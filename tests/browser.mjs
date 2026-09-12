@@ -1,4 +1,5 @@
 import { chromium, firefox } from "playwright";
+import {browserArgs} from './browser-options.mjs';
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 const base = process.env.ATLAS_URL || "http://127.0.0.1:5186/";
@@ -7,7 +8,7 @@ const browser = await engine.launch({
   headless: true,
   args:
     engine.name() === "chromium"
-      ? ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
+      ? browserArgs
       : [],
 });
 const output = process.env.ATLAS_RESULTS || "test-results";
@@ -181,6 +182,7 @@ try {
   await page.locator("#relief").click();
   const far = await page.evaluate(() => window.__atlas.camera.position);
   await page.locator("#approach").click();
+  console.log(JSON.stringify({afterApproach:await page.evaluate(()=>({autopilot:window.__atlas.travel.autopilot,altitude:window.__atlas.travel.approachAltitude,ready:window.__atlas.ready}))}));
   await page.waitForFunction(
     () =>
       window.__atlas.terrain?.tiles?.ready &&
@@ -310,6 +312,7 @@ try {
     ),
   );
 } catch (e) {
+  console.log(await page.evaluate(()=>({travel:window.__atlas.travel,terrain:window.__atlas.terrain,errors:document.querySelector('#status')?.textContent})));
   await shot("failure");
   throw e;
 } finally {

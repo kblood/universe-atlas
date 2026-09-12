@@ -1,7 +1,14 @@
 import { AU, LY, bodyPosition, type StarSystem, type V3 } from "./catalog.ts";
 import { terrainSampler } from './terrain.ts';
 import { visibleElevation, unit } from './planet-tiles.ts';
+import {type OrbitTime} from './world-time.ts';
 const samplers = new Map<string, ReturnType<typeof terrainSampler>>();
+/** Stop a fast galactic step before a nearby star, then release that staging
+ * boundary with a tolerance so floating-point roundoff cannot trap flight. */
+export function sweptStarStep(step:number,along:number,perpendicularSq:number) {
+  return along>.030001&&along<step+.03&&perpendicularSq<.02*.02
+    ? Math.min(step,along-.03):step;
+}
 export function surfaceClearance(body: StarSystem['stars'][number], relative: V3) {
   const distance = Math.hypot(...relative);
   let elevation = 0;
@@ -37,7 +44,7 @@ export function automaticSpeed(
       ? Math.max(0.000001, Math.min(50000, clearance * 1.6))
       : Math.max(20, Math.min(AU * 50000, clearance * (.3 + 1.5 * Math.max(0, Math.min(1,(clearance-10000)/50000)))));
 }
-export function nearestBody(sys: StarSystem, p: V3, epoch = 0) {
+export function nearestBody(sys: StarSystem, p: V3, epoch: OrbitTime = 0) {
   let best: any = null;
   for (const body of [...sys.stars, ...sys.planets, ...sys.moons]) {
     const center = bodyPosition(body, sys, epoch),

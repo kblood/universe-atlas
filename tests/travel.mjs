@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import {browserArgs} from './browser-options.mjs';
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 const base = process.env.ATLAS_URL || "http://127.0.0.1:5186/";
@@ -6,7 +7,7 @@ const out = process.env.ATLAS_RESULTS || "test-results/travel";
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch({
   headless: true,
-  args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+  args: browserArgs,
 });
 const p = await browser.newPage({ viewport: { width: 1440, height: 1000 } }),
   errors = [];

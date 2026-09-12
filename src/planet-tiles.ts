@@ -5,6 +5,21 @@ export const PATCH_SEGMENTS = 32;
 export const PATCH_TEXTURE = 64;
 export type Tile = { face: number; level: number; x: number; y: number };
 export const tileKey = (t: Tile) => `${t.face}/${t.level}/${t.x}/${t.y}`;
+export function directionCoordinates(d: V3) {
+  const [x,y,z]=d, ax=Math.abs(x),ay=Math.abs(y),az=Math.abs(z);
+  const face=ax>=ay&&ax>=az?(x>=0?0:1):ay>=az?(y>=0?2:3):(z>=0?4:5);
+  const a=Math.max(ax,ay,az)||1;
+  const [u,v]=[[-z/a,y/a],[z/a,y/a],[x/a,-z/a],[x/a,z/a],[x/a,y/a],[-x/a,y/a]][face];
+  return {face,u,v};
+}
+export function directionTile(d:V3,level:number):Tile {
+  const {face,u,v}=directionCoordinates(d),n=2**level;
+  return {face,level,x:Math.max(0,Math.min(n-1,Math.floor((u+1)*.5*n))),y:Math.max(0,Math.min(n-1,Math.floor((v+1)*.5*n)))};
+}
+export function tileNeighbour(t:Tile,edge:number):Tile {
+  const [u,v]=[[-1e-5,.5],[1+1e-5,.5],[.5,-1e-5],[.5,1+1e-5]][edge];
+  return directionTile(tileDirection(t,u,v),t.level);
+}
 export const children = (t: Tile): Tile[] => [0, 1, 2, 3].map(i => ({
   face: t.face, level: t.level + 1, x: t.x * 2 + (i % 2), y: t.y * 2 + (i >> 1),
 }));
@@ -38,7 +53,7 @@ export function visibleElevation(body: Body, elevation: number) {
 }
 /** Stable directional finite differences; never derive normals per mesh/face. */
 export function surfaceNormal(body: Body, d: V3, sample = terrainSampler(body), relief = 1): V3 {
-  const eps = 0.00001;
+  const eps = 2 / body.radiusM;
   const h = (q: V3) => visibleElevation(body, sample(unit(q)).elevationM) * relief / body.radiusM;
   const grad = [0, 1, 2].map(i => {
     const a = [...d] as V3, b = [...d] as V3;

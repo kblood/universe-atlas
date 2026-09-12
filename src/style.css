@@ -669,3 +669,14 @@ summary {
   display: none;
 }
 #flight-reticle {position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);color:#a9e5ee;font:20px monospace;pointer-events:none;z-index:4;opacity:.8;text-shadow:0 1px 4px #000;}
+#timeline {position:fixed;top:78px;right:34px;z-index:20;background:#101b27;border:1px solid #354d61;border-radius:5px;max-width:290px;padding:9px 12px;font-size:12px;}
+#timeline summary {cursor:pointer;color:#a2d3d8;}
+#timeline[open] {box-shadow:0 10px 35px #000b;}
+#timeline label {display:block;margin:12px 0 6px;}
+#timeline input {width:100%;margin-bottom:8px;}
+#timeline button {margin:3px;}
+#timeline p {line-height:1.5;color:#9bacbb;}
+.walking .view-caption h1 {font-size:28px;margin:8px 0;}
+.walking .view-caption #view-stats {display:none;}
+.walking .view-caption {max-width:520px;background:#0a121bc9;padding:12px;border-radius:6px;bottom:85px;}
+@media(max-width:800px){#timeline{top:122px;right:14px;} .walking .view-caption{display:none;}}

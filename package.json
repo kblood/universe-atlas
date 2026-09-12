@@ -7,7 +7,8 @@
     "dev": "vite --host 127.0.0.1 --port 5186",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5186",
-    "test": "node --test tests/catalog.test.mjs tests/planet.test.mjs",
+    "test": "node --test tests/catalog.test.mjs tests/planet.test.mjs tests/world.test.mjs tests/ground.test.mjs",
+    "test:walking": "node tests/walking.mjs",
     "test:planet": "node tests/planet.mjs",
     "test:exploration": "node tests/exploration.mjs",
     "test:browser": "node tests/browser.mjs",
@@ -16,6 +17,7 @@
     "test:travel": "node tests/travel.mjs"
   },
   "dependencies": {
+    "@dimforge/rapier3d-compat": "0.20.0",
     "three": "npm:super-three@0.181.0"
   },
   "devDependencies": {

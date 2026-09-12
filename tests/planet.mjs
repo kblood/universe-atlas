@@ -1,10 +1,11 @@
 import {chromium} from 'playwright';
+import {browserArgs} from './browser-options.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 const base=process.env.ATLAS_URL||'http://127.0.0.1:5186/';
 const out=process.env.ATLAS_RESULTS||'test-results/planet';
 await mkdir(out,{recursive:true});
-const browser=await chromium.launch({headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const browser=await chromium.launch({headless:true,args:browserArgs});
 const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];
 page.on('pageerror',e=>errors.push(e.message));
 page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});

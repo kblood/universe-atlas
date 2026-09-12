@@ -1,4 +1,5 @@
 import { densityOverview } from "./galaxy-field.ts";
+import {phaseAt, type OrbitTime} from './world-time.ts';
 /** Pure catalogue. No renderer state, wall clock, or exploration-order inputs. */
 export const VERSION = "atlas-1.0.0";
 export const LY = 9.4607304725808e15;
@@ -560,9 +561,9 @@ export function system(ref: SystemRef): StarSystem {
     version: VERSION,
   };
 }
-export function orbitPosition(o: Orbit | null, time = 0): V3 {
+export function orbitPosition(o: Orbit | null, time: OrbitTime = 0): V3 {
   if (!o) return [0, 0, 0];
-  const M = (o.anomaly + Math.sqrt(o.mu / o.a ** 3) * time) % (Math.PI * 2);
+  const M = (o.anomaly + phaseAt(time, Math.sqrt(o.mu / o.a ** 3))) % (Math.PI * 2);
   let E = M;
   for (let i = 0; i < 12; i++) {
     const d = (E - o.e * Math.sin(E) - M) / (1 - o.e * Math.cos(E));
@@ -583,7 +584,7 @@ export function orbitPosition(o: Orbit | null, time = 0): V3 {
     u * Math.sin(n) + v * c * Math.cos(n),
   ];
 }
-export function bodyPosition(b: Body, sys: StarSystem, time = 0): V3 {
+export function bodyPosition(b: Body, sys: StarSystem, time: OrbitTime = 0): V3 {
   const p = orbitPosition(b.orbit, time);
   const parent = [...sys.stars, ...sys.planets].find(
     (x) => x.id === b.parentId,

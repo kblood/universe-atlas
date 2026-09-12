@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import {browserArgs} from './browser-options.mjs';
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 const base = process.env.ATLAS_URL || "http://127.0.0.1:5186/";
@@ -6,7 +7,7 @@ const out = process.env.ATLAS_RESULTS || "test-results/continuous";
 await mkdir(out, { recursive: true });
 const b = await chromium.launch({
   headless: true,
-  args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+  args: browserArgs,
 });
 const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
 const errors = [];
@@ -91,9 +92,14 @@ try {
   await p.locator("#toggle-flight").click();
   await p.mouse.move(700, 400);
   await p.mouse.wheel(0, 2000);
-  await p.keyboard.down("w");
-  await p.waitForTimeout(1000);
-  await p.keyboard.up("w");
+  // Measure travel, not a fixed wall-time assumption. Move laterally so the
+  // route exercises galaxy chunks without aiming into the selected system.
+  await p.keyboard.down("d");
+  await p.waitForFunction(start=>{
+    const s=window.__atlas.space;
+    return s&&Math.hypot(...s.positionLy.map((v,i)=>v-start[i]))>300;
+  },flightStart.positionLy,{timeout:30000});
+  await p.keyboard.up("d");
   await p.keyboard.press("Escape");
   await p.waitForFunction(
     () =>

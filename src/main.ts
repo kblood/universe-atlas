@@ -7,10 +7,15 @@ import {
   automaticSpeed,
   nearestBody,
   surfaceClearance,
+  sweptStarStep,
 } from "./travel.ts";
 import { PlanetRenderer } from './planet-renderer.ts';
 import { NavigationMarkers } from './navigation-markers.ts';
 import { freeLook, orbitStep } from './planet-flight.ts';
+import {parseDate,dateRecord,dateYears,yearsToDate,advanceDate} from './world-time.ts';
+import {identityRecord,stellarHistory} from './world-history.ts';
+import {surfaceQuery} from './world-surface.ts';
+import {type GroundWalker} from './ground-walker.ts';
 import { GalaxySpace } from "./galaxy-space.ts";
 import { ViewBlend } from "./view-transition.ts";
 import { systemLayout, type SystemScale } from "./system-layout.ts";
@@ -81,12 +86,13 @@ let sectorData: {
   coords: V3;
   aggregated: boolean;
 } | null = null;
-let epoch = 0,
+let epoch = 0n,
   playing = false,
   loadId = 0,
   frameCount = 0,
   drawCount = 0,
   frameTimes: number[] = [];
+try {epoch=parseDate(new URLSearchParams(location.search).get('date'));}catch{}
 let ready = false,
   frameMs = 16,
   lastStats = 0;
@@ -282,6 +288,11 @@ let planetTiles: PlanetRenderer | null = null;
 let systemMarkers: NavigationMarkers | null = null;
 let galaxyGlyphs: {group: THREE.Group; visual: THREE.Group; pick: THREE.Mesh; radius: number}[] = [];
 let flightAim: string | null = null;
+let walker:GroundWalker|null=null;
+let walkingModule:typeof import('./ground-walker.ts')|null=null;
+let landing:{point:V3;launch?:boolean}|null=null;
+let landAfterCruise=false,walkGeneration=0;
+function clearWalking(){walkGeneration++;walker?.dispose();walker=null;landing=null;landAfterCruise=false;planetTiles?.setContactFocus(null);}
 let orbitAssist: {bodyId: string; axis: THREE.Vector3; clearanceM?: number} | null = null;
 let surfaceJourney: {bodyId:string; direction:THREE.Vector3; up:THREE.Vector3} | null = null;
 let startCruiseAfterLook = false;
@@ -354,6 +365,7 @@ function disposeView(group: THREE.Group) {
   });
 }
 function clearView(retain = false) {
+  clearWalking();
   surfaceJourney = null; startCruiseAfterLook = false;
   systemMarkers = null; galaxyGlyphs = []; flightAim = null;
   planetTiles?.dispose(); planetTiles = null;
@@ -540,12 +552,37 @@ function breadcrumbs() {
 }
 function persist() {
   const q = new URLSearchParams({ seed });
+  if(epoch!==0n)q.set('date',epoch.toString());
+  if(walker){q.set('walk',walker.position.toArray().join(','));q.set('heading',camera.quaternion.toArray().join(','));}
   if (state.galaxy) q.set("g", state.galaxy.id);
   if (state.coords) q.set("sector", state.coords.join(","));
   if (state.ref) q.set("system", state.ref.id);
   if (state.body) q.set("body", state.body.id);
   history.replaceState(null, "", "?" + q);
   saveStored("atlas-seed", seed);
+}
+function seekDate(next:bigint){
+  tween=null;
+  const body=state.body,oldCenter=body&&state.sys?vec(bodyPosition(body,state.sys,epoch)):null;
+  const relative=oldCenter?vec(localPose()).sub(oldCenter):null;
+  const grounded=!!walker||!!landing;
+  clearWalking();autopilot=null;orbitAssist=null;planetLook=null;surfaceJourney=null;playing=false;
+  epoch=next;positionSystem();
+  if(relative&&body&&state.sys&&!renderer.xr.isPresenting){
+    const targetOffset=controls.target.clone().sub(camera.position);
+    if(grounded){const d=relative.clone().normalize();relative.setLength(body.radiusM+surfaceQuery(body)(d.toArray() as V3).visibleHeightM+160);}
+    const newCenter=vec(bodyPosition(body,state.sys,epoch)),shift=newCenter.clone().sub(oldCenter!);
+    const position=relative.add(newCenter);
+    rebaseSystem(position);camera.position.set(0,0,0);
+    controls.target.copy(targetOffset);
+    homePos.addScaledVector(shift,systemUnit);homeTarget.addScaledVector(shift,systemUnit);
+  }
+  updateDateUI();persist();panel();
+  announce(grounded?'Date changed in observation hover. Land again when ready.':'Orbital date updated across all views.');
+}
+function updateDateUI(){
+  $('date-label').textContent=epoch===0n?'reference date':dateYears(epoch)+' yr';
+  if(document.activeElement!==$('date-years'))($('date-years') as HTMLInputElement).value=dateYears(epoch);
 }
 function childAnchor(
   parentState: State,
@@ -734,7 +771,6 @@ async function navigate(level: Level, options: Partial<State> = {}) {
     } else state = next;
     selected = null;
     playing = false;
-    epoch = 0;
     clearView(animate);
     if (level === "universe") drawUniverse(data);
     if (level === "galaxy") drawGalaxy(data);
@@ -1275,6 +1311,7 @@ function applyPose(pose: TravelPose) {
     );
 }
 function toggleFlight() {
+  clearWalking();
   surfaceJourney = null; startCruiseAfterLook = false;
   if (renderer.xr.isPresenting) return;
   flight = !flight;
@@ -1309,6 +1346,7 @@ function toggleFlight() {
   panel();
 }
 function beginTargetFlight() {
+  clearWalking();
   surfaceJourney = null; startCruiseAfterLook = false;
   planetLook = null;
   if (!selected) return;
@@ -1318,6 +1356,7 @@ function beginTargetFlight() {
   autopilot = { kind, id: selected };
 }
 function flyOutward() {
+  clearWalking();
   surfaceJourney = null; startCruiseAfterLook = false;
   planetLook = null;
   if (!flight) toggleFlight();
@@ -1360,6 +1399,7 @@ function aimedDistance(
 }
 function updateFlight(dt: number) {
   if (!flight || !ready || renderer.xr.isPresenting) return;
+  if(walker||landing){updateWalking(dt);return;}
   if (surfaceJourney && residentSystem) {
     const body=bodyById(surfaceJourney.bodyId)!, center=vec(bodyPosition(body,state.sys!,epoch));
     const relative=vec(localPose()).sub(center), radius=relative.length(), radial=relative.clone().normalize();
@@ -1628,8 +1668,7 @@ function updateFlight(dt: number) {
       // before the next frame can prepare it and change coordinate scale.
       for (const ref of [...space.refs,...space.nearbyRefs]) {
         const delta=vec(ref.position).sub(vec(p)), along=delta.dot(direction);
-        if (along > .03 && along < step + .03 && delta.lengthSq()-along*along < .02*.02)
-          step=Math.min(step,along-.03);
+        step=sweptStarStep(step,along,delta.lengthSq()-along*along);
       }
     }
     motion
@@ -1692,13 +1731,17 @@ function updateFlightHud() {
     const latitude = Math.asin(THREE.MathUtils.clamp(relative[1] / Math.hypot(...relative), -1, 1)) * 180 / Math.PI;
     hud.textContent += ` · altitude ${fmt(info.altitude / 1000, 1)} km · clearance ${fmt(info.terrainClearance / 1000, 1)} km · latitude ${fmt(latitude, 1)}°${orbitAssist?.clearanceM ? ' · terrain following' : orbitAssist ? ' · orbit assist' : ''}`;
     if(flight && body.kind!=='star' && body.type!=='Gas giant') {
-      const low=info.terrainClearance<20000, label=low?'05 / TERRAIN FLIGHT':'05 / PLANETARY ORBIT';
+      const low=info.terrainClearance<20000, label=walker?'06 / ON FOOT':landing?'06 / LANDING':low?'05 / TERRAIN FLIGHT':'05 / PLANETARY ORBIT';
       if($('view-kicker').textContent!==label){$('view-kicker').textContent=label;$('view-description').textContent=low?'Flying over this world. Drag to look, use WASD to steer, and the wheel to adjust speed.':'Your planet, moons and star system remain connected. Fly toward a destination or choose a terrain site.';}
     }
   }
+  document.body.classList.toggle('walking',!!walker||!!landing);
+  if(walker){hud.textContent=`ON FOOT · ${fmt(walker.speed,1)} m/s · ${walker.waiting?'preparing nearby ground':walker.grounded?'grounded':'airborne'} · WASD move · Shift run · Space jump`;$('view-description').textContent='Walk across this world. Drag to look, hold Shift to run, and press Space to jump.';}
+  else if(landing)hud.textContent=landing.launch?'TAKING OFF · returning to free flight':'LANDING · refining nearby ground and preparing collision';
 }
 
 function approachPlanet(altitude: number) {
+  clearWalking();
   surfaceJourney = null; startCruiseAfterLook = false; approachClearance=3000;
   planetLook = null;
   if (!state.body || renderer.xr.isPresenting) return;
@@ -1710,6 +1753,7 @@ function approachPlanet(altitude: number) {
 function exploreTerrain() {
   const body=state.body;
   if(!body || body.kind==='star' || body.type==='Gas giant' || renderer.xr.isPresenting) return;
+  clearWalking();
   if(!flight) toggleFlight();
   autopilot=null; orbitAssist=null; planetLook=null; startCruiseAfterLook=false;
   const center=vec(bodyPosition(body,state.sys!,epoch)), eye=vec(localPose()).sub(center).normalize();
@@ -1733,7 +1777,70 @@ function startTerrainCruise() {
   const tangent=camera.getWorldDirection(new THREE.Vector3()).projectOnPlane(radial);
   if(tangent.lengthSq()<.0001)tangent.set(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(radial);
   orbitAssist={bodyId:body.id,axis:new THREE.Vector3().crossVectors(radial,tangent.normalize()).normalize(),clearanceM:600};
+  if(landAfterCruise){landAfterCruise=false;void prepareLanding();}
   panel();
+}
+async function prepareLanding(savedPoint?:V3){
+  const body=state.body;
+  if(!body||body.kind==='star'||body.type==='Gas giant'||renderer.xr.isPresenting)return;
+  if(!flight)toggleFlight();
+  clearWalking();autopilot=null;orbitAssist=null;surfaceJourney=null;planetLook=null;playing=false;
+  const relative=savedPoint?vec(savedPoint):vec(localPose()).sub(vec(bodyPosition(body,state.sys!,epoch)));
+  const d=relative.normalize(),s=surfaceQuery(body)(d.toArray() as V3);
+  if(!s.walkable){exploreTerrain();landAfterCruise=true;return;}
+  const point=d.multiplyScalar(body.radiusM+s.rockHeightM+.92).toArray() as V3;
+  if(savedPoint){
+    // A restored surface address starts above that ground, not at the orbit
+    // viewer's initial camera. Wait here for the same contact tiles as landing.
+    const eye=vec(point).setLength(vec(point).length()+12).add(vec(bodyPosition(body,state.sys!,epoch)));
+    rebaseSystem(eye);camera.position.set(0,0,0);
+  }
+  landing={point};planetTiles?.setContactFocus(point);panel();
+  const token=walkGeneration;
+  announce('Preparing ground for landing. The scene stays visible while nearby terrain refines.');
+  try{const mod=await import('./ground-walker.ts');await mod.initWalking();if(token===walkGeneration)walkingModule=mod;}
+  catch(error){if(token===walkGeneration){clearWalking();announce('Walking could not start: '+String(error));panel();}}
+}
+function landOnWorld(){
+  if(!state.body)return;
+  const info=surfaceClearance(state.body,vec(localPose()).sub(vec(bodyPosition(state.body,state.sys!,epoch))).toArray() as V3);
+  if(info.terrainClearance<20000)void prepareLanding();
+  else {exploreTerrain();landAfterCruise=true;}
+}
+function takeoffWalk(){
+  if(!state.body)return;
+  const relative=vec(localPose()).sub(vec(bodyPosition(state.body,state.sys!,epoch)));
+  clearWalking();landing={point:relative.toArray() as V3,launch:true};panel();
+}
+function updateWalking(dt:number){
+  if(!state.body||!planetTiles)return;
+  const body=state.body,center=vec(bodyPosition(body,state.sys!,epoch));
+  if(walker){
+    planetTiles.setContactFocus(walker.position.toArray() as V3);
+    walker.update(dt,camera.quaternion,flightKeys,(p,o)=>planetTiles!.contactPatches(p,o));
+    const eye=vec(walker.eye()).add(center);
+    if(eye.distanceTo(systemOrigin)>128)rebaseSystem(eye);
+    camera.position.copy(eye.sub(systemOrigin).multiplyScalar(systemUnit));flightSpeed=walker.speed;
+  }else if(landing){
+    const point=vec(landing.point),d=point.clone().normalize(),current=vec(localPose()).sub(center);
+    const patches=landing.launch?null:planetTiles.contactPatches(landing.point,landing.point);
+    const target=landing.launch?body.radiusM+surfaceQuery(body)(d.toArray() as V3).rockHeightM+160:point.length()+(patches&&walkingModule? .72:12);
+    const gap=target-current.length(),step=Math.sign(gap)*Math.min(Math.abs(gap),Math.max(.5,Math.min(5000,Math.abs(gap)*2))*dt);
+    const next=d.multiplyScalar(current.length()+step).add(center);
+    if(next.distanceTo(systemOrigin)>128)rebaseSystem(next);
+    camera.position.copy(next.sub(systemOrigin).multiplyScalar(systemUnit));flightSpeed=Math.abs(step)/Math.max(dt,.001);
+    if(landing.launch&&Math.abs(gap)<.2){landing=null;planetTiles.setContactFocus(null);announce('Free flight · WASD to move, Q/E to descend or climb.');panel();}
+    else if(!landing.launch&&patches&&walkingModule&&Math.abs(gap)<.1){
+      walker=new walkingModule.GroundWalker(body,landing.point);landing=null;
+      const up=walker.position.clone().normalize(),forward=camera.getWorldDirection(new THREE.Vector3()).projectOnPlane(up);
+      if(forward.lengthSq()<.01)forward.set(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(up);
+      camera.up.copy(up);camera.lookAt(camera.position.clone().add(forward.normalize()));
+      announce('Walking · WASD move · Shift run · Space jump · Return to flight to take off.');panel();persist();
+    }
+  }
+  camera.near=.03*systemUnit;camera.updateProjectionMatrix();
+  controls.target.copy(camera.position).add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(systemUnit));
+  flightDomain='surface';
 }
 function holdPlanetOrbit() {
   if (!state.body || renderer.xr.isPresenting) return;
@@ -1777,7 +1884,7 @@ function updatePlanetTiles(dt: number) {
     // Keep metre-scale depth precision without clipping the distant system.
     const center = bodyPosition(state.body, state.sys!, epoch);
     const info = surfaceClearance(state.body, localPose().map((v,i) => v - center[i]) as V3);
-    const near = Math.max(1, Math.min(1000, info.terrainClearance * .005)) * systemUnit;
+    const near = (walker||landing ? .03:Math.max(1, Math.min(1000, info.terrainClearance * .005))) * systemUnit;
     if (Math.abs(camera.near - near) > near * .1) { camera.near = near; camera.updateProjectionMatrix(); }
   }
 }
@@ -2277,6 +2384,7 @@ function replaceTerrain(
   mesh.userData.radius = radius;
 }
 async function focusBody(body: Body, keepPose = false) {
+  clearWalking();
   surfaceJourney=null;startCruiseAfterLook=false;
   planetTiles?.dispose(); planetTiles = null;
   orbitAssist = null;
@@ -2627,7 +2735,7 @@ function panel() {
   }
   {
     const mapped = space?.find(selected || "");
-    const surfaceNav = state.level==='body' && state.body!.kind!=='star' && state.body!.type!=='Gas giant' ? '<button id="terrain-flight" class="explore">Fly over terrain</button>' : '';
+    const surfaceNav = state.level==='body' && state.body!.kind!=='star' && state.body!.type!=='Gas giant' ? `<button id="walk-surface" class="explore">${walker?'Return to flight':landing?'Cancel landing':'Land and walk'}</button><button id="terrain-flight" class="explore">Fly over terrain</button>` : '';
     const nav = `<div class="mini-buttons"><button id="fly-target" ${selected ? "" : "disabled"}>Fly to selection</button><button id="fly-outward">Fly outward</button><button id="toggle-flight">${flight ? "Stop flight" : "Fly freely"}</button>${mapped ? '<button id="approach-star">Approach selected star</button>' : ""}</div><p class="subtle">Flight: drag to look · WASD move · Q/E down/up · wheel adjusts speed · Shift boosts · Esc stops. Touch: hold Fly forward below.</p><div class="mini-buttons"><button id="fly-forward">Hold: fly forward</button></div>`;
     if (state.level === "galaxy" && mapped)
       html =
@@ -2695,6 +2803,7 @@ function panel() {
     panel();
   });
   bind("play", () => {
+    if(walker||landing)seekDate(epoch);
     playing = !playing;
     panel();
   });
@@ -2708,6 +2817,7 @@ function panel() {
   });
   bind('descend', () => approachPlanet(10000));
   bind('terrain-flight', exploreTerrain);
+  bind('walk-surface',()=>{if(walker||landing)takeoffWalk();else landOnWorld();});
   bind('hold-orbit', holdPlanetOrbit);
   bind("relief", () => {
     if (flight) toggleFlight();
@@ -2726,7 +2836,7 @@ function panel() {
   });
   bind("epoch", () => {
     playing = false;
-    epoch = 0;
+    seekDate(0n);
     panel();
   });
   bind("export", exportData);
@@ -2793,7 +2903,10 @@ function exportData() {
   const data = {
     seed,
     version: VERSION,
-    epochSeconds: epoch,
+    epochSeconds: Number(epoch)/1e9,
+    date:dateRecord(epoch),
+    identities:state.sys?[...state.sys.stars,...state.sys.planets,...state.sys.moons].map(identityRecord):[],
+    stellarHistories:state.sys?.stars.map(stellarHistory),
     galaxy: state.galaxy || null,
     sector: state.coords || null,
     system: state.sys || null,
@@ -3033,11 +3146,13 @@ window.addEventListener("keydown", (e) => {
   )
     return;
   if (e.key === "Escape") {
+    if(walker){flightKeys.clear();announce('Walking paused. Drag to look or use WASD to continue.');return;}
     toggleFlight();
     return;
   }
-  if (["w", "a", "s", "d", "q", "e", "shift"].includes(e.key.toLowerCase())) {
+  if (["w", "a", "s", "d", "q", "e", "shift", " "].includes(e.key.toLowerCase())) {
     e.preventDefault();
+    if(e.key===' '&&!e.repeat)walker?.requestJump();
     autopilot = null;
     orbitAssist = null; approachAltitude = null;
     surfaceJourney=null;startCruiseAfterLook=false;
@@ -3104,6 +3219,10 @@ $("reset").onclick = () => {
 $("collapse").onclick = () => $("panel").classList.toggle("collapsed");
 $("help").onclick = () => ($("help-dialog") as HTMLDialogElement).showModal();
 $("close-help").onclick = () => ($("help-dialog") as HTMLDialogElement).close();
+$('time-apply').onclick=()=>{try{seekDate(yearsToDate(($('date-years') as HTMLInputElement).value));}catch(error){announce(String(error));}};
+$('time-reset').onclick=()=>seekDate(0n);
+$('time-day-back').onclick=()=>seekDate(epoch-86400_000_000_000n);
+$('time-day-forward').onclick=()=>seekDate(epoch+86400_000_000_000n);
 window.addEventListener("keydown", (e) => {
   if (
     (e.target as HTMLElement).matches("input,textarea") ||
@@ -3145,6 +3264,7 @@ renderer.domElement.addEventListener("webglcontextlost", (e) => {
   announce("Graphics context lost. Reload to restore the atlas.");
 });
 let last = performance.now();
+let lastDateSave=0;
 const projected = new THREE.Vector3();
 renderer.setAnimationLoop(() => {
   const now = performance.now(),
@@ -3224,7 +3344,8 @@ renderer.setAnimationLoop(() => {
     journey.completed++;
     controls.enabled = !renderer.xr.isPresenting && !flight;
   }
-  if (playing) epoch += dt * 86400 * 30;
+  if (playing) epoch=advanceDate(epoch,dt,86400*30);
+  if(now-lastDateSave>1000){updateDateUI();if(playing||walker)persist();lastDateSave=now;}
   positionSystem();
   const occluder = surfaceMesh?.getWorldPosition(new THREE.Vector3());
   const occupiedLabels: {x:number;y:number}[]=[];
@@ -3292,12 +3413,18 @@ async function boot() {
       sys,
       body: b,
     });
+    const saved=q.get('walk')?.split(',').map(Number),heading=q.get('heading')?.split(',').map(Number);
+    if(b&&saved?.length===3&&saved.every(Number.isFinite)&&Math.abs(Math.hypot(...saved)-b.radiusM)<30000){
+      if(heading?.length===4&&heading.every(Number.isFinite))camera.quaternion.fromArray(heading).normalize();
+      void prepareLanding(saved as V3);
+    }
   } else if (coords) await navigate("sector", { galaxy: g, coords });
   else await navigate("galaxy", { galaxy: g });
 }
 // Small, read-only diagnostics surface used by real browser acceptance tests.
 Object.defineProperty(window, "__atlas", {
   value: {
+    get date(){return dateRecord(epoch);},
     get state() {
       return state;
     },
@@ -3316,6 +3443,8 @@ Object.defineProperty(window, "__atlas", {
     },
     get travel() {
       return {
+        walking:walker?.diagnostics()||null,
+        landing:!!landing,
         active: flight,
         domain: flightDomain,
         speed: flightSpeed,
@@ -3410,7 +3539,7 @@ Object.defineProperty(window, "__atlas", {
       return displayLayout
         ? {
             mode: systemScale,
-            epoch,
+            epoch:Number(epoch)/1e9,
             bodies: animations.map((a) => ({
               position: a.obj.position.toArray(),
               ...displayLayout!.records[a.body.id],
@@ -3434,6 +3563,7 @@ Object.defineProperty(window, "__atlas", {
     },
     get camera() {
       return {
+        animating:!!tween,
         fov: camera.fov,
         near: camera.near,
         far: camera.far,
@@ -3568,6 +3698,7 @@ vr = new AtlasVR(renderer, scene, camera, {
   root: () => root,
   menu: vrMenu,
   start: () => {
+    clearWalking();
     flight = false;
     orbitAssist = null; approachAltitude = null; planetLook = null; autopilot = null;
     surfaceJourney=null;startCruiseAfterLook=false;

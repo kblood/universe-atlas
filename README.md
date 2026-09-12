@@ -7,6 +7,7 @@ Next-stage proposal: [walkable worlds and traversable history](docs/living-world
 This roadmap describes planned work, not the deployed feature set.
 See also [Fable 5.1's independent review](docs/fable-5.1-plan-review.md) and
 [the checked follow-up](docs/fable-review-assessment.md).
+The first implementation is documented in [Walking and shared time](docs/walking-and-time.md).
 
 ## Run and validate
 
@@ -23,6 +24,7 @@ npm run test:continuous
 npm run test:travel
 npm run test:planet
 npm run test:exploration
+npm run test:walking
 npm run test:vr
 ```
 
@@ -31,6 +33,9 @@ The automated browser test uses SwiftShader for reliable headless WebGL on this
 machine. Its frame timings are software-rendering measurements, not a hardware
 performance guarantee. Desktop and mobile viewport layouts are exercised;
 headset and physical mobile-device performance have not been validated.
+Set `ATLAS_HARDWARE=1` to request GPU rendering (D3D11 on Windows). The walking
+report records the actual adapter and settled-ground frame timings; the latest
+RTX 5090 measurements are in the implementation record.
 The VR suite injects IWER 2.4.0 with a stereo Meta Quest 3 profile through
 Playwright only. It exercises controller rays, the in-world catalogue, thumbstick
 rotation/zoom, orbital approach, relief controls, session exit and re-entry.
@@ -69,11 +74,13 @@ controls, not a relativistic or propulsion simulation.
 
 Nearby stars stream around the camera. Internal 32-ly chunk boundaries update
 the nearby catalogue without replacing the galaxy scene. Surface clearance limits
-keep flight outside solid bodies; terrain landing and ground travel are future work.
+keep ordinary flight outside solid bodies. **Land and walk** prepares nearby
+terrain and descends onto solid planets and moons.
 
 The help button lists controls. Seed tools provide direct addresses, bookmarks,
 catalogue exports and a repeatability check. URLs restore the selected destination.
-Continuous flight positions themselves are not yet saved in shared URLs.
+Walking locations and the exact shared date are saved in the URL. Continuous
+free-flight positions themselves are not yet saved.
 
 Galaxy-to-local navigation uses an uninterrupted logarithmic camera move and
 retains the same galaxy point buffer. Planetary focus retains the system scene.
@@ -98,10 +105,20 @@ exaggerates elevation for stationary inspection; flight restores physical height
 and starts a 600 m terrain-following flight. The terrain now includes local hills
 and gullies, with atmospheric haze where appropriate. The wheel adjusts speed;
 movement keys release assistance. Free flight retains a 120 m terrain-clearance
-floor. Landing is a later milestone.
+floor. **Land and walk** descends to ground contact: WASD walks, Shift runs,
+Space jumps and dragging looks around. **Return to flight** rises to a 160 m
+hover. Landings over water find a dry site; oceans and gas giants have no walking
+surface. Walking currently uses desktop keyboard/mouse controls, outside VR.
+
+**Universal date** accepts years relative to the catalogue reference date and
+applies across every view. URLs and exports retain exact integer nanoseconds.
+Only orbital positions currently respond visually. A time seek from the ground
+returns to observation hover; stars do not yet evolve and continents do not yet
+change. The clock and lifecycle fixtures prepare for that later work.
 
 The implementation, controls, cube-face mathematics, budgets, known limitations,
-test procedure and research sources are documented in
+test procedure and research sources for the latest stage are documented in
+[Walking and shared time](docs/walking-and-time.md). The preceding release is in
 [Connected exploration corrections](docs/exploration-corrections.md).
 Measured acceptance results are in
 [Connected exploration corrections](docs/exploration-corrections.md).
@@ -180,15 +197,17 @@ the panel. The design manipulates the model without artificial head motion.
   that field over a cube-sphere, including matching face edges and pole centres.
   `src/planet-renderer.ts` streams patches through a dedicated worker, retains
   parents until children are ready, morphs new geometry, and uses edge skirts.
-  The cache plus pending work is capped at 256 tiles, with two jobs in flight and at most two
+  The ordinary cache plus pending work is capped at 256 tiles, with two jobs in flight and at most two
   resource installations per frame. Desktop selects at most 150 leaves, XR 102.
   Horizon and camera-frustum culling reduce hidden work. Ground-proximity priority
-  permits deeper refinement (maximum address level 16); level 8+ textures have
+  permits refinement to level 16 in flight; walking uses a 768-tile cache,
+  up to 512 leaves and radius-dependent contact levels 14–20. Level 8+ textures have
   128x128 interiors. Focused 1024-pixel
   globes remain fallback previews; solid worlds no longer upscale a whole globe
   to 2048 pixels for close inspection. The terrain sampler, not the fallback map,
-  supplies streamed detail. Ground walking, metre-scale objects, vegetation,
-  weather, full atmospheric scattering and landing remain future work.
+  supplies streamed detail. Ground collision uses the settled contact triangles.
+  Metre-scale props, vegetation, weather and full atmospheric scattering remain
+  future work. See the walking record for resource accounting and measurements.
 - `src/planet-flight.ts` uses quaternion free look and great-circle transport
   without a geographic-north singularity. `src/travel.ts` samples actual terrain
   for clearance. Ocean planets receive a lightweight atmosphere shell; it is a

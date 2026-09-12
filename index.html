@@ -28,6 +28,14 @@
       </div>
     </header>
     <nav id="breadcrumbs" aria-label="Location"></nav>
+    <details id="timeline">
+      <summary>Time · <span id="date-label">reference date</span></summary>
+      <label for="date-years">Years from reference date</label>
+      <input id="date-years" value="0" inputmode="decimal" aria-label="Years from reference date" />
+      <button id="time-apply">Go to date</button><button id="time-reset">Reference date</button>
+      <button id="time-day-back">−1 day</button><button id="time-day-forward">+1 day</button>
+      <p>Orbital positions follow this date at every scale. Stellar lifecycles and changing landscapes are planned for later releases.</p>
+    </details>
     <aside id="panel">
       <div class="panel-top">
         <span id="panel-kicker" class="kicker">CATALOGUE</span
@@ -98,12 +106,17 @@
         Descend to 10 km stops higher over mountains. Hold orbit circles the
         planet smoothly through the poles; drag to look and use movement keys
         to release it. The wheel changes orbit speed. Free flight keeps a
-        120 m terrain-clearance floor; landing is a later stage.
+        120 m terrain-clearance floor. <b>Land and walk</b> prepares a solid
+        surface: WASD walks, Shift runs, Space jumps. <b>Return to flight</b>
+        takes off. Walking uses desktop controls; oceans remain closed.
         Fly over terrain chooses land and descends to a 600 m terrain-following
         flight. Select a star and align it with the reticle to fly there with W.
       </p>
+      <p><b>Universal date:</b> seek in years relative to the reference catalogue.
+        Only orbits change visually in this release. Walking locations and exact
+        dates are saved in the URL.</p>
       <button id="close-help">Start exploring</button>
-      <p><a href="./docs/exploration-corrections.md" target="_blank" rel="noopener">Flight and terrain documentation &amp; sources</a></p>
+      <p><a href="./docs/walking-and-time.md" target="_blank" rel="noopener">Walking, time, validation &amp; sources</a></p>
     </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
