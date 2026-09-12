@@ -3,6 +3,11 @@
 A deterministic Three.js universe explorer, deployed at
 https://dionysus.dk/webxr/IWSDK/universe-atlas/.
 
+Next-stage proposal: [walkable worlds and traversable history](docs/living-worlds-and-time-roadmap.md).
+This roadmap describes planned work, not the deployed feature set.
+See also [Fable 5.1's independent review](docs/fable-5.1-plan-review.md) and
+[the checked follow-up](docs/fable-review-assessment.md).
+
 ## Run and validate
 
 Requires Node.js 22.18+ (the catalogue tests use native TypeScript stripping).

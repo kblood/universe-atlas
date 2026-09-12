@@ -1,0 +1,77 @@
+{
+  "reviewDate": "2026-09-13",
+  "cliVersion": "2.1.268",
+  "requestedModel": "claude-fable-5-1",
+  "canonicalModel": "claude-fable-5-1",
+  "durationMs": 436942,
+  "toolsEnabled": [],
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 40521,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.040606,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-haiku-4-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    },
+    "claude-fable-5-1": {
+      "inputTokens": 2,
+      "outputTokens": 29967,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 61257,
+      "webSearchRequests": 0,
+      "costUSD": 2.72351,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 64000,
+      "thinkingTokens": 20215,
+      "canonicalModel": "claude-fable-5-1",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "inputFiles": [
+    {
+      "path": "docs/fable-review-brief.md",
+      "sha256": "E309F3916F5792A65672E6B1B5F1C68F139EB7C4E58E4A0EEE523FB1AF50CD7B"
+    },
+    {
+      "path": "docs/living-worlds-and-time-roadmap.md",
+      "sha256": "0407683D2D49894BF1037DF4998CE308006A234D82FCC28227DC24EC16F18B93"
+    },
+    {
+      "path": "docs/exploration-corrections.md",
+      "sha256": "6290E3B92D0043E599A5F5E513BEEDC25E2980C22972EFFA7EFBF761A1D68BDC"
+    },
+    {
+      "path": "../docs/procedural-universe-research-2026-09-12.md",
+      "sha256": "D46DC7334CF90002F8C63770F765664C5B0E878D0263184DCC76B3ADA431E34E"
+    },
+    {
+      "path": "../docs/universe-atlas-v1-spec.md",
+      "sha256": "2E038E0D44C0F90EC49F371D9554B3C24D99DDE923C7167FE7A7140E40C64E59"
+    },
+    {
+      "path": "src/terrain.ts",
+      "sha256": "A44CDEEA561D2B3A497213BA736D852D1922E95CA586BFF2F8430F15E2214C3E"
+    },
+    {
+      "path": "src/planet-tiles.ts",
+      "sha256": "230A84683D485D18127868AB080E81BD94BE4500A69BA3EFEC9B7141A3AF8118"
+    },
+    {
+      "path": "src/planet-renderer.ts",
+      "sha256": "A513019FD4004CD05D8BF568244161D552FD2BB8A3C4CBBDB5E11AEAF3D9A5E9"
+    },
+    {
+      "path": "src/travel.ts",
+      "sha256": "8D70E523DADB8E6B78AEE8EFCD9B24916E2E8E568CB998DD7891EC786CC70BB8"
+    }
+  ],
+  "responseSha256": "55E48152591F09E6FF1525B112526D2BB71380A387B2F2A83131C929F6661AEB"
+}
