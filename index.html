@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#080d16" />
+    <meta
+      name="description"
+      content="Explore a seeded universe. Discover galaxies, star systems and worlds, from the cosmic neighbourhood to planetary orbit."
+    />
+    <title>Universe Atlas · IWSDK</title>
+  </head>
+  <body>
+    <div id="viewport"></div>
+    <header>
+      <a class="brand" href="../" title="IWSDK projects"
+        ><span class="brand-icon">✧</span
+        ><span>UNIVERSE<span class="brand-light"> ATLAS</span></span></a
+      >
+      <div class="seed-form">
+        <label for="seed">UNIVERSE SEED</label
+        ><input
+          id="seed"
+          maxlength="80"
+          spellcheck="false"
+          aria-label="Universe seed"
+        /><button id="generate">Generate ↗</button>
+      </div>
+    </header>
+    <nav id="breadcrumbs" aria-label="Location"></nav>
+    <aside id="panel">
+      <div class="panel-top">
+        <span id="panel-kicker" class="kicker">CATALOGUE</span
+        ><button id="collapse" aria-label="Toggle explorer panel">☰</button>
+      </div>
+      <div id="panel-content"></div>
+    </aside>
+    <section class="view-caption">
+      <div class="kicker" id="view-kicker">THE COSMIC NEIGHBOURHOOD</div>
+      <h1 id="view-title">A universe to discover.</h1>
+      <p id="view-description">Select a galaxy to begin your journey.</p>
+      <div id="view-stats"></div>
+    </section>
+    <div id="hover" hidden></div>
+    <div id="labels" aria-hidden="true"></div>
+    <div class="view-actions">
+      <button id="back" title="Return to parent (Backspace)">← Back</button
+      ><button id="reset" title="Fit current view (Home)">⌖ Fit view</button
+      ><button id="help" aria-label="Show controls">?</button>
+    </div>
+    <footer>
+      <span id="status" role="status">Preparing the catalogue…</span
+      ><span id="performance"></span
+      ><span class="controls-hint"
+        >DRAG rotate <b>·</b> RIGHT DRAG pan <b>·</b> SCROLL zoom
+        <b>·</b> DOUBLE CLICK explore</span
+      >
+    </footer>
+    <dialog id="help-dialog">
+      <h2>Explore at every scale.</h2>
+      <p>
+        Click to select. Double-click or press <b>F</b> to explore the selected
+        object.
+      </p>
+      <p>
+        <b>Left drag</b> rotates. <b>Right drag / Shift-drag</b> pans.
+        <b>Scroll</b> zooms. Touch: one finger rotates; two fingers pan and
+        zoom.
+      </p>
+      <p>
+        <b>Home</b> fits the view. <b>Backspace</b> goes back. Breadcrumbs
+        return to any parent level.
+      </p>
+      <p>
+        <b>VR:</b> Open this page in your headset browser and choose Enter VR.
+        Point and pull a controller trigger to select, then use Explore in the
+        floating panel. Left stick zooms and pans; right stick rotates the
+        model. Hold a grip to move it. Back, Fit model and Exit VR are in the
+        panel.
+      </p>
+      <p>
+        In a galaxy, select any mapped star and choose
+        <b>Approach selected star</b> or <b>Visit this system</b>. Scroll toward
+        stars to zoom freely. <b>Fly freely</b> enables drag-to-look, WASD
+        movement, Q/E down/up, Shift boost, and wheel speed adjustment. Escape
+        stops flight. Flight works between galaxies, stars and planets; speed
+        adapts automatically. Fly to selection steers to a chosen object, and
+        Fly outward leaves a system or galaxy. On touch screens, hold Fly
+        forward and drag the scene to steer.
+      </p>
+      <p>
+        Positions are physical. Small bodies use enlarged markers so they remain
+        selectable. Galaxy map points are real catalogue systems. Nearby stars
+        stream in around you while the larger galaxy stays in place.
+      </p>
+      <p>
+        <b>Planets:</b> Approach low orbit flies to 30–100 km altitude.
+        Descend to 10 km stops higher over mountains. Hold orbit circles the
+        planet smoothly through the poles; drag to look and use movement keys
+        to release it. The wheel changes orbit speed. Free flight keeps a
+        120 m terrain-clearance floor; landing is a later stage.
+        Fly over terrain chooses land and descends to a 600 m terrain-following
+        flight. Select a star and align it with the reticle to fly there with W.
+      </p>
+      <button id="close-help">Start exploring</button>
+      <p><a href="./docs/exploration-corrections.md" target="_blank" rel="noopener">Flight and terrain documentation &amp; sources</a></p>
+    </dialog>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
