@@ -681,8 +681,15 @@ summary {
 .walking .view-caption {max-width:520px;background:#0a121bc9;padding:12px;border-radius:6px;bottom:85px;}
 @media(max-width:800px){#timeline{top:122px;right:14px;} .walking .view-caption{display:none;}}
 #surface-detail {width:100%;margin:0 0 12px;}
+#horizon-assist {width:100%;margin:0 0 12px;font-size:12px;}
 #surface-survey {margin:0 0 18px;padding:12px;border:1px solid #354d61;border-radius:5px;}
 #surface-survey summary {cursor:pointer;color:#a5dddd;}
 .surface-site {display:block;width:100%;text-align:left;margin:8px 0;padding:10px;}
 .surface-site strong {display:block;color:#c8efdf;font-size:13px;}
 .surface-site span {display:block;color:#9fb5c0;font-size:11px;line-height:1.6;margin-top:4px;}
+#drainage-panel {margin:0 0 18px;padding:12px;border:1px solid #456167;border-radius:5px;}
+#drainage-panel summary {color:#a5dddd;cursor:pointer;}
+#drainage-panel>button {width:100%;}
+#drainage-panel label {display:block;font-size:11px;color:#9fb5c0;margin-bottom:5px;}
+#drainage-catchment {width:100%;padding:9px;background:#15232e;color:#d4eded;border:1px solid #456167;border-radius:4px;}
+.drainage-legend {font-size:11px;line-height:1.7;color:#93dfd5;}

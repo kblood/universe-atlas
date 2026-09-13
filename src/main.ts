@@ -11,11 +11,12 @@ import {
 } from "./travel.ts";
 import { PlanetRenderer } from './planet-renderer.ts';
 import { NavigationMarkers } from './navigation-markers.ts';
-import { freeLook, orbitStep } from './planet-flight.ts';
+import { freeLook, orbitStep, atmosphereHeightM, alignPlanetaryDown } from './planet-flight.ts';
 import {parseDate,dateRecord,dateYears,yearsToDate,advanceDate} from './world-time.ts';
 import {identityRecord,stellarHistory} from './world-history.ts';
 import {surfaceQuery} from './world-surface.ts';
 import {type SurfaceSite,SURVEY_VERSION} from './surface-survey.ts';
+import {DrainageMap} from './drainage-map.ts';
 import {type GroundWalker} from './ground-walker.ts';
 import { GalaxySpace } from "./galaxy-space.ts";
 import { ViewBlend } from "./view-transition.ts";
@@ -332,8 +333,44 @@ let surfaceMesh: THREE.Mesh<
 > | null = null;
 let surfaceInfo: Surface | null = null;
 let surfaceDetail=new URLSearchParams(location.search).get('detail')!=='0';
+let horizonAssist=new URLSearchParams(location.search).get('horizon')!=='0';
+let flightAlignment:({bodyId:string;altitudeM:number}&ReturnType<typeof alignPlanetaryDown>)|null=null;
 const surveys=new Map<string,SurfaceSite[]>(),surveyPending=new Set<string>();
 let surveyOpen=false;
+let drainage:DrainageMap|null=null,drainageOpen=false;
+function clearDrainage(){drainage?.dispose();drainage=null;}
+function analyseDrainage(){
+  const body=state.body;if(!body||!body.water||body.kind==='star'||body.type==='Gas giant')return;
+  clearDrainage();drainageOpen=true;
+  const next=new DrainageMap(body,()=>{if(drainage===next)panel();});
+  drainage=next;scene.add(next.group);panel();
+}
+function inspectCatchment(){
+  const c=drainage?.catchment(),body=state.body;if(!c||!body)return;
+  clearWalking();if(flight)toggleFlight();
+  surfaceJourney=null;orbitAssist=null;autopilot=null;planetLook=null;
+  drainage!.enabled=true;
+  const data=drainage!.data!,direction=new THREE.Vector3();
+  for(let i=0;i<data.outlet.length;i++)if(data.outlet[i]===c.outlet)direction.addScaledVector(new THREE.Vector3().fromArray(data.directions,i*3),data.areas[i]);
+  direction.normalize();
+  let cosine=1;
+  for(let i=0;i<data.outlet.length;i++)if(data.outlet[i]===c.outlet)cosine=Math.min(cosine,direction.dot(new THREE.Vector3().fromArray(data.directions,i*3)));
+  const centre=vec(bodyPosition(body,state.sys!,epoch));
+  const radius=body.radiusM+20000*reliefScale+1500;
+  const span=radius*Math.sqrt(Math.max(0,1-cosine*cosine));
+  const distance=Math.max(body.radiusM+150000,radius*cosine+span/Math.sin(camera.fov*Math.PI/360)*1.15);
+  rebaseSystem(centre);
+  const target=direction.clone().multiplyScalar(radius*cosine*systemUnit),end=direction.clone().multiplyScalar(distance*systemUnit);
+  camera.up.set(0,1,0);if(Math.abs(direction.y)>.94)camera.up.set(0,0,1);
+  controls.minDistance=50000*systemUnit;
+  tween={from:camera.position.clone(),to:end,targetFrom:controls.target.clone(),targetTo:target,start:performance.now(),duration:1100};
+  homePos.copy(end);homeTarget.copy(target);panel();
+}
+function exportDrainage(){
+  const data=drainage?.export();if(!data)return;
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download='universe-atlas-drainage-'+state.body!.name+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 async function surveySurface(){
   const body=state.body;if(!body||surveyPending.has(body.seed))return;
   surveyOpen=true;surveyPending.add(body.seed);panel();
@@ -379,6 +416,7 @@ function disposeView(group: THREE.Group) {
   });
 }
 function clearView(retain = false) {
+  clearDrainage();
   clearWalking();
   surfaceJourney = null; startCruiseAfterLook = false;
   systemMarkers = null; galaxyGlyphs = []; flightAim = null;
@@ -567,6 +605,7 @@ function breadcrumbs() {
 function persist() {
   const q = new URLSearchParams({ seed });
   if(!surfaceDetail)q.set('detail','0');
+  if(!horizonAssist)q.set('horizon','0');
   if(epoch!==0n)q.set('date',epoch.toString());
   if(walker){q.set('walk',walker.position.toArray().join(','));q.set('heading',camera.quaternion.toArray().join(','));}
   if (state.galaxy) q.set("g", state.galaxy.id);
@@ -1413,6 +1452,7 @@ function aimedDistance(
   return best;
 }
 function updateFlight(dt: number) {
+  flightAlignment=null;
   if (!flight || !ready || renderer.xr.isPresenting) return;
   if(walker||landing){updateWalking(dt);return;}
   if (surfaceJourney && residentSystem) {
@@ -1712,6 +1752,15 @@ function updateFlight(dt: number) {
       }
     }
   }
+  if(horizonAssist&&residentSystem&&!autopilot&&!planetLook){
+    const near=nearestBody(state.sys!,localPose(),epoch),depth=atmosphereHeightM(near.body);
+    const altitude=near.distance-near.body.radiusM;
+    if(depth>0&&altitude<depth){
+      const radial=vec(localPose()).sub(vec(near.center)).normalize();
+      flightAlignment={bodyId:near.body.id,altitudeM:altitude,...alignPlanetaryDown(camera.quaternion,radial,altitude,depth,dt)};
+      controls.target.copy(camera.position).add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(flightUnit()));
+    }
+  }
 }
 function updateFlightHud() {
   let hud = document.getElementById("flight-hud");
@@ -1897,6 +1946,7 @@ function updatePlanetTiles(dt: number) {
     return new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(view.projectionMatrix, view.matrixWorldInverse).multiply(planetTiles!.group.matrixWorld));
   });
   planetTiles.update(local, innerHeight, camera.fov, dt, renderer.xr.isPresenting, sun, frusta);
+  drainage?.update(planetTiles.group.matrixWorld,(Math.hypot(...local)-1)*state.body!.radiusM,reliefScale);
   if (!renderer.xr.isPresenting && state.body) {
     // Keep metre-scale depth precision without clipping the distant system.
     const center = bodyPosition(state.body, state.sys!, epoch);
@@ -2401,6 +2451,7 @@ function replaceTerrain(
   mesh.userData.radius = radius;
 }
 async function focusBody(body: Body, keepPose = false) {
+  clearDrainage();
   clearWalking();
   surfaceJourney=null;startCruiseAfterLook=false;
   planetTiles?.dispose(); planetTiles = null;
@@ -2544,6 +2595,7 @@ async function focusBody(body: Body, keepPose = false) {
   }
 }
 function unfocusBody(keepPose: boolean) {
+  clearDrainage();
   surfaceJourney=null;startCruiseAfterLook=false;
   planetLook = null;
   planetTiles?.dispose(); planetTiles = null;
@@ -2755,7 +2807,15 @@ function panel() {
     let surfaceNav = state.level==='body' && state.body!.kind!=='star' && state.body!.type!=='Gas giant' ? `<button id="walk-surface" class="explore">${walker?'Return to flight':landing?'Cancel landing':'Land and walk'}</button><button id="terrain-flight" class="explore">Fly over terrain</button>` : '';
     if(surfaceNav){
       const sites=surveys.get(state.body!.seed);
+      if(atmosphereHeightM(state.body!)>0)surfaceNav+=`<button id="horizon-assist">Atmospheric horizon assist: ${horizonAssist?'on':'off'}</button>`;
       surfaceNav+=`<button id="surface-detail">Ground detail: ${surfaceDetail?'on':'off'}</button><details id="surface-survey" ${surveyOpen?'open':''}><summary>Surface destinations</summary><p class="subtle">Find named sites on this world's existing terrain. Fly to a site, then choose Land and walk.</p>${sites?sites.map(s=>`<button data-surface-site="${esc(s.id)}" class="surface-site"><strong>${esc(s.name)}</strong><span>${esc(s.category)} · ${esc(s.biome)}<br>${fmt(s.elevationM,0)} m · slope ${fmt(s.slopeDeg,1)}°</span></button>`).join(''):`<button id="survey-surface" ${surveyPending.has(state.body!.seed)?'disabled':''}>${surveyPending.has(state.body!.seed)?'Surveying terrain…':'Survey surface'}</button>`}<p class="subtle">Ground materials show sand, soil, rock and snow. Vegetation and flowing rivers are still being developed.</p></details>`;
+    }
+    if(surfaceNav&&state.body!.water){
+      const d=drainage?.data,c=drainage?.catchment();
+      surfaceNav+=`<details id="drainage-panel" ${drainageOpen?'open':''}><summary>Drainage atlas</summary><p class="subtle">Coarse catchments and proposed flow routes on this terrain. These are analysis markings; river channels and lake water are not built yet.</p>`;
+      if(!d)surfaceNav+=`<button id="drainage-build" ${drainage?.status==='building'?'disabled':''}>${drainage?.status==='building'?'Analysing planet…':drainage?.status==='error'?'Retry analysis':'Analyse drainage'}</button>${drainage?.error?`<p class="subtle">${esc(drainage.error)}</p>`:''}`;
+      else surfaceNav+=`<button id="drainage-toggle">${drainage?.enabled?'Hide':'Show'} drainage map</button><p class="drainage-legend">Cyan: flow routes · Amber: depressions<br>White: selected main route and endpoints</p><label for="drainage-catchment">Major catchments</label><select id="drainage-catchment">${d.catchments.map(x=>`<option value="${esc(x.id)}" ${x.id===c?.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>${c?`<p class="subtle"><strong>${esc(c.name)}</strong><br>${fmt(c.areaKm2,0)} km² contributing area<br>${fmt(c.lengthKm,0)} km sampled main route<br>${fmt(c.depressionKm2,0)} km² of conditioned depressions</p><div class="mini-buttons"><button id="drainage-inspect">Inspect basin</button><button id="drainage-head">Fly to headwaters</button><button id="drainage-mouth">Fly to outlet</button></div>`:''}<p class="subtle">Average sample spacing: ${fmt(d.stats.meanSpacingKm,0)} km. Map fades below 120 km and is hidden below 50 km; ground remains unchanged.</p><button id="drainage-export">Export drainage graph</button>`;
+      surfaceNav+='</details>';
     }
     const nav = `<div class="mini-buttons"><button id="fly-target" ${selected ? "" : "disabled"}>Fly to selection</button><button id="fly-outward">Fly outward</button><button id="toggle-flight">${flight ? "Stop flight" : "Fly freely"}</button>${mapped ? '<button id="approach-star">Approach selected star</button>' : ""}</div><p class="subtle">Flight: drag to look · WASD move · Q/E down/up · wheel adjusts speed · Shift boosts · Esc stops. Touch: hold Fly forward below.</p><div class="mini-buttons"><button id="fly-forward">Hold: fly forward</button></div>`;
     if (state.level === "galaxy" && mapped)
@@ -2771,6 +2831,10 @@ function panel() {
     VERSION +
     '</p><div class="mini-buttons"><button id="verify">Verify seed</button><button id="copy">Copy view link</button></div><input id="address" placeholder="System address: G001/C…/0" aria-label="System catalogue address" style="width:100%"><button id="find-address" style="width:100%;margin-top:7px">Go to address</button><div id="bookmarks"></div></details>';
   content.innerHTML = html;
+  const drainageElement=$('drainage-panel') as HTMLDetailsElement|null;
+  if(drainageElement)drainageElement.ontoggle=()=>{if(drainageElement.isConnected)drainageOpen=drainageElement.open;};
+  const basinSelect=$('drainage-catchment') as HTMLSelectElement|null;
+  if(basinSelect)basinSelect.onchange=()=>drainage?.select(basinSelect.value);
   const surveyElement=$('surface-survey') as HTMLDetailsElement|null;
   if(surveyElement)surveyElement.ontoggle=()=>{if(surveyElement.isConnected)surveyOpen=surveyElement.open;};
   for(const button of content.querySelectorAll<HTMLButtonElement>('[data-surface-site]'))button.onclick=()=>{
@@ -2845,7 +2909,15 @@ function panel() {
   bind('descend', () => approachPlanet(10000));
   bind('terrain-flight', ()=>exploreTerrain());
   bind('survey-surface',()=>void surveySurface());
+  bind('drainage-build',analyseDrainage);
+  bind('drainage-toggle',()=>{if(drainage){drainage.enabled=!drainage.enabled;panel();}});
+  bind('drainage-inspect',inspectCatchment);
+  bind('drainage-export',exportDrainage);
+  for(const [id,site] of [['drainage-head','headwater'],['drainage-mouth','mouth']] as const)bind(id,()=>{
+    const c=drainage?.catchment();if(c){exploreTerrain(vec(c[site].direction));announce('Flying to '+c.name+' '+(site==='mouth'?'outlet':'headwater vicinity')+'. This is the existing terrain; channels are still in development.');}
+  });
   bind('surface-detail',()=>{surfaceDetail=!surfaceDetail;planetTiles?.setSurfaceDetail(surfaceDetail);persist();panel();});
+  bind('horizon-assist',()=>{horizonAssist=!horizonAssist;persist();panel();});
   bind('walk-surface',()=>{if(walker||landing)takeoffWalk();else landOnWorld();});
   bind('hold-orbit', holdPlanetOrbit);
   bind("relief", () => {
@@ -2935,6 +3007,7 @@ function exportData() {
     epochSeconds: Number(epoch)/1e9,
     date:dateRecord(epoch),
     surfaceSurvey:state.body?{version:SURVEY_VERSION,sites:surveys.get(state.body.seed)||[]}:null,
+    drainage:drainage?.data?{version:drainage.data.version,geologyVersion:drainage.data.geologyVersion,stats:drainage.data.stats,catchments:drainage.data.catchments}:null,
     identities:state.sys?[...state.sys.stars,...state.sys.planets,...state.sys.moons].map(identityRecord):[],
     stellarHistories:state.sys?.stars.map(stellarHistory),
     galaxy: state.galaxy || null,
@@ -3456,6 +3529,7 @@ Object.defineProperty(window, "__atlas", {
   value: {
     get date(){return dateRecord(epoch);},
     get surfaceSurvey(){return state.body?surveys.get(state.body.seed)||null:null;},
+    get drainage(){return drainage?.diagnostics()||null;},
     get state() {
       return state;
     },
@@ -3488,6 +3562,7 @@ Object.defineProperty(window, "__atlas", {
         autopilot,
         orbitAssist: orbitAssist ? {bodyId: orbitAssist.bodyId, axis: orbitAssist.axis.toArray()} : null,
         terrainCruise: orbitAssist?.clearanceM || null,
+        horizonAssist,alignment:flightAlignment,
         surfaceJourney: !!surfaceJourney,
         approachAltitude,
         flightAim,

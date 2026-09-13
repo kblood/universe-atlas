@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {type Body} from './catalog.ts';
+import {atmosphereHeightM} from './planet-flight.ts';
 
 /** Small single-scattering approximation for the orbital milestone. Not a
  * Bruneton LUT implementation; parameters are deliberately explicit. */
@@ -7,7 +8,7 @@ export class PlanetAtmosphere {
   readonly mesh: THREE.Mesh;
   readonly uniforms: { [key: string]: {value: any} };
   constructor(body: Body) {
-    const depth = Math.min(.12, 80000 / body.radiusM);
+    const depth = atmosphereHeightM(body) / body.radiusM;
     this.uniforms = {
       eye: {value: new THREE.Vector3(0,0,4)}, sun: {value: new THREE.Vector3(1,0,0)},
       outer: {value: 1 + depth}, scaleHeight: {value: depth / 8},

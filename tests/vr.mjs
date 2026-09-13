@@ -157,8 +157,18 @@ try {
     await page.locator("body").evaluate((el) => el.classList.contains("in-vr")),
     false,
   );
+  // An analysis overlay follows the same model transforms in stereo, and is
+  // disposed when leaving the planet after the session.
+  await page.locator('#drainage-panel summary').click();
+  await page.locator('#drainage-build').click();
+  await page.waitForFunction(()=>window.__atlas.drainage?.status==='ready');
+  await page.locator('#enter-vr').click();
+  await page.waitForFunction(()=>window.__atlas.vr.active&&window.__atlas.drainage.visible);
+  await page.waitForTimeout(500);await page.screenshot({path:output+'/04-vr-drainage.png'});
+  await press(560,880);await page.waitForFunction(()=>!window.__atlas.vr.active);
   await page.locator("#back").click();
   await page.waitForFunction(() => window.__atlas.state.level === "system");
+  assert.equal(await page.evaluate(()=>window.__atlas.drainage),null);
   await page.locator("#enter-vr").click();
   await page.waitForFunction(() => window.__atlas.vr.active);
   await page.waitForTimeout(500);

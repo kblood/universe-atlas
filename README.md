@@ -9,6 +9,7 @@ See also [Fable 5.1's independent review](docs/fable-5.1-plan-review.md) and
 [the checked follow-up](docs/fable-review-assessment.md).
 The first implementation is documented in [Walking and shared time](docs/walking-and-time.md).
 The next increment adds [ground materials and named surface destinations](docs/surface-materials-and-survey.md), with implementation details, validation and sources.
+The [drainage atlas and atmospheric flight](docs/drainage-and-atmospheric-flight.md) add connected catchment analysis and gentle planetary horizon alignment.
 
 ## Run and validate
 
@@ -27,6 +28,8 @@ npm run test:planet
 npm run test:exploration
 npm run test:walking
 npm run test:surface
+npm run test:drainage
+npm run test:atmosphere
 npm run test:vr
 ```
 

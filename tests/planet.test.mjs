@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {cubeDirection, buildTile, surfaceNormal, PATCH_SEGMENTS} from '../src/planet-tiles.ts';
 import {terrainSampler} from '../src/terrain.ts';
 import {surfaceClearance} from '../src/travel.ts';
-import {orbitStep, freeLook} from '../src/planet-flight.ts';
+import {orbitStep, freeLook,alignPlanetaryDown,atmosphereHeightM} from '../src/planet-flight.ts';
 const body = {id:'test',seed:'polar-regression-1',kind:'planet',type:'Terrestrial world',radiusM:6371000,water:.65};
 const distance = (a,b) => Math.hypot(...a.map((v,i) => v-b[i]));
 
@@ -64,4 +64,25 @@ test('terrain-aware clearance permits low orbit at poles, coasts and face corner
     assert.ok(Math.abs(info.altitude-30000)<1e-6);
     assert.equal(info.minimum,body.radiusM+info.terrainElevation+120);
   }
+});
+
+test('atmospheric roll assist preserves aim and gently aligns down at poles and equator',()=>{
+  for(const radial of [[0,1,0],[0,-1,0],[1,0,0],[1,1,1]]){
+    const up=new THREE.Vector3(...radial).normalize(),forward=new THREE.Vector3(0,0,-1).projectOnPlane(up).normalize();
+    const base=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(new THREE.Vector3(),forward,up));
+    const q=base.clone().premultiply(new THREE.Quaternion().setFromAxisAngle(forward,1.7)),aim=new THREE.Vector3(0,0,-1).applyQuaternion(q);
+    for(let i=0;i<600;i++){
+      const step=alignPlanetaryDown(q,up,600,80000,1/60);
+      assert.ok(Math.abs(step.correctionRad)<=Math.PI/5/60+1e-12,'bounded nudge');
+      assert.ok(new THREE.Vector3(0,0,-1).applyQuaternion(q).distanceTo(aim)<1e-12,'pitch/heading retained');
+    }
+    assert.ok(new THREE.Vector3(0,1,0).applyQuaternion(q).dot(up)>.999999);
+  }
+  const q=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),1),saved=q.clone();
+  alignPlanetaryDown(q,new THREE.Vector3(0,1,0),80000,80000,1);assert.deepEqual(q,saved,'no correction outside atmosphere');
+  alignPlanetaryDown(q,new THREE.Vector3(0,1,0),0,0,1);assert.deepEqual(q,saved,'no atmosphere means no artificial gravity cue');
+  const vertical=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,-1),new THREE.Vector3(0,1,0)),before=vertical.clone();
+  alignPlanetaryDown(vertical,new THREE.Vector3(0,1,0),1000,80000,1);assert.deepEqual(vertical,before,'no flip looking straight up');
+  assert.equal(atmosphereHeightM({...body,kind:'moon',water:0}),0);
+  assert.equal(atmosphereHeightM(body),80000);
 });
