@@ -40,7 +40,7 @@ export const groundVertexHeader=`attribute vec4 groundWeights; uniform vec3 grou
 varying vec3 groundPosition,groundNormal; varying vec4 groundMix;`;
 export const groundVertex=`groundPosition=transformed*atlasRadius+groundOrigin; groundNormal=normal; groundMix=groundWeights;`;
 export const groundFragmentHeader=`
-uniform sampler2D groundAtlas; uniform float groundEnabled,groundPatch;
+uniform sampler2D groundAtlas; uniform float groundEnabled,groundPatch,groundHabitat;
 varying vec3 groundPosition,groundNormal; varying vec4 groundMix;
 vec4 groundTri(vec3 p,vec3 w){return texture2D(groundAtlas,p.yz)*w.x+texture2D(groundAtlas,p.zx)*w.y+texture2D(groundAtlas,p.xy)*w.z;}
 `;
@@ -49,20 +49,32 @@ float groundFade=groundEnabled*groundPatch*(1.0-smoothstep(1500.0,6000.0,length(
 // The analytic baseline map still supplies all orbital colour. Detail is local.
 vec3 groundAxis=pow(abs(normalize(groundNormal)),vec3(4.0));groundAxis/=dot(groundAxis,vec3(1.0));
 vec4 groundW=max(groundMix,vec4(0.0));groundW/=max(.001,dot(groundW,vec4(1.0)));
-vec4 groundCoarse=vec4(.5),groundFine=vec4(.5);
+vec4 groundCoarse=vec4(.5),groundFine=vec4(.5),groundMacro=vec4(.5);
 // Uniform branch keeps texture derivatives valid and skips six fetches on
 // disabled or distant patches. Fine per-fragment distance fade stays smooth.
 if(groundEnabled*groundPatch>.5){
   groundCoarse=groundTri(groundPosition/16.0,groundAxis);
   groundFine=groundTri(groundPosition,groundAxis);
+  groundMacro=groundTri(groundPosition/256.0,groundAxis);
 }
 float groundSignal=dot(groundW,vec4(groundFine.a,groundFine.r*.6+groundCoarse.r*.4,groundCoarse.b*.55+groundFine.g*.45,groundFine.a*.3+groundCoarse.r*.7));
 float groundWater=atlasAir*step(length(atlasSurface),1.00000005);
-groundFade*=1.0-groundWater;
-diffuseColor.rgb*=mix(1.0,.52+groundSignal*.96,groundFade);
+groundFade*=(1.0-groundWater)*step(.5,diffuseColor.a);
+// Metre-scale patches break up the uniform orbital tint without introducing a
+// new height field or stretching a photograph over the planet. All periods
+// divide the 4096 m anchor period so neighboring tiles agree at their seams.
+float turf=groundHabitat*groundW.y*smoothstep(.40,.61,groundMacro.r);
+vec3 turfColor=mix(vec3(.072,.089,.031),vec3(.105,.145,.050),groundCoarse.r);
+vec3 dirtColor=diffuseColor.rgb*mix(vec3(.72,.69,.61),vec3(1.05,1.01,.88),groundMacro.a);
+vec3 groundAlbedo=mix(dirtColor,turfColor,turf*.72);
+float pebble=smoothstep(.63,.84,groundFine.g)*(groundW.x*.35+groundW.y*.12);
+groundAlbedo=mix(groundAlbedo,vec3(.22,.21,.18),pebble);
+diffuseColor.rgb=mix(diffuseColor.rgb,groundAlbedo*(.82+groundSignal*.32),groundFade);
 // Millimetre-scale grain stays subtle at eye height; centimetre amplitudes on
 // sub-centimetre atlas features made grazing shores alternate black and gold.
-float groundBump=dot(groundW,vec4(groundFine.a*.001,groundFine.r*.002+groundFine.g*.0025,groundCoarse.b*.02+groundFine.g*.004,groundFine.a*.0007))*groundFade;
+float groundFootprint=max(length(dFdx(groundPosition)),length(dFdy(groundPosition)));
+float fineNormalFade=1.0-smoothstep(.008,.08,groundFootprint);
+float groundBump=(dot(groundW,vec4(groundFine.a*.001,groundFine.r*.002+groundFine.g*.0025,groundFine.g*.004,groundFine.a*.0007))*fineNormalFade+groundW.z*groundCoarse.b*.012)*groundFade;
 `;
 export const groundNormalCode=`
 // Surface-gradient bump mapping: scale metre amplitudes into view-space units.
@@ -72,6 +84,12 @@ float metresToView=length(gx)/max(.000001,length(dFdx(groundPosition)));
 vec3 gr1=cross(gy,normal),gr2=cross(normal,gx);
 float gd=dot(gx,gr1);
 vec3 gradient=sign(gd)*(dFdx(groundBump)*gr1+dFdy(groundBump)*gr2)*metresToView;
-if(abs(gd)>1e-30)normal=normalize(abs(gd)*normal-gradient);
+if(abs(gd)>1e-30){
+  vec3 perturb=gradient/abs(gd);
+  // A grazing sample must not turn its normal beneath the surface. Small
+  // surface texture is bounded independently from the true terrain normal.
+  perturb*=min(1.0,.35/max(.00001,length(perturb)));
+  normal=normalize(normal-perturb);
+}
 }
 `;

@@ -18,7 +18,7 @@ import {surfaceQuery} from './world-surface.ts';
 import {type SurfaceSite,SURVEY_VERSION} from './surface-survey.ts';
 import {DrainageMap} from './drainage-map.ts';
 import {RiverPreparation} from './river-preparation.ts';
-import {RIVER_VERSION,type RiverSite} from './river-types.ts';
+import {RIVER_VERSION,RIVER_SURFACE_VERSION,type RiverSite} from './river-types.ts';
 import {type GroundWalker} from './ground-walker.ts';
 import { GalaxySpace } from "./galaxy-space.ts";
 import { ViewBlend } from "./view-transition.ts";
@@ -2037,6 +2037,12 @@ function updatePlanetTiles(dt: number) {
   const local = planetTiles.group.worldToLocal(eye).toArray() as V3;
   const sun = vec(bodyPosition(state.sys!.stars[0], state.sys!, epoch))
     .sub(vec(bodyPosition(state.body!, state.sys!, epoch))).normalize().toArray() as V3;
+  // Keep terrain sunlight in the same frame as water and foliage, including
+  // after date seeking, planetary rebasing and VR model rotation.
+  const worldSun=vec(sun).transformDirection(planetTiles.group.matrixWorld);
+  light.target.position.copy(eye);
+  light.position.copy(eye).addScaledVector(worldSun,12);
+  light.target.updateMatrixWorld();light.updateMatrixWorld();
   const views = renderer.xr.isPresenting ? renderer.xr.getCamera().cameras : [camera];
   const frusta = views.map(view => {
     view.updateMatrixWorld();
@@ -2721,6 +2727,9 @@ function unfocusBody(keepPose: boolean) {
   controls.minDistance = systemUnit * 1000;
   root.userData.viewRadius = 15;
   if (!keepPose) {
+    // A breadcrumb exit is deliberate: do not re-focus the nearby body next frame.
+    flight = false; autopilot = null; flightAim = null;
+    controls.enabled = !renderer.xr.isPresenting;
     rebaseSystem(new THREE.Vector3());
     const to = new THREE.Vector3(15, 12, 25);
     homePos.copy(to);
@@ -3129,6 +3138,7 @@ function exportData() {
     surfaceSurvey:state.body?{version:SURVEY_VERSION,sites:surveys.get(surveyKey(state.body))||[]}:null,
     drainage:drainage?.data?{version:drainage.data.version,geologyVersion:drainage.data.geologyVersion,stats:drainage.data.stats,catchments:drainage.data.catchments}:null,
     riverRegion:state.body?.hydrology||null,
+    riverSurfaceVersion:state.body?.hydrology?RIVER_SURFACE_VERSION:null,
     identities:state.sys?[...state.sys.stars,...state.sys.planets,...state.sys.moons].map(identityRecord):[],
     stellarHistories:state.sys?.stars.map(stellarHistory),
     galaxy: state.galaxy || null,
@@ -3653,7 +3663,7 @@ Object.defineProperty(window, "__atlas", {
     get date(){return dateRecord(epoch);},
     get surfaceSurvey(){return state.body?surveys.get(surveyKey(state.body))||null:null;},
     get drainage(){return drainage?.diagnostics()||null;},
-    get river(){return state.body?.hydrology?{status:riverState?.status||'ready',version:RIVER_VERSION,region:state.body.hydrology,buildMs:riverState?.buildMs||0,render:planetTiles?.diagnostics().river||null}:riverState;},
+    get river(){return state.body?.hydrology?{status:riverState?.status||'ready',version:RIVER_VERSION,surfaceVersion:RIVER_SURFACE_VERSION,region:state.body.hydrology,buildMs:riverState?.buildMs||0,render:planetTiles?.diagnostics().river||null}:riverState;},
     get state() {
       return state;
     },

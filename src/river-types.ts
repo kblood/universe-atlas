@@ -1,5 +1,8 @@
 import type {V3} from './catalog.ts';
 export const RIVER_VERSION='river-region-1';
+// Geometry/profile records remain v1; the queried lake-bank interpolation has
+// its own revision so exports do not imply that old bank samples are identical.
+export const RIVER_SURFACE_VERSION='river-surface-2';
 export type RiverPoint={x:number;z:number;waterM:number;widthM:number;depthM:number;distanceM:number};
 export type RiverChannel={id:string;name:string;points:RiverPoint[];parentId:string|null};
 export type RiverLake={id:string;name:string;x:number;z:number;radiusXM:number;radiusZM:number;angle:number;waterM:number;depthM:number};

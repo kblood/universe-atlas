@@ -2,10 +2,14 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {baseTerrainSampler,terrainSampler,planetSurface} from '../src/terrain.ts';
-import {buildTile,directionTile,tileDirection,unit,regionalBankWeights} from '../src/planet-tiles.ts';
+import {buildTile,directionTile,tileDirection,unit,regionalBankWeights,INLAND_WATER_PROXY_ALPHA} from '../src/planet-tiles.ts';
 import {contactGeometry} from '../src/terrain-contact.ts';
 import {surfaceQuery} from '../src/world-surface.ts';
 import {GroundWalker,initWalking} from '../src/ground-walker.ts';
+import {galaxies,refByAddress,system} from '../src/catalog.ts';
+import {buildDrainage} from '../src/drainage.ts';
+import {buildRiverRegion,riverDirection} from '../src/river-generation.ts';
+import {sampleRiverRegion} from '../src/river-sample.ts';
 
 const radiusM=10000;
 const region={version:'river-region-1',id:'test/drainage-1/river-region-1',parentCatchmentId:'test/drainage-1',bodyId:'test',bodySeed:'river-terrain',radiusM,
@@ -80,7 +84,7 @@ test('orbit preview and tile colour texels read the shared regional bank sample'
   const temperate={...body,seed:'season-3',water:.65,hydrology:{...region,bodySeed:'season-3'}},sample=terrainSampler(temperate);
   const tile=directionTile(direction(0,150),6),data=buildTile(temperate,tile),size=data.width,x=32,y=32;
   const tileDirectionAtTexel=tileDirection(tile,(x-.5)/64,(y-.5)/64),tileSample=sample(tileDirectionAtTexel);
-  assert.deepEqual(Array.from(data.color.slice((y*size+x)*4,(y*size+x+1)*4)),[...tileSample.color.map(Math.floor),255]);
+  assert.deepEqual(Array.from(data.color.slice((y*size+x)*4,(y*size+x+1)*4)),[...tileSample.color.map(Math.floor),tileSample.wet&&tileSample.waterKind?0:255]);
   const preview=planetSurface(temperate,128,40);let found=false;
   for(let py=0;py<preview.height&&!found;py++)for(let px=0;px<preview.width;px++){
     const theta=((px+.5)/preview.width)*Math.PI*2,phi=((py+.5)/preview.height)*Math.PI,d=[-Math.cos(theta)*Math.sin(phi),Math.cos(phi),Math.sin(theta)*Math.sin(phi)],s=sample(d);
@@ -88,6 +92,36 @@ test('orbit preview and tile colour texels read the shared regional bank sample'
     assert.deepEqual(Array.from(preview.data.slice((py*preview.width+px)*4,(py*preview.width+px+1)*4)),[...s.color.map(Math.floor),255]);found=true;
   }
   assert.equal(found,true,'preview resolution samples the regional dry bank');
+});
+
+test('tile alpha masks inland physical water without masking dry bank or baseline ocean',()=>{
+  const inland=buildTile(body,directionTile(direction(0,0),6));
+  const alpha=(data,x,y)=>data.color[(y*data.width+x)*4+3];
+  assert.ok([...Array(inland.width).keys()].some(y=>[...Array(inland.width).keys()].some(x=>alpha(inland,x,y)===INLAND_WATER_PROXY_ALPHA)),'river texels request nearby physical-water coverage');
+  const dry=buildTile(body,directionTile(direction(0,150),6));
+  assert.equal(alpha(dry,32,32),255,'dry regional bank preserves the opaque terrain byte');
+  const oceanBody={...baseBody,water:.8,hydrology:undefined};
+  const ocean=buildTile(oceanBody,directionTile([1,0,0],6));
+  assert.ok(ocean.color.every((value,index)=>index%4!==3||value===255),'baseline ocean preserves opaque colour-map bytes');
+});
+
+test('Maithea Orien Delta lake collar is continuous across lake and nearby river edges',()=>{
+  const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===23165);
+  assert.ok(catchment);const regional=buildRiverRegion(maithea,catchment),lake=regional.lakes[0],baseline=terrainSampler(maithea);
+  assert.equal(regional.id,'G001/C2128,0,1/0/planet/1/drainage-1/n64/outlet/23165/river-region-1');assert.equal(JSON.stringify(buildRiverRegion(maithea,catchment)),JSON.stringify(regional),'surface correction keeps canonical construction deterministic');
+  const sample=(x,z)=>{const d=riverDirection(regional,x,z);return sampleRiverRegion(regional,d,baseline(d).elevationM);};
+  let maxLakeStep=0,maxRiverStep=0;
+  for(let i=0;i<96;i++){
+    const angle=i*Math.PI*2/96,ca=Math.cos(lake.angle),sa=Math.sin(lake.angle),ex=lake.radiusXM*Math.cos(angle),ez=lake.radiusZM*Math.sin(angle),ux=Math.cos(angle)/lake.radiusXM,uz=Math.sin(angle)/lake.radiusZM,length=Math.hypot(ux,uz),nx=(ca*ux-sa*uz)/length,nz=(sa*ux+ca*uz)/length,x=lake.x+ca*ex-sa*ez,z=lake.z+sa*ex+ca*ez;
+    const inside=sample(x-nx*.01,z-nz*.01),outside=sample(x+nx*.01,z+nz*.01),insideVisible=inside.waterLevelM??inside.rockHeightM,outsideVisible=outside.waterLevelM??outside.rockHeightM;
+    assert.equal(inside.waterKind,'lake');assert.ok(inside.wet);assert.ok(!outside.wet||Math.abs((outside.waterLevelM??0)-lake.waterM)<.01,'attached river stays level at the lake join');
+    maxLakeStep=Math.max(maxLakeStep,Math.abs(insideVisible-outsideVisible));if(!outside.wet)assert.ok(outside.rockHeightM>=lake.waterM-.01,'dry lake bank remains above lake level');
+  }
+  for(const channel of regional.channels)for(let i=1;i<channel.points.length-1;i++){
+    const p=channel.points[i],before=channel.points[i-1],after=channel.points[i+1],dx=after.x-before.x,dz=after.z-before.z,length=Math.hypot(dx,dz),nx=-dz/length,nz=dx/length,half=p.widthM/2;
+    for(const side of [-1,1]){const wet=sample(p.x+side*nx*(half-.01),p.z+side*nz*(half-.01)),dry=sample(p.x+side*nx*(half+.01),p.z+side*nz*(half+.01));if(wet.influence>0||dry.influence>0)maxRiverStep=Math.max(maxRiverStep,Math.abs(wet.rockHeightM-dry.rockHeightM));}
+  }
+  assert.ok(maxLakeStep<.01,`lake shoreline maximum visible step ${maxLakeStep} m`);assert.ok(maxRiverStep<.05,`nearby river wet/dry maximum rock step ${maxRiverStep} m`);
 });
 
 test('future global water overtops and later reveals the immutable inland level',()=>{

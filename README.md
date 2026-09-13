@@ -13,6 +13,9 @@ The [drainage atlas and atmospheric flight](docs/drainage-and-atmospheric-flight
 The [physical river pilot and ground environment](docs/physical-rivers-and-ground-detail.md)
 add a visitable river, tributary and lake region, carved banks, and initial local
 forest and ground-cover detail. See its [design specification](docs/physical-river-pilot-spec.md).
+The [ground realism correction](docs/ground-realism.md) improves lake-bank continuity,
+walking terrain refinement, vegetation lighting and density, and fine water detail.
+It includes the [implementation specification](docs/ground-realism-spec.md), sources and validation.
 
 ## Run and validate
 

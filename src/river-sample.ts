@@ -13,8 +13,10 @@ function hit(region:RiverRegion,x:number,z:number):Hit|null{const ix=index(regio
   if(best)best.distance=Math.sqrt(best2);return best;}
 const lerp=(a:number,b:number,t:number)=>a+(b-a)*t;
 
-/** Shared bed and bank field. The renderer and terrain wrapper must call this exact function. */
-export function sampleRiverRegion(region:RiverRegion,d:[number,number,number],baseHeightM:number):RiverSample{
+/** Original river-region-1 field. Region construction keeps using this exact
+ * sampler so existing generated region exports, site heights and addresses do
+ * not change when a render-query correction is introduced. */
+export function sampleLegacyRiverRegion(region:RiverRegion,d:[number,number,number],baseHeightM:number):RiverSample{
   const x=d[0]*region.east[0]+d[1]*region.east[1]+d[2]*region.east[2],z=d[0]*region.north[0]+d[1]*region.north[1]+d[2]*region.north[2];
   // Coordinates above are tangent-linear; scale corrects the small gnomonic projection.
   const projection=d[0]*region.origin[0]+d[1]*region.origin[1]+d[2]*region.origin[2];
@@ -42,4 +44,48 @@ export function sampleRiverRegion(region:RiverRegion,d:[number,number,number],ba
   const bowl=water-depth*Math.max(0,1-edge*edge);
   const smooth=bank*bank*(3-2*bank),rock=wet?bowl:water+(baseHeightM-water)*(1-smooth);
   return {rockHeightM:rock,waterLevelM:wet?water:null,wet,bank,channelId:id,waterKind:wet?kind:null,flow,influence};
+}
+
+/**
+ * Surface-query revision for lake shores. The legacy selector gives a nearby
+ * river priority immediately outside an ellipse, even when its bank is many
+ * metres above the lake. A lake owns its bowl and a finite dry collar; within
+ * that collar its bank blends into the legacy river/baseline field. This pins
+ * both sides of the wet boundary to the lake level without extending water or
+ * regional influence beyond the existing bounded corridor.
+ */
+export function sampleRiverRegion(region:RiverRegion,d:[number,number,number],baseHeightM:number):RiverSample{
+  const fallback=sampleLegacyRiverRegion(region,d,baseHeightM);
+  const x=d[0]*region.east[0]+d[1]*region.east[1]+d[2]*region.east[2],z=d[0]*region.north[0]+d[1]*region.north[1]+d[2]*region.north[2],projection=d[0]*region.origin[0]+d[1]*region.origin[1]+d[2]*region.origin[2];
+  if(projection<=.5)return fallback;
+  const scale=region.radiusM/projection,px=x*scale,pz=z*scale;
+  let lake:null|{water:number;depth:number;edge:number;radius:number;id:string}=null;
+  for(const l of region.lakes){
+    const ca=Math.cos(l.angle),sa=Math.sin(l.angle),u=((px-l.x)*ca+(pz-l.z)*sa)/l.radiusXM,v=(-(px-l.x)*sa+(pz-l.z)*ca)/l.radiusZM,edge=Math.hypot(u,v),radius=Math.min(l.radiusXM,l.radiusZM);
+    if(edge<=1+3000/radius&&(!lake||edge<lake.edge))lake={water:l.waterM,depth:l.depthM,edge,radius,id:l.id};
+  }
+  if(!lake)return fallback;
+  const lakeCorridor=clamp(Math.max(100,Math.abs(baseHeightM-lake.water)*4),100,3000),outward=Math.max(0,(lake.edge-1)*lake.radius);
+  const wet=lake.edge<=1;
+  if(wet){
+    const bowl=lake.water-lake.depth*Math.max(0,1-lake.edge*lake.edge);
+    return {rockHeightM:bowl,waterLevelM:lake.water,wet:true,bank:1,channelId:lake.id,waterKind:'lake',flow:[0,0],influence:1};
+  }
+  // A dry lake collar must never cover an already-wet channel outside the
+  // ellipse. That channel owns its physical water and retains its own bank.
+  if(fallback.wet)return fallback;
+  // A nearby river is a second boundary condition. Give the lake full weight
+  // at its ellipse, taper it to zero at that river's wet edge, and use smooth
+  // endpoint slopes. This prevents a lake collar from lifting a dry riverbank
+  // while still avoiding the old lake-edge handoff to a distant river bank.
+  const competing=hit(region,px,pz),riverEdge=competing?Math.max(0,competing.distance-lerp(competing.channel.points[competing.segment].widthM,competing.channel.points[competing.segment+1].widthM,competing.t)/2):Infinity;
+  if(outward>=lakeCorridor)return fallback;
+  const ratio=Number.isFinite(riverEdge)?outward/Math.max(1e-9,outward+riverEdge):0,riverConstraint=1-ratio*ratio*(3-2*ratio);
+  const bank=clamp(1-outward/lakeCorridor,0,1)*riverConstraint,smooth=bank*bank*(3-2*bank),lakeRock=lake.water+(baseHeightM-lake.water)*(1-smooth);
+  // Both the lake shape and blend have zero slope at the shoreline. The collar
+  // therefore meets the water without a step, then hands off continuously to
+  // any nearby dry river bank or the untouched baseline.
+  const blend=smooth;
+  const useLake=bank>=fallback.bank;
+  return {rockHeightM:lerp(fallback.rockHeightM,lakeRock,blend),waterLevelM:null,wet:false,bank:Math.max(bank,fallback.bank),channelId:useLake?lake.id:fallback.channelId,waterKind:null,flow:useLake?[0,0]:fallback.flow,influence:Math.max(bank,fallback.influence)};
 }

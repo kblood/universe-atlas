@@ -4,6 +4,10 @@ import {biomeClassifier,materialBytes} from './surface-biomes.ts';
 
 export const PATCH_SEGMENTS = 32;
 export const PATCH_TEXTURE = 64;
+/** A zero tile-map alpha identifies inland water covered by RiverWater near
+ * the observer. Normal terrain and ocean retain their original opaque alpha,
+ * which also keeps the local ground-detail fade enabled. */
+export const INLAND_WATER_PROXY_ALPHA = 0;
 export type Tile = { face: number; level: number; x: number; y: number };
 export const tileKey = (t: Tile) => `${t.face}/${t.level}/${t.x}/${t.y}`;
 export function directionCoordinates(d: V3) {
@@ -155,7 +159,11 @@ export function buildTile(body: Body, tile: Tile, relief = 1) {
   for (let y = 0; y < width; y++) for (let x = 0; x < width; x++) {
     // Half-texel gutters sample the same field beyond each edge.
     const s = sample(tileDirection(tile, (x - .5) / textureSize, (y - .5) / textureSize));
-    color.set([...s.color, 255], (y * width + x) * 4);
+    // The terrain surface still supplies the distant/orbital inland-water
+    // proxy. At walking distance the physical RiverWater mesh is complete,
+    // so only that regional wet proxy receives transparent alpha. `waterKind`
+    // excludes baseline ocean, which remains the authoritative shell here.
+    color.set([...s.color, s.wet && s.waterKind ? INLAND_WATER_PROXY_ALPHA : 255], (y * width + x) * 4);
   }
   return { tile, anchor, positions: new Float32Array(positions), parents: new Float32Array(parents), normals: new Float32Array(normals), materials:new Uint8Array(materials), uvs: new Float32Array(uvs), indices: new Uint16Array(indices), color, width };
 }

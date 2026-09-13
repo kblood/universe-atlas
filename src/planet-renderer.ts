@@ -12,6 +12,9 @@ type Patch = { tile: Tile; mesh: THREE.Mesh; map: THREE.DataTexture; material: T
 const ROOTS: Tile[] = Array.from({length: 6}, (_,face) => ({face, level: 0, x: 0, y: 0}));
 export const TILE_CACHE_LIMIT = 256;
 export const TILE_DRAW_LIMIT = 150;
+// RiverWater's bounded visibility radius guarantees complete local coverage.
+// Beyond this distance the tile map remains the orbital/distant water proxy.
+export const PHYSICAL_WATER_PROXY_COVERAGE_M = 12000;
 
 /** One resident planet, a bounded cache, and one dedicated CPU worker. */
 export class PlanetRenderer {
@@ -45,7 +48,8 @@ export class PlanetRenderer {
   private contactOrigin='';
   private selectionEye=new THREE.Vector3(Infinity,Infinity,Infinity);
   private selectionContact=false;
-  private selectionFrame=0;
+  private selectionFrustum:number[]=[];
+  private selectionPixels=0;
   private updateMs=0;
   private groundAtlas:THREE.DataTexture;
   private groundEnabled={value:1};
@@ -116,6 +120,10 @@ export class PlanetRenderer {
       shader.uniforms.atlasEye=this.eyeUniform;shader.uniforms.atlasSun=this.sunUniform;
       shader.uniforms.atlasRadius={value:this.body.radiusM};
       shader.uniforms.atlasAir={value:this.atmosphere?1:0};
+      shader.uniforms.groundHabitat={value:this.body.water>0&&this.body.temperatureK>=250&&this.body.temperatureK<=325&&this.body.type!=='Ice world'&&this.body.type!=='Volcanic world'?1:0};
+      shader.uniforms.atlasRelief={value:this.relief};
+      shader.uniforms.physicalWaterProxyCoverage={value:PHYSICAL_WATER_PROXY_COVERAGE_M};
+      shader.uniforms.physicalWaterValid={value:this.river?.completeCoverage()?1:0};
       shader.uniforms.groundAtlas={value:this.groundAtlas};
       shader.uniforms.groundEnabled=this.groundEnabled;
       shader.uniforms.groundPatch=detail;
@@ -125,9 +133,20 @@ export class PlanetRenderer {
         float lockEdge=max(max((1.0-step(.00001,gridUV.x))*patchEdges.x,step(.99999,gridUV.x)*patchEdges.y),max((1.0-step(.00001,gridUV.y))*patchEdges.z,step(.99999,gridUV.y)*patchEdges.w));
         vec3 transformed = mix(parentPosition, position, patchMorph*(1.0-lockEdge)); atlasSurface=transformed+tileAnchor; ${groundVertex}`);
       shader.vertexShader=groundVertexHeader+'\n'+shader.vertexShader;
-      shader.fragmentShader='uniform vec3 atlasEye,atlasSun;uniform float atlasRadius,atlasAir;varying vec3 atlasSurface;\n'+shader.fragmentShader;
+      shader.fragmentShader='uniform vec3 atlasEye,atlasSun;uniform float atlasRadius,atlasAir,atlasRelief,physicalWaterProxyCoverage,physicalWaterValid;varying vec3 atlasSurface;\n'+shader.fragmentShader;
       shader.fragmentShader=groundFragmentHeader+shader.fragmentShader;
-      shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n'+groundColor);
+      shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+        // RGB keeps normal mip filtering. The regional wet mask must use its
+        // authored base level: a lower mip averages a small lake into a large
+        // rectangular alpha hole at grazing distance.
+        float regionalWetMask=textureLod(map,vMapUv,0.0).a;
+        diffuseColor.a=regionalWetMask;
+        // Discard only the fully wet core. The physical lake/river polygon is
+        // deliberately inset by finite shoreline chords, so a .5 transition
+        // can cut a grazing gap beyond its edge. The water bias covers this
+        // retained proxy fringe without adding another water surface.
+        if (physicalWaterValid > .5 && abs(atlasRelief-1.0) < .0001 && regionalWetMask < .001 && length(atlasSurface-atlasEye)*atlasRadius < physicalWaterProxyCoverage) discard;
+        ${groundColor}`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,dot(groundW,vec4(.96,.92,.84,.73)),groundFade);');
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\n'+groundNormalCode);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>', `
@@ -138,7 +157,7 @@ export class PlanetRenderer {
         outgoingLight=mix(outgoingLight,mix(vec3(.008,.016,.035),vec3(.23,.43,.64),daylight),airFog);
         #include <opaque_fragment>`);
     };
-    material.customProgramCacheKey = () => 'planet-patch-stitched-v4';
+    material.customProgramCacheKey = () => 'planet-patch-stitched-v6';
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(...d.anchor);
     mesh.visible = false;
@@ -177,11 +196,17 @@ export class PlanetRenderer {
     this.eyeUniform.value.copy(eye);this.sunUniform.value.set(...sun);
     this.atmosphere?.update(eye, new THREE.Vector3(...sun));
     this.waterTime+=Math.min(dt,.1);this.river?.update(observer,sun,this.waterTime,this.relief);
-    if(this.environment){this.environment.group.visible=this.relief===1;if(this.relief===1)this.environment.update(observer,dt);}
+    if(this.environment){this.environment.group.visible=this.relief===1;if(this.relief===1)this.environment.update(observer,dt,sun);}
     const direction = eye.clone().normalize();
     const pixels = height / (2 * Math.tan(fov * Math.PI / 360));
     const projectionCache=new Map<string,{visible:boolean;score:number}>();
-    const changed=completions.length>0||!this.leafIndex.size||this.selectionContact!==!!contact||this.frame-this.selectionFrame>=15||eye.distanceTo(this.selectionEye)*this.body.radiusM>(contact?.distanceTo(eye)||0)*this.body.radiusM*.02+.5;
+    const viewNormals=frusta.flatMap(f=>f.planes.flatMap(p=>p.normal.toArray()));
+    const rotated=viewNormals.length!==this.selectionFrustum.length||viewNormals.some((v,i)=>Math.abs(v-this.selectionFrustum[i])>.001);
+    const retryDue=[...this.retryAfter].some(([key,frame])=>this.frame>=frame&&!this.failures.has(key)&&!this.pending.has(key)&&!this.patches.has(key));
+    // Rebuilding a full walking quadtree every 15 idle frames caused periodic
+    // CPU stalls. Refine for real pose/projection changes or arriving tiles;
+    // conservative visibility culling still runs on every frame below.
+    const changed=completions.length>0||retryDue||!this.leafIndex.size||this.selectionContact!==!!contact||rotated||Math.abs(pixels-this.selectionPixels)>.5||eye.distanceTo(this.selectionEye)*this.body.radiusM>(contact?.distanceTo(eye)||0)*this.body.radiusM*.02+.5;
     const projected = (t: Tile) => {
       const key=tileKey(t),cached=projectionCache.get(key);if(cached)return cached;
       const center = new THREE.Vector3(...tileDirection(t, .5, .5));
@@ -205,7 +230,7 @@ export class PlanetRenderer {
     };
     const leaves = changed?[...ROOTS]:[...this.leafIndex.values()];
     if (this.rootsReady&&changed) {
-      this.selectionEye.copy(eye);this.selectionContact=!!contact;this.selectionFrame=this.frame;
+      this.selectionEye.copy(eye);this.selectionContact=!!contact;this.selectionFrustum=viewNormals;this.selectionPixels=pixels;
       for (let iteration = 0; iteration < 360; iteration++) {
         const index=new Map(leaves.map(t=>[tileKey(t),t]));
         const neighbour=(t:Tile,e:number)=>{let n=tileNeighbour(t,e);while(n.level>0&&!index.has(tileKey(n)))n={face:n.face,level:n.level-1,x:Math.floor(n.x/2),y:Math.floor(n.y/2)};return index.get(tileKey(n));};
@@ -213,7 +238,10 @@ export class PlanetRenderer {
         candidates.sort((a, b) => b.score - a.score);
         let split = false;
         for (const candidate of candidates) {
-          if(contact&&candidate.score<1e8&&leaves.length>=90)continue;
+          // Foot-contact candidates sort first, but do not freeze all visible
+          // non-contact terrain after an arbitrary 90 leaves.  The fixed
+          // draw/cache limits below remain the allocation boundary, allowing
+          // a visible river or lake shore to refine beside the contact ring.
           let t=candidate.t;
           if(contact){for(let pass=0;pass<20;pass++){const lower=[0,1,2,3].map(e=>neighbour(t,e)).find(n=>n&&n.level<t.level);if(!lower)break;t=lower;}}
           if (leaves.length + 3 > drawLimit) break;
