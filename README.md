@@ -19,6 +19,10 @@ It includes the [implementation specification](docs/ground-realism-spec.md), sou
 The follow-up [planet terrain research](docs/terrain-research-2026-09-13.md)
 examines the remaining flicker and proposes a terrain redesign, with a
 [stable-shore implementation brief](docs/terrain-v2-first-slice-spec.md).
+The [planet realism milestone and continuing plan](docs/planet-realism-goal.md)
+document shared river geometry, reflective lake water, regional valley relief,
+instanced ground cover and textured trees, with sources and measured validation.
+
 The first slice is described in [physical ground and stable shores](docs/stable-shores.md):
 separate ground beds and water, local shader coordinates, and measured tile-edge
 skirts. The larger erosion and terrain-renderer redesign remains planned work.

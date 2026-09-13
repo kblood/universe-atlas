@@ -3585,6 +3585,9 @@ renderer.setAnimationLoop(() => {
   if(now-lastDateSave>1000){updateDateUI();if(playing||walker)persist();lastDateSave=now;}
   positionSystem();
   const occluder = surfaceMesh?.getWorldPosition(new THREE.Vector3());
+  const cameraRadial = occluder ? camera.position.clone().sub(occluder) : null;
+  const localTerrainRadius = walker ? walker.position.length() * systemUnit : 0;
+  const cameraUp = cameraRadial?.normalize();
   const occupiedLabels: {x:number;y:number}[]=[];
   for (const l of labels) {
     l.object.getWorldPosition(projected);
@@ -3592,8 +3595,15 @@ renderer.setAnimationLoop(() => {
     if (occluder && l.object !== surfaceMesh) {
       const toLabel = projected.clone().sub(camera.position), length = toLabel.length();
       const toPlanet = occluder.clone().sub(camera.position), along = toPlanet.dot(toLabel.normalize());
-      const radius = focusRadius() * .995;
+      const radius = Math.max(focusRadius(),localTerrainRadius);
       occluded = along > 0 && along < length && toPlanet.lengthSq() - along * along < radius * radius;
+      // A walker is close enough to terrain that a label just below the local
+      // horizon may miss the analytic tangent by floating-point noise.  Apply
+      // it to the camera-to-label ray: context proxies do not retain a useful
+      // planet-centred distance, while labels above the local horizon remain.
+      if (!occluded && walker && cameraUp) {
+        occluded = toLabel.dot(cameraUp) < -.001;
+      }
     }
     projected.project(camera);
     const x = (projected.x * 0.5 + 0.5) * innerWidth,
@@ -3614,6 +3624,9 @@ renderer.setAnimationLoop(() => {
     l.el.style.display = visible ? "block" : "none";
     if (visible) l.el.style.transform = `translate(${x + 9}px,${y - 6}px)`;
   }
+  // Lake-only planar reflection renders before the visible frame and reuses
+  // existing terrain/environment; XR deliberately retains procedural sky.
+  planetTiles?.renderLakeReflection(renderer,scene,camera,renderer.xr.isPresenting);
   renderer.render(scene, camera);
   drawCount = renderer.info.render.calls;
   if (now - lastStats > 900) {

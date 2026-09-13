@@ -1,6 +1,8 @@
 import type {RiverChannel,RiverRegion,RiverSample} from './river-types.ts';
+import {riverPhysicalField} from './river-physical-field.ts';
 
 type Hit={channel:RiverChannel;segment:number;t:number;distance:number;x:number;z:number};
+export type RiverFeature={distanceM:number;wetRadiusM:number;waterM:number;depthM:number;kind:'river'|'lake'};
 type Index={cells:Map<string,[RiverChannel,number][]>;cell:number};
 const indexes=new WeakMap<RiverRegion,Index>();
 const clamp=(v:number,a:number,b:number)=>Math.max(a,Math.min(b,v));
@@ -12,7 +14,57 @@ function hit(region:RiverRegion,x:number,z:number):Hit|null{const ix=index(regio
   for(const [channel,segment] of ix.cells.get(key(cellX,cellZ))||[]){const a=channel.points[segment],b=channel.points[segment+1],dx=b.x-a.x,dz=b.z-a.z,l=dx*dx+dz*dz,t=l?clamp(((x-a.x)*dx+(z-a.z)*dz)/l,0,1):0,px=a.x+dx*t,pz=a.z+dz*t,d2=(x-px)*(x-px)+(z-pz)*(z-pz),tie=d2===best2&&best&&(channel.id<best.channel.id||(channel.id===best.channel.id&&segment<best.segment));if(d2<best2||tie){best2=d2;best={channel,segment,t,distance:0,x:px,z:pz};}}
   if(best)best.distance=Math.sqrt(best2);return best;}
 const lerp=(a:number,b:number,t:number)=>a+(b-a)*t;
-
+const smoothstep=(t:number)=>{t=clamp(t,0,1);return t*t*(3-2*t);};
+function coordinates(region:RiverRegion,d:[number,number,number]):[number,number]|null{
+  const projection=d[0]*region.origin[0]+d[1]*region.origin[1]+d[2]*region.origin[2];
+  if(projection<=.5)return null;
+  const scale=region.radiusM/projection,px=(d[0]*region.east[0]+d[1]*region.east[1]+d[2]*region.east[2])*scale,pz=(d[0]*region.north[0]+d[1]*region.north[1]+d[2]*region.north[2])*scale;
+  return [px,pz];
+}
+/** Indexed nearest wet feature query shared by bounded display landforms. */
+export function riverFeatureAt(region:RiverRegion,d:[number,number,number]):RiverFeature|null{
+  const q=coordinates(region,d);if(!q)return null;const [px,pz]=q;
+  if(px<region.boundsM[0]-3000||px>region.boundsM[2]+3000||pz<region.boundsM[1]-3000||pz>region.boundsM[3]+3000)return null;
+  const ix=index(region),cellX=Math.floor(px/ix.cell),cellZ=Math.floor(pz/ix.cell);let bestOutward=Infinity,bestDistance=0,bestRadius=0,bestWater=0,bestDepth=0,bestKind:'river'|'lake'='river',bestId='',bestSegment=-1,found=false;
+  const choose=(distance:number,radius:number,water:number,depth:number,kind:'river'|'lake',id:string,segment:number)=>{const outward=Math.max(0,distance-radius);let replace=outward<bestOutward;if(!replace&&outward===bestOutward&&found){
+    // Only exact geometric ties need an ID comparison; avoid constructing a
+    // candidate string in the ordinary indexed-hot-path case.
+    const candidateKey=segment<0?id:id+'/'+segment,currentKey=bestSegment<0?bestId:bestId+'/'+bestSegment;replace=candidateKey<currentKey;
+  }if(replace||!found){found=true;bestOutward=outward;bestDistance=distance;bestRadius=radius;bestWater=water;bestDepth=depth;bestKind=kind;bestId=id;bestSegment=segment;}};
+  // Use wet-edge distance, not nearest centreline. Unequal-width parallel
+  // channels otherwise switch the dry landform at a discontinuous bisector.
+  for(const [channel,segment] of ix.cells.get(key(cellX,cellZ))||[]){const a=channel.points[segment],b=channel.points[segment+1],dx=b.x-a.x,dz=b.z-a.z,l=dx*dx+dz*dz,t=l?clamp(((px-a.x)*dx+(pz-a.z)*dz)/l,0,1):0,qx=a.x+dx*t,qz=a.z+dz*t;choose(Math.hypot(px-qx,pz-qz),lerp(a.widthM,b.widthM,t)/2,lerp(a.waterM,b.waterM,t),lerp(a.depthM,b.depthM,t),'river',channel.id,segment);}
+  for(const l of region.lakes){const ca=Math.cos(l.angle),sa=Math.sin(l.angle),u=((px-l.x)*ca+(pz-l.z)*sa)/l.radiusXM,v=(-(px-l.x)*sa+(pz-l.z)*ca)/l.radiusZM,edge=Math.hypot(u,v),radius=Math.min(l.radiusXM,l.radiusZM);choose(edge*radius,radius,l.waterM,l.depthM,'lake',l.id,-1);}
+  return found?{distanceM:bestDistance,wetRadiusM:bestRadius,waterM:bestWater,depthM:bestDepth,kind:bestKind}:null;
+}
+/** Conservative coarse-grid bed envelope. Every indexed segment or lake whose
+ * wet footprint reaches this vertex is considered; the minimum endpoint bed
+ * is safe for a linearly profiled ribbon, including channel junctions. */
+export function conservativeRiverBedM(region:RiverRegion,d:[number,number,number],footprintM:number,baseHeightM?:number):number|null{
+  const q=coordinates(region,d);if(!q)return null;const [px,pz]=q;
+  const support=baseHeightM===undefined?footprintM:Math.min(3000,footprintM*2);
+  if(px<region.boundsM[0]-support||px>region.boundsM[2]+support||pz<region.boundsM[1]-support||pz>region.boundsM[3]+support)return null;
+  const ix=index(region),cellX=Math.floor(px/ix.cell),cellZ=Math.floor(pz/ix.cell);let bed:number|null=null;
+  // index() inserts each segment into every cell inside its 3 km halo. The
+  // tile envelope clamps footprintM to 2.8 km, so this one cell contains every
+  // potentially overlapping segment without a global channel scan.
+  for(const [channel,segment] of ix.cells.get(key(cellX,cellZ))||[]){
+    const a=channel.points[segment],b=channel.points[segment+1],dx=b.x-a.x,dz=b.z-a.z,l=dx*dx+dz*dz,t=l?clamp(((px-a.x)*dx+(pz-a.z)*dz)/l,0,1):0,qx=a.x+dx*t,qz=a.z+dz*t,distance=Math.hypot(px-qx,pz-qz),radius=Math.max(a.widthM,b.widthM)/2;
+    const outside=Math.max(0,distance-radius);if(outside>support)continue;
+    const floor=Math.min(a.waterM-a.depthM,b.waterM-b.depthM),fade=baseHeightM===undefined||outside<=footprintM?1:(()=>{const t=clamp((outside-footprintM)/Math.max(1e-9,support-footprintM),0,1);return 1-t*t*(3-2*t);})();
+    bed=Math.min(bed??Infinity,baseHeightM===undefined?floor:baseHeightM+(floor-baseHeightM)*fade);
+  }
+  for(const lake of region.lakes){
+    const ca=Math.cos(lake.angle),sa=Math.sin(lake.angle),u=(px-lake.x)*ca+(pz-lake.z)*sa,v=-(px-lake.x)*sa+(pz-lake.z)*ca,edge=Math.hypot(u/lake.radiusXM,v/lake.radiusZM),outside=Math.max(0,(edge-1)*Math.min(lake.radiusXM,lake.radiusZM));
+    // This is a conservative lower bound on ellipse distance: the normalized
+    // ellipse norm is 1/rMin-Lipschitz. It avoids a max-radius circular moat
+    // along the short axis while retaining every potentially overlapping lake.
+    if(outside>support)continue;
+    const floor=lake.waterM-lake.depthM,fade=baseHeightM===undefined||outside<=footprintM?1:(()=>{const t=clamp((outside-footprintM)/Math.max(1e-9,support-footprintM),0,1);return 1-t*t*(3-2*t);})();
+    bed=Math.min(bed??Infinity,baseHeightM===undefined?floor:baseHeightM+(floor-baseHeightM)*fade);
+  }
+  return bed;
+}
 /** Original river-region-1 field. Region construction keeps using this exact
  * sampler so existing generated region exports, site heights and addresses do
  * not change when a render-query correction is introduced. */
@@ -46,6 +98,25 @@ export function sampleLegacyRiverRegion(region:RiverRegion,d:[number,number,numb
   return {rockHeightM:rock,waterLevelM:wet?water:null,wet,bank,channelId:id,waterKind:wet?kind:null,flow,influence};
 }
 
+const emptySample=(baseHeightM:number):RiverSample=>({rockHeightM:baseHeightM,waterLevelM:null,wet:false,bank:0,channelId:null,waterKind:null,flow:[0,0],influence:0});
+/** Final canonical river mesh query. Region construction deliberately keeps
+ * using sampleLegacyRiverRegion; this only changes runtime terrain ownership. */
+export function samplePhysicalRiverRegion(region:RiverRegion,d:[number,number,number],baseHeightM:number):RiverSample{
+  const q=coordinates(region,d);if(!q)return emptySample(baseHeightM);const [px,pz]=q;
+  if(px<region.boundsM[0]-3000||px>region.boundsM[2]+3000||pz<region.boundsM[1]-3000||pz>region.boundsM[3]+3000)return emptySample(baseHeightM);
+  const field=riverPhysicalField(region),surface=field.surface;
+  if(field.rejected||!surface.indices.length)return sampleLegacyRiverRegion(region,d,baseHeightM);
+  const wet=surface.query(px,pz);
+  if(wet)return {rockHeightM:wet.waterM-wet.depthM,waterLevelM:wet.waterM,wet:true,bank:1,channelId:wet.sourceId,waterKind:'river',flow:wet.flow,influence:1};
+  const nearest=field.bank?.query(px,pz,3000);if(!nearest)return emptySample(baseHeightM);
+  const corridor=clamp(Math.max(100,Math.abs(baseHeightM-nearest.waterM)*4),100,3000),bank=clamp(1-nearest.distanceM/corridor,0,1);
+  if(!bank)return emptySample(baseHeightM);
+  const triangle=nearest.triangleIndex,sourceIndex=surface.triangleSourceIds[triangle],source=surface.sources[sourceIndex],ia=surface.indices[triangle*3],ib=surface.indices[triangle*3+1],ic=surface.indices[triangle*3+2],[u,v,w]=nearest.barycentric,fx=surface.flow[ia*2]*u+surface.flow[ib*2]*v+surface.flow[ic*2]*w,fz=surface.flow[ia*2+1]*u+surface.flow[ib*2+1]*v+surface.flow[ic*2+1]*w,n=Math.hypot(fx,fz)||1,rock=lerp(nearest.waterM-nearest.depthM,baseHeightM,smoothstep(nearest.distanceM/corridor));
+  return {rockHeightM:rock,waterLevelM:null,wet:false,bank,channelId:source?.channelId||null,waterKind:null,flow:[fx/n,fz/n],influence:bank};
+}
+
+function canonicalRiverEdgeDistance(region:RiverRegion,x:number,z:number){const field=riverPhysicalField(region);if(field.rejected||!field.surface.indices.length)return Infinity;return field.bank?.query(x,z,3000)?.distanceM??Infinity;}
+
 /**
  * Surface-query revision for lake shores. The legacy selector gives a nearby
  * river priority immediately outside an ellipse, even when its bank is many
@@ -55,7 +126,7 @@ export function sampleLegacyRiverRegion(region:RiverRegion,d:[number,number,numb
  * regional influence beyond the existing bounded corridor.
  */
 export function sampleRiverRegion(region:RiverRegion,d:[number,number,number],baseHeightM:number):RiverSample{
-  const fallback=sampleLegacyRiverRegion(region,d,baseHeightM);
+  const fallback=samplePhysicalRiverRegion(region,d,baseHeightM);
   const x=d[0]*region.east[0]+d[1]*region.east[1]+d[2]*region.east[2],z=d[0]*region.north[0]+d[1]*region.north[1]+d[2]*region.north[2],projection=d[0]*region.origin[0]+d[1]*region.origin[1]+d[2]*region.origin[2];
   if(projection<=.5)return fallback;
   const scale=region.radiusM/projection,px=x*scale,pz=z*scale;
@@ -78,7 +149,7 @@ export function sampleRiverRegion(region:RiverRegion,d:[number,number,number],ba
   // at its ellipse, taper it to zero at that river's wet edge, and use smooth
   // endpoint slopes. This prevents a lake collar from lifting a dry riverbank
   // while still avoiding the old lake-edge handoff to a distant river bank.
-  const competing=hit(region,px,pz),riverEdge=competing?Math.max(0,competing.distance-lerp(competing.channel.points[competing.segment].widthM,competing.channel.points[competing.segment+1].widthM,competing.t)/2):Infinity;
+  const riverEdge=canonicalRiverEdgeDistance(region,px,pz);
   if(outward>=lakeCorridor)return fallback;
   const ratio=Number.isFinite(riverEdge)?outward/Math.max(1e-9,outward+riverEdge):0,riverConstraint=1-ratio*ratio*(3-2*ratio);
   const bank=clamp(1-outward/lakeCorridor,0,1)*riverConstraint,smooth=bank*bank*(3-2*bank),lakeRock=lake.water+(baseHeightM-lake.water)*(1-smooth);

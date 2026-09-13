@@ -1,5 +1,6 @@
 import { type Body, type V3 } from './catalog.ts';
 import { terrainSampler } from './terrain.ts';
+import {conservativeRiverBedM} from './river-sample.ts';
 import {biomeClassifier,materialBytes} from './surface-biomes.ts';
 
 export const PATCH_SEGMENTS = 32;
@@ -76,7 +77,8 @@ export function regionalBankWeights(body:Body,s:RegionalMaterialSample,base:numb
   // baseline ground at the regional boundary.
   return base.map((weight,i)=>weight+(regional[i]-weight)*clamp(s.influence));
 }
-/** Stable directional finite differences; never derive normals per mesh/face. */
+/** Legacy analytic normal query retained for non-tile callers. Tile meshes use
+ * their actual cached child lattice below, including conservative coarse beds. */
 export function surfaceNormal(body: Body, d: V3, sample = terrainSampler(body), relief = 1): V3 {
   const eps = 2 / body.radiusM;
   // Terrain and contact geometry use the actual bed; water owns its surface.
@@ -96,46 +98,97 @@ export function buildTile(body: Body, tile: Tile, relief = 1) {
   // Near-contact patches are only a few metres wide. Their ground-detail atlas
   // supplies the fine grain, so retaining a 130² macro-colour texture there
   // wastes worker time and resident bytes without adding visible geography.
-  const textureSize = tile.level>=20?32:tile.level>=19?64:tile.level>=8?128:PATCH_TEXTURE;
+  // At L14 a patch is roughly 630 m across on Maithea: 64 macro texels still
+  // give a 10 m substrate colour field. Geometry carries banks and cliffs,
+  // while the shared ground atlas supplies the metre-scale grain at landing.
+  const textureSize = tile.level>=20?32:tile.level>=14?64:tile.level>=8?128:PATCH_TEXTURE;
   const positions: number[] = [], parents: number[] = [], normals: number[] = [], uvs: number[] = [], indices: number[] = [];
   const surfaceHeight:number[] = [], parentHeight:number[] = [];
-  const point = (u: number, v: number): V3 => {
-    const d = tileDirection(tile, u, v);
-    const r = 1 + sample(d).groundHeightM * relief / body.radiusM;
-    return d.map(x => x * r) as V3;
+  // A level-only bound is intentionally used instead of a tile-centre metric:
+  // the same global direction on a cube edge must receive the same envelope
+  // from either face, and a child parent endpoint must match that parent's
+  // own grid.  The factor bounds cube normalization and a diagonal triangle.
+  const footprintForLevel=(level:number)=>Math.min(2800,4*Math.SQRT2*body.radiusM/(2**level*PATCH_SEGMENTS));
+  const childFootprint=footprintForLevel(tile.level),parentFootprint=tile.level?footprintForLevel(tile.level-1):childFootprint;
+  const heightAt=(d:V3,footprintM:number)=>{
+    const s=sample(d);
+    if(!body.hydrology||footprintM<=8)return s.groundHeightM;
+    // Coarse valley widening is a bed envelope, never a water lift or ground
+    // mask.  The 3 km query bound matches river-sample's indexed halo. At
+    // levels whose conservative radius exceeds that bound (L0–8 on Maithea),
+    // renderer selection must refine a visible inland-water region before it
+    // claims exposure; this bounded tile field does not promise coverage there.
+    // Preserve the full conservative bed inside the footprint, then blend its
+    // outer support back to this vertex's sampled ground. This removes the
+    // old coarse-grid vertical apron without lifting water or changing fine
+    // contact terrain.
+    const radius=Math.min(2800,footprintM),bed=conservativeRiverBedM(body.hydrology,d,radius,s.groundHeightM);
+    return bed===null?s.groundHeightM:Math.min(s.groundHeightM,bed);
+  };
+  type LatticePoint={point:V3;height:number};
+  const childPoints=new Map<string,LatticePoint>(),parentPoints=new Map<string,LatticePoint>();
+  // Every caller uses this tile's 33x33 binary-fraction lattice.  Keep two
+  // short-lived maps because parent endpoints have a different conservative
+  // footprint; this avoids recomputing indexed hydrology queries four times
+  // per parent interpolation without sharing mutable output arrays.
+  const point = (u: number, v: number, footprintM=childFootprint): LatticePoint => {
+    // Halo coordinates are intentionally outside [0, n]. A numeric row-major
+    // key aliases e.g. (-1,1) with (n,0), which silently corrupts edge normal
+    // samples; the signed pair remains unique for this short-lived cache.
+    const x=Math.round(u*n),y=Math.round(v*n),key=`${x},${y}`,cache=footprintM===parentFootprint?parentPoints:childPoints;
+    const existing=cache.get(key);if(existing)return existing;
+    const d = tileDirection(tile, u, v),height=heightAt(d,footprintM),r = 1 + height * relief / body.radiusM;
+    const result={point:d.map(value => value * r) as V3,height};cache.set(key,result);return result;
   };
   // Centre all three coordinates on the surface. A sea-level anchor leaves
   // kilometre-sized height offsets even in metre-sized contact patches.
-  const anchor = point(.5,.5);
+  const anchor = point(.5,.5,childFootprint).point;
   // Interpolate the actual parent triangles, not its analytic sphere. New
   // children start on that mesh and morph to their sampled elevation.
   const parentPoint = (u: number, v: number): V3 => {
-    if (!tile.level) return point(u, v);
+    if (!tile.level) return point(u, v, parentFootprint).point;
     const gx = u * n / 2, gy = v * n / 2;
     const ix = Math.min(n / 2 - 1, Math.floor(gx)), iy = Math.min(n / 2 - 1, Math.floor(gy));
     const a = gx - ix, b = gy - iy;
-    const p00 = point(ix * 2 / n, iy * 2 / n), p11 = point((ix + 1) * 2 / n, (iy + 1) * 2 / n);
-    const p = a >= b ? point((ix + 1) * 2 / n, iy * 2 / n) : point(ix * 2 / n, (iy + 1) * 2 / n);
+    const p00 = point(ix * 2 / n, iy * 2 / n,parentFootprint).point, p11 = point((ix + 1) * 2 / n, (iy + 1) * 2 / n,parentFootprint).point;
+    const p = a >= b ? point((ix + 1) * 2 / n, iy * 2 / n,parentFootprint).point : point(ix * 2 / n, (iy + 1) * 2 / n,parentFootprint).point;
     return p00.map((v, i) => a >= b
       ? v * (1 - a) + p[i] * (a - b) + p11[i] * b
       : v * (1 - b) + p[i] * (b - a) + p11[i] * a) as V3;
   };
   const heightOf=(p:V3)=>(Math.hypot(...p)-1)*body.radiusM;
+  const cross=(a:V3,b:V3):V3=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  const childNormal=(x:number,y:number):V3=>{
+    const u=x/n,v=y/n,centre=point(u,v).point;
+    let normal:V3;
+    if(x>0&&x<n&&y>0&&y<n){
+      const west=point((x-1)/n,v).point,east=point((x+1)/n,v).point,south=point(u,(y-1)/n).point,north=point(u,(y+1)/n).point;
+      normal=unit(cross(east.map((q,i)=>q-west[i]) as V3,north.map((q,i)=>q-south[i]) as V3));
+    }else{
+      // A cube-face coordinate step changes its tangent scale at an edge. Use
+      // one level-consistent geodesic halo there, so either face asks for the
+      // same four physical samples at its shared border/corners.
+      const d=tileDirection(tile,u,v),axis=Math.abs(d[1])<.9?[0,1,0] as V3:[1,0,0] as V3,tangent=unit(cross(axis,d)),bitangent=unit(cross(d,tangent)),step=2/(2**tile.level*n),at=(t:V3,sign:number)=>{const q=unit(d.map((value,i)=>value+t[i]*step*sign) as V3),height=heightAt(q,childFootprint),r=1+height*relief/body.radiusM;return q.map(value=>value*r) as V3;},west=at(tangent,-1),east=at(tangent,1),south=at(bitangent,-1),north=at(bitangent,1);
+      normal=unit(cross(east.map((q,i)=>q-west[i]) as V3,north.map((q,i)=>q-south[i]) as V3));
+    }
+    if(normal[0]*centre[0]+normal[1]*centre[1]+normal[2]*centre[2]<0)normal=normal.map(q=>-q) as V3;
+    return normal;
+  };
   const substrateColor=(weights:number[])=>{
     const palette=[[160,141,94],[72,91,52],[104,96,84],[220,229,232]];
     return palette[0].map((_,channel)=>Math.floor(weights.reduce((sum,w,i)=>sum+w*palette[i][channel],0)));
   };
   for (let y = 0; y <= n; y++) for (let x = 0; x <= n; x++) {
     const u = x / n, v = y / n, d = tileDirection(tile, u, v);
-    const child=point(u,v),parent=parentPoint(u,v);
+    const childSample=point(u,v,childFootprint),child=childSample.point,parent=parentPoint(u,v);
     positions.push(...child.map((p, i) => p - anchor[i]));
     parents.push(...parent.map((p, i) => p - anchor[i]));
-    const normal=surfaceNormal(body,d,sample,relief);
+    const normal=childNormal(x,y);
     normals.push(...normal);
     const s=sample(d);
     const base=classify(d,s.groundHeightM,normal.reduce((sum,x,j)=>sum+x*d[j],0)).weights;
     materials.push(...materialBytes(regionalBankWeights(body,s,base)));
-    surfaceHeight.push(s.groundHeightM*relief);
+    surfaceHeight.push(childSample.height*relief);
     parentHeight.push(heightOf(parent));
     uvs.push((u * textureSize + 1) / (textureSize + 2), (v * textureSize + 1) / (textureSize + 2));
     if (x < n && y < n) {

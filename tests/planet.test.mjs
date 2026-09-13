@@ -63,9 +63,9 @@ test('canonical tile buffers are invariant under forward and reverse generation 
 });
 
 test('near-contact tiles reduce opaque colour-map resolution deterministically',()=>{
-  const l18=buildTile(body,{face:0,level:18,x:12000,y:13000}),l19=buildTile(body,{face:0,level:19,x:24000,y:26000}),l20=buildTile(body,{face:0,level:20,x:48000,y:52000});
-  assert.equal(l18.width,130);assert.equal(l19.width,66);assert.equal(l20.width,34);
-  assert.equal(l19.color.byteLength,l19.width*l19.width*4);assert.equal(l20.color.byteLength,l20.width*l20.width*4);
+  const l13=buildTile(body,{face:0,level:13,x:375,y:406}),l14=buildTile(body,{face:0,level:14,x:750,y:812}),l18=buildTile(body,{face:0,level:18,x:12000,y:13000}),l20=buildTile(body,{face:0,level:20,x:48000,y:52000});
+  assert.equal(l13.width,130);assert.equal(l14.width,66);assert.equal(l18.width,66);assert.equal(l20.width,34);
+  for(const t of [l13,l14,l18,l20]){assert.equal(t.color.byteLength,t.width*t.width*4);for(const uv of t.uvs)assert.ok(uv>0&&uv<1,'half-texel gutter remains inside the opaque map');}
   assert.deepEqual(l20,buildTile(body,l20.tile));
 });
 
@@ -136,4 +136,11 @@ test('atmospheric roll assist preserves aim and gently aligns down at poles and 
   alignPlanetaryDown(vertical,new THREE.Vector3(0,1,0),1000,80000,1);assert.deepEqual(vertical,before,'no flip looking straight up');
   assert.equal(atmosphereHeightM({...body,kind:'moon',water:0}),0);
   assert.equal(atmosphereHeightM(body),80000);
+});
+
+test('cached child-lattice normals are finite, outward, and continuous across tile and cube edges',()=>{
+  const n=PATCH_SEGMENTS,a=buildTile(body,{face:2,level:8,x:77,y:91}),b=buildTile(body,{face:2,level:8,x:78,y:91}),normal=(data,i)=>Array.from(data.normals.slice(i*3,i*3+3));
+  for(let y=0;y<=n;y++){const left=normal(a,y*(n+1)+n),right=normal(b,y*(n+1));assert.ok(left.every(Number.isFinite)&&right.every(Number.isFinite));assert.ok(distance(left,right)<2e-6,'same-face shared normal');}
+  const edge={face:0,level:8,x:0,y:77},other=tileNeighbour(edge,0),x=buildTile(body,edge),z=buildTile(body,other);
+  for(let y=0;y<=n;y++){const d=tileDirection(edge,0,y/n);let match=0,best=-Infinity;for(let i=0;i<(n+1)**2;i++){const q=tileDirection(other,(i%(n+1))/n,Math.floor(i/(n+1))/n),dot=d[0]*q[0]+d[1]*q[1]+d[2]*q[2];if(dot>best){best=dot;match=i;}}assert.ok(1-best<1e-14);const left=normal(x,y*(n+1)),right=normal(z,match);assert.ok(distance(left,right)<2e-6,'cube-face shared normal');assert.ok(left[0]*d[0]+left[1]*d[1]+left[2]*d[2]>0,'outward normal');}
 });

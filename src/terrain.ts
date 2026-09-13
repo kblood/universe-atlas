@@ -6,8 +6,10 @@ import {
   type V3,
 } from "./catalog.ts";
 import { sampleRiverRegion } from './river-sample.ts';
+import {regionalLandformHeight,REGIONAL_LANDFORM_VERSION} from './regional-landform.ts';
 
-export const TERRAIN_VERSION = "terrain-1.1.0";
+export const TERRAIN_VERSION = "terrain-1.2.0";
+export {REGIONAL_LANDFORM_VERSION};
 export const ELEVATION_RANGE_M = 60000;
 /** Physical ground and a separately-owned water surface. `visibleHeightM` is
  * retained solely as the legacy presentation/navigation compatibility value. */
@@ -26,15 +28,15 @@ const mix = (a: number[], b: number[], t: number) =>
 /** Shared dry-bank tint for orbit pixels and terrain-tile colour maps. The
  * sampler's normalized bank/influence field owns both the shoreline falloff
  * and its regional extent; no renderer-local shoreline is invented here. */
-function regionalBankColor(body:Body,d:V3,base:{elevationM:number;color:number[]},river:{wet:boolean;bank:number;influence:number}){
+function regionalBankColor(body:Body,d:V3,elevationM:number,color:number[],river:{wet:boolean;bank:number;influence:number}){
   const temperate=body.water>0&&body.temperatureK>=250&&body.temperatureK<=325&&body.type!=='Ice world'&&body.type!=='Volcanic world';
-  const snow=clamp((Math.abs(d[1])-.79)*7+Math.max(0,base.elevationM-2600)/3300);
+  const snow=clamp((Math.abs(d[1])-.79)*7+Math.max(0,elevationM-2600)/3300);
   // Terrain samples have no normal here; retain elevated mountain colouring
   // rather than replacing it with a river-bank biome.
-  if(!temperate||river.wet||river.influence<=0||snow>.2||base.elevationM>1800)return base.color;
+  if(!temperate||river.wet||river.influence<=0||snow>.2||elevationM>1800)return color;
   const shore=clamp(river.bank)**4;
   const regional=mix([65,86,44],[115,111,85],shore);
-  return mix(base.color,regional,river.influence);
+  return mix(color,regional,river.influence);
 }
 
 /** One continuous direction-space field for orbital geometry, colour and detail.
@@ -151,14 +153,18 @@ export function terrainSampler(body: Body) {
       influence: 0,
     };
     if (!region || ocean) return baseline;
-    const river = sampleRiverRegion(region, d, sample.elevationM);
+    // This versioned physical surface drives tiles and collision. River
+    // construction still uses baseTerrainSampler + sampleLegacyRiverRegion,
+    // preserving exports and canonical drainage inputs.
+    const landform=regionalLandformHeight(region,d,sample.elevationM);
+    const river = sampleRiverRegion(region, d, landform);
     if (!river.influence) return baseline;
     const rockHeightM = river.rockHeightM;
     const wet = river.wet;
     const waterLevelM = river.waterLevelM;
     // Inland water shares the water palette used by orbit previews. River
     // material selection is carried in bank/waterKind for nearby terrain.
-    const color = wet ? [24, 105, 132] : regionalBankColor(body,d,sample,river);
+    const color = wet ? [24, 105, 132] : regionalBankColor(body,d,landform,sample.color,river);
     const waterHeightM=waterLevelM;
     return {
       elevationM: rockHeightM,

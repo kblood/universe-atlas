@@ -1,6 +1,7 @@
 import {type Body, type V3} from './catalog.ts';
-import {terrainSampler, TERRAIN_VERSION} from './terrain.ts';
+import {terrainSampler, TERRAIN_VERSION,REGIONAL_LANDFORM_VERSION} from './terrain.ts';
 import {RIVER_SURFACE_VERSION} from './river-types.ts';
+import {RIVER_PHYSICAL_SURFACE_VERSION} from './river-physical-field.ts';
 export const SURFACE_VERSION='atlas-surface-1';
 export type WaterKey = {dateNs:bigint; levelM:number};
 export function waterLevelAt(keys: readonly WaterKey[], date:bigint): number {
@@ -40,6 +41,8 @@ export function surfaceQuery(body:Body, keys:readonly WaterKey[]=[]) {
       rockHeightM:groundHeightM,waterLevelM:waterHeightM,
       visibleHeightM,ocean,wet,walkable:solid&&!wet,version:SURFACE_VERSION,
       geologyVersion:TERRAIN_VERSION,regionalGeologyVersion:body.hydrology?.version||null,
-      regionalSurfaceVersion:body.hydrology?RIVER_SURFACE_VERSION:null};
+      regionalSurfaceVersion:body.hydrology?RIVER_SURFACE_VERSION:null,
+      regionalPhysicalSurfaceVersion:body.hydrology?RIVER_PHYSICAL_SURFACE_VERSION:null,
+      regionalLandformVersion:body.hydrology?REGIONAL_LANDFORM_VERSION:null};
   };
 }

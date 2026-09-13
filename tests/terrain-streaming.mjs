@@ -13,10 +13,10 @@ async function rendererModule(){
   const directory=await mkdtemp(join(tmpdir(),'atlas-streaming-')),output=join(directory,'renderer.mjs');
   await build({bundle:true,platform:'node',format:'esm',outfile:output,logLevel:'silent',stdin:{resolveDir:fileURLToPath(new URL('..',import.meta.url)),sourcefile:'terrain-streaming-entry.mjs',contents:`
     import * as THREE from 'three';
-    import {buildTile} from './src/planet-tiles.ts';
+    import {buildTile,tileNeighbour} from './src/planet-tiles.ts';
     import {PlanetRenderer} from './src/planet-renderer.ts';
     import {surfaceQuery} from './src/world-surface.ts';
-    export {THREE,buildTile,PlanetRenderer,surfaceQuery};
+    export {THREE,buildTile,tileNeighbour,PlanetRenderer,surfaceQuery};
   `}});
   return {module:await import(pathToFileURL(output).href),directory};
 }
@@ -28,8 +28,8 @@ async function removeReviewDirectory(directory){
   await rm(target,{recursive:true,force:true});
 }
 
-test('hydrology fine contact support settles before the broad walking ring starves it',async()=>{
-  const {module,directory}=await rendererModule(),{THREE,buildTile,PlanetRenderer,surfaceQuery}=module;
+test('hydrology keeps 2:1 contact support while water-floor work progresses best effort',async()=>{
+  const {module,directory}=await rendererModule(),{THREE,buildTile,tileNeighbour,PlanetRenderer,surfaceQuery}=module;
   const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===23165);
   assert.ok(catchment);const body={...maithea,hydrology:buildRiverRegion(maithea,catchment)},direction=[-0.15499501816238923,0.26750660377146346,-0.9510082866534327],surface=surfaceQuery(body)(direction),radius=body.radiusM;
   const contact=new THREE.Vector3(...direction).multiplyScalar(radius+surface.groundHeightM+.92),eye=new THREE.Vector3(...direction).multiplyScalar(radius+surface.groundHeightM+12).divideScalar(radius),host=new THREE.Mesh(new THREE.SphereGeometry(1,8,8),new THREE.MeshBasicMaterial());
@@ -44,9 +44,20 @@ test('hydrology fine contact support settles before the broad walking ring starv
       await new Promise(resolve=>setImmediate(resolve));
       patches=renderer.contactPatches(contact.toArray(),contact.toArray());
     }
-    const diagnostics=renderer.diagnostics();
+    const settled=renderer.diagnostics();
     assert.ok(patches&&patches.length>0,'fine capsule support settles');
-    assert.equal(diagnostics.contactLevel,22);assert.equal(diagnostics.baseContactLevel,18);
+    assert.equal(settled.contactLevel,22);assert.equal(settled.baseContactLevel,18);
+    assert.equal(settled.minimumWaterLevel,10,'coarse wet-bed envelope has a bounded target');
+    assert.equal(settled.waterRegionActive,true,'near-bank water region is large enough to schedule');
+    for(let frame=0;frame<90;frame++){renderer.update(eye.toArray(),1080,65,1/60,false,[1,0,0],[]);await new Promise(resolve=>setImmediate(resolve));assert.ok(renderer.contactPatches(contact.toArray(),contact.toArray()),'settled contact support remains valid');}
+    const diagnostics=renderer.diagnostics(),leaves=new Map(diagnostics.debug.activeTileIds.map(key=>[key,key.split('/').map(Number)]));
+    for(const [key,[face,level,x,y]] of leaves)for(let edge=0;edge<4;edge++){
+      let neighbour=tileNeighbour({face,level,x,y},edge),other=leaves.get(`${neighbour.face}/${neighbour.level}/${neighbour.x}/${neighbour.y}`);
+      while(!other&&neighbour.level>0){neighbour={face:neighbour.face,level:neighbour.level-1,x:Math.floor(neighbour.x/2),y:Math.floor(neighbour.y/2)};other=leaves.get(`${neighbour.face}/${neighbour.level}/${neighbour.x}/${neighbour.y}`);}
+      if(other)assert.ok(level-neighbour.level<=1,`active 2:1 closure at ${key} edge ${edge}`);
+    }
+    assert.ok(diagnostics.underresolvedWaterTiles<=settled.underresolvedWaterTiles,'best-effort water floor does not regress after contact settles');
+    assert.ok(diagnostics.visible<=450,'walking leaf cap remains fixed');
     assert.ok(diagnostics.reservedCombinedBytes<=256*1024*1024,'fine support stays inside the combined reserve');
   } finally {renderer.dispose();host.geometry.dispose();host.material.dispose();globalThis.Worker=SavedWorker;await removeReviewDirectory(directory);}
 });

@@ -4,8 +4,10 @@ import { children, tileDirection, closestTileDirection, tileKey, directionTile, 
 import {terrainSampler} from './terrain.ts';
 import { PlanetAtmosphere } from './planet-atmosphere.ts';
 import {RiverWater} from './river-water.ts';
+import {LakeReflection} from './lake-reflection.ts';
 import {createOceanWaterMaterial,setOceanWaterPatchFrame,type OceanWaterMaterial} from './ocean-water-material.ts';
 import {oceanPatchCullProof} from './ocean-patch-culling.ts';
+import {SHARED_WATER_NORMAL_ATLAS_BYTES} from './water-normal-atlas.ts';
 import {RiverEnvironment} from './river-environment.ts';
 import {contactGeometry,type ContactPatch} from './terrain-contact.ts';
 import {detailTexture,detailOrigin,MATERIAL_VERSION,groundVertexHeader,groundVertex,groundFragmentHeader,groundColor,groundNormalCode} from './ground-material.ts';
@@ -44,6 +46,8 @@ export class PlanetRenderer {
   private originalMaterial: THREE.Material | THREE.Material[];
   private atmosphere: PlanetAtmosphere | null = null;
   private river:RiverWater|null=null;
+  private lakeReflection:LakeReflection|null=null;
+  private reflectionRevision=0;
   private environment:RiverEnvironment|null=null;
   private waterTime=0;
   private eyeHeightUniform = {value:0};
@@ -68,6 +72,10 @@ export class PlanetRenderer {
   setSurfaceDetail(enabled:boolean){this.groundEnabled.value=enabled?1:0;}
   readonly contactLevel:number;
   readonly fineContactLevel:number;
+  readonly minimumWaterLevel:number|null;
+  private waterRegion:THREE.Sphere|null=null;
+  private waterRegionActive=false;
+  private underresolvedWaterTiles=0;
   setContactFocus(point:V3|null) { this.contactFocus=point; }
   constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,anisotropy=1) {
     this.groundAtlas=detailTexture(anisotropy);
@@ -76,11 +84,17 @@ export class PlanetRenderer {
     // Hydrology beds need sub-decimetre samples near the capsule. This is a
     // contact-only target; ordinary terrain keeps the established base level.
     this.fineContactLevel=body.hydrology?Math.max(this.contactLevel,Math.min(24,Math.ceil(Math.log2(2*body.radiusM/(PATCH_SEGMENTS*.09))))):this.contactLevel;
+    this.minimumWaterLevel=body.hydrology?Math.max(0,Math.ceil(Math.log2(4*Math.SQRT2*body.radiusM/(PATCH_SEGMENTS*2800)))+1):null;
+    if(body.hydrology){
+      const r=body.hydrology,b=[r.boundsM[0],r.boundsM[1],r.boundsM[2],r.boundsM[3]],points:[[number,number],[number,number],[number,number],[number,number],[number,number]]=[[b[0],b[1]],[b[0],b[3]],[b[2],b[1]],[b[2],b[3]],[(b[0]+b[2])/2,(b[1]+b[3])/2]],direction=([x,z]:[number,number])=>new THREE.Vector3(...r.origin).addScaledVector(new THREE.Vector3(...r.east),x/r.radiusM).addScaledVector(new THREE.Vector3(...r.north),z/r.radiusM).normalize();
+      const directions=points.map(direction),center=directions.reduce((sum,p)=>sum.add(p),new THREE.Vector3()).normalize(),radius=Math.max(...directions.map(p=>p.distanceTo(center)));
+      this.waterRegion=new THREE.Sphere(center,radius);
+    }
     this.group.name = 'Planet terrain patches';
     this.group.scale.setScalar(radius);
     this.group.visible = false;
     host.add(this.group);
-    if(body.hydrology){this.river=new RiverWater(body,body.hydrology);this.group.add(this.river.group);}
+    if(body.hydrology){this.river=new RiverWater(body,body.hydrology);this.group.add(this.river.group);if(body.hydrology.lakes.length)this.lakeReflection=new LakeReflection(body,body.hydrology,frame=>this.river?.setLakeReflection(frame),this.river.group,{canAllocate:bytes=>this.river?.canAllocateLakeReflection(bytes)??false,setBytes:bytes=>this.river?.setLakeReflectionBytes(bytes)});}
     if(body.hydrology){this.environment=new RiverEnvironment(body,body.hydrology);this.group.add(this.environment.group);}
     this.originalMaterial = host.material;
     if (body.kind === 'planet' && body.water > 0) {
@@ -109,7 +123,31 @@ export class PlanetRenderer {
   private materialVisible(visible: boolean) {
     for (const m of Array.isArray(this.originalMaterial) ? this.originalMaterial : [this.originalMaterial]) m.visible = visible;
   }
+  renderLakeReflection(renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera,xr=false){
+    if(!this.lakeReflection)return;
+    if(!this.rootsReady||this.relief!==1||xr){this.lakeReflection.disable();return;}
+    this.group.updateMatrixWorld(true);camera.updateMatrixWorld();
+    const morphEpoch=[...this.active].some(key=>(this.patches.get(key)?.morph.value??1)<1)?this.frame:0,
+      env=this.environment?.diagnostics(),sun=this.sunUniform.value,
+      reflectionRevision=[this.reflectionRevision,morphEpoch,env?.generatedCells??0,env?.grassCells??0,env?.instances??0,Math.round(sun.x*500),Math.round(sun.y*500),Math.round(sun.z*500),Math.round(camera.fov*100),Math.round(camera.aspect*10000)].join('/');
+    // Ocean visibility is touched only for a real offscreen render, never for
+    // cadence-gated or cached frames.
+    this.lakeReflection.update(renderer,scene,camera,this.group,false,!!this.debug.freezeWater,reflectionRevision,render=>{
+      const oceans=[...this.patches.values()].flatMap(p=>p.ocean?[p.ocean]:[]),oceanVisible=oceans.map(mesh=>mesh.visible),terrain=[...this.patches.values()].map(p=>p.mesh),terrainCulling=terrain.map(mesh=>mesh.frustumCulled);
+      // Normal rendering uses explicit tile visibility, hence disabled Three
+      // culling. During the reflected camera pass the installed tile geometry
+      // has an exact BufferGeometry sphere, so Three can cheaply reject tiles
+      // outside that camera without changing the normal-frame contract.
+      try{oceans.forEach(mesh=>mesh.visible=false);terrain.forEach(mesh=>mesh.frustumCulled=true);render();}finally{terrain.forEach((mesh,i)=>mesh.frustumCulled=terrainCulling[i]);oceans.forEach((mesh,i)=>mesh.visible=oceanVisible[i]);}
+    });
+  }
+  private intersectsWaterRegion(t:Tile){
+    if(!this.waterRegion)return false;
+    const span=2/2**t.level,bound=Math.min(1.8,span*1.42),center=new THREE.Vector3(...tileDirection(t,.5,.5));
+    return center.distanceTo(this.waterRegion.center)<=bound+this.waterRegion.radius;
+  }
   private install(key: string, d: ReturnType<typeof buildTile>) {
+    this.reflectionRevision++;
     this.retries.delete(key);this.retryAfter.delete(key);
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(d.positions, 3));
@@ -224,7 +262,8 @@ export class PlanetRenderer {
     if(this.environment){this.environment.group.visible=this.relief===1;if(this.relief===1)this.environment.update(observer,dt,sun);}
     const direction = eye.clone().normalize();
     const pixels = height / (2 * Math.tan(fov * Math.PI / 360));
-    const projectionCache=new Map<string,{visible:boolean;score:number;contactNear:number}>();
+    if(this.waterRegion){const near=Math.max(1e-9,eye.distanceTo(this.waterRegion.center)-this.waterRegion.radius);this.waterRegionActive=this.waterRegion.radius*pixels/near>=8;}else this.waterRegionActive=false;
+    const projectionCache=new Map<string,{visible:boolean;score:number;contactNear:number;waterPriority:boolean;finePriority:boolean}>();
     const viewNormals=frusta.flatMap(f=>f.planes.flatMap(p=>p.normal.toArray()));
     const rotated=viewNormals.length!==this.selectionFrustum.length||viewNormals.some((v,i)=>Math.abs(v-this.selectionFrustum[i])>.001);
     const retryDue=[...this.retryAfter].some(([key,frame])=>this.frame>=frame&&!this.failures.has(key)&&!this.pending.has(key)&&!this.patches.has(key));
@@ -241,7 +280,7 @@ export class PlanetRenderer {
       const horizon = distance < 1 + margin || direction.dot(center) + bound >= (1 - margin) / distance;
       const sphere = new THREE.Sphere(center, bound + margin);
       const visible = horizon && (!frusta.length || frusta.some(f => f.intersectsSphere(sphere)));
-      if(!changed)return {visible,score:0,contactNear:Infinity};
+      if(!changed)return {visible,score:0,contactNear:Infinity,waterPriority:false,finePriority:false};
       const nearest = closestTileDirection(t,observer);
       const elevation=this.sample(nearest).visibleHeightM;
       const ground=new THREE.Vector3(...nearest).multiplyScalar(1+Math.max(this.body.water?0:-Infinity,elevation)*this.relief/this.body.radiusM);
@@ -252,10 +291,13 @@ export class PlanetRenderer {
       // overestimates error instead of claiming a measured terrain error bound.
       const contactPriority=contactNear<28&&t.level<this.contactLevel;
       const finePriority=!!this.body.hydrology&&contactNear<3&&t.level<this.fineContactLevel;
+      // Best-effort regional floor: deliberately below fine capsule and broad
+      // contact work, so it cannot consume their balanced support budget.
+      const waterPriority=!!this.minimumWaterLevel&&this.waterRegionActive&&t.level<this.minimumWaterLevel&&this.intersectsWaterRegion(t);
       // The tiny fine-support band must arrive before the wider 28 m base
       // ring; otherwise the walking leaf cap can fill with L18 candidates
       // before the capsule has its L19–22 descendants.
-      const result={visible,contactNear,score:finePriority?1e12/((t.level+1)*(1+contactNear)):contactPriority?1e10/(t.level+1):visible ? span * pixels / near : 0};
+      const result={visible,contactNear,waterPriority,finePriority,score:finePriority?1e12/((t.level+1)*(1+contactNear)):contactPriority?1e10/(t.level+1):waterPriority?1e7/(t.level+1):visible ? span * pixels / near : 0};
       projectionCache.set(key,result);return result;
     };
     const leaves = changed?[...ROOTS]:[...this.leafIndex.values()];
@@ -280,6 +322,9 @@ export class PlanetRenderer {
           // draw/cache limits below remain the allocation boundary, allowing
           // a visible river or lake shore to refine beside the contact ring.
           let t=candidate.t;
+          // Every contact split preserves the established 2:1 closure. Edge
+          // locks only support one level of difference; bypassing this creates
+          // unsupported multi-level seams and skirt walls.
           if(contact){for(let pass=0;pass<20;pass++){const lower=[0,1,2,3].map(e=>neighbour(t,e)).find(n=>n&&n.level<t.level);if(!lower)break;t=lower;}}
           if (leaves.length + 3 > drawLimit) break;
           const kids = children(t);
@@ -295,6 +340,7 @@ export class PlanetRenderer {
     }
     this.active.clear();
     this.leafIndex=new Map(leaves.map(t=>[tileKey(t),t]));
+    this.underresolvedWaterTiles=this.waterRegionActive&&this.minimumWaterLevel!==null?leaves.filter(t=>t.level<this.minimumWaterLevel!&&this.intersectsWaterRegion(t)).length:0;
     for (const p of this.patches.values()){p.mesh.visible = false;if(p.ocean)p.ocean.visible=false;}
     for (const t of leaves) {
       const key = tileKey(t), p = this.patches.get(key);
@@ -367,9 +413,12 @@ export class PlanetRenderer {
     });
   }
   diagnostics() {
-    return {projection: 'cube-sphere', river:this.river?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
+    // The shared texture belongs to the existing water reservation. Inland
+    // diagnostics count it when present; ocean-only worlds count it here.
+    const oceanNormalBytes=this.river?.diagnostics().resident?0:[...this.patches.values()].some(p=>p.ocean)?SHARED_WATER_NORMAL_ATLAS_BYTES:0;
+    return {projection: 'cube-sphere', river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
       maxLevel: Math.max(0, ...[...this.active].map(k => this.patches.get(k)!.tile.level)), cacheLimit: this.contactFocus?768:TILE_CACHE_LIMIT,
-      contactLevel:this.contactFocus?(this.body.hydrology?this.fineContactLevel:this.contactLevel):null,baseContactLevel:this.contactFocus?this.contactLevel:null,accountedBytes:this.residentBytes+GROUND_ATLAS_BYTES,reservedCombinedBytes:this.residentBytes+GROUND_ATLAS_BYTES+WATER_ENVIRONMENT_RESERVE_BYTES+this.pending.size*PENDING_TILE_BYTES,terrainResidentBytes:this.residentBytes,groundAtlasBytes:GROUND_ATLAS_BYTES,pendingReserveBytes:this.pending.size*PENDING_TILE_BYTES,materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:TOTAL_BUDGET_BYTES,failuresTotal:this.failuresTotal,updateMs:this.updateMs,
+      contactLevel:this.contactFocus?(this.body.hydrology?this.fineContactLevel:this.contactLevel):null,baseContactLevel:this.contactFocus?this.contactLevel:null,minimumWaterLevel:this.minimumWaterLevel,underresolvedWaterTiles:this.underresolvedWaterTiles,waterRegionActive:this.waterRegionActive,accountedBytes:this.residentBytes+GROUND_ATLAS_BYTES+oceanNormalBytes,reservedCombinedBytes:this.residentBytes+GROUND_ATLAS_BYTES+WATER_ENVIRONMENT_RESERVE_BYTES+this.pending.size*PENDING_TILE_BYTES,terrainResidentBytes:this.residentBytes,groundAtlasBytes:GROUND_ATLAS_BYTES,oceanNormalBytes,pendingReserveBytes:this.pending.size*PENDING_TILE_BYTES,materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:TOTAL_BUDGET_BYTES,failuresTotal:this.failuresTotal,updateMs:this.updateMs,
       failures: this.failures.size, faces: [...new Set([...this.active].map(k => Number(k.split('/')[0])))],
       detailPatches:[...this.active].filter(k=>this.groundEnabled.value&&this.patches.get(k)!.detail.value).length,
       oceanDraws:[...this.active].filter(k=>this.patches.get(k)!.ocean?.visible).length,
@@ -378,13 +427,13 @@ export class PlanetRenderer {
       skirtPatches:[...this.active].filter(k=>this.patches.get(k)!.mesh.geometry.drawRange.count>PATCH_SEGMENTS*PATCH_SEGMENTS*6).length,
       vertices: [...this.active].reduce((n,k) => n + this.patches.get(k)!.mesh.geometry.attributes.position.count, 0)};
   }
-  private release(p: Patch) { this.residentBytes=Math.max(0,this.residentBytes-p.bytes);this.group.remove(p.mesh);if(p.ocean){this.group.remove(p.ocean);p.ocean.geometry.dispose();p.ocean.material.dispose();} p.mesh.geometry.dispose(); p.map.dispose(); p.material.dispose(); }
+  private release(p: Patch) { this.reflectionRevision++;this.residentBytes=Math.max(0,this.residentBytes-p.bytes);this.group.remove(p.mesh);if(p.ocean){this.group.remove(p.ocean);p.ocean.geometry.dispose();p.ocean.material.dispose();} p.mesh.geometry.dispose(); p.map.dispose(); p.material.dispose(); }
   dispose() {
     this.disposed = true;
     this.worker.terminate();
     this.groundAtlas.dispose();
     this.atmosphere?.dispose();
-    this.river?.dispose();this.river=null;
+    this.lakeReflection?.dispose();this.lakeReflection=null;this.river?.dispose();this.river=null;
     this.environment?.dispose();this.environment=null;
     this.materialVisible(true);
     for (const p of this.patches.values()) this.release(p);

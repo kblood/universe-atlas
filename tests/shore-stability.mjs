@@ -33,7 +33,7 @@ page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()
 // Browser-only GL diagnostics work on both baseline and replacement, and never
 // ship in the app. Freeze known animation uniforms and classify actual draws.
 await page.addInitScript(()=>{
- const state=window.__shoreAudit={mode:'all',flat:false,freezeWater:false,freezeMorph:false,capture:null};
+ const state=window.__shoreAudit={mode:'all',flat:false,freezeWater:false,freezeMorph:false,capture:null,reflectionFramebuffer:null};
  const proto=WebGL2RenderingContext.prototype,sources=new WeakMap(),attached=new WeakMap(),programs=new WeakMap(),uniforms=new WeakMap(),lastValues=new WeakMap();let current=null,draws=0,lastGL=null;
  const shaderSource=proto.shaderSource;proto.shaderSource=function(shader,source){
   const kind=source.includes('uniform sampler2D groundAtlas')?'ground':source.includes('waterCoordV')||source.includes('oceanWater')?'water':null;
@@ -44,6 +44,8 @@ await page.addInitScript(()=>{
  const attach=proto.attachShader;proto.attachShader=function(p,s){if(sources.get(s))attached.set(p,sources.get(s));return attach.call(this,p,s);};
  const link=proto.linkProgram;proto.linkProgram=function(p){link.call(this,p);if(attached.has(p))programs.set(p,{kind:attached.get(p),view:this.getUniformLocation(p,'shoreAuditView')});};
  const use=proto.useProgram;proto.useProgram=function(p){current=p;lastGL=this;return use.call(this,p);};
+ const viewport=proto.viewport;proto.viewport=function(x,y,w,h){if(w===256&&h===256){const fb=this.getParameter(this.FRAMEBUFFER_BINDING);if(fb)state.reflectionFramebuffer=fb;}return viewport.call(this,x,y,w,h);};
+ window.__shoreReflectionPNG=()=>{const gl=lastGL,fb=state.reflectionFramebuffer;if(!gl||!fb)return null;const old=gl.getParameter(gl.READ_FRAMEBUFFER_BINDING),pixels=new Uint8Array(256*256*4);try{gl.bindFramebuffer(gl.READ_FRAMEBUFFER,fb);gl.readPixels(0,0,256,256,gl.RGBA,gl.UNSIGNED_BYTE,pixels);}finally{gl.bindFramebuffer(gl.READ_FRAMEBUFFER,old);}const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const ctx=canvas.getContext('2d'),data=ctx.createImageData(256,256);for(let y=0;y<256;y++)for(let x=0;x<256;x++){const a=(y*256+x)*4,b=((255-y)*256+x)*4;for(let c=0;c<3;c++){const v=pixels[a+c]/255;data.data[b+c]=Math.round(255*(v<=.0031308?v*12.92:1.055*Math.pow(v,1/2.4)-.055));}data.data[b+3]=255;}ctx.putImageData(data,0,0);return canvas.toDataURL();};
  const get=proto.getUniformLocation;proto.getUniformLocation=function(p,n){const l=get.call(this,p,n);if(l)uniforms.set(l,n);return l;};
  const uf=proto.uniform1f;proto.uniform1f=function(l,v){const n=uniforms.get(l);if(state.freezeWater&&(n==='waterTime'||n==='oceanTime'))v=0;if(state.freezeMorph&&n==='patchMorph')v=lastValues.get(l)??v;else if(l)lastValues.set(l,v);return uf.call(this,l,v);};
  for(const name of ['drawElements','drawElementsInstanced','drawArrays','drawArraysInstanced']){const original=proto[name];proto[name]=function(...args){const p=programs.get(current),kind=p?.kind,mode=state.mode;
@@ -67,6 +69,10 @@ try{
  await page.waitForFunction(()=>window.__atlas?.travel.walking?.grounded&&!window.__atlas.travel.walking.waiting,undefined,{timeout:240000});
  const landingMs=Date.now()-started;console.log('shore: landed '+landingMs+'ms');await page.waitForTimeout(8000);
  await page.screenshot({path:out+'/01-shore.png'});
+ const reflectionPNG=await page.evaluate(()=>window.__shoreReflectionPNG());if(reflectionPNG)await writeFile(out+'/reflection-target.png',Buffer.from(reflectionPNG.split(',')[1],'base64'));
+ // Preserve the last ordinary lake reflection before GL draw-isolation modes
+ // hide terrain. Diagnostic-only captures must never replace its cached image.
+ await page.evaluate(()=>window.__atlas?.shoreDebug?.({freezeWater:true}));
  for(const mode of ['ground','water','skirts','depth','coverage']){await debug({mode,flat:true});await page.waitForTimeout(150);await page.screenshot({path:out+'/debug-'+mode+'.png'});}
  const coverage=await page.evaluate(()=>window.__shoreFrames(2));
  await debug({mode:'all',flat:false,freezeWater:true,freezeMorph:true});
@@ -87,6 +93,14 @@ try{
    await page.keyboard.up('s');await page.keyboard.up('Shift');await page.waitForTimeout(1000);
    const after=await snapshot();rebase={before,after};assert.ok(Math.hypot(...after.walk.originM.map((v,i)=>v-before.walk.originM[i]))>60,'motion recording crosses physics origin');
    await page.screenshot({path:out+'/05-rebased.png'});
+ }
+ if(process.env.ATLAS_SHORE_INLAND){
+   // Turn from the water toward the ground cover without changing the saved
+   // landing fixture; these views expose crown shape and human-scale plants.
+   for(let i=0;i<3;i++){await page.mouse.move(600,500);await page.mouse.down();await page.mouse.move(950,500,{steps:45});await page.mouse.up();}
+   await page.waitForTimeout(1200);await page.screenshot({path:out+'/06-inland.png'});
+   await page.mouse.move(600,450);await page.mouse.down();await page.mouse.move(600,570,{steps:45});await page.mouse.up();
+   await page.waitForTimeout(500);await page.screenshot({path:out+'/07-ground-cover.png'});
  }
  assert.deepEqual(errors,[]);
  const report={ok:true,base,kind,landingMs,roi:[560,740,500,180],toleranceChannel:2,staticMaximumChangedPixels:Math.max(...frames.slice(1).map(f=>f.changedPixels)),staticFrames:frames,coverageFrames:coverage,start,end:await snapshot(),rebase,errors};

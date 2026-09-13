@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import type {Body, V3} from './catalog.ts';
 import type {RiverChannel, RiverLake, RiverRegion} from './river-types.ts';
+import {acquireWaterNormalAtlas,releaseWaterNormalAtlas,SHARED_WATER_NORMAL_ATLAS_BYTES,WATER_NORMAL_ATLAS_METRES_PER_REPEAT} from './water-normal-atlas.ts';
+import {riverPhysicalField} from './river-physical-field.ts';
 
 /** The regional water renderer treats RiverPoint.widthM as the full water width.
  * Geometry is kept in planet-radius units so it can live beneath PlanetRenderer.group. */
@@ -15,6 +17,9 @@ type RawVertex={direction:V3;height:number;u:number;v:number;flow:number;flowX:n
 type ChunkData={vertices:RawVertex[];indices:number[];flow:number;kind:'river'|'lake';sourceId:string};
 type Chunk={mesh:THREE.Mesh;center:V3;radius:number;bytes:number;visible:boolean;material:THREE.ShaderMaterial};
 export type WaterDebug={freezeWater?:boolean;flat?:boolean;depth?:boolean};
+/** Matrix maps a water chunk's local coordinates into the planet-local frame
+ * that existed when the reflection texture was captured. */
+export type LakeReflectionFrame={texture:THREE.Texture|null;matrix:THREE.Matrix4;valid:boolean;strength:number;coordinateFrame:'planet-local-at-capture'};
 
 function directionAt(region:RiverRegion,x:number,z:number):V3 {
   return unit(add(region.origin,add(scale(region.east,x/region.radiusM),scale(region.north,z/region.radiusM))));
@@ -40,6 +45,14 @@ function channelChunk(channel:RiverChannel,start:number,end:number,region:RiverR
     for(let band=0;band<2;band++)indices.push(a+band,a+band+1,a+band+3,a+band+1,a+band+4,a+band+3);
   }
   return {vertices,indices,flow:1,kind:'river',sourceId:channel.id};
+}
+
+function physicalChunks(region:RiverRegion,maxChunks:number):ChunkData[]{
+  const field=riverPhysicalField(region),s=field.surface;if(field.rejected||!s.indices.length)return [];
+  const buckets=new Map<number,number[]>();
+  for(let i=0;i<s.indices.length;i+=3){const a=s.indices[i],b=s.indices[i+1],c=s.indices[i+2],x=(s.positions[a*2]+s.positions[b*2]+s.positions[c*2])/3,z=(s.positions[a*2+1]+s.positions[b*2+1]+s.positions[c*2+1])/3,k=Math.floor(x/4000)*1048576+Math.floor(z/4000),v=buckets.get(k)||[];v.push(i/3);buckets.set(k,v);}
+  const raw:ChunkData[]=[...buckets.keys()].sort((a,b)=>a-b).map(k=>{const map=new Map<number,number>(),vertices:RawVertex[]=[],indices:number[]=[];for(const t of buckets.get(k)!){for(let q=0;q<3;q++){const g=s.indices[t*3+q];let local=map.get(g);if(local===undefined){local=vertices.length;map.set(g,local);const x=s.positions[g*2],z=s.positions[g*2+1];vertices.push({direction:directionAt(region,x,z),height:s.waterM[g],u:x*.018,v:z*.018,flow:1,flowX:s.flow[g*2],flowZ:s.flow[g*2+1],x,z,depth:s.depthM[g],shore:1-clamp(s.depthM[g]/8,0,1)});}indices.push(local);}}return {vertices,indices,flow:1,kind:'river' as const,sourceId:'physical'};});
+  if(raw.length<=maxChunks)return raw;const groups:Array<ChunkData>=Array.from({length:maxChunks},()=>({vertices:[],indices:[],flow:1,kind:'river',sourceId:'physical'}));for(let i=0;i<raw.length;i++){const target=groups[Math.floor(i*maxChunks/raw.length)],part=raw[i],base=target.vertices.length;for(const v of part.vertices)target.vertices.push(v);for(const index of part.indices)target.indices.push(index+base);}return groups.filter(g=>g.indices.length);
 }
 
 function lakeChunk(lake:RiverLake,region:RiverRegion):ChunkData {
@@ -82,48 +95,65 @@ function material(body:Body,flow:number,region:RiverRegion,riverSurface:boolean)
   // The shader only reserves uniforms for actual local lakes.  Reserving the
   // global draw limit here would waste scarce mobile fragment uniforms.
   const lakeSlots=Math.max(1,region.lakes.length),lakeEllipse=Array.from({length:lakeSlots},(_,i)=>{const l=region.lakes[i];return new THREE.Vector4(l?.x||0,l?.z||0,l?.radiusXM||1,l?.radiusZM||1);}),lakeRotation=Array.from({length:lakeSlots},(_,i)=>{const a=region.lakes[i]?.angle||0;return new THREE.Vector2(Math.cos(a),Math.sin(a));});
-  return new THREE.ShaderMaterial({
-    uniforms:{waterRadius:{value:body.radiusM},waterRelief:{value:1},waterTime:{value:0},waterFlat:{value:0},waterDepthDebug:{value:0},sunDirection:{value:new THREE.Vector3(1,0,0)},eyeRelative:{value:new THREE.Vector3()},waterEast:{value:new THREE.Vector3(...region.east)},waterNorth:{value:new THREE.Vector3(...region.north)},riverSurface:{value:riverSurface?1:0},lakeEllipse:{value:lakeEllipse},lakeRotation:{value:lakeRotation}},
+  const normalAtlas=acquireWaterNormalAtlas();
+  const result=new THREE.ShaderMaterial({
+    uniforms:{waterRadius:{value:body.radiusM},waterRelief:{value:1},waterTime:{value:0},waterFlat:{value:0},waterDepthDebug:{value:0},waterNormalAtlas:{value:normalAtlas},waterNormalRepeatM:{value:WATER_NORMAL_ATLAS_METRES_PER_REPEAT},lakeReflectionTexture:{value:null},lakeReflectionMatrix:{value:new THREE.Matrix4()},lakeReflectionValid:{value:0},lakeReflectionStrength:{value:0},sunDirection:{value:new THREE.Vector3(1,0,0)},eyeRelative:{value:new THREE.Vector3()},waterEast:{value:new THREE.Vector3(...region.east)},waterNorth:{value:new THREE.Vector3(...region.north)},riverSurface:{value:riverSurface?1:0},lakeEllipse:{value:lakeEllipse},lakeRotation:{value:lakeRotation}},
     vertexShader:`#include <common>
 #include <logdepthbuf_pars_vertex>
-attribute vec3 surfaceDirection; attribute float waterHeight; attribute vec2 waterCoord; attribute float waterDepth,shoreDistance; attribute vec2 flowVector; varying vec3 waterNormal,waterLocalPosition; varying vec2 waterCoordV,waterFlowV; varying float waterDepthV,shoreDistanceV; uniform float waterRadius,waterRelief;
+attribute vec3 surfaceDirection; attribute float waterHeight; attribute vec2 waterCoord; attribute float waterDepth,shoreDistance; attribute vec2 flowVector; varying vec3 waterNormal,waterLocalPosition; varying vec2 waterCoordV,waterFlowV; varying vec4 lakeReflectionCoord; varying float waterDepthV,shoreDistanceV; uniform float waterRadius,waterRelief; uniform mat4 lakeReflectionMatrix;
 void main(){
   vec3 transformed=position+surfaceDirection*(waterHeight*(waterRelief-1.0)/waterRadius);
-  waterNormal=surfaceDirection; waterLocalPosition=transformed; waterCoordV=waterCoord; waterFlowV=flowVector; waterDepthV=waterDepth; shoreDistanceV=shoreDistance;
+  waterNormal=surfaceDirection; waterLocalPosition=transformed; waterCoordV=waterCoord; waterFlowV=flowVector; lakeReflectionCoord=lakeReflectionMatrix*vec4(transformed,1.0); waterDepthV=waterDepth; shoreDistanceV=shoreDistance;
   gl_Position=projectionMatrix*modelViewMatrix*vec4(transformed,1.0);
   #include <logdepthbuf_vertex>
 }`,
     fragmentShader:`#include <common>
 #include <logdepthbuf_pars_fragment>
-uniform vec3 sunDirection,eyeRelative,waterEast,waterNorth; uniform float waterTime,riverSurface,waterFlat,waterDepthDebug; const int LAKE_COUNT=${region.lakes.length}; uniform vec4 lakeEllipse[${lakeSlots}]; uniform vec2 lakeRotation[${lakeSlots}]; varying vec3 waterNormal,waterLocalPosition; varying vec2 waterCoordV,waterFlowV; varying float waterDepthV,shoreDistanceV;
+uniform vec3 sunDirection,eyeRelative,waterEast,waterNorth; uniform float waterTime,riverSurface,waterFlat,waterDepthDebug,waterNormalRepeatM,lakeReflectionValid,lakeReflectionStrength; uniform sampler2D waterNormalAtlas,lakeReflectionTexture; const int LAKE_COUNT=${region.lakes.length}; uniform vec4 lakeEllipse[${lakeSlots}]; uniform vec2 lakeRotation[${lakeSlots}]; varying vec3 waterNormal,waterLocalPosition; varying vec2 waterCoordV,waterFlowV; varying vec4 lakeReflectionCoord; varying float waterDepthV,shoreDistanceV;
 void main(){
   // All vectors below are in the planet's local frame.  The ripple is only a
   // normal perturbation, evaluated in metre coordinates, so it cannot form a
   // kilometre-wide animated stripe or destabilise the physical water level.
   if(riverSurface>.5){for(int i=0;i<LAKE_COUNT;i++){vec2 d=waterCoordV-lakeEllipse[i].xy, r=lakeRotation[i]; vec2 q=vec2(d.x*r.x+d.y*r.y,-d.x*r.y+d.y*r.x)/lakeEllipse[i].zw; if(dot(q,q)<=1.0)discard;}}
+  #include <logdepthbuf_fragment>
   if(waterDepthDebug>.5){gl_FragColor=vec4(vec3(clamp(waterDepthV/12.0,0.0,1.0)),1.0);return;}
   if(waterFlat>.5){gl_FragColor=vec4(vec3(.035,.16,.22),1.0);return;}
   vec3 base=normalize(waterNormal),east=normalize(waterEast-base*dot(waterEast,base)),north=normalize(waterNorth-base*dot(waterNorth,base));
-  vec2 flow=length(waterFlowV)>.01?normalize(waterFlowV):vec2(.72,.69); float drift=dot(waterCoordV,flow)*.42-waterTime*(length(waterFlowV)>.01?.75:.13);
-  float footprint=max(length(dFdx(waterCoordV)),length(dFdy(waterCoordV))),rippleFade=1.0-smoothstep(.20,1.0,footprint),microFade=1.0-smoothstep(.035,.16,footprint);
-  float a=sin(drift+waterCoordV.y*.71)*.035*rippleFade, b=sin(waterCoordV.x*1.27-waterCoordV.y*.91+waterTime*.19)*.022*rippleFade;
-  // Sub-metre, differently directed wind ripples remain normal-only.  Their
-  // derivative footprint fade removes them before they can alias at distance.
-  float microEast=(sin(dot(waterCoordV,vec2(15.7,8.3))-waterTime*.85)*.018+sin(dot(waterCoordV,vec2(-6.4,12.1))+waterTime*.47)*.011)*microFade, microNorth=(sin(dot(waterCoordV,vec2(11.2,-14.6))+waterTime*.63)*.016+sin(dot(waterCoordV,vec2(5.1,18.3))-waterTime*.38)*.009)*microFade;
-  vec3 n=normalize(base+east*(a+b+microEast)+north*(a*.65-b*.8+microNorth)); vec3 view=normalize(eyeRelative-waterLocalPosition); vec3 sun=normalize(sunDirection);
-  float daylight=smoothstep(-.14,.08,dot(base,sun)),fresnel=pow(1.0-max(0.0,dot(n,view)),5.0);
+  vec2 flow=length(waterFlowV)>.01?normalize(waterFlowV):vec2(.72,.69); vec2 crossFlow=vec2(-flow.y,flow.x);
+  float footprint=max(length(dFdx(waterCoordV)),length(dFdy(waterCoordV))),rippleFade=1.0-smoothstep(.30,4.5,footprint),microFade=1.0-smoothstep(.035,.45,footprint);
+  // The 16 m periodic atlas has nonparallel warped slopes and a separate micro phase.
+  // Hardware mip selection plus footprint attenuation keeps its sharp near-bank
+  // detail from shimmering when viewed across a lake.
+  vec2 atlasA=(waterCoordV+flow*waterTime*.72+crossFlow*7.3)/waterNormalRepeatM;
+  vec2 atlasB=(waterCoordV*.5-flow*waterTime*.31+crossFlow*23.7)/waterNormalRepeatM;
+  vec2 atlasMicro=(waterCoordV*8.0-flow*waterTime*2.1+crossFlow*3.7)/waterNormalRepeatM;
+  vec2 atlasNormal=(texture2D(waterNormalAtlas,atlasA).xy*2.0-1.0)*.055*rippleFade+(texture2D(waterNormalAtlas,atlasB).xy*2.0-1.0)*.027*rippleFade+(texture2D(waterNormalAtlas,atlasMicro).xy*2.0-1.0)*.012*microFade;
+  vec3 n=normalize(base+east*atlasNormal.x+north*atlasNormal.y); vec3 view=normalize(eyeRelative-waterLocalPosition); vec3 sun=normalize(sunDirection);
+  float daylight=smoothstep(-.14,.08,dot(base,sun)),fresnel=.020+.980*pow(1.0-max(0.0,dot(n,view)),5.0);
   float absorption=1.0-exp(-max(0.,waterDepthV)*.32),skyUp=smoothstep(-.12,.78,dot(reflect(-view,n),base)); vec3 shallow=vec3(.055,.16,.17),deep=vec3(.012,.055,.075),nightSky=mix(vec3(.009,.018,.040),vec3(.002,.006,.017),skyUp),daySky=mix(vec3(.22,.34,.44),vec3(.04,.12,.27),skyUp),sky=mix(nightSky,daySky,daylight);
-  vec3 color=mix(mix(shallow,deep,absorption),sky,.025+.72*fresnel);
+  // Absorbed/scattered water is lit locally. Reflected radiance is already
+  // lit by the offscreen scene, so it must not receive this daylight factor.
+  vec3 depthAbsorbedWater=mix(shallow,deep,absorption)*mix(.38,1.,daylight);
+  float reflectionW=lakeReflectionCoord.w;
+  vec2 reflectionUV=lakeReflectionCoord.xy/max(1e-5,reflectionW)+atlasNormal*.035;
+  float edge=min(min(reflectionUV.x,reflectionUV.y),min(1.-reflectionUV.x,1.-reflectionUV.y));
+  float inReflection=step(1e-5,reflectionW)*smoothstep(0.,.035,edge);
+  vec3 reflection=texture2D(lakeReflectionTexture,clamp(reflectionUV,.001,.999)).rgb;
+  float reflectedLake=lakeReflectionValid*lakeReflectionStrength*(1.-riverSurface)*inReflection;
+  vec3 reflectedRadiance=mix(sky,reflection,reflectedLake);
+  vec3 color=mix(depthAbsorbedWater,reflectedRadiance,fresnel);
   float glint=pow(max(0.,dot(reflect(-sun,n),view)),180.)*(.08+.22*fresnel)*daylight;
-  float foam=smoothstep(.91,1.0,shoreDistanceV)*(1.0-smoothstep(.02,.55,waterDepthV))*(.035+.025*sin(waterCoordV.x*2.7+waterCoordV.y*1.9));
-  color+=vec3(glint+foam*.45,glint+foam*.5,glint+foam*.45); color*=mix(.38,1.,daylight);
+  float foamNoise=texture2D(waterNormalAtlas,(waterCoordV*.23+crossFlow*13.1)/waterNormalRepeatM).x;
+  float foam=smoothstep(.87,.985,shoreDistanceV)*(1.0-smoothstep(.025,.48,waterDepthV))*smoothstep(.52,.76,foamNoise)*.20;
+  color+=vec3(glint+foam*.45,glint+foam*.5,glint+foam*.45);
   gl_FragColor=vec4(color,1.0);
-  #include <logdepthbuf_fragment>
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }`,
     side:THREE.FrontSide,depthWrite:true,transparent:false,toneMapped:true
   });
+  let released=false;result.addEventListener('dispose',()=>{if(!released){released=true;releaseWaterNormalAtlas();}});
+  return result;
 }
 
 export class RiverWater {
@@ -136,11 +166,15 @@ export class RiverWater {
   private rejected:string|null=null;
   private debug:Required<WaterDebug>={freezeWater:false,flat:false,depth:false};
   private frozenTime=0;
+  private reflectionBytes=0;
+  private physicalFieldBytes=0;
+  private physicalSurfaceRejected:string|null=null;
   constructor(body:Body,region:RiverRegion){
     this.body=body;this.region=region;
     this.group.name='Physical river and lake water';
     const active=region.channels.filter(c=>c.points.length>1), slots=MAX_DRAWS-region.lakes.length;
-    if(region.lakes.length>MAX_DRAWS||active.length>slots){this.rejected='configured water needs more than 64 complete chunks';return;}
+    if(region.lakes.length>MAX_DRAWS){this.rejected='configured water needs more than 64 complete chunks';return;}
+    if(slots<1&&active.length){this.rejected='configured water needs more than 64 complete chunks';return;}
     // Reserve a slot for every lake and every channel first, then distribute
     // the remaining channel slots by segment count.  This covers every feature.
     const counts=new Map(active.map(c=>[c,1]));
@@ -148,12 +182,12 @@ export class RiverWater {
     // Reject oversized procedural lakes before their concentric-ring arrays are
     // allocated.  The regular preflight below still accounts for every river
     // and lake as CPU+GPU geometry.
-    if(region.lakes.some(l=>lakeBytes(l)*2>MAX_BYTES)){this.rejected='configured lake exceeds the 16 MiB CPU+GPU geometry budget';return;}
-    const proposed:ChunkData[]=[];
-    for(const channel of active){const chunks=counts.get(channel)!,step=Math.ceil((channel.points.length-1)/chunks);for(let start=0;start+1<channel.points.length;start+=step)proposed.push(channelChunk(channel,start,Math.min(channel.points.length-1,start+step),region));}
+    if(region.lakes.some(l=>lakeBytes(l)*2>MAX_BYTES-SHARED_WATER_NORMAL_ATLAS_BYTES)){this.rejected='configured lake exceeds the 16 MiB CPU+GPU water budget';return;}
+    let proposed:ChunkData[]=[];const field=riverPhysicalField(region);this.physicalFieldBytes=field.accountedCopiesBytes;this.physicalSurfaceRejected=field.rejected;
+    if(!field.rejected){proposed=physicalChunks(region,slots);}else {if(active.length>slots){this.rejected='configured water needs more than 64 complete chunks';return;}for(const channel of active){const chunks=counts.get(channel)!,step=Math.ceil((channel.points.length-1)/chunks);for(let start=0;start+1<channel.points.length;start+=step)proposed.push(channelChunk(channel,start,Math.min(channel.points.length-1,start+step),region));}}
     for(const lake of region.lakes)proposed.push(lakeChunk(lake,region));
     const bytes=proposed.reduce((n,d)=>n+riverWaterGeometry(d,body).bytes*2,0);
-    if(bytes>MAX_BYTES){this.rejected='configured water exceeds the 16 MiB CPU+GPU geometry budget';return;}
+    if(bytes+SHARED_WATER_NORMAL_ATLAS_BYTES+this.physicalFieldBytes>MAX_BYTES){this.rejected='configured water exceeds the 16 MiB CPU+GPU water budget';return;}
     for(const data of proposed)this.install(data);
   }
   private install(data:ChunkData){
@@ -162,8 +196,8 @@ export class RiverWater {
     const geometry=new THREE.BufferGeometry();
     geometry.setAttribute('position',new THREE.BufferAttribute(d.positions,3));geometry.setAttribute('surfaceDirection',new THREE.BufferAttribute(d.directions,3));geometry.setAttribute('waterHeight',new THREE.BufferAttribute(d.heights,1));geometry.setAttribute('waterCoord',new THREE.BufferAttribute(d.coords,2));geometry.setAttribute('waterDepth',new THREE.BufferAttribute(d.depths,1));geometry.setAttribute('shoreDistance',new THREE.BufferAttribute(d.shores,1));geometry.setAttribute('flowVector',new THREE.BufferAttribute(d.flowVectors,2));geometry.setAttribute('uv',new THREE.BufferAttribute(d.uvs,2));geometry.setIndex(new THREE.BufferAttribute(d.index,1));geometry.computeBoundingSphere();
     const m=material(this.body,data.flow,this.region,data.kind==='river'),mesh=new THREE.Mesh(geometry,m);mesh.position.set(...d.anchor);mesh.frustumCulled=false;mesh.userData.water={kind:data.kind,sourceId:data.sourceId};this.group.add(mesh);
-    let radius=0;for(let i=0;i<d.directions.length;i+=3)radius=Math.max(radius,Math.acos(clamp(dot(d.anchor,[d.directions[i],d.directions[i+1],d.directions[i+2]]),-1,1)));
-    this.chunks.push({mesh,center:unit(d.anchor),radius,bytes:d.bytes*2,visible:false,material:m});
+    const center=unit(d.anchor);let radius=0;for(const vertex of data.vertices)radius=Math.max(radius,Math.acos(clamp(dot(center,vertex.direction),-1,1)));
+    this.chunks.push({mesh,center,radius,bytes:d.bytes*2,visible:false,material:m});
   }
   setDebug(debug:WaterDebug={}){
     const freeze=!!debug.freezeWater;
@@ -181,7 +215,10 @@ export class RiverWater {
       c.material.uniforms.waterTime.value=this.debug.freezeWater?this.frozenTime:timeSeconds;c.material.uniforms.waterRelief.value=relief;c.material.uniforms.sunDirection.value.set(...sun);c.material.uniforms.eyeRelative.value.set(eye[0]-c.mesh.position.x,eye[1]-c.mesh.position.y,eye[2]-c.mesh.position.z);
     }this.lastVisible=visible;
   }
-  diagnostics(){const bytes=this.chunks.reduce((n,c)=>n+c.bytes,0);return {draws:this.lastVisible,resident:this.chunks.length,accountedBytes:bytes,budgetBytes:MAX_BYTES,withinBudget:!this.rejected&&bytes<=MAX_BYTES&&this.chunks.length<=MAX_DRAWS,rejected:this.rejected,geometryAccounting:'CPU+GPU x2'};}
+  setLakeReflection(frame:LakeReflectionFrame){for(const c of this.chunks){const u=c.material.uniforms;u.lakeReflectionTexture.value=frame.texture;u.lakeReflectionMatrix.value.copy(frame.matrix).multiply(c.mesh.matrix);u.lakeReflectionValid.value=frame.valid?1:0;u.lakeReflectionStrength.value=frame.strength;}}
+  canAllocateLakeReflection(bytes:number){const geometry=this.chunks.reduce((n,c)=>n+c.bytes,0),atlas=this.chunks.length?SHARED_WATER_NORMAL_ATLAS_BYTES:0;return !this.rejected&&geometry+atlas+this.physicalFieldBytes+this.reflectionBytes+bytes<=MAX_BYTES;}
+  setLakeReflectionBytes(bytes:number){this.reflectionBytes=Math.max(0,bytes);}
+  diagnostics(){const bytes=this.chunks.reduce((n,c)=>n+c.bytes,0),accountedBytes=bytes+(this.chunks.length?SHARED_WATER_NORMAL_ATLAS_BYTES:0)+this.physicalFieldBytes+this.reflectionBytes;return {draws:this.lastVisible,resident:this.chunks.length,accountedBytes,budgetBytes:MAX_BYTES,reflectionBytes:this.reflectionBytes,physicalSurfaceRejected:this.physicalSurfaceRejected,withinBudget:!this.rejected&&accountedBytes<=MAX_BYTES&&this.chunks.length<=MAX_DRAWS,rejected:this.rejected,geometryAccounting:'CPU+GPU geometry, physical field copies, shared normal atlas and allocated reflection target'};}
   /** Terrain may discard its wet proxy only when every authored water feature installed. */
   completeCoverage(){return !this.disposed&&!this.rejected&&this.chunks.length>0;}
   dispose(){if(this.disposed)return;this.disposed=true;for(const c of this.chunks){this.group.remove(c.mesh);c.mesh.geometry.dispose();c.material.dispose();}this.chunks=[];this.group.clear();}
