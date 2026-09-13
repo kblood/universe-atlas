@@ -3,6 +3,8 @@ import { type Body, type V3 } from './catalog.ts';
 import { children, tileDirection, closestTileDirection, tileKey, directionTile, tileNeighbour, PATCH_SEGMENTS, type Tile, type buildTile } from './planet-tiles.ts';
 import {terrainSampler} from './terrain.ts';
 import { PlanetAtmosphere } from './planet-atmosphere.ts';
+import {RiverWater} from './river-water.ts';
+import {RiverEnvironment} from './river-environment.ts';
 import {contactGeometry,type ContactPatch} from './terrain-contact.ts';
 import {detailTexture,detailOrigin,MATERIAL_VERSION,groundVertexHeader,groundVertex,groundFragmentHeader,groundColor,groundNormalCode} from './ground-material.ts';
 
@@ -29,6 +31,9 @@ export class PlanetRenderer {
   private previous = new Set<string>();
   private originalMaterial: THREE.Material | THREE.Material[];
   private atmosphere: PlanetAtmosphere | null = null;
+  private river:RiverWater|null=null;
+  private environment:RiverEnvironment|null=null;
+  private waterTime=0;
   private eyeUniform = {value:new THREE.Vector3()};
   private sunUniform = {value:new THREE.Vector3(1,0,0)};
   private contactFocus:V3|null=null;
@@ -55,6 +60,8 @@ export class PlanetRenderer {
     this.group.scale.setScalar(radius);
     this.group.visible = false;
     host.add(this.group);
+    if(body.hydrology){this.river=new RiverWater(body,body.hydrology);this.group.add(this.river.group);}
+    if(body.hydrology){this.environment=new RiverEnvironment(body,body.hydrology);this.group.add(this.environment.group);}
     this.originalMaterial = host.material;
     if (body.kind === 'planet' && body.water > 0) {
       this.atmosphere = new PlanetAtmosphere(body);
@@ -169,6 +176,8 @@ export class PlanetRenderer {
     const cacheLimit=contact?768:TILE_CACHE_LIMIT,drawLimit=contact?512:(immersive?102:TILE_DRAW_LIMIT);
     this.eyeUniform.value.copy(eye);this.sunUniform.value.set(...sun);
     this.atmosphere?.update(eye, new THREE.Vector3(...sun));
+    this.waterTime+=Math.min(dt,.1);this.river?.update(observer,sun,this.waterTime,this.relief);
+    if(this.environment){this.environment.group.visible=this.relief===1;if(this.relief===1)this.environment.update(observer,dt);}
     const direction = eye.clone().normalize();
     const pixels = height / (2 * Math.tan(fov * Math.PI / 360));
     const projectionCache=new Map<string,{visible:boolean;score:number}>();
@@ -184,11 +193,11 @@ export class PlanetRenderer {
       const visible = horizon && (!frusta.length || frusta.some(f => f.intersectsSphere(sphere)));
       if(!changed)return {visible,score:0};
       const nearest = closestTileDirection(t,observer);
-      const elevation=this.sample(nearest).elevationM;
+      const elevation=this.sample(nearest).visibleHeightM;
       const ground=new THREE.Vector3(...nearest).multiplyScalar(1+Math.max(this.body.water?0:-Infinity,elevation)*this.relief/this.body.radiusM);
       const near = Math.max(1e-9, eye.distanceTo(ground));
       let contactNear=Infinity;
-      if(contact){const d=closestTileDirection(t,contact.toArray() as V3),h=this.sample(d).elevationM;contactNear=contact.distanceTo(new THREE.Vector3(...d).multiplyScalar(1+Math.max(this.body.water?0:-Infinity,h)/this.body.radiusM))*this.body.radiusM;}
+      if(contact){const d=closestTileDirection(t,contact.toArray() as V3),h=this.sample(d).visibleHeightM;contactNear=contact.distanceTo(new THREE.Vector3(...d).multiplyScalar(1+Math.max(this.body.water?0:-Infinity,h)/this.body.radiusM))*this.body.radiusM;}
       // Projected patch span also budgets texture resolution. It deliberately
       // overestimates error instead of claiming a measured terrain error bound.
       const result={visible, score: contactNear<28&&t.level<this.contactLevel?1e10/(t.level+1):visible ? span * pixels / near : 0};
@@ -286,7 +295,7 @@ export class PlanetRenderer {
     });
   }
   diagnostics() {
-    return {projection: 'cube-sphere', ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
+    return {projection: 'cube-sphere', river:this.river?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
       maxLevel: Math.max(0, ...[...this.active].map(k => this.patches.get(k)!.tile.level)), cacheLimit: this.contactFocus?768:TILE_CACHE_LIMIT,
       contactLevel:this.contactFocus?this.contactLevel:null,accountedBytes:[...this.patches.values()].reduce((n,p)=>n+p.bytes,Math.ceil(256*256*4*(1+4/3))),materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:256*1024*1024,failuresTotal:this.failuresTotal,updateMs:this.updateMs,
       failures: this.failures.size, faces: [...new Set([...this.active].map(k => Number(k.split('/')[0])))],
@@ -300,6 +309,8 @@ export class PlanetRenderer {
     this.worker.terminate();
     this.groundAtlas.dispose();
     this.atmosphere?.dispose();
+    this.river?.dispose();this.river=null;
+    this.environment?.dispose();this.environment=null;
     this.materialVisible(true);
     for (const p of this.patches.values()) this.release(p);
     this.patches.clear(); this.pending.clear(); this.inbox = [];

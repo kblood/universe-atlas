@@ -85,7 +85,7 @@ export function routeDrainage(grid:SphereGrid,height:Float64Array,wet:Uint8Array
 }
 
 export function buildDrainage(body:Body,n=DRAINAGE_GRID){
-  const grid=sphereGrid(n),sample=terrainSampler(body),count=grid.areas.length;
+  const grid=sphereGrid(n),sample=terrainSampler({...body,hydrology:undefined}),count=grid.areas.length;
   const height=new Float64Array(count),wet=new Uint8Array(count);
   for(let i=0;i<count;i++){const s=sample(direction(grid.directions,i));height[i]=s.elevationM;wet[i]=s.ocean?1:0;}
   const flow=routeDrainage(grid,height,wet),radius2=body.radiusM**2;

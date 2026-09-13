@@ -1,6 +1,6 @@
 import { AU, LY, bodyPosition, type StarSystem, type V3 } from "./catalog.ts";
 import { terrainSampler } from './terrain.ts';
-import { visibleElevation, unit } from './planet-tiles.ts';
+import { unit } from './planet-tiles.ts';
 import {type OrbitTime} from './world-time.ts';
 const samplers = new Map<string, ReturnType<typeof terrainSampler>>();
 /** Stop a fast galactic step before a nearby star, then release that staging
@@ -13,12 +13,15 @@ export function surfaceClearance(body: StarSystem['stars'][number], relative: V3
   const distance = Math.hypot(...relative);
   let elevation = 0;
   if (body.kind !== 'star' && body.type !== 'Gas giant') {
-    let sample = samplers.get(body.seed);
+    // A body can receive a new immutable geology region without its catalogue
+    // seed changing. Never reuse its pre-river clearance sampler.
+    const key=`${body.seed}/${body.hydrology?.version||'terrain-1.1.0'}/${body.hydrology?.id||''}`;
+    let sample = samplers.get(key);
     if (!sample) {
-      sample = terrainSampler(body); samplers.set(body.seed, sample);
+      sample = terrainSampler(body); samplers.set(key, sample);
       if (samplers.size > 32) samplers.delete(samplers.keys().next().value!);
     }
-    elevation = visibleElevation(body, sample(distance ? unit(relative) : [0,1,0]).elevationM);
+    elevation = sample(distance ? unit(relative) : [0,1,0]).visibleHeightM;
   }
   const minimum = body.kind === 'star' || body.type === 'Gas giant'
     ? body.radiusM * 1.025 : body.radiusM + elevation + 120;

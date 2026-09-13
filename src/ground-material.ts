@@ -60,7 +60,9 @@ float groundSignal=dot(groundW,vec4(groundFine.a,groundFine.r*.6+groundCoarse.r*
 float groundWater=atlasAir*step(length(atlasSurface),1.00000005);
 groundFade*=1.0-groundWater;
 diffuseColor.rgb*=mix(1.0,.52+groundSignal*.96,groundFade);
-float groundBump=dot(groundW,vec4(groundFine.a*.006,groundFine.r*.012+groundFine.g*.015,groundCoarse.b*.035+groundFine.g*.025,groundFine.a*.004))*groundFade;
+// Millimetre-scale grain stays subtle at eye height; centimetre amplitudes on
+// sub-centimetre atlas features made grazing shores alternate black and gold.
+float groundBump=dot(groundW,vec4(groundFine.a*.001,groundFine.r*.002+groundFine.g*.0025,groundCoarse.b*.02+groundFine.g*.004,groundFine.a*.0007))*groundFade;
 `;
 export const groundNormalCode=`
 // Surface-gradient bump mapping: scale metre amplitudes into view-space units.

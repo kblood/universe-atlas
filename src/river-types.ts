@@ -1,0 +1,13 @@
+import type {V3} from './catalog.ts';
+export const RIVER_VERSION='river-region-1';
+export type RiverPoint={x:number;z:number;waterM:number;widthM:number;depthM:number;distanceM:number};
+export type RiverChannel={id:string;name:string;points:RiverPoint[];parentId:string|null};
+export type RiverLake={id:string;name:string;x:number;z:number;radiusXM:number;radiusZM:number;angle:number;waterM:number;depthM:number};
+export type RiverSite={id:string;name:string;kind:'river-bank'|'lake-shore'|'mouth';direction:V3;elevationM:number;lookDirection:V3};
+export type RiverRegion={
+ version:typeof RIVER_VERSION;id:string;parentCatchmentId:string;bodyId:string;bodySeed:string;radiusM:number;
+ origin:V3;east:V3;north:V3;boundsM:[number,number,number,number];
+ channels:RiverChannel[];lakes:RiverLake[];sites:RiverSite[];
+ stats:{samples:number;lengthM:number;maxCutM:number;maxFillM:number;buildAlgorithm:string};
+};
+export type RiverSample={rockHeightM:number;waterLevelM:number|null;wet:boolean;bank:number;channelId:string|null;waterKind:'river'|'lake'|null;flow:[number,number];influence:number};

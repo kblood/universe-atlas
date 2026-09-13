@@ -73,7 +73,9 @@ export class GroundWalker {
       const right=new THREE.Vector3().crossVectors(forward,up).normalize();
       const move=forward.multiplyScalar(+keys.has('w')-+keys.has('s')).addScaledVector(right,+keys.has('d')-+keys.has('a'));
       if(move.lengthSq()>0)move.normalize().multiplyScalar(keys.has('shift')?8:4);
-      if(this.sample(this.position.clone().addScaledVector(move,STEP).normalize().toArray() as V3).ocean)move.set(0,0,0);
+      // Test the requested step before physics so ordinary movement cannot
+      // enter an inland channel. `wet` includes rivers/lakes as well as ocean.
+      if(!this.sample(this.position.clone().addScaledVector(move,STEP).normalize().toArray() as V3).walkable)move.set(0,0,0);
       const gravity=Math.max(.05,Math.min(40,G*this.body.massKg/this.position.lengthSq()));
       if(this.jumpRequested&&this.grounded){this.vertical=Math.sqrt(2*gravity*1.1);this.grounded=false;}this.jumpRequested=false;
       this.vertical-=gravity*STEP;
@@ -83,6 +85,13 @@ export class GroundWalker {
       this.world.step();
       this.controller.computeColliderMovement(this.capsule,move.multiplyScalar(STEP).addScaledVector(up,this.vertical*STEP));
       const actual=new THREE.Vector3().copy(this.controller.computedMovement());
+      // Collision resolution can turn a dry intended step into a lateral slide.
+      // Validate the resolved endpoint too; otherwise a capsule can bypass the
+      // shore test by being pushed across a wet boundary.
+      const resolved=this.position.clone().add(actual);
+      if(!this.sample(resolved.normalize().toArray() as V3).walkable){
+        actual.copy(up).multiplyScalar(actual.dot(up));
+      }
       this.position.add(actual);this.grounded=this.controller.computedGrounded();
       if(this.grounded&&this.vertical<0)this.vertical=0;
       this.speed=actual.clone().projectOnPlane(up).length()/STEP;this.travelled+=actual.length();
@@ -91,7 +100,7 @@ export class GroundWalker {
     }
     const up=this.position.clone().normalize(),rayStart=this.position.clone().sub(this.origin).addScaledVector(up,3);
     const hit=this.world.castRay(new RAPIER.Ray(rayStart,up.clone().negate()),10,true,undefined,undefined,this.capsule);
-    if(hit){const meshHeight=this.position.length()+3-hit.timeOfImpact-this.body.radiusM;this.mismatchM=Math.abs(meshHeight-this.sample(up.toArray() as V3).rockHeightM);}
+    if(hit){const meshHeight=this.position.length()+3-hit.timeOfImpact-this.body.radiusM;this.mismatchM=Math.abs(meshHeight-this.sample(up.toArray() as V3).visibleHeightM);}
   }
   eye():V3 {return this.position.clone().addScaledVector(this.position.clone().normalize(),EYE_OFFSET).toArray() as V3;}
   diagnostics(){return {active:true,grounded:this.grounded,waiting:this.waiting,position:this.position.toArray(),speed:this.speed,steps:this.steps,travelledM:this.travelled,colliders:this.terrain.size,rawColliderBytes:this.rawColliderBytes,contactMismatchM:this.mismatchM};}

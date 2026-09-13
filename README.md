@@ -10,6 +10,9 @@ See also [Fable 5.1's independent review](docs/fable-5.1-plan-review.md) and
 The first implementation is documented in [Walking and shared time](docs/walking-and-time.md).
 The next increment adds [ground materials and named surface destinations](docs/surface-materials-and-survey.md), with implementation details, validation and sources.
 The [drainage atlas and atmospheric flight](docs/drainage-and-atmospheric-flight.md) add connected catchment analysis and gentle planetary horizon alignment.
+The [physical river pilot and ground environment](docs/physical-rivers-and-ground-detail.md)
+add a visitable river, tributary and lake region, carved banks, and initial local
+forest and ground-cover detail. See its [design specification](docs/physical-river-pilot-spec.md).
 
 ## Run and validate
 
@@ -30,6 +33,7 @@ npm run test:walking
 npm run test:surface
 npm run test:drainage
 npm run test:atmosphere
+npm run test:rivers
 npm run test:vr
 ```
 
@@ -81,6 +85,13 @@ Nearby stars stream around the camera. Internal 32-ly chunk boundaries update
 the nearby catalogue without replacing the galaxy scene. Surface clearance limits
 keep ordinary flight outside solid bodies. **Land and walk** prepares nearby
 terrain and descends onto solid planets and moons.
+
+On an ocean-bearing planet, **Find rivers and a lake** discovers a suitable
+coastal region and builds its channels, lake and banks. Pick a named dry bank,
+then choose **Land and walk** after arrival. This regional pilot includes initial
+local trees, stones and ground cover. Water blocks walking; individual tree and
+stone collision is pending. Its address is saved with walking links. Planet-wide
+ecosystems, animals, cities and people remain future work.
 
 The help button lists controls. Seed tools provide direct addresses, bookmarks,
 catalogue exports and a repeatability check. URLs restore the selected destination.

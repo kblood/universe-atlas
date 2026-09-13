@@ -1,3 +1,4 @@
+import type {RiverRegion} from './river-types.ts';
 import { densityOverview } from "./galaxy-field.ts";
 import {phaseAt, type OrbitTime} from './world-time.ts';
 /** Pure catalogue. No renderer state, wall clock, or exploration-order inputs. */
@@ -45,6 +46,7 @@ export interface Orbit {
   mu: number;
 }
 export interface Body {
+  hydrology?: RiverRegion;
   id: string;
   name: string;
   kind: "star" | "planet" | "moon";

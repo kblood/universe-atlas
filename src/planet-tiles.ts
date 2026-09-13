@@ -52,10 +52,36 @@ export function closestTileDirection(t: Tile, eye: V3): V3 {
 export function visibleElevation(body: Body, elevation: number) {
   return body.water ? Math.max(0, elevation) : elevation;
 }
+const clamp=(v:number,a=0,b=1)=>Math.max(a,Math.min(b,v));
+type RegionalMaterialSample={wet:boolean;bank:number;influence:number};
+/**
+ * The regional field gives a normalized dry-bank blend, rather than an
+ * invented distance from the shoreline. Keep a small pebbly/sandy margin at
+ * bank=1, then return a temperate inland bank to soil as that shared field
+ * fades. Snow and already-rocky ground retain their normal material choice.
+ */
+export function regionalBankWeights(body:Body,s:RegionalMaterialSample,base:number[]):number[]{
+  if(!body.hydrology||s.wet||s.influence<=0)return base;
+  const snow=base[3],rock=base[2];
+  const habitat=body.water>0&&body.temperatureK>=250&&body.temperatureK<=325&&body.type!=='Ice world'&&body.type!=='Volcanic world';
+  if(!habitat||snow>.2||rock>.55)return base;
+  // `bank` is one at the water edge and decreases monotonically across the
+  // sampler's own corridor. Its fourth power keeps that edge visually narrow.
+  const shore=clamp(s.bank)**4;
+  const preservedRock=Math.max(rock,.08+.12*shore),available=Math.max(0,1-snow-preservedRock);
+  const sand=.12+.5*shore;
+  const regional=[available*sand,available*(1-sand),preservedRock,snow];
+  // The sampler owns the corridor falloff. Apply it to the material target as
+  // well, so an arbitrarily small positive influence cannot abruptly replace
+  // baseline ground at the regional boundary.
+  return base.map((weight,i)=>weight+(regional[i]-weight)*clamp(s.influence));
+}
 /** Stable directional finite differences; never derive normals per mesh/face. */
 export function surfaceNormal(body: Body, d: V3, sample = terrainSampler(body), relief = 1): V3 {
   const eps = 2 / body.radiusM;
-  const h = (q: V3) => visibleElevation(body, sample(unit(q)).elevationM) * relief / body.radiusM;
+  // Use the same visible surface for tiles, contact geometry, and clearance.
+  // The metre-based direction step remains unchanged at poles and cube seams.
+  const h = (q: V3) => sample(unit(q)).visibleHeightM * relief / body.radiusM;
   const grad = [0, 1, 2].map(i => {
     const a = [...d] as V3, b = [...d] as V3;
     a[i] += eps; b[i] -= eps;
@@ -71,7 +97,7 @@ export function buildTile(body: Body, tile: Tile, relief = 1) {
   const positions: number[] = [], parents: number[] = [], normals: number[] = [], uvs: number[] = [], indices: number[] = [];
   const point = (u: number, v: number): V3 => {
     const d = tileDirection(tile, u, v);
-    const r = 1 + visibleElevation(body, sample(d).elevationM) * relief / body.radiusM;
+    const r = 1 + sample(d).visibleHeightM * relief / body.radiusM;
     return d.map(x => x * r) as V3;
   };
   // Centre all three coordinates on the surface. A sea-level anchor leaves
@@ -96,7 +122,9 @@ export function buildTile(body: Body, tile: Tile, relief = 1) {
     parents.push(...parentPoint(u, v).map((p, i) => p - anchor[i]));
     const normal=surfaceNormal(body,d,sample,relief);
     normals.push(...normal);
-    materials.push(...materialBytes(classify(d,sample(d).elevationM,normal.reduce((sum,x,j)=>sum+x*d[j],0)).weights));
+    const s=sample(d);
+    const base=classify(d,s.visibleHeightM,normal.reduce((sum,x,j)=>sum+x*d[j],0)).weights;
+    materials.push(...materialBytes(regionalBankWeights(body,s,base)));
     uvs.push((u * textureSize + 1) / (textureSize + 2), (v * textureSize + 1) / (textureSize + 2));
     if (x < n && y < n) {
       const a = y * stride + x;
