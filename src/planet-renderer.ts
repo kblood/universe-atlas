@@ -4,8 +4,9 @@ import { children, tileDirection, closestTileDirection, tileKey, directionTile, 
 import {terrainSampler} from './terrain.ts';
 import { PlanetAtmosphere } from './planet-atmosphere.ts';
 import {contactGeometry,type ContactPatch} from './terrain-contact.ts';
+import {detailTexture,detailOrigin,MATERIAL_VERSION,groundVertexHeader,groundVertex,groundFragmentHeader,groundColor,groundNormalCode} from './ground-material.ts';
 
-type Patch = { tile: Tile; mesh: THREE.Mesh; map: THREE.DataTexture; material: THREE.MeshStandardMaterial; morph: {value: number}; edge:{value:THREE.Vector4}; data:ReturnType<typeof buildTile>; bytes:number; touched: number };
+type Patch = { tile: Tile; mesh: THREE.Mesh; map: THREE.DataTexture; material: THREE.MeshStandardMaterial; morph: {value: number}; detail:{value:number}; edge:{value:THREE.Vector4}; data:ReturnType<typeof buildTile>; bytes:number; touched: number };
 const ROOTS: Tile[] = Array.from({length: 6}, (_,face) => ({face, level: 0, x: 0, y: 0}));
 export const TILE_CACHE_LIMIT = 256;
 export const TILE_DRAW_LIMIT = 150;
@@ -41,9 +42,13 @@ export class PlanetRenderer {
   private selectionContact=false;
   private selectionFrame=0;
   private updateMs=0;
+  private groundAtlas:THREE.DataTexture;
+  private groundEnabled={value:1};
+  setSurfaceDetail(enabled:boolean){this.groundEnabled.value=enabled?1:0;}
   readonly contactLevel:number;
   setContactFocus(point:V3|null) { this.contactFocus=point; }
-  constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1) {
+  constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,anisotropy=1) {
+    this.groundAtlas=detailTexture(anisotropy);
     this.sample=terrainSampler(body);
     this.contactLevel=Math.max(14,Math.min(20,Math.ceil(Math.log2(2*body.radiusM/(PATCH_SEGMENTS*1.4)))));
     this.group.name = 'Planet terrain patches';
@@ -83,6 +88,7 @@ export class PlanetRenderer {
     geometry.setAttribute('position', new THREE.BufferAttribute(d.positions, 3));
     geometry.setAttribute('parentPosition', new THREE.BufferAttribute(d.parents, 3));
     geometry.setAttribute('normal', new THREE.BufferAttribute(d.normals, 3));
+    geometry.setAttribute('groundWeights',new THREE.BufferAttribute(d.materials,4,true));
     geometry.setAttribute('uv', new THREE.BufferAttribute(d.uvs, 2));
     geometry.setIndex(new THREE.BufferAttribute(d.indices, 1));
     geometry.computeBoundingSphere();
@@ -93,6 +99,7 @@ export class PlanetRenderer {
     map.needsUpdate = true;
     const material = new THREE.MeshStandardMaterial({map, roughness: this.body.water ? .72 : .95});
     const morph = {value: 0};
+    const detail={value:0};
     const edge={value:new THREE.Vector4()};
     material.onBeforeCompile = shader => {
       shader.uniforms.patchMorph = morph;
@@ -102,11 +109,20 @@ export class PlanetRenderer {
       shader.uniforms.atlasEye=this.eyeUniform;shader.uniforms.atlasSun=this.sunUniform;
       shader.uniforms.atlasRadius={value:this.body.radiusM};
       shader.uniforms.atlasAir={value:this.atmosphere?1:0};
+      shader.uniforms.groundAtlas={value:this.groundAtlas};
+      shader.uniforms.groundEnabled=this.groundEnabled;
+      shader.uniforms.groundPatch=detail;
+      shader.uniforms.groundOrigin={value:new THREE.Vector3(...detailOrigin(d.anchor,this.body.radiusM))};
       shader.vertexShader = 'attribute vec3 parentPosition; uniform float patchMorph,patchTexels; uniform vec4 patchEdges; uniform vec3 tileAnchor; varying vec3 atlasSurface;\n' + shader.vertexShader;
       shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `vec2 gridUV=(uv*(patchTexels+2.0)-1.0)/patchTexels;
         float lockEdge=max(max((1.0-step(.00001,gridUV.x))*patchEdges.x,step(.99999,gridUV.x)*patchEdges.y),max((1.0-step(.00001,gridUV.y))*patchEdges.z,step(.99999,gridUV.y)*patchEdges.w));
-        vec3 transformed = mix(parentPosition, position, patchMorph*(1.0-lockEdge)); atlasSurface=transformed+tileAnchor;`);
+        vec3 transformed = mix(parentPosition, position, patchMorph*(1.0-lockEdge)); atlasSurface=transformed+tileAnchor; ${groundVertex}`);
+      shader.vertexShader=groundVertexHeader+'\n'+shader.vertexShader;
       shader.fragmentShader='uniform vec3 atlasEye,atlasSun;uniform float atlasRadius,atlasAir;varying vec3 atlasSurface;\n'+shader.fragmentShader;
+      shader.fragmentShader=groundFragmentHeader+shader.fragmentShader;
+      shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n'+groundColor);
+      shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,dot(groundW,vec4(.96,.92,.84,.73)),groundFade);');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\n'+groundNormalCode);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>', `
         float airHeight=max(0.0,((length(atlasEye)+length(atlasSurface))*.5-1.0)*atlasRadius);
         float airDistance=length(atlasEye-atlasSurface)*atlasRadius;
@@ -115,7 +131,7 @@ export class PlanetRenderer {
         outgoingLight=mix(outgoingLight,mix(vec3(.008,.016,.035),vec3(.23,.43,.64),daylight),airFog);
         #include <opaque_fragment>`);
     };
-    material.customProgramCacheKey = () => 'planet-patch-stitched-v3';
+    material.customProgramCacheKey = () => 'planet-patch-stitched-v4';
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(...d.anchor);
     mesh.visible = false;
@@ -123,9 +139,9 @@ export class PlanetRenderer {
     // CPU culling below uses a conservative bound covering both morph endpoints.
     mesh.frustumCulled = false;
     this.group.add(mesh);
-    const bufferBytes=d.positions.byteLength+d.parents.byteLength+d.normals.byteLength+d.uvs.byteLength+d.indices.byteLength;
+    const bufferBytes=d.positions.byteLength+d.parents.byteLength+d.normals.byteLength+d.materials.byteLength+d.uvs.byteLength+d.indices.byteLength;
     const bytes=bufferBytes*2+Math.ceil(d.color.byteLength*(1+4/3));
-    this.patches.set(key, {tile: d.tile, mesh, map, material, morph, edge,data:d,bytes,touched: this.frame});
+    this.patches.set(key, {tile: d.tile, mesh, map, material, morph, detail,edge,data:d,bytes,touched: this.frame});
   }
   update(observer: V3, height: number, fov: number, dt: number, immersive = false, sun: V3 = [1,0,0], frusta: THREE.Frustum[] = []) {
     if (this.disposed) return;
@@ -216,8 +232,20 @@ export class PlanetRenderer {
       if (p.mesh.visible) this.active.add(key);
       if (!this.previous.has(key)) p.morph.value = t.level ? 0 : 1;
       p.morph.value = Math.min(1, p.morph.value + dt / .22);
-      const edges=[0,1,2,3].map(e=>{const n=tileNeighbour(t,e);return this.leafIndex.has(tileKey({face:n.face,level:n.level-1,x:Math.floor(n.x/2),y:Math.floor(n.y/2)}))?1:0;});
+      const neighbours=[0,1,2,3].map(e=>tileNeighbour(t,e));
+      const parent=(n:Tile)=>({face:n.face,level:n.level-1,x:Math.floor(n.x/2),y:Math.floor(n.y/2)});
+      const edges=neighbours.map(n=>this.leafIndex.has(tileKey(parent(n)))?1:0);
       p.edge.value.set(edges[0],edges[1],edges[2],edges[3]);
+      // Skirts are a streaming fallback. Once neighbouring edges are settled
+      // and at most one level apart, edge locks already close the surface.
+      // Keeping skirts there lets nearly coplanar vertical faces leak through
+      // the log-depth buffer and creates textured fences at ground level.
+      const settled=(n:Tile)=>this.previous.has(tileKey(n))&&this.leafIndex.has(tileKey(n))&&this.patches.get(tileKey(n))?.morph.value===1;
+      const stitched=p.morph.value===1&&neighbours.every(n=>settled(n)||(n.level>0&&settled(parent(n)))||children(n).every(settled));
+      p.mesh.geometry.setDrawRange(0,stitched?PATCH_SEGMENTS*PATCH_SEGMENTS*6:p.data.indices.length);
+      const sphere=p.mesh.geometry.boundingSphere!;
+      const near=eye.distanceTo(sphere.center.clone().add(p.mesh.position))-sphere.radius;
+      p.detail.value=(distance-1)*this.body.radiusM<20000*this.relief+6000&&near*this.body.radiusM<6000?1:0;
       // Contact hand-off is enabled only after fine coverage has finished morphing.
     }
     this.previous = new Set(leaves.map(tileKey));
@@ -260,14 +288,17 @@ export class PlanetRenderer {
   diagnostics() {
     return {projection: 'cube-sphere', ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
       maxLevel: Math.max(0, ...[...this.active].map(k => this.patches.get(k)!.tile.level)), cacheLimit: this.contactFocus?768:TILE_CACHE_LIMIT,
-      contactLevel:this.contactFocus?this.contactLevel:null,accountedBytes:[...this.patches.values()].reduce((n,p)=>n+p.bytes,0),budgetBytes:256*1024*1024,failuresTotal:this.failuresTotal,updateMs:this.updateMs,
+      contactLevel:this.contactFocus?this.contactLevel:null,accountedBytes:[...this.patches.values()].reduce((n,p)=>n+p.bytes,Math.ceil(256*256*4*(1+4/3))),materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:256*1024*1024,failuresTotal:this.failuresTotal,updateMs:this.updateMs,
       failures: this.failures.size, faces: [...new Set([...this.active].map(k => Number(k.split('/')[0])))],
+      detailPatches:[...this.active].filter(k=>this.groundEnabled.value&&this.patches.get(k)!.detail.value).length,
+      skirtPatches:[...this.active].filter(k=>this.patches.get(k)!.mesh.geometry.drawRange.count>PATCH_SEGMENTS*PATCH_SEGMENTS*6).length,
       vertices: [...this.active].reduce((n,k) => n + this.patches.get(k)!.mesh.geometry.attributes.position.count, 0)};
   }
   private release(p: Patch) { this.group.remove(p.mesh); p.mesh.geometry.dispose(); p.map.dispose(); p.material.dispose(); }
   dispose() {
     this.disposed = true;
     this.worker.terminate();
+    this.groundAtlas.dispose();
     this.atmosphere?.dispose();
     this.materialVisible(true);
     for (const p of this.patches.values()) this.release(p);

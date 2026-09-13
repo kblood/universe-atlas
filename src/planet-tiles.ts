@@ -1,5 +1,6 @@
 import { type Body, type V3 } from './catalog.ts';
 import { terrainSampler } from './terrain.ts';
+import {biomeClassifier,materialBytes} from './surface-biomes.ts';
 
 export const PATCH_SEGMENTS = 32;
 export const PATCH_TEXTURE = 64;
@@ -65,14 +66,17 @@ export function surfaceNormal(body: Body, d: V3, sample = terrainSampler(body), 
 
 export function buildTile(body: Body, tile: Tile, relief = 1) {
   const sample = terrainSampler(body), n = PATCH_SEGMENTS, stride = n + 1;
+  const classify=biomeClassifier(body),materials:number[]=[];
   const textureSize = tile.level >= 8 ? 128 : PATCH_TEXTURE;
   const positions: number[] = [], parents: number[] = [], normals: number[] = [], uvs: number[] = [], indices: number[] = [];
-  const anchor = tileDirection(tile, .5, .5);
   const point = (u: number, v: number): V3 => {
     const d = tileDirection(tile, u, v);
     const r = 1 + visibleElevation(body, sample(d).elevationM) * relief / body.radiusM;
     return d.map(x => x * r) as V3;
   };
+  // Centre all three coordinates on the surface. A sea-level anchor leaves
+  // kilometre-sized height offsets even in metre-sized contact patches.
+  const anchor = point(.5,.5);
   // Interpolate the actual parent triangles, not its analytic sphere. New
   // children start on that mesh and morph to their sampled elevation.
   const parentPoint = (u: number, v: number): V3 => {
@@ -90,7 +94,9 @@ export function buildTile(body: Body, tile: Tile, relief = 1) {
     const u = x / n, v = y / n, d = tileDirection(tile, u, v);
     positions.push(...point(u, v).map((p, i) => p - anchor[i]));
     parents.push(...parentPoint(u, v).map((p, i) => p - anchor[i]));
-    normals.push(...surfaceNormal(body, d, sample, relief));
+    const normal=surfaceNormal(body,d,sample,relief);
+    normals.push(...normal);
+    materials.push(...materialBytes(classify(d,sample(d).elevationM,normal.reduce((sum,x,j)=>sum+x*d[j],0)).weights));
     uvs.push((u * textureSize + 1) / (textureSize + 2), (v * textureSize + 1) / (textureSize + 2));
     if (x < n && y < n) {
       const a = y * stride + x;
@@ -99,7 +105,9 @@ export function buildTile(body: Body, tile: Tile, relief = 1) {
   }
   // Conservative inward skirts hide T junctions while neighbours stream or
   // use different levels. They don't change the shared surface samples.
-  const skirt = Math.min(.08, 4 / (2 ** tile.level * n) ** 2 + 36000 * relief / body.radiusM);
+  // Deep planet-scale skirts cause raster interpolation artefacts when viewed
+  // centimetres away. Bound fine skirts by patch width as well as global relief.
+  const skirt = Math.min(.08, 4 / (2 ** tile.level * n) ** 2 + Math.min(36000/body.radiusM,8/2**tile.level)*relief);
   const edges = [Array.from({length: stride}, (_,i) => i), Array.from({length: stride}, (_,i) => i * stride + n), Array.from({length: stride}, (_,i) => n * stride + n - i), Array.from({length: stride}, (_,i) => (n - i) * stride)];
   for (const edge of edges) {
     let previous = -1;
@@ -109,6 +117,7 @@ export function buildTile(body: Body, tile: Tile, relief = 1) {
       positions.push(...d.map((v, i) => positions[a * 3 + i] - v * skirt));
       parents.push(...d.map((v, i) => parents[a * 3 + i] - v * skirt));
       normals.push(...normals.slice(a * 3, a * 3 + 3));
+      materials.push(...materials.slice(a*4,a*4+4));
       uvs.push(...uvs.slice(a * 2, a * 2 + 2));
       if (previous >= 0) indices.push(a - (a - previous), a, b, previous, b, b - 1);
       previous = a;
@@ -120,5 +129,5 @@ export function buildTile(body: Body, tile: Tile, relief = 1) {
     const s = sample(tileDirection(tile, (x - .5) / textureSize, (y - .5) / textureSize));
     color.set([...s.color, 255], (y * width + x) * 4);
   }
-  return { tile, anchor, positions: new Float32Array(positions), parents: new Float32Array(parents), normals: new Float32Array(normals), uvs: new Float32Array(uvs), indices: new Uint16Array(indices), color, width };
+  return { tile, anchor, positions: new Float32Array(positions), parents: new Float32Array(parents), normals: new Float32Array(normals), materials:new Uint8Array(materials), uvs: new Float32Array(uvs), indices: new Uint16Array(indices), color, width };
 }

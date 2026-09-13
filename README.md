@@ -8,6 +8,7 @@ This roadmap describes planned work, not the deployed feature set.
 See also [Fable 5.1's independent review](docs/fable-5.1-plan-review.md) and
 [the checked follow-up](docs/fable-review-assessment.md).
 The first implementation is documented in [Walking and shared time](docs/walking-and-time.md).
+The next increment adds [ground materials and named surface destinations](docs/surface-materials-and-survey.md), with implementation details, validation and sources.
 
 ## Run and validate
 
@@ -25,6 +26,7 @@ npm run test:travel
 npm run test:planet
 npm run test:exploration
 npm run test:walking
+npm run test:surface
 npm run test:vr
 ```
 

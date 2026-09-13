@@ -15,6 +15,7 @@ import { freeLook, orbitStep } from './planet-flight.ts';
 import {parseDate,dateRecord,dateYears,yearsToDate,advanceDate} from './world-time.ts';
 import {identityRecord,stellarHistory} from './world-history.ts';
 import {surfaceQuery} from './world-surface.ts';
+import {type SurfaceSite,SURVEY_VERSION} from './surface-survey.ts';
 import {type GroundWalker} from './ground-walker.ts';
 import { GalaxySpace } from "./galaxy-space.ts";
 import { ViewBlend } from "./view-transition.ts";
@@ -330,6 +331,19 @@ let surfaceMesh: THREE.Mesh<
   THREE.MeshStandardMaterial
 > | null = null;
 let surfaceInfo: Surface | null = null;
+let surfaceDetail=new URLSearchParams(location.search).get('detail')!=='0';
+const surveys=new Map<string,SurfaceSite[]>(),surveyPending=new Set<string>();
+let surveyOpen=false;
+async function surveySurface(){
+  const body=state.body;if(!body||surveyPending.has(body.seed))return;
+  surveyOpen=true;surveyPending.add(body.seed);panel();
+  try{
+    const sites=await job('surface-survey',{body}) as SurfaceSite[];
+    surveys.set(body.seed,sites);
+    if(surveys.size>4)surveys.delete(surveys.keys().next().value!);
+  }catch(error){announce('Surface survey failed: '+String(error));}
+  finally{surveyPending.delete(body.seed);if(state.body?.id===body.id)panel();}
+}
 let reliefScale = 1;
 let refiningSurface = false;
 let space: GalaxySpace | null = null;
@@ -552,6 +566,7 @@ function breadcrumbs() {
 }
 function persist() {
   const q = new URLSearchParams({ seed });
+  if(!surfaceDetail)q.set('detail','0');
   if(epoch!==0n)q.set('date',epoch.toString());
   if(walker){q.set('walk',walker.position.toArray().join(','));q.set('heading',camera.quaternion.toArray().join(','));}
   if (state.galaxy) q.set("g", state.galaxy.id);
@@ -1750,7 +1765,7 @@ function approachPlanet(altitude: number) {
   approachAltitude = altitude;
   autopilot = {kind: 'body', id: state.body.id};
 }
-function exploreTerrain() {
+function exploreTerrain(preferred?:THREE.Vector3) {
   const body=state.body;
   if(!body || body.kind==='star' || body.type==='Gas giant' || renderer.xr.isPresenting) return;
   clearWalking();
@@ -1759,7 +1774,8 @@ function exploreTerrain() {
   const center=vec(bodyPosition(body,state.sys!,epoch)), eye=vec(localPose()).sub(center).normalize();
   const sample=terrainSampler(body), sun=vec(bodyPosition(state.sys!.stars[0],state.sys!,epoch)).sub(center).normalize();
   let destination=eye.clone(), best=-Infinity;
-  for(let i=0;i<384;i++) {
+  if(preferred)destination.copy(preferred);
+  else for(let i=0;i<384;i++) {
     const y=1-2*(i+.5)/384, phi=i*2.399963229728653, r=Math.sqrt(1-y*y);
     const d=new THREE.Vector3(Math.cos(phi)*r,y,Math.sin(phi)*r), s=sample(d.toArray() as V3);
     if(s.ocean || s.elevationM>10000)continue;
@@ -1865,7 +1881,8 @@ function holdPlanetOrbit() {
 function restartPlanetTiles() {
   planetTiles?.dispose(); planetTiles = null;
   if (!state.body || !surfaceMesh || state.body.type === 'Gas giant') return;
-  planetTiles = new PlanetRenderer(state.body, surfaceMesh, focusRadius(), reliefScale);
+  planetTiles = new PlanetRenderer(state.body, surfaceMesh, focusRadius(), reliefScale,Math.min(4,renderer.capabilities.getMaxAnisotropy()));
+  planetTiles.setSurfaceDetail(surfaceDetail);
 }
 function updatePlanetTiles(dt: number) {
   if (!planetTiles || !surfaceMesh) return;
@@ -2735,7 +2752,11 @@ function panel() {
   }
   {
     const mapped = space?.find(selected || "");
-    const surfaceNav = state.level==='body' && state.body!.kind!=='star' && state.body!.type!=='Gas giant' ? `<button id="walk-surface" class="explore">${walker?'Return to flight':landing?'Cancel landing':'Land and walk'}</button><button id="terrain-flight" class="explore">Fly over terrain</button>` : '';
+    let surfaceNav = state.level==='body' && state.body!.kind!=='star' && state.body!.type!=='Gas giant' ? `<button id="walk-surface" class="explore">${walker?'Return to flight':landing?'Cancel landing':'Land and walk'}</button><button id="terrain-flight" class="explore">Fly over terrain</button>` : '';
+    if(surfaceNav){
+      const sites=surveys.get(state.body!.seed);
+      surfaceNav+=`<button id="surface-detail">Ground detail: ${surfaceDetail?'on':'off'}</button><details id="surface-survey" ${surveyOpen?'open':''}><summary>Surface destinations</summary><p class="subtle">Find named sites on this world's existing terrain. Fly to a site, then choose Land and walk.</p>${sites?sites.map(s=>`<button data-surface-site="${esc(s.id)}" class="surface-site"><strong>${esc(s.name)}</strong><span>${esc(s.category)} · ${esc(s.biome)}<br>${fmt(s.elevationM,0)} m · slope ${fmt(s.slopeDeg,1)}°</span></button>`).join(''):`<button id="survey-surface" ${surveyPending.has(state.body!.seed)?'disabled':''}>${surveyPending.has(state.body!.seed)?'Surveying terrain…':'Survey surface'}</button>`}<p class="subtle">Ground materials show sand, soil, rock and snow. Vegetation and flowing rivers are still being developed.</p></details>`;
+    }
     const nav = `<div class="mini-buttons"><button id="fly-target" ${selected ? "" : "disabled"}>Fly to selection</button><button id="fly-outward">Fly outward</button><button id="toggle-flight">${flight ? "Stop flight" : "Fly freely"}</button>${mapped ? '<button id="approach-star">Approach selected star</button>' : ""}</div><p class="subtle">Flight: drag to look · WASD move · Q/E down/up · wheel adjusts speed · Shift boosts · Esc stops. Touch: hold Fly forward below.</p><div class="mini-buttons"><button id="fly-forward">Hold: fly forward</button></div>`;
     if (state.level === "galaxy" && mapped)
       html =
@@ -2750,6 +2771,12 @@ function panel() {
     VERSION +
     '</p><div class="mini-buttons"><button id="verify">Verify seed</button><button id="copy">Copy view link</button></div><input id="address" placeholder="System address: G001/C…/0" aria-label="System catalogue address" style="width:100%"><button id="find-address" style="width:100%;margin-top:7px">Go to address</button><div id="bookmarks"></div></details>';
   content.innerHTML = html;
+  const surveyElement=$('surface-survey') as HTMLDetailsElement|null;
+  if(surveyElement)surveyElement.ontoggle=()=>{if(surveyElement.isConnected)surveyOpen=surveyElement.open;};
+  for(const button of content.querySelectorAll<HTMLButtonElement>('[data-surface-site]'))button.onclick=()=>{
+    const site=surveys.get(state.body!.seed)?.find(s=>s.id===button.dataset.surfaceSite);
+    if(site){exploreTerrain(vec(site.direction));announce('Flying to '+site.name+' · '+site.biome+'. Choose Land and walk on arrival.');}
+  };
   content.scrollTop = 0;
   for (const btn of content.querySelectorAll<HTMLButtonElement>(
     "[data-select]",
@@ -2816,7 +2843,9 @@ function panel() {
     else approachPlanet(Math.max(30000, Math.min(100000, state.body!.radiusM * .03)));
   });
   bind('descend', () => approachPlanet(10000));
-  bind('terrain-flight', exploreTerrain);
+  bind('terrain-flight', ()=>exploreTerrain());
+  bind('survey-surface',()=>void surveySurface());
+  bind('surface-detail',()=>{surfaceDetail=!surfaceDetail;planetTiles?.setSurfaceDetail(surfaceDetail);persist();panel();});
   bind('walk-surface',()=>{if(walker||landing)takeoffWalk();else landOnWorld();});
   bind('hold-orbit', holdPlanetOrbit);
   bind("relief", () => {
@@ -2905,6 +2934,7 @@ function exportData() {
     version: VERSION,
     epochSeconds: Number(epoch)/1e9,
     date:dateRecord(epoch),
+    surfaceSurvey:state.body?{version:SURVEY_VERSION,sites:surveys.get(state.body.seed)||[]}:null,
     identities:state.sys?[...state.sys.stars,...state.sys.planets,...state.sys.moons].map(identityRecord):[],
     stellarHistories:state.sys?.stars.map(stellarHistory),
     galaxy: state.galaxy || null,
@@ -3425,6 +3455,7 @@ async function boot() {
 Object.defineProperty(window, "__atlas", {
   value: {
     get date(){return dateRecord(epoch);},
+    get surfaceSurvey(){return state.body?surveys.get(state.body.seed)||null:null;},
     get state() {
       return state;
     },

@@ -2,11 +2,12 @@ import { overview, sector, surfaceTexture } from "./catalog.ts";
 import { sectorView, galaxyClouds, systemContext } from "./context.ts";
 import { starMap, starChunk } from "./star-map.ts";
 import { planetSurface } from "./terrain.ts";
+import {surfaceSurvey} from './surface-survey.ts';
 self.onmessage = ({ data }) => {
   const { id, kind, args } = data;
   try {
     const result =
-      kind === "space-chunk"
+      kind === 'surface-survey' ? surfaceSurvey(args.body) : kind === "space-chunk"
         ? starChunk(args.galaxy, args.coords)
         : kind === "universe-view"
           ? { galaxyClouds: galaxyClouds(args.galaxies, 650) }

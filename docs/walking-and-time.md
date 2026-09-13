@@ -203,6 +203,10 @@ timing or the order in which terrain happens to stream.
 
 ## Next work
 
+Update: the [ground-material and destination increment](surface-materials-and-survey.md)
+now adds close surface shading and named sites while retaining this baseline.
+The paragraph below records the boundary of the initial walking release.
+
 This stage deliberately retains the existing hills, gullies and coarse colours.
 It does not yet deliver realistic ground materials, rocks, beaches, vegetation,
 forests, rivers or ponds. The next milestone should add structured geology and
