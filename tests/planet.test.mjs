@@ -1,7 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import * as THREE from 'three';
-import {cubeDirection, buildTile, surfaceNormal, PATCH_SEGMENTS} from '../src/planet-tiles.ts';
+import {cubeDirection, buildTile, surfaceNormal, PATCH_SEGMENTS, tileDirection, tileNeighbour} from '../src/planet-tiles.ts';
 import {terrainSampler} from '../src/terrain.ts';
 import {surfaceClearance} from '../src/travel.ts';
 import {orbitStep, freeLook,alignPlanetaryDown,atmosphereHeightM} from '../src/planet-flight.ts';
@@ -30,6 +31,10 @@ test('patches are deterministic with outward triangles and shared child boundari
   assert.deepEqual(a,buildTile(body,a.tile));
   const point=(t,i)=>Array.from(t.positions.slice(i*3,i*3+3)).map((v,j)=>v+t.anchor[j]);
   for(let y=0;y<=n;y++) assert.ok(distance(point(a,y*(n+1)+n),point(b,y*(n+1))) * body.radiusM < .25);
+  // Morph endpoints use the same bed field on adjacent tiles; no water level
+  // can enter either endpoint.
+  const parentPoint=(t,i)=>Array.from(t.parents.slice(i*3,i*3+3)).map((v,j)=>v+t.anchor[j]);
+  for(let y=0;y<=n;y++) assert.ok(distance(parentPoint(a,y*(n+1)+n),parentPoint(b,y*(n+1))) * body.radiusM < .25);
   for(let f=0;f<6;f++) {
     const t=buildTile(body,{face:f,level:0,x:0,y:0});
     for(let i=0;i<n*n*6;i+=6) {
@@ -37,6 +42,52 @@ test('patches are deterministic with outward triangles and shared child boundari
       const ab=new THREE.Vector3(...point(t,bi)).sub(p), ac=new THREE.Vector3(...point(t,ci)).sub(p);
       assert.ok(ab.cross(ac).dot(p)>0,'outward triangle winding on every face');
     }
+  }
+});
+
+test('canonical tile buffers are invariant under forward and reverse generation order',()=>{
+  const fixtures=[
+    {face:0,level:6,x:11,y:17}, {face:2,level:6,x:29,y:34},
+    {face:0,level:18,x:12000,y:13000}, {face:4,level:18,x:0,y:12000},
+  ];
+  const digest=(tiles)=>{
+    const h=createHash('sha256');
+    for(const tile of [...tiles].sort((a,b)=>a.face-b.face||a.level-b.level||a.x-b.x||a.y-b.y)){
+      const d=buildTile(body,tile);
+      h.update(JSON.stringify([d.tile,d.anchor,d.width,d.skirtDepthM]));
+      for(const value of [d.positions,d.parents,d.surfaceHeight,d.parentHeight,d.normals,d.materials,d.uvs,d.indices,d.color,d.oceanPositions,d.oceanParents])if(value)h.update(Buffer.from(value.buffer,value.byteOffset,value.byteLength));
+    }
+    return h.digest('hex');
+  };
+  assert.equal(digest(fixtures),digest([...fixtures].reverse()));
+});
+
+test('near-contact tiles reduce opaque colour-map resolution deterministically',()=>{
+  const l18=buildTile(body,{face:0,level:18,x:12000,y:13000}),l19=buildTile(body,{face:0,level:19,x:24000,y:26000}),l20=buildTile(body,{face:0,level:20,x:48000,y:52000});
+  assert.equal(l18.width,130);assert.equal(l19.width,66);assert.equal(l20.width,34);
+  assert.equal(l19.color.byteLength,l19.width*l19.width*4);assert.equal(l20.color.byteLength,l20.width*l20.width*4);
+  assert.deepEqual(l20,buildTile(body,l20.tile));
+});
+
+test('fine L18 terrain and parent morph edges agree within two centimetres',()=>{
+  const n=PATCH_SEGMENTS,childTile={face:2,level:18,x:12000,y:12000},parentTile={face:2,level:17,x:6000,y:6000};
+  const child=buildTile(body,childTile),parent=buildTile(body,parentTile);
+  const point=(data,attribute,index)=>[0,1,2].map(j=>data[attribute][index*3+j]+data.anchor[j]);
+  // The child starts on the actual parent mesh at every co-located edge node.
+  for(let y=0;y<=n;y+=2)for(const [ci,pi] of [[y*(n+1),y/2*(n+1)],[y*(n+1)+n,y/2*(n+1)+n/2]]){
+    assert.ok(distance(point(child,'parents',ci),point(parent,'positions',pi))*body.radiusM<.02);
+  }
+});
+
+test('fine cube-face edge positions agree within two centimetres',()=>{
+  const n=PATCH_SEGMENTS,aTile={face:0,level:18,x:0,y:12000},bTile=tileNeighbour(aTile,0),a=buildTile(body,aTile),b=buildTile(body,bTile);
+  const point=(data,index)=>[0,1,2].map(j=>data.positions[index*3+j]+data.anchor[j]);
+  for(let y=0;y<=n;y++){
+    const d=tileDirection(aTile,0,y/n);
+    let match=-1,best=-Infinity;
+    for(let j=0;j<=(n*n+2*n);j++){const q=tileDirection(bTile,(j%(n+1))/n,Math.floor(j/(n+1))/n),dot=d[0]*q[0]+d[1]*q[1]+d[2]*q[2];if(dot>best){best=dot;match=j;}}
+    assert.ok(1-best<1e-14,'mapped cube-edge vertex stays on neighbour grid');
+    assert.ok(distance(point(a,y*(n+1)),point(b,match))*body.radiusM<.02);
   }
 });
 

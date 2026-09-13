@@ -4,17 +4,26 @@ import { children, tileDirection, closestTileDirection, tileKey, directionTile, 
 import {terrainSampler} from './terrain.ts';
 import { PlanetAtmosphere } from './planet-atmosphere.ts';
 import {RiverWater} from './river-water.ts';
+import {createOceanWaterMaterial,setOceanWaterPatchFrame,type OceanWaterMaterial} from './ocean-water-material.ts';
+import {oceanPatchCullProof} from './ocean-patch-culling.ts';
 import {RiverEnvironment} from './river-environment.ts';
 import {contactGeometry,type ContactPatch} from './terrain-contact.ts';
 import {detailTexture,detailOrigin,MATERIAL_VERSION,groundVertexHeader,groundVertex,groundFragmentHeader,groundColor,groundNormalCode} from './ground-material.ts';
 
-type Patch = { tile: Tile; mesh: THREE.Mesh; map: THREE.DataTexture; material: THREE.MeshStandardMaterial; morph: {value: number}; detail:{value:number}; edge:{value:THREE.Vector4}; data:ReturnType<typeof buildTile>; bytes:number; touched: number };
+type Patch = { tile: Tile; mesh: THREE.Mesh; ocean:THREE.Mesh<THREE.BufferGeometry,OceanWaterMaterial>|null; localEye:{value:THREE.Vector3}; map: THREE.DataTexture; material: THREE.MeshStandardMaterial; morph: {value: number}; detail:{value:number}; edge:{value:THREE.Vector4}; data:ReturnType<typeof buildTile>; bytes:number; touched: number };
 const ROOTS: Tile[] = Array.from({length: 6}, (_,face) => ({face, level: 0, x: 0, y: 0}));
 export const TILE_CACHE_LIMIT = 256;
 export const TILE_DRAW_LIMIT = 150;
-// RiverWater's bounded visibility radius guarantees complete local coverage.
-// Beyond this distance the tile map remains the orbital/distant water proxy.
-export const PHYSICAL_WATER_PROXY_COVERAGE_M = 12000;
+const TOTAL_BUDGET_BYTES=256*1024*1024;
+// RiverWater has its own 16 MiB cap and the retained environment allocation is
+// reserved here, so terrain admission cannot consume their headroom.
+const WATER_ENVIRONMENT_RESERVE_BYTES=28*1024*1024;
+const GROUND_ATLAS_BYTES=Math.ceil(256*256*4*(1+4/3));
+const TERRAIN_BUDGET_BYTES=TOTAL_BUDGET_BYTES-WATER_ENVIRONMENT_RESERVE_BYTES-GROUND_ATLAS_BYTES;
+// n=32: 108336 bytes of geometry, doubled for CPU/GPU, plus a 130x130 RGBA
+// map with the existing conservative 7/3 mip allocation.
+const PENDING_TILE_BYTES=108336*2+Math.ceil(67600*7/3);
+export type ShoreDebug={freezeSelection?:boolean;freezeMorph?:boolean;freezeWater?:boolean};
 
 /** One resident planet, a bounded cache, and one dedicated CPU worker. */
 export class PlanetRenderer {
@@ -37,7 +46,9 @@ export class PlanetRenderer {
   private river:RiverWater|null=null;
   private environment:RiverEnvironment|null=null;
   private waterTime=0;
-  private eyeUniform = {value:new THREE.Vector3()};
+  private eyeHeightUniform = {value:0};
+  private debug:ShoreDebug={};
+  setShoreDebug(options:ShoreDebug){Object.assign(this.debug,options);if(options.freezeSelection===false)this.selectionEye.setScalar(Infinity);}
   private sunUniform = {value:new THREE.Vector3(1,0,0)};
   private contactFocus:V3|null=null;
   private sample:ReturnType<typeof terrainSampler>;
@@ -52,14 +63,19 @@ export class PlanetRenderer {
   private selectionPixels=0;
   private updateMs=0;
   private groundAtlas:THREE.DataTexture;
+  private residentBytes=0;
   private groundEnabled={value:1};
   setSurfaceDetail(enabled:boolean){this.groundEnabled.value=enabled?1:0;}
   readonly contactLevel:number;
+  readonly fineContactLevel:number;
   setContactFocus(point:V3|null) { this.contactFocus=point; }
   constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,anisotropy=1) {
     this.groundAtlas=detailTexture(anisotropy);
     this.sample=terrainSampler(body);
     this.contactLevel=Math.max(14,Math.min(20,Math.ceil(Math.log2(2*body.radiusM/(PATCH_SEGMENTS*1.4)))));
+    // Hydrology beds need sub-decimetre samples near the capsule. This is a
+    // contact-only target; ordinary terrain keeps the established base level.
+    this.fineContactLevel=body.hydrology?Math.max(this.contactLevel,Math.min(24,Math.ceil(Math.log2(2*body.radiusM/(PATCH_SEGMENTS*.09))))):this.contactLevel;
     this.group.name = 'Planet terrain patches';
     this.group.scale.setScalar(radius);
     this.group.visible = false;
@@ -98,6 +114,8 @@ export class PlanetRenderer {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(d.positions, 3));
     geometry.setAttribute('parentPosition', new THREE.BufferAttribute(d.parents, 3));
+    geometry.setAttribute('surfaceHeight',new THREE.BufferAttribute(d.surfaceHeight,1));
+    geometry.setAttribute('parentHeight',new THREE.BufferAttribute(d.parentHeight,1));
     geometry.setAttribute('normal', new THREE.BufferAttribute(d.normals, 3));
     geometry.setAttribute('groundWeights',new THREE.BufferAttribute(d.materials,4,true));
     geometry.setAttribute('uv', new THREE.BufferAttribute(d.uvs, 2));
@@ -112,52 +130,43 @@ export class PlanetRenderer {
     const morph = {value: 0};
     const detail={value:0};
     const edge={value:new THREE.Vector4()};
+    const localEye={value:new THREE.Vector3()};
     material.onBeforeCompile = shader => {
       shader.uniforms.patchMorph = morph;
       shader.uniforms.patchEdges=edge;
       shader.uniforms.patchTexels={value:d.width-2};
       shader.uniforms.tileAnchor={value:new THREE.Vector3(...d.anchor)};
-      shader.uniforms.atlasEye=this.eyeUniform;shader.uniforms.atlasSun=this.sunUniform;
+      shader.uniforms.atlasLocalEyeM=localEye;shader.uniforms.atlasEyeHeightM=this.eyeHeightUniform;shader.uniforms.atlasSun=this.sunUniform;
       shader.uniforms.atlasRadius={value:this.body.radiusM};
       shader.uniforms.atlasAir={value:this.atmosphere?1:0};
       shader.uniforms.groundHabitat={value:this.body.water>0&&this.body.temperatureK>=250&&this.body.temperatureK<=325&&this.body.type!=='Ice world'&&this.body.type!=='Volcanic world'?1:0};
       shader.uniforms.atlasRelief={value:this.relief};
-      shader.uniforms.physicalWaterProxyCoverage={value:PHYSICAL_WATER_PROXY_COVERAGE_M};
-      shader.uniforms.physicalWaterValid={value:this.river?.completeCoverage()?1:0};
       shader.uniforms.groundAtlas={value:this.groundAtlas};
       shader.uniforms.groundEnabled=this.groundEnabled;
       shader.uniforms.groundPatch=detail;
       shader.uniforms.groundOrigin={value:new THREE.Vector3(...detailOrigin(d.anchor,this.body.radiusM))};
-      shader.vertexShader = 'attribute vec3 parentPosition; uniform float patchMorph,patchTexels; uniform vec4 patchEdges; uniform vec3 tileAnchor; varying vec3 atlasSurface;\n' + shader.vertexShader;
+      shader.vertexShader = 'attribute vec3 parentPosition; attribute float surfaceHeight,parentHeight; uniform float patchMorph,patchTexels; uniform vec4 patchEdges; uniform vec3 tileAnchor; varying vec3 atlasSurface,atlasLocalM; varying float atlasHeightM;\n' + shader.vertexShader;
       shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `vec2 gridUV=(uv*(patchTexels+2.0)-1.0)/patchTexels;
         float lockEdge=max(max((1.0-step(.00001,gridUV.x))*patchEdges.x,step(.99999,gridUV.x)*patchEdges.y),max((1.0-step(.00001,gridUV.y))*patchEdges.z,step(.99999,gridUV.y)*patchEdges.w));
-        vec3 transformed = mix(parentPosition, position, patchMorph*(1.0-lockEdge)); atlasSurface=transformed+tileAnchor; ${groundVertex}`);
+        float patchBlend=patchMorph*(1.0-lockEdge);
+        vec3 transformed = mix(parentPosition, position, patchBlend); atlasSurface=transformed+tileAnchor;
+        atlasLocalM=transformed*atlasRadius; atlasHeightM=mix(parentHeight,surfaceHeight,patchBlend); ${groundVertex}`);
       shader.vertexShader=groundVertexHeader+'\n'+shader.vertexShader;
-      shader.fragmentShader='uniform vec3 atlasEye,atlasSun;uniform float atlasRadius,atlasAir,atlasRelief,physicalWaterProxyCoverage,physicalWaterValid;varying vec3 atlasSurface;\n'+shader.fragmentShader;
+      shader.fragmentShader='uniform vec3 atlasLocalEyeM,atlasSun;uniform float atlasRadius,atlasAir,atlasRelief,atlasEyeHeightM;varying vec3 atlasSurface,atlasLocalM;varying float atlasHeightM;\n'+shader.fragmentShader;
       shader.fragmentShader=groundFragmentHeader+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
-        // RGB keeps normal mip filtering. The regional wet mask must use its
-        // authored base level: a lower mip averages a small lake into a large
-        // rectangular alpha hole at grazing distance.
-        float regionalWetMask=textureLod(map,vMapUv,0.0).a;
-        diffuseColor.a=regionalWetMask;
-        // Discard only the fully wet core. The physical lake/river polygon is
-        // deliberately inset by finite shoreline chords, so a .5 transition
-        // can cut a grazing gap beyond its edge. The water bias covers this
-        // retained proxy fringe without adding another water surface.
-        if (physicalWaterValid > .5 && abs(atlasRelief-1.0) < .0001 && regionalWetMask < .001 && length(atlasSurface-atlasEye)*atlasRadius < physicalWaterProxyCoverage) discard;
         ${groundColor}`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,dot(groundW,vec4(.96,.92,.84,.73)),groundFade);');
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\n'+groundNormalCode);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>', `
-        float airHeight=max(0.0,((length(atlasEye)+length(atlasSurface))*.5-1.0)*atlasRadius);
-        float airDistance=length(atlasEye-atlasSurface)*atlasRadius;
+        float airHeight=max(0.0,(atlasEyeHeightM+atlasHeightM)*.5);
+        float airDistance=length(atlasLocalEyeM-atlasLocalM);
         float airFog=atlasAir*min(.97,1.0-exp(-airDistance/65000.0*exp(-airHeight/14000.0)));
         float daylight=smoothstep(-.15,.15,dot(normalize(atlasSurface),atlasSun));
         outgoingLight=mix(outgoingLight,mix(vec3(.008,.016,.035),vec3(.23,.43,.64),daylight),airFog);
         #include <opaque_fragment>`);
     };
-    material.customProgramCacheKey = () => 'planet-patch-stitched-v6';
+    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v7';
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(...d.anchor);
     mesh.visible = false;
@@ -165,16 +174,29 @@ export class PlanetRenderer {
     // CPU culling below uses a conservative bound covering both morph endpoints.
     mesh.frustumCulled = false;
     this.group.add(mesh);
-    const bufferBytes=d.positions.byteLength+d.parents.byteLength+d.normals.byteLength+d.materials.byteLength+d.uvs.byteLength+d.indices.byteLength;
+    let ocean:Patch['ocean']=null;
+    if(d.oceanPositions&&d.oceanParents&&!oceanPatchCullProof({positions:d.positions,parents:d.parents,oceanPositions:d.oceanPositions,oceanParents:d.oceanParents,baseVertices:(PATCH_SEGMENTS+1)**2,anchorDir:d.anchor,radiusM:this.body.radiusM}).canCull){
+      const waterGeometry=new THREE.BufferGeometry();
+      waterGeometry.setAttribute('position',new THREE.BufferAttribute(d.oceanPositions,3));
+      waterGeometry.setAttribute('parentPosition',new THREE.BufferAttribute(d.oceanParents,3));
+      waterGeometry.setAttribute('uv',geometry.getAttribute('uv'));
+      waterGeometry.setIndex(geometry.index);waterGeometry.setDrawRange(0,PATCH_SEGMENTS*PATCH_SEGMENTS*6);
+      const normalAnchorDir=new THREE.Vector3(...d.anchor).normalize().toArray() as V3;
+      const waterMaterial=createOceanWaterMaterial({radiusM:this.body.radiusM,normalAnchorDir,phaseOriginM:detailOrigin(d.anchor,this.body.radiusM),patchMorph:morph,patchEdges:edge,patchTexels:{value:d.width-2}});
+      ocean=new THREE.Mesh(waterGeometry,waterMaterial);ocean.position.copy(mesh.position);ocean.visible=false;ocean.frustumCulled=false;
+      this.group.add(ocean);
+    }
+    const bufferBytes=d.positions.byteLength+d.parents.byteLength+d.normals.byteLength+d.materials.byteLength+d.uvs.byteLength+d.indices.byteLength+d.surfaceHeight.byteLength+d.parentHeight.byteLength+(d.oceanPositions?.byteLength||0)+(d.oceanParents?.byteLength||0);
     const bytes=bufferBytes*2+Math.ceil(d.color.byteLength*(1+4/3));
-    this.patches.set(key, {tile: d.tile, mesh, map, material, morph, detail,edge,data:d,bytes,touched: this.frame});
+    this.patches.set(key, {tile: d.tile, mesh, ocean,localEye,map, material, morph, detail,edge,data:d,bytes,touched: this.frame});
+    this.residentBytes+=bytes;
   }
   update(observer: V3, height: number, fov: number, dt: number, immersive = false, sun: V3 = [1,0,0], frusta: THREE.Frustum[] = []) {
     if (this.disposed) return;
     const started=performance.now();
     this.frame++;
     // At most two completions become GPU resources per animation frame.
-    const completions=this.inbox.splice(0,2);
+    const completions=this.debug.freezeSelection?[]:this.inbox.splice(0,2);
     for (const message of completions) {
       this.pending.delete(message.key);
       if (message.result) this.install(message.key, message.result);
@@ -192,21 +214,24 @@ export class PlanetRenderer {
     this.materialVisible(!this.rootsReady);
     const eye = new THREE.Vector3(...observer), distance = eye.length();
     const contact=this.contactFocus?new THREE.Vector3(...this.contactFocus).divideScalar(this.body.radiusM):null;
-    const cacheLimit=contact?768:TILE_CACHE_LIMIT,drawLimit=contact?512:(immersive?102:TILE_DRAW_LIMIT);
-    this.eyeUniform.value.copy(eye);this.sunUniform.value.set(...sun);
+    // 450 active walking leaves plus their protected ancestors fit beneath the
+    // terrain reserve while leaving admission headroom for newly requested
+    // contact chunks. A 512-leaf full quadtree can consume that headroom.
+    const cacheLimit=contact?768:TILE_CACHE_LIMIT,drawLimit=contact?450:(immersive?102:TILE_DRAW_LIMIT);
+    this.eyeHeightUniform.value=(distance-1)*this.body.radiusM;this.sunUniform.value.set(...sun);
     this.atmosphere?.update(eye, new THREE.Vector3(...sun));
-    this.waterTime+=Math.min(dt,.1);this.river?.update(observer,sun,this.waterTime,this.relief);
+    if(!this.debug.freezeWater)this.waterTime+=Math.min(dt,.1);this.river?.update(observer,sun,this.waterTime,this.relief);
     if(this.environment){this.environment.group.visible=this.relief===1;if(this.relief===1)this.environment.update(observer,dt,sun);}
     const direction = eye.clone().normalize();
     const pixels = height / (2 * Math.tan(fov * Math.PI / 360));
-    const projectionCache=new Map<string,{visible:boolean;score:number}>();
+    const projectionCache=new Map<string,{visible:boolean;score:number;contactNear:number}>();
     const viewNormals=frusta.flatMap(f=>f.planes.flatMap(p=>p.normal.toArray()));
     const rotated=viewNormals.length!==this.selectionFrustum.length||viewNormals.some((v,i)=>Math.abs(v-this.selectionFrustum[i])>.001);
     const retryDue=[...this.retryAfter].some(([key,frame])=>this.frame>=frame&&!this.failures.has(key)&&!this.pending.has(key)&&!this.patches.has(key));
     // Rebuilding a full walking quadtree every 15 idle frames caused periodic
     // CPU stalls. Refine for real pose/projection changes or arriving tiles;
     // conservative visibility culling still runs on every frame below.
-    const changed=completions.length>0||retryDue||!this.leafIndex.size||this.selectionContact!==!!contact||rotated||Math.abs(pixels-this.selectionPixels)>.5||eye.distanceTo(this.selectionEye)*this.body.radiusM>(contact?.distanceTo(eye)||0)*this.body.radiusM*.02+.5;
+    const changed=!this.debug.freezeSelection&&(completions.length>0||retryDue||!this.leafIndex.size||this.selectionContact!==!!contact||rotated||Math.abs(pixels-this.selectionPixels)>.5||eye.distanceTo(this.selectionEye)*this.body.radiusM>(contact?.distanceTo(eye)||0)*this.body.radiusM*.02+.5);
     const projected = (t: Tile) => {
       const key=tileKey(t),cached=projectionCache.get(key);if(cached)return cached;
       const center = new THREE.Vector3(...tileDirection(t, .5, .5));
@@ -216,7 +241,7 @@ export class PlanetRenderer {
       const horizon = distance < 1 + margin || direction.dot(center) + bound >= (1 - margin) / distance;
       const sphere = new THREE.Sphere(center, bound + margin);
       const visible = horizon && (!frusta.length || frusta.some(f => f.intersectsSphere(sphere)));
-      if(!changed)return {visible,score:0};
+      if(!changed)return {visible,score:0,contactNear:Infinity};
       const nearest = closestTileDirection(t,observer);
       const elevation=this.sample(nearest).visibleHeightM;
       const ground=new THREE.Vector3(...nearest).multiplyScalar(1+Math.max(this.body.water?0:-Infinity,elevation)*this.relief/this.body.radiusM);
@@ -225,7 +250,12 @@ export class PlanetRenderer {
       if(contact){const d=closestTileDirection(t,contact.toArray() as V3),h=this.sample(d).visibleHeightM;contactNear=contact.distanceTo(new THREE.Vector3(...d).multiplyScalar(1+Math.max(this.body.water?0:-Infinity,h)/this.body.radiusM))*this.body.radiusM;}
       // Projected patch span also budgets texture resolution. It deliberately
       // overestimates error instead of claiming a measured terrain error bound.
-      const result={visible, score: contactNear<28&&t.level<this.contactLevel?1e10/(t.level+1):visible ? span * pixels / near : 0};
+      const contactPriority=contactNear<28&&t.level<this.contactLevel;
+      const finePriority=!!this.body.hydrology&&contactNear<3&&t.level<this.fineContactLevel;
+      // The tiny fine-support band must arrive before the wider 28 m base
+      // ring; otherwise the walking leaf cap can fill with L18 candidates
+      // before the capsule has its L19–22 descendants.
+      const result={visible,contactNear,score:finePriority?1e12/((t.level+1)*(1+contactNear)):contactPriority?1e10/(t.level+1):visible ? span * pixels / near : 0};
       projectionCache.set(key,result);return result;
     };
     const leaves = changed?[...ROOTS]:[...this.leafIndex.values()];
@@ -234,7 +264,14 @@ export class PlanetRenderer {
       for (let iteration = 0; iteration < 360; iteration++) {
         const index=new Map(leaves.map(t=>[tileKey(t),t]));
         const neighbour=(t:Tile,e:number)=>{let n=tileNeighbour(t,e);while(n.level>0&&!index.has(tileKey(n)))n={face:n.face,level:n.level-1,x:Math.floor(n.x/2),y:Math.floor(n.y/2)};return index.get(tileKey(n));};
-        const candidates = leaves.map(t => ({t, ...projected(t)})).filter(p => p.t.level < (contact?this.contactLevel:16) && p.score > (immersive ? 360 : 260));
+        const candidates = leaves.map(t => ({t, ...projected(t)})).filter(p => {
+          const target=contact?(this.body.hydrology?this.fineContactLevel:this.contactLevel):16;
+          if(p.t.level>=target||p.score<=(immersive?360:260))return false;
+          // Above the regular contact level, only the 3 m hydrology contact
+          // band may refine. This prevents ordinary visible terrain from
+          // consuming the fine-band leaf budget.
+          return !contact||p.t.level<this.contactLevel||p.contactNear<3||p.score>1e8;
+        });
         candidates.sort((a, b) => b.score - a.score);
         let split = false;
         for (const candidate of candidates) {
@@ -258,7 +295,7 @@ export class PlanetRenderer {
     }
     this.active.clear();
     this.leafIndex=new Map(leaves.map(t=>[tileKey(t),t]));
-    for (const p of this.patches.values()) p.mesh.visible = false;
+    for (const p of this.patches.values()){p.mesh.visible = false;if(p.ocean)p.ocean.visible=false;}
     for (const t of leaves) {
       const key = tileKey(t), p = this.patches.get(key);
       protectedKeys.add(key);
@@ -268,7 +305,9 @@ export class PlanetRenderer {
       p.mesh.visible = projected(t).visible && this.rootsReady;
       if (p.mesh.visible) this.active.add(key);
       if (!this.previous.has(key)) p.morph.value = t.level ? 0 : 1;
-      p.morph.value = Math.min(1, p.morph.value + dt / .22);
+      if(!this.debug.freezeMorph)p.morph.value = Math.min(1, p.morph.value + dt / .22);
+      p.localEye.value.copy(eye).sub(p.mesh.position).multiplyScalar(this.body.radiusM);
+      if(p.ocean){p.ocean.visible=p.mesh.visible;setOceanWaterPatchFrame(p.ocean.material,{localEyeM:p.localEye.value,sunDirection:this.sunUniform.value,timeSeconds:this.waterTime});}
       const neighbours=[0,1,2,3].map(e=>tileNeighbour(t,e));
       const parent=(n:Tile)=>({face:n.face,level:n.level-1,x:Math.floor(n.x/2),y:Math.floor(n.y/2)});
       const edges=neighbours.map(n=>this.leafIndex.has(tileKey(parent(n)))?1:0);
@@ -288,14 +327,18 @@ export class PlanetRenderer {
     this.previous = new Set(leaves.map(tileKey));
     // Retain ancestor fallback meshes; evict unused children first. Bound also
     // includes pending work, so late completions cannot grow the cache forever.
+    // Reserve one worst-case worker result before admitting it. This maintains
+    // the combined cap even when a worker completion arrives after selection.
+    const bytePressure=()=>this.residentBytes+(this.pending.size+1)*PENDING_TILE_BYTES>TERRAIN_BUDGET_BYTES;
     for (const p of [...this.patches.values()].sort((a,b) => a.touched - b.touched)) {
-      if (this.patches.size + this.pending.size < cacheLimit - 2) break;
+      if (this.patches.size + this.pending.size < cacheLimit - 2&&!bytePressure()) break;
       const key = tileKey(p.tile);
       if (!protectedKeys.has(key)) { this.release(p); this.patches.delete(key); }
     }
     const unique = new Map(wanted.map(t => [tileKey(t), t]));
     for (const [key, tile] of unique) {
-      if (this.pending.size >= 2 || this.patches.size + this.pending.size >= cacheLimit) break;
+      if(this.debug.freezeSelection)break;
+      if (this.pending.size >= 2 || this.patches.size + this.pending.size >= cacheLimit||this.residentBytes+(this.pending.size+1)*PENDING_TILE_BYTES>TERRAIN_BUDGET_BYTES) break;
       this.pending.add(key);
       this.worker.postMessage({key, tile, body: this.body, relief: this.relief});
     }
@@ -306,10 +349,11 @@ export class PlanetRenderer {
     const radial=new THREE.Vector3(...point).normalize(),up=new THREE.Vector3(0,1,0);
     if(Math.abs(radial.dot(up))>.9)up.set(1,0,0);
     const east=new THREE.Vector3().crossVectors(up,radial).normalize(),north=new THREE.Vector3().crossVectors(radial,east).normalize();
-    const selected=new Map<string,Patch>();
-    for(const x of [-12,0,12])for(const y of [-12,0,12]){
+    const selected=new Map<string,Patch>(),level=this.body.hydrology?this.fineContactLevel:this.contactLevel;
+    const offsets=this.body.hydrology?(()=>{const step=Math.min(.5,(2*this.body.radiusM/2**level)/4),values:number[]=[];for(let value=-1;value<=1+1e-9;value+=step)values.push(Math.min(1,value));return [...new Set(values.map(value=>Number(value.toFixed(9))))];})():[-12,0,12];
+    for(const x of offsets)for(const y of offsets){
       const d=new THREE.Vector3(...point).addScaledVector(east,x).addScaledVector(north,y).toArray() as V3;
-      const key=tileKey(directionTile(d,this.contactLevel)),p=this.patches.get(key);
+      const key=tileKey(directionTile(d,level)),p=this.patches.get(key);
       if(!this.leafIndex.has(key)||!p||p.morph.value<1)return null;
       selected.set(key,p);
     }
@@ -325,13 +369,16 @@ export class PlanetRenderer {
   diagnostics() {
     return {projection: 'cube-sphere', river:this.river?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
       maxLevel: Math.max(0, ...[...this.active].map(k => this.patches.get(k)!.tile.level)), cacheLimit: this.contactFocus?768:TILE_CACHE_LIMIT,
-      contactLevel:this.contactFocus?this.contactLevel:null,accountedBytes:[...this.patches.values()].reduce((n,p)=>n+p.bytes,Math.ceil(256*256*4*(1+4/3))),materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:256*1024*1024,failuresTotal:this.failuresTotal,updateMs:this.updateMs,
+      contactLevel:this.contactFocus?(this.body.hydrology?this.fineContactLevel:this.contactLevel):null,baseContactLevel:this.contactFocus?this.contactLevel:null,accountedBytes:this.residentBytes+GROUND_ATLAS_BYTES,reservedCombinedBytes:this.residentBytes+GROUND_ATLAS_BYTES+WATER_ENVIRONMENT_RESERVE_BYTES+this.pending.size*PENDING_TILE_BYTES,terrainResidentBytes:this.residentBytes,groundAtlasBytes:GROUND_ATLAS_BYTES,pendingReserveBytes:this.pending.size*PENDING_TILE_BYTES,materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:TOTAL_BUDGET_BYTES,failuresTotal:this.failuresTotal,updateMs:this.updateMs,
       failures: this.failures.size, faces: [...new Set([...this.active].map(k => Number(k.split('/')[0])))],
       detailPatches:[...this.active].filter(k=>this.groundEnabled.value&&this.patches.get(k)!.detail.value).length,
+      oceanDraws:[...this.active].filter(k=>this.patches.get(k)!.ocean?.visible).length,
+      maxVisibleSkirtDepthM:Math.max(0,...[...this.active].map(k=>this.patches.get(k)!.data.skirtDepthM)),
+      debug:{...this.debug,activeTileIds:[...this.active],pendingTileIds:[...this.pending],eyeHeightM:this.eyeHeightUniform.value},
       skirtPatches:[...this.active].filter(k=>this.patches.get(k)!.mesh.geometry.drawRange.count>PATCH_SEGMENTS*PATCH_SEGMENTS*6).length,
       vertices: [...this.active].reduce((n,k) => n + this.patches.get(k)!.mesh.geometry.attributes.position.count, 0)};
   }
-  private release(p: Patch) { this.group.remove(p.mesh); p.mesh.geometry.dispose(); p.map.dispose(); p.material.dispose(); }
+  private release(p: Patch) { this.residentBytes=Math.max(0,this.residentBytes-p.bytes);this.group.remove(p.mesh);if(p.ocean){this.group.remove(p.ocean);p.ocean.geometry.dispose();p.ocean.material.dispose();} p.mesh.geometry.dispose(); p.map.dispose(); p.material.dispose(); }
   dispose() {
     this.disposed = true;
     this.worker.terminate();

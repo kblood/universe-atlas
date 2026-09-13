@@ -4,9 +4,7 @@ import type {RiverChannel, RiverLake, RiverRegion} from './river-types.ts';
 
 /** The regional water renderer treats RiverPoint.widthM as the full water width.
  * Geometry is kept in planet-radius units so it can live beneath PlanetRenderer.group. */
-// Logarithmic depth needs a decimetre-scale separation from the wet terrain
-// proxy at eye height.  This remains a surface bias, never a raised shell.
-const MAX_DRAWS=64, MAX_BYTES=16*1024*1024, WATER_BIAS_M=.1, LAKE_EDGE_M=16;
+const MAX_DRAWS=64, MAX_BYTES=16*1024*1024, LAKE_EDGE_M=16;
 const clamp=(v:number,a:number,b:number)=>Math.max(a,Math.min(b,v));
 const dot=(a:V3,b:V3)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
 const add=(a:V3,b:V3):V3=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
@@ -16,6 +14,7 @@ const unit=(a:V3):V3=>{const n=Math.hypot(...a);return n>0?[a[0]/n,a[1]/n,a[2]/n
 type RawVertex={direction:V3;height:number;u:number;v:number;flow:number;flowX:number;flowZ:number;x:number;z:number;depth:number;shore:number};
 type ChunkData={vertices:RawVertex[];indices:number[];flow:number;kind:'river'|'lake';sourceId:string};
 type Chunk={mesh:THREE.Mesh;center:V3;radius:number;bytes:number;visible:boolean;material:THREE.ShaderMaterial};
+export type WaterDebug={freezeWater?:boolean;flat?:boolean;depth?:boolean};
 
 function directionAt(region:RiverRegion,x:number,z:number):V3 {
   return unit(add(region.origin,add(scale(region.east,x/region.radiusM),scale(region.north,z/region.radiusM))));
@@ -84,24 +83,26 @@ function material(body:Body,flow:number,region:RiverRegion,riverSurface:boolean)
   // global draw limit here would waste scarce mobile fragment uniforms.
   const lakeSlots=Math.max(1,region.lakes.length),lakeEllipse=Array.from({length:lakeSlots},(_,i)=>{const l=region.lakes[i];return new THREE.Vector4(l?.x||0,l?.z||0,l?.radiusXM||1,l?.radiusZM||1);}),lakeRotation=Array.from({length:lakeSlots},(_,i)=>{const a=region.lakes[i]?.angle||0;return new THREE.Vector2(Math.cos(a),Math.sin(a));});
   return new THREE.ShaderMaterial({
-    uniforms:{waterRadius:{value:body.radiusM},waterRelief:{value:1},waterBias:{value:WATER_BIAS_M},waterTime:{value:0},sunDirection:{value:new THREE.Vector3(1,0,0)},eyeRelative:{value:new THREE.Vector3()},waterEast:{value:new THREE.Vector3(...region.east)},waterNorth:{value:new THREE.Vector3(...region.north)},riverSurface:{value:riverSurface?1:0},lakeEllipse:{value:lakeEllipse},lakeRotation:{value:lakeRotation}},
+    uniforms:{waterRadius:{value:body.radiusM},waterRelief:{value:1},waterTime:{value:0},waterFlat:{value:0},waterDepthDebug:{value:0},sunDirection:{value:new THREE.Vector3(1,0,0)},eyeRelative:{value:new THREE.Vector3()},waterEast:{value:new THREE.Vector3(...region.east)},waterNorth:{value:new THREE.Vector3(...region.north)},riverSurface:{value:riverSurface?1:0},lakeEllipse:{value:lakeEllipse},lakeRotation:{value:lakeRotation}},
     vertexShader:`#include <common>
 #include <logdepthbuf_pars_vertex>
-attribute vec3 surfaceDirection; attribute float waterHeight; attribute vec2 waterCoord; attribute float waterDepth,shoreDistance; attribute vec2 flowVector; varying vec3 waterNormal,waterLocalPosition; varying vec2 waterCoordV,waterFlowV; varying float waterDepthV,shoreDistanceV; uniform float waterRadius,waterRelief,waterBias;
+attribute vec3 surfaceDirection; attribute float waterHeight; attribute vec2 waterCoord; attribute float waterDepth,shoreDistance; attribute vec2 flowVector; varying vec3 waterNormal,waterLocalPosition; varying vec2 waterCoordV,waterFlowV; varying float waterDepthV,shoreDistanceV; uniform float waterRadius,waterRelief;
 void main(){
-  vec3 transformed=position+surfaceDirection*((waterHeight*(waterRelief-1.0)+waterBias)/waterRadius);
+  vec3 transformed=position+surfaceDirection*(waterHeight*(waterRelief-1.0)/waterRadius);
   waterNormal=surfaceDirection; waterLocalPosition=transformed; waterCoordV=waterCoord; waterFlowV=flowVector; waterDepthV=waterDepth; shoreDistanceV=shoreDistance;
   gl_Position=projectionMatrix*modelViewMatrix*vec4(transformed,1.0);
   #include <logdepthbuf_vertex>
 }`,
     fragmentShader:`#include <common>
 #include <logdepthbuf_pars_fragment>
-uniform vec3 sunDirection,eyeRelative,waterEast,waterNorth; uniform float waterTime,riverSurface; const int LAKE_COUNT=${region.lakes.length}; uniform vec4 lakeEllipse[${lakeSlots}]; uniform vec2 lakeRotation[${lakeSlots}]; varying vec3 waterNormal,waterLocalPosition; varying vec2 waterCoordV,waterFlowV; varying float waterDepthV,shoreDistanceV;
+uniform vec3 sunDirection,eyeRelative,waterEast,waterNorth; uniform float waterTime,riverSurface,waterFlat,waterDepthDebug; const int LAKE_COUNT=${region.lakes.length}; uniform vec4 lakeEllipse[${lakeSlots}]; uniform vec2 lakeRotation[${lakeSlots}]; varying vec3 waterNormal,waterLocalPosition; varying vec2 waterCoordV,waterFlowV; varying float waterDepthV,shoreDistanceV;
 void main(){
   // All vectors below are in the planet's local frame.  The ripple is only a
   // normal perturbation, evaluated in metre coordinates, so it cannot form a
   // kilometre-wide animated stripe or destabilise the physical water level.
   if(riverSurface>.5){for(int i=0;i<LAKE_COUNT;i++){vec2 d=waterCoordV-lakeEllipse[i].xy, r=lakeRotation[i]; vec2 q=vec2(d.x*r.x+d.y*r.y,-d.x*r.y+d.y*r.x)/lakeEllipse[i].zw; if(dot(q,q)<=1.0)discard;}}
+  if(waterDepthDebug>.5){gl_FragColor=vec4(vec3(clamp(waterDepthV/12.0,0.0,1.0)),1.0);return;}
+  if(waterFlat>.5){gl_FragColor=vec4(vec3(.035,.16,.22),1.0);return;}
   vec3 base=normalize(waterNormal),east=normalize(waterEast-base*dot(waterEast,base)),north=normalize(waterNorth-base*dot(waterNorth,base));
   vec2 flow=length(waterFlowV)>.01?normalize(waterFlowV):vec2(.72,.69); float drift=dot(waterCoordV,flow)*.42-waterTime*(length(waterFlowV)>.01?.75:.13);
   float footprint=max(length(dFdx(waterCoordV)),length(dFdy(waterCoordV))),rippleFade=1.0-smoothstep(.20,1.0,footprint),microFade=1.0-smoothstep(.035,.16,footprint);
@@ -133,6 +134,8 @@ export class RiverWater {
   private disposed=false;
   private lastVisible=0;
   private rejected:string|null=null;
+  private debug:Required<WaterDebug>={freezeWater:false,flat:false,depth:false};
+  private frozenTime=0;
   constructor(body:Body,region:RiverRegion){
     this.body=body;this.region=region;
     this.group.name='Physical river and lake water';
@@ -162,6 +165,12 @@ export class RiverWater {
     let radius=0;for(let i=0;i<d.directions.length;i+=3)radius=Math.max(radius,Math.acos(clamp(dot(d.anchor,[d.directions[i],d.directions[i+1],d.directions[i+2]]),-1,1)));
     this.chunks.push({mesh,center:unit(d.anchor),radius,bytes:d.bytes*2,visible:false,material:m});
   }
+  setDebug(debug:WaterDebug={}){
+    const freeze=!!debug.freezeWater;
+    if(freeze&&!this.debug.freezeWater)this.frozenTime=this.chunks[0]?.material.uniforms.waterTime.value||this.frozenTime;
+    this.debug={freezeWater:freeze,flat:!!debug.flat,depth:!!debug.depth};
+    for(const c of this.chunks){c.material.uniforms.waterFlat.value=this.debug.flat?1:0;c.material.uniforms.waterDepthDebug.value=this.debug.depth?1:0;}
+  }
   update(eye:V3,sun:V3,timeSeconds:number,relief:number){
     if(this.disposed)return; const distance=Math.hypot(...eye),look=distance?scale(eye,1/distance):[0,1,0] as V3;let visible=0;
     for(const c of this.chunks){
@@ -169,7 +178,7 @@ export class RiverWater {
       const altitude=Math.max(0,distance-1)*this.body.radiusM;
       const nearby=Math.acos(clamp(dot(look,c.center),-1,1))*this.body.radiusM-c.radius*this.body.radiusM<=Math.max(18000,altitude*4+12000);
       c.visible=horizon&&nearby&&visible<MAX_DRAWS;c.mesh.visible=c.visible;if(c.visible)visible++;
-      c.material.uniforms.waterTime.value=timeSeconds;c.material.uniforms.waterRelief.value=relief;c.material.uniforms.sunDirection.value.set(...sun);c.material.uniforms.eyeRelative.value.set(eye[0]-c.mesh.position.x,eye[1]-c.mesh.position.y,eye[2]-c.mesh.position.z);
+      c.material.uniforms.waterTime.value=this.debug.freezeWater?this.frozenTime:timeSeconds;c.material.uniforms.waterRelief.value=relief;c.material.uniforms.sunDirection.value.set(...sun);c.material.uniforms.eyeRelative.value.set(eye[0]-c.mesh.position.x,eye[1]-c.mesh.position.y,eye[2]-c.mesh.position.z);
     }this.lastVisible=visible;
   }
   diagnostics(){const bytes=this.chunks.reduce((n,c)=>n+c.bytes,0);return {draws:this.lastVisible,resident:this.chunks.length,accountedBytes:bytes,budgetBytes:MAX_BYTES,withinBudget:!this.rejected&&bytes<=MAX_BYTES&&this.chunks.length<=MAX_DRAWS,rejected:this.rejected,geometryAccounting:'CPU+GPU x2'};}

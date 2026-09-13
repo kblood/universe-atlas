@@ -31,9 +31,13 @@ export function surfaceQuery(body:Body, keys:readonly WaterKey[]=[]) {
       ? globalWet ? Math.max(levelM,sample.waterLevelM!) : sample.waterLevelM
       : body.water ? levelM : null;
     const wet=globalWet||inland;
-    const visibleHeightM=wet&&waterLevelM!==null
-      ? Math.max(sample.rockHeightM,waterLevelM) : sample.rockHeightM;
-    return {...sample,solid,rockHeightM:sample.rockHeightM,waterLevelM,
+    const groundHeightM=sample.groundHeightM;
+    const waterHeightM=waterLevelM;
+    const visibleHeightM=wet&&waterHeightM!==null
+      ? Math.max(groundHeightM,waterHeightM) : groundHeightM;
+    return {...sample,solid,groundHeightM,waterHeightM,
+      waterDepthM:waterHeightM===null?0:Math.max(0,waterHeightM-groundHeightM),
+      rockHeightM:groundHeightM,waterLevelM:waterHeightM,
       visibleHeightM,ocean,wet,walkable:solid&&!wet,version:SURFACE_VERSION,
       geologyVersion:TERRAIN_VERSION,regionalGeologyVersion:body.hydrology?.version||null,
       regionalSurfaceVersion:body.hydrology?RIVER_SURFACE_VERSION:null};

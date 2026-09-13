@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {baseTerrainSampler,terrainSampler,planetSurface} from '../src/terrain.ts';
-import {buildTile,directionTile,tileDirection,unit,regionalBankWeights,INLAND_WATER_PROXY_ALPHA} from '../src/planet-tiles.ts';
+import {buildTile,directionTile,tileDirection,unit,regionalBankWeights,PATCH_SEGMENTS} from '../src/planet-tiles.ts';
 import {contactGeometry} from '../src/terrain-contact.ts';
 import {surfaceQuery} from '../src/world-surface.ts';
 import {GroundWalker,initWalking} from '../src/ground-walker.ts';
@@ -19,11 +19,25 @@ const region={version:'river-region-1',id:'test/drainage-1/river-region-1',paren
 const baseBody={id:'test',name:'Test',seed:'river-terrain',kind:'planet',type:'Terrestrial world',parentId:'star',massKg:5.972e18,radiusM,temperatureK:290,color:'#3985ae',orbit:null,water:0,rings:false};
 const body={...baseBody,hydrology:region};
 const direction=(x,z)=>unit([1,z/radiusM,x/radiusM]);
+const dot=(a,b)=>a.reduce((sum,value,i)=>sum+value*b[i],0);
+const subtract=(a,b)=>a.map((value,i)=>value-b[i]);
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+/** Radial intersection with a base-grid terrain triangle, independent of the
+ * renderer and Rapier. It measures the mesh the contact collider receives. */
+const tileTriangleHeight=(data,d,radius)=>{
+  for(let k=0;k<PATCH_SEGMENTS*PATCH_SEGMENTS*6;k+=3){
+    const ids=[data.indices[k],data.indices[k+1],data.indices[k+2]],point=i=>[0,1,2].map(j=>data.positions[i*3+j]+data.anchor[j]),[a,b,c]=ids.map(point),normal=cross(subtract(b,a),subtract(c,a)),distance=dot(normal,a)/dot(normal,d);
+    if(distance<=0)continue;
+    const hit=d.map(value=>value*distance),ab=subtract(b,a),ac=subtract(c,a),ah=subtract(hit,a),denominator=dot(ab,ab)*dot(ac,ac)-dot(ab,ac)**2,u=(dot(ah,ab)*dot(ac,ac)-dot(ah,ac)*dot(ab,ac))/denominator,v=(dot(ah,ac)*dot(ab,ab)-dot(ah,ab)*dot(ab,ac))/denominator;
+    if(u>=-1e-8&&v>=-1e-8&&u+v<=1+1e-8)return (distance-1)*radius;
+  }
+  throw new Error('radial ray missed tile base grid');
+};
 
 test('hydrology leaves the baseline sampler unchanged outside its regional influence',()=>{
   const old=baseTerrainSampler(baseBody),plain=terrainSampler(baseBody),river=terrainSampler(body);
   for(const d of [[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]){
-    assert.deepEqual(plain(d),{...old(d),rockHeightM:old(d).elevationM,waterLevelM:old(d).ocean?0:null,visibleHeightM:old(d).ocean?0:old(d).elevationM,wet:old(d).ocean,waterKind:null,bank:0,channelId:null,flow:[0,0],influence:0});
+    assert.deepEqual(plain(d),{...old(d),rockHeightM:old(d).elevationM,waterLevelM:old(d).ocean?0:null,visibleHeightM:old(d).ocean?0:old(d).elevationM,groundHeightM:old(d).elevationM,waterHeightM:old(d).ocean?0:null,waterDepthM:old(d).ocean?Math.max(0,-old(d).elevationM):0,wet:old(d).ocean,waterKind:null,bank:0,channelId:null,flow:[0,0],influence:0});
     assert.deepEqual(river(d),plain(d));
   }
 });
@@ -33,6 +47,8 @@ test('inland water keeps a carved rock field and a separate visible water surfac
   assert.equal(s.ocean,false);assert.equal(s.wet,true);assert.equal(s.waterKind,'river');
   assert.ok(s.waterLevelM!==null&&s.rockHeightM<s.waterLevelM);
   assert.equal(s.visibleHeightM,s.waterLevelM);assert.equal(q.visibleHeightM,s.visibleHeightM);
+  assert.equal(s.groundHeightM,s.rockHeightM);assert.equal(s.waterHeightM,s.waterLevelM);
+  assert.equal(s.waterDepthM,s.waterHeightM-s.groundHeightM);
   assert.equal(q.walkable,false);assert.equal(q.ocean,false);
   const lake=surfaceQuery(body)(direction(350,320));assert.equal(lake.waterKind,'lake');assert.equal(lake.walkable,false);
   assert.equal(q.geologyVersion,'terrain-1.1.0');assert.equal(q.regionalGeologyVersion,'river-region-1');
@@ -80,11 +96,12 @@ test('temperate dry-bank colour is shared, finite, and leaves wet water unchange
   const polar=sample([0,1,0]);assert.deepEqual(polar,terrainSampler(temperate)([0,1,0]));
 });
 
-test('orbit preview and tile colour texels read the shared regional bank sample',()=>{
+test('orbit preview retains its palette while terrain tiles use opaque ground substrate',()=>{
   const temperate={...body,seed:'season-3',water:.65,hydrology:{...region,bodySeed:'season-3'}},sample=terrainSampler(temperate);
   const tile=directionTile(direction(0,150),6),data=buildTile(temperate,tile),size=data.width,x=32,y=32;
   const tileDirectionAtTexel=tileDirection(tile,(x-.5)/64,(y-.5)/64),tileSample=sample(tileDirectionAtTexel);
-  assert.deepEqual(Array.from(data.color.slice((y*size+x)*4,(y*size+x+1)*4)),[...tileSample.color.map(Math.floor),tileSample.wet&&tileSample.waterKind?0:255]);
+  const texel=Array.from(data.color.slice((y*size+x)*4,(y*size+x+1)*4));
+  assert.equal(texel[3],255);assert.ok(texel.slice(0,3).every(value=>value>=0&&value<=255));
   const preview=planetSurface(temperate,128,40);let found=false;
   for(let py=0;py<preview.height&&!found;py++)for(let px=0;px<preview.width;px++){
     const theta=((px+.5)/preview.width)*Math.PI*2,phi=((py+.5)/preview.height)*Math.PI,d=[-Math.cos(theta)*Math.sin(phi),Math.cos(phi),Math.sin(theta)*Math.sin(phi)],s=sample(d);
@@ -94,10 +111,10 @@ test('orbit preview and tile colour texels read the shared regional bank sample'
   assert.equal(found,true,'preview resolution samples the regional dry bank');
 });
 
-test('tile alpha masks inland physical water without masking dry bank or baseline ocean',()=>{
+test('tile colour is opaque ground substrate for inland water, dry bank and ocean bed',()=>{
   const inland=buildTile(body,directionTile(direction(0,0),6));
   const alpha=(data,x,y)=>data.color[(y*data.width+x)*4+3];
-  assert.ok([...Array(inland.width).keys()].some(y=>[...Array(inland.width).keys()].some(x=>alpha(inland,x,y)===INLAND_WATER_PROXY_ALPHA)),'river texels request nearby physical-water coverage');
+  assert.ok(inland.color.every((value,index)=>index%4!==3||value===255),'inland bed never masks coverage through alpha');
   const dry=buildTile(body,directionTile(direction(0,150),6));
   assert.equal(alpha(dry,32,32),255,'dry regional bank preserves the opaque terrain byte');
   const oceanBody={...baseBody,water:.8,hydrology:undefined};
@@ -133,15 +150,49 @@ test('future global water overtops and later reveals the immutable inland level'
   assert.equal(drained.waterLevelM,15);assert.equal(drained.visibleHeightM,15);
 });
 
-test('tiles and contact patches use the same visible bank and water elevations',()=>{
+test('tiles and contact patches use the ground bed while wet blocking retains visible water',()=>{
   const tile=directionTile(direction(0,0),6),data=buildTile(body,tile),contact=contactGeometry(data,[0,0,0,0],radiusM,[0,0,0],'river');
   for(const i of [0,16,32,16*33+16,32*33+32]){
     const d=tileDirection(tile,(i%33)/32,Math.floor(i/33)/32),s=terrainSampler(body)(d);
     const tilePoint=[0,1,2].map(j=>(data.positions[i*3+j]+data.anchor[j])*radiusM);
     const contactPoint=[0,1,2].map(j=>contact.positions[i*3+j]);
-    assert.ok(Math.abs(Math.hypot(...tilePoint)-radiusM-s.visibleHeightM)<.02);
+    assert.ok(Math.abs(Math.hypot(...tilePoint)-radiusM-s.groundHeightM)<.02);
     assert.ok(Math.hypot(...tilePoint.map((v,j)=>v-contactPoint[j]))<.02);
   }
+});
+
+test('synthetic sloping lake shore has a submerged bed, separate water grid and no alpha coverage hole',()=>{
+  const tile=directionTile(direction(350,320),6),data=buildTile(body,tile),n=PATCH_SEGMENTS,stride=n+1;
+  const nearest=[...Array(stride*stride).keys()].map(i=>({i,d:tileDirection(tile,(i%stride)/n,Math.floor(i/stride)/n)})).sort((a,b)=>Math.acos(a.d[0]*direction(350,320)[0]+a.d[1]*direction(350,320)[1]+a.d[2]*direction(350,320)[2])-Math.acos(b.d[0]*direction(350,320)[0]+b.d[1]*direction(350,320)[1]+b.d[2]*direction(350,320)[2]))[0];
+  const s=terrainSampler(body)(nearest.d),i=nearest.i;
+  assert.ok(s.wet&&s.waterDepthM>0,'fixture selects a lake bed');
+  assert.ok(data.oceanPositions===undefined,'inland water is not conflated with global ocean');
+  assert.ok(Math.abs(data.surfaceHeight[i]-s.groundHeightM)<.001);
+  assert.ok(data.color.every((value,index)=>index%4!==3||value===255),'opaque terrain cannot create a shoreline alpha hole');
+  assert.equal(surfaceQuery(body)(nearest.d).walkable,false,'wetness remains a query rule rather than terrain elevation');
+});
+
+test('ocean grids share the terrain anchor and base topology without skirts',()=>{
+  const oceanBody={...baseBody,water:.8},data=buildTile(oceanBody,{face:0,level:3,x:2,y:2}),baseVertices=(PATCH_SEGMENTS+1)**2;
+  assert.ok(data.oceanPositions&&data.oceanParents);
+  assert.equal(data.oceanPositions.length,baseVertices*3);assert.equal(data.oceanParents.length,baseVertices*3);
+  assert.equal(data.indices.slice(0,PATCH_SEGMENTS*PATCH_SEGMENTS*6).length,PATCH_SEGMENTS*PATCH_SEGMENTS*6);
+  for(let i=0;i<baseVertices;i++)assert.ok(Math.abs(Math.hypot(...[0,1,2].map(j=>data.oceanPositions[i*3+j]+data.anchor[j]))-1)<1e-6);
+});
+
+test('hydrology fine contact mesh remains within two centimetres across the saved dry-bank failure fixture',()=>{
+  const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===23165);
+  assert.ok(catchment);const regional=buildRiverRegion(maithea,catchment),fixture={...maithea,hydrology:regional},radius=fixture.radiusM,centre=unit([-795709.2257620192,1391499.6290880316,-4941536.491626542]),east=unit([-centre[2],0,centre[0]]),north=unit(cross(centre,east)),query=surfaceQuery(fixture),cache=new Map();
+  let drySamples=0;
+  for(const x of [-1,-.5,0,.5,1])for(const y of [-1,-.5,0,.5,1]){
+    const d=unit(centre.map((value,i)=>value+(east[i]*x+north[i]*y)/radius)),s=query(d);
+    if(s.wet)continue;
+    drySamples++;
+    const tile=directionTile(d,22),key=`${tile.face}/${tile.level}/${tile.x}/${tile.y}`;
+    if(!cache.has(key))cache.set(key,buildTile(fixture,tile));
+    assert.ok(Math.abs(tileTriangleHeight(cache.get(key),d,radius)-s.groundHeightM)<.02,`fine contact mesh agrees at ${x},${y} m`);
+  }
+  assert.ok(drySamples>0,'fixture includes dry-bank samples within the one-metre contact neighbourhood');
 });
 
 test('tangent-frame sampling remains deterministic at poles and cube boundaries',()=>{

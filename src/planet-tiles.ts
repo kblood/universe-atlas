@@ -4,10 +4,6 @@ import {biomeClassifier,materialBytes} from './surface-biomes.ts';
 
 export const PATCH_SEGMENTS = 32;
 export const PATCH_TEXTURE = 64;
-/** A zero tile-map alpha identifies inland water covered by RiverWater near
- * the observer. Normal terrain and ocean retain their original opaque alpha,
- * which also keeps the local ground-detail fade enabled. */
-export const INLAND_WATER_PROXY_ALPHA = 0;
 export type Tile = { face: number; level: number; x: number; y: number };
 export const tileKey = (t: Tile) => `${t.face}/${t.level}/${t.x}/${t.y}`;
 export function directionCoordinates(d: V3) {
@@ -83,9 +79,9 @@ export function regionalBankWeights(body:Body,s:RegionalMaterialSample,base:numb
 /** Stable directional finite differences; never derive normals per mesh/face. */
 export function surfaceNormal(body: Body, d: V3, sample = terrainSampler(body), relief = 1): V3 {
   const eps = 2 / body.radiusM;
-  // Use the same visible surface for tiles, contact geometry, and clearance.
+  // Terrain and contact geometry use the actual bed; water owns its surface.
   // The metre-based direction step remains unchanged at poles and cube seams.
-  const h = (q: V3) => sample(unit(q)).visibleHeightM * relief / body.radiusM;
+  const h = (q: V3) => sample(unit(q)).groundHeightM * relief / body.radiusM;
   const grad = [0, 1, 2].map(i => {
     const a = [...d] as V3, b = [...d] as V3;
     a[i] += eps; b[i] -= eps;
@@ -97,11 +93,15 @@ export function surfaceNormal(body: Body, d: V3, sample = terrainSampler(body), 
 export function buildTile(body: Body, tile: Tile, relief = 1) {
   const sample = terrainSampler(body), n = PATCH_SEGMENTS, stride = n + 1;
   const classify=biomeClassifier(body),materials:number[]=[];
-  const textureSize = tile.level >= 8 ? 128 : PATCH_TEXTURE;
+  // Near-contact patches are only a few metres wide. Their ground-detail atlas
+  // supplies the fine grain, so retaining a 130² macro-colour texture there
+  // wastes worker time and resident bytes without adding visible geography.
+  const textureSize = tile.level>=20?32:tile.level>=19?64:tile.level>=8?128:PATCH_TEXTURE;
   const positions: number[] = [], parents: number[] = [], normals: number[] = [], uvs: number[] = [], indices: number[] = [];
+  const surfaceHeight:number[] = [], parentHeight:number[] = [];
   const point = (u: number, v: number): V3 => {
     const d = tileDirection(tile, u, v);
-    const r = 1 + sample(d).visibleHeightM * relief / body.radiusM;
+    const r = 1 + sample(d).groundHeightM * relief / body.radiusM;
     return d.map(x => x * r) as V3;
   };
   // Centre all three coordinates on the surface. A sea-level anchor leaves
@@ -120,27 +120,41 @@ export function buildTile(body: Body, tile: Tile, relief = 1) {
       ? v * (1 - a) + p[i] * (a - b) + p11[i] * b
       : v * (1 - b) + p[i] * (b - a) + p11[i] * a) as V3;
   };
+  const heightOf=(p:V3)=>(Math.hypot(...p)-1)*body.radiusM;
+  const substrateColor=(weights:number[])=>{
+    const palette=[[160,141,94],[72,91,52],[104,96,84],[220,229,232]];
+    return palette[0].map((_,channel)=>Math.floor(weights.reduce((sum,w,i)=>sum+w*palette[i][channel],0)));
+  };
   for (let y = 0; y <= n; y++) for (let x = 0; x <= n; x++) {
     const u = x / n, v = y / n, d = tileDirection(tile, u, v);
-    positions.push(...point(u, v).map((p, i) => p - anchor[i]));
-    parents.push(...parentPoint(u, v).map((p, i) => p - anchor[i]));
+    const child=point(u,v),parent=parentPoint(u,v);
+    positions.push(...child.map((p, i) => p - anchor[i]));
+    parents.push(...parent.map((p, i) => p - anchor[i]));
     const normal=surfaceNormal(body,d,sample,relief);
     normals.push(...normal);
     const s=sample(d);
-    const base=classify(d,s.visibleHeightM,normal.reduce((sum,x,j)=>sum+x*d[j],0)).weights;
+    const base=classify(d,s.groundHeightM,normal.reduce((sum,x,j)=>sum+x*d[j],0)).weights;
     materials.push(...materialBytes(regionalBankWeights(body,s,base)));
+    surfaceHeight.push(s.groundHeightM*relief);
+    parentHeight.push(heightOf(parent));
     uvs.push((u * textureSize + 1) / (textureSize + 2), (v * textureSize + 1) / (textureSize + 2));
     if (x < n && y < n) {
       const a = y * stride + x;
       indices.push(a, a + 1, a + stride + 1, a, a + stride + 1, a + stride);
     }
   }
-  // Conservative inward skirts hide T junctions while neighbours stream or
-  // use different levels. They don't change the shared surface samples.
-  // Deep planet-scale skirts cause raster interpolation artefacts when viewed
-  // centimetres away. Bound fine skirts by patch width as well as global relief.
-  const skirt = Math.min(.08, 4 / (2 ** tile.level * n) ** 2 + Math.min(36000/body.radiusM,8/2**tile.level)*relief);
   const edges = [Array.from({length: stride}, (_,i) => i), Array.from({length: stride}, (_,i) => i * stride + n), Array.from({length: stride}, (_,i) => n * stride + n - i), Array.from({length: stride}, (_,i) => (n - i) * stride)];
+  // A skirt only needs to cover the measured child/parent morph separation at
+  // this patch boundary. The old level-only formula was 4x a fine patch span
+  // in the reported lake, creating a large visible curtain. Keep a 25 cm
+  // streaming fallback, while retaining the actual (possibly larger) morph
+  // bound needed before an adjacent patch has settled.
+  let boundaryMorphErrorM=0;
+  for(const edge of edges)for(const i of edge){
+    const offset=i*3;
+    boundaryMorphErrorM=Math.max(boundaryMorphErrorM,Math.hypot(positions[offset]-parents[offset],positions[offset+1]-parents[offset+1],positions[offset+2]-parents[offset+2])*body.radiusM);
+  }
+  const skirtDepthM=Math.max(.25,boundaryMorphErrorM+.25),skirt=skirtDepthM/body.radiusM;
   for (const edge of edges) {
     let previous = -1;
     for (const a of edge) {
@@ -151,6 +165,8 @@ export function buildTile(body: Body, tile: Tile, relief = 1) {
       normals.push(...normals.slice(a * 3, a * 3 + 3));
       materials.push(...materials.slice(a*4,a*4+4));
       uvs.push(...uvs.slice(a * 2, a * 2 + 2));
+      surfaceHeight.push(surfaceHeight[a]);
+      parentHeight.push(parentHeight[a]);
       if (previous >= 0) indices.push(a - (a - previous), a, b, previous, b, b - 1);
       previous = a;
     }
@@ -159,11 +175,26 @@ export function buildTile(body: Body, tile: Tile, relief = 1) {
   for (let y = 0; y < width; y++) for (let x = 0; x < width; x++) {
     // Half-texel gutters sample the same field beyond each edge.
     const s = sample(tileDirection(tile, (x - .5) / textureSize, (y - .5) / textureSize));
-    // The terrain surface still supplies the distant/orbital inland-water
-    // proxy. At walking distance the physical RiverWater mesh is complete,
-    // so only that regional wet proxy receives transparent alpha. `waterKind`
-    // excludes baseline ocean, which remains the authoritative shell here.
-    color.set([...s.color, s.wet && s.waterKind ? INLAND_WATER_PROXY_ALPHA : 255], (y * width + x) * 4);
+    // Preserve the established dry geography palette. Only wet texels need a
+    // bed colour, and use a deliberately inexpensive radial classification:
+    // texture generation must not run six finite-difference terrain samples
+    // per texel merely to obtain a shading normal.
+    const d=tileDirection(tile,(x-.5)/textureSize,(y-.5)/textureSize);
+    const rgb=s.wet?substrateColor(regionalBankWeights(body,s,classify(d,s.groundHeightM,1).weights)):s.color.map(Math.floor);
+    color.set([...rgb,255], (y * width + x) * 4);
   }
-  return { tile, anchor, positions: new Float32Array(positions), parents: new Float32Array(parents), normals: new Float32Array(normals), materials:new Uint8Array(materials), uvs: new Float32Array(uvs), indices: new Uint16Array(indices), color, width };
+  // The base grid is a shared ocean topology. It deliberately has no skirts;
+  // root can cull it from conservative tile bounds without changing coverage.
+  const oceanPositions:number[]|undefined=body.water?[]:undefined,oceanParents:number[]|undefined=body.water?[]:undefined;
+  if(oceanPositions&&oceanParents)for(let y=0;y<=n;y++)for(let x=0;x<=n;x++){
+    const u=x/n,v=y/n,d=tileDirection(tile,u,v),sea=d;
+    oceanPositions.push(...sea.map((p,i)=>p-anchor[i]));
+    const p=tile.level?(() => {
+      const gx=u*n/2,gy=v*n/2,ix=Math.min(n/2-1,Math.floor(gx)),iy=Math.min(n/2-1,Math.floor(gy)),a=gx-ix,b=gy-iy;
+      const p00=tileDirection(tile,ix*2/n,iy*2/n),p11=tileDirection(tile,(ix+1)*2/n,(iy+1)*2/n),q=a>=b?tileDirection(tile,(ix+1)*2/n,iy*2/n):tileDirection(tile,ix*2/n,(iy+1)*2/n);
+      return p00.map((value,i)=>a>=b?value*(1-a)+q[i]*(a-b)+p11[i]*b:value*(1-b)+q[i]*(b-a)+p11[i]*a) as V3;
+    })():sea;
+    oceanParents.push(...p.map((value,i)=>value-anchor[i]));
+  }
+  return { tile, anchor, positions: new Float32Array(positions), parents: new Float32Array(parents), surfaceHeight:new Float32Array(surfaceHeight), parentHeight:new Float32Array(parentHeight), normals: new Float32Array(normals), materials:new Uint8Array(materials), uvs: new Float32Array(uvs), indices: new Uint16Array(indices), color, width, skirtDepthM, oceanPositions:oceanPositions&&new Float32Array(oceanPositions), oceanParents:oceanParents&&new Float32Array(oceanParents) };
 }

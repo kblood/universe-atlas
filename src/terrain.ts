@@ -9,6 +9,16 @@ import { sampleRiverRegion } from './river-sample.ts';
 
 export const TERRAIN_VERSION = "terrain-1.1.0";
 export const ELEVATION_RANGE_M = 60000;
+/** Physical ground and a separately-owned water surface. `visibleHeightM` is
+ * retained solely as the legacy presentation/navigation compatibility value. */
+export type SurfaceSample = {
+  elevationM:number; ocean:boolean; color:number[]; roughness:number;
+  groundHeightM:number; waterHeightM:number|null; waterDepthM:number;
+  /** @deprecated Compatibility aliases for pre-shore callers. */
+  rockHeightM:number; waterLevelM:number|null; visibleHeightM:number;
+  wet:boolean; waterKind:'river'|'lake'|null; bank:number; channelId:string|null;
+  flow:[number,number]; influence:number;
+};
 const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 const mix = (a: number[], b: number[], t: number) =>
   a.map((v, i) => v + (b[i] - v) * clamp(t));
@@ -120,7 +130,7 @@ export function terrainSampler(body: Body) {
   return (d: V3) => {
     const sample = base(d);
     const ocean = sample.ocean;
-    const baseline = {
+    const baseline:SurfaceSample = {
       // Keep the common no-region path to one result allocation. Do not spread
       // a sampler result for every tile vertex: this is the hot terrain loop.
       elevationM: sample.elevationM,
@@ -130,6 +140,9 @@ export function terrainSampler(body: Body) {
       rockHeightM: sample.elevationM,
       waterLevelM: ocean ? 0 : null,
       visibleHeightM: ocean ? 0 : sample.elevationM,
+      groundHeightM: sample.elevationM,
+      waterHeightM: ocean ? 0 : null,
+      waterDepthM: ocean ? Math.max(0,-sample.elevationM) : 0,
       wet: ocean,
       waterKind: null as 'river'|'lake'|null,
       bank: 0,
@@ -146,6 +159,7 @@ export function terrainSampler(body: Body) {
     // Inland water shares the water palette used by orbit previews. River
     // material selection is carried in bank/waterKind for nearby terrain.
     const color = wet ? [24, 105, 132] : regionalBankColor(body,d,sample,river);
+    const waterHeightM=waterLevelM;
     return {
       elevationM: rockHeightM,
       ocean,
@@ -154,6 +168,9 @@ export function terrainSampler(body: Body) {
       rockHeightM,
       waterLevelM,
       visibleHeightM: wet && waterLevelM !== null ? Math.max(rockHeightM, waterLevelM) : rockHeightM,
+      groundHeightM:rockHeightM,
+      waterHeightM,
+      waterDepthM:waterHeightM===null?0:Math.max(0,waterHeightM-rockHeightM),
       wet,
       waterKind: river.waterKind,
       bank: river.bank,

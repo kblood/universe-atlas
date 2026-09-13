@@ -2708,7 +2708,10 @@ function unfocusBody(keepPose: boolean) {
   riverFlight=null;surfaceJourney=null;startCruiseAfterLook=false;
   planetLook = null;
   planetTiles?.dispose(); planetTiles = null;
-  orbitAssist = null; approachAltitude = null;
+  orbitAssist = null;
+  // Automatic distance unfocus keeps a running low-orbit approach continuous.
+  // Breadcrumb exits intentionally discard that target.
+  if (!keepPose) approachAltitude = null;
   bodyFocusToken++;
   const sys = state.sys!;
   rescaleSystem(systemLayout(sys, 'physical').records[sys.stars[0].id].orbitScale);
@@ -3657,9 +3660,10 @@ async function boot() {
   } else if (coords) await navigate("sector", { galaxy: g, coords });
   else await navigate("galaxy", { galaxy: g });
 }
-// Small, read-only diagnostics surface used by real browser acceptance tests.
+// Diagnostics and an explicit rendering freeze used by browser acceptance tests.
 Object.defineProperty(window, "__atlas", {
   value: {
+    shoreDebug(options:import('./planet-renderer.ts').ShoreDebug){planetTiles?.setShoreDebug(options);},
     get date(){return dateRecord(epoch);},
     get surfaceSurvey(){return state.body?surveys.get(surveyKey(state.body))||null:null;},
     get drainage(){return drainage?.diagnostics()||null;},

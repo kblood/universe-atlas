@@ -16,6 +16,12 @@ forest and ground-cover detail. See its [design specification](docs/physical-riv
 The [ground realism correction](docs/ground-realism.md) improves lake-bank continuity,
 walking terrain refinement, vegetation lighting and density, and fine water detail.
 It includes the [implementation specification](docs/ground-realism-spec.md), sources and validation.
+The follow-up [planet terrain research](docs/terrain-research-2026-09-13.md)
+examines the remaining flicker and proposes a terrain redesign, with a
+[stable-shore implementation brief](docs/terrain-v2-first-slice-spec.md).
+The first slice is described in [physical ground and stable shores](docs/stable-shores.md):
+separate ground beds and water, local shader coordinates, and measured tile-edge
+skirts. The larger erosion and terrain-renderer redesign remains planned work.
 
 ## Run and validate
 

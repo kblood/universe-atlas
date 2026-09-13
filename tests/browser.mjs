@@ -180,9 +180,35 @@ try {
     12,
   );
   await page.locator("#relief").click();
+  const initialOrbitRadius = await page.evaluate(() =>
+    Math.hypot(...window.__atlas.camera.position),
+  );
+  const farOrbitRadius = initialOrbitRadius * 11;
+  await page.mouse.move(720, 500);
+  for (let i = 0; i < 80; i++) {
+    await page.mouse.wheel(0, 1000);
+    await page.waitForTimeout(35);
+    const radius = await page.evaluate(() =>
+      Math.hypot(...window.__atlas.camera.position),
+    );
+    if (radius > farOrbitRadius) break;
+  }
+  await page.waitForFunction(
+    (minimumRadius) => Math.hypot(...window.__atlas.camera.position) > minimumRadius,
+    farOrbitRadius,
+    { timeout: 10000 },
+  );
   const far = await page.evaluate(() => window.__atlas.camera.position);
   await page.locator("#approach").click();
   console.log(JSON.stringify({afterApproach:await page.evaluate(()=>({autopilot:window.__atlas.travel.autopilot,altitude:window.__atlas.travel.approachAltitude,ready:window.__atlas.ready}))}));
+  await page.waitForFunction(
+    () =>
+      window.__atlas.state.level === "system" &&
+      window.__atlas.travel.autopilot?.kind === "body" &&
+      window.__atlas.travel.approachAltitude === 100000,
+    undefined,
+    { timeout: 30000 },
+  );
   await page.waitForFunction(
     () =>
       window.__atlas.terrain?.tiles?.ready &&
@@ -195,6 +221,11 @@ try {
   assert.ok(
     Math.hypot(...(await page.evaluate(() => window.__atlas.camera.position))) <
       Math.hypot(...far),
+  );
+  const approachedSurface = await page.evaluate(() => window.__atlas.travel.surface);
+  assert.ok(
+    Math.abs(approachedSurface.altitude - 100000) < 1000,
+    `low-orbit approach altitude is ${approachedSurface.altitude} m`,
   );
   await shot("05b-close-orbit");
   const saved = await page.evaluate(() => JSON.stringify(window.__atlas.state));

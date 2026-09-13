@@ -45,7 +45,7 @@ varying vec3 groundPosition,groundNormal; varying vec4 groundMix;
 vec4 groundTri(vec3 p,vec3 w){return texture2D(groundAtlas,p.yz)*w.x+texture2D(groundAtlas,p.zx)*w.y+texture2D(groundAtlas,p.xy)*w.z;}
 `;
 export const groundColor=`
-float groundFade=groundEnabled*groundPatch*(1.0-smoothstep(1500.0,6000.0,length(atlasSurface-atlasEye)*atlasRadius));
+float groundFade=groundEnabled*groundPatch*(1.0-smoothstep(1500.0,6000.0,length(atlasLocalM-atlasLocalEyeM)));
 // The analytic baseline map still supplies all orbital colour. Detail is local.
 vec3 groundAxis=pow(abs(normalize(groundNormal)),vec3(4.0));groundAxis/=dot(groundAxis,vec3(1.0));
 vec4 groundW=max(groundMix,vec4(0.0));groundW/=max(.001,dot(groundW,vec4(1.0)));
@@ -58,8 +58,6 @@ if(groundEnabled*groundPatch>.5){
   groundMacro=groundTri(groundPosition/256.0,groundAxis);
 }
 float groundSignal=dot(groundW,vec4(groundFine.a,groundFine.r*.6+groundCoarse.r*.4,groundCoarse.b*.55+groundFine.g*.45,groundFine.a*.3+groundCoarse.r*.7));
-float groundWater=atlasAir*step(length(atlasSurface),1.00000005);
-groundFade*=(1.0-groundWater)*step(.5,diffuseColor.a);
 // Metre-scale patches break up the uniform orbital tint without introducing a
 // new height field or stretching a photograph over the planet. All periods
 // divide the 4096 m anchor period so neighboring tiles agree at their seams.

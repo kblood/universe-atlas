@@ -21,6 +21,7 @@ export class GroundWalker {
   private vertical=0;
   private jumpHeld=false;
   private jumpRequested=false;
+  private idleFrames=0;
   requestJump(){this.jumpRequested=true;}
   grounded=false;
   waiting=false;
@@ -42,14 +43,17 @@ export class GroundWalker {
     this.controller.enableAutostep(.3,.25,false);
     this.controller.enableSnapToGround(.35);
   }
+  /** Returns whether the settled contact topology changed this frame. */
   private sync(patches:ContactPatch[]) {
+    let changed=false;
     const wanted=new Set(patches.map(p=>p.key));
-    for(const [key,c] of this.terrain)if(!wanted.has(key)){this.world.removeCollider(c,true);this.terrain.delete(key);}
+    for(const [key,c] of this.terrain)if(!wanted.has(key)){this.world.removeCollider(c,true);this.terrain.delete(key);changed=true;}
     this.rawColliderBytes=0;
     for(const p of patches){
       this.rawColliderBytes+=p.positions.byteLength+p.indices.byteLength;
-      if(!this.terrain.has(p.key))this.terrain.set(p.key,this.world.createCollider(RAPIER.ColliderDesc.trimesh(p.positions,p.indices)));
+      if(!this.terrain.has(p.key)){this.terrain.set(p.key,this.world.createCollider(RAPIER.ColliderDesc.trimesh(p.positions,p.indices)));changed=true;}
     }
+    return changed;
   }
   update(dt:number,heading:THREE.Quaternion,keys:Set<string>,getPatches:(p:V3,o:V3)=>ContactPatch[]|null) {
     if(this.position.distanceTo(this.origin)>64){
@@ -60,10 +64,19 @@ export class GroundWalker {
     }
     const patches=getPatches(this.position.toArray() as V3,this.origin.toArray() as V3);
     this.waiting=!patches;
-    if(!patches){this.accumulator=0;this.speed=0;return;}
-    this.sync(patches);
-    this.accumulator=Math.min(.1,this.accumulator+dt);
+    if(!patches){this.accumulator=0;this.speed=0;this.idleFrames=0;return;}
+    const topologyChanged=this.sync(patches);
     const jump=keys.has(' ');this.jumpRequested ||= jump&&!this.jumpHeld;this.jumpHeld=jump;
+    const movementInput=keys.has('w')||keys.has('a')||keys.has('s')||keys.has('d');
+    if(topologyChanged||movementInput||jump||this.jumpRequested)this.idleFrames=0;
+    // Rapier's snap-to-ground can make millimetre-scale corrections forever on
+    // a resting capsule. Preserve a settled pose only while its exact contact
+    // topology, support state and input remain unchanged. Any new collider,
+    // movement or jump wakes the ordinary fixed-step controller immediately.
+    if(this.grounded&&this.idleFrames>=2&&!movementInput&&!jump&&!this.jumpRequested&&this.vertical<=0&&!topologyChanged){
+      this.accumulator=0;this.speed=0;this.vertical=0;return;
+    }
+    this.accumulator=Math.min(.1,this.accumulator+dt);
     this.speed=0;
     while(this.accumulator>=STEP){
       this.accumulator-=STEP;this.steps++;
@@ -95,6 +108,8 @@ export class GroundWalker {
       this.position.add(actual);this.grounded=this.controller.computedGrounded();
       if(this.grounded&&this.vertical<0)this.vertical=0;
       this.speed=actual.clone().projectOnPlane(up).length()/STEP;this.travelled+=actual.length();
+      if(this.grounded&&!movementInput&&!jump&&!this.jumpRequested&&this.vertical===0&&actual.length()<.001)this.idleFrames++;
+      else this.idleFrames=0;
       heading.premultiply(new THREE.Quaternion().setFromUnitVectors(oldUp,this.position.clone().normalize())).normalize();
       this.capsule.setTranslation(this.position.clone().sub(this.origin));
     }
@@ -103,6 +118,6 @@ export class GroundWalker {
     if(hit){const meshHeight=this.position.length()+3-hit.timeOfImpact-this.body.radiusM;this.mismatchM=Math.abs(meshHeight-this.sample(up.toArray() as V3).visibleHeightM);}
   }
   eye():V3 {return this.position.clone().addScaledVector(this.position.clone().normalize(),EYE_OFFSET).toArray() as V3;}
-  diagnostics(){return {active:true,grounded:this.grounded,waiting:this.waiting,position:this.position.toArray(),speed:this.speed,steps:this.steps,travelledM:this.travelled,colliders:this.terrain.size,rawColliderBytes:this.rawColliderBytes,contactMismatchM:this.mismatchM};}
+  diagnostics(){return {active:true,grounded:this.grounded,waiting:this.waiting,position:this.position.toArray(),originM:this.origin.toArray(),speed:this.speed,steps:this.steps,travelledM:this.travelled,colliders:this.terrain.size,rawColliderBytes:this.rawColliderBytes,contactMismatchM:this.mismatchM};}
   dispose(){this.world.free();this.terrain.clear();}
 }

@@ -6,6 +6,26 @@ import {buildTile,directionTile,tileKey} from '../src/planet-tiles.ts';
 import {contactGeometry} from '../src/terrain-contact.ts';
 import {surfaceQuery} from '../src/world-surface.ts';
 await initWalking();
+test('settled grounded pose is fixed while idle and wakes for walk and jump',()=>{
+  const body={id:'idle-physics',seed:'idle-physics',kind:'planet',type:'Rocky world',radiusM:6371000,massKg:5.972e24,water:0};
+  const up=new THREE.Vector3(0,1,0),position=up.clone().multiplyScalar(body.radiusM+1),heading=new THREE.Quaternion();
+  const walker=new GroundWalker(body,position.toArray());
+  const patches=(_p,origin)=>{
+    const vertices=[[-100,-100],[-100,100],[100,100],[100,-100]].flatMap(([x,z])=>[x,body.radiusM-origin[1],z]);
+    return [{key:'stable-plane',anchor:[0,1,0],positions:new Float32Array(vertices),indices:new Uint32Array([0,1,2,0,2,3])}];
+  };
+  for(let i=0;i<120;i++)walker.update(1/60,heading,new Set(),patches);
+  assert.ok(walker.grounded);const settled=walker.position.clone(),travelled=walker.travelled;
+  for(let i=0;i<120;i++)walker.update(1/60,heading,new Set(),patches);
+  assert.ok(walker.position.distanceTo(settled)<1e-10,'idle controller keeps the exact settled pose');
+  assert.equal(walker.travelled,travelled);assert.equal(walker.speed,0);
+  for(let i=0;i<60;i++)walker.update(1/60,heading,new Set(['w']),patches);
+  assert.ok(walker.position.distanceTo(settled)>3,'movement input wakes the controller');
+  for(let i=0;i<120&&!walker.grounded;i++)walker.update(1/60,heading,new Set(),patches);
+  walker.requestJump();walker.update(1/60,heading,new Set(),patches);
+  assert.equal(walker.grounded,false,'jump request wakes the controller');walker.dispose();
+});
+
 test('capsule walks and jumps with radial gravity at both poles and the equator',()=>{
   const body={id:'physics',seed:'physics',kind:'planet',type:'Rocky world',radiusM:6371000,massKg:5.972e24,water:0};
   for(const axis of [[0,1,0],[0,-1,0],[1,0,0]]){
