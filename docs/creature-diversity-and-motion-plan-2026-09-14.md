@@ -3,6 +3,10 @@
 Research follow-up to the Biosphere Lab at `22ad8ed`, 2026-09-14.
 This document proposes the next implementation; it does not add animation.
 
+Implementation update: the [Creature Lab record](creature-lab-implementation-spec.md)
+describes the subsequent articulated prototype, ancestry display and validation.
+The baseline diagnosis below remains a record of `22ad8ed`.
+
 ## What the lab actually does
 
 The animals cannot currently walk or run. `src/biosphere-geometry.ts` builds a

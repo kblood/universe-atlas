@@ -89,7 +89,7 @@ try{
   await page.locator('#planet-profile').selectOption('airless');d=await settle(page);
   assert.equal(d.world.species.length,0);assert.equal(d.dated.stage,'sterile');await shot(page,'07-airless');
   await page.locator('#planet-profile').selectOption('arid');d=await settle(page);
-  assert.equal(d.world.profile,'arid');assert.equal(d.world.species.length,15);await shot(page,'08-arid');
+  assert.equal(d.world.profile,'arid');assert.equal(d.world.species.length,24);await shot(page,'08-arid');
   await page.locator('#planet-profile').selectOption('cold');d=await settle(page);assert.equal(d.world.profile,'cold');
   await shot(page,'08-cold');
   const narrow=await browser.newPage({viewport:{width:390,height:844}});

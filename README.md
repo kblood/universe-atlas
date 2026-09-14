@@ -8,10 +8,13 @@ planet-specific habitat ranges and dated lineages. Its [implementation record](d
 separates the fictional history and static specimen tests from full planetary
 ecology, animal locomotion and main-app formation gating.
 
-The [creature diversity and motion research](docs/creature-diversity-and-motion-plan-2026-09-14.md)
-explains why the current animals look similar, reviews procedural anatomy and
-locomotion references, and proposes inherited body plans, rig inspection and
-walk/run tests. These are next-stage recommendations; animals remain static.
+The [Creature Lab](creature-lab.html) adds four generated quadruped lineages,
+an articulated anatomy inspector, a walk/run arena and an ancestry display
+showing each species beside its actual predecessors. Read the
+[implementation and validation](docs/creature-lab-implementation-spec.md) and
+[research with sources](docs/creature-diversity-and-motion-plan-2026-09-14.md).
+Movement is a kinematic rigid-part prototype; smooth skin deformation, animal
+behavior and planetary fauna remain future work.
 
 The [Biome Lab](biome-lab.html) compares deterministic plant and rock communities
 on controlled terrain. Its [specification and validation](docs/biome-lab-spec.md)

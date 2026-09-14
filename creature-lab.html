@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#08131a" />
+    <title>Creature Lab · Universe Atlas</title>
+    <style>#creature-labels{position:fixed;z-index:2;inset:82px 370px 32px 0;pointer-events:none}.creature-card{position:absolute;pointer-events:auto;max-width:142px;padding:5px 7px;border:1px solid #477b79;border-radius:4px;background:#08171bd9;color:#e3f0e8;font-size:10px;text-align:center;transform:translateX(-50%)}.creature-card span{display:block;color:#9bbab4;font-size:9px;margin-top:2px}.creature-card.archive{border-color:#9b7444;color:#f0d098}#creature-labels.anatomy,#creature-labels.arena{display:none}@media(max-width:850px){#creature-labels{inset:118px 0 0}}</style>
+  </head>
+  <body>
+    <main id="viewport" aria-label="Inspectable procedural creature laboratory"></main><section id="creature-labels" aria-label="Displayed creature labels"></section>
+    <header class="topbar">
+      <a class="brand" href="./index.html">◒ UNIVERSE ATLAS <em>CREATURE LAB</em></a>
+      <nav><a href="./biosphere-lab.html">Biosphere lab</a><a href="./biome-lab.html">Biome lab</a></nav>
+      <div class="header-controls"><label>Seed <input id="seed" maxlength="160" value="LETHRA-BIOSPHERE-01"></label><label>Profile <select id="profile"><option value="temperate">Temperate</option><option value="arid">Arid</option><option value="cold">Cold</option><option value="airless">Airless</option></select></label><button id="regenerate">Regenerate</button></div>
+    </header>
+    <aside class="side-panel">
+      <span class="eyebrow">RIGGED QUADRUPED EXPERIMENT</span><h1 id="title">Creature gallery</h1><p id="description"></p>
+      <div class="controls">
+        <label>Mode <select id="mode"><option value="gallery">Gallery</option><option value="anatomy">Anatomy</option><option value="arena">Arena</option><option value="ancestry">Ancestry</option></select></label>
+        <label>Reference date (Myr) <input id="date-myr" type="number" min="-20000" max="20000" step="1" value="0"></label>
+        <label>Species <select id="species"></select></label>
+        <label class="check"><input id="normalize" type="checkbox"> Normalized display scale</label>
+        <div id="anatomy-controls"><label class="check"><input id="skeleton" type="checkbox"> Actual solved skeleton</label><label class="check"><input id="neutral" type="checkbox"> Neutral material</label><label>Individual <select id="variant"><option value="0">Specimen 01</option><option value="1">Specimen 02</option><option value="2">Specimen 03</option><option value="3">Specimen 04</option></select></label><label>Growth <select id="growth"><option value="adult">Adult</option><option value="juvenile">Juvenile</option></select></label></div>
+        <div id="arena-controls"><label>Gait <select id="gait"><option value="idle">Idle</option><option value="walk">Walk</option><option value="run">Run</option></select></label><label>Terrain <select id="terrain"><option value="flat">Flat</option><option value="slope">Slope</option><option value="steps">Steps</option></select></label><label>Crowd <select id="crowd"><option value="1">1 actor</option><option value="8">8 actors</option><option value="16">16 actors</option></select></label><div class="button-row"><button id="play">Pause</button><button id="reset">Reset</button></div><label>Time <input id="time" type="number" min="0" max="20" value="0" step="0.01"></label></div>
+      </div>
+      <section id="notice" class="notice" hidden></section>
+      <section><h2>Selected species</h2><div id="species-detail" class="detail"></div></section>
+      <section id="ancestry-panel" hidden><h2>Actual parent chain</h2><div id="ancestry-list"></div></section>
+      <section><h2>Live diagnostics</h2><div id="metrics" class="metrics"></div></section>
+      <button id="export-json" class="wide">Export complete lab JSON</button>
+    </aside>
+    <section class="caption"><span id="caption-eyebrow" class="eyebrow">COMMON METRE SCALE</span><h2 id="caption-title">Twelve procedural specimens</h2><p id="caption-copy">Rigid body parts are articulated by an inspectable quadruped rig. Smooth skin deformation is later work.</p></section>
+    <footer><span id="status" role="status">Preparing creature lab…</span><span>Orbit drag · Pan right drag · Zoom wheel/pinch</span></footer>
+    <script type="module" src="/src/creature-lab.ts"></script>
+  </body>
+</html>

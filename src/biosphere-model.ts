@@ -4,6 +4,8 @@
  * inspectable heuristics, rather than predictions.
  */
 import {YEAR_NS} from './world-time.ts';
+import {generateCreatureGenome} from './creature-model.ts';
+import type {CreatureArchetype, CreatureGenome} from './creature-model.ts';
 
 export type PlanetProfile = 'temperate' | 'arid' | 'cold' | 'airless';
 export type SpeciesKind = 'tree' | 'shrub' | 'grass' | 'animal';
@@ -21,6 +23,8 @@ export type Species = {
   traits:Traits; niche:{minTempK:number;maxTempK:number;minMoisture:number;
     maxMoisture:number;maxSlope:number};
   diet:'producer'|'browser'|'grazer'; dispersal:'land';
+  /** Present only for the four procedural quadruped clades. */
+  creature?:CreatureGenome;
 };
 export type Habitat = {id:string;name:string;temperatureK:number;moisture:number;slope:number;reachable:boolean;groundColor:string};
 export type RockFamily = {id:string;name:string;form:'angular'|'layered'|'rounded';color:string;scaleM:number;elongation:number;layers:number;roughness:number};
@@ -34,7 +38,7 @@ export type Membership = {speciesId:string;suitability:number;occupied:boolean;r
 export type DatedBiosphere = {dateMyr:number;dateNs:string;stage:'unformed'|'forming'|'sterile'|'microbial'|'complex';surfaceAvailable:boolean;species:Species[];digest:string};
 export type Placement = {id:string;speciesId:string|null;rockId:string|null;variant:number;x:number;z:number;rotation:number;scale:number};
 
-export const BIOSPHERE_VERSION = 'biosphere-lab-1';
+export const BIOSPHERE_VERSION = 'biosphere-lab-2';
 const MAX_SEED_LENGTH = 160;
 const MIN_DATE_MYR = -20_000, MAX_DATE_MYR = 20_000;
 const PLOT_M = 64, MAX_PLACEMENTS = 700, VARIANT_COUNT = 4;
@@ -48,6 +52,12 @@ const familyWords: Record<Family, string[]> = {
   branching: ['Alder', 'Crown', 'Fork', 'Bough'], spire: ['Needle', 'Pillar', 'Spire', 'Lance'],
   bush: ['Mound', 'Thorn', 'Cushion', 'Brush'], blade: ['Reed', 'Blade', 'Tuft', 'Sward'],
   quadruped: ['Grazer', 'Browser', 'Runner', 'Hoof'],
+};
+const creatureWords:Record<CreatureArchetype,string[]>={
+  browser:['Mossback','Hornbrow','Muzzlefern','Crestgrazer'],
+  runner:['Fleetfoot','Tailwind','Longstride','Reedrunner'],
+  'low-slung':['Platebelly','Lowshield','Broadstep','Mudcarapace'],
+  'long-neck':['Skyneck','Reachcrest','Tallbrow','Canopywalker'],
 };
 const worldWords = ['Aster', 'Boreal', 'Cinder', 'Dawn', 'Elder', 'Fallow', 'Galen', 'Hearth'];
 const placeWords = ['Vale', 'Reach', 'Cairn', 'Mere', 'Hollow', 'Crest', 'Fen', 'Rill'];
@@ -138,6 +148,10 @@ function inheritedNiche(parent:Species['niche'], seed:string, ordinal:number):Sp
   const nextCentre=centre+thermalShift, nextMoistureCentre=clamp(moistureCentre+moistureShift,.08,.92);
   return {minTempK:round(nextCentre-nextHalf,1),maxTempK:round(nextCentre+nextHalf,1),minMoisture:round(clamp(nextMoistureCentre-nextMoistureHalf,.01,.9),3),maxMoisture:round(clamp(nextMoistureCentre+nextMoistureHalf,.1,.99),3),maxSlope:round(clamp(parent.maxSlope+between(`${seed}/niche-mutation/${ordinal}/slope`,-.08,.08),.12,.96),3)};
 }
+function creatureTraits(genome:CreatureGenome):Traits {
+  const height=genome.legLength+genome.torsoHeight*.35;
+  return {heightM:round(height),widthRatio:round(genome.torsoWidth/genome.torsoLength),branchCount:0,branchAngle:0,leafLength:0,leafWidth:0,leafDensity:0,curvature:0,legRatio:round(genome.legLength/height),bodyLength:genome.torsoLength,headRatio:round(genome.headLength/genome.torsoLength),tailLength:genome.tailLength,color:genome.color,woodColor:genome.accentColor};
+}
 function makeSpecies(seed:string, planetId:string, profile:Exclude<PlanetProfile,'airless'>, family:Family, lineageIndex:number, baseBirth:number):Species[] {
   const lineageId=`${planetId}/lineage/${family}`, kind:SpeciesKind=family==='bush'?'shrub':family==='blade'?'grass':family==='quadruped'?'animal':'tree';
   const founderId=`${lineageId}/0`, child1Id=`${lineageId}/1`, child2Id=`${lineageId}/2`;
@@ -153,6 +167,26 @@ function makeSpecies(seed:string, planetId:string, profile:Exclude<PlanetProfile
     {id:child2Id,name:name(2),lineageId,parentId:child1Id,kind,family,birthMyr:split2,deathMyr:null,traits:child2,niche:child2Niche,diet,dispersal:'land'},
   ];
 }
+function makeCreatureClade(seed:string, planetId:string, profile:Exclude<PlanetProfile,'airless'>, archetype:CreatureArchetype, lineageIndex:number, baseBirth:number):Species[] {
+  const lineageId=`${planetId}/lineage/quadruped/${archetype}`;
+  const ids=[0,1,2].map(ordinal=>`${lineageId}/${ordinal}`);
+  const firstBirth=baseBirth+lineageIndex*17+Math.floor(random01(`${seed}/${archetype}/birth`)*9);
+  const split1=firstBirth+90+Math.floor(random01(`${seed}/${archetype}/split1`)*75),split2=split1+65+Math.floor(random01(`${seed}/${archetype}/split2`)*65);
+  // Fold the public seed and planet context before making creature generator
+  // channels: the public seed limit remains usable and profiles do not share fauna.
+  const creatureKey=digest(`${profile}/${planetId}/${seed}/${archetype}`);
+  const founder=generateCreatureGenome(`${creatureKey}/0`,archetype);
+  const child1=generateCreatureGenome(`${creatureKey}/1`,archetype,founder);
+  const child2=generateCreatureGenome(`${creatureKey}/2`,archetype,child1);
+  const genomes=[founder,child1,child2],births=[firstBirth,split1,split2];
+  const founderNiche=nicheFor(profile,'quadruped',0,seed),niches=[founderNiche,inheritedNiche(founderNiche,`${seed}/${archetype}`,1),inheritedNiche(inheritedNiche(founderNiche,`${seed}/${archetype}`,1),`${seed}/${archetype}`,2)];
+  const diet:Species['diet']=archetype==='runner'||archetype==='low-slung'?'grazer':'browser';
+  return genomes.map((creature,ordinal)=>({
+    id:ids[ordinal]!,name:`${pick(creatureWords[archetype],`${seed}/${archetype}/name/${ordinal}`)} ${pick(placeWords,`${seed}/${archetype}/epithet/${ordinal}`)} ${archetype} ${ordinal+1}`,
+    lineageId,parentId:ordinal===0?null:ids[ordinal-1]!,kind:'animal' as const,family:'quadruped' as const,birthMyr:births[ordinal]!,deathMyr:null,
+    traits:creatureTraits(creature),niche:niches[ordinal]!,diet,dispersal:'land' as const,creature,
+  }));
+}
 function makeRocks(seed:string, planetId:string, profile:PlanetProfile):RockFamily[] { const palette=profile==='arid'?['#8b6544','#a58a60','#715443']:profile==='cold'?['#69717a','#8a8f8a','#596269']:['#6b6254','#82765e','#59675e']; return (['angular','layered','rounded'] as const).map((form,index)=>({
   id:`${planetId}/rock/${form}`,name:`${pick(placeWords,`${seed}/rock/${form}`)} ${form} stone`,form,color:palette[index]!,scaleM:round(between(`${seed}/rock/${form}/scale`,.45,1.65)),elongation:round(between(`${seed}/rock/${form}/elongation`,form==='layered'?1.5:0.7,form==='layered'?2.7:1.5)),layers:form==='layered'?Math.floor(between(`${seed}/rock/${form}/layers`,3,8)):0,roughness:round(between(`${seed}/rock/${form}/roughness`,.25,.85)),
 })); }
@@ -165,8 +199,12 @@ export function generateBiosphere(seed:string, profile:PlanetProfile):BiosphereW
   const formationEvent:HistoryEvent={id:`${planetId}/formation`,dateMyr:formationMyr,kind:'formation',label:'Planet formation scenario begins'};
   if (profile==='airless') { const bare={version:BIOSPHERE_VERSION,seed,planetId,name,profile,formationMyr,surfaceMyr,microbialMyr:null,species:[],habitats:airlessHabitats(seed),rocks,events:[formationEvent,{id:`${planetId}/surface`,dateMyr:surfaceMyr,kind:'surface',label:'Bare surface scenario begins'}],digest:''}; return {...bare,digest:digest(JSON.stringify(bare))}; }
   const microbialMyr=surfaceMyr+95+Math.floor(random01(`${seed}/microbial`)*110), speciesBase=microbialMyr+420+Math.floor(random01(`${seed}/complex`)*150);
-  const families:Family[]=['branching','spire','bush','blade','quadruped'];
-  const species=families.flatMap((family,index)=>makeSpecies(seed,planetId,profile,family,index,speciesBase));
+  // Plants retain the existing four three-member lineages. Four animal clades
+  // add a similarly inspectable ancestor chain without collapsing their anatomy
+  // into a single generic quadruped.
+  const plantFamilies:PlantFamily[]=['branching','spire','bush','blade'];
+  const creatures:CreatureArchetype[]=['browser','runner','low-slung','long-neck'];
+  const species=[...plantFamilies.flatMap((family,index)=>makeSpecies(seed,planetId,profile,family,index,speciesBase)),...creatures.flatMap((archetype,index)=>makeCreatureClade(seed,planetId,profile,archetype,index,speciesBase+plantFamilies.length*13))];
   const events:HistoryEvent[]=[
     formationEvent,
     {id:`${planetId}/surface`,dateMyr:surfaceMyr,kind:'surface',label:'Stable surface scenario begins'},

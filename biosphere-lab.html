@@ -11,7 +11,7 @@
     <main id="viewport" aria-label="Inspectable procedural biosphere laboratory"></main>
     <header class="topbar">
       <a class="brand" href="./index.html" aria-label="Return to Universe Atlas"><span>◒</span> UNIVERSE ATLAS <em>BIOSPHERE LAB</em></a>
-      <nav aria-label="Related views"><a href="./biome-lab.html">Biome lab</a><a href="./index.html">Atlas</a></nav>
+      <nav aria-label="Related views"><a href="./creature-lab.html">Creature lab</a><a href="./biome-lab.html">Biome lab</a><a href="./index.html">Atlas</a></nav>
       <div class="control-row">
         <label>Planet seed <input id="biosphere-seed" maxlength="80" value="LETHRA-BIOSPHERE-01" /></label>
         <label>Profile <select id="planet-profile"><option value="temperate">Temperate</option><option value="arid">Arid</option><option value="cold">Cold</option><option value="airless">Airless</option></select></label>
@@ -32,6 +32,7 @@
       <div class="metric-grid" id="summary-metrics"></div>
       <section id="notice" class="notice" hidden></section>
       <section><h2>Selected specimen</h2><div id="species-detail" class="detail-list"></div></section>
+      <a id="creature-inspect" class="wide" href="./creature-lab.html" hidden>Inspect anatomy, ancestry and movement →</a>
       <section><h2>Habitat range</h2><div id="membership-list" class="detail-list"></div></section>
       <section class="digest"><span>WORLD DIGEST</span><code id="world-digest"></code></section>
       <button id="export-json" class="wide">Export complete lab JSON</button>

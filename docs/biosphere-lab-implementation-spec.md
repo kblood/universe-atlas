@@ -1,5 +1,12 @@
 # Biosphere generator lab implementation
 
+Follow-up: [Creature Lab](creature-lab-implementation-spec.md) expands the
+catalogue to `biosphere-lab-2`, with 12 plants and 12 animals. It adds separate
+articulated anatomy, walk/run and full ancestor-chain displays. The original
+Biosphere Lab still renders static community specimens and links the selected
+animal to its matching Creature Lab identity. The implementation and measurements
+below describe the original v1 baseline unless explicitly updated.
+
 This increment implements the procedural-biospheres research as an inspectable
 lab, not full planetary climate, ecology or calibrated evolutionary simulation.
 Preserve the existing biome lab and its deterministic fixtures. Link the new

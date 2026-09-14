@@ -73,6 +73,8 @@ function buildView(){
 function statusFor(s:Species){if(s.birthMyr>dated.dateMyr)return "unborn / archive";if(s.deathMyr!==null&&dated.dateMyr>=s.deathMyr)return "extinct";return "living";}
 function renderPanels(){
   const s=selected(), habitat=world.habitats.find(h=>h.id===habitatId), notice=$("notice");
+  const creatureLink=$("creature-inspect") as HTMLAnchorElement; creatureLink.hidden=!s?.creature;
+  creatureLink.href=`./creature-lab.html?${new URLSearchParams({seed:world.seed,profile:world.profile,species:s?.id??''})}`;
   for(const btn of document.querySelectorAll<HTMLButtonElement>("[data-mode]"))btn.classList.toggle("active",btn.dataset.mode===mode); modeSelect.value=mode; $("lineage-main-panel").hidden=mode!=="lineage";
   $("lab-title").textContent=mode==="nursery"?"Nursery specimens":mode==="community"?"Habitat community":"Lineage archive"; $("caption-name").textContent=mode==="community"?`${habitat?.name??"Habitat"} community`:mode==="lineage"?"Dated branching lineage":"Biosphere nursery";
   const archive=s&&s.birthMyr>dated.dateMyr; const nurseryCount=mode==="nursery"&&s&&dated.stage==="complex"?4:0;
