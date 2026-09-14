@@ -8,6 +8,11 @@ planet-specific habitat ranges and dated lineages. Its [implementation record](d
 separates the fictional history and static specimen tests from full planetary
 ecology, animal locomotion and main-app formation gating.
 
+The [creature diversity and motion research](docs/creature-diversity-and-motion-plan-2026-09-14.md)
+explains why the current animals look similar, reviews procedural anatomy and
+locomotion references, and proposes inherited body plans, rig inspection and
+walk/run tests. These are next-stage recommendations; animals remain static.
+
 The [Biome Lab](biome-lab.html) compares deterministic plant and rock communities
 on controlled terrain. Its [specification and validation](docs/biome-lab-spec.md)
 distinguish this test bench from the pending planet-wide ecosystem integration.

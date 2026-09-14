@@ -48,7 +48,7 @@ species. ([Sims 1994](https://doi.org/10.1145/192161.192167)) More recent work
 also encodes creatures as kinematic trees, evolving morphology and control over
 terrain tasks; it reinforces the value of a proxy physics gate, while not
 providing a biological validator or browser-ready rig.
-([Wang et al. 2021](https://www.nature.com/articles/s41467-021-25874-z))
+([Gupta et al. 2021](https://www.nature.com/articles/s41467-021-25874-z))
 
 For gameplay animation, the practical middle ground is a declarative gait
 family plus terrain-aware inverse kinematics. Karim et al. generate footfalls,
@@ -57,7 +57,7 @@ and deliberately vary the computation by level of detail. Their review notes
 the trade: data-driven motion looks natural but is morphology-specific;
 physics-based control adapts but costs more; procedural motion is controllable
 but can look unnatural. Use this as a lab hypothesis to test, not a promise of
-quality. ([Karim et al. 2014](https://www.ahmadabdulkarim.com/wp-content/uploads/2014/02/AAK-ProceduralLocomotion.pdf))
+quality. ([Karim et al. 2012](https://liris.cnrs.fr/Documents/Liris-5511.pdf))
 
 Biomechanics makes several generator inputs non-optional: mass distribution,
 centre of mass, attachment position, joint range, foot/contact shape, gravity,
