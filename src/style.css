@@ -406,11 +406,19 @@ body.in-vr #enter-vr {
   display: flex;
   gap: 8px;
 }
-.view-actions button {
+.view-actions button,
+.view-actions .lab-launch {
   background: #0c1621c9;
   font-size: 11px;
   padding: 7px 12px;
 }
+.view-actions .lab-launch {
+  border: 1px solid #2a394b;
+  border-radius: 5px;
+  color: #d7e9f2;
+  text-decoration: none;
+}
+.view-actions .lab-launch:hover { background: #22384a; }
 footer {
   position: fixed;
   z-index: 5;

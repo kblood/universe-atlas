@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07120f" />
+    <title>Biome Lab · Universe Atlas</title>
+  </head>
+  <body>
+    <main id="viewport" aria-label="Interactive biome composition view"></main>
+    <header class="topbar">
+      <a class="brand" href="./index.html" aria-label="Return to Universe Atlas"><span>◒</span> UNIVERSE ATLAS <em>BIOME LAB</em></a>
+      <div class="control-row">
+        <label>Seed <input id="biome-seed" maxlength="80" value="LETHRA-BIOME-01" /></label>
+        <label>Primary <select id="primary-biome"></select></label>
+        <label>Ecotone <select id="blend-biome"></select></label>
+        <button id="regenerate" class="primary">Regenerate</button>
+      </div>
+    </header>
+    <aside class="side-panel">
+      <div class="panel-heading"><span class="eyebrow">CONTROLLED TEST BED</span><h1 id="biome-title">Biome composition</h1><p id="biome-description"></p></div>
+      <div class="metric-grid" id="summary-metrics"></div>
+      <p class="subtle footprint-note">Footprints are projected recipe envelopes, not visible pixel coverage or measured ecological cover.</p>
+      <section><h2>Recipe counts</h2><div id="recipe-counts" class="recipe-list"></div></section>
+      <section><h2>Habitat members</h2><p class="subtle">Planned fauna; none are rendered or included in organism counts.</p><div id="fauna-list" class="fauna-list"></div></section>
+      <section class="digest"><span>PATCH DIGEST</span><code id="patch-digest"></code></section>
+      <button id="export-json" class="wide">Export patch JSON</button>
+    </aside>
+    <section class="caption">
+      <span class="eyebrow">128 × 128 METRES · FLAT REFERENCE TERRAIN</span>
+      <h2 id="caption-name">Woodland test plot</h2>
+      <p>Controlled composition lab, not a completed planetary environment. Ground colour marks the deterministic biome transition.</p>
+      <div class="view-actions"><button id="ground-view">Ground inspection</button><button id="overhead-view">Overhead</button></div>
+    </section>
+    <footer><span id="status">Ready</span><span><b>Orbit</b> drag · <b>Pan</b> right drag · <b>Zoom</b> wheel/pinch · scale grid: 10 m</span></footer>
+    <script type="module" src="/src/biome-lab.ts"></script>
+  </body>
+</html>

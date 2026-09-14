@@ -4,6 +4,10 @@ Research and proposed implementation specification, 2026-09-14.
 Code audited at `12645f6`. This document proposes new labs; it does not claim
 that they are implemented or that the reported Cerintar defect is fixed.
 
+Follow-up: the first [Biome Lab](biome-lab-spec.md) is now implemented as a
+controlled composition test bench. The planet-wide survey, continuous-flight
+ecology tests and creature simulation proposed below remain future increments.
+
 ## Decision
 
 Build a small collection of repeatable generator and traversal labs before
