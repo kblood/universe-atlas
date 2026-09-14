@@ -3,6 +3,15 @@
 Implementation specification, 2026-09-14. Follows
 [planet validation labs](planet-validation-labs-2026-09-14.md).
 
+Follow-up: [procedural biospheres and generator labs](procedural-biospheres-next-plan-2026-09-14.md)
+specifies the next generation of this lab: procedural species morphology,
+planet-specific species pools and habitat ranges shared across biomes. The
+fixed recipes documented below remain the implemented baseline.
+
+The companion [Biosphere Lab](../biosphere-lab.html) adds procedural morphology,
+generated species pools, habitat membership and a dated lineage inspector.
+See its [implementation contract and validation](biosphere-lab-implementation-spec.md).
+
 ## Scope and acceptance
 
 Create a reusable deterministic biome/palette/placement module and an actual

@@ -1,0 +1,105 @@
+import {chromium} from 'playwright';
+import {browserArgs} from './browser-options.mjs';
+import assert from 'node:assert/strict';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import path from 'node:path';
+const base=process.env.ATLAS_URL||'http://127.0.0.1:5186/biosphere-lab.html';
+const out=process.env.ATLAS_RESULTS||'test-results/biosphere-lab';
+await mkdir(out,{recursive:true});
+const browser=await chromium.launch({headless:true,args:browserArgs});
+const errors=[];
+const inspect=page=>page.evaluate(()=>{
+  const d=window.__biosphereLab;
+  return d&&{ready:d.ready,error:d.error,world:d.world,dated:d.dated,mode:d.mode,selectedSpeciesId:d.selectedSpeciesId,habitatId:d.habitatId,placements:d.placements,memberships:d.memberships,renderer:d.renderer,accountedBytes:d.accountedBytes,camera:d.camera,geometryValidation:d.geometryValidation};
+});
+const settle=async page=>{
+  await page.waitForFunction(()=>window.__biosphereLab?.ready,undefined,{timeout:30000});
+  await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+  const d=await inspect(page);assert.equal(d.error,null);assert.deepEqual(d.geometryValidation.failures,[]);
+  assert.ok(Number.isInteger(d.renderer.triangles));assert.ok(Number.isFinite(d.accountedBytes));return d;
+};
+const date=async(page,value)=>{await page.locator('#date-myr').fill(String(value));await page.locator('#date-myr').press('Tab');return settle(page);};
+const shot=async(page,name)=>page.screenshot({path:path.join(out,name+'.png'),fullPage:true});
+try{
+  const page=await browser.newPage({viewport:{width:1500,height:1000}});
+  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  await page.goto(base,{waitUntil:'networkidle'});let d=await settle(page);
+  assert.equal(d.mode,'nursery');assert.ok(d.world.species.length>=15);
+  const initialWorld=d.world.digest;
+  await shot(page,'01-nursery');
+  const samples=[];
+  for(const family of ['branching','spire','bush','blade','quadruped']){
+    const s=d.world.species.find(s=>s.family===family&&s.deathMyr===null);assert.ok(s);
+    await page.locator('#species-select').selectOption(s.id);d=await settle(page);
+    assert.equal(d.selectedSpeciesId,s.id);assert.ok(d.renderer.triangles>0);
+    await shot(page,'nursery-'+family);
+    samples.push({family,id:s.id,triangles:d.renderer.triangles,bytes:d.accountedBytes});
+  }
+  await page.locator('#growth-stage').selectOption('juvenile');await settle(page);
+  await page.locator('#neutral-material').check();await settle(page);await shot(page,'02-juvenile-neutral');
+  await page.locator('#growth-stage').selectOption('adult');await page.locator('#neutral-material').uncheck();
+  await page.locator('#lab-mode').selectOption('community');d=await settle(page);
+  const h=d.world.habitats.find(h=>h.reachable);await page.locator('#habitat-select').selectOption(h.id);d=await settle(page);
+  const populated=d.placements;assert.ok(populated.some(p=>p.speciesId),'community renders generated organisms');
+  const communityMetrics={members:populated.length,bytes:d.accountedBytes,...d.renderer};
+  assert.ok(d.accountedBytes<64*1024*1024,'community prototype buffers stay inside the 64 MiB lab cap');
+  assert.ok(d.renderer.calls<=100,'community batches variants instead of drawing every individual separately');
+  const digestAtZero=d.dated.digest;
+  await page.locator('#overhead-view').click();await settle(page);await shot(page,'03-community');
+  const island=d.world.habitats.find(h=>!h.reachable);await page.locator('#habitat-select').selectOption(island.id);d=await settle(page);
+  assert.equal(d.placements.filter(p=>p.speciesId).length,0,'dispersal blocks island organisms');
+  await page.locator('#habitat-select').selectOption(h.id);await settle(page);
+  d=await date(page,d.world.formationMyr-1);
+  assert.equal(d.dated.stage,'unformed');assert.equal(d.placements.length,0);await shot(page,'04-unformed');
+  d=await date(page,d.world.microbialMyr);
+  assert.equal(d.dated.stage,'microbial');assert.equal(d.placements.filter(p=>p.speciesId).length,0);await shot(page,'05-microbial');
+  d=await date(page,0);assert.equal(d.dated.digest,digestAtZero);assert.deepEqual(d.placements,populated);
+  await page.locator('#lab-mode').selectOption('lineage');d=await settle(page);
+  const graphLayout=await page.locator('#lineage-main-panel').evaluate(el=>{
+    const box=el.getBoundingClientRect(),svg=el.querySelector('svg').getBoundingClientRect();
+    return {width:box.width,right:box.right,top:box.top,svgRight:svg.right,scrollWidth:el.scrollWidth,clientWidth:el.clientWidth};
+  });
+  assert.ok(graphLayout.width>600&&graphLayout.right<1150,'lineage occupies the main viewport outside the control sidebar');
+  assert.ok(graphLayout.svgRight<=graphLayout.right&&graphLayout.scrollWidth<=graphLayout.clientWidth+1,'timeline is not clipped horizontally');
+  const extinct=d.world.species.find(s=>s.deathMyr!==null);assert.ok(extinct);
+  const node=page.locator('[data-species-id='+JSON.stringify(extinct.id)+']').first();
+  assert.ok(await node.count(),'lineage provides actual clickable ancestor nodes');await node.click();d=await settle(page);
+  assert.equal(d.selectedSpeciesId,extinct.id);await shot(page,'06-lineage');
+  const descendant=d.world.species.find(s=>s.parentId===extinct.id);
+  const descendantNode=page.locator('[data-species-id='+JSON.stringify(descendant.id)+']').first();
+  await descendantNode.focus();await descendantNode.press('Enter');d=await settle(page);
+  assert.equal(d.selectedSpeciesId,descendant.id,'lineage keyboard selection works on SVG rows');
+  d=await date(page,extinct.birthMyr);assert.ok(d.dated.species.some(s=>s.id===extinct.id));
+  d=await date(page,extinct.deathMyr);assert.ok(!d.dated.species.some(s=>s.id===extinct.id));
+  await date(page,0);
+  await page.locator('#lab-mode').selectOption('nursery');await settle(page);
+  await page.locator('#ground-view').click();d=await settle(page);const beforeCamera=d.camera;
+  await page.mouse.move(450,470);await page.mouse.down();await page.mouse.move(600,410,{steps:8});await page.mouse.up();await page.mouse.wheel(0,-180);await page.waitForTimeout(250);
+  assert.notDeepEqual((await inspect(page)).camera,beforeCamera);
+  const downloading=page.waitForEvent('download');await page.locator('#export-json').click();const download=await downloading;
+  const file=path.join(out,'export.json');await download.saveAs(file);const json=JSON.parse(await readFile(file,'utf8'));
+  assert.ok(json.world&&json.dated);assert.equal(json.world.digest,initialWorld);assert.ok(json.dated.dateNs);
+  const resourceRows=[];
+  for(let i=0;i<7;i++){
+    await page.locator('#biosphere-seed').fill('RESOURCE-'+i);await page.locator('#regenerate').click();d=await settle(page);
+    resourceRows.push({bytes:d.accountedBytes,...d.renderer.memory});
+  }
+  assert.ok(Math.max(...resourceRows.map(r=>r.bytes))<64*1024*1024,'prototype cache stays inside proposed 64 MiB cap');
+  assert.ok(resourceRows.at(-1).geometries<=resourceRows[0].geometries+8,'old world geometries released');
+  await page.locator('#planet-profile').selectOption('airless');d=await settle(page);
+  assert.equal(d.world.species.length,0);assert.equal(d.dated.stage,'sterile');await shot(page,'07-airless');
+  await page.locator('#planet-profile').selectOption('arid');d=await settle(page);
+  assert.equal(d.world.profile,'arid');assert.equal(d.world.species.length,15);await shot(page,'08-arid');
+  await page.locator('#planet-profile').selectOption('cold');d=await settle(page);assert.equal(d.world.profile,'cold');
+  await shot(page,'08-cold');
+  const narrow=await browser.newPage({viewport:{width:390,height:844}});
+  narrow.on('pageerror',e=>errors.push(e.message));await narrow.goto(base,{waitUntil:'networkidle'});await settle(narrow);
+  assert.ok(await narrow.locator('#planet-profile').isVisible());
+  assert.ok(await narrow.locator('#lab-mode').isVisible());await shot(narrow,'09-narrow');
+  await narrow.locator('#lab-mode').selectOption('lineage');await settle(narrow);
+  assert.ok(await narrow.locator('#lineage-main-panel').isVisible());
+  assert.ok(await narrow.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'narrow layout does not overflow horizontally');
+  await shot(narrow,'10-narrow-lineage');await narrow.close();
+  assert.deepEqual(errors,[]);
+  const report={ok:true,base,samples,communityMetrics,resourceRows,errors};await writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+}finally{await browser.close();}

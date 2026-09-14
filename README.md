@@ -3,11 +3,21 @@
 A deterministic Three.js universe explorer, deployed at
 https://dionysus.dk/webxr/IWSDK/universe-atlas/.
 
+The [Biosphere Lab](biosphere-lab.html) inspects generated plant/animal morphology,
+planet-specific habitat ranges and dated lineages. Its [implementation record](docs/biosphere-lab-implementation-spec.md)
+separates the fictional history and static specimen tests from full planetary
+ecology, animal locomotion and main-app formation gating.
+
 The [Biome Lab](biome-lab.html) compares deterministic plant and rock communities
 on controlled terrain. Its [specification and validation](docs/biome-lab-spec.md)
 distinguish this test bench from the pending planet-wide ecosystem integration.
 The [broader validation plan](docs/planet-validation-labs-2026-09-14.md) links
 the terrain, vegetation and species research.
+
+The next [procedural biospheres plan](docs/procedural-biospheres-next-plan-2026-09-14.md)
+extends the fixed lab fixtures into generated species, planet-specific communities,
+shared habitat ranges, universal time and evolutionary lineages. It links four detailed
+research reports and describes proposed work, not deployed capabilities.
 
 Next-stage proposal: [walkable worlds and traversable history](docs/living-worlds-and-time-roadmap.md).
 This roadmap describes planned work, not the deployed feature set.
@@ -55,6 +65,7 @@ npm run test:atmosphere
 npm run test:rivers
 npm run test:vr
 npm run test:biomes
+npm run test:biosphere
 ```
 
 Playwright needs its Chromium browser installed (`npx playwright install chromium`).

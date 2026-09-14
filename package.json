@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1 --port 5186",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5186",
-    "test": "node --test tests/catalog.test.mjs tests/planet.test.mjs tests/world.test.mjs tests/ground.test.mjs tests/surface.test.mjs tests/drainage.test.mjs tests/river.test.mjs tests/river-terrain.test.mjs tests/river-water.test.mjs tests/ocean-patch-culling.test.mjs tests/river-environment.test.mjs tests/river-surface.test.mjs tests/river-surface-conform.test.mjs tests/river-surface-bank.test.mjs tests/river-physical-field.test.mjs tests/biome-ecology.test.mjs",
+    "test": "node --test tests/catalog.test.mjs tests/planet.test.mjs tests/world.test.mjs tests/ground.test.mjs tests/surface.test.mjs tests/drainage.test.mjs tests/river.test.mjs tests/river-terrain.test.mjs tests/river-water.test.mjs tests/ocean-patch-culling.test.mjs tests/river-environment.test.mjs tests/river-surface.test.mjs tests/river-surface-conform.test.mjs tests/river-surface-bank.test.mjs tests/river-physical-field.test.mjs tests/biome-ecology.test.mjs tests/biosphere-model.test.mjs tests/biosphere-geometry.test.mjs",
     "test:shore": "node tests/shore-stability.mjs",
     "test:streaming": "node --test tests/terrain-streaming.mjs",
     "test:drainage": "node tests/drainage.mjs",
@@ -21,7 +21,8 @@
     "test:continuous": "node tests/continuous.mjs",
     "test:travel": "node tests/travel.mjs",
     "test:rivers": "node tests/rivers.mjs",
-    "test:biomes": "node tests/biome-lab.mjs"
+    "test:biomes": "node tests/biome-lab.mjs",
+    "test:biosphere": "node tests/biosphere-lab.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "0.20.0",

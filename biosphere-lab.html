@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07120f" />
+    <title>Biosphere Lab · Universe Atlas</title>
+    <style>.mode-select{display:grid;gap:4px;color:#819589;font-size:9px;letter-spacing:.12em;margin:12px 0}.mode-select select{height:34px;border:1px solid #355443;background:#0b1b13;color:#dcebdc;border-radius:4px;padding:6px 8px}#lineage-main-panel{position:fixed;z-index:2;top:96px;left:28px;width:min(760px,calc(100vw - 410px));max-height:calc(100dvh - 250px);overflow:auto;padding:16px;background:#07110e;border:1px solid #34503c;border-radius:8px;box-shadow:0 18px 50px #0008}#lineage-main-panel[hidden]{display:none}@media(max-width:850px){#lineage-main-panel{left:12px;right:12px;top:118px;width:auto;max-height:35dvh}}@media(max-width:560px){#lineage-main-panel{top:112px;max-height:31dvh;padding:10px}}</style>
+  </head>
+  <body>
+    <main id="viewport" aria-label="Inspectable procedural biosphere laboratory"></main>
+    <header class="topbar">
+      <a class="brand" href="./index.html" aria-label="Return to Universe Atlas"><span>◒</span> UNIVERSE ATLAS <em>BIOSPHERE LAB</em></a>
+      <nav aria-label="Related views"><a href="./biome-lab.html">Biome lab</a><a href="./index.html">Atlas</a></nav>
+      <div class="control-row">
+        <label>Planet seed <input id="biosphere-seed" maxlength="80" value="LETHRA-BIOSPHERE-01" /></label>
+        <label>Profile <select id="planet-profile"><option value="temperate">Temperate</option><option value="arid">Arid</option><option value="cold">Cold</option><option value="airless">Airless</option></select></label>
+        <button id="regenerate" class="primary">Regenerate</button>
+      </div>
+    </header>
+    <aside class="side-panel">
+      <div class="panel-heading"><span class="eyebrow">PROCEDURAL BIOSPHERE TEST BED</span><h1 id="lab-title">Nursery specimens</h1><p id="lab-description"></p></div>
+      <label class="mode-select">Lab mode <select id="lab-mode"><option value="nursery">Nursery</option><option value="community">Community</option><option value="lineage">Lineage</option></select></label>
+      <div class="controls-stack">
+        <label>Global Myr date <input id="date-myr" type="number" min="-20000" max="20000" step="1" value="0" /></label>
+        <div class="era-row" aria-label="Date presets"><button data-era="formation">Formation</button><button data-era="microbial">Microbial</button><button data-era="present">Reference</button></div>
+        <label>Habitat <select id="habitat-select"></select></label>
+        <label>Species / archive <select id="species-select"></select></label>
+        <label>Growth stage <select id="growth-stage"><option value="adult">Adult</option><option value="juvenile">Juvenile</option></select></label>
+        <label class="check"><input id="neutral-material" type="checkbox" /> Neutral material <small>Show shape without colour</small></label>
+      </div>
+      <div class="metric-grid" id="summary-metrics"></div>
+      <section id="notice" class="notice" hidden></section>
+      <section><h2>Selected specimen</h2><div id="species-detail" class="detail-list"></div></section>
+      <section><h2>Habitat range</h2><div id="membership-list" class="detail-list"></div></section>
+      <section class="digest"><span>WORLD DIGEST</span><code id="world-digest"></code></section>
+      <button id="export-json" class="wide">Export complete lab JSON</button>
+    </aside>
+    <section id="lineage-main-panel" hidden><span class="eyebrow">ACTUAL DATED LINEAGE</span><h2>Dated branching timeline</h2><div id="lineage-graph" class="lineage-graph"></div></section>
+    <section class="caption">
+      <span class="eyebrow">64 × 64 METRES · FLAT REFERENCE BED</span>
+      <h2 id="caption-name">Biosphere nursery</h2>
+      <p id="caption-copy">Four deterministic morphology variants at a fixed metre scale. Static fauna are morphology prototypes, not animated population simulations.</p>
+      <div class="view-actions"><button id="ground-view">Ground inspection</button><button id="overhead-view">Overhead</button><button id="focus-view">Focus species</button></div>
+    </section>
+    <footer><span id="status" role="status">Preparing laboratory…</span><span><b>Orbit</b> drag · <b>Pan</b> right drag · <b>Zoom</b> wheel/pinch · scale grid: 8 m</span></footer>
+    <script type="module" src="/src/biosphere-lab.ts"></script>
+  </body>
+</html>
