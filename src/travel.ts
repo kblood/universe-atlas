@@ -29,9 +29,14 @@ export function surfaceClearance(body: StarSystem['stars'][number], relative: V3
     terrainClearance: distance - body.radiusM - elevation, clearance: Math.max(0, distance - minimum)};
 }
 export const LY_PER_MPC = 3261563.777167433;
+export const GALAXY_ENTRY_RADII = 6;
+export const GALAXY_EXIT_RADII = 8;
+export const SYSTEM_PREPARE_LY = .4;
 export function systemBoundary(sys: StarSystem) {
   return Math.max(
-    300 * AU,
+    // Load the physical system while its primary star is still unresolved.
+    // Exit uses twice this radius to prevent crossing back and forth.
+    6000 * AU,
     ...sys.planets.map((p) => p.orbit!.a * (1 + p.orbit!.e) * 8),
   );
 }

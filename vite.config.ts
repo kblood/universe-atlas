@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 export default defineConfig({
   base: "./",
   plugins: [{name: 'publish-orbit-docs', generateBundle() {
+    this.emitFile({type:'asset',fileName:'docs/star-visibility-and-transitions.md',
+      source:readFileSync(new URL('docs/star-visibility-and-transitions.md',import.meta.url),'utf8')});
     for(const fileName of ['docs/creature-lab-implementation-spec.md','docs/creature-diversity-and-motion-plan-2026-09-14.md','docs/research-creature-anatomy-references-2026-09-14.md','docs/research-creature-locomotion-references-2026-09-14.md'])
       this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
     for(const fileName of ['docs/biosphere-lab-implementation-spec.md','docs/procedural-biospheres-next-plan-2026-09-14.md','docs/research-planet-biome-generation-2026-09-14.md','docs/research-procedural-flora-geology-2026-09-14.md','docs/research-procedural-fauna-habitats-2026-09-14.md','docs/research-evolutionary-history-2026-09-14.md'])

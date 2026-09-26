@@ -1,5 +1,9 @@
 # Visual continuity across Atlas scales
 
+The density/photometry experiment below was revised on September 26 after a
+visibility regression. See [the current rendering correction](star-visibility-and-transitions.md)
+for the restored star field, earlier preparation and shared optical points.
+
 ## What the current renderer does
 
 - The universe view draws each galaxy from `densityOverview` as an enlarged point cloud and core sprite (`main.ts` `drawUniverse`). The galaxy view replaces this with up to 10,000 addressable catalogue systems plus streamed 32 ly chunks (`star-map.ts`, `galaxy-space.ts`). They use the same underlying density function, but the exterior points and interior stars have different positions, sizes and colors. A fade cannot make them correspond one for one.

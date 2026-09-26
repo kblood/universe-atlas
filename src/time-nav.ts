@@ -52,7 +52,7 @@ export const MODEL_MANIFEST_ID = [
   FUTURE_SCENARIO_VERSION,ALTERNATE_FATE_VERSION,OBSERVED_SKY_VERSION,CMB_FIELD_VERSION,SURFACE_CELL_VERSION,
 ].join('|');
 /** Consumer changes can affect a bookmark without changing generator data. */
-export const BUILD_VERSION = 'atlas-client-2026-09-24-1';
+export const BUILD_VERSION = 'atlas-client-2026-09-26-visual-2';
 
 // ---------------------------------------------------------------------------
 // §3.2 playback tiers.

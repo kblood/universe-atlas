@@ -4,6 +4,7 @@ import { referenceStarLifecycles, type StarLifecycle } from './stellar-evolution
 import { CATALOGUE_EPOCH_NS,UNIVERSE_END_NS } from './world-time.ts';
 import {historicalStarsForGalaxy,futureStarsForGalaxy,galaxyHostAt,type HistoricalStar} from './stellar-cohorts.ts';
 import type {GalaxyAddress} from './address.ts';
+import { displayLuminosity, STAR_DIAMETER_GLSL, STAR_FRAGMENT } from './star-appearance.ts';
 import {
   neighbourhood,
   chunkKey,
@@ -12,20 +13,10 @@ import {
 } from "./star-map.ts";
 type Chunk = ReturnType<typeof starChunk>;
 type MapData = ReturnType<typeof starMap>;
-type DensityData={positions:Float32Array;colors:Float32Array;sizes:Float32Array};
 function rootAddress(galaxy:Galaxy):GalaxyAddress {
   const match=/^G(\d{3})$/.exec(galaxy.id);
   if(!match)throw new Error(`GalaxySpace requires a root catalogue galaxy: ${galaxy.id}`);
   return {clusterCell:[0n,0n,0n],groupCell:[0n,0n,0n],galaxyOrdinal:Number(match[1])-1};
-}
-/** Stable display luminosity, separate from the catalogue's density-preview size.
- * The catalogue does not carry calibrated stellar photometry. */
-function displayLuminosity(ref:SystemRef):number {
-  let hash=2166136261;
-  for(const char of ref.id)hash=Math.imul(hash^char.charCodeAt(0),16777619);
-  const scatter=.5+((hash>>>0)/4294967295)*1.5;
-  const colorWeight=ref.color==='#b3d7ff'?4:ref.color==='#ffe6b6'?1:.22;
-  return colorWeight*scatter;
 }
 
 /** One physical galaxy, with catalogue stars streamed around a moving observer.
@@ -35,7 +26,6 @@ export class GalaxySpace {
   readonly anchors: THREE.Points;
   readonly nearby: THREE.Points;
   readonly historical:THREE.Points;
-  readonly density:THREE.Points|null;
   readonly populationBeacon:THREE.Points;
   readonly scale: number;
   readonly origin = new THREE.Vector3();
@@ -63,12 +53,10 @@ export class GalaxySpace {
     private arrived: (chunk: Chunk) => void,
     private failed: (message: string) => void,
     private readonly universeSeed:string=galaxy.seed,
-    densityData?:DensityData,
   ) {
     this.scale = 10 / galaxy.radiusLy;
     this.refs = data.refs;
     this.ids = new Set(this.refs.map((r) => r.id));
-    this.density=densityData?this.makeDensity(densityData):null;
     this.anchors = this.cloud(
       data.positions,
       data.colors,
@@ -104,24 +92,7 @@ export class GalaxySpace {
       new THREE.Float32BufferAttribute([0,0,0],3)),new THREE.PointsMaterial({size:22,sizeAttenuation:false,
       color:'#e7efff',transparent:true,opacity:.85,depthWrite:false}));
     this.populationBeacon.visible=false;
-    if(this.density)this.group.add(this.density);
     this.group.add(this.anchors, this.nearby,this.historical,this.populationBeacon);
-  }
-  private makeDensity(data:DensityData):THREE.Points {
-    const geometry=new THREE.BufferGeometry();
-    geometry.setAttribute('position',new THREE.BufferAttribute(Float32Array.from(data.positions,p=>p*this.scale),3));
-    geometry.setAttribute('color',new THREE.BufferAttribute(data.colors,3));
-    geometry.setAttribute('pointSize',new THREE.BufferAttribute(data.sizes,1));
-    const material=new THREE.ShaderMaterial({
-      uniforms:{observer:{value:new THREE.Vector3()},unit:{value:this.scale},pixelRatio:{value:1},alpha:{value:.7}},
-      vertexShader:`attribute vec3 color;attribute float pointSize;uniform vec3 observer;uniform float unit,pixelRatio;varying vec3 tint;varying float visibility;
-        void main(){float distanceLy=length(position-observer)/unit;visibility=smoothstep(150.,1200.,distanceLy);
-          tint=color;vec4 view=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*view;
-          gl_PointSize=clamp(1.4+pointSize*80./max(100.,distanceLy),1.4,5.)*pixelRatio;}`,
-      fragmentShader:`uniform float alpha;varying vec3 tint;varying float visibility;void main(){vec2 p=gl_PointCoord-.5;float d=dot(p,p);if(d>.25||visibility<.002)discard;gl_FragColor=vec4(tint,exp(-d*22.)*.24*alpha*visibility);}`,
-      transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-    });
-    const points=new THREE.Points(geometry,material);points.frustumCulled=false;return points;
   }
   private cloud(
     positions: Float32Array,
@@ -156,39 +127,28 @@ export class GalaxySpace {
       uniforms: {
         alpha: { value: 1 },
         observer: { value: new THREE.Vector3() },
-        originLy:{value:new THREE.Vector3()},
         unit: { value: this.scale },
         nearLayer: { value: near ? 1 : 0 },
         now: { value: 0 },
         immersive: { value: 0 },
         pixelRatio: { value: 1 },
-        dustHeight: {value:Math.max(1,this.galaxy.radiusLy*.015)},
-        dustStrength:{value:this.galaxy.type==='Spiral'||this.galaxy.type==='Barred spiral'?0.8:0.12},
       },
       vertexShader: `attribute vec3 color;attribute vec3 starColor;attribute float pointSize;attribute float luminosity;attribute float born;attribute float alive;
-        uniform vec3 observer,originLy;uniform float unit,nearLayer,now,immersive,pixelRatio,dustHeight,dustStrength;
-        varying vec3 tint;varying float visibility;varying float brightness;varying float mapped;
+        uniform vec3 observer;uniform float unit,nearLayer,now,immersive,pixelRatio;
+        varying vec3 tint;varying float visibility;
+        ${STAR_DIAMETER_GLSL}
         void main(){float d=length(position-observer)/unit;
-          float farMix=smoothstep(24.,256.,d);mapped=farMix;
-          tint=mix(mix(vec3(1.),starColor,.5),color,farMix);
+          float farMix=smoothstep(32.,256.,d);
+          tint=mix(starColor,color,farMix);
           visibility=(nearLayer>.5?(1.-smoothstep(24.,32.,d))*smoothstep(0.,.45,now-born):1.)*alive;
-          float midY=abs((position.y+observer.y)*.5/unit+originLy.y);
-          float galX=position.x/unit+originLy.x,galZ=position.z/unit+originLy.z;
-          float patch=.7+.3*sin(galX/220.+sin(galZ/500.))*sin(galZ/310.);
-          float opticalDepth=dustStrength*exp(-midY/dustHeight)*min(2.,d/4000.)*patch;
-          float transmission=exp(-opticalDepth);
-          visibility*=transmission;
-          tint=mix(tint,vec3(tint.r*1.08,tint.g*.86,tint.b*.72),1.-transmission);
           vec4 world=modelMatrix*vec4(position,1.);vec4 original=viewMatrix*world;
           if(immersive>.5){vec3 delta=world.xyz-cameraPosition;world.xyz=cameraPosition+delta*min(1.,140./max(.001,length(delta)));}
           gl_Position=projectionMatrix*viewMatrix*world;
-          float flux=luminosity/(d*d+.25);
-          brightness=flux/(flux+.08);
-          float mapSize=clamp(pointSize*1.5*110.*length(modelMatrix[0].xyz)/max(.00001,-original.z),1.,13.);
-          float closeSize=1.25+4.25*sqrt(brightness);
+          float mapSize=clamp(pointSize*1.5*110.*length(modelMatrix[0].xyz)/max(.00001,-original.z),1.5,3.);
+          float closeSize=starPointDiameter(d,luminosity);
           gl_PointSize=mix(closeSize,mapSize,nearLayer>.5?0.:farMix)*pixelRatio;
         }`,
-      fragmentShader: `uniform float alpha;varying vec3 tint;varying float visibility;varying float brightness;varying float mapped;void main(){vec2 p=gl_PointCoord-.5;float d=dot(p,p);if(d>.25||visibility<.002)discard;float core=exp(-d*90.);float halo=exp(-d*16.)*.24*brightness*brightness;float light=mix((core+halo)*(.22+.78*brightness),exp(-d*24.)*.55,mapped);gl_FragColor=vec4(tint,light*alpha*visibility);}`,
+      fragmentShader: STAR_FRAGMENT,
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
@@ -215,9 +175,6 @@ export class GalaxySpace {
       .sub(this.origin)
       .multiplyScalar(this.scale);
     this.origin.set(...origin);
-    if(this.density)this.density.position.copy(this.origin).multiplyScalar(-this.scale);
-    for(const cloud of [this.anchors,this.nearby])
-      (cloud.material as THREE.ShaderMaterial).uniforms.originLy.value.copy(this.origin);
     const coordinates = this.anchors.geometry.attributes.position as THREE.BufferAttribute;
     this.refs.forEach((r,i) => coordinates.setXYZ(i,
       (r.position[0]-origin[0])*this.scale,
@@ -251,11 +208,6 @@ export class GalaxySpace {
       u.now.value = performance.now() / 1000;
       u.immersive.value = +immersive;
       u.pixelRatio.value = pixelRatio;
-    }
-    if(this.density){
-      const u=(this.density.material as THREE.ShaderMaterial).uniforms;
-      u.observer.value.copy(cameraLocal).addScaledVector(this.origin,this.scale);
-      u.pixelRatio.value=pixelRatio;
     }
     if (this.dirty) this.rebuild();
     if(this.lastWorldNs!==worldNs)this.updateDate(worldNs);

@@ -8,7 +8,9 @@ import {
   nearestBody,
   surfaceClearance,
   sweptStarStep,
+  GALAXY_ENTRY_RADII, GALAXY_EXIT_RADII, SYSTEM_PREPARE_LY,
 } from "./travel.ts";
+import { displayLuminosity, starPointDiameter, STAR_FRAGMENT } from './star-appearance.ts';
 import { PlanetRenderer } from './planet-renderer.ts';
 import { NavigationMarkers } from './navigation-markers.ts';
 import { freeLook, orbitStep, atmosphereHeightM, alignPlanetaryDown } from './planet-flight.ts';
@@ -529,8 +531,10 @@ let residentSystem: string | null = null;
 let detailedBody: { mesh: THREE.Mesh; body: Body } | null = null;
 let planetTiles: PlanetRenderer | null = null;
 let systemMarkers: NavigationMarkers | null = null;
-let galaxyGlyphs: {group: THREE.Group; visual: THREE.Group; pick: THREE.Mesh; radius: number}[] = [];
-const opticalStarPoints:{mesh:THREE.Mesh;point:THREE.Sprite;sourceColor:THREE.Color}[]=[];
+type GalaxyGlyph = {group: THREE.Group; visual: THREE.Group; pick: THREE.Mesh; radius: number;
+  galaxy: Galaxy; preview?: GalaxySpace; pending?: boolean; failed?: boolean; detailWanted?: boolean; baseAlpha?: number};
+let galaxyGlyphs: GalaxyGlyph[] = [];
+const opticalStarPoints:{mesh:THREE.Mesh;point:THREE.Points<THREE.BufferGeometry,THREE.ShaderMaterial>;sourceColor:THREE.Color;luminosity:number}[]=[];
 let flightAim: string | null = null;
 let walker:GroundWalker|null=null;
 let walkingModule:typeof import('./ground-walker.ts')|null=null;
@@ -828,7 +832,8 @@ function clearView(retain = false) {
   clearDrainage();
   clearWalking();
   riverFlight=null;surfaceJourney = null; startCruiseAfterLook = false;
-  systemMarkers = null; galaxyGlyphs = []; primordialGlyphs.length=0; opticalStarPoints.length=0; flightAim = null;
+  systemMarkers = null; for(const glyph of galaxyGlyphs)glyph.preview?.stop();
+  galaxyGlyphs = []; primordialGlyphs.length=0; opticalStarPoints.length=0; flightAim = null;
   planetTiles?.dispose(); planetTiles = null;
   orbitAssist = null; approachAltitude = null;
   planetLook = null;
@@ -1578,9 +1583,8 @@ function updateUniverseVisibility() {
       glyph.group.position.set(...emission.properPosition).multiplyScalar(3/Math.max(a,Number.MIN_VALUE));
     }else glyph.group.position.copy(vec(g.position).multiplyScalar(3));
     const points=glyph.visual.children[0] as THREE.Points<THREE.BufferGeometry,THREE.ShaderMaterial>;
-    points.material.uniforms.alpha.value=.32*Math.max(.12,lightFactor);
-    const center=glyph.visual.children[1] as THREE.Sprite;
-    (center.material as THREE.SpriteMaterial).opacity=.65*Math.max(.12,lightFactor);
+    glyph.baseAlpha=.8*Math.max(.12,lightFactor);
+    points.material.uniforms.alpha.value=glyph.baseAlpha;
   }
   for(const glyph of primordialGlyphs){
     const {star,group,light}=glyph;
@@ -1609,23 +1613,17 @@ function drawUniverse(data: { galaxyClouds: NamedCloud[] }) {
       pointCloud(
         data.galaxyClouds.find((c) => c.id === g.id)!,
         size / g.radiusLy,
-        0.32,
+        0.8,
       ),
     );
     ((visual.children[0] as THREE.Points).material as THREE.ShaderMaterial).uniforms.maxPointSize.value=2.3;
-    const center = sprite(
-      g.type === "Elliptical" ? "#ffe0ad" : "#d7e4ff",
-      size * 0.35,
-    );
-    (center.material as THREE.SpriteMaterial).opacity=.65;
-    visual.add(center);
     root.add(group);
     const pick = new THREE.Mesh(
       new THREE.SphereGeometry(Math.max(0.06, size), 8, 6),
       new THREE.MeshBasicMaterial({ visible: false }),
     );
     group.add(pick);
-    galaxyGlyphs.push({group, visual, pick, radius:size});
+    galaxyGlyphs.push({group, visual, pick, radius:size, galaxy:g});
     picks.push({ object: pick, id: g.id, kind: "galaxy" });
     addLabel(group, g.name, g.type);
   }
@@ -1691,12 +1689,6 @@ function drawGalaxyNeighbours(
     const source = clouds.find((c) => c.id === n.id)!;
     const data = { ...source, sizes: source.sizes.map((s) => s * 3) };
     group.add(pointCloud(data, radius / n.radiusLy, 0.5));
-    const core = sprite(
-      n.type === "Elliptical" ? "#ffe0ad" : "#9cb7df",
-      radius * 1.1,
-    );
-    (core.material as THREE.SpriteMaterial).opacity = 0.55;
-    group.add(core);
     skyAnchor.add(group);
     if (i < 8) {
       group.userData.context = true;
@@ -1834,7 +1826,6 @@ function setupSpace(data: any) {
     },
     announce,
     seed,
-    data.focus||data.sky,
   );
   space = current;
   root.add(current.group);
@@ -2107,6 +2098,7 @@ function beginTargetFlight() {
   if (!flight) toggleFlight();
   orbitAssist = null; approachAltitude = null;
   autopilot = { kind, id: selected };
+  if(kind==='galaxy')prewarmGalaxy(selected);
 }
 function visitDatedStar(id:string){
   const star=space?.findPopulation(id,epoch);
@@ -2341,12 +2333,12 @@ function updateFlight(dt: number) {
       .sort((a, b) => a.d - b.d)[0];
     clearance = nearest?.d??1;
     const g = nearest?.g as Galaxy|undefined;
-    if (g&&nearest.d < (g.radiusLy / LY_PER_MPC) * 8)
+    if (g&&nearest.d < (g.radiusLy / LY_PER_MPC) * 64)
       void prepare("galaxy:" + g.seed, "galaxy-view", {
         galaxy: g,
         galaxies: catalogue,
       }).catch(() => {});
-    if (g&&nearest.d < (g.radiusLy / LY_PER_MPC) * 2) {
+    if (g&&nearest.d < (g.radiusLy / LY_PER_MPC) * GALAXY_ENTRY_RADII) {
       const inverse = new THREE.Quaternion()
         .setFromEuler(new THREE.Euler(...g.rotation))
         .invert();
@@ -2387,9 +2379,9 @@ function updateFlight(dt: number) {
       camera.updateProjectionMatrix();
       // Always bound a step by the nearest physical destination, including
       // outside the narrow aiming cone. Boost can no longer skip a system.
-      if (closest.d < .1) clearance = Math.min(clearance, Math.max(closest.d, 1e-9));
+      if (closest.d < SYSTEM_PREPARE_LY) clearance = Math.min(clearance, Math.max(closest.d, 1e-9));
     }
-    if (closest && closest.d < 0.1) {
+    if (closest && closest.d < SYSTEM_PREPARE_LY) {
       const ref = closest.ref as SystemRef,
         sys = system(ref),
         coords = ref.cell.map((v) => Math.floor(v / 8)) as V3;
@@ -2417,7 +2409,7 @@ function updateFlight(dt: number) {
         return;
       }
     }
-    if (vec(p).length() > g.radiusLy * 2.6) {
+    if (vec(p).length() > g.radiusLy * GALAXY_EXIT_RADII) {
       const rotation = new THREE.Quaternion().setFromEuler(
         new THREE.Euler(...g.rotation),
       );
@@ -2818,11 +2810,6 @@ function updateSpace() {
     Math.hypot(...space.physical(observer)) < space.galaxy.radiusLy * 1.4,
     epoch,
   );
-  if(space.density){
-    space.density.visible=galaxyVisibleAt(space.galaxy,epoch);
-    (space.density.material as THREE.ShaderMaterial).uniforms.alpha.value=
-      .7*Math.max(.02,galaxyLightProxyAt(epoch));
-  }
   const stats = space.diagnostics();
   contextStats.nearbySystems = stats.nearbyStars;
   contextStats.skyPoints = stats.mapStars;
@@ -3145,9 +3132,16 @@ function drawSystem(data: {
       mesh.userData.halo = halo; // O(1) lookup for applyExistence's colour propagation, instead of scanning children
       mesh.add(halo);
       const sourceColor=new THREE.Color(b.id===sys.stars[0].id?sys.ref.color:b.color);
-      const point=sprite('#ffffff',1);
-      (point.material as THREE.SpriteMaterial).color.copy(sourceColor);
-      root.add(point);opticalStarPoints.push({mesh,point,sourceColor});
+      const point=new THREE.Points(new THREE.BufferGeometry().setAttribute('position',
+        new THREE.Float32BufferAttribute([0,0,0],3)),new THREE.ShaderMaterial({
+        uniforms:{alpha:{value:1},pointSize:{value:1},sourceColor:{value:sourceColor.clone()},visibility:{value:1}},
+        vertexShader:`uniform float pointSize,visibility;uniform vec3 sourceColor;varying vec3 tint;varying float visibilityOut;
+          void main(){tint=sourceColor;visibilityOut=visibility;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);gl_PointSize=pointSize;}`,
+        fragmentShader:STAR_FRAGMENT.replaceAll('visibility','visibilityOut'),
+        transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+      }));
+      point.frustumCulled=false;
+      root.add(point);opticalStarPoints.push({mesh,point,sourceColor,luminosity:displayLuminosity(sys.ref)});
     }
     addLabel(
       mesh,
@@ -3249,21 +3243,74 @@ function createSystemMarkers() {
     systemMarkers.points.geometry.dispose();
     (systemMarkers.points.material as THREE.Material).dispose();
   }
+  const starScreen = new THREE.Vector3(), bodyScreen = new THREE.Vector3();
   systemMarkers = new NavigationMarkers(animations.map(a => ({object:a.obj,
     radius:()=>a.obj.userData.radius * a.obj.scale.x,
     color:a.body.kind==='star'?a.body.color:a.body.kind==='moon'?'#bdcfdf':'#92d9ec',
-    pixels:a.body.kind==='star'?18:a.body.kind==='moon'?7:10})));
+    pixels:a.body.kind==='star'?18:a.body.kind==='moon'?7:10,
+    visibility:()=>{
+      if(systemScale==='overview'||renderer.xr.isPresenting)return 1;
+      // The optical point already represents the star. Planet beacons must
+      // separate on screen before appearing, rather than stack into a glow.
+      if(a.body.kind==='star')return 0;
+      const parent=animations.find(p=>p.body.id===a.body.parentId)||animations[0];
+      starScreen.copy(parent.obj.position).project(camera);
+      bodyScreen.copy(a.obj.position).project(camera);
+      const separation=Math.hypot((bodyScreen.x-starScreen.x)*innerWidth*.5,
+        (bodyScreen.y-starScreen.y)*innerHeight*.5);
+      return THREE.MathUtils.smoothstep(separation,12,30);
+    }})));
   root.add(systemMarkers.points);
+}
+/** Prepare the actual catalogue points before crossing into the galaxy. Only
+ * one exterior galaxy gets this extra detail; no separate fog field is used. */
+function prepareGalaxyPreview(glyph: GalaxyGlyph) {
+  if(glyph.preview||glyph.pending||glyph.failed)return;
+  glyph.pending=true;
+  const g=glyph.galaxy;
+  void prepare('galaxy:'+g.seed,'galaxy-view',{galaxy:g,galaxies:catalogue}).then(data=>{
+    if(!galaxyGlyphs.includes(glyph)||!glyph.detailWanted)return;
+    const preview=new GalaxySpace(g,data.starMap,async()=>{throw new Error('Exterior preview cannot stream');},()=>{},()=>{},seed);
+    preview.group.scale.setScalar(glyph.radius/10);
+    glyph.visual.add(preview.group);
+    glyph.preview=preview;
+  }).catch(error=>{glyph.failed=true;console.warn('Galaxy approach preview unavailable',error);}).finally(()=>{glyph.pending=false;});
+}
+function prewarmGalaxy(id: string) {
+  const galaxy=catalogue.find(g=>g.id===id);
+  if(galaxy)void prepare('galaxy:'+galaxy.seed,'galaxy-view',{galaxy,galaxies:catalogue})
+    .catch(error=>console.warn('Galaxy preparation unavailable',error));
 }
 function updateNavigationVisibility() {
   systemMarkers?.update(innerHeight,renderer.getPixelRatio());
   if (state.level === 'universe' && !renderer.xr.isPresenting) {
     const focal=innerHeight/(2*Math.tan(camera.fov*Math.PI/360));
+    const detailed=viewMode==='state'?galaxyGlyphs.filter(g=>g.group.visible).reduce<GalaxyGlyph|null>((best,g)=>
+      !best||g.group.position.distanceTo(camera.position)/g.radius<best.group.position.distanceTo(camera.position)/best.radius?g:best,null):null;
     for (const g of galaxyGlyphs) {
       const distance=g.group.position.distanceTo(camera.position);
       const visibleRadius=Math.max(g.radius,distance*22/focal);
       g.visual.scale.setScalar(visibleRadius/g.radius);
       g.pick.scale.setScalar(visibleRadius/(g.pick.geometry as THREE.SphereGeometry).parameters.radius);
+      const radii=distance/g.radius;
+      g.detailWanted=g===detailed&&radii<64;
+      if(g.detailWanted)prepareGalaxyPreview(g);
+      else if(g.preview){g.preview.stop();g.visual.remove(g.preview.group);disposeView(g.preview.group);g.preview=undefined;}
+      if(g.preview){
+        // By eight radii the exact incoming catalogue field is fully visible;
+        // the scene boundary is farther in, at six radii.
+        const mix=1-THREE.MathUtils.smoothstep(radii,8,20);
+        const local=camera.position.clone().sub(g.group.position)
+          .applyQuaternion(g.group.quaternion.clone().invert()).multiplyScalar(10/g.radius);
+        g.preview.update(local,false,renderer.getPixelRatio(),false,epoch);
+        (g.preview.anchors.material as THREE.ShaderMaterial).uniforms.alpha.value=mix;
+        (g.preview.historical.material as THREE.PointsMaterial).opacity=.55*mix;
+        (g.visual.children[0] as THREE.Points<THREE.BufferGeometry,THREE.ShaderMaterial>).material.uniforms.alpha.value=
+          (g.baseAlpha??.8)*(1-mix);
+      }else{
+        (g.visual.children[0] as THREE.Points<THREE.BufferGeometry,THREE.ShaderMaterial>).material.uniforms.alpha.value=
+          g.baseAlpha??.8;
+      }
     }
   }
 }
@@ -3560,7 +3607,7 @@ function updateOpticalStarPoints(){
   const viewportHeight=renderer.domElement.clientHeight||window.innerHeight;
   const focal=viewportHeight/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov)/2));
   root.updateMatrixWorld(true);
-  for(const {mesh,point,sourceColor} of opticalStarPoints){
+  for(const {mesh,point,sourceColor,luminosity} of opticalStarPoints){
     point.visible=mesh.visible&&systemScale==='physical';
     if(!point.visible)continue;
     const position=mesh.getWorldPosition(new THREE.Vector3());
@@ -3569,13 +3616,12 @@ function updateOpticalStarPoints(){
     const radius=(mesh.geometry.boundingSphere?.radius||mesh.userData.radius||0)*mesh.scale.x;
     const diskPixels=radius/distance*focal;
     const fade=1-THREE.MathUtils.smoothstep(diskPixels,1.5,5);
-    const material=point.material as THREE.SpriteMaterial;
-    material.opacity=.72*fade*(viewBlend?.progress??1);
+    const material=point.material;
+    material.uniforms.visibility.value=fade;
     const resolved=(mesh.userData.halo as THREE.Sprite|undefined)?.material as THREE.SpriteMaterial|undefined;
-    material.color.copy(sourceColor).lerp(resolved?.color||sourceColor,THREE.MathUtils.smoothstep(diskPixels,.25,3));
+    material.uniforms.sourceColor.value.copy(sourceColor).lerp(resolved?.color||sourceColor,THREE.MathUtils.smoothstep(diskPixels,.25,3));
     point.visible=fade>.01;
-    const worldSize=4.5*distance/focal;
-    point.scale.setScalar(worldSize);
+    material.uniforms.pointSize.value=starPointDiameter(distance/systemUnit/LY,luminosity)*renderer.getPixelRatio();
   }
 }
 async function focusBody(body: Body, keepPose = false) {
@@ -4376,6 +4422,7 @@ function select(id: string) {
   panel();
   if (state.level === "universe") {
     const g = catalogue.find((x) => x.id === id);
+    if(g)prewarmGalaxy(id);
     if (g) announce(g.name + " selected · double-click or press F to explore");
     else if(firstStarAtDate(id,epoch))announce('First star selected · double-click or press F to visit');
   } else
@@ -5227,6 +5274,27 @@ Object.defineProperty(window, "__atlas", {
     },
     get selected() {
       return selected;
+    },
+    // Read-only visual acceptance data; pixel tests still inspect screenshots.
+    get appearance() {
+      const ref=space?.find(selected||'');
+      const primary=opticalStarPoints[0];
+      const position=ref?space!.world(ref.position).applyMatrix4(root.matrixWorld)
+        :primary?.mesh.getWorldPosition(new THREE.Vector3());
+      const distanceLy=ref?vec(ref.position).distanceTo(vec(localPose()))
+        :position?position.distanceTo(camera.position)/systemUnit/LY:null;
+      const projected=position?.clone().project(camera);
+      return {
+        target:projected&&distanceLy!==null?{id:ref?.id||state.sys?.id,distanceLy,
+          x:(projected.x*.5+.5)*innerWidth,y:(.5-projected.y*.5)*innerHeight,
+          pointDiameter:ref?starPointDiameter(distanceLy,displayLuminosity(ref))
+            :primary!.point.material.uniforms.pointSize.value/renderer.getPixelRatio()}:null,
+        galaxyPreview:galaxyGlyphs.filter(g=>g.preview).map(g=>({id:g.galaxy.id,
+          radii:g.group.position.distanceTo(camera.position)/g.radius,
+          mix:(g.preview!.anchors.material as THREE.ShaderMaterial).uniforms.alpha.value,
+          stars:g.preview!.refs.length})),
+        markerVisibility:systemMarkers?Array.from(systemMarkers.points.geometry.getAttribute('visibility').array):[],
+      };
     },
     get frameCount() {
       return frameCount;

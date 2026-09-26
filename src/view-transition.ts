@@ -85,7 +85,7 @@ export class ViewBlend {
   }
   update(now: number) {
     if (this.finished) return true;
-    const t = Math.min(1, (now - this.start) / (this.immersive ? 450 : 700));
+    const t = Math.min(1, (now - this.start) / (this.immersive ? 450 : this.oldWorldToNew ? 1400 : 700));
     this.progress = t;
     const eased = t * t * (3 - 2 * t);
     if (!this.immersive&&!this.oldWorldToNew) {
