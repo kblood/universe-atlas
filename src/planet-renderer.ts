@@ -25,47 +25,14 @@ import {faunaHerdAt, faunaMemberPoseAtWorldNs, faunaRigSecondsAt, faunaMemberGen
 import {surfaceCellAt} from './surface-cell.ts';
 import {generateCreatureGenome} from './creature-model.ts';
 import {biomeClassifier} from './surface-biomes.ts';
+import {PlanetForest} from './planet-forest.ts';
+import {PLANET_DETAIL} from './planet-detail.ts';
 
-// ---------------------------------------------------------------------------
-// Flora/fauna "life layer": ground-level vegetation + herd rendering wired
-// into this renderer's existing tile/contact machinery.
-//  - Gated on `this.relief===1 && this.contactFocus!==null` (i.e. only while
-//    landing/walking), matching `this.environment`'s existing `relief===1`
-//    gate above -- flora/fauna are never evaluated beyond
-//    FLORA_VISIBLE_DISTANCE_M/FAUNA_VISIBLE_DISTANCE_M (~120m/92m) of the
-//    scatter center, so this also means ZERO added cost in orbit/flight --
-//    the paths this task's brief specifically warned are measured against a
-//    hard 60s/body job budget and buildTile's own ms/tile budget.
-//  - Placement candidates come from a small, BOUNDED tangent-plane lattice
-//    centered on the observer (not `buildTile`'s per-vertex grid, and not
-//    `terrainSampler`'s hot per-sample path used by tile selection/walking
-//    contact) -- an OUTER coarse grid (tree/shrub/fauna-anchor scale) and an
-//    INNER fine grid (grass/flower ground-cover scale), re-sampled only when
-//    the observer has moved LIFE_RESCATTER_THRESHOLD_M, not every frame.
-//  - Every frame, `floraAt`/`faunaMemberPoseAt` are re-run against the
-//    CACHED lattice (hash-only re-evaluation for flora's growth pulse,
-//    closed-form for fauna's pose -- no new terrainSampler/biome queries),
-//    then culled via flora-culling.ts's own SoA frustum test and drawn
-//    through one FloraFieldRenderer (flora) plus a small set of
-//    FloraLodBucket instances reused generically for fauna's L1/L2 archetype
-//    proxies (fauna-runtime.ts has no renderer of its own).
-//  - UNIT-MISMATCH FINDING (reported, not silently patched around in a
-//    DO-NOT-EDIT file): flora-culling.ts's `drawFloraCandidates` convenience
-//    wrapper computes LOD-band distance as
-//    `|candidateCenter - cameraPosition|` directly against
-//    `FLORA_LOD0_DISTANCE_M`/etc (real meters). This renderer's local group
-//    space is radius-normalized (`group.scale.setScalar(radius)`), so local
-//    coordinates are NOT meters -- using that wrapper directly here would
-//    make every candidate resolve to LOD0 regardless of true distance. Fixed
-//    by NOT calling `drawFloraCandidates`: `drawFlora` below replicates its
-//    logic inline, using `buffer.cull()` in the local (radius-normalized)
-//    frame the frustum planes are already expressed in (correct for
-//    culling), then a SEPARATE `distanceLocal * body.radiusM` conversion
-//    before `pickFloraLodBand` (correct for LOD banding). `FloraLodBucket`/
-//    `FloraFieldRenderer.submit` themselves are unit-agnostic (they only
-//    copy matrix bytes), so this stays entirely inside this file.
-const LIFE_OUTER_GRID_N = 9, LIFE_OUTER_HALF_SPAN_M = 96;
-const LIFE_INNER_GRID_N = 11, LIFE_INNER_HALF_SPAN_M = 24;
+// Low-flight and walking life share dated habitat gates. A separate bounded
+// forest stream owns trees; this nearby lattice owns ground cover and herds.
+// Culling uses radius-normalized local coordinates, while LOD uses metres.
+const LIFE_OUTER_GRID_N = 15, LIFE_OUTER_HALF_SPAN_M = 168;
+const LIFE_INNER_GRID_N = 25, LIFE_INNER_HALF_SPAN_M = 24;
 const LIFE_OUTER_SLOTS = (LIFE_OUTER_GRID_N - 2) ** 2;
 const LIFE_INNER_SLOTS = (LIFE_INNER_GRID_N - 2) ** 2;
 const LIFE_SLOT_CAPACITY = LIFE_OUTER_SLOTS + LIFE_INNER_SLOTS;
@@ -126,8 +93,9 @@ const TOTAL_BUDGET_BYTES=256*1024*1024;
 // RiverWater has its own 16 MiB cap and the retained environment allocation is
 // reserved here, so terrain admission cannot consume their headroom.
 const WATER_ENVIRONMENT_RESERVE_BYTES=28*1024*1024;
+const LIFE_RESERVE_BYTES=8*1024*1024;
 const GROUND_ATLAS_BYTES=Math.ceil(256*256*4*(1+4/3));
-const TERRAIN_BUDGET_BYTES=TOTAL_BUDGET_BYTES-WATER_ENVIRONMENT_RESERVE_BYTES-GROUND_ATLAS_BYTES;
+const TERRAIN_BUDGET_BYTES=TOTAL_BUDGET_BYTES-WATER_ENVIRONMENT_RESERVE_BYTES-LIFE_RESERVE_BYTES-GROUND_ATLAS_BYTES;
 // n=32: 108336 bytes of geometry, doubled for CPU/GPU, plus a 130x130 RGBA
 // map with the existing conservative 7/3 mip allocation.
 const PENDING_TILE_BYTES=108336*2+Math.ceil(67600*7/3);
@@ -209,6 +177,9 @@ export class PlanetRenderer {
   private lakeReflection:LakeReflection|null=null;
   private reflectionRevision=0;
   private environment:RiverEnvironment|null=null;
+  private forest:PlanetForest;
+  private lowFlightDetail=false;
+  private surfaceReady=false;
   private eyeHeightUniform = {value:0};
   private debug:ShoreDebug={};
   setShoreDebug(options:ShoreDebug){Object.assign(this.debug,options);if(options.freezeSelection===false)this.selectionEye.setScalar(Infinity);}
@@ -224,6 +195,7 @@ export class PlanetRenderer {
   private selectionContact=false;
   private selectionFrustum:number[]=[];
   private selectionPixels=0;
+  private selectionDirty=false;
   private updateMs=0;
   private lifeMs=0;
   private rescatterMs=0;
@@ -363,7 +335,7 @@ export class PlanetRenderer {
   private faunaProxyBuckets!: Map<CreatureArchetype, readonly [FloraLodBucket, FloraLodBucket]>;
   private readonly faunaRigPool = new Map<string, CreatureRig>();
   private readonly faunaActiveThisFrame = new Set<string>();
-  private readonly floraCandidates = new FloraCandidateBuffer(256);
+  private readonly floraCandidates = new FloraCandidateBuffer(LIFE_SLOT_CAPACITY);
   private readonly floraCullPlanes = new Float32Array(DEFAULT_FRUSTUM_PLANE_COUNT * 4);
   private readonly lifeScatterCenter = new THREE.Vector3(Infinity, Infinity, Infinity);
   private lifeScatterValid = false;
@@ -372,13 +344,13 @@ export class PlanetRenderer {
   private readonly lifeBasisForward = new THREE.Vector3();
   private readonly lifeWorldUpScratch = new THREE.Vector3();
   private readonly lifeHeightScratch = new Float32Array(LIFE_HEIGHT_SCRATCH_CAPACITY);
-  private readonly lifeDirScratch = new Float32Array(LIFE_HEIGHT_SCRATCH_CAPACITY * 3);
+  private readonly lifeDirScratch = new Float64Array(LIFE_HEIGHT_SCRATCH_CAPACITY * 3);
   private readonly lifeDirTuple: [number, number, number] = [0, 0, 0];
   private floraSlotCount = 0;
   private faunaAnchorCount = 0;
   private faunaHerdCount = 0;
   private faunaVisibleCount = 0;
-  private readonly floraSlotDir = new Float32Array(LIFE_SLOT_CAPACITY * 3);
+  private readonly floraSlotDir = new Float64Array(LIFE_SLOT_CAPACITY * 3);
   private readonly floraSlotHeightM = new Float32Array(LIFE_SLOT_CAPACITY);
   private readonly floraSlotWeights = new Float32Array(LIFE_SLOT_CAPACITY * 4);
   private readonly floraSlotForest = new Uint8Array(LIFE_SLOT_CAPACITY);
@@ -551,6 +523,7 @@ export class PlanetRenderer {
     // All geometry/materials/buckets are built ONCE here; the per-frame path
     // in `update()`/`drawFlora`/`drawFauna` only mutates preallocated state.
     this.classify = biomeClassifier(body);
+    this.forest=new PlanetForest(body);this.group.add(this.forest.group);
     const floraSeedFor = (kind: FloraKind) => hashSeedString(body.seed + '/flora/' + kind);
     this.floraRenderer = new FloraFieldRenderer(
       (kind, lod) => floraGeometryToBufferGeometry(buildFloraGeometryData(kind, lod, floraSeedFor(kind))),
@@ -806,14 +779,16 @@ export class PlanetRenderer {
     };
     for (const t of ROOTS) request(t);
     this.rootsReady = ROOTS.every(t => this.patches.has(tileKey(t)));
-    this.group.visible = this.rootsReady;
-    this.materialVisible(!this.rootsReady);
     const eye = new THREE.Vector3(...observer), distance = eye.length();
     const contact=this.contactFocus?new THREE.Vector3(...this.contactFocus).divideScalar(this.body.radiusM):null;
-    // 450 active walking leaves plus their protected ancestors fit beneath the
+    const groundDirection=eye.clone().normalize().toArray() as V3;
+    const groundHeight=this.sample(groundDirection).visibleHeightM;
+    const altitudeM=(distance-1)*this.body.radiusM-groundHeight;
+    this.lowFlightDetail=!immersive&&altitudeM<PLANET_DETAIL.flightDetailAltitudeM;
+    // 390 active walking leaves plus their protected ancestors fit beneath the
     // terrain reserve while leaving admission headroom for newly requested
     // contact chunks. A 512-leaf full quadtree can consume that headroom.
-    const cacheLimit=contact?768:TILE_CACHE_LIMIT,drawLimit=contact?450:(immersive?102:TILE_DRAW_LIMIT);
+    const cacheLimit=contact||this.lowFlightDetail?768:TILE_CACHE_LIMIT,drawLimit=contact?450:this.lowFlightDetail?390:(immersive?102:TILE_DRAW_LIMIT);
     this.eyeHeightUniform.value=(distance-1)*this.body.radiusM;this.sunUniform.value.set(...sun);
     this.atmosphere?.update(eye, new THREE.Vector3(...sun));
     if(this.clouds){
@@ -842,13 +817,24 @@ export class PlanetRenderer {
     const oceanPhaseS=oceanPhaseSeconds(worldNs);
     this.river?.update(observer,sun,oceanPhaseS,this.relief);
     if(this.environment){this.environment.group.visible=this.relief===1;if(this.relief===1)this.environment.update(observer,dt,sun);}
-    // Flora/fauna: confined to landing/walking (relief===1, a real contact
+    // Flora/fauna: shared by low flight and walking. The historical contact
     // focus) exactly like `this.environment` above, so orbit/flight incur
     // zero cost from this layer. `frusta[0]` is reused directly (already
     // composed with this.group.matrixWorld by main.ts -- see this method's
     // own `worldNs` doc comment for the equivalent existing precedent) rather
     // than calling flora-culling.ts's `frustumPlanesFromCamera` again.
-    if (this.relief === 1 && this.contactFocus && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, contact!, frusta[0] ?? null, worldNs); this.lifeMs=performance.now()-lifeStarted; }
+    const lifeFocus=contact??eye.clone().normalize().multiplyScalar(1+groundHeight/this.body.radiusM);
+    const forestEnabled=this.relief===1&&this.lifeContext?.floraStage==='complex'&&
+      !!this.lifeContext.floraAvailableKinds?.includes('tree');
+    const forestFocus=lifeFocus.clone().normalize();
+    if(!contact&&frusta[0]&&altitudeM>40){
+      // At 600 m altitude an underfoot patch is below the screen. Prepare
+      // the visible ground ahead during descent, retaining fixed cell IDs.
+      const heading=frusta[0].planes[5].normal.clone().projectOnPlane(forestFocus).normalize();
+      forestFocus.addScaledVector(heading,Math.min(2500,altitudeM*1.6)/this.body.radiusM).normalize();
+    }
+    this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta);
+    if (this.relief === 1 && (contact||altitudeM<PLANET_DETAIL.groundLifeAltitudeM) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs); this.lifeMs=performance.now()-lifeStarted; }
     else { this.hideLife(); this.lifeMs=0; }
     const direction = eye.clone().normalize();
     const pixels = height / (2 * Math.tan(fov * Math.PI / 360));
@@ -860,15 +846,22 @@ export class PlanetRenderer {
     // Rebuilding a full walking quadtree every 15 idle frames caused periodic
     // CPU stalls. Refine for real pose/projection changes or arriving tiles;
     // conservative visibility culling still runs on every frame below.
-    const changed=!this.debug.freezeSelection&&(completions.length>0||retryDue||!this.leafIndex.size||this.selectionContact!==!!contact||rotated||Math.abs(pixels-this.selectionPixels)>.5||eye.distanceTo(this.selectionEye)*this.body.radiusM>(contact?.distanceTo(eye)||0)*this.body.radiusM*.02+.5);
+    const changed=!this.debug.freezeSelection&&(this.selectionDirty||completions.length>0||retryDue||!this.leafIndex.size||this.selectionContact!==!!contact||rotated||Math.abs(pixels-this.selectionPixels)>.5||eye.distanceTo(this.selectionEye)*this.body.radiusM>(contact?.distanceTo(eye)||0)*this.body.radiusM*.02+.5);
     const projected = (t: Tile) => {
       const key=tileKey(t),cached=projectionCache.get(key);if(cached)return cached;
       const center = new THREE.Vector3(...tileDirection(t, .5, .5));
       const span = 2 / 2 ** t.level, bound = Math.min(1.8, span * 1.42);
       // Conservative horizon test, expanded for the highest possible terrain.
       const margin = 20000 * this.relief / this.body.radiusM;
-      const horizon = distance < 1 + margin || direction.dot(center) + bound >= (1 - margin) / distance;
+      const core=1-16000/this.body.radiusM;
+      const eyeCos=Math.min(1,Math.max(0,core/distance)),peakCos=Math.min(1,Math.max(0,core/(1+margin)));
+      const horizonCos=eyeCos*peakCos-Math.sqrt(1-eyeCos*eyeCos)*Math.sqrt(1-peakCos*peakCos);
+      const horizon = direction.dot(center) + bound >= horizonCos;
       const sphere = new THREE.Sphere(center, bound + margin);
+      const resident=this.patches.get(key);
+      if(resident?.mesh.geometry.boundingSphere){
+        sphere.copy(resident.mesh.geometry.boundingSphere);sphere.center.add(resident.mesh.position);
+      }
       const visible = horizon && (!frusta.length || frusta.some(f => f.intersectsSphere(sphere)));
       if(!changed)return {visible,score:0,contactNear:Infinity,waterPriority:false,finePriority:false};
       const nearest = closestTileDirection(t,observer);
@@ -890,14 +883,38 @@ export class PlanetRenderer {
       const result={visible,contactNear,waterPriority,finePriority,score:finePriority?1e12/((t.level+1)*(1+contactNear)):contactPriority?1e10/(t.level+1):waterPriority?1e7/(t.level+1):visible ? span * pixels / near : 0};
       projectionCache.set(key,result);return result;
     };
-    const leaves = changed?[...ROOTS]:[...this.leafIndex.values()];
+    // Contact re-ranks the full balanced frontier so distant visual leaves
+    // cannot starve the capsule's mandatory support ring.
+    const leaves = contact&&changed?[...ROOTS]:this.leafIndex.size?[...this.leafIndex.values()]:[...ROOTS];
     if (this.rootsReady&&changed) {
       this.selectionEye.copy(eye);this.selectionContact=!!contact;this.selectionFrustum=viewNormals;this.selectionPixels=pixels;
-      for (let iteration = 0; iteration < 360; iteration++) {
+      this.selectionDirty=false;
+      const selectionStarted=performance.now();
+      // Retain the prior frontier. Collapse distant sibling sets once, then
+      // refine incrementally; rebuilding all 450 leaves from six roots on
+      // every flight frame was a dominant source of main-thread stalls.
+      const initial=new Map(leaves.map(t=>[tileKey(t),t])),parents=new Map<string,Tile>(),deepest=new Map<string,number>();
+      const urgent=Math.max(...leaves.map(t=>t.level<(contact?(this.needsFineContact?this.fineContactLevel:this.contactLevel):this.contactLevel)?projected(t).score:0));
+      for(const leaf of leaves){let t=leaf;while(t.level>0){t={face:t.face,level:t.level-1,x:Math.floor(t.x/2),y:Math.floor(t.y/2)};
+        const key=tileKey(t);deepest.set(key,Math.max(deepest.get(key)??0,leaf.level));
+        if(t.level===leaf.level-1)parents.set(key,t);}}
+      for(const [key,parent] of parents){
+        const kids=children(parent);if(!kids.every(k=>initial.has(tileKey(k))))continue;
+        const score=projected(parent).score;
+        const pressure=leaves.length>drawLimit-60||this.residentBytes>TERRAIN_BUDGET_BYTES*.94;
+        if(score>(immersive?210:160)&&!(pressure&&score<urgent/4))continue;
+        if([0,1,2,3].some(e=>(deepest.get(tileKey(tileNeighbour(parent,e)))??0)>parent.level+1))continue;
+        if(!this.patches.has(key))continue;
+        for(const child of kids){const index=leaves.findIndex(t=>tileKey(t)===tileKey(child));if(index>=0)leaves.splice(index,1);}
+        leaves.push(parent);this.selectionDirty=true;
+      }
+      const iterations=contact?256:24;
+      for (let iteration = 0; iteration < iterations; iteration++) {
+        if(!contact&&iteration>0&&performance.now()-selectionStarted>3){this.selectionDirty=true;break;}
         const index=new Map(leaves.map(t=>[tileKey(t),t]));
         const neighbour=(t:Tile,e:number)=>{let n=tileNeighbour(t,e);while(n.level>0&&!index.has(tileKey(n)))n={face:n.face,level:n.level-1,x:Math.floor(n.x/2),y:Math.floor(n.y/2)};return index.get(tileKey(n));};
         const candidates = leaves.map(t => ({t, ...projected(t)})).filter(p => {
-          const target=contact?(this.needsFineContact?this.fineContactLevel:this.contactLevel):16;
+          const target=contact?(this.needsFineContact?this.fineContactLevel:this.contactLevel):this.lowFlightDetail?this.contactLevel:16;
           if(p.t.level>=target||p.score<=(immersive?360:260))return false;
           // Above the regular contact level, only the 3 m hydrology contact
           // band may refine. This prevents ordinary visible terrain from
@@ -905,8 +922,13 @@ export class PlanetRenderer {
           return !contact||p.t.level<this.contactLevel||p.contactNear<3||p.score>1e8;
         });
         candidates.sort((a, b) => b.score - a.score);
+        const contactPending=!!contact&&candidates.some(c=>c.score>1e8);
         let split = false;
         for (const candidate of candidates) {
+          // Request balanced capsule support first. Protecting every distant
+          // candidate's children can otherwise pin the entire byte budget
+          // while the last mandatory contact tiles still need admission.
+          if(contactPending&&candidate.score<1e8)continue;
           // Foot-contact candidates sort first, but do not freeze all visible
           // non-contact terrain after an arbitrary 90 leaves.  The fixed
           // draw/cache limits below remain the allocation boundary, allowing
@@ -922,6 +944,7 @@ export class PlanetRenderer {
           if (leaves.length + 3 <= drawLimit && kids.every(k => this.patches.has(tileKey(k)))) {
             leaves.splice(leaves.indexOf(t), 1, ...kids);
             split = true;
+            if(iteration===iterations-1)this.selectionDirty=true;
             break;
           }
         }
@@ -961,6 +984,12 @@ export class PlanetRenderer {
       // Contact hand-off is enabled only after fine coverage has finished morphing.
     }
     this.previous = new Set(leaves.map(tileKey));
+    // Keep the orbital preview until the focused replacement tree has
+    // reached useful resolution. Six coarse root maps caused a blur on focus.
+    if(!this.surfaceReady&&this.rootsReady&&
+      [...this.active].some(key=>this.patches.get(key)!.tile.level>=3))this.surfaceReady=true;
+    this.group.visible=this.surfaceReady;
+    this.materialVisible(!this.surfaceReady);
     // Retain ancestor fallback meshes; evict unused children first. Bound also
     // includes pending work, so late completions cannot grow the cache forever.
     // Reserve one worst-case worker result before admitting it. This maintains
@@ -1105,6 +1134,10 @@ export class PlanetRenderer {
       for (let i = 0; i < gridN; i++) {
         const x = -halfSpanM + i * spacing;
         this.floraScratchDirVec.copy(up).addScaledVector(right, x / radiusM).addScaledVector(forward, z / radiusM).normalize();
+        // Snap candidates to planetary cells. Observer motion changes the
+        // working set, never the identity/position of a retained plant.
+        const stable=surfaceCellAt(this.floraScratchDirVec.toArray() as V3,radiusM,spacing);
+        this.floraScratchDirVec.set(...stable.direction);
         const base = cursor * 3;
         dirScratch[base] = this.floraScratchDirVec.x; dirScratch[base + 1] = this.floraScratchDirVec.y; dirScratch[base + 2] = this.floraScratchDirVec.z;
         this.lifeDirTuple[0] = this.floraScratchDirVec.x; this.lifeDirTuple[1] = this.floraScratchDirVec.y; this.lifeDirTuple[2] = this.floraScratchDirVec.z;
@@ -1157,6 +1190,7 @@ export class PlanetRenderer {
       this.lifeDirTuple[0] = this.floraSlotDir[sb]!; this.lifeDirTuple[1] = this.floraSlotDir[sb + 1]!; this.lifeDirTuple[2] = this.floraSlotDir[sb + 2]!;
       const instance = floraAt(this.body.seed, this.body.id, this.lifeDirTuple, b, gate, tMyr);
       if (!instance.present) continue;
+      if(instance.kind==='tree')continue; // The continuous forest owns trees at every altitude.
       this.floraPresentCount++;
       const dx = this.lifeDirTuple[0], dy = this.lifeDirTuple[1], dz = this.lifeDirTuple[2];
       const heightM = this.floraSlotHeightM[i]!, r = 1 + heightM * relief / radiusM;
@@ -1322,7 +1356,7 @@ export class PlanetRenderer {
     // The shared texture belongs to the existing water reservation. Inland
     // diagnostics count it when present; ocean-only worlds count it here.
     const oceanNormalBytes=this.river?.diagnostics().resident?0:[...this.patches.values()].some(p=>p.ocean)?SHARED_WATER_NORMAL_ATLAS_BYTES:0;
-    return {projection: 'cube-sphere', river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
+    return {projection: 'cube-sphere', forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
       // Moving-sea-level verification/observability (this task): the
       // quantized bucket `this.sample`/`this.classify` and newly-dispatched
       // tile jobs are currently using, plus how many of the currently VISIBLE
@@ -1333,8 +1367,8 @@ export class PlanetRenderer {
       // a stuck rebuild.
       waterLevelM: this.waterBucket*WATER_LEVEL_BUCKET_M, waterBucket: this.waterBucket,
       staleWaterPatches:[...this.active].filter(k=>this.patches.get(k)!.waterBucket!==this.waterBucket).length,
-      maxLevel: Math.max(0, ...[...this.active].map(k => this.patches.get(k)!.tile.level)), cacheLimit: this.contactFocus?768:TILE_CACHE_LIMIT,
-      contactLevel:this.contactFocus?(this.needsFineContact?this.fineContactLevel:this.contactLevel):null,baseContactLevel:this.contactFocus?this.contactLevel:null,minimumWaterLevel:this.minimumWaterLevel,underresolvedWaterTiles:this.underresolvedWaterTiles,waterRegionActive:this.waterRegionActive,accountedBytes:this.residentBytes+GROUND_ATLAS_BYTES+oceanNormalBytes,reservedCombinedBytes:this.residentBytes+GROUND_ATLAS_BYTES+WATER_ENVIRONMENT_RESERVE_BYTES+this.pending.size*PENDING_TILE_BYTES,terrainResidentBytes:this.residentBytes,groundAtlasBytes:GROUND_ATLAS_BYTES,oceanNormalBytes,pendingReserveBytes:this.pending.size*PENDING_TILE_BYTES,materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:TOTAL_BUDGET_BYTES,failuresTotal:this.failuresTotal,updateMs:this.updateMs,lifeMs:this.lifeMs,rescatterMs:this.rescatterMs,drawFloraMs:this.drawFloraMs,drawFaunaMs:this.drawFaunaMs,faunaRigCount:this.faunaRigPool.size,floraSlotCount:this.floraSlotCount,floraPresentCount:this.floraPresentCount,floraSurvivorCount:this.floraSurvivorCount,floraSubmittedCount:this.floraSubmittedCount,faunaAnchorCount:this.faunaAnchorCount,
+      maxLevel: Math.max(0, ...[...this.active].map(k => this.patches.get(k)!.tile.level)), cacheLimit: this.contactFocus||this.lowFlightDetail?768:TILE_CACHE_LIMIT,
+      contactLevel:this.contactFocus?(this.needsFineContact?this.fineContactLevel:this.contactLevel):null,baseContactLevel:this.contactFocus?this.contactLevel:null,minimumWaterLevel:this.minimumWaterLevel,underresolvedWaterTiles:this.underresolvedWaterTiles,waterRegionActive:this.waterRegionActive,accountedBytes:this.residentBytes+GROUND_ATLAS_BYTES+oceanNormalBytes,lifeReserveBytes:LIFE_RESERVE_BYTES,reservedCombinedBytes:this.residentBytes+GROUND_ATLAS_BYTES+WATER_ENVIRONMENT_RESERVE_BYTES+LIFE_RESERVE_BYTES+this.pending.size*PENDING_TILE_BYTES,terrainResidentBytes:this.residentBytes,groundAtlasBytes:GROUND_ATLAS_BYTES,oceanNormalBytes,pendingReserveBytes:this.pending.size*PENDING_TILE_BYTES,materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:TOTAL_BUDGET_BYTES,failuresTotal:this.failuresTotal,updateMs:this.updateMs,lifeMs:this.lifeMs,rescatterMs:this.rescatterMs,drawFloraMs:this.drawFloraMs,drawFaunaMs:this.drawFaunaMs,faunaRigCount:this.faunaRigPool.size,floraSlotCount:this.floraSlotCount,floraPresentCount:this.floraPresentCount,floraSurvivorCount:this.floraSurvivorCount,floraSubmittedCount:this.floraSubmittedCount,faunaAnchorCount:this.faunaAnchorCount,
       faunaHerdCount:this.faunaHerdCount,faunaVisibleCount:this.faunaVisibleCount,
       failures: this.failures.size, faces: [...new Set([...this.active].map(k => Number(k.split('/')[0])))],
       detailPatches:[...this.active].filter(k=>this.groundEnabled.value&&this.patches.get(k)!.detail.value).length,
@@ -1363,6 +1397,7 @@ export class PlanetRenderer {
     }
     this.lakeReflection?.dispose();this.lakeReflection=null;this.river?.dispose();this.river=null;
     this.environment?.dispose();this.environment=null;
+    this.forest.dispose();
     for (const mesh of this.floraRenderer.meshes) { this.group.remove(mesh); mesh.geometry.dispose(); (mesh.material as THREE.Material).dispose(); }
     for (const [lod1, lod2] of this.faunaProxyBuckets.values()) for (const bucket of [lod1, lod2]) { this.group.remove(bucket.mesh); bucket.mesh.geometry.dispose(); (bucket.mesh.material as THREE.Material).dispose(); }
     for (const rig of this.faunaRigPool.values()) { this.group.remove(rig.group); rig.dispose(); }

@@ -18,6 +18,7 @@ import {parseDate,dateRecord,dateYears,yearsToDate,advanceDate,CATALOGUE_EPOCH_N
 import {identityRecord,stellarHistory} from './world-history.ts';
 import {type surfaceQuery,biosphereStateAt,biosphereHistoryFor,clearBiosphereHistoryCache,planetAgeMyr,planetSnapshotAt,type BiosphereQueryStage} from './world-surface.ts';
 import type {LifeGateContext} from './planet-renderer.ts';
+import {PLANET_DETAIL} from './planet-detail.ts';
 import type {FloraKind,FloraStage} from './flora-field.ts';
 import type {CreatureArchetype} from './creature-model.ts';
 import {profileFromPhysicalProperties,type Species} from './biosphere-model.ts';
@@ -799,6 +800,7 @@ let space: GalaxySpace | null = null;
 let spaceSelection: { object: THREE.Object3D; el: HTMLElement } | null = null;
 let flight = false,
   flightSpeed = 20;
+let flightCruise=false;
 const flightKeys = new Set<string>();
 let touchForwardHeld = false;
 let viewBlend: ViewBlend | null = null;
@@ -2059,6 +2061,7 @@ function toggleFlight() {
   riverFlight=null;surfaceJourney = null; startCruiseAfterLook = false;
   if (renderer.xr.isPresenting) return;
   flight = !flight;
+  flightCruise=false;
   updateCameraViewport();
   flightAim = null;
   tween = null;
@@ -2090,6 +2093,7 @@ function toggleFlight() {
   panel();
 }
 function beginTargetFlight() {
+  flightCruise=false;
   clearWalking();
   riverFlight=null;surfaceJourney = null; startCruiseAfterLook = false;
   planetLook = null;
@@ -2159,7 +2163,7 @@ function aimedDistance(
 }
 function updateFlight(dt: number) {
   flightAlignment=null;
-  if (!flight || !ready || renderer.xr.isPresenting) return;
+  if (!flight || (!ready&&journey.phase!=='blend') || renderer.xr.isPresenting) return;
   if(residentSystem&&state.body){
     const relative=vec(localPose()).sub(vec(bodyPosition(state.body,state.sys!,epoch))).toArray() as V3;
     const clearance=surfaceClearance(state.body,relative,snappedWaterLevelFor(state.body)).terrainClearance;
@@ -2276,14 +2280,14 @@ function updateFlight(dt: number) {
   } else flightAim = null;
   let target: V3 | undefined;
   if (autopilot?.kind === "galaxy") {
-    if (space && state.galaxy?.id === autopilot.id) autopilot = null;
+    if (space && state.galaxy?.id === autopilot.id) {autopilot = null;flightCruise=true;}
     else target = catalogue.find((g) => g.id === autopilot!.id)?.position;
   } else if (autopilot?.kind === "primordial") {
     const star=firstStarById(autopilot.id);
     if(star){target=primordialPosition(star);if(vec(target).distanceTo(vec(p))<.04){autopilot=null;target=undefined;}}
     else autopilot=null;
   } else if (autopilot?.kind === "star") {
-    if (residentSystem === autopilot.id) autopilot = null;
+    if (residentSystem === autopilot.id) {autopilot = null;flightCruise=true;}
     else target = space?.find(autopilot.id)?.position||space?.findPopulation(autopilot.id,epoch)?.positionLy;
   } else if (autopilot?.kind === "body") {
     const body = bodyById(autopilot.id);
@@ -2320,7 +2324,7 @@ function updateFlight(dt: number) {
   const motion = new THREE.Vector3(
     +flightKeys.has("d") - +flightKeys.has("a"),
     +flightKeys.has("e") - +flightKeys.has("q"),
-    +flightKeys.has("s") - +(flightKeys.has("w") || !!autopilot),
+    +flightKeys.has("s") - +(flightKeys.has("w") || !!autopilot || flightCruise),
   );
   const direction = motion.lengthSq()
     ? motion.clone().normalize().applyQuaternion(camera.quaternion)
@@ -2432,6 +2436,20 @@ function updateFlight(dt: number) {
     const sys = state.sys!;
     nearest = nearestAtDate(sys, p);
     clearance = nearest.clearance;
+    // Prepare ground contact while still flying. Descending onto solid dry
+    // ground hands off to the existing walker; hovering never forces landing.
+    if(!autopilot&&!orbitAssist&&state.body?.id===nearest.body.id&&planetTiles&&
+      nearest.body.kind!=='star'&&nearest.body.type!=='Gas giant'){
+      const relative=vec(p).sub(vec(nearest.center)),radial=relative.clone().normalize();
+      const surface=surfaceSample(nearest.body,radial.toArray() as V3);
+      const descending=motion.lengthSq()>0&&direction.dot(radial)<-.15;
+      if(surface?.walkable&&nearest.terrainClearance<PLANET_DETAIL.touchdownPrepareM){
+        planetTiles.setContactFocus(radial.multiplyScalar(nearest.body.radiusM+surface.rockHeightM+.92).toArray() as V3);
+        if(descending&&nearest.terrainClearance<PLANET_DETAIL.touchdownM){
+          flightCruise=false;void prepareLanding();return;
+        }
+      }else planetTiles.setContactFocus(null);
+    }
     if (approachAltitude !== null && target) {
       const body = bodyById(autopilot!.id)!;
       const stop = Math.max(body.radiusM + approachAltitude,
@@ -2577,6 +2595,8 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false) {
   autopilot=null; orbitAssist=null; planetLook=null; startCruiseAfterLook=false;
   const center=vec(bodyPosition(body,state.sys!,epoch)), eye=vec(localPose()).sub(center).normalize();
   const sample=surfaceFor(body), sun=vec(bodyPosition(state.sys!.stars[0],state.sys!,epoch)).sub(center).normalize();
+  const lifeEntry=lifecycleFor(state.sys!,body);
+  if(lifeEntry.kind!=='star')sun.set(...spinCompensatedSunDirection(sun.toArray() as V3,spinFor(body),lifeEntry.lc.formationNs,epoch));
   if(!sample([0,1,0],epoch)){announce('This world has no surface at this date.');return;}
   const biome=preferLife?biomeClassifier(body,snappedWaterLevelFor(body)):null;
   let destination=eye.clone(), best=-Infinity;
@@ -2586,7 +2606,7 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false) {
     const d=new THREE.Vector3(Math.cos(phi)*r,y,Math.sin(phi)*r), s=sample(d.toArray() as V3,epoch);
     if(!s || !s.walkable || s.elevationM>10000)continue;
     const habitat=biome?.(d.toArray() as V3,s.groundHeightM,1);
-    if(preferLife&&(!habitat||habitat.weights[1]<.35||habitat.moisture<.2))continue;
+    if(preferLife&&(!habitat||habitat.weights[1]<.35||habitat.moisture<.2||d.dot(sun)<.25))continue;
     const score=preferLife
       ? habitat!.weights[1]*3+habitat!.moisture+(habitat!.forestPotential?.5:0)+d.dot(eye)*.3+Math.max(-.5,d.dot(sun))*.2
       : d.dot(eye)*2+Math.max(-.5,d.dot(sun))*.7+Math.min(1,s.elevationM/3500)*.12;
@@ -2596,7 +2616,7 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false) {
   const up=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(eye);
   if(up.lengthSq()<.0001)up.set(1,0,0).applyQuaternion(camera.quaternion).projectOnPlane(eye);
   surfaceJourney={bodyId:body.id,direction:destination,up:up.normalize()};
-  announce(preferLife?'Approaching a vegetated habitat. Land after arrival to look for nearby life.':'Approaching a terrain site, then flying 600 m above the ground. Movement keys release assistance.');
+  announce(preferLife?'Approaching a living habitat. Vegetation and wildlife stream during low flight.':'Approaching a terrain site, then flying 600 m above the ground. Movement keys release assistance.');
 }
 function startTerrainCruise() {
   const body=state.body!;
@@ -3540,6 +3560,7 @@ function positionSystem() {
 }
 function rebaseSystem(origin: THREE.Vector3) {
   const delta = origin.clone().sub(systemOrigin).multiplyScalar(systemUnit);
+  viewBlend?.shiftOrigin(delta);
   systemOrigin.copy(origin);
   camera.position.sub(delta);
   controls.target.sub(delta);
@@ -4739,6 +4760,7 @@ window.addEventListener("keydown", (e) => {
     e.preventDefault();
     if(e.key===' '&&!e.repeat)walker?.requestJump();
     autopilot = null;
+    flightCruise=false;
     orbitAssist = null; approachAltitude = null;
     riverFlight=null;surfaceJourney=null;startCruiseAfterLook=false;
     planetLook = null;
@@ -5214,6 +5236,7 @@ Object.defineProperty(window, "__atlas", {
         crossings,
         crossing: !!crossing,
         autopilot,
+        cruise:flightCruise,
         orbitAssist: orbitAssist ? {bodyId: orbitAssist.bodyId, axis: orbitAssist.axis.toArray()} : null,
         terrainCruise: orbitAssist?.clearanceM || null,
         horizonAssist,alignment:flightAlignment,

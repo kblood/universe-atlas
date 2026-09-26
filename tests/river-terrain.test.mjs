@@ -13,6 +13,7 @@ import {buildRiverRegion,riverDirection} from '../src/river-generation.ts';
 import {conservativeRiverBedM,riverFeatureAt,samplePhysicalRiverRegion,sampleRiverRegion} from '../src/river-sample.ts';
 import {riverPhysicalField} from '../src/river-physical-field.ts';
 import {regionalLandformHeight} from '../src/regional-landform.ts';
+import {planetLandforms} from '../src/planet-landforms.ts';
 
 const radiusM=10000;
 const region={version:'river-region-1',id:'test/drainage-1/river-region-1',parentCatchmentId:'test/drainage-1',bodyId:'test',bodySeed:'river-terrain',radiusM,
@@ -38,7 +39,9 @@ const tileTriangleHeight=(data,d,radius,positions=data.positions)=>{
 };
 
 test('hydrology leaves the baseline sampler unchanged outside its regional influence',()=>{
-  const old=baseTerrainSampler(baseBody),plain=terrainSampler(baseBody),river=terrainSampler(body);
+  const base=baseTerrainSampler(baseBody),relief=planetLandforms(baseBody);
+  const old=d=>{const s=base(d);return {...s,elevationM:s.elevationM+relief(d,s.elevationM)};};
+  const plain=terrainSampler(baseBody),river=terrainSampler(body);
   for(const d of [[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]){
     assert.deepEqual(plain(d),{...old(d),rockHeightM:old(d).elevationM,waterLevelM:old(d).ocean?0:null,visibleHeightM:old(d).ocean?0:old(d).elevationM,groundHeightM:old(d).elevationM,waterHeightM:old(d).ocean?0:null,waterDepthM:old(d).ocean?Math.max(0,-old(d).elevationM):0,wet:old(d).ocean,waterKind:null,bank:0,channelId:null,flow:[0,0],influence:0});
     assert.deepEqual(river(d),plain(d));
@@ -92,7 +95,7 @@ test('inland water keeps a carved rock field and a separate visible water surfac
   // is computed via `surfaceQuery(body)(...)`/`terrainSampler(body)` with no
   // override, so `waterLevelM` defaults to `0` here too — a pure version-
   // string move, not a numeric one, exactly as the 1.4.1 re-pin above.
-  assert.equal(q.geologyVersion,'terrain-1.4.2');assert.equal(q.regionalGeologyVersion,'river-region-1');
+  assert.equal(q.geologyVersion,'terrain-1.5.0');assert.equal(q.regionalGeologyVersion,'river-region-1');
 });
 
 test('river shore bed and dry bank meet continuously without a submerged walking trench',()=>{

@@ -4,7 +4,7 @@ import {conservativeRiverBedM} from './river-sample.ts';
 import {biomeClassifier,materialBytes} from './surface-biomes.ts';
 
 export const PATCH_SEGMENTS = 32;
-export const PATCH_TEXTURE = 64;
+export const PATCH_TEXTURE = 128;
 export type Tile = { face: number; level: number; x: number; y: number };
 export const tileKey = (t: Tile) => `${t.face}/${t.level}/${t.x}/${t.y}`;
 export function directionCoordinates(d: V3) {

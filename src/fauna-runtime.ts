@@ -6,8 +6,8 @@
  * Provenance: the LOD-band distance constants below
  * (`FAUNA_LOD0_DISTANCE_M`/`FAUNA_LOD1_DISTANCE_M`/`FAUNA_VISIBLE_DISTANCE_M`)
  * are ported from C:\LLM\IWSDK\nms\shared\faunaAnimAudio.ts's
- * `M9_LOD0_DISTANCE_M` (18) / `M9_LOD1_DISTANCE_M` (48) /
- * `M9_VISIBLE_DISTANCE_M` (92) - already Quest-budget-reasoned constants,
+ * `M9_LOD0_DISTANCE_M` (18) / `M9_LOD1_DISTANCE_M` (100) /
+ * `M9_VISIBLE_DISTANCE_M` (280) - presentation distances for continuous low flight,
  * reused verbatim rather than re-deriving. The ring-based per-instance
  * placement idea (golden-angle spiral + sqrt-radius jitter) also follows
  * that file's `generateFaunaInstance`, adapted to a bounded per-anchor herd
@@ -391,8 +391,8 @@ export type FaunaLodBand = 0 | 1 | 2;
 
 /** Ported from nms/shared/faunaAnimAudio.ts's M9_LOD*_DISTANCE_M / M9_VISIBLE_DISTANCE_M. */
 export const FAUNA_LOD0_DISTANCE_M = 18;
-export const FAUNA_LOD1_DISTANCE_M = 48;
-export const FAUNA_VISIBLE_DISTANCE_M = 92;
+export const FAUNA_LOD1_DISTANCE_M = 100;
+export const FAUNA_VISIBLE_DISTANCE_M = 280;
 
 export function pickFaunaLodBand(distanceM: number): FaunaLodBand | -1 {
   if (distanceM <= FAUNA_LOD0_DISTANCE_M) return 0;

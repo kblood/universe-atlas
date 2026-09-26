@@ -13,6 +13,18 @@ page.on('pageerror',e=>errors.push(e.message));
 page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
 const wait=fn=>page.waitForFunction(fn,null,{timeout:90000});
 const ready=()=>wait(()=>window.__atlas?.ready);
+const continuation=[];
+async function checkContinuation(domain){
+  await page.waitForFunction(domain=>window.__atlas.travel.domain===domain&&window.__atlas.travel.cruise&&!window.__atlas.ready,domain,{timeout:90000});
+  const before=await page.evaluate(()=>({position:window.__atlas.travel.position,active:window.__atlas.travel.active}));
+  await page.waitForTimeout(100);
+  const after=await page.evaluate(()=>({position:window.__atlas.travel.position,active:window.__atlas.travel.active}));
+  assert.ok(before.active&&after.active,domain+': flight survives the frame change');
+  assert.ok(Math.hypot(...after.position.map((v,i)=>v-before.position[i]))>0,domain+': movement continues during the blend');
+  continuation.push({domain,before,after});
+  // Brake without leaving free flight before measuring the optical handoff.
+  await page.keyboard.press('Shift');
+}
 async function sample(name){
   // Label text must not count as light from the star.
   await page.addStyleTag({content:'#labels { visibility:hidden !important; }'});
@@ -49,6 +61,7 @@ try{
   await page.locator('#fly-target').click();
   await wait(()=>window.__atlas.appearance.galaxyPreview.some(g=>g.radii<11&&g.radii>6));
   await page.screenshot({path:out+'/01-before-galaxy-entry.png'});
+  await checkContinuation('galaxy');
   await wait(()=>window.__atlas.travel.crossings===1&&window.__atlas.ready&&!window.__atlas.travel.autopilot);
   const entry=await page.evaluate(()=>({position:window.__atlas.space.positionLy,radius:window.__atlas.state.galaxy.radiusLy,
     samples:window.visualSamples.flatMap(s=>s.level==='universe'?s.preview:[])}));
@@ -78,6 +91,7 @@ try{
   assert.ok(samples[2].pointDiameter>samples[0].pointDiameter*1.8,'optical diameter grows over the approach');
   assert.ok(samples[2].area>samples[0].area*2,'rendered star footprint actually grows');
   await page.locator('#fly-target').click();
+  await checkContinuation('system');
   await wait(()=>window.__atlas.travel.crossings===1&&window.__atlas.ready&&!window.__atlas.travel.autopilot);
   await page.keyboard.press('Escape');await page.waitForTimeout(120);
   const arrived=await sample('05-after-system-entry');samples.push(arrived);
@@ -89,7 +103,7 @@ try{
   assert.equal(markers[0],0,'physical star has one optical point, no duplicate beacon');
   assert.deepEqual(errors,[]);
   const report={ok:true,base,galaxyEntryRadii:Math.hypot(...entry.position)/entry.radius,
-    preparedCatalogueBeforeEntry:true,samples,markerVisibility:markers,errors};
+    preparedCatalogueBeforeEntry:true,continuation,samples,markerVisibility:markers,errors};
   await writeFile(out+'/report.json',JSON.stringify(report,null,2));
   console.log(JSON.stringify(report));
 }catch(error){await page.screenshot({path:out+'/failure.png'});throw error;}

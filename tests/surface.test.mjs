@@ -77,7 +77,7 @@ test('procedural craters: pure function of (seed,address,t), gated by real surfa
   // in this codebase inheriting craters-on with no override). This test
   // exercises the crater feature itself via the explicit opt-in, which
   // remains fully wired, pure and deterministic.
-  const young=terrainSampler(moon,undefined,0,true),aged=terrainSampler(moon,undefined,3500,true),base=baseTerrainSampler(moon);
+  const young=terrainSampler(moon,undefined,0,true),aged=terrainSampler(moon,undefined,3500,true),base=terrainSampler(moon,undefined,0,false);
   let differed=false;
   for(let i=0;i<200;i++){
     const theta=(i/200)*Math.PI*2,phi=Math.PI*((i*7%200)/200);

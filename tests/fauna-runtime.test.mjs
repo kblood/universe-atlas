@@ -173,17 +173,17 @@ test('faunaGroundedTransform applies real ground height as an outer transform', 
   assert.equal(position.y, 5);
 });
 
-test('pickFaunaLodBand thresholds match the ported nms M9 distances', () => {
+test('pickFaunaLodBand retains close rigs and extends proxies into low flight', () => {
   assert.equal(FAUNA_LOD0_DISTANCE_M, 18);
-  assert.equal(FAUNA_LOD1_DISTANCE_M, 48);
-  assert.equal(FAUNA_VISIBLE_DISTANCE_M, 92);
+  assert.equal(FAUNA_LOD1_DISTANCE_M, 100);
+  assert.equal(FAUNA_VISIBLE_DISTANCE_M, 280);
   assert.equal(pickFaunaLodBand(0), 0);
   assert.equal(pickFaunaLodBand(18), 0);
   assert.equal(pickFaunaLodBand(18.01), 1);
-  assert.equal(pickFaunaLodBand(48), 1);
-  assert.equal(pickFaunaLodBand(48.01), 2);
-  assert.equal(pickFaunaLodBand(92), 2);
-  assert.equal(pickFaunaLodBand(92.01), -1);
+  assert.equal(pickFaunaLodBand(100), 1);
+  assert.equal(pickFaunaLodBand(100.01), 2);
+  assert.equal(pickFaunaLodBand(280), 2);
+  assert.equal(pickFaunaLodBand(280.01), -1);
 });
 
 test('LOD budgets are documented, positive, and the L0 concurrent-rig cap is small relative to instanced L1/L2', () => {

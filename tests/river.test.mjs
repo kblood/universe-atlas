@@ -2,13 +2,13 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {galaxies,refByAddress,system} from '../src/catalog.ts';
 import {buildDrainage} from '../src/drainage.ts';
-import {terrainSampler} from '../src/terrain.ts';
+import {baseTerrainSampler} from '../src/terrain.ts';
 import {buildRiverRegion,riverCoordinates,riverDirection} from '../src/river-generation.ts';
 import {sampleLegacyRiverRegion,sampleRiverRegion} from '../src/river-sample.ts';
 import {RIVER_VERSION} from '../src/river-types.ts';
 
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
-const drainage=buildDrainage(body),baseline=terrainSampler(body);
+const drainage=buildDrainage(body),baseline=baseTerrainSampler(body);
 const feasible=()=>drainage.catchments.flatMap(c=>{try{return [[c,buildRiverRegion(body,c)]]}catch{return []}});
 
 test('physical regional rivers are deterministic, bounded, and retain the baseline',()=>{

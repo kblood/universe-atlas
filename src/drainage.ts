@@ -1,5 +1,5 @@
 import {hash64,type Body,type V3} from './catalog.ts';
-import {terrainSampler,TERRAIN_VERSION} from './terrain.ts';
+import {baseTerrainSampler} from './terrain.ts';
 import {cubeDirection} from './planet-tiles.ts';
 import {acosDet,atan2Det,hypotDet} from './det-math.ts';
 
@@ -103,7 +103,9 @@ export function routeDrainage(grid:SphereGrid,height:Float64Array,wet:Uint8Array
 }
 
 export function buildDrainage(body:Body,n=DRAINAGE_GRID){
-  const grid=sphereGrid(n),sample=terrainSampler({...body,hydrology:undefined}),count=grid.areas.length;
+  // Canonical catchments keep their continental baseline; added regional
+  // ranges refine the rendered/collision surface without renumbering rivers.
+  const grid=sphereGrid(n),sample=baseTerrainSampler(body),count=grid.areas.length;
   const height=new Float64Array(count),wet=new Uint8Array(count);
   for(let i=0;i<count;i++){const s=sample(direction(grid.directions,i));height[i]=s.elevationM;wet[i]=s.ocean?1:0;}
   const flow=routeDrainage(grid,height,wet),radius2=body.radiusM**2;
@@ -131,7 +133,7 @@ export function buildDrainage(body:Body,n=DRAINAGE_GRID){
     const b=['Aster','Bracken','Cairn','Delta','Ember','Flint','Gale','Hollow','Iris','Jasper','Kestrel','Larch','Morrow','Nacre','Ochre','Pale'];
     return {id,name:a[Number(h%16n)]+' '+b[Number((h>>8n)%16n)]+' Basin',outlet:mouth,head,areaKm2:t.area*radius2/1e6,lengthKm:length/1000,depressionKm2:t.depression*radius2/1e6,headwater:site(head),mouth:mouthSite};
   });
-  return {version:DRAINAGE_VERSION,geologyVersion:TERRAIN_VERSION,gridSize:n,bodyId:body.id,bodySeed:body.seed,radiusM:body.radiusM,...grid,height,wet,...flow,catchments,
+  return {version:DRAINAGE_VERSION,geologyVersion:'terrain-1.4.2',gridSize:n,bodyId:body.id,bodySeed:body.seed,radiusM:body.radiusM,...grid,height,wet,...flow,catchments,
     stats:{nodes:count,edges:grid.neighbours.length/2,oceanNodes:wet.reduce((a,b)=>a+b,0),catchments:totals.size,landKm2:[...totals.values()].reduce((a,b)=>a+b.area,0)*radius2/1e6,meanSpacingKm:Math.sqrt(4*Math.PI*radius2/count)/1000}};
 }
 export type Drainage=ReturnType<typeof buildDrainage>;

@@ -16,7 +16,8 @@ async function rendererModule(){
     import {buildTile,tileNeighbour} from './src/planet-tiles.ts';
     import {PlanetRenderer} from './src/planet-renderer.ts';
     import {surfaceQuery} from './src/world-surface.ts';
-    export {THREE,buildTile,tileNeighbour,PlanetRenderer,surfaceQuery};
+    import {primeCanonicalHydrologySync} from './src/hydrology-registry.ts';
+    export {THREE,buildTile,tileNeighbour,PlanetRenderer,surfaceQuery,primeCanonicalHydrologySync};
   `}});
   return {module:await import(pathToFileURL(output).href),directory};
 }
@@ -29,9 +30,15 @@ async function removeReviewDirectory(directory){
 }
 
 test('hydrology keeps 2:1 contact support while water-floor work progresses best effort',async()=>{
-  const {module,directory}=await rendererModule(),{THREE,buildTile,tileNeighbour,PlanetRenderer,surfaceQuery}=module;
-  const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===23165);
-  assert.ok(catchment);const body={...maithea,hydrology:buildRiverRegion(maithea,catchment)},direction=[-0.15499501816238923,0.26750660377146346,-0.9510082866534327],surface=surfaceQuery(body)(direction),radius=body.radiusM;
+  const {module,directory}=await rendererModule(),{THREE,buildTile,tileNeighbour,PlanetRenderer,surfaceQuery,primeCanonicalHydrologySync}=module;
+  const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===3386);
+  assert.ok(catchment);const regional=buildRiverRegion(maithea,catchment),body={...maithea,hydrology:regional};
+  primeCanonicalHydrologySync(body);
+  const site=regional.sites.find(s=>s.kind==='river-bank');
+  // Move four metres toward the channel from the current authored dry bank.
+  const d=new THREE.Vector3(...site.direction),toward=new THREE.Vector3(...site.lookDirection).sub(d).normalize();
+  const direction=d.addScaledVector(toward,4/body.radiusM).normalize().toArray(),surface=surfaceQuery(body)(direction),radius=body.radiusM;
+  assert.equal(surface.wet,false,'fine contact fixture stays on the dry bank');
   const contact=new THREE.Vector3(...direction).multiplyScalar(radius+surface.groundHeightM+.92),eye=new THREE.Vector3(...direction).multiplyScalar(radius+surface.groundHeightM+12).divideScalar(radius),host=new THREE.Mesh(new THREE.SphereGeometry(1,8,8),new THREE.MeshBasicMaterial());
   const SavedWorker=globalThis.Worker;
   class InlineWorker { onmessage=null; onerror=null; postMessage(data){queueMicrotask(()=>{try{this.onmessage?.({data:{key:data.key,result:buildTile(data.body,data.tile,data.relief)}});}catch(error){this.onmessage?.({data:{key:data.key,error:String(error)}});}});} terminate(){} }

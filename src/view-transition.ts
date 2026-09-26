@@ -112,4 +112,9 @@ export class ViewBlend {
     this.scene.remove(this.wrapper);
     this.cleanup();
   }
+  /** A moving system camera can rebase while its outgoing view is fading. */
+  shiftOrigin(delta:THREE.Vector3){
+    if(!this.oldWorldToNew||this.finished)return;
+    const e=this.wrapper.matrix.elements;e[12]-=delta.x;e[13]-=delta.y;e[14]-=delta.z;
+  }
 }

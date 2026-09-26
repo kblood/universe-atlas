@@ -9,6 +9,7 @@ import { sampleRiverRegion } from './river-sample.ts';
 import {regionalLandformHeight,REGIONAL_LANDFORM_VERSION} from './regional-landform.ts';
 import type {RiverRegion} from './river-types.ts';
 import {craterField, craterAgeGate, craterHeightDeltaAt, type CraterField, type CraterParams} from './planet-craters.ts';
+import {planetLandforms} from './planet-landforms.ts';
 
 // Bumped from terrain-1.3.0: `terrainSampler` gained the ABILITY to sum
 // procedural impact craters (planet-craters.ts) into `elevationM` for any
@@ -70,7 +71,10 @@ import {craterField, craterAgeGate, craterHeightDeltaAt, type CraterField, type 
 // receiving that exact `0` default, so this is a statement of algorithm
 // intent per §6.2's rule, not a claim the golden digest moved - the
 // four-engine gate is what certifies that (see this task's report).
-export const TERRAIN_VERSION = "terrain-1.4.2";
+// 1.5.0 adds physical regional ridges in every surface consumer. Canonical
+// drainage remains on the unchanged continental baseline; terrain golden
+// samples deliberately change and are checked across all four JS engines.
+export const TERRAIN_VERSION = "terrain-1.5.0";
 export {REGIONAL_LANDFORM_VERSION};
 export const ELEVATION_RANGE_M = 60000;
 /**
@@ -375,6 +379,7 @@ export function terrainSampler(
   waterLevelM: number = 0,
 ) {
   const base = baseTerrainSampler(body, waterLevelM);
+  const landforms=planetLandforms(body);
   const candidates = regions.length > 1 ? [...regions].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0) : regions;
   // `includeCraters=false` skips building a CraterField at all (not merely
   // "zero craters" via surfaceAgeMyr<=0): planet-craters.ts's per-voxel
@@ -389,13 +394,14 @@ export function terrainSampler(
   const craters = includeCraters ? buildCraterField(body, surfaceAgeMyr) : null;
   return (d: V3) => {
     const sample = base(d);
-    const ocean = sample.ocean;
     // Craters never touch the seafloor shape in this pass (see this
     // function's own doc comment): only the exposed dry/rocky elevation
     // gains a crater delta, and `ocean` itself keeps deciding land/sea from
     // the PRE-crater elevation, so this cannot flip the coastline.
+    const uncrateredHeightM = sample.elevationM + landforms(d,sample.elevationM);
+    const ocean=!!body.water&&uncrateredHeightM<waterLevelM;
     const craterDeltaM = craters && !ocean ? craterHeightDeltaAt(craters, d) : 0;
-    const elevationM = sample.elevationM + craterDeltaM;
+    const elevationM = uncrateredHeightM + craterDeltaM;
     const baseline:SurfaceSample = {
       // Keep the common no-region path to one result allocation. Do not spread
       // a sampler result for every tile vertex: this is the hot terrain loop.
@@ -421,7 +427,7 @@ export function terrainSampler(
     // construction still uses baseTerrainSampler + sampleLegacyRiverRegion,
     // preserving exports and canonical drainage inputs.
     for (const region of candidates) {
-      const landform=regionalLandformHeight(region,d,sample.elevationM);
+      const landform=regionalLandformHeight(region,d,elevationM);
       const river = sampleRiverRegion(region, d, landform);
       if (!river.influence) continue;
       const rockHeightM = river.rockHeightM;

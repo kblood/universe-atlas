@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {sphereGrid,routeDrainage,buildDrainage,drainageBytes} from '../src/drainage.ts';
 import {galaxies,refByAddress,system} from '../src/catalog.ts';
-import {terrainSampler} from '../src/terrain.ts';
+import {terrainSampler,baseTerrainSampler} from '../src/terrain.ts';
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 const digest=d=>createHash('sha256').update(JSON.stringify(d.catchments)).update(Buffer.from(d.receiver.buffer)).update(Buffer.from(d.filled.buffer)).update(Buffer.from(d.accumulated.buffer)).digest('hex');
 test('spherical drainage topology joins all seams and sums to the area of a sphere',()=>{
@@ -44,7 +44,7 @@ test('planet catchments retain identities and physical locations independent of 
   assert.deepEqual(terrainSampler(body)([1,0,0]),before);
   assert.equal(d.stats.nodes,24578);assert.ok(drainageBytes(d)<4*1024*1024);
   assert.equal(d.catchments.length,12);assert.equal(new Set(d.catchments.map(c=>c.id)).size,12);
-  const sample=terrainSampler(body);let dryArea=0;
+  const sample=baseTerrainSampler(body);let dryArea=0;
   for(let i=0;i<d.height.length;i++){
     if(d.wet[i])continue;dryArea+=d.areas[i];
     const r=d.receiver[i];if(r>=0&&!d.wet[r])assert.equal(d.outlet[i],d.outlet[r]);
