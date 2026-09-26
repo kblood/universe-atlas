@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {galaxies,refByAddress,system} from '../src/catalog.ts';
-import {terrainSampler} from '../src/terrain.ts';
+import {terrainSampler,baseTerrainSampler,planetSurface,DEFAULT_SURFACE_AGE_MYR,TERRAIN_VERSION} from '../src/terrain.ts';
 import {cubeDirection,buildTile,PATCH_SEGMENTS,directionTile} from '../src/planet-tiles.ts';
 import {biomeClassifier,materialBytes} from '../src/surface-biomes.ts';
 import {detailPixels,detailOrigin} from '../src/ground-material.ts';
@@ -67,4 +67,69 @@ test('survey sites are repeatable real dry terrain and retain IDs across request
   assert.ok(sites.length>=3);assert.equal(new Set(sites.map(x=>x.id)).size,sites.length);
   for(const site of sites){const s=terrainSampler(body)(site.direction);assert.equal(s.elevationM,site.elevationM);assert.equal(s.ocean,false);assert.ok(site.slopeDeg<=28);}
   assert.deepEqual(surfaceSurvey({...body,type:'Gas giant'}),[]);
+});
+test('procedural craters: pure function of (seed,address,t), gated by real surface age, never flip ocean/land',()=>{
+  const moon={id:'crater-test-moon',seed:'crater-test-seed',kind:'moon',type:'Rocky moon',radiusM:1737000,massKg:7.3e22,temperatureK:220,water:0};
+  // `includeCraters=true` is required explicitly below: `terrainSampler`'s
+  // own default is now OFF (see terrain.ts's terrain-1.4.1 version-bump
+  // comment - a real-time walking/contact performance regression and a
+  // drainage.ts correctness hazard, both traced to every unmodified caller
+  // in this codebase inheriting craters-on with no override). This test
+  // exercises the crater feature itself via the explicit opt-in, which
+  // remains fully wired, pure and deterministic.
+  const young=terrainSampler(moon,undefined,0,true),aged=terrainSampler(moon,undefined,3500,true),base=baseTerrainSampler(moon);
+  let differed=false;
+  for(let i=0;i<200;i++){
+    const theta=(i/200)*Math.PI*2,phi=Math.PI*((i*7%200)/200);
+    const d=[-Math.cos(theta)*Math.sin(phi),Math.cos(phi),Math.sin(theta)*Math.sin(phi)];
+    const b=base(d);
+    // surfaceAgeMyr=0 => zero elapsed time => Poisson lambda=0 for every
+    // band (planet-craters.ts's craterField), so literally no craters exist
+    // yet - this must reproduce the pre-crater baseline exactly, not merely
+    // "close", proving the age gate at its zero boundary is exact.
+    assert.equal(young(d).elevationM,b.elevationM,'surfaceAgeMyr=0 must have zero craters, matching the pre-crater baseline exactly');
+    if(aged(d).elevationM!==b.elevationM)differed=true;
+    assert.equal(aged(d).ocean,b.ocean,'craters are summed after the ocean/land decision and must never flip it');
+  }
+  assert.ok(differed,'an aged (3500 Myr) surface must carry at least one crater over this sample sweep');
+  // Default OFF: with no explicit opt-in, terrainSampler(moon,undefined,3500)
+  // must reproduce the pre-crater baseline exactly, matching every other
+  // unmodified caller in this codebase (planet-renderer.ts, planet-tiles.ts,
+  // drainage.ts, travel.ts, world-surface.ts, surface-survey.ts) that samples
+  // with no override.
+  const agedDefault=terrainSampler(moon,undefined,3500);
+  for(const d of [[1,0,0],[0,1,0],[0,0,1],[-1,0,0]])assert.equal(agedDefault(d).elevationM,base(d).elevationM,'terrainSampler defaults to craters off');
+  // Purity/determinism: identical (seed,address,t,includeCraters) via fresh
+  // sampler instances reproduces the identical field - no hidden state
+  // carried between calls, no dependence on call/visit order.
+  const a1=terrainSampler(moon,undefined,3500,true),a2=terrainSampler(moon,undefined,3500,true);
+  for(const d of [[1,0,0],[0,1,0],[0,0,1],[-1,0,0],[0.6,0.6,0.529150262212918]])assert.deepEqual(a1(d),a2(d));
+});
+test('planetSurface gates craters off by default (the system-surfaces multi-body job budget) and matches terrainSampler exactly when opted in',()=>{
+  const moon={id:'crater-test-moon-2',seed:'crater-test-seed-2',kind:'moon',type:'Rocky moon',radiusM:1737000,massKg:7.3e22,temperatureK:220,water:0};
+  const t0=performance.now();
+  const off=planetSurface(moon,64,16);
+  // Regression guard: before terrain.ts gated craters off by default here,
+  // a system view (worker.ts's job('system-surfaces',...), which calls this
+  // function once per body with no per-call time budget of its own, all
+  // inside ONE 60s-timeout job in main.ts) measured 261.2s in isolated Node
+  // timing for a real 37-body system (11 planets + 26 moons), over 4x the
+  // job's hard timeout, permanently stranding the app on the sector view -
+  // see this task's report for the exact before/after numbers. This bound
+  // is generous (the fixed body above measures under 50ms in isolation) but
+  // catches the shape of that regression (an unbounded per-call cost that
+  // does not scale down with a small width/segments request) recurring.
+  assert.ok(performance.now()-t0<3000,'default planetSurface(...) must stay well inside a multi-body job budget');
+  const sample=terrainSampler(moon,undefined,DEFAULT_SURFACE_AGE_MYR,false);
+  for(let y=0;y<=8;y++)for(let x=0;x<=16;x++){
+    const u=x/16,v=y/8,theta=u*Math.PI*2,phi=v*Math.PI;
+    const d=[-Math.cos(theta)*Math.sin(phi),Math.cos(phi),Math.sin(theta)*Math.sin(phi)];
+    // `elevations` is a Float32Array (single-precision storage); compare
+    // against the plain double-precision sampler within float32 rounding,
+    // not bit-for-bit - the underlying craters-off computation is identical.
+    assert.ok(Math.abs(off.elevations[y*17+x]-sample(d).visibleHeightM)<1e-2,'craters-off elevations match the craters-off sampler at every grid point (within float32 rounding)');
+  }
+  const on=planetSurface(moon,64,16,DEFAULT_SURFACE_AGE_MYR,true);
+  assert.equal(on.elevations.length,off.elevations.length);
+  assert.equal(on.version,TERRAIN_VERSION);
 });

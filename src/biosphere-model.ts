@@ -30,7 +30,7 @@ export type Habitat = {id:string;name:string;temperatureK:number;moisture:number
 export type RockFamily = {id:string;name:string;form:'angular'|'layered'|'rounded';color:string;scaleM:number;elongation:number;layers:number;roughness:number};
 export type HistoryEvent = {id:string;dateMyr:number;kind:string;label:string;speciesId?:string};
 export type BiosphereWorld = {
-  version:string;seed:string;planetId:string;name:string;profile:PlanetProfile;
+  version:string;seed:string;bodyAddress:string;planetId:string;name:string;profile:PlanetProfile;
   formationMyr:number;surfaceMyr:number;microbialMyr:number|null;
   species:Species[];habitats:Habitat[];rocks:RockFamily[];events:HistoryEvent[];digest:string;
 };
@@ -38,9 +38,15 @@ export type Membership = {speciesId:string;suitability:number;occupied:boolean;r
 export type DatedBiosphere = {dateMyr:number;dateNs:string;stage:'unformed'|'forming'|'sterile'|'microbial'|'complex';surfaceAvailable:boolean;species:Species[];digest:string};
 export type Placement = {id:string;speciesId:string|null;rockId:string|null;variant:number;x:number;z:number;rotation:number;scale:number};
 
-export const BIOSPHERE_VERSION = 'biosphere-lab-2';
+// was 'biosphere-lab-2': reseeded by (seed, bodyAddress) instead of a bare
+// profile string (contract §2.4 rekey — two planets sharing a profile no
+// longer share a biosphere history), and world.formationMyr/surfaceMyr can
+// now be anchored to a real PlanetLifecycle instead of always being an
+// independently-seeded fictional offset. Species existence timing output
+// changes for every caller, hence the bump (docs/time-and-coordinates-contract.md §6.2).
+export const BIOSPHERE_VERSION = 'biosphere-lab-3';
 const MAX_SEED_LENGTH = 160;
-const MIN_DATE_MYR = -20_000, MAX_DATE_MYR = 20_000;
+export const MIN_DATE_MYR = -20_000, MAX_DATE_MYR = 20_000;
 const PLOT_M = 64, MAX_PLACEMENTS = 700, VARIANT_COUNT = 4;
 
 const profiles: Record<Exclude<PlanetProfile, 'airless'>, {temp:number; moisture:number; height:number; leaf:number; hue:number}> = {
@@ -71,10 +77,25 @@ function random01(key:string):number { return hash32(key) / 0x1_0000_0000; }
 function pick<T>(items:readonly T[], key:string):T { return items[Math.floor(random01(key) * items.length)]!; }
 function between(key:string, low:number, high:number):number { return low + (high-low)*random01(key); }
 function clamp(value:number, low:number, high:number):number { return Math.max(low, Math.min(high, value)); }
-function round(value:number, places=3):number { const k=10**places; return Math.round(value*k)/k; }
+// `places` is always a small non-negative integer literal at every call site
+// (1, 3 or 4) — `tenToThe` avoids the real `**`/Math.pow operator (whose
+// result is not guaranteed bit-identical across engines, see det-math.ts's
+// header) via plain repeated multiplication instead. For these small
+// integer powers of 10 the numeric result is unchanged (10, 1000, 10000 are
+// all exactly representable and this loop reaches them by exact integer
+// multiplication), so this is a determinism hardening, not a behaviour change.
+function tenToThe(places:number):number { let k=1; for(let i=0;i<places;i++) k*=10; return k; }
+function round(value:number, places=3):number { const k=tenToThe(places); return Math.round(value*k)/k; }
 function digest(value:string):string { return hash32(value).toString(16).padStart(8, '0') + hash32(value + '/digest').toString(16).padStart(8, '0'); }
 function dateNs(dateMyr:number):string { return (BigInt(dateMyr) * 1_000_000n * YEAR_NS).toString(); }
 function requireSeed(seed:string):void { if (typeof seed !== 'string' || !seed.trim() || seed.length > MAX_SEED_LENGTH) throw new Error(`seed must be a non-empty string up to ${MAX_SEED_LENGTH} characters`); }
+/** Contract §2.4: `generateBiosphere` folds `bodyAddress` into every seed
+ * derivation so two different planets sharing a `profile` no longer share a
+ * biosphere history. Any non-empty, bounded string works as the address key
+ * — callers with a real catalogue body pass its stable `body.id` (already a
+ * fully-qualified `galaxy/cell/ordinal/slot` path, see catalog.ts's `system()`);
+ * lab/demo callers pass a fixed placeholder (see biosphere-lab.ts, creature-lab.ts). */
+function requireBodyAddress(bodyAddress:string):void { if (typeof bodyAddress !== 'string' || !bodyAddress.trim() || bodyAddress.length > MAX_SEED_LENGTH) throw new Error(`bodyAddress must be a non-empty string up to ${MAX_SEED_LENGTH} characters`); }
 function requireProfile(profile:PlanetProfile):void { if (profile !== 'temperate' && profile !== 'arid' && profile !== 'cold' && profile !== 'airless') throw new Error(`Unknown planet profile: ${String(profile)}`); }
 function requireDate(dateMyr:number):void { if (!Number.isFinite(dateMyr) || !Number.isInteger(dateMyr) || dateMyr < MIN_DATE_MYR || dateMyr > MAX_DATE_MYR) throw new Error(`dateMyr must be a finite integer between ${MIN_DATE_MYR} and ${MAX_DATE_MYR}`); }
 function requireVariant(variant:number):void { if (!Number.isFinite(variant) || !Number.isInteger(variant) || variant < 0 || variant >= VARIANT_COUNT) throw new Error(`variant must be an integer from 0 to ${VARIANT_COUNT-1}`); }
@@ -191,20 +212,34 @@ function makeRocks(seed:string, planetId:string, profile:PlanetProfile):RockFami
   id:`${planetId}/rock/${form}`,name:`${pick(placeWords,`${seed}/rock/${form}`)} ${form} stone`,form,color:palette[index]!,scaleM:round(between(`${seed}/rock/${form}/scale`,.45,1.65)),elongation:round(between(`${seed}/rock/${form}/elongation`,form==='layered'?1.5:0.7,form==='layered'?2.7:1.5)),layers:form==='layered'?Math.floor(between(`${seed}/rock/${form}/layers`,3,8)):0,roughness:round(between(`${seed}/rock/${form}/roughness`,.25,.85)),
 })); }
 
-export function generateBiosphere(seed:string, profile:PlanetProfile):BiosphereWorld {
-  requireSeed(seed); requireProfile(profile);
-  const formationMyr=-12_000+Math.floor(random01(`${seed}/formation`)*1_000), surfaceMyr=formationMyr+80+Math.floor(random01(`${seed}/surface`)*140);
-  const planetId=`${BIOSPHERE_VERSION}/planet/${digest(`${profile}/${seed}`)}`, name=`${pick(worldWords,`${seed}/world`)} ${pick(placeWords,`${seed}/world-place`)}`;
-  const rocks=makeRocks(seed,planetId,profile);
+/** Contract §2.4: `world.formationMyr`/`world.surfaceMyr` stop being
+ * independently-seeded fictional offsets and become derived from the real
+ * `PlanetLifecycle` when the caller has one: `formationMyr = 0` (this clock
+ * starts at planet formation, by definition) and `surfaceMyr` is the caller's
+ * `round((coolingNs - formationNs) / (1e6 * YEAR_NS))` (computed in
+ * world-surface.ts, which owns the BigInt clock — this module stays
+ * independent of world-time.ts's `Ns` type, exactly as it did before). Pass
+ * `undefined` (the default) to keep today's demo/lab heuristic, unchanged
+ * apart from now folding `bodyAddress` into its seed. */
+export type RealPlanetClock = {surfaceMyr:number};
+
+export function generateBiosphere(seed:string, profile:PlanetProfile, bodyAddress:string, realClock?:RealPlanetClock):BiosphereWorld {
+  requireSeed(seed); requireProfile(profile); requireBodyAddress(bodyAddress);
+  if (realClock!==undefined && (!Number.isFinite(realClock.surfaceMyr) || !Number.isInteger(realClock.surfaceMyr) || realClock.surfaceMyr<=0 || realClock.surfaceMyr>MAX_DATE_MYR)) throw new Error(`realClock.surfaceMyr must be a finite positive integer up to ${MAX_DATE_MYR}`);
+  const key=`${seed}/${bodyAddress}`;
+  const formationMyr=realClock?0:-12_000+Math.floor(random01(`${key}/formation`)*1_000);
+  const surfaceMyr=realClock?realClock.surfaceMyr:formationMyr+80+Math.floor(random01(`${key}/surface`)*140);
+  const planetId=`${BIOSPHERE_VERSION}/planet/${digest(`${profile}/${key}`)}`, name=`${pick(worldWords,`${key}/world`)} ${pick(placeWords,`${key}/world-place`)}`;
+  const rocks=makeRocks(key,planetId,profile);
   const formationEvent:HistoryEvent={id:`${planetId}/formation`,dateMyr:formationMyr,kind:'formation',label:'Planet formation scenario begins'};
-  if (profile==='airless') { const bare={version:BIOSPHERE_VERSION,seed,planetId,name,profile,formationMyr,surfaceMyr,microbialMyr:null,species:[],habitats:airlessHabitats(seed),rocks,events:[formationEvent,{id:`${planetId}/surface`,dateMyr:surfaceMyr,kind:'surface',label:'Bare surface scenario begins'}],digest:''}; return {...bare,digest:digest(JSON.stringify(bare))}; }
-  const microbialMyr=surfaceMyr+95+Math.floor(random01(`${seed}/microbial`)*110), speciesBase=microbialMyr+420+Math.floor(random01(`${seed}/complex`)*150);
+  if (profile==='airless') { const bare={version:BIOSPHERE_VERSION,seed,bodyAddress,planetId,name,profile,formationMyr,surfaceMyr,microbialMyr:null,species:[],habitats:airlessHabitats(key),rocks,events:[formationEvent,{id:`${planetId}/surface`,dateMyr:surfaceMyr,kind:'surface',label:'Bare surface scenario begins'}],digest:''}; return {...bare,digest:digest(JSON.stringify(bare))}; }
+  const microbialMyr=surfaceMyr+95+Math.floor(random01(`${key}/microbial`)*110), speciesBase=microbialMyr+420+Math.floor(random01(`${key}/complex`)*150);
   // Plants retain the existing four three-member lineages. Four animal clades
   // add a similarly inspectable ancestor chain without collapsing their anatomy
   // into a single generic quadruped.
   const plantFamilies:PlantFamily[]=['branching','spire','bush','blade'];
   const creatures:CreatureArchetype[]=['browser','runner','low-slung','long-neck'];
-  const species=[...plantFamilies.flatMap((family,index)=>makeSpecies(seed,planetId,profile,family,index,speciesBase)),...creatures.flatMap((archetype,index)=>makeCreatureClade(seed,planetId,profile,archetype,index,speciesBase+plantFamilies.length*13))];
+  const species=[...plantFamilies.flatMap((family,index)=>makeSpecies(key,planetId,profile,family,index,speciesBase)),...creatures.flatMap((archetype,index)=>makeCreatureClade(key,planetId,profile,archetype,index,speciesBase+plantFamilies.length*13))];
   const events:HistoryEvent[]=[
     formationEvent,
     {id:`${planetId}/surface`,dateMyr:surfaceMyr,kind:'surface',label:'Stable surface scenario begins'},
@@ -212,11 +247,29 @@ export function generateBiosphere(seed:string, profile:PlanetProfile):BiosphereW
   ];
   for (const s of species) { events.push({id:`${s.id}/origin`,dateMyr:s.birthMyr,kind:s.parentId?'budding-speciation':'lineage-origin',label:`${s.name} begins`,speciesId:s.id}); if(s.deathMyr!==null) events.push({id:`${s.id}/extinction`,dateMyr:s.deathMyr,kind:'extinction',label:`${s.name} ends`,speciesId:s.id}); }
   events.sort((a,b)=>a.dateMyr-b.dateMyr || (a.id<b.id?-1:a.id>b.id?1:0));
-  const world={version:BIOSPHERE_VERSION,seed,planetId,name,profile,formationMyr,surfaceMyr,microbialMyr,species,habitats:makeHabitats(seed,profile),rocks,events,digest:''};
+  const world={version:BIOSPHERE_VERSION,seed,bodyAddress,planetId,name,profile,formationMyr,surfaceMyr,microbialMyr,species,habitats:makeHabitats(key,profile),rocks,events,digest:''};
   return {...world,digest:digest(JSON.stringify(world))};
 }
 
-function worldLooksValid(world:BiosphereWorld):void { if (!world || typeof world!=='object' || typeof world.seed!=='string' || !Array.isArray(world.species) || !Array.isArray(world.habitats) || !Number.isInteger(world.formationMyr) || !Number.isInteger(world.surfaceMyr)) throw new Error('Invalid biosphere world'); }
+/** Contract §2.4's "profile derived deterministically from the body's
+ * physical properties + star state at t" path, for a real catalogue body:
+ * plain threshold comparisons on already-deterministic numeric fields (no
+ * random draw, no det-math needed — nothing here is a fixed-point
+ * approximation of a transcendental). Kept independent of `catalog.ts`'s
+ * `Body` type (structural typing only) so this module's existing "no
+ * world-time/catalog dependency" shape is preserved. Labs/tests that want a
+ * specific named profile continue to call `generateBiosphere` directly with
+ * one of the four `PlanetProfile` values — this helper is only for callers
+ * deriving a profile from a real body instead of picking one by hand. */
+export function profileFromPhysicalProperties(body:{water:number; temperatureK:number}, starStage:'unformed'|'main-sequence'|'giant'|'remnant'):PlanetProfile {
+  if (starStage!=='main-sequence' && starStage!=='giant') return 'airless';
+  if (!(body.water>0)) return 'airless';
+  if (body.temperatureK>=295) return 'arid';
+  if (body.temperatureK<=278) return 'cold';
+  return 'temperate';
+}
+
+function worldLooksValid(world:BiosphereWorld):void { if (!world || typeof world!=='object' || typeof world.seed!=='string' || typeof world.bodyAddress!=='string' || !Array.isArray(world.species) || !Array.isArray(world.habitats) || !Number.isInteger(world.formationMyr) || !Number.isInteger(world.surfaceMyr)) throw new Error('Invalid biosphere world'); }
 function exists(s:Species, dateMyr:number):boolean { return dateMyr>=s.birthMyr && (s.deathMyr===null || dateMyr<s.deathMyr); }
 export function biosphereAt(world:BiosphereWorld,dateMyr:number):DatedBiosphere {
   worldLooksValid(world); requireDate(dateMyr);

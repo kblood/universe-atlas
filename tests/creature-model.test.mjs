@@ -7,7 +7,7 @@ const archetypes=['browser','runner','low-slung','long-neck'];
 const animals=w=>w.species.filter(s=>s.creature);
 test('all animal species have shared versioned anatomy and complete dated ancestry',()=>{
   for(const profile of ['temperate','arid','cold']){
-    const w=generateBiosphere('CREATURE-HISTORY',profile),list=animals(w);
+    const w=generateBiosphere('CREATURE-HISTORY',profile,'planet/0'),list=animals(w);
     assert.equal(list.length,12);assert.equal(w.species.length,24);
     assert.deepEqual(new Set(list.map(s=>s.creature.archetype)),new Set(archetypes));
     for(const a of archetypes){
@@ -28,7 +28,7 @@ test('all animal species have shared versioned anatomy and complete dated ancest
     }
     assert.equal(animals(biosphereAt(w,w.formationMyr-1)).length,0);
   }
-  assert.equal(animals(generateBiosphere('CREATURE-HISTORY','airless')).length,0);
+  assert.equal(animals(generateBiosphere('CREATURE-HISTORY','airless','planet/0')).length,0);
 });
 test('body plan envelopes differ in shape rather than only uniform size or colour',()=>{
   for(const seed of ['SHAPES-A','SHAPES-B','SHAPES-C']){
@@ -64,9 +64,9 @@ test('juvenile anatomy and locomotion scale together, and planet context changes
   }
   const seed='s'.repeat(160);
   assert.deepEqual(validateCreatureGenome(generateCreatureGenome(seed,'browser')),[]);
-  assert.doesNotThrow(()=>generateBiosphere(seed,'temperate'));
-  const temperate=animals(generateBiosphere('PROFILE-CONTEXT','temperate')).map(s=>s.creature);
-  const arid=animals(generateBiosphere('PROFILE-CONTEXT','arid')).map(s=>s.creature);
+  assert.doesNotThrow(()=>generateBiosphere(seed,'temperate','planet/0'));
+  const temperate=animals(generateBiosphere('PROFILE-CONTEXT','temperate','planet/0')).map(s=>s.creature);
+  const arid=animals(generateBiosphere('PROFILE-CONTEXT','arid','planet/0')).map(s=>s.creature);
   assert.notDeepEqual(temperate,arid,'planet/profile context changes creature founders and descendants');
 });
 test('invalid anatomical and individual inputs cannot silently produce malformed rigs',()=>{

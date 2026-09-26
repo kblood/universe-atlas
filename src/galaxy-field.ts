@@ -2,9 +2,12 @@ import {
   density,
   spiralArmStrength,
   rng,
+  groupsInCluster,
   type Galaxy,
+  type GroupAnchor,
   type V3,
 } from "./catalog.ts";
+import type { CellV3 } from "./address.ts";
 
 // Integrate the SAME density used by 4-ly catalogue cells. The nonuniform
 // vertical bins resolve thin disks without allocating a galaxy-sized grid.
@@ -97,4 +100,38 @@ export function densityOverview(g: Galaxy, count: number) {
     n++;
   }
   return { positions, colors, sizes };
+}
+
+// ---------------------------------------------------------------------------
+// Cluster-scale field: a lazy replacement for iterating the fixed 32-galaxy
+// array at the "which galaxies exist near the camera" scale. Where
+// `densityOverview` above turns one galaxy's continuous density field into a
+// renderable star point-cloud, `fieldOverview` turns a window of the
+// cluster/group hierarchy (catalog.ts's `groupsInCluster`) into a renderable
+// "where are the groups" point-cloud - the piece Package D's
+// `galaxy-space.ts` needs to stream chunks over an unbounded universe
+// instead of assuming a fixed 32-entry array.
+// ---------------------------------------------------------------------------
+
+export interface FieldAnchor extends GroupAnchor {
+  clusterCell: CellV3;
+}
+
+/** Enumerates every non-empty group across a rectangular block of cluster
+ * cells (inclusive `loCluster`..`hiCluster` per axis - both BigInt, so the
+ * block itself can sit anywhere in the unbounded universe). Each cluster is
+ * generated independently via `groupsInCluster` (no dependency on
+ * neighbouring clusters), so callers request only the window they need
+ * instead of the whole universe. */
+export function fieldOverview(seed: string, loCluster: CellV3, hiCluster: CellV3): FieldAnchor[] {
+  const anchors: FieldAnchor[] = [];
+  for (let x = loCluster[0]; x <= hiCluster[0]; x++)
+    for (let y = loCluster[1]; y <= hiCluster[1]; y++)
+      for (let z = loCluster[2]; z <= hiCluster[2]; z++) {
+        const clusterCell: CellV3 = [x, y, z];
+        for (const anchor of groupsInCluster(seed, clusterCell)) {
+          anchors.push({ ...anchor, clusterCell });
+        }
+      }
+  return anchors;
 }

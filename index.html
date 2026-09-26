@@ -12,6 +12,7 @@
   </head>
   <body>
     <div id="viewport"></div>
+    <div id="early-cosmos" aria-hidden="true" hidden><div class="early-cosmos-field"></div></div>
     <header>
       <a class="brand" href="../" title="IWSDK projects"
         ><span class="brand-icon">✧</span
@@ -28,13 +29,25 @@
       </div>
     </header>
     <nav id="breadcrumbs" aria-label="Location"></nav>
+    <p id="compat-notice" role="status" hidden></p>
     <details id="timeline">
-      <summary>Time · <span id="date-label">reference date</span></summary>
-      <label for="date-years">Years from reference date</label>
-      <input id="date-years" value="0" inputmode="decimal" aria-label="Years from reference date" />
-      <button id="time-apply">Go to date</button><button id="time-reset">Reference date</button>
+      <summary>Time · <span id="era-label">now</span> · <span id="date-label">reference date</span></summary>
+      <label id="era-track-label">Cosmic era</label>
+      <div id="era-track" role="group" aria-labelledby="era-track-label"></div>
+      <label for="fine-slider">Position within era</label>
+      <input id="fine-slider" type="range" min="0" max="1000" value="500" aria-label="Position within era" />
+      <p id="expansion-readout" class="readout"></p>
+      <label for="view-mode">Universe view</label>
+      <select id="view-mode" aria-label="Universe view"><option value="state">State at date</option><option value="observed">Observed sky (approximate)</option></select>
+      <label for="future-scenario">Future scenario</label>
+      <select id="future-scenario" aria-label="Future scenario"><option value="constant-dark-energy">Continued expansion (baseline)</option><option value="big-crunch">Big Crunch (illustration)</option><option value="big-rip">Big Rip (illustration)</option></select>
+      <label for="tier-select">Playback speed</label>
+      <select id="tier-select" aria-label="Playback speed"></select>
+      <label for="date-years">Absolute year (since the Big Bang)</label>
+      <input id="date-years" value="0" inputmode="decimal" aria-label="Absolute year since the Big Bang" />
+      <button id="time-apply">Go to year</button><button id="time-reset">Catalogue epoch</button>
       <button id="time-day-back">−1 day</button><button id="time-day-forward">+1 day</button>
-      <p>Orbital positions follow this date at every scale. Stellar lifecycles and changing landscapes are planned for later releases.</p>
+      <p>Galaxies, stars, planets, moons and biospheres only render once formed and before they end. Orbital position, spin and day/night all follow this date at every scale.</p>
     </details>
     <aside id="panel">
       <div class="panel-top">
@@ -56,6 +69,7 @@
       ><button id="reset" title="Fit current view (Home)">⌖ Fit view</button
       ><button id="help" aria-label="Show controls">?</button>
       <a class="lab-launch" href="./biosphere-lab.html">World labs</a>
+      <a class="lab-launch" href="./guide/index.html" target="_blank" rel="noopener" title="Read how Atlas works (opens in a new tab)">Atlas guide ↗</a>
     </div>
     <footer>
       <span id="status" role="status">Preparing the catalogue…</span
@@ -67,6 +81,7 @@
     </footer>
     <dialog id="help-dialog">
       <h2>Explore at every scale.</h2>
+      <p><a href="./guide/index.html" target="_blank" rel="noopener">Read the Atlas guide ↗</a> for the universe’s structure, deterministic time travel, terrain, water, living worlds, navigation and website publishing. Opens in a new tab so you can keep your current view.</p>
       <p><a href="./biosphere-lab.html">Open the biosphere lab</a> to inspect generated species, habitats and evolutionary histories. The <a href="./creature-lab.html">creature lab</a> compares anatomy, walking, running and each animal's predecessors. The <a href="./biome-lab.html">reference biome lab</a> retains the original composition fixtures.</p>
       <p>
         Click to select. Double-click or press <b>F</b> to explore the selected
@@ -124,15 +139,17 @@
         Fly over terrain chooses land and descends to a 600 m terrain-following
         flight. Select a star and align it with the reticle to fly there with W.
       </p>
-      <p><b>Universal date:</b> seek in years relative to the reference catalogue.
-        Only orbits change visually in this release. Walking locations and exact
-        dates are saved in the URL.</p>
+      <p><b>Universal date:</b> seek in years since the Big Bang. Stars, planets,
+        surfaces and nearby life follow their modeled dates. The earliest universe
+        and far future remain coarse placeholders. Walking locations and exact dates
+        are saved in the URL.</p>
       <button id="close-help">Start exploring</button>
       <p><a href="./docs/walking-and-time.md" target="_blank" rel="noopener">Walking, time, validation &amp; sources</a></p>
       <p><a href="./docs/surface-materials-and-survey.md" target="_blank" rel="noopener">Ground materials, destinations &amp; sources</a></p>
       <p><a href="./docs/drainage-and-atmospheric-flight.md" target="_blank" rel="noopener">Drainage, atmospheric flight &amp; sources</a></p>
       <p><a href="./docs/physical-rivers-and-ground-detail.md" target="_blank" rel="noopener">Physical rivers, ground environment &amp; sources</a></p>
       <p><a href="./docs/ground-realism.md" target="_blank" rel="noopener">Ground realism corrections &amp; sources</a></p>
+      <p><a href="./docs/cosmic-history-simulation-plan-2026-09-23.md" target="_blank" rel="noopener">Cosmic history and far-future plan</a></p>
     </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>

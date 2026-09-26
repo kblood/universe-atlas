@@ -50,8 +50,13 @@ export function closestTileDirection(t: Tile, eye: V3): V3 {
   const n=2**t.level;
   return tileDirection(t,Math.max(0,Math.min(1,(u+1)*.5*n-t.x)),Math.max(0,Math.min(1,(v+1)*.5*n-t.y)));
 }
-export function visibleElevation(body: Body, elevation: number) {
-  return body.water ? Math.max(0, elevation) : elevation;
+/** `waterLevelM` (new, additive, default `0` - the literal this already
+ * hardcoded): docs/time-and-coordinates-contract.md §2.5/§2.6 - one of the
+ * four sites that must move together with the sea level everywhere else in
+ * this module, or a water world's visible clamp keeps pinning to the old
+ * ocean-formation datum regardless of how far the real sea has receded. */
+export function visibleElevation(body: Body, elevation: number, waterLevelM: number = 0) {
+  return body.water ? Math.max(waterLevelM, elevation) : elevation;
 }
 const clamp=(v:number,a=0,b=1)=>Math.max(a,Math.min(b,v));
 type RegionalMaterialSample={wet:boolean;bank:number;influence:number};
@@ -92,9 +97,23 @@ export function surfaceNormal(body: Body, d: V3, sample = terrainSampler(body), 
   return unit(d.map((v, i) => v - grad[i]) as V3);
 }
 
-export function buildTile(body: Body, tile: Tile, relief = 1) {
-  const sample = terrainSampler(body), n = PATCH_SEGMENTS, stride = n + 1;
-  const classify=biomeClassifier(body),materials:number[]=[];
+/**
+ * `waterLevelM` (new, additive, default `0` - the literal every field below
+ * already hardcoded): docs/time-and-coordinates-contract.md §2.5/§2.6 - the
+ * caller-resolved global sea level (`world-surface.ts`'s `waterLevelAt`,
+ * keyed from `stellar-evolution.ts`'s `waterKeysFor`, evaluated at the real
+ * epoch - see that module's own trap warning about an omitted `date`
+ * clamping to the ocean-formation level). Threaded into the rock/colour
+ * sampler, the biome classifier and the ocean shell's radius below so all
+ * three stay in agreement about where the shoreline is at this `t` (the
+ * same requirement `terrainSampler`'s own doc comment states). Tile-cache
+ * staleness (this function's caller may still hand back a stale resident
+ * tile built at an earlier sea level) is out of this package's ownership —
+ * see this task's report.
+ */
+export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: number = 0) {
+  const sample = terrainSampler(body, undefined, undefined, undefined, waterLevelM), n = PATCH_SEGMENTS, stride = n + 1;
+  const classify=biomeClassifier(body,waterLevelM),materials:number[]=[];
   // Near-contact patches are only a few metres wide. Their ground-detail atlas
   // supplies the fine grain, so retaining a 130² macro-colour texture there
   // wastes worker time and resident bytes without adding visible geography.
@@ -207,7 +226,16 @@ export function buildTile(body: Body, tile: Tile, relief = 1) {
     const offset=i*3;
     boundaryMorphErrorM=Math.max(boundaryMorphErrorM,Math.hypot(positions[offset]-parents[offset],positions[offset+1]-parents[offset+1],positions[offset+2]-parents[offset+2])*body.radiusM);
   }
-  const skirtDepthM=Math.max(.25,boundaryMorphErrorM+.25),skirt=skirtDepthM/body.radiusM;
+  // Bound the measured morph error well below this tile's own physical
+  // footprint. A hydrology-adjacent boundary, or a neighbour that has not
+  // finished streaming in yet, occasionally reports a child/parent
+  // separation of hundreds to thousands of metres (observed up to ~5 km),
+  // which built an oversized skirt "curtain" rendered as a bright
+  // rectangular seam/arc cutting across nearby terrain and visible from a
+  // distance. A skirt's job is only to paper over a thin sub-pixel crack, so
+  // it is capped to a small absolute depth: large enough to hide an ordinary
+  // LOD gap, far too shallow to read as a wall from any normal viewing angle.
+  const skirtDepthM=Math.max(.25,Math.min(boundaryMorphErrorM,childFootprint,40)+.25),skirt=skirtDepthM/body.radiusM;
   for (const edge of edges) {
     let previous = -1;
     for (const a of edge) {
@@ -239,14 +267,27 @@ export function buildTile(body: Body, tile: Tile, relief = 1) {
   // The base grid is a shared ocean topology. It deliberately has no skirts;
   // root can cull it from conservative tile bounds without changing coverage.
   const oceanPositions:number[]|undefined=body.water?[]:undefined,oceanParents:number[]|undefined=body.water?[]:undefined;
+  // Global sea level is one scalar per body per `t` (contract §2.5/§2.6), so
+  // the shell is a UNIFORM radius scale, never a per-vertex or non-spherical
+  // change: the old implicit `×1` (unit sphere, i.e. `waterLevelM=0`) becomes
+  // `×(1 + waterLevelM/body.radiusM)`, matching the exact `r = 1 + height *
+  // relief / body.radiusM` convention the land mesh above already uses.
+  // Baked into this tile's own build rather than applied as a renderer-side
+  // uniform: `planet-renderer.ts` (out of this package's ownership for this
+  // change) consumes `oceanPositions`/`oceanParents` as plain vertex buffers
+  // with no separate sea-level transform, so moving the shell here is the
+  // only mechanism available without editing that file. See this task's
+  // report for the resulting tile-cache staleness consequence.
+  const seaRadius=1+waterLevelM/body.radiusM;
   if(oceanPositions&&oceanParents)for(let y=0;y<=n;y++)for(let x=0;x<=n;x++){
-    const u=x/n,v=y/n,d=tileDirection(tile,u,v),sea=d;
+    const u=x/n,v=y/n,d=tileDirection(tile,u,v),sea=d.map(value=>value*seaRadius) as V3;
     oceanPositions.push(...sea.map((p,i)=>p-anchor[i]));
-    const p=tile.level?(() => {
+    const rawParent=tile.level?(() => {
       const gx=u*n/2,gy=v*n/2,ix=Math.min(n/2-1,Math.floor(gx)),iy=Math.min(n/2-1,Math.floor(gy)),a=gx-ix,b=gy-iy;
       const p00=tileDirection(tile,ix*2/n,iy*2/n),p11=tileDirection(tile,(ix+1)*2/n,(iy+1)*2/n),q=a>=b?tileDirection(tile,(ix+1)*2/n,iy*2/n):tileDirection(tile,ix*2/n,(iy+1)*2/n);
       return p00.map((value,i)=>a>=b?value*(1-a)+q[i]*(a-b)+p11[i]*b:value*(1-b)+q[i]*(b-a)+p11[i]*a) as V3;
-    })():sea;
+    })():d;
+    const p=rawParent.map(value=>value*seaRadius) as V3;
     oceanParents.push(...p.map((value,i)=>value-anchor[i]));
   }
   return { tile, anchor, positions: new Float32Array(positions), parents: new Float32Array(parents), surfaceHeight:new Float32Array(surfaceHeight), parentHeight:new Float32Array(parentHeight), normals: new Float32Array(normals), materials:new Uint8Array(materials), uvs: new Float32Array(uvs), indices: new Uint16Array(indices), color, width, skirtDepthM, oceanPositions:oceanPositions&&new Float32Array(oceanPositions), oceanParents:oceanParents&&new Float32Array(oceanParents) };

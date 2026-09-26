@@ -32,7 +32,17 @@ export type BiomePatch = {
   rejected: {competition: number}; digest: string;
 };
 
-export const BIOME_ECOLOGY_VERSION = 'biome-ecology-1';
+// Bumped from biome-ecology-1: the tie-break comparators below now use plain
+// code-unit comparison instead of String.localeCompare, which collates by
+// the platform/OS default locale (da-DK on this machine) rather than a fixed
+// rule and is not guaranteed consistent even for the same locale across
+// engines. See docs/universe-atlas-v1-spec.md §3 (sort keys must be
+// deterministic across browsers). This is embedded in candidateKey(), so it
+// also re-seeds every placement draw, not just the final ordering.
+export const BIOME_ECOLOGY_VERSION = 'biome-ecology-2';
+/** Plain code-unit string comparison: portable across locales/engines, unlike
+ * String.prototype.localeCompare (collation is locale- and engine-dependent). */
+const ordCompare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 export const ELEMENT_RECIPES: readonly ElementRecipe[] = Object.freeze(([
   {id: 'oak', name: 'Broadleaf oak', kind: 'tree', form: 'broadleaf', color: '#54733d', minSizeM: 6, maxSizeM: 13},
@@ -196,7 +206,7 @@ export function generateBiomePatch(config: BiomePatchConfig): BiomePatch {
       candidates.push({id: key, recipeId, kind: recipe.kind, x, z, sizeM, rotation: random01(`${key}/rotation`) * Math.PI * 2, color: recipe.color, footprintM: footprintM(recipe, sizeM), priority: random01(`${key}/priority`)});
     }
   }
-  candidates.sort((a, b) => a.priority - b.priority || a.id.localeCompare(b.id));
+  candidates.sort((a, b) => a.priority - b.priority || ordCompare(a.id, b.id));
   // A candidate loses to any overlapping higher-priority candidate, whether or
   // not that higher candidate itself loses elsewhere. This priority rule is
   // local (rather than a sequential greedy walk), so the halo fully determines
@@ -228,7 +238,7 @@ export function generateBiomePatch(config: BiomePatchConfig): BiomePatch {
       output.push(placement);
     }
   }
-  output.sort((a, b) => a.id.localeCompare(b.id));
+  output.sort((a, b) => ordCompare(a.id, b.id));
   const counts: Record<ElementKind, number> = {tree: 0, shrub: 0, grass: 0, rock: 0};
   const recipeCounts: Record<string, number> = {};
   for (const placement of output) { counts[placement.kind]++; recipeCounts[placement.recipeId] = (recipeCounts[placement.recipeId] ?? 0) + 1; }

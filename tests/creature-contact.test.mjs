@@ -6,7 +6,7 @@ import {individualCreatureGenome} from '../src/creature-model.ts';
 import {createCreatureRig,creatureTerrainHeight} from '../src/creature-rig.ts';
 
 test('actual foot geometry stays above flat ground and diagnostics track solved joints',()=>{
-  const world=generateBiosphere('CONTACT-CORPUS','temperate');
+  const world=generateBiosphere('CONTACT-CORPUS','temperate','planet/0');
   for(const species of world.species.filter(s=>s.creature))for(const stage of ['adult','juvenile']){
     const rig=createCreatureRig(individualCreatureGenome(species.creature,species.id,0,stage));
     try{for(const gait of ['idle','walk','run'])for(const time of [0,.13,.31,.59,.82,1.21]){
@@ -24,7 +24,7 @@ test('actual foot geometry stays above flat ground and diagnostics track solved 
   }
 });
 test('stance feet remain planted as the body progresses, including terrain transitions',()=>{
-  for(const species of generateBiosphere('PLANTED','temperate').species.filter(s=>s.creature)){
+  for(const species of generateBiosphere('PLANTED','temperate','planet/0').species.filter(s=>s.creature)){
     const rig=createCreatureRig(species.creature);
     try{for(const terrain of ['flat','slope','steps'])for(const gait of ['walk','run']){
       let previous=rig.update(0,gait,terrain),comparisons=0;
@@ -45,7 +45,7 @@ test('stance feet remain planted as the body progresses, including terrain trans
   }
 });
 test('disposing every rig releases every geometry actually attached to a mesh',()=>{
-  const species=generateBiosphere('DISPOSE','temperate').species.find(s=>s.creature);
+  const species=generateBiosphere('DISPOSE','temperate','planet/0').species.find(s=>s.creature);
   const rig=createCreatureRig(species.creature),geometries=new Set(),disposed=new Set();
   rig.group.traverse(o=>{if(o.geometry)geometries.add(o.geometry);});
   for(const g of geometries)g.addEventListener('dispose',()=>disposed.add(g));

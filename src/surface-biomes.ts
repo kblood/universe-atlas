@@ -2,14 +2,22 @@ import {hash64,noise,type Body,type V3} from './catalog.ts';
 export const BIOME_VERSION='surface-biomes-1';
 const clamp=(x:number)=>Math.max(0,Math.min(1,x));
 /** Habitat/material classification of existing geology, not a climate simulation.
- * Never changes the authoritative rock field or assumes all worlds support life. */
-export function biomeClassifier(body:Body){
+ * Never changes the authoritative rock field or assumes all worlds support life.
+ *
+ * `waterLevelM` (new, additive, default `0` - the literal this already
+ * hardcoded): docs/time-and-coordinates-contract.md §2.5/§2.6 - this is one
+ * of the four sites that must move together with `terrain.ts`'s sea level or
+ * the classifier's `ocean` boolean (which feeds biome name/weights/
+ * forestPotential) disagrees with the rock/colour sampler about where the
+ * shoreline is, reproducing the exact "two paths disagree" bug one layer
+ * down. Every existing call site keeps omitting this argument. */
+export function biomeClassifier(body:Body,waterLevelM:number=0){
   const seed=Number(hash64(body.seed+'/macro-v1')&0xffffffffn);
   return (direction:V3,height:number,upDot=1)=>{
     const latitude=Math.abs(direction[1]);
     const moisture=noise(direction[0]*5+13,direction[1]*5+37,direction[2]*5+19,seed+30);
     const slope=Math.acos(Math.max(-1,Math.min(1,upDot)))*180/Math.PI;
-    const ocean=!!body.water&&height<0;
+    const ocean=!!body.water&&height<waterLevelM;
     const frozen=body.type==='Ice world';
     const snow=frozen?1:body.water?clamp((latitude-.79)*7+Math.max(0,height-2600)/3300):0;
     const rock=clamp((slope-18)/27);

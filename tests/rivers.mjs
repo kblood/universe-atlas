@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {surfaceQuery} from '../src/world-surface.ts';
+import {RIVER_VERSION} from '../src/river-types.ts';
 
 const base=process.env.ATLAS_URL||'http://127.0.0.1:5186/';
 const out=process.env.ATLAS_RESULTS||'test-results/rivers';
@@ -75,7 +76,7 @@ try{
   }
   await wait(()=>window.__atlas.river?.status==='ready'&&window.__atlas.terrain?.tiles?.ready,240000);
   const ready=await snapshot(),region=ready.river.region,regionHash=hash(region);
-  assert.equal(region.version,'river-region-1');assert.ok(region.channels.length&&region.lakes.length);
+  assert.equal(region.version,RIVER_VERSION);assert.ok(region.channels.length&&region.lakes.length);
   console.log(`rivers: generation ready (${region.id})`);
   await page.screenshot({path:out+'/01-river-inspect.png'});
 

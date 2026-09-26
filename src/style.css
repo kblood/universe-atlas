@@ -56,6 +56,27 @@ a:focus-visible {
   position: fixed;
   inset: 0;
 }
+#early-cosmos {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 48% 43%, #a35e43 0%, #442337 48%, #100f21 100%);
+}
+#early-cosmos[hidden] { display: none; }
+.early-cosmos-field {
+  position: absolute;
+  inset: -12%;
+  opacity: .7;
+  filter: blur(28px);
+}
+#early-cosmos[data-stage="origin"] { background: linear-gradient(135deg, #a86456, #513348 55%, #402a48); }
+#early-cosmos[data-stage="plasma"] { background: linear-gradient(125deg, #995f4e, #583542 53%, #282039); }
+#early-cosmos[data-stage="recombination"] { background: linear-gradient(125deg, #74675f, #3a4157 60%, #24283d); }
+#early-cosmos[data-stage="dark-ages"] { background: radial-gradient(ellipse at 50% 43%, #162538, #0a1221 57%, #050911); }
+#early-cosmos[data-stage="first-stars"] { background: radial-gradient(ellipse at 50% 43%, #17263b55, #080f1e55 62%, #05081066); }
+#early-cosmos[data-stage="first-stars"] .early-cosmos-field { opacity: .08; }
 canvas {
   display: block;
   outline: 0;
@@ -138,6 +159,10 @@ input {
   color: #4a647d;
   font-size: 11px;
 }
+#compat-notice { position:fixed; z-index:22; left:34px; top:132px;
+  max-width:450px; margin:0; padding:9px 12px; border:1px solid #a7834e;
+  border-radius:5px; background:#2b241bdc; color:#f1d6a4; font-size:12px; }
+#compat-notice[hidden] { display:none; }
 #panel {
   position: fixed;
   z-index: 4;
@@ -405,6 +430,8 @@ body.in-vr #enter-vr {
   bottom: 50px;
   display: flex;
   gap: 8px;
+  max-width: calc(100vw - 52px);
+  flex-wrap: wrap;
 }
 .view-actions button,
 .view-actions .lab-launch {
@@ -621,8 +648,17 @@ summary {
   }
   .view-caption {
     bottom: 93px;
-    max-width: calc(100vw - 28px);
+    /* Reserve space for the docked #panel (width 205px + right 10px + gap)
+       so the caption text never runs under it at narrow widths (e.g. 390px). */
+    max-width: calc(100vw - 270px);
     pointer-events: none;
+  }
+  #enter-vr {
+    /* At this width the VR button (right-anchored) and .view-actions row
+       (left-anchored, bottom: 50px) no longer both fit on one line without
+       overlapping; stack the VR button above the actions row instead. */
+    right: 18px;
+    bottom: 96px;
   }
   .view-caption p {
     display: none;
@@ -677,17 +713,25 @@ summary {
   display: none;
 }
 #flight-reticle {position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);color:#a9e5ee;font:20px monospace;pointer-events:none;z-index:4;opacity:.8;text-shadow:0 1px 4px #000;}
-#timeline {position:fixed;top:78px;right:34px;z-index:20;background:#101b27;border:1px solid #354d61;border-radius:5px;max-width:290px;padding:9px 12px;font-size:12px;}
+#timeline {position:fixed;top:78px;right:34px;z-index:20;background:#101b27;border:1px solid #354d61;border-radius:5px;max-width:310px;padding:9px 12px;font-size:12px;max-height:calc(100dvh - 100px);overflow-y:auto;}
 #timeline summary {cursor:pointer;color:#a2d3d8;}
 #timeline[open] {box-shadow:0 10px 35px #000b;}
 #timeline label {display:block;margin:12px 0 6px;}
 #timeline input {width:100%;margin-bottom:8px;}
+#timeline input[type="range"] {width:100%;margin-bottom:4px;accent-color:#5fb9c4;}
 #timeline button {margin:3px;}
 #timeline p {line-height:1.5;color:#9bacbb;}
+#timeline select {width:100%;margin-bottom:8px;background:#0c1620;color:#dfeef2;border:1px solid #354d61;border-radius:4px;padding:6px;font-size:12px;}
+#era-track {display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;}
+#era-track button {flex:1 1 auto;min-width:64px;font-size:10px;padding:6px 5px;background:#132030;border:1px solid #2c4256;border-radius:4px;color:#a2d3d8;cursor:pointer;}
+#era-track button:hover {background:#1a2c40;}
+#era-track button.active {background:#2f6a78;border-color:#5fb9c4;color:#eafcff;}
+.readout {font-size:11px;color:#7fa6b3;margin:0 0 8px;font-variant-numeric:tabular-nums;}
 .walking .view-caption h1 {font-size:28px;margin:8px 0;}
 .walking .view-caption #view-stats {display:none;}
 .walking .view-caption {max-width:520px;background:#0a121bc9;padding:12px;border-radius:6px;bottom:85px;}
-@media(max-width:800px){#timeline{top:122px;right:14px;} .walking .view-caption{display:none;}}
+@media(max-width:800px){#timeline{top:122px;right:14px;max-width:260px;max-height:calc(100dvh - 150px);} .walking .view-caption{display:none;}}
+@media(max-width:520px){#timeline{max-width:calc(100vw - 28px);right:14px;}#era-track button{min-width:56px;font-size:9px;padding:5px 4px;}}
 #surface-detail {width:100%;margin:0 0 12px;}
 #horizon-assist {width:100%;margin:0 0 12px;font-size:12px;}
 #surface-survey {margin:0 0 18px;padding:12px;border:1px solid #354d61;border-radius:5px;}

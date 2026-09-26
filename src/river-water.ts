@@ -3,6 +3,7 @@ import type {Body, V3} from './catalog.ts';
 import type {RiverChannel, RiverLake, RiverRegion} from './river-types.ts';
 import {acquireWaterNormalAtlas,releaseWaterNormalAtlas,SHARED_WATER_NORMAL_ATLAS_BYTES,WATER_NORMAL_ATLAS_METRES_PER_REPEAT} from './water-normal-atlas.ts';
 import {riverPhysicalField} from './river-physical-field.ts';
+import type {OceanPhaseS} from './ocean-gerstner.ts';
 
 /** The regional water renderer treats RiverPoint.widthM as the full water width.
  * Geometry is kept in planet-radius units so it can live beneath PlanetRenderer.group. */
@@ -205,14 +206,14 @@ export class RiverWater {
     this.debug={freezeWater:freeze,flat:!!debug.flat,depth:!!debug.depth};
     for(const c of this.chunks){c.material.uniforms.waterFlat.value=this.debug.flat?1:0;c.material.uniforms.waterDepthDebug.value=this.debug.depth?1:0;}
   }
-  update(eye:V3,sun:V3,timeSeconds:number,relief:number){
+  update(eye:V3,sun:V3,oceanPhaseS:OceanPhaseS,relief:number){
     if(this.disposed)return; const distance=Math.hypot(...eye),look=distance?scale(eye,1/distance):[0,1,0] as V3;let visible=0;
     for(const c of this.chunks){
       const horizon=distance<1.0001||dot(look,c.center)+Math.sin(c.radius)>=1/distance;
       const altitude=Math.max(0,distance-1)*this.body.radiusM;
       const nearby=Math.acos(clamp(dot(look,c.center),-1,1))*this.body.radiusM-c.radius*this.body.radiusM<=Math.max(18000,altitude*4+12000);
       c.visible=horizon&&nearby&&visible<MAX_DRAWS;c.mesh.visible=c.visible;if(c.visible)visible++;
-      c.material.uniforms.waterTime.value=this.debug.freezeWater?this.frozenTime:timeSeconds;c.material.uniforms.waterRelief.value=relief;c.material.uniforms.sunDirection.value.set(...sun);c.material.uniforms.eyeRelative.value.set(eye[0]-c.mesh.position.x,eye[1]-c.mesh.position.y,eye[2]-c.mesh.position.z);
+      c.material.uniforms.waterTime.value=this.debug.freezeWater?this.frozenTime:oceanPhaseS;c.material.uniforms.waterRelief.value=relief;c.material.uniforms.sunDirection.value.set(...sun);c.material.uniforms.eyeRelative.value.set(eye[0]-c.mesh.position.x,eye[1]-c.mesh.position.y,eye[2]-c.mesh.position.z);
     }this.lastVisible=visible;
   }
   setLakeReflection(frame:LakeReflectionFrame){for(const c of this.chunks){const u=c.material.uniforms;u.lakeReflectionTexture.value=frame.texture;u.lakeReflectionMatrix.value.copy(frame.matrix).multiply(c.mesh.matrix);u.lakeReflectionValid.value=frame.valid?1:0;u.lakeReflectionStrength.value=frame.strength;}}

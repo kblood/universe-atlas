@@ -1,5 +1,10 @@
 import type {V3} from './catalog.ts';
-export const RIVER_VERSION='river-region-1';
+// Bumped alongside drainage-2: the regional-search candidate angle (river-
+// generation.ts) and the catchment ranking/flow routing it builds on
+// (drainage.ts) now use deterministic cross-engine math (src/det-math.ts)
+// instead of native Math.atan2/Math.hypot/Math.acos for decision-feeding
+// values, per docs/universe-atlas-v1-spec.md §3.
+export const RIVER_VERSION='river-region-2';
 // Geometry/profile records remain v1; the queried lake-bank interpolation has
 // its own revision so exports do not imply that old bank samples are identical.
 export const RIVER_SURFACE_VERSION='river-surface-3';

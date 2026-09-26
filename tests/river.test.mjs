@@ -5,6 +5,7 @@ import {buildDrainage} from '../src/drainage.ts';
 import {terrainSampler} from '../src/terrain.ts';
 import {buildRiverRegion,riverCoordinates,riverDirection} from '../src/river-generation.ts';
 import {sampleLegacyRiverRegion,sampleRiverRegion} from '../src/river-sample.ts';
+import {RIVER_VERSION} from '../src/river-types.ts';
 
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 const drainage=buildDrainage(body),baseline=terrainSampler(body);
@@ -14,7 +15,7 @@ test('physical regional rivers are deterministic, bounded, and retain the baseli
   const before=baseline([1,0,0]),regions=feasible();
   assert.ok(regions.length>=3,'fixture has several feasible coastal regions');
   for(const [catchment,region] of regions){
-    assert.equal(region.id,catchment.id+'/river-region-1');assert.equal(region.bodySeed,body.seed);assert.ok(region.stats.samples<=257**2);assert.ok(region.stats.lengthM<100000);assert.equal(JSON.stringify(buildRiverRegion(body,catchment)),JSON.stringify(region));
+    assert.equal(region.id,catchment.id+'/'+RIVER_VERSION);assert.equal(region.bodySeed,body.seed);assert.ok(region.stats.samples<=257**2);assert.ok(region.stats.lengthM<100000);assert.equal(JSON.stringify(buildRiverRegion(body,catchment)),JSON.stringify(region));
     assert.deepEqual(baseline([1,0,0]),before);
     for(const channel of region.channels){assert.ok(channel.points.length>2);for(let i=1;i<channel.points.length;i++){assert.ok(channel.points[i].waterM<=channel.points[i-1].waterM);assert.ok(channel.points[i].distanceM>channel.points[i-1].distanceM);assert.ok(Math.hypot(channel.points[i].x-channel.points[i-1].x,channel.points[i].z-channel.points[i-1].z)<=100);}}
     const main=region.channels[0],trib=region.channels[1];assert.equal(main.points.at(-1).waterM,0);assert.ok(baseline(riverDirection(region,main.points.at(-1).x,main.points.at(-1).z)).ocean);const join=main.points.reduce((best,p)=>Math.hypot(p.x-trib.points.at(-1).x,p.z-trib.points.at(-1).z)<Math.hypot(best.x-trib.points.at(-1).x,best.z-trib.points.at(-1).z)?p:best,main.points[0]);assert.equal(trib.points.at(-1).waterM,join.waterM);

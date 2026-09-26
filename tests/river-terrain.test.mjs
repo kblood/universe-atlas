@@ -64,7 +64,35 @@ test('inland water keeps a carved rock field and a separate visible water surfac
   assert.equal(s.waterDepthM,s.waterHeightM-s.groundHeightM);
   assert.equal(q.walkable,false);assert.equal(q.ocean,false);
   const lake=surfaceQuery(body)(direction(350,320));assert.equal(lake.waterKind,'lake');assert.equal(lake.walkable,false);
-  assert.equal(q.geologyVersion,'terrain-1.2.0');assert.equal(q.regionalGeologyVersion,'river-region-1');
+  // Pin updated for the terrain.ts determinism hardening: TERRAIN_VERSION
+  // moved to terrain-1.3.0 (explicit multiplication replaces `**` in the
+  // ridge/hill fields, and the catalog.ts coordinate hash's avalanche was
+  // fixed), both of which change sampled terrain output cross-engine.
+  // Re-pinned again for terrain-1.4.0: `terrainSampler` gained the ABILITY
+  // to sum procedural impact craters into elevation, but this test's own
+  // direction, direction(0,0), sits on the region's main river channel
+  // (`s.wet===true`, asserted above), which stays on the river-carved path
+  // craters never touch (see terrain.ts's own doc comment) - so only the
+  // version string moved here, not any numeric value in this test.
+  // Re-pinned again for terrain-1.4.1: `terrainSampler`'s `includeCraters`
+  // parameter now DEFAULTS TO FALSE (see terrain.ts's own version-bump
+  // comment for the two independently-measured reasons - a real-time
+  // walking/contact performance regression and a genuine drainage.ts
+  // correctness hazard, both now fixed by this default). `q` above is
+  // computed via `surfaceQuery(body)(...)`, which calls `terrainSampler`
+  // with no override and therefore now gets craters off by default too, but
+  // that has no effect on this specific assertion either way: TERRAIN_VERSION
+  // is a fixed string, not something craters-on/off changes, and this test's
+  // direction was already established above (two paragraphs up) to be on
+  // the river-carved path craters never touch regardless of this default.
+  // Re-pinned again for terrain-1.4.2 (docs/time-and-coordinates-contract.md
+  // §2.5/§2.6): `baseTerrainSampler`/`terrainSampler` gained an additive
+  // `waterLevelM: number = 0` parameter so the ocean/land boundary can be
+  // driven by a time-varying sea level instead of a hardcoded `0`. `q` above
+  // is computed via `surfaceQuery(body)(...)`/`terrainSampler(body)` with no
+  // override, so `waterLevelM` defaults to `0` here too — a pure version-
+  // string move, not a numeric one, exactly as the 1.4.1 re-pin above.
+  assert.equal(q.geologyVersion,'terrain-1.4.2');assert.equal(q.regionalGeologyVersion,'river-region-1');
 });
 
 test('river shore bed and dry bank meet continuously without a submerged walking trench',()=>{
@@ -135,10 +163,47 @@ test('tile colour is opaque ground substrate for inland water, dry bank and ocea
   assert.ok(ocean.color.every((value,index)=>index%4!==3||value===255),'baseline ocean preserves opaque colour-map bytes');
 });
 
-test('Maithea Orien Delta lake collar is continuous across lake and nearby river edges',()=>{
-  const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===23165);
+test('Maithea Eiren Bracken lake collar is continuous across lake and nearby river edges',()=>{
+  const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===16162);
   assert.ok(catchment);const regional=buildRiverRegion(maithea,catchment),lake=regional.lakes[0],baseline=terrainSampler(maithea);
-  assert.equal(regional.id,'G001/C2128,0,1/0/planet/1/drainage-1/n64/outlet/23165/river-region-1');assert.equal(createHash('sha256').update(JSON.stringify(regional)).digest('hex'),'603266aec921d8c83b857eb5b530309a09ac32841f9d6ac531e397842758e263','surface correction preserves the stored river-region-1 export');assert.equal(JSON.stringify(buildRiverRegion(maithea,catchment)),JSON.stringify(regional),'surface correction keeps canonical construction deterministic');
+  // The address (seed + body + drainage/river versions + outlet index) is the
+  // load-bearing identity: it is what a saved ?river= link and river-worker's
+  // canonical top-K both key off. The hash only pins that today's exact export
+  // bytes for that address are unchanged; a legitimate math/version change
+  // updates both together. terrain-1.3.0's ihash avalanche fix changed which
+  // sphere-grid vertex sampled highest, so every outlet index shuffled under
+  // drainage-2 — outlet 23165 (drainage-1) no longer exists. (TERRAIN_VERSION
+  // has since moved on to terrain-1.4.0/1.4.1 for procedural craters, which
+  // this fixture's outlet ranking happened to survive unchanged even while
+  // terrain-1.4.0 briefly shipped with craters ON by default and no override
+  // at drainage.ts's own `terrainSampler({...body,hydrology:undefined})`
+  // call site — but that was an unverified coincidence, not a guarantee: any
+  // caller of `buildDrainage` inherited whatever `terrainSampler`'s default
+  // did, and craters really were live in that computation for a time (see
+  // terrain.ts's terrain-1.4.1 version-bump comment for the full finding).
+  // terrain-1.4.1 fixed this at the root by flipping `terrainSampler`'s own
+  // `includeCraters` default to false, so drainage.ts (still unedited by
+  // this task) is unambiguously back to its pre-crater baseline again, not
+  // merely lucky — this outlet history is unaffected and still accurate.)
+  // Outlet 16162
+  // (drainage-2's rank-1, largest-area canonical catchment) was PREVIOUSLY
+  // avoided here because its main channel carried a genuine >1.5m wet/wet
+  // rock discontinuity at i=229, right where the tributary joins the main
+  // channel (outlet 3386, rank-3, was pinned instead as a workaround). The
+  // root cause was river-surface.ts's per-channel `profile()` bowl: each
+  // channel tapers depth toward ITS OWN centreline, so the hard ownership
+  // boundary the mesh's polygon-difference clip cuts between a channel and
+  // its parent can seat a shallow point on the parent's own edge directly
+  // against a deep point on the child's own bowl — a real wet/wet cliff at
+  // every confluence, not a dry-bank blend gap (regionalLandformHeight never
+  // runs here; both sides are wet). Fixed by blending both channels' bed
+  // height toward their shared junction value in a bounded collar around the
+  // confluence (river-surface.ts's confluenceCollars/applyConfluenceCollars,
+  // RIVER_PHYSICAL_SURFACE_VERSION bumped to river-physical-surface-2), which
+  // closes the gap by construction for every confluence, not just this one
+  // (see the multi-basin/multi-body sweep below). Outlet 16162 now measures
+  // <0.01m across every channel edge and is pinned here again.
+  assert.equal(regional.id,'G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/16162/river-region-2');assert.equal(createHash('sha256').update(JSON.stringify(regional)).digest('hex'),'088c7ec8ac169878498a7785526efb606a216ba537f7cca4d25384ceac561eb5','the stored river-region-2 export for outlet 16162 (buildRiverRegion itself is untouched by the river-surface.ts confluence-collar fix: the collar only changes the queried physical mesh, never the authored channel/lake/site geometry)');assert.equal(JSON.stringify(buildRiverRegion(maithea,catchment)),JSON.stringify(regional),'surface correction keeps canonical construction deterministic');
   const sample=(x,z)=>{const d=riverDirection(regional,x,z);return sampleRiverRegion(regional,d,baseline(d).elevationM);};
   let maxLakeStep=0,maxRiverStep=0;
   for(let i=0;i<96;i++){
@@ -152,6 +217,61 @@ test('Maithea Orien Delta lake collar is continuous across lake and nearby river
     for(const side of [-1,1]){const wet=sample(p.x+side*nx*(half-.01),p.z+side*nz*(half-.01)),dry=sample(p.x+side*nx*(half+.01),p.z+side*nz*(half+.01));if(wet.influence>0||dry.influence>0)maxRiverStep=Math.max(maxRiverStep,Math.abs(wet.rockHeightM-dry.rockHeightM));}
   }
   assert.ok(maxLakeStep<.01,`lake shoreline maximum visible step ${maxLakeStep} m`);assert.ok(maxRiverStep<.05,`nearby river wet/dry maximum rock step ${maxRiverStep} m`);
+});
+
+// Hardened property test: the previous test above pins ONE hand-picked basin.
+// That is exactly how the 16162 defect went unnoticed for so long — a single
+// fixture only ever proves the property for the geometry it happens to
+// exercise. This sweeps EVERY canonical basin (RIVER_CANDIDATE_COUNT=8, the
+// top-K by catchment area river-worker actually offers players) of several
+// distinct catalogue bodies and asserts the <=0.05m wet/dry rock-height
+// continuity property holds for all of them, not just one. Runtime is kept
+// sane by: (a) only sampling the two sides of each authored channel polyline
+// vertex (the confluence — where two independently-owned mesh regions meet —
+// is always one of these, so this is where a seam would appear; interior
+// points along a single channel's own bowl are smooth by construction and
+// need no per-metre resampling), and (b) walking a handful of bodies per
+// galaxy rather than the whole catalogue. Any basin buildRiverRegion rejects
+// as geometrically infeasible (steep coast, no room for a tributary, etc.) is
+// simply not a basin that ships to players, so it is skipped rather than
+// asserted on.
+test('wet/dry rock-height continuity holds across every canonical basin of several catalogue bodies, not just one pinned fixture',()=>{
+  const galaxy=galaxies('LETHRA-001')[0];
+  const addresses=['G001/C2128,0,1/0','G001/C-3,-2,-3/0','G001/C-3,-2,-3/2','G001/C-3,-2,-3/4'];
+  const bodies=[];
+  for(const address of addresses){
+    const ref=refByAddress(galaxy,address);if(!ref)continue;
+    let sys;try{sys=system(ref);}catch{continue;}
+    for(const candidate of sys.planets)if(candidate.water>0&&candidate.type!=='Gas giant')bodies.push(candidate);
+  }
+  assert.ok(bodies.length>=4,`expected at least 4 water-bearing bodies across the sampled addresses, found ${bodies.length}`);
+  const measureStep=(region,baseline)=>{
+    const sample=(x,z)=>{const d=riverDirection(region,x,z);return sampleRiverRegion(region,d,baseline(d).elevationM);};
+    let maxRiverStep=0,worst=null;
+    for(const channel of region.channels)for(let i=1;i<channel.points.length-1;i++){
+      const p=channel.points[i],before=channel.points[i-1],after=channel.points[i+1],dx=after.x-before.x,dz=after.z-before.z,length=Math.hypot(dx,dz)||1,nx=-dz/length,nz=dx/length,half=p.widthM/2;
+      for(const side of [-1,1]){
+        const wet=sample(p.x+side*nx*(half-.01),p.z+side*nz*(half-.01)),dry=sample(p.x+side*nx*(half+.01),p.z+side*nz*(half+.01));
+        if(wet.influence>0||dry.influence>0){const step=Math.abs(wet.rockHeightM-dry.rockHeightM);if(step>maxRiverStep){maxRiverStep=step;worst={channel:channel.id,i,side};}}
+      }
+    }
+    return {maxRiverStep,worst};
+  };
+  let checked=0,worstOverall=0,worstOverallInfo=null;
+  for(const candidate of bodies){
+    const drainage=buildDrainage(candidate),baseline=terrainSampler(candidate);
+    for(const catchment of drainage.catchments.slice(0,8)){
+      let region;
+      try{region=buildRiverRegion(candidate,catchment);}
+      catch{continue;} // geometrically infeasible basin: never offered to players, nothing to assert
+      const {maxRiverStep,worst}=measureStep(region,baseline);
+      checked++;
+      if(maxRiverStep>worstOverall){worstOverall=maxRiverStep;worstOverallInfo={body:candidate.id,outlet:catchment.outlet,worst};}
+      assert.ok(maxRiverStep<.05,`${candidate.id} outlet ${catchment.outlet} (${region.id}) wet/dry rock step ${maxRiverStep.toFixed(4)}m at ${JSON.stringify(worst)} exceeds the 0.05m tolerance`);
+    }
+  }
+  assert.ok(checked>=8,`expected at least 8 feasible canonical basins across the sampled bodies, found ${checked}`);
+  assert.ok(worstOverall<.05,`worst measured step across ${checked} basins was ${worstOverall}m ${JSON.stringify(worstOverallInfo)}`);
 });
 
 test('future global water overtops and later reveals the immutable inland level',()=>{
@@ -194,8 +314,22 @@ test('ocean grids share the terrain anchor and base topology without skirts',()=
 });
 
 test('hydrology fine contact mesh remains within two centimetres across the saved dry-bank failure fixture',()=>{
-  const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===23165);
-  assert.ok(catchment);const regional=buildRiverRegion(maithea,catchment),fixture={...maithea,hydrology:regional},radius=fixture.radiusM,centre=unit([-795709.2257620192,1391499.6290880316,-4941536.491626542]),east=unit([-centre[2],0,centre[0]]),north=unit(cross(centre,east)),query=surfaceQuery(fixture),cache=new Map();
+  const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===3386);
+  assert.ok(catchment);const regional=buildRiverRegion(maithea,catchment),fixture={...maithea,hydrology:regional},radius=fixture.radiusM;
+  // Re-pinned for terrain-1.3.0/drainage-2 (outlet 23165 retired, see above):
+  // centre is regional's own authored river-bank site direction (the
+  // dry-bank site buildRiverRegion places just off the main channel), a
+  // deterministic, regenerated-not-guessed dry-bank location rather than a
+  // stale coordinate from the retired outlet's geometry. (TERRAIN_VERSION has
+  // since moved on to terrain-1.4.0/1.4.1 for procedural craters. This
+  // fixture's outlet/site selection happened to survive terrain-1.4.0's brief
+  // window with craters ON by default at drainage.ts's own unedited
+  // `terrainSampler` call - an unverified coincidence at the time, not a
+  // guarantee, exactly as noted at the outlet-16162 fixture above. As of
+  // terrain-1.4.1, `terrainSampler`'s `includeCraters` default is false, so
+  // this outlet/site selection is unambiguously unaffected by craters again,
+  // not merely lucky.)
+  const centre=unit(regional.sites.find(s=>s.kind==='river-bank').direction),east=unit([-centre[2],0,centre[0]]),north=unit(cross(centre,east)),query=surfaceQuery(fixture),cache=new Map();
   let drySamples=0;
   for(const x of [-1,-.5,0,.5,1])for(const y of [-1,-.5,0,.5,1]){
     const d=unit(centre.map((value,i)=>value+(east[i]*x+north[i]*y)/radius)),s=query(d);
@@ -209,7 +343,7 @@ test('hydrology fine contact mesh remains within two centimetres across the save
 });
 
 test('Maithea coarse child and parent triangles conservatively expose authored river water',()=>{
-  const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===23165);
+  const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===3386);
   assert.ok(catchment);const regional=buildRiverRegion(maithea,catchment),fixture={...maithea,hydrology:regional},cache=new Map();
   let measured=0;
   for(const channel of regional.channels){const stride=Math.max(1,Math.ceil((channel.points.length-1)/32));for(let i=0;i<channel.points.length-1;i+=stride){
@@ -284,7 +418,7 @@ test('walker rejects both intended and collision-resolved wet crossings',()=>{
 });
 
 test('Maithea carved-envelope normals remain continuous across a streamed hydrology edge',()=>{
-  const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===23165),fixture={...maithea,hydrology:buildRiverRegion(maithea,catchment)},lake=fixture.hydrology.lakes[0],d=riverDirection(fixture.hydrology,lake.x,lake.z),tile=directionTile(d,12),other=tileNeighbour(tile,0),a=buildTile(fixture,tile),b=buildTile(fixture,other),stride=PATCH_SEGMENTS+1;
+  const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===3386),fixture={...maithea,hydrology:buildRiverRegion(maithea,catchment)},lake=fixture.hydrology.lakes[0],d=riverDirection(fixture.hydrology,lake.x,lake.z),tile=directionTile(d,12),other=tileNeighbour(tile,0),a=buildTile(fixture,tile),b=buildTile(fixture,other),stride=PATCH_SEGMENTS+1;
   for(let y=0;y<=PATCH_SEGMENTS;y++){const direction=tileDirection(tile,0,y/PATCH_SEGMENTS);let match=0,best=-Infinity;for(let i=0;i<stride*stride;i++){const q=tileDirection(other,(i%stride)/PATCH_SEGMENTS,Math.floor(i/stride)/PATCH_SEGMENTS),dot=direction[0]*q[0]+direction[1]*q[1]+direction[2]*q[2];if(dot>best){best=dot;match=i;}}assert.ok(1-best<1e-14);const ai=(y*stride)*3,bi=match*3,delta=Math.hypot(...[0,1,2].map(j=>a.normals[ai+j]-b.normals[bi+j]));assert.ok(delta<2e-6,`normal seam ${y}`);}
 });
 test('coarse envelope preserves its full bed core and fades continuously through the bounded apron',()=>{

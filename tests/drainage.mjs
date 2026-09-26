@@ -3,6 +3,7 @@ import {browserArgs} from './browser-options.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
+import {DRAINAGE_VERSION} from '../src/drainage.ts';
 const base=process.env.ATLAS_URL||'http://127.0.0.1:5186/',out=process.env.ATLAS_RESULTS||'test-results/drainage';
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,args:browserArgs});
@@ -35,7 +36,7 @@ try{
   await wait(()=>!window.__atlas.camera.animating);assert.equal((await snapshot()).drainage.selected,basin.id);
   await page.screenshot({path:out+'/03-selected-basin.png'});
   const graph=await download(),hash=createHash('sha256').update(JSON.stringify(graph)).digest('hex');
-  assert.equal(graph.version,'drainage-1');assert.equal(graph.receiver.length,24578);assert.equal(graph.directions.length,24578*3);
+  assert.equal(graph.version,DRAINAGE_VERSION);assert.equal(graph.receiver.length,24578);assert.equal(graph.directions.length,24578*3);
   const perf=await page.evaluate(async()=>{const rows=[];let last=performance.now();for(let i=0;i<120;i++){await new Promise(requestAnimationFrame);const now=performance.now();rows.push(now-last);last=now;}rows.sort((a,b)=>a-b);const gl=document.querySelector('canvas').getContext('webgl2'),ext=gl.getExtension('WEBGL_debug_renderer_info');return {frames:rows.length,medianMs:rows[60],p95Ms:rows[114],renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'unknown'};});
   await page.locator('#timeline summary').click();await page.locator('#date-years').fill('13800000000.1');await page.locator('#time-apply').click();
   assert.deepEqual((await snapshot()).drainage.catchments,map.drainage.catchments,'reference drainage is stable under time seeks');

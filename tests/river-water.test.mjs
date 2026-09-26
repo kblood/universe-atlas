@@ -40,9 +40,9 @@ test('ocean material shares terrain morph exactly and keeps frame values local',
   assert.match(ocean.fragmentShader,/oceanWater marker/);
   assert.match(ocean.fragmentShader,/modulo 4096 m/);assert.match(ocean.fragmentShader,/eastLength>.01\?eastCandidate\/eastLength/);
   assert.ok(ocean.fragmentShader.indexOf('#include <logdepthbuf_fragment>')<ocean.fragmentShader.indexOf('if(oceanDepthDebug>.5)'),'debug views retain logarithmic depth');
-  setOceanWaterPatchFrame(ocean,{localEyeM:[12,3,-8],sunDirection:[1,2,3],timeSeconds:4});
+  setOceanWaterPatchFrame(ocean,{localEyeM:[12,3,-8],sunDirection:[1,2,3],oceanPhaseS:4});
   assert.deepEqual(ocean.uniforms.oceanEyeM.value.toArray(),[12,3,-8]);assert.equal(ocean.uniforms.oceanTime.value,4);
-  setOceanWaterDebug(ocean,{freezeWater:true,flat:true,depth:true});setOceanWaterPatchFrame(ocean,{localEyeM:[2,4,6],sunDirection:[0,1,0],timeSeconds:9});
+  setOceanWaterDebug(ocean,{freezeWater:true,flat:true,depth:true});setOceanWaterPatchFrame(ocean,{localEyeM:[2,4,6],sunDirection:[0,1,0],oceanPhaseS:9});
   assert.equal(ocean.uniforms.oceanTime.value,4);assert.equal(ocean.uniforms.oceanFlat.value,1);assert.equal(ocean.uniforms.oceanDepthDebug.value,1);ocean.dispose();ocean.dispose();assert.equal(waterNormalAtlasDiagnostics().references,0);
 });
 test('shared water normal atlas is deterministic, canonical-periodic and released after its final user',()=>{

@@ -1,5 +1,9 @@
 import * as THREE from "three";
-import { type Galaxy, type SystemRef, type V3 } from "./catalog.ts";
+import { galaxies, type Galaxy, type SystemRef, type V3 } from "./catalog.ts";
+import { referenceStarLifecycles, type StarLifecycle } from './stellar-evolution.ts';
+import { CATALOGUE_EPOCH_NS,UNIVERSE_END_NS } from './world-time.ts';
+import {historicalStarsForGalaxy,futureStarsForGalaxy,galaxyHostAt,type HistoricalStar} from './stellar-cohorts.ts';
+import type {GalaxyAddress} from './address.ts';
 import {
   neighbourhood,
   chunkKey,
@@ -8,6 +12,21 @@ import {
 } from "./star-map.ts";
 type Chunk = ReturnType<typeof starChunk>;
 type MapData = ReturnType<typeof starMap>;
+type DensityData={positions:Float32Array;colors:Float32Array;sizes:Float32Array};
+function rootAddress(galaxy:Galaxy):GalaxyAddress {
+  const match=/^G(\d{3})$/.exec(galaxy.id);
+  if(!match)throw new Error(`GalaxySpace requires a root catalogue galaxy: ${galaxy.id}`);
+  return {clusterCell:[0n,0n,0n],groupCell:[0n,0n,0n],galaxyOrdinal:Number(match[1])-1};
+}
+/** Stable display luminosity, separate from the catalogue's density-preview size.
+ * The catalogue does not carry calibrated stellar photometry. */
+function displayLuminosity(ref:SystemRef):number {
+  let hash=2166136261;
+  for(const char of ref.id)hash=Math.imul(hash^char.charCodeAt(0),16777619);
+  const scatter=.5+((hash>>>0)/4294967295)*1.5;
+  const colorWeight=ref.color==='#b3d7ff'?4:ref.color==='#ffe6b6'?1:.22;
+  return colorWeight*scatter;
+}
 
 /** One physical galaxy, with catalogue stars streamed around a moving observer.
  * The map survives local navigation. Chunk boundaries have no scene geometry. */
@@ -15,6 +34,9 @@ export class GalaxySpace {
   readonly group = new THREE.Group();
   readonly anchors: THREE.Points;
   readonly nearby: THREE.Points;
+  readonly historical:THREE.Points;
+  readonly density:THREE.Points|null;
+  readonly populationBeacon:THREE.Points;
   readonly scale: number;
   readonly origin = new THREE.Vector3();
   readonly refs: SystemRef[];
@@ -29,16 +51,24 @@ export class GalaxySpace {
   private dirty = true;
   private failures = 0;
   private retryAt = 0;
+  private readonly lifecycles=new Map<string,readonly StarLifecycle[]>();
+  private lastWorldNs:bigint|null=null;
+  private focusedPopulationId:string|null=null;
+  private readonly historicalStars:readonly HistoricalStar[];
+  private readonly populationSources:ReadonlyMap<string,Galaxy>;
   constructor(
     readonly galaxy: Galaxy,
     data: MapData,
     private request: (coords: V3) => Promise<Chunk>,
     private arrived: (chunk: Chunk) => void,
     private failed: (message: string) => void,
+    private readonly universeSeed:string=galaxy.seed,
+    densityData?:DensityData,
   ) {
     this.scale = 10 / galaxy.radiusLy;
     this.refs = data.refs;
     this.ids = new Set(this.refs.map((r) => r.id));
+    this.density=densityData?this.makeDensity(densityData):null;
     this.anchors = this.cloud(
       data.positions,
       data.colors,
@@ -54,7 +84,44 @@ export class GalaxySpace {
       [],
       true,
     );
-    this.group.add(this.anchors, this.nearby);
+    // A merger redirects surviving population IDs into the successor's
+    // display without regenerating either source cohort. Placement in the
+    // successor is illustrative; identity and dated host are authoritative.
+    const sources=[galaxy,...galaxies(universeSeed).filter(other=>other.id!==galaxy.id&&
+      galaxyHostAt(universeSeed,other,UNIVERSE_END_NS,rootAddress(other)).hostGalaxyId===galaxy.id)];
+    this.populationSources=new Map(sources.map(source=>[source.id,source]));
+    this.historicalStars=sources.flatMap(source=>[
+      ...historicalStarsForGalaxy(universeSeed,source,rootAddress(source)),...futureStarsForGalaxy(universeSeed,source,rootAddress(source))]);
+    const historicalGeometry=new THREE.BufferGeometry();
+    historicalGeometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(this.historicalStars.length*3),3));
+    const colors=new Float32Array(this.historicalStars.length*3);
+    this.historicalStars.forEach((star,i)=>new THREE.Color(star.color).toArray(colors,i*3));
+    historicalGeometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
+    this.historical=new THREE.Points(historicalGeometry,new THREE.PointsMaterial({size:2.5,sizeAttenuation:false,vertexColors:true,
+      transparent:true,opacity:.55,depthWrite:false,blending:THREE.AdditiveBlending}));
+    this.historical.frustumCulled=false;
+    this.populationBeacon=new THREE.Points(new THREE.BufferGeometry().setAttribute('position',
+      new THREE.Float32BufferAttribute([0,0,0],3)),new THREE.PointsMaterial({size:22,sizeAttenuation:false,
+      color:'#e7efff',transparent:true,opacity:.85,depthWrite:false}));
+    this.populationBeacon.visible=false;
+    if(this.density)this.group.add(this.density);
+    this.group.add(this.anchors, this.nearby,this.historical,this.populationBeacon);
+  }
+  private makeDensity(data:DensityData):THREE.Points {
+    const geometry=new THREE.BufferGeometry();
+    geometry.setAttribute('position',new THREE.BufferAttribute(Float32Array.from(data.positions,p=>p*this.scale),3));
+    geometry.setAttribute('color',new THREE.BufferAttribute(data.colors,3));
+    geometry.setAttribute('pointSize',new THREE.BufferAttribute(data.sizes,1));
+    const material=new THREE.ShaderMaterial({
+      uniforms:{observer:{value:new THREE.Vector3()},unit:{value:this.scale},pixelRatio:{value:1},alpha:{value:.7}},
+      vertexShader:`attribute vec3 color;attribute float pointSize;uniform vec3 observer;uniform float unit,pixelRatio;varying vec3 tint;varying float visibility;
+        void main(){float distanceLy=length(position-observer)/unit;visibility=smoothstep(150.,1200.,distanceLy);
+          tint=color;vec4 view=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*view;
+          gl_PointSize=clamp(1.4+pointSize*80./max(100.,distanceLy),1.4,5.)*pixelRatio;}`,
+      fragmentShader:`uniform float alpha;varying vec3 tint;varying float visibility;void main(){vec2 p=gl_PointCoord-.5;float d=dot(p,p);if(d>.25||visibility<.002)discard;gl_FragColor=vec4(tint,exp(-d*22.)*.24*alpha*visibility);}`,
+      transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    });
+    const points=new THREE.Points(geometry,material);points.frustumCulled=false;return points;
   }
   private cloud(
     positions: Float32Array,
@@ -73,6 +140,7 @@ export class GalaxySpace {
     );
     geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     geometry.setAttribute("pointSize", new THREE.BufferAttribute(sizes, 1));
+    geometry.setAttribute("luminosity",new THREE.BufferAttribute(Float32Array.from(refs,displayLuminosity),1));
     const starColors = new Float32Array(positions.length);
     refs.forEach((r, i) => new THREE.Color(r.color).toArray(starColors, i * 3));
     geometry.setAttribute(
@@ -83,30 +151,44 @@ export class GalaxySpace {
       "born",
       new THREE.BufferAttribute(new Float32Array(sizes.length), 1),
     );
+    geometry.setAttribute('alive',new THREE.BufferAttribute(new Float32Array(refs.length).fill(1),1));
     const material = new THREE.ShaderMaterial({
       uniforms: {
         alpha: { value: 1 },
         observer: { value: new THREE.Vector3() },
+        originLy:{value:new THREE.Vector3()},
         unit: { value: this.scale },
         nearLayer: { value: near ? 1 : 0 },
         now: { value: 0 },
         immersive: { value: 0 },
         pixelRatio: { value: 1 },
+        dustHeight: {value:Math.max(1,this.galaxy.radiusLy*.015)},
+        dustStrength:{value:this.galaxy.type==='Spiral'||this.galaxy.type==='Barred spiral'?0.8:0.12},
       },
-      vertexShader: `attribute vec3 color;attribute vec3 starColor;attribute float pointSize;attribute float born;
-        uniform vec3 observer;uniform float unit,nearLayer,now,immersive,pixelRatio;
-        varying vec3 tint;varying float visibility;
+      vertexShader: `attribute vec3 color;attribute vec3 starColor;attribute float pointSize;attribute float luminosity;attribute float born;attribute float alive;
+        uniform vec3 observer,originLy;uniform float unit,nearLayer,now,immersive,pixelRatio,dustHeight,dustStrength;
+        varying vec3 tint;varying float visibility;varying float brightness;varying float mapped;
         void main(){float d=length(position-observer)/unit;
-          float farMix=smoothstep(32.,256.,d);tint=mix(starColor,color,farMix);
-          visibility=nearLayer>.5?(1.-smoothstep(24.,32.,d))*smoothstep(0.,.45,now-born):1.;
+          float farMix=smoothstep(24.,256.,d);mapped=farMix;
+          tint=mix(mix(vec3(1.),starColor,.5),color,farMix);
+          visibility=(nearLayer>.5?(1.-smoothstep(24.,32.,d))*smoothstep(0.,.45,now-born):1.)*alive;
+          float midY=abs((position.y+observer.y)*.5/unit+originLy.y);
+          float galX=position.x/unit+originLy.x,galZ=position.z/unit+originLy.z;
+          float patch=.7+.3*sin(galX/220.+sin(galZ/500.))*sin(galZ/310.);
+          float opticalDepth=dustStrength*exp(-midY/dustHeight)*min(2.,d/4000.)*patch;
+          float transmission=exp(-opticalDepth);
+          visibility*=transmission;
+          tint=mix(tint,vec3(tint.r*1.08,tint.g*.86,tint.b*.72),1.-transmission);
           vec4 world=modelMatrix*vec4(position,1.);vec4 original=viewMatrix*world;
           if(immersive>.5){vec3 delta=world.xyz-cameraPosition;world.xyz=cameraPosition+delta*min(1.,140./max(.001,length(delta)));}
           gl_Position=projectionMatrix*viewMatrix*world;
+          float flux=luminosity/(d*d+.25);
+          brightness=flux/(flux+.08);
           float mapSize=clamp(pointSize*1.5*110.*length(modelMatrix[0].xyz)/max(.00001,-original.z),1.,13.);
-          float closeSize=clamp(2.6+15./sqrt(max(.1,d)),2.,10.);
+          float closeSize=1.25+4.25*sqrt(brightness);
           gl_PointSize=mix(closeSize,mapSize,nearLayer>.5?0.:farMix)*pixelRatio;
         }`,
-      fragmentShader: `uniform float alpha;varying vec3 tint;varying float visibility;void main(){vec2 p=gl_PointCoord-.5;float d=dot(p,p);if(d>.25||visibility<.002)discard;gl_FragColor=vec4(tint,exp(-d*24.)*.55*alpha*visibility);}`,
+      fragmentShader: `uniform float alpha;varying vec3 tint;varying float visibility;varying float brightness;varying float mapped;void main(){vec2 p=gl_PointCoord-.5;float d=dot(p,p);if(d>.25||visibility<.002)discard;float core=exp(-d*90.);float halo=exp(-d*16.)*.24*brightness*brightness;float light=mix((core+halo)*(.22+.78*brightness),exp(-d*24.)*.55,mapped);gl_FragColor=vec4(tint,light*alpha*visibility);}`,
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
@@ -133,12 +215,16 @@ export class GalaxySpace {
       .sub(this.origin)
       .multiplyScalar(this.scale);
     this.origin.set(...origin);
+    if(this.density)this.density.position.copy(this.origin).multiplyScalar(-this.scale);
+    for(const cloud of [this.anchors,this.nearby])
+      (cloud.material as THREE.ShaderMaterial).uniforms.originLy.value.copy(this.origin);
     const coordinates = this.anchors.geometry.attributes.position as THREE.BufferAttribute;
     this.refs.forEach((r,i) => coordinates.setXYZ(i,
       (r.position[0]-origin[0])*this.scale,
       (r.position[1]-origin[1])*this.scale,
       (r.position[2]-origin[2])*this.scale));
     coordinates.needsUpdate = true;
+    if(this.lastWorldNs!==null)this.updateHistoricalDate(this.lastWorldNs);
     this.dirty = true;
     return delta;
   }
@@ -147,6 +233,7 @@ export class GalaxySpace {
     immersive: boolean,
     pixelRatio: number,
     stream: boolean,
+    worldNs:bigint=CATALOGUE_EPOCH_NS,
   ) {
     this.observer.copy(cameraLocal);
     const physical = this.physical(cameraLocal),
@@ -165,7 +252,13 @@ export class GalaxySpace {
       u.immersive.value = +immersive;
       u.pixelRatio.value = pixelRatio;
     }
+    if(this.density){
+      const u=(this.density.material as THREE.ShaderMaterial).uniforms;
+      u.observer.value.copy(cameraLocal).addScaledVector(this.origin,this.scale);
+      u.pixelRatio.value=pixelRatio;
+    }
     if (this.dirty) this.rebuild();
+    if(this.lastWorldNs!==worldNs)this.updateDate(worldNs);
     if (stream && !this.pending && performance.now() > this.retryAt)
       void this.fill();
   }
@@ -219,14 +312,76 @@ export class GalaxySpace {
       "pointSize",
       new THREE.BufferAttribute(new Float32Array(refs.length).fill(2), 1),
     );
+    geometry.setAttribute("luminosity",new THREE.BufferAttribute(Float32Array.from(refs,displayLuminosity),1));
     geometry.setAttribute(
       "born",
       new THREE.BufferAttribute(new Float32Array(birth), 1),
     );
+    geometry.setAttribute('alive',new THREE.BufferAttribute(new Float32Array(refs.length).fill(1),1));
     this.nearby.geometry.dispose();
     this.nearby.geometry = geometry;
     this.nearbyRefs = refs;
     this.nearby.userData.refs = refs;
+    this.lastWorldNs=null;
+  }
+  private updateDate(t:bigint) {
+    this.lastWorldNs=t;
+    for(const [cloud,refs] of [[this.anchors,this.refs],[this.nearby,this.nearbyRefs]] as const){
+      const alive=cloud.geometry.getAttribute('alive') as THREE.BufferAttribute;
+      for(let i=0;i<refs.length;i++){
+        const ref=refs[i];
+        let lc=this.lifecycles.get(ref.id);
+        if(!lc){lc=referenceStarLifecycles(ref);this.lifecycles.set(ref.id,lc);}
+        alive.setX(i,lc.some(star=>t>=star.formationNs&&t<star.remnantNs)?1:0);
+      }
+      alive.needsUpdate=true;
+    }
+    this.updateHistoricalDate(t);
+  }
+  private updateHistoricalDate(t:bigint) {
+    const positions=this.historical.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const activeHosts=new Map([...this.populationSources].map(([id,source])=>
+      [id,galaxyHostAt(this.universeSeed,source,t,rootAddress(source)).hostGalaxyId]));
+    for(let i=0;i<this.historicalStars.length;i++){
+      const star=this.historicalStars[i];
+      if(star.birthNs<=t&&t<star.deathNs&&activeHosts.get(star.hostGalaxyId)===this.galaxy.id){
+        const p=this.world(star.positionLy);positions.setXYZ(i,p.x,p.y,p.z);
+      }else positions.setXYZ(i,1e9,1e9,1e9);
+    }
+    positions.needsUpdate=true;
+    this.focusPopulation(this.focusedPopulationId,t);
+  }
+  focusPopulation(id:string|null,t:bigint){
+    this.focusedPopulationId=id;
+    const star=id?this.findPopulation(id,t):undefined;
+    this.populationBeacon.visible=!!star;
+    if(star)this.populationBeacon.position.copy(this.world(star.positionLy));
+  }
+  /** Dated cohort points are visitable locations, but not generated planetary systems. */
+  populationAt(t:bigint):readonly HistoricalStar[] {
+    const hosts=new Map([...this.populationSources].map(([id,source])=>
+      [id,galaxyHostAt(this.universeSeed,source,t,rootAddress(source)).hostGalaxyId]));
+    return this.historicalStars.filter(star=>star.birthNs<=t&&t<star.deathNs&&
+      hosts.get(star.hostGalaxyId)===this.galaxy.id);
+  }
+  populationAtIndex(index:number,t:bigint):HistoricalStar|null {
+    const star=this.historicalStars[index];
+    if(!star||this.lastWorldNs!==t)return null;
+    const positions=this.historical.geometry.getAttribute('position') as THREE.BufferAttribute;
+    return positions.getX(index)<1e8?star:null;
+  }
+  findPopulation(id:string,t:bigint):HistoricalStar|undefined {
+    const star=this.historicalStars.find(item=>item.id===id);
+    if(!star||star.birthNs>t||star.deathNs<=t)return undefined;
+    const source=this.populationSources.get(star.hostGalaxyId);
+    return source&&galaxyHostAt(this.universeSeed,source,t,rootAddress(source)).hostGalaxyId===this.galaxy.id?star:undefined;
+  }
+  nextPopulationBirthAfter(t:bigint):HistoricalStar|undefined {
+    return this.historicalStars.filter(star=>star.birthNs>t&&
+      this.populationSources.has(star.hostGalaxyId)&&
+      galaxyHostAt(this.universeSeed,this.populationSources.get(star.hostGalaxyId)!,star.birthNs,
+        rootAddress(this.populationSources.get(star.hostGalaxyId)!)).hostGalaxyId===this.galaxy.id)
+      .reduce<HistoricalStar|undefined>((best,star)=>!best||star.birthNs<best.birthNs?star:best,undefined);
   }
   find(id: string) {
     return (

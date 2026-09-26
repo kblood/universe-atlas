@@ -9,16 +9,16 @@ export function sweptStarStep(step:number,along:number,perpendicularSq:number) {
   return along>.030001&&along<step+.03&&perpendicularSq<.02*.02
     ? Math.min(step,along-.03):step;
 }
-export function surfaceClearance(body: StarSystem['stars'][number], relative: V3) {
+export function surfaceClearance(body: StarSystem['stars'][number], relative: V3, waterLevelM = 0) {
   const distance = Math.hypot(...relative);
   let elevation = 0;
   if (body.kind !== 'star' && body.type !== 'Gas giant') {
     // A body can receive a new immutable geology region without its catalogue
     // seed changing. Never reuse its pre-river clearance sampler.
-    const key=`${body.seed}/${body.hydrology?.version||'terrain-1.1.0'}/${body.hydrology?.id||''}`;
+    const key=`${body.seed}/${body.hydrology?.version||'terrain-1.1.0'}/${body.hydrology?.id||''}/${body.canonicalRivers?.map(r=>r.id).join(',')||''}/${waterLevelM}`;
     let sample = samplers.get(key);
     if (!sample) {
-      sample = terrainSampler(body); samplers.set(key, sample);
+      sample = terrainSampler(body,undefined,undefined,undefined,waterLevelM); samplers.set(key, sample);
       if (samplers.size > 32) samplers.delete(samplers.keys().next().value!);
     }
     elevation = sample(distance ? unit(relative) : [0,1,0]).visibleHeightM;
@@ -47,12 +47,12 @@ export function automaticSpeed(
       ? Math.max(0.000001, Math.min(50000, clearance * 1.6))
       : Math.max(20, Math.min(AU * 50000, clearance * (.3 + 1.5 * Math.max(0, Math.min(1,(clearance-10000)/50000)))));
 }
-export function nearestBody(sys: StarSystem, p: V3, epoch: OrbitTime = 0) {
+export function nearestBody(sys: StarSystem, p: V3, epoch: OrbitTime = 0, waterLevelForBody: (body: StarSystem['stars'][number]) => number = () => 0) {
   let best: any = null;
   for (const body of [...sys.stars, ...sys.planets, ...sys.moons]) {
     const center = bodyPosition(body, sys, epoch),
       distance = Math.hypot(...p.map((v, i) => v - center[i]));
-    const details = surfaceClearance(body, p.map((v,i) => v - center[i]) as V3);
+    const details = surfaceClearance(body, p.map((v,i) => v - center[i]) as V3,waterLevelForBody(body));
     const clearance = details.clearance;
     if (!best || clearance < best.clearance)
       best = { body, center, distance, ...details };

@@ -2,37 +2,56 @@
 
 A deterministic Three.js universe explorer, deployed at
 https://dionysus.dk/webxr/IWSDK/universe-atlas/.
+This README describes the current repository source; the deployed build can
+lag local changes.
+The [formation and life integration record](docs/formation-and-life-integration-2026-09-23.md)
+summarizes the current end-to-end planet timeline, local life rendering and
+review evidence.
+The [cosmic history simulation plan](docs/cosmic-history-simulation-plan-2026-09-23.md)
+sets out the early-universe timescale, its connection to planets and life, and
+the scenario-based far future.
+The [deterministic temporal universe design](docs/deterministic-temporal-universe-design-2026-09-23.md)
+combines those eras with Atlas's existing dated galaxies, planets, species and
+local animals into one query and implementation sequence.
+The [temporal universe implementation status](docs/temporal-universe-implementation-2026-09-23.md)
+records the current integrated baseline and the scientific and ecological
+limits that remain.
 
 The [Biosphere Lab](biosphere-lab.html) inspects generated plant/animal morphology,
 planet-specific habitat ranges and dated lineages. Its [implementation record](docs/biosphere-lab-implementation-spec.md)
-separates the fictional history and static specimen tests from full planetary
-ecology, animal locomotion and main-app formation gating.
+separates the lab fixtures from full planetary ecology. The main app now gates
+nearby life by the formation and biosphere date.
 
 The [Creature Lab](creature-lab.html) adds four generated quadruped lineages,
 an articulated anatomy inspector, a walk/run arena and an ancestry display
 showing each species beside its actual predecessors. Read the
 [implementation and validation](docs/creature-lab-implementation-spec.md) and
 [research with sources](docs/creature-diversity-and-motion-plan-2026-09-14.md).
-Movement is a kinematic rigid-part prototype; smooth skin deformation, animal
-behavior and planetary fauna remain future work.
+Movement is a kinematic rigid-part prototype. The main Atlas now uses its
+quadruped archetypes for nearby herds on suitable living planets. Smooth skin
+deformation and animal behavior remain future work.
 
 The [Biome Lab](biome-lab.html) compares deterministic plant and rock communities
 on controlled terrain. Its [specification and validation](docs/biome-lab-spec.md)
-distinguish this test bench from the pending planet-wide ecosystem integration.
+distinguish this test bench from the main Atlas's bounded near-ground life layer.
+Full planet-wide ecosystem integration remains future work.
 The [broader validation plan](docs/planet-validation-labs-2026-09-14.md) links
 the terrain, vegetation and species research.
 
-The next [procedural biospheres plan](docs/procedural-biospheres-next-plan-2026-09-14.md)
-extends the fixed lab fixtures into generated species, planet-specific communities,
-shared habitat ranges, universal time and evolutionary lineages. It links four detailed
-research reports and describes proposed work, not deployed capabilities.
+The [procedural biospheres plan](docs/procedural-biospheres-next-plan-2026-09-14.md)
+records the path from lab fixtures to generated species and communities. The
+main Atlas now queries dated biospheres and renders local vegetation and herds
+while landing or walking. Planet-wide populations and ecological simulation
+remain proposed work.
 
-Next-stage proposal: [walkable worlds and traversable history](docs/living-worlds-and-time-roadmap.md).
-This roadmap describes planned work, not the deployed feature set.
+The [walkable worlds and traversable history roadmap](docs/living-worlds-and-time-roadmap.md)
+guided the current walking and dated-world work. Its later ecosystem,
+civilization and terrain milestones remain proposals.
 See also [Fable 5.1's independent review](docs/fable-5.1-plan-review.md) and
 [the checked follow-up](docs/fable-review-assessment.md).
 The first implementation is documented in [Walking and shared time](docs/walking-and-time.md).
-The next increment adds [ground materials and named surface destinations](docs/surface-materials-and-survey.md), with implementation details, validation and sources.
+The [ground materials and named surface destinations](docs/surface-materials-and-survey.md)
+increment records its implementation, validation and sources.
 The [drainage atlas and atmospheric flight](docs/drainage-and-atmospheric-flight.md) add connected catchment analysis and gentle planetary horizon alignment.
 The [physical river pilot and ground environment](docs/physical-rivers-and-ground-detail.md)
 add a visitable river, tributary and lake region, carved banks, and initial local
@@ -129,8 +148,9 @@ On an ocean-bearing planet, **Find rivers and a lake** discovers a suitable
 coastal region and builds its channels, lake and banks. Pick a named dry bank,
 then choose **Land and walk** after arrival. This regional pilot includes initial
 local trees, stones and ground cover. Water blocks walking; individual tree and
-stone collision is pending. Its address is saved with walking links. Planet-wide
-ecosystems, animals, cities and people remain future work.
+stone collision is pending. Its address is saved with walking links. Nearby
+generated plants and simple herds can appear on suitable worlds; planet-wide
+ecosystems, cities and people remain future work.
 
 The help button lists controls. Seed tools provide direct addresses, bookmarks,
 catalogue exports and a repeatability check. URLs restore the selected destination.
@@ -165,11 +185,26 @@ Space jumps and dragging looks around. **Return to flight** rises to a 160 m
 hover. Landings over water find a dry site; oceans and gas giants have no walking
 surface. Walking currently uses desktop keyboard/mouse controls, outside VR.
 
-**Universal date** accepts years relative to the catalogue reference date and
+**Universal date** accepts years since the Big Bang and
 applies across every view. URLs and exports retain exact integer nanoseconds.
-Only orbital positions currently respond visually. A time seek from the ground
-returns to observation hover; stars do not yet evolve and continents do not yet
-change. The clock and lifecycle fixtures prepare for that later work.
+Star size, colour and lighting follow lifecycle stages. The system view shows
+an accretion proxy before a planet forms, a molten world before cooling, and
+the solid planet afterward. Ocean level and nearby life respond to the date.
+A time seek from the ground returns to observation hover; continents do not yet
+change. Formation and biosphere dates are procedural scenarios. Select a planet
+or moon to open **Formation & life** and jump to its history milestones.
+On a planet, **Follow from formation** selects that planet through its molten,
+solid, life and possible engulfment stages. Use **Next milestone** or Play to
+move forward. The target remains selected in the system view before it forms
+and after it ends. Some planets have no modeled destruction date.
+At **First stars**, select a living star marker or an entry in the explorer to
+visit its illustrative close view. In a formed galaxy, dated stellar population
+points can be selected and visited; they have no resolved planetary systems.
+If a galaxy has no active dated star, **Go to next stellar birth** advances to
+one. Surviving galaxies remain selectable in the far future as dim map proxies.
+On a world with living vegetation, **Find living habitat** flies toward a
+vegetated dry region. Herds are sparse and may be absent from a particular
+walking area even when animal species exist on the planet.
 
 The implementation, controls, cube-face mathematics, budgets, known limitations,
 test procedure and research sources for the latest stage are documented in
@@ -187,7 +222,7 @@ the panel. The design manipulates the model without artificial head motion.
 
 ## Architecture and limits
 
-- `src/catalog.ts`: pure generation, version `atlas-1.0.0`. FNV-1a 64-bit path
+- `src/catalog.ts`: pure generation, version `atlas-1.1.0`. FNV-1a 64-bit path
   hashes initialize PCG32 streams independently for names, structures and
   textures. Stable IDs encode the hierarchy, independent of exploration order.
 - Galaxy origins use Mpc, galaxy-local cells use light-years, and body records
@@ -216,7 +251,7 @@ the panel. The design manipulates the model without artificial head motion.
   fade in as generated and fade with distance between 24 and 32 ly, before chunk
   boundaries become visible. Large travel steps request the latest neighbourhood
   without applying an old result to a new position.
-- Map positions, names and system records come from the unchanged `atlas-1.0.0`
+- Map positions, names and system records come from the unchanged `atlas-1.1.0`
   catalogue. Map lighting emphasises young spiral-arm populations; close stars
   use catalogue colours. Point brightness is illustrative, not photometry. The
   small representative sample does not describe all the unresolved diffuse light,
@@ -246,7 +281,7 @@ the panel. The design manipulates the model without artificial head motion.
   being applied to a different body. Moons' orbital paths follow their moving
   parent during playback. Very distant system context still uses directional sky
   markers, with negligible AU-scale parallax for most stars.
-- `src/terrain.ts`, version `terrain-1.1.0`, preserves the existing seeded
+- `src/terrain.ts`, version `terrain-1.3.0`, preserves the existing seeded
   continents, coastlines and ocean level, adding local relief at 6,500 m, 1,400 m
   and 260 m wavelengths. `src/planet-tiles.ts` samples
   that field over a cube-sphere, including matching face edges and pole centres.
@@ -261,7 +296,8 @@ the panel. The design manipulates the model without artificial head motion.
   globes remain fallback previews; solid worlds no longer upscale a whole globe
   to 2048 pixels for close inspection. The terrain sampler, not the fallback map,
   supplies streamed detail. Ground collision uses the settled contact triangles.
-  Metre-scale props, vegetation, weather and full atmospheric scattering remain
+  Nearby vegetation and simple herds render on suitable worlds. Complete
+  planet-wide populations, weather and full atmospheric scattering remain
   future work. See the walking record for resource accounting and measurements.
 - `src/planet-flight.ts` uses quaternion free look and great-circle transport
   without a geographic-north singularity. `src/travel.ts` samples actual terrain
@@ -303,6 +339,24 @@ provided by the pinned `super-three` package; its MIT notice ships as
 `public/three-LICENSE.txt`. Dependency versions are recorded in package-lock.json.
 
 ## Deployment
+
+### Atlas guide
+
+The game links to the HTML guide at `guide/index.html` from its action bar and
+help dialog. Nine linked chapters describe the current universe, determinism,
+time, spatial hierarchy, terrain, water/atmosphere, life, travel and publishing.
+The time explorer imports the game's era checkpoints and bookmark encoder.
+
+Guide sources are `guide/*.html`, `guide/theme.css` and
+`guide/time-explorer.ts`. Vite builds these entry points into `dist/guide/`
+alongside the game and labs. Publish them with the ordinary project release
+below; `release-site.ps1 -IndexOnly` only updates the shared landing page.
+The guide's implementation-record links use the documents explicitly emitted
+by `vite.config.ts`. Keep those links and the build's document list aligned.
+
+After building, run `node tests/guide.mjs` for the guide's nested-path link,
+responsive layout, exact-era bookmark, no-JavaScript and in-game-link checks.
+It writes review screenshots under `test-results/guide/`.
 
 This project has its own repository at
 `caldor@192.168.50.17:/srv/git/repositories/universe-atlas.git`.

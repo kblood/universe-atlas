@@ -6,8 +6,13 @@ import polygonClipping, {
 } from "polygon-clipping";
 import type { RiverChannel, RiverRegion } from "./river-types.ts";
 import {conformRiverSurface} from './river-surface-conform.ts';
+// Bumped to -2: childTapers/profile now taper a child channel's own depth to
+// zero over a short stretch of arc length near its attached (confluence)
+// end, closing a genuine wet/wet bed-height cliff that could otherwise
+// appear right where the polygon-clipping ownership boundary cuts between a
+// channel and its already-placed parent (see buildRiverSurface below).
 export const RIVER_PHYSICAL_SURFACE_VERSION =
-  "river-physical-surface-1" as const;
+  "river-physical-surface-2" as const;
 const { difference } = polygonClipping,
   MAX_BYTES = 16 * 1024 * 1024,
   CELL = 64;
@@ -153,7 +158,112 @@ function pieces(s: S): Polygon[] {
   }
   return out.map((p) => [clean(p[0])]).filter((p) => p[0].length);
 }
-function profile(s: S, x: number, z: number) {
+type ChildTaper = { attachedDistanceM: number; taperLenM: number; parent: RiverChannel };
+/**
+ * Every child channel is authored so one of its endpoints lands exactly on
+ * its parent's own polyline (river-generation.ts's tributary junction). Each
+ * channel's `profile()` bowl is centred on its OWN centreline and tapers to
+ * zero depth at its OWN bank (e=1) — but the ownership boundary the
+ * `difference()` loop below cuts between a child and its already-placed
+ * parent is generally NOT the child's own bank; it is wherever the PARENT's
+ * own shoreline happens to fall. Right at a confluence this is often nearly
+ * perpendicular to the child's own centreline (a T-junction), so a point
+ * that sits just outside the parent's channel — on the sliver of the child's
+ * polygon that survives clipping — can still be very close to the CHILD's
+ * OWN centreline (small e, near-full depth), even though physically it is
+ * sitting right on the parent's shoreline (which is always zero-depth, since
+ * `profile()`'s own e=1 edge always has depthM=0). That mismatch between "far
+ * from the child's centreline" and "far from the parent's boundary" is the
+ * actual seam: a wet/wet bed-height cliff that is a property of ARC-LENGTH
+ * along the child's own centreline near its attached end, not of the child's
+ * cross-channel position, and not of any single triangle's shape.
+ *
+ * Per-triangle radius/compactness gates were tried and rejected: "near the
+ * seam" here is not a 2D Euclidean neighbourhood of the junction point (a
+ * child approaching near-perpendicular can stay close to its OWN centreline,
+ * i.e. deep, for a good distance past the junction in real 2D space), so any
+ * fixed-radius or triangle-span test either missed the real seam entirely or
+ * grabbed unrelated far-away geometry in coarser fixtures.
+ *
+ * The fix instead tapers a CHILD channel's own `depthM` smoothly to zero as
+ * ARC LENGTH along the child's own centreline approaches its attached end —
+ * using the channel's own monotonic `distanceM`, exactly the coordinate the
+ * ownership cut is effectively aligned with at that end, regardless of
+ * cross-channel position or triangle shape. At the attached end itself this
+ * makes the child's own bed converge to its own `waterM` there. That alone
+ * is not quite enough: `waterM` is flat across a channel's OWN width, but it
+ * still varies along a channel's length (the water surface follows the
+ * ground's slope), and the arc-length position `profile()` resolves to on
+ * the child's own segment near the seam is generally NOT the exact
+ * coincident point, so the child's own `waterM` there can differ from the
+ * parent's local water level by a similar cliff. So within the same taper
+ * zone, `waterM` is blended (with the identical smoothstep weight) toward
+ * the PARENT's own `waterM` at the nearest point on the parent's own
+ * polyline — which is safe to do only because it is confined to this short,
+ * bounded zone and fades out with the same weight that zeroes the depth;
+ * unbounded per-vertex blending toward a nearby channel's reading was tried
+ * and rejected earlier for corrupting unrelated far-field geometry, but here
+ * it can only ever act within `taperLenM` of a genuine, authored confluence
+ * point. Both terms are plain functions of continuous coordinates (arc
+ * length, and nearest-point projection onto the parent) run through a
+ * smoothstep, so they are continuous in (x,z) by construction — ordinary
+ * per-vertex barycentric interpolation of a continuous per-vertex field
+ * stays continuous — with no triangle-level gating needed, so this cannot
+ * introduce a new internal triangle discontinuity, and it self-limits to a
+ * short stretch of the child's own length near the confluence rather than
+ * reaching out along unrelated, possibly oversized, geometry.
+ */
+function childTapers(region: RiverRegion): Map<string, ChildTaper> {
+  const byId = new Map(region.channels.map((c) => [c.id, c] as const)),
+    tapers = new Map<string, ChildTaper>();
+  for (const c of region.channels) {
+    if (!c.parentId) continue;
+    const parent = byId.get(c.parentId);
+    if (!parent) continue;
+    for (const end of [c.points[0], c.points[c.points.length - 1]]) {
+      let nearest = parent.points[0], best = Infinity;
+      for (const p of parent.points) {
+        const d = Math.hypot(p.x - end.x, p.z - end.z);
+        if (d < best) { best = d; nearest = p; }
+      }
+      // Only the endpoint that is actually attached to the parent (the other
+      // end is the tributary's own free headwater) gets a taper.
+      if (best > 1e-6) continue;
+      // A generous multiple of the local channel width: a near-perpendicular
+      // (T-junction) approach can keep a query point close to the CHILD's
+      // own centreline for a good stretch of arc length past the confluence
+      // even though it is only a hair outside the PARENT's channel, so the
+      // taper needs enough length to fully reach zero before the ownership
+      // cut can plausibly still be biting into the child's polygon (measured
+      // empirically against real canonical basins, not merely the synthetic
+      // fixture). It still stays short enough to leave the rest of the
+      // child's length (an unrelated, possibly much longer, stretch)
+      // completely untouched.
+      const taperLenM = Math.max(end.widthM, nearest.widthM) * 10;
+      tapers.set(c.id, { attachedDistanceM: end.distanceM, taperLenM, parent });
+    }
+  }
+  return tapers;
+}
+/** The parent's own `waterM` at the point on the parent's polyline nearest
+ * (x,z) — a plain nearest-segment projection, continuous in (x,z) wherever
+ * two segments' own local projections agree at their shared node (which they
+ * do, since adjacent segments of one channel share endpoint values). Only
+ * ever consulted from within a bounded taper zone (see childTapers above),
+ * never as a general cross-channel lookup. */
+function nearestChannelWaterM(channel: RiverChannel, x: number, z: number): number {
+  let best = Infinity, waterM = channel.points[0].waterM;
+  for (let i = 0; i < channel.points.length - 1; i++) {
+    const a = channel.points[i], b = channel.points[i + 1],
+      dx = b.x - a.x, dz = b.z - a.z, l = dx * dx + dz * dz,
+      t = l ? clamp(((x - a.x) * dx + (z - a.z) * dz) / l, 0, 1) : 0,
+      cx = a.x + dx * t, cz = a.z + dz * t,
+      d = Math.hypot(x - cx, z - cz);
+    if (d < best) { best = d; waterM = lerp(a.waterM, b.waterM, t); }
+  }
+  return waterM;
+}
+function profile(s: S, x: number, z: number, tapers?: Map<string, ChildTaper>) {
   const a = s.channel.points[s.segment],
     b = s.channel.points[s.segment + 1],
     dx = b.x - a.x,
@@ -165,9 +275,19 @@ function profile(s: S, x: number, z: number) {
     r = Math.max(0.001, lerp(a.widthM, b.widthM, t) * 0.5),
     e = clamp(Math.hypot(x - cx, z - cz) / r, 0, 1),
     n = Math.hypot(dx, dz) || 1;
+  let depthM = lerp(a.depthM, b.depthM, t) * (1 - e * e),
+    waterM = lerp(a.waterM, b.waterM, t);
+  const taper = tapers?.get(s.channel.id);
+  if (taper) {
+    const arc = lerp(a.distanceM, b.distanceM, t),
+      k = clamp(Math.abs(arc - taper.attachedDistanceM) / Math.max(1e-6, taper.taperLenM), 0, 1),
+      smooth = k * k * (3 - 2 * k);
+    depthM *= smooth;
+    if (smooth < 1) waterM = lerp(nearestChannelWaterM(taper.parent, x, z), waterM, smooth);
+  }
   return {
-    waterM: lerp(a.waterM, b.waterM, t),
-    depthM: lerp(a.depthM, b.depthM, t) * (1 - e * e),
+    waterM,
+    depthM,
     flow: [dx / n, dz / n] as [number, number],
   };
 }
@@ -395,11 +515,12 @@ export function buildRiverSurface(region: RiverRegion): RiverSurface {
     fl = new Float32Array(verts.length * 2),
     ind = new Uint32Array(tri.length * 3);
   for (let i = 0; i < verts.length; i++) pos.set(verts[i], i * 2);
+  const tapers = childTapers(region);
   for (let i = 0; i < tri.length; i++) {
     const t = tri[i];
     ind.set([t.a, t.b, t.c], i * 3);
     for (const j of [t.a, t.b, t.c]) {
-      const q = profile(t.s, ...verts[j]);
+      const q = profile(t.s, ...verts[j], tapers);
       wm[j] = q.waterM;
       dm[j] = q.depthM;
       fl.set(q.flow, j * 2);

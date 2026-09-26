@@ -72,8 +72,10 @@ export class ViewBlend {
     private oldLabels: HTMLElement[],
     private newLabels: HTMLElement[],
     private cleanup: () => void,
+    private oldWorldToNew: THREE.Matrix4 | null = null,
   ) {
     this.wrapper.matrixAutoUpdate = false;
+    if(oldWorldToNew)this.wrapper.matrix.copy(oldWorldToNew);
     this.wrapper.add(oldRoot);
     scene.add(this.wrapper);
     this.outgoing = materials(oldRoot);
@@ -86,7 +88,7 @@ export class ViewBlend {
     const t = Math.min(1, (now - this.start) / (this.immersive ? 450 : 700));
     this.progress = t;
     const eased = t * t * (3 - 2 * t);
-    if (!this.immersive) {
+    if (!this.immersive&&!this.oldWorldToNew) {
       this.camera.updateMatrixWorld();
       this.wrapper.matrix.multiplyMatrices(
         this.camera.matrixWorld,

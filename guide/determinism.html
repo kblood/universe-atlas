@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#080e17">
+  <meta name="description" content="A seed is the starting point. Reproducibility also needs the complete address, exact date and the versions of the algorithms that interpret them.">
+  <title>Determinism · Universe Atlas Guide</title>
+  <link rel="stylesheet" href="./theme.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar"><a class="brand" href="index.html"><span aria-hidden="true">✧</span> UNIVERSE ATLAS / GUIDE</a><a class="button" href="../">Open Atlas ↗</a></header>
+  <div class="shell">
+    <aside class="sidebar"><p class="eyebrow">Field guide / 2026</p><nav aria-label="Guide chapters"><a href="index.html"><span class="num">00</span>Overview</a>
+<a href="determinism.html" aria-current="page"><span class="num">01</span>Determinism</a>
+<a href="time.html"><span class="num">02</span>Time & history</a>
+<a href="universe.html"><span class="num">03</span>Universe structure</a>
+<a href="terrain.html"><span class="num">04</span>Terrain generation</a>
+<a href="water-atmosphere.html"><span class="num">05</span>Water & atmosphere</a>
+<a href="life.html"><span class="num">06</span>Biospheres & life</a>
+<a href="travel.html"><span class="num">07</span>Travel & controls</a>
+<a href="publishing.html"><span class="num">08</span>Architecture & publishing</a></nav><div class="secondary"><a href="../biosphere-lab.html">Biosphere lab ↗</a><a href="../creature-lab.html">Creature lab ↗</a><a href="../biome-lab.html">Biome lab ↗</a><a href="../../">IWSDK projects ↗</a></div></aside>
+    <main id="main">
+      <div class="eyebrow">01 / Identity & reproducibility</div>
+      <h1>The same place. The same time.</h1>
+      <p class="lead">A seed is the starting point. Reproducibility also needs the complete address, exact date and the versions of the algorithms that interpret them.</p>
+      <div class="meta"><span class="pill">Source review · 26 Sep 2026</span><span class="pill">Chapter 01 of 08</span></div>
+      <nav class="on-this-page" aria-label="On this page"><strong>In this chapter</strong><a href="#seed">Randomness with a stable address</a><a href="#address">The complete location</a><a href="#time">Exact dates, bounded animation phases</a><a href="#versions">Bookmarks carry the model</a><a href="#boundaries">Determinism has explicit boundaries</a></nav>
+      <section id="seed"><h2>Randomness with a stable address</h2><p><code>catalog.ts</code> hashes text with a 64-bit FNV-1a hash and uses PCG32 streams for seeded choices. Generation keys are derived from an entity’s identity, so generating a neighbouring system does not consume a shared global random sequence and change the next planet.</p><p>The same inputs resolve the same catalogue records without storing every star or patch of ground. Human-readable names can repeat. Canonical identifiers distinguish objects even when names or local labels match.</p><div class="formula">seed → identity key → seeded choices → generated record</div><p>Determinism also applies to history: a lifecycle is created once from identity, then queried at a date. Directly seeking to that date and visiting it after other dates should produce the same state.</p></section>
+<section id="address"><h2>The complete location</h2><p><code>address.ts</code> defines cluster, group, galaxy, system and body addresses. A body identity extends its parent hierarchy with a body slot. A local surface position adds a body-fixed direction or offset; it does not become a new planet.</p><div class="table-wrap"><table><thead><tr><th>Layer</th><th>Representation</th></tr></thead><tbody><tr><td>Cluster</td><td>Signed BigInt cells, each 100 Mpc across.</td></tr><tr><td>Group</td><td>5 Mpc cells; each coordinate is a local offset from 0 to 19 within its cluster.</td></tr><tr><td>Galaxy</td><td>An ordinal within its addressed group.</td></tr><tr><td>System</td><td>Generation cell and system ordinal; sector coordinates are derived from that cell.</td></tr><tr><td>Body & local position</td><td>A planet, star or moon slot, plus an explicit coordinate frame and local offset.</td></tr></tbody></table></div><p>Euclidean division keeps negative cell coordinates consistent. The legacy root spelling, such as <code>G001/C2128,0,1/0</code>, remains parseable. A local <code>G001</code> alone is not globally unique across generated groups.</p><p>The address model extends beyond the root group. The current interactive scene still navigates the root 32-galaxy catalogue; broader address support does not yet provide a UI for travelling through all generated groups.</p></section>
+<section id="time"><h2>Exact dates, bounded animation phases</h2><p>The clock stores signed BigInt nanoseconds since the Big Bang. The navigable baseline interval is closed at both ends: 0 through 10<sup>100</sup> years. Dates serialize as decimal strings, avoiding floating-point loss in saves and URLs.</p><p>Orbits, spin and animal animation reduce time to a bounded remainder before converting to floating-point phases. This allows a date far beyond ordinary JavaScript numerical precision to retain useful local motion. The timeline’s slider is a navigation convenience; exact decimal entry and serialized dates have a different precision contract.</p></section>
+<section id="versions"><h2>Bookmarks carry the model</h2><p><code>time-nav.ts</code> writes <code>date</code>, <code>wv</code>, <code>mv</code> and <code>bv</code>: the date, world-version bundle, combined model identity and client build identity. The bundle includes time, space, cosmology, catalogue, history, surface, terrain, biosphere and galaxy history.</p><p>Legacy dates without the current time convention are interpreted relative to the catalogue epoch. New bookmarks use absolute time. Compatibility messages identify older or unrecognized models, because an algorithm change can alter the world behind an otherwise valid address.</p><div class="callout"><p><strong>A version warning is not an old-engine replay.</strong> The current application reports compatibility differences. It does not ship every historical generator or automatically reproduce an older build’s scenery.</p></div></section>
+<section id="boundaries"><h2>Determinism has explicit boundaries</h2><p><code>det-math.ts</code> supplies fixed arithmetic approximations for decisions that affect identity, thresholds or discrete generation. This avoids depending on small browser differences in transcendental math. Ordinary continuous animation can still use floating-point evaluation with tolerances.</p><p>Canonical hydrology is generated from a fixed candidate set. Selecting a river changes which region receives rich visuals; it must not create a new river or alter physical existence. Local animal anchors and dated poses likewise resolve without replaying previous frames.</p><p>The repository includes reference-vector, visit-order, direct-seek, existence-gating and compatibility tests. Its golden harness compares Node, Chromium, Firefox and WebKit. Those are verification tools, not a promise that every untested change or every GPU renders identical pixels. Level of detail, scheduling, shaders and hardware can change appearance while catalogue identity remains stable.</p></section>
+      <section class="sources" id="sources"><h2>Implementation records</h2><p>Source filenames in the chapter refer to the Atlas repository. These published records provide supporting context and design history.</p><ul><li><a href="../docs/time-and-coordinates-contract.md">Time, coordinates and determinism contract</a></li><li><a href="../docs/deterministic-temporal-universe-design-2026-09-23.md">Temporal universe design</a></li></ul></section>
+      <nav class="chapter-nav" aria-label="Adjacent chapters"><a href="index.html">← Overview</a><a href="time.html">Time & history →</a></nav>
+      <footer class="page-footer">Universe Atlas · Procedural worlds, explicit model limits. Guide reviewed against local source on 26 September 2026.</footer>
+    </main>
+  </div>
+  
+</body>
+</html>
+

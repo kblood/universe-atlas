@@ -29,7 +29,9 @@ try {
   assert.ok(altitude(low.travel)<101000&&altitude(low.travel)>29000);
   assert.equal(low.travel.sceneId,far.travel.sceneId);
   assert.deepEqual(low.travel.bodies.map(b=>b.objectId),far.travel.bodies.map(b=>b.objectId));
-  assert.ok(low.terrain.tiles.resident<=256&&low.terrain.tiles.pending<=2);
+  // See the pending-cap note below: up to 4 in-flight requests on a real
+  // GPU's 2-worker pool, still 2 under software rendering.
+  assert.ok(low.terrain.tiles.resident<=256&&low.terrain.tiles.pending<=4);
   assert.equal(low.terrain.tiles.failures,0);
   await page.screenshot({path:out+'/02-low-orbit.png'});
   await page.locator('#hold-orbit').click();
@@ -52,7 +54,11 @@ try {
   const radii=track.map(t=>t.r);
   assert.ok(Math.max(...radii)-Math.min(...radii)<1,'assisted altitude stable to one metre');
   for(let i=1;i<track.length;i++)assert.ok(Math.abs(track[i].heading.reduce((s,v,j)=>s+v*track[i-1].heading[j],0))>.995,'no camera flips');
-  assert.ok(track.every(t=>t.resident<=256&&t.pending<=2&&t.visible>0));
+  // Pending cap is now workers.length*2 (planet-renderer.ts) rather than a
+  // flat 2: up to 4 in-flight requests on a real GPU (2 tile workers), still
+  // 2 under software rendering where the worker pool stays at 1. Either way
+  // it must stay bounded, not grow unboundedly.
+  assert.ok(track.every(t=>t.resident<=256&&t.pending<=4&&t.visible>0));
   await page.screenshot({path:out+'/03-polar-orbit.png'});
   await page.keyboard.press('w');
   assert.equal((await read()).travel.orbitAssist,null,'movement releases orbit');

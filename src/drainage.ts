@@ -1,8 +1,20 @@
 import {hash64,type Body,type V3} from './catalog.ts';
 import {terrainSampler,TERRAIN_VERSION} from './terrain.ts';
 import {cubeDirection} from './planet-tiles.ts';
+import {acosDet,atan2Det,hypotDet} from './det-math.ts';
 
-export const DRAINAGE_VERSION='drainage-1';
+export const DRAINAGE_VERSION='drainage-2';
+/** Of the 12 major catchments ranked below (area desc, then outlet index asc
+ * — both pure functions of seed + body address, never of request time), the
+ * largest RIVER_CANDIDATE_COUNT canonically "have a river": requesting any of
+ * their addresses always produces the same physical region regardless of
+ * when or in what order it is asked for (see river-worker.ts, which uses
+ * this to bound automatic destination selection — never basin existence). A
+ * user can still explicitly address any of the 12 drainage catchments from
+ * the drainage browser or a direct ?river=<id> link; this constant only
+ * bounds the "Find rivers" auto-pick pool. Chosen prototype budget, not a
+ * claim that a real coastline has exactly 8 rivers. */
+export const RIVER_CANDIDATE_COUNT=8;
 export const DRAINAGE_GRID=64;
 export type DrainageSite={direction:V3;elevationM:number};
 export type Catchment={id:string;name:string;outlet:number;head:number;areaKm2:number;lengthKm:number;depressionKm2:number;headwater:DrainageSite;mouth:DrainageSite};
@@ -28,7 +40,10 @@ export function sphereGrid(n:number):SphereGrid{
     triangles.push(a,b,c);
     const p=dirs.slice(a*3,a*3+3) as V3,q=dirs.slice(b*3,b*3+3) as V3,r=dirs.slice(c*3,c*3+3) as V3;
     const determinant=p[0]*(q[1]*r[2]-q[2]*r[1])+p[1]*(q[2]*r[0]-q[0]*r[2])+p[2]*(q[0]*r[1]-q[1]*r[0]);
-    const area=2*Math.atan2(Math.abs(determinant),1+dot(p,q)+dot(q,r)+dot(r,p));
+    // Spherical-triangle area feeds catchment area totals, which rank the
+    // canonical top-K catchments — a branch-affecting decision, so this uses
+    // the deterministic atan2 rather than native Math.atan2.
+    const area=2*atan2Det(Math.abs(determinant),1+dot(p,q)+dot(q,r)+dot(r,p));
     for(const i of [a,b,c])areas[i]+=area/3;
   };
   for(let face=0;face<6;face++)for(let y=0;y<n;y++)for(let x=0;x<n;x++){
@@ -72,7 +87,10 @@ export function routeDrainage(grid:SphereGrid,height:Float64Array,wet:Uint8Array
     let best=receiver[i],slope=0;
     for(let k=grid.offsets[i];k<grid.offsets[i+1];k++){
       const j=grid.neighbours[k];if(rank[j]>=rank[i])continue;
-      const chord=Math.hypot(...[0,1,2].map(c=>grid.directions[i*3+c]-grid.directions[j*3+c]));
+      // Chord length feeds the steepest-descent slope comparison just below —
+      // a branch-affecting flow-routing decision — so it uses the
+      // deterministic hypot rather than native Math.hypot.
+      const chord=hypotDet(...[0,1,2].map(c=>grid.directions[i*3+c]-grid.directions[j*3+c]));
       const s=(filled[i]-filled[j])/chord;
       if(s>slope||(s===slope&&s>0&&j<best)){slope=s;best=j;}
     }
@@ -99,7 +117,7 @@ export function buildDrainage(body:Body,n=DRAINAGE_GRID){
   const site=(i:number):DrainageSite=>({direction:direction(grid.directions,i),elevationM:height[i]});
   const catchments:Catchment[]=top.map(([mouth,t])=>{
     let head=mouth,length=0;
-    while(upstream[head]>=0){const j=upstream[head];length+=Math.acos(Math.max(-1,Math.min(1,dot(direction(grid.directions,head),direction(grid.directions,j)))))*body.radiusM;head=j;}
+    while(upstream[head]>=0){const j=upstream[head];length+=acosDet(dot(direction(grid.directions,head),direction(grid.directions,j)))*body.radiusM;head=j;}
     // Refine an outlet onto the existing dry coastal side, without changing its
     // coarse graph ownership. Keep a little inland clearance for landing.
     let mouthSite=site(mouth);const target=flow.receiver[mouth];

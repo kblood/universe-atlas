@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#080e17">
+  <meta name="description" content="The galaxy map, nearby star field, planetary system and focused world are different views of related catalogue records. Zooming and travelling should preserve the identity of the object you selected.">
+  <title>Universe structure · Universe Atlas Guide</title>
+  <link rel="stylesheet" href="./theme.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar"><a class="brand" href="index.html"><span aria-hidden="true">✧</span> UNIVERSE ATLAS / GUIDE</a><a class="button" href="../">Open Atlas ↗</a></header>
+  <div class="shell">
+    <aside class="sidebar"><p class="eyebrow">Field guide / 2026</p><nav aria-label="Guide chapters"><a href="index.html"><span class="num">00</span>Overview</a>
+<a href="determinism.html"><span class="num">01</span>Determinism</a>
+<a href="time.html"><span class="num">02</span>Time & history</a>
+<a href="universe.html" aria-current="page"><span class="num">03</span>Universe structure</a>
+<a href="terrain.html"><span class="num">04</span>Terrain generation</a>
+<a href="water-atmosphere.html"><span class="num">05</span>Water & atmosphere</a>
+<a href="life.html"><span class="num">06</span>Biospheres & life</a>
+<a href="travel.html"><span class="num">07</span>Travel & controls</a>
+<a href="publishing.html"><span class="num">08</span>Architecture & publishing</a></nav><div class="secondary"><a href="../biosphere-lab.html">Biosphere lab ↗</a><a href="../creature-lab.html">Creature lab ↗</a><a href="../biome-lab.html">Biome lab ↗</a><a href="../../">IWSDK projects ↗</a></div></aside>
+    <main id="main">
+      <div class="eyebrow">03 / Catalogue & coordinates</div>
+      <h1>Space with a persistent identity.</h1>
+      <p class="lead">The galaxy map, nearby star field, planetary system and focused world are different views of related catalogue records. Zooming and travelling should preserve the identity of the object you selected.</p>
+      <div class="meta"><span class="pill">Source review · 26 Sep 2026</span><span class="pill">Chapter 03 of 08</span></div>
+      <nav class="on-this-page" aria-label="On this page"><strong>In this chapter</strong><a href="#hierarchy">A hierarchy of places</a><a href="#stars">Map stars are destinations</a><a href="#orbits">Physical systems and readable views</a><a href="#coordinates">Several coordinate frames, one location</a></nav>
+      <section id="hierarchy"><h2>A hierarchy of places</h2><ol class="flow"><li><strong>Universe</strong><span>Root galaxy catalogue and dated cosmic background.</span></li><li><strong>Galaxy</strong><span>Mapped systems, streamed neighbours and historical populations.</span></li><li><strong>System</strong><span>Stars, planets, moons, physical orbital positions and navigation beacons.</span></li><li><strong>Body</strong><span>Orbit, surface tiles, local contact, habitats and ground detail.</span></li></ol><p><code>catalog.ts</code> generates 32 galaxies in the root catalogue. It also exposes group and cluster generation queries; the visible travel scene is currently restricted to that root catalogue. Generated group queries use full addresses to avoid collisions between repeated local galaxy labels.</p><p>Galaxy density and spiral structure guide system distribution. A 32-light-year sector contains an 8 × 8 × 8 grid of generation cells. System identities derive from these cells and their local ordinal, allowing direct reconstruction without generating the whole galaxy.</p></section>
+<section id="stars"><h2>Map stars are destinations</h2><p><code>star-map.ts</code> builds the selectable map from catalogue systems. <code>galaxy-space.ts</code> keeps that larger map in place while nearby sectors stream around the observer. Workers prepare bounded chunks; a cache holds nearby data and discards distant work.</p><p>The map and detailed local field share identity. A displayed point can therefore resolve to the same system when approached. Origin rebasing keeps local positions numerically manageable as the observer moves.</p><p>Historical and future cohort points are dated separately from reference stars. Surviving population identities can appear in a successor galaxy after a merger. Their close visits remain population illustrations, while reference systems supply resolved planets and moons.</p></section>
+<section id="orbits"><h2>Physical systems and readable views</h2><p>Generated records include body type, radius, mass, temperature estimate, water inventory, ring flag and orbital parameters. Stars, terrestrial worlds, gas giants, ice and volcanic worlds use different surface or appearance paths.</p><p><code>orbitPosition</code> evaluates orbital elements at the selected time. <code>bodyPosition</code> composes the parent’s position with a moon’s relative orbit. Spin, axial tilt and the sun direction support dated day/night presentation.</p><p>The system layout has physical and spaced overview presentations. Tiny bodies receive readable selection markers, and unresolved body beacons are batched. Marker size is a navigation aid and does not imply a planet’s physical radius changed. Focused planet views retain resident system identities and moons.</p><div class="callout"><p><strong>Orbital mechanics are simplified.</strong> The model provides seeded orbital relationships and dated positions. It does not integrate a complete many-body system, long-term chaotic stability, collisions or every orbital consequence of stellar evolution.</p></div></section>
+<section id="coordinates"><h2>Several coordinate frames, one location</h2><div class="table-wrap"><table><thead><tr><th>Frame</th><th>Purpose</th></tr></thead><tbody><tr><td>Galaxy comoving</td><td>Cosmological positions scale with expansion; very late proper distances are evaluated in log space.</td></tr><tr><td>System barycentric</td><td>Local orbital geometry and travel use system-relative positions.</td></tr><tr><td>Body fixed</td><td>Terrain direction, local surface offsets and landmarks remain attached to the rotating body.</td></tr><tr><td>Render coordinates</td><td>Scaled and rebased positions preserve useful numerical precision in a finite GPU scene.</td></tr></tbody></table></div><p>Physical distances span Mpc, light years, AU and metres. <code>travel.ts</code>, <code>system-layout.ts</code> and <code>view-transition.ts</code> translate navigation across those scales. The global address hierarchy uses BigInt cluster cells; system generation cells still have safe-integer range constraints.</p><p>In-system distant-star context is largely directional sky geometry, where AU-scale movement produces negligible visible parallax for most stars. This presentation is distinct from flying between streamed stars within a galaxy.</p></section>
+      <section class="sources" id="sources"><h2>Implementation records</h2><p>Source filenames in the chapter refer to the Atlas repository. These published records provide supporting context and design history.</p><ul><li><a href="../README.md">Current catalogue, flight and scale overview</a></li><li><a href="../docs/planetary-orbit-implementation.md">Planetary orbit implementation</a></li><li><a href="../docs/time-and-coordinates-contract.md">Address hierarchy and coordinate frames</a></li></ul></section>
+      <nav class="chapter-nav" aria-label="Adjacent chapters"><a href="time.html">← Time & history</a><a href="terrain.html">Terrain generation →</a></nav>
+      <footer class="page-footer">Universe Atlas · Procedural worlds, explicit model limits. Guide reviewed against local source on 26 September 2026.</footer>
+    </main>
+  </div>
+  
+</body>
+</html>
+

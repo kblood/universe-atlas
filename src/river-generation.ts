@@ -3,6 +3,7 @@ import type {Catchment} from './drainage.ts';
 import {baseTerrainSampler} from './terrain.ts';
 import {RIVER_VERSION,type RiverChannel,type RiverLake,type RiverPoint,type RiverRegion,type RiverSite} from './river-types.ts';
 import {sampleLegacyRiverRegion as sampleRiverRegion} from './river-sample.ts';
+import {atan2Det} from './det-math.ts';
 
 const dot=(a:V3,b:V3)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
 const cross=(a:V3,b:V3):V3=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
@@ -41,7 +42,11 @@ export function buildRiverRegion(body:Body,catchment:Catchment):RiverRegion {
   for(let iy=0;iy<n;iy++)for(let ix=0;ix<n;ix++){
     const x=((ix/(n-1))*2-1)*max,z=((iy/(n-1))*2-1)*max;
     const reach=Math.hypot(x,z);if(reach<14000||reach>max||z<2000)continue;
-    const a=Math.atan2(x,z), h=height(x,z), top=Math.min(h-9,reach*.0065);if(top<55)continue;
+    // This candidate angle feeds the regional-search sort/tiebreak below
+    // (candidates.sort(...a.a-b.a)), which picks `best` and so the entire
+    // route's geometry: a branch-affecting decision, hence the deterministic
+    // atan2 rather than native Math.atan2.
+    const a=atan2Det(x,z), h=height(x,z), top=Math.min(h-9,reach*.0065);if(top<55)continue;
     let margin=Infinity;
     for(let k=0;k<=24;k++){const t=k/24, px=Math.sin(a)*reach*t+Math.sin(a*3)*850*Math.sin(Math.PI*t),pz=Math.cos(a)*reach*t; margin=Math.min(margin,height(px,pz)-top*t);}
     if(margin>=12)candidates.push({a,reach,score:h+margin*2-reach*.002});

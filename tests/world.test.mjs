@@ -36,7 +36,13 @@ test('stellar fixture histories are order-independent with distinct remnant line
   const sun={...sys.stars[0],massKg:1.98847e30},massive={...sun,id:'massive',seed:'massive',massKg:30*1.98847e30};
   const a=stellarHistory(sun),b=stellarHistory(massive);
   assert.equal(a.outcome,'white-dwarf');assert.equal(b.outcome,'black-hole');
-  assert.ok(BigInt(a.formationNs)<0n&&BigInt(a.giantNs)>0n);
+  // TIME_VERSION bumped atlas-time-1 -> atlas-time-2 and HISTORY_VERSION bumped
+  // atlas-history-fixtures-1 -> atlas-history-2 (docs/time-and-coordinates-contract.md
+  // §6.2, §6.3): the clock origin moved from the catalogue epoch to the Big
+  // Bang, so formationNs is now an absolute, always-positive instant
+  // (billions of years after t=0n) instead of a negative catalogue-relative
+  // offset. giantNs/remnantNs stay ordered strictly after formation.
+  assert.ok(BigInt(a.formationNs)>0n&&BigInt(a.giantNs)>BigInt(a.formationNs));
   assert.ok(BigInt(b.remnantNs)>BigInt(b.giantNs));
   stellarHistory(massive);assert.deepEqual(stellarHistory(sun),a);
   assert.notEqual(b.id,b.remnantId);

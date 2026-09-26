@@ -2,6 +2,10 @@ import { chromium, firefox } from "playwright";
 import {browserArgs} from './browser-options.mjs';
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
+import { starLifecycle } from "../src/stellar-evolution.ts";
+import { galaxies } from "../src/catalog.ts";
+import { galaxyLifecycle, galaxyStateAt } from "../src/galaxy-history.ts";
+import { CATALOGUE_EPOCH_NS } from "../src/world-time.ts";
 const base = process.env.ATLAS_URL || "http://127.0.0.1:5186/";
 const engine = process.env.ATLAS_ENGINE === "firefox" ? firefox : chromium;
 const browser = await engine.launch({
@@ -50,7 +54,14 @@ try {
   await page.goto(base + "?seed=LETHRA-001", { waitUntil: "networkidle" });
   await waitLevel("universe");
   assert.equal(await page.locator("canvas").count(), 1);
-  assert.equal(await page.locator("[data-select]").count(), 32);
+  // The root catalogue has 32 identities, but merged galaxies are no longer
+  // selectable at the reference date. Assert the exact dated identity set.
+  const visibleGalaxies = galaxies('LETHRA-001').filter((_, galaxyOrdinal) =>
+    galaxyStateAt(galaxyLifecycle('LETHRA-001', {
+      clusterCell: [0n, 0n, 0n], groupCell: [0n, 0n, 0n], galaxyOrdinal,
+    }), CATALOGUE_EPOCH_NS).stage === 'active').map(g => g.id);
+  assert.deepEqual(await page.locator('[data-select]').evaluateAll(elements =>
+    elements.map(el => el.dataset.select)), visibleGalaxies);
   await shot("01-universe");
   await page.locator('[data-select="G001"]').click();
   await page.locator("#explore").click();
@@ -168,6 +179,53 @@ try {
     await page.locator("[data-select]").count(),
     sys.stars.length + sys.planets.length + sys.moons.length,
   );
+  // Stellar visual evolution (proving test): starStateAt's radius/temperature/
+  // luminosity used to be computed every frame and then discarded -- every
+  // caller read only `.stage`. Seek the resident system's own primary star to
+  // two real points on its own lifecycle (main sequence, then its remnant)
+  // and assert the star's rendered scale, colour AND the scene light all
+  // genuinely differ -- this must fail on the pre-fix app (nothing but
+  // `.stage`-driven visibility/rotation would differ) and pass after it.
+  // `starLifecycle` is imported directly from the app's own source (Node's
+  // native TS type-stripping handles the `.ts` import exactly like every
+  // `tests/*.test.mjs` file already does) so the seek targets are the EXACT
+  // boundaries the app itself computes -- never re-derived or guessed at.
+  {
+    const originalEpoch = await page.evaluate(() => window.__atlas.date.offsetNs);
+    const starSeed = await page.evaluate(() => window.__atlas.seed);
+    const star = sys.stars[0];
+    const starLc = starLifecycle(starSeed, undefined, star);
+    const mainSequenceT = (starLc.formationNs + 1n).toString();
+    const remnantT = (starLc.remnantNs + 1n).toString();
+    await page.evaluate((t) => window.__atlas.seek(t), mainSequenceT);
+    await page.waitForTimeout(200);
+    const mainSequenceVisual = await page.evaluate(() => window.__atlas.starVisual);
+    await page.evaluate((t) => window.__atlas.seek(t), remnantT);
+    await page.waitForTimeout(200);
+    const remnantVisual = await page.evaluate(() => window.__atlas.starVisual);
+    await page.evaluate((t) => window.__atlas.seek(t), originalEpoch);
+    await page.waitForTimeout(200);
+    assert.ok(mainSequenceVisual, "starVisual must be available for the resident system's primary star");
+    assert.ok(remnantVisual, "starVisual must be available at the remnant epoch too");
+    assert.notEqual(
+      mainSequenceVisual.radiusScale,
+      remnantVisual.radiusScale,
+      `star radius must visually change across its own lifecycle (main-sequence ${mainSequenceVisual.radiusScale} vs remnant ${remnantVisual.radiusScale})`,
+    );
+    assert.notEqual(
+      mainSequenceVisual.colorHex,
+      remnantVisual.colorHex,
+      `star colour must visually change across its own lifecycle (main-sequence #${mainSequenceVisual.colorHex} vs remnant #${remnantVisual.colorHex})`,
+    );
+    assert.notEqual(
+      mainSequenceVisual.lightIntensity,
+      remnantVisual.lightIntensity,
+      `system light intensity must change across the star's own lifecycle (main-sequence ${mainSequenceVisual.lightIntensity} vs remnant ${remnantVisual.lightIntensity})`,
+    );
+    console.log(
+      JSON.stringify({ starVisualCheck: { mainSequence: mainSequenceVisual, remnant: remnantVisual } }),
+    );
+  }
   const body = sys.planets.find((p) => p.water) || sys.planets[0];
   await page.locator(`[data-select="${body.id}"]`).click();
   await page.locator("#explore").click();

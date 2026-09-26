@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#080e17">
+  <meta name="description" content="Travel from the beginning of cosmic time to a distant future. Follow a star, descend to a planet, walk beside a river, and return to the same place and date in a universe reconstructed from its seed.">
+  <title>Overview · Universe Atlas Guide</title>
+  <link rel="stylesheet" href="./theme.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar"><a class="brand" href="index.html"><span aria-hidden="true">✧</span> UNIVERSE ATLAS / GUIDE</a><a class="button" href="../">Open Atlas ↗</a></header>
+  <div class="shell">
+    <aside class="sidebar"><p class="eyebrow">Field guide / 2026</p><nav aria-label="Guide chapters"><a href="index.html" aria-current="page"><span class="num">00</span>Overview</a>
+<a href="determinism.html"><span class="num">01</span>Determinism</a>
+<a href="time.html"><span class="num">02</span>Time & history</a>
+<a href="universe.html"><span class="num">03</span>Universe structure</a>
+<a href="terrain.html"><span class="num">04</span>Terrain generation</a>
+<a href="water-atmosphere.html"><span class="num">05</span>Water & atmosphere</a>
+<a href="life.html"><span class="num">06</span>Biospheres & life</a>
+<a href="travel.html"><span class="num">07</span>Travel & controls</a>
+<a href="publishing.html"><span class="num">08</span>Architecture & publishing</a></nav><div class="secondary"><a href="../biosphere-lab.html">Biosphere lab ↗</a><a href="../creature-lab.html">Creature lab ↗</a><a href="../biome-lab.html">Biome lab ↗</a><a href="../../">IWSDK projects ↗</a></div></aside>
+    <main id="main">
+      <div class="eyebrow">The Atlas field guide</div>
+      <h1>A universe you can revisit.</h1>
+      <p class="lead">Travel from the beginning of cosmic time to a distant future. Follow a star, descend to a planet, walk beside a river, and return to the same place and date in a universe reconstructed from its seed.</p>
+      <div class="meta"><span class="pill">Source review · 26 Sep 2026</span><span class="pill">Nine connected chapters</span></div>
+      <nav class="on-this-page" aria-label="On this page"><strong>In this chapter</strong><a href="#design">One address. One date. A world to explore.</a><a href="#chapters">Explore the systems</a><a href="#architecture">How the pieces connect</a><a href="#scope">What “beginning to end” means here</a></nav>
+      <section id="design"><h2>One address. One date. A world to explore.</h2><div class="atlas-art" role="img" aria-label="Illustration of a planetary horizon under distant stars"><span>SPACE × TIME × SEED</span></div><p>Universe Atlas is a browser-based procedural explorer built with TypeScript and Three.js. Its catalogue, life histories and terrain are generated locally. The browser requests files from the website; it computes the worlds itself.</p><div class="stats"><div><strong>32</strong><span>galaxies in the interactive root catalogue</span></div><div><strong>13.787 Gyr</strong><span>catalogue reference age</span></div><div><strong>10<sup>100</sup> yr</strong><span>baseline timeline ceiling</span></div></div><p>The central design is to query a world at a location and time. A visit does not need to simulate every intervening year. Stable identities connect the universe map, local star field, planetary system, surface and dated biosphere.</p><div class="formula">World state = query(seed, canonical address, absolute time, model versions)</div><p>Rendering adds camera position, visible detail and performance budgets. Those choices decide what is drawn; the deterministic query defines what exists.</p></section>
+<section id="chapters"><h2>Explore the systems</h2><div class="cards"><a class="card" href="determinism.html"><span class="eyebrow">01 / Identity</span><h3>How the same world comes back</h3><p>Seeds, hashes, addresses, versioned bookmarks and the boundary between reproducible data and rendered pixels.</p></a><a class="card" href="time.html"><span class="eyebrow">02 / Cosmic time</span><h3>From the first second to the far future</h3><p>An interactive era explorer, stellar lifetimes, planet formation and the meaning of “the end of time.”</p></a><a class="card" href="universe.html"><span class="eyebrow">03 / Spatial structure</span><h3>From galaxies to moons</h3><p>The address hierarchy, historical populations, physical orbits, reference catalogue and streaming star fields.</p></a><a class="card" href="terrain.html"><span class="eyebrow">04 / Planetary terrain</span><h3>From a globe to the ground</h3><p>Continuous height fields, cube-sphere tiles, refinement, collision, material layers and terrain limits.</p></a><a class="card" href="water-atmosphere.html"><span class="eyebrow">05 / Water & sky</span><h3>Rivers, oceans and horizons</h3><p>Canonical catchments, carved channels, dated oceans, waves, reflections, atmosphere, clouds and rings.</p></a><a class="card" href="life.html"><span class="eyebrow">06 / Living worlds</span><h3>Habitats, species and herds</h3><p>Procedural histories, suitability gates, local vegetation, deterministic animal poses and the three labs.</p></a><a class="card" href="travel.html"><span class="eyebrow">07 / Exploration</span><h3>Fly, land, walk and revisit</h3><p>Controls, automatic scale changes, surface destinations, time travel while grounded and VR inspection.</p></a><a class="card" href="publishing.html"><span class="eyebrow">08 / Website</span><h3>How Atlas reaches the web</h3><p>The source layout, Vite build, guide pages, static hosting, release scripts and validation boundaries.</p></a></div></section>
+<section id="architecture"><h2>How the pieces connect</h2><ol class="flow"><li><strong>01 · Catalogue</strong><span>Seed and address resolve a galaxy, star, planet or moon.</span></li><li><strong>02 · History</strong><span>The date resolves existence, lifecycle, spin and environment.</span></li><li><strong>03 · Surface & life</strong><span>The dated snapshot exposes terrain, ocean state and species.</span></li><li><strong>04 · Presentation</strong><span>Workers, tiles, materials, local detail and navigation show the result.</span></li></ol><p><code>main.ts</code> connects these systems and their UI. The mathematical modules own the generated records; <code>planet-renderer.ts</code> and <code>galaxy-space.ts</code> maintain the nearby scene. Ground movement uses Rapier physics against streamed contact geometry.</p></section>
+<section id="scope"><h2>What “beginning to end” means here</h2><div class="callout"><p><strong>The timeline is navigable; its scientific detail varies.</strong> The Big Bang is an explanatory origin. Early plasma and the CMB are illustrative fields. The far future is a labelled scenario, with 10<sup>100</sup> years as a navigation ceiling rather than a predicted finite end of the universe.</p></div><p>Galaxies, stars, planet stages, water availability and local life respond to time. Atlas does not calculate cosmic structure from a full gravity simulation, evolve a planet-wide food web, or solve geological history through erosion and plate tectonics. The following chapters identify implemented behavior and its current limits.</p><p>This guide describes the working source reviewed on <time datetime="2026-09-26">26 September 2026</time>. Older research documents linked below preserve design history; where they differ, the implementation described here takes priority. This is a source review, not a claim of fresh headset acceptance.</p></section>
+      <section class="sources" id="sources"><h2>Implementation records</h2><p>Source filenames in the chapter refer to the Atlas repository. These published records provide supporting context and design history.</p><ul><li><a href="../README.md">Project overview and controls</a></li><li><a href="../docs/temporal-universe-implementation-2026-09-23.md">Temporal universe implementation status</a></li></ul></section>
+      <nav class="chapter-nav" aria-label="Adjacent chapters"><a href="../">← Open Atlas</a><a href="determinism.html">Determinism →</a></nav>
+      <footer class="page-footer">Universe Atlas · Procedural worlds, explicit model limits. Guide reviewed against local source on 26 September 2026.</footer>
+    </main>
+  </div>
+  
+</body>
+</html>
+

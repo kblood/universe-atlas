@@ -17,6 +17,7 @@ export class GroundWalker {
   private controller:RAPIER.KinematicCharacterController;
   private terrain=new Map<string,RAPIER.Collider>();
   private sample:ReturnType<typeof surfaceQuery>;
+  private date:bigint;
   private accumulator=0;
   private vertical=0;
   private jumpHeld=false;
@@ -31,9 +32,10 @@ export class GroundWalker {
   rawColliderBytes=0;
   mismatchM:number|null=null;
   readonly body:Body;
-  constructor(body:Body,point:V3) {
+  constructor(body:Body,point:V3,sample:ReturnType<typeof surfaceQuery>=surfaceQuery(body),date:bigint=0n) {
     this.body=body;
-    this.sample=surfaceQuery(body);
+    this.sample=sample;
+    this.date=date;
     this.position=new THREE.Vector3(...point);this.origin=this.position.clone();
     this.world.timestep=STEP;
     this.capsule=this.world.createCollider(RAPIER.ColliderDesc.capsule(.6,.3));
@@ -88,7 +90,7 @@ export class GroundWalker {
       if(move.lengthSq()>0)move.normalize().multiplyScalar(keys.has('shift')?8:4);
       // Test the requested step before physics so ordinary movement cannot
       // enter an inland channel. `wet` includes rivers/lakes as well as ocean.
-      if(!this.sample(this.position.clone().addScaledVector(move,STEP).normalize().toArray() as V3).walkable)move.set(0,0,0);
+      if(!this.sample(this.position.clone().addScaledVector(move,STEP).normalize().toArray() as V3,this.date).walkable)move.set(0,0,0);
       const gravity=Math.max(.05,Math.min(40,G*this.body.massKg/this.position.lengthSq()));
       if(this.jumpRequested&&this.grounded){this.vertical=Math.sqrt(2*gravity*1.1);this.grounded=false;}this.jumpRequested=false;
       this.vertical-=gravity*STEP;
@@ -102,7 +104,7 @@ export class GroundWalker {
       // Validate the resolved endpoint too; otherwise a capsule can bypass the
       // shore test by being pushed across a wet boundary.
       const resolved=this.position.clone().add(actual);
-      if(!this.sample(resolved.normalize().toArray() as V3).walkable){
+      if(!this.sample(resolved.normalize().toArray() as V3,this.date).walkable){
         actual.copy(up).multiplyScalar(actual.dot(up));
       }
       this.position.add(actual);this.grounded=this.controller.computedGrounded();
@@ -115,7 +117,7 @@ export class GroundWalker {
     }
     const up=this.position.clone().normalize(),rayStart=this.position.clone().sub(this.origin).addScaledVector(up,3);
     const hit=this.world.castRay(new RAPIER.Ray(rayStart,up.clone().negate()),10,true,undefined,undefined,this.capsule);
-    if(hit){const meshHeight=this.position.length()+3-hit.timeOfImpact-this.body.radiusM;this.mismatchM=Math.abs(meshHeight-this.sample(up.toArray() as V3).visibleHeightM);}
+    if(hit){const meshHeight=this.position.length()+3-hit.timeOfImpact-this.body.radiusM;this.mismatchM=Math.abs(meshHeight-this.sample(up.toArray() as V3,this.date).visibleHeightM);}
   }
   eye():V3 {return this.position.clone().addScaledVector(this.position.clone().normalize(),EYE_OFFSET).toArray() as V3;}
   diagnostics(){return {active:true,grounded:this.grounded,waiting:this.waiting,position:this.position.toArray(),originM:this.origin.toArray(),speed:this.speed,steps:this.steps,travelledM:this.travelled,colliders:this.terrain.size,rawColliderBytes:this.rawColliderBytes,contactMismatchM:this.mismatchM};}

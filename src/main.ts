@@ -12,18 +12,44 @@ import {
 import { PlanetRenderer } from './planet-renderer.ts';
 import { NavigationMarkers } from './navigation-markers.ts';
 import { freeLook, orbitStep, atmosphereHeightM, alignPlanetaryDown } from './planet-flight.ts';
-import {parseDate,dateRecord,dateYears,yearsToDate,advanceDate} from './world-time.ts';
+import {parseDate,dateRecord,dateYears,yearsToDate,advanceDate,CATALOGUE_EPOCH_NS,UNIVERSE_END_NS,YEAR_NS,type Ns} from './world-time.ts';
 import {identityRecord,stellarHistory} from './world-history.ts';
-import {surfaceQuery} from './world-surface.ts';
+import {type surfaceQuery,biosphereStateAt,biosphereHistoryFor,clearBiosphereHistoryCache,planetAgeMyr,planetSnapshotAt,type BiosphereQueryStage} from './world-surface.ts';
+import type {LifeGateContext} from './planet-renderer.ts';
+import type {FloraKind,FloraStage} from './flora-field.ts';
+import type {CreatureArchetype} from './creature-model.ts';
+import {profileFromPhysicalProperties,type Species} from './biosphere-model.ts';
+import {galaxyLifecycle,galaxyStateAt,type GalaxyLifecycle} from './galaxy-history.ts';
+import {
+  starLifecycle,starStateAt,planetLifecycle,planetStateAt,spinStateFor,rotationAngleAt,
+  type StarLifecycle,type PlanetLifecycle,type SpinState,type ParentPlanetContext,
+} from './stellar-evolution.ts';
+import {parseAddress,type BodyAddress,type GalaxyAddress} from './address.ts';
+import {ERA_CHECKPOINTS,scaleFactorAt} from './cosmology.ts';
+import {cosmicBackgroundAt,RECOMBINATION_NS,FIRST_STARS_NS} from './cosmic-background.ts';
+import {primordialStars,primordialStarsAt,primordialEnrichmentProxyAt,type PrimordialStar} from './primordial-population.ts';
+import {illustrativeCmbGradient} from './cmb-field.ts';
+import {galaxyLineageAt,galaxyHostAt,historicalStarsForGalaxy} from './stellar-cohorts.ts';
+import {futureStageAt,galaxyLightProxyAt,ALTERNATE_FUTURE_SCENARIOS,type FutureStage,type AlternateFutureScenario} from './future-scenario.ts';
+import {observedGalaxyAt} from './observed-sky.ts';
+import {
+  CURRENT_VERSIONS,PLAYBACK_TIERS,type TierId,
+  advancePlayback,eraIndexAt,eraCheckpoint,nextEraCheckpoint,prevEraCheckpoint,eraTrackFraction,
+  fineRangeForEra,fineFractionToT,tToFineFraction,
+  resolveTimeFromUrl,writeTimeToUrl,groundedSeekFallback,type GroundedSeekContext,
+  compatibilityNoticeFromUrl,
+  safeScaleFactorAt,canonicalDigest,
+} from './time-nav.ts';
 import {type SurfaceSite,SURVEY_VERSION} from './surface-survey.ts';
 import {DrainageMap} from './drainage-map.ts';
-import {RiverPreparation} from './river-preparation.ts';
+import {ensureCanonicalHydrology,canonicalCatchmentsFor,canonicalRegionForCatchment,canonicalRegionsFor,rankAutoDestinations,resetHydrologyRegistry} from './hydrology-registry.ts';
 import {RIVER_VERSION,RIVER_SURFACE_VERSION,type RiverSite} from './river-types.ts';
 import {type GroundWalker} from './ground-walker.ts';
 import { GalaxySpace } from "./galaxy-space.ts";
 import { ViewBlend } from "./view-transition.ts";
 import { systemLayout, type SystemScale } from "./system-layout.ts";
 import { ELEVATION_RANGE_M, terrainSampler, type planetSurface } from "./terrain.ts";
+import {biomeClassifier} from './surface-biomes.ts';
 import {
   galaxies,
   overview,
@@ -53,6 +79,20 @@ const esc = (s: unknown) =>
   );
 const fmt = (v: number, d = 1) =>
   v.toLocaleString("en-US", { maximumFractionDigits: d });
+/** Human scale for cosmic dates; exact integer years remain in the edit field and URL. */
+function readableYears(t:Ns):string {
+  const years=t/YEAR_NS;
+  if(years<1_000n)return `${years} years`;
+  if(years>=1_000_000_000_000_000_000n){
+    const digits=years.toString();
+    return `${digits[0]}.${digits.slice(1,3).padEnd(2,'0')} × 10^${digits.length-1} years`;
+  }
+  const units:[bigint,string][]=[[1_000_000_000_000_000n,'Qa'],[1_000_000_000_000n,'Tr'],[1_000_000_000n,'B'],[1_000_000n,'M'],[1_000n,'T']];
+  const [unit,suffix]=units.find(([value])=>years>=value)!;
+  const tenths=(years*10n+unit/2n)/unit;
+  return `${tenths/10n}${tenths%10n===0n?'':'.'+String(tenths%10n)} ${suffix} years`;
+}
+const readableLifetime=(birth:Ns,death:Ns)=>readableYears(death-birth);
 const vec = (p: V3) => new THREE.Vector3(...p);
 const facts = (entries: [string, string][]) =>
   `<dl class="facts">${entries.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join("")}</dl>`;
@@ -80,6 +120,13 @@ let seed =
   readStored("atlas-seed") ||
   "LETHRA-001";
 seed = seed.slice(0, 80);
+let followedPlanetId:string|null=new URLSearchParams(location.search).get('follow');
+let viewMode:'state'|'observed'=new URLSearchParams(location.search).get('observe')==='1'?'observed':'state';
+type FutureScenarioId='constant-dark-energy'|AlternateFutureScenario['id'];
+const savedFate=new URLSearchParams(location.search).get('fate');
+let futureScenario:FutureScenarioId=savedFate==='big-crunch'||savedFate==='big-rip'?savedFate:'constant-dark-energy';
+function alternateFuture(){return futureScenario==='constant-dark-energy'?null:ALTERNATE_FUTURE_SCENARIOS[futureScenario];}
+if(futureScenario!=='constant-dark-energy')viewMode='state';
 let catalogue = galaxies(seed),
   state: State = { level: "universe" },
   selected: string | null = null,
@@ -90,13 +137,201 @@ let sectorData: {
   coords: V3;
   aggregated: boolean;
 } | null = null;
-let epoch = 0n,
+let epoch = CATALOGUE_EPOCH_NS,
   playing = false,
+  tier: TierId = 'orbital',
   loadId = 0,
   frameCount = 0,
   drawCount = 0,
   frameTimes: number[] = [];
-try {epoch=parseDate(new URLSearchParams(location.search).get('date'));}catch{}
+try {epoch=resolveTimeFromUrl(new URLSearchParams(location.search));}catch{}
+if(alternateFuture()&&epoch>alternateFuture()!.endDateNs)epoch=alternateFuture()!.endDateNs;
+// Per-galaxy/body lifecycle caches (contract §2.2/§2.3): built once per
+// catalogue/system and reused for existence gating every frame, instead of
+// recomputing a deterministic-but-not-free lifecycle draw every tick.
+// Cleared whenever the objects they key on are torn down (clearView for the
+// per-system map, seed regeneration for the per-galaxy map).
+const galaxyLifecycles = new Map<string, GalaxyLifecycle>();
+type BodyLifecycleEntry =
+  | { kind: 'star'; lc: StarLifecycle }
+  | { kind: 'planet' | 'moon'; lc: PlanetLifecycle; starLc: StarLifecycle };
+let bodyLifecycles = new Map<string, BodyLifecycleEntry>();
+// `spinStateFor` re-draws its RNG on every call; it's t-independent (pure
+// function of the body alone) so — unlike the existence-gating stage lookups
+// above, which are cheap and must re-run every frame as `epoch` changes —
+// caching it once per body avoids doing fresh hash64 draws every rendered
+// frame for every body in view (this fed a real per-frame cost spike before
+// caching was added here).
+const bodySpins = new Map<string, SpinState>();
+function spinFor(body: Body): SpinState {
+  let spin = bodySpins.get(body.id);
+  if (!spin) { spin = spinStateFor(body); bodySpins.set(body.id, spin); }
+  return spin;
+}
+function galaxyAddressFor(g: Galaxy): GalaxyAddress {
+  const parsed=parseAddress(g.id);
+  if(parsed&&'galaxyOrdinal' in parsed)return parsed;
+  const root=/^G(\d{3})$/.exec(g.id);
+  if(root)return {clusterCell:[0n,0n,0n],groupCell:[0n,0n,0n],galaxyOrdinal:Number(root[1])-1};
+  throw new Error(`Cannot resolve galaxy address: ${g.id}`);
+}
+function galaxyLifecycleFor(g: Galaxy): GalaxyLifecycle {
+  let lc = galaxyLifecycles.get(g.id);
+  if (!lc) { lc = galaxyLifecycle(seed, galaxyAddressFor(g)); galaxyLifecycles.set(g.id, lc); }
+  return lc;
+}
+function bodyAddressFor(sys: StarSystem, body: Body): BodyAddress {
+  const sysAddress = parseAddress(sys.ref.id) as BodyAddress;
+  return { ...sysAddress, slot: body.id.slice(sys.ref.id.length + 1) };
+}
+/** Builds (or returns the cached) lifecycle entry for a body in the resident
+ * system. Moons resolve their parent planet's lifecycle first (§2.3
+ * requires it — a moon can't be lifecycle-queried standalone) and inherit
+ * its formation/engulfment bounds through `ParentPlanetContext`. */
+function lifecycleFor(sys: StarSystem, body: Body): BodyLifecycleEntry {
+  const cached = bodyLifecycles.get(body.id);
+  if (cached) return cached;
+  if (body.kind === 'star') {
+    const entry: BodyLifecycleEntry = { kind: 'star', lc: starLifecycle(seed, bodyAddressFor(sys, body), body) };
+    bodyLifecycles.set(body.id, entry);
+    return entry;
+  }
+  const star = sys.stars[0];
+  const starEntry = lifecycleFor(sys, star);
+  const starLc = starEntry.kind === 'star' ? starEntry.lc : starLifecycle(seed, bodyAddressFor(sys, star), star);
+  let parentPlanet: ParentPlanetContext | undefined;
+  if (body.kind === 'moon') {
+    const parent = sys.planets.find((p) => p.id === body.parentId)!;
+    const parentEntry = lifecycleFor(sys, parent);
+    const parentLc = parentEntry.kind !== 'star' ? parentEntry.lc : planetLifecycle(seed, bodyAddressFor(sys, parent), parent, starLc);
+    parentPlanet = { starOrbitAu: (parent.orbit ? parent.orbit.a / AU : 0), lifecycle: parentLc };
+  }
+  const lc = planetLifecycle(seed, bodyAddressFor(sys, body), body, starLc, parentPlanet);
+  const entry: BodyLifecycleEntry = { kind: body.kind === 'moon' ? 'moon' : 'planet', lc, starLc };
+  bodyLifecycles.set(body.id, entry);
+  return entry;
+}
+// world-surface.ts's `BiosphereQueryResult.stage` has 8 values (including
+// 'accreting'/'molten'/'extinct', which have no flora/fauna analogue);
+// flora-field.ts's `FloraStage`/fauna-runtime.ts's `FaunaStage` both use the
+// same narrower 5-value set. The 3 extra values all collapse to 'unformed'
+// (zero density in both modules' own STAGE_DENSITY_MULTIPLIER tables), so
+// this is a safe, lossless-for-gating-purposes narrowing, not an approximation.
+const planetSnapshots=new WeakMap<Body,{seed:string;date:Ns;hydrology:Body['hydrology'];canonical:Body['canonicalRivers'];snapshot:ReturnType<typeof planetSnapshotAt>}>();
+function planetSnapshotFor(sys:StarSystem,body:Body,t:Ns){
+  const cached=planetSnapshots.get(body);
+  if(cached?.seed===seed&&cached.date===t&&cached.hydrology===body.hydrology&&cached.canonical===body.canonicalRivers)return cached.snapshot;
+  const entry=lifecycleFor(sys,body);
+  if(entry.kind==='star')throw new Error('A star has no planet snapshot');
+  const snapshot=planetSnapshotAt(seed,body.id,body,entry.lc,entry.starLc,t,CURRENT_VERSIONS,
+    body.kind==='moon'?sys.planets.find(p=>p.id===body.parentId):undefined);
+  planetSnapshots.set(body,{seed,date:t,hydrology:body.hydrology,canonical:body.canonicalRivers,snapshot});
+  return snapshot;
+}
+function toLifeStage(stage: BiosphereQueryStage): FloraStage {
+  switch (stage) {
+    case 'forming': case 'sterile': case 'microbial': case 'complex': return stage;
+    default: return 'unformed';
+  }
+}
+// flora-field.ts's own doc for `FloraBiosphereGate.availableKinds`: map
+// `species.kind` for tree/shrub/grass entries. biosphere-model.ts's
+// `SpeciesKind` has no 'flower' analogue (flowers are ambient ground cover
+// with no dedicated lineage/extinction tracking in this biosphere model), so
+// 'flower' is included whenever ANY plant species is alive; an empty result
+// (no living plant species at all) is passed through as an explicit `[]`
+// ("extinct vegetation"), never `undefined` ("allow all" — wrong once we
+// know for a fact there are zero plant species).
+function floraKindsFromSpecies(species: readonly Species[]): readonly FloraKind[] {
+  const kinds = new Set<FloraKind>();
+  for (const s of species) if (s.kind === 'tree' || s.kind === 'shrub' || s.kind === 'grass') kinds.add(s.kind);
+  if (kinds.size > 0) kinds.add('flower');
+  return [...kinds];
+}
+// fauna-runtime.ts's own doc for `FaunaBiosphereGate.availableArchetypes`:
+// map `creature.archetype` for species entries with `.creature` set (the
+// four procedural quadruped clades).
+function faunaArchetypesFromSpecies(species: readonly Species[]): readonly CreatureArchetype[] {
+  const archetypes = new Set<CreatureArchetype>();
+  for (const s of species) if (s.creature) archetypes.add(s.creature.archetype);
+  return [...archetypes];
+}
+// Single-slot memo: `updatePlanetTiles` calls this once per rendered frame,
+// and the (body, epoch) pair is unchanged far more often than not (paused
+// playback, orbit/flight with the clock stopped, repeated frames while
+// walking). `biosphereStateAt` composes a full species timeline lookup, so
+// this avoids repeating that work every single frame for no change in input.
+let lifeGateCache: { key: string; value: LifeGateContext | null } | null = null;
+/** The `LifeGateContext` `PlanetRenderer.update()`'s 9th argument needs,
+ * computed from world-surface.ts's SAFE `biosphereStateAt` query (never the
+ * raw `biosphereAt` — see this task's report for why) and `planetAgeMyr`
+ * (the only correct provenance for flora's clamped `tMyr` — never hand-rolled
+ * Ns-to-Myr arithmetic; see flora-field.ts's `toMyr` PROVENANCE RULE). `null`
+ * for stars, gas giants and any stage before 'molten'/'solid' — the exact
+ * same existence gate the `existenceDigest` diagnostic above already uses. */
+function lifeGateContext(sys: StarSystem, body: Body, t: Ns): LifeGateContext | null {
+  const key = seed + '/' + body.id + '/' + t.toString();
+  if (lifeGateCache && lifeGateCache.key === key) return lifeGateCache.value;
+  const entry = lifecycleFor(sys, body);
+  let value: LifeGateContext | null = null;
+  if (entry.kind !== 'star') {
+    const st = planetSnapshotFor(sys,body,t).state;
+    if (st.stage === 'molten' || st.stage === 'solid') {
+      const bio = planetSnapshotFor(sys,body,t).biosphere();
+      const stage = toLifeStage(bio.stage);
+      value = {
+        tMyr: planetAgeMyr(entry.lc, t),
+        floraStage: stage, floraAvailableKinds: floraKindsFromSpecies(bio.species),
+        faunaStage: stage, faunaAvailableArchetypes: faunaArchetypesFromSpecies(bio.species),
+        faunaSpecies: bio.species.filter((s): s is Species & { creature: NonNullable<Species['creature']> } => !!s.creature)
+          .map(s => ({ id: s.id, creature: s.creature })),
+      };
+    }
+  }
+  lifeGateCache = { key, value };
+  return value;
+}
+/** The same dated sea level feeds the tile renderer, flight, landing, and walking. */
+const waterLevelCache=new WeakMap<Body,{date:bigint;state:ReturnType<typeof planetSnapshotAt>['ocean']}>();
+function oceanStateFor(body: Body, sys: StarSystem = state.sys!) {
+  const cached=waterLevelCache.get(body);
+  if(cached?.date===epoch)return cached.state;
+  const entry=lifecycleFor(sys,body);
+  const ocean=entry.kind==='star'
+    ? {globalOceanAvailable:false,waterLevelM:0,renderWaterLevelM:-1_000_000}
+    : planetSnapshotFor(sys,body,epoch).ocean;
+  waterLevelCache.set(body,{date:epoch,state:ocean});
+  return ocean;
+}
+function waterLevelFor(body: Body, sys: StarSystem = state.sys!): number {
+  return oceanStateFor(body,sys).renderWaterLevelM;
+}
+const snappedWaterLevelFor=(body:Body,sys:StarSystem=state.sys!)=>Math.round(waterLevelFor(body,sys)/25)*25;
+const nearestAtDate=(sys:StarSystem,p:V3)=>nearestBody(sys,p,epoch,body=>snappedWaterLevelFor(body,sys));
+function surfaceFor(body: Body, sys: StarSystem = state.sys!, t: Ns = epoch) {
+  if (body.kind === 'star') return (_direction: V3, _date: Ns = t) => null;
+  return (direction: V3, date: Ns = t) => planetSnapshotFor(sys, body, date).surface(direction);
+}
+function surfaceSample(body: Body, direction: V3, sys: StarSystem = state.sys!, t: Ns = epoch) {
+  return body.kind === 'star' ? null : planetSnapshotFor(sys, body, t).surface(direction);
+}
+/** §3.3 grounded-seek policy inputs for the body currently under the player's
+ * feet (or hovered above), at a candidate target time `t`. */
+function groundedSeekContextFor(galaxy: Galaxy, sys: StarSystem, body: Body, t: Ns): GroundedSeekContext {
+  const galaxyExists = galaxyStateAt(galaxyLifecycleFor(galaxy), t).stage === 'active';
+  const star = sys.stars[0];
+  const starLc = lifecycleFor(sys, star).kind === 'star' ? (lifecycleFor(sys, star) as { kind: 'star'; lc: StarLifecycle }).lc : starLifecycle(seed, bodyAddressFor(sys, star), star);
+  const starExists = starStateAt(starLc, t).stage !== 'unformed';
+  const entry = lifecycleFor(sys, body);
+  let planetExists = true, planetWalkable = true, engulfed = false;
+  if (entry.kind !== 'star') {
+    const st = planetStateAt(entry.lc, entry.starLc, t);
+    engulfed = st.stage === 'engulfed';
+    planetExists = st.stage === 'molten' || st.stage === 'solid';
+    planetWalkable = st.stage === 'solid';
+  }
+  return { galaxyExists, starExists, planetExists, planetWalkable, engulfed };
+}
 let ready = false,
   frameMs = 16,
   lastStats = 0;
@@ -244,7 +479,11 @@ const genericBackdrop = new THREE.Points(
 );
 scene.add(genericBackdrop);
 scene.add(new THREE.AmbientLight("#91b3cc", 0.22));
-const light = new THREE.DirectionalLight("#ffecd0", 3);
+// Shared with `positionSystem`'s self-normalising re-tint below -- keep a
+// single source of truth for the light's base (pre-lifecycle) colour so the
+// two spots can never drift out of sync.
+const LIGHT_BASE_COLOR = "#ffecd0";
+const light = new THREE.DirectionalLight(LIGHT_BASE_COLOR, 3);
 light.position.set(-12, 5, 10);
 scene.add(light);
 scene.add(light.target);
@@ -291,6 +530,7 @@ let detailedBody: { mesh: THREE.Mesh; body: Body } | null = null;
 let planetTiles: PlanetRenderer | null = null;
 let systemMarkers: NavigationMarkers | null = null;
 let galaxyGlyphs: {group: THREE.Group; visual: THREE.Group; pick: THREE.Mesh; radius: number}[] = [];
+const opticalStarPoints:{mesh:THREE.Mesh;point:THREE.Sprite;sourceColor:THREE.Color}[]=[];
 let flightAim: string | null = null;
 let walker:GroundWalker|null=null;
 let walkingModule:typeof import('./ground-walker.ts')|null=null;
@@ -339,36 +579,141 @@ let surfaceDetail=new URLSearchParams(location.search).get('detail')!=='0';
 let horizonAssist=new URLSearchParams(location.search).get('horizon')!=='0';
 let flightAlignment:({bodyId:string;altitudeM:number}&ReturnType<typeof alignPlanetaryDown>)|null=null;
 const surveys=new Map<string,SurfaceSite[]>(),surveyPending=new Set<string>();
-const surveyKey=(body:Body)=>body.seed+'/'+(body.hydrology?.id||'baseline');
+// A survey depends on terrainSampler's default, which now reads
+// body.canonicalRivers (see terrain.ts) rather than body.hydrology — key the
+// cache on that so a survey computed before the canonical registry resolved
+// is not served stale once it does.
+const surveyKey=(body:Body)=>body.seed+'/'+(body.canonicalRivers?'canonical':'baseline');
 let surveyOpen=false;
 let drainage:DrainageMap|null=null,drainageOpen=false;
-let riverPreparation:RiverPreparation|null=null;
+let riverSelectionToken=0;
 let riverState:{bodyId:string;parentId:string;status:'building'|'ready'|'error';error:string;buildMs:number}|null=null;
-function cancelRiverPreparation(){riverPreparation?.cancel();riverPreparation=null;riverState=null;}
-async function buildPhysicalRiver(parentId:string,restore=false):Promise<boolean>{
+// Set by boot() just before it navigates to a body that has a ?river=
+// deep-link address to restore (see focusBody's consumption of this and the
+// boot() call site below). focusBody performs the restore itself, awaited
+// in-line before it reports the view `ready`, for two reasons: (1) so the
+// proactive per-focus auto-pick never races the explicit restore's own
+// selectRiverDestination call over the shared riverSelectionToken (both used
+// to fire concurrent, mutually-invalidating job('surface',...) builds), and
+// (2) because `ready` is set by focusBody itself — if boot() instead awaited
+// its own separate selectRiverDestination call *after* awaiting navigate(),
+// `ready` (and so state.level==='body') would already be visible to
+// polling/deep-link observers before the river restore had even started.
+let pendingRiverRestore:string|null=null;
+// Kept as a no-op-preserving name: many unrelated navigation call sites
+// already call this defensively on leaving a view. There is no more
+// in-flight worker to cancel (selectRiverDestination only ever looks up an
+// already-built canonical region), so this now just invalidates any
+// in-flight selection via a generation token and clears transient UI state.
+function cancelRiverPreparation(){riverSelectionToken++;riverState=null;}
+function currentSunDirection(body:Body):V3{
+  return vec(bodyPosition(state.sys!.stars[0],state.sys!,epoch)).sub(vec(bodyPosition(body,state.sys!,epoch))).normalize().toArray() as V3;
+}
+/**
+ * "Find rivers"/direct catchment selection/?river= restore all funnel
+ * through here. This NEVER builds or decides what exists — existence is the
+ * canonical top-RIVER_CANDIDATE_COUNT set, built proactively by
+ * ensureCanonicalHydrology once this body becomes the focus/approach target
+ * (see focusBody) — it only looks up an already-built canonical region
+ * (awaiting the registry if that build is still in flight) and switches
+ * which one currently gets the rich water-mesh/vegetation/heightmap-texture
+ * detail render: 'auto' ranks the canonical, already-existing rivers by a
+ * genuinely date-dependent sunlit-mouth preference (rankAutoDestinations)
+ * and picks where to go; an explicit id (from the drainage panel or a
+ * ?river= link) must name one of the canonical basins — a non-canonical
+ * catchment id is rejected clearly rather than silently building a second,
+ * uncontrolled existence path outside the canonical set.
+ */
+async function selectRiverDestination(parentId:string,restore=false):Promise<boolean>{
   const body=state.body;if(!body||!surfaceMesh||body.kind!=='planet'||!body.water||body.type==='Gas giant')return false;
-  cancelRiverPreparation();
-  const sun=vec(bodyPosition(state.sys!.stars[0],state.sys!,epoch)).sub(vec(bodyPosition(body,state.sys!,epoch))).normalize().toArray() as V3;
-  const owner=new RiverPreparation(body,parentId,sun);riverPreparation=owner;
-  riverState={bodyId:body.id,parentId,status:'building',error:'',buildMs:0};panel();
-  announce('Preparing a physical river region. The current planet remains available.');
+  const token=++riverSelectionToken;riverState=null;
+  await ensureCanonicalHydrology(body);
+  if(token!==riverSelectionToken||state.body!==body)return false;
+  const catchments=canonicalCatchmentsFor(body.id);
+  const owners=parentId==='auto'?rankAutoDestinations(catchments,currentSunDirection(body)):catchments.filter(c=>c.id===parentId);
+  const region=owners.map(c=>canonicalRegionForCatchment(body.id,c.id)).find((r):r is NonNullable<typeof r>=>!!r);
+  if(!region){
+    riverState={bodyId:body.id,parentId,status:'error',error:parentId==='auto'?'No canonical river on this world could be reached.':'This river address is not a canonical basin on this body.',buildMs:0};
+    panel();announce('No river region is available there. Try again or choose another catchment.');return false;
+  }
+  // Already showing this exact canonical region (very often true: the
+  // proactive focus-time auto-select above already ran the same ranking) —
+  // skip the redundant texture regen/restartPlanetTiles. That rebuild would
+  // throw away the live PlanetRenderer's already-streamed water/vegetation
+  // instances for no positional change, which is wasted work at best and a
+  // visible pop/regression at worst.
+  if(body.hydrology?.id===region.id){
+    riverState={bodyId:body.id,parentId:region.parentCatchmentId,status:'ready',error:'',buildMs:0};panel();
+    if(!restore)inspectRiver();
+    return true;
+  }
+  riverState={bodyId:body.id,parentId:region.parentCatchmentId,status:'building',error:'',buildMs:0};panel();
   try{
-    const {region,buildMs}=await owner.result;
     const upgraded={...body,hydrology:region};
     const data=await job('surface',{body:upgraded,width:1024,segments:192});
-    if(riverPreparation!==owner||state.body!==body||!surfaceMesh)return false;
+    if(token!==riverSelectionToken||state.body!==body||!surfaceMesh)return false;
+    // This job is fire-and-forget from both focusBody's proactive auto-pick
+    // and (via that same path) boot()'s deep-link restore — neither of which
+    // is awaited by whoever is racing a ground landing/walk in parallel (see
+    // boot()'s own `void prepareLanding(saved)` for a `?walk=` URL, and
+    // prepareLanding()/landOnWorld()/takeoffWalk() for any ordinary in-app
+    // walk request). clearWalking() below is still unconditional and runs
+    // first: every other call site in this file pairs clearWalking() directly
+    // before restartPlanetTiles() for the same reason — a live GroundWalker's
+    // per-frame contactPatches closure reads whatever `planetTiles` currently
+    // is, and restartPlanetTiles() is about to dispose the resident
+    // PlanetRenderer (all its streamed/settled tiles) and build an empty one
+    // from scratch, at a *different* contact tile granularity once
+    // body.hydrology is set (contactPatches's `hasHydrology` switch to
+    // fineContactLevel, see planet-renderer.ts). Leaving a walker/landing
+    // wired to the doomed instance across that swap is untested and,
+    // unlike every other clearWalking()+restartPlanetTiles() pairing in this
+    // file, would be happening asynchronously behind the user's back rather
+    // than as the direct result of a deliberate action of theirs (toggling
+    // flight, changing relief, focusing a different body) — so instead of
+    // guarding clearWalking() (which would skip that teardown) or leaving the
+    // request permanently discarded, capture the in-flight intent here and
+    // reissue it below once the new PlanetRenderer exists, through the same
+    // prepareLanding() path any other landing takes (which also re-arms
+    // setContactFocus and the memoized RAPIER/ground-walker module init that
+    // a bare state restore would miss).
+    const resumeWalk=walker?{point:walker.position.toArray() as V3,launch:false}
+      :landing?{point:landing.point,launch:!!landing.launch}:null;
     clearWalking();if(flight)toggleFlight();
     riverFlight=null;surfaceJourney=null;autopilot=null;orbitAssist=null;planetLook=null;playing=false;
-    body.hydrology=region;reliefScale=1;
-    replaceTerrain(surfaceMesh,body,data);surfaceInfo=data;detailedBody={mesh:surfaceMesh,body};
+    body.hydrology=region;
+    // Build the freshly-loaded river region's terrain mesh at whatever
+    // exaggeration the user currently has selected (reliefScale), rather
+    // than silently forcing reliefScale back to 1. `data.elevations` is
+    // always raw, unscaled physical height (see planetSurface in terrain.ts)
+    // — relief exaggeration is a purely client-side rendering multiplier
+    // applied here and in restartPlanetTiles' PlanetRenderer, so there is no
+    // physical-accuracy reason a river region must render unexaggerated.
+    // Forwarding the live reliefScale keeps this mesh consistent with the
+    // PlanetRenderer restartPlanetTiles() is about to build (which also
+    // reads the live reliefScale) instead of clobbering an explicit user
+    // choice made moments earlier (e.g. via the VR "Terrain relief" button)
+    // that this async job happened to race past.
+    replaceTerrain(surfaceMesh,body,data,reliefScale);surfaceInfo=data;detailedBody={mesh:surfaceMesh,body};
     restartPlanetTiles();if(drainage)drainage.enabled=false;
-    riverState={bodyId:body.id,parentId:region.parentCatchmentId,status:'ready',error:'',buildMs};riverPreparation=null;
+    riverState={bodyId:body.id,parentId:region.parentCatchmentId,status:'ready',error:'',buildMs:0};
+    // An explicit selection (restore=false: the drainage panel or a ?river=
+    // link) deliberately flies the camera to inspect that river via
+    // inspectRiver() below — that is itself a new, explicit override of any
+    // prior walk/landing, so it must win, not be fought by a resumed walk.
+    // Only the silent/background paths (the proactive per-focus auto-pick
+    // and a ?river= restore that already matched what was showing) resume
+    // the interrupted landing/walk instead.
     if(!restore)inspectRiver();
-    persist();panel();announce('Physical river region ready. Inspect it or fly to a named bank, then land.');return true;
+    else if(resumeWalk){
+      if(resumeWalk.launch){landing={point:resumeWalk.point,launch:true};planetTiles?.setContactFocus(resumeWalk.point);}
+      else void prepareLanding(resumeWalk.point);
+    }
+    persist();panel();announce('River region ready. Inspect it or fly to a named bank, then land.');return true;
   }catch(error){
-    if(riverPreparation!==owner)return false;
-    riverPreparation=null;riverState={bodyId:body.id,parentId,status:'error',error:String(error),buildMs:0};
-    panel();announce('River region could not be prepared. Retry or choose another catchment.');return false;
+    if(token!==riverSelectionToken)return false;
+    riverState={bodyId:body.id,parentId,status:'error',error:String(error),buildMs:0};
+    panel();announce('River region could not be shown. Retry or choose another catchment.');return false;
   }
 }
 function inspectRiver(){
@@ -378,7 +723,9 @@ function inspectRiver(){
   if(drainage)drainage.enabled=false;
   const d=vec(r.sites.find(s=>s.kind==='lake-shore')?.direction||r.origin);
   const centre=vec(bodyPosition(body,state.sys!,epoch));rebaseSystem(centre);
-  const elevation=surfaceQuery(body)(d.toArray() as V3).visibleHeightM;
+  const surface=surfaceSample(body,d.toArray() as V3);
+  if(!surface){announce('This world has no surface at this date.');return;}
+  const elevation=surface.visibleHeightM;
   const span=Math.max(r.boundsM[2]-r.boundsM[0],r.boundsM[3]-r.boundsM[1]);
   const target=d.clone().multiplyScalar((body.radiusM+elevation)*systemUnit);
   const end=d.clone().multiplyScalar((body.radiusM+elevation+Math.max(6000,span*.65))*systemUnit);
@@ -481,7 +828,7 @@ function clearView(retain = false) {
   clearDrainage();
   clearWalking();
   riverFlight=null;surfaceJourney = null; startCruiseAfterLook = false;
-  systemMarkers = null; galaxyGlyphs = []; flightAim = null;
+  systemMarkers = null; galaxyGlyphs = []; primordialGlyphs.length=0; opticalStarPoints.length=0; flightAim = null;
   planetTiles?.dispose(); planetTiles = null;
   orbitAssist = null; approachAltitude = null;
   planetLook = null;
@@ -532,6 +879,8 @@ function clearView(retain = false) {
   controls.minDistance = 0.7;
   controls.maxDistance = 160;
   animations = [];
+  bodyLifecycles = new Map();
+  bodySpins.clear();
   if (!retain) for (const l of labels) l.el.remove();
   labels = [];
   $("hover").hidden = true;
@@ -666,28 +1015,81 @@ function breadcrumbs() {
 }
 function persist() {
   const q = new URLSearchParams({ seed });
+  if(viewMode==='observed')q.set('observe','1');
+  if(futureScenario!=='constant-dark-energy')q.set('fate',futureScenario);
   if(!surfaceDetail)q.set('detail','0');
   if(!horizonAssist)q.set('horizon','0');
   if(state.body?.hydrology)q.set('river',state.body.hydrology.parentCatchmentId);
-  if(epoch!==0n)q.set('date',epoch.toString());
+  writeTimeToUrl(q,epoch);
   if(walker){q.set('walk',walker.position.toArray().join(','));q.set('heading',camera.quaternion.toArray().join(','));}
   if (state.galaxy) q.set("g", state.galaxy.id);
   if (state.coords) q.set("sector", state.coords.join(","));
   if (state.ref) q.set("system", state.ref.id);
   if (state.body) q.set("body", state.body.id);
+  if(followedPlanetId)q.set('follow',followedPlanetId);
+  if(firstStarFocus)q.set('firstStar',firstStarFocus);
+  if(selected&&space?.findPopulation(selected,epoch))q.set('cohort',selected);
   history.replaceState(null, "", "?" + q);
   saveStored("atlas-seed", seed);
 }
 function seekDate(next:bigint){
+  const alternate=alternateFuture();
+  if(alternate&&next>alternate.endDateNs){next=alternate.endDateNs;announce(`${alternate.name} reaches its illustrative timeline limit here.`);}
+  if(next<0n)next=0n;
   tween=null;
+  if(alternate&&state.level!=='universe'&&alternate.stateAt(next)!=='ordinary-expansion'){
+    clearWalking();autopilot=null;orbitAssist=null;playing=false;
+    epoch=next;void navigate('universe');updateDateUI();persist();
+    announce('Showing the alternate fate as a universe-scale illustration.');
+    return;
+  }
   const body=state.body,oldCenter=body&&state.sys?vec(bodyPosition(body,state.sys,epoch)):null;
   const relative=oldCenter?vec(localPose()).sub(oldCenter):null;
   const grounded=!!walker||!!landing;
+  const focusedEntry=body&&state.sys?lifecycleFor(state.sys,body):null;
+  const priorStage=focusedEntry&&focusedEntry.kind!=='star'?planetStateAt(focusedEntry.lc,focusedEntry.starLc,epoch).stage:null;
+  const nextStage=focusedEntry&&focusedEntry.kind!=='star'?planetStateAt(focusedEntry.lc,focusedEntry.starLc,next).stage:null;
+  // Before star birth or after engulfment there is no body to focus. During
+  // accretion and cooling the focused formation proxy remains inspectable.
+  if(state.level==='body'&&body&&state.sys&&state.galaxy){
+    const starStage=focusedEntry?.kind==='star'?starStateAt(focusedEntry.lc,next).stage:null;
+    if(nextStage==='unformed'||nextStage==='engulfed'||starStage==='unformed'){
+      clearWalking();autopilot=null;orbitAssist=null;playing=false;
+      epoch=next;
+      const galaxy=state.galaxy,ref=state.ref,sys=state.sys;
+      void navigate('system',{galaxy,ref,sys});
+      updateDateUI();persist();
+      announce('Showing this world’s formation from the system view.');
+      return;
+    }
+  }
+  // §3.3 grounded-seek policy: seeking while standing on a surface must never
+  // strand the camera over a body/star/galaxy that no longer exists at the
+  // target date. Decide the fallback scope BEFORE mutating any state.
+  if(grounded&&body&&state.sys&&state.galaxy){
+    const fallback=groundedSeekFallback(groundedSeekContextFor(state.galaxy,state.sys,body,next));
+    if(fallback.scope!=='body'){
+      clearWalking();autopilot=null;orbitAssist=null;planetLook=null;riverFlight=null;surfaceJourney=null;playing=false;
+      epoch=next;
+      const galaxy=state.galaxy,ref=state.ref,sys=state.sys;
+      if(fallback.scope==='universe')void navigate('universe');
+      else if(fallback.scope==='galaxy')void navigate('galaxy',{galaxy});
+      else void navigate('system',{galaxy,ref,sys});
+      updateDateUI();persist();
+      announce(fallback.announce);
+      return;
+    }
+  }
+  let groundedAnnounce='Date changed in observation hover. Land again when ready.';
+  if(grounded&&body&&state.sys&&state.galaxy)groundedAnnounce=groundedSeekFallback(groundedSeekContextFor(state.galaxy,state.sys,body,next)).announce;
   clearWalking();autopilot=null;orbitAssist=null;planetLook=null;riverFlight=null;surfaceJourney=null;playing=false;
   epoch=next;positionSystem();
+  if(state.level==='body'&&(nextStage==='accreting'||nextStage==='molten')){
+    planetTiles?.dispose();planetTiles=null;
+  }
   if(relative&&body&&state.sys&&!renderer.xr.isPresenting){
     const targetOffset=controls.target.clone().sub(camera.position);
-    if(grounded){const d=relative.clone().normalize();relative.setLength(body.radiusM+surfaceQuery(body)(d.toArray() as V3).visibleHeightM+160);}
+    if(grounded){const d=relative.clone().normalize(),surface=surfaceSample(body,d.toArray() as V3,state.sys,next);if(surface)relative.setLength(body.radiusM+surface.visibleHeightM+160);}
     const newCenter=vec(bodyPosition(body,state.sys,epoch)),shift=newCenter.clone().sub(oldCenter!);
     const position=relative.add(newCenter);
     rebaseSystem(position);camera.position.set(0,0,0);
@@ -695,11 +1097,56 @@ function seekDate(next:bigint){
     homePos.addScaledVector(shift,systemUnit);homeTarget.addScaledVector(shift,systemUnit);
   }
   updateDateUI();persist();panel();
-  announce(grounded?'Date changed in observation hover. Land again when ready.':'Orbital date updated across all views.');
+  if(state.level==='body'&&body&&nextStage==='solid'&&priorStage!=='solid')void focusBody(body,true);
+  if(state.level==='system'&&followedPlanetId){
+    const followed=followedPlanet();
+    if(followed){
+      selected=followed.id;
+      const entry=lifecycleFor(state.sys!,followed);
+      if(entry.kind!=='star'){
+        const stage=planetStateAt(entry.lc,entry.starLc,next).stage;
+        if(stage==='molten'||stage==='solid')void focusBody(followed);
+        else {panel();persist();}
+      }
+    }
+  }
+  announce(grounded?groundedAnnounce:'Orbital date updated across all views.');
 }
 function updateDateUI(){
-  $('date-label').textContent=epoch===0n?'reference date':dateYears(epoch)+' yr';
+  const idx=eraIndexAt(epoch),era=eraCheckpoint(idx);
+  $('date-label').textContent=epoch===CATALOGUE_EPOCH_NS?'catalogue reference ("now")':
+    epoch<YEAR_NS ? epoch===0n?'explanatory origin':
+      `${(Number(epoch)/1e9).toPrecision(4)} s after the hot Big Bang`:
+      readableYears(epoch)+' since the Big Bang';
   if(document.activeElement!==$('date-years'))($('date-years') as HTMLInputElement).value=dateYears(epoch);
+  const eraLabel=$('era-label');if(eraLabel){
+    const fate=alternateFuture();
+    eraLabel.textContent=fate&&fate.stateAt(epoch)!=='ordinary-expansion'?fate.name:era.label;
+  }
+  const expansion=$('expansion-readout');
+  if(expansion){
+    const alternate=alternateFuture();
+    const bg=cosmicBackgroundAt(epoch),a=safeScaleFactorAt(epoch);
+    expansion.textContent=alternate&&alternate.stateAt(epoch)!=='ordinary-expansion'
+      ? `${alternate.name}: ${alternate.stateAt(epoch).replaceAll('-',' ')}. Its expansion curve is illustrative, not the baseline ΛCDM model.`
+      : epoch===0n?'scale factor a(t) = 0 (the Big Bang)':
+      `scale factor a(t) ≈ ${a>=1e6||a<1e-3?a.toExponential(3):fmt(a,6)} (log₁₀ a ≈ ${(bg.lnScaleFactor/Math.LN10).toFixed(2)})`+
+      (bg.photonTemperatureK!==null&&epoch<RECOMBINATION_NS?` · photon background ≈ ${bg.photonTemperatureK.toExponential(2)} K`:'');
+  }
+  for(const btn of document.querySelectorAll<HTMLButtonElement>('#era-track button')){
+    btn.classList.toggle('active',btn.dataset.era===era.id);
+    const checkpoint=ERA_CHECKPOINTS.find(c=>c.id===btn.dataset.era);
+    btn.disabled=!!(checkpoint&&alternateFuture()&&checkpoint.tNs>alternateFuture()!.endDateNs);
+  }
+  const tierSelect=$('tier-select') as HTMLSelectElement|null;
+  if(tierSelect&&tierSelect.value!==tier)tierSelect.value=tier;
+  const fineSlider=$('fine-slider') as HTMLInputElement|null;
+  if(fineSlider&&document.activeElement!==fineSlider){
+    const range=fineRangeForEra(idx);
+    fineSlider.disabled=range.hi<=range.lo;
+    fineSlider.value=String(Math.round(tToFineFraction(idx,epoch)*1000));
+  }
+  if(playing&&state.level==='universe')panel();
 }
 function childAnchor(
   parentState: State,
@@ -762,7 +1209,47 @@ function depart(next: State, animate: boolean) {
   journey.phase = "approach";
   return new Promise<void>((resolve) => setTimeout(resolve, 660));
 }
+/** Map the outgoing flight scene into the incoming scene's physical frame.
+ * This keeps the approached galaxy/star at the same bearing during the fade. */
+function flightBlendTransform(previous:State,next:State,oldSpace:{origin:THREE.Vector3;scale:number}|null,
+  oldSystem:{origin:THREE.Vector3;unit:number}|null):THREE.Matrix4|null {
+  const translation=(v:THREE.Vector3)=>new THREE.Matrix4().makeTranslation(v.x,v.y,v.z);
+  const scaling=(s:number)=>new THREE.Matrix4().makeScale(s,s,s);
+  if(previous.level==='universe'&&next.level==='galaxy'&&next.galaxy&&space){
+    const g=next.galaxy;
+    const inverse=new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(...g.rotation)).invert();
+    return translation(space.origin.clone().multiplyScalar(-space.scale))
+      .multiply(scaling(space.scale*LY_PER_MPC/3)).multiply(inverse)
+      .multiply(translation(vec(g.position).multiplyScalar(-3)));
+  }
+  if((previous.level==='galaxy'||previous.level==='sector')&&next.level==='universe'&&previous.galaxy&&oldSpace){
+    const g=previous.galaxy;
+    const rotation=new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(...g.rotation));
+    return translation(vec(g.position).multiplyScalar(3)).multiply(rotation)
+      .multiply(scaling(3/(LY_PER_MPC*oldSpace.scale)))
+      .multiply(translation(oldSpace.origin.clone().multiplyScalar(oldSpace.scale)));
+  }
+  if((previous.level==='galaxy'||previous.level==='sector')&&next.level==='system'&&next.ref&&oldSpace){
+    const ratio=LY*systemUnit/oldSpace.scale;
+    const offset=oldSpace.origin.clone().sub(vec(next.ref.position)).multiplyScalar(LY)
+      .sub(systemOrigin).multiplyScalar(systemUnit);
+    return translation(offset).multiply(scaling(ratio));
+  }
+  if((previous.level==='system'||previous.level==='body')&&
+      (next.level==='galaxy'||next.level==='sector')&&previous.ref&&space&&oldSystem){
+    const ratio=space.scale/(LY*oldSystem.unit);
+    const offset=vec(previous.ref.position).sub(space.origin).add(oldSystem.origin.clone().divideScalar(LY))
+      .multiplyScalar(space.scale);
+    return translation(offset).multiply(scaling(ratio));
+  }
+  return null;
+}
 async function navigate(level: Level, options: Partial<State> = {}) {
+  const projectedFate=alternateFuture();
+  if(level!=='universe'&&projectedFate&&projectedFate.stateAt(epoch)!=='ordinary-expansion'){
+    announce('This alternate fate is represented at universe scale only.');
+    return;
+  }
   if (!crossing && level === "body") {
     const body = options.body || state.body;
     if (!body) return;
@@ -798,10 +1285,9 @@ async function navigate(level: Level, options: Partial<State> = {}) {
     (level === "body" && (!next.body || !next.sys))
   )
     return;
-  const animate =
-    !crossing &&
-    frameCount > 0 &&
+  const blend = frameCount > 0 && !renderer.xr.isPresenting &&
     !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const animate = !crossing && blend;
   ready = false;
   playing = false;
   controls.enabled = false;
@@ -868,6 +1354,8 @@ async function navigate(level: Level, options: Partial<State> = {}) {
     const oldCameraInverse = camera.matrixWorldInverse.clone(),
       oldRoot = root,
       oldLabels = labels.map((l) => l.el);
+    const oldSpace=space?{origin:space.origin.clone(),scale:space.scale}:null;
+    const oldSystem=residentSystem?{origin:systemOrigin.clone(),unit:systemUnit}:null;
     if (level === "universe") {
       state = { level };
       region = null;
@@ -886,9 +1374,10 @@ async function navigate(level: Level, options: Partial<State> = {}) {
         sys: next.sys,
       };
     } else state = next;
+    if(!state.sys||!state.sys.planets.some(p=>p.id===followedPlanetId))followedPlanetId=null;
     selected = null;
     playing = false;
-    clearView(animate);
+    clearView(blend);
     if (level === "universe") drawUniverse(data);
     if (level === "galaxy") drawGalaxy(data);
     if (level === "sector") drawSector(data);
@@ -929,8 +1418,10 @@ async function navigate(level: Level, options: Partial<State> = {}) {
     breadcrumbs();
     panel();
     persist();
-    if (animate) {
+    if (blend) {
       journey.phase = "blend";
+      const physicalBlend=transfer&&pose&&!renderer.xr.isPresenting
+        ? flightBlendTransform(previous,state,oldSpace,oldSystem):null;
       viewBlend = new ViewBlend(
         scene,
         camera,
@@ -941,6 +1432,7 @@ async function navigate(level: Level, options: Partial<State> = {}) {
         oldLabels,
         labels.map((l) => l.el),
         () => disposeView(oldRoot),
+        physicalBlend,
       );
     } else {
       ready = true;
@@ -972,6 +1464,136 @@ async function navigate(level: Level, options: Partial<State> = {}) {
     console.error(error);
   }
 }
+/** The main map is a simultaneous-date state view, not a past-light-cone sky.
+ * Its catalogue positions are comoving, so a formed galaxy stays addressable
+ * even when its light would be highly redshifted for a physical observer. */
+function galaxyVisibleAt(g: Galaxy, t: Ns): boolean {
+  return galaxyStateAt(galaxyLifecycleFor(g), t).stage === 'active';
+}
+type EarlySceneStage = 'origin'|'plasma'|'recombination'|'dark-ages'|'first-stars'|null;
+function earlySceneStageAt(t:Ns):EarlySceneStage {
+  if(t===0n)return 'origin';
+  if(t<RECOMBINATION_NS)return 'plasma';
+  if(t<1_000_000n*YEAR_NS)return 'recombination';
+  if(t<FIRST_STARS_NS)return 'dark-ages';
+  if(t<500_000_000n*YEAR_NS)return 'first-stars';
+  return null;
+}
+let priorEraPresentation='';
+let primordialSeed='',primordialCohort:readonly PrimordialStar[]=[];
+let firstStarFocus:string|null=null;
+const primordialGlyphs:{star:PrimordialStar;group:THREE.Group;light:THREE.Sprite}[]=[];
+function ensurePrimordialCohort(){
+  if(primordialSeed===seed)return;
+  primordialSeed=seed;primordialCohort=primordialStars(seed);
+}
+function firstStarById(id:string|null){ensurePrimordialCohort();return primordialCohort.find(star=>star.id===id);}
+function firstStarAtDate(id:string|null,t:Ns):PrimordialStar|undefined {
+  const star=firstStarById(id);return star&&star.birthNs<=t&&t<star.deathNs?star:undefined;
+}
+function primordialPosition(star:PrimordialStar):V3 {
+  // A stable comoving proxy near the eventual galaxy; no exact stellar orbit is claimed.
+  const galaxy=catalogue.find(g=>g.id===star.descendantGalaxyId);
+  const base=galaxy?.position||[0,0,0];
+  let hash=2166136261;
+  for(const char of star.id)hash=Math.imul(hash^char.charCodeAt(0),16777619);
+  const component=(shift:number)=>(((hash>>>shift)&255)/255-.5)*.15;
+  return [base[0]+component(0),base[1]+component(8),base[2]+component(16)];
+}
+function visitFirstStar(star:PrimordialStar){
+  firstStarFocus=star.id;selected=star.id;
+  if(state.level==='universe'){
+    if(flight)toggleFlight();
+    const target=vec(primordialPosition(star)).multiplyScalar(3);
+    const to=target.clone().add(new THREE.Vector3(.22,.12,.35));
+    tween={from:camera.position.clone(),to,targetFrom:controls.target.clone(),targetTo:target,start:performance.now(),duration:1300,logarithmic:false};
+    homePos.copy(to);homeTarget.copy(target);
+  }
+  lastVisibilityEpoch=null;updateUniverseVisibility();panel();persist();
+  announce(epoch<star.birthNs?'Following this star toward formation.':epoch>=star.deathNs?'Following an ended first star into its descendant lineage.':'Following this first star through its life.');
+}
+function leaveFirstStar(){firstStarFocus=null;lastVisibilityEpoch=null;updateUniverseVisibility();panel();persist();}
+function updateEarlyUniverseView(){
+  const view=$('early-cosmos');
+  const field=view.querySelector<HTMLElement>('.early-cosmos-field')!;
+  if(field.dataset.seed!==seed){field.style.backgroundImage=illustrativeCmbGradient(seed);field.dataset.seed=seed;}
+  const stage=state.level==='universe'?earlySceneStageAt(epoch):null;
+  const alternate=state.level==='universe'?alternateFuture():null;
+  const fateState=alternate?.stateAt(epoch);
+  const future=state.level==='universe'&&!alternate?futureStageAt(epoch):null;
+  view.hidden=stage===null;
+  view.setAttribute('aria-hidden',stage===null?'true':'false');
+  if(stage)view.dataset.stage=stage;
+  const presentation=stage?`early:${stage}`:alternate?`alternate:${alternate.id}:${fateState}`:future?`future:${future}`:'normal';
+  if(presentation===priorEraPresentation)return;
+  priorEraPresentation=presentation;
+  if(state.level!=='universe')return;
+  if(alternate&&fateState!=='ordinary-expansion'){
+    caption('ALTERNATE FATE',alternate.name,
+      `${fateState?.replaceAll('-',' ')}. ${alternate.validity}`,
+      [[readableYears(epoch),'after Big Bang'],['illustrative','scenario']]);
+  }else if(future){
+    const descriptions:Record<NonNullable<FutureStage>,[string,string,string]>={
+      'stellar-decline':['THE LONG FUTURE','Starlight fades','A continued-expansion scenario. The far-future population is a coarse model.'],
+      degenerate:['THE DEGENERATE ERA','Cooling remnants','The individual stellar histories are dim; late populations are illustrative.'],
+      'black-hole':['THE BLACK-HOLE ERA','A dilute universe','Black-hole outcomes depend on assumptions about matter stability and evaporation.'],
+      ceiling:['HEAT-DEATH SCENARIO','A navigation ceiling','10^100 years is an Atlas limit, not a known final instant of the universe.'],
+    };
+    const [kicker,title,description]=descriptions[future];
+    caption(kicker,title,description,[[readableYears(epoch),'after Big Bang'],['constant Λ','scenario']]);
+  }else if(stage===null){
+    caption('01 / THE COSMIC NEIGHBOURHOOD','A universe to discover.',
+      'Thirty-two galaxies. One seed. Choose a distant glow and explore what lies within.',
+      [['32','galaxies'],['4','morphologies'],['20 Mpc','region extent']]);
+  }else{
+    const descriptions:Record<NonNullable<EarlySceneStage>,[string,string,string]>={
+      origin:['THE HOT BIG BANG','An explanatory origin','The model does not resolve a singularity or an explosion centre.'],
+      plasma:['THE OPAQUE UNIVERSE','Hot, expanding plasma','Radiation and matter cool as space expands. No ordinary stars or planets exist yet.'],
+      recombination:['FIRST LIGHT','The universe becomes transparent','Atoms form and the cosmic microwave background fills the sky. The field is illustrative.'],
+      'dark-ages':['THE COSMIC DARK AGES','Before the first stars','Neutral gas fills the expanding universe; density fluctuations grow.'],
+      'first-stars':['COSMIC DAWN','The first stars ignite','A procedural early population precedes the surviving reference catalogue.'],
+    };
+    const [kicker,title,description]=descriptions[stage];
+    caption(kicker,title,description,[[readableYears(epoch),'after Big Bang'],['ΛCDM','scenario']]);
+  }
+  panel();
+}
+function updateUniverseVisibility() {
+  const visibilityMode=`${viewMode}/${futureScenario}`;
+  if(lastVisibilityEpoch===epoch&&lastVisibilitySeed===seed&&lastVisibilityMode===visibilityMode)return;
+  lastVisibilityEpoch=epoch;lastVisibilitySeed=seed;lastVisibilityMode=visibilityMode;
+  const alternate=alternateFuture();
+  const illustratedFate=alternate&&alternate.stateAt(epoch)!=='ordinary-expansion';
+  const baselineLight=galaxyLightProxyAt(epoch);
+  for (let i = 0; i < galaxyGlyphs.length && i < catalogue.length; i++){
+    const glyph=galaxyGlyphs[i];
+    const g=catalogue[i];
+    const observation=viewMode==='observed'
+      ? observedGalaxyAt(galaxyLifecycleFor(g),vec(g.position).length(),epoch):null;
+    const lightFactor=baselineLight*(observation?.relativeBrightness??1);
+    glyph.group.visible = !illustratedFate&&(observation?observation.visible:galaxyVisibleAt(g,epoch));
+    if(observation?.visible&&observation.emissionNs!==null){
+      const emission=galaxyStateAt(galaxyLifecycleFor(g),observation.emissionNs);
+      const a=scaleFactorAt(observation.emissionNs);
+      glyph.group.position.set(...emission.properPosition).multiplyScalar(3/Math.max(a,Number.MIN_VALUE));
+    }else glyph.group.position.copy(vec(g.position).multiplyScalar(3));
+    const points=glyph.visual.children[0] as THREE.Points<THREE.BufferGeometry,THREE.ShaderMaterial>;
+    points.material.uniforms.alpha.value=.32*Math.max(.12,lightFactor);
+    const center=glyph.visual.children[1] as THREE.Sprite;
+    (center.material as THREE.SpriteMaterial).opacity=.65*Math.max(.12,lightFactor);
+  }
+  for(const glyph of primordialGlyphs){
+    const {star,group,light}=glyph;
+    const alive=star.birthNs<=epoch&&epoch<star.deathNs;
+    const tracked=firstStarFocus===star.id;
+    group.visible=!illustratedFate&&(alive||tracked);
+    const material=light.material as THREE.SpriteMaterial;
+    material.opacity=alive?Math.max(.55,star.brightness):.25;
+    material.color.set(alive?'#dce7ff':epoch<star.birthNs?'#78a9d3':'#c58e73');
+    light.scale.setScalar(tracked?.19:.11);
+  }
+}
+let lastVisibilityEpoch:Ns|null=null,lastVisibilitySeed='',lastVisibilityMode='';
 function drawUniverse(data: { galaxyClouds: NamedCloud[] }) {
   camera.near = 1e-7;
   camera.updateProjectionMatrix();
@@ -1007,6 +1629,17 @@ function drawUniverse(data: { galaxyClouds: NamedCloud[] }) {
     picks.push({ object: pick, id: g.id, kind: "galaxy" });
     addLabel(group, g.name, g.type);
   }
+  ensurePrimordialCohort();
+  for(const star of primordialCohort){
+    const group=new THREE.Group();group.position.copy(vec(primordialPosition(star)).multiplyScalar(3));
+    const light=sprite('#dce7ff',.11);group.add(light);
+    const pick=new THREE.Mesh(new THREE.SphereGeometry(.08,8,6),new THREE.MeshBasicMaterial({visible:false}));
+    group.add(pick);root.add(group);
+    primordialGlyphs.push({star,group,light});
+    picks.push({object:pick,id:star.id,kind:'primordial-star'});
+  }
+  lastVisibilityEpoch=null;
+  updateUniverseVisibility();
   fit(new THREE.Vector3(13, 13, 24), !ready);
   caption(
     "01 / THE COSMIC NEIGHBOURHOOD",
@@ -1200,6 +1833,8 @@ function setupSpace(data: any) {
       }
     },
     announce,
+    seed,
+    data.focus||data.sky,
   );
   space = current;
   root.add(current.group);
@@ -1332,6 +1967,7 @@ async function navigateSpace(
       level === "galaxy"
         ? { level, galaxy: state.galaxy }
         : { level, galaxy: state.galaxy, coords };
+    followedPlanetId=null;
     if (chunk) sectorData = chunk;
     selected = options.ref?.id || null;
     root.userData.viewRadius = level === "galaxy" ? 16 : current.scale * 32;
@@ -1375,7 +2011,7 @@ async function navigateSpace(
   }
 }
 let autopilot: {
-  kind: "galaxy" | "star" | "body" | "exit";
+  kind: "galaxy" | "primordial" | "star" | "body" | "exit";
   id: string;
 } | null = null;
 function flightUnit() {
@@ -1467,10 +2103,25 @@ function beginTargetFlight() {
   riverFlight=null;surfaceJourney = null; startCruiseAfterLook = false;
   planetLook = null;
   if (!selected) return;
-  const kind = state.level === "universe" ? "galaxy" : space ? "star" : "body";
+  const kind = state.level === "universe" ? firstStarById(selected)?"primordial":"galaxy" : space ? "star" : "body";
   if (!flight) toggleFlight();
   orbitAssist = null; approachAltitude = null;
   autopilot = { kind, id: selected };
+}
+function visitDatedStar(id:string){
+  const star=space?.findPopulation(id,epoch);
+  if(!star||!space)return;
+  if(flight)toggleFlight();
+  selected=id;space.focusPopulation(id,epoch);
+  const target=space.world(star.positionLy);
+  const to=target.clone().add(new THREE.Vector3(0,2.5,8).multiplyScalar(space.scale));
+  camera.near=Math.max(1e-8,space.scale*.002);camera.updateProjectionMatrix();
+  controls.minDistance=space.scale*.05;
+  tween={from:camera.position.clone(),to,targetFrom:controls.target.clone(),targetTo:target,
+    start:performance.now(),duration:1500,logarithmic:true};
+  homePos.copy(to);homeTarget.copy(target);
+  panel();persist();
+  announce('Visiting a dated stellar population point. No planetary system is resolved for this star.');
 }
 function flyOutward() {
   clearWalking();
@@ -1482,7 +2133,7 @@ function flyOutward() {
   const direction = vec(localPose()).normalize();
   if (residentSystem) {
     const p = localPose(),
-      near = nearestBody(state.sys!, p, epoch);
+      near = nearestAtDate(state.sys!, p);
     direction.set(0, p[1] >= near.center[1] ? 1 : -1, 0);
   }
   if (direction.lengthSq() < 0.1) direction.set(0, 1, 0);
@@ -1519,9 +2170,16 @@ function updateFlight(dt: number) {
   if (!flight || !ready || renderer.xr.isPresenting) return;
   if(residentSystem&&state.body){
     const relative=vec(localPose()).sub(vec(bodyPosition(state.body,state.sys!,epoch))).toArray() as V3;
-    const clearance=surfaceClearance(state.body,relative).terrainClearance;
+    const clearance=surfaceClearance(state.body,relative,snappedWaterLevelFor(state.body)).terrainClearance;
     const desired=clearance<2000?1:clearance>10000?1e-6:systemUnit;
     if(desired!==systemUnit){rescaleSystem(desired);rebaseSystem(vec(localPose()));}
+    // Orbit rings are a system-scale visualization baked at construction time;
+    // as systemUnit rescales toward true scale for close terrain flight, a
+    // ring's near arc can sweep across the view as a stray line over the
+    // ground. Hide the rings once terrain-following, matching the same
+    // clearance band used for the true-scale rescale above.
+    const showOrbits=clearance>=10000;
+    for(const orbit of systemOrbits) if(orbit.visible!==showOrbits) orbit.visible=showOrbits;
   }
   if(walker||landing){updateWalking(dt);return;}
   if(riverFlight&&residentSystem){
@@ -1539,7 +2197,9 @@ function updateFlight(dt: number) {
         if(angle*body.radiusM<.5){radial.copy(goal);riverFlight.phase='descent';}
       }
     }else{
-      radial.copy(goal);const ground=surfaceQuery(body)(site.direction).visibleHeightM;
+      radial.copy(goal);const groundSample=surfaceSample(body,site.direction);
+      if(!groundSample){riverFlight=null;announce('This world has no surface at this date.');return;}
+      const ground=groundSample.visibleHeightM;
       const target=body.radiusM+ground+180,gap=target-radius;
       radius+=Math.sign(gap)*Math.min(Math.abs(gap),Math.max(.5,Math.min(50000,Math.abs(gap)*2))*dt);
       if(Math.abs(gap)<.1){riverFlight=null;announce('Holding above '+site.name+'. Choose Land and walk to visit the bank.');panel();}
@@ -1548,7 +2208,9 @@ function updateFlight(dt: number) {
     flightSpeed=next.distanceTo(vec(localPose()))/Math.max(dt,.001);flightDomain='system';
     if(next.distanceTo(systemOrigin)>10000)rebaseSystem(next);
     camera.position.copy(next.sub(systemOrigin).multiplyScalar(systemUnit));
-    const targetDirection=vec(site.lookDirection),h=surfaceQuery(body)(site.lookDirection).visibleHeightM;
+    const targetDirection=vec(site.lookDirection),lookSample=surfaceSample(body,site.lookDirection);
+    if(!lookSample){riverFlight=null;return;}
+    const h=lookSample.visibleHeightM;
     const target=targetDirection.multiplyScalar(body.radiusM+h).add(centre).sub(systemOrigin).multiplyScalar(systemUnit);
     camera.up.copy(goal);camera.lookAt(target);controls.target.copy(target);return;
   }
@@ -1593,14 +2255,14 @@ function updateFlight(dt: number) {
     const angle = orbitAssist.clearanceM ? dt * 250 * flightThrottle / relative.length() : dt * .045 * flightThrottle;
     orbitStep(relative, camera.quaternion, orbitAssist.axis, angle);
     if (orbitAssist.clearanceM) {
-      const ground=surfaceClearance(body,relative.toArray() as V3).terrainElevation;
+      const ground=surfaceClearance(body,relative.toArray() as V3,snappedWaterLevelFor(body)).terrainElevation;
       relative.setLength(body.radiusM+ground+orbitAssist.clearanceM);
     }
     camera.position.copy(relative.clone().add(center).sub(systemOrigin).multiplyScalar(systemUnit));
     controls.target.copy(camera.position).add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(flightUnit()));
     flightDomain = 'system';
     flightSpeed = angle / Math.max(dt, .00001) * relative.length();
-    flightClearance = nearestBody(state.sys!, localPose(), epoch).clearance;
+    flightClearance = nearestAtDate(state.sys!, localPose()).clearance;
     return;
   }
   const domain = space ? "galaxy" : residentSystem ? "system" : "universe";
@@ -1624,16 +2286,20 @@ function updateFlight(dt: number) {
   if (autopilot?.kind === "galaxy") {
     if (space && state.galaxy?.id === autopilot.id) autopilot = null;
     else target = catalogue.find((g) => g.id === autopilot!.id)?.position;
+  } else if (autopilot?.kind === "primordial") {
+    const star=firstStarById(autopilot.id);
+    if(star){target=primordialPosition(star);if(vec(target).distanceTo(vec(p))<.04){autopilot=null;target=undefined;}}
+    else autopilot=null;
   } else if (autopilot?.kind === "star") {
     if (residentSystem === autopilot.id) autopilot = null;
-    else target = space?.find(autopilot.id)?.position;
+    else target = space?.find(autopilot.id)?.position||space?.findPopulation(autopilot.id,epoch)?.positionLy;
   } else if (autopilot?.kind === "body") {
     const body = bodyById(autopilot.id);
     if (body) {
       target = bodyPosition(body, state.sys!, epoch);
       const relative = p.map((v,i) => v - target![i]) as V3;
       const stopDistance = approachAltitude === null ? body.radiusM * 4.2
-        : Math.max(body.radiusM + approachAltitude, surfaceClearance(body, relative).minimum + approachClearance);
+        : Math.max(body.radiusM + approachAltitude, surfaceClearance(body, relative, snappedWaterLevelFor(body)).minimum + approachClearance);
       if (Math.hypot(...relative) < stopDistance + 200) {
         if (approachAltitude !== null) {
           const up = vec(relative).normalize();
@@ -1670,17 +2336,17 @@ function updateFlight(dt: number) {
   let clearance = 1,
     nearest: any = null;
   if (domain === "universe") {
-    nearest = catalogue
+    nearest = catalogue.filter(g=>galaxyVisibleAt(g,epoch))
       .map((g) => ({ g, d: vec(g.position).distanceTo(vec(p)) }))
       .sort((a, b) => a.d - b.d)[0];
-    clearance = nearest.d;
-    const g = nearest.g as Galaxy;
-    if (nearest.d < (g.radiusLy / LY_PER_MPC) * 8)
+    clearance = nearest?.d??1;
+    const g = nearest?.g as Galaxy|undefined;
+    if (g&&nearest.d < (g.radiusLy / LY_PER_MPC) * 8)
       void prepare("galaxy:" + g.seed, "galaxy-view", {
         galaxy: g,
         galaxies: catalogue,
       }).catch(() => {});
-    if (nearest.d < (g.radiusLy / LY_PER_MPC) * 2) {
+    if (g&&nearest.d < (g.radiusLy / LY_PER_MPC) * 2) {
       const inverse = new THREE.Quaternion()
         .setFromEuler(new THREE.Euler(...g.rotation))
         .invert();
@@ -1772,12 +2438,12 @@ function updateFlight(dt: number) {
     }
   } else if (residentSystem) {
     const sys = state.sys!;
-    nearest = nearestBody(sys, p, epoch);
+    nearest = nearestAtDate(sys, p);
     clearance = nearest.clearance;
     if (approachAltitude !== null && target) {
       const body = bodyById(autopilot!.id)!;
       const stop = Math.max(body.radiusM + approachAltitude,
-        surfaceClearance(body, p.map((v,i) => v - target![i]) as V3).minimum + approachClearance);
+        surfaceClearance(body, p.map((v,i) => v - target![i]) as V3, snappedWaterLevelFor(body)).minimum + approachClearance);
       clearance = Math.min(clearance, Math.max(0, vec(p).distanceTo(vec(target)) - stop));
     }
     if (vec(p).length() > systemBoundary(sys) * 2) {
@@ -1830,7 +2496,7 @@ function updateFlight(dt: number) {
     camera.position.add(motion);
     controls.target.add(motion);
     if (residentSystem) {
-      const near = nearestBody(state.sys!, localPose(), epoch),
+      const near = nearestAtDate(state.sys!, localPose()),
         minimum = near.minimum;
       if (near.distance < minimum) {
         const safe = vec(localPose()).sub(vec(near.center));
@@ -1850,7 +2516,7 @@ function updateFlight(dt: number) {
     }
   }
   if(horizonAssist&&residentSystem&&!autopilot&&!planetLook){
-    const near=nearestBody(state.sys!,localPose(),epoch),depth=atmosphereHeightM(near.body);
+    const near=nearestAtDate(state.sys!,localPose()),depth=atmosphereHeightM(near.body);
     const altitude=near.distance-near.body.radiusM;
     if(depth>0&&altitude<depth){
       const radial=vec(localPose()).sub(vec(near.center)).normalize();
@@ -1888,7 +2554,7 @@ function updateFlightHud() {
   if (residentSystem && state.body) {
     const body = state.body, center = bodyPosition(body, state.sys!, epoch);
     const relative = localPose().map((v,i) => v - center[i]) as V3;
-    const info = surfaceClearance(body, relative);
+    const info = surfaceClearance(body, relative, snappedWaterLevelFor(body));
     const latitude = Math.asin(THREE.MathUtils.clamp(relative[1] / Math.hypot(...relative), -1, 1)) * 180 / Math.PI;
     hud.textContent += ` · altitude ${fmt(info.altitude / 1000, 1)} km · clearance ${fmt(info.terrainClearance / 1000, 1)} km · latitude ${fmt(latitude, 1)}°${orbitAssist?.clearanceM ? ' · terrain following' : orbitAssist ? ' · orbit assist' : ''}`;
     if(flight && body.kind!=='star' && body.type!=='Gas giant') {
@@ -1911,27 +2577,34 @@ function approachPlanet(altitude: number) {
   approachAltitude = altitude;
   autopilot = {kind: 'body', id: state.body.id};
 }
-function exploreTerrain(preferred?:THREE.Vector3) {
+function exploreTerrain(preferred?:THREE.Vector3,preferLife=false) {
   const body=state.body;
   if(!body || body.kind==='star' || body.type==='Gas giant' || renderer.xr.isPresenting) return;
   clearWalking();
   if(!flight) toggleFlight();
   autopilot=null; orbitAssist=null; planetLook=null; startCruiseAfterLook=false;
   const center=vec(bodyPosition(body,state.sys!,epoch)), eye=vec(localPose()).sub(center).normalize();
-  const sample=terrainSampler(body), sun=vec(bodyPosition(state.sys!.stars[0],state.sys!,epoch)).sub(center).normalize();
+  const sample=surfaceFor(body), sun=vec(bodyPosition(state.sys!.stars[0],state.sys!,epoch)).sub(center).normalize();
+  if(!sample([0,1,0],epoch)){announce('This world has no surface at this date.');return;}
+  const biome=preferLife?biomeClassifier(body,snappedWaterLevelFor(body)):null;
   let destination=eye.clone(), best=-Infinity;
   if(preferred)destination.copy(preferred);
-  else for(let i=0;i<384;i++) {
-    const y=1-2*(i+.5)/384, phi=i*2.399963229728653, r=Math.sqrt(1-y*y);
-    const d=new THREE.Vector3(Math.cos(phi)*r,y,Math.sin(phi)*r), s=sample(d.toArray() as V3);
-    if(s.ocean || s.elevationM>10000)continue;
-    const score=d.dot(eye)*2+Math.max(-.5,d.dot(sun))*.7+Math.min(1,s.elevationM/3500)*.12;
+  else for(let i=0;i<(preferLife?1024:384);i++) {
+    const count=preferLife?1024:384,y=1-2*(i+.5)/count, phi=i*2.399963229728653, r=Math.sqrt(1-y*y);
+    const d=new THREE.Vector3(Math.cos(phi)*r,y,Math.sin(phi)*r), s=sample(d.toArray() as V3,epoch);
+    if(!s || !s.walkable || s.elevationM>10000)continue;
+    const habitat=biome?.(d.toArray() as V3,s.groundHeightM,1);
+    if(preferLife&&(!habitat||habitat.weights[1]<.35||habitat.moisture<.2))continue;
+    const score=preferLife
+      ? habitat!.weights[1]*3+habitat!.moisture+(habitat!.forestPotential?.5:0)+d.dot(eye)*.3+Math.max(-.5,d.dot(sun))*.2
+      : d.dot(eye)*2+Math.max(-.5,d.dot(sun))*.7+Math.min(1,s.elevationM/3500)*.12;
     if(score>best){best=score;destination=d;}
   }
+  if(preferLife&&best===-Infinity){announce('No suitable living habitat was found on this world at this date.');return;}
   const up=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(eye);
   if(up.lengthSq()<.0001)up.set(1,0,0).applyQuaternion(camera.quaternion).projectOnPlane(eye);
   surfaceJourney={bodyId:body.id,direction:destination,up:up.normalize()};
-  announce('Approaching a terrain site, then flying 600 m above the ground. Movement keys release assistance.');
+  announce(preferLife?'Approaching a vegetated habitat. Land after arrival to look for nearby life.':'Approaching a terrain site, then flying 600 m above the ground. Movement keys release assistance.');
 }
 function startTerrainCruise() {
   const body=state.body!;
@@ -1945,10 +2618,30 @@ function startTerrainCruise() {
 async function prepareLanding(savedPoint?:V3){
   const body=state.body;
   if(!body||body.kind==='star'||body.type==='Gas giant'||renderer.xr.isPresenting)return;
+  // §2.6 existence gate: `walkable` above only reflects the immutable rock
+  // field, not lifecycle stage, so without this a planet that is `engulfed`
+  // by its star's giant phase -- or hasn't formed yet at this epoch -- could
+  // still be landed on. Refuse before any state is torn down (toggleFlight/
+  // clearWalking below), so a refused replay from selectRiverDestination's
+  // resumeWalk (the captured in-flight landing intent reissued through this
+  // same function after restartPlanetTiles()) is a clean no-op rather than
+  // leaving anything mid-teardown or silently retried.
+  const lcEntry=lifecycleFor(state.sys!,body);
+  if(lcEntry.kind!=='star'){
+    const stage=planetStateAt(lcEntry.lc,lcEntry.starLc,epoch).stage;
+    if(stage!=='solid'){
+      announce(stage==='engulfed'
+        ?'This world has been engulfed by its star at this date — landing is not possible.'
+        :'This world is not yet solid ground at this date — landing is not possible.');
+      panel();
+      return;
+    }
+  }
   if(!flight)toggleFlight();
   clearWalking();autopilot=null;orbitAssist=null;riverFlight=null;surfaceJourney=null;planetLook=null;playing=false;
   const relative=savedPoint?vec(savedPoint):vec(localPose()).sub(vec(bodyPosition(body,state.sys!,epoch)));
-  const d=relative.normalize(),s=surfaceQuery(body)(d.toArray() as V3);
+  const d=relative.normalize(),s=surfaceSample(body,d.toArray() as V3);
+  if(!s){announce('This world has no surface at this date — landing is not possible.');panel();return;}
   if(!s.walkable){exploreTerrain();landAfterCruise=true;return;}
   const point=d.multiplyScalar(body.radiusM+s.rockHeightM+.92).toArray() as V3;
   if(savedPoint){
@@ -1965,7 +2658,7 @@ async function prepareLanding(savedPoint?:V3){
 }
 function landOnWorld(){
   if(!state.body)return;
-  const info=surfaceClearance(state.body,vec(localPose()).sub(vec(bodyPosition(state.body,state.sys!,epoch))).toArray() as V3);
+  const info=surfaceClearance(state.body,vec(localPose()).sub(vec(bodyPosition(state.body,state.sys!,epoch))).toArray() as V3,snappedWaterLevelFor(state.body));
   if(info.terrainClearance<20000)void prepareLanding();
   else {exploreTerrain();landAfterCruise=true;}
 }
@@ -1986,14 +2679,23 @@ function updateWalking(dt:number){
   }else if(landing){
     const point=vec(landing.point),d=point.clone().normalize(),current=vec(localPose()).sub(center);
     const patches=landing.launch?null:planetTiles.contactPatches(landing.point,landing.point);
-    const target=landing.launch?body.radiusM+surfaceQuery(body)(d.toArray() as V3).rockHeightM+160:point.length()+(patches&&walkingModule? .72:12);
+    const launchSurface=landing.launch?surfaceSample(body,d.toArray() as V3):null;
+    if(landing.launch&&!launchSurface){clearWalking();return;}
+    const target=landing.launch?body.radiusM+launchSurface!.rockHeightM+160:point.length()+(patches&&walkingModule? .72:12);
     const gap=target-current.length(),step=Math.sign(gap)*Math.min(Math.abs(gap),Math.max(.5,Math.min(5000,Math.abs(gap)*2))*dt);
     const next=d.multiplyScalar(current.length()+step).add(center);
     if(next.distanceTo(systemOrigin)>128)rebaseSystem(next);
     camera.position.copy(next.sub(systemOrigin).multiplyScalar(systemUnit));flightSpeed=Math.abs(step)/Math.max(dt,.001);
     if(landing.launch&&Math.abs(gap)<.2){landing=null;planetTiles.setContactFocus(null);announce('Free flight · WASD to move, Q/E to descend or climb.');panel();}
     else if(!landing.launch&&patches&&walkingModule&&Math.abs(gap)<.1){
-      walker=new walkingModule.GroundWalker(body,landing.point);landing=null;
+      const snapshot=planetSnapshotFor(state.sys!,body,epoch);
+      if(snapshot.state.stage!=='solid'){clearWalking();return;}
+      const walkerSurface=(direction:V3,date:Ns=epoch)=>{
+        const result=planetSnapshotFor(state.sys!,body,date).surface(direction);
+        if(!result)throw new Error('GroundWalker queried a surface outside the solid epoch');
+        return result;
+      };
+      walker=new walkingModule.GroundWalker(body,landing.point,walkerSurface as ReturnType<typeof surfaceQuery>,epoch);landing=null;
       const up=walker.position.clone().normalize(),forward=camera.getWorldDirection(new THREE.Vector3()).projectOnPlane(up);
       if(forward.lengthSq()<.01)forward.set(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(up);
       camera.up.copy(up);camera.lookAt(camera.position.clone().add(forward.normalize()));
@@ -2027,16 +2729,42 @@ function holdPlanetOrbit() {
 function restartPlanetTiles() {
   planetTiles?.dispose(); planetTiles = null;
   if (!state.body || !surfaceMesh || state.body.type === 'Gas giant') return;
-  planetTiles = new PlanetRenderer(state.body, surfaceMesh, focusRadius(), reliefScale,Math.min(4,renderer.capabilities.getMaxAnisotropy()));
+  const entry=lifecycleFor(state.sys!,state.body);
+  if(entry.kind!=='star'&&planetStateAt(entry.lc,entry.starLc,epoch).stage!=='solid')return;
+  // Anisotropic filtering was capped at 4x, well below what desktop/laptop
+  // GPUs support (typically 16x): the ground colour map and detail atlas both
+  // undersampled at grazing/orbital view angles, showing as jagged coastlines
+  // from orbit and blurry ground texture up close. Raised to 8x, a
+  // conservative step up in cost for a clear filtering improvement.
+  planetTiles = new PlanetRenderer(state.body, surfaceMesh, focusRadius(), reliefScale,Math.min(8,renderer.capabilities.getMaxAnisotropy()));
   planetTiles.setSurfaceDetail(surfaceDetail);
+}
+const SPIN_Y_AXIS = new THREE.Vector3(0, 1, 0), SPIN_X_AXIS = new THREE.Vector3(1, 0, 0);
+/** Contract §4.4: the sun direction seen from a spinning body's surface must
+ * follow its rotation. The terrain mesh and the ground-walker's frame are
+ * never themselves rotated (that would risk desynchronising walker physics
+ * and terrain sampling, which read this same mesh's untouched local frame),
+ * so instead the incoming light direction is counter-rotated by the body's
+ * current spin angle and axial tilt — mathematically equivalent to rotating
+ * the body under a fixed sun, using the exact convention documented on
+ * `dayNightAt` (unrotated polar axis +Y, spin about Y then tilt about X). */
+function spinCompensatedSunDirection(rawSun: V3, spin: SpinState, formationNs: Ns, t: Ns): V3 {
+  const angle = rotationAngleAt(spin, formationNs, t);
+  const v = new THREE.Vector3(...rawSun);
+  v.applyAxisAngle(SPIN_X_AXIS, -spin.axialTiltRad);
+  v.applyAxisAngle(SPIN_Y_AXIS, -angle);
+  return v.toArray() as V3;
 }
 function updatePlanetTiles(dt: number) {
   if (!planetTiles || !surfaceMesh) return;
   root.updateMatrixWorld(true);
   const eye = renderer.xr.isPresenting ? renderer.xr.getCamera().getWorldPosition(new THREE.Vector3()) : camera.position.clone();
   const local = planetTiles.group.worldToLocal(eye).toArray() as V3;
-  const sun = vec(bodyPosition(state.sys!.stars[0], state.sys!, epoch))
+  const rawSun = vec(bodyPosition(state.sys!.stars[0], state.sys!, epoch))
     .sub(vec(bodyPosition(state.body!, state.sys!, epoch))).normalize().toArray() as V3;
+  const bodyEntry = lifecycleFor(state.sys!, state.body!);
+  const sun = bodyEntry.kind === 'star' ? rawSun
+    : spinCompensatedSunDirection(rawSun, spinFor(state.body!), bodyEntry.lc.formationNs, epoch);
   // Keep terrain sunlight in the same frame as water and foliage, including
   // after date seeking, planetary rebasing and VR model rotation.
   const worldSun=vec(sun).transformDirection(planetTiles.group.matrixWorld);
@@ -2048,12 +2776,17 @@ function updatePlanetTiles(dt: number) {
     view.updateMatrixWorld();
     return new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(view.projectionMatrix, view.matrixWorldInverse).multiply(planetTiles!.group.matrixWorld));
   });
-  planetTiles.update(local, innerHeight, camera.fov, dt, renderer.xr.isPresenting, sun, frusta);
+  // Global sea level (contract §2.5/§2.6): a star has no water key set, so it
+  // stays pinned at 0 like every other body before its ocean forms; a
+  // planet/moon resolves it from the SAME lifecycle pair `prepareLanding`
+  // already uses (`bodyEntry.lc`/`bodyEntry.starLc`), never a fresh query.
+  const waterLevelM = waterLevelFor(state.body!);
+  planetTiles.update(local, innerHeight, camera.fov, dt, renderer.xr.isPresenting, sun, frusta, epoch, lifeGateContext(state.sys!, state.body!, epoch), waterLevelM);
   drainage?.update(planetTiles.group.matrixWorld,(Math.hypot(...local)-1)*state.body!.radiusM,reliefScale);
   if (!renderer.xr.isPresenting && state.body) {
     // Keep metre-scale depth precision without clipping the distant system.
     const center = bodyPosition(state.body, state.sys!, epoch);
-    const info = surfaceClearance(state.body, localPose().map((v,i) => v - center[i]) as V3);
+    const info = surfaceClearance(state.body, localPose().map((v,i) => v - center[i]) as V3, snappedWaterLevelFor(state.body));
     const near = (walker||landing ? .03:Math.max(1, Math.min(1000, info.terrainClearance * .005))) * systemUnit;
     if (Math.abs(camera.near - near) > near * .1) { camera.near = near; camera.updateProjectionMatrix(); }
   }
@@ -2083,7 +2816,13 @@ function updateSpace() {
     immersive,
     renderer.getPixelRatio(),
     Math.hypot(...space.physical(observer)) < space.galaxy.radiusLy * 1.4,
+    epoch,
   );
+  if(space.density){
+    space.density.visible=galaxyVisibleAt(space.galaxy,epoch);
+    (space.density.material as THREE.ShaderMaterial).uniforms.alpha.value=
+      .7*Math.max(.02,galaxyLightProxyAt(epoch));
+  }
   const stats = space.diagnostics();
   contextStats.nearbySystems = stats.nearbyStars;
   contextStats.skyPoints = stats.mapStars;
@@ -2123,8 +2862,91 @@ function orbitLine(b: Body, scale: number, sys: StarSystem, parent?: Body) {
     }),
   );
   line.userData.parent = parent;
+  line.userData.body = b;
   root.add(line);
   systemOrbits.push(line);
+}
+// Module-level scratch: `blackbodyColor` mutates and returns this SAME
+// THREE.Color every call rather than allocating a new one, so driving it from
+// a per-frame call site (`applyExistence`/`positionSystem`) costs zero new
+// allocations (Quest budget). Callers that need to retain a value must
+// `.copy()` it (every call site here does, via `material.color.copy(...)`).
+const _blackbodyScratch = new THREE.Color();
+/** Planckian-locus RGB approximation for a temperature in kelvin (Tanner
+ * Helland's widely-used polynomial fit to the blackbody locus,
+ * https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm.html,
+ * valid ~1000-40000K -- comfortably spans stellar-evolution.ts's
+ * `starStateAt` range: main-sequence ~2600-7400K over the catalogue's
+ * 0.08-1.63 solar-mass range, white-dwarf remnants at 12000K, neutron-star
+ * remnants at 6e5K (clamped at the approximation's ceiling -- still reads as
+ * the intended hot blue-white, just not spectroscopically exact that far out
+ * of range). This is a presentation-only quantity (contract §1.2 rule 3: no
+ * caller of `starStateAt` branches on colour), so native `Math.pow`/`Math.log`
+ * are fine here, same as `starStateAt` itself already uses for radius/
+ * temperature. `kelvin <= 0` (or NaN) -- the black-hole remnant's
+ * `temperatureK` -- returns pure black rather than feeding a non-positive
+ * value into `Math.log`/`Math.pow`. */
+function blackbodyColor(kelvin: number): THREE.Color {
+  if (!(kelvin > 0)) return _blackbodyScratch.setRGB(0, 0, 0);
+  const temp = THREE.MathUtils.clamp(kelvin, 1000, 40000) / 100;
+  const r = temp <= 66 ? 255 : 329.698727446 * Math.pow(temp - 60, -0.1332047592);
+  const g =
+    temp <= 66
+      ? 99.4708025861 * Math.log(temp) - 161.1195681661
+      : 288.1221695283 * Math.pow(temp - 60, -0.0755148492);
+  const b =
+    temp >= 66 ? 255 : temp <= 19 ? 0 : 138.5177312231 * Math.log(temp - 10) - 305.0447927307;
+  return _blackbodyScratch.setRGB(
+    THREE.MathUtils.clamp(r, 0, 255) / 255,
+    THREE.MathUtils.clamp(g, 0, 255) / 255,
+    THREE.MathUtils.clamp(b, 0, 255) / 255,
+    THREE.SRGBColorSpace,
+  );
+}
+const _blackbodyCurScratch = new THREE.Color();
+const _tintScratch = new THREE.Color();
+/**
+ * Self-normalising per-channel tint: `blackbodyColor(kelvin) /
+ * blackbodyColor(referenceKelvin)`, meant to be *multiplied* into an
+ * existing static colour (catalogue `b.color`, or the light's hardcoded
+ * `LIGHT_BASE_COLOR`) rather than replacing it outright. At
+ * `kelvin === referenceKelvin` every channel ratio is exactly 1, so the
+ * tinted colour is bit-identical to the untinted static colour -- the same
+ * self-normalising trick `applyExistence` already uses for
+ * `st.radiusM / body.radiusM`.
+ *
+ * `referenceKelvin` MUST come from `starStateAt` evaluated at an instant
+ * known to be main-sequence for the star in question (its own
+ * `lifecycle.formationNs` -- `starStateAt` returns the constant
+ * `baseTemperatureK` for the entire main-sequence stage, so any such instant
+ * works), NOT catalog.ts's `Body.temperatureK`. That field is *rounded*
+ * (`Math.round(5772 * Math.sqrt(solarMass))`) while `starStateAt`'s
+ * `baseTemperatureK` is not (`5772 * Math.pow(solarMass, 0.5)`), so at the
+ * catalogue epoch the two would differ by a fraction of a kelvin and the
+ * ratio would only be ~1.0000, not exactly 1 -- verified to reintroduce
+ * exactly the `test:surface` regression this function exists to fix. Two
+ * `starStateAt` calls at the same main-sequence instant return the literal
+ * same double for `temperatureK`, so this reference is exact by
+ * construction, not just close.
+ *
+ * Per-channel epsilon guards a reference channel that is legitimately 0
+ * (`blackbodyColor`'s polynomial fit clamps blue to 0 below ~1900K, and the
+ * coolest main-sequence stars in this catalogue's mass range sit close to
+ * that) -- without it, a star whose reference channel is ~0 evolving to a
+ * temperature where that channel is nonzero would divide by ~0 and blow up
+ * to Infinity. It also covers `kelvin <= 0` (the black-hole remnant, for
+ * which `blackbodyColor` already returns pure black) for free: 0 over
+ * anything (plus the epsilon) stays finite and small, never NaN.
+ */
+function blackbodyTint(kelvin: number, referenceKelvin: number): THREE.Color {
+  const cur = _blackbodyCurScratch.copy(blackbodyColor(kelvin));
+  const ref = blackbodyColor(referenceKelvin); // blackbodyColor's shared scratch; `cur` above is already an independent copy
+  const eps = 1e-3;
+  return _tintScratch.setRGB(
+    (cur.r + eps) / (ref.r + eps),
+    (cur.g + eps) / (ref.g + eps),
+    (cur.b + eps) / (ref.b + eps),
+  );
 }
 function sphere(b: Body, size: number) {
   return new THREE.Mesh(
@@ -2137,6 +2959,17 @@ function sphere(b: Body, size: number) {
           metalness: 0,
         }),
   );
+}
+function attachFormationRing(mesh: THREE.Mesh, body: Body, size: number) {
+  if (body.kind !== 'planet') return;
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(size * 1.3, size * 2.7, 48),
+    new THREE.MeshBasicMaterial({ color: '#d77d42', transparent: true, opacity: .56, side: THREE.DoubleSide, depthWrite: false }),
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.visible = false;
+  mesh.add(ring);
+  mesh.userData.formationRing = ring;
 }
 function surfaceMap(bytes: Uint8Array, data: Surface, color = false) {
   const texture = new THREE.DataTexture(
@@ -2287,9 +3120,18 @@ function drawSystem(data: {
     mesh.position.copy(vec(bodyPosition(b, sys)).multiplyScalar(scale));
     mesh.userData.radius = size;
     mesh.userData.preview = surface;
+    // The non-stellar-lifecycle part of this mesh's scale (render-unit
+    // rescale via `rescaleSystem`, overview<->physical toggle via
+    // `physicalSystem`) -- see `applyExistence`'s star branch, which composes
+    // `baseScale * (stellar lifecycle radius ratio)` into the actual
+    // `mesh.scale` every frame. Only meaningful for stars; harmless (unread)
+    // on every other body.
+    mesh.userData.baseScale = 1;
+    attachFormationRing(mesh, b, size);
     root.add(mesh);
     picks.push({ object: mesh, id: b.id, kind: "body" });
     animations.push({ obj: mesh, body: b, sys, scale });
+    applyExistence(animations[animations.length - 1]);
     orbitLine(
       b,
       scale,
@@ -2300,7 +3142,12 @@ function drawSystem(data: {
     );
     if (b.kind === "star") {
       const halo = sprite(b.color, size * 4);
+      mesh.userData.halo = halo; // O(1) lookup for applyExistence's colour propagation, instead of scanning children
       mesh.add(halo);
+      const sourceColor=new THREE.Color(b.id===sys.stars[0].id?sys.ref.color:b.color);
+      const point=sprite('#ffffff',1);
+      (point.material as THREE.SpriteMaterial).color.copy(sourceColor);
+      root.add(point);opticalStarPoints.push({mesh,point,sourceColor});
     }
     addLabel(
       mesh,
@@ -2321,6 +3168,7 @@ function drawSystem(data: {
       );
       ring.rotation.x = -Math.PI / 2;
       mesh.add(ring);
+      mesh.userData.catalogueRing = ring;
     }
   }
   for (const belt of sys.belts) {
@@ -2428,7 +3276,14 @@ function physicalSystem() {
   for (const a of animations) {
     const mesh = a.obj as THREE.Mesh;
     const r = a.body.radiusM * systemUnit;
-    mesh.scale.setScalar(r / mesh.userData.radius);
+    const displayScale = r / mesh.userData.radius;
+    // For a star, `applyExistence` (called via `positionSystem()` below, in
+    // this same function) is the sole writer of `mesh.scale` -- it composes
+    // this display-mode ratio with the stellar-lifecycle radius ratio.
+    // Writing `mesh.scale` directly here would just be clobbered by that call
+    // a few lines down, so stash it in `userData.baseScale` instead.
+    mesh.userData.baseScale = displayScale;
+    if (a.body.kind !== "star") mesh.scale.setScalar(displayScale);
     a.scale = systemUnit;
   }
   for (const orbit of systemOrbits) {
@@ -2443,9 +3298,11 @@ function physicalSystem() {
     const r = moon.radiusM * systemUnit,
       mesh = sphere(moon, r);
     mesh.userData.radius = r;
+    mesh.userData.baseScale = 1;
     root.add(mesh);
     picks.push({ object: mesh, id: moon.id, kind: "body" });
     animations.push({ obj: mesh, body: moon, sys, scale: systemUnit });
+    applyExistence(animations[animations.length - 1]);
     addLabel(mesh, moon.name, "MOON");
     orbitLine(
       moon,
@@ -2481,13 +3338,116 @@ function physicalSystem() {
   camera.updateProjectionMatrix();
   createSystemMarkers();
 }
+/** Contract §2.2/§2.3 existence gating, applied to a live system render
+ * object every frame: nothing renders before formation or after
+ * engulfment/merger — the headline bug this package fixes (a star's planets
+ * must not render before the star itself has formed). Also applies the
+ * body's spin (§4.4) as a cosmetic rotation, skipped for whichever body is
+ * currently the focused/walked surface (that body's day/night instead
+ * rotates the light direction in `updatePlanetTiles`, so its terrain mesh
+ * and the ground-walker's frame are never themselves rotated). */
+function bodyExists(sys: StarSystem, body: Body, t: Ns): boolean {
+  const entry = lifecycleFor(sys, body);
+  if (entry.kind === 'star') return starStateAt(entry.lc, t).stage !== 'unformed';
+  const st = planetStateAt(entry.lc, entry.starLc, t);
+  return st.stage === 'molten' || st.stage === 'solid';
+}
+function applyPlanetFormationAppearance(mesh: THREE.Mesh, stage: ReturnType<typeof planetStateAt>['stage']) {
+  const material = mesh.material as THREE.MeshStandardMaterial;
+  if (mesh.userData.formationMaterial !== material) {
+    mesh.userData.formationMaterial = material;
+    mesh.userData.formationMap = material.map;
+    mesh.userData.formationColor = material.color.clone();
+    mesh.userData.formationEmissive = material.emissive.clone();
+    mesh.userData.formationEmissiveIntensity = material.emissiveIntensity;
+  }
+  const forming = stage === 'accreting', molten = stage === 'molten';
+  const map = forming || molten ? null : mesh.userData.formationMap;
+  if (material.map !== map) { material.map = map; material.needsUpdate = true; }
+  if (forming || molten) {
+    material.color.set(forming ? '#a46a43' : '#f48748');
+    material.emissive.set(forming ? '#7e391b' : '#c53d19');
+    material.emissiveIntensity = forming ? .45 : .7;
+  } else {
+    material.color.copy(mesh.userData.formationColor);
+    material.emissive.copy(mesh.userData.formationEmissive);
+    material.emissiveIntensity = mesh.userData.formationEmissiveIntensity;
+  }
+  mesh.scale.setScalar((mesh.userData.baseScale ?? 1) * (forming ? .4 : 1));
+  const ring = mesh.userData.formationRing as THREE.Mesh | undefined;
+  if (ring) ring.visible = forming;
+  const catalogueRing = mesh.userData.catalogueRing as THREE.Mesh | undefined;
+  if (catalogueRing) catalogueRing.visible = stage === 'solid';
+}
+function applyExistence(a: { obj: THREE.Object3D; body: Body; sys: StarSystem }) {
+  const exists = bodyExists(a.sys, a.body, epoch);
+  const entry = lifecycleFor(a.sys, a.body);
+  const planetStage = entry.kind === 'star' ? null : planetStateAt(entry.lc, entry.starLc, epoch).stage;
+  a.obj.visible = exists || planetStage === 'accreting';
+  if (planetStage) applyPlanetFormationAppearance(a.obj as THREE.Mesh, planetStage);
+  if (exists && a.obj !== surfaceMesh) {
+    const spin = spinFor(a.body);
+    const angle = rotationAngleAt(spin, entry.lc.formationNs, epoch);
+    a.obj.rotation.set(spin.axialTiltRad, angle, 0);
+    // Stellar visual evolution (this task): `starStateAt`'s radius/
+    // temperature/luminosity were computed every frame already (via
+    // `bodyExists` above) but only `.stage` was ever read -- swelling into a
+    // giant or collapsing to a remnant had zero visible effect. Drive it from
+    // the exact same lifecycle lookup used for spin, immediately above, no
+    // new per-frame allocation: `mesh.scale`/`material.color`/the halo's
+    // `material.color` are mutated in place every call.
+    if (a.body.kind === "star" && entry.kind === "star") {
+      const st = starStateAt(entry.lc, epoch);
+      const mesh = a.obj as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
+      // Self-normalising: `body.radiusM` (catalog.ts) and `starStateAt`'s
+      // main-sequence `baseRadiusM` are the exact same formula
+      // (`6.957e8 * solarMass^0.8`), so this ratio is exactly 1.0 at the
+      // catalogue epoch -- nothing shifts from today's rendering there, only
+      // once the star actually evolves away from main sequence.
+      mesh.scale.setScalar((mesh.userData.baseScale ?? 1) * (st.radiusM / a.body.radiusM));
+      // Self-normalising, exactly like the radius ratio above: tint the
+      // catalogue's own static `a.body.color` by the ratio against this
+      // star's main-sequence reference temperature, instead of replacing it
+      // with an absolute blackbody colour -- see `blackbodyTint`'s doc
+      // comment for why the reference must come from `starStateAt`, not
+      // catalog.ts's rounded `Body.temperatureK`.
+      const refTemperatureK = starStateAt(entry.lc, entry.lc.formationNs).temperatureK;
+      const tint = blackbodyTint(st.temperatureK, refTemperatureK);
+      mesh.material.color.set(a.body.color).multiply(tint);
+      const halo = mesh.userData.halo as THREE.Sprite | undefined;
+      if (halo) (halo.material as THREE.SpriteMaterial).color.set(a.body.color).multiply(tint);
+    }
+  } else if (a.obj === surfaceMesh && (a.obj.rotation.x !== 0 || a.obj.rotation.y !== 0 || a.obj.rotation.z !== 0)) {
+    // A body keeps whatever spin rotation it last had (set above, while it
+    // was still a plain orbiting body) the instant it becomes the focused/
+    // walked surface -- the branch above stops touching it, but nothing
+    // else ever zeroed it. GroundWalker/contactPatches/PlanetRenderer all
+    // assume this mesh's own transform carries NO rotation (per this
+    // function's own doc comment above): they read `camera.position`
+    // through `surfaceMesh`'s (and its PlanetRenderer group child's)
+    // worldToLocal and treat the result as already being in the body's
+    // unrotated local frame, the same frame `walker.position`/
+    // `contactFocus` live in. A leftover non-identity rotation here silently
+    // rotates every local-space reading (candidate culling, life-lattice
+    // anchoring, tile selection) by that stale angle while leaving the
+    // walker's own physics (which never goes through this transform) still
+    // correct -- producing exactly the large, stable divergence between
+    // `camera`-derived local coordinates and the walker's true position that
+    // this task found (flora scattered/culled around the wrong point, and
+    // the root cause of ground-walker tile-selection starving too). Fix: pin
+    // it to identity for as long as it remains the walked body.
+    a.obj.rotation.set(0, 0, 0);
+  }
+}
 function positionSystem() {
-  for (const a of animations)
+  for (const a of animations) {
     a.obj.position.copy(
       vec(bodyPosition(a.body, a.sys, epoch))
         .sub(systemOrigin)
         .multiplyScalar(a.scale),
     );
+    applyExistence(a);
+  }
   for (const orbit of systemOrbits) {
     const parent = orbit.userData.parent as Body | undefined;
     orbit.position
@@ -2500,6 +3460,35 @@ function positionSystem() {
       )
       .sub(systemOrigin)
       .multiplyScalar(systemUnit);
+    const owner = orbit.userData.body as Body | undefined;
+    if (owner && state.sys) orbit.visible = bodyExists(state.sys, owner, epoch);
+  }
+  // Drive the scene's single DirectionalLight (main.ts's own construction
+  // comment: colour/intensity were set once and never touched again) from
+  // the resident system's primary star's lifecycle state -- the other half
+  // of this task's fix, so a giant's brightening/reddening and a remnant's
+  // dimming actually reach the lighting, not just the star's own mesh.
+  // Intensity is compressed (sqrt, not linear) so the ~400x luminosityRel at
+  // giant-phase peak doesn't blow out the whole scene; a `luminosityRel` of
+  // 0 (unformed, or a black-hole remnant) drives it to exactly 0, and
+  // `blackbodyColor` itself guards `temperatureK === 0` against NaN.
+  const sys = state.sys;
+  const primaryStar = sys?.stars[0];
+  if (sys && primaryStar) {
+    const entry = lifecycleFor(sys, primaryStar);
+    if (entry.kind === "star") {
+      const st = starStateAt(entry.lc, epoch);
+      // Self-normalising, same reasoning as the star mesh/halo above: tint
+      // `LIGHT_BASE_COLOR` rather than replacing it outright, so the light is
+      // bit-identical to the pre-this-feature build while the primary star is
+      // on the main sequence.
+      const refTemperatureK = starStateAt(entry.lc, entry.lc.formationNs).temperatureK;
+      light.color.set(LIGHT_BASE_COLOR).multiply(blackbodyTint(st.temperatureK, refTemperatureK));
+      // `3 * Math.sqrt(luminosityRel)` is already self-normalising:
+      // `luminosityRel` is exactly 1 on the main sequence, so this is exactly
+      // the original hardcoded intensity (3) at the catalogue epoch.
+      light.intensity = st.luminosityRel > 0 ? 3 * Math.sqrt(st.luminosityRel) : 0;
+    }
   }
 }
 function rebaseSystem(origin: THREE.Vector3) {
@@ -2519,7 +3508,15 @@ function rescaleSystem(unit: number) {
   const ratio = unit / systemUnit;
   if (Math.abs(ratio - 1) < 1e-10) return;
   systemUnit = unit;
-  for (const a of animations) { a.obj.scale.multiplyScalar(ratio); a.scale = unit; }
+  for (const a of animations) {
+    // See physicalSystem()'s matching comment: a star's `mesh.scale` is owned
+    // by `applyExistence` (composing this render-unit ratio with the stellar-
+    // lifecycle radius ratio), so the ratio is folded into `userData.baseScale`
+    // instead of the mesh's own scale, which `positionSystem()` below recomputes.
+    a.obj.userData.baseScale = (a.obj.userData.baseScale ?? 1) * ratio;
+    if (a.body.kind !== "star") a.obj.scale.multiplyScalar(ratio);
+    a.scale = unit;
+  }
   for (const orbit of systemOrbits) orbit.scale.multiplyScalar(ratio);
   for (const p of [camera.position, controls.target, homePos, homeTarget]) p.multiplyScalar(ratio);
   controls.minDistance *= ratio; controls.maxDistance *= ratio;
@@ -2552,12 +3549,69 @@ function replaceTerrain(
   mesh.geometry = next.geometry;
   mesh.material = next.material;
   mesh.scale.setScalar(1);
+  mesh.userData.baseScale = 1;
   mesh.userData.radius = radius;
+}
+/** A stellar photosphere is subpixel through most of a system approach.
+ * Keep its point-source image visible until the resolved disk takes over. */
+function updateOpticalStarPoints(){
+  if(!residentSystem)return;
+  if(renderer.xr.isPresenting){for(const {point} of opticalStarPoints)point.visible=false;return;}
+  const viewportHeight=renderer.domElement.clientHeight||window.innerHeight;
+  const focal=viewportHeight/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov)/2));
+  root.updateMatrixWorld(true);
+  for(const {mesh,point,sourceColor} of opticalStarPoints){
+    point.visible=mesh.visible&&systemScale==='physical';
+    if(!point.visible)continue;
+    const position=mesh.getWorldPosition(new THREE.Vector3());
+    point.position.copy(position);
+    const distance=Math.max(1e-9,camera.position.distanceTo(position));
+    const radius=(mesh.geometry.boundingSphere?.radius||mesh.userData.radius||0)*mesh.scale.x;
+    const diskPixels=radius/distance*focal;
+    const fade=1-THREE.MathUtils.smoothstep(diskPixels,1.5,5);
+    const material=point.material as THREE.SpriteMaterial;
+    material.opacity=.72*fade*(viewBlend?.progress??1);
+    const resolved=(mesh.userData.halo as THREE.Sprite|undefined)?.material as THREE.SpriteMaterial|undefined;
+    material.color.copy(sourceColor).lerp(resolved?.color||sourceColor,THREE.MathUtils.smoothstep(diskPixels,.25,3));
+    point.visible=fade>.01;
+    const worldSize=4.5*distance/focal;
+    point.scale.setScalar(worldSize);
+  }
 }
 async function focusBody(body: Body, keepPose = false) {
   // A direct URL can supply a body from a separately generated system record.
   // Use the resident catalogue object so flight, render and geology share it.
   body=bodyById(body.id)||body;
+  const focusEntry=lifecycleFor(state.sys!,body);
+  const solidAtFocus=focusEntry.kind==='star'||planetStateAt(focusEntry.lc,focusEntry.starLc,epoch).stage==='solid';
+  // Consume any pending ?river= deep-link restore (see boot()) exactly once
+  // per focus, so it can never leak into a later, unrelated focusBody call.
+  const riverRestoreAddress=pendingRiverRestore;pendingRiverRestore=null;
+  // Proactive, deterministic, worker-driven: build this body's canonical
+  // hydrology set the moment it becomes the focus/approach target, never
+  // waiting on a "Find rivers" click. Once ready, auto-select a canonical
+  // destination for the rich water-mesh/vegetation detail render (restore
+  // mode: no camera fly-away) so that a body's visible river/lake dressing
+  // does not depend on whether the button was ever pressed — only WHICH
+  // canonical basin is auto-picked may still vary with date (sun-lit
+  // ranking), never whether one exists. Terrain height/colliders/survey
+  // never depend on this selection at all (see terrain.ts).
+  // When a ?river= deep-link restore is pending for this exact focus, skip
+  // the auto-pick here — it is performed explicitly, in-line, below (see
+  // riverRestoreAddress below) instead. Both would otherwise share one
+  // `riverSelectionToken` generation counter, so racing them started two
+  // redundant job('surface',...) builds that invalidated each other
+  // non-deterministically (worker-scheduling dependent) — the loser's result
+  // was discarded, and the URL's specific ?river= address could lose the
+  // race to the date-dependent 'auto' pick, leaving body.hydrology unset.
+  // ensureCanonicalHydrology still runs unconditionally so the canonical set
+  // this body needs is already built (and cached) by the time the explicit
+  // restore's own await on it resolves.
+  if(solidAtFocus&&body.kind==='planet'&&body.water>0&&body.type!=='Gas giant'){
+    void ensureCanonicalHydrology(body).then(()=>{
+      if(!riverRestoreAddress&&state.body===body&&!body.hydrology&&canonicalRegionsFor(body.id).length>0)void selectRiverDestination('auto',true);
+    });
+  }
   cancelRiverPreparation();riverFlight=null;
   clearDrainage();
   clearWalking();
@@ -2670,7 +3724,7 @@ async function focusBody(body: Body, keepPose = false) {
   breadcrumbs();
   panel();
   persist();
-  if (body.kind !== "star")
+  if (body.kind !== "star" && solidAtFocus)
     try {
       const data = await job("surface", { body, width: 1024, segments: 192 });
       if (
@@ -2689,6 +3743,13 @@ async function focusBody(body: Body, keepPose = false) {
         "The system remains available; terrain detail could not be prepared.",
       );
     }
+  // Run any pending explicit ?river= restore in-line, awaited here — before
+  // `ready` (below) ever flips true — so a deep-link observer polling on
+  // `ready` can never observe this body as "arrived" with its restored river
+  // still missing (see riverRestoreAddress above).
+  let riverRestored=true;
+  if(riverRestoreAddress&&token===bodyFocusToken&&state.body?.id===body.id)
+    riverRestored=await selectRiverDestination(riverRestoreAddress,true);
   if (!keepPose) {
     await new Promise((r) =>
       setTimeout(r, Math.max(0, focusDuration - (performance.now() - started))),
@@ -2701,6 +3762,7 @@ async function focusBody(body: Body, keepPose = false) {
       controls.enabled = !flight && !renderer.xr.isPresenting;
     }
   }
+  return riverRestored;
 }
 function unfocusBody(keepPose: boolean) {
   cancelRiverPreparation();riverFlight=null;
@@ -2725,7 +3787,7 @@ function unfocusBody(keepPose: boolean) {
   surfaceInfo = null;
   surfaceMesh = null;
   refiningSurface = false;
-  selected = null;
+  selected = followedPlanetId&&sys.planets.some(p=>p.id===followedPlanetId)?followedPlanetId:null;
   delete root.userData.focusRadius;
   controls.minDistance = systemUnit * 1000;
   root.userData.viewRadius = 15;
@@ -2767,13 +3829,178 @@ function bodyById(id: string) {
       )
     : undefined;
 }
+function followedPlanet():Body|undefined {
+  return state.sys?.planets.find(body=>body.id===followedPlanetId);
+}
+function planetFollowEvents(sys:StarSystem,body:Body):[string,Ns][] {
+  const entry=lifecycleFor(sys,body);
+  if(entry.kind==='star')return [];
+  const events:[string,Ns][]=[['Formation begins',entry.lc.formationNs],['Solid ground',entry.lc.coolingNs]];
+  if(entry.lc.oceanNs!==null)events.push(['Ocean begins',entry.lc.oceanNs]);
+  const history=biosphereHistoryFor(seed,body.id,body,entry.lc);
+  const atAge=(myr:number)=>entry.lc.formationNs+BigInt(myr)*1_000_000n*YEAR_NS;
+  if(history.microbialMyr!==null)events.push(['First microbes',atAge(history.microbialMyr)]);
+  for(const [label,kind] of [['First plants','plant'],['First animals','animal']] as const){
+    const first=Math.min(...history.species.filter(s=>kind==='animal'?s.kind==='animal':s.kind!=='animal').map(s=>s.birthMyr));
+    if(Number.isFinite(first))events.push([label,atAge(first)]);
+  }
+  events.push(['Host becomes giant',entry.starLc.giantNs],['Host becomes remnant',entry.starLc.remnantNs]);
+  if(entry.lc.engulfedNs!==null)events.push(['Planet engulfed',entry.lc.engulfedNs]);
+  return events.filter(([,t])=>entry.lc.engulfedNs===null||t<=entry.lc.engulfedNs)
+    .sort((a,b)=>a[1]<b[1]?-1:a[1]>b[1]?1:0);
+}
+function followPlanetFromFormation(body:Body){
+  if(body.kind!=='planet'||!state.sys)return;
+  const entry=lifecycleFor(state.sys,body);
+  if(entry.kind==='star')return;
+  followedPlanetId=body.id;selected=body.id;
+  seekDate(entry.lc.formationNs);
+  if(state.sys&&state.level==='system')void focusBody(body);
+  tier='historical';updateDateUI();panel();persist();
+  announce(`Following ${body.name} from formation. Use Play or Next milestone to move through its history.`);
+}
+function nextPlanetMilestone(){
+  const body=followedPlanet();if(!body||!state.sys)return;
+  const event=planetFollowEvents(state.sys,body).find(([,t])=>t>epoch);
+  if(!event){announce('This model specifies no later milestone or destruction for this planet.');return;}
+  seekDate(event[1]);
+  announce(`${body.name}: ${event[0]} at ${readableYears(event[1])} after the Big Bang.`);
+}
+function stopPlanetFollow(){followedPlanetId=null;panel();persist();announce('Planet follow ended.');}
+function worldHistoryPanel(sys: StarSystem, body: Body): string {
+  const entry=lifecycleFor(sys,body);
+  if(entry.kind==='star')return '';
+  const snapshot=planetSnapshotFor(sys,body,epoch);
+  const stage=snapshot.state.stage;
+  const environment=snapshot.environment;
+  const bio=stage==='molten'||stage==='solid'
+    ? snapshot.biosphere()
+    : null;
+  const plants=bio?.species.filter(s=>s.kind!=='animal').length||0;
+  const animals=bio?.species.filter(s=>s.kind==='animal').length||0;
+  const events: [string,bigint][]=[
+    ['Accretion disc',(entry.starLc.formationNs+entry.lc.formationNs)/2n],
+    ['Molten world',entry.lc.formationNs],
+    ['Solid ground',entry.lc.coolingNs],
+  ];
+  if(entry.lc.oceanNs!==null)events.push(['Ocean begins',entry.lc.oceanNs]);
+  const profile=profileFromPhysicalProperties(body,'main-sequence');
+  if(profile!=='airless'){
+    const world=biosphereHistoryFor(seed,body.id,body,entry.lc);
+    const atAge=(myr:number)=>entry.lc.formationNs+BigInt(myr)*1_000_000n*YEAR_NS;
+    if(world.microbialMyr!==null)events.push(['First microbes',atAge(world.microbialMyr)]);
+    const firstPlant=Math.min(...world.species.filter(s=>s.kind!=='animal').map(s=>s.birthMyr));
+    const firstAnimal=Math.min(...world.species.filter(s=>s.kind==='animal').map(s=>s.birthMyr));
+    if(Number.isFinite(firstPlant))events.push(['First plants',atAge(firstPlant)]);
+    if(Number.isFinite(firstAnimal))events.push(['First animals',atAge(firstAnimal)]);
+  }
+  events.push(['Reference date',CATALOGUE_EPOCH_NS]);
+  const following=followedPlanetId===body.id;
+  const followEvents=body.kind==='planet'?planetFollowEvents(sys,body):[];
+  const nextEvent=followEvents.find(([,t])=>t>epoch);
+  return `<details class="world-history" open><summary>Formation & life</summary>
+    <p class="subtle">At this date: <strong>${esc(stage.replace('-', ' '))}</strong> · biosphere: <strong>${esc(bio?.stage||'not yet present')}</strong><br>
+    ${plants} living plant species · ${animals} living animal species.<br>
+    Host star: ${esc(environment.starStage.replace('-', ' '))} · estimated temperature: ${environment.estimatedTemperatureK===null?'unresolved':`${Math.round(environment.estimatedTemperatureK)} K`} · global ocean: ${environment.oceanAvailable?'present':'absent'} · dated habitat: ${environment.biosphereSuitable?'suitable':'unsuitable'}. ${environment.biosphereSuitable?'Animals and plants appear near walkable ground where the local habitat supports them.':'The procedural climate or water gate excludes visible life at this date.'}</p>
+    <div class="mini-buttons">${events.filter(([,t])=>entry.lc.engulfedNs===null||t<entry.lc.engulfedNs).map(([label,t])=>`<button type="button" data-history-date="${t}">${esc(label)}<small>${esc(readableYears(t))}</small></button>`).join('')}</div>
+    ${body.kind==='planet'?`<div class="mini-buttons"><button id="follow-planet">Follow from formation</button>${following?`<button id="next-planet-event">Next milestone${nextEvent?`: ${esc(nextEvent[0])}`:''}</button><button id="stop-planet-follow">Stop following</button>`:''}</div><p class="subtle">${following?`Following this planet · ${esc(stage)} at ${esc(readableYears(epoch))}. `:''}${entry.lc.engulfedNs===null?'No destruction date is specified for this planet.':`Engulfment: ${esc(readableYears(entry.lc.engulfedNs))}.`}</p>`:''}
+    <p class="subtle">These formation and biosphere dates are procedural scenarios, not a calibrated planetary history.</p></details>`;
+}
+function universeTravelPanel(){
+  return `<div class="mini-buttons"><button id="toggle-flight">${flight?'Stop flight':'Fly freely'}</button><button id="fly-target" ${selected?'':'disabled'}>Fly to selection</button><button id="fly-outward">Fly outward</button><button id="play">${playing?'Pause time':'Play time'}</button></div><p class="subtle">Drag to look · WASD travel · Q/E down/up · wheel adjusts speed · Shift boosts · Esc stops.</p><div class="mini-buttons"><button id="fly-forward">Hold: fly forward</button></div>`;
+}
+function bindUniverseTravel(){
+  bind('toggle-flight',toggleFlight);bind('fly-target',beginTargetFlight);bind('fly-outward',flyOutward);
+  bind('play',()=>{playing=!playing;panel();});
+  const forward=$('fly-forward');
+  if(forward){forward.onpointerdown=()=>{if(!flight)toggleFlight();touchForwardHeld=true;flightKeys.add('w');};forward.onpointerup=forward.onpointercancel=()=>{touchForwardHeld=false;flightKeys.delete('w');};}
+}
+function starTrackerPanel(star:PrimordialStar|undefined){
+  if(!star)return '';
+  const status=epoch<star.birthNs?'not formed':epoch<star.deathNs?'alive':'ended';
+  const descendant=catalogue.find(g=>g.id===star.descendantGalaxyId);
+  const available=!!descendant&&galaxyVisibleAt(descendant,epoch);
+  return `<h3>${firstStarFocus===star.id?'Following':'Selected'} first star</h3><div class="code">${esc(star.id)}</div>
+    <p><strong>${status}</strong> at this date · lifespan ${readableLifetime(star.birthNs,star.deathNs)} · formed ${readableYears(star.birthNs)} after the Big Bang.</p>
+    <p class="subtle">${status==='ended'?'The original star is gone. This trace follows its modeled material lineage, not a living star or a measured remnant.':'This is a procedural first star with no resolved planets.'} Descendant region: ${esc(star.descendantGalaxyId)}.</p>
+    <details><summary>Stellar life and mergers</summary><p class="subtle">Gas cloud → protostar → hydrogen-burning star → giant or supergiant. Depending on mass, the end can leave a white dwarf, neutron star or black hole, or disperse material in an explosion. Massive first stars in this model live only a few to a few dozen million years, so none is still alive at the reference date. Stars can merge in close binaries or crowded clusters; individual stellar mergers and remnant outcomes are not yet resolved here.</p></details>
+    <div class="mini-buttons">${firstStarFocus===star.id?'<button id="stop-first-star-follow">Stop following</button>':'<button id="follow-first-star">Follow star</button>'}<button id="star-birth">Formation</button><button id="star-death">End of life</button><button id="star-now">Reference now</button>${available?'<button id="star-descendant">Visit descendant galaxy</button>':''}</div>`;
+}
+function bindStarTracker(){
+  const star=firstStarById(firstStarFocus||selected);if(!star)return;
+  bind('follow-first-star',()=>visitFirstStar(star));bind('stop-first-star-follow',leaveFirstStar);
+  bind('star-birth',()=>seekDate(star.birthNs));bind('star-death',()=>seekDate(star.deathNs));
+  bind('star-now',()=>seekDate(CATALOGUE_EPOCH_NS));
+  bind('star-descendant',()=>{const galaxy=catalogue.find(g=>g.id===star.descendantGalaxyId);if(galaxy&&galaxyVisibleAt(galaxy,epoch))void navigate('galaxy',{galaxy});});
+}
 function panel() {
   const content = $("panel-content");
   $("panel-kicker").textContent =
     state.level === "body" ? "WORLD INSPECTOR" : "EXPLORER";
   let html = "";
   if (state.level === "universe") {
-    const g = catalogue.find((g) => g.id === selected);
+    const early=earlySceneStageAt(epoch);
+    if(early){
+      ensurePrimordialCohort();
+      const bg=cosmicBackgroundAt(epoch);
+      const alive=early==='first-stars'?primordialStarsAt(primordialCohort,epoch):[];
+      const focused=firstStarById(firstStarFocus);
+      const chosen=firstStarById(selected);
+      html=`<span class="kicker">COSMIC HISTORY</span><h2>${esc(early.replaceAll('-',' '))}</h2>
+        ${universeTravelPanel()}
+        <p>The view shows a simultaneous model date. The earliest plasma and first-light fields are illustrative; there is no central explosion.</p>
+        ${facts([['Scale factor',epoch===0n?'undefined at origin':Math.exp(Math.max(-700,bg.lnScaleFactor)).toExponential(3)],
+          ['Opacity',bg.opacity],['Model',bg.fidelity],
+          ['First stars',early==='first-stars'?String(alive.length):'not yet'],
+          ['Enrichment proxy',`${Math.round(primordialEnrichmentProxyAt(primordialCohort,epoch)*100)}%`]])}
+        ${starTrackerPanel(focused||chosen)}
+        ${alive.length?`<h3>First stars · ${alive.length}</h3>${alive.slice(0,24).map(star=>item(star.id,`First star ${star.id.split('/').at(-2)}`,`Lifespan ${readableLifetime(star.birthNs,star.deathNs)}`,'#d4dfff',star.id===selected)).join('')}${alive.length>24?'<p class="subtle">First 24 listed. More stars appear in the spatial view.</p>':''}`:'<p class="subtle">No first star is alive at this exact date. Move the fine time control forward.</p>'}
+        <p class="subtle">First-star positions are stable comoving proxies near later galaxies. They do not represent measured orbits or resolved planetary systems. T = thousand, M = million, B = billion, Tr = trillion years.</p>`;
+      content.innerHTML=html;
+      for(const btn of content.querySelectorAll<HTMLButtonElement>('[data-select]')){
+        btn.onclick=()=>select(btn.dataset.select!);
+        btn.ondblclick=()=>{select(btn.dataset.select!);void explore();};
+      }
+      bindUniverseTravel();bindStarTracker();
+      bind('explore',()=>void explore());
+      return;
+    }
+    const alternate=alternateFuture();
+    if(alternate){
+      const status=alternate.stateAt(epoch);
+      content.innerHTML=`<span class="kicker">ILLUSTRATIVE FUTURE</span><h2>${esc(alternate.name)}</h2>
+        ${universeTravelPanel()}${starTrackerPanel(firstStarById(firstStarFocus))}
+        <p>At this date: <strong>${esc(status.replaceAll('-',' '))}</strong>. The scenario ends at ${esc(readableYears(alternate.endDateNs))} after the Big Bang.</p>
+        ${facts([['Transition',readableYears(BigInt(alternate.parameters.transitionYears)*YEAR_NS)],['Scenario limit',readableYears(BigInt(alternate.parameters.scenarioEndYears)*YEAR_NS)]])}
+        <p class="subtle">${esc(alternate.validity)} ${esc(alternate.uncertainty)}</p>
+        <p class="subtle">This branch is an explanatory projection. Galaxy and local-system physics remain the baseline model before the transition; the projected fate has no calibrated structure simulation.</p>`;
+      bindUniverseTravel();bindStarTracker();return;
+    }
+    const future=futureStageAt(epoch);
+    if(future){
+      const meaning:Record<NonNullable<FutureStage>,string>={
+        'stellar-decline':'Ordinary starlight has become scarce in this constant-dark-energy scenario.',
+        degenerate:'Cooling stellar remnants dominate this illustrative era. Individual late populations are coarse.',
+        'black-hole':'Black-hole and dilute-remnant outcomes depend on proton stability and evaporation assumptions.',
+        ceiling:'The 10^100-year limit is an Atlas navigation ceiling, not a predicted end of time.',
+      };
+      const surviving=catalogue.filter(g=>galaxyVisibleAt(g,epoch));
+      content.innerHTML=`<span class="kicker">FUTURE SCENARIO</span><h2>${esc(future.replaceAll('-',' '))}</h2>
+        ${universeTravelPanel()}${starTrackerPanel(firstStarById(firstStarFocus))}
+        <p>${esc(meaning[future])}</p><p class="subtle">Scenario: continued expansion with constant dark energy. Local stars and planets still follow their own lifecycle queries.</p>`;
+      content.innerHTML+=`<h3>Surviving galaxies · ${surviving.length}</h3>${surviving.map(g=>item(g.id,g.name,g.type,'#91adc3',g.id===selected)).join('')}`;
+      for(const btn of content.querySelectorAll<HTMLButtonElement>('[data-select]')){
+        btn.onclick=()=>select(btn.dataset.select!);
+        btn.ondblclick=()=>{select(btn.dataset.select!);void explore();};
+      }
+      const selectedGalaxy=surviving.find(g=>g.id===selected);
+      if(selectedGalaxy){content.insertAdjacentHTML('afterbegin',`<button id="explore" class="explore">Explore ${esc(selectedGalaxy.name)} ↗</button>`);bind('explore',()=>void explore());}
+      bindUniverseTravel();bindStarTracker();return;
+    }
+    const existingGalaxies=catalogue.filter(g=>viewMode==='observed'
+      ? observedGalaxyAt(galaxyLifecycleFor(g),vec(g.position).length(),epoch).visible
+      : galaxyVisibleAt(g,epoch));
+    const g = existingGalaxies.find((g) => g.id === selected);
     html = g
       ? `<span class="kicker">${g.type.toUpperCase()}</span><h2>${esc(g.name)}</h2><div class="code">${g.id}</div>${facts(
           [
@@ -2782,17 +4009,33 @@ function panel() {
             ["Centre Y", fmt(g.position[1], 3) + " Mpc"],
             ["Centre Z", fmt(g.position[2], 3) + " Mpc"],
           ],
-        )}<button class="explore" id="explore">Explore galaxy ↗</button>`
-      : "<h2>The neighbourhood</h2><p>Pick a galaxy in the sky or the catalogue below. Every destination comes from your universe seed.</p>";
+        )}${galaxyVisibleAt(g,epoch)
+          ? '<button class="explore" id="explore">Explore galaxy ↗</button>'
+          : '<p class="subtle">This light was emitted before the galaxy merged. Seek to its emission era to explore its former state.</p>'}`
+      : `<h2>The neighbourhood</h2><p>${viewMode==='observed'?'Approximate observed sky: galaxy light is shown from its emission date, with redshift dimming.':'State at the selected cosmic date: formed galaxies are shown in comoving map positions.'}</p>`;
+    html += starTrackerPanel(firstStarById(firstStarFocus));
     html +=
-      "<h3>Galaxies · 32</h3>" +
-      catalogue
+      `<h3>Galaxies · ${existingGalaxies.length}</h3>` +
+      existingGalaxies
         .map((g) => item(g.id, g.name, g.type, "#b4d5ef", g.id === selected))
         .join("");
+    if(!existingGalaxies.length){
+      const nextGalaxy=catalogue.map(g=>({g,birth:galaxyLifecycleFor(g).birthNs}))
+        .filter(entry=>entry.birth>epoch).sort((a,b)=>a.birth<b.birth?-1:1)[0];
+      if(nextGalaxy)html+=`<p class="subtle">No catalogue galaxy has formed at this date.</p><button id="next-galaxy">Go to first galaxy formation · ${esc(readableYears(nextGalaxy.birth))}</button>`;
+    }
   }
   if (state.level === "galaxy") {
     const g = state.galaxy!;
+    const lineage=galaxyLineageAt(seed,g,epoch,galaxyAddressFor(g));
     html = `<span class="kicker">${g.type.toUpperCase()}</span><h2>${esc(g.name)}</h2><p>Select a named star and approach it. Scroll over a star to zoom toward it, or switch to flight.</p>`;
+    if(lineage.transferred)html+=`<p class="subtle">This galaxy merged at ${esc(readableYears(lineage.transferNs!))}. Its surviving population IDs now belong to host ${esc(lineage.hostGalaxyId)}.</p>`;
+    if(firstStarFocus&&firstStarById(firstStarFocus)?.descendantGalaxyId===g.id){
+      html+=starTrackerPanel(firstStarById(firstStarFocus));
+      const descendants=historicalStarsForGalaxy(seed,g,galaxyAddressFor(g)).filter(star=>star.ancestryStarId===firstStarFocus);
+      const activeDescendants=descendants.filter(star=>star.birthNs<=epoch&&epoch<star.deathNs);
+      html+=`<p class="subtle">Modeled material lineage: ${descendants.length} later stellar population points in this galaxy; ${activeDescendants.length} alive at this date. These are distinct stars, not the first star surviving.</p>`;
+    }
     if (region) {
       html += `<div class="code">S(${region.join(", ")})</div>${facts([
         ["Sector width", "32 light-years"],
@@ -2816,7 +4059,12 @@ function panel() {
             : "—",
         ],
       ]) +
-      '<p class="subtle">Mapped points are real catalogue systems. More stars stream into view as you approach; the whole galaxy stays in place.</p>';
+      `<p class="subtle">This procedural lineage has ${lineage.primordialEnded} ended first-star precursors, ${lineage.historicalAlive} active older stars and ${lineage.futureAlive} active post-reference stars at this date. Its enrichment proxy is ${Math.round(lineage.enrichmentProxy*100)}%.</p>`;
+    const population=space?.populationAt(epoch)||[];
+    const nextPopulation=population.length?undefined:space?.nextPopulationBirthAfter(epoch);
+    const chosenPopulation=space?.findPopulation(selected||'',epoch);
+    if(chosenPopulation)html+=`<h3>Selected dated star</h3><div class="code">${esc(chosenPopulation.id)}</div><p>Lifespan ${esc(readableLifetime(chosenPopulation.birthNs,chosenPopulation.deathNs))}</p><button id="explore" class="explore">Visit this star ↗</button><p class="subtle">This population point has a dated location and lineage. Its planetary system is unresolved.</p>`;
+    html+=`<h3>Stars alive at this date · ${population.length}</h3>${population.slice(0,32).map(star=>item(star.id,`Dated star ${star.id.split('/').at(-2)}`,`Lifespan ${readableLifetime(star.birthNs,star.deathNs)}`,star.color,star.id===selected)).join('')}${population.length>32?'<p class="subtle">First 32 listed. Select other stars in the spatial view.</p>':''}${nextPopulation?`<button id="next-dated-star">Go to next stellar birth · ${esc(readableYears(nextPopulation.birthNs))}</button>`:''}`;
   }
   if (state.level === "sector") {
     const ref =
@@ -2841,6 +4089,12 @@ function panel() {
         item(r.id, r.name, "Stellar system", r.color, r.id === selected),
       )
       .join("");
+    const population=space?.populationAt(epoch)||[];
+    const nextPopulation=population.length?undefined:space?.nextPopulationBirthAfter(epoch);
+    const chosenPopulation=space?.findPopulation(selected||'',epoch);
+    if(chosenPopulation)html+=`<h3>Selected dated star</h3><div class="code">${esc(chosenPopulation.id)}</div><p>Lifespan ${esc(readableLifetime(chosenPopulation.birthNs,chosenPopulation.deathNs))}</p><button id="explore" class="explore">Visit this star ↗</button><p class="subtle">This population point has no resolved planetary system.</p>`;
+    if(population.length)html+=`<h3>Other dated stars · ${population.length}</h3>${population.slice(0,16).map(star=>item(star.id,`Dated star ${star.id.split('/').at(-2)}`,`Lifespan ${readableLifetime(star.birthNs,star.deathNs)}`,star.color,star.id===selected)).join('')}`;
+    else if(nextPopulation)html+=`<button id="next-dated-star">Go to next stellar birth · ${esc(readableYears(nextPopulation.birthNs))}</button>`;
     if (sectorData!.refs.length > 120)
       html +=
         '<p class="subtle">First 120 listed. Select other systems directly in the spatial view.</p>';
@@ -2851,6 +4105,7 @@ function panel() {
     html = `<span class="kicker">STELLAR SYSTEM</span><h2>${esc(sys.name)}</h2><div class="code">${esc(sys.id)}</div><div class="count-grid"><div>${sys.stars.length}<small>stars</small></div><div>${sys.planets.length}<small>planets</small></div><div>${sys.moons.length}<small>moons</small></div></div>`;
     if (b) {
       html += `<h2>${esc(b.name)}</h2><p>${esc(b.type)} · ${distance(b.radiusM)} radius</p><button class="explore" id="explore">View from orbit ↗</button>`;
+      html += worldHistoryPanel(sys,b);
     }
     html +=
       `<div class="mini-buttons"><button id="system-scale">${systemScale === "overview" ? "Physical scale" : "Spaced overview"}</button><button id="play">${playing ? "Ⅱ Pause" : "▷ Orbit playback"}</button><button id="epoch">Reset epoch</button><button id="bookmark">☆ Bookmark</button><button id="export">↓ Export</button></div>` +
@@ -2895,6 +4150,8 @@ function panel() {
     const b = state.body!,
       sys = state.sys!,
       parent = bodyById(b.parentId);
+    const bodyEntry=lifecycleFor(sys,b);
+    const bodySolid=bodyEntry.kind!=='star'&&planetStateAt(bodyEntry.lc,bodyEntry.starLc,epoch).stage==='solid';
     html = `<span class="kicker">${b.kind.toUpperCase()}</span><h2>${esc(b.name)}</h2><p>${esc(b.type)}</p><div class="code">${esc(b.id)}</div>${facts(
       [
         ["Radius", distance(b.radiusM)],
@@ -2904,6 +4161,7 @@ function panel() {
         ["Eccentricity", b.orbit ? fmt(b.orbit.e, 3) : "—"],
       ],
     )}<div class="mini-buttons"><button id="export">↓ Export</button><button id="bookmark">☆ Bookmark</button></div>`;
+    html += worldHistoryPanel(sys,b);
     const moons = sys.moons.filter((m) => m.parentId === b.id);
     if (moons.length)
       html +=
@@ -2912,18 +4170,29 @@ function panel() {
         "</h3>" +
         moons.map((m) => item(m.id, m.name, "View moon", m.color)).join("");
     if (b.rings) html += `<p>${esc(b.name)}'s Pale Ring · ring system</p>`;
-    html +=
+    if(bodySolid)html +=
       '<p class="subtle">Terrain flight approaches land and follows the ground at 600 m. Drag to look around; WASD or Q/E releases assistance. Free flight permits approach to 120 m over the terrain.</p>';
-    if (b.kind !== "star" && b.type !== "Gas giant")
+    if (bodySolid && b.type !== "Gas giant")
       html += `<div class="mini-buttons"><button id="approach">Approach low orbit</button><button id="descend">Descend to 10 km</button><button id="hold-orbit">${orbitAssist ? 'Release orbit' : 'Hold orbit'}</button><button id="relief">Terrain relief ×${reliefScale}</button></div><p class="subtle">The wheel adjusts flight speed. Low orbit and terrain flight retain the surrounding system. VR retains stationary model controls.</p>`;
   }
   {
     const mapped = space?.find(selected || "");
-    let surfaceNav = state.level==='body' && state.body!.kind!=='star' && state.body!.type!=='Gas giant' ? `<button id="walk-surface" class="explore">${walker?'Return to flight':landing?'Cancel landing':'Land and walk'}</button><button id="terrain-flight" class="explore">Fly over terrain</button>` : '';
+    const datedStar=space?.findPopulation(selected || "",epoch);
+    const activeBodyEntry=state.level==='body'?lifecycleFor(state.sys!,state.body!):null;
+    const activeBodySolid=activeBodyEntry?.kind!=='star'&&activeBodyEntry!==null&&planetStateAt(activeBodyEntry.lc,activeBodyEntry.starLc,epoch).stage==='solid';
+    let surfaceNav = activeBodySolid && state.body!.type!=='Gas giant' ? `<button id="walk-surface" class="explore">${walker?'Return to flight':landing?'Cancel landing':'Land and walk'}</button><button id="terrain-flight" class="explore">Fly over terrain</button>` : '';
     if(surfaceNav){
+      const life=lifeGateContext(state.sys!,state.body!,epoch);
+      if(life?.floraStage==='complex'&&life.floraAvailableKinds?.length)surfaceNav+='<button id="find-life" class="explore">Find living habitat</button>';
       const sites=surveys.get(surveyKey(state.body!));
       if(atmosphereHeightM(state.body!)>0)surfaceNav+=`<button id="horizon-assist">Atmospheric horizon assist: ${horizonAssist?'on':'off'}</button>`;
-      if(state.body!.kind==='planet'&&state.body!.water&&!state.body!.hydrology)surfaceNav+=`<button id="river-find" ${riverState?.status==='building'?'disabled':''}>${riverState?.status==='building'?'Finding a river region…':'Find rivers and a lake'}</button>`;
+      // Existence no longer gates this: canonicalRegionsFor is the pure,
+      // already-built existence set (see hydrology-registry.ts). The button
+      // is available whenever this world has at least one canonical river,
+      // regardless of whether one has already been selected for detail
+      // rendering — "Find rivers" is navigation among existing rivers, not a
+      // one-time discovery/build action.
+      if(state.body!.kind==='planet'&&state.body!.water&&canonicalRegionsFor(state.body!.id).length>0)surfaceNav+=`<button id="river-find" ${riverState?.status==='building'?'disabled':''}>${riverState?.status==='building'?'Preparing a river region…':'Find rivers and a lake'}</button>`;
       surfaceNav+=`<button id="surface-detail">Ground detail: ${surfaceDetail?'on':'off'}</button><details id="surface-survey" ${surveyOpen?'open':''}><summary>Surface destinations</summary><p class="subtle">Find named sites on this world's existing terrain. Fly to a site, then choose Land and walk.</p>${sites?sites.map(s=>`<button data-surface-site="${esc(s.id)}" class="surface-site"><strong>${esc(s.name)}</strong><span>${esc(s.category)} · ${esc(s.biome)}<br>${fmt(s.elevationM,0)} m · slope ${fmt(s.slopeDeg,1)}°</span></button>`).join(''):`<button id="survey-surface" ${surveyPending.has(surveyKey(state.body!))?'disabled':''}>${surveyPending.has(surveyKey(state.body!))?'Surveying terrain…':'Survey surface'}</button>`}<p class="subtle">Ground materials show sand, soil, rock and snow. Find rivers and a lake adds a local waterway with initial forest and ground-cover detail.</p></details>`;
     }
     if(surfaceNav&&state.body!.water){
@@ -2942,7 +4211,7 @@ function panel() {
       if(riverState?.status==='error')surfaceNav+=`<p class="subtle">${esc(riverState.error)}</p><button id="river-retry">Retry river region</button>`;
       surfaceNav+='</details>';
     }
-    const nav = `<div class="mini-buttons"><button id="fly-target" ${selected ? "" : "disabled"}>Fly to selection</button><button id="fly-outward">Fly outward</button><button id="toggle-flight">${flight ? "Stop flight" : "Fly freely"}</button>${mapped ? '<button id="approach-star">Approach selected star</button>' : ""}</div><p class="subtle">Flight: drag to look · WASD move · Q/E down/up · wheel adjusts speed · Shift boosts · Esc stops. Touch: hold Fly forward below.</p><div class="mini-buttons"><button id="fly-forward">Hold: fly forward</button></div>`;
+    const nav = `<div class="mini-buttons"><button id="fly-target" ${selected ? "" : "disabled"}>Fly to selection</button><button id="fly-outward">Fly outward</button><button id="toggle-flight">${flight ? "Stop flight" : "Fly freely"}</button>${mapped ? '<button id="approach-star">Approach selected star</button>' : ""}${datedStar?'<button id="visit-dated-star">Visit dated star</button>':''}</div><p class="subtle">Flight: drag to look · WASD move · Q/E down/up · wheel adjusts speed · Shift boosts · Esc stops. Touch: hold Fly forward below.</p><div class="mini-buttons"><button id="fly-forward">Hold: fly forward</button></div>`;
     if (state.level === "galaxy" && mapped)
       html =
         `<h2>${esc(mapped.name)}</h2><div class="code">${esc(mapped.id)}</div><button id="explore" class="explore">Visit this system ↗</button>` +
@@ -2956,6 +4225,12 @@ function panel() {
     VERSION +
     '</p><div class="mini-buttons"><button id="verify">Verify seed</button><button id="copy">Copy view link</button></div><input id="address" placeholder="System address: G001/C…/0" aria-label="System catalogue address" style="width:100%"><button id="find-address" style="width:100%;margin-top:7px">Go to address</button><div id="bookmarks"></div></details>';
   content.innerHTML = html;
+  for(const button of content.querySelectorAll<HTMLButtonElement>('[data-history-date]'))button.onclick=()=>seekDate(BigInt(button.dataset.historyDate!));
+  bind('follow-planet',()=>{const body=state.body?.kind==='planet'?state.body:selected?bodyById(selected):undefined;if(body)followPlanetFromFormation(body);});
+  bind('next-planet-event',nextPlanetMilestone);
+  bind('stop-planet-follow',stopPlanetFollow);
+  bind('leave-primordial',leaveFirstStar);
+  bindStarTracker();
   const drainageElement=$('drainage-panel') as HTMLDetailsElement|null;
   if(drainageElement)drainageElement.ontoggle=()=>{if(drainageElement.isConnected)drainageOpen=drainageElement.open;};
   const basinSelect=$('drainage-catchment') as HTMLSelectElement|null;
@@ -2990,6 +4265,8 @@ function panel() {
         coords: ref.cell.map((v) => Math.floor(v / 8)) as V3,
       });
   });
+  bind('visit-dated-star',()=>{if(selected)visitDatedStar(selected);});
+  bind('next-dated-star',()=>{const star=space?.nextPopulationBirthAfter(epoch);if(star){seekDate(star.birthNs);select(star.id);}});
   const forward = document.getElementById("fly-forward");
   if (forward) {
     forward.onpointerdown = (e) => {
@@ -3009,6 +4286,10 @@ function panel() {
   bind("suggest-sector", () => {
     region = [Math.floor((state.galaxy!.radiusLy * 0.16) / 32), 0, 0];
     panel();
+  });
+  bind('next-galaxy',()=>{
+    const next=catalogue.map(g=>galaxyLifecycleFor(g).birthNs).filter(t=>t>epoch).sort((a,b)=>a<b?-1:1)[0];
+    if(next!==undefined)seekDate(next);
   });
   bind("layer-down", () => {
     region![1]--;
@@ -3033,11 +4314,12 @@ function panel() {
   });
   bind('descend', () => approachPlanet(10000));
   bind('terrain-flight', ()=>exploreTerrain());
+  bind('find-life',()=>exploreTerrain(undefined,true));
   bind('survey-surface',()=>void surveySurface());
   bind('drainage-build',analyseDrainage);
-  bind('river-build',()=>{const c=drainage?.catchment();if(c)void buildPhysicalRiver(c.id);});
-  bind('river-find',()=>void buildPhysicalRiver('auto'));
-  bind('river-retry',()=>{if(riverState)void buildPhysicalRiver(riverState.parentId);});
+  bind('river-build',()=>{const c=drainage?.catchment();if(c)void selectRiverDestination(c.id);});
+  bind('river-find',()=>void selectRiverDestination('auto'));
+  bind('river-retry',()=>{if(riverState)void selectRiverDestination(riverState.parentId);});
   bind('river-inspect',inspectRiver);bind('river-export',exportRiver);
   for(const button of content.querySelectorAll<HTMLButtonElement>('[data-river-site]'))button.onclick=()=>{
     const site=state.body?.hydrology?.sites.find(s=>s.id===button.dataset.riverSite);if(site)flyRiverSite(site);
@@ -3069,7 +4351,7 @@ function panel() {
   });
   bind("epoch", () => {
     playing = false;
-    seekDate(0n);
+    seekDate(CATALOGUE_EPOCH_NS);
     panel();
   });
   bind("export", exportData);
@@ -3090,19 +4372,25 @@ function bind(id: string, f: () => void) {
 }
 function select(id: string) {
   selected = id;
+  if(space)space.focusPopulation(null,epoch);
   panel();
   if (state.level === "universe") {
     const g = catalogue.find((x) => x.id === id);
     if (g) announce(g.name + " selected · double-click or press F to explore");
+    else if(firstStarAtDate(id,epoch))announce('First star selected · double-click or press F to visit');
   } else
     announce(
-      (bodyById(id)?.name ||
+      (space?.findPopulation(id,epoch)?'Dated star':bodyById(id)?.name ||
         sectorData?.refs.find((r) => r.id === id)?.name ||
         id) + " selected · press F to explore",
     );
 }
 async function explore() {
+  const projectedFate=alternateFuture();
+  if(projectedFate&&projectedFate.stateAt(epoch)!=='ordinary-expansion')return;
   const mapped = space?.find(selected || "");
+  const datedStar=space?.findPopulation(selected || "",epoch);
+  if(datedStar){visitDatedStar(datedStar.id);return;}
   if (mapped) {
     await navigate("system", {
       ref: mapped,
@@ -3112,8 +4400,10 @@ async function explore() {
   }
 
   if (state.level === "universe") {
+    const first=firstStarAtDate(selected,epoch);
+    if(first){visitFirstStar(first);return;}
     const galaxy = catalogue.find((g) => g.id === selected);
-    if (galaxy) await navigate("galaxy", { galaxy });
+    if (galaxy&&galaxyVisibleAt(galaxy,epoch)) await navigate("galaxy", { galaxy });
   } else if (state.level === "galaxy" && region)
     await navigate("sector", { coords: [...region] });
   else if (state.level === "sector") {
@@ -3301,10 +4591,21 @@ function pickRay(picker: THREE.Raycaster) {
         }
       }
     }
+    const cohortPositions=space.historical.geometry.getAttribute('position');
+    for(let i=0;i<cohortPositions.count;i++){
+      const star=space.populationAtIndex(i,epoch);
+      if(!star)continue;
+      point.fromBufferAttribute(cohortPositions,i).applyMatrix4(space.historical.matrixWorld);
+      delta.copy(point).sub(picker.ray.origin);
+      const distance=delta.length(),forward=delta.dot(picker.ray.direction);
+      if(forward<=0)continue;
+      const angle=delta.addScaledVector(picker.ray.direction,-forward).length()/distance;
+      if(angle<score){score=angle;best={object:space.historical,id:star.id,kind:'dated-star',title:'Dated star · '+star.id};}
+    }
     return best;
   }
   const hits = picker.intersectObjects(
-    picks.map((p) => p.object),
+    picks.filter(p=>p.object.visible&&p.object.parent?.visible!==false).map((p) => p.object),
     false,
   );
   if (!hits.length) return null;
@@ -3442,7 +4743,12 @@ $("generate").onclick = () => {
     return;
   }
   seed = value;
+  firstStarFocus=null;primordialSeed='';
   catalogue = galaxies(seed);
+  galaxyLifecycles.clear();
+  lifeGateCache = null;
+  clearBiosphereHistoryCache();
+  resetHydrologyRegistry();
   void navigate("universe");
 };
 input.addEventListener("keydown", (e) => {
@@ -3457,9 +4763,47 @@ $("collapse").onclick = () => $("panel").classList.toggle("collapsed");
 $("help").onclick = () => ($("help-dialog") as HTMLDialogElement).showModal();
 $("close-help").onclick = () => ($("help-dialog") as HTMLDialogElement).close();
 $('time-apply').onclick=()=>{try{seekDate(yearsToDate(($('date-years') as HTMLInputElement).value));}catch(error){announce(String(error));}};
-$('time-reset').onclick=()=>seekDate(0n);
-$('time-day-back').onclick=()=>seekDate(epoch-86400_000_000_000n);
-$('time-day-forward').onclick=()=>seekDate(epoch+86400_000_000_000n);
+$('time-reset').onclick=()=>seekDate(CATALOGUE_EPOCH_NS);
+$('time-day-back').onclick=()=>seekDate(epoch>86400_000_000_000n?epoch-86400_000_000_000n:0n);
+// Contract §2.1: the navigable range is CLOSED, [0n, UNIVERSE_END_NS] — clamp
+// rather than ever stepping strictly past the heat-death ceiling (the era
+// track's own "Heat death proxy" checkpoint sits exactly at that ceiling, so
+// a user standing on it who clicks "+1 day" must stay there, not overshoot
+// into undefined territory beyond the declared range).
+$('time-day-forward').onclick=()=>seekDate(epoch+86400_000_000_000n>UNIVERSE_END_NS?UNIVERSE_END_NS:epoch+86400_000_000_000n);
+{
+  const track=$('era-track');
+  track.innerHTML=ERA_CHECKPOINTS.map((c)=>`<button type="button" data-era="${esc(c.id)}" title="${esc(c.representation)}">${esc(c.label)}</button>`).join('');
+  for(const btn of track.querySelectorAll<HTMLButtonElement>('button'))
+    btn.onclick=()=>{const c=ERA_CHECKPOINTS.find((e)=>e.id===btn.dataset.era)!;seekDate(c.tNs);};
+  const tierSelect=$('tier-select') as HTMLSelectElement;
+  tierSelect.innerHTML=PLAYBACK_TIERS.map((t)=>`<option value="${t.id}">${esc(t.label)} — ${esc(t.hint)}</option>`).join('');
+  tierSelect.value=tier;
+  tierSelect.onchange=()=>{tier=tierSelect.value as TierId;};
+  const viewSelect=$('view-mode') as HTMLSelectElement;
+  viewSelect.value=viewMode;
+  viewSelect.disabled=futureScenario!=='constant-dark-energy';
+  viewSelect.onchange=()=>{viewMode=viewSelect.value==='observed'?'observed':'state';
+    lastVisibilityEpoch=null;updateUniverseVisibility();panel();persist();};
+  const fateSelect=$('future-scenario') as HTMLSelectElement;
+  fateSelect.value=futureScenario;
+  fateSelect.onchange=()=>{
+    futureScenario=fateSelect.value==='big-crunch'||fateSelect.value==='big-rip'
+      ? fateSelect.value:'constant-dark-energy';
+    viewMode='state';viewSelect.value=viewMode;
+    viewSelect.disabled=futureScenario!=='constant-dark-energy';
+    const fate=alternateFuture();
+    if(fate&&epoch>fate.endDateNs)seekDate(fate.endDateNs);
+    if(state.level!=='universe')void navigate('universe');
+    priorEraPresentation='';lastVisibilityEpoch=null;
+    updateDateUI();updateUniverseVisibility();updateEarlyUniverseView();panel();persist();
+  };
+  const fineSlider=$('fine-slider') as HTMLInputElement;
+  fineSlider.oninput=()=>{
+    const idx=eraIndexAt(epoch);
+    seekDate(fineFractionToT(idx,Number(fineSlider.value)/1000));
+  };
+}
 window.addEventListener("keydown", (e) => {
   if (
     (e.target as HTMLElement).matches("input,textarea") ||
@@ -3581,9 +4925,36 @@ renderer.setAnimationLoop(() => {
     journey.completed++;
     controls.enabled = !renderer.xr.isPresenting && !flight;
   }
-  if (playing) epoch=advanceDate(epoch,dt,86400*30);
-  if(now-lastDateSave>1000){updateDateUI();if(playing||walker)persist();lastDateSave=now;}
+  if (playing){
+    epoch=advancePlayback(epoch,dt,tier);
+    const fate=alternateFuture();
+    if(fate&&epoch>=fate.endDateNs){epoch=fate.endDateNs;playing=false;}
+    if(fate&&state.level!=='universe'&&fate.stateAt(epoch)!=='ordinary-expansion'){
+      playing=false;clearWalking();void navigate('universe');
+    }
+    const followed=followedPlanet();
+    if(playing&&followed&&state.sys){
+      const entry=lifecycleFor(state.sys,followed);
+      if(entry.kind!=='star'){
+        const stage=planetStateAt(entry.lc,entry.starLc,epoch).stage;
+        if(state.level==='system'&&(stage==='molten'||stage==='solid')){
+          playing=false;void focusBody(followed);
+          announce(`${followed.name} has formed. Continue playback to follow its later history.`);
+        }else if(state.level==='body'&&(stage==='unformed'||stage==='engulfed')){
+          playing=false;unfocusBody(false);
+          announce(stage==='engulfed'?`${followed.name} was engulfed. Its history remains selected in the system view.`:`${followed.name} has not formed yet.`);
+        }else if(state.level==='body'&&stage==='solid'&&!surfaceInfo){
+          playing=false;void focusBody(followed,true);
+          announce(`${followed.name} has solid ground. Continue playback to follow its later history.`);
+        }
+      }
+    }
+  }
+  if(now-lastDateSave>1000){updateDateUI();if(playing&&(followedPlanetId||state.level==='universe'||firstStarFocus))panel();if(playing||walker)persist();lastDateSave=now;}
   positionSystem();
+  updateOpticalStarPoints();
+  if (state.level === 'universe') updateUniverseVisibility();
+  updateEarlyUniverseView();
   const occluder = surfaceMesh?.getWorldPosition(new THREE.Vector3());
   const cameraRadial = occluder ? camera.position.clone().sub(occluder) : null;
   const localTerrainRadius = walker ? walker.position.length() * systemUnit : 0;
@@ -3639,8 +5010,16 @@ renderer.setAnimationLoop(() => {
 });
 async function boot() {
   const q = new URLSearchParams(location.search);
+  const requestedFollow=q.get('follow');
+  const compatibilityNotice=compatibilityNoticeFromUrl(q);
+  const notice=$('compat-notice');
+  notice.hidden=!compatibilityNotice;
+  if(compatibilityNotice)notice.textContent=compatibilityNotice;
   const g = catalogue.find((x) => x.id === q.get("g"));
   await navigate("universe");
+  const firstStarId=q.get('firstStar');
+  if(firstStarId){const first=firstStarById(firstStarId);if(first)visitFirstStar(first);}
+  if(alternateFuture()?.stateAt(epoch)!=='ordinary-expansion'&&alternateFuture())return;
   if (!g) return;
   const sc = q.get("sector")?.split(",").map(Number);
   const coords =
@@ -3656,15 +5035,20 @@ async function boot() {
       b = [...sys.stars, ...sys.planets, ...sys.moons].find(
         (b) => b.id === q.get("body"),
       );
-    await navigate(b ? "body" : "system", {
+    const riverAddress=q.get('river');
+    // See pendingRiverRestore: when a body is deep-linked, its ?river=
+    // restore must run (and be awaited) *inside* focusBody, before `ready`
+    // flips true — not here, after navigate() has already resolved and
+    // `ready` may already be visible to a polling deep-link observer.
+    if(riverAddress&&b)pendingRiverRestore=riverAddress;
+    const navigateResult=await navigate(b ? "body" : "system", {
       galaxy: g,
       coords: coords || (ref.cell.map((v) => Math.floor(v / 8)) as V3),
       ref,
       sys,
       body: b,
     });
-    const riverAddress=q.get('river');
-    const riverRestored=!riverAddress||!!b&&await buildPhysicalRiver(riverAddress,true);
+    const riverRestored=!riverAddress||(!!b&&navigateResult===true);
     const saved=q.get('walk')?.split(',').map(Number),heading=q.get('heading')?.split(',').map(Number);
     if(b&&riverRestored&&saved?.length===3&&saved.every(Number.isFinite)&&Math.abs(Math.hypot(...saved)-b.radiusM)<30000){
       if(heading?.length===4&&heading.every(Number.isFinite))camera.quaternion.fromArray(heading).normalize();
@@ -3672,12 +5056,80 @@ async function boot() {
     }
   } else if (coords) await navigate("sector", { galaxy: g, coords });
   else await navigate("galaxy", { galaxy: g });
+  if(requestedFollow&&state.sys?.planets.some(body=>body.id===requestedFollow)){
+    followedPlanetId=requestedFollow;
+    if(state.level==='system')selected=requestedFollow;
+    panel();persist();
+  }
+  const cohortId=q.get('cohort');
+  if(cohortId&&space?.findPopulation(cohortId,epoch))visitDatedStar(cohortId);
 }
 // Diagnostics and an explicit rendering freeze used by browser acceptance tests.
 Object.defineProperty(window, "__atlas", {
   value: {
     shoreDebug(options:import('./planet-renderer.ts').ShoreDebug){planetTiles?.setShoreDebug(options);},
     get date(){return dateRecord(epoch);},
+    // Package D diagnostics (contract §6.4): a pure function of the current
+    // `t` and the resident system's real catalogue bodies, shared with
+    // tests/time-nav.test.mjs and tests/time-integration.test.mjs's
+    // `canonicalDigest` so the browser-shipped app and the Node tests use the
+    // exact same digest — used to assert t-seek independence (direct seek vs
+    // reaching the same t via playback stepping) at the app level.
+    get existenceDigest(){
+      if(!state.sys)return null;
+      const sys=state.sys;
+      return canonicalDigest(Object.fromEntries([...sys.stars,...sys.planets,...sys.moons].map((b)=>{
+        const entry=lifecycleFor(sys,b);
+        if(entry.kind==='star')return [b.id,starStateAt(entry.lc,epoch).stage];
+        const st=planetStateAt(entry.lc,entry.starLc,epoch);
+        let bio:string|null=null;
+        if(st.stage==='molten'||st.stage==='solid')
+          bio=biosphereStateAt(seed,b.id,b,epoch,'baseline',CURRENT_VERSIONS,entry.starLc,
+            b.kind==='moon'?sys.planets.find((p)=>p.id===b.parentId):undefined).stage;
+        return [b.id,{stage:st.stage,biosphere:bio}];
+      })));
+    },
+    // Flora/fauna wiring diagnostic (this task): exposes the exact
+    // `LifeGateContext` `updatePlanetTiles` is passing into `PlanetRenderer.
+    // update()`'s 9th argument for the currently-loaded body, so a test/probe
+    // can confirm whether a given world/time is expected to render any life
+    // at all (`null`/empty `floraAvailableKinds` = correctly nothing drawn)
+    // without duplicating `lifeGateContext`'s own `biosphereStateAt` call.
+    get lifeGate(){
+      if(!state.sys||!state.body)return null;
+      return lifeGateContext(state.sys,state.body,epoch);
+    },
+    // Stellar visual evolution diagnostic (this task): the resident system's
+    // primary star's actually-rendered visual state, so a test can seek to
+    // two different lifecycle stages and assert the mesh/light genuinely
+    // changed -- not just that `starStateAt(...).stage` changed internally.
+    get starVisual(){
+      if(!state.sys)return null;
+      const star=state.sys.stars[0];
+      const entry=animations.find((a)=>a.body.id===star.id);
+      if(!entry)return null;
+      const mesh=entry.obj as THREE.Mesh<THREE.SphereGeometry,THREE.MeshBasicMaterial>;
+      return {
+        radiusScale:mesh.scale.x,
+        colorHex:mesh.material.color.getHexString(),
+        lightIntensity:light.intensity,
+        lightColorHex:light.color.getHexString(),
+      };
+    },
+    get era(){
+      const idx=eraIndexAt(epoch);
+      return {id:eraCheckpoint(idx).id,label:eraCheckpoint(idx).label,tNs:eraCheckpoint(idx).tNs.toString(),
+        next:nextEraCheckpoint(epoch).id,prev:prevEraCheckpoint(epoch).id,trackFraction:eraTrackFraction(epoch)};
+    },
+    get tier(){return tier;},
+    set tier(value:string){if(PLAYBACK_TIERS.some((t)=>t.id===value))tier=value as TierId;},
+    get versions(){return CURRENT_VERSIONS;},
+    seek:(t:string)=>{
+      const parsed=parseDate(t);
+      if(parsed<0n||parsed>UNIVERSE_END_NS) throw new Error(`seek: t out of range [0, UNIVERSE_END_NS]: ${t}`);
+      seekDate(parsed);
+    },
+    setPlaying:(value:boolean)=>{playing=value;},
     get surfaceSurvey(){return state.body?surveys.get(surveyKey(state.body))||null:null;},
     get drainage(){return drainage?.diagnostics()||null;},
     get river(){return state.body?.hydrology?{status:riverState?.status||'ready',version:RIVER_VERSION,surfaceVersion:RIVER_SURFACE_VERSION,region:state.body.hydrology,buildMs:riverState?.buildMs||0,render:planetTiles?.diagnostics().river||null}:riverState;},
@@ -3707,6 +5159,10 @@ Object.defineProperty(window, "__atlas", {
         throttle: flightThrottle,
         clearance: flightClearance,
         position: localPose(),
+        cameraNear: camera.near,
+        cameraFar: camera.far,
+        systemUnit,
+        focusRadiusM: state.level === 'body' ? focusRadius() : null,
         heading: camera.quaternion.toArray(),
         crossings,
         crossing: !!crossing,
@@ -3718,7 +5174,7 @@ Object.defineProperty(window, "__atlas", {
         riverJourney:riverFlight?{siteId:riverFlight.site.id,phase:riverFlight.phase}:null,
         approachAltitude,
         flightAim,
-        surface: state.body ? surfaceClearance(state.body, localPose().map((v,i)=>v-bodyPosition(state.body!,state.sys!,epoch)[i]) as V3) : null,
+        surface: state.body ? surfaceClearance(state.body, localPose().map((v,i)=>v-bodyPosition(state.body!,state.sys!,epoch)[i]) as V3, snappedWaterLevelFor(state.body)) : null,
         sceneId: root.uuid,
         residentSystem,
         bodies: animations.map((a) => ({
@@ -3765,7 +5221,9 @@ Object.defineProperty(window, "__atlas", {
       const list = state.level==='universe'
         ? galaxyGlyphs.map((g,i)=>({id:catalogue[i].id,kind:'galaxy',object:g.group,pixels:44}))
         : animations.map(a=>({id:a.body.id,kind:a.body.kind,object:a.obj,pixels:a.body.kind==='star'?18:a.body.kind==='moon'?7:10}));
-      return list.map(t=>{const p=t.object.getWorldPosition(new THREE.Vector3()).project(camera);return {id:t.id,kind:t.kind,pixels:t.pixels,x:(p.x*.5+.5)*innerWidth,y:(.5-p.y*.5)*innerHeight,z:p.z};});
+      return list
+        .filter(t=>t.object.visible)
+        .map(t=>{const p=t.object.getWorldPosition(new THREE.Vector3()).project(camera);return {id:t.id,kind:t.kind,pixels:t.pixels,x:(p.x*.5+.5)*innerWidth,y:(.5-p.y*.5)*innerHeight,z:p.z};});
     },
     get selected() {
       return selected;
@@ -3899,7 +5357,8 @@ function vrMenu(): VRMenu {
           action: () => void navigate("body", { body: m }),
         })),
     ];
-  if (state.level === "system")
+  if (state.level === "system") {
+    const activeTier = PLAYBACK_TIERS.find((t) => t.id === tier) ?? PLAYBACK_TIERS[1];
     rows.push(
       {
         title:
@@ -3910,11 +5369,12 @@ function vrMenu(): VRMenu {
         action: () => document.getElementById("system-scale")?.click(),
       },
       {
-        title: playing ? "Pause orbits" : "Play orbits",
-        detail: "30 simulated days per second",
+        title: playing ? "Pause" : "Play",
+        detail: activeTier.label + " — " + activeTier.hint,
         action: () => document.getElementById("play")?.click(),
       },
     );
+  }
   if (
     state.level === "body" &&
     state.body!.kind !== "star" &&
