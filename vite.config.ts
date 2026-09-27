@@ -14,6 +14,8 @@ export default defineConfig({
       'docs/desktop-rendering-validation-2026-09-28.md',
       'docs/background-hydrology-travel-2026-09-28.md',
       'docs/canopy-foundation-2026-09-28.md',
+      'docs/forest-selection-cache-2026-09-28.md',
+      'test-results/forest-selection-cache/benchmark.json',
       'docs/opus-5.5-canopy-review-2026-09-28.md',
       'docs/opus-5.5-canopy-review-2026-09-28.metadata.json',
       'tests/background-hydrology-flight.browser.mjs',

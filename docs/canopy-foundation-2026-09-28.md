@@ -44,7 +44,8 @@ summary caches still require explicit hydrology invalidation.
 
 ## Next increments
 
-Cache canonical patch enumeration in the selection worker, then build bounded
+The [population worker cache](forest-selection-cache-2026-09-28.md) now retains
+patch enumeration; source equivalence and CPU benchmarks pass. Next build bounded
 habitat summaries with exact accounting of representative and other trees.
 Verify worker/main equality and resource bounds before rendering them. Add
 canopy chunks behind a diagnostic switch, with readiness-gated complementary

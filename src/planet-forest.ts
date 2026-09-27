@@ -4,6 +4,7 @@ import {terrainSampler} from './terrain.ts';
 import {biomeClassifier} from './surface-biomes.ts';
 import {forestPopulationCells,FAR_CROWN_PROBABILITY,type PopulationCell} from './planet-population.ts';
 import {forestHabitat,TREE_HABITAT_VERSION} from './forest-habitat.ts';
+import type {ForestSelectionCache} from './forest-selection-cache.ts';
 import {PLANET_DETAIL as B} from './planet-detail.ts';
 
 type Resident={cell:PopulationCell;height:number;present:boolean;water:number};
@@ -115,6 +116,7 @@ export class PlanetForest {
   private workerRestarts=0;
   private workerFailures=0;
   private selectionApplyMs=0;
+  private selectionCacheStats:ReturnType<ForestSelectionCache['diagnostics']>|null=null;
   private applySelection(direction:V3,cells:PopulationCell[],selectionMs:number){
     const started=performance.now();
     this.center.set(...direction);this.wanted=cells;
@@ -157,11 +159,13 @@ export class PlanetForest {
     try{
       const worker=new Worker(new URL('./planet-population-worker.ts',import.meta.url),{type:'module'});this.worker=worker;
       worker.onmessage=({data})=>{
-        if(this.worker===worker&&data.requestId===this.selectionRequest)this.applySelection(data.direction,data.cells,data.selectionMs);
+        if(this.worker===worker&&data.requestId===this.selectionRequest){
+          this.selectionCacheStats=data.cache??null;this.applySelection(data.direction,data.cells,data.selectionMs);
+        }
       };
       worker.onerror=event=>{
         event.preventDefault();if(this.worker!==worker)return;
-        worker.terminate();this.worker=null;this.selecting=false;this.workerFailures++;this.selectionRequest++;
+        worker.terminate();this.worker=null;this.selectionCacheStats=null;this.selecting=false;this.workerFailures++;this.selectionRequest++;
         if(this.workerRestarts<1){this.workerRestarts++;this.startWorker();}
       };
     }catch{this.worker=null;this.selecting=false;this.workerFailures++;}
@@ -291,7 +295,7 @@ export class PlanetForest {
   diagnostics(){return {visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
     candidateCells:this.wanted.length,canopyStands:0,farCanonicalTrees:this.group.visible?this.canopy.count:0,farSamplingFraction:FAR_CROWN_PROBABILITY,habitatVersion:TREE_HABITAT_VERSION,placementMs:this.placementMs,selectionMs:this.selectionMs,selectionPending:this.selecting,selectionWorker:!!this.worker,
     representation:'canonical-tree-field',densityFocus:'observer-ground',instanceUpdates:'stable-slots-retained-origin-dirty-ranges',
-    selectionJobsInFlight:this.selecting?1:0,waterBucket:this.water,selectionApplyMs:this.selectionApplyMs,
+    selectionJobsInFlight:this.selecting?1:0,waterBucket:this.water,selectionApplyMs:this.selectionApplyMs,selectionCache:this.selectionCacheStats,
     workerRestarts:this.workerRestarts,workerFailures:this.workerFailures,selectionMode:this.worker?'worker':'synchronous-fallback',
     updateMs:this.updateMs,matrixWrites:this.matrixWrites,colorWrites:this.colorWrites,coverageWrites:this.coverageWrites,
     scheduledUploadBytes:this.scheduledUploadBytes,originRebased:this.originRebased,originVersion:this.originVersion,originRebaseM:B.forestOriginRebaseM,

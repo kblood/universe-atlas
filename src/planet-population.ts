@@ -9,6 +9,7 @@ export const FAR_CROWN_PROBABILITY=.065;
 export type PopulationCell={id:string;direction:V3;roll:number;heightM:number;yaw:number;distanceM:number;canopyRepresentative?:boolean};
 function hash(text:string){let h=2166136261;for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),16777619);h=Math.imul(h^(h>>>16),2246822507);return (h^(h>>>13))>>>0;}
 const random=(key:string)=>hash(key)/4294967296;
+export const forestRepresentative=(seed:string,id:string)=>random(seed+'/'+POPULATION_VERSION+'/'+id+'/far-crown')<FAR_CROWN_PROBABILITY;
 
 function cellAt(key:string,id:string,face:number,n:number,ix:number,iy:number,distanceM:number):PopulationCell {
   const direction=cubeDirection(face,(ix+.2+random(key+'/x')*.6)*2/n-1,(iy+.2+random(key+'/y')*.6)*2/n-1);

@@ -1,0 +1,127 @@
+{
+  "runtime": "v24.7.0",
+  "radiusM": 6000000,
+  "nearM": 750,
+  "farM": 4500,
+  "seed": "CACHE-EARTH-SCALE",
+  "views": [
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "cells": 17881,
+      "referenceMs": 364.54819999999995,
+      "coldMs": 561.9108000000001,
+      "coldCache": {
+        "patches": 3209,
+        "estimatedBytes": 16102688,
+        "maxBytes": 25165824,
+        "maxEntries": 20000,
+        "hits": 0,
+        "misses": 3209,
+        "visited": 3209,
+        "evictions": 0
+      },
+      "warmMs": [
+        48.61959999999999,
+        39.91090000000008,
+        29.937800000000152,
+        34.99309999999991,
+        17.75760000000014
+      ],
+      "moved50mMs": 26.948200000000043,
+      "movedCache": {
+        "patches": 3230,
+        "estimatedBytes": 16208066,
+        "maxBytes": 25165824,
+        "maxEntries": 20000,
+        "hits": 3190,
+        "misses": 21,
+        "visited": 3211,
+        "evictions": 0
+      },
+      "digest": "754360f4a17bfa4c83ceb4618f3f456d420664b90a61427c27e41e2b34c32485"
+    },
+    {
+      "direction": [
+        0.7071067811865475,
+        0.7071067811865475,
+        0
+      ],
+      "cells": 17886,
+      "referenceMs": 484.2044000000001,
+      "coldMs": 740.4095000000002,
+      "coldCache": {
+        "patches": 9174,
+        "estimatedBytes": 17772238,
+        "maxBytes": 25165824,
+        "maxEntries": 20000,
+        "hits": 0,
+        "misses": 9174,
+        "visited": 9174,
+        "evictions": 0
+      },
+      "warmMs": [
+        34.41750000000002,
+        29.98109999999997,
+        29.088200000000143,
+        27.240099999999984,
+        30.71309999999994
+      ],
+      "moved50mMs": 33.58550000000014,
+      "movedCache": {
+        "patches": 9217,
+        "estimatedBytes": 17856144,
+        "maxBytes": 25165824,
+        "maxEntries": 20000,
+        "hits": 9128,
+        "misses": 43,
+        "visited": 9171,
+        "evictions": 0
+      },
+      "digest": "a6fc9b80c27a58b784fe01cbf3eafccae4b8669b98916b85677c472f9302eba5"
+    },
+    {
+      "direction": [
+        0.5773502691896258,
+        0.5773502691896258,
+        0.5773502691896258
+      ],
+      "cells": 17702,
+      "referenceMs": 700.3765999999996,
+      "coldMs": 982.8337000000001,
+      "coldCache": {
+        "patches": 16818,
+        "estimatedBytes": 19819022,
+        "maxBytes": 25165824,
+        "maxEntries": 20000,
+        "hits": 0,
+        "misses": 16818,
+        "visited": 16818,
+        "evictions": 0
+      },
+      "warmMs": [
+        32.520800000000236,
+        30.186999999999898,
+        37.07729999999992,
+        28.08299999999963,
+        92.05429999999978
+      ],
+      "moved50mMs": 35.302999999999884,
+      "movedCache": {
+        "patches": 16908,
+        "estimatedBytes": 19927724,
+        "maxBytes": 25165824,
+        "maxEntries": 20000,
+        "hits": 16720,
+        "misses": 90,
+        "visited": 16810,
+        "evictions": 0
+      },
+      "digest": "94f105612ea2de35060dad8c0d8bf02279a9a34752b516aa72d0a0900ff8f84b"
+    }
+  ],
+  "scope": "Node population selection only; not browser frame or GPU performance"
+}
