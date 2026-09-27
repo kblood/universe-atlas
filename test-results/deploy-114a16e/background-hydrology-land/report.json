@@ -1,0 +1,90 @@
+{
+  "ok": true,
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "action": "land",
+  "date": {
+    "version": "atlas-time-2",
+    "reference": "big-bang",
+    "offsetNs": "435084631200000032444700000",
+    "branchId": "baseline"
+  },
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "beforeAction": {
+    "level": "body",
+    "bodyId": "G001/C2128,0,1/0/planet/1",
+    "travel": {
+      "active": false,
+      "domain": "galaxy",
+      "surfaceJourney": false,
+      "terrainCruise": null,
+      "landing": false,
+      "walking": null,
+      "riverJourney": null
+    },
+    "riverStatus": "building",
+    "held": 1,
+    "heldJobs": [
+      4
+    ],
+    "released": false
+  },
+  "heldTravel": {
+    "level": "body",
+    "bodyId": "G001/C2128,0,1/0/planet/1",
+    "travel": {
+      "active": true,
+      "domain": "system",
+      "surfaceJourney": true,
+      "terrainCruise": null,
+      "landing": false,
+      "walking": null,
+      "riverJourney": null
+    },
+    "riverStatus": "building",
+    "held": 1,
+    "heldJobs": [
+      4
+    ],
+    "released": false
+  },
+  "afterBackgroundCompletion": {
+    "level": "body",
+    "bodyId": "G001/C2128,0,1/0/planet/1",
+    "travel": {
+      "active": true,
+      "domain": "system",
+      "surfaceJourney": true,
+      "terrainCruise": null,
+      "landing": false,
+      "walking": null,
+      "riverJourney": null
+    },
+    "riverStatus": "ready",
+    "held": 1,
+    "heldJobs": [
+      4
+    ],
+    "released": true
+  },
+  "afterExplicitSelection": {
+    "level": "body",
+    "bodyId": "G001/C2128,0,1/0/planet/1",
+    "travel": {
+      "active": false,
+      "domain": "system",
+      "surfaceJourney": false,
+      "terrainCruise": null,
+      "landing": false,
+      "walking": null,
+      "riverJourney": null
+    },
+    "riverStatus": "ready",
+    "held": 1,
+    "heldJobs": [
+      4
+    ],
+    "released": true
+  },
+  "errors": []
+}
