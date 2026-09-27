@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "deployment": {
+    "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+    "releaseScript": "C:/LLM/IWSDK/release.ps1 universe-atlas",
+    "commit": "37f0e89c695f592bd3a7a995e90ff80a5760498c",
+    "dirty": false,
+    "buildInfo": {
+      "commit": "37f0e89c695f592bd3a7a995e90ff80a5760498c",
+      "dirty": false,
+      "builtAt": "2026-09-27T23:10:02.356Z"
+    }
+  },
+  "liveChecks": {
+    "checkedAt": "2026-09-28",
+    "httpStatus": 200,
+    "buildStampMatches": true,
+    "checks": [
+      "application entry point",
+      "build-info.json",
+      "all nine guide chapters and overview",
+      "desktop rendering stage C and validation docs",
+      "flora cache, asset contract, candidate, and review docs",
+      "tree asset brief",
+      "desktop rendering browser fixture",
+      "four accepted browser reports",
+      "all linked accepted screenshots"
+    ],
+    "guideLocalLinksChecked": 57,
+    "brokenGuideLinks": 0,
+    "publishedPrototypeGlb": false
+  },
+  "hardwareAcceptance": {
+    "result": "failed",
+    "fixture": "tests/desktop-rendering-acceptance.browser.mjs",
+    "hardwareAcceleration": true,
+    "renderer": "NVIDIA GeForce RTX 5090, ANGLE Direct3D 11",
+    "viewport": "1440x1000",
+    "failure": "Timed out after 180 seconds waiting for terrainCruise during Find-Life traversal.",
+    "browserAndConsoleErrors": [],
+    "diagnostic": "Live page reached River region ready while the requested surface journey was active. Source review found background hydrology refresh could clear that journey. The parent is fixing the async race; this run does not establish a successful live traversal.",
+    "rawLocalArtifacts": "test-results/deploy-37f0e89/rendering-acceptance/ (failure JSON and screenshot; not published)"
+  },
+  "priorLocalHardwareEvidence": {
+    "sourceCommit": "6b87e13",
+    "record": "docs/desktop-rendering-validation-2026-09-28.md",
+    "result": "passed",
+    "coverage": [
+      "shader compilation",
+      "19 of 19 aerial hooks attached",
+      "cloud AA sample requests 0, 2, and 4",
+      "2560x1440 resize and AA allocation checks",
+      "forest turn-in-place and fauna replay"
+    ]
+  },
+  "unverified": [
+    "cloud-edge visual comparison",
+    "XR runtime acceptance",
+    "successful live Find-Life traversal on 37f0e89"
+  ]
+}
