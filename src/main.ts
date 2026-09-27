@@ -688,8 +688,15 @@ async function selectRiverDestination(parentId:string,restore=false):Promise<boo
     // a bare state restore would miss).
     const resumeWalk=walker?{point:walker.position.toArray() as V3,launch:false}
       :landing?{point:landing.point,launch:!!landing.launch}:null;
-    clearWalking();if(flight)toggleFlight();
-    riverFlight=null;surfaceJourney=null;autopilot=null;orbitAssist=null;planetLook=null;playing=false;
+    // A background detail refresh must not cancel a newer free-flight or
+    // approach command. Only walker/contact state needs rebuilding with the
+    // renderer; explicit river selection still intentionally changes travel.
+    const preserveTravel=restore&&!resumeWalk;
+    clearWalking();
+    if(!preserveTravel){
+      if(flight)toggleFlight();
+      riverFlight=null;surfaceJourney=null;autopilot=null;orbitAssist=null;planetLook=null;playing=false;
+    }
     body.hydrology=region;
     // Build the freshly-loaded river region's terrain mesh at whatever
     // exaggeration the user currently has selected (reliefScale), rather
@@ -718,7 +725,9 @@ async function selectRiverDestination(parentId:string,restore=false):Promise<boo
       if(resumeWalk.launch){landing={point:resumeWalk.point,launch:true};planetTiles?.setContactFocus(resumeWalk.point);}
       else void prepareLanding(resumeWalk.point);
     }
-    persist();panel();announce('River region ready. Inspect it or fly to a named bank, then land.');return true;
+    persist();panel();
+    if(!preserveTravel)announce('River region ready. Inspect it or fly to a named bank, then land.');
+    return true;
   }catch(error){
     if(token!==riverSelectionToken)return false;
     riverState={bodyId:body.id,parentId,status:'error',error:String(error),buildMs:0};
