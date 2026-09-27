@@ -35,15 +35,22 @@ cloud/foliage fringes and temporal shimmer need a post-composite AA comparison.
 TypeScript/Vite build and eleven targeted aerial/cloud checks pass. They cover
 terrain-formula equivalence, airless/zero-distance response, shader composition,
 coordinate transforms, compatible AA capabilities and allocation arithmetic.
-Browser shader compilation, visual comparison, AA/depth transitions, actual
-GPU/memory behavior and XR remain separate acceptance work. The independent
+The local RTX 5090 browser run recorded in the
+[desktop rendering validation](desktop-rendering-validation-2026-09-28.md)
+passed shader compilation, all 19 aerial hooks, AA requests and resize checks.
+The live `37f0e89` deployment is recorded in
+[its deployment report](../test-results/deploy-37f0e89/live-deployment.json).
+Its Find-Life browser traversal timed out during asynchronous river readiness;
+the page and console error arrays were empty, and the parent investigation
+identified a race where background hydrology refresh clears the active journey.
+Cloud-edge visual comparison and XR remain unverified. The independent
 [Opus 5.5 review](opus-5.5-rendering-review-2026-09-28.md) is preserved verbatim.
 Its AA resolution finding is fixed, haze now shares terrain's actual air/eye
 uniforms, shader-hook failures are visible in diagnostics, and dynamic material
 cache keys are retained. XR captures preserve the supplied camera world matrix.
 All current forest/flora/fauna meshes are constructed before attachment and
 keep unique materials. Future dynamic batches must attach the hook explicitly.
-These changes have not been published with the forest foundation.
+These changes were published in release `37f0e89`.
 
 Shared lighting, bounded shadows, authored materials, continuous canopy and
 species-bound structural variants remain in the
