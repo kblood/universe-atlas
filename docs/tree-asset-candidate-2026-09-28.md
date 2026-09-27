@@ -65,10 +65,16 @@ without simply enlarging the leaves with a whole-object scale.
 The historical manifest copied the brief's stale “no generated output exists
 yet” restriction. The candidate remains `NOASSERTION` and unshipped; that
 sentence is not an accurate status description. Preserve the historical
-manifest and correct the brief for future runs. Its recorded brief hash
+manifest; the brief is now corrected for future runs. Its recorded brief hash
 `b453…` differs from the rendering checkout's `5834…` solely because the main
 checkout uses CRLF and the rendering checkout uses LF: parsed JSON and
 LF-normalized bytes are identical, as verified directly.
+
+The authoring operation now also saves the exact input brief bytes beside each
+new candidate and includes the snapshot in its artifact hashes. A fresh smoke
+at `Assets/_assetctl/atlas-tree-smoke-1790552987698/` passes with the corrected
+brief, unchanged 11,100-triangle geometry and matching snapshot/hash. Existing
+candidate manifests and source files are preserved.
 
 This is a reviewed proposal under the
 [tree contract](tree-species-asset-contract-2026-09-28.md), not a finished asset.

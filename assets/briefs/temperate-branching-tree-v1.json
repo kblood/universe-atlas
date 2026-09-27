@@ -30,13 +30,13 @@
   },
   "provenance": {
     "sourceType":"original",
-    "generator":{"provider":"blender-authored","model":"procedural-tree-component-authoring","checkpoint":null,"version":"planned-v1","workflow":"named-assetctl-operation-required"},
+    "generator":{"provider":"blender-authored","model":"procedural-tree-component-authoring","checkpoint":null,"version":"atlas-branching-author-2","workflow":"assetctl-blender-tree-family"},
     "prompt":"Author connected tapered wood and physically scaled broadleaf components for species-directed variants; preserve editable source and all export provenance.",
     "negativePrompt":"floating limbs, opaque crown blobs, baked sun lighting",
     "seed":729281,
     "sourceUrl":null,"sourceConsent":"not-applicable","parents":[],
-    "license":{"expression":"NOASSERTION","attribution":null,"restrictions":["Brief only: no generated output exists yet; resolve source/output provenance before packaging or shipping"]},
-    "notes":"No external mesh, photograph or learned generator input selected. Named authoring operation and visual review remain implementation work. This brief does not assert a finished asset or a runtime budget pass."
+    "license":{"expression":"NOASSERTION","attribution":null,"restrictions":["Prototype assets require visual, LOD, provenance and runtime acceptance before packaging or shipping"]},
+    "notes":"Original procedural mesh and texture proposals have been authored through the named operation and reviewed. No external mesh, photograph or learned generator input is used. This brief does not assert a finished asset, resolved output license or a runtime budget pass."
   },
   "experiments":{"providers":["blender-authored"],"seeds":[729281],"selectionMetric":"Connected silhouette, physical leaf scale, LOD consistency, alpha overdraw, full-scene timing and cleanup cost"}
 }
