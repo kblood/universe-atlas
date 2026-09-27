@@ -13,6 +13,7 @@ export default defineConfig({
     // Do not publish arbitrary scratch files from test-results.
     for(const fileName of [
       'docs/desktop-realism-validation-2026-09-28.md',
+      'test-results/deploy-a58ad07/live-deployment.json',
       'tests/desktop-forest-acceptance.browser.mjs',
       'test-results/desktop-realism-26b41f5/forest-hardware/report.json',
       'test-results/desktop-realism-26b41f5/forest-hardware/forest-warmed.png',

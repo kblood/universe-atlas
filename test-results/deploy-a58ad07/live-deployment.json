@@ -1,0 +1,303 @@
+{
+  "buildInfo": {
+    "dirty": false,
+    "currentCommit": "9a63155c77150e84a6e492e84105493bf0263caf",
+    "firstCommit": "a58ad07bbac2fe64431a904dfc5a98c10d500482"
+  },
+  "liveCommit": "9a63155c77150e84a6e492e84105493bf0263caf",
+  "deploymentNotes": [
+    "The first a58ad07 release exposed a broken validation-record route: the Vite allowlist omitted the Markdown.",
+    "Commit 9a63155 adds the validation record and acceptance artifacts to the explicit publication list.",
+    "Public hardware browser acceptance ran on runtime a58ad07. The 9a63155 change is documentation publication only; runtime code is identical."
+  ],
+  "links": {
+    "browserTest": "https://dionysus.dk/webxr/IWSDK/universe-atlas/tests/desktop-forest-acceptance.browser.mjs",
+    "forestWarmImage": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/desktop-realism-26b41f5/forest-hardware/forest-warmed.png",
+    "forestReport": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/desktop-realism-26b41f5/forest-hardware/report.json",
+    "validationRecord": "https://dionysus.dk/webxr/IWSDK/universe-atlas/docs/desktop-realism-validation-2026-09-28.md",
+    "populationReport": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/desktop-realism-26b41f5/population-flight/report.json",
+    "forestTurnImage": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/desktop-realism-26b41f5/forest-hardware/forest-turned.png"
+  },
+  "browser": {
+    "date": {
+      "version": "atlas-time-2",
+      "reference": "big-bang",
+      "offsetNs": "435084631200000032195200000",
+      "branchId": "baseline"
+    },
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "viewport": [
+      1440,
+      1000
+    ]
+  },
+  "runtimeCommit": "a58ad07bbac2fe64431a904dfc5a98c10d500482",
+  "releaseScript": "C:\\LLM\\IWSDK\\release.ps1 universe-atlas",
+  "populationFlight": {
+    "realtime": {
+      "elapsedWorldS": 4.0543,
+      "motion": true
+    },
+    "ok": true,
+    "dateReplay": {
+      "paused": true,
+      "startNs": "435084631200000037897300000",
+      "replayA": "435084631200000057897300000",
+      "replayB": "435084631200000117897300000",
+      "exact": true,
+      "motionBetweenDates": true
+    },
+    "lowFlight": {
+      "faunaDrawn": 128,
+      "lifePending": 0,
+      "faunaAnchors": 296,
+      "clearanceM": 99.38411724919752,
+      "faunaTerrainPending": 0
+    },
+    "movement": {
+      "movedM": 21.846508458266232,
+      "retainedId": "G001/C2128,0,1/0/planet/1:fauna:b30b086a",
+      "beforeCount": 128,
+      "afterCount": 128
+    },
+    "contact": {
+      "walking": true,
+      "clearanceM": 1.6318469126929358
+    }
+  },
+  "publication": {
+    "checkedEndpoints": [
+      {
+        "status": 200,
+        "path": "/build-info.json",
+        "contentType": [
+          "application/json"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/",
+        "contentType": [
+          "text/html"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/guide/index.html",
+        "contentType": [
+          "text/html"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/guide/universe.html",
+        "contentType": [
+          "text/html"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/guide/time.html",
+        "contentType": [
+          "text/html"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/guide/terrain.html",
+        "contentType": [
+          "text/html"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/guide/water-atmosphere.html",
+        "contentType": [
+          "text/html"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/guide/life.html",
+        "contentType": [
+          "text/html"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/guide/travel.html",
+        "contentType": [
+          "text/html"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/guide/publishing.html",
+        "contentType": [
+          "text/html"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/docs/desktop-realism-validation-2026-09-28.md",
+        "contentType": [
+          "text/markdown"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/docs/desktop-realism-implementation-plan-2026-09-27.md",
+        "contentType": [
+          "text/markdown"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/docs/population-continuity-implementation-2026-09-27.md",
+        "contentType": [
+          "text/markdown"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/docs/desktop-render-profiling.md",
+        "contentType": [
+          "text/markdown"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/tests/desktop-forest-acceptance.browser.mjs",
+        "contentType": [
+          "application/javascript"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/test-results/desktop-realism-26b41f5/forest-hardware/report.json",
+        "contentType": [
+          "application/json"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/test-results/desktop-realism-26b41f5/forest-hardware/forest-warmed.png",
+        "contentType": [
+          "image/png"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/test-results/desktop-realism-26b41f5/forest-hardware/forest-turned.png",
+        "contentType": [
+          "image/png"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/test-results/desktop-realism-26b41f5/population-flight/report.json",
+        "contentType": [
+          "application/json"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/test-results/desktop-realism-26b41f5/population-flight/01-contact.png",
+        "contentType": [
+          "image/png"
+        ]
+      },
+      {
+        "status": 200,
+        "path": "/test-results/desktop-realism-26b41f5/population-flight/02-fauna-low-flight.png",
+        "contentType": [
+          "image/png"
+        ]
+      }
+    ],
+    "gameGuideLink": true
+  },
+  "schemaVersion": 1,
+  "dirty": false,
+  "forestAcceptance": {
+    "warmedVisible": 2017,
+    "ok": true,
+    "profileStatistics": {
+      "gpu/sceneCaptureMs": {
+        "samples": 418,
+        "p50": 2.905184,
+        "p95": 5.08704,
+        "p99": 6.067584,
+        "max": 6.494144
+      },
+      "cpu/frameWorkMs": {
+        "samples": 420,
+        "p50": 18.700000000186265,
+        "p95": 22.700000000186265,
+        "p99": 25.200000000186265,
+        "max": 26.5
+      },
+      "cpu/planetUpdateMs": {
+        "samples": 420,
+        "p50": 15,
+        "p95": 18.399999999441206,
+        "p99": 20.299999999813735,
+        "max": 21
+      },
+      "gpu/cloudResolveMs": {
+        "samples": 418,
+        "p50": 0.033376,
+        "p95": 0.824896,
+        "p99": 1.479072,
+        "max": 2.07568
+      },
+      "gpu/cloudIntegrationMs": {
+        "samples": 418,
+        "p50": 0.546912,
+        "p95": 0.59536,
+        "p99": 2.884512,
+        "max": 3.489696
+      },
+      "frameIntervalMs": {
+        "samples": 420,
+        "p50": 19.09999999962747,
+        "p95": 23.200000000186265,
+        "p99": 25.5,
+        "max": 27.09999999962747
+      },
+      "gpu/framePassSumMs": {
+        "samples": 418,
+        "p50": 3.5352000000000006,
+        "p95": 5.958304,
+        "p99": 6.971648,
+        "max": 7.321696000000001
+      }
+    },
+    "turn": {
+      "positionDeltaM": 0,
+      "colorWrites": 0,
+      "matrixWrites": 0,
+      "visibleAfterTurn": 1970,
+      "originVersion": 13,
+      "headingDeltaQuaternionNorm": 0.41969366618621723
+    },
+    "stationaryWrites": {
+      "color": 0,
+      "matrix": 0,
+      "coverage": 0
+    },
+    "terrain": {
+      "faunaTerrainPending": 0,
+      "forestUpdateMs": 1.699999999254942,
+      "lifeMs": 7.7000000001862645,
+      "updateMs": 11.599999999627471,
+      "visibleTiles": 151,
+      "faunaDrawn": 128,
+      "floraDrawMs": 5.400000000372529,
+      "residentTiles": 661,
+      "faunaDrawMs": 1.8999999994412065
+    },
+    "cachedCandidates": 18358
+  },
+  "liveUrl": "https://dionysus.dk/webxr/IWSDK/universe-atlas/"
+}

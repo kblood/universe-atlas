@@ -98,7 +98,35 @@ machine-readable report should guide the next CPU investigation.
   and [`forest-turned.png`](../test-results/desktop-realism-26b41f5/forest-hardware/forest-turned.png)
   are the matched browser captures.
 
+## Deployment checks
+
+`C:\LLM\IWSDK\release.ps1 universe-atlas` first deployed runtime commit
+`a58ad07bbac2fe64431a904dfc5a98c10d500482`. The live `build-info.json` matched
+that exact commit with `dirty: false`. The live app and guide worked, but the
+new validation Markdown initially returned 404 because the build's selected
+document list did not include it. That publication list was fixed in doc-only
+commit `9a63155c77150e84a6e492e84105493bf0263caf` and deployed using the same
+release script. The current live `build-info.json` matches `9a63155` with
+`dirty: false`; runtime code is unchanged from `a58ad07`.
+
+After the first release, the public RTX 5090 hardware forest and
+population-flight browser checks passed with no page or console errors. The
+forest remained at zero matrix, colour and coverage writes in stationary
+samples and during the measured in-place turn. Population flight retained an
+individual across 21.85 m movement, replayed exact-date poses, showed motion
+between dates and reached walking contact. The documentation-only release does
+not alter those runtime results.
+
+The current site returned HTTP 200 for the app root, all nine guide chapters,
+the validation, implementation, population and profiling documents, the
+browser test source, the acceptance reports and their screenshots. The app's
+Atlas guide link and all links from the guide overview resolved. The sanitized
+[live deployment record](../test-results/deploy-a58ad07/live-deployment.json)
+contains the exact build identities, endpoint checks, and summarized public
+browser diagnostics. Runtime and document publication were two distinct
+deployments, so the record identifies both revisions.
+
 This validates retained forest buffers and local behavior. It does not validate
 the planned authored tree assets, aggregate canopy density, broad weather/time
-matrix, cold streaming, headset behavior or production release. Deployment is
-recorded separately after the reviewed stage is explicitly approved.
+matrix, cold streaming or headset behavior. The published foundation and its
+deployment checks are recorded above; later visual stages remain outstanding.
