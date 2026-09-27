@@ -9,6 +9,18 @@ export default defineConfig({
       dirty:execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim().length>0,
       builtAt:new Date().toISOString(),
     },null,2)});
+    // Explicit review artifacts linked by the desktop acceptance record.
+    // Do not publish arbitrary scratch files from test-results.
+    for(const fileName of [
+      'docs/desktop-realism-validation-2026-09-28.md',
+      'tests/desktop-forest-acceptance.browser.mjs',
+      'test-results/desktop-realism-26b41f5/forest-hardware/report.json',
+      'test-results/desktop-realism-26b41f5/forest-hardware/forest-warmed.png',
+      'test-results/desktop-realism-26b41f5/forest-hardware/forest-turned.png',
+      'test-results/desktop-realism-26b41f5/population-flight/report.json',
+      'test-results/desktop-realism-26b41f5/population-flight/01-contact.png',
+      'test-results/desktop-realism-26b41f5/population-flight/02-fauna-low-flight.png',
+    ])this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
     for(const fileName of ['docs/opus-5.5-forest-implementation-review-2026-09-28.md','docs/opus-5.5-forest-implementation-review-2026-09-28.metadata.json','docs/desktop-render-profiling.md','docs/desktop-realism-implementation-plan-2026-09-27.md','docs/desktop-realism-proposal-2026-09-27.md','docs/desktop-realism-assessment-2026-09-27.md','docs/opus-5.5-desktop-realism-review-2026-09-27.md','docs/opus-5.5-desktop-realism-review-2026-09-27.metadata.json'])
       this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
     for(const fileName of ['docs/planet-rendering-validation-2026-09-27.md','docs/realistic-clouds-research-2026-09-27.md','docs/planet-local-rendering-design.md','docs/population-continuity-review-2026-09-27.md','docs/population-continuity-implementation-2026-09-27.md'])

@@ -62,7 +62,7 @@ fauna, and no pending terrain or fauna-terrain requests. It is one settled
 fixture, not a representative-world benchmark or a 60 FPS acceptance result.
 Complete machine-readable diagnostics
 and screenshots are in
-[`test-results/desktop-realism-26b41f5/forest-hardware/`](../test-results/desktop-realism-26b41f5/forest-hardware/).
+[`forest-hardware/report.json`](../test-results/desktop-realism-26b41f5/forest-hardware/report.json).
 
 | Metric | p50 | p95 | p99 | Samples |
 | --- | ---: | ---: | ---: | ---: |
