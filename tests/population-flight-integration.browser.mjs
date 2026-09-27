@@ -5,12 +5,13 @@ import { browserArgs } from './browser-options.mjs';
 
 const base = process.env.ATLAS_URL || 'http://127.0.0.1:5188/';
 const out = process.env.ATLAS_RESULTS || 'test-results/population-flight-integration';
+const viewport = (process.env.ATLAS_VIEWPORT || '1440x1000').split('x').map(Number);
 const bodyId = 'G001/C2128,0,1/0/planet/1';
 const query = new URLSearchParams({ seed: 'LETHRA-001', g: 'G001', system: 'G001/C2128,0,1/0', body: bodyId });
 await mkdir(out, { recursive: true });
 
 const browser = await chromium.launch({ headless: true, args: browserArgs });
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
+const page = await browser.newPage({ viewport: { width: viewport[0], height: viewport[1] }, deviceScaleFactor: 1 });
 const errors = [];
 page.on('pageerror', error => errors.push(`page: ${error.message}`));
 page.on('console', message => {
@@ -123,7 +124,7 @@ try {
     return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'unavailable';
   });
   result = {
-    ok: false, base, bodyId, renderer, errors,
+    ok: false, base, bodyId, viewport, renderer, errors,
     orbital: { cloudVolume: orbital.clouds, state: orbital.state },
     lowFlight: {
       clearanceM: lowFlight.travel.surface?.terrainClearance,
