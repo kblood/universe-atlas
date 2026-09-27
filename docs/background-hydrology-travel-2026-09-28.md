@@ -26,9 +26,15 @@ and passes on `eb06755` (which contains both fixes). Both **Find living
 habitat** and **Land and walk** preserve their approach after the delayed
 completion. Explicit river selection then ends that flight as intended.
 
-These behavioral checks use SwiftShader, have no browser errors, and do not
-wait for touchdown or establish GPU performance. See the
+The fix is deployed in `114a16ec51f76741b272927b42f19af8ce0b9142`. Live RTX
+5090/ANGLE Direct3D 11 runs of the same controlled worker-delay regression pass
+for both **Find living habitat** and **Land and walk**. Each keeps active
+navigation through hydrology completion, then confirms explicit river
+selection ends that flight. Browser error arrays were empty. See the
+[live deployment record](../test-results/deploy-114a16e/live-deployment.json),
+[Find Life hardware report](../test-results/deploy-114a16e/background-hydrology-life/report.json),
+and [Land hardware report](../test-results/deploy-114a16e/background-hydrology-land/report.json).
+The controlled tests do not wait for touchdown. See the
 [regression record](../test-results/background-hydrology-regression/README.md),
 [Find Life report](../test-results/background-hydrology-regression/fixed-cb03169-life-report.json)
 and [Land approach report](../test-results/background-hydrology-regression/fixed-cb03169-land-report.json).
-Deployed hardware acceptance is the next release check.

@@ -38,11 +38,15 @@ coordinate transforms, compatible AA capabilities and allocation arithmetic.
 The local RTX 5090 browser run recorded in the
 [desktop rendering validation](desktop-rendering-validation-2026-09-28.md)
 passed shader compilation, all 19 aerial hooks, AA requests and resize checks.
-The live `37f0e89` deployment is recorded in
-[its deployment report](../test-results/deploy-37f0e89/live-deployment.json).
-Its Find-Life browser traversal timed out during asynchronous river readiness;
-the page and console error arrays were empty, and the parent investigation
-identified a race where background hydrology refresh clears the active journey.
+The live `37f0e89` traversal exposed an asynchronous hydrology race, fixed in
+the integrated release below. Release `114a16ec51f76741b272927b42f19af8ce0b9142`
+passed the live RTX 5090 browser fixture: 19/19 aerial hooks attached, 2,034
+visible forest instances, 1,624 flora and 128 fauna near ground, zero warm
+stationary matrix/color writes, and successful 0/2/4-sample AA plus resize
+checks. The turn-in-place kept observer position fixed and wrote no forest
+matrices or colors. See the
+[deployment record](../test-results/deploy-114a16e/live-deployment.json) and
+[full browser report](../test-results/deploy-114a16e/desktop-rendering-acceptance/report.json).
 Cloud-edge visual comparison and XR remain unverified. The independent
 [Opus 5.5 review](opus-5.5-rendering-review-2026-09-28.md) is preserved verbatim.
 Its AA resolution finding is fixed, haze now shares terrain's actual air/eye
@@ -50,7 +54,7 @@ uniforms, shader-hook failures are visible in diagnostics, and dynamic material
 cache keys are retained. XR captures preserve the supplied camera world matrix.
 All current forest/flora/fauna meshes are constructed before attachment and
 keep unique materials. Future dynamic batches must attach the hook explicitly.
-These changes were published in release `37f0e89`.
+These changes were published in release `114a16e`.
 
 Shared lighting, bounded shadows, authored materials, continuous canopy and
 species-bound structural variants remain in the
