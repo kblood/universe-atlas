@@ -177,7 +177,7 @@ more. Structural diversity must not come from disconnected anatomy.
 | --- | --- | --- |
 | A. Record direction | This plan, related MD links/status, guide explanations | Written; guide updated by Luna 6 |
 | B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented locally; TypeScript/Vite build passes; browser acceptance pending |
-| C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Planned |
+| C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Opt-in frame/pass profiling implemented; lighting/AA/shadows pending |
 | D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Planned |
 | E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Planned |
 | F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | Planned |
@@ -199,6 +199,15 @@ Upload/write counters and forest-update CPU timing are exposed in diagnostics.
 The [population implementation record](population-continuity-implementation-2026-09-27.md)
 documents scope and limitations. This is a retained-buffer foundation; complete
 spatial chunks, revised LOD/canopy and species-bound assets remain future stages.
+
+### Measurement increment — 2026-09-28
+
+[Desktop render profiling](desktop-render-profiling.md) adds bounded, optional
+CPU frame/planet timings and asynchronous GPU capture/cloud/resolve measurements.
+It reports complete-frame pass sums separately from frame intervals. Nine
+mocked-API unit cases pass; browser measurements remain a separate acceptance
+step. It does not yet split the forward scene into individual subsystem GPU
+timings or implement the lighting/shadow/AA changes in stage C.
 
 ## 8. Acceptance for later verification
 

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type {RenderProfile} from './render-profile.ts';
 import { cloudCoverAt, type CloudParams } from './planet-clouds.ts';
 import { hash64, noise } from './catalog.ts';
 
@@ -325,7 +326,7 @@ export class VolumetricClouds {
     }
     this.weather.needsUpdate=true;
   }
-  render(renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera) {
+  render(renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera,profile?:RenderProfile) {
     if(this.disposed)return false;
     const xr=renderer.xr.enabled,presenting=renderer.xr.isPresenting;
     const oldTarget=renderer.getRenderTarget(),oldAuto=renderer.autoClear;
@@ -364,15 +365,17 @@ export class VolumetricClouds {
           target.depthTexture=new THREE.DepthTexture(fullWidth,fullHeight,THREE.UnsignedIntType);this.targets[i]=target;
         }
         const target=this.targets[i];if(target.width!==fullWidth||target.height!==fullHeight)target.setSize(fullWidth,fullHeight);
-        renderer.setRenderTarget(target);renderer.setScissorTest(false);renderer.render(scene,view);
+        renderer.setRenderTarget(target);renderer.setScissorTest(false);
+        if(profile)profile.pass('sceneCapture',()=>renderer.render(scene,view));else renderer.render(scene,view);
         this.captures.push({camera:view,target});
         if(!this.cloudTargets[i])this.cloudTargets[i]=new THREE.WebGLRenderTarget(width,height,{type:THREE.HalfFloatType,depthBuffer:false});
         const cloudTarget=this.cloudTargets[i];if(cloudTarget.width!==width||cloudTarget.height!==height)cloudTarget.setSize(width,height);
-        renderer.setRenderTarget(cloudTarget);renderer.render(this.scene,view);
+        renderer.setRenderTarget(cloudTarget);
+        if(profile)profile.pass('cloudIntegration',()=>renderer.render(this.scene,view));else renderer.render(this.scene,view);
       }
       renderer.xr.enabled=xr;renderer.setRenderTarget(oldTarget);
       renderer.setViewport(oldViewport);renderer.setScissor(oldScissor);renderer.setScissorTest(oldScissorTest);
-      renderer.render(this.resolveScene,camera);
+      if(profile)profile.pass('cloudResolve',()=>renderer.render(this.resolveScene,camera));else renderer.render(this.resolveScene,camera);
     }finally{
       renderer.xr.enabled=xr;renderer.autoClear=oldAuto;renderer.info.autoReset=oldInfoAuto;renderer.setRenderTarget(oldTarget);
       renderer.setViewport(oldViewport);renderer.setScissor(oldScissor);renderer.setScissorTest(oldScissorTest);

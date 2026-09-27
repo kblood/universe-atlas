@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import {RenderProfile} from './render-profile.ts';
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { AtlasVR, type VRMenu } from "./vr.ts";
 import {
@@ -433,6 +434,8 @@ camera.setViewOffset(
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
+const renderProfile=new RenderProfile(renderer.getContext() as WebGL2RenderingContext);
+renderProfile.setEnabled(new URLSearchParams(location.search).get('profile')==='1');
 $("viewport").append(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -4969,6 +4972,7 @@ renderer.setAnimationLoop(() => {
     elapsedSeconds = Math.max(0,(now - last) / 1000),
     dt = Math.min(elapsedSeconds, 0.1);
   frameMs = now - last;
+  renderProfile.beginFrame(frameMs);
   last = now;
   if (ready) {
     frameCount++;
@@ -4998,7 +5002,7 @@ renderer.setAnimationLoop(() => {
   updateFlight(dt);
   if (!renderer.xr.isPresenting && (flight ? camera.view?.enabled : !camera.view?.enabled)) updateCameraViewport();
   vr?.update(dt);
-  updatePlanetTiles(dt);
+  renderProfile.cpu('planetUpdate',()=>updatePlanetTiles(dt));
   updateSpace();
   updateNavigationVisibility();
   updateFlightHud();
@@ -5116,8 +5120,12 @@ renderer.setAnimationLoop(() => {
   }
   // Lake-only planar reflection renders before the visible frame and reuses
   // existing terrain/environment; XR deliberately retains procedural sky.
-  planetTiles?.renderLakeReflection(renderer,scene,camera,renderer.xr.isPresenting);
-  if(!planetTiles?.renderCloudScene(renderer,scene,camera))renderer.render(scene, camera);
+  const infoAutoReset=renderer.info.autoReset;
+  if(renderProfile.enabled){renderer.info.reset();renderer.info.autoReset=false;}
+  try{
+    renderProfile.pass('lakeReflection',()=>planetTiles?.renderLakeReflection(renderer,scene,camera,renderer.xr.isPresenting));
+    if(!planetTiles?.renderCloudScene(renderer,scene,camera,renderProfile))renderProfile.pass('scene',()=>renderer.render(scene,camera));
+  }finally{renderer.info.autoReset=infoAutoReset;}
   drawCount = renderer.info.render.calls;
   if (now - lastStats > 900) {
     lastStats = now;
@@ -5126,6 +5134,7 @@ renderer.setAnimationLoop(() => {
     $("performance").textContent =
       `${state.level.toUpperCase()} · ${drawCount} draws · p95 ${p95.toFixed(0)} ms`;
   }
+  renderProfile.endFrame(drawCount,renderer.info.render.triangles);
 });
 async function boot() {
   const q = new URLSearchParams(location.search);
@@ -5186,6 +5195,9 @@ async function boot() {
 // Diagnostics and an explicit rendering freeze used by browser acceptance tests.
 Object.defineProperty(window, "__atlas", {
   value: {
+    setProfiling(enabled:boolean){renderProfile.setEnabled(enabled);},
+    resetProfile(){renderProfile.clear();},
+    get renderProfile(){return renderProfile.diagnostics();},
     shoreDebug(options:import('./planet-renderer.ts').ShoreDebug){planetTiles?.setShoreDebug(options);},
     get date(){return dateRecord(epoch);},
     // Package D diagnostics (contract §6.4): a pure function of the current

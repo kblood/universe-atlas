@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type {RenderProfile} from './render-profile.ts';
 import { AU, type Body, type V3 } from './catalog.ts';
 import { children, tileDirection, closestTileDirection, tileKey, directionTile, tileNeighbour, PATCH_SEGMENTS, type Tile, type buildTile } from './planet-tiles.ts';
 import {terrainSampler, DEFAULT_SURFACE_AGE_MYR} from './terrain.ts';
@@ -1223,8 +1224,8 @@ export class PlanetRenderer {
       skirtPatches:[...this.active].filter(k=>this.patches.get(k)!.mesh.geometry.drawRange.count>PATCH_SEGMENTS*PATCH_SEGMENTS*6).length,
       vertices: [...this.active].reduce((n,k) => n + this.patches.get(k)!.mesh.geometry.attributes.position.count, 0)};
   }
-  renderCloudScene(renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera){
-    return this.clouds?.render(renderer,scene,camera)??false;
+  renderCloudScene(renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera,profile?:RenderProfile){
+    return this.clouds?.render(renderer,scene,camera,profile)??false;
   }
   private release(p: Patch) { this.reflectionRevision++;this.residentBytes=Math.max(0,this.residentBytes-p.bytes);this.group.remove(p.mesh);if(p.ocean){this.group.remove(p.ocean);p.ocean.geometry.dispose();p.ocean.material.dispose();} p.mesh.geometry.dispose(); p.map.dispose(); p.material.dispose(); }
   dispose() {
