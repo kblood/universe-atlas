@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import {type Body,type V3} from './catalog.ts';
 import {terrainSampler} from './terrain.ts';
 import {biomeClassifier} from './surface-biomes.ts';
-import {forestPopulationCells,type PopulationCell} from './planet-population.ts';
+import {forestPopulationCells,FAR_CROWN_PROBABILITY,type PopulationCell} from './planet-population.ts';
+import {forestHabitat,TREE_HABITAT_VERSION} from './forest-habitat.ts';
 import {PLANET_DETAIL as B} from './planet-detail.ts';
 
 type Resident={cell:PopulationCell;height:number;present:boolean;water:number};
@@ -97,6 +98,7 @@ export class PlanetForest {
   private updates:BatchUpdates[]=[batchUpdates(),batchUpdates(),batchUpdates()];
   private sample:ReturnType<typeof terrainSampler>;
   private classify:ReturnType<typeof biomeClassifier>;
+  private habitat:ReturnType<typeof forestHabitat>;
   private water=NaN;
   private matrix=new THREE.Matrix4();
   private position=new THREE.Vector3();
@@ -134,6 +136,7 @@ export class PlanetForest {
   private originRebased=false;
   constructor(private body:Body){
     this.sample=terrainSampler(body);this.classify=biomeClassifier(body);
+    this.habitat=forestHabitat(this.sample,this.classify,body.radiusM);
     this.meshes=[B.forestNearCapacity,B.forestCapacity].map((capacity,i)=>{
       const mesh=new THREE.InstancedMesh(treeGeometry(i===0?1:0),
         forestMaterial(true),capacity);
@@ -222,6 +225,7 @@ export class PlanetForest {
     if(water!==this.water){
       this.water=water;this.sample=terrainSampler(this.body,undefined,undefined,undefined,water);
       this.classify=biomeClassifier(this.body,water);
+      this.habitat=forestHabitat(this.sample,this.classify,this.body.radiusM);
       // Selection depends only on identity/location, not water. Keep the single
       // in-flight job and resident trees while bounded habitat refresh replaces
       // them. Never queue another expensive selection on each playback bucket.
@@ -239,16 +243,8 @@ export class PlanetForest {
     }
     const started=performance.now();
     for(let count=0;this.queue.length&&count<B.placementSamplesPerFrame&&performance.now()-started<B.placementBudgetMs;count++){
-      const cell=this.queue.shift()!,s=this.sample(cell.direction);
-      const biome=this.classify(cell.direction,s.groundHeightM);
-      let present=!s.wet&&biome.forestPotential&&cell.roll<.76;
-      if(present){
-        const d=new THREE.Vector3(...cell.direction),right=new THREE.Vector3().crossVectors(Math.abs(d.y)>.9?new THREE.Vector3(1,0,0):this.up,d).normalize();
-        const a=d.clone().addScaledVector(right,5/r).normalize(),b=d.clone().addScaledVector(right,-5/r).normalize();
-        const slope=Math.abs(this.sample(a.toArray() as V3).groundHeightM-this.sample(b.toArray() as V3).groundHeightM)/10;
-        present=slope<.55;
-      }
-      this.cache.set(cell.id,{cell,height:s.groundHeightM,present,water});
+      const cell=this.queue.shift()!,habitat=this.habitat(cell);
+      this.cache.set(cell.id,{cell,height:habitat.groundHeightM,present:habitat.present,water});
     }
     this.placementMs=performance.now()-started;
     // Retain the anchor across ordinary movement so static tree matrices need
@@ -293,7 +289,7 @@ export class PlanetForest {
     this.updateMs=performance.now()-updateStarted;
   }
   diagnostics(){return {visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
-    candidateCells:this.wanted.length,canopyStands:0,farCanonicalTrees:this.group.visible?this.canopy.count:0,farSamplingFraction:.065,placementMs:this.placementMs,selectionMs:this.selectionMs,selectionPending:this.selecting,selectionWorker:!!this.worker,
+    candidateCells:this.wanted.length,canopyStands:0,farCanonicalTrees:this.group.visible?this.canopy.count:0,farSamplingFraction:FAR_CROWN_PROBABILITY,habitatVersion:TREE_HABITAT_VERSION,placementMs:this.placementMs,selectionMs:this.selectionMs,selectionPending:this.selecting,selectionWorker:!!this.worker,
     representation:'canonical-tree-field',densityFocus:'observer-ground',instanceUpdates:'stable-slots-retained-origin-dirty-ranges',
     selectionJobsInFlight:this.selecting?1:0,waterBucket:this.water,selectionApplyMs:this.selectionApplyMs,
     workerRestarts:this.workerRestarts,workerFailures:this.workerFailures,selectionMode:this.worker?'worker':'synchronous-fallback',

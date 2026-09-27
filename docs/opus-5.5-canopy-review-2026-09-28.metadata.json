@@ -1,0 +1,45 @@
+{
+  "requestedModel": "claude-opus-5-5",
+  "actualModel": "claude-opus-5-5",
+  "provider": "firstParty",
+  "sourceRevision": "eb06755e7ce5ec241793dc3d48f37658e8705972",
+  "inputFiles": [
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "b2fe219b7a95bb18c4a11968cd83e001bfa63f6d723170ac82edc537cb5f52bc"
+    },
+    {
+      "path": "src/planet-population.ts",
+      "sha256": "10171df72d4a2fd8709165ca74b05dcf52ebcbe9615dc5d74b61c8b478710f4c"
+    },
+    {
+      "path": "src/planet-detail.ts",
+      "sha256": "d83f03503b7a778d35332d4bd8c80e3d52d16268af98a9d25e4985797964617a"
+    },
+    {
+      "path": "src/tree-species-recipe.ts",
+      "sha256": "a7ad583f72e728be2ba4c75a56197c77b8333f2e17c1e9cd7d3de359949a327f"
+    },
+    {
+      "path": "docs/desktop-realism-implementation-plan-2026-09-27.md",
+      "sha256": "182a7215308338db9488c37574dfa357baa59b4dd6143a3ba83636ea3d558a04"
+    }
+  ],
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 40679,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 21195,
+      "webSearchRequests": 0,
+      "costUSD": 0.9834398,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 31413,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "notes": "Genuine Claude CLI read-only source review. No tool execution or browser validation by reviewer. Preserved verbatim; recommendations require independent assessment."
+}

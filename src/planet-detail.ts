@@ -1,5 +1,6 @@
-/** Distances are physical metres; these are presentation/streaming budgets,
- * never inputs to catalogue identity, geology or the dated species model. */
+import {FOREST_CELL_M} from './planet-population.ts';
+/** Distances are physical metres. These are presentation/streaming budgets,
+ * except forestCellM, the frozen population-address input re-exported below. */
 export const PLANET_DETAIL = Object.freeze({
   forestRadiusM: 4000,
   forestFootprintM: 650,
@@ -7,7 +8,7 @@ export const PLANET_DETAIL = Object.freeze({
   canopyCellM: 140,
   canopyCapacity: 8192,
   forestPrepareAltitudeM: 3500,
-  forestCellM: 18,
+  forestCellM: FOREST_CELL_M,
   forestNearM: 110,
   forestCapacity: 4096,
   forestNearCapacity: 192,
