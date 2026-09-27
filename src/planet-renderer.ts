@@ -788,12 +788,9 @@ export class PlanetRenderer {
     const forestEnabled=this.relief===1&&this.lifeContext?.floraStage==='complex'&&
       !!this.lifeContext.floraAvailableKinds?.includes('tree');
     const forestFocus=lifeFocus.clone().normalize();
-    if(!contact&&frusta[0]&&altitudeM>40){
-      // At 600 m altitude an underfoot patch is below the screen. Prepare
-      // the visible ground ahead during descent, retaining fixed cell IDs.
-      const heading=frusta[0].planes[5].normal.clone().projectOnPlane(forestFocus).normalize();
-      forestFocus.addScaledVector(heading,Math.min(2500,altitudeM*1.6)/this.body.radiusM).normalize();
-    }
+    // Visible forest density is centred on the observer's ground position.
+    // View direction may inform future prefetch, never population coverage:
+    // moving this focus ahead made turning in place replace dense forest.
     this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta);
     if (this.relief === 1 && (contact||altitudeM<PLANET_DETAIL.groundLifeAltitudeM) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs); this.lifeMs=performance.now()-lifeStarted; }
     else { this.hideLife(); this.lifeMs=0; }

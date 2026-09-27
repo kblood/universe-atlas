@@ -1,5 +1,14 @@
 # Creature Lab implementation contract
 
+## Planetary rendering follow-on — 2026-09-28
+
+The [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md)
+adds a future continuous rigged animal compatible with these genomes and their
+proportions. It preserves the existing date/identity contract and will evaluate
+bounded paths and foot contact in the main game. This lab remains a separate
+implementation; the current planetary renderer still uses four primitive
+instance batches. Blender rigs and richer planetary animation remain planned.
+
 Implement the researched diversity gallery, anatomical inspection and walk/run
 arena as `creature-lab.html`, linked from Biosphere Lab and the main World Labs
 entry. Reuse `generateBiosphere(seed, profile)` and its dated species identities.

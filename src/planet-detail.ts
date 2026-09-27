@@ -11,6 +11,7 @@ export const PLANET_DETAIL = Object.freeze({
   forestNearM: 110,
   forestCapacity: 4096,
   forestNearCapacity: 192,
+  forestOriginRebaseM: 256,
   placementSamplesPerFrame: 48,
   placementBudgetMs: 2,
   populationCacheLimit: 24000,

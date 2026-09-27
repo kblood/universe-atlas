@@ -1,5 +1,9 @@
 # Vegetation, rocks, and free-flight coverage research
 
+## Current direction — 2026-09-27
+
+The [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md) consolidates the current decisions on vegetation assets, ecology, instancing and distant canopy. Desktop is the initial quality target. Historical observations below describe their dated baseline; newer implementation status belongs to the plan and population record.
+
 _Research note, 2026-09-14. No runtime code, assets, dependencies, or test baselines were changed by this note._
 
 ## What the current implementation actually proves

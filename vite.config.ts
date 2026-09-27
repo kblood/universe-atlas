@@ -9,6 +9,8 @@ export default defineConfig({
       dirty:execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim().length>0,
       builtAt:new Date().toISOString(),
     },null,2)});
+    for(const fileName of ['docs/desktop-realism-implementation-plan-2026-09-27.md','docs/desktop-realism-proposal-2026-09-27.md','docs/desktop-realism-assessment-2026-09-27.md','docs/opus-5.5-desktop-realism-review-2026-09-27.md','docs/opus-5.5-desktop-realism-review-2026-09-27.metadata.json'])
+      this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
     for(const fileName of ['docs/planet-rendering-validation-2026-09-27.md','docs/realistic-clouds-research-2026-09-27.md','docs/planet-local-rendering-design.md','docs/population-continuity-review-2026-09-27.md','docs/population-continuity-implementation-2026-09-27.md'])
       this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
     this.emitFile({type:'asset',fileName:'docs/star-visibility-and-transitions.md',

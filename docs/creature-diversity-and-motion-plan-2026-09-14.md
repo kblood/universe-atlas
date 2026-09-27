@@ -1,5 +1,9 @@
 # Creature diversity, attributes and motion
 
+## Current direction — 2026-09-27
+
+The [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md) adds the planetary rendering sequence: one continuous rigged body plan compatible with current genome proportions, then bounded deterministic paths and foot contact. Instanced skinning or baked animation will follow measured need. The existing four primitive batches remain the planetary baseline.
+
 Research follow-up to the Biosphere Lab at `22ad8ed`, 2026-09-14.
 This document proposes the next implementation; it does not add animation.
 

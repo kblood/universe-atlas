@@ -1,5 +1,9 @@
 # Planet realism iteration goal
 
+## Current direction — 2026-09-27
+
+The accepted [desktop realism and procedural life plan](desktop-realism-implementation-plan-2026-09-27.md) is the current priority and status record. Desktop realism leads; Quest receives a separate measured profile. The new plan covers species recipes, structural variants, instance appearance, canopy continuity, lighting and fauna.
+
 Started 2026-09-13, after stable-shore release `4275e43`.
 
 ## Outcome

@@ -1,5 +1,9 @@
 # Atmospheric entry and local planetary rendering
 
+## Current direction — 2026-09-27
+
+The [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md) is the next rendering roadmap. The implemented metre-frame and contact behavior below remains the foundation. AA/depth alternatives, shared atmosphere/lighting, spatial vegetation batches and new assets remain staged work; a new graphics API is not assumed.
+
 Design and implementation record, 2026-09-27. The regional flight and clock
 changes below are implemented in the working source. Validation results belong
 to the accompanying test reports; this document does not certify deployment.

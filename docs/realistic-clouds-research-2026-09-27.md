@@ -1,5 +1,9 @@
 # Realistic clouds for continuous planetary flight
 
+## Current direction — 2026-09-27
+
+The [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md) retains full-resolution desktop clouds as the baseline while adding an AA/depth audit and shared lighting work. Reduced-resolution reconstruction needs the earlier checker artifact resolved. This research report’s measurements do not establish whole-game desktop performance.
+
 Research and implementation notes, 2026-09-27. See also the
 [local rendering design](planet-local-rendering-design.md) and
 [population continuity review](population-continuity-review-2026-09-27.md).

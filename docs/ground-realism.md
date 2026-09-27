@@ -1,5 +1,9 @@
 # Ground rendering realism
 
+## Current direction — 2026-09-27
+
+Follow the [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md) for the next rendering and content stages. The implementation described below is an earlier baseline; realistic authored/procedural tree assets, shared lighting and aggregate canopy are not completed by that baseline.
+
 2026-09-13. Design: [walking-height correction specification](ground-realism-spec.md).
 This pass responds to the supplied Oraeva riverbank screenshot. It changes
 rendering and local vegetation, and fixes runtime lake-bank interpolation while

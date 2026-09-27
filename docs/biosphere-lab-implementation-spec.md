@@ -1,5 +1,13 @@
 # Biosphere generator lab implementation
 
+## Current rendering direction — 2026-09-28
+
+The [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md)
+will reuse the existing dated species and lineage catalogue for plant recipes,
+bounded structural variants and individual instance parameters. Binding canonical
+planetary forest cells to those recipes is still planned. Lab specimen detail
+does not imply that the planetary renderer already supports those assets.
+
 Follow-up: [Creature Lab](creature-lab-implementation-spec.md) expands the
 catalogue to `biosphere-lab-2`, with 12 plants and 12 animals. It adds separate
 articulated anatomy, walk/run and full ancestor-chain displays. The original

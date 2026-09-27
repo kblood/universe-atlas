@@ -1,5 +1,33 @@
 # Surface population implementation
 
+## Desktop realism continuation — 2026-09-28
+
+The [desktop realism implementation plan](desktop-realism-implementation-plan-2026-09-27.md)
+owns the next visual stages. The first local source increment removes the
+heading-based forest focus offset: the dense footprint is now selected around
+the observer's ground location. Rotating the view can change frustum visibility,
+but no longer shifts that footprint up to 2.5 km ahead.
+
+Forest instance transforms now retain a local origin until 256 m movement.
+Per-batch slots remember their resident tree and origin version; matrices are
+recomposed on slot replacement or rebase, colours on replacement, and coverage
+only when its Float32 value changes. Dirty component ranges are merged with any
+pending upload before submission. A hidden slot returning after a rebase gets
+its transform refreshed. Worker replies carry request IDs so old water-context
+selections cannot overwrite current demand.
+
+Diagnostics now expose `densityFocus`, `instanceUpdates`, `updateMs`,
+`matrixWrites`, `colorWrites`, `coverageWrites`, `scheduledUploadBytes` and
+origin/rebase state. Scheduled bytes describe pending attribute ranges, not
+measured driver transfers; initial GPU buffer allocation can upload full arrays.
+
+This increment preserves tree IDs, placement, dimensions, palette, habitat
+rules and existing draw ranges. It still scans resident candidates and compacts
+visible batches; camera movement/frustum changes can rewrite many slots. Spatial
+chunking, detailed procedural assets, PBR forest lighting and aggregate canopy
+remain planned. TypeScript checking and the production Vite build pass for this
+increment. Unit suites and browser acceptance were not run in this increment.
+
 This implements the continuity repairs identified in
 `population-continuity-review-2026-09-27.md`. Runtime and browser validation
 are recorded separately by the validation agent; this document describes

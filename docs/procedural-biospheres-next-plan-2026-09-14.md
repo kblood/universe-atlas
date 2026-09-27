@@ -1,5 +1,9 @@
 # Procedural biospheres and generator labs
 
+## Current direction — 2026-09-27
+
+The [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md) defines the current rendering increment. Reuse the existing species/lineage catalogue: Blender supplies components and recipes, bounded variant caches supply geometry, and stable individual parameters supply instance variation. Species binding and richer rendering remain explicit future stages.
+
 ## Recommendation
 
 Generate a planet's environment and biological lineages, derive a species pool

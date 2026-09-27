@@ -1,5 +1,9 @@
 # Procedural flora and geology: a hierarchical, inspectable proposal
 
+## Current direction — 2026-09-27
+
+The [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md) adopts the species-to-individual hierarchy for the next implementation. Species rules, bounded structural mesh variants and per-instance bark/leaf colours and controlled shape changes are separate responsibilities. This dated research remains context, not an implementation report.
+
 _Research note, 2026-09-14. This report changes no runtime code, assets, dependencies, or baselines._
 
 ## Decision

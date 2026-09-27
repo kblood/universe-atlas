@@ -1,5 +1,9 @@
 # Walking-height realism correction
 
+## Current direction — 2026-09-27
+
+The [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md) now owns implementation order and desktop-first quality targets. This specification remains supporting design context for terrain, materials and movement; its proposed features are not automatically implemented.
+
 2026-09-13. This iteration responds to the user's Oraeva riverbank screenshot:
 black trees, coarse triangular shorelines, a bright ribbon of water, uniform
 ground and isolated identical tree groups. The acceptance target is visibly

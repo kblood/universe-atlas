@@ -1,0 +1,87 @@
+{
+  "reviewDate": "2026-09-27",
+  "baselineCommit": "27e89c897369270728e5ef4118dcc144e40af7fc",
+  "requestedModel": "claude-opus-5-5",
+  "canonicalModel": "claude-opus-5-5",
+  "cliVersion": "2.1.283",
+  "toolsEnabled": [],
+  "durationMs": 243198,
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 22286,
+      "cacheReadInputTokens": 531,
+      "cacheCreationInputTokens": 99033,
+      "webSearchRequests": 0,
+      "costUSD": 1.2380982,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 14875,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "totalCostUSD": 1.2380982,
+  "inputFiles": [
+    {
+      "path": "docs/desktop-realism-proposal-2026-09-27.md",
+      "sha256": "a000541f5bfa86da45fca535f70d3a156a49c1dfdbb437df59d2fe3047cc0477"
+    },
+    {
+      "path": "docs/planet-rendering-validation-2026-09-27.md",
+      "sha256": "0e2a6f58b7a6896663ddd1a4c13ed7b83af5d1e4f0150081d7a1ec40a0e40dfd"
+    },
+    {
+      "path": "docs/planet-local-rendering-design.md",
+      "sha256": "d415027c252e49c3826777c5820f02f8f37df6e29b504ccb00c045edd14e9043"
+    },
+    {
+      "path": "docs/population-continuity-implementation-2026-09-27.md",
+      "sha256": "2d9714985fac74113ac5a944faf54e340e621af239001531ef59673873530aad"
+    },
+    {
+      "path": "docs/realistic-clouds-research-2026-09-27.md",
+      "sha256": "82efe9c7f379e6fa3f7a0588a5919c7f18281b6bb07b047465d0506f87cfa171"
+    },
+    {
+      "path": "src/planet-detail.ts",
+      "sha256": "06f3d15a565630b70c866e7a637aa7daa4acd179c8831e8b9f080265c4380c04"
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "0004a7c0c7279c967620686d3d1c74c95c5aa9d071d7f030051b85316f229287"
+    },
+    {
+      "path": "src/planet-population.ts",
+      "sha256": "6c097cd6d348e973f620f8d7e4bd095290d48d91bad966e04efb21628afc27b9"
+    },
+    {
+      "path": "src/fauna-field-renderer.ts",
+      "sha256": "a17cfaef00fc195b122fbce9f9a0b4401757889d7db99ac5a9623eddcebaf0f7"
+    },
+    {
+      "path": "src/fauna-runtime.ts",
+      "sha256": "0619a37d2890813d5460d8180869917f27aeddec745eca4f645563845bc80a1f"
+    },
+    {
+      "path": "src/ground-material.ts",
+      "sha256": "7c92dd1425848341604867740220774d6383ae96fd6f983b479bdbbdf697f314"
+    },
+    {
+      "path": "src/planet-renderer.ts",
+      "sha256": "20bf36e89439c09619b765a2f2190998e5a3af3a365a441a92d8ad3533ec8b5d"
+    },
+    {
+      "path": "src/volumetric-clouds.ts",
+      "sha256": "66c19256b95b92617067a61212fb5e8083653d9780f85421111aa9a5bf195307"
+    },
+    {
+      "path": "package.json",
+      "sha256": "b33ba581e597d12c235da70bab91c2451dfa8e4d983d815bd5aab14e2bf5edbc"
+    }
+  ],
+  "promptSha256": "bd87cb0ee4bc48e8d5049a50c068393df8f60117e54580fb80b5238d74699531",
+  "responseSha256": "e276177a58c25ef7fc43c5772ef92c5cd6a3a48608ed1ea5b7d80b7f27d5b986",
+  "scope": "Text and source review only; no tests, browsing, or screenshots by reviewer."
+}

@@ -1,5 +1,9 @@
 # Walkable worlds and traversable history
 
+## Current direction — 2026-09-27
+
+For the next planetary visual increment, use the [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md). It preserves this roadmap’s random-access history and metre-scale world contracts while specifying procedural asset families, instance variation, canopy continuity and a desktop-first implementation sequence.
+
 Proposal, 2026-09-13. This describes future work, not capabilities of the deployed
 build. It extends the [exploration corrections](exploration-corrections.md) and
 the shared universe research. No runtime changes accompany this proposal.

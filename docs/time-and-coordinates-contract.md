@@ -1,5 +1,15 @@
 # The 4D time and coordinate contract
 
+## Rendering follow-on — 2026-09-28
+
+The [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md)
+builds on this contract. Its initial forest changes affect observer selection
+and render-buffer maintenance only; canonical tree IDs, dimensions, placement
+and the time model retain their existing rules. Proposed species asset recipes,
+appearance manifests, seasonal variation and individual growth are future
+extensions and must conform to the identity/lifecycle requirements below.
+No new appearance or history version is introduced by the initial source slice.
+
 Design, 2026-09-15. This is a contract other engineers implement against, not a
 narrative proposal. It resolves the open questions in
 [`living-worlds-and-time-roadmap.md`](living-worlds-and-time-roadmap.md) into

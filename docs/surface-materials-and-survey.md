@@ -1,5 +1,9 @@
 # Ground materials and named surface destinations
 
+## Current direction — 2026-09-27
+
+The next material and lighting work is governed by the [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md). Retain existing terrain detail and physical scale while introducing consistent lighting, ground/rock/wetness materials and compatible vegetation assets. This report retains its original measurements.
+
 Implementation record, 2026-09-13. This follows [walking and shared time](walking-and-time.md)
 and the [reviewed long-term roadmap](fable-review-assessment.md).
 

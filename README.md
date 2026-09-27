@@ -1,5 +1,9 @@
 # Universe Atlas
 
+## Current direction — 2026-09-27
+
+The [desktop realism and procedural life implementation plan](docs/desktop-realism-implementation-plan-2026-09-27.md) is the current planetary graphics roadmap. Desktop quality comes first: deterministic species recipes, cached structural variants, per-instance appearance, continuous canopy, shared lighting and genome-compatible animals. The first source increment addresses forest selection and instance uploads; the richer assets and rendering stages remain planned.
+
 A deterministic Three.js universe explorer, deployed at
 https://dionysus.dk/webxr/IWSDK/universe-atlas/.
 This README describes the current repository source; the deployed build can

@@ -1,5 +1,9 @@
 # Continuous planet detail
 
+## Current direction — 2026-09-27
+
+The current [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md) extends this continuity contract with procedural species, reusable structural variants, per-instance appearance and a coverage-preserving canopy. The current sparse far-tree representation remains a limitation until that stage is implemented.
+
 ## Contract
 
 Flight and walking see one dated planet in metres. Landing changes movement
@@ -16,7 +20,8 @@ the world seed, body, stable surface cell and dated biosphere.
 3. A bounded forest stream begins during descent. It samples fixed planetary
    cells, caches their habitat/ground results, and admits only a small amount of
    placement work per frame. Individual tree LODs share placement and physical
-   dimensions. Farther away, stand silhouettes approximate canopy coverage.
+   dimensions. Farther away, a stable sparse subset of the same trees remains
+   visible; a coverage-preserving aggregate canopy is planned.
 4. Nearby ground cover and fauna operate in low flight as well as on foot.
    Smaller objects have shorter visibility ranges. Species availability and
    sterile/microbial/extinct gates remain authoritative.
@@ -46,16 +51,19 @@ Desktop results are separate from physical-headset acceptance.
 | Regional geology | 14 km, 2.3 km, 310 m ridge wavelengths; up to about 1.9 km additional relief | Pure sample, no retained global mesh |
 | Flight terrain | Higher detail below 6 km ground clearance | 390 selected leaves; 768 resident plus pending tiles |
 | Contact terrain | Metre and sub-metre triangles near the capsule | 450 leaves; balanced 2:1 adjacency; mandatory support admitted first |
-| Forest preparation | Starts below 3.5 km; looks ahead along the flight heading | One population worker job in flight |
+| Forest preparation | Starts below 3.5 km, centred on the observer's ground location | One current population worker request; stale replies rejected |
 | Individual trees | 10–22 m height; 18 m candidate spacing; 650 m working footprint | 192 detailed + 4,096 distant instances; XR 64 + 1,024 |
-| Distant canopy | 140 m stand cells; 4.5 km working footprint | 4,096 stand instances; XR 768; frustum culled |
-| Habitat placement | Dry, suitable biome; slope and dated tree availability gates | 48 placements or about 2 ms per frame; 12,000 retained cells |
-| Ground cover | Active below 350 m and during contact | Fixed outer and inner grids, instanced LOD buckets |
-| Wildlife | Detailed within 18 m; proxies to 100 m; distant forms to 280 m | 16 detailed rigs plus fixed proxy pools |
-| Touchdown | Contact prepares below 350 m; deliberate descent below 125 m requests walking | Wait for canonical hydrology and settled collision; retain safety clearance meanwhile |
+| Distant trees | Stable 6.5% of canonical 18 m candidates; selection to 4.5 km, drawing to 4 km, altitude fade at 3–3.5 km | 8,192 instances; XR 2,048; frustum culled |
+| Habitat placement | Dry, suitable biome; slope and dated tree availability gates | 48 placements or about 2 ms per frame; 24,000 retained cells |
+| Forest uploads | Retained origin until 256 m movement; per-slot matrix/colour reuse | Dirty attribute ranges; resident candidate scan still occurs |
+| Ground cover | Active below 350 m and during contact; visible to 120 m | Canonical cell enumeration, four kinds × three instanced LOD buckets |
+| Wildlife | Same genome-derived primitive anatomy within 600 m | Four instanced primitive batches; up to 128 individuals |
+| Touchdown | Contact prepares below 350 m; deliberate descent to 1.64 m eye clearance plus 12 cm tolerance | Wait for canonical hydrology and settled collision; retain safety clearance meanwhile |
 
-The combined reservation is 256 MiB, including pending terrain results,
-ground materials, water/environment resources and an 8 MiB life allowance.
+Desktop retains a 256 MiB core reservation, including pending terrain results,
+ground materials, water/environment resources and a 16 MiB life allowance,
+plus up to 160 MiB for cloud resources (416 MiB combined). Immersive mode retains
+a 256 MiB combined cap with a smaller cloud allocation.
 This is subsystem accounting, not a cap on the whole browser process or a
 claim of measured headset performance. Work and allocation remain bounded
 when the observer travels: the whole planet is never populated in memory.
@@ -82,9 +90,12 @@ river construction coordinates, preserving catchment addresses.
   Horizon and frustum culling avoid refining the back side of the planet.
   Contact re-ranks the balanced frontier to guarantee collision priority;
   it does not depend on the previous flight view filling the cache favorably.
-- Individual trees keep their position and size across their two LODs. The
-  distant canopy is an aggregate representation, with overlapping range fades.
-  It does not provide distant individual-tree simulation or obstacle collision.
+- Individual trees keep their position and size across their two LODs. Distant
+  trees share those identities, with overlapping range fades, but their sparse
+  subset does not preserve full forest coverage. Tree collision is not provided.
+- Visible forest density is independent of camera heading. Retained origins and
+  dirty instance ranges reduce redundant matrix/colour updates; this does not
+  eliminate resident scans or the need for future spatial chunking.
 - Atmosphere and clouds already exist. Their role is depth and weather
   presentation; actual terrain and life stream while the observer is airborne.
 - Galaxy/system arrival keeps free flight and forward cruise active. Movement
@@ -94,7 +105,14 @@ river construction coordinates, preserving catchment addresses.
   Unsuitable or wet ground retains flight safety behavior. Landing does not
   generate vegetation or switch the planet to a different geology.
 
-## Validation and remaining limits
+## Historical validation and remaining limits
+
+The measurements below predate the 2026-09-27 population/cloud work and the
+2026-09-28 retained-buffer increment. Preserve them as historical evidence, not
+validation of today's source. See the [newer validation record](planet-rendering-validation-2026-09-27.md)
+and [current implementation plan](desktop-realism-implementation-plan-2026-09-27.md).
+The latest source increment has build/type-check coverage only; browser
+acceptance remains pending.
 
 `tests/planet-detail.test.mjs` covers fixed cell identity across movement and
 cube seams, regional relief, coastal preservation and rock invariance under
@@ -128,7 +146,7 @@ claim. Browser errors were zero and the reserved subsystem bytes remained
 below 256 MiB. Screenshots and raw measurements are recorded by the test,
 under `test-results/planet-detail-final/`.
 
-The current forest is procedural geometry and approximate distant canopy.
+The forest remains procedural geometry with sparse distant coverage.
 It is not final vegetation art, ecological succession, a global food web,
 tectonics, or a complete civilization-ready environment. Planetary sampling,
 stable physical scale, bounded streaming and pre-landing visibility are the
