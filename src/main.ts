@@ -666,8 +666,8 @@ async function selectRiverDestination(parentId:string,restore=false):Promise<boo
     // is awaited by whoever is racing a ground landing/walk in parallel (see
     // boot()'s own `void prepareLanding(saved)` for a `?walk=` URL, and
     // prepareLanding()/landOnWorld()/takeoffWalk() for any ordinary in-app
-    // walk request). clearWalking() below is still unconditional and runs
-    // first: every other call site in this file pairs clearWalking() directly
+    // walk request). When a walker/landing exists, clearWalking() runs
+    // first: other deliberate restart call sites pair clearWalking() directly
     // before restartPlanetTiles() for the same reason — a live GroundWalker's
     // per-frame contactPatches closure reads whatever `planetTiles` currently
     // is, and restartPlanetTiles() is about to dispose the resident
@@ -680,7 +680,7 @@ async function selectRiverDestination(parentId:string,restore=false):Promise<boo
     // file, would be happening asynchronously behind the user's back rather
     // than as the direct result of a deliberate action of theirs (toggling
     // flight, changing relief, focusing a different body) — so instead of
-    // guarding clearWalking() (which would skip that teardown) or leaving the
+    // leaving an existing walker wired to disposed tiles or leaving the
     // request permanently discarded, capture the in-flight intent here and
     // reissue it below once the new PlanetRenderer exists, through the same
     // prepareLanding() path any other landing takes (which also re-arms
@@ -692,8 +692,8 @@ async function selectRiverDestination(parentId:string,restore=false):Promise<boo
     // approach command. Only walker/contact state needs rebuilding with the
     // renderer; explicit river selection still intentionally changes travel.
     const preserveTravel=restore&&!resumeWalk;
-    clearWalking();
     if(!preserveTravel){
+      clearWalking();
       if(flight)toggleFlight();
       riverFlight=null;surfaceJourney=null;autopilot=null;orbitAssist=null;planetLook=null;playing=false;
     }
