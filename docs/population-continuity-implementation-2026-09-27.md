@@ -1,5 +1,29 @@
 # Surface population implementation
 
+## Opus review follow-up — 2026-09-28
+
+Following the [independent source review](opus-5.5-forest-implementation-review-2026-09-28.md),
+forest batches now map canonical tree IDs to stable slots. A departure moves the
+final resident into the hole; changing demand order alone no longer rewrites a
+batch tail. CPU frustum culling remains to bound submitted geometry. Dirty
+components coalesce into at most eight ranges, merging closest gaps if needed.
+Instance colours are preallocated with dynamic usage.
+
+Water-independent cell selection now remains single-flight across water changes.
+Only habitat placement is requeued. Old cached placements remain until refreshed;
+newly submerged old roots are hidden immediately. This avoids blanking the whole
+forest during rebuilding, but unsettled habitat is temporarily approximate.
+Paused-date acceptance must wait for its placement queue to drain. Rapid playback
+can keep that queue busy; existence gates still decide whether forest is enabled.
+
+Worker failures receive one restart before a diagnosed synchronous fallback.
+`selectionApplyMs` reports main-thread application time, excluding structured
+clone deserialization; worker cost remains separate. Six focused unit checks
+cover slot reorder, frustum swap-removal, rebasing, water selection admission,
+dirty ranges and bounded worker restart. Browser acceptance is in progress.
+This supersedes the compacted-slot and water-invalidation details of the initial
+increment below. It does not claim full spatial chunking or conserved far canopy.
+
 ## Desktop realism continuation — 2026-09-28
 
 The [desktop realism implementation plan](desktop-realism-implementation-plan-2026-09-27.md)

@@ -5,28 +5,39 @@ import {biomeClassifier} from './surface-biomes.ts';
 import {forestPopulationCells,type PopulationCell} from './planet-population.ts';
 import {PLANET_DETAIL as B} from './planet-detail.ts';
 
-type Resident={cell:PopulationCell;height:number;present:boolean};
+type Resident={cell:PopulationCell;height:number;present:boolean;water:number};
 
 /** Component ranges, not byte ranges. Preserve pending updates if a batch was
  * culled or hidden before Three uploaded it. Driver upload bytes are separate. */
 class DirtyRange {
-  private first=Infinity;
-  private end=0;
+  private ranges:{start:number;end:number}[]=[];
   include(index:number,components:number){
-    this.first=Math.min(this.first,index*components);
-    this.end=Math.max(this.end,(index+1)*components);
+    this.merge(index*components,(index+1)*components);
+  }
+  private merge(start:number,end:number){
+    for(let i=this.ranges.length-1;i>=0;i--){
+      const range=this.ranges[i];if(range.end<start||range.start>end)continue;
+      start=Math.min(start,range.start);end=Math.max(end,range.end);this.ranges.splice(i,1);
+    }
+    this.ranges.push({start,end});this.ranges.sort((a,b)=>a.start-b.start);
+    // Bound range submission overhead. Merge the closest gap, rather than
+    // uploading the entire span between two unrelated changed tree slots.
+    while(this.ranges.length>8){
+      let closest=0;for(let i=1;i<this.ranges.length-1;i++)if(this.ranges[i+1].start-this.ranges[i].end<this.ranges[closest+1].start-this.ranges[closest].end)closest=i;
+      this.ranges[closest].end=this.ranges[closest+1].end;this.ranges.splice(closest+1,1);
+    }
   }
   flush(attribute:THREE.BufferAttribute){
-    if(this.first===Infinity)return 0;
-    let first=this.first,end=this.end;
-    for(const range of attribute.updateRanges){first=Math.min(first,range.start);end=Math.max(end,range.start+range.count);}
-    attribute.clearUpdateRanges();attribute.addUpdateRange(first,end-first);
-    attribute.needsUpdate=true;this.first=Infinity;this.end=0;
-    return (end-first)*attribute.array.BYTES_PER_ELEMENT;
+    if(!this.ranges.length)return 0;
+    for(const range of attribute.updateRanges)this.merge(range.start,range.start+range.count);
+    attribute.clearUpdateRanges();let components=0;
+    for(const range of this.ranges){attribute.addUpdateRange(range.start,range.end-range.start);components+=range.end-range.start;}
+    attribute.needsUpdate=true;this.ranges.length=0;
+    return components*attribute.array.BYTES_PER_ELEMENT;
   }
 }
-type BatchUpdates={residents:(Resident|undefined)[];originVersions:number[];matrix:DirtyRange;color:DirtyRange;coverage:DirtyRange};
-const batchUpdates=():BatchUpdates=>({residents:[],originVersions:[],matrix:new DirtyRange(),color:new DirtyRange(),coverage:new DirtyRange()});
+type BatchUpdates={residents:Resident[];originVersions:number[];slots:Map<string,number>;wanted:Resident[];wantedCoverage:number[];wantedIds:Set<string>;matrix:DirtyRange;color:DirtyRange;coverage:DirtyRange};
+const batchUpdates=():BatchUpdates=>({residents:[],originVersions:[],slots:new Map(),wanted:[],wantedCoverage:[],wantedIds:new Set(),matrix:new DirtyRange(),color:new DirtyRange(),coverage:new DirtyRange()});
 
 /** Matched metre-normalized silhouettes for near branches and distant crowns.
  * All geometry is authored here; no textures or external generated assets. */
@@ -99,15 +110,20 @@ export class PlanetForest {
   private worker:Worker|null=null;
   private selecting=false;
   private selectionRequest=0;
+  private workerRestarts=0;
+  private workerFailures=0;
+  private selectionApplyMs=0;
   private applySelection(direction:V3,cells:PopulationCell[],selectionMs:number){
+    const started=performance.now();
     this.center.set(...direction);this.wanted=cells;
     const incoming=new Set(cells.map(c=>c.id));for(const id of this.retainedNear)if(!incoming.has(id))this.retainedNear.delete(id);
-    this.queue=this.wanted.filter(cell=>!this.cache.has(cell.id));
+    this.queue=this.wanted.filter(cell=>this.cache.get(cell.id)?.water!==this.water);
     if(this.cache.size+this.queue.length>B.populationCacheLimit){
       const keep=new Set(this.wanted.map(c=>c.id));
       for(const id of this.cache.keys())if(!keep.has(id))this.cache.delete(id);
     }
     this.selectionMs=selectionMs;this.selecting=false;
+    this.selectionApplyMs=performance.now()-started;
   }
   visibleTrees=0;nearTrees=0;placementMs=0;selectionMs=0;
   private matrixWrites=0;
@@ -122,23 +138,32 @@ export class PlanetForest {
       const mesh=new THREE.InstancedMesh(treeGeometry(i===0?1:0),
         forestMaterial(true),capacity);
       const coverage=new THREE.InstancedBufferAttribute(new Float32Array(capacity),1);coverage.setUsage(THREE.DynamicDrawUsage);mesh.geometry.setAttribute('instanceCoverage',coverage);this.coverage.push(coverage);
-      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;mesh.count=0;
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      mesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3).fill(1),3).setUsage(THREE.DynamicDrawUsage);
+      mesh.frustumCulled=false;mesh.count=0;
       this.group.add(mesh);return mesh;
     });
     this.canopy=new THREE.InstancedMesh(treeGeometry(0),forestMaterial(true),B.canopyCapacity);
     this.canopyCoverage=new THREE.InstancedBufferAttribute(new Float32Array(B.canopyCapacity),1);this.canopyCoverage.setUsage(THREE.DynamicDrawUsage);this.canopy.geometry.setAttribute('instanceCoverage',this.canopyCoverage);
     this.canopy.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.canopy.frustumCulled=false;this.canopy.count=0;
+    this.canopy.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(B.canopyCapacity*3).fill(1),3).setUsage(THREE.DynamicDrawUsage);
     this.group.add(this.canopy);this.group.name='Continuous planetary forest';
-    if(typeof Worker!=='undefined'){
-      this.worker=new Worker(new URL('./planet-population-worker.ts',import.meta.url),{type:'module'});
-      this.worker.onmessage=({data})=>{
-        if(data.requestId===this.selectionRequest)this.applySelection(data.direction,data.cells,data.selectionMs);
-      };
-      this.worker.onerror=()=>{this.worker?.terminate();this.worker=null;this.selecting=false;};
-    }
+    if(typeof Worker!=='undefined')this.startWorker();
   }
-  /** Stable slot contents survive stationary views. Compact visible ordering
-   * still changes at frustum/LOD boundaries; spatial chunks are a later stage. */
+  private startWorker(){
+    try{
+      const worker=new Worker(new URL('./planet-population-worker.ts',import.meta.url),{type:'module'});this.worker=worker;
+      worker.onmessage=({data})=>{
+        if(this.worker===worker&&data.requestId===this.selectionRequest)this.applySelection(data.direction,data.cells,data.selectionMs);
+      };
+      worker.onerror=event=>{
+        event.preventDefault();if(this.worker!==worker)return;
+        worker.terminate();this.worker=null;this.selecting=false;this.workerFailures++;this.selectionRequest++;
+        if(this.workerRestarts++<1)this.startWorker();
+      };
+    }catch{this.worker=null;this.selecting=false;this.workerFailures++;}
+  }
+  /** Slots belong to resident IDs, not their current visibility/sort ordinal. */
   private writeInstance(batch:number,index:number,resident:Resident,coverage:number){
     const mesh=batch===2?this.canopy:this.meshes[batch],updates=this.updates[batch];
     const changed=updates.residents[index]!==resident;
@@ -160,6 +185,34 @@ export class PlanetForest {
     const attribute=batch===2?this.canopyCoverage:this.coverage[batch],value=Math.fround(coverage);
     if(attribute.getX(index)!==value){attribute.setX(index,value);updates.coverage.include(index,1);this.coverageWrites++;}
   }
+  private wantInstance(batch:number,resident:Resident,coverage:number){
+    const updates=this.updates[batch];updates.wanted.push(resident);updates.wantedCoverage.push(coverage);updates.wantedIds.add(resident.cell.id);
+  }
+  private reconcileBatch(batch:number){
+    const updates=this.updates[batch],mesh=batch===2?this.canopy:this.meshes[batch];
+    const coverage=batch===2?this.canopyCoverage:this.coverage[batch];
+    // A departure moves only the final resident into the hole. Reverse traversal
+    // ensures that moved residents have already been checked for retention.
+    for(let index=updates.residents.length-1;index>=0;index--){
+      const resident=updates.residents[index];if(updates.wantedIds.has(resident.cell.id))continue;
+      updates.slots.delete(resident.cell.id);
+      const last=updates.residents.length-1;
+      if(index!==last){
+        const moved=updates.residents[last];this.writeInstance(batch,index,moved,coverage.getX(last));
+        updates.slots.set(moved.cell.id,index);
+      }
+      updates.residents.pop();updates.originVersions.pop();
+    }
+    for(let i=0;i<updates.wanted.length;i++){
+      const resident=updates.wanted[i];let index=updates.slots.get(resident.cell.id);
+      if(index===undefined){index=updates.residents.length;updates.slots.set(resident.cell.id,index);}
+      this.writeInstance(batch,index,resident,updates.wantedCoverage[i]);
+    }
+    mesh.count=updates.residents.length;
+    this.scheduledUploadBytes+=updates.matrix.flush(mesh.instanceMatrix);
+    if(mesh.instanceColor)this.scheduledUploadBytes+=updates.color.flush(mesh.instanceColor);
+    this.scheduledUploadBytes+=updates.coverage.flush(coverage);
+  }
   update(eye:THREE.Vector3,groundDirection:V3,altitudeM:number,enabled:boolean,water:number,immersive:boolean,frusta:THREE.Frustum[]=[]){
     const updateStarted=performance.now();
     this.group.visible=enabled&&altitudeM<B.forestPrepareAltitudeM;
@@ -168,9 +221,11 @@ export class PlanetForest {
     if(!this.group.visible)return;
     if(water!==this.water){
       this.water=water;this.sample=terrainSampler(this.body,undefined,undefined,undefined,water);
-      this.classify=biomeClassifier(this.body,water);this.cache.clear();this.center.setScalar(Infinity);
-      // Ignore pending selections from a previous water/date context.
-      this.selectionRequest++;this.selecting=false;this.wanted=[];this.queue=[];this.retainedNear.clear();
+      this.classify=biomeClassifier(this.body,water);
+      // Selection depends only on identity/location, not water. Keep the single
+      // in-flight job and resident trees while bounded habitat refresh replaces
+      // them. Never queue another expensive selection on each playback bucket.
+      this.queue=this.wanted.filter(cell=>this.cache.get(cell.id)?.water!==water);
     }
     const r=this.body.radiusM,ground=this.direction.set(...groundDirection);
     if(ground.distanceTo(this.center)*r>40&&!this.selecting){
@@ -193,7 +248,7 @@ export class PlanetForest {
         const slope=Math.abs(this.sample(a.toArray() as V3).groundHeightM-this.sample(b.toArray() as V3).groundHeightM)/10;
         present=slope<.55;
       }
-      this.cache.set(cell.id,{cell,height:s.groundHeightM,present});
+      this.cache.set(cell.id,{cell,height:s.groundHeightM,present,water});
     }
     this.placementMs=performance.now()-started;
     // Retain the anchor across ordinary movement so static tree matrices need
@@ -203,9 +258,13 @@ export class PlanetForest {
       this.originVersion++;this.originRebased=true;
     }
     const counts=[0,0],capacities=immersive?[64,1024]:[B.forestNearCapacity,B.forestCapacity];let canopyCount=0;
+    for(const updates of this.updates){updates.wanted.length=0;updates.wantedCoverage.length=0;updates.wantedIds.clear();}
     const altitudeFade=1-THREE.MathUtils.smoothstep(altitudeM,B.forestPrepareAltitudeM-500,B.forestPrepareAltitudeM);
     for(const cell of this.wanted){
       const resident=this.cache.get(cell.id);if(!resident?.present)continue;
+      // Hide newly submerged old residents immediately while other habitat
+      // properties are refreshed. The current bucket sampler remains authority.
+      if(resident.water!==water&&this.body.water>0&&resident.height<=water)continue;
       this.direction.set(...cell.direction);
       this.position.copy(this.direction).multiplyScalar(1+resident.height/r);
       this.bounds.center.copy(this.position);this.bounds.radius=cell.heightM/r;
@@ -221,34 +280,27 @@ export class PlanetForest {
       const edgeCoverage=altitudeFade*(1-THREE.MathUtils.smoothstep(distance,B.forestRadiusM-300,B.forestRadiusM));
       if(cell.canopyRepresentative&&horizontal>B.forestFootprintM-100){
         if(canopyCount>=(immersive?2048:B.canopyCapacity))continue;
-        this.writeInstance(2,canopyCount++,resident,edgeCoverage);continue;
+        this.wantInstance(2,resident,edgeCoverage);canopyCount++;continue;
       }
       if(counts[lod]>=capacities[lod]){if(lod===0)lod=1;else continue;}
       if(counts[lod]>=capacities[lod])continue;
       const fade=edgeCoverage*(cell.canopyRepresentative?1:1-THREE.MathUtils.smoothstep(horizontal,B.forestFootprintM-130,B.forestFootprintM));
       if(fade<=0)continue;
-      this.writeInstance(lod,counts[lod]++,resident,fade);
+      this.wantInstance(lod,resident,fade);counts[lod]++;
     }
-    for(let i=0;i<2;i++){
-      this.meshes[i].count=counts[i];
-    }
-    this.canopy.count=canopyCount;
-    for(let i=0;i<3;i++){
-      const mesh=i===2?this.canopy:this.meshes[i],updates=this.updates[i];
-      this.scheduledUploadBytes+=updates.matrix.flush(mesh.instanceMatrix);
-      if(mesh.instanceColor)this.scheduledUploadBytes+=updates.color.flush(mesh.instanceColor);
-      this.scheduledUploadBytes+=updates.coverage.flush(i===2?this.canopyCoverage:this.coverage[i]);
-    }
+    for(let i=0;i<3;i++)this.reconcileBatch(i);
     this.nearTrees=counts[0];this.visibleTrees=counts[0]+counts[1]+canopyCount;
     this.updateMs=performance.now()-updateStarted;
   }
   diagnostics(){return {visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
     candidateCells:this.wanted.length,canopyStands:0,farCanonicalTrees:this.group.visible?this.canopy.count:0,farSamplingFraction:.065,placementMs:this.placementMs,selectionMs:this.selectionMs,selectionPending:this.selecting,selectionWorker:!!this.worker,
-    representation:'canonical-tree-field',densityFocus:'observer-ground',instanceUpdates:'retained-origin-dirty-ranges',
+    representation:'canonical-tree-field',densityFocus:'observer-ground',instanceUpdates:'stable-slots-retained-origin-dirty-ranges',
+    selectionJobsInFlight:this.selecting?1:0,waterBucket:this.water,selectionApplyMs:this.selectionApplyMs,
+    workerRestarts:this.workerRestarts,workerFailures:this.workerFailures,selectionMode:this.worker?'worker':'synchronous-fallback',
     updateMs:this.updateMs,matrixWrites:this.matrixWrites,colorWrites:this.colorWrites,coverageWrites:this.coverageWrites,
     scheduledUploadBytes:this.scheduledUploadBytes,originRebased:this.originRebased,originVersion:this.originVersion,originRebaseM:B.forestOriginRebaseM,
     radiusM:B.forestRadiusM,heightRangeM:[10,22],cellSizeM:B.forestCellM,
     allocatedBytes:[...this.meshes,this.canopy].reduce((s,m)=>s+m.instanceMatrix.array.byteLength+(m.instanceColor?.array.byteLength??0)+
       Object.values(m.geometry.attributes).reduce((n,a)=>n+a.array.byteLength,0),0)*2};}
-  dispose(){this.worker?.terminate();for(const mesh of [...this.meshes,this.canopy]){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();}this.cache.clear();this.group.removeFromParent();}
+  dispose(){this.worker?.terminate();this.worker=null;for(const mesh of [...this.meshes,this.canopy]){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();}this.cache.clear();this.group.removeFromParent();}
 }

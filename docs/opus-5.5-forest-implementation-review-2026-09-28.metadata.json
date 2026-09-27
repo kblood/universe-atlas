@@ -1,0 +1,61 @@
+{
+  "reviewDate": "2026-09-28",
+  "reviewedCommit": "eaf8414",
+  "requestedModel": "claude-opus-5-5",
+  "canonicalModel": "claude-opus-5-5",
+  "cliVersion": "2.1.283",
+  "toolsEnabled": [],
+  "durationMs": 234809,
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 22172,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 71744,
+      "webSearchRequests": 0,
+      "costUSD": 1.0176918000000001,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 17049,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "inputFiles": [
+    {
+      "path": "docs/desktop-realism-implementation-plan-2026-09-27.md",
+      "sha256": "7334ab0592613d124b8249bb0639c207b3180744a14e18abce6c4ee8036e256b"
+    },
+    {
+      "path": "docs/desktop-realism-assessment-2026-09-27.md",
+      "sha256": "e62d425648bf886667b94b4ac8373180f0e8474b97cd674cc3e6bdcf3cd4c1ba"
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "455fba27fe6769228763db54a63d5b7eb746e1459f58682ba59857f0dba16baa"
+    },
+    {
+      "path": "src/planet-population-worker.ts",
+      "sha256": "ebf5d3d04ccdcbf671f0535d76390f918ef478eef68de728272ddb168de87943"
+    },
+    {
+      "path": "src/planet-population.ts",
+      "sha256": "6c097cd6d348e973f620f8d7e4bd095290d48d91bad966e04efb21628afc27b9"
+    },
+    {
+      "path": "src/planet-detail.ts",
+      "sha256": "9830782a716eed2077cb98da0e70f64dbfca3d8345e06b61551ddb705e26eff2"
+    },
+    {
+      "path": "src/planet-renderer.ts",
+      "sha256": "9b7327fe3ac5035d2e1be920d76e9b53a4111dfd26d25960918515e20d192cf3"
+    },
+    {
+      "path": "src/volumetric-clouds.ts",
+      "sha256": "66c19256b95b92617067a61212fb5e8083653d9780f85421111aa9a5bf195307"
+    }
+  ],
+  "promptSha256": "c4ee4ea425ec2309e24b8f794528ae738339cc64cdf963e38578a5636bc54cc7",
+  "responseSha256": "e721ef4bbdb73a1ecf6acf1e490ac340d35f909f78814fa3de48a5ce6642e89f"
+}

@@ -209,6 +209,18 @@ mocked-API unit cases pass; browser measurements remain a separate acceptance
 step. It does not yet split the forward scene into individual subsystem GPU
 timings or implement the lighting/shadow/AA changes in stage C.
 
+### Review corrections — 2026-09-28
+
+Opus 5.5 [reviewed checkpoint eaf8414](opus-5.5-forest-implementation-review-2026-09-28.md)
+and identified compacted-slot rewrites and water-triggered selection backlog.
+The next source increment introduces stable per-batch ID slots with swap-removal,
+up to eight coalesced dirty ranges, preallocated colours, water-only habitat
+refresh, and a bounded worker restart. Six source unit cases cover these repairs.
+Luna 6 is independently checking the browser fixtures and preparing committed
+stage deployment. Remaining review suggestions (packed selection transfer,
+shader-based fades, larger precision-derived rebases and canopy handoff
+hysteresis) remain follow-on work; none is silently declared complete.
+
 ## 8. Acceptance for later verification
 
 Use one dated in-game valley with forest edge, exposed terrain, water boundary
