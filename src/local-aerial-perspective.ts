@@ -3,6 +3,7 @@ import * as THREE from 'three';
 /** Shared approximation for local solid surfaces. This preserves the existing
  * terrain response; it is not a multiple-scattering atmosphere model. */
 export const LOCAL_AERIAL_VERSION='local-aerial-1';
+const attachedMaterials=new WeakSet<THREE.Material>();
 export const localAerialGLSL=`
 vec3 atlasApplyLocalAir(vec3 radiance,float distanceM,float eyeHeightM,float surfaceHeightM,float sunCosine,float enabled){
   float airHeight=max(0.0,(eyeHeightM+surfaceHeightM)*.5);
@@ -25,18 +26,24 @@ export function localAerialReference(radiance:readonly number[],distanceM:number
  * GPU uses view-space distance; the planet-relative position is needed only
  * for kilometre-scale density and daylight, not fine terrain or collision.
  * Each supplied mesh must own its material (one material per batch is enough). */
-export function attachLocalAerial(mesh:THREE.Mesh,planet:THREE.Object3D,radiusM:number,sun:{value:THREE.Vector3},enabled=true){
+export function attachLocalAerial(mesh:THREE.Mesh,planet:THREE.Object3D,radiusM:number,sun:{value:THREE.Vector3},enabled={value:1},eyeHeight?:{value:number}){
   if(Array.isArray(mesh.material))throw new Error('Local aerial attachment expects one material per batch');
   const material=mesh.material;
-  if(material.userData.localAerialVersion)throw new Error('Local aerial material is already attached');
+  if(attachedMaterials.has(material))throw new Error('Local aerial material is already attached');
+  attachedMaterials.add(material);
   const uniforms={
     atlasAirObjectToPlanet:{value:new THREE.Matrix4()},atlasAirRadius:{value:radiusM},
-    atlasAirMetresPerViewUnit:{value:1},atlasAirEyeHeight:{value:0},atlasAirSun:sun,
-    atlasAirEnabled:{value:enabled?1:0},
+    atlasAirMetresPerViewUnit:{value:1},atlasAirEyeHeight:eyeHeight??{value:0},atlasAirSun:sun,
+    atlasAirEnabled:enabled,
   };
-  const compile=material.onBeforeCompile,cacheKey=material.customProgramCacheKey();
+  const compile=material.onBeforeCompile;
+  const inheritedKey=material.customProgramCacheKey===THREE.Material.prototype.customProgramCacheKey?()=>compile.toString():material.customProgramCacheKey.bind(material);
   material.onBeforeCompile=(shader,renderer)=>{
-    compile.call(material,shader,renderer);Object.assign(shader.uniforms,uniforms);
+    compile.call(material,shader,renderer);
+    const missing=!shader.vertexShader.includes('#include <project_vertex>')?'project_vertex':!shader.fragmentShader.includes('#include <opaque_fragment>')?'opaque_fragment':null;
+    if(missing){material.userData.localAerialVersion=`failed:${missing}`;return;}
+    material.userData.localAerialVersion=LOCAL_AERIAL_VERSION;
+    Object.assign(shader.uniforms,uniforms);
     shader.vertexShader='uniform mat4 atlasAirObjectToPlanet; varying vec3 atlasAirPlanetPosition,atlasAirViewPosition;\n'+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>',`#include <project_vertex>
       vec4 atlasAirLocalPosition=vec4(transformed,1.0);
@@ -54,7 +61,7 @@ export function attachLocalAerial(mesh:THREE.Mesh,planet:THREE.Object3D,radiusM:
         dot(normalize(atlasAirPlanetPosition),atlasAirSun),atlasAirEnabled);
       #include <opaque_fragment>`);
   };
-  material.customProgramCacheKey=()=>cacheKey+'/'+LOCAL_AERIAL_VERSION;
+  material.customProgramCacheKey=()=>inheritedKey()+'/'+LOCAL_AERIAL_VERSION;
   material.userData.localAerialVersion=LOCAL_AERIAL_VERSION;material.needsUpdate=true;
   const inversePlanet=new THREE.Matrix4(),eye=new THREE.Vector3(),scale=new THREE.Vector3();
   const before=mesh.onBeforeRender;
@@ -63,7 +70,7 @@ export function attachLocalAerial(mesh:THREE.Mesh,planet:THREE.Object3D,radiusM:
     inversePlanet.copy(planet.matrixWorld).invert();
     uniforms.atlasAirObjectToPlanet.value.multiplyMatrices(inversePlanet,mesh.matrixWorld);
     eye.setFromMatrixPosition(camera.matrixWorld).applyMatrix4(inversePlanet);
-    uniforms.atlasAirEyeHeight.value=(eye.length()-1)*radiusM;
+    if(!eyeHeight)uniforms.atlasAirEyeHeight.value=(eye.length()-1)*radiusM;
     scale.setFromMatrixScale(planet.matrixWorld);
     uniforms.atlasAirMetresPerViewUnit.value=radiusM/Math.max(1e-20,Math.abs(scale.x));
   };

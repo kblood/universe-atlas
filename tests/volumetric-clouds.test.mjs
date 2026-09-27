@@ -12,7 +12,7 @@ const {
   cloudTransmittance,
   createCloudNoise,
   VolumetricClouds,
-  supportedCloudSceneSamples, cloudTargetBytesPerPixel,
+  supportedCloudSceneSamples, cloudTargetBytesPerPixel,cloudSceneSampleChoice,CLOUD_TARGET_BUDGET_BYTES,
 } = await vite.ssrLoadModule('/src/volumetric-clouds.ts');
 after(async () => { await vite.close(); });
 
@@ -23,6 +23,21 @@ test('scene AA requires matching colour/depth support and budgets sample storage
   assert.equal(cloudTargetBytesPerPixel(0,1),20);
   assert.equal(cloudTargetBytesPerPixel(4,1),68);
   assert.equal(cloudTargetBytesPerPixel(0,.5),14);
+});
+
+test('AA reduces sample count before sacrificing native scene detail',()=>{
+  for(const [w,h] of [[1440,1000],[1920,1080],[2560,1440],[3840,2160]]){
+    const baseline=cloudSceneSampleChoice(0,[4,2],w*h,1,CLOUD_TARGET_BUDGET_BYTES);
+    for(const requested of [2,4]){
+      const choice=cloudSceneSampleChoice(requested,[4,2],w*h,1,CLOUD_TARGET_BUDGET_BYTES);
+      assert.equal(choice.scale,baseline.scale);
+      assert.ok(w*h*choice.scale**2*cloudTargetBytesPerPixel(choice.samples,1)<=CLOUD_TARGET_BUDGET_BYTES);
+    }
+  }
+  assert.equal(cloudSceneSampleChoice(4,[4,2],2560*1440,1,CLOUD_TARGET_BUDGET_BYTES).samples,2);
+  assert.equal(cloudSceneSampleChoice(4,[4],2560*1440,1,CLOUD_TARGET_BUDGET_BYTES).limit,'budget');
+  assert.equal(cloudSceneSampleChoice(4,[],1440*1000,1,CLOUD_TARGET_BUDGET_BYTES).limit,'format');
+  assert.equal(cloudSceneSampleChoice(4,[4],1440*1000,.5,CLOUD_TARGET_BUDGET_BYTES,true).limit,'xr');
 });
 
 const terrestrial = { hasAtmosphere: true, hasOcean: true, temperatureK: 285, radiusM: 6_200_000, spinPeriodS: 86_400 };

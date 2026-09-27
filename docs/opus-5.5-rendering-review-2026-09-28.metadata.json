@@ -1,0 +1,50 @@
+{
+  "reviewDate": "2026-09-28",
+  "reviewedSource": "4c2369d rendering changes plus existing profiler; see exact file hashes and prompt hash",
+  "requestedModel": "claude-opus-5-5",
+  "canonicalModel": "claude-opus-5-5",
+  "cliVersion": "2.1.283",
+  "toolsEnabled": [],
+  "durationMs": 467086,
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 49308,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 25762,
+      "webSearchRequests": 0,
+      "costUSD": 1.1925557999999998,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 45027,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "inputFiles": [
+    {
+      "path": "src/local-aerial-perspective.ts",
+      "sha256": "7a33c4c582349d27090b937a85b2cbd2aea66cccd317f951352f19a0327673f6"
+    },
+    {
+      "path": "src/volumetric-clouds.ts",
+      "sha256": "7f743758d507743ba6d21844ea112d7ae7e54dd39ee58380b2f2e61ece83f619"
+    },
+    {
+      "path": "src/render-profile.ts",
+      "sha256": "91896338e8cb444a292bc41653637dde76df0ab1102ea24c750f1daacdb20799"
+    },
+    {
+      "path": "tests/local-aerial-perspective.test.mjs",
+      "sha256": "9b9b7441d7e918f74435d4974d65c26dfe9579120884851edd1c77b5d0852b15"
+    },
+    {
+      "path": "tests/volumetric-clouds.test.mjs",
+      "sha256": "3a7227c4557f82141d05a2d92dd3d9988693bbd3977b7c783a554132584c7129"
+    }
+  ],
+  "promptSha256": "8de1ffebf0ec051b57ebebaa84f0d2cc48e3bd24e39bd4964f4599ea5a9be504",
+  "responseSha256": "1acb825818bde33d42e423bfac119d11e3a7079d1f10abc3a41c48c0e8339e8c",
+  "inputCorrection": "Review prompt called the dependency Three.js0.185.x. Actual package.json pins super-three0.181.0 and @types/three0.181.0. Review output is preserved verbatim; API conclusions require checking the installed version."
+}

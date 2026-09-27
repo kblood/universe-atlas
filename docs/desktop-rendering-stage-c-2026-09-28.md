@@ -23,19 +23,27 @@ intersect; unsupported requests fall back to a lower supported count or zero.
 Diagnostics expose requested, supported and effective samples.
 
 The memory estimate includes resolved colour/depth, multisample storage and
-the cloud integration buffer. Capture resolution can decrease to keep the
-existing 160 MiB desktop target cap. This tradeoff is why MSAA is experimental:
-at higher resolutions, a cleaner edge may cost fine scene detail. It does not
-solve temporal shimmer or establish a final vegetation alpha strategy.
+the cloud integration buffer. Following Opus review, requests reduce their
+sample count before reducing scene resolution: AA cannot make capture resolution
+lower than the no-AA baseline. `sampleLimit` explains budget, format or XR
+fallback. The existing 160 MiB cap remains. MSAA stays experimental because
+resolved depth has one value per pixel while colour averages coverage samples;
+cloud/foliage fringes and temporal shimmer need a post-composite AA comparison.
 
 ## Checks and remaining work
 
-TypeScript/Vite build and nine targeted aerial/cloud checks pass. They cover
+TypeScript/Vite build and eleven targeted aerial/cloud checks pass. They cover
 terrain-formula equivalence, airless/zero-distance response, shader composition,
 coordinate transforms, compatible AA capabilities and allocation arithmetic.
 Browser shader compilation, visual comparison, AA/depth transitions, actual
-GPU/memory behavior and XR remain separate acceptance work. Opus 5.5 review is
-in progress. These changes have not been published with the forest foundation.
+GPU/memory behavior and XR remain separate acceptance work. The independent
+[Opus 5.5 review](opus-5.5-rendering-review-2026-09-28.md) is preserved verbatim.
+Its AA resolution finding is fixed, haze now shares terrain's actual air/eye
+uniforms, shader-hook failures are visible in diagnostics, and dynamic material
+cache keys are retained. XR captures preserve the supplied camera world matrix.
+All current forest/flora/fauna meshes are constructed before attachment and
+keep unique materials. Future dynamic batches must attach the hook explicitly.
+These changes have not been published with the forest foundation.
 
 Shared lighting, bounded shadows, authored materials, continuous canopy and
 species-bound structural variants remain in the

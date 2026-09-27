@@ -36,3 +36,24 @@ test('instanced attachment composes existing shader modifications and uniform co
   assert.throws(()=>attachLocalAerial(mesh,planet,radius,sun),/already attached/);
   mesh.geometry.dispose();mesh.material.dispose();
 });
+
+test('attachment shares terrain inputs, retains dynamic cache keys, and fails visibly on missing shader hooks',()=>{
+  const planet=new THREE.Group(),sun={value:new THREE.Vector3(1,0,0)},air={value:1},eyeHeight={value:120};
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshLambertMaterial());
+  let key='one';mesh.material.customProgramCacheKey=()=>key;
+  const uniforms=attachLocalAerial(mesh,planet,1,sun,air,eyeHeight);
+  assert.equal(uniforms.atlasAirEnabled,air);assert.equal(uniforms.atlasAirEyeHeight,eyeHeight);
+  key='two';assert.match(mesh.material.customProgramCacheKey(),/^two\//);
+  const missing={uniforms:{},vertexShader:'void main(){}',fragmentShader:'#include <opaque_fragment>'};
+  mesh.material.onBeforeCompile(missing,{});
+  assert.equal(mesh.material.userData.localAerialVersion,'failed:project_vertex');
+  assert.equal(missing.fragmentShader,'#include <opaque_fragment>');
+  assert.deepEqual(missing.uniforms,{});
+  const clone=mesh.material.clone(),other=new THREE.Mesh(mesh.geometry,clone);
+  assert.doesNotThrow(()=>attachLocalAerial(other,planet,1,sun,air,eyeHeight));
+  const shader={uniforms:{},vertexShader:THREE.ShaderLib.lambert.vertexShader,fragmentShader:THREE.ShaderLib.lambert.fragmentShader};
+  clone.onBeforeCompile(shader,{});
+  assert.ok(shader.vertexShader.includes('atlasAirViewPosition=mvPosition.xyz'));
+  assert.ok(shader.fragmentShader.includes('outgoingLight=atlasApplyLocalAir'));
+  mesh.geometry.dispose();mesh.material.dispose();clone.dispose();
+});

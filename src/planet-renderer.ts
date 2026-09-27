@@ -189,6 +189,7 @@ export class PlanetRenderer {
   private lowFlightDetail=false;
   private surfaceReady=false;
   private eyeHeightUniform = {value:0};
+  private localAirUniform={value:0};
   private debug:ShoreDebug={};
   setShoreDebug(options:ShoreDebug){Object.assign(this.debug,options);if(options.freezeSelection===false)this.selectionEye.setScalar(Infinity);}
   private sunUniform = {value:new THREE.Vector3(1,0,0)};
@@ -517,8 +518,9 @@ export class PlanetRenderer {
     );
     for (const mesh of this.floraRenderer.meshes) { mesh.name = 'Flora field'; mesh.frustumCulled = false; this.floraGroup.add(mesh); }
     this.group.add(this.floraGroup,this.faunaRenderer.group);
+    this.localAirUniform.value=this.atmosphere?1:0;
     for(const group of [this.forest.group,this.floraGroup,this.faunaRenderer.group])group.traverse(object=>{
-      if(object instanceof THREE.Mesh)attachLocalAerial(object,this.group,body.radiusM,this.sunUniform,!!this.atmosphere);
+      if(object instanceof THREE.Mesh)attachLocalAerial(object,this.group,body.radiusM,this.sunUniform,this.localAirUniform,this.eyeHeightUniform);
     });
   }
 
@@ -624,7 +626,7 @@ export class PlanetRenderer {
       shader.uniforms.tileAnchor={value:new THREE.Vector3(...d.anchor)};
       shader.uniforms.atlasLocalEyeM=localEye;shader.uniforms.atlasEyeHeightM=this.eyeHeightUniform;shader.uniforms.atlasSun=this.sunUniform;
       shader.uniforms.atlasRadius={value:this.body.radiusM};
-      shader.uniforms.atlasAir={value:this.atmosphere?1:0};
+      shader.uniforms.atlasAir=this.localAirUniform;
       shader.uniforms.groundHabitat={value:this.body.water>0&&this.body.temperatureK>=250&&this.body.temperatureK<=325&&this.body.type!=='Ice world'&&this.body.type!=='Volcanic world'?1:0};
       shader.uniforms.atlasRelief={value:this.relief};
       shader.uniforms.groundAtlas={value:this.groundAtlas};
@@ -1201,10 +1203,17 @@ export class PlanetRenderer {
     });
   }
   diagnostics() {
+    const localAerial={meshes:0,attached:0,failures:[] as string[]};
+    for(const group of [this.forest.group,this.floraGroup,this.faunaRenderer.group])group.traverse(object=>{
+      if(!(object instanceof THREE.Mesh))return;
+      localAerial.meshes++;
+      const state=Array.isArray(object.material)?'material-array':object.material.userData.localAerialVersion;
+      if(state===LOCAL_AERIAL_VERSION)localAerial.attached++;else localAerial.failures.push(`${object.name||object.type}:${state??'missing'}`);
+    });
     // The shared texture belongs to the existing water reservation. Inland
     // diagnostics count it when present; ocean-only worlds count it here.
     const oceanNormalBytes=this.river?.diagnostics().resident?0:[...this.patches.values()].some(p=>p.ocean)?SHARED_WATER_NORMAL_ATLAS_BYTES:0;
-    return {projection: 'cube-sphere', floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
+    return {projection: 'cube-sphere',localAerial, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
       // Moving-sea-level verification/observability (this task): the
       // quantized bucket `this.sample`/`this.classify` and newly-dispatched
       // tile jobs are currently using, plus how many of the currently VISIBLE
