@@ -12,6 +12,11 @@ export default defineConfig({
     for(const fileName of [
       'docs/desktop-rendering-stage-c-2026-09-28.md',
       'docs/desktop-rendering-validation-2026-09-28.md',
+      'docs/background-hydrology-travel-2026-09-28.md',
+      'test-results/background-hydrology-regression/README.md',
+      'test-results/background-hydrology-regression/baseline-37f0e89-failure.json',
+      'test-results/background-hydrology-regression/fixed-cb03169-life-report.json',
+      'test-results/background-hydrology-regression/fixed-cb03169-land-report.json',
       'docs/flora-recipe-cache-2026-09-28.md',
       'docs/tree-species-asset-contract-2026-09-28.md',
       'docs/tree-asset-candidate-2026-09-28.md',
