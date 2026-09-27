@@ -75,5 +75,6 @@ test('selection worker gets one bounded restart and exposes permanent fallback',
     workers[0].onerror({preventDefault(){}});assert.equal(workers.length,2);assert.equal(f.diagnostics().selectionMode,'worker');
     workers[1].onerror({preventDefault(){}});assert.equal(workers.length,2);assert.equal(f.diagnostics().selectionMode,'synchronous-fallback');
     assert.equal(f.diagnostics().workerFailures,2);
+    assert.equal(f.diagnostics().workerRestarts,1,'count actual restarts, not rejected restart attempts');
   }finally{f?.dispose();if(OriginalWorker===undefined)delete globalThis.Worker;else globalThis.Worker=OriginalWorker;}
 });

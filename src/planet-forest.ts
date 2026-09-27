@@ -159,7 +159,7 @@ export class PlanetForest {
       worker.onerror=event=>{
         event.preventDefault();if(this.worker!==worker)return;
         worker.terminate();this.worker=null;this.selecting=false;this.workerFailures++;this.selectionRequest++;
-        if(this.workerRestarts++<1)this.startWorker();
+        if(this.workerRestarts<1){this.workerRestarts++;this.startWorker();}
       };
     }catch{this.worker=null;this.selecting=false;this.workerFailures++;}
   }
