@@ -1,8 +1,16 @@
 import { defineConfig } from "vite";
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 export default defineConfig({
   base: "./",
   plugins: [{name: 'publish-orbit-docs', generateBundle() {
+    this.emitFile({type:'asset',fileName:'build-info.json',source:JSON.stringify({
+      commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
+      dirty:execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim().length>0,
+      builtAt:new Date().toISOString(),
+    },null,2)});
+    for(const fileName of ['docs/planet-rendering-validation-2026-09-27.md','docs/realistic-clouds-research-2026-09-27.md','docs/planet-local-rendering-design.md','docs/population-continuity-review-2026-09-27.md','docs/population-continuity-implementation-2026-09-27.md'])
+      this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
     this.emitFile({type:'asset',fileName:'docs/star-visibility-and-transitions.md',
       source:readFileSync(new URL('docs/star-visibility-and-transitions.md',import.meta.url),'utf8')});
     for(const fileName of ['docs/creature-lab-implementation-spec.md','docs/creature-diversity-and-motion-plan-2026-09-14.md','docs/research-creature-anatomy-references-2026-09-14.md','docs/research-creature-locomotion-references-2026-09-14.md'])
@@ -21,7 +29,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 800,
     rollupOptions: {
       input: {
-        atlas: 'index.html', biomes: 'biome-lab.html', biosphere: 'biosphere-lab.html', creatures: 'creature-lab.html',
+        atlas: 'index.html', biomes: 'biome-lab.html', biosphere: 'biosphere-lab.html', creatures: 'creature-lab.html', clouds: 'tests/cloud-comparison.html',
         ...Object.fromEntries(['index', 'determinism', 'time', 'universe', 'terrain', 'water-atmosphere', 'life', 'travel', 'publishing']
           .map(chapter => [`guide-${chapter}`, `guide/${chapter}.html`])),
       },

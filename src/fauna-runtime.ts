@@ -275,8 +275,9 @@ export function faunaHerdAt(
       stage: unit(`${memberKey}|stage`) < 0.18 ? 'juvenile' : 'adult',
       anchorOffsetX: Math.cos(angle) * distanceFromAnchor,
       anchorOffsetZ: Math.sin(angle) * distanceFromAnchor,
-      orbitRadiusM: 0.6 + unit(`${memberKey}|orbitRadius`) * 1.8,
-      orbitAngularSpeed: (unit(`${memberKey}|orbitSpeed`) - 0.5) * 0.5,
+      orbitRadiusM: 2.5 + unit(`${memberKey}|orbitRadius`) * 5,
+      orbitAngularSpeed: (unit(`${memberKey}|orbitDirection`) < .5 ? -1 : 1) *
+        (.45 + unit(`${memberKey}|orbitSpeed`) * .45) / (2.5 + unit(`${memberKey}|orbitRadius`) * 5),
       orbitPhase: unit(`${memberKey}|orbitPhase`) * Math.PI * 2,
       gaitPeriodS: 10 + unit(`${memberKey}|gaitPeriod`) * 8,
     });
@@ -290,15 +291,31 @@ export function faunaMemberGenome(member: FaunaHerdMember): CreatureGenome {
   return individualCreatureGenome(founder, member.id, member.variant, member.stage);
 }
 
+/** Individual idle schedules share the orbit's seeded phase, with no new
+ * random stream or accumulated state. Quantize once to nanoseconds so both
+ * public pose adapters use the same window boundaries. */
+function activityClock(member: FaunaHerdMember) {
+  const gaitPeriod=BigInt(Math.max(1,Math.round(member.gaitPeriodS*Number(NS))));
+  const cyclePeriod=3n*gaitPeriod;
+  const turn=((member.orbitPhase/(Math.PI*2))%1+1)%1;
+  const offset=BigInt(Math.round(turn*Number(cyclePeriod)))%cyclePeriod;
+  return {gaitPeriod,cyclePeriod,offset};
+}
+
 /** Exact-date pose. Only bounded periodic remainders are converted to Number;
  * a 10^100-year date never becomes an imprecise floating-point second count. */
 export function faunaMemberPoseAtWorldNs(member: FaunaHerdMember, worldNs: bigint): FaunaMemberPose {
-  const elapsed = worldNs - CATALOGUE_EPOCH_NS;
+  const {gaitPeriod,cyclePeriod,offset}=activityClock(member);
+  const elapsed = worldNs - CATALOGUE_EPOCH_NS + offset;
+  const cycleRemainder=((elapsed%cyclePeriod)+cyclePeriod)%cyclePeriod;
+  // Integrate the periodic idle/walk schedule analytically. Idle pauses both
+  // translation and gait, with no accumulated state and no seek dependence.
+  const activeElapsed=(elapsed-cycleRemainder)/cyclePeriod*(2n*gaitPeriod)+(cycleRemainder>gaitPeriod?cycleRemainder-gaitPeriod:0n)
+    -(offset>gaitPeriod?offset-gaitPeriod:0n);
   const speed = Math.abs(member.orbitAngularSpeed);
   const period = speed < 1e-9 ? 1n : BigInt(Math.max(1, Math.round((Math.PI * 2 / speed) * Number(NS))));
-  const remainder = ((elapsed % period) + period) % period;
+  const remainder = ((activeElapsed % period) + period) % period;
   const angle = member.orbitPhase + (speed < 1e-9 ? 0 : Math.sign(member.orbitAngularSpeed) * Number(remainder) / Number(period) * Math.PI * 2);
-  const gaitPeriod = BigInt(Math.max(1, Math.round(member.gaitPeriodS * Number(NS))));
   const gaitWindow = (elapsed - ((elapsed % gaitPeriod) + gaitPeriod) % gaitPeriod) / gaitPeriod;
   const gait: CreatureGait = ((gaitWindow % 3n) + 3n) % 3n === 0n ? 'idle' : 'walk';
   return {
@@ -346,14 +363,17 @@ export interface FaunaMemberPose {
  * for a full extra simulated nanosecond with no error at all.
  */
 export function faunaMemberPoseAt(member: FaunaHerdMember, tSeconds: Seconds): FaunaMemberPose {
-  const time = toSeconds(tSeconds);
-  const angle = member.orbitPhase + member.orbitAngularSpeed * time;
+  const clock=activityClock(member),offset=Number(clock.offset)/Number(NS),gaitPeriod=Number(clock.gaitPeriod)/Number(NS);
+  const time = toSeconds(tSeconds)+offset;
+  const cyclePeriod=Number(clock.cyclePeriod)/Number(NS),cycleRemainder=((time%cyclePeriod)+cyclePeriod)%cyclePeriod;
+  const activeTime=(time-cycleRemainder)/cyclePeriod*(2*gaitPeriod)+Math.max(0,cycleRemainder-gaitPeriod)-Math.max(0,offset-gaitPeriod);
+  const angle = member.orbitPhase + member.orbitAngularSpeed * activeTime;
   const x = member.anchorOffsetX + Math.cos(angle) * member.orbitRadiusM;
   const z = member.anchorOffsetZ + Math.sin(angle) * member.orbitRadiusM;
   const yaw = angle + Math.sign(member.orbitAngularSpeed || 1) * Math.PI * 0.5;
   // Floor-windowed (not accumulated) gait cycling: idle roughly one window
   // in three, otherwise walking. Directly evaluable at any `t`.
-  const window = Math.floor(time / member.gaitPeriodS);
+  const window = Math.floor(time / gaitPeriod);
   const gait: CreatureGait = window % 3 === 0 ? 'idle' : 'walk';
   return { x, z, yaw, gait };
 }
@@ -378,7 +398,11 @@ export function faunaGroundedTransform(
     .addScaledVector(tangentForward, pose.z);
   position.addScaledVector(up, groundHeightAt(position));
   const facing = tangentRight.clone().multiplyScalar(Math.cos(pose.yaw)).addScaledVector(tangentForward, Math.sin(pose.yaw)).normalize();
-  const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), facing);
+  // Creature anatomy faces +X and stands along +Y. A shortest-arc rotation
+  // from +Z alone leaves arbitrary roll on a spherical planet.
+  const radialUp=up.clone().normalize(),side=new THREE.Vector3().crossVectors(facing,radialUp).normalize();
+  facing.crossVectors(radialUp,side).normalize();
+  const quaternion = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(facing,radialUp,side));
   return { position, quaternion };
 }
 

@@ -96,12 +96,28 @@ export function datedOceanState(body:Body, planet:PlanetLifecycle, star:StarLife
   return {globalOceanAvailable,waterLevelM,renderWaterLevelM:globalOceanAvailable?waterLevelM:-1_000_000};
 }
 
+// Time advances each exploration frame, but rock and the snapped ocean plane
+// normally do not. Keep only the most recent immutable geometry query per body;
+// lifecycle, ecology and the exact requested date are still resolved separately.
+const datedGeometryQueries=new WeakMap<Body,{
+  seed:string;hydrology:Body['hydrology'];canonical:Body['canonicalRivers'];
+  levelM:number;available:boolean;query:ReturnType<typeof surfaceQuery>;
+}>();
 export function datedSurfaceSampler(body:Body, planet:PlanetLifecycle, star:StarLifecycle, t:Ns) {
   const ocean=datedOceanState(body,planet,star,t);
   let query:ReturnType<typeof surfaceQuery>|undefined;
   return {ocean, sample:(direction:V3)=>{
-    query??=surfaceQuery(body,[{dateNs:0n,levelM:ocean.waterLevelM}],
-      {globalOceanAvailable:ocean.globalOceanAvailable});
+    if(!query){
+      const cached=datedGeometryQueries.get(body);
+      if(cached&&cached.seed===body.seed&&cached.hydrology===body.hydrology&&cached.canonical===body.canonicalRivers&&
+        cached.levelM===ocean.waterLevelM&&cached.available===ocean.globalOceanAvailable)query=cached.query;
+      else {
+        query=surfaceQuery(body,[{dateNs:0n,levelM:ocean.waterLevelM}],
+          {globalOceanAvailable:ocean.globalOceanAvailable});
+        datedGeometryQueries.set(body,{seed:body.seed,hydrology:body.hydrology,canonical:body.canonicalRivers,
+          levelM:ocean.waterLevelM,available:ocean.globalOceanAvailable,query});
+      }
+    }
     return query(direction,t);
   }};
 }

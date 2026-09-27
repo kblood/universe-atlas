@@ -3,6 +3,9 @@ import { terrainSampler } from './terrain.ts';
 import { unit } from './planet-tiles.ts';
 import {type OrbitTime} from './world-time.ts';
 const samplers = new Map<string, ReturnType<typeof terrainSampler>>();
+/** Eye height of the walking capsule. Flight uses the same physical contact
+ * boundary so touchdown does not lift the observer by an arbitrary amount. */
+export const FLIGHT_EYE_CLEARANCE_M = 1.64;
 /** Stop a fast galactic step before a nearby star, then release that staging
  * boundary with a tolerance so floating-point roundoff cannot trap flight. */
 export function sweptStarStep(step:number,along:number,perpendicularSq:number) {
@@ -24,7 +27,7 @@ export function surfaceClearance(body: StarSystem['stars'][number], relative: V3
     elevation = sample(distance ? unit(relative) : [0,1,0]).visibleHeightM;
   }
   const minimum = body.kind === 'star' || body.type === 'Gas giant'
-    ? body.radiusM * 1.025 : body.radiusM + elevation + 120;
+    ? body.radiusM * 1.025 : body.radiusM + elevation + FLIGHT_EYE_CLEARANCE_M;
   return {minimum, altitude: distance - body.radiusM, terrainElevation: elevation,
     terrainClearance: distance - body.radiusM - elevation, clearance: Math.max(0, distance - minimum)};
 }
@@ -50,7 +53,38 @@ export function automaticSpeed(
     ? Math.max(0.0001, Math.min(5, clearance * 1.6))
     : domain === "galaxy"
       ? Math.max(0.000001, Math.min(50000, clearance * 1.6))
-      : Math.max(20, Math.min(AU * 50000, clearance * (.3 + 1.5 * Math.max(0, Math.min(1,(clearance-10000)/50000)))));
+      : Math.max(.8, Math.min(AU * 50000, clearance * (.3 + 1.5 * Math.max(0, Math.min(1,(clearance-10000)/50000)))));
+}
+
+/** Conservative bounded terrain sweep. Check the path, not just its endpoint.
+ * Close to the surface, restrict each sampled segment to half a metre. Work
+ * stays bounded even during boosted flight or a long frame; excess requested
+ * travel is deferred instead of skipping unsampled terrain. The caller owns
+ * the authoritative dated surface query. */
+export function sweptTerrainStep(start: V3, direction: V3, requestedM: number,
+  clearanceM: number, radiusM: number, visibleHeight: (direction: V3) => number) {
+  const spacing = Math.max(.5, Math.min(5000, Math.max(0, clearanceM) * .2));
+  const distance = Math.min(Math.max(0, requestedM), spacing * 16);
+  const segments = Math.max(1, Math.ceil(distance / spacing));
+  const gap = (travel: number) => {
+    const p = start.map((v, i) => v + direction[i] * travel) as V3;
+    const r = Math.hypot(...p);
+    return r - radiusM - visibleHeight(r > 0 ? p.map(v => v / r) as V3 : [0, 1, 0]) - FLIGHT_EYE_CLEARANCE_M;
+  };
+  let safe = 0;
+  for (let i = 1; i <= segments; i++) {
+    const next = distance * i / segments;
+    if (gap(next) < 0) {
+      let blocked = next;
+      for (let iteration = 0; iteration < 8; iteration++) {
+        const middle = (safe + blocked) * .5;
+        if (gap(middle) >= 0) safe = middle; else blocked = middle;
+      }
+      return { distanceM: safe, contact: true, samples: i + 8 };
+    }
+    safe = next;
+  }
+  return { distanceM: distance, contact: false, samples: segments };
 }
 export function nearestBody(sys: StarSystem, p: V3, epoch: OrbitTime = 0, waterLevelForBody: (body: StarSystem['stars'][number]) => number = () => 0) {
   let best: any = null;

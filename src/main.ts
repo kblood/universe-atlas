@@ -7,13 +7,14 @@ import {
   automaticSpeed,
   nearestBody,
   surfaceClearance,
+  sweptTerrainStep, FLIGHT_EYE_CLEARANCE_M,
   sweptStarStep,
   GALAXY_ENTRY_RADII, GALAXY_EXIT_RADII, SYSTEM_PREPARE_LY,
 } from "./travel.ts";
 import { displayLuminosity, starPointDiameter, STAR_FRAGMENT } from './star-appearance.ts';
 import { PlanetRenderer } from './planet-renderer.ts';
 import { NavigationMarkers } from './navigation-markers.ts';
-import { freeLook, orbitStep, atmosphereHeightM, alignPlanetaryDown } from './planet-flight.ts';
+import { freeLook, orbitStep, atmosphereHeightM, alignPlanetaryDown, planetaryRenderUnit, LOCAL_RENDER_EXIT_M, LOCAL_ORIGIN_RADIUS_M } from './planet-flight.ts';
 import {parseDate,dateRecord,dateYears,yearsToDate,advanceDate,CATALOGUE_EPOCH_NS,UNIVERSE_END_NS,YEAR_NS,type Ns} from './world-time.ts';
 import {identityRecord,stellarHistory} from './world-history.ts';
 import {type surfaceQuery,biosphereStateAt,biosphereHistoryFor,clearBiosphereHistoryCache,planetAgeMyr,planetSnapshotAt,type BiosphereQueryStage} from './world-surface.ts';
@@ -539,7 +540,7 @@ const opticalStarPoints:{mesh:THREE.Mesh;point:THREE.Points<THREE.BufferGeometry
 let flightAim: string | null = null;
 let walker:GroundWalker|null=null;
 let walkingModule:typeof import('./ground-walker.ts')|null=null;
-let landing:{point:V3;launch?:boolean}|null=null;
+let landing:{point:V3;launch?:boolean;contact?:boolean}|null=null;
 let landAfterCruise=false,walkGeneration=0;
 function clearWalking(){walkGeneration++;walker?.dispose();walker=null;landing=null;landAfterCruise=false;planetTiles?.setContactFocus(null);}
 let orbitAssist: {bodyId: string; axis: THREE.Vector3; clearanceM?: number} | null = null;
@@ -801,6 +802,16 @@ let spaceSelection: { object: THREE.Object3D; el: HTMLElement } | null = null;
 let flight = false,
   flightSpeed = 20;
 let flightCruise=false;
+// Exploration uses the dated universe clock at one physical second per second.
+// Explicit pause and date seek remain paused until resumed by the user.
+let explorationPaused=false;
+let lastFlightSweep={distanceM:0,contact:false,samples:0};
+function timeRunning(){return playing||(flight&&!explorationPaused);}
+function toggleTime(){
+  if(flight){explorationPaused=timeRunning();playing=false;}
+  else {playing=!playing;explorationPaused=!playing;}
+  panel();
+}
 const flightKeys = new Set<string>();
 let touchForwardHeld = false;
 let viewBlend: ViewBlend | null = null;
@@ -1040,6 +1051,7 @@ function persist() {
   saveStored("atlas-seed", seed);
 }
 function seekDate(next:bigint){
+  explorationPaused=true;
   const alternate=alternateFuture();
   if(alternate&&next>alternate.endDateNs){next=alternate.endDateNs;announce(`${alternate.name} reaches its illustrative timeline limit here.`);}
   if(next<0n)next=0n;
@@ -2161,20 +2173,49 @@ function aimedDistance(
   }
   return best;
 }
+/** Keep one dated physical clock for wildlife, weather and terrain. A local
+ * observer follows the body's orbital translation, as a grounded observer
+ * already does, while retaining their exact body-relative pose and heading. */
+function updateExplorationClock(dt:number){
+  if(!ready||!flight||explorationPaused||playing||renderer.xr.isPresenting)return;
+  const body=state.body,sys=state.sys;
+  const oldCenter=body&&sys?vec(bodyPosition(body,sys,epoch)):null;
+  // A focused world defines the navigation reference frame through orbit,
+  // clouds and landing; no orbital-velocity jump at an altitude threshold.
+  const attached=!!oldCenter&&!!body&&!!residentSystem;
+  const end=alternateFuture()?.endDateNs??UNIVERSE_END_NS;
+  const next=advanceDate(epoch,dt);
+  const targetDate=next<end?next:end;
+  if(body&&sys){
+    const entry=lifecycleFor(sys,body);
+    if(entry.kind!=='star'&&planetStateAt(entry.lc,entry.starLc,epoch).stage!==planetStateAt(entry.lc,entry.starLc,targetDate).stage){
+      // A normal physical tick can also cross a dated existence boundary.
+      // Reuse the same explicit hover/fallback rules as timeline seeking.
+      seekDate(targetDate);return;
+    }
+  }
+  epoch=targetDate;
+  if(epoch===end)explorationPaused=true;
+  if(attached&&body&&sys&&oldCenter){
+    systemOrigin.add(vec(bodyPosition(body,sys,epoch)).sub(oldCenter));
+    positionSystem();
+  }
+}
 function updateFlight(dt: number) {
   flightAlignment=null;
   if (!flight || (!ready&&journey.phase!=='blend') || renderer.xr.isPresenting) return;
   if(residentSystem&&state.body){
     const relative=vec(localPose()).sub(vec(bodyPosition(state.body,state.sys!,epoch))).toArray() as V3;
     const clearance=surfaceClearance(state.body,relative,snappedWaterLevelFor(state.body)).terrainClearance;
-    const desired=clearance<2000?1:clearance>10000?1e-6:systemUnit;
+    const desired=planetaryRenderUnit(clearance,systemUnit);
     if(desired!==systemUnit){rescaleSystem(desired);rebaseSystem(vec(localPose()));}
+    if(systemUnit===1&&camera.position.length()>LOCAL_ORIGIN_RADIUS_M)rebaseSystem(vec(localPose()));
     // Orbit rings are a system-scale visualization baked at construction time;
     // as systemUnit rescales toward true scale for close terrain flight, a
     // ring's near arc can sweep across the view as a stray line over the
     // ground. Hide the rings once terrain-following, matching the same
     // clearance band used for the true-scale rescale above.
-    const showOrbits=clearance>=10000;
+    const showOrbits=clearance>=LOCAL_RENDER_EXIT_M;
     for(const orbit of systemOrbits) if(orbit.visible!==showOrbits) orbit.visible=showOrbits;
   }
   if(walker||landing){updateWalking(dt);return;}
@@ -2445,8 +2486,8 @@ function updateFlight(dt: number) {
       const descending=motion.lengthSq()>0&&direction.dot(radial)<-.15;
       if(surface?.walkable&&nearest.terrainClearance<PLANET_DETAIL.touchdownPrepareM){
         planetTiles.setContactFocus(radial.multiplyScalar(nearest.body.radiusM+surface.rockHeightM+.92).toArray() as V3);
-        if(descending&&nearest.terrainClearance<PLANET_DETAIL.touchdownM){
-          flightCruise=false;void prepareLanding();return;
+        if(descending&&nearest.terrainClearance<FLIGHT_EYE_CLEARANCE_M+.12){
+          flightCruise=false;void prepareLanding(undefined,true);return;
         }
       }else planetTiles.setContactFocus(null);
     }
@@ -2486,6 +2527,9 @@ function updateFlight(dt: number) {
     automaticSpeed(domain, clearance) *
     flightThrottle *
     (flightKeys.has("shift") ? 8 : 1);
+  // Boost remains controllable in metre-scale low flight.
+  if(domain==='system'&&nearest?.body.kind!=='star'&&nearest?.body.type!=='Gas giant')
+    flightSpeed=Math.min(flightSpeed,Math.max(2,clearance*2));
   if (motion.lengthSq()) {
     let step = Math.min(
       flightSpeed * dt,
@@ -2498,6 +2542,14 @@ function updateFlight(dt: number) {
         const delta=vec(ref.position).sub(vec(p)), along=delta.dot(direction);
         step=sweptStarStep(step,along,delta.lengthSq()-along*along);
       }
+    }
+    if(residentSystem&&nearest&&nearest.body.kind!=='star'&&nearest.body.type!=='Gas giant'&&nearest.terrainClearance<100000){
+      const body=nearest.body as Body;
+      lastFlightSweep=sweptTerrainStep(vec(p).sub(vec(nearest.center)).toArray() as V3,
+        direction.toArray() as V3,step,nearest.terrainClearance,body.radiusM,
+        d=>surfaceSample(body,d)?.visibleHeightM??surfaceClearance(body,vec(d).multiplyScalar(body.radiusM).toArray() as V3,snappedWaterLevelFor(body)).terrainElevation);
+      step=lastFlightSweep.distanceM;
+      flightSpeed=step/Math.max(dt,1e-6);
     }
     motion
       .normalize()
@@ -2518,7 +2570,7 @@ function updateFlight(dt: number) {
       }
       if (
         camera.position.length() >
-        Math.max(focusRadius() * 100, systemUnit * 1e8)
+        (systemUnit===1?LOCAL_ORIGIN_RADIUS_M:Math.max(focusRadius() * 100, systemUnit * 1e8))
       ) {
         const center = vec(localPose());
         rebaseSystem(center);
@@ -2627,7 +2679,7 @@ function startTerrainCruise() {
   if(landAfterCruise){landAfterCruise=false;void prepareLanding();}
   panel();
 }
-async function prepareLanding(savedPoint?:V3){
+async function prepareLanding(savedPoint?:V3,contact=false){
   const body=state.body;
   if(!body||body.kind==='star'||body.type==='Gas giant'||renderer.xr.isPresenting)return;
   // §2.6 existence gate: `walkable` above only reflects the immutable rock
@@ -2662,7 +2714,7 @@ async function prepareLanding(savedPoint?:V3){
     const eye=vec(point).setLength(vec(point).length()+12).add(vec(bodyPosition(body,state.sys!,epoch)));
     rebaseSystem(eye);camera.position.set(0,0,0);
   }
-  landing={point};planetTiles?.setContactFocus(point);panel();
+  landing={point,contact};planetTiles?.setContactFocus(point);panel();
   const token=walkGeneration;
   announce('Preparing ground for landing. The scene stays visible while nearby terrain refines.');
   try{const mod=await import('./ground-walker.ts');await mod.initWalking();if(token===walkGeneration)walkingModule=mod;}
@@ -2693,7 +2745,7 @@ function updateWalking(dt:number){
     const patches=landing.launch?null:planetTiles.contactPatches(landing.point,landing.point);
     const launchSurface=landing.launch?surfaceSample(body,d.toArray() as V3):null;
     if(landing.launch&&!launchSurface){clearWalking();return;}
-    const target=landing.launch?body.radiusM+launchSurface!.rockHeightM+160:point.length()+(patches&&walkingModule? .72:12);
+    const target=landing.launch?body.radiusM+launchSurface!.rockHeightM+160:point.length()+(patches&&walkingModule? .72:landing.contact?Math.max(.72,current.length()-point.length()):12);
     const gap=target-current.length(),step=Math.sign(gap)*Math.min(Math.abs(gap),Math.max(.5,Math.min(5000,Math.abs(gap)*2))*dt);
     const next=d.multiplyScalar(current.length()+step).add(center);
     if(next.distanceTo(systemOrigin)>128)rebaseSystem(next);
@@ -2707,10 +2759,11 @@ function updateWalking(dt:number){
         if(!result)throw new Error('GroundWalker queried a surface outside the solid epoch');
         return result;
       };
+      const preserveHeading=landing.contact;
       walker=new walkingModule.GroundWalker(body,landing.point,walkerSurface as ReturnType<typeof surfaceQuery>,epoch);landing=null;
       const up=walker.position.clone().normalize(),forward=camera.getWorldDirection(new THREE.Vector3()).projectOnPlane(up);
       if(forward.lengthSq()<.01)forward.set(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(up);
-      camera.up.copy(up);camera.lookAt(camera.position.clone().add(forward.normalize()));
+      camera.up.copy(up);if(!preserveHeading)camera.lookAt(camera.position.clone().add(forward.normalize()));
       announce('Walking · WASD move · Shift run · Space jump · Return to flight to take off.');panel();persist();
     }
   }
@@ -2799,7 +2852,7 @@ function updatePlanetTiles(dt: number) {
     // Keep metre-scale depth precision without clipping the distant system.
     const center = bodyPosition(state.body, state.sys!, epoch);
     const info = surfaceClearance(state.body, localPose().map((v,i) => v - center[i]) as V3, snappedWaterLevelFor(state.body));
-    const near = (walker||landing ? .03:Math.max(1, Math.min(1000, info.terrainClearance * .005))) * systemUnit;
+    const near = (walker||landing ? .03:Math.max(.03, Math.min(1000, info.terrainClearance * .005))) * systemUnit;
     if (Math.abs(camera.near - near) > near * .1) { camera.near = near; camera.updateProjectionMatrix(); }
   }
 }
@@ -3569,10 +3622,9 @@ function rebaseSystem(origin: THREE.Vector3) {
   positionSystem();
 }
 function rescaleSystem(unit: number) {
-  // Logarithmic depth loses local precision when an entire planet is much
-  // smaller than one render unit. Preserve physical poses while using km-scale
-  // render units near a world, and metre units at walking height. Every system
-  // object keeps its identity; only the rendering representation changes.
+  // Use metre units through regional flight and walking, preserving physical
+  // poses and dimensions. Tile/batch local anchors are still necessary before
+  // Float32 upload; changing scene scale alone cannot restore lost precision.
   const ratio = unit / systemUnit;
   if (Math.abs(ratio - 1) < 1e-10) return;
   systemUnit = unit;
@@ -3974,11 +4026,11 @@ function worldHistoryPanel(sys: StarSystem, body: Body): string {
     <p class="subtle">These formation and biosphere dates are procedural scenarios, not a calibrated planetary history.</p></details>`;
 }
 function universeTravelPanel(){
-  return `<div class="mini-buttons"><button id="toggle-flight">${flight?'Stop flight':'Fly freely'}</button><button id="fly-target" ${selected?'':'disabled'}>Fly to selection</button><button id="fly-outward">Fly outward</button><button id="play">${playing?'Pause time':'Play time'}</button></div><p class="subtle">Drag to look · WASD travel · Q/E down/up · wheel adjusts speed · Shift boosts · Esc stops.</p><div class="mini-buttons"><button id="fly-forward">Hold: fly forward</button></div>`;
+  return `<div class="mini-buttons"><button id="toggle-flight">${flight?'Stop flight':'Fly freely'}</button><button id="fly-target" ${selected?'':'disabled'}>Fly to selection</button><button id="fly-outward">Fly outward</button><button id="play">${timeRunning()?'Pause time':flight?'Resume time (1×)':'Play time'}</button></div><p class="subtle">Drag to look · WASD travel · Q/E down/up · wheel adjusts speed · Shift boosts · Esc stops.</p><div class="mini-buttons"><button id="fly-forward">Hold: fly forward</button></div>`;
 }
 function bindUniverseTravel(){
   bind('toggle-flight',toggleFlight);bind('fly-target',beginTargetFlight);bind('fly-outward',flyOutward);
-  bind('play',()=>{playing=!playing;panel();});
+  bind('play',toggleTime);
   const forward=$('fly-forward');
   if(forward){forward.onpointerdown=()=>{if(!flight)toggleFlight();touchForwardHeld=true;flightKeys.add('w');};forward.onpointerup=forward.onpointercancel=()=>{touchForwardHeld=false;flightKeys.delete('w');};}
 }
@@ -4175,7 +4227,7 @@ function panel() {
       html += worldHistoryPanel(sys,b);
     }
     html +=
-      `<div class="mini-buttons"><button id="system-scale">${systemScale === "overview" ? "Physical scale" : "Spaced overview"}</button><button id="play">${playing ? "Ⅱ Pause" : "▷ Orbit playback"}</button><button id="epoch">Reset epoch</button><button id="bookmark">☆ Bookmark</button><button id="export">↓ Export</button></div>` +
+      `<div class="mini-buttons"><button id="system-scale">${systemScale === "overview" ? "Physical scale" : "Spaced overview"}</button><button id="play">${timeRunning() ? "Ⅱ Pause time" : flight ? "▷ Resume time (1×)" : "▷ Orbit playback"}</button><button id="epoch">Reset epoch</button><button id="bookmark">☆ Bookmark</button><button id="export">↓ Export</button></div>` +
       contextPanel() +
       "<h3>Stars</h3>" +
       sys.stars
@@ -4366,11 +4418,7 @@ function panel() {
     region![1]++;
     panel();
   });
-  bind("play", () => {
-    if(walker||landing)seekDate(epoch);
-    playing = !playing;
-    panel();
-  });
+  bind("play", toggleTime);
   bind("system-scale", () => {
     systemScale = systemScale === "overview" ? "physical" : "overview";
     void navigate("system");
@@ -4918,7 +4966,8 @@ let lastDateSave=0;
 const projected = new THREE.Vector3();
 renderer.setAnimationLoop(() => {
   const now = performance.now(),
-    dt = Math.min((now - last) / 1000, 0.1);
+    elapsedSeconds = Math.max(0,(now - last) / 1000),
+    dt = Math.min(elapsedSeconds, 0.1);
   frameMs = now - last;
   last = now;
   if (ready) {
@@ -4945,6 +4994,7 @@ renderer.setAnimationLoop(() => {
     if (t === 1) tween = null;
   }
   if (!renderer.xr.isPresenting && !flight) controls.update();
+  updateExplorationClock(elapsedSeconds);
   updateFlight(dt);
   if (!renderer.xr.isPresenting && (flight ? camera.view?.enabled : !camera.view?.enabled)) updateCameraViewport();
   vr?.update(dt);
@@ -5019,7 +5069,7 @@ renderer.setAnimationLoop(() => {
       }
     }
   }
-  if(now-lastDateSave>1000){updateDateUI();if(playing&&(followedPlanetId||state.level==='universe'||firstStarFocus))panel();if(playing||walker)persist();lastDateSave=now;}
+  if(now-lastDateSave>1000){updateDateUI();if(playing&&(followedPlanetId||state.level==='universe'||firstStarFocus))panel();if(timeRunning()||walker)persist();lastDateSave=now;}
   positionSystem();
   updateOpticalStarPoints();
   if (state.level === 'universe') updateUniverseVisibility();
@@ -5067,7 +5117,7 @@ renderer.setAnimationLoop(() => {
   // Lake-only planar reflection renders before the visible frame and reuses
   // existing terrain/environment; XR deliberately retains procedural sky.
   planetTiles?.renderLakeReflection(renderer,scene,camera,renderer.xr.isPresenting);
-  renderer.render(scene, camera);
+  if(!planetTiles?.renderCloudScene(renderer,scene,camera))renderer.render(scene, camera);
   drawCount = renderer.info.render.calls;
   if (now - lastStats > 900) {
     lastStats = now;
@@ -5198,7 +5248,8 @@ Object.defineProperty(window, "__atlas", {
       if(parsed<0n||parsed>UNIVERSE_END_NS) throw new Error(`seek: t out of range [0, UNIVERSE_END_NS]: ${t}`);
       seekDate(parsed);
     },
-    setPlaying:(value:boolean)=>{playing=value;},
+    setPlaying:(value:boolean)=>{playing=value;explorationPaused=!value;},
+    setExplorationPaused:(value:boolean)=>{explorationPaused=value;playing=false;},
     get surfaceSurvey(){return state.body?surveys.get(surveyKey(state.body))||null:null;},
     get drainage(){return drainage?.diagnostics()||null;},
     get river(){return state.body?.hydrology?{status:riverState?.status||'ready',version:RIVER_VERSION,surfaceVersion:RIVER_SURFACE_VERSION,region:state.body.hydrology,buildMs:riverState?.buildMs||0,render:planetTiles?.diagnostics().river||null}:riverState;},
@@ -5231,6 +5282,10 @@ Object.defineProperty(window, "__atlas", {
         cameraNear: camera.near,
         cameraFar: camera.far,
         systemUnit,
+        renderOriginM:systemOrigin.toArray(),
+        cameraOffsetM:camera.position.length()/systemUnit,
+        explorationClock:{paused:explorationPaused,running:flight&&!explorationPaused&&!playing,rate:1},
+        terrainSweep:lastFlightSweep,
         focusRadiusM: state.level === 'body' ? focusRadius() : null,
         heading: camera.quaternion.toArray(),
         crossings,

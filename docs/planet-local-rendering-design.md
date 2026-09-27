@@ -1,12 +1,88 @@
 # Atmospheric entry and local planetary rendering
 
-Design, 2026-09-27. Proposed architecture; no runtime changes are implemented
-by this document. Complements the
+Design and implementation record, 2026-09-27. The regional flight and clock
+changes below are implemented in the working source. Validation results belong
+to the accompanying test reports; this document does not certify deployment.
+Complements the
 [population continuity review](population-continuity-review-2026-09-27.md).
 The existing time and coordinate contract remains authoritative for world
 identity, date, existence and body transforms.
 
-## Findings in the current code
+## Implemented regional flight and clock
+
+- `planet-flight.ts` supplies the metre-rendering entry/exit thresholds: below
+  20 km terrain clearance uses one render unit per metre; above 40 km returns
+  to system rendering units. The intermediate band retains the current units.
+- `main.ts` preserves the physical camera pose during scale changes and shifts
+  the system origin within 256 m during ordinary regional flight. Walking uses
+  its existing 128 m render-origin threshold and smaller local physics frame.
+  Geometry still requires tile or instance anchors before Float32 upload.
+- `travel.ts` replaces the 120 m ground floor with a 1.64 m observer eye
+  clearance. A deliberate descent starts automatic touchdown only within
+  12 cm of that contact height. Waiting for collision holds the current view
+  height; automatic contact preserves heading.
+- Flight speed reaches a 0.8 m/s base speed near the surface, with a continuous
+  cap on boosted low flight. `sweptTerrainStep` samples the requested path in
+  at most 16 segments and uses eight refinements when contact is found. It
+  shortens travel to fit the sampling budget. This is a bounded sampled sweep,
+  not exact collision against arbitrarily thin geometry or decorative objects.
+- Ordinary local flight can use a 3 cm near plane. The existing logarithmic
+  depth buffer still covers terrain and the distant system.
+- Desktop exploration advances the authoritative epoch at one second per
+  elapsed second, independently of the capped physics timestep. Wildlife and
+  weather receive that date. Pause and explicit seek remain paused until
+  resumed; accelerated inspection playback retains its separate controls.
+- The focused body supplies the navigation reference frame. Its orbital
+  translation carries the observer without changing the body-relative pose.
+  Crossing a dated planet lifecycle stage uses the existing seek/fallback
+  policy, including leaving ground that no longer exists.
+- `world-surface.ts` reuses immutable terrain queries across clock ticks when
+  the body, hydrology references, canonical river references, ocean availability
+  and snapped ocean height match. Exact lifecycle, environment, ecology and
+  date resolution remain outside that cache.
+
+### Contact support under cloud memory pressure
+
+The retained terrain frontier now protects mandatory contact parents from
+coarsening. Previously, a high-priority fine capsule tile could make its own
+base support ring eligible for merging, producing repeated coarsening and
+refinement while level-22 contact waited indefinitely.
+
+Selection estimates use the resident terrain height lattice rather than
+calling the full procedural geology for every leaf and parent. Contact
+priority uses surface angular distance; collision still uses settled terrain
+triangles. Coarsening scans at most 64 parents per frame with a cooperative
+1.5 ms slice and a retained cursor. Refinement retains its cooperative 3 ms
+limit, with at least one operation allowed for forward progress. Frame time
+also includes bounded frontier bookkeeping, uploads and drawing preparation;
+these slices are not hard total-frame deadlines.
+
+Desktop retains the 256 MiB core terrain/life/water working-set budget and
+allows a separate cloud allocation capped at 160 MiB, for 416 MiB combined.
+Immersive mode keeps a 256 MiB combined budget and its smaller ordinary draw
+limit. This preserves desktop collision headroom at large display resolutions
+without reducing ground resolution during approach. Subsystem accounting does
+not include every browser or driver allocation.
+
+`tests/terrain-streaming.mjs` exercises actual cloud allocations and simulated
+21 MiB / 96 MiB / 160 MiB allocations. It requires fine support, retained contact over
+90 further frames, balanced 2:1 neighbours, the 450-leaf contact cap, and the
+combined allocation bound. Current measured outcomes belong in its test report.
+
+### Remaining architecture and acceptance
+
+A separate background depth pass for distant space has **not** been introduced.
+The existing spherical adaptive terrain tree, horizon/frustum culling and
+coarse ancestors still supply regional terrain and horizon coverage. A fully
+separate background/local pass needs explicit terrain overlap ownership and
+cloud-depth handling, followed by desktop and stereo acceptance.
+
+Population continuity and cloud rendering are implemented in their own modules
+and documented in the population/cloud review records. Their integration and
+performance results must be judged by the current validation report rather
+than inferred from these flight changes. In-headset acceptance is separate.
+
+## Original audit findings (before this implementation)
 
 - `main.ts:updateFlight` already changes `systemUnit` from `1e-6` to `1`
   below 2,000 m terrain clearance, and back above 10,000 m. Between these
@@ -111,12 +187,12 @@ clouds provide atmosphere and visual continuity rather than a loading gate.
 
 ## Flight and work budgets
 
-Express velocity, acceleration and clearance in physical metres and seconds,
-independent of the active render units. Replace the fixed 120 m flight floor
-with a swept collision policy based on the observer/vehicle volume and actual
-dated terrain. Use a controlled braking distance and continuous local speed
-curve; account for mountains ahead, not only terrain directly underneath.
-Do not automatically begin a descent animation at 125 m.
+Velocity, clearance and sweep distances use physical metres and seconds,
+independent of active render units. The implemented sampled sweep follows the
+dated visible surface, replacing the fixed 120 m floor and 125 m landing
+trigger. Near-ground speed and per-frame travel are bounded. A future vehicle
+with a larger hull needs its own swept volume; the current boundary matches
+the on-foot observer eye height.
 
 Regional preparation accounts for travel speed and expected worker latency.
 Bound generation, upload and selection work, including contact selection.
@@ -125,7 +201,7 @@ and visible tiles, and retain completed region data across entry/exit.
 Use the same world date for terrain, weather and population queries; reject
 stale worker results after a body/date change.
 
-## Implementation sequence and acceptance
+## Architecture sequence and acceptance
 
 1. Introduce the local frame and coherent transforms for every surface renderer,
    including culling and collision. Measure precision during origin shifts.
@@ -142,4 +218,5 @@ cube seams; slow and boosted approaches; delayed worker completion; date seeks;
 and following the same tree/animal through region, origin and LOD transitions.
 Record physical pose continuity, projected jitter, actual submitted instances,
 memory/queue bounds and frame-time tails. Desktop and headset acceptance are
-separate. These are planned checks, not results of this design review.
+separate. These remain acceptance requirements; consult the current test reports
+for measured outcomes and failures.

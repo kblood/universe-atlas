@@ -179,8 +179,9 @@ exaggerates elevation for stationary inspection; flight restores physical height
 **Fly over terrain**, at the top of a solid world's inspector, approaches land
 and starts a 600 m terrain-following flight. The terrain now includes local hills
 and gullies, with atmospheric haze where appropriate. The wheel adjusts speed;
-movement keys release assistance. Free flight retains a 120 m terrain-clearance
-floor. **Land and walk** descends to ground contact: WASD walks, Shift runs,
+movement keys release assistance. Free flight reaches physical ground contact
+with the same 1.64 m eye clearance as walking. Metre rendering starts below
+20 km and uses a nearby floating origin. **Land and walk** descends to ground contact: WASD walks, Shift runs,
 Space jumps and dragging looks around. **Return to flight** rises to a 160 m
 hover. Landings over water find a dry site; oceans and gas giants have no walking
 surface. Walking currently uses desktop keyboard/mouse controls, outside VR.
@@ -205,6 +206,18 @@ one. Surviving galaxies remain selectable in the far future as dim map proxies.
 On a world with living vegetation, **Find living habitat** flies toward a
 vegetated dry region. Herds are sparse and may be absent from a particular
 walking area even when animal species exist on the planet.
+
+Ordinary exploration advances the authoritative date at one physical second
+per second. Pause time freezes wildlife and weather; seeking a date remains
+paused until resumed. Near and far populations share canonical spatial cells.
+The [population implementation](docs/population-continuity-implementation-2026-09-27.md)
+records identity, precision, streaming and animation changes and their limits.
+The [cloud research](docs/realistic-clouds-research-2026-09-27.md) explains the
+volumetric cloud renderer and its approximations. The
+[cloud comparison lab](tests/cloud-comparison.html) keeps the old sheet and new
+volume available under matching views for visual regression checks.
+See [validation results and limits](docs/planet-rendering-validation-2026-09-27.md)
+for the measured checks and hardware coverage.
 
 The implementation, controls, cube-face mathematics, budgets, known limitations,
 test procedure and research sources for the latest stage are documented in

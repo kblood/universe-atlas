@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {type Body,type V3} from './catalog.ts';
 import {terrainSampler} from './terrain.ts';
 import {biomeClassifier} from './surface-biomes.ts';
-import {populationCells,type PopulationCell} from './planet-population.ts';
+import {forestPopulationCells,type PopulationCell} from './planet-population.ts';
 import {PLANET_DETAIL as B,forestLod} from './planet-detail.ts';
 
 type Resident={cell:PopulationCell;height:number;present:boolean};
@@ -33,19 +33,17 @@ function treeGeometry(detail:number){
   geometry.computeBoundingSphere();return geometry;
 }
 
-/** A stand silhouette for distant coverage; horizontal footprint represents
- * many crowns, while vertical scale remains in physical metres. */
-function canopyGeometry(){
-  const positions:number[]=[],normals:number[]=[];
-  let state=57219;const random=()=>((state=Math.imul(state,1664525)+1013904223>>>0)/4294967296);
-  for(let i=0;i<16;i++){
-    const g=new THREE.IcosahedronGeometry(1,0);
-    const angle=random()*Math.PI*2,distance=Math.sqrt(random())*.45,size=.065+random()*.035;
-    g.scale(size,.26+random()*.12,size);g.translate(Math.cos(angle)*distance,.62+random()*.18,Math.sin(angle)*distance);
-    positions.push(...g.attributes.position.array);normals.push(...g.attributes.normal.array);g.dispose();
-  }
-  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
-  g.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));g.computeBoundingSphere();return g;
+/** Screen-door coverage changes visibility without shrinking a physical tree.
+ * alphaHash preserves opaque depth testing and avoids sorted transparent forests. */
+function forestMaterial(vertexColors:boolean){
+  const material=new THREE.MeshLambertMaterial({vertexColors,color:vertexColors?0xffffff:0x456c28,alphaHash:true});
+  material.onBeforeCompile=shader=>{
+    shader.vertexShader='attribute float instanceCoverage;\nvarying float vForestCoverage;\n'+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvForestCoverage=instanceCoverage;');
+    shader.fragmentShader='varying float vForestCoverage;\n'+shader.fragmentShader;
+    shader.fragmentShader=shader.fragmentShader.replace('#include <alphahash_fragment>','diffuseColor.a *= vForestCoverage;\n#include <alphahash_fragment>');
+  };
+  material.customProgramCacheKey=()=>`forest-coverage-1/${vertexColors}`;return material;
 }
 
 /** Bounded placement queue + retained habitat cache. Flight and walking call
@@ -58,6 +56,9 @@ export class PlanetForest {
   private wanted:PopulationCell[]=[];
   private queue:PopulationCell[]=[];
   private center=new THREE.Vector3(Infinity,Infinity,Infinity);
+  private coverage:THREE.InstancedBufferAttribute[]=[];
+  private canopyCoverage!:THREE.InstancedBufferAttribute;
+  private retainedNear=new Set<string>();
   private origin=new THREE.Vector3();
   private sample:ReturnType<typeof terrainSampler>;
   private classify:ReturnType<typeof biomeClassifier>;
@@ -75,6 +76,7 @@ export class PlanetForest {
   private selecting=false;
   private applySelection(direction:V3,cells:PopulationCell[],selectionMs:number){
     this.center.set(...direction);this.wanted=cells;
+    const incoming=new Set(cells.map(c=>c.id));for(const id of this.retainedNear)if(!incoming.has(id))this.retainedNear.delete(id);
     this.queue=this.wanted.filter(cell=>!this.cache.has(cell.id));
     if(this.cache.size+this.queue.length>B.populationCacheLimit){
       const keep=new Set(this.wanted.map(c=>c.id));
@@ -87,11 +89,13 @@ export class PlanetForest {
     this.sample=terrainSampler(body);this.classify=biomeClassifier(body);
     this.meshes=[B.forestNearCapacity,B.forestCapacity].map((capacity,i)=>{
       const mesh=new THREE.InstancedMesh(treeGeometry(i===0?1:0),
-        new THREE.MeshLambertMaterial({vertexColors:true}),capacity);
+        forestMaterial(true),capacity);
+      const coverage=new THREE.InstancedBufferAttribute(new Float32Array(capacity),1);coverage.setUsage(THREE.DynamicDrawUsage);mesh.geometry.setAttribute('instanceCoverage',coverage);this.coverage.push(coverage);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.frustumCulled=false;mesh.count=0;
       this.group.add(mesh);return mesh;
     });
-    this.canopy=new THREE.InstancedMesh(canopyGeometry(),new THREE.MeshLambertMaterial({color:0x456c28}),B.canopyCapacity);
+    this.canopy=new THREE.InstancedMesh(treeGeometry(0),forestMaterial(true),B.canopyCapacity);
+    this.canopyCoverage=new THREE.InstancedBufferAttribute(new Float32Array(B.canopyCapacity),1);this.canopyCoverage.setUsage(THREE.DynamicDrawUsage);this.canopy.geometry.setAttribute('instanceCoverage',this.canopyCoverage);
     this.canopy.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.canopy.frustumCulled=false;this.canopy.count=0;
     this.group.add(this.canopy);this.group.name='Continuous planetary forest';
     if(typeof Worker!=='undefined'){
@@ -114,9 +118,7 @@ export class PlanetForest {
         this.selecting=true;this.worker.postMessage({seed:this.body.seed,direction:groundDirection,radiusM:r});
       }else{
       const started=performance.now();
-      const cells=populationCells(this.body.seed,groundDirection,r,B.forestFootprintM,B.forestCellM);
-      cells.push(...populationCells(this.body.seed,groundDirection,r,B.canopyFootprintM,B.canopyCellM)
-        .map(cell=>({...cell,id:'canopy/'+cell.id})));
+      const cells=forestPopulationCells(this.body.seed,groundDirection,r,B.forestFootprintM+100,B.canopyFootprintM,B.forestCellM);
       this.applySelection(groundDirection,cells,performance.now()-started);
       }
     }
@@ -142,45 +144,49 @@ export class PlanetForest {
       const resident=this.cache.get(cell.id);if(!resident?.present)continue;
       this.direction.set(...cell.direction);
       this.position.copy(this.direction).multiplyScalar(1+resident.height/r);
-      this.bounds.center.copy(this.position);this.bounds.radius=(cell.id.startsWith('canopy/')?B.canopyCellM:cell.heightM)/r;
+      this.bounds.center.copy(this.position);this.bounds.radius=cell.heightM/r;
       if(frusta.length&&!frusta.some(f=>f.intersectsSphere(this.bounds)))continue;
       const distance=this.position.distanceTo(eye)*r;
-      const horizontal=this.direction.distanceTo(this.center)*r;
-      if(cell.id.startsWith('canopy/')){
-        if(canopyCount>=(immersive?768:B.canopyCapacity))continue;
-        const fade=altitudeFade*THREE.MathUtils.smoothstep(horizontal,B.forestFootprintM-200,B.forestFootprintM)*
-          (1-THREE.MathUtils.smoothstep(horizontal,B.canopyFootprintM-700,B.canopyFootprintM));
-        if(fade<=0)continue;
+      const horizontal=Math.hypot(this.direction.x-groundDirection[0],this.direction.y-groundDirection[1],this.direction.z-groundDirection[2])*r;
+      // Detailed and distant draws refer to one canonical tree. A retained
+      // band prevents oscillation between equal-silhouette batches.
+      const wasNear=this.retainedNear.has(cell.id),nearLimit=wasNear?B.forestNearM+12:B.forestNearM-12;
+      let lod=distance<nearLimit?0:1;
+      if(lod===0)this.retainedNear.add(cell.id);else this.retainedNear.delete(cell.id);
+      if(distance>=B.forestRadiusM)continue;
+      const edgeCoverage=altitudeFade*(1-THREE.MathUtils.smoothstep(distance,B.forestRadiusM-300,B.forestRadiusM));
+      if(cell.canopyRepresentative&&horizontal>B.forestFootprintM-100){
+        if(canopyCount>=(immersive?2048:B.canopyCapacity))continue;
         this.position.sub(this.origin);this.quaternion.setFromUnitVectors(this.up,this.direction);
         this.yaw.setFromAxisAngle(this.direction,cell.yaw);this.quaternion.premultiply(this.yaw);
-        this.scale.set(B.canopyCellM/r*fade,cell.heightM/r*fade,B.canopyCellM/r*fade);
-        this.matrix.compose(this.position,this.quaternion,this.scale);this.canopy.setMatrixAt(canopyCount++,this.matrix);continue;
+        this.scale.setScalar(cell.heightM/r);
+        this.matrix.compose(this.position,this.quaternion,this.scale);this.canopy.setMatrixAt(canopyCount,this.matrix);
+        this.color.setRGB(.8+cell.roll*.2,.85+cell.roll*.15,.75+cell.roll*.25);this.canopy.setColorAt(canopyCount,this.color);
+        this.canopyCoverage.setX(canopyCount++,edgeCoverage);continue;
       }
-      let lod=forestLod(distance);if(lod<0)continue;
       if(counts[lod]>=capacities[lod]){if(lod===0)lod=1;else continue;}
       if(counts[lod]>=capacities[lod])continue;
-      // A narrow growth fade at the outer visibility edge avoids hard popping.
-      const fade=altitudeFade*(1-THREE.MathUtils.smoothstep(distance,B.forestRadiusM-160,B.forestRadiusM))*
-        (1-THREE.MathUtils.smoothstep(horizontal,B.forestFootprintM-100,B.forestFootprintM));
+      const fade=edgeCoverage*(cell.canopyRepresentative?1:1-THREE.MathUtils.smoothstep(horizontal,B.forestFootprintM-130,B.forestFootprintM));
+      if(fade<=0)continue;
       this.position.sub(this.origin);
       this.quaternion.setFromUnitVectors(this.up,this.direction);
       this.yaw.setFromAxisAngle(this.direction,cell.yaw);this.quaternion.premultiply(this.yaw);
-      this.scale.setScalar(cell.heightM/r*fade);
+      this.scale.setScalar(cell.heightM/r);
       this.matrix.compose(this.position,this.quaternion,this.scale);
       const mesh=this.meshes[lod],index=counts[lod]++;
-      mesh.setMatrixAt(index,this.matrix);
+      mesh.setMatrixAt(index,this.matrix);this.coverage[lod].setX(index,fade);
       this.color.setRGB(.8+cell.roll*.2,.85+cell.roll*.15,.75+cell.roll*.25);mesh.setColorAt(index,this.color);
     }
     for(let i=0;i<2;i++){
       const mesh=this.meshes[i];mesh.count=counts[i];mesh.instanceMatrix.needsUpdate=true;
-      if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
+      if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;this.coverage[i].needsUpdate=true;
     }
-    this.canopy.count=canopyCount;this.canopy.instanceMatrix.needsUpdate=true;
-    this.nearTrees=counts[0];this.visibleTrees=counts[0]+counts[1];
+    this.canopy.count=canopyCount;this.canopy.instanceMatrix.needsUpdate=true;this.canopyCoverage.needsUpdate=true;if(this.canopy.instanceColor)this.canopy.instanceColor.needsUpdate=true;
+    this.nearTrees=counts[0];this.visibleTrees=counts[0]+counts[1]+canopyCount;
   }
   diagnostics(){return {visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
-    candidateCells:this.wanted.length,canopyStands:this.group.visible?this.canopy.count:0,placementMs:this.placementMs,selectionMs:this.selectionMs,selectionPending:this.selecting,selectionWorker:!!this.worker,
-    radiusM:B.forestRadiusM,heightRangeM:[10,22],cellSizeM:B.forestCellM,
+    candidateCells:this.wanted.length,canopyStands:0,farCanonicalTrees:this.group.visible?this.canopy.count:0,farSamplingFraction:.065,placementMs:this.placementMs,selectionMs:this.selectionMs,selectionPending:this.selecting,selectionWorker:!!this.worker,
+    representation:'canonical-tree-field',radiusM:B.forestRadiusM,heightRangeM:[10,22],cellSizeM:B.forestCellM,
     allocatedBytes:[...this.meshes,this.canopy].reduce((s,m)=>s+m.instanceMatrix.array.byteLength+(m.instanceColor?.array.byteLength??0)+
       Object.values(m.geometry.attributes).reduce((n,a)=>n+a.array.byteLength,0),0)*2};}
   dispose(){this.worker?.terminate();for(const mesh of [...this.meshes,this.canopy]){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();}this.cache.clear();this.group.removeFromParent();}

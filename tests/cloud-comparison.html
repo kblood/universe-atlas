@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atlas cloud comparison lab</title>
+  <style>
+    :root { color-scheme: dark; font: 14px system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #07101c; color: #dce8f4; }
+    main { display: grid; grid-template-columns: minmax(240px, 300px) 1fr; height: 100vh; }
+    aside { padding: 18px; overflow: auto; border-right: 1px solid #26374b; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    p { line-height: 1.45; color: #aabbd0; }
+    label { display: block; margin: 12px 0 5px; color: #b9c9dc; }
+    select, button { width: 100%; padding: 9px; color: inherit; background: #17263a; border: 1px solid #364d68; border-radius: 5px; }
+    button { margin-top: 8px; cursor: pointer; }
+    button[aria-pressed="true"] { border-color: #8ce5df; }
+    #status { white-space: pre-wrap; font: 12px ui-monospace, monospace; color: #91c4d5; }
+    #view { min-width: 0; min-height: 0; position: relative; }
+    canvas { width: 100%; height: 100%; display: block; }
+    #stamp { position: absolute; left: 16px; top: 14px; padding: 6px 9px; background: #07101ccc; border: 1px solid #41566e; border-radius: 4px; }
+    @media (max-width: 760px) { main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } aside { max-height: 43vh; } }
+  </style>
+</head>
+<body>
+<main>
+  <aside>
+    <h1>Cloud rendering comparison</h1>
+    <p>Compare the previous seeded cloud shell with the depth-aware volume. The body, date, sun and camera are held fixed between modes.</p>
+    <label for="mode">Representation</label>
+    <select id="mode"><option value="shell">Previous textured shell</option><option value="volume">Volumetric raymarch</option><option value="clear">Clouds disabled</option></select>
+    <label for="viewpoint">Viewpoint</label>
+    <select id="viewpoint"><option value="orbit">Orbital, sunlit limb</option><option value="flight">Flight above cloud tops</option><option value="inside">Inside lower deck</option><option value="surface">Surface looking up</option><option value="nightside">Night limb</option></select>
+    <label for="coverage">Weather coverage <output id="coverageValue">1.0</output></label>
+    <input id="coverage" type="range" min="0" max="1.5" value="1" step="0.05">
+    <label for="date">World date (seconds)</label>
+    <input id="date" type="range" min="0" max="21600" value="3700" step="10">
+    <button id="replay">Replay selected date</button>
+    <div id="status">loading renderer…</div>
+  </aside>
+  <div id="view"><span id="stamp">loading</span></div>
+</main>
+<script type="module" src="./cloud-comparison.ts"></script>
+</body>
+</html>

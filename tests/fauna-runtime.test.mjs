@@ -5,6 +5,7 @@ import {
   faunaHerdAt,
   faunaMemberGenome,
   faunaMemberPoseAt,
+  faunaMemberPoseAtWorldNs,
   faunaGroundedTransform,
   createFaunaSkinnedRig,
   buildFaunaProxyGeometryData,
@@ -20,6 +21,7 @@ import {
   validateCreatureGenome,
   toSeconds,
 } from '../src/fauna-runtime.ts';
+import {CATALOGUE_EPOCH_NS} from '../src/world-time.ts';
 
 const SEED = 'FAUNA-GOLDEN-001';
 const BODY = 'sector/2,1,0/system/3/planet/1';
@@ -48,6 +50,44 @@ function fixedBiome(overrides = {}) {
   return { weights: [0.1, 0.6, 0.25, 0.05], forestPotential: true, moisture: 0.6, slopeDeg: 8, ocean: false, ...overrides };
 }
 const COMPLEX_GATE = { stage: 'complex' };
+
+test('individual idle schedules are staggered at the catalogue epoch',()=>{
+  const members=SAMPLE_DIRECTIONS.flatMap(d=>faunaHerdAt(SEED,BODY,d,fixedBiome(),COMPLEX_GATE,toSeconds(0)).members);
+  assert.ok(members.length>=8,'the regression must inspect a real population');
+  const states=new Set();
+  for(const member of members){
+    const exact=faunaMemberPoseAtWorldNs(member,CATALOGUE_EPOCH_NS),seconds=faunaMemberPoseAt(member,toSeconds(0));
+    states.add(exact.gait);assert.equal(seconds.gait,exact.gait);
+    assert.ok(Math.hypot(exact.x-seconds.x,exact.z-seconds.z)<1e-10);
+  }
+  assert.deepEqual([...states].sort(),['idle','walk']);
+});
+
+test('staggered idle windows are stationary and both date adapters agree',()=>{
+  const members=SAMPLE_DIRECTIONS.flatMap(d=>faunaHerdAt(SEED,BODY,d,fixedBiome(),COMPLEX_GATE,toSeconds(0)).members);
+  assert.ok(members.length>0);
+  for(const member of members){
+    const periodNs=BigInt(Math.round(member.gaitPeriodS*1e9)),cycleNs=3n*periodNs;
+    const turn=((member.orbitPhase/(Math.PI*2))%1+1)%1;
+    const offsetNs=BigInt(Math.round(turn*Number(cycleNs)))%cycleNs;
+    const idleNs=periodNs/2n-offsetNs;
+    const a=faunaMemberPoseAtWorldNs(member,CATALOGUE_EPOCH_NS+idleNs);
+    const b=faunaMemberPoseAtWorldNs(member,CATALOGUE_EPOCH_NS+idleNs+100000000n);
+    assert.equal(a.gait,'idle');assert.deepEqual(b,a,'idle must freeze translation and heading');
+    const sa=faunaMemberPoseAt(member,toSeconds(Number(idleNs)/1e9));
+    const sb=faunaMemberPoseAt(member,toSeconds(Number(idleNs)/1e9+.1));
+    assert.equal(sa.gait,'idle');assert.equal(sb.gait,'idle');
+    assert.ok(Math.hypot(sa.x-sb.x,sa.z-sb.z)<1e-10);
+    for(const t of [-1000,-23.5,0,71.25,1000]){
+      const seconds=faunaMemberPoseAt(member,toSeconds(t)),exact=faunaMemberPoseAtWorldNs(member,CATALOGUE_EPOCH_NS+BigInt(Math.round(t*1e9)));
+      assert.equal(seconds.gait,exact.gait);
+      assert.ok(Math.hypot(seconds.x-exact.x,seconds.z-exact.z)<1e-6);
+    }
+    const far=10n**120n,direct=faunaMemberPoseAtWorldNs(member,far);
+    faunaMemberPoseAtWorldNs(member,far+123456789n);
+    assert.deepEqual(faunaMemberPoseAtWorldNs(member,far),direct,'far future seek remains exact');
+  }
+});
 
 test('faunaHerdAt is deterministic over >=100 (address, direction) samples', () => {
   const bodies = ['sector/0,0,0/system/1/planet/0', 'sector/9,-3,2/system/4/planet/2'];

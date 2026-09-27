@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import * as THREE from 'three';
 import {cubeDirection, buildTile, surfaceNormal, PATCH_SEGMENTS, tileDirection, tileNeighbour} from '../src/planet-tiles.ts';
 import {terrainSampler} from '../src/terrain.ts';
-import {surfaceClearance} from '../src/travel.ts';
+import {surfaceClearance,FLIGHT_EYE_CLEARANCE_M} from '../src/travel.ts';
 import {orbitStep, freeLook,alignPlanetaryDown,atmosphereHeightM} from '../src/planet-flight.ts';
 const body = {id:'test',seed:'polar-regression-1',kind:'planet',type:'Terrestrial world',radiusM:6371000,water:.65};
 const distance = (a,b) => Math.hypot(...a.map((v,i) => v-b[i]));
@@ -113,7 +113,9 @@ test('terrain-aware clearance permits low orbit at poles, coasts and face corner
     assert.ok(info.minimum<body.radiusM+22000);
     assert.ok(info.clearance>0);
     assert.ok(Math.abs(info.altitude-30000)<1e-6);
-    assert.equal(info.minimum,body.radiusM+info.terrainElevation+120);
+    assert.equal(info.minimum,body.radiusM+info.terrainElevation+FLIGHT_EYE_CLEARANCE_M);
+    assert.ok(Math.abs(info.minimum-body.radiusM-info.terrainElevation-FLIGHT_EYE_CLEARANCE_M)<1e-7,
+      'ordinary flight shares the observer eye-height contact boundary');
   }
 });
 

@@ -1,6 +1,17 @@
 import * as THREE from 'three';
 import type {Body} from './catalog.ts';
 
+/** Enter local metre rendering before reaching cloud bases. Hysteresis keeps
+ * the representation stable while climbing or circling in the entry band.
+ * Geometry remains spherical and physical dimensions do not change. */
+export const LOCAL_RENDER_ENTER_M = 20000;
+export const LOCAL_RENDER_EXIT_M = 40000;
+export const LOCAL_ORIGIN_RADIUS_M = 256;
+export function planetaryRenderUnit(clearanceM:number, currentUnit:number) {
+  return clearanceM < LOCAL_RENDER_ENTER_M ? 1
+    : clearanceM > LOCAL_RENDER_EXIT_M ? 1e-6 : currentUnit;
+}
+
 /** Match the atmosphere currently rendered by the app. Future atmosphere
  * records can replace this proxy without changing the attitude controller. */
 export function atmosphereHeightM(body:Body){

@@ -29,7 +29,7 @@ async function removeReviewDirectory(directory){
   await rm(target,{recursive:true,force:true});
 }
 
-test('hydrology keeps 2:1 contact support while water-floor work progresses best effort',async()=>{
+for(const cloudMiB of [0,21,96,160])test(`hydrology keeps 2:1 contact support with ${cloudMiB||'actual'} MiB cloud allocation`,async()=>{
   const {module,directory}=await rendererModule(),{THREE,buildTile,tileNeighbour,PlanetRenderer,surfaceQuery,primeCanonicalHydrologySync}=module;
   const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1],catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===3386);
   assert.ok(catchment);const regional=buildRiverRegion(maithea,catchment),body={...maithea,hydrology:regional};
@@ -44,14 +44,23 @@ test('hydrology keeps 2:1 contact support while water-floor work progresses best
   class InlineWorker { onmessage=null; onerror=null; postMessage(data){queueMicrotask(()=>{try{this.onmessage?.({data:{key:data.key,result:buildTile(data.body,data.tile,data.relief)}});}catch(error){this.onmessage?.({data:{key:data.key,error:String(error)}});}});} terminate(){} }
   globalThis.Worker=InlineWorker;
   const renderer=new PlanetRenderer(body,host,radius,1,1);renderer.setContactFocus(contact.toArray());
+  if(cloudMiB){
+    assert.ok(renderer.clouds,'the fixture includes atmospheric clouds');
+    Object.defineProperty(renderer.clouds,'allocatedBytes',{get:()=>cloudMiB*1024*1024});
+  }
   try{
-    let patches=null;
-    for(let frame=0;frame<600&&!patches;frame++){
+    let patches=null;let frames=0;const updateTimes=[];
+    for(let frame=0;frame<600&&!patches;frame++){frames=frame+1;
       renderer.update(eye.toArray(),1080,65,1/60,false,[1,0,0],[]);
+      updateTimes.push(renderer.diagnostics().updateMs);
       await new Promise(resolve=>setImmediate(resolve));
       patches=renderer.contactPatches(contact.toArray(),contact.toArray());
     }
     const settled=renderer.diagnostics();
+    const sorted=updateTimes.slice().sort((a,b)=>a-b);
+    console.log(JSON.stringify({cloudMiB,frames,contactReady:!!patches?.length,resident:settled.resident,visible:settled.visible,
+      maxLevel:settled.maxLevel,combinedMiB:settled.reservedCombinedBytes/1024**2,budgetMiB:settled.budgetBytes/1024**2,
+      updateP95Ms:sorted[Math.floor(sorted.length*.95)],updateMaxMs:Math.max(...updateTimes)}));
     assert.ok(patches&&patches.length>0,'fine capsule support settles');
     assert.equal(settled.contactLevel,22);assert.equal(settled.baseContactLevel,18);
     assert.equal(settled.minimumWaterLevel,10,'coarse wet-bed envelope has a bounded target');
@@ -65,6 +74,8 @@ test('hydrology keeps 2:1 contact support while water-floor work progresses best
     }
     assert.ok(diagnostics.underresolvedWaterTiles<=settled.underresolvedWaterTiles,'best-effort water floor does not regress after contact settles');
     assert.ok(diagnostics.visible<=450,'walking leaf cap remains fixed');
-    assert.ok(diagnostics.reservedCombinedBytes<=256*1024*1024,'fine support stays inside the combined reserve');
+    assert.equal(diagnostics.coreBudgetBytes,256*1024*1024);
+    assert.equal(diagnostics.budgetBytes,(256+160)*1024*1024,'desktop clouds have their own bounded headroom');
+    assert.ok(diagnostics.reservedCombinedBytes<=diagnostics.budgetBytes,'fine support stays inside the combined reserve');
   } finally {renderer.dispose();host.geometry.dispose();host.material.dispose();globalThis.Worker=SavedWorker;await removeReviewDirectory(directory);}
 });
