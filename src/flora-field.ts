@@ -175,6 +175,10 @@ export type FloraInstance =
       density: number;
     };
 
+/** Retained habitat decision. It contains no date or mutable simulation state.
+ * Cache only while the seed, address, direction, biome and gate are unchanged. */
+export type FloraRecipe = {present:false} | (Omit<Extract<FloraInstance,{present:true}>, 'scale'> & {baseScale:number;growthPhase:number});
+
 const MAX_SLOPE_DEG = 34;
 /** Fraction of the sterile 'unformed'/'forming'/'sterile' stages' flora, and
  * of 'microbial' relative to 'complex': 0 for the first three (no plants at
@@ -238,6 +242,10 @@ export function floraAt(
   // caller, a dynamically-typed boundary, an `as Myr` cast) - see the Myr
   // section above (FINDING 2 fix).
   toMyr(tMyr);
+  return floraFromRecipe(prepareFlora(seed,bodyAddress,direction,biome,gate),tMyr);
+}
+
+export function prepareFlora(seed:string,bodyAddress:string,direction:Vec3,biome:FloraBiomeSample,gate:FloraBiosphereGate):FloraRecipe {
   const stageMultiplier = STAGE_DENSITY_MULTIPLIER[gate.stage] ?? 0;
   if (stageMultiplier <= 0) return { present: false };
   if (biome.ocean) return { present: false };
@@ -262,9 +270,18 @@ export function floraAt(
   const instanceSeed = hashU32(hash32(directionKey(seed, bodyAddress, direction, 'seed')), 0x666c6f72);
   const rotationY = random01(directionKey(seed, bodyAddress, direction, 'rotation')) * Math.PI * 2;
   const baseScale = 0.72 + random01(directionKey(seed, bodyAddress, direction, 'scale')) * 0.56;
-  const scale = baseScale * growthPulse(tMyr, directionKey(seed, bodyAddress, direction, 'growth'));
+  const growthPhase=random01(directionKey(seed,bodyAddress,direction,'growth'))*Math.PI*2;
+  return { present: true, kind, instanceSeed, baseScale, growthPhase, rotationY, density };
+}
 
-  return { present: true, kind, instanceSeed, scale, rotationY, density };
+/** Closed-form bounded growth [0.92,1.08], never a presence/kind decision.
+ * Date seeks do not accumulate or mutate the retained habitat recipe. */
+export function floraFromRecipe(recipe:FloraRecipe,tMyr:Myr):FloraInstance {
+  toMyr(tMyr);
+  if(!recipe.present)return {present:false};
+  const {kind,instanceSeed,rotationY,density,baseScale,growthPhase}=recipe;
+  const scale=baseScale*(1+.08*Math.sin(tMyr*.0005+growthPhase));
+  return {present:true,kind,instanceSeed,scale,rotationY,density};
 }
 
 /** Weighted discrete pick over `candidateKinds`, using only the integer hash
@@ -292,19 +309,6 @@ function pickKind(
     if (roll < accumulated) return kind;
   }
   return candidateKinds[candidateKinds.length - 1]!;
-}
-
-/** Bounded, closed-form (no accumulated state) growth pulse in [0.92, 1.08],
- * a pure function of `tMyr` and `key` - direct evaluation at any `tMyr`
- * always agrees with having "stepped" there, because nothing here is
- * integrated. Purely a presentation nicety; never gates presence/kind. `t`
- * is already range-validated by `floraAt`'s `toMyr` call before this runs,
- * so the `Number.isFinite` fallback here is just defense-in-depth for any
- * future internal caller. */
-function growthPulse(tMyr: Myr, key: string): number {
-  const phase = random01(key) * Math.PI * 2;
-  const t = Number.isFinite(tMyr) ? tMyr : 0;
-  return 1 + 0.08 * Math.sin(t * 0.0005 + phase);
 }
 
 function clamp01(value: number): number {

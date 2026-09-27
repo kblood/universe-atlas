@@ -21,7 +21,7 @@ import {VolumetricClouds,CLOUD_TARGET_BUDGET_BYTES} from './volumetric-clouds.ts
 import {ringSystemFor, ringActiveAt, createRingMesh, type RingSystem} from './planet-rings.ts';
 import {spinStateFor} from './stellar-evolution.ts';
 import {CATALOGUE_EPOCH_NS} from './world-time.ts';
-import {floraAt, toMyr, buildFloraGeometryData, floraGeometryToBufferGeometry, FLORA_KIND_NAMES, type FloraKind, type FloraBiosphereGate, type FloraBiomeSample, type FloraStage} from './flora-field.ts';
+import {prepareFlora, floraFromRecipe, toMyr, buildFloraGeometryData, floraGeometryToBufferGeometry, FLORA_KIND_NAMES, type FloraRecipe, type FloraKind, type FloraBiosphereGate, type FloraBiomeSample, type FloraStage} from './flora-field.ts';
 import {FloraFieldRenderer, FloraCandidateBuffer, packCullPlane, pickFloraLodBand, DEFAULT_FRUSTUM_PLANE_COUNT} from './flora-culling.ts';
 import {faunaHerdAt, faunaMemberPoseAtWorldNs, faunaRigSecondsAt, faunaMemberGenome, faunaGroundedTransform, toSeconds, type FaunaHerd, type FaunaHerdMember, type FaunaBiosphereGate, type FaunaStage, type CreatureArchetype, type CreatureGenome} from './fauna-runtime.ts';
 import {FaunaFieldRenderer,FAUNA_FIELD_CAPACITY,FAUNA_FIELD_VISIBLE_M} from './fauna-field-renderer.ts';
@@ -39,7 +39,7 @@ const LIFE_LOAD_MARGIN_M = 48;
 const FLORA_KIND_CULL_RADIUS_M: Record<FloraKind, number> = { tree: 6, shrub: 2.5, grass: 1, flower: .6 };
 const LIFE_UP_Y = new THREE.Vector3(0, 1, 0);
 type LifeCell=SurfaceCell & {layer:'flora'|'fauna';cellSizeM:number};
-type LifeResident={cell:LifeCell;height:number;biome:FloraBiomeSample;herd:FaunaHerd|null;ground:Float64Array|null;groundCursor:number};
+type LifeResident={cell:LifeCell;height:number;biome:FloraBiomeSample;herd:FaunaHerd|null;ground:Float64Array|null;groundCursor:number;floraRecipe?:FloraRecipe};
 
 /** Context this file needs from main.ts to gate/date flora and fauna -- the
  * caller (main.ts, which owns world-surface.ts's `biosphereStateAt` and
@@ -370,6 +370,8 @@ export class PlanetRenderer {
   private faunaHerdCount = 0;
   private faunaVisibleCount = 0;
   private readonly floraSlotDir = new Float64Array(LIFE_SLOT_CAPACITY * 3);
+  private readonly floraSlotResidents:LifeResident[]=[];
+  private floraRecipeBuilds=0;
   private readonly floraSlotHeightM = new Float32Array(LIFE_SLOT_CAPACITY);
   private readonly floraSlotWeights = new Float32Array(LIFE_SLOT_CAPACITY * 4);
   private readonly floraSlotForest = new Uint8Array(LIFE_SLOT_CAPACITY);
@@ -981,6 +983,7 @@ export class PlanetRenderer {
     this.updateMs=performance.now()-started;
   }
   private hideLife(): void {
+    this.floraRecipeBuilds=0;
     this.faunaVisibleCount=0;this.faunaCulledCount=0;this.faunaBudgetDrops=0;this.faunaDrawn=[];
     this.floraRenderer.beginFrame();this.floraRenderer.endFrame();
     this.faunaRenderer.beginFrame(this.lifeOrigin);this.faunaRenderer.endFrame();
@@ -1061,10 +1064,12 @@ export class PlanetRenderer {
         this.faunaAnchorDirections.set(cell.direction,fauna*3);this.faunaSurfaces[fauna]=record;this.faunaHerds[fauna++]=record.herd;herds++;continue;
       }
       if(flora>=LIFE_SLOT_CAPACITY)continue;
+      this.floraSlotResidents[flora]=record;
       const b=record.biome;this.floraSlotDir.set(cell.direction,flora*3);this.floraSlotHeightM[flora]=record.height;
       this.floraSlotWeights.set(b.weights,flora*4);this.floraSlotForest[flora]=b.forestPotential?1:0;
       this.floraSlotMoisture[flora]=b.moisture;this.floraSlotSlopeDeg[flora]=b.slopeDeg;this.floraSlotOcean[flora]=b.ocean?1:0;flora++;
     }
+    this.floraSlotResidents.length=flora;
     this.floraSlotCount=flora;this.faunaAnchorCount=fauna;this.faunaHerdCount=herds;this.faunaHerds.length=fauna;
     // Genome objects live with the retained herd working set, never forever.
     if(this.faunaGenomes.size>2048){const ids=new Set(this.faunaHerds.flatMap(h=>h?.members.map(m=>m.id)??[]));for(const id of this.faunaGenomes.keys())if(!ids.has(id))this.faunaGenomes.delete(id);}
@@ -1083,13 +1088,19 @@ export class PlanetRenderer {
     const tMyr = toMyr(life.tMyr);
     const radiusM = this.body.radiusM, relief = this.relief, b = this.floraBiomeScratch;
     this.floraPresentCount = 0;
+    this.floraRecipeBuilds=0;
     for (let i = 0; i < this.floraSlotCount; i++) {
       const wb = i * 4;
       b.weights[0] = this.floraSlotWeights[wb]!; b.weights[1] = this.floraSlotWeights[wb + 1]!; b.weights[2] = this.floraSlotWeights[wb + 2]!; b.weights[3] = this.floraSlotWeights[wb + 3]!;
       b.forestPotential = !!this.floraSlotForest[i]; b.moisture = this.floraSlotMoisture[i]!; b.slopeDeg = this.floraSlotSlopeDeg[i]!; b.ocean = !!this.floraSlotOcean[i];
       const sb = i * 3;
       this.lifeDirTuple[0] = this.floraSlotDir[sb]!; this.lifeDirTuple[1] = this.floraSlotDir[sb + 1]!; this.lifeDirTuple[2] = this.floraSlotDir[sb + 2]!;
-      const instance = floraAt(this.body.seed, this.body.id, this.lifeDirTuple, b, gate, tMyr);
+      const resident=this.floraSlotResidents[i];
+      // Preserve the original Float32 habitat inputs above. Cache follows the
+      // canonical resident, never the transient packed slot. Water/gate changes
+      // already replace these residents; eviction releases their recipes.
+      if(!resident.floraRecipe){resident.floraRecipe=prepareFlora(this.body.seed,this.body.id,this.lifeDirTuple,b,gate);this.floraRecipeBuilds++;}
+      const instance = floraFromRecipe(resident.floraRecipe,tMyr);
       if (!instance.present) continue;
       if(instance.kind==='tree')continue; // The continuous forest owns trees at every altitude.
       this.floraPresentCount++;
@@ -1193,7 +1204,7 @@ export class PlanetRenderer {
     // The shared texture belongs to the existing water reservation. Inland
     // diagnostics count it when present; ocean-only worlds count it here.
     const oceanNormalBytes=this.river?.diagnostics().resident?0:[...this.patches.values()].some(p=>p.ocean)?SHARED_WATER_NORMAL_ATLAS_BYTES:0;
-    return {projection: 'cube-sphere', clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
+    return {projection: 'cube-sphere', floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
       // Moving-sea-level verification/observability (this task): the
       // quantized bucket `this.sample`/`this.classify` and newly-dispatched
       // tile jobs are currently using, plus how many of the currently VISIBLE
