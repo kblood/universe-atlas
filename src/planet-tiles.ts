@@ -31,6 +31,9 @@ export function unit(v: V3): V3 {
 }
 // On each face cross(d/du,d/dv) points outward. Identical cube edge
 // coordinates normalize identically, including at all eight cube corners.
+/** Gnomonic cube-face projection. Forest patch rejection relies on its
+ * 1-Lipschitz normalization bound; changing projection requires reviewing
+ * forest-selection-cache.ts and its seam/corner equivalence fixtures. */
 export function cubeDirection(face: number, u: number, v: number): V3 {
   return unit(([
     [1, v, -u], [-1, v, u], [u, 1, -v],

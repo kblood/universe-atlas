@@ -13,7 +13,7 @@ export class ForestSelectionCache {
   private n:number;
   private seed:string;private radiusM:number;private maxBytes:number;private maxEntries:number;
   private hits=0;private misses=0;private evictions=0;private visited=0;
-  constructor(seed:string,radiusM:number,cellM:number,maxBytes=24*1024*1024,maxEntries=20000){
+  constructor(seed:string,radiusM:number,cellM:number,maxBytes=32*1024*1024,maxEntries=30000){
     this.seed=seed;this.radiusM=radiusM;this.maxBytes=maxBytes;this.maxEntries=maxEntries;
     this.n=Math.ceil(2*radiusM/cellM);
     if(!Number.isFinite(radiusM)||radiusM<=0||!Number.isFinite(cellM)||cellM<=0||
@@ -74,5 +74,5 @@ export class ForestSelectionCache {
     }
     return result.sort((a,b)=>a.distanceM-b.distanceM||a.id.localeCompare(b.id));
   }
-  diagnostics(){return {patches:this.entries.size,estimatedBytes:this.bytes,maxBytes:this.maxBytes,maxEntries:this.maxEntries,hits:this.hits,misses:this.misses,visited:this.visited,evictions:this.evictions};}
+  diagnostics(){return {patches:this.entries.size,estimatedBytes:this.bytes,maxBytes:this.maxBytes,maxEntries:this.maxEntries,hits:this.hits,misses:this.misses,visited:this.visited,evictionsTotal:this.evictions};}
 }

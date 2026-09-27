@@ -34,3 +34,21 @@ test('cache validates bounds and returns independent objects',()=>{
   first[0].heightM=999;first[0].direction[0]=999;
   assert.deepEqual(cache.select([0,0,1],100,200),copy);
 });
+
+test('Earth-scale seam and corner perturbations retain exact selection boundaries',()=>{
+  const r=6000000,cache=new ForestSelectionCache('FUZZ-SEAMS',r,18);let state=0x781298;
+  const random=()=>((state=(Math.imul(state,1664525)+1013904223)>>>0)/4294967296);
+  for(let i=0;i<12;i++){
+    const base=i%2?[1,1,0]:[1,1,1],c=norm(base.map(x=>x+(random()-.5)*1000/r));
+    const near=100+random()*300,far=500+random()*1000;
+    assert.deepEqual(cache.select(c,near,far),forestPopulationCells('FUZZ-SEAMS',c,r,near,far,18));
+  }
+});
+
+test('current Earth-scale corner working set leaves cache headroom',()=>{
+  const cache=new ForestSelectionCache('CACHE-EARTH-SCALE',6000000,18);
+  cache.select(norm([1,1,1]),750,4500);const stats=cache.diagnostics();
+  assert.ok(stats.estimatedBytes<stats.maxBytes*.7,'range increases need an explicit memory/headroom review');
+  assert.ok(stats.patches<stats.maxEntries*.7);
+  assert.equal(stats.evictionsTotal,0);
+});

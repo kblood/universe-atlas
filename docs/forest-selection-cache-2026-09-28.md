@@ -7,13 +7,14 @@ regions outside the selection disc. The final cell-centre distance tests,
 The main-thread fallback still uses the previous selector.
 
 Packed Float64 records preserve canonical direction, height, yaw and roll.
-Cache limits are 24 MiB of accounted arrays/entry allowance and 20,000 patches;
+Cache limits are 32 MiB of accounted arrays/entry allowance and 30,000 patches;
 least recently used patches are evicted. This is an estimate, not measured
 browser heap usage. It does not consume a texture/GPU allocation. Worker
 termination frees the cache. The cache is keyed by body seed/radius/grid;
 water, habitat and date do not affect this address-only arithmetic.
 
-Diagnostics expose hits, misses, patch count, estimated bytes and evictions.
+Diagnostics expose per-query hits/misses/visited patches, resident patch count,
+estimated bytes and explicitly cumulative `evictionsTotal`.
 One worker request remains in flight. The response still uses existing cell
 objects; packed worker-to-main transfers remain future work.
 
@@ -39,3 +40,24 @@ workstation, not browser frame or GPU timings. Cold construction is slower
 and can delay the first forest working set. Repeated samples include a 92 ms
 outlier. Browser streaming, memory and fast-flight acceptance are still needed.
 No denser far canopy or new tree assets are enabled by this change.
+
+## Independent review and follow-up
+
+[Opus 5.5 reviewed d0538c8](opus-5.5-selection-cache-review-2026-09-28.md) and
+found no selector correctness defect. Its conditional error-handling blocker
+is covered by `PlanetForest.startWorker`: `worker.onerror` clears the in-flight
+state, allows one restart, then uses the legacy synchronous fallback. That file
+was absent from the review bundle; the existing restart/fallback test passes.
+
+The reviewed 24 MiB/20,000-entry limits left limited corner headroom. The next
+increment raises the bounded allowance to 32 MiB/30,000 entries; a full-radius
+corner test enforces less than 70% occupancy of both limits. It adds twelve
+deterministic random Earth-scale seam/corner comparisons and documents the
+gnomonic projection assumption beside `cubeDirection`. Sixteen focused tests
+now cover cache, habitat, patch and buffer contracts. The benchmark table
+above remains the historical 24 MiB run; its actual working sets fit either cap.
+
+Lazy jitter construction and packed transferable worker results remain useful
+follow-ups for cold latency and main-thread receive costs. Enlarging the forest
+range still requires a new cache/headroom review; a finite cache cannot promise
+warm performance for an arbitrarily large working set.

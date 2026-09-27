@@ -57,5 +57,18 @@ cards trade geometry for alpha overdraw: fewer triangles do not establish a
 runtime speedup. This remains an unshipped proposal with the same LOD,
 collision, wind, packaging and in-game acceptance work outstanding.
 
+Luna 6's independent read-only review also flags repeated fan-shaped sprays
+and a radial branch pattern in the top view. Total exported height is
+13.819 m, about 13.6% below the brief's 16 m reference. This must be resolved
+without simply enlarging the leaves with a whole-object scale.
+
+The historical manifest copied the brief's stale “no generated output exists
+yet” restriction. The candidate remains `NOASSERTION` and unshipped; that
+sentence is not an accurate status description. Preserve the historical
+manifest and correct the brief for future runs. Its recorded brief hash
+`b453…` differs from the rendering checkout's `5834…` solely because the main
+checkout uses CRLF and the rendering checkout uses LF: parsed JSON and
+LF-normalized bytes are identical, as verified directly.
+
 This is a reviewed proposal under the
 [tree contract](tree-species-asset-contract-2026-09-28.md), not a finished asset.

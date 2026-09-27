@@ -15,6 +15,8 @@ export default defineConfig({
       'docs/background-hydrology-travel-2026-09-28.md',
       'docs/canopy-foundation-2026-09-28.md',
       'docs/forest-selection-cache-2026-09-28.md',
+      'docs/opus-5.5-selection-cache-review-2026-09-28.md',
+      'docs/opus-5.5-selection-cache-review-2026-09-28.metadata.json',
       'test-results/forest-selection-cache/benchmark.json',
       'docs/opus-5.5-canopy-review-2026-09-28.md',
       'docs/opus-5.5-canopy-review-2026-09-28.metadata.json',

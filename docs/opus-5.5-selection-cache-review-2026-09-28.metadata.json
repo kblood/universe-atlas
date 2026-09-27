@@ -1,0 +1,49 @@
+{
+  "requestedModel": "claude-opus-5-5",
+  "actualModel": "claude-opus-5-5",
+  "provider": "firstParty",
+  "sourceRevision": "d0538c84458c906dc35130ca3f246a0d41d4cd51",
+  "inputFiles": [
+    {
+      "path": "src/forest-selection-cache.ts",
+      "sha256": "eb394b1348c8332dde4a24a6bdc6263f08009c7edfb3d2ced9dddcc8ffadd70f"
+    },
+    {
+      "path": "src/forest-patch.ts",
+      "sha256": "7bf314970b0c73c78e9dec01877906bef02dc135176761143f3a3419b845b96c"
+    },
+    {
+      "path": "src/planet-population.ts",
+      "sha256": "5c29d92f684aeec42a75bab1c939d9815e18959627f28ae0b4ddb752eadd62e6"
+    },
+    {
+      "path": "src/planet-population-worker.ts",
+      "sha256": "6cee7376e7a9ad3564afeb38af9948f0a433a35b65c4fe75b2777f070b106186"
+    },
+    {
+      "path": "tests/forest-selection-cache.test.mjs",
+      "sha256": "1d5b0249094e6591b61cb4cc68f14e6c89f9a2e928fd6cc8f788fc762ca9b36b"
+    },
+    {
+      "path": "docs/forest-selection-cache-2026-09-28.md",
+      "sha256": "bf2b4298e8f7fd145d20b51205f3621fa17bed3f8feb95a70e16c256b5a922b7"
+    }
+  ],
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 13815,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 9592,
+      "webSearchRequests": 0,
+      "costUSD": 0.3533358,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 11161,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "notes": "Verbatim read-only review. planet-forest.ts was not supplied; its existing worker.onerror restart/fallback resolves the conditional integration blocker. See implementation assessment."
+}
