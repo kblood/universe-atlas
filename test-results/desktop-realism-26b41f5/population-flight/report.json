@@ -1,0 +1,84 @@
+{
+  "ok": true,
+  "base": "http://127.0.0.1:5191/",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "viewport": [
+    1440,
+    1000
+  ],
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "errors": [],
+  "orbital": {
+    "cloudVolume": {
+      "version": "cloud-volume-2",
+      "enabled": true,
+      "representation": "raymarched-volume",
+      "temporalHistory": false,
+      "steps": 64,
+      "lightSteps": 5,
+      "estimatedTargetBytes": 28800000,
+      "estimatedBytes": 29813468,
+      "targetBudgetBytes": 167772160,
+      "sceneResolutionScale": 1,
+      "eyes": 1,
+      "targets": [
+        {
+          "width": 1440,
+          "height": 1000
+        }
+      ],
+      "cloudTargets": [
+        {
+          "width": 1440,
+          "height": 1000
+        }
+      ],
+      "layers": {
+        "baseM": 800,
+        "lowTopM": 4200,
+        "highBaseM": 6500,
+        "topM": 8500
+      }
+    },
+    "state": {
+      "level": "body",
+      "body": "G001/C2128,0,1/0/planet/1"
+    }
+  },
+  "lowFlight": {
+    "clearanceM": 99.01163834584281,
+    "faunaAnchorCount": 294,
+    "faunaVisibleCount": 128,
+    "faunaDrawnCount": 128,
+    "lifePending": 0,
+    "faunaTerrainPending": 0,
+    "cameraOffsetM": 0.000010962116351931856
+  },
+  "movement": {
+    "movedM": 20.707991107123124,
+    "retainedId": "G001/C2128,0,1/0/planet/1:fauna:b30b086a",
+    "beforeCount": 128,
+    "afterCount": 128
+  },
+  "dateReplay": {
+    "paused": true,
+    "startNs": "435084631200000037597600000",
+    "replayA": "435084631200000057597600000",
+    "replayB": "435084631200000117597600000",
+    "exact": true,
+    "motionBetweenDates": true
+  },
+  "realtime": {
+    "elapsedWorldS": 4.0551,
+    "motion": true
+  },
+  "below120": {
+    "clearanceM": 92.26218800574702,
+    "cameraOffsetM": 1.8400412942243745,
+    "systemUnit": 1
+  },
+  "contact": {
+    "walking": true,
+    "clearanceM": 1.6318918932720408
+  }
+}

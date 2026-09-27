@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "base": "http://127.0.0.1:5191/",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "viewport": [
+    1440,
+    1000
+  ],
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "errors": [],
+  "warmed": {
+    "visible": 1933,
+    "near": 0,
+    "cached": 18202,
+    "pending": 0,
+    "matrixWrites": 0,
+    "colorWrites": 0,
+    "coverageWrites": 0,
+    "originVersion": 13,
+    "selectionPending": false
+  },
+  "stationarySecond": {
+    "visible": 1933,
+    "matrixWrites": 0,
+    "colorWrites": 0,
+    "coverageWrites": 0,
+    "originVersion": 13
+  },
+  "turn": {
+    "visible": 1904,
+    "near": 0,
+    "positionDeltaM": 0,
+    "headingDeltaQuaternionNorm": 0.41975165683877147,
+    "matrixWrites": 0,
+    "colorWrites": 0,
+    "originVersion": 13
+  }
+}
