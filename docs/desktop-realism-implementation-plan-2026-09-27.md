@@ -176,7 +176,7 @@ more. Structural diversity must not come from disconnected anatomy.
 | Stage | Deliverables | Status |
 | --- | --- | --- |
 | A. Record direction | This plan, related MD links/status, guide explanations | Written; guide updated by Luna 6 |
-| B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented locally; TypeScript/Vite build passes; browser acceptance pending |
+| B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented; build, 53 targeted checks and RTX 5090 browser acceptance pass; see validation record |
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Opt-in frame/pass profiling implemented; lighting/AA/shadows pending |
 | D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Planned |
 | E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Planned |
@@ -222,6 +222,16 @@ shader-based fades, larger precision-derived rebases and canopy handoff
 hysteresis) remain follow-on work; none is silently declared complete.
 
 ## 8. Acceptance for later verification
+
+### Foundation acceptance — 2026-09-28
+
+Luna 6 validated `26b41f5` on RTX 5090 / Ryzen 9 9950X with stationary
+forest uploads, camera rotation, fauna motion/identity, exact-date replay and
+touchdown checks. The [validation record](desktop-realism-validation-2026-09-28.md)
+includes hardware, source checks, captures and measured limits. The warmed
+fixture is CPU limited (planet update p95 about 20 ms); flora work is the next
+measured optimization target. This does not establish sustained 60 FPS or
+realistic artwork. Later acceptance below remains outstanding.
 
 Use one dated in-game valley with forest edge, exposed terrain, water boundary
 and wildlife. Fix camera poses at ground height, low flight, 300 m, 3 km, 15 km
