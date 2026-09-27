@@ -6,6 +6,10 @@ import { hash64, noise } from './catalog.ts';
 /** Presentation version: catalogue and cloudCoverAt identities are unchanged. */
 export const VOLUMETRIC_CLOUDS_VERSION = 'cloud-volume-2';
 export const CLOUD_TARGET_BUDGET_BYTES=160*1024*1024;
+export function supportedCloudSceneSamples(colour:readonly number[],depth:readonly number[],maxSamples:number){
+  return [...new Set(colour)].filter(n=>Number.isInteger(n)&&n>0&&depth.includes(n)&&n<=maxSamples).sort((a,b)=>b-a);
+}
+export function cloudTargetBytesPerPixel(samples:number,resolution:number){return 12+12*samples+8*resolution*resolution;}
 const WEATHER_WIDTH=128, WEATHER_HEIGHT=64;
 const noiseDataCache=new Map<number,Uint8Array>();
 export type CloudQuality = 'desktop' | 'immersive';
@@ -247,6 +251,12 @@ export class VolumetricClouds {
   enabled = true;
   coverageScale = 1;
   extinctionScale = 2.2;
+  /** Desktop AA experiment. Zero preserves the existing capture. Selection is
+   * limited to sample counts supported by both colour and depth renderbuffers. */
+  sceneSamples:0|2|4=0;
+  private effectiveSceneSamples=0;
+  private samplesContext:WebGL2RenderingContext|null=null;
+  private supportedSceneSamples:number[]=[];
   private targets: THREE.WebGLRenderTarget[] = [];
   private cloudTargets: THREE.WebGLRenderTarget[] = [];
   private lastWeatherKey = '';
@@ -341,7 +351,19 @@ export class VolumetricClouds {
     this.targetBudgetBytes=presenting?96*1024*1024:CLOUD_TARGET_BUDGET_BYTES;
     const size=renderer.getDrawingBufferSize(new THREE.Vector2());
     const nativePixels=views.reduce((sum,view)=>{const v=(view as THREE.PerspectiveCamera&{viewport?:THREE.Vector4}).viewport;return sum+(presenting?v!.z*v!.w:size.x*size.y);},0);
-    const bytesPerScenePixel=12+8*quality.resolution*quality.resolution;
+    if(this.sceneSamples>0&&!presenting){
+      const gl=renderer.getContext() as WebGL2RenderingContext;
+      if(gl!==this.samplesContext){
+        this.samplesContext=gl;
+        const colour=Array.from(gl.getInternalformatParameter(gl.RENDERBUFFER,gl.RGBA16F,gl.SAMPLES) as Int32Array);
+        const depth=Array.from(gl.getInternalformatParameter(gl.RENDERBUFFER,gl.DEPTH_COMPONENT24,gl.SAMPLES) as Int32Array);
+        this.supportedSceneSamples=supportedCloudSceneSamples(colour,depth,renderer.capabilities.maxSamples);
+      }
+      this.effectiveSceneSamples=this.supportedSceneSamples.find(n=>n<=this.sceneSamples)??0;
+    }else this.effectiveSceneSamples=0;
+    // Resolved colour/depth (12), multisample renderbuffers (12 per sample),
+    // and the cloud integration target. This remains an allocation estimate.
+    const bytesPerScenePixel=cloudTargetBytesPerPixel(this.effectiveSceneSamples,quality.resolution);
     this.sceneResolutionScale=Math.min(1,Math.sqrt((this.targetBudgetBytes-2*1024*1024)/(bytesPerScenePixel*Math.max(1,nativePixels))));
     this.group.updateWorldMatrix(true,false);this.inverseGroup.copy(this.group.matrixWorld).invert();
     const worldScale=this.group.getWorldScale(new THREE.Vector3()).x;
@@ -360,8 +382,10 @@ export class VolumetricClouds {
         const height=Math.max(1,Math.ceil((presenting?view.viewport!.w:size.y)*this.sceneResolutionScale*quality.resolution));
         // Preserve scene resolution within the shared target memory cap.
         const fullWidth=Math.round(width/quality.resolution),fullHeight=Math.round(height/quality.resolution);
-        if(!this.targets[i]){
+        if(!this.targets[i]||this.targets[i].samples!==this.effectiveSceneSamples){
+          this.targets[i]?.dispose();
           const target=new THREE.WebGLRenderTarget(fullWidth,fullHeight,{type:THREE.HalfFloatType,depthBuffer:true});
+          target.samples=this.effectiveSceneSamples;target.resolveDepthBuffer=true;
           target.depthTexture=new THREE.DepthTexture(fullWidth,fullHeight,THREE.UnsignedIntType);this.targets[i]=target;
         }
         const target=this.targets[i];if(target.width!==fullWidth||target.height!==fullHeight)target.setSize(fullWidth,fullHeight);
@@ -382,7 +406,7 @@ export class VolumetricClouds {
     }
     return true;
   }
-  get allocatedBytes(){return this.targets.reduce((n,t)=>n+t.width*t.height*12,0)+this.cloudTargets.reduce((n,t)=>n+t.width*t.height*8,0)+Math.ceil(this.noise.image.data!.byteLength*(1+8/7))+this.weather.image.data!.byteLength*2;}
-  diagnostics(){return {version:VOLUMETRIC_CLOUDS_VERSION,enabled:this.enabled,representation:'raymarched-volume',temporalHistory:false,steps:this.material.uniforms.steps.value,lightSteps:this.material.uniforms.lightSteps.value,estimatedTargetBytes:this.targets.reduce((n,t)=>n+t.width*t.height*12,0)+this.cloudTargets.reduce((n,t)=>n+t.width*t.height*8,0),estimatedBytes:this.allocatedBytes,targetBudgetBytes:this.targetBudgetBytes,sceneResolutionScale:this.sceneResolutionScale,eyes:this.captures.length,targets:this.targets.map(t=>({width:t.width,height:t.height})),cloudTargets:this.cloudTargets.map(t=>({width:t.width,height:t.height})),layers:cloudLayerHeights(this.params)};}
+  get allocatedBytes(){return this.targets.reduce((n,t)=>n+t.width*t.height*12*(1+t.samples),0)+this.cloudTargets.reduce((n,t)=>n+t.width*t.height*8,0)+Math.ceil(this.noise.image.data!.byteLength*(1+8/7))+this.weather.image.data!.byteLength*2;}
+  diagnostics(){return {version:VOLUMETRIC_CLOUDS_VERSION,enabled:this.enabled,representation:'raymarched-volume',temporalHistory:false,steps:this.material.uniforms.steps.value,lightSteps:this.material.uniforms.lightSteps.value,requestedSceneSamples:this.sceneSamples,effectiveSceneSamples:this.effectiveSceneSamples,supportedSceneSamples:this.supportedSceneSamples,estimatedTargetBytes:this.targets.reduce((n,t)=>n+t.width*t.height*12*(1+t.samples),0)+this.cloudTargets.reduce((n,t)=>n+t.width*t.height*8,0),estimatedBytes:this.allocatedBytes,targetBudgetBytes:this.targetBudgetBytes,sceneResolutionScale:this.sceneResolutionScale,eyes:this.captures.length,targets:this.targets.map(t=>({width:t.width,height:t.height,samples:t.samples})),cloudTargets:this.cloudTargets.map(t=>({width:t.width,height:t.height})),layers:cloudLayerHeights(this.params)};}
   dispose(){if(this.disposed)return;this.disposed=true;for(const t of [...this.targets,...this.cloudTargets])t.dispose();this.weather.dispose();this.noise.dispose();this.material.dispose();this.resolveMaterial.dispose();this.mesh.geometry.dispose();this.resolveMesh.geometry.dispose();}
 }

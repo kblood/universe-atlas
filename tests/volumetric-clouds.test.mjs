@@ -12,8 +12,18 @@ const {
   cloudTransmittance,
   createCloudNoise,
   VolumetricClouds,
+  supportedCloudSceneSamples, cloudTargetBytesPerPixel,
 } = await vite.ssrLoadModule('/src/volumetric-clouds.ts');
 after(async () => { await vite.close(); });
+
+test('scene AA requires matching colour/depth support and budgets sample storage',()=>{
+  assert.deepEqual(supportedCloudSceneSamples([8,4,2,4],[4,2],4),[4,2]);
+  assert.deepEqual(supportedCloudSceneSamples([4],[2],4),[]);
+  assert.deepEqual(supportedCloudSceneSamples([8,4],[8,4],2),[]);
+  assert.equal(cloudTargetBytesPerPixel(0,1),20);
+  assert.equal(cloudTargetBytesPerPixel(4,1),68);
+  assert.equal(cloudTargetBytesPerPixel(0,.5),14);
+});
 
 const terrestrial = { hasAtmosphere: true, hasOcean: true, temperatureK: 285, radiusM: 6_200_000, spinPeriodS: 86_400 };
 

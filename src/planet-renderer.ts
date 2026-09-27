@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type {RenderProfile} from './render-profile.ts';
+import {attachLocalAerial,localAerialGLSL,LOCAL_AERIAL_VERSION} from './local-aerial-perspective.ts';
 import { AU, type Body, type V3 } from './catalog.ts';
 import { children, tileDirection, closestTileDirection, tileKey, directionTile, tileNeighbour, PATCH_SEGMENTS, type Tile, type buildTile } from './planet-tiles.ts';
 import {terrainSampler, DEFAULT_SURFACE_AGE_MYR} from './terrain.ts';
@@ -514,6 +515,9 @@ export class PlanetRenderer {
     );
     for (const mesh of this.floraRenderer.meshes) { mesh.name = 'Flora field'; mesh.frustumCulled = false; this.floraGroup.add(mesh); }
     this.group.add(this.floraGroup,this.faunaRenderer.group);
+    for(const group of [this.forest.group,this.floraGroup,this.faunaRenderer.group])group.traverse(object=>{
+      if(object instanceof THREE.Mesh)attachLocalAerial(object,this.group,body.radiusM,this.sunUniform,!!this.atmosphere);
+    });
   }
 
   /** Called by main.ts once per frame (before `update()`, or at any point
@@ -634,30 +638,17 @@ export class PlanetRenderer {
       shader.vertexShader=groundVertexHeader+'\n'+shader.vertexShader;
       shader.fragmentShader='uniform vec3 atlasLocalEyeM,atlasSun;uniform float atlasRadius,atlasAir,atlasRelief,atlasEyeHeightM;varying vec3 atlasSurface,atlasLocalM;varying float atlasHeightM;\n'+shader.fragmentShader;
       shader.fragmentShader=groundFragmentHeader+shader.fragmentShader;
+      shader.fragmentShader=localAerialGLSL+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
         ${groundColor}`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,dot(groundW,vec4(.96,.92,.84,.73)),groundFade);');
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\n'+groundNormalCode);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>', `
-        float airHeight=max(0.0,(atlasEyeHeightM+atlasHeightM)*.5);
-        float airDistance=length(atlasLocalEyeM-atlasLocalM);
-        // Capped below 1.0 (was .97) and with a dim night-side floor above pure
-        // black: terrain-following flight over the night hemisphere previously
-        // washed to a near-unreadable black screen at any real viewing distance.
-        // A faint starlight/skyglow floor keeps distant terrain legible without
-        // changing the lit daytime result (day mix target is unchanged).
-        float airFog=atlasAir*min(.92,1.0-exp(-airDistance/65000.0*exp(-airHeight/14000.0)));
-        float daylight=smoothstep(-.15,.15,dot(normalize(atlasSurface),atlasSun));
-        outgoingLight=mix(outgoingLight,mix(vec3(.020,.032,.055),vec3(.23,.43,.64),daylight),airFog);
-        // Gate the night floor by the same fog/distance term used above.
-        // An unconditional max() here silently overwrote close-range,
-        // un-fogged ground pixels with a constant, erasing the
-        // surfaceDetail albedo/roughness/normal signal (ground-material.ts)
-        // -- this is what zeroed tests/surface.mjs's ground-detail delta.
-        outgoingLight=mix(outgoingLight,max(outgoingLight,vec3(.007,.011,.018)),airFog);
+        outgoingLight=atlasApplyLocalAir(outgoingLight,length(atlasLocalEyeM-atlasLocalM),
+          atlasEyeHeightM,atlasHeightM,dot(normalize(atlasSurface),atlasSun),atlasAir);
         #include <opaque_fragment>`);
     };
-    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v7';
+    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v7/'+LOCAL_AERIAL_VERSION;
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(...d.anchor);
     mesh.visible = false;
@@ -1227,6 +1218,8 @@ export class PlanetRenderer {
   renderCloudScene(renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera,profile?:RenderProfile){
     return this.clouds?.render(renderer,scene,camera,profile)??false;
   }
+  /** Diagnostic experiment for the current body; deliberately not a saved quality setting. */
+  setCloudSceneSamples(samples:0|2|4){if(this.clouds)this.clouds.sceneSamples=samples;}
   private release(p: Patch) { this.reflectionRevision++;this.residentBytes=Math.max(0,this.residentBytes-p.bytes);this.group.remove(p.mesh);if(p.ocean){this.group.remove(p.ocean);p.ocean.geometry.dispose();p.ocean.material.dispose();} p.mesh.geometry.dispose(); p.map.dispose(); p.material.dispose(); }
   dispose() {
     this.disposed = true;

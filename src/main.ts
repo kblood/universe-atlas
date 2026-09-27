@@ -5197,6 +5197,10 @@ Object.defineProperty(window, "__atlas", {
   value: {
     setProfiling(enabled:boolean){renderProfile.setEnabled(enabled);},
     resetProfile(){renderProfile.clear();},
+    setCloudSceneSamples(samples:0|2|4){
+      if(![0,2,4].includes(samples))throw new Error('Scene samples must be 0, 2 or 4');
+      planetTiles?.setCloudSceneSamples(samples);
+    },
     get renderProfile(){return renderProfile.diagnostics();},
     shoreDebug(options:import('./planet-renderer.ts').ShoreDebug){planetTiles?.setShoreDebug(options);},
     get date(){return dateRecord(epoch);},
