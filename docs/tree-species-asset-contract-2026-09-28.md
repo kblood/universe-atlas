@@ -26,9 +26,10 @@ This contract is not wired into the forest renderer yet. The current rendered
 population still uses its existing 10–22 m primitive silhouettes and canonical
 placement. Activating species geometry, physical envelopes and habitat binding
 requires an explicit appearance/population migration decision and a consistent
-canopy implementation. Runtime variant resource eviction, the named Blender
-authoring operation, source `.blend`, textures, GLBs and technical/visual asset
-acceptance remain unfinished. No generated assets have been published.
+canopy implementation. A named Blender authoring operation now produces a
+[technically valid candidate](tree-asset-candidate-2026-09-28.md), editable
+source and original textures. Visual quality, LODs, resource eviction and full
+asset acceptance remain unfinished. No candidate assets have been published.
 
 Three source tests cover ordering/dated eligibility, physical envelopes,
 repeatable structural variation, bounded geometry keys and version changes.

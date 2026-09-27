@@ -19,6 +19,9 @@ cache misses in the current flora draw; warmed stationary frames should be zero.
 
 The build and 22 flora tests pass. A 960-result digest captured from the previous
 `4c2369d` implementation matches the refactor, including gates, habitats and
-four dates. Date evaluation leaves recipes unchanged. Actual game timing and
-retention after movement are pending Luna's hardware comparison; no measured
-speedup is claimed yet.
+four dates. Date evaluation leaves recipes unchanged. Luna's
+[hardware comparison](desktop-rendering-validation-2026-09-28.md) reports zero
+warmed recipe builds and lower CPU update cost: planet update p95 changed from
+18.6 ms to 12.1 ms in separate runs. One warmed flora draw measured 0.4 ms.
+These are approximate fixture comparisons, not a controlled benchmark or a
+general frame-rate guarantee.

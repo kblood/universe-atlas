@@ -1,0 +1,66 @@
+{
+  "ok": true,
+  "base": "http://127.0.0.1:5194/",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "targetId": "G001/C2128,0,1/0/planet/1:fauna:b30b086a",
+  "sourceDistanceM": 180.87569706049126,
+  "sourceGenome": {
+    "version": "creature-genome-1",
+    "archetype": "runner",
+    "torsoLength": 1.838,
+    "torsoHeight": 0.626,
+    "torsoWidth": 0.465,
+    "legLength": 1.393,
+    "upperLegFraction": 0.52,
+    "stanceWidth": 0.572,
+    "neckLength": 0.372,
+    "neckRise": 0.197,
+    "headLength": 0.405,
+    "headWidth": 0.246,
+    "tailLength": 1.082,
+    "footLength": 0.278,
+    "footWidth": 0.108,
+    "hornLength": 0,
+    "earLength": 0.239,
+    "armor": 0.02,
+    "walkSpeed": 1.55,
+    "runSpeed": 5.6,
+    "strideLength": 1.331,
+    "color": "#5f6d78",
+    "accentColor": "#e1c58a",
+    "pattern": "stripes",
+    "mutationLog": [
+      "runner founder anatomy"
+    ]
+  },
+  "closeupEyeRelativeM": [
+    4067201.4903504685,
+    -1507009.6887292047,
+    2860931.573665528
+  ],
+  "errors": [],
+  "drawnFirstFrame": 128,
+  "drawnSecondFrame": 128,
+  "stableIdsAndPositions": true,
+  "walking": {
+    "active": true,
+    "grounded": true,
+    "waiting": false,
+    "position": [
+      4067201.5407924857,
+      -1507009.707425052,
+      2860931.609196423
+    ],
+    "originM": [
+      4067201.5473995977,
+      -1507009.7098674714,
+      2860931.6137947557
+    ],
+    "speed": 0,
+    "steps": 5,
+    "travelledM": 0.008812016659611557,
+    "colliders": 4,
+    "rawColliderBytes": 150576,
+    "contactMismatchM": 0.0000033779981549741933
+  }
+}

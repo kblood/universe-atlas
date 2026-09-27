@@ -9,6 +9,32 @@ export default defineConfig({
       dirty:execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim().length>0,
       builtAt:new Date().toISOString(),
     },null,2)});
+    for(const fileName of [
+      'docs/desktop-rendering-stage-c-2026-09-28.md',
+      'docs/desktop-rendering-validation-2026-09-28.md',
+      'docs/flora-recipe-cache-2026-09-28.md',
+      'docs/tree-species-asset-contract-2026-09-28.md',
+      'docs/tree-asset-candidate-2026-09-28.md',
+      'docs/opus-5.5-rendering-review-2026-09-28.md',
+      'docs/opus-5.5-rendering-review-2026-09-28.metadata.json',
+      'assets/briefs/temperate-branching-tree-v1.json',
+      'tests/desktop-rendering-acceptance.browser.mjs',
+      'test-results/desktop-rendering-stage-c-absolute-date/report.json',
+      'test-results/desktop-rendering-921de57/report.json',
+      'test-results/desktop-rendering-6b87e13/report.json',
+      'test-results/fauna-closeup-6b87e13/report.json',
+    ])this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
+    for(const fileName of [
+      'test-results/desktop-rendering-6b87e13/near-ground-warmed.png',
+      'test-results/desktop-rendering-6b87e13/cloud-aa-0.png',
+      'test-results/desktop-rendering-6b87e13/cloud-aa-2.png',
+      'test-results/desktop-rendering-6b87e13/cloud-aa-4.png',
+      'test-results/desktop-rendering-6b87e13/cloud-aa-4-2560x1440.png',
+      'test-results/desktop-rendering-6b87e13/near-ground-resized-2560x1440.png',
+      'test-results/desktop-rendering-6b87e13/forest-turned.png',
+      'test-results/fauna-closeup-6b87e13/01-fauna-closeup.png',
+      'test-results/fauna-closeup-6b87e13/02-fauna-paused-repeat.png',
+    ])this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
     // Explicit review artifacts linked by the desktop acceptance record.
     // Do not publish arbitrary scratch files from test-results.
     for(const fileName of [

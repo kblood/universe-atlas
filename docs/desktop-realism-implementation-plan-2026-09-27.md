@@ -177,8 +177,8 @@ more. Structural diversity must not come from disconnected anatomy.
 | --- | --- | --- |
 | A. Record direction | This plan, related MD links/status, guide explanations | Written; guide updated by Luna 6 |
 | B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented; build, 53 targeted checks and RTX 5090 browser acceptance pass; see validation record |
-| C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Opt-in frame/pass profiling implemented; lighting/AA/shadows pending |
-| D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Planned |
+| C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
+| D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; first Blender brief validates; forest integration, authored assets and resource cache pending |
 | E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Planned |
 | F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | Planned |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
@@ -222,6 +222,26 @@ shader-based fades, larger precision-derived rebases and canopy handoff
 hysteresis) remain follow-on work; none is silently declared complete.
 
 ## 8. Acceptance for later verification
+
+### Rendering and asset-contract increments — 2026-09-28
+
+- [Shared aerial perspective and AA experiment](desktop-rendering-stage-c-2026-09-28.md)
+  aligns solid local life with terrain's approximation. Opus 5.5's review led
+  to reducing AA samples before sacrificing scene resolution. This is not yet
+  a full physically based lighting or final antialiasing pipeline.
+- [Retained flora decisions](flora-recipe-cache-2026-09-28.md) remove repeated
+  habitat/hash work from the per-frame plant path while preserving a 960-result
+  previous-implementation digest. Luna's hardware comparison shows lower CPU
+  cost in the tested fixture; see the validation record for limits.
+- [Tree species/asset contract](tree-species-asset-contract-2026-09-28.md)
+  consumes existing species and exposes bounded variants, allometry, separate
+  bark/leaf appearance and versioned geometry keys. The first tree-family
+  asset brief validates, but the renderer still uses primitive tree geometry.
+
+These are staged commits in the implementation branch. Luna's
+[rendering acceptance](desktop-rendering-validation-2026-09-28.md) passes on
+the RTX 5090, including full-resolution AA fallback, 19 material hooks, warmed
+flora cache and fauna replay. Publication must identify the integrated revision.
 
 ### Foundation acceptance — 2026-09-28
 
