@@ -27,12 +27,27 @@ The local combined branch contains optional packaged tree-family loading,
 experimental far-tree presentation, connected near-body fauna, detailed ground
 materials, curved grass blades, branched leafy shrubs and the rivers-off behavior.
 The merged candidate passes 45 focused checks and a clean production build;
-its normal-game visual review is underway and it is not published. See the
+the saved normal-game visual review is complete, but the candidate is not
+published or visually accepted as a whole. The 8 m frame shows the new grass
+and branching shrubs, with a stylized, sparse appearance; the close animal is
+partly obscured and dark. One tracked animal remained rigged at 80.65 m and
+94.999 m, then moved to the instanced fallback at 97.03 m while remaining in
+the draw diagnostics. The 95 m and 97 m images do not resolve it clearly, so
+visual continuity across the handoff is unverified. The six-rig limit also
+leaves some drawn animals without a near rig. The local review files are kept
+under the ignored `test-results/combined-visual-acceptance-a755f1b/` directory;
+they are not published evidence. See the
 [integration record](../test-results/combined-understory-integration/README.md).
 Detailed trees still use the canonical 10–22 m population height
 proxy rather than species recipe stature, crown-width and trunk limits, so
 consistent species allometry remains open. Opus owns the next physical-scale
 milestone and the separate ordinary-rock generation implementation.
+
+Commit `a46bccf` refreshes two CPU fixtures for the current surface contract:
+the terrain-water test supplies a tiny `DataTexture` in Node instead of relying
+on browser `document`, and the version test expects the released
+`atlas-surface-7-no-inland-rivers` value. These are harness corrections, not
+changes to the runtime candidate.
 
 The preceding `c9ba64f` browser route verified dated animal root movement,
 exact-date replay and a same-pose ground-material detail improvement. Its near
@@ -223,8 +238,8 @@ more. Structural diversity must not come from disconnected anatomy.
 | C. Pipeline baseline | Shared lighting, terrain materials, antialiasing and bounded shadows | Common aerial perspective and detailed ground-material paths exist locally; device-wide frame targets and complete lighting/shadow acceptance remain open |
 | D. Procedural asset contract | Species binding, physical envelopes, variants, bark/leaf materials and instance parameters | Oak/Pine family loading and metadata are integrated in the local branch, but detailed trees still use the canonical 10–22 m height proxy instead of species recipe allometry. Per-species bounds, consistent near/far dimensions, broad variants, visual approval and midrange performance remain open |
 | E. Continuous canopy | Shared population from near view through distance | The replacement captured crowns passed a bounded local visual and identity check; complete forest appearance and seamless transitions remain open. See the [hardware record](forest-far-atlas-hardware-acceptance-2026-09-28.md) |
-| F. Realistic landscape | Trees, rocks, metre-scaled ground detail, understory and shared wind | Ground-material detail has a same-pose local comparison. Curved grass and branched shrubs are integrated in `a755f1b`, awaiting visual review. Ordinary rocks are being implemented separately; realistic tree acceptance and landscape breadth remain open |
-| G. Realistic fauna | Genome-compatible form, deterministic identity and grounded motion | Connected near bodies and dated root movement are verified locally. Bone motion, individual rig handoff, obstacle avoidance, foot placement, broader species and device cost remain open |
+| F. Realistic landscape | Trees, rocks, metre-scaled ground detail, understory and shared wind | Ground-material detail has a same-pose local comparison. Curved grass and branched shrubs are integrated and reviewed in the `a755f1b` local candidate; the scene remains stylized/sparse and full landscape acceptance is open. Ordinary rocks are being implemented separately; tree allometry remains open |
+| G. Realistic fauna | Genome-compatible form, deterministic identity and grounded motion | Connected near bodies and dated root movement are verified locally. The `a755f1b` route showed a dark, partly obscured close animal and did not visually resolve the 95/97 m handoff. Bone-motion quality, clear handoff visibility, obstacle avoidance, foot placement, broader species and device cost remain open |
 | H. Breadth | More biomes/species and separately measured Quest profile | Future work after desktop visual and performance gates |
 
 ### Historical checkpoints and experiment records
