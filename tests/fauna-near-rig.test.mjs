@@ -32,6 +32,34 @@ function candidate(member, distanceM = 10, ns = NOW) {
 function steppedClock() { let t = 0; return () => t++; }
 function settle(near, candidates, frames = 400) { let drawn; for (let i = 0; i < frames; i++) drawn = near.update(candidates); return drawn; }
 
+test('instanced and skinned fauna retain the same opaque coat lighting at handoff', () => {
+  const near = new FaunaNearRigs(), field = new FaunaFieldRenderer();
+  try {
+    const reference = near.group.children[0].material;
+    assert.ok(reference.isMeshStandardMaterial);
+    for (const mesh of [...near.group.children, ...field.group.children]) {
+      const material = mesh.material;
+      assert.ok(material.isMeshStandardMaterial, `${mesh.name}: handoff must not switch lighting models`);
+      for (const key of ['roughness', 'metalness', 'opacity', 'transparent', 'depthWrite', 'side', 'toneMapped', 'fog', 'envMapIntensity'])
+        assert.equal(material[key], reference[key], `${mesh.name}: ${key}`);
+      assert.deepEqual(material.color.toArray(), [1, 1, 1], 'genome RGB must not receive a second coat tint');
+      assert.deepEqual(material.emissive.toArray(), [0, 0, 0], 'no visibility boost at either LOD');
+      assert.ok(mesh.castShadow && mesh.receiveShadow, 'both representations participate in the same shadows');
+    }
+    // The colour sources differ deliberately: vertex RGB on the skin,
+    // instance RGB on each fallback part. Both decode into linear light.
+    assert.ok(near.group.children.every(mesh => mesh.material.vertexColors));
+    const c = candidate(MEMBERS[0]);
+    field.beginFrame(new THREE.Vector3());
+    assert.ok(field.submit(c.genome, c.matrix, c.rigSeconds, c.activity.pose.gait));
+    field.endFrame();
+    const actual = new THREE.Color(); field.group.children[0].getColorAt(0, actual);
+    const expected = new THREE.Color(c.genome.color);
+    for (const key of ['r', 'g', 'b']) assert.ok(Math.abs(actual[key] - expected[key]) < 1e-7);
+    assert.equal(field.count, 1);
+  } finally { near.dispose(); field.dispose(); }
+});
+
 test('built bodies are skinned by the solved skeleton and stand on the stencil', () => {
   const near = new FaunaNearRigs({ capacity: 2, now: steppedClock(), buildBudgetMs: 40 });
   for (const member of MEMBERS.slice(0, 4)) {

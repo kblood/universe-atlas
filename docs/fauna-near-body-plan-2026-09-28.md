@@ -70,6 +70,10 @@ New tests:
 
 ## Known limits / for Luna's visual slot
 
+- Follow-up [handoff review](fauna-handoff-review-2026-09-28.md) aligns fallback
+  lighting with the near body's rough dielectric material. The two paths still
+  differ in anatomy, limb/head pose and coat detail; the shared torso reference
+  height and world transform do not establish a seamless visual transition.
 - Linear blend skinning only. Deep grazing stretches about 40 withers edges up to ~3.1×. The neck flex is
   limited to 1.35 rad and split across two neck bones, but check for visible creasing.
 - One walk gait on the planet (the herd model has no run state yet). No obstacle-aware paths. The stencil

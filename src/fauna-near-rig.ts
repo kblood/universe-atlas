@@ -3,6 +3,7 @@ import type { CreatureGenome } from './creature-model.ts';
 import { QUADRUPED_BONE_NAMES, QUADRUPED_BONE_PARENTS, quadrupedBodyBuildSteps, quadrupedBodyBytes, type QuadrupedBodyData, type QuadrupedPlan } from './fauna-body-plan.ts';
 import { quadrupedPoseAt, type FaunaGround, type FaunaPathMember, type QuadrupedPose } from './fauna-locomotion.ts';
 import type { FaunaMemberActivity } from './fauna-runtime.ts';
+import { createFaunaMaterial } from './fauna-material.ts';
 
 /**
  * Bounded near-field representation: the nearest camera-visible animals are
@@ -80,7 +81,7 @@ export class FaunaNearRigs {
       const bones = QUADRUPED_BONE_NAMES.map(name => { const bone = new THREE.Bone(); bone.name = name; return bone; });
       QUADRUPED_BONE_PARENTS.forEach((parent, i) => { if (parent >= 0) bones[parent]!.add(bones[i]!); });
       const skeleton = new THREE.Skeleton(bones, bones.map(() => new THREE.Matrix4()));
-      const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .86, metalness: 0 });
+      const material = createFaunaMaterial(true);
       const mesh = new THREE.SkinnedMesh(placeholder, material);
       // Bones stay outside the scene graph, so skinning matrices are pure body
       // space; the mesh transform alone carries the planet placement.

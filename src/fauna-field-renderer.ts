@@ -1,14 +1,16 @@
 import * as THREE from 'three';
 import type {CreatureGenome,CreatureGait} from './fauna-runtime.ts';
+import {createFaunaMaterial} from './fauna-material.ts';
 
 export const FAUNA_FIELD_CAPACITY=128;
 /** Forward-looking low flight needs more than the old 280 m proxy range. */
 export const FAUNA_FIELD_VISIBLE_M=600;
 const UP=new THREE.Vector3(0,1,0);
 
-/** A single specimen representation at every viewing distance. Anatomy is
- * instanced as four primitive batches, so the same genome, colour and dated
- * gait survive approach without switching to a generic quad or another rig.
+/** Instanced fallback for specimens outside the near rig pool. Anatomy is
+ * drawn as four primitive batches using the same genome and base coat lighting
+ * as the near body. This simpler pose does not reproduce the near rig's IK or
+ * grazing, so it is not yet a continuous representation handoff.
  * Geometry is in metres; instance translations are relative to a double-
  * precision local origin before they reach the Float32 instance buffers. */
 export class FaunaFieldRenderer {
@@ -28,7 +30,7 @@ export class FaunaFieldRenderer {
   constructor(){
     const geometries=[new THREE.SphereGeometry(1,10,7),new THREE.CylinderGeometry(1,1,1,7),new THREE.ConeGeometry(1,1,6),new THREE.BoxGeometry(1,1,1)];
     this.meshes=geometries.map((g,i)=>{
-      const m=new THREE.InstancedMesh(g,new THREE.MeshLambertMaterial(),FAUNA_FIELD_CAPACITY*[4,10,4,10][i]);
+      const m=new THREE.InstancedMesh(g,createFaunaMaterial(),FAUNA_FIELD_CAPACITY*[4,10,4,10][i]);
       m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);m.frustumCulled=false;m.count=0;
       m.castShadow=true;m.receiveShadow=true;
       m.name=['Fauna bodies and eyes','Fauna limbs necks tails','Fauna ears and horns','Fauna feet and armour'][i];
