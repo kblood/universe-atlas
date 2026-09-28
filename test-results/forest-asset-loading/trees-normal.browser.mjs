@@ -44,6 +44,15 @@ const snapshot=()=>page.evaluate(()=>{
    detailedTrees:f.detailedTrees,farWork:f.farWork}:null,
   profile:a?.renderProfile};
 });
+const farWorkState=s=>s?.forest?.farWork??null;
+const farWorkDelta=(before,after)=>{
+ const a=farWorkState(before),b=farWorkState(after);if(!a||!b)return null;
+ const reasonKeys=new Set([...Object.keys(a.refreshReasons||{}),...Object.keys(b.refreshReasons||{})]);
+ const refreshReasons=Object.fromEntries([...reasonKeys].map(k=>[k,(b.refreshReasons?.[k]||0)-(a.refreshReasons?.[k]||0)]));
+ return {refreshes:(b.refreshes||0)-(a.refreshes||0),rebuilds:(b.rebuilds||0)-(a.rebuilds||0),refreshReasons,
+   revisionDeltas:Object.fromEntries(['selectionRevision','habitatRevision','builtSelectionRevision','builtHabitatRevision','workStateRevision','builtWorkStateRevision','canopyRevision']
+    .map(k=>[k,(b[k]||0)-(a[k]||0)]))};
+};
 const waitAssetsReady=async(timeout=180000)=>{
  await wait(()=>{const a=window.__atlas?.forestAssets,d=window.__atlas?.terrain?.tiles?.forest?.detailedTrees;
   return !!(a?.ready&&!a.loading&&d?.ready&&d.visible.some(n=>n>0))||!!(a?.error&&!a.loading);},timeout);
@@ -137,13 +146,15 @@ try{
  await wait(()=>{const f=window.__atlas.terrain?.tiles?.forest,c=f?.fullCanopy;return f?.pending===0&&c?.ready&&!c.selectionPending&&!c.selectionApplyPending&&c.queuedPatches===0&&c.jobsInFlight===0;},180000);
  await page.evaluate(()=>{window.__atlas.resetProfile();window.__atlas.setProfiling(true);});
  await page.waitForTimeout(2000);
+ const profileStart=await snapshot();
  cdp=await context.newCDPSession(page);await cdp.send('Profiler.enable');await cdp.send('Profiler.start');
  await page.waitForTimeout(6000);
  const cpu=await cdp.send('Profiler.stop');await cdp.send('Profiler.disable');
  await writeFile(`${out}/stationary-6s.cpuprofile`,JSON.stringify(cpu.profile));
  const profile=await page.evaluate(()=>window.__atlas.renderProfile);
+ const profileEnd=await snapshot();
  await page.evaluate(()=>window.__atlas.setProfiling(false));
- report.profile={windowMs:6000,prewarmMs:2000,renderProfile:profile,farWork:(await snapshot()).forest?.farWork??null};
+ report.profile={windowMs:6000,prewarmMs:2000,renderProfile:profile,farWorkStart:farWorkState(profileStart),farWorkEnd:farWorkState(profileEnd),farWorkDelta:farWorkDelta(profileStart,profileEnd)};
  assert.ok(profile?.statistics?.frameIntervalMs?.samples>0,'opt-in render profile produced stationary frame samples');
  report.renderer=await page.evaluate(()=>{const gl=document.querySelector('canvas')?.getContext('webgl2'),e=gl?.getExtension('WEBGL_debug_renderer_info');return e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):'unavailable';});
  report.glError=await page.evaluate(()=>document.querySelector('canvas')?.getContext('webgl2')?.getError()??null);
