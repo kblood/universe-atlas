@@ -1,0 +1,14 @@
+{
+  "kind": "synthetic-cpu-microbenchmark",
+  "runtime": "Node v24.7.0",
+  "workload": {
+    "queriesPerSample": 18000,
+    "uniquePatchKeys": 300,
+    "queriesPerKey": 60,
+    "samplesPerVariant": 50,
+    "ordering": "alternating uncached and cached samples after warmup"
+  },
+  "uncachedMs": { "median": 0.225, "p95": 0.381 },
+  "cachedMs": { "median": 0.171, "p95": 0.310 },
+  "interpretation": "Synthetic microbenchmark only. It measures PlanetCanopy.currentPatch against 300 preinstalled matching patch records; it is not a browser or actual-game CPU profile. The workload key distribution is illustrative, not yet validated against a captured game frame."
+}
