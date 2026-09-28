@@ -67,6 +67,8 @@ export default defineConfig({
       'test-results/surface-lighting/closeup-run/cpu-profile.cpuprofile',
       'docs/tree-forest-integration-2026-09-28.md',
       'docs/forest-worklist-2026-09-28.md',
+      'test-results/forest-worklist-v1/README.md',
+      'test-results/forest-worklist-v1/focused-cpu.log',
       'docs/opus-5.5-desktop-state-review-2026-09-28.md',
       'docs/opus-5.5-desktop-state-review-2026-09-28.metadata.json',
       'docs/desktop-state-review-assessment-2026-09-28.md',

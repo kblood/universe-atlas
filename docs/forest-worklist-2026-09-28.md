@@ -26,7 +26,8 @@ Implementation: [forest update](../src/planet-forest.ts),
 
 ## Verification and limits
 
-The focused CPU suite passes 77 tests and `npx tsc --noEmit` passes. The tests
+The [verification record](../test-results/forest-worklist-v1/README.md) captures
+the focused 77-test CPU run, TypeScript check, and production build. The tests
 compare active indices and capacity winners against canonical input order,
 exercise moves within and beyond the 20 m cache window, and cover census loss,
 water invalidation, and dated updates. See the [work-list test](../tests/planet-forest-worklist.test.mjs),
