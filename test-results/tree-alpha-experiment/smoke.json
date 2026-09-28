@@ -1,0 +1,221 @@
+{
+  "probes": [
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 32,
+      "native": 32.74117647058823,
+      "reference": 135.125,
+      "hash": 200.89411764705892,
+      "nativeRatio": 0.24230287859824776,
+      "hashRatio": 1.486727975186375
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 64,
+      "native": 161.1882352941177,
+      "reference": 706.5625,
+      "hash": 777.2980392156865,
+      "nativeRatio": 0.22813018705934393,
+      "hashRatio": 1.100112218261918
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 128,
+      "native": 2155.823529411766,
+      "reference": 2974.375,
+      "hash": 3052.835294117651,
+      "nativeRatio": 0.7247988331705874,
+      "hashRatio": 1.0263787498609458
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 256,
+      "native": 11284.380392156843,
+      "reference": 12030.375,
+      "hash": 12164.89019607841,
+      "nativeRatio": 0.9379907436099741,
+      "hashRatio": 1.0111812970151313
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 512,
+      "native": 47568.49803921573,
+      "reference": 48214.4375,
+      "hash": 48432.09019607851,
+      "nativeRatio": 0.9866027792860952,
+      "hashRatio": 1.004514263929316
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 32,
+      "native": 31.23529411764705,
+      "reference": 144.8125,
+      "hash": 202.64705882352948,
+      "nativeRatio": 0.2156947371093452,
+      "hashRatio": 1.3993754601538506
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 64,
+      "native": 190.68235294117653,
+      "reference": 730.5625,
+      "hash": 819.5568627450982,
+      "nativeRatio": 0.2610075838017644,
+      "hashRatio": 1.1218162207136257
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 128,
+      "native": 2323.8274509803946,
+      "reference": 3058.5625,
+      "hash": 3161.611764705883,
+      "nativeRatio": 0.7597776573080964,
+      "hashRatio": 1.033692057855899
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 256,
+      "native": 11689.086274509775,
+      "reference": 12364.75,
+      "hash": 12523.101960784286,
+      "nativeRatio": 0.9453556500948078,
+      "hashRatio": 1.012806725634104
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 512,
+      "native": 48919.1921568628,
+      "reference": 49552,
+      "hash": 49785.72549019617,
+      "nativeRatio": 0.9872294187290686,
+      "hashRatio": 1.0047167720817762
+    }
+  ],
+  "diagnostics": {
+    "bytes": 28311120,
+    "renderer": {
+      "memory": {
+        "geometries": 3,
+        "textures": 8
+      },
+      "render": {
+        "frame": 350,
+        "calls": 1,
+        "triangles": 2,
+        "points": 0,
+        "lines": 0
+      },
+      "programs": [
+        {
+          "type": "MeshStandardMaterial",
+          "name": "MAT_AtlasBark",
+          "id": 0,
+          "cacheKey": "physical,STANDARD,,highp,srgb,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,4,0,0,0,65667,131082,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "MAT_AtlasFoliage",
+          "id": 1,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,4,0,0,0,66691,133130,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "",
+          "id": 2,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb,false,,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,4,0,0,0,1,131080,srgb,atlas-captured-tree-lab-1",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshStandardMaterial",
+          "name": "MAT_AtlasBark",
+          "id": 3,
+          "cacheKey": "physical,STANDARD,,highp,srgb-linear,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,65667,131082,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "MAT_AtlasFoliage",
+          "id": 4,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb-linear,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,66691,133130,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "MAT_AtlasFoliage",
+          "id": 5,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb-linear,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,327811,133130,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        }
+      ],
+      "autoReset": true
+    },
+    "views": 81
+  },
+  "errors": []
+}

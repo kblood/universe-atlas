@@ -1,0 +1,491 @@
+Review the actual Atlas tree capture tool implementation. User requested genuine Opus5.5 review. No tools, source only; <=800 words, actionable correctness findings and fixes first. Operation uses constrained local assetctl CLI with fixed bundled browser entry and strict same-origin local HTTP routes, fresh outputs/manifest/provenance, existing actual PBR tree material shader deformation/normal-map/alphaTest path and terminal material-channel output into float targets. Full9x9/128px/4xss 16m capture+repeat and small10/22m captures ran on RTX5090 with noGL errors; independent raw artifact audit pending. Luna13CPU tests pass (padding bounds fixed after a test caught Infinity loop). Rendering reconstructed impostors is the next step, not implemented or accepted yet. Inspect capture projection/normal/depth/color conversion/coverage/mips/padding, path/input preservation/resource cleanup/security and format consequences. Nearest covered subsample depth chosen deliberately to avoid mean surfaces in empty space; assess tradeoffs. Source:
+FILE ../tools/assetctl/tree-impostor.mjs
+/** Named, bounded browser capture. No caller-supplied scripts or server paths. */
+import {createServer} from 'node:http';
+import {createHash,randomBytes} from 'node:crypto';
+import {createRequire} from 'node:module';
+import {readFile,writeFile,mkdir,stat,realpath} from 'node:fs/promises';
+import {join,relative,isAbsolute,dirname} from 'node:path';
+import sharp from 'sharp';
+import {fileURLToPath} from 'node:url';
+import {resolveApprovedPath,workspaceRoot,approvedRoots} from './path-policy.mjs';
+import {validateContractValue} from './contract.mjs';
+
+const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
+const inside=(root,path)=>{const r=relative(root,path);return r===''||!r.startsWith('..')&&!isAbsolute(r);};
+async function approvedReal(value,label){
+  const lexical=resolveApprovedPath(value,{mustExist:true,label}),path=await realpath(lexical);
+  const roots=await Promise.all(approvedRoots().map(p=>realpath(p)));
+  if(!roots.some(root=>inside(root,path)))throw new Error(`${label} resolves outside approved roots`);
+  return path;
+}
+export function treeImpostorOptions(args){
+  const allowed=new Set(['--input','--output','--project','--grid','--size','--supersample','--height']);
+  const values={};
+  for(let i=0;i<args.length;i+=2){
+    const key=args[i];if(!allowed.has(key)||key in values||!args[i+1]||args[i+1].startsWith('--'))throw new Error(`Invalid tree-impostor option ${key}`);
+    values[key]=args[i+1];
+  }
+  if(!values['--input']||!values['--output'])throw new Error('tree-impostor requires --input candidate-directory and --output fresh-directory');
+  const project=values['--project']??'universe-atlas';
+  if(!['universe-atlas','universe-atlas-rendering'].includes(project))throw new Error('Tree capture project is not allowlisted');
+  const grid=Number(values['--grid']??9),size=Number(values['--size']??128),supersample=Number(values['--supersample']??4),heightM=Number(values['--height']??16);
+  if(![3,9,17].includes(grid)||![32,64,128].includes(size)||![1,2,4].includes(supersample)||!Number.isFinite(heightM)||heightM<10||heightM>22)throw new Error('Unsupported capture settings');
+  return {input:values['--input'],output:values['--output'],project,grid,size,supersample,heightM};
+}
+
+export async function captureTreeImpostor(args){
+  const options=treeImpostorOptions(args),input=await approvedReal(options.input,'input');
+  if(!(await stat(input)).isDirectory())throw new Error('Tree capture input must be a candidate directory');
+  const output=resolveApprovedPath(options.output,{label:'output'});
+  // Output parent must already exist, and junctions must resolve inside roots.
+  await approvedReal(dirname(output),'output parent');
+  try{await stat(output);throw new Error('Tree capture requires a fresh output directory');}catch(error){if(error.code!=='ENOENT')throw error;}
+  const names=['asset-brief.json','authoring-manifest.json','atlas-branching-v1.glb','atlas-branching-v1.lod1.glb'];
+  const inputs={};
+  for(const name of names){
+    const path=await approvedReal(join(input,name),'candidate input');
+    if((await stat(path)).size>64*1024*1024)throw new Error('Tree capture input exceeds 64 MiB');
+    inputs[name]=await readFile(path);
+  }
+  const brief=JSON.parse(inputs['asset-brief.json']),validation=await validateContractValue('asset-brief',brief);
+  if(!validation.valid)throw new Error(`Invalid capture asset brief: ${JSON.stringify(validation.errors)}`);
+  const author=JSON.parse(inputs['authoring-manifest.json']);
+  if(author.operation!=='atlas-branching-author-7'||author.textureEncoding?.colourRecipeSpace!=='linear-rec709')throw new Error('Capture requires the author-7 colour contract');
+  if(brief.provenance.generator.version!==author.operation||brief.provenance.sourceType!=='original'||author.brief?.sha256!==digest(inputs['asset-brief.json']))throw new Error('Candidate brief/provenance does not match its authoring manifest');
+  for(const name of ['atlas-branching-v1.glb','atlas-branching-v1.lod1.glb']){
+    const record=author.artifacts.find(item=>(item.path??'').replaceAll('\\','/').split('/').at(-1)===name);
+    if(!record||record.sha256!==digest(inputs[name]))throw new Error(`Candidate manifest hash mismatch for ${name}`);
+  }
+  const project=await approvedReal(join(workspaceRoot,options.project),'project');
+  const requireProject=createRequire(join(project,'package.json'));
+  const {build}=requireProject('esbuild'),{chromium}=requireProject('playwright');
+  const entry=join(project,'src','tree-impostor-capture.ts');
+  const bundled=await build({entryPoints:[entry],bundle:true,format:'iife',platform:'browser',write:false,metafile:true,logLevel:'silent'});
+  const bundle=Buffer.from(bundled.outputFiles[0].contents);
+  await mkdir(output); // Exclusive creation; no cleanup that could remove inputs.
+  await writeFile(join(output,'asset-brief.json'),inputs['asset-brief.json'],{flag:'wx'});
+  await writeFile(join(output,'capture-runtime.js'),bundle,{flag:'wx'});
+  const token=randomBytes(24).toString('hex'),artifacts=[],received=new Set(),errors=[];
+  let metadata,bodyFailure;
+  const totalMips=Math.log2(options.size)+1,expectedFrames=options.grid**2*totalMips;
+  const json=result=>Buffer.from(JSON.stringify(result));
+  const server=createServer(async(req,res)=>{
+    try{
+      if(req.headers.host!==`127.0.0.1:${server.address().port}`)throw new Error('Invalid capture host');
+      const url=new URL(req.url,'http://127.0.0.1');
+      res.setHeader('Cache-Control','no-store');
+      if(req.method==='GET'&&url.pathname==='/'){
+        res.setHeader('Content-Type','text/html');res.end('<!doctype html><title>Atlas asset capture</title><script src="/capture.js"></script>');return;
+      }
+      if(req.method==='GET'&&url.pathname==='/capture.js'){res.setHeader('Content-Type','text/javascript');res.end(bundle);return;}
+      if(req.method==='GET'&&['/lod0','/lod1'].includes(url.pathname)){
+        res.setHeader('Content-Type','model/gltf-binary');res.end(inputs[url.pathname==='/lod0'?names[2]:names[3]]);return;
+      }
+      if(req.method==='GET'&&url.pathname==='/favicon.ico'){res.statusCode=204;res.end();return;}
+      if(req.method!=='POST'||req.headers['x-capture-token']!==token)throw new Error('Unknown capture route');
+      const match=/^\/frame\/(\d+)\/(\d+)$/.exec(url.pathname);if(!match)throw new Error('Unknown capture output');
+      const view=Number(match[1]),mip=Number(match[2]),key=`${view}/${mip}`,size=options.size/2**mip;
+      if(view>=options.grid**2||mip>=totalMips||received.has(key))throw new Error('Invalid or repeated capture frame');
+      const expected=size*size*8*4,parts=[];let length=0;
+      for await(const part of req){length+=part.length;if(length>expected)throw new Error('Oversized capture frame');parts.push(part);}
+      if(length!==expected)throw new Error('Incomplete capture frame');
+      const bytes=Buffer.concat(parts),count=size*size*4;
+      const values=new Float32Array(bytes.buffer,bytes.byteOffset,count*2),colour=values.subarray(0,count),data=values.subarray(count);
+      const rgba=Buffer.alloc(count);let coverage=0;
+      for(let i=0;i<count;i++){
+        const value=colour[i];if(!Number.isFinite(value)||value<0||value>1.00001||!Number.isFinite(data[i]))throw new Error('Invalid capture channel');
+        const encoded=i%4===3?value:value<=.0031308?12.92*value:1.055*value**(1/2.4)-.055;
+        rgba[i]=Math.round(Math.min(1,encoded)*255);if(i%4===3)coverage+=value;
+      }
+      const folder=`view-${String(view).padStart(3,'0')}`;await mkdir(join(output,folder),{recursive:true});
+      const files=[{name:`${folder}/mip-${mip}.albedo.png`,bytes:await sharp(rgba,{raw:{width:size,height:size,channels:4}}).flip().png().toBuffer()},
+        {name:`${folder}/mip-${mip}.colour.f32`,bytes:Buffer.from(colour.buffer,colour.byteOffset,colour.byteLength)},
+        {name:`${folder}/mip-${mip}.data.f32`,bytes:Buffer.from(data.buffer,data.byteOffset,data.byteLength)}];
+      for(const file of files){await writeFile(join(output,file.name),file.bytes,{flag:'wx'});artifacts.push({path:file.name,sha256:digest(file.bytes),bytes:file.bytes.length,view,mip,size});}
+      received.add(key);res.setHeader('Content-Type','application/json');res.end(json({ok:true,coverage}));
+    }catch(error){bodyFailure=String(error);res.statusCode=400;res.end(json({error:String(error)}));}
+  });
+  let browser;
+  try{
+    await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
+    browser=await chromium.launch({headless:true,args:process.platform==='win32'?['--use-angle=d3d11','--enable-gpu']:['--enable-gpu']});
+    const page=await browser.newPage();page.on('pageerror',e=>errors.push(String(e)));
+    page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
+    await page.goto(`http://127.0.0.1:${server.address().port}/`,{waitUntil:'networkidle'});
+    metadata=await page.evaluate(async({options,token})=>{
+      if(new Uint8Array(new Uint32Array([0x01020304]).buffer)[0]!==4)throw new Error('Capture requires little-endian float readback');
+      const [lod0,lod1]=await Promise.all(['/lod0','/lod1'].map(async p=>(await fetch(p)).arrayBuffer()));
+      return globalThis.__atlasTreeCapture.captureTree(lod0,lod1,options,async(view,mip,layer)=>{
+        const joined=new Float32Array(layer.colour.length*2);joined.set(layer.colour);joined.set(layer.data,layer.colour.length);
+        const response=await fetch(`/frame/${view}/${mip}`,{method:'POST',headers:{'x-capture-token':token},body:joined.buffer});
+        if(!response.ok)throw new Error(await response.text());
+      });
+    },{options:{grid:options.grid,size:options.size,supersample:options.supersample,heightM:options.heightM},token});
+    if(bodyFailure||errors.length||received.size!==expectedFrames)throw new Error(`Capture failed: ${bodyFailure??errors.join(';')}; ${received.size}/${expectedFrames} frames`);
+    const manifest={schemaVersion:1,operation:'atlas-tree-impostor-capture-1',status:'proposal-needs-render-comparison',...metadata,
+      input:{directory:relative(workspaceRoot,input).replaceAll('\\','/'),files:Object.fromEntries(names.map(name=>[name,digest(inputs[name])]))},
+      runtimeBundleSha256:digest(bundle),hostCodeSha256:digest(await readFile(fileURLToPath(import.meta.url))),project:options.project,threeVersion:requireProject('three').REVISION,
+      files:{albedo:'8-bit sRGB RGB; linear area coverage in alpha; top row first in PNG (flipped from raw readback)',colour:'little-endian Float32 RGBA, linear RGB/coverage, bottom row first',data:'little-endian Float32 RGBA, oct normal XZ / normalized view-axis depth / leaf fraction, bottom row first'},
+      mipPolicy:'Mean area coverage, coverage-weighted linear RGB/vector normal/classification, frontmost covered depth; each view reduced independently then four-texel RGB/data padding without alpha growth',
+      provenance:brief.provenance,artifacts,errors};
+    await writeFile(join(output,'capture-manifest.json'),JSON.stringify(manifest,null,2)+'\n',{flag:'wx'});
+    return {ok:true,operation:manifest.operation,output,manifest:join(output,'capture-manifest.json'),views:metadata.views.length,frames:received.size,adapter:metadata.adapter};
+  }catch(error){await writeFile(join(output,'capture-failure.json'),JSON.stringify({error:String(error),errors,bodyFailure,frames:received.size},null,2));throw error;}
+  finally{await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+}
+
+export async function treeImpostorCli(args){console.log(JSON.stringify(await captureTreeImpostor(args),null,2));}
+
+
+FILE src/tree-impostor-capture.ts
+import * as THREE from 'three';
+import {loadTreeAssetFamily,treeVertexMeters} from './tree-asset.ts';
+import {treeCaptureViews,decodeTreeView,encodeTreeView,TREE_VIEW_VERSION} from './tree-impostor-views.ts';
+
+export const TREE_CAPTURE_VERSION='tree-material-capture-1';
+export type CaptureLayer={size:number;colour:Float32Array;data:Float32Array};
+
+/** Coverage is area, not a second alpha-test threshold. RGB is linear and
+ * unassociated. Normals are averaged as vectors. Depth uses the nearest covered
+ * subsample to avoid averaging disconnected surfaces into empty space. */
+export function reduceCapture(layer:CaptureLayer,factor:number):CaptureLayer {
+  const {size,colour,data}=layer;
+  if(!Number.isInteger(size)||size<1||colour.length!==size*size*4||data.length!==colour.length||!Number.isInteger(factor)||factor<1||size%factor)throw new Error('Invalid capture reduction');
+  const next=size/factor,c=new Float32Array(next*next*4),d=new Float32Array(c.length);
+  for(let y=0;y<next;y++)for(let x=0;x<next;x++){
+    const p=(y*next+x)*4;let weight=0,nx=0,ny=0,nz=0,depth=-Infinity,leaf=0,best=-1;
+    for(let dy=0;dy<factor;dy++)for(let dx=0;dx<factor;dx++){
+      const q=((y*factor+dy)*size+x*factor+dx)*4,a=colour[q+3];
+      if(a<=0)continue;
+      weight+=a;for(let j=0;j<3;j++)c[p+j]+=colour[q+j]*a;
+      const n=decodeTreeView(data[q],data[q+1]);nx+=n[0]*a;ny+=n[1]*a;nz+=n[2]*a;
+      leaf+=data[q+3]*a;if(data[q+2]>depth){depth=data[q+2];best=q;}
+    }
+    if(weight===0)continue;
+    for(let j=0;j<3;j++)c[p+j]/=weight;c[p+3]=weight/(factor*factor);
+    const normal=Math.hypot(nx,ny,nz)>1e-7?encodeTreeView([nx,ny,nz]):[data[best],data[best+1]];
+    d[p]=normal[0];d[p+1]=normal[1];d[p+2]=depth;d[p+3]=leaf/weight;
+  }
+  return {size:next,colour:c,data:d};
+}
+
+/** Nearest valid material padding stays inside one view and never creates
+ * coverage. Mips are reduced before padding so empty pixels remain empty. */
+export function padCapture(layer:CaptureLayer,steps=4):CaptureLayer {
+  if(!Number.isInteger(layer.size)||layer.size<1||!(layer.colour instanceof Float32Array)||!(layer.data instanceof Float32Array)||layer.colour.length!==layer.size*layer.size*4||layer.data.length!==layer.colour.length||!Number.isInteger(steps)||steps<0||steps>16)throw new Error('Invalid capture padding');
+  const {size}=layer,c=layer.colour.slice(),d=layer.data.slice();
+  let valid=Uint8Array.from({length:size*size},(_,i)=>c[i*4+3]>0?1:0);
+  for(let step=0;step<steps;step++){
+    const next=valid.slice();
+    for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+      const pixel=y*size+x;if(valid[pixel])continue;
+      const neighbors=[x>0?pixel-1:-1,x+1<size?pixel+1:-1,y>0?pixel-size:-1,y+1<size?pixel+size:-1];
+      const from=neighbors.find(i=>i>=0&&valid[i]);if(from===undefined)continue;
+      for(let j=0;j<3;j++)c[pixel*4+j]=c[from*4+j];
+      for(let j=0;j<4;j++)d[pixel*4+j]=d[from*4+j];next[pixel]=1;
+    }
+    valid=next;
+  }
+  return {size,colour:c,data:d};
+}
+
+export async function captureTree(lod0:ArrayBuffer,lod1:ArrayBuffer,
+  options:{grid:number;size:number;supersample:number;heightM:number},
+  receive:(view:number,mip:number,layer:CaptureLayer)=>Promise<void>){
+  const {grid,size,supersample,heightM}=options,views=treeCaptureViews(grid);
+  if(![32,64,128].includes(size)||![1,2,4].includes(supersample)||!Number.isFinite(heightM)||heightM<10||heightM>22)throw new Error('Unsupported tree capture settings');
+  const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance',alpha:true});
+  renderer.setSize(size*supersample,size*supersample);renderer.setPixelRatio(1);
+  renderer.toneMapping=THREE.NoToneMapping;renderer.outputColorSpace=THREE.LinearSRGBColorSpace;
+  renderer.setClearColor(0,0);renderer.shadowMap.enabled=false;
+  const gl=renderer.getContext() as WebGL2RenderingContext;
+  let family:Awaited<ReturnType<typeof loadTreeAssetFamily>>|undefined;
+  let batch:ReturnType<NonNullable<typeof family>['createBatch']>|undefined;
+  let target:THREE.WebGLRenderTarget|undefined;
+  try{
+    if(!gl.getExtension('EXT_color_buffer_float'))throw new Error('Tree capture requires EXT_color_buffer_float');
+    if(size*supersample>gl.getParameter(gl.MAX_TEXTURE_SIZE))throw new Error('Capture target exceeds device texture limit');
+    family=await loadTreeAssetFamily(lod0,lod1);family.setDate(0n);
+    batch=family.createBatch(0,1);batch.setInstance(0,new THREE.Matrix4(),heightM,0);
+    const scene=new THREE.Scene();scene.add(batch.group);
+    const points:THREE.Vector3[]=[],bounds=new THREE.Box3();let windMargin=0;
+    for(const mesh of family.lods[0]){
+      const attrs=mesh.geometry.attributes;
+      for(let i=0;i<attrs.position.count;i++){
+        const p=new THREE.Vector3().fromBufferAttribute(attrs.position,i),pivot=new THREE.Vector3().fromBufferAttribute(attrs._leaf_pivot,i);
+        const leaf=attrs._branch_level.getX(i)>3.5;
+        if(leaf)windMargin=Math.max(windMargin,2*p.distanceTo(pivot)*Math.sin(.12*attrs._wind.getX(i)/2));
+        const point=treeVertexMeters(p,pivot,leaf,heightM,attrs._wind.getX(i),0);points.push(point);bounds.expandByPoint(point);
+      }
+    }
+    const center=bounds.getCenter(new THREE.Vector3());
+    const radius=Math.max(...points.map(p=>p.distanceTo(center)))+windMargin+.02;
+    const distance=radius+1,camera=new THREE.OrthographicCamera(-radius,radius,radius,-radius,.5,2*radius+1.5);
+    const uniforms={pass:{value:0},viewToObject:{value:new THREE.Matrix3()},distance:{value:distance},radius:{value:radius}};
+    for(const mesh of family.lods[0]){
+      const material=mesh.material,previous=material.onBeforeCompile;
+      material.toneMapped=false;material.fog=false;material.dithering=false;
+      material.onBeforeCompile=(shader,host)=>{
+        previous.call(material,shader,host);
+        Object.assign(shader.uniforms,{atlasCapturePass:uniforms.pass,atlasCaptureViewToObject:uniforms.viewToObject,atlasCaptureDistance:uniforms.distance,atlasCaptureRadius:uniforms.radius});
+        shader.fragmentShader=`uniform int atlasCapturePass;
+uniform mat3 atlasCaptureViewToObject;
+uniform float atlasCaptureDistance,atlasCaptureRadius;
+vec2 captureOct(vec3 n){n/=abs(n.x)+abs(n.y)+abs(n.z);vec2 p=n.xz;
+if(n.y<0.)p=(1.-abs(p.yx))*vec2(p.x<0.?-1.:1.,p.y<0.?-1.:1.);return p*.5+.5;}
+`+shader.fragmentShader;
+        // Retain runtime texture decoding, MASK, normal maps and deformation;
+        // replace the terminal lighting/output path with linear material data.
+        shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`
+if(atlasCapturePass==0)gl_FragColor=vec4(diffuseColor.rgb,1.);
+else gl_FragColor=vec4(captureOct(normalize(atlasCaptureViewToObject*normal)),
+ (atlasCaptureDistance-vViewPosition.z)/atlasCaptureRadius,${material.name==='MAT_AtlasFoliage'?'1.':'0.'});`);
+        for(const chunk of ['tonemapping','colorspace','fog','premultiplied_alpha','dithering'])shader.fragmentShader=shader.fragmentShader.replace(`#include <${chunk}_fragment>`,'');
+      };
+      material.customProgramCacheKey=()=>`${TREE_CAPTURE_VERSION}/${material.name}`;material.needsUpdate=true;
+    }
+    const captureSize=size*supersample;
+    target=new THREE.WebGLRenderTarget(captureSize,captureSize,{type:THREE.FloatType,format:THREE.RGBAFormat,minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter,depthBuffer:true,stencilBuffer:false});
+    target.texture.colorSpace=THREE.NoColorSpace;renderer.setRenderTarget(target);
+    const colour=new Float32Array(captureSize*captureSize*4),data=new Float32Array(colour.length);
+    let coveredSamples=0,coverageSum=0;
+    for(const view of views){
+      const toward=new THREE.Vector3(...view.towardCamera),right=new THREE.Vector3(...view.right),up=new THREE.Vector3(...view.up);
+      camera.position.copy(center).addScaledVector(toward,distance);
+      camera.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right,up,toward));camera.updateMatrixWorld(true);
+      uniforms.viewToObject.value.setFromMatrix4(camera.matrixWorld);
+      for(const [pass,buffer] of [[0,colour],[1,data]] as const){
+        uniforms.pass.value=pass;renderer.clear();renderer.render(scene,camera);renderer.readRenderTargetPixels(target,0,0,captureSize,captureSize,buffer);
+        const error=gl.getError();if(error!==gl.NO_ERROR)throw new Error(`Capture GL error ${error} at view ${view.index}, pass ${pass}`);
+      }
+      for(let p=0;p<colour.length;p+=4){
+        if(!Number.isFinite(colour[p]+colour[p+1]+colour[p+2]+colour[p+3]+data[p]+data[p+1]+data[p+2]+data[p+3]))throw new Error('Nonfinite capture texel');
+        if(colour[p+3]>0){
+          if(colour[p+3]!==1||data[p]<0||data[p]>1||data[p+1]<0||data[p+1]>1||Math.abs(data[p+2])>1.0001)throw new Error('Capture channel outside declared range');
+          coveredSamples++;
+        }
+      }
+      let layer=reduceCapture({size:captureSize,colour,data},supersample),mip=0;
+      coverageSum+=layer.colour.reduce((sum,value,index)=>sum+(index%4===3?value:0),0);
+      while(true){await receive(view.index,mip,padCapture(layer));if(layer.size===1)break;layer=reduceCapture(layer,2);mip++;}
+    }
+    if(coveredSamples===0)throw new Error('Capture produced no tree coverage');
+    const ext=gl.getExtension('WEBGL_debug_renderer_info');
+    return {version:TREE_CAPTURE_VERSION,viewVersion:TREE_VIEW_VERSION,options,views,center:center.toArray(),radius,distance,
+      bounds:{min:bounds.min.toArray(),max:bounds.max.toArray(),windMargin},root:[0,0,0],
+      rowOrder:'bottom-to-top',colour:'linear-unassociated-rgb-area-coverage',data:'oct-normal-xz-normalized-frontmost-depth-leaf-fraction',
+      depth:'dot(surface-center,towardCamera)/radius; valid only where colour coverage > 0',
+      coveredSamples,coverageSum,adapter:{renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),maxArrayLayers:gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS)},
+      limitations:['Capture only: runtime impostor, parallax, handoff and game integration are pending','Mips preserve mean area coverage; they require coverage-aware runtime rendering, not a fixed MASK threshold','Depth is the frontmost covered subsample; normal/classification and colour average coverage and can mix disconnected surfaces','RGBA32F capture files are review data, not compressed shipping textures']};
+  }finally{
+    batch?.dispose();family?.dispose();target?.dispose();renderer.dispose();renderer.forceContextLoss();
+  }
+}
+
+// Fixed browser entry for the named assetctl operation; caller code is never
+// accepted. HTTP routes/inputs and output writes are bounded by the host tool.
+Object.assign(globalThis,{__atlasTreeCapture:{captureTree}});
+
+
+FILE src/tree-impostor-views.ts
+/** Pure capture/view contract for the authored-tree distance experiment.
+ * Coordinates are object-space, right-handed, Y-up. Directions point from the
+ * capture centre towards the camera. This module does not render impostors. */
+export type TreeViewVector=readonly [number,number,number];
+export const TREE_VIEW_VERSION='tree-full-octahedral-1';
+export const TREE_VIEW_GRID=9;
+const sign=(x:number)=>x<0?-1:1;
+function unit(v:TreeViewVector):TreeViewVector {
+  if(v.length!==3||v.some(x=>!Number.isFinite(x)))throw new Error('View direction must contain three finite components');
+  // Avoid overflow/underflow for otherwise valid nonzero directions.
+  const scale=Math.max(...v.map(Math.abs));
+  if(scale===0)throw new Error('View direction must be nonzero');
+  const a=v.map(x=>x/scale),length=Math.hypot(...a);
+  return [a[0]/length,a[1]/length,a[2]/length];
+}
+export function encodeTreeView(direction:TreeViewVector):readonly [number,number] {
+  const [x,y,z]=unit(direction),sum=Math.abs(x)+Math.abs(y)+Math.abs(z);
+  const a=x/sum,b=z/sum;
+  return y>=0?[(a+1)/2,(b+1)/2]:[((1-Math.abs(b))*sign(a)+1)/2,((1-Math.abs(a))*sign(b)+1)/2];
+}
+export function decodeTreeView(u:number,v:number):TreeViewVector {
+  if(!Number.isFinite(u)||!Number.isFinite(v)||u<0||u>1||v<0||v>1)throw new Error('Octahedral coordinates must lie in [0,1]');
+  let x=2*u-1,z=2*v-1;
+  const y=1-Math.abs(x)-Math.abs(z),fold=Math.max(0,-y);
+  x-=sign(x)*fold;z-=sign(z)*fold;
+  return unit([x,y,z]);
+}
+function checkGrid(grid:number){
+  // An odd vertex count places equator folds and axes on cell edges/diagonals.
+  if(!Number.isInteger(grid)||grid<3||grid>33||grid%2!==1)throw new Error('Tree view grid must be odd and between 3 and 33');
+}
+export function treeViewBlend(direction:TreeViewVector,grid=TREE_VIEW_GRID){
+  checkGrid(grid);
+  const [u,v]=encodeTreeView(direction),n=grid-1;
+  const gx=u*n,gy=v*n,x=Math.min(n-1,Math.floor(gx)),y=Math.min(n-1,Math.floor(gy));
+  const a=gx-x,b=gy-y;
+  const at=(dx:number,dy:number)=>({index:(y+dy)*grid+x+dx,x:x+dx,y:y+dy});
+  // Choose diagonals that follow the octahedron's equator folds. A single
+  // diagonal orientation throughout the square crosses faces in two quadrants.
+  const sameQuadrant=(x<n/2)===(y<n/2);
+  const vertices=sameQuadrant
+    ? a+b<=1?[at(0,0),at(1,0),at(0,1)]:[at(1,1),at(0,1),at(1,0)]
+    : a>=b?[at(0,0),at(1,0),at(1,1)]:[at(0,0),at(1,1),at(0,1)];
+  // Barycentric weights are in the unfolded octahedron plane. Reconstructing
+  // the original ray requires L1-normalized capture vectors, not unit vectors.
+  const weights=sameQuadrant
+    ? a+b<=1?[1-a-b,a,b]:[a+b-1,1-a,1-b]
+    : a>=b?[1-a,a-b,b]:[1-b,a,b-a];
+  return {uv:[u,v] as const,vertices,weights};
+}
+function cross(a:TreeViewVector,b:TreeViewVector):TreeViewVector {
+  return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+}
+export function treeCaptureBasis(direction:TreeViewVector){
+  const towardCamera=unit(direction);
+  const reference:TreeViewVector=Math.abs(towardCamera[1])>.999?[0,0,1]:[0,1,0];
+  const right=unit(cross(reference,towardCamera)),up=unit(cross(towardCamera,right));
+  // Each view stores its own basis; bases must not be interpolated at runtime.
+  return {towardCamera,right,up};
+}
+export function treeCaptureViews(grid=TREE_VIEW_GRID){
+  checkGrid(grid);
+  return Array.from({length:grid*grid},(_,index)=>{
+    const x=index%grid,y=Math.floor(index/grid),uv=[x/(grid-1),y/(grid-1)] as const;
+    return {index,x,y,uv,...treeCaptureBasis(decodeTreeView(...uv))};
+  });
+}
+
+
+FILE docs/authored-tree-distance-design-2026-09-28.md
+# Authored trees at a distance
+
+Status: design under review; the game still renders its existing tree shapes.
+This is the next implementation increment after the v7 colour correction.
+
+## Why a separate representation
+
+The authored pair has 10,712 and 4,820 triangles per tree. Rendering either
+through the existing four-kilometre forest would exceed a useful geometry
+budget. The current analytic proxy exactly represents the old faceted trees;
+it cannot represent the new branches and leaf gaps. Reusing it would introduce
+a conspicuous silhouette change during approach.
+
+Epic's [Impostor Baker documentation](https://dev.epicgames.com/documentation/en-us/unreal-engine/impostor-baker-plugin-in-unreal-engine)
+describes captures from multiple directions, blending three neighbouring views,
+separate material/depth channels and optional parallax correction. It distinguishes
+full-sphere and upper-hemisphere captures. Those techniques inform this proposal;
+the following budgets and implementation choices are Atlas experiments.
+
+## First experiment
+
+1. Capture the exact authored GLB at rest through a constrained assetctl
+   operation. Input must be an approved asset path; outputs go to a fresh
+   review directory with source hash, capture version, settings and image hashes.
+   Do not accept arbitrary capture scripts or overwrite inputs.
+2. Use a full-sphere octahedral direction grid. Free flight, steep terrain and
+   cameras below crown centres can require lower views. Start with a 9 by 9
+   grid, including duplicate seam directions, and 128-pixel view interiors.
+   Measure whether that density suffices before increasing it.
+3. Capture unlit base colour plus alpha coverage, object-space normal, depth
+   and bark/leaf classification. Data textures stay linear; base colour is
+   explicitly sRGB. A sun-lit screenshot is not a reusable material. The
+   capture must honour the source alpha cutoff and tangent-space normal map.
+4. Keep camera axes, object bounds and root offset in the manifest. Use a
+   common enclosing sphere for every view, including wind displacement bounds.
+   Store depth in a declared physical interval. Background depth is invalid,
+   never a surface at the interval endpoint.
+5. Render one instanced camera-facing plane per tree. Choose the enclosing
+   triangle of capture directions and blend its three views. Reproject from
+   stored depth; reject off-tile/background samples. Reconstruct normals in
+   the instance orientation and shade under the same sun/sky as close meshes.
+   Derive fragment depth from the reconstructed surface, including the current
+   logarithmic-depth contract. Shadow views require their own light direction.
+6. Prevent atlas bleeding with per-view padding and explicit mip generation,
+   or use WebGL2 texture arrays. Ordinary whole-atlas mipmaps mix unrelated
+   views. Test alpha coverage at each supported mip; do not choose a cutoff
+   simply to hide a failed silhouette comparison.
+
+## Scale, wind and handoff
+
+Near-tree leaves retain physical size while skeleton height changes from 10 to
+22 metres. Uniformly scaling a captured 16-metre tree does not reproduce that
+rule. First measure the discrepancy at each height and projected size. If it
+exceeds the transition error budget, bake a bounded set of height classes or
+delay the switch; do not silently rescale the canonical tree or its leaves.
+
+Wind can settle towards the captured rest pose only while its projected
+displacement falls below an explicit screen-space error. Close meshes and
+impostors must use the same transition policy. The initial static lab is not
+evidence of an acceptable animated game transition.
+
+Use projected size, hysteresis and residency readiness for selection. Keep the
+canonical individual, height, yaw, species, variant and tint unchanged.
+Complementary coverage must give each pixel one representation during handoff;
+avoid drawing both at full opacity. Existing census ownership and worker
+residency remain responsible for which trees exist.
+
+## Resource and acceptance gates
+
+Start with one family and one structural variant. Account for mipmapped colour,
+normal/depth/classification storage explicitly, including temporary capture
+buffers. Do not multiply the present 53.3 MiB source textures by every instance
+or variant. Colour tints must affect both distance representations consistently.
+
+Before game integration, compare mesh and impostor at captured and intermediate
+directions, octahedron folds, pole/seam crossings, ground/orbit views, tree
+heights 10/16/22 m and several yaws. Report silhouette coverage, bounds, root
+offset, depth error and light response at the proposed transition sizes. Measure
+GPU cost and overdraw at 3/192 trees and at full census density. Include date
+replay, load failure, cache eviction and shadow/depth passes. A two-triangle
+primitive alone establishes neither speed nor acceptable visual continuity.
+
+The existing asset brief's root/dimension constraint remains in force. Pixel
+silhouette error needs a separately reported projected-size tolerance; it must
+not be confused with a change to world-space root contact or identity.
+
+## Opus review and implementation decisions
+
+[Opus 5.5 reviewed this design](opus-5.5-tree-distance-review-2026-09-28.md);
+[input hashes and returned model](opus-5.5-tree-distance-review-2026-09-28.metadata.json)
+identify its source-only scope. Adopt the following for the first baker:
+
+- Use the installed Three renderer through a named assetctl browser operation,
+  preserving its alpha, normal-map and physical leaf-size behaviour. Require
+  float render-target support, record adapter information, and compare rendered
+  results with tolerances rather than promise identical bytes across GPUs.
+- Capture at four times the destination width/height, then reduce coverage and
+  material channels. Test a 9×9/128-pixel grid against 17×17/64-pixel views.
+  Preserve zero coverage for absent views during blending; do not renormalize
+  silhouette coverage over only valid views.
+- Prototype a linear RGBA16F normal/depth/classification target, alongside
+  sRGB colour/coverage. A 9×9×128² pair with full mips costs approximately
+  21.3 MiB per height class before source maps and intermediate buffers.
+  Three height classes and eight variants would exceed 500 MiB for these
+  captures alone. Begin with one class/variant and enforce a cache budget
+  before expanding either axis.
+- Keep mesh shadow casters within a bounded local region for the first
+  experiment. The distant shadow policy is still an acceptance decision.
+  Use the same discard pattern on both sides of an ownership transition;
+  mixed alpha-to-coverage and discard cannot guarantee complementary coverage.
+
+Several review estimates are hypotheses, not accepted facts. Leaf coverage
+does not exactly follow inverse squared height because projected overlap,
+orientation and occlusion matter; the suggested alpha exponent cannot replace
+height-class comparisons. Octahedral grid spacing is not uniformly 22.5 degrees.
+Blending foreground/background depth can create a surface in empty space, so
+depth-aware rejection and comparison against mesh depth remain necessary.
+Neither the suggested switch distance nor a triangle count proves performance.
+
+The first code increment, `src/tree-impostor-views.ts`, implements full-sphere
+encoding/decoding, face-aligned triangle selection and explicit capture bases.
+It deliberately stores a basis per view, including deterministic pole fallback;
+bases are never interpolated. This is capture mathematics, not a rendered or
+integrated distant-tree implementation.
+
+Luna's [six CPU checks](../test-results/tree-impostor-views-v1/cpu-test.log)
+pass for axes, poles, folds, grids of 3/5/9/33 vertices, enclosing triangles,
+duplicate corner bases, invalid inputs and caller-data preservation. TypeScript
+compilation also passes. Rendered silhouette/depth and performance checks still
+require the capture tool and shader.

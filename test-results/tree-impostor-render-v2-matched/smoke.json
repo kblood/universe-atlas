@@ -1,0 +1,146 @@
+{
+  "probes": [
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "sourceArea": 2974.375,
+      "captureArea": 2974.2980392156846,
+      "areaError": -0.000025874607040255783,
+      "coverageIoU": 0.999371617698064
+    },
+    {
+      "direction": [
+        1,
+        0,
+        0
+      ],
+      "sourceArea": 2926.375,
+      "captureArea": 2926.211764705883,
+      "areaError": -0.000055780716455317644,
+      "coverageIoU": 0.9994393192451331
+    },
+    {
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "sourceArea": 3493.6875,
+      "captureArea": 3493.474509803922,
+      "areaError": -0.0000609642951975394,
+      "coverageIoU": 0.9996351816736999
+    },
+    {
+      "direction": [
+        0,
+        -1,
+        0
+      ],
+      "sourceArea": 3493.75,
+      "captureArea": 3493.5372549019608,
+      "areaError": -0.00006089305131713762,
+      "coverageIoU": 0.9996352583416019
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "sourceArea": 3058.5625,
+      "captureArea": 3085.8431372549258,
+      "areaError": 0.008919431025171384,
+      "coverageIoU": 0.7202881972131396
+    }
+  ],
+  "diagnostics": {
+    "bytes": 28311120,
+    "renderer": {
+      "memory": {
+        "geometries": 3,
+        "textures": 8
+      },
+      "render": {
+        "frame": 302,
+        "calls": 1,
+        "triangles": 2,
+        "points": 0,
+        "lines": 0
+      },
+      "programs": [
+        {
+          "type": "MeshStandardMaterial",
+          "name": "MAT_AtlasBark",
+          "id": 0,
+          "cacheKey": "physical,STANDARD,,highp,srgb,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,4,0,0,0,65667,131082,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "MAT_AtlasFoliage",
+          "id": 1,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,4,0,0,0,66691,133130,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "",
+          "id": 2,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb,false,,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,4,0,0,0,1,131080,srgb,atlas-captured-tree-lab-1",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshStandardMaterial",
+          "name": "MAT_AtlasBark",
+          "id": 3,
+          "cacheKey": "physical,STANDARD,,highp,srgb-linear,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,65667,131082,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "MAT_AtlasFoliage",
+          "id": 4,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb-linear,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,66691,133130,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "",
+          "id": 5,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb-linear,false,,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,1,131080,srgb,atlas-captured-tree-lab-1",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        }
+      ],
+      "autoReset": true
+    },
+    "views": 81
+  },
+  "errors": []
+}

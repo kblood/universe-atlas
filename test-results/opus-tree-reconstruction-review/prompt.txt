@@ -1,0 +1,862 @@
+Review actual Atlas tree reconstruction prototype and advise next code corrections, <=900words. Sourceonly no tools. V2 capture stores separate linearcolour/coverage, objectnormalXYZ/depth, classleaf fraction per view + complete mipchain; fullsphereoct9x9 views128px captured512 thenSSAAarea. GPU shadercompiled noerrors. Exactviewmesh512 SSAAto128matches capture128 .9993IoU; arbitrary [1,.3,1] .72IoU. NativeMASKmesh losesmanyleaves mipmapping (up to77%area lossat64pixels comparedmesh256SSAA); builtinThreealphahash withalphaTest0 yieldsmesh128coverage+3%vshighref,256+1%,512+.5%. 32/64test referencealso undersampled, notgroundtruth. IntendedalphaHashexperiment asoptin withnativeMASKretainedforhistoricalcapture, objectspacehashbettercamera stabilitythan currentimpostorscreennoise. Investigate correctness bugsinreconstruction depth/rays/lighting/mips/failedloads, howtomeasure normals/shading/depth andimproveintermediateviews; assess need9x9vs17x17 andbakingthresholdlimitedfoliage. Newshadersdevonly singleheight, noforestintegration. Fixedcaptures reviewed separately, byteauditpassedbut22m32pixelsbakehasnoleaves dueMASKmips. Source/data:
+FILE src/tree-captured-impostor.ts
+import * as THREE from 'three';
+import {treeCaptureViews,treeViewBlend} from './tree-impostor-views.ts';
+
+/** Development representation for one exact captured height/variant. No forest
+ * residency, instancing, shadow casting or game handoff is installed here. */
+export async function loadTreeCapture(manifest:any,read:(path:string)=>Promise<ArrayBuffer>){
+  const {grid,size,heightM}=manifest.options??{},views=treeCaptureViews(grid);
+  if(manifest.operation!=='atlas-tree-impostor-capture-2'||manifest.version!=='tree-material-capture-2'||![32,64,128].includes(size)||!Number.isFinite(heightM)||heightM<10||heightM>22||!Number.isFinite(manifest.radius)||manifest.radius<=0||manifest.radius>100||!Array.isArray(manifest.center)||manifest.center.length!==3||manifest.center.some((x:number)=>!Number.isFinite(x)||Math.abs(x)>100))throw new Error('Invalid tree capture manifest');
+  if(JSON.stringify(manifest.views)!==JSON.stringify(views))throw new Error('Capture view bases do not match the declared contract');
+  const records=new Map<string,any>(manifest.artifacts.map((r:any)=>[r.path,r]));
+  const colours:{data:Uint8Array;width:number;height:number}[]=[],classes:typeof colours=[],data:{data:Uint16Array;width:number;height:number}[]=[];
+  let bytes=0;
+  for(let mip=0,width=size;width>=1;mip++,width/=2){
+    const count=width*width*4,colour=new Uint8Array(count*views.length),values=new Uint16Array(colour.length),classification=new Uint8Array(colour.length);
+    for(const view of views)for(const channel of ['colour','data','classification'] as const){
+      const path=`view-${String(view.index).padStart(3,'0')}/mip-${mip}.${channel}.f32`,record=records.get(path);
+      const channels=channel==='classification'?1:4,channelCount=width*width*channels;
+      if(!record||record.bytes!==channelCount*4)throw new Error('Capture attachment length is invalid');
+      const payload=await read(path);
+      if(payload.byteLength!==channelCount*4)throw new Error('Truncated capture attachment');
+      const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',payload)),v=>v.toString(16).padStart(2,'0')).join('');
+      if(hash!==record.sha256)throw new Error('Capture attachment hash mismatch');
+      const floats=new Float32Array(payload);
+      for(let i=0;i<channelCount;i++){
+        const value=floats[i],offset=view.index*count+i;
+        if(!Number.isFinite(value)||value< (channel==='data'?-1.001:0)||value>1.001)throw new Error('Capture channel is outside its range');
+        if(channel==='colour'){
+          const encoded=i%4===3?value:value<=.0031308?12.92*value:1.055*value**(1/2.4)-.055;
+          colour[offset]=Math.round(Math.max(0,Math.min(1,encoded))*255);
+        }else if(channel==='data')values[offset]=THREE.DataUtils.toHalfFloat(value);
+        else classification[view.index*count+i*4]=Math.round(Math.max(0,Math.min(1,value))*255);
+      }
+    }
+    colours.push({data:colour,width,height:width});data.push({data:values,width,height:width});classes.push({data:classification,width,height:width});bytes+=colour.byteLength+values.byteLength+classification.byteLength;
+  }
+  // The installed Three DataArrayTexture upload path only uploads level zero.
+  // Its CompressedArrayTexture path supports explicit RGBA mip data as well:
+  // RGBAFormat selects texSubImage3D, without block compression.
+  // @types excludes the installed renderer's explicit uncompressed RGBA path.
+  const rgba=THREE.RGBAFormat as unknown as THREE.CompressedPixelFormat;
+  const colourTexture=new THREE.CompressedArrayTexture(colours,size,size,views.length,rgba);
+  colourTexture.colorSpace=THREE.SRGBColorSpace;
+  const dataTexture=new THREE.CompressedArrayTexture(data,size,size,views.length,rgba,THREE.HalfFloatType);
+  dataTexture.colorSpace=THREE.NoColorSpace;
+  // RGBA class storage uses the installed explicit-mip array path. Three spare
+  // channels are a measured prototype cost; this is not yet an R8 upload path.
+  const classTexture=new THREE.CompressedArrayTexture(classes,size,size,views.length,rgba);
+  for(const texture of [colourTexture,dataTexture,classTexture]){
+    if(Number(texture.format)!==THREE.RGBAFormat)throw new Error('Installed array texture default no longer supports RGBA mip uploads');
+    texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;
+    texture.generateMipmaps=false;texture.flipY=false;texture.needsUpdate=true;
+  }
+  return {manifest,views,colourTexture,dataTexture,classTexture,bytes,
+    dispose(){colourTexture.dispose();dataTexture.dispose();classTexture.dispose();}};
+}
+export type TreeCapture=Awaited<ReturnType<typeof loadTreeCapture>>;
+
+const sampleGLSL=`
+precision highp sampler2DArray;
+uniform sampler2DArray captureColour,captureData,captureClass;
+uniform vec3 captureCenter,captureEye,captureDirection;
+uniform float captureRadius,captureOrtho,captureMip,captureMask;
+uniform vec3 captureWeights;
+uniform ivec3 captureLayers;
+uniform mat3 captureBasis0,captureBasis1,captureBasis2,captureNormalMatrix;
+uniform mat4 captureModelView,captureProjection;
+uniform vec2 captureRoughness,captureSpecular;
+varying vec3 captureRayPoint;
+vec2 captureUV(vec3 p,mat3 basis){vec3 d=p-captureCenter;return vec2(dot(d,basis[0]),dot(d,basis[1]))/(2.*captureRadius)+.5;}
+void captureSample(int layer,mat3 basis,vec3 ro,vec3 rd,out vec4 colour,out vec3 normal,out float t,out float leaf){
+  colour=vec4(0);normal=vec3(0,1,0);t=1e20;leaf=0.;
+  float denominator=dot(rd,basis[2]);if(abs(denominator)<.01)return;
+  float plane=dot(captureCenter-ro,basis[2]);t=plane/denominator;
+  vec2 uv=captureUV(ro+rd*t,basis);
+  for(int step=0;step<2;step++){
+    vec4 data=textureLod(captureData,vec3(clamp(uv,0.,1.),float(layer)),captureMip);
+    t=(plane+data.w*captureRadius)/denominator;uv=captureUV(ro+rd*t,basis);
+  }
+  if(any(lessThan(uv,vec2(0)))||any(greaterThan(uv,vec2(1)))||t<0.)return;
+  colour=textureLod(captureColour,vec3(uv,float(layer)),captureMip);
+  vec4 data=textureLod(captureData,vec3(uv,float(layer)),captureMip);
+  normal=dot(data.xyz,data.xyz)>1e-8?normalize(data.xyz):basis[2];leaf=textureLod(captureClass,vec3(uv,float(layer)),captureMip).r;
+  t=(plane+data.w*captureRadius)/denominator;
+}
+float captureNoise(vec2 p){return fract(52.9829189*fract(dot(floor(p),vec2(.06711056,.00583715))));}
+`;
+
+export class TreeCapturedImpostor {
+  readonly mesh:THREE.Mesh<THREE.PlaneGeometry,THREE.MeshPhysicalMaterial>;
+  readonly uniforms;
+  constructor(readonly capture:TreeCapture,sourceMaterials:readonly THREE.MeshStandardMaterial[]){
+    if(sourceMaterials.length!==2||sourceMaterials.some(m=>m.metalness!==0)||sourceMaterials[0].name!=='MAT_AtlasBark'||sourceMaterials[1].name!=='MAT_AtlasFoliage')throw new Error('Impostor requires its bark/foliage source materials');
+    const specular=sourceMaterials.map(m=>(m as THREE.MeshPhysicalMaterial).specularIntensity??1);
+    const u=this.uniforms={
+      captureColour:{value:capture.colourTexture},captureData:{value:capture.dataTexture},captureClass:{value:capture.classTexture},
+      captureCenter:{value:new THREE.Vector3(...capture.manifest.center as [number,number,number])},captureRadius:{value:capture.manifest.radius},
+      captureEye:{value:new THREE.Vector3()},captureDirection:{value:new THREE.Vector3()},captureOrtho:{value:0},captureMip:{value:0},captureMask:{value:0},
+      captureWeights:{value:new THREE.Vector3()},captureLayers:{value:new Int32Array(3)},
+      captureBasis0:{value:new THREE.Matrix3()},captureBasis1:{value:new THREE.Matrix3()},captureBasis2:{value:new THREE.Matrix3()},
+      captureBillboardRight:{value:new THREE.Vector3()},captureBillboardUp:{value:new THREE.Vector3()},captureBillboardScale:{value:1},
+      captureNormalMatrix:{value:new THREE.Matrix3()},captureModelView:{value:new THREE.Matrix4()},captureProjection:{value:new THREE.Matrix4()},
+      captureRoughness:{value:new THREE.Vector2(sourceMaterials[0].roughness,sourceMaterials[1].roughness)},captureSpecular:{value:new THREE.Vector2(specular[0],specular[1])},
+    };
+    const material=new THREE.MeshPhysicalMaterial({roughness:1,metalness:0});material.fog=false;
+    material.onBeforeCompile=shader=>{
+      Object.assign(shader.uniforms,u);
+      shader.vertexShader=`uniform vec3 captureCenter,captureBillboardRight,captureBillboardUp;
+uniform float captureRadius,captureBillboardScale;varying vec3 captureRayPoint;\n`+shader.vertexShader;
+      shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`vec3 transformed=captureCenter+captureRadius*captureBillboardScale*(position.x*captureBillboardRight+position.y*captureBillboardUp);captureRayPoint=transformed;`);
+      shader.fragmentShader=sampleGLSL+shader.fragmentShader;
+      shader.fragmentShader=shader.fragmentShader.replace('#include <logdepthbuf_fragment>',`
+vec3 ro=captureEye,rd=normalize(captureRayPoint-captureEye);
+if(captureOrtho>.5){rd=captureDirection;ro=captureRayPoint+rd*dot(captureEye-captureRayPoint,rd);}
+vec4 c0,c1,c2;vec3 n0,n1,n2;float t0,t1,t2,l0,l1,l2;
+captureSample(captureLayers.x,captureBasis0,ro,rd,c0,n0,t0,l0);
+captureSample(captureLayers.y,captureBasis1,ro,rd,c1,n1,t1,l1);
+captureSample(captureLayers.z,captureBasis2,ro,rd,c2,n2,t2,l2);
+vec3 weights=captureWeights*vec3(c0.a,c1.a,c2.a);float captureCoverage=dot(weights,vec3(1));
+if(captureCoverage<=.00001)discard;
+weights/=captureCoverage;
+float hitDistance=min(weights.x>.001?t0:1e20,min(weights.y>.001?t1:1e20,weights.z>.001?t2:1e20));
+vec3 captureHit=ro+rd*hitDistance;vec4 hitView=captureModelView*vec4(captureHit,1),clip=captureProjection*hitView;
+if(hitView.z>=0.||clip.w<=0.||clip.z < -clip.w||clip.z > clip.w)discard;
+#if defined(USE_LOGARITHMIC_DEPTH_BUFFER)
+gl_FragDepth=captureOrtho>.5?clip.z/clip.w*.5+.5:log2(1.-hitView.z)*logDepthBufFC*.5;
+#else
+gl_FragDepth=clip.z/clip.w*.5+.5;
+#endif
+if(captureMask<.5&&captureNoise(gl_FragCoord.xy)>=captureCoverage)discard;
+diffuseColor.rgb=c0.rgb*weights.x+c1.rgb*weights.y+c2.rgb*weights.z;
+vec3 captureObjectNormal=n0*weights.x+n1*weights.y+n2*weights.z;
+if(dot(captureObjectNormal,captureObjectNormal)<1e-8)captureObjectNormal=n0;
+float captureLeaf=dot(vec3(l0,l1,l2),weights);
+`);
+      shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_begin>',`float faceDirection=1.;vec3 normal=normalize(captureNormalMatrix*captureObjectNormal);vec3 nonPerturbedNormal=normal;`);
+      shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`float roughnessFactor=mix(captureRoughness.x,captureRoughness.y,captureLeaf);`);
+      shader.fragmentShader=shader.fragmentShader.replace('#include <lights_physical_fragment>',`#include <lights_physical_fragment>
+float capturedSpecular=mix(captureSpecular.x,captureSpecular.y,captureLeaf);material.specularColor=vec3(.04)*capturedSpecular;material.specularF90=capturedSpecular;`);
+      shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`#include <opaque_fragment>
+if(captureMask>.5)gl_FragColor=vec4(vec3(1),captureCoverage);`);
+    };
+    material.customProgramCacheKey=()=> 'atlas-captured-tree-lab-1';
+    this.mesh=new THREE.Mesh(new THREE.PlaneGeometry(2,2),material);this.mesh.frustumCulled=false;
+    this.mesh.name='Authored tree capture reconstruction (development)';
+    const inverse=new THREE.Matrix4(),localCamera=new THREE.Matrix4(),viewport=new THREE.Vector4();
+    this.mesh.onBeforeRender=(renderer,_scene,camera)=>{
+      const gl=renderer.getContext() as WebGL2RenderingContext;if(capture.views.length>gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS))throw new Error('Capture exceeds texture array layer limit');
+      inverse.copy(this.mesh.matrixWorld).invert();localCamera.multiplyMatrices(inverse,camera.matrixWorld);
+      u.captureEye.value.setFromMatrixPosition(localCamera);u.captureDirection.value.set(0,0,-1).transformDirection(localCamera);
+      u.captureOrtho.value=Number((camera as THREE.OrthographicCamera).isOrthographicCamera===true);
+      const toCamera=u.captureOrtho.value?u.captureDirection.value.clone().negate():u.captureEye.value.clone().sub(u.captureCenter.value).normalize();
+      const blend=treeViewBlend(toCamera.toArray() as [number,number,number],capture.manifest.options.grid);
+      u.captureWeights.value.fromArray(blend.weights);
+      const matrices=[u.captureBasis0,u.captureBasis1,u.captureBasis2];
+      blend.vertices.forEach((v,i)=>{
+        u.captureLayers.value[i]=v.index;const basis=capture.views[v.index];
+        matrices[i].value.setFromMatrix4(new THREE.Matrix4().makeBasis(new THREE.Vector3(...basis.right),new THREE.Vector3(...basis.up),new THREE.Vector3(...basis.towardCamera)));
+      });
+      u.captureBillboardRight.value.set(1,0,0).transformDirection(localCamera);u.captureBillboardUp.value.set(0,1,0).transformDirection(localCamera);
+      const distance=u.captureEye.value.distanceTo(u.captureCenter.value),radius=u.captureRadius.value;
+      u.captureBillboardScale.value=u.captureOrtho.value?1:distance/Math.max(.01,distance-radius);
+      u.captureModelView.value.multiplyMatrices(camera.matrixWorldInverse,this.mesh.matrixWorld);
+      u.captureNormalMatrix.value.getNormalMatrix(u.captureModelView.value);u.captureProjection.value.copy(camera.projectionMatrix);
+      renderer.getCurrentViewport(viewport);
+      const pixels=radius*Math.abs(camera.projectionMatrix.elements[5])*viewport.w/(u.captureOrtho.value?1:distance);
+      u.captureMip.value=Math.max(0,Math.min(Math.log2(capture.manifest.options.size),Math.log2(capture.manifest.options.size/Math.max(1,pixels))));
+    };
+  }
+  dispose(){this.mesh.geometry.dispose();this.mesh.material.dispose();this.mesh.removeFromParent();}
+}
+
+
+FILE src/tree-impostor-lab.ts
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {loadTreeAssetFamily,type TreeAssetFamily} from './tree-asset.ts';
+import {loadTreeCapture,TreeCapturedImpostor,type TreeCapture} from './tree-captured-impostor.ts';
+
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,logarithmicDepthBuffer:true});
+renderer.setPixelRatio(1);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;
+document.body.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#a6bfd0');
+const camera=new THREE.PerspectiveCamera(50,1,.1,10000);camera.position.set(90,40,220);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,8,0);controls.update();
+const sun=new THREE.DirectionalLight(0xfff6e5,3);sun.position.set(-30,55,25);scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xc4dcf0,0x41472c,1));
+let family:TreeAssetFamily|undefined,batch:ReturnType<TreeAssetFamily['createBatch']>|undefined,capture:TreeCapture|undefined,impostor:TreeCapturedImpostor|undefined;
+let mode:'mesh'|'capture'='mesh',loading=false;const mask={value:0};
+const status=document.getElementById('status')!;
+function setMode(value:typeof mode){mode=value;if(batch)batch.group.visible=mode==='mesh';if(impostor)impostor.mesh.visible=mode==='capture';(document.getElementById('mode') as HTMLSelectElement).value=value;}
+function dispose(){impostor?.dispose();batch?.dispose();family?.dispose();capture?.dispose();impostor=undefined;batch=undefined;family=undefined;capture=undefined;}
+async function hash(buffer:ArrayBuffer){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',buffer)),v=>v.toString(16).padStart(2,'0')).join('');}
+async function load(lod0:ArrayBuffer,lod1:ArrayBuffer,manifest:any,read:(path:string)=>Promise<ArrayBuffer>){
+  if(loading)throw new Error('Capture comparison already loading');loading=true;
+  let nextFamily:TreeAssetFamily|undefined,nextCapture:TreeCapture|undefined,nextBatch:typeof batch,nextImpostor:TreeCapturedImpostor|undefined;
+  try{
+    if(await hash(lod0)!==manifest.input.files['atlas-branching-v1.glb']||await hash(lod1)!==manifest.input.files['atlas-branching-v1.lod1.glb'])throw new Error('Selected mesh pair does not match capture inputs');
+    nextFamily=await loadTreeAssetFamily(lod0,lod1);nextCapture=await loadTreeCapture(manifest,read);
+    nextBatch=nextFamily.createBatch(0,1);nextBatch.setInstance(0,new THREE.Matrix4(),manifest.options.heightM,0);nextFamily.setDate(0n);
+    nextImpostor=new TreeCapturedImpostor(nextCapture,nextFamily.lods[0].map(m=>m.material));
+    for(const mesh of nextFamily.lods[0]){
+      const material=mesh.material,previous=material.onBeforeCompile,key=material.customProgramCacheKey();
+      material.onBeforeCompile=(shader,host)=>{previous.call(material,shader,host);shader.uniforms.treeLabMask=mask;shader.fragmentShader='uniform float treeLabMask;\n'+shader.fragmentShader;
+        shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','#include <opaque_fragment>\nif(treeLabMask>.5)gl_FragColor=vec4(vec3(1),1);');};
+      material.customProgramCacheKey=()=>key+'/capture-lab-mask';material.needsUpdate=true;
+    }
+    scene.add(nextBatch.group,nextImpostor.mesh);
+  }catch(error){nextImpostor?.dispose();nextBatch?.dispose();nextFamily?.dispose();nextCapture?.dispose();throw error;}
+  finally{loading=false;}
+  dispose();family=nextFamily;batch=nextBatch;capture=nextCapture;impostor=nextImpostor;setMode(mode);
+  status.textContent=JSON.stringify({heightM:manifest.options.heightM,views:manifest.views.length,gpuTextureBytes:capture!.bytes,
+    format:'RGBA8 colour + RGBA16F normal/depth + RGBA8 class (R used); explicit independent mip chains',
+    limits:'Single tree and exact captured height. No game integration, instancing, cast shadows, wind or handoff.'},null,2);
+}
+/** Fixed orthographic view for silhouette comparisons; returns pixels for the
+ * independent browser harness. It restores all renderer and visibility state. */
+function probe(direction:readonly number[],representation:'mesh'|'capture',pixels=128,supersample=1){
+  if(!capture||!impostor||!batch)throw new Error('Load a capture first');
+  if(direction.length!==3||direction.some(x=>!Number.isFinite(x))||!Number.isInteger(pixels)||pixels<32||pixels>512||![1,2,4].includes(supersample)||pixels*supersample>2048)throw new Error('Invalid probe');
+  const toward=new THREE.Vector3().fromArray(direction);if(toward.lengthSq()<1e-12)throw new Error('Invalid probe direction');toward.normalize();
+  const center=new THREE.Vector3().fromArray(capture.manifest.center),radius=capture.manifest.radius;
+  const view=new THREE.OrthographicCamera(-radius,radius,radius,-radius,.5,2*radius+1.5);view.position.copy(center).addScaledVector(toward,radius+1);
+  view.up.set(...(Math.abs(toward.y)>.999?[0,0,1]:[0,1,0]) as [number,number,number]);view.lookAt(center);view.updateMatrixWorld(true);
+  const resolution=pixels*supersample;
+  const target=new THREE.WebGLRenderTarget(resolution,resolution,{depthBuffer:true});target.samples=supersample===1?4:0;
+  const oldTarget=renderer.getRenderTarget(),oldMode=mode,background=scene.background,oldClear=new THREE.Color(),alpha=renderer.getClearAlpha();renderer.getClearColor(oldClear);
+  const data=new Uint8Array(resolution*resolution*4);
+  try{
+    setMode(representation);mask.value=1;impostor.uniforms.captureMask.value=1;scene.background=null;renderer.setClearColor(0,0);
+    renderer.setRenderTarget(target);renderer.clear();renderer.render(scene,view);renderer.readRenderTargetPixels(target,0,0,resolution,resolution,data);
+    const gl=renderer.getContext(),error=gl.getError();if(error!==gl.NO_ERROR)throw new Error(`Probe GL error ${error}`);
+    if(supersample===1)return Array.from(data);
+    const reduced=new Float32Array(pixels*pixels*4);
+    for(let y=0;y<resolution;y++)for(let x=0;x<resolution;x++)for(let c=0;c<4;c++)reduced[(Math.floor(y/supersample)*pixels+Math.floor(x/supersample))*4+c]+=data[(y*resolution+x)*4+c]/(supersample*supersample);
+    return Array.from(reduced);
+  }finally{renderer.setRenderTarget(oldTarget);renderer.setClearColor(oldClear,alpha);scene.background=background;mask.value=0;impostor.uniforms.captureMask.value=0;setMode(oldMode);target.dispose();}
+}
+document.getElementById('load')!.onclick=async()=>{
+  try{
+    const a=(document.getElementById('lod0') as HTMLInputElement).files?.[0],b=(document.getElementById('lod1') as HTMLInputElement).files?.[0];
+    const files=Array.from((document.getElementById('capture') as HTMLInputElement).files??[]),manifestFile=files.find(f=>f.webkitRelativePath.split('/').length===2&&f.name==='capture-manifest.json');
+    if(!a||!b||!manifestFile)throw new Error('Select both GLBs and one capture directory');
+    const fileMap=new Map(files.map(file=>[file.webkitRelativePath.split('/').slice(1).join('/'),file]));status.textContent='Checking inputs and loading capture…';
+    await load(await a.arrayBuffer(),await b.arrayBuffer(),JSON.parse(await manifestFile.text()),async path=>{const file=fileMap.get(path);if(!file)throw new Error(`Missing capture ${path}`);return file.arrayBuffer();});
+  }catch(error){status.textContent=String(error);}
+};
+(document.getElementById('mode') as HTMLSelectElement).onchange=event=>setMode((event.target as HTMLSelectElement).value as typeof mode);
+function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}addEventListener('resize',resize);resize();
+renderer.setAnimationLoop(()=>renderer.render(scene,camera));
+Object.assign(window,{__treeImpostorLab:{load,setMode,probe,renderer,scene,camera,controls,sun,get capture(){return capture;},get impostor(){return impostor;},get family(){return family;},get ready(){return !!impostor&&!loading;}}});
+
+
+FILE src/tree-asset.ts
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {phaseFromPeriod} from './world-time.ts';
+
+/** Experimental author-6 adapter. Assets are supplied explicitly; this does not
+ * replace the canonical forest or invent a second species catalogue. */
+export const TREE_REFERENCE_HEIGHT_M=16;
+export const TREE_WIND_PERIOD_NS=7_000_000_000n;
+export const treeWindPhase=(date:bigint)=>phaseFromPeriod(date,TREE_WIND_PERIOD_NS);
+
+type GLBDocument={json:any;binary:Uint8Array};
+function readGLB(buffer:ArrayBuffer):GLBDocument {
+  const view=new DataView(buffer);
+  if(buffer.byteLength<28||view.getUint32(0,true)!==0x46546c67||view.getUint32(4,true)!==2||view.getUint32(8,true)!==buffer.byteLength)throw new Error('Expected a complete glTF 2 GLB');
+  const length=view.getUint32(12,true),start=20+length;
+  if(view.getUint32(16,true)!==0x4e4f534a||start+8>buffer.byteLength||view.getUint32(start+4,true)!==0x004e4942||start+8+view.getUint32(start,true)!==buffer.byteLength)throw new Error('Expected JSON and embedded binary chunks');
+  const json=JSON.parse(new TextDecoder().decode(new Uint8Array(buffer,20,length)));
+  if(json.buffers?.length!==1||json.buffers[0].uri||json.extensionsRequired?.length)throw new Error('Only self-contained author-6 GLBs are supported');
+  if(json.nodes?.length!==1||json.nodes[0].mesh!==0||['matrix','translation','rotation','scale'].some(k=>json.nodes[0][k])||json.meshes?.length!==1||json.meshes[0].primitives?.length!==2)throw new Error('Expected one untransformed two-material tree');
+  if(json.materials?.length!==2||json.materials[0].name!=='MAT_AtlasBark'||json.materials[1].name!=='MAT_AtlasFoliage'||json.images?.length!==4)throw new Error('Expected author-6 bark and foliage');
+  if((json.materials[0].alphaMode??'OPAQUE')!=='OPAQUE'||json.materials[1].alphaMode!=='MASK'||(json.materials[1].alphaCutoff??.5)<=0)throw new Error('Tree foliage requires alpha MASK with a positive cutoff');
+  const formats:Record<string,string>={_WIND:'SCALAR',_BRANCH_LEVEL:'SCALAR',_LEAF_CENTER:'VEC3',_LEAF_PIVOT:'VEC3',POSITION:'VEC3',NORMAL:'VEC3',TEXCOORD_0:'VEC2',TANGENT:'VEC4'};
+  for(const [index,p] of json.meshes[0].primitives.entries()){
+    if(p.material!==index||p.mode!==undefined&&p.mode!==4||p.targets||Object.keys(p.attributes??{}).length!==8||!Object.keys(formats).every(k=>Number.isInteger(p.attributes?.[k])))throw new Error('Incomplete tree vertex contract');
+    const count=json.accessors[p.attributes.POSITION]?.count;
+    for(const [name,type] of Object.entries(formats)){
+      const a=json.accessors[p.attributes[name]];
+      if(!a||a.type!==type||a.componentType!==5126||a.normalized||a.sparse||!Number.isInteger(count)||count<1||a.count!==count)throw new Error(`Invalid tree accessor ${name}`);
+    }
+  }
+  return {json,binary:new Uint8Array(buffer,start+8,view.getUint32(start,true))};
+}
+function imageBytes(doc:GLBDocument,index:number){
+  const image=doc.json.images[index],view=doc.json.bufferViews[image.bufferView];
+  if(image.uri||image.mimeType!=='image/png'||!view||view.buffer!==0||!Number.isInteger(view.byteLength)||view.byteLength<=0)throw new Error('Expected an embedded PNG');
+  const start=view.byteOffset??0,end=start+view.byteLength;
+  if(start<0||end>doc.binary.length)throw new Error('Image outside GLB binary');
+  return doc.binary.subarray(start,end);
+}
+/** Check byte identity before sharing materials. LOD1 images are never decoded:
+ * its parser receives texture-free material placeholders with stable indices. */
+export function prepareTreeLODPair(lod0:ArrayBuffer,lod1:ArrayBuffer){
+  const a=readGLB(lod0),b=readGLB(lod1);
+  for(const key of ['materials','textures','samplers'])if(JSON.stringify(a.json[key])!==JSON.stringify(b.json[key]))throw new Error(`Tree LOD ${key} differ`);
+  let embeddedTextureBytes=0;
+  for(let i=0;i<4;i++){
+    const x=imageBytes(a,i),y=imageBytes(b,i);embeddedTextureBytes+=x.length;
+    if(x.length!==y.length||x.some((v,k)=>v!==y[k]))throw new Error(`Tree LOD image ${i} differs`);
+  }
+  const json=structuredClone(b.json);
+  json.materials=json.materials.map((m:any)=>({name:m.name}));delete json.images;delete json.textures;delete json.samplers;
+  // Keep the original binary offsets. Unused compressed PNG bytes remain in
+  // this temporary parse input, but do not allocate image/GPU resources.
+  const text=new TextEncoder().encode(JSON.stringify(json)),length=(text.length+3)&~3;
+  const buffer=new ArrayBuffer(28+length+b.binary.length),view=new DataView(buffer),bytes=new Uint8Array(buffer);
+  view.setUint32(0,0x46546c67,true);view.setUint32(4,2,true);view.setUint32(8,buffer.byteLength,true);
+  view.setUint32(12,length,true);view.setUint32(16,0x4e4f534a,true);bytes.fill(32,20,20+length);bytes.set(text,20);
+  view.setUint32(20+length,b.binary.length,true);view.setUint32(24+length,0x004e4942,true);bytes.set(b.binary,28+length);
+  return {lod1GeometryBuffer:buffer,embeddedTextureBytes};
+}
+
+/** CPU reference for shader audits. Scale skeleton/attachment coordinates,
+ * keeping every offset within a leaf card in metres, then rotate rigidly. */
+export function treeVertexMeters(position:THREE.Vector3,pivot:THREE.Vector3,leaf:boolean,heightM:number,windWeight:number,phase:number,instancePhase=0){
+  if(!Number.isFinite(heightM)||heightM<10||heightM>22)throw new Error('Prototype supports tree heights 10–22 m');
+  if(!leaf)return position.clone().multiplyScalar(heightM/TREE_REFERENCE_HEIGHT_M);
+  return position.clone().sub(pivot).applyAxisAngle(new THREE.Vector3(0,0,1),Math.sin(phase+instancePhase)*.12*windWeight).addScaledVector(pivot,heightM/TREE_REFERENCE_HEIGHT_M);
+}
+
+const declarations=`
+attribute float _wind, _branch_level;
+attribute vec3 _leaf_pivot;
+attribute vec2 instanceTree;
+uniform float atlasTreePhase;
+mat3 atlasLeafRotation(){
+  float angle=sin(atlasTreePhase+instanceTree.y)*.12*_wind;
+  float c=cos(angle),s=sin(angle);
+  return mat3(c,s,0.,-s,c,0.,0.,0.,1.);
+}
+`;
+function deform(material:THREE.Material,phase:{value:number}){
+  material.onBeforeCompile=shader=>{
+    shader.uniforms.atlasTreePhase=phase;
+    shader.vertexShader=declarations+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
+      if(_branch_level>3.5){objectNormal=atlasLeafRotation()*objectNormal;
+        #ifdef USE_TANGENT
+        objectTangent=atlasLeafRotation()*objectTangent;
+        #endif
+      }`);
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      transformed=_branch_level>3.5 ? _leaf_pivot*instanceTree.x+atlasLeafRotation()*(position-_leaf_pivot) : position*instanceTree.x;`);
+  };
+  material.customProgramCacheKey=()=> 'atlas-tree-physical-1';
+}
+export type TreeAssetFamily=Awaited<ReturnType<typeof loadTreeAssetFamily>>;
+export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer){
+  const prepared=prepareTreeLODPair(lod0,lod1),loader=new GLTFLoader();
+  const loaded:THREE.Group[]=[];
+  const textures=new Set<THREE.Texture>(),materials=new Set<THREE.Material>(),geometries=new Set<THREE.BufferGeometry>();
+  function collect(group:THREE.Group){group.traverse(o=>{
+    if(!(o instanceof THREE.Mesh))return;
+    geometries.add(o.geometry);
+    for(const m of Array.isArray(o.material)?o.material:[o.material]){
+      materials.add(m);for(const value of Object.values(m))if(value instanceof THREE.Texture)textures.add(value);
+    }
+  });}
+  function dispose(){for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures){t.dispose();if(typeof ImageBitmap!=='undefined'&&t.image instanceof ImageBitmap)t.image.close();}}
+  try {
+    for(const bytes of [lod0,prepared.lod1GeometryBuffer]){const gltf=await loader.parseAsync(bytes,'');loaded.push(gltf.scene);collect(gltf.scene);}
+    const lods=loaded.map(group=>{
+      const meshes:THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>[]=[];
+      group.traverse(o=>{if(o instanceof THREE.Mesh)meshes.push(o as THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>);});
+      if(meshes.length!==2||meshes.some(m=>Array.isArray(m.material)))throw new Error('Expected two tree primitives');
+      return meshes.sort((a,b)=>a.material.name.localeCompare(b.material.name));
+    });
+    for(let i=0;i<2;i++){lods[1][i].material.dispose();materials.delete(lods[1][i].material);lods[1][i].material=lods[0][i].material;}
+    const phase={value:0};
+    for(const material of materials)deform(material,phase);
+    let disposed=false,activeBatches=0;
+    return {
+      lods,textures,embeddedTextureBytes:prepared.embeddedTextureBytes,
+      setDate(date:bigint){phase.value=treeWindPhase(date);},
+      createBatch(lod:0|1,capacity:number){
+        if(disposed)throw new Error('Tree family is disposed');
+        if(!Number.isInteger(capacity)||capacity<1||capacity>4096)throw new Error('Invalid tree capacity');
+        const group=new THREE.Group(),tree=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2).setUsage(THREE.DynamicDrawUsage);
+        const meshes=lods[lod].map(source=>{
+          const geometry=source.geometry.clone();geometry.setAttribute('instanceTree',tree);
+          const mesh=new THREE.InstancedMesh(geometry,source.material,capacity);mesh.count=0;
+          mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.castShadow=true;mesh.receiveShadow=true;
+          // Caller can install conservative curved-world bounds after integration.
+          // Shader scale/wind invalidates Three's unmodified geometry bounds.
+          mesh.frustumCulled=false;
+          const common={map:source.material.map,alphaTest:source.material.alphaTest,side:source.material.side};
+          mesh.customDepthMaterial=new THREE.MeshDepthMaterial({...common,depthPacking:THREE.RGBADepthPacking});
+          mesh.customDistanceMaterial=new THREE.MeshDistanceMaterial(common);
+          deform(mesh.customDepthMaterial,phase);deform(mesh.customDistanceMaterial,phase);group.add(mesh);return mesh;
+        });
+        activeBatches++;let batchDisposed=false;
+        return {group,meshes,
+          setCount(count:number){
+            if(batchDisposed||!Number.isInteger(count)||count<0||count>meshes[0].count)throw new Error('Tree count can only truncate initialized slots');
+            for(const mesh of meshes)mesh.count=count;
+          },
+          /** Matrix contains yaw/translation and metres-to-scene-units only.
+           * Tree height is applied in the shader so leaves retain their size. */
+          setInstance(index:number,matrix:THREE.Matrix4,heightM:number,phaseOffset=0){
+            if(batchDisposed||!Number.isInteger(index)||index<0||index>=capacity||index>meshes[0].count||!Number.isFinite(heightM)||heightM<10||heightM>22||!Number.isFinite(phaseOffset)||matrix.elements.some(x=>!Number.isFinite(x)))throw new Error('Invalid tree instance or gap in initialized slots');
+            const e=matrix.elements,a=new THREE.Vector3(e[0],e[1],e[2]),b=new THREE.Vector3(e[4],e[5],e[6]),c=new THREE.Vector3(e[8],e[9],e[10]);
+            const scale2=a.lengthSq(),tolerance=scale2*1e-6;
+            if(!Number.isFinite(scale2)||scale2<=0||Math.abs(b.lengthSq()-scale2)>tolerance||Math.abs(c.lengthSq()-scale2)>tolerance||Math.abs(a.dot(b))>tolerance||Math.abs(a.dot(c))>tolerance||Math.abs(b.dot(c))>tolerance||matrix.determinant()<=0||e[3]!==0||e[7]!==0||e[11]!==0||e[15]!==1)throw new Error('Tree matrix requires rotation and positive uniform scene-unit scale');
+            // Phase stays representable as Float32 even for a caller's very
+            // large finite offset; the absolute universe date stays BigInt.
+            const tau=2*Math.PI;phaseOffset=((phaseOffset%tau)+tau)%tau;
+            tree.setXY(index,heightM/TREE_REFERENCE_HEIGHT_M,phaseOffset);tree.needsUpdate=true;
+            for(const mesh of meshes){mesh.setMatrixAt(index,matrix);mesh.instanceMatrix.needsUpdate=true;mesh.count=Math.max(mesh.count,index+1);}
+          },
+          dispose(){if(batchDisposed)return;batchDisposed=true;activeBatches--;for(const mesh of meshes){mesh.geometry.dispose();mesh.customDepthMaterial?.dispose();mesh.customDistanceMaterial?.dispose();mesh.dispose();}group.clear();group.removeFromParent();},
+        };
+      },
+      dispose(){if(disposed)return;if(activeBatches)throw new Error('Dispose tree batches before their family');disposed=true;dispose();},
+    };
+  }catch(error){dispose();throw error;}
+}
+
+
+FILE src/tree-impostor-views.ts
+/** Pure capture/view contract for the authored-tree distance experiment.
+ * Coordinates are object-space, right-handed, Y-up. Directions point from the
+ * capture centre towards the camera. This module does not render impostors. */
+export type TreeViewVector=readonly [number,number,number];
+export const TREE_VIEW_VERSION='tree-full-octahedral-1';
+export const TREE_VIEW_GRID=9;
+const sign=(x:number)=>x<0?-1:1;
+function unit(v:TreeViewVector):TreeViewVector {
+  if(v.length!==3||v.some(x=>!Number.isFinite(x)))throw new Error('View direction must contain three finite components');
+  // Avoid overflow/underflow for otherwise valid nonzero directions.
+  const scale=Math.max(...v.map(Math.abs));
+  if(scale===0)throw new Error('View direction must be nonzero');
+  const a=v.map(x=>x/scale),length=Math.hypot(...a);
+  return [a[0]/length,a[1]/length,a[2]/length];
+}
+export function encodeTreeView(direction:TreeViewVector):readonly [number,number] {
+  const [x,y,z]=unit(direction),sum=Math.abs(x)+Math.abs(y)+Math.abs(z);
+  const a=x/sum,b=z/sum;
+  return y>=0?[(a+1)/2,(b+1)/2]:[((1-Math.abs(b))*sign(a)+1)/2,((1-Math.abs(a))*sign(b)+1)/2];
+}
+export function decodeTreeView(u:number,v:number):TreeViewVector {
+  if(!Number.isFinite(u)||!Number.isFinite(v)||u<0||u>1||v<0||v>1)throw new Error('Octahedral coordinates must lie in [0,1]');
+  let x=2*u-1,z=2*v-1;
+  const y=1-Math.abs(x)-Math.abs(z),fold=Math.max(0,-y);
+  x-=sign(x)*fold;z-=sign(z)*fold;
+  return unit([x,y,z]);
+}
+function checkGrid(grid:number){
+  // An odd vertex count places equator folds and axes on cell edges/diagonals.
+  if(!Number.isInteger(grid)||grid<3||grid>33||grid%2!==1)throw new Error('Tree view grid must be odd and between 3 and 33');
+}
+export function treeViewBlend(direction:TreeViewVector,grid=TREE_VIEW_GRID){
+  checkGrid(grid);
+  const [u,v]=encodeTreeView(direction),n=grid-1;
+  const gx=u*n,gy=v*n,x=Math.min(n-1,Math.floor(gx)),y=Math.min(n-1,Math.floor(gy));
+  const a=gx-x,b=gy-y;
+  const at=(dx:number,dy:number)=>({index:(y+dy)*grid+x+dx,x:x+dx,y:y+dy});
+  // Choose diagonals that follow the octahedron's equator folds. A single
+  // diagonal orientation throughout the square crosses faces in two quadrants.
+  const sameQuadrant=(x<n/2)===(y<n/2);
+  const vertices=sameQuadrant
+    ? a+b<=1?[at(0,0),at(1,0),at(0,1)]:[at(1,1),at(0,1),at(1,0)]
+    : a>=b?[at(0,0),at(1,0),at(1,1)]:[at(0,0),at(1,1),at(0,1)];
+  // Barycentric weights are in the unfolded octahedron plane. Reconstructing
+  // the original ray requires L1-normalized capture vectors, not unit vectors.
+  const weights=sameQuadrant
+    ? a+b<=1?[1-a-b,a,b]:[a+b-1,1-a,1-b]
+    : a>=b?[1-a,a-b,b]:[1-b,a,b-a];
+  return {uv:[u,v] as const,vertices,weights};
+}
+function cross(a:TreeViewVector,b:TreeViewVector):TreeViewVector {
+  return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+}
+export function treeCaptureBasis(direction:TreeViewVector){
+  const towardCamera=unit(direction);
+  const reference:TreeViewVector=Math.abs(towardCamera[1])>.999?[0,0,1]:[0,1,0];
+  const right=unit(cross(reference,towardCamera)),up=unit(cross(towardCamera,right));
+  // Each view stores its own basis; bases must not be interpolated at runtime.
+  return {towardCamera,right,up};
+}
+export function treeCaptureViews(grid=TREE_VIEW_GRID){
+  checkGrid(grid);
+  return Array.from({length:grid*grid},(_,index)=>{
+    const x=index%grid,y=Math.floor(index/grid),uv=[x/(grid-1),y/(grid-1)] as const;
+    return {index,x,y,uv,...treeCaptureBasis(decodeTreeView(...uv))};
+  });
+}
+
+
+FILE test-results/tree-impostor-render-v2-matched/smoke.json
+{
+  "probes": [
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "sourceArea": 2974.375,
+      "captureArea": 2974.2980392156846,
+      "areaError": -0.000025874607040255783,
+      "coverageIoU": 0.999371617698064
+    },
+    {
+      "direction": [
+        1,
+        0,
+        0
+      ],
+      "sourceArea": 2926.375,
+      "captureArea": 2926.211764705883,
+      "areaError": -0.000055780716455317644,
+      "coverageIoU": 0.9994393192451331
+    },
+    {
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "sourceArea": 3493.6875,
+      "captureArea": 3493.474509803922,
+      "areaError": -0.0000609642951975394,
+      "coverageIoU": 0.9996351816736999
+    },
+    {
+      "direction": [
+        0,
+        -1,
+        0
+      ],
+      "sourceArea": 3493.75,
+      "captureArea": 3493.5372549019608,
+      "areaError": -0.00006089305131713762,
+      "coverageIoU": 0.9996352583416019
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "sourceArea": 3058.5625,
+      "captureArea": 3085.8431372549258,
+      "areaError": 0.008919431025171384,
+      "coverageIoU": 0.7202881972131396
+    }
+  ],
+  "diagnostics": {
+    "bytes": 28311120,
+    "renderer": {
+      "memory": {
+        "geometries": 3,
+        "textures": 8
+      },
+      "render": {
+        "frame": 302,
+        "calls": 1,
+        "triangles": 2,
+        "points": 0,
+        "lines": 0
+      },
+      "programs": [
+        {
+          "type": "MeshStandardMaterial",
+          "name": "MAT_AtlasBark",
+          "id": 0,
+          "cacheKey": "physical,STANDARD,,highp,srgb,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,4,0,0,0,65667,131082,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "MAT_AtlasFoliage",
+          "id": 1,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,4,0,0,0,66691,133130,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "",
+          "id": 2,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb,false,,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,4,0,0,0,1,131080,srgb,atlas-captured-tree-lab-1",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshStandardMaterial",
+          "name": "MAT_AtlasBark",
+          "id": 3,
+          "cacheKey": "physical,STANDARD,,highp,srgb-linear,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,65667,131082,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "MAT_AtlasFoliage",
+          "id": 4,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb-linear,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,66691,133130,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "",
+          "id": 5,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb-linear,false,,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,1,131080,srgb,atlas-captured-tree-lab-1",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        }
+      ],
+      "autoReset": true
+    },
+    "views": 81
+  },
+  "errors": []
+}
+
+FILE test-results/tree-alpha-experiment/smoke.json
+{
+  "probes": [
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 32,
+      "native": 32.74117647058823,
+      "reference": 135.125,
+      "hash": 200.89411764705892,
+      "nativeRatio": 0.24230287859824776,
+      "hashRatio": 1.486727975186375
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 64,
+      "native": 161.1882352941177,
+      "reference": 706.5625,
+      "hash": 777.2980392156865,
+      "nativeRatio": 0.22813018705934393,
+      "hashRatio": 1.100112218261918
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 128,
+      "native": 2155.823529411766,
+      "reference": 2974.375,
+      "hash": 3052.835294117651,
+      "nativeRatio": 0.7247988331705874,
+      "hashRatio": 1.0263787498609458
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 256,
+      "native": 11284.380392156843,
+      "reference": 12030.375,
+      "hash": 12164.89019607841,
+      "nativeRatio": 0.9379907436099741,
+      "hashRatio": 1.0111812970151313
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 512,
+      "native": 47568.49803921573,
+      "reference": 48214.4375,
+      "hash": 48432.09019607851,
+      "nativeRatio": 0.9866027792860952,
+      "hashRatio": 1.004514263929316
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 32,
+      "native": 31.23529411764705,
+      "reference": 144.8125,
+      "hash": 202.64705882352948,
+      "nativeRatio": 0.2156947371093452,
+      "hashRatio": 1.3993754601538506
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 64,
+      "native": 190.68235294117653,
+      "reference": 730.5625,
+      "hash": 819.5568627450982,
+      "nativeRatio": 0.2610075838017644,
+      "hashRatio": 1.1218162207136257
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 128,
+      "native": 2323.8274509803946,
+      "reference": 3058.5625,
+      "hash": 3161.611764705883,
+      "nativeRatio": 0.7597776573080964,
+      "hashRatio": 1.033692057855899
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 256,
+      "native": 11689.086274509775,
+      "reference": 12364.75,
+      "hash": 12523.101960784286,
+      "nativeRatio": 0.9453556500948078,
+      "hashRatio": 1.012806725634104
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 512,
+      "native": 48919.1921568628,
+      "reference": 49552,
+      "hash": 49785.72549019617,
+      "nativeRatio": 0.9872294187290686,
+      "hashRatio": 1.0047167720817762
+    }
+  ],
+  "diagnostics": {
+    "bytes": 28311120,
+    "renderer": {
+      "memory": {
+        "geometries": 3,
+        "textures": 8
+      },
+      "render": {
+        "frame": 350,
+        "calls": 1,
+        "triangles": 2,
+        "points": 0,
+        "lines": 0
+      },
+      "programs": [
+        {
+          "type": "MeshStandardMaterial",
+          "name": "MAT_AtlasBark",
+          "id": 0,
+          "cacheKey": "physical,STANDARD,,highp,srgb,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,4,0,0,0,65667,131082,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "MAT_AtlasFoliage",
+          "id": 1,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,4,0,0,0,66691,133130,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "",
+          "id": 2,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb,false,,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,4,0,0,0,1,131080,srgb,atlas-captured-tree-lab-1",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshStandardMaterial",
+          "name": "MAT_AtlasBark",
+          "id": 3,
+          "cacheKey": "physical,STANDARD,,highp,srgb-linear,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,65667,131082,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "MAT_AtlasFoliage",
+          "id": 4,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb-linear,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,66691,133130,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        },
+        {
+          "type": "MeshPhysicalMaterial",
+          "name": "MAT_AtlasFoliage",
+          "id": 5,
+          "cacheKey": "physical,STANDARD,,PHYSICAL,,highp,srgb-linear,false,,uv,false,false,false,false,uv,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,,false,false,0,,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,327811,133130,srgb,atlas-tree-physical-1/capture-lab-mask",
+          "usedTimes": 1,
+          "program": {},
+          "vertexShader": {},
+          "fragmentShader": {},
+          "numMultiviewViews": 0
+        }
+      ],
+      "autoReset": true
+    },
+    "views": 81
+  },
+  "errors": []
+}
