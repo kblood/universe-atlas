@@ -1,0 +1,1825 @@
+{
+  "capturedAt": "2026-09-28T06:39:34.310Z",
+  "gitRevision": "75b8312a362fdad5eae703cc9dd1b55e425b9ea3",
+  "gitStatus": "M docs/authored-tree-distance-design-2026-09-28.md\n M src/tree-asset.ts\n?? docs/authored-tree-capture-2026-09-28.md\n?? docs/opus-5.5-tree-capture-review-2026-09-28.md\n?? docs/opus-5.5-tree-capture-review-2026-09-28.metadata.json\n?? docs/opus-5.5-tree-reconstruction-review-2026-09-28.md\n?? docs/opus-5.5-tree-reconstruction-review-2026-09-28.metadata.json\n?? src/tree-captured-impostor.ts\n?? src/tree-impostor-filter.ts\n?? src/tree-impostor-lab.ts\n?? tests/tree-impostor-filter.test.mjs\n?? tests/tree-impostor-rendering.test.mjs\n?? tree-impostor-lab.html",
+  "sourceHashes": {
+    "src/tree-captured-impostor.ts": "de10eb740b5e60b72f9f42da6ed46fef7da4b17fff54a3aefb01301d7cbc09c9",
+    "src/tree-impostor-lab.ts": "c5c7e2a617c0ad6312bb60859da2ebb8b037f7db088d6e61c16903d49b32f859",
+    "tree-impostor-lab.html": "6422365c5d05ef86c11310807a3abeaa14e1b6e81eb7b59d423893ba4e7fbc7b",
+    "src/tree-impostor-views.ts": "caba31dfa7e2a2924a56b6dc5701b662ade1c20c95a40c58542ba13635d39520",
+    "src/tree-asset.ts": "c3c6409a63efaff9d8fdb913c7a87bb11dfcf599eb9621142bed9fe4fd1b2586"
+  },
+  "inputHashes": {
+    "atlas-branching-v1.glb": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df",
+    "atlas-branching-v1.lod1.glb": "6d071f129ff4dae730b3ad08b6b012bdab4d8f35070170776ea4adb27a865b25",
+    "capture-manifest.json": "603e15ddf91ec8615b15a2c2503abd8b9d1552af76838560c9b415511eaeb50e"
+  },
+  "hardware": {
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "vendor": "Google Inc. (NVIDIA)",
+    "captureBytes": 28311120,
+    "textureCount": 5,
+    "geometryCount": 2,
+    "views": 81,
+    "version": "tree-material-capture-2"
+  },
+  "coverageContract": {
+    "defaultMask": {
+      "alphaHash": false,
+      "alphaTest": 0.5,
+      "depthAlphaHash": false,
+      "distanceAlphaHash": false
+    },
+    "labHash": {
+      "alphaHash": true,
+      "alphaTest": 0,
+      "depthAlphaHash": true,
+      "distanceAlphaHash": true
+    },
+    "loaderHash": {
+      "alphaHash": true,
+      "alphaTest": 0,
+      "depthAlphaHash": true,
+      "depthAlphaTest": 0,
+      "distanceAlphaHash": true,
+      "distanceAlphaTest": 0
+    }
+  },
+  "rollback": {
+    "message": "Error: Truncated capture attachment",
+    "oldFamilyRetained": true,
+    "oldCaptureRetained": true,
+    "oldImpostorRetained": true,
+    "ready": true,
+    "mode": true
+  },
+  "probeRestoration": {
+    "renderTarget": true,
+    "mode": true
+  },
+  "probeParallax": [
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "offCoverage": 2989.0078431372526,
+      "onCoverage": 3085.8392156862983,
+      "changedBytes": 7234
+    },
+    {
+      "direction": [
+        1,
+        1,
+        0
+      ],
+      "offCoverage": 3216.5529411764705,
+      "onCoverage": 3216.5529411764705,
+      "changedBytes": 0
+    },
+    {
+      "direction": [
+        0.01,
+        -1,
+        0.02
+      ],
+      "offCoverage": 3453.976470588255,
+      "onCoverage": 3463.7882352941447,
+      "changedBytes": 3990
+    }
+  ],
+  "probes": [
+    {
+      "direction": [
+        0,
+        -1,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 218.34509803921569,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -0.9486832980505138,
+        -0.3162277660168379
+      ],
+      "pixels": 32,
+      "impCoverage": 220.65490196078443,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -0.7071067811865475,
+        -0.7071067811865475
+      ],
+      "pixels": 32,
+      "impCoverage": 219.36470588235292,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -0.3162277660168379,
+        -0.9486832980505138
+      ],
+      "pixels": 32,
+      "impCoverage": 195.4117647058825,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        0,
+        -1
+      ],
+      "pixels": 32,
+      "impCoverage": 185.86666666666662,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -0.3162277660168379,
+        -0.9486832980505138
+      ],
+      "pixels": 32,
+      "impCoverage": 195.4117647058825,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -0.7071067811865475,
+        -0.7071067811865475
+      ],
+      "pixels": 32,
+      "impCoverage": 219.36470588235292,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -0.9486832980505138,
+        -0.3162277660168379
+      ],
+      "pixels": 32,
+      "impCoverage": 220.65490196078443,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -1,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 218.34509803921569,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.3162277660168379,
+        -0.9486832980505138,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 207.886274509804,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.4082482904638631,
+        -0.8164965809277261,
+        -0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 214.86666666666662,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.4082482904638631,
+        -0.4082482904638631,
+        -0.8164965809277261
+      ],
+      "pixels": 32,
+      "impCoverage": 201.50588235294106,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.3162277660168379,
+        0,
+        -0.9486832980505138
+      ],
+      "pixels": 32,
+      "impCoverage": 187.4509803921568,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        0.3162277660168379,
+        -0.9486832980505138
+      ],
+      "pixels": 32,
+      "impCoverage": 197.44705882352932,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.3162277660168379,
+        0,
+        -0.9486832980505138
+      ],
+      "pixels": 32,
+      "impCoverage": 186.9254901960784,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.4082482904638631,
+        -0.4082482904638631,
+        -0.8164965809277261
+      ],
+      "pixels": 32,
+      "impCoverage": 193.69019607843123,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.4082482904638631,
+        -0.8164965809277261,
+        -0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 203.63529411764702,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.3162277660168379,
+        -0.9486832980505138,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 212.22352941176464,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.7071067811865475,
+        -0.7071067811865475,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 201.0392156862745,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.8164965809277261,
+        -0.4082482904638631,
+        -0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 196.32549019607853,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.7071067811865475,
+        0,
+        -0.7071067811865475
+      ],
+      "pixels": 32,
+      "impCoverage": 192.64705882352936,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.4082482904638631,
+        0.4082482904638631,
+        -0.8164965809277261
+      ],
+      "pixels": 32,
+      "impCoverage": 196.44705882352937,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        0.7071067811865475,
+        -0.7071067811865475
+      ],
+      "pixels": 32,
+      "impCoverage": 204.01568627450987,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.4082482904638631,
+        0.4082482904638631,
+        -0.8164965809277261
+      ],
+      "pixels": 32,
+      "impCoverage": 192.5176470588235,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.7071067811865475,
+        0,
+        -0.7071067811865475
+      ],
+      "pixels": 32,
+      "impCoverage": 182.72156862745075,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.8164965809277261,
+        -0.4082482904638631,
+        -0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 184.2549019607843,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.7071067811865475,
+        -0.7071067811865475,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 200.72549019607845,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.9486832980505138,
+        -0.3162277660168379,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 189.7372549019607,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.9486832980505138,
+        0,
+        -0.3162277660168379
+      ],
+      "pixels": 32,
+      "impCoverage": 185.9411764705883,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.8164965809277261,
+        0.4082482904638631,
+        -0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 193.2941176470587,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.4082482904638631,
+        0.8164965809277261,
+        -0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 209.79215686274514,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        0.9486832980505138,
+        -0.3162277660168379
+      ],
+      "pixels": 32,
+      "impCoverage": 211.34117647058832,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.4082482904638631,
+        0.8164965809277261,
+        -0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 198.67843137254903,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.8164965809277261,
+        0.4082482904638631,
+        -0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 194.14901960784312,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.9486832980505138,
+        0,
+        -0.3162277660168379
+      ],
+      "pixels": 32,
+      "impCoverage": 180.66666666666674,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.9486832980505138,
+        -0.3162277660168379,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 186.12549019607852,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -1,
+        0,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 182.8745098039214,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.9486832980505138,
+        0.3162277660168379,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 186.1254901960785,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.7071067811865475,
+        0.7071067811865475,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 200.7254901960784,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.3162277660168379,
+        0.9486832980505138,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 212.22352941176464,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 218.34117647058818,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.3162277660168379,
+        0.9486832980505138,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 207.88627450980403,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.7071067811865475,
+        0.7071067811865475,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 201.03921568627447,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.9486832980505138,
+        0.3162277660168379,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 189.7372549019607,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        1,
+        0,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 182.87450980392146,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.9486832980505138,
+        -0.3162277660168379,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 189.7372549019607,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.9486832980505138,
+        0,
+        0.3162277660168379
+      ],
+      "pixels": 32,
+      "impCoverage": 180.6666666666667,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.8164965809277261,
+        0.4082482904638631,
+        0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 184.2509803921568,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.4082482904638631,
+        0.8164965809277261,
+        0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 203.63529411764702,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        0.9486832980505138,
+        0.3162277660168379
+      ],
+      "pixels": 32,
+      "impCoverage": 220.6549019607844,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.4082482904638631,
+        0.8164965809277261,
+        0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 214.86666666666656,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.8164965809277261,
+        0.4082482904638631,
+        0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 196.3254901960785,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.9486832980505138,
+        0,
+        0.3162277660168379
+      ],
+      "pixels": 32,
+      "impCoverage": 185.93725490196078,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.9486832980505138,
+        -0.3162277660168379,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 186.12549019607852,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.7071067811865475,
+        -0.7071067811865475,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 201.0392156862745,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.8164965809277261,
+        -0.4082482904638631,
+        0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 194.14901960784317,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.7071067811865475,
+        0,
+        0.7071067811865475
+      ],
+      "pixels": 32,
+      "impCoverage": 182.72156862745072,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.4082482904638631,
+        0.4082482904638631,
+        0.8164965809277261
+      ],
+      "pixels": 32,
+      "impCoverage": 193.6901960784312,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        0.7071067811865475,
+        0.7071067811865475
+      ],
+      "pixels": 32,
+      "impCoverage": 219.36470588235292,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.4082482904638631,
+        0.4082482904638631,
+        0.8164965809277261
+      ],
+      "pixels": 32,
+      "impCoverage": 201.50588235294106,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.7071067811865475,
+        0,
+        0.7071067811865475
+      ],
+      "pixels": 32,
+      "impCoverage": 192.6509803921568,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.8164965809277261,
+        -0.4082482904638631,
+        0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 193.29411764705875,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.7071067811865475,
+        -0.7071067811865475,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 200.72549019607845,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.3162277660168379,
+        -0.9486832980505138,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 207.886274509804,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.4082482904638631,
+        -0.8164965809277261,
+        0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 198.67843137254906,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.4082482904638631,
+        -0.4082482904638631,
+        0.8164965809277261
+      ],
+      "pixels": 32,
+      "impCoverage": 192.51764705882348,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.3162277660168379,
+        0,
+        0.9486832980505138
+      ],
+      "pixels": 32,
+      "impCoverage": 186.9254901960784,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        0.3162277660168379,
+        0.9486832980505138
+      ],
+      "pixels": 32,
+      "impCoverage": 195.41176470588243,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.3162277660168379,
+        0,
+        0.9486832980505138
+      ],
+      "pixels": 32,
+      "impCoverage": 187.4509803921568,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.4082482904638631,
+        -0.4082482904638631,
+        0.8164965809277261
+      ],
+      "pixels": 32,
+      "impCoverage": 196.44705882352935,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.4082482904638631,
+        -0.8164965809277261,
+        0.4082482904638631
+      ],
+      "pixels": 32,
+      "impCoverage": 209.79215686274512,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.3162277660168379,
+        -0.9486832980505138,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 212.22352941176464,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -1,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 218.34509803921569,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -0.9486832980505138,
+        0.3162277660168379
+      ],
+      "pixels": 32,
+      "impCoverage": 211.34117647058838,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -0.7071067811865475,
+        0.7071067811865475
+      ],
+      "pixels": 32,
+      "impCoverage": 204.0156862745099,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -0.3162277660168379,
+        0.9486832980505138
+      ],
+      "pixels": 32,
+      "impCoverage": 197.4470588235293,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 32,
+      "impCoverage": 185.86666666666656,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -0.3162277660168379,
+        0.9486832980505138
+      ],
+      "pixels": 32,
+      "impCoverage": 197.4470588235293,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -0.7071067811865475,
+        0.7071067811865475
+      ],
+      "pixels": 32,
+      "impCoverage": 204.0156862745099,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -0.9486832980505138,
+        0.3162277660168379
+      ],
+      "pixels": 32,
+      "impCoverage": 211.34117647058838,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -1,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 218.34509803921569,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 32,
+      "impCoverage": 185.86666666666656,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        1,
+        0,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 182.87450980392146,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 218.34117647058818,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        -1,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 218.34509803921569,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        0,
+        -1
+      ],
+      "pixels": 32,
+      "impCoverage": 185.86666666666662,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -1,
+        0,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 182.8745098039214,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.6917144638660746,
+        0.20751433915982237,
+        0.6917144638660746
+      ],
+      "pixels": 32,
+      "impCoverage": 192.48235294117643,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.7071067811865475,
+        0.7071067811865475,
+        0
+      ],
+      "pixels": 32,
+      "impCoverage": 201.03921568627447,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        -0.7071067811865475,
+        0,
+        0.7071067811865475
+      ],
+      "pixels": 32,
+      "impCoverage": 182.72156862745072,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.009997500937109546,
+        0.9997500937109545,
+        0.01999500187421909
+      ],
+      "pixels": 32,
+      "impCoverage": 217.03921568627433,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0.009997500937109546,
+        -0.9997500937109545,
+        0.01999500187421909
+      ],
+      "pixels": 32,
+      "impCoverage": 212.72156862745098,
+      "allFinite": true,
+      "probeKind": "capture-grid-view"
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 32,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 135.125,
+      "captureArea": 185.86666666666656,
+      "relativeAreaError": 0.37551649707061285,
+      "coverageIoU": 0.7202419497842553,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 64,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 706.5625,
+      "captureArea": 743.5176470588225,
+      "relativeAreaError": 0.05230272914119061,
+      "coverageIoU": 0.9231463353507483,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 128,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 2974.375,
+      "captureArea": 2974.2980392156846,
+      "relativeAreaError": -0.000025874607040255783,
+      "coverageIoU": 0.999371617698064,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        1,
+        0,
+        0
+      ],
+      "pixels": 32,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 135.4375,
+      "captureArea": 182.87450980392146,
+      "relativeAreaError": 0.35025018775391936,
+      "coverageIoU": 0.7332165144373213,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        1,
+        0,
+        0
+      ],
+      "pixels": 64,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 693.5,
+      "captureArea": 731.5019607843132,
+      "relativeAreaError": 0.05479734792258566,
+      "coverageIoU": 0.9222587269401173,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        1,
+        0,
+        0
+      ],
+      "pixels": 128,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 2926.375,
+      "captureArea": 2926.211764705883,
+      "relativeAreaError": -0.000055780716455317644,
+      "coverageIoU": 0.9994393192451331,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "pixels": 32,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 198.8125,
+      "captureArea": 218.34117647058818,
+      "relativeAreaError": 0.09822660280710811,
+      "coverageIoU": 0.9042848975180332,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "pixels": 64,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 865.75,
+      "captureArea": 873.3176470588229,
+      "relativeAreaError": 0.008741145895261796,
+      "coverageIoU": 0.9683063495766637,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "pixels": 128,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 3493.6875,
+      "captureArea": 3493.474509803922,
+      "relativeAreaError": -0.0000609642951975394,
+      "coverageIoU": 0.9996351816736999,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        -1,
+        0
+      ],
+      "pixels": 32,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 198.8125,
+      "captureArea": 218.34509803921569,
+      "relativeAreaError": 0.09824632776719615,
+      "coverageIoU": 0.9042687095189772,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        -1,
+        0
+      ],
+      "pixels": 64,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 865.75,
+      "captureArea": 873.3333333333326,
+      "relativeAreaError": 0.008759264606794773,
+      "coverageIoU": 0.9682891585783404,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        -1,
+        0
+      ],
+      "pixels": 128,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 3493.75,
+      "captureArea": 3493.5372549019608,
+      "relativeAreaError": -0.00006089305131713762,
+      "coverageIoU": 0.9996352583416019,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        0,
+        -1
+      ],
+      "pixels": 32,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 135.125,
+      "captureArea": 185.86666666666662,
+      "relativeAreaError": 0.37551649707061324,
+      "coverageIoU": 0.7202419497842553,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        0,
+        -1
+      ],
+      "pixels": 64,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 706.5625,
+      "captureArea": 743.5176470588224,
+      "relativeAreaError": 0.05230272914119045,
+      "coverageIoU": 0.9231463353507485,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        0,
+        -1
+      ],
+      "pixels": 128,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 2974.375,
+      "captureArea": 2974.298039215685,
+      "relativeAreaError": -0.000025874607040102894,
+      "coverageIoU": 0.999371617698064,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        -1,
+        0,
+        0
+      ],
+      "pixels": 32,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 135.4375,
+      "captureArea": 182.8745098039214,
+      "relativeAreaError": 0.350250187753919,
+      "coverageIoU": 0.7332165144373214,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        -1,
+        0,
+        0
+      ],
+      "pixels": 64,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 693.5,
+      "captureArea": 731.501960784313,
+      "relativeAreaError": 0.0547973479225855,
+      "coverageIoU": 0.9222587269401177,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        -1,
+        0,
+        0
+      ],
+      "pixels": 128,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 2926.375,
+      "captureArea": 2926.211764705884,
+      "relativeAreaError": -0.00005578071645500685,
+      "coverageIoU": 0.9994393192451331,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 32,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 144.8125,
+      "captureArea": 192.48235294117643,
+      "relativeAreaError": 0.32918327451826623,
+      "coverageIoU": 0.6594152218843224,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 64,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 730.5625,
+      "captureArea": 775.5450980392154,
+      "relativeAreaError": 0.06157255271002196,
+      "coverageIoU": 0.7328433556636668,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 128,
+      "sourceCoverage": "mask",
+      "probeKind": "mesh-capture",
+      "sourceArea": 3058.5625,
+      "captureArea": 3085.8392156862983,
+      "relativeAreaError": 0.008918148864474179,
+      "coverageIoU": 0.7202889880518616,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 32,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 190.8125,
+      "captureArea": 185.86666666666656,
+      "relativeAreaError": -0.025919860246752385,
+      "coverageIoU": 0.8931212799085504,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 64,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 760.4375,
+      "captureArea": 743.5176470588225,
+      "relativeAreaError": -0.02225015591837266,
+      "coverageIoU": 0.9140753453821312,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 128,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 3027.1875,
+      "captureArea": 2974.2980392156846,
+      "relativeAreaError": -0.01747148492926697,
+      "coverageIoU": 0.9294165156728246,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        1,
+        0,
+        0
+      ],
+      "pixels": 32,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 187.4375,
+      "captureArea": 182.87450980392146,
+      "relativeAreaError": -0.024344062399885534,
+      "coverageIoU": 0.9025703859104778,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        1,
+        0,
+        0
+      ],
+      "pixels": 64,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 749.3125,
+      "captureArea": 731.5019607843132,
+      "relativeAreaError": -0.0237691740304437,
+      "coverageIoU": 0.9190326132978337,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        1,
+        0,
+        0
+      ],
+      "pixels": 128,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 2985.1875,
+      "captureArea": 2926.211764705883,
+      "relativeAreaError": -0.019756124295079263,
+      "coverageIoU": 0.9307715566319016,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "pixels": 32,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 220.0625,
+      "captureArea": 218.34117647058818,
+      "relativeAreaError": -0.007821975708772822,
+      "coverageIoU": 0.9415216421482699,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "pixels": 64,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 874.4375,
+      "captureArea": 873.3176470588229,
+      "relativeAreaError": -0.0012806552111238373,
+      "coverageIoU": 0.9502632134577998,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "pixels": 128,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 3496.375,
+      "captureArea": 3493.474509803922,
+      "relativeAreaError": -0.0008295706828008876,
+      "coverageIoU": 0.9620098361282794,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        -1,
+        0
+      ],
+      "pixels": 32,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 220.0625,
+      "captureArea": 218.34509803921569,
+      "relativeAreaError": -0.007804155459400466,
+      "coverageIoU": 0.9415052909105318,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        -1,
+        0
+      ],
+      "pixels": 64,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 874.4375,
+      "captureArea": 873.3333333333326,
+      "relativeAreaError": -0.0012627165082323489,
+      "coverageIoU": 0.9502807172621425,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        -1,
+        0
+      ],
+      "pixels": 128,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 3496.5625,
+      "captureArea": 3493.5372549019608,
+      "relativeAreaError": -0.0008652054976964517,
+      "coverageIoU": 0.9620120476904814,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        0,
+        -1
+      ],
+      "pixels": 32,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 190.8125,
+      "captureArea": 185.86666666666662,
+      "relativeAreaError": -0.025919860246752087,
+      "coverageIoU": 0.8931212799085503,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        0,
+        -1
+      ],
+      "pixels": 64,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 760.4375,
+      "captureArea": 743.5176470588224,
+      "relativeAreaError": -0.02225015591837281,
+      "coverageIoU": 0.9140753453821313,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        0,
+        0,
+        -1
+      ],
+      "pixels": 128,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 3027.25,
+      "captureArea": 2974.298039215685,
+      "relativeAreaError": -0.017491770017116163,
+      "coverageIoU": 0.9294364567537898,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        -1,
+        0,
+        0
+      ],
+      "pixels": 32,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 187.4375,
+      "captureArea": 182.8745098039214,
+      "relativeAreaError": -0.024344062399885836,
+      "coverageIoU": 0.9025703859104774,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        -1,
+        0,
+        0
+      ],
+      "pixels": 64,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 749.3125,
+      "captureArea": 731.501960784313,
+      "relativeAreaError": -0.023769174030443853,
+      "coverageIoU": 0.9190326132978339,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        -1,
+        0,
+        0
+      ],
+      "pixels": 128,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 2985.1875,
+      "captureArea": 2926.211764705884,
+      "relativeAreaError": -0.019756124295078958,
+      "coverageIoU": 0.9307715566319017,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 32,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 197.375,
+      "captureArea": 192.48235294117643,
+      "relativeAreaError": -0.024788585478523473,
+      "coverageIoU": 0.7749818107153857,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 64,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 782,
+      "captureArea": 775.5450980392154,
+      "relativeAreaError": -0.008254350333484121,
+      "coverageIoU": 0.7542982458077602,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    },
+    {
+      "direction": [
+        1,
+        0.3,
+        1
+      ],
+      "pixels": 128,
+      "sourceCoverage": "hash",
+      "probeKind": "mesh-capture",
+      "sourceArea": 3113.0625,
+      "captureArea": 3085.8392156862983,
+      "relativeAreaError": -0.008744856331571144,
+      "coverageIoU": 0.7323705748946713,
+      "meshAllFinite": true,
+      "captureAllFinite": true
+    }
+  ],
+  "finalState": {
+    "ready": true,
+    "mode": "capture",
+    "textures": 8,
+    "geometries": 3,
+    "programs": [
+      {
+        "name": "MAT_AtlasBark",
+        "diagnostics": null
+      },
+      {
+        "name": "MAT_AtlasFoliage",
+        "diagnostics": null
+      },
+      {
+        "name": "",
+        "diagnostics": null
+      },
+      {
+        "name": "",
+        "diagnostics": null
+      },
+      {
+        "name": "MAT_AtlasBark",
+        "diagnostics": null
+      },
+      {
+        "name": "MAT_AtlasFoliage",
+        "diagnostics": null
+      },
+      {
+        "name": "MAT_AtlasFoliage",
+        "diagnostics": null
+      }
+    ],
+    "glError": 0
+  },
+  "errors": [],
+  "warnings": [
+    "THREE.WARNING: Multiple instances of Three.js being imported."
+  ],
+  "knownLimitations": [
+    "Source comparison uses 4x supersampled mesh probes; captures were baked from the same asset at 4x supersampling.",
+    "Native source alpha mips at 1x render resolution lose foliage; 128px/4x is the reference mesh probe.",
+    "Intermediate-angle silhouette mismatch is unresolved. Record IoU and area error as diagnostics, not as evidence of full visual acceptance.",
+    "This lab does not establish game integration, parallax, shadow casting, wind, handoff, or full-population performance."
+  ]
+}

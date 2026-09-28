@@ -1,0 +1,12 @@
+✔ tree-impostor option parser rejects unsupported and duplicate arguments (1.1717ms)
+✔ capture reduction preserves area coverage and padding never expands alpha (160.579ms)
+✔ invalid path and provenance guards fail before writes with a tiny isolated fixture (70.6315ms)
+✔ full and scaled tree captures are finite, deterministic and preserve provenance (3552.8207ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3990.0776

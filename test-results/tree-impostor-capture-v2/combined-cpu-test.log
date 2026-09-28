@@ -1,0 +1,29 @@
+✔ wind phase uses Euclidean BigInt dates at negative, period, and universe endpoints (1.1446ms)
+✔ physical leaf transforms scale the attachment pivot, retain card size, and rotate the rigid offset (0.6993ms)
+✔ LOD pair validates matching embedded material/texture bytes and strips LOD1 texture descriptors before parse (26.5387ms)
+✔ LOD preparation rejects material and embedded image divergence before sharing (10.0718ms)
+✔ GLB contract rejects extra, malformed, normalized, and blended attributes (8.7173ms)
+✔ reduction computes area coverage, unassociated linear RGB, normal vectors, leaf fraction and frontmost covered depth (1.1249ms)
+✔ normal reduction averages Cartesian object-space vectors directly (0.2863ms)
+✔ normals straddling an octahedral seam average toward the downward direction in Cartesian space (0.1369ms)
+✔ near-antipodal normal result uses the deepest covered source normal as deterministic fallback (0.1317ms)
+✔ frontmost depth ignores uncovered samples and empty output texels stay empty (0.7792ms)
+✔ mean area coverage is conserved through a complete factor-two mip chain (0.1737ms)
+✔ padding copies nearest covered material/data without growing coverage, wrapping tiles or mutating input (0.5916ms)
+✔ invalid reduction and padding arguments are rejected (0.6185ms)
+✔ GPU attributes share quantized alpha and ignore transparent padded material (1.3411ms)
+✔ GPU packing rejects malformed, nonfinite and out-of-range capture planes (0.5667ms)
+✔ octahedral encoding round-trips axes, poles, fold seams and extreme finite magnitudes (12.4614ms)
+✔ odd capture grids provide three-view enclosing cones over every cell, fold, pole and sampled sphere direction (81.4497ms)
+✔ view builders reject invalid grids without mutating direction inputs or emitting inverted UV triangles (3.8477ms)
+✔ duplicated octahedral corner captures for the south pole have identical bases (0.4052ms)
+✔ seam and pole neighborhoods remain covered without imposing cross-threshold basis continuity (0.6951ms)
+✔ stored capture bases are deterministic, finite, orthonormal and right-handed, including fallback poles (2.6384ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 237.1194

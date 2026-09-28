@@ -94,7 +94,8 @@ function deform(material:THREE.Material,phase:{value:number}){
   material.customProgramCacheKey=()=> 'atlas-tree-physical-1';
 }
 export type TreeAssetFamily=Awaited<ReturnType<typeof loadTreeAssetFamily>>;
-export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer){
+export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,options:{foliageCoverage?:'mask'|'hash'}={}){
+  if(options.foliageCoverage!==undefined&&!['mask','hash'].includes(options.foliageCoverage))throw new Error('Unsupported foliage coverage mode');
   const prepared=prepareTreeLODPair(lod0,lod1),loader=new GLTFLoader();
   const loaded:THREE.Group[]=[];
   const textures=new Set<THREE.Texture>(),materials=new Set<THREE.Material>(),geometries=new Set<THREE.BufferGeometry>();
@@ -115,6 +116,12 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer){
       return meshes.sort((a,b)=>a.material.name.localeCompare(b.material.name));
     });
     for(let i=0;i<2;i++){lods[1][i].material.dispose();materials.delete(lods[1][i].material);lods[1][i].material=lods[0][i].material;}
+    // Explicit experiment: hashing samples fractional mip coverage instead of
+    // discarding every leaf texel below the GLB's fixed MASK cutoff. Preserve
+    // the imported MASK path by default, including historical captures.
+    if(options.foliageCoverage==='hash'){
+      lods[0][1].material.alphaTest=0;lods[0][1].material.alphaHash=true;
+    }
     const phase={value:0};
     for(const material of materials)deform(material,phase);
     let disposed=false,activeBatches=0;
@@ -132,7 +139,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer){
           // Caller can install conservative curved-world bounds after integration.
           // Shader scale/wind invalidates Three's unmodified geometry bounds.
           mesh.frustumCulled=false;
-          const common={map:source.material.map,alphaTest:source.material.alphaTest,side:source.material.side};
+          const common={map:source.material.map,alphaTest:source.material.alphaTest,alphaHash:source.material.alphaHash,side:source.material.side};
           mesh.customDepthMaterial=new THREE.MeshDepthMaterial({...common,depthPacking:THREE.RGBADepthPacking});
           mesh.customDistanceMaterial=new THREE.MeshDistanceMaterial(common);
           deform(mesh.customDepthMaterial,phase);deform(mesh.customDistanceMaterial,phase);group.add(mesh);return mesh;
