@@ -1,13 +1,14 @@
-# Live canopy review assessment
+# Canopy host review assessment
 
-This assessment records the host review findings and their status at the later
-local acceptance checkpoint `4c776b8`. That clean production-preview build
-passed Luna's flight/walk, handoff, census agreement and alpha checks; details
-are in the [immutable acceptance record](../test-results/acceptance-4c776b8/README.md).
-It remains local; live is `e8a848d`. The water-validity interval-reuse core is
-committed as `c02ee95`, but review follow-up fixes and full date-seek acceptance
-remain pending. See the [water design](canopy-water-validity-design-2026-09-28.md)
-and [Opus review assessment](canopy-water-review-assessment-2026-09-28.md).
+This assessment records the host review findings and their status in the build
+including canopy runtime through `98556a7`. The date-seek preview test passes
+water changes from −4,500 m to −4,475 m and back with 6,301 patches and 156,309
+trees retained, zero stale visible terrain tiles, and no browser errors. See the
+[date-seek evidence](../test-results/canopy-water-date-seek-98556a7/report.json)
+and [terrain refresh record](terrain-water-refresh-2026-09-28.md). The full
+flight/walk acceptance is tracked in the [integration record](canopy-runtime-integration-2026-09-28.md).
+The water core is `c02ee95` with review fixes in `a1`; this document does not
+claim deployment or completion of the desktop realism plan.
 
 The [genuine Opus implementation review](opus-5.5-canopy-host-review-2026-09-28.md)
 audited a supplied working-tree snapshot. It supports the core ray intersection,
@@ -30,18 +31,21 @@ deployment or complete the desktop realism plan.
   sampled movement upload counters are in the acceptance record. Comparisons
   are separate runs, not controlled performance gains.
 - Reduce avoidable near-loop work for complete distant patches. Implemented in
-  `4c776b8`; water interval reuse core is in `c02ee95`, with review fixes and
-  full date-seek acceptance still pending.
+  `4c776b8`; water interval reuse core is in `c02ee95`, with review fixes in
+  `a1` and date-seek acceptance in `98556a7`.
 - Avoid whole-canopy churn on small water changes. The validity-interval core
   is implemented in `c02ee95`; follow-up coalescing, immutable body-snapshot
   reuse, hydrology attachment refresh, watchdog queue accounting and phased
-  selection fixes are under review and await acceptance. See the [water design](canopy-water-validity-design-2026-09-28.md)
-  and [Opus assessment](canopy-water-review-assessment-2026-09-28.md). A validity interval must
+  selection fixes are in `a1` and covered by the date-seek preview. See the
+  [water design](canopy-water-validity-design-2026-09-28.md),
+  [Opus assessment](canopy-water-review-assessment-2026-09-28.md) and
+  [terrain refresh record](terrain-water-refresh-2026-09-28.md). A validity interval must
   include every terrain/ocean and biome threshold involved in presence and the
   slope probes. A heuristic derived only from present tree heights is unsafe:
   ocean classification can bypass river geometry and change ground height.
 - Move selection application out of the message callback into bounded work.
-  The current follow-up is under review and awaits full acceptance.
+  The follow-up is included through `98556a7`; broader movement acceptance is
+  tracked separately from the date-seek check.
 
 ## Findings already addressed or requiring qualification
 

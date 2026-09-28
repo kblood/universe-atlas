@@ -21,19 +21,15 @@ The [temporal universe implementation status](docs/temporal-universe-implementat
 records the current integrated baseline and the scientific and ecological
 limits that remain.
 
-Local source checkpoint `213ca95` connected full forest census patches to the
-desktop renderer using faceted far-tree proxies. Its RTX 5090 fixture covered
-153,251 trees with no census mismatches or settled canopy uploads, but the
-19.5 ms median frame interval missed the proposed 60 FPS target. Follow-up
-checkpoint `4c776b8` starts prefetch below 5,500 m altitude and canopy rendering
-below 3,500 m altitude, with outer fade at 3,700–4,000 m and residency to
-4,500 m. It adds a progress watchdog, bounded static dirty-block uploads, and
-skips near-placement work for complete distant patches. Its acceptance evidence
-is available separately;
-these changes are not deployed. The live release remains `e8a848d`, with sparse
-distant forest representatives. The proxies are placeholders rather than
-realistic authored tree assets. See the [integration record](docs/canopy-runtime-integration-2026-09-28.md)
-and [Opus implementation review](docs/opus-5.5-canopy-integration-review-2026-09-28.md).
+This build includes the canopy runtime through `98556a7`: stable census patches,
+individual near/far ownership, 5,500 m altitude prefetch, 3,500 m altitude
+rendering, water-aware patch reuse, and retained terrain refresh on date changes.
+RTX 5090 preview evidence covers repeatable date replay with 6,301 patches and
+156,309 trees retained and over 321 m of flight and 323 m of walking. It does
+not establish midrange performance or a general 60 FPS result. The current
+forest still uses legacy faceted proxy trees rather than realistic authored
+assets. See the [integration and acceptance record](docs/canopy-runtime-integration-2026-09-28.md),
+[water/date fix](docs/terrain-water-refresh-2026-09-28.md), and [Opus implementation review](docs/opus-5.5-canopy-integration-review-2026-09-28.md).
 
 The [Biosphere Lab](biosphere-lab.html) inspects generated plant/animal morphology,
 planet-specific habitat ranges and dated lineages. Its [implementation record](docs/biosphere-lab-implementation-spec.md)

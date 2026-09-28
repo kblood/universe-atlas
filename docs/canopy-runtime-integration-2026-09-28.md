@@ -1,9 +1,9 @@
 # Desktop canopy: local integration and acceptance
 
-The complete canonical census now feeds the desktop planet renderer. This is a
-local implementation and acceptance record, not a deployment or completion of
-realism. The first measured fixture below is from checkpoint `213ca95`; the
-later acceptance is for clean production-preview build `4c776b8`.
+The complete canonical census now feeds the desktop planet renderer. The current
+build includes the canopy runtime through `98556a7`; the dated checkpoints below
+preserve earlier implementation evidence. The cited checks are production-preview
+evidence, not a deployment claim or completion of the desktop realism plan.
 
 ## Structure
 
@@ -132,10 +132,10 @@ system load was not controlled, so they do not establish a performance gain.
 See the [immutable acceptance report](../test-results/acceptance-4c776b8/README.md)
 and its [flight report](../test-results/acceptance-4c776b8/canopy-flight-final/report.json)
 and [profile report](../test-results/acceptance-4c776b8/desktop-rendering-profile/report.json).
-This is local acceptance only; no deployment was performed. The live release
-remains `e8a848d`. Legacy faceted trees remain in use, with no authored realistic
-tree assets or species-geometry integration accepted. XR, dated water
-transitions, cloud-edge comparison and broader visual realism remain open.
+This is the dated `4c776b8` acceptance, superseded by the `98556a7` evidence
+below. Its earlier deployed baseline was `e8a848d`. Legacy faceted trees remain
+in use; no authored realistic tree assets or species-geometry integration have
+been accepted. XR, cloud-edge comparison and broader visual realism remain open.
 
 The water-validity interval-reuse core was subsequently committed as `c02ee95`;
 it is outside the immutable `4c776b8` acceptance. Follow-up review fixes for
@@ -144,3 +144,24 @@ refresh, watchdog queue accounting and atomic selection are awaiting acceptance.
 See the [water design](canopy-water-validity-design-2026-09-28.md) and its
 [Opus review assessment](canopy-water-review-assessment-2026-09-28.md), as well
 as the [host review assessment](canopy-host-review-assessment-2026-09-28.md).
+
+## Canopy runtime through 98556a7
+
+The clean production-preview date-seek fixture on `98556a7` returned from
+−4,500 m to −4,475 m and back to −4,500 m. All 6,301 forest patches and 156,309
+trees were retained across the seeks; terrain reported zero stale visible
+water tiles, with zero queued work and browser errors. The test also confirms
+stable date replay in the same forest window; counts from separate fixture runs
+are not cross-run equality evidence. The GPU was an RTX 5090 at 1440×1000.
+See the [terrain refresh record](terrain-water-refresh-2026-09-28.md) and
+[immutable date-seek report](../test-results/canopy-water-date-seek-98556a7/report.json).
+
+The RTX 5090 flight/walking acceptance for this build covered 321.5 m of flight
+and 323.2 m of walking, with no census disagreements, queued work, capacity
+misses or browser errors; MSAA 0/2/4 alpha readback was 255. See the [flight
+report](../test-results/canopy-flight-98556a7/report.json). These preview checks
+do not establish midrange performance or a general FPS target. The canopy still
+uses legacy faceted tree shapes; authored realistic assets, species geometry,
+XR and full visual realism acceptance remain open. Historical deployed release
+`e8a848d` used sparse distant representatives; that statement describes the
+earlier release only.

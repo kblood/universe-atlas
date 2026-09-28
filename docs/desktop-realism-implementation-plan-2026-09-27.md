@@ -2,15 +2,12 @@
 
 Date: 2026-09-27. Accepted direction; implementation started.
 
-Latest local progress: [canopy runtime integration](canopy-runtime-integration-2026-09-28.md)
-connects complete canonical patches and individual tree ownership, with later
-checkpoint `4c776b8` starting prefetch below 5,500 m altitude and canopy
-rendering below 3,500 m altitude, with an outer fade from 3,700–4,000 m and
-residency to 4,500 m. It adds a progress watchdog, bounded static dirty-block
-uploads, and near-work skipping for complete distant patches. Its local
-acceptance is recorded in the [immutable Luna report](../test-results/acceptance-4c776b8/README.md);
-the live release remains `e8a848d`. This does not complete realistic species
-assets.
+Latest build includes the canopy runtime through `98556a7`: complete canonical
+patches and individual ownership, 5,500 m altitude prefetch, 3,500 m altitude
+rendering, water-aware patch reuse, and retained terrain refresh during date
+changes. The [integration record](canopy-runtime-integration-2026-09-28.md)
+links the immutable RTX 5090 date-seek and flight/walking evidence. This does
+not complete realistic species assets or establish midrange performance.
 Baseline before this work: `27e89c897369270728e5ef4118dcc144e40af7fc`.
 
 This is the current plan for planetary visual quality. It consolidates the
@@ -189,7 +186,7 @@ more. Structural diversity must not come from disconnected anatomy.
 | B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented; build, 53 targeted checks and RTX 5090 browser acceptance pass; see validation record |
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
 | D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; first Blender brief validates; forest integration, authored assets and resource cache pending |
-| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Local integration began at `213ca95`; `4c776b8` adds altitude-based prefetch/render thresholds, progress watchdog, static dirty blocks, and near-work skipping. Luna's production-preview flight/walk acceptance passes census agreement and alpha checks; see [evidence](../test-results/acceptance-4c776b8/README.md). Water interval reuse core is committed in `c02ee95`; review follow-up fixes are awaiting acceptance. See the [water design](canopy-water-validity-design-2026-09-28.md) and [Opus assessment](canopy-water-review-assessment-2026-09-28.md). Live `e8a848d` retains the previous representation |
+| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Canopy runtime through `98556a7` includes complete census patches, near/far ownership, altitude prefetch/render thresholds, bounded uploads, water-aware patch reuse, and retained terrain refresh on date changes. RTX 5090 date-seek and flight/walk acceptance are linked in the [integration record](canopy-runtime-integration-2026-09-28.md). Legacy faceted tree shapes remain; authored realism, midrange performance validation, XR and broader visual signoff are open. The earlier deployed `e8a848d` used sparse distant representatives |
 | F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | Two tree authoring proposals technically validated and visually reviewed; asset/runtime acceptance and other landscape work pending |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |
@@ -241,7 +238,9 @@ comparison, frame interval p50/p95 was 16.8/20.8 ms on this build and
 17.6/24.3 ms on the `66c7728` baseline, with zero browser errors in both runs.
 This is one fixture and one run: it shows no regression signal, not a general
 speedup or a 60 FPS guarantee. The [validation record](../test-results/forest-transfer-23de0b9/README.md)
-contains the evidence. Integrated release `e8a848d` is deployed with a clean build stamp; Luna’s live movement/rendering checks and all 60 unique guide targets pass. The [deployment record](../test-results/deploy-e8a848d/live-deployment.json) preserves the evidence. See
+contains the evidence. The previous deployed release at that checkpoint was
+`e8a848d`, with a clean build stamp; its live movement/rendering checks and all
+60 unique guide targets passed. The [historical deployment record](../test-results/deploy-e8a848d/live-deployment.json) preserves the evidence. See
 the [transfer review](opus-5.5-transfer-review-2026-09-28.md) and its
 assessment in the [transfer record](forest-selection-transfer-2026-09-28.md).
 Shader-based fades, larger precision-derived rebases and canopy handoff
@@ -402,7 +401,9 @@ general speedup or 60 FPS. See the
 [validation record](../test-results/forest-transfer-23de0b9/README.md), the
 completed [Opus review](opus-5.5-transfer-review-2026-09-28.md), and its
 assessment in the [transfer record](forest-selection-transfer-2026-09-28.md).
-Integrated release `e8a848d` is deployed with a clean build stamp; Luna’s live movement/rendering checks and all 60 unique guide targets pass. The [deployment record](../test-results/deploy-e8a848d/live-deployment.json) preserves the evidence.
+At the 2026-09-28 checkpoint, deployed release `e8a848d` had a clean build
+stamp; Luna’s live movement/rendering checks and all 60 unique guide targets
+passed. See the [historical deployment record](../test-results/deploy-e8a848d/live-deployment.json).
 
 ## 9. Reference techniques and boundaries
 
