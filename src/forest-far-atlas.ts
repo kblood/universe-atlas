@@ -158,8 +158,10 @@ export class ForestFarAtlas{
     const r=this.sphereM.radiusM,distance=r+1;
     this.camera=new THREE.OrthographicCamera(-L.columns*r,L.columns*r,L.rows*r,-L.rows*r,.5,2*r+1.5);
     this.batch=source.createCaptureBatch(L.captureLod,FOREST_VARIANT_COUNT);
-    const captureBuffers=this.batch.meshes?forestMeshBufferFootprint(this.batch.meshes):{totalBytes:0};
-    this.captureBatchCpuBytes=captureBuffers.totalBytes;this.captureBatchGpuEstimateBytes=captureBuffers.totalBytes;
+    const captureBuffers=this.batch.meshes?forestMeshBufferFootprint(this.batch.meshes):
+      {totalBytes:0,geometryGpuEstimateBytes:0,instanceGpuEstimateBytes:0};
+    this.captureBatchCpuBytes=captureBuffers.totalBytes;
+    this.captureBatchGpuEstimateBytes=captureBuffers.geometryGpuEstimateBytes+captureBuffers.instanceGpuEstimateBytes;
     this.buildScratchPeakGpuBytes=this.scratchBytes+this.captureBatchGpuEstimateBytes;
     this.batch.frame.value.set(distance,r);this.scene.add(this.batch.group);
     const material=new THREE.ShaderMaterial({vertexShader:copyVertex,fragmentShader:copyFragment,depthTest:false,depthWrite:false,blending:THREE.NoBlending,
