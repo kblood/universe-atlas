@@ -1,0 +1,14 @@
+✔ group skip agrees with per-cell oracle across movement, patch validity and global cell order (9.1074ms)
+✔ partial, stale-water, invalidated-hydrology and unavailable-census groups always fall back (3.5775ms)
+✔ water changes, habitat replacements, and later arrivals rebuild conservative bounds before skipping (3.2943ms)
+✔ selection replacement drops old keys and a census arriving after a miss enables only fresh skips (1.1313ms)
+✔ invalid inputs fail closed and diagnostics report bounds readiness (1.2834ms)
+✔ distance boundary uses the conservative margin and never skips an inside group (0.3953ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 359.5565
