@@ -1,7 +1,9 @@
 # Offline foliage mip delivery
 
-Local implementation following the updated Opus review. The offline baker and
-runtime sidecar loader have CPU checks; actual-game GPU acceptance is pending.
+Local implementation following the updated Opus review. CPU checks and an
+actual-game GPU upload/readback check pass. The matched medium-distance images
+show restored foliage; complete forest appearance and normal-control acceptance
+remain open.
 
 ## Why this path
 
@@ -68,10 +70,29 @@ bounds the available mip range to its allocated levels; this supports a short
 chain without a separate shader LOD clamp. See the
 [WebGL2 specification](https://registry.khronos.org/webgl/specs/latest/2.0/) and
 [OpenGL ES 3.0.6 texture storage/completeness rules](https://registry.khronos.org/OpenGL/specs/es/3.0/es_spec_3.0.pdf).
-This source/specification inspection is not a browser readback test or visual
-acceptance of the chosen endpoint.
+The subsequent [browser record](../test-results/offline-foliage-mips/README.md)
+confirms two eight-level immutable foliage textures, complete level-7 readback
+and endpoint coverage matching the baked payloads. This is one RTX 5090 fixture,
+not acceptance across browsers/devices.
 
 Validate the actual shared Texture upload, minimum-size sampling, original
 colour/alpha, shadow agreement, close/middle movement and matching far handoff.
 Measure payload, decode/upload time and memory as well as total cold loading.
 Use the observed in-game date after navigation for all wind and replay checks.
+
+## Actual-game result
+
+At 390.58 m, a matched downward view submitted 250 Oak and 369 Pine middle-detail
+trees in both modes, with the same date/pose and detailed lighting. The
+[offline image](../test-results/offline-foliage-mips/mid-pair-down-390m-rerun/offline-mid-down-angle.png)
+retains visibly fuller foliage than the
+[default image](../test-results/offline-foliage-mips/mid-pair-down-390m-rerun/default-mid-down-angle.png).
+It also exposes a pronounced mismatch with the larger, brighter legacy far
+crowns. The foliage change is useful; it does not finish the near/far transition.
+
+Sidecar setup measured 24.4 ms for Oak and 21.9 ms for Pine in the close fixture.
+The complete pair still took roughly four seconds to load, and its sequential
+default/offline frame profiles do not establish a speedup. Thirty-two sampled
+tree bindings matched after returning to the observed date; browser and GL error
+checks passed. These captures used committed runtime `2e00837`, before the
+normal asset control and retained forest work list.
