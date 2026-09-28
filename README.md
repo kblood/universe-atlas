@@ -433,4 +433,4 @@ Research and the broader roadmap are in the parent `docs` directory:
 `procedural-universe-build-prompts-2026-09-12.md`, and
 `universe-atlas-v1-spec.md`.
 
-Current local tree integration now has [compact branching/spire batches](docs/compact-tree-families-2026-09-28.md), atomic family replacement and 38 focused CPU checks. Earlier single-family milestones remain historical; normal production asset loading and combined Pine/near-far acceptance are still pending.
+Current local tree integration now has [compact branching/spire batches](docs/compact-tree-families-2026-09-28.md) and atomic family replacement, with CPU and actual-game submission/date-return evidence. The [offline foliage loader](docs/offline-foliage-mips-2026-09-28.md) has 34 focused CPU checks; its GPU validation is next. Earlier single-family milestones remain historical; normal production asset loading, Pine appearance and near/far acceptance are still pending.

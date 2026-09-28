@@ -1,7 +1,7 @@
 # Offline foliage mip delivery
 
-Implementation decision following the updated Opus review. The offline baker is
-in progress; runtime sidecar loading and actual-game acceptance are not done.
+Local implementation following the updated Opus review. The offline baker and
+runtime sidecar loader have CPU checks; actual-game GPU acceptance is pending.
 
 ## Why this path
 
@@ -31,10 +31,34 @@ the complete asset format is deferred until the existing texture path is accepte
 - Trial endpoint: level 7 for a 2048-square, 4-by-4-cell atlas (four pixels per
   cell side). This is a visual trial setting, not an accepted universal policy.
   A full chain remains available as reference.
-- Runtime should validate the manifest against the source foliage bytes before
+- Runtime validates the manifest against the source foliage bytes before
   installing all levels on the shared texture. Colour, depth and distance
-  passes must use the same map and alpha threshold. Failure retains the ordinary
-  texture path with an explicit diagnostic.
+  passes use the same map and alpha threshold. Invalid input rejects the staged
+  family replacement and preserves the previously active forest library.
+
+## Local runtime implementation
+
+`TreeAssetOptions.foliageMipSidecar` accepts a manifest and an ArrayBuffer.
+Each input to `loadForestTreeFamilies` can supply its own sidecar, since Oak and
+Pine have different source PNGs. Choosing both the runtime builder and offline
+sidecar is rejected. No sidecar is fetched implicitly by production yet.
+
+The loader validates dimensions, atlas layout, cutoff, contiguous level layout,
+coverage metadata and SHA-256 hashes of the embedded source PNG, full payload
+and each level. It installs the original base image and straight-RGBA ImageData
+lower levels before the first GPU upload. Both LODs and their shadow materials
+share the same Texture. Failed validation leaves that texture untouched;
+disposal releases the installed image sources along with the family.
+
+The level-7 payload is 5,592,064 bytes per family. This removes pixel generation
+from loading, but hashing, ImageData creation and GPU upload still cost time.
+The uncompressed foliage chain alone occupies approximately 21.3 MiB on the
+GPU; this excludes the other textures, geometry, shadow map and driver overhead.
+
+The [focused CPU log](../test-results/offline-foliage-mips/cpu.log) records 34
+passing checks across sidecar validation/lifecycle, mip generation, actual Oak
+LOD parsing and family integration. These checks do not establish browser
+upload correctness or improved frame time.
 
 ## Renderer compatibility
 

@@ -45,7 +45,18 @@ slots, partial replacement failure, duplicate inputs and cancellation between
 family parses. The fake GPU writer enforces the real loader's contiguous
 initialization rule. These are CPU checks, not measured frame-rate gains.
 
-Next: actual-game Oak submission/identity comparison, then the validated Pine
-candidate with detailed lighting, date return and movement. The complete scene
-still needs far-crown matching, distant foliage fixes, loading cost work and
-normal desktop asset settings before default acceptance.
+The subsequent [actual-game browser run](../test-results/compact-tree-families/README.md)
+loaded both Oak and Pine with detailed lighting. Their submitted instance counts
+matched the visible supported counts: 95 near and 651 middle trees combined.
+The Oak date-return check preserved all 16 sampled identities, recipes, heights
+and wind offsets. Its 24.8 m movement did not cross an origin rebase.
+
+The Oak profile still measured 52.6/66.9 ms frame p50/p95 on the RTX 5090 fixture,
+with 33.2/41.7 ms planet CPU time. The geometry and population differ between
+legacy, Oak and combined captures, so their triangle/frame differences do not
+prove a compaction speedup. CPU samples still concentrate in forest selection
+and canopy checks. Pine looks thin and the far canopy remains visibly different.
+
+Next: [offline foliage mips](offline-foliage-mips-2026-09-28.md), fewer repeated
+far-candidate checks and matching far crowns. Loading/settings, believable
+appearance and measured performance remain required before default acceptance.

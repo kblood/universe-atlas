@@ -1,0 +1,42 @@
+✔ dated catalogue attaches detailed branching instances while spire and unsupported heights retain legacy coverage (26.5261ms)
+✔ reordering retained canonical cells and rebasing preserves species, phase, and appearance (8.7883ms)
+✔ empty or non-tree dated catalogue clears detail draw and restores legacy coverage (5.6853ms)
+✔ immersive mode hides detailed batches and restores legacy representation (4.2329ms)
+✔ clear during a pending load disposes stale family without attaching it (3.4375ms)
+✔ dispose during pending load disposes late family and rejects later loads (2.9607ms)
+✔ loader failure is diagnostic and preserves legacy rendering; invalid family is disposed (5.1436ms)
+✔ successful replacement disposes previous batches/family only after replacement is ready (2.5248ms)
+✔ attaching after legacy slots exist initializes only selected detailed slots without gaps (3.629ms)
+✔ dated tree catalogue is order independent, filters non-trees, and tracks trait changes (0.5667ms)
+✔ partial batch creation failure disposes already-created batches and family (2.8374ms)
+✔ malformed dated catalogue reports error, preserves legacy draw, and recovers on a valid snapshot (3.643ms)
+✔ malformed dated catalogue is ignored safely while detail family is absent (2.3858ms)
+✔ overlapping family loads are newest-wins and dispose the stale result exactly once (2.2481ms)
+✔ branching and spire use separate compact pools and suppress all supported legacy draws (4.5309ms)
+✔ family reassignment and empty demand regrow initialized compact slots without gaps (3.2341ms)
+✔ failure in second family preserves active library and disposes partial replacement (4.324ms)
+✔ duplicate family requests are rejected without replacing or cancelling active state (3.4284ms)
+✔ cancelling between family parses releases all staged assets and keeps latest request authoritative (8.6697ms)
+✔ each family receives its own offline mip sidecar while sharing atmosphere options (5.7064ms)
+✔ wind phase uses Euclidean BigInt dates at negative, period, and universe endpoints (0.9206ms)
+✔ physical leaf transforms scale the attachment pivot, retain card size, and rotate the rigid offset (0.5975ms)
+✔ LOD pair validates matching embedded material/texture bytes and strips LOD1 texture descriptors before parse (38.1222ms)
+✔ LOD preparation rejects material and embedded image divergence before sharing (20.1045ms)
+✔ GLB contract rejects extra, malformed, normalized, and blended attributes (30.1913ms)
+✔ builds deterministic explicit mip levels and preserves base pixels and per-cell coverage where representable (10.0268ms)
+✔ small cells choose the nearest representable coverage and prefer undercoverage at exact ties (0.4655ms)
+✔ filters RGB in linear light with alpha weighting and avoids transparent-color halos (0.3132ms)
+✔ supports clamped and ordinary byte arrays while rejecting malformed dimensions and options (1.5481ms)
+✔ installs regular mip image sources on the same texture and restores it on dispose (2.8252ms)
+✔ sidecar binds original PNG and exact bounded mip bytes (55.37ms)
+✔ sidecar rejects mismatched tables, unbounded dimensions and incompatible alpha policy (33.9687ms)
+✔ installation keeps texture identity and base image, restores state and owns lower pixel storage (71.621ms)
+✔ failed validation never mutates a shared texture (10.4611ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1334.876

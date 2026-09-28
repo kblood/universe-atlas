@@ -7,6 +7,7 @@ import {installTreeForestCoverage} from './tree-forest-coverage.ts';
 import {quantizeForestCoverage} from './forest-coverage.ts';
 import {attachLocalAerial} from './local-aerial-perspective.ts';
 import {installTreeFoliageCoverageMipmaps,type InstalledTreeFoliageMipChain} from './tree-foliage-mips.ts';
+import {installTreeFoliageSidecar,type TreeFoliageMipSidecar} from './tree-foliage-sidecar.ts';
 
 /** Experimental author-6 adapter. Assets are supplied explicitly; this does not
  * replace the canonical forest or invent a second species catalogue. */
@@ -62,7 +63,10 @@ export function prepareTreeLODPair(lod0:ArrayBuffer,lod1:ArrayBuffer){
   view.setUint32(0,0x46546c67,true);view.setUint32(4,2,true);view.setUint32(8,buffer.byteLength,true);
   view.setUint32(12,length,true);view.setUint32(16,0x4e4f534a,true);bytes.fill(32,20,20+length);bytes.set(text,20);
   view.setUint32(20+length,b.binary.length,true);view.setUint32(24+length,0x004e4942,true);bytes.set(b.binary,28+length);
-  return {lod1GeometryBuffer:buffer,embeddedTextureBytes};
+  const foliageTexture=a.json.materials[1].pbrMetallicRoughness?.baseColorTexture?.index;
+  const foliageImage=a.json.textures?.[foliageTexture]?.source;
+  if(!Number.isInteger(foliageImage)||foliageImage<0||foliageImage>=4)throw new Error('Expected embedded foliage base-color image');
+  return {lod1GeometryBuffer:buffer,embeddedTextureBytes,foliagePng:imageBytes(a,foliageImage)};
 }
 
 /** CPU reference for shader audits. Scale skeleton/attachment coordinates,
@@ -100,16 +104,17 @@ function deform(material:THREE.Material,phase:{value:number}){
   material.customProgramCacheKey=()=> 'atlas-tree-physical-1';
 }
 export type TreeAssetFamily=Awaited<ReturnType<typeof loadTreeAssetFamily>>;
-export type TreeAssetOptions={foliageCoverage?:'mask'|'hash';foliageMipmaps?:boolean;leafTransmission?:LeafTransmissionOptions;forestCoverage?:boolean;
+export type TreeAssetOptions={foliageCoverage?:'mask'|'hash';foliageMipmaps?:boolean;foliageMipSidecar?:TreeFoliageMipSidecar;leafTransmission?:LeafTransmissionOptions;forestCoverage?:boolean;
   localAerial?:{planet:THREE.Object3D;frame:THREE.Object3D;radiusM:number;sun:{value:THREE.Vector3};enabled:{value:number};eyeHeight:{value:number}}};
 export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){
   if(options.foliageCoverage!==undefined&&!['mask','hash'].includes(options.foliageCoverage))throw new Error('Unsupported foliage coverage mode');
   if(options.forestCoverage!==undefined&&typeof options.forestCoverage!=='boolean')throw new Error('Invalid forest coverage option');
   if(options.foliageMipmaps!==undefined&&typeof options.foliageMipmaps!=='boolean')throw new Error('Invalid foliage mip option');
+  if(options.foliageMipmaps&&options.foliageMipSidecar)throw new Error('Choose offline or runtime foliage mips, not both');
   const prepared=prepareTreeLODPair(lod0,lod1),loader=new GLTFLoader();
   const loaded:THREE.Group[]=[];
   const textures=new Set<THREE.Texture>(),materials=new Set<THREE.Material>(),geometries=new Set<THREE.BufferGeometry>();
-  let foliageMipChain:InstalledTreeFoliageMipChain|null=null,foliageMipSetupMs=0;
+  let foliageMipChain:InstalledTreeFoliageMipChain|null=null,foliageMipSetupMs=0,foliageMipPayloadBytes=0;
   function collect(group:THREE.Group){group.traverse(o=>{
     if(!(o instanceof THREE.Mesh))return;
     geometries.add(o.geometry);
@@ -127,11 +132,14 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
       return meshes.sort((a,b)=>a.material.name.localeCompare(b.material.name));
     });
     for(let i=0;i<2;i++){lods[1][i].material.dispose();materials.delete(lods[1][i].material);lods[1][i].material=lods[0][i].material;}
-    if(options.foliageMipmaps){
+    if(options.foliageMipmaps||options.foliageMipSidecar){
       const foliage=lods[0][1].material;
       if(!foliage.map)throw new Error('Foliage coverage mips require a base-color map');
       const started=performance.now();
-      foliageMipChain=await installTreeFoliageCoverageMipmaps(foliage.map,{alphaCutoff:foliage.alphaTest});
+      if(options.foliageMipSidecar){
+        const installed=await installTreeFoliageSidecar(foliage.map,options.foliageMipSidecar,prepared.foliagePng,foliage.alphaTest);
+        foliageMipChain=installed;foliageMipPayloadBytes=installed.payloadBytes;
+      }else foliageMipChain=await installTreeFoliageCoverageMipmaps(foliage.map,{alphaCutoff:foliage.alphaTest});
       foliageMipSetupMs=performance.now()-started;
     }
     // Explicit experiment: hashing samples fractional mip coverage instead of
@@ -168,7 +176,8 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     let disposed=false,activeBatches=0;
     return {
       lods,textures,leafTransmission,maxRadiusM,forestCoverage:!!options.forestCoverage,embeddedTextureBytes:prepared.embeddedTextureBytes,
-      foliageMipmaps:foliageMipChain?{setupMs:foliageMipSetupMs,levels:foliageMipChain.report,baseCoverage:foliageMipChain.baseCoverage}:null,
+      foliageMipmaps:foliageMipChain?{source:options.foliageMipSidecar?'offline-sidecar':'runtime-build',payloadBytes:foliageMipPayloadBytes,
+        setupMs:foliageMipSetupMs,levels:foliageMipChain.report,baseCoverage:foliageMipChain.baseCoverage}:null,
       setDate(date:bigint){leafTransmission?.assertInstalled();phase.value=treeWindPhase(date);},
       createBatch(lod:0|1,capacity:number){
         if(disposed)throw new Error('Tree family is disposed');

@@ -3,7 +3,7 @@ import type {TreeAssetFamily,TreeAssetOptions} from './tree-asset.ts';
 import {CompactInstanceSlots} from './compact-instance-slots.ts';
 
 export type ForestTreeKind='branching'|'spire';
-export type ForestTreeFamilyInput={kind:ForestTreeKind;lod0:ArrayBuffer;lod1:ArrayBuffer};
+export type ForestTreeFamilyInput={kind:ForestTreeKind;lod0:ArrayBuffer;lod1:ArrayBuffer;foliageMipSidecar?:TreeAssetOptions['foliageMipSidecar']};
 export type ForestTreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
 type Batch=ReturnType<TreeAssetFamily['createBatch']>;
 export type ForestTreeFamilyEntry<T,S>={kind:ForestTreeKind;family:TreeAssetFamily;batches:Batch[];
@@ -33,7 +33,8 @@ export class ForestTreeFamilyLibrary<T,S>{
     const pending:ForestTreeFamilyEntry<T,S>[]=[];let adopted=false;
     try{
       for(const input of inputs){
-        const family=await this.loader(input.lod0,input.lod1,{...options,forestCoverage:true});
+        const family=await this.loader(input.lod0,input.lod1,{...options,
+          foliageMipSidecar:input.foliageMipSidecar??options.foliageMipSidecar,forestCoverage:true});
         const entry:ForestTreeFamilyEntry<T,S>={kind:input.kind,family,batches:[],pools:[],wanted:[[],[]],coverage:[new Map(),new Map()]};
         pending.push(entry);
         if(this.disposed||request!==this.request)return false;

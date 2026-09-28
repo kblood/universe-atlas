@@ -1,0 +1,27 @@
+{
+  "scope": "CPU actual GLB/sidecar binding; no GPU upload",
+  "report": [
+    {
+      "family": "oak",
+      "source": "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak",
+      "manifest": "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-oak-max7-e/mip-manifest.json",
+      "basePngSha256": "43368cb6820bfcb78efb8713b7ba6a47639566a75204ffee1678ee5967937284",
+      "payloadSha256": "489bbfbc31c1c7375907f606d80817e918b8660bb9de0d91480bb2d4978484c6",
+      "payloadBytes": 5592064,
+      "levels": 7,
+      "baseCoverage": 0.18970775604248047,
+      "endpointCoverage": 0.1953125
+    },
+    {
+      "family": "pine",
+      "source": "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer",
+      "manifest": "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-conifer-max7-d/mip-manifest.json",
+      "basePngSha256": "144e6852a437108daafca9d9c98f207a6d0bcf4a2f13da70bd6cc316e99a79ac",
+      "payloadSha256": "1be67c71812a392451e90789c47667aeeb6c92d010f29f3f11735f4353e0e576",
+      "payloadBytes": 5592064,
+      "levels": 7,
+      "baseCoverage": 0.04645085334777832,
+      "endpointCoverage": 0.0625
+    }
+  ]
+}

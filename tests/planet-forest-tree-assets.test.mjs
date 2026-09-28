@@ -299,3 +299,16 @@ test('cancelling between family parses releases all staged assets and keeps late
   assert.equal(f.diagnostics().detailedTrees.ready,false);
  }finally{f.dispose();}
 });
+
+test('each family receives its own offline mip sidecar while sharing atmosphere options',async()=>{
+ const {f}=fixture(),original=f.treeLoader,received=[];
+ f.treeLoader=(a,b,options)=>{received.push(options);return original(a,b,options);};
+ const inputs=bothFamilies(),oak={manifest:{family:'oak'},data:new ArrayBuffer(4)},pine={manifest:{family:'pine'},data:new ArrayBuffer(8)};
+ inputs[0].foliageMipSidecar=oak;inputs[1].foliageMipSidecar=pine;
+ const localAerial={fixture:true};
+ try{
+  await f.loadTreeFamilies(inputs,{localAerial});
+  assert.equal(received[0].foliageMipSidecar,oak);assert.equal(received[1].foliageMipSidecar,pine);
+  assert.ok(received.every(x=>x.localAerial===localAerial&&x.forestCoverage===true));
+ }finally{f.dispose();}
+});

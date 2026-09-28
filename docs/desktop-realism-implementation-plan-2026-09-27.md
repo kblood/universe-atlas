@@ -563,6 +563,17 @@ claimed. Live remains `8e16776`; these later changes are local checkpoints.
 [Compact per-family slots](compact-tree-families-2026-09-28.md) are now integrated,
 with an atomic branching/spire library and 38 focused CPU tests. Unsupported
 trees no longer consume detailed GPU slots, and fully replaced legacy batches
-are hidden. The next actual-game comparison must measure submissions and verify
-identity, dated return, movement and shadows; no frame-rate improvement is yet
-claimed. Pine remains an asset candidate until its combined visual check passes.
+are hidden. The subsequent actual-game check loaded both families with detailed
+lighting and confirmed exact supported submission counts. Oak date return
+preserved sampled identity, recipe, height and wind; the short movement did not
+cross an origin rebase. No causal frame-rate improvement is claimed. Pine remains
+an asset candidate until its appearance and near/far transition are accepted.
+
+### Offline foliage loading
+
+The [offline sidecar loader](offline-foliage-mips-2026-09-28.md) validates the
+source foliage PNG and every baked mip by SHA-256 before installing a shared
+explicit texture chain. Each family can supply its own sidecar. The focused
+34-test CPU scope passes; actual-game GPU upload, endpoint sampling and matched
+default/sidecar close/middle captures are next. A retained forest work list is
+also in progress to reduce repeated far-candidate checks. Neither stage is live.

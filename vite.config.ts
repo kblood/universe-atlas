@@ -10,6 +10,18 @@ export default defineConfig({
       builtAt:new Date().toISOString(),
     },null,2)});
     for(const fileName of [
+      'docs/offline-foliage-mips-2026-09-28.md',
+      'src/tree-foliage-sidecar.ts',
+      'tests/tree-foliage-sidecar.test.mjs',
+      'test-results/offline-foliage-mips/cpu.log',
+      'test-results/offline-foliage-mips/actual-sidecars.mjs',
+      'test-results/offline-foliage-mips/actual-sidecar-report.json',
+      'test-results/compact-tree-families/README.md',
+      'test-results/compact-tree-families/integration.browser.mjs',
+      'test-results/compact-tree-families/browser-run-2/report.json',
+      'test-results/compact-tree-families/browser-run-2/legacy-close-baseline.png',
+      'test-results/compact-tree-families/browser-run-2/oak-only-close.png',
+      'test-results/compact-tree-families/browser-run-2/oak-plus-pine-close.png',
       'docs/compact-tree-families-2026-09-28.md',
       'src/compact-instance-slots.ts',
       'src/forest-tree-family-library.ts',
