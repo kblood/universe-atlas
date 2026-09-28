@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {treeCaptureViews,treeViewBlend} from './tree-impostor-views.ts';
 import {packTreeCaptureLayer} from './tree-impostor-filter.ts';
+import {treeDiffuseTransferGLSL,patchTreeDiffuseTransferPhysical} from './tree-diffuse-transfer-shader.ts';
 
 export type TreeCaptureFiltering='legacy-unassociated'|'coverage-weighted';
 export type TreeCaptureLoadOptions={filtering?:TreeCaptureFiltering};
@@ -12,13 +13,18 @@ export async function loadTreeCapture(manifest:any,read:(path:string)=>Promise<A
   if(!['legacy-unassociated','coverage-weighted'].includes(filtering))throw new Error('Unsupported tree capture filtering mode');
   if(!manifest||manifest.schemaVersion!==2||![3,9,17].includes(manifest.options?.grid)||manifest.rowOrder!=='bottom-to-top'||manifest.colour!=='linear-unassociated-rgb-area-coverage'||manifest.data!=='object-normal-xyz-normalized-frontmost-depth'||manifest.classification!=='leaf-fraction'||!Array.isArray(manifest.artifacts))throw new Error('Unsupported tree capture contract');
   const {grid,size,heightM}=manifest.options??{},views=treeCaptureViews(grid);
+  const hasTransfer=manifest.options.diffuseTransfer===true;
+  if(hasTransfer&&(manifest.diffuseTransfer!=='area-associated-linear-rgb-moments-1'||JSON.stringify(manifest.diffuseTransferOrder)!==JSON.stringify(['A','Nx','Ny','Nz','Qxx','Qyy','Qxy','Qxz','Qyz'])))throw new Error('Unsupported diffuse transfer contract');
+  if(!hasTransfer&&manifest.diffuseTransfer)throw new Error('Undeclared diffuse transfer attachment');
+  if(hasTransfer&&views.length*(4*size*size-1)/3*72>32*1024*1024)throw new Error('Diffuse transfer experiment exceeds 32 MiB texture budget');
   if(manifest.operation!=='atlas-tree-impostor-capture-2'||manifest.version!=='tree-material-capture-2'||![32,64,128].includes(size)||!Number.isFinite(heightM)||heightM<10||heightM>22||!Number.isFinite(manifest.radius)||manifest.radius<=0||manifest.radius>100||!Array.isArray(manifest.center)||manifest.center.length!==3||manifest.center.some((x:number)=>!Number.isFinite(x)||Math.abs(x)>100))throw new Error('Invalid tree capture manifest');
   if(JSON.stringify(manifest.views)!==JSON.stringify(views))throw new Error('Capture view bases do not match the declared contract');
   const records=new Map<string,any>(manifest.artifacts.map((r:any)=>[r.path,r]));
   if(records.size!==manifest.artifacts.length)throw new Error('Duplicate capture attachment');
   const colours:{data:Uint8Array;width:number;height:number}[]=[],classes:typeof colours=[],data:{data:Uint16Array;width:number;height:number}[]=[];
-  async function readAttachment(viewIndex:number,mip:number,width:number,channel:'colour'|'data'|'classification'){
-    const channels=channel==='classification'?1:4,channelCount=width*width*channels;
+  const transferMips:{data:Uint16Array;width:number;height:number}[][]=Array.from({length:hasTransfer?7:0},()=>[]);
+  async function readAttachment(viewIndex:number,mip:number,width:number,channel:'colour'|'data'|'classification'|'diffuse-transfer'){
+    const channels=channel==='classification'?1:channel==='diffuse-transfer'?27:4,channelCount=width*width*channels;
     const path=`view-${String(viewIndex).padStart(3,'0')}/mip-${mip}.${channel}.f32`,record=records.get(path);
     if(!record||record.bytes!==channelCount*4)throw new Error('Capture attachment length is invalid');
     const payload=await read(path);
@@ -30,11 +36,21 @@ export async function loadTreeCapture(manifest:any,read:(path:string)=>Promise<A
   let bytes=0;
   for(let mip=0,width=size;width>=1;mip++,width/=2){
     const count=width*width*4,colour=new Uint8Array(count*views.length),values=new Uint16Array(colour.length),classification=new Uint8Array(colour.length);
+    const transfer=transferMips.map(()=>new Uint16Array(count*views.length));
     for(const view of views){
       const [colourFloats,dataFloats,classFloats]=await Promise.all([
         readAttachment(view.index,mip,width,'colour'),readAttachment(view.index,mip,width,'data'),readAttachment(view.index,mip,width,'classification'),
       ]);
       const layerOffset=view.index*count;
+      if(hasTransfer){
+        const coefficients=await readAttachment(view.index,mip,width,'diffuse-transfer');
+        for(let pixel=0;pixel<width*width;pixel++)for(let component=0;component<27;component++){
+          const value=coefficients[pixel*27+component],channel=component%3,A=coefficients[pixel*27+channel];
+          if(!Number.isFinite(value)||Math.abs(value)>1.00001||A<0||A>1.00001||Math.abs(value)>A+1e-5)throw new Error('Diffuse transfer coefficient outside its physical range');
+          if(component<3&&Math.abs(A-colourFloats[pixel*4+channel]*colourFloats[pixel*4+3])>2e-5)throw new Error('Diffuse transfer albedo/coverage mismatch');
+          transfer[Math.floor(component/4)][layerOffset+pixel*4+component%4]=THREE.DataUtils.toHalfFloat(value);
+        }
+      }
       if(filtering==='coverage-weighted'){
         const packed=packTreeCaptureLayer(colourFloats,dataFloats,classFloats);
         colour.set(packed.colour,layerOffset);values.set(packed.data,layerOffset);classification.set(packed.classification,layerOffset);
@@ -58,6 +74,7 @@ export async function loadTreeCapture(manifest:any,read:(path:string)=>Promise<A
       }
     }
     colours.push({data:colour,width,height:width});data.push({data:values,width,height:width});classes.push({data:classification,width,height:width});bytes+=colour.byteLength+values.byteLength+classification.byteLength;
+    transfer.forEach((values,index)=>{transferMips[index].push({data:values,width,height:width});bytes+=values.byteLength;});
   }
   // The installed Three DataArrayTexture upload path only uploads level zero.
   // Its CompressedArrayTexture path supports explicit RGBA mip data as well:
@@ -71,18 +88,20 @@ export async function loadTreeCapture(manifest:any,read:(path:string)=>Promise<A
   // RGBA class storage uses the installed explicit-mip array path. Three spare
   // channels are a measured prototype cost; this is not yet an R8 upload path.
   const classTexture=new THREE.CompressedArrayTexture(classes,size,size,views.length,rgba);
-  for(const texture of [colourTexture,dataTexture,classTexture]){
+  const transferTextures=transferMips.map(mips=>new THREE.CompressedArrayTexture(mips,size,size,views.length,rgba,THREE.HalfFloatType));
+  for(const texture of [colourTexture,dataTexture,classTexture,...transferTextures]){
     if(Number(texture.format)!==THREE.RGBAFormat)throw new Error('Installed array texture default no longer supports RGBA mip uploads');
     texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;
     texture.generateMipmaps=false;texture.flipY=false;texture.needsUpdate=true;
   }
-  return {manifest,views,colourTexture,dataTexture,classTexture,bytes,filtering,
-    dispose(){colourTexture.dispose();dataTexture.dispose();classTexture.dispose();}};
+  return {manifest,views,colourTexture,dataTexture,classTexture,transferTextures,bytes,filtering,
+    dispose(){colourTexture.dispose();dataTexture.dispose();classTexture.dispose();for(const texture of transferTextures)texture.dispose();}};
 }
 export type TreeCapture=Awaited<ReturnType<typeof loadTreeCapture>>;
 
 const sampleGLSL=`
 precision highp sampler2DArray;
+${treeDiffuseTransferGLSL}
 uniform sampler2DArray captureColour,captureData,captureClass;
 uniform vec3 captureCenter,captureEye,captureDirection;
 uniform float captureRadius,captureOrtho,captureMip,captureMask,captureParallax,captureHash,captureCoverageWeighted,captureStableReconstruction,captureRelightViews;
@@ -93,7 +112,7 @@ uniform mat4 captureModelView,captureProjection;
 uniform vec2 captureRoughness,captureSpecular;
 varying vec3 captureRayPoint;
 vec2 captureUV(vec3 p,mat3 basis){vec3 d=p-captureCenter;return vec2(dot(d,basis[0]),dot(d,basis[1]))/(2.*captureRadius)+.5;}
-void captureSample(int layer,mat3 basis,vec3 ro,vec3 rd,out vec4 colour,out vec3 normal,out float t,out float leaf){
+void captureSample(int layer,mat3 basis,vec3 ro,vec3 rd,float viewWeight,out vec4 colour,out vec3 normal,out float t,out float leaf){
   colour=vec4(0);normal=vec3(0,1,0);t=1e20;leaf=0.;
   float denominator=dot(rd,basis[2]);if(abs(denominator)<.01)return;
   float plane=dot(captureCenter-ro,basis[2]);t=plane/denominator;
@@ -105,6 +124,9 @@ void captureSample(int layer,mat3 basis,vec3 ro,vec3 rd,out vec4 colour,out vec3
   }
   if(any(lessThan(uv,vec2(0)))||any(greaterThan(uv,vec2(1)))||t<0.)return;
   colour=textureLod(captureColour,vec3(uv,float(layer)),captureMip);
+  #ifdef CAPTURE_DIFFUSE_TRANSFER
+    accumulateTransfer(uv,layer,captureMip,viewWeight);
+  #endif
   vec4 data=textureLod(captureData,vec3(uv,float(layer)),captureMip);
   float alpha=max(colour.a,1e-6);vec4 classification=textureLod(captureClass,vec3(uv,float(layer)),captureMip);
   if(captureCoverageWeighted>.5){colour.rgb/=alpha;data/=alpha;classification.r/=alpha;}
@@ -135,23 +157,30 @@ export class TreeCapturedImpostor {
       captureBillboardRight:{value:new THREE.Vector3()},captureBillboardUp:{value:new THREE.Vector3()},captureBillboardScale:{value:1},
       captureNormalMatrix:{value:new THREE.Matrix3()},captureModelView:{value:new THREE.Matrix4()},captureProjection:{value:new THREE.Matrix4()},
       captureRoughness:{value:new THREE.Vector2(sourceMaterials[0].roughness,sourceMaterials[1].roughness)},captureSpecular:{value:new THREE.Vector2(specular[0],specular[1])},
+      captureDiffuseTransfer:{value:0},captureViewToObject:{value:new THREE.Matrix3()},
     };
     const material=new THREE.MeshPhysicalMaterial({roughness:1,metalness:0,alphaHash:true});material.fog=false;
+    if(capture.transferTextures.length){
+      capture.transferTextures.forEach((texture,index)=>Object.assign(u,{[`captureTransfer${index}`]:{value:texture}}));
+    }
     material.onBeforeCompile=shader=>{
       Object.assign(shader.uniforms,u);
       shader.vertexShader=`uniform vec3 captureCenter,captureBillboardRight,captureBillboardUp;
 uniform float captureRadius,captureBillboardScale;varying vec3 captureRayPoint;\n`+shader.vertexShader;
       shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`vec3 transformed=captureCenter+captureRadius*captureBillboardScale*(position.x*captureBillboardRight+position.y*captureBillboardUp);captureRayPoint=transformed;`);
-      shader.fragmentShader=sampleGLSL+shader.fragmentShader;
+      shader.fragmentShader=(capture.transferTextures.length?'#define CAPTURE_DIFFUSE_TRANSFER\n':'')+sampleGLSL+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <logdepthbuf_fragment>',`
 vec3 ro=captureEye,rd=normalize(captureRayPoint-captureEye);
 if(captureOrtho>.5){rd=captureDirection;ro=captureRayPoint+rd*dot(captureEye-captureRayPoint,rd);}
 vec4 c0,c1,c2;vec3 n0,n1,n2;float t0,t1,t2,l0,l1,l2;
-captureSample(captureLayers.x,captureBasis0,ro,rd,c0,n0,t0,l0);
-captureSample(captureLayers.y,captureBasis1,ro,rd,c1,n1,t1,l1);
-captureSample(captureLayers.z,captureBasis2,ro,rd,c2,n2,t2,l2);
+captureSample(captureLayers.x,captureBasis0,ro,rd,captureWeights.x,c0,n0,t0,l0);
+captureSample(captureLayers.y,captureBasis1,ro,rd,captureWeights.y,c1,n1,t1,l1);
+captureSample(captureLayers.z,captureBasis2,ro,rd,captureWeights.z,c2,n2,t2,l2);
 vec3 weights=captureWeights*vec3(c0.a,c1.a,c2.a);float captureCoverage=dot(weights,vec3(1));
 if(captureCoverage<=.00001)discard;
+#ifdef CAPTURE_DIFFUSE_TRANSFER
+normalizeTransfer(captureCoverage);
+#endif
 weights/=captureCoverage;
 float hitDistance=min(weights.x>.001?t0:1e20,min(weights.y>.001?t1:1e20,weights.z>.001?t2:1e20));
 // A tiny newly visible contribution must not select the depth of the entire
@@ -180,6 +209,11 @@ float captureLeaf=dot(vec3(l0,l1,l2),weights);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`float roughnessFactor=mix(captureRoughness.x,captureRoughness.y,captureLeaf);`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <lights_physical_fragment>',`#include <lights_physical_fragment>
 float capturedSpecular=mix(captureSpecular.x,captureSpecular.y,captureLeaf);material.specularColor=vec3(.04)*capturedSpecular;material.specularF90=capturedSpecular;`);
+      if(capture.transferTextures.length)shader.fragmentShader=shader.fragmentShader.replace('#include <lights_physical_pars_fragment>',`
+#if defined(USE_ENVMAP) || defined(USE_LIGHT_PROBES) || NUM_RECT_AREA_LIGHTS > 0
+#error Captured diffuse transfer supports only punctual ambient and hemisphere lab lighting
+#endif
+${patchTreeDiffuseTransferPhysical(THREE.ShaderChunk.lights_physical_pars_fragment)}`);
       // Keep the original single-pass lighting as the default. The optional
       // comparison evaluates Three's same PBR chunks at each reconstructed
       // view surface before blending their reflected-light terms.
@@ -237,7 +271,7 @@ if(captureMask>.5&&captureMask<2.5)gl_FragColor=vec4(vec3(1),captureCoverage);`)
 if(captureMask>1.5&&captureMask<2.5)gl_FragColor=vec4(vec3(-hitView.z),captureCoverage);
 else if(captureMask>2.5)gl_FragColor.a=captureCoverage;`);
     };
-    material.customProgramCacheKey=()=> `atlas-captured-tree-lab-3-${capture.filtering}`;
+    material.customProgramCacheKey=()=> `atlas-captured-tree-lab-4-${capture.filtering}-${capture.transferTextures.length}`;
     this.mesh=new THREE.Mesh(new THREE.PlaneGeometry(2,2),material);this.mesh.frustumCulled=false;
     this.mesh.name='Authored tree capture reconstruction (development)';
     const inverse=new THREE.Matrix4(),localCamera=new THREE.Matrix4(),viewport=new THREE.Vector4();
@@ -263,6 +297,7 @@ else if(captureMask>2.5)gl_FragColor.a=captureCoverage;`);
         :distance/Math.max(.01,distance-radius);
       u.captureModelView.value.multiplyMatrices(camera.matrixWorldInverse,this.mesh.matrixWorld);
       u.captureNormalMatrix.value.getNormalMatrix(u.captureModelView.value);u.captureProjection.value.copy(camera.projectionMatrix);
+      u.captureViewToObject.value.copy(u.captureNormalMatrix.value).invert();
       renderer.getCurrentViewport(viewport);
       const pixels=radius*Math.abs(camera.projectionMatrix.elements[5])*viewport.w/(u.captureOrtho.value?1:distance);
       u.captureMip.value=Math.max(0,Math.min(Math.log2(capture.manifest.options.size),Math.log2(capture.manifest.options.size/Math.max(1,pixels))));

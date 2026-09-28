@@ -16,9 +16,17 @@ if(process.env.ATLAS_CAPTURE_GRID==='17'){
   if(process.env.ATLAS_CAPTURE_SIDECAR!=='1'||families.length!==1||families[0].name!=='oak')throw new Error('Dense capture fixture currently covers only Oak with runtime sidecars');
   families[0].capture='atlas-oak-lod1-capture-16m-64-sidecar-grid17-v1';
 }else if(process.env.ATLAS_CAPTURE_GRID&&process.env.ATLAS_CAPTURE_GRID!=='9')throw new Error('Unknown comparison view grid');
+if(process.env.ATLAS_CAPTURE_TRANSFER==='1'){
+  if(process.env.ATLAS_CAPTURE_SIDECAR!=='1'||families.length!==1||families[0].name!=='oak'||process.env.ATLAS_CAPTURE_GRID==='17')throw new Error('Transfer fixture currently covers only 81-view Oak with runtime sidecars');
+  families[0].capture='atlas-oak-lod1-capture-16m-64-sidecar-transfer-v1';
+}
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const sourceFiles=[];
-for(const path of ['src/tree-impostor-lab.ts','src/tree-captured-impostor.ts','src/tree-impostor-filter.ts','src/tree-asset.ts','src/tree-impostor-views.ts'])sourceFiles.push({path,sha256:sha(await readFile(path))});
+await mkdir(join(out,'source-snapshots'),{recursive:true});
+for(const path of ['src/tree-impostor-lab.ts','src/tree-captured-impostor.ts','src/tree-impostor-filter.ts','src/tree-asset.ts','src/tree-impostor-views.ts','src/tree-diffuse-transfer-shader.ts']){
+  const bytes=await readFile(path),snapshotPath='source-snapshots/'+path.split('/').at(-1)+'.raw.bin';
+  await writeFile(join(out,snapshotPath),bytes);sourceFiles.push({path,sha256:sha(bytes),lfNormalizedSha256:sha(bytes.toString().replaceAll('\r\n','\n')),snapshotPath});
+}
 const report={commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),sourceFiles,
   scope:'Isolated exact 16m LOD1 comparison; frame pixels refer to full capture diameter, not tree height. Supersampled mesh is calibration; native mesh reported separately. No forest integration/performance claim.',results:[],errors:[]};
 const browser=await chromium.launch({headless:true,args:['--use-angle=d3d11','--enable-gpu']});
@@ -29,7 +37,7 @@ for(const family of families){
   await page.route('**/__capture/**',async route=>{
     const name=new URL(route.request().url()).pathname.slice('/__capture/'.length);
     let path;if(name==='source0'||name==='source1')path=join(root,'Assets/_assetctl',family.source,family.stem+(name==='source0'?'.glb':'.lod1.glb'));
-    else if(['capture-manifest.json','source-mip-manifest.json','source-foliage-mips.rgba8'].includes(name)||/^view-\d+\/mip-\d+\.(colour|data|classification)\.f32$/.test(name))path=join(root,'Assets/_assetctl',family.capture,name);
+    else if(['capture-manifest.json','source-mip-manifest.json','source-foliage-mips.rgba8'].includes(name)||/^view-\d+\/mip-\d+\.(colour|data|classification|diffuse-transfer)\.f32$/.test(name))path=join(root,'Assets/_assetctl',family.capture,name);
     else throw new Error('Unknown capture fixture path');
     if(!cache.has(path))cache.set(path,await readFile(path));
     await route.fulfill({status:200,body:cache.get(path),contentType:name.endsWith('.json')?'application/json':'application/octet-stream'});
@@ -38,7 +46,8 @@ for(const family of families){
   for(const filtering of ['legacy-unassociated','coverage-weighted']){
     await page.evaluate(async filtering=>{const read=async p=>(await fetch('/__capture/'+p)).arrayBuffer();const [a,b,m]=await Promise.all([read('source0'),read('source1'),fetch('/__capture/capture-manifest.json').then(r=>r.json())]);await window.__treeImpostorLab.load(a,b,m,read,filtering);},filtering);
     if(process.env.ATLAS_CAPTURE_RELIGHT==='1')await page.evaluate(()=>{const u=window.__treeImpostorLab.impostor.uniforms.captureRelightViews;if(!u)throw new Error('Missing per-view relighting option');u.value=1;});
-    const metrics=await page.evaluate(()=>{
+    if(process.env.ATLAS_CAPTURE_TRANSFER==='1')await page.evaluate(()=>{const l=window.__treeImpostorLab;if(l.capture.transferTextures?.length!==7)throw new Error('Missing diffuse transfer textures');l.impostor.uniforms.captureDiffuseTransfer.value=1;});
+    const metrics=await page.evaluate(multiSun=>{
       const lab=window.__treeImpostorLab,rows=[];
       function metrics(a,b,n){
         const blur=v=>{const out=new Float64Array(n*n);for(let y=0;y<n;y++)for(let x=0;x<n;x++){let total=0,weights=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(x+dx<0||x+dx>=n||y+dy<0||y+dy>=n)continue;const w=(dx===0?2:1)*(dy===0?2:1);total+=v[((y+dy)*n+x+dx)*4+3]*w;weights+=w;}out[y*n+x]=total/weights;}return out};
@@ -64,8 +73,24 @@ for(const family of families){
         surface.push({direction,depthSamples:errors.length,depthMedianErrorM:errors[Math.floor(errors.length*.5)],depthP95ErrorM:errors[Math.floor(errors.length*.95)],sourceMeanLuminance:a,captureMeanLuminance:b,relativeLuminanceError:(b-a)/a,referenceConvergence1056vs528:metrics(high,low,33)});
       }
       const gl=lab.renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');
-      return {rows,surface,foliageSampling:lab.capture.manifest.foliageSampling??'original-mips',relightViews:lab.impostor.uniforms.captureRelightViews?.value??0,filtering:lab.capture.filtering,bytes:lab.capture.bytes,lod:lab.capture.manifest.options.lod,glError:gl.getError(),adapter:gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)};
-    });
+      const lightingSweep=[];
+      if(multiSun){
+        const savedSun=lab.sun.position.clone();
+        const luminance=data=>{let sum=0,area=0;for(let p=0;p<data.length;p+=4){area+=data[p+3];sum+=(.2126*data[p]+.7152*data[p+1]+.0722*data[p+2])*data[p+3];}return sum/area;};
+        try{for(const sunPosition of [[-30,55,25],[30,55,25],[0,80,0]]){
+          lab.sun.position.fromArray(sunPosition);
+          for(const direction of [[0,0,1],[1,.3,1]]){
+            const source=luminance(lab.probe(direction,'mesh',33,32,'colour'));
+            for(const enabled of [0,1]){
+              lab.impostor.uniforms.captureDiffuseTransfer.value=enabled;
+              const capture=luminance(lab.probe(direction,'capture',33,1,'colour'));
+              lightingSweep.push({sunPosition,direction,diffuseTransfer:enabled,sourceMeanLuminance:source,captureMeanLuminance:capture,relativeLuminanceError:(capture-source)/source});
+            }
+          }
+        }}finally{lab.sun.position.copy(savedSun);lab.impostor.uniforms.captureDiffuseTransfer.value=1;}
+      }
+      return {rows,surface,lightingSweep,foliageSampling:lab.capture.manifest.foliageSampling??'original-mips',relightViews:lab.impostor.uniforms.captureRelightViews?.value??0,diffuseTransfer:lab.impostor.uniforms.captureDiffuseTransfer?.value??0,filtering:lab.capture.filtering,bytes:lab.capture.bytes,lod:lab.capture.manifest.options.lod,glError:gl.getError(),adapter:gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)};
+    },process.env.ATLAS_CAPTURE_MULTI_SUN==='1');
     report.results.push({family:family.name,captureDirectory:family.capture,captureManifestSha256:sha(await readFile(join(root,'Assets/_assetctl',family.capture,'capture-manifest.json'))),requestedFiltering:filtering,...metrics});
     await page.evaluate(()=>{const l=window.__treeImpostorLab;l.impostor.uniforms.captureParallax.value=1;l.camera.position.set(40,20,40);l.controls.target.set(0,8,0);l.controls.update()});
     for(const mode of ['mesh','capture']){await page.evaluate(m=>window.__treeImpostorLab.setMode(m),mode);await page.waitForTimeout(100);await page.screenshot({path:join(out,`${family.name}-${filtering}-${mode}.png`)});}

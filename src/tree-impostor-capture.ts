@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import {loadTreeAssetFamily,treeVertexMeters} from './tree-asset.ts';
 import {treeCaptureViews,TREE_VIEW_VERSION} from './tree-impostor-views.ts';
 import type {TreeFoliageMipSidecar} from './tree-foliage-sidecar.ts';
+import {createTreeDiffuseTransfer,reduceTreeDiffuseTransfer} from './tree-diffuse-transfer.ts';
 
 export const TREE_CAPTURE_VERSION='tree-material-capture-2';
-export type CaptureLayer={size:number;colour:Float32Array;data:Float32Array;classification:Float32Array};
+export type CaptureLayer={size:number;colour:Float32Array;data:Float32Array;classification:Float32Array;diffuseTransfer?:Float32Array};
 
 /** Coverage is area, not a second alpha-test threshold. RGB is linear and
  * unassociated. Normals are averaged as vectors. Depth uses the nearest covered
@@ -51,10 +52,11 @@ export function padCapture(layer:CaptureLayer,steps=4):CaptureLayer {
 }
 
 export async function captureTree(lod0:ArrayBuffer,lod1:ArrayBuffer,
-  options:{grid:number;size:number;supersample:number;heightM:number;lod?:0|1},
+  options:{grid:number;size:number;supersample:number;heightM:number;lod?:0|1;diffuseTransfer?:boolean},
   receive:(view:number,mip:number,layer:CaptureLayer)=>Promise<void>,foliageMipSidecar?:TreeFoliageMipSidecar){
   const {grid,size,supersample,heightM}=options,lod=options.lod??0,views=treeCaptureViews(grid);
   if(![32,64,128].includes(size)||![1,2,4,8].includes(supersample)||![0,1].includes(lod)||!Number.isFinite(heightM)||heightM<10||heightM>22)throw new Error('Unsupported tree capture settings');
+  if(options.diffuseTransfer!==undefined&&typeof options.diffuseTransfer!=='boolean')throw new Error('Invalid diffuse transfer option');
   const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance',alpha:true});
   renderer.setSize(size*supersample,size*supersample);renderer.setPixelRatio(1);
   renderer.toneMapping=THREE.NoToneMapping;renderer.outputColorSpace=THREE.LinearSRGBColorSpace;
@@ -137,15 +139,24 @@ else gl_FragColor=vec4(.125,.25,.5,1.);`);
           coveredSamples++;
         }
       }
+      // Transfer coefficients keep albedo/normal correlation from the original
+      // source samples. Never derive them from the normalized reduced normals.
+      let transfer=options.diffuseTransfer?reduceTreeDiffuseTransfer(captureSize,createTreeDiffuseTransfer(captureSize,colour,data),supersample):undefined;
       let layer=reduceCapture({size:captureSize,colour,data,classification},supersample),mip=0;
       const area=layer.colour.reduce((sum,value,index)=>sum+(index%4===3?value:0),0);coverageSum+=area;frameCoverage.push(area);
-      while(true){await receive(view.index,mip,padCapture(layer));if(layer.size===1)break;layer=reduceCapture(layer,2);mip++;}
+      while(true){
+        const padded=padCapture(layer);if(transfer)padded.diffuseTransfer=transfer;
+        await receive(view.index,mip,padded);if(layer.size===1)break;
+        if(transfer)transfer=reduceTreeDiffuseTransfer(layer.size,transfer,2);
+        layer=reduceCapture(layer,2);mip++;
+      }
     }
     if(coveredSamples===0)throw new Error('Capture produced no tree coverage');
     const ext=gl.getExtension('WEBGL_debug_renderer_info');
     return {version:TREE_CAPTURE_VERSION,viewVersion:TREE_VIEW_VERSION,options,views,center:center.toArray(),radius,distance,foliageSampling:foliageMipSidecar?'offline-sidecar':'original-mips',
       bounds:{min:bounds.min.toArray(),max:bounds.max.toArray(),windMargin},root:[0,0,0],
       rowOrder:'bottom-to-top',colour:'linear-unassociated-rgb-area-coverage',data:'object-normal-xyz-normalized-frontmost-depth',classification:'leaf-fraction',
+      ...(options.diffuseTransfer?{diffuseTransfer:'area-associated-linear-rgb-moments-1',diffuseTransferOrder:['A','Nx','Ny','Nz','Qxx','Qyy','Qxy','Qxz','Qyz']}:{}),
       depth:'dot(surface-center,towardCamera)/radius; valid only where colour coverage > 0',
       coveredSamples,coverageSum,frameCoverage,bakedState:{date:'0',instancePhase:0,skeletonHeightM:heightM,neutralTint:true,wind:'sin(0)=0 under atlas-tree-physical-1'},adapter:{renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),maxArrayLayers:gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS)},
       limitations:['Capture only: runtime impostor, parallax, handoff and game integration are pending','Mips preserve mean area coverage; they require coverage-aware runtime rendering, not a fixed MASK threshold','Depth is the frontmost covered subsample; normal/classification and colour average coverage and can mix disconnected surfaces','RGBA32F capture files are review data, not compressed shipping textures']};
