@@ -1,6 +1,18 @@
 # Forest asset loading: production UI validation
 
-## Verified run
+## Latest deployed run
+
+The deployed runtime through stage `8c03f41` passed its full production UI flow.
+The exact `build-info.json` stamp matched that revision, and the ordinary
+served-site probe returned the expected default state. Using the normal Trees
+control, 759 detailed instances appeared on attach. After a one-day shift and
+return, all 753 sampled returned identities matched. A deliberate Oak LOD0
+HTTP 503 kept fallback trees available; Retry succeeded. Planet revisit reused
+the package, with 20 package requests total. There were no unexpected page or
+WebGL errors. This checks the deployed UI and package lifecycle, not realistic
+tree appearance, continuous canopy matching or general performance.
+
+## Earlier verified preview run
 
 `normal-ui-ee26efa-accepted/` is the successful desktop run against the clean production preview at commit `ee26efa79c891cd914122f4b642db8efdaacf592` (`build-info.json`: `dirty=false`). The corresponding clean build and 17-resource publication audit are `build-ee26efa.log` and `publication-ee26efa/report.json`. The browser used an RTX 5090 through ANGLE D3D11.
 

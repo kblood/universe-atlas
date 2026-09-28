@@ -4,17 +4,15 @@
 
 The [desktop realism and procedural life implementation plan](docs/desktop-realism-implementation-plan-2026-09-27.md) is the current planetary graphics roadmap. Desktop quality comes first: deterministic species recipes, cached structural variants, per-instance appearance, continuous canopy, shared lighting and genome-compatible animals. Canonical canopy streaming and bounded instance uploads are implemented; richer assets and their runtime integration remain in development.
 
-The deployed site remains at `8e16776`; local source checkpoint `fbe3c26` is
-not published. The local checkpoint connects the verified, sidecar-backed
-Oak/Pine package to opt-in compact near and middle tree batches and to a
-dated-family distant canopy profile. A 67-check focused CPU integration suite
-and TypeScript pass; a separate family-metadata suite passes 7 checks with 3
-optional candidate-path checks skipped. An earlier normal Trees smoke passed
-load, off-toggle and recovery-after-503 checks, but the latest real-family
-browser run exposed an interleaved-geometry attribute issue in metadata
-extraction. Family load must be rerun after that fix; date revisit, appearance
-and performance acceptance are pending. See [local family canopy status](docs/family-canopy-2026-09-28.md),
-[normal forest loading](docs/forest-asset-loading-2026-09-28.md),
+The deployed runtime is stage `8c03f41`; the live `build-info.json` stamp and
+ordinary served-site probe match that revision. Luna's full production UI
+acceptance also passed: the normal Trees control showed 759 detailed instances,
+date replay returned 753 matching identities, one deliberate 503 recovered by
+Retry, planet revisit reused the package with 20 total requests, and there were
+no unexpected page or WebGL errors. These checks verify the deployed flow, not
+realistic tree appearance. Canopy matching and visual acceptance remain open.
+See [normal forest loading](docs/forest-asset-loading-2026-09-28.md),
+[family canopy status](docs/family-canopy-2026-09-28.md),
 [compact family slots](docs/compact-tree-families-2026-09-28.md) and the
 [retained forest work list](docs/forest-worklist-2026-09-28.md).
 

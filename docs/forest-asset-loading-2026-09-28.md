@@ -1,8 +1,10 @@
 # Normal desktop forest asset loading
 
-Local work in progress. The byte loader and normal Trees control are implemented.
-Detailed trees remain opt-in while the combined forest scene is under review.
-The normal-control path still needs browser acceptance before publication.
+Runtime stage `8c03f41` is deployed and its exact build stamp, ordinary served-site
+probe and full normal-control UI acceptance are confirmed. The normal Trees
+workflow passes package load, fallback, a deliberate 503/retry and planet
+revisit. This verifies the deployed control and package lifecycle; detailed-tree
+appearance and continuous near/far canopy matching are still under review.
 
 ## Candidate package
 
