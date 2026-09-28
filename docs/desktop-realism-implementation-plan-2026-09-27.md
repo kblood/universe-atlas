@@ -189,15 +189,19 @@ more. Structural diversity must not come from disconnected anatomy.
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
 | D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; first Blender brief validates; forest integration, authored assets and resource cache pending |
 | E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Published release `580936f` includes canopy runtime through `98556a7`: complete census patches, near/far ownership, altitude prefetch/render thresholds, bounded uploads, water-aware patch reuse, and retained terrain refresh on date changes. RTX 5090 date-seek and flight/walk acceptance are linked in the [integration record](canopy-runtime-integration-2026-09-28.md), with the [live deployment receipt](deployment-580936f-2026-09-28.md). Legacy faceted tree shapes remain; authored realism, midrange performance validation, XR and broader visual signoff are open. The earlier deployed `e8a848d` used sparse distant representatives |
-| F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | Two tree authoring proposals technically validated and visually reviewed; asset/runtime acceptance and other landscape work pending |
+| F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | Tree authoring v3 modules and a 12,020-triangle smoke candidate pass technical validation at 15.999997 m height. Luna's corrected render review finds less regular branching but a still sparse/asymmetric/tiered crown and pale leaves. Opus source review reports geometry, determinism and provenance blockers; authoring v4 fixes are underway, with no v4 candidate yet. Eight shared-atlas structural variants, LOD1/2, calibrated color, runtime/species binding, collision, license and asset acceptance remain open. See [v3 status](tree-authoring-v3-2026-09-28.md) |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |
 
-Stage F's next tree-authoring changes are proposed, not implemented. The
-[authoring increment record](tree-authoring-next-increment-2026-09-28.md)
-specifies the 16 m height correction, irregular branch layout, calibrated
-foliage, eight seeded variants, LOD targets and provenance safeguards. The
-current candidate remains unshipped with license `NOASSERTION`.
+Stage F has a partial authoring-code increment. The original proposal record
+distinguishes implemented v3 skeleton, height and atlas work from remaining
+review criteria. Luna found visible crown and leaf-colour gaps; Opus's
+source-only review found geometry, determinism and authoring/provenance blockers.
+Authoring v4 code fixes are underway, but there is no v4 candidate yet. The
+[v3 status record](tree-authoring-v3-2026-09-28.md) captures the evidence; the
+[authoring proposal](tree-authoring-next-increment-2026-09-28.md) covers shared-
+atlas variants, LOD targets, calibrated colour and safeguards. The smoke
+candidate remains unshipped with license `NOASSERTION`.
 
 Stages have dependencies. Beginning this programme does not mean replacing all
 subsystems at once. The first code increment targets B so detailed assets have
@@ -313,8 +317,10 @@ habitat/dimensions, readiness-gated handoff and measured worker/cache budgets.
 The [first canopy foundation](canopy-foundation-2026-09-28.md) implements
 addressable patches and extracts the current habitat rule without changing
 the placement digest. The distant rendered population remains a sparse sample.
-The [second tree proposal](tree-asset-candidate-2026-09-28.md) improves crown
-structure using original cutout leaf sprays, but remains outside the game.
+The [second tree proposal](tree-asset-candidate-2026-09-28.md) documents an
+earlier candidate. The newer v3 smoke has a less regular branch layout and
+original cutout sprays, but visual review still finds the crown sparse and the
+foliage pale; it remains outside the game. See the [v3 review record](tree-authoring-v3-2026-09-28.md).
 
 Release `6f7cb21` publishes the reviewed forest selection cache and updated
 guide. Luna 6's deployed RTX 5090 movement and rendering checks pass; the

@@ -1,47 +1,71 @@
 # Proposed next tree-authoring increment — 2026-09-28
 
-**Status: proposed and unimplemented.** This record converts review findings
-from the existing Blender candidate into concrete authoring changes. No source
-mesh, authoring code, brief, textures, LODs or runtime integration are changed
-by this proposal.
+**Status: v3 partially implemented; visual signoff and Opus review fixes pending.**
+The sections below preserve the original proposal and rationale. The authoring modules
+`tree_family.py`, `tree_skeleton.py` and `tree_foliage.py` have since been
+revised, and a v3 smoke candidate has passed technical GLB checks. It remains an
+authoring experiment, not an accepted or shipped species asset.
 
-The current candidate at seed `729281` has 11,100 triangles and validates as a
-GLB, but its measured height is 13.819 m against the brief's 16 m reference.
-The review sheet shows a fuller crown than the first proposal, with a regular
-radial branch pattern, repeated fan-shaped leaf sprays and pale foliage under
-the review lights. Existing source and candidate folders remain preserved.
+The v3 smoke candidate is 15.999997 m tall with a 12.652519 m stem, sixteen
+staggered foliage sprays on fixed 1 × 1.2 m cards, a 2048 × 2048 foliage atlas,
+12,020 triangles and two materials. Root pivot, finite positions/UVs and the
+technical wind data validate. Its manifest and validation output are preserved
+in [v3 smoke evidence](../test-results/tree-author-v3/authoring-manifest.json)
+and [validation](../test-results/tree-author-v3/validation.json). Luna reviewed
+the corrected bounded-wire sheet: branching is less regular, but the crown is
+still sparse, asymmetric and tiered, and the leaves look pale. The prior wire
+panel was invalid due to the review modifier and is only a diagnostic. The
+[corrected sheet](../test-results/tree-author-v3/render-sheet-bounded-wire/render-sheet.png)
+and [hero view](../test-results/tree-author-v3/render-sheet-bounded-wire/hero.png)
+show the current state. Opus 5.5 completed a source-only review and reported
+geometry, determinism and authoring/provenance blockers. Authoring v4 fixes are
+underway, but no v4 candidate has been produced or validated. See the [review
+report](opus-5.5-tree-author-v3-review-2026-09-28.md) and [v3 status](tree-authoring-v3-2026-09-28.md).
 
-## 1. Reach the reference height without enlarging leaves
+An eight-variant batch, tree-specific LOD1/2, collision, calibrated grey
+reference colour review, runtime wind binding, species/cell binding, packaging
+and license resolution remain open. The candidate license is `NOASSERTION`;
+none of the new authoring changes is integrated into the forest renderer.
 
-In `tools/assetctl/blender/tree_family.py`, `author_tree` currently fixes the
+The prior candidate at seed `729281` had 11,100 triangles and measured
+13.819 m against the brief's 16 m reference. Its review sheet showed a fuller
+but regular crown, repeated fan-shaped sprays and pale foliage. Existing source
+and candidate folders remain preserved; see the dated candidate record.
+
+## 1. Reach the reference height without enlarging leaves — implemented in v3 smoke
+
+In the pre-v3 `tools/assetctl/blender/tree_family.py`, `author_tree` fixed the
 trunk path at 10 m (`trunk = ... i * 10 / 14`), places 14 primary branches on
 the trunk, and emits leaf cards as it goes. The maximum exported vertex is
 13.819 m for the reviewed seed. A first estimate for the missing height is
 `16 / 13.819 = 1.1576`.
 
-For the next version, build and retain the deterministic branch skeleton
-before emitting mesh geometry. Apply a vertical factor to skeleton joint
-positions about the root, then emit tapered tubes and regenerate leaf cards
-from the transformed twig directions. Keep tube radii, card width and length,
-and atlas leaf dimensions unscaled. The reviewed cards remain 1.0 × 1.2 m with
-individual leaf shapes in the approximate 0.20–0.32 m range. Calibrate the
-factor from the final emitted mesh bounds, including card tips, so the final
-height is 16.00 m within 0.02 m and the root contact plane remains exactly
-`z=0`. Record `stemHeightM` and `actualHeightM` separately in the manifest;
-the current hard-coded `trunkHeightM: 10` will no longer describe the
-transformed stem.
+V3 constructs a deterministic branch skeleton before emitting geometry,
+applies vertical scaling to the skeleton, and regenerates tubes and foliage.
+The smoke manifest records a 12.652519 m stem and 15.999997 m total height; the
+root pivot is `(0, 0, 0)`. Card dimensions remain 1.0 × 1.2 m and leaf lengths
+remain 0.20–0.32 m. This verifies the 16 m envelope without uniformly enlarging
+the cards. Target-render review is still needed before treating its scale or
+shape as accepted.
 
 The current `_WIND` weight uses `p.z / 16` in `add_vertex`. A 16 m final
 envelope makes this denominator meaningful. Keep the weight clamped to `[0,1]`
 and recompute it after the final skeleton transform. Export validation should
 check maximum height, root contact, leaf card dimensions and wind bounds.
 
-## 2. Distribute branches irregularly and keep taper continuous
+## 2. Distribute branches irregularly and keep taper continuous — authoring code updated; visual review pending
 
-`author_tree` currently uses `angle = primary * 2.3999632297` with ±0.18 rad
-jitter, and repeats branch start heights with `start_i = 5 + primary % 9`.
+The pre-v3 `author_tree` used `angle = primary * 2.3999632297` with ±0.18 rad
+jitter, and repeated branch start heights with `start_i = 5 + primary % 9`.
 Secondary branches and twigs also use fixed loop counts and repeated anchors.
 That combination produces visible spokes and ring-like groupings from above.
+
+V3 moves structure generation into `tree_skeleton.py` and revises seeded
+skeleton placement. The detailed targets below remain review criteria where
+not explicitly verified by the smoke manifest or render review. Technical
+validation does not establish visual approval. Luna's first corrected sheet
+confirms a less regular arrangement but also shows a sparse, asymmetric,
+tiered crown; improve the silhouette before proposing the family as accepted.
 
 Replace it with a seeded stratified placement over the middle 56% of the stem:
 for `N` primary roots, place one root in each interval of
@@ -68,12 +92,19 @@ current fixed branch base radii becoming wider than the upper trunk. Preserve
 branch intersections as connected visual forms and inspect close views for
 gaps after changing the taper.
 
-## 3. Make foliage sprays less repetitive and calibrate colour
+## 3. Make foliage sprays less repetitive and calibrate colour — atlas implemented; colour review pending
 
-`tools/assetctl/blender/tree_foliage.py::foliage_atlas` currently emits a
-1024 × 1024 atlas with four 512 px tiles. Each tile has six mirrored leaf
-pairs and a tip leaf. `tree_family.py::leaf_spray` picks from those four tiles,
-while the twig loop places three cards at fixed fractions along each twig.
+Before v3, `tools/assetctl/blender/tree_foliage.py::foliage_atlas` emitted a
+1024 × 1024 atlas with four 512 px tiles. Each tile had six mirrored leaf pairs
+and a tip leaf. The earlier `tree_family.py::leaf_spray` picked from those four
+tiles, while its twig loop placed three cards at fixed fractions along each twig.
+
+V3 emits a 2048 × 2048 foliage atlas with sixteen original staggered
+alpha-mask sprays on fixed 1 × 1.2 m cards. The smoke manifest records this
+atlas and GLB validation confirms the masked foliage material. Grey-reference
+and target-scene colour calibration remain pending; Luna's review still finds
+the foliage pale. The detailed proposals
+below remain to be reviewed:
 
 For the next version, use a 2048 × 2048 atlas with sixteen 512 px tiles, within
 the brief's 2048 px maximum. Build each tile with a curved central shoot, 3–5
@@ -99,7 +130,7 @@ green `0.22` in place of `0.27` and red `0.10` in place of `0.12`. These are
 review parameters, not approved final values. Keep base colour free of baked
 directional lighting; preserve separate bark and foliage masks.
 
-## 4. Generate a bounded family and tree-specific LODs
+## 4. Generate a bounded family and tree-specific LODs — proposed, not implemented
 
 The current `tree-family` named operation accepts one brief seed and emits one
 candidate. The brief already validates and its `experiments.seeds` field is
@@ -122,7 +153,9 @@ At runtime, choose a variant deterministically from species and canonical cell
 identity, with a byte-counted cache whose eviction preserves cell assignment
 and has an explicit fallback LOD.
 
-The brief's LOD ceilings are LOD0 ≤18,000, LOD1 ≤5,000 and LOD2 ≤900
+The eight structural variants must share one foliage atlas per species; do not
+duplicate the current 2048 × 2048 textures for each variant, which would
+multiply texture memory. The brief's LOD ceilings are LOD0 ≤18,000, LOD1 ≤5,000 and LOD2 ≤900
 triangles, with root and silhouette agreement within 0.02 m. Current
 `tools/assetctl/lod.mjs` uses generic 50% and 25% targets, so an 11,100-triangle
 source would target about 5,550 and 2,775 and miss both lower-level ceilings.
@@ -141,7 +174,7 @@ For all three, check alpha coverage/overdraw, wind weights, normals, UVs,
 triangle counts and actual exported bounds. Keep generic `assetctl lod` as a
 comparison and validator input, not the acceptance authority for foliage.
 
-## 5. Provenance and acceptance safeguards
+## 5. Provenance and acceptance safeguards for remaining work
 
 The validated brief is
 `assets/briefs/temperate-branching-tree-v1.json`. The current candidate remains
@@ -150,23 +183,28 @@ and not production accepted. Preserve the historical manifest that copied the
 outdated “no generated output exists yet” wording. Do not rewrite old candidate
 manifests or artifacts to make the new record look cleaner.
 
-When authorized, use a new output directory under `Assets/_assetctl/` and the
-named data-only `assetctl blender tree-family` operation. Keep the exact brief
+The v3 smoke output is retained in
+`Assets/_assetctl/atlas-tree-smoke-1790566084092/`. For subsequent candidates,
+use a new output directory under `Assets/_assetctl/` and the named data-only
+`assetctl blender tree-family` operation. Keep the exact brief
 byte snapshot, master seed and all eight variant seeds, authoring version,
 Blender version, tree-family and foliage-source hashes, and hashes for every
 `.blend`, GLB, texture and render sheet in the manifest. Keep the license at
 `NOASSERTION` unless the declaration is actually resolved. Validate the brief,
 GLB, root/height, triangle caps, LOD silhouette, alpha-mask behavior, render
 sheet, package manifest and target-scene performance before describing any
-variant as accepted. No asset generation, source edit or GPU work is performed
-by this proposal.
+variant as accepted. The v3 smoke remains technically validated but awaits visual signoff, fixes
+for the Opus review findings, and the outstanding asset, runtime and license
+gates. Authoring v4 code changes are underway, but no v4 candidate exists yet.
 
 ## Source records
 
+- [V3 smoke status and review](tree-authoring-v3-2026-09-28.md)
 - [Reviewed candidate and visual findings](tree-asset-candidate-2026-09-28.md)
 - [Tree species and asset contract](tree-species-asset-contract-2026-09-28.md)
 - [Candidate brief](../assets/briefs/temperate-branching-tree-v1.json)
 - `tools/assetctl/blender/tree_family.py`: `author_tree`, `tube`, `leaf_spray`
+- `tools/assetctl/blender/tree_skeleton.py`: deterministic branch skeleton
 - `tools/assetctl/blender/tree_foliage.py`: `foliage_atlas`
 - `tools/assetctl/blender/asset_blender.py`: `op_render_sheet`
 - `tools/assetctl/lod.mjs`: generic LOD target ratios
