@@ -1,0 +1,52 @@
+{
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "seed": "[\"[\\\"LETHRA-001\\\",\\\"G001\\\"]\",[2128,0,1],0]/planet/1",
+  "radiusM": 5194907.072465867,
+  "waterLevelM": 300,
+  "address": {
+    "face": 2,
+    "n": 577212,
+    "x": 42120,
+    "y": 62028
+  },
+  "candidates": 36,
+  "testedCells": 64,
+  "preSlopeEligible": 27,
+  "slopeRejected": 20,
+  "present": 7,
+  "thresholdCount": 180,
+  "lowerExclusive": "-Infinity",
+  "upperInclusive": 1764.8703535738487,
+  "thresholdsByKind": {
+    "terrain-ocean-H": 36,
+    "biome-ocean-G": 36,
+    "slope-probe-H": 54,
+    "slope-probe-G": 54
+  },
+  "intervalChecks": [
+    {
+      "water": 300,
+      "identical": true
+    },
+    {
+      "water": 300,
+      "identical": true
+    },
+    {
+      "water": 300,
+      "identical": true
+    },
+    {
+      "water": 1032.4351767869243,
+      "identical": true
+    },
+    {
+      "water": 1764.8703535738487,
+      "identical": true
+    }
+  ],
+  "allIntervalChecksMatch": true,
+  "lowerBoundaryPredicatesMatchCurrent": null,
+  "upperOutsidePredicatesMatchCurrent": false,
+  "proof": "Every water-dependent predicate in this patch compares finite H or G with water using strict H/G < water. Fixing each comparison result is sufficient; the intersection is (max(thresholds below current), min(thresholds at/above current)]. H values include all primary samples and every ±5m probe evaluated for each pre-slope-eligible candidate, including candidates rejected by slope."
+}

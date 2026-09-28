@@ -1,0 +1,109 @@
+{
+  "ok": true,
+  "scope": "Actual browser module worker; exact census and protocol checks, no renderer/visual claim",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "patches": 16,
+  "candidates": 479,
+  "present": 366,
+  "cold": {
+    "type": "patches",
+    "generation": 1,
+    "requestId": 1,
+    "context": "756f27a1c3d04a0e1afb36da42985dcf72101b8d6e89d36f7b15bdcb2bceb67b",
+    "done": true,
+    "elapsedMs": 12,
+    "slices": 4,
+    "maxSliceMs": 4.600000001490116,
+    "cache": {
+      "context": "756f27a1c3d04a0e1afb36da42985dcf72101b8d6e89d36f7b15bdcb2bceb67b",
+      "family": "e5cc1d89f84fcfad7c773fa58ecadacc21f381bca8f6995901eaabba91ca6a54",
+      "reusedPatches": 0,
+      "patches": 16,
+      "estimatedBytes": 31600,
+      "maxBytes": 50331648,
+      "maxPatches": 16000,
+      "hits": 0,
+      "misses": 16,
+      "evictionsTotal": 0,
+      "sampledCandidates": 479,
+      "activeCandidates": 0
+    }
+  },
+  "warm": {
+    "type": "patches",
+    "generation": 1,
+    "requestId": 2,
+    "context": "756f27a1c3d04a0e1afb36da42985dcf72101b8d6e89d36f7b15bdcb2bceb67b",
+    "done": true,
+    "elapsedMs": 0.30000000074505806,
+    "slices": 2,
+    "maxSliceMs": 0.10000000149011612,
+    "cache": {
+      "context": "756f27a1c3d04a0e1afb36da42985dcf72101b8d6e89d36f7b15bdcb2bceb67b",
+      "family": "e5cc1d89f84fcfad7c773fa58ecadacc21f381bca8f6995901eaabba91ca6a54",
+      "reusedPatches": 0,
+      "patches": 16,
+      "estimatedBytes": 31600,
+      "maxBytes": 50331648,
+      "maxPatches": 16000,
+      "hits": 16,
+      "misses": 16,
+      "evictionsTotal": 0,
+      "sampledCandidates": 479,
+      "activeCandidates": 0
+    }
+  },
+  "waterReuse": {
+    "family": "e5cc1d89f84fcfad7c773fa58ecadacc21f381bca8f6995901eaabba91ca6a54",
+    "context": "9184a9e89c831b6c070772ff7d2b251af044ec4ae1da28f0082c94bddaa0cfe4",
+    "reusedPatches": 16,
+    "cache": {
+      "context": "9184a9e89c831b6c070772ff7d2b251af044ec4ae1da28f0082c94bddaa0cfe4",
+      "family": "e5cc1d89f84fcfad7c773fa58ecadacc21f381bca8f6995901eaabba91ca6a54",
+      "reusedPatches": 16,
+      "patches": 16,
+      "estimatedBytes": 31600,
+      "maxBytes": 50331648,
+      "maxPatches": 16000,
+      "hits": 16,
+      "misses": 0,
+      "evictionsTotal": 0,
+      "sampledCandidates": 0,
+      "activeCandidates": 0
+    }
+  },
+  "selection": {
+    "requestId": 6,
+    "patchRequestId": 6,
+    "rangeM": 1200,
+    "patches": 536,
+    "cellsChecked": 13818,
+    "selectionMs": 2.699999999254942
+  },
+  "checks": [
+    "exact Node/browser equality",
+    "address+offset identity reconstruction",
+    "cache reuse and transfer ownership",
+    "bounded batches and <50ms max-slice bound",
+    "selection counter independent from patch counter",
+    "packed selection grid validation",
+    "production-cell coverage by selected patches",
+    "selection errors preserve active patch job",
+    "future-generation selection error preserves active patch job",
+    "cancellation",
+    "cancel after done silent",
+    "request/phase error attribution",
+    "protocol faults preserve live job",
+    "A-to-B supersession",
+    "invalid newer batch supersedes",
+    "pre-ready request rejection",
+    "configure error recovery",
+    "context race",
+    "stale generation rejection",
+    "water invalidation"
+  ],
+  "limitations": [
+    "A worker-internal step exception with already completed patches was not induced: production exposes no fault-injection hook. The class-level step throw/recovery path is covered by the Node census test."
+  ],
+  "errors": []
+}

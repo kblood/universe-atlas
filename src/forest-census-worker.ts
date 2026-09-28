@@ -4,6 +4,7 @@ import {forestPatchAddresses} from './forest-patch-selection.ts';
 
 const MAX_BATCH_PATCHES=64,RESULT_BATCH=8,SLICE_MS=4,SLICE_CANDIDATES=8;
 let generation=0,requestId=0,census:ForestCensus|null=null;
+let retainedCensus:ForestCensus|null=null;
 let radiusM=0,selectionRequest=0;
 // A local MessageChannel yields to incoming worker messages without the nested
 // setTimeout minimum-delay clamp throttling thousands of short census slices.
@@ -57,12 +58,13 @@ self.onmessage=async({data})=>{
   try{
     if(data.type==='configure'){
       if(data.generation<=generation)return;
-      cancel();generation=data.generation;requestId=0;selectionRequest=0;census=null;radiusM=0;
+      const previous=census??retainedCensus;
+      cancel();generation=data.generation;requestId=0;selectionRequest=0;census=null;radiusM=0;retainedCensus=previous;
       const ownGeneration=generation;let source:ForestCensus;
-      try{source=await createForestCensus(data.body,data.waterLevelM);}
+      try{source=await createForestCensus(data.body,data.waterLevelM,undefined,undefined,previous);}
       catch(error){if(ownGeneration===generation)fail(error,'configure');return;}
       if(ownGeneration!==generation)return;
-      census=source;radiusM=data.body.radiusM;self.postMessage({type:'ready',generation,context:source.context,n:source.n});return;
+      census=source;retainedCensus=source;radiusM=data.body.radiusM;self.postMessage({type:'ready',generation,context:source.context,family:source.family,n:source.n,cache:source.diagnostics()});return;
     }
     if(data.generation!==generation){
       if(data.generation>generation&&(data.type==='patches'||data.type==='select'))self.postMessage({type:'error',phase:data.type==='select'?'selection':'request',generation:data.generation,

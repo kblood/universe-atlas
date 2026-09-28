@@ -145,6 +145,20 @@ try{
   const completedCount=await page.evaluate(()=>window.messages.length);
   await send({type:'cancel',generation:3,requestId:1});await page.waitForTimeout(50);
   assert.equal(await page.evaluate(()=>window.messages.length),completedCount,'cancel after done is silent');
+  await send({type:'configure',generation:4,body,waterLevelM:0});
+  const returnDry=await wait('ready',4);assert.equal(returnDry.family,ready.family);
+  await send({type:'patches',generation:4,requestId:1,addresses});
+  const dryAgain=await collect(4,1);assert.deepEqual(dryAgain.flatMap(p=>p.patches),expected);
+  await send({type:'configure',generation:5,body,waterLevelM:25});
+  const shifted=await wait('ready',5);
+  assert.equal(shifted.family,ready.family);assert.notEqual(shifted.context,ready.context);
+  assert.ok(shifted.cache.reusedPatches>0,'real worker retains complete inland patches across a water bucket');
+  const shiftReference=await createForestCensus(body,25);
+  const shiftExpected=addresses.map(address=>{let result=shiftReference.start(address);while(!result)result=shiftReference.step();return normalize(result);});
+  await send({type:'patches',generation:5,requestId:1,addresses});
+  const shiftedPatches=await collect(5,1);
+  assert.deepEqual(shiftedPatches.flatMap(p=>p.patches),shiftExpected,'inherited browser patches equal fresh census at new water');
+  assert.equal(shiftedPatches.at(-1).cache.sampledCandidates,0,'all fixture patches reused without resampling');
   await page.evaluate(()=>{
     window.preReadyMessages=[];window.preReadyErrors=[];window.preReadyWorker=new Worker('/src/forest-census-worker.ts',{type:'module'});
     window.preReadyWorker.onmessage=({data})=>window.preReadyMessages.push(data);
@@ -173,7 +187,7 @@ try{
   assert.deepEqual(await page.evaluate(()=>window.workerErrors),[]);assert.deepEqual(errors,[]);
   report={ok:true,scope:'Actual browser module worker; exact census and protocol checks, no renderer/visual claim',bodyId:body.id,patches:addresses.length,
     candidates:expected.reduce((s,p)=>s+p.candidates,0),present:expected.reduce((s,p)=>s+p.present,0),
-    cold:cold.at(-1),warm:warm.at(-1),selection:{requestId:6,patchRequestId:6,rangeM:selectionRange,patches:selected.packed.length/4,cellsChecked:selectionCellCandidates.length,selectionMs:selected.selectionMs},
+    cold:cold.at(-1),warm:warm.at(-1),waterReuse:{family:shifted.family,context:shifted.context,reusedPatches:shifted.cache.reusedPatches,cache:shiftedPatches.at(-1).cache},selection:{requestId:6,patchRequestId:6,rangeM:selectionRange,patches:selected.packed.length/4,cellsChecked:selectionCellCandidates.length,selectionMs:selected.selectionMs},
     checks:['exact Node/browser equality','address+offset identity reconstruction','cache reuse and transfer ownership','bounded batches and <50ms max-slice bound','selection counter independent from patch counter','packed selection grid validation','production-cell coverage by selected patches','selection errors preserve active patch job','future-generation selection error preserves active patch job','cancellation','cancel after done silent','request/phase error attribution','protocol faults preserve live job','A-to-B supersession','invalid newer batch supersedes','pre-ready request rejection','configure error recovery','context race','stale generation rejection','water invalidation'],
     limitations:['A worker-internal step exception with already completed patches was not induced: production exposes no fault-injection hook. The class-level step throw/recovery path is covered by the Node census test.'],errors};
   delete report.cold.patches;delete report.warm.patches;

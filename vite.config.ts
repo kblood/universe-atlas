@@ -10,6 +10,12 @@ export default defineConfig({
       builtAt:new Date().toISOString(),
     },null,2)});
     for(const fileName of [
+      'docs/canopy-water-validity-design-2026-09-28.md',
+      'test-results/canopy-water-validity-design/prototype.mjs',
+      'test-results/canopy-water-validity-design/water-300.json',
+      'test-results/canopy-water-validity-design/water-3000.json',
+      'test-results/canopy-water-worker/report.json',
+      'test-results/canopy-water-host/report.json',
       'docs/canopy-census-design-2026-09-28.md',
       'docs/opus-5.5-census-design-review-2026-09-28.md',
       'docs/opus-5.5-census-design-review-2026-09-28.metadata.json',

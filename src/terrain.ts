@@ -377,6 +377,7 @@ export function terrainSampler(
   surfaceAgeMyr: number = DEFAULT_SURFACE_AGE_MYR,
   includeCraters: boolean = false,
   waterLevelM: number = 0,
+  onOceanThreshold?: (heightM:number)=>void,
 ) {
   const base = baseTerrainSampler(body, waterLevelM);
   const landforms=planetLandforms(body);
@@ -399,6 +400,9 @@ export function terrainSampler(
     // gains a crater delta, and `ocean` itself keeps deciding land/sea from
     // the PRE-crater elevation, so this cannot flip the coastline.
     const uncrateredHeightM = sample.elevationM + landforms(d,sample.elevationM);
+    // Optional read-only observer for exact forest cache validity. This is the
+    // branch threshold before ocean sampling bypasses immutable river geometry.
+    if(body.water)onOceanThreshold?.(uncrateredHeightM);
     const ocean=!!body.water&&uncrateredHeightM<waterLevelM;
     const craterDeltaM = craters && !ocean ? craterHeightDeltaAt(craters, d) : 0;
     const elevationM = uncrateredHeightM + craterDeltaM;

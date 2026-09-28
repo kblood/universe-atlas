@@ -9,6 +9,7 @@ import {PLANET_DETAIL} from '../src/planet-detail.ts';
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 const ground=[1,0,0],eye=new THREE.Vector3(1,0,0),nearOrigin=new THREE.Vector3();
 const contextA='a'.repeat(64),contextB='b'.repeat(64);
+const familyA='f'.repeat(64),familyB='c'.repeat(64);
 
 class MockWorker{
   static instances=[];
@@ -28,8 +29,8 @@ function recordBuffer(count){
   for(let i=0;i<count;i++)out.set([i,1,0,0,.25,16,.5,120,0],i*9);
   return out;
 }
-function patch(a,{present=1,candidates=64,testedCells=64,context=contextA,records=recordBuffer(present)}={}){
-  return {context,address:{...a},testedCells,candidates,present,representatives:0,records};
+function patch(a,{present=1,candidates=64,testedCells=64,context=contextA,records=recordBuffer(present),waterInterval}={}){
+  return {context,address:{...a},testedCells,candidates,present,representatives:0,records,...(waterInterval?{waterInterval}: {})};
 }
 function begin(capacity=256,canopyBody=body){
   const previousWorker=globalThis.Worker;MockWorker.instances=[];globalThis.Worker=MockWorker;
@@ -37,7 +38,7 @@ function begin(capacity=256,canopyBody=body){
   const worker=MockWorker.instances[0],configure=worker.sent.find(m=>m.type==='configure');
   assert.ok(worker&&configure,'prepare starts and configures a census worker');
   const generation=configure.generation,n=configure.body?Math.ceil(2*configure.body.radiusM/18):Math.ceil(2*body.radiusM/18);
-  worker.emit({type:'ready',generation,context:contextA,n});
+  worker.emit({type:'ready',generation,context:contextA,family:familyA,n});
   host.prepare(eye,ground,100,0,true,false,nearOrigin);
   const select=worker.sent.findLast(m=>m.type==='select');assert.ok(select,'ready host requests a patch selection');
   return {host,worker,generation,n,select,context:contextA,restore(){host.dispose();globalThis.Worker=previousWorker;}};
@@ -57,13 +58,13 @@ test('selection requests and queued census results stay bounded and installs are
   const h=begin(4096),addresses=Array.from({length:70},(_,i)=>address(i,h.n));
   try{
     const request=selectAndRequest(h,addresses);
-    assert.equal(request.addresses.length,64,'host requests at most 64 whole patches');
-    for(let batch=0;batch<8;batch++){
+    assert.ok(request.addresses.length>0&&request.addresses.length<=64,'host requests no more than 64 whole patches per bounded slice');
+    for(let batch=0;batch<Math.ceil(request.addresses.length/8);batch++){
       const patches=request.addresses.slice(batch*8,batch*8+8).map(a=>patch(a,{present:64}));
-      sendPatchResponse(h,request,patches,batch===7);
+      sendPatchResponse(h,request,patches,batch===Math.ceil(request.addresses.length/8)-1);
       assert.ok(h.host.pending.length<=64);
     }
-    assert.equal(h.host.pending.length,64,'incomplete/queued batches retain at most 64 complete patches');
+    assert.equal(h.host.pending.length,request.addresses.length,'incomplete/queued batches retain only requested complete patches');
     assert.equal(h.host.installed.size,0,'message receipt alone never installs a patch');
     let frames=0;
     while(h.host.pending.length&&frames++<20){
@@ -71,10 +72,55 @@ test('selection requests and queued census results stay bounded and installs are
       assert.ok(h.host.installedThisFrame<=512,'installation respects the per-frame tree budget');
       assert.ok(h.host.pending.length<=64);
     }
-    assert.equal(h.host.pending.length,0);assert.equal(h.host.slots.size,4096);
-    assert.equal(h.host.installed.size,64);
+    assert.equal(h.host.pending.length,0);assert.equal(h.host.slots.size,request.addresses.length*64);
+    assert.equal(h.host.installed.size,request.addresses.length);
     const nextRequest=h.worker.sent.findLast(m=>m.type==='patches');
-    assert.equal(nextRequest.addresses.length,6,'the remaining selection is requested only after the first bounded batch drains');
+    assert.equal(nextRequest.addresses.length,addresses.length-request.addresses.length,
+      'the remaining selection is requested only after the first bounded batch drains');
+  }finally{h.restore();}
+});
+
+test('large selection decoding is sliced and atomically swaps the old patch window',()=>{
+  const h=begin(64),a=address(0,h.n),oldKey=`${a.face}/${a.n}/${a.x}/${a.y}`;
+  try{
+    h.worker.emit({type:'selection',generation:h.generation,requestId:h.select.requestId,context:h.context,
+      packed:Float64Array.from([a.face,a.n,a.x,a.y]),selectionMs:1});
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    assert.deepEqual(h.host.order,[oldKey]);
+    h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
+    const nextSelect=h.worker.sent.findLast(m=>m.type==='select');assert.notEqual(nextSelect.requestId,h.select.requestId);
+    const addresses=Array.from({length:1300},(_,i)=>address(i+1,h.n));
+    const packed=Float64Array.from(addresses.flatMap(a=>[a.face,a.n,a.x,a.y]));
+    h.worker.emit({type:'selection',generation:h.generation,requestId:nextSelect.requestId,context:h.context,packed,selectionMs:3});
+    h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
+    assert.equal(h.host.diagnostics().selectionApplyPending,true,'first bounded slice leaves application in progress');
+    assert.deepEqual(h.host.order,[oldKey],'new window is not visible until its complete packed selection validates');
+    let frames=0;
+    while(h.host.diagnostics().selectionApplyPending&&frames++<10)h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
+    assert.ok(frames<10);assert.equal(h.host.order.length,addresses.length);
+    assert.equal(h.host.order[0],`${addresses[0].face}/${addresses[0].n}/${addresses[0].x}/${addresses[0].y}`);
+    assert.equal(h.host.order.at(-1),`${addresses.at(-1).face}/${addresses.at(-1).n}/${addresses.at(-1).x}/${addresses.at(-1).y}`);
+    assert.equal(h.host.diagnostics().selectionApplyPending,false);
+  }finally{h.restore();}
+});
+
+test('malformed deferred selection terminates before replacing the current window',()=>{
+  const h=begin(64),a=address(0,h.n),oldKey=`${a.face}/${a.n}/${a.x}/${a.y}`;
+  try{
+    h.worker.emit({type:'selection',generation:h.generation,requestId:h.select.requestId,context:h.context,
+      packed:Float64Array.from([a.face,a.n,a.x,a.y]),selectionMs:1});
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    assert.deepEqual(h.host.order,[oldKey]);
+    h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
+    const selection=h.worker.sent.findLast(m=>m.type==='select');
+    const invalidX=Math.ceil(h.n/8);
+    h.worker.emit({type:'selection',generation:h.generation,requestId:selection.requestId,context:h.context,
+      packed:Float64Array.from([0,h.n,invalidX,1000]),selectionMs:1});
+    assert.deepEqual(h.host.order,[oldKey],'message callback queues decoding without changing the public window');
+    h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
+    assert.equal(h.worker.terminated,true,'address validation happens in the budgeted apply phase');
+    assert.deepEqual(h.host.order,[oldKey],'partial/malformed input cannot publish a replacement window');
+    assert.equal(h.host.diagnostics().selectionApplyPending,false);
   }finally{h.restore();}
 });
 
@@ -141,12 +187,68 @@ test('water reconfiguration ignores stale generation replies and accepts the new
     h.worker.emit({type:'patches',generation:h.generation,requestId:request.requestId,context:h.context,patches:[patch(a)],done:true});
     assert.equal(h.host.pending.length,0);assert.equal(h.host.installed.size,0);
     h.worker.emit({type:'ready',generation:config2.generation,context:contextB,n:h.n});
-    h.host.prepare(eye,ground,100,10,true,false,nearOrigin);
+    h.host.prepare(eye,[0,1,0],100,10,true,false,nearOrigin);
     const selection2=h.worker.sent.findLast(m=>m.type==='select');assert.equal(selection2.generation,config2.generation);
     const previousOrder=h.host.order.slice();
     h.worker.emit({type:'selection',generation:h.generation,requestId:selection2.requestId,context:contextA,packed:new Float64Array(),selectionMs:0});
     assert.deepEqual(h.host.order,previousOrder,'stale selection data cannot replace current-water patches');
     assert.equal(h.host.diagnostics().selectionPending,true);
+  }finally{h.restore();}
+});
+
+test('matching family retags an in-range patch only after ready without rewriting its slot',()=>{
+  const h=begin(64),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`,id=`${a.face}/${a.n}/${a.x*8}/${a.y*8}`;
+  try{
+    const request=selectAndRequest(h,[a]);sendPatchResponse(h,request,[patch(a,{waterInterval:[-1,10]})]);
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    const slot=h.host.slots.get(id),position=Array.from(h.host.renderer.positions.array.slice(slot*4,slot*4+4));
+    let writes=0;const write=h.host.renderer.write.bind(h.host.renderer);h.host.renderer.write=(...args)=>{writes++;return write(...args);};
+    h.host.prepare(eye,ground,100,5,true,false,nearOrigin);
+    const configure=h.worker.sent.findLast(m=>m.type==='configure');
+    assert.equal(h.host.installed.get(key).water,0,'configuration alone does not retag installed content');
+    assert.equal(h.host.currentPatch(key),false);
+    assert.equal(h.host.canHandoff(id,120),true,'canonical geometry remains pairable during a water reconfiguration');
+    h.worker.emit({type:'ready',generation:configure.generation,context:contextB,family:familyA,n:h.n});
+    h.host.prepare(eye,ground,100,5,true,false,nearOrigin);
+    assert.equal(h.host.currentPatch(key),true);
+    assert.equal(h.host.installed.get(key).water,5);
+    assert.equal(h.host.reusedPatches,1);
+    assert.equal(h.host.slots.get(id),slot);assert.equal(writes,0,'interval reuse does not rewrite the unchanged slot');
+    assert.deepEqual(Array.from(h.host.renderer.positions.array.slice(slot*4,slot*4+4)),position);
+  }finally{h.restore();}
+});
+
+test('outside-interval and different-family patches stay stale and are requested again',()=>{
+  for(const family of [familyA,familyB]){
+    const h=begin(64),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`;
+    try{
+      const request=selectAndRequest(h,[a]);sendPatchResponse(h,request,[patch(a,{waterInterval:[-1,10]})]);
+      h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+      h.host.prepare(eye,ground,100,family===familyA?20:5,true,false,nearOrigin);
+      const configure=h.worker.sent.findLast(m=>m.type==='configure');
+      h.worker.emit({type:'ready',generation:configure.generation,context:contextB,family,n:h.n});
+      h.host.prepare(eye,ground,100,family===familyA?20:5,true,false,nearOrigin);
+      assert.equal(h.host.currentPatch(key),false);
+      assert.equal(h.host.installed.get(key).water,0);
+      assert.equal(h.host.reusedPatches,0);
+      h.host.prepare(eye,ground,100,family===familyA?20:5,true,false,nearOrigin);
+      const replacement=h.worker.sent.findLast(m=>m.type==='patches');
+      assert.ok(replacement?.addresses.some(a=>`${a.face}/${a.n}/${a.x}/${a.y}`===key),
+        family===familyA?'outside the stored interval requests a fresh census':'a changed family hash requests a fresh census');
+    }finally{h.restore();}
+  }
+});
+
+test('near absence during a water shift still suppresses the paired far instance',()=>{
+  const h=begin(64),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`,id=`${a.face}/${a.n}/${a.x*8}/${a.y*8}`;
+  try{
+    const request=selectAndRequest(h,[a]);sendPatchResponse(h,request,[patch(a,{waterInterval:[-1,10]})]);
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    const slot=h.host.slots.get(id);assert.equal(h.host.renderer.ownership.array[slot],0);
+    h.host.prepare(eye,ground,100,5,true,false,nearOrigin);
+    assert.equal(h.host.currentPatch(key),false,'old patch waits for the matching-family ready message');
+    h.host.noteNear(id,key,false,5);h.host.finish();
+    assert.equal(h.host.renderer.ownership.array[slot],256,'current near absence wins while canonical far geometry remains pairable');
   }finally{h.restore();}
 });
 
@@ -381,6 +483,24 @@ test('replacement that still exceeds capacity retires the stale patch without a 
     assert.equal(h.host.installed.has(key),false);assert.equal(h.host.currentPatch(key),false);
     assert.equal(h.host.slots.size,0);assert.equal(h.host.allocator.diagnostics().used,0);assert.equal(h.host.capacityMisses,1);
     assert.equal(h.host.prepare(eye,ground,100,10,true,false,nearOrigin),true,'near legacy rendering remains enabled without the oversized far patch');
+  }finally{h.restore();}
+});
+
+test('same-water family replacement releases its old full-capacity patch before whole-patch install',()=>{
+  const h=begin(1),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`;
+  try{
+    const first=selectAndRequest(h,[a]);sendPatchResponse(h,first,[patch(a)]);h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    assert.equal(h.host.slots.size,1);assert.equal(h.host.installed.get(key).family,familyA);
+    h.host.configure();const configure=h.worker.sent.findLast(m=>m.type==='configure');
+    h.worker.emit({type:'ready',generation:configure.generation,context:contextB,family:familyB,n:h.n});
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    const replacement=h.worker.sent.findLast(m=>m.type==='patches');assert.ok(replacement?.addresses.some(x=>`${x.face}/${x.n}/${x.x}/${x.y}`===key));
+    h.worker.emit({type:'patches',generation:configure.generation,requestId:replacement.requestId,context:contextB,
+      patches:[patch(a,{context:contextB})],done:true});
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    assert.equal(h.host.slots.size,1);assert.equal(h.host.capacityMisses,0);
+    assert.equal(h.host.installed.get(key).family,familyB);assert.equal(h.host.currentPatch(key),true);
   }finally{h.restore();}
 });
 

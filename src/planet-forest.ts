@@ -315,7 +315,7 @@ export class PlanetForest {
       if(lod===0)this.retainedNear.add(cell.id);else this.retainedNear.delete(cell.id);
       if(distance>=B.forestRadiusM)continue;
       const edgeCoverage=altitudeFade*(1-THREE.MathUtils.smoothstep(distance,B.forestRadiusM-300,B.forestRadiusM));
-      const paired=this.fullCanopy?.canHandoff(cell.id,resident.height)??false;
+      const paired=this.fullCanopy?.canHandoff(cell.id,resident.height,resident.patchKey)??false;
       if(paired){
         const middleLimit=this.retainedMiddle.has(cell.id)?600:550;
         if(distance>=middleLimit){this.retainedMiddle.delete(cell.id);continue;}
