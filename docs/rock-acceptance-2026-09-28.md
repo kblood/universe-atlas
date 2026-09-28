@@ -40,6 +40,35 @@ it.
   - `__atlas` gains `rockPublished`, `rockProbe`, `rockWork` and
     `resetRockWork`.
 
+## Which run the numbers come from
+
+The tables below are from the first complete run of all three scenarios. That
+run stopped at its first assertion, the far-LOD 0.94 px float described
+under "Unresolved". The test was then changed to fail only on gaps of 1 px
+or more.
+
+A clean rerun at `a73f8d0` passed with `ok: true`. Its `report.json`, PNGs
+and logs are the ones now in `test-results/opus55-rocks/` (logs under
+`verify/`). Its numbers match within noise:
+
+- **Drawn:** barren wide 130, barren close 414, living wide 32, living close
+  103.
+- **Draw ms p95/max (contended):**
+  - barren flying 0.6/1.6
+  - barren walking 0.8/1.8
+  - living flying 0.4/0.5
+  - living walking 0.4/0.8
+  - every still window 0.1/0.1 with 0 draw units
+- **Update max:** 4.0–6.2 ms while moving.
+- **Replay:** all replays identical.
+- **Shore:** 43 band rocks at A, 0 at B. Waterline minimum 0.319 m. 149 stale
+  terrain patches at B.
+- **Desktop acceptance:** 38 drawn, 6.45 MB owned. Draw p95/max 0.4/0.9 ms,
+  82 jobs over 467 frames, each at most 3 frames.
+- **Also at `a73f8d0`:** `npx tsc --noEmit` is clean. `npm test` (full,
+  serial) ran 801 tests: 798 pass, 0 fail, 3 skipped. That is the baseline of
+  797/794/3 plus 4 new rock tests. `npm run build` succeeds.
+
 ## Barren vs living
 
 The views:
