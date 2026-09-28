@@ -21,7 +21,26 @@ faceted procedural shapes that motivate the current vegetation work. The
 [deployment record](../test-results/deploy-4796b1a/README.md) includes the
 live river-link and grounded checks.
 
-## Current local runtime candidate — `a755f1b`
+## Current local runtime candidate — `770d807` (2026-09-28)
+
+The current integration candidate adds canonical surface rocks, bounded rock
+draw traversal/accounting, shared dated tree-species allometry and Astra's fauna
+handoff material correction. Full serial tests (794 passed, none failed, 3
+retained-GLB tests skipped), TypeScript, production build and three hardware
+browser routes pass on the RTX 5090. The full near-ground browser profile is
+still over the proposed desktop frame target at 29.4 ms p95, and ordinary rocks
+have not yet been included in the browser visual/performance report.
+
+A targeted fauna close-up found a drawn individual missing after a 1.75-second
+date seek with a stationary observer. The close image also shows a dark animal
+partly occluded by conifer branches. Pine crown dimensions frequently clamp to
+the minimum ratio. Therefore fauna continuity/readability, tree-family visual
+fit and rock browser acceptance remain open. This candidate is not deployed;
+production remains `4796b1a`, with inland rivers disabled. See the current
+[Opus 5.5 implementation handoff](opus-5.5-desktop-realism-handoff-2026-09-28.md)
+for the task order, measured results and acceptance gates.
+
+## Earlier local runtime checkpoint — `a755f1b` (2026-09-28)
 
 The local combined branch contains optional packaged tree-family loading,
 experimental far-tree presentation, connected near-body fauna, detailed ground
