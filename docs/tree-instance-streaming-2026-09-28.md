@@ -73,9 +73,14 @@ geometry, shadows and full-scene frame cost are excluded.
 
 The first attempt is preserved separately; its five failed assertions read
 slot 1 instead of slot 191 and applied foliage alpha rules to bark. The
-corrected run passes without changing runtime source. A follow-up checks tint
-replay on both LODs across MASK/HASH and transmission off/0.35; it is still in
-progress. No realistic-tree adoption or forest-scale performance is established.
+corrected run passes without changing runtime source. The
+[final follow-up](../test-results/tree-instance-updates/run-1790591702202/report.json)
+also passes tint-to-white hash replay on both LODs across MASK/HASH and
+transmission off/0.35: eight combinations, with no recorded page, console,
+request or WebGL errors. Its source and input hashes match implementation
+commit `851b221`; the report records the uncommitted worktree it tested before
+that commit. No realistic-tree adoption or forest-scale performance is
+established. See the [test methods](../test-results/tree-instance-updates/README.md).
 
 ## Next planetary integration
 

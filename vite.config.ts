@@ -16,6 +16,15 @@ export default defineConfig({
       'docs/leaf-diffuse-transmission-2026-09-28.md',
       'docs/tree-foliage-minification-2026-09-28.md',
       'docs/opus-leaf-transmission-review-2026-09-28.md',
+      'docs/tree-instance-streaming-2026-09-28.md',
+      'test-results/tree-instance-updates/README.md',
+      'test-results/tree-instance-updates/final-cpu.log',
+      'test-results/tree-instance-updates/build.log',
+      'test-results/tree-instance-updates/run.mjs',
+      'test-results/tree-instance-updates/opus/response.json',
+      'test-results/tree-instance-updates/opus/inputs.json',
+      'test-results/tree-instance-updates/run-1790591510207/report.json',
+      'test-results/tree-instance-updates/run-1790591702202/report.json',
       'test-results/opus-three-ez-impostor-review/response.json',
       'test-results/opus-three-ez-impostor-review/inputs.json',
       'test-results/three-ez-impostor-reference/README.md',
@@ -369,8 +378,12 @@ export default defineConfig({
       const fileName=`test-results/tree-foliage-temporal/isolated-final/${mode}/${lod}/smoke-128-date0.png`;
       this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
     }
-    for(const fileName of ['src/tree-leaf-transmission.ts','src/tree-asset.ts'])
+    for(const fileName of ['src/tree-leaf-transmission.ts','src/tree-asset.ts','src/instance-update-ranges.ts'])
       this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
+    for(const run of ['run-1790591510207','run-1790591702202'])for(const image of ['white-before.png','tinted.png','white-restored.png']){
+      const fileName=`test-results/tree-instance-updates/${run}/${image}`;
+      this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
+    }
     for(const fileName of [
       'test-results/deploy-580936f/canopy-flight/flight-lateral.png',
       'test-results/deploy-580936f/canopy-flight/flight-near-ground.png',
