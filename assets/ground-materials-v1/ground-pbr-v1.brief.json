@@ -45,7 +45,7 @@
     "sourceType":"third-party",
     "sourceConsent":"licensed",
     "sourceUrl":"https://polyhaven.com/",
-    "license":{"expression":"CC0-1.0","attribution":"Poly Haven; source asset authors are recorded in manifest.json","restrictions":[]},
+    "license":{"expression":"CC0-1.0","attribution":"Poly Haven textures by Charlotte Baglioni (Dirt) and Rob Tuytel (Rock Ground); author records are preserved in bundle metadata","restrictions":[]},
     "parents":[],
     "notes":"Runtime maps are downsampled and channel-packed from the two source PBR texture sets. Input file hashes and API metadata are preserved in bundle.json and ground-pbr-v1.asset.json. No generated geometry or model checkpoint is used."
   }

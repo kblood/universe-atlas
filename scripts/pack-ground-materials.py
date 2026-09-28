@@ -145,7 +145,7 @@ def main() -> None:
             "version": "1.0.0",
             "target": "IWSDK universe-atlas desktop-web renderer",
             "sourceUrl": "https://polyhaven.com/",
-            "license": {"expression": LICENSE, "attribution": "Poly Haven; source asset authors are recorded in manifest.json", "restrictions": []},
+            "license": {"expression": LICENSE, "attribution": "Poly Haven textures by Charlotte Baglioni (Dirt) and Rob Tuytel (Rock Ground); author records are preserved in bundle metadata", "restrictions": []},
             "parentAssets": ["Dirt (Poly Haven)", "Rock Ground (Poly Haven)"],
         },
         "primaryFile": "runtime/soil-albedo-roughness-512.png",

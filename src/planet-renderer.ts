@@ -18,7 +18,7 @@ import {contactGeometry,type ContactPatch} from './terrain-contact.ts';
 import {hydrologyReady} from './hydrology-registry.ts';
 import type {RiverRegion} from './river-types.ts';
 import {riverFeatureAt} from './river-sample.ts';
-import {detailTexture,detailOrigin,MATERIAL_VERSION,GROUND_PBR_TEXTURE_BYTES,acquireGroundPbrTextures,groundVertexHeader,groundVertex,groundFragmentHeader,groundColor,groundRoughnessCode,groundNormalCode} from './ground-material.ts';
+import {detailTexture,detailOrigin,MATERIAL_VERSION,GROUND_ATLAS_BYTES,GROUND_RESOURCE_BYTES,GROUND_PBR_TEXTURE_BYTES,acquireGroundPbrTextures,groundVertexHeader,groundVertex,groundFragmentHeader,groundColor,groundRoughnessCode,groundNormalCode} from './ground-material.ts';
 import {VolumetricClouds,CLOUD_TARGET_BUDGET_BYTES} from './volumetric-clouds.ts';
 import {ringSystemFor, ringActiveAt, createRingMesh, type RingSystem} from './planet-rings.ts';
 import {spinStateFor} from './stellar-evolution.ts';
@@ -111,8 +111,10 @@ const TOTAL_BUDGET_BYTES=256*1024*1024;
 // reserved here, so terrain admission cannot consume their headroom.
 const WATER_ENVIRONMENT_RESERVE_BYTES=28*1024*1024;
 const LIFE_RESERVE_BYTES=16*1024*1024;
-const GROUND_ATLAS_BYTES=Math.ceil(256*256*4*(1+4/3))+GROUND_PBR_TEXTURE_BYTES;
-const TERRAIN_BUDGET_BYTES=TOTAL_BUDGET_BYTES-WATER_ENVIRONMENT_RESERVE_BYTES-LIFE_RESERVE_BYTES-GROUND_ATLAS_BYTES;
+// The four PBR maps are physically shared across renderer leases, but each
+// renderer reserves their full mip-chain cost so its local budget remains safe
+// if its lifetime outlasts the lease that first initiated the shared load.
+const TERRAIN_BUDGET_BYTES=TOTAL_BUDGET_BYTES-WATER_ENVIRONMENT_RESERVE_BYTES-LIFE_RESERVE_BYTES-GROUND_RESOURCE_BYTES;
 // n=32: 108336 bytes of geometry, doubled for CPU/GPU, plus a 130x130 RGBA
 // map with the existing conservative 7/3 mip allocation.
 const PENDING_TILE_BYTES=108336*2+Math.ceil(67600*7/3);
@@ -1284,12 +1286,12 @@ export class PlanetRenderer {
       waterLevelM: this.waterBucket*WATER_LEVEL_BUCKET_M, waterBucket: this.waterBucket,
       staleWaterPatches:[...this.active].filter(k=>this.patches.get(k)!.waterBucket!==this.waterBucket).length,
       maxLevel: Math.max(0, ...[...this.active].map(k => this.patches.get(k)!.tile.level)), cacheLimit: this.contactFocus||this.lowFlightDetail?768:TILE_CACHE_LIMIT,
-      contactLevel:this.contactFocus?(this.needsFineContact?this.fineContactLevel:this.contactLevel):null,baseContactLevel:this.contactFocus?this.contactLevel:null,minimumWaterLevel:this.minimumWaterLevel,underresolvedWaterTiles:this.underresolvedWaterTiles,waterRegionActive:this.waterRegionActive,accountedBytes:this.residentBytes+GROUND_ATLAS_BYTES+oceanNormalBytes,lifeReserveBytes:LIFE_RESERVE_BYTES,cloudTargetBudgetBytes:CLOUD_TARGET_BUDGET_BYTES,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,reservedCombinedBytes:this.residentBytes+GROUND_ATLAS_BYTES+WATER_ENVIRONMENT_RESERVE_BYTES+LIFE_RESERVE_BYTES+(this.clouds?.allocatedBytes??0)+this.pending.size*PENDING_TILE_BYTES,terrainResidentBytes:this.residentBytes,groundAtlasBytes:GROUND_ATLAS_BYTES,oceanNormalBytes,pendingReserveBytes:this.pending.size*PENDING_TILE_BYTES,materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:TOTAL_BUDGET_BYTES+(this.immersiveBudget?0:CLOUD_TARGET_BUDGET_BYTES),coreBudgetBytes:TOTAL_BUDGET_BYTES,failuresTotal:this.failuresTotal,updateMs:this.updateMs,lifeMs:this.lifeMs,rescatterMs:this.rescatterMs,drawFloraMs:this.drawFloraMs,drawFaunaMs:this.drawFaunaMs,faunaRigCount:this.faunaNear.diagnostics().active,faunaRepresentation:'individual-instanced-anatomy+near-skinned-body',faunaNear:this.faunaNear.diagnostics(),faunaCulledCount:this.faunaCulledCount,faunaBudgetDrops:this.faunaBudgetDrops,faunaDrawn:this.faunaDrawn,lifePending:this.lifeQueue.length-this.lifeQueueIndex,lifeResidentCells:this.lifeResidents.size,faunaAllocatedBytes:this.faunaRenderer.allocatedBytes+this.faunaNear.allocatedBytes,faunaTerrainPending:this.faunaGroundQueue.length,floraSlotCount:this.floraSlotCount,floraPresentCount:this.floraPresentCount,floraSurvivorCount:this.floraSurvivorCount,floraSubmittedCount:this.floraSubmittedCount,faunaAnchorCount:this.faunaAnchorCount,
+      contactLevel:this.contactFocus?(this.needsFineContact?this.fineContactLevel:this.contactLevel):null,baseContactLevel:this.contactFocus?this.contactLevel:null,minimumWaterLevel:this.minimumWaterLevel,underresolvedWaterTiles:this.underresolvedWaterTiles,waterRegionActive:this.waterRegionActive,accountedBytes:this.residentBytes+GROUND_RESOURCE_BYTES+oceanNormalBytes,lifeReserveBytes:LIFE_RESERVE_BYTES,cloudTargetBudgetBytes:CLOUD_TARGET_BUDGET_BYTES,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,reservedCombinedBytes:this.residentBytes+GROUND_RESOURCE_BYTES+WATER_ENVIRONMENT_RESERVE_BYTES+LIFE_RESERVE_BYTES+(this.clouds?.allocatedBytes??0)+this.pending.size*PENDING_TILE_BYTES,terrainResidentBytes:this.residentBytes,groundAtlasBytes:GROUND_ATLAS_BYTES,groundPbrTextureBytes:GROUND_PBR_TEXTURE_BYTES,groundPbrAccounting:'conservative per-renderer reserve; shared textures are loaded once',oceanNormalBytes,pendingReserveBytes:this.pending.size*PENDING_TILE_BYTES,materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:TOTAL_BUDGET_BYTES+(this.immersiveBudget?0:CLOUD_TARGET_BUDGET_BYTES),coreBudgetBytes:TOTAL_BUDGET_BYTES,failuresTotal:this.failuresTotal,updateMs:this.updateMs,lifeMs:this.lifeMs,rescatterMs:this.rescatterMs,drawFloraMs:this.drawFloraMs,drawFaunaMs:this.drawFaunaMs,faunaRigCount:this.faunaNear.diagnostics().active,faunaRepresentation:'individual-instanced-anatomy+near-skinned-body',faunaNear:this.faunaNear.diagnostics(),faunaCulledCount:this.faunaCulledCount,faunaBudgetDrops:this.faunaBudgetDrops,faunaDrawn:this.faunaDrawn,lifePending:this.lifeQueue.length-this.lifeQueueIndex,lifeResidentCells:this.lifeResidents.size,faunaAllocatedBytes:this.faunaRenderer.allocatedBytes+this.faunaNear.allocatedBytes,faunaTerrainPending:this.faunaGroundQueue.length,floraSlotCount:this.floraSlotCount,floraPresentCount:this.floraPresentCount,floraSurvivorCount:this.floraSurvivorCount,floraSubmittedCount:this.floraSubmittedCount,faunaAnchorCount:this.faunaAnchorCount,
       faunaHerdCount:this.faunaHerdCount,faunaVisibleCount:this.faunaVisibleCount,
       failures: this.failures.size, faces: [...new Set([...this.active].map(k => Number(k.split('/')[0])))],
         detailPatches:[...this.active].filter(k=>this.groundEnabled.value&&this.patches.get(k)!.detail.value).length,
         pbrDetailPatches:[...this.active].filter(k=>this.groundEnabled.value&&this.patches.get(k)!.pbrDetail.value).length,
-        groundPbrReady:!!this.groundPbrTextures.ready.value,groundPbrTextureBytes:GROUND_PBR_TEXTURE_BYTES,
+        groundPbrReady:!!this.groundPbrTextures.ready.value,
       oceanDraws:[...this.active].filter(k=>this.patches.get(k)!.ocean?.visible).length,
       maxVisibleSkirtDepthM:Math.max(0,...[...this.active].map(k=>this.patches.get(k)!.data.skirtDepthM)),
       debug:{...this.debug,activeTileIds:[...this.active],pendingTileIds:[...this.pending],eyeHeightM:this.eyeHeightUniform.value},

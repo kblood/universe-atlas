@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {join,dirname} from 'node:path';
-import {DETAIL_PERIOD_M,GROUND_PBR_REPEAT_M,GROUND_PBR_TEXTURE_BYTES,groundPbrMaterialWeights,groundColor,groundFragmentHeader,groundNormalCode,groundRoughnessCode} from '../src/ground-material.ts';
+import {DETAIL_PERIOD_M,GROUND_ATLAS_BYTES,GROUND_PBR_REPEAT_M,GROUND_PBR_TEXTURE_BYTES,GROUND_RESOURCE_BYTES,groundPbrMaterialWeights,groundColor,groundFragmentHeader,groundNormalCode,groundRoughnessCode} from '../src/ground-material.ts';
 
 const assetRoot=join(dirname(fileURLToPath(import.meta.url)),'..','assets','ground-materials-v1');
 const sha256=(bytes)=>createHash('sha256').update(bytes).digest('hex');
@@ -28,6 +28,16 @@ test('PBR texture periods align to the existing rebased local frame',()=>{
     assert.ok(Math.abs(pbrPhase-rebased)<1e-9);
   }
   assert.equal(GROUND_PBR_TEXTURE_BYTES,5_592_406);
+  assert.equal(GROUND_RESOURCE_BYTES,GROUND_ATLAS_BYTES+GROUND_PBR_TEXTURE_BYTES);
+  assert.equal(GROUND_ATLAS_BYTES,611_670,'terrain diagnostics retain existing CPU plus GPU mip accounting for the procedural atlas');
+});
+
+test('per-renderer terrain accounting includes the shared PBR set once as a conservative reserve',async()=>{
+  const renderer=await readFile(join(dirname(fileURLToPath(import.meta.url)),'..','src','planet-renderer.ts'),'utf8');
+  assert.match(renderer,/accountedBytes:this\.residentBytes\+GROUND_RESOURCE_BYTES\+oceanNormalBytes/);
+  assert.match(renderer,/reservedCombinedBytes:this\.residentBytes\+GROUND_RESOURCE_BYTES\+/);
+  assert.match(renderer,/groundAtlasBytes:GROUND_ATLAS_BYTES,groundPbrTextureBytes:GROUND_PBR_TEXTURE_BYTES/);
+  assert.match(renderer,/groundPbrAccounting:'conservative per-renderer reserve; shared textures are loaded once'/);
 });
 
 test('PBR detail uses the current palette, surface wetness, and standard normal path',()=>{

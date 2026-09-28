@@ -8,7 +8,7 @@
     "sourceUrl": "https://polyhaven.com/",
     "license": {
       "expression": "CC0-1.0",
-      "attribution": "Poly Haven; source asset authors are recorded in manifest.json",
+      "attribution": "Poly Haven textures by Charlotte Baglioni (Dirt) and Rob Tuytel (Rock Ground); author records are preserved in bundle metadata",
       "restrictions": []
     },
     "parentAssets": [
@@ -72,19 +72,19 @@
     ]
   },
   "provenance": {
-    "jobId": "b1890211-cd70-43c2-8947-3fb663322525",
-    "generatedAt": "2026-09-28T17:32:46.256Z",
+    "jobId": "42edfcae-0cb5-41ae-9bce-5cb881e29e5d",
+    "generatedAt": "2026-09-28T17:43:26.640Z",
     "brief": {
       "id": "atlas-ground-pbr-v1",
       "path": "C:\\LLM\\IWSDK\\universe-atlas-terrain-material\\assets\\ground-materials-v1\\ground-pbr-v1.brief.json",
-      "sha256": "d32201443f46a2fcd8ae4117a79d3798a450b99ebf7f75869a4ef985cb0b1e69",
+      "sha256": "2532f00802aeaf61586d808828d9f5fb49f6749ca34e09cc781b98fe0760f5a7",
       "declaration": {
         "sourceType": "third-party",
         "sourceConsent": "licensed",
         "sourceUrl": "https://polyhaven.com/",
         "license": {
           "expression": "CC0-1.0",
-          "attribution": "Poly Haven; source asset authors are recorded in manifest.json",
+          "attribution": "Poly Haven textures by Charlotte Baglioni (Dirt) and Rob Tuytel (Rock Ground); author records are preserved in bundle metadata",
           "restrictions": []
         },
         "parents": [],
