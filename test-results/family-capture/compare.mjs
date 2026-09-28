@@ -5,9 +5,17 @@ import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 const root='C:/LLM/IWSDK',out=process.env.ATLAS_CAPTURE_REPORT??'test-results/family-capture/filtering-v1';
 await mkdir(out,{recursive:true});
-const families=[{name:'oak',source:'atlas-ez-family-f',stem:'atlas-ez-oak',capture:'atlas-oak-lod1-capture-16m-64-v1'},
+let families=[{name:'oak',source:'atlas-ez-family-f',stem:'atlas-ez-oak',capture:'atlas-oak-lod1-capture-16m-64-v1'},
   {name:'pine',source:'atlas-ez-conifer-family-13977-16m-v1e',stem:'atlas-ez-conifer',capture:'atlas-pine-lod1-capture-16m-64-v1'}];
 if(process.env.ATLAS_CAPTURE_SIDECAR==='1')for(const f of families)f.capture=f.capture.replace('-v1','-sidecar-v1');
+if(process.env.ATLAS_CAPTURE_FAMILY){
+  if(!['oak','pine'].includes(process.env.ATLAS_CAPTURE_FAMILY))throw new Error('Unknown comparison family');
+  families=families.filter(f=>f.name===process.env.ATLAS_CAPTURE_FAMILY);
+}
+if(process.env.ATLAS_CAPTURE_GRID==='17'){
+  if(process.env.ATLAS_CAPTURE_SIDECAR!=='1'||families.length!==1||families[0].name!=='oak')throw new Error('Dense capture fixture currently covers only Oak with runtime sidecars');
+  families[0].capture='atlas-oak-lod1-capture-16m-64-sidecar-grid17-v1';
+}else if(process.env.ATLAS_CAPTURE_GRID&&process.env.ATLAS_CAPTURE_GRID!=='9')throw new Error('Unknown comparison view grid');
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const sourceFiles=[];
 for(const path of ['src/tree-impostor-lab.ts','src/tree-captured-impostor.ts','src/tree-impostor-filter.ts','src/tree-asset.ts','src/tree-impostor-views.ts'])sourceFiles.push({path,sha256:sha(await readFile(path))});
@@ -58,7 +66,7 @@ for(const family of families){
       const gl=lab.renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');
       return {rows,surface,foliageSampling:lab.capture.manifest.foliageSampling??'original-mips',relightViews:lab.impostor.uniforms.captureRelightViews?.value??0,filtering:lab.capture.filtering,bytes:lab.capture.bytes,lod:lab.capture.manifest.options.lod,glError:gl.getError(),adapter:gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)};
     });
-    report.results.push({family:family.name,requestedFiltering:filtering,...metrics});
+    report.results.push({family:family.name,captureDirectory:family.capture,captureManifestSha256:sha(await readFile(join(root,'Assets/_assetctl',family.capture,'capture-manifest.json'))),requestedFiltering:filtering,...metrics});
     await page.evaluate(()=>{const l=window.__treeImpostorLab;l.impostor.uniforms.captureParallax.value=1;l.camera.position.set(40,20,40);l.controls.target.set(0,8,0);l.controls.update()});
     for(const mode of ['mesh','capture']){await page.evaluate(m=>window.__treeImpostorLab.setMode(m),mode);await page.waitForTimeout(100);await page.screenshot({path:join(out,`${family.name}-${filtering}-${mode}.png`)});}
     console.log(JSON.stringify({family:family.name,filtering,...metrics}));
