@@ -1,0 +1,115 @@
+{
+  "sourceCommit": "2a585b27388d1fc0352cf97f669d9b7c929f6d41",
+  "brief": {
+    "schemaValidation": "pass",
+    "seed": 729281,
+    "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\assets\\briefs\\temperate-branching-tree-v1.json",
+    "version": "atlas-branching-author-4"
+  },
+  "smokeRepeat": {
+    "latestCandidates": [
+      "Assets/_assetctl/atlas-tree-smoke-1790567076137",
+      "Assets/_assetctl/atlas-tree-smoke-1790567076137-repeat"
+    ],
+    "deterministicMaterials": true,
+    "renderedCandidate": "Assets/_assetctl/atlas-tree-smoke-1790566779960",
+    "deterministicGlbAndPng": true,
+    "result": "2 tests passed, 0 failed",
+    "renderedCandidateRepeat": "Assets/_assetctl/atlas-tree-smoke-1790566779960-repeat",
+    "existingSourcePreserved": true,
+    "log": "universe-atlas-rendering/test-results/tree-author-v4/smoke-repeat.log",
+    "deterministicGeometry": true,
+    "rejectedInvalidVersionAndSourceType": true
+  },
+  "physicalAudit": {
+    "khronosErrors": 0,
+    "manifestStatus": "proposal-needs-review",
+    "leafCards": 1312,
+    "vertices": 18472,
+    "nonFiniteAccessors": 0,
+    "heightM": 15.999341011047363,
+    "khronosWarnings": 0,
+    "triangles": 12020,
+    "degenerateTriangles": 0,
+    "valid": true,
+    "report": "Assets/_assetctl/atlas-tree-smoke-1790566779960/validation.json",
+    "materials": 2,
+    "candidate": "Assets/_assetctl/atlas-tree-smoke-1790566779960",
+    "log": "universe-atlas-rendering/test-results/tree-author-v4/physical-audit.log",
+    "cardDimensionsM": [
+      1,
+      1.2
+    ],
+    "boundsY": [
+      0,
+      15.999341011047363
+    ],
+    "textures": [
+      {
+        "name": "bark",
+        "resolution": [
+          256,
+          256
+        ]
+      },
+      {
+        "name": "foliage",
+        "resolution": [
+          2048,
+          2048
+        ]
+      }
+    ]
+  },
+  "renderRoundtrip": {
+    "wireOffsetEven": false,
+    "glbSheet": "Assets/_assetctl/atlas-tree-smoke-1790566779960-v4-glb-review/render-sheet.png",
+    "conclusion": "BLEND-to-GLB render round-trip shows no material color or visibility loss.",
+    "glbHero": "Assets/_assetctl/atlas-tree-smoke-1790566779960-v4-glb-review/hero.png",
+    "heroDiff": {
+      "changedRgbPixels": 1,
+      "meanAbsRgba": [
+        0.0,
+        3.814697265625E-06,
+        0.0,
+        0.0
+      ],
+      "dimensions": [
+        512,
+        512
+      ],
+      "foregroundBoundingBoxEach": [
+        129,
+        91,
+        385,
+        384
+      ],
+      "maxAbsRgba": [
+        0,
+        1,
+        0,
+        0
+      ],
+      "foregroundPixelCountEach": 22134
+    },
+    "blendSheet": "Assets/_assetctl/atlas-tree-smoke-1790566779960-v4-blend-review/render-sheet.png",
+    "sheetDiff": {
+      "totalPixels": 1572864,
+      "changedRgbPixels": 7554,
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "meanAbsRgba": [
+        0.0067602793375651045,
+        0.005359649658203125,
+        0.008159001668294271,
+        0.0
+      ]
+    },
+    "report": "universe-atlas-rendering/test-results/tree-author-v4/render-roundtrip.json",
+    "blendHero": "Assets/_assetctl/atlas-tree-smoke-1790566779960-v4-blend-review/hero.png"
+  },
+  "visualStatus": "Visual review remains open; candidate is not production-approved.",
+  "preservation": "v3 candidates and render sheets remain untouched."
+}

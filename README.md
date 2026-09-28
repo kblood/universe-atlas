@@ -2,7 +2,7 @@
 
 ## Current direction — 2026-09-27
 
-The [desktop realism and procedural life implementation plan](docs/desktop-realism-implementation-plan-2026-09-27.md) is the current planetary graphics roadmap. Desktop quality comes first: deterministic species recipes, cached structural variants, per-instance appearance, continuous canopy, shared lighting and genome-compatible animals. The first source increment addresses forest selection and instance uploads; the richer assets and rendering stages remain planned.
+The [desktop realism and procedural life implementation plan](docs/desktop-realism-implementation-plan-2026-09-27.md) is the current planetary graphics roadmap. Desktop quality comes first: deterministic species recipes, cached structural variants, per-instance appearance, continuous canopy, shared lighting and genome-compatible animals. Canonical canopy streaming and bounded instance uploads are implemented; richer assets and their runtime integration remain in development.
 
 A deterministic Three.js universe explorer, deployed at
 https://dionysus.dk/webxr/IWSDK/universe-atlas/.
@@ -32,6 +32,11 @@ assets. See the [integration and acceptance record](docs/canopy-runtime-integrat
 [release 580936f deployment receipt](docs/deployment-580936f-2026-09-28.md),
 [immutable preview evidence](test-results/acceptance-98556a7/README.md),
 [water/date fix](docs/terrain-water-refresh-2026-09-28.md), and [Opus implementation review](docs/opus-5.5-canopy-integration-review-2026-09-28.md).
+
+The [tree authoring v4 candidate](docs/tree-authoring-v4-2026-09-28.md) passes
+physical export, repeat-generation and Blender/GLB render checks after the
+[Opus authoring review fixes](docs/tree-authoring-review-assessment-2026-09-28.md).
+Its crown and materials still need visual work; it is not a runtime forest asset.
 
 The [Biosphere Lab](biosphere-lab.html) inspects generated plant/animal morphology,
 planet-specific habitat ranges and dated lineages. Its [implementation record](docs/biosphere-lab-implementation-spec.md)

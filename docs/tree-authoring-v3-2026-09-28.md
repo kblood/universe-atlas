@@ -1,11 +1,11 @@
 # Tree authoring v3 smoke — 2026-09-28
 
-**Status: v3 smoke technically validated; visual signoff and Opus review fixes
-remain open.** Luna reviewed the corrected sheet. Opus 5.5 completed a
-source-only CLI review and reported blockers; it did not execute the authoring
-tool or candidate. Authoring v4 code fixes are underway, but there is no v4
-candidate yet. The v3 smoke is not packaged, species-bound, or integrated into
-the runtime forest.
+**Historical status: v3 smoke technically validated, but visually unaccepted.**
+Luna found its crown sparse, asymmetric and tiered, with pale leaves. Opus 5.5
+completed a source-only CLI review; its implementation blockers were addressed
+in authoring v4. The v4 smoke, repeat and BLEND-to-GLB roundtrip are documented
+in the [current v4 record](tree-authoring-v4-2026-09-28.md). Neither candidate
+is packaged, species-bound or integrated into the runtime forest.
 
 ## What the smoke produced
 
@@ -30,16 +30,16 @@ review modifier and is retained only as a diagnostic. The corrected bounded
 wire sheet is the review image linked below; it does not change the candidate
 GLB.
 
-Opus 5.5's source-only review reports blockers in tube-frame continuity, cap
-normals, deterministic output and authoring/provenance gates. The authoring v4
-fixes underway add parallel-transport tube frames, independent flat caps,
-canonical geometry/material hashes, sorted outputs, relative brief paths,
-version/provenance checks and a failure manifest. These fixes have not yet
-produced a v4 candidate or received fresh validation. The review also identifies
-visual risks around sparse foliage, leaf-card proportions and bark texture
-mapping. Its concern about the brief's review note refers to historical
-candidates; it does not amount to v3 acceptance. See the
-[review report](opus-5.5-tree-author-v3-review-2026-09-28.md).
+Opus 5.5's source-only review found blockers in tube-frame continuity, cap
+normals, deterministic output and authoring/provenance gates. V4 implements
+parallel-transport frames, independent flat caps, canonical geometry/material
+hashes, sorted outputs, relative brief paths, version/provenance checks and a
+failure manifest; the fresh smoke and repeat now pass their technical checks.
+The review also identified visual risks around sparse foliage, leaf-card
+proportions and bark texture mapping. The v4 roundtrip confirms that the GLB
+matches its `.blend`; visual asset acceptance and material/crown calibration
+remain open. See the [review report](opus-5.5-tree-author-v3-review-2026-09-28.md)
+and [review assessment](tree-authoring-review-assessment-2026-09-28.md).
 
 ## Still required
 

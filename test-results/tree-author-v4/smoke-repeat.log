@@ -1,0 +1,11 @@
+{"candidate":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790567076137","repeat":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790567076137-repeat","triangles":12020,"validation":"pass","sourcePreserved":true,"deterministicGeometry":true,"deterministicMaterials":true}
+✔ named tree authoring preserves candidates and exports finite UV/tangent/wind data (23918.2668ms)
+✔ tree authoring rejects invalid version and non-original provenance before creating an output (2516.9546ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 26556.4842

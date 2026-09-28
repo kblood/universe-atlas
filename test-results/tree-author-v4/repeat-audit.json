@@ -1,0 +1,59 @@
+{
+  "ok": true,
+  "checkedAt": "2026-09-28T03:45:46.276349+00:00",
+  "rootCommit": "2a585b27388d1fc0352cf97f669d9b7c929f6d41",
+  "candidate": "Assets/_assetctl/atlas-tree-smoke-1790566779960",
+  "repeat": "Assets/_assetctl/atlas-tree-smoke-1790566779960-repeat",
+  "geometryContentSha256": "7507fa6bb13cdfcc01455f18abc571f6ab69ce95314ae3a04ba03e35183079e6",
+  "materialContentSha256": "928b840db1662783ca24825f6a91e7ac725e0d7fc0016970afd4537aacc0e93a",
+  "codeSha256": {
+    "tree_family.py": "ab637329808785940683ede76af7fd06737f8f6d242d45afcb06045fa7df9c71",
+    "tree_foliage.py": "ff85d0dea932669615b308d63039329c10ccf7b7aecc3359d335c979bf2d6270",
+    "tree_skeleton.py": "9629c1ca9fbd795b88c07e205ce3f197fa889dfea71c2dde248faf52af74e374"
+  },
+  "artifacts": [
+    {
+      "name": "atlas-branching-v1.glb",
+      "firstSha256": "f7245e797384eb79b6701249a73a62e3d0096cbe792e09d1f111e067cc533ee4",
+      "repeatSha256": "f7245e797384eb79b6701249a73a62e3d0096cbe792e09d1f111e067cc533ee4",
+      "match": true
+    },
+    {
+      "name": "MAT_AtlasBark_BaseColor.png",
+      "firstSha256": "2d45c6e14ee16953b2215b5052b403a1618ae1bc06c05c6037671fa1fdce430c",
+      "repeatSha256": "2d45c6e14ee16953b2215b5052b403a1618ae1bc06c05c6037671fa1fdce430c",
+      "match": true
+    },
+    {
+      "name": "MAT_AtlasBark_Normal.png",
+      "firstSha256": "e879541d5fe14c41d6a12d1a0b881d05f7516e63957ac076ec807a86d1e384b6",
+      "repeatSha256": "e879541d5fe14c41d6a12d1a0b881d05f7516e63957ac076ec807a86d1e384b6",
+      "match": true
+    },
+    {
+      "name": "MAT_AtlasFoliage_BaseColor.png",
+      "firstSha256": "1b3ef4cfdc8b9bac26ad1c8df93621f3e431c14dc933305337efc316719ad6fe",
+      "repeatSha256": "1b3ef4cfdc8b9bac26ad1c8df93621f3e431c14dc933305337efc316719ad6fe",
+      "match": true
+    },
+    {
+      "name": "MAT_AtlasFoliage_Normal.png",
+      "firstSha256": "0ac79d9b0316ec35d7150fb24dc139f4b0efbda4ee266ba862e13ce8b220515f",
+      "repeatSha256": "0ac79d9b0316ec35d7150fb24dc139f4b0efbda4ee266ba862e13ce8b220515f",
+      "match": true
+    }
+  ],
+  "scope": "Independent CPU recheck of retained outputs. Does not compare editable blend bytes or claim runtime/visual acceptance.",
+  "additionalLoggedRuns": [
+    {
+      "candidate": "Assets/_assetctl/atlas-tree-smoke-1790567076137",
+      "matchesRenderedCandidate": true,
+      "glbAndPngMatches": 5
+    },
+    {
+      "candidate": "Assets/_assetctl/atlas-tree-smoke-1790567076137-repeat",
+      "matchesRenderedCandidate": true,
+      "glbAndPngMatches": 5
+    }
+  ]
+}

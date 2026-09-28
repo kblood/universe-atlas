@@ -1,0 +1,75 @@
+{
+  "schema": "https://iwsdk.local/schemas/render-sheet/v1",
+  "source": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566779960\\atlas-branching-v1.glb",
+  "sheet": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566779960-v4-glb-review\\render-sheet.png",
+  "views": [
+    {
+      "view": "hero",
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566779960-v4-glb-review\\hero.png"
+    },
+    {
+      "view": "front",
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566779960-v4-glb-review\\front.png"
+    },
+    {
+      "view": "right",
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566779960-v4-glb-review\\right.png"
+    },
+    {
+      "view": "back",
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566779960-v4-glb-review\\back.png"
+    },
+    {
+      "view": "top",
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566779960-v4-glb-review\\top.png"
+    },
+    {
+      "view": "wire",
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566779960-v4-glb-review\\wire.png"
+    }
+  ],
+  "bounds": {
+    "minimum": [
+      -6.814031600952148,
+      -6.287628173828125,
+      0.0
+    ],
+    "maximum": [
+      6.619967460632324,
+      5.851107120513916,
+      15.999341011047363
+    ],
+    "center": [
+      -0.09703207015991211,
+      -0.2182605266571045,
+      7.999670505523682
+    ],
+    "dimensions": [
+      13.433999061584473,
+      12.138734817504883,
+      15.999341011047363
+    ]
+  },
+  "render": {
+    "width": 512,
+    "height": 512,
+    "layout": "3x2",
+    "engine": "Eevee with duplicate wireframe overlay"
+  },
+  "scene": {
+    "blenderVersion": "5.1.1",
+    "objects": 5,
+    "meshes": 1,
+    "materials": 2,
+    "armatures": 0,
+    "actions": 0,
+    "triangles": 12020,
+    "objectNames": [
+      "SM_AtlasBranching_LOD0",
+      "ASSETCTL_ReviewCamera",
+      "ASSETCTL_ReviewLight_0",
+      "ASSETCTL_ReviewLight_1",
+      "ASSETCTL_ReviewLight_2"
+    ]
+  }
+}

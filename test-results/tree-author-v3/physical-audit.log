@@ -1,0 +1,10 @@
+{"candidate":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566084092\\atlas-branching-v1.glb","vertices":18145,"triangles":12020,"leafCards":1312,"heightM":15.99999713897705,"foliageBase":[2048,2048],"foliageNormal":[2048,2048],"physicalAudit":"pass"}
+✔ exported tree GLB geometry carries metre-scaled cards, valid atlas UVs, finite tangent frames, wind and correctly sized textures (51.9005ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 117.1316

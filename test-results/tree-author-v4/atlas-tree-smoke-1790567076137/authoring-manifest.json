@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "operation": "atlas-branching-author-4",
+  "status": "proposal-needs-review",
+  "seed": 729281,
+  "blenderVersion": "5.1.1",
+  "pythonVersion": "3.13.9 (main, Jan 16 2026, 12:29:45) [MSC v.1944 64 bit (AMD64)]",
+  "geometryContentSha256": "7507fa6bb13cdfcc01455f18abc571f6ab69ce95314ae3a04ba03e35183079e6",
+  "materialContentSha256": "928b840db1662783ca24825f6a91e7ac725e0d7fc0016970afd4537aacc0e93a",
+  "brief": {
+    "path": "universe-atlas-rendering/assets/briefs/temperate-branching-tree-v1.json",
+    "sha256": "fbd83cc8317ea44db43dad3ca08f7e0b042b41af923dc76c1d5d12e7b02ca0e3"
+  },
+  "authoringCodeSha256": "ab637329808785940683ede76af7fd06737f8f6d242d45afcb06045fa7df9c71",
+  "foliageCodeSha256": "ff85d0dea932669615b308d63039329c10ccf7b7aecc3359d335c979bf2d6270",
+  "skeletonCodeSha256": "9629c1ca9fbd795b88c07e205ce3f197fa889dfea71c2dde248faf52af74e374",
+  "sourceType": "original",
+  "externalInputs": [],
+  "license": {
+    "expression": "NOASSERTION",
+    "attribution": null,
+    "restrictions": [
+      "Prototype assets require visual, LOD, provenance and runtime acceptance before packaging or shipping"
+    ]
+  },
+  "physicalReference": {
+    "stemHeightM": 12.6519775390625,
+    "actualHeightM": 15.999341011047363,
+    "skeletonVerticalScale": 1.26519775390625,
+    "cardDimensionsM": [
+      1,
+      1.2
+    ],
+    "leafLengthM": [
+      0.2,
+      0.32
+    ],
+    "rootPivot": [
+      0,
+      0,
+      0
+    ],
+    "foliage": "sixteen original staggered alpha-mask sprays, 1m by 1.2m cards"
+  },
+  "preExportAudit": {
+    "triangles": 12020,
+    "maxTriangles": 18000,
+    "materials": 2,
+    "uvLayers": 1,
+    "appliedTransforms": true,
+    "finitePositions": true
+  },
+  "limitations": [
+    "LOD1/2, collision and runtime wind binding are pending",
+    "Eight structural variants and shared species atlas binding are pending",
+    "License resolution, KTX2/UASTC conversion and target-runtime acceptance are pending",
+    "Calibrated lighting, foliage transmission and render-sheet acceptance are pending",
+    "Branch intersections are overlapping surfaces; not a watertight sculpt",
+    "Textures are original procedural proposals; visual review required",
+    "Leaf count/coverage and close leaf materials need target-scene review"
+  ],
+  "artifacts": [
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790567076137\\asset-brief.json",
+      "sha256": "fbd83cc8317ea44db43dad3ca08f7e0b042b41af923dc76c1d5d12e7b02ca0e3"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790567076137\\atlas-branching-v1.blend",
+      "sha256": "1aad55f34852513fa9a0d8ed8833e4589f39414b8261ac4e9732914443fef435"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790567076137\\atlas-branching-v1.glb",
+      "sha256": "f7245e797384eb79b6701249a73a62e3d0096cbe792e09d1f111e067cc533ee4"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790567076137\\MAT_AtlasBark_BaseColor.png",
+      "sha256": "2d45c6e14ee16953b2215b5052b403a1618ae1bc06c05c6037671fa1fdce430c"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790567076137\\MAT_AtlasBark_Normal.png",
+      "sha256": "e879541d5fe14c41d6a12d1a0b881d05f7516e63957ac076ec807a86d1e384b6"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790567076137\\MAT_AtlasFoliage_BaseColor.png",
+      "sha256": "1b3ef4cfdc8b9bac26ad1c8df93621f3e431c14dc933305337efc316719ad6fe"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790567076137\\MAT_AtlasFoliage_Normal.png",
+      "sha256": "0ac79d9b0316ec35d7150fb24dc139f4b0efbda4ee266ba862e13ce8b220515f"
+    }
+  ]
+}

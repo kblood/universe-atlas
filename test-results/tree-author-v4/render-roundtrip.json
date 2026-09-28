@@ -1,0 +1,88 @@
+{
+  "candidate": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566779960",
+  "operation": "assetctl blender render-sheet",
+  "renderedInputs": {
+    "glb": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566779960\\atlas-branching-v1.glb",
+    "blend": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566779960\\atlas-branching-v1.blend"
+  },
+  "reviewDirs": {
+    "glb": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566779960-v4-glb-review",
+    "blend": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790566779960-v4-blend-review"
+  },
+  "settings": {
+    "wireModifierEvenOffset": false,
+    "resolution": [
+      512,
+      512
+    ],
+    "engine": "Blender 5.1.1 Eevee"
+  },
+  "boundsM": {
+    "max": [
+      6.619967460632324,
+      5.851107120513916,
+      15.999341011047363
+    ],
+    "min": [
+      -6.814031600952148,
+      -6.287628173828125,
+      0.0
+    ],
+    "dimensions": [
+      13.433999061584473,
+      12.138734817504883,
+      15.999341011047363
+    ]
+  },
+  "hero": {
+    "blendSha256": "6eb8755dc43299e9004ea92f1453bbe7f4b9ab7779524705e2a8b6ea6c07e352",
+    "visualResult": "Both show the full tree and are virtually pixel-identical.",
+    "pixelDifference": {
+      "changedRgbPixels": 1,
+      "meanAbsRgba": [
+        0.0,
+        3.814697265625E-06,
+        0.0,
+        0.0
+      ],
+      "dimensions": [
+        512,
+        512
+      ],
+      "foregroundBoundingBoxEach": [
+        129,
+        91,
+        385,
+        384
+      ],
+      "maxAbsRgba": [
+        0,
+        1,
+        0,
+        0
+      ],
+      "foregroundPixelCountEach": 22134
+    },
+    "glbSha256": "2b52f8f81d29cf23f5f685c61c5af5f20747a1aca6cf1c6ef7cb8103c74ae4d7"
+  },
+  "combinedSheet": {
+    "blendSha256": "8028b6654a6dee32361cd3dfbc47d7005312d0147f894c9a2276351fdcf9b653",
+    "visualResult": "Same six views and silhouette; small per-render differences.",
+    "pixelDifference": {
+      "totalPixels": 1572864,
+      "changedRgbPixels": 7554,
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "meanAbsRgba": [
+        0.0067602793375651045,
+        0.005359649658203125,
+        0.008159001668294271,
+        0.0
+      ]
+    },
+    "glbSha256": "29c0d2c47c09317791e1518fa2e966419ce46f6fbdc84ae8ed6b59d85f26b2e7"
+  },
+  "conclusion": "BLEND-to-GLB render round-trip shows no material color or visibility loss."
+}

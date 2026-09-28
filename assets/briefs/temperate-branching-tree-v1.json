@@ -30,7 +30,7 @@
   },
   "provenance": {
     "sourceType":"original",
-    "generator":{"provider":"blender-authored","model":"procedural-tree-component-authoring","checkpoint":null,"version":"atlas-branching-author-2","workflow":"assetctl-blender-tree-family"},
+    "generator":{"provider":"blender-authored","model":"procedural-tree-component-authoring","checkpoint":null,"version":"atlas-branching-author-4","workflow":"assetctl-blender-tree-family"},
     "prompt":"Author connected tapered wood and physically scaled broadleaf components for species-directed variants; preserve editable source and all export provenance.",
     "negativePrompt":"floating limbs, opaque crown blobs, baked sun lighting",
     "seed":729281,

@@ -1,38 +1,30 @@
 # Proposed next tree-authoring increment — 2026-09-28
 
-**Status: v3 partially implemented; visual signoff and Opus review fixes pending.**
-The sections below preserve the original proposal and rationale. The authoring modules
-`tree_family.py`, `tree_skeleton.py` and `tree_foliage.py` have since been
-revised, and a v3 smoke candidate has passed technical GLB checks. It remains an
-authoring experiment, not an accepted or shipped species asset.
+**Status: v4 technical smoke, repeat and export roundtrip pass; visual asset
+acceptance remains open.** Opus 5.5's v3 source-review fixes are committed in
+`2a585b2`. The fresh v4 smoke and repeat have matching geometry/material-content
+hashes and byte-identical GLB/PNG outputs. Luna's BLEND-to-GLB hero comparison
+differs by one green-channel pixel by one level, with matching foreground
+bounds; the six-view sheets differ only slightly. See the [v4 status record](tree-authoring-v4-2026-09-28.md)
+and [roundtrip metrics](../test-results/tree-author-v4/render-roundtrip.json).
+This remains an authoring experiment, not an accepted or shipped species asset.
 
-The v3 smoke candidate is 15.999997 m tall with a 12.652519 m stem, sixteen
-staggered foliage sprays on fixed 1 × 1.2 m cards, a 2048 × 2048 foliage atlas,
-12,020 triangles and two materials. Root pivot, finite positions/UVs and the
-technical wind data validate. Its manifest and validation output are preserved
-in [v3 smoke evidence](../test-results/tree-author-v3/authoring-manifest.json)
-and [validation](../test-results/tree-author-v3/validation.json). Luna reviewed
-the corrected bounded-wire sheet: branching is less regular, but the crown is
-still sparse, asymmetric and tiered, and the leaves look pale. The prior wire
-panel was invalid due to the review modifier and is only a diagnostic. The
-[corrected sheet](../test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/render-sheet.png)
-and [hero view](../test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/hero.png)
-show the current state. Opus 5.5 completed a source-only review and reported
-geometry, determinism and authoring/provenance blockers. Authoring v4 fixes are
-underway, but no v4 candidate has been produced or validated. See the [review
-report](opus-5.5-tree-author-v3-review-2026-09-28.md) and [v3 status](tree-authoring-v3-2026-09-28.md).
-
-An eight-variant batch, tree-specific LOD1/2, collision, calibrated grey
-reference colour review, runtime wind binding, species/cell binding, packaging
-and license resolution remain open. The candidate license is `NOASSERTION`;
-none of the new authoring changes is integrated into the forest renderer.
+The historical v3 smoke measured 15.999997 m tall with a 12.652519 m stem.
+Its corrected review sheet showed a less regular but still sparse, asymmetric,
+tiered crown and pale leaves. V4 measures 15.999341 m with a 12.651978 m stem,
+16 atlas patterns across 1,312 fixed 1 × 1.2 m cards, 12,020 triangles and two materials. The
+manifest, validation and repeated outputs are preserved under
+`../test-results/tree-author-v4/`. A family of eight shared-atlas variants,
+tree-specific LODs, collision, calibrated colour, runtime wind/species binding,
+packaging, target-runtime acceptance and license resolution remain open; the
+license is `NOASSERTION`.
 
 The prior candidate at seed `729281` had 11,100 triangles and measured
 13.819 m against the brief's 16 m reference. Its review sheet showed a fuller
 but regular crown, repeated fan-shaped sprays and pale foliage. Existing source
 and candidate folders remain preserved; see the dated candidate record.
 
-## 1. Reach the reference height without enlarging leaves — implemented in v3 smoke
+## 1. Reach the reference height without enlarging leaves — implemented in v4 smoke
 
 In the pre-v3 `tools/assetctl/blender/tree_family.py`, `author_tree` fixed the
 trunk path at 10 m (`trunk = ... i * 10 / 14`), places 14 primary branches on
@@ -40,9 +32,9 @@ the trunk, and emits leaf cards as it goes. The maximum exported vertex is
 13.819 m for the reviewed seed. A first estimate for the missing height is
 `16 / 13.819 = 1.1576`.
 
-V3 constructs a deterministic branch skeleton before emitting geometry,
+V4 constructs a deterministic branch skeleton before emitting geometry,
 applies vertical scaling to the skeleton, and regenerates tubes and foliage.
-The smoke manifest records a 12.652519 m stem and 15.999997 m total height; the
+The smoke manifest records a 12.651978 m stem and 15.999341 m total height; the
 root pivot is `(0, 0, 0)`. Card dimensions remain 1.0 × 1.2 m and leaf lengths
 remain 0.20–0.32 m. This verifies the 16 m envelope without uniformly enlarging
 the cards. Target-render review is still needed before treating its scale or
@@ -53,17 +45,20 @@ envelope makes this denominator meaningful. Keep the weight clamped to `[0,1]`
 and recompute it after the final skeleton transform. Export validation should
 check maximum height, root contact, leaf card dimensions and wind bounds.
 
-## 2. Distribute branches irregularly and keep taper continuous — authoring code updated; visual review pending
+## 2. Distribute branches irregularly and keep taper continuous — authoring code updated; broader visual acceptance pending
 
 The pre-v3 `author_tree` used `angle = primary * 2.3999632297` with ±0.18 rad
 jitter, and repeated branch start heights with `start_i = 5 + primary % 9`.
 Secondary branches and twigs also use fixed loop counts and repeated anchors.
 That combination produces visible spokes and ring-like groupings from above.
 
-V3 moves structure generation into `tree_skeleton.py` and revises seeded
-skeleton placement. The detailed targets below remain review criteria where
+V3 moved structure generation into `tree_skeleton.py`; v4 adds parallel
+transport ring frames and separate flat cap normals. Luna's v4 blend/GLB
+comparison matches at the hero-pixel level, while the crown's broader visual
+acceptance remains separate from this export-equivalence check. V3's detailed
+targets below remain review criteria where
 not explicitly verified by the smoke manifest or render review. Technical
-validation does not establish visual approval. Luna's first corrected sheet
+validation does not establish visual approval. Luna's first corrected v3 sheet
 confirms a less regular arrangement but also shows a sparse, asymmetric,
 tiered crown; improve the silhouette before proposing the family as accepted.
 
@@ -92,14 +87,14 @@ current fixed branch base radii becoming wider than the upper trunk. Preserve
 branch intersections as connected visual forms and inspect close views for
 gaps after changing the taper.
 
-## 3. Make foliage sprays less repetitive and calibrate colour — atlas implemented; colour review pending
+## 3. Make foliage sprays less repetitive and calibrate colour — atlas implemented; colour calibration pending
 
 Before v3, `tools/assetctl/blender/tree_foliage.py::foliage_atlas` emitted a
 1024 × 1024 atlas with four 512 px tiles. Each tile had six mirrored leaf pairs
 and a tip leaf. The earlier `tree_family.py::leaf_spray` picked from those four
 tiles, while its twig loop placed three cards at fixed fractions along each twig.
 
-V3 emits a 2048 × 2048 foliage atlas with sixteen original staggered
+V4 emits a 2048 × 2048 foliage atlas with sixteen original staggered
 alpha-mask sprays on fixed 1 × 1.2 m cards. The smoke manifest records this
 atlas and GLB validation confirms the masked foliage material. Grey-reference
 and target-scene colour calibration remain pending; Luna's review still finds
@@ -193,13 +188,17 @@ Blender version, tree-family and foliage-source hashes, and hashes for every
 `NOASSERTION` unless the declaration is actually resolved. Validate the brief,
 GLB, root/height, triangle caps, LOD silhouette, alpha-mask behavior, render
 sheet, package manifest and target-scene performance before describing any
-variant as accepted. The v3 smoke remains technically validated but awaits visual signoff, fixes
-for the Opus review findings, and the outstanding asset, runtime and license
-gates. Authoring v4 code changes are underway, but no v4 candidate exists yet.
+variant as accepted. The v3 smoke is a historical checkpoint. V4 addresses its
+source-review findings and passes the recorded technical smoke, independent
+repeat and BLEND-to-GLB render comparison. The visual crown/material design and
+remaining asset, runtime and license gates are still open; see the
+[v4 status record](tree-authoring-v4-2026-09-28.md). The candidate remains
+unshipped with license `NOASSERTION`.
 
 ## Source records
 
 - [V3 smoke status and review](tree-authoring-v3-2026-09-28.md)
+- [V4 smoke, repeat and roundtrip status](tree-authoring-v4-2026-09-28.md)
 - [Reviewed candidate and visual findings](tree-asset-candidate-2026-09-28.md)
 - [Tree species and asset contract](tree-species-asset-contract-2026-09-28.md)
 - [Candidate brief](../assets/briefs/temperate-branching-tree-v1.json)
