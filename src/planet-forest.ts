@@ -51,9 +51,9 @@ const crownBoundRadius=Math.hypot(...LEGACY_TREE_BOUND.extent)+Math.hypot(LEGACY
 function forestMaterial(vertexColors:boolean){
   const material=new THREE.MeshLambertMaterial({vertexColors,color:vertexColors?0xffffff:0x456c28});
   material.onBeforeCompile=shader=>{
-    shader.vertexShader='attribute float instanceCoverage,instanceForestSeed;\nvarying float vForestCoverage,vForestSeed;\n'+shader.vertexShader;
+    shader.vertexShader='attribute float instanceCoverage,instanceForestSeed;\nflat varying float vForestCoverage,vForestSeed;\n'+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvForestCoverage=instanceCoverage;vForestSeed=instanceForestSeed;');
-    shader.fragmentShader='varying float vForestCoverage,vForestSeed;\n'+forestCoverageGLSL+shader.fragmentShader;
+    shader.fragmentShader='flat varying float vForestCoverage,vForestSeed;\n'+forestCoverageGLSL+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <alphahash_fragment>',`#ifdef USE_ALPHAHASH
       diffuseColor.a *= vForestCoverage;
       #include <alphahash_fragment>
@@ -124,6 +124,7 @@ export class PlanetForest {
   private coverageWrites=0;
   private scheduledUploadBytes=0;
   private updateMs=0;
+  private farOwnedSkipped=0;
   private originRebased=false;
   constructor(private body:Body){
     this.sample=terrainSampler(body);this.classify=biomeClassifier(body);
@@ -230,11 +231,18 @@ export class PlanetForest {
     this.scheduledUploadBytes+=updates.seed.flush(mesh.geometry.getAttribute('instanceForestSeed') as THREE.BufferAttribute);
   }
   update(eye:THREE.Vector3,groundDirection:V3,altitudeM:number,enabled:boolean,water:number,immersive:boolean,frusta:THREE.Frustum[]=[]){
+    if(!Number.isFinite(water))throw new Error('Forest water level must be finite');
     const updateStarted=performance.now();
-    this.group.visible=enabled&&altitudeM<B.forestPrepareAltitudeM;
+    this.group.visible=enabled&&altitudeM<B.forestStreamAltitudeM;
     this.visibleTrees=0;this.nearTrees=0;this.placementMs=0;this.selectionMs=0;
-    this.matrixWrites=0;this.colorWrites=0;this.coverageWrites=0;this.scheduledUploadBytes=0;this.originRebased=false;this.updateMs=0;
+    this.matrixWrites=0;this.colorWrites=0;this.coverageWrites=0;this.scheduledUploadBytes=0;this.originRebased=false;this.updateMs=0;this.farOwnedSkipped=0;
     if(!this.group.visible){if(this.fullCanopy)this.fullCanopy.group.visible=false;return;}
+    const draw=altitudeM<B.forestPrepareAltitudeM;
+    for(const mesh of this.meshes)mesh.visible=draw;this.canopy.visible=draw;
+    if(!draw){
+      this.fullCanopy?.prepare(eye,groundDirection,altitudeM,water,enabled,immersive,this.origin);
+      this.fullCanopy?.finish();this.updateMs=performance.now()-updateStarted;return;
+    }
     if(immersive!==this.immersiveMaterial){
       this.immersiveMaterial=immersive;
       for(const mesh of [...this.meshes,this.canopy]){const material=mesh.material as THREE.MeshLambertMaterial;material.alphaHash=immersive;material.needsUpdate=true;}
@@ -280,7 +288,16 @@ export class PlanetForest {
       const dx=cell.direction[0]-groundDirection[0],dy=cell.direction[1]-groundDirection[1],dz=cell.direction[2]-groundDirection[2];
       if((dx*dx+dy*dy+dz*dz)*r*r<100*100)this.fullCanopy?.observeClose(cell.id,eye);
       const resident=this.cache.get(cell.id);if(!resident)continue;
-      resident.patchKey??=forestCellPatchKey(cell.id);this.fullCanopy?.noteNear(cell.id,resident.patchKey,resident.present,resident.water);
+      resident.patchKey??=forestCellPatchKey(cell.id);
+      if(resident.water===water&&this.fullCanopy?.currentPatch(resident.patchKey)){
+        const scale=1+resident.height/r,x=cell.direction[0]*scale-eye.x,y=cell.direction[1]*scale-eye.y,z=cell.direction[2]*scale-eye.z;
+        if((x*x+y*y+z*z)*r*r>=650*650){
+          // Complete current patches own this entire distant band. Keep stale
+          // water and missing patches on the full fallback/absence path below.
+          this.retainedNear.delete(cell.id);this.retainedMiddle.delete(cell.id);this.farOwnedSkipped++;continue;
+        }
+      }
+      this.fullCanopy?.noteNear(cell.id,resident.patchKey,resident.present,resident.water);
       if(!resident.present)continue;
       // Hide newly submerged old residents immediately while other habitat
       // properties are refreshed. The current bucket sampler remains authority.
@@ -324,7 +341,7 @@ export class PlanetForest {
     representation:'canonical-tree-field',densityFocus:'observer-ground',instanceUpdates:'stable-slots-retained-origin-dirty-ranges',
     selectionJobsInFlight:this.selecting?1:0,waterBucket:this.water,selectionApplyMs:this.selectionApplyMs,selectionCache:this.selectionCacheStats,selectionTransfer:this.selectionTransfer,fullCanopy:this.fullCanopy?.diagnostics()??null,
     workerRestarts:this.workerRestarts,workerFailures:this.workerFailures,selectionMode:this.worker?'worker':'synchronous-fallback',
-    updateMs:this.updateMs,matrixWrites:this.matrixWrites,colorWrites:this.colorWrites,coverageWrites:this.coverageWrites,
+    updateMs:this.updateMs,farOwnedSkipped:this.farOwnedSkipped,matrixWrites:this.matrixWrites,colorWrites:this.colorWrites,coverageWrites:this.coverageWrites,
     scheduledUploadBytes:this.scheduledUploadBytes,originRebased:this.originRebased,originVersion:this.originVersion,originRebaseM:B.forestOriginRebaseM,
     radiusM:B.forestRadiusM,heightRangeM:[10,22],cellSizeM:B.forestCellM,
     allocatedBytes:[...this.meshes,this.canopy].reduce((s,m)=>s+m.instanceMatrix.array.byteLength+(m.instanceColor?.array.byteLength??0)+

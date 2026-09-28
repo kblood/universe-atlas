@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import {PlanetCanopy} from '../src/planet-canopy.ts';
 import {LEGACY_TREE_BOUND} from '../src/tree-shape.ts';
 import {galaxies,refByAddress,system} from '../src/catalog.ts';
+import {PLANET_DETAIL} from '../src/planet-detail.ts';
 
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 const ground=[1,0,0],eye=new THREE.Vector3(1,0,0),nearOrigin=new THREE.Vector3();
@@ -30,9 +31,9 @@ function recordBuffer(count){
 function patch(a,{present=1,candidates=64,testedCells=64,context=contextA,records=recordBuffer(present)}={}){
   return {context,address:{...a},testedCells,candidates,present,representatives:0,records};
 }
-function begin(capacity=256){
+function begin(capacity=256,canopyBody=body){
   const previousWorker=globalThis.Worker;MockWorker.instances=[];globalThis.Worker=MockWorker;
-  const host=new PlanetCanopy(body,capacity);host.prepare(eye,ground,100,0,true,false,nearOrigin);
+  const host=new PlanetCanopy(canopyBody,capacity);host.prepare(eye,ground,100,0,true,false,nearOrigin);
   const worker=MockWorker.instances[0],configure=worker.sent.find(m=>m.type==='configure');
   assert.ok(worker&&configure,'prepare starts and configures a census worker');
   const generation=configure.generation,n=configure.body?Math.ceil(2*configure.body.radiusM/18):Math.ceil(2*body.radiusM/18);
@@ -170,15 +171,112 @@ test('close canonical crowns require same-frame ownership; holes and submerged t
   }finally{h.restore();}
 });
 
-test('worker failure retries once and leaves near rendering available after the retry fails',()=>{
+test('worker failure retries once then disables the full canopy for legacy near rendering',()=>{
   const h=begin(64);
   try{
     h.worker.error();assert.equal(h.worker.terminated,true);assert.equal(h.host.workerRestarts,1);
     const retry=MockWorker.instances.at(-1);assert.notEqual(retry,h.worker);retry.error();
     assert.equal(retry.terminated,true);assert.equal(h.host.workerRestarts,1);assert.equal(h.host.failures,2);
-    const count=MockWorker.instances.length;assert.equal(h.host.prepare(eye,ground,100,0,true,false,nearOrigin),true);
-    assert.equal(MockWorker.instances.length,count,'restart limit is bounded');assert.equal(h.host.canHandoff('missing/0/0/0',12),false);
+    const count=MockWorker.instances.length;assert.equal(h.host.prepare(eye,ground,100,0,true,false,nearOrigin),false);
+    assert.equal(MockWorker.instances.length,count,'restart limit is bounded');assert.equal(h.host.diagnostics().terminalFailure,true);
+    assert.equal(h.host.group.visible,false,'the failed far canopy stays hidden');assert.equal(h.host.canHandoff('missing/0/0/0',12),false);
   }finally{h.restore();}
+});
+
+test('hung configure, selection, and request each restart once then disable far ownership',()=>{
+  const cases=['configure','selection','request'];
+  for(const phase of cases){
+    const h=begin(64),a=address(0,h.n),b=address(1,h.n),keyA=`${a.face}/${a.n}/${a.x}/${a.y}`;
+    try{
+      let handoffId='missing/0/0/0',height=12;
+      if(phase==='configure'){
+        h.host.ready=false;h.host.selection=null;h.host.configuredAt=performance.now()-10001;
+      }else if(phase==='selection'){
+        h.host.selection.started=performance.now()-10001;
+      }else{
+        const request=selectAndRequest(h,[a,b]);
+        h.worker.emit({type:'patches',generation:h.generation,requestId:request.requestId,context:h.context,
+          patches:[patch(a)],done:false});
+        h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+        const id=`${a.face}/${a.n}/${a.x*8}/${a.y*8}`;handoffId=id;
+        height=h.host.heights[h.host.slots.get(id)];assert.equal(h.host.currentPatch(keyA),true);
+        h.host.request.progressAt=performance.now()-10001;
+      }
+      h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+      assert.equal(MockWorker.instances.length,2,`${phase}: first timeout restarts the worker once`);
+      assert.equal(h.host.workerRestarts,1);assert.equal(h.host.terminalFailure,false);
+      const restarted=MockWorker.instances.at(-1);assert.ok(restarted.sent.some(m=>m.type==='configure'));
+      h.host.configuredAt=performance.now()-10001;
+      h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+      assert.equal(MockWorker.instances.length,2,`${phase}: second timeout is terminal, without another restart`);
+      assert.equal(h.host.timeouts,2);assert.equal(h.host.diagnostics().terminalFailure,true);
+      assert.equal(h.host.group.visible,false,'terminal failure disables old far instances');
+      assert.equal(h.host.prepare(eye,ground,100,0,true,false,nearOrigin),false,'caller keeps the legacy near path');
+      assert.equal(h.host.currentPatch(keyA),false);assert.equal(h.host.canHandoff(handoffId,height),false,'terminal far state cannot take near ownership');
+    }finally{h.restore();}
+  }
+});
+
+test('valid partial patch progress refreshes the request watchdog timestamp',()=>{
+  const h=begin(64),a=address(0,h.n),b=address(1,h.n);
+  try{
+    const request=selectAndRequest(h,[a,b]),old=performance.now()-10001;
+    h.host.request.progressAt=old;
+    h.worker.emit({type:'patches',generation:h.generation,requestId:request.requestId,context:h.context,patches:[patch(a)],done:false});
+    assert.ok(h.host.request.progressAt>old);assert.ok(performance.now()-h.host.request.progressAt<1000);
+    assert.equal(h.host.request.keys.size,1,'the response made valid partial progress');
+  }finally{h.restore();}
+});
+
+test('nonfinite water is rejected before host state changes and zero stays stable for waterless bodies',()=>{
+  const h=begin(64);
+  try{
+    const generation=h.host.generation,sent=h.worker.sent.length,water=h.host.water,visible=h.host.group.visible;
+    assert.throws(()=>h.host.prepare(eye,ground,100,Number.NaN,false,false,nearOrigin),/water level must be finite/);
+    assert.equal(h.host.generation,generation);assert.equal(h.worker.sent.length,sent);
+    assert.equal(h.host.water,water);assert.equal(h.host.group.visible,visible);
+  }finally{h.restore();}
+
+  const dry=begin(64,{...body,water:0});
+  try{
+    const generation=dry.host.generation,configures=dry.worker.sent.filter(m=>m.type==='configure').length;
+    for(let i=0;i<4;i++)assert.equal(dry.host.prepare(eye,ground,100,0,true,false,nearOrigin),true);
+    assert.equal(dry.host.generation,generation);assert.equal(dry.worker.sent.filter(m=>m.type==='configure').length,configures);
+  }finally{dry.restore();}
+});
+
+test('canopy prefetches while hidden between prepare and streaming altitude thresholds',()=>{
+  const h=begin(64);
+  const a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`,id=`${a.face}/${a.n}/${a.x*8}/${a.y*8}`;
+  try{
+    const high=PLANET_DETAIL.forestPrepareAltitudeM+1000;
+    assert.ok(high<PLANET_DETAIL.forestStreamAltitudeM);
+    assert.equal(h.host.prepare(eye,ground,high,0,true,false,nearOrigin),false,'prefetch stays visually hidden');
+    assert.equal(h.host.diagnostics().streaming,true);assert.equal(h.host.group.visible,false);
+    h.worker.emit({type:'ready',generation:h.generation,context:contextA,n:h.n});
+    h.host.prepare(eye,ground,high,0,true,false,nearOrigin);
+    const selection=h.worker.sent.findLast(m=>m.type==='select');assert.ok(selection);
+    h.worker.emit({type:'selection',generation:h.generation,requestId:selection.requestId,context:contextA,
+      packed:Float64Array.from([a.face,a.n,a.x,a.y]),selectionMs:0});
+    h.host.prepare(eye,ground,high,0,true,false,nearOrigin);
+    const request=h.worker.sent.findLast(m=>m.type==='patches');assert.ok(request);
+    sendPatchResponse(h,request,[patch(a)]);h.host.prepare(eye,ground,high,0,true,false,nearOrigin);
+    assert.equal(h.host.installed.has(key),true,'prefetch installs the complete patch while hidden');
+    assert.equal(h.host.canHandoff(id,120),false,'hidden prefetch cannot take visible near ownership');
+    assert.equal(h.host.prepare(eye,ground,PLANET_DETAIL.forestPrepareAltitudeM-100,0,true,false,nearOrigin),true);
+    assert.equal(h.host.currentPatch(key),true);assert.equal(h.host.canHandoff(id,120),true,'the prepared patch becomes available when revealed');
+  }finally{h.restore();}
+});
+
+test('canopy does not start or keep streaming above its altitude band',()=>{
+  const previousWorker=globalThis.Worker;MockWorker.instances=[];globalThis.Worker=MockWorker;
+  const host=new PlanetCanopy(body,64);
+  try{
+    assert.equal(host.prepare(eye,ground,PLANET_DETAIL.forestStreamAltitudeM+1,0,true,false,nearOrigin),false);
+    assert.equal(host.diagnostics().streaming,false);assert.equal(MockWorker.instances.length,0,'high altitude does not launch background census work');
+    assert.equal(host.prepare(eye,ground,PLANET_DETAIL.forestStreamAltitudeM-1,0,true,false,nearOrigin),false);
+    assert.equal(host.diagnostics().streaming,true);assert.equal(MockWorker.instances.length,1,'worker starts on entering the prefetch band');
+  }finally{host.dispose();globalThis.Worker=previousWorker;}
 });
 
 test('patch failures stop retrying after three attempts and an infinite wake does not spin',()=>{

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {LEGACY_TREE_LOBES,LEGACY_TREE_TRUNK,LEGACY_TREE_SHAPE_VERSION,LEGACY_TREE_BOUND} from './tree-shape.ts';
 import {forestCoverageGLSL} from './forest-coverage.ts';
+import {ForestDirtyBlocks} from './forest-dirty-blocks.ts';
 
 const vector=(v:readonly number[])=>`vec3(${v.map(x=>Number.isInteger(x)?`${x}.0`:String(x)).join(',')})`;
 const quaternionGLSL=`
@@ -95,9 +96,10 @@ export class ForestImpostors {
   readonly ownership:THREE.InstancedBufferAttribute;
   private ownershipBlocks:Uint8Array;
   private ownershipDirty=false;
-  private dirtyStart=Infinity;private dirtyEnd=0;
+  private staticDirty:ForestDirtyBlocks[];
   constructor(capacity:number){
     if(!Number.isInteger(capacity)||capacity<1||capacity>229376)throw new Error('Invalid forest impostor capacity');
+    this.staticDirty=[new ForestDirtyBlocks(capacity),new ForestDirtyBlocks(capacity),new ForestDirtyBlocks(capacity)];
     const geometry=new THREE.InstancedBufferGeometry();
     geometry.setAttribute('position',new THREE.Float32BufferAttribute([-1,-1,0,1,-1,0,1,1,0,-1,1,0],3));
     geometry.setAttribute('normal',new THREE.Float32BufferAttribute([0,0,1,0,0,1,0,0,1,0,0,1],3));
@@ -115,7 +117,7 @@ export class ForestImpostors {
       shader.vertexShader=`attribute vec4 treePositionHeight,treeRotation,treeParameters;attribute float treeOwnership;
         uniform vec3 treeCamera,treeViewDirection;uniform float treeOrthographic,treeBoundInflation,treeRadiusScale,treePixelScale;
         uniform float treeRuntime,treeAltitudeCoverage,treeWater,treeHasWater;uniform vec2 treeDrawRange;uniform mat4 treeClipToLocal;
-        varying vec3 treeRayPoint;varying vec4 treeRootHeight,treeQ,treeData;varying float treeNearLevel,treeEdgeLevel;${quaternionGLSL}\n`+shader.vertexShader;
+        varying vec3 treeRayPoint;flat varying vec4 treeRootHeight,treeQ,treeData;flat varying float treeNearLevel,treeEdgeLevel;${quaternionGLSL}\n`+shader.vertexShader;
       shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`
         treeRootHeight=treePositionHeight;treeQ=treeRotation;treeData=treeParameters;
         float h=treePositionHeight.w;vec3 root=treePositionHeight.xyz;
@@ -149,7 +151,7 @@ export class ForestImpostors {
       shader.fragmentShader=`uniform vec3 treeCamera,treeViewDirection;
         uniform float treeOrthographic,treeRadiusScale,treeMaskOnly,treeFaceted,treeEdgeAA,treeSampleAA;
         uniform mat4 treeModelView,treeProjection;uniform mat3 treeNormalMatrix;
-        varying vec3 treeRayPoint;varying vec4 treeRootHeight,treeQ,treeData;varying float treeNearLevel,treeEdgeLevel;
+        varying vec3 treeRayPoint;flat varying vec4 treeRootHeight,treeQ,treeData;flat varying float treeNearLevel,treeEdgeLevel;
         ${quaternionGLSL}${forestCoverageGLSL}${intersectGLSL}${facetedGLSL}\n`+shader.fragmentShader;
       if(renderer.capabilities.logarithmicDepthBuffer)shader.fragmentShader='#ifndef USE_LOGARITHMIC_DEPTH_BUFFER\n#error Atlas forest requires the installed logarithmic depth define\n#endif\n'+shader.fragmentShader;
       const lobes=LEGACY_TREE_LOBES.map(([x,y,z,s])=>{
@@ -159,7 +161,7 @@ export class ForestImpostors {
       shader.fragmentShader=shader.fragmentShader.replace('#include <logdepthbuf_fragment>',`
         if(treeRootHeight.w<=0.0)discard;
         uint forestHash=atlasForestHash(uint(treeData.w+.5));
-        if(forestHash<uint(treeNearLevel+.5)||forestHash>=uint(treeEdgeLevel+.5))discard;
+        bool treeUnowned=forestHash<uint(treeNearLevel+.5)||forestHash>=uint(treeEdgeLevel+.5);
         vec3 rayOrigin=treeCamera,rayDirection=normalize(treeRayPoint-treeCamera);
         if(treeOrthographic>.5){rayDirection=treeViewDirection;rayOrigin=treeRayPoint+rayDirection*dot(treeCamera-treeRayPoint,rayDirection);}
         vec4 inverseQ=vec4(-treeQ.xyz,treeQ.w);
@@ -172,7 +174,9 @@ export class ForestImpostors {
         ${lobes}
         if(treeFaceted>.5)treeFacetedTrunk(ro,rd,vec3(0),vec3(1),vec3(.25,.17,.10),best,treeHitNormal,treeHitColour,treeCoverage);
         else {treeTrunk(ro,rd,best,treeHitNormal,treeHitColour);treeCoverage=1.0;}
-        if(best==1e20)discard;
+        // Complete derivative-based edge coverage before any per-pixel hash
+        // discard. Derivatives in divergent discarded lanes are undefined.
+        if(best==1e20||treeUnowned)discard;
         vec3 treeHit=treeRootHeight.xyz+treeRotate(treeQ,(ro+rd*best)*treeRootHeight.w);
         vec4 treeHitView=treeModelView*vec4(treeHit,1.0),treeClip=treeProjection*treeHitView;
         if(treeHitView.z>=0.0||treeClip.w<=0.0||treeClip.z < -treeClip.w||treeClip.z > treeClip.w)discard;
@@ -221,18 +225,17 @@ export class ForestImpostors {
     this.parameters.setXYZW(index,roll,groundHeightM,0,Math.min(255,Math.floor(roll*256)));
     this.setOwnership(index,0);
     this.mesh.geometry.instanceCount=Math.max(this.mesh.geometry.instanceCount,index+1);
-    this.dirtyStart=Math.min(this.dirtyStart,index);this.dirtyEnd=Math.max(this.dirtyEnd,index+1);
+    for(const dirty of this.staticDirty)dirty.mark(index);
+  }
+  retire(index:number){
+    if(!Number.isInteger(index)||index<0||index>=this.positions.count)throw new Error('Invalid forest retirement');
+    this.positions.setW(index,0);this.staticDirty[0].mark(index);this.setOwnership(index,0);
   }
   commit(){
     let bytes=this.commitOwnership();
-    if(this.dirtyEnd<=this.dirtyStart)return bytes;
-    for(const attribute of [this.positions,this.rotations,this.parameters]){
-      let start=this.dirtyStart*4,end=this.dirtyEnd*4;
-      for(const pending of attribute.updateRanges){start=Math.min(start,pending.start);end=Math.max(end,pending.start+pending.count);}
-      attribute.clearUpdateRanges();attribute.addUpdateRange(start,end-start);attribute.needsUpdate=true;
-      bytes+=(end-start)*attribute.array.BYTES_PER_ELEMENT;
-    }
-    this.dirtyStart=Infinity;this.dirtyEnd=0;return bytes;
+    bytes+=this.staticDirty[0].flush(this.positions);
+    bytes+=this.staticDirty[1].flush(this.rotations);
+    bytes+=this.staticDirty[2].flush(this.parameters);return bytes;
   }
   /** Quantized 0..256. A value of 256 also suppresses stale far presence when
    * current near sampling proves absence. Kept apart from static transforms. */
@@ -258,6 +261,7 @@ export class ForestImpostors {
   replacePositions(prepared:Float32Array){
     if(prepared.length!==this.positions.array.length)throw new Error('Invalid forest rebase buffer');
     this.positions.array.set(prepared);this.positions.clearUpdateRanges();this.positions.addUpdateRange(0,prepared.length);this.positions.needsUpdate=true;
+    this.staticDirty[0].clear();
     return prepared.byteLength;
   }
   dispose(){this.mesh.geometry.dispose();this.mesh.material.dispose();this.mesh.removeFromParent();}

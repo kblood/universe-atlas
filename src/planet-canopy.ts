@@ -7,11 +7,12 @@ import {type ForestPatchAddress,validateForestPatchAddress} from './forest-patch
 import {treeQuaternion} from './tree-shape.ts';
 import {quantizeForestCoverage} from './forest-coverage.ts';
 import {LEGACY_TREE_BOUND} from './tree-shape.ts';
+import {PLANET_DETAIL} from './planet-detail.ts';
 
 const patchKey=(a:ForestPatchAddress)=>`${a.face}/${a.n}/${a.x}/${a.y}`;
 export function forestCellPatchKey(id:string){const [face,n,x,y]=id.split('/').map(Number);return `${face}/${n}/${Math.floor(x/8)}/${Math.floor(y/8)}`;}
 type Installed={address:ForestPatchAddress;range:ForestSlotRange;ids:string[];water:number};
-type Request={id:number;keys:Set<string>};
+type Request={id:number;keys:Set<string>;progressAt:number};
 
 /** Bounded host for complete census patches. prepare -> near ownership ->
  * finish is one render-frame transaction. Message callbacks only queue work. */
@@ -25,7 +26,9 @@ export class PlanetCanopy {
   private requestCursor=0;private retryWakeAt=Infinity;private selectionRetryAt=0;
   private worker:Worker|null=null;private ready=false;private disposed=false;
   private generation=0;private serial=0;private request:Request|null=null;
-  private selection:{id:number;center:V3}|null=null;private context='';
+  private selection:{id:number;center:V3;started:number}|null=null;private context='';
+  private configuredAt=0;private terminalFailure=false;private timeouts=0;
+  private streaming=false;
   private water=NaN;private center=new THREE.Vector3(Infinity,Infinity,Infinity);
   private origin=new THREE.Vector3();private originReady=false;
   private bodyPositions:Float64Array;private heights:Float64Array;private waters:Float64Array;
@@ -50,16 +53,17 @@ export class PlanetCanopy {
       worker.onmessage=({data})=>{if(this.worker===worker){try{this.receive(data);}catch{this.failWorker(worker);}}};
       worker.onerror=e=>{e.preventDefault();this.failWorker(worker);};worker.onmessageerror=()=>this.failWorker(worker);
       this.configure();
-    }catch{this.worker=null;this.failures++;}
+    }catch{this.worker=null;this.failures++;this.terminalFailure=true;this.streaming=false;this.group.visible=false;}
   }
   private configure(){
-    this.generation++;this.ready=false;this.context='';this.request=null;this.selection=null;this.pending=[];this.retries.clear();this.center.set(Infinity,Infinity,Infinity);
+    this.generation++;this.configuredAt=performance.now();this.ready=false;this.context='';this.request=null;this.selection=null;this.pending=[];this.retries.clear();this.center.set(Infinity,Infinity,Infinity);
     this.requestCursor=0;this.retryWakeAt=Infinity;this.selectionRetryAt=0;
     this.worker?.postMessage({type:'configure',generation:this.generation,body:this.body,waterLevelM:this.water});
   }
   private failWorker(worker:Worker){
     if(this.worker!==worker)return;worker.terminate();this.worker=null;this.ready=false;this.request=null;this.selection=null;this.pending=[];this.failures++;
     if(this.workerRestarts<1){this.workerRestarts++;this.start();}
+    else{this.terminalFailure=true;this.streaming=false;this.group.visible=false;}
   }
   private receive(data:any){
     if(!data||!Number.isSafeInteger(data.generation))throw new Error('Invalid census response');
@@ -94,6 +98,7 @@ export class PlanetCanopy {
       this.center.set(...selection.center);this.selection=null;this.selectionMs=data.selectionMs;this.selectionApplyMs=performance.now()-started;return;
     }
     const request=this.request;if(data.type!=='patches'||!request||data.requestId!==request.id)return;
+    request.progressAt=performance.now();
     if(!Array.isArray(data.patches)||data.patches.length>8||this.pending.length+data.patches.length>64)throw new Error('Census queue limit');
     for(const p of data.patches as ForestCensusPatch[]){
       validateForestPatchAddress(p.address);const key=patchKey(p.address);
@@ -118,7 +123,7 @@ export class PlanetCanopy {
     const patch=this.installed.get(key);if(!patch)return 0;
     for(let i=0;i<patch.ids.length;i++){
       const index=patch.range.start+i;this.slots.delete(patch.ids[i]);
-      this.renderer.write(index,this.position.set(0,0,0),0,this.rotation.identity(),0,0);
+      this.renderer.retire(index);
       if(this.rebase)this.rebase.positions.fill(0,index*4,index*4+4);
     }
     this.allocator.free(patch.range);this.installed.delete(key);return patch.ids.length;
@@ -147,9 +152,15 @@ export class PlanetCanopy {
   }
   /** Call after the near render origin is chosen, before the near draw loop. */
   prepare(eye:THREE.Vector3,ground:V3,altitudeM:number,water:number,enabled:boolean,immersive:boolean,nearOrigin:THREE.Vector3){
-    this.group.visible=enabled&&!immersive&&altitudeM<3500;this.installedThisFrame=0;this.installMs=0;this.uploadBytes=0;this.seen.clear();
+    if(!Number.isFinite(water))throw new Error('Canopy water level must be finite');
+    const now=performance.now();
+    if(this.worker&&(!this.ready&&now-this.configuredAt>10000||this.request&&now-this.request.progressAt>10000||this.selection&&now-this.selection.started>10000)){
+      this.timeouts++;this.failWorker(this.worker);
+    }
+    this.streaming=enabled&&!immersive&&!this.terminalFailure&&altitudeM<PLANET_DETAIL.forestStreamAltitudeM;
+    this.group.visible=this.streaming&&altitudeM<PLANET_DETAIL.forestPrepareAltitudeM;this.installedThisFrame=0;this.installMs=0;this.uploadBytes=0;this.seen.clear();
     this.nearPresentNotInCensus=0;this.nearAbsentInCensus=0;this.closeCandidates.length=0;this.farForcedClose=0;
-    if(!this.group.visible)return false;
+    if(!this.streaming)return false;
     this.renderer.uniforms.treeRuntime.value=1;
     this.renderer.uniforms.treeAltitudeCoverage.value=1-THREE.MathUtils.smoothstep(altitudeM,3000,3500);
     this.renderer.uniforms.treeWater.value=water;this.renderer.uniforms.treeHasWater.value=Number(this.body.water>0);
@@ -157,7 +168,7 @@ export class PlanetCanopy {
     if(water!==this.water){this.water=water;if(this.worker){try{this.configure();}catch{this.failWorker(this.worker);}}}
     if(!this.worker&&this.failures===0)this.start();
     if(this.ready&&this.worker&&!this.selection&&performance.now()>=this.selectionRetryAt&&this.direction.set(...ground).distanceTo(this.center)*this.body.radiusM>150){
-      this.selection={id:++this.serial,center:[...ground]};
+      this.selection={id:++this.serial,center:[...ground],started:performance.now()};
       try{this.worker.postMessage({type:'select',generation:this.generation,requestId:this.selection.id,center:ground,rangeM:4500});}catch{this.failWorker(this.worker);}
     }
     const started=performance.now();let work=0;
@@ -190,10 +201,10 @@ export class PlanetCanopy {
         const after=this.retries.get(key)?.after??0;if(after>now){this.retryWakeAt=Math.min(this.retryWakeAt,after);continue;}
         addresses.push(this.desired.get(key)!);
       }
-      if(addresses.length){this.request={id:++this.serial,keys:new Set(addresses.map(patchKey))};
+      if(addresses.length){this.request={id:++this.serial,keys:new Set(addresses.map(patchKey)),progressAt:performance.now()};
         try{this.worker.postMessage({type:'patches',generation:this.generation,requestId:this.request.id,addresses});}catch{this.failWorker(this.worker);}}
     }
-    return true;
+    return this.group.visible;
   }
   currentPatch(key:string){return this.group.visible&&this.installed.get(key)?.water===this.water;}
   canHandoff(id:string,height:number){const index=this.slots.get(id);return this.group.visible&&index!==undefined&&this.waters[index]===this.water&&Math.abs(this.heights[index]-height)<1e-6;}
@@ -222,16 +233,16 @@ export class PlanetCanopy {
     if(this.position.length()<=Math.hypot(...LEGACY_TREE_BOUND.extent)*height*1.1)this.closeCandidates.push(id);
   }
   finish(){
-    if(!this.group.visible)return;
+    if(!this.streaming)return;
     for(const id of this.previous)if(!this.seen.has(id)){const index=this.slots.get(id);if(index!==undefined)this.renderer.setOwnership(index,0);}
     const old=this.previous;this.previous=this.seen;this.seen=old;this.uploadBytes+=this.renderer.commit();
     const edge=quantizeForestCoverage(this.renderer.uniforms.treeAltitudeCoverage.value);
     for(const id of this.closeCandidates){const index=this.slots.get(id);if(index!==undefined&&this.renderer.ownership.array[index]<edge)this.farForcedClose++;}
   }
-  diagnostics(){return {enabled:this.group.visible,ready:this.ready,context:this.context,generation:this.generation,patches:this.installed.size,trees:this.slots.size,
+  diagnostics(){return {enabled:this.group.visible,streaming:this.streaming,ready:this.ready,context:this.context,generation:this.generation,patches:this.installed.size,trees:this.slots.size,
     selectedPatches:this.order.length,queuedPatches:this.pending.length,jobsInFlight:Number(!!this.request),selectionPending:!!this.selection,
     installedThisFrame:this.installedThisFrame,installMs:this.installMs,selectionMs:this.selectionMs,selectionApplyMs:this.selectionApplyMs,uploadBytes:this.uploadBytes,
-    failures:this.failures,workerRestarts:this.workerRestarts,capacityMisses:this.capacityMisses,slots:this.allocator.diagnostics(),rebasePending:!!this.rebase,
+    failures:this.failures,workerRestarts:this.workerRestarts,terminalFailure:this.terminalFailure,timeouts:this.timeouts,capacityMisses:this.capacityMisses,slots:this.allocator.diagnostics(),rebasePending:!!this.rebase,
     nearPresentNotInCensus:this.nearPresentNotInCensus,nearAbsentInCensus:this.nearAbsentInCensus,
     farForcedClose:this.farForcedClose,closeCandidateScope:'current near selection',
     attributeBytes:this.renderer.positions.array.byteLength+this.renderer.rotations.array.byteLength+this.renderer.parameters.array.byteLength+this.renderer.ownership.array.byteLength,

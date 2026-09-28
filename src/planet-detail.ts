@@ -8,6 +8,7 @@ export const PLANET_DETAIL = Object.freeze({
   canopyCellM: 140,
   canopyCapacity: 8192,
   forestPrepareAltitudeM: 3500,
+  forestStreamAltitudeM: 5500,
   forestCellM: FOREST_CELL_M,
   forestNearM: 110,
   forestCapacity: 4096,

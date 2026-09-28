@@ -86,5 +86,29 @@ Luna's first independent flight/walk run settled without worker failures,
 population disagreements or uploads after over 600 metres of combined travel.
 It found partial final canvas alpha at MSAA2/4 (838/1,093 pixels below 255).
 The desktop cloud composite now exports opaque alpha after RGB coverage is
-resolved; XR retains its previous alpha semantics. Unit checks pass and a new
-full-game alpha/flight run is pending.
+resolved; XR retains its previous alpha semantics. Luna's corrected rerun
+[passes](../test-results/canopy-flight-post-alpha-fix-rerun/report.json): 320.60 m
+flight and 320.65 m walking, 153,518 trees / 6,689 patches at rest, zero queues,
+failures, capacity misses or presence disagreements, and every canvas alpha
+byte is 255 at MSAA0/2/4. View units are metres. See the
+[snapshot note](../test-results/canopy-flight-post-alpha-fix-rerun/README.md).
+
+## Subsequent review fixes (new browser acceptance pending)
+
+- Streaming begins at 5.5 km while visibility still begins below 3.5 km.
+- Configuration, selection and patch work have a 10 s progress watchdog.
+  One restart is allowed; terminal failure hides the new representation and
+  leaves the legacy path in control.
+- Shader instance varyings are flat; per-pixel ownership discard follows
+  derivative calculations. The D3D11 regression passes. SwiftShader/Vulkan
+  preserves ownership/interior coverage but fails the existing strict edge
+  threshold: max area difference 0.250%, up to 90 boundary pixels. This backend
+  is not accepted by the current test and needs investigation.
+- Static updates use separate 64-slot dirty blocks per attribute; retirement
+  changes only position/ownership. Two widely separated edits now schedule
+  6,144 bytes, verified by a unit test, rather than the intervening full span.
+- Complete current patches beyond 650 m bypass near placement/culling work.
+  Stale water and missing patches retain the previous fallback path.
+
+The [review assessment](canopy-host-review-assessment-2026-09-28.md) tracks
+remaining work, including exact water validity and bounded selection application.

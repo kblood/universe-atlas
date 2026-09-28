@@ -7,7 +7,7 @@ test('far proxy bounds instance allocation and validates physical transforms',()
   const f=new ForestImpostors(8),p=new THREE.Vector3(100,200,300),q=new THREE.Quaternion();
   try{
     assert.equal(f.commit(),0);f.write(2,p,16,q,.3,900);assert.equal(f.mesh.geometry.instanceCount,3);
-    assert.equal(f.commit(),48);assert.equal(f.commit(),0);
+    assert.equal(f.commit(),8*48);assert.equal(f.commit(),0);
     assert.deepEqual(Array.from(f.positions.array.slice(8,12)),[100,200,300,16]);
     for(const index of [-1,8,.5,NaN])assert.throws(()=>f.write(index,p,16,q,.3,900));
     assert.throws(()=>f.write(0,p,NaN,q,.3,900));assert.throws(()=>f.write(0,p,16,new THREE.Quaternion(1,1,1,1),.3,900));
@@ -53,7 +53,7 @@ test('reusing an impostor slot resets ownership and rejects invalid ownership wr
     f.setOwnership(300,128);assert.equal(f.commit(),512);assert.equal(f.ownership.array[300],128);
     const ownershipVersion=f.ownership.version;f.write(300,p,16,q,.5,900);
     assert.equal(f.ownership.array[300],0,'a reused slot starts with no prior near/far ownership');
-    assert.equal(f.commit(),48+512);assert.equal(f.ownership.version,ownershipVersion+1);
+    assert.equal(f.commit(),64*48+512);assert.equal(f.ownership.version,ownershipVersion+1);
   }finally{f.dispose();}
 });
 
@@ -70,5 +70,27 @@ test('rebasing uploads positions without changing rotation, parameters, or owner
     assert.equal(f.rotations.version,before.rotation);assert.equal(f.parameters.version,before.parameters);assert.equal(f.ownership.version,before.ownership);
     assert.deepEqual(f.positions.updateRanges,[{start:0,count:prepared.length}]);
     assert.deepEqual(f.rotations.updateRanges,untouchedRanges[0]);assert.deepEqual(f.parameters.updateRanges,untouchedRanges[1]);assert.deepEqual(f.ownership.updateRanges,untouchedRanges[2]);
+  }finally{f.dispose();}
+});
+test('distant static edits upload bounded blocks and retirement leaves rotation and colour untouched',()=>{
+  const f=new ForestImpostors(229376),p=new THREE.Vector3(),q=new THREE.Quaternion();
+  try{
+    f.write(1,p,16,q,.5,0);f.write(229000,p,16,q,.5,0);
+    assert.equal(f.commit(),2*64*48,'two blocks rather than their enormous intervening span');
+    for(const attr of [f.positions,f.rotations,f.parameters]){assert.equal(attr.updateRanges.length,2);attr.clearUpdateRanges();}
+    const rotation=f.rotations.version,parameters=f.parameters.version;
+    f.retire(1);assert.equal(f.commit(),64*16);
+    assert.equal(f.positions.getW(1),0);assert.equal(f.rotations.version,rotation);assert.equal(f.parameters.version,parameters);
+    assert.throws(()=>f.retire(-1));assert.throws(()=>f.retire(229376));
+  }finally{f.dispose();}
+});
+test('a rebase includes pending position writes once while retaining other static uploads',()=>{
+  const f=new ForestImpostors(128);
+  try{
+    f.write(3,new THREE.Vector3(),16,new THREE.Quaternion(),.5,0);
+    const prepared=f.positions.array.slice(),positionBytes=f.replacePositions(prepared);
+    const otherBytes=f.commit();
+    assert.equal(positionBytes,128*16);assert.equal(otherBytes,64*32);
+    assert.deepEqual(f.positions.updateRanges,[{start:0,count:128*4}]);
   }finally{f.dispose();}
 });
