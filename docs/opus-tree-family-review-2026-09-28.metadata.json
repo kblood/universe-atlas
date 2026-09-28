@@ -1,0 +1,13 @@
+{
+  "requestedModel": "claude-opus-5-5",
+  "returnedModel": "claude-opus-5-5",
+  "provider": "firstParty",
+  "reviewType": "source-only",
+  "reviewedCandidate": "atlas-ez-family-d",
+  "supersedingCandidate": "atlas-ez-family-f",
+  "postReviewEditsIndependentlyTested": true,
+  "postReviewEditsReReviewed": false,
+  "isError": false,
+  "responseSha256": "615026e8757e5a2486eeb47f9ecbe97fa68fdaf25a97c146a9d6f254e569d086",
+  "inputsSha256": "56dcff048d66fbd7af173245ddd54217407fc0d2469eeb66361b423c905cedaa"
+}

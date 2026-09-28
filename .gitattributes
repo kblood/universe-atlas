@@ -4,3 +4,8 @@ test-results/opus-tree-reference-review/** -text
 test-results/tree-reference-ez-live/** -text
 src/tree-reference-lab.ts -text
 tree-reference-lab.html -text
+test-results/tree-ez-family-v1/** -text
+test-results/opus-tree-reference-family-review/** -text
+tree-asset-lab.html -text
+assets/briefs/atlas-ez-tree-family-v1.json -text whitespace=cr-at-eol
+test-results/tree-ez-family-live/** -text

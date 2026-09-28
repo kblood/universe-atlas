@@ -1,0 +1,967 @@
+Review actual Atlas EZ-Tree family GLB converter, source-only, no tools, <=1000 words. We are reusing seeded EZ-Tree geometry and NodeIO/Meshoptimizer/MikkTSpace, not inventing tree growth. Input reference fixed16mOakseed35729 from pinnedMITsource; manifest andgeometry hashes checked. ParentAtlasGLB materialgraph/4originalPNGs preserved. Floatattrs match existingAtlasloader; CPU5loader tests pass. Actual pair13806/4866tri validated Khronos (near0fallback,mid1 numericalMikktangentfallback). Historical firstposition-only simplifier gave5zerotangents; attribute-aware normal/UV-weighted+lockedborders reduces to1; code explicitly projects localedge into normal plane onlywhenMikk cancels, recordsfallbackcount. Please critically assess this remedy, sourcecoordinate mapping, metricbarkUV and leaftextureorientation,wind/pivotLODidentity, typedgeometry/export/resourceprovenance/paths. Midleafmesh retains firstplane ofeverysecondnearleaf (2660leaftri vs10640near), exactlysamephysical1.2m cards/offsets/pivots/UV/wind. Woodratio.7,error.01 viaMeshopt. Allbudgets candidate gates only, noLODcoverageacceptance; browserreviewunderway. No collision/farimpostor/gameintegration; these are futureplanitems, don'ttreatmissingexcludedfeaturesasconverterbugs. Code should not execute callerbundles/scripts. Prioritize actionable correctness, avoid recommending purely cosmetic docs chores over fixes.
+FILE ../tools/assetctl/tree-reference-family.mjs
+import {readFile,writeFile,mkdir,realpath,stat} from 'node:fs/promises';
+import {dirname,join} from 'node:path';
+import {createHash} from 'node:crypto';
+import {pathToFileURL} from 'node:url';
+import {NodeIO,PropertyType} from '@gltf-transform/core';
+import {ALL_EXTENSIONS} from '@gltf-transform/extensions';
+import {unweld,tangents,weld,prune} from '@gltf-transform/functions';
+import {MeshoptSimplifier} from 'meshoptimizer';
+import {workspaceRoot,resolveApprovedPath} from './path-policy.mjs';
+import {validateContractValue} from './contract.mjs';
+import {validateAsset} from './gltf.mjs';
+import {familyGeometry} from './tree-reference-family-geometry.mjs';
+
+const hash=b=>createHash('sha256').update(b).digest('hex');
+export function treeReferenceFamilyOptions(argv){
+  const values={},allowed=['--brief','--input','--template','--output'];
+  for(let i=0;i<argv.length;i+=2){const k=argv[i];if(!allowed.includes(k)||Object.hasOwn(values,k)||!argv[i+1]||argv[i+1].startsWith('--'))throw new Error('Invalid family option');values[k]=argv[i+1];}
+  if(allowed.some(k=>!values[k]))throw new Error('Family requires brief, input, template and output');
+  return Object.fromEntries(allowed.map(k=>[k.slice(2),values[k]]));
+}
+async function approved(value){const path=await realpath(resolveApprovedPath(value,{mustExist:true}));resolveApprovedPath(path);return path;}
+async function bounded(path,max){if((await stat(path)).size>max)throw new Error('Input exceeds family size bound');return readFile(path);}
+export async function convertTreeReferenceFamily(argv){
+  const options=treeReferenceFamilyOptions(argv),input=await approved(options.input),template=await approved(options.template),briefPath=await approved(options.brief);
+  const briefBytes=await bounded(briefPath,1024*1024),brief=JSON.parse(briefBytes),validation=await validateContractValue('asset-brief',brief);
+  if(!validation.valid||brief.id!=='atlas-ez-tree-family-v1')throw new Error('Invalid family brief');
+  const manifestBytes=await bounded(await approved(join(input,'reference-manifest.json')),1024*1024),reference=JSON.parse(manifestBytes);
+  if(hash(manifestBytes)!==brief.provenance.parents.find(p=>p.relationship==='geometry-reference')?.sha256)throw new Error('Reference manifest hash differs from brief');
+  if(reference.operation!=='atlas-ez-tree-reference-1'||reference.source?.revision!=='dcf309bd86bd521083d9c70f01f2de45fdc7c457'||reference.preset!=='oak_medium'||reference.seed!==35729||reference.height!==16)throw new Error('Only the pinned 16m Oak reference is supported');
+  const inputs=[];
+  async function artifact(name){const record=reference.artifacts.find(r=>r.path===name),bytes=await bounded(await approved(join(input,name)),32*1024*1024);if(!record||record.bytes!==bytes.length||hash(bytes)!==record.sha256)throw new Error('Reference artifact hash mismatch');inputs.push({path:name,sha256:hash(bytes)});return JSON.parse(bytes);}
+  const full=await artifact('full.json'),skeleton=await artifact('skeleton.json'),data=familyGeometry(full,skeleton,reference.skeletonScale);
+  const templateBytes=await bounded(template,32*1024*1024);
+  if(hash(templateBytes)!==brief.provenance.parents.find(p=>p.relationship==='material-template')?.sha256)throw new Error('Template hash differs from validated brief');
+  const io=new NodeIO().registerExtensions(ALL_EXTENSIONS),source=await io.readBinary(templateBytes),root=source.getRoot();
+  if(root.listMeshes().length!==1||root.listNodes().length!==1||root.listMaterials().map(m=>m.getName()).join('|')!=='MAT_AtlasBark|MAT_AtlasFoliage'||root.listTextures().length!==4)throw new Error('Unsupported Atlas material template');
+  // This operation imports an approved GLB material graph only. It never runs
+  // bundled reference code or caller-supplied scripts from the candidate.
+  const output=resolveApprovedPath(options.output);await approved(dirname(output));await mkdir(output);await approved(output);
+  await writeFile(join(output,'asset-brief.json'),briefBytes,{flag:'wx'});
+  const Mikk=await import(pathToFileURL(join(workspaceRoot,'universe-atlas/node_modules/three/examples/jsm/libs/mikktspace.module.js')).href);await Mikk.ready;await MeshoptSimplifier.ready;
+  const artifacts=[],levels=[];
+  try{
+    for(let lod=0;lod<2;lod++){
+      const doc=await io.readBinary(templateBytes),r=doc.getRoot(),mesh=r.listMeshes()[0],buffer=r.listBuffers()[0];
+      const old=mesh.listPrimitives();for(const p of old){mesh.removePrimitive(p);p.dispose();}
+      r.listNodes()[0].setTranslation([0,0,0]).setRotation([0,0,0,1]).setScale([1,1,1]).setName('SM_AtlasEzOak');mesh.setName(`SM_AtlasEzOak_LOD${lod}`);
+      for(const [material,part] of [data.wood,lod===0?data.leaves:data.midLeaves].entries()){
+        const prim=doc.createPrimitive().setMaterial(r.listMaterials()[material]);mesh.addPrimitive(prim);
+        const fields={POSITION:['position','VEC3'],NORMAL:['normal','VEC3'],TEXCOORD_0:['uv','VEC2'],_WIND:['wind','SCALAR'],_BRANCH_LEVEL:['level','SCALAR'],_LEAF_CENTER:['center','VEC3'],_LEAF_PIVOT:['pivot','VEC3']};
+        for(const [semantic,[key,type]] of Object.entries(fields))prim.setAttribute(semantic,doc.createAccessor(semantic).setType(type).setBuffer(buffer).setArray(new Float32Array(part[key])));
+        prim.setIndices(doc.createAccessor('indices').setType('SCALAR').setBuffer(buffer).setArray(new Uint32Array(part.index)));
+        if(lod===1&&material===0){
+          const attrs=new Float32Array(part.position.length/3*5);
+          for(let i=0;i<attrs.length/5;i++){attrs.set(part.normal.slice(i*3,i*3+3),i*5);attrs.set(part.uv.slice(i*2,i*2+2),i*5+3);}
+          const [indices]=MeshoptSimplifier.simplifyWithAttributes(new Uint32Array(part.index),new Float32Array(part.position),3,attrs,5,[.5,.5,.5,1,1],null,Math.floor(part.index.length*.7/3)*3,.01,['LockBorder']);
+          prim.getIndices().setArray(indices);
+        }
+      }
+      const triangles=mesh.listPrimitives().reduce((sum,p)=>sum+p.getIndices().getCount()/3,0),budget=lod===0?18000:5000;
+      if(triangles>budget)throw new Error(`LOD${lod} exceeds ${budget} triangles: ${triangles}`);
+      let degenerateTangentFallbacks=0;
+      const generateTangents=(position,normal,uv)=>{
+        const result=Mikk.generateTangents(position,normal,uv);
+        for(let v=0;v<result.length/4;v++){
+          if(Math.hypot(...result.subarray(v*4,v*4+3))>1e-6)continue;
+          // A nearly collapsed twig can make Mikk's averaged tangent cancel.
+          // Project the longest available triangle edge into the normal plane;
+          // retain Mikk's handedness and report every such numerical fallback.
+          const n=Array.from(normal.subarray(v*3,v*3+3)),start=Math.floor(v/3)*3;
+          let best=[0,0,0],bestLength=0;
+          for(let j=0;j<3;j++){
+            const e=[0,1,2].map(k=>position[(start+j)*3+k]-position[v*3+k]),dot=e.reduce((s,x,k)=>s+x*n[k],0),projected=e.map((x,k)=>x-dot*n[k]),length=Math.hypot(...projected);
+            if(length>bestLength){best=projected;bestLength=length;}
+          }
+          if(bestLength<1e-12)throw new Error('Degenerate geometry cannot support a tangent');
+          result.set(best.map(x=>x/bestLength),v*4);degenerateTangentFallbacks++;
+        }
+        return result;
+      };
+      await doc.transform(unweld(),tangents({generateTangents,overwrite:true}),weld(),prune({propertyTypes:[PropertyType.ACCESSOR,PropertyType.BUFFER],keepAttributes:true}));
+      const file=lod===0?'atlas-ez-oak.glb':'atlas-ez-oak.lod1.glb',bytes=await io.writeBinary(doc);
+      await writeFile(join(output,file),bytes,{flag:'wx'});
+      const checked=await validateAsset(join(output,file));if(!checked.validation.valid)throw new Error(`Export failed validation: ${file}`);
+      artifacts.push({path:file,bytes:bytes.length,sha256:hash(bytes)});levels.push({lod,triangles,vertices:checked.geometry.vertices,bounds:checked.geometry.bounds,degenerateTangentFallbacks,validation:checked.validation});
+    }
+    const report={schemaVersion:1,operation:'atlas-ez-tree-family-1',status:'runtime-candidate-not-packaged',seed:reference.seed,height:16,
+      sources:{referenceManifestSha256:hash(manifestBytes),artifacts:inputs,templateSha256:hash(templateBytes),upstreamRevision:reference.source.revision},
+      briefSha256:hash(briefBytes),provenance:brief.provenance,
+      adapterSha256:hash(await readFile(new URL(import.meta.url))),geometryAdapterSha256:hash(await readFile(new URL('./tree-reference-family-geometry.mjs',import.meta.url))),
+      toolchain:{node:process.version,gltfTransform:JSON.parse(await readFile(new URL('./node_modules/@gltf-transform/core/package.json',import.meta.url),'utf8')).version,
+        meshoptimizer:JSON.parse(await readFile(new URL('./node_modules/meshoptimizer/package.json',import.meta.url),'utf8')).version,
+        mikkModuleSha256:hash(await readFile(join(workspaceRoot,'universe-atlas/node_modules/three/examples/jsm/libs/mikktspace.module.js')))},
+      adaptations:['Atlas material/image graph retained','Leaf plane normals corrected; MikkTSpace tangents regenerated with counted projected-edge fallback for cancellations','Metric bark UVs from full skeleton; deterministic 4x4 leaf tiles with V reversed and half-texel inset','Leaf sprig offset .048m; physical 1.2m cards unchanged','LOD1 uses half the original leaves with one plane each, same pivots/UV/wind; wood uses Meshoptimizer with normals/UV weights, locked borders, ratio .7/error .01'],
+      limitations:['No canopy parity or LOD visual acceptance','Static trunk; date-driven leaf wind contract only','No collision, distant impostor, packaged asset or game integration'],levels,artifacts};
+    await writeFile(join(output,'family-manifest.json'),JSON.stringify(report,null,2),{flag:'wx'});return report;
+  }catch(error){await writeFile(join(output,'family-failure.json'),JSON.stringify({error:String(error)}),{flag:'wx'});throw error;}
+}
+export async function treeReferenceFamilyCli(argv){console.log(JSON.stringify(await convertTreeReferenceFamily(argv),null,2));}
+
+
+FILE ../tools/assetctl/tree-reference-family-geometry.mjs
+/** Fixed adaptation of the pinned EZ-Tree mesh ordering; no tree growth here. */
+export function familyGeometry(full,skeleton,scale){
+  const wood=structuredClone(full.wood),leaves=structuredClone(full.leaves);
+  if(!Number.isFinite(scale)||scale<=0)throw new Error('Invalid skeleton scale');
+  const count=mesh=>mesh.position.length/3;
+  for(const mesh of [wood,leaves]){
+    const n=count(mesh);
+    if(!Number.isInteger(n)||n<3||n>65535||mesh.normal.length!==n*3||mesh.uv.length!==n*2||mesh.index.length%3||mesh.index.length>100000*3)throw new Error('Invalid source geometry');
+    for(const key of ['position','normal','uv'])if(mesh[key].some(x=>!Number.isFinite(x)))throw new Error('Nonfinite source geometry');
+    if(mesh.index.some(x=>!Number.isInteger(x)||x<0||x>=n))throw new Error('Invalid source indices');
+    mesh.wind=Array(n).fill(0);mesh.level=Array(n).fill(mesh===leaves?4:0);mesh.center=Array(n*3).fill(0);
+  }
+  wood.pivot=Array(count(wood)*3).fill(0);
+  if(leaves.pivot.length!==leaves.position.length||leaves.pivot.some(x=>!Number.isFinite(x)))throw new Error('Invalid leaf pivots');
+  // The pinned full mesh emits each branch's complete rings in skeleton order.
+  let vertex=0;
+  for(const branch of skeleton.branches){
+    const segments=branch.segmentCount,sections=branch.sections;
+    if(!Number.isInteger(segments)||segments<3||segments>64||sections.length<2)throw new Error('Invalid branch layout');
+    const wrap=Math.max(1,Math.round(branch.baseRadius*scale*2*Math.PI*8))/8;
+    let arc=0;
+    for(let ring=0;ring<sections.length;ring++){
+      if(ring)arc+=Math.hypot(...sections[ring].origin.map((x,i)=>(x-sections[ring-1].origin[i])*scale));
+      for(let j=0;j<=segments;j++,vertex++){
+        if(vertex>=count(wood))throw new Error('Branch layout exceeds wood buffer');
+        wood.uv[vertex*2]=j/segments*wrap;wood.uv[vertex*2+1]=-arc;
+      }
+    }
+  }
+  if(vertex!==count(wood)||count(leaves)!==skeleton.leaves.length*8)throw new Error('Pinned skeleton mapping differs');
+  for(let card=0;card<count(leaves)/4;card++){
+    const first=card*4,leaf=Math.floor(card/2),tile=leaf%16;
+    const p=leaves.position,axis=[0,1,2].map(k=>(p[first*3+k]+p[(first+3)*3+k]-p[(first+1)*3+k]-p[(first+2)*3+k])/2);
+    const length=Math.hypot(...axis);if(Math.abs(length-1.2)>1e-4)throw new Error('Expected 1.2m source cards');
+    // Register the drawn sprig base with its attachment (same .048m offset as
+    // the existing Atlas family); local card dimensions remain unchanged.
+    for(let j=0;j<4;j++)for(let k=0;k<3;k++)p[(first+j)*3+k]-=.048*axis[k]/length;
+    const a=p.slice(first*3,first*3+3),b=p.slice((first+1)*3,(first+1)*3+3),c=p.slice((first+2)*3,(first+2)*3+3);
+    const u=b.map((x,k)=>x-a[k]),v=c.map((x,k)=>x-a[k]),n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],norm=Math.hypot(...n);
+    const center=[0,1,2].map(k=>(p[first*3+k]+p[(first+2)*3+k])/2);
+    for(let j=0;j<4;j++){
+      const i=first+j,x=leaves.uv[i*2],y=leaves.uv[i*2+1],inset=.5/2048,span=.25-2*inset;
+      leaves.uv[i*2]=(tile%4)*.25+inset+x*span;
+      leaves.uv[i*2+1]=Math.floor(tile/4)*.25+inset+(1-y)*span;
+      leaves.wind[i]=Math.min(1,Math.max(0,leaves.pivot[i*3+1]/16))**2;
+      for(let k=0;k<3;k++){leaves.normal[i*3+k]=n[k]/norm;leaves.center[i*3+k]=center[k];}
+    }
+  }
+  // Mid detail keeps the first plane of every second leaf. Its card, pivot,
+  // tile and wind are copied byte-for-byte from the near mesh.
+  const mid={};const sizes={position:3,normal:3,uv:2,pivot:3,center:3,wind:1,level:1};
+  for(const key of Object.keys(sizes))mid[key]=[];mid.index=[];
+  for(let leaf=0;leaf<skeleton.leaves.length;leaf+=2){
+    const base=mid.position.length/3;
+    for(const [key,size] of Object.entries(sizes))mid[key].push(...leaves[key].slice(leaf*8*size,(leaf*8+4)*size));
+    mid.index.push(base,base+1,base+2,base,base+2,base+3);
+  }
+  return {wood,leaves,midLeaves:mid};
+}
+
+
+FILE ../tools/assetctl/test/tree-reference-family.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {existsSync} from 'node:fs';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {readFileSync} from 'node:fs';
+import {basename,join,resolve} from 'node:path';
+import {convertTreeReferenceFamily} from '../tree-reference-family.mjs';
+import {validateAsset} from '../gltf.mjs';
+import {workspaceRoot} from '../path-policy.mjs';
+
+const reference=resolve(workspaceRoot,process.env.ATLAS_EZTREE_REFERENCE??'Assets/_assetctl/ez-tree-oak-reference-a');
+const template=resolve(workspaceRoot,process.env.ATLAS_EZTREE_TEMPLATE??'Assets/_assetctl/atlas-tree-v7-color-a/atlas-branching-v1.glb');
+const haveInputs=existsSync(join(reference,'reference-manifest.json'))&&existsSync(join(template));
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+const requiredAttributes=['POSITION','NORMAL','TANGENT','TEXCOORD_0','_WIND','_BRANCH_LEVEL','_LEAF_CENTER','_LEAF_PIVOT'];
+const componentMethods=new Map([[5121,['getUint8',1]],[5123,['getUint16',2]],[5125,['getUint32',4]],[5126,['getFloat32',4]]]);
+const componentCounts=new Map([['SCALAR',1],['VEC2',2],['VEC3',3],['VEC4',4]]);
+
+function parseGLB(input){
+  const bytes=input instanceof Uint8Array?input:new Uint8Array(input),view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+  assert.equal(view.getUint32(0,true),0x46546c67,'GLB magic');assert.equal(view.getUint32(4,true),2,'GLB version');assert.equal(view.getUint32(8,true),bytes.byteLength,'GLB length');
+  assert.equal(view.getUint32(16,true),0x4e4f534a,'JSON chunk');
+  const jsonLength=view.getUint32(12,true),jsonStart=20,jsonEnd=jsonStart+jsonLength;
+  assert.ok(jsonEnd+8<=bytes.length);const json=JSON.parse(new TextDecoder().decode(bytes.subarray(jsonStart,jsonEnd)));
+  const binaryLength=view.getUint32(jsonEnd,true);assert.equal(view.getUint32(jsonEnd+4,true),0x004e4942,'BIN chunk');
+  const binaryStart=jsonEnd+8;assert.equal(binaryStart+binaryLength,bytes.length,'BIN ends at file end');
+  const binary=bytes.subarray(binaryStart,binaryStart+binaryLength);
+  const binaryView=new DataView(binary.buffer,binary.byteOffset,binary.byteLength);
+  const accessor=id=>{
+    const a=json.accessors[id];assert.ok(a,`accessor ${id} exists`);
+    assert.ok(!a.sparse,'output accessors are dense');
+    const viewRecord=json.bufferViews[a.bufferView],component=componentMethods.get(a.componentType),count=componentCounts.get(a.type);
+    assert.ok(viewRecord&&component&&count,`accessor ${id} has a directly readable representation`);
+    const [method,size]=component,stride=viewRecord.byteStride??size*count,offset=(viewRecord.byteOffset??0)+(a.byteOffset??0),out=[];
+    assert.ok(offset>=0&&offset+Math.max(0,a.count-1)*stride+size*count<=binary.length,`accessor ${id} stays in binary payload`);
+    for(let row=0;row<a.count;row++){
+      const item=[];for(let col=0;col<count;col++)item.push(binaryView[method](offset+row*stride+col*size,true));
+      out.push(count===1?item[0]:item);
+    }
+    return out;
+  };
+  return {bytes,json,binary,binaryStart,accessor};
+}
+function imageBytes(doc,index){
+  const image=doc.json.images[index],view=doc.json.bufferViews[image.bufferView];
+  assert.ok(image&&view,'image references a bufferView');assert.equal(image.mimeType,'image/png');assert.equal(image.uri,undefined,'image is embedded');
+  const offset=view.byteOffset??0;return doc.binary.slice(offset,offset+view.byteLength);
+}
+function triangleCount(primitive,accessor){
+  const indices=accessor(primitive.indices);assert.equal(indices.length%3,0);return indices.length/3;
+}
+function close(a,b,tol,message){assert.ok(Math.abs(a-b)<=tol,`${message}: ${a} vs ${b}`);}
+function areaOfQuad(indices,positions){
+  const areaTriangle=(ia,ib,ic)=>{
+    const a=positions[ia],b=positions[ib],c=positions[ic],u=b.map((x,i)=>x-a[i]),v=c.map((x,i)=>x-a[i]);
+    return Math.hypot(u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0])*.5;
+  };
+  return areaTriangle(indices[0],indices[1],indices[2])+areaTriangle(indices[3],indices[4],indices[5]);
+}
+function inspectFamily(path){
+  const doc=parseGLB(new Uint8Array(readFileSync(path))),{json,accessor}=doc;
+  assert.equal(json.nodes?.length,1);assert.equal(json.meshes?.length,1);assert.equal(json.meshes[0].primitives.length,2);
+  assert.equal(json.materials.length,2);assert.deepEqual(json.materials.map(x=>x.name),['MAT_AtlasBark','MAT_AtlasFoliage']);
+  assert.equal(json.images.length,4);assert.ok(json.textures?.length>=4);
+  const primitives=json.meshes[0].primitives.map((primitive,index)=>{
+    assert.equal(primitive.material,index,`primitive ${index} uses the ordered material`);
+    assert.equal(primitive.mode??4,4);assert.equal(Object.keys(primitive.attributes).length,8);
+    for(const name of requiredAttributes){
+      const a=json.accessors[primitive.attributes[name]];
+      assert.ok(a,`${name} exists`);assert.equal(a.componentType,5126,`${name} is FLOAT`);assert.equal(a.normalized,undefined,`${name} is not normalized`);
+      assert.equal(a.count,json.accessors[primitive.attributes.POSITION].count,`${name} matches vertex count`);
+    }
+    const data=Object.fromEntries(requiredAttributes.map(name=>[name,accessor(primitive.attributes[name])]));
+    const vertices=data.POSITION.length;assert.ok(vertices>0&&vertices<=65535,`primitive ${index} is within Uint16 vertex capacity`);
+    for(const name of requiredAttributes)assert.ok(data[name].flat().every(Number.isFinite),`${name} values are finite`);
+    assert.ok(data.NORMAL.every(n=>Math.abs(Math.hypot(...n)-1)<.02),'normals are unit length');
+    assert.ok(data.TANGENT.every((t,i)=>Math.abs(Math.hypot(t[0],t[1],t[2])-1)<.02&&Math.abs(t[0]*data.NORMAL[i][0]+t[1]*data.NORMAL[i][1]+t[2]*data.NORMAL[i][2])<.02&&Math.abs(Math.abs(t[3])-1)<1e-4),'tangents are unit, orthogonal to normals, and handed');
+    const indices=accessor(primitive.indices);assert.ok(indices.every(i=>Number.isInteger(i)&&i>=0&&i<vertices));
+    const triangles=triangleCount(primitive,accessor);
+    return {primitive,data,indices,triangles};
+  });
+  return {...doc,primitives};
+}
+
+test('reference family converter creates a repeatable loader-compatible GLB pair from preserved sources',
+  {skip:!haveInputs?'Provide retained EZ-Tree and Atlas-v7 GLB fixtures with ATLAS_EZTREE_REFERENCE / ATLAS_EZTREE_TEMPLATE.':false},async()=>{
+    const suffix=`${Date.now()}-${process.pid}`,outputRelative=`Assets/_assetctl/ez-tree-family-test-${suffix}`,repeatRelative=`${outputRelative}-repeat`;
+    const output=resolve(workspaceRoot,outputRelative),repeat=resolve(workspaceRoot,repeatRelative);
+    assert.equal(existsSync(output),false);assert.equal(existsSync(repeat),false);
+const brief='examples/asset-briefs/atlas-ez-tree-family-v1.json';
+    const briefPath=resolve(workspaceRoot,brief);
+    const sourcePaths=[join(reference,'reference-manifest.json'),join(reference,'full.json'),join(reference,'skeleton.json'),join(reference,'upstream-lod2.json'),template,briefPath];
+    const before=new Map(await Promise.all(sourcePaths.map(async path=>[path,hash(await import('node:fs/promises').then(fs=>fs.readFile(path)))])));
+    const args=['--brief',brief,'--input',reference,'--template',template,'--output',outputRelative];
+    const first=await convertTreeReferenceFamily(args);
+    const second=await convertTreeReferenceFamily([...args.slice(0,7),repeatRelative]);
+    assert.equal(first.status,'runtime-candidate-not-packaged');assert.equal(first.operation,'atlas-ez-tree-family-1');
+    assert.equal(second.operation,first.operation);
+    const lod0Path=join(output,'atlas-ez-oak.glb'),lod1Path=join(output,'atlas-ez-oak.lod1.glb');
+    const repeat0=join(repeat,'atlas-ez-oak.glb'),repeat1=join(repeat,'atlas-ez-oak.lod1.glb');
+    const [lod0Bytes,lod1Bytes,repeat0Bytes,repeat1Bytes]=await Promise.all([lod0Path,lod1Path,repeat0,repeat1].map(path=>import('node:fs/promises').then(fs=>fs.readFile(path))));
+    assert.equal(hash(lod0Bytes),hash(repeat0Bytes),'LOD0 GLB repeats byte-for-byte');
+    assert.equal(hash(lod1Bytes),hash(repeat1Bytes),'LOD1 GLB repeats byte-for-byte');
+    const lod0=inspectFamily(lod0Path),lod1=inspectFamily(lod1Path);
+    assert.deepEqual(lod0.json.materials,lod1.json.materials);assert.deepEqual(lod0.json.textures,lod1.json.textures);assert.deepEqual(lod0.json.samplers,lod1.json.samplers);
+    assert.equal(lod0.json.images.length,4);
+    for(let i=0;i<4;i++)assert.deepEqual(imageBytes(lod0,i),imageBytes(lod1,i),`embedded image ${i} matches across LODs`);
+    const templateDoc=parseGLB(new Uint8Array(readFileSync(template)));
+    assert.equal(templateDoc.json.images.length,4);
+    for(let i=0;i<4;i++)assert.deepEqual(imageBytes(lod0,i),imageBytes(templateDoc,i),`output image ${i} preserves the Atlas template PNG bytes`);
+    const [validated0,validated1]=await Promise.all([validateAsset(lod0Path),validateAsset(lod1Path)]);
+    assert.equal(validated0.validation.valid,true,JSON.stringify(validated0.validation.khronos.errors));
+    assert.equal(validated1.validation.valid,true,JSON.stringify(validated1.validation.khronos.errors));
+
+    const computed={lod0:lod0.primitives.reduce((n,p)=>n+p.triangles,0),lod1:lod1.primitives.reduce((n,p)=>n+p.triangles,0)};
+    assert.ok(computed.lod0<=18000,`LOD0 computed from indices: ${computed.lod0}`);
+    assert.ok(computed.lod1<=5000,`LOD1 computed from indices: ${computed.lod1}`);
+    assert.equal(first.levels.find(x=>x.lod===0).triangles,computed.lod0,'manifest LOD0 count agrees with indices read from GLB');
+    assert.equal(first.levels.find(x=>x.lod===1).triangles,computed.lod1,'manifest LOD1 count agrees with indices read from GLB');
+    for(const [name,doc] of [['LOD0',lod0],['LOD1',lod1]]){
+      const wood=doc.primitives[0],foliage=doc.primitives[1];
+      assert.ok(wood.triangles>0&&foliage.triangles>0);
+      assert.ok(wood.data._BRANCH_LEVEL.every(x=>x<=3));assert.ok(foliage.data._BRANCH_LEVEL.every(x=>x>3.5));
+      assert.ok(wood.data._LEAF_CENTER.every(v=>v.every(x=>x===0)));assert.ok(wood.data._LEAF_PIVOT.every(v=>v.every(x=>x===0)));
+      assert.ok(foliage.data._WIND.every(x=>x>=0&&x<=1));
+      assert.ok(foliage.data._LEAF_PIVOT.every(v=>v[1]>=0&&v[1]<=16.1),`${name} pivots remain in the tree bounds`);
+    }
+
+    const foliage0=lod0.primitives[1],foliage1=lod1.primitives[1];
+    const keyPivot=v=>v.map(x=>Math.round(x*1e5)).join(',');
+    const pivots0=new Set(foliage0.data._LEAF_PIVOT.map(keyPivot));
+    const pivots1=new Set(foliage1.data._LEAF_PIVOT.map(keyPivot));
+    assert.ok(pivots1.size<pivots0.size,'the budgeted LOD1 retains a subset of the LOD0 card pivots');
+    for(const pivot of pivots1)assert.ok(pivots0.has(pivot),`LOD1 pivot ${pivot} corresponds to an LOD0 card`);
+    for(const [name,foliage] of [['LOD0',foliage0],['LOD1',foliage1]]){
+      const positions=foliage.data.POSITION,pivots=foliage.data._LEAF_PIVOT,indices=foliage.indices;
+      const groups=[];
+      for(let start=0;start<pivots.length;){
+        const key=keyPivot(pivots[start]);let end=start+1;
+        while(end<pivots.length&&keyPivot(pivots[end])===key)end++;
+        groups.push({start,count:end-start,key});start=end;
+      }
+      let indexCursor=0;
+      for(const [card,{start,count,key}] of groups.entries()){
+        assert.ok(count===4||count===8,`${name} card ${card} has 4 or 8 vertices, got ${count}`);
+        for(let vertex=1;vertex<count;vertex++)for(let axis=0;axis<3;axis++)close(pivots[start][axis],pivots[start+vertex][axis],1e-5,`${name} card ${card} has one shared attachment pivot`);
+        const local=Array.from({length:count},(_,k)=>positions[start+k].map((x,axis)=>x-pivots[start+k][axis]));
+        for(let vertex=1;vertex<count;vertex++){
+          for(let axis=0;axis<3;axis++)close(foliage.data._LEAF_CENTER[start][axis],foliage.data._LEAF_CENTER[start+vertex][axis],1e-5,`${name} card ${card} has one repeated center`);
+          close(foliage.data._WIND[start],foliage.data._WIND[start+vertex],1e-6,`${name} card ${card} has one wind value`);
+          close(foliage.data._WIND[start],Math.min(1,Math.max(0,pivots[start][1]/16))**2,1e-6,`${name} card ${card} wind follows pivot height squared`);
+        }
+        const uv=foliage.data.TEXCOORD_0.slice(start,start+count);
+        const tileX=Math.floor(uv[0][0]*4),tileY=Math.floor(uv[0][1]*4);
+        assert.ok(uv.every(([u,v])=>Math.floor(u*4)===tileX&&Math.floor(v*4)===tileY),`${name} card ${card} remains within one foliage-atlas tile`);
+        assert.ok(uv.every(([u,v])=>u>tileX*.25&&u<(tileX+1)*.25&&v>tileY*.25&&v<(tileY+1)*.25),`${name} card ${card} UVs are inset from tile boundaries`);
+        close(uv[0][0],uv[3][0],1e-6,`${name} card ${card} UV left edge`);close(uv[1][0],uv[2][0],1e-6,`${name} card ${card} UV right edge`);
+        assert.ok(uv[0][1]<uv[1][1]&&uv[3][1]<uv[2][1],`${name} card ${card} preserves the explicit vertical UV orientation`);
+        const indexCount=(count/4)*6;
+        for(let side=0;side<count/4;side++){
+          const quadIndices=indices.slice(indexCursor+side*6,indexCursor+(side+1)*6).map(i=>i-start);
+          close(areaOfQuad(quadIndices,local),1.44,2e-3,`${name} card ${card}, plane ${side} keeps physical 1.2m square dimensions`);
+        }
+        indexCursor+=indexCount;
+      }
+      assert.equal(indexCursor,indices.length,`${name} card groups account for every foliage triangle`);
+    }
+
+    for(const [path,expected] of before)assert.equal(hash(await readFile(path)),expected,`input ${basename(path)} was preserved`);
+    const protectedHashes=new Map(await Promise.all([lod0Path,lod1Path].map(async path=>[path,hash(await readFile(path))])));
+    await assert.rejects(convertTreeReferenceFamily(args),/fresh directory|EEXIST/);
+    for(const [path,expected] of protectedHashes)assert.equal(hash(await readFile(path)),expected,'rejected overwrite preserves earlier pair');
+
+    const badInput=resolve(workspaceRoot,`Assets/_assetctl/ez-tree-family-bad-input-${suffix}`);
+    await mkdir(badInput);
+    for(const name of ['reference-manifest.json','full.json','skeleton.json'])await writeFile(join(badInput,name),await readFile(join(reference,name)));
+    await writeFile(join(badInput,'full.json'),Buffer.concat([await readFile(join(badInput,'full.json')),Buffer.from(' ')]));
+    const rejectedOutput=`Assets/_assetctl/ez-tree-family-hash-rejected-${suffix}`;
+    await assert.rejects(convertTreeReferenceFamily(['--brief',brief,'--input',badInput,'--template',template,'--output',rejectedOutput]),/artifact hash mismatch/);
+    assert.equal(existsSync(resolve(workspaceRoot,rejectedOutput)),false,'hash mismatch is rejected before output creation');
+    const outside=resolve(workspaceRoot,'..',`ez-tree-family-outside-${suffix}`);
+    await assert.rejects(convertTreeReferenceFamily(['--brief',brief,'--input',reference,'--template',template,'--output',outside]),/outside approved roots/);
+    assert.equal(existsSync(outside),false,'outside output is rejected before creation');
+  });
+
+
+FILE ../examples/asset-briefs/atlas-ez-tree-family-v1.json
+{
+  "schema": "https://iwsdk.local/schemas/asset-brief/v1",
+  "id": "atlas-ez-tree-family-v1",
+  "kind": "environment-kit",
+  "purpose": "Adapt pinned EZ-Tree geometry into a tested Atlas GLB pair with physical cards, named materials, metric bark UVs and deterministic wind attributes.",
+  "target": {
+    "engine": "IWSDK",
+    "project": "universe-atlas",
+    "devices": [
+      "desktop-web"
+    ],
+    "metersPerUnit": 1,
+    "runtimeCoordinates": "right-handed-y-up"
+  },
+  "artDirection": {
+    "summary": "Measure believable broadleaf branching and canopy shape at matched 10, 16 and 22 metre heights. Preserve physical leaf-card dimensions and inspect source normals rather than silently correcting the reference.",
+    "styleTags": [
+      "realistic",
+      "broadleaf",
+      "reference-comparison"
+    ],
+    "references": [
+      "https://github.com/dgreenheck/ez-tree/tree/dcf309bd86bd521083d9c70f01f2de45fdc7c457"
+    ]
+  },
+  "deliverables": [
+    {
+      "type": "runtime",
+      "format": "glb",
+      "path": "atlas-ez-oak.glb",
+      "required": true
+    },
+    {
+      "type": "lod",
+      "format": "glb",
+      "path": "atlas-ez-oak.lod1.glb",
+      "required": true
+    },
+    {
+      "type": "manifest",
+      "format": "json",
+      "path": "family-manifest.json",
+      "required": true
+    }
+  ],
+  "constraints": {
+    "geometry": {
+      "lodCount": 2,
+      "maxMaterials": 2,
+      "collision": "none",
+      "maxTriangles": 18000
+    }
+  },
+  "acceptance": {
+    "visual": [
+      "Compare actual reference and Atlas shapes at matched height, camera, light and material conditions",
+      "Record source normal defects and every adapter override; no reference is accepted from topology counts alone"
+    ],
+    "technical": [
+      "Exact Atlas two-material/four-PNG graph retained between LODs",
+      "All eight required Float32 vertex attributes and finite MikkTSpace tangents",
+      "LOD0 at most18000 triangles, LOD1 at most5000 triangles",
+      "Retained leaves keep 1.2m card dimensions, pivot, UV tile and wind across LODs",
+      "Repeat outputs byte-identical under recorded toolchain; input files unchanged"
+    ],
+    "runtime": [
+      "Actual Atlas loader accepts pair and shares material images",
+      "Date replay gives deterministic wind at universe endpoints",
+      "Browser review measures LOD coverage rather than equating triangle budget with visual acceptance"
+    ]
+  },
+  "provenance": {
+    "sourceType": "derived",
+    "generator": {
+      "provider": "ez-tree",
+      "model": "seeded-procedural-geometry",
+      "checkpoint": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+      "version": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+      "workflow": "assetctl-tree-reference-family"
+    },
+    "prompt": "Convert the fixed 16m Oak reference to an Atlas GLB pair, preserving physical leaves, canonical attachment pivots and the source Atlas texture bytes.",
+    "seed": 35729,
+    "sourceUrl": "https://github.com/dgreenheck/ez-tree",
+    "sourceConsent": "licensed",
+    "parents": [
+      {
+        "relationship": "geometry-reference",
+        "sha256": "b219c25c26f5e7f72bafbfd1fe207660adb781ff1e546f6de7b529db963cc8cc",
+        "path": "Assets/_assetctl/ez-tree-oak-reference-a/reference-manifest.json"
+      },
+      {
+        "relationship": "material-template",
+        "sha256": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df",
+        "path": "Assets/_assetctl/atlas-tree-v7-color-a/atlas-branching-v1.glb"
+      }
+    ],
+    "license": {
+      "expression": "NOASSERTION",
+      "attribution": "EZ-Tree geometry: Daniel Greenheck (MIT). Atlas textures and material graph: original project authoring v7.",
+      "restrictions": [
+        "Retain upstream MIT notice; geometry comparison does not include any upstream photographs or textures"
+      ]
+    },
+    "notes": "Development candidate only, not a packaged asset. Upstream MIT notice preserved in tools/assetctl/vendor/ez-tree/LICENSE. Original Atlas texture license state remains NOASSERTION; no external textures imported."
+  },
+  "experiments": {
+    "providers": [
+      "ez-tree"
+    ],
+    "seeds": [
+      35729,
+      36330
+    ],
+    "selectionMetric": "Canopy shape, repeatability, physical dimensions, LOD continuity and adaptation effort"
+  }
+}
+
+
+FILE src/tree-asset.ts
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {phaseFromPeriod} from './world-time.ts';
+
+/** Experimental author-6 adapter. Assets are supplied explicitly; this does not
+ * replace the canonical forest or invent a second species catalogue. */
+export const TREE_REFERENCE_HEIGHT_M=16;
+export const TREE_WIND_PERIOD_NS=7_000_000_000n;
+export const treeWindPhase=(date:bigint)=>phaseFromPeriod(date,TREE_WIND_PERIOD_NS);
+
+type GLBDocument={json:any;binary:Uint8Array};
+function readGLB(buffer:ArrayBuffer):GLBDocument {
+  const view=new DataView(buffer);
+  if(buffer.byteLength<28||view.getUint32(0,true)!==0x46546c67||view.getUint32(4,true)!==2||view.getUint32(8,true)!==buffer.byteLength)throw new Error('Expected a complete glTF 2 GLB');
+  const length=view.getUint32(12,true),start=20+length;
+  if(view.getUint32(16,true)!==0x4e4f534a||start+8>buffer.byteLength||view.getUint32(start+4,true)!==0x004e4942||start+8+view.getUint32(start,true)!==buffer.byteLength)throw new Error('Expected JSON and embedded binary chunks');
+  const json=JSON.parse(new TextDecoder().decode(new Uint8Array(buffer,20,length)));
+  if(json.buffers?.length!==1||json.buffers[0].uri||json.extensionsRequired?.length)throw new Error('Only self-contained author-6 GLBs are supported');
+  if(json.nodes?.length!==1||json.nodes[0].mesh!==0||['matrix','translation','rotation','scale'].some(k=>json.nodes[0][k])||json.meshes?.length!==1||json.meshes[0].primitives?.length!==2)throw new Error('Expected one untransformed two-material tree');
+  if(json.materials?.length!==2||json.materials[0].name!=='MAT_AtlasBark'||json.materials[1].name!=='MAT_AtlasFoliage'||json.images?.length!==4)throw new Error('Expected author-6 bark and foliage');
+  if((json.materials[0].alphaMode??'OPAQUE')!=='OPAQUE'||json.materials[1].alphaMode!=='MASK'||(json.materials[1].alphaCutoff??.5)<=0)throw new Error('Tree foliage requires alpha MASK with a positive cutoff');
+  const formats:Record<string,string>={_WIND:'SCALAR',_BRANCH_LEVEL:'SCALAR',_LEAF_CENTER:'VEC3',_LEAF_PIVOT:'VEC3',POSITION:'VEC3',NORMAL:'VEC3',TEXCOORD_0:'VEC2',TANGENT:'VEC4'};
+  for(const [index,p] of json.meshes[0].primitives.entries()){
+    if(p.material!==index||p.mode!==undefined&&p.mode!==4||p.targets||Object.keys(p.attributes??{}).length!==8||!Object.keys(formats).every(k=>Number.isInteger(p.attributes?.[k])))throw new Error('Incomplete tree vertex contract');
+    const count=json.accessors[p.attributes.POSITION]?.count;
+    for(const [name,type] of Object.entries(formats)){
+      const a=json.accessors[p.attributes[name]];
+      if(!a||a.type!==type||a.componentType!==5126||a.normalized||a.sparse||!Number.isInteger(count)||count<1||a.count!==count)throw new Error(`Invalid tree accessor ${name}`);
+    }
+  }
+  return {json,binary:new Uint8Array(buffer,start+8,view.getUint32(start,true))};
+}
+function imageBytes(doc:GLBDocument,index:number){
+  const image=doc.json.images[index],view=doc.json.bufferViews[image.bufferView];
+  if(image.uri||image.mimeType!=='image/png'||!view||view.buffer!==0||!Number.isInteger(view.byteLength)||view.byteLength<=0)throw new Error('Expected an embedded PNG');
+  const start=view.byteOffset??0,end=start+view.byteLength;
+  if(start<0||end>doc.binary.length)throw new Error('Image outside GLB binary');
+  return doc.binary.subarray(start,end);
+}
+/** Check byte identity before sharing materials. LOD1 images are never decoded:
+ * its parser receives texture-free material placeholders with stable indices. */
+export function prepareTreeLODPair(lod0:ArrayBuffer,lod1:ArrayBuffer){
+  const a=readGLB(lod0),b=readGLB(lod1);
+  for(const key of ['materials','textures','samplers'])if(JSON.stringify(a.json[key])!==JSON.stringify(b.json[key]))throw new Error(`Tree LOD ${key} differ`);
+  let embeddedTextureBytes=0;
+  for(let i=0;i<4;i++){
+    const x=imageBytes(a,i),y=imageBytes(b,i);embeddedTextureBytes+=x.length;
+    if(x.length!==y.length||x.some((v,k)=>v!==y[k]))throw new Error(`Tree LOD image ${i} differs`);
+  }
+  const json=structuredClone(b.json);
+  json.materials=json.materials.map((m:any)=>({name:m.name}));delete json.images;delete json.textures;delete json.samplers;
+  // Keep the original binary offsets. Unused compressed PNG bytes remain in
+  // this temporary parse input, but do not allocate image/GPU resources.
+  const text=new TextEncoder().encode(JSON.stringify(json)),length=(text.length+3)&~3;
+  const buffer=new ArrayBuffer(28+length+b.binary.length),view=new DataView(buffer),bytes=new Uint8Array(buffer);
+  view.setUint32(0,0x46546c67,true);view.setUint32(4,2,true);view.setUint32(8,buffer.byteLength,true);
+  view.setUint32(12,length,true);view.setUint32(16,0x4e4f534a,true);bytes.fill(32,20,20+length);bytes.set(text,20);
+  view.setUint32(20+length,b.binary.length,true);view.setUint32(24+length,0x004e4942,true);bytes.set(b.binary,28+length);
+  return {lod1GeometryBuffer:buffer,embeddedTextureBytes};
+}
+
+/** CPU reference for shader audits. Scale skeleton/attachment coordinates,
+ * keeping every offset within a leaf card in metres, then rotate rigidly. */
+export function treeVertexMeters(position:THREE.Vector3,pivot:THREE.Vector3,leaf:boolean,heightM:number,windWeight:number,phase:number,instancePhase=0){
+  if(!Number.isFinite(heightM)||heightM<10||heightM>22)throw new Error('Prototype supports tree heights 10–22 m');
+  if(!leaf)return position.clone().multiplyScalar(heightM/TREE_REFERENCE_HEIGHT_M);
+  return position.clone().sub(pivot).applyAxisAngle(new THREE.Vector3(0,0,1),Math.sin(phase+instancePhase)*.12*windWeight).addScaledVector(pivot,heightM/TREE_REFERENCE_HEIGHT_M);
+}
+
+const declarations=`
+attribute float _wind, _branch_level;
+attribute vec3 _leaf_pivot;
+attribute vec2 instanceTree;
+uniform float atlasTreePhase;
+mat3 atlasLeafRotation(){
+  float angle=sin(atlasTreePhase+instanceTree.y)*.12*_wind;
+  float c=cos(angle),s=sin(angle);
+  return mat3(c,s,0.,-s,c,0.,0.,0.,1.);
+}
+`;
+function deform(material:THREE.Material,phase:{value:number}){
+  material.onBeforeCompile=shader=>{
+    shader.uniforms.atlasTreePhase=phase;
+    shader.vertexShader=declarations+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
+      if(_branch_level>3.5){objectNormal=atlasLeafRotation()*objectNormal;
+        #ifdef USE_TANGENT
+        objectTangent=atlasLeafRotation()*objectTangent;
+        #endif
+      }`);
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      transformed=_branch_level>3.5 ? _leaf_pivot*instanceTree.x+atlasLeafRotation()*(position-_leaf_pivot) : position*instanceTree.x;`);
+  };
+  material.customProgramCacheKey=()=> 'atlas-tree-physical-1';
+}
+export type TreeAssetFamily=Awaited<ReturnType<typeof loadTreeAssetFamily>>;
+export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,options:{foliageCoverage?:'mask'|'hash'}={}){
+  if(options.foliageCoverage!==undefined&&!['mask','hash'].includes(options.foliageCoverage))throw new Error('Unsupported foliage coverage mode');
+  const prepared=prepareTreeLODPair(lod0,lod1),loader=new GLTFLoader();
+  const loaded:THREE.Group[]=[];
+  const textures=new Set<THREE.Texture>(),materials=new Set<THREE.Material>(),geometries=new Set<THREE.BufferGeometry>();
+  function collect(group:THREE.Group){group.traverse(o=>{
+    if(!(o instanceof THREE.Mesh))return;
+    geometries.add(o.geometry);
+    for(const m of Array.isArray(o.material)?o.material:[o.material]){
+      materials.add(m);for(const value of Object.values(m))if(value instanceof THREE.Texture)textures.add(value);
+    }
+  });}
+  function dispose(){for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures){t.dispose();if(typeof ImageBitmap!=='undefined'&&t.image instanceof ImageBitmap)t.image.close();}}
+  try {
+    for(const bytes of [lod0,prepared.lod1GeometryBuffer]){const gltf=await loader.parseAsync(bytes,'');loaded.push(gltf.scene);collect(gltf.scene);}
+    const lods=loaded.map(group=>{
+      const meshes:THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>[]=[];
+      group.traverse(o=>{if(o instanceof THREE.Mesh)meshes.push(o as THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>);});
+      if(meshes.length!==2||meshes.some(m=>Array.isArray(m.material)))throw new Error('Expected two tree primitives');
+      return meshes.sort((a,b)=>a.material.name.localeCompare(b.material.name));
+    });
+    for(let i=0;i<2;i++){lods[1][i].material.dispose();materials.delete(lods[1][i].material);lods[1][i].material=lods[0][i].material;}
+    // Explicit experiment: hashing samples fractional mip coverage instead of
+    // discarding every leaf texel below the GLB's fixed MASK cutoff. Preserve
+    // the imported MASK path by default, including historical captures.
+    if(options.foliageCoverage==='hash'){
+      lods[0][1].material.alphaTest=0;lods[0][1].material.alphaHash=true;
+    }
+    const phase={value:0};
+    for(const material of materials)deform(material,phase);
+    let disposed=false,activeBatches=0;
+    return {
+      lods,textures,embeddedTextureBytes:prepared.embeddedTextureBytes,
+      setDate(date:bigint){phase.value=treeWindPhase(date);},
+      createBatch(lod:0|1,capacity:number){
+        if(disposed)throw new Error('Tree family is disposed');
+        if(!Number.isInteger(capacity)||capacity<1||capacity>4096)throw new Error('Invalid tree capacity');
+        const group=new THREE.Group(),tree=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2).setUsage(THREE.DynamicDrawUsage);
+        const meshes=lods[lod].map(source=>{
+          const geometry=source.geometry.clone();geometry.setAttribute('instanceTree',tree);
+          const mesh=new THREE.InstancedMesh(geometry,source.material,capacity);mesh.count=0;
+          mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.castShadow=true;mesh.receiveShadow=true;
+          // Caller can install conservative curved-world bounds after integration.
+          // Shader scale/wind invalidates Three's unmodified geometry bounds.
+          mesh.frustumCulled=false;
+          const common={map:source.material.map,alphaTest:source.material.alphaTest,alphaHash:source.material.alphaHash,side:source.material.side};
+          mesh.customDepthMaterial=new THREE.MeshDepthMaterial({...common,depthPacking:THREE.RGBADepthPacking});
+          mesh.customDistanceMaterial=new THREE.MeshDistanceMaterial(common);
+          deform(mesh.customDepthMaterial,phase);deform(mesh.customDistanceMaterial,phase);group.add(mesh);return mesh;
+        });
+        activeBatches++;let batchDisposed=false;
+        return {group,meshes,
+          setCount(count:number){
+            if(batchDisposed||!Number.isInteger(count)||count<0||count>meshes[0].count)throw new Error('Tree count can only truncate initialized slots');
+            for(const mesh of meshes)mesh.count=count;
+          },
+          /** Matrix contains yaw/translation and metres-to-scene-units only.
+           * Tree height is applied in the shader so leaves retain their size. */
+          setInstance(index:number,matrix:THREE.Matrix4,heightM:number,phaseOffset=0){
+            if(batchDisposed||!Number.isInteger(index)||index<0||index>=capacity||index>meshes[0].count||!Number.isFinite(heightM)||heightM<10||heightM>22||!Number.isFinite(phaseOffset)||matrix.elements.some(x=>!Number.isFinite(x)))throw new Error('Invalid tree instance or gap in initialized slots');
+            const e=matrix.elements,a=new THREE.Vector3(e[0],e[1],e[2]),b=new THREE.Vector3(e[4],e[5],e[6]),c=new THREE.Vector3(e[8],e[9],e[10]);
+            const scale2=a.lengthSq(),tolerance=scale2*1e-6;
+            if(!Number.isFinite(scale2)||scale2<=0||Math.abs(b.lengthSq()-scale2)>tolerance||Math.abs(c.lengthSq()-scale2)>tolerance||Math.abs(a.dot(b))>tolerance||Math.abs(a.dot(c))>tolerance||Math.abs(b.dot(c))>tolerance||matrix.determinant()<=0||e[3]!==0||e[7]!==0||e[11]!==0||e[15]!==1)throw new Error('Tree matrix requires rotation and positive uniform scene-unit scale');
+            // Phase stays representable as Float32 even for a caller's very
+            // large finite offset; the absolute universe date stays BigInt.
+            const tau=2*Math.PI;phaseOffset=((phaseOffset%tau)+tau)%tau;
+            tree.setXY(index,heightM/TREE_REFERENCE_HEIGHT_M,phaseOffset);tree.needsUpdate=true;
+            for(const mesh of meshes){mesh.setMatrixAt(index,matrix);mesh.instanceMatrix.needsUpdate=true;mesh.count=Math.max(mesh.count,index+1);}
+          },
+          dispose(){if(batchDisposed)return;batchDisposed=true;activeBatches--;for(const mesh of meshes){mesh.geometry.dispose();mesh.customDepthMaterial?.dispose();mesh.customDistanceMaterial?.dispose();mesh.dispose();}group.clear();group.removeFromParent();},
+        };
+      },
+      dispose(){if(disposed)return;if(activeBatches)throw new Error('Dispose tree batches before their family');disposed=true;dispose();},
+    };
+  }catch(error){dispose();throw error;}
+}
+
+
+FILE ../Assets/_assetctl/atlas-ez-family-d/family-manifest.json
+{
+  "schemaVersion": 1,
+  "operation": "atlas-ez-tree-family-1",
+  "status": "runtime-candidate-not-packaged",
+  "seed": 35729,
+  "height": 16,
+  "sources": {
+    "referenceManifestSha256": "b219c25c26f5e7f72bafbfd1fe207660adb781ff1e546f6de7b529db963cc8cc",
+    "artifacts": [
+      {
+        "path": "full.json",
+        "sha256": "dab8f58ce168719bf10a0920a7eca67094ca74e036e3af905c14c0bf9994de14"
+      },
+      {
+        "path": "skeleton.json",
+        "sha256": "5e013512d20d0b0f10eded0e0a6639b5fd58047f6810a55a4c8d2f788abaab78"
+      }
+    ],
+    "templateSha256": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df",
+    "upstreamRevision": "dcf309bd86bd521083d9c70f01f2de45fdc7c457"
+  },
+  "briefSha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91",
+  "provenance": {
+    "sourceType": "derived",
+    "generator": {
+      "provider": "ez-tree",
+      "model": "seeded-procedural-geometry",
+      "checkpoint": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+      "version": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+      "workflow": "assetctl-tree-reference-family"
+    },
+    "prompt": "Convert the fixed 16m Oak reference to an Atlas GLB pair, preserving physical leaves, canonical attachment pivots and the source Atlas texture bytes.",
+    "seed": 35729,
+    "sourceUrl": "https://github.com/dgreenheck/ez-tree",
+    "sourceConsent": "licensed",
+    "parents": [
+      {
+        "relationship": "geometry-reference",
+        "sha256": "b219c25c26f5e7f72bafbfd1fe207660adb781ff1e546f6de7b529db963cc8cc",
+        "path": "Assets/_assetctl/ez-tree-oak-reference-a/reference-manifest.json"
+      },
+      {
+        "relationship": "material-template",
+        "sha256": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df",
+        "path": "Assets/_assetctl/atlas-tree-v7-color-a/atlas-branching-v1.glb"
+      }
+    ],
+    "license": {
+      "expression": "NOASSERTION",
+      "attribution": "EZ-Tree geometry: Daniel Greenheck (MIT). Atlas textures and material graph: original project authoring v7.",
+      "restrictions": [
+        "Retain upstream MIT notice; geometry comparison does not include any upstream photographs or textures"
+      ]
+    },
+    "notes": "Development candidate only, not a packaged asset. Upstream MIT notice preserved in tools/assetctl/vendor/ez-tree/LICENSE. Original Atlas texture license state remains NOASSERTION; no external textures imported."
+  },
+  "adapterSha256": "25fd799dc00c85233e603d16a689fd79ef7973bad504fe59037f8fe0f8f3b604",
+  "geometryAdapterSha256": "2df7efae1665ff3249f1b63bd05ac1c74b4be88da33cc8fde8587b884c603411",
+  "toolchain": {
+    "node": "v24.7.0",
+    "gltfTransform": "4.4.1",
+    "meshoptimizer": "0.25.0",
+    "mikk": "Three 0.181 bundled module"
+  },
+  "adaptations": [
+    "Atlas material/image graph retained",
+    "Leaf plane normals corrected; MikkTSpace tangents regenerated with counted projected-edge fallback for cancellations",
+    "Metric bark UVs from full skeleton; deterministic 4x4 leaf tiles with V reversed and half-texel inset",
+    "Leaf sprig offset .048m; physical 1.2m cards unchanged",
+    "LOD1 uses half the original leaves with one plane each, same pivots/UV/wind; wood uses Meshoptimizer with normals/UV weights, locked borders, ratio .7/error .01"
+  ],
+  "limitations": [
+    "No canopy parity or LOD visual acceptance",
+    "Static trunk; date-driven leaf wind contract only",
+    "No collision, distant impostor, packaged asset or game integration"
+  ],
+  "levels": [
+    {
+      "lod": 0,
+      "triangles": 13806,
+      "vertices": 24060,
+      "bounds": {
+        "min": [
+          -6.4743571281433105,
+          0,
+          -6.3347320556640625
+        ],
+        "max": [
+          5.264985084533691,
+          15.96432876586914,
+          5.00840950012207
+        ]
+      },
+      "degenerateTangentFallbacks": 0,
+      "validation": {
+        "valid": true,
+        "khronos": {
+          "errors": [],
+          "warnings": [],
+          "info": {
+            "version": "2.0",
+            "generator": "glTF-Transform v4.4.1",
+            "extensionsUsed": [
+              "KHR_materials_specular"
+            ],
+            "resources": [
+              {
+                "pointer": "/buffers/0",
+                "mimeType": "application/gltf-buffer",
+                "storage": "glb",
+                "byteLength": 3965720
+              },
+              {
+                "pointer": "/images/0",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 1024,
+                  "height": 1024,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              },
+              {
+                "pointer": "/images/1",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 1024,
+                  "height": 1024,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              },
+              {
+                "pointer": "/images/2",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 2048,
+                  "height": 2048,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              },
+              {
+                "pointer": "/images/3",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 2048,
+                  "height": 2048,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              }
+            ],
+            "animationCount": 0,
+            "materialCount": 2,
+            "hasMorphTargets": false,
+            "hasSkins": false,
+            "hasTextures": true,
+            "hasDefaultScene": true,
+            "drawCallCount": 2,
+            "totalVertexCount": 24060,
+            "totalTriangleCount": 13806,
+            "maxUVs": 1,
+            "maxInfluences": 0,
+            "maxAttributes": 8
+          }
+        },
+        "local": {
+          "nonFiniteAccessors": 0,
+          "degenerateIndexedTriangles": 0,
+          "skinQuality": {
+            "weightedVertices": 0,
+            "unweightedVertices": 0,
+            "overFourInfluenceVertices": 0,
+            "nonNormalizedWeightVertices": 0
+          }
+        }
+      }
+    },
+    {
+      "lod": 1,
+      "triangles": 4866,
+      "vertices": 7648,
+      "bounds": {
+        "min": [
+          -6.470961093902588,
+          0,
+          -6.2733235359191895
+        ],
+        "max": [
+          5.216452598571777,
+          15.86973762512207,
+          4.564723968505859
+        ]
+      },
+      "degenerateTangentFallbacks": 1,
+      "validation": {
+        "valid": true,
+        "khronos": {
+          "errors": [],
+          "warnings": [],
+          "info": {
+            "version": "2.0",
+            "generator": "glTF-Transform v4.4.1",
+            "extensionsUsed": [
+              "KHR_materials_specular"
+            ],
+            "resources": [
+              {
+                "pointer": "/buffers/0",
+                "mimeType": "application/gltf-buffer",
+                "storage": "glb",
+                "byteLength": 2599120
+              },
+              {
+                "pointer": "/images/0",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 1024,
+                  "height": 1024,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              },
+              {
+                "pointer": "/images/1",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 1024,
+                  "height": 1024,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              },
+              {
+                "pointer": "/images/2",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 2048,
+                  "height": 2048,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              },
+              {
+                "pointer": "/images/3",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 2048,
+                  "height": 2048,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              }
+            ],
+            "animationCount": 0,
+            "materialCount": 2,
+            "hasMorphTargets": false,
+            "hasSkins": false,
+            "hasTextures": true,
+            "hasDefaultScene": true,
+            "drawCallCount": 2,
+            "totalVertexCount": 7648,
+            "totalTriangleCount": 4866,
+            "maxUVs": 1,
+            "maxInfluences": 0,
+            "maxAttributes": 8
+          }
+        },
+        "local": {
+          "nonFiniteAccessors": 0,
+          "degenerateIndexedTriangles": 0,
+          "skinQuality": {
+            "weightedVertices": 0,
+            "unweightedVertices": 0,
+            "overFourInfluenceVertices": 0,
+            "nonNormalizedWeightVertices": 0
+          }
+        }
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "atlas-ez-oak.glb",
+      "bytes": 3969868,
+      "sha256": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068"
+    },
+    {
+      "path": "atlas-ez-oak.lod1.glb",
+      "bytes": 2603256,
+      "sha256": "c8b7be3a0121013e6a8a8ba05375d4e14422db58e05f9677b86e7ed8b91eaf55"
+    }
+  ]
+}

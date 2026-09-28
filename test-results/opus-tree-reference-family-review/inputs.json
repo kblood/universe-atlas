@@ -1,0 +1,30 @@
+{
+  "revision": "1da7d2502c013e95ff1169abd2157445e7829631",
+  "dirty": true,
+  "files": [
+    {
+      "path": "../tools/assetctl/tree-reference-family.mjs",
+      "sha256": "5fbd352002a6a25315bb3d821f2365c55289d51ad25a88550dbb0f3e02b5510b"
+    },
+    {
+      "path": "../tools/assetctl/tree-reference-family-geometry.mjs",
+      "sha256": "2df7efae1665ff3249f1b63bd05ac1c74b4be88da33cc8fde8587b884c603411"
+    },
+    {
+      "path": "../tools/assetctl/test/tree-reference-family.test.mjs",
+      "sha256": "84eabf415ea10f7aa36354c3fd135bd70b47dc2bc2336be8a69d471633751b46"
+    },
+    {
+      "path": "../examples/asset-briefs/atlas-ez-tree-family-v1.json",
+      "sha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91"
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "sha256": "c3c6409a63efaff9d8fdb913c7a87bb11dfcf599eb9621142bed9fe4fd1b2586"
+    },
+    {
+      "path": "../Assets/_assetctl/atlas-ez-family-d/family-manifest.json",
+      "sha256": "ad3edff495fb81001bd3cac16fa6e08c5d9efdb64484a209a6bff986268fe04f"
+    }
+  ]
+}

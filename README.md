@@ -37,6 +37,8 @@ The [v7 tree checkpoint](docs/tree-authoring-v7-2026-09-28.md) preserves geometr
 
 A separate [pinned EZ-Tree reference comparison](docs/tree-ez-reference-2026-09-28.md) generates fixed-seed oak geometry and reduced-wood/upstream-LOD variants for a local browser review. The 16 m Oak has 13,806 full-detail triangles; the wood-reduced control retains its leaf mesh at 12,014. Its RTX 5090 fixture records six 60-frame samples and shows a fuller, less tiered crown, but the trees differ in geometry and leaf coverage, so these are not general performance results or visual acceptance. The reference is not in the game.
 
+Adapter candidate F turns that reference into an Atlas-material GLB pair: 13,806-triangle LOD0 and 4,866-triangle LOD1, retaining 1.2 m cards, pivots and wind data. It is a separate browser lab, not the default forest or a shipped asset; canopy/LOD appearance and material quality remain under review. The live app checkpoint `cc25635` still uses its legacy tree shapes. See the [candidate F status](docs/tree-ez-family-2026-09-28.md).
+
 The [tree authoring v4 candidate](docs/tree-authoring-v4-2026-09-28.md) passes
 physical export, repeat-generation and Blender/GLB render checks after the
 [Opus authoring review fixes](docs/tree-authoring-review-assessment-2026-09-28.md).

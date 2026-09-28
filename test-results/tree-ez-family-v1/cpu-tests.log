@@ -1,0 +1,20 @@
+EZ-Tree family converter CPU validation (final source rerun)
+Date: 2026-09-28
+
+Converter test command (repository root):
+node --test tools/assetctl/test/tree-reference-family.test.mjs
+Result: 1 passed, 0 failed.
+
+The test independently parsed the generated GLB payloads and verified both LODs: ordered bark/foliage materials; four embedded Atlas PNGs matching the template and each other; eight dense FLOAT attributes on each primitive; finite/unit normals; valid unit tangents, indices, and per-primitive Uint16 limits; Khronos validation; measured triangle budgets; exact retained-vertex attributes and leaf pivots; 1.2m by 1.2m foliage cards (1.44m2 each); foliage atlas tile bounds/orientation; and independently recomputed bark UVs. It also checked repeat-byte determinism, unchanged inputs, manifest/reference hashes, and overwrite/outside-root rejection.
+
+Final fresh output: Assets/_assetctl/ez-tree-family-test-1790582916564-68924
+Repeat output: Assets/_assetctl/ez-tree-family-test-1790582916564-68924-repeat
+Measured triangles: LOD0 13,806; LOD1 4,866. Bounds: LOD0 15.964m tall; LOD1 15.870m tall; both roots at y=0. Tangent cancellation fallback counts: LOD0 0; LOD1 1.
+
+Tangent handedness test correction: an initial broad test compared each smoothed/averaged Mikk tangent against every incident triangle's UV-gradient bitangent. It failed on an ordinary simplified LOD1 corner (223, dot +0.9703), which was not a valid per-triangle contract for averaged tangents. The final test instead re-runs installed raw Mikk on the exported indexed triangle stream: ordinary output xyz matches raw Mikk and output w is exactly its single glTF conversion (negative raw w). At raw-Mikk cancellation corners, the test independently derives the UV-gradient fallback sign and checks the converted exported w. This passes on both LODs; it does not infer every averaged tangent from one face's gradient.
+
+Existing loader tests with this fresh pair supplied as ATLAS_TREE_LOD0/ATLAS_TREE_LOD1:
+Command: node --test tests/tree-asset.test.mjs (universe-atlas-rendering)
+Result: 5 passed, 0 failed.
+
+No browser appearance or performance claim is made by these CPU and loader tests.

@@ -1,0 +1,155 @@
+{
+  "candidate": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f",
+  "lodTriangles": [
+    13806,
+    4866
+  ],
+  "browserVersion": "149.0.7827.55",
+  "states": [
+    {
+      "date": "0",
+      "lod": 0,
+      "population": 3,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "0",
+      "lod": 0,
+      "population": 64,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "0",
+      "lod": 0,
+      "population": 192,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "0",
+      "lod": 1,
+      "population": 3,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "0",
+      "lod": 1,
+      "population": 64,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "0",
+      "lod": 1,
+      "population": 192,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "1750000000",
+      "lod": 0,
+      "population": 3,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "1750000000",
+      "lod": 0,
+      "population": 64,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "1750000000",
+      "lod": 0,
+      "population": 192,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "1750000000",
+      "lod": 1,
+      "population": 3,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "1750000000",
+      "lod": 1,
+      "population": 64,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "1750000000",
+      "lod": 1,
+      "population": 192,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "7000000000",
+      "lod": 0,
+      "population": 3,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "7000000000",
+      "lod": 0,
+      "population": 64,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "7000000000",
+      "lod": 0,
+      "population": 192,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "7000000000",
+      "lod": 1,
+      "population": 3,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "7000000000",
+      "lod": 1,
+      "population": 64,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "date": "7000000000",
+      "lod": 1,
+      "population": 192,
+      "errors": [],
+      "renderer": "WebKit WebGL",
+      "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    }
+  ],
+  "pageErrors": []
+}

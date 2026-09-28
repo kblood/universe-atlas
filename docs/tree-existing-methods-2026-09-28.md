@@ -11,6 +11,10 @@ This is a source-only research snapshot; its statement below that no candidate
 was run refers to that review. The subsequent pinned EZ-Tree geometry
 comparison is documented in the [follow-up record](tree-ez-reference-2026-09-28.md).
 Its operation and fixture received a separate [Opus source review](opus-5.5-tree-reference-review-2026-09-28.md); that review did not render or accept the tree.
+The follow-on [Atlas GLB adapter candidate F](tree-ez-family-2026-09-28.md)
+keeps the same pinned source and adds Atlas materials, pivots and wind
+attributes in a standalone lab; it does not adopt the generator in the live
+forest.
 
 ## Findings
 

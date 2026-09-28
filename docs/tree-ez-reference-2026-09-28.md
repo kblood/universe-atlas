@@ -147,4 +147,7 @@ source-only snapshot made before this operation ran; its statement that it
 benchmarked no candidate is historically accurate. This record is its measured
 follow-up. The [desktop realism plan](desktop-realism-implementation-plan-2026-09-27.md)
 continues to require visual acceptance, appropriate LOD budgets, packaging and
-target-device validation before any authored species can enter the forest.
+target-device validation before any authored species can enter the forest. The
+later [Atlas GLB adapter candidate F](tree-ez-family-2026-09-28.md) reuses this
+Oak source with the existing Atlas material graph; it remains a development
+candidate, not an accepted asset.

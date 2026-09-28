@@ -232,6 +232,18 @@ records applied adapter and manifest fixes but is not a visual acceptance.
 Nothing from the experiment has been adopted into the game. A Three.ez impostor
 benchmark against the same asset remains future work.
 
+The [EZ-Tree family adapter candidate F](tree-ez-family-2026-09-28.md) now
+emits a local two-LOD GLB pair with Atlas materials, physical cards, attachment
+pivots and wind data. Its LOD0 contains 13,806 triangles and LOD1 4,866; a
+mid-twig tangent sign was corrected from E without changing geometry or images.
+Independent export and loader checks pass; the fixed RTX 5090 browser fixture
+replays leaf wind pixel-exactly when returning to the same date. The linked
+record includes isolated GPU measurements and visibly unresolved canopy and
+back-lighting issues.
+GLB validation is not canopy or LOD acceptance, and its runtime browser lab
+does not change the deployed default. Live checkpoint `cc25635` still draws
+the legacy tree shapes. No asset from this adapter has been adopted in the game.
+
 Stages have dependencies. Beginning this programme does not mean replacing all
 subsystems at once. The first code increment targets B so detailed assets have
 a more stable population renderer underneath them. It does not claim a realistic
