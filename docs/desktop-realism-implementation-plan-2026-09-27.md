@@ -6,18 +6,26 @@ Execution ownership follows the [Luna and Claude Code task flow](desktop-realism
 Luna owns bounded implementation and acceptance; Claude Code / Opus 5.5 owns
 substantial implementation milestones. The product scope below remains intact.
 
-## Current status snapshot — deployed runtime stage `8c03f41`
+## Current status snapshot — live site `e0d9d9c`
 
-The live `build-info.json` stamp and ordinary served-site probe match runtime
-stage `8c03f41`. Luna's full production UI acceptance passed on that exact
-build: 759 detailed trees appeared on attach, 753 identities matched after a
-one-day shift and return, the deliberate Oak 503 kept fallback trees available
-and Retry succeeded, and revisiting the planet reused the package with 20
-requests total. There were no unexpected page or WebGL errors. See the
-[current forest-loading summary](../test-results/forest-asset-loading/README.md).
-This verifies deployment and normal UI behavior; it does not accept tree
-appearance, resolve the distant canopy mismatch, or establish a general
+The live site includes the website-only follow-up at `e0d9d9c`; its runtime is
+still the deployed `8c03f41` stage. That stage passed the ordinary browser
+loading checks: 759 detailed trees appeared on attach, 753 identities matched
+after a one-day shift and return, the deliberate Oak 503 retained fallback
+trees and Retry succeeded, and revisiting reused the package with 20 requests
+total. See the [forest-loading summary](../test-results/forest-asset-loading/README.md).
+These checks do not approve the tree appearance or establish a general
 performance target.
+
+The later local structural-variant stage `d1f6182` passed CPU tests and build,
+but normal-flight visual review rejected its stacked far discs; its date replay
+was inconclusive. That experiment is not deployed. A separate fauna candidate
+`7ca4b62` adds genome-proportioned connected skinned quadrupeds near the camera,
+with the current instanced fauna retained as fallback. Its focused CPU tests and
+type-check pass (124 focused tests in Opus's run; my independent rerun passed all
+17 new fauna tests), but it has not had browser/GPU visual or performance
+acceptance. The 80/95 m handoff, local aerial material behavior, shadows, and
+device cost remain open. See the [fauna body-plan record](fauna-near-body-plan-2026-09-28.md).
 
 An earlier `ee26efa` preview measured one stationary RTX 5090 pose at 41.4 ms
 p50 / 60.1 ms p95 frame work. That single-pose measurement remains historical;
