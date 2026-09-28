@@ -42,21 +42,29 @@ function deformedVertex(position,pivot,leaf,wind,height,sign){
 
 test('analytic profile uses four deterministic reference-height bands and metric card extent',()=>{
   const g=geometry([
-    0,2,0, .4,5,0, -.2,9,.2, .8,14,0,
-    0,0,0, 0,4,0, 0,8,0, 0,12,0,
+    0,2,0, .4,1,0, -.2,3,.2, .8,5,0, 0,9,0, 0,14,0,
+    0,1.5,0, 0,4,0,
   ],[
-    0,2,0, 0,5,0, 0,9,0, 0,14,0,
-    0,0,0, 0,4,0, 0,8,0, 0,12,0,
-  ],[0,4,4,4,0,0,0,0],[0,.5,1,.25,0,0,0,0]);
+    0,2,0, 0,1,0, 0,3,0, 0,5,0, 0,9,0, 0,14,0,
+    0,1.5,0, 0,4,0,
+  ],[0,4,4,4,4,4,4,0],[0,.5,1,.25,0,0,0,0]);
   const result=deriveTreeCanopyMetadata([g]),again=deriveTreeCanopyMetadata([g]);
   assert.deepEqual(result,again);
   assert.equal(result.profile.bands.length,4);
-  assert.deepEqual(result.profile.bands.map(b=>b.count),[0,1,1,1]);
+  assert.deepEqual(result.profile.bands.map(b=>b.count),[3,1,1,1]);
   assert.deepEqual(result.profile.bands.map(b=>b.centerM[1]),[2,5,9,14]);
+  assert.deepEqual(result.profile.bands.map(b=>[b.populated,b.minY_M,b.maxY_M,b.halfHeightM]),[
+    [true,1,3,1],[true,5,5,0],[true,9,9,0],[true,14,14,0],
+  ]);
+  assert.equal(result.profile.bands[0].centerM[1],2,'vertical center is midpoint of the reported extent, not the sample mean');
   assert.equal(result.profile.bands[1].radiusM,0);
   assert.ok(Math.abs(result.profile.maxLeafOffsetM-.8)<1e-6,'leaf offset remains source metres and is not multiplied by tree height');
   assert.equal(result.profile.radiusStatistic,'p90-visual-only');
   assert.ok(result.cullingBounds.radiusM>0);
+  for(const band of result.profile.bands.filter(b=>b.populated)){
+    const envelope=Math.hypot(...band.centerM)*22/16+Math.hypot(band.radiusM,band.halfHeightM)*22/16+result.profile.maxLeafOffsetM;
+    assert.ok(result.cullingBounds.radiusM+1e-6>=envelope,'culling sphere encloses each shader band envelope');
+  }
   g.dispose();
 });
 
@@ -87,6 +95,14 @@ test('alpha-weighted color mean decodes straight sRGB before averaging',()=>{
   assert.equal(result.pixelCount,3);assert.equal(result.alphaWeight,2);
   const blackWhite=alphaWeightedLinearRgbMean([0,0,0,255,255,255,255,255]);
   assert.ok(Math.abs(blackWhite.linearRgb[0]-.5)<1e-12,'mean is linear light, not sRGB encoded midpoint');
+  const bytes=Uint8Array.from({length:4096},(_,i)=>(i*37)%256);
+  const fast=alphaWeightedLinearRgbMean(bytes),generic=alphaWeightedLinearRgbMean(Array.from(bytes));
+  assert.deepEqual(fast,generic,'typed-byte LUT path matches strict generic input exactly');
+  const clamped=alphaWeightedLinearRgbMean(new Uint8ClampedArray([17,89,201,128]));
+  assert.deepEqual(clamped,alphaWeightedLinearRgbMean([17,89,201,128]));
+  const reference=byte=>{const c=byte/255;return c<=.04045?c/12.92:((c+.055)/1.055)**2.4;};
+  const sample=[17,89,201,128],expected=[0,1,2].map(i=>reference(sample[i]));
+  assert.ok(clamped.linearRgb.every((x,i)=>Math.abs(x-expected[i])<1e-15),'LUT result matches the scalar sRGB transfer function');
 });
 
 test('invalid geometry, attributes, wind, and color inputs are rejected',()=>{
@@ -95,5 +111,10 @@ test('invalid geometry, attributes, wind, and color inputs are rejected',()=>{
   const noLeaves=geometry([0,0,0],[0,0,0],[2],[0]);assert.throws(()=>deriveTreeCanopyMetadata([noLeaves]),/no foliage pivots/);
   const invalidWind=geometry([0,1,0],[0,1,0],[4],[1.01]);assert.throws(()=>deriveTreeCanopyMetadata([invalidWind]),/wind outside/);
   for(const value of [[],[255,0,0],[256,0,0,255],[0,0,0,NaN],[0,0,0,0]])assert.throws(()=>alphaWeightedLinearRgbMean(value));
+  const emptyBand=geometry([0,0,0, 0,12,0],[0,0,0, 0,12,0],[0,4],[0,0]);
+  const profile=deriveTreeCanopyMetadata([emptyBand]).profile;
+  assert.equal(profile.bands[0].populated,false);assert.equal(profile.bands[0].halfHeightM,0);
+  assert.equal(profile.bands[3].populated,true);assert.equal(profile.bands[3].count,1);
   noLeaves.dispose();invalidWind.dispose();
+  emptyBand.dispose();
 });

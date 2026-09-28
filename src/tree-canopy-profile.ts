@@ -10,6 +10,11 @@ const BAND_COUNT = 4;
 export type CrownBand = {
   /** Mean attachment pivot in the 16 m reference skeleton, in metres. */
   centerM: [number, number, number];
+  /** Populated bands expose their actual reference-space vertical extent. */
+  minY_M: number;
+  maxY_M: number;
+  halfHeightM: number;
+  populated: boolean;
   /** 90th-percentile pivot radius in XZ at reference scale; visual shape only. */
   radiusM: number;
   count: number;
@@ -85,7 +90,7 @@ function maxDeformedVertexRadius(px: number, py: number, pz: number, qx: number,
  * The p90 crown radii are deliberately visual representatives, never bounds. */
 export function deriveTreeCanopyMetadata(geometries: readonly BufferGeometry[]): TreeCanopyMetadata {
   const sources = readAttributes(geometries);
-  const samples: {x: number; y: number; z: number; radius: number; band: number}[] = [];
+  const samples: {x: number; y: number; z: number; band: number}[] = [];
   let maxLeafOffsetM = 0, cullingRadiusM = 0;
   for (const source of sources) {
     for (let i = 0; i < source.branch.length; i++) {
@@ -96,12 +101,10 @@ export function deriveTreeCanopyMetadata(geometries: readonly BufferGeometry[]):
       const leaf = branch > LEAF_BRANCH_LEVEL;
       cullingRadiusM = Math.max(cullingRadiusM, maxDeformedVertexRadius(px, py, pz, qx, qy, qz, leaf, wind));
       if (!leaf) continue;
-      const x = qx * TREE_CANOPY_REFERENCE_HEIGHT_M / TREE_CANOPY_REFERENCE_HEIGHT_M;
-      const y = qy * TREE_CANOPY_REFERENCE_HEIGHT_M / TREE_CANOPY_REFERENCE_HEIGHT_M;
-      const z = qz * TREE_CANOPY_REFERENCE_HEIGHT_M / TREE_CANOPY_REFERENCE_HEIGHT_M;
+      const x = qx, y = qy, z = qz;
       const normHeight = y / TREE_CANOPY_REFERENCE_HEIGHT_M;
       const band = Math.max(0, Math.min(BAND_COUNT - 1, Math.floor(normHeight * BAND_COUNT)));
-      samples.push({x, y, z, radius: Math.hypot(x, z), band});
+      samples.push({x, y, z, band});
       maxLeafOffsetM = Math.max(maxLeafOffsetM, Math.hypot(px - qx, py - qy, pz - qz));
     }
   }
@@ -114,12 +117,20 @@ export function deriveTreeCanopyMetadata(geometries: readonly BufferGeometry[]):
         members.reduce((n, x) => n + x.z, 0) / members.length]
       : [0, (i + .5) * TREE_CANOPY_REFERENCE_HEIGHT_M / BAND_COUNT, 0];
     const radii = members.map(sample => Math.hypot(sample.x - centerM[0], sample.z - centerM[2]));
-    return {centerM, radiusM: percentile(radii, .9), count: members.length};
+    const minY_M = members.length ? Math.min(...members.map(sample => sample.y)) : 0;
+    const maxY_M = members.length ? Math.max(...members.map(sample => sample.y)) : 0;
+    const halfHeightM = members.length ? (maxY_M - minY_M) / 2 : 0;
+    if (members.length) centerM[1] = minY_M + halfHeightM;
+    return {centerM, minY_M, maxY_M, halfHeightM,
+      populated: members.length > 0, radiusM: percentile(radii, .9), count: members.length};
   }) as [CrownBand, CrownBand, CrownBand, CrownBand];
-  // Enclose the visual band envelopes too. Their pivot centers/radii scale
-  // with the skeleton; card offsets remain metric and are added unchanged.
+  // Enclose the visible band envelopes too. Each is bounded by a horizontal
+  // disk and vertical half-height around its center. Both profile dimensions
+  // scale with the skeleton; card offsets remain metric and are added unchanged.
   for (const band of bands) {
-    const envelope = Math.hypot(...band.centerM) * 22 / 16 + band.radiusM * 22 / 16 + maxLeafOffsetM;
+    if (!band.populated) continue;
+    const envelope = Math.hypot(...band.centerM) * 22 / 16 +
+      Math.hypot(band.radiusM, band.halfHeightM) * 22 / 16 + maxLeafOffsetM;
     cullingRadiusM = Math.max(cullingRadiusM, envelope);
   }
   if (!finite(cullingRadiusM) || cullingRadiusM <= 0 || !finite(maxLeafOffsetM)) throw new Error('Invalid derived tree bounds');
@@ -129,17 +140,22 @@ export function deriveTreeCanopyMetadata(geometries: readonly BufferGeometry[]):
   };
 }
 
-const srgbToLinear = (v: number) => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
+const srgbLinearLut = Float64Array.from({length: 256}, (_, byte) => {
+  const v = byte / 255;
+  return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
+});
 
 /** Alpha-weighted mean of straight-alpha sRGB RGBA byte pixels, returned in linear RGB. */
 export function alphaWeightedLinearRgbMean(rgba: ArrayLike<number>): {linearRgb: [number, number, number]; alphaWeight: number; pixelCount: number} {
   if (!rgba || !Number.isSafeInteger(rgba.length) || rgba.length === 0 || rgba.length % 4 !== 0) throw new Error('Expected non-empty straight sRGB RGBA pixels');
   let weight = 0, r = 0, g = 0, b = 0;
+  const byteArray = rgba instanceof Uint8Array || rgba instanceof Uint8ClampedArray;
   for (let i = 0; i < rgba.length; i += 4) {
-    const values = [rgba[i], rgba[i + 1], rgba[i + 2], rgba[i + 3]];
-    if (!values.every(x => Number.isInteger(x) && x >= 0 && x <= 255)) throw new Error('RGBA values must be integer bytes');
-    const a = values[3] / 255;
-    weight += a; r += srgbToLinear(values[0] / 255) * a; g += srgbToLinear(values[1] / 255) * a; b += srgbToLinear(values[2] / 255) * a;
+    const red = rgba[i], green = rgba[i + 1], blue = rgba[i + 2], alpha = rgba[i + 3];
+    if (!byteArray && (!Number.isInteger(red) || red < 0 || red > 255 || !Number.isInteger(green) || green < 0 || green > 255 ||
+      !Number.isInteger(blue) || blue < 0 || blue > 255 || !Number.isInteger(alpha) || alpha < 0 || alpha > 255)) throw new Error('RGBA values must be integer bytes');
+    const a = alpha / 255;
+    weight += a; r += srgbLinearLut[red] * a; g += srgbLinearLut[green] * a; b += srgbLinearLut[blue] * a;
   }
   if (weight <= 0) throw new Error('RGBA pixels have no alpha weight');
   return {linearRgb: [r / weight, g / weight, b / weight], alphaWeight: weight, pixelCount: rgba.length / 4};
