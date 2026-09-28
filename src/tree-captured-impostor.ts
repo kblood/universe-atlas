@@ -85,7 +85,7 @@ const sampleGLSL=`
 precision highp sampler2DArray;
 uniform sampler2DArray captureColour,captureData,captureClass;
 uniform vec3 captureCenter,captureEye,captureDirection;
-uniform float captureRadius,captureOrtho,captureMip,captureMask,captureParallax,captureHash,captureCoverageWeighted,captureStableReconstruction;
+uniform float captureRadius,captureOrtho,captureMip,captureMask,captureParallax,captureHash,captureCoverageWeighted,captureStableReconstruction,captureRelightViews;
 uniform vec3 captureWeights;
 uniform ivec3 captureLayers;
 uniform mat3 captureBasis0,captureBasis1,captureBasis2,captureNormalMatrix;
@@ -129,7 +129,7 @@ export class TreeCapturedImpostor {
       captureColour:{value:capture.colourTexture},captureData:{value:capture.dataTexture},captureClass:{value:capture.classTexture},
       captureCenter:{value:new THREE.Vector3(...capture.manifest.center as [number,number,number])},captureRadius:{value:capture.manifest.radius},
       captureEye:{value:new THREE.Vector3()},captureDirection:{value:new THREE.Vector3()},captureOrtho:{value:0},captureMip:{value:0},captureMask:{value:0},
-      captureParallax:{value:1},captureHash:{value:0},captureCoverageWeighted:{value:Number(capture.filtering==='coverage-weighted')},captureStableReconstruction:{value:1},
+      captureParallax:{value:1},captureHash:{value:0},captureCoverageWeighted:{value:Number(capture.filtering==='coverage-weighted')},captureStableReconstruction:{value:1},captureRelightViews:{value:0},
       captureWeights:{value:new THREE.Vector3()},captureLayers:{value:new Int32Array(3)},
       captureBasis0:{value:new THREE.Matrix3()},captureBasis1:{value:new THREE.Matrix3()},captureBasis2:{value:new THREE.Matrix3()},
       captureBillboardRight:{value:new THREE.Vector3()},captureBillboardUp:{value:new THREE.Vector3()},captureBillboardScale:{value:1},
@@ -180,11 +180,55 @@ float captureLeaf=dot(vec3(l0,l1,l2),weights);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`float roughnessFactor=mix(captureRoughness.x,captureRoughness.y,captureLeaf);`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <lights_physical_fragment>',`#include <lights_physical_fragment>
 float capturedSpecular=mix(captureSpecular.x,captureSpecular.y,captureLeaf);material.specularColor=vec3(.04)*capturedSpecular;material.specularF90=capturedSpecular;`);
-      // Point-light distance and the BRDF's eye vector must refer to the
-      // reconstructed surface, rather than the billboard's centre plane.
-      const lightChunk=THREE.ShaderChunk.lights_fragment_begin;
-      if(!lightChunk.includes('vViewPosition'))throw new Error('Installed lighting chunk has changed');
-      shader.fragmentShader=shader.fragmentShader.replace('#include <lights_fragment_begin>',lightChunk.replaceAll('vViewPosition','(-hitView.xyz)'));
+      // Keep the original single-pass lighting as the default. The optional
+      // comparison evaluates Three's same PBR chunks at each reconstructed
+      // view surface before blending their reflected-light terms.
+      const physicalChunk=THREE.ShaderChunk.lights_physical_fragment,
+        lightBegin=THREE.ShaderChunk.lights_fragment_begin,
+        lightMaps=THREE.ShaderChunk.lights_fragment_maps,
+        lightEnd=THREE.ShaderChunk.lights_fragment_end;
+      if(!physicalChunk.includes('PhysicalMaterial material;')||!lightBegin.includes('vec3 geometryPosition = - vViewPosition;')||
+        !lightBegin.includes('getPointLightInfo( pointLight, geometryPosition, directLight )')||!lightMaps.includes('getIBLIrradiance( geometryNormal )')||
+        !lightEnd.includes('RE_IndirectDiffuse('))throw new Error('Installed Three PBR lighting chunks have changed; per-view relighting was not installed');
+      const baseLightBegin=lightBegin.replaceAll('vViewPosition','(-hitView.xyz)');
+      const perViewLighting=(index:0|1|2)=>{
+        const suffix=String(index),hit=`captureViewHit${suffix}`,sample=`${suffix}`,begin=lightBegin.replaceAll('vViewPosition',`(-${hit}.xyz)`);
+        return `{
+vec4 diffuseColor=vec4(c${sample}.rgb,1.);
+vec3 normal=normalize(captureNormalMatrix*n${sample}),nonPerturbedNormal=normal;
+float roughnessFactor=mix(captureRoughness.x,captureRoughness.y,l${sample});
+ReflectedLight reflectedLight=ReflectedLight(vec3(0),vec3(0),vec3(0),vec3(0));
+${physicalChunk}
+float capturedSpecular=mix(captureSpecular.x,captureSpecular.y,l${sample});material.specularColor=vec3(.04)*capturedSpecular;material.specularF90=capturedSpecular;
+${begin}
+${lightMaps}
+${lightEnd}
+capturePerViewDirectDiffuse${suffix}=reflectedLight.directDiffuse;capturePerViewIndirectDiffuse${suffix}=reflectedLight.indirectDiffuse;
+capturePerViewDirectSpecular${suffix}=reflectedLight.directSpecular;capturePerViewIndirectSpecular${suffix}=reflectedLight.indirectSpecular;
+}`;
+      };
+      const lightingBlock=`if(captureRelightViews>.5){
+vec4 captureViewHit0=captureModelView*vec4(ro+rd*(weights.x>.00001?t0:hitDistance),1.);
+vec4 captureViewHit1=captureModelView*vec4(ro+rd*(weights.y>.00001?t1:hitDistance),1.);
+vec4 captureViewHit2=captureModelView*vec4(ro+rd*(weights.z>.00001?t2:hitDistance),1.);
+vec3 capturePerViewDirectDiffuse0=vec3(0),capturePerViewIndirectDiffuse0=vec3(0),capturePerViewDirectSpecular0=vec3(0),capturePerViewIndirectSpecular0=vec3(0);
+vec3 capturePerViewDirectDiffuse1=vec3(0),capturePerViewIndirectDiffuse1=vec3(0),capturePerViewDirectSpecular1=vec3(0),capturePerViewIndirectSpecular1=vec3(0);
+vec3 capturePerViewDirectDiffuse2=vec3(0),capturePerViewIndirectDiffuse2=vec3(0),capturePerViewDirectSpecular2=vec3(0),capturePerViewIndirectSpecular2=vec3(0);
+${perViewLighting(0)}${perViewLighting(1)}${perViewLighting(2)}
+reflectedLight.directDiffuse=capturePerViewDirectDiffuse0*weights.x+capturePerViewDirectDiffuse1*weights.y+capturePerViewDirectDiffuse2*weights.z;
+reflectedLight.indirectDiffuse=capturePerViewIndirectDiffuse0*weights.x+capturePerViewIndirectDiffuse1*weights.y+capturePerViewIndirectDiffuse2*weights.z;
+reflectedLight.directSpecular=capturePerViewDirectSpecular0*weights.x+capturePerViewDirectSpecular1*weights.y+capturePerViewDirectSpecular2*weights.z;
+reflectedLight.indirectSpecular=capturePerViewIndirectSpecular0*weights.x+capturePerViewIndirectSpecular1*weights.y+capturePerViewIndirectSpecular2*weights.z;
+diffuseColor.rgb=c0.rgb*weights.x+c1.rgb*weights.y+c2.rgb*weights.z;
+}else{
+${baseLightBegin}
+${lightMaps}
+${lightEnd}
+}`;
+      const lightIncludes=/#include <lights_fragment_begin>\s*#include <lights_fragment_maps>\s*#include <lights_fragment_end>/g;
+      const includeMatches=shader.fragmentShader.match(lightIncludes);
+      if(!includeMatches||includeMatches.length!==1)throw new Error('Installed physical shader lighting include sequence has changed');
+      shader.fragmentShader=shader.fragmentShader.replace(lightIncludes,lightingBlock);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`#include <opaque_fragment>
 if(captureMask>.5&&captureMask<2.5)gl_FragColor=vec4(vec3(1),captureCoverage);`);
       // Diagnostic passes write after display transforms. Depth is metres
