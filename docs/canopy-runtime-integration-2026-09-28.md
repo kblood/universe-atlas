@@ -36,7 +36,9 @@ headless Chromium using D3D11 on an RTX 5090:
 
 Evidence: `test-results/canopy-runtime/report.json` and screenshots. This first
 run predates the follow-up that uses analytic hit positions for aerial haze.
-The follow-up has a shader-hook unit test and requires a fresh browser check.
+The follow-up shader-hook unit test and fresh full-game browser run both pass:
+`test-results/canopy-runtime-aerial/report.json`. Its timing sample had large
+outliers; it establishes functional acceptance, not a performance improvement.
 
 ## Remaining acceptance
 

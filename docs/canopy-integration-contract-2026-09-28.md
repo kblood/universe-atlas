@@ -1,7 +1,7 @@
 # Proposed live canopy integration contract
 
-Draft for the next implementation stage. The census worker and renderer lab
-are committed, but this host/renderer connection is still being implemented.
+Contract for the initial implementation stage. The host/renderer connection is
+implemented locally in `213ca95`; broader acceptance and deployment are pending.
 The [completed Opus review](opus-5.5-canopy-integration-review-2026-09-28.md)
 supports per-instance ownership and requires the corrections below.
 
@@ -34,7 +34,7 @@ crown has 20 planes per lobe; the review's plane-count shorthand is inaccurate.
 Each installed far slot belongs to one canonical tree ID. The existing near
 loop already determines which resident trees actually obtain a draw slot.
 For each admitted tree with a compatible installed far record, transfer its
-near coverage to that slot's parameter attribute. A missing near draw uses
+near coverage to that slot's dedicated ownership attribute. A missing near draw uses
 zero near coverage, whether caused by pending placement, capacity or culling.
 
 Let `E` be the common outer-distance/altitude coverage, `N` the admitted near
@@ -69,8 +69,8 @@ decisions so both representations use the same authoritative answer.
   bounded ID/patch maps and explicit eviction. Separate CPU retained bytes,
   GPU attribute bytes and worker-cache estimates in diagnostics.
 - Re-evaluate conservative 4.5 km patch residency after approximately 150 m
-  of motion, prioritizing inner patches. Measure this enumeration on the main
-  thread; move it to a worker if it causes a spike. Ordinary movement finishes
+  of motion, prioritizing inner patches. Enumeration runs in the worker; decoding
+  the selection on the main thread still needs tuning. Ordinary movement finishes
   the small current request rather than continuously cancelling its work.
 - Keep overlap. Evict only beyond the residency shell, with the actual draw
   radius still 4 km. Fast travel and missed deadlines must retain useful
