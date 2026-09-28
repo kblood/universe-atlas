@@ -179,7 +179,7 @@ more. Structural diversity must not come from disconnected anatomy.
 | B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented; build, 53 targeted checks and RTX 5090 browser acceptance pass; see validation record |
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
 | D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; first Blender brief validates; forest integration, authored assets and resource cache pending |
-| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Canonical patches, shared habitat and bounded worker selection cache implemented, reviewed and deployed; packed transfer and receiver fixes pass source/browser checks at `23de0b9` and live release `e8a848d`; summary worker and visible canopy pending |
+| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Census worker/protocol tested; full-radius census cost and an exact-individual faceted proxy measured in isolated labs. These experiments are not integrated into live release `e8a848d`; streaming handoff and visible production canopy remain pending |
 | F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | Two tree authoring proposals technically validated and visually reviewed; asset/runtime acceptance and other landscape work pending |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |
@@ -305,6 +305,58 @@ guide. Luna 6's deployed RTX 5090 movement and rendering checks pass; the
 browser evidence. This completes the selection-cache increment, not stage E
 or the overall realism plan. Continuous canopy, production landscape assets,
 lighting/shadows and realistic rigged fauna remain active work.
+
+### Census worker and full-radius cost — 2026-09-28
+
+The census implementation at `8c5ff7f` adds bounded, cancellable patch work,
+content-stamped contexts and bounded completed-result caching. Five focused
+tests passed; the actual Vite module Worker matched Node results for a 16-patch
+fixture, exercised batching, cache hits, cancellation, invalid requests and
+stale-context recovery, and reported no browser/page errors. The full suite
+had 448 passes and four unrelated existing failures: seek saturation,
+version-compatibility expectations, cosmology version expectations and time
+horizon gating. These checks validate the worker protocol, not a rendered
+canopy or full-radius integration. See the [implementation check](../test-results/forest-canopy-census-8c5ff7f/README.md), the [census design](canopy-census-design-2026-09-28.md) and the [Opus design review](opus-5.5-census-design-review-2026-09-28.md).
+
+A separate Luna 6 cost probe used a real near-ground Maithea forest fixture
+and the shared habitat query. At 4.5 km, 6,537 full 8×8 patches sampled
+200,865 candidates and contained all 196,306 production-selected cells in the
+exact-radius reference, with zero missing and 149,478 trees present. Patch
+coverage extended to 4,625.4 m, including 4,559 candidates beyond the circle.
+Habitat evaluation took 636.2 ms cumulatively; patch enumeration/data
+construction took 1,071.1 ms, hydrology setup 244.8 ms, and the full Worker
+roundtrip 2,159.4 ms including module startup. This was one CPU-side browser
+probe with no renderer or WebGL scene; it is a workload measurement, not a
+frame/GPU result or proof of an interactive 4.5 km census. See the [cost
+probe](../test-results/forest-canopy-census-481e693/README.md). The worker and
+probe are not present in live release `e8a848d`; exact-individual far proxies
+are being explored separately and are not shipped.
+
+### Exact-individual proxy experiment — 2026-09-28
+
+An isolated 64-view silhouette comparison measured an analytic, faceted proxy
+against the current point-tree shape. Silhouette area mean error was about
+0.0024% and maximum error 0.0098%; perspective bounds and opaque depth were
+checked at 24, 64, 650 and 4,000 m. An antialiasing edge-coverage prototype was
+also checked. These tests validate the proxy shape and depth in the lab, not a
+near/far game handoff. See [silhouette report](../test-results/forest-impostor/report.json).
+
+A second RTX 5090 lab compared 149,479 jittered-root proxy trees across 6,684
+conservative patches at 1440×900 and 120 m / 1,200 m camera heights. Its
+full-mesh reference rendered 14.38 million triangles including terrain; the
+proxy path rendered 331,726. GPU p50 was 2.51 ms reference versus 2.57 ms
+proxy at 120 m, and 3.52 ms versus 2.59 ms at 1,200 m. This is an isolated
+forest/terrain comparison, not a whole-game performance claim. The proxy uses
+the existing faceted procedural tree shape; it is not an authored realistic
+tree asset. The lab counts jittered roots, so its 149,479 trees differ by one
+from the census probe's 149,478 cell-centre count. See the [field report](../test-results/forest-impostor-field/report.json).
+
+These proxy measurements remain unintegrated and unshipped. Full streaming,
+readiness-gated near/far ownership, dated life gates, shared aerial perspective,
+wind and shadows remain to be implemented and validated. The separate [census
+implementation review](opus-5.5-census-implementation-review-2026-09-28.md)
+records six passing tests and a browser-worker protocol pass; neither that
+review nor the proxy lab constitutes game acceptance. Follow-up protocol fixes received an Opus implementation review; six focused tests and the browser-worker protocol report pass, with no renderer or visual acceptance. See the [protocol report](../test-results/forest-census-protocol-review/report.json) and [implementation review](opus-5.5-census-implementation-review-2026-09-28.md).
 
 ### Packed selection transfer — 2026-09-28
 

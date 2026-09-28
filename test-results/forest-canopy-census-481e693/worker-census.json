@@ -1,0 +1,119 @@
+{
+  "workerRoundTripMs": 2159.39999999851,
+  "ok": true,
+  "body": {
+    "id": "G001/C2128,0,1/0/planet/1",
+    "seed": "[\"[\\\"LETHRA-001\\\",\\\"G001\\\"]\",[2128,0,1],0]/planet/1",
+    "radiusM": 5194907.072465867,
+    "type": "Oceanic world",
+    "water": 0.4153434117278084
+  },
+  "direction": [
+    0.7830496262178345,
+    -0.29079923308047756,
+    0.5497900407609398
+  ],
+  "grid": {
+    "cellM": 18,
+    "n": 577212,
+    "patchSide": 8,
+    "patchCountPerAxis": 72152
+  },
+  "hydrology": {
+    "buildMs": 244.7999999988824,
+    "catchments": 8,
+    "regions": 3,
+    "regionSurfaceSamples": 39922,
+    "terrainUsesCanonicalRivers": true
+  },
+  "patchEnumeration": {
+    "ms": 1071.0999999996275,
+    "candidateAddressesSeen": 6537,
+    "intersectingPatches": 6537
+  },
+  "coverage": {
+    "referencePopulationCells": 196306,
+    "patchCandidateIds": 200865,
+    "missingReferenceCells": 0,
+    "exactCircleCandidatesInPatches": 196306,
+    "extraPatchCandidates": 4559,
+    "exactReferenceCoverage": true
+  },
+  "checkpoints": [
+    {
+      "radiusM": 250,
+      "incrementalMs": 7.700000001117587,
+      "cumulativeMs": 7.700000001117587,
+      "incrementalPatches": 28,
+      "patchCount": 28,
+      "testedGridCells": 1792,
+      "candidateCells": 860,
+      "exactCircleCandidateCells": 606,
+      "exactCircleTrees": 457,
+      "resolvedHabitatCells": 860,
+      "trees": 663,
+      "maxSampleDistanceM": 353.62482282057596,
+      "maxPatchOvershootM": 103.62482282057596
+    },
+    {
+      "radiusM": 500,
+      "incrementalMs": 6.900000000372529,
+      "cumulativeMs": 14.600000001490116,
+      "incrementalPatches": 68,
+      "patchCount": 96,
+      "testedGridCells": 6144,
+      "candidateCells": 2950,
+      "exactCircleCandidateCells": 2435,
+      "exactCircleTrees": 1856,
+      "resolvedHabitatCells": 2950,
+      "trees": 2254,
+      "maxSampleDistanceM": 621.893296981929,
+      "maxPatchOvershootM": 121.89329698192898
+    },
+    {
+      "radiusM": 1000,
+      "incrementalMs": 25.300000000745058,
+      "cumulativeMs": 39.900000002235174,
+      "incrementalPatches": 254,
+      "patchCount": 350,
+      "testedGridCells": 22400,
+      "candidateCells": 10640,
+      "exactCircleCandidateCells": 9576,
+      "exactCircleTrees": 7282,
+      "resolvedHabitatCells": 10640,
+      "trees": 8074,
+      "maxSampleDistanceM": 1117.9989402022552,
+      "maxPatchOvershootM": 117.9989402022552
+    },
+    {
+      "radiusM": 2250,
+      "incrementalMs": 118.79999999888241,
+      "cumulativeMs": 158.7000000011176,
+      "incrementalPatches": 1316,
+      "patchCount": 1666,
+      "testedGridCells": 106624,
+      "candidateCells": 51092,
+      "exactCircleCandidateCells": 48975,
+      "exactCircleTrees": 37214,
+      "resolvedHabitatCells": 51092,
+      "trees": 38803,
+      "maxSampleDistanceM": 2382.4149295283146,
+      "maxPatchOvershootM": 132.4149295283146
+    },
+    {
+      "radiusM": 4500,
+      "incrementalMs": 477.5,
+      "cumulativeMs": 636.2000000011176,
+      "incrementalPatches": 4871,
+      "patchCount": 6537,
+      "testedGridCells": 418368,
+      "candidateCells": 200865,
+      "exactCircleCandidateCells": 196306,
+      "exactCircleTrees": 149478,
+      "resolvedHabitatCells": 200865,
+      "trees": 152904,
+      "maxSampleDistanceM": 4625.392854773345,
+      "maxPatchOvershootM": 125.39285477334488
+    }
+  ]
+}

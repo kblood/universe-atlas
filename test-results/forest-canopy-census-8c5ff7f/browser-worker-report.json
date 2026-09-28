@@ -1,0 +1,63 @@
+{
+  "ok": true,
+  "scope": "Actual browser module worker; exact census and protocol checks, no renderer/visual claim",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "patches": 16,
+  "candidates": 479,
+  "present": 366,
+  "cold": {
+    "type": "patches",
+    "generation": 1,
+    "requestId": 1,
+    "context": "3be86ccca6d91d27050ba5f693754e6d6bbe0df5b48b3037e1056c5c04964234",
+    "done": true,
+    "elapsedMs": 9.600000001490116,
+    "slices": 3,
+    "maxSliceMs": 4,
+    "cache": {
+      "context": "3be86ccca6d91d27050ba5f693754e6d6bbe0df5b48b3037e1056c5c04964234",
+      "patches": 16,
+      "estimatedBytes": 31088,
+      "maxBytes": 50331648,
+      "maxPatches": 16000,
+      "hits": 0,
+      "misses": 16,
+      "evictionsTotal": 0,
+      "sampledCandidates": 479,
+      "activeCandidates": 0
+    }
+  },
+  "warm": {
+    "type": "patches",
+    "generation": 1,
+    "requestId": 2,
+    "context": "3be86ccca6d91d27050ba5f693754e6d6bbe0df5b48b3037e1056c5c04964234",
+    "done": true,
+    "elapsedMs": 0.19999999925494194,
+    "slices": 2,
+    "maxSliceMs": 0,
+    "cache": {
+      "context": "3be86ccca6d91d27050ba5f693754e6d6bbe0df5b48b3037e1056c5c04964234",
+      "patches": 16,
+      "estimatedBytes": 31088,
+      "maxBytes": 50331648,
+      "maxPatches": 16000,
+      "hits": 16,
+      "misses": 16,
+      "evictionsTotal": 0,
+      "sampledCandidates": 479,
+      "activeCandidates": 0
+    }
+  },
+  "checks": [
+    "exact Node/browser equality",
+    "cache reuse and transfer ownership",
+    "bounded batches",
+    "cancellation",
+    "invalid batch recovery",
+    "context race",
+    "stale generation rejection",
+    "water invalidation"
+  ],
+  "errors": []
+}

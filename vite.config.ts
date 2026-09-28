@@ -10,6 +10,21 @@ export default defineConfig({
       builtAt:new Date().toISOString(),
     },null,2)});
     for(const fileName of [
+      'docs/canopy-census-design-2026-09-28.md',
+      'docs/opus-5.5-census-design-review-2026-09-28.md',
+      'docs/opus-5.5-census-design-review-2026-09-28.metadata.json',
+      'docs/opus-5.5-census-implementation-review-2026-09-28.md',
+      'docs/opus-5.5-census-implementation-review-2026-09-28.metadata.json',
+      'docs/forest-census-review-fixes-2026-09-28.md',
+      'docs/forest-impostor-experiment-2026-09-28.md',
+      'test-results/forest-census-protocol-review/report.json',
+      'test-results/forest-canopy-census-481e693/README.md',
+      'test-results/forest-canopy-census-481e693/worker-census.json',
+      'test-results/forest-canopy-census-8c5ff7f/README.md',
+      'test-results/forest-canopy-census-8c5ff7f/browser-worker-report.json',
+      'test-results/forest-canopy-census-8c5ff7f/unit-tests.log',
+      'test-results/forest-impostor/report.json',
+      'test-results/forest-impostor-field/report.json',
       'docs/desktop-rendering-stage-c-2026-09-28.md',
       'docs/desktop-rendering-validation-2026-09-28.md',
       'docs/background-hydrology-travel-2026-09-28.md',
@@ -57,6 +72,10 @@ export default defineConfig({
       'test-results/fauna-closeup-6b87e13/report.json',
     ])this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
     for(const fileName of [
+      'test-results/forest-impostor-field/reference-120m.png',
+      'test-results/forest-impostor-field/impostor-120m.png',
+      'test-results/forest-impostor-field/reference-1200m.png',
+      'test-results/forest-impostor-field/impostor-1200m.png',
       'test-results/desktop-rendering-6b87e13/near-ground-warmed.png',
       'test-results/desktop-rendering-6b87e13/cloud-aa-0.png',
       'test-results/desktop-rendering-6b87e13/cloud-aa-2.png',
