@@ -67,12 +67,18 @@ test('dated family retag preserves roots and requires matching appearance and ca
     assert.equal(h.host.canHandoff(id,120,key,17,oak),false);
     assert.equal(h.host.canHandoff(id,121,key,16,oak),false);
     assert.equal(h.host.canHandoff(id,120,key,16,pine),false);
+    for(const variant of [1,7])assert.equal(h.host.canHandoff(id,120,key,16,packForestPresentation('branching',.95,1.05,variant)),false,'a different structural member never pairs');
     const settledCalls=calls;h.host.canHandoff(id,120,key,16,oak);assert.equal(calls,settledCalls,'stationary handoff reuses the slot tag');
     h.host.setPresentation('catalogue-B',()=>pine,new Map());
     assert.equal(h.host.canHandoff(id,120,key,16,oak),false,'on-demand retag precedes near pairing');
     assert.equal(h.host.canHandoff(id,120,key,16,pine),true);
     assert.equal(h.host.renderer.parameters.getZ(index),pine);
     assert.deepEqual(h.host.renderer.positions.array,root);assert.deepEqual(h.host.renderer.rotations.array,rotation);
+    const pineVariant=packForestPresentation('spire',1.04,.96,5);
+    h.host.setPresentation('catalogue-C',()=>pineVariant,new Map());
+    assert.equal(h.host.canHandoff(id,120,key,16,pine),false,'variant retag blocks stale pairing');
+    assert.equal(h.host.canHandoff(id,120,key,16,pineVariant),true);
+    assert.deepEqual(h.host.renderer.positions.array,root,'variant retag keeps canonical roots and heights');
     h.host.setPresentation('basic',()=>0,new Map());assert.equal(h.host.canHandoff(id,120,key,16,0),true);
     assert.equal(h.host.renderer.parameters.getZ(index),0);
   }finally{h.restore();}

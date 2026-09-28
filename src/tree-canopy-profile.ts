@@ -18,12 +18,21 @@ export type CrownBand = {
   /** 90th-percentile pivot radius in XZ at reference scale; visual shape only. */
   radiusM: number;
   count: number;
+  /** One-sided leaf-card area whose attachment pivot lies in this band, in metres². */
+  leafAreaM2?: number;
+};
+export type TreeTrunkProfile = {
+  /** Reference-skeleton trunk (branch level 0) extent at 16 m, in metres. */
+  heightM: number; baseRadiusM: number; topRadiusM: number;
 };
 export type TreeCanopyProfile = {
   referenceHeightM: 16;
   bands: [CrownBand, CrownBand, CrownBand, CrownBand];
   /** Maximum source vertex offset from its attachment pivot, kept in metres. */
   maxLeafOffsetM: number;
+  /** 75th-percentile leaf vertex offset: representative metric card extent. */
+  cardExtentM?: number;
+  trunk?: TreeTrunkProfile | null;
   radiusStatistic: 'p90-visual-only';
 };
 export type TreeCullingBounds = {
@@ -91,7 +100,23 @@ function maxDeformedVertexRadius(px: number, py: number, pz: number, qx: number,
 export function deriveTreeCanopyMetadata(geometries: readonly BufferGeometry[]): TreeCanopyMetadata {
   const sources = readAttributes(geometries);
   const samples: {x: number; y: number; z: number; band: number}[] = [];
+  const leafOffsets: number[] = [], trunk: {y: number; r: number}[] = [];
+  const bandArea = [0, 0, 0, 0];
   let maxLeafOffsetM = 0, cullingRadiusM = 0;
+  const bandOf = (y: number) => Math.max(0, Math.min(BAND_COUNT - 1, Math.floor(y / TREE_CANOPY_REFERENCE_HEIGHT_M * BAND_COUNT)));
+  for (const [sourceIndex, source] of sources.entries()) {
+    // Leaf-card area is metric: cards keep their size at every tree height.
+    const index = geometries[sourceIndex].index, triangles = Math.floor((index ? index.count : source.position.count) / 3);
+    const vertex = (t: number) => index ? index.getX(t) : t;
+    for (let t = 0; t < triangles; t++) {
+      const a = vertex(t * 3), b = vertex(t * 3 + 1), c = vertex(t * 3 + 2);
+      if (source.branch.getX(a) <= LEAF_BRANCH_LEVEL || source.branch.getX(b) <= LEAF_BRANCH_LEVEL || source.branch.getX(c) <= LEAF_BRANCH_LEVEL) continue;
+      const ux = source.position.getX(b) - source.position.getX(a), uy = source.position.getY(b) - source.position.getY(a), uz = source.position.getZ(b) - source.position.getZ(a);
+      const vx = source.position.getX(c) - source.position.getX(a), vy = source.position.getY(c) - source.position.getY(a), vz = source.position.getZ(c) - source.position.getZ(a);
+      const area = Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) / 2;
+      if (finite(area)) bandArea[bandOf(source.pivot.getY(a))] += area;
+    }
+  }
   for (const source of sources) {
     for (let i = 0; i < source.branch.count; i++) {
       // GLTFLoader may share an interleaved buffer across attributes. Accessors
@@ -102,12 +127,15 @@ export function deriveTreeCanopyMetadata(geometries: readonly BufferGeometry[]):
       if (![px, py, pz, qx, qy, qz, branch, wind].every(finite) || wind < 0 || wind > 1) throw new Error('Tree vertex contains non-finite data or wind outside [0,1]');
       const leaf = branch > LEAF_BRANCH_LEVEL;
       cullingRadiusM = Math.max(cullingRadiusM, maxDeformedVertexRadius(px, py, pz, qx, qy, qz, leaf, wind));
-      if (!leaf) continue;
+      if (!leaf) {
+        if (branch < .5) trunk.push({y: py, r: Math.hypot(px, pz)});
+        continue;
+      }
       const x = qx, y = qy, z = qz;
-      const normHeight = y / TREE_CANOPY_REFERENCE_HEIGHT_M;
-      const band = Math.max(0, Math.min(BAND_COUNT - 1, Math.floor(normHeight * BAND_COUNT)));
-      samples.push({x, y, z, band});
-      maxLeafOffsetM = Math.max(maxLeafOffsetM, Math.hypot(px - qx, py - qy, pz - qz));
+      samples.push({x, y, z, band: bandOf(y)});
+      const offset = Math.hypot(px - qx, py - qy, pz - qz);
+      leafOffsets.push(offset);
+      maxLeafOffsetM = Math.max(maxLeafOffsetM, offset);
     }
   }
   if (!samples.length) throw new Error('Tree family contains no foliage pivots');
@@ -124,7 +152,7 @@ export function deriveTreeCanopyMetadata(geometries: readonly BufferGeometry[]):
     const halfHeightM = members.length ? (maxY_M - minY_M) / 2 : 0;
     if (members.length) centerM[1] = minY_M + halfHeightM;
     return {centerM, minY_M, maxY_M, halfHeightM,
-      populated: members.length > 0, radiusM: percentile(radii, .9), count: members.length};
+      populated: members.length > 0, radiusM: percentile(radii, .9), count: members.length, leafAreaM2: bandArea[i]};
   }) as [CrownBand, CrownBand, CrownBand, CrownBand];
   // Enclose the visible band envelopes too. Each is bounded by a horizontal
   // disk and vertical half-height around its center. Both profile dimensions
@@ -136,8 +164,16 @@ export function deriveTreeCanopyMetadata(geometries: readonly BufferGeometry[]):
     cullingRadiusM = Math.max(cullingRadiusM, envelope);
   }
   if (!finite(cullingRadiusM) || cullingRadiusM <= 0 || !finite(maxLeafOffsetM)) throw new Error('Invalid derived tree bounds');
+  // Trunk: branch level 0. Radii are p90 horizontal distances near its ends.
+  let trunkProfile: TreeTrunkProfile | null = null;
+  if (trunk.length) {
+    const heightM = trunk.reduce((n, v) => Math.max(n, v.y), 0);
+    const base = trunk.filter(v => v.y <= heightM * .08).map(v => v.r), top = trunk.filter(v => v.y >= heightM * .85).map(v => v.r);
+    const baseRadiusM = percentile(base, .9), topRadiusM = percentile(top, .9);
+    if (heightM > 0 && baseRadiusM > 0 && [heightM, baseRadiusM, topRadiusM].every(finite)) trunkProfile = {heightM, baseRadiusM, topRadiusM: Math.min(topRadiusM, baseRadiusM)};
+  }
   return {
-    profile: {referenceHeightM: 16, bands, maxLeafOffsetM, radiusStatistic: 'p90-visual-only'},
+    profile: {referenceHeightM: 16, bands, maxLeafOffsetM, cardExtentM: percentile(leafOffsets, .75), trunk: trunkProfile, radiusStatistic: 'p90-visual-only'},
     cullingBounds: {centerM: [0, 0, 0], radiusM: cullingRadiusM, heightRangeM: [10, 22], maxWindAngleRad: TREE_CANOPY_WIND_MAX_ANGLE_RAD},
   };
 }

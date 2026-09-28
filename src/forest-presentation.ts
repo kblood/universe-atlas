@@ -1,8 +1,8 @@
 import type {ForestTreeBinding} from './forest-tree-catalogue.ts';
 import type {ForestTreeKind} from './forest-tree-family-library.ts';
 
-export const FOREST_PRESENTATION_VERSION='forest-presentation-1';
-const LOW=.8,RANGE=.4;
+export const FOREST_PRESENTATION_VERSION='forest-presentation-2';
+const LOW=.8,RANGE=.4,VARIANT_STRIDE=262144,VARIANTS=8;
 /** Shared eligibility for detailed and family-aware distant presentation.
  * The caller supplies the binding from the one already dated catalogue. */
 export function forestPresentationFamily(binding:ForestTreeBinding|null,heightM:number,
@@ -12,26 +12,30 @@ export function forestPresentationFamily(binding:ForestTreeBinding|null,heightM:
   return available.has(kind)?kind:null;
 }
 
-/** Fits family and two bounded brightness values into the unused float channel
- * of the existing far instance buffer. Every encoded integer is exact in f32.
- * Code zero retains the legacy shape/roll tint. No identity or date is encoded. */
-export function packForestPresentation(kind:ForestTreeKind,bark:number,foliage:number){
-  if(!['branching','spire'].includes(kind)||![bark,foliage].every(x=>Number.isFinite(x)&&x>=LOW&&x<=LOW+RANGE))
+/** Fits family, two bounded brightness values and the bounded structural
+ * variant into the unused float channel of the existing far instance buffer.
+ * Every encoded integer is below 2^21 and exact in f32. Code zero retains the
+ * legacy shape/roll tint. No identity or date is encoded. */
+export function packForestPresentation(kind:ForestTreeKind,bark:number,foliage:number,variant=0){
+  if(!['branching','spire'].includes(kind)||![bark,foliage].every(x=>Number.isFinite(x)&&x>=LOW&&x<=LOW+RANGE)||
+    !Number.isInteger(variant)||variant<0||variant>=VARIANTS)
     throw new Error('Invalid forest family presentation');
   const quantize=(x:number)=>Math.round((x-LOW)*255/RANGE);
-  return (kind==='branching'?1:2)+4*quantize(foliage)+1024*quantize(bark);
+  return (kind==='branching'?1:2)+4*quantize(foliage)+1024*quantize(bark)+VARIANT_STRIDE*variant;
 }
 export function unpackForestPresentation(code:number){
-  if(!Number.isSafeInteger(code)||code<0||code>262142||code!==0&&![1,2].includes(code%4))
+  if(!Number.isSafeInteger(code)||code<0||code>=VARIANT_STRIDE*VARIANTS||code!==0&&![1,2].includes(code%4))
     throw new Error('Invalid packed forest presentation');
-  if(code===0)return {kind:null,bark:1,foliage:1};
+  if(code===0)return {kind:null,bark:1,foliage:1,variant:0};
   return {kind:(code%4===1?'branching':'spire') as ForestTreeKind,
-    foliage:LOW+(Math.floor(code/4)%256)*RANGE/255,bark:LOW+Math.floor(code/1024)*RANGE/255};
+    foliage:LOW+(Math.floor(code/4)%256)*RANGE/255,bark:LOW+(Math.floor(code/1024)%256)*RANGE/255,
+    variant:Math.floor(code/VARIANT_STRIDE)};
 }
 
 export const forestPresentationGLSL=`
 float forestFamilyCode(float packed){return mod(packed,4.0);}
 vec2 forestFamilyBrightness(float packed){
-  return vec2(.8)+vec2(floor(packed/1024.0),mod(floor(packed/4.0),256.0))*(.4/255.0);
+  return vec2(.8)+vec2(mod(floor(packed/1024.0),256.0),mod(floor(packed/4.0),256.0))*(.4/255.0);
 }
+int forestFamilyVariant(float packed){return int(floor(packed/${VARIANT_STRIDE}.0));}
 `;
