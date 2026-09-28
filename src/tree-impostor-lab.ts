@@ -51,7 +51,15 @@ async function load(lod0:ArrayBuffer,lod1:ArrayBuffer,manifest:any,read:(path:st
   try{
     const {pair,lod}=captureInputPair(manifest);
     if(await hash(lod0)!==manifest.input.files[pair[0]]||await hash(lod1)!==manifest.input.files[pair[1]])throw new Error('Selected mesh pair does not match capture input hashes');
-    nextFamily=await loadTreeAssetFamily(lod0,lod1);nextCapture=await loadTreeCapture(manifest,read,{filtering});
+    let foliageMipSidecar;
+    if(manifest.foliageMipSource){
+      const source=manifest.foliageMipSource;
+      if(source.manifest?.path!=='source-mip-manifest.json'||source.payload?.path!=='source-foliage-mips.rgba8')throw new Error('Unsupported capture foliage source paths');
+      const [metadata,data]=await Promise.all([read(source.manifest.path),read(source.payload.path)]);
+      if(await hash(metadata)!==source.manifest.sha256||await hash(data)!==source.payload.sha256)throw new Error('Capture foliage source hash mismatch');
+      foliageMipSidecar={manifest:JSON.parse(new TextDecoder().decode(metadata)),data};
+    }else if(manifest.foliageSampling==='offline-sidecar')throw new Error('Capture is missing its recorded foliage sidecar');
+    nextFamily=await loadTreeAssetFamily(lod0,lod1,{foliageMipSidecar});nextCapture=await loadTreeCapture(manifest,read,{filtering});
     nextBatch=nextFamily.createBatch(lod,1);nextBatch.setInstance(0,new THREE.Matrix4(),manifest.options.heightM,0);nextFamily.setDate(0n);
     nextImpostor=new TreeCapturedImpostor(nextCapture,nextFamily.lods[lod].map(m=>m.material));
     for(const mesh of nextFamily.lods[lod]){
@@ -67,7 +75,7 @@ async function load(lod0:ArrayBuffer,lod1:ArrayBuffer,manifest:any,read:(path:st
   dispose();family=nextFamily;batch=nextBatch;capture=nextCapture;impostor=nextImpostor;activeLod=captureInputPair(manifest).lod;captureFiltering=filtering;sourceCutoff=family!.lods[activeLod][1].material.alphaTest;setMode(mode);setSourceCoverage(sourceCoverage);
   impostor!.uniforms.captureParallax.value=Number((document.getElementById('parallax') as HTMLInputElement).checked);
   impostor!.uniforms.captureHash.value=Number((document.getElementById('hash') as HTMLInputElement).checked);
-  status.textContent=JSON.stringify({heightM:manifest.options.heightM,lod:activeLod,filtering:capture!.filtering,views:manifest.views.length,gpuTextureBytes:capture!.bytes,
+  status.textContent=JSON.stringify({heightM:manifest.options.heightM,lod:activeLod,filtering:capture!.filtering,foliageSampling:manifest.foliageSampling??'original-mips',views:manifest.views.length,gpuTextureBytes:capture!.bytes,
     format:'RGBA8 colour + RGBA16F normal/depth + RGBA8 class (R used); explicit independent mip chains',
     limits:'Single tree and exact captured height. No game integration, instancing, cast shadows, wind or handoff.'},null,2);
 }

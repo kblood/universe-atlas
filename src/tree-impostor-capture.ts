@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {loadTreeAssetFamily,treeVertexMeters} from './tree-asset.ts';
 import {treeCaptureViews,TREE_VIEW_VERSION} from './tree-impostor-views.ts';
+import type {TreeFoliageMipSidecar} from './tree-foliage-sidecar.ts';
 
 export const TREE_CAPTURE_VERSION='tree-material-capture-2';
 export type CaptureLayer={size:number;colour:Float32Array;data:Float32Array;classification:Float32Array};
@@ -51,7 +52,7 @@ export function padCapture(layer:CaptureLayer,steps=4):CaptureLayer {
 
 export async function captureTree(lod0:ArrayBuffer,lod1:ArrayBuffer,
   options:{grid:number;size:number;supersample:number;heightM:number;lod?:0|1},
-  receive:(view:number,mip:number,layer:CaptureLayer)=>Promise<void>){
+  receive:(view:number,mip:number,layer:CaptureLayer)=>Promise<void>,foliageMipSidecar?:TreeFoliageMipSidecar){
   const {grid,size,supersample,heightM}=options,lod=options.lod??0,views=treeCaptureViews(grid);
   if(![32,64,128].includes(size)||![1,2,4,8].includes(supersample)||![0,1].includes(lod)||!Number.isFinite(heightM)||heightM<10||heightM>22)throw new Error('Unsupported tree capture settings');
   const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance',alpha:true});
@@ -65,7 +66,7 @@ export async function captureTree(lod0:ArrayBuffer,lod1:ArrayBuffer,
   try{
     if(!gl.getExtension('EXT_color_buffer_float'))throw new Error('Tree capture requires EXT_color_buffer_float');
     if(size*supersample>gl.getParameter(gl.MAX_TEXTURE_SIZE))throw new Error('Capture target exceeds device texture limit');
-    family=await loadTreeAssetFamily(lod0,lod1);family.setDate(0n);
+    family=await loadTreeAssetFamily(lod0,lod1,{foliageMipSidecar});family.setDate(0n);
     batch=family.createBatch(lod,1);batch.setInstance(0,new THREE.Matrix4(),heightM,0);
     const scene=new THREE.Scene();scene.add(batch.group);
     const points:THREE.Vector3[]=[],bounds=new THREE.Box3();let windMargin=0;
@@ -142,7 +143,7 @@ else gl_FragColor=vec4(.125,.25,.5,1.);`);
     }
     if(coveredSamples===0)throw new Error('Capture produced no tree coverage');
     const ext=gl.getExtension('WEBGL_debug_renderer_info');
-    return {version:TREE_CAPTURE_VERSION,viewVersion:TREE_VIEW_VERSION,options,views,center:center.toArray(),radius,distance,
+    return {version:TREE_CAPTURE_VERSION,viewVersion:TREE_VIEW_VERSION,options,views,center:center.toArray(),radius,distance,foliageSampling:foliageMipSidecar?'offline-sidecar':'original-mips',
       bounds:{min:bounds.min.toArray(),max:bounds.max.toArray(),windMargin},root:[0,0,0],
       rowOrder:'bottom-to-top',colour:'linear-unassociated-rgb-area-coverage',data:'object-normal-xyz-normalized-frontmost-depth',classification:'leaf-fraction',
       depth:'dot(surface-center,towardCamera)/radius; valid only where colour coverage > 0',
