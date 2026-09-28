@@ -15,7 +15,7 @@ LOD continuity is a CPU geometry proxy, not visual acceptance: grass LODs resamp
 | Grass | 70 / 18 / 6 | 17,920 / 9,216 / 6,144 |
 | Shrub | 284 / 60 / 28 | 36,352 / 15,360 / 14,336 |
 
-At full instance capacity, grass plus shrub geometry totals 99,328 triangles for a selected LOD combination. Ordinary-play grass, shrubs and flowers total at most 122,752; tree geometry remains unchanged and is not drawn in ordinary play. Grass and shrub buffers total at most 35,916 bytes per planet across the eight measured seeds. Shadow rendering uses the same meshes, so the additional pass also processes the new triangle counts.
+Across the full capacities of all three LODs, grass plus shrub geometry totals 99,328 triangles. Ordinary-play grass, shrubs and flowers total at most 122,752; tree geometry remains unchanged and is not drawn in ordinary play. Grass and shrub buffers reach 35,916 bytes per planet in the eight tested seeds. Shadow rendering uses the same meshes, so the additional pass also processes the new triangle counts.
 
 ## Verification
 
@@ -25,4 +25,3 @@ Genuine first-party Opus 5.5 (`claude-opus-5-5`, session `afb6f577-4739-47b2-a1a
 - `npx tsc --noEmit -p .`: passed.
 - `npm run build`: passed in 7.34 seconds; existing large-chunk warning only.
 - After correcting a stale source-regex assertion, `flora-cache-ownership` plus `flora-understory-geometry`: 13/13 passed. The old assertion expected `faunaGenomes.clear()` to be immediately followed by `faunaGroundQueue=[]`; the unchanged baseline renderer already has `faunaNear.clear()` between them. Its cache-eviction behavior assertions are preserved.
-
