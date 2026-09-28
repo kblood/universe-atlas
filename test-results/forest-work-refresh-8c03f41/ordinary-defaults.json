@@ -1,0 +1,35 @@
+{
+  "ok": true,
+  "expectedBuild": "8c03f410d4d0a0627f02d2a820dc432bdb73b411",
+  "servedBuild": {
+    "commit": "8c03f410d4d0a0627f02d2a820dc432bdb73b411",
+    "dirty": false,
+    "builtAt": "2026-09-28T15:16:52.743Z"
+  },
+  "state": {
+    "href": "http://127.0.0.1:5199/?seed=LETHRA-001&wv=atlas-time-2%2Catlas-address-1%2Catlas-cosmology-2-radiation%2Catlas-2.0.0%2Catlas-history-3-remnant-cooling%2Catlas-surface-6-lifecycle-sampler%2Cterrain-1.5.0%2Cbiosphere-lab-3%2Catlas-galaxy-history-2&mv=atlas-time-2%7Catlas-address-1%7Catlas-cosmology-2-radiation%7Catlas-2.0.0%7Catlas-history-3-remnant-cooling%7Catlas-surface-6-lifecycle-sampler%7Cterrain-1.5.0%7Cbiosphere-lab-3%7Catlas-galaxy-history-2%7Catlas-background-radiation-1%7Catlas-biosphere-query-5-dated-suitability%7Catlas-primordial-2-address-lineage%7Catlas-stellar-cohorts-5-address-lineage%7Catlas-future-constant-lambda-1%7Catlas-alternate-fates-1%7Catlas-observed-sky-1%7Catlas-cmb-illustration-1%7Catlas-surface-cell-1&bv=atlas-client-2026-09-26-planets-1",
+    "ready": true,
+    "level": "universe",
+    "detailedForestEnabled": false,
+    "surfaceLighting": {
+      "enabled": true,
+      "active": false,
+      "altitudeM": null,
+      "unitsPerM": 1,
+      "widthM": 320,
+      "depthM": 1000,
+      "mapSize": 2048,
+      "shadowIntensity": 0,
+      "skyIntensity": 0,
+      "ambientIntensity": 0.22,
+      "allocated": false,
+      "estimatedTargetBytes": 0
+    },
+    "localStorage": {
+      "trees": null,
+      "lighting": null
+    }
+  },
+  "forestRequests": [],
+  "errors": []
+}
