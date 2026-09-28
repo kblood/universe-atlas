@@ -4,10 +4,10 @@ import {biomeClassifier,BIOME_VERSION} from './surface-biomes.ts';
 import {LANDFORM_VERSION} from './planet-landforms.ts';
 import {RIVER_SURFACE_VERSION} from './river-types.ts';
 import {forestHabitat,TREE_HABITAT_VERSION} from './forest-habitat.ts';
-import {forestPatch,validateForestPatchAddress,type ForestPatch,type ForestPatchAddress,FOREST_PATCH_SIDE} from './forest-patch.ts';
+import {forestPatch,validateForestPatchAddress,type ForestPatch,type ForestPatchAddress,FOREST_PATCH_SIDE,FOREST_PATCH_VERSION} from './forest-patch.ts';
 import {POPULATION_VERSION,FOREST_CELL_M,forestRepresentative} from './planet-population.ts';
 
-export const FOREST_CENSUS_VERSION='forest-census-1';
+export const FOREST_CENSUS_VERSION='forest-census-2';
 /** Present members only: offset, direction xyz, roll, nominal height, yaw,
  * ground height and representative flag. An absent record in a COMPLETE patch
  * proves absence; a pending/missing patch must never be treated as empty. */
@@ -19,6 +19,32 @@ export type ForestCensusPatch={
 type Entry={patch:ForestCensusPatch;bytes:number};
 type Active={patch:ForestPatch;index:number;records:number[];representatives:number};
 
+/** Type-tagged canonical content. Unsupported values must never silently hash
+ * as an empty object or null. Typed arrays retain both their type and values.
+ * This is cache provenance, not the deterministic population seed. */
+function canonical(value:unknown,ancestors=new Set<object>()):unknown{
+  if(value===null)return null;
+  if(value===undefined)return ['undefined'];
+  if(typeof value==='number'){if(!Number.isFinite(value))throw new Error('Non-finite census context');return value;}
+  if(typeof value==='string'||typeof value==='boolean')return value;
+  if(typeof value!=='object')throw new Error('Unsupported census context value');
+  if(ancestors.has(value))throw new Error('Cyclic census context');
+  ancestors.add(value);
+  try{
+    if(ArrayBuffer.isView(value)){
+      if(value instanceof DataView)throw new Error('Unsupported census context DataView');
+      return ['typed',value.constructor.name,Array.from(value as unknown as ArrayLike<unknown>,v=>canonical(v,ancestors))];
+    }
+    if(Array.isArray(value))return ['array',Array.from(value,v=>canonical(v,ancestors))];
+    if(Object.getPrototypeOf(value)!==Object.prototype&&Object.getPrototypeOf(value)!==null)throw new Error('Unsupported census context object');
+    return ['object',Object.keys(value).sort().map(key=>{
+      const descriptor=Object.getOwnPropertyDescriptor(value,key)!;
+      if(!('value' in descriptor))throw new Error('Unsupported census context accessor');
+      return [key,canonical(descriptor.value,ancestors)];
+    })];
+  }finally{ancestors.delete(value);}
+}
+
 /** This context owns a cloned body, including the actual hydrology geometry.
  * The SHA covers content, not merely region IDs. No date is simulated here:
  * dated world eligibility still gates the parent renderer, as it does near trees.
@@ -26,13 +52,13 @@ type Active={patch:ForestPatch;index:number;records:number[];representatives:num
 export async function createForestCensus(body:Body,waterLevelM:number,maxBytes=48*1024*1024,maxPatches=16000){
   if(!Number.isFinite(body.radiusM)||body.radiusM<=0||!Number.isFinite(waterLevelM)||
     !Number.isSafeInteger(maxBytes)||maxBytes<0||!Number.isSafeInteger(maxPatches)||maxPatches<0)throw new Error('Invalid forest census context');
-  const snapshot=structuredClone(body);
   const description=JSON.stringify([FOREST_CENSUS_VERSION,POPULATION_VERSION,TREE_HABITAT_VERSION,
-    TERRAIN_VERSION,REGIONAL_LANDFORM_VERSION,LANDFORM_VERSION,BIOME_VERSION,RIVER_SURFACE_VERSION,FOREST_CELL_M,waterLevelM,snapshot],
-    (_key,value)=>value&&typeof value==='object'&&!Array.isArray(value)?Object.fromEntries(Object.keys(value).sort().map(key=>[key,value[key]])):value);
+    TERRAIN_VERSION,REGIONAL_LANDFORM_VERSION,LANDFORM_VERSION,BIOME_VERSION,RIVER_SURFACE_VERSION,FOREST_CELL_M,
+    FOREST_PATCH_VERSION,FOREST_PATCH_SIDE,waterLevelM,canonical(body)]);
+  const snapshot=structuredClone(body);
   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(description));
   const context=Array.from(new Uint8Array(digest),value=>value.toString(16).padStart(2,'0')).join('');
-  const habitat=forestHabitat(terrainSampler(snapshot,undefined,undefined,undefined,waterLevelM),biomeClassifier(snapshot,waterLevelM),snapshot.radiusM);
+  const habitat=forestHabitat(terrainSampler(snapshot,undefined,undefined,undefined,waterLevelM),biomeClassifier(snapshot,waterLevelM),snapshot.radiusM,true);
   return new ForestCensus(context,snapshot.seed,Math.ceil(2*snapshot.radiusM/FOREST_CELL_M),habitat,maxBytes,maxPatches);
 }
 
@@ -64,6 +90,9 @@ export class ForestCensus {
   }
   step(maxCandidates=8):ForestCensusPatch|null {
     if(!Number.isInteger(maxCandidates)||maxCandidates<1||maxCandidates>64)throw new Error('Invalid forest census slice');
+    try{return this.advance(maxCandidates);}catch(error){this.active=null;throw error;}
+  }
+  private advance(maxCandidates:number):ForestCensusPatch|null {
     const active=this.active;if(!active)return null;
     const {patch}=active,{x,y}=patch.address,end=Math.min(patch.cells.length,active.index+maxCandidates);
     for(;active.index<end;active.index++){
@@ -71,6 +100,8 @@ export class ForestCensus {
       if(!Number.isFinite(sample.groundHeightM))throw new Error('Non-finite forest census height');
       if(!sample.present)continue;
       const parts=cell.id.split('/'),offset=(Number(parts[3])-y*FOREST_PATCH_SIDE)*FOREST_PATCH_SIDE+Number(parts[2])-x*FOREST_PATCH_SIDE;
+      if(Number(parts[0])!==patch.address.face||Number(parts[1])!==patch.address.n||
+        !Number.isInteger(offset)||offset<0||offset>=FOREST_PATCH_SIDE**2)throw new Error('Invalid forest census cell identity');
       const representative=Number(forestRepresentative(this.seed,cell.id));active.representatives+=representative;
       active.records.push(offset,...cell.direction,cell.roll,cell.heightM,cell.yaw,sample.groundHeightM,representative);
     }

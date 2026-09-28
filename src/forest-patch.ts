@@ -4,6 +4,7 @@ import {POPULATION_VERSION,populationCellAt,type PopulationCell} from './planet-
  * ~144m at a cube face centre; physical patch area varies over the sphere.
  * This is an address partition, not a new population or a render primitive. */
 export const FOREST_PATCH_SIDE=8;
+export const FOREST_PATCH_VERSION='forest-patch-1';
 export type ForestPatchAddress=Readonly<{face:number;n:number;x:number;y:number}>;
 export type ForestPatch=Readonly<{key:string;address:ForestPatchAddress;testedCells:number;cells:readonly PopulationCell[]}>;
 
@@ -20,7 +21,7 @@ export function forestPatch(seed:string,address:ForestPatchAddress):ForestPatch 
   for(let iy=y0;iy<y1;iy++)for(let ix=x0;ix<x1;ix++){
     const cell=populationCellAt(seed,face,n,ix,iy);if(cell)cells.push(cell);
   }
-  return {key:JSON.stringify([seed,POPULATION_VERSION,'forest-patch-1',face,n,x,y]),
+  return {key:JSON.stringify([seed,POPULATION_VERSION,FOREST_PATCH_VERSION,face,n,x,y]),
     address:{face,n,x,y},testedCells:(x1-x0)*(y1-y0),cells};
 }
 

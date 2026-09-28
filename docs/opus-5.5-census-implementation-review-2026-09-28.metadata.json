@@ -1,0 +1,46 @@
+{
+  "revision": "f55023f97880fe45448be860ed49b8589a8bbcea",
+  "files": [
+    {
+      "path": "src/forest-census.ts",
+      "sha256": "1966113d9805adafef1ad186fc867db12ff0371cbf03d46998ca1cf41d0248fe"
+    },
+    {
+      "path": "src/forest-census-worker.ts",
+      "sha256": "5360a78f2b58f23455909a35de5091d70d5ee729463c46a8d46a79c6c505a3e2"
+    },
+    {
+      "path": "src/forest-patch.ts",
+      "sha256": "79b551d11bf1b0af5c5b9620b28b78e45f924be488cd2efcc0d9bd8a562a647c"
+    },
+    {
+      "path": "src/forest-habitat.ts",
+      "sha256": "a470d5c423c132133895a7c95654661feaa5fc75180255e060d37e243fc876db"
+    },
+    {
+      "path": "tests/forest-census.test.mjs",
+      "sha256": "bb04e45dcb56d84f1b31f39850d86522ff887347877ee3609f8f5117db6aef60"
+    },
+    {
+      "path": "tests/forest-census-worker.browser.mjs",
+      "sha256": "10d8e4c36e92b0597ad6a447e7b11ead97a5ca343e2e3f83d7e8843ef5a80c57"
+    }
+  ],
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 25501,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 13775,
+      "webSearchRequests": 0,
+      "costUSD": 0.6205198,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 21658,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "isError": false
+}

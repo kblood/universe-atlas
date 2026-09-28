@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createForestCensus,ForestCensus,FOREST_CENSUS_STRIDE as STRIDE} from '../src/forest-census.ts';
 import {forestPatch} from '../src/forest-patch.ts';
 import {forestHabitat} from '../src/forest-habitat.ts';
-import {forestRepresentative} from '../src/planet-population.ts';
+import {forestRepresentative,populationCellAt} from '../src/planet-population.ts';
 import {terrainSampler} from '../src/terrain.ts';
 import {biomeClassifier} from '../src/surface-biomes.ts';
 import {galaxies,refByAddress,system} from '../src/catalog.ts';
@@ -21,6 +21,18 @@ function livingPatch(n){
   throw new Error('No forest fixture found');
 }
 function complete(census,address,slice=8){let result=census.start(address);while(!result)result=census.step(slice);return result;}
+function assertAddressRoundTrip(seed,patch){
+  assert.equal(patch.records.length,patch.present*STRIDE);
+  for(let i=0;i<patch.records.length;i+=STRIDE){
+    const offset=patch.records[i];assert.ok(Number.isInteger(offset)&&offset>=0&&offset<64);
+    const ix=patch.address.x*8+(offset%8),iy=patch.address.y*8+Math.floor(offset/8);
+    const cell=populationCellAt(seed,patch.address.face,patch.address.n,ix,iy);
+    assert.ok(cell,`address ${patch.address.face}/${patch.address.n}/${ix}/${iy} must select a population cell`);
+    assert.equal(cell.id,`${patch.address.face}/${patch.address.n}/${ix}/${iy}`);
+    assert.deepEqual(cell.direction,Array.from(patch.records.slice(i+1,i+4)));
+    assert.equal(cell.roll,patch.records[i+4]);assert.equal(cell.heightM,patch.records[i+5]);assert.equal(cell.yaw,patch.records[i+6]);
+  }
+}
 function reference(seed,address,habitat){
   const p=forestPatch(seed,address),records=[];let representatives=0;
   for(const c of p.cells){const h=habitat(c);if(!h.present)continue;
@@ -36,10 +48,11 @@ test('complete census equals the authoritative near query across cube faces and 
     const census=await createForestCensus(body,water),n=census.n;
     const query=forestHabitat(terrainSampler(body,undefined,undefined,undefined,water),biomeClassifier(body,water),body.radiusM);
     const living=livingPatch(n),actualLiving=complete(census,living),expectedLiving=reference(body.seed,living,query);
+    assertAddressRoundTrip(body.seed,actualLiving);
     assert.deepEqual(actualLiving.records,expectedLiving.records);trees+=actualLiving.present;
     for(let face=0;face<6;face++)for(const fraction of [.02,.38,.5,.98]){
       const a={face,n,x:Math.floor(n*fraction/8),y:Math.floor(n*.49/8)},actual=complete(census,a),expected=reference(body.seed,a,query);
-      assert.deepEqual(actual.records,expected.records);assert.equal(actual.candidates,expected.candidates);
+      assert.deepEqual(actual.records,expected.records);assertAddressRoundTrip(body.seed,actual);assert.equal(actual.candidates,expected.candidates);
       assert.equal(actual.present,expected.records.length/STRIDE);assert.equal(actual.representatives,expected.representatives);candidates+=actual.candidates;trees+=actual.present;
     }
   }
@@ -73,7 +86,9 @@ test('partial edge patches and known empty patches are complete, not missing',()
   const p=complete(c,{face:5,n:33,x:4,y:4});assert.equal(p.testedCells,1);assert.equal(p.present,0);assert.equal(p.records.length,0);
   assert.equal(c.diagnostics().patches,1);
   const invalid=new ForestCensus('fixture','EDGE',33,()=>({present:true,groundHeightM:NaN}),10000,10);
-  invalid.start({face:0,n:33,x:2,y:2});assert.throws(()=>invalid.step());assert.equal(invalid.diagnostics().patches,0);
+  const address={face:0,n:33,x:2,y:2};invalid.start(address);assert.throws(()=>invalid.step());assert.equal(invalid.diagnostics().patches,0);
+  assert.equal(invalid.start(address),null,'a failed step must clear the active patch so callers can recover');
+  invalid.cancelActive();
 });
 test('snapshot and content stamp isolate water and same-ID hydrology edits',async()=>{
   const plain=await createForestCensus(body,0),reordered=await createForestCensus(Object.fromEntries(Object.entries(body).reverse()),0);
@@ -87,4 +102,15 @@ test('snapshot and content stamp isolate water and same-ID hydrology edits',asyn
   const expected=complete(first,a);changed.seed='caller-mutated';changed.water=0;
   assert.deepEqual(complete(first,a),expected,'caller mutation cannot reach sampler snapshot');
   await assert.rejects(createForestCensus(body,NaN));await assert.rejects(createForestCensus(body,0,-1));
+});
+
+test('context hashing fails closed on unsupported binary/container values and non-finite numbers',async()=>{
+  for(const value of [new Map([['river',1]]),new Set([1]),new ArrayBuffer(8),new DataView(new ArrayBuffer(8)),NaN,Infinity,-Infinity]){
+    const malformed=structuredClone(body);malformed.hashProbe=value;
+    await assert.rejects(createForestCensus(malformed,0),undefined,`reject ${Object.prototype.toString.call(value)}`);
+  }
+  const first=structuredClone(body);first.hashProbe=new Float64Array([1,2,3]);
+  const changed=structuredClone(body);changed.hashProbe=new Float64Array([1,2,4]);
+  assert.notEqual((await createForestCensus(first,0)).context,(await createForestCensus(changed,0)).context,
+    'typed-array contents must participate in the content stamp');
 });
