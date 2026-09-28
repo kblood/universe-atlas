@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { faunaHerdAt, faunaMemberActivityAtWorldNs, toSeconds } from '../src/fauna-runtime.ts';
+import { faunaHerdAt, faunaMemberActivityAtWorldNs, faunaMemberGenome, toSeconds } from '../src/fauna-runtime.ts';
 import { surfaceCellsWithin } from '../src/surface-cell.ts';
-import { FAUNA_FIELD_VISIBLE_M } from '../src/fauna-field-renderer.ts';
+import { FaunaFieldRenderer, FAUNA_FIELD_CAPACITY, FAUNA_FIELD_EYE_DETAIL_M, FAUNA_FIELD_VISIBLE_M } from '../src/fauna-field-renderer.ts';
 import { NS } from '../src/world-time.ts';
 import { galaxies, refByAddress, system } from '../src/catalog.ts';
 
@@ -98,3 +98,26 @@ test('observation hover keeps the individual resident and within draw range', ()
   assert.ok(d > 150 && d < FAUNA_FIELD_VISIBLE_M, `hover distance ${d.toFixed(2)} m is inside the visible range`);
 });
 
+test('the instanced field draws the whole measured in-view population without a distance-rank cutoff', () => {
+  // Ground-level census at the follow-up pose (trace at 743b3f4): 224
+  // camera-visible animals plus 65 off-camera shadow casters within 600 m.
+  // A 128-animal cap dropped 96 in-view animals, so a distant animal's
+  // presence depended on how many nearer animals the camera faced.
+  const cameraVisible = 224, shadowOnly = 65;
+  assert.ok(FAUNA_FIELD_CAPACITY >= cameraVisible + shadowOnly);
+  const field = new FaunaFieldRenderer(), genome = faunaMemberGenome(member()), m = new THREE.Matrix4();
+  const bodies = field.group.children.find(c => c.name === 'Fauna bodies and eyes');
+  field.beginFrame(new THREE.Vector3());
+  for (let i = 0; i < cameraVisible + shadowOnly; i++)
+    assert.ok(field.submit(genome, m.makeTranslation(i, 0, 0), 1, 'walk', 5 + i * 2), `animal ${i} is drawn`);
+  field.endFrame();
+  assert.equal(field.count, cameraVisible + shadowOnly);
+  // Eyes are a fixed-distance detail: two per animal inside 60 m, none beyond.
+  const inside = Array.from({ length: cameraVisible + shadowOnly }, (_, i) => 5 + i * 2).filter(d => d <= FAUNA_FIELD_EYE_DETAIL_M).length;
+  assert.equal(bodies.count, (cameraVisible + shadowOnly) * 2 + inside * 2);
+  // The budget only ever refuses beyond its documented capacity.
+  field.beginFrame(new THREE.Vector3());
+  for (let i = 0; i < FAUNA_FIELD_CAPACITY; i++) assert.ok(field.submit(genome, m, 1, 'idle', 300));
+  assert.equal(field.submit(genome, m, 1, 'idle', 300), false);
+  field.endFrame(); field.dispose();
+});

@@ -2,7 +2,16 @@ import * as THREE from 'three';
 import type {CreatureGenome,CreatureGait} from './fauna-runtime.ts';
 import {createFaunaMaterial} from './fauna-material.ts';
 
-export const FAUNA_FIELD_CAPACITY=128;
+/** Animals drawn through the instanced anatomy per frame. Sized from the
+ * measured ground-level population at LETHRA-001 G001/C2128,0,1/0/planet/1
+ * (224 camera-visible plus ~65 shadow casters inside 600 m): the former 128
+ * dropped 96 in-view animals by distance rank, so which distant animals were
+ * drawn depended on how many nearer ones the camera happened to face. */
+export const FAUNA_FIELD_CAPACITY=512;
+/** Eyes (~5 cm) fall below one 1440p pixel beyond this range at the 48 degree
+ * desktop field of view; skipping them there is a fixed distance rule, not a
+ * count-dependent budget, so it cannot pop an animal in view. */
+export const FAUNA_FIELD_EYE_DETAIL_M=60;
 /** Forward-looking low flight needs more than the old 280 m proxy range. */
 export const FAUNA_FIELD_VISIBLE_M=600;
 const UP=new THREE.Vector3(0,1,0);
@@ -52,7 +61,7 @@ export class FaunaFieldRenderer {
     this.part(1,parent,(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2,radius,length,radius,color,this.quaternion);
   }
   /** parent is a metre-to-radius-normalized transform with LOCAL translation. */
-  submit(g:CreatureGenome,parent:THREE.Matrix4,timeS:number,gait:CreatureGait):boolean{
+  submit(g:CreatureGenome,parent:THREE.Matrix4,timeS:number,gait:CreatureGait,distanceM=0):boolean{
     if(this.animalCount>=FAUNA_FIELD_CAPACITY)return false;this.animalCount++;
     const moving=gait!=='idle',phase=timeS*g.walkSpeed/Math.max(.2,g.strideLength)*Math.PI*2;
     const bob=moving?Math.sin(phase*2)*g.legLength*.012:Math.sin(timeS*1.8)*.006;
@@ -64,7 +73,7 @@ export class FaunaFieldRenderer {
     this.part(0,parent,hx+g.headLength*.3,hy,0,g.headLength*.52,g.headWidth*.48,g.headWidth*.52,g.color);
     this.segment(parent,this.a.set(-g.torsoLength*.43,torsoY,0),this.b.set(-g.torsoLength*.43-g.tailLength*.84,torsoY+g.tailLength*.12,Math.sin(phase*.5)*g.tailLength*.08),Math.max(.006,g.torsoWidth*.04),g.accentColor);
     for(const side of [-1,1]){
-      this.part(0,parent,hx+g.headLength*.57,hy+g.headWidth*.12,side*g.headWidth*.43,.025,.025,.025,'#151a12');
+      if(distanceM<=FAUNA_FIELD_EYE_DETAIL_M)this.part(0,parent,hx+g.headLength*.57,hy+g.headWidth*.12,side*g.headWidth*.43,.025,.025,.025,'#151a12');
       if(g.earLength>.01)this.part(2,parent,hx+g.headLength*.15,hy+g.headWidth*.42,side*g.headWidth*.32,g.headWidth*.1,g.earLength,g.headWidth*.1,g.accentColor);
       if(g.hornLength>.01)this.part(2,parent,hx+g.headLength*.35,hy+g.headWidth*.48+g.hornLength*.42,side*g.headWidth*.25,g.headWidth*.09,g.hornLength,g.headWidth*.09,g.accentColor);
       for(const rear of [false,true]){
