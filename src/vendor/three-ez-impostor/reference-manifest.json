@@ -1,0 +1,86 @@
+{
+  "operation": "atlas-three-ez-impostor-reference-1",
+  "status": "unmodified-source-bundle-not-runtime-acceptance",
+  "revision": "ca0046a49fef8f8c75745a6e49e52752ef3cf8e3",
+  "repository": "https://github.com/agargaro/octahedral-impostor",
+  "vendorManifestSha256": "ce06b2e5997b263ff96dc387d72515796aba807163169a930647765e8b5e44d5",
+  "sourceFiles": [
+    {
+      "path": "tools/assetctl/vendor/three-ez-impostor/src/utils/computeObjectBoundingSphere.ts",
+      "sha256": "ec6bd50746c64dabda89e33cc1fcc7363bcd260a3f7e69cab2b9b385dff705e7"
+    },
+    {
+      "path": "tools/assetctl/vendor/three-ez-impostor/src/shaders/impostor/octahedral_impostor_shader_map_fragment.glsl",
+      "sha256": "d1c8032fd98f4ca41b6538c3fa0c549f92cee87725092ae87e1964cbb6bcf7b1"
+    },
+    {
+      "path": "tools/assetctl/vendor/three-ez-impostor/src/shaders/impostor/octahedral_impostor_shader_normal_fragment_begin.glsl",
+      "sha256": "0ea37b4627fc4ab4cfe633a7fc30015306fe09eab3df1b824a03afdf049f8a22"
+    },
+    {
+      "path": "tools/assetctl/vendor/three-ez-impostor/src/shaders/impostor/octahedral_impostor_shader_params_fragment.glsl",
+      "sha256": "c5b6a4276256ae41a3fde90a3c3b186977545fa738eb5780eeed375d106d9e6b"
+    },
+    {
+      "path": "tools/assetctl/vendor/three-ez-impostor/src/shaders/impostor/octahedral_impostor_shader_params_vertex.glsl",
+      "sha256": "22488c77fd6d8b50fda428b024140d6727d3ed5fb052045cbbab5680418107f7"
+    },
+    {
+      "path": "tools/assetctl/vendor/three-ez-impostor/src/shaders/impostor/octahedral_impostor_shader_vertex.glsl",
+      "sha256": "76505602076dc61eac3d05548eaf00a924956c3c278c4c92926a5b1b568e5698"
+    },
+    {
+      "path": "tools/assetctl/vendor/three-ez-impostor/src/utils/octahedronUtils.ts",
+      "sha256": "b01e2c8e5351ca83c2be08ca391406bbb7ea02961679284de49e2dcbac387b40"
+    },
+    {
+      "path": "tools/assetctl/vendor/three-ez-impostor/src/shaders/atlas_texture/octahedral_atlas_fragment.glsl",
+      "sha256": "d83853379135936e2a1cd89eec36afa08c8713671a3e12627891df821c006588"
+    },
+    {
+      "path": "tools/assetctl/vendor/three-ez-impostor/src/shaders/atlas_texture/octahedral_atlas_vertex.glsl",
+      "sha256": "ce5b80065fd651a6654d33e70830e082c386833431778d1fa6ad89bb685c4d1b"
+    },
+    {
+      "path": "tools/assetctl/vendor/three-ez-impostor/src/utils/createTextureAtlas.ts",
+      "sha256": "1c5f46fc619aa26a6c3009971c07bc565ab90f7eb626c029142031c7e5393c2c"
+    },
+    {
+      "path": "tools/assetctl/vendor/three-ez-impostor/src/core/octahedralImpostorMaterial.ts",
+      "sha256": "f95dbcdf253dad1718b555b03226bf0b2627f21b5281e3e7041c7a9bb0a453d7"
+    },
+    {
+      "path": "tools/assetctl/vendor/three-ez-impostor/src/core/octahedralImpostor.ts",
+      "sha256": "2588e36d3b2ef07c2183d9ae3065f11221d9ffe2f16716ce7a9c85c241f03421"
+    }
+  ],
+  "briefSha256": "0cf84c3edfc3a1d0f08ddc94758257c3012ec52834b91ad8825e0ee4752307c4",
+  "hostSha256": "455a685c4957dfe9d8db49e9a3d0d92d9892aa9ffe81a88e8ef72632ba6b3d62",
+  "toolchain": {
+    "node": "v24.7.0",
+    "esbuild": "0.28.2"
+  },
+  "externalImports": [
+    "three",
+    "three",
+    "three",
+    "three"
+  ],
+  "limitations": [
+    "Hemisphere only: upstream full-octahedron reconstruction is unfinished",
+    "Static capture: no Atlas wind or custom deformation",
+    "No shadow, depth, lighting or visual acceptance from bundling"
+  ],
+  "artifacts": [
+    {
+      "path": "impostor-reference.js",
+      "bytes": 27267,
+      "sha256": "3d29cb7e45f265c434b0090d62a093639a71d0f1fe415d6f00e24bd7ac573180"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1071,
+      "sha256": "f2303e10ee489543167d52eaa99937e239659e24638d40e3feca2ab96107d590"
+    }
+  ]
+}

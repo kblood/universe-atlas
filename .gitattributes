@@ -9,3 +9,9 @@ test-results/opus-tree-reference-family-review/** -text
 tree-asset-lab.html -text
 assets/briefs/atlas-ez-tree-family-v1.json -text whitespace=cr-at-eol
 test-results/tree-ez-family-live/** -text
+src/vendor/three-ez-impostor/** -text
+src/tree-impostor-reference-lab.ts -text
+src/tree-impostor-reference-shader.ts -text
+tree-impostor-reference-lab.html -text
+test-results/three-ez-impostor-reference/** -text
+test-results/opus-three-ez-impostor-review/** -text

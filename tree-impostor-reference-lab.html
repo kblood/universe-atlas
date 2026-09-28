@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Atlas · Existing impostor comparison</title>
+<style>body{margin:0;background:#16202a;color:#eef4ed;font:14px system-ui}canvas{display:block}aside{position:absolute;top:12px;left:12px;width:310px;max-height:90vh;overflow:auto;padding:16px;background:#14221ee8;border-radius:8px}h1{font-size:20px}label{display:block;margin:10px 0}button,select,input{max-width:100%}pre{white-space:pre-wrap;font-size:11px}</style></head>
+<body><aside><h1>Existing impostor comparison</h1><p>Static 16 m tree. Select its Atlas GLB pair. This tests the pinned Three.ez hemisphere renderer; one capture per page load.</p>
+<label>Near GLB <input id="near" type="file" accept=".glb"></label><label>Middle GLB <input id="mid" type="file" accept=".glb"></label>
+<label><input id="fix" type="checkbox"> Repair the upstream colour include</label>
+<button id="load">Capture reference</button><label>View <select id="mode"><option value="mesh">Full mesh</option><option value="mid">Middle mesh</option><option value="impostor">Three.ez impostor</option></select></label>
+<p>No wind or shadow acceptance. Ground-level and top views are part of the comparison.</p><pre id="status">Waiting for GLBs.</pre></aside><script type="module" src="/src/tree-impostor-reference-lab.ts"></script></body></html>
