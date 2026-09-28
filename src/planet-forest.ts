@@ -427,7 +427,7 @@ export class PlanetForest {
       this.patchBroadphase.setWater(water);this.setWorkSelection(this.wanted);
     }
     const eyeMeters=this.position.set(eye.x*r,eye.y*r,eye.z*r);
-    const legacyCanopyRevision=this.fullCanopy?.currentPatchRevision?.()??NaN;
+    const legacyCanopyRevision=this.fullCanopy?(this.fullCanopy.currentPatchRevision?.()??NaN):-1;
     const canopyChanges=this.fullCanopy?.currentPatchChanges?.()??{globalRevision:legacyCanopyRevision,revision:legacyCanopyRevision,keys:[] as [string,number][]};
     const moved=this.workReferenceEyeReady&&eyeMeters.distanceToSquared(this.workReferenceEye)>20*20;
     const initial=!this.workReferenceEyeReady;

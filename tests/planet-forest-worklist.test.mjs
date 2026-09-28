@@ -13,7 +13,7 @@ const makeCell=(face,n,x,y,distanceM)=>{
   const angle=distanceM/body.radiusM;
   return {id:`${face}/${n}/${x}/${y}`,direction:[Math.sin(angle),0,Math.cos(angle)],roll:.2,heightM:16,yaw:.4,distanceM};
 };
-function fixture(includeEdge=false){
+function fixture(includeEdge=false,{canopy=true,revisionKnown=true}={}){
   const f=new PlanetForest(body),eye=new THREE.Vector3(0,0,1+20/body.radiusM),notes=[];
   f.water=0;f.center.set(0,0,1);
   const nearGroups=[0,1,2,3].map(face=>Array.from({length:64},(_,i)=>makeCell(face,256,i%8,Math.floor(i/8),50)));
@@ -26,12 +26,14 @@ function fixture(includeEdge=false){
   f.wanted=cells;
   for(const cell of cells)f.cache.set(cell.id,{cell,height:0,present:true,water:0});
   let valid=true,revision=0,globalRevision=0;const dirty=new Map();
-  f.fullCanopy={group:new THREE.Group(),prepare(){},finish(){},observeClose(){},
-    currentPatch:()=>valid,noteNear(id){notes.push(id);},canHandoff:()=>false,own(){},diagnostics(){return{};},
-    currentPatchRevision:()=>revision,
-    currentPatchChanges(){return {globalRevision,revision,keys:[...dirty.entries()]};},
-    acknowledgeCurrentPatchChanges(snapshot){if(snapshot.globalRevision===globalRevision)for(const [key,version] of snapshot.keys)if(dirty.get(key)===version)dirty.delete(key);},
-    dispose(){}};
+  if(canopy){
+    f.fullCanopy={group:new THREE.Group(),prepare(){},finish(){},observeClose(){},
+      currentPatch:()=>valid,noteNear(id){notes.push(id);},canHandoff:()=>false,own(){},diagnostics(){return{};},
+      ...(revisionKnown?{currentPatchRevision:()=>revision}:{}),
+      currentPatchChanges:revisionKnown?function(){return {globalRevision,revision,keys:[...dirty.entries()]};}:undefined,
+      acknowledgeCurrentPatchChanges(snapshot){if(snapshot.globalRevision===globalRevision)for(const [key,version] of snapshot.keys)if(dirty.get(key)===version)dirty.delete(key);},
+      dispose(){}};
+  }else f.fullCanopy=null;
   const step=(water=0,date=0n)=>f.update(eye,[0,0,1],20,true,water,false,[],date);
   const markRootChanged=(cell,height)=>{
     f.cache.get(cell.id).height=height;f.patchBroadphase.updateResident(cell.id,{groundHeightM:height,water:0});
@@ -40,6 +42,26 @@ function fixture(includeEdge=false){
   return {f,eye,cells,far,nearGroups,notes,step,edge,markRootChanged,
     setValid(value){valid=value;revision++;globalRevision++;},bumpRevision(){revision++;}};
 }
+
+test('no-canopy fallback keeps a stable revision and reuses stationary work',()=>{
+  const {f,step}=fixture(false,{canopy:false});
+  try{
+    step();const refreshes=f.diagnostics().farWork.refreshes;
+    assert.equal(f.diagnostics().farWork.canopyEpoch,-1);
+    step();
+    assert.equal(f.diagnostics().farWork.refreshes,refreshes,'absent canopy remains at the stable legacy revision');
+  }finally{f.dispose();}
+});
+
+test('present canopy without a revision API refreshes conservatively',()=>{
+  const {f,step}=fixture(false,{revisionKnown:false});
+  try{
+    step();const refreshes=f.diagnostics().farWork.refreshes;
+    assert.ok(Number.isNaN(f.diagnostics().farWork.canopyEpoch));
+    step();
+    assert.equal(f.diagnostics().farWork.refreshes,refreshes+1,'unknown canopy revision is never cached as stable');
+  }finally{f.dispose();}
+});
 
 test('owned far patches reduce per-cell work while preserving canonical capacity winners',()=>{
   const {f,cells,far,nearGroups,notes,step}=fixture();
