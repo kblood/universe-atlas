@@ -862,48 +862,461 @@ function buildFlowerArchetype(builder: PlantGeometryBuilder, lod: number, seed: 
   addLeafTetrahedron(builder, [0, headY + 0.02, 0], 0.08, 0.055, [0.94, 0.78, 0.20], 0.92, rand01(seed, 590 + lod) * Math.PI * 2);
 }
 
-function buildGrassArchetype(builder: PlantGeometryBuilder, lod: number, seed: number): void {
-  const bladeCount = lod === 0 ? 3 : lod === 1 ? 2 : 1;
-  const height = Math.fround(0.42 + rand01(seed, 710 + lod) * 0.08);
-  for (let i = 0; i < bladeCount; i++) {
-    const angle = (i / bladeCount) * Math.PI * 2 + rand01(seed, 720 + i) * 0.18;
-    const width = Math.fround(0.075 + rand01(seed, 730 + i) * 0.035);
-    const bladeHeight = Math.fround(height * (0.82 + rand01(seed, 740 + i) * 0.25));
-    const foldDepth = Math.fround(width * (0.46 + rand01(seed, 750 + i) * 0.16));
-    const lean = Math.fround(randSigned(seed, 760 + i) * width * 0.24);
-    const colorA: PlantColor = [0.34 + rand01(seed, 770 + i) * 0.04, 0.76 + rand01(seed, 780 + i) * 0.08, 0.32];
-    const colorB: PlantColor = [0.24, 0.62 + rand01(seed, 790 + i) * 0.07, 0.24];
-    addFoldedGrassBlade(builder, width, 0, bladeHeight, angle, foldDepth, lean, colorA, colorB, 1);
+// ---------------------------------------------------------------------------
+// Understory geometry: grass tussocks and low woody shrubs (not ported).
+//
+// Replaces the ported cone-blade grass and umbrella/pyramid shrub crowns with
+// walk-scale botanical forms. Every shape value comes from `rand01(seed, salt)`
+// with fixed salts, and each LOD resamples the same per-seed tuft/skeleton,
+// so the LODs share root, height and spread while their triangle counts are
+// fixed per LOD whatever the seed:
+//   grass LOD0/1/2: 7/3/3 two-sided blades of 3/2/1 segments   = 70/18/6
+//   shrub LOD0: 4 five-sided arching stems (25 each), 8 three-sided twigs
+//               (3 each) and 20 two-sided ovate leaves (8 each) = 284
+//         LOD1: 4 three-sided stem cones (3) + 12 two-sided leaf sprays (4) = 60
+//         LOD2: 4 three-sided stem cones (3) + 4 two-sided leaf sprays (4)  = 28
+// The ordinary flora material is FrontSide, so thin blades and leaves carry
+// an explicit back face (reversed winding, negated normal). Tubes are wound
+// outward. At FLORA_LOD_INSTANCE_BUDGET full capacity grass+shrub cost
+// 99,328 triangles; tests/flora-understory-geometry.test.mjs holds that budget.
+// ---------------------------------------------------------------------------
+
+const UNDERSTORY_GOLDEN_ANGLE = 2.399963229728653;
+const WORLD_UP: PlantVec3 = [0, 1, 0];
+const GRASS_LOD_BLADES = [7, 3, 3] as const;
+const GRASS_LOD_SEGMENTS = [3, 2, 1] as const;
+const GRASS_LOD_WIDTH_SCALE = [1, 2.3, 3] as const;
+/** Far LODs straighten their fewer, coarser blades so none lie flat on the ground. */
+const GRASS_LOD_ARCH = [1, 0.75, 0.55] as const;
+const SHRUB_STEM_COUNT = 4;
+const SHRUB_TWIGS_PER_STEM = 2;
+/** Arc parameters at which LOD0 samples each stem; far LODs use the chord. */
+const SHRUB_LOD0_STEM_SAMPLES = [0, 0.45, 0.8, 1] as const;
+const SHRUB_STEM_BASE_Y = -0.008;
+const SPRAY_MIN_WIDTH_RATIO = 0.15;
+const SPRAY_ROLL = 0.5;
+const SHRUB_BARK_BASE: PlantColor = [0.30, 0.22, 0.14];
+const SHRUB_BARK_TIP: PlantColor = [0.44, 0.36, 0.22];
+
+function addVec3(a: PlantVec3, b: PlantVec3): PlantVec3 { return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]; }
+function subVec3(a: PlantVec3, b: PlantVec3): PlantVec3 { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+function scaleVec3(a: PlantVec3, s: number): PlantVec3 { return [a[0] * s, a[1] * s, a[2] * s]; }
+function maddVec3(a: PlantVec3, b: PlantVec3, s: number): PlantVec3 { return [a[0] + b[0] * s, a[1] + b[1] * s, a[2] + b[2] * s]; }
+function dotVec3(a: PlantVec3, b: PlantVec3): number { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+function lengthVec3(a: PlantVec3): number { return Math.hypot(a[0], a[1], a[2]); }
+function mixColor(a: PlantColor, b: PlantColor, t: number): PlantColor { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+
+/** Arc that leaves `base` at `lean` radians from vertical toward `azimuth`,
+ * bends a further `bend` radians outward along its length and drifts
+ * sideways by `drift * t^2`; `t` is the arc parameter in [0,1]. */
+function arcPoint(base: PlantVec3, azimuth: number, lean: number, bend: number, length: number, drift: number, t: number): PlantVec3 {
+  const ox = Math.cos(azimuth), oz = Math.sin(azimuth);
+  const straight = Math.abs(bend) < 1e-4;
+  const outward = straight ? Math.sin(lean) * t : (Math.cos(lean) - Math.cos(lean + bend * t)) / bend;
+  const rise = straight ? Math.cos(lean) * t : (Math.sin(lean + bend * t) - Math.sin(lean)) / bend;
+  const side = drift * t * t;
+  return [base[0] + (ox * outward - oz * side) * length, base[1] + rise * length, base[2] + (oz * outward + ox * side) * length];
+}
+function arcTangent(azimuth: number, lean: number, bend: number, drift: number, t: number): PlantVec3 {
+  const ox = Math.cos(azimuth), oz = Math.sin(azimuth), angle = lean + bend * t, side = 2 * drift * t;
+  return normalize3([ox * Math.sin(angle) - oz * side, Math.cos(angle), oz * Math.sin(angle) + ox * side]);
+}
+
+/** Pushes one smooth-shaded open surface. Normals are area-weighted sums of
+ * the patch's own (optionally reversed) faces, so every vertex normal agrees
+ * with the winding of the triangles that use it. */
+function addSmoothPatch(builder: PlantGeometryBuilder, positions: readonly PlantVec3[], uvs: readonly [number, number][], colors: readonly PlantColor[], stiffness: readonly number[], triangles: readonly number[], reverse: boolean): void {
+  const start = builder.positions.length / 3;
+  const accumulated: PlantVec3[] = positions.map(() => [0, 0, 0]);
+  for (let i = 0; i < triangles.length; i += 3) {
+    const a = triangles[i]!, b = reverse ? triangles[i + 2]! : triangles[i + 1]!, c = reverse ? triangles[i + 1]! : triangles[i + 2]!;
+    const pa = positions[a]!, face = cross3(subVec3(positions[b]!, pa), subVec3(positions[c]!, pa));
+    for (const vertex of [a, b, c]) accumulated[vertex] = addVec3(accumulated[vertex]!, face);
+    builder.indices.push(start + a, start + b, start + c);
   }
+  for (let i = 0; i < positions.length; i++) pushVertex(builder, positions[i]!, accumulated[i]!, uvs[i]!, colors[i]!, stiffness[i]!);
+}
+function addTwoSidedPatch(builder: PlantGeometryBuilder, positions: readonly PlantVec3[], uvs: readonly [number, number][], frontColors: readonly PlantColor[], backColors: readonly PlantColor[], stiffness: readonly number[], triangles: readonly number[]): void {
+  addSmoothPatch(builder, positions, uvs, frontColors, stiffness, triangles, false);
+  addSmoothPatch(builder, positions, uvs, backColors, stiffness, triangles, true);
+}
+
+/** Outward-wound woody tube along `points` with one shared ring per point
+ * (no seams at bends); the last point is a closed apex. The base ring is left
+ * open: stems sink it into the ground, twigs bury it inside their parent. */
+function addWoodyTube(builder: PlantGeometryBuilder, points: readonly PlantVec3[], radii: readonly number[], stiffness: readonly number[], sides: number, seed: number, salt: number): void {
+  const count = points.length, rings = count - 1;
+  const tangents = points.map((_, i) => normalize3(subVec3(points[Math.min(i + 1, count - 1)]!, points[Math.max(i - 1, 0)]!)));
+  const first = tangents[0]!;
+  let right = normalize3(cross3(Math.abs(first[1]) > 0.92 ? [1, 0, 0] : [0, 1, 0], first));
+  const frames: { right: PlantVec3; up: PlantVec3 }[] = [];
+  for (let i = 0; i < rings; i++) {
+    const tangent = tangents[i]!;
+    // Parallel transport keeps consecutive rings untwisted.
+    if (i > 0) right = normalize3(maddVec3(right, tangent, -dotVec3(right, tangent)));
+    frames.push({ right, up: normalize3(cross3(tangent, right)) });
+  }
+  const phase = rand01(seed, salt) * Math.PI * 2 / sides;
+  const radial = (frame: { right: PlantVec3; up: PlantVec3 }, angle: number): PlantVec3 => addVec3(scaleVec3(frame.right, Math.cos(angle)), scaleVec3(frame.up, Math.sin(angle)));
+  const start = builder.positions.length / 3;
+  for (let i = 0; i < rings; i++) {
+    const along = i / rings, bark = mixColor(SHRUB_BARK_BASE, SHRUB_BARK_TIP, along);
+    for (let k = 0; k < sides; k++) {
+      const direction = radial(frames[i]!, phase + (k / sides) * Math.PI * 2);
+      pushVertex(builder, maddVec3(points[i]!, direction, radii[i]!), direction, [k / sides, along], shadePlantColor(bark, 0.86 + rand01(seed, salt + 1 + i * 8 + k) * 0.2), stiffness[i]!);
+    }
+  }
+  // One apex vertex per facet so each facet keeps its own radial normal.
+  const last = frames[rings - 1]!, tipBark = shadePlantColor(SHRUB_BARK_TIP, 0.96);
+  for (let k = 0; k < sides; k++) {
+    pushVertex(builder, points[count - 1]!, radial(last, phase + ((k + 0.5) / sides) * Math.PI * 2), [(k + 0.5) / sides, 1], tipBark, stiffness[count - 1]!);
+  }
+  for (let i = 0; i < rings - 1; i++) {
+    for (let k = 0; k < sides; k++) {
+      const a = start + i * sides + k, b = start + i * sides + ((k + 1) % sides), c = a + sides, d = b + sides;
+      builder.indices.push(a, b, c, b, d, c);
+    }
+  }
+  const lastRing = start + (rings - 1) * sides, apex = start + rings * sides;
+  for (let k = 0; k < sides; k++) builder.indices.push(lastRing + k, lastRing + ((k + 1) % sides), apex + k);
+}
+
+// --- Grass ------------------------------------------------------------------
+
+interface GrassBlade {
+  base: PlantVec3; azimuth: number; lean: number; bend: number; length: number; drift: number;
+  halfWidth: number; twist: number; tone: number; straw: number;
+}
+
+/** A tussock of `count` blades on a Vogel spiral: inner blades stand upright
+ * and tall, outer blades lean and arch further. Every LOD resamples the same
+ * seeded tuft height, turn and lean range with fewer blades. */
+function grassTuft(seed: number, count: number, arch: number): GrassBlade[] {
+  const turn = rand01(seed, 0x5100) * Math.PI * 2;
+  const height = 0.42 + rand01(seed, 0x5101) * 0.08;
+  const blades: GrassBlade[] = [];
+  for (let i = 0; i < count; i++) {
+    const f = (i + 0.5) / count;
+    const azimuth = turn + i * UNDERSTORY_GOLDEN_ANGLE + randSigned(seed, 0x5110 + i) * 0.28;
+    const offset = 0.006 + 0.03 * Math.sqrt(f);
+    blades.push({
+      base: [Math.cos(azimuth) * offset, 0, Math.sin(azimuth) * offset],
+      azimuth,
+      lean: (0.08 + f * 0.42 + rand01(seed, 0x5120 + i) * 0.12) * (0.5 + 0.5 * arch),
+      bend: (0.25 + rand01(seed, 0x5130 + i) * 0.5) * arch,
+      length: height * (0.8 + rand01(seed, 0x5140 + i) * 0.3) * (1.1 - 0.26 * f),
+      drift: randSigned(seed, 0x5150 + i) * 0.08,
+      halfWidth: 0.0085 + rand01(seed, 0x5160 + i) * 0.0055,
+      twist: randSigned(seed, 0x5170 + i) * 0.5,
+      tone: rand01(seed, 0x5180 + i),
+      straw: rand01(seed, 0x5190 + i),
+    });
+  }
+  return blades;
+}
+
+/** Tapered blade with `segments` bands: parallel-sided sheath, arched
+ * midline, gentle twist and a single tip vertex. */
+function addGrassBlade(builder: PlantGeometryBuilder, blade: GrassBlade, segments: number, widthScale: number): void {
+  const across0: PlantVec3 = [Math.sin(blade.azimuth), 0, -Math.cos(blade.azimuth)];
+  const baseColor = shadePlantColor([0.20, 0.47, 0.18], 0.9 + blade.tone * 0.18);
+  const tipColor = mixColor(shadePlantColor([0.42, 0.78, 0.33], 0.92 + blade.tone * 0.14), [0.64, 0.72, 0.38], blade.straw * 0.35);
+  const positions: PlantVec3[] = [], uvs: [number, number][] = [], colors: PlantColor[] = [], stiffness: number[] = [];
+  for (let row = 0; row < segments; row++) {
+    const t = row / segments;
+    const center = arcPoint(blade.base, blade.azimuth, blade.lean, blade.bend, blade.length, blade.drift, t);
+    const tangent = arcTangent(blade.azimuth, blade.lean, blade.bend, blade.drift, t);
+    const flat = normalize3(maddVec3(across0, tangent, -dotVec3(across0, tangent)));
+    const twist = blade.twist * t;
+    const across = normalize3(addVec3(scaleVec3(flat, Math.cos(twist)), scaleVec3(cross3(tangent, flat), Math.sin(twist))));
+    const halfWidth = blade.halfWidth * widthScale * (0.72 + 0.28 * Math.min(1, t * 5)) * (1 - Math.pow(t, 1.8));
+    const color = mixColor(baseColor, tipColor, t), stiff = Math.pow(t, 1.4);
+    positions.push(maddVec3(center, across, -halfWidth), maddVec3(center, across, halfWidth));
+    uvs.push([0, t], [1, t]);
+    colors.push(color, color);
+    stiffness.push(stiff, stiff);
+  }
+  positions.push(arcPoint(blade.base, blade.azimuth, blade.lean, blade.bend, blade.length, blade.drift, 1));
+  uvs.push([0.5, 1]);
+  colors.push(tipColor);
+  stiffness.push(1);
+  const triangles: number[] = [];
+  for (let row = 0; row < segments - 1; row++) {
+    const l = row * 2, r = l + 1;
+    triangles.push(l, r, l + 2, r, r + 2, l + 2);
+  }
+  const tip = segments * 2;
+  triangles.push(tip - 2, tip - 1, tip);
+  addTwoSidedPatch(builder, positions, uvs, colors, colors.map((color) => shadePlantColor(color, 0.9)), stiffness, triangles);
+}
+
+function buildGrassArchetype(builder: PlantGeometryBuilder, lod: number, seed: number): void {
+  for (const blade of grassTuft(seed, GRASS_LOD_BLADES[lod]!, GRASS_LOD_ARCH[lod]!)) addGrassBlade(builder, blade, GRASS_LOD_SEGMENTS[lod]!, GRASS_LOD_WIDTH_SCALE[lod]!);
+}
+
+// --- Shrub ------------------------------------------------------------------
+
+/** One woody axis of an understory shrub, as drawn at one LOD. */
+export interface UnderstoryShrubShoot {
+  /** Axis from base to apex; the apex is the last point. */
+  points: PlantVec3[];
+  /** Ring radius at each point (the apex entry is 0). */
+  radii: number[];
+  stiffness: number[];
+  sides: number;
+  /** Index into `stems` for a twig; -1 for a stem. */
+  parent: number;
+  /** Radius of the parent axis where a twig is rooted (0 for a stem). */
+  parentRadius: number;
+}
+/** Leaf (LOD0) or leaf spray (LOD1/2), rooted on a host shoot's axis. */
+export interface UnderstoryShrubFoliage {
+  host: 'stem' | 'twig';
+  hostIndex: number;
+  base: PlantVec3;
+  /** Unit axis from base to tip. */
+  direction: PlantVec3;
+  /** Unit upper-surface normal, perpendicular to `direction`. */
+  normal: PlantVec3;
+  length: number;
+  halfWidth: number;
+  /** 0 = ovate (widest near base) ... 1 = obovate (widest near tip). */
+  shape: number;
+  fold: number;
+  curl: number;
+  top: PlantColor;
+  under: PlantColor;
+  stiffness: number;
+}
+export interface UnderstoryShrubSkeleton {
+  stems: UnderstoryShrubShoot[];
+  twigs: UnderstoryShrubShoot[];
+  foliage: UnderstoryShrubFoliage[];
+}
+
+interface ShrubStemPlan { base: PlantVec3; azimuth: number; lean: number; bend: number; length: number; drift: number; radius: number }
+
+function shrubStemPlans(seed: number): ShrubStemPlan[] {
+  const turn = rand01(seed, 0x5300) * Math.PI * 2, stature = 0.9 + rand01(seed, 0x5301) * 0.2;
+  const plans: ShrubStemPlan[] = [];
+  for (let j = 0; j < SHRUB_STEM_COUNT; j++) {
+    const azimuth = turn + j * UNDERSTORY_GOLDEN_ANGLE + randSigned(seed, 0x5310 + j) * 0.3;
+    const f = j / (SHRUB_STEM_COUNT - 1), offset = 0.014 + rand01(seed, 0x5320 + j) * 0.022;
+    plans.push({
+      base: [Math.cos(azimuth) * offset, SHRUB_STEM_BASE_Y, Math.sin(azimuth) * offset],
+      azimuth,
+      lean: 0.08 + f * 0.5 + rand01(seed, 0x5330 + j) * 0.12,
+      bend: 0.3 + rand01(seed, 0x5340 + j) * 0.4,
+      length: (0.84 - 0.26 * f + rand01(seed, 0x5350 + j) * 0.1) * stature,
+      drift: randSigned(seed, 0x5360 + j) * 0.12,
+      radius: 0.017 + rand01(seed, 0x5370 + j) * 0.006,
+    });
+  }
+  return plans;
+}
+
+/** Position, segment direction and interpolated radius at arc parameter `t`
+ * on a shoot sampled at `params` (so attachments sit on the drawn axis). */
+function sampleShoot(shoot: UnderstoryShrubShoot, params: readonly number[], t: number): { point: PlantVec3; tangent: PlantVec3; radius: number } {
+  let i = 0;
+  while (i < params.length - 2 && t > params[i + 1]!) i++;
+  const t0 = params[i]!, t1 = params[i + 1]!, u = clamp01((t - t0) / (t1 - t0));
+  const a = shoot.points[i]!, b = shoot.points[i + 1]!;
+  return { point: lerpVec3(a, b, u), tangent: normalize3(subVec3(b, a)), radius: shoot.radii[i]! + (shoot.radii[i + 1]! - shoot.radii[i]!) * u };
+}
+/** Unit vector perpendicular to `axis`, at angle `psi` around it measured
+ * from the horizontal. */
+function aroundAxis(axis: PlantVec3, psi: number): PlantVec3 {
+  const right = normalize3(Math.abs(axis[1]) > 0.98 ? [1, 0, 0] : cross3(WORLD_UP, axis));
+  const up = normalize3(cross3(axis, right));
+  return addVec3(scaleVec3(right, Math.cos(psi)), scaleVec3(up, Math.sin(psi)));
+}
+/** Upper-surface normal for a blade-like organ lying along `direction`. */
+function organNormal(direction: PlantVec3, fallbackOut: PlantVec3, roll: number): PlantVec3 {
+  const hint = Math.abs(direction[1]) > 0.95 ? fallbackOut : WORLD_UP;
+  const side = normalize3(cross3(direction, hint));
+  const normal = normalize3(cross3(side, direction));
+  return normalize3(addVec3(scaleVec3(normal, Math.cos(roll)), scaleVec3(side, Math.sin(roll))));
+}
+
+/** `radiusScale` thins the far triangular cones, whose steeper chord would
+ * otherwise tilt their root ring below the -0.023 m root convention. */
+function shrubStems(plans: readonly ShrubStemPlan[], params: readonly number[], sides: number, radiusScale: number): UnderstoryShrubShoot[] {
+  return plans.map((plan) => ({
+    points: params.map((t) => arcPoint(plan.base, plan.azimuth, plan.lean, plan.bend, plan.length, plan.drift, t)),
+    radii: params.map((t, i) => (i === params.length - 1 ? 0 : plan.radius * radiusScale * (1 - 0.72 * t))),
+    stiffness: params.map((t) => 0.04 + 0.5 * t),
+    sides, parent: -1, parentRadius: 0,
+  }));
+}
+
+function shrubTwigs(seed: number, stems: readonly UnderstoryShrubShoot[], params: readonly number[]): UnderstoryShrubShoot[] {
+  const twigs: UnderstoryShrubShoot[] = [];
+  stems.forEach((stem, j) => {
+    const turn = rand01(seed, 0x5380 + j) * Math.PI * 2;
+    for (let m = 0; m < SHRUB_TWIGS_PER_STEM; m++) {
+      const salt = 0x5400 + (j * SHRUB_TWIGS_PER_STEM + m) * 8;
+      const t = (m === 0 ? 0.32 : 0.56) + rand01(seed, salt) * 0.13;
+      const at = sampleShoot(stem, params, t);
+      const side = aroundAxis(at.tangent, turn + m * UNDERSTORY_GOLDEN_ANGLE + randSigned(seed, salt + 1) * 0.25);
+      const divergence = 0.75 + rand01(seed, salt + 2) * 0.4;
+      const direction = normalize3(maddVec3(addVec3(scaleVec3(at.tangent, Math.cos(divergence)), scaleVec3(side, Math.sin(divergence))), WORLD_UP, 0.25));
+      const length = 0.18 + rand01(seed, salt + 3) * 0.12;
+      const stiff = 0.04 + 0.5 * t;
+      twigs.push({ points: [at.point, maddVec3(at.point, direction, length)], radii: [at.radius * 0.55, 0], stiffness: [stiff, Math.min(1, stiff + 0.25)], sides: 3, parent: j, parentRadius: at.radius });
+    }
+  });
+  return twigs;
+}
+
+function shrubLeafColors(seed: number, salt: number): { top: PlantColor; under: PlantColor } {
+  const green = mixColor([0.24, 0.60, 0.31], [0.36, 0.74, 0.38], rand01(seed, salt));
+  const top = shadePlantColor(mixColor(green, [0.42, 0.64, 0.26], rand01(seed, salt + 1) * 0.45), 0.9 + rand01(seed, salt + 2) * 0.18);
+  return { top, under: mixColor(top, [0.62, 0.72, 0.52], 0.25) };
+}
+
+/** LOD0 leaves: a lateral and a terminal leaf per twig and a terminal leaf per
+ * stem, turning by the golden angle around their host axis. */
+function shrubLeaves(seed: number, stems: readonly UnderstoryShrubShoot[], twigs: readonly UnderstoryShrubShoot[]): UnderstoryShrubFoliage[] {
+  const leaves: UnderstoryShrubFoliage[] = [];
+  const add = (host: 'stem' | 'twig', hostIndex: number, base: PlantVec3, hostAxis: PlantVec3, lateral: boolean, stiffness: number): void => {
+    const q = leaves.length, salt = 0x5500 + q * 16;
+    const side = aroundAxis(hostAxis, rand01(seed, 0x54f0) * Math.PI * 2 + (q + 1) * UNDERSTORY_GOLDEN_ANGLE);
+    const divergence = lateral ? 0.7 + rand01(seed, salt) * 0.35 : 0.2 + rand01(seed, salt) * 0.2;
+    const raw = addVec3(scaleVec3(hostAxis, Math.cos(divergence)), scaleVec3(side, Math.sin(divergence)));
+    // Leaves hold their blades nearer horizontal than their shoots.
+    const direction = normalize3([raw[0], raw[1] * 0.6 - 0.06, raw[2]]);
+    const out = normalize3([base[0] || 1e-3, 0, base[2]]);
+    const length = 0.12 + rand01(seed, salt + 1) * 0.06;
+    leaves.push({
+      host, hostIndex, base, direction,
+      normal: organNormal(direction, out, randSigned(seed, salt + 2) * 0.6),
+      length,
+      halfWidth: length * (0.23 + rand01(seed, salt + 3) * 0.09),
+      shape: rand01(seed, salt + 4),
+      fold: 0.1 + rand01(seed, salt + 5) * 0.2,
+      curl: 0.06 + rand01(seed, salt + 6) * 0.16,
+      ...shrubLeafColors(seed, salt + 8),
+      stiffness,
+    });
+  };
+  twigs.forEach((twig, i) => {
+    const a = twig.points[0]!, b = twig.points[1]!, axis = normalize3(subVec3(b, a));
+    add('twig', i, lerpVec3(a, b, 0.55), axis, true, twig.stiffness[0]! + 0.14);
+    add('twig', i, b, axis, false, twig.stiffness[1]!);
+  });
+  stems.forEach((stem, j) => {
+    const count = stem.points.length, apex = stem.points[count - 1]!;
+    add('stem', j, apex, normalize3(subVec3(apex, stem.points[count - 2]!)), false, stem.stiffness[count - 1]!);
+  });
+  return leaves;
+}
+
+function ovateLeafArea(leaf: UnderstoryShrubFoliage): number {
+  // Planar area of the six-point outline built by `addOvateLeaf`.
+  const t1 = 0.26 + 0.14 * leaf.shape, t2 = 0.64 + 0.14 * leaf.shape, w1 = 1 - 0.28 * leaf.shape, w2 = 0.62 + 0.36 * leaf.shape;
+  return leaf.length * leaf.halfWidth * (t1 * w1 + (t2 - t1) * (w1 + w2) + (1 - t2) * w2);
+}
+function leafTip(leaf: UnderstoryShrubFoliage): PlantVec3 {
+  return maddVec3(maddVec3(leaf.base, leaf.direction, leaf.length), leaf.normal, -leaf.curl * leaf.length);
+}
+
+/** Far-LOD spray: one kite from the host axis through the centre of the
+ * leaves it replaces, reaching half a leaf beyond it. It keeps the replaced
+ * leaves' area but is never narrower than SPRAY_MIN_WIDTH_RATIO of its length
+ * (no blade-like spikes). Sprays roll about their axis by `roll` so distant,
+ * near-horizontal views meet some of them face-on rather than edge-on;
+ * `flatten` scales the rise of the spray axis as leaves hold their blades
+ * nearer horizontal than their shoots. */
+function leafSpray(host: 'stem' | 'twig', hostIndex: number, base: PlantVec3, leaves: readonly UnderstoryShrubFoliage[], stiffness: number, areaScale: number, roll: number, flatten: number): UnderstoryShrubFoliage {
+  let center: PlantVec3 = [0, 0, 0], leafLength = 0, area = 0, top: PlantColor = [0, 0, 0], under: PlantColor = [0, 0, 0];
+  const share = 1 / leaves.length;
+  for (const leaf of leaves) {
+    center = maddVec3(center, lerpVec3(leaf.base, leafTip(leaf), 0.5), share);
+    leafLength += leaf.length * share;
+    area += ovateLeafArea(leaf);
+    top = maddVec3(top, leaf.top, share);
+    under = maddVec3(under, leaf.under, share);
+  }
+  const reach = subVec3(center, base), direction = normalize3([reach[0], reach[1] * flatten, reach[2]]);
+  let length = lengthVec3(reach) + leafLength * 0.5;
+  for (const leaf of leaves) length = Math.max(length, dotVec3(subVec3(leafTip(leaf), base), direction));
+  const out = normalize3([center[0] || 1e-3, 0, center[2]]);
+  // Kite area = length * halfWidth.
+  const halfWidth = Math.max((area * areaScale) / length, SPRAY_MIN_WIDTH_RATIO * length);
+  return { host, hostIndex, base, direction, normal: organNormal(direction, out, roll), length, halfWidth, shape: 0.62, fold: 0.12, curl: 0, top, under, stiffness };
+}
+
+/**
+ * Deterministic shrub skeleton for one LOD: stems, twigs and the leaves
+ * (LOD0) or leaf sprays (LOD1/2) that `buildFloraGeometryData('shrub', ...)`
+ * draws. Exposed so tests can check attachments without parsing the mesh.
+ */
+export function understoryShrubSkeleton(lod: number, seed: number): UnderstoryShrubSkeleton {
+  const clampedLod = clampInt(lod, 0, FLORA_LOD_COUNT - 1);
+  const plans = shrubStemPlans(seed);
+  const nearStems = shrubStems(plans, SHRUB_LOD0_STEM_SAMPLES, 5, 1);
+  const nearTwigs = shrubTwigs(seed, nearStems, SHRUB_LOD0_STEM_SAMPLES);
+  const leaves = shrubLeaves(seed, nearStems, nearTwigs);
+  if (clampedLod === 0) return { stems: nearStems, twigs: nearTwigs, foliage: leaves };
+  const chord = [0, 1] as const;
+  const stems = shrubStems(plans, chord, 3, 0.7);
+  const foliage: UnderstoryShrubFoliage[] = [];
+  if (clampedLod === 1) {
+    shrubTwigs(seed, stems, chord).forEach((twig, i) => {
+      foliage.push(leafSpray('stem', twig.parent, twig.points[0]!, leaves.filter((leaf) => leaf.host === 'twig' && leaf.hostIndex === i), twig.stiffness[1]!, 0.85, SPRAY_ROLL * (i % 2 === 0 ? 1 : -1), 0.6));
+    });
+    stems.forEach((stem, j) => {
+      const base = sampleShoot(stem, chord, 0.8).point;
+      foliage.push(leafSpray('stem', j, base, leaves.filter((leaf) => leaf.host === 'stem' && leaf.hostIndex === j), stem.stiffness[1]!, 0.85, SPRAY_ROLL * (j % 2 === 0 ? -1 : 1), 0.6));
+    });
+  } else {
+    stems.forEach((stem, j) => {
+      const owned = leaves.filter((leaf) => (leaf.host === 'stem' ? leaf.hostIndex : nearTwigs[leaf.hostIndex]!.parent) === j);
+      foliage.push(leafSpray('stem', j, sampleShoot(stem, chord, 0.45).point, owned, stem.stiffness[1]!, 1.3, SPRAY_ROLL * 0.6 * (j % 2 === 0 ? 1 : -1), 0.85));
+    });
+  }
+  return { stems, twigs: [], foliage };
+}
+
+/** Six-point ovate/obovate leaf folded along its midrib and curled at the
+ * tip; two-sided with a paler underside. */
+function addOvateLeaf(builder: PlantGeometryBuilder, leaf: UnderstoryShrubFoliage): void {
+  const { base, direction: d, normal: n, length, halfWidth, shape, fold, curl } = leaf;
+  const s = normalize3(cross3(d, n));
+  const midrib = (t: number): PlantVec3 => maddVec3(maddVec3(base, d, length * t), n, -curl * length * t * t);
+  const edge = (t: number, width: number, sign: number): PlantVec3 => maddVec3(maddVec3(midrib(t), s, sign * halfWidth * width), n, -fold * halfWidth * width);
+  const t1 = 0.26 + 0.14 * shape, t2 = 0.64 + 0.14 * shape, w1 = 1 - 0.28 * shape, w2 = 0.62 + 0.36 * shape;
+  // Outline B, R1, R2, T, L2, L1; the B-T midrib is a shared edge so the fold stays crisp.
+  const positions: PlantVec3[] = [midrib(0), edge(t1, w1, 1), edge(t2, w2, 1), midrib(1), edge(t2, w2, -1), edge(t1, w1, -1)];
+  const along = [0, t1, t2, 1, t2, t1];
+  const uvs: [number, number][] = [[0.5, 0], [1, t1], [1, t2], [0.5, 1], [0, t2], [0, t1]];
+  const top = along.map((t) => shadePlantColor(leaf.top, 0.86 + 0.14 * t));
+  const under = along.map((t) => shadePlantColor(leaf.under, 0.9 + 0.1 * t));
+  const stiffness = along.map((t) => Math.min(1, leaf.stiffness + (1 - leaf.stiffness) * 0.6 * t));
+  addTwoSidedPatch(builder, positions, uvs, top, under, stiffness, [0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5]);
+}
+
+/** Four-point folded kite used for far-LOD leaf sprays; two-sided. */
+function addLeafSprayCard(builder: PlantGeometryBuilder, spray: UnderstoryShrubFoliage): void {
+  const { base, direction: d, normal: n, length, halfWidth, shape, fold } = spray;
+  const s = normalize3(cross3(d, n));
+  const widest = maddVec3(base, d, length * shape);
+  const positions: PlantVec3[] = [base, maddVec3(maddVec3(widest, s, halfWidth), n, -fold * halfWidth), maddVec3(base, d, length), maddVec3(maddVec3(widest, s, -halfWidth), n, -fold * halfWidth)];
+  const uvs: [number, number][] = [[0.5, 0], [1, shape], [0.5, 1], [0, shape]];
+  const tip = Math.min(1, spray.stiffness + 0.3);
+  const stiffness = [spray.stiffness, tip, tip, tip];
+  addTwoSidedPatch(builder, positions, uvs, [shadePlantColor(spray.top, 0.88), spray.top, spray.top, spray.top], [spray.under, spray.under, spray.under, spray.under], stiffness, [0, 1, 2, 0, 2, 3]);
 }
 
 function buildShrubArchetype(builder: PlantGeometryBuilder, lod: number, seed: number): void {
-  const bark: PlantColor = [0.38, 0.29, 0.17];
-  const leafA: PlantColor = [0.24, 0.62, 0.33];
-  const leafB: PlantColor = [0.36, 0.74, 0.38];
-  if (lod >= 2) {
-    addTriPrism(builder, 0.09, 0.04, 0.42, bark, 0.36);
-    addFacetedCanopyCrown(builder, [0, 0.62, 0], 0.48, 0.62, leafA, 0.9, seed, 910);
-    return;
+  const skeleton = understoryShrubSkeleton(lod, seed);
+  skeleton.stems.forEach((stem, j) => addWoodyTube(builder, stem.points, stem.radii, stem.stiffness, stem.sides, seed, 0x5600 + j * 64));
+  skeleton.twigs.forEach((twig, i) => addWoodyTube(builder, twig.points, twig.radii, twig.stiffness, twig.sides, seed, 0x5800 + i * 16));
+  for (const organ of skeleton.foliage) {
+    if (lod === 0) addOvateLeaf(builder, organ);
+    else addLeafSprayCard(builder, organ);
   }
-  const stemCount = lod === 0 ? 5 : 3;
-  for (let i = 0; i < stemCount; i++) {
-    const yaw = (i / stemCount) * Math.PI * 2 + randSigned(seed, 920 + i + lod * 17) * 0.42;
-    const reach = Math.fround((lod === 0 ? 0.44 : 0.35) + rand01(seed, 930 + i + lod * 17) * 0.16);
-    const height = Math.fround((lod === 0 ? 0.58 : 0.48) + rand01(seed, 940 + i + lod * 17) * 0.16);
-    const start: PlantVec3 = [Math.fround(Math.cos(yaw) * 0.045), 0, Math.fround(Math.sin(yaw) * 0.045)];
-    const elbow: PlantVec3 = [Math.fround(Math.cos(yaw) * reach * 0.42), Math.fround(height * 0.44), Math.fround(Math.sin(yaw) * reach * 0.42)];
-    const end: PlantVec3 = [Math.fround(Math.cos(yaw) * reach), height, Math.fround(Math.sin(yaw) * reach)];
-    addCurvedBranch(builder, start, elbow, end, lod === 0 ? 0.038 : 0.032, lod === 0 ? 0.014 : 0.012, 3, lod === 0 ? 2 : 1, bark, 0.05, 0.62);
-    if (lod === 0) {
-      addLeafPolyhedron(builder, end, 0.15 + rand01(seed, 950 + i) * 0.025, 0.13, i % 2 === 0 ? leafA : leafB, 0.92, yaw);
-      addFlowerFoldedLeaf(builder, lerpVec3(start, end, 0.62), yaw + 0.92, 0.18, 0.055, i % 2 === 0 ? leafB : leafA);
-      addFlowerFoldedLeaf(builder, lerpVec3(start, end, 0.46), yaw - 0.84, 0.16, 0.05, leafA);
-    } else {
-      addLeafTetrahedron(builder, end, 0.15, 0.1, i % 2 === 0 ? leafA : leafB, 0.9, yaw);
-    }
-  }
-  if (lod === 0) addRootFlare(builder, 0.08, bark);
 }
 
 function addCurvedBranch(builder: PlantGeometryBuilder, start: PlantVec3, control: PlantVec3, end: PlantVec3, bottomRadius: number, topRadius: number, sides: number, segments: number, color: PlantColor, bottomStiffness: number, topStiffness: number): void {
@@ -951,24 +1364,6 @@ function addTreeCanopyLobe(builder: PlantGeometryBuilder, center: PlantVec3, rad
   }
 }
 
-function addLeafPolyhedron(builder: PlantGeometryBuilder, center: PlantVec3, radius: number, height: number, color: PlantColor, stiffness: number, yaw: number): void {
-  const right: PlantVec3 = [Math.cos(yaw) * radius, 0, Math.sin(yaw) * radius];
-  const forward: PlantVec3 = [Math.cos(yaw + Math.PI * 0.5) * radius * 0.74, 0, Math.sin(yaw + Math.PI * 0.5) * radius * 0.74];
-  const top: PlantVec3 = [center[0], Math.fround(center[1] + height), center[2]];
-  const bottom: PlantVec3 = [center[0], Math.fround(center[1] - height * 0.42), center[2]];
-  const left: PlantVec3 = [Math.fround(center[0] - right[0]), center[1], Math.fround(center[2] - right[2])];
-  const rightPoint: PlantVec3 = [Math.fround(center[0] + right[0]), center[1], Math.fround(center[2] + right[2])];
-  const front: PlantVec3 = [Math.fround(center[0] + forward[0]), Math.fround(center[1] + height * 0.08), Math.fround(center[2] + forward[2])];
-  const back: PlantVec3 = [Math.fround(center[0] - forward[0]), Math.fround(center[1] - height * 0.04), Math.fround(center[2] - forward[2])];
-  addTriangleAutoNormal(builder, top, front, rightPoint, color, [stiffness, stiffness, stiffness]);
-  addTriangleAutoNormal(builder, top, rightPoint, back, color, [stiffness, stiffness, stiffness]);
-  addTriangleAutoNormal(builder, top, back, left, color, [stiffness, stiffness, stiffness]);
-  addTriangleAutoNormal(builder, top, left, front, color, [stiffness, stiffness, stiffness]);
-  addTriangleAutoNormal(builder, bottom, rightPoint, front, color, [stiffness * 0.9, stiffness, stiffness]);
-  addTriangleAutoNormal(builder, bottom, back, rightPoint, color, [stiffness * 0.9, stiffness, stiffness]);
-  addTriangleAutoNormal(builder, bottom, left, back, color, [stiffness * 0.9, stiffness, stiffness]);
-  addTriangleAutoNormal(builder, bottom, front, left, color, [stiffness * 0.9, stiffness, stiffness]);
-}
 
 function addLeafTetrahedron(builder: PlantGeometryBuilder, center: PlantVec3, radius: number, height: number, color: PlantColor, stiffness: number, yaw: number): void {
   const top: PlantVec3 = [center[0], Math.fround(center[1] + height), center[2]];
@@ -981,22 +1376,6 @@ function addLeafTetrahedron(builder: PlantGeometryBuilder, center: PlantVec3, ra
   addTriangleAutoNormal(builder, a, c, b, color, [stiffness * 0.85, stiffness * 0.85, stiffness * 0.85]);
 }
 
-function addFacetedCanopyCrown(builder: PlantGeometryBuilder, center: PlantVec3, radius: number, height: number, color: PlantColor, stiffness: number, seed: number, salt: number): void {
-  const yaw = randSigned(seed, salt) * 0.16;
-  const top: PlantVec3 = [Math.fround(center[0] + randSigned(seed, salt + 1) * radius * 0.08), Math.fround(center[1] + height * 0.58), Math.fround(center[2] + randSigned(seed, salt + 2) * radius * 0.08)];
-  const bottom: PlantVec3 = [Math.fround(center[0] - randSigned(seed, salt + 1) * radius * 0.04), Math.fround(center[1] - height * 0.42), Math.fround(center[2] - randSigned(seed, salt + 2) * radius * 0.04)];
-  const ring: PlantVec3[] = [];
-  for (let i = 0; i < 6; i++) {
-    const angle = yaw + (i / 6) * Math.PI * 2;
-    const yOffset = (i % 2 === 0 ? 0.08 : -0.05) * height;
-    ring.push([Math.fround(center[0] + Math.cos(angle) * radius * (0.82 + rand01(seed, salt + 10 + i) * 0.1)), Math.fround(center[1] + yOffset), Math.fround(center[2] + Math.sin(angle) * radius * (0.66 + rand01(seed, salt + 20 + i) * 0.1))]);
-  }
-  for (let i = 0; i < 3; i++) {
-    const a = ring[i * 2]!, b = ring[(i * 2 + 1) % ring.length]!, c = ring[(i * 2 + 2) % ring.length]!;
-    addTriangleAutoNormal(builder, top, a, b, color, [stiffness, stiffness * 0.9, stiffness * 0.9]);
-    addTriangleAutoNormal(builder, bottom, c, b, color, [stiffness * 0.72, stiffness * 0.82, stiffness * 0.82]);
-  }
-}
 
 function addFlowerFoldedLeaf(builder: PlantGeometryBuilder, base: PlantVec3, yaw: number, length: number, width: number, color: PlantColor): void {
   const forward: PlantVec3 = [Math.cos(yaw), 0.22, Math.sin(yaw)];
@@ -1083,30 +1462,6 @@ function quadraticVec3(a: PlantVec3, b: PlantVec3, c: PlantVec3, t: number): Pla
 }
 function cross3(a: PlantVec3, b: PlantVec3): PlantVec3 {
   return [Math.fround(a[1] * b[2] - a[2] * b[1]), Math.fround(a[2] * b[0] - a[0] * b[2]), Math.fround(a[0] * b[1] - a[1] * b[0])];
-}
-function addTriPrism(builder: PlantGeometryBuilder, bottomRadius: number, topRadius: number, height: number, color: [number, number, number], topStiffness: number): void {
-  const start = builder.positions.length / 3;
-  for (let yIndex = 0; yIndex < 2; yIndex++) {
-    const radius = yIndex === 0 ? bottomRadius : topRadius, y = yIndex === 0 ? 0 : height, stiffness = yIndex === 0 ? 0 : topStiffness;
-    for (let side = 0; side < 3; side++) {
-      const angle = (side / 3) * Math.PI * 2 + Math.PI / 6, nx = Math.cos(angle), nz = Math.sin(angle);
-      pushVertex(builder, [nx * radius, y, nz * radius], [nx, 0, nz], [side / 3, yIndex], color, stiffness);
-    }
-  }
-  for (let side = 0; side < 3; side++) {
-    const next = (side + 1) % 3, a = start + side, b = start + next, c = start + 3 + side, d = start + 3 + next;
-    builder.indices.push(a, c, b, b, c, d);
-  }
-}
-function addFoldedGrassBlade(builder: PlantGeometryBuilder, halfWidth: number, baseY: number, height: number, yaw: number, foldDepth: number, lean: number, colorA: PlantColor, colorB: PlantColor, tipStiffness: number): void {
-  const rightUnitX = Math.fround(Math.cos(yaw)), rightUnitZ = Math.fround(Math.sin(yaw));
-  const rightX = Math.fround(rightUnitX * halfWidth), rightZ = Math.fround(rightUnitZ * halfWidth);
-  const normalX = Math.fround(-Math.sin(yaw)), normalZ = Math.fround(Math.cos(yaw));
-  const baseLeft: PlantVec3 = [-rightX, baseY, -rightZ], baseRight: PlantVec3 = [rightX, baseY, rightZ];
-  const ridgeBase: PlantVec3 = [Math.fround(normalX * foldDepth), Math.fround(baseY + height * 0.06), Math.fround(normalZ * foldDepth)];
-  const tip: PlantVec3 = [Math.fround(normalX * foldDepth * 0.36 + rightUnitX * lean), Math.fround(baseY + height), Math.fround(normalZ * foldDepth * 0.36 + rightUnitZ * lean)];
-  addTriangleAutoNormal(builder, baseLeft, ridgeBase, tip, colorA, [0, 0.42, tipStiffness]);
-  addTriangleAutoNormal(builder, ridgeBase, baseRight, tip, colorB, [0.42, 0, tipStiffness]);
 }
 function addQuad(builder: PlantGeometryBuilder, p0: [number, number, number], p1: [number, number, number], p2: [number, number, number], p3: [number, number, number], normal: [number, number, number], color: [number, number, number], stiffness: [number, number, number, number]): void {
   const start = builder.positions.length / 3;
