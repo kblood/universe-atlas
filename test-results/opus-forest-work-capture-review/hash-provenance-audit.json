@@ -1,0 +1,56 @@
+{
+  "capturedAt": "2026-09-28T15:26:55.245Z",
+  "rawSnapshotPath": "test-results/opus-forest-work-capture-review/source-snapshots/tree-captured-impostor-reported.raw.bin",
+  "rawBytes": 21848,
+  "rawSha256": "57473086a71728337ff8ce1598c86649397c8da0e603a0183fc76023066d8fd2",
+  "items": [
+    {
+      "report": "test-results/family-capture/sidecar-surface-v1/report.json",
+      "commit": "d2223c379cfa31b83cea863da9e4b1574836299b",
+      "path": "src/tree-captured-impostor.ts",
+      "reported": "e775c66afe5230f90f9456b823fa8a6d1025aed49187e5b8353c06b5be41719e",
+      "commitBlob": "400321981fa316ebf5b49248e7cc4aef9c83e26a4597df341fe8193fd85ea3f7",
+      "workingRaw": "57473086a71728337ff8ce1598c86649397c8da0e603a0183fc76023066d8fd2",
+      "workingLFNormalized": "338dc15b66ed6e47b5c093bcdfea5e7dd21f2d6add97dbe5be45312b2fa629da",
+      "gitHashObjectWithAttributes": "51f57379ec10d4bc80fe2c12ae468ddd27cefe8e"
+    },
+    {
+      "report": "test-results/family-capture/sidecar-relight-v1/report.json",
+      "commit": "bd6d96aaeff55b0a6ac3abc0f3562effd68d73df",
+      "path": "src/tree-captured-impostor.ts",
+      "reported": "57473086a71728337ff8ce1598c86649397c8da0e603a0183fc76023066d8fd2",
+      "commitBlob": "338dc15b66ed6e47b5c093bcdfea5e7dd21f2d6add97dbe5be45312b2fa629da",
+      "workingRaw": "57473086a71728337ff8ce1598c86649397c8da0e603a0183fc76023066d8fd2",
+      "workingLFNormalized": "338dc15b66ed6e47b5c093bcdfea5e7dd21f2d6add97dbe5be45312b2fa629da",
+      "gitHashObjectWithAttributes": "51f57379ec10d4bc80fe2c12ae468ddd27cefe8e"
+    },
+    {
+      "report": "test-results/family-capture/sidecar-grid17-relight-v1/report.json",
+      "commit": "39d937d9117c5057e534beabe99374f2da70c65d",
+      "path": "src/tree-captured-impostor.ts",
+      "reported": "57473086a71728337ff8ce1598c86649397c8da0e603a0183fc76023066d8fd2",
+      "commitBlob": "338dc15b66ed6e47b5c093bcdfea5e7dd21f2d6add97dbe5be45312b2fa629da",
+      "workingRaw": "57473086a71728337ff8ce1598c86649397c8da0e603a0183fc76023066d8fd2",
+      "workingLFNormalized": "338dc15b66ed6e47b5c093bcdfea5e7dd21f2d6add97dbe5be45312b2fa629da",
+      "gitHashObjectWithAttributes": "51f57379ec10d4bc80fe2c12ae468ddd27cefe8e"
+    }
+  ],
+  "reviewRun": {
+    "uuid": "e6687fd5-5697-4d2c-9718-63766d3dc15e",
+    "model": "claude-opus-5-5",
+    "provider": "firstParty",
+    "durationMs": 561600,
+    "promptSha256": "93d84f325d0afd63cbf1a7d698adb34086a7f8e3c4e521cc9485c6e54c1c3369"
+  },
+  "forestTestSnapshot": {
+    "path": "test-results/opus-forest-work-capture-review/source-snapshots/planet-forest-worklist-96997ec.test.mjs",
+    "sha256": "2116ad7f12d803a454f16c01d5624d36efa9b6d1de6b58428a773c62034dabc2",
+    "bytes": 7165,
+    "targetCommit": "96997ec2114dc4ccf207fd5f53700dea8823afc7"
+  },
+  "reportLogFiles": [
+    "test-results/forest-work-refresh-96997ec/focused-tests.log",
+    "test-results/forest-work-refresh-96997ec/tsc.log"
+  ],
+  "captureRelightCleanGitObject": "51f57379ec10d4bc80fe2c12ae468ddd27cefe8e"
+}

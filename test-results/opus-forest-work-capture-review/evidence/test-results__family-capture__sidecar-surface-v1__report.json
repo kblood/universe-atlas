@@ -1,0 +1,1209 @@
+{
+  "commit": "d2223c379cfa31b83cea863da9e4b1574836299b",
+  "sourceFiles": [
+    {
+      "path": "src/tree-impostor-lab.ts",
+      "sha256": "0eceb58856a6ab708bc24792cec398b213aa2af0588abb227c26c69a86768a68"
+    },
+    {
+      "path": "src/tree-captured-impostor.ts",
+      "sha256": "e775c66afe5230f90f9456b823fa8a6d1025aed49187e5b8353c06b5be41719e"
+    },
+    {
+      "path": "src/tree-impostor-filter.ts",
+      "sha256": "1fec693684acc8e68697d2fbccbccdf2eddaadb541b0ca77ca5cf04325cd2a0e"
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "sha256": "0c0ebb6180c3e2a957f364d347c75767bc841e22e801c2ecb1934ceab803de25"
+    },
+    {
+      "path": "src/tree-impostor-views.ts",
+      "sha256": "caba31dfa7e2a2924a56b6dc5701b662ade1c20c95a40c58542ba13635d39520"
+    }
+  ],
+  "scope": "Isolated exact 16m LOD1 comparison; frame pixels refer to full capture diameter, not tree height. Supersampled mesh is calibration; native mesh reported separately. No forest integration/performance claim.",
+  "results": [
+    {
+      "family": "oak",
+      "requestedFiltering": "legacy-unassociated",
+      "rows": [
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 268.234375,
+            "measuredArea": 267.670588235294,
+            "relativeAreaError": -0.002101843824848999,
+            "coverageIoU": 0.8979900515758815,
+            "blurredIoU": 0.9640983509005824
+          },
+          "native": {
+            "referenceArea": 268.234375,
+            "measuredArea": 201.48627450980393,
+            "relativeAreaError": -0.24884245537208297,
+            "coverageIoU": 0.6438674682098526,
+            "blurredIoU": 0.7446431969560473
+          },
+          "referenceConvergence": {
+            "referenceArea": 268.234375,
+            "measuredArea": 260.78125,
+            "relativeAreaError": -0.02778586823556824,
+            "coverageIoU": 0.9610194034173183,
+            "blurredIoU": 0.970798056921754
+          }
+        },
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 268.234375,
+            "measuredArea": 267.670588235294,
+            "relativeAreaError": -0.002101843824848999,
+            "coverageIoU": 0.8979900515758815,
+            "blurredIoU": 0.9640983509005824
+          },
+          "native": {
+            "referenceArea": 268.234375,
+            "measuredArea": 201.48627450980393,
+            "relativeAreaError": -0.24884245537208297,
+            "coverageIoU": 0.6438674682098526,
+            "blurredIoU": 0.7446431969560473
+          },
+          "referenceConvergence": {
+            "referenceArea": 268.234375,
+            "measuredArea": 260.78125,
+            "relativeAreaError": -0.02778586823556824,
+            "coverageIoU": 0.9610194034173183,
+            "blurredIoU": 0.970798056921754
+          }
+        },
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 4035,
+            "measuredArea": 4032.3764705882713,
+            "relativeAreaError": -0.0006501931627580343,
+            "coverageIoU": 0.852212606205019,
+            "blurredIoU": 0.9291998715033283
+          },
+          "native": {
+            "referenceArea": 4035,
+            "measuredArea": 3470.0470588235353,
+            "relativeAreaError": -0.14001312048983017,
+            "coverageIoU": 0.7877934833676824,
+            "blurredIoU": 0.8449667841226114
+          },
+          "referenceConvergence": {
+            "referenceArea": 4035,
+            "measuredArea": 3918,
+            "relativeAreaError": -0.02899628252788104,
+            "coverageIoU": 0.9188129561493455,
+            "blurredIoU": 0.9506710087982777
+          }
+        },
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 4035,
+            "measuredArea": 4032.3764705882713,
+            "relativeAreaError": -0.0006501931627580343,
+            "coverageIoU": 0.852212606205019,
+            "blurredIoU": 0.9291998715033283
+          },
+          "native": {
+            "referenceArea": 4035,
+            "measuredArea": 3470.0470588235353,
+            "relativeAreaError": -0.14001312048983017,
+            "coverageIoU": 0.7877934833676824,
+            "blurredIoU": 0.8449667841226114
+          },
+          "referenceConvergence": {
+            "referenceArea": 4035,
+            "measuredArea": 3918,
+            "relativeAreaError": -0.02899628252788104,
+            "coverageIoU": 0.9188129561493455,
+            "blurredIoU": 0.9506710087982777
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 234.78125,
+            "measuredArea": 221.81176470588218,
+            "relativeAreaError": -0.055240720006890745,
+            "coverageIoU": 0.7888992238682567,
+            "blurredIoU": 0.8740841514454747
+          },
+          "native": {
+            "referenceArea": 234.78125,
+            "measuredArea": 170.98039215686276,
+            "relativeAreaError": -0.27174596712104243,
+            "coverageIoU": 0.6547190263839281,
+            "blurredIoU": 0.7241841001642719
+          },
+          "referenceConvergence": {
+            "referenceArea": 234.78125,
+            "measuredArea": 227.25,
+            "relativeAreaError": -0.03207773193131905,
+            "coverageIoU": 0.9595109505980584,
+            "blurredIoU": 0.9668272462818412
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 234.78125,
+            "measuredArea": 223.31764705882333,
+            "relativeAreaError": -0.04882673953382851,
+            "coverageIoU": 0.818883247248991,
+            "blurredIoU": 0.8867731176862796
+          },
+          "native": {
+            "referenceArea": 234.78125,
+            "measuredArea": 170.98039215686276,
+            "relativeAreaError": -0.27174596712104243,
+            "coverageIoU": 0.6547190263839281,
+            "blurredIoU": 0.7241841001642719
+          },
+          "referenceConvergence": {
+            "referenceArea": 234.78125,
+            "measuredArea": 227.25,
+            "relativeAreaError": -0.03207773193131905,
+            "coverageIoU": 0.9595109505980584,
+            "blurredIoU": 0.9668272462818412
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 3531.0625,
+            "measuredArea": 3336.878431372577,
+            "relativeAreaError": -0.05499309871389224,
+            "coverageIoU": 0.7227322126134383,
+            "blurredIoU": 0.7709597804777633
+          },
+          "native": {
+            "referenceArea": 3531.0625,
+            "measuredArea": 3099.16078431373,
+            "relativeAreaError": -0.12231494505868137,
+            "coverageIoU": 0.8131144895143723,
+            "blurredIoU": 0.864852745644583
+          },
+          "referenceConvergence": {
+            "referenceArea": 3531.0625,
+            "measuredArea": 3414.25,
+            "relativeAreaError": -0.03308140255234791,
+            "coverageIoU": 0.9262437164153233,
+            "blurredIoU": 0.9529289526298389
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 3531.0625,
+            "measuredArea": 3346.223529411788,
+            "relativeAreaError": -0.05234655874491371,
+            "coverageIoU": 0.7734387739391535,
+            "blurredIoU": 0.8228665165739116
+          },
+          "native": {
+            "referenceArea": 3531.0625,
+            "measuredArea": 3099.16078431373,
+            "relativeAreaError": -0.12231494505868137,
+            "coverageIoU": 0.8131144895143723,
+            "blurredIoU": 0.864852745644583
+          },
+          "referenceConvergence": {
+            "referenceArea": 3531.0625,
+            "measuredArea": 3414.25,
+            "relativeAreaError": -0.03308140255234791,
+            "coverageIoU": 0.9262437164153233,
+            "blurredIoU": 0.9529289526298389
+          }
+        }
+      ],
+      "surface": [
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "depthSamples": 367,
+          "depthMedianErrorM": 0.8721685409545898,
+          "depthP95ErrorM": 2.461636543273926,
+          "sourceMeanLuminance": 0.07599900284493781,
+          "captureMeanLuminance": 0.07155078913279597,
+          "relativeLuminanceError": -0.05852989573057441,
+          "referenceConvergence1056vs528": {
+            "referenceArea": 270.05859375,
+            "measuredArea": 268.234375,
+            "relativeAreaError": -0.0067548998336587835,
+            "coverageIoU": 0.9855052626270631,
+            "blurredIoU": 0.9918238582366571
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "depthSamples": 315,
+          "depthMedianErrorM": 1.0430474281311035,
+          "depthP95ErrorM": 2.764866352081299,
+          "sourceMeanLuminance": 0.06221303827927181,
+          "captureMeanLuminance": 0.040922486733538335,
+          "relativeLuminanceError": -0.34222008978505525,
+          "referenceConvergence1056vs528": {
+            "referenceArea": 236.2529296875,
+            "measuredArea": 234.78125,
+            "relativeAreaError": -0.006229254762879098,
+            "coverageIoU": 0.9870111144982822,
+            "blurredIoU": 0.9928466870619216
+          }
+        }
+      ],
+      "foliageSampling": "offline-sidecar",
+      "relightViews": 0,
+      "filtering": "legacy-unassociated",
+      "bytes": 7077456,
+      "lod": 1,
+      "glError": 0,
+      "adapter": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "family": "oak",
+      "requestedFiltering": "coverage-weighted",
+      "rows": [
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 268.234375,
+            "measuredArea": 267.670588235294,
+            "relativeAreaError": -0.002101843824848999,
+            "coverageIoU": 0.8979900515758815,
+            "blurredIoU": 0.9640983509005824
+          },
+          "native": {
+            "referenceArea": 268.234375,
+            "measuredArea": 201.48627450980393,
+            "relativeAreaError": -0.24884245537208297,
+            "coverageIoU": 0.6438674682098526,
+            "blurredIoU": 0.7446431969560473
+          },
+          "referenceConvergence": {
+            "referenceArea": 268.234375,
+            "measuredArea": 260.78125,
+            "relativeAreaError": -0.02778586823556824,
+            "coverageIoU": 0.9610194034173183,
+            "blurredIoU": 0.970798056921754
+          }
+        },
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 268.234375,
+            "measuredArea": 267.670588235294,
+            "relativeAreaError": -0.002101843824848999,
+            "coverageIoU": 0.8979900515758815,
+            "blurredIoU": 0.9640983509005824
+          },
+          "native": {
+            "referenceArea": 268.234375,
+            "measuredArea": 201.48627450980393,
+            "relativeAreaError": -0.24884245537208297,
+            "coverageIoU": 0.6438674682098526,
+            "blurredIoU": 0.7446431969560473
+          },
+          "referenceConvergence": {
+            "referenceArea": 268.234375,
+            "measuredArea": 260.78125,
+            "relativeAreaError": -0.02778586823556824,
+            "coverageIoU": 0.9610194034173183,
+            "blurredIoU": 0.970798056921754
+          }
+        },
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 4035,
+            "measuredArea": 4032.3764705882713,
+            "relativeAreaError": -0.0006501931627580343,
+            "coverageIoU": 0.852212606205019,
+            "blurredIoU": 0.9291998715033283
+          },
+          "native": {
+            "referenceArea": 4035,
+            "measuredArea": 3470.0470588235353,
+            "relativeAreaError": -0.14001312048983017,
+            "coverageIoU": 0.7877934833676824,
+            "blurredIoU": 0.8449667841226114
+          },
+          "referenceConvergence": {
+            "referenceArea": 4035,
+            "measuredArea": 3918,
+            "relativeAreaError": -0.02899628252788104,
+            "coverageIoU": 0.9188129561493455,
+            "blurredIoU": 0.9506710087982777
+          }
+        },
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 4035,
+            "measuredArea": 4032.3764705882713,
+            "relativeAreaError": -0.0006501931627580343,
+            "coverageIoU": 0.852212606205019,
+            "blurredIoU": 0.9291998715033283
+          },
+          "native": {
+            "referenceArea": 4035,
+            "measuredArea": 3470.0470588235353,
+            "relativeAreaError": -0.14001312048983017,
+            "coverageIoU": 0.7877934833676824,
+            "blurredIoU": 0.8449667841226114
+          },
+          "referenceConvergence": {
+            "referenceArea": 4035,
+            "measuredArea": 3918,
+            "relativeAreaError": -0.02899628252788104,
+            "coverageIoU": 0.9188129561493455,
+            "blurredIoU": 0.9506710087982777
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 234.78125,
+            "measuredArea": 221.81176470588218,
+            "relativeAreaError": -0.055240720006890745,
+            "coverageIoU": 0.7888992238682567,
+            "blurredIoU": 0.8740841514454747
+          },
+          "native": {
+            "referenceArea": 234.78125,
+            "measuredArea": 170.98039215686276,
+            "relativeAreaError": -0.27174596712104243,
+            "coverageIoU": 0.6547190263839281,
+            "blurredIoU": 0.7241841001642719
+          },
+          "referenceConvergence": {
+            "referenceArea": 234.78125,
+            "measuredArea": 227.25,
+            "relativeAreaError": -0.03207773193131905,
+            "coverageIoU": 0.9595109505980584,
+            "blurredIoU": 0.9668272462818412
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 234.78125,
+            "measuredArea": 220.51764705882354,
+            "relativeAreaError": -0.060752734475927946,
+            "coverageIoU": 0.8010408158553627,
+            "blurredIoU": 0.8738838723559709
+          },
+          "native": {
+            "referenceArea": 234.78125,
+            "measuredArea": 170.98039215686276,
+            "relativeAreaError": -0.27174596712104243,
+            "coverageIoU": 0.6547190263839281,
+            "blurredIoU": 0.7241841001642719
+          },
+          "referenceConvergence": {
+            "referenceArea": 234.78125,
+            "measuredArea": 227.25,
+            "relativeAreaError": -0.03207773193131905,
+            "coverageIoU": 0.9595109505980584,
+            "blurredIoU": 0.9668272462818412
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 3531.0625,
+            "measuredArea": 3336.878431372577,
+            "relativeAreaError": -0.05499309871389224,
+            "coverageIoU": 0.7227322126134383,
+            "blurredIoU": 0.7709597804777633
+          },
+          "native": {
+            "referenceArea": 3531.0625,
+            "measuredArea": 3099.16078431373,
+            "relativeAreaError": -0.12231494505868137,
+            "coverageIoU": 0.8131144895143723,
+            "blurredIoU": 0.864852745644583
+          },
+          "referenceConvergence": {
+            "referenceArea": 3531.0625,
+            "measuredArea": 3414.25,
+            "relativeAreaError": -0.03308140255234791,
+            "coverageIoU": 0.9262437164153233,
+            "blurredIoU": 0.9529289526298389
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 3531.0625,
+            "measuredArea": 3301.8156862745122,
+            "relativeAreaError": -0.06492289890804474,
+            "coverageIoU": 0.7481429760166147,
+            "blurredIoU": 0.7960051468577798
+          },
+          "native": {
+            "referenceArea": 3531.0625,
+            "measuredArea": 3099.16078431373,
+            "relativeAreaError": -0.12231494505868137,
+            "coverageIoU": 0.8131144895143723,
+            "blurredIoU": 0.864852745644583
+          },
+          "referenceConvergence": {
+            "referenceArea": 3531.0625,
+            "measuredArea": 3414.25,
+            "relativeAreaError": -0.03308140255234791,
+            "coverageIoU": 0.9262437164153233,
+            "blurredIoU": 0.9529289526298389
+          }
+        }
+      ],
+      "surface": [
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "depthSamples": 367,
+          "depthMedianErrorM": 0.9005975723266602,
+          "depthP95ErrorM": 2.4774999618530273,
+          "sourceMeanLuminance": 0.07599900284493781,
+          "captureMeanLuminance": 0.07115554054828684,
+          "relativeLuminanceError": -0.06373060323611326,
+          "referenceConvergence1056vs528": {
+            "referenceArea": 270.05859375,
+            "measuredArea": 268.234375,
+            "relativeAreaError": -0.0067548998336587835,
+            "coverageIoU": 0.9855052626270631,
+            "blurredIoU": 0.9918238582366571
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "depthSamples": 310,
+          "depthMedianErrorM": 1.1627793312072754,
+          "depthP95ErrorM": 3.2160582542419434,
+          "sourceMeanLuminance": 0.06221303827927181,
+          "captureMeanLuminance": 0.0398522399909905,
+          "relativeLuminanceError": -0.35942302299888634,
+          "referenceConvergence1056vs528": {
+            "referenceArea": 236.2529296875,
+            "measuredArea": 234.78125,
+            "relativeAreaError": -0.006229254762879098,
+            "coverageIoU": 0.9870111144982822,
+            "blurredIoU": 0.9928466870619216
+          }
+        }
+      ],
+      "foliageSampling": "offline-sidecar",
+      "relightViews": 0,
+      "filtering": "coverage-weighted",
+      "bytes": 7077456,
+      "lod": 1,
+      "glError": 0,
+      "adapter": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "family": "pine",
+      "requestedFiltering": "legacy-unassociated",
+      "rows": [
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 80.3984375,
+            "measuredArea": 79.80392156862747,
+            "relativeAreaError": -0.007394620466007527,
+            "coverageIoU": 0.7465171145320338,
+            "blurredIoU": 0.9202413063706539
+          },
+          "native": {
+            "referenceArea": 80.3984375,
+            "measuredArea": 40.48235294117648,
+            "relativeAreaError": -0.4964783620182111,
+            "coverageIoU": 0.435536463010154,
+            "blurredIoU": 0.5000253948917531
+          },
+          "referenceConvergence": {
+            "referenceArea": 80.3984375,
+            "measuredArea": 63.4375,
+            "relativeAreaError": -0.21096103391312798,
+            "coverageIoU": 0.7834931705899448,
+            "blurredIoU": 0.7882703897878257
+          }
+        },
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 80.3984375,
+            "measuredArea": 79.80392156862747,
+            "relativeAreaError": -0.007394620466007527,
+            "coverageIoU": 0.7465171145320338,
+            "blurredIoU": 0.9202413063706539
+          },
+          "native": {
+            "referenceArea": 80.3984375,
+            "measuredArea": 40.48235294117648,
+            "relativeAreaError": -0.4964783620182111,
+            "coverageIoU": 0.435536463010154,
+            "blurredIoU": 0.5000253948917531
+          },
+          "referenceConvergence": {
+            "referenceArea": 80.3984375,
+            "measuredArea": 63.4375,
+            "relativeAreaError": -0.21096103391312798,
+            "coverageIoU": 0.7834931705899448,
+            "blurredIoU": 0.7882703897878257
+          }
+        },
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 1202.0625,
+            "measuredArea": 1201.7411764705857,
+            "relativeAreaError": -0.0002673101684931173,
+            "coverageIoU": 0.6449477517301898,
+            "blurredIoU": 0.8445210039074101
+          },
+          "native": {
+            "referenceArea": 1202.0625,
+            "measuredArea": 645.6000000000004,
+            "relativeAreaError": -0.46292310092029293,
+            "coverageIoU": 0.47682084175968714,
+            "blurredIoU": 0.5316225170440444
+          },
+          "referenceConvergence": {
+            "referenceArea": 1202.0625,
+            "measuredArea": 935.75,
+            "relativeAreaError": -0.22154630062912703,
+            "coverageIoU": 0.7029274121278503,
+            "blurredIoU": 0.7661600025817278
+          }
+        },
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 1202.0625,
+            "measuredArea": 1201.7411764705857,
+            "relativeAreaError": -0.0002673101684931173,
+            "coverageIoU": 0.6449477517301898,
+            "blurredIoU": 0.8445210039074101
+          },
+          "native": {
+            "referenceArea": 1202.0625,
+            "measuredArea": 645.6000000000004,
+            "relativeAreaError": -0.46292310092029293,
+            "coverageIoU": 0.47682084175968714,
+            "blurredIoU": 0.5316225170440444
+          },
+          "referenceConvergence": {
+            "referenceArea": 1202.0625,
+            "measuredArea": 935.75,
+            "relativeAreaError": -0.22154630062912703,
+            "coverageIoU": 0.7029274121278503,
+            "blurredIoU": 0.7661600025817278
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 79.8828125,
+            "measuredArea": 74.24705882352954,
+            "relativeAreaError": -0.07055026607219742,
+            "coverageIoU": 0.6821712813701868,
+            "blurredIoU": 0.8347220541403922
+          },
+          "native": {
+            "referenceArea": 79.8828125,
+            "measuredArea": 40.23137254901961,
+            "relativeAreaError": -0.49637010403183274,
+            "coverageIoU": 0.4273106855886119,
+            "blurredIoU": 0.4880607316000352
+          },
+          "referenceConvergence": {
+            "referenceArea": 79.8828125,
+            "measuredArea": 62.4375,
+            "relativeAreaError": -0.21838630806845966,
+            "coverageIoU": 0.7728577684784196,
+            "blurredIoU": 0.7802961967105752
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 79.8828125,
+            "measuredArea": 76.38039215686284,
+            "relativeAreaError": -0.04384447960113022,
+            "coverageIoU": 0.7319706479552673,
+            "blurredIoU": 0.8678694414116039
+          },
+          "native": {
+            "referenceArea": 79.8828125,
+            "measuredArea": 40.23137254901961,
+            "relativeAreaError": -0.49637010403183274,
+            "coverageIoU": 0.4273106855886119,
+            "blurredIoU": 0.4880607316000352
+          },
+          "referenceConvergence": {
+            "referenceArea": 79.8828125,
+            "measuredArea": 62.4375,
+            "relativeAreaError": -0.21838630806845966,
+            "coverageIoU": 0.7728577684784196,
+            "blurredIoU": 0.7802961967105752
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 1194.25,
+            "measuredArea": 1117.0666666666618,
+            "relativeAreaError": -0.06462912567162502,
+            "coverageIoU": 0.5025985877105611,
+            "blurredIoU": 0.6445268000771239
+          },
+          "native": {
+            "referenceArea": 1194.25,
+            "measuredArea": 617.5803921568631,
+            "relativeAreaError": -0.48287176708657054,
+            "coverageIoU": 0.46275386279066777,
+            "blurredIoU": 0.5116684709356512
+          },
+          "referenceConvergence": {
+            "referenceArea": 1194.25,
+            "measuredArea": 923.75,
+            "relativeAreaError": -0.2265019886958342,
+            "coverageIoU": 0.7006072163396397,
+            "blurredIoU": 0.7585827757434622
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 1194.25,
+            "measuredArea": 1136.3529411764655,
+            "relativeAreaError": -0.048479848292681184,
+            "coverageIoU": 0.5633257355252549,
+            "blurredIoU": 0.7227503124472864
+          },
+          "native": {
+            "referenceArea": 1194.25,
+            "measuredArea": 617.5803921568631,
+            "relativeAreaError": -0.48287176708657054,
+            "coverageIoU": 0.46275386279066777,
+            "blurredIoU": 0.5116684709356512
+          },
+          "referenceConvergence": {
+            "referenceArea": 1194.25,
+            "measuredArea": 923.75,
+            "relativeAreaError": -0.2265019886958342,
+            "coverageIoU": 0.7006072163396397,
+            "blurredIoU": 0.7585827757434622
+          }
+        }
+      ],
+      "surface": [
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "depthSamples": 184,
+          "depthMedianErrorM": 1.0832295417785645,
+          "depthP95ErrorM": 2.7754673957824707,
+          "sourceMeanLuminance": 0.06417468929201764,
+          "captureMeanLuminance": 0.05844505072276386,
+          "relativeLuminanceError": -0.0892819058800875,
+          "referenceConvergence1056vs528": {
+            "referenceArea": 83.1279296875,
+            "measuredArea": 80.3984375,
+            "relativeAreaError": -0.0328348389976857,
+            "coverageIoU": 0.9429025595804423,
+            "blurredIoU": 0.9617849551605915
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "depthSamples": 183,
+          "depthMedianErrorM": 1.1080780029296875,
+          "depthP95ErrorM": 2.6309938430786133,
+          "sourceMeanLuminance": 0.051094495834881036,
+          "captureMeanLuminance": 0.033129520103513964,
+          "relativeLuminanceError": -0.35160295522678975,
+          "referenceConvergence1056vs528": {
+            "referenceArea": 82.9052734375,
+            "measuredArea": 79.8828125,
+            "relativeAreaError": -0.03645679957594676,
+            "coverageIoU": 0.9420852119814057,
+            "blurredIoU": 0.9600780874450152
+          }
+        }
+      ],
+      "foliageSampling": "offline-sidecar",
+      "relightViews": 0,
+      "filtering": "legacy-unassociated",
+      "bytes": 7077456,
+      "lod": 1,
+      "glError": 0,
+      "adapter": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    {
+      "family": "pine",
+      "requestedFiltering": "coverage-weighted",
+      "rows": [
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 80.3984375,
+            "measuredArea": 79.80392156862747,
+            "relativeAreaError": -0.007394620466007527,
+            "coverageIoU": 0.7465171145320338,
+            "blurredIoU": 0.9202413063706539
+          },
+          "native": {
+            "referenceArea": 80.3984375,
+            "measuredArea": 40.48235294117648,
+            "relativeAreaError": -0.4964783620182111,
+            "coverageIoU": 0.435536463010154,
+            "blurredIoU": 0.5000253948917531
+          },
+          "referenceConvergence": {
+            "referenceArea": 80.3984375,
+            "measuredArea": 63.4375,
+            "relativeAreaError": -0.21096103391312798,
+            "coverageIoU": 0.7834931705899448,
+            "blurredIoU": 0.7882703897878257
+          }
+        },
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 80.3984375,
+            "measuredArea": 79.80392156862747,
+            "relativeAreaError": -0.007394620466007527,
+            "coverageIoU": 0.7465171145320338,
+            "blurredIoU": 0.9202413063706539
+          },
+          "native": {
+            "referenceArea": 80.3984375,
+            "measuredArea": 40.48235294117648,
+            "relativeAreaError": -0.4964783620182111,
+            "coverageIoU": 0.435536463010154,
+            "blurredIoU": 0.5000253948917531
+          },
+          "referenceConvergence": {
+            "referenceArea": 80.3984375,
+            "measuredArea": 63.4375,
+            "relativeAreaError": -0.21096103391312798,
+            "coverageIoU": 0.7834931705899448,
+            "blurredIoU": 0.7882703897878257
+          }
+        },
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 1202.0625,
+            "measuredArea": 1201.7411764705857,
+            "relativeAreaError": -0.0002673101684931173,
+            "coverageIoU": 0.6449477517301898,
+            "blurredIoU": 0.8445210039074101
+          },
+          "native": {
+            "referenceArea": 1202.0625,
+            "measuredArea": 645.6000000000004,
+            "relativeAreaError": -0.46292310092029293,
+            "coverageIoU": 0.47682084175968714,
+            "blurredIoU": 0.5316225170440444
+          },
+          "referenceConvergence": {
+            "referenceArea": 1202.0625,
+            "measuredArea": 935.75,
+            "relativeAreaError": -0.22154630062912703,
+            "coverageIoU": 0.7029274121278503,
+            "blurredIoU": 0.7661600025817278
+          }
+        },
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 1202.0625,
+            "measuredArea": 1201.7411764705857,
+            "relativeAreaError": -0.0002673101684931173,
+            "coverageIoU": 0.6449477517301898,
+            "blurredIoU": 0.8445210039074101
+          },
+          "native": {
+            "referenceArea": 1202.0625,
+            "measuredArea": 645.6000000000004,
+            "relativeAreaError": -0.46292310092029293,
+            "coverageIoU": 0.47682084175968714,
+            "blurredIoU": 0.5316225170440444
+          },
+          "referenceConvergence": {
+            "referenceArea": 1202.0625,
+            "measuredArea": 935.75,
+            "relativeAreaError": -0.22154630062912703,
+            "coverageIoU": 0.7029274121278503,
+            "blurredIoU": 0.7661600025817278
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 79.8828125,
+            "measuredArea": 74.24705882352954,
+            "relativeAreaError": -0.07055026607219742,
+            "coverageIoU": 0.6821712813701868,
+            "blurredIoU": 0.8347220541403922
+          },
+          "native": {
+            "referenceArea": 79.8828125,
+            "measuredArea": 40.23137254901961,
+            "relativeAreaError": -0.49637010403183274,
+            "coverageIoU": 0.4273106855886119,
+            "blurredIoU": 0.4880607316000352
+          },
+          "referenceConvergence": {
+            "referenceArea": 79.8828125,
+            "measuredArea": 62.4375,
+            "relativeAreaError": -0.21838630806845966,
+            "coverageIoU": 0.7728577684784196,
+            "blurredIoU": 0.7802961967105752
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 33,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 79.8828125,
+            "measuredArea": 74.89803921568641,
+            "relativeAreaError": -0.062401073876981863,
+            "coverageIoU": 0.7170038900719898,
+            "blurredIoU": 0.8477594986325534
+          },
+          "native": {
+            "referenceArea": 79.8828125,
+            "measuredArea": 40.23137254901961,
+            "relativeAreaError": -0.49637010403183274,
+            "coverageIoU": 0.4273106855886119,
+            "blurredIoU": 0.4880607316000352
+          },
+          "referenceConvergence": {
+            "referenceArea": 79.8828125,
+            "measuredArea": 62.4375,
+            "relativeAreaError": -0.21838630806845966,
+            "coverageIoU": 0.7728577684784196,
+            "blurredIoU": 0.7802961967105752
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 0,
+          "capture": {
+            "referenceArea": 1194.25,
+            "measuredArea": 1117.0666666666618,
+            "relativeAreaError": -0.06462912567162502,
+            "coverageIoU": 0.5025985877105611,
+            "blurredIoU": 0.6445268000771239
+          },
+          "native": {
+            "referenceArea": 1194.25,
+            "measuredArea": 617.5803921568631,
+            "relativeAreaError": -0.48287176708657054,
+            "coverageIoU": 0.46275386279066777,
+            "blurredIoU": 0.5116684709356512
+          },
+          "referenceConvergence": {
+            "referenceArea": 1194.25,
+            "measuredArea": 923.75,
+            "relativeAreaError": -0.2265019886958342,
+            "coverageIoU": 0.7006072163396397,
+            "blurredIoU": 0.7585827757434622
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "pixels": 128,
+          "parallax": 1,
+          "capture": {
+            "referenceArea": 1194.25,
+            "measuredArea": 1135.7372549019508,
+            "relativeAreaError": -0.04899539049449379,
+            "coverageIoU": 0.5318072004549169,
+            "blurredIoU": 0.6815448835909212
+          },
+          "native": {
+            "referenceArea": 1194.25,
+            "measuredArea": 617.5803921568631,
+            "relativeAreaError": -0.48287176708657054,
+            "coverageIoU": 0.46275386279066777,
+            "blurredIoU": 0.5116684709356512
+          },
+          "referenceConvergence": {
+            "referenceArea": 1194.25,
+            "measuredArea": 923.75,
+            "relativeAreaError": -0.2265019886958342,
+            "coverageIoU": 0.7006072163396397,
+            "blurredIoU": 0.7585827757434622
+          }
+        }
+      ],
+      "surface": [
+        {
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "depthSamples": 184,
+          "depthMedianErrorM": 1.1703472137451172,
+          "depthP95ErrorM": 3.244084358215332,
+          "sourceMeanLuminance": 0.06417468929201764,
+          "captureMeanLuminance": 0.05912279068152892,
+          "relativeLuminanceError": -0.07872104510706375,
+          "referenceConvergence1056vs528": {
+            "referenceArea": 83.1279296875,
+            "measuredArea": 80.3984375,
+            "relativeAreaError": -0.0328348389976857,
+            "coverageIoU": 0.9429025595804423,
+            "blurredIoU": 0.9617849551605915
+          }
+        },
+        {
+          "direction": [
+            1,
+            0.3,
+            1
+          ],
+          "depthSamples": 178,
+          "depthMedianErrorM": 1.1773810386657715,
+          "depthP95ErrorM": 2.7199602127075195,
+          "sourceMeanLuminance": 0.051094495834881036,
+          "captureMeanLuminance": 0.03166463533570535,
+          "relativeLuminanceError": -0.38027306428398827,
+          "referenceConvergence1056vs528": {
+            "referenceArea": 82.9052734375,
+            "measuredArea": 79.8828125,
+            "relativeAreaError": -0.03645679957594676,
+            "coverageIoU": 0.9420852119814057,
+            "blurredIoU": 0.9600780874450152
+          }
+        }
+      ],
+      "foliageSampling": "offline-sidecar",
+      "relightViews": 0,
+      "filtering": "coverage-weighted",
+      "bytes": 7077456,
+      "lod": 1,
+      "glError": 0,
+      "adapter": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,363 @@
+{
+  "capturedAt": "2026-09-28T15:14:06.050Z",
+  "targetCommit": "96997ec2114dc4ccf207fd5f53700dea8823afc7",
+  "evidenceHead": "8c03f410d4d0a0627f02d2a820dc432bdb73b411",
+  "changedPathsSinceTarget": [
+    "docs/captured-family-relighting-2026-09-28.md",
+    "docs/captured-tree-view-density-2026-09-28.md",
+    "docs/desktop-realism-implementation-plan-2026-09-27.md",
+    "guide/life.html",
+    "src/planet-forest.ts",
+    "test-results/family-capture/audit.mjs",
+    "test-results/family-capture/compare.mjs",
+    "test-results/family-capture/sidecar-grid17-audit/capture-audit.json",
+    "test-results/family-capture/sidecar-grid17-audit/oak-capture-manifest.json",
+    "test-results/family-capture/sidecar-grid17-relight-v1/oak-coverage-weighted-capture.png",
+    "test-results/family-capture/sidecar-grid17-relight-v1/oak-coverage-weighted-mesh.png",
+    "test-results/family-capture/sidecar-grid17-relight-v1/oak-legacy-unassociated-capture.png",
+    "test-results/family-capture/sidecar-grid17-relight-v1/oak-legacy-unassociated-mesh.png",
+    "test-results/family-capture/sidecar-grid17-relight-v1/report.json",
+    "test-results/forest-work-refresh-96997ec/01-basic-before.png",
+    "test-results/forest-work-refresh-96997ec/02-loaded-normal-ui.png",
+    "test-results/forest-work-refresh-96997ec/02a-date-plus-one-day.png",
+    "test-results/forest-work-refresh-96997ec/02b-date-return.png",
+    "test-results/forest-work-refresh-96997ec/03-disabled.png",
+    "test-results/forest-work-refresh-96997ec/04-controlled-fetch-failure.png",
+    "test-results/forest-work-refresh-96997ec/05-retry-success.png",
+    "test-results/forest-work-refresh-96997ec/06-left-planet.png",
+    "test-results/forest-work-refresh-96997ec/07-revisited-loaded.png",
+    "test-results/forest-work-refresh-96997ec/README.md",
+    "test-results/forest-work-refresh-96997ec/committed-build.log",
+    "test-results/forest-work-refresh-96997ec/focused-tests.log",
+    "test-results/forest-work-refresh-96997ec/refresh-comparison.json",
+    "test-results/forest-work-refresh-96997ec/report.json",
+    "test-results/forest-work-refresh-96997ec/stationary-6s.cpuprofile",
+    "test-results/forest-work-refresh-96997ec/tsc.log",
+    "tests/planet-forest-worklist.test.mjs"
+  ],
+  "workingTreeStatus": "",
+  "sourceSnapshots": [
+    {
+      "path": "src/forest-ordered-work.ts",
+      "bytes": 4324,
+      "sha256": "5e2db37f9e24d4fd705adefbef5da489697f639bdd11f3f28afd66a7e8c05de4"
+    },
+    {
+      "path": "src/forest-patch-broadphase.ts",
+      "bytes": 10647,
+      "sha256": "1c3db18c9e0b85c3500954be454d86d43b402e9fc54ae303feb3aaa8091a617d"
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "bytes": 38647,
+      "sha256": "8364fc3ad75eafab12dc391b45746e214ab64b44bc36b86a1ab119bd558d31a8"
+    },
+    {
+      "path": "src/planet-canopy.ts",
+      "bytes": 30113,
+      "sha256": "2efb25962496afc6bba6e5a91cc670e36b93737fe4417fda0f0c242d2e96178b"
+    },
+    {
+      "path": "src/forest-presentation.ts",
+      "bytes": 1985,
+      "sha256": "eeaef458396c2c248300345b814be6b68a3e2904f40ebed840d6eeda6a650b82"
+    },
+    {
+      "path": "src/forest-census.ts",
+      "bytes": 11341,
+      "sha256": "f38f154a04f9a02de42095f930b391627ffbaf2a3505081b09829d05190841a0"
+    },
+    {
+      "path": "src/forest-census-worker.ts",
+      "bytes": 6602,
+      "sha256": "d2461c4daa2019330ce7146a86294aed23e7d95460ee3846c599efd1710f5779"
+    },
+    {
+      "path": "src/tree-captured-impostor.ts",
+      "bytes": 21725,
+      "sha256": "338dc15b66ed6e47b5c093bcdfea5e7dd21f2d6add97dbe5be45312b2fa629da"
+    },
+    {
+      "path": "src/tree-impostor-capture.ts",
+      "bytes": 12759,
+      "sha256": "1247587da3cf71894425ed98257ec2e2acc1fe6668b3332b334988e732d256be"
+    },
+    {
+      "path": "src/tree-impostor-filter.ts",
+      "bytes": 1701,
+      "sha256": "1fec693684acc8e68697d2fbccbccdf2eddaadb541b0ca77ca5cf04325cd2a0e"
+    },
+    {
+      "path": "src/tree-impostor-views.ts",
+      "bytes": 3531,
+      "sha256": "caba31dfa7e2a2924a56b6dc5701b662ade1c20c95a40c58542ba13635d39520"
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "bytes": 24322,
+      "sha256": "0c0ebb6180c3e2a957f364d347c75767bc841e22e801c2ecb1934ceab803de25"
+    },
+    {
+      "path": "src/tree-impostor-lab.ts",
+      "bytes": 12410,
+      "sha256": "a4621cdbcf5d5e4672a614ccc425dc61819285fa147bf3fefab20a12a66cc460"
+    },
+    {
+      "path": "tests/forest-ordered-work.test.mjs",
+      "bytes": 3688,
+      "sha256": "5fd31cfe5c806ced33ee5e8615d33e63e77b2aa190963104300757c84c178523"
+    },
+    {
+      "path": "tests/forest-patch-broadphase.test.mjs",
+      "bytes": 7667,
+      "sha256": "d632ff16b43d67bf1f73ad012e4725cbbf3a4784130860be3ca477b4727c4409"
+    },
+    {
+      "path": "tests/planet-canopy-invalidation.test.mjs",
+      "bytes": 2466,
+      "sha256": "7681d459802753411775611854a42eb9c5304eb3e76e14f9e6bd2b9e41c18e02"
+    },
+    {
+      "path": "tests/planet-canopy.test.mjs",
+      "bytes": 47123,
+      "sha256": "0afc82d2b91616d373aafd2c8af19ab183e73486a89fc2446ab4f7c0b741c8d0"
+    },
+    {
+      "path": "tests/tree-impostor-capture.test.mjs",
+      "bytes": 6043,
+      "sha256": "33eb7cca37b309b104f134a9f4197084efd36c7b9c947c861ccbbe5987e5a028"
+    }
+  ],
+  "supplementalCommit": "98d8ff0",
+  "supplement": [
+    {
+      "path": "src/planet-forest.ts",
+      "bytes": 38667,
+      "sha256": "7529d5bceff0c877a8694726b2e86759c63eae42cf5d3e7236375930744d333a"
+    },
+    {
+      "path": "tests/planet-canopy-invalidation.test.mjs",
+      "bytes": 2466,
+      "sha256": "7681d459802753411775611854a42eb9c5304eb3e76e14f9e6bd2b9e41c18e02"
+    }
+  ],
+  "docSnapshots": [
+    {
+      "path": "docs/captured-family-relighting-2026-09-28.md",
+      "bytes": 4122,
+      "sha256": "8684645062e3aac6416b2626902aa34d808f470f6eacf8c18f9026ef63269b6b"
+    },
+    {
+      "path": "test-results/family-capture/README.md",
+      "bytes": 7162,
+      "sha256": "d8a83bb4d976aa26b5c9c627008c0be561f6fe474511a9c22204ff944b762d68"
+    },
+    {
+      "path": "test-results/forest-work-refresh-96997ec/README.md",
+      "bytes": 2202,
+      "sha256": "0ae0877f39a4b46ffee9faa9e2767b0d3991cacd9364757684d263aa875c6d71"
+    },
+    {
+      "path": "test-results/forest-work-refresh-96997ec/refresh-comparison.json",
+      "bytes": 1395,
+      "sha256": "636045b2f7e6c8c9c9cf925a2d9e4f92072ab65be842ec1a33749a889c75f433"
+    }
+  ],
+  "evidence": [
+    {
+      "source": "test-results/family-capture/sidecar-surface-v1/report.json",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-surface-v1__report.json",
+      "bytes": 39022,
+      "sha256": "e819c87dc67dadfcf85467723c22fa33f4a45c25fe762288afcb72ee02c31131"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-surface-v1.log",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-surface-v1.log",
+      "bytes": 23160,
+      "sha256": "ac3a083e89e402fda7f5f069e170af9ebe554590b3c1bde33ca46d718ba01fe8"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-relight-v1/report.json",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-relight-v1__report.json",
+      "bytes": 47720,
+      "sha256": "037e6e2e523be277a7a94cb56f1280ae71f6466b4d3fa1893c357762a669f66a"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-relight-v1.log",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-relight-v1.log",
+      "bytes": 28882,
+      "sha256": "61d6c9a47223372d844eebe21dffcb4c21e63e3bebc81e57ffbe204b63aa6531"
+    },
+    {
+      "source": "test-results/family-capture/oak-capture-manifest.json",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__oak-capture-manifest.json",
+      "bytes": 520851,
+      "sha256": "972f3c443a96d2e0452c2ab0beaf1f8fc5a4b8ba220ef5d3a8b91f6a80f1f5b3"
+    },
+    {
+      "source": "test-results/family-capture/pine-capture-manifest.json",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__pine-capture-manifest.json",
+      "bytes": 521442,
+      "sha256": "c9052d6201087262a97fad3054bd9a6adb7267db268b0444efebcfdfe703a62a"
+    },
+    {
+      "source": "test-results/forest-work-refresh-96997ec/README.md",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__forest-work-refresh-96997ec__README.md",
+      "bytes": 2202,
+      "sha256": "0ae0877f39a4b46ffee9faa9e2767b0d3991cacd9364757684d263aa875c6d71"
+    },
+    {
+      "source": "test-results/forest-work-refresh-96997ec/refresh-comparison.json",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__forest-work-refresh-96997ec__refresh-comparison.json",
+      "bytes": 1395,
+      "sha256": "636045b2f7e6c8c9c9cf925a2d9e4f92072ab65be842ec1a33749a889c75f433"
+    },
+    {
+      "source": "test-results/forest-work-refresh-96997ec/report.json",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__forest-work-refresh-96997ec__report.json",
+      "bytes": 446089,
+      "sha256": "d8b2d07027f2c4d9404fe5817d535de94ac964eb37cb356dd3d1aba79508c464"
+    },
+    {
+      "source": "test-results/forest-work-refresh-96997ec/stationary-6s.cpuprofile",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__forest-work-refresh-96997ec__stationary-6s.cpuprofile",
+      "bytes": 157688,
+      "sha256": "a276a38431e7a371f2f8a70d2964cfbd10f9cec0d17053fcb00a10b9ab046f07"
+    },
+    {
+      "source": "test-results/forest-work-refresh-96997ec/02-loaded-normal-ui.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__forest-work-refresh-96997ec__02-loaded-normal-ui.png",
+      "bytes": 1318933,
+      "sha256": "5b14dda4533b5a370c2edebda44575e803cb9a234551e9f19ea468d645441cb7"
+    },
+    {
+      "source": "test-results/forest-work-refresh-96997ec/02b-date-return.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__forest-work-refresh-96997ec__02b-date-return.png",
+      "bytes": 1287186,
+      "sha256": "97c0dda78e5d9d0c769604fa290d102ddc3d5943a7d6200f8c0473ef1c4b74e6"
+    },
+    {
+      "source": "test-results/forest-work-refresh-96997ec/05-retry-success.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__forest-work-refresh-96997ec__05-retry-success.png",
+      "bytes": 1318940,
+      "sha256": "c2ac3b8dbd21af24c59dc8e5389c52ffa9181a636816ac394939d030a3a71f94"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-grid17-relight-v1/report.json",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-grid17-relight-v1__report.json",
+      "bytes": 24716,
+      "sha256": "70d510877cef573de9fbd962d91c10a5868856b3b5635ea4a732facfb40d6520"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-grid17-relight-v1/oak-coverage-weighted-mesh.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-grid17-relight-v1__oak-coverage-weighted-mesh.png",
+      "bytes": 95913,
+      "sha256": "a2979f12ed01083f7751b05c34022b2fda777c3a61efee9d536900c598924fa4"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-grid17-relight-v1/oak-coverage-weighted-capture.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-grid17-relight-v1__oak-coverage-weighted-capture.png",
+      "bytes": 100141,
+      "sha256": "06190dc5d45d99436b9f00d186739fc0498247dd6211990bbaeb8edff918420b"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-surface-v1/oak-legacy-unassociated-mesh.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-surface-v1__oak-legacy-unassociated-mesh.png",
+      "bytes": 95498,
+      "sha256": "d619b584a6086d7c569f13bc5a54269bc22b8ca9b38d4fe63db973009ff88076"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-surface-v1/oak-legacy-unassociated-capture.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-surface-v1__oak-legacy-unassociated-capture.png",
+      "bytes": 101902,
+      "sha256": "9af3ff79c13ed8df409840020c6a4cfd2fe7d0f5d9fd4f5e0009208062ae0635"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-surface-v1/oak-coverage-weighted-mesh.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-surface-v1__oak-coverage-weighted-mesh.png",
+      "bytes": 95479,
+      "sha256": "3aedf4a46f840e991741979fbe6dc81e87ff8edd3e1420078e36a60b5f31fb55"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-surface-v1/oak-coverage-weighted-capture.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-surface-v1__oak-coverage-weighted-capture.png",
+      "bytes": 101894,
+      "sha256": "c9d9d5370ddfd6f2a337355f972124fb55fa466284b702c136c9dfc3a734cd6d"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-surface-v1/pine-legacy-unassociated-mesh.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-surface-v1__pine-legacy-unassociated-mesh.png",
+      "bytes": 75852,
+      "sha256": "91782bcdc90af903975c3c31e7e56bd774556df3b9ca83739f50367f097269c8"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-surface-v1/pine-legacy-unassociated-capture.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-surface-v1__pine-legacy-unassociated-capture.png",
+      "bytes": 85358,
+      "sha256": "c88fa1b870bfb83ac343fed1d86c24c656453ef23bc14187f7dd1580d243b837"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-surface-v1/pine-coverage-weighted-mesh.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-surface-v1__pine-coverage-weighted-mesh.png",
+      "bytes": 75833,
+      "sha256": "32af9a0f747b702c2e22099b2b80013cdb3da1746c21cc6bc743514fae4a419d"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-surface-v1/pine-coverage-weighted-capture.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-surface-v1__pine-coverage-weighted-capture.png",
+      "bytes": 85551,
+      "sha256": "90f944ea4633b298b41c2c921b66b455fe3aa949ed71b12a3361926f529f1daf"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-relight-v1/oak-legacy-unassociated-mesh.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-relight-v1__oak-legacy-unassociated-mesh.png",
+      "bytes": 95498,
+      "sha256": "d619b584a6086d7c569f13bc5a54269bc22b8ca9b38d4fe63db973009ff88076"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-relight-v1/oak-legacy-unassociated-capture.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-relight-v1__oak-legacy-unassociated-capture.png",
+      "bytes": 104289,
+      "sha256": "2ded064eec5f83ce699a66cbd42e02ca268986486fa0febda52b9c1ecd70da4f"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-relight-v1/oak-coverage-weighted-mesh.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-relight-v1__oak-coverage-weighted-mesh.png",
+      "bytes": 95479,
+      "sha256": "3aedf4a46f840e991741979fbe6dc81e87ff8edd3e1420078e36a60b5f31fb55"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-relight-v1/oak-coverage-weighted-capture.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-relight-v1__oak-coverage-weighted-capture.png",
+      "bytes": 104451,
+      "sha256": "a2e15776afa775ab7215affe9d46ef87aef922b65785f030323ab492e3159dbe"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-relight-v1/pine-legacy-unassociated-mesh.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-relight-v1__pine-legacy-unassociated-mesh.png",
+      "bytes": 75852,
+      "sha256": "91782bcdc90af903975c3c31e7e56bd774556df3b9ca83739f50367f097269c8"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-relight-v1/pine-legacy-unassociated-capture.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-relight-v1__pine-legacy-unassociated-capture.png",
+      "bytes": 86585,
+      "sha256": "61d55b9ad5660bc713776263c149acd21ea4bade5a227b2bc75ef7aee76750df"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-relight-v1/pine-coverage-weighted-mesh.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-relight-v1__pine-coverage-weighted-mesh.png",
+      "bytes": 75833,
+      "sha256": "32af9a0f747b702c2e22099b2b80013cdb3da1746c21cc6bc743514fae4a419d"
+    },
+    {
+      "source": "test-results/family-capture/sidecar-relight-v1/pine-coverage-weighted-capture.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-forest-work-capture-review\\evidence\\test-results__family-capture__sidecar-relight-v1__pine-coverage-weighted-capture.png",
+      "bytes": 86787,
+      "sha256": "017a7daac522ba7dedbc7c00dd2d4c289c33a252b3ab1aabc9d36ac9ba0b74eb"
+    }
+  ],
+  "promptSha256": "93d84f325d0afd63cbf1a7d698adb34086a7f8e3c4e521cc9485c6e54c1c3369",
+  "model": "claude-opus-5-5",
+  "providerExpected": "firstParty"
+}

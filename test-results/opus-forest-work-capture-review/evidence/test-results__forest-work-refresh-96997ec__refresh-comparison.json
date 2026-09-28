@@ -1,0 +1,30 @@
+{
+  "schema": "forest-work-refresh-comparison/v1",
+  "baselineCommit": "d5c532225095254e942b4a2beb252c329a53b63e",
+  "incrementalCommit": "96997ec2114dc4ccf207fd5f53700dea8823afc7",
+  "hardware": "NVIDIA GeForce RTX 5090 via ANGLE D3D11",
+  "baseline": {
+    "windowMs": 6000,
+    "fullRefreshDelta": 135,
+    "workIndexRebuildDelta": 135,
+    "canopyRevisionDelta": 1297,
+    "refreshReasons": {"canopy": 135, "selection": 0, "habitat": 0, "movement": 0, "selectionMismatch": 0},
+    "groups": 5621,
+    "inferredGroupVisitsUpperBound": 758835,
+    "inference": "135 full scans times 5621 groups; baseline did not instrument visits"
+  },
+  "incremental": {
+    "windowMs": 6000,
+    "fullRefreshDelta": 0,
+    "workIndexRebuildDelta": 0,
+    "incrementalIndexUpdates": 72,
+    "incrementalBroadphaseQueries": 79,
+    "broadphaseGroupsVisited": 879,
+    "canopyRevisionDelta": 879
+  },
+  "timingsMs": {
+    "baseline": {"planetUpdateP50": 30.2, "planetUpdateP95": 46.0, "frameWorkP50": 45.0, "frameWorkP95": 66.4, "gpuPassSumP50": 9.765, "gpuPassSumP95": 19.162},
+    "incremental": {"planetUpdateP50": 18.9, "planetUpdateP95": 33.9, "frameWorkP50": 32.1, "frameWorkP95": 54.3, "gpuPassSumP50": 7.369, "gpuPassSumP95": 16.952},
+    "limitation": "Descriptive only; visible tree counts and final camera pose differed between runs. Do not interpret timing differences as a causal speedup."
+  }
+}
