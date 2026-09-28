@@ -1,0 +1,36 @@
+{
+  "brief": {
+    "path": "examples/asset-briefs/atlas-family-lod1-capture-comparison.json",
+    "sha256": "c102fc8a74a6f1be1d7fc38055e26e57a310cd3554dfd6ac7338faf445d1e6b9"
+  },
+  "results": [
+    {
+      "family": "oak",
+      "directory": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-oak-lod1-capture-16m-64-sidecar-v1",
+      "manifestSha256": "4f141cabca89742e7afd50d0058d2df18a8b00e267f2bb6d09953ce260ff00d4",
+      "artifacts": 2268,
+      "covered": 132278,
+      "leaf": 83306,
+      "bark": 4642,
+      "area": 71823.25,
+      "adapter": {
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "maxArrayLayers": 2048
+      }
+    },
+    {
+      "family": "pine",
+      "directory": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-pine-lod1-capture-16m-64-sidecar-v1",
+      "manifestSha256": "f24ddb87e5bfe3167f611cfbaa35b8c3a2f7cb8b0fb567d428e6e246a8b63bbb",
+      "artifacts": 2268,
+      "covered": 84344,
+      "leaf": 31404,
+      "bark": 7332,
+      "area": 22197.59375,
+      "adapter": {
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "maxArrayLayers": 2048
+      }
+    }
+  ]
+}

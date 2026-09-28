@@ -2,14 +2,15 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {join} from 'node:path';
 import assert from 'node:assert/strict';
-const root='C:/LLM/IWSDK',out='test-results/family-capture';await mkdir(out,{recursive:true});
+const root='C:/LLM/IWSDK',sidecar=process.env.ATLAS_CAPTURE_SIDECAR==='1',out='test-results/family-capture'+(sidecar?'/sidecar-audit':'');await mkdir(out,{recursive:true});
 const sha=b=>createHash('sha256').update(b).digest('hex'),results=[];
 for(const name of ['oak','pine']){
-  const dir=join(root,`Assets/_assetctl/atlas-${name}-lod1-capture-16m-64-v1`),raw=await readFile(join(dir,'capture-manifest.json')),m=JSON.parse(raw);
+  const dir=join(root,`Assets/_assetctl/atlas-${name}-lod1-capture-16m-64${sidecar?'-sidecar':''}-v1`),raw=await readFile(join(dir,'capture-manifest.json')),m=JSON.parse(raw);
   assert.equal(m.options.lod,1);assert.equal(m.options.heightM,16);assert.equal(m.views.length,81);assert.equal(m.artifacts.length,2268);assert.deepEqual(m.errors,[]);
   for(const [path,hash] of Object.entries(m.input.files))assert.equal(sha(await readFile(join(root,m.input.directory,path))),hash);
   assert.equal(sha(await readFile(join(dir,m.sourceManifest.path))),m.sourceManifest.sha256);
   assert.equal(sha(await readFile(join(dir,m.upstreamNotice.path))),m.upstreamNotice.sha256);
+  if(sidecar){assert.equal(m.foliageSampling,'offline-sidecar');for(const r of Object.values(m.foliageMipSource))assert.equal(sha(await readFile(join(dir,r.path))),r.sha256);}
   let covered=0,leaf=0,bark=0,area=0;
   for(const r of m.artifacts){
     const bytes=await readFile(join(dir,r.path));assert.equal(bytes.length,r.bytes);assert.equal(sha(bytes),r.sha256);

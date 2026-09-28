@@ -53,6 +53,28 @@ the 64px representation to expose artifacts; they do not represent accepted
 close-range use. Root raster contact, temporal stability, full forest cost,
 physical height variants and game handoff remain unverified.
 
+## Corrected source sampling
+
+The runs above intentionally load original GLB texture mips. They use the real
+game geometry but **do not model the current game's offline foliage mips**.
+That missing input was found during the comparison audit. Root `35ff152` and
+Atlas `d2223c3` add explicit, source-hash-bound sidecars to both capture and
+reference, with no silent fallback. `sidecar-audit` verifies the new retained
+captures; `sidecar-surface-v1` repeats the hardware comparisons with the actual
+runtime foliage inputs. All artifacts and GPU error checks pass.
+
+At the intermediate 33px frame, weighted capture versus the 528px reference
+gives blurred IoU 0.874 Oak / 0.848 Pine, area error -6.08% / -6.24%. The
+528px→1056px source convergence error is <0.7% Oak and 3.3–3.6% Pine. Native
+MASK geometry still loses 27% / 50% coverage respectively. This is relevant
+to the visible transition and is not solved by a matching proxy alone.
+
+The source correction improves Pine capture coverage and reference convergence,
+but intermediate luminance is still -35.9% Oak / -38.0% Pine; median depth
+errors are 1.163m / 1.177m. These captures also remain unaccepted. An opt-in
+per-view PBR lighting experiment is being implemented separately; its existence
+is not evidence of improvement.
+
 ## Reproduce
 
 Keep rendering dev server on 5197, retained root captures present, and the GPU
@@ -60,6 +82,10 @@ free of other browser/generation jobs. Run `node test-results/family-capture/aud
 then set `ATLAS_CAPTURE_REPORT` to a **fresh** report directory and run
 `node test-results/family-capture/compare.mjs`. The harness uses original MASK
 source coverage and reports native mesh loss separately from supersampling.
+Set `ATLAS_CAPTURE_SIDECAR=1` for the runtime-matching captures and reference.
+The optional `ATLAS_CAPTURE_RELIGHT=1` requires the per-view lighting uniform;
+the runner fails if that option is requested but unavailable. New runs also
+report native Three alpha-hash coverage as a separate source comparison.
 
 Next implementation must resolve intermediate-view lighting/depth and Pine
 source sampling before game integration; the original solid canopy remains

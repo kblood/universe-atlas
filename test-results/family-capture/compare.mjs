@@ -7,6 +7,7 @@ const root='C:/LLM/IWSDK',out=process.env.ATLAS_CAPTURE_REPORT??'test-results/fa
 await mkdir(out,{recursive:true});
 const families=[{name:'oak',source:'atlas-ez-family-f',stem:'atlas-ez-oak',capture:'atlas-oak-lod1-capture-16m-64-v1'},
   {name:'pine',source:'atlas-ez-conifer-family-13977-16m-v1e',stem:'atlas-ez-conifer',capture:'atlas-pine-lod1-capture-16m-64-v1'}];
+if(process.env.ATLAS_CAPTURE_SIDECAR==='1')for(const f of families)f.capture=f.capture.replace('-v1','-sidecar-v1');
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const sourceFiles=[];
 for(const path of ['src/tree-impostor-lab.ts','src/tree-captured-impostor.ts','src/tree-impostor-filter.ts','src/tree-asset.ts','src/tree-impostor-views.ts'])sourceFiles.push({path,sha256:sha(await readFile(path))});
@@ -20,7 +21,7 @@ for(const family of families){
   await page.route('**/__capture/**',async route=>{
     const name=new URL(route.request().url()).pathname.slice('/__capture/'.length);
     let path;if(name==='source0'||name==='source1')path=join(root,'Assets/_assetctl',family.source,family.stem+(name==='source0'?'.glb':'.lod1.glb'));
-    else if(name==='capture-manifest.json'||/^view-\d+\/mip-\d+\.(colour|data|classification)\.f32$/.test(name))path=join(root,'Assets/_assetctl',family.capture,name);
+    else if(['capture-manifest.json','source-mip-manifest.json','source-foliage-mips.rgba8'].includes(name)||/^view-\d+\/mip-\d+\.(colour|data|classification)\.f32$/.test(name))path=join(root,'Assets/_assetctl',family.capture,name);
     else throw new Error('Unknown capture fixture path');
     if(!cache.has(path))cache.set(path,await readFile(path));
     await route.fulfill({status:200,body:cache.get(path),contentType:name.endsWith('.json')?'application/json':'application/octet-stream'});
@@ -28,6 +29,7 @@ for(const family of families){
   await page.goto('http://127.0.0.1:5197/tree-impostor-lab.html');await page.waitForFunction(()=>window.__treeImpostorLab);
   for(const filtering of ['legacy-unassociated','coverage-weighted']){
     await page.evaluate(async filtering=>{const read=async p=>(await fetch('/__capture/'+p)).arrayBuffer();const [a,b,m]=await Promise.all([read('source0'),read('source1'),fetch('/__capture/capture-manifest.json').then(r=>r.json())]);await window.__treeImpostorLab.load(a,b,m,read,filtering);},filtering);
+    if(process.env.ATLAS_CAPTURE_RELIGHT==='1')await page.evaluate(()=>{const u=window.__treeImpostorLab.impostor.uniforms.captureRelightViews;if(!u)throw new Error('Missing per-view relighting option');u.value=1;});
     const metrics=await page.evaluate(()=>{
       const lab=window.__treeImpostorLab,rows=[];
       function metrics(a,b,n){
@@ -38,7 +40,8 @@ for(const family of families){
       }
       for(const direction of [[0,0,1],[1,.3,1]])for(const pixels of [33,128]){
         const reference=lab.probe(direction,'mesh',pixels,pixels===33?16:4),calibration=lab.probe(direction,'mesh',pixels,pixels===33?8:2),native=lab.probe(direction,'mesh',pixels,1);
-        for(const parallax of [0,1]){lab.impostor.uniforms.captureParallax.value=parallax;const captured=lab.probe(direction,'capture',pixels,1);rows.push({direction,pixels,parallax,capture:metrics(reference,captured,pixels),native:metrics(reference,native,pixels),referenceConvergence:metrics(reference,calibration,pixels)});}
+        lab.setSourceCoverage('hash');const nativeHash=lab.probe(direction,'mesh',pixels,1);lab.setSourceCoverage('mask');
+        for(const parallax of [0,1]){lab.impostor.uniforms.captureParallax.value=parallax;const captured=lab.probe(direction,'capture',pixels,1);rows.push({direction,pixels,parallax,capture:metrics(reference,captured,pixels),native:metrics(reference,native,pixels),nativeHash:metrics(reference,nativeHash,pixels),referenceConvergence:metrics(reference,calibration,pixels)});}
       }
       const surface=[];lab.impostor.uniforms.captureParallax.value=1;
       for(const direction of [[0,0,1],[1,.3,1]]){
@@ -53,7 +56,7 @@ for(const family of families){
         surface.push({direction,depthSamples:errors.length,depthMedianErrorM:errors[Math.floor(errors.length*.5)],depthP95ErrorM:errors[Math.floor(errors.length*.95)],sourceMeanLuminance:a,captureMeanLuminance:b,relativeLuminanceError:(b-a)/a,referenceConvergence1056vs528:metrics(high,low,33)});
       }
       const gl=lab.renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');
-      return {rows,surface,filtering:lab.capture.filtering,bytes:lab.capture.bytes,lod:lab.capture.manifest.options.lod,glError:gl.getError(),adapter:gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)};
+      return {rows,surface,foliageSampling:lab.capture.manifest.foliageSampling??'original-mips',relightViews:lab.impostor.uniforms.captureRelightViews?.value??0,filtering:lab.capture.filtering,bytes:lab.capture.bytes,lod:lab.capture.manifest.options.lod,glError:gl.getError(),adapter:gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)};
     });
     report.results.push({family:family.name,requestedFiltering:filtering,...metrics});
     await page.evaluate(()=>{const l=window.__treeImpostorLab;l.impostor.uniforms.captureParallax.value=1;l.camera.position.set(40,20,40);l.controls.target.set(0,8,0);l.controls.update()});
