@@ -1,8 +1,27 @@
 # Universe Atlas
 
-## Current direction — 2026-09-27
+## Current direction — 2026-09-28
 
 The [desktop realism and procedural life implementation plan](docs/desktop-realism-implementation-plan-2026-09-27.md) is the current planetary graphics roadmap. Desktop quality comes first: deterministic species recipes, cached structural variants, per-instance appearance, continuous canopy, shared lighting and genome-compatible animals. Canonical canopy streaming and bounded instance uploads are implemented; richer assets and their runtime integration remain in development.
+
+The deployed site remains at `8e16776`; local source checkpoint `fbe3c26` is
+not published. The local checkpoint connects the verified, sidecar-backed
+Oak/Pine package to opt-in compact near and middle tree batches and to a
+dated-family distant canopy profile. A 67-check focused CPU integration suite
+and TypeScript pass; a separate family-metadata suite passes 7 checks with 3
+optional candidate-path checks skipped. An earlier normal Trees smoke passed
+load, off-toggle and recovery-after-503 checks, but the latest real-family
+browser run exposed an interleaved-geometry attribute issue in metadata
+extraction. Family load must be rerun after that fix; date revisit, appearance
+and performance acceptance are pending. See [local family canopy status](docs/family-canopy-2026-09-28.md),
+[normal forest loading](docs/forest-asset-loading-2026-09-28.md),
+[compact family slots](docs/compact-tree-families-2026-09-28.md) and the
+[retained forest work list](docs/forest-worklist-2026-09-28.md).
+
+The remaining goal includes realistic species dimensions and structural
+variants, foliage and material response, ground/rock/terrain breadth, fauna,
+midrange performance qualification and full desktop visual acceptance. Quest
+remains a later, separately measured profile.
 
 [Desktop surface lighting](docs/surface-lighting-2026-09-28.md) adds atmospheric
 sky fill and bounded local sun shadows through the normal planet panel. This
@@ -26,10 +45,10 @@ The [temporal universe implementation status](docs/temporal-universe-implementat
 records the current integrated baseline and the scientific and ecological
 limits that remain.
 
-This build includes the canopy runtime through `98556a7`: stable census patches,
-individual near/far ownership, 5,500 m altitude prefetch, 3,500 m altitude
-rendering, water-aware patch reuse, and retained terrain refresh on date changes.
-RTX 5090 preview evidence covers repeatable date replay with 6,301 patches and
+An earlier published canopy build included runtime through `98556a7`: stable
+census patches, individual near/far ownership, 5,500 m altitude prefetch,
+3,500 m altitude rendering, water-aware patch reuse, and retained terrain
+refresh on date changes. RTX 5090 preview evidence covers repeatable date replay with 6,301 patches and
 156,309 trees retained and over 321 m of flight and 323 m of walking. It does
 not establish midrange performance or a general 60 FPS result. The current
 forest still uses legacy faceted proxy trees rather than realistic authored
@@ -42,9 +61,9 @@ The [v7 tree checkpoint](docs/tree-authoring-v7-2026-09-28.md) preserves geometr
 
 A separate [pinned EZ-Tree reference comparison](docs/tree-ez-reference-2026-09-28.md) generates fixed-seed oak geometry and reduced-wood/upstream-LOD variants for a local browser review. The 16 m Oak has 13,806 full-detail triangles; the wood-reduced control retains its leaf mesh at 12,014. Its RTX 5090 fixture records six 60-frame samples and shows a fuller, less tiered crown, but the trees differ in geometry and leaf coverage, so these are not general performance results or visual acceptance. The reference is not in the game.
 
-Adapter candidate F turns that reference into an Atlas-material GLB pair: 13,806-triangle LOD0 and 4,866-triangle LOD1, retaining 1.2 m cards, pivots and wind data. It is a separate browser lab, not the default forest or a shipped asset; canopy/LOD appearance and material quality remain under review. The live app checkpoint `cc25635` still uses its legacy tree shapes. See the [candidate F status](docs/tree-ez-family-2026-09-28.md).
+Adapter candidate F turns that reference into an Atlas-material GLB pair: 13,806-triangle LOD0 and 4,866-triangle LOD1, retaining 1.2 m cards, pivots and wind data. It began as a separate browser lab; later local source can load the package into opt-in detailed batches and derive distant family profiles. Appearance and the near/far transition remain unaccepted and the local checkpoint is not deployed. See the [candidate F status](docs/tree-ez-family-2026-09-28.md).
 
-The next [instance streaming stage](docs/tree-instance-streaming-2026-09-28.md) shares partial-upload logic with the planetary forest, skips unchanged detailed-tree transforms, and adds separate bark/leaf instance tints. It prepares canonical forest integration; the detailed family is still not attached to the game.
+The [instance streaming record](docs/tree-instance-streaming-2026-09-28.md) documents the partial-upload logic and separate bark/leaf tints. That earlier snapshot preceded local near/far family integration; current details are in the family canopy record above.
 
 The current [Three.ez impostor comparison](docs/tree-three-ez-impostor-2026-09-28.md) isolates an upstream texture-atlas colour defect and measures distant coverage against a converged mesh reference. The existing proxy and Three.js alpha hashing retain substantially more coverage than the experimental mesh's default alpha mask. Lighting, view continuity and game adoption remain open. The [foliage minification comparison](docs/tree-foliage-minification-2026-09-28.md) records current coverage studies. An opt-in [leaf diffuse-transmission prototype](docs/leaf-diffuse-transmission-2026-09-28.md) passed synthetic calibration and a corrected tree-lab check, but remains off by default and is not connected to planetary rendering.
 

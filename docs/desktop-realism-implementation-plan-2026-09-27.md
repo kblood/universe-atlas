@@ -2,14 +2,43 @@
 
 Date: 2026-09-27. Accepted direction; implementation started.
 
-Published release `580936f` includes the canopy runtime through `98556a7`: complete canonical
-patches and individual ownership, 5,500 m altitude prefetch, 3,500 m altitude
-rendering, water-aware patch reuse, and retained terrain refresh during date
-changes. The [integration record](canopy-runtime-integration-2026-09-28.md)
-links the immutable RTX 5090 date-seek and flight/walking evidence; the
-[deployment receipt](deployment-580936f-2026-09-28.md) records the live build
-and byte audit. This does not complete realistic species assets or establish
-midrange performance.
+## Current status snapshot — local `fbe3c26`, live `8e16776`
+
+The deployed site remains at `8e16776`; this later local source checkpoint is
+not published. Locally, the normal Trees setting loads a verified Oak/Pine
+package and offline foliage sidecars into compact near and middle batches. A
+shared dated binding now feeds family-specific distant crowns using each
+family's actual LOD profiles, texture-derived linear colors and conservative
+bounds. The retained forest work list skips complete far census patches while
+preserving canonical order and the 650 m ownership cutoff. These paths remain
+opt-in or under development; no family-matching GPU/visual acceptance or
+performance gain is claimed.
+
+The family/canopy integration has 67 focused CPU checks and passes TypeScript.
+The separate metadata suite has 7 passes; 3 candidate-path checks were skipped
+because their environment variables were unset. An earlier Luna normal-control
+smoke verified package loading, switching Trees off and retry after a 503.
+The latest real-family browser run exposed an interleaved-geometry attribute
+issue during metadata extraction; the family load needs a fresh browser rerun
+after its fix. Date revisit, appearance and performance acceptance remain
+pending. The
+[family integration record](family-canopy-2026-09-28.md), [normal loading
+record](forest-asset-loading-2026-09-28.md), [compact family record](compact-tree-families-2026-09-28.md)
+and [retained work-list record](forest-worklist-2026-09-28.md) give the current
+implementation details.
+
+Per-species physical dimensions, structural variants, accepted realistic
+foliage and far silhouettes, rocks and ground materials, terrain and fauna
+breadth, midrange performance targets, Quest quality and end-to-end visual
+acceptance remain open. No general frame-rate claim follows from CPU tests.
+
+Historical deployment `580936f` included the canopy runtime through `98556a7`:
+complete canonical patches and individual ownership, 5,500 m altitude
+prefetch, 3,500 m altitude rendering, water-aware patch reuse and retained
+terrain refresh during date changes. The [integration record](canopy-runtime-integration-2026-09-28.md)
+links its immutable RTX 5090 date-seek and flight/walking evidence; the
+[deployment receipt](deployment-580936f-2026-09-28.md) preserves that earlier
+build and byte audit. It is historical evidence, not the current live stamp.
 Baseline before this work: `27e89c897369270728e5ef4118dcc144e40af7fc`.
 
 This is the current plan for planetary visual quality. It consolidates the
@@ -187,13 +216,21 @@ more. Structural diversity must not come from disconnected anatomy.
 | A. Record direction | This plan, related MD links/status, guide explanations | Written; guide updated by Luna 6 |
 | B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented; build, 53 targeted checks and RTX 5090 browser acceptance pass; see validation record |
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
-| D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; a development-only family loader binds supported branching species into detailed forest batches. Focused CPU/loader suite: 58 pass, 0 skips; one RTX 5090 game fixture passed date-replay and 316.87 m movement checks with no browser or GL errors. Opus follow-up confirms aerial composition and slot lifecycle. Asset acceptance, per-species dimensions, structural variants, resource cache, visual acceptance and performance claims remain open |
-| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Published release `580936f` includes canopy runtime through `98556a7`: complete census patches, near/far ownership, altitude prefetch/render thresholds, bounded uploads, water-aware patch reuse, and retained terrain refresh on date changes. RTX 5090 date-seek and flight/walk acceptance are linked in the [integration record](canopy-runtime-integration-2026-09-28.md), with the [live deployment receipt](deployment-580936f-2026-09-28.md). Legacy faceted tree shapes remain; authored realism, midrange performance validation, XR and broader visual signoff are open. The earlier deployed `e8a848d` used sparse distant representatives |
-| F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | V7 applies the versioned linear-RGB-to-sRGB byte conversion and passes export/repeat and browser checks; back-lit foliage remains dark. A separate v2 capture lab passes repeat/mip/CPU audits for a 16 m tree, but the 22 m / 32-pixel capture has no leaf classification and arbitrary-view silhouette error remains high. A development-only local path attaches a supplied family to supported branching species in detailed near/middle batches. Its 58 focused CPU/loader checks pass; one RTX 5090 game fixture passed date-replay and movement checks, and Opus follow-up confirmed aerial composition and slot lifecycle. Detailed candidate crowns look thinner than the faceted legacy trees; no visual acceptance or general performance result is claimed. The published default and far canopy remain legacy. See the [browser prototype](tree-browser-prototype-2026-09-28.md), [v7 record](tree-authoring-v7-2026-09-28.md), [colour calibration](tree-color-calibration-2026-09-28.md), [capture record](authored-tree-capture-2026-09-28.md) and [local forest integration record](tree-forest-integration-2026-09-28.md). LOD2, per-species dimensions, structural variants, packaging, midrange/XR profiling and other landscape assets remain open. |
+| D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Local `fbe3c26` binds supported dated species to the verified opt-in Oak/Pine package, retains separate LOD profiles and computes family colors/bounds at load. The integration and family metadata pass 67 focused CPU checks plus TypeScript; the separate metadata run is 7 pass / 3 optional path skips. An earlier normal-control smoke passed load/off/503 retry, but the latest real-family browser run exposed an interleaved-geometry attribute issue during metadata extraction. Rerun is pending its fix; visual acceptance, variants, physical species allometry, midrange performance and default adoption remain open. See the family and normal-loading records above. |
+| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | The live `8e16776` remains distinct from local `fbe3c26`. Locally, the distant renderer receives the same dated binding and family presentation as detailed slots and builds crowns from each loaded family's LOD1 profile. The focused far-renderer/forest integration suite passes 67 CPU checks. A real-family browser run found an interleaved-attribute metadata issue; GPU compilation, matching close/middle/far captures, handoff continuity, Pine density, performance and visual acceptance await a corrected rerun. The analytic trunk and legacy fallback remain temporary approximations; see [family canopy integration](family-canopy-2026-09-28.md). |
+| F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | The existing packaged family is now connected to an opt-in local near/middle/far path, but is not visually accepted or live at `8e16776`. The implementation has separate measured geometry profiles and an offline-sidecar eligibility gate; it does not yet provide per-species dimensions or structural variants. V7 texture encoding and earlier capture/authoring checks remain historical experiments. Realistic foliage/material response, continuous LOD silhouette, ground/rocks/terrain breadth, fauna, midrange/XR profiling and full visual acceptance remain open. See the [local family integration record](tree-forest-integration-2026-09-28.md), [family canopy record](family-canopy-2026-09-28.md), [v7 record](tree-authoring-v7-2026-09-28.md) and [capture record](authored-tree-capture-2026-09-28.md). |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |
 
-Historical checkpoint: [v5 authoring](tree-authoring-v5-2026-09-28.md) exports a 14,012-triangle tree and a 4,380-triangle LOD1 with identical foliage. The [Opus follow-up](tree-authoring-v5-review-assessment-2026-09-28.md) records bark wrapping, secondary support and wind issues from that version.
+### Historical checkpoints before `fbe3c26`
+
+The records below preserve earlier implementation snapshots. Their status
+sentences describe the checkpoint named in each heading/record; the current
+state is summarized above and in the dated family records.
+
+[V5 authoring](tree-authoring-v5-2026-09-28.md) exports a 14,012-triangle tree
+and a 4,380-triangle LOD1 with identical foliage. The [Opus follow-up](tree-authoring-v5-review-assessment-2026-09-28.md)
+records bark wrapping, secondary support and wind issues from that version.
 
 Stage F has a v7 colour-encoding increment and a browser lab. V7 preserves v6
 geometry, alpha and normal data while converting the declared linear RGB recipe
@@ -532,8 +569,10 @@ check; establish vegetation lighting and bounded shadows; combine existing
 branching/conifer assets and foliage mip correction; match the distant canopy;
 then enable the accepted result through normal desktop loading/settings.
 Separate AA experiments and additional standalone tree labs are deferred.
-The local detailed-tree integration is committed; it is not the live default
-or proof that the broader realism goal is complete.
+The local detailed-tree integration is committed but not live. Its latest
+real-family browser load exposed an attribute-layout bug; corrected load and
+matched visual checks are pending. This does not complete the broader realism
+goal.
 
 ### Progress — 2026-09-28, surface lighting
 
@@ -592,10 +631,11 @@ family appearance and matching far canopy are accepted; the site is not updated.
 
 ### Matching the loaded families at distance
 
-The [family canopy integration](family-canopy-2026-09-28.md) now passes the same
+The [family canopy integration](family-canopy-2026-09-28.md) passes the same
 dated catalogue and adopted library revision to the distant renderer. It uses
 separate LOD profiles, texture-derived linear colors, packed per-instance
 brightness and bounded retagging without moving canonical trees. Focused CPU
-checks pass; actual GPU compilation, per-ID handoff continuity, Pine density,
-matched captures and performance still need browser acceptance. The analytic
-trunk remains an explicit temporary approximation. This local stage is not live.
+checks pass. A real-family browser run exposed an interleaved-attribute issue
+in metadata extraction; corrected loading, per-ID handoff continuity, Pine
+density, matched captures and performance still need a browser rerun. The
+analytic trunk remains a temporary approximation. This local stage is not live.
