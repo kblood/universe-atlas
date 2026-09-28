@@ -1,0 +1,368 @@
+{
+  "schema": "https://iwsdk.local/schemas/live-atlas-publication-receipt/v3",
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "checkedAt": "2026-09-28T05:15:46.437041+00:00",
+  "expectedCommit": "c747e6b16d59577c600484ff62d0efb8b3cb47a2",
+  "liveBuild": {
+    "commit": "c747e6b16d59577c600484ff62d0efb8b3cb47a2",
+    "dirty": false,
+    "builtAt": "2026-09-28T05:12:05.393Z"
+  },
+  "buildStampPass": true,
+  "guideBrowser": {
+    "report": "test-results/tree-asset-lab-v6/live-guide/guide-report.json",
+    "chapters": 9,
+    "widths": [
+      1440,
+      390,
+      320
+    ],
+    "internalDestinations": 79,
+    "deployedRuntimeChecked": true,
+    "errors": [],
+    "mobileHistoryDetails": {
+      "viewportWidth": 320,
+      "summary": "Implementation history, experiments and measurements",
+      "expanded": true,
+      "noHorizontalOverflow": true,
+      "pageErrors": []
+    },
+    "noJsReading": true,
+    "inGameGuideLink": true,
+    "eraDeepLinks": [
+      0,
+      5,
+      9
+    ],
+    "passed": true
+  },
+  "guidePages": [
+    {
+      "path": "guide/index.html",
+      "status": 200,
+      "contentType": "text/html",
+      "bytes": 11909,
+      "sha256": "124e7d5a7781f715dc94e2ea96d2b794db1478d71e6afe1b7a08b90e30124988",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "124e7d5a7781f715dc94e2ea96d2b794db1478d71e6afe1b7a08b90e30124988"
+    },
+    {
+      "path": "guide/determinism.html",
+      "status": 200,
+      "contentType": "text/html",
+      "bytes": 8258,
+      "sha256": "9b2d1d5827c0f8e1c8730e92bb3188ac0700f4f6f90a39fd92efa568aaf5be6a",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "9b2d1d5827c0f8e1c8730e92bb3188ac0700f4f6f90a39fd92efa568aaf5be6a"
+    },
+    {
+      "path": "guide/time.html",
+      "status": 200,
+      "contentType": "text/html",
+      "bytes": 10850,
+      "sha256": "d3e877056fd0b92324119921d72a19a4a367462667aa6adeadc63f0b0ef0d20f",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "d3e877056fd0b92324119921d72a19a4a367462667aa6adeadc63f0b0ef0d20f"
+    },
+    {
+      "path": "guide/universe.html",
+      "status": 200,
+      "contentType": "text/html",
+      "bytes": 7864,
+      "sha256": "b713743711e84434c00f41111a9718e2113f4e30d859a2dff217423f8b1b817a",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "b713743711e84434c00f41111a9718e2113f4e30d859a2dff217423f8b1b817a"
+    },
+    {
+      "path": "guide/terrain.html",
+      "status": 200,
+      "contentType": "text/html",
+      "bytes": 11797,
+      "sha256": "61dedaaea4defbe0e952d6bf1d49981b301810da740c3380ffac48eb74208c52",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "61dedaaea4defbe0e952d6bf1d49981b301810da740c3380ffac48eb74208c52"
+    },
+    {
+      "path": "guide/water-atmosphere.html",
+      "status": 200,
+      "contentType": "text/html",
+      "bytes": 11625,
+      "sha256": "48be5992c677723972d24d6a6d4f332cf59300b8309a3af63232ff59c820ef28",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "48be5992c677723972d24d6a6d4f332cf59300b8309a3af63232ff59c820ef28"
+    },
+    {
+      "path": "guide/life.html",
+      "status": 200,
+      "contentType": "text/html",
+      "bytes": 18364,
+      "sha256": "ccb05bd6744bc87959b8905cfdd5068c626bb35a2d95fa0cdbe674bd82907d72",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "ccb05bd6744bc87959b8905cfdd5068c626bb35a2d95fa0cdbe674bd82907d72"
+    },
+    {
+      "path": "guide/travel.html",
+      "status": 200,
+      "contentType": "text/html",
+      "bytes": 14308,
+      "sha256": "7db4f2bdf7524ce10fd00c7e507f4776c667a11844fc1e7498ba6fd3ee8c9774",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "7db4f2bdf7524ce10fd00c7e507f4776c667a11844fc1e7498ba6fd3ee8c9774"
+    },
+    {
+      "path": "guide/publishing.html",
+      "status": 200,
+      "contentType": "text/html",
+      "bytes": 11294,
+      "sha256": "45ea534cc167a5c0a800d669ed35a51e75ce1df095f205d4f1cefb619594da5b",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "45ea534cc167a5c0a800d669ed35a51e75ce1df095f205d4f1cefb619594da5b"
+    }
+  ],
+  "allNineGuidePagesMatchMainDist": true,
+  "browserPrototypeResources": [
+    {
+      "path": "docs/tree-browser-prototype-2026-09-28.md",
+      "status": 200,
+      "contentType": "text/markdown",
+      "bytes": 7245,
+      "sha256": "29bf3eeeef5b3a55ed9d976aaacf97e7737f3f5f29f65e7002d822d8648091bf",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "29bf3eeeef5b3a55ed9d976aaacf97e7737f3f5f29f65e7002d822d8648091bf"
+    },
+    {
+      "path": "docs/opus-5.5-tree-browser-review-2026-09-28.md",
+      "status": 200,
+      "contentType": "text/markdown",
+      "bytes": 7594,
+      "sha256": "13c0301fe7afadda5708d6dae57e31ac9527016d1c3d8dc258a2dda0270ab5ac",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "13c0301fe7afadda5708d6dae57e31ac9527016d1c3d8dc258a2dda0270ab5ac"
+    },
+    {
+      "path": "docs/opus-5.5-tree-browser-review-2026-09-28.metadata.json",
+      "status": 200,
+      "contentType": "application/json",
+      "bytes": 1226,
+      "sha256": "3df4947b47292cd05aee17efb49b8ab8a742ca7a14a3ef5221f10e346fb169ba",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "3df4947b47292cd05aee17efb49b8ab8a742ca7a14a3ef5221f10e346fb169ba"
+    },
+    {
+      "path": "test-results/tree-asset-lab-v6/report.json",
+      "status": 200,
+      "contentType": "application/json",
+      "bytes": 25518,
+      "sha256": "b77bccfada4ce185c191c93debf0f83523a2f57ce744a2cf6fc98245582148e9",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "b77bccfada4ce185c191c93debf0f83523a2f57ce744a2cf6fc98245582148e9"
+    },
+    {
+      "path": "test-results/tree-asset-lab-v6/cpu-test.log",
+      "status": 200,
+      "contentType": "",
+      "bytes": 642,
+      "sha256": "1f13519432113babad70b579da802671ce72f223696140f76fafa10cdd68920d",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "1f13519432113babad70b579da802671ce72f223696140f76fafa10cdd68920d"
+    },
+    {
+      "path": "test-results/tree-asset-lab-v6/lod0-population3.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 416305,
+      "sha256": "8748a188dd20ecee3bae8c6143db39dafced2f136132040bd4976c6a4d9f3740",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "8748a188dd20ecee3bae8c6143db39dafced2f136132040bd4976c6a4d9f3740"
+    },
+    {
+      "path": "test-results/tree-asset-lab-v6/lod0-population192.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 2740544,
+      "sha256": "df57024de47cf565a37eec824fde78cb9a69321ec4612e8bc69657f8caeb4695",
+      "localDeploymentDistExists": true,
+      "matchesMainDeploymentDist": true,
+      "mainDistSha256": "df57024de47cf565a37eec824fde78cb9a69321ec4612e8bc69657f8caeb4695"
+    }
+  ],
+  "allBrowserPrototypeResourcesMatchMainDist": true,
+  "runtimeJavaScript": {
+    "baselineCommit": "1bd3af3acf6866226726a110c69ae4006378cb64",
+    "baselineDist": "C:/LLM/IWSDK/universe-atlas/dist/assets",
+    "assetCount": 22,
+    "assets": [
+      {
+        "name": "OrbitControls-C33he78E.js",
+        "status": 200,
+        "sha256": "8068f9d55af334b44a238ee5608ca1002026843c1b191ea9641d3af74193c52c",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "8068f9d55af334b44a238ee5608ca1002026843c1b191ea9641d3af74193c52c"
+      },
+      {
+        "name": "atlas-D_fLpHjv.js",
+        "status": 200,
+        "sha256": "a0707cf891ebfee84c9ce254c591c63a5714398ca8e28bf17bb427930d1f7e29",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "a0707cf891ebfee84c9ce254c591c63a5714398ca8e28bf17bb427930d1f7e29"
+      },
+      {
+        "name": "biomes-B2FSz8AO.js",
+        "status": 200,
+        "sha256": "6213e8f4da8320ec71d19d0c9e39deede091999530b9913031222d7fe58460ff",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "6213e8f4da8320ec71d19d0c9e39deede091999530b9913031222d7fe58460ff"
+      },
+      {
+        "name": "biosphere-CVMT8gpe.js",
+        "status": 200,
+        "sha256": "45688e5ba13d4176b559e22cd010bd66973948b4deb0e7f6e90d9a5cac7db0b6",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "45688e5ba13d4176b559e22cd010bd66973948b4deb0e7f6e90d9a5cac7db0b6"
+      },
+      {
+        "name": "biosphere-model-BxOjjDxI.js",
+        "status": 200,
+        "sha256": "4d8529f4671472589497cb12468606470989a190ef1103fc3571d0fb7737e979",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "4d8529f4671472589497cb12468606470989a190ef1103fc3571d0fb7737e979"
+      },
+      {
+        "name": "catalog-Cs3U8xJB.js",
+        "status": 200,
+        "sha256": "2dcc20d12a182188e8b154ca9d0ffa1dc3cbf2014d5bc08aa4078da22cfc6e9b",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "2dcc20d12a182188e8b154ca9d0ffa1dc3cbf2014d5bc08aa4078da22cfc6e9b"
+      },
+      {
+        "name": "clouds-CGGXURlv.js",
+        "status": 200,
+        "sha256": "4c19e442ba9c21d5bd28c606974ecbafa8265c97e1e3b478c75719e296d3b7fd",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "4c19e442ba9c21d5bd28c606974ecbafa8265c97e1e3b478c75719e296d3b7fd"
+      },
+      {
+        "name": "creatures-z4zMnOp4.js",
+        "status": 200,
+        "sha256": "5f6f373d7f4604e198a4cde08164af0d17cd81ce4cb25da9ba29b2392726787d",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "5f6f373d7f4604e198a4cde08164af0d17cd81ce4cb25da9ba29b2392726787d"
+      },
+      {
+        "name": "drainage-worker-Bp34AJ1h.js",
+        "status": 200,
+        "sha256": "08b032e56f2cb5268e8c24825461f864a558c1b4309c1663a3526cf0c31a0439",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "08b032e56f2cb5268e8c24825461f864a558c1b4309c1663a3526cf0c31a0439"
+      },
+      {
+        "name": "forest-census-worker-CpdaZJHJ.js",
+        "status": 200,
+        "sha256": "53c1ba117e7a0415f87cdd781dd3ba6f92b356844990c9a072b9706986ddfd89",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "53c1ba117e7a0415f87cdd781dd3ba6f92b356844990c9a072b9706986ddfd89"
+      },
+      {
+        "name": "ground-walker-B9BC5jac.js",
+        "status": 200,
+        "sha256": "34896728731d272dad5585fc81a68e4151abdc0db35b8e5396f1cd25830202ed",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "34896728731d272dad5585fc81a68e4151abdc0db35b8e5396f1cd25830202ed"
+      },
+      {
+        "name": "guide-time-JsQuz3LV.js",
+        "status": 200,
+        "sha256": "a3f69a8d03bffaa8bb7ce7d620691aef42fa7ffed203adb6059286f6b7feafea",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "a3f69a8d03bffaa8bb7ce7d620691aef42fa7ffed203adb6059286f6b7feafea"
+      },
+      {
+        "name": "planet-population-worker-DPoR_B8X.js",
+        "status": 200,
+        "sha256": "e90f8ed0b32b5e6b763662ed37ce2e92727aff1eaa8997cc593dd781669d3ce1",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "e90f8ed0b32b5e6b763662ed37ce2e92727aff1eaa8997cc593dd781669d3ce1"
+      },
+      {
+        "name": "planet-worker-BpRIhApT.js",
+        "status": 200,
+        "sha256": "63244cb31d54ccd384482ece789259457c6bd6badc186017dff6b65669f91516",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "63244cb31d54ccd384482ece789259457c6bd6badc186017dff6b65669f91516"
+      },
+      {
+        "name": "rapier-physics-iRel_T-y.js",
+        "status": 200,
+        "sha256": "73f8b5fe1e32ae64e8fde0354f3d0e9fc04b9ffa71c043d5b1ca93f786ff8679",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "73f8b5fe1e32ae64e8fde0354f3d0e9fc04b9ffa71c043d5b1ca93f786ff8679"
+      },
+      {
+        "name": "river-worker-B6OWmDg5.js",
+        "status": 200,
+        "sha256": "9d5d876dffb667585760e15ee4accb5d08503e2b2e42776240c0a6ba66c25d0d",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "9d5d876dffb667585760e15ee4accb5d08503e2b2e42776240c0a6ba66c25d0d"
+      },
+      {
+        "name": "three.core-DYul8iZ1.js",
+        "status": 200,
+        "sha256": "bcc2dd17f1a58cfcb96b48f382a6f24a25f46a5f0e36ac02e5415e108161dc69",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "bcc2dd17f1a58cfcb96b48f382a6f24a25f46a5f0e36ac02e5415e108161dc69"
+      },
+      {
+        "name": "three.module-NATEk4NP.js",
+        "status": 200,
+        "sha256": "41530d4cf5b954f9f521b2ce84b45236e9bf9be2f3ff6746e3ff9302d002c96e",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "41530d4cf5b954f9f521b2ce84b45236e9bf9be2f3ff6746e3ff9302d002c96e"
+      },
+      {
+        "name": "time-nav-zNzZqn8I.js",
+        "status": 200,
+        "sha256": "2ebe545821f1a2dc034464507d9d880a6fcc77777877241395ec681263507093",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "2ebe545821f1a2dc034464507d9d880a6fcc77777877241395ec681263507093"
+      },
+      {
+        "name": "volumetric-clouds-8SQVk-_2.js",
+        "status": 200,
+        "sha256": "e4e9e5987587ae4f255e0d3a3dfc791863707150a6bcb18adabf8f4518ac601d",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "e4e9e5987587ae4f255e0d3a3dfc791863707150a6bcb18adabf8f4518ac601d"
+      },
+      {
+        "name": "worker-Df1A3ASA.js",
+        "status": 200,
+        "sha256": "f224306858e7173b0104913d8a0ab9d025a5fbfd63802fabe2f27494b5e21db0",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "f224306858e7173b0104913d8a0ab9d025a5fbfd63802fabe2f27494b5e21db0"
+      },
+      {
+        "name": "world-time-C2zk4ykx.js",
+        "status": 200,
+        "sha256": "2043fc7fe4472a29415bd9f2f3e3218d4adb462c158ea500b709d72c750cf5d2",
+        "matches1bd3af3MainDist": true,
+        "baselineSha256": "2043fc7fe4472a29415bd9f2f3e3218d4adb462c158ea500b709d72c750cf5d2"
+      }
+    ],
+    "all22Unchanged": true
+  },
+  "result": "pass"
+}
