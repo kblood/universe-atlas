@@ -413,6 +413,12 @@ export class PlanetRenderer {
   private readonly floraScratchFinalQuat = new THREE.Quaternion();
   private readonly floraScratchMatrix = new THREE.Matrix4();
   private readonly faunaAnchorPos = new THREE.Vector3();
+  private readonly faunaTraceEye=new THREE.Vector3();
+  private faunaTraceNs:bigint|null=null;
+  private readonly faunaTraceFrustum=new THREE.Frustum();
+  private readonly faunaTraceShadow=new THREE.Frustum();
+  private faunaTraceShadowValid=false;
+  private faunaCameraVisibleCount=0;
   private readonly faunaTangentRight = new THREE.Vector3();
   private readonly faunaTangentForward = new THREE.Vector3();
   private readonly faunaTangentUp = new THREE.Vector3();
@@ -1210,34 +1216,87 @@ export class PlanetRenderer {
     }
     this.floraRenderer.endFrame();
   }
+  /** Tangent frame for packed herd `a`; false when the herd is beyond the
+   * coarse visibility range. Shared by drawing and `faunaTrace`. */
+  private faunaHerdFrame(a:number,eye:THREE.Vector3,ignoreRange=false):boolean {
+    const radiusM=this.body.radiusM;
+    this.faunaAnchorPos.fromArray(this.faunaAnchorDirections,a*3);
+    this.faunaGroundDirScratch.copy(eye).normalize();
+    const inRange=this.faunaGroundDirScratch.distanceTo(this.faunaAnchorPos)*radiusM<=FAUNA_FIELD_VISIBLE_M+20;
+    if(!inRange&&!ignoreRange)return false;
+    const ref=Math.abs(this.faunaAnchorPos.y)>.92?this.lifeWorldUpScratch.set(1,0,0):this.lifeWorldUpScratch.set(0,1,0);
+    this.faunaTangentRight.crossVectors(ref,this.faunaAnchorPos).normalize().multiplyScalar(1/radiusM);
+    this.faunaTangentForward.crossVectors(this.faunaAnchorPos,this.faunaTangentRight).normalize().multiplyScalar(1/radiusM);
+    this.faunaTangentUp.copy(this.faunaAnchorPos).multiplyScalar(1/radiusM);
+    return inRange;
+  }
+  private faunaPlace(a:number,pose:FaunaMemberActivity['pose']){
+    this.faunaGroundValue=faunaGroundHeight(this.faunaSurfaces[a].ground!,pose.x,pose.z)*this.relief;
+    return faunaGroundedTransform(this.faunaAnchorPos,this.faunaTangentRight,this.faunaTangentForward,this.faunaTangentUp,pose,this.faunaGroundHeightAt);
+  }
+  private faunaBoundsIntersect(position:THREE.Vector3,frustum:THREE.Frustum):boolean {
+    const radiusM=this.body.radiusM;
+    this.faunaBounds.center.copy(position).addScaledVector(this.faunaAnchorPos,3/radiusM);this.faunaBounds.radius=6/radiusM;
+    return frustum.intersectsSphere(this.faunaBounds);
+  }
+  /** Diagnostics only: follow canonical individuals through every stage of
+   * the last drawn fauna frame (census residency, terrain stencil, dated
+   * position, range, camera/shadow visibility, budget, near rig, lighting).
+   * Re-evaluates with the exact draw-path helpers and that frame's eye,
+   * frusta and date; it never mutates population or presentation state. */
+  faunaTrace(ids:readonly string[]){
+    const radiusM=this.body.radiusM,eye=this.faunaTraceEye,worldNs=this.faunaTraceNs;
+    if(worldNs===null)return {frame:null,individuals:ids.map(id=>({id,stage:'no-fauna-frame'}))};
+    const drawnIndex=new Map(this.faunaDrawn.map((x,i)=>[x.id,i]));
+    const sun=this.sunUniform.value;
+    const individuals=ids.map(id=>{
+      let resident:LifeResident|undefined,member:FaunaHerdMember|undefined;
+      for(const record of this.lifeResidents.values()){const m=record.herd?.present?record.herd.members.find(x=>x.id===id):undefined;if(m){resident=record;member=m;break;}}
+      if(!resident||!member)return {id,stage:'not-resident'};
+      const cell=resident.cell,wanted=this.lifeWanted.some(c=>c.id===cell.id),groundReady=resident.groundCursor>=FAUNA_GROUND_N**2;
+      const {speciesGenome:_genome,...record}=member;
+      const census={cellId:cell.id,direction:[...cell.direction],wanted,groundReady,groundCursor:resident.groundCursor,memberIndex:(resident.herd!.members as readonly FaunaHerdMember[]).indexOf(member),member:record};
+      const a=this.faunaSurfaces.indexOf(resident);
+      if(!groundReady||a<0||a>=this.faunaAnchorCount)return {id,stage:groundReady?'not-packed':'terrain-pending',census};
+      const activity=faunaMemberActivityAtWorldNs(member,worldNs);
+      const inRange=this.faunaHerdFrame(a,eye,true),anchorUp=this.faunaAnchorPos.clone();
+      const grounded=this.faunaPlace(a,activity.pose),distanceM=eye.distanceTo(grounded.position)*radiusM;
+      const cameraVisible=this.faunaBoundsIntersect(grounded.position,this.faunaTraceFrustum);
+      const shadowVisible=this.faunaTraceShadowValid&&this.faunaBoundsIntersect(grounded.position,this.faunaTraceShadow);
+      const drawn=drawnIndex.get(id),rigged=this.faunaNear.poseOf(id)!==null;
+      const toEye=eye.clone().sub(grounded.position).normalize();
+      const stage=!inRange||distanceM>FAUNA_FIELD_VISIBLE_M?'out-of-range':!cameraVisible&&!shadowVisible?'culled':
+        drawn===undefined?'budget-drop':rigged?'near-rig':cameraVisible?'instanced':'shadow-only-instanced';
+      return {id,stage,census,
+        pose:{x:activity.pose.x,z:activity.pose.z,yaw:activity.pose.yaw,gait:activity.pose.gait,travel:activity.travel,stateS:activity.stateS},
+        position:grounded.position.toArray(),distanceM,cameraVisible,shadowVisible,drawnIndex:drawn??null,rigged,
+        lighting:{sunElevation:anchorUp.dot(sun),viewFromSunSide:toEye.dot(sun)}};
+    });
+    return {frame:{worldNs:worldNs.toString(),eye:eye.toArray(),drawn:this.faunaDrawn.length,cameraVisible:this.faunaCameraVisibleCount,capacity:FAUNA_FIELD_CAPACITY,budgetDrops:this.faunaBudgetDrops,culled:this.faunaCulledCount,anchors:this.faunaAnchorCount,near:this.faunaNear.diagnostics().activeMembers.map(m=>m.id)},individuals};
+  }
   /** Visible animals are sorted before the finite GPU budget is allocated.
    * All distances use the same individual genome and animated representation. */
   private drawFauna(eye:THREE.Vector3,worldNs:bigint,frustum:THREE.Frustum,shadowFrustum:THREE.Frustum|null):void {
     const radiusM=this.body.radiusM,rigTime=faunaRigSecondsAt(worldNs);
     this.faunaRenderer.beginFrame(this.lifeOrigin);this.faunaVisibleCount=0;this.faunaCulledCount=0;this.faunaBudgetDrops=0;this.faunaDrawn=[];
     const visible:{cameraVisible:boolean;member:FaunaHerdMember;position:THREE.Vector3;quaternion:THREE.Quaternion;distance:number;gait:FaunaMemberActivity['pose']['gait'];activity:FaunaMemberActivity;anchor:number}[]=[];
+    this.faunaTraceEye.copy(eye);this.faunaTraceNs=worldNs;this.faunaTraceFrustum.copy(frustum);
+    this.faunaTraceShadowValid=!!shadowFrustum;if(shadowFrustum)this.faunaTraceShadow.copy(shadowFrustum);
     for(let a=0;a<this.faunaAnchorCount;a++){
       const herd=this.faunaHerds[a];if(!herd?.present)continue;
-      this.faunaAnchorPos.fromArray(this.faunaAnchorDirections,a*3);
       // One coarse check per herd; no allocations or terrain queries here.
-      this.faunaGroundDirScratch.copy(eye).normalize();
-      if(this.faunaGroundDirScratch.distanceTo(this.faunaAnchorPos)*radiusM>FAUNA_FIELD_VISIBLE_M+20)continue;
-      const ref=Math.abs(this.faunaAnchorPos.y)>.92?this.lifeWorldUpScratch.set(1,0,0):this.lifeWorldUpScratch.set(0,1,0);
-      this.faunaTangentRight.crossVectors(ref,this.faunaAnchorPos).normalize().multiplyScalar(1/radiusM);
-      this.faunaTangentForward.crossVectors(this.faunaAnchorPos,this.faunaTangentRight).normalize().multiplyScalar(1/radiusM);
-      this.faunaTangentUp.copy(this.faunaAnchorPos).multiplyScalar(1/radiusM);
+      if(!this.faunaHerdFrame(a,eye))continue;
       for(const member of herd.members){
         const activity=faunaMemberActivityAtWorldNs(member,worldNs),pose=activity.pose;
-        this.faunaGroundValue=faunaGroundHeight(this.faunaSurfaces[a].ground!,pose.x,pose.z)*this.relief;
-        const grounded=faunaGroundedTransform(this.faunaAnchorPos,this.faunaTangentRight,this.faunaTangentForward,this.faunaTangentUp,pose,this.faunaGroundHeightAt);
+        const grounded=this.faunaPlace(a,pose);
         const distance=eye.distanceTo(grounded.position)*radiusM;if(distance>FAUNA_FIELD_VISIBLE_M)continue;
-        this.faunaBounds.center.copy(grounded.position).addScaledVector(this.faunaAnchorPos,3/radiusM);this.faunaBounds.radius=6/radiusM;
-        const cameraVisible=frustum.intersectsSphere(this.faunaBounds);
-        if(!cameraVisible&&!shadowFrustum?.intersectsSphere(this.faunaBounds)){this.faunaCulledCount++;continue;}
+        const cameraVisible=this.faunaBoundsIntersect(grounded.position,frustum);
+        if(!cameraVisible&&!(shadowFrustum&&this.faunaBoundsIntersect(grounded.position,shadowFrustum))){this.faunaCulledCount++;continue;}
         visible.push({cameraVisible,member,...grounded,distance,gait:pose.gait,activity,anchor:a});
       }
     }
     visible.sort(compareFaunaVisibility);
+    this.faunaCameraVisibleCount=0;for(const item of visible)if(item.cameraVisible)this.faunaCameraVisibleCount++;
     this.faunaProxyScale.setScalar(1/radiusM);
     const genomeOf=(member:FaunaHerdMember)=>{let genome=this.faunaGenomes.get(member.id);if(!genome){genome=faunaMemberGenome(member);this.faunaGenomes.set(member.id,genome);}return genome;};
     // The nearest camera-visible animals may draw as skinned bodies posed on

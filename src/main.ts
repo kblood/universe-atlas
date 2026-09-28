@@ -4917,6 +4917,8 @@ Object.defineProperty(window, "__atlas", {
     forestPresentationCensus(){return planetTiles?.forestPresentationCensus()??null;},
     // Canonical surface-rock census around the current ground focus.
     rockCensus(){return planetTiles?.rockCensus()??null;},
+    // Stage-by-stage trace of canonical fauna individuals in the last frame.
+    faunaTrace(ids:string[]){return planetTiles?.faunaTrace(ids)??null;},
     async loadForestTreeFamilies(inputs:readonly import('./forest-tree-family-library.ts').ForestTreeFamilyInput[],options:import('./tree-asset.ts').TreeAssetOptions={}){
       if(!import.meta.env.DEV)throw new Error('Experimental forest assets require a development build');
       if(!planetTiles)throw new Error('Visit a planet before loading forest assets');
