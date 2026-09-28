@@ -6,7 +6,11 @@
 
 Opus replaced the cone grass and umbrella/pyramid shrub with deterministic walk-scale geometry in `src/flora-field.ts`. Each shrub has four woody stems with two attached twigs and foliage; near LOD foliage uses 20 varied leaves, while middle/far LODs reduce the foliage to 12/4 leaf sprays. Grass uses 7/3/3 two-sided blades across the three LODs. Placement, recipes, seeds, per-instance position/yaw/scale, wind attribute range, capacities, draw calls, culling, shadow policy and LOD distances remain unchanged. Flower and tree geometry were not edited.
 
-LOD continuity is a CPU geometry proxy, not visual acceptance: grass LODs resample blade counts and arch, so their per-blade positions/lean are not identical across levels. The silhouette tests check broad height/spread and view coverage; camera-crossing appearance must still be checked in the real renderer. Existing flower/tree stem-winding issues are recorded as a follow-up and were not changed here.
+LOD continuity is a CPU geometry proxy, not visual acceptance: grass LODs resample blade counts and arch, so their per-blade positions/lean are not identical across levels. The silhouette tests check broad height/spread and view coverage; camera-crossing appearance must still be checked in the real renderer. Luna later fixed a separate existing tree/flower woody-stem winding defect in commit `286e9ed`, now included in the next source candidate. It changes face order only and preserves triangle counts.
+
+## Initial combined screenshot review
+
+The RTX 5090 image `combined-visual-acceptance-a755f1b/persistent-session/a755-fauna-grounded-detailed-understory.png` at 8 m shows tufted multi-blade grass and branching shrubs with individual leaves; the old umbrella shrub outline is gone. The composition is still stylized and sparse. Detailed Pine/Oak canopies dominate the frame and partially hide the target animal in this rear angle. This confirms a bounded geometry change, not realistic-forest or fauna acceptance. A clearer side/front animal view and ground-level appearance review remain necessary.
 
 ## Costs
 
@@ -25,3 +29,4 @@ Genuine first-party Opus 5.5 (`claude-opus-5-5`, session `afb6f577-4739-47b2-a1a
 - `npx tsc --noEmit -p .`: passed.
 - `npm run build`: passed in 7.34 seconds; existing large-chunk warning only.
 - After correcting a stale source-regex assertion, `flora-cache-ownership` plus `flora-understory-geometry`: 13/13 passed. The old assertion expected `faunaGenomes.clear()` to be immediately followed by `faunaGroundQueue=[]`; the unchanged baseline renderer already has `faunaNear.clear()` between them. Its cache-eviction behavior assertions are preserved.
+- Luna's independently implemented woody stem face-order fix (`286e9ed`) passes the combined flora, understory and cache-ownership selection: 26/26. It catches inward-facing tree and flower stem walls across all LODs while asserting unchanged topology counts. This source fix is not in runtime build `a755f1b`.

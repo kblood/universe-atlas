@@ -19,8 +19,12 @@ node --test tests/forest-resource-accounting.test.mjs tests/forest-far-atlas.tes
 
 Memory figures are estimates, excluding driver overhead and ordinary JS heap;
 reported allocation limits are not new admission controls. Geometry tests do
-not establish appearance, animation quality, or performance. Browser review of
-this merged candidate and its individual fauna handoff remains pending. The
+not establish appearance, animation quality, or performance. The `a755f1b`
+GPU frame shows the new tufted grass and branched shrubs, with a sparse/stylized
+landscape; detailed tree canopy obscures some of the selected animal in its
+rear-facing view. Luna's subsequent flora winding fix (`286e9ed`) is merged
+into source after `a755f1b`, passed a separate focused 26-test selection, and is
+not yet built. Individual rig pose/handoff acceptance remains incomplete. The
 published runtime remains `4796b1a`.
 
 ## Guide publication follow-up
