@@ -292,6 +292,11 @@ function lifeGateContext(sys: StarSystem, body: Body, t: Ns): LifeGateContext | 
         faunaStage: stage, faunaAvailableArchetypes: faunaArchetypesFromSpecies(bio.species),
         faunaSpecies: bio.species.filter((s): s is Species & { creature: NonNullable<Species['creature']> } => !!s.creature)
           .map(s => ({ id: s.id, creature: s.creature })),
+        // Rocks follow the solid surface, not life: the same body-keyed
+        // history supplies RockFamily records on barren and living worlds.
+        rocks: st.stage === 'solid'
+          ? { surfaceSolid: true, families: biosphereHistoryFor(seed, body.id, body, entry.lc).rocks }
+          : { surfaceSolid: false, families: [] },
       };
     }
   }
@@ -4910,6 +4915,8 @@ Object.defineProperty(window, "__atlas", {
     clearForestTreeAssets(){planetTiles?.clearForestTreeAssets();},
     // Whole-population forest census for acceptance replays (explicit call).
     forestPresentationCensus(){return planetTiles?.forestPresentationCensus()??null;},
+    // Canonical surface-rock census around the current ground focus.
+    rockCensus(){return planetTiles?.rockCensus()??null;},
     async loadForestTreeFamilies(inputs:readonly import('./forest-tree-family-library.ts').ForestTreeFamilyInput[],options:import('./tree-asset.ts').TreeAssetOptions={}){
       if(!import.meta.env.DEV)throw new Error('Experimental forest assets require a development build');
       if(!planetTiles)throw new Error('Visit a planet before loading forest assets');

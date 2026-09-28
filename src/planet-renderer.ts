@@ -33,6 +33,8 @@ import {faunaGroundHeight,FAUNA_GROUND_N,FAUNA_GROUND_HALF_M,FAUNA_GROUND_STEP_M
 import {surfaceCellsWithin,type SurfaceCell} from './surface-cell.ts';
 import {biomeClassifier} from './surface-biomes.ts';
 import {PlanetForest} from './planet-forest.ts';
+import {PlanetRocks} from './planet-rocks.ts';
+import type {RockGate} from './rock-field.ts';
 import {PLANET_DETAIL} from './planet-detail.ts';
 import type {Species} from './biosphere-model.ts';
 import type {TreeAssetOptions} from './tree-asset.ts';
@@ -63,6 +65,9 @@ export interface LifeGateContext {
   faunaStage: FaunaStage;
   faunaAvailableArchetypes?: readonly CreatureArchetype[];
   faunaSpecies?: readonly { id: string; creature: CreatureGenome }[];
+  /** Geology, not life: the solid-surface stage and the body's canonical
+   * RockFamily records. Present on barren bodies too. */
+  rocks?: RockGate;
 }
 
 type Patch ={ tile: Tile; mesh: THREE.Mesh; ocean:THREE.Mesh<THREE.BufferGeometry,OceanWaterMaterial>|null; localEye:{value:THREE.Vector3}; map: THREE.DataTexture; material: THREE.MeshStandardMaterial; morph: {value: number}; detail:{value:number}; pbrDetail:{value:number}; edge:{value:THREE.Vector4}; data:ReturnType<typeof buildTile>; bytes:number; touched: number; waterBucket: number };
@@ -195,6 +200,7 @@ export class PlanetRenderer {
   private reflectionRevision=0;
   private environment:RiverEnvironment|null=null;
   private forest:PlanetForest;
+  private rocks:PlanetRocks;
   private lowFlightDetail=false;
   private surfaceReady=false;
   private eyeHeightUniform = {value:0};
@@ -548,6 +554,10 @@ export class PlanetRenderer {
     // in `update()`/`drawFlora`/`drawFauna` only mutates preallocated state.
     this.classify = biomeClassifier(body);
     this.forest=new PlanetForest(body);this.group.add(this.forest.group);
+    // Canonical surface rocks share the terrain's rock PBR lease (not owned).
+    this.rocks=new PlanetRocks({body,sample:()=>this.sample,classify:()=>this.classify,textures:this.groundPbrTextures,
+      attach:mesh=>attachLocalAerial(mesh,this.group,body.radiusM,this.sunUniform,this.localAirUniform,this.eyeHeightUniform)});
+    this.group.add(this.rocks.group);
     const floraSeedFor = (kind: FloraKind) => hashSeedString(body.seed + '/flora/' + kind);
     this.floraRenderer = new FloraFieldRenderer(
       (kind, lod) => floraGeometryToBufferGeometry(buildFloraGeometryData(kind, lod, floraSeedFor(kind))),
@@ -607,6 +617,7 @@ export class PlanetRenderer {
    * before the visible scene, never during XR. */
   renderForestAtlases(renderer:THREE.WebGLRenderer,xr=false){this.forest.renderFarAtlases(renderer,xr);}
   forestPresentationCensus(){return this.forest.presentationCensus();}
+  rockCensus(){return this.rocks.census();}
   renderLakeReflection(renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera,xr=false){
     if(!this.lakeReflection)return;
     if(!this.rootsReady||this.relief!==1||xr){this.lakeReflection.disable();return;}
@@ -847,6 +858,7 @@ export class PlanetRenderer {
     // View direction may inform future prefetch, never population coverage:
     // moving this focus ahead made turning in place replace dense forest.
     this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta,worldNs,this.lifeContext?.treeSpecies,shadowFrustum);
+    this.rocks.update({eye,focus:lifeFocus,altitudeM,gate:this.lifeContext?.rocks,relief:this.relief,waterLevelM:snappedWaterLevelM,frusta,shadowFrustum});
     if (this.relief === 1 && (contact||altitudeM<PLANET_DETAIL.groundLifeAltitudeM) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs,shadowFrustum); this.lifeMs=performance.now()-lifeStarted; }
     else { this.hideLife(); this.lifeMs=0; }
     const direction = eye.clone().normalize();
@@ -1302,7 +1314,7 @@ export class PlanetRenderer {
   }
   diagnostics() {
     const localAerial={meshes:0,attached:0,failures:[] as string[]};
-    for(const group of [this.forest.group,this.floraGroup,this.faunaRenderer.group])group.traverse(object=>{
+    for(const group of [this.forest.group,this.floraGroup,this.faunaRenderer.group,this.rocks.group])group.traverse(object=>{
       if(!(object instanceof THREE.Mesh))return;
       localAerial.meshes++;
       const state=Array.isArray(object.material)?'material-array':object.material.userData.localAerialVersion;
@@ -1311,7 +1323,7 @@ export class PlanetRenderer {
     // The shared texture belongs to the existing water reservation. Inland
     // diagnostics count it when present; ocean-only worlds count it here.
     const oceanNormalBytes=this.river?.diagnostics().resident?0:[...this.patches.values()].some(p=>p.ocean)?SHARED_WATER_NORMAL_ATLAS_BYTES:0;
-    return {projection: 'cube-sphere',localAerial,lifePackBuilds:this.lifePackBuilds, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,frontierMaxLevel:Math.max(0,...[...this.leafIndex.values()].map(t=>t.level)),contactReadiness:this.lastContactReadiness,
+    return {projection: 'cube-sphere',localAerial,rocks:this.rocks.diagnostics(),lifePackBuilds:this.lifePackBuilds, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,frontierMaxLevel:Math.max(0,...[...this.leafIndex.values()].map(t=>t.level)),contactReadiness:this.lastContactReadiness,
       // Moving-sea-level verification/observability (this task): the
       // quantized bucket `this.sample`/`this.classify` and newly-dispatched
       // tile jobs are currently using, plus how many of the currently VISIBLE
@@ -1359,6 +1371,7 @@ export class PlanetRenderer {
     }
     this.lakeReflection?.dispose();this.lakeReflection=null;this.river?.dispose();this.river=null;
     this.environment?.dispose();this.environment=null;
+    this.rocks.dispose();
     this.forest.dispose();
     for (const mesh of this.floraRenderer.meshes) { this.group.remove(mesh); mesh.geometry.dispose(); (mesh.material as THREE.Material).dispose(); }
     this.faunaNear.dispose();this.faunaRenderer.dispose();this.lifeResidents.clear();this.faunaGenomes.clear();
