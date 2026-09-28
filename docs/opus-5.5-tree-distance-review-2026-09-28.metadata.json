@@ -1,0 +1,41 @@
+{
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 11048,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 20370,
+      "webSearchRequests": 0,
+      "costUSD": 0.3842198,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 8523,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "inputs": {
+    "revision": "cb741c2d6b6906e1cb35eb28cfe7b33f31b66947",
+    "dirty": true,
+    "files": [
+      {
+        "path": "docs/authored-tree-distance-design-2026-09-28.md",
+        "sha256": "1b3792617b8d9efdc811b11e175d019fcf4f01d0fbc3a514e341b7c3b7360620"
+      },
+      {
+        "path": "src/tree-asset.ts",
+        "sha256": "5bef0a8097abaa529be6468b4a210e7de69fc9baa55d7c262b475f2ee4223692"
+      },
+      {
+        "path": "src/forest-impostor.ts",
+        "sha256": "2bc8adf3dce8e6568ae48b4cc0d4c89f14372c0564b6724ae5d4aee963597220"
+      },
+      {
+        "path": "assets/briefs/temperate-branching-tree-v1.json",
+        "sha256": "fd9bb11a0630dd4ad1d207156265aadaf36ae50f5f7ced9ff05e39505802d072"
+      }
+    ]
+  },
+  "scope": "source/design only; no execution; CPU view module was written after review snapshot"
+}

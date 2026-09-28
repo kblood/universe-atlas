@@ -1,0 +1,14 @@
+✔ octahedral encoding round-trips axes, poles, fold seams and extreme finite magnitudes (9.9191ms)
+✔ odd capture grids provide three-view enclosing cones over every cell, fold, pole and sampled sphere direction (60.756ms)
+✔ view builders reject invalid grids without mutating direction inputs or emitting inverted UV triangles (3.0255ms)
+✔ duplicated octahedral corner captures for the south pole have identical bases (0.2398ms)
+✔ seam and pole neighborhoods remain covered without imposing cross-threshold basis continuity (0.6122ms)
+✔ stored capture bases are deterministic, finite, orthonormal and right-handed, including fallback poles (2.5654ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 175.6208
