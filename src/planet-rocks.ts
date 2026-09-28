@@ -120,6 +120,11 @@ export const ROCK_WORST_CASE_BYTES=(()=>{
  * leaves at least 10% headroom. PlanetRenderer reserves exactly this inside
  * its combined core budget. */
 export const ROCK_BUDGET_BYTES=28*1024*1024;
+/** Farthest any wanted rock can be from the eye: tier range, cell margin, the
+ * cell's own extent and the largest rock, with slack. A frustum plane whose
+ * inside half-space contains the eye by more than this cannot reject any rock,
+ * so it is left out of the draw key (see `draw`). */
+export const ROCK_KEY_PLANE_REACH_M=Math.max(...ROCK_TIERS.map(t=>t.rangeM+t.marginM+2*t.cellSizeM+4*t.sizeMax))+64;
 export const ROCK_COLLISION_NOTE='none: rocks are visual only; walker, landing and fauna do not collide with them';
 
 export type RockTextureLease={ready:{value:number};rockColor:THREE.Texture|null;rockNormal:THREE.Texture|null};
@@ -491,7 +496,23 @@ export class PlanetRocks {
    * never restart a running job, so continuous motion cannot starve it. */
   private draw(eye:THREE.Vector3,frusta:readonly THREE.Frustum[],shadow:THREE.Frustum|null){
     const r=this.body.radiusM,q=(x:number)=>Math.round(x*r*20);
-    const planes=(f:THREE.Frustum|null)=>f?f.planes.map(p=>`${p.normal.x.toFixed(4)},${p.normal.y.toFixed(4)},${p.normal.z.toFixed(4)},${(p.constant*r).toFixed(2)}`).join(';'):'';
+    // Planes are keyed by their normal (1e-4) and their signed distance from
+    // the eye in metres (1 cm), never by their constant about the planet
+    // centre: that constant is -n.eye, so a 1e-6 rad drift of a plane through
+    // the eye moves it by ~5 m on a 5,000 km body. A slowly settling camera
+    // turn then restarted a full draw traversal every frame while the view
+    // looked still. A plane that cannot reject any rock within reach of the
+    // eye is keyed as '*': at astronomical far/near ratios the far plane's
+    // extracted normal is floating-point noise that changes frame to frame
+    // (both found on the living planet, 2026-09-29).
+    const reach=ROCK_KEY_PLANE_REACH_M/r;
+    // Integer steps (`||0` folds -0), so values near zero do not flip between
+    // "-0.00" and "0.00" spellings.
+    const step=(v:number,scale:number)=>Math.round(v*scale)||0;
+    const planes=(f:THREE.Frustum|null)=>f?f.planes.map(p=>{
+      const d=p.normal.dot(eye)+p.constant;
+      return d>reach?'*':`${step(p.normal.x,1e4)},${step(p.normal.y,1e4)},${step(p.normal.z,1e4)},${step(d*r,100)}`;
+    }).join(';'):'';
     const key=`${this.residentsVersion}|${this.originVersion}|${q(eye.x)},${q(eye.y)},${q(eye.z)}|${frusta.map(planes).join('/')}|${planes(shadow)}`;
     this.group.visible=true;
     const full=this.drawUnitsPerFrame,frame=++this.drawFrame;
