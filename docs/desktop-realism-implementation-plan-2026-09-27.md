@@ -2,6 +2,14 @@
 
 Date: 2026-09-27. Accepted direction; implementation started.
 
+**Water-feature decision (2026-09-28):** inland rivers and the regional lakes
+attached to river regions are withdrawn in the separate rivers-off candidate
+based on published runtime `e0d9d9c`. That candidate keeps dated global oceans
+and ordinary terrain, while old river algorithms and their tests remain
+archived. Further river-realism work is paused until the feature is reconsidered;
+this does not close the broader ground, forest or terrain-quality work below.
+The withdrawal has not yet been promoted to the live site.
+
 ## Current status snapshot — deployed runtime stage `8c03f41`
 
 The live `build-info.json` stamp and ordinary served-site probe match runtime

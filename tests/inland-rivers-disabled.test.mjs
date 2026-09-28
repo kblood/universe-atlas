@@ -38,6 +38,8 @@ const DRY_FIELDS={wet:false,waterKind:null,channelId:null,bank:0,influence:0,wat
 test('inland rivers are withdrawn by default and the fixture really contains archived river water',()=>{
   assert.equal(inlandRiversEnabled(),false);
   assert.deepEqual(activeRiverRegions(riverBody),[]);
+  assert.strictEqual(activeRiverRegions(riverBody),activeRiverRegions(maithea),'disabled lookups reuse a shared immutable empty list');
+  assert.equal(Object.isFrozen(activeRiverRegions(riverBody)),true);
   assert.equal(activeRenderedRiverRegion(riverBody),null);
   assert.ok(regions.length>0&&regions.some(r=>r.lakes.length>0),'fixture has canonical rivers and a coupled regional lake');
   // Explicit regions exercise the archived algorithm only; this proves the

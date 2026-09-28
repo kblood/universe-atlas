@@ -19,6 +19,7 @@ import type {RiverRegion} from './river-types.ts';
  * never call (tests/inland-rivers-disabled.test.mjs checks this).
  */
 let archivedInlandRivers = false;
+const EMPTY_RIVER_REGIONS = Object.freeze([]) as unknown as RiverRegion[];
 
 export function inlandRiversEnabled(): boolean { return archivedInlandRivers; }
 
@@ -28,7 +29,7 @@ export function setArchivedInlandRiversForTesting(enabled: boolean): void { arch
 
 /** Regions production terrain may read. Empty while rivers are withdrawn. */
 export function activeRiverRegions(body: Pick<Body, 'canonicalRivers' | 'hydrology'>): RiverRegion[] {
-  if (!archivedInlandRivers) return [];
+  if (!archivedInlandRivers) return EMPTY_RIVER_REGIONS;
   return body.canonicalRivers ?? (body.hydrology ? [body.hydrology] : []);
 }
 
