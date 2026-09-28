@@ -12,7 +12,7 @@ This is a standalone `tree-asset-lab.html` check of family F on ANGLE/NVIDIA GeF
 
 ## Limits
 
-This did not test the game, XR, headset output, temporal antialiasing, or full-scene performance. The fixed-camera date replay is exact in this sample, but camera-difference counts are whole-frame comparisons. Small-footprint wind and movement comparison against 512/1024 render-target samples remains outstanding.
+This did not test the game, XR, headset output, temporal antialiasing, or full-scene performance. The fixed-camera date replay is exact in this sample, but camera-difference counts are whole-frame comparisons. A subsequent [corrected isolated probe](isolated-final/README.md) compares small-footprint wind and movement against downsampled 512/1024 render-target samples, with its own source hashes and limitations.
 
 The separate [render-target probe report](render-target-probes/report.json) is retained as a failed harness attempt: its isolated setup rendered zero tree pixels in every case. Those zero-coverage numbers are invalid and are not acceptance evidence.
 

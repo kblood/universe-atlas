@@ -250,9 +250,10 @@ does not change the deployed default. Live checkpoint `cc25635` still draws
 the legacy tree shapes. No asset from this adapter has been adopted in the game.
 
 The [leaf diffuse-transmission note](leaf-diffuse-transmission-2026-09-28.md)
-now records an opt-in shader prototype. Its independent Opus review and five
-CPU checks are complete; calibrated browser validation is pending. It is not
-wired to the game or a complete Khronos extension implementation.
+records an opt-in shader prototype. Its independent Opus review and 13 focused
+CPU/GLB checks pass; synthetic calibration and corrected family-F tree browser
+fixtures have also completed. The factor remains off by default and is not
+wired to the planetary game or a complete Khronos extension implementation.
 
 Before accepting the new textured tree at distance, address its measured
 minification loss. In three converged-reference views, the current alpha-masked
@@ -263,12 +264,15 @@ mip generation. Those findings apply to the experimental tree family, not a
 replacement already deployed in the game.
 
 A separate [MASK/HASH temporal browser check](../test-results/tree-foliage-temporal/README.md)
-verified date replay and foliage coverage propagation to depth/distance
-materials for both LODs. The four 192-tree profiles are descriptive lab
-measurements, not a broad performance comparison. Whole-frame camera-yaw
-differences do not isolate hash noise, and the zero-footprint render-target
-probe is invalid. This does not resolve static minification loss or certify
-coverage under moving views.
+verified fixed-camera date replay and foliage coverage propagation to
+depth/distance materials for both LODs. The four 192-tree profiles are
+descriptive lab measurements, not a broad performance comparison. A corrected
+[isolated coverage probe](../test-results/tree-foliage-temporal/isolated-final/README.md)
+shows HASH closer to its downsampled reference at 16/32/64 pixels, with greater
+coverage variation under small yaw turns and a moving wind date. The 512/1024
+references are not proven ground truth, and TAA is absent. The earlier
+zero-footprint and MASK/HASH load-race probes remain identified as failures.
+This does not resolve static minification or establish perceptual acceptance.
 
 Stages have dependencies. Beginning this programme does not mean replacing all
 subsystems at once. The first code increment targets B so detailed assets have

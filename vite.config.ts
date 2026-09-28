@@ -15,6 +15,7 @@ export default defineConfig({
       'docs/opus-three-ez-impostor-review-2026-09-28.md',
       'docs/leaf-diffuse-transmission-2026-09-28.md',
       'docs/tree-foliage-minification-2026-09-28.md',
+      'docs/opus-leaf-transmission-review-2026-09-28.md',
       'test-results/opus-three-ez-impostor-review/response.json',
       'test-results/opus-three-ez-impostor-review/inputs.json',
       'test-results/three-ez-impostor-reference/README.md',
@@ -46,6 +47,42 @@ export default defineConfig({
       'test-results/three-ez-impostor-reference/top-impostor.png',
       'test-results/three-ez-impostor-reference/baseline-source/tree-impostor-reference-lab.ts',
       'test-results/three-ez-impostor-reference/baseline-source/tree-impostor-reference-lab.html',
+      'test-results/tree-foliage-temporal/README.md',
+      'test-results/tree-foliage-temporal/report.json',
+      'test-results/tree-foliage-temporal/run.mjs',
+      'test-results/tree-foliage-temporal/baseline-source/manifest.json',
+      'test-results/tree-foliage-temporal/baseline-source/tree-asset-lab.html',
+      'test-results/tree-foliage-temporal/baseline-source/tree-asset-lab.ts',
+      'test-results/tree-foliage-temporal/baseline-source/tree-asset.ts',
+      'test-results/tree-foliage-temporal/baseline-source/world-time.ts',
+      'test-results/tree-foliage-temporal/mask/report.json',
+      'test-results/tree-foliage-temporal/hash/report.json',
+      'test-results/tree-foliage-temporal/render-target-probes/report.json',
+      'test-results/tree-foliage-temporal/isolated-probe.mjs',
+      'test-results/tree-foliage-temporal/isolated-final/README.md',
+      'test-results/tree-foliage-temporal/isolated-final/report.json',
+      'test-results/tree-foliage-temporal/isolated-final/mask/report.json',
+      'test-results/tree-foliage-temporal/isolated-final/hash/report.json',
+      'test-results/tree-foliage-temporal/isolated-final/mask/lod0/smoke.json',
+      'test-results/tree-foliage-temporal/isolated-final/mask/lod1/smoke.json',
+      'test-results/tree-foliage-temporal/isolated-final/hash/lod0/smoke.json',
+      'test-results/tree-foliage-temporal/isolated-final/hash/lod1/smoke.json',
+      'test-results/tree-foliage-temporal/isolated-report/README.md',
+      'test-results/tree-foliage-temporal/isolated-report/report.json',
+      'test-results/tree-leaf-transmission/README.md',
+      'tests/tree-impostor-rendering.test.mjs',
+      'test-results/tree-leaf-transmission/browser-check.mjs',
+      'test-results/tree-leaf-transmission/node-test.log',
+      'test-results/tree-leaf-transmission/tree-regression.log',
+      'test-results/tree-leaf-transmission/tsc.log',
+      'test-results/tree-leaf-transmission/final-cpu.log',
+      'test-results/tree-leaf-transmission/browser-final/report.json',
+      'test-results/tree-leaf-transmission/actual-tree/integration.mjs',
+      'test-results/tree-leaf-transmission/actual-tree/family-f-corrected/report.json',
+      'test-results/opus-leaf-transmission-review/response.json',
+      'test-results/opus-leaf-transmission-review/inputs.json',
+      'test-results/opus-leaf-transmission-review/followup/response.json',
+      'test-results/opus-leaf-transmission-review/followup/inputs.json',
       'docs/tree-browser-prototype-2026-09-28.md',
       'docs/tree-authoring-v7-2026-09-28.md',
       'docs/tree-color-calibration-2026-09-28.md',
@@ -319,6 +356,21 @@ export default defineConfig({
       'test-results/desktop-rendering-6b87e13/report.json',
       'test-results/fauna-closeup-6b87e13/report.json',
     ])this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
+    for(const mode of ['mask','hash'])for(const image of [
+      'lod0-back-shadows-on.png','lod0-front-shadows-on.png',
+      'lod1-back-shadows-on.png','lod1-front-shadows-on.png',
+      'wind-0-a.png','wind-0-b.png','wind-1750000000.png','wind-7s.png','wind-neg7s.png',
+      'yaw-0.00deg.png','yaw-0.35deg.png','yaw-0.70deg.png','yaw-1.05deg.png',
+    ]){
+      const fileName=`test-results/tree-foliage-temporal/${mode}/${image}`;
+      this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
+    }
+    for(const mode of ['mask','hash'])for(const lod of ['lod0','lod1']){
+      const fileName=`test-results/tree-foliage-temporal/isolated-final/${mode}/${lod}/smoke-128-date0.png`;
+      this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
+    }
+    for(const fileName of ['src/tree-leaf-transmission.ts','src/tree-asset.ts'])
+      this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
     for(const fileName of [
       'test-results/deploy-580936f/canopy-flight/flight-lateral.png',
       'test-results/deploy-580936f/canopy-flight/flight-near-ground.png',
@@ -445,6 +497,13 @@ export default defineConfig({
       'test-results/desktop-rendering-6b87e13/forest-turned.png',
       'test-results/fauna-closeup-6b87e13/01-fauna-closeup.png',
       'test-results/fauna-closeup-6b87e13/02-fauna-paused-repeat.png',
+    ])this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
+    for(const fileName of [
+      'test-results/tree-leaf-transmission/browser-final/directional-back-T1.png',
+      'test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-front-off.png',
+      'test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-front-on.png',
+      'test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-back-off.png',
+      'test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-back-on.png',
     ])this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
     // Keep the mask images named by the comparison reports inspectable online.
     for(const [directory,tags,modes] of [

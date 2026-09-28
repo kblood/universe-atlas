@@ -1,6 +1,6 @@
 # Foliage coverage under minification
 
-_Static coverage research and temporal browser check, 2026-09-28. No game change or visual acceptance._
+_Static coverage research and browser comparisons, 2026-09-28. No game change or visual acceptance._
 
 ## Current signal
 
@@ -40,11 +40,20 @@ trees in front/back views and both LODs. The foliage coverage mode propagated
 to its depth and distance shadow materials; bark remained unmasked and
 unhashed. The check does not demonstrate shadow-quality acceptance.
 
-The camera-yaw captures compare whole 1200 × 900 frames, including camera and
-background movement, so their changed-pixel counts do not isolate hash noise.
-The separate zero-footprint render-target probe is a failed harness attempt;
-its zero-coverage measurements are invalid, not evidence. The full methods and
-captures are in the [temporal browser record](../test-results/tree-foliage-temporal/README.md).
+The population-192 yaw captures compare whole 1200 × 900 frames, including
+camera and background movement, so their changed-pixel counts do not isolate
+hash noise. A later corrected isolated probe measures alpha coverage directly
+at 16, 32 and 64 pixels. It shows a tradeoff: HASH better matches the
+downsampled sample's static coverage in this fixture, while changing more with
+small yaw steps and at date 1.75 s than that sample. At +7 s and −7 s it
+replays date zero exactly. These results are a single shadowless tree with no
+TAA; 512/1024-pixel inputs are comparison references, not proven ground truth.
+See the [corrected isolated report](../test-results/tree-foliage-temporal/isolated-final/README.md)
+and [temporal browser record](../test-results/tree-foliage-temporal/README.md).
+
+The zero-footprint render-target probe and the earlier MASK/HASH load-race
+report are retained as failed harness attempts. Their measurements are invalid,
+not evidence for either mode. The corrected isolated run avoids both failures.
 
 ## Reuse the current material and texture paths
 
@@ -57,13 +66,13 @@ to its custom depth and distance materials. Compare these two modes first on
 the same family-F GLB, without changing geometry or the authored alpha image.
 
 The initial [hash diagnostic](../test-results/three-ez-impostor-reference/native-map-fix/alpha-hash-followup.json)
-now tests that existing option on a cloned material at three views. At the
-front 32 px output, hashed foliage gives 300 weighted tree pixels against
-280.02 in its high-resolution reference; the ordinary mask gave 38. The two
+tests that existing option on a cloned material at three views. At the front
+32 px output, hashed foliage gives 300 weighted tree pixels against 280.02 in
+its high-resolution reference; the ordinary mask gave 38. The two
 high-resolution representations differ by only 0.28–0.31% mean absolute alpha
-across the tested views. This is a static coverage result. Moving-camera noise,
-date-driven wind, shadows and temporal antialiasing remain untested for this
-diagnostic, so the option is not enabled in the game.
+across the tested views. This remains static coverage evidence; the later
+isolated test measures date and yaw changes. HASH is still a lab option, not a
+game setting.
 
 Add two isolated material/texture trials to that comparison:
 
@@ -102,10 +111,11 @@ only the whole texture's average could conceal losses in a sparse cell while
 increasing coverage in a denser one. This is a test requirement for the adapter,
 not a claim that the current textures have such a mip chain.
 
-`alphaHash` trades hard cutout edges for a stochastic threshold and may show
-grain at a still camera view; Three.js notes that temporal antialiasing can
-reduce that noise. Atlas does not use a general TAA resolve in this tree path,
-so inspect moving camera and tree-wind frames as well as still images.
+`alphaHash` trades hard cutout edges for a stochastic threshold. The corrected
+isolated comparison measures increased coverage variation under 0.5° yaw
+steps and at the moving wind date relative to its downsampled sample; it does
+not establish whether that pattern is perceptually acceptable. Atlas does not
+use a general TAA resolve in this tree path.
 
 The offline method is established: Ignacio Castaño's original alpha-mipmap
 method solves for a per-level remap that preserves coverage at a chosen alpha
@@ -135,8 +145,10 @@ evidence that the native mesh's alpha mip chain is fixed.
 ## Small comparison matrix
 
 Use the same hash-verified family-F near GLB, material, light, exposure, camera
-direction and date for four modes: default mask; existing hash; mask plus
-alpha-to-coverage; and mask plus the explicit coverage-preserving mip chain.
+direction and date for the remaining alpha-to-coverage and
+coverage-preserving-mip trials. MASK and HASH have been compared in the
+[temporal run](../test-results/tree-foliage-temporal/README.md) and
+[corrected isolated run](../test-results/tree-foliage-temporal/isolated-final/README.md).
 The high-resolution reference uses the same mesh, not a different impostor.
 Measure the requested 256/512/1024 reference convergence before using it as a
 comparison baseline. Then probe 128, 64, 32, 16 and 8 px at the horizon and
