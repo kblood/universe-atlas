@@ -202,7 +202,15 @@ export class FaunaNearRigs {
   }
 
   diagnostics() {
-    return { active: this.slots.filter(s => s.memberId).length, capacity: this.capacity, cached: this.cache.size, cacheSize: this.cacheSize,
+    // Aggregate counts cannot establish that a particular animal survived a
+    // representation handoff. Keep this snapshot bounded by the live rig pool;
+    // contact errors describe the immutable ground stencil, not mesh collision.
+    const activeMembers = this.slots.filter(s => s.memberId !== null).map(s => ({
+      id: s.memberId!, poseState: s.pose?.state ?? null, phase: s.pose?.phase ?? null,
+      stencilMaxPenetrationM: s.pose?.maxPenetration ?? null,
+      stencilMaxReachErrorM: s.pose?.maxReachError ?? null,
+    }));
+    return { active: activeMembers.length, activeMembers, capacity: this.capacity, cached: this.cache.size, cacheSize: this.cacheSize,
       building: this.build?.id ?? null, failed: this.failed.size, allocatedBytes: this.allocatedBytes, ...this.stats };
   }
 

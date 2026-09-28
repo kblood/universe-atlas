@@ -76,6 +76,17 @@ test('capacity, hysteresis and stable slot ownership', () => {
   const drawn = near.update(six);
   assert.equal(drawn.size, 3, 'never more rigs than capacity');
   assert.deepEqual([...drawn], six.slice(0, 3).map(c => c.member.id), 'nearest animals get the rigs');
+  const diagnostics = near.diagnostics();
+  assert.deepEqual(diagnostics.activeMembers.map(x => x.id).sort(), [...drawn].sort(), 'diagnostics identify the actual rig owners');
+  assert.equal(diagnostics.activeMembers.length, diagnostics.active);
+  for (const member of diagnostics.activeMembers) {
+    assert.equal(member.poseState, near.poseOf(member.id).state);
+    assert.equal(member.phase, near.poseOf(member.id).phase);
+    assert.equal(member.stencilMaxPenetrationM, near.poseOf(member.id).maxPenetration);
+    assert.equal(member.stencilMaxReachErrorM, near.poseOf(member.id).maxReachError);
+  }
+  diagnostics.activeMembers[0].id = 'modified-external-snapshot';
+  assert.deepEqual(near.diagnostics().activeMembers.map(x => x.id).sort(), [...drawn].sort(), 'snapshot edits cannot change rig ownership');
   const meshes = [...drawn].map(id => near.meshOf(id));
   near.update([six[2], six[1], six[0]]);
   assert.deepEqual([...drawn].map(id => near.meshOf(id)), meshes, 'reordering keeps each animal on its slot');
@@ -83,8 +94,10 @@ test('capacity, hysteresis and stable slot ownership', () => {
   const between = (FAUNA_NEAR_RIG_ENTER_M + FAUNA_NEAR_RIG_EXIT_M) / 2;
   const kept = near.update([{ ...six[0], distanceM: between }, { ...six[4], distanceM: between }]);
   assert.ok(kept.has(six[0].member.id) && !kept.has(six[4].member.id));
+  assert.deepEqual(near.diagnostics().activeMembers.map(x => x.id), [six[0].member.id], 'hysteresis reports the retained individual only');
   assert.equal(near.update([{ ...six[0], distanceM: FAUNA_NEAR_RIG_EXIT_M + 1 }]).size, 0, 'released past exit distance');
   assert.equal(near.diagnostics().active, 0);
+  assert.deepEqual(near.diagnostics().activeMembers, [], 'released individuals are absent from active diagnostics');
   assert.ok(near.group.children.every(m => !m.visible), 'released slots are hidden');
   near.dispose();
 });
