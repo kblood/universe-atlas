@@ -2,6 +2,7 @@ import { type Body, type V3 } from './catalog.ts';
 import { terrainSampler } from './terrain.ts';
 import {conservativeRiverBedM} from './river-sample.ts';
 import {biomeClassifier,materialBytes} from './surface-biomes.ts';
+import {activeRenderedRiverRegion} from './inland-rivers.ts';
 
 export const PATCH_SEGMENTS = 32;
 export const PATCH_TEXTURE = 128;
@@ -70,7 +71,8 @@ type RegionalMaterialSample={wet:boolean;bank:number;influence:number};
  * fades. Snow and already-rocky ground retain their normal material choice.
  */
 export function regionalBankWeights(body:Body,s:RegionalMaterialSample,base:number[]):number[]{
-  if(!body.hydrology||s.wet||s.influence<=0)return base;
+  // Inland rivers are withdrawn (inland-rivers.ts): no bank palette.
+  if(!activeRenderedRiverRegion(body)||s.wet||s.influence<=0)return base;
   const snow=base[3],rock=base[2];
   const habitat=body.water>0&&body.temperatureK>=250&&body.temperatureK<=325&&body.type!=='Ice world'&&body.type!=='Volcanic world';
   if(!habitat||snow>.2||rock>.55)return base;
@@ -132,9 +134,11 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
   // own grid.  The factor bounds cube normalization and a diagonal triangle.
   const footprintForLevel=(level:number)=>Math.min(2800,4*Math.SQRT2*body.radiusM/(2**level*PATCH_SEGMENTS));
   const childFootprint=footprintForLevel(tile.level),parentFootprint=tile.level?footprintForLevel(tile.level-1):childFootprint;
+  // Null while inland rivers are withdrawn: no conservative river-bed carve.
+  const riverRegion=activeRenderedRiverRegion(body);
   const heightAt=(d:V3,footprintM:number)=>{
     const s=sample(d);
-    if(!body.hydrology||footprintM<=8)return s.groundHeightM;
+    if(!riverRegion||footprintM<=8)return s.groundHeightM;
     // Coarse valley widening is a bed envelope, never a water lift or ground
     // mask.  The 3 km query bound matches river-sample's indexed halo. At
     // levels whose conservative radius exceeds that bound (L0–8 on Maithea),
@@ -144,7 +148,7 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
     // outer support back to this vertex's sampled ground. This removes the
     // old coarse-grid vertical apron without lifting water or changing fine
     // contact terrain.
-    const radius=Math.min(2800,footprintM),bed=conservativeRiverBedM(body.hydrology,d,radius,s.groundHeightM);
+    const radius=Math.min(2800,footprintM),bed=conservativeRiverBedM(riverRegion,d,radius,s.groundHeightM);
     return bed===null?s.groundHeightM:Math.min(s.groundHeightM,bed);
   };
   type LatticePoint={point:V3;height:number};

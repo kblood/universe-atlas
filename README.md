@@ -107,6 +107,9 @@ See also [Fable 5.1's independent review](docs/fable-5.1-plan-review.md) and
 The first implementation is documented in [Walking and shared time](docs/walking-and-time.md).
 The [ground materials and named surface destinations](docs/surface-materials-and-survey.md)
 increment records its implementation, validation and sources.
+Inland rivers, the drainage atlas and the regional lakes built with rivers are
+currently withdrawn; see [inland rivers withdrawn](docs/inland-rivers-withdrawn-2026-09-28.md).
+The river documents below describe the archived feature.
 The [drainage atlas and atmospheric flight](docs/drainage-and-atmospheric-flight.md) add connected catchment analysis and gentle planetary horizon alignment.
 The [physical river pilot and ground environment](docs/physical-rivers-and-ground-detail.md)
 add a visitable river, tributary and lake region, carved banks, and initial local
@@ -199,13 +202,11 @@ the nearby catalogue without replacing the galaxy scene. Surface clearance limit
 keep ordinary flight outside solid bodies. **Land and walk** prepares nearby
 terrain and descends onto solid planets and moons.
 
-On an ocean-bearing planet, **Find rivers and a lake** discovers a suitable
-coastal region and builds its channels, lake and banks. Pick a named dry bank,
-then choose **Land and walk** after arrival. This regional pilot includes initial
-local trees, stones and ground cover. Water blocks walking; individual tree and
-stone collision is pending. Its address is saved with walking links. Nearby
-generated plants and simple herds can appear on suitable worlds; planet-wide
-ecosystems, cities and people remain future work.
+Inland rivers and their regional lakes are currently unavailable. Dated oceans
+remain, and ocean water blocks walking; individual tree and stone collision is
+pending. An older link containing `river=` opens the ordinary world with a short
+notice. Nearby generated plants and simple herds can appear on suitable worlds;
+planet-wide ecosystems, cities and people remain future work.
 
 The help button lists controls. Seed tools provide direct addresses, bookmarks,
 catalogue exports and a repeatability check. URLs restore the selected destination.

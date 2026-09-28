@@ -2,6 +2,7 @@ import {type Body, type V3, AU} from './catalog.ts';
 import {terrainSampler, TERRAIN_VERSION,REGIONAL_LANDFORM_VERSION} from './terrain.ts';
 import {RIVER_SURFACE_VERSION} from './river-types.ts';
 import {RIVER_PHYSICAL_SURFACE_VERSION} from './river-physical-field.ts';
+import {activeRenderedRiverRegion} from './inland-rivers.ts';
 import {YEAR_NS, type Ns} from './world-time.ts';
 import type {BranchId, BodyAddress, WorldVersions} from './address.ts';
 import {
@@ -12,9 +13,10 @@ import {
   MIN_DATE_MYR, MAX_DATE_MYR, generateBiosphere, biosphereAt, profileFromPhysicalProperties,
   type Species, type BiosphereWorld, BIOSPHERE_VERSION,
 } from './biosphere-model.ts';
-// The dated ocean flag is shared by the surface query and renderer. Inland
-// water remains a separate terrain feature before a global ocean forms.
-export const SURFACE_VERSION='atlas-surface-6-lifecycle-sampler';
+// The dated ocean flag is shared by the surface query and renderer. Surface 7
+// withdraws inland rivers and their regional lakes (inland-rivers.ts): the
+// only water a query reports is the dated global ocean.
+export const SURFACE_VERSION='atlas-surface-7-no-inland-rivers';
 export type WaterKey = {dateNs:bigint; levelM:number};
 export function waterLevelAt(keys: readonly WaterKey[], date:bigint): number {
   if (!keys.length) return 0;
@@ -49,14 +51,15 @@ export function surfaceQuery(body:Body, keys:readonly WaterKey[]=[], options:{gl
     const waterHeightM=waterLevelM;
     const visibleHeightM=wet&&waterHeightM!==null
       ? Math.max(groundHeightM,waterHeightM) : groundHeightM;
+    const regional=activeRenderedRiverRegion(body);
     return {...sample,solid,groundHeightM,waterHeightM,
       waterDepthM:waterHeightM===null?0:Math.max(0,waterHeightM-groundHeightM),
       rockHeightM:groundHeightM,waterLevelM:waterHeightM,
       visibleHeightM,ocean,wet,walkable:solid&&!wet,version:SURFACE_VERSION,
-      geologyVersion:TERRAIN_VERSION,regionalGeologyVersion:body.hydrology?.version||null,
-      regionalSurfaceVersion:body.hydrology?RIVER_SURFACE_VERSION:null,
-      regionalPhysicalSurfaceVersion:body.hydrology?RIVER_PHYSICAL_SURFACE_VERSION:null,
-      regionalLandformVersion:body.hydrology?REGIONAL_LANDFORM_VERSION:null};
+      geologyVersion:TERRAIN_VERSION,regionalGeologyVersion:regional?.version||null,
+      regionalSurfaceVersion:regional?RIVER_SURFACE_VERSION:null,
+      regionalPhysicalSurfaceVersion:regional?RIVER_PHYSICAL_SURFACE_VERSION:null,
+      regionalLandformVersion:regional?REGIONAL_LANDFORM_VERSION:null};
   };
 }
 

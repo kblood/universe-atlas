@@ -19,6 +19,7 @@ import {hydrologyReady} from './hydrology-registry.ts';
 import type {RiverRegion} from './river-types.ts';
 import {riverFeatureAt} from './river-sample.ts';
 import {detailTexture,detailOrigin,MATERIAL_VERSION,GROUND_ATLAS_BYTES,GROUND_RESOURCE_BYTES,GROUND_PBR_TEXTURE_BYTES,acquireGroundPbrTextures,groundVertexHeader,groundVertex,groundFragmentHeader,groundColor,groundRoughnessCode,groundNormalCode} from './ground-material.ts';
+import {inlandRiversEnabled,activeRenderedRiverRegion} from './inland-rivers.ts';
 import {VolumetricClouds,CLOUD_TARGET_BUDGET_BYTES} from './volumetric-clouds.ts';
 import {ringSystemFor, ringActiveAt, createRingMesh, type RingSystem} from './planet-rings.ts';
 import {spinStateFor} from './stellar-evolution.ts';
@@ -238,7 +239,9 @@ export class PlanetRenderer {
   // test `body.hydrology` alone for this purpose must read this getter
   // instead, so demand (`contactPatches`) and supply (`finePriority`, the
   // quadtree split target, `diagnostics()`) can never drift apart again.
-  private get hasHydrology():boolean{return (this.body.canonicalRivers?.length??0)>0||!!this.body.hydrology;}
+  // Always false while inland rivers are withdrawn (inland-rivers.ts), so
+  // ordinary dry-ground contact never enters the hydrology fine-contact mode.
+  private get hasHydrology():boolean{return inlandRiversEnabled()&&((this.body.canonicalRivers?.length??0)>0||!!this.body.hydrology);}
   readonly minimumWaterLevel:number|null;
   private waterRegion:THREE.Sphere|null=null;
   private waterRegionActive=false;
@@ -457,18 +460,21 @@ export class PlanetRenderer {
     // whichever one body.hydrology currently selects for rich rendering) so
     // contact precision near an unvisited canonical river is exact too, not
     // only near the one basin picked for water-mesh/vegetation detail.
-    const hasHydrology=(body.canonicalRivers?.length??0)>0||!!body.hydrology;
+    const hasHydrology=this.hasHydrology;
     this.fineContactLevel=hasHydrology?Math.max(this.contactLevel,Math.min(24,Math.ceil(Math.log2(2*body.radiusM/(PATCH_SEGMENTS*.09))))):this.contactLevel;
     this.minimumWaterLevel=hasHydrology?Math.max(0,Math.ceil(Math.log2(4*Math.SQRT2*body.radiusM/(PATCH_SEGMENTS*2800)))+1):null;
-    if(body.hydrology){
-      this.waterRegion=riverRegionSphere(body.hydrology);
+    // No river/lake water, reflection or bank dressing while inland rivers
+    // are withdrawn; ocean water remains owned by the terrain patches.
+    const riverRegion=activeRenderedRiverRegion(body);
+    if(riverRegion){
+      this.waterRegion=riverRegionSphere(riverRegion);
     }
     this.group.name = 'Planet terrain patches';
     this.group.scale.setScalar(radius);
     this.group.visible = false;
     host.add(this.group);
-    if(body.hydrology){this.river=new RiverWater(body,body.hydrology);this.group.add(this.river.group);if(body.hydrology.lakes.length)this.lakeReflection=new LakeReflection(body,body.hydrology,frame=>this.river?.setLakeReflection(frame),this.river.group,{canAllocate:bytes=>this.river?.canAllocateLakeReflection(bytes)??false,setBytes:bytes=>this.river?.setLakeReflectionBytes(bytes)});}
-    if(body.hydrology){this.environment=new RiverEnvironment(body,body.hydrology);this.group.add(this.environment.group);}
+    if(riverRegion){this.river=new RiverWater(body,riverRegion);this.group.add(this.river.group);if(riverRegion.lakes.length)this.lakeReflection=new LakeReflection(body,riverRegion,frame=>this.river?.setLakeReflection(frame),this.river.group,{canAllocate:bytes=>this.river?.canAllocateLakeReflection(bytes)??false,setBytes:bytes=>this.river?.setLakeReflectionBytes(bytes)});}
+    if(riverRegion){this.environment=new RiverEnvironment(body,riverRegion);this.group.add(this.environment.group);}
     this.originalMaterial = host.material;
     if (body.kind === 'planet' && body.water > 0) {
       this.atmosphere = new PlanetAtmosphere(body);
@@ -1245,6 +1251,7 @@ export class PlanetRenderer {
     // landing and physics already use for unloaded tiles (below) now also
     // covers an unbuilt canonical river, so a settled capsule can never rest
     // on terrain that is about to change shape once the registry resolves.
+    // hydrologyReady is unconditionally true while inland rivers are withdrawn.
     if(!hydrologyReady(this.body))return null;
     const originKey=origin.join(',');if(originKey!==this.contactOrigin){this.contactGeometryCache.clear();this.contactOrigin=originKey;}
     const radial=new THREE.Vector3(...point).normalize(),up=new THREE.Vector3(0,1,0);

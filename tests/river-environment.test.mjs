@@ -1,4 +1,9 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {RiverEnvironment,barkTexture,leafClusterGeometry,leafSprayTexture} from '../src/river-environment.ts';import {surfaceQuery} from '../src/world-surface.ts';import {riverDirection} from '../src/river-generation.ts';
+import {setArchivedInlandRiversForTesting} from '../src/inland-rivers.ts';
+// Archived river algorithm tests. Inland rivers are withdrawn from the
+// application (src/inland-rivers.ts); this process re-enables the archived
+// pipeline so the historical river behaviour stays covered unchanged.
+setArchivedInlandRiversForTesting(true);
 const body={id:'env',name:'Env',seed:'env',kind:'planet',type:'Terrestrial world',parentId:'s',massKg:1,radiusM:6371000,temperatureK:288,color:'#fff',orbit:null,water:.7,rings:false};
 const region={version:'river-region-1',id:'c/river-region-1',parentCatchmentId:'c',bodyId:'env',bodySeed:'env',radiusM:body.radiusM,origin:[0,1,0],east:[1,0,0],north:[0,0,-1],boundsM:[-1000,-1000,1000,1000],channels:[{id:'r',name:'R',parentId:null,points:[{x:-800,z:0,waterM:30,widthM:10,depthM:3,distanceM:0},{x:800,z:0,waterM:0,widthM:25,depthM:4,distanceM:1600}]}],lakes:[],sites:[],stats:{samples:2,lengthM:1600,maxCutM:1,maxFillM:1,buildAlgorithm:'fixture'}};
 const settle=e=>{for(let i=0;i<30;i++)e.update([0,1.0001,0],1/60);return e.diagnostics();};

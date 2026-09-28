@@ -6,6 +6,15 @@ Execution ownership follows the [Luna and Claude Code task flow](desktop-realism
 Luna owns bounded implementation and acceptance; Claude Code / Opus 5.5 owns
 substantial implementation milestones. The product scope below remains intact.
 
+**Water-feature decision (2026-09-28):** inland rivers and the regional lakes
+attached to river regions are withdrawn in the separate rivers-off candidate
+based on published runtime `e0d9d9c`. That candidate keeps dated global oceans
+and ordinary terrain, while old river algorithms and their tests remain
+archived. Further river-realism work is paused until the feature is reconsidered;
+this does not close the broader ground, forest or terrain-quality work below.
+The candidate is integrated in this local rendering branch and has not been
+promoted to the live site.
+
 ## Current status snapshot — live site `e0d9d9c`
 
 The live site includes the website-only follow-up at `e0d9d9c`; its runtime is
@@ -62,7 +71,7 @@ showed separate irregular crowns instead of stacked discs. The 56.6 MB total
 atlas allocation is bounded but substantial. Dark sparse close Pine foliage,
 angular non-tree shrubs, and faceted terrain remain visible; this is a bounded
 representation improvement, not completion of forest realism. The final
-combined check remains pending on the rivers-disabled candidate. See the
+combined check on the rivers-disabled branch remains pending. See the
 [hardware record](forest-far-atlas-hardware-acceptance-2026-09-28.md) and its
 [browser report](../test-results/forest-visual-followup-opus/resume-2/browser/report.json).
 

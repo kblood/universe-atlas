@@ -14,6 +14,12 @@ import {
   hydrologyReady,
   resetHydrologyRegistry,
 } from '../src/hydrology-registry.ts';
+import {setArchivedInlandRiversForTesting} from '../src/inland-rivers.ts';
+
+// Archived river algorithm tests. Inland rivers are withdrawn from the
+// application (src/inland-rivers.ts); this process re-enables the archived
+// pipeline so the historical river behaviour stays covered unchanged.
+setArchivedInlandRiversForTesting(true);
 
 // system() is a pure regeneration (per docs/universe-atlas-v1-spec.md §3): a
 // fresh call yields a structurally-identical but reference-DISTINCT Body for

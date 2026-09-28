@@ -12,15 +12,16 @@ const region={version:'river-region-1',id:'test/wet-roughness/river-region-1',pa
 const body={id:'test/wet-roughness',name:'Wet roughness fixture',seed:'wet-roughness',kind:'planet',type:'Terrestrial world',parentId:'star',massKg:5.972e18,radiusM,temperatureK:290,color:'#3985ae',orbit:null,water:0,rings:false,hydrology:region};
 const direction=(x,z)=>unit([1,z/radiusM,x/radiusM]);
 
-test('terrain wet/dry roughness reaches the rendered ground attribute without changing biome targets',()=>{
-  const sample=terrainSampler(body),wet=sample(direction(0,0)),dry=sample(direction(0,150));
-  assert.equal(wet.wet,true);assert.equal(wet.roughness,.28);
+test('withdrawn river geometry does not inject wet roughness; dry biome targets remain intact',()=>{
+  const sample=terrainSampler(body),formerChannel=sample(direction(0,0)),dry=sample(direction(0,150));
+  assert.equal(formerChannel.wet,false);assert.equal(formerChannel.roughness,.9);
   assert.equal(dry.wet,false);assert.equal(dry.roughness,.9);
-  // Dry roughness .9 maps to zero wet response, retaining even the sand target
-  // above .9. The existing wet-channel value .28 maps to full response.
+  // The former river channel and ordinary dry ground now both keep the dry
+  // sampler value. The pure material mapping still supports explicit wetness
+  // when an ocean sample supplies the lower roughness endpoint.
   assert.equal(groundRoughnessTarget(.84,dry.roughness),.84);
-  assert.equal(groundRoughnessTarget(.84,wet.roughness),.28);
-  assert.equal(groundRoughnessTarget(.96,wet.roughness),.28);
+  assert.equal(groundRoughnessTarget(.84,.28),.28);
+  assert.equal(groundRoughnessTarget(.96,.28),.28);
   assert.equal(groundRoughnessTarget(.96,dry.roughness),.96);
   assert.ok(Math.abs(groundRoughnessTarget(.84,.59)-.56)<1e-12,'intermediate sampler values blend continuously');
 });
@@ -35,7 +36,8 @@ test('tile roughness samples match terrain values, stay continuous at shared ver
     assert.ok(Math.abs(value-expected)<1e-7,'stored scalar is the existing terrain sampler result');
     if(expected<.5)wetCount++;else dryCount++;
   }
-  assert.ok(wetCount>0&&dryCount>0,'fixture includes wet channel and dry terrain');
+  assert.equal(wetCount,0,'withdrawn channel geometry contributes no wet roughness');
+  assert.equal(dryCount,(n+1)**2,'the no-ocean fixture remains dry across the tile');
   for(let edge=0;edge<4;edge++)for(let i=0;i<=n;i++){
     const index=edge===0?i:edge===1?i*stride+n:edge===2?n*stride+n-i:(n-i)*stride;
     const skirtIndex=(n+1)**2+edge*stride+i;

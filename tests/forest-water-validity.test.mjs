@@ -9,6 +9,7 @@ import {terrainSampler} from '../src/terrain.ts';
 import {buildCanonicalHydrology} from '../src/hydrology-registry.ts';
 import {biomeClassifier} from '../src/surface-biomes.ts';
 import {galaxies,refByAddress,system} from '../src/catalog.ts';
+import {setArchivedInlandRiversForTesting} from '../src/inland-rivers.ts';
 
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 const address={face:2,n:Math.ceil(2*body.radiusM/18),x:42120,y:62028};
@@ -97,7 +98,10 @@ test('family and water both gate inherited completed patches; returned interval 
   assert.equal(complete(changedRiver,address).present,riverPatch.present);
 });
 
-test('canonical river patch reuses only within its sampled H/G interval',async()=>{
+test('canonical river patch reuses only within its sampled H/G interval (archived rivers)',async t=>{
+  // Inland rivers are withdrawn from the application; exercise the archived
+  // river terrain explicitly for this historical cache-validity case.
+  setArchivedInlandRiversForTesting(true);t.after(()=>setArchivedInlandRiversForTesting(false));
   const {regions}=buildCanonicalHydrology(body);assert.ok(regions.length>0);
   const riverBody={...body,canonicalRivers:regions},region=regions[0];
   const faceComponents=[region.origin[0],-region.origin[0],region.origin[1],-region.origin[1],region.origin[2],-region.origin[2]];

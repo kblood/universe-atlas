@@ -31,6 +31,7 @@ import { SURFACE_CELL_VERSION } from './surface-cell.ts';
 import { TERRAIN_VERSION } from './terrain.ts';
 import { BIOSPHERE_VERSION } from './biosphere-model.ts';
 import { GALAXY_HISTORY_VERSION } from './galaxy-history.ts';
+import { INLAND_RIVERS_UNAVAILABLE, INLAND_RIVERS_UNAVAILABLE_NOTICE } from './inland-rivers.ts';
 
 /** The build's current WorldVersions bundle (contract §1.3) — threaded
  * through every save/bookmark/URL per requirement 6. */
@@ -51,8 +52,9 @@ export const MODEL_MANIFEST_ID = [
   BIOSPHERE_QUERY_VERSION,PRIMORDIAL_POPULATION_VERSION,STELLAR_COHORT_VERSION,
   FUTURE_SCENARIO_VERSION,ALTERNATE_FATE_VERSION,OBSERVED_SKY_VERSION,CMB_FIELD_VERSION,SURFACE_CELL_VERSION,
 ].join('|');
-/** Consumer changes can affect a bookmark without changing generator data. */
-export const BUILD_VERSION = 'atlas-client-2026-09-26-planets-1';
+/** Consumer changes can affect a bookmark without changing generator data.
+ * 2026-09-28: river/drainage navigation and rendering withdrawn. */
+export const BUILD_VERSION = 'atlas-client-2026-09-28-no-inland-rivers-1';
 
 // ---------------------------------------------------------------------------
 // §3.2 playback tiers.
@@ -273,14 +275,24 @@ export function writeTimeToUrl(params: URLSearchParams, t: Ns): void {
   params.set('bv', BUILD_VERSION);
 }
 
+/** A legacy `river=` parameter (written by builds that rendered inland
+ * rivers) is never restored: the body opens in its ordinary view and the
+ * river notice leads, followed by any model-version notice. */
 export function compatibilityNoticeFromUrl(params:URLSearchParams):string|null {
+  const model=modelCompatibilityNotice(params,!params.has('river'));
+  if(!params.has('river'))return model;
+  return model?`${INLAND_RIVERS_UNAVAILABLE_NOTICE} ${model}`:INLAND_RIVERS_UNAVAILABLE_NOTICE;
+}
+function modelCompatibilityNotice(params:URLSearchParams,explainRivers:boolean):string|null {
   const oldBundle=params.get('wv');
   if(!oldBundle)return null;
   const decoded=decodeVersions(oldBundle);
   if(!decoded)return 'This bookmark has an unrecognized world-version record. Its scenery may differ from the saved view.';
   const differences=(Object.keys(CURRENT_VERSIONS) as (keyof WorldVersions)[])
     .filter(key=>decoded[key]!==CURRENT_VERSIONS[key]);
-  if(differences.length)return `This bookmark uses older ${differences.join(', ')} model versions. Its world may look different.`;
+  // terrain-1.6.0/atlas-surface-7 withdrew inland rivers and their lakes.
+  const riverNote=explainRivers&&(differences.includes('terrain')||differences.includes('surface'))?` ${INLAND_RIVERS_UNAVAILABLE}`:'';
+  if(differences.length)return `This bookmark uses older ${differences.join(', ')} model versions.${riverNote} Its world may look different.`;
   if(params.get('mv')!==MODEL_MANIFEST_ID)return 'This bookmark predates the current combined model. Planet and life details may differ.';
   if(params.get('bv')!==BUILD_VERSION)return 'This bookmark was viewed with a different Atlas build. Presentation may differ.';
   return null;
