@@ -67,3 +67,31 @@ The 25-sample p95 above is the second-worst measured sample, not a statistically
 strong tail-latency guarantee. Current transport diagnostics measure explicit
 decode/application; they cannot retrospectively time structured-clone work
 before a message handler starts. No browser frame-speedup claim is made.
+
+## Luna 6 final hardware checks
+
+Exact runtime `23de0b9` passes its production build and 75 targeted tests.
+The RTX 5090 movement fixture travels 110.74 m laterally, receives fresh
+packed responses and leaves terrain, trees, flora and animals ready. The last
+response contains 18,051 cells / 1,732,896 bytes, with worker packing 15.3 ms
+and main decoding 4.5 ms. Its cache reused 6,655 patches, built 32, accounted
+for 17,348,174 of 33,554,432 bytes, and evicted none. Browser errors, worker
+failures and restarts are all zero. The rendering fixture also passes.
+
+An initially slower development-server profile prompted a sequential comparison
+of production previews on the same machine, with no overlapping test/build jobs:
+
+| Production preview | Frame interval p50/p95 | CPU planet update p50/p95 | GPU pass sum p50/p95 |
+| --- | ---: | ---: | ---: |
+| Packed transfer `23de0b9` | 16.8 / 20.8 ms | 11.0 / 14.1 ms | 4.38 / 6.74 ms |
+| Previous runtime `66c7728` | 17.6 / 24.3 ms | 11.6 / 16.5 ms | 4.76 / 7.33 ms |
+
+Both captures have zero browser errors. There is no regression signal in this
+comparison; one run does not establish a general speedup, sustained 60 FPS,
+midrange hardware acceptance or the old path's main-thread deserialize cost.
+See [Luna's validation record](../test-results/forest-transfer-23de0b9/README.md).
+
+Separate broad checks of the initial `a0dd78a` revision retain two existing
+failures: an extreme-time scale-factor Infinity expectation and an older
+history-version expectation. The full suite is not claimed green. These source
+and local browser checks do not by themselves establish live deployment.
