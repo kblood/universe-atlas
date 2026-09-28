@@ -1,0 +1,299 @@
+{
+  "schema": "https://iwsdk.local/schemas/asset-manifest/v1",
+  "asset": {
+    "id": "atlas-ground-pbr-v1",
+    "version": "1.0.0",
+    "purpose": "Add metre-scaled authored soil and rocky-ground PBR detail to the Atlas terrain material while preserving its existing biome colours and continuous local frame.",
+    "target": "IWSDK universe-atlas desktop-web renderer",
+    "sourceUrl": "https://polyhaven.com/",
+    "license": {
+      "expression": "CC0-1.0",
+      "attribution": "Poly Haven textures by Charlotte Baglioni (Dirt) and Rob Tuytel (Rock Ground); author records are preserved in bundle metadata",
+      "restrictions": []
+    },
+    "parentAssets": [
+      "Dirt (Poly Haven)",
+      "Rock Ground (Poly Haven)"
+    ]
+  },
+  "content": {
+    "primaryFile": "runtime/soil-albedo-roughness-512.png",
+    "files": [
+      {
+        "path": "source/soil-albedo.jpg",
+        "sha256": "6ce6ca7e28ed046f7f93fa60dcb29f8cf42cd5a539adc5676675acccfa34efd3",
+        "bytes": 730425
+      },
+      {
+        "path": "source/soil-normal-gl.jpg",
+        "sha256": "5a5f97d920fdcdf352b350b95558bf48bb306be1fe61a47418aadc60b7deb0ce",
+        "bytes": 1202783
+      },
+      {
+        "path": "source/soil-roughness.jpg",
+        "sha256": "eff62d5ae7bf0c46b84173bc46f07528dd164aa39f5d550c93a805b36f54b704",
+        "bytes": 253549
+      },
+      {
+        "path": "source/rock-albedo.jpg",
+        "sha256": "bec2573bc8aa9c714b690df753730e41f2077a1f0bbca83b13e055c86b4d5626",
+        "bytes": 817925
+      },
+      {
+        "path": "source/rock-normal-gl.jpg",
+        "sha256": "eea3e980653ff19938326fe6416c717f69c1493d16caec54ce2797460157efbf",
+        "bytes": 1430284
+      },
+      {
+        "path": "source/rock-roughness.jpg",
+        "sha256": "2585e6eda380d10b081448fd98bc4e8c37b3e8947a26ec7d95d361920d36b2e7",
+        "bytes": 521080
+      },
+      {
+        "path": "runtime/soil-albedo-roughness-512.png",
+        "sha256": "ff397d6d14a882f6867a84c25ad9798e1237f7b9b21522470416c4a3c75b3fa3",
+        "bytes": 530561
+      },
+      {
+        "path": "runtime/soil-normal-512.png",
+        "sha256": "08d00b74a9b5c62793df34a1431e89b77731c28f1ee9d60accb7cc6bee57077f",
+        "bytes": 602556
+      },
+      {
+        "path": "runtime/rock-albedo-roughness-512.png",
+        "sha256": "83a055d27eb1d468213a9396dbc4a95fcef13e897c76086723cb39100fc74d2e",
+        "bytes": 880414
+      },
+      {
+        "path": "runtime/rock-normal-512.png",
+        "sha256": "c3a14551847b0493886c345cb37ebf7376b046a79f96f00e7f065bdae00921d0",
+        "bytes": 784082
+      }
+    ]
+  },
+  "provenance": {
+    "jobId": "42edfcae-0cb5-41ae-9bce-5cb881e29e5d",
+    "generatedAt": "2026-09-28T17:43:26.640Z",
+    "brief": {
+      "id": "atlas-ground-pbr-v1",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-terrain-material\\assets\\ground-materials-v1\\ground-pbr-v1.brief.json",
+      "sha256": "2532f00802aeaf61586d808828d9f5fb49f6749ca34e09cc781b98fe0760f5a7",
+      "declaration": {
+        "sourceType": "third-party",
+        "sourceConsent": "licensed",
+        "sourceUrl": "https://polyhaven.com/",
+        "license": {
+          "expression": "CC0-1.0",
+          "attribution": "Poly Haven textures by Charlotte Baglioni (Dirt) and Rob Tuytel (Rock Ground); author records are preserved in bundle metadata",
+          "restrictions": []
+        },
+        "parents": [],
+        "notes": "Runtime maps are downsampled and channel-packed from the two source PBR texture sets. Input file hashes and API metadata are preserved in bundle.json and ground-pbr-v1.asset.json. No generated geometry or model checkpoint is used."
+      }
+    },
+    "tools": {
+      "assetctl": "0.2.0",
+      "node": "v24.7.0"
+    },
+    "transformations": [
+      {
+        "operation": "verify-source",
+        "method": "MD5 check against the official Poly Haven files API and SHA-256 inventory"
+      },
+      {
+        "operation": "resample",
+        "method": "downsample 1K maps to 512px using Lanczos; diffuse is filtered in linear sRGB, normal vectors are decoded, filtered and renormalized"
+      },
+      {
+        "operation": "pack",
+        "method": "sRGB diffuse RGB plus linear roughness A; OpenGL tangent-space normal RGB"
+      },
+      {
+        "operation": "scale",
+        "method": "set both runtime texture periods to 2m so the existing 4096m local-frame period joins without seams; rock source 1.5m tile is uniformly rescaled by 4/3"
+      }
+    ]
+  },
+  "technical": {
+    "schemaVersion": 1,
+    "generator": "atlas-ground-pbr-pack-1",
+    "generatorVersions": {
+      "python": "3.13.7",
+      "pillow": "11.3.0",
+      "numpy": "2.3.2"
+    },
+    "textureSize": [
+      512,
+      512
+    ],
+    "sets": 2,
+    "runtimeTextureCount": 4,
+    "estimatedGpuBytesWithFullMipChains": 5592406,
+    "materials": [
+      {
+        "name": "soil",
+        "sourceAsset": "dirt",
+        "author": "Charlotte Baglioni",
+        "sourcePage": "https://polyhaven.com/a/dirt",
+        "license": "CC0-1.0",
+        "physicalSizeM": [
+          2,
+          2
+        ],
+        "sourceDimensionsM": null,
+        "runtimeRepeatM": 2,
+        "inputs": [
+          {
+            "role": "albedo",
+            "path": "source/soil-albedo.jpg",
+            "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dirt/dirt_diff_1k.jpg",
+            "md5FromOfficialFilesApi": "cb37e24797597b1dd1ae3819fa80f076",
+            "sha256": "6ce6ca7e28ed046f7f93fa60dcb29f8cf42cd5a539adc5676675acccfa34efd3",
+            "bytes": 730425,
+            "dimensionsPx": [
+              1024,
+              1024
+            ]
+          },
+          {
+            "role": "normalGL",
+            "path": "source/soil-normal-gl.jpg",
+            "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dirt/dirt_nor_gl_1k.jpg",
+            "md5FromOfficialFilesApi": "362610edf09fd31735958eecec823a84",
+            "sha256": "5a5f97d920fdcdf352b350b95558bf48bb306be1fe61a47418aadc60b7deb0ce",
+            "bytes": 1202783,
+            "dimensionsPx": [
+              1024,
+              1024
+            ]
+          },
+          {
+            "role": "roughness",
+            "path": "source/soil-roughness.jpg",
+            "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dirt/dirt_rough_1k.jpg",
+            "md5FromOfficialFilesApi": "d936d6760ce0f899b131d30626d52ce9",
+            "sha256": "eff62d5ae7bf0c46b84173bc46f07528dd164aa39f5d550c93a805b36f54b704",
+            "bytes": 253549,
+            "dimensionsPx": [
+              1024,
+              1024
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "role": "sRGB albedo RGB + linear roughness A",
+            "path": "runtime/soil-albedo-roughness-512.png",
+            "sha256": "ff397d6d14a882f6867a84c25ad9798e1237f7b9b21522470416c4a3c75b3fa3",
+            "bytes": 530561,
+            "dimensions": [
+              512,
+              512
+            ]
+          },
+          {
+            "role": "OpenGL tangent normal RGB",
+            "path": "runtime/soil-normal-512.png",
+            "sha256": "08d00b74a9b5c62793df34a1431e89b77731c28f1ee9d60accb7cc6bee57077f",
+            "bytes": 602556,
+            "dimensions": [
+              512,
+              512
+            ]
+          }
+        ]
+      },
+      {
+        "name": "rock",
+        "sourceAsset": "rock_ground",
+        "author": "Rob Tuytel",
+        "sourcePage": "https://polyhaven.com/a/rock_ground",
+        "license": "CC0-1.0",
+        "physicalSizeM": [
+          1.5,
+          1.5
+        ],
+        "sourceDimensionsM": [
+          1.5,
+          1.5
+        ],
+        "runtimeRepeatM": 2,
+        "inputs": [
+          {
+            "role": "albedo",
+            "path": "source/rock-albedo.jpg",
+            "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_ground/rock_ground_diff_1k.jpg",
+            "md5FromOfficialFilesApi": "5e897f7e2bcf857250bf74be878584b2",
+            "sha256": "bec2573bc8aa9c714b690df753730e41f2077a1f0bbca83b13e055c86b4d5626",
+            "bytes": 817925,
+            "dimensionsPx": [
+              1024,
+              1024
+            ]
+          },
+          {
+            "role": "normalGL",
+            "path": "source/rock-normal-gl.jpg",
+            "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_ground/rock_ground_nor_gl_1k.jpg",
+            "md5FromOfficialFilesApi": "f0831bc095636c0019e44adbacdc09e7",
+            "sha256": "eea3e980653ff19938326fe6416c717f69c1493d16caec54ce2797460157efbf",
+            "bytes": 1430284,
+            "dimensionsPx": [
+              1024,
+              1024
+            ]
+          },
+          {
+            "role": "roughness",
+            "path": "source/rock-roughness.jpg",
+            "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_ground/rock_ground_rough_1k.jpg",
+            "md5FromOfficialFilesApi": "67be099b9edb59d2fcb3377c5fccbf88",
+            "sha256": "2585e6eda380d10b081448fd98bc4e8c37b3e8947a26ec7d95d361920d36b2e7",
+            "bytes": 521080,
+            "dimensionsPx": [
+              1024,
+              1024
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "role": "sRGB albedo RGB + linear roughness A",
+            "path": "runtime/rock-albedo-roughness-512.png",
+            "sha256": "83a055d27eb1d468213a9396dbc4a95fcef13e897c76086723cb39100fc74d2e",
+            "bytes": 880414,
+            "dimensions": [
+              512,
+              512
+            ]
+          },
+          {
+            "role": "OpenGL tangent normal RGB",
+            "path": "runtime/rock-normal-512.png",
+            "sha256": "c3a14551847b0493886c345cb37ebf7376b046a79f96f00e7f065bdae00921d0",
+            "bytes": 784082,
+            "dimensions": [
+              512,
+              512
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "qa": {
+    "briefValidated": true,
+    "sourceHashesValidated": true,
+    "technical": [
+      "512 x 512",
+      "RGBA8 albedo-roughness and OpenGL normal maps",
+      "deterministic pack script"
+    ],
+    "visual": [
+      "PENDING browser comparison on grounded wet/dry terrain"
+    ],
+    "runtime": [
+      "PENDING tile seam and local-frame rebase acceptance"
+    ]
+  }
+}

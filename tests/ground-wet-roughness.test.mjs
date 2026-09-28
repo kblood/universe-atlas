@@ -61,5 +61,6 @@ test('ground shader transports sampler roughness and preserves dry biome targets
   assert.equal(groundRoughnessTarget(.84,.9),.84);
   assert.equal(groundRoughnessTarget(.84,.28),.28);
   assert.match(groundRoughnessCode,/groundSurfaceWetness=clamp\(/);
-  assert.match(groundRoughnessCode,/mix\(groundBiomeRoughness,0\.28,groundSurfaceWetness\)/);
+  assert.match(groundRoughnessCode,/mix\(groundBiomeRoughness,groundPbrRoughness,.68\*groundPbrMixWeight\)/);
+  assert.match(groundRoughnessCode,/mix\(groundPbrDryRoughness,0\.28,groundSurfaceWetness\)/);
 });

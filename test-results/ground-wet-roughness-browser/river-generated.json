@@ -1,0 +1,22 @@
+{
+  "site": {
+    "id": "G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/16162/river-region-2/bank",
+    "name": "Eiren Bracken River Bank",
+    "kind": "river-bank",
+    "direction": [
+      -0.124042926209492,
+      -0.7812517382464692,
+      0.6117671729867965
+    ],
+    "elevationM": 113.31071951922797,
+    "lookDirection": [
+      -0.12404360091599874,
+      -0.7812501870591305,
+      0.6117690171068377
+    ]
+  },
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "radiusM": 5194907.072465867,
+  "regionId": "G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/16162/river-region-2",
+  "parentCatchmentId": "G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/16162"
+}

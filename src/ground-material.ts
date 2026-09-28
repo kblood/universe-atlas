@@ -4,11 +4,52 @@ import {DRY_SURFACE_ROUGHNESS,WET_SURFACE_ROUGHNESS,groundRoughnessTarget} from 
 export {groundRoughnessTarget} from './surface-roughness.ts';
 export const MATERIAL_VERSION='ground-material-1';
 export const DETAIL_PERIOD_M=4096;
+export const GROUND_PBR_REPEAT_M=2;
+export const GROUND_PBR_TEXTURE_SIZE=512;
+export const GROUND_PBR_TEXTURE_BYTES=Math.ceil(4*GROUND_PBR_TEXTURE_SIZE*GROUND_PBR_TEXTURE_SIZE*4*4/3);
+export const GROUND_ATLAS_BYTES=Math.ceil(256*256*4*(1+4/3));
+export const GROUND_RESOURCE_BYTES=GROUND_ATLAS_BYTES+GROUND_PBR_TEXTURE_BYTES;
+const SOIL_ALBEDO_ROUGHNESS_URL=new URL('../assets/ground-materials-v1/runtime/soil-albedo-roughness-512.png',import.meta.url).href;
+const SOIL_NORMAL_URL=new URL('../assets/ground-materials-v1/runtime/soil-normal-512.png',import.meta.url).href;
+const ROCK_ALBEDO_ROUGHNESS_URL=new URL('../assets/ground-materials-v1/runtime/rock-albedo-roughness-512.png',import.meta.url).href;
+const ROCK_NORMAL_URL=new URL('../assets/ground-materials-v1/runtime/rock-normal-512.png',import.meta.url).href;
+
+type GroundPbrShared={refs:number;ready:{value:number};failed:boolean;loaded:number;textures:THREE.Texture[];soilColor:THREE.Texture;soilNormal:THREE.Texture;rockColor:THREE.Texture;rockNormal:THREE.Texture};
+let sharedGroundPbr:GroundPbrShared|null=null;
+export type GroundPbrLease=Pick<GroundPbrShared,'ready'|'soilColor'|'soilNormal'|'rockColor'|'rockNormal'> & {release():void};
+/** One shared set of 512px maps for every resident planet renderer. */
+export function acquireGroundPbrTextures(anisotropy=1):GroundPbrLease{
+  if(!sharedGroundPbr){
+    const shared={} as GroundPbrShared;shared.refs=0;shared.ready={value:0};shared.failed=false;shared.loaded=0;shared.textures=[];sharedGroundPbr=shared;
+    const loader=new THREE.TextureLoader();
+    const make=(url:string,colorSpace:THREE.ColorSpace)=>{
+      const texture=loader.load(url,()=>{if(shared.failed)return;if(++shared.loaded===4)shared.ready.value=1;},undefined,()=>{shared.failed=true;shared.ready.value=0;});
+      texture.colorSpace=colorSpace;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;texture.generateMipmaps=true;texture.anisotropy=Math.max(1,Math.min(4,anisotropy));
+      shared.textures.push(texture);return texture;
+    };
+    shared.soilColor=make(SOIL_ALBEDO_ROUGHNESS_URL,THREE.SRGBColorSpace);
+    shared.soilNormal=make(SOIL_NORMAL_URL,THREE.NoColorSpace);
+    shared.rockColor=make(ROCK_ALBEDO_ROUGHNESS_URL,THREE.SRGBColorSpace);
+    shared.rockNormal=make(ROCK_NORMAL_URL,THREE.NoColorSpace);
+  }
+  const lease=sharedGroundPbr;lease.refs++;
+  let released=false;
+  return {ready:lease.ready,soilColor:lease.soilColor,soilNormal:lease.soilNormal,rockColor:lease.rockColor,rockNormal:lease.rockNormal,release(){
+    if(released)return;released=true;lease.refs=Math.max(0,lease.refs-1);
+    if(lease.refs===0&&sharedGroundPbr===lease){for(const texture of lease.textures)texture.dispose();sharedGroundPbr=null;}
+  }};
+}
+
+export function groundPbrMaterialWeights(soil:number,rock:number){
+  const s=Math.max(0,Number.isFinite(soil)?soil:0),r=Math.max(0,Number.isFinite(rock)?rock:0),sum=s+r;
+  return {coverage:Math.min(1,sum),rockMix:sum>1e-8?r/sum:0};
+}
 /** GLSL equivalent of surfaceWetnessFromRoughness/groundRoughnessTarget. */
 export const groundRoughnessCode=`
 float groundBiomeRoughness=dot(groundW,vec4(.96,.92,.84,.73));
 float groundSurfaceWetness=clamp((${DRY_SURFACE_ROUGHNESS}-groundSurfaceRoughnessV)/(${DRY_SURFACE_ROUGHNESS}-${WET_SURFACE_ROUGHNESS}),0.0,1.0);
-float groundWetAdjustedRoughness=mix(groundBiomeRoughness,${WET_SURFACE_ROUGHNESS},groundSurfaceWetness);
+float groundPbrDryRoughness=mix(groundBiomeRoughness,groundPbrRoughness,.68*groundPbrMixWeight);
+float groundWetAdjustedRoughness=mix(groundPbrDryRoughness,${WET_SURFACE_ROUGHNESS},groundSurfaceWetness);
 roughnessFactor=mix(roughnessFactor,groundWetAdjustedRoughness,groundFade);`;
 export function detailOrigin(anchor:V3,radius:number):V3{
   return anchor.map(x=>((x*radius)%DETAIL_PERIOD_M+DETAIL_PERIOD_M)%DETAIL_PERIOD_M) as V3;
@@ -48,9 +89,19 @@ export const groundVertexHeader=`attribute vec4 groundWeights; attribute float g
 varying vec3 groundPosition,groundNormal; varying vec4 groundMix; varying float groundSurfaceRoughnessV;`;
 export const groundVertex=`groundPosition=transformed*atlasRadius+groundOrigin; groundNormal=normal; groundMix=groundWeights; groundSurfaceRoughnessV=groundSurfaceRoughness;`;
 export const groundFragmentHeader=`
-uniform sampler2D groundAtlas; uniform float groundEnabled,groundPatch,groundHabitat;
+uniform sampler2D groundAtlas,groundSoilColorRoughness,groundSoilNormal,groundRockColorRoughness,groundRockNormal; uniform float groundEnabled,groundPatch,groundPbrPatch,groundPbrReady,groundHabitat; uniform mat3 normalMatrix;
 varying vec3 groundPosition,groundNormal; varying vec4 groundMix; varying float groundSurfaceRoughnessV;
 vec4 groundTri(vec3 p,vec3 w){return texture2D(groundAtlas,p.yz)*w.x+texture2D(groundAtlas,p.zx)*w.y+texture2D(groundAtlas,p.xy)*w.z;}
+vec4 groundPbrTri(sampler2D t,vec3 p,vec3 w){return texture2D(t,p.yz)*w.x+texture2D(t,p.zx)*w.y+texture2D(t,p.xy)*w.z;}
+vec3 groundPbrNormalAxisX(vec3 c,float side){vec3 n=normalize(c*2.0-1.0);n.xy*=.78;return normalize(vec3(side*n.z,n.x,n.y));}
+vec3 groundPbrNormalAxisY(vec3 c,float side){vec3 n=normalize(c*2.0-1.0);n.xy*=.78;return normalize(vec3(n.y,side*n.z,n.x));}
+vec3 groundPbrNormalAxisZ(vec3 c,float side){vec3 n=normalize(c*2.0-1.0);n.xy*=.78;return normalize(vec3(n.x,n.y,side*n.z));}
+vec3 groundPbrTriNormal(sampler2D t,vec3 p,vec3 w,vec3 n){
+ vec3 x=groundPbrNormalAxisX(texture2D(t,p.yz).rgb,n.x<0.0?-1.0:1.0);
+ vec3 y=groundPbrNormalAxisY(texture2D(t,p.zx).rgb,n.y<0.0?-1.0:1.0);
+ vec3 z=groundPbrNormalAxisZ(texture2D(t,p.xy).rgb,n.z<0.0?-1.0:1.0);
+ return normalize(x*w.x+y*w.y+z*w.z);
+}
 `;
 export const groundColor=`
 float groundFade=groundEnabled*groundPatch*(1.0-smoothstep(1500.0,6000.0,length(atlasLocalM-atlasLocalEyeM)));
@@ -58,12 +109,29 @@ float groundFade=groundEnabled*groundPatch*(1.0-smoothstep(1500.0,6000.0,length(
 vec3 groundAxis=pow(abs(normalize(groundNormal)),vec3(4.0));groundAxis/=dot(groundAxis,vec3(1.0));
 vec4 groundW=max(groundMix,vec4(0.0));groundW/=max(.001,dot(groundW,vec4(1.0)));
 vec4 groundCoarse=vec4(.5),groundFine=vec4(.5),groundMacro=vec4(.5);
+float groundPbrMixWeight=0.0,groundPbrRoughness=.9;
+vec4 groundSoilPbr=vec4(1.0),groundRockPbr=vec4(1.0);
+vec3 groundPbrObjectNormal=normalize(groundNormal);
 // Uniform branch keeps texture derivatives valid and skips six fetches on
 // disabled or distant patches. Fine per-fragment distance fade stays smooth.
 if(groundEnabled*groundPatch>.5){
   groundCoarse=groundTri(groundPosition/16.0,groundAxis);
   groundFine=groundTri(groundPosition,groundAxis);
   groundMacro=groundTri(groundPosition/256.0,groundAxis);
+}
+float groundSoilRockWeight=groundW.x+groundW.y+groundW.z;
+float groundPbrRockMix=groundW.z/max(groundSoilRockWeight,.0001);
+float groundPbrFade=1.0-smoothstep(600.0,1800.0,length(atlasLocalM-atlasLocalEyeM));
+groundPbrMixWeight=groundPbrReady*groundPbrPatch*groundPbrFade*min(1.0,groundSoilRockWeight);
+if(groundEnabled*groundPatch>.5&&groundPbrPatch>.5&&groundPbrReady>.5){
+  vec3 groundPbrPos=groundPosition/${GROUND_PBR_REPEAT_M.toFixed(1)};
+  groundSoilPbr=groundPbrTri(groundSoilColorRoughness,groundPbrPos,groundAxis);
+  groundRockPbr=groundPbrTri(groundRockColorRoughness,groundPbrPos,groundAxis);
+  vec3 soilN=groundPbrTriNormal(groundSoilNormal,groundPbrPos,groundAxis,groundNormal);
+  vec3 rockN=groundPbrTriNormal(groundRockNormal,groundPbrPos,groundAxis,groundNormal);
+  vec4 groundPbrColor=mix(groundSoilPbr,groundRockPbr,groundPbrRockMix);
+  groundPbrRoughness=groundPbrColor.a;
+  groundPbrObjectNormal=normalize(mix(soilN,rockN,groundPbrRockMix));
 }
 float groundSignal=dot(groundW,vec4(groundFine.a,groundFine.r*.6+groundCoarse.r*.4,groundCoarse.b*.55+groundFine.g*.45,groundFine.a*.3+groundCoarse.r*.7));
 // Metre-scale patches break up the uniform orbital tint without introducing a
@@ -75,6 +143,9 @@ vec3 dirtColor=diffuseColor.rgb*mix(vec3(.72,.69,.61),vec3(1.05,1.01,.88),ground
 vec3 groundAlbedo=mix(dirtColor,turfColor,turf*.72);
 float pebble=smoothstep(.63,.84,groundFine.g)*(groundW.x*.35+groundW.y*.12);
 groundAlbedo=mix(groundAlbedo,vec3(.22,.21,.18),pebble);
+if(groundPbrMixWeight>0.0&&groundSoilRockWeight>.001){
+  groundAlbedo=mix(groundAlbedo,mix(groundSoilPbr.rgb,groundRockPbr.rgb,groundPbrRockMix),.68*groundPbrMixWeight);
+}
 diffuseColor.rgb=mix(diffuseColor.rgb,groundAlbedo*(.82+groundSignal*.32),groundFade);
 // Millimetre-scale grain stays subtle at eye height; centimetre amplitudes on
 // sub-centimetre atlas features made grazing shores alternate black and gold.
@@ -85,6 +156,8 @@ float groundBump=(dot(groundW,vec4(groundFine.a*.001,groundFine.r*.002+groundFin
 export const groundNormalCode=`
 // Surface-gradient bump mapping: scale metre amplitudes into view-space units.
 if(groundEnabled*groundPatch>.5){
+vec3 groundPbrViewNormal=normalize(normalMatrix*groundPbrObjectNormal);
+normal=normalize(mix(normal,groundPbrViewNormal,.78*groundPbrMixWeight));
 vec3 gx=dFdx(-vViewPosition),gy=dFdy(-vViewPosition);
 float metresToView=length(gx)/max(.000001,length(dFdx(groundPosition)));
 vec3 gr1=cross(gy,normal),gr2=cross(normal,gx);
