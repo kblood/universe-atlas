@@ -19,6 +19,11 @@ and around sunset. This is a bounded local shadow region, not planetary terrain
 occlusion or cascaded shadows. Lateral map-edge transitions still need visual
 assessment.
 
+The shadow target adds an estimated 32 MiB for packed depth colour and a depth
+attachment at 2048², outside the existing terrain/cloud reserves. It remains
+allocated when basic lighting is selected, avoiding reallocation on toggles.
+Diagnostics report this estimate separately; driver overhead is not included.
+
 Terrain, nearby legacy/detailed trees, ground flora and instanced fauna cast and
 receive shadows. Terrain depth uses the same morph and edge-lock expressions as
 its colour pass. Legacy tree depth uses the same canonical coverage mask as its

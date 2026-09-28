@@ -75,5 +75,8 @@ export class SurfaceLighting {
   diagnostics(){return {active:this.active,altitudeM:this.altitudeM,unitsPerM:this.unitsPerM,
     widthM:SURFACE_SHADOW.widthM,depthM:SURFACE_SHADOW.depthM,mapSize:SURFACE_SHADOW.mapSize,
     shadowIntensity:this.sun.shadow.intensity,skyIntensity:this.sky.intensity,ambientIntensity:this.ambient.intensity,
-    allocated:!!this.sun.shadow.map};}
+    allocated:!!this.sun.shadow.map,
+    // RGBA8 packed depth plus a conservative four-byte depth attachment.
+    // Driver overhead is not included; the map is retained while basic is on.
+    estimatedTargetBytes:this.sun.shadow.map?this.sun.shadow.map.width*this.sun.shadow.map.height*8:0};}
 }
