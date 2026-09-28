@@ -598,7 +598,10 @@ let surfaceMesh: THREE.Mesh<
 let surfaceInfo: Surface | null = null;
 let surfaceDetail=new URLSearchParams(location.search).get('detail')!=='0';
 let surfaceLightingEnabled=new URLSearchParams(location.search).get('lighting')!=='0';
-let detailedForestEnabled=new URLSearchParams(location.search).get('trees')==='1';
+// Detailed Oak/Pine families (and the far atlas baked from them) are the
+// ordinary desktop forest; `trees=0` opts out. Immersive sessions still skip
+// them (see forestAssetAttachment.update) until a Quest profile is measured.
+let detailedForestEnabled=new URLSearchParams(location.search).get('trees')!=='0';
 const forestAssetSource=new ForestAssetSource(new URL('assets/forest/desktop-v1/forest-bundle-manifest.json',document.baseURI));
 const forestAssetAttachment=new ForestAssetAttachment(forestAssetSource,()=>panel());
 let horizonAssist=new URLSearchParams(location.search).get('horizon')!=='0';
@@ -857,7 +860,7 @@ function persist() {
   if(futureScenario!=='constant-dark-energy')q.set('fate',futureScenario);
   if(!surfaceDetail)q.set('detail','0');
   if(!surfaceLightingEnabled)q.set('lighting','0');
-  if(detailedForestEnabled)q.set('trees','1');
+  if(!detailedForestEnabled)q.set('trees','0');
   if(!horizonAssist)q.set('horizon','0');
   writeTimeToUrl(q,epoch);
   if(walker){q.set('walk',walker.position.toArray().join(','));q.set('heading',camera.quaternion.toArray().join(','));}
