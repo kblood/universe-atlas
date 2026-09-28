@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {phaseFromPeriod} from './world-time.ts';
+import {installLeafTransmission,type LeafTransmissionOptions} from './tree-leaf-transmission.ts';
 
 /** Experimental author-6 adapter. Assets are supplied explicitly; this does not
  * replace the canonical forest or invent a second species catalogue. */
@@ -94,7 +95,8 @@ function deform(material:THREE.Material,phase:{value:number}){
   material.customProgramCacheKey=()=> 'atlas-tree-physical-1';
 }
 export type TreeAssetFamily=Awaited<ReturnType<typeof loadTreeAssetFamily>>;
-export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,options:{foliageCoverage?:'mask'|'hash'}={}){
+export type TreeAssetOptions={foliageCoverage?:'mask'|'hash';leafTransmission?:LeafTransmissionOptions};
+export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){
   if(options.foliageCoverage!==undefined&&!['mask','hash'].includes(options.foliageCoverage))throw new Error('Unsupported foliage coverage mode');
   const prepared=prepareTreeLODPair(lod0,lod1),loader=new GLTFLoader();
   const loaded:THREE.Group[]=[];
@@ -124,10 +126,13 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     }
     const phase={value:0};
     for(const material of materials)deform(material,phase);
+    // Compose only after wind. Both LODs share this one foliage material;
+    // bark and all custom shadow materials retain their previous lighting.
+    const leafTransmission=options.leafTransmission===undefined?null:installLeafTransmission(lods[0][1].material,options.leafTransmission);
     let disposed=false,activeBatches=0;
     return {
-      lods,textures,embeddedTextureBytes:prepared.embeddedTextureBytes,
-      setDate(date:bigint){phase.value=treeWindPhase(date);},
+      lods,textures,leafTransmission,embeddedTextureBytes:prepared.embeddedTextureBytes,
+      setDate(date:bigint){leafTransmission?.assertInstalled();phase.value=treeWindPhase(date);},
       createBatch(lod:0|1,capacity:number){
         if(disposed)throw new Error('Tree family is disposed');
         if(!Number.isInteger(capacity)||capacity<1||capacity>4096)throw new Error('Invalid tree capacity');

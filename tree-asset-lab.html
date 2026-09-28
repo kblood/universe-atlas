@@ -4,7 +4,8 @@
 <body><main id="viewport" aria-label="Tree prototype in physical metres"></main><aside>
 <h1>Tree asset lab</h1><p>Local authoring prototype. Select the two exported detail levels. Files stay in this browser.</p>
 <label>LOD0 GLB <input id="lod0-file" type="file" accept=".glb"></label><label>LOD1 GLB <input id="lod1-file" type="file" accept=".glb"></label>
-<label>Coverage on load <select id="coverage"><option value="mask">Alpha mask</option><option value="hash">Three.js alpha hash</option></select></label><button id="load-assets">Load trees</button>
+<label>Coverage on load <select id="coverage"><option value="mask">Alpha mask</option><option value="hash">Three.js alpha hash</option></select></label>
+<label>Leaf transmission on load <select id="transmission"><option value="off">Off (original shader)</option><option value="0">0 (calibration)</option><option value="0.35">0.35</option><option value="0.5">0.5</option><option value="1">1 (calibration)</option></select></label><button id="load-assets">Load trees</button>
 <label>Detail <select id="lod"><option value="0">LOD0</option><option value="1">LOD1</option></select></label>
 <label>Population <select id="population"><option value="3">3 scale specimens</option><option value="64">64 trees</option><option value="192">192 trees</option></select></label>
 <label>Date, nanoseconds <input id="date" value="0" inputmode="numeric"></label><label><input id="animate" type="checkbox"> Animate seven-second wind cycle</label>

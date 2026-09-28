@@ -20,6 +20,7 @@ test-results/opus-three-ez-impostor-review/prompt.txt -whitespace
 assets/briefs/atlas-three-ez-impostor-reference.json -text whitespace=cr-at-eol
 test-results/tree-three-ez-live/** -text whitespace=cr-at-eol
 src/tree-asset-lab.ts -text
+src/tree-asset.ts -text
 src/tree-leaf-transmission.ts -text
 src/leaf-transmission-lab.ts -text
 leaf-transmission-lab.html -text
@@ -27,3 +28,4 @@ test-results/tree-foliage-temporal/** -text whitespace=cr-at-eol
 test-results/tree-leaf-transmission/** -text whitespace=cr-at-eol
 test-results/opus-leaf-transmission-review/** -text whitespace=cr-at-eol
 test-results/opus-leaf-transmission-review/prompt.txt -whitespace
+test-results/opus-leaf-transmission-review/followup/prompt.txt -whitespace
