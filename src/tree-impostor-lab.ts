@@ -72,7 +72,7 @@ async function load(lod0:ArrayBuffer,lod1:ArrayBuffer,manifest:any,read:(path:st
     scene.add(nextBatch.group,nextImpostor.mesh);
   }catch(error){nextImpostor?.dispose();nextBatch?.dispose();nextFamily?.dispose();nextCapture?.dispose();throw error;}
   finally{loading=false;}
-  dispose();family=nextFamily;batch=nextBatch;capture=nextCapture;impostor=nextImpostor;activeLod=captureInputPair(manifest).lod;captureFiltering=filtering;sourceCutoff=family!.lods[activeLod][1].material.alphaTest;setMode(mode);setSourceCoverage(sourceCoverage);
+  dispose();family=nextFamily;batch=nextBatch;capture=nextCapture;impostor=nextImpostor;activeLod=captureInputPair(manifest).lod;setCaptureFiltering(filtering);sourceCutoff=family!.lods[activeLod][1].material.alphaTest;setMode(mode);setSourceCoverage(sourceCoverage);
   impostor!.uniforms.captureParallax.value=Number((document.getElementById('parallax') as HTMLInputElement).checked);
   impostor!.uniforms.captureHash.value=Number((document.getElementById('hash') as HTMLInputElement).checked);
   status.textContent=JSON.stringify({heightM:manifest.options.heightM,lod:activeLod,filtering:capture!.filtering,foliageSampling:manifest.foliageSampling??'original-mips',views:manifest.views.length,gpuTextureBytes:capture!.bytes,
