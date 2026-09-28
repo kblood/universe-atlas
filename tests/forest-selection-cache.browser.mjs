@@ -53,7 +53,7 @@ try {
         super.addEventListener('message', event => {
           const data = event.data;
           if (data && data.cache && Number.isInteger(data.requestId)) {
-            window.__forestSelectionWorkerResponses.push({ requestId: data.requestId, ...data.cache });
+            window.__forestSelectionWorkerResponses.push({ requestId: data.requestId, selectionMs: data.selectionMs, packMs: data.packMs, transferBytes: data.packed?.buffer?.byteLength, transferCells: data.packed?.count, ...data.cache });
           }
         });
       }
@@ -126,6 +126,9 @@ try {
   assert.ok(cache.misses >= 0, `cache misses are reported (${cache.misses})`);
   assert.ok(cache.estimatedBytes <= cache.maxBytes, `cache stays within its byte cap (${cache.estimatedBytes}/${cache.maxBytes})`);
   assert.ok(cache.maxBytes <= 32 * 1024 * 1024, `configured cap is at most 32 MiB (${cache.maxBytes})`);
+  const transfer = after.terrain.forest.selectionTransfer;
+  assert.ok(transfer && transfer.cells > 0 && transfer.bytes === transfer.cells * 96, 'packed response is received and decoded');
+  assert.ok(Number.isFinite(transfer.packMs) && Number.isFinite(transfer.decodeMs));
   assert.equal(after.terrain.forest.workerFailures, 0);
   assert.equal(after.terrain.forest.workerRestarts, 0);
   assert.ok(after.terrain.forest.visible > 200, 'trees remain visible after movement');
@@ -141,7 +144,7 @@ try {
       const ext = gl?.getExtension('WEBGL_debug_renderer_info');
       return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'unavailable';
     }),
-    date: after.date, movedM, groundMovedM, beforeCache, cache,
+    date: after.date, movedM, groundMovedM, beforeCache, cache, transfer,
     workerResponsesBefore: responseCount, movedResponses,
     forest: {
       before: { visible: before.terrain.forest.visible, cached: before.terrain.forest.cached, pending: before.terrain.forest.pending },

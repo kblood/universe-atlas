@@ -15,8 +15,9 @@ water, habitat and date do not affect this address-only arithmetic.
 
 Diagnostics expose per-query hits/misses/visited patches, resident patch count,
 estimated bytes and explicitly cumulative `evictionsTotal`.
-One worker request remains in flight. The response still uses existing cell
-objects; packed worker-to-main transfers remain future work.
+One worker request remains in flight. The subsequent
+[packed-transfer increment](forest-selection-transfer-2026-09-28.md) replaces
+object cloning at the worker boundary; main-thread resident objects remain.
 
 ## Source and CPU checks
 

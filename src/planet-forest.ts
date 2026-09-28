@@ -5,6 +5,7 @@ import {biomeClassifier} from './surface-biomes.ts';
 import {forestPopulationCells,FAR_CROWN_PROBABILITY,type PopulationCell} from './planet-population.ts';
 import {forestHabitat,TREE_HABITAT_VERSION} from './forest-habitat.ts';
 import type {ForestSelectionCache} from './forest-selection-cache.ts';
+import {unpackForestSelection} from './forest-selection-transfer.ts';
 import {PLANET_DETAIL as B} from './planet-detail.ts';
 
 type Resident={cell:PopulationCell;height:number;present:boolean;water:number};
@@ -116,6 +117,7 @@ export class PlanetForest {
   private workerRestarts=0;
   private workerFailures=0;
   private selectionApplyMs=0;
+  private selectionTransfer:{bytes:number;cells:number;packMs:number;decodeMs:number}|null=null;
   private selectionCacheStats:ReturnType<ForestSelectionCache['diagnostics']>|null=null;
   private applySelection(direction:V3,cells:PopulationCell[],selectionMs:number){
     const started=performance.now();
@@ -160,15 +162,21 @@ export class PlanetForest {
       const worker=new Worker(new URL('./planet-population-worker.ts',import.meta.url),{type:'module'});this.worker=worker;
       worker.onmessage=({data})=>{
         if(this.worker===worker&&data.requestId===this.selectionRequest){
-          this.selectionCacheStats=data.cache??null;this.applySelection(data.direction,data.cells,data.selectionMs);
+          try{
+            const started=performance.now(),cells=unpackForestSelection(data.packed);
+            this.selectionTransfer={bytes:data.packed.buffer.byteLength,cells:cells.length,packMs:data.packMs,decodeMs:performance.now()-started};
+            this.selectionCacheStats=data.cache??null;this.applySelection(data.direction,cells,data.selectionMs);
+          }catch{this.failWorker(worker);}
         }
       };
-      worker.onerror=event=>{
-        event.preventDefault();if(this.worker!==worker)return;
-        worker.terminate();this.worker=null;this.selectionCacheStats=null;this.selecting=false;this.workerFailures++;this.selectionRequest++;
-        if(this.workerRestarts<1){this.workerRestarts++;this.startWorker();}
-      };
+      worker.onerror=event=>{event.preventDefault();this.failWorker(worker);};
+      worker.onmessageerror=()=>this.failWorker(worker);
     }catch{this.worker=null;this.selecting=false;this.workerFailures++;}
+  }
+  private failWorker(worker:Worker){
+    if(this.worker!==worker)return;
+    worker.terminate();this.worker=null;this.selectionCacheStats=null;this.selectionTransfer=null;this.selecting=false;this.workerFailures++;this.selectionRequest++;
+    if(this.workerRestarts<1){this.workerRestarts++;this.startWorker();}
   }
   /** Slots belong to resident IDs, not their current visibility/sort ordinal. */
   private writeInstance(batch:number,index:number,resident:Resident,coverage:number){
@@ -295,7 +303,7 @@ export class PlanetForest {
   diagnostics(){return {visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
     candidateCells:this.wanted.length,canopyStands:0,farCanonicalTrees:this.group.visible?this.canopy.count:0,farSamplingFraction:FAR_CROWN_PROBABILITY,habitatVersion:TREE_HABITAT_VERSION,placementMs:this.placementMs,selectionMs:this.selectionMs,selectionPending:this.selecting,selectionWorker:!!this.worker,
     representation:'canonical-tree-field',densityFocus:'observer-ground',instanceUpdates:'stable-slots-retained-origin-dirty-ranges',
-    selectionJobsInFlight:this.selecting?1:0,waterBucket:this.water,selectionApplyMs:this.selectionApplyMs,selectionCache:this.selectionCacheStats,
+    selectionJobsInFlight:this.selecting?1:0,waterBucket:this.water,selectionApplyMs:this.selectionApplyMs,selectionCache:this.selectionCacheStats,selectionTransfer:this.selectionTransfer,
     workerRestarts:this.workerRestarts,workerFailures:this.workerFailures,selectionMode:this.worker?'worker':'synchronous-fallback',
     updateMs:this.updateMs,matrixWrites:this.matrixWrites,colorWrites:this.colorWrites,coverageWrites:this.coverageWrites,
     scheduledUploadBytes:this.scheduledUploadBytes,originRebased:this.originRebased,originVersion:this.originVersion,originRebaseM:B.forestOriginRebaseM,

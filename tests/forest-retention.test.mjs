@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import {createServer} from 'vite';
 const vite=await createServer({configFile:false,optimizeDeps:{noDiscovery:true},server:{middlewareMode:true,hmr:false,ws:false},appType:'custom'});
 const {PlanetForest}=await vite.ssrLoadModule('/src/planet-forest.ts');
+const {packForestSelection}=await vite.ssrLoadModule('/src/forest-selection-transfer.ts');
 const {galaxies,refByAddress,system}=await vite.ssrLoadModule('/src/catalog.ts');
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 after(()=>vite.close());
@@ -76,5 +77,29 @@ test('selection worker gets one bounded restart and exposes permanent fallback',
     workers[1].onerror({preventDefault(){}});assert.equal(workers.length,2);assert.equal(f.diagnostics().selectionMode,'synchronous-fallback');
     assert.equal(f.diagnostics().workerFailures,2);
     assert.equal(f.diagnostics().workerRestarts,1,'count actual restarts, not rejected restart attempts');
+  }finally{f?.dispose();if(OriginalWorker===undefined)delete globalThis.Worker;else globalThis.Worker=OriginalWorker;}
+});
+
+test('packed selection applies once, ignores stale replies and recovers from decode and message errors',()=>{
+  const OriginalWorker=globalThis.Worker,workers=[];
+  globalThis.Worker=class {constructor(){workers.push(this);}terminate(){}postMessage(){}};
+  let f;
+  try{
+    f=new PlanetForest(body);f.selectionRequest=10;f.selecting=true;
+    const cell={id:'0/2/0/1',direction:[1,0,0],roll:.5,heightM:15,yaw:0,distanceM:0,canopyRepresentative:true};
+    workers[0].onmessage({data:{requestId:9,packed:null}});
+    assert.equal(f.selecting,true);assert.equal(f.workerFailures,0);
+    workers[0].onmessage({data:{requestId:10,direction:[1,0,0],packed:packForestSelection([cell]),selectionMs:3,packMs:1}});
+    assert.deepEqual(f.wanted,[cell]);assert.equal(f.selecting,false);
+    assert.equal(f.diagnostics().selectionTransfer.bytes,96);
+    f.selectionRequest++;f.selecting=true;
+    workers[0].onmessage({data:{requestId:11,packed:{version:99}}});
+    assert.equal(workers.length,2);assert.equal(f.selecting,false);assert.deepEqual(f.wanted,[cell]);
+    assert.equal(f.diagnostics().selectionTransfer,null);
+    workers[0].onmessage({data:{requestId:f.selectionRequest,packed:null}});
+    assert.equal(f.workerFailures,1,'terminated worker cannot affect current state');
+    f.selecting=true;workers[1].onmessageerror({});
+    assert.equal(f.selecting,false);assert.equal(f.diagnostics().selectionMode,'synchronous-fallback');
+    assert.equal(f.workerFailures,2);assert.equal(f.workerRestarts,1);
   }finally{f?.dispose();if(OriginalWorker===undefined)delete globalThis.Worker;else globalThis.Worker=OriginalWorker;}
 });
