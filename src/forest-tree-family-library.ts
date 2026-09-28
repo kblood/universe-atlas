@@ -42,10 +42,10 @@ export class ForestTreeFamilyLibrary<T,S>{
     try{
       for(const input of inputs){
         // The game library always supplies the bounded per-family pool and the
-        // coverage-preserving foliage LOD; standalone labs opt in explicitly.
+        // silhouette-matched reduced foliage LOD; standalone labs opt in explicitly.
         const family=await this.loader(input.lod0,input.lod1,{...options,
           foliageMipSidecar:input.foliageMipSidecar??options.foliageMipSidecar,forestCoverage:true,
-          structuralVariants:forestStructuralVariants(input.kind),areaPreservingLod:true,
+          structuralVariants:forestStructuralVariants(input.kind),areaPreservingLod:true,silhouetteMatchedLod:true,
           cardCompensation:options.cardCompensation??FOREST_CARD_COMPENSATION});
         const entry:ForestTreeFamilyEntry<T,S>={kind:input.kind,family,batches:[],pools:[],wanted:[[],[]],coverage:[new Map(),new Map()]};
         pending.push(entry);

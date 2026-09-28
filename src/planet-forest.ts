@@ -571,7 +571,7 @@ export class PlanetForest {
       families:[...this.assets.entries.values()].map(entry=>({kind:entry.kind,
         submitted:entry.pools.map((pool,lod)=>this.group.visible&&entry.batches[lod].group.visible?pool.items.length:0),
         retainedSlots:entry.pools.map(pool=>pool.items.length),capacities:entry.pools.map(pool=>pool.capacity),foliageMipmaps:entry.family.foliageMipmaps??null,
-        structuralVariants:entry.family.structuralVariantCount??0,lod1CardScale:entry.family.lod1CardScale??1,cardCompensation:entry.family.cardCompensation??null,
+        structuralVariants:entry.family.structuralVariantCount??0,lod1CardScale:entry.family.lod1CardScale??1,lodCoverage:entry.family.lodCoverage??null,cardCompensation:entry.family.cardCompensation??null,
         variantHistogram:this.variantHistogram(entry)})),
       foliageMipmaps:this.assets.entries.get('branching')?.family.foliageMipmaps??null,samples:this.detailedSamples(),
       handoffSamples:this.detailedSamples().map(sample=>({id:sample.id,far:this.fullCanopy?.presentationSample?.(sample.id)??null}))},

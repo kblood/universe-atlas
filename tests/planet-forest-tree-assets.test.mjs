@@ -312,7 +312,7 @@ test('near slots and far codes share one canonical structural variant across dat
   try{
     await f.loadTreeFamilies(bothFamilies());f.fullCanopy=new PlanetCanopy(body,64);
     assert.deepEqual(h.options.map(o=>o.structuralVariants.map(v=>v.kind)[0]),['branching','spire'],'library supplies each family its own pool');
-    assert.ok(h.options.every(o=>o.structuralVariants.length===8&&o.areaPreservingLod===true&&o.cardCompensation.maxScale>1));
+    assert.ok(h.options.every(o=>o.structuralVariants.length===8&&o.areaPreservingLod===true&&o.silhouetteMatchedLod===true&&o.cardCompensation.maxScale>1));
     const dated=[species('oak'),species('pine','spire')];step(dated,200n);
     assert.equal(assertVariantAgreement(f,'initial'),3);
     const d=f.diagnostics().detailedTrees;
