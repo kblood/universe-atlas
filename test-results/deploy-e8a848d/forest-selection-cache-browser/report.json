@@ -1,0 +1,94 @@
+{
+  "ok": true,
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "date": {
+    "version": "atlas-time-2",
+    "reference": "big-bang",
+    "offsetNs": "435084631200000068375900000",
+    "branchId": "baseline"
+  },
+  "movedM": 110.79337683740789,
+  "groundMovedM": 110.76886331219224,
+  "beforeCache": {
+    "patches": 6731,
+    "estimatedBytes": 17202896,
+    "maxBytes": 33554432,
+    "maxEntries": 30000,
+    "hits": 6656,
+    "misses": 41,
+    "visited": 6697,
+    "evictionsTotal": 0
+  },
+  "cache": {
+    "patches": 6787,
+    "estimatedBytes": 17345598,
+    "maxBytes": 33554432,
+    "maxEntries": 30000,
+    "hits": 6659,
+    "misses": 31,
+    "visited": 6690,
+    "evictionsTotal": 0
+  },
+  "transfer": {
+    "bytes": 1732608,
+    "cells": 18048,
+    "packMs": 18.5,
+    "decodeMs": 3.5
+  },
+  "workerResponsesBefore": 2,
+  "movedResponses": [
+    {
+      "requestId": 3,
+      "selectionMs": 29.09999999962747,
+      "packMs": 21,
+      "transferBytes": 1733280,
+      "transferCells": 18055,
+      "patches": 6756,
+      "estimatedBytes": 17267740,
+      "maxBytes": 33554432,
+      "maxEntries": 30000,
+      "hits": 6662,
+      "misses": 25,
+      "visited": 6687,
+      "evictionsTotal": 0
+    },
+    {
+      "requestId": 4,
+      "selectionMs": 51.40000000037253,
+      "packMs": 18.5,
+      "transferBytes": 1732608,
+      "transferCells": 18048,
+      "patches": 6787,
+      "estimatedBytes": 17345598,
+      "maxBytes": 33554432,
+      "maxEntries": 30000,
+      "hits": 6659,
+      "misses": 31,
+      "visited": 6690,
+      "evictionsTotal": 0
+    }
+  ],
+  "forest": {
+    "before": {
+      "visible": 2023,
+      "cached": 18309,
+      "pending": 0
+    },
+    "after": {
+      "visible": 2029,
+      "cached": 18714,
+      "pending": 0,
+      "workerRestarts": 0,
+      "workerFailures": 0
+    }
+  },
+  "life": {
+    "floraPresent": 1637,
+    "faunaDrawn": 128,
+    "faunaTerrainPending": 0,
+    "surfaceReady": true
+  },
+  "errors": []
+}

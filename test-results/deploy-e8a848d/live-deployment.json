@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-09-28",
+  "deployment": {
+    "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+    "releaseScript": "C:/LLM/IWSDK/release.ps1 universe-atlas",
+    "commit": "e8a848d0e9d56d579c1ad1c0b69a1aa4474e989b",
+    "dirty": false,
+    "buildInfo": {
+      "commit": "e8a848d0e9d56d579c1ad1c0b69a1aa4474e989b",
+      "dirty": false,
+      "builtAt": "2026-09-28T00:30:49.483Z"
+    }
+  },
+  "liveChecks": {
+    "httpStatus": 200,
+    "guideSameOriginHrefOccurrences": 249,
+    "uniqueGuideTargets": 60,
+    "guideLinkFailures": 0,
+    "publishedDocsAndEvidence": [
+      "docs/forest-selection-transfer-2026-09-28.md",
+      "docs/opus-5.5-transfer-review-2026-09-28.md",
+      "docs/opus-5.5-transfer-review-2026-09-28.metadata.json",
+      "docs/forest-selection-cache-2026-09-28.md",
+      "test-results/forest-selection-transfer/benchmark.json",
+      "test-results/forest-transfer-23de0b9/README.md",
+      "test-results/forest-transfer-23de0b9/browser-movement-hardware/report.json",
+      "test-results/forest-transfer-23de0b9/desktop-rendering-hardware/report.json"
+    ],
+    "publishedBrowserFixtureSources": {
+      "tests/forest-selection-cache.browser.mjs": 200,
+      "tests/background-hydrology-flight.browser.mjs": 200
+    },
+    "unpublishedDirectCheck": {
+      "path": "tests/forest-selection-transfer.test.mjs",
+      "status": 404,
+      "note": "Not in the Vite publishing allowlist; no published guide link depends on this endpoint."
+    }
+  },
+  "hardware": {
+    "renderer": "ANGLE (NVIDIA GeForce RTX 5090, Direct3D 11)",
+    "playwright": "1.61.1",
+    "forestMovementAndTransfer": {
+      "result": "passed",
+      "groundLateralDisplacementM": 110.769,
+      "workerResponsesAfterMove": 2,
+      "latestPackedResponse": {
+        "cells": 18048,
+        "bytes": 1732608,
+        "packMs": 18.5,
+        "decodeMs": 3.5
+      },
+      "latestCache": {
+        "hits": 6659,
+        "misses": 31,
+        "patches": 6787,
+        "estimatedBytes": 17345598,
+        "maxBytes": 33554432,
+        "evictionsTotal": 0
+      },
+      "forestVisibleBeforeAfter": [2023, 2029],
+      "floraPresent": 1637,
+      "faunaDrawn": 128,
+      "surfaceReady": true,
+      "workerRestarts": 0,
+      "workerFailures": 0,
+      "browserErrors": []
+    },
+    "desktopRendering": {
+      "result": "passed",
+      "viewport": "1440x1000",
+      "terrainClearanceM": 99.438,
+      "floraPresent": 1610,
+      "faunaDrawn": 128,
+      "localAerialHooks": {
+        "attached": 19,
+        "meshes": 19,
+        "failures": 0
+      },
+      "warmForest": {
+        "visibleInstances": 2000,
+        "cached": 18353,
+        "matrixWrites": 0,
+        "colorWrites": 0,
+        "coverageWrites": 0
+      },
+      "turnInPlace": {
+        "positionDeltaM": 0,
+        "matrixWrites": 0,
+        "colorWrites": 0
+      },
+      "cloudSamplesEffectiveAt1440x1000": [0, 2, 4],
+      "resize": {
+        "viewport": "2560x1440",
+        "requestedSamples": 4,
+        "effectiveSamples": 2,
+        "sceneResolutionScale": 1,
+        "estimatedBytes": 163215068,
+        "budgetBytes": 167772160
+      },
+      "transferDuringRendering": {
+        "cells": 18114,
+        "bytes": 1738944,
+        "packMs": 32.3,
+        "decodeMs": 3.3
+      },
+      "profileSamples": 478,
+      "frameIntervalMs": {
+        "p50": 16.6,
+        "p95": 18.9,
+        "p99": 22.3,
+        "max": 24
+      },
+      "cpuPlanetUpdateMs": {
+        "p50": 9.5,
+        "p95": 13,
+        "p99": 14.2
+      },
+      "gpuFramePassSumMs": {
+        "p50": 4.714,
+        "p95": 6.371,
+        "p99": 7.267,
+        "max": 7.734
+      },
+      "browserErrors": []
+    },
+    "notes": [
+      "These are single-run RTX 5090 fixture measurements, not broad FPS or speedup guarantees.",
+      "Transfer diagnostics measure explicit packing/decoding; the frame profile's GPU pass sum excludes CPU work and presentation wait.",
+      "Cache bytes are estimated accounting, not measured browser heap usage.",
+      "Cloud-edge visual comparison and XR runtime acceptance remain unverified."
+    ]
+  },
+  "artifacts": {
+    "movementReport": "test-results/deploy-e8a848d/forest-selection-cache-browser/report.json",
+    "desktopRenderingReport": "test-results/deploy-e8a848d/desktop-rendering-acceptance/report.json",
+    "screenshots": [
+      "test-results/deploy-e8a848d/forest-selection-cache-browser/after-move.png",
+      "test-results/deploy-e8a848d/desktop-rendering-acceptance/near-ground-warmed.png",
+      "test-results/deploy-e8a848d/desktop-rendering-acceptance/forest-turned.png",
+      "test-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-0.png",
+      "test-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-2.png",
+      "test-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-4.png",
+      "test-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-4-2560x1440.png",
+      "test-results/deploy-e8a848d/desktop-rendering-acceptance/near-ground-resized-2560x1440.png"
+    ]
+  }
+}
