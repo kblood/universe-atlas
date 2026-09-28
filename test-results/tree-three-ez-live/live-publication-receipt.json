@@ -1,0 +1,2046 @@
+{
+  "schema": "https://iwsdk.local/schemas/live-atlas-publication-receipt/v4",
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "checkedAt": "2026-09-28T09:14:17.066Z",
+  "expectedCommit": "6af378d30ff5f824bef3b3f2e48242a092d86077",
+  "liveBuild": {
+    "commit": "6af378d30ff5f824bef3b3f2e48242a092d86077",
+    "dirty": false,
+    "builtAt": "2026-09-28T09:10:59.388Z"
+  },
+  "buildStampPass": true,
+  "publicationResources": {
+    "roots": [
+      "guide",
+      "docs",
+      "assets/briefs",
+      "test-results/three-ez-impostor-reference",
+      "test-results/opus-three-ez-impostor-review"
+    ],
+    "requiredResources": [
+      "docs/tree-three-ez-impostor-2026-09-28.md",
+      "docs/opus-three-ez-impostor-review-2026-09-28.md",
+      "docs/leaf-diffuse-transmission-2026-09-28.md",
+      "docs/tree-foliage-minification-2026-09-28.md",
+      "test-results/three-ez-impostor-reference/native-map-fix/alpha-hash-followup.json",
+      "test-results/three-ez-impostor-reference/native-map-fix/alpha-hash-followup.mjs",
+      "test-results/opus-three-ez-impostor-review/response.json",
+      "test-results/opus-three-ez-impostor-review/inputs.json",
+      "assets/briefs/atlas-three-ez-impostor-reference.json",
+      "test-results/three-ez-impostor-reference/README.md",
+      "test-results/three-ez-impostor-reference/report.json",
+      "test-results/three-ez-impostor-reference/cpu-tests.log",
+      "test-results/three-ez-impostor-reference/shader-tests.log",
+      "test-results/three-ez-impostor-reference/front-mesh.png",
+      "test-results/three-ez-impostor-reference/front-impostor.png",
+      "test-results/three-ez-impostor-reference/back-mesh.png",
+      "test-results/three-ez-impostor-reference/back-impostor.png",
+      "test-results/three-ez-impostor-reference/top-mesh.png",
+      "test-results/three-ez-impostor-reference/top-impostor.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/yaw-continuity.json",
+      "test-results/three-ez-impostor-reference/native-map-fix/yaw-continuity.mjs",
+      "test-results/three-ez-impostor-reference/native-map-fix/report.json",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-mesh.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-mid.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-impostor.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-mesh.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-mid.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-impostor.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-mesh.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-mid.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-impostor.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-mesh.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-mid.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-impostor.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-mesh.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-mid.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-impostor.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/top-mesh.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/top-mid.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/top-impostor.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-mesh.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-mid.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-impostor.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-mesh.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-mid.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-impostor.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/front-mesh.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/front-mid.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/front-impostor.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/back-mesh.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/back-mid.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/back-impostor.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/top-mesh.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/top-mid.png",
+      "test-results/three-ez-impostor-reference/native-map-fix/top-impostor.png"
+    ],
+    "count": 215,
+    "allMatchDist": true,
+    "resources": [
+      {
+        "path": "assets/briefs/atlas-ez-tree-family-v1.json",
+        "status": 200,
+        "bytes": 4422,
+        "localSha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91",
+        "remoteSha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91",
+        "matches": true
+      },
+      {
+        "path": "assets/briefs/atlas-three-ez-impostor-reference.json",
+        "status": 200,
+        "bytes": 3192,
+        "localSha256": "0cf84c3edfc3a1d0f08ddc94758257c3012ec52834b91ad8825e0ee4752307c4",
+        "remoteSha256": "0cf84c3edfc3a1d0f08ddc94758257c3012ec52834b91ad8825e0ee4752307c4",
+        "matches": true
+      },
+      {
+        "path": "assets/briefs/temperate-branching-tree-v1.json",
+        "status": 200,
+        "bytes": 4957,
+        "localSha256": "4bc43f7c5dda66be918194bb960d2672d72022cb78bc1e6eb09c0a5298a7e8e0",
+        "remoteSha256": "4bc43f7c5dda66be918194bb960d2672d72022cb78bc1e6eb09c0a5298a7e8e0",
+        "matches": true
+      },
+      {
+        "path": "docs/authored-tree-capture-2026-09-28.md",
+        "status": 200,
+        "bytes": 5743,
+        "localSha256": "526f0488428217e7b8fa04a4240d41cdb3d7c2bc47666f91724676125b84a9e0",
+        "remoteSha256": "526f0488428217e7b8fa04a4240d41cdb3d7c2bc47666f91724676125b84a9e0",
+        "matches": true
+      },
+      {
+        "path": "docs/authored-tree-distance-design-2026-09-28.md",
+        "status": 200,
+        "bytes": 9353,
+        "localSha256": "d37d1c2f126fe00094e06a5bd6ceb16885094e1dbcd3e8fc83fe11c70ceaa274",
+        "remoteSha256": "d37d1c2f126fe00094e06a5bd6ceb16885094e1dbcd3e8fc83fe11c70ceaa274",
+        "matches": true
+      },
+      {
+        "path": "docs/background-hydrology-travel-2026-09-28.md",
+        "status": 200,
+        "bytes": 2577,
+        "localSha256": "46cd467790d749f755d449a295ad469daa3c8f543ba1a8c541bd7183a24e5f60",
+        "remoteSha256": "46cd467790d749f755d449a295ad469daa3c8f543ba1a8c541bd7183a24e5f60",
+        "matches": true
+      },
+      {
+        "path": "docs/biome-lab-spec.md",
+        "status": 200,
+        "bytes": 12072,
+        "localSha256": "9892384d1dc44931e01f7671ab66e78f0eb41154ea3d9dcfc24a96ba5194ef7d",
+        "remoteSha256": "9892384d1dc44931e01f7671ab66e78f0eb41154ea3d9dcfc24a96ba5194ef7d",
+        "matches": true
+      },
+      {
+        "path": "docs/biosphere-lab-implementation-spec.md",
+        "status": 200,
+        "bytes": 16204,
+        "localSha256": "5b2e41c4cbcdda899470a7c6cb1195fab5fb36d914026aa714c2af6300477866",
+        "remoteSha256": "5b2e41c4cbcdda899470a7c6cb1195fab5fb36d914026aa714c2af6300477866",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-census-design-2026-09-28.md",
+        "status": 200,
+        "bytes": 3773,
+        "localSha256": "ecb34afb58fd0343550a4edeef7846b45e4922aab3809731e3c841d13cb184f4",
+        "remoteSha256": "ecb34afb58fd0343550a4edeef7846b45e4922aab3809731e3c841d13cb184f4",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-foundation-2026-09-28.md",
+        "status": 200,
+        "bytes": 3210,
+        "localSha256": "5be1e785209602b5a18d0f4d934b3f654927701ef81ebf9826192850beafd1f5",
+        "remoteSha256": "5be1e785209602b5a18d0f4d934b3f654927701ef81ebf9826192850beafd1f5",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-host-review-assessment-2026-09-28.md",
+        "status": 200,
+        "bytes": 5315,
+        "localSha256": "8cbc39b255405bfee00fae7789012669efe9b4f24e3ed51b9e6f09db17f1749e",
+        "remoteSha256": "8cbc39b255405bfee00fae7789012669efe9b4f24e3ed51b9e6f09db17f1749e",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-integration-contract-2026-09-28.md",
+        "status": 200,
+        "bytes": 6648,
+        "localSha256": "0b882bb17051494c7a94dde9fc14380fd35c61d49025a77c8b1e272177d3ea2e",
+        "remoteSha256": "0b882bb17051494c7a94dde9fc14380fd35c61d49025a77c8b1e272177d3ea2e",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-runtime-integration-2026-09-28.md",
+        "status": 200,
+        "bytes": 10330,
+        "localSha256": "85750a5b721f283abcc8e704d97d3ad36c4bf8afb74c0d5a04cbf9e35473e161",
+        "remoteSha256": "85750a5b721f283abcc8e704d97d3ad36c4bf8afb74c0d5a04cbf9e35473e161",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-water-review-assessment-2026-09-28.md",
+        "status": 200,
+        "bytes": 2973,
+        "localSha256": "da8d9c48eb43536b273cb7082a18e432d08c1eb48bc48062bbe591fa311b08b8",
+        "remoteSha256": "da8d9c48eb43536b273cb7082a18e432d08c1eb48bc48062bbe591fa311b08b8",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-water-validity-design-2026-09-28.md",
+        "status": 200,
+        "bytes": 10084,
+        "localSha256": "f8db72b735e425edf4ac03b3a485c68db37220b1db499c32c8e000e7ae6a9b52",
+        "remoteSha256": "f8db72b735e425edf4ac03b3a485c68db37220b1db499c32c8e000e7ae6a9b52",
+        "matches": true
+      },
+      {
+        "path": "docs/continuous-planet-detail.md",
+        "status": 200,
+        "bytes": 10241,
+        "localSha256": "ca5b35ec635c0a9c9ed4c80cdc28870764a48e6565c36e89147438bf5cb35ac0",
+        "remoteSha256": "ca5b35ec635c0a9c9ed4c80cdc28870764a48e6565c36e89147438bf5cb35ac0",
+        "matches": true
+      },
+      {
+        "path": "docs/cosmic-history-simulation-plan-2026-09-23.md",
+        "status": 200,
+        "bytes": 6832,
+        "localSha256": "8658c7f21bbfabe51e19b0a3c44c034eb04cb5de0a9b7774a0cd4bfcb826e6ff",
+        "remoteSha256": "8658c7f21bbfabe51e19b0a3c44c034eb04cb5de0a9b7774a0cd4bfcb826e6ff",
+        "matches": true
+      },
+      {
+        "path": "docs/creature-diversity-and-motion-plan-2026-09-14.md",
+        "status": 200,
+        "bytes": 12105,
+        "localSha256": "06831d3075f1c0a6c24280fa50842d53c710c53e6f1ade8914d1cd6d17d10699",
+        "remoteSha256": "06831d3075f1c0a6c24280fa50842d53c710c53e6f1ade8914d1cd6d17d10699",
+        "matches": true
+      },
+      {
+        "path": "docs/creature-lab-implementation-spec.md",
+        "status": 200,
+        "bytes": 13328,
+        "localSha256": "91c6791415fa5741b473aa327f29db98ea59448a02c5cf596d271bb286d8d3df",
+        "remoteSha256": "91c6791415fa5741b473aa327f29db98ea59448a02c5cf596d271bb286d8d3df",
+        "matches": true
+      },
+      {
+        "path": "docs/deployment-580936f-2026-09-28.md",
+        "status": 200,
+        "bytes": 3039,
+        "localSha256": "a91a47a7df7f0b5c1ced13e02d86d36007082930016c68682ba756bc1847937c",
+        "remoteSha256": "a91a47a7df7f0b5c1ced13e02d86d36007082930016c68682ba756bc1847937c",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-realism-assessment-2026-09-27.md",
+        "status": 200,
+        "bytes": 9297,
+        "localSha256": "e62d425648bf886667b94b4ac8373180f0e8474b97cd674cc3e6bdcf3cd4c1ba",
+        "remoteSha256": "e62d425648bf886667b94b4ac8373180f0e8474b97cd674cc3e6bdcf3cd4c1ba",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-realism-implementation-plan-2026-09-27.md",
+        "status": 200,
+        "bytes": 34177,
+        "localSha256": "9170f3d913107784f2fc6cc423ded7f242d6e63e8e31293fd0dc95ec85561217",
+        "remoteSha256": "9170f3d913107784f2fc6cc423ded7f242d6e63e8e31293fd0dc95ec85561217",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-realism-proposal-2026-09-27.md",
+        "status": 200,
+        "bytes": 9276,
+        "localSha256": "a000541f5bfa86da45fca535f70d3a156a49c1dfdbb437df59d2fe3047cc0477",
+        "remoteSha256": "a000541f5bfa86da45fca535f70d3a156a49c1dfdbb437df59d2fe3047cc0477",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-realism-validation-2026-09-28.md",
+        "status": 200,
+        "bytes": 7608,
+        "localSha256": "7de1295c2631a5b7f15dd0bff6c5e9b2862e21c5e5412fd5063e1dbca50a0ce9",
+        "remoteSha256": "7de1295c2631a5b7f15dd0bff6c5e9b2862e21c5e5412fd5063e1dbca50a0ce9",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-render-profiling.md",
+        "status": 200,
+        "bytes": 3584,
+        "localSha256": "59ff474620ead3b476f91b88864e7eec8ce4ad6e4eee55735d86b12e1de4d586",
+        "remoteSha256": "59ff474620ead3b476f91b88864e7eec8ce4ad6e4eee55735d86b12e1de4d586",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-rendering-stage-c-2026-09-28.md",
+        "status": 200,
+        "bytes": 4097,
+        "localSha256": "3e7ac3fcec54cba54aeca80514bcccaabc524bb8592cb0785779d95e1ede711a",
+        "remoteSha256": "3e7ac3fcec54cba54aeca80514bcccaabc524bb8592cb0785779d95e1ede711a",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-rendering-validation-2026-09-28.md",
+        "status": 200,
+        "bytes": 6152,
+        "localSha256": "d1ca75d68021ad5c41bb3a64375e5a829db09d1ba6471309e443999d8f4e51ca",
+        "remoteSha256": "d1ca75d68021ad5c41bb3a64375e5a829db09d1ba6471309e443999d8f4e51ca",
+        "matches": true
+      },
+      {
+        "path": "docs/deterministic-temporal-universe-design-2026-09-23.md",
+        "status": 200,
+        "bytes": 14233,
+        "localSha256": "4040d1427e32c066722484276f3d87f16854ae54c43457b3eca7e54a44fb3af3",
+        "remoteSha256": "4040d1427e32c066722484276f3d87f16854ae54c43457b3eca7e54a44fb3af3",
+        "matches": true
+      },
+      {
+        "path": "docs/drainage-and-atmospheric-flight.md",
+        "status": 200,
+        "bytes": 14413,
+        "localSha256": "b07dcd28eaf58777639988a889906e3788628e183e12bfdb8be101a50880cd27",
+        "remoteSha256": "b07dcd28eaf58777639988a889906e3788628e183e12bfdb8be101a50880cd27",
+        "matches": true
+      },
+      {
+        "path": "docs/exploration-corrections.md",
+        "status": 200,
+        "bytes": 14344,
+        "localSha256": "6290e3b92d0043e599a5f5e513beedc25e2980c22972effa7efbf761a1d68bdc",
+        "remoteSha256": "6290e3b92d0043e599a5f5e513beedc25e2980c22972effa7efbf761a1d68bdc",
+        "matches": true
+      },
+      {
+        "path": "docs/fable-5.1-plan-review.md",
+        "status": 200,
+        "bytes": 28390,
+        "localSha256": "8b7be76010e21c256d2cb658fa4f4328a1b4adf3c29532c2f6091218d6df2733",
+        "remoteSha256": "8b7be76010e21c256d2cb658fa4f4328a1b4adf3c29532c2f6091218d6df2733",
+        "matches": true
+      },
+      {
+        "path": "docs/fable-5.1-plan-review.metadata.json",
+        "status": 200,
+        "bytes": 2495,
+        "localSha256": "51965ee81c62a47f833a2fcc44999fce6e6d4da4228a8463e49296d996d21d54",
+        "remoteSha256": "51965ee81c62a47f833a2fcc44999fce6e6d4da4228a8463e49296d996d21d54",
+        "matches": true
+      },
+      {
+        "path": "docs/fable-review-assessment.md",
+        "status": 200,
+        "bytes": 9076,
+        "localSha256": "083105515df6e8cd701a251dfe3e58382ce81b0a23c43c6b9c551255fc700c7f",
+        "remoteSha256": "083105515df6e8cd701a251dfe3e58382ce81b0a23c43c6b9c551255fc700c7f",
+        "matches": true
+      },
+      {
+        "path": "docs/fable-review-brief.md",
+        "status": 200,
+        "bytes": 4248,
+        "localSha256": "23d77b240e0bc63c3b555f7f5490774eea935281d1c6aa3ffa48195362f9f273",
+        "remoteSha256": "23d77b240e0bc63c3b555f7f5490774eea935281d1c6aa3ffa48195362f9f273",
+        "matches": true
+      },
+      {
+        "path": "docs/flora-recipe-cache-2026-09-28.md",
+        "status": 200,
+        "bytes": 1691,
+        "localSha256": "f611023e82618dda33dfd3cdfc4e99b1a505c87d5a6717d9f566c3ed13967958",
+        "remoteSha256": "f611023e82618dda33dfd3cdfc4e99b1a505c87d5a6717d9f566c3ed13967958",
+        "matches": true
+      },
+      {
+        "path": "docs/forest-census-review-fixes-2026-09-28.md",
+        "status": 200,
+        "bytes": 2156,
+        "localSha256": "05264a40ba95f0c713b498e88892e1e26be7b833ce30a3d98a8f7b46158d156d",
+        "remoteSha256": "05264a40ba95f0c713b498e88892e1e26be7b833ce30a3d98a8f7b46158d156d",
+        "matches": true
+      },
+      {
+        "path": "docs/forest-impostor-experiment-2026-09-28.md",
+        "status": 200,
+        "bytes": 6191,
+        "localSha256": "4f817ec2a740fc721e9d1889be3c5a48fb182c73aea17d4f17bc1ffc2cad4e93",
+        "remoteSha256": "4f817ec2a740fc721e9d1889be3c5a48fb182c73aea17d4f17bc1ffc2cad4e93",
+        "matches": true
+      },
+      {
+        "path": "docs/forest-selection-cache-2026-09-28.md",
+        "status": 200,
+        "bytes": 5841,
+        "localSha256": "11cb99234aaefa77d4aa4a20ed6f3cc2ff99a61385af16c9cc705bface8f779d",
+        "remoteSha256": "11cb99234aaefa77d4aa4a20ed6f3cc2ff99a61385af16c9cc705bface8f779d",
+        "matches": true
+      },
+      {
+        "path": "docs/forest-selection-transfer-2026-09-28.md",
+        "status": 200,
+        "bytes": 6933,
+        "localSha256": "17953dd503503aa54f2964fbdd422c13a097e24930c95d7c44a0283ac0240035",
+        "remoteSha256": "17953dd503503aa54f2964fbdd422c13a097e24930c95d7c44a0283ac0240035",
+        "matches": true
+      },
+      {
+        "path": "docs/formation-and-life-integration-2026-09-23.md",
+        "status": 200,
+        "bytes": 2699,
+        "localSha256": "6cc81533a5b6309f7d741ae083737675fdbcec571931a9c1f35486c2be1989bf",
+        "remoteSha256": "6cc81533a5b6309f7d741ae083737675fdbcec571931a9c1f35486c2be1989bf",
+        "matches": true
+      },
+      {
+        "path": "docs/ground-realism-spec.md",
+        "status": 200,
+        "bytes": 4169,
+        "localSha256": "6f1dc9dec7bdeeccb73c7806aecd801f7e89f1d60d057f98f9f036a917ef323b",
+        "remoteSha256": "6f1dc9dec7bdeeccb73c7806aecd801f7e89f1d60d057f98f9f036a917ef323b",
+        "matches": true
+      },
+      {
+        "path": "docs/ground-realism.md",
+        "status": 200,
+        "bytes": 10900,
+        "localSha256": "eb30eaadbdedf352d654bdfe416623ce655e75700710965ec4ced3a1c3a30d98",
+        "remoteSha256": "eb30eaadbdedf352d654bdfe416623ce655e75700710965ec4ced3a1c3a30d98",
+        "matches": true
+      },
+      {
+        "path": "docs/leaf-diffuse-transmission-2026-09-28.md",
+        "status": 200,
+        "bytes": 10463,
+        "localSha256": "3c7c07c24c8b6993c867e08558ec428da8d1309f8124b193817e5b0a6ba5e154",
+        "remoteSha256": "3c7c07c24c8b6993c867e08558ec428da8d1309f8124b193817e5b0a6ba5e154",
+        "matches": true
+      },
+      {
+        "path": "docs/living-worlds-and-time-roadmap.md",
+        "status": 200,
+        "bytes": 25850,
+        "localSha256": "9d260a521663ca6a9704dee5b1d262471e4dc88c3bf1cad993e6d74a2000a31c",
+        "remoteSha256": "9d260a521663ca6a9704dee5b1d262471e4dc88c3bf1cad993e6d74a2000a31c",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-host-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 15684,
+        "localSha256": "ff2060c95e3d07c5164f60b5acfcdbfc97a0f3a9ed6b3182239743549636f980",
+        "remoteSha256": "ff2060c95e3d07c5164f60b5acfcdbfc97a0f3a9ed6b3182239743549636f980",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-host-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2010,
+        "localSha256": "d7d4075fb1daadd02b00454b63ec76b70ed4a6049c0af5ddb147ba2a53aa04d5",
+        "remoteSha256": "d7d4075fb1daadd02b00454b63ec76b70ed4a6049c0af5ddb147ba2a53aa04d5",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-integration-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 18440,
+        "localSha256": "eee0279396c919f663c72bc3e31512d3dc44fba393e0bc1eb372e2439bd46449",
+        "remoteSha256": "eee0279396c919f663c72bc3e31512d3dc44fba393e0bc1eb372e2439bd46449",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-integration-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1574,
+        "localSha256": "6869070447d49176f9691ee418ce63f675eb5f376fcfad061e5841e480c620a4",
+        "remoteSha256": "6869070447d49176f9691ee418ce63f675eb5f376fcfad061e5841e480c620a4",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 24662,
+        "localSha256": "7458fd2803ed6c32c7612cd782f7a54267ee033d6e5a4ca90c71e976e09fd374",
+        "remoteSha256": "7458fd2803ed6c32c7612cd782f7a54267ee033d6e5a4ca90c71e976e09fd374",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1569,
+        "localSha256": "7862e48a43934f44b60ecfcd6b04e2caaa47489c0314e12a9f358233d4e89d50",
+        "remoteSha256": "7862e48a43934f44b60ecfcd6b04e2caaa47489c0314e12a9f358233d4e89d50",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-water-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 10343,
+        "localSha256": "bd5003a54a3a64acdeec3c6470f2cfec5a794776745b72cbf9939d729f9fc3ef",
+        "remoteSha256": "bd5003a54a3a64acdeec3c6470f2cfec5a794776745b72cbf9939d729f9fc3ef",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-water-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1552,
+        "localSha256": "20e1e1b7857035b5bbea1730d7093ef15a9be4888ee01c5539f1552b02025895",
+        "remoteSha256": "20e1e1b7857035b5bbea1730d7093ef15a9be4888ee01c5539f1552b02025895",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-census-design-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 18319,
+        "localSha256": "8f09801c53144ea46bf080efcd4aa74f7fc4225f1433dd28e2350be7e0a29da7",
+        "remoteSha256": "8f09801c53144ea46bf080efcd4aa74f7fc4225f1433dd28e2350be7e0a29da7",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-census-design-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2017,
+        "localSha256": "03d38120837ac25867a92e669a9ea3744d4c99d9c73c367520cb31abc719d467",
+        "remoteSha256": "03d38120837ac25867a92e669a9ea3744d4c99d9c73c367520cb31abc719d467",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-census-implementation-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 10797,
+        "localSha256": "faec6e63505df0215178b8d48ed600bc2339613dc2b1e79885ce9d1f7d9fec98",
+        "remoteSha256": "faec6e63505df0215178b8d48ed600bc2339613dc2b1e79885ce9d1f7d9fec98",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-census-implementation-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1418,
+        "localSha256": "0801e59254ec901c6bb4059b9de6e5cfc52faa29d467fe31eea3b8e5f630cbba",
+        "remoteSha256": "0801e59254ec901c6bb4059b9de6e5cfc52faa29d467fe31eea3b8e5f630cbba",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-desktop-realism-review-2026-09-27.md",
+        "status": 200,
+        "bytes": 19473,
+        "localSha256": "e276177a58c25ef7fc43c5772ef92c5cd6a3a48608ed1ea5b7d80b7f27d5b986",
+        "remoteSha256": "e276177a58c25ef7fc43c5772ef92c5cd6a3a48608ed1ea5b7d80b7f27d5b986",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-desktop-realism-review-2026-09-27.metadata.json",
+        "status": 200,
+        "bytes": 3014,
+        "localSha256": "fdae7deeeb9aec4ca7e3b476da85693871dbb6fec11e3a5af695b17081f385a4",
+        "remoteSha256": "fdae7deeeb9aec4ca7e3b476da85693871dbb6fec11e3a5af695b17081f385a4",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-forest-implementation-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 13857,
+        "localSha256": "e721ef4bbdb73a1ecf6acf1e490ac340d35f909f78814fa3de48a5ce6642e89f",
+        "remoteSha256": "e721ef4bbdb73a1ecf6acf1e490ac340d35f909f78814fa3de48a5ce6642e89f",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-forest-implementation-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2011,
+        "localSha256": "9d81197fa63df3a06add6952f215afd2a01b1eaae7412c78efdc84b458fc30bc",
+        "remoteSha256": "9d81197fa63df3a06add6952f215afd2a01b1eaae7412c78efdc84b458fc30bc",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-rendering-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 10630,
+        "localSha256": "525f4b08a0ef28336cd549c8f8b5964f3522a3398d2e0c769e0691a8c66b30c2",
+        "remoteSha256": "525f4b08a0ef28336cd549c8f8b5964f3522a3398d2e0c769e0691a8c66b30c2",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-rendering-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1945,
+        "localSha256": "9f19c88cd0e97bb953573adb791a27cd3760843e2dfa665c11fdf2edaa4b7516",
+        "remoteSha256": "9f19c88cd0e97bb953573adb791a27cd3760843e2dfa665c11fdf2edaa4b7516",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-selection-cache-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 7156,
+        "localSha256": "52c636666c85401cc664e6b12efeaf67da87a68e39dd4cb6dc0115d997448a4e",
+        "remoteSha256": "52c636666c85401cc664e6b12efeaf67da87a68e39dd4cb6dc0115d997448a4e",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-selection-cache-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1742,
+        "localSha256": "db19dac227d4cd87b9c501271389bd3249f286db3da5dcda0f7984ed46add974",
+        "remoteSha256": "db19dac227d4cd87b9c501271389bd3249f286db3da5dcda0f7984ed46add974",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-transfer-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 6245,
+        "localSha256": "868c189c2d65391073bebfb754f4a4b4abf88e83a4adff83122aeb340d92c1ed",
+        "remoteSha256": "868c189c2d65391073bebfb754f4a4b4abf88e83a4adff83122aeb340d92c1ed",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-transfer-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2003,
+        "localSha256": "c174d101597972ced5f098879f988a3fccf0e2bfd2c5ca2b415c786f8e8faa24",
+        "remoteSha256": "c174d101597972ced5f098879f988a3fccf0e2bfd2c5ca2b415c786f8e8faa24",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v3-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 7742,
+        "localSha256": "1a1833a70c073585be7845ee2442a0275dc0d808b3c388a94f502543bae152af",
+        "remoteSha256": "1a1833a70c073585be7845ee2442a0275dc0d808b3c388a94f502543bae152af",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v3-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1486,
+        "localSha256": "29b8cdf565f444889a50ce8ed816166ec76cf1874499fa6bacbed9b48342d29d",
+        "remoteSha256": "29b8cdf565f444889a50ce8ed816166ec76cf1874499fa6bacbed9b48342d29d",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v5-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 6698,
+        "localSha256": "40584b61192215371908e873f30ce70bbda59bb46b33c7707b172f9d3bff4c1b",
+        "remoteSha256": "40584b61192215371908e873f30ce70bbda59bb46b33c7707b172f9d3bff4c1b",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v5-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2037,
+        "localSha256": "64e03d31865380a8cb97248a56941fd2207c9e46bc0f4e4639de311c7bddaadb",
+        "remoteSha256": "64e03d31865380a8cb97248a56941fd2207c9e46bc0f4e4639de311c7bddaadb",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v6-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 6570,
+        "localSha256": "35150aaa42a13df378e9f1d3b163876521be9b1d5cf146ce2b81d34c4319b524",
+        "remoteSha256": "35150aaa42a13df378e9f1d3b163876521be9b1d5cf146ce2b81d34c4319b524",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v6-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1679,
+        "localSha256": "14a647dce2327efbe9de89f79ecf8f44a9b5c9a24e647df2b9f29541b0485c27",
+        "remoteSha256": "14a647dce2327efbe9de89f79ecf8f44a9b5c9a24e647df2b9f29541b0485c27",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v7-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 5082,
+        "localSha256": "16eeea6f3aecb9667065218d0b28990f9c31c04b32c3ed4a52162a4d18237e97",
+        "remoteSha256": "16eeea6f3aecb9667065218d0b28990f9c31c04b32c3ed4a52162a4d18237e97",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v7-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1595,
+        "localSha256": "4423f0b8db92d6433b76a788f7084093c5cc8db2bcd04fd0b512ff0a6d5375f1",
+        "remoteSha256": "4423f0b8db92d6433b76a788f7084093c5cc8db2bcd04fd0b512ff0a6d5375f1",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-browser-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 7594,
+        "localSha256": "13c0301fe7afadda5708d6dae57e31ac9527016d1c3d8dc258a2dda0270ab5ac",
+        "remoteSha256": "13c0301fe7afadda5708d6dae57e31ac9527016d1c3d8dc258a2dda0270ab5ac",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-browser-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1226,
+        "localSha256": "3df4947b47292cd05aee17efb49b8ab8a742ca7a14a3ef5221f10e346fb169ba",
+        "remoteSha256": "3df4947b47292cd05aee17efb49b8ab8a742ca7a14a3ef5221f10e346fb169ba",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-capture-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 7518,
+        "localSha256": "1544f69bfef969f56d091b5d9ceb01d76706a9f79f47b672df402380f916c347",
+        "remoteSha256": "1544f69bfef969f56d091b5d9ceb01d76706a9f79f47b672df402380f916c347",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-capture-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1819,
+        "localSha256": "6198543496d40404d7d6e791b386ba26ff9ce2602370284a793c26fe97dba1c4",
+        "remoteSha256": "6198543496d40404d7d6e791b386ba26ff9ce2602370284a793c26fe97dba1c4",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-distance-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 6932,
+        "localSha256": "7eaec45f3004173a21c65495528707878022f261690bc3d45ea675b30d3f53b8",
+        "remoteSha256": "7eaec45f3004173a21c65495528707878022f261690bc3d45ea675b30d3f53b8",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-distance-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1319,
+        "localSha256": "0a2d2a6c7f79bdb9d2a53e1673272adb90eea19c0f428fe104b7a0ecbcd206c2",
+        "remoteSha256": "0a2d2a6c7f79bdb9d2a53e1673272adb90eea19c0f428fe104b7a0ecbcd206c2",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-reconstruction-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 8090,
+        "localSha256": "ca6452bce6822da730210e472fac7b343ff5fb30f316e44149a34a670f179f95",
+        "remoteSha256": "ca6452bce6822da730210e472fac7b343ff5fb30f316e44149a34a670f179f95",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-reconstruction-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2153,
+        "localSha256": "9fd7725f30db1a5d4edc571e2a606cf5c04b6114fa562876fcb69d5bdb24a6cf",
+        "remoteSha256": "9fd7725f30db1a5d4edc571e2a606cf5c04b6114fa562876fcb69d5bdb24a6cf",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-reference-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 4151,
+        "localSha256": "4aff4bab9be594ad05bf422784321591ed1233a8f5608d965b0d76249e37770b",
+        "remoteSha256": "4aff4bab9be594ad05bf422784321591ed1233a8f5608d965b0d76249e37770b",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-reference-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2169,
+        "localSha256": "42c9f89541336c48f77d751b3be37014675c7a5421849ccdbad6e64fcd343e31",
+        "remoteSha256": "42c9f89541336c48f77d751b3be37014675c7a5421849ccdbad6e64fcd343e31",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-three-ez-impostor-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 3888,
+        "localSha256": "42004a14001a1a1ecca68472765744bb0f6a8a8625b27d7e4a9f0a2f987510c5",
+        "remoteSha256": "42004a14001a1a1ecca68472765744bb0f6a8a8625b27d7e4a9f0a2f987510c5",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-tree-family-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 3690,
+        "localSha256": "397c464dbc22f62f70429cd902db09a2c100e8cfdbd2afe8771997a0f36e8f01",
+        "remoteSha256": "397c464dbc22f62f70429cd902db09a2c100e8cfdbd2afe8771997a0f36e8f01",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-tree-family-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 521,
+        "localSha256": "faf77bb48aaadfe51dd423afba60d484990f608742201e8e3263fed1bf64ab02",
+        "remoteSha256": "faf77bb48aaadfe51dd423afba60d484990f608742201e8e3263fed1bf64ab02",
+        "matches": true
+      },
+      {
+        "path": "docs/physical-river-pilot-spec.md",
+        "status": 200,
+        "bytes": 8801,
+        "localSha256": "2ecc8f857e0d42bf108f3879386a532869dd1d8185f2f87ccc4c10365e2b60d1",
+        "remoteSha256": "2ecc8f857e0d42bf108f3879386a532869dd1d8185f2f87ccc4c10365e2b60d1",
+        "matches": true
+      },
+      {
+        "path": "docs/physical-rivers-and-ground-detail.md",
+        "status": 200,
+        "bytes": 15599,
+        "localSha256": "801945687f69669d2ddd558f04a0e24b073a9d1c5ace4b2406519caaf97d4388",
+        "remoteSha256": "801945687f69669d2ddd558f04a0e24b073a9d1c5ace4b2406519caaf97d4388",
+        "matches": true
+      },
+      {
+        "path": "docs/planet-local-rendering-design.md",
+        "status": 200,
+        "bytes": 14258,
+        "localSha256": "66fcc2c63f76fa28ea491e4e875ef99d01edaf02bc158793b24eca20f5b896aa",
+        "remoteSha256": "66fcc2c63f76fa28ea491e4e875ef99d01edaf02bc158793b24eca20f5b896aa",
+        "matches": true
+      },
+      {
+        "path": "docs/planet-realism-goal.md",
+        "status": 200,
+        "bytes": 23132,
+        "localSha256": "52cb85491e51997420b8f1459154fa48ecde48936135e8543a9a4749eddbc616",
+        "remoteSha256": "52cb85491e51997420b8f1459154fa48ecde48936135e8543a9a4749eddbc616",
+        "matches": true
+      },
+      {
+        "path": "docs/planet-rendering-validation-2026-09-27.md",
+        "status": 200,
+        "bytes": 6160,
+        "localSha256": "0e2a6f58b7a6896663ddd1a4c13ed7b83af5d1e4f0150081d7a1ec40a0e40dfd",
+        "remoteSha256": "0e2a6f58b7a6896663ddd1a4c13ed7b83af5d1e4f0150081d7a1ec40a0e40dfd",
+        "matches": true
+      },
+      {
+        "path": "docs/planet-validation-labs-2026-09-14.md",
+        "status": 200,
+        "bytes": 16530,
+        "localSha256": "8a9c05c18320fa1ea6e4bf6891e7f3670160ea420d17146696a9297784fec1c7",
+        "remoteSha256": "8a9c05c18320fa1ea6e4bf6891e7f3670160ea420d17146696a9297784fec1c7",
+        "matches": true
+      },
+      {
+        "path": "docs/planetary-orbit-implementation.md",
+        "status": 200,
+        "bytes": 15539,
+        "localSha256": "d78b8437cfe658cdd7a29b7b1a9de54b0d2e59cf9af09e06f04fdfa03210e9eb",
+        "remoteSha256": "d78b8437cfe658cdd7a29b7b1a9de54b0d2e59cf9af09e06f04fdfa03210e9eb",
+        "matches": true
+      },
+      {
+        "path": "docs/planetary-orbit-validation.md",
+        "status": 200,
+        "bytes": 4560,
+        "localSha256": "05b161ca40c5edc440f09faaac325f12942b0eeae600528a098a5bdd53de46af",
+        "remoteSha256": "05b161ca40c5edc440f09faaac325f12942b0eeae600528a098a5bdd53de46af",
+        "matches": true
+      },
+      {
+        "path": "docs/population-continuity-implementation-2026-09-27.md",
+        "status": 200,
+        "bytes": 8059,
+        "localSha256": "d6b948c2adcd9dc9db0bfb4b28eb7bf25f3bd94bf6c11eaaebb631f4acd6477c",
+        "remoteSha256": "d6b948c2adcd9dc9db0bfb4b28eb7bf25f3bd94bf6c11eaaebb631f4acd6477c",
+        "matches": true
+      },
+      {
+        "path": "docs/population-continuity-review-2026-09-27.md",
+        "status": 200,
+        "bytes": 12325,
+        "localSha256": "a9841f569a441443473b43ccae1e181d9baf6e03c68e309acb111017dfb6422c",
+        "remoteSha256": "a9841f569a441443473b43ccae1e181d9baf6e03c68e309acb111017dfb6422c",
+        "matches": true
+      },
+      {
+        "path": "docs/procedural-biospheres-next-plan-2026-09-14.md",
+        "status": 200,
+        "bytes": 33748,
+        "localSha256": "15146a7a11303b2b182c26c60b765aedba8578032b64d0b2c1701b8d27ad1da4",
+        "remoteSha256": "15146a7a11303b2b182c26c60b765aedba8578032b64d0b2c1701b8d27ad1da4",
+        "matches": true
+      },
+      {
+        "path": "docs/realistic-clouds-research-2026-09-27.md",
+        "status": 200,
+        "bytes": 12017,
+        "localSha256": "845463990d969b997ca3fb8b6b42529cdcb7927d2d6d9791c368f1abd802ef7c",
+        "remoteSha256": "845463990d969b997ca3fb8b6b42529cdcb7927d2d6d9791c368f1abd802ef7c",
+        "matches": true
+      },
+      {
+        "path": "docs/research-creature-anatomy-references-2026-09-14.md",
+        "status": 200,
+        "bytes": 10071,
+        "localSha256": "cb9b7b288fc8e91b02fb1044a1740bdd799351d59ca7e0fdfcad033af31879e1",
+        "remoteSha256": "cb9b7b288fc8e91b02fb1044a1740bdd799351d59ca7e0fdfcad033af31879e1",
+        "matches": true
+      },
+      {
+        "path": "docs/research-creature-locomotion-references-2026-09-14.md",
+        "status": 200,
+        "bytes": 8440,
+        "localSha256": "d3fcdf61cbd159cb6ef4026e81c5cde0ba3e285f784c6f004ac68f94b37186f3",
+        "remoteSha256": "d3fcdf61cbd159cb6ef4026e81c5cde0ba3e285f784c6f004ac68f94b37186f3",
+        "matches": true
+      },
+      {
+        "path": "docs/research-evolutionary-history-2026-09-14.md",
+        "status": 200,
+        "bytes": 13387,
+        "localSha256": "eb9d72a588ad56f504abae0bcb4d36738c5cdc6e879f14ca5aeed65822a8d08f",
+        "remoteSha256": "eb9d72a588ad56f504abae0bcb4d36738c5cdc6e879f14ca5aeed65822a8d08f",
+        "matches": true
+      },
+      {
+        "path": "docs/research-planet-biome-generation-2026-09-14.md",
+        "status": 200,
+        "bytes": 19087,
+        "localSha256": "17966fdeb643ade6616028ef9aec85d9589e367786cc7a73f25d5f2d32d87c24",
+        "remoteSha256": "17966fdeb643ade6616028ef9aec85d9589e367786cc7a73f25d5f2d32d87c24",
+        "matches": true
+      },
+      {
+        "path": "docs/research-procedural-fauna-habitats-2026-09-14.md",
+        "status": 200,
+        "bytes": 19803,
+        "localSha256": "8f503d9697ca54cc1fc437fa2587ec99efa04f0cea822e2b02f0c654e49445e4",
+        "remoteSha256": "8f503d9697ca54cc1fc437fa2587ec99efa04f0cea822e2b02f0c654e49445e4",
+        "matches": true
+      },
+      {
+        "path": "docs/research-procedural-flora-geology-2026-09-14.md",
+        "status": 200,
+        "bytes": 19889,
+        "localSha256": "ce783833eda1f8beaa5d879ec628f9b902a23de15aca31be31409b7b40f2c4b5",
+        "remoteSha256": "ce783833eda1f8beaa5d879ec628f9b902a23de15aca31be31409b7b40f2c4b5",
+        "matches": true
+      },
+      {
+        "path": "docs/research-species-and-simulation-2026-09-14.md",
+        "status": 200,
+        "bytes": 17655,
+        "localSha256": "c196093eea8d6d705c6d4fdf4198afe626950013e54ad861c24646f740a89c40",
+        "remoteSha256": "c196093eea8d6d705c6d4fdf4198afe626950013e54ad861c24646f740a89c40",
+        "matches": true
+      },
+      {
+        "path": "docs/research-terrain-river-validation-2026-09-14.md",
+        "status": 200,
+        "bytes": 23136,
+        "localSha256": "b0103550955e8b3137518640d49b6d27061f8d2ca6cce8007fc3e098b5c6fd3f",
+        "remoteSha256": "b0103550955e8b3137518640d49b6d27061f8d2ca6cce8007fc3e098b5c6fd3f",
+        "matches": true
+      },
+      {
+        "path": "docs/research-vegetation-rocks-2026-09-14.md",
+        "status": 200,
+        "bytes": 16797,
+        "localSha256": "49d69a00917b2bd173157d9d5f9f5c9ed0ad514e796b29391de444e411cf7d42",
+        "remoteSha256": "49d69a00917b2bd173157d9d5f9f5c9ed0ad514e796b29391de444e411cf7d42",
+        "matches": true
+      },
+      {
+        "path": "docs/stable-shores.md",
+        "status": 200,
+        "bytes": 13017,
+        "localSha256": "568134d2ba1e84cca355cff046e6e1324eb3c5737b2fdd753030b40ae784c0ec",
+        "remoteSha256": "568134d2ba1e84cca355cff046e6e1324eb3c5737b2fdd753030b40ae784c0ec",
+        "matches": true
+      },
+      {
+        "path": "docs/star-visibility-and-transitions.md",
+        "status": 200,
+        "bytes": 3664,
+        "localSha256": "035b324ca85483dedfa0f490164151c4f92dab3ce7a6953a3d898f2b2a2e759b",
+        "remoteSha256": "035b324ca85483dedfa0f490164151c4f92dab3ce7a6953a3d898f2b2a2e759b",
+        "matches": true
+      },
+      {
+        "path": "docs/surface-materials-and-survey.md",
+        "status": 200,
+        "bytes": 13581,
+        "localSha256": "4517f57c2b675435fb336716cf8468df7bbcc7b737d7399f6142000f359eaea7",
+        "remoteSha256": "4517f57c2b675435fb336716cf8468df7bbcc7b737d7399f6142000f359eaea7",
+        "matches": true
+      },
+      {
+        "path": "docs/temporal-universe-implementation-2026-09-23.md",
+        "status": 200,
+        "bytes": 6091,
+        "localSha256": "bc1ffec789a9c294f43a8885490b0c58639b627fd229eda0aef217fc5e88113c",
+        "remoteSha256": "bc1ffec789a9c294f43a8885490b0c58639b627fd229eda0aef217fc5e88113c",
+        "matches": true
+      },
+      {
+        "path": "docs/terrain-research-2026-09-13.md",
+        "status": 200,
+        "bytes": 23323,
+        "localSha256": "a932fbf77a1c3a679481dbdaf11b99b20985d0574f7af2840e7fb4f64d130154",
+        "remoteSha256": "a932fbf77a1c3a679481dbdaf11b99b20985d0574f7af2840e7fb4f64d130154",
+        "matches": true
+      },
+      {
+        "path": "docs/terrain-v2-first-slice-spec.md",
+        "status": 200,
+        "bytes": 7194,
+        "localSha256": "7eeeec291dc5a1f8c71b857816b85cee624f2644ff15c94235f4062b5d6370b8",
+        "remoteSha256": "7eeeec291dc5a1f8c71b857816b85cee624f2644ff15c94235f4062b5d6370b8",
+        "matches": true
+      },
+      {
+        "path": "docs/terrain-water-refresh-2026-09-28.md",
+        "status": 200,
+        "bytes": 3117,
+        "localSha256": "2b3d2ff95a0ce278b25e9c8bfb61656cae7cb1562a881bf7f6959d7f1ae7ad91",
+        "remoteSha256": "2b3d2ff95a0ce278b25e9c8bfb61656cae7cb1562a881bf7f6959d7f1ae7ad91",
+        "matches": true
+      },
+      {
+        "path": "docs/time-and-coordinates-contract.md",
+        "status": 200,
+        "bytes": 111583,
+        "localSha256": "379b17a12312ea001a43dff07ac297b799821a6e8b9ff4fe8b4476cf51c64741",
+        "remoteSha256": "379b17a12312ea001a43dff07ac297b799821a6e8b9ff4fe8b4476cf51c64741",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-asset-candidate-2026-09-28.md",
+        "status": 200,
+        "bytes": 4823,
+        "localSha256": "3c3fa8f9da668aa05ade153fbe10979585429b8961d632d3785897a7232967fa",
+        "remoteSha256": "3c3fa8f9da668aa05ade153fbe10979585429b8961d632d3785897a7232967fa",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-next-increment-2026-09-28.md",
+        "status": 200,
+        "bytes": 15345,
+        "localSha256": "e1ad193b1c5483dc6c5a5ac0eb55b195c52c871f261f3845d3a4fb11aa4630dc",
+        "remoteSha256": "e1ad193b1c5483dc6c5a5ac0eb55b195c52c871f261f3845d3a4fb11aa4630dc",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-review-assessment-2026-09-28.md",
+        "status": 200,
+        "bytes": 3420,
+        "localSha256": "77eb626607f8546835f075c23b00925a803b09f9f10cb9c2ce0ad03a489feb5f",
+        "remoteSha256": "77eb626607f8546835f075c23b00925a803b09f9f10cb9c2ce0ad03a489feb5f",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-v3-2026-09-28.md",
+        "status": 200,
+        "bytes": 4413,
+        "localSha256": "ebff269f14a627d0c19e50768273a4e2f11abb740de4bc3d4edeb38811ed2a3d",
+        "remoteSha256": "ebff269f14a627d0c19e50768273a4e2f11abb740de4bc3d4edeb38811ed2a3d",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-v4-2026-09-28.md",
+        "status": 200,
+        "bytes": 4955,
+        "localSha256": "03106aa36a720202c8b63062ed06d5f2aaf6add9e15dfe099ce42bbadf372c86",
+        "remoteSha256": "03106aa36a720202c8b63062ed06d5f2aaf6add9e15dfe099ce42bbadf372c86",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-v5-2026-09-28.md",
+        "status": 200,
+        "bytes": 6500,
+        "localSha256": "566efbc86315fa90f22c13fc2d00582b7598384df7eadf57ac5c89ebd674b461",
+        "remoteSha256": "566efbc86315fa90f22c13fc2d00582b7598384df7eadf57ac5c89ebd674b461",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-v5-review-assessment-2026-09-28.md",
+        "status": 200,
+        "bytes": 4308,
+        "localSha256": "4af529a59693db2ec165e28b6be5c9e8c52a160744849a44bac2cd4aeeced6e0",
+        "remoteSha256": "4af529a59693db2ec165e28b6be5c9e8c52a160744849a44bac2cd4aeeced6e0",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-v6-2026-09-28.md",
+        "status": 200,
+        "bytes": 7113,
+        "localSha256": "e3ff97bbdc5caeb99c0097184c31f38df2a3060aeaf91f5afc26a1d1ca85d5f2",
+        "remoteSha256": "e3ff97bbdc5caeb99c0097184c31f38df2a3060aeaf91f5afc26a1d1ca85d5f2",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-v7-2026-09-28.md",
+        "status": 200,
+        "bytes": 4504,
+        "localSha256": "4abe14393b584788f7dbd9afc1e22aa08bf76e257eb4de7a4e375553fdbebed8",
+        "remoteSha256": "4abe14393b584788f7dbd9afc1e22aa08bf76e257eb4de7a4e375553fdbebed8",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-browser-prototype-2026-09-28.md",
+        "status": 200,
+        "bytes": 8402,
+        "localSha256": "dd94e79afcb4f49e6127bd8aa2d6f5ab07057171d06082ed7f808c3e66827f27",
+        "remoteSha256": "dd94e79afcb4f49e6127bd8aa2d6f5ab07057171d06082ed7f808c3e66827f27",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-color-calibration-2026-09-28.md",
+        "status": 200,
+        "bytes": 3581,
+        "localSha256": "e9c0f016e45391e5bfc3b6ba5064a7eb0e2a4e95dd5c47133d69ccd5bb6f627d",
+        "remoteSha256": "e9c0f016e45391e5bfc3b6ba5064a7eb0e2a4e95dd5c47133d69ccd5bb6f627d",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-existing-methods-2026-09-28.md",
+        "status": 200,
+        "bytes": 9271,
+        "localSha256": "15f15bd1e6b3688d8588f50b15705e9f145089fabaa137b4ba58bdbcd64f1452",
+        "remoteSha256": "15f15bd1e6b3688d8588f50b15705e9f145089fabaa137b4ba58bdbcd64f1452",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-ez-family-2026-09-28.md",
+        "status": 200,
+        "bytes": 6746,
+        "localSha256": "45f9b5caa37729459e43e33dffb52c50583ed9caba159cb17987f1dc26454191",
+        "remoteSha256": "45f9b5caa37729459e43e33dffb52c50583ed9caba159cb17987f1dc26454191",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-ez-reference-2026-09-28.md",
+        "status": 200,
+        "bytes": 9886,
+        "localSha256": "5e3d5a3ffe9e5a8b56f2aa4fb4546b061a8a18b58061829d330bce17b56396d9",
+        "remoteSha256": "5e3d5a3ffe9e5a8b56f2aa4fb4546b061a8a18b58061829d330bce17b56396d9",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-foliage-minification-2026-09-28.md",
+        "status": 200,
+        "bytes": 9290,
+        "localSha256": "c220888682ad77b18c367717e5df639ed2f4b44c29193433e73c2c644fcf66b7",
+        "remoteSha256": "c220888682ad77b18c367717e5df639ed2f4b44c29193433e73c2c644fcf66b7",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-lighting-diagnosis-2026-09-28.md",
+        "status": 200,
+        "bytes": 2599,
+        "localSha256": "d26f275ec1d2fea5eb13ce1a46143ebf5bc3c8bf083fa90f7948ec4a7eb431c2",
+        "remoteSha256": "d26f275ec1d2fea5eb13ce1a46143ebf5bc3c8bf083fa90f7948ec4a7eb431c2",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-species-asset-contract-2026-09-28.md",
+        "status": 200,
+        "bytes": 3664,
+        "localSha256": "ca06de75ebe0b03bcdbf951fa2465cf1377b58e10c71e264f90bd2f02b0e77e2",
+        "remoteSha256": "ca06de75ebe0b03bcdbf951fa2465cf1377b58e10c71e264f90bd2f02b0e77e2",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-three-ez-impostor-2026-09-28.md",
+        "status": 200,
+        "bytes": 9601,
+        "localSha256": "2c00640d6ce7f3086ba0f6ae919f860fa84aa2ee6a0c9d2ea6fbe07be2246214",
+        "remoteSha256": "2c00640d6ce7f3086ba0f6ae919f860fa84aa2ee6a0c9d2ea6fbe07be2246214",
+        "matches": true
+      },
+      {
+        "path": "docs/walking-and-time.md",
+        "status": 200,
+        "bytes": 15081,
+        "localSha256": "4b047156bb1f8e4ed7302614de07c914d9987f37aabf5a9d9ca1264f9ab6641f",
+        "remoteSha256": "4b047156bb1f8e4ed7302614de07c914d9987f37aabf5a9d9ca1264f9ab6641f",
+        "matches": true
+      },
+      {
+        "path": "guide/determinism.html",
+        "status": 200,
+        "bytes": 8258,
+        "localSha256": "9b2d1d5827c0f8e1c8730e92bb3188ac0700f4f6f90a39fd92efa568aaf5be6a",
+        "remoteSha256": "9b2d1d5827c0f8e1c8730e92bb3188ac0700f4f6f90a39fd92efa568aaf5be6a",
+        "matches": true
+      },
+      {
+        "path": "guide/index.html",
+        "status": 200,
+        "bytes": 11909,
+        "localSha256": "124e7d5a7781f715dc94e2ea96d2b794db1478d71e6afe1b7a08b90e30124988",
+        "remoteSha256": "124e7d5a7781f715dc94e2ea96d2b794db1478d71e6afe1b7a08b90e30124988",
+        "matches": true
+      },
+      {
+        "path": "guide/life.html",
+        "status": 200,
+        "bytes": 20274,
+        "localSha256": "f8810afa4413f85184bb4adbfa27dba1f69c814b26deae819824617cbd112ec9",
+        "remoteSha256": "f8810afa4413f85184bb4adbfa27dba1f69c814b26deae819824617cbd112ec9",
+        "matches": true
+      },
+      {
+        "path": "guide/publishing.html",
+        "status": 200,
+        "bytes": 11294,
+        "localSha256": "45ea534cc167a5c0a800d669ed35a51e75ce1df095f205d4f1cefb619594da5b",
+        "remoteSha256": "45ea534cc167a5c0a800d669ed35a51e75ce1df095f205d4f1cefb619594da5b",
+        "matches": true
+      },
+      {
+        "path": "guide/terrain.html",
+        "status": 200,
+        "bytes": 11797,
+        "localSha256": "61dedaaea4defbe0e952d6bf1d49981b301810da740c3380ffac48eb74208c52",
+        "remoteSha256": "61dedaaea4defbe0e952d6bf1d49981b301810da740c3380ffac48eb74208c52",
+        "matches": true
+      },
+      {
+        "path": "guide/time.html",
+        "status": 200,
+        "bytes": 10850,
+        "localSha256": "d3e877056fd0b92324119921d72a19a4a367462667aa6adeadc63f0b0ef0d20f",
+        "remoteSha256": "d3e877056fd0b92324119921d72a19a4a367462667aa6adeadc63f0b0ef0d20f",
+        "matches": true
+      },
+      {
+        "path": "guide/travel.html",
+        "status": 200,
+        "bytes": 14308,
+        "localSha256": "7db4f2bdf7524ce10fd00c7e507f4776c667a11844fc1e7498ba6fd3ee8c9774",
+        "remoteSha256": "7db4f2bdf7524ce10fd00c7e507f4776c667a11844fc1e7498ba6fd3ee8c9774",
+        "matches": true
+      },
+      {
+        "path": "guide/universe.html",
+        "status": 200,
+        "bytes": 7864,
+        "localSha256": "b713743711e84434c00f41111a9718e2113f4e30d859a2dff217423f8b1b817a",
+        "remoteSha256": "b713743711e84434c00f41111a9718e2113f4e30d859a2dff217423f8b1b817a",
+        "matches": true
+      },
+      {
+        "path": "guide/water-atmosphere.html",
+        "status": 200,
+        "bytes": 11625,
+        "localSha256": "48be5992c677723972d24d6a6d4f332cf59300b8309a3af63232ff59c820ef28",
+        "remoteSha256": "48be5992c677723972d24d6a6d4f332cf59300b8309a3af63232ff59c820ef28",
+        "matches": true
+      },
+      {
+        "path": "test-results/opus-three-ez-impostor-review/inputs.json",
+        "status": 200,
+        "bytes": 2325,
+        "localSha256": "b06436ed7c3d814e91ffab865933471d71223f7076fff92d4a07ee426350857c",
+        "remoteSha256": "b06436ed7c3d814e91ffab865933471d71223f7076fff92d4a07ee426350857c",
+        "matches": true
+      },
+      {
+        "path": "test-results/opus-three-ez-impostor-review/response.json",
+        "status": 200,
+        "bytes": 9663,
+        "localSha256": "3e8f9d4367a7c1a3e73ae6d952f69d7c150e1ab2562884f8f03cc20b7a91cd2a",
+        "remoteSha256": "3e8f9d4367a7c1a3e73ae6d952f69d7c150e1ab2562884f8f03cc20b7a91cd2a",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/README.md",
+        "status": 200,
+        "bytes": 3587,
+        "localSha256": "881a6903087fdeee13c92af062d0ed8722de53a141c59a8c35428df03c18e638",
+        "remoteSha256": "881a6903087fdeee13c92af062d0ed8722de53a141c59a8c35428df03c18e638",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/back-impostor.png",
+        "status": 200,
+        "bytes": 239225,
+        "localSha256": "19f1623b5b8c7e81c08406c81d661f3fe9d6a6987bcfe766f2ebac94d33158df",
+        "remoteSha256": "19f1623b5b8c7e81c08406c81d661f3fe9d6a6987bcfe766f2ebac94d33158df",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/back-mesh.png",
+        "status": 200,
+        "bytes": 523699,
+        "localSha256": "64da1b1345c625cbcfa6f38e9f990c7d0326aae2f88361a943231338ab17c819",
+        "remoteSha256": "64da1b1345c625cbcfa6f38e9f990c7d0326aae2f88361a943231338ab17c819",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/baseline-source/tree-impostor-reference-lab.html",
+        "status": 200,
+        "bytes": 1280,
+        "localSha256": "b38e76ad6b3c9383599750e622b1b8d5b52a1b913b63fd8979116105e337c86f",
+        "remoteSha256": "b38e76ad6b3c9383599750e622b1b8d5b52a1b913b63fd8979116105e337c86f",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/baseline-source/tree-impostor-reference-lab.ts",
+        "status": 200,
+        "bytes": 10347,
+        "localSha256": "7ae64931790df598c15ef341389e390f7659265e45a4dc69bc2564190aa08856",
+        "remoteSha256": "7ae64931790df598c15ef341389e390f7659265e45a4dc69bc2564190aa08856",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/cpu-tests.log",
+        "status": 200,
+        "bytes": 1140,
+        "localSha256": "64637e8f4c3b63f1d0b11e8ca82c150fe2e62f0e8d201848188102d321c46d9b",
+        "remoteSha256": "64637e8f4c3b63f1d0b11e8ca82c150fe2e62f0e8d201848188102d321c46d9b",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/front-impostor.png",
+        "status": 200,
+        "bytes": 295590,
+        "localSha256": "4de9066c7ed35074a8d986078a2436df75c6986ec8261e1902aa2bd6bc56aa48",
+        "remoteSha256": "4de9066c7ed35074a8d986078a2436df75c6986ec8261e1902aa2bd6bc56aa48",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/front-mesh.png",
+        "status": 200,
+        "bytes": 612587,
+        "localSha256": "0184fa78f5bd01f23a394641b1656f11bf07e2ccd266ddb312eb33d5675302a5",
+        "remoteSha256": "0184fa78f5bd01f23a394641b1656f11bf07e2ccd266ddb312eb33d5675302a5",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el-5-impostor.png",
+        "status": 200,
+        "bytes": 1920,
+        "localSha256": "f194e8828b41662b9f6f7b5cdcbe429a1f1a702d47dae556c5051d9dc1aa8419",
+        "remoteSha256": "f194e8828b41662b9f6f7b5cdcbe429a1f1a702d47dae556c5051d9dc1aa8419",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el-5-mesh.png",
+        "status": 200,
+        "bytes": 1891,
+        "localSha256": "42cfcd92f539533f3173f05184b637a6c79093af7459309c571fe8e24d55acb0",
+        "remoteSha256": "42cfcd92f539533f3173f05184b637a6c79093af7459309c571fe8e24d55acb0",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el0-impostor.png",
+        "status": 200,
+        "bytes": 1907,
+        "localSha256": "80fee4f34cad9c2650f2d695e8c2250a699b9b361ffc4eb0a1f74163a708fb49",
+        "remoteSha256": "80fee4f34cad9c2650f2d695e8c2250a699b9b361ffc4eb0a1f74163a708fb49",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el0-mesh.png",
+        "status": 200,
+        "bytes": 1840,
+        "localSha256": "bb269f98f1d506d88ce534540629fd3551f65f67b69873586b23c53af6562ed7",
+        "remoteSha256": "bb269f98f1d506d88ce534540629fd3551f65f67b69873586b23c53af6562ed7",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el15-impostor.png",
+        "status": 200,
+        "bytes": 1776,
+        "localSha256": "f03205eda547abbe7e365e86d2344bb12839377bfaa69156f750122866d6e865",
+        "remoteSha256": "f03205eda547abbe7e365e86d2344bb12839377bfaa69156f750122866d6e865",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el15-mesh.png",
+        "status": 200,
+        "bytes": 1886,
+        "localSha256": "084c65ae970a7a36f9af721bb14003f5855c25eee43f1e05987264d981004b20",
+        "remoteSha256": "084c65ae970a7a36f9af721bb14003f5855c25eee43f1e05987264d981004b20",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el85-impostor.png",
+        "status": 200,
+        "bytes": 1680,
+        "localSha256": "14382267ae32be78db36f082ec7fd8712c62539c4dddb26fc6abc02c6b3f3337",
+        "remoteSha256": "14382267ae32be78db36f082ec7fd8712c62539c4dddb26fc6abc02c6b3f3337",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el85-mesh.png",
+        "status": 200,
+        "bytes": 1706,
+        "localSha256": "a0e4343c079262360464530f0bfc3d342653629c68789c2f5323f564608e5df8",
+        "remoteSha256": "a0e4343c079262360464530f0bfc3d342653629c68789c2f5323f564608e5df8",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az45-el0-impostor.png",
+        "status": 200,
+        "bytes": 1709,
+        "localSha256": "a55495dd7e488448779a3076f0e1e23a18631cf1c8b7acbe579d979632133f4d",
+        "remoteSha256": "a55495dd7e488448779a3076f0e1e23a18631cf1c8b7acbe579d979632133f4d",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az45-el0-mesh.png",
+        "status": 200,
+        "bytes": 1746,
+        "localSha256": "44193ff105da795b2c22d980788bd4548028e91722af9c8237a6b67a67e9ce18",
+        "remoteSha256": "44193ff105da795b2c22d980788bd4548028e91722af9c8237a6b67a67e9ce18",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az45-el45-impostor.png",
+        "status": 200,
+        "bytes": 1532,
+        "localSha256": "4f5ec01aa0f41b44e68b54a0702a9ba1fd9ee305283f6dc20af889178424c48c",
+        "remoteSha256": "4f5ec01aa0f41b44e68b54a0702a9ba1fd9ee305283f6dc20af889178424c48c",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az45-el45-mesh.png",
+        "status": 200,
+        "bytes": 1617,
+        "localSha256": "692fd73fc794fa0b8c0b746070a3dcd080361522851ec223617238d8ac2657a9",
+        "remoteSha256": "692fd73fc794fa0b8c0b746070a3dcd080361522851ec223617238d8ac2657a9",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az90-el0-impostor.png",
+        "status": 200,
+        "bytes": 1773,
+        "localSha256": "00a6ea3f0541cb610000d29939e4fc4d130dc0f536d1ad729b4fde9d330db54d",
+        "remoteSha256": "00a6ea3f0541cb610000d29939e4fc4d130dc0f536d1ad729b4fde9d330db54d",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az90-el0-mesh.png",
+        "status": 200,
+        "bytes": 1702,
+        "localSha256": "dfa69bc7f58628b26cc8e3bf36cd438a676e6aaddbf982fa2ced902c8c04ac89",
+        "remoteSha256": "dfa69bc7f58628b26cc8e3bf36cd438a676e6aaddbf982fa2ced902c8c04ac89",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/top-impostor.png",
+        "status": 200,
+        "bytes": 1590,
+        "localSha256": "cad273be5d23b005aea175721aac78a58d5f6f4d60d0f216e7b83a5a83b4f3ef",
+        "remoteSha256": "cad273be5d23b005aea175721aac78a58d5f6f4d60d0f216e7b83a5a83b4f3ef",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/top-mesh.png",
+        "status": 200,
+        "bytes": 1709,
+        "localSha256": "4cf843edf7a22046f8bad28601ffc57a182c46aa8c596bbff2344711f8b68a00",
+        "remoteSha256": "4cf843edf7a22046f8bad28601ffc57a182c46aa8c596bbff2344711f8b68a00",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/README.md",
+        "status": 200,
+        "bytes": 5040,
+        "localSha256": "fcb75f80da3ded19b3abc2dc4125c345232ea3b78f36be50ad13283eb7178097",
+        "remoteSha256": "fcb75f80da3ded19b3abc2dc4125c345232ea3b78f36be50ad13283eb7178097",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/alpha-hash-followup.json",
+        "status": 200,
+        "bytes": 17814,
+        "localSha256": "594ad3dea83b00ae194eedf8ae05df97b3ed50adea0923a971ad80e142dd9611",
+        "remoteSha256": "594ad3dea83b00ae194eedf8ae05df97b3ed50adea0923a971ad80e142dd9611",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/alpha-hash-followup.mjs",
+        "status": 200,
+        "bytes": 5791,
+        "localSha256": "9ff95f0d444c18bbfc26629b873597779449d480c9fe870ade375c9640ef7218",
+        "remoteSha256": "9ff95f0d444c18bbfc26629b873597779449d480c9fe870ade375c9640ef7218",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/back-impostor.png",
+        "status": 200,
+        "bytes": 245959,
+        "localSha256": "080bf25a5105c03fd6abc57ef5d6d0758b57fea9e03be8b9241377020a191e25",
+        "remoteSha256": "080bf25a5105c03fd6abc57ef5d6d0758b57fea9e03be8b9241377020a191e25",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/back-mesh.png",
+        "status": 200,
+        "bytes": 523699,
+        "localSha256": "64da1b1345c625cbcfa6f38e9f990c7d0326aae2f88361a943231338ab17c819",
+        "remoteSha256": "64da1b1345c625cbcfa6f38e9f990c7d0326aae2f88361a943231338ab17c819",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/back-mid.png",
+        "status": 200,
+        "bytes": 462596,
+        "localSha256": "8881c3f76ddb674850fb31921f95148bd9fa391d13f957bcafd55f2a2252cf93",
+        "remoteSha256": "8881c3f76ddb674850fb31921f95148bd9fa391d13f957bcafd55f2a2252cf93",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/front-impostor.png",
+        "status": 200,
+        "bytes": 301493,
+        "localSha256": "bee847ae52bce2d1b519744d287069561f1ef861e8d85e7a1649906769b26cde",
+        "remoteSha256": "bee847ae52bce2d1b519744d287069561f1ef861e8d85e7a1649906769b26cde",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/front-mesh.png",
+        "status": 200,
+        "bytes": 612587,
+        "localSha256": "0184fa78f5bd01f23a394641b1656f11bf07e2ccd266ddb312eb33d5675302a5",
+        "remoteSha256": "0184fa78f5bd01f23a394641b1656f11bf07e2ccd266ddb312eb33d5675302a5",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/front-mid.png",
+        "status": 200,
+        "bytes": 511257,
+        "localSha256": "8133541b8677a1c19c9ca06bef1d8e72f2fc3bc4d71000bcdb0fdfa84979ac15",
+        "remoteSha256": "8133541b8677a1c19c9ca06bef1d8e72f2fc3bc4d71000bcdb0fdfa84979ac15",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-impostor.png",
+        "status": 200,
+        "bytes": 1743,
+        "localSha256": "928fad93fe62d2e88a32b877fdc4d27aece58c71056d069371db4e8414b73a13",
+        "remoteSha256": "928fad93fe62d2e88a32b877fdc4d27aece58c71056d069371db4e8414b73a13",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-mesh.png",
+        "status": 200,
+        "bytes": 1775,
+        "localSha256": "04f95643b372a7f07658c1052771b2f5b46f23346a8d78b7a3cbfaedc51d688d",
+        "remoteSha256": "04f95643b372a7f07658c1052771b2f5b46f23346a8d78b7a3cbfaedc51d688d",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-mid.png",
+        "status": 200,
+        "bytes": 2574,
+        "localSha256": "2cf8e1c94158d9d400bc1a3cee8014785f274ae2721ee9f5e6324b8391a7f444",
+        "remoteSha256": "2cf8e1c94158d9d400bc1a3cee8014785f274ae2721ee9f5e6324b8391a7f444",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-impostor.png",
+        "status": 200,
+        "bytes": 1920,
+        "localSha256": "f194e8828b41662b9f6f7b5cdcbe429a1f1a702d47dae556c5051d9dc1aa8419",
+        "remoteSha256": "f194e8828b41662b9f6f7b5cdcbe429a1f1a702d47dae556c5051d9dc1aa8419",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-mesh.png",
+        "status": 200,
+        "bytes": 1891,
+        "localSha256": "42cfcd92f539533f3173f05184b637a6c79093af7459309c571fe8e24d55acb0",
+        "remoteSha256": "42cfcd92f539533f3173f05184b637a6c79093af7459309c571fe8e24d55acb0",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-mid.png",
+        "status": 200,
+        "bytes": 2613,
+        "localSha256": "16f8c1a00ff19218b1853eb3b61f1f0775637f578410b8b52ea6a44677115c48",
+        "remoteSha256": "16f8c1a00ff19218b1853eb3b61f1f0775637f578410b8b52ea6a44677115c48",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-impostor.png",
+        "status": 200,
+        "bytes": 1907,
+        "localSha256": "80fee4f34cad9c2650f2d695e8c2250a699b9b361ffc4eb0a1f74163a708fb49",
+        "remoteSha256": "80fee4f34cad9c2650f2d695e8c2250a699b9b361ffc4eb0a1f74163a708fb49",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-mesh.png",
+        "status": 200,
+        "bytes": 1840,
+        "localSha256": "bb269f98f1d506d88ce534540629fd3551f65f67b69873586b23c53af6562ed7",
+        "remoteSha256": "bb269f98f1d506d88ce534540629fd3551f65f67b69873586b23c53af6562ed7",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-mid.png",
+        "status": 200,
+        "bytes": 2577,
+        "localSha256": "919e95581f6ddae2263eb00eb54e2b5e479a2a265006333cd5140a571fbbb9f0",
+        "remoteSha256": "919e95581f6ddae2263eb00eb54e2b5e479a2a265006333cd5140a571fbbb9f0",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-impostor.png",
+        "status": 200,
+        "bytes": 1776,
+        "localSha256": "f03205eda547abbe7e365e86d2344bb12839377bfaa69156f750122866d6e865",
+        "remoteSha256": "f03205eda547abbe7e365e86d2344bb12839377bfaa69156f750122866d6e865",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-mesh.png",
+        "status": 200,
+        "bytes": 1886,
+        "localSha256": "084c65ae970a7a36f9af721bb14003f5855c25eee43f1e05987264d981004b20",
+        "remoteSha256": "084c65ae970a7a36f9af721bb14003f5855c25eee43f1e05987264d981004b20",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-mid.png",
+        "status": 200,
+        "bytes": 2480,
+        "localSha256": "82ac2bd36168f0e9b2ab345cf6c0f0c21a387011bb61971d75d6042f4d2906f7",
+        "remoteSha256": "82ac2bd36168f0e9b2ab345cf6c0f0c21a387011bb61971d75d6042f4d2906f7",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-impostor.png",
+        "status": 200,
+        "bytes": 1680,
+        "localSha256": "14382267ae32be78db36f082ec7fd8712c62539c4dddb26fc6abc02c6b3f3337",
+        "remoteSha256": "14382267ae32be78db36f082ec7fd8712c62539c4dddb26fc6abc02c6b3f3337",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-mesh.png",
+        "status": 200,
+        "bytes": 1706,
+        "localSha256": "a0e4343c079262360464530f0bfc3d342653629c68789c2f5323f564608e5df8",
+        "remoteSha256": "a0e4343c079262360464530f0bfc3d342653629c68789c2f5323f564608e5df8",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-mid.png",
+        "status": 200,
+        "bytes": 2187,
+        "localSha256": "634650f60cde30b1d8c50b9451a14576f8ee079f766f339c191c544063ec5f61",
+        "remoteSha256": "634650f60cde30b1d8c50b9451a14576f8ee079f766f339c191c544063ec5f61",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-impostor.png",
+        "status": 200,
+        "bytes": 1709,
+        "localSha256": "a55495dd7e488448779a3076f0e1e23a18631cf1c8b7acbe579d979632133f4d",
+        "remoteSha256": "a55495dd7e488448779a3076f0e1e23a18631cf1c8b7acbe579d979632133f4d",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-mesh.png",
+        "status": 200,
+        "bytes": 1746,
+        "localSha256": "44193ff105da795b2c22d980788bd4548028e91722af9c8237a6b67a67e9ce18",
+        "remoteSha256": "44193ff105da795b2c22d980788bd4548028e91722af9c8237a6b67a67e9ce18",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-mid.png",
+        "status": 200,
+        "bytes": 2333,
+        "localSha256": "038ad69b18eba1aaed1856c15cc0d571d0e6d1c93cc486260862fb9d1fb44209",
+        "remoteSha256": "038ad69b18eba1aaed1856c15cc0d571d0e6d1c93cc486260862fb9d1fb44209",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-impostor.png",
+        "status": 200,
+        "bytes": 1532,
+        "localSha256": "4f5ec01aa0f41b44e68b54a0702a9ba1fd9ee305283f6dc20af889178424c48c",
+        "remoteSha256": "4f5ec01aa0f41b44e68b54a0702a9ba1fd9ee305283f6dc20af889178424c48c",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-mesh.png",
+        "status": 200,
+        "bytes": 1617,
+        "localSha256": "692fd73fc794fa0b8c0b746070a3dcd080361522851ec223617238d8ac2657a9",
+        "remoteSha256": "692fd73fc794fa0b8c0b746070a3dcd080361522851ec223617238d8ac2657a9",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-mid.png",
+        "status": 200,
+        "bytes": 2148,
+        "localSha256": "9ab92de8691b8618be93f49aadedd4aaabf6c8b2b87b84bd9110e4a8b69a2f3f",
+        "remoteSha256": "9ab92de8691b8618be93f49aadedd4aaabf6c8b2b87b84bd9110e4a8b69a2f3f",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/top-impostor.png",
+        "status": 200,
+        "bytes": 1590,
+        "localSha256": "cad273be5d23b005aea175721aac78a58d5f6f4d60d0f216e7b83a5a83b4f3ef",
+        "remoteSha256": "cad273be5d23b005aea175721aac78a58d5f6f4d60d0f216e7b83a5a83b4f3ef",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/top-mesh.png",
+        "status": 200,
+        "bytes": 1709,
+        "localSha256": "4cf843edf7a22046f8bad28601ffc57a182c46aa8c596bbff2344711f8b68a00",
+        "remoteSha256": "4cf843edf7a22046f8bad28601ffc57a182c46aa8c596bbff2344711f8b68a00",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/top-mid.png",
+        "status": 200,
+        "bytes": 2183,
+        "localSha256": "64ad77827320b61b51e6fb9e3a3669e5df609ac27e38c39289b4a28e64431a7c",
+        "remoteSha256": "64ad77827320b61b51e6fb9e3a3669e5df609ac27e38c39289b4a28e64431a7c",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/report.json",
+        "status": 200,
+        "bytes": 212443,
+        "localSha256": "e3f932f7b40010d117608518e91541c28d5eef0702ca8ed92363d642b56b2a44",
+        "remoteSha256": "e3f932f7b40010d117608518e91541c28d5eef0702ca8ed92363d642b56b2a44",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/run.mjs",
+        "status": 200,
+        "bytes": 16505,
+        "localSha256": "13f5bf2a310c7d3d52035406598651673be17452b45ebf90f7d91f511cb7f092",
+        "remoteSha256": "13f5bf2a310c7d3d52035406598651673be17452b45ebf90f7d91f511cb7f092",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/top-impostor.png",
+        "status": 200,
+        "bytes": 310178,
+        "localSha256": "c3e72933edc2c866055319db573615189b5998e16d3b5f1654cc2faa2c5c7ea8",
+        "remoteSha256": "c3e72933edc2c866055319db573615189b5998e16d3b5f1654cc2faa2c5c7ea8",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/top-mesh.png",
+        "status": 200,
+        "bytes": 489746,
+        "localSha256": "4f9ba62e2a0a7636922a03986b00569faafaefc5d97fde21566e581af6493efb",
+        "remoteSha256": "4f9ba62e2a0a7636922a03986b00569faafaefc5d97fde21566e581af6493efb",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/top-mid.png",
+        "status": 200,
+        "bytes": 427239,
+        "localSha256": "c8fa1cb626ed1c5dbefa5d5472b1e0c0d9ad82a7854ce42b77c3152707cbb344",
+        "remoteSha256": "c8fa1cb626ed1c5dbefa5d5472b1e0c0d9ad82a7854ce42b77c3152707cbb344",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/yaw-continuity.json",
+        "status": 200,
+        "bytes": 79269,
+        "localSha256": "52502d245e8c427ab45e0776923fb34d36facae4c26fb1701dff2a365b6efd15",
+        "remoteSha256": "52502d245e8c427ab45e0776923fb34d36facae4c26fb1701dff2a365b6efd15",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/yaw-continuity.mjs",
+        "status": 200,
+        "bytes": 6734,
+        "localSha256": "0b1417b997f95ea7175b2ec4783c88c3db5fb1b7c5e591d91f48eaab821576d3",
+        "remoteSha256": "0b1417b997f95ea7175b2ec4783c88c3db5fb1b7c5e591d91f48eaab821576d3",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/report.json",
+        "status": 200,
+        "bytes": 35762,
+        "localSha256": "36fb082f8b41dc8f201e62101487678124eb16f5d30c46266e87db5cd958064c",
+        "remoteSha256": "36fb082f8b41dc8f201e62101487678124eb16f5d30c46266e87db5cd958064c",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/run.mjs",
+        "status": 200,
+        "bytes": 10538,
+        "localSha256": "8af33c040dba135be35f49c007a611ce04d527ea87341ec3bfd506db349abc0d",
+        "remoteSha256": "8af33c040dba135be35f49c007a611ce04d527ea87341ec3bfd506db349abc0d",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/shader-tests.log",
+        "status": 200,
+        "bytes": 373,
+        "localSha256": "cb63c2ebd47274a7a2a40fa3b912141c43db51455c09de7c8a29cd3cd9167594",
+        "remoteSha256": "cb63c2ebd47274a7a2a40fa3b912141c43db51455c09de7c8a29cd3cd9167594",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/top-impostor.png",
+        "status": 200,
+        "bytes": 302240,
+        "localSha256": "8a82c0d02bb18c307567601dd2a35527cc6a44006649a087d440145fb6f1da46",
+        "remoteSha256": "8a82c0d02bb18c307567601dd2a35527cc6a44006649a087d440145fb6f1da46",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/top-mesh.png",
+        "status": 200,
+        "bytes": 489746,
+        "localSha256": "4f9ba62e2a0a7636922a03986b00569faafaefc5d97fde21566e581af6493efb",
+        "remoteSha256": "4f9ba62e2a0a7636922a03986b00569faafaefc5d97fde21566e581af6493efb",
+        "matches": true
+      }
+    ]
+  },
+  "runtimeJavaScript": {
+    "baselineReleaseCommit": "c60e662292394f36e6648c91ba752039fa7722ea",
+    "baselineReceipt": "../../universe-atlas-rendering/test-results/tree-ez-family-live/live-publication-receipt.json",
+    "assetCount": 22,
+    "all22Unchanged": true,
+    "assets": [
+      {
+        "name": "atlas-D_fLpHjv.js",
+        "status": 200,
+        "sha256": "a0707cf891ebfee84c9ce254c591c63a5714398ca8e28bf17bb427930d1f7e29",
+        "localSha256": "a0707cf891ebfee84c9ce254c591c63a5714398ca8e28bf17bb427930d1f7e29",
+        "baselineSha256": "a0707cf891ebfee84c9ce254c591c63a5714398ca8e28bf17bb427930d1f7e29",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "biomes-B2FSz8AO.js",
+        "status": 200,
+        "sha256": "6213e8f4da8320ec71d19d0c9e39deede091999530b9913031222d7fe58460ff",
+        "localSha256": "6213e8f4da8320ec71d19d0c9e39deede091999530b9913031222d7fe58460ff",
+        "baselineSha256": "6213e8f4da8320ec71d19d0c9e39deede091999530b9913031222d7fe58460ff",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "biosphere-CVMT8gpe.js",
+        "status": 200,
+        "sha256": "45688e5ba13d4176b559e22cd010bd66973948b4deb0e7f6e90d9a5cac7db0b6",
+        "localSha256": "45688e5ba13d4176b559e22cd010bd66973948b4deb0e7f6e90d9a5cac7db0b6",
+        "baselineSha256": "45688e5ba13d4176b559e22cd010bd66973948b4deb0e7f6e90d9a5cac7db0b6",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "biosphere-model-BxOjjDxI.js",
+        "status": 200,
+        "sha256": "4d8529f4671472589497cb12468606470989a190ef1103fc3571d0fb7737e979",
+        "localSha256": "4d8529f4671472589497cb12468606470989a190ef1103fc3571d0fb7737e979",
+        "baselineSha256": "4d8529f4671472589497cb12468606470989a190ef1103fc3571d0fb7737e979",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "catalog-Cs3U8xJB.js",
+        "status": 200,
+        "sha256": "2dcc20d12a182188e8b154ca9d0ffa1dc3cbf2014d5bc08aa4078da22cfc6e9b",
+        "localSha256": "2dcc20d12a182188e8b154ca9d0ffa1dc3cbf2014d5bc08aa4078da22cfc6e9b",
+        "baselineSha256": "2dcc20d12a182188e8b154ca9d0ffa1dc3cbf2014d5bc08aa4078da22cfc6e9b",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "clouds-CGGXURlv.js",
+        "status": 200,
+        "sha256": "4c19e442ba9c21d5bd28c606974ecbafa8265c97e1e3b478c75719e296d3b7fd",
+        "localSha256": "4c19e442ba9c21d5bd28c606974ecbafa8265c97e1e3b478c75719e296d3b7fd",
+        "baselineSha256": "4c19e442ba9c21d5bd28c606974ecbafa8265c97e1e3b478c75719e296d3b7fd",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "creatures-z4zMnOp4.js",
+        "status": 200,
+        "sha256": "5f6f373d7f4604e198a4cde08164af0d17cd81ce4cb25da9ba29b2392726787d",
+        "localSha256": "5f6f373d7f4604e198a4cde08164af0d17cd81ce4cb25da9ba29b2392726787d",
+        "baselineSha256": "5f6f373d7f4604e198a4cde08164af0d17cd81ce4cb25da9ba29b2392726787d",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "drainage-worker-Bp34AJ1h.js",
+        "status": 200,
+        "sha256": "08b032e56f2cb5268e8c24825461f864a558c1b4309c1663a3526cf0c31a0439",
+        "localSha256": "08b032e56f2cb5268e8c24825461f864a558c1b4309c1663a3526cf0c31a0439",
+        "baselineSha256": "08b032e56f2cb5268e8c24825461f864a558c1b4309c1663a3526cf0c31a0439",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "forest-census-worker-CpdaZJHJ.js",
+        "status": 200,
+        "sha256": "53c1ba117e7a0415f87cdd781dd3ba6f92b356844990c9a072b9706986ddfd89",
+        "localSha256": "53c1ba117e7a0415f87cdd781dd3ba6f92b356844990c9a072b9706986ddfd89",
+        "baselineSha256": "53c1ba117e7a0415f87cdd781dd3ba6f92b356844990c9a072b9706986ddfd89",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "ground-walker-B9BC5jac.js",
+        "status": 200,
+        "sha256": "34896728731d272dad5585fc81a68e4151abdc0db35b8e5396f1cd25830202ed",
+        "localSha256": "34896728731d272dad5585fc81a68e4151abdc0db35b8e5396f1cd25830202ed",
+        "baselineSha256": "34896728731d272dad5585fc81a68e4151abdc0db35b8e5396f1cd25830202ed",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "guide-time-JsQuz3LV.js",
+        "status": 200,
+        "sha256": "a3f69a8d03bffaa8bb7ce7d620691aef42fa7ffed203adb6059286f6b7feafea",
+        "localSha256": "a3f69a8d03bffaa8bb7ce7d620691aef42fa7ffed203adb6059286f6b7feafea",
+        "baselineSha256": "a3f69a8d03bffaa8bb7ce7d620691aef42fa7ffed203adb6059286f6b7feafea",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "OrbitControls-C33he78E.js",
+        "status": 200,
+        "sha256": "8068f9d55af334b44a238ee5608ca1002026843c1b191ea9641d3af74193c52c",
+        "localSha256": "8068f9d55af334b44a238ee5608ca1002026843c1b191ea9641d3af74193c52c",
+        "baselineSha256": "8068f9d55af334b44a238ee5608ca1002026843c1b191ea9641d3af74193c52c",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "planet-population-worker-DPoR_B8X.js",
+        "status": 200,
+        "sha256": "e90f8ed0b32b5e6b763662ed37ce2e92727aff1eaa8997cc593dd781669d3ce1",
+        "localSha256": "e90f8ed0b32b5e6b763662ed37ce2e92727aff1eaa8997cc593dd781669d3ce1",
+        "baselineSha256": "e90f8ed0b32b5e6b763662ed37ce2e92727aff1eaa8997cc593dd781669d3ce1",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "planet-worker-BpRIhApT.js",
+        "status": 200,
+        "sha256": "63244cb31d54ccd384482ece789259457c6bd6badc186017dff6b65669f91516",
+        "localSha256": "63244cb31d54ccd384482ece789259457c6bd6badc186017dff6b65669f91516",
+        "baselineSha256": "63244cb31d54ccd384482ece789259457c6bd6badc186017dff6b65669f91516",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "rapier-physics-iRel_T-y.js",
+        "status": 200,
+        "sha256": "73f8b5fe1e32ae64e8fde0354f3d0e9fc04b9ffa71c043d5b1ca93f786ff8679",
+        "localSha256": "73f8b5fe1e32ae64e8fde0354f3d0e9fc04b9ffa71c043d5b1ca93f786ff8679",
+        "baselineSha256": "73f8b5fe1e32ae64e8fde0354f3d0e9fc04b9ffa71c043d5b1ca93f786ff8679",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "river-worker-B6OWmDg5.js",
+        "status": 200,
+        "sha256": "9d5d876dffb667585760e15ee4accb5d08503e2b2e42776240c0a6ba66c25d0d",
+        "localSha256": "9d5d876dffb667585760e15ee4accb5d08503e2b2e42776240c0a6ba66c25d0d",
+        "baselineSha256": "9d5d876dffb667585760e15ee4accb5d08503e2b2e42776240c0a6ba66c25d0d",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "three.core-DYul8iZ1.js",
+        "status": 200,
+        "sha256": "bcc2dd17f1a58cfcb96b48f382a6f24a25f46a5f0e36ac02e5415e108161dc69",
+        "localSha256": "bcc2dd17f1a58cfcb96b48f382a6f24a25f46a5f0e36ac02e5415e108161dc69",
+        "baselineSha256": "bcc2dd17f1a58cfcb96b48f382a6f24a25f46a5f0e36ac02e5415e108161dc69",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "three.module-NATEk4NP.js",
+        "status": 200,
+        "sha256": "41530d4cf5b954f9f521b2ce84b45236e9bf9be2f3ff6746e3ff9302d002c96e",
+        "localSha256": "41530d4cf5b954f9f521b2ce84b45236e9bf9be2f3ff6746e3ff9302d002c96e",
+        "baselineSha256": "41530d4cf5b954f9f521b2ce84b45236e9bf9be2f3ff6746e3ff9302d002c96e",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "time-nav-zNzZqn8I.js",
+        "status": 200,
+        "sha256": "2ebe545821f1a2dc034464507d9d880a6fcc77777877241395ec681263507093",
+        "localSha256": "2ebe545821f1a2dc034464507d9d880a6fcc77777877241395ec681263507093",
+        "baselineSha256": "2ebe545821f1a2dc034464507d9d880a6fcc77777877241395ec681263507093",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "volumetric-clouds-8SQVk-_2.js",
+        "status": 200,
+        "sha256": "e4e9e5987587ae4f255e0d3a3dfc791863707150a6bcb18adabf8f4518ac601d",
+        "localSha256": "e4e9e5987587ae4f255e0d3a3dfc791863707150a6bcb18adabf8f4518ac601d",
+        "baselineSha256": "e4e9e5987587ae4f255e0d3a3dfc791863707150a6bcb18adabf8f4518ac601d",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "worker-Df1A3ASA.js",
+        "status": 200,
+        "sha256": "f224306858e7173b0104913d8a0ab9d025a5fbfd63802fabe2f27494b5e21db0",
+        "localSha256": "f224306858e7173b0104913d8a0ab9d025a5fbfd63802fabe2f27494b5e21db0",
+        "baselineSha256": "f224306858e7173b0104913d8a0ab9d025a5fbfd63802fabe2f27494b5e21db0",
+        "matchesDist": true,
+        "matchesBaseline": true
+      },
+      {
+        "name": "world-time-C2zk4ykx.js",
+        "status": 200,
+        "sha256": "2043fc7fe4472a29415bd9f2f3e3218d4adb462c158ea500b709d72c750cf5d2",
+        "localSha256": "2043fc7fe4472a29415bd9f2f3e3218d4adb462c158ea500b709d72c750cf5d2",
+        "baselineSha256": "2043fc7fe4472a29415bd9f2f3e3218d4adb462c158ea500b709d72c750cf5d2",
+        "matchesDist": true,
+        "matchesBaseline": true
+      }
+    ]
+  },
+  "guideBrowser": {
+    "report": "../../universe-atlas-rendering/test-results/tree-three-ez-live/live-guide/guide-report.json",
+    "chapters": 9,
+    "widths": [
+      1440,
+      390,
+      320
+    ],
+    "internalDestinations": 89,
+    "deployedRuntimeChecked": true,
+    "errors": [],
+    "eraBookmarks": [
+      0,
+      5,
+      9
+    ],
+    "noJavaScriptReading": true,
+    "inGameGuideLink": true,
+    "mobileDetails": {
+      "initial": [
+        {
+          "summary": "Implementation history, experiments and measurements",
+          "open": false
+        }
+      ],
+      "expanded": [
+        {
+          "summary": "Implementation history, experiments and measurements",
+          "open": true
+        }
+      ],
+      "noHorizontalOverflow": true,
+      "pageErrors": []
+    }
+  },
+  "researchLabNotProductionEntry": true,
+  "finalEvidenceReport": "test-results/three-ez-impostor-reference/native-map-fix/report.json",
+  "result": "pass"
+}
