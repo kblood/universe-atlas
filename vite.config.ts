@@ -384,7 +384,7 @@ export default defineConfig({
       'test-results/desktop-rendering-921de57/report.json',
       'test-results/desktop-rendering-6b87e13/report.json',
       'test-results/fauna-closeup-6b87e13/report.json',
-    ])this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
+    ])this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
     for(const mode of ['mask','hash'])for(const image of [
       'lod0-back-shadows-on.png','lod0-front-shadows-on.png',
       'lod1-back-shadows-on.png','lod1-front-shadows-on.png',
