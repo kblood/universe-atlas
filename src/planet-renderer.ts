@@ -18,7 +18,7 @@ import {contactGeometry,type ContactPatch} from './terrain-contact.ts';
 import {hydrologyReady} from './hydrology-registry.ts';
 import type {RiverRegion} from './river-types.ts';
 import {riverFeatureAt} from './river-sample.ts';
-import {detailTexture,detailOrigin,MATERIAL_VERSION,groundVertexHeader,groundVertex,groundFragmentHeader,groundColor,groundNormalCode} from './ground-material.ts';
+import {detailTexture,detailOrigin,MATERIAL_VERSION,groundVertexHeader,groundVertex,groundFragmentHeader,groundColor,groundRoughnessCode,groundNormalCode} from './ground-material.ts';
 import {VolumetricClouds,CLOUD_TARGET_BUDGET_BYTES} from './volumetric-clouds.ts';
 import {ringSystemFor, ringActiveAt, createRingMesh, type RingSystem} from './planet-rings.ts';
 import {spinStateFor} from './stellar-evolution.ts';
@@ -619,6 +619,7 @@ export class PlanetRenderer {
     geometry.setAttribute('parentHeight',new THREE.BufferAttribute(d.parentHeight,1));
     geometry.setAttribute('normal', new THREE.BufferAttribute(d.normals, 3));
     geometry.setAttribute('groundWeights',new THREE.BufferAttribute(d.materials,4,true));
+    geometry.setAttribute('groundSurfaceRoughness',new THREE.BufferAttribute(d.surfaceRoughness,1,false));
     geometry.setAttribute('uv', new THREE.BufferAttribute(d.uvs, 2));
     geometry.setIndex(new THREE.BufferAttribute(d.indices, 1));
     boundMorphedTerrain(geometry);
@@ -661,14 +662,14 @@ export class PlanetRenderer {
       shader.fragmentShader=localAerialGLSL+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
         ${groundColor}`);
-      shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,dot(groundW,vec4(.96,.92,.84,.73)),groundFade);');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n'+groundRoughnessCode);
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\n'+groundNormalCode);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>', `
         outgoingLight=atlasApplyLocalAir(outgoingLight,length(atlasLocalEyeM-atlasLocalM),
           atlasEyeHeightM,atlasHeightM,dot(normalize(atlasSurface),atlasSun),atlasAir);
         #include <opaque_fragment>`);
     };
-    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v8/'+LOCAL_AERIAL_VERSION;
+    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v9/'+LOCAL_AERIAL_VERSION;
     const mesh = new THREE.Mesh(geometry, material);
     mesh.receiveShadow=true;mesh.castShadow=true;material.shadowSide=THREE.DoubleSide;
     mesh.customDepthMaterial=terrainDepthMaterial(morph,edge,d.width-2);
@@ -690,7 +691,7 @@ export class PlanetRenderer {
       ocean=new THREE.Mesh(waterGeometry,waterMaterial);ocean.position.copy(mesh.position);ocean.visible=false;ocean.frustumCulled=false;
       this.group.add(ocean);
     }
-    const bufferBytes=d.positions.byteLength+d.parents.byteLength+d.normals.byteLength+d.materials.byteLength+d.uvs.byteLength+d.indices.byteLength+d.surfaceHeight.byteLength+d.parentHeight.byteLength+(d.oceanPositions?.byteLength||0)+(d.oceanParents?.byteLength||0);
+    const bufferBytes=d.positions.byteLength+d.parents.byteLength+d.normals.byteLength+d.materials.byteLength+d.surfaceRoughness.byteLength+d.uvs.byteLength+d.indices.byteLength+d.surfaceHeight.byteLength+d.parentHeight.byteLength+(d.oceanPositions?.byteLength||0)+(d.oceanParents?.byteLength||0);
     const bytes=bufferBytes*2+Math.ceil(d.color.byteLength*(1+4/3));
     this.patches.set(key, {tile: d.tile, mesh, ocean,localEye,map, material, morph, detail,edge,data:d,bytes,touched: this.frame,waterBucket});
     this.residentBytes+=bytes;

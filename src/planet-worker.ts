@@ -14,7 +14,7 @@ self.onmessage = ({data}) => {
     // finished patch with the bucket it was actually built at without the
     // renderer having to recompute it from a float round-trip.
     const result = buildTile(residentBody!, data.tile, data.relief, data.waterLevelM ?? 0);
-    const transfer=[result.positions.buffer,result.parents.buffer,result.surfaceHeight.buffer,result.parentHeight.buffer,result.normals.buffer,result.materials.buffer,result.uvs.buffer,result.indices.buffer,result.color.buffer];
+    const transfer=[result.positions.buffer,result.parents.buffer,result.surfaceHeight.buffer,result.parentHeight.buffer,result.normals.buffer,result.materials.buffer,result.surfaceRoughness.buffer,result.uvs.buffer,result.indices.buffer,result.color.buffer];
     if(result.oceanPositions&&result.oceanParents)transfer.push(result.oceanPositions.buffer,result.oceanParents.buffer);
     self.postMessage({key: data.key, result, waterBucket: data.waterBucket}, transfer);
   } catch (error) { self.postMessage({key: data.key, error: String(error)}); }

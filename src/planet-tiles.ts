@@ -124,7 +124,7 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
   // give a 10 m substrate colour field. Geometry carries banks and cliffs,
   // while the shared ground atlas supplies the metre-scale grain at landing.
   const textureSize = tile.level>=20?32:tile.level>=14?64:tile.level>=8?128:PATCH_TEXTURE;
-  const positions: number[] = [], parents: number[] = [], normals: number[] = [], uvs: number[] = [], indices: number[] = [];
+  const positions: number[] = [], parents: number[] = [], normals: number[] = [], surfaceRoughness:number[]=[], uvs: number[] = [], indices: number[] = [];
   const surfaceHeight:number[] = [], parentHeight:number[] = [];
   // A level-only bound is intentionally used instead of a tile-centre metric:
   // the same global direction on a cube edge must receive the same envelope
@@ -208,6 +208,7 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
     const normal=childNormal(x,y);
     normals.push(...normal);
     const s=sample(d);
+    surfaceRoughness.push(Math.max(0,Math.min(1,s.roughness)));
     const base=classify(d,s.groundHeightM,normal.reduce((sum,x,j)=>sum+x*d[j],0)).weights;
     materials.push(...materialBytes(regionalBankWeights(body,s,base)));
     surfaceHeight.push(childSample.height*relief);
@@ -247,6 +248,7 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
       positions.push(...d.map((v, i) => positions[a * 3 + i] - v * skirt));
       parents.push(...d.map((v, i) => parents[a * 3 + i] - v * skirt));
       normals.push(...normals.slice(a * 3, a * 3 + 3));
+      surfaceRoughness.push(surfaceRoughness[a]);
       materials.push(...materials.slice(a*4,a*4+4));
       uvs.push(...uvs.slice(a * 2, a * 2 + 2));
       surfaceHeight.push(surfaceHeight[a]);
@@ -293,5 +295,5 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
     const p=rawParent.map(value=>value*seaRadius) as V3;
     oceanParents.push(...p.map((value,i)=>value-anchor[i]));
   }
-  return { tile, anchor, positions: new Float32Array(positions), parents: new Float32Array(parents), surfaceHeight:new Float32Array(surfaceHeight), parentHeight:new Float32Array(parentHeight), normals: new Float32Array(normals), materials:new Uint8Array(materials), uvs: new Float32Array(uvs), indices: new Uint16Array(indices), color, width, skirtDepthM, oceanPositions:oceanPositions&&new Float32Array(oceanPositions), oceanParents:oceanParents&&new Float32Array(oceanParents) };
+  return { tile, anchor, positions: new Float32Array(positions), parents: new Float32Array(parents), surfaceHeight:new Float32Array(surfaceHeight), parentHeight:new Float32Array(parentHeight), normals: new Float32Array(normals), materials:new Uint8Array(materials), surfaceRoughness:new Float32Array(surfaceRoughness), uvs: new Float32Array(uvs), indices: new Uint16Array(indices), color, width, skirtDepthM, oceanPositions:oceanPositions&&new Float32Array(oceanPositions), oceanParents:oceanParents&&new Float32Array(oceanParents) };
 }

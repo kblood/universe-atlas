@@ -1,7 +1,15 @@
 import * as THREE from 'three';
 import {hash64,type V3} from './catalog.ts';
+import {DRY_SURFACE_ROUGHNESS,WET_SURFACE_ROUGHNESS,groundRoughnessTarget} from './surface-roughness.ts';
+export {groundRoughnessTarget} from './surface-roughness.ts';
 export const MATERIAL_VERSION='ground-material-1';
 export const DETAIL_PERIOD_M=4096;
+/** GLSL equivalent of surfaceWetnessFromRoughness/groundRoughnessTarget. */
+export const groundRoughnessCode=`
+float groundBiomeRoughness=dot(groundW,vec4(.96,.92,.84,.73));
+float groundSurfaceWetness=clamp((${DRY_SURFACE_ROUGHNESS}-groundSurfaceRoughnessV)/(${DRY_SURFACE_ROUGHNESS}-${WET_SURFACE_ROUGHNESS}),0.0,1.0);
+float groundWetAdjustedRoughness=mix(groundBiomeRoughness,${WET_SURFACE_ROUGHNESS},groundSurfaceWetness);
+roughnessFactor=mix(roughnessFactor,groundWetAdjustedRoughness,groundFade);`;
 export function detailOrigin(anchor:V3,radius:number):V3{
   return anchor.map(x=>((x*radius)%DETAIL_PERIOD_M+DETAIL_PERIOD_M)%DETAIL_PERIOD_M) as V3;
 }
@@ -36,12 +44,12 @@ export function detailTexture(anisotropy=1){
   texture.generateMipmaps=true;texture.anisotropy=anisotropy;texture.needsUpdate=true;
   return texture;
 }
-export const groundVertexHeader=`attribute vec4 groundWeights; uniform vec3 groundOrigin; uniform float atlasRadius;
-varying vec3 groundPosition,groundNormal; varying vec4 groundMix;`;
-export const groundVertex=`groundPosition=transformed*atlasRadius+groundOrigin; groundNormal=normal; groundMix=groundWeights;`;
+export const groundVertexHeader=`attribute vec4 groundWeights; attribute float groundSurfaceRoughness; uniform vec3 groundOrigin; uniform float atlasRadius;
+varying vec3 groundPosition,groundNormal; varying vec4 groundMix; varying float groundSurfaceRoughnessV;`;
+export const groundVertex=`groundPosition=transformed*atlasRadius+groundOrigin; groundNormal=normal; groundMix=groundWeights; groundSurfaceRoughnessV=groundSurfaceRoughness;`;
 export const groundFragmentHeader=`
 uniform sampler2D groundAtlas; uniform float groundEnabled,groundPatch,groundHabitat;
-varying vec3 groundPosition,groundNormal; varying vec4 groundMix;
+varying vec3 groundPosition,groundNormal; varying vec4 groundMix; varying float groundSurfaceRoughnessV;
 vec4 groundTri(vec3 p,vec3 w){return texture2D(groundAtlas,p.yz)*w.x+texture2D(groundAtlas,p.zx)*w.y+texture2D(groundAtlas,p.xy)*w.z;}
 `;
 export const groundColor=`

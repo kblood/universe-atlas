@@ -10,6 +10,7 @@ import {regionalLandformHeight,REGIONAL_LANDFORM_VERSION} from './regional-landf
 import type {RiverRegion} from './river-types.ts';
 import {craterField, craterAgeGate, craterHeightDeltaAt, type CraterField, type CraterParams} from './planet-craters.ts';
 import {planetLandforms} from './planet-landforms.ts';
+import {DRY_SURFACE_ROUGHNESS,WET_SURFACE_ROUGHNESS} from './surface-roughness.ts';
 
 // Bumped from terrain-1.3.0: `terrainSampler` gained the ABILITY to sum
 // procedural impact craters (planet-craters.ts) into `elevationM` for any
@@ -249,7 +250,7 @@ export function baseTerrainSampler(body: Body, waterLevelM: number = 0) {
       elevationM,
       ocean,
       color: color.map((v) => clamp(v * grain * localGrain, 0, 255)),
-      roughness: ocean ? 0.28 : 0.9,
+      roughness: ocean ? WET_SURFACE_ROUGHNESS : DRY_SURFACE_ROUGHNESS,
     };
   };
 }
@@ -445,7 +446,7 @@ export function terrainSampler(
         elevationM: rockHeightM,
         ocean,
         color,
-        roughness: wet ? .28 : sample.roughness,
+        roughness: wet ? WET_SURFACE_ROUGHNESS : sample.roughness,
         rockHeightM,
         waterLevelM,
         visibleHeightM: wet && waterLevelM !== null ? Math.max(rockHeightM, waterLevelM) : rockHeightM,
