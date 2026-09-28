@@ -2,6 +2,10 @@
 
 Date: 2026-09-27. Accepted direction; implementation started.
 
+Execution ownership follows the [Luna and Claude Code task flow](desktop-realism-task-flow-2026-09-28.md).
+Luna owns bounded implementation and acceptance; Claude Code / Opus 5.5 owns
+substantial implementation milestones. The product scope below remains intact.
+
 ## Current status snapshot — deployed runtime stage `8c03f41`
 
 The live `build-info.json` stamp and ordinary served-site probe match runtime
