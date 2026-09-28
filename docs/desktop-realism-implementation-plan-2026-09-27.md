@@ -179,7 +179,7 @@ more. Structural diversity must not come from disconnected anatomy.
 | B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented; build, 53 targeted checks and RTX 5090 browser acceptance pass; see validation record |
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
 | D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; first Blender brief validates; forest integration, authored assets and resource cache pending |
-| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Canonical patches, shared habitat and bounded worker selection cache implemented, reviewed and deployed; summary worker and canopy rendering pending |
+| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Canonical patches, shared habitat and bounded worker selection cache implemented, reviewed and deployed; packed worker transfer implemented at `a0dd78a`; summary worker and visible canopy pending |
 | F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | Two tree authoring proposals technically validated and visually reviewed; asset/runtime acceptance and other landscape work pending |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |
@@ -213,13 +213,14 @@ timings or implement the lighting/shadow/AA changes in stage C.
 
 Opus 5.5 [reviewed checkpoint eaf8414](opus-5.5-forest-implementation-review-2026-09-28.md)
 and identified compacted-slot rewrites and water-triggered selection backlog.
-The next source increment introduces stable per-batch ID slots with swap-removal,
+The follow-up increment implemented stable per-batch ID slots with swap-removal,
 up to eight coalesced dirty ranges, preallocated colours, water-only habitat
 refresh, and a bounded worker restart. Six source unit cases cover these repairs.
-Luna 6 is independently checking the browser fixtures and preparing committed
-stage deployment. Remaining review suggestions (packed selection transfer,
-shader-based fades, larger precision-derived rebases and canopy handoff
-hysteresis) remain follow-on work; none is silently declared complete.
+Packed selection transfer is now implemented at checkpoint `a0dd78a`; its Node
+benchmark and protocol checks are recorded below. Browser validation and an
+independent Opus review of this increment are pending. Shader-based fades,
+larger precision-derived rebases and canopy handoff hysteresis remain follow-on
+work; none is silently declared complete.
 
 ## 8. Acceptance for later verification
 
@@ -295,6 +296,26 @@ guide. Luna 6's deployed RTX 5090 movement and rendering checks pass; the
 browser evidence. This completes the selection-cache increment, not stage E
 or the overall realism plan. Continuous canopy, production landscape assets,
 lighting/shadows and realistic rigged fauna remain active work.
+
+### Packed selection transfer — 2026-09-28
+
+Checkpoint `a0dd78a` sends population-selection results in a bounded,
+transferable binary buffer instead of structured-cloning one JavaScript object
+per cell. Twelve Float64 values preserve each cell's canonical numeric address,
+direction, roll, height, yaw, query distance and representative flag. Order and
+canonical doubles remain unchanged. Validation checks protocol version, length,
+addresses and finite values. Malformed/failed worker replies recover through
+one restart and the existing synchronous selector; existing residents remain
+visible during recovery. Main-thread objects are still reconstructed, so this
+is not zero-allocation and adds no canopy or asset rendering.
+
+The [Node worker benchmark](forest-selection-transfer-2026-09-28.md) compares
+18,019-cell responses and verifies exact JSON equality. Object cloning measured
+23.33/32.70 ms p50/p95 round trip; packed transfer including encode/decode
+measured 13.79/19.42 ms. Selection itself is excluded. These are Node
+worker-thread measurements on the development machine, not browser frame or
+GPU improvement claims. Browser validation and independent Opus review remain
+pending.
 
 ## 9. Reference techniques and boundaries
 
