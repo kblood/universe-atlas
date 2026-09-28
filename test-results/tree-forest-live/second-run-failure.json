@@ -1,0 +1,8 @@
+{
+  "commit": "8e16776b20effaa1e2bd89a6de4b47654a1cae5e",
+  "stage": "production-game-smoke",
+  "result": "failed",
+  "observed": "The corrected verifier reached the requested body with settled camera, the #find-life control became visible and was clicked, and the loader guard passed. It then timed out after 60 seconds waiting for window.__atlas.travel.terrainCruise to become non-null.",
+  "diagnostics": "The verifier revision running at the time did not yet have the state/screenshot failure capture, so the reason terrainCruise stayed null is unconfirmed.",
+  "nextRun": "Use the updated failure capture to record state, camera, travel, lifeGate, forest diagnostics, selector status, console/page errors, and screenshot if this wait fails again."
+}

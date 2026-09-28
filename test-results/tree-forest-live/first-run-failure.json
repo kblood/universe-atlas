@@ -1,0 +1,8 @@
+{
+  "commit": "8e16776b20effaa1e2bd89a6de4b47654a1cae5e",
+  "stage": "production-game-smoke",
+  "result": "failed",
+  "failure": "Playwright timed out waiting for #find-life. The first runner waited only for window.__atlas.ready; it did not record the route state, camera state, or selector visibility at timeout, so the cause is not confirmed.",
+  "publicationAudit": "Completed before browser smoke; no byte mismatches were reported.",
+  "harnessCorrection": "The rerun includes CURRENT_VERSIONS and waits for body level, exact body ID, and camera animation completion. It also records state, selector visibility, and a screenshot on a later timeout."
+}

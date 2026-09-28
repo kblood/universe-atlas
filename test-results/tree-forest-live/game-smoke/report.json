@@ -1,0 +1,114 @@
+{
+  "ok": true,
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "build": {
+    "commit": "8e16776b20effaa1e2bd89a6de4b47654a1cae5e",
+    "dirty": false,
+    "builtAt": "2026-09-28T11:13:33.121Z"
+  },
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "viewport": [
+    1440,
+    1000
+  ],
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "loader": {
+    "rejected": true,
+    "message": "Error: Experimental forest assets require a development build"
+  },
+  "candidateRequests": [],
+  "phases": [
+    {
+      "name": "body-ready",
+      "status": "Physical scale · continuous planetary terrain and system flight",
+      "travel": {
+        "active": false,
+        "systemUnit": 1E-06,
+        "terrainCruise": null,
+        "clearanceM": 0,
+        "cameraNear": 0.001
+      },
+      "forest": {
+        "visible": 0,
+        "cached": 0,
+        "pending": 0,
+        "fullCanopyTrees": 0,
+        "fullCanopyFailures": 0
+      }
+    },
+    {
+      "name": "immediate-after-click",
+      "status": "Approaching a living habitat. Vegetation and wildlife stream during low flight.",
+      "travel": {
+        "active": true,
+        "systemUnit": 1E-06,
+        "terrainCruise": null,
+        "clearanceM": 0,
+        "cameraNear": 0.001
+      },
+      "forest": {
+        "visible": 0,
+        "cached": 0,
+        "pending": 0,
+        "fullCanopyTrees": 0,
+        "fullCanopyFailures": 0
+      }
+    },
+    {
+      "name": "after-1.5s",
+      "status": "Approaching a living habitat. Vegetation and wildlife stream during low flight.",
+      "travel": {
+        "active": true,
+        "systemUnit": 1E-06,
+        "terrainCruise": null,
+        "clearanceM": 0,
+        "cameraNear": 0.001
+      },
+      "forest": {
+        "visible": 0,
+        "cached": 0,
+        "pending": 0,
+        "fullCanopyTrees": 0,
+        "fullCanopyFailures": 0
+      }
+    },
+    {
+      "name": "terrain-cruise",
+      "status": "Approaching a living habitat. Vegetation and wildlife stream during low flight.",
+      "travel": {
+        "active": true,
+        "systemUnit": 1,
+        "terrainCruise": 600,
+        "clearanceM": 598.3599976804107,
+        "cameraNear": 3.0000000233508866
+      },
+      "forest": {
+        "visible": 0,
+        "cached": 16207,
+        "pending": 1892,
+        "fullCanopyTrees": 156275,
+        "fullCanopyFailures": 0
+      }
+    },
+    {
+      "name": "legacy-forest-warmed",
+      "status": "Approaching a living habitat. Vegetation and wildlife stream during low flight.",
+      "travel": {
+        "active": true,
+        "systemUnit": 1,
+        "terrainCruise": null,
+        "clearanceM": 95.8763958895579,
+        "cameraNear": 0.5163529711339185
+      },
+      "forest": {
+        "visible": 362,
+        "cached": 18395,
+        "pending": 0,
+        "fullCanopyTrees": 156275,
+        "fullCanopyFailures": 0
+      }
+    }
+  ],
+  "glError": 0,
+  "errors": []
+}

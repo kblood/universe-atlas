@@ -1,0 +1,79 @@
+{
+  "checkedAt": "2026-09-28T11:25:10.581Z",
+  "expectedCommit": "8e16776b20effaa1e2bd89a6de4b47654a1cae5e",
+  "liveBuild": {
+    "commit": "8e16776b20effaa1e2bd89a6de4b47654a1cae5e",
+    "dirty": false,
+    "builtAt": "2026-09-28T11:13:33.121Z"
+  },
+  "stage": "production-game-panel",
+  "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/?seed=LETHRA-001&river=G001%2FC2128%2C0%2C1%2F0%2Fplanet%2F1%2Fdrainage-2%2Fn64%2Foutlet%2F16162&date=435084631200000121530000000&wv=atlas-time-2%2Catlas-address-1%2Catlas-cosmology-2-radiation%2Catlas-2.0.0%2Catlas-history-3-remnant-cooling%2Catlas-surface-6-lifecycle-sampler%2Cterrain-1.5.0%2Cbiosphere-lab-3%2Catlas-galaxy-history-2&mv=atlas-time-2%7Catlas-address-1%7Catlas-cosmology-2-radiation%7Catlas-2.0.0%7Catlas-history-3-remnant-cooling%7Catlas-surface-6-lifecycle-sampler%7Cterrain-1.5.0%7Cbiosphere-lab-3%7Catlas-galaxy-history-2%7Catlas-background-radiation-1%7Catlas-biosphere-query-5-dated-suitability%7Catlas-primordial-2-address-lineage%7Catlas-stellar-cohorts-5-address-lineage%7Catlas-future-constant-lambda-1%7Catlas-alternate-fates-1%7Catlas-observed-sky-1%7Catlas-cmb-illustration-1%7Catlas-surface-cell-1&bv=atlas-client-2026-09-26-planets-1&g=G001&sector=266%2C0%2C0&system=G001%2FC2128%2C0%2C1%2F0&body=G001%2FC2128%2C0%2C1%2F0%2Fplanet%2F1",
+  "failure": "TimeoutError: page.waitForFunction: Timeout 60000ms exceeded.",
+  "findLife": {
+    "count": 1,
+    "visible": true
+  },
+  "browserState": {
+    "ready": true,
+    "level": "body",
+    "camera": {
+      "animating": false,
+      "fov": 48,
+      "near": 0.001,
+      "far": 3590348896.7999997,
+      "viewOffset": 0,
+      "position": [
+        3.676462546760559,
+        -3.7386581728691195,
+        -1.3022069477233886
+      ],
+      "target": [
+        0,
+        0,
+        0
+      ]
+    },
+    "date": {
+      "version": "atlas-time-2",
+      "reference": "big-bang",
+      "offsetNs": "435084631200000090241400000",
+      "branchId": "baseline"
+    },
+    "lifeGate": {
+      "tMyr": 2344,
+      "floraStage": "complex",
+      "treeSpeciesCount": 5
+    },
+    "forest": {
+      "visible": 0,
+      "candidateCells": 0,
+      "cached": 0,
+      "pending": 0,
+      "detailedTrees": {
+        "ready": false,
+        "loading": false,
+        "error": "",
+        "visible": [
+          0,
+          0
+        ],
+        "species": 0,
+        "dateNs": "435084631200000090241400000",
+        "catalogueVersion": 0,
+        "heightPolicy": "canonical-population-proxy",
+        "geometryVariants": 1,
+        "farRepresentation": "legacy-canonical-canopy",
+        "samples": []
+      },
+      "fullCanopy": {
+        "enabled": false,
+        "ready": false,
+        "trees": 0,
+        "failures": 0
+      }
+    }
+  },
+  "candidateFamilyRequests": [],
+  "errors": [],
+  "failureScreenshot": "Not present in retained directory"
+}

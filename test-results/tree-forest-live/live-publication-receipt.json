@@ -1,0 +1,4075 @@
+{
+  "schema": "https://iwsdk.local/schemas/live-atlas-publication-receipt/v5",
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "checkedAt": "2026-09-28T11:35:08.130Z",
+  "expectedCommit": "8e16776b20effaa1e2bd89a6de4b47654a1cae5e",
+  "liveBuild": {
+    "commit": "8e16776b20effaa1e2bd89a6de4b47654a1cae5e",
+    "dirty": false,
+    "builtAt": "2026-09-28T11:13:33.121Z"
+  },
+  "buildStampPass": true,
+  "buildInfoBytesMatch": true,
+  "publicationResources": {
+    "roots": [
+      "guide",
+      "docs",
+      "src",
+      "tests",
+      "assets/briefs",
+      "test-results/tree-forest-integration"
+    ],
+    "includeAllDistPng": true,
+    "pngCount": 295,
+    "allPngSignaturesValid": true,
+    "requiredResources": [
+      "docs/tree-forest-integration-2026-09-28.md",
+      "test-results/tree-forest-integration/README.md",
+      "test-results/tree-forest-integration/cpu.log",
+      "test-results/tree-forest-integration/acceptance.browser.mjs",
+      "test-results/tree-forest-integration/hardware-family-f-verified/provenance.json",
+      "test-results/tree-forest-integration/hardware-family-f-verified/report.json",
+      "test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-initial.png",
+      "test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-date-shift.png",
+      "test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-date-return.png",
+      "test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-after-movement.png"
+    ],
+    "count": 470,
+    "allMatchDist": true,
+    "resources": [
+      {
+        "path": "assets/briefs/atlas-ez-tree-family-v1.json",
+        "status": 200,
+        "bytes": 4422,
+        "localSha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91",
+        "remoteSha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91",
+        "matches": true
+      },
+      {
+        "path": "assets/briefs/atlas-three-ez-impostor-reference.json",
+        "status": 200,
+        "bytes": 3192,
+        "localSha256": "0cf84c3edfc3a1d0f08ddc94758257c3012ec52834b91ad8825e0ee4752307c4",
+        "remoteSha256": "0cf84c3edfc3a1d0f08ddc94758257c3012ec52834b91ad8825e0ee4752307c4",
+        "matches": true
+      },
+      {
+        "path": "assets/briefs/temperate-branching-tree-v1.json",
+        "status": 200,
+        "bytes": 4957,
+        "localSha256": "4bc43f7c5dda66be918194bb960d2672d72022cb78bc1e6eb09c0a5298a7e8e0",
+        "remoteSha256": "4bc43f7c5dda66be918194bb960d2672d72022cb78bc1e6eb09c0a5298a7e8e0",
+        "matches": true
+      },
+      {
+        "path": "docs/authored-tree-capture-2026-09-28.md",
+        "status": 200,
+        "bytes": 5743,
+        "localSha256": "526f0488428217e7b8fa04a4240d41cdb3d7c2bc47666f91724676125b84a9e0",
+        "remoteSha256": "526f0488428217e7b8fa04a4240d41cdb3d7c2bc47666f91724676125b84a9e0",
+        "matches": true
+      },
+      {
+        "path": "docs/authored-tree-distance-design-2026-09-28.md",
+        "status": 200,
+        "bytes": 9353,
+        "localSha256": "d37d1c2f126fe00094e06a5bd6ceb16885094e1dbcd3e8fc83fe11c70ceaa274",
+        "remoteSha256": "d37d1c2f126fe00094e06a5bd6ceb16885094e1dbcd3e8fc83fe11c70ceaa274",
+        "matches": true
+      },
+      {
+        "path": "docs/background-hydrology-travel-2026-09-28.md",
+        "status": 200,
+        "bytes": 2577,
+        "localSha256": "46cd467790d749f755d449a295ad469daa3c8f543ba1a8c541bd7183a24e5f60",
+        "remoteSha256": "46cd467790d749f755d449a295ad469daa3c8f543ba1a8c541bd7183a24e5f60",
+        "matches": true
+      },
+      {
+        "path": "docs/biome-lab-spec.md",
+        "status": 200,
+        "bytes": 12072,
+        "localSha256": "9892384d1dc44931e01f7671ab66e78f0eb41154ea3d9dcfc24a96ba5194ef7d",
+        "remoteSha256": "9892384d1dc44931e01f7671ab66e78f0eb41154ea3d9dcfc24a96ba5194ef7d",
+        "matches": true
+      },
+      {
+        "path": "docs/biosphere-lab-implementation-spec.md",
+        "status": 200,
+        "bytes": 16204,
+        "localSha256": "5b2e41c4cbcdda899470a7c6cb1195fab5fb36d914026aa714c2af6300477866",
+        "remoteSha256": "5b2e41c4cbcdda899470a7c6cb1195fab5fb36d914026aa714c2af6300477866",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-census-design-2026-09-28.md",
+        "status": 200,
+        "bytes": 3773,
+        "localSha256": "ecb34afb58fd0343550a4edeef7846b45e4922aab3809731e3c841d13cb184f4",
+        "remoteSha256": "ecb34afb58fd0343550a4edeef7846b45e4922aab3809731e3c841d13cb184f4",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-foundation-2026-09-28.md",
+        "status": 200,
+        "bytes": 3210,
+        "localSha256": "5be1e785209602b5a18d0f4d934b3f654927701ef81ebf9826192850beafd1f5",
+        "remoteSha256": "5be1e785209602b5a18d0f4d934b3f654927701ef81ebf9826192850beafd1f5",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-host-review-assessment-2026-09-28.md",
+        "status": 200,
+        "bytes": 5315,
+        "localSha256": "8cbc39b255405bfee00fae7789012669efe9b4f24e3ed51b9e6f09db17f1749e",
+        "remoteSha256": "8cbc39b255405bfee00fae7789012669efe9b4f24e3ed51b9e6f09db17f1749e",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-integration-contract-2026-09-28.md",
+        "status": 200,
+        "bytes": 6648,
+        "localSha256": "0b882bb17051494c7a94dde9fc14380fd35c61d49025a77c8b1e272177d3ea2e",
+        "remoteSha256": "0b882bb17051494c7a94dde9fc14380fd35c61d49025a77c8b1e272177d3ea2e",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-runtime-integration-2026-09-28.md",
+        "status": 200,
+        "bytes": 10330,
+        "localSha256": "85750a5b721f283abcc8e704d97d3ad36c4bf8afb74c0d5a04cbf9e35473e161",
+        "remoteSha256": "85750a5b721f283abcc8e704d97d3ad36c4bf8afb74c0d5a04cbf9e35473e161",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-water-review-assessment-2026-09-28.md",
+        "status": 200,
+        "bytes": 2973,
+        "localSha256": "da8d9c48eb43536b273cb7082a18e432d08c1eb48bc48062bbe591fa311b08b8",
+        "remoteSha256": "da8d9c48eb43536b273cb7082a18e432d08c1eb48bc48062bbe591fa311b08b8",
+        "matches": true
+      },
+      {
+        "path": "docs/canopy-water-validity-design-2026-09-28.md",
+        "status": 200,
+        "bytes": 10084,
+        "localSha256": "f8db72b735e425edf4ac03b3a485c68db37220b1db499c32c8e000e7ae6a9b52",
+        "remoteSha256": "f8db72b735e425edf4ac03b3a485c68db37220b1db499c32c8e000e7ae6a9b52",
+        "matches": true
+      },
+      {
+        "path": "docs/continuous-planet-detail.md",
+        "status": 200,
+        "bytes": 10241,
+        "localSha256": "ca5b35ec635c0a9c9ed4c80cdc28870764a48e6565c36e89147438bf5cb35ac0",
+        "remoteSha256": "ca5b35ec635c0a9c9ed4c80cdc28870764a48e6565c36e89147438bf5cb35ac0",
+        "matches": true
+      },
+      {
+        "path": "docs/cosmic-history-simulation-plan-2026-09-23.md",
+        "status": 200,
+        "bytes": 6832,
+        "localSha256": "8658c7f21bbfabe51e19b0a3c44c034eb04cb5de0a9b7774a0cd4bfcb826e6ff",
+        "remoteSha256": "8658c7f21bbfabe51e19b0a3c44c034eb04cb5de0a9b7774a0cd4bfcb826e6ff",
+        "matches": true
+      },
+      {
+        "path": "docs/creature-diversity-and-motion-plan-2026-09-14.md",
+        "status": 200,
+        "bytes": 12105,
+        "localSha256": "06831d3075f1c0a6c24280fa50842d53c710c53e6f1ade8914d1cd6d17d10699",
+        "remoteSha256": "06831d3075f1c0a6c24280fa50842d53c710c53e6f1ade8914d1cd6d17d10699",
+        "matches": true
+      },
+      {
+        "path": "docs/creature-lab-implementation-spec.md",
+        "status": 200,
+        "bytes": 13328,
+        "localSha256": "91c6791415fa5741b473aa327f29db98ea59448a02c5cf596d271bb286d8d3df",
+        "remoteSha256": "91c6791415fa5741b473aa327f29db98ea59448a02c5cf596d271bb286d8d3df",
+        "matches": true
+      },
+      {
+        "path": "docs/deployment-580936f-2026-09-28.md",
+        "status": 200,
+        "bytes": 3039,
+        "localSha256": "a91a47a7df7f0b5c1ced13e02d86d36007082930016c68682ba756bc1847937c",
+        "remoteSha256": "a91a47a7df7f0b5c1ced13e02d86d36007082930016c68682ba756bc1847937c",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-realism-assessment-2026-09-27.md",
+        "status": 200,
+        "bytes": 9297,
+        "localSha256": "e62d425648bf886667b94b4ac8373180f0e8474b97cd674cc3e6bdcf3cd4c1ba",
+        "remoteSha256": "e62d425648bf886667b94b4ac8373180f0e8474b97cd674cc3e6bdcf3cd4c1ba",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-realism-implementation-plan-2026-09-27.md",
+        "status": 200,
+        "bytes": 37376,
+        "localSha256": "18b33dab608c39e4f301d9105aef9c91982e14eb8c1af26f88c267468cde5e6c",
+        "remoteSha256": "18b33dab608c39e4f301d9105aef9c91982e14eb8c1af26f88c267468cde5e6c",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-realism-proposal-2026-09-27.md",
+        "status": 200,
+        "bytes": 9276,
+        "localSha256": "a000541f5bfa86da45fca535f70d3a156a49c1dfdbb437df59d2fe3047cc0477",
+        "remoteSha256": "a000541f5bfa86da45fca535f70d3a156a49c1dfdbb437df59d2fe3047cc0477",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-realism-validation-2026-09-28.md",
+        "status": 200,
+        "bytes": 7608,
+        "localSha256": "7de1295c2631a5b7f15dd0bff6c5e9b2862e21c5e5412fd5063e1dbca50a0ce9",
+        "remoteSha256": "7de1295c2631a5b7f15dd0bff6c5e9b2862e21c5e5412fd5063e1dbca50a0ce9",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-render-profiling.md",
+        "status": 200,
+        "bytes": 3584,
+        "localSha256": "59ff474620ead3b476f91b88864e7eec8ce4ad6e4eee55735d86b12e1de4d586",
+        "remoteSha256": "59ff474620ead3b476f91b88864e7eec8ce4ad6e4eee55735d86b12e1de4d586",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-rendering-stage-c-2026-09-28.md",
+        "status": 200,
+        "bytes": 4097,
+        "localSha256": "3e7ac3fcec54cba54aeca80514bcccaabc524bb8592cb0785779d95e1ede711a",
+        "remoteSha256": "3e7ac3fcec54cba54aeca80514bcccaabc524bb8592cb0785779d95e1ede711a",
+        "matches": true
+      },
+      {
+        "path": "docs/desktop-rendering-validation-2026-09-28.md",
+        "status": 200,
+        "bytes": 6152,
+        "localSha256": "d1ca75d68021ad5c41bb3a64375e5a829db09d1ba6471309e443999d8f4e51ca",
+        "remoteSha256": "d1ca75d68021ad5c41bb3a64375e5a829db09d1ba6471309e443999d8f4e51ca",
+        "matches": true
+      },
+      {
+        "path": "docs/deterministic-temporal-universe-design-2026-09-23.md",
+        "status": 200,
+        "bytes": 14233,
+        "localSha256": "4040d1427e32c066722484276f3d87f16854ae54c43457b3eca7e54a44fb3af3",
+        "remoteSha256": "4040d1427e32c066722484276f3d87f16854ae54c43457b3eca7e54a44fb3af3",
+        "matches": true
+      },
+      {
+        "path": "docs/drainage-and-atmospheric-flight.md",
+        "status": 200,
+        "bytes": 14413,
+        "localSha256": "b07dcd28eaf58777639988a889906e3788628e183e12bfdb8be101a50880cd27",
+        "remoteSha256": "b07dcd28eaf58777639988a889906e3788628e183e12bfdb8be101a50880cd27",
+        "matches": true
+      },
+      {
+        "path": "docs/exploration-corrections.md",
+        "status": 200,
+        "bytes": 14344,
+        "localSha256": "6290e3b92d0043e599a5f5e513beedc25e2980c22972effa7efbf761a1d68bdc",
+        "remoteSha256": "6290e3b92d0043e599a5f5e513beedc25e2980c22972effa7efbf761a1d68bdc",
+        "matches": true
+      },
+      {
+        "path": "docs/fable-5.1-plan-review.md",
+        "status": 200,
+        "bytes": 28390,
+        "localSha256": "8b7be76010e21c256d2cb658fa4f4328a1b4adf3c29532c2f6091218d6df2733",
+        "remoteSha256": "8b7be76010e21c256d2cb658fa4f4328a1b4adf3c29532c2f6091218d6df2733",
+        "matches": true
+      },
+      {
+        "path": "docs/fable-5.1-plan-review.metadata.json",
+        "status": 200,
+        "bytes": 2495,
+        "localSha256": "51965ee81c62a47f833a2fcc44999fce6e6d4da4228a8463e49296d996d21d54",
+        "remoteSha256": "51965ee81c62a47f833a2fcc44999fce6e6d4da4228a8463e49296d996d21d54",
+        "matches": true
+      },
+      {
+        "path": "docs/fable-review-assessment.md",
+        "status": 200,
+        "bytes": 9076,
+        "localSha256": "083105515df6e8cd701a251dfe3e58382ce81b0a23c43c6b9c551255fc700c7f",
+        "remoteSha256": "083105515df6e8cd701a251dfe3e58382ce81b0a23c43c6b9c551255fc700c7f",
+        "matches": true
+      },
+      {
+        "path": "docs/fable-review-brief.md",
+        "status": 200,
+        "bytes": 4248,
+        "localSha256": "23d77b240e0bc63c3b555f7f5490774eea935281d1c6aa3ffa48195362f9f273",
+        "remoteSha256": "23d77b240e0bc63c3b555f7f5490774eea935281d1c6aa3ffa48195362f9f273",
+        "matches": true
+      },
+      {
+        "path": "docs/flora-recipe-cache-2026-09-28.md",
+        "status": 200,
+        "bytes": 1691,
+        "localSha256": "f611023e82618dda33dfd3cdfc4e99b1a505c87d5a6717d9f566c3ed13967958",
+        "remoteSha256": "f611023e82618dda33dfd3cdfc4e99b1a505c87d5a6717d9f566c3ed13967958",
+        "matches": true
+      },
+      {
+        "path": "docs/forest-census-review-fixes-2026-09-28.md",
+        "status": 200,
+        "bytes": 2156,
+        "localSha256": "05264a40ba95f0c713b498e88892e1e26be7b833ce30a3d98a8f7b46158d156d",
+        "remoteSha256": "05264a40ba95f0c713b498e88892e1e26be7b833ce30a3d98a8f7b46158d156d",
+        "matches": true
+      },
+      {
+        "path": "docs/forest-impostor-experiment-2026-09-28.md",
+        "status": 200,
+        "bytes": 6191,
+        "localSha256": "4f817ec2a740fc721e9d1889be3c5a48fb182c73aea17d4f17bc1ffc2cad4e93",
+        "remoteSha256": "4f817ec2a740fc721e9d1889be3c5a48fb182c73aea17d4f17bc1ffc2cad4e93",
+        "matches": true
+      },
+      {
+        "path": "docs/forest-selection-cache-2026-09-28.md",
+        "status": 200,
+        "bytes": 5841,
+        "localSha256": "11cb99234aaefa77d4aa4a20ed6f3cc2ff99a61385af16c9cc705bface8f779d",
+        "remoteSha256": "11cb99234aaefa77d4aa4a20ed6f3cc2ff99a61385af16c9cc705bface8f779d",
+        "matches": true
+      },
+      {
+        "path": "docs/forest-selection-transfer-2026-09-28.md",
+        "status": 200,
+        "bytes": 6933,
+        "localSha256": "17953dd503503aa54f2964fbdd422c13a097e24930c95d7c44a0283ac0240035",
+        "remoteSha256": "17953dd503503aa54f2964fbdd422c13a097e24930c95d7c44a0283ac0240035",
+        "matches": true
+      },
+      {
+        "path": "docs/formation-and-life-integration-2026-09-23.md",
+        "status": 200,
+        "bytes": 2699,
+        "localSha256": "6cc81533a5b6309f7d741ae083737675fdbcec571931a9c1f35486c2be1989bf",
+        "remoteSha256": "6cc81533a5b6309f7d741ae083737675fdbcec571931a9c1f35486c2be1989bf",
+        "matches": true
+      },
+      {
+        "path": "docs/ground-realism-spec.md",
+        "status": 200,
+        "bytes": 4169,
+        "localSha256": "6f1dc9dec7bdeeccb73c7806aecd801f7e89f1d60d057f98f9f036a917ef323b",
+        "remoteSha256": "6f1dc9dec7bdeeccb73c7806aecd801f7e89f1d60d057f98f9f036a917ef323b",
+        "matches": true
+      },
+      {
+        "path": "docs/ground-realism.md",
+        "status": 200,
+        "bytes": 10900,
+        "localSha256": "eb30eaadbdedf352d654bdfe416623ce655e75700710965ec4ced3a1c3a30d98",
+        "remoteSha256": "eb30eaadbdedf352d654bdfe416623ce655e75700710965ec4ced3a1c3a30d98",
+        "matches": true
+      },
+      {
+        "path": "docs/leaf-diffuse-transmission-2026-09-28.md",
+        "status": 200,
+        "bytes": 9370,
+        "localSha256": "01f45cd99e58825c0a085b369b19aad1ca13d7fa82f6b9ac2d8f843af4cd1215",
+        "remoteSha256": "01f45cd99e58825c0a085b369b19aad1ca13d7fa82f6b9ac2d8f843af4cd1215",
+        "matches": true
+      },
+      {
+        "path": "docs/living-worlds-and-time-roadmap.md",
+        "status": 200,
+        "bytes": 25850,
+        "localSha256": "9d260a521663ca6a9704dee5b1d262471e4dc88c3bf1cad993e6d74a2000a31c",
+        "remoteSha256": "9d260a521663ca6a9704dee5b1d262471e4dc88c3bf1cad993e6d74a2000a31c",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-host-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 15684,
+        "localSha256": "ff2060c95e3d07c5164f60b5acfcdbfc97a0f3a9ed6b3182239743549636f980",
+        "remoteSha256": "ff2060c95e3d07c5164f60b5acfcdbfc97a0f3a9ed6b3182239743549636f980",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-host-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2010,
+        "localSha256": "d7d4075fb1daadd02b00454b63ec76b70ed4a6049c0af5ddb147ba2a53aa04d5",
+        "remoteSha256": "d7d4075fb1daadd02b00454b63ec76b70ed4a6049c0af5ddb147ba2a53aa04d5",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-integration-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 18440,
+        "localSha256": "eee0279396c919f663c72bc3e31512d3dc44fba393e0bc1eb372e2439bd46449",
+        "remoteSha256": "eee0279396c919f663c72bc3e31512d3dc44fba393e0bc1eb372e2439bd46449",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-integration-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1574,
+        "localSha256": "6869070447d49176f9691ee418ce63f675eb5f376fcfad061e5841e480c620a4",
+        "remoteSha256": "6869070447d49176f9691ee418ce63f675eb5f376fcfad061e5841e480c620a4",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 24662,
+        "localSha256": "7458fd2803ed6c32c7612cd782f7a54267ee033d6e5a4ca90c71e976e09fd374",
+        "remoteSha256": "7458fd2803ed6c32c7612cd782f7a54267ee033d6e5a4ca90c71e976e09fd374",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1569,
+        "localSha256": "7862e48a43934f44b60ecfcd6b04e2caaa47489c0314e12a9f358233d4e89d50",
+        "remoteSha256": "7862e48a43934f44b60ecfcd6b04e2caaa47489c0314e12a9f358233d4e89d50",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-water-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 10343,
+        "localSha256": "bd5003a54a3a64acdeec3c6470f2cfec5a794776745b72cbf9939d729f9fc3ef",
+        "remoteSha256": "bd5003a54a3a64acdeec3c6470f2cfec5a794776745b72cbf9939d729f9fc3ef",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-water-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1552,
+        "localSha256": "20e1e1b7857035b5bbea1730d7093ef15a9be4888ee01c5539f1552b02025895",
+        "remoteSha256": "20e1e1b7857035b5bbea1730d7093ef15a9be4888ee01c5539f1552b02025895",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-census-design-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 18319,
+        "localSha256": "8f09801c53144ea46bf080efcd4aa74f7fc4225f1433dd28e2350be7e0a29da7",
+        "remoteSha256": "8f09801c53144ea46bf080efcd4aa74f7fc4225f1433dd28e2350be7e0a29da7",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-census-design-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2017,
+        "localSha256": "03d38120837ac25867a92e669a9ea3744d4c99d9c73c367520cb31abc719d467",
+        "remoteSha256": "03d38120837ac25867a92e669a9ea3744d4c99d9c73c367520cb31abc719d467",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-census-implementation-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 10797,
+        "localSha256": "faec6e63505df0215178b8d48ed600bc2339613dc2b1e79885ce9d1f7d9fec98",
+        "remoteSha256": "faec6e63505df0215178b8d48ed600bc2339613dc2b1e79885ce9d1f7d9fec98",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-census-implementation-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1418,
+        "localSha256": "0801e59254ec901c6bb4059b9de6e5cfc52faa29d467fe31eea3b8e5f630cbba",
+        "remoteSha256": "0801e59254ec901c6bb4059b9de6e5cfc52faa29d467fe31eea3b8e5f630cbba",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-desktop-realism-review-2026-09-27.md",
+        "status": 200,
+        "bytes": 19473,
+        "localSha256": "e276177a58c25ef7fc43c5772ef92c5cd6a3a48608ed1ea5b7d80b7f27d5b986",
+        "remoteSha256": "e276177a58c25ef7fc43c5772ef92c5cd6a3a48608ed1ea5b7d80b7f27d5b986",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-desktop-realism-review-2026-09-27.metadata.json",
+        "status": 200,
+        "bytes": 3014,
+        "localSha256": "fdae7deeeb9aec4ca7e3b476da85693871dbb6fec11e3a5af695b17081f385a4",
+        "remoteSha256": "fdae7deeeb9aec4ca7e3b476da85693871dbb6fec11e3a5af695b17081f385a4",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-forest-implementation-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 13857,
+        "localSha256": "e721ef4bbdb73a1ecf6acf1e490ac340d35f909f78814fa3de48a5ce6642e89f",
+        "remoteSha256": "e721ef4bbdb73a1ecf6acf1e490ac340d35f909f78814fa3de48a5ce6642e89f",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-forest-implementation-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2011,
+        "localSha256": "9d81197fa63df3a06add6952f215afd2a01b1eaae7412c78efdc84b458fc30bc",
+        "remoteSha256": "9d81197fa63df3a06add6952f215afd2a01b1eaae7412c78efdc84b458fc30bc",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-rendering-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 10630,
+        "localSha256": "525f4b08a0ef28336cd549c8f8b5964f3522a3398d2e0c769e0691a8c66b30c2",
+        "remoteSha256": "525f4b08a0ef28336cd549c8f8b5964f3522a3398d2e0c769e0691a8c66b30c2",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-rendering-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1945,
+        "localSha256": "9f19c88cd0e97bb953573adb791a27cd3760843e2dfa665c11fdf2edaa4b7516",
+        "remoteSha256": "9f19c88cd0e97bb953573adb791a27cd3760843e2dfa665c11fdf2edaa4b7516",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-selection-cache-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 7156,
+        "localSha256": "52c636666c85401cc664e6b12efeaf67da87a68e39dd4cb6dc0115d997448a4e",
+        "remoteSha256": "52c636666c85401cc664e6b12efeaf67da87a68e39dd4cb6dc0115d997448a4e",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-selection-cache-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1742,
+        "localSha256": "db19dac227d4cd87b9c501271389bd3249f286db3da5dcda0f7984ed46add974",
+        "remoteSha256": "db19dac227d4cd87b9c501271389bd3249f286db3da5dcda0f7984ed46add974",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-transfer-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 6245,
+        "localSha256": "868c189c2d65391073bebfb754f4a4b4abf88e83a4adff83122aeb340d92c1ed",
+        "remoteSha256": "868c189c2d65391073bebfb754f4a4b4abf88e83a4adff83122aeb340d92c1ed",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-transfer-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2003,
+        "localSha256": "c174d101597972ced5f098879f988a3fccf0e2bfd2c5ca2b415c786f8e8faa24",
+        "remoteSha256": "c174d101597972ced5f098879f988a3fccf0e2bfd2c5ca2b415c786f8e8faa24",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v3-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 7742,
+        "localSha256": "1a1833a70c073585be7845ee2442a0275dc0d808b3c388a94f502543bae152af",
+        "remoteSha256": "1a1833a70c073585be7845ee2442a0275dc0d808b3c388a94f502543bae152af",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v3-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1486,
+        "localSha256": "29b8cdf565f444889a50ce8ed816166ec76cf1874499fa6bacbed9b48342d29d",
+        "remoteSha256": "29b8cdf565f444889a50ce8ed816166ec76cf1874499fa6bacbed9b48342d29d",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v5-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 6698,
+        "localSha256": "40584b61192215371908e873f30ce70bbda59bb46b33c7707b172f9d3bff4c1b",
+        "remoteSha256": "40584b61192215371908e873f30ce70bbda59bb46b33c7707b172f9d3bff4c1b",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v5-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2037,
+        "localSha256": "64e03d31865380a8cb97248a56941fd2207c9e46bc0f4e4639de311c7bddaadb",
+        "remoteSha256": "64e03d31865380a8cb97248a56941fd2207c9e46bc0f4e4639de311c7bddaadb",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v6-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 6570,
+        "localSha256": "35150aaa42a13df378e9f1d3b163876521be9b1d5cf146ce2b81d34c4319b524",
+        "remoteSha256": "35150aaa42a13df378e9f1d3b163876521be9b1d5cf146ce2b81d34c4319b524",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v6-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1679,
+        "localSha256": "14a647dce2327efbe9de89f79ecf8f44a9b5c9a24e647df2b9f29541b0485c27",
+        "remoteSha256": "14a647dce2327efbe9de89f79ecf8f44a9b5c9a24e647df2b9f29541b0485c27",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v7-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 5082,
+        "localSha256": "16eeea6f3aecb9667065218d0b28990f9c31c04b32c3ed4a52162a4d18237e97",
+        "remoteSha256": "16eeea6f3aecb9667065218d0b28990f9c31c04b32c3ed4a52162a4d18237e97",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v7-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1595,
+        "localSha256": "4423f0b8db92d6433b76a788f7084093c5cc8db2bcd04fd0b512ff0a6d5375f1",
+        "remoteSha256": "4423f0b8db92d6433b76a788f7084093c5cc8db2bcd04fd0b512ff0a6d5375f1",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-browser-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 7594,
+        "localSha256": "13c0301fe7afadda5708d6dae57e31ac9527016d1c3d8dc258a2dda0270ab5ac",
+        "remoteSha256": "13c0301fe7afadda5708d6dae57e31ac9527016d1c3d8dc258a2dda0270ab5ac",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-browser-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1226,
+        "localSha256": "3df4947b47292cd05aee17efb49b8ab8a742ca7a14a3ef5221f10e346fb169ba",
+        "remoteSha256": "3df4947b47292cd05aee17efb49b8ab8a742ca7a14a3ef5221f10e346fb169ba",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-capture-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 7518,
+        "localSha256": "1544f69bfef969f56d091b5d9ceb01d76706a9f79f47b672df402380f916c347",
+        "remoteSha256": "1544f69bfef969f56d091b5d9ceb01d76706a9f79f47b672df402380f916c347",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-capture-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1819,
+        "localSha256": "6198543496d40404d7d6e791b386ba26ff9ce2602370284a793c26fe97dba1c4",
+        "remoteSha256": "6198543496d40404d7d6e791b386ba26ff9ce2602370284a793c26fe97dba1c4",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-distance-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 6932,
+        "localSha256": "7eaec45f3004173a21c65495528707878022f261690bc3d45ea675b30d3f53b8",
+        "remoteSha256": "7eaec45f3004173a21c65495528707878022f261690bc3d45ea675b30d3f53b8",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-distance-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 1319,
+        "localSha256": "0a2d2a6c7f79bdb9d2a53e1673272adb90eea19c0f428fe104b7a0ecbcd206c2",
+        "remoteSha256": "0a2d2a6c7f79bdb9d2a53e1673272adb90eea19c0f428fe104b7a0ecbcd206c2",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-reconstruction-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 8090,
+        "localSha256": "ca6452bce6822da730210e472fac7b343ff5fb30f316e44149a34a670f179f95",
+        "remoteSha256": "ca6452bce6822da730210e472fac7b343ff5fb30f316e44149a34a670f179f95",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-reconstruction-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2153,
+        "localSha256": "9fd7725f30db1a5d4edc571e2a606cf5c04b6114fa562876fcb69d5bdb24a6cf",
+        "remoteSha256": "9fd7725f30db1a5d4edc571e2a606cf5c04b6114fa562876fcb69d5bdb24a6cf",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-reference-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 4151,
+        "localSha256": "4aff4bab9be594ad05bf422784321591ed1233a8f5608d965b0d76249e37770b",
+        "remoteSha256": "4aff4bab9be594ad05bf422784321591ed1233a8f5608d965b0d76249e37770b",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-reference-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 2169,
+        "localSha256": "42c9f89541336c48f77d751b3be37014675c7a5421849ccdbad6e64fcd343e31",
+        "remoteSha256": "42c9f89541336c48f77d751b3be37014675c7a5421849ccdbad6e64fcd343e31",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-leaf-transmission-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 4608,
+        "localSha256": "bcb22544755d6bb6ff4704bd2b4121da583372bed5d5a1176803f3ba4aba9a21",
+        "remoteSha256": "bcb22544755d6bb6ff4704bd2b4121da583372bed5d5a1176803f3ba4aba9a21",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-three-ez-impostor-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 3888,
+        "localSha256": "42004a14001a1a1ecca68472765744bb0f6a8a8625b27d7e4a9f0a2f987510c5",
+        "remoteSha256": "42004a14001a1a1ecca68472765744bb0f6a8a8625b27d7e4a9f0a2f987510c5",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-tree-family-review-2026-09-28.md",
+        "status": 200,
+        "bytes": 3690,
+        "localSha256": "397c464dbc22f62f70429cd902db09a2c100e8cfdbd2afe8771997a0f36e8f01",
+        "remoteSha256": "397c464dbc22f62f70429cd902db09a2c100e8cfdbd2afe8771997a0f36e8f01",
+        "matches": true
+      },
+      {
+        "path": "docs/opus-tree-family-review-2026-09-28.metadata.json",
+        "status": 200,
+        "bytes": 521,
+        "localSha256": "faf77bb48aaadfe51dd423afba60d484990f608742201e8e3263fed1bf64ab02",
+        "remoteSha256": "faf77bb48aaadfe51dd423afba60d484990f608742201e8e3263fed1bf64ab02",
+        "matches": true
+      },
+      {
+        "path": "docs/physical-river-pilot-spec.md",
+        "status": 200,
+        "bytes": 8801,
+        "localSha256": "2ecc8f857e0d42bf108f3879386a532869dd1d8185f2f87ccc4c10365e2b60d1",
+        "remoteSha256": "2ecc8f857e0d42bf108f3879386a532869dd1d8185f2f87ccc4c10365e2b60d1",
+        "matches": true
+      },
+      {
+        "path": "docs/physical-rivers-and-ground-detail.md",
+        "status": 200,
+        "bytes": 15599,
+        "localSha256": "801945687f69669d2ddd558f04a0e24b073a9d1c5ace4b2406519caaf97d4388",
+        "remoteSha256": "801945687f69669d2ddd558f04a0e24b073a9d1c5ace4b2406519caaf97d4388",
+        "matches": true
+      },
+      {
+        "path": "docs/planet-local-rendering-design.md",
+        "status": 200,
+        "bytes": 14258,
+        "localSha256": "66fcc2c63f76fa28ea491e4e875ef99d01edaf02bc158793b24eca20f5b896aa",
+        "remoteSha256": "66fcc2c63f76fa28ea491e4e875ef99d01edaf02bc158793b24eca20f5b896aa",
+        "matches": true
+      },
+      {
+        "path": "docs/planet-realism-goal.md",
+        "status": 200,
+        "bytes": 23132,
+        "localSha256": "52cb85491e51997420b8f1459154fa48ecde48936135e8543a9a4749eddbc616",
+        "remoteSha256": "52cb85491e51997420b8f1459154fa48ecde48936135e8543a9a4749eddbc616",
+        "matches": true
+      },
+      {
+        "path": "docs/planet-rendering-validation-2026-09-27.md",
+        "status": 200,
+        "bytes": 6160,
+        "localSha256": "0e2a6f58b7a6896663ddd1a4c13ed7b83af5d1e4f0150081d7a1ec40a0e40dfd",
+        "remoteSha256": "0e2a6f58b7a6896663ddd1a4c13ed7b83af5d1e4f0150081d7a1ec40a0e40dfd",
+        "matches": true
+      },
+      {
+        "path": "docs/planet-validation-labs-2026-09-14.md",
+        "status": 200,
+        "bytes": 16530,
+        "localSha256": "8a9c05c18320fa1ea6e4bf6891e7f3670160ea420d17146696a9297784fec1c7",
+        "remoteSha256": "8a9c05c18320fa1ea6e4bf6891e7f3670160ea420d17146696a9297784fec1c7",
+        "matches": true
+      },
+      {
+        "path": "docs/planetary-orbit-implementation.md",
+        "status": 200,
+        "bytes": 15539,
+        "localSha256": "d78b8437cfe658cdd7a29b7b1a9de54b0d2e59cf9af09e06f04fdfa03210e9eb",
+        "remoteSha256": "d78b8437cfe658cdd7a29b7b1a9de54b0d2e59cf9af09e06f04fdfa03210e9eb",
+        "matches": true
+      },
+      {
+        "path": "docs/planetary-orbit-validation.md",
+        "status": 200,
+        "bytes": 4560,
+        "localSha256": "05b161ca40c5edc440f09faaac325f12942b0eeae600528a098a5bdd53de46af",
+        "remoteSha256": "05b161ca40c5edc440f09faaac325f12942b0eeae600528a098a5bdd53de46af",
+        "matches": true
+      },
+      {
+        "path": "docs/population-continuity-implementation-2026-09-27.md",
+        "status": 200,
+        "bytes": 8059,
+        "localSha256": "d6b948c2adcd9dc9db0bfb4b28eb7bf25f3bd94bf6c11eaaebb631f4acd6477c",
+        "remoteSha256": "d6b948c2adcd9dc9db0bfb4b28eb7bf25f3bd94bf6c11eaaebb631f4acd6477c",
+        "matches": true
+      },
+      {
+        "path": "docs/population-continuity-review-2026-09-27.md",
+        "status": 200,
+        "bytes": 12325,
+        "localSha256": "a9841f569a441443473b43ccae1e181d9baf6e03c68e309acb111017dfb6422c",
+        "remoteSha256": "a9841f569a441443473b43ccae1e181d9baf6e03c68e309acb111017dfb6422c",
+        "matches": true
+      },
+      {
+        "path": "docs/procedural-biospheres-next-plan-2026-09-14.md",
+        "status": 200,
+        "bytes": 33748,
+        "localSha256": "15146a7a11303b2b182c26c60b765aedba8578032b64d0b2c1701b8d27ad1da4",
+        "remoteSha256": "15146a7a11303b2b182c26c60b765aedba8578032b64d0b2c1701b8d27ad1da4",
+        "matches": true
+      },
+      {
+        "path": "docs/realistic-clouds-research-2026-09-27.md",
+        "status": 200,
+        "bytes": 12017,
+        "localSha256": "845463990d969b997ca3fb8b6b42529cdcb7927d2d6d9791c368f1abd802ef7c",
+        "remoteSha256": "845463990d969b997ca3fb8b6b42529cdcb7927d2d6d9791c368f1abd802ef7c",
+        "matches": true
+      },
+      {
+        "path": "docs/research-creature-anatomy-references-2026-09-14.md",
+        "status": 200,
+        "bytes": 10071,
+        "localSha256": "cb9b7b288fc8e91b02fb1044a1740bdd799351d59ca7e0fdfcad033af31879e1",
+        "remoteSha256": "cb9b7b288fc8e91b02fb1044a1740bdd799351d59ca7e0fdfcad033af31879e1",
+        "matches": true
+      },
+      {
+        "path": "docs/research-creature-locomotion-references-2026-09-14.md",
+        "status": 200,
+        "bytes": 8440,
+        "localSha256": "d3fcdf61cbd159cb6ef4026e81c5cde0ba3e285f784c6f004ac68f94b37186f3",
+        "remoteSha256": "d3fcdf61cbd159cb6ef4026e81c5cde0ba3e285f784c6f004ac68f94b37186f3",
+        "matches": true
+      },
+      {
+        "path": "docs/research-evolutionary-history-2026-09-14.md",
+        "status": 200,
+        "bytes": 13387,
+        "localSha256": "eb9d72a588ad56f504abae0bcb4d36738c5cdc6e879f14ca5aeed65822a8d08f",
+        "remoteSha256": "eb9d72a588ad56f504abae0bcb4d36738c5cdc6e879f14ca5aeed65822a8d08f",
+        "matches": true
+      },
+      {
+        "path": "docs/research-planet-biome-generation-2026-09-14.md",
+        "status": 200,
+        "bytes": 19087,
+        "localSha256": "17966fdeb643ade6616028ef9aec85d9589e367786cc7a73f25d5f2d32d87c24",
+        "remoteSha256": "17966fdeb643ade6616028ef9aec85d9589e367786cc7a73f25d5f2d32d87c24",
+        "matches": true
+      },
+      {
+        "path": "docs/research-procedural-fauna-habitats-2026-09-14.md",
+        "status": 200,
+        "bytes": 19803,
+        "localSha256": "8f503d9697ca54cc1fc437fa2587ec99efa04f0cea822e2b02f0c654e49445e4",
+        "remoteSha256": "8f503d9697ca54cc1fc437fa2587ec99efa04f0cea822e2b02f0c654e49445e4",
+        "matches": true
+      },
+      {
+        "path": "docs/research-procedural-flora-geology-2026-09-14.md",
+        "status": 200,
+        "bytes": 19889,
+        "localSha256": "ce783833eda1f8beaa5d879ec628f9b902a23de15aca31be31409b7b40f2c4b5",
+        "remoteSha256": "ce783833eda1f8beaa5d879ec628f9b902a23de15aca31be31409b7b40f2c4b5",
+        "matches": true
+      },
+      {
+        "path": "docs/research-species-and-simulation-2026-09-14.md",
+        "status": 200,
+        "bytes": 17655,
+        "localSha256": "c196093eea8d6d705c6d4fdf4198afe626950013e54ad861c24646f740a89c40",
+        "remoteSha256": "c196093eea8d6d705c6d4fdf4198afe626950013e54ad861c24646f740a89c40",
+        "matches": true
+      },
+      {
+        "path": "docs/research-terrain-river-validation-2026-09-14.md",
+        "status": 200,
+        "bytes": 23136,
+        "localSha256": "b0103550955e8b3137518640d49b6d27061f8d2ca6cce8007fc3e098b5c6fd3f",
+        "remoteSha256": "b0103550955e8b3137518640d49b6d27061f8d2ca6cce8007fc3e098b5c6fd3f",
+        "matches": true
+      },
+      {
+        "path": "docs/research-vegetation-rocks-2026-09-14.md",
+        "status": 200,
+        "bytes": 16797,
+        "localSha256": "49d69a00917b2bd173157d9d5f9f5c9ed0ad514e796b29391de444e411cf7d42",
+        "remoteSha256": "49d69a00917b2bd173157d9d5f9f5c9ed0ad514e796b29391de444e411cf7d42",
+        "matches": true
+      },
+      {
+        "path": "docs/stable-shores.md",
+        "status": 200,
+        "bytes": 13017,
+        "localSha256": "568134d2ba1e84cca355cff046e6e1324eb3c5737b2fdd753030b40ae784c0ec",
+        "remoteSha256": "568134d2ba1e84cca355cff046e6e1324eb3c5737b2fdd753030b40ae784c0ec",
+        "matches": true
+      },
+      {
+        "path": "docs/star-visibility-and-transitions.md",
+        "status": 200,
+        "bytes": 3664,
+        "localSha256": "035b324ca85483dedfa0f490164151c4f92dab3ce7a6953a3d898f2b2a2e759b",
+        "remoteSha256": "035b324ca85483dedfa0f490164151c4f92dab3ce7a6953a3d898f2b2a2e759b",
+        "matches": true
+      },
+      {
+        "path": "docs/surface-materials-and-survey.md",
+        "status": 200,
+        "bytes": 13581,
+        "localSha256": "4517f57c2b675435fb336716cf8468df7bbcc7b737d7399f6142000f359eaea7",
+        "remoteSha256": "4517f57c2b675435fb336716cf8468df7bbcc7b737d7399f6142000f359eaea7",
+        "matches": true
+      },
+      {
+        "path": "docs/temporal-universe-implementation-2026-09-23.md",
+        "status": 200,
+        "bytes": 6091,
+        "localSha256": "bc1ffec789a9c294f43a8885490b0c58639b627fd229eda0aef217fc5e88113c",
+        "remoteSha256": "bc1ffec789a9c294f43a8885490b0c58639b627fd229eda0aef217fc5e88113c",
+        "matches": true
+      },
+      {
+        "path": "docs/terrain-research-2026-09-13.md",
+        "status": 200,
+        "bytes": 23323,
+        "localSha256": "a932fbf77a1c3a679481dbdaf11b99b20985d0574f7af2840e7fb4f64d130154",
+        "remoteSha256": "a932fbf77a1c3a679481dbdaf11b99b20985d0574f7af2840e7fb4f64d130154",
+        "matches": true
+      },
+      {
+        "path": "docs/terrain-v2-first-slice-spec.md",
+        "status": 200,
+        "bytes": 7194,
+        "localSha256": "7eeeec291dc5a1f8c71b857816b85cee624f2644ff15c94235f4062b5d6370b8",
+        "remoteSha256": "7eeeec291dc5a1f8c71b857816b85cee624f2644ff15c94235f4062b5d6370b8",
+        "matches": true
+      },
+      {
+        "path": "docs/terrain-water-refresh-2026-09-28.md",
+        "status": 200,
+        "bytes": 3117,
+        "localSha256": "2b3d2ff95a0ce278b25e9c8bfb61656cae7cb1562a881bf7f6959d7f1ae7ad91",
+        "remoteSha256": "2b3d2ff95a0ce278b25e9c8bfb61656cae7cb1562a881bf7f6959d7f1ae7ad91",
+        "matches": true
+      },
+      {
+        "path": "docs/time-and-coordinates-contract.md",
+        "status": 200,
+        "bytes": 111583,
+        "localSha256": "379b17a12312ea001a43dff07ac297b799821a6e8b9ff4fe8b4476cf51c64741",
+        "remoteSha256": "379b17a12312ea001a43dff07ac297b799821a6e8b9ff4fe8b4476cf51c64741",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-asset-candidate-2026-09-28.md",
+        "status": 200,
+        "bytes": 4823,
+        "localSha256": "3c3fa8f9da668aa05ade153fbe10979585429b8961d632d3785897a7232967fa",
+        "remoteSha256": "3c3fa8f9da668aa05ade153fbe10979585429b8961d632d3785897a7232967fa",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-next-increment-2026-09-28.md",
+        "status": 200,
+        "bytes": 15345,
+        "localSha256": "e1ad193b1c5483dc6c5a5ac0eb55b195c52c871f261f3845d3a4fb11aa4630dc",
+        "remoteSha256": "e1ad193b1c5483dc6c5a5ac0eb55b195c52c871f261f3845d3a4fb11aa4630dc",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-review-assessment-2026-09-28.md",
+        "status": 200,
+        "bytes": 3420,
+        "localSha256": "77eb626607f8546835f075c23b00925a803b09f9f10cb9c2ce0ad03a489feb5f",
+        "remoteSha256": "77eb626607f8546835f075c23b00925a803b09f9f10cb9c2ce0ad03a489feb5f",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-v3-2026-09-28.md",
+        "status": 200,
+        "bytes": 4413,
+        "localSha256": "ebff269f14a627d0c19e50768273a4e2f11abb740de4bc3d4edeb38811ed2a3d",
+        "remoteSha256": "ebff269f14a627d0c19e50768273a4e2f11abb740de4bc3d4edeb38811ed2a3d",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-v4-2026-09-28.md",
+        "status": 200,
+        "bytes": 4955,
+        "localSha256": "03106aa36a720202c8b63062ed06d5f2aaf6add9e15dfe099ce42bbadf372c86",
+        "remoteSha256": "03106aa36a720202c8b63062ed06d5f2aaf6add9e15dfe099ce42bbadf372c86",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-v5-2026-09-28.md",
+        "status": 200,
+        "bytes": 6500,
+        "localSha256": "566efbc86315fa90f22c13fc2d00582b7598384df7eadf57ac5c89ebd674b461",
+        "remoteSha256": "566efbc86315fa90f22c13fc2d00582b7598384df7eadf57ac5c89ebd674b461",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-v5-review-assessment-2026-09-28.md",
+        "status": 200,
+        "bytes": 4308,
+        "localSha256": "4af529a59693db2ec165e28b6be5c9e8c52a160744849a44bac2cd4aeeced6e0",
+        "remoteSha256": "4af529a59693db2ec165e28b6be5c9e8c52a160744849a44bac2cd4aeeced6e0",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-v6-2026-09-28.md",
+        "status": 200,
+        "bytes": 7113,
+        "localSha256": "e3ff97bbdc5caeb99c0097184c31f38df2a3060aeaf91f5afc26a1d1ca85d5f2",
+        "remoteSha256": "e3ff97bbdc5caeb99c0097184c31f38df2a3060aeaf91f5afc26a1d1ca85d5f2",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-authoring-v7-2026-09-28.md",
+        "status": 200,
+        "bytes": 4504,
+        "localSha256": "4abe14393b584788f7dbd9afc1e22aa08bf76e257eb4de7a4e375553fdbebed8",
+        "remoteSha256": "4abe14393b584788f7dbd9afc1e22aa08bf76e257eb4de7a4e375553fdbebed8",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-browser-prototype-2026-09-28.md",
+        "status": 200,
+        "bytes": 8402,
+        "localSha256": "dd94e79afcb4f49e6127bd8aa2d6f5ab07057171d06082ed7f808c3e66827f27",
+        "remoteSha256": "dd94e79afcb4f49e6127bd8aa2d6f5ab07057171d06082ed7f808c3e66827f27",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-color-calibration-2026-09-28.md",
+        "status": 200,
+        "bytes": 3581,
+        "localSha256": "e9c0f016e45391e5bfc3b6ba5064a7eb0e2a4e95dd5c47133d69ccd5bb6f627d",
+        "remoteSha256": "e9c0f016e45391e5bfc3b6ba5064a7eb0e2a4e95dd5c47133d69ccd5bb6f627d",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-existing-methods-2026-09-28.md",
+        "status": 200,
+        "bytes": 9271,
+        "localSha256": "15f15bd1e6b3688d8588f50b15705e9f145089fabaa137b4ba58bdbcd64f1452",
+        "remoteSha256": "15f15bd1e6b3688d8588f50b15705e9f145089fabaa137b4ba58bdbcd64f1452",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-ez-family-2026-09-28.md",
+        "status": 200,
+        "bytes": 6746,
+        "localSha256": "45f9b5caa37729459e43e33dffb52c50583ed9caba159cb17987f1dc26454191",
+        "remoteSha256": "45f9b5caa37729459e43e33dffb52c50583ed9caba159cb17987f1dc26454191",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-ez-reference-2026-09-28.md",
+        "status": 200,
+        "bytes": 9886,
+        "localSha256": "5e3d5a3ffe9e5a8b56f2aa4fb4546b061a8a18b58061829d330bce17b56396d9",
+        "remoteSha256": "5e3d5a3ffe9e5a8b56f2aa4fb4546b061a8a18b58061829d330bce17b56396d9",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-foliage-minification-2026-09-28.md",
+        "status": 200,
+        "bytes": 11631,
+        "localSha256": "f10ec88fc1555d511961b6e85c966eed8184817aed89df54edfbd36e1c4225f8",
+        "remoteSha256": "f10ec88fc1555d511961b6e85c966eed8184817aed89df54edfbd36e1c4225f8",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-forest-integration-2026-09-28.md",
+        "status": 200,
+        "bytes": 5865,
+        "localSha256": "731b5f8182dc2dcd90fe3d4e37b05dd5326df646dd220b881bf5992dcb75ca52",
+        "remoteSha256": "731b5f8182dc2dcd90fe3d4e37b05dd5326df646dd220b881bf5992dcb75ca52",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-instance-streaming-2026-09-28.md",
+        "status": 200,
+        "bytes": 5499,
+        "localSha256": "bc7f9745f201df7c43ac3dfc3ec913959c33dc5e65424ea77018eaf8fee2fc88",
+        "remoteSha256": "bc7f9745f201df7c43ac3dfc3ec913959c33dc5e65424ea77018eaf8fee2fc88",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-lighting-diagnosis-2026-09-28.md",
+        "status": 200,
+        "bytes": 2599,
+        "localSha256": "d26f275ec1d2fea5eb13ce1a46143ebf5bc3c8bf083fa90f7948ec4a7eb431c2",
+        "remoteSha256": "d26f275ec1d2fea5eb13ce1a46143ebf5bc3c8bf083fa90f7948ec4a7eb431c2",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-species-asset-contract-2026-09-28.md",
+        "status": 200,
+        "bytes": 3664,
+        "localSha256": "ca06de75ebe0b03bcdbf951fa2465cf1377b58e10c71e264f90bd2f02b0e77e2",
+        "remoteSha256": "ca06de75ebe0b03bcdbf951fa2465cf1377b58e10c71e264f90bd2f02b0e77e2",
+        "matches": true
+      },
+      {
+        "path": "docs/tree-three-ez-impostor-2026-09-28.md",
+        "status": 200,
+        "bytes": 9601,
+        "localSha256": "2c00640d6ce7f3086ba0f6ae919f860fa84aa2ee6a0c9d2ea6fbe07be2246214",
+        "remoteSha256": "2c00640d6ce7f3086ba0f6ae919f860fa84aa2ee6a0c9d2ea6fbe07be2246214",
+        "matches": true
+      },
+      {
+        "path": "docs/walking-and-time.md",
+        "status": 200,
+        "bytes": 15081,
+        "localSha256": "4b047156bb1f8e4ed7302614de07c914d9987f37aabf5a9d9ca1264f9ab6641f",
+        "remoteSha256": "4b047156bb1f8e4ed7302614de07c914d9987f37aabf5a9d9ca1264f9ab6641f",
+        "matches": true
+      },
+      {
+        "path": "guide/determinism.html",
+        "status": 200,
+        "bytes": 8258,
+        "localSha256": "9b2d1d5827c0f8e1c8730e92bb3188ac0700f4f6f90a39fd92efa568aaf5be6a",
+        "remoteSha256": "9b2d1d5827c0f8e1c8730e92bb3188ac0700f4f6f90a39fd92efa568aaf5be6a",
+        "matches": true
+      },
+      {
+        "path": "guide/index.html",
+        "status": 200,
+        "bytes": 11909,
+        "localSha256": "124e7d5a7781f715dc94e2ea96d2b794db1478d71e6afe1b7a08b90e30124988",
+        "remoteSha256": "124e7d5a7781f715dc94e2ea96d2b794db1478d71e6afe1b7a08b90e30124988",
+        "matches": true
+      },
+      {
+        "path": "guide/life.html",
+        "status": 200,
+        "bytes": 21677,
+        "localSha256": "e56f0c44882f9c76b100aae28c06ed9bc0d087969f489942f712cb23a44264cf",
+        "remoteSha256": "e56f0c44882f9c76b100aae28c06ed9bc0d087969f489942f712cb23a44264cf",
+        "matches": true
+      },
+      {
+        "path": "guide/publishing.html",
+        "status": 200,
+        "bytes": 11294,
+        "localSha256": "45ea534cc167a5c0a800d669ed35a51e75ce1df095f205d4f1cefb619594da5b",
+        "remoteSha256": "45ea534cc167a5c0a800d669ed35a51e75ce1df095f205d4f1cefb619594da5b",
+        "matches": true
+      },
+      {
+        "path": "guide/terrain.html",
+        "status": 200,
+        "bytes": 11797,
+        "localSha256": "61dedaaea4defbe0e952d6bf1d49981b301810da740c3380ffac48eb74208c52",
+        "remoteSha256": "61dedaaea4defbe0e952d6bf1d49981b301810da740c3380ffac48eb74208c52",
+        "matches": true
+      },
+      {
+        "path": "guide/time.html",
+        "status": 200,
+        "bytes": 10850,
+        "localSha256": "24197d2f8197e482ff23c5e295d713bd2ac96e537530ba9ddb25c4c338718148",
+        "remoteSha256": "24197d2f8197e482ff23c5e295d713bd2ac96e537530ba9ddb25c4c338718148",
+        "matches": true
+      },
+      {
+        "path": "guide/travel.html",
+        "status": 200,
+        "bytes": 14308,
+        "localSha256": "7db4f2bdf7524ce10fd00c7e507f4776c667a11844fc1e7498ba6fd3ee8c9774",
+        "remoteSha256": "7db4f2bdf7524ce10fd00c7e507f4776c667a11844fc1e7498ba6fd3ee8c9774",
+        "matches": true
+      },
+      {
+        "path": "guide/universe.html",
+        "status": 200,
+        "bytes": 7864,
+        "localSha256": "b713743711e84434c00f41111a9718e2113f4e30d859a2dff217423f8b1b817a",
+        "remoteSha256": "b713743711e84434c00f41111a9718e2113f4e30d859a2dff217423f8b1b817a",
+        "matches": true
+      },
+      {
+        "path": "guide/water-atmosphere.html",
+        "status": 200,
+        "bytes": 11625,
+        "localSha256": "48be5992c677723972d24d6a6d4f332cf59300b8309a3af63232ff59c820ef28",
+        "remoteSha256": "48be5992c677723972d24d6a6d4f332cf59300b8309a3af63232ff59c820ef28",
+        "matches": true
+      },
+      {
+        "path": "src/forest-tree-catalogue.ts",
+        "status": 200,
+        "bytes": 1111,
+        "localSha256": "b188297fc1e71cc8e85b3f3a6991ee784501b1dc8f08237048e811d130dd9518",
+        "remoteSha256": "b188297fc1e71cc8e85b3f3a6991ee784501b1dc8f08237048e811d130dd9518",
+        "matches": true
+      },
+      {
+        "path": "src/instance-update-ranges.ts",
+        "status": 200,
+        "bytes": 1499,
+        "localSha256": "6ee7fd00142af2e3938fd8480c0bf46b80f7fb71c5492538f7c63c704631ac29",
+        "remoteSha256": "6ee7fd00142af2e3938fd8480c0bf46b80f7fb71c5492538f7c63c704631ac29",
+        "matches": true
+      },
+      {
+        "path": "src/local-aerial-perspective.ts",
+        "status": 200,
+        "bytes": 5692,
+        "localSha256": "3d20ca9cf9232059e9cd2d48969c246a258476e62fde6ba54c80d73a1bf76788",
+        "remoteSha256": "3d20ca9cf9232059e9cd2d48969c246a258476e62fde6ba54c80d73a1bf76788",
+        "matches": true
+      },
+      {
+        "path": "src/planet-forest.ts",
+        "status": 200,
+        "bytes": 31853,
+        "localSha256": "cb1f09a7b381fe941ffae668a959548df3817e38470a5738292bf426eb45db95",
+        "remoteSha256": "cb1f09a7b381fe941ffae668a959548df3817e38470a5738292bf426eb45db95",
+        "matches": true
+      },
+      {
+        "path": "src/tree-asset.ts",
+        "status": 200,
+        "bytes": 19796,
+        "localSha256": "2688dbfae20e92820ac121333faaab251c85a28876018fda00a99c057d47b04b",
+        "remoteSha256": "2688dbfae20e92820ac121333faaab251c85a28876018fda00a99c057d47b04b",
+        "matches": true
+      },
+      {
+        "path": "src/tree-forest-coverage.ts",
+        "status": 200,
+        "bytes": 1539,
+        "localSha256": "e74c0ad07873b1c201880a091e0bfc8ecfcf6e352203fea8496ab1fb574304fd",
+        "remoteSha256": "e74c0ad07873b1c201880a091e0bfc8ecfcf6e352203fea8496ab1fb574304fd",
+        "matches": true
+      },
+      {
+        "path": "src/tree-leaf-transmission.ts",
+        "status": 200,
+        "bytes": 9204,
+        "localSha256": "6f161c4ec513838f5516120288592855ec4f6ed4ccc8d7de5c83ae54a4c502d0",
+        "remoteSha256": "6f161c4ec513838f5516120288592855ec4f6ed4ccc8d7de5c83ae54a4c502d0",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/canopy-flight-final/flight-lateral.png",
+        "status": 200,
+        "bytes": 830417,
+        "localSha256": "2899d688e933b93be74b131850c674f9e15b93e40fdfc9bb838d34b56adb6af6",
+        "remoteSha256": "2899d688e933b93be74b131850c674f9e15b93e40fdfc9bb838d34b56adb6af6",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/canopy-flight-final/flight-near-ground.png",
+        "status": 200,
+        "bytes": 858790,
+        "localSha256": "7a59271006490deb6a3f3c0ec9e6d154ec4f33ce6c3d78f87539e0534a80a7d3",
+        "remoteSha256": "7a59271006490deb6a3f3c0ec9e6d154ec4f33ce6c3d78f87539e0534a80a7d3",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/canopy-flight-final/flight-turned.png",
+        "status": 200,
+        "bytes": 880870,
+        "localSha256": "f5475d25c222929070269d0490228c4a97c5ee11b44c6bd405d74bee30f48eb0",
+        "remoteSha256": "f5475d25c222929070269d0490228c4a97c5ee11b44c6bd405d74bee30f48eb0",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/canopy-flight-final/settled.png",
+        "status": 200,
+        "bytes": 667745,
+        "localSha256": "301ad19d0282110020bba9b8c21cbe67fd59213d5a68ef50ae9a1b2437b0ee2e",
+        "remoteSha256": "301ad19d0282110020bba9b8c21cbe67fd59213d5a68ef50ae9a1b2437b0ee2e",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/canopy-flight-final/walking-close.png",
+        "status": 200,
+        "bytes": 712922,
+        "localSha256": "46334ffbb853cd6116f1f5f0d67973d0f9de9dd24b6cca47bd94a45f9bb326cb",
+        "remoteSha256": "46334ffbb853cd6116f1f5f0d67973d0f9de9dd24b6cca47bd94a45f9bb326cb",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/canopy-flight-final/walking-lateral-300m.png",
+        "status": 200,
+        "bytes": 667745,
+        "localSha256": "301ad19d0282110020bba9b8c21cbe67fd59213d5a68ef50ae9a1b2437b0ee2e",
+        "remoteSha256": "301ad19d0282110020bba9b8c21cbe67fd59213d5a68ef50ae9a1b2437b0ee2e",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/canopy-flight-final/walking-turned.png",
+        "status": 200,
+        "bytes": 670733,
+        "localSha256": "ed7cfb049240fbb2a789c2f1c8b4e82226163eec9402532b82788ccb95235255",
+        "remoteSha256": "ed7cfb049240fbb2a789c2f1c8b4e82226163eec9402532b82788ccb95235255",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/desktop-rendering-profile/cloud-aa-0.png",
+        "status": 200,
+        "bytes": 728432,
+        "localSha256": "c66089d865f045241d789e9167aa09d72f944b259b4a19ca258a56ff202fcd66",
+        "remoteSha256": "c66089d865f045241d789e9167aa09d72f944b259b4a19ca258a56ff202fcd66",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/desktop-rendering-profile/cloud-aa-2.png",
+        "status": 200,
+        "bytes": 786002,
+        "localSha256": "c19ee2f752eda92fa5ed1229cf49557dbb361f6ccf6e8bd037070113bbe6aece",
+        "remoteSha256": "c19ee2f752eda92fa5ed1229cf49557dbb361f6ccf6e8bd037070113bbe6aece",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/desktop-rendering-profile/cloud-aa-4-2560x1440.png",
+        "status": 200,
+        "bytes": 1800445,
+        "localSha256": "4b8d8d341b27c1aa8d94031a0a648c3e98ce4c786bf80ffbf01ddb31917bd426",
+        "remoteSha256": "4b8d8d341b27c1aa8d94031a0a648c3e98ce4c786bf80ffbf01ddb31917bd426",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/desktop-rendering-profile/cloud-aa-4.png",
+        "status": 200,
+        "bytes": 834430,
+        "localSha256": "a72458b1c048580b03a7b8d46930ce6f9f597c98cfa2cd4c6ddea729a896cf8b",
+        "remoteSha256": "a72458b1c048580b03a7b8d46930ce6f9f597c98cfa2cd4c6ddea729a896cf8b",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/desktop-rendering-profile/forest-turned.png",
+        "status": 200,
+        "bytes": 813213,
+        "localSha256": "675d7e35cd8de50189692b42c0b5e6eb8f38296be4053872793fc1bf32e58880",
+        "remoteSha256": "675d7e35cd8de50189692b42c0b5e6eb8f38296be4053872793fc1bf32e58880",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/desktop-rendering-profile/near-ground-resized-2560x1440.png",
+        "status": 200,
+        "bytes": 1665278,
+        "localSha256": "71e996d78c8858f3d6d4c10c0d989235345412ad328c9c5bd88b49aec3d10cd0",
+        "remoteSha256": "71e996d78c8858f3d6d4c10c0d989235345412ad328c9c5bd88b49aec3d10cd0",
+        "matches": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/desktop-rendering-profile/near-ground-warmed.png",
+        "status": 200,
+        "bytes": 728432,
+        "localSha256": "c66089d865f045241d789e9167aa09d72f944b259b4a19ca258a56ff202fcd66",
+        "remoteSha256": "c66089d865f045241d789e9167aa09d72f944b259b4a19ca258a56ff202fcd66",
+        "matches": true
+      },
+      {
+        "path": "test-results/background-hydrology-regression/baseline-37f0e89-failure.png",
+        "status": 200,
+        "bytes": 298508,
+        "localSha256": "98cf4a6cdf774adaf1cea7df0add13fad1529068a19783e5b695974ebad3a17a",
+        "remoteSha256": "98cf4a6cdf774adaf1cea7df0add13fad1529068a19783e5b695974ebad3a17a",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/flight-lateral.png",
+        "status": 200,
+        "bytes": 830309,
+        "localSha256": "fe84106ccb2025e12eaf58ef7b038845c2d7f2fd3a4cb07dad5b8ef0494f4e63",
+        "remoteSha256": "fe84106ccb2025e12eaf58ef7b038845c2d7f2fd3a4cb07dad5b8ef0494f4e63",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/flight-near-ground.png",
+        "status": 200,
+        "bytes": 860068,
+        "localSha256": "6004225173c65a1da9e5b8909f2bd61965c3251abc0fe877bbddfb0888c112b7",
+        "remoteSha256": "6004225173c65a1da9e5b8909f2bd61965c3251abc0fe877bbddfb0888c112b7",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/flight-turned.png",
+        "status": 200,
+        "bytes": 879694,
+        "localSha256": "5bcbf6cc0f4e659b3d3e311808fff410468399bcfc70fc5a6919ecce3d584044",
+        "remoteSha256": "5bcbf6cc0f4e659b3d3e311808fff410468399bcfc70fc5a6919ecce3d584044",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/settled.png",
+        "status": 200,
+        "bytes": 653060,
+        "localSha256": "5ec1318102ed83aa5bbdcb07d720381c1640c151ac9d2ad47ee7f0b3c7e15da5",
+        "remoteSha256": "5ec1318102ed83aa5bbdcb07d720381c1640c151ac9d2ad47ee7f0b3c7e15da5",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/walking-close.png",
+        "status": 200,
+        "bytes": 718545,
+        "localSha256": "5ce9badfff56cf4190440716380962cde64505899d2e2f82b4d4985641f3aa7f",
+        "remoteSha256": "5ce9badfff56cf4190440716380962cde64505899d2e2f82b4d4985641f3aa7f",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/walking-lateral-300m.png",
+        "status": 200,
+        "bytes": 653060,
+        "localSha256": "5ec1318102ed83aa5bbdcb07d720381c1640c151ac9d2ad47ee7f0b3c7e15da5",
+        "remoteSha256": "5ec1318102ed83aa5bbdcb07d720381c1640c151ac9d2ad47ee7f0b3c7e15da5",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/walking-turned.png",
+        "status": 200,
+        "bytes": 670783,
+        "localSha256": "2542b58ca4491fd1088b45fef223fd24a746b8bf7363bdedd16f2850f3566dfb",
+        "remoteSha256": "2542b58ca4491fd1088b45fef223fd24a746b8bf7363bdedd16f2850f3566dfb",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-flight-post-alpha-fix-rerun/flight-near-ground.png",
+        "status": 200,
+        "bytes": 857012,
+        "localSha256": "a023fad283986417fb9ef1bb96247b291af3d48d7b953d224e0efb99c5357ec1",
+        "remoteSha256": "a023fad283986417fb9ef1bb96247b291af3d48d7b953d224e0efb99c5357ec1",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-flight-post-alpha-fix-rerun/settled.png",
+        "status": 200,
+        "bytes": 667643,
+        "localSha256": "6cf1b07ca63031ccca2c5283f5d16b471dc789724ff3541eb3f9006cb17dbc62",
+        "remoteSha256": "6cf1b07ca63031ccca2c5283f5d16b471dc789724ff3541eb3f9006cb17dbc62",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-flight-post-alpha-fix-rerun/walking-close.png",
+        "status": 200,
+        "bytes": 709812,
+        "localSha256": "ee16554f5408d944a0f5cc55f57ef865b643de8e96a9e13f4b1246022560297e",
+        "remoteSha256": "ee16554f5408d944a0f5cc55f57ef865b643de8e96a9e13f4b1246022560297e",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-runtime-aerial/forest-turned.png",
+        "status": 200,
+        "bytes": 861111,
+        "localSha256": "ed2d9f0f03cedcb4a7511dc650af3aeb2734a4c865f7776a3da7d1e513d527c3",
+        "remoteSha256": "ed2d9f0f03cedcb4a7511dc650af3aeb2734a4c865f7776a3da7d1e513d527c3",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-runtime-aerial/forest-warmed.png",
+        "status": 200,
+        "bytes": 857956,
+        "localSha256": "f7c9f70442143f840957d32d17641664b5d3fc99e1ef1e4011c5c1c32addbd1d",
+        "remoteSha256": "f7c9f70442143f840957d32d17641664b5d3fc99e1ef1e4011c5c1c32addbd1d",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-runtime/forest-turned.png",
+        "status": 200,
+        "bytes": 865320,
+        "localSha256": "c853b7b4a2f5159160941835f16653562a05be9a0b86b7c4f6622c498c47f39b",
+        "remoteSha256": "c853b7b4a2f5159160941835f16653562a05be9a0b86b7c4f6622c498c47f39b",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-runtime/forest-warmed.png",
+        "status": 200,
+        "bytes": 858016,
+        "localSha256": "edd9194cfad2cdf1dceaa98eec746697ccef5430169e559124604940bcacff68",
+        "remoteSha256": "edd9194cfad2cdf1dceaa98eec746697ccef5430169e559124604940bcacff68",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-water-date-seek-98556a7/water--4475m-1.png",
+        "status": 200,
+        "bytes": 1317852,
+        "localSha256": "5fa970893dcd9521c16b7b7dd045eb734026096cfa817e953e2ff0032f0931fa",
+        "remoteSha256": "5fa970893dcd9521c16b7b7dd045eb734026096cfa817e953e2ff0032f0931fa",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-water-date-seek-98556a7/water--4500m-2.png",
+        "status": 200,
+        "bytes": 1038734,
+        "localSha256": "b096ea98c2dee0bf27fce141b58c7429a78bc2c413b3f8c7134f6365225462fa",
+        "remoteSha256": "b096ea98c2dee0bf27fce141b58c7429a78bc2c413b3f8c7134f6365225462fa",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-water-date-seek-98556a7/water-minus-4500m.png",
+        "status": 200,
+        "bytes": 1047590,
+        "localSha256": "e7b79ae62c610d2382620ebb964cbcf2be4122a503423b6cf1fa3d482a6eed56",
+        "remoteSha256": "e7b79ae62c610d2382620ebb964cbcf2be4122a503423b6cf1fa3d482a6eed56",
+        "matches": true
+      },
+      {
+        "path": "test-results/canopy-water-date-seek-c02ee95/failure.png",
+        "status": 200,
+        "bytes": 1342300,
+        "localSha256": "4ac746d7ad7e620d5099d1328da30b9e89377e846a34b01f9e916b95e679d9e5",
+        "remoteSha256": "4ac746d7ad7e620d5099d1328da30b9e89377e846a34b01f9e916b95e679d9e5",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-114a16e/desktop-rendering-acceptance/cloud-aa-0.png",
+        "status": 200,
+        "bytes": 858950,
+        "localSha256": "db432ee39cb202dd488677468aeed3e74c00ba22f0db671d103ea10a2fead450",
+        "remoteSha256": "db432ee39cb202dd488677468aeed3e74c00ba22f0db671d103ea10a2fead450",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-114a16e/desktop-rendering-acceptance/cloud-aa-2.png",
+        "status": 200,
+        "bytes": 921226,
+        "localSha256": "64f56761113282746df5ef76a6b0e43a676cad5fd06d7c264658bad793d2d7d9",
+        "remoteSha256": "64f56761113282746df5ef76a6b0e43a676cad5fd06d7c264658bad793d2d7d9",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-114a16e/desktop-rendering-acceptance/cloud-aa-4-2560x1440.png",
+        "status": 200,
+        "bytes": 2130361,
+        "localSha256": "d668a23adabe388d05c413bad99b0f1d24806a709fb5d303fc1168c555c28be2",
+        "remoteSha256": "d668a23adabe388d05c413bad99b0f1d24806a709fb5d303fc1168c555c28be2",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-114a16e/desktop-rendering-acceptance/cloud-aa-4.png",
+        "status": 200,
+        "bytes": 977347,
+        "localSha256": "87a44395ac803d374666d3c5a71981cf0174726a038cc4e5d67f2ea9b387527a",
+        "remoteSha256": "87a44395ac803d374666d3c5a71981cf0174726a038cc4e5d67f2ea9b387527a",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-114a16e/desktop-rendering-acceptance/forest-turned.png",
+        "status": 200,
+        "bytes": 873420,
+        "localSha256": "a378ffbb783cc5409742b2e4b63941317ddcba70db47095b141b1d09042c6d4c",
+        "remoteSha256": "a378ffbb783cc5409742b2e4b63941317ddcba70db47095b141b1d09042c6d4c",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-114a16e/desktop-rendering-acceptance/near-ground-resized-2560x1440.png",
+        "status": 200,
+        "bytes": 1989180,
+        "localSha256": "c7f534dd509b3a6614ece15c9133b5c0d1f94c98d4a3efac754bcd8fc57c589f",
+        "remoteSha256": "c7f534dd509b3a6614ece15c9133b5c0d1f94c98d4a3efac754bcd8fc57c589f",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-114a16e/desktop-rendering-acceptance/near-ground-warmed.png",
+        "status": 200,
+        "bytes": 858950,
+        "localSha256": "db432ee39cb202dd488677468aeed3e74c00ba22f0db671d103ea10a2fead450",
+        "remoteSha256": "db432ee39cb202dd488677468aeed3e74c00ba22f0db671d103ea10a2fead450",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/canopy-flight/flight-lateral.png",
+        "status": 200,
+        "bytes": 827924,
+        "localSha256": "4f86c0005d62c31493df142ec19712f190dd712b9b5e26eecd0bb4d1cc0a7083",
+        "remoteSha256": "4f86c0005d62c31493df142ec19712f190dd712b9b5e26eecd0bb4d1cc0a7083",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/canopy-flight/flight-near-ground.png",
+        "status": 200,
+        "bytes": 854170,
+        "localSha256": "9064c90929f0b25bd5f7a2823b4c444f5e0ab31124e3336995d8eb48e1775b74",
+        "remoteSha256": "9064c90929f0b25bd5f7a2823b4c444f5e0ab31124e3336995d8eb48e1775b74",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/canopy-flight/flight-turned.png",
+        "status": 200,
+        "bytes": 883264,
+        "localSha256": "61349130a06c8c0053ed861fc2672233f759dc883d08fcebf7a4a83b8a83b6a0",
+        "remoteSha256": "61349130a06c8c0053ed861fc2672233f759dc883d08fcebf7a4a83b8a83b6a0",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/canopy-flight/settled.png",
+        "status": 200,
+        "bytes": 633935,
+        "localSha256": "3597e65a64957d43ba4a123186560771fed52d248a6e973888fda47043fecd85",
+        "remoteSha256": "3597e65a64957d43ba4a123186560771fed52d248a6e973888fda47043fecd85",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/canopy-flight/walking-close.png",
+        "status": 200,
+        "bytes": 709341,
+        "localSha256": "38df3e4121dc3d70df310f38ad39225f9c3cf8ad71b4de2044fa27f7cb37f3d1",
+        "remoteSha256": "38df3e4121dc3d70df310f38ad39225f9c3cf8ad71b4de2044fa27f7cb37f3d1",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/canopy-flight/walking-lateral-300m.png",
+        "status": 200,
+        "bytes": 633935,
+        "localSha256": "3597e65a64957d43ba4a123186560771fed52d248a6e973888fda47043fecd85",
+        "remoteSha256": "3597e65a64957d43ba4a123186560771fed52d248a6e973888fda47043fecd85",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/canopy-flight/walking-turned.png",
+        "status": 200,
+        "bytes": 673739,
+        "localSha256": "24b422cdb97beacd8632063ccd59ffb4475af2b61e1118db57edc404ab78bcbc",
+        "remoteSha256": "24b422cdb97beacd8632063ccd59ffb4475af2b61e1118db57edc404ab78bcbc",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/canopy-water-date-seek/water--4475m-1.png",
+        "status": 200,
+        "bytes": 1335665,
+        "localSha256": "58cbe8af984d231af34c9146d4c91c1230cb05c503249eb94ccf5f4068ec9a2e",
+        "remoteSha256": "58cbe8af984d231af34c9146d4c91c1230cb05c503249eb94ccf5f4068ec9a2e",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/canopy-water-date-seek/water--4500m-2.png",
+        "status": 200,
+        "bytes": 1042736,
+        "localSha256": "aa62ec159d68fa238995ed7a4b0711e6d82db2790148eb99ae2e6ba6b71accda",
+        "remoteSha256": "aa62ec159d68fa238995ed7a4b0711e6d82db2790148eb99ae2e6ba6b71accda",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/canopy-water-date-seek/water-minus-4500m.png",
+        "status": 200,
+        "bytes": 1052816,
+        "localSha256": "f3fecdaff41cb437a351ac36d3fb33d26a523e028079d2ea16d7b605024aef50",
+        "remoteSha256": "f3fecdaff41cb437a351ac36d3fb33d26a523e028079d2ea16d7b605024aef50",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/desktop-rendering/cloud-aa-0.png",
+        "status": 200,
+        "bytes": 859016,
+        "localSha256": "ccd9c61012ac819f714e3982f992ea7ec9cb316200b3cbbbd9d49bef374f8591",
+        "remoteSha256": "ccd9c61012ac819f714e3982f992ea7ec9cb316200b3cbbbd9d49bef374f8591",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/desktop-rendering/cloud-aa-2.png",
+        "status": 200,
+        "bytes": 929835,
+        "localSha256": "8ed648ba0326c7495703bff0a21b9f33523c74ea0897c6d452cb10f2b46fc319",
+        "remoteSha256": "8ed648ba0326c7495703bff0a21b9f33523c74ea0897c6d452cb10f2b46fc319",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/desktop-rendering/cloud-aa-4-2560x1440.png",
+        "status": 200,
+        "bytes": 2083256,
+        "localSha256": "ba50576efe10ff68258ce356f3ba6deb57bb5f740091fb77d86b98c4d205c190",
+        "remoteSha256": "ba50576efe10ff68258ce356f3ba6deb57bb5f740091fb77d86b98c4d205c190",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/desktop-rendering/cloud-aa-4.png",
+        "status": 200,
+        "bytes": 991198,
+        "localSha256": "4e6cd9faad7a6374088d7ae686e53b09194919ce7c4b95c1b2235d591b39fa8c",
+        "remoteSha256": "4e6cd9faad7a6374088d7ae686e53b09194919ce7c4b95c1b2235d591b39fa8c",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/desktop-rendering/forest-turned.png",
+        "status": 200,
+        "bytes": 859930,
+        "localSha256": "a1e769ab85fd16501a38285150b89a6a7379277da7ec27a576ff64c05ca83ba0",
+        "remoteSha256": "a1e769ab85fd16501a38285150b89a6a7379277da7ec27a576ff64c05ca83ba0",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/desktop-rendering/near-ground-resized-2560x1440.png",
+        "status": 200,
+        "bytes": 1933261,
+        "localSha256": "26788165273135066cc3e57c9b6e5e4aa68b86a56ce78c541ff886f6ff727b4c",
+        "remoteSha256": "26788165273135066cc3e57c9b6e5e4aa68b86a56ce78c541ff886f6ff727b4c",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/desktop-rendering/near-ground-warmed.png",
+        "status": 200,
+        "bytes": 859016,
+        "localSha256": "ccd9c61012ac819f714e3982f992ea7ec9cb316200b3cbbbd9d49bef374f8591",
+        "remoteSha256": "ccd9c61012ac819f714e3982f992ea7ec9cb316200b3cbbbd9d49bef374f8591",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/guide/index-1440.png",
+        "status": 200,
+        "bytes": 586179,
+        "localSha256": "2cc1b44eb002cd020f35a45b99496ac1f447a8609da63d93c560194198f9b210",
+        "remoteSha256": "2cc1b44eb002cd020f35a45b99496ac1f447a8609da63d93c560194198f9b210",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/guide/index-390.png",
+        "status": 200,
+        "bytes": 490936,
+        "localSha256": "07ea4ad07e05723cafdf94e201c414447f46f6e71843d2290af716ca8b7ebe88",
+        "remoteSha256": "07ea4ad07e05723cafdf94e201c414447f46f6e71843d2290af716ca8b7ebe88",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/guide/live-era-0.png",
+        "status": 200,
+        "bytes": 164940,
+        "localSha256": "ed31e8910721debd4f1be3acff82bf29005901f8dd702d1e5932bf698e757dd6",
+        "remoteSha256": "ed31e8910721debd4f1be3acff82bf29005901f8dd702d1e5932bf698e757dd6",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/guide/live-era-5.png",
+        "status": 200,
+        "bytes": 63231,
+        "localSha256": "4699b8df80a0ad7967f84d848ab1e9ea93a2eeb623f6502780eb0b6be0e38c5f",
+        "remoteSha256": "4699b8df80a0ad7967f84d848ab1e9ea93a2eeb623f6502780eb0b6be0e38c5f",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/guide/live-era-9.png",
+        "status": 200,
+        "bytes": 61365,
+        "localSha256": "29a4d31963fc1aad7b0a055a963ad3878d99f1cc08fd33bbd5a02aaabf3dc406",
+        "remoteSha256": "29a4d31963fc1aad7b0a055a963ad3878d99f1cc08fd33bbd5a02aaabf3dc406",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/guide/terrain-1440.png",
+        "status": 200,
+        "bytes": 377263,
+        "localSha256": "b596c6cb4953cd501458f62758197c5aa3730202d3ac18f19f02855c0de0a1e9",
+        "remoteSha256": "b596c6cb4953cd501458f62758197c5aa3730202d3ac18f19f02855c0de0a1e9",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/guide/terrain-390.png",
+        "status": 200,
+        "bytes": 356357,
+        "localSha256": "f5b2ce29256b7596a8918cabff5ac4f4c6e6d59fa14b8a6ba4777e2d91142a29",
+        "remoteSha256": "f5b2ce29256b7596a8918cabff5ac4f4c6e6d59fa14b8a6ba4777e2d91142a29",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/guide/time-1440.png",
+        "status": 200,
+        "bytes": 424048,
+        "localSha256": "15a822eee2283f702df315a4220019ec45ce00d436f81291a5cb8e4fe35c5014",
+        "remoteSha256": "15a822eee2283f702df315a4220019ec45ce00d436f81291a5cb8e4fe35c5014",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-580936f/guide/time-390.png",
+        "status": 200,
+        "bytes": 346595,
+        "localSha256": "43818cc2cee26a9623f0a720a9bf5df2bacba43fd653ef6e95ce29caa7b22a1f",
+        "remoteSha256": "43818cc2cee26a9623f0a720a9bf5df2bacba43fd653ef6e95ce29caa7b22a1f",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-6f7cb21/desktop-rendering-acceptance/cloud-aa-0.png",
+        "status": 200,
+        "bytes": 856941,
+        "localSha256": "f97582408dc6dffcb1fba329eb498762b2bc1e2a320daa45cf3b291aa7b5e117",
+        "remoteSha256": "f97582408dc6dffcb1fba329eb498762b2bc1e2a320daa45cf3b291aa7b5e117",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-6f7cb21/desktop-rendering-acceptance/cloud-aa-2.png",
+        "status": 200,
+        "bytes": 921181,
+        "localSha256": "9c502ba2e6cdd4e01ca99b9debd9e9729a9f93c8ab5cf983b2eea96aabc683b4",
+        "remoteSha256": "9c502ba2e6cdd4e01ca99b9debd9e9729a9f93c8ab5cf983b2eea96aabc683b4",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-6f7cb21/desktop-rendering-acceptance/cloud-aa-4-2560x1440.png",
+        "status": 200,
+        "bytes": 2120088,
+        "localSha256": "c4934f6a030b9f8114d8b831ac362b7233e5d19bbda4ef8c61ac7ca483903a05",
+        "remoteSha256": "c4934f6a030b9f8114d8b831ac362b7233e5d19bbda4ef8c61ac7ca483903a05",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-6f7cb21/desktop-rendering-acceptance/cloud-aa-4.png",
+        "status": 200,
+        "bytes": 979025,
+        "localSha256": "101fb8e309b7af633bbb8604a732977d316bcd4574c004d78968cec65fe6379f",
+        "remoteSha256": "101fb8e309b7af633bbb8604a732977d316bcd4574c004d78968cec65fe6379f",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-6f7cb21/desktop-rendering-acceptance/forest-turned.png",
+        "status": 200,
+        "bytes": 868563,
+        "localSha256": "fe267f559186ecabcf6d09c6e2c56e80c3fddad767105930af10b2f1b36232cc",
+        "remoteSha256": "fe267f559186ecabcf6d09c6e2c56e80c3fddad767105930af10b2f1b36232cc",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-6f7cb21/desktop-rendering-acceptance/near-ground-resized-2560x1440.png",
+        "status": 200,
+        "bytes": 1982127,
+        "localSha256": "8655101f39703adb585d1ba2446c6a0bda9dbc8c77ffddbce4e6dc904391ea96",
+        "remoteSha256": "8655101f39703adb585d1ba2446c6a0bda9dbc8c77ffddbce4e6dc904391ea96",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-6f7cb21/desktop-rendering-acceptance/near-ground-warmed.png",
+        "status": 200,
+        "bytes": 856995,
+        "localSha256": "dee575802b4981b85019b73be8679fa0b8aa6e5e92727a4ee71c1f485017fcb2",
+        "remoteSha256": "dee575802b4981b85019b73be8679fa0b8aa6e5e92727a4ee71c1f485017fcb2",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-6f7cb21/forest-selection-cache-browser/after-move.png",
+        "status": 200,
+        "bytes": 858712,
+        "localSha256": "f689c40d202c861c9cf944f95222c53a2de39be1d819be5f7529f6521430a884",
+        "remoteSha256": "f689c40d202c861c9cf944f95222c53a2de39be1d819be5f7529f6521430a884",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-0.png",
+        "status": 200,
+        "bytes": 794424,
+        "localSha256": "ab719c49e0a892de82c823031fcb2ec3cf7f0f74668a069c3d044dc8e55edb06",
+        "remoteSha256": "ab719c49e0a892de82c823031fcb2ec3cf7f0f74668a069c3d044dc8e55edb06",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-2.png",
+        "status": 200,
+        "bytes": 844019,
+        "localSha256": "f4cc7bf78e3a6083a96cb57e443eb24db03cd1a58e6815e44b4dad4f254dd39f",
+        "remoteSha256": "f4cc7bf78e3a6083a96cb57e443eb24db03cd1a58e6815e44b4dad4f254dd39f",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-4-2560x1440.png",
+        "status": 200,
+        "bytes": 1949251,
+        "localSha256": "8c05ab69be8a5ed0ae03e06f6fd0b73f6eb57f409349aa88f89ae1a3575a06b2",
+        "remoteSha256": "8c05ab69be8a5ed0ae03e06f6fd0b73f6eb57f409349aa88f89ae1a3575a06b2",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-4.png",
+        "status": 200,
+        "bytes": 890137,
+        "localSha256": "b6c8432646e84a5feab69504e0cd74ca33a9e15052efe3192d56c27276984cf6",
+        "remoteSha256": "b6c8432646e84a5feab69504e0cd74ca33a9e15052efe3192d56c27276984cf6",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-e8a848d/desktop-rendering-acceptance/forest-turned.png",
+        "status": 200,
+        "bytes": 842938,
+        "localSha256": "6ea2399bcdb2ab10d7eebfb0177c8d6845acd0bc500d8522e70634a0775ed637",
+        "remoteSha256": "6ea2399bcdb2ab10d7eebfb0177c8d6845acd0bc500d8522e70634a0775ed637",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-e8a848d/desktop-rendering-acceptance/near-ground-resized-2560x1440.png",
+        "status": 200,
+        "bytes": 1842403,
+        "localSha256": "fe6aa1599a71d03b89c4d5bdf149f49853d771edaa4a90634c8056c5ef86591f",
+        "remoteSha256": "fe6aa1599a71d03b89c4d5bdf149f49853d771edaa4a90634c8056c5ef86591f",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-e8a848d/desktop-rendering-acceptance/near-ground-warmed.png",
+        "status": 200,
+        "bytes": 794424,
+        "localSha256": "ab719c49e0a892de82c823031fcb2ec3cf7f0f74668a069c3d044dc8e55edb06",
+        "remoteSha256": "ab719c49e0a892de82c823031fcb2ec3cf7f0f74668a069c3d044dc8e55edb06",
+        "matches": true
+      },
+      {
+        "path": "test-results/deploy-e8a848d/forest-selection-cache-browser/after-move.png",
+        "status": 200,
+        "bytes": 856734,
+        "localSha256": "eff7d8d418fef73c7531703d4a928cb72174e2b12b49fe31b58423077b480321",
+        "remoteSha256": "eff7d8d418fef73c7531703d4a928cb72174e2b12b49fe31b58423077b480321",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-realism-26b41f5/forest-hardware/forest-turned.png",
+        "status": 200,
+        "bytes": 968139,
+        "localSha256": "a0f8218935e183e5228efbf78ab83b13271dd6f3d6bbeff2b3af212b072360ed",
+        "remoteSha256": "a0f8218935e183e5228efbf78ab83b13271dd6f3d6bbeff2b3af212b072360ed",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-realism-26b41f5/forest-hardware/forest-warmed.png",
+        "status": 200,
+        "bytes": 986430,
+        "localSha256": "5c9d2b5df19408a74c42c6123061846b44da9cb322e086d2ecd2301ac2788bf0",
+        "remoteSha256": "5c9d2b5df19408a74c42c6123061846b44da9cb322e086d2ecd2301ac2788bf0",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-realism-26b41f5/population-flight/01-contact.png",
+        "status": 200,
+        "bytes": 793476,
+        "localSha256": "210aecca25bc7ed83dc7d63ce7317934ff19e45e1a7a995e0b2f3cba362520f4",
+        "remoteSha256": "210aecca25bc7ed83dc7d63ce7317934ff19e45e1a7a995e0b2f3cba362520f4",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-realism-26b41f5/population-flight/02-fauna-low-flight.png",
+        "status": 200,
+        "bytes": 854837,
+        "localSha256": "e703266b7ed7721a2a9dc518565e627f1cefabcf1605d0dcf97bf7886c684853",
+        "remoteSha256": "e703266b7ed7721a2a9dc518565e627f1cefabcf1605d0dcf97bf7886c684853",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-6b87e13/cloud-aa-0.png",
+        "status": 200,
+        "bytes": 876307,
+        "localSha256": "7f83c18a2553a270d1138abb2634fd90c0eb7600bce5190f0284ef7324b914bb",
+        "remoteSha256": "7f83c18a2553a270d1138abb2634fd90c0eb7600bce5190f0284ef7324b914bb",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-6b87e13/cloud-aa-2.png",
+        "status": 200,
+        "bytes": 939975,
+        "localSha256": "da5ec2fb74c128debc9f5f2a01a48cfd8115edbaa4edb3dada4f0dced423c158",
+        "remoteSha256": "da5ec2fb74c128debc9f5f2a01a48cfd8115edbaa4edb3dada4f0dced423c158",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-6b87e13/cloud-aa-4-2560x1440.png",
+        "status": 200,
+        "bytes": 2183022,
+        "localSha256": "9a1eb3e860e15b534a55196513b7232c83952f76d2226027bcda56fc9cf8552b",
+        "remoteSha256": "9a1eb3e860e15b534a55196513b7232c83952f76d2226027bcda56fc9cf8552b",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-6b87e13/cloud-aa-4.png",
+        "status": 200,
+        "bytes": 998139,
+        "localSha256": "10d9b202378d2d3de7942107bbe662929403a35b074cef2f1f3393e680add2e1",
+        "remoteSha256": "10d9b202378d2d3de7942107bbe662929403a35b074cef2f1f3393e680add2e1",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-6b87e13/forest-turned.png",
+        "status": 200,
+        "bytes": 812557,
+        "localSha256": "17aba97c0ed58bdb1789f2941541757e3630f4354b334d734698ea2bb24cb0eb",
+        "remoteSha256": "17aba97c0ed58bdb1789f2941541757e3630f4354b334d734698ea2bb24cb0eb",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-6b87e13/near-ground-resized-2560x1440.png",
+        "status": 200,
+        "bytes": 2043065,
+        "localSha256": "48fdd9faa88ba6829e8a4afe4f774fe2465ffa05c2fa96137bf28cc9606cd229",
+        "remoteSha256": "48fdd9faa88ba6829e8a4afe4f774fe2465ffa05c2fa96137bf28cc9606cd229",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-6b87e13/near-ground-warmed.png",
+        "status": 200,
+        "bytes": 876307,
+        "localSha256": "7f83c18a2553a270d1138abb2634fd90c0eb7600bce5190f0284ef7324b914bb",
+        "remoteSha256": "7f83c18a2553a270d1138abb2634fd90c0eb7600bce5190f0284ef7324b914bb",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-98556a7/cloud-aa-0.png",
+        "status": 200,
+        "bytes": 796573,
+        "localSha256": "6fd90d1fc987e5be0e3cfa64fd650721e4e7e5f7fd760ab198f38e5435858734",
+        "remoteSha256": "6fd90d1fc987e5be0e3cfa64fd650721e4e7e5f7fd760ab198f38e5435858734",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-98556a7/cloud-aa-2.png",
+        "status": 200,
+        "bytes": 849706,
+        "localSha256": "1243fa87ac311029639ff9ecd0c7d58eea9e689ca49915d3f6fe2b12f603cfc4",
+        "remoteSha256": "1243fa87ac311029639ff9ecd0c7d58eea9e689ca49915d3f6fe2b12f603cfc4",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-98556a7/cloud-aa-4-2560x1440.png",
+        "status": 200,
+        "bytes": 1937292,
+        "localSha256": "0cd0f61759c45d57caf78589d9f94732df1b757fa61be63b6df7786927ccaf8f",
+        "remoteSha256": "0cd0f61759c45d57caf78589d9f94732df1b757fa61be63b6df7786927ccaf8f",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-98556a7/cloud-aa-4.png",
+        "status": 200,
+        "bytes": 898247,
+        "localSha256": "7f2f64b6384a2454d7277beccc34e7c06c9a8d8a671cd88d07e85e684699bb96",
+        "remoteSha256": "7f2f64b6384a2454d7277beccc34e7c06c9a8d8a671cd88d07e85e684699bb96",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-98556a7/forest-turned.png",
+        "status": 200,
+        "bytes": 858281,
+        "localSha256": "5bf51e322bdeed31ae5097b49d68141153f4b5b018efdcda588ad88e6ed44495",
+        "remoteSha256": "5bf51e322bdeed31ae5097b49d68141153f4b5b018efdcda588ad88e6ed44495",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-98556a7/near-ground-resized-2560x1440.png",
+        "status": 200,
+        "bytes": 1821813,
+        "localSha256": "5a6b780bff8394393c39aa8186d376a2b2d2417bbc919f00a2ed3c48fe16b125",
+        "remoteSha256": "5a6b780bff8394393c39aa8186d376a2b2d2417bbc919f00a2ed3c48fe16b125",
+        "matches": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-98556a7/near-ground-warmed.png",
+        "status": 200,
+        "bytes": 796573,
+        "localSha256": "6fd90d1fc987e5be0e3cfa64fd650721e4e7e5f7fd760ab198f38e5435858734",
+        "remoteSha256": "6fd90d1fc987e5be0e3cfa64fd650721e4e7e5f7fd760ab198f38e5435858734",
+        "matches": true
+      },
+      {
+        "path": "test-results/fauna-closeup-6b87e13/01-fauna-closeup.png",
+        "status": 200,
+        "bytes": 614442,
+        "localSha256": "9ce90e8c88066a49e193ee6971120c0f1e1a909b22af92b1241b5ccc6905e7aa",
+        "remoteSha256": "9ce90e8c88066a49e193ee6971120c0f1e1a909b22af92b1241b5ccc6905e7aa",
+        "matches": true
+      },
+      {
+        "path": "test-results/fauna-closeup-6b87e13/02-fauna-paused-repeat.png",
+        "status": 200,
+        "bytes": 614448,
+        "localSha256": "369cc8947f3a3bc2b4f2f6de4bc7d01175e53a3bd7c175e067faafd616444555",
+        "remoteSha256": "369cc8947f3a3bc2b4f2f6de4bc7d01175e53a3bd7c175e067faafd616444555",
+        "matches": true
+      },
+      {
+        "path": "test-results/forest-impostor-field/impostor-1200m.png",
+        "status": 200,
+        "bytes": 1229004,
+        "localSha256": "a1524903b3ed04f5c80b0c661eb2b2f38e42ff3705b6c3d62852e06161ab2ec2",
+        "remoteSha256": "a1524903b3ed04f5c80b0c661eb2b2f38e42ff3705b6c3d62852e06161ab2ec2",
+        "matches": true
+      },
+      {
+        "path": "test-results/forest-impostor-field/impostor-120m.png",
+        "status": 200,
+        "bytes": 667991,
+        "localSha256": "3baabe525daebe86a01401cfdbbc554695dc6bc79b350bcdf67a0c3d8ba4e4a3",
+        "remoteSha256": "3baabe525daebe86a01401cfdbbc554695dc6bc79b350bcdf67a0c3d8ba4e4a3",
+        "matches": true
+      },
+      {
+        "path": "test-results/forest-impostor-field/reference-1200m.png",
+        "status": 200,
+        "bytes": 1140764,
+        "localSha256": "35d452f33d0c8d045f10e8d564498463b4e66fe5c93e79bcb8f5c46e777bfbcb",
+        "remoteSha256": "35d452f33d0c8d045f10e8d564498463b4e66fe5c93e79bcb8f5c46e777bfbcb",
+        "matches": true
+      },
+      {
+        "path": "test-results/forest-impostor-field/reference-120m.png",
+        "status": 200,
+        "bytes": 696531,
+        "localSha256": "6e569ce9bb54b5de4448ff6b5fefa8fa226dcd2e2a1351248ac85e17d4026fb3",
+        "remoteSha256": "6e569ce9bb54b5de4448ff6b5fefa8fa226dcd2e2a1351248ac85e17d4026fb3",
+        "matches": true
+      },
+      {
+        "path": "test-results/forest-selection-66c7728/browser-movement-lateral-hardware/after-move.png",
+        "status": 200,
+        "bytes": 858296,
+        "localSha256": "c119c816cbf2dece548cd2d307e401667469a712d52e828e3e444756a006d9a9",
+        "remoteSha256": "c119c816cbf2dece548cd2d307e401667469a712d52e828e3e444756a006d9a9",
+        "matches": true
+      },
+      {
+        "path": "test-results/forest-transfer-23de0b9/browser-movement-hardware/after-move.png",
+        "status": 200,
+        "bytes": 858132,
+        "localSha256": "76244fa236d0c16bf00177c408bb3a662bdd37721e4c0775346125f9bc3801a8",
+        "remoteSha256": "76244fa236d0c16bf00177c408bb3a662bdd37721e4c0775346125f9bc3801a8",
+        "matches": true
+      },
+      {
+        "path": "test-results/forest-transfer-23de0b9/desktop-rendering-baseline-66c-production-preview/near-ground-warmed.png",
+        "status": 200,
+        "bytes": 857853,
+        "localSha256": "1519546a2ddb9e703c20a336bbda41374d88537f19218c2772c8dfa0512ce135",
+        "remoteSha256": "1519546a2ddb9e703c20a336bbda41374d88537f19218c2772c8dfa0512ce135",
+        "matches": true
+      },
+      {
+        "path": "test-results/forest-transfer-23de0b9/desktop-rendering-production-preview/near-ground-warmed.png",
+        "status": 200,
+        "bytes": 857558,
+        "localSha256": "009eddce316ee5cedf1dea7f44945095360f5c7fb63eeb597b4597fc2bd0b177",
+        "remoteSha256": "009eddce316ee5cedf1dea7f44945095360f5c7fb63eeb597b4597fc2bd0b177",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/back-impostor.png",
+        "status": 200,
+        "bytes": 137571,
+        "localSha256": "7d204215074f193437dbba59fe06a76e3f5dab88e41b6669996e16cd64acd7fd",
+        "remoteSha256": "7d204215074f193437dbba59fe06a76e3f5dab88e41b6669996e16cd64acd7fd",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/back-mesh.png",
+        "status": 200,
+        "bytes": 296782,
+        "localSha256": "d2c51d4c3a5fea05f66a98db73b30254974bc85a13fae998248acf74f00b0267",
+        "remoteSha256": "d2c51d4c3a5fea05f66a98db73b30254974bc85a13fae998248acf74f00b0267",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/front-impostor.png",
+        "status": 200,
+        "bytes": 168676,
+        "localSha256": "9ae19def1056bf3aec3bfdca795e70061f81da670f0d50f2ec520293b48dcb12",
+        "remoteSha256": "9ae19def1056bf3aec3bfdca795e70061f81da670f0d50f2ec520293b48dcb12",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/front-mesh.png",
+        "status": 200,
+        "bytes": 345978,
+        "localSha256": "609ff13e13de11a31f15579a786cbb3263ecbb0c2af064780adca1eeda3529d7",
+        "remoteSha256": "609ff13e13de11a31f15579a786cbb3263ecbb0c2af064780adca1eeda3529d7",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el-5-impostor.png",
+        "status": 200,
+        "bytes": 1920,
+        "localSha256": "f194e8828b41662b9f6f7b5cdcbe429a1f1a702d47dae556c5051d9dc1aa8419",
+        "remoteSha256": "f194e8828b41662b9f6f7b5cdcbe429a1f1a702d47dae556c5051d9dc1aa8419",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el-5-mesh.png",
+        "status": 200,
+        "bytes": 1891,
+        "localSha256": "42cfcd92f539533f3173f05184b637a6c79093af7459309c571fe8e24d55acb0",
+        "remoteSha256": "42cfcd92f539533f3173f05184b637a6c79093af7459309c571fe8e24d55acb0",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el0-impostor.png",
+        "status": 200,
+        "bytes": 1907,
+        "localSha256": "80fee4f34cad9c2650f2d695e8c2250a699b9b361ffc4eb0a1f74163a708fb49",
+        "remoteSha256": "80fee4f34cad9c2650f2d695e8c2250a699b9b361ffc4eb0a1f74163a708fb49",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el0-mesh.png",
+        "status": 200,
+        "bytes": 1840,
+        "localSha256": "bb269f98f1d506d88ce534540629fd3551f65f67b69873586b23c53af6562ed7",
+        "remoteSha256": "bb269f98f1d506d88ce534540629fd3551f65f67b69873586b23c53af6562ed7",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el15-impostor.png",
+        "status": 200,
+        "bytes": 1776,
+        "localSha256": "f03205eda547abbe7e365e86d2344bb12839377bfaa69156f750122866d6e865",
+        "remoteSha256": "f03205eda547abbe7e365e86d2344bb12839377bfaa69156f750122866d6e865",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el15-mesh.png",
+        "status": 200,
+        "bytes": 1886,
+        "localSha256": "084c65ae970a7a36f9af721bb14003f5855c25eee43f1e05987264d981004b20",
+        "remoteSha256": "084c65ae970a7a36f9af721bb14003f5855c25eee43f1e05987264d981004b20",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el85-impostor.png",
+        "status": 200,
+        "bytes": 1680,
+        "localSha256": "14382267ae32be78db36f082ec7fd8712c62539c4dddb26fc6abc02c6b3f3337",
+        "remoteSha256": "14382267ae32be78db36f082ec7fd8712c62539c4dddb26fc6abc02c6b3f3337",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az0-el85-mesh.png",
+        "status": 200,
+        "bytes": 1706,
+        "localSha256": "a0e4343c079262360464530f0bfc3d342653629c68789c2f5323f564608e5df8",
+        "remoteSha256": "a0e4343c079262360464530f0bfc3d342653629c68789c2f5323f564608e5df8",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az45-el0-impostor.png",
+        "status": 200,
+        "bytes": 1709,
+        "localSha256": "a55495dd7e488448779a3076f0e1e23a18631cf1c8b7acbe579d979632133f4d",
+        "remoteSha256": "a55495dd7e488448779a3076f0e1e23a18631cf1c8b7acbe579d979632133f4d",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az45-el0-mesh.png",
+        "status": 200,
+        "bytes": 1746,
+        "localSha256": "44193ff105da795b2c22d980788bd4548028e91722af9c8237a6b67a67e9ce18",
+        "remoteSha256": "44193ff105da795b2c22d980788bd4548028e91722af9c8237a6b67a67e9ce18",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az45-el45-impostor.png",
+        "status": 200,
+        "bytes": 1532,
+        "localSha256": "4f5ec01aa0f41b44e68b54a0702a9ba1fd9ee305283f6dc20af889178424c48c",
+        "remoteSha256": "4f5ec01aa0f41b44e68b54a0702a9ba1fd9ee305283f6dc20af889178424c48c",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az45-el45-mesh.png",
+        "status": 200,
+        "bytes": 1617,
+        "localSha256": "692fd73fc794fa0b8c0b746070a3dcd080361522851ec223617238d8ac2657a9",
+        "remoteSha256": "692fd73fc794fa0b8c0b746070a3dcd080361522851ec223617238d8ac2657a9",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az90-el0-impostor.png",
+        "status": 200,
+        "bytes": 1773,
+        "localSha256": "00a6ea3f0541cb610000d29939e4fc4d130dc0f536d1ad729b4fde9d330db54d",
+        "remoteSha256": "00a6ea3f0541cb610000d29939e4fc4d130dc0f536d1ad729b4fde9d330db54d",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/az90-el0-mesh.png",
+        "status": 200,
+        "bytes": 1702,
+        "localSha256": "dfa69bc7f58628b26cc8e3bf36cd438a676e6aaddbf982fa2ced902c8c04ac89",
+        "remoteSha256": "dfa69bc7f58628b26cc8e3bf36cd438a676e6aaddbf982fa2ced902c8c04ac89",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/top-impostor.png",
+        "status": 200,
+        "bytes": 1590,
+        "localSha256": "cad273be5d23b005aea175721aac78a58d5f6f4d60d0f216e7b83a5a83b4f3ef",
+        "remoteSha256": "cad273be5d23b005aea175721aac78a58d5f6f4d60d0f216e7b83a5a83b4f3ef",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/masks/top-mesh.png",
+        "status": 200,
+        "bytes": 1709,
+        "localSha256": "4cf843edf7a22046f8bad28601ffc57a182c46aa8c596bbff2344711f8b68a00",
+        "remoteSha256": "4cf843edf7a22046f8bad28601ffc57a182c46aa8c596bbff2344711f8b68a00",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/back-impostor.png",
+        "status": 200,
+        "bytes": 141839,
+        "localSha256": "67f2cd92ebdf24087c36191b67905f6e4344bfbf6bdece66b20a993ab8aeb1f3",
+        "remoteSha256": "67f2cd92ebdf24087c36191b67905f6e4344bfbf6bdece66b20a993ab8aeb1f3",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/back-mesh.png",
+        "status": 200,
+        "bytes": 296782,
+        "localSha256": "d2c51d4c3a5fea05f66a98db73b30254974bc85a13fae998248acf74f00b0267",
+        "remoteSha256": "d2c51d4c3a5fea05f66a98db73b30254974bc85a13fae998248acf74f00b0267",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/back-mid.png",
+        "status": 200,
+        "bytes": 262126,
+        "localSha256": "5e6b17d92054bdfdd4e927fd659a8a6316478ecb87a8fd3e5ac41654060f6712",
+        "remoteSha256": "5e6b17d92054bdfdd4e927fd659a8a6316478ecb87a8fd3e5ac41654060f6712",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/front-impostor.png",
+        "status": 200,
+        "bytes": 172318,
+        "localSha256": "4b2fca2e1cd939b523a46078943208e0795b4ef61042193d2cba5eddacc7b789",
+        "remoteSha256": "4b2fca2e1cd939b523a46078943208e0795b4ef61042193d2cba5eddacc7b789",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/front-mesh.png",
+        "status": 200,
+        "bytes": 345978,
+        "localSha256": "609ff13e13de11a31f15579a786cbb3263ecbb0c2af064780adca1eeda3529d7",
+        "remoteSha256": "609ff13e13de11a31f15579a786cbb3263ecbb0c2af064780adca1eeda3529d7",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/front-mid.png",
+        "status": 200,
+        "bytes": 290392,
+        "localSha256": "e03209f198e47c09da3701123126bc9e3b0ec1efee361863821d77f3de803668",
+        "remoteSha256": "e03209f198e47c09da3701123126bc9e3b0ec1efee361863821d77f3de803668",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-impostor.png",
+        "status": 200,
+        "bytes": 1743,
+        "localSha256": "928fad93fe62d2e88a32b877fdc4d27aece58c71056d069371db4e8414b73a13",
+        "remoteSha256": "928fad93fe62d2e88a32b877fdc4d27aece58c71056d069371db4e8414b73a13",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-mesh.png",
+        "status": 200,
+        "bytes": 1775,
+        "localSha256": "04f95643b372a7f07658c1052771b2f5b46f23346a8d78b7a3cbfaedc51d688d",
+        "remoteSha256": "04f95643b372a7f07658c1052771b2f5b46f23346a8d78b7a3cbfaedc51d688d",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-mid.png",
+        "status": 200,
+        "bytes": 2574,
+        "localSha256": "2cf8e1c94158d9d400bc1a3cee8014785f274ae2721ee9f5e6324b8391a7f444",
+        "remoteSha256": "2cf8e1c94158d9d400bc1a3cee8014785f274ae2721ee9f5e6324b8391a7f444",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-impostor.png",
+        "status": 200,
+        "bytes": 1920,
+        "localSha256": "f194e8828b41662b9f6f7b5cdcbe429a1f1a702d47dae556c5051d9dc1aa8419",
+        "remoteSha256": "f194e8828b41662b9f6f7b5cdcbe429a1f1a702d47dae556c5051d9dc1aa8419",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-mesh.png",
+        "status": 200,
+        "bytes": 1891,
+        "localSha256": "42cfcd92f539533f3173f05184b637a6c79093af7459309c571fe8e24d55acb0",
+        "remoteSha256": "42cfcd92f539533f3173f05184b637a6c79093af7459309c571fe8e24d55acb0",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-mid.png",
+        "status": 200,
+        "bytes": 2613,
+        "localSha256": "16f8c1a00ff19218b1853eb3b61f1f0775637f578410b8b52ea6a44677115c48",
+        "remoteSha256": "16f8c1a00ff19218b1853eb3b61f1f0775637f578410b8b52ea6a44677115c48",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-impostor.png",
+        "status": 200,
+        "bytes": 1907,
+        "localSha256": "80fee4f34cad9c2650f2d695e8c2250a699b9b361ffc4eb0a1f74163a708fb49",
+        "remoteSha256": "80fee4f34cad9c2650f2d695e8c2250a699b9b361ffc4eb0a1f74163a708fb49",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-mesh.png",
+        "status": 200,
+        "bytes": 1840,
+        "localSha256": "bb269f98f1d506d88ce534540629fd3551f65f67b69873586b23c53af6562ed7",
+        "remoteSha256": "bb269f98f1d506d88ce534540629fd3551f65f67b69873586b23c53af6562ed7",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-mid.png",
+        "status": 200,
+        "bytes": 2577,
+        "localSha256": "919e95581f6ddae2263eb00eb54e2b5e479a2a265006333cd5140a571fbbb9f0",
+        "remoteSha256": "919e95581f6ddae2263eb00eb54e2b5e479a2a265006333cd5140a571fbbb9f0",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-impostor.png",
+        "status": 200,
+        "bytes": 1776,
+        "localSha256": "f03205eda547abbe7e365e86d2344bb12839377bfaa69156f750122866d6e865",
+        "remoteSha256": "f03205eda547abbe7e365e86d2344bb12839377bfaa69156f750122866d6e865",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-mesh.png",
+        "status": 200,
+        "bytes": 1886,
+        "localSha256": "084c65ae970a7a36f9af721bb14003f5855c25eee43f1e05987264d981004b20",
+        "remoteSha256": "084c65ae970a7a36f9af721bb14003f5855c25eee43f1e05987264d981004b20",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-mid.png",
+        "status": 200,
+        "bytes": 2480,
+        "localSha256": "82ac2bd36168f0e9b2ab345cf6c0f0c21a387011bb61971d75d6042f4d2906f7",
+        "remoteSha256": "82ac2bd36168f0e9b2ab345cf6c0f0c21a387011bb61971d75d6042f4d2906f7",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-impostor.png",
+        "status": 200,
+        "bytes": 1680,
+        "localSha256": "14382267ae32be78db36f082ec7fd8712c62539c4dddb26fc6abc02c6b3f3337",
+        "remoteSha256": "14382267ae32be78db36f082ec7fd8712c62539c4dddb26fc6abc02c6b3f3337",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-mesh.png",
+        "status": 200,
+        "bytes": 1706,
+        "localSha256": "a0e4343c079262360464530f0bfc3d342653629c68789c2f5323f564608e5df8",
+        "remoteSha256": "a0e4343c079262360464530f0bfc3d342653629c68789c2f5323f564608e5df8",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-mid.png",
+        "status": 200,
+        "bytes": 2187,
+        "localSha256": "634650f60cde30b1d8c50b9451a14576f8ee079f766f339c191c544063ec5f61",
+        "remoteSha256": "634650f60cde30b1d8c50b9451a14576f8ee079f766f339c191c544063ec5f61",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-impostor.png",
+        "status": 200,
+        "bytes": 1709,
+        "localSha256": "a55495dd7e488448779a3076f0e1e23a18631cf1c8b7acbe579d979632133f4d",
+        "remoteSha256": "a55495dd7e488448779a3076f0e1e23a18631cf1c8b7acbe579d979632133f4d",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-mesh.png",
+        "status": 200,
+        "bytes": 1746,
+        "localSha256": "44193ff105da795b2c22d980788bd4548028e91722af9c8237a6b67a67e9ce18",
+        "remoteSha256": "44193ff105da795b2c22d980788bd4548028e91722af9c8237a6b67a67e9ce18",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-mid.png",
+        "status": 200,
+        "bytes": 2333,
+        "localSha256": "038ad69b18eba1aaed1856c15cc0d571d0e6d1c93cc486260862fb9d1fb44209",
+        "remoteSha256": "038ad69b18eba1aaed1856c15cc0d571d0e6d1c93cc486260862fb9d1fb44209",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-impostor.png",
+        "status": 200,
+        "bytes": 1532,
+        "localSha256": "4f5ec01aa0f41b44e68b54a0702a9ba1fd9ee305283f6dc20af889178424c48c",
+        "remoteSha256": "4f5ec01aa0f41b44e68b54a0702a9ba1fd9ee305283f6dc20af889178424c48c",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-mesh.png",
+        "status": 200,
+        "bytes": 1617,
+        "localSha256": "692fd73fc794fa0b8c0b746070a3dcd080361522851ec223617238d8ac2657a9",
+        "remoteSha256": "692fd73fc794fa0b8c0b746070a3dcd080361522851ec223617238d8ac2657a9",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-mid.png",
+        "status": 200,
+        "bytes": 2148,
+        "localSha256": "9ab92de8691b8618be93f49aadedd4aaabf6c8b2b87b84bd9110e4a8b69a2f3f",
+        "remoteSha256": "9ab92de8691b8618be93f49aadedd4aaabf6c8b2b87b84bd9110e4a8b69a2f3f",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/top-impostor.png",
+        "status": 200,
+        "bytes": 1590,
+        "localSha256": "cad273be5d23b005aea175721aac78a58d5f6f4d60d0f216e7b83a5a83b4f3ef",
+        "remoteSha256": "cad273be5d23b005aea175721aac78a58d5f6f4d60d0f216e7b83a5a83b4f3ef",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/top-mesh.png",
+        "status": 200,
+        "bytes": 1709,
+        "localSha256": "4cf843edf7a22046f8bad28601ffc57a182c46aa8c596bbff2344711f8b68a00",
+        "remoteSha256": "4cf843edf7a22046f8bad28601ffc57a182c46aa8c596bbff2344711f8b68a00",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/masks/top-mid.png",
+        "status": 200,
+        "bytes": 2183,
+        "localSha256": "64ad77827320b61b51e6fb9e3a3669e5df609ac27e38c39289b4a28e64431a7c",
+        "remoteSha256": "64ad77827320b61b51e6fb9e3a3669e5df609ac27e38c39289b4a28e64431a7c",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/top-impostor.png",
+        "status": 200,
+        "bytes": 175526,
+        "localSha256": "9548152868309e070df2c21286abc67df42171404ef548e5fbd022e44a60dd3d",
+        "remoteSha256": "9548152868309e070df2c21286abc67df42171404ef548e5fbd022e44a60dd3d",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/top-mesh.png",
+        "status": 200,
+        "bytes": 277415,
+        "localSha256": "f547a8662693993c2ac3bd40a00712c425f97772fea4aeb887a2a3a0b303e8cf",
+        "remoteSha256": "f547a8662693993c2ac3bd40a00712c425f97772fea4aeb887a2a3a0b303e8cf",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/native-map-fix/top-mid.png",
+        "status": 200,
+        "bytes": 243398,
+        "localSha256": "e23a85e00c64ae25ac0e822ee610f209482c0a5620b27af26c554d6c08673937",
+        "remoteSha256": "e23a85e00c64ae25ac0e822ee610f209482c0a5620b27af26c554d6c08673937",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/top-impostor.png",
+        "status": 200,
+        "bytes": 172930,
+        "localSha256": "76cce85729c56205c95abb10ac713b2f8b71df1cb3611dc9614a0b66acc1156b",
+        "remoteSha256": "76cce85729c56205c95abb10ac713b2f8b71df1cb3611dc9614a0b66acc1156b",
+        "matches": true
+      },
+      {
+        "path": "test-results/three-ez-impostor-reference/top-mesh.png",
+        "status": 200,
+        "bytes": 277415,
+        "localSha256": "f547a8662693993c2ac3bd40a00712c425f97772fea4aeb887a2a3a0b303e8cf",
+        "remoteSha256": "f547a8662693993c2ac3bd40a00712c425f97772fea4aeb887a2a3a0b303e8cf",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-asset-lab-v6/lod0-population192.png",
+        "status": 200,
+        "bytes": 2740544,
+        "localSha256": "df57024de47cf565a37eec824fde78cb9a69321ec4612e8bc69657f8caeb4695",
+        "remoteSha256": "df57024de47cf565a37eec824fde78cb9a69321ec4612e8bc69657f8caeb4695",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-asset-lab-v6/lod0-population3.png",
+        "status": 200,
+        "bytes": 416305,
+        "localSha256": "8748a188dd20ecee3bae8c6143db39dafced2f136132040bd4976c6a4d9f3740",
+        "remoteSha256": "8748a188dd20ecee3bae8c6143db39dafced2f136132040bd4976c6a4d9f3740",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-asset-lab-v7-color-a/lod0-population192.png",
+        "status": 200,
+        "bytes": 3643636,
+        "localSha256": "3b8a7bf1e887901113d1d3b253e875c16e47a4823b0089b75edf79a859bb29ed",
+        "remoteSha256": "3b8a7bf1e887901113d1d3b253e875c16e47a4823b0089b75edf79a859bb29ed",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-asset-lab-v7-color-a/lod0-population3.png",
+        "status": 200,
+        "bytes": 460118,
+        "localSha256": "b4160b7a3909f37cbf6c8bd190144f4052bcd65e15fcf2ac27e5fda7f9c23d08",
+        "remoteSha256": "b4160b7a3909f37cbf6c8bd190144f4052bcd65e15fcf2ac27e5fda7f9c23d08",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-asset-lab-v7-color-a/lod1-population192.png",
+        "status": 200,
+        "bytes": 3584064,
+        "localSha256": "29cd72e87bceb8469efdaffc9474a920aa1bf40d56829949124f9d5770a3ec8f",
+        "remoteSha256": "29cd72e87bceb8469efdaffc9474a920aa1bf40d56829949124f9d5770a3ec8f",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-asset-lab-v7-color-a/lod1-population3.png",
+        "status": 200,
+        "bytes": 456082,
+        "localSha256": "ecd60f03feee80d524792660a03fc37c658b63256cb9c8cd996771c538f256fa",
+        "remoteSha256": "ecd60f03feee80d524792660a03fc37c658b63256cb9c8cd996771c538f256fa",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-asset-lighting-v6/center-16m-back-shadows-off.png",
+        "status": 200,
+        "bytes": 274259,
+        "localSha256": "06905089d20e95f900e4f64a1d970bdfdaea28469900c24b7f6a07f73549f602",
+        "remoteSha256": "06905089d20e95f900e4f64a1d970bdfdaea28469900c24b7f6a07f73549f602",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-asset-lighting-v6/center-16m-back-shadows-on.png",
+        "status": 200,
+        "bytes": 286935,
+        "localSha256": "a8a88b938815c87d34cba22b5e2feb7b7f36117a48a81b761fc8cb6661642222",
+        "remoteSha256": "a8a88b938815c87d34cba22b5e2feb7b7f36117a48a81b761fc8cb6661642222",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-asset-lighting-v6/center-16m-front-shadows-off.png",
+        "status": 200,
+        "bytes": 308020,
+        "localSha256": "bfcda6d68a41d3f10f99a2d090fb2f6fdae7bf535a189344b90c504422732dbc",
+        "remoteSha256": "bfcda6d68a41d3f10f99a2d090fb2f6fdae7bf535a189344b90c504422732dbc",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-asset-lighting-v6/center-16m-front-shadows-on.png",
+        "status": 200,
+        "bytes": 315791,
+        "localSha256": "42d95d11d88ba1f8a565c74d9084c44b30dafc5cd74eff3505b543337bc48ecc",
+        "remoteSha256": "42d95d11d88ba1f8a565c74d9084c44b30dafc5cd74eff3505b543337bc48ecc",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-asset-lighting-v7-color-a/center-16m-back-shadows-off.png",
+        "status": 200,
+        "bytes": 366872,
+        "localSha256": "388e34bb03a895faa2d569ec8747bdf5e4af8bc60e1d278da8a445b59a264f86",
+        "remoteSha256": "388e34bb03a895faa2d569ec8747bdf5e4af8bc60e1d278da8a445b59a264f86",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-asset-lighting-v7-color-a/center-16m-front-shadows-on.png",
+        "status": 200,
+        "bytes": 421816,
+        "localSha256": "7acee89273d63309668dfa879eccdf5b9a2a38677d3bf1a2c9e2b22f93310836",
+        "remoteSha256": "7acee89273d63309668dfa879eccdf5b9a2a38677d3bf1a2c9e2b22f93310836",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/back.png",
+        "status": 200,
+        "bytes": 237464,
+        "localSha256": "0b8e8f1aabdc48a869a483514a3ac1df190d0814d9cc2505d841569af768fe11",
+        "remoteSha256": "0b8e8f1aabdc48a869a483514a3ac1df190d0814d9cc2505d841569af768fe11",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/front.png",
+        "status": 200,
+        "bytes": 237366,
+        "localSha256": "b50f3999d4ac08d3d1a34229a46500ac05b64d5150f202bbf5ff14b8344a3d1d",
+        "remoteSha256": "b50f3999d4ac08d3d1a34229a46500ac05b64d5150f202bbf5ff14b8344a3d1d",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/hero.png",
+        "status": 200,
+        "bytes": 204180,
+        "localSha256": "c447c9480acfe615b1fcae048ecc56bb02705422b0d0790cedb2eaab2a30c952",
+        "remoteSha256": "c447c9480acfe615b1fcae048ecc56bb02705422b0d0790cedb2eaab2a30c952",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/render-sheet.png",
+        "status": 200,
+        "bytes": 1298801,
+        "localSha256": "4b32acaa5fc273d98f786c496522a24c47159c7ca398933259cf70a6af13c3cf",
+        "remoteSha256": "4b32acaa5fc273d98f786c496522a24c47159c7ca398933259cf70a6af13c3cf",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/right.png",
+        "status": 200,
+        "bytes": 243510,
+        "localSha256": "72f464df1af1570d40f66ae7d8cb4d285bfb1c69a5b31a3edcc055f41ee5c059",
+        "remoteSha256": "72f464df1af1570d40f66ae7d8cb4d285bfb1c69a5b31a3edcc055f41ee5c059",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/top.png",
+        "status": 200,
+        "bytes": 257132,
+        "localSha256": "3200496b1d4b4601df7847090071fb0926a9c02ed5aa88bf26089f610af0d4ae",
+        "remoteSha256": "3200496b1d4b4601df7847090071fb0926a9c02ed5aa88bf26089f610af0d4ae",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/wire.png",
+        "status": 200,
+        "bytes": 214495,
+        "localSha256": "fee280e4c2c6b6d4265fc36c9909e4bd4ff916a2ea53b2be9fec6af982f88418",
+        "remoteSha256": "fee280e4c2c6b6d4265fc36c9909e4bd4ff916a2ea53b2be9fec6af982f88418",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/back.png",
+        "status": 200,
+        "bytes": 237770,
+        "localSha256": "c9652a2ff94ee0977d38d91e81fc101706a5ca38e9027a5101a559ac930fe873",
+        "remoteSha256": "c9652a2ff94ee0977d38d91e81fc101706a5ca38e9027a5101a559ac930fe873",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/front.png",
+        "status": 200,
+        "bytes": 238372,
+        "localSha256": "58fa5fa5227d01136c41563413c4d5510c3e1f7055b3e7ffc95865170157a2b6",
+        "remoteSha256": "58fa5fa5227d01136c41563413c4d5510c3e1f7055b3e7ffc95865170157a2b6",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/hero.png",
+        "status": 200,
+        "bytes": 204664,
+        "localSha256": "6eb8755dc43299e9004ea92f1453bbe7f4b9ab7779524705e2a8b6ea6c07e352",
+        "remoteSha256": "6eb8755dc43299e9004ea92f1453bbe7f4b9ab7779524705e2a8b6ea6c07e352",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/render-sheet.png",
+        "status": 200,
+        "bytes": 1302697,
+        "localSha256": "8028b6654a6dee32361cd3dfbc47d7005312d0147f894c9a2276351fdcf9b653",
+        "remoteSha256": "8028b6654a6dee32361cd3dfbc47d7005312d0147f894c9a2276351fdcf9b653",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/right.png",
+        "status": 200,
+        "bytes": 243807,
+        "localSha256": "3828a190af2484b90a32563ba15b6563bd0bc9a9d8bb9efa51c95e550da68347",
+        "remoteSha256": "3828a190af2484b90a32563ba15b6563bd0bc9a9d8bb9efa51c95e550da68347",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/top.png",
+        "status": 200,
+        "bytes": 259014,
+        "localSha256": "444a53d8e1d63ab7b93b55c980623fb4d8db5ab14e862d7c9fe18c3401771f6f",
+        "remoteSha256": "444a53d8e1d63ab7b93b55c980623fb4d8db5ab14e862d7c9fe18c3401771f6f",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/wire.png",
+        "status": 200,
+        "bytes": 214371,
+        "localSha256": "26c62e2000c6d63f70b0c8ef110aa6e046a52da605387cbebc4e4298ae40903f",
+        "remoteSha256": "26c62e2000c6d63f70b0c8ef110aa6e046a52da605387cbebc4e4298ae40903f",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/back.png",
+        "status": 200,
+        "bytes": 237699,
+        "localSha256": "bddca1e0038a43f30121030f5dd22c84a5c0ec02068b70b23304f7f64d61bd8e",
+        "remoteSha256": "bddca1e0038a43f30121030f5dd22c84a5c0ec02068b70b23304f7f64d61bd8e",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/front.png",
+        "status": 200,
+        "bytes": 238295,
+        "localSha256": "cc3573b689c8eb981ef0c7f6df2e5d75dd5f1d1a2e8f507cc178e4e43b6943af",
+        "remoteSha256": "cc3573b689c8eb981ef0c7f6df2e5d75dd5f1d1a2e8f507cc178e4e43b6943af",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/hero.png",
+        "status": 200,
+        "bytes": 204590,
+        "localSha256": "2b52f8f81d29cf23f5f685c61c5af5f20747a1aca6cf1c6ef7cb8103c74ae4d7",
+        "remoteSha256": "2b52f8f81d29cf23f5f685c61c5af5f20747a1aca6cf1c6ef7cb8103c74ae4d7",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/render-sheet.png",
+        "status": 200,
+        "bytes": 1303025,
+        "localSha256": "29c0d2c47c09317791e1518fa2e966419ce46f6fbdc84ae8ed6b59d85f26b2e7",
+        "remoteSha256": "29c0d2c47c09317791e1518fa2e966419ce46f6fbdc84ae8ed6b59d85f26b2e7",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/right.png",
+        "status": 200,
+        "bytes": 243735,
+        "localSha256": "04a116128f539248d9f4b8bbdc89b470f3d1b3c5eb8232f955dcf64dd7280afd",
+        "remoteSha256": "04a116128f539248d9f4b8bbdc89b470f3d1b3c5eb8232f955dcf64dd7280afd",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/top.png",
+        "status": 200,
+        "bytes": 258935,
+        "localSha256": "2eb767a8800c0e0a9398cd8ca75250897ef95e27ed7462cd6f1680dde79f715c",
+        "remoteSha256": "2eb767a8800c0e0a9398cd8ca75250897ef95e27ed7462cd6f1680dde79f715c",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/wire.png",
+        "status": 200,
+        "bytes": 214355,
+        "localSha256": "3d90f916f776e98c5c8f47526f3794b1b2dc803a0bbdca15e0afe58817052d0d",
+        "remoteSha256": "3d90f916f776e98c5c8f47526f3794b1b2dc803a0bbdca15e0afe58817052d0d",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/back.png",
+        "status": 200,
+        "bytes": 246674,
+        "localSha256": "c9c8bfd2c988f21b2f0aaa3c50508e653d8f0fb83848e480e3448f6fd4ae18a5",
+        "remoteSha256": "c9c8bfd2c988f21b2f0aaa3c50508e653d8f0fb83848e480e3448f6fd4ae18a5",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/front.png",
+        "status": 200,
+        "bytes": 248051,
+        "localSha256": "2d4f7b289c931434c486f8654c6505bda7a1a2d960c9404c35a1a8d73cc93465",
+        "remoteSha256": "2d4f7b289c931434c486f8654c6505bda7a1a2d960c9404c35a1a8d73cc93465",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/hero.png",
+        "status": 200,
+        "bytes": 207442,
+        "localSha256": "999fd57f8018180f111114eb2877cab06a946575e24492e949efa2a4b102d309",
+        "remoteSha256": "999fd57f8018180f111114eb2877cab06a946575e24492e949efa2a4b102d309",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/render-sheet.png",
+        "status": 200,
+        "bytes": 1329633,
+        "localSha256": "3e59654107d57bb1682a37febb66a78dc7cb43a28998d909ed361c974af20cc3",
+        "remoteSha256": "3e59654107d57bb1682a37febb66a78dc7cb43a28998d909ed361c974af20cc3",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/right.png",
+        "status": 200,
+        "bytes": 243640,
+        "localSha256": "ae251fb591b843051d1aa99347716be8130e5e5ad5affe78581f0a0ff31c7b04",
+        "remoteSha256": "ae251fb591b843051d1aa99347716be8130e5e5ad5affe78581f0a0ff31c7b04",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/top.png",
+        "status": 200,
+        "bytes": 258380,
+        "localSha256": "bc4b3e30f3235063e601fd47699e9e1a90b4b8e7a13cd913504d778aaf531fb2",
+        "remoteSha256": "bc4b3e30f3235063e601fd47699e9e1a90b4b8e7a13cd913504d778aaf531fb2",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/wire.png",
+        "status": 200,
+        "bytes": 218778,
+        "localSha256": "51b29eace797844056750153411b525f2df42fe7e838460a0683ead2ed4ad817",
+        "remoteSha256": "51b29eace797844056750153411b525f2df42fe7e838460a0683ead2ed4ad817",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/back.png",
+        "status": 200,
+        "bytes": 246599,
+        "localSha256": "dc92a50621d4942815af4636bf7fbb6fa771ad0ee1441b30b600b9a990a52d50",
+        "remoteSha256": "dc92a50621d4942815af4636bf7fbb6fa771ad0ee1441b30b600b9a990a52d50",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/front.png",
+        "status": 200,
+        "bytes": 247974,
+        "localSha256": "940911e494f5ebecb8fad7b2d7e10c935707d019c71912597f091af5184716d4",
+        "remoteSha256": "940911e494f5ebecb8fad7b2d7e10c935707d019c71912597f091af5184716d4",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/hero.png",
+        "status": 200,
+        "bytes": 207366,
+        "localSha256": "d7641230832d030424163f7e5e0b1f47bea1879f9c6cc666a72b4ade98c61797",
+        "remoteSha256": "d7641230832d030424163f7e5e0b1f47bea1879f9c6cc666a72b4ade98c61797",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/render-sheet.png",
+        "status": 200,
+        "bytes": 1329306,
+        "localSha256": "7a8d1f625a7cd6a95a23c378acce27a9cbca16c255de04774c8ab5f780a518cd",
+        "remoteSha256": "7a8d1f625a7cd6a95a23c378acce27a9cbca16c255de04774c8ab5f780a518cd",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/right.png",
+        "status": 200,
+        "bytes": 243557,
+        "localSha256": "d29be489ac865fe5f0b9fc8478f0c6b98a10a88e0b84d82915936ed560afba98",
+        "remoteSha256": "d29be489ac865fe5f0b9fc8478f0c6b98a10a88e0b84d82915936ed560afba98",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/top.png",
+        "status": 200,
+        "bytes": 258303,
+        "localSha256": "98d9a4a5c5d82d04ba35797f5fa803e7699405a81f29cca0fbd5bffd332c258d",
+        "remoteSha256": "98d9a4a5c5d82d04ba35797f5fa803e7699405a81f29cca0fbd5bffd332c258d",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/wire.png",
+        "status": 200,
+        "bytes": 218769,
+        "localSha256": "a4b437c4ee39f9d036f476176ed1376fda705d4580aa3477cadd23095c9fe982",
+        "remoteSha256": "a4b437c4ee39f9d036f476176ed1376fda705d4580aa3477cadd23095c9fe982",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/back.png",
+        "status": 200,
+        "bytes": 245481,
+        "localSha256": "1c2fd1d66a4094a16174fa2090b8fefb00eb8f7110c02db18996b12d95552cb1",
+        "remoteSha256": "1c2fd1d66a4094a16174fa2090b8fefb00eb8f7110c02db18996b12d95552cb1",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/front.png",
+        "status": 200,
+        "bytes": 246860,
+        "localSha256": "288b0aa6c9848245001fe52b254da1ca5bfbe13e3470825e2f6db74a407fe78f",
+        "remoteSha256": "288b0aa6c9848245001fe52b254da1ca5bfbe13e3470825e2f6db74a407fe78f",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/hero.png",
+        "status": 200,
+        "bytes": 206466,
+        "localSha256": "a7d351d9153e19764bde7640adc28a20347f67bb77a3209c71fc156b9e262393",
+        "remoteSha256": "a7d351d9153e19764bde7640adc28a20347f67bb77a3209c71fc156b9e262393",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/render-sheet.png",
+        "status": 200,
+        "bytes": 1321151,
+        "localSha256": "325847e3c4f4ed827bea745564de58214d3d81f90f5b78948de3483fb6250705",
+        "remoteSha256": "325847e3c4f4ed827bea745564de58214d3d81f90f5b78948de3483fb6250705",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/right.png",
+        "status": 200,
+        "bytes": 242115,
+        "localSha256": "ab76c0c72c00105c16020c93dfc75da8e69980589adb118dd0e8f2b8083d97fe",
+        "remoteSha256": "ab76c0c72c00105c16020c93dfc75da8e69980589adb118dd0e8f2b8083d97fe",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/top.png",
+        "status": 200,
+        "bytes": 253914,
+        "localSha256": "0a308a226bf93805810ae08c46c80789ef32bbc958dee3525c20182bb80f592d",
+        "remoteSha256": "0a308a226bf93805810ae08c46c80789ef32bbc958dee3525c20182bb80f592d",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/wire.png",
+        "status": 200,
+        "bytes": 218505,
+        "localSha256": "bc2c99a6b7de3cd6443f5d646bb338b5e738701e46cea986950c5d1395781577",
+        "remoteSha256": "bc2c99a6b7de3cd6443f5d646bb338b5e738701e46cea986950c5d1395781577",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-blend-calibrated/render-sheet.png",
+        "status": 200,
+        "bytes": 1294058,
+        "localSha256": "fb28b65f6f2ca7e0c7399a047cd75b0b4f2e4279dbfea2e3d047ecc66735f8b2",
+        "remoteSha256": "fb28b65f6f2ca7e0c7399a047cd75b0b4f2e4279dbfea2e3d047ecc66735f8b2",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-lod0-calibrated/render-sheet.png",
+        "status": 200,
+        "bytes": 1294111,
+        "localSha256": "153703ae8376fbac6386e115fd5557ed88dd93eac83684edf1ddbcc72f90e359",
+        "remoteSha256": "153703ae8376fbac6386e115fd5557ed88dd93eac83684edf1ddbcc72f90e359",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-lod1-calibrated/render-sheet.png",
+        "status": 200,
+        "bytes": 1292889,
+        "localSha256": "59f718a533910f7966bc344e5b50fbb4e8c8acfdffaee02c5b264d0816ce3b6c",
+        "remoteSha256": "59f718a533910f7966bc344e5b50fbb4e8c8acfdffaee02c5b264d0816ce3b6c",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-ez-family-v1/candidate-f-canvasfinal/close-lod0-back-shadows-off.png",
+        "status": 200,
+        "bytes": 614827,
+        "localSha256": "9c81685d5daf75790bdda11d9752209e5c548a962d3d0b1e49be9ef8e96a17c3",
+        "remoteSha256": "9c81685d5daf75790bdda11d9752209e5c548a962d3d0b1e49be9ef8e96a17c3",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-ez-family-v1/candidate-f-canvasfinal/close-lod0-front-shadows-off.png",
+        "status": 200,
+        "bytes": 578417,
+        "localSha256": "328ccf9ca92ff552f65488d4201c135cee55e05873417f2686db2ce54c7c994d",
+        "remoteSha256": "328ccf9ca92ff552f65488d4201c135cee55e05873417f2686db2ce54c7c994d",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-ez-family-v1/candidate-f-canvasfinal/close-lod1-back-shadows-off.png",
+        "status": 200,
+        "bytes": 569454,
+        "localSha256": "47aa30338d2bbeb8548ceeddd0e0f0ee292a28246f5bf1a64be3f7502812d4fb",
+        "remoteSha256": "47aa30338d2bbeb8548ceeddd0e0f0ee292a28246f5bf1a64be3f7502812d4fb",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-ez-family-v1/candidate-f-canvasfinal/close-lod1-front-shadows-off.png",
+        "status": 200,
+        "bytes": 505726,
+        "localSha256": "2cc88e94e589940e25d626c49d5160204d94aff7cf6ebc98b8286315c2c2f8b5",
+        "remoteSha256": "2cc88e94e589940e25d626c49d5160204d94aff7cf6ebc98b8286315c2c2f8b5",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-ez-family-v1/candidate-f-canvasfinal/date0-a.png",
+        "status": 200,
+        "bytes": 547564,
+        "localSha256": "b30b3602f0a4098356d98d80bbb98e1ce98d7b087b908eb644070cafadca97b1",
+        "remoteSha256": "b30b3602f0a4098356d98d80bbb98e1ce98d7b087b908eb644070cafadca97b1",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-ez-family-v1/candidate-f-canvasfinal/date0-b.png",
+        "status": 200,
+        "bytes": 547564,
+        "localSha256": "b30b3602f0a4098356d98d80bbb98e1ce98d7b087b908eb644070cafadca97b1",
+        "remoteSha256": "b30b3602f0a4098356d98d80bbb98e1ce98d7b087b908eb644070cafadca97b1",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-ez-family-v1/candidate-f-canvasfinal/date1750000000.png",
+        "status": 200,
+        "bytes": 547404,
+        "localSha256": "6830dd1a2c28e997c208c4454b4f9ae8b482f7d9acb04ae18dfe4a3e7177af09",
+        "remoteSha256": "6830dd1a2c28e997c208c4454b4f9ae8b482f7d9acb04ae18dfe4a3e7177af09",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-ez-family-v1/candidate-f-canvasfinal/date7000000000.png",
+        "status": 200,
+        "bytes": 547564,
+        "localSha256": "b30b3602f0a4098356d98d80bbb98e1ce98d7b087b908eb644070cafadca97b1",
+        "remoteSha256": "b30b3602f0a4098356d98d80bbb98e1ce98d7b087b908eb644070cafadca97b1",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-ez-family-v1/candidate-f-canvasfinal/lod0-population192.png",
+        "status": 200,
+        "bytes": 1644020,
+        "localSha256": "335dffb919bd42f0a62b5b5c0f51445cd36ccbe2d46a12a89d448a0d75f35927",
+        "remoteSha256": "335dffb919bd42f0a62b5b5c0f51445cd36ccbe2d46a12a89d448a0d75f35927",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-ez-family-v1/candidate-f-canvasfinal/lod0-population3.png",
+        "status": 200,
+        "bytes": 281530,
+        "localSha256": "768431cd7ebfd87ab298262d1cfe36f6509aab6c13c375b1c53ef911bb3d2c40",
+        "remoteSha256": "768431cd7ebfd87ab298262d1cfe36f6509aab6c13c375b1c53ef911bb3d2c40",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-ez-family-v1/candidate-f-canvasfinal/lod1-population192.png",
+        "status": 200,
+        "bytes": 1719819,
+        "localSha256": "9bf7782bfabfea1e6b673ae39fd242c50f269ae2837cff138eb3a041088076eb",
+        "remoteSha256": "9bf7782bfabfea1e6b673ae39fd242c50f269ae2837cff138eb3a041088076eb",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-ez-family-v1/candidate-f-canvasfinal/lod1-population3.png",
+        "status": 200,
+        "bytes": 277042,
+        "localSha256": "1995ce9405a0eae0485529a6901c01f9ae3fb0e4a669bde60ceba312f01d1efc",
+        "remoteSha256": "1995ce9405a0eae0485529a6901c01f9ae3fb0e4a669bde60ceba312f01d1efc",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/hash/lod0-back-shadows-on.png",
+        "status": 200,
+        "bytes": 449999,
+        "localSha256": "e65b166219186c087d95a8104cab80efa03122d51b1cc8a5d4902323aac2a9ba",
+        "remoteSha256": "e65b166219186c087d95a8104cab80efa03122d51b1cc8a5d4902323aac2a9ba",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/hash/lod0-front-shadows-on.png",
+        "status": 200,
+        "bytes": 437995,
+        "localSha256": "426b5d13c37716412d728b2063bcc40b8d06bcc1480a243485123d56bf05483c",
+        "remoteSha256": "426b5d13c37716412d728b2063bcc40b8d06bcc1480a243485123d56bf05483c",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/hash/lod1-back-shadows-on.png",
+        "status": 200,
+        "bytes": 451787,
+        "localSha256": "fbe4527f61b9d847ee652d0b1e75f20b2dff6914ecbf7b02592bf42c34aa8d51",
+        "remoteSha256": "fbe4527f61b9d847ee652d0b1e75f20b2dff6914ecbf7b02592bf42c34aa8d51",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/hash/lod1-front-shadows-on.png",
+        "status": 200,
+        "bytes": 433293,
+        "localSha256": "4f08db609d41dbab3294e25cf5b0d4f782bbc2dfbf3b821654c9976bb21cea18",
+        "remoteSha256": "4f08db609d41dbab3294e25cf5b0d4f782bbc2dfbf3b821654c9976bb21cea18",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/hash/wind-0-a.png",
+        "status": 200,
+        "bytes": 435578,
+        "localSha256": "0b495dde2c0bee25191e3481f8b40dae89c17e6d7ed41777e76b538806737e01",
+        "remoteSha256": "0b495dde2c0bee25191e3481f8b40dae89c17e6d7ed41777e76b538806737e01",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/hash/wind-0-b.png",
+        "status": 200,
+        "bytes": 435578,
+        "localSha256": "0b495dde2c0bee25191e3481f8b40dae89c17e6d7ed41777e76b538806737e01",
+        "remoteSha256": "0b495dde2c0bee25191e3481f8b40dae89c17e6d7ed41777e76b538806737e01",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/hash/wind-1750000000.png",
+        "status": 200,
+        "bytes": 435425,
+        "localSha256": "0e00bdf0f4c04903083fe729468ba10eb00c2bb87afae772c510b18dc3ebf6be",
+        "remoteSha256": "0e00bdf0f4c04903083fe729468ba10eb00c2bb87afae772c510b18dc3ebf6be",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/hash/wind-7s.png",
+        "status": 200,
+        "bytes": 435578,
+        "localSha256": "0b495dde2c0bee25191e3481f8b40dae89c17e6d7ed41777e76b538806737e01",
+        "remoteSha256": "0b495dde2c0bee25191e3481f8b40dae89c17e6d7ed41777e76b538806737e01",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/hash/wind-neg7s.png",
+        "status": 200,
+        "bytes": 435578,
+        "localSha256": "0b495dde2c0bee25191e3481f8b40dae89c17e6d7ed41777e76b538806737e01",
+        "remoteSha256": "0b495dde2c0bee25191e3481f8b40dae89c17e6d7ed41777e76b538806737e01",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/hash/yaw-0.00deg.png",
+        "status": 200,
+        "bytes": 435578,
+        "localSha256": "0b495dde2c0bee25191e3481f8b40dae89c17e6d7ed41777e76b538806737e01",
+        "remoteSha256": "0b495dde2c0bee25191e3481f8b40dae89c17e6d7ed41777e76b538806737e01",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/hash/yaw-0.35deg.png",
+        "status": 200,
+        "bytes": 433367,
+        "localSha256": "a9a08c7b2310c6634d349a3cba0b4283d5d2ef469466f32b23c94da4c6f684e7",
+        "remoteSha256": "a9a08c7b2310c6634d349a3cba0b4283d5d2ef469466f32b23c94da4c6f684e7",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/hash/yaw-0.70deg.png",
+        "status": 200,
+        "bytes": 434680,
+        "localSha256": "89b287718461794e87b6446a6038d437414ccbdf972388a9c51069924299ba69",
+        "remoteSha256": "89b287718461794e87b6446a6038d437414ccbdf972388a9c51069924299ba69",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/hash/yaw-1.05deg.png",
+        "status": 200,
+        "bytes": 436358,
+        "localSha256": "7874482acc32f31c899f39a5d144a8bb041db131538005f6ed24320ed794dc8c",
+        "remoteSha256": "7874482acc32f31c899f39a5d144a8bb041db131538005f6ed24320ed794dc8c",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/isolated-final/hash/lod0/smoke-128-date0.png",
+        "status": 200,
+        "bytes": 1971,
+        "localSha256": "daaa8351b7458f5210fead7f6f351e1cb2242fbfba51d18a27bffa1f2cd97713",
+        "remoteSha256": "daaa8351b7458f5210fead7f6f351e1cb2242fbfba51d18a27bffa1f2cd97713",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/isolated-final/hash/lod1/smoke-128-date0.png",
+        "status": 200,
+        "bytes": 2716,
+        "localSha256": "079235d03efe9316858edaec2b250dfc0dfe7cbbae540cd613712123aa897d33",
+        "remoteSha256": "079235d03efe9316858edaec2b250dfc0dfe7cbbae540cd613712123aa897d33",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/isolated-final/mask/lod0/smoke-128-date0.png",
+        "status": 200,
+        "bytes": 2030,
+        "localSha256": "5d9c031cb3e9c6544ba74e0bd8a182f9ab3e7906083c317c9d58108101b87dde",
+        "remoteSha256": "5d9c031cb3e9c6544ba74e0bd8a182f9ab3e7906083c317c9d58108101b87dde",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/isolated-final/mask/lod1/smoke-128-date0.png",
+        "status": 200,
+        "bytes": 2692,
+        "localSha256": "55b0284b4520d95580910af80355739871e5e42297328a74cbed90b9ae95d5a9",
+        "remoteSha256": "55b0284b4520d95580910af80355739871e5e42297328a74cbed90b9ae95d5a9",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/mask/lod0-back-shadows-on.png",
+        "status": 200,
+        "bytes": 420754,
+        "localSha256": "d93365fa3fe8595117bca14a0bb859b666f0ed7a2f54265a36ecd9c71a163099",
+        "remoteSha256": "d93365fa3fe8595117bca14a0bb859b666f0ed7a2f54265a36ecd9c71a163099",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/mask/lod0-front-shadows-on.png",
+        "status": 200,
+        "bytes": 415825,
+        "localSha256": "9de5a9136de659f35c09c98dd08d9d31f01015129c42af97d9a70d8614594a4d",
+        "remoteSha256": "9de5a9136de659f35c09c98dd08d9d31f01015129c42af97d9a70d8614594a4d",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/mask/lod1-back-shadows-on.png",
+        "status": 200,
+        "bytes": 419336,
+        "localSha256": "be750209cb197663f34502c7d0fc7c8a6a81e3bff06c74d915e6b61c4d14a8e9",
+        "remoteSha256": "be750209cb197663f34502c7d0fc7c8a6a81e3bff06c74d915e6b61c4d14a8e9",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/mask/lod1-front-shadows-on.png",
+        "status": 200,
+        "bytes": 406427,
+        "localSha256": "38612673fe9d5770e0b109e4269027cc30363450346ba9d0c98b99f4b5327ce6",
+        "remoteSha256": "38612673fe9d5770e0b109e4269027cc30363450346ba9d0c98b99f4b5327ce6",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/mask/wind-0-a.png",
+        "status": 200,
+        "bytes": 405357,
+        "localSha256": "091d396857a889e30f290d873e586043bbad4ba77e1e5332f1dd278d88d0e513",
+        "remoteSha256": "091d396857a889e30f290d873e586043bbad4ba77e1e5332f1dd278d88d0e513",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/mask/wind-0-b.png",
+        "status": 200,
+        "bytes": 405357,
+        "localSha256": "091d396857a889e30f290d873e586043bbad4ba77e1e5332f1dd278d88d0e513",
+        "remoteSha256": "091d396857a889e30f290d873e586043bbad4ba77e1e5332f1dd278d88d0e513",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/mask/wind-1750000000.png",
+        "status": 200,
+        "bytes": 405202,
+        "localSha256": "130d50755245dcdd1af3d4364728094e1cce59c9cf3c27c95fcadd7bab86980b",
+        "remoteSha256": "130d50755245dcdd1af3d4364728094e1cce59c9cf3c27c95fcadd7bab86980b",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/mask/wind-7s.png",
+        "status": 200,
+        "bytes": 405357,
+        "localSha256": "091d396857a889e30f290d873e586043bbad4ba77e1e5332f1dd278d88d0e513",
+        "remoteSha256": "091d396857a889e30f290d873e586043bbad4ba77e1e5332f1dd278d88d0e513",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/mask/wind-neg7s.png",
+        "status": 200,
+        "bytes": 405357,
+        "localSha256": "091d396857a889e30f290d873e586043bbad4ba77e1e5332f1dd278d88d0e513",
+        "remoteSha256": "091d396857a889e30f290d873e586043bbad4ba77e1e5332f1dd278d88d0e513",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/mask/yaw-0.00deg.png",
+        "status": 200,
+        "bytes": 405357,
+        "localSha256": "091d396857a889e30f290d873e586043bbad4ba77e1e5332f1dd278d88d0e513",
+        "remoteSha256": "091d396857a889e30f290d873e586043bbad4ba77e1e5332f1dd278d88d0e513",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/mask/yaw-0.35deg.png",
+        "status": 200,
+        "bytes": 402793,
+        "localSha256": "8e73e34e89583ad8c1ff1ec2d6a189928ebaa893f3fb4f80a2930429b1442191",
+        "remoteSha256": "8e73e34e89583ad8c1ff1ec2d6a189928ebaa893f3fb4f80a2930429b1442191",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/mask/yaw-0.70deg.png",
+        "status": 200,
+        "bytes": 403862,
+        "localSha256": "79cf75c313cde1655884887ef06bf2204388f95ae1b91b3e58389a5acabd2c9c",
+        "remoteSha256": "79cf75c313cde1655884887ef06bf2204388f95ae1b91b3e58389a5acabd2c9c",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-foliage-temporal/mask/yaw-1.05deg.png",
+        "status": 200,
+        "bytes": 405959,
+        "localSha256": "2eb4eb3ea5ad6036c40a839b47f0180b59a60ddd4c09497e522d0a0dab054ac8",
+        "remoteSha256": "2eb4eb3ea5ad6036c40a839b47f0180b59a60ddd4c09497e522d0a0dab054ac8",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/README.md",
+        "status": 200,
+        "bytes": 3329,
+        "localSha256": "64c6302048d433c3035ccca45e29358c2790db924b2ee3858005e0c815731cbd",
+        "remoteSha256": "64c6302048d433c3035ccca45e29358c2790db924b2ee3858005e0c815731cbd",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/acceptance.browser.mjs",
+        "status": 200,
+        "bytes": 12679,
+        "localSha256": "f8d5002b5ea75934e573a0d7248e2637be92bef3aaceeaf579bd51b8d03cc504",
+        "remoteSha256": "f8d5002b5ea75934e573a0d7248e2637be92bef3aaceeaf579bd51b8d03cc504",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/build.log",
+        "status": 200,
+        "bytes": 96423,
+        "localSha256": "7d47151c3ed970e06f82fe7c2bc800a85da2d22b6b9cee179da756147fa6708c",
+        "remoteSha256": "7d47151c3ed970e06f82fe7c2bc800a85da2d22b6b9cee179da756147fa6708c",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/cpu.log",
+        "status": 200,
+        "bytes": 5798,
+        "localSha256": "d4ee3953b69bbe9b662ddc59517647d2e04bc3b7bf2a04e7d7b9ca5613a8f8bb",
+        "remoteSha256": "d4ee3953b69bbe9b662ddc59517647d2e04bc3b7bf2a04e7d7b9ca5613a8f8bb",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-after-movement.png",
+        "status": 200,
+        "bytes": 707951,
+        "localSha256": "72d1f4bb736793eb2ffd647489e0178d6787f91f3b34effe657b4364e310c75e",
+        "remoteSha256": "72d1f4bb736793eb2ffd647489e0178d6787f91f3b34effe657b4364e310c75e",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-date-return.png",
+        "status": 200,
+        "bytes": 1060202,
+        "localSha256": "28634bd59553d41ad4551f0bd22c1947be5b3b8b651cd3f6b16460b580dc06f8",
+        "remoteSha256": "28634bd59553d41ad4551f0bd22c1947be5b3b8b651cd3f6b16460b580dc06f8",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-date-shift.png",
+        "status": 200,
+        "bytes": 529700,
+        "localSha256": "91678aa7c2d481c523b14d246c14f1c20c0e79570f026099438f784862495537",
+        "remoteSha256": "91678aa7c2d481c523b14d246c14f1c20c0e79570f026099438f784862495537",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-initial.png",
+        "status": 200,
+        "bytes": 1061903,
+        "localSha256": "7460ee9a973482b2392c69a0729715c4366f817a05ad3234070b77aeebf1e4eb",
+        "remoteSha256": "7460ee9a973482b2392c69a0729715c4366f817a05ad3234070b77aeebf1e4eb",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/hardware-family-f-verified/provenance.json",
+        "status": 200,
+        "bytes": 5899,
+        "localSha256": "3603ba350526a26a7727a235240e4acf2be3052ec8750cbcfd2a0fa8a745d859",
+        "remoteSha256": "3603ba350526a26a7727a235240e4acf2be3052ec8750cbcfd2a0fa8a745d859",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/hardware-family-f-verified/report.json",
+        "status": 200,
+        "bytes": 135357,
+        "localSha256": "8272d1ebbf1c058df52837aa357930aa42917dc975f27efeb0419e7e9f104319",
+        "remoteSha256": "8272d1ebbf1c058df52837aa357930aa42917dc975f27efeb0419e7e9f104319",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/opus-followup/inputs.json",
+        "status": 200,
+        "bytes": 5759,
+        "localSha256": "96c22fdd564d43396a6b42aa2db39268194b6c8705e1c928ad8a5366addbd949",
+        "remoteSha256": "96c22fdd564d43396a6b42aa2db39268194b6c8705e1c928ad8a5366addbd949",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/opus-followup/response.json",
+        "status": 200,
+        "bytes": 9770,
+        "localSha256": "4271bc4ed523ea41bc0f80d68ca65966bc9aebbad43f6d73e95a53f2e249dbad",
+        "remoteSha256": "4271bc4ed523ea41bc0f80d68ca65966bc9aebbad43f6d73e95a53f2e249dbad",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/opus/inputs.json",
+        "status": 200,
+        "bytes": 5256,
+        "localSha256": "7c4de894c577c0f31e0b2bbd46722b9fb583f31b99e7adc95c6fdb716c8d3ccc",
+        "remoteSha256": "7c4de894c577c0f31e0b2bbd46722b9fb583f31b99e7adc95c6fdb716c8d3ccc",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-forest-integration/opus/response.json",
+        "status": 200,
+        "bytes": 8634,
+        "localSha256": "4bd14b018a2bf03277e1159e7b70351599f7e3057073402efda06185af09de69",
+        "remoteSha256": "4bd14b018a2bf03277e1159e7b70351599f7e3057073402efda06185af09de69",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-instance-updates/run-1790591510207/tinted.png",
+        "status": 200,
+        "bytes": 239116,
+        "localSha256": "63b4a6fdc364735ce3fb5f59e7ae0873ac9a1a5b0c716cbd903d6a5064018ff0",
+        "remoteSha256": "63b4a6fdc364735ce3fb5f59e7ae0873ac9a1a5b0c716cbd903d6a5064018ff0",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-instance-updates/run-1790591510207/white-before.png",
+        "status": 200,
+        "bytes": 268455,
+        "localSha256": "f5246e9aab87c046cf2d74cdfd720a657e54d522d0c5c60bb81b139dc7aeb146",
+        "remoteSha256": "f5246e9aab87c046cf2d74cdfd720a657e54d522d0c5c60bb81b139dc7aeb146",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-instance-updates/run-1790591510207/white-restored.png",
+        "status": 200,
+        "bytes": 268455,
+        "localSha256": "f5246e9aab87c046cf2d74cdfd720a657e54d522d0c5c60bb81b139dc7aeb146",
+        "remoteSha256": "f5246e9aab87c046cf2d74cdfd720a657e54d522d0c5c60bb81b139dc7aeb146",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-instance-updates/run-1790591702202/tinted.png",
+        "status": 200,
+        "bytes": 239116,
+        "localSha256": "63b4a6fdc364735ce3fb5f59e7ae0873ac9a1a5b0c716cbd903d6a5064018ff0",
+        "remoteSha256": "63b4a6fdc364735ce3fb5f59e7ae0873ac9a1a5b0c716cbd903d6a5064018ff0",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-instance-updates/run-1790591702202/white-before.png",
+        "status": 200,
+        "bytes": 268455,
+        "localSha256": "f5246e9aab87c046cf2d74cdfd720a657e54d522d0c5c60bb81b139dc7aeb146",
+        "remoteSha256": "f5246e9aab87c046cf2d74cdfd720a657e54d522d0c5c60bb81b139dc7aeb146",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-instance-updates/run-1790591702202/white-restored.png",
+        "status": 200,
+        "bytes": 268455,
+        "localSha256": "f5246e9aab87c046cf2d74cdfd720a657e54d522d0c5c60bb81b139dc7aeb146",
+        "remoteSha256": "f5246e9aab87c046cf2d74cdfd720a657e54d522d0c5c60bb81b139dc7aeb146",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-back-off.png",
+        "status": 200,
+        "bytes": 841254,
+        "localSha256": "ad80630f3c8f5aa30d255ea45f9709339b7bb1b759a63b439802452b7570dc9e",
+        "remoteSha256": "ad80630f3c8f5aa30d255ea45f9709339b7bb1b759a63b439802452b7570dc9e",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-back-on.png",
+        "status": 200,
+        "bytes": 828236,
+        "localSha256": "8662242fd744a097c74333547964b2975bcc234973dd4aac6643982f50070fce",
+        "remoteSha256": "8662242fd744a097c74333547964b2975bcc234973dd4aac6643982f50070fce",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-front-off.png",
+        "status": 200,
+        "bytes": 1225943,
+        "localSha256": "f5443ef84a62105a339f240aab0acce787851c5fec38c7c9965defef94efe625",
+        "remoteSha256": "f5443ef84a62105a339f240aab0acce787851c5fec38c7c9965defef94efe625",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-front-on.png",
+        "status": 200,
+        "bytes": 1148871,
+        "localSha256": "7b5f143120f1a9f6fc61b4f1bc1517b49a5cdf508cbd7c399d6c860ad809c5e7",
+        "remoteSha256": "7b5f143120f1a9f6fc61b4f1bc1517b49a5cdf508cbd7c399d6c860ad809c5e7",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-leaf-transmission/browser-final/directional-back-T1.png",
+        "status": 200,
+        "bytes": 23929,
+        "localSha256": "a9196e15404c1bf5204198c55fea54f3dc81b21b3012c51b6a5d4fad2c113b0e",
+        "remoteSha256": "a9196e15404c1bf5204198c55fea54f3dc81b21b3012c51b6a5d4fad2c113b0e",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/atlas-ash16m-scaled.png",
+        "status": 200,
+        "bytes": 255284,
+        "localSha256": "3c346e033da8f74188fadb3043381e1ba6012758e9015d813e9079e74f9a2f8f",
+        "remoteSha256": "3c346e033da8f74188fadb3043381e1ba6012758e9015d813e9079e74f9a2f8f",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/atlas-full-close.png",
+        "status": 200,
+        "bytes": 255556,
+        "localSha256": "ffe8f105ade3a626c5d03764b4a4d106ac2f6a915b78052c5db2b3ba0607f490",
+        "remoteSha256": "ffe8f105ade3a626c5d03764b4a4d106ac2f6a915b78052c5db2b3ba0607f490",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/atlas-oak10m-scaled.png",
+        "status": 200,
+        "bytes": 288547,
+        "localSha256": "f74deda56568352429425809801386d0d1af93cf582d437bc32c6e561eb0f9b3",
+        "remoteSha256": "f74deda56568352429425809801386d0d1af93cf582d437bc32c6e561eb0f9b3",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/atlas-oak22m-scaled.png",
+        "status": 200,
+        "bytes": 230703,
+        "localSha256": "21d2b0e1a6a1ae55bb39dcedd29bc558250d7acbc4b321fff0f91d4cf2652a9b",
+        "remoteSha256": "21d2b0e1a6a1ae55bb39dcedd29bc558250d7acbc4b321fff0f91d4cf2652a9b",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/comparison-ash16m.png",
+        "status": 200,
+        "bytes": 496214,
+        "localSha256": "4f541d20e340708b1f09d671af22cfe38616467ffdbdf42ea3f18d921d1520b3",
+        "remoteSha256": "4f541d20e340708b1f09d671af22cfe38616467ffdbdf42ea3f18d921d1520b3",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/comparison-oak10m.png",
+        "status": 200,
+        "bytes": 511282,
+        "localSha256": "4dfbeab6f4b4d30f8486633d05333f0bb11793bbe6bce7f4d8a4c2bcec5d5ff6",
+        "remoteSha256": "4dfbeab6f4b4d30f8486633d05333f0bb11793bbe6bce7f4d8a4c2bcec5d5ff6",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/comparison-oak22m.png",
+        "status": 200,
+        "bytes": 418587,
+        "localSha256": "67b9bc9cf134073dbcc62f1a67e6751e0bc8b5dd18ec1269c04b0fec3d2b98c8",
+        "remoteSha256": "67b9bc9cf134073dbcc62f1a67e6751e0bc8b5dd18ec1269c04b0fec3d2b98c8",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/comparison.png",
+        "status": 200,
+        "bytes": 443292,
+        "localSha256": "d3e8158abb3cfbac97bd864a56893b87492f345a4e7e979c30aac828853ec4a4",
+        "remoteSha256": "d3e8158abb3cfbac97bd864a56893b87492f345a4e7e979c30aac828853ec4a4",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/ez-ash16m-full-geometric-normals.png",
+        "status": 200,
+        "bytes": 372794,
+        "localSha256": "de47f2e69119dceaa1aa1a352cd8e25fd2b93f966b227e946e00a08423ea64a5",
+        "remoteSha256": "de47f2e69119dceaa1aa1a352cd8e25fd2b93f966b227e946e00a08423ea64a5",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/ez-full-geometric-normals-close.png",
+        "status": 200,
+        "bytes": 330667,
+        "localSha256": "aebe7cde087275ae89105f0f425434e479613f49d65c82cf4fcfbbe0497b4c75",
+        "remoteSha256": "aebe7cde087275ae89105f0f425434e479613f49d65c82cf4fcfbbe0497b4c75",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/ez-full-source-normals-close.png",
+        "status": 200,
+        "bytes": 304934,
+        "localSha256": "afbba1015bad1b248677130d0a1b1e86bb0c154a0a9c33dba09d8fcbcecf6114",
+        "remoteSha256": "afbba1015bad1b248677130d0a1b1e86bb0c154a0a9c33dba09d8fcbcecf6114",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/ez-oak10m-full-geometric-normals.png",
+        "status": 200,
+        "bytes": 344579,
+        "localSha256": "01497776f3e4199c8b8685cbb565794386fe60481d80306a4b0e094da6be6b5b",
+        "remoteSha256": "01497776f3e4199c8b8685cbb565794386fe60481d80306a4b0e094da6be6b5b",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/ez-oak22m-full-geometric-normals.png",
+        "status": 200,
+        "bytes": 322380,
+        "localSha256": "e3b2c311d5d3219195c2cc8ea32f5a6b3f7dcd18592bed52e720d47cbbba2bc3",
+        "remoteSha256": "e3b2c311d5d3219195c2cc8ea32f5a6b3f7dcd18592bed52e720d47cbbba2bc3",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/ez-upstream-lod1-close.png",
+        "status": 200,
+        "bytes": 310015,
+        "localSha256": "bd040fb1c807308e68ee9362bfd109cec53e54e0cd78402713a182a06554c40e",
+        "remoteSha256": "bd040fb1c807308e68ee9362bfd109cec53e54e0cd78402713a182a06554c40e",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/ez-upstream-lod2-close.png",
+        "status": 200,
+        "bytes": 301259,
+        "localSha256": "45bf580a30f6b9ffb7460f2a8612f15f1fab9bee9674f8b8414b4c36dc81e792",
+        "remoteSha256": "45bf580a30f6b9ffb7460f2a8612f15f1fab9bee9674f8b8414b4c36dc81e792",
+        "matches": true
+      },
+      {
+        "path": "test-results/tree-reference-ez-oak/ez-wood-reduced-close.png",
+        "status": 200,
+        "bytes": 305298,
+        "localSha256": "18a27332a357d5ee7e5ac3a5b55ed275fc7d5bbcbbe30fd17fdb77612f62c2b5",
+        "remoteSha256": "18a27332a357d5ee7e5ac3a5b55ed275fc7d5bbcbbe30fd17fdb77612f62c2b5",
+        "matches": true
+      },
+      {
+        "path": "tests/background-hydrology-flight.browser.mjs",
+        "status": 200,
+        "bytes": 7585,
+        "localSha256": "506c7b81a4da98846717669d4eec20d5c76f172abcb4d12224d59520b501dd60",
+        "remoteSha256": "506c7b81a4da98846717669d4eec20d5c76f172abcb4d12224d59520b501dd60",
+        "matches": true
+      },
+      {
+        "path": "tests/canopy-water-date-seek.browser.mjs",
+        "status": 200,
+        "bytes": 10326,
+        "localSha256": "01c0704c084d37bf05ce1718d1683b9bda33cd5a7f524ed76c7517f8bbb8c845",
+        "remoteSha256": "01c0704c084d37bf05ce1718d1683b9bda33cd5a7f524ed76c7517f8bbb8c845",
+        "matches": true
+      },
+      {
+        "path": "tests/cloud-comparison.html",
+        "status": 200,
+        "bytes": 3204,
+        "localSha256": "8ae34a19689c32cab9edb279c4ad2edcb3bcf0b8953b4aeadc353e073acf9c5a",
+        "remoteSha256": "8ae34a19689c32cab9edb279c4ad2edcb3bcf0b8953b4aeadc353e073acf9c5a",
+        "matches": true
+      },
+      {
+        "path": "tests/desktop-forest-acceptance.browser.mjs",
+        "status": 200,
+        "bytes": 6893,
+        "localSha256": "af744023679110c2fcf40cb48ca7aa4c991fc31ec477cc23e09d2463a739563f",
+        "remoteSha256": "af744023679110c2fcf40cb48ca7aa4c991fc31ec477cc23e09d2463a739563f",
+        "matches": true
+      },
+      {
+        "path": "tests/desktop-rendering-acceptance.browser.mjs",
+        "status": 200,
+        "bytes": 10103,
+        "localSha256": "a5dceaee02ac36a9881760049a0546f8ebd065ae4c6efca3dbf967ab8e12d1a3",
+        "remoteSha256": "a5dceaee02ac36a9881760049a0546f8ebd065ae4c6efca3dbf967ab8e12d1a3",
+        "matches": true
+      },
+      {
+        "path": "tests/forest-selection-cache.browser.mjs",
+        "status": 200,
+        "bytes": 9468,
+        "localSha256": "bad314207f86c2ea17b1fed0a3d4216719c8205f5373ebc2ab5da8ecb18382b1",
+        "remoteSha256": "bad314207f86c2ea17b1fed0a3d4216719c8205f5373ebc2ab5da8ecb18382b1",
+        "matches": true
+      },
+      {
+        "path": "tests/forest-water-validity.test.mjs",
+        "status": 200,
+        "bytes": 9995,
+        "localSha256": "9944f1826158a6d127f3ee09842008b1b2db2bb77ad350916ba9275f236bd164",
+        "remoteSha256": "9944f1826158a6d127f3ee09842008b1b2db2bb77ad350916ba9275f236bd164",
+        "matches": true
+      },
+      {
+        "path": "tests/planet-forest-tree-assets.test.mjs",
+        "status": 200,
+        "bytes": 14576,
+        "localSha256": "050677eb470d44dff074d472cdf3e51c3b565a8a0610cc28d906095f7990d0a6",
+        "remoteSha256": "050677eb470d44dff074d472cdf3e51c3b565a8a0610cc28d906095f7990d0a6",
+        "matches": true
+      },
+      {
+        "path": "tests/terrain-water-refresh.test.mjs",
+        "status": 200,
+        "bytes": 5088,
+        "localSha256": "fc9bca70887d435b92021b4858d704263b3c0ba70af072df1a5e9b0a007cdc80",
+        "remoteSha256": "fc9bca70887d435b92021b4858d704263b3c0ba70af072df1a5e9b0a007cdc80",
+        "matches": true
+      },
+      {
+        "path": "tests/tree-forest-coverage.test.mjs",
+        "status": 200,
+        "bytes": 3531,
+        "localSha256": "60f8a886532d61c6ba6133f7f6da3030cddb9071879d53224fe70c53597f45b2",
+        "remoteSha256": "60f8a886532d61c6ba6133f7f6da3030cddb9071879d53224fe70c53597f45b2",
+        "matches": true
+      },
+      {
+        "path": "tests/tree-impostor-rendering.test.mjs",
+        "status": 200,
+        "bytes": 14724,
+        "localSha256": "f9211714cf0eed72c24e7b994c990326130d47618da87f2378e5bdd6c4f125d9",
+        "remoteSha256": "f9211714cf0eed72c24e7b994c990326130d47618da87f2378e5bdd6c4f125d9",
+        "matches": true
+      }
+    ]
+  },
+  "productionJavaScript": {
+    "assetCount": 24,
+    "allMatchDist": true,
+    "assets": [
+      {
+        "name": "atlas-Cdc_CIOu.js",
+        "status": 200,
+        "sha256": "caf446931e66103f4b88b7bf9be9984b0dbd8ea6be4eacb3fe144316cbe1eebb",
+        "localSha256": "caf446931e66103f4b88b7bf9be9984b0dbd8ea6be4eacb3fe144316cbe1eebb",
+        "matchesDist": true
+      },
+      {
+        "name": "biomes-DMWcg5ZT.js",
+        "status": 200,
+        "sha256": "93d46502621b6004b6107e8816f79f04b908e520ec850e5773b2f0ec64bc1f2a",
+        "localSha256": "93d46502621b6004b6107e8816f79f04b908e520ec850e5773b2f0ec64bc1f2a",
+        "matchesDist": true
+      },
+      {
+        "name": "biosphere-Cmz01Hui.js",
+        "status": 200,
+        "sha256": "f2b93a4241723576939f7a0506eb8d73382efc907ba15ebb7736d334f2359097",
+        "localSha256": "f2b93a4241723576939f7a0506eb8d73382efc907ba15ebb7736d334f2359097",
+        "matchesDist": true
+      },
+      {
+        "name": "biosphere-model-C_M_4Pgu.js",
+        "status": 200,
+        "sha256": "0ced478afc355b3c1fc0f6fe08a3b864f349e222af8782dc97ae5f6945edad29",
+        "localSha256": "0ced478afc355b3c1fc0f6fe08a3b864f349e222af8782dc97ae5f6945edad29",
+        "matchesDist": true
+      },
+      {
+        "name": "BufferGeometryUtils-CIzA1hmx.js",
+        "status": 200,
+        "sha256": "8ed66218a25fc4093a1b3de70e2ad5abb33ddac4bc7b8e1f36dc5a0662bf2457",
+        "localSha256": "8ed66218a25fc4093a1b3de70e2ad5abb33ddac4bc7b8e1f36dc5a0662bf2457",
+        "matchesDist": true
+      },
+      {
+        "name": "catalog-BafDYuJw.js",
+        "status": 200,
+        "sha256": "098f0fe17a2d57b70126fb89b6a9431b4d1a844731fe4234df99d1f3f016f33e",
+        "localSha256": "098f0fe17a2d57b70126fb89b6a9431b4d1a844731fe4234df99d1f3f016f33e",
+        "matchesDist": true
+      },
+      {
+        "name": "clouds-Cc-yPKkz.js",
+        "status": 200,
+        "sha256": "145d8f8dd49ebe9a3a0bc9ccc707b255f6b4d0c9d3d38dd217b20a07fe8bf721",
+        "localSha256": "145d8f8dd49ebe9a3a0bc9ccc707b255f6b4d0c9d3d38dd217b20a07fe8bf721",
+        "matchesDist": true
+      },
+      {
+        "name": "creatures-3zf6Fqjs.js",
+        "status": 200,
+        "sha256": "7bea8aff9ad5c8032b22329689866ad466de217685547e4195842eaee38c6f12",
+        "localSha256": "7bea8aff9ad5c8032b22329689866ad466de217685547e4195842eaee38c6f12",
+        "matchesDist": true
+      },
+      {
+        "name": "drainage-worker-Bp34AJ1h.js",
+        "status": 200,
+        "sha256": "08b032e56f2cb5268e8c24825461f864a558c1b4309c1663a3526cf0c31a0439",
+        "localSha256": "08b032e56f2cb5268e8c24825461f864a558c1b4309c1663a3526cf0c31a0439",
+        "matchesDist": true
+      },
+      {
+        "name": "forest-census-worker-CpdaZJHJ.js",
+        "status": 200,
+        "sha256": "53c1ba117e7a0415f87cdd781dd3ba6f92b356844990c9a072b9706986ddfd89",
+        "localSha256": "53c1ba117e7a0415f87cdd781dd3ba6f92b356844990c9a072b9706986ddfd89",
+        "matchesDist": true
+      },
+      {
+        "name": "ground-walker-CDKzpeET.js",
+        "status": 200,
+        "sha256": "8b825620bdda6667e994bb60d1637c61a027fba8ba82ffe6bbab744b8af97eac",
+        "localSha256": "8b825620bdda6667e994bb60d1637c61a027fba8ba82ffe6bbab744b8af97eac",
+        "matchesDist": true
+      },
+      {
+        "name": "guide-time-BxGgRnhy.js",
+        "status": 200,
+        "sha256": "66929d91f500864d028de592be89c024efe146f4f2501ef2077e19e77571accb",
+        "localSha256": "66929d91f500864d028de592be89c024efe146f4f2501ef2077e19e77571accb",
+        "matchesDist": true
+      },
+      {
+        "name": "OrbitControls-F_9lm_Bl.js",
+        "status": 200,
+        "sha256": "57b6744b620495c4b11a4b10384ee3065798f37df2ebd4d9f2d430c53a465eba",
+        "localSha256": "57b6744b620495c4b11a4b10384ee3065798f37df2ebd4d9f2d430c53a465eba",
+        "matchesDist": true
+      },
+      {
+        "name": "planet-population-worker-DPoR_B8X.js",
+        "status": 200,
+        "sha256": "e90f8ed0b32b5e6b763662ed37ce2e92727aff1eaa8997cc593dd781669d3ce1",
+        "localSha256": "e90f8ed0b32b5e6b763662ed37ce2e92727aff1eaa8997cc593dd781669d3ce1",
+        "matchesDist": true
+      },
+      {
+        "name": "planet-worker-BpRIhApT.js",
+        "status": 200,
+        "sha256": "63244cb31d54ccd384482ece789259457c6bd6badc186017dff6b65669f91516",
+        "localSha256": "63244cb31d54ccd384482ece789259457c6bd6badc186017dff6b65669f91516",
+        "matchesDist": true
+      },
+      {
+        "name": "rapier-physics-iRel_T-y.js",
+        "status": 200,
+        "sha256": "73f8b5fe1e32ae64e8fde0354f3d0e9fc04b9ffa71c043d5b1ca93f786ff8679",
+        "localSha256": "73f8b5fe1e32ae64e8fde0354f3d0e9fc04b9ffa71c043d5b1ca93f786ff8679",
+        "matchesDist": true
+      },
+      {
+        "name": "river-worker-B6OWmDg5.js",
+        "status": 200,
+        "sha256": "9d5d876dffb667585760e15ee4accb5d08503e2b2e42776240c0a6ba66c25d0d",
+        "localSha256": "9d5d876dffb667585760e15ee4accb5d08503e2b2e42776240c0a6ba66c25d0d",
+        "matchesDist": true
+      },
+      {
+        "name": "three.core-D-9zeTsK.js",
+        "status": 200,
+        "sha256": "afcd6dab40b337a087e4b10af07e57fade417edbbe0f87dacf8cc4ef426eed53",
+        "localSha256": "afcd6dab40b337a087e4b10af07e57fade417edbbe0f87dacf8cc4ef426eed53",
+        "matchesDist": true
+      },
+      {
+        "name": "three.module-cFIZboJ1.js",
+        "status": 200,
+        "sha256": "1e91de67e6efec54d9a58ac405f160825aa3abc40ff09520923a62c6b0118ef4",
+        "localSha256": "1e91de67e6efec54d9a58ac405f160825aa3abc40ff09520923a62c6b0118ef4",
+        "matchesDist": true
+      },
+      {
+        "name": "time-nav-B7WiIISw.js",
+        "status": 200,
+        "sha256": "d2bf8cdc9a4cf6d2250cd7f80f5a8449a6e5b96d33d3e63119daaaa20ca365a6",
+        "localSha256": "d2bf8cdc9a4cf6d2250cd7f80f5a8449a6e5b96d33d3e63119daaaa20ca365a6",
+        "matchesDist": true
+      },
+      {
+        "name": "tree-asset-2ZG6XMXQ.js",
+        "status": 200,
+        "sha256": "19aa835eaca0e6708edc4815f9060ee50bd996452801a63b6857b1ede54d9a1c",
+        "localSha256": "19aa835eaca0e6708edc4815f9060ee50bd996452801a63b6857b1ede54d9a1c",
+        "matchesDist": true
+      },
+      {
+        "name": "volumetric-clouds-yZo6x5lE.js",
+        "status": 200,
+        "sha256": "9085f4ff0bce6356870ab4471d0a757dbdb1a789d511d8b189e8e25eb2c62ef9",
+        "localSha256": "9085f4ff0bce6356870ab4471d0a757dbdb1a789d511d8b189e8e25eb2c62ef9",
+        "matchesDist": true
+      },
+      {
+        "name": "worker-Df1A3ASA.js",
+        "status": 200,
+        "sha256": "f224306858e7173b0104913d8a0ab9d025a5fbfd63802fabe2f27494b5e21db0",
+        "localSha256": "f224306858e7173b0104913d8a0ab9d025a5fbfd63802fabe2f27494b5e21db0",
+        "matchesDist": true
+      },
+      {
+        "name": "world-time-jlnosqkt.js",
+        "status": 200,
+        "sha256": "b0cc64d653287bc49a2f3f544bbc2e9f90ecb3d8f75ff558c6845d78531873fd",
+        "localSha256": "b0cc64d653287bc49a2f3f544bbc2e9f90ecb3d8f75ff558c6845d78531873fd",
+        "matchesDist": true
+      }
+    ]
+  },
+  "guideBrowser": {
+    "report": "test-results/tree-forest-live/live-guide/guide-report.json",
+    "chapters": 9,
+    "widths": [
+      1440,
+      390,
+      320
+    ],
+    "internalDestinations": 92,
+    "errors": [],
+    "exactEraAnchors": [
+      0,
+      5,
+      9
+    ],
+    "lifeDetails": {
+      "initial": [
+        {
+          "summary": "Implementation history, experiments and measurements",
+          "open": false
+        }
+      ],
+      "expanded": [
+        {
+          "summary": "Implementation history, experiments and measurements",
+          "open": true
+        }
+      ]
+    },
+    "inGameGuideLink": true
+  },
+  "productionTreeAssetGuard": {
+    "rejected": {
+      "rejected": true,
+      "message": "Error: Experimental forest assets require a development build"
+    },
+    "candidateFamilyRequests": [],
+    "normalGameReady": true,
+    "detailedFamilyLoaded": false,
+    "legacyForest": {
+      "visible": 362,
+      "near": 0,
+      "farTrees": 156275,
+      "failures": 0
+    },
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "glError": 0,
+    "pageErrors": [],
+    "report": "test-results/tree-forest-live/game-smoke/report.json"
+  },
+  "integrationEvidence": {
+    "report": "test-results/tree-forest-integration/hardware-family-f-verified/report.json",
+    "imageCount": 4,
+    "provenanceArtifacts": [
+      {
+        "path": "test-results/tree-forest-integration/hardware-family-f-verified/report.json",
+        "manifestSha256": "334fa89ce9c6cde6cccab6be5ec67868083a2fa0580ac2500062ac991553358f",
+        "rawSha256": "8272d1ebbf1c058df52837aa357930aa42917dc975f27efeb0419e7e9f104319",
+        "lfSha256": "334fa89ce9c6cde6cccab6be5ec67868083a2fa0580ac2500062ac991553358f",
+        "comparison": "LF-normalized text (autocrlf)"
+      },
+      {
+        "path": "test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-initial.png",
+        "manifestSha256": "7460ee9a973482b2392c69a0729715c4366f817a05ad3234070b77aeebf1e4eb",
+        "rawSha256": "7460ee9a973482b2392c69a0729715c4366f817a05ad3234070b77aeebf1e4eb",
+        "lfSha256": null,
+        "comparison": "raw bytes"
+      },
+      {
+        "path": "test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-date-shift.png",
+        "manifestSha256": "91678aa7c2d481c523b14d246c14f1c20c0e79570f026099438f784862495537",
+        "rawSha256": "91678aa7c2d481c523b14d246c14f1c20c0e79570f026099438f784862495537",
+        "lfSha256": null,
+        "comparison": "raw bytes"
+      },
+      {
+        "path": "test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-date-return.png",
+        "manifestSha256": "28634bd59553d41ad4551f0bd22c1947be5b3b8b651cd3f6b16460b580dc06f8",
+        "rawSha256": "28634bd59553d41ad4551f0bd22c1947be5b3b8b651cd3f6b16460b580dc06f8",
+        "lfSha256": null,
+        "comparison": "raw bytes"
+      },
+      {
+        "path": "test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-after-movement.png",
+        "manifestSha256": "72d1f4bb736793eb2ffd647489e0178d6787f91f3b34effe657b4364e310c75e",
+        "rawSha256": "72d1f4bb736793eb2ffd647489e0178d6787f91f3b34effe657b4364e310c75e",
+        "lfSha256": null,
+        "comparison": "raw bytes"
+      },
+      {
+        "path": "test-results/tree-forest-integration/README.md",
+        "manifestSha256": "7905a3b39cd3a5d74323895856ce4ddd2770b2e2a6052940672c849a5bbb6d53",
+        "rawSha256": "64c6302048d433c3035ccca45e29358c2790db924b2ee3858005e0c815731cbd",
+        "lfSha256": "7905a3b39cd3a5d74323895856ce4ddd2770b2e2a6052940672c849a5bbb6d53",
+        "comparison": "LF-normalized text (autocrlf)"
+      }
+    ]
+  },
+  "result": "pass"
+}
