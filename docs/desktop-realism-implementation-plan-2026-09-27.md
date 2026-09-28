@@ -2,30 +2,40 @@
 
 Date: 2026-09-27. Accepted direction; implementation started.
 
-## Current status snapshot — local `fbe3c26`, live `8e16776`
+## Current status snapshot — local family labs, live `8e16776`
 
-The deployed site remains at `8e16776`; this later local source checkpoint is
-not published. Locally, the normal Trees setting loads a verified Oak/Pine
-package and offline foliage sidecars into compact near and middle batches. A
-shared dated binding now feeds family-specific distant crowns using each
-family's actual LOD profiles, texture-derived linear colors and conservative
-bounds. The retained forest work list skips complete far census patches while
-preserving canonical order and the 650 m ownership cutoff. These paths remain
-opt-in or under development; no family-matching GPU/visual acceptance or
-performance gain is claimed.
+The deployed site remains at `8e16776`; the newer verified UI and capture
+experiments described here are not deployed. In the local build at `ee26efa`,
+the normal Trees control loaded the verified Oak/Pine package, allowed trees to
+be switched off, recovered from one deliberate Oak 503 using Retry, and
+revisited the same date with all 16 sampled identities and wind phases
+matching. No unexpected browser or WebGL errors occurred. A single RTX 5090
+stationary pose measured frame work at 41.4 ms p50 / 60.1 ms p95; this does not
+meet the proposed desktop target and is not a before/after speedup result. See
+the [normal UI evidence](../test-results/forest-asset-loading/README.md).
 
-The family/canopy integration has 67 focused CPU checks and passes TypeScript.
-The separate metadata suite has 7 passes; 3 candidate-path checks were skipped
-because their environment variables were unset. An earlier Luna normal-control
-smoke verified package loading, switching Trees off and retry after a 503.
-The latest real-family browser run exposed an interleaved-geometry attribute
-issue during metadata extraction; the family load needs a fresh browser rerun
-after its fix. Date revisit, appearance and performance acceptance remain
-pending. The
-[family integration record](family-canopy-2026-09-28.md), [normal loading
-record](forest-asset-loading-2026-09-28.md), [compact family record](compact-tree-families-2026-09-28.md)
-and [retained work-list record](forest-worklist-2026-09-28.md) give the current
-implementation details.
+The local far-crown visual review rejected the solid analytic band shapes as a
+realism direction. The replacement experiment captures actual Oak and Pine
+LOD1 meshes at their fixed 16 m source height: each uses 81 views, 64 px per
+view, and 7,077,456 bytes of explicit mipmapped GPU texture data. In the
+33 px intermediate-view A/B, coverage-weighted filtering measured blurred IoU
+0.873 for Oak with −6.37% area error, and 0.838 for Pine with −6.73% area
+error. Pine's reference samples disagree by about 20% (264 versus 528 covered
+samples), so those scores do not establish reference convergence. The captures
+are still lab experiments: no visual approval, continuous forest integration,
+or production adoption. See the [visual decision](family-canopy-visual-decision-2026-09-28.md),
+[capture filtering report](../test-results/family-capture/filtering-v3/report.json),
+and [capture comparison notes](authored-tree-capture-2026-09-28.md).
+
+The local normal-loading, family-canopy, and retained work-list records remain
+useful implementation evidence, with their limits stated separately. Physical
+species dimensions, accepted foliage and far silhouettes, ground/rock and
+terrain materials, fauna breadth, performance targets on midrange hardware,
+Quest quality, and end-to-end visual acceptance remain open. No general
+frame-rate claim follows from these fixtures. See the [family integration](family-canopy-2026-09-28.md),
+[compact family record](compact-tree-families-2026-09-28.md),
+[normal loading record](forest-asset-loading-2026-09-28.md), and
+[retained work-list record](forest-worklist-2026-09-28.md).
 
 Per-species physical dimensions, structural variants, accepted realistic
 foliage and far silhouettes, rocks and ground materials, terrain and fauna
