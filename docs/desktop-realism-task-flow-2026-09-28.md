@@ -23,26 +23,22 @@ returning every decision to the parent.
 
 ## Current assignments
 
-1. **Luna guide + acceptance:** the website-only fix is deployed at `e0d9d9c`.
-   Nine guide chapters, 98 internal destinations and the in-game link passed
-   live verification. Future releases still require a committed candidate and
-   explicit live verification.
-2. **Claude Code / Opus 5.5, supervised and tested by Luna:** own the current
-   Oak/Pine forest milestone from implementation through local acceptance in
-   an isolated worktree. Improve coherent species presentation, bounded
-   deterministic structural variants and near/middle/far transitions during
-   normal low flight and walking. Choose rendering techniques from evidence;
-   the captured diffuse-transfer experiment is optional, not prescribed.
-3. **Luna terrain implementation:** roughness propagation is integrated locally
-   with focused CPU checks; visual acceptance remains open. The next material
-   task covers physically scaled soil and rock PBR detail with licensed source
-   textures, shared resources and bounded memory.
-4. **Claude Code / Opus 5.5, supervised and tested by Luna:** the separate
-   `opus-fauna-continuous-20260928` branch is implementing one connected,
-   genome-compatible rigged quadruped in ordinary planetary fauna. Its process
-   is confirmed as Opus 5.5. Forest and fauna may implement CPU code in
-   parallel; their GPU/browser work remains serialized. Neither milestone is
-   accepted merely because its implementation job has started.
+1. **Luna acceptance:** review clean runtime `a755f1b` in the ordinary game:
+   individual fauna rig handoff and pose, matched understory/detail-tree views,
+   then isolated performance sampling. The published runtime remains the
+   rivers-disabled `4796b1a`; later candidates require committed deployment
+   and live checks.
+2. **Claude Code / Opus 5.5, supervised by Luna:** implement ordinary procedural
+   rocks and species-based physical tree dimensions in separate worktrees.
+   Both are complete implementation assignments with focused tests and staged
+   commits; browser/GPU work remains serialized after their handoffs.
+3. **Luna implementation:** bounded correctness fixes and performance-review
+   tooling. Corrected forest resource estimates are integrated. The confirmed
+   flower/tree stem winding fix is committed separately, awaiting integration.
+4. **Luna guide:** keep guide/plan claims tied to deployed or locally verified
+   revisions, review the shared acceptance images, and supervise genuine Opus
+   jobs and their model receipts. The procedural understory implementation is
+   integrated, with visual acceptance pending.
 
 ## Task flow
 
@@ -118,8 +114,11 @@ returning every decision to the parent.
 
 ## Forest milestone invariants and evidence
 
-Preserve canonical individuals, positions, heights, yaw, dated species and
-existence rules. Species presentation and structural variation must be derived
+Preserve canonical individuals, positions, yaw, dated species and existence
+rules. The existing canonical height proxy remains a stable source datum;
+the new physical-scale milestone intentionally derives rendered dimensions
+from species recipes under an explicit presentation version. Near and far
+representations must agree on those dimensions. Species presentation and structural variation must be derived
 from stable identities and must not introduce a second population catalogue.
 Keep roots, bounds, shadows, depth and aerial perspective consistent across
 representations. Structural variation changes geometry, not just tint.

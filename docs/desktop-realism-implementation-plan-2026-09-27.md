@@ -21,19 +21,26 @@ faceted procedural shapes that motivate the current vegetation work. The
 [deployment record](../test-results/deploy-4796b1a/README.md) includes the
 live river-link and grounded checks.
 
-## Current local candidate — combined rendering head `c9ba64f`
+## Current local runtime candidate — `a755f1b`
 
 The local combined branch contains optional packaged tree-family loading,
 experimental far-tree presentation, connected near-body fauna, detailed ground
-materials and the rivers-off behavior. The combined candidate is undergoing
-normal-game review; its appearance and performance are not accepted or
-published. Detailed trees still use the canonical 10–22 m population height
+materials, curved grass blades, branched leafy shrubs and the rivers-off behavior.
+The merged candidate passes 45 focused checks and a clean production build;
+its normal-game visual review is underway and it is not published. See the
+[integration record](../test-results/combined-understory-integration/README.md).
+Detailed trees still use the canonical 10–22 m population height
 proxy rather than species recipe stature, crown-width and trunk limits, so
-consistent species allometry remains open. This milestone targets the visibly
-faceted grass and shrub geometry in the existing instanced flora path while
-preserving placement, identity, habitat and date decisions. It starts from
-`c9ba64f`; measurements, tests and screenshot review will be recorded before
-any adoption.
+consistent species allometry remains open. Opus owns the next physical-scale
+milestone and the separate ordinary-rock generation implementation.
+
+The preceding `c9ba64f` browser route verified dated animal root movement,
+exact-date replay and a same-pose ground-material detail improvement. Its near
+animal body was visible, but bone motion and individual 80/95 m rig handoff
+were not proven. The current candidate exposes per-animal rig state for those
+checks. Forest resource accounting now separates retained CPU storage from
+estimated GPU uploads and textures; it does not measure driver memory or add
+allocation admission controls. See the [c9 visual record](../test-results/combined-visual-acceptance-c9ba64f/README.md).
 
 The dated sections below retain experiment and checkpoint records. Their
 measurements belong to the named fixture and do not imply current deployment,
@@ -215,9 +222,9 @@ more. Structural diversity must not come from disconnected anatomy.
 | B. Forest foundation | Stable populations, retained origins and bounded instance updates | Implemented in the deployed runtime; supports continuous population sampling, not realistic vegetation by itself |
 | C. Pipeline baseline | Shared lighting, terrain materials, antialiasing and bounded shadows | Common aerial perspective and detailed ground-material paths exist locally; device-wide frame targets and complete lighting/shadow acceptance remain open |
 | D. Procedural asset contract | Species binding, physical envelopes, variants, bark/leaf materials and instance parameters | Oak/Pine family loading and metadata are integrated in the local branch, but detailed trees still use the canonical 10–22 m height proxy instead of species recipe allometry. Per-species bounds, consistent near/far dimensions, broad variants, visual approval and midrange performance remain open |
-| E. Continuous canopy | Shared population from near view through distance | Local census and far-representation paths exist, but the current far silhouette/hand-off remains visually unaccepted; see the [family integration](family-canopy-2026-09-28.md) and [visual decision](family-canopy-visual-decision-2026-09-28.md) |
-| F. Realistic landscape | Trees, rocks, metre-scaled ground detail, understory and shared wind | Ground-material detail is integrated locally. A bounded grass/shrub geometry update is underway in the ordinary instanced flora path; the current renderer still uses the faceted shapes until the candidate passes review. Rocks, realistic tree acceptance and full landscape breadth remain open |
-| G. Realistic fauna | Genome-compatible form, deterministic identity and grounded motion | Near-body rig and dated movement are implemented in the local branch; the combined c9 candidate remains under review. Obstacle avoidance, foot placement, broader species and device cost remain open |
+| E. Continuous canopy | Shared population from near view through distance | The replacement captured crowns passed a bounded local visual and identity check; complete forest appearance and seamless transitions remain open. See the [hardware record](forest-far-atlas-hardware-acceptance-2026-09-28.md) |
+| F. Realistic landscape | Trees, rocks, metre-scaled ground detail, understory and shared wind | Ground-material detail has a same-pose local comparison. Curved grass and branched shrubs are integrated in `a755f1b`, awaiting visual review. Ordinary rocks are being implemented separately; realistic tree acceptance and landscape breadth remain open |
+| G. Realistic fauna | Genome-compatible form, deterministic identity and grounded motion | Connected near bodies and dated root movement are verified locally. Bone motion, individual rig handoff, obstacle avoidance, foot placement, broader species and device cost remain open |
 | H. Breadth | More biomes/species and separately measured Quest profile | Future work after desktop visual and performance gates |
 
 ### Historical checkpoints and experiment records
