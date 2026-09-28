@@ -139,16 +139,21 @@ try {
   }, null, 2));
   assert.equal(loadedDate, source.date, 'close route loads the exact source world epoch');
   await waitWithProgress('walking-settled', () => window.__atlas.travel.walking?.grounded, 180000);
+  await checkpoint('walker-grounded');
   // Record the canonical target before any optional visibility/aiming work.
   // `faunaDrawn.position` is body-local normalized position, while the walker
   // position is body-local metres; convert before comparing distances.
-  const landed = await page.evaluate((radius, targetId) => {
+  const landed = await page.evaluate(({ radius, targetId }) => {
     const a = window.__atlas;
     const animals = a.terrain.tiles.faunaDrawn.map(({ id, cell, position }) => ({
       id, cell, position, bodyLocalM: position.map(value => value * radius),
     }));
     const walker = a.travel.walking;
+    const body = a.state.body;
+    const bodyCenterM = a.travel.bodies.find(item => item.id === body.id).positionM;
     return { date: a.date.offsetNs, heading: a.travel.heading, walker,
+      bodyCenterM, cameraPositionM: a.travel.position, cameraHeading: a.travel.heading,
+      camera: a.camera, viewport: { width: innerWidth, height: innerHeight },
       sourceTargetPresent: animals.some(animal => animal.id === targetId),
       sourceTarget: animals.find(animal => animal.id === targetId) ?? null,
       drawnCount: animals.length, drawn: animals,
@@ -156,18 +161,49 @@ try {
         distanceM: Math.hypot(...animal.bodyLocalM.map((value, i) => value - walker.position[i])) }))
         .sort((a, b) => a.distanceM - b.distanceM).slice(0, 8),
     };
-  }, radius, nearest.id);
+  }, { radius, targetId: nearest.id });
+  const projectBodyLocal = (positionM) => {
+    const worldPosition = new THREE.Vector3(...landed.bodyCenterM).add(new THREE.Vector3(...positionM));
+    const local = worldPosition.sub(new THREE.Vector3(...landed.cameraPositionM))
+      .applyQuaternion(new THREE.Quaternion(...landed.cameraHeading).invert());
+    const depthM = -local.z;
+    if (depthM <= 0) return { inFront: false, depthM };
+    const halfY = Math.tan((landed.camera.fov * Math.PI / 180) / 2);
+    const halfX = halfY * landed.viewport.width / landed.viewport.height;
+    const ndcX = local.x / (depthM * halfX), ndcY = local.y / (depthM * halfY);
+    return { inFront: true, ndcX, ndcY, depthM,
+      inFrame: Math.abs(ndcX) <= 1 && Math.abs(ndcY) <= 1 };
+  };
+  landed.sourceTargetExpected = {
+    positionBodyLocalM: nearest.local.toArray(),
+    distanceToGroundWalkerM: new THREE.Vector3(...nearest.local).distanceTo(new THREE.Vector3(...landed.walker.position)),
+    projectedFromSettledCamera: projectBodyLocal(nearest.local.toArray()),
+  };
+  landed.nearestDrawnProjected = landed.nearestToWalker.slice(0, 8).map(item => ({
+    id: item.id, distanceM: item.distanceM,
+    projected: projectBodyLocal(landed.drawn.find(animal => animal.id === item.id).bodyLocalM),
+  }));
   await writeFile(`${out}/landed-population.json`, JSON.stringify({
     source: { date: source.date, target: { id: nearest.id, cell: nearest.cell,
       bodyLocalM: nearest.local.toArray(), distanceM: nearest.distanceM,
       genome: nearest.genome }, radiusM: source.radiusM },
     landed,
   }, null, 2));
-  await checkpoint('near-rig-built');
-  await waitFor(() => window.__atlas.terrain.tiles.faunaNear?.active > 0 && window.__atlas.terrain.tiles.faunaNear?.builds > 0, 60000);
+  let nearRigReady = false;
+  try {
+    await waitFor(() => window.__atlas.terrain.tiles.faunaNear?.active > 0 && window.__atlas.terrain.tiles.faunaNear?.builds > 0, 15000);
+    nearRigReady = true;
+  } catch (error) {
+    if (!String(error).includes('Timeout')) throw error;
+  }
+  await checkpoint(nearRigReady ? 'near-rig-built' : 'near-rig-not-ready');
   await page.evaluate(() => window.__atlas.setExplorationPaused(true));
-  await page.locator('#timeline').evaluate(details => { details.open = false; });
-  await page.locator('#collapse').click();
+  let panelCollapsed = false;
+  try {
+    await page.locator('#timeline').evaluate(details => { details.open = false; });
+    await page.locator('#collapse').click({ timeout: 1500 });
+    panelCollapsed = true;
+  } catch { /* optional screenshot preparation; diagnostics continue */ }
   const first = await page.evaluate(() => window.__atlas.terrain.tiles.faunaDrawn.map(({ id, position }) => ({ id, position })));
   const firstRender = await page.evaluate(() => ({ stats: window.__atlas.terrain.tiles, camera: window.__atlas.travel.position }));
   await page.screenshot({ path: `${out}/01-fauna-closeup.png` });
@@ -186,6 +222,7 @@ try {
   });
   const report = {
     ok: false, base, bodyId, targetId: nearest.id, sourceDistanceM: nearest.distanceM,
+    nearRigReady, panelCollapsed,
     sourceGenome: nearest.genome, closeupEyeRelativeM: eye.toArray(), errors,
     drawnFirstFrame: first.length, drawnSecondFrame: second.length, stableIdsAndPositions: stable,
     walking: await page.evaluate(() => window.__atlas.travel.walking),
@@ -194,6 +231,7 @@ try {
   };
   await writeFile(`${out}/report.json`, JSON.stringify(report, null, 2));
   assert.ok(first.some(animal => animal.id === nearest.id), 'target individual is visible in the close-up view');
+  assert.ok(nearRigReady, 'near-body skinned rig is active in the close-up view');
   assert.ok(stable, 'paused consecutive frames preserve exact animal identities and positions');
   assert.deepEqual(errors, []);
   report.ok = true;
