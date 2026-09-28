@@ -5,6 +5,22 @@ It is a development laboratory, not the planetary forest replacement. No GLB
 or texture is installed in the game or added to the website by this increment.
 The desktop realism goal remains active.
 
+## V7 colour follow-up
+
+V7 changes the byte-image colour encoding while preserving v6 geometry, alpha
+and normal-map data. Its RTX 5090/D3D11 browser and fixed-light checks complete
+at 2560 × 1440 with no browser errors, covering both LODs at 3, 64 and 192
+trees. Two PBR materials use four shared texture objects; directional and point
+shadow rendering and load rollback are exercised. The foliage reads clearer and
+greener than v6, but back-facing leaves remain strongly dark even with cast
+shadows disabled. This is not visual acceptance or a full-game/midrange
+performance result. See the [v6/v7 comparison](../test-results/tree-asset-lab-v7-color-a/color-comparison-v6-v7.json),
+[browser report](../test-results/tree-asset-lab-v7-color-a/report.json),
+[fixed-lighting report](../test-results/tree-asset-lighting-v7-color-a/report.json),
+[v7 authoring and validation record](tree-authoring-v7-2026-09-28.md),
+[front-lit image](../test-results/tree-asset-lighting-v7-color-a/center-16m-front-shadows-on.png)
+and [back-lit image without cast shadows](../test-results/tree-asset-lighting-v7-color-a/center-16m-back-shadows-off.png).
+
 ## Run and inspect
 
 Run `npm run dev`, open `/tree-asset-lab.html`, then select
@@ -105,16 +121,16 @@ source revision, actual renderer, individual scenarios and limitations.
 [Three scale specimens](../test-results/tree-asset-lab-v6/lod0-population3.png)
 show root contact and cast shadows;
 [192 trees](../test-results/tree-asset-lab-v6/lod0-population192.png) show the
-overlapping crowns at the chosen camera. Visual inspection finds dark foliage
-and repeated crown shapes. This is technical prototype acceptance, not final
-artistic acceptance. Lighting isolation is the next diagnostic step.
+overlapping crowns at the chosen camera. Earlier v6 renders showed dark foliage
+and repeated crown shapes. V7 improves the colour encoding, but the backlit
+canopy remains dark. Technical checks are not visual acceptance.
 
 ## Next integration gates
 
-The actual browser screenshots, alpha-card appearance and shadow stability need
-inspection. Profile both LODs at the three population sizes. A matching LOD2,
+V7 screenshots confirm the colour-space change in the browser but leave
+backlit foliage too dark for visual acceptance. A matching LOD2,
 alpha-preserving mip coverage, shared-atlas structural variants, species colour
-binding, coherent wind, conservative world bounds/culling, explicit cache
-budgets, collision, packaging/license resolution and whole-game performance
-remain open. Do not substitute the near tree while leaving an unrelated far
-canopy silhouette and call the transition finished.
+binding, coherent branch wind, conservative world bounds/culling, explicit cache
+budgets, collision, packaging/license resolution, midrange/XR testing and
+whole-game performance remain open. The lab is not wired into the planetary
+renderer; do not infer far-canopy or species integration from its LOD pair.

@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 2,
+  "artifactPathBase": "manifest-directory",
+  "operation": "atlas-branching-author-7",
+  "status": "proposal-needs-review",
+  "seed": 729281,
+  "blenderVersion": "5.1.1",
+  "pythonVersion": "3.13.9 (main, Jan 16 2026, 12:29:45) [MSC v.1944 64 bit (AMD64)]",
+  "blenderBuildHash": "b70da489d7f4",
+  "executionThreads": 1,
+  "numpyVersion": "2.3.4",
+  "exporterVersion": "5.1.19",
+  "geometryContentSha256": "6e8cfa0853edd18f990c55a4d3c6a08eac6fbfbfd7b936c9e829615e8d8ba076",
+  "lods": [
+    {
+      "level": 0,
+      "runtime": "atlas-branching-v1.glb",
+      "triangles": 10712,
+      "maxTriangles": 18000,
+      "geometryContentSha256": "6e8cfa0853edd18f990c55a4d3c6a08eac6fbfbfd7b936c9e829615e8d8ba076",
+      "boundsM": {
+        "min": [
+          -5.846503734588623,
+          0,
+          -5.393500804901123
+        ],
+        "max": [
+          5.975094318389893,
+          16.000028610229492,
+          4.909943103790283
+        ]
+      },
+      "trianglesByBranchLevel": {
+        "0": 236,
+        "1": 1008,
+        "2": 2688,
+        "3": 4068,
+        "4": 2712
+      },
+      "measuredAudit": {
+        "materials": 2,
+        "uvLayers": 1,
+        "appliedTransforms": true,
+        "finitePositions": true
+      }
+    },
+    {
+      "level": 1,
+      "runtime": "atlas-branching-v1.lod1.glb",
+      "triangles": 4820,
+      "maxTriangles": 5000,
+      "geometryContentSha256": "d1d93993c95ffa3ade9cc8d3d4d8f8246615a2ab50df215da25d37320aada7e5",
+      "boundsM": {
+        "min": [
+          -5.846503734588623,
+          0,
+          -5.393500804901123
+        ],
+        "max": [
+          5.975094318389893,
+          16.000028610229492,
+          4.909943103790283
+        ]
+      },
+      "trianglesByBranchLevel": {
+        "0": 236,
+        "1": 1008,
+        "2": 672,
+        "3": 192,
+        "4": 2712
+      },
+      "measuredAudit": {
+        "materials": 2,
+        "uvLayers": 1,
+        "appliedTransforms": true,
+        "finitePositions": true
+      }
+    }
+  ],
+  "materialContentSha256": "1ab9d61cfaf4a843d08e1168df11c0ddde331ef96b7888ee92d53dab635f1ef5",
+  "embeddedImages": [
+    {
+      "runtime": "atlas-branching-v1.glb",
+      "name": "MAT_AtlasBark_Normal",
+      "sha256": "ef4fd931e8b0a9db10a75945d1ee4fc02570151c9d181edd7b19b22a73ba5706",
+      "byteLength": 200026,
+      "pngDepth": 8,
+      "standaloneBytesEqual": true
+    },
+    {
+      "runtime": "atlas-branching-v1.glb",
+      "name": "MAT_AtlasBark_BaseColor",
+      "sha256": "146e748a484106362eb768809e38167ccaf18abf4bc795e7db3b0a1d7e98fa17",
+      "byteLength": 241530,
+      "pngDepth": 8,
+      "standaloneBytesEqual": true
+    },
+    {
+      "runtime": "atlas-branching-v1.glb",
+      "name": "MAT_AtlasFoliage_Normal",
+      "sha256": "3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951",
+      "byteLength": 759600,
+      "pngDepth": 8,
+      "standaloneBytesEqual": true
+    },
+    {
+      "runtime": "atlas-branching-v1.glb",
+      "name": "MAT_AtlasFoliage_BaseColor",
+      "sha256": "43368cb6820bfcb78efb8713b7ba6a47639566a75204ffee1678ee5967937284",
+      "byteLength": 756917,
+      "pngDepth": 8,
+      "standaloneBytesEqual": true
+    },
+    {
+      "runtime": "atlas-branching-v1.lod1.glb",
+      "name": "MAT_AtlasBark_Normal",
+      "sha256": "ef4fd931e8b0a9db10a75945d1ee4fc02570151c9d181edd7b19b22a73ba5706",
+      "byteLength": 200026,
+      "pngDepth": 8,
+      "standaloneBytesEqual": true
+    },
+    {
+      "runtime": "atlas-branching-v1.lod1.glb",
+      "name": "MAT_AtlasBark_BaseColor",
+      "sha256": "146e748a484106362eb768809e38167ccaf18abf4bc795e7db3b0a1d7e98fa17",
+      "byteLength": 241530,
+      "pngDepth": 8,
+      "standaloneBytesEqual": true
+    },
+    {
+      "runtime": "atlas-branching-v1.lod1.glb",
+      "name": "MAT_AtlasFoliage_Normal",
+      "sha256": "3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951",
+      "byteLength": 759600,
+      "pngDepth": 8,
+      "standaloneBytesEqual": true
+    },
+    {
+      "runtime": "atlas-branching-v1.lod1.glb",
+      "name": "MAT_AtlasFoliage_BaseColor",
+      "sha256": "43368cb6820bfcb78efb8713b7ba6a47639566a75204ffee1678ee5967937284",
+      "byteLength": 756917,
+      "pngDepth": 8,
+      "standaloneBytesEqual": true
+    }
+  ],
+  "textureEncoding": {
+    "version": "linear-rgb-to-srgb-byte-1",
+    "colourRecipeSpace": "linear-rec709",
+    "colourPNGSpace": "sRGB",
+    "colourPNGDepth": 8,
+    "alpha": "linear-coverage-unchanged",
+    "normalMaps": "non-colour-unchanged"
+  },
+  "brief": {
+    "path": "asset-brief.json",
+    "sha256": "fd9bb11a0630dd4ad1d207156265aadaf36ae50f5f7ced9ff05e39505802d072"
+  },
+  "authoringCodeSha256": "e1b748dd3ed5a2debb605e3dc8d1b5ed4f608689e252f68b9610eb9654a354ef",
+  "foliageCodeSha256": "40a0a76c214602646a10591399a6c13cf55f510b1eec0795c6048a3ad0b0efdc",
+  "skeletonCodeSha256": "973030536be61192fc08b965029ab6b08ebb60098c476d876ac61357abf87a9b",
+  "meshCodeSha256": "7ada0e405b2b271f3256f5ad7380cacdb38314f7badecd0c80deb6c5186ed470",
+  "barkCodeSha256": "4b88c1014400ca682d011a59c34f93b61a4bc7741a64668ce085858051617a75",
+  "sourceType": "original",
+  "externalInputs": [],
+  "license": {
+    "expression": "NOASSERTION",
+    "attribution": null,
+    "restrictions": [
+      "Prototype assets require visual, LOD, provenance and runtime acceptance before packaging or shipping"
+    ]
+  },
+  "skeletonStats": {
+    "primaryCount": 16,
+    "secondaryCounts": [
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      6,
+      5,
+      6,
+      5,
+      5,
+      6,
+      6
+    ],
+    "secondaryCount": 84,
+    "twigCount": 678,
+    "maxPrimaryTipAzimuthGapRad": 0.8400660952009007
+  },
+  "lod1Review": {
+    "retainedTwigCount": 32,
+    "droppedTwigCount": 646,
+    "retainedTwigLimit": 32,
+    "maxDroppedTwigDiameterM": 0.016168661420222413,
+    "onePixelDiameterDistanceM": 20.16355901054687,
+    "referenceVerticalPixels": 1440,
+    "referenceVerticalFovDeg": 60,
+    "secondaryCrossSectionSides": 4,
+    "meaning": "Projected dropped-wood diameter only; not a silhouette or transition acceptance gate"
+  },
+  "physicalReference": {
+    "stemHeightM": 12.9730224609375,
+    "actualHeightM": 16.000028610229492,
+    "skeletonVerticalScale": 1.29730224609375,
+    "cardDimensionsM": [
+      1,
+      1.2
+    ],
+    "leafLengthM": [
+      0.2,
+      0.32
+    ],
+    "rootPivot": [
+      0,
+      0,
+      0
+    ],
+    "leafCardCount": 1356,
+    "leafCenterCoordinates": "runtime-y-up",
+    "leafPivotCoordinates": "runtime-y-up",
+    "leafWind": "one pivot-height weight per rigid card; not a complete branch wind rig",
+    "barkUv": {
+      "longitudinalUnitsPerMetre": 1,
+      "horizontalPeriod": 0.125,
+      "tubeSpan": "nearest positive period multiple to base circumference, constant along taper"
+    },
+    "foliage": "sixteen original staggered alpha-mask sprays, 1m by 1.2m cards"
+  },
+  "preExportAudit": {
+    "triangles": 10712,
+    "maxTriangles": 18000,
+    "materials": 2,
+    "uvLayers": 1,
+    "appliedTransforms": true,
+    "finitePositions": true
+  },
+  "limitations": [
+    "LOD2, collision and runtime wind binding are pending",
+    "Packed base-colour byte images contain sRGB-encoded values, not the linear recipe values",
+    "LOD1 retains all foliage/primary wood, endpoint secondary tubes and up to 32 thickest twigs; projected-size limit is not visual transition acceptance",
+    "Eight structural variants and shared species atlas binding are pending",
+    "License resolution, KTX2/UASTC conversion and target-runtime acceptance are pending",
+    "Calibrated lighting, foliage transmission and render-sheet acceptance are pending",
+    "Branch intersections are overlapping surfaces; not a watertight sculpt",
+    "Textures are original procedural proposals; visual review required",
+    "Leaf count/coverage and close leaf materials need target-scene review"
+  ],
+  "artifacts": [
+    {
+      "path": "asset-brief.json",
+      "sha256": "fd9bb11a0630dd4ad1d207156265aadaf36ae50f5f7ced9ff05e39505802d072"
+    },
+    {
+      "path": "atlas-branching-v1.blend",
+      "sha256": "1446ba10870ad235373d2a5bc99a2c14eb3aaebd81453a69352bc131f1a59844"
+    },
+    {
+      "path": "atlas-branching-v1.glb",
+      "sha256": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df"
+    },
+    {
+      "path": "atlas-branching-v1.lod1.glb",
+      "sha256": "6d071f129ff4dae730b3ad08b6b012bdab4d8f35070170776ea4adb27a865b25"
+    },
+    {
+      "path": "MAT_AtlasBark_BaseColor.png",
+      "sha256": "146e748a484106362eb768809e38167ccaf18abf4bc795e7db3b0a1d7e98fa17"
+    },
+    {
+      "path": "MAT_AtlasBark_Normal.png",
+      "sha256": "ef4fd931e8b0a9db10a75945d1ee4fc02570151c9d181edd7b19b22a73ba5706"
+    },
+    {
+      "path": "MAT_AtlasFoliage_BaseColor.png",
+      "sha256": "43368cb6820bfcb78efb8713b7ba6a47639566a75204ffee1678ee5967937284"
+    },
+    {
+      "path": "MAT_AtlasFoliage_Normal.png",
+      "sha256": "3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951"
+    }
+  ]
+}

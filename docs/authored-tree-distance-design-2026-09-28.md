@@ -122,3 +122,9 @@ encoding/decoding, face-aligned triangle selection and explicit capture bases.
 It deliberately stores a basis per view, including deterministic pole fallback;
 bases are never interpolated. This is capture mathematics, not a rendered or
 integrated distant-tree implementation.
+
+Luna's [six CPU checks](../test-results/tree-impostor-views-v1/cpu-test.log)
+pass for axes, poles, folds, grids of 3/5/9/33 vertices, enclosing triangles,
+duplicate corner bases, invalid inputs and caller-data preservation. TypeScript
+compilation also passes. Rendered silhouette/depth and performance checks still
+require the capture tool and shader.

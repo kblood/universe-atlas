@@ -1,0 +1,35 @@
+{"candidate":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790573482187\\atlas-branching-v1.glb","operation":"atlas-branching-author-7","vertices":13992,"triangles":10712,"leafCards":1356,"heightM":16.000028610229492,"bark":[1024,1024],"barkRingAudit":null,"barkTubeAudit":{"trunk":1,"primaries":16,"rings":127,"arcPairs":110},"foliageBase":[2048,2048],"foliageNormal":[2048,2048],"leafCenterAttribute":"_LEAF_CENTER","leafPivotAttribute":"_LEAF_PIVOT","transparentPadding":{"transparentPixels":3398612,"greenPaddingPixels":3398612,"maxGreenByte":134},"textureEncoding":{"version":"linear-rgb-to-srgb-byte-1","colourRecipeSpace":"linear-rec709","colourPNGSpace":"sRGB","colourPNGDepth":8,"alpha":"linear-coverage-unchanged","normalMaps":"non-colour-unchanged"},"physicalAudit":"pass"}
+{"lod0":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790573482187\\atlas-branching-v1.glb","lod1":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790573482187\\atlas-branching-v1.lod1.glb","foliageVertices":5497,"primaryWoodVertices":971,"woodLevelsLod0":[0,1,2,3],"woodLevelsLod1":[0,1,2,3],"retainedTwigCount":32,"droppedTwigCount":646,"foliageAndPrimary":"byte-value parity"}
+✔ exported tree GLB geometry carries metre-scaled cards, valid atlas UVs, finite tangent frames, wind and correctly sized textures (179.5905ms)
+✔ LOD1 preserves exact trunk/primary wood and complete foliage while retaining secondary endpoint tubes (39.9198ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 320.3381
+
+{"operation":"atlas-branching-author-7","oldOperation":"atlas-branching-author-6","geometryContentSha256":"6e8cfa0853edd18f990c55a4d3c6a08eac6fbfbfd7b936c9e829615e8d8ba076","exactAccessorParity":true,"textureEncoding":{"version":"linear-rgb-to-srgb-byte-1","colourRecipeSpace":"linear-rec709","colourPNGSpace":"sRGB","colourPNGDepth":8,"alpha":"linear-coverage-unchanged","normalMaps":"non-colour-unchanged"},"images":[{"lod":0,"name":"MAT_AtlasBark_BaseColor","width":1024,"height":1024,"alphaMismatches":0,"rgbChannelsChecked":3145728,"maxTransferRangeDeviation":0},{"lod":0,"name":"MAT_AtlasBark_Normal","width":1024,"height":1024,"normalBytesUnchanged":true},{"lod":0,"name":"MAT_AtlasFoliage_BaseColor","width":2048,"height":2048,"alphaMismatches":0,"rgbChannelsChecked":12582912,"maxTransferRangeDeviation":0},{"lod":0,"name":"MAT_AtlasFoliage_Normal","width":2048,"height":2048,"normalBytesUnchanged":true},{"lod":1,"name":"MAT_AtlasBark_BaseColor","width":1024,"height":1024,"alphaMismatches":0,"rgbChannelsChecked":3145728,"maxTransferRangeDeviation":0},{"lod":1,"name":"MAT_AtlasBark_Normal","width":1024,"height":1024,"normalBytesUnchanged":true},{"lod":1,"name":"MAT_AtlasFoliage_BaseColor","width":2048,"height":2048,"alphaMismatches":0,"rgbChannelsChecked":12582912,"maxTransferRangeDeviation":0},{"lod":1,"name":"MAT_AtlasFoliage_Normal","width":2048,"height":2048,"normalBytesUnchanged":true}],"embeddedImages":"standalone PNG bytes exact"}
+✔ author-7 preserves v6 geometry, masks and normals while RGB follows sRGB transfer (2601.9502ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2668.919
+
+{"candidate":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790573482187","repeat":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790573482187-repeat","triangles":10712,"validation":"pass","sourcePreserved":true,"deterministicGeometry":true,"deterministicMaterials":true}
+✔ named tree authoring preserves candidates and exports finite UV/tangent/wind data (31932.1255ms)
+✔ tree authoring rejects invalid version and non-original provenance before creating an output (2660.8284ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 34714.3894

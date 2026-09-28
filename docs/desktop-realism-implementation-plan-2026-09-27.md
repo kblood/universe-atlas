@@ -189,20 +189,25 @@ more. Structural diversity must not come from disconnected anatomy.
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
 | D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; first Blender brief validates; forest integration, authored assets and resource cache pending |
 | E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Published release `580936f` includes canopy runtime through `98556a7`: complete census patches, near/far ownership, altitude prefetch/render thresholds, bounded uploads, water-aware patch reuse, and retained terrain refresh on date changes. RTX 5090 date-seek and flight/walk acceptance are linked in the [integration record](canopy-runtime-integration-2026-09-28.md), with the [live deployment receipt](deployment-580936f-2026-09-28.md). Legacy faceted tree shapes remain; authored realism, midrange performance validation, XR and broader visual signoff are open. The earlier deployed `e8a848d` used sparse distant representatives |
-| F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | V6 exports 10,712 / 4,820 triangle LOD0/1 with technical checks. A [browser prototype](tree-browser-prototype-2026-09-28.md) implements shared LOD resources, physical leaf scaling, rigid flutter and shadow deformation. Five CPU checks and six RTX 5090 population/LOD scenarios pass after Opus review fixes. Dark foliage/repeated crowns still need work; LOD2, species/canopy binding, other landscape assets and full asset acceptance remain open. |
+| F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | V7 applies the versioned linear-RGB-to-sRGB byte conversion and passes exact geometry/accessor, alpha, normal-map, embedded-image and repeat checks. Browser checks cover both LODs at 3/64/192 trees on an RTX 5090 and fixed front/back lighting; v7 reads greener than v6 but remains dark when backlit. The [browser prototype](tree-browser-prototype-2026-09-28.md), [v7 record](tree-authoring-v7-2026-09-28.md) and [colour calibration](tree-color-calibration-2026-09-28.md) hold details. This is a development lab, not forest integration or visual acceptance. LOD2, species/canopy binding, packaging, midrange/XR profiling and other landscape assets remain open. |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |
 
-Previous checkpoint: [v5 authoring](tree-authoring-v5-2026-09-28.md) exports a 14,012-triangle tree and a 4,380-triangle LOD1 with identical foliage. Technical tests pass; the [Opus follow-up](tree-authoring-v5-review-assessment-2026-09-28.md) identifies bark wrapping, missing secondary support and future wind deformation issues. These must be fixed before runtime integration. The game still uses its existing trees.
+Historical checkpoint: [v5 authoring](tree-authoring-v5-2026-09-28.md) exports a 14,012-triangle tree and a 4,380-triangle LOD1 with identical foliage. The [Opus follow-up](tree-authoring-v5-review-assessment-2026-09-28.md) records bark wrapping, secondary support and wind issues from that version.
 
-Stage F has a partial authoring-code increment. V4 addresses the source-review
-findings and passes technical smoke, independent repeat and BLEND-to-GLB
-roundtrip comparison. These checks do not accept the sparse, pale, tiered
-crown design. Eight shared-atlas variants, LOD targets, calibrated colour,
-runtime/species binding, collision and licensing remain open. See the
-[v4 status record](tree-authoring-v4-2026-09-28.md) and
-[authoring proposal](tree-authoring-next-increment-2026-09-28.md). The candidate
-is not integrated into the game and its license remains `NOASSERTION`.
+Stage F has a v7 colour-encoding increment and a browser lab. V7 preserves v6
+geometry, alpha and normal data while converting the declared linear RGB recipe
+to sRGB bytes. Export, repeat and browser checks pass; the colour reads greener,
+but the back-lit canopy remains dark. This is not visual acceptance or game
+integration. The current forest still uses legacy faceted shapes; LOD2,
+species/canopy binding, variants, packaging and midrange profiling remain open.
+See the [v7 validation](tree-authoring-v7-2026-09-28.md),
+[browser prototype](tree-browser-prototype-2026-09-28.md) and
+[next-increment proposal](tree-authoring-next-increment-2026-09-28.md). A
+separate [distance-proxy design](authored-tree-distance-design-2026-09-28.md)
+documents CPU-only view selection and capture bases; it does not implement an
+impostor baker or renderer. Its [six passing CPU tests](../test-results/tree-impostor-views-v1/cpu-test.log)
+check this math only, not any GPU or visual representation.
 
 Stages have dependencies. Beginning this programme does not mean replacing all
 subsystems at once. The first code increment targets B so detailed assets have

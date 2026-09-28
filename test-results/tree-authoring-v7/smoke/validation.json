@@ -1,0 +1,486 @@
+{
+  "lod0": {
+    "asset": {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790573482187\\atlas-branching-v1.glb",
+      "bytes": 3146244,
+      "sha256": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df"
+    },
+    "geometry": {
+      "meshes": 1,
+      "primitives": 2,
+      "vertices": 13992,
+      "triangles": 10712,
+      "bounds": {
+        "min": [
+          -5.846503734588623,
+          0,
+          -5.393500804901123
+        ],
+        "max": [
+          5.975094318389893,
+          16.000028610229492,
+          4.909943103790283
+        ]
+      },
+      "degenerateIndexedTriangles": 0,
+      "nonFiniteAccessors": 0,
+      "meshDetails": [
+        {
+          "name": "SM_AtlasBranching_LOD0",
+          "primitives": [
+            {
+              "mode": 4,
+              "triangles": 8000,
+              "vertices": 8495,
+              "bounds": {
+                "min": [
+                  -4.895876407623291,
+                  0,
+                  -4.479665756225586
+                ],
+                "max": [
+                  5.069779396057129,
+                  15.171660423278809,
+                  4.106351852416992
+                ]
+              },
+              "material": "MAT_AtlasBark"
+            },
+            {
+              "mode": 4,
+              "triangles": 2712,
+              "vertices": 5497,
+              "bounds": {
+                "min": [
+                  -5.846503734588623,
+                  4.475056171417236,
+                  -5.393500804901123
+                ],
+                "max": [
+                  5.975094318389893,
+                  16.000028610229492,
+                  4.909943103790283
+                ]
+              },
+              "material": "MAT_AtlasFoliage"
+            }
+          ]
+        }
+      ]
+    },
+    "materials": [
+      {
+        "name": "MAT_AtlasBark",
+        "alphaMode": "OPAQUE",
+        "doubleSided": false
+      },
+      {
+        "name": "MAT_AtlasFoliage",
+        "alphaMode": "MASK",
+        "doubleSided": true
+      }
+    ],
+    "textures": [
+      {
+        "name": "MAT_AtlasBark_Normal",
+        "mimeType": "image/png",
+        "size": [
+          1024,
+          1024
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 4194304
+      },
+      {
+        "name": "MAT_AtlasBark_BaseColor",
+        "mimeType": "image/png",
+        "size": [
+          1024,
+          1024
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 4194304
+      },
+      {
+        "name": "MAT_AtlasFoliage_Normal",
+        "mimeType": "image/png",
+        "size": [
+          2048,
+          2048
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 16777216
+      },
+      {
+        "name": "MAT_AtlasFoliage_BaseColor",
+        "mimeType": "image/png",
+        "size": [
+          2048,
+          2048
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 16777216
+      }
+    ],
+    "skins": [],
+    "skinQuality": {
+      "weightedVertices": 0,
+      "unweightedVertices": 0,
+      "overFourInfluenceVertices": 0,
+      "nonNormalizedWeightVertices": 0
+    },
+    "animations": [],
+    "extensions": {
+      "used": [
+        "KHR_materials_specular"
+      ],
+      "required": []
+    },
+    "validation": {
+      "valid": true,
+      "khronos": {
+        "errors": [],
+        "warnings": [],
+        "info": {
+          "version": "2.0",
+          "generator": "Khronos glTF Blender I/O v5.1.19",
+          "extensionsUsed": [
+            "KHR_materials_specular"
+          ],
+          "resources": [
+            {
+              "pointer": "/buffers/0",
+              "mimeType": "application/gltf-buffer",
+              "storage": "glb",
+              "byteLength": 3141712
+            },
+            {
+              "pointer": "/images/0",
+              "mimeType": "image/png",
+              "storage": "buffer-view",
+              "image": {
+                "width": 1024,
+                "height": 1024,
+                "format": "rgba",
+                "primaries": "srgb",
+                "transfer": "srgb",
+                "bits": 8
+              }
+            },
+            {
+              "pointer": "/images/1",
+              "mimeType": "image/png",
+              "storage": "buffer-view",
+              "image": {
+                "width": 1024,
+                "height": 1024,
+                "format": "rgba",
+                "primaries": "srgb",
+                "transfer": "srgb",
+                "bits": 8
+              }
+            },
+            {
+              "pointer": "/images/2",
+              "mimeType": "image/png",
+              "storage": "buffer-view",
+              "image": {
+                "width": 2048,
+                "height": 2048,
+                "format": "rgba",
+                "primaries": "srgb",
+                "transfer": "srgb",
+                "bits": 8
+              }
+            },
+            {
+              "pointer": "/images/3",
+              "mimeType": "image/png",
+              "storage": "buffer-view",
+              "image": {
+                "width": 2048,
+                "height": 2048,
+                "format": "rgba",
+                "primaries": "srgb",
+                "transfer": "srgb",
+                "bits": 8
+              }
+            }
+          ],
+          "animationCount": 0,
+          "materialCount": 2,
+          "hasMorphTargets": false,
+          "hasSkins": false,
+          "hasTextures": true,
+          "hasDefaultScene": true,
+          "drawCallCount": 2,
+          "totalVertexCount": 13992,
+          "totalTriangleCount": 10712,
+          "maxUVs": 1,
+          "maxInfluences": 0,
+          "maxAttributes": 8
+        }
+      },
+      "local": {
+        "nonFiniteAccessors": 0,
+        "degenerateIndexedTriangles": 0,
+        "skinQuality": {
+          "weightedVertices": 0,
+          "unweightedVertices": 0,
+          "overFourInfluenceVertices": 0,
+          "nonNormalizedWeightVertices": 0
+        }
+      }
+    }
+  },
+  "lod1": {
+    "asset": {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790573482187\\atlas-branching-v1.lod1.glb",
+      "bytes": 2596632,
+      "sha256": "6d071f129ff4dae730b3ad08b6b012bdab4d8f35070170776ea4adb27a865b25"
+    },
+    "geometry": {
+      "meshes": 1,
+      "primitives": 2,
+      "vertices": 7564,
+      "triangles": 4820,
+      "bounds": {
+        "min": [
+          -5.846503734588623,
+          0,
+          -5.393500804901123
+        ],
+        "max": [
+          5.975094318389893,
+          16.000028610229492,
+          4.909943103790283
+        ]
+      },
+      "degenerateIndexedTriangles": 0,
+      "nonFiniteAccessors": 0,
+      "meshDetails": [
+        {
+          "name": "SM_AtlasBranching_LOD1",
+          "primitives": [
+            {
+              "mode": 4,
+              "triangles": 2108,
+              "vertices": 2067,
+              "bounds": {
+                "min": [
+                  -4.089014530181885,
+                  0,
+                  -3.996520519256592
+                ],
+                "max": [
+                  4.523697376251221,
+                  14.83364200592041,
+                  3.5311686992645264
+                ]
+              },
+              "material": "MAT_AtlasBark"
+            },
+            {
+              "mode": 4,
+              "triangles": 2712,
+              "vertices": 5497,
+              "bounds": {
+                "min": [
+                  -5.846503734588623,
+                  4.475056171417236,
+                  -5.393500804901123
+                ],
+                "max": [
+                  5.975094318389893,
+                  16.000028610229492,
+                  4.909943103790283
+                ]
+              },
+              "material": "MAT_AtlasFoliage"
+            }
+          ]
+        }
+      ]
+    },
+    "materials": [
+      {
+        "name": "MAT_AtlasBark",
+        "alphaMode": "OPAQUE",
+        "doubleSided": false
+      },
+      {
+        "name": "MAT_AtlasFoliage",
+        "alphaMode": "MASK",
+        "doubleSided": true
+      }
+    ],
+    "textures": [
+      {
+        "name": "MAT_AtlasBark_Normal",
+        "mimeType": "image/png",
+        "size": [
+          1024,
+          1024
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 4194304
+      },
+      {
+        "name": "MAT_AtlasBark_BaseColor",
+        "mimeType": "image/png",
+        "size": [
+          1024,
+          1024
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 4194304
+      },
+      {
+        "name": "MAT_AtlasFoliage_Normal",
+        "mimeType": "image/png",
+        "size": [
+          2048,
+          2048
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 16777216
+      },
+      {
+        "name": "MAT_AtlasFoliage_BaseColor",
+        "mimeType": "image/png",
+        "size": [
+          2048,
+          2048
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 16777216
+      }
+    ],
+    "skins": [],
+    "skinQuality": {
+      "weightedVertices": 0,
+      "unweightedVertices": 0,
+      "overFourInfluenceVertices": 0,
+      "nonNormalizedWeightVertices": 0
+    },
+    "animations": [],
+    "extensions": {
+      "used": [
+        "KHR_materials_specular"
+      ],
+      "required": []
+    },
+    "validation": {
+      "valid": true,
+      "khronos": {
+        "errors": [],
+        "warnings": [],
+        "info": {
+          "version": "2.0",
+          "generator": "Khronos glTF Blender I/O v5.1.19",
+          "extensionsUsed": [
+            "KHR_materials_specular"
+          ],
+          "resources": [
+            {
+              "pointer": "/buffers/0",
+              "mimeType": "application/gltf-buffer",
+              "storage": "glb",
+              "byteLength": 2592120
+            },
+            {
+              "pointer": "/images/0",
+              "mimeType": "image/png",
+              "storage": "buffer-view",
+              "image": {
+                "width": 1024,
+                "height": 1024,
+                "format": "rgba",
+                "primaries": "srgb",
+                "transfer": "srgb",
+                "bits": 8
+              }
+            },
+            {
+              "pointer": "/images/1",
+              "mimeType": "image/png",
+              "storage": "buffer-view",
+              "image": {
+                "width": 1024,
+                "height": 1024,
+                "format": "rgba",
+                "primaries": "srgb",
+                "transfer": "srgb",
+                "bits": 8
+              }
+            },
+            {
+              "pointer": "/images/2",
+              "mimeType": "image/png",
+              "storage": "buffer-view",
+              "image": {
+                "width": 2048,
+                "height": 2048,
+                "format": "rgba",
+                "primaries": "srgb",
+                "transfer": "srgb",
+                "bits": 8
+              }
+            },
+            {
+              "pointer": "/images/3",
+              "mimeType": "image/png",
+              "storage": "buffer-view",
+              "image": {
+                "width": 2048,
+                "height": 2048,
+                "format": "rgba",
+                "primaries": "srgb",
+                "transfer": "srgb",
+                "bits": 8
+              }
+            }
+          ],
+          "animationCount": 0,
+          "materialCount": 2,
+          "hasMorphTargets": false,
+          "hasSkins": false,
+          "hasTextures": true,
+          "hasDefaultScene": true,
+          "drawCallCount": 2,
+          "totalVertexCount": 7564,
+          "totalTriangleCount": 4820,
+          "maxUVs": 1,
+          "maxInfluences": 0,
+          "maxAttributes": 8
+        }
+      },
+      "local": {
+        "nonFiniteAccessors": 0,
+        "degenerateIndexedTriangles": 0,
+        "skinQuality": {
+          "weightedVertices": 0,
+          "unweightedVertices": 0,
+          "overFourInfluenceVertices": 0,
+          "nonNormalizedWeightVertices": 0
+        }
+      }
+    }
+  }
+}

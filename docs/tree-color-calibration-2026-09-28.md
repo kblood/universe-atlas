@@ -37,19 +37,21 @@ helper and a missing filesystem import) are preserved in the
 [failure log](../test-results/tree-color-calibration-v1/validated/initial-test-harness-failures.log);
 they were corrected before the passing run and were not generator failures.
 
-## Next generator change
+## V7 generator change and browser results
 
 The author-6 procedural colour constants did not declare whether they were
-linear reflectance or display RGB. Treating them as linear is an explicit
-versioned authoring decision, not proof that the old authors intended that
-meaning. The next candidate should declare linear RGB for bark and foliage,
-encode only those RGB channels into 8-bit sRGB images, and preserve alpha and
-normal-map data unchanged. Explicit byte encoding keeps the runtime texture
-format bounded and preserves coloured transparent padding.
+linear reflectance or display RGB. V7 now defines them as linear Rec.709 RGB and
+encodes only those colour channels into 8-bit sRGB images. Alpha and normal-map
+bytes are preserved. Fresh export, repeat, raw accessor/image checks and
+embedded-PNG parity pass; see the [v7 record](tree-authoring-v7-2026-09-28.md)
+and [primary validation receipt](../test-results/tree-authoring-v7/smoke/validation.json).
 
-Require unchanged geometry and alpha/normal data, deterministic output,
-Blender/GLB appearance agreement and new browser lighting comparisons before
-acceptance. Scene exposure must stay fixed during comparison. This diagnostic
-does not establish correct artistic albedo, realistic leaf transmission or
-final forest appearance. Author-6 assets and the currently deployed game are
-unchanged by the diagnostic.
+This is a versioned interpretation of the prior colour recipe, not proof of
+its intended meaning or an artistic approval of the new values. The fixed
+RTX 5090 browser comparison reads clearer and greener than v6, but back-facing
+foliage remains strongly dark even when cast shadows are disabled. See the
+[v6/v7 comparison](../test-results/tree-asset-lab-v7-color-a/color-comparison-v6-v7.json)
+and [fixed-lighting report](../test-results/tree-asset-lighting-v7-color-a/report.json).
+This controlled studio comparison does not establish realistic leaf
+transmission, final forest appearance or midrange performance. V6 assets and
+the currently deployed game are unchanged.

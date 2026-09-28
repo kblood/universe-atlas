@@ -1,0 +1,47 @@
+{
+  "requestedModel": "claude-opus-5-5",
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 5166,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 13639,
+      "webSearchRequests": 0,
+      "costUSD": 0.21273179999999997,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 3350,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "inputs": {
+    "revision": "8358bd91575545e981abeea3cade48d1ac1140e3",
+    "dirty": true,
+    "files": [
+      {
+        "path": "../tools/assetctl/blender/tree_family.py",
+        "sha256": "1806f663f9faf3dd5552514d4eb6dc204cb38db42f0700ecb2a2d10afe87507f"
+      },
+      {
+        "path": "../tools/assetctl/blender/tree_foliage.py",
+        "sha256": "40a0a76c214602646a10591399a6c13cf55f510b1eec0795c6048a3ad0b0efdc"
+      },
+      {
+        "path": "../tools/assetctl/blender/tree_bark.py",
+        "sha256": "4b88c1014400ca682d011a59c34f93b61a4bc7741a64668ce085858051617a75"
+      },
+      {
+        "path": "assets/briefs/temperate-branching-tree-v1.json",
+        "sha256": "fd9bb11a0630dd4ad1d207156265aadaf36ae50f5f7ced9ff05e39505802d072"
+      },
+      {
+        "path": "docs/tree-color-calibration-2026-09-28.md",
+        "sha256": "63d4940c2e9c0f14ff577f487a080510100edb666bf41a1e2863b1258a05fa81"
+      }
+    ]
+  },
+  "scope": "Source-only initial v7 colour encoding, before post-review buffer and embedded-image gates",
+  "isError": false
+}
