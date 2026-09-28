@@ -26,6 +26,7 @@ export default defineConfig({
       'test-results/tree-impostor-v7-color-a/capture-v2-portability-audit.json',
       'test-results/tree-impostor-v7-color-a/capture-v2-portability-tests.log',
       'test-results/tree-impostor-capture-v2/combined-cpu-test.log',
+      'test-results/tree-impostor-capture-v2/cpu-test.log',
       'test-results/tree-impostor-render-v2-hardware/browser-report.json',
       'test-results/tree-impostor-render-v2-hardware/node-test.log',
       'docs/tree-lighting-diagnosis-2026-09-28.md',
