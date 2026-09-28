@@ -1,0 +1,1488 @@
+{
+  "ok": true,
+  "base": "http://127.0.0.1:5197/",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "date": "435084631200000032044300000",
+  "viewport": [
+    1440,
+    1000
+  ],
+  "sourceStart": {
+    "src/main.ts": "33e7e46273303ceb4181654cccc490fe91468c431488afadc5fec9df191d94fc",
+    "src/surface-lighting.ts": "fe5d3e6c890dff05bbbf154ddbfccd6bb79cc53eab71e04e20a53fb7ca7bf49d",
+    "src/terrain-shadow.ts": "f08967f239d3f68bc26e886b97bdb992c1cbdc022db8c6657ede194e5f9d091e",
+    "src/forest-material.ts": "fc65be33dc821c59cd15b93aa83d5de0dc9d884665363675e55752fbc7d3657b",
+    "src/planet-renderer.ts": "0407cbb4c373ec74e732d3555edce4bd10671657a05d36bc02ddac24606ee7f7",
+    "src/planet-forest.ts": "00044a7df282a75dad93746e8c966fe5959fc2943581adc992d41f17e944b9d9",
+    "src/fauna-field-renderer.ts": "7a4af029cc85b0e4248d11c2f9f45a39dc8f2e8f6a4d03bd4912225984f51a29",
+    "test-results/surface-lighting/closeup.browser.mjs": "1f2af82e8a8b92e5d95809e21d750ce19dd1e39d469ae6eb3f13e35fc017b7db"
+  },
+  "errors": [],
+  "phases": [
+    {
+      "name": "detailed-lighting-low-flight",
+      "state": {
+        "ready": true,
+        "bodyId": "G001/C2128,0,1/0/planet/1",
+        "date": "435084631200000075806200000",
+        "level": "body",
+        "position": [
+          44771974634.551704,
+          32475745.097509015,
+          144033830458.0463
+        ],
+        "heading": [
+          0.2204848859917248,
+          -0.11188969127108606,
+          -0.7691856854008116,
+          0.5892541840419643
+        ],
+        "travel": {
+          "active": true,
+          "domain": "system",
+          "terrainCruise": null,
+          "clearanceM": 11.7012934288814,
+          "systemUnit": 1
+        },
+        "lighting": {
+          "enabled": true,
+          "active": true,
+          "altitudeM": 11.7012934288814,
+          "unitsPerM": 1,
+          "widthM": 320,
+          "depthM": 1000,
+          "mapSize": 2048,
+          "shadowIntensity": 1,
+          "skyIntensity": 0.7,
+          "ambientIntensity": 0.08800000000000001,
+          "allocated": true
+        },
+        "star": {
+          "radiusScale": 3843272926.592127,
+          "colorHex": "d7e7ff",
+          "lightIntensity": 3,
+          "lightColorHex": "ffecd0"
+        },
+        "forest": {
+          "visible": 725,
+          "near": 79,
+          "cached": 18309,
+          "pending": 0,
+          "fullCanopy": {
+            "enabled": true,
+            "streaming": true,
+            "ready": true,
+            "water": -4500,
+            "configuredWater": -4500,
+            "context": "6a86d89ddc18ad1e501ab2bbc413882bffd0d9577162337d48aa6a16b9cc0c8e",
+            "family": "94b2a1c58d25d2d94ee1bcf23c96fbb0b03c7e271e9bbea8140156f6dadfe6f1",
+            "reusedPatches": 0,
+            "reusePending": false,
+            "generation": 1,
+            "patches": 6690,
+            "trees": 153251,
+            "selectedPatches": 6690,
+            "queuedPatches": 0,
+            "jobsInFlight": 0,
+            "selectionPending": false,
+            "installedThisFrame": 0,
+            "installMs": 0,
+            "selectionMs": 26.600000001490116,
+            "selectionApplyMs": 12.500000014901161,
+            "selectionApplySliceMs": 0,
+            "selectionApplyPending": false,
+            "uploadBytes": 0,
+            "failures": 0,
+            "workerRestarts": 0,
+            "terminalFailure": false,
+            "timeouts": 0,
+            "capacityMisses": 0,
+            "slots": {
+              "capacity": 229376,
+              "used": 153251,
+              "free": 76125,
+              "allocations": 6620,
+              "freeExtents": 1,
+              "largestFree": 76125,
+              "failures": 0
+            },
+            "rebasePending": false,
+            "nearPresentNotInCensus": 0,
+            "nearAbsentInCensus": 0,
+            "farForcedClose": 0,
+            "closeCandidateScope": "current near selection",
+            "attributeBytes": 11468800,
+            "retainedCoordinateBytes": 7340032,
+            "rebaseBufferBytes": 0
+          },
+          "selectionPending": false,
+          "workerFailures": 0
+        },
+        "terrain": {
+          "pending": 0,
+          "failures": 0,
+          "floraPresent": 1631,
+          "faunaVisible": 128,
+          "faunaTerrainPending": 0,
+          "waterBucket": -180
+        },
+        "renderer": {
+          "draws": 282,
+          "triangles": 1263132,
+          "geometries": 676,
+          "textures": 489
+        },
+        "profile": {
+          "enabled": true,
+          "gpuAvailable": true,
+          "historyLimit": 600,
+          "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+          "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+          "pendingQueries": 5,
+          "pendingLimit": 48,
+          "skippedQueries": 0,
+          "disjointQueries": 0,
+          "expiredQueries": 0,
+          "lastDrawCalls": 282,
+          "lastTriangles": 1263132,
+          "statistics": {
+            "frameIntervalMs": {
+              "samples": 153,
+              "p50": 53.29999999701977,
+              "p95": 66.19999999552965,
+              "p99": 82.29999999701977,
+              "max": 100
+            },
+            "cpu/planetUpdateMs": {
+              "samples": 153,
+              "p50": 34.600000001490116,
+              "p95": 44.600000001490116,
+              "p99": 50.900000005960464,
+              "max": 76.80000000447035
+            },
+            "cpu/lakeReflectionMs": {
+              "samples": 153,
+              "p50": 0.3999999985098839,
+              "p95": 0.8999999985098839,
+              "p99": 1.2999999970197678,
+              "max": 2.2999999970197678
+            },
+            "cpu/sceneCaptureMs": {
+              "samples": 153,
+              "p50": 9.100000001490116,
+              "p95": 13.399999998509884,
+              "p99": 14.899999998509884,
+              "max": 15.600000001490116
+            },
+            "cpu/cloudIntegrationMs": {
+              "samples": 153,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.30000000447034836,
+              "max": 0.3999999985098839
+            },
+            "cpu/cloudResolveMs": {
+              "samples": 153,
+              "p50": 0.09999999403953552,
+              "p95": 0.20000000298023224,
+              "p99": 0.20000000298023224,
+              "max": 0.29999999701976776
+            },
+            "cpu/frameWorkMs": {
+              "samples": 153,
+              "p50": 51,
+              "p95": 63.5,
+              "p99": 80.10000000149012,
+              "max": 97.89999999850988
+            },
+            "drawCalls": {
+              "samples": 153,
+              "p50": 282,
+              "p95": 282,
+              "p99": 282,
+              "max": 282
+            },
+            "triangles": {
+              "samples": 153,
+              "p50": 1263132,
+              "p95": 1263132,
+              "p99": 1263132,
+              "max": 1263132
+            },
+            "gpu/lakeReflectionMs": {
+              "samples": 152,
+              "p50": 0,
+              "p95": 0.000032,
+              "p99": 0.000032,
+              "max": 0.000032
+            },
+            "gpu/sceneCaptureMs": {
+              "samples": 152,
+              "p50": 10.19568,
+              "p95": 13.800032,
+              "p99": 15.621632,
+              "max": 16.071552
+            },
+            "gpu/cloudIntegrationMs": {
+              "samples": 152,
+              "p50": 0.442016,
+              "p95": 1.089504,
+              "p99": 2.148384,
+              "max": 3.01232
+            },
+            "gpu/cloudResolveMs": {
+              "samples": 151,
+              "p50": 0.049664,
+              "p95": 0.107104,
+              "p99": 0.325856,
+              "max": 2.22752
+            },
+            "gpu/framePassSumMs": {
+              "samples": 151,
+              "p50": 10.785984000000001,
+              "p95": 14.430656,
+              "p99": 16.164384,
+              "max": 16.612864
+            }
+          }
+        }
+      },
+      "profile": {
+        "warmupMs": 1200,
+        "sampleWindowMs": 8000,
+        "diagnostics": {
+          "enabled": true,
+          "gpuAvailable": true,
+          "historyLimit": 600,
+          "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+          "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+          "pendingQueries": 7,
+          "pendingLimit": 48,
+          "skippedQueries": 0,
+          "disjointQueries": 0,
+          "expiredQueries": 0,
+          "lastDrawCalls": 282,
+          "lastTriangles": 1263132,
+          "statistics": {
+            "frameIntervalMs": {
+              "samples": 151,
+              "p50": 53.100000001490116,
+              "p95": 66.19999999552965,
+              "p99": 82.29999999701977,
+              "max": 100
+            },
+            "cpu/planetUpdateMs": {
+              "samples": 151,
+              "p50": 34.399999998509884,
+              "p95": 44.600000001490116,
+              "p99": 50.900000005960464,
+              "max": 76.80000000447035
+            },
+            "cpu/lakeReflectionMs": {
+              "samples": 151,
+              "p50": 0.3999999985098839,
+              "p95": 0.8999999985098839,
+              "p99": 1.2999999970197678,
+              "max": 2.2999999970197678
+            },
+            "cpu/sceneCaptureMs": {
+              "samples": 151,
+              "p50": 9.100000001490116,
+              "p95": 13.399999998509884,
+              "p99": 14.899999998509884,
+              "max": 15.600000001490116
+            },
+            "cpu/cloudIntegrationMs": {
+              "samples": 151,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.30000000447034836,
+              "max": 0.3999999985098839
+            },
+            "cpu/cloudResolveMs": {
+              "samples": 151,
+              "p50": 0.09999999403953552,
+              "p95": 0.20000000298023224,
+              "p99": 0.20000000298023224,
+              "max": 0.29999999701976776
+            },
+            "cpu/frameWorkMs": {
+              "samples": 151,
+              "p50": 51,
+              "p95": 63.5,
+              "p99": 80.10000000149012,
+              "max": 97.89999999850988
+            },
+            "drawCalls": {
+              "samples": 151,
+              "p50": 282,
+              "p95": 282,
+              "p99": 282,
+              "max": 282
+            },
+            "triangles": {
+              "samples": 151,
+              "p50": 1263132,
+              "p95": 1263132,
+              "p99": 1263132,
+              "max": 1263132
+            },
+            "gpu/lakeReflectionMs": {
+              "samples": 150,
+              "p50": 0,
+              "p95": 0.000032,
+              "p99": 0.000032,
+              "max": 0.000032
+            },
+            "gpu/sceneCaptureMs": {
+              "samples": 149,
+              "p50": 10.234752,
+              "p95": 13.800032,
+              "p99": 15.621632,
+              "max": 16.071552
+            },
+            "gpu/cloudIntegrationMs": {
+              "samples": 149,
+              "p50": 0.442112,
+              "p95": 1.089504,
+              "p99": 2.148384,
+              "max": 3.01232
+            },
+            "gpu/cloudResolveMs": {
+              "samples": 149,
+              "p50": 0.049664,
+              "p95": 0.107104,
+              "p99": 0.325856,
+              "max": 2.22752
+            },
+            "gpu/framePassSumMs": {
+              "samples": 149,
+              "p50": 10.813920000000001,
+              "p95": 14.430656,
+              "p99": 16.164384,
+              "max": 16.612864
+            }
+          }
+        },
+        "frameStats": {
+          "draws": 282,
+          "triangles": 1263132,
+          "geometries": 676,
+          "textures": 489
+        }
+      }
+    },
+    {
+      "name": "basic-lighting-same-camera",
+      "state": {
+        "ready": true,
+        "bodyId": "G001/C2128,0,1/0/planet/1",
+        "date": "435084631200000075806200000",
+        "level": "body",
+        "position": [
+          44771974634.551704,
+          32475745.097509015,
+          144033830458.0463
+        ],
+        "heading": [
+          0.2204848859917248,
+          -0.11188969127108608,
+          -0.7691856854008116,
+          0.5892541840419643
+        ],
+        "travel": {
+          "active": true,
+          "domain": "system",
+          "terrainCruise": null,
+          "clearanceM": 11.7012934288814,
+          "systemUnit": 1
+        },
+        "lighting": {
+          "enabled": false,
+          "active": false,
+          "altitudeM": 11.7012934288814,
+          "unitsPerM": 1,
+          "widthM": 320,
+          "depthM": 1000,
+          "mapSize": 2048,
+          "shadowIntensity": 0,
+          "skyIntensity": 0,
+          "ambientIntensity": 0.22,
+          "allocated": true
+        },
+        "star": {
+          "radiusScale": 3843272926.592127,
+          "colorHex": "d7e7ff",
+          "lightIntensity": 3,
+          "lightColorHex": "ffecd0"
+        },
+        "forest": {
+          "visible": 493,
+          "near": 25,
+          "cached": 18309,
+          "pending": 0,
+          "fullCanopy": {
+            "enabled": true,
+            "streaming": true,
+            "ready": true,
+            "water": -4500,
+            "configuredWater": -4500,
+            "context": "6a86d89ddc18ad1e501ab2bbc413882bffd0d9577162337d48aa6a16b9cc0c8e",
+            "family": "94b2a1c58d25d2d94ee1bcf23c96fbb0b03c7e271e9bbea8140156f6dadfe6f1",
+            "reusedPatches": 0,
+            "reusePending": false,
+            "generation": 1,
+            "patches": 6690,
+            "trees": 153251,
+            "selectedPatches": 6690,
+            "queuedPatches": 0,
+            "jobsInFlight": 0,
+            "selectionPending": false,
+            "installedThisFrame": 0,
+            "installMs": 0.10000000149011612,
+            "selectionMs": 26.600000001490116,
+            "selectionApplyMs": 12.500000014901161,
+            "selectionApplySliceMs": 0,
+            "selectionApplyPending": false,
+            "uploadBytes": 0,
+            "failures": 0,
+            "workerRestarts": 0,
+            "terminalFailure": false,
+            "timeouts": 0,
+            "capacityMisses": 0,
+            "slots": {
+              "capacity": 229376,
+              "used": 153251,
+              "free": 76125,
+              "allocations": 6620,
+              "freeExtents": 1,
+              "largestFree": 76125,
+              "failures": 0
+            },
+            "rebasePending": false,
+            "nearPresentNotInCensus": 0,
+            "nearAbsentInCensus": 0,
+            "farForcedClose": 0,
+            "closeCandidateScope": "current near selection",
+            "attributeBytes": 11468800,
+            "retainedCoordinateBytes": 7340032,
+            "rebaseBufferBytes": 0
+          },
+          "selectionPending": false,
+          "workerFailures": 0
+        },
+        "terrain": {
+          "pending": 0,
+          "failures": 0,
+          "floraPresent": 1631,
+          "faunaVisible": 128,
+          "faunaTerrainPending": 0,
+          "waterBucket": -180
+        },
+        "renderer": {
+          "draws": 217,
+          "triangles": 854691,
+          "geometries": 676,
+          "textures": 489
+        },
+        "profile": {
+          "enabled": true,
+          "gpuAvailable": true,
+          "historyLimit": 600,
+          "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+          "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+          "pendingQueries": 7,
+          "pendingLimit": 48,
+          "skippedQueries": 0,
+          "disjointQueries": 0,
+          "expiredQueries": 0,
+          "lastDrawCalls": 217,
+          "lastTriangles": 854691,
+          "statistics": {
+            "frameIntervalMs": {
+              "samples": 162,
+              "p50": 51.19999999552965,
+              "p95": 61.5,
+              "p99": 63,
+              "max": 64.59999999403954
+            },
+            "cpu/planetUpdateMs": {
+              "samples": 162,
+              "p50": 34.899999998509884,
+              "p95": 42.400000005960464,
+              "p99": 44.599999994039536,
+              "max": 44.600000001490116
+            },
+            "cpu/lakeReflectionMs": {
+              "samples": 162,
+              "p50": 0.3999999985098839,
+              "p95": 0.7999999970197678,
+              "p99": 1.3999999985098839,
+              "max": 1.5
+            },
+            "cpu/sceneCaptureMs": {
+              "samples": 162,
+              "p50": 7.5,
+              "p95": 10.300000004470348,
+              "p99": 12.5,
+              "max": 12.800000004470348
+            },
+            "cpu/cloudIntegrationMs": {
+              "samples": 162,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.30000000447034836,
+              "max": 0.30000000447034836
+            },
+            "cpu/cloudResolveMs": {
+              "samples": 162,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.20000000298023224,
+              "max": 0.20000000298023224
+            },
+            "cpu/frameWorkMs": {
+              "samples": 162,
+              "p50": 49.5,
+              "p95": 58.80000000447035,
+              "p99": 60,
+              "max": 60.099999994039536
+            },
+            "drawCalls": {
+              "samples": 162,
+              "p50": 217,
+              "p95": 217,
+              "p99": 217,
+              "max": 217
+            },
+            "triangles": {
+              "samples": 162,
+              "p50": 854691,
+              "p95": 854691,
+              "p99": 854691,
+              "max": 854691
+            },
+            "gpu/lakeReflectionMs": {
+              "samples": 161,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0.000032,
+              "max": 0.000032
+            },
+            "gpu/sceneCaptureMs": {
+              "samples": 160,
+              "p50": 8.81024,
+              "p95": 11.249472,
+              "p99": 12.373888,
+              "max": 16.01904
+            },
+            "gpu/cloudIntegrationMs": {
+              "samples": 160,
+              "p50": 0.427616,
+              "p95": 0.490976,
+              "p99": 2.081664,
+              "max": 2.280096
+            },
+            "gpu/cloudResolveMs": {
+              "samples": 160,
+              "p50": 0.044416,
+              "p95": 0.429792,
+              "p99": 1.471424,
+              "max": 2.661248
+            },
+            "gpu/framePassSumMs": {
+              "samples": 160,
+              "p50": 9.471487999999999,
+              "p95": 11.74224,
+              "p99": 12.904992,
+              "max": 16.489184
+            }
+          }
+        }
+      },
+      "profile": {
+        "warmupMs": 1200,
+        "sampleWindowMs": 8000,
+        "diagnostics": {
+          "enabled": true,
+          "gpuAvailable": true,
+          "historyLimit": 600,
+          "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+          "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+          "pendingQueries": 7,
+          "pendingLimit": 48,
+          "skippedQueries": 0,
+          "disjointQueries": 0,
+          "expiredQueries": 0,
+          "lastDrawCalls": 217,
+          "lastTriangles": 854691,
+          "statistics": {
+            "frameIntervalMs": {
+              "samples": 160,
+              "p50": 51.19999999552965,
+              "p95": 61.5,
+              "p99": 63,
+              "max": 64.59999999403954
+            },
+            "cpu/planetUpdateMs": {
+              "samples": 160,
+              "p50": 35,
+              "p95": 42.400000005960464,
+              "p99": 44.599999994039536,
+              "max": 44.600000001490116
+            },
+            "cpu/lakeReflectionMs": {
+              "samples": 160,
+              "p50": 0.3999999985098839,
+              "p95": 0.7999999970197678,
+              "p99": 1.3999999985098839,
+              "max": 1.5
+            },
+            "cpu/sceneCaptureMs": {
+              "samples": 160,
+              "p50": 7.600000001490116,
+              "p95": 10.300000004470348,
+              "p99": 12.5,
+              "max": 12.800000004470348
+            },
+            "cpu/cloudIntegrationMs": {
+              "samples": 160,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.30000000447034836,
+              "max": 0.30000000447034836
+            },
+            "cpu/cloudResolveMs": {
+              "samples": 160,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.20000000298023224,
+              "max": 0.20000000298023224
+            },
+            "cpu/frameWorkMs": {
+              "samples": 160,
+              "p50": 49.5,
+              "p95": 58.80000000447035,
+              "p99": 60,
+              "max": 60.099999994039536
+            },
+            "drawCalls": {
+              "samples": 160,
+              "p50": 217,
+              "p95": 217,
+              "p99": 217,
+              "max": 217
+            },
+            "triangles": {
+              "samples": 160,
+              "p50": 854691,
+              "p95": 854691,
+              "p99": 854691,
+              "max": 854691
+            },
+            "gpu/lakeReflectionMs": {
+              "samples": 159,
+              "p50": 0,
+              "p95": 0.000032,
+              "p99": 0.000032,
+              "max": 0.000032
+            },
+            "gpu/sceneCaptureMs": {
+              "samples": 158,
+              "p50": 8.81024,
+              "p95": 11.37344,
+              "p99": 12.373888,
+              "max": 16.01904
+            },
+            "gpu/cloudIntegrationMs": {
+              "samples": 158,
+              "p50": 0.427392,
+              "p95": 0.4944,
+              "p99": 2.081664,
+              "max": 2.280096
+            },
+            "gpu/cloudResolveMs": {
+              "samples": 158,
+              "p50": 0.044416,
+              "p95": 0.559872,
+              "p99": 1.471424,
+              "max": 2.661248
+            },
+            "gpu/framePassSumMs": {
+              "samples": 158,
+              "p50": 9.471487999999999,
+              "p95": 11.843712,
+              "p99": 12.904992,
+              "max": 16.489184
+            }
+          }
+        },
+        "frameStats": {
+          "draws": 217,
+          "triangles": 854691,
+          "geometries": 676,
+          "textures": 489
+        }
+      }
+    },
+    {
+      "name": "basic-lighting-after-one-year-seek",
+      "state": {
+        "ready": true,
+        "bodyId": "G001/C2128,0,1/0/planet/1",
+        "date": "435084631231536032044300000",
+        "level": "body",
+        "position": [
+          -140696432408.3209,
+          4749100732.434946,
+          61992335384.48466
+        ],
+        "heading": [
+          0.22048488599172833,
+          -0.11188969127107937,
+          -0.7691856854008295,
+          0.5892541840419407
+        ],
+        "travel": {
+          "active": true,
+          "domain": "system",
+          "terrainCruise": null,
+          "clearanceM": 11.701293551928075,
+          "systemUnit": 1
+        },
+        "lighting": {
+          "enabled": false,
+          "active": false,
+          "altitudeM": 11.701293551928075,
+          "unitsPerM": 1,
+          "widthM": 320,
+          "depthM": 1000,
+          "mapSize": 2048,
+          "shadowIntensity": 0,
+          "skyIntensity": 0,
+          "ambientIntensity": 0.22,
+          "allocated": true
+        },
+        "star": {
+          "radiusScale": 3843272926.592127,
+          "colorHex": "d7e7ff",
+          "lightIntensity": 3,
+          "lightColorHex": "ffecd0"
+        },
+        "forest": {
+          "visible": 493,
+          "near": 25,
+          "cached": 18309,
+          "pending": 0,
+          "fullCanopy": {
+            "enabled": true,
+            "streaming": true,
+            "ready": true,
+            "water": -4500,
+            "configuredWater": -4500,
+            "context": "6a86d89ddc18ad1e501ab2bbc413882bffd0d9577162337d48aa6a16b9cc0c8e",
+            "family": "94b2a1c58d25d2d94ee1bcf23c96fbb0b03c7e271e9bbea8140156f6dadfe6f1",
+            "reusedPatches": 0,
+            "reusePending": false,
+            "generation": 1,
+            "patches": 6690,
+            "trees": 153251,
+            "selectedPatches": 6690,
+            "queuedPatches": 0,
+            "jobsInFlight": 0,
+            "selectionPending": false,
+            "installedThisFrame": 0,
+            "installMs": 0,
+            "selectionMs": 26.600000001490116,
+            "selectionApplyMs": 12.500000014901161,
+            "selectionApplySliceMs": 0,
+            "selectionApplyPending": false,
+            "uploadBytes": 0,
+            "failures": 0,
+            "workerRestarts": 0,
+            "terminalFailure": false,
+            "timeouts": 0,
+            "capacityMisses": 0,
+            "slots": {
+              "capacity": 229376,
+              "used": 153251,
+              "free": 76125,
+              "allocations": 6620,
+              "freeExtents": 1,
+              "largestFree": 76125,
+              "failures": 0
+            },
+            "rebasePending": false,
+            "nearPresentNotInCensus": 0,
+            "nearAbsentInCensus": 0,
+            "farForcedClose": 0,
+            "closeCandidateScope": "current near selection",
+            "attributeBytes": 11468800,
+            "retainedCoordinateBytes": 7340032,
+            "rebaseBufferBytes": 0
+          },
+          "selectionPending": false,
+          "workerFailures": 0
+        },
+        "terrain": {
+          "pending": 0,
+          "failures": 0,
+          "floraPresent": 1631,
+          "faunaVisible": 128,
+          "faunaTerrainPending": 0,
+          "waterBucket": -180
+        },
+        "renderer": {
+          "draws": 218,
+          "triangles": 856531,
+          "geometries": 676,
+          "textures": 489
+        },
+        "profile": {
+          "enabled": true,
+          "gpuAvailable": true,
+          "historyLimit": 600,
+          "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+          "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+          "pendingQueries": 7,
+          "pendingLimit": 48,
+          "skippedQueries": 0,
+          "disjointQueries": 0,
+          "expiredQueries": 0,
+          "lastDrawCalls": 218,
+          "lastTriangles": 856531,
+          "statistics": {
+            "frameIntervalMs": {
+              "samples": 193,
+              "p50": 51.5,
+              "p95": 61.899999998509884,
+              "p99": 161.10000000149012,
+              "max": 166.20000000298023
+            },
+            "cpu/planetUpdateMs": {
+              "samples": 193,
+              "p50": 35.29999999701977,
+              "p95": 42.900000005960464,
+              "p99": 45,
+              "max": 85.70000000298023
+            },
+            "cpu/lakeReflectionMs": {
+              "samples": 193,
+              "p50": 0.3999999985098839,
+              "p95": 0.8999999985098839,
+              "p99": 1.5,
+              "max": 1.5
+            },
+            "cpu/sceneCaptureMs": {
+              "samples": 193,
+              "p50": 7.600000001490116,
+              "p95": 11,
+              "p99": 12.800000004470348,
+              "max": 13
+            },
+            "cpu/cloudIntegrationMs": {
+              "samples": 193,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.30000000447034836,
+              "max": 0.30000000447034836
+            },
+            "cpu/cloudResolveMs": {
+              "samples": 193,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.20000000298023224,
+              "max": 0.20000000298023224
+            },
+            "cpu/frameWorkMs": {
+              "samples": 193,
+              "p50": 49.70000000298023,
+              "p95": 59.399999998509884,
+              "p99": 68.19999999552965,
+              "max": 101.30000000447035
+            },
+            "drawCalls": {
+              "samples": 193,
+              "p50": 217,
+              "p95": 218,
+              "p99": 218,
+              "max": 218
+            },
+            "triangles": {
+              "samples": 193,
+              "p50": 854691,
+              "p95": 856531,
+              "p99": 856531,
+              "max": 856531
+            },
+            "gpu/lakeReflectionMs": {
+              "samples": 192,
+              "p50": 0,
+              "p95": 0.000032,
+              "p99": 0.000032,
+              "max": 0.000032
+            },
+            "gpu/sceneCaptureMs": {
+              "samples": 191,
+              "p50": 8.780576,
+              "p95": 11.507424,
+              "p99": 14.925856,
+              "max": 16.01904
+            },
+            "gpu/cloudIntegrationMs": {
+              "samples": 191,
+              "p50": 0.428576,
+              "p95": 1.096928,
+              "p99": 2.081664,
+              "max": 2.280096
+            },
+            "gpu/cloudResolveMs": {
+              "samples": 191,
+              "p50": 0.044608,
+              "p95": 0.159968,
+              "p99": 1.471424,
+              "max": 2.661248
+            },
+            "gpu/framePassSumMs": {
+              "samples": 191,
+              "p50": 9.51088,
+              "p95": 12.170016,
+              "p99": 15.395712,
+              "max": 16.489184
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "detailed-lighting-after-date-seek",
+      "state": {
+        "ready": true,
+        "bodyId": "G001/C2128,0,1/0/planet/1",
+        "date": "435084631231536032044300000",
+        "level": "body",
+        "position": [
+          -140696432408.3209,
+          4749100732.434946,
+          61992335384.48466
+        ],
+        "heading": [
+          0.22048488599172922,
+          -0.11188969127107874,
+          -0.7691856854008308,
+          0.5892541840419391
+        ],
+        "travel": {
+          "active": true,
+          "domain": "system",
+          "terrainCruise": null,
+          "clearanceM": 11.701293551928075,
+          "systemUnit": 1
+        },
+        "lighting": {
+          "enabled": true,
+          "active": false,
+          "altitudeM": 11.701293551928075,
+          "unitsPerM": 1,
+          "widthM": 320,
+          "depthM": 1000,
+          "mapSize": 2048,
+          "shadowIntensity": 0,
+          "skyIntensity": 0,
+          "ambientIntensity": 0.22,
+          "allocated": true
+        },
+        "star": {
+          "radiusScale": 3843272926.592127,
+          "colorHex": "d7e7ff",
+          "lightIntensity": 3,
+          "lightColorHex": "ffecd0"
+        },
+        "forest": {
+          "visible": 493,
+          "near": 25,
+          "cached": 18309,
+          "pending": 0,
+          "fullCanopy": {
+            "enabled": true,
+            "streaming": true,
+            "ready": true,
+            "water": -4500,
+            "configuredWater": -4500,
+            "context": "6a86d89ddc18ad1e501ab2bbc413882bffd0d9577162337d48aa6a16b9cc0c8e",
+            "family": "94b2a1c58d25d2d94ee1bcf23c96fbb0b03c7e271e9bbea8140156f6dadfe6f1",
+            "reusedPatches": 0,
+            "reusePending": false,
+            "generation": 1,
+            "patches": 6690,
+            "trees": 153251,
+            "selectedPatches": 6690,
+            "queuedPatches": 0,
+            "jobsInFlight": 0,
+            "selectionPending": false,
+            "installedThisFrame": 0,
+            "installMs": 0,
+            "selectionMs": 26.600000001490116,
+            "selectionApplyMs": 12.500000014901161,
+            "selectionApplySliceMs": 0,
+            "selectionApplyPending": false,
+            "uploadBytes": 0,
+            "failures": 0,
+            "workerRestarts": 0,
+            "terminalFailure": false,
+            "timeouts": 0,
+            "capacityMisses": 0,
+            "slots": {
+              "capacity": 229376,
+              "used": 153251,
+              "free": 76125,
+              "allocations": 6620,
+              "freeExtents": 1,
+              "largestFree": 76125,
+              "failures": 0
+            },
+            "rebasePending": false,
+            "nearPresentNotInCensus": 0,
+            "nearAbsentInCensus": 0,
+            "farForcedClose": 0,
+            "closeCandidateScope": "current near selection",
+            "attributeBytes": 11468800,
+            "retainedCoordinateBytes": 7340032,
+            "rebaseBufferBytes": 0
+          },
+          "selectionPending": false,
+          "workerFailures": 0
+        },
+        "terrain": {
+          "pending": 0,
+          "failures": 0,
+          "floraPresent": 1631,
+          "faunaVisible": 128,
+          "faunaTerrainPending": 0,
+          "waterBucket": -180
+        },
+        "renderer": {
+          "draws": 218,
+          "triangles": 856531,
+          "geometries": 676,
+          "textures": 489
+        },
+        "profile": {
+          "enabled": true,
+          "gpuAvailable": true,
+          "historyLimit": 600,
+          "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+          "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+          "pendingQueries": 7,
+          "pendingLimit": 48,
+          "skippedQueries": 0,
+          "disjointQueries": 0,
+          "expiredQueries": 0,
+          "lastDrawCalls": 218,
+          "lastTriangles": 856531,
+          "statistics": {
+            "frameIntervalMs": {
+              "samples": 232,
+              "p50": 51.79999999701977,
+              "p95": 61.899999998509884,
+              "p99": 109.80000000447035,
+              "max": 166.20000000298023
+            },
+            "cpu/planetUpdateMs": {
+              "samples": 232,
+              "p50": 35.100000001490116,
+              "p95": 42.900000005960464,
+              "p99": 44.600000001490116,
+              "max": 85.70000000298023
+            },
+            "cpu/lakeReflectionMs": {
+              "samples": 232,
+              "p50": 0.3999999985098839,
+              "p95": 0.8999999985098839,
+              "p99": 1.5,
+              "max": 1.6000000014901161
+            },
+            "cpu/sceneCaptureMs": {
+              "samples": 232,
+              "p50": 7.600000001490116,
+              "p95": 11,
+              "p99": 12.5,
+              "max": 13
+            },
+            "cpu/cloudIntegrationMs": {
+              "samples": 232,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.29999999701976776,
+              "max": 0.30000000447034836
+            },
+            "cpu/cloudResolveMs": {
+              "samples": 232,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.20000000298023224,
+              "max": 0.30000000447034836
+            },
+            "cpu/frameWorkMs": {
+              "samples": 232,
+              "p50": 49.79999999701977,
+              "p95": 59.399999998509884,
+              "p99": 65.39999999850988,
+              "max": 101.30000000447035
+            },
+            "drawCalls": {
+              "samples": 232,
+              "p50": 217,
+              "p95": 218,
+              "p99": 218,
+              "max": 218
+            },
+            "triangles": {
+              "samples": 232,
+              "p50": 854691,
+              "p95": 856531,
+              "p99": 856531,
+              "max": 856531
+            },
+            "gpu/lakeReflectionMs": {
+              "samples": 231,
+              "p50": 0,
+              "p95": 0.000032,
+              "p99": 0.000032,
+              "max": 0.000032
+            },
+            "gpu/sceneCaptureMs": {
+              "samples": 230,
+              "p50": 8.744256,
+              "p95": 11.748,
+              "p99": 13.792672,
+              "max": 16.01904
+            },
+            "gpu/cloudIntegrationMs": {
+              "samples": 230,
+              "p50": 0.434912,
+              "p95": 1.154336,
+              "p99": 2.02528,
+              "max": 2.280096
+            },
+            "gpu/cloudResolveMs": {
+              "samples": 230,
+              "p50": 0.045952,
+              "p95": 0.159968,
+              "p99": 1.471424,
+              "max": 2.661248
+            },
+            "gpu/framePassSumMs": {
+              "samples": 230,
+              "p50": 9.55968,
+              "p95": 12.774176,
+              "p99": 15.05072,
+              "max": 16.489184
+            }
+          }
+        }
+      }
+    }
+  ],
+  "visualComparison": {
+    "width": 1440,
+    "height": 1000,
+    "pixels": 1440000,
+    "changedPixelsOver3": 1359488,
+    "changedFraction": 0.9440888888888889,
+    "meanMaxChannelDelta": 20.718809027777777,
+    "maxChannelDelta": 144
+  },
+  "cameraComparison": {
+    "positionDeltaM": 0,
+    "headingDelta": 1.3877787807814457e-17
+  },
+  "dateDeltaNs": "31536000000000000",
+  "cameraAfterDateSeek": {
+    "positionDeltaM": 202858530696.14078,
+    "lightDiagnostics": {
+      "enabled": true,
+      "active": false,
+      "altitudeM": 11.701293551928075,
+      "unitsPerM": 1,
+      "widthM": 320,
+      "depthM": 1000,
+      "mapSize": 2048,
+      "shadowIntensity": 0,
+      "skyIntensity": 0,
+      "ambientIntensity": 0.22,
+      "allocated": true
+    }
+  },
+  "cpuProfile": {
+    "durationMs": 6500,
+    "sampleCount": 4293,
+    "timeDeltasCount": 4293,
+    "topSelfSamples": [
+      {
+        "functionName": "update",
+        "url": "http://127.0.0.1:5197/src/planet-forest.ts",
+        "scriptId": "98",
+        "selfSamples": 847,
+        "lineNumber": 402,
+        "columnNumber": 8
+      },
+      {
+        "functionName": "currentPatch",
+        "url": "http://127.0.0.1:5197/src/planet-canopy.ts",
+        "scriptId": "117",
+        "selfSamples": 379,
+        "lineNumber": 452,
+        "columnNumber": 14
+      },
+      {
+        "functionName": "processLifeQueue",
+        "url": "http://127.0.0.1:5197/src/planet-renderer.ts",
+        "scriptId": "45",
+        "selfSamples": 284,
+        "lineNumber": 979,
+        "columnNumber": 18
+      },
+      {
+        "functionName": "noteNear",
+        "url": "http://127.0.0.1:5197/src/planet-canopy.ts",
+        "scriptId": "117",
+        "selfSamples": 194,
+        "lineNumber": 460,
+        "columnNumber": 10
+      },
+      {
+        "functionName": "update",
+        "url": "http://127.0.0.1:5197/src/planet-renderer.ts",
+        "scriptId": "45",
+        "selfSamples": 179,
+        "lineNumber": 661,
+        "columnNumber": 8
+      },
+      {
+        "functionName": "(program)",
+        "url": "",
+        "scriptId": "0",
+        "selfSamples": 141,
+        "lineNumber": -1,
+        "columnNumber": -1
+      },
+      {
+        "functionName": "drawFlora",
+        "url": "http://127.0.0.1:5197/src/planet-renderer.ts",
+        "scriptId": "45",
+        "selfSamples": 102,
+        "lineNumber": 1053,
+        "columnNumber": 11
+      },
+      {
+        "functionName": "upload",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "scriptId": "75",
+        "selfSamples": 76,
+        "lineNumber": 35016,
+        "columnNumber": 15
+      },
+      {
+        "functionName": "settled",
+        "url": "http://127.0.0.1:5197/src/planet-renderer.ts",
+        "scriptId": "45",
+        "selfSamples": 69,
+        "lineNumber": 884,
+        "columnNumber": 22
+      },
+      {
+        "functionName": "drawFauna",
+        "url": "http://127.0.0.1:5197/src/planet-renderer.ts",
+        "scriptId": "45",
+        "selfSamples": 66,
+        "lineNumber": 1124,
+        "columnNumber": 11
+      },
+      {
+        "functionName": "updateMatrixWorld",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "scriptId": "75",
+        "selfSamples": 58,
+        "lineNumber": 8359,
+        "columnNumber": 19
+      },
+      {
+        "functionName": "updateMatrixWorld",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "scriptId": "75",
+        "selfSamples": 57,
+        "lineNumber": 8359,
+        "columnNumber": 19
+      },
+      {
+        "functionName": "updateOpticalStarPoints",
+        "url": "http://127.0.0.1:5197/src/main.ts?t=1790595803979",
+        "scriptId": "18",
+        "selfSamples": 47,
+        "lineNumber": 3319,
+        "columnNumber": 32
+      },
+      {
+        "functionName": "refreshUniformsCommon",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "scriptId": "75",
+        "selfSamples": 42,
+        "lineNumber": 39948,
+        "columnNumber": 32
+      },
+      {
+        "functionName": "faunaMemberPoseAtWorldNs",
+        "url": "http://127.0.0.1:5197/src/fauna-runtime.ts",
+        "scriptId": "94",
+        "selfSamples": 41,
+        "lineNumber": 101,
+        "columnNumber": 40
+      },
+      {
+        "functionName": "multiplyMatrices",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "scriptId": "75",
+        "selfSamples": 37,
+        "lineNumber": 6686,
+        "columnNumber": 18
+      },
+      {
+        "functionName": "(garbage collector)",
+        "url": "",
+        "scriptId": "0",
+        "selfSamples": 36,
+        "lineNumber": -1,
+        "columnNumber": -1
+      },
+      {
+        "functionName": "WebGLRenderer.renderBufferDirect",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "scriptId": "75",
+        "selfSamples": 35,
+        "lineNumber": 42863,
+        "columnNumber": 38
+      },
+      {
+        "functionName": "projected",
+        "url": "http://127.0.0.1:5197/src/planet-renderer.ts",
+        "scriptId": "45",
+        "selfSamples": 31,
+        "lineNumber": 731,
+        "columnNumber": 22
+      },
+      {
+        "functionName": "projectObject",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "scriptId": "75",
+        "selfSamples": 31,
+        "lineNumber": 43148,
+        "columnNumber": 26
+      },
+      {
+        "functionName": "setStyle",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "scriptId": "75",
+        "selfSamples": 30,
+        "lineNumber": 9283,
+        "columnNumber": 10
+      },
+      {
+        "functionName": "needsUpdate",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "scriptId": "75",
+        "selfSamples": 30,
+        "lineNumber": 32532,
+        "columnNumber": 22
+      },
+      {
+        "functionName": "bindVertexArray",
+        "url": "",
+        "scriptId": "0",
+        "selfSamples": 30,
+        "lineNumber": -1,
+        "columnNumber": -1
+      },
+      {
+        "functionName": "bufferSubData",
+        "url": "",
+        "scriptId": "0",
+        "selfSamples": 30,
+        "lineNumber": -1,
+        "columnNumber": -1
+      },
+      {
+        "functionName": "multiplyMatrices",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "scriptId": "75",
+        "selfSamples": 29,
+        "lineNumber": 6686,
+        "columnNumber": 18
+      },
+      {
+        "functionName": "setProgram",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "scriptId": "75",
+        "selfSamples": 28,
+        "lineNumber": 43404,
+        "columnNumber": 23
+      },
+      {
+        "functionName": "(anonymous)",
+        "url": "http://127.0.0.1:5197/src/planet-renderer.ts",
+        "scriptId": "45",
+        "selfSamples": 26,
+        "lineNumber": 882,
+        "columnNumber": 35
+      },
+      {
+        "functionName": "fmt",
+        "url": "http://127.0.0.1:5197/src/main.ts?t=1790595803979",
+        "scriptId": "18",
+        "selfSamples": 26,
+        "lineNumber": 88,
+        "columnNumber": 12
+      },
+      {
+        "functionName": "wantInstance",
+        "url": "http://127.0.0.1:5197/src/planet-forest.ts",
+        "scriptId": "98",
+        "selfSamples": 25,
+        "lineNumber": 351,
+        "columnNumber": 14
+      },
+      {
+        "functionName": "updatePlanetTiles",
+        "url": "http://127.0.0.1:5197/src/main.ts?t=1790595803979",
+        "scriptId": "18",
+        "selfSamples": 24,
+        "lineNumber": 2653,
+        "columnNumber": 26
+      }
+    ]
+  },
+  "glError": 0,
+  "sourceIntegrity": {
+    "unchanged": true,
+    "start": {
+      "src/main.ts": "33e7e46273303ceb4181654cccc490fe91468c431488afadc5fec9df191d94fc",
+      "src/surface-lighting.ts": "fe5d3e6c890dff05bbbf154ddbfccd6bb79cc53eab71e04e20a53fb7ca7bf49d",
+      "src/terrain-shadow.ts": "f08967f239d3f68bc26e886b97bdb992c1cbdc022db8c6657ede194e5f9d091e",
+      "src/forest-material.ts": "fc65be33dc821c59cd15b93aa83d5de0dc9d884665363675e55752fbc7d3657b",
+      "src/planet-renderer.ts": "0407cbb4c373ec74e732d3555edce4bd10671657a05d36bc02ddac24606ee7f7",
+      "src/planet-forest.ts": "00044a7df282a75dad93746e8c966fe5959fc2943581adc992d41f17e944b9d9",
+      "src/fauna-field-renderer.ts": "7a4af029cc85b0e4248d11c2f9f45a39dc8f2e8f6a4d03bd4912225984f51a29",
+      "test-results/surface-lighting/closeup.browser.mjs": "1f2af82e8a8b92e5d95809e21d750ce19dd1e39d469ae6eb3f13e35fc017b7db"
+    },
+    "end": {
+      "src/main.ts": "33e7e46273303ceb4181654cccc490fe91468c431488afadc5fec9df191d94fc",
+      "src/surface-lighting.ts": "fe5d3e6c890dff05bbbf154ddbfccd6bb79cc53eab71e04e20a53fb7ca7bf49d",
+      "src/terrain-shadow.ts": "f08967f239d3f68bc26e886b97bdb992c1cbdc022db8c6657ede194e5f9d091e",
+      "src/forest-material.ts": "fc65be33dc821c59cd15b93aa83d5de0dc9d884665363675e55752fbc7d3657b",
+      "src/planet-renderer.ts": "0407cbb4c373ec74e732d3555edce4bd10671657a05d36bc02ddac24606ee7f7",
+      "src/planet-forest.ts": "00044a7df282a75dad93746e8c966fe5959fc2943581adc992d41f17e944b9d9",
+      "src/fauna-field-renderer.ts": "7a4af029cc85b0e4248d11c2f9f45a39dc8f2e8f6a4d03bd4912225984f51a29",
+      "test-results/surface-lighting/closeup.browser.mjs": "1f2af82e8a8b92e5d95809e21d750ce19dd1e39d469ae6eb3f13e35fc017b7db"
+    }
+  }
+}
