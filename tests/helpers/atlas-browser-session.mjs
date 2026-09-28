@@ -5,6 +5,10 @@
  * {"op":"aim","pointM":[x,y,z],"heightM":2}
  * {"op":"move","key":"s","ms":1200}, {"op":"snapshot","name":"side"}
  * {"op":"advance","ms":1000}, {"op":"close"}
+ * {"op":"profileFixed","name":"steady","durationMs":8000}
+ * {"op":"profileWalk","name":"walk-forward","durationMs":8000}
+ * Profile intervals cap at 8 seconds; context collection is outside the window.
+ * Reports keep CPU frame work, frame interval, and delayed GPU pass sums separate.
  */
 import {chromium} from 'playwright';
 import * as THREE from 'three';
@@ -63,6 +67,78 @@ async function snapshot(name,hideUI=false,targetId){
   }finally{if(style)await style.evaluate(node=>node.remove()).catch(()=>{});}
   return {files:[`${name}.json`,`${name}.png`],...summary(s,targetId)};
 }
+async function profilingContext(){
+  const context=await page.evaluate(()=>{
+    const a=window.__atlas,travel=a?.travel,tiles=a?.terrain?.tiles,forest=tiles?.forest;
+    const canvas=document.querySelector('#viewport canvas')??document.querySelector('canvas');
+    const gl=canvas?.getContext('webgl2');const ext=gl?.getExtension('WEBGL_debug_renderer_info');
+    return {url:location.href,ready:a?.ready??false,date:a?.date??null,level:a?.state?.level??null,
+      body:a?.state?.body?{id:a.state.body.id,radiusM:a.state.body.radiusM}:null,
+      viewport:{width:innerWidth,height:innerHeight,devicePixelRatio},
+      camera:a?.camera?{position:a.camera.position,target:a.camera.target,fov:a.camera.fov}:null,
+      travel:travel?{position:travel.position,heading:travel.heading,active:travel.active,domain:travel.domain,
+        speed:travel.speed,walkingGrounded:travel.walking?.grounded??false,walkingPosition:travel.walking?.position??null,
+        terrainCruise:travel.terrainCruise,surface:travel.surface}:null,
+      settings:{tier:a?.tier??null,surfaceLighting:a?.surfaceLighting??null,
+        forestAssets:a?.forestAssets?{ready:a.forestAssets.ready,loaded:a.forestAssets.loaded,error:a.forestAssets.error}:null},
+      forest:forest?{visible:forest.visible,near:forest.near,cached:forest.cached,pending:forest.pending,
+        updateMs:forest.updateMs,farWork:forest.farWork,detailedTrees:forest.detailedTrees,
+        memoryAccounting:forest.memoryAccounting}:null,
+      renderer:gl?{version:gl.getParameter(gl.VERSION),shadingLanguageVersion:gl.getParameter(gl.SHADING_LANGUAGE_VERSION),
+        vendor:ext?gl.getParameter(ext.UNMASKED_VENDOR_WEBGL):gl.getParameter(gl.VENDOR),
+        renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER)}:null,
+      stats:a?.stats?{draws:a.stats.draws,triangles:a.stats.triangles,geometries:a.stats.geometries,textures:a.stats.textures}:null,
+      currentProfile:a?.renderProfile??null};
+  });
+  const build=await page.evaluate(async()=>{
+    try{const response=await fetch(new URL('build-info.json',location.href),{cache:'no-store'});
+      if(!response.ok)return {available:false,status:response.status};
+      const contentType=response.headers.get('content-type')||'';
+      if(!contentType.includes('json'))return {available:false,status:response.status,contentType};
+      return {available:true,...await response.json()};
+    }catch(error){return {available:false,error:String(error)};}
+  });
+  return {...context,build};
+}
+async function profileWindow(kind,name,durationMs){
+  if(typeof name!=='string'||!/^[-a-zA-Z0-9_]+$/.test(name))throw Error('Use a simple profile name');
+  if(!Number.isInteger(durationMs)||durationMs<500||durationMs>8000)throw Error('durationMs must be an integer between 500 and 8000');
+  if(!['fixed','walk'].includes(kind))throw Error('Unknown profile window kind');
+  const before=await profilingContext();
+  if(!before.ready)throw Error('Atlas is not ready');
+  if(kind==='walk'&&!before.travel?.walkingGrounded)throw Error('A grounded walker is required for a held walking-key profile');
+  const startedAt=new Date().toISOString(),start=Date.now();
+  await page.evaluate(()=>{window.__atlas.setProfiling(true);window.__atlas.resetProfile();});
+  let keyHeld=false,intervalProfile=null,after=null,drainedProfile=null;
+  try{
+    if(kind==='walk'){await page.keyboard.down('w');keyHeld=true;}
+    await page.waitForTimeout(durationMs);
+    intervalProfile=await page.evaluate(()=>window.__atlas.renderProfile);
+  }finally{
+    if(keyHeld)await page.keyboard.up('w').catch(()=>{});
+    // Timer queries resolve asynchronously. This bounded tail keeps both the
+    // interval-end snapshot and a later snapshot with delayed GPU results.
+    await page.waitForTimeout(250);
+    drainedProfile=await page.evaluate(()=>window.__atlas.renderProfile).catch(()=>null);
+    await page.evaluate(()=>window.__atlas.setProfiling(false)).catch(()=>{});
+    after=await profilingContext().catch(error=>({error:String(error)}));
+  }
+  const elapsedMs=Date.now()-start,stats=intervalProfile?.statistics??{},resolved=drainedProfile?.statistics??{};
+  const sampleCounts=Object.fromEntries(Object.entries(stats).map(([series,value])=>[series,value.samples]));
+  const report={schema:'atlas-normal-game-profile-1',ok:!!intervalProfile,kind,name,startedAt,
+    requestedDurationMs:durationMs,queryDrainMs:250,elapsedMs,before,after,
+    measurement:{cpuFrameWorkMs:stats['cpu/frameWorkMs']??null,frameIntervalMs:stats.frameIntervalMs??null,
+      gpuFramePassSumMs:stats['gpu/framePassSumMs']??null,
+      gpuPasses:Object.fromEntries(Object.entries(stats).filter(([key])=>key.startsWith('gpu/')&&key!=='gpu/framePassSumMs')),
+      rawSampleCounts:sampleCounts,intervalEndProfile:intervalProfile,afterQueryDrainProfile:drainedProfile,
+      resolvedSampleCounts:Object.fromEntries(Object.entries(resolved).map(([series,value])=>[series,value.samples])),
+      gpuAvailable:intervalProfile?.gpuAvailable??false,skippedQueries:intervalProfile?.skippedQueries??null,
+      disjointQueries:intervalProfile?.disjointQueries??null,expiredQueries:intervalProfile?.expiredQueries??null},errors:[...errors]};
+  await writeFile(join(output,`${name}.profile.json`),JSON.stringify(report,null,2));
+  return {file:`${name}.profile.json`,ok:report.ok,elapsedMs,samples:sampleCounts,
+    gpuAvailable:report.measurement.gpuAvailable,skippedQueries:report.measurement.skippedQueries,
+    disjointQueries:report.measurement.disjointQueries,errors:[...errors]};
+}
 async function dragAxis(pixels,axis){
   let remaining=pixels;
   while(Math.abs(remaining)>.1){
@@ -109,6 +185,8 @@ async function command(c){
     }
     case 'state':return summary(await state(),c.targetId);
     case 'snapshot':return snapshot(c.name,!!c.hideUI,c.targetId);
+    case 'profileFixed':return profileWindow('fixed',c.name,c.durationMs);
+    case 'profileWalk':return profileWindow('walk',c.name,c.durationMs);
     case 'click':await page.locator(c.selector).click({timeout:3000});return summary(await state(),c.targetId);
     case 'freeze':await page.evaluate(value=>window.__atlas.setExplorationPaused(value),c.value!==false);return summary(await state(),c.targetId);
     case 'advance':{
