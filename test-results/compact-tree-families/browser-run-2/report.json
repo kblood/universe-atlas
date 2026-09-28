@@ -1,0 +1,3515 @@
+{
+  "ok": true,
+  "base": "http://127.0.0.1:5197/",
+  "out": "test-results/compact-tree-families/browser-run-2",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "assetPaths": [
+    "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.glb",
+    "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.lod1.glb",
+    "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.glb",
+    "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.lod1.glb"
+  ],
+  "sourceHashes": {
+    "src/main.ts": "a5398371b9c5eab3082b7a5003c6e582719d20374a664180b27938c6c2ed5c52",
+    "src/planet-renderer.ts": "50743ac68aee665343c57e658ba94407ca3f4ff70a934c15971592edb359bf6f",
+    "src/planet-forest.ts": "dbff7989e0daa5bc01fa95ffaa0c0d87bd40bb415c1651eba12fb8dd15257983",
+    "src/forest-tree-family-library.ts": "ab19e112bc6cf4301c6bcf20cf74720315ede6491a516025d8c048703365b4c6",
+    "src/compact-instance-slots.ts": "1b9812f4e7b2162fa558d82edd800ece37d5e310f6abd6721a70c2a39981d925",
+    "src/tree-asset.ts": "e20daf5cc22e0ec567df07f688dda470a888f8f254535f5e358ba9550b2fb90b",
+    "src/forest-tree-catalogue.ts": "11fea8d2e51a7002dd0aa17de0e8ddd00e73ff29b7a447aff989702110810258",
+    "src/surface-lighting.ts": "4348fd91f6d871aee09800d7bcd1547d8bf8cb9e53ebb1b52293a991e72eaf93",
+    "src/terrain-shadow.ts": "f08967f239d3f68bc26e886b97bdb992c1cbdc022db8c6657ede194e5f9d091e",
+    "src/forest-material.ts": "fc65be33dc821c59cd15b93aa83d5de0dc9d884665363675e55752fbc7d3657b",
+    "src/planet-canopy.ts": "b63cc25fd01b4f0f6ff63968b33192e7c85da1e588093eb0a29a4ecc43481c22",
+    "src/fauna-field-renderer.ts": "7a4af029cc85b0e4248d11c2f9f45a39dc8f2e8f6a4d03bd4912225984f51a29",
+    "test-results/compact-tree-families/integration.browser.mjs": "cfab77e415f0ca2e808a1575c2d0b5d8227516b68b44320e00016a4884afa5a3",
+    "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.glb": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+    "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.lod1.glb": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9",
+    "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.glb": "58ead3644a84f91d0d30658c827be0c04d6ab0b5a42f468397cd2474a1c06e3d",
+    "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.lod1.glb": "126cc179069cdeadf37bfa9fefa47b5be853040046be812a6e282e648f8d884b"
+  },
+  "phases": [
+    {
+      "label": "legacy-close-baseline",
+      "state": {
+        "date": "435084631200000074160300000",
+        "bodyId": "G001/C2128,0,1/0/planet/1",
+        "positionM": [
+          4067104.067237854,
+          -1507036.4961632006,
+          2861048.5403137207
+        ],
+        "heading": [
+          0.2204843416944747,
+          -0.11188898079160305,
+          -0.7691857887561367,
+          0.5892543876973427
+        ],
+        "travel": {
+          "clearanceM": 11.737105475177032,
+          "systemUnit": 1
+        },
+        "lighting": {
+          "enabled": true,
+          "active": true,
+          "altitudeM": 11.737105475177032,
+          "unitsPerM": 1,
+          "widthM": 320,
+          "depthM": 1000,
+          "mapSize": 2048,
+          "shadowIntensity": 1,
+          "skyIntensity": 0.7,
+          "ambientIntensity": 0.08800000000000001,
+          "allocated": true,
+          "estimatedTargetBytes": 33554432
+        },
+        "terrain": {
+          "pending": 0,
+          "staleWaterPatches": 0,
+          "lifePackBuilds": 356,
+          "lifePending": 0,
+          "faunaTerrainPending": 0,
+          "failures": 0
+        },
+        "forest": {
+          "visible": 729,
+          "near": 80,
+          "cached": 18309,
+          "pending": 0,
+          "originVersion": 14,
+          "originRebased": false,
+          "workerFailures": 0,
+          "selectionPending": false,
+          "fullCanopy": {
+            "enabled": true,
+            "streaming": true,
+            "ready": true,
+            "water": -4500,
+            "configuredWater": -4500,
+            "context": "6a86d89ddc18ad1e501ab2bbc413882bffd0d9577162337d48aa6a16b9cc0c8e",
+            "family": "94b2a1c58d25d2d94ee1bcf23c96fbb0b03c7e271e9bbea8140156f6dadfe6f1",
+            "reusedPatches": 0,
+            "reusePending": false,
+            "generation": 1,
+            "patches": 6690,
+            "trees": 153251,
+            "selectedPatches": 6690,
+            "queuedPatches": 0,
+            "jobsInFlight": 0,
+            "selectionPending": false,
+            "installedThisFrame": 0,
+            "installMs": 0,
+            "selectionMs": 28.100000001490116,
+            "selectionApplyMs": 20.19999998062849,
+            "selectionApplySliceMs": 0,
+            "selectionApplyPending": false,
+            "uploadBytes": 0,
+            "failures": 0,
+            "workerRestarts": 0,
+            "terminalFailure": false,
+            "timeouts": 0,
+            "capacityMisses": 0,
+            "slots": {
+              "capacity": 229376,
+              "used": 153251,
+              "free": 76125,
+              "allocations": 6620,
+              "freeExtents": 1,
+              "largestFree": 76125,
+              "failures": 0
+            },
+            "rebasePending": false,
+            "nearPresentNotInCensus": 0,
+            "nearAbsentInCensus": 0,
+            "farForcedClose": 0,
+            "closeCandidateScope": "current near selection",
+            "patchLookupCache": {
+              "hits": 16550,
+              "misses": 5627,
+              "keys": 5627
+            },
+            "attributeBytes": 11468800,
+            "retainedCoordinateBytes": 7340032,
+            "rebaseBufferBytes": 0
+          },
+          "detailedTrees": {
+            "ready": false,
+            "loading": false,
+            "error": "",
+            "visible": [
+              0,
+              0
+            ],
+            "species": 0,
+            "dateNs": "435084631200000074160300000",
+            "catalogueVersion": 0,
+            "heightPolicy": "canonical-population-proxy",
+            "geometryVariants": 0,
+            "farRepresentation": "legacy-canonical-canopy",
+            "instanceSlots": "compact-per-family",
+            "families": [],
+            "foliageMipmaps": null,
+            "samples": []
+          }
+        },
+        "render": {
+          "draws": 289,
+          "triangles": 1274896,
+          "textures": 494
+        },
+        "profile": {
+          "enabled": true,
+          "gpuAvailable": true,
+          "historyLimit": 600,
+          "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+          "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+          "pendingQueries": 7,
+          "pendingLimit": 48,
+          "skippedQueries": 0,
+          "disjointQueries": 0,
+          "expiredQueries": 0,
+          "lastDrawCalls": 289,
+          "lastTriangles": 1274896,
+          "statistics": {
+            "frameIntervalMs": {
+              "samples": 600,
+              "p50": 57.80000000447035,
+              "p95": 79,
+              "p99": 103.10000000149012,
+              "max": 1084.7000000029802
+            },
+            "cpu/planetUpdateMs": {
+              "samples": 600,
+              "p50": 36.19999999552965,
+              "p95": 49.5,
+              "p99": 64.5,
+              "max": 115.80000000447035
+            },
+            "cpu/lakeReflectionMs": {
+              "samples": 600,
+              "p50": 0.5999999940395355,
+              "p95": 1.3999999985098839,
+              "p99": 1.8999999985098839,
+              "max": 2.3000000044703484
+            },
+            "cpu/sceneMs": {
+              "samples": 283,
+              "p50": 0.8000000044703484,
+              "p95": 2.7999999970197678,
+              "p99": 31.600000001490116,
+              "max": 242.5
+            },
+            "cpu/frameWorkMs": {
+              "samples": 600,
+              "p50": 54.79999999701977,
+              "p95": 74.20000000298023,
+              "p99": 100.39999999850988,
+              "max": 1082.8999999985099
+            },
+            "drawCalls": {
+              "samples": 600,
+              "p50": 282,
+              "p95": 289,
+              "p99": 290,
+              "max": 290
+            },
+            "triangles": {
+              "samples": 600,
+              "p50": 1240556,
+              "p95": 1274896,
+              "p99": 1274896,
+              "max": 1274896
+            },
+            "gpu/lakeReflectionMs": {
+              "samples": 600,
+              "p50": 0,
+              "p95": 0.000032,
+              "p99": 0.000032,
+              "max": 0.000032
+            },
+            "gpu/sceneMs": {
+              "samples": 283,
+              "p50": 0.895392,
+              "p95": 7.130816,
+              "p99": 16.515936,
+              "max": 135.519616
+            },
+            "gpu/framePassSumMs": {
+              "samples": 600,
+              "p50": 11.56864,
+              "p95": 18.346528000000003,
+              "p99": 23.347584,
+              "max": 1055.542016
+            },
+            "cpu/sceneCaptureMs": {
+              "samples": 600,
+              "p50": 9.899999998509884,
+              "p95": 15.399999998509884,
+              "p99": 21.299999997019768,
+              "max": 1049.0999999940395
+            },
+            "cpu/cloudIntegrationMs": {
+              "samples": 600,
+              "p50": 0.19999999552965164,
+              "p95": 0.29999999701976776,
+              "p99": 0.3999999985098839,
+              "max": 0.7000000029802322
+            },
+            "cpu/cloudResolveMs": {
+              "samples": 600,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.20000000298023224,
+              "max": 0.3999999985098839
+            },
+            "gpu/sceneCaptureMs": {
+              "samples": 600,
+              "p50": 10.935232,
+              "p95": 17.29568,
+              "p99": 22.683584,
+              "max": 1055.038144
+            },
+            "gpu/cloudIntegrationMs": {
+              "samples": 600,
+              "p50": 0.446048,
+              "p95": 1.27744,
+              "p99": 2.337056,
+              "max": 3.65136
+            },
+            "gpu/cloudResolveMs": {
+              "samples": 600,
+              "p50": 0.047936,
+              "p95": 0.436032,
+              "p99": 1.560064,
+              "max": 2.44224
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "oak-only",
+      "elapsedMs": 2491,
+      "state": {
+        "date": "435084631200000074160300000",
+        "bodyId": "G001/C2128,0,1/0/planet/1",
+        "positionM": [
+          4067104.067237854,
+          -1507036.4961632006,
+          2861048.5403137207
+        ],
+        "heading": [
+          0.2204843416944747,
+          -0.11188898079160298,
+          -0.7691857887561367,
+          0.5892543876973427
+        ],
+        "travel": {
+          "clearanceM": 11.737105475177032,
+          "systemUnit": 1
+        },
+        "lighting": {
+          "enabled": true,
+          "active": true,
+          "altitudeM": 11.737105475177032,
+          "unitsPerM": 1,
+          "widthM": 320,
+          "depthM": 1000,
+          "mapSize": 2048,
+          "shadowIntensity": 1,
+          "skyIntensity": 0.7,
+          "ambientIntensity": 0.08800000000000001,
+          "allocated": true,
+          "estimatedTargetBytes": 33554432
+        },
+        "terrain": {
+          "pending": 0,
+          "staleWaterPatches": 0,
+          "lifePackBuilds": 356,
+          "lifePending": 0,
+          "faunaTerrainPending": 0,
+          "failures": 0
+        },
+        "forest": {
+          "visible": 778,
+          "near": 80,
+          "cached": 18309,
+          "pending": 0,
+          "originVersion": 14,
+          "originRebased": false,
+          "workerFailures": 0,
+          "selectionPending": false,
+          "fullCanopy": {
+            "enabled": true,
+            "streaming": true,
+            "ready": true,
+            "water": -4500,
+            "configuredWater": -4500,
+            "context": "6a86d89ddc18ad1e501ab2bbc413882bffd0d9577162337d48aa6a16b9cc0c8e",
+            "family": "94b2a1c58d25d2d94ee1bcf23c96fbb0b03c7e271e9bbea8140156f6dadfe6f1",
+            "reusedPatches": 0,
+            "reusePending": false,
+            "generation": 1,
+            "patches": 6690,
+            "trees": 153251,
+            "selectedPatches": 6690,
+            "queuedPatches": 0,
+            "jobsInFlight": 0,
+            "selectionPending": false,
+            "installedThisFrame": 0,
+            "installMs": 0,
+            "selectionMs": 28.100000001490116,
+            "selectionApplyMs": 20.19999998062849,
+            "selectionApplySliceMs": 0,
+            "selectionApplyPending": false,
+            "uploadBytes": 0,
+            "failures": 0,
+            "workerRestarts": 0,
+            "terminalFailure": false,
+            "timeouts": 0,
+            "capacityMisses": 0,
+            "slots": {
+              "capacity": 229376,
+              "used": 153251,
+              "free": 76125,
+              "allocations": 6620,
+              "freeExtents": 1,
+              "largestFree": 76125,
+              "failures": 0
+            },
+            "rebasePending": false,
+            "nearPresentNotInCensus": 0,
+            "nearAbsentInCensus": 0,
+            "farForcedClose": 0,
+            "closeCandidateScope": "current near selection",
+            "patchLookupCache": {
+              "hits": 16550,
+              "misses": 5627,
+              "keys": 5627
+            },
+            "attributeBytes": 11468800,
+            "retainedCoordinateBytes": 7340032,
+            "rebaseBufferBytes": 0
+          },
+          "detailedTrees": {
+            "ready": true,
+            "loading": false,
+            "error": "",
+            "visible": [
+              33,
+              295
+            ],
+            "species": 5,
+            "dateNs": "435084631200000074160300000",
+            "catalogueVersion": 1,
+            "heightPolicy": "canonical-population-proxy",
+            "geometryVariants": 1,
+            "farRepresentation": "legacy-canonical-canopy",
+            "instanceSlots": "compact-per-family",
+            "families": [
+              {
+                "kind": "branching",
+                "submitted": [
+                  33,
+                  295
+                ],
+                "retainedSlots": [
+                  33,
+                  295
+                ],
+                "capacities": [
+                  192,
+                  4096
+                ],
+                "foliageMipmaps": null
+              }
+            ],
+            "foliageMipmaps": null,
+            "samples": [
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85585/181665",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 20.643772007897496,
+                "variant": 0,
+                "barkBrightness": 0.9744454337656498,
+                "foliageBrightness": 0.9595192545093596,
+                "windPhase01": 0.04107257793657482,
+                "textureVariant": 3
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85585/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 20.48117033112794,
+                "variant": 5,
+                "barkBrightness": 0.9444439062848687,
+                "foliageBrightness": 0.9428975746035576,
+                "windPhase01": 0.07157540135085583,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181664",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 10.411693538539112,
+                "variant": 6,
+                "barkBrightness": 0.9384905888140201,
+                "foliageBrightness": 1.0179500334896148,
+                "windPhase01": 0.3537117892410606,
+                "textureVariant": 0
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 16.56552426610142,
+                "variant": 1,
+                "barkBrightness": 0.9857744085416198,
+                "foliageBrightness": 1.0451483393553644,
+                "windPhase01": 0.31941383332014084,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85582/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 11.850877651013434,
+                "variant": 4,
+                "barkBrightness": 1.0278018553927541,
+                "foliageBrightness": 1.005873320857063,
+                "windPhase01": 0.2850574168842286,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85582/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 13.46297427918762,
+                "variant": 6,
+                "barkBrightness": 0.9637957454100252,
+                "foliageBrightness": 1.07692808737047,
+                "windPhase01": 0.2273182508070022,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85583/181661",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 15.71476753987372,
+                "variant": 0,
+                "barkBrightness": 0.9934859221056104,
+                "foliageBrightness": 1.0639401901047676,
+                "windPhase01": 0.04741596314124763,
+                "textureVariant": 0
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 10.365708612836897,
+                "variant": 4,
+                "barkBrightness": 0.9639474834129215,
+                "foliageBrightness": 1.0693794677965343,
+                "windPhase01": 0.7809903337620199,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85591/181665",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 10.274388244375587,
+                "variant": 0,
+                "barkBrightness": 1.0662663301452995,
+                "foliageBrightness": 1.0843436789233238,
+                "windPhase01": 0.2160706096328795,
+                "textureVariant": 1
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85591/181664",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 12.114487455226481,
+                "variant": 0,
+                "barkBrightness": 0.932051511630416,
+                "foliageBrightness": 1.046647456008941,
+                "windPhase01": 0.186246027238667,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85590/181670",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 10.610656581819057,
+                "variant": 2,
+                "barkBrightness": 0.977249795421958,
+                "foliageBrightness": 1.0884368382859975,
+                "windPhase01": 0.034867452224716544,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85587/181659",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 18.75295039732009,
+                "variant": 2,
+                "barkBrightness": 0.9853208805248141,
+                "foliageBrightness": 0.9732299626339227,
+                "windPhase01": 0.37597894575446844,
+                "textureVariant": 2
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85592/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 19.275899487547576,
+                "variant": 4,
+                "barkBrightness": 0.982231138125062,
+                "foliageBrightness": 1.0661282637156546,
+                "windPhase01": 0.07886440819129348,
+                "textureVariant": 1
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85589/181660",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 20.43930181954056,
+                "variant": 5,
+                "barkBrightness": 0.9258772864565253,
+                "foliageBrightness": 0.9745496874209494,
+                "windPhase01": 0.8616405474022031,
+                "textureVariant": 1
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85592/181664",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 15.200129696168005,
+                "variant": 3,
+                "barkBrightness": 0.9866383877024055,
+                "foliageBrightness": 1.0029590729624034,
+                "windPhase01": 0.9235067735426128,
+                "textureVariant": 0
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85591/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 17.208945986814797,
+                "variant": 0,
+                "barkBrightness": 1.0481133957207203,
+                "foliageBrightness": 0.9343566044699401,
+                "windPhase01": 0.3295487912837416,
+                "textureVariant": 3
+              }
+            ]
+          }
+        },
+        "render": {
+          "draws": 297,
+          "triangles": 5066440,
+          "textures": 498
+        },
+        "profile": {
+          "enabled": true,
+          "gpuAvailable": true,
+          "historyLimit": 600,
+          "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+          "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+          "pendingQueries": 7,
+          "pendingLimit": 48,
+          "skippedQueries": 0,
+          "disjointQueries": 0,
+          "expiredQueries": 0,
+          "lastDrawCalls": 297,
+          "lastTriangles": 5066440,
+          "statistics": {
+            "frameIntervalMs": {
+              "samples": 600,
+              "p50": 58.599999994039536,
+              "p95": 79.39999999850988,
+              "p99": 121.70000000298023,
+              "max": 1084.7000000029802
+            },
+            "cpu/planetUpdateMs": {
+              "samples": 600,
+              "p50": 36.899999998509884,
+              "p95": 49.70000000298023,
+              "p99": 64.5,
+              "max": 115.80000000447035
+            },
+            "cpu/lakeReflectionMs": {
+              "samples": 600,
+              "p50": 0.5999999940395355,
+              "p95": 1.3999999985098839,
+              "p99": 1.8999999985098839,
+              "max": 2.3000000044703484
+            },
+            "cpu/sceneMs": {
+              "samples": 283,
+              "p50": 0.8000000044703484,
+              "p95": 2.7999999970197678,
+              "p99": 31.600000001490116,
+              "max": 242.5
+            },
+            "cpu/frameWorkMs": {
+              "samples": 600,
+              "p50": 55.5,
+              "p95": 74.20000000298023,
+              "p99": 104.20000000298023,
+              "max": 1082.8999999985099
+            },
+            "drawCalls": {
+              "samples": 600,
+              "p50": 289,
+              "p95": 290,
+              "p99": 297,
+              "max": 297
+            },
+            "triangles": {
+              "samples": 600,
+              "p50": 1274896,
+              "p95": 1274896,
+              "p99": 5066440,
+              "max": 5066440
+            },
+            "gpu/lakeReflectionMs": {
+              "samples": 600,
+              "p50": 0,
+              "p95": 0.000032,
+              "p99": 0.000032,
+              "max": 0.000032
+            },
+            "gpu/sceneMs": {
+              "samples": 283,
+              "p50": 0.895392,
+              "p95": 7.130816,
+              "p99": 16.515936,
+              "max": 135.519616
+            },
+            "gpu/framePassSumMs": {
+              "samples": 600,
+              "p50": 11.732736,
+              "p95": 18.346528000000003,
+              "p99": 23.347584,
+              "max": 1055.542016
+            },
+            "cpu/sceneCaptureMs": {
+              "samples": 600,
+              "p50": 10.200000002980232,
+              "p95": 15.5,
+              "p99": 21.399999998509884,
+              "max": 1049.0999999940395
+            },
+            "cpu/cloudIntegrationMs": {
+              "samples": 600,
+              "p50": 0.19999999552965164,
+              "p95": 0.29999999701976776,
+              "p99": 0.3999999985098839,
+              "max": 0.7000000029802322
+            },
+            "cpu/cloudResolveMs": {
+              "samples": 600,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.20000000298023224,
+              "max": 0.3999999985098839
+            },
+            "gpu/sceneCaptureMs": {
+              "samples": 600,
+              "p50": 11.045184,
+              "p95": 17.29568,
+              "p99": 22.683584,
+              "max": 1055.038144
+            },
+            "gpu/cloudIntegrationMs": {
+              "samples": 600,
+              "p50": 0.447744,
+              "p95": 1.36992,
+              "p99": 2.554752,
+              "max": 3.65136
+            },
+            "gpu/cloudResolveMs": {
+              "samples": 600,
+              "p50": 0.048928,
+              "p95": 0.436032,
+              "p99": 1.560064,
+              "max": 2.44224
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "date-plus-3.5s",
+      "state": {
+        "date": "435084631200000077660300000",
+        "bodyId": "G001/C2128,0,1/0/planet/1",
+        "positionM": [
+          4067104.067237854,
+          -1507036.4961632006,
+          2861048.5403137207
+        ],
+        "heading": [
+          0.2204843416944747,
+          -0.11188898079160292,
+          -0.7691857887561367,
+          0.5892543876973427
+        ],
+        "travel": {
+          "clearanceM": 11.737105475177032,
+          "systemUnit": 1
+        },
+        "lighting": {
+          "enabled": true,
+          "active": true,
+          "altitudeM": 11.737105475177032,
+          "unitsPerM": 1,
+          "widthM": 320,
+          "depthM": 1000,
+          "mapSize": 2048,
+          "shadowIntensity": 1,
+          "skyIntensity": 0.7,
+          "ambientIntensity": 0.08800000000000001,
+          "allocated": true,
+          "estimatedTargetBytes": 33554432
+        },
+        "terrain": {
+          "pending": 0,
+          "staleWaterPatches": 0,
+          "lifePackBuilds": 356,
+          "lifePending": 0,
+          "faunaTerrainPending": 0,
+          "failures": 0
+        },
+        "forest": {
+          "visible": 778,
+          "near": 80,
+          "cached": 18309,
+          "pending": 0,
+          "originVersion": 14,
+          "originRebased": false,
+          "workerFailures": 0,
+          "selectionPending": false,
+          "fullCanopy": {
+            "enabled": true,
+            "streaming": true,
+            "ready": true,
+            "water": -4500,
+            "configuredWater": -4500,
+            "context": "6a86d89ddc18ad1e501ab2bbc413882bffd0d9577162337d48aa6a16b9cc0c8e",
+            "family": "94b2a1c58d25d2d94ee1bcf23c96fbb0b03c7e271e9bbea8140156f6dadfe6f1",
+            "reusedPatches": 0,
+            "reusePending": false,
+            "generation": 1,
+            "patches": 6690,
+            "trees": 153251,
+            "selectedPatches": 6690,
+            "queuedPatches": 0,
+            "jobsInFlight": 0,
+            "selectionPending": false,
+            "installedThisFrame": 0,
+            "installMs": 0,
+            "selectionMs": 28.100000001490116,
+            "selectionApplyMs": 20.19999998062849,
+            "selectionApplySliceMs": 0,
+            "selectionApplyPending": false,
+            "uploadBytes": 0,
+            "failures": 0,
+            "workerRestarts": 0,
+            "terminalFailure": false,
+            "timeouts": 0,
+            "capacityMisses": 0,
+            "slots": {
+              "capacity": 229376,
+              "used": 153251,
+              "free": 76125,
+              "allocations": 6620,
+              "freeExtents": 1,
+              "largestFree": 76125,
+              "failures": 0
+            },
+            "rebasePending": false,
+            "nearPresentNotInCensus": 0,
+            "nearAbsentInCensus": 0,
+            "farForcedClose": 0,
+            "closeCandidateScope": "current near selection",
+            "patchLookupCache": {
+              "hits": 16550,
+              "misses": 5627,
+              "keys": 5627
+            },
+            "attributeBytes": 11468800,
+            "retainedCoordinateBytes": 7340032,
+            "rebaseBufferBytes": 0
+          },
+          "detailedTrees": {
+            "ready": true,
+            "loading": false,
+            "error": "",
+            "visible": [
+              33,
+              295
+            ],
+            "species": 5,
+            "dateNs": "435084631200000077660300000",
+            "catalogueVersion": 1,
+            "heightPolicy": "canonical-population-proxy",
+            "geometryVariants": 1,
+            "farRepresentation": "legacy-canonical-canopy",
+            "instanceSlots": "compact-per-family",
+            "families": [
+              {
+                "kind": "branching",
+                "submitted": [
+                  33,
+                  295
+                ],
+                "retainedSlots": [
+                  33,
+                  295
+                ],
+                "capacities": [
+                  192,
+                  4096
+                ],
+                "foliageMipmaps": null
+              }
+            ],
+            "foliageMipmaps": null,
+            "samples": [
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85585/181665",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 20.643772007897496,
+                "variant": 0,
+                "barkBrightness": 0.9744454337656498,
+                "foliageBrightness": 0.9595192545093596,
+                "windPhase01": 0.04107257793657482,
+                "textureVariant": 3
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85585/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 20.48117033112794,
+                "variant": 5,
+                "barkBrightness": 0.9444439062848687,
+                "foliageBrightness": 0.9428975746035576,
+                "windPhase01": 0.07157540135085583,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181664",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 10.411693538539112,
+                "variant": 6,
+                "barkBrightness": 0.9384905888140201,
+                "foliageBrightness": 1.0179500334896148,
+                "windPhase01": 0.3537117892410606,
+                "textureVariant": 0
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 16.56552426610142,
+                "variant": 1,
+                "barkBrightness": 0.9857744085416198,
+                "foliageBrightness": 1.0451483393553644,
+                "windPhase01": 0.31941383332014084,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85582/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 11.850877651013434,
+                "variant": 4,
+                "barkBrightness": 1.0278018553927541,
+                "foliageBrightness": 1.005873320857063,
+                "windPhase01": 0.2850574168842286,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85582/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 13.46297427918762,
+                "variant": 6,
+                "barkBrightness": 0.9637957454100252,
+                "foliageBrightness": 1.07692808737047,
+                "windPhase01": 0.2273182508070022,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85583/181661",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 15.71476753987372,
+                "variant": 0,
+                "barkBrightness": 0.9934859221056104,
+                "foliageBrightness": 1.0639401901047676,
+                "windPhase01": 0.04741596314124763,
+                "textureVariant": 0
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 10.365708612836897,
+                "variant": 4,
+                "barkBrightness": 0.9639474834129215,
+                "foliageBrightness": 1.0693794677965343,
+                "windPhase01": 0.7809903337620199,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85591/181665",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 10.274388244375587,
+                "variant": 0,
+                "barkBrightness": 1.0662663301452995,
+                "foliageBrightness": 1.0843436789233238,
+                "windPhase01": 0.2160706096328795,
+                "textureVariant": 1
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85591/181664",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 12.114487455226481,
+                "variant": 0,
+                "barkBrightness": 0.932051511630416,
+                "foliageBrightness": 1.046647456008941,
+                "windPhase01": 0.186246027238667,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85590/181670",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 10.610656581819057,
+                "variant": 2,
+                "barkBrightness": 0.977249795421958,
+                "foliageBrightness": 1.0884368382859975,
+                "windPhase01": 0.034867452224716544,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85587/181659",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 18.75295039732009,
+                "variant": 2,
+                "barkBrightness": 0.9853208805248141,
+                "foliageBrightness": 0.9732299626339227,
+                "windPhase01": 0.37597894575446844,
+                "textureVariant": 2
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85592/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 19.275899487547576,
+                "variant": 4,
+                "barkBrightness": 0.982231138125062,
+                "foliageBrightness": 1.0661282637156546,
+                "windPhase01": 0.07886440819129348,
+                "textureVariant": 1
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85589/181660",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 20.43930181954056,
+                "variant": 5,
+                "barkBrightness": 0.9258772864565253,
+                "foliageBrightness": 0.9745496874209494,
+                "windPhase01": 0.8616405474022031,
+                "textureVariant": 1
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85592/181664",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 15.200129696168005,
+                "variant": 3,
+                "barkBrightness": 0.9866383877024055,
+                "foliageBrightness": 1.0029590729624034,
+                "windPhase01": 0.9235067735426128,
+                "textureVariant": 0
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85591/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 17.208945986814797,
+                "variant": 0,
+                "barkBrightness": 1.0481133957207203,
+                "foliageBrightness": 0.9343566044699401,
+                "windPhase01": 0.3295487912837416,
+                "textureVariant": 3
+              }
+            ]
+          }
+        },
+        "render": {
+          "draws": 297,
+          "triangles": 5066440,
+          "textures": 498
+        },
+        "profile": {
+          "enabled": true,
+          "gpuAvailable": true,
+          "historyLimit": 600,
+          "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+          "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+          "pendingQueries": 7,
+          "pendingLimit": 48,
+          "skippedQueries": 0,
+          "disjointQueries": 0,
+          "expiredQueries": 0,
+          "lastDrawCalls": 297,
+          "lastTriangles": 5066440,
+          "statistics": {
+            "frameIntervalMs": {
+              "samples": 262,
+              "p50": 52.399999998509884,
+              "p95": 66.19999999552965,
+              "p99": 81.29999999701977,
+              "max": 488.70000000298023
+            },
+            "cpu/planetUpdateMs": {
+              "samples": 262,
+              "p50": 33.29999999701977,
+              "p95": 40.79999999701977,
+              "p99": 46.899999998509884,
+              "max": 125.69999999552965
+            },
+            "cpu/lakeReflectionMs": {
+              "samples": 262,
+              "p50": 0.4000000059604645,
+              "p95": 1.0999999940395355,
+              "p99": 1.6000000014901161,
+              "max": 2.5999999940395355
+            },
+            "cpu/sceneCaptureMs": {
+              "samples": 262,
+              "p50": 10.299999997019768,
+              "p95": 13.700000002980232,
+              "p99": 16.399999998509884,
+              "max": 17.099999994039536
+            },
+            "cpu/cloudIntegrationMs": {
+              "samples": 262,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.30000000447034836,
+              "max": 0.5
+            },
+            "cpu/cloudResolveMs": {
+              "samples": 262,
+              "p50": 0.09999999403953552,
+              "p95": 0.20000000298023224,
+              "p99": 0.20000000298023224,
+              "max": 0.5
+            },
+            "cpu/frameWorkMs": {
+              "samples": 262,
+              "p50": 50.399999998509884,
+              "p95": 62.900000005960464,
+              "p99": 71.10000000149012,
+              "max": 140.70000000298023
+            },
+            "drawCalls": {
+              "samples": 262,
+              "p50": 297,
+              "p95": 297,
+              "p99": 297,
+              "max": 297
+            },
+            "triangles": {
+              "samples": 262,
+              "p50": 5066440,
+              "p95": 5066440,
+              "p99": 5066440,
+              "max": 5066440
+            },
+            "gpu/lakeReflectionMs": {
+              "samples": 261,
+              "p50": 0,
+              "p95": 0.000032,
+              "p99": 0.000032,
+              "max": 0.000032
+            },
+            "gpu/sceneCaptureMs": {
+              "samples": 260,
+              "p50": 5.751008,
+              "p95": 16.38464,
+              "p99": 18.134816,
+              "max": 19.116448
+            },
+            "gpu/cloudIntegrationMs": {
+              "samples": 260,
+              "p50": 0.449728,
+              "p95": 0.708416,
+              "p99": 1.885984,
+              "max": 2.404544
+            },
+            "gpu/cloudResolveMs": {
+              "samples": 260,
+              "p50": 0.049888,
+              "p95": 0.115008,
+              "p99": 0.993696,
+              "max": 2.286464
+            },
+            "gpu/framePassSumMs": {
+              "samples": 260,
+              "p50": 6.400192,
+              "p95": 17.056639999999998,
+              "p99": 19.030016,
+              "max": 19.675072
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "date-return",
+      "state": {
+        "date": "435084631200000074160300000",
+        "bodyId": "G001/C2128,0,1/0/planet/1",
+        "positionM": [
+          4067104.067237854,
+          -1507036.4961632006,
+          2861048.5403137207
+        ],
+        "heading": [
+          0.2204843416944747,
+          -0.1118889807916029,
+          -0.7691857887561367,
+          0.5892543876973427
+        ],
+        "travel": {
+          "clearanceM": 11.737105475177032,
+          "systemUnit": 1
+        },
+        "lighting": {
+          "enabled": true,
+          "active": true,
+          "altitudeM": 11.737105475177032,
+          "unitsPerM": 1,
+          "widthM": 320,
+          "depthM": 1000,
+          "mapSize": 2048,
+          "shadowIntensity": 1,
+          "skyIntensity": 0.7,
+          "ambientIntensity": 0.08800000000000001,
+          "allocated": true,
+          "estimatedTargetBytes": 33554432
+        },
+        "terrain": {
+          "pending": 0,
+          "staleWaterPatches": 0,
+          "lifePackBuilds": 356,
+          "lifePending": 0,
+          "faunaTerrainPending": 0,
+          "failures": 0
+        },
+        "forest": {
+          "visible": 778,
+          "near": 80,
+          "cached": 18309,
+          "pending": 0,
+          "originVersion": 14,
+          "originRebased": false,
+          "workerFailures": 0,
+          "selectionPending": false,
+          "fullCanopy": {
+            "enabled": true,
+            "streaming": true,
+            "ready": true,
+            "water": -4500,
+            "configuredWater": -4500,
+            "context": "6a86d89ddc18ad1e501ab2bbc413882bffd0d9577162337d48aa6a16b9cc0c8e",
+            "family": "94b2a1c58d25d2d94ee1bcf23c96fbb0b03c7e271e9bbea8140156f6dadfe6f1",
+            "reusedPatches": 0,
+            "reusePending": false,
+            "generation": 1,
+            "patches": 6690,
+            "trees": 153251,
+            "selectedPatches": 6690,
+            "queuedPatches": 0,
+            "jobsInFlight": 0,
+            "selectionPending": false,
+            "installedThisFrame": 0,
+            "installMs": 0,
+            "selectionMs": 28.100000001490116,
+            "selectionApplyMs": 20.19999998062849,
+            "selectionApplySliceMs": 0,
+            "selectionApplyPending": false,
+            "uploadBytes": 0,
+            "failures": 0,
+            "workerRestarts": 0,
+            "terminalFailure": false,
+            "timeouts": 0,
+            "capacityMisses": 0,
+            "slots": {
+              "capacity": 229376,
+              "used": 153251,
+              "free": 76125,
+              "allocations": 6620,
+              "freeExtents": 1,
+              "largestFree": 76125,
+              "failures": 0
+            },
+            "rebasePending": false,
+            "nearPresentNotInCensus": 0,
+            "nearAbsentInCensus": 0,
+            "farForcedClose": 0,
+            "closeCandidateScope": "current near selection",
+            "patchLookupCache": {
+              "hits": 16550,
+              "misses": 5627,
+              "keys": 5627
+            },
+            "attributeBytes": 11468800,
+            "retainedCoordinateBytes": 7340032,
+            "rebaseBufferBytes": 0
+          },
+          "detailedTrees": {
+            "ready": true,
+            "loading": false,
+            "error": "",
+            "visible": [
+              33,
+              295
+            ],
+            "species": 5,
+            "dateNs": "435084631200000074160300000",
+            "catalogueVersion": 1,
+            "heightPolicy": "canonical-population-proxy",
+            "geometryVariants": 1,
+            "farRepresentation": "legacy-canonical-canopy",
+            "instanceSlots": "compact-per-family",
+            "families": [
+              {
+                "kind": "branching",
+                "submitted": [
+                  33,
+                  295
+                ],
+                "retainedSlots": [
+                  33,
+                  295
+                ],
+                "capacities": [
+                  192,
+                  4096
+                ],
+                "foliageMipmaps": null
+              }
+            ],
+            "foliageMipmaps": null,
+            "samples": [
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85585/181665",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 20.643772007897496,
+                "variant": 0,
+                "barkBrightness": 0.9744454337656498,
+                "foliageBrightness": 0.9595192545093596,
+                "windPhase01": 0.04107257793657482,
+                "textureVariant": 3
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85585/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 20.48117033112794,
+                "variant": 5,
+                "barkBrightness": 0.9444439062848687,
+                "foliageBrightness": 0.9428975746035576,
+                "windPhase01": 0.07157540135085583,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181664",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 10.411693538539112,
+                "variant": 6,
+                "barkBrightness": 0.9384905888140201,
+                "foliageBrightness": 1.0179500334896148,
+                "windPhase01": 0.3537117892410606,
+                "textureVariant": 0
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 16.56552426610142,
+                "variant": 1,
+                "barkBrightness": 0.9857744085416198,
+                "foliageBrightness": 1.0451483393553644,
+                "windPhase01": 0.31941383332014084,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85582/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 11.850877651013434,
+                "variant": 4,
+                "barkBrightness": 1.0278018553927541,
+                "foliageBrightness": 1.005873320857063,
+                "windPhase01": 0.2850574168842286,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85582/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 13.46297427918762,
+                "variant": 6,
+                "barkBrightness": 0.9637957454100252,
+                "foliageBrightness": 1.07692808737047,
+                "windPhase01": 0.2273182508070022,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85583/181661",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 15.71476753987372,
+                "variant": 0,
+                "barkBrightness": 0.9934859221056104,
+                "foliageBrightness": 1.0639401901047676,
+                "windPhase01": 0.04741596314124763,
+                "textureVariant": 0
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 10.365708612836897,
+                "variant": 4,
+                "barkBrightness": 0.9639474834129215,
+                "foliageBrightness": 1.0693794677965343,
+                "windPhase01": 0.7809903337620199,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85591/181665",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 10.274388244375587,
+                "variant": 0,
+                "barkBrightness": 1.0662663301452995,
+                "foliageBrightness": 1.0843436789233238,
+                "windPhase01": 0.2160706096328795,
+                "textureVariant": 1
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85591/181664",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 12.114487455226481,
+                "variant": 0,
+                "barkBrightness": 0.932051511630416,
+                "foliageBrightness": 1.046647456008941,
+                "windPhase01": 0.186246027238667,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85590/181670",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 10.610656581819057,
+                "variant": 2,
+                "barkBrightness": 0.977249795421958,
+                "foliageBrightness": 1.0884368382859975,
+                "windPhase01": 0.034867452224716544,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85587/181659",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 18.75295039732009,
+                "variant": 2,
+                "barkBrightness": 0.9853208805248141,
+                "foliageBrightness": 0.9732299626339227,
+                "windPhase01": 0.37597894575446844,
+                "textureVariant": 2
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85592/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 19.275899487547576,
+                "variant": 4,
+                "barkBrightness": 0.982231138125062,
+                "foliageBrightness": 1.0661282637156546,
+                "windPhase01": 0.07886440819129348,
+                "textureVariant": 1
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85589/181660",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 20.43930181954056,
+                "variant": 5,
+                "barkBrightness": 0.9258772864565253,
+                "foliageBrightness": 0.9745496874209494,
+                "windPhase01": 0.8616405474022031,
+                "textureVariant": 1
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85592/181664",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 15.200129696168005,
+                "variant": 3,
+                "barkBrightness": 0.9866383877024055,
+                "foliageBrightness": 1.0029590729624034,
+                "windPhase01": 0.9235067735426128,
+                "textureVariant": 0
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85591/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 17.208945986814797,
+                "variant": 0,
+                "barkBrightness": 1.0481133957207203,
+                "foliageBrightness": 0.9343566044699401,
+                "windPhase01": 0.3295487912837416,
+                "textureVariant": 3
+              }
+            ]
+          }
+        },
+        "render": {
+          "draws": 297,
+          "triangles": 5066440,
+          "textures": 498
+        },
+        "profile": {
+          "enabled": true,
+          "gpuAvailable": true,
+          "historyLimit": 600,
+          "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+          "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+          "pendingQueries": 7,
+          "pendingLimit": 48,
+          "skippedQueries": 0,
+          "disjointQueries": 0,
+          "expiredQueries": 0,
+          "lastDrawCalls": 297,
+          "lastTriangles": 5066440,
+          "statistics": {
+            "frameIntervalMs": {
+              "samples": 278,
+              "p50": 52.399999998509884,
+              "p95": 67.09999999403954,
+              "p99": 115.10000000149012,
+              "max": 488.70000000298023
+            },
+            "cpu/planetUpdateMs": {
+              "samples": 278,
+              "p50": 33.100000001490116,
+              "p95": 41.399999998509884,
+              "p99": 47.900000005960464,
+              "max": 125.69999999552965
+            },
+            "cpu/lakeReflectionMs": {
+              "samples": 278,
+              "p50": 0.4000000059604645,
+              "p95": 1.1000000014901161,
+              "p99": 1.6000000014901161,
+              "max": 2.5999999940395355
+            },
+            "cpu/sceneCaptureMs": {
+              "samples": 278,
+              "p50": 10.299999997019768,
+              "p95": 13.700000002980232,
+              "p99": 16.399999998509884,
+              "max": 17.099999994039536
+            },
+            "cpu/cloudIntegrationMs": {
+              "samples": 278,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.30000000447034836,
+              "max": 0.5
+            },
+            "cpu/cloudResolveMs": {
+              "samples": 278,
+              "p50": 0.09999999403953552,
+              "p95": 0.20000000298023224,
+              "p99": 0.20000000298023224,
+              "max": 0.5
+            },
+            "cpu/frameWorkMs": {
+              "samples": 278,
+              "p50": 50.399999998509884,
+              "p95": 63.20000000298023,
+              "p99": 74.60000000149012,
+              "max": 140.70000000298023
+            },
+            "drawCalls": {
+              "samples": 278,
+              "p50": 297,
+              "p95": 297,
+              "p99": 297,
+              "max": 297
+            },
+            "triangles": {
+              "samples": 278,
+              "p50": 5066440,
+              "p95": 5066440,
+              "p99": 5066440,
+              "max": 5066440
+            },
+            "gpu/lakeReflectionMs": {
+              "samples": 277,
+              "p50": 0,
+              "p95": 0.000032,
+              "p99": 0.000032,
+              "max": 0.000032
+            },
+            "gpu/sceneCaptureMs": {
+              "samples": 276,
+              "p50": 5.7696,
+              "p95": 16.38464,
+              "p99": 18.134816,
+              "max": 19.116448
+            },
+            "gpu/cloudIntegrationMs": {
+              "samples": 276,
+              "p50": 0.450112,
+              "p95": 0.708416,
+              "p99": 1.885984,
+              "max": 2.404544
+            },
+            "gpu/cloudResolveMs": {
+              "samples": 276,
+              "p50": 0.049888,
+              "p95": 0.115616,
+              "p99": 0.993696,
+              "max": 2.286464
+            },
+            "gpu/framePassSumMs": {
+              "samples": 276,
+              "p50": 6.474176,
+              "p95": 17.056639999999998,
+              "p99": 19.030016,
+              "max": 19.675072
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "oak-after-movement",
+      "state": {
+        "date": "435084631200000076265000000",
+        "bodyId": "G001/C2128,0,1/0/planet/1",
+        "positionM": [
+          4067115.742301941,
+          -1507034.322103653,
+          2861026.785430908
+        ],
+        "heading": [
+          0.2204843416944884,
+          -0.11188898079157578,
+          -0.7691857887562095,
+          0.5892543876972478
+        ],
+        "travel": {
+          "clearanceM": 5.839267415844915,
+          "systemUnit": 1
+        },
+        "lighting": {
+          "enabled": true,
+          "active": true,
+          "altitudeM": 5.839267415844915,
+          "unitsPerM": 1,
+          "widthM": 320,
+          "depthM": 1000,
+          "mapSize": 2048,
+          "shadowIntensity": 1,
+          "skyIntensity": 0.7,
+          "ambientIntensity": 0.08800000000000001,
+          "allocated": true,
+          "estimatedTargetBytes": 33554432
+        },
+        "terrain": {
+          "pending": 0,
+          "staleWaterPatches": 0,
+          "lifePackBuilds": 356,
+          "lifePending": 0,
+          "faunaTerrainPending": 0,
+          "failures": 0
+        },
+        "forest": {
+          "visible": 746,
+          "near": 95,
+          "cached": 18309,
+          "pending": 0,
+          "originVersion": 14,
+          "originRebased": false,
+          "workerFailures": 0,
+          "selectionPending": false,
+          "fullCanopy": {
+            "enabled": true,
+            "streaming": true,
+            "ready": true,
+            "water": -4500,
+            "configuredWater": -4500,
+            "context": "6a86d89ddc18ad1e501ab2bbc413882bffd0d9577162337d48aa6a16b9cc0c8e",
+            "family": "94b2a1c58d25d2d94ee1bcf23c96fbb0b03c7e271e9bbea8140156f6dadfe6f1",
+            "reusedPatches": 0,
+            "reusePending": false,
+            "generation": 1,
+            "patches": 6690,
+            "trees": 153251,
+            "selectedPatches": 6690,
+            "queuedPatches": 0,
+            "jobsInFlight": 0,
+            "selectionPending": false,
+            "installedThisFrame": 0,
+            "installMs": 0,
+            "selectionMs": 28.100000001490116,
+            "selectionApplyMs": 20.19999998062849,
+            "selectionApplySliceMs": 0,
+            "selectionApplyPending": false,
+            "uploadBytes": 0,
+            "failures": 0,
+            "workerRestarts": 0,
+            "terminalFailure": false,
+            "timeouts": 0,
+            "capacityMisses": 0,
+            "slots": {
+              "capacity": 229376,
+              "used": 153251,
+              "free": 76125,
+              "allocations": 6620,
+              "freeExtents": 1,
+              "largestFree": 76125,
+              "failures": 0
+            },
+            "rebasePending": false,
+            "nearPresentNotInCensus": 0,
+            "nearAbsentInCensus": 0,
+            "farForcedClose": 0,
+            "closeCandidateScope": "current near selection",
+            "patchLookupCache": {
+              "hits": 16535,
+              "misses": 5627,
+              "keys": 5627
+            },
+            "attributeBytes": 11468800,
+            "retainedCoordinateBytes": 7340032,
+            "rebaseBufferBytes": 0
+          },
+          "detailedTrees": {
+            "ready": true,
+            "loading": false,
+            "error": "",
+            "visible": [
+              42,
+              275
+            ],
+            "species": 5,
+            "dateNs": "435084631200000076265000000",
+            "catalogueVersion": 1,
+            "heightPolicy": "canonical-population-proxy",
+            "geometryVariants": 1,
+            "farRepresentation": "legacy-canonical-canopy",
+            "instanceSlots": "compact-per-family",
+            "families": [
+              {
+                "kind": "branching",
+                "submitted": [
+                  42,
+                  275
+                ],
+                "retainedSlots": [
+                  42,
+                  275
+                ],
+                "capacities": [
+                  192,
+                  4096
+                ],
+                "foliageMipmaps": null
+              }
+            ],
+            "foliageMipmaps": null,
+            "samples": [
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85585/181665",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 20.643772007897496,
+                "variant": 0,
+                "barkBrightness": 0.9744454337656498,
+                "foliageBrightness": 0.9595192545093596,
+                "windPhase01": 0.04107257793657482,
+                "textureVariant": 3
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85585/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 20.48117033112794,
+                "variant": 5,
+                "barkBrightness": 0.9444439062848687,
+                "foliageBrightness": 0.9428975746035576,
+                "windPhase01": 0.07157540135085583,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181664",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 10.411693538539112,
+                "variant": 6,
+                "barkBrightness": 0.9384905888140201,
+                "foliageBrightness": 1.0179500334896148,
+                "windPhase01": 0.3537117892410606,
+                "textureVariant": 0
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 16.56552426610142,
+                "variant": 1,
+                "barkBrightness": 0.9857744085416198,
+                "foliageBrightness": 1.0451483393553644,
+                "windPhase01": 0.31941383332014084,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85582/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 11.850877651013434,
+                "variant": 4,
+                "barkBrightness": 1.0278018553927541,
+                "foliageBrightness": 1.005873320857063,
+                "windPhase01": 0.2850574168842286,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85582/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 13.46297427918762,
+                "variant": 6,
+                "barkBrightness": 0.9637957454100252,
+                "foliageBrightness": 1.07692808737047,
+                "windPhase01": 0.2273182508070022,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85583/181661",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 15.71476753987372,
+                "variant": 0,
+                "barkBrightness": 0.9934859221056104,
+                "foliageBrightness": 1.0639401901047676,
+                "windPhase01": 0.04741596314124763,
+                "textureVariant": 0
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 10.365708612836897,
+                "variant": 4,
+                "barkBrightness": 0.9639474834129215,
+                "foliageBrightness": 1.0693794677965343,
+                "windPhase01": 0.7809903337620199,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85631/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 18.35100895166397,
+                "variant": 5,
+                "barkBrightness": 0.9436232686415316,
+                "foliageBrightness": 1.0019798218738287,
+                "windPhase01": 0.37049811985343695,
+                "textureVariant": 2
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85631/181666",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 13.93719585146755,
+                "variant": 1,
+                "barkBrightness": 1.0180635090172292,
+                "foliageBrightness": 1.0938649975229056,
+                "windPhase01": 0.6944051128812134,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85627/181688",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 17.93395545706153,
+                "variant": 2,
+                "barkBrightness": 1.0087935403361916,
+                "foliageBrightness": 0.9702357118949294,
+                "windPhase01": 0.48271912010386586,
+                "textureVariant": 2
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85631/181675",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 16.993598566390574,
+                "variant": 6,
+                "barkBrightness": 1.065115034878254,
+                "foliageBrightness": 1.0179993541445582,
+                "windPhase01": 0.9014052730053663,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85626/181687",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 16.98527143895626,
+                "variant": 6,
+                "barkBrightness": 1.0583450286090375,
+                "foliageBrightness": 0.9333238285500557,
+                "windPhase01": 0.19310634001158178,
+                "textureVariant": 0
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85623/181693",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 19.86505034379661,
+                "variant": 0,
+                "barkBrightness": 0.94781076785177,
+                "foliageBrightness": 1.0373585810884833,
+                "windPhase01": 0.0765176941640675,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85628/181660",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 15.874745957553387,
+                "variant": 2,
+                "barkBrightness": 1.0025940585508943,
+                "foliageBrightness": 1.0660068272612988,
+                "windPhase01": 0.049247951013967395,
+                "textureVariant": 2
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85628/181680",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 13.097521007061005,
+                "variant": 6,
+                "barkBrightness": 1.0351872612163424,
+                "foliageBrightness": 0.9966614614706487,
+                "windPhase01": 0.4185002848971635,
+                "textureVariant": 3
+              }
+            ]
+          }
+        },
+        "render": {
+          "draws": 291,
+          "triangles": 5118910,
+          "textures": 501
+        },
+        "profile": {
+          "enabled": true,
+          "gpuAvailable": true,
+          "historyLimit": 600,
+          "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+          "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+          "pendingQueries": 7,
+          "pendingLimit": 48,
+          "skippedQueries": 0,
+          "disjointQueries": 0,
+          "expiredQueries": 0,
+          "lastDrawCalls": 291,
+          "lastTriangles": 5118910,
+          "statistics": {
+            "frameIntervalMs": {
+              "samples": 318,
+              "p50": 52.80000000447035,
+              "p95": 68.79999999701977,
+              "p99": 121,
+              "max": 488.70000000298023
+            },
+            "cpu/planetUpdateMs": {
+              "samples": 318,
+              "p50": 33.600000001490116,
+              "p95": 42.79999999701977,
+              "p99": 55.19999999552965,
+              "max": 125.69999999552965
+            },
+            "cpu/lakeReflectionMs": {
+              "samples": 318,
+              "p50": 0.5,
+              "p95": 1.1999999955296516,
+              "p99": 1.5,
+              "max": 2.5999999940395355
+            },
+            "cpu/sceneCaptureMs": {
+              "samples": 318,
+              "p50": 10.299999997019768,
+              "p95": 13.699999995529652,
+              "p99": 16.299999997019768,
+              "max": 17.099999994039536
+            },
+            "cpu/cloudIntegrationMs": {
+              "samples": 318,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.30000000447034836,
+              "max": 0.5
+            },
+            "cpu/cloudResolveMs": {
+              "samples": 318,
+              "p50": 0.09999999403953552,
+              "p95": 0.20000000298023224,
+              "p99": 0.20000000298023224,
+              "max": 0.5
+            },
+            "cpu/frameWorkMs": {
+              "samples": 318,
+              "p50": 50.80000000447035,
+              "p95": 65.69999999552965,
+              "p99": 74.60000000149012,
+              "max": 141.5
+            },
+            "drawCalls": {
+              "samples": 318,
+              "p50": 297,
+              "p95": 297,
+              "p99": 297,
+              "max": 297
+            },
+            "triangles": {
+              "samples": 318,
+              "p50": 5066440,
+              "p95": 5118910,
+              "p99": 5134424,
+              "max": 5137108
+            },
+            "gpu/lakeReflectionMs": {
+              "samples": 317,
+              "p50": 0,
+              "p95": 0.000032,
+              "p99": 0.000032,
+              "max": 0.000032
+            },
+            "gpu/sceneCaptureMs": {
+              "samples": 316,
+              "p50": 5.89216,
+              "p95": 16.38464,
+              "p99": 17.977664,
+              "max": 19.116448
+            },
+            "gpu/cloudIntegrationMs": {
+              "samples": 316,
+              "p50": 0.44992,
+              "p95": 0.708416,
+              "p99": 1.885984,
+              "max": 2.442976
+            },
+            "gpu/cloudResolveMs": {
+              "samples": 316,
+              "p50": 0.05008,
+              "p95": 0.115616,
+              "p99": 0.741696,
+              "max": 2.286464
+            },
+            "gpu/framePassSumMs": {
+              "samples": 316,
+              "p50": 6.619072,
+              "p95": 17.034048,
+              "p99": 18.690112000000003,
+              "max": 19.675072
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "oak-plus-pine",
+      "elapsedMs": 3333,
+      "state": {
+        "date": "435084631200000076265000000",
+        "bodyId": "G001/C2128,0,1/0/planet/1",
+        "positionM": [
+          4067115.742301941,
+          -1507034.322103653,
+          2861026.785430908
+        ],
+        "heading": [
+          0.2204843416944943,
+          -0.11188898079156472,
+          -0.7691857887562389,
+          0.5892543876972092
+        ],
+        "travel": {
+          "clearanceM": 5.839267415844915,
+          "systemUnit": 1
+        },
+        "lighting": {
+          "enabled": true,
+          "active": true,
+          "altitudeM": 5.839267415844915,
+          "unitsPerM": 1,
+          "widthM": 320,
+          "depthM": 1000,
+          "mapSize": 2048,
+          "shadowIntensity": 1,
+          "skyIntensity": 0.7,
+          "ambientIntensity": 0.08800000000000001,
+          "allocated": true,
+          "estimatedTargetBytes": 33554432
+        },
+        "terrain": {
+          "pending": 0,
+          "staleWaterPatches": 0,
+          "lifePackBuilds": 356,
+          "lifePending": 0,
+          "faunaTerrainPending": 0,
+          "failures": 0
+        },
+        "forest": {
+          "visible": 746,
+          "near": 95,
+          "cached": 18309,
+          "pending": 0,
+          "originVersion": 14,
+          "originRebased": false,
+          "workerFailures": 0,
+          "selectionPending": false,
+          "fullCanopy": {
+            "enabled": true,
+            "streaming": true,
+            "ready": true,
+            "water": -4500,
+            "configuredWater": -4500,
+            "context": "6a86d89ddc18ad1e501ab2bbc413882bffd0d9577162337d48aa6a16b9cc0c8e",
+            "family": "94b2a1c58d25d2d94ee1bcf23c96fbb0b03c7e271e9bbea8140156f6dadfe6f1",
+            "reusedPatches": 0,
+            "reusePending": false,
+            "generation": 1,
+            "patches": 6690,
+            "trees": 153251,
+            "selectedPatches": 6690,
+            "queuedPatches": 0,
+            "jobsInFlight": 0,
+            "selectionPending": false,
+            "installedThisFrame": 0,
+            "installMs": 0,
+            "selectionMs": 28.100000001490116,
+            "selectionApplyMs": 20.19999998062849,
+            "selectionApplySliceMs": 0,
+            "selectionApplyPending": false,
+            "uploadBytes": 0,
+            "failures": 0,
+            "workerRestarts": 0,
+            "terminalFailure": false,
+            "timeouts": 0,
+            "capacityMisses": 0,
+            "slots": {
+              "capacity": 229376,
+              "used": 153251,
+              "free": 76125,
+              "allocations": 6620,
+              "freeExtents": 1,
+              "largestFree": 76125,
+              "failures": 0
+            },
+            "rebasePending": false,
+            "nearPresentNotInCensus": 0,
+            "nearAbsentInCensus": 0,
+            "farForcedClose": 0,
+            "closeCandidateScope": "current near selection",
+            "patchLookupCache": {
+              "hits": 16535,
+              "misses": 5627,
+              "keys": 5627
+            },
+            "attributeBytes": 11468800,
+            "retainedCoordinateBytes": 7340032,
+            "rebaseBufferBytes": 0
+          },
+          "detailedTrees": {
+            "ready": true,
+            "loading": false,
+            "error": "",
+            "visible": [
+              95,
+              651
+            ],
+            "species": 5,
+            "dateNs": "435084631200000076265000000",
+            "catalogueVersion": 1,
+            "heightPolicy": "canonical-population-proxy",
+            "geometryVariants": 2,
+            "farRepresentation": "legacy-canonical-canopy",
+            "instanceSlots": "compact-per-family",
+            "families": [
+              {
+                "kind": "branching",
+                "submitted": [
+                  42,
+                  275
+                ],
+                "retainedSlots": [
+                  42,
+                  275
+                ],
+                "capacities": [
+                  192,
+                  4096
+                ],
+                "foliageMipmaps": null
+              },
+              {
+                "kind": "spire",
+                "submitted": [
+                  53,
+                  376
+                ],
+                "retainedSlots": [
+                  53,
+                  376
+                ],
+                "capacities": [
+                  192,
+                  4096
+                ],
+                "foliageMipmaps": null
+              }
+            ],
+            "foliageMipmaps": null,
+            "samples": [
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85585/181665",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 20.643772007897496,
+                "variant": 0,
+                "barkBrightness": 0.9744454337656498,
+                "foliageBrightness": 0.9595192545093596,
+                "windPhase01": 0.04107257793657482,
+                "textureVariant": 3
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85585/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 20.48117033112794,
+                "variant": 5,
+                "barkBrightness": 0.9444439062848687,
+                "foliageBrightness": 0.9428975746035576,
+                "windPhase01": 0.07157540135085583,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181664",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 10.411693538539112,
+                "variant": 6,
+                "barkBrightness": 0.9384905888140201,
+                "foliageBrightness": 1.0179500334896148,
+                "windPhase01": 0.3537117892410606,
+                "textureVariant": 0
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 16.56552426610142,
+                "variant": 1,
+                "barkBrightness": 0.9857744085416198,
+                "foliageBrightness": 1.0451483393553644,
+                "windPhase01": 0.31941383332014084,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85582/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 11.850877651013434,
+                "variant": 4,
+                "barkBrightness": 1.0278018553927541,
+                "foliageBrightness": 1.005873320857063,
+                "windPhase01": 0.2850574168842286,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85582/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 13.46297427918762,
+                "variant": 6,
+                "barkBrightness": 0.9637957454100252,
+                "foliageBrightness": 1.07692808737047,
+                "windPhase01": 0.2273182508070022,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85583/181661",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 15.71476753987372,
+                "variant": 0,
+                "barkBrightness": 0.9934859221056104,
+                "foliageBrightness": 1.0639401901047676,
+                "windPhase01": 0.04741596314124763,
+                "textureVariant": 0
+              },
+              {
+                "batch": 0,
+                "family": "branching",
+                "id": "0/577212/85586/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 10.365708612836897,
+                "variant": 4,
+                "barkBrightness": 0.9639474834129215,
+                "foliageBrightness": 1.0693794677965343,
+                "windPhase01": 0.7809903337620199,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85588/181659",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 17.416798907332122,
+                "variant": 0,
+                "barkBrightness": 1.0437799154222012,
+                "foliageBrightness": 1.092317938292399,
+                "windPhase01": 0.8018757237587124,
+                "textureVariant": 2
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85589/181672",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 10.662903230637312,
+                "variant": 6,
+                "barkBrightness": 1.0610069021582604,
+                "foliageBrightness": 0.9565615832339972,
+                "windPhase01": 0.20114244776777923,
+                "textureVariant": 0
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85575/181660",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 13.524892185814679,
+                "variant": 0,
+                "barkBrightness": 0.9935604953020811,
+                "foliageBrightness": 1.0261945537291468,
+                "windPhase01": 0.6688979191239923,
+                "textureVariant": 2
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85593/181669",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 12.683464791625738,
+                "variant": 6,
+                "barkBrightness": 0.9844104330986738,
+                "foliageBrightness": 0.9527792764361948,
+                "windPhase01": 0.050120001658797264,
+                "textureVariant": 0
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85574/181665",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 14.91970089636743,
+                "variant": 2,
+                "barkBrightness": 0.9634602193906904,
+                "foliageBrightness": 1.0455321565270423,
+                "windPhase01": 0.8047347164247185,
+                "textureVariant": 1
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85578/181671",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 17.102554945275187,
+                "variant": 0,
+                "barkBrightness": 0.9547995968908072,
+                "foliageBrightness": 1.0985682281199842,
+                "windPhase01": 0.26473346282728016,
+                "textureVariant": 0
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85583/181656",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+                "recipe": "8640a3f4",
+                "heightM": 20.728198554366827,
+                "variant": 2,
+                "barkBrightness": 0.9269592806324363,
+                "foliageBrightness": 1.0801374069880694,
+                "windPhase01": 0.3025571459438652,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "branching",
+                "id": "0/577212/85577/181657",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+                "recipe": "66ef8578",
+                "heightM": 19.071791796945035,
+                "variant": 7,
+                "barkBrightness": 1.0300536539033056,
+                "foliageBrightness": 0.9025881635956466,
+                "windPhase01": 0.9685058505274355,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "spire",
+                "id": "0/577212/85583/181665",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+                "recipe": "4ae4ecf7",
+                "heightM": 10.410580036230385,
+                "variant": 4,
+                "barkBrightness": 0.9742303253337741,
+                "foliageBrightness": 0.9381677398458124,
+                "windPhase01": 0.4256964921951294,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "spire",
+                "id": "0/577212/85584/181664",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+                "recipe": "4ae4ecf7",
+                "heightM": 21.714109929278493,
+                "variant": 3,
+                "barkBrightness": 0.9904291210696101,
+                "foliageBrightness": 1.0899048076476903,
+                "windPhase01": 0.25654693110845983,
+                "textureVariant": 0
+              },
+              {
+                "batch": 0,
+                "family": "spire",
+                "id": "0/577212/85585/181664",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/1",
+                "recipe": "ffb4da89",
+                "heightM": 15.135507203638554,
+                "variant": 6,
+                "barkBrightness": 0.975431893505156,
+                "foliageBrightness": 0.9658882573712617,
+                "windPhase01": 0.3981558489613235,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "spire",
+                "id": "0/577212/85582/181666",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/1",
+                "recipe": "ffb4da89",
+                "heightM": 16.51584542170167,
+                "variant": 0,
+                "barkBrightness": 1.0626605251431465,
+                "foliageBrightness": 0.9132483626715839,
+                "windPhase01": 0.28256991505622864,
+                "textureVariant": 3
+              },
+              {
+                "batch": 0,
+                "family": "spire",
+                "id": "0/577212/85582/181663",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/0",
+                "recipe": "b63c82e0",
+                "heightM": 12.381355861201882,
+                "variant": 4,
+                "barkBrightness": 1.077848156541586,
+                "foliageBrightness": 0.9648231385275722,
+                "windPhase01": 0.8716850010678172,
+                "textureVariant": 1
+              },
+              {
+                "batch": 0,
+                "family": "spire",
+                "id": "0/577212/85584/181667",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/1",
+                "recipe": "ffb4da89",
+                "heightM": 11.210252068936825,
+                "variant": 6,
+                "barkBrightness": 0.9752862175926567,
+                "foliageBrightness": 1.029526540171355,
+                "windPhase01": 0.6354102087207139,
+                "textureVariant": 2
+              },
+              {
+                "batch": 0,
+                "family": "spire",
+                "id": "0/577212/85585/181663",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/0",
+                "recipe": "b63c82e0",
+                "heightM": 11.428175689652562,
+                "variant": 3,
+                "barkBrightness": 0.9953121619671583,
+                "foliageBrightness": 0.9003525359090417,
+                "windPhase01": 0.8700640648603439,
+                "textureVariant": 2
+              },
+              {
+                "batch": 0,
+                "family": "spire",
+                "id": "0/577212/85583/181662",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+                "recipe": "4ae4ecf7",
+                "heightM": 10.438582957722247,
+                "variant": 6,
+                "barkBrightness": 0.9867238830029965,
+                "foliageBrightness": 0.9709973074030132,
+                "windPhase01": 0.060814393451437354,
+                "textureVariant": 1
+              },
+              {
+                "batch": 1,
+                "family": "spire",
+                "id": "0/577212/85581/181657",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/0",
+                "recipe": "b63c82e0",
+                "heightM": 12.30283862631768,
+                "variant": 6,
+                "barkBrightness": 1.0752814200893046,
+                "foliageBrightness": 0.9305040465667844,
+                "windPhase01": 0.7957505327649415,
+                "textureVariant": 2
+              },
+              {
+                "batch": 1,
+                "family": "spire",
+                "id": "0/577212/85584/181657",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/0",
+                "recipe": "b63c82e0",
+                "heightM": 17.1828544549644,
+                "variant": 5,
+                "barkBrightness": 0.9696681687608362,
+                "foliageBrightness": 1.050886571733281,
+                "windPhase01": 0.22862295806407928,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "spire",
+                "id": "0/577212/85585/181673",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/1",
+                "recipe": "ffb4da89",
+                "heightM": 19.445050476118922,
+                "variant": 5,
+                "barkBrightness": 1.0482123399153351,
+                "foliageBrightness": 0.9761042694095523,
+                "windPhase01": 0.38769090198911726,
+                "textureVariant": 2
+              },
+              {
+                "batch": 1,
+                "family": "spire",
+                "id": "0/577212/85586/181673",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/0",
+                "recipe": "b63c82e0",
+                "heightM": 15.701341315172613,
+                "variant": 1,
+                "barkBrightness": 0.9918544057384133,
+                "foliageBrightness": 0.9523820043541491,
+                "windPhase01": 0.510700169717893,
+                "textureVariant": 0
+              },
+              {
+                "batch": 1,
+                "family": "spire",
+                "id": "0/577212/85579/181657",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+                "recipe": "4ae4ecf7",
+                "heightM": 11.281395520083606,
+                "variant": 6,
+                "barkBrightness": 0.9548120128363371,
+                "foliageBrightness": 1.0848331538960339,
+                "windPhase01": 0.1776490919291973,
+                "textureVariant": 0
+              },
+              {
+                "batch": 1,
+                "family": "spire",
+                "id": "0/577212/85590/181660",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+                "recipe": "4ae4ecf7",
+                "heightM": 20.209777653217316,
+                "variant": 1,
+                "barkBrightness": 0.9559472750499844,
+                "foliageBrightness": 0.9159233459271491,
+                "windPhase01": 0.8517839745618403,
+                "textureVariant": 3
+              },
+              {
+                "batch": 1,
+                "family": "spire",
+                "id": "0/577212/85593/181665",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/1",
+                "recipe": "ffb4da89",
+                "heightM": 15.800317795015872,
+                "variant": 7,
+                "barkBrightness": 1.0196706977486611,
+                "foliageBrightness": 1.0804171667899936,
+                "windPhase01": 0.25021269847638905,
+                "textureVariant": 1
+              },
+              {
+                "batch": 1,
+                "family": "spire",
+                "id": "0/577212/85585/181657",
+                "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/0",
+                "recipe": "b63c82e0",
+                "heightM": 12.413966013118625,
+                "variant": 5,
+                "barkBrightness": 1.0690845454856754,
+                "foliageBrightness": 0.9633557128719986,
+                "windPhase01": 0.8470200824085623,
+                "textureVariant": 0
+              }
+            ]
+          }
+        },
+        "render": {
+          "draws": 295,
+          "triangles": 8928438,
+          "textures": 505
+        },
+        "profile": {
+          "enabled": true,
+          "gpuAvailable": true,
+          "historyLimit": 600,
+          "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+          "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+          "pendingQueries": 7,
+          "pendingLimit": 48,
+          "skippedQueries": 0,
+          "disjointQueries": 0,
+          "expiredQueries": 0,
+          "lastDrawCalls": 295,
+          "lastTriangles": 8928438,
+          "statistics": {
+            "frameIntervalMs": {
+              "samples": 381,
+              "p50": 53.600000001490116,
+              "p95": 73.19999999552965,
+              "p99": 142.80000000447035,
+              "max": 488.70000000298023
+            },
+            "cpu/planetUpdateMs": {
+              "samples": 381,
+              "p50": 33.80000000447035,
+              "p95": 43.100000001490116,
+              "p99": 71,
+              "max": 125.69999999552965
+            },
+            "cpu/lakeReflectionMs": {
+              "samples": 381,
+              "p50": 0.5,
+              "p95": 1.1000000014901161,
+              "p99": 1.6000000014901161,
+              "max": 3.1999999955296516
+            },
+            "cpu/sceneCaptureMs": {
+              "samples": 381,
+              "p50": 10.299999997019768,
+              "p95": 13.600000001490116,
+              "p99": 16.399999998509884,
+              "max": 152.29999999701977
+            },
+            "cpu/cloudIntegrationMs": {
+              "samples": 381,
+              "p50": 0.10000000149011612,
+              "p95": 0.20000000298023224,
+              "p99": 0.30000000447034836,
+              "max": 0.5
+            },
+            "cpu/cloudResolveMs": {
+              "samples": 381,
+              "p50": 0.09999999403953552,
+              "p95": 0.20000000298023224,
+              "p99": 0.20000000298023224,
+              "max": 0.5
+            },
+            "cpu/frameWorkMs": {
+              "samples": 381,
+              "p50": 51.19999999552965,
+              "p95": 65.69999999552965,
+              "p99": 103.79999999701977,
+              "max": 216.10000000149012
+            },
+            "drawCalls": {
+              "samples": 381,
+              "p50": 297,
+              "p95": 297,
+              "p99": 297,
+              "max": 297
+            },
+            "triangles": {
+              "samples": 381,
+              "p50": 5066440,
+              "p95": 5137108,
+              "p99": 8928438,
+              "max": 8928438
+            },
+            "gpu/lakeReflectionMs": {
+              "samples": 380,
+              "p50": 0,
+              "p95": 0.000032,
+              "p99": 0.000032,
+              "max": 0.000032
+            },
+            "gpu/sceneCaptureMs": {
+              "samples": 379,
+              "p50": 6.057312,
+              "p95": 16.536672,
+              "p99": 18.815104,
+              "max": 166.464032
+            },
+            "gpu/cloudIntegrationMs": {
+              "samples": 379,
+              "p50": 0.449728,
+              "p95": 0.704736,
+              "p99": 2.096,
+              "max": 2.455968
+            },
+            "gpu/cloudResolveMs": {
+              "samples": 379,
+              "p50": 0.0504,
+              "p95": 0.116608,
+              "p99": 0.993696,
+              "max": 2.553312
+            },
+            "gpu/framePassSumMs": {
+              "samples": 379,
+              "p50": 6.839872000000001,
+              "p95": 17.254368,
+              "p99": 19.368672000000004,
+              "max": 167.157632
+            }
+          }
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "baseDateAfterFindLife": "435084631200000074160300000",
+  "oakOnly": {
+    "eligibleVisible": [
+      33,
+      295
+    ],
+    "submittedByLod": [
+      33,
+      295
+    ],
+    "countsMatch": true,
+    "families": [
+      {
+        "kind": "branching",
+        "submitted": [
+          33,
+          295
+        ],
+        "retainedSlots": [
+          33,
+          295
+        ],
+        "capacities": [
+          192,
+          4096
+        ],
+        "foliageMipmaps": null
+      }
+    ],
+    "triangleDeltaFromLegacy": 3791544,
+    "drawDeltaFromLegacy": 8
+  },
+  "oakProfile": {
+    "name": "oak-only-detailed-lit",
+    "warmMs": 2000,
+    "sampleMs": 8000,
+    "statistics": {
+      "frameIntervalMs": {
+        "samples": 153,
+        "p50": 52.600000001490116,
+        "p95": 66.89999999850988,
+        "p99": 73.40000000596046,
+        "max": 76.39999999850988
+      },
+      "cpu/planetUpdateMs": {
+        "samples": 153,
+        "p50": 33.20000000298023,
+        "p95": 41.69999999552965,
+        "p99": 46.899999998509884,
+        "max": 47.900000005960464
+      },
+      "cpu/lakeReflectionMs": {
+        "samples": 153,
+        "p50": 0.5,
+        "p95": 1.1999999955296516,
+        "p99": 1.7000000029802322,
+        "max": 2.5999999940395355
+      },
+      "cpu/sceneCaptureMs": {
+        "samples": 153,
+        "p50": 10.699999995529652,
+        "p95": 15,
+        "p99": 16.80000000447035,
+        "max": 17.099999994039536
+      },
+      "cpu/cloudIntegrationMs": {
+        "samples": 153,
+        "p50": 0.10000000149011612,
+        "p95": 0.20000000298023224,
+        "p99": 0.29999999701976776,
+        "max": 0.5
+      },
+      "cpu/cloudResolveMs": {
+        "samples": 153,
+        "p50": 0.09999999403953552,
+        "p95": 0.20000000298023224,
+        "p99": 0.20000000298023224,
+        "max": 0.5
+      },
+      "cpu/frameWorkMs": {
+        "samples": 153,
+        "p50": 50.899999998509884,
+        "p95": 64.30000000447035,
+        "p99": 71.10000000149012,
+        "max": 74.60000000149012
+      },
+      "drawCalls": {
+        "samples": 153,
+        "p50": 297,
+        "p95": 297,
+        "p99": 297,
+        "max": 297
+      },
+      "triangles": {
+        "samples": 153,
+        "p50": 5066440,
+        "p95": 5066440,
+        "p99": 5066440,
+        "max": 5066440
+      },
+      "gpu/lakeReflectionMs": {
+        "samples": 152,
+        "p50": 0,
+        "p95": 0.000032,
+        "p99": 0.000032,
+        "max": 0.000032
+      },
+      "gpu/sceneCaptureMs": {
+        "samples": 151,
+        "p50": 5.775232,
+        "p95": 16.656992,
+        "p99": 18.815104,
+        "max": 19.116448
+      },
+      "gpu/cloudIntegrationMs": {
+        "samples": 151,
+        "p50": 0.449632,
+        "p95": 0.600064,
+        "p99": 1.771648,
+        "max": 1.885984
+      },
+      "gpu/cloudResolveMs": {
+        "samples": 151,
+        "p50": 0.049984,
+        "p95": 0.113824,
+        "p99": 0.993696,
+        "max": 1.980544
+      },
+      "gpu/framePassSumMs": {
+        "samples": 151,
+        "p50": 6.547776,
+        "p95": 17.417888,
+        "p99": 19.368672000000004,
+        "max": 19.675072
+      }
+    },
+    "diagnostics": {
+      "enabled": true,
+      "gpuAvailable": true,
+      "historyLimit": 600,
+      "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+      "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+      "pendingQueries": 7,
+      "pendingLimit": 48,
+      "skippedQueries": 0,
+      "disjointQueries": 0,
+      "expiredQueries": 0,
+      "lastDrawCalls": 297,
+      "lastTriangles": 5066440,
+      "statistics": {
+        "frameIntervalMs": {
+          "samples": 153,
+          "p50": 52.600000001490116,
+          "p95": 66.89999999850988,
+          "p99": 73.40000000596046,
+          "max": 76.39999999850988
+        },
+        "cpu/planetUpdateMs": {
+          "samples": 153,
+          "p50": 33.20000000298023,
+          "p95": 41.69999999552965,
+          "p99": 46.899999998509884,
+          "max": 47.900000005960464
+        },
+        "cpu/lakeReflectionMs": {
+          "samples": 153,
+          "p50": 0.5,
+          "p95": 1.1999999955296516,
+          "p99": 1.7000000029802322,
+          "max": 2.5999999940395355
+        },
+        "cpu/sceneCaptureMs": {
+          "samples": 153,
+          "p50": 10.699999995529652,
+          "p95": 15,
+          "p99": 16.80000000447035,
+          "max": 17.099999994039536
+        },
+        "cpu/cloudIntegrationMs": {
+          "samples": 153,
+          "p50": 0.10000000149011612,
+          "p95": 0.20000000298023224,
+          "p99": 0.29999999701976776,
+          "max": 0.5
+        },
+        "cpu/cloudResolveMs": {
+          "samples": 153,
+          "p50": 0.09999999403953552,
+          "p95": 0.20000000298023224,
+          "p99": 0.20000000298023224,
+          "max": 0.5
+        },
+        "cpu/frameWorkMs": {
+          "samples": 153,
+          "p50": 50.899999998509884,
+          "p95": 64.30000000447035,
+          "p99": 71.10000000149012,
+          "max": 74.60000000149012
+        },
+        "drawCalls": {
+          "samples": 153,
+          "p50": 297,
+          "p95": 297,
+          "p99": 297,
+          "max": 297
+        },
+        "triangles": {
+          "samples": 153,
+          "p50": 5066440,
+          "p95": 5066440,
+          "p99": 5066440,
+          "max": 5066440
+        },
+        "gpu/lakeReflectionMs": {
+          "samples": 152,
+          "p50": 0,
+          "p95": 0.000032,
+          "p99": 0.000032,
+          "max": 0.000032
+        },
+        "gpu/sceneCaptureMs": {
+          "samples": 151,
+          "p50": 5.775232,
+          "p95": 16.656992,
+          "p99": 18.815104,
+          "max": 19.116448
+        },
+        "gpu/cloudIntegrationMs": {
+          "samples": 151,
+          "p50": 0.449632,
+          "p95": 0.600064,
+          "p99": 1.771648,
+          "max": 1.885984
+        },
+        "gpu/cloudResolveMs": {
+          "samples": 151,
+          "p50": 0.049984,
+          "p95": 0.113824,
+          "p99": 0.993696,
+          "max": 1.980544
+        },
+        "gpu/framePassSumMs": {
+          "samples": 151,
+          "p50": 6.547776,
+          "p95": 17.417888,
+          "p99": 19.368672000000004,
+          "max": 19.675072
+        }
+      }
+    },
+    "render": {
+      "draws": 297,
+      "triangles": 5066440,
+      "textures": 498
+    },
+    "lifePackBuilds": 356,
+    "lifePending": 0,
+    "faunaTerrainPending": 0,
+    "detailedVisible": [
+      33,
+      295
+    ],
+    "families": [
+      {
+        "kind": "branching",
+        "submitted": [
+          33,
+          295
+        ],
+        "retainedSlots": [
+          33,
+          295
+        ],
+        "capacities": [
+          192,
+          4096
+        ],
+        "foliageMipmaps": null
+      }
+    ]
+  },
+  "cpuProfile": {
+    "duration": 5467054,
+    "nodes": [
+      {
+        "fn": "update",
+        "url": "http://127.0.0.1:5197/src/planet-forest.ts",
+        "line": 373,
+        "selfSamples": 757
+      },
+      {
+        "fn": "currentPatch",
+        "url": "http://127.0.0.1:5197/src/planet-canopy.ts",
+        "line": 462,
+        "selfSamples": 350
+      },
+      {
+        "fn": "noteNear",
+        "url": "http://127.0.0.1:5197/src/planet-canopy.ts",
+        "line": 477,
+        "selfSamples": 152
+      },
+      {
+        "fn": "update",
+        "url": "http://127.0.0.1:5197/src/planet-renderer.ts",
+        "line": 670,
+        "selfSamples": 122
+      },
+      {
+        "fn": "(program)",
+        "url": "",
+        "line": 0,
+        "selfSamples": 109
+      },
+      {
+        "fn": "settled",
+        "url": "http://127.0.0.1:5197/src/planet-renderer.ts",
+        "line": 893,
+        "selfSamples": 68
+      },
+      {
+        "fn": "upload",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "line": 35017,
+        "selfSamples": 63
+      },
+      {
+        "fn": "projected",
+        "url": "http://127.0.0.1:5197/src/planet-renderer.ts",
+        "line": 740,
+        "selfSamples": 62
+      },
+      {
+        "fn": "drawFlora",
+        "url": "http://127.0.0.1:5197/src/planet-renderer.ts",
+        "line": 1070,
+        "selfSamples": 59
+      },
+      {
+        "fn": "drawFauna",
+        "url": "http://127.0.0.1:5197/src/planet-renderer.ts",
+        "line": 1137,
+        "selfSamples": 56
+      },
+      {
+        "fn": "updateMatrixWorld",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "line": 8360,
+        "selfSamples": 49
+      },
+      {
+        "fn": "updateMatrixWorld",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "line": 8360,
+        "selfSamples": 46
+      },
+      {
+        "fn": "faunaMemberPoseAtWorldNs",
+        "url": "http://127.0.0.1:5197/src/fauna-runtime.ts",
+        "line": 102,
+        "selfSamples": 43
+      },
+      {
+        "fn": "updateOpticalStarPoints",
+        "url": "http://127.0.0.1:5197/src/main.ts",
+        "line": 3320,
+        "selfSamples": 41
+      },
+      {
+        "fn": "refreshUniformsCommon",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "line": 39949,
+        "selfSamples": 41
+      },
+      {
+        "fn": "reconcileBatch",
+        "url": "http://127.0.0.1:5197/src/planet-forest.ts",
+        "line": 323,
+        "selfSamples": 36
+      },
+      {
+        "fn": "WebGLRenderer.renderBufferDirect",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "line": 42864,
+        "selfSamples": 36
+      },
+      {
+        "fn": "(garbage collector)",
+        "url": "",
+        "line": 0,
+        "selfSamples": 33
+      },
+      {
+        "fn": "(anonymous)",
+        "url": "http://127.0.0.1:5197/src/main.ts",
+        "line": 4574,
+        "selfSamples": 29
+      },
+      {
+        "fn": "setProgram",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "line": 43405,
+        "selfSamples": 25
+      },
+      {
+        "fn": "bufferSubData",
+        "url": "",
+        "line": 0,
+        "selfSamples": 24
+      },
+      {
+        "fn": "updatePlanetTiles",
+        "url": "http://127.0.0.1:5197/src/main.ts",
+        "line": 2654,
+        "selfSamples": 23
+      },
+      {
+        "fn": "setValueV3f",
+        "url": "http://127.0.0.1:5197/node_modules/.vite/deps/chunk-WRDRO7YF.js?v=969718af",
+        "line": 34445,
+        "selfSamples": 23
+      },
+      {
+        "fn": "bindVertexArray",
+        "url": "",
+        "line": 0,
+        "selfSamples": 23
+      },
+      {
+        "fn": "fmt",
+        "url": "http://127.0.0.1:5197/src/main.ts",
+        "line": 89,
+        "selfSamples": 22
+      }
+    ]
+  },
+  "dateReplay": {
+    "observedBaseDate": "435084631200000074160300000",
+    "shiftedDate": "435084631200000077660300000",
+    "matchingIds": 16,
+    "mismatches": [],
+    "phaseSamples": [
+      {
+        "id": "0/577212/85585/181665",
+        "before": {
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 20.643772007897496,
+          "windPhase01": 0.04107257793657482
+        },
+        "after": {
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 20.643772007897496,
+          "windPhase01": 0.04107257793657482
+        }
+      },
+      {
+        "id": "0/577212/85585/181667",
+        "before": {
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 20.48117033112794,
+          "windPhase01": 0.07157540135085583
+        },
+        "after": {
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 20.48117033112794,
+          "windPhase01": 0.07157540135085583
+        }
+      },
+      {
+        "id": "0/577212/85586/181664",
+        "before": {
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 10.411693538539112,
+          "windPhase01": 0.3537117892410606
+        },
+        "after": {
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 10.411693538539112,
+          "windPhase01": 0.3537117892410606
+        }
+      },
+      {
+        "id": "0/577212/85586/181667",
+        "before": {
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 16.56552426610142,
+          "windPhase01": 0.31941383332014084
+        },
+        "after": {
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 16.56552426610142,
+          "windPhase01": 0.31941383332014084
+        }
+      },
+      {
+        "id": "0/577212/85582/181667",
+        "before": {
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+          "recipe": "66ef8578",
+          "heightM": 11.850877651013434,
+          "windPhase01": 0.2850574168842286
+        },
+        "after": {
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+          "recipe": "66ef8578",
+          "heightM": 11.850877651013434,
+          "windPhase01": 0.2850574168842286
+        }
+      },
+      {
+        "id": "0/577212/85582/181662",
+        "before": {
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 13.46297427918762,
+          "windPhase01": 0.2273182508070022
+        },
+        "after": {
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 13.46297427918762,
+          "windPhase01": 0.2273182508070022
+        }
+      }
+    ]
+  },
+  "movement": {
+    "distanceM": 24.78524929338344,
+    "originVersionBefore": 14,
+    "originVersionAfter": 14,
+    "originRebased": false
+  },
+  "oakPlusPine": {
+    "eligibleVisible": [
+      95,
+      651
+    ],
+    "submittedByLod": [
+      95,
+      651
+    ],
+    "countsMatch": true,
+    "families": [
+      {
+        "kind": "branching",
+        "submitted": [
+          42,
+          275
+        ],
+        "retainedSlots": [
+          42,
+          275
+        ],
+        "capacities": [
+          192,
+          4096
+        ],
+        "foliageMipmaps": null
+      },
+      {
+        "kind": "spire",
+        "submitted": [
+          53,
+          376
+        ],
+        "retainedSlots": [
+          53,
+          376
+        ],
+        "capacities": [
+          192,
+          4096
+        ],
+        "foliageMipmaps": null
+      }
+    ],
+    "render": {
+      "draws": 295,
+      "triangles": 8928438,
+      "textures": 505
+    }
+  },
+  "glError": 0,
+  "sourceIntegrity": {
+    "unchanged": true,
+    "start": {
+      "src/main.ts": "a5398371b9c5eab3082b7a5003c6e582719d20374a664180b27938c6c2ed5c52",
+      "src/planet-renderer.ts": "50743ac68aee665343c57e658ba94407ca3f4ff70a934c15971592edb359bf6f",
+      "src/planet-forest.ts": "dbff7989e0daa5bc01fa95ffaa0c0d87bd40bb415c1651eba12fb8dd15257983",
+      "src/forest-tree-family-library.ts": "ab19e112bc6cf4301c6bcf20cf74720315ede6491a516025d8c048703365b4c6",
+      "src/compact-instance-slots.ts": "1b9812f4e7b2162fa558d82edd800ece37d5e310f6abd6721a70c2a39981d925",
+      "src/tree-asset.ts": "e20daf5cc22e0ec567df07f688dda470a888f8f254535f5e358ba9550b2fb90b",
+      "src/forest-tree-catalogue.ts": "11fea8d2e51a7002dd0aa17de0e8ddd00e73ff29b7a447aff989702110810258",
+      "src/surface-lighting.ts": "4348fd91f6d871aee09800d7bcd1547d8bf8cb9e53ebb1b52293a991e72eaf93",
+      "src/terrain-shadow.ts": "f08967f239d3f68bc26e886b97bdb992c1cbdc022db8c6657ede194e5f9d091e",
+      "src/forest-material.ts": "fc65be33dc821c59cd15b93aa83d5de0dc9d884665363675e55752fbc7d3657b",
+      "src/planet-canopy.ts": "b63cc25fd01b4f0f6ff63968b33192e7c85da1e588093eb0a29a4ecc43481c22",
+      "src/fauna-field-renderer.ts": "7a4af029cc85b0e4248d11c2f9f45a39dc8f2e8f6a4d03bd4912225984f51a29",
+      "test-results/compact-tree-families/integration.browser.mjs": "cfab77e415f0ca2e808a1575c2d0b5d8227516b68b44320e00016a4884afa5a3",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.glb": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.lod1.glb": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.glb": "58ead3644a84f91d0d30658c827be0c04d6ab0b5a42f468397cd2474a1c06e3d",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.lod1.glb": "126cc179069cdeadf37bfa9fefa47b5be853040046be812a6e282e648f8d884b"
+    },
+    "end": {
+      "src/main.ts": "a5398371b9c5eab3082b7a5003c6e582719d20374a664180b27938c6c2ed5c52",
+      "src/planet-renderer.ts": "50743ac68aee665343c57e658ba94407ca3f4ff70a934c15971592edb359bf6f",
+      "src/planet-forest.ts": "dbff7989e0daa5bc01fa95ffaa0c0d87bd40bb415c1651eba12fb8dd15257983",
+      "src/forest-tree-family-library.ts": "ab19e112bc6cf4301c6bcf20cf74720315ede6491a516025d8c048703365b4c6",
+      "src/compact-instance-slots.ts": "1b9812f4e7b2162fa558d82edd800ece37d5e310f6abd6721a70c2a39981d925",
+      "src/tree-asset.ts": "e20daf5cc22e0ec567df07f688dda470a888f8f254535f5e358ba9550b2fb90b",
+      "src/forest-tree-catalogue.ts": "11fea8d2e51a7002dd0aa17de0e8ddd00e73ff29b7a447aff989702110810258",
+      "src/surface-lighting.ts": "4348fd91f6d871aee09800d7bcd1547d8bf8cb9e53ebb1b52293a991e72eaf93",
+      "src/terrain-shadow.ts": "f08967f239d3f68bc26e886b97bdb992c1cbdc022db8c6657ede194e5f9d091e",
+      "src/forest-material.ts": "fc65be33dc821c59cd15b93aa83d5de0dc9d884665363675e55752fbc7d3657b",
+      "src/planet-canopy.ts": "b63cc25fd01b4f0f6ff63968b33192e7c85da1e588093eb0a29a4ecc43481c22",
+      "src/fauna-field-renderer.ts": "7a4af029cc85b0e4248d11c2f9f45a39dc8f2e8f6a4d03bd4912225984f51a29",
+      "test-results/compact-tree-families/integration.browser.mjs": "cfab77e415f0ca2e808a1575c2d0b5d8227516b68b44320e00016a4884afa5a3",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.glb": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.lod1.glb": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.glb": "58ead3644a84f91d0d30658c827be0c04d6ab0b5a42f468397cd2474a1c06e3d",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.lod1.glb": "126cc179069cdeadf37bfa9fefa47b5be853040046be812a6e282e648f8d884b"
+    }
+  }
+}
