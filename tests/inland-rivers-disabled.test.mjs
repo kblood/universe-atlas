@@ -188,6 +188,38 @@ test('renderer: stale river attachments add no river water/reflection and dry-gr
     }
     assert.ok(patches&&patches.length>0,'ordinary dry-ground contact terrain becomes available');
     assert.equal(renderer.diagnostics().contactLevel,renderer.contactLevel,'contact uses the ordinary level');
+    renderer.selectionDirty=false;
+    renderer.setContactFocus(point);
+    assert.equal(renderer.selectionDirty,false,'repeating the selected contact point does not rebuild the frontier');
+    const radial=new THREE.Vector3(...direction),tangent=new THREE.Vector3(0,1,0).cross(radial).normalize();
+    const settled=.6,accumulated=1.2;
+    renderer.setContactFocus(radial.clone().multiplyScalar(radiusM+ground+.92).addScaledVector(tangent,settled).toArray());
+    assert.equal(renderer.selectionDirty,false,'sub-metre capsule settling stays below the focus deadband');
+    renderer.setContactFocus(radial.clone().multiplyScalar(radiusM+ground+.92).addScaledVector(tangent,accumulated).toArray());
+    assert.equal(renderer.selectionDirty,true,'small focus movements accumulate against the last selected point');
+    renderer.selectionDirty=false;
+    renderer.setContactFocus(null);
+    assert.equal(renderer.selectionDirty,true,'nonnull-to-null focus transition invalidates the frontier');
+    renderer.selectionDirty=false;
+    renderer.setContactFocus(null);
+    assert.equal(renderer.selectionDirty,false,'repeated null focus does not invalidate each flight frame');
+    const movedDirection=radial.clone().addScaledVector(tangent,160/radiusM).normalize().toArray();
+    const movedSurface=surfaceQuery(base)(movedDirection);
+    assert.equal(movedSurface.ocean,false,'the moved focus remains on dry ground');
+    assert.equal(movedSurface.walkable,true,'the moved focus is walkable');
+    const movedPoint=movedDirection.map(v=>v*(radiusM+movedSurface.groundHeightM+.92));
+    renderer.setContactFocus(movedPoint);
+    assert.equal(renderer.selectionDirty,true,'a 160 m grounded retarget invalidates the selected terrain frontier');
+    let movedPatches=null,retargetFrames=0;
+    for(;retargetFrames<600&&!movedPatches;retargetFrames++){
+      renderer.update(eye,1080,65,1/60,false,[1,0,0],[],undefined,null,0);
+      await new Promise(resolve=>setImmediate(resolve));
+      movedPatches=renderer.contactPatches(movedPoint,movedPoint);
+    }
+    const movedDiagnostics=renderer.diagnostics();
+    assert.ok(movedPatches&&movedPatches.length>0,
+      `ordinary moved contact settles within the bounded 600-frame window; ${JSON.stringify(movedDiagnostics.contactReadiness)}`);
+    assert.equal(movedDiagnostics.contactReadiness?.reason,'ready');
   }finally{
     renderer.dispose();host.geometry.dispose();host.material.dispose();globalThis.Worker=SavedWorker;
     const target=resolve(directory);

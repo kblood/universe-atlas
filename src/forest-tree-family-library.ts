@@ -22,6 +22,11 @@ export type ForestTreeFamilyEntry<T,S>={kind:ForestTreeKind;family:TreeAssetFami
  * capacities are enforced upstream before residents are assigned to families. */
 export class ForestTreeFamilyLibrary<T,S>{
   entries=new Map<ForestTreeKind,ForestTreeFamilyEntry<T,S>>();
+  /** Families still being staged during an atomic replacement. They are
+   * separately owned until adoption or rollback, and belong in peak-memory
+   * diagnostics even though they are not drawable yet. */
+  readonly pendingEntries=new Set<ForestTreeFamilyEntry<T,S>>();
+  get ownedEntries(){return [...this.entries.values(),...this.pendingEntries];}
   loading=false;error='';maxRadiusM=0;
   /** Changes only when the adopted presentation changes, not when a request
    * starts or fails. Near/far pairing can key against this stable revision. */
@@ -35,6 +40,7 @@ export class ForestTreeFamilyLibrary<T,S>{
   setDate(date:bigint){this.date=date;for(const entry of this.entries.values())entry.family.setDate(date);}
   private release(entries:Iterable<ForestTreeFamilyEntry<T,S>>){
     for(const entry of entries){
+      this.pendingEntries.delete(entry);
       for(const attachment of entry.attachments.splice(0))attachment.dispose();
       for(const batch of entry.batches)batch.dispose();entry.family.dispose();
     }
@@ -54,7 +60,7 @@ export class ForestTreeFamilyLibrary<T,S>{
           structuralVariants:forestStructuralVariants(input.kind),areaPreservingLod:true,silhouetteMatchedLod:true,
           cardCompensation:options.cardCompensation??FOREST_CARD_COMPENSATION});
         const entry:ForestTreeFamilyEntry<T,S>={kind:input.kind,family,batches:[],pools:[],wanted:[[],[]],coverage:[new Map(),new Map()],attachments:[]};
-        pending.push(entry);
+        pending.push(entry);this.pendingEntries.add(entry);
         if(this.disposed||request!==this.request)return false;
         if(!family.forestCoverage||!Number.isFinite(family.maxRadiusM)||family.maxRadiusM<=0)
           throw new Error('Tree family lacks forest coverage or conservative bounds');
@@ -66,6 +72,7 @@ export class ForestTreeFamilyLibrary<T,S>{
       for(const entry of pending){entry.family.setDate(this.date);for(const batch of entry.batches)this.parent.add(batch.group);}
       this.release(this.entries.values());
       this.entries=new Map(pending.map(entry=>[entry.kind,entry]));
+      for(const entry of pending)this.pendingEntries.delete(entry);
       this.maxRadiusM=Math.max(...pending.map(entry=>entry.family.maxRadiusM));this.revision++;adopted=true;
       return true;
     }catch(error){if(request===this.request)this.error=String(error);throw error;}

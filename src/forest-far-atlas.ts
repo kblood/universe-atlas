@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {hemiTreeViewGLSL,treeHemiCaptureViews,TREE_HEMI_VIEW_VERSION} from './tree-impostor-views.ts';
 import {forestVariantPoint,forestVariantRemovesLeaf,forestVariantTwist,FOREST_VARIANT_COUNT,type ForestStructuralVariant} from './tree-structural-variant.ts';
+import {forestMeshBufferFootprint} from './forest-resource-accounting.ts';
 
 /** Captured far representation for the canonical Oak/Pine forest.
  *
@@ -99,7 +100,7 @@ export function installForestFarAtlasCapture(fragmentShader:string,leaf:boolean)
   return source;
 }
 
-type CaptureBatch={group:THREE.Group;pass:{value:number};frame:{value:THREE.Vector2};count:number;
+type CaptureBatch={group:THREE.Group;meshes?:THREE.InstancedMesh[];pass:{value:number};frame:{value:THREE.Vector2};count:number;
   setMember(index:number,matrix:THREE.Matrix4,member:number):void;dispose():void};
 export type ForestFarAtlasSource={kind:'branching'|'spire';geometries:readonly THREE.BufferGeometry[];
   variants:readonly ForestStructuralVariant[];cardScale:number;createCaptureBatch(lod:0|1,count:number):CaptureBatch};
@@ -120,6 +121,9 @@ export class ForestFarAtlas{
   readonly sphereM:ForestFarAtlasSphere;
   readonly bytes=forestFarAtlasBytes();
   readonly scratchBytes=forestFarAtlasScratchBytes();
+  private captureBatchCpuBytes=0;
+  private captureBatchGpuEstimateBytes=0;
+  private buildScratchPeakGpuBytes=0;
   state:ForestFarAtlasState='baking';
   error='';nextView=0;bakeMs=0;steps=0;
   private batch:CaptureBatch|null;
@@ -154,6 +158,9 @@ export class ForestFarAtlas{
     const r=this.sphereM.radiusM,distance=r+1;
     this.camera=new THREE.OrthographicCamera(-L.columns*r,L.columns*r,L.rows*r,-L.rows*r,.5,2*r+1.5);
     this.batch=source.createCaptureBatch(L.captureLod,FOREST_VARIANT_COUNT);
+    const captureBuffers=this.batch.meshes?forestMeshBufferFootprint(this.batch.meshes):{totalBytes:0};
+    this.captureBatchCpuBytes=captureBuffers.totalBytes;this.captureBatchGpuEstimateBytes=captureBuffers.totalBytes;
+    this.buildScratchPeakGpuBytes=this.scratchBytes+this.captureBatchGpuEstimateBytes;
     this.batch.frame.value.set(distance,r);this.scene.add(this.batch.group);
     const material=new THREE.ShaderMaterial({vertexShader:copyVertex,fragmentShader:copyFragment,depthTest:false,depthWrite:false,blending:THREE.NoBlending,
       uniforms:{atlasSource:{value:null},atlasSourceLevel:{value:0},atlasTargetSize:{value:new THREE.Vector2()}}});
@@ -218,6 +225,9 @@ export class ForestFarAtlas{
   diagnostics(){
     return {kind:this.kind,version:FOREST_FAR_ATLAS_VERSION,state:this.state,error:this.error,views:this.nextView,viewCount:FOREST_FAR_ATLAS_VIEWS,
       members:FOREST_VARIANT_COUNT,tilePx:L.tile,captureLod:L.captureLod,bytes:this.bytes,scratchBytes:this.state==='baking'?this.scratchBytes:0,
+      captureBatchCpuBytes:this.state==='baking'?this.captureBatchCpuBytes:0,
+      captureBatchGpuEstimateBytes:this.state==='baking'?this.captureBatchGpuEstimateBytes:0,
+      buildScratchPeakGpuBytes:this.buildScratchPeakGpuBytes,
       bakeCpuMs:Math.round(this.bakeMs*10)/10,steps:this.steps,sphereM:this.sphereM};
   }
   dispose(){

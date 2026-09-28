@@ -19,10 +19,11 @@ import {ForestTreeFamilyLibrary,type ForestTreeFamilyInput,type ForestTreeFamily
 import {ForestPatchBroadphase} from './forest-patch-broadphase.ts';
 import {ForestOrderedWorkIndex} from './forest-ordered-work.ts';
 import {forestPresentationFamily,packForestPresentation,FOREST_PRESENTATION_VERSION} from './forest-presentation.ts';
-import {FOREST_VARIANT_VERSION} from './tree-structural-variant.ts';
+import {FOREST_VARIANT_VERSION,FOREST_VARIANT_COUNT} from './tree-structural-variant.ts';
 import type {ForestFamilyPresentation} from './forest-impostor.ts';
 import type {ForestTreeKind} from './forest-tree-family-library.ts';
-import {ForestFarAtlas,FOREST_FAR_ATLAS_VERSION} from './forest-far-atlas.ts';
+import {ForestFarAtlas,FOREST_FAR_ATLAS_VERSION,FOREST_FAR_ATLAS_VIEWS} from './forest-far-atlas.ts';
+import {forestMemoryFootprint,forestMeshBufferFootprint,forestTextureFootprint} from './forest-resource-accounting.ts';
 
 type Resident={cell:PopulationCell;height:number;present:boolean;water:number;patchKey?:string};
 type TreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
@@ -641,7 +642,48 @@ export class PlanetForest {
     this.nearTrees=counts[0];this.visibleTrees=counts[0]+counts[1]+canopyCount;
     this.updateMs=performance.now()-updateStarted;
   }
-  diagnostics(){return {visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
+  diagnostics(){
+    const ownedEntries=this.assets.ownedEntries;
+    const legacyMeshes=[...this.meshes,this.canopy,...(this.fullCanopy?[this.fullCanopy.renderer.mesh]:[])];
+    const legacyBuffers=forestMeshBufferFootprint(legacyMeshes);
+    const familyGeometries=ownedEntries.flatMap(entry=>(entry.family.lods??[]).flatMap(lod=>lod.map(mesh=>mesh.geometry)));
+    const familyMeshes=ownedEntries.flatMap(entry=>entry.batches.flatMap(batch=>batch.meshes??[]));
+    const familyBufferUsage=forestMeshBufferFootprint(familyMeshes,familyGeometries);
+    const textures=forestTextureFootprint(ownedEntries.flatMap(entry=>[...(entry.family.textures??[])]));
+    const atlasReports=[...this.farAtlases.values()].map(atlas=>atlas.diagnostics());
+    const farAtlasResidentGpuBytes=atlasReports.reduce((n,atlas)=>n+atlas.bytes,0);
+    const farAtlasScratchGpuBytes=atlasReports.reduce((n,atlas)=>n+atlas.scratchBytes,0);
+    const farAtlasCaptureCpuBytes=atlasReports.reduce((n,atlas)=>n+atlas.captureBatchCpuBytes,0);
+    const farAtlasCaptureGpuEstimateBytes=atlasReports.reduce((n,atlas)=>n+atlas.captureBatchGpuEstimateBytes,0);
+    const farAtlasBuildScratchPeakGpuBytes=atlasReports.reduce((n,atlas)=>n+atlas.buildScratchPeakGpuBytes,0);
+    const embeddedImageFileBytes=ownedEntries.reduce((n,entry)=>n+(entry.family.embeddedTextureBytes??0),0);
+    const baseMemory=forestMemoryFootprint({legacyMeshes,familyGeometries,familyMeshes,
+      familyTextures:ownedEntries.flatMap(entry=>[...(entry.family.textures??[])]),embeddedImageFileBytes,farAtlasResidentBytes:farAtlasResidentGpuBytes});
+    const canopyMemory=this.fullCanopy?.memoryUsage()??{hostPersistentCpuBytes:0,hostScratchCpuBytes:0,hostScratchPeakCpuBytes:0};
+    const baseCpuBytes=baseMemory.retainedCpuBytes+canopyMemory.hostPersistentCpuBytes+canopyMemory.hostScratchCpuBytes;
+    const baseGpuEstimateBytes=baseMemory.estimatedGpuBytes;
+    const estimatedGpuBytes=baseGpuEstimateBytes+farAtlasScratchGpuBytes+farAtlasCaptureGpuEstimateBytes;
+    const retainedCpuBytes=baseCpuBytes+farAtlasCaptureCpuBytes;
+    const estimatedPeakGpuBytes=baseGpuEstimateBytes+farAtlasBuildScratchPeakGpuBytes;
+    const estimatedPeakCpuBytes=baseMemory.retainedCpuBytes+canopyMemory.hostPersistentCpuBytes+
+      Math.max(canopyMemory.hostScratchCpuBytes,canopyMemory.hostScratchPeakCpuBytes)+farAtlasCaptureCpuBytes;
+    const memoryAccounting={version:'forest-resource-estimate-1',basis:'CPU typed-array/image byte lengths plus estimated WebGL buffer/texture storage; excludes driver padding, shader/program state and allocator overhead',
+      legacyBufferCpuBytes:legacyBuffers.totalBytes,legacyBufferGpuEstimateBytes:legacyBuffers.geometryGpuEstimateBytes+legacyBuffers.instanceGpuEstimateBytes,
+      familyBufferCpuBytes:familyBufferUsage.totalBytes,familyBufferGpuEstimateBytes:familyBufferUsage.geometryGpuEstimateBytes+familyBufferUsage.instanceGpuEstimateBytes,
+      geometryCount:baseMemory.geometryCount,familyGeometryCount:familyBufferUsage.geometryCount,
+      familyTextureCount:textures.textureCount,decodedImageSourceCount:textures.imageSourceCount,
+      familyDecodedTextureCpuBytes:textures.decodedCpuBytes,familyGpuTextureEstimateBytes:textures.gpuEstimateBytes,embeddedImageFileBytes,
+      canopyHostPersistentCpuBytes:canopyMemory.hostPersistentCpuBytes,canopyCurrentScratchCpuBytes:canopyMemory.hostScratchCpuBytes,
+      canopyScratchPeakCpuBytes:canopyMemory.hostScratchPeakCpuBytes,
+      allocationCaps:{maximumFamilies:2,legacyInstanceSlots:[...this.meshes,this.canopy].map(mesh=>mesh.instanceMatrix.count),
+        familyInstanceSlots:ownedEntries.map(entry=>({kind:entry.kind,lods:entry.batches.map(batch=>batch.meshes?.[0]?.instanceMatrix.count??null)})),
+        farAtlasCount:2,farAtlasViewsPerFamily:FOREST_FAR_ATLAS_VIEWS,farAtlasMembersPerFamily:FOREST_VARIANT_COUNT},
+      farAtlasResidentGpuBytes,farAtlasScratchGpuBytes,farAtlasCaptureBufferCpuBytes:farAtlasCaptureCpuBytes,
+      farAtlasCaptureBufferGpuEstimateBytes:farAtlasCaptureGpuEstimateBytes,farAtlasBuildScratchPeakGpuBytes,
+      retainedCpuBytes,estimatedGpuBytes,estimatedPeakCpuBytes,estimatedPeakGpuBytes,
+      currentCombinedEstimateBytes:retainedCpuBytes+estimatedGpuBytes,peakCombinedEstimateBytes:estimatedPeakCpuBytes+estimatedPeakGpuBytes,
+      pendingFamilyReplacements:Math.max(0,ownedEntries.length-this.assets.entries.size)};
+    return {visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
     detailedTrees:{ready:this.assets.entries.size>0,loading:this.assets.loading,error:this.assets.error||this.catalogueError,visible:[...this.assetCounts],species:this.catalogue.count,dateNs:this.worldDate.toString(),catalogueVersion:this.catalogueVersion,
       heightPolicy:'canonical-population-proxy',geometryVariants:this.assets.entries.size,farRepresentation:this.farRepresentation(),
       farAtlas:{version:FOREST_FAR_ATLAS_VERSION,error:this.farAtlasError,viewsPerFrame:FOREST_FAR_ATLAS_VIEWS_PER_FRAME,
@@ -662,7 +704,7 @@ export class PlanetForest {
     updateMs:this.updateMs,farOwnedSkipped:this.farOwnedSkipped,farWork:this.farWorkDiagnostics,matrixWrites:this.matrixWrites,colorWrites:this.colorWrites,coverageWrites:this.coverageWrites,
     scheduledUploadBytes:this.scheduledUploadBytes,originRebased:this.originRebased,originVersion:this.originVersion,originRebaseM:B.forestOriginRebaseM,
     radiusM:B.forestRadiusM,heightRangeM:[10,22],cellSizeM:B.forestCellM,
-    allocatedBytes:[...this.meshes,this.canopy].reduce((s,m)=>s+m.instanceMatrix.array.byteLength+(m.instanceColor?.array.byteLength??0)+
-      Object.values(m.geometry.attributes).reduce((n,a)=>n+a.array.byteLength,0),0)*2};}
+      allocatedBytes:memoryAccounting.currentCombinedEstimateBytes,memoryAccounting};
+  }
   dispose(){if(this.disposed)return;this.disposed=true;this.assets.dispose();this.worker?.terminate();this.worker=null;this.fullCanopy?.dispose();this.fullCanopy=null;for(const mesh of [...this.meshes,this.canopy]){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();mesh.customDepthMaterial?.dispose();}this.cache.clear();this.group.removeFromParent();}
 }

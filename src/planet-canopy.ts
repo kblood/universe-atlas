@@ -79,6 +79,11 @@ export class PlanetCanopy {
     this.presentationVersions=new Uint32Array(capacity);
     this.renderer.mesh.scale.setScalar(1/body.radiusM);this.group.add(this.renderer.mesh);this.group.name='Complete canonical canopy';this.group.visible=false;
   }
+  /** Persistent CPU-only host arrays and current rebase scratch. Map/set/
+   * string/worker runtime heap is not a byte-exact measurable buffer. */
+  memoryUsage(){return {hostPersistentCpuBytes:this.bodyPositions.byteLength+this.heights.byteLength+
+      this.presentationVersions.byteLength+this.renderer.memorySidecarBytes(),
+    hostScratchCpuBytes:this.rebase?.positions.byteLength??0,hostScratchPeakCpuBytes:this.bodyPositions.length*4};}
   /** The near owner supplies its existing dated catalogue and adopted library.
    * Replacement touches bounded parameter slices, never population identity. */
   setPresentation(key:string,resolve:(id:string,heightM:number)=>number,families:ReadonlyMap<ForestTreeKind,ForestFamilyPresentation>){
