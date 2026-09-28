@@ -17,18 +17,21 @@ const species=(id='tree-a',family='branching')=>({id,name:id,lineageId:`lineage-
   traits:{heightM:16,widthRatio:.65,branchCount:8,branchAngle:.7,leafLength:.8,leafWidth:.4,leafDensity:.7,curvature:.2,legRatio:0,bodyLength:0,headRatio:0,tailLength:0,color:'#52743b',woodColor:'#62422d'},
   niche:{minTempK:0,maxTempK:1000,minMoisture:0,maxMoisture:1,maxSlope:90},diet:'producer',dispersal:'land'});
 
-function familyHarness({reject=false,forestCoverage=true,maxRadiusM=20,presentationEnabled=true}={}){
-  const families=[],dates=[],batches=[];
-  const loader=async(_a,_b,options)=>{
+function familyHarness({reject=false,forestCoverage=true,maxRadiusM=20,presentationEnabled=true,variants=false}={}){
+  const families=[],dates=[],batches=[],options=[];
+  const loader=async(_a,_b,received)=>{
+    options.push(received);
     if(reject)throw new Error('fixture load failure');
-    const family={forestCoverage:forestCoverage&&options.forestCoverage,maxRadiusM,
+    const family={forestCoverage:forestCoverage&&received.forestCoverage,maxRadiusM,
       canopyPresentation:{enabled:presentationEnabled,lod1Profile:{referenceHeightM:16,maxLeafOffsetM:.5,
         bands:Array.from({length:4},(_,i)=>({centerM:[0,i*4+2,0],radiusM:2,halfHeightM:1.5,populated:true,count:4}))},
-        conservativeBounds:{radiusM:maxRadiusM},barkLinearRgb:[.1,.08,.06],foliageLinearRgb:[.03,.08,.02]},
+        conservativeBounds:{radiusM:maxRadiusM},barkLinearRgb:[.1,.08,.06],foliageLinearRgb:[.03,.08,.02],
+        // Like the real loader, adopt the pool the library supplies for this family.
+        ...(variants?{structuralVariants:received.structuralVariants,foliageProjectedAreaM2:[0,40,60,20],trunk:{heightM:14,baseRadiusM:.3,topRadiusM:.2}}:{})},
       setDate(date){dates.push(date);},
       createBatch(lod,capacity){
         const batch={lod,capacity,group:new THREE.Group(),instances:new Map(),coverage:new Map(),appearances:new Map(),count:0,initialized:0,disposed:0,
-          setInstance(i,matrix,heightM,phase){if(i>batch.count)throw new Error(`batch slot gap ${i} > ${batch.count}`);if(i===batch.initialized)batch.initialized++;batch.count=Math.max(batch.count,i+1);batch.instances.set(i,{matrix:matrix.clone(),heightM,phase});},
+          setInstance(i,matrix,heightM,phase,variant=0){if(i>batch.count)throw new Error(`batch slot gap ${i} > ${batch.count}`);if(i===batch.initialized)batch.initialized++;batch.count=Math.max(batch.count,i+1);batch.instances.set(i,{matrix:matrix.clone(),heightM,phase,variant});},
           setAppearance(i,bark,foliage){batch.appearances.set(i,{bark:[...bark],foliage:[...foliage]});},
           setCoverage(i,coverage,seed){batch.coverage.set(i,{coverage,seed});},
           setCount(count){if(count>batch.initialized)throw new Error(`batch count ${count} exceeds initialized slots ${batch.initialized}`);batch.count=count;},dispose(){batch.disposed++;batch.group.removeFromParent();}};
@@ -36,7 +39,7 @@ function familyHarness({reject=false,forestCoverage=true,maxRadiusM=20,presentat
       },dispose(){family.disposed=(family.disposed||0)+1;}};
     families.push(family);return family;
   };
-  return {loader,families,dates,batches};
+  return {loader,families,dates,batches,options};
 }
 function fixture(opts={}){
   const h=familyHarness(opts),f=new PlanetForest(body,h.loader),eye=new THREE.Vector3(0,0,1+20/body.radiusM);
@@ -289,6 +292,61 @@ test('overlapping family loads are newest-wins and dispose the stale result exac
 });
 
 const bothFamilies=()=>['branching','spire'].map(kind=>({kind,lod0:new ArrayBuffer(8),lod1:new ArrayBuffer(8)}));
+
+/** Every detailed slot and its far code carry the resident's dated canonical variant. */
+function assertVariantAgreement(f,label){
+  let checked=0;
+  for(const [kind,entry] of f.assets.entries)for(const [lod,pool] of entry.pools.entries())pool.items.forEach((resident,slot)=>{
+    const binding=f.binding(resident),instance=entry.batches[lod].instances.get(slot);
+    assert.equal(binding.recipe.family,kind);
+    assert.equal(instance.variant,binding.appearance.variant+1,`${label}: near slot ${slot} uses its resident's pool member`);
+    const code=f.expectedCanopyPresentation(resident),decoded=unpackForestPresentation(code);
+    assert.equal(decoded.kind,kind);assert.equal(decoded.variant,binding.appearance.variant,`${label}: far code carries the same member`);
+    assert.equal(f.fullCanopy.presentationResolve(resident.cell.id,resident.cell.heightM),code,`${label}: far retag equals handoff expectation`);
+    checked++;
+  });
+  return checked;
+}
+test('near slots and far codes share one canonical structural variant across dates, catalogues and slot reuse',async()=>{
+  const {f,h,cells,step}=fixture({variants:true});cells[1].heightM=16;
+  try{
+    await f.loadTreeFamilies(bothFamilies());f.fullCanopy=new PlanetCanopy(body,64);
+    assert.deepEqual(h.options.map(o=>o.structuralVariants.map(v=>v.kind)[0]),['branching','spire'],'library supplies each family its own pool');
+    assert.ok(h.options.every(o=>o.structuralVariants.length===8&&o.areaPreservingLod===true&&o.cardCompensation.maxScale>1));
+    const dated=[species('oak'),species('pine','spire')];step(dated,200n);
+    assert.equal(assertVariantAgreement(f,'initial'),3);
+    const d=f.diagnostics().detailedTrees;
+    assert.equal(d.structuralVariantVersion,'forest-structural-variant-1');
+    assert.ok(d.samples.every(s=>s.structuralVariant===s.variant),'diagnostic sample reports the applied member');
+    assert.equal(d.families.reduce((n,x)=>n+Object.values(x.variantHistogram).reduce((a,b)=>a+b,0),0),3);
+    const before=new Map(d.samples.map(s=>[s.id,s.structuralVariant]));
+    // Date replay: same catalogue and date reproduce identical members.
+    step(dated,201n);step(dated,200n);
+    assert.deepEqual(new Map(f.diagnostics().detailedTrees.samples.map(s=>[s.id,s.structuralVariant])),before);
+    // A new dated catalogue rebinds species; members follow the new binding.
+    const renamed=[species('oak-b'),species('pine-b','spire'),species('ash-b')];step(renamed,300n);
+    assertVariantAgreement(f,'catalogue change');
+    const after=new Map(f.diagnostics().detailedTrees.samples.map(s=>[s.id,s.structuralVariant]));
+    assert.ok([...after].some(([id,v])=>before.get(id)!==v),'fixture covers a member change');
+    // Slot reuse: removing one resident moves the tail into its slot with the tail's member.
+    f.wanted.splice(0,1);step(renamed,300n);
+    assert.equal(assertVariantAgreement(f,'slot reuse'),2);
+    // Family unload: far falls back to the legacy code immediately.
+    f.clearTreeAssets();step(renamed,300n);
+    assert.equal(f.fullCanopy.presentationResolve(cells[0].id,16),0,'no family: far legacy fallback');
+  }finally{f.dispose();}
+});
+test('a family without a structural pool keeps authored structure in near and far paths',async()=>{
+  const {f,h,step}=fixture();
+  try{
+    await load(f);f.fullCanopy=new PlanetCanopy(body,64);step([species('oak')],5n);
+    for(const [slot,instance] of h.batches[0].instances){
+      assert.equal(instance.variant,0,`slot ${slot} keeps authored structure`);
+      const resident=f.assets.entries.get('branching').pools[0].items[slot];
+      assert.equal(unpackForestPresentation(f.expectedCanopyPresentation(resident)).variant,0);
+    }
+  }finally{f.dispose();}
+});
 test('branching and spire use separate compact pools and suppress all supported legacy draws',async()=>{
  const {f,h,step,cells}=fixture();cells[1].heightM=16;
  try{

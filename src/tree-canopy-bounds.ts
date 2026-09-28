@@ -1,5 +1,5 @@
 import {LEGACY_TREE_TRUNK} from './tree-shape.ts';
-import {TREE_CANOPY_REFERENCE_HEIGHT_M,type TreeCanopyProfile} from './tree-canopy-profile.ts';
+import {TREE_CANOPY_REFERENCE_HEIGHT_M,type TreeCanopyProfile,type TreeTrunkProfile} from './tree-canopy-profile.ts';
 
 export type FamilyProxyBounds={
   /** Centre of the proxy's linear-height box per metre of canonical tree height. */
@@ -41,6 +41,23 @@ export function deriveFamilyProxyBounds(profile:TreeCanopyProfile):FamilyProxyBo
   const extentPerHeight:[number,number,number]=[(maxX-minX)/2,(maxY-minY)/2,(maxZ-minZ)/2];
   if(![...centerPerHeight,...extentPerHeight].every(finite)||extentPerHeight.some(x=>x<=0))throw new Error('Invalid derived family proxy bounds');
   return {centerPerHeight,extentPerHeight,metricMarginM:profile.maxLeafOffsetM};
+}
+
+/** Extend the family box for its measured trunk and every pool variant. Twist
+ * rotates about the trunk, so the horizontal box becomes the enclosing circle;
+ * crown scale also applies to the metric card margin, as in the far shader. */
+export function deriveVariantFamilyProxyBounds(profile:TreeCanopyProfile,envelope:{scale:number;leanFraction:number},trunk?:TreeTrunkProfile|null):FamilyProxyBounds{
+  const base=deriveFamilyProxyBounds(profile);
+  if(!envelope||!finite(envelope.scale)||envelope.scale<1||!finite(envelope.leanFraction)||envelope.leanFraction<0)throw new Error('Invalid variant envelope');
+  let minY=base.centerPerHeight[1]-base.extentPerHeight[1],maxY=base.centerPerHeight[1]+base.extentPerHeight[1];
+  let radius=Math.hypot(Math.abs(base.centerPerHeight[0])+base.extentPerHeight[0],Math.abs(base.centerPerHeight[2])+base.extentPerHeight[2]);
+  if(trunk){
+    if(![trunk.heightM,trunk.baseRadiusM,trunk.topRadiusM].every(finite)||trunk.heightM<=0||trunk.baseRadiusM<=0||trunk.topRadiusM<0)throw new Error('Invalid trunk profile');
+    maxY=Math.max(maxY,trunk.heightM/TREE_CANOPY_REFERENCE_HEIGHT_M);minY=Math.min(minY,0);
+    radius=Math.max(radius,trunk.baseRadiusM/TREE_CANOPY_REFERENCE_HEIGHT_M);
+  }
+  const horizontal=envelope.scale*radius+envelope.leanFraction;
+  return {centerPerHeight:[0,(minY+maxY)/2,0],extentPerHeight:[horizontal,(maxY-minY)/2,horizontal],metricMarginM:base.metricMarginM*envelope.scale};
 }
 
 /** Scale only the skeleton envelope. Leaf/card margins remain in metres. */

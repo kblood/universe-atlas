@@ -8,7 +8,8 @@ import {quantizeForestCoverage} from './forest-coverage.ts';
 import {attachLocalAerial} from './local-aerial-perspective.ts';
 import {installTreeFoliageCoverageMipmaps,type InstalledTreeFoliageMipChain} from './tree-foliage-mips.ts';
 import {installTreeFoliageSidecar,type TreeFoliageMipSidecar} from './tree-foliage-sidecar.ts';
-import {deriveTreeBaseColorStatistics,deriveTreeCanopyMetadata,type TreeCanopyProfile,type TreeCullingBounds} from './tree-canopy-profile.ts';
+import {deriveTreeBaseColorStatistics,deriveTreeCanopyMetadata,type TreeCanopyProfile,type TreeCullingBounds,type TreeTrunkProfile} from './tree-canopy-profile.ts';
+import {forestVariantGLSL,forestVariantRadiusBound,forestVariantUniformData,FOREST_VARIANT_COUNT,type ForestStructuralVariant} from './tree-structural-variant.ts';
 
 /** Experimental author-6 adapter. Assets are supplied explicitly; this does not
  * replace the canonical forest or invent a second species catalogue. */
@@ -82,27 +83,68 @@ const declarations=`
 attribute float _wind, _branch_level;
 attribute vec3 _leaf_pivot;
 attribute vec2 instanceTree;
+// x: 0 = authored structure, k = bounded variant k-1. y: static LOD card scale.
+attribute vec2 instanceTreeShape;
 uniform float atlasTreePhase;
+uniform vec4 atlasTreeVariantA[${FOREST_VARIANT_COUNT}],atlasTreeVariantB[${FOREST_VARIANT_COUNT}];
+// Main-camera position in the batch frame and pixels per radian (0 disables).
+uniform vec4 atlasTreeView;
+// Representative card extent (m), target projected size (px), maximum scale.
+uniform vec3 atlasTreeCards;
+${forestVariantGLSL}
 mat3 atlasLeafRotation(){
   float angle=sin(atlasTreePhase+instanceTree.y)*.12*_wind;
   float c=cos(angle),s=sin(angle);
   return mat3(c,s,0.,-s,c,0.,0.,0.,1.);
 }
+vec4 atlasTreeVariantParameterA(){int i=int(instanceTreeShape.x-.5);return instanceTreeShape.x>.5?atlasTreeVariantA[i]:vec4(1,1,0,0);}
+vec4 atlasTreeVariantParameterB(){int i=int(instanceTreeShape.x-.5);return instanceTreeShape.x>.5?atlasTreeVariantB[i]:vec4(0,0,1,0);}
+// Tier rotation follows the reference skeleton height, so normals and leaves
+// turn with the branch that carries them.
+float atlasTreeTwist(){return atlasTreeVariantParameterB().x*clamp((_branch_level>3.5?_leaf_pivot.y:position.y)/${TREE_REFERENCE_HEIGHT_M}.0,0.0,1.0);}
+float atlasTreeCardScale(){
+  float s=max(1.0,instanceTreeShape.y);
+  if(atlasTreeView.w>0.0&&atlasTreeCards.z>1.0){
+    #ifdef USE_INSTANCING
+      vec3 root=instanceMatrix[3].xyz;float unitsPerMetre=length(instanceMatrix[0].xyz);
+    #else
+      vec3 root=vec3(0);float unitsPerMetre=1.0;
+    #endif
+    float distanceM=length(atlasTreeView.xyz-root)/max(unitsPerMetre,1e-30);
+    float pixels=atlasTreeCards.x*s*atlasTreeView.w/max(distanceM,1e-3);
+    s*=clamp(sqrt(atlasTreeCards.y/max(pixels,1e-3)),1.0,atlasTreeCards.z);
+  }
+  return s;
+}
 `;
-function deform(material:THREE.Material,phase:{value:number}){
+type TreeShaderState={phase:{value:number};variantA:{value:THREE.Vector4[]};variantB:{value:THREE.Vector4[]};view:{value:THREE.Vector4};cards:{value:THREE.Vector3}};
+function deform(material:THREE.Material,state:TreeShaderState){
   material.onBeforeCompile=shader=>{
-    shader.uniforms.atlasTreePhase=phase;
+    Object.assign(shader.uniforms,{atlasTreePhase:state.phase,atlasTreeVariantA:state.variantA,atlasTreeVariantB:state.variantB,atlasTreeView:state.view,atlasTreeCards:state.cards});
     shader.vertexShader=declarations+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
       if(_branch_level>3.5){objectNormal=atlasLeafRotation()*objectNormal;
         #ifdef USE_TANGENT
         objectTangent=atlasLeafRotation()*objectTangent;
         #endif
-      }`);
+      }
+      objectNormal=atlasVariantRotate(objectNormal,atlasTreeTwist());
+      #ifdef USE_TANGENT
+      objectTangent.xyz=atlasVariantRotate(objectTangent.xyz,atlasTreeTwist());
+      #endif`);
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
-      transformed=_branch_level>3.5 ? _leaf_pivot*instanceTree.x+atlasLeafRotation()*(position-_leaf_pivot) : position*instanceTree.x;`);
+      {
+        vec4 variantA=atlasTreeVariantParameterA(),variantB=atlasTreeVariantParameterB();
+        float treeHeightM=instanceTree.x*${TREE_REFERENCE_HEIGHT_M}.0;
+        if(_branch_level>3.5){
+          // Card offsets stay metric; removed clumps collapse in every pass.
+          float cardScale=atlasVariantRemovesLeaf(_leaf_pivot,instanceTreeShape.x,variantB)?0.0:atlasTreeCardScale();
+          transformed=atlasVariantPoint(_leaf_pivot*instanceTree.x,treeHeightM,variantA,variantB)+
+            atlasVariantRotate(atlasLeafRotation()*(position-_leaf_pivot),atlasTreeTwist())*cardScale;
+        }else transformed=atlasVariantPoint(position*instanceTree.x,treeHeightM,variantA,variantB);
+      }`);
   };
-  material.customProgramCacheKey=()=> 'atlas-tree-physical-1';
+  material.customProgramCacheKey=()=> 'atlas-tree-physical-2';
 }
 export type TreeAssetFamily=Awaited<ReturnType<typeof loadTreeAssetFamily>>;
 export type TreeCanopyPresentation={
@@ -117,14 +159,43 @@ export type TreeCanopyPresentation={
   alphaCutoff:number;
   /** Fraction of foliage texture pixels meeting cutoff; not whole-crown opacity. */
   baseCoverage:number;
+  /** Mean opaque projected leaf area per LOD0 band (0.5 × one-sided card area × texture coverage), m². */
+  foliageProjectedAreaM2:[number,number,number,number];
+  /** Measured branch-level-0 trunk at the 16 m reference height, or null. */
+  trunk:TreeTrunkProfile|null;
+  /** The bounded pool also used by the detailed batches; empty for authored structure only. */
+  structuralVariants:readonly ForestStructuralVariant[];
+  /** Area-preserving card scale applied to the reduced LOD1 foliage. */
+  lod1CardScale:number;
 };
+export type TreeCardCompensation={targetPixels:number;maxScale:number};
 export type TreeAssetOptions={foliageCoverage?:'mask'|'hash';foliageMipmaps?:boolean;foliageMipSidecar?:TreeFoliageMipSidecar;leafTransmission?:LeafTransmissionOptions;forestCoverage?:boolean;
-  localAerial?:{planet:THREE.Object3D;frame:THREE.Object3D;radiusM:number;sun:{value:THREE.Vector3};enabled:{value:number};eyeHeight:{value:number}}};
+  localAerial?:{planet:THREE.Object3D;frame:THREE.Object3D;radiusM:number;sun:{value:THREE.Vector3};enabled:{value:number};eyeHeight:{value:number}};
+  /** Bounded structural pool for this family. Batches select a member per slot. */
+  structuralVariants?:readonly ForestStructuralVariant[];
+  /** Enlarge reduced LOD1 cards so its total leaf area matches LOD0. */
+  areaPreservingLod?:boolean;
+  /** Distance-driven card growth when cards approach pixel size. */
+  cardCompensation?:TreeCardCompensation};
+
+/** Area-preserving scale for the reduced foliage LOD. Cards are metric, so the
+ * leaf-area ratio of the two actual LOD meshes fixes it; bounded to [1,3]. */
+export function treeLodCardScale(lod0:TreeCanopyProfile,lod1:TreeCanopyProfile){
+  const area=(profile:TreeCanopyProfile)=>profile.bands.reduce((n,band)=>n+(band.leafAreaM2??0),0);
+  const a0=area(lod0),a1=area(lod1);
+  if(!Number.isFinite(a0)||!Number.isFinite(a1)||a0<=0||a1<=0)return 1;
+  return Math.min(3,Math.max(1,Math.sqrt(a0/a1)));
+}
 export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){
   if(options.foliageCoverage!==undefined&&!['mask','hash'].includes(options.foliageCoverage))throw new Error('Unsupported foliage coverage mode');
   if(options.forestCoverage!==undefined&&typeof options.forestCoverage!=='boolean')throw new Error('Invalid forest coverage option');
   if(options.foliageMipmaps!==undefined&&typeof options.foliageMipmaps!=='boolean')throw new Error('Invalid foliage mip option');
   if(options.foliageMipmaps&&options.foliageMipSidecar)throw new Error('Choose offline or runtime foliage mips, not both');
+  const cards=options.cardCompensation;
+  if(cards!==undefined&&(!cards||!Number.isFinite(cards.targetPixels)||cards.targetPixels<=0||cards.targetPixels>64||!Number.isFinite(cards.maxScale)||cards.maxScale<1||cards.maxScale>2))
+    throw new Error('Invalid tree card compensation');
+  const variants=options.structuralVariants??[];
+  const variantData=forestVariantUniformData(variants);
   const prepared=prepareTreeLODPair(lod0,lod1),loader=new GLTFLoader();
   const loaded:THREE.Group[]=[];
   const textures=new Set<THREE.Texture>(),materials=new Set<THREE.Material>(),geometries=new Set<THREE.BufferGeometry>();
@@ -185,7 +256,11 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
       lods[0][1].material.alphaTest=0;lods[0][1].material.alphaHash=true;
     }
     const phase={value:0};
-    for(const material of materials)deform(material,phase);
+    const vectors=(offset:number)=>Array.from({length:FOREST_VARIANT_COUNT},(_,i)=>new THREE.Vector4().fromArray(variantData,i*8+offset));
+    const shaderState:TreeShaderState={phase,variantA:{value:vectors(0)},variantB:{value:vectors(4)},
+      view:{value:new THREE.Vector4()},cards:{value:new THREE.Vector3(1,1,1)}};
+    const viewEye=new THREE.Vector3(),viewInverse=new THREE.Matrix4(),viewport=new THREE.Vector4();
+    for(const material of materials)deform(material,shaderState);
     if(options.forestCoverage)for(const material of materials)installTreeForestCoverage(material);
     if(options.localAerial){
       const air=options.localAerial;
@@ -198,15 +273,26 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     // actual reduced geometry rather than a merged near/far percentile.
     const lod0Metadata=deriveTreeCanopyMetadata(lods[0].map(mesh=>mesh.geometry));
     const lod1Metadata=deriveTreeCanopyMetadata(lods[1].map(mesh=>mesh.geometry));
+    const lod1CardScale=options.areaPreservingLod?treeLodCardScale(lod0Metadata.profile,lod1Metadata.profile):1;
+    const compensationMax=cards?.maxScale??1;
+    if(cards)shaderState.cards.value.set(lod0Metadata.profile.cardExtentM??lod0Metadata.profile.maxLeafOffsetM,cards.targetPixels,cards.maxScale);
+    const authoredRadius=Math.max(lod0Metadata.cullingBounds.radiusM,lod1Metadata.cullingBounds.radiusM);
+    const maxLeafOffsetM=Math.max(lod0Metadata.profile.maxLeafOffsetM,lod1Metadata.profile.maxLeafOffsetM);
+    // Variants, LOD card scale and distance growth all enlarge the vertex set.
+    const cardScaleMax=Math.max(1,lod1CardScale)*compensationMax;
     const conservativeBounds:TreeCullingBounds={...lod0Metadata.cullingBounds,
-      radiusM:Math.max(lod0Metadata.cullingBounds.radiusM,lod1Metadata.cullingBounds.radiusM)};
+      radiusM:variants.length||cardScaleMax>1?forestVariantRadiusBound(variants,authoredRadius,maxLeafOffsetM,cardScaleMax):authoredRadius};
     const foliage=lods[0][1].material;
     const barkStatistics=textureStatistics(lods[0][0].material,0);
     const foliageStatistics=textureStatistics(foliage,alphaCutoff);
+    // Beer-Lambert reference density for distant crowns: randomly oriented
+    // cards project half their one-sided area; the atlas cutoff removes gaps.
+    const foliageProjectedAreaM2=lod0Metadata.profile.bands.map(band=>.5*(band.leafAreaM2??0)*foliageStatistics.baseCoverage) as [number,number,number,number];
     const canopyPresentation:TreeCanopyPresentation={enabled:!!options.foliageMipSidecar,
       lod0Profile:lod0Metadata.profile,lod1Profile:lod1Metadata.profile,conservativeBounds,
       barkLinearRgb:barkStatistics.linearRgb,foliageLinearRgb:foliageStatistics.linearRgb,
-      alphaCutoff,baseCoverage:foliageStatistics.baseCoverage};
+      alphaCutoff,baseCoverage:foliageStatistics.baseCoverage,foliageProjectedAreaM2,
+      trunk:lod0Metadata.profile.trunk??null,structuralVariants:variants,lod1CardScale};
     const maxRadiusM=conservativeBounds.radiusM;
     // Compose only after wind. Both LODs share this one foliage material;
     // bark and all custom shadow materials retain their previous lighting.
@@ -216,7 +302,10 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
       lods,textures,leafTransmission,maxRadiusM,canopyPresentation,forestCoverage:!!options.forestCoverage,embeddedTextureBytes:prepared.embeddedTextureBytes,
       foliageMipmaps:foliageMipChain?{source:options.foliageMipSidecar?'offline-sidecar':'runtime-build',payloadBytes:foliageMipPayloadBytes,
         setupMs:foliageMipSetupMs,levels:foliageMipChain.report,baseCoverage:foliageMipChain.baseCoverage}:null,
+      structuralVariantCount:variants.length,lod1CardScale,cardCompensation:cards?{...cards,cardExtentM:shaderState.cards.value.x}:null,
       setDate(date:bigint){leafTransmission?.assertInstalled();phase.value=treeWindPhase(date);},
+      /** Last main-camera state used by distance card growth; shadow passes reuse it. */
+      viewState(){return shaderState.view.value.clone();},
       createBatch(lod:0|1,capacity:number){
         if(disposed)throw new Error('Tree family is disposed');
         if(!Number.isInteger(capacity)||capacity<1||capacity>4096)throw new Error('Invalid tree capacity');
@@ -226,6 +315,12 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
         // its first upload; hidden batches keep their pending ranges intact.
         tree.onUpload(()=>tree.clearUpdateRanges());
         const treeUpdates=new InstanceUpdateRanges();
+        // Variant code per slot plus this LOD's constant area-preserving card scale.
+        const lodScale=lod===1?lod1CardScale:1,shapeData=new Float32Array(capacity*2);
+        for(let i=0;i<capacity;i++)shapeData[i*2+1]=lodScale;
+        const shape=new THREE.InstancedBufferAttribute(shapeData,2).setUsage(THREE.DynamicDrawUsage);
+        shape.onUpload(()=>shape.clearUpdateRanges());
+        const shapeUpdates=new InstanceUpdateRanges();
         const forest=options.forestCoverage?new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2).setUsage(THREE.DynamicDrawUsage):null;
         const forestUpdates=new InstanceUpdateRanges();
         if(forest){
@@ -235,10 +330,23 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
         const matrixUpdates=[new InstanceUpdateRanges(),new InstanceUpdateRanges()];
         const colorUpdates=[new InstanceUpdateRanges(),new InstanceUpdateRanges()];
         const meshes=lods[lod].map((source,part)=>{
-          const geometry=source.geometry.clone();geometry.setAttribute('instanceTree',tree);
+          const geometry=source.geometry.clone();geometry.setAttribute('instanceTree',tree);geometry.setAttribute('instanceTreeShape',shape);
           if(forest)geometry.setAttribute('instanceForest',forest);
           const mesh=new THREE.InstancedMesh(geometry,source.material,capacity);mesh.count=0;
-          if(options.localAerial)mesh.onBeforeRender=lods[0][part].onBeforeRender;
+          const inherited=options.localAerial?lods[0][part].onBeforeRender:mesh.onBeforeRender;
+          mesh.onBeforeRender=(renderer,scene,camera,geometry,material,group)=>{
+            inherited.call(mesh,renderer,scene,camera,geometry,material,group);
+            // Every batch of a family shares one frame, so any submitted batch
+            // can publish the camera for the shared card-growth uniform.
+            // Shadow passes call this with the light camera; they reuse the main
+            // camera's state so casters match the cards they shadow.
+            if(!cards||material===mesh.customDepthMaterial||material===mesh.customDistanceMaterial)return;
+            const view=shaderState.view.value;
+            viewEye.setFromMatrixPosition(camera.matrixWorld);viewInverse.copy(mesh.matrixWorld).invert();viewEye.applyMatrix4(viewInverse);
+            renderer.getCurrentViewport(viewport);
+            const perspective=(camera as THREE.PerspectiveCamera).isPerspectiveCamera===true;
+            view.set(viewEye.x,viewEye.y,viewEye.z,perspective?Math.abs(camera.projectionMatrix.elements[5])*viewport.w/2:0);
+          };
           mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.castShadow=true;mesh.receiveShadow=true;
           mesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3).fill(1),3).setUsage(THREE.DynamicDrawUsage);
           mesh.instanceMatrix.onUpload(()=>mesh.instanceMatrix.clearUpdateRanges());
@@ -249,7 +357,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
           const common={map:source.material.map,alphaTest:source.material.alphaTest,alphaHash:source.material.alphaHash,side:source.material.side};
           mesh.customDepthMaterial=new THREE.MeshDepthMaterial({...common,depthPacking:THREE.RGBADepthPacking});
           mesh.customDistanceMaterial=new THREE.MeshDistanceMaterial(common);
-          deform(mesh.customDepthMaterial,phase);deform(mesh.customDistanceMaterial,phase);
+          deform(mesh.customDepthMaterial,shaderState);deform(mesh.customDistanceMaterial,shaderState);
           if(options.forestCoverage){installTreeForestCoverage(mesh.customDepthMaterial);installTreeForestCoverage(mesh.customDistanceMaterial);}
           group.add(mesh);return mesh;
         });
@@ -260,9 +368,11 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
             for(const mesh of meshes)mesh.count=count;
           },
           /** Matrix contains yaw/translation and metres-to-scene-units only.
-           * Tree height is applied in the shader so leaves retain their size. */
-          setInstance(index:number,matrix:THREE.Matrix4,heightM:number,phaseOffset=0){
+           * Tree height is applied in the shader so leaves retain their size.
+           * `variant` 0 keeps the authored structure; k selects pool member k-1. */
+          setInstance(index:number,matrix:THREE.Matrix4,heightM:number,phaseOffset=0,variant=0){
             if(batchDisposed||!Number.isInteger(index)||index<0||index>=capacity||index>meshes[0].count||!Number.isFinite(heightM)||heightM<10||heightM>22||!Number.isFinite(phaseOffset)||matrix.elements.some(x=>!Number.isFinite(x)))throw new Error('Invalid tree instance or gap in initialized slots');
+            if(!Number.isInteger(variant)||variant<0||variant>variants.length)throw new Error('Tree structural variant is outside the loaded pool');
             const e=matrix.elements,a=new THREE.Vector3(e[0],e[1],e[2]),b=new THREE.Vector3(e[4],e[5],e[6]),c=new THREE.Vector3(e[8],e[9],e[10]);
             const scale2=a.lengthSq(),tolerance=scale2*1e-6;
             if(!Number.isFinite(scale2)||scale2<=0||Math.abs(b.lengthSq()-scale2)>tolerance||Math.abs(c.lengthSq()-scale2)>tolerance||Math.abs(a.dot(b))>tolerance||Math.abs(a.dot(c))>tolerance||Math.abs(b.dot(c))>tolerance||matrix.determinant()<=0||e[3]!==0||e[7]!==0||e[11]!==0||e[15]!==1)throw new Error('Tree matrix requires rotation and positive uniform scene-unit scale');
@@ -277,6 +387,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
             if(tree.getX(index)!==scale||tree.getY(index)!==offset){
               tree.setXY(index,scale,offset);treeUpdates.include(index,2);treeUpdates.flush(tree);
             }
+            if(shape.getX(index)!==variant){shape.setX(index,variant);shapeUpdates.include(index,2);shapeUpdates.flush(shape);}
             for(const [part,mesh] of meshes.entries()){
               const color=mesh.instanceColor!;
               if(newSlot&&(color.getX(index)!==1||color.getY(index)!==1||color.getZ(index)!==1)){

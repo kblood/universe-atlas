@@ -19,6 +19,7 @@ import {ForestTreeFamilyLibrary,type ForestTreeFamilyInput,type ForestTreeFamily
 import {ForestPatchBroadphase} from './forest-patch-broadphase.ts';
 import {ForestOrderedWorkIndex} from './forest-ordered-work.ts';
 import {forestPresentationFamily,packForestPresentation,FOREST_PRESENTATION_VERSION} from './forest-presentation.ts';
+import {FOREST_VARIANT_VERSION} from './tree-structural-variant.ts';
 import type {ForestFamilyPresentation} from './forest-impostor.ts';
 import type {ForestTreeKind} from './forest-tree-family-library.ts';
 
@@ -30,6 +31,17 @@ const loadTreeFamily:TreeLoader=async(a,b,options)=>(await import('./tree-asset.
 type BatchUpdates={residents:Resident[];originVersions:number[];slots:Map<string,number>;wanted:Resident[];wantedCoverage:number[];wantedIds:Set<string>;matrix:DirtyRange;color:DirtyRange;coverage:DirtyRange;seed:DirtyRange};
 const batchUpdates=():BatchUpdates=>({residents:[],originVersions:[],slots:new Map(),wanted:[],wantedCoverage:[],wantedIds:new Set(),matrix:new DirtyRange(),color:new DirtyRange(),coverage:new DirtyRange(),seed:new DirtyRange()});
 const crownBoundRadius=Math.hypot(...LEGACY_TREE_BOUND.extent)+Math.hypot(LEGACY_TREE_BOUND.center[0],LEGACY_TREE_BOUND.center[2]);
+/** One structural choice per canonical individual: the dated binding's bounded
+ * variant, applied only when the adopted family carries that pool member. */
+function familyVariant(binding:ForestTreeBinding,presentation:{structuralVariants?:readonly unknown[]}){
+  const variant=binding.appearance.variant;
+  return variant<(presentation.structuralVariants?.length??0)?variant+1:0;
+}
+function packFamilyPresentation(kind:ForestTreeKind,binding:ForestTreeBinding,presentation:ForestFamilyPresentation){
+  // Far code carries pool index; code index 0 with an empty pool is authored structure.
+  const variant=familyVariant(binding,presentation);
+  return packForestPresentation(kind,binding.appearance.barkBrightness,binding.appearance.foliageBrightness,Math.max(0,variant-1));
+}
 
 /** Bounded placement queue + retained habitat cache. Flight and walking call
  * the same update. Work begins above visible range; no landing flag exists. */
@@ -195,10 +207,20 @@ export class PlanetForest {
         if(heightM<10||heightM>22)continue;
         const binding=this.binding(slot.resident);if(!binding)continue;
         samples.push({batch,family:entry.kind,id:slot.resident.cell.id,speciesId:binding.recipe.speciesId,
-          recipe:binding.recipe.sourceFingerprint,heightM,...binding.appearance});count++;
+          recipe:binding.recipe.sourceFingerprint,heightM,...binding.appearance,
+          structuralVariant:familyVariant(binding,entry.family.canopyPresentation??{})-1});count++;
       }
     }
     return samples;
+  }
+  /** Bounded HUD scan: the first 512 retained slots per LOD. Index -1 is authored structure. */
+  private variantHistogram(entry:ForestTreeFamilyEntry<Resident,AssetSlot>){
+    const counts:Record<string,number>={};
+    for(const pool of entry.pools)for(let index=0;index<Math.min(pool.items.length,512);index++){
+      const binding=this.binding(pool.items[index]);if(!binding)continue;
+      const key=String(familyVariant(binding,entry.family.canopyPresentation??{})-1);counts[key]=(counts[key]??0)+1;
+    }
+    return counts;
   }
   private setCatalogue(species:readonly Species[]|undefined){
     if(species===this.catalogueInput)return;
@@ -218,7 +240,7 @@ export class PlanetForest {
     return this.bindings.get(resident)??null;
   }
   private syncCanopyPresentation(){
-    const key=`${FOREST_PRESENTATION_VERSION}/${this.catalogueVersion}/${this.assets.revision}/${Number(this.assetDraw)}`;
+    const key=`${FOREST_PRESENTATION_VERSION}/${FOREST_VARIANT_VERSION}/${this.catalogueVersion}/${this.assets.revision}/${Number(this.assetDraw)}`;
     if(key===this.canopyPresentationKey)return;
     const families=new Map<ForestTreeKind,ForestFamilyPresentation>();
     if(this.assetDraw)for(const [kind,entry] of this.assets.entries){
@@ -229,7 +251,7 @@ export class PlanetForest {
     this.fullCanopy?.setPresentation?.(key,(id,heightM)=>{
       if(!families.size)return 0;
       const binding=catalogue.resolve(id),kind=forestPresentationFamily(binding,heightM,families);
-      return kind&&binding?packForestPresentation(kind,binding.appearance.barkBrightness,binding.appearance.foliageBrightness):0;
+      return kind&&binding?packFamilyPresentation(kind,binding,families.get(kind)!):0;
     },families);
     this.presentedFamilies=families;
     this.canopyPresentationKey=key;
@@ -237,7 +259,7 @@ export class PlanetForest {
   private expectedCanopyPresentation(resident:Resident){
     if(!this.assetDraw)return 0;
     const binding=this.binding(resident),kind=forestPresentationFamily(binding,resident.cell.heightM,this.presentedFamilies);
-    return kind&&binding?packForestPresentation(kind,binding.appearance.barkBrightness,binding.appearance.foliageBrightness):0;
+    return kind&&binding?packFamilyPresentation(kind,binding,this.presentedFamilies.get(kind)!):0;
   }
   private startWorker(){
     try{
@@ -304,7 +326,7 @@ export class PlanetForest {
       this.direction.set(...cell.direction);this.position.copy(this.direction).multiplyScalar(1+resident.height/this.body.radiusM).sub(this.origin);
       treeQuaternion(this.direction,cell.yaw,this.quaternion,this.yaw);
       this.scale.setScalar(1/this.body.radiusM);this.matrix.compose(this.position,this.quaternion,this.scale);
-      asset.setInstance(index,this.matrix,cell.heightM,binding.appearance.windPhase01*2*Math.PI);
+      asset.setInstance(index,this.matrix,cell.heightM,binding.appearance.windPhase01*2*Math.PI,familyVariant(binding,entry.family.canopyPresentation??{}));
       const bark=binding.appearance.barkBrightness,leaf=binding.appearance.foliageBrightness;
       asset.setAppearance(index,[bark,bark,bark],[leaf,leaf,leaf]);
       state={resident,originVersion:this.originVersion,catalogueVersion:this.catalogueVersion};
@@ -544,10 +566,13 @@ export class PlanetForest {
   }
   diagnostics(){return {visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
     detailedTrees:{ready:this.assets.entries.size>0,loading:this.assets.loading,error:this.assets.error||this.catalogueError,visible:[...this.assetCounts],species:this.catalogue.count,dateNs:this.worldDate.toString(),catalogueVersion:this.catalogueVersion,
-      heightPolicy:'canonical-population-proxy',geometryVariants:this.assets.entries.size,farRepresentation:'family-profile-with-legacy-fallback',presentationKey:this.canopyPresentationKey,instanceSlots:'compact-per-family',
+      heightPolicy:'canonical-population-proxy',geometryVariants:this.assets.entries.size,farRepresentation:'family-porous-profile-with-legacy-fallback',presentationKey:this.canopyPresentationKey,instanceSlots:'compact-per-family',
+      structuralVariantVersion:FOREST_VARIANT_VERSION,
       families:[...this.assets.entries.values()].map(entry=>({kind:entry.kind,
         submitted:entry.pools.map((pool,lod)=>this.group.visible&&entry.batches[lod].group.visible?pool.items.length:0),
-        retainedSlots:entry.pools.map(pool=>pool.items.length),capacities:entry.pools.map(pool=>pool.capacity),foliageMipmaps:entry.family.foliageMipmaps??null})),
+        retainedSlots:entry.pools.map(pool=>pool.items.length),capacities:entry.pools.map(pool=>pool.capacity),foliageMipmaps:entry.family.foliageMipmaps??null,
+        structuralVariants:entry.family.structuralVariantCount??0,lod1CardScale:entry.family.lod1CardScale??1,cardCompensation:entry.family.cardCompensation??null,
+        variantHistogram:this.variantHistogram(entry)})),
       foliageMipmaps:this.assets.entries.get('branching')?.family.foliageMipmaps??null,samples:this.detailedSamples(),
       handoffSamples:this.detailedSamples().map(sample=>({id:sample.id,far:this.fullCanopy?.presentationSample?.(sample.id)??null}))},
     candidateCells:this.wanted.length,canopyStands:0,farCanonicalTrees:this.group.visible?this.canopy.count:0,farSamplingFraction:FAR_CROWN_PROBABILITY,habitatVersion:TREE_HABITAT_VERSION,placementMs:this.placementMs,selectionMs:this.selectionMs,selectionPending:this.selecting,selectionWorker:!!this.worker,

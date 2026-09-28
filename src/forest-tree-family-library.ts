@@ -1,6 +1,11 @@
 import type {Group} from 'three';
 import type {TreeAssetFamily,TreeAssetOptions} from './tree-asset.ts';
 import {CompactInstanceSlots} from './compact-instance-slots.ts';
+import {forestStructuralVariants} from './tree-structural-variant.ts';
+
+/** Cards narrower than about three pixels lose MASK coverage; grow them by at
+ * most 35% so the middle band keeps its measured leaf area on screen. */
+export const FOREST_CARD_COMPENSATION=Object.freeze({targetPixels:3,maxScale:1.35});
 
 export type ForestTreeKind='branching'|'spire';
 export type ForestTreeFamilyInput={kind:ForestTreeKind;lod0:ArrayBuffer;lod1:ArrayBuffer;foliageMipSidecar?:TreeAssetOptions['foliageMipSidecar']};
@@ -36,8 +41,12 @@ export class ForestTreeFamilyLibrary<T,S>{
     const pending:ForestTreeFamilyEntry<T,S>[]=[];let adopted=false;
     try{
       for(const input of inputs){
+        // The game library always supplies the bounded per-family pool and the
+        // coverage-preserving foliage LOD; standalone labs opt in explicitly.
         const family=await this.loader(input.lod0,input.lod1,{...options,
-          foliageMipSidecar:input.foliageMipSidecar??options.foliageMipSidecar,forestCoverage:true});
+          foliageMipSidecar:input.foliageMipSidecar??options.foliageMipSidecar,forestCoverage:true,
+          structuralVariants:forestStructuralVariants(input.kind),areaPreservingLod:true,
+          cardCompensation:options.cardCompensation??FOREST_CARD_COMPENSATION});
         const entry:ForestTreeFamilyEntry<T,S>={kind:input.kind,family,batches:[],pools:[],wanted:[[],[]],coverage:[new Map(),new Map()]};
         pending.push(entry);
         if(this.disposed||request!==this.request)return false;

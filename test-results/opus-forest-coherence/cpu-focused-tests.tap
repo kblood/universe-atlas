@@ -1,0 +1,608 @@
+TAP version 13
+# Subtest: family profile updates uniforms and packed appearance updates only the existing parameter channel
+ok 1 - family profile updates uniforms and packed appearance updates only the existing parameter channel
+  ---
+  duration_ms: 6.0337
+  type: 'test'
+  ...
+# Subtest: invalid profile is rejected before changing the active family uniforms
+ok 2 - invalid profile is rejected before changing the active family uniforms
+  ---
+  duration_ms: 1.3671
+  type: 'test'
+  ...
+# Subtest: Lambert shader composes family shape, linear color and conservative bounds with legacy fallback
+ok 3 - Lambert shader composes family shape, linear color and conservative bounds with legacy fallback
+  ---
+  duration_ms: 1.8189
+  type: 'test'
+  ...
+# Subtest: far family carries the same bounded variant pool, measured trunk and porous density
+ok 4 - far family carries the same bounded variant pool, measured trunk and porous density
+  ---
+  duration_ms: 3.1478
+  type: 'test'
+  ...
+# Subtest: far proxy box encloses every variant-transformed crown band and trunk at supported heights
+ok 5 - far proxy box encloses every variant-transformed crown band and trunk at supported heights
+  ---
+  duration_ms: 19.4755
+  type: 'test'
+  ...
+# Subtest: far proxy bounds instance allocation and validates physical transforms
+ok 6 - far proxy bounds instance allocation and validates physical transforms
+  ---
+  duration_ms: 4.4714
+  type: 'test'
+  ...
+# Subtest: hidden batches retain uploads without accumulating unbounded ranges
+ok 7 - hidden batches retain uploads without accumulating unbounded ranges
+  ---
+  duration_ms: 8.7699
+  type: 'test'
+  ...
+# Subtest: scattered ownership writes coalesce by 256-slot blocks and touch only ownership
+ok 8 - scattered ownership writes coalesce by 256-slot blocks and touch only ownership
+  ---
+  duration_ms: 2.7008
+  type: 'test'
+  ...
+# Subtest: reusing an impostor slot resets ownership and rejects invalid ownership writes
+ok 9 - reusing an impostor slot resets ownership and rejects invalid ownership writes
+  ---
+  duration_ms: 0.9449
+  type: 'test'
+  ...
+# Subtest: rebasing uploads positions without changing rotation, parameters, or ownership
+ok 10 - rebasing uploads positions without changing rotation, parameters, or ownership
+  ---
+  duration_ms: 0.8713
+  type: 'test'
+  ...
+# Subtest: distant static edits upload bounded blocks and retirement leaves rotation and colour untouched
+ok 11 - distant static edits upload bounded blocks and retirement leaves rotation and colour untouched
+  ---
+  duration_ms: 1.4601
+  type: 'test'
+  ...
+# Subtest: a rebase includes pending position writes once while retaining other static uploads
+ok 12 - a rebase includes pending position writes once while retaining other static uploads
+  ---
+  duration_ms: 0.5449
+  type: 'test'
+  ...
+# Subtest: presentation eligibility uses the supplied dated binding and loaded family set
+ok 13 - presentation eligibility uses the supplied dated binding and loaded family set
+  ---
+  duration_ms: 1.415
+  type: 'test'
+  ...
+# Subtest: family brightness codes survive float storage and decode within one quantization half-step
+ok 14 - family brightness codes survive float storage and decode within one quantization half-step
+  ---
+  duration_ms: 7.7068
+  type: 'test'
+  ...
+# Subtest: malformed packed data and out-of-contract tint ranges are rejected
+ok 15 - malformed packed data and out-of-contract tint ranges are rejected
+  ---
+  duration_ms: 0.7526
+  type: 'test'
+  ...
+# Subtest: structural variant bits decode independently of family and brightness
+ok 16 - structural variant bits decode independently of family and brightness
+  ---
+  duration_ms: 0.4776
+  type: 'test'
+  ...
+# Subtest: dated family retag preserves roots and requires matching appearance and canonical height for handoff
+ok 17 - dated family retag preserves roots and requires matching appearance and canonical height for handoff
+  ---
+  duration_ms: 9.4844
+  type: 'test'
+  ...
+# Subtest: presentation replacement validates before adoption and rapid dates preserve the retag cursor
+ok 18 - presentation replacement validates before adoption and rapid dates preserve the retag cursor
+  ---
+  duration_ms: 2.1494
+  type: 'test'
+  ...
+# Subtest: selection requests and queued census results stay bounded and installs are frame budgeted
+ok 19 - selection requests and queued census results stay bounded and installs are frame budgeted
+  ---
+  duration_ms: 33.8843
+  type: 'test'
+  ...
+# Subtest: current-patch revision tracks ownership/readiness changes but not stationary queries
+ok 20 - current-patch revision tracks ownership/readiness changes but not stationary queries
+  ---
+  duration_ms: 1.949
+  type: 'test'
+  ...
+# Subtest: large selection decoding is sliced and atomically swaps the old patch window
+ok 21 - large selection decoding is sliced and atomically swaps the old patch window
+  ---
+  duration_ms: 2.7536
+  type: 'test'
+  ...
+# Subtest: old patch replies cannot install after the replacement address scan has completed
+ok 22 - old patch replies cannot install after the replacement address scan has completed
+  ---
+  duration_ms: 8.118
+  type: 'test'
+  ...
+# Subtest: malformed deferred selection terminates before replacing the current window
+ok 23 - malformed deferred selection terminates before replacing the current window
+  ---
+  duration_ms: 2.8069
+  type: 'test'
+  ...
+# Subtest: only structurally complete patches install; validated empty patches remain known
+ok 24 - only structurally complete patches install; validated empty patches remain known
+  ---
+  duration_ms: 1.8348
+  type: 'test'
+  ...
+# Subtest: patch address coverage metadata rejects a partial edge/interior result before installation
+ok 25 - patch address coverage metadata rejects a partial edge/interior result before installation
+  ---
+  duration_ms: 0.8315
+  type: 'test'
+  ...
+# Subtest: near ownership, absence suppression, and reused-slot previous IDs resolve in one frame
+ok 26 - near ownership, absence suppression, and reused-slot previous IDs resolve in one frame
+  ---
+  duration_ms: 1.2824
+  type: 'test'
+  ...
+# Subtest: caches current-patch ownership lookups only within one prepare transaction
+ok 27 - caches current-patch ownership lookups only within one prepare transaction
+  ---
+  duration_ms: 0.7428
+  type: 'test'
+  ...
+# Subtest: a census arrival replaces a cached miss at the next frame boundary
+ok 28 - a census arrival replaces a cached miss at the next frame boundary
+  ---
+  duration_ms: 3.9894
+  type: 'test'
+  ...
+# Subtest: water reconfiguration ignores stale generation replies and accepts the new context
+ok 29 - water reconfiguration ignores stale generation replies and accepts the new context
+  ---
+  duration_ms: 1.4135
+  type: 'test'
+  ...
+# Subtest: matching family retags an in-range patch only after ready without rewriting its slot
+ok 30 - matching family retags an in-range patch only after ready without rewriting its slot
+  ---
+  duration_ms: 0.9385
+  type: 'test'
+  ...
+# Subtest: outside-interval and different-family patches stay stale and are requested again
+ok 31 - outside-interval and different-family patches stay stale and are requested again
+  ---
+  duration_ms: 0.9317
+  type: 'test'
+  ...
+# Subtest: near absence during a water shift still suppresses the paired far instance
+ok 32 - near absence during a water shift still suppresses the paired far instance
+  ---
+  duration_ms: 0.7099
+  type: 'test'
+  ...
+# Subtest: water targets coalesce to one follow-up configure and water-only messages omit the body
+ok 33 - water targets coalesce to one follow-up configure and water-only messages omit the body
+  ---
+  duration_ms: 0.4148
+  type: 'test'
+  ...
+# Subtest: a lagging interval reply is validated against its configured water snapshot
+ok 34 - a lagging interval reply is validated against its configured water snapshot
+  ---
+  duration_ms: 0.4145
+  type: 'test'
+  ...
+# Subtest: same-water river reference attachment forces a full-body worker configure
+ok 35 - same-water river reference attachment forces a full-body worker configure
+  ---
+  duration_ms: 0.2907
+  type: 'test'
+  ...
+# Subtest: close canonical crowns require same-frame ownership; holes and submerged trees do not count as forced closes
+ok 36 - close canonical crowns require same-frame ownership; holes and submerged trees do not count as forced closes
+  ---
+  duration_ms: 0.7578
+  type: 'test'
+  ...
+# Subtest: worker failure retries once then disables the full canopy for legacy near rendering
+ok 37 - worker failure retries once then disables the full canopy for legacy near rendering
+  ---
+  duration_ms: 0.4948
+  type: 'test'
+  ...
+# Subtest: hung configure, selection, and request each restart once then disable far ownership
+ok 38 - hung configure, selection, and request each restart once then disable far ownership
+  ---
+  duration_ms: 0.9395
+  type: 'test'
+  ...
+# Subtest: valid partial patch progress refreshes the request watchdog timestamp
+ok 39 - valid partial patch progress refreshes the request watchdog timestamp
+  ---
+  duration_ms: 0.3461
+  type: 'test'
+  ...
+# Subtest: nonfinite water is rejected before host state changes and zero stays stable for waterless bodies
+ok 40 - nonfinite water is rejected before host state changes and zero stays stable for waterless bodies
+  ---
+  duration_ms: 0.7027
+  type: 'test'
+  ...
+# Subtest: canopy prefetches while hidden between prepare and streaming altitude thresholds
+ok 41 - canopy prefetches while hidden between prepare and streaming altitude thresholds
+  ---
+  duration_ms: 0.3783
+  type: 'test'
+  ...
+# Subtest: canopy does not start or keep streaming above its altitude band
+ok 42 - canopy does not start or keep streaming above its altitude band
+  ---
+  duration_ms: 1.5024
+  type: 'test'
+  ...
+# Subtest: patch failures stop retrying after three attempts and an infinite wake does not spin
+ok 43 - patch failures stop retrying after three attempts and an infinite wake does not spin
+  ---
+  duration_ms: 1.2429
+  type: 'test'
+  ...
+# Subtest: a pending patch job cannot install results from the previous selection after a long move
+ok 44 - a pending patch job cannot install results from the previous selection after a long move
+  ---
+  duration_ms: 0.8318
+  type: 'test'
+  ...
+# Subtest: water change during pending selection invalidates its reply before requesting the new context
+ok 45 - water change during pending selection invalidates its reply before requesting the new context
+  ---
+  duration_ms: 0.6083
+  type: 'test'
+  ...
+# Subtest: capacity overflow rejects a whole patch without a partial slot allocation
+ok 46 - capacity overflow rejects a whole patch without a partial slot allocation
+  ---
+  duration_ms: 0.4996
+  type: 'test'
+  ...
+# Subtest: water refresh can replace a resident patch using its old slots
+ok 47 - water refresh can replace a resident patch using its old slots
+  ---
+  duration_ms: 0.7189
+  type: 'test'
+  ...
+# Subtest: replacement that still exceeds capacity retires the stale patch without a partial resident
+ok 48 - replacement that still exceeds capacity retires the stale patch without a partial resident
+  ---
+  duration_ms: 0.5794
+  type: 'test'
+  ...
+# Subtest: same-water family replacement releases its old full-capacity patch before whole-patch install
+ok 49 - same-water family replacement releases its old full-capacity patch before whole-patch install
+  ---
+  duration_ms: 0.6651
+  type: 'test'
+  ...
+# Subtest: origin rebasing retains positions until the replacement buffer is complete
+ok 50 - origin rebasing retains positions until the replacement buffer is complete
+  ---
+  duration_ms: 1.7188
+  type: 'test'
+  ...
+# Subtest: a no-sidecar diagnostic family keeps both near and far game presentation on legacy fallback
+ok 51 - a no-sidecar diagnostic family keeps both near and far game presentation on legacy fallback
+  ---
+  duration_ms: 21.1311
+  type: 'test'
+  ...
+# Subtest: near and distant family selection share the dated catalogue and adopted library revision
+ok 52 - near and distant family selection share the dated catalogue and adopted library revision
+  ---
+  duration_ms: 18.2273
+  type: 'test'
+  ...
+# Subtest: dated catalogue attaches detailed branching instances while spire and unsupported heights retain legacy coverage
+ok 53 - dated catalogue attaches detailed branching instances while spire and unsupported heights retain legacy coverage
+  ---
+  duration_ms: 5.578
+  type: 'test'
+  ...
+# Subtest: reordering retained canonical cells and rebasing preserves species, phase, and appearance
+ok 54 - reordering retained canonical cells and rebasing preserves species, phase, and appearance
+  ---
+  duration_ms: 8.2089
+  type: 'test'
+  ...
+# Subtest: empty or non-tree dated catalogue clears detail draw and restores legacy coverage
+ok 55 - empty or non-tree dated catalogue clears detail draw and restores legacy coverage
+  ---
+  duration_ms: 4.7821
+  type: 'test'
+  ...
+# Subtest: immersive mode hides detailed batches and restores legacy representation
+ok 56 - immersive mode hides detailed batches and restores legacy representation
+  ---
+  duration_ms: 3.6519
+  type: 'test'
+  ...
+# Subtest: clear during a pending load disposes stale family without attaching it
+ok 57 - clear during a pending load disposes stale family without attaching it
+  ---
+  duration_ms: 3.2844
+  type: 'test'
+  ...
+# Subtest: dispose during pending load disposes late family and rejects later loads
+ok 58 - dispose during pending load disposes late family and rejects later loads
+  ---
+  duration_ms: 4.7506
+  type: 'test'
+  ...
+# Subtest: loader failure is diagnostic and preserves legacy rendering; invalid family is disposed
+ok 59 - loader failure is diagnostic and preserves legacy rendering; invalid family is disposed
+  ---
+  duration_ms: 6.3823
+  type: 'test'
+  ...
+# Subtest: successful replacement disposes previous batches/family only after replacement is ready
+ok 60 - successful replacement disposes previous batches/family only after replacement is ready
+  ---
+  duration_ms: 3.8975
+  type: 'test'
+  ...
+# Subtest: attaching after legacy slots exist initializes only selected detailed slots without gaps
+ok 61 - attaching after legacy slots exist initializes only selected detailed slots without gaps
+  ---
+  duration_ms: 4.5296
+  type: 'test'
+  ...
+# Subtest: dated tree catalogue is order independent, filters non-trees, and tracks trait changes
+ok 62 - dated tree catalogue is order independent, filters non-trees, and tracks trait changes
+  ---
+  duration_ms: 0.6651
+  type: 'test'
+  ...
+# Subtest: partial batch creation failure disposes already-created batches and family
+ok 63 - partial batch creation failure disposes already-created batches and family
+  ---
+  duration_ms: 3.9262
+  type: 'test'
+  ...
+# Subtest: malformed dated catalogue reports error, preserves legacy draw, and recovers on a valid snapshot
+ok 64 - malformed dated catalogue reports error, preserves legacy draw, and recovers on a valid snapshot
+  ---
+  duration_ms: 5.1751
+  type: 'test'
+  ...
+# Subtest: malformed dated catalogue is ignored safely while detail family is absent
+ok 65 - malformed dated catalogue is ignored safely while detail family is absent
+  ---
+  duration_ms: 7.7442
+  type: 'test'
+  ...
+# Subtest: overlapping family loads are newest-wins and dispose the stale result exactly once
+ok 66 - overlapping family loads are newest-wins and dispose the stale result exactly once
+  ---
+  duration_ms: 4.4404
+  type: 'test'
+  ...
+# Subtest: near slots and far codes share one canonical structural variant across dates, catalogues and slot reuse
+ok 67 - near slots and far codes share one canonical structural variant across dates, catalogues and slot reuse
+  ---
+  duration_ms: 6.0038
+  type: 'test'
+  ...
+# Subtest: a family without a structural pool keeps authored structure in near and far paths
+ok 68 - a family without a structural pool keeps authored structure in near and far paths
+  ---
+  duration_ms: 5.2809
+  type: 'test'
+  ...
+# Subtest: branching and spire use separate compact pools and suppress all supported legacy draws
+ok 69 - branching and spire use separate compact pools and suppress all supported legacy draws
+  ---
+  duration_ms: 3.8303
+  type: 'test'
+  ...
+# Subtest: family reassignment and empty demand regrow initialized compact slots without gaps
+ok 70 - family reassignment and empty demand regrow initialized compact slots without gaps
+  ---
+  duration_ms: 4.0493
+  type: 'test'
+  ...
+# Subtest: failure in second family preserves active library and disposes partial replacement
+ok 71 - failure in second family preserves active library and disposes partial replacement
+  ---
+  duration_ms: 5.0971
+  type: 'test'
+  ...
+# Subtest: duplicate family requests are rejected without replacing or cancelling active state
+ok 72 - duplicate family requests are rejected without replacing or cancelling active state
+  ---
+  duration_ms: 4.5097
+  type: 'test'
+  ...
+# Subtest: cancelling between family parses releases all staged assets and keeps latest request authoritative
+ok 73 - cancelling between family parses releases all staged assets and keeps latest request authoritative
+  ---
+  duration_ms: 9.8902
+  type: 'test'
+  ...
+# Subtest: each family receives its own offline mip sidecar while sharing atmosphere options
+ok 74 - each family receives its own offline mip sidecar while sharing atmosphere options
+  ---
+  duration_ms: 5.8272
+  type: 'test'
+  ...
+# Subtest: wind phase uses Euclidean BigInt dates at negative, period, and universe endpoints
+ok 75 - wind phase uses Euclidean BigInt dates at negative, period, and universe endpoints
+  ---
+  duration_ms: 2.2278
+  type: 'test'
+  ...
+# Subtest: physical leaf transforms scale the attachment pivot, retain card size, and rotate the rigid offset
+ok 76 - physical leaf transforms scale the attachment pivot, retain card size, and rotate the rigid offset
+  ---
+  duration_ms: 1.0851
+  type: 'test'
+  ...
+# Subtest: LOD pair validates matching embedded material/texture bytes and strips LOD1 texture descriptors before parse
+ok 77 - LOD pair validates matching embedded material/texture bytes and strips LOD1 texture descriptors before parse # SKIP Set ATLAS_TREE_CANDIDATE or both LOD paths to run retained v6 GLB checks.
+  ---
+  duration_ms: 0.1206
+  type: 'test'
+  ...
+# Subtest: LOD preparation rejects material and embedded image divergence before sharing
+ok 78 - LOD preparation rejects material and embedded image divergence before sharing # SKIP Set ATLAS_TREE_CANDIDATE or both LOD paths to run retained v6 GLB checks.
+  ---
+  duration_ms: 0.129
+  type: 'test'
+  ...
+# Subtest: GLB contract rejects extra, malformed, normalized, and blended attributes
+ok 79 - GLB contract rejects extra, malformed, normalized, and blended attributes # SKIP Set ATLAS_TREE_CANDIDATE or both LOD paths to run retained v6 GLB checks.
+  ---
+  duration_ms: 0.2092
+  type: 'test'
+  ...
+# Subtest: analytic profile returns deterministic height-scaled AABB plus constant metric margin
+ok 80 - analytic profile returns deterministic height-scaled AABB plus constant metric margin
+  ---
+  duration_ms: 11.9755
+  type: 'test'
+  ...
+# Subtest: packaged Oak and Pine LOD profiles produce valid deterministic proxy bounds and cone/trunk samples fit
+ok 81 - packaged Oak and Pine LOD profiles produce valid deterministic proxy bounds and cone/trunk samples fit
+  ---
+  duration_ms: 378.0656
+  type: 'test'
+  ...
+# Subtest: empty bands are excluded and invalid profiles or heights are rejected
+ok 82 - empty bands are excluded and invalid profiles or heights are rejected
+  ---
+  duration_ms: 1.5914
+  type: 'test'
+  ...
+# Subtest: interleaved GLTF vertex attributes produce the same profile and bounds as separate arrays
+ok 83 - interleaved GLTF vertex attributes produce the same profile and bounds as separate arrays
+  ---
+  duration_ms: 5.614
+  type: 'test'
+  ...
+# Subtest: analytic profile uses four deterministic reference-height bands and metric card extent
+ok 84 - analytic profile uses four deterministic reference-height bands and metric card extent
+  ---
+  duration_ms: 0.9836
+  type: 'test'
+  ...
+# Subtest: guaranteed sphere contains every actual Oak and Pine LOD vertex at 10, 16, and 22 m under both extreme wind phases
+ok 85 - guaranteed sphere contains every actual Oak and Pine LOD vertex at 10, 16, and 22 m under both extreme wind phases
+  ---
+  duration_ms: 396.5056
+  type: 'test'
+  ...
+# Subtest: alpha-weighted color mean decodes straight sRGB before averaging
+ok 86 - alpha-weighted color mean decodes straight sRGB before averaging
+  ---
+  duration_ms: 1.5538
+  type: 'test'
+  ...
+# Subtest: base-color statistics apply linear material factor and pixel alpha cutoff coverage
+ok 87 - base-color statistics apply linear material factor and pixel alpha cutoff coverage
+  ---
+  duration_ms: 0.7063
+  type: 'test'
+  ...
+# Subtest: invalid geometry, attributes, wind, and color inputs are rejected
+ok 88 - invalid geometry, attributes, wind, and color inputs are rejected
+  ---
+  duration_ms: 0.9212
+  type: 'test'
+  ...
+# Subtest: tree binding uses supplied dated catalogue species and is independent of enumeration order
+ok 89 - tree binding uses supplied dated catalogue species and is independent of enumeration order
+  ---
+  duration_ms: 5.9641
+  type: 'test'
+  ...
+# Subtest: recipes and bounded variants preserve species physical relationships and leaf dimensions
+ok 90 - recipes and bounded variants preserve species physical relationships and leaf dimensions
+  ---
+  duration_ms: 3.7146
+  type: 'test'
+  ...
+# Subtest: instance appearance and geometry keys separate individuals from shared structure
+ok 91 - instance appearance and geometry keys separate individuals from shared structure
+  ---
+  duration_ms: 13.2735
+  type: 'test'
+  ...
+# Subtest: pool is deterministic, frozen, bounded and stratified per family and version
+ok 92 - pool is deterministic, frozen, bounded and stratified per family and version
+  ---
+  duration_ms: 3.775
+  type: 'test'
+  ...
+# Subtest: canonical identity chooses the variant; recipe version, species and cell are the only inputs
+ok 93 - canonical identity chooses the variant; recipe version, species and cell are the only inputs
+  ---
+  duration_ms: 1.53
+  type: 'test'
+  ...
+# Subtest: roots, heights and tree yaw are invariant; only horizontal crown structure moves
+ok 94 - roots, heights and tree yaw are invariant; only horizontal crown structure moves
+  ---
+  duration_ms: 0.8424
+  type: 'test'
+  ...
+# Subtest: variants change real Oak and Pine geometry, and leaf thinning is shared by both LODs
+ok 95 - variants change real Oak and Pine geometry, and leaf thinning is shared by both LODs
+  ---
+  duration_ms: 292.1812
+  type: 'test'
+  ...
+# branching variant 0: max pivot displacement 1.412 m at 16 m
+# branching variant 1: max pivot displacement 0.938 m at 16 m
+# branching variant 2: max pivot displacement 1.164 m at 16 m
+# branching variant 3: max pivot displacement 0.885 m at 16 m
+# branching variant 4: max pivot displacement 0.737 m at 16 m
+# branching variant 5: max pivot displacement 0.899 m at 16 m
+# branching variant 6: max pivot displacement 0.684 m at 16 m
+# branching variant 7: max pivot displacement 1.428 m at 16 m
+# spire variant 0: max pivot displacement 0.735 m at 16 m
+# spire variant 1: max pivot displacement 0.923 m at 16 m
+# spire variant 2: max pivot displacement 0.784 m at 16 m
+# spire variant 3: max pivot displacement 0.549 m at 16 m
+# spire variant 4: max pivot displacement 0.888 m at 16 m
+# spire variant 5: max pivot displacement 1.086 m at 16 m
+# spire variant 6: max pivot displacement 1.149 m at 16 m
+# spire variant 7: max pivot displacement 0.540 m at 16 m
+# Subtest: area-preserving LOD card scale follows the real mesh leaf-area ratio
+ok 96 - area-preserving LOD card scale follows the real mesh leaf-area ratio
+  ---
+  duration_ms: 1.1333
+  type: 'test'
+  ...
+# Subtest: conservative sphere contains every actual LOD vertex for every variant, height, wind extreme and card scale
+ok 97 - conservative sphere contains every actual LOD vertex for every variant, height, wind extreme and card scale
+  ---
+  duration_ms: 320.1488
+  type: 'test'
+  ...
+1..97
+# tests 97
+# suites 0
+# pass 94
+# fail 0
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 1501.5528
