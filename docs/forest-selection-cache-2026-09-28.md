@@ -82,3 +82,15 @@ be mostly vertical and also need not cross a selector centre's 40 m threshold.
 - [Movement/cache report](../test-results/forest-selection-66c7728/browser-movement-lateral-hardware/report.json)
 - [After movement](../test-results/forest-selection-66c7728/browser-movement-lateral-hardware/after-move.png)
 - [Browser fixture source](../tests/forest-selection-cache.browser.mjs)
+
+## Integrated live release `6f7cb21`
+
+The published build passed the RTX 5090 movement fixture at 110.07 m lateral
+surface displacement. Two selection-worker responses arrived; the last reused
+6,654 patches and built 32. It reported 17.34 MB of estimated residency under
+the 32 MiB cap, with no evictions, worker restarts, worker failures or browser
+errors. Trees, flora, fauna and terrain remained ready. The existing desktop
+rendering fixture also passed on the same live release. See the
+[deployment record](../test-results/deploy-6f7cb21/live-deployment.json),
+[movement report](../test-results/deploy-6f7cb21/forest-selection-cache-browser/report.json),
+and [rendering report](../test-results/deploy-6f7cb21/desktop-rendering-acceptance/report.json).

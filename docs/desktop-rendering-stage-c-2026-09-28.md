@@ -54,7 +54,11 @@ uniforms, shader-hook failures are visible in diagnostics, and dynamic material
 cache keys are retained. XR captures preserve the supplied camera world matrix.
 All current forest/flora/fauna meshes are constructed before attachment and
 keep unique materials. Future dynamic batches must attach the hook explicitly.
-These changes were published in release `114a16e`.
+These changes were published in release `114a16e`; the integrated forest cache
+revision was subsequently published in `6f7cb214e1f9c3e7f4865ba2fc8fdcc6fc98e13d`.
+Its live RTX 5090 desktop fixture again passed AA, resize, hook, stationary
+forest and turn-in-place checks. The full record is in the
+[6f7cb21 deployment report](../test-results/deploy-6f7cb21/live-deployment.json).
 
 Shared lighting, bounded shadows, authored materials, continuous canopy and
 species-bound structural variants remain in the

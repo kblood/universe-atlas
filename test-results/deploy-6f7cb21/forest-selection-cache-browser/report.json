@@ -1,0 +1,80 @@
+{
+  "ok": true,
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "date": {
+    "version": "atlas-time-2",
+    "reference": "big-bang",
+    "offsetNs": "435084631200000067692800000",
+    "branchId": "baseline"
+  },
+  "movedM": 110.09680051167821,
+  "groundMovedM": 110.07243938865889,
+  "beforeCache": {
+    "patches": 6731,
+    "estimatedBytes": 17202896,
+    "maxBytes": 33554432,
+    "maxEntries": 30000,
+    "hits": 6656,
+    "misses": 41,
+    "visited": 6697,
+    "evictionsTotal": 0
+  },
+  "cache": {
+    "patches": 6787,
+    "estimatedBytes": 17344858,
+    "maxBytes": 33554432,
+    "maxEntries": 30000,
+    "hits": 6654,
+    "misses": 32,
+    "visited": 6686,
+    "evictionsTotal": 0
+  },
+  "workerResponsesBefore": 2,
+  "movedResponses": [
+    {
+      "requestId": 3,
+      "patches": 6755,
+      "estimatedBytes": 17265460,
+      "maxBytes": 33554432,
+      "maxEntries": 30000,
+      "hits": 6661,
+      "misses": 24,
+      "visited": 6685,
+      "evictionsTotal": 0
+    },
+    {
+      "requestId": 4,
+      "patches": 6787,
+      "estimatedBytes": 17344858,
+      "maxBytes": 33554432,
+      "maxEntries": 30000,
+      "hits": 6654,
+      "misses": 32,
+      "visited": 6686,
+      "evictionsTotal": 0
+    }
+  ],
+  "forest": {
+    "before": {
+      "visible": 2024,
+      "cached": 18309,
+      "pending": 0
+    },
+    "after": {
+      "visible": 2031,
+      "cached": 18719,
+      "pending": 0,
+      "workerRestarts": 0,
+      "workerFailures": 0
+    }
+  },
+  "life": {
+    "floraPresent": 1628,
+    "faunaDrawn": 128,
+    "faunaTerrainPending": 0,
+    "surfaceReady": true
+  },
+  "errors": []
+}

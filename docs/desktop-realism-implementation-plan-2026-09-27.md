@@ -179,7 +179,7 @@ more. Structural diversity must not come from disconnected anatomy.
 | B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented; build, 53 targeted checks and RTX 5090 browser acceptance pass; see validation record |
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
 | D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; first Blender brief validates; forest integration, authored assets and resource cache pending |
-| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Canonical bounded patches and shared legacy habitat implemented/tested; summary worker and canopy rendering pending |
+| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Canonical patches, shared habitat and bounded worker selection cache implemented, reviewed and deployed; summary worker and canopy rendering pending |
 | F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | Two tree authoring proposals technically validated and visually reviewed; asset/runtime acceptance and other landscape work pending |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |
@@ -288,6 +288,13 @@ addressable patches and extracts the current habitat rule without changing
 the placement digest. The distant rendered population remains a sparse sample.
 The [second tree proposal](tree-asset-candidate-2026-09-28.md) improves crown
 structure using original cutout leaf sprays, but remains outside the game.
+
+Release `6f7cb21` publishes the reviewed forest selection cache and updated
+guide. Luna 6's deployed RTX 5090 movement and rendering checks pass; the
+[cache record](forest-selection-cache-2026-09-28.md) links source, CPU and
+browser evidence. This completes the selection-cache increment, not stage E
+or the overall realism plan. Continuous canopy, production landscape assets,
+lighting/shadows and realistic rigged fauna remain active work.
 
 ## 9. Reference techniques and boundaries
 
