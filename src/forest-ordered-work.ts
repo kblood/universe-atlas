@@ -9,6 +9,7 @@ export class ForestOrderedWorkIndex {
   private skipped=new Set<string>();
   private indices:number[]=[];
   private rebuildCount=0;
+  private incrementalUpdateCount=0;
   private lastNewlySkipped:string[]=[];
   private keyForCell:(id:string)=>string;
 
@@ -46,10 +47,42 @@ export class ForestOrderedWorkIndex {
     return this.indices;
   }
 
+  /** Apply changed patch membership without rescanning the entire selection.
+   * The maintained array remains in canonical cell order. */
+  updateSkippedPatches(changes:ReadonlyMap<string,boolean>){
+    const newlySkipped:string[]=[];let changed=false;
+    for(const [key,skip] of changes){
+      const previous=this.skipped.has(key);if(previous===skip)continue;
+      const members=this.groups.get(key);if(!members)continue;
+      changed=true;
+      if(skip){
+        this.skipped.add(key);
+        for(const index of members){
+          const position=this.lowerBound(this.indices,index);
+          if(this.indices[position]===index)this.indices.splice(position,1);
+          newlySkipped.push(this.cells[index].id);
+        }
+      }else{
+        this.skipped.delete(key);
+        for(const index of members){
+          const position=this.lowerBound(this.indices,index);
+          if(this.indices[position]!==index)this.indices.splice(position,0,index);
+        }
+      }
+    }
+    this.lastNewlySkipped=newlySkipped;
+    if(changed)this.incrementalUpdateCount++;
+    return this.indices;
+  }
+
   newlySkippedIds(){return this.lastNewlySkipped;}
   currentIndices(){return this.indices;}
   diagnostics(){return {selectionCells:this.cells.length,groups:this.groups.size,skippedGroups:this.skipped.size,
-    skippedCells:this.cells.length-this.indices.length,activeCells:this.indices.length,rebuilds:this.rebuildCount};}
+    skippedCells:this.cells.length-this.indices.length,activeCells:this.indices.length,rebuilds:this.rebuildCount,incrementalUpdates:this.incrementalUpdateCount};}
+
+  private lowerBound(values:readonly number[],target:number){
+    let low=0,high=values.length;while(low<high){const middle=(low+high)>>>1;if(values[middle]<target)low=middle+1;else high=middle;}return low;
+  }
 
   private rebuildActiveIndices(){
     const ordered:number[]=[];

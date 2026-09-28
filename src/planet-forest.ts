@@ -54,9 +54,12 @@ export class PlanetForest {
   // Diagnostic-only revisions distinguish why the retained far-work list is rebuilt.
   private workSelectionRevision=0;
   private workHabitatRevision=0;
+  private workGlobalHabitatRevision=0;
   private workBuiltSelectionRevision=-1;
   private workBuiltHabitatRevision=-1;
-  private workRefreshReasons={initial:0,selection:0,habitat:0,canopy:0,movement:0,selectionMismatch:0};
+  private workBuiltGlobalHabitatRevision=-1;
+  private workBuiltCanopyEpoch=-2;
+  private workRefreshReasons={initial:0,selection:0,habitat:0,canopy:0,movement:0,selectionMismatch:0,incrementalPatch:0};
   private workCanopyRevision=-2;
   private workReferenceEye=new THREE.Vector3();
   private workReferenceEyeReady=false;
@@ -382,6 +385,7 @@ export class PlanetForest {
       this.patchBroadphase.setWater(water);if(hydrologyChanged)this.patchBroadphase.invalidate();
       this.workStateVersion++;
       this.workHabitatRevision++;
+      this.workGlobalHabitatRevision++;
       this.water=water;this.sample=terrainSampler(this.body,undefined,undefined,undefined,water);
       this.classify=biomeClassifier(this.body,water);
       this.habitat=forestHabitat(this.sample,this.classify,this.body.radiusM);
@@ -423,16 +427,18 @@ export class PlanetForest {
       this.patchBroadphase.setWater(water);this.setWorkSelection(this.wanted);
     }
     const eyeMeters=this.position.set(eye.x*r,eye.y*r,eye.z*r);
-    const canopyRevision=this.fullCanopy?(typeof this.fullCanopy.currentPatchRevision==='function'?this.fullCanopy.currentPatchRevision():NaN):-1;
+    const legacyCanopyRevision=this.fullCanopy?.currentPatchRevision?.()??NaN;
+    const canopyChanges=this.fullCanopy?.currentPatchChanges?.()??{globalRevision:legacyCanopyRevision,revision:legacyCanopyRevision,keys:[] as [string,number][]};
     const moved=this.workReferenceEyeReady&&eyeMeters.distanceToSquared(this.workReferenceEye)>20*20;
     const initial=!this.workReferenceEyeReady;
     const selectionChanged=this.workSelectionRevision!==this.workBuiltSelectionRevision;
-    const habitatChanged=this.workHabitatRevision!==this.workBuiltHabitatRevision;
-    const canopyChanged=canopyRevision!==this.workCanopyRevision;
-    const stateChanged=this.workStateVersion!==this.workBuiltStateVersion;
-    const refresh=canopyChanged||stateChanged||moved;
+    const habitatChanged=this.workGlobalHabitatRevision!==this.workBuiltGlobalHabitatRevision;
+    const canopyChanged=canopyChanges.globalRevision!==this.workBuiltCanopyEpoch;
+    const fullRefresh=initial||selectionMismatch||selectionChanged||habitatChanged||canopyChanged||moved;
     let workIndices=this.workIndex.currentIndices();
-    if(refresh){
+    const canopyDirtyKeys=canopyChanges.keys.map(([key])=>key);
+    const habitatDirtyKeys=this.patchBroadphase.dirtyGroups();
+    if(fullRefresh){
       if(initial)this.workRefreshReasons.initial++;
       if(selectionChanged)this.workRefreshReasons.selection++;
       if(habitatChanged)this.workRefreshReasons.habitat++;
@@ -444,16 +450,37 @@ export class PlanetForest {
       workIndices=this.workIndex.updateSkipped(skippedPatches);
       for(const id of this.workIndex.newlySkippedIds()){this.retainedNear.delete(id);this.retainedMiddle.delete(id);}
       this.workReferenceEye.copy(eyeMeters);this.workReferenceEyeReady=true;
-      this.workCanopyRevision=canopyRevision;this.workBuiltStateVersion=this.workStateVersion;this.workListRefreshes++;
+      this.workCanopyRevision=canopyChanges.revision;this.workBuiltCanopyEpoch=canopyChanges.globalRevision;
+      this.workListRefreshes++;
       this.workBuiltSelectionRevision=this.workSelectionRevision;this.workBuiltHabitatRevision=this.workHabitatRevision;
+      this.workBuiltGlobalHabitatRevision=this.workGlobalHabitatRevision;this.workBuiltStateVersion=this.workStateVersion;
+      this.patchBroadphase.acknowledgeDirtyGroups(habitatDirtyKeys);
+      this.fullCanopy?.acknowledgeCurrentPatchChanges?.(canopyChanges);
+    }else{
+      const dirtyKeys=[...new Set([...canopyDirtyKeys,...habitatDirtyKeys])];
+      if(dirtyKeys.length){
+        const states=this.patchBroadphase.skipStatesFor(dirtyKeys,
+          [this.workReferenceEye.x,this.workReferenceEye.y,this.workReferenceEye.z],water,
+          key=>this.fullCanopy?.currentPatch(key)??false,B.forestFootprintM+20);
+        workIndices=this.workIndex.updateSkippedPatches(states);
+        for(const id of this.workIndex.newlySkippedIds()){this.retainedNear.delete(id);this.retainedMiddle.delete(id);}
+        this.workRefreshReasons.incrementalPatch++;
+        this.workCanopyRevision=canopyChanges.revision;
+        this.workBuiltStateVersion=this.workStateVersion;
+        this.workBuiltHabitatRevision=this.workHabitatRevision;
+        this.patchBroadphase.acknowledgeDirtyGroups(habitatDirtyKeys);
+        this.fullCanopy?.acknowledgeCurrentPatchChanges?.(canopyChanges);
+      }
     }
     const workStats=this.workIndex.diagnostics(),patchStats=this.patchBroadphase.diagnostics();
-    this.farWorkDiagnostics={...workStats,patchGroups:patchStats.groups,readyGroups:patchStats.readyGroups,
-      invalidatedGroups:patchStats.invalidatedGroups,skippedGroups:patchStats.skippedGroups,
+    this.farWorkDiagnostics={...workStats,patchGroups:patchStats.groups,patchLastFullScan:patchStats.lastFullScan,
+      patchVisitedGroups:patchStats.lastVisitedGroups,patchVisitedGroupsTotal:patchStats.totalVisitedGroups,
+      patchFullScans:patchStats.fullScans,patchIncrementalScans:patchStats.incrementalScans,
       skippedCells:workStats.skippedCells,activeCells:workStats.activeCells,refreshes:this.workListRefreshes,
       refreshReasons:this.workRefreshReasons,selectionRevision:this.workSelectionRevision,habitatRevision:this.workHabitatRevision,
       builtSelectionRevision:this.workBuiltSelectionRevision,builtHabitatRevision:this.workBuiltHabitatRevision,
-      workStateRevision:this.workStateVersion,builtWorkStateRevision:this.workBuiltStateVersion,canopyRevision};
+      globalHabitatRevision:this.workGlobalHabitatRevision,builtGlobalHabitatRevision:this.workBuiltGlobalHabitatRevision,
+      canopyRevision:this.fullCanopy?.currentPatchRevision?.()??-1,canopyEpoch:canopyChanges.globalRevision,workStateRevision:this.workStateVersion,builtWorkStateRevision:this.workBuiltStateVersion};
     this.farOwnedSkipped=workStats.skippedCells;
     const counts=[0,0],capacities=immersive?[64,1024]:[B.forestNearCapacity,B.forestCapacity];let canopyCount=0;
     for(const updates of this.updates){updates.wanted.length=0;updates.wantedCoverage.length=0;updates.wantedIds.clear();}

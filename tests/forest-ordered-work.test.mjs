@@ -37,3 +37,26 @@ test('selection replacement resets retained work and stale skip keys',()=>{
   assert.deepEqual(index.newlySkippedIds(),[]);
   assert.equal(index.diagnostics().skippedGroups,0);
 });
+
+test('incremental patch transitions match full canonical rebuilds without rebuilding the whole list',()=>{
+  const cells=Array.from({length:2048},(_,i)=>cell(i%128,Math.floor(i/128)));
+  const incremental=new ForestOrderedWorkIndex(patch),oracle=new ForestOrderedWorkIndex(patch);
+  incremental.setSelection(cells);oracle.setSelection(cells);
+  let skipped=new Set();incremental.updateSkipped(skipped);oracle.updateSkipped(skipped);
+  const fullRebuilds=incremental.diagnostics().rebuilds;
+  const changed=[patch(cells[17].id),patch(cells[700].id),patch(cells[1200].id)];
+  for(const key of changed){
+    skipped=new Set(skipped);skipped.add(key);
+    incremental.updateSkippedPatches(new Map([[key,true]]));oracle.updateSkipped(skipped);
+    assert.deepEqual(incremental.currentIndices(),oracle.currentIndices());
+    assert.deepEqual(incremental.newlySkippedIds(),cells.filter(c=>patch(c.id)===key).map(c=>c.id));
+  }
+  for(const key of [...changed].reverse()){
+    skipped=new Set(skipped);skipped.delete(key);
+    incremental.updateSkippedPatches(new Map([[key,false]]));oracle.updateSkipped(skipped);
+    assert.deepEqual(incremental.currentIndices(),oracle.currentIndices());
+    assert.deepEqual(incremental.newlySkippedIds(),[]);
+  }
+  assert.equal(incremental.diagnostics().rebuilds,fullRebuilds,'patch transitions avoid full canonical list scans');
+  assert.equal(incremental.diagnostics().incrementalUpdates,changed.length*2);
+});

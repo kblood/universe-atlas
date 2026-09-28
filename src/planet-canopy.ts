@@ -11,6 +11,7 @@ import {PLANET_DETAIL} from './planet-detail.ts';
 import {forestWaterIntervalContains,validForestWaterInterval,type ForestWaterInterval} from './forest-water-validity.ts';
 
 const patchKey=(a:ForestPatchAddress)=>`${a.face}/${a.n}/${a.x}/${a.y}`;
+const MAX_DIRTY_CURRENT_PATCH_KEYS=8192;
 export function forestCellPatchKey(id:string){const [face,n,x,y]=id.split('/').map(Number);return `${face}/${n}/${Math.floor(x/8)}/${Math.floor(y/8)}`;}
 type Installed={address:ForestPatchAddress;range:ForestSlotRange;ids:string[];water:number;family:string|null;waterInterval?:ForestWaterInterval};
 type Request={id:number;keys:Set<string>;progressAt:number};
@@ -59,8 +60,19 @@ export class PlanetCanopy {
   private frameCurrentPatches=new Map<string,boolean>();
   private patchLookupCacheHits=0;private patchLookupCacheMisses=0;
   private currentPatchVersion=0;
+  private currentPatchEpoch=0;
+  private dirtyCurrentPatchKeys=new Map<string,number>();
   private body:Body;
-  private invalidateCurrentPatchAnswers(){this.currentPatchVersion++;}
+  private invalidateCurrentPatchAnswers(key?:string){
+    this.currentPatchVersion++;
+    if(key){
+      if(!this.dirtyCurrentPatchKeys.has(key)&&this.dirtyCurrentPatchKeys.size>=MAX_DIRTY_CURRENT_PATCH_KEYS){
+        this.currentPatchEpoch++;this.dirtyCurrentPatchKeys.clear();return;
+      }
+      this.dirtyCurrentPatchKeys.set(key,this.currentPatchVersion);return;
+    }
+    this.currentPatchEpoch++;this.dirtyCurrentPatchKeys.clear();
+  }
   constructor(body:Body,capacity=229376){
     this.body=body;this.allocator=new ForestSlotAllocator(capacity);this.renderer=new ForestImpostors(capacity);
     this.bodyPositions=new Float64Array(capacity*3);this.heights=new Float64Array(capacity);
@@ -191,7 +203,7 @@ export class PlanetCanopy {
       this.presentationVersions[index]=0;
       if(this.rebase)this.rebase.positions.fill(0,index*4,index*4+4);
     }
-    this.allocator.free(patch.range);this.installed.delete(key);this.invalidateCurrentPatchAnswers();return patch.ids.length;
+    this.allocator.free(patch.range);this.installed.delete(key);this.invalidateCurrentPatchAnswers(key);return patch.ids.length;
   }
   private install(patch:ForestCensusPatch){
     const key=patchKey(patch.address);if(!this.desired.has(key))return;
@@ -215,7 +227,7 @@ export class PlanetCanopy {
       this.renderer.write(index,this.position,r[5],this.rotation,r[4],r[7]);
       this.presentationVersions[index]=0;this.tagPresentation(id,index);
     }
-    this.installed.set(key,{address:patch.address,range,ids,water:this.configuredWater,family:this.family,waterInterval:patch.waterInterval});this.invalidateCurrentPatchAnswers();this.retries.delete(key);this.installedThisFrame+=patch.present;
+    this.installed.set(key,{address:patch.address,range,ids,water:this.configuredWater,family:this.family,waterInterval:patch.waterInterval});this.invalidateCurrentPatchAnswers(key);this.retries.delete(key);this.installedThisFrame+=patch.present;
   }
   /** Call after the near render origin is chosen, before the near draw loop. */
   prepare(eye:THREE.Vector3,ground:V3,altitudeM:number,water:number,enabled:boolean,immersive:boolean,nearOrigin:THREE.Vector3){
@@ -255,7 +267,7 @@ export class PlanetCanopy {
       const next=this.reuse.next();if(next.done){this.reuse=null;break;}work++;
       const patch=next.value;
       if(patch.water!==water&&patch.family===this.family&&forestWaterIntervalContains(patch.waterInterval,water)){
-        patch.water=water;this.reusedPatches++;this.invalidateCurrentPatchAnswers();
+        patch.water=water;this.reusedPatches++;this.invalidateCurrentPatchAnswers(patchKey(patch.address));
       }
     }
     while(this.evictions.length&&work<512&&performance.now()-started<2){
@@ -313,6 +325,11 @@ export class PlanetCanopy {
     this.frameCurrentPatches.set(key,current);return current;
   }
   currentPatchRevision(){return this.currentPatchVersion;}
+  currentPatchChanges(){return {globalRevision:this.currentPatchEpoch,revision:this.currentPatchVersion,keys:[...this.dirtyCurrentPatchKeys.entries()] as [string,number][]};}
+  acknowledgeCurrentPatchChanges(snapshot:{globalRevision:number;revision:number;keys:readonly (readonly [string,number])[]}){
+    if(snapshot.globalRevision!==this.currentPatchEpoch)return;
+    for(const [key,version] of snapshot.keys)if(this.dirtyCurrentPatchKeys.get(key)===version)this.dirtyCurrentPatchKeys.delete(key);
+  }
   presentationSample(id:string){
     const index=this.slots.get(id);if(index===undefined)return null;
     return {id,heightM:this.renderer.positions.getW(index),groundHeightM:this.heights[index],code:this.renderer.parameters.getZ(index),

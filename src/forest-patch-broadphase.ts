@@ -19,8 +19,10 @@ export class ForestPatchBroadphase {
   private keyForCell:(id:string)=>string;
   private groups=new Map<string,Group>();
   private byId=new Map<string,Group>();
+  private dirtyPatchKeys=new Set<string>();
   private water=NaN;
   private lastStats:ForestPatchBroadphaseStats={groups:0,readyGroups:0,invalidatedGroups:0,skippedGroups:0,skippedCells:0};
+  private lastVisitedGroups=0;private totalVisitedGroups=0;private fullScans=0;private incrementalScans=0;
 
   constructor(radiusM:number,keyForCell:(id:string)=>string){
     if(!Number.isFinite(radiusM)||radiusM<=0)throw new Error('Broadphase radius must be finite and positive');
@@ -49,7 +51,7 @@ export class ForestPatchBroadphase {
       group.members.push(member);group.byId.set(cell.id,member);byId.set(cell.id,group);
       if(root){group.currentCount++;this.extendBounds(group,member);}
     }
-    this.groups=groups;this.byId=byId;this.water=water;
+    this.groups=groups;this.byId=byId;this.water=water;this.dirtyPatchKeys.clear();
     for(const group of groups.values())if(group.currentCount!==group.members.length)group.boundsDirty=true;
     this.lastStats={groups:groups.size,readyGroups:0,invalidatedGroups:groups.size,skippedGroups:0,skippedCells:0};
   }
@@ -62,10 +64,14 @@ export class ForestPatchBroadphase {
     if(root&&(!Number.isFinite(root.groundHeightM)||!Number.isFinite(root.water)))throw new Error('Invalid resolved forest root');
     const next=root&&root.water===this.water?{groundHeightM:root.groundHeightM,water:root.water}:null;
     const previous=member.root;
+    const changed=!!previous!==!!next||!!previous&&!!next&&
+      (previous.groundHeightM!==next.groundHeightM||previous.water!==next.water);
+    if(!changed)return true;
     if(previous&&previous.water===this.water)group.currentCount--;
     if(previous&&next&&(previous.groundHeightM!==next.groundHeightM||previous.water!==next.water))group.boundsDirty=true;
     member.root=next;
     if(next){group.currentCount++;if(!group.boundsDirty)this.extendBounds(group,member);}
+    this.dirtyPatchKeys.add(group.key);
     return true;
   }
 
@@ -84,6 +90,33 @@ export class ForestPatchBroadphase {
     this.water=water;this.invalidate();
   }
 
+  /** Pending local root changes. Callers acknowledge only after applying the
+   * corresponding incremental skip states; selection/water resets are global. */
+  dirtyGroups(){return [...this.dirtyPatchKeys];}
+  acknowledgeDirtyGroups(keys:readonly string[]){for(const key of keys)this.dirtyPatchKeys.delete(key);}
+
+  /** Re-evaluate only the supplied patch keys and report their new skip state.
+   * A missing/incomplete group is explicitly non-skippable. */
+  skipStatesFor(keys:readonly string[],eyeMeters:readonly [number,number,number],water:number,
+    currentPatch:(patchKey:string)=>boolean,minimumDistanceM=FOREST_PATCH_BROADPHASE_DISTANCE_M){
+    if(!eyeMeters||eyeMeters.length!==3||!eyeMeters.every(Number.isFinite)||!Number.isFinite(water)||
+      !Number.isFinite(minimumDistanceM)||minimumDistanceM<0||typeof currentPatch!=='function')throw new Error('Invalid broadphase query');
+    const states=new Map<string,boolean>();
+    this.lastVisitedGroups=keys.length;this.totalVisitedGroups+=keys.length;this.incrementalScans++;
+    if(water!==this.water){for(const key of keys)states.set(key,false);return states;}
+    const [x,y,z]=eyeMeters;
+    for(const key of keys){
+      const group=this.groups.get(key);
+      if(!group||group.currentCount!==group.members.length){states.set(key,false);continue;}
+      if(group.boundsDirty)this.rebuildBounds(group);
+      const bounds=group.bounds;
+      if(!bounds||!currentPatch(key)){states.set(key,false);continue;}
+      const near=Math.hypot(x-bounds.center[0],y-bounds.center[1],z-bounds.center[2])-bounds.radiusM;
+      states.set(key,near>=minimumDistanceM+FOREST_PATCH_BROADPHASE_MARGIN_M);
+    }
+    return states;
+  }
+
   /** Returns canonical patch keys that are safe to omit from the existing
    * ordered per-cell loop. The callback must report a complete current-family,
    * current-water census patch. A conservative AABB-derived sphere encloses
@@ -93,6 +126,7 @@ export class ForestPatchBroadphase {
     if(!eyeMeters||eyeMeters.length!==3||!eyeMeters.every(Number.isFinite)||!Number.isFinite(water)||
       !Number.isFinite(minimumDistanceM)||minimumDistanceM<0||typeof currentPatch!=='function')throw new Error('Invalid broadphase query');
     const skipped=new Set<string>();let readyGroups=0,invalidatedGroups=0,skippedCells=0;
+    this.lastVisitedGroups=water===this.water?this.groups.size:0;this.totalVisitedGroups+=this.lastVisitedGroups;this.fullScans++;
     if(water!==this.water){this.lastStats={groups:this.groups.size,readyGroups:0,invalidatedGroups:this.groups.size,skippedGroups:0,skippedCells:0};return skipped;}
     for(const group of this.groups.values()){
       if(group.currentCount!==group.members.length){invalidatedGroups++;continue;}
@@ -107,7 +141,8 @@ export class ForestPatchBroadphase {
   }
 
   patchKeyForCell(id:string){return this.byId.get(id)?.key;}
-  diagnostics(){return {...this.lastStats,water:this.water};}
+  diagnostics(){return {groups:this.groups.size,water:this.water,lastFullScan:{...this.lastStats},lastVisitedGroups:this.lastVisitedGroups,
+    totalVisitedGroups:this.totalVisitedGroups,fullScans:this.fullScans,incrementalScans:this.incrementalScans};}
 
   private rootPosition(member:Member):[number,number,number]{
     if(!member.root)throw new Error('Cannot bound an unresolved forest root');

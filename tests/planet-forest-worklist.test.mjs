@@ -13,7 +13,7 @@ const makeCell=(face,n,x,y,distanceM)=>{
   const angle=distanceM/body.radiusM;
   return {id:`${face}/${n}/${x}/${y}`,direction:[Math.sin(angle),0,Math.cos(angle)],roll:.2,heightM:16,yaw:.4,distanceM};
 };
-function fixture(){
+function fixture(includeEdge=false){
   const f=new PlanetForest(body),eye=new THREE.Vector3(0,0,1+20/body.radiusM),notes=[];
   f.water=0;f.center.set(0,0,1);
   const nearGroups=[0,1,2,3].map(face=>Array.from({length:64},(_,i)=>makeCell(face,256,i%8,Math.floor(i/8),50)));
@@ -22,14 +22,23 @@ function fixture(){
   for(let i=0;i<64;i++)for(let group=0;group<nearGroups.length;group++){
     cells.push(nearGroups[group][i]);if(group===1)cells.push(far[i]);
   }
+  const edge=makeCell(5,256,0,0,-660);if(includeEdge)cells.push(edge);
   f.wanted=cells;
   for(const cell of cells)f.cache.set(cell.id,{cell,height:0,present:true,water:0});
-  let valid=true,revision=0;
+  let valid=true,revision=0,globalRevision=0;const dirty=new Map();
   f.fullCanopy={group:new THREE.Group(),prepare(){},finish(){},observeClose(){},
     currentPatch:()=>valid,noteNear(id){notes.push(id);},canHandoff:()=>false,own(){},diagnostics(){return{};},
-    currentPatchRevision:()=>revision,dispose(){}};
+    currentPatchRevision:()=>revision,
+    currentPatchChanges(){return {globalRevision,revision,keys:[...dirty.entries()]};},
+    acknowledgeCurrentPatchChanges(snapshot){if(snapshot.globalRevision===globalRevision)for(const [key,version] of snapshot.keys)if(dirty.get(key)===version)dirty.delete(key);},
+    dispose(){}};
   const step=(water=0,date=0n)=>f.update(eye,[0,0,1],20,true,water,false,[],date);
-  return {f,eye,cells,far,nearGroups,notes,step,setValid(value){valid=value;revision++;},bumpRevision(){revision++;}};
+  const markRootChanged=(cell,height)=>{
+    f.cache.get(cell.id).height=height;f.patchBroadphase.updateResident(cell.id,{groundHeightM:height,water:0});
+    const key=f.patchBroadphase.patchKeyForCell(cell.id);revision++;dirty.set(key,revision);
+  };
+  return {f,eye,cells,far,nearGroups,notes,step,edge,markRootChanged,
+    setValid(value){valid=value;revision++;globalRevision++;},bumpRevision(){revision++;}};
 }
 
 test('owned far patches reduce per-cell work while preserving canonical capacity winners',()=>{
@@ -83,5 +92,19 @@ test('census loss and stale water reintroduce fallback work immediately',()=>{
     assert.equal(f.diagnostics().farOwnedSkipped,freshFar.length,'only newly refreshed residents may use the unchanged per-cell ownership gate');
     assert.deepEqual(notes,expectedNotes,'stale residents stay on the immediate fallback path in original selection order');
     assert.equal(f.diagnostics().detailedTrees.dateNs,'1');
+  }finally{f.dispose();}
+});
+
+test('local patch refreshes use the frozen 20m anchor across a movement reversal',()=>{
+  const {f,eye,edge,step,markRootChanged}=fixture(true),radius=body.radiusM;
+  try{
+    step();const edgeIndex=f.wanted.findIndex(cell=>cell.id===edge.id);
+    assert.ok(f.workIndex.currentIndices().includes(edgeIndex),'edge cell starts in active work');
+    const activeBefore=f.diagnostics().farWork.activeCells;
+    eye.x=19/radius;markRootChanged(edge,.001);step();
+    assert.equal(f.diagnostics().farWork.activeCells,activeBefore,'a local root update evaluates against the frozen reference eye, not +19m');
+    eye.x=-19/radius;markRootChanged(edge,.002);step();
+    assert.equal(f.diagnostics().farWork.activeCells,activeBefore,'the +19m to -19m reversal stays inside one 20m anchor window');
+    assert.equal(f.diagnostics().farWork.refreshReasons.movement,0,'neither leg triggers the full movement refresh');
   }finally{f.dispose();}
 });

@@ -49,8 +49,10 @@ const farWorkDelta=(before,after)=>{
  const a=farWorkState(before),b=farWorkState(after);if(!a||!b)return null;
  const reasonKeys=new Set([...Object.keys(a.refreshReasons||{}),...Object.keys(b.refreshReasons||{})]);
  const refreshReasons=Object.fromEntries([...reasonKeys].map(k=>[k,(b.refreshReasons?.[k]||0)-(a.refreshReasons?.[k]||0)]));
- return {refreshes:(b.refreshes||0)-(a.refreshes||0),rebuilds:(b.rebuilds||0)-(a.rebuilds||0),refreshReasons,
-   revisionDeltas:Object.fromEntries(['selectionRevision','habitatRevision','builtSelectionRevision','builtHabitatRevision','workStateRevision','builtWorkStateRevision','canopyRevision']
+ return {refreshes:(b.refreshes||0)-(a.refreshes||0),rebuilds:(b.rebuilds||0)-(a.rebuilds||0),incrementalUpdates:(b.incrementalUpdates||0)-(a.incrementalUpdates||0),
+   broadphaseGroupsVisited:(b.patchVisitedGroupsTotal||0)-(a.patchVisitedGroupsTotal||0),fullScans:(b.patchFullScans||0)-(a.patchFullScans||0),
+   incrementalScans:(b.patchIncrementalScans||0)-(a.patchIncrementalScans||0),refreshReasons,
+   revisionDeltas:Object.fromEntries(['selectionRevision','habitatRevision','globalHabitatRevision','builtSelectionRevision','builtHabitatRevision','builtGlobalHabitatRevision','workStateRevision','builtWorkStateRevision','canopyRevision','canopyEpoch']
     .map(k=>[k,(b[k]||0)-(a[k]||0)]))};
 };
 const waitAssetsReady=async(timeout=180000)=>{

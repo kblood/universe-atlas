@@ -48,7 +48,7 @@ test('partial, stale-water, invalidated-hydrology and unavailable-census groups 
     const skipped=index.skipPatchKeys(eye,0,current);
     if(kind==='partial'||kind==='water')assert.equal(skipped.has(affected),false,`${kind} patch must retain full per-cell fallback`);
     else assert.equal(skipped.size,0,`${kind} invalidation keeps all patches on fallback`);
-    assert.ok(index.diagnostics().invalidatedGroups>0||kind==='census');
+    assert.ok(index.diagnostics().lastFullScan.invalidatedGroups>0||kind==='census');
   }
 });
 
@@ -85,7 +85,7 @@ test('invalid inputs fail closed and diagnostics report bounds readiness',()=>{
   assert.throws(()=>index.skipPatchKeys([NaN,0,0],0,()=>true));
   assert.throws(()=>index.skipPatchKeys(eye,0,()=>true,-1));
   const keys=index.skipPatchKeys(eye,0,()=>true);assert.ok(keys.size>0);
-  const stats=index.diagnostics();assert.equal(stats.readyGroups,stats.groups);assert.equal(stats.skippedGroups,keys.size);assert.ok(stats.skippedCells>0);
+  const stats=index.diagnostics();assert.equal(stats.lastFullScan.readyGroups,stats.groups);assert.equal(stats.lastFullScan.skippedGroups,keys.size);assert.ok(stats.lastFullScan.skippedCells>0);
 });
 
 test('distance boundary uses the conservative margin and never skips an inside group',()=>{
@@ -94,4 +94,23 @@ test('distance boundary uses the conservative margin and never skips an inside g
   const outside=[radius+650+FOREST_PATCH_BROADPHASE_MARGIN_M+.01,0,0];
   assert.equal(index.skipPatchKeys(inside,0,current).size,0);
   assert.equal(index.skipPatchKeys(outside,0,current).size,1);
+});
+
+test('local resident edits re-evaluate only their patch and stale roots become non-skippable',()=>{
+  const cells=fixture(),values=roots(cells),index=broad(cells,values),eye=[6371000+3000,0,0],all=()=>true;
+  const before=index.skipPatchKeys(eye,0,all),affected=keyFor(cells[0].id);
+  assert.ok(before.has(affected));
+  index.updateResident(cells[0].id,{groundHeightM:3000,water:0});values.set(cells[0].id,{groundHeightM:3000,water:0});
+  const dirty=index.dirtyGroups();assert.deepEqual(dirty,[affected]);
+  const states=index.skipStatesFor(dirty,eye,0,all);
+  assert.deepEqual([...states.keys()],[affected]);assert.equal(states.get(affected),false);
+  const after=new Set(before);for(const [key,skip] of states)skip?after.add(key):after.delete(key);
+  assert.deepEqual(asSet(after),asSet(oracle(cells,values,0,eye,all)));
+  index.acknowledgeDirtyGroups(dirty);assert.deepEqual(index.dirtyGroups(),[]);
+
+  index.updateResident(cells[0].id,null);
+  const unresolved=index.skipStatesFor(index.dirtyGroups(),eye,0,all);
+  assert.equal(unresolved.get(affected),false,'a missing root immediately restores per-cell fallback');
+  index.setWater(5);
+  assert.equal(index.skipStatesFor([affected],eye,5,all).get(affected),false,'stale-water roots never skip');
 });
