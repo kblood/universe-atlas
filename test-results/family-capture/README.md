@@ -100,6 +100,32 @@ statistic does not by itself establish the mesh's screen-space coverage.
 
 ## Reproduce
 
+The bounded `sidecar-grid17-relight-v1` Oak experiment is rejected: intermediate
+blurred silhouette IoU improves to 0.943, but brightness error worsens to -32.37%
+and decoded texture bytes rise from 7,077,456 to 25,251,664. The aligned front
+view stays identical. The [density record](../../docs/captured-tree-view-density-2026-09-28.md)
+states the unchanged gates and full limitations. No Pine repeat follows it.
+
+`normal-reduction.mjs` / `normal-reduction.json` diagnose one separate loss:
+lighting already stored 64px normals before averaging versus lighting the
+normalized 32px mean. At view 60 (toward `[1,0,1]`) under the lab sun direction,
+the latter loses 36.2% Oak / 39.7% Pine diffuse energy. Averaging an order-two
+clamped-cosine transfer approximation instead gives +6.45% / +6.56%. Across
+all 81 views, the sunlight-weighted absolute per-view error changes from 10.2%
+to 2.8% Oak, and 8.6% to 3.3% Pine. This uses the established quadratic
+irradiance expansion; it is not proof that the full browser lighting mismatch
+is resolved. Original capture-time averaging, visibility, parallax, specular,
+hemisphere light and PBR remain outside this CPU calculation. The vertical
+light case is worse with the approximation for Pine (9.47% versus 8.85%
+absolute error); negative polynomial lobes are clamped and counted explicitly.
+The summaries pool texel areas over the sampled views, without solid-angle
+weighting or duplicate-direction removal; they are not whole-canopy lighting
+integrals. Signed errors across all views partly cancel opposing directional
+errors. Luna's independent read-only audit confirmed the formula and weighting,
+and identified this interpretation limit. Near-zero-energy relative errors are
+recorded as null.
+No new runtime texture encoding or shader is adopted from this diagnostic.
+
 Keep rendering dev server on 5197, retained root captures present, and the GPU
 free of other browser/generation jobs. Run `node test-results/family-capture/audit.mjs`
 then set `ATLAS_CAPTURE_REPORT` to a **fresh** report directory and run
