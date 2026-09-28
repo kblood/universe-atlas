@@ -85,7 +85,7 @@ const sampleGLSL=`
 precision highp sampler2DArray;
 uniform sampler2DArray captureColour,captureData,captureClass;
 uniform vec3 captureCenter,captureEye,captureDirection;
-uniform float captureRadius,captureOrtho,captureMip,captureMask,captureParallax,captureHash,captureCoverageWeighted;
+uniform float captureRadius,captureOrtho,captureMip,captureMask,captureParallax,captureHash,captureCoverageWeighted,captureStableReconstruction;
 uniform vec3 captureWeights;
 uniform ivec3 captureLayers;
 uniform mat3 captureBasis0,captureBasis1,captureBasis2,captureNormalMatrix;
@@ -109,6 +109,9 @@ void captureSample(int layer,mat3 basis,vec3 ro,vec3 rd,out vec4 colour,out vec3
   float alpha=max(colour.a,1e-6);vec4 classification=textureLod(captureClass,vec3(uv,float(layer)),captureMip);
   if(captureCoverageWeighted>.5){colour.rgb/=alpha;data/=alpha;classification.r/=alpha;}
   normal=dot(data.xyz,data.xyz)>1e-8?normalize(data.xyz):basis[2];leaf=classification.r;
+  // Captured leaf normals face their capture camera. Reorient a two-sided
+  // leaf toward this ray before combining views from different directions.
+  if(captureStableReconstruction>.5&&leaf>.5&&dot(normal,rd)>0.)normal=-normal;
   t=(plane+data.w*captureRadius)/denominator;
 }
 float captureNoise(vec2 p){return fract(52.9829189*fract(dot(floor(p),vec2(.06711056,.00583715))));}
@@ -126,7 +129,7 @@ export class TreeCapturedImpostor {
       captureColour:{value:capture.colourTexture},captureData:{value:capture.dataTexture},captureClass:{value:capture.classTexture},
       captureCenter:{value:new THREE.Vector3(...capture.manifest.center as [number,number,number])},captureRadius:{value:capture.manifest.radius},
       captureEye:{value:new THREE.Vector3()},captureDirection:{value:new THREE.Vector3()},captureOrtho:{value:0},captureMip:{value:0},captureMask:{value:0},
-      captureParallax:{value:1},captureHash:{value:0},captureCoverageWeighted:{value:Number(capture.filtering==='coverage-weighted')},
+      captureParallax:{value:1},captureHash:{value:0},captureCoverageWeighted:{value:Number(capture.filtering==='coverage-weighted')},captureStableReconstruction:{value:1},
       captureWeights:{value:new THREE.Vector3()},captureLayers:{value:new Int32Array(3)},
       captureBasis0:{value:new THREE.Matrix3()},captureBasis1:{value:new THREE.Matrix3()},captureBasis2:{value:new THREE.Matrix3()},
       captureBillboardRight:{value:new THREE.Vector3()},captureBillboardUp:{value:new THREE.Vector3()},captureBillboardScale:{value:1},
@@ -151,6 +154,9 @@ vec3 weights=captureWeights*vec3(c0.a,c1.a,c2.a);float captureCoverage=dot(weigh
 if(captureCoverage<=.00001)discard;
 weights/=captureCoverage;
 float hitDistance=min(weights.x>.001?t0:1e20,min(weights.y>.001?t1:1e20,weights.z>.001?t2:1e20));
+// A tiny newly visible contribution must not select the depth of the entire
+// pixel. Use the same continuous coverage weights as colour and normals.
+if(captureStableReconstruction>.5)hitDistance=dot(weights,vec3(t0,t1,t2));
 vec3 captureHit=ro+rd*hitDistance;vec4 hitView=captureModelView*vec4(captureHit,1),clip=captureProjection*hitView;
 if(hitView.z>=0.||clip.w<=0.||clip.z < -clip.w||clip.z > clip.w)discard;
 #if defined(USE_LOGARITHMIC_DEPTH_BUFFER)
@@ -187,7 +193,7 @@ if(captureMask>.5&&captureMask<2.5)gl_FragColor=vec4(vec3(1),captureCoverage);`)
 if(captureMask>1.5&&captureMask<2.5)gl_FragColor=vec4(vec3(-hitView.z),captureCoverage);
 else if(captureMask>2.5)gl_FragColor.a=captureCoverage;`);
     };
-    material.customProgramCacheKey=()=> `atlas-captured-tree-lab-2-${capture.filtering}`;
+    material.customProgramCacheKey=()=> `atlas-captured-tree-lab-3-${capture.filtering}`;
     this.mesh=new THREE.Mesh(new THREE.PlaneGeometry(2,2),material);this.mesh.frustumCulled=false;
     this.mesh.name='Authored tree capture reconstruction (development)';
     const inverse=new THREE.Matrix4(),localCamera=new THREE.Matrix4(),viewport=new THREE.Vector4();
@@ -206,7 +212,11 @@ else if(captureMask>2.5)gl_FragColor.a=captureCoverage;`);
       });
       u.captureBillboardRight.value.set(1,0,0).transformDirection(localCamera);u.captureBillboardUp.value.set(0,1,0).transformDirection(localCamera);
       const distance=u.captureEye.value.distanceTo(u.captureCenter.value),radius=u.captureRadius.value;
-      u.captureBillboardScale.value=u.captureOrtho.value?1:distance/Math.max(.01,distance-radius);
+      // Tangent cone of the bounding sphere, projected onto its centre plane.
+      // The old d/(d-r) expression needlessly enlarged the shaded quad.
+      u.captureBillboardScale.value=u.captureOrtho.value?1:u.captureStableReconstruction.value>.5
+        ?distance/Math.sqrt(Math.max(.0001,distance*distance-radius*radius))
+        :distance/Math.max(.01,distance-radius);
       u.captureModelView.value.multiplyMatrices(camera.matrixWorldInverse,this.mesh.matrixWorld);
       u.captureNormalMatrix.value.getNormalMatrix(u.captureModelView.value);u.captureProjection.value.copy(camera.projectionMatrix);
       renderer.getCurrentViewport(viewport);

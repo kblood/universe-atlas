@@ -67,6 +67,8 @@ test('shader hook compensates weighted colour, depth/normal and leaf-class sampl
     assert.match(shader.fragmentShader,/classification\.r\s*\/=?\s*alpha/);
     assert.match(shader.fragmentShader,/vec3\(-hitView\.z\)/,'depth diagnostic writes metric view depth after display transforms');
     assert.match(shader.fragmentShader,/gl_FragColor\.a=captureCoverage/,'colour diagnostic retains continuous coverage');
+    assert.match(shader.fragmentShader,/hitDistance=dot\(weights,vec3\(t0,t1,t2\)\)/,'depth uses continuous material weights');
+    assert.match(shader.fragmentShader,/leaf>\.5&&dot\(normal,rd\)>0\./,'two-sided leaf normals face the viewing ray before blending');
     assert.equal(shader.uniforms.captureCoverageWeighted.value,expected);
     proxy.dispose();capture.dispose();
   }

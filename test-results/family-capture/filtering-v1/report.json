@@ -1,0 +1,30 @@
+{
+  "commit": "e18315f895dabbf0bea4eee7542d9f254ad5c823",
+  "sourceFiles": [
+    {
+      "path": "src/tree-impostor-lab.ts",
+      "sha256": "80665f14fbbe9544cd5e58e06c5791d4e11b5404928cfaa0ca53f0615033e9fc"
+    },
+    {
+      "path": "src/tree-captured-impostor.ts",
+      "sha256": "f473d4963d4debb5b0c6cd41dc7790bb04e1070018101ddf555e02385104f10e"
+    },
+    {
+      "path": "src/tree-impostor-filter.ts",
+      "sha256": "1fec693684acc8e68697d2fbccbccdf2eddaadb541b0ca77ca5cf04325cd2a0e"
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "sha256": "0c0ebb6180c3e2a957f364d347c75767bc841e22e801c2ecb1934ceab803de25"
+    },
+    {
+      "path": "src/tree-impostor-views.ts",
+      "sha256": "caba31dfa7e2a2924a56b6dc5701b662ade1c20c95a40c58542ba13635d39520"
+    }
+  ],
+  "scope": "Isolated exact 16m LOD1 comparison; frame pixels refer to full capture diameter, not tree height. Supersampled mesh is calibration; native mesh reported separately. No forest integration/performance claim.",
+  "results": [],
+  "errors": [
+    "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'uniforms')\n    at eval (eval at evaluate (:303:30), <anonymous>:11:51)\n    at UtilityScript.evaluate (<anonymous>:305:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+  ]
+}
