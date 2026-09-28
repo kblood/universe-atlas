@@ -18,6 +18,7 @@ import {forestTreeCatalogue,type ForestTreeBinding} from './forest-tree-catalogu
 import {ForestTreeFamilyLibrary,type ForestTreeFamilyInput,type ForestTreeFamilyEntry} from './forest-tree-family-library.ts';
 import {ForestPatchBroadphase} from './forest-patch-broadphase.ts';
 import {ForestOrderedWorkIndex} from './forest-ordered-work.ts';
+import {forestPresentationFamily} from './forest-presentation.ts';
 
 type Resident={cell:PopulationCell;height:number;present:boolean;water:number;patchKey?:string};
 type TreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
@@ -256,8 +257,8 @@ export class PlanetForest {
     if(attribute.getX(index)!==value){attribute.setX(index,value);updates.coverage.include(index,1);this.coverageWrites++;}
   }
   private detailEntry(resident:Resident){
-    if(!this.assetDraw||resident.cell.heightM<10||resident.cell.heightM>22)return undefined;
-    const kind=this.binding(resident)?.recipe.family;
+    if(!this.assetDraw)return undefined;
+    const kind=forestPresentationFamily(this.binding(resident),resident.cell.heightM,this.assets.entries);
     return kind?this.assets.entries.get(kind):undefined;
   }
   private writeDetailed(entry:ForestTreeFamilyEntry<Resident,AssetSlot>,lod:number,index:number,resident:Resident,previous:AssetSlot|undefined):AssetSlot{
