@@ -1,0 +1,14 @@
+{
+  "stage": "live-guide-link-audit",
+  "expectedCommit": "8c03f410d4d0a0627f02d2a820dc432bdb73b411",
+  "liveBuild": { "commit": "8c03f410d4d0a0627f02d2a820dc432bdb73b411", "dirty": false },
+  "status": "failed",
+  "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/forest-asset-loading/README.md",
+  "expectedStatus": 200,
+  "observedStatus": 404,
+  "localSourceExists": true,
+  "releaseDistFileExists": false,
+  "failure": "tests/guide.mjs stopped at the same-origin link audit on this missing published README. Other guide checks were not yet complete in this run.",
+  "screenshotsCapturedBeforeFailure": ["guide-initial/index-1440.png", "guide-initial/terrain-1440.png", "guide-initial/time-1440.png"],
+  "recordedAt": "2026-09-28T15:32:00Z"
+}
