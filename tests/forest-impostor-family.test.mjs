@@ -5,7 +5,7 @@ import {ForestImpostors} from '../src/forest-impostor.ts';
 import {packForestPresentation} from '../src/forest-presentation.ts';
 
 function presentation(){return {enabled:true,lod1Profile:{referenceHeightM:16,maxLeafOffsetM:.8,
-  bands:Array.from({length:4},(_,i)=>({centerM:[.1,2+i*4,-.1],radiusM:3-i*.5,halfHeightM:1.8,populated:i>0}))},
+  bands:Array.from({length:4},(_,i)=>({centerM:[.1,2+i*4,-.1],radiusM:3-i*.5,halfHeightM:1.8,populated:i>0,count:i>0?4:0}))},
   conservativeBounds:{radiusM:26},barkLinearRgb:[.12,.08,.05],foliageLinearRgb:[.025,.085,.014]};}
 
 test('family profile updates uniforms and packed appearance updates only the existing parameter channel',()=>{
@@ -40,6 +40,10 @@ test('invalid profile is rejected before changing the active family uniforms',()
       const p=presentation();mutate(p);assert.throws(()=>f.setFamilyPresentation('spire',p));
       assert.equal(f.uniforms.treeFamilyBounds.value.y,26);
     }
+    const first=presentation();first.barkLinearRgb=[.8,.2,.1];const second=presentation();second.conservativeBounds.radiusM=NaN;
+    const before=f.uniforms.treeFamilyBark.value.map(v=>v.toArray());
+    assert.throws(()=>f.setFamilyPresentations(new Map([['branching',first],['spire',second]])));
+    assert.deepEqual(f.uniforms.treeFamilyBark.value.map(v=>v.toArray()),before,'invalid second family cannot partially replace the first');
   }finally{f.dispose();}
 });
 
@@ -52,12 +56,14 @@ test('Lambert shader composes family shape, linear color and conservative bounds
       assert.equal((source.match(/float familyCode=forestFamilyCode\(treeData.z\);/g)||[]).length,1);
       assert.match(source,/uniform vec4 treeFamilyBands\[8\]/);
     }
-    assert.match(shader.vertexShader,/familyBound>0.0\?vec3\(familyBound\)/);
+    assert.match(shader.vertexShader,/extent=treeFamilyExtent\[familyIndex\]\*h\+vec3\(treeFamilyMargin\[familyIndex\]\)/);
     assert.match(shader.fragmentShader,/treeFamilyCone\(ro,rd,band.xyz\/16.0/);
     assert.match(shader.fragmentShader,/float numerator=1\.0-dot\(n,o\)/,'integer cone plane distances are emitted as GLSL floats');
     assert.doesNotMatch(shader.fragmentShader,/float numerator=-?\d+-dot\(n,o\)/);
     assert.match(shader.fragmentShader,/treeFamilyFoliage\[familyIndex\]\*brightness.y/);
-    assert.match(shader.fragmentShader,/familyBound\/treeRootHeight.w/,'ray shift uses the family bound');
+    assert.match(shader.fragmentShader,/treeFamilyMargin\[familyIndex\]\/treeRootHeight.w/,'ray shift uses the same metric family box');
+    assert.match(shader.fragmentShader,/fwidth\(remaining\)/,'ellipsoid edge coverage follows the AA contract');
+    assert.doesNotMatch(shader.fragmentShader,/familyCode==1.0&&best<1e20\)treeCoverage=1.0/);
     assert.ok(!shader.fragmentShader.includes('baseCoverage'),'atlas occupancy is not treated as tree opacity');
     assert.match(f.mesh.material.customProgramCacheKey(),/forest-presentation-1/);
   }finally{f.dispose();}

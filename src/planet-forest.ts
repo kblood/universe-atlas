@@ -81,6 +81,7 @@ export class PlanetForest {
   private catalogueInput:readonly Species[]|undefined;
   private catalogueVersion=0;
   private canopyPresentationKey='';
+  private presentedFamilies=new Map<ForestTreeKind,ForestFamilyPresentation>();
   private bindings=new WeakMap<Resident,ForestTreeBinding|null>();
   private assetDraw=false;
   private worldDate=0n;
@@ -207,7 +208,6 @@ export class PlanetForest {
     return this.bindings.get(resident)??null;
   }
   private syncCanopyPresentation(){
-    if(!this.fullCanopy)return;
     const key=`${FOREST_PRESENTATION_VERSION}/${this.catalogueVersion}/${this.assets.revision}/${Number(this.assetDraw)}`;
     if(key===this.canopyPresentationKey)return;
     const families=new Map<ForestTreeKind,ForestFamilyPresentation>();
@@ -216,16 +216,17 @@ export class PlanetForest {
       if(presentation?.enabled)families.set(kind,presentation);
     }
     const catalogue=this.catalogue;
-    this.fullCanopy.setPresentation?.(key,(id,heightM)=>{
+    this.fullCanopy?.setPresentation?.(key,(id,heightM)=>{
       if(!families.size)return 0;
       const binding=catalogue.resolve(id),kind=forestPresentationFamily(binding,heightM,families);
       return kind&&binding?packForestPresentation(kind,binding.appearance.barkBrightness,binding.appearance.foliageBrightness):0;
     },families);
+    this.presentedFamilies=families;
     this.canopyPresentationKey=key;
   }
   private expectedCanopyPresentation(resident:Resident){
     if(!this.assetDraw)return 0;
-    const binding=this.binding(resident),kind=forestPresentationFamily(binding,resident.cell.heightM,this.assets.entries);
+    const binding=this.binding(resident),kind=forestPresentationFamily(binding,resident.cell.heightM,this.presentedFamilies);
     return kind&&binding?packForestPresentation(kind,binding.appearance.barkBrightness,binding.appearance.foliageBrightness):0;
   }
   private startWorker(){
@@ -283,7 +284,7 @@ export class PlanetForest {
   }
   private detailEntry(resident:Resident){
     if(!this.assetDraw)return undefined;
-    const kind=forestPresentationFamily(this.binding(resident),resident.cell.heightM,this.assets.entries);
+    const kind=forestPresentationFamily(this.binding(resident),resident.cell.heightM,this.presentedFamilies);
     return kind?this.assets.entries.get(kind):undefined;
   }
   private writeDetailed(entry:ForestTreeFamilyEntry<Resident,AssetSlot>,lod:number,index:number,resident:Resident,previous:AssetSlot|undefined):AssetSlot{

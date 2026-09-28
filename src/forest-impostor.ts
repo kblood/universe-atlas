@@ -4,11 +4,21 @@ import {forestCoverageGLSL} from './forest-coverage.ts';
 import {ForestDirtyBlocks} from './forest-dirty-blocks.ts';
 import {forestPresentationGLSL,unpackForestPresentation,FOREST_PRESENTATION_VERSION} from './forest-presentation.ts';
 import type {TreeCanopyProfile,TreeCullingBounds} from './tree-canopy-profile.ts';
+import {deriveFamilyProxyBounds} from './tree-canopy-bounds.ts';
 
 export type ForestFamilyPresentation={enabled:boolean;lod1Profile:TreeCanopyProfile;conservativeBounds:TreeCullingBounds;
   barkLinearRgb:[number,number,number];foliageLinearRgb:[number,number,number]};
+function validateFamilyPresentation(presentation:ForestFamilyPresentation|null){
+  if(!presentation?.enabled)return null;
+  const {lod1Profile:profile,conservativeBounds:bounds,barkLinearRgb,foliageLinearRgb}=presentation;
+  if(profile.referenceHeightM!==16||profile.bands.length!==4||!Number.isFinite(bounds.radiusM)||bounds.radiusM<=0||
+    ![...barkLinearRgb,...foliageLinearRgb,profile.maxLeafOffsetM].every(x=>Number.isFinite(x)&&x>=0))throw new Error('Invalid distant family presentation');
+  for(const band of profile.bands)if(![...band.centerM,band.radiusM,band.halfHeightM].every(Number.isFinite)||band.radiusM<0||band.halfHeightM<0)throw new Error('Invalid distant crown band');
+  return deriveFamilyProxyBounds(profile);
+}
 const familyUniformGLSL=`uniform vec4 treeFamilyBands[8];uniform vec2 treeFamilyBandExtent[8];
-  uniform vec3 treeFamilyBark[2],treeFamilyFoliage[2];uniform vec2 treeFamilyBounds;`;
+  uniform vec3 treeFamilyBark[2],treeFamilyFoliage[2],treeFamilyCenter[2],treeFamilyExtent[2];
+  uniform vec2 treeFamilyBounds,treeFamilyMargin;`;
 
 const scalar=(x:number)=>Number.isInteger(x)?`${x}.0`:String(x);
 const vector=(v:readonly number[])=>`vec3(${v.map(scalar).join(',')})`;
@@ -53,13 +63,15 @@ const facetedGLSL=convexShader('treeCrown',new THREE.IcosahedronGeometry(1,0))+
   convexShader('treeFacetedTrunk',new THREE.CylinderGeometry(LEGACY_TREE_TRUNK.topRadius,LEGACY_TREE_TRUNK.baseRadius,LEGACY_TREE_TRUNK.height,4).translate(0,.32,0));
 const intersectGLSL=`
 void treeEllipsoid(vec3 ro,vec3 rd,vec3 centre,vec3 radii,vec3 colour,
-  inout float best,inout vec3 hitNormal,inout vec3 hitColour){
+  inout float best,inout vec3 hitNormal,inout vec3 hitColour,inout float coverage){
   vec3 o=(ro-centre)/radii,d=rd/radii;
   float a=dot(d,d),tc=-dot(o,d)/a;vec3 closest=o+tc*d;
-  float remaining=1.0-dot(closest,closest);if(remaining<0.0)return;
+  float remaining=1.0-dot(closest,closest),width=max(1e-7,fwidth(remaining));
+  float alpha=treeEdgeAA*treeSampleAA>.5?clamp(.5+remaining/width,0.0,1.0):step(0.0,remaining);
+  if(alpha<=0.0)return;
   float halfChord=sqrt(max(0.0,remaining)/a),t=tc-halfChord;
   if(t<0.0)t=tc+halfChord;
-  if(t>=0.0&&t<best){best=t;hitNormal=normalize((ro+rd*t-centre)/(radii*radii));hitColour=colour;}
+  if(t>=0.0){coverage=max(coverage,alpha);if(t<best){best=t;hitNormal=normalize((ro+rd*t-centre)/(radii*radii));hitColour=colour;}}
 }
 void treeTrunk(vec3 ro,vec3 rd,inout float best,inout vec3 hitNormal,inout vec3 hitColour){
   const float height=${LEGACY_TREE_TRUNK.height},r0=${LEGACY_TREE_TRUNK.baseRadius};
@@ -102,6 +114,8 @@ export class ForestImpostors {
     treeFamilyBandExtent:{value:Array.from({length:8},()=>new THREE.Vector2())},
     treeFamilyBark:{value:[new THREE.Vector3(),new THREE.Vector3()]},
     treeFamilyFoliage:{value:[new THREE.Vector3(),new THREE.Vector3()]},treeFamilyBounds:{value:new THREE.Vector2()},
+    treeFamilyCenter:{value:[new THREE.Vector3(),new THREE.Vector3()]},
+    treeFamilyExtent:{value:[new THREE.Vector3(),new THREE.Vector3()]},treeFamilyMargin:{value:new THREE.Vector2()},
   };
   readonly positions:THREE.InstancedBufferAttribute;
   readonly rotations:THREE.InstancedBufferAttribute;
@@ -142,12 +156,18 @@ export class ForestImpostors {
         }
         float familyCode=forestFamilyCode(treeData.z);
         float familyBound=familyCode==1.0?treeFamilyBounds.x:(familyCode==2.0?treeFamilyBounds.y:0.0);
-        vec3 centre=familyBound>0.0?root:root+treeRotate(treeQ,${vector(LEGACY_TREE_BOUND.center)}*h);
+        vec3 boundCentre=${vector(LEGACY_TREE_BOUND.center)}*h;
+        vec3 extent=${vector(LEGACY_TREE_BOUND.extent)}*h;
+        if(familyBound>0.0){int familyIndex=int(familyCode)-1;
+          boundCentre=treeFamilyCenter[familyIndex]*h;
+          extent=treeFamilyExtent[familyIndex]*h+vec3(treeFamilyMargin[familyIndex]);
+        }
+        vec3 centre=root+treeRotate(treeQ,boundCentre);
         vec3 facing=treeOrthographic>.5?-treeViewDirection:normalize(treeCamera-centre);
         vec3 axisX=treeRotate(treeQ,vec3(1,0,0)),axisY=treeRotate(treeQ,vec3(0,1,0)),axisZ=treeRotate(treeQ,vec3(0,0,1));
         vec3 right=cross(axisY,facing);if(dot(right,right)<1e-6)right=cross(axisZ,facing);right=normalize(right);
         vec3 vertical=normalize(cross(facing,right));
-        vec3 extent=(familyBound>0.0?vec3(familyBound):${vector(LEGACY_TREE_BOUND.extent)}*h)*max(1.0,treeRadiusScale);
+        extent*=max(1.0,treeRadiusScale);
         float halfX=dot(abs(vec3(dot(right,axisX),dot(right,axisY),dot(right,axisZ))),extent);
         float halfY=dot(abs(vec3(dot(vertical,axisX),dot(vertical,axisY),dot(vertical,axisZ))),extent);
         float distanceToEye=length(treeCamera-centre),boundRadius=length(extent);
@@ -171,7 +191,7 @@ export class ForestImpostors {
       if(renderer.capabilities.logarithmicDepthBuffer)shader.fragmentShader='#ifndef USE_LOGARITHMIC_DEPTH_BUFFER\n#error Atlas forest requires the installed logarithmic depth define\n#endif\n'+shader.fragmentShader;
       const lobes=LEGACY_TREE_LOBES.map(([x,y,z,s])=>{
         const args=`ro,rd,${vector([x,y,z])},${vector([s,s*.85,s])}*treeRadiusScale,${vector([.16+y*.06,.29+y*.04,.08])},best,treeHitNormal,treeHitColour`;
-        return `if(treeFaceted>.5)treeCrown(${args},treeCoverage);else treeEllipsoid(${args});`;
+        return `if(treeFaceted>.5)treeCrown(${args},treeCoverage);else treeEllipsoid(${args},treeCoverage);`;
       }).join('\n');
       shader.fragmentShader=shader.fragmentShader.replace('#include <logdepthbuf_fragment>',`
         if(treeRootHeight.w<=0.0)discard;
@@ -186,7 +206,12 @@ export class ForestImpostors {
         float familyBound=familyCode==1.0?treeFamilyBounds.x:(familyCode==2.0?treeFamilyBounds.y:0.0);
         // Shift the ray close to the tree before small-primitive quadratics.
         // Subtracting huge nearly equal squared camera distances loses leaves.
-        ro+=rd*max(0.0,familyBound>0.0?dot(-ro,rd)-familyBound/treeRootHeight.w:dot(vec3(0,.52,0)-ro,rd)-2.0);
+        vec3 rayBoundCenter=vec3(0,.52,0);float rayBoundRadius=2.0;
+        if(familyBound>0.0){int familyIndex=int(familyCode)-1;
+          rayBoundCenter=treeFamilyCenter[familyIndex];
+          rayBoundRadius=length(treeFamilyExtent[familyIndex]+vec3(treeFamilyMargin[familyIndex]/treeRootHeight.w));
+        }
+        ro+=rd*max(0.0,dot(rayBoundCenter-ro,rd)-rayBoundRadius);
         float best=1e20,treeCoverage=0.0;vec3 treeHitNormal=vec3(0,1,0),treeHitColour=vec3(0);
         if(familyBound>0.0){
           int familyIndex=int(familyCode)-1;vec2 brightness=forestFamilyBrightness(treeData.z);
@@ -200,10 +225,9 @@ export class ForestImpostors {
             vec3 radii=max(vec3(.00001),vec3(band.w,ext.x,band.w)/16.0+margin);
             vec3 colour=treeFamilyFoliage[familyIndex]*brightness.y;
             if(familyCode==2.0)treeFamilyCone(ro,rd,band.xyz/16.0,radii,colour,best,treeHitNormal,treeHitColour,treeCoverage);
-            else treeEllipsoid(ro,rd,band.xyz/16.0,radii,colour,best,treeHitNormal,treeHitColour);
+            else treeEllipsoid(ro,rd,band.xyz/16.0,radii,colour,best,treeHitNormal,treeHitColour,treeCoverage);
           }
           treeFacetedTrunk(ro,rd,vec3(0),vec3(1),treeFamilyBark[familyIndex]*brightness.x,best,treeHitNormal,treeHitColour,treeCoverage);
-          if(familyCode==1.0&&best<1e20)treeCoverage=1.0;
         }else{
           ${lobes}
           if(treeFaceted>.5)treeFacetedTrunk(ro,rd,vec3(0),vec3(1),vec3(.25,.17,.10),best,treeHitNormal,treeHitColour,treeCoverage);
@@ -230,7 +254,7 @@ export class ForestImpostors {
       `);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','if(treeMaskOnly>.5)outgoingLight=vec3(1.0);\n#include <opaque_fragment>');
     };
-    material.customProgramCacheKey=()=>`${LEGACY_TREE_SHAPE_VERSION}/analytic-impostor-5/${FOREST_PRESENTATION_VERSION}`;
+    material.customProgramCacheKey=()=>`${LEGACY_TREE_SHAPE_VERSION}/analytic-impostor-6/${FOREST_PRESENTATION_VERSION}`;
     this.mesh=new THREE.Mesh(geometry,material);this.mesh.name='Canonical forest analytic impostors';this.mesh.frustumCulled=false;
     this.mesh.userData.localAerialSurfaceHit={local:'treeHit',view:'treeHitView.xyz'};
     const inverse=new THREE.Matrix4(),localCamera=new THREE.Matrix4(),viewport=new THREE.Vector4();
@@ -253,20 +277,26 @@ export class ForestImpostors {
   }
   setFamilyPresentation(kind:'branching'|'spire',presentation:ForestFamilyPresentation|null){
     const family=kind==='branching'?0:1,offset=family*4;
+    const proxy=validateFamilyPresentation(presentation);
     if(presentation?.enabled){
       const {lod1Profile:profile,conservativeBounds:bounds,barkLinearRgb,foliageLinearRgb}=presentation;
-      if(profile.referenceHeightM!==16||profile.bands.length!==4||!Number.isFinite(bounds.radiusM)||bounds.radiusM<=0||
-        ![...barkLinearRgb,...foliageLinearRgb,profile.maxLeafOffsetM].every(x=>Number.isFinite(x)&&x>=0))throw new Error('Invalid distant family presentation');
-      for(const band of profile.bands)if(![...band.centerM,band.radiusM,band.halfHeightM].every(Number.isFinite)||band.radiusM<0||band.halfHeightM<0)throw new Error('Invalid distant crown band');
       // Include the temporary legacy trunk as well as the derived leaf envelopes.
       const radius=Math.max(bounds.radiusM,Math.hypot(LEGACY_TREE_TRUNK.baseRadius,LEGACY_TREE_TRUNK.height)*22);
       this.uniforms.treeFamilyBounds.value.setComponent(family,radius);
+      this.uniforms.treeFamilyCenter.value[family].fromArray(proxy!.centerPerHeight);
+      this.uniforms.treeFamilyExtent.value[family].fromArray(proxy!.extentPerHeight);
+      this.uniforms.treeFamilyMargin.value.setComponent(family,proxy!.metricMarginM);
       this.uniforms.treeFamilyBark.value[family].fromArray(barkLinearRgb);this.uniforms.treeFamilyFoliage.value[family].fromArray(foliageLinearRgb);
       profile.bands.forEach((band,i)=>{
         this.uniforms.treeFamilyBands.value[offset+i].set(...band.centerM,band.populated?band.radiusM:-1);
         this.uniforms.treeFamilyBandExtent.value[offset+i].set(band.halfHeightM,profile.maxLeafOffsetM);
       });
     }else this.uniforms.treeFamilyBounds.value.setComponent(family,0);
+  }
+  setFamilyPresentations(families:ReadonlyMap<'branching'|'spire',ForestFamilyPresentation>){
+    // Validate the entire replacement before changing either active family.
+    for(const kind of ['branching','spire'] as const)validateFamilyPresentation(families.get(kind)??null);
+    for(const kind of ['branching','spire'] as const)this.setFamilyPresentation(kind,families.get(kind)??null);
   }
   /** Only the existing parameter channel changes; static roots and ownership survive. */
   setPresentation(index:number,code:number){
@@ -278,6 +308,15 @@ export class ForestImpostors {
   familyBoundRadius(index:number){
     const family=this.parameters.getZ(index)%4;
     return family===1?this.uniforms.treeFamilyBounds.value.x:family===2?this.uniforms.treeFamilyBounds.value.y:0;
+  }
+  /** Same local box as the GPU quad and its full-screen close fallback. */
+  proxyBounds(index:number,center:THREE.Vector3,extent:THREE.Vector3){
+    const height=this.positions.getW(index),family=this.parameters.getZ(index)%4;
+    if((family===1||family===2)&&this.uniforms.treeFamilyBounds.value.getComponent(family-1)>0){
+      center.copy(this.uniforms.treeFamilyCenter.value[family-1]).multiplyScalar(height);
+      extent.copy(this.uniforms.treeFamilyExtent.value[family-1]).multiplyScalar(height).addScalar(this.uniforms.treeFamilyMargin.value.getComponent(family-1));
+    }else{center.fromArray(LEGACY_TREE_BOUND.center).multiplyScalar(height);extent.fromArray(LEGACY_TREE_BOUND.extent).multiplyScalar(height);}
+    extent.multiplyScalar(Math.max(1,this.uniforms.treeRadiusScale.value));
   }
   write(index:number,position:THREE.Vector3,heightM:number,rotation:THREE.Quaternion,roll:number,groundHeightM:number){
     if(!Number.isInteger(index)||index<0||index>=this.positions.count||!Number.isFinite(heightM)||heightM<0||

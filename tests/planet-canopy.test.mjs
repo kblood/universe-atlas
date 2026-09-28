@@ -78,6 +78,28 @@ test('dated family retag preserves roots and requires matching appearance and ca
   }finally{h.restore();}
 });
 
+test('presentation replacement validates before adoption and rapid dates preserve the retag cursor',()=>{
+  const h=begin(64),a=address(0,h.n);
+  try{
+    const request=selectAndRequest(h,[a]);sendPatchResponse(h,request,[patch(a,{present:3})]);
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    const oak=packForestPresentation('branching',1,1),pine=packForestPresentation('spire',1,1);
+    h.host.setPresentation('A',()=>oak,new Map());
+    const iterator=h.host.presentationRetag,first=iterator.next().value;h.host.tagPresentation(...first);
+    h.host.setPresentation('B',()=>pine,new Map());
+    assert.equal(h.host.presentationRetag,iterator,'changing date cannot restart from the first slot');
+    const second=iterator.next().value;assert.notEqual(second[0],first[0]);h.host.tagPresentation(...second);
+    const before=h.host.diagnostics().presentation;
+    assert.throws(()=>h.host.setPresentation('invalid',()=>0,new Map([['spire',{enabled:true}]])));
+    assert.equal(h.host.diagnostics().presentation.key,before.key);
+    assert.equal(h.host.diagnostics().presentation.version,before.version);
+    assert.equal(h.host.presentationRetag,iterator);
+    for(let frame=0;frame<6&&h.host.presentationRetag;frame++)h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    assert.equal(h.host.presentationRetag,null,'a stable final snapshot completes a follow-up pass');
+    for(const index of h.host.slots.values())assert.equal(h.host.renderer.parameters.getZ(index),pine);
+  }finally{h.restore();}
+});
+
 test('selection requests and queued census results stay bounded and installs are frame budgeted',()=>{
   const h=begin(4096),addresses=Array.from({length:70},(_,i)=>address(i,h.n));
   try{

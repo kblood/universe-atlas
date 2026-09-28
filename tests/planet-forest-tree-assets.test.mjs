@@ -17,11 +17,14 @@ const species=(id='tree-a',family='branching')=>({id,name:id,lineageId:`lineage-
   traits:{heightM:16,widthRatio:.65,branchCount:8,branchAngle:.7,leafLength:.8,leafWidth:.4,leafDensity:.7,curvature:.2,legRatio:0,bodyLength:0,headRatio:0,tailLength:0,color:'#52743b',woodColor:'#62422d'},
   niche:{minTempK:0,maxTempK:1000,minMoisture:0,maxMoisture:1,maxSlope:90},diet:'producer',dispersal:'land'});
 
-function familyHarness({reject=false,forestCoverage=true,maxRadiusM=20}={}){
+function familyHarness({reject=false,forestCoverage=true,maxRadiusM=20,presentationEnabled=true}={}){
   const families=[],dates=[],batches=[];
   const loader=async(_a,_b,options)=>{
     if(reject)throw new Error('fixture load failure');
     const family={forestCoverage:forestCoverage&&options.forestCoverage,maxRadiusM,
+      canopyPresentation:{enabled:presentationEnabled,lod1Profile:{referenceHeightM:16,maxLeafOffsetM:.5,
+        bands:Array.from({length:4},(_,i)=>({centerM:[0,i*4+2,0],radiusM:2,halfHeightM:1.5,populated:true,count:4}))},
+        conservativeBounds:{radiusM:maxRadiusM},barkLinearRgb:[.1,.08,.06],foliageLinearRgb:[.03,.08,.02]},
       setDate(date){dates.push(date);},
       createBatch(lod,capacity){
         const batch={lod,capacity,group:new THREE.Group(),instances:new Map(),coverage:new Map(),appearances:new Map(),count:0,initialized:0,disposed:0,
@@ -50,12 +53,23 @@ function fixture(opts={}){
 }
 const load=async(f)=>f.loadTreeAssets(new ArrayBuffer(8),new ArrayBuffer(8));
 
+test('a no-sidecar diagnostic family keeps both near and far game presentation on legacy fallback',async()=>{
+  const {f,step,cells}=fixture({presentationEnabled:false});
+  try{
+    await load(f);f.fullCanopy=new PlanetCanopy(body,64);step();
+    assert.deepEqual(f.diagnostics().detailedTrees.visible,[0,0]);
+    assert.equal(f.fullCanopy.presentationResolve(cells[0].id,16),0);
+    assert.equal(f.expectedCanopyPresentation(f.cache.get(cells[0].id)),0);
+    assert.ok(f.meshes[0].visible&&f.meshes[0].count>0);
+  }finally{f.dispose();}
+});
+
 test('near and distant family selection share the dated catalogue and adopted library revision',async()=>{
   const {f,h,cells,step}=fixture();
   try{
     await load(f);
     h.families[0].canopyPresentation={enabled:true,lod1Profile:{referenceHeightM:16,maxLeafOffsetM:.5,
-      bands:Array.from({length:4},(_,i)=>({centerM:[0,i*4+2,0],radiusM:2,halfHeightM:1.5,populated:true}))},
+      bands:Array.from({length:4},(_,i)=>({centerM:[0,i*4+2,0],radiusM:2,halfHeightM:1.5,populated:true,count:4}))},
       conservativeBounds:{radiusM:25},barkLinearRgb:[.1,.08,.06],foliageLinearRgb:[.03,.08,.02]};
     f.fullCanopy=new PlanetCanopy(body,64);
     const dated=[species('oak'),species('ash'),species('pine','spire')];step(dated,123n);

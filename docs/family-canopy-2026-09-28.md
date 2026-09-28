@@ -89,3 +89,22 @@ errors. Nine focused regression checks and TypeScript pass. This is an isolated
 compile/render check, not the normal-control game acceptance. The close-up proxy
 image visibly contains smooth stacked broadleaf bands and solid conifer cones;
 it does not establish realistic foliage or a seamless distance transition.
+
+## Review corrections
+
+The next source increment replaces the max-height sphere box used for raster
+coverage with a per-instance analytic AABB: profile/trunk extents scale with
+height, while leaf margins stay metric. GPU quads, ray shifts and CPU close
+checks use the same box. Detailed mesh culling keeps its separate vertex/wind
+bound. A front-facing 16 m calculation gives about 12.3× less quad area for Oak
+and 10.3× for Pine; this is geometry arithmetic, not measured GPU speedup.
+
+Near and far game eligibility now both require the validated sidecar-backed
+presentation. Standalone asset labs retain no-sidecar experiments; normal game
+rendering consistently falls back to basic trees for those diagnostic families.
+Oak ellipsoid edges now use derivative coverage under the existing AA setting.
+Family replacement validates both families before adoption, and rapid date
+changes retain the retag cursor so distant slots cannot starve indefinitely.
+Seventy-two focused CPU tests pass. GPU validation of this correction is pending.
+The actual game capture still shows an obvious sparse-near/solid-far transition;
+these technical corrections do not resolve that visual mismatch.

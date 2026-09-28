@@ -7,7 +7,6 @@ import {type ForestCensusPatch,FOREST_CENSUS_STRIDE} from './forest-census.ts';
 import {type ForestPatchAddress,validateForestPatchAddress} from './forest-patch.ts';
 import {treeQuaternion} from './tree-shape.ts';
 import {quantizeForestCoverage} from './forest-coverage.ts';
-import {LEGACY_TREE_BOUND} from './tree-shape.ts';
 import {PLANET_DETAIL} from './planet-detail.ts';
 import {forestWaterIntervalContains,validForestWaterInterval,type ForestWaterInterval} from './forest-water-validity.ts';
 
@@ -44,6 +43,7 @@ export class PlanetCanopy {
   private presentationKey='';private presentationVersion=0;
   private presentationResolve:(id:string,heightM:number)=>number=()=>0;
   private presentationRetag:MapIterator<[string,number]>|null=null;
+  private presentationPassVersion=0;
   private presentationRetagged=0;private presentationSliceMs=0;
   private rebase:{origin:THREE.Vector3;positions:Float32Array;cursor:number}|null=null;
   private seen=new Set<string>();private previous=new Set<string>();
@@ -71,12 +71,14 @@ export class PlanetCanopy {
    * Replacement touches bounded parameter slices, never population identity. */
   setPresentation(key:string,resolve:(id:string,heightM:number)=>number,families:ReadonlyMap<ForestTreeKind,ForestFamilyPresentation>){
     if(key===this.presentationKey)return;
+    this.renderer.setFamilyPresentations(families);
     this.presentationKey=key;this.presentationResolve=resolve;
     this.presentationVersion++;
     if(this.presentationVersion>0xffffffff){this.presentationVersions.fill(0);this.presentationVersion=1;}
-    this.renderer.setFamilyPresentation('branching',families.get('branching')??null);
-    this.renderer.setFamilyPresentation('spire',families.get('spire')??null);
-    this.presentationRetag=this.slots.entries();this.presentationRetagged=0;
+    // Keep the cursor moving under rapid date/library changes. Restarting at
+    // the first slot on every key change can starve the far end indefinitely.
+    if(!this.presentationRetag){this.presentationRetag=this.slots.entries();this.presentationPassVersion=this.presentationVersion;}
+    this.presentationRetagged=0;
   }
   private tagPresentation(id:string,index:number){
     if(this.presentationVersions[index]===this.presentationVersion)return;
@@ -269,7 +271,11 @@ export class PlanetCanopy {
     // bounded slice, so a dated catalogue/library change cannot block a frame.
     const presentationStarted=performance.now();let presentationCount=0;
     while(this.presentationRetag&&presentationCount++<2048&&performance.now()-presentationStarted<2){
-      const next=this.presentationRetag.next();if(next.done){this.presentationRetag=null;break;}
+      const next=this.presentationRetag.next();if(next.done){
+        if(this.presentationPassVersion!==this.presentationVersion){this.presentationRetag=this.slots.entries();this.presentationPassVersion=this.presentationVersion;}
+        else this.presentationRetag=null;
+        break;
+      }
       this.tagPresentation(next.value[0],next.value[1]);
     }
     this.presentationSliceMs=performance.now()-presentationStarted;
@@ -339,13 +345,12 @@ export class PlanetCanopy {
     if(!this.group.visible)return;const index=this.slots.get(id);if(index===undefined)return;
     const height=this.renderer.positions.getW(index);if(height<=0||this.body.water>0&&this.heights[index]<=this.water)return;
     this.rotation.fromArray(this.renderer.rotations.array,index*4);
-    const familyRadius=this.renderer.familyBoundRadius(index);
-    if(familyRadius>0)this.position.set(0,0,0);
-    else this.position.fromArray(LEGACY_TREE_BOUND.center).multiplyScalar(height).applyQuaternion(this.rotation);
+    this.renderer.proxyBounds(index,this.position,this.direction);
+    this.position.applyQuaternion(this.rotation);
     this.position.x+=this.bodyPositions[index*3]-eye.x*this.body.radiusM;
     this.position.y+=this.bodyPositions[index*3+1]-eye.y*this.body.radiusM;
     this.position.z+=this.bodyPositions[index*3+2]-eye.z*this.body.radiusM;
-    const radius=familyRadius>0?Math.sqrt(3)*familyRadius:Math.hypot(...LEGACY_TREE_BOUND.extent)*height;
+    const radius=this.direction.length();
     if(this.position.length()<=radius*1.1)this.closeCandidates.push(id);
   }
   finish(){

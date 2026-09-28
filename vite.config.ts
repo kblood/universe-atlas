@@ -11,6 +11,8 @@ export default defineConfig({
     },null,2)});
     for(const fileName of [
       'docs/family-canopy-2026-09-28.md',
+      'src/tree-canopy-bounds.ts','tests/tree-canopy-bounds.test.mjs',
+      'test-results/family-canopy/review-fixes-cpu.log',
       'test-results/family-canopy/README.md','test-results/family-canopy/shader-smoke.mjs',
       'test-results/family-canopy/browser-fixes-cpu.log',
       'test-results/family-canopy/shader-fbe3c26/report.json',
