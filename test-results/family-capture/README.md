@@ -75,6 +75,20 @@ errors are 1.163m / 1.177m. These captures also remain unaccepted. An opt-in
 per-view PBR lighting experiment is being implemented separately; its existence
 is not evidence of improvement.
 
+`sidecar-relight-v1` subsequently tests committed `bd6d96a` with its opt-in
+`captureRelightViews=1` path on RTX 5090; all four family/filter combinations
+compile/render without GL/page/console errors. The installed Three PBR chunks
+shade each view before coverage-weighted light blending. Intermediate weighted
+luminance error improves from -35.94% to -21.00% Oak and -38.03% to -24.95%
+Pine; it still fails the 10% gate. No full-game or GPU cost claim is made.
+
+That run also tests native Three alpha hashing as a separate mesh setting,
+using the current offline mip chains. Oak's 33px area error is +2.4–2.8%, with
+blurred IoU 0.886–0.895 against the MASK supersampled reference. Pine instead
+overfills by 76–78%, with blurred IoU about 0.555. This is not grounds for a
+global foliage-mode switch. The family-specific behavior needs a coherent
+source/capture coverage contract and actual-game temporal review.
+
 ## Reproduce
 
 Keep rendering dev server on 5197, retained root captures present, and the GPU
