@@ -1,7 +1,9 @@
 # Authored trees at a distance
 
-Status: design under review; the game still renders its existing tree shapes.
-This is the next implementation increment after the v7 colour correction.
+Status: a v2 capture/preview experiment exists, but its silhouettes and one
+height-class leaf classification are not accepted. The planetary renderer
+still uses its legacy tree shapes. See the [capture-stage record](authored-tree-capture-2026-09-28.md)
+for its limited evidence and open gates; this design is not a shipped feature.
 
 ## Why a separate representation
 
@@ -120,11 +122,23 @@ Neither the suggested switch distance nor a triangle count proves performance.
 The first code increment, `src/tree-impostor-views.ts`, implements full-sphere
 encoding/decoding, face-aligned triangle selection and explicit capture bases.
 It deliberately stores a basis per view, including deterministic pole fallback;
-bases are never interpolated. This is capture mathematics, not a rendered or
-integrated distant-tree implementation.
+bases are never interpolated. A separate development-only capture and preview
+prototype now exercises this path for one exact-height tree. It has no forest
+instancing, wind, shadow casting or mesh handoff and is not integrated into the
+planet renderer; see the [capture record](authored-tree-capture-2026-09-28.md).
 
-Luna's [six CPU checks](../test-results/tree-impostor-views-v1/cpu-test.log)
-pass for axes, poles, folds, grids of 3/5/9/33 vertices, enclosing triangles,
-duplicate corner bases, invalid inputs and caller-data preservation. TypeScript
-compilation also passes. Rendered silhouette/depth and performance checks still
-require the capture tool and shader.
+Luna's [21 passing CPU checks](../test-results/tree-impostor-capture-v2/combined-cpu-test.log)
+cover capture reduction, filtering helpers, mip coverage, view bases, axes,
+poles, folds and invalid inputs. The [independent capture audit](../test-results/tree-impostor-v7-color-a/capture-v2-audit.json)
+passes its three technical checks and confirms repeat output on one RTX 5090
+adapter; the 22 m / 32-pixel view still has no leaf classification. The preview
+shows up to 38% coverage mismatch at native resolution; matched supersampling
+aligns captured axes but leaves an arbitrary direction at 0.7203 IoU. These
+results do not validate a far-tree representation or performance. The browser
+lab's intermediate view remains mismatched with either source MASK or optional
+hashed coverage, which changes but does not fix the diagnostic. See the
+[capture-stage limits](authored-tree-capture-2026-09-28.md).
+
+Hashed alpha coverage is an opt-in experiment, not an accepted tree setting;
+see [Three.js material alpha-hash behavior](https://threejs.org/docs/pages/Material.html)
+and the original [hashed alpha testing paper](https://research.nvidia.com/sites/default/files/pubs/2017-02_Hashed-Alpha-Testing/Wyman2017Hashed.pdf).

@@ -1,0 +1,50 @@
+{
+  "reviewDate": "2026-09-28",
+  "reviewer": "Opus 5.5",
+  "returnedModel": "claude-opus-5-5",
+  "provider": "firstParty",
+  "scope": "Source/design only; no execution; no generated capture artifacts read. Raw artifact audit pending in returned review.",
+  "sourceRevision": "e08a8f137a12c10ddfa15cc219f75b8071afb7a5",
+  "sourceSnapshotDirty": true,
+  "reviewedInputs": [
+    {
+      "path": "../tools/assetctl/tree-impostor.mjs",
+      "sha256": "36fc9a7016b6db866ae4e018b6f458939009c4f8ec84b46f38308e2cb0d334d0"
+    },
+    {
+      "path": "src/tree-impostor-capture.ts",
+      "sha256": "97d93e227d475d3c2b1ce37bb2cc8327e9fb8a9cb097145b8bb8f22205080298"
+    },
+    {
+      "path": "src/tree-impostor-views.ts",
+      "sha256": "caba31dfa7e2a2924a56b6dc5701b662ade1c20c95a40c58542ba13635d39520"
+    },
+    {
+      "path": "docs/authored-tree-distance-design-2026-09-28.md",
+      "sha256": "da323152e96c77c14ce8de68792a6f2612206191c4794481714593d794d50523"
+    }
+  ],
+  "rawResponse": {
+    "path": "../test-results/opus-tree-capture-review/response.json",
+    "sha256": "62452cfa9fa91cef9568608f901a18fc3668ebe2d99e7849d82f8dc9f052a36e"
+  },
+  "rawInputs": {
+    "path": "../test-results/opus-tree-capture-review/inputs.json",
+    "sha256": "f93e87c324e40f395ad0356bd701cd54bf6fee1006749f80e40d59edcd95666c"
+  },
+  "usage": {
+    "inputTokens": 2,
+    "outputTokens": 13269,
+    "cacheReadInputTokens": 1459,
+    "cacheCreationInputTokens": 15891,
+    "webSearchRequests": 0,
+    "costUSD": 0.39280780000000004,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 10614,
+    "canonicalModel": "claude-opus-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+  },
+  "responseSessionId": "c4a48213-7163-4451-9548-e637c75f893c"
+}

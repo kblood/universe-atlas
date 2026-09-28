@@ -189,7 +189,7 @@ more. Structural diversity must not come from disconnected anatomy.
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
 | D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; first Blender brief validates; forest integration, authored assets and resource cache pending |
 | E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Published release `580936f` includes canopy runtime through `98556a7`: complete census patches, near/far ownership, altitude prefetch/render thresholds, bounded uploads, water-aware patch reuse, and retained terrain refresh on date changes. RTX 5090 date-seek and flight/walk acceptance are linked in the [integration record](canopy-runtime-integration-2026-09-28.md), with the [live deployment receipt](deployment-580936f-2026-09-28.md). Legacy faceted tree shapes remain; authored realism, midrange performance validation, XR and broader visual signoff are open. The earlier deployed `e8a848d` used sparse distant representatives |
-| F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | V7 applies the versioned linear-RGB-to-sRGB byte conversion and passes exact geometry/accessor, alpha, normal-map, embedded-image and repeat checks. Browser checks cover both LODs at 3/64/192 trees on an RTX 5090 and fixed front/back lighting; v7 reads greener than v6 but remains dark when backlit. The [browser prototype](tree-browser-prototype-2026-09-28.md), [v7 record](tree-authoring-v7-2026-09-28.md) and [colour calibration](tree-color-calibration-2026-09-28.md) hold details. This is a development lab, not forest integration or visual acceptance. LOD2, species/canopy binding, packaging, midrange/XR profiling and other landscape assets remain open. |
+| F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | V7 applies the versioned linear-RGB-to-sRGB byte conversion and passes export/repeat and browser checks; back-lit foliage remains dark. A separate v2 capture lab passes repeat/mip/CPU audits for a 16 m tree, but the 22 m / 32-pixel capture has no leaf classification and arbitrary-view silhouette error remains high. Neither prototype is integrated into the forest or visually accepted. The [browser prototype](tree-browser-prototype-2026-09-28.md), [v7 record](tree-authoring-v7-2026-09-28.md), [colour calibration](tree-color-calibration-2026-09-28.md) and [capture record](authored-tree-capture-2026-09-28.md) hold details. LOD2, species/canopy binding, packaging, midrange/XR profiling and other landscape assets remain open. |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |
 
@@ -206,8 +206,15 @@ See the [v7 validation](tree-authoring-v7-2026-09-28.md),
 [next-increment proposal](tree-authoring-next-increment-2026-09-28.md). A
 separate [distance-proxy design](authored-tree-distance-design-2026-09-28.md)
 documents CPU-only view selection and capture bases; it does not implement an
-impostor baker or renderer. Its [six passing CPU tests](../test-results/tree-impostor-views-v1/cpu-test.log)
-check this math only, not any GPU or visual representation.
+The distance stage now has a CPU capture baker and one-tree browser preview, but
+neither is integrated into the planetary renderer. Its [21 passing CPU checks](../test-results/tree-impostor-capture-v2/combined-cpu-test.log)
+cover capture reduction and view math. The separate [capture experiment](authored-tree-capture-2026-09-28.md)
+passes the 16 m technical audit on one adapter, while the 22 m low-resolution
+leaf-class result fails. Browser checks confirm exact-axis matching but retain
+a substantial intermediate-view silhouette mismatch. Opus source and
+reconstruction reviews are archived with hashes; remaining rendering
+suggestions are not implemented wholesale. No capture asset is accepted or
+bound to a species.
 
 Stages have dependencies. Beginning this programme does not mean replacing all
 subsystems at once. The first code increment targets B so detailed assets have
