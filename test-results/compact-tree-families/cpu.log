@@ -1,0 +1,46 @@
+✔ dense slots preserve identities through reorder, departures and replacement (1.7647ms)
+✔ duplicate and over-capacity demand is rejected before changing slots (0.5444ms)
+✔ randomized demand retains exact membership with contiguous initialized slots (10.3608ms)
+✔ coverage quantization handles endpoints and half-step rounding boundaries (0.8694ms)
+✔ near, transition, and edge ownership partition all 256 hash values (1.0431ms)
+✔ CPU screen hash matches uint32 shader golden vectors and stays in byte range (0.8568ms)
+✔ stationary and reordered demand preserve instance slots without matrix or colour writes (19.229ms)
+✔ frustum departure swap-removes one slot instead of rewriting the batch tail (4.967ms)
+✔ retained origin rebases without changing canonical root placement (5.5051ms)
+✔ water changes do not enqueue additional water-independent selection jobs (9.6317ms)
+✔ dirty uploads keep separated edits separate and preallocate instance colours (4.249ms)
+✔ off-camera sun casters retain canonical slots and only leave when both frusta exclude them (4.03ms)
+✔ owned instance attributes clear consumed upload ranges before the next sparse edit (5.3327ms)
+✔ selection worker gets one bounded restart and exposes permanent fallback (9.0167ms)
+✔ late canonical hydrology attachment refreshes near habitat at unchanged water (6.5398ms)
+✔ complete distant canopy skips near work while missing or stale water keeps fallback (6.9352ms)
+✔ packed selection applies once, ignores stale replies and recovers from decode and message errors (8.4863ms)
+✔ malformed response envelope and synchronous post failure cannot leave selection pending (11.9106ms)
+✔ main selection application defects remain visible and do not consume worker recovery (13.5469ms)
+✔ dated catalogue attaches detailed branching instances while spire and unsupported heights retain legacy coverage (30.1018ms)
+✔ reordering retained canonical cells and rebasing preserves species, phase, and appearance (9.4098ms)
+✔ empty or non-tree dated catalogue clears detail draw and restores legacy coverage (5.6689ms)
+✔ immersive mode hides detailed batches and restores legacy representation (7.1063ms)
+✔ clear during a pending load disposes stale family without attaching it (9.9715ms)
+✔ dispose during pending load disposes late family and rejects later loads (5.7692ms)
+✔ loader failure is diagnostic and preserves legacy rendering; invalid family is disposed (11.706ms)
+✔ successful replacement disposes previous batches/family only after replacement is ready (6.1879ms)
+✔ attaching after legacy slots exist initializes only selected detailed slots without gaps (6.6483ms)
+✔ dated tree catalogue is order independent, filters non-trees, and tracks trait changes (1.0837ms)
+✔ partial batch creation failure disposes already-created batches and family (5.8509ms)
+✔ malformed dated catalogue reports error, preserves legacy draw, and recovers on a valid snapshot (6.9831ms)
+✔ malformed dated catalogue is ignored safely while detail family is absent (6.8586ms)
+✔ overlapping family loads are newest-wins and dispose the stale result exactly once (6.0466ms)
+✔ branching and spire use separate compact pools and suppress all supported legacy draws (5.6231ms)
+✔ family reassignment and empty demand regrow initialized compact slots without gaps (2.7702ms)
+✔ failure in second family preserves active library and disposes partial replacement (4.9567ms)
+✔ duplicate family requests are rejected without replacing or cancelling active state (2.7248ms)
+✔ cancelling between family parses releases all staged assets and keeps latest request authoritative (7.7838ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1302.066
