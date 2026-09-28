@@ -1,0 +1,21 @@
+✔ wind phase uses Euclidean BigInt dates at negative, period, and universe endpoints (0.867ms)
+✔ physical leaf transforms scale the attachment pivot, retain card size, and rotate the rigid offset (0.7446ms)
+✔ LOD pair validates matching embedded material/texture bytes and strips LOD1 texture descriptors before parse (31.3559ms)
+✔ LOD preparation rejects material and embedded image divergence before sharing (11.2498ms)
+✔ GLB contract rejects extra, malformed, normalized, and blended attributes (14.3364ms)
+✔ audits a pinned Three MeshStandard shader and repairs only live hooks (9.9216ms)
+✔ liveGlsl masks line and block comments without shifting shader offsets (0.2162ms)
+✔ rejects missing, duplicate and changed structural shader hooks (0.3415ms)
+✔ default values preserve zero-transmission expressions and public setting updates are atomic (2.1486ms)
+✔ patch preserves the host specular paths and branches around every added diffuse contribution (0.9016ms)
+✔ install composes prior compile hooks and cache key while exposing shared uniforms (2.2711ms)
+✔ source guards ignore comment-shaped anchors and reject missing or duplicate live hooks (1.309ms)
+✔ installation rejects materials outside the explicitly supported leaf domain (0.5383ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 256.2485

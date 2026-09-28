@@ -1,0 +1,1505 @@
+{
+  "inputs": [
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f\\atlas-ez-oak.glb",
+      "sha256": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f\\atlas-ez-oak.lod1.glb",
+      "sha256": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9"
+    }
+  ],
+  "sourceHashes": {
+    "tree-asset-lab.html": "088d2f6c92a371445f5dc5e12b6567d9028d787589685d01a9901e507d1aae69",
+    "src/tree-asset-lab.ts": "34c713baeced84239c2a3b93c68f0de8e67fb1d43583a2eaffd872ad8522abe4",
+    "src/tree-asset.ts": "109033ea24dc21aee9bc7a2a7fc673ae18c23369f864b9974c4ba833baf6e1c5"
+  },
+  "browserVersion": "149.0.7827.55",
+  "url": "http://127.0.0.1:5197/tree-asset-lab.html",
+  "modes": {
+    "mask": {
+      "setup": {
+        "mode": "mask",
+        "diagnostics": {
+          "ready": true,
+          "loading": false,
+          "error": "",
+          "lod": 0,
+          "date": "0",
+          "foliageCoverage": "mask",
+          "specimenSkeletonHeightsM": [
+            10,
+            16,
+            22
+          ],
+          "textures": 4,
+          "leafTransmission": null,
+          "coverageMaterials": {
+            "color": [
+              {
+                "name": "MAT_AtlasBark",
+                "alphaTest": 0,
+                "alphaHash": false
+              },
+              {
+                "name": "MAT_AtlasFoliage",
+                "alphaTest": 0.5,
+                "alphaHash": false
+              }
+            ],
+            "shadows": [
+              [
+                {
+                  "depth": {
+                    "alphaTest": 0,
+                    "alphaHash": false
+                  },
+                  "distance": {
+                    "alphaTest": 0,
+                    "alphaHash": false
+                  }
+                },
+                {
+                  "depth": {
+                    "alphaTest": 0.5,
+                    "alphaHash": false
+                  },
+                  "distance": {
+                    "alphaTest": 0.5,
+                    "alphaHash": false
+                  }
+                }
+              ],
+              [
+                {
+                  "depth": {
+                    "alphaTest": 0,
+                    "alphaHash": false
+                  },
+                  "distance": {
+                    "alphaTest": 0,
+                    "alphaHash": false
+                  }
+                },
+                {
+                  "depth": {
+                    "alphaTest": 0.5,
+                    "alphaHash": false
+                  },
+                  "distance": {
+                    "alphaTest": 0.5,
+                    "alphaHash": false
+                  }
+                }
+              ]
+            ]
+          },
+          "materials": 2,
+          "shadowMaterials": 8,
+          "sharedMaterials": true,
+          "texturePNGContainerBytes": 1958073,
+          "textureRGBA8MipBytesEstimate": 55924048,
+          "renderer": {
+            "calls": 2,
+            "triangles": 2,
+            "textures": 2,
+            "geometries": 2
+          },
+          "renderCPUSubmissionMs": 0.3999999985098839,
+          "counterMeaning": "Draws include main and shadow passes; renderer textures include shadow targets; geometry counts track uploaded objects. Shared materials count PBR objects only; resource identity is not a measured GPU saving.",
+          "population": 3,
+          "profile": {
+            "enabled": true,
+            "gpuAvailable": true,
+            "historyLimit": 600,
+            "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+            "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+            "pendingQueries": 0,
+            "pendingLimit": 48,
+            "skippedQueries": 0,
+            "disjointQueries": 0,
+            "expiredQueries": 0,
+            "lastDrawCalls": 0,
+            "lastTriangles": 0,
+            "statistics": {}
+          },
+          "lighting": "ACES exposure 1.2, sun 3, hemisphere 1; lab lighting, not whole-game acceptance",
+          "wind": "rigid leaf rotation only; branch wind pending"
+        },
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "sourceGeometry": [
+          [
+            {
+              "name": "MAT_AtlasBark",
+              "vertices": 2780,
+              "triangles": 3166,
+              "instanceTree": null
+            },
+            {
+              "name": "MAT_AtlasFoliage",
+              "vertices": 21280,
+              "triangles": 10640,
+              "instanceTree": null
+            }
+          ],
+          [
+            {
+              "name": "MAT_AtlasBark",
+              "vertices": 2328,
+              "triangles": 2206,
+              "instanceTree": null
+            },
+            {
+              "name": "MAT_AtlasFoliage",
+              "vertices": 5320,
+              "triangles": 2660,
+              "instanceTree": null
+            }
+          ]
+        ],
+        "batches": [
+          [
+            {
+              "name": "MAT_AtlasBark",
+              "count": 1,
+              "instanceTree": 192
+            },
+            {
+              "name": "MAT_AtlasFoliage",
+              "count": 1,
+              "instanceTree": 192
+            }
+          ],
+          [
+            {
+              "name": "MAT_AtlasBark",
+              "count": 1,
+              "instanceTree": 192
+            },
+            {
+              "name": "MAT_AtlasFoliage",
+              "count": 1,
+              "instanceTree": 192
+            }
+          ]
+        ],
+        "coverageMaterials": {
+          "color": [
+            {
+              "name": "MAT_AtlasBark",
+              "alphaTest": 0,
+              "alphaHash": false
+            },
+            {
+              "name": "MAT_AtlasFoliage",
+              "alphaTest": 0.5,
+              "alphaHash": false
+            }
+          ],
+          "shadows": [
+            [
+              {
+                "depth": {
+                  "alphaTest": 0,
+                  "alphaHash": false
+                },
+                "distance": {
+                  "alphaTest": 0,
+                  "alphaHash": false
+                }
+              },
+              {
+                "depth": {
+                  "alphaTest": 0.5,
+                  "alphaHash": false
+                },
+                "distance": {
+                  "alphaTest": 0.5,
+                  "alphaHash": false
+                }
+              }
+            ],
+            [
+              {
+                "depth": {
+                  "alphaTest": 0,
+                  "alphaHash": false
+                },
+                "distance": {
+                  "alphaTest": 0,
+                  "alphaHash": false
+                }
+              },
+              {
+                "depth": {
+                  "alphaTest": 0.5,
+                  "alphaHash": false
+                },
+                "distance": {
+                  "alphaTest": 0.5,
+                  "alphaHash": false
+                }
+              }
+            ]
+          ]
+        }
+      },
+      "lods": {
+        "0": {
+          "nonzero128Smoke": {
+            "size": 128,
+            "lod": 0,
+            "distanceM": 20,
+            "coverageEquivalentPixels": 3793,
+            "hardPixelsAtHalfAlpha": 3793,
+            "meanAlpha": 0.23150634765625
+          },
+          "footprints": [
+            {
+              "outputPixels": 16,
+              "referencePixels": 512,
+              "distanceM": 20,
+              "native": {
+                "coverageEquivalentPixels": 9,
+                "hardPixelsAtHalfAlpha": 9,
+                "meanAlpha": 0.03515625
+              },
+              "highResolutionDownsampled": {
+                "coverageEquivalentPixels": 62.7353515625,
+                "hardPixelsAtHalfAlpha": 61,
+                "meanAlpha": 0.24505996704101562
+              },
+              "nativeVsHighResolution": {
+                "meanAbsoluteCoverageDelta": 0.21171951293945312,
+                "thresholdChangedPixels": 52,
+                "iou": 0.14754098360655737
+              }
+            },
+            {
+              "outputPixels": 32,
+              "referencePixels": 512,
+              "distanceM": 20,
+              "native": {
+                "coverageEquivalentPixels": 35,
+                "hardPixelsAtHalfAlpha": 35,
+                "meanAlpha": 0.0341796875
+              },
+              "highResolutionDownsampled": {
+                "coverageEquivalentPixels": 250.94140625,
+                "hardPixelsAtHalfAlpha": 251,
+                "meanAlpha": 0.24505996704101562
+              },
+              "nativeVsHighResolution": {
+                "meanAbsoluteCoverageDelta": 0.21414566040039062,
+                "thresholdChangedPixels": 218,
+                "iou": 0.1349206349206349
+              }
+            },
+            {
+              "outputPixels": 64,
+              "referencePixels": 1024,
+              "distanceM": 20,
+              "native": {
+                "coverageEquivalentPixels": 580,
+                "hardPixelsAtHalfAlpha": 580,
+                "meanAlpha": 0.1416015625
+              },
+              "highResolutionDownsampled": {
+                "coverageEquivalentPixels": 1005.76953125,
+                "hardPixelsAtHalfAlpha": 1023,
+                "meanAlpha": 0.24554920196533203
+              },
+              "nativeVsHighResolution": {
+                "meanAbsoluteCoverageDelta": 0.10843563079833984,
+                "thresholdChangedPixels": 445,
+                "iou": 0.5654296875
+              }
+            }
+          ],
+          "temporal": [
+            {
+              "outputPixels": 16,
+              "date": "1750000000",
+              "highReferencePixels": 512,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0.001964569091796875,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 9,
+                "hardPixelsAtHalfAlpha": 9,
+                "meanAlpha": 0.03515625
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 62.705078125,
+                "hardPixelsAtHalfAlpha": 61,
+                "meanAlpha": 0.24494171142578125
+              }
+            },
+            {
+              "outputPixels": 16,
+              "date": "7000000000",
+              "highReferencePixels": 512,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 9,
+                "hardPixelsAtHalfAlpha": 9,
+                "meanAlpha": 0.03515625
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 62.7353515625,
+                "hardPixelsAtHalfAlpha": 61,
+                "meanAlpha": 0.24505996704101562
+              }
+            },
+            {
+              "outputPixels": 16,
+              "date": "-7000000000",
+              "highReferencePixels": 512,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 9,
+                "hardPixelsAtHalfAlpha": 9,
+                "meanAlpha": 0.03515625
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 62.7353515625,
+                "hardPixelsAtHalfAlpha": 61,
+                "meanAlpha": 0.24505996704101562
+              }
+            },
+            {
+              "outputPixels": 32,
+              "date": "1750000000",
+              "highReferencePixels": 1024,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0.0023412704467773438,
+                "thresholdChangedPixels": 1,
+                "iou": 0.996
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 35,
+                "hardPixelsAtHalfAlpha": 35,
+                "meanAlpha": 0.0341796875
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 251.22265625,
+                "hardPixelsAtHalfAlpha": 250,
+                "meanAlpha": 0.24533462524414062
+              }
+            },
+            {
+              "outputPixels": 32,
+              "date": "7000000000",
+              "highReferencePixels": 1024,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 35,
+                "hardPixelsAtHalfAlpha": 35,
+                "meanAlpha": 0.0341796875
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 251.4423828125,
+                "hardPixelsAtHalfAlpha": 249,
+                "meanAlpha": 0.24554920196533203
+              }
+            },
+            {
+              "outputPixels": 32,
+              "date": "-7000000000",
+              "highReferencePixels": 1024,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 35,
+                "hardPixelsAtHalfAlpha": 35,
+                "meanAlpha": 0.0341796875
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 251.4423828125,
+                "hardPixelsAtHalfAlpha": 249,
+                "meanAlpha": 0.24554920196533203
+              }
+            }
+          ],
+          "yawSteps": [
+            {
+              "fromDegrees": 0,
+              "toDegrees": 0.5,
+              "native": {
+                "meanAbsoluteCoverageDelta": 0.0029296875,
+                "thresholdChangedPixels": 3,
+                "iou": 0.918918918918919
+              },
+              "highDownsampled": {
+                "meanAbsoluteCoverageDelta": 0.001811981201171875,
+                "thresholdChangedPixels": 2,
+                "iou": 0.9920318725099602
+              }
+            },
+            {
+              "fromDegrees": 0.5,
+              "toDegrees": 1,
+              "native": {
+                "meanAbsoluteCoverageDelta": 0.0048828125,
+                "thresholdChangedPixels": 5,
+                "iou": 0.8648648648648649
+              },
+              "highDownsampled": {
+                "meanAbsoluteCoverageDelta": 0.0016937255859375,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              }
+            }
+          ]
+        },
+        "1": {
+          "nonzero128Smoke": {
+            "size": 128,
+            "lod": 1,
+            "distanceM": 20,
+            "coverageEquivalentPixels": 2531,
+            "hardPixelsAtHalfAlpha": 2531,
+            "meanAlpha": 0.15447998046875
+          },
+          "footprints": [
+            {
+              "outputPixels": 16,
+              "referencePixels": 512,
+              "distanceM": 20,
+              "native": {
+                "coverageEquivalentPixels": 8,
+                "hardPixelsAtHalfAlpha": 8,
+                "meanAlpha": 0.03125
+              },
+              "highResolutionDownsampled": {
+                "coverageEquivalentPixels": 49.349609375,
+                "hardPixelsAtHalfAlpha": 48,
+                "meanAlpha": 0.19277191162109375
+              },
+              "nativeVsHighResolution": {
+                "meanAbsoluteCoverageDelta": 0.16567230224609375,
+                "thresholdChangedPixels": 40,
+                "iou": 0.16666666666666666
+              }
+            },
+            {
+              "outputPixels": 32,
+              "referencePixels": 512,
+              "distanceM": 20,
+              "native": {
+                "coverageEquivalentPixels": 36,
+                "hardPixelsAtHalfAlpha": 36,
+                "meanAlpha": 0.03515625
+              },
+              "highResolutionDownsampled": {
+                "coverageEquivalentPixels": 197.3984375,
+                "hardPixelsAtHalfAlpha": 206,
+                "meanAlpha": 0.19277191162109375
+              },
+              "nativeVsHighResolution": {
+                "meanAbsoluteCoverageDelta": 0.16631317138671875,
+                "thresholdChangedPixels": 172,
+                "iou": 0.16908212560386474
+              }
+            },
+            {
+              "outputPixels": 64,
+              "referencePixels": 1024,
+              "distanceM": 20,
+              "native": {
+                "coverageEquivalentPixels": 264,
+                "hardPixelsAtHalfAlpha": 264,
+                "meanAlpha": 0.064453125
+              },
+              "highResolutionDownsampled": {
+                "coverageEquivalentPixels": 794.23828125,
+                "hardPixelsAtHalfAlpha": 836,
+                "meanAlpha": 0.19390583038330078
+              },
+              "nativeVsHighResolution": {
+                "meanAbsoluteCoverageDelta": 0.13927364349365234,
+                "thresholdChangedPixels": 578,
+                "iou": 0.3110846245530393
+              }
+            }
+          ],
+          "temporal": [
+            {
+              "outputPixels": 16,
+              "date": "1750000000",
+              "highReferencePixels": 512,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0.00240325927734375,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 8,
+                "hardPixelsAtHalfAlpha": 8,
+                "meanAlpha": 0.03125
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 49.330078125,
+                "hardPixelsAtHalfAlpha": 48,
+                "meanAlpha": 0.19269561767578125
+              }
+            },
+            {
+              "outputPixels": 16,
+              "date": "7000000000",
+              "highReferencePixels": 512,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 8,
+                "hardPixelsAtHalfAlpha": 8,
+                "meanAlpha": 0.03125
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 49.349609375,
+                "hardPixelsAtHalfAlpha": 48,
+                "meanAlpha": 0.19277191162109375
+              }
+            },
+            {
+              "outputPixels": 16,
+              "date": "-7000000000",
+              "highReferencePixels": 512,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 8,
+                "hardPixelsAtHalfAlpha": 8,
+                "meanAlpha": 0.03125
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 49.349609375,
+                "hardPixelsAtHalfAlpha": 48,
+                "meanAlpha": 0.19277191162109375
+              }
+            },
+            {
+              "outputPixels": 32,
+              "date": "1750000000",
+              "highReferencePixels": 1024,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0.00327301025390625,
+                "thresholdChangedPixels": 3,
+                "iou": 0.9853658536585366
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 36,
+                "hardPixelsAtHalfAlpha": 36,
+                "meanAlpha": 0.03515625
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 198.4619140625,
+                "hardPixelsAtHalfAlpha": 204,
+                "meanAlpha": 0.19381046295166016
+              }
+            },
+            {
+              "outputPixels": 32,
+              "date": "7000000000",
+              "highReferencePixels": 1024,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 36,
+                "hardPixelsAtHalfAlpha": 36,
+                "meanAlpha": 0.03515625
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 198.5595703125,
+                "hardPixelsAtHalfAlpha": 203,
+                "meanAlpha": 0.19390583038330078
+              }
+            },
+            {
+              "outputPixels": 32,
+              "date": "-7000000000",
+              "highReferencePixels": 1024,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 36,
+                "hardPixelsAtHalfAlpha": 36,
+                "meanAlpha": 0.03515625
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 198.5595703125,
+                "hardPixelsAtHalfAlpha": 203,
+                "meanAlpha": 0.19390583038330078
+              }
+            }
+          ],
+          "yawSteps": [
+            {
+              "fromDegrees": 0,
+              "toDegrees": 0.5,
+              "native": {
+                "meanAbsoluteCoverageDelta": 0.00390625,
+                "thresholdChangedPixels": 4,
+                "iou": 0.8947368421052632
+              },
+              "highDownsampled": {
+                "meanAbsoluteCoverageDelta": 0.002529144287109375,
+                "thresholdChangedPixels": 2,
+                "iou": 0.9902912621359223
+              }
+            },
+            {
+              "fromDegrees": 0.5,
+              "toDegrees": 1,
+              "native": {
+                "meanAbsoluteCoverageDelta": 0.005859375,
+                "thresholdChangedPixels": 6,
+                "iou": 0.8378378378378378
+              },
+              "highDownsampled": {
+                "meanAbsoluteCoverageDelta": 0.002513885498046875,
+                "thresholdChangedPixels": 1,
+                "iou": 0.9951219512195122
+              }
+            }
+          ]
+        }
+      }
+    },
+    "hash": {
+      "setup": {
+        "mode": "hash",
+        "diagnostics": {
+          "ready": true,
+          "loading": false,
+          "error": "",
+          "lod": 1,
+          "date": "0",
+          "foliageCoverage": "hash",
+          "specimenSkeletonHeightsM": [
+            10,
+            16,
+            22
+          ],
+          "textures": 4,
+          "leafTransmission": null,
+          "coverageMaterials": {
+            "color": [
+              {
+                "name": "MAT_AtlasBark",
+                "alphaTest": 0,
+                "alphaHash": false
+              },
+              {
+                "name": "MAT_AtlasFoliage",
+                "alphaTest": 0,
+                "alphaHash": true
+              }
+            ],
+            "shadows": [
+              [
+                {
+                  "depth": {
+                    "alphaTest": 0,
+                    "alphaHash": false
+                  },
+                  "distance": {
+                    "alphaTest": 0,
+                    "alphaHash": false
+                  }
+                },
+                {
+                  "depth": {
+                    "alphaTest": 0,
+                    "alphaHash": true
+                  },
+                  "distance": {
+                    "alphaTest": 0,
+                    "alphaHash": true
+                  }
+                }
+              ],
+              [
+                {
+                  "depth": {
+                    "alphaTest": 0,
+                    "alphaHash": false
+                  },
+                  "distance": {
+                    "alphaTest": 0,
+                    "alphaHash": false
+                  }
+                },
+                {
+                  "depth": {
+                    "alphaTest": 0,
+                    "alphaHash": true
+                  },
+                  "distance": {
+                    "alphaTest": 0,
+                    "alphaHash": true
+                  }
+                }
+              ]
+            ]
+          },
+          "materials": 2,
+          "shadowMaterials": 8,
+          "sharedMaterials": true,
+          "texturePNGContainerBytes": 1958073,
+          "textureRGBA8MipBytesEstimate": 55924048,
+          "renderer": {
+            "calls": 118,
+            "triangles": 541490,
+            "textures": 2,
+            "geometries": 2
+          },
+          "renderCPUSubmissionMs": 0.3999999985098839,
+          "counterMeaning": "Draws include main and shadow passes; renderer textures include shadow targets; geometry counts track uploaded objects. Shared materials count PBR objects only; resource identity is not a measured GPU saving.",
+          "population": 3,
+          "profile": {
+            "enabled": true,
+            "gpuAvailable": true,
+            "historyLimit": 600,
+            "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+            "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+            "pendingQueries": 0,
+            "pendingLimit": 48,
+            "skippedQueries": 0,
+            "disjointQueries": 0,
+            "expiredQueries": 0,
+            "lastDrawCalls": 0,
+            "lastTriangles": 0,
+            "statistics": {}
+          },
+          "lighting": "ACES exposure 1.2, sun 3, hemisphere 1; lab lighting, not whole-game acceptance",
+          "wind": "rigid leaf rotation only; branch wind pending"
+        },
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "sourceGeometry": [
+          [
+            {
+              "name": "MAT_AtlasBark",
+              "vertices": 2780,
+              "triangles": 3166,
+              "instanceTree": null
+            },
+            {
+              "name": "MAT_AtlasFoliage",
+              "vertices": 21280,
+              "triangles": 10640,
+              "instanceTree": null
+            }
+          ],
+          [
+            {
+              "name": "MAT_AtlasBark",
+              "vertices": 2328,
+              "triangles": 2206,
+              "instanceTree": null
+            },
+            {
+              "name": "MAT_AtlasFoliage",
+              "vertices": 5320,
+              "triangles": 2660,
+              "instanceTree": null
+            }
+          ]
+        ],
+        "batches": [
+          [
+            {
+              "name": "MAT_AtlasBark",
+              "count": 1,
+              "instanceTree": 192
+            },
+            {
+              "name": "MAT_AtlasFoliage",
+              "count": 1,
+              "instanceTree": 192
+            }
+          ],
+          [
+            {
+              "name": "MAT_AtlasBark",
+              "count": 1,
+              "instanceTree": 192
+            },
+            {
+              "name": "MAT_AtlasFoliage",
+              "count": 1,
+              "instanceTree": 192
+            }
+          ]
+        ],
+        "coverageMaterials": {
+          "color": [
+            {
+              "name": "MAT_AtlasBark",
+              "alphaTest": 0,
+              "alphaHash": false
+            },
+            {
+              "name": "MAT_AtlasFoliage",
+              "alphaTest": 0,
+              "alphaHash": true
+            }
+          ],
+          "shadows": [
+            [
+              {
+                "depth": {
+                  "alphaTest": 0,
+                  "alphaHash": false
+                },
+                "distance": {
+                  "alphaTest": 0,
+                  "alphaHash": false
+                }
+              },
+              {
+                "depth": {
+                  "alphaTest": 0,
+                  "alphaHash": true
+                },
+                "distance": {
+                  "alphaTest": 0,
+                  "alphaHash": true
+                }
+              }
+            ],
+            [
+              {
+                "depth": {
+                  "alphaTest": 0,
+                  "alphaHash": false
+                },
+                "distance": {
+                  "alphaTest": 0,
+                  "alphaHash": false
+                }
+              },
+              {
+                "depth": {
+                  "alphaTest": 0,
+                  "alphaHash": true
+                },
+                "distance": {
+                  "alphaTest": 0,
+                  "alphaHash": true
+                }
+              }
+            ]
+          ]
+        }
+      },
+      "lods": {
+        "0": {
+          "nonzero128Smoke": {
+            "size": 128,
+            "lod": 0,
+            "distanceM": 20,
+            "coverageEquivalentPixels": 4148,
+            "hardPixelsAtHalfAlpha": 4148,
+            "meanAlpha": 0.253173828125
+          },
+          "footprints": [
+            {
+              "outputPixels": 16,
+              "referencePixels": 512,
+              "distanceM": 20,
+              "native": {
+                "coverageEquivalentPixels": 64,
+                "hardPixelsAtHalfAlpha": 64,
+                "meanAlpha": 0.25
+              },
+              "highResolutionDownsampled": {
+                "coverageEquivalentPixels": 63.2529296875,
+                "hardPixelsAtHalfAlpha": 62,
+                "meanAlpha": 0.24708175659179688
+              },
+              "nativeVsHighResolution": {
+                "meanAbsoluteCoverageDelta": 0.055355072021484375,
+                "thresholdChangedPixels": 8,
+                "iou": 0.8805970149253731
+              }
+            },
+            {
+              "outputPixels": 32,
+              "referencePixels": 512,
+              "distanceM": 20,
+              "native": {
+                "coverageEquivalentPixels": 266,
+                "hardPixelsAtHalfAlpha": 266,
+                "meanAlpha": 0.259765625
+              },
+              "highResolutionDownsampled": {
+                "coverageEquivalentPixels": 253.01171875,
+                "hardPixelsAtHalfAlpha": 253,
+                "meanAlpha": 0.24708175659179688
+              },
+              "nativeVsHighResolution": {
+                "meanAbsoluteCoverageDelta": 0.048763275146484375,
+                "thresholdChangedPixels": 41,
+                "iou": 0.8535714285714285
+              }
+            },
+            {
+              "outputPixels": 64,
+              "referencePixels": 1024,
+              "distanceM": 20,
+              "native": {
+                "coverageEquivalentPixels": 1055,
+                "hardPixelsAtHalfAlpha": 1055,
+                "meanAlpha": 0.257568359375
+              },
+              "highResolutionDownsampled": {
+                "coverageEquivalentPixels": 1008.7734375,
+                "hardPixelsAtHalfAlpha": 1028,
+                "meanAlpha": 0.24628257751464844
+              },
+              "nativeVsHighResolution": {
+                "meanAbsoluteCoverageDelta": 0.031152725219726562,
+                "thresholdChangedPixels": 99,
+                "iou": 0.9092575618698442
+              }
+            }
+          ],
+          "temporal": [
+            {
+              "outputPixels": 16,
+              "date": "1750000000",
+              "highReferencePixels": 512,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0.01953125,
+                "thresholdChangedPixels": 5,
+                "iou": 0.9264705882352942
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0.00197601318359375,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 67,
+                "hardPixelsAtHalfAlpha": 67,
+                "meanAlpha": 0.26171875
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 63.2490234375,
+                "hardPixelsAtHalfAlpha": 62,
+                "meanAlpha": 0.24706649780273438
+              }
+            },
+            {
+              "outputPixels": 16,
+              "date": "7000000000",
+              "highReferencePixels": 512,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 64,
+                "hardPixelsAtHalfAlpha": 64,
+                "meanAlpha": 0.25
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 63.2529296875,
+                "hardPixelsAtHalfAlpha": 62,
+                "meanAlpha": 0.24708175659179688
+              }
+            },
+            {
+              "outputPixels": 16,
+              "date": "-7000000000",
+              "highReferencePixels": 512,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 64,
+                "hardPixelsAtHalfAlpha": 64,
+                "meanAlpha": 0.25
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 63.2529296875,
+                "hardPixelsAtHalfAlpha": 62,
+                "meanAlpha": 0.24708175659179688
+              }
+            },
+            {
+              "outputPixels": 32,
+              "date": "1750000000",
+              "highReferencePixels": 1024,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0.029296875,
+                "thresholdChangedPixels": 30,
+                "iou": 0.8928571428571429
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0.0024499893188476562,
+                "thresholdChangedPixels": 2,
+                "iou": 0.9920318725099602
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 264,
+                "hardPixelsAtHalfAlpha": 264,
+                "meanAlpha": 0.2578125
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 251.9814453125,
+                "hardPixelsAtHalfAlpha": 251,
+                "meanAlpha": 0.24607563018798828
+              }
+            },
+            {
+              "outputPixels": 32,
+              "date": "7000000000",
+              "highReferencePixels": 1024,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 266,
+                "hardPixelsAtHalfAlpha": 266,
+                "meanAlpha": 0.259765625
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 252.193359375,
+                "hardPixelsAtHalfAlpha": 249,
+                "meanAlpha": 0.24628257751464844
+              }
+            },
+            {
+              "outputPixels": 32,
+              "date": "-7000000000",
+              "highReferencePixels": 1024,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 266,
+                "hardPixelsAtHalfAlpha": 266,
+                "meanAlpha": 0.259765625
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 252.193359375,
+                "hardPixelsAtHalfAlpha": 249,
+                "meanAlpha": 0.24628257751464844
+              }
+            }
+          ],
+          "yawSteps": [
+            {
+              "fromDegrees": 0,
+              "toDegrees": 0.5,
+              "native": {
+                "meanAbsoluteCoverageDelta": 0.0224609375,
+                "thresholdChangedPixels": 23,
+                "iou": 0.9154411764705882
+              },
+              "highDownsampled": {
+                "meanAbsoluteCoverageDelta": 0.002590179443359375,
+                "thresholdChangedPixels": 2,
+                "iou": 0.9920948616600791
+              }
+            },
+            {
+              "fromDegrees": 0.5,
+              "toDegrees": 1,
+              "native": {
+                "meanAbsoluteCoverageDelta": 0.021484375,
+                "thresholdChangedPixels": 22,
+                "iou": 0.9169811320754717
+              },
+              "highDownsampled": {
+                "meanAbsoluteCoverageDelta": 0.002696990966796875,
+                "thresholdChangedPixels": 3,
+                "iou": 0.9880952380952381
+              }
+            }
+          ]
+        },
+        "1": {
+          "nonzero128Smoke": {
+            "size": 128,
+            "lod": 1,
+            "distanceM": 20,
+            "coverageEquivalentPixels": 3226,
+            "hardPixelsAtHalfAlpha": 3226,
+            "meanAlpha": 0.1968994140625
+          },
+          "footprints": [
+            {
+              "outputPixels": 16,
+              "referencePixels": 512,
+              "distanceM": 20,
+              "native": {
+                "coverageEquivalentPixels": 45,
+                "hardPixelsAtHalfAlpha": 45,
+                "meanAlpha": 0.17578125
+              },
+              "highResolutionDownsampled": {
+                "coverageEquivalentPixels": 49.7890625,
+                "hardPixelsAtHalfAlpha": 50,
+                "meanAlpha": 0.194488525390625
+              },
+              "nativeVsHighResolution": {
+                "meanAbsoluteCoverageDelta": 0.09268951416015625,
+                "thresholdChangedPixels": 17,
+                "iou": 0.6964285714285714
+              }
+            },
+            {
+              "outputPixels": 32,
+              "referencePixels": 512,
+              "distanceM": 20,
+              "native": {
+                "coverageEquivalentPixels": 204,
+                "hardPixelsAtHalfAlpha": 204,
+                "meanAlpha": 0.19921875
+              },
+              "highResolutionDownsampled": {
+                "coverageEquivalentPixels": 199.15625,
+                "hardPixelsAtHalfAlpha": 207,
+                "meanAlpha": 0.194488525390625
+              },
+              "nativeVsHighResolution": {
+                "meanAbsoluteCoverageDelta": 0.0805816650390625,
+                "thresholdChangedPixels": 69,
+                "iou": 0.7125
+              }
+            },
+            {
+              "outputPixels": 64,
+              "referencePixels": 1024,
+              "distanceM": 20,
+              "native": {
+                "coverageEquivalentPixels": 808,
+                "hardPixelsAtHalfAlpha": 808,
+                "meanAlpha": 0.197265625
+              },
+              "highResolutionDownsampled": {
+                "coverageEquivalentPixels": 797.88671875,
+                "hardPixelsAtHalfAlpha": 844,
+                "meanAlpha": 0.19479656219482422
+              },
+              "nativeVsHighResolution": {
+                "meanAbsoluteCoverageDelta": 0.06284236907958984,
+                "thresholdChangedPixels": 196,
+                "iou": 0.7878787878787878
+              }
+            }
+          ],
+          "temporal": [
+            {
+              "outputPixels": 16,
+              "date": "1750000000",
+              "highReferencePixels": 512,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0.046875,
+                "thresholdChangedPixels": 12,
+                "iou": 0.7647058823529411
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0.003284454345703125,
+                "thresholdChangedPixels": 2,
+                "iou": 0.9607843137254902
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 45,
+                "hardPixelsAtHalfAlpha": 45,
+                "meanAlpha": 0.17578125
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 49.7822265625,
+                "hardPixelsAtHalfAlpha": 50,
+                "meanAlpha": 0.19446182250976562
+              }
+            },
+            {
+              "outputPixels": 16,
+              "date": "7000000000",
+              "highReferencePixels": 512,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 45,
+                "hardPixelsAtHalfAlpha": 45,
+                "meanAlpha": 0.17578125
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 49.7890625,
+                "hardPixelsAtHalfAlpha": 50,
+                "meanAlpha": 0.194488525390625
+              }
+            },
+            {
+              "outputPixels": 16,
+              "date": "-7000000000",
+              "highReferencePixels": 512,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 45,
+                "hardPixelsAtHalfAlpha": 45,
+                "meanAlpha": 0.17578125
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 49.7890625,
+                "hardPixelsAtHalfAlpha": 50,
+                "meanAlpha": 0.194488525390625
+              }
+            },
+            {
+              "outputPixels": 32,
+              "date": "1750000000",
+              "highReferencePixels": 1024,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0.056640625,
+                "thresholdChangedPixels": 58,
+                "iou": 0.7489177489177489
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0.003589630126953125,
+                "thresholdChangedPixels": 2,
+                "iou": 0.9903381642512077
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 200,
+                "hardPixelsAtHalfAlpha": 200,
+                "meanAlpha": 0.1953125
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 199.0693359375,
+                "hardPixelsAtHalfAlpha": 206,
+                "meanAlpha": 0.19440364837646484
+              }
+            },
+            {
+              "outputPixels": 32,
+              "date": "7000000000",
+              "highReferencePixels": 1024,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 204,
+                "hardPixelsAtHalfAlpha": 204,
+                "meanAlpha": 0.19921875
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 199.4716796875,
+                "hardPixelsAtHalfAlpha": 206,
+                "meanAlpha": 0.19479656219482422
+              }
+            },
+            {
+              "outputPixels": 32,
+              "date": "-7000000000",
+              "highReferencePixels": 1024,
+              "nativeVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "highDownsampledVsDate0": {
+                "meanAbsoluteCoverageDelta": 0,
+                "thresholdChangedPixels": 0,
+                "iou": 1
+              },
+              "nativeCoverage": {
+                "coverageEquivalentPixels": 204,
+                "hardPixelsAtHalfAlpha": 204,
+                "meanAlpha": 0.19921875
+              },
+              "highDownsampledCoverage": {
+                "coverageEquivalentPixels": 199.4716796875,
+                "hardPixelsAtHalfAlpha": 206,
+                "meanAlpha": 0.19479656219482422
+              }
+            }
+          ],
+          "yawSteps": [
+            {
+              "fromDegrees": 0,
+              "toDegrees": 0.5,
+              "native": {
+                "meanAbsoluteCoverageDelta": 0.03125,
+                "thresholdChangedPixels": 32,
+                "iou": 0.8497652582159625
+              },
+              "highDownsampled": {
+                "meanAbsoluteCoverageDelta": 0.004505157470703125,
+                "thresholdChangedPixels": 7,
+                "iou": 0.966824644549763
+              }
+            },
+            {
+              "fromDegrees": 0.5,
+              "toDegrees": 1,
+              "native": {
+                "meanAbsoluteCoverageDelta": 0.0341796875,
+                "thresholdChangedPixels": 35,
+                "iou": 0.8333333333333334
+              },
+              "highDownsampled": {
+                "meanAbsoluteCoverageDelta": 0.004039764404296875,
+                "thresholdChangedPixels": 5,
+                "iou": 0.9760765550239234
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "limitations": [
+    "512/1024 samples are high-resolution references, not converged ground truth.",
+    "Alpha coverage is measured from transparent render-target output; no background color threshold is used.",
+    "Only one controlled 16 m instance is rendered, without ground or shadows. This does not measure whole-scene or shadow performance.",
+    "TAA is not enabled."
+  ],
+  "errors": [],
+  "failedRequests": []
+}

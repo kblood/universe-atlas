@@ -29,3 +29,4 @@ test-results/tree-leaf-transmission/** -text whitespace=cr-at-eol
 test-results/opus-leaf-transmission-review/** -text whitespace=cr-at-eol
 test-results/opus-leaf-transmission-review/prompt.txt -whitespace
 test-results/opus-leaf-transmission-review/followup/prompt.txt -whitespace
+test-results/tree-leaf-live/** -text whitespace=cr-at-eol

@@ -81,6 +81,33 @@ setting for this metres-based lab, not a planetary shadow-bias policy. The
 earlier MASK/HASH timing/date run used its saved original shadow settings;
 its source snapshot and results remain unchanged.
 
+## Actual tree integration check
+
+The [family-F report](../test-results/tree-leaf-transmission/actual-tree/family-f-corrected/report.json)
+uses the same hash-recorded EZ-Tree/Atlas GLBs, three physical-size specimens,
+and a 2560 × 1440 RTX 5090 canvas. Both LODs rendered with transmission off and
+`0.35`, retaining wind and custom shadow materials, with no recorded browser,
+request or WebGL errors. The sun stays fixed while the camera changes between
+front-lit and back-lit views.
+
+At LOD0, installing the adapter at factor zero reproduced every RGBA byte of
+the original front and back frames (`maxAbs = 0`). At factor `0.35`, the
+rendered frame's FNV-1a 32-bit hash changed at 1.75 seconds and returned to the
+date-zero hash at seven seconds. This is a frame-hash replay check; the earlier
+temporal run separately measured pixel differences directly.
+
+Inspect the page captures, including their visible lab controls:
+[front off](../test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-front-off.png),
+[front 0.35](../test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-front-on.png),
+[back off](../test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-back-off.png),
+[back 0.35](../test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-back-on.png).
+The pixel comparisons read the WebGL buffer, excluding the controls.
+
+The canopy remains dark in this backlit rig; transmitting some light does not
+replace a complete outdoor lighting setup. These images are integration
+evidence, not visual approval. Tree lighting cost under environment maps,
+realistic LOD handoff, species variation and planetary adoption remain open.
+
 ## Earlier design rationale
 
 This prototype follows the narrow proposal below: address dark back-lit leaves
