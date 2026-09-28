@@ -62,3 +62,13 @@ of both GLB pairs with source-bound sidecar validation. The
 Normal-control travel, cold/warm network timing and GPU-resource disposal still
 require browser acceptance. Matching distant family shapes, lighter shadows
 and the remaining landscape content are separate unfinished parts of the plan.
+
+## Publication byte audit
+
+`tests/forest-asset-publication.mjs` checks the served build revision and all 17
+package resources against the committed local manifest. It rejects a dirty build,
+redirects, missing resources, size/hash differences and inconsistent references.
+Set `ATLAS_URL` to the preview or deployed directory URL, `ATLAS_EXPECT_COMMIT`
+to its full 40-character commit and `ATLAS_RESULTS` to a fresh evidence folder,
+then run `node tests/forest-asset-publication.mjs`. The resulting JSON receipt
+does not replace normal-control browser, visual or performance checks.
