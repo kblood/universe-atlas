@@ -5,8 +5,9 @@ including canopy runtime through `98556a7`. The date-seek preview test passes
 water changes from −4,500 m to −4,475 m and back with 6,301 patches and 156,309
 trees retained, zero stale visible terrain tiles, and no browser errors. See the
 [date-seek evidence](../test-results/canopy-water-date-seek-98556a7/report.json)
-and [terrain refresh record](terrain-water-refresh-2026-09-28.md). The full
-flight/walk acceptance is tracked in the [integration record](canopy-runtime-integration-2026-09-28.md).
+and [terrain refresh record](terrain-water-refresh-2026-09-28.md). Flight/walk
+acceptance is in the [flight report](../test-results/canopy-flight-98556a7/report.json)
+and [preview summary](../test-results/acceptance-98556a7/README.md).
 The water core is `c02ee95` with review fixes in `a1`; this document does not
 claim deployment or completion of the desktop realism plan.
 

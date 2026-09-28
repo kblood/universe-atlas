@@ -343,9 +343,10 @@ construction took 1,071.1 ms, hydrology setup 244.8 ms, and the full Worker
 roundtrip 2,159.4 ms including module startup. This was one CPU-side browser
 probe with no renderer or WebGL scene; it is a workload measurement, not a
 frame/GPU result or proof of an interactive 4.5 km census. See the [cost
-probe](../test-results/forest-canopy-census-481e693/README.md). The worker and
-probe are not present in live release `e8a848d`; exact-individual far proxies
-are being explored separately and are not shipped.
+probe](../test-results/forest-canopy-census-481e693/README.md). At the earlier
+`e8a848d` deployment checkpoint, the worker and probe were not in the live
+release; the canopy runtime is now included through `98556a7`. The standalone
+exact-individual proxy lab remains separate from the faceted runtime proxies.
 
 ### Exact-individual proxy experiment — 2026-09-28
 
@@ -366,11 +367,11 @@ the existing faceted procedural tree shape; it is not an authored realistic
 tree asset. The lab counts jittered roots, so its 149,479 trees differ by one
 from the census probe's 149,478 cell-centre count. See the [field report](../test-results/forest-impostor-field/report.json).
 
-These specific lab measurements are not game-performance results and are not
-shipped. The faceted proxy representation was subsequently integrated locally
-at `213ca95` and validated in the `4c776b8` preview, while live remains
-`e8a848d`. Realistic authored trees, dated life gates, wind and shadows remain
-to be implemented and validated. The separate [census
+These specific lab measurements are not game-performance results. The faceted
+proxy representation was subsequently integrated at `213ca95`, with the
+runtime now included through `98556a7`; the earlier `e8a848d` deployment had
+the sparse representation. Realistic authored trees, binding individual forest
+cells to dated species, wind and shadows remain to be implemented and validated. The separate [census
 implementation review](opus-5.5-census-implementation-review-2026-09-28.md)
 records six passing tests and a browser-worker protocol pass; neither that
 review nor the proxy lab constitutes game acceptance. Follow-up protocol fixes received an Opus implementation review; six focused tests and the browser-worker protocol report pass, with no renderer or visual acceptance. See the [protocol report](../test-results/forest-census-protocol-review/report.json) and [implementation review](opus-5.5-census-implementation-review-2026-09-28.md).
