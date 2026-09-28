@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {loadTreeAssetFamily,type TreeAssetFamily} from './tree-asset.ts';
-import {loadTreeCapture,TreeCapturedImpostor,type TreeCapture} from './tree-captured-impostor.ts';
+import {loadTreeCapture,TreeCapturedImpostor,type TreeCapture,type TreeCaptureFiltering} from './tree-captured-impostor.ts';
 
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,logarithmicDepthBuffer:true});
 renderer.setPixelRatio(1);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;
@@ -12,30 +12,49 @@ const controls=new OrbitControls(camera,renderer.domElement);controls.target.set
 const sun=new THREE.DirectionalLight(0xfff6e5,3);sun.position.set(-30,55,25);scene.add(sun);
 scene.add(new THREE.HemisphereLight(0xc4dcf0,0x41472c,1));
 let family:TreeAssetFamily|undefined,batch:ReturnType<TreeAssetFamily['createBatch']>|undefined,capture:TreeCapture|undefined,impostor:TreeCapturedImpostor|undefined;
-let mode:'mesh'|'capture'='mesh',loading=false;const mask={value:0};
+let mode:'mesh'|'capture'='mesh',loading=false,activeLod:0|1=0,captureFiltering:TreeCaptureFiltering='legacy-unassociated';const mask={value:0};
 let sourceCoverage:'mask'|'hash'='mask',sourceCutoff=.5;
 const status=document.getElementById('status')!;
 function setMode(value:typeof mode){mode=value;if(batch)batch.group.visible=mode==='mesh';if(impostor)impostor.mesh.visible=mode==='capture';(document.getElementById('mode') as HTMLSelectElement).value=value;}
 function setSourceCoverage(value:typeof sourceCoverage){
   if(value!=='mask'&&value!=='hash')throw new Error('Invalid source coverage mode');sourceCoverage=value;
   if(family&&batch){
-    for(const material of [family.lods[0][1].material,batch.meshes[1].customDepthMaterial!,batch.meshes[1].customDistanceMaterial!] as THREE.MeshStandardMaterial[]){
+    for(const material of [family.lods[activeLod][1].material,batch.meshes[1].customDepthMaterial!,batch.meshes[1].customDistanceMaterial!] as THREE.MeshStandardMaterial[]){
       material.alphaHash=value==='hash';material.alphaTest=value==='hash'?0:sourceCutoff;material.needsUpdate=true;
     }
   }
   (document.getElementById('coverage') as HTMLSelectElement).value=value;
 }
+function setCaptureFiltering(value:TreeCaptureFiltering){
+  if(value!=='legacy-unassociated'&&value!=='coverage-weighted')throw new Error('Invalid capture filtering mode');
+  captureFiltering=value;(document.getElementById('filtering') as HTMLSelectElement).value=value;
+}
 function dispose(){impostor?.dispose();batch?.dispose();family?.dispose();capture?.dispose();impostor=undefined;batch=undefined;family=undefined;capture=undefined;}
 async function hash(buffer:ArrayBuffer){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',buffer)),v=>v.toString(16).padStart(2,'0')).join('');}
-async function load(lod0:ArrayBuffer,lod1:ArrayBuffer,manifest:any,read:(path:string)=>Promise<ArrayBuffer>){
+const supportedInputs=[
+  ['atlas-branching-v1.glb','atlas-branching-v1.lod1.glb'],
+  ['atlas-ez-oak.glb','atlas-ez-oak.lod1.glb'],
+  ['atlas-ez-conifer.glb','atlas-ez-conifer.lod1.glb'],
+] as const;
+function captureInputPair(manifest:any){
+  const files=manifest?.input?.files;
+  if(!files||typeof files!=='object')throw new Error('Capture manifest does not declare source GLB hashes');
+  const pair=supportedInputs.find(([a,b])=>typeof files[a]==='string'&&typeof files[b]==='string');
+  if(!pair)throw new Error('Capture inputs are not a supported Atlas or EZ-Tree Oak/Pine GLB pair');
+  const lod=manifest.options?.lod??0;
+  if(lod!==0&&lod!==1)throw new Error('Capture LOD must be 0 or 1');
+  return {pair,lod:lod as 0|1};
+}
+async function load(lod0:ArrayBuffer,lod1:ArrayBuffer,manifest:any,read:(path:string)=>Promise<ArrayBuffer>,filtering:TreeCaptureFiltering='legacy-unassociated'){
   if(loading)throw new Error('Capture comparison already loading');loading=true;
   let nextFamily:TreeAssetFamily|undefined,nextCapture:TreeCapture|undefined,nextBatch:typeof batch,nextImpostor:TreeCapturedImpostor|undefined;
   try{
-    if(await hash(lod0)!==manifest.input.files['atlas-branching-v1.glb']||await hash(lod1)!==manifest.input.files['atlas-branching-v1.lod1.glb'])throw new Error('Selected mesh pair does not match capture inputs');
-    nextFamily=await loadTreeAssetFamily(lod0,lod1);nextCapture=await loadTreeCapture(manifest,read);
-    nextBatch=nextFamily.createBatch(0,1);nextBatch.setInstance(0,new THREE.Matrix4(),manifest.options.heightM,0);nextFamily.setDate(0n);
-    nextImpostor=new TreeCapturedImpostor(nextCapture,nextFamily.lods[0].map(m=>m.material));
-    for(const mesh of nextFamily.lods[0]){
+    const {pair,lod}=captureInputPair(manifest);
+    if(await hash(lod0)!==manifest.input.files[pair[0]]||await hash(lod1)!==manifest.input.files[pair[1]])throw new Error('Selected mesh pair does not match capture input hashes');
+    nextFamily=await loadTreeAssetFamily(lod0,lod1);nextCapture=await loadTreeCapture(manifest,read,{filtering});
+    nextBatch=nextFamily.createBatch(lod,1);nextBatch.setInstance(0,new THREE.Matrix4(),manifest.options.heightM,0);nextFamily.setDate(0n);
+    nextImpostor=new TreeCapturedImpostor(nextCapture,nextFamily.lods[lod].map(m=>m.material));
+    for(const mesh of nextFamily.lods[lod]){
       const material=mesh.material,previous=material.onBeforeCompile,key=material.customProgramCacheKey();
       material.onBeforeCompile=(shader,host)=>{previous.call(material,shader,host);shader.uniforms.treeLabMask=mask;shader.fragmentShader='uniform float treeLabMask;\n'+shader.fragmentShader;
         shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','#include <opaque_fragment>\nif(treeLabMask>.5)gl_FragColor=vec4(vec3(1),1);');};
@@ -44,10 +63,10 @@ async function load(lod0:ArrayBuffer,lod1:ArrayBuffer,manifest:any,read:(path:st
     scene.add(nextBatch.group,nextImpostor.mesh);
   }catch(error){nextImpostor?.dispose();nextBatch?.dispose();nextFamily?.dispose();nextCapture?.dispose();throw error;}
   finally{loading=false;}
-  dispose();family=nextFamily;batch=nextBatch;capture=nextCapture;impostor=nextImpostor;sourceCutoff=family!.lods[0][1].material.alphaTest;setMode(mode);setSourceCoverage(sourceCoverage);
+  dispose();family=nextFamily;batch=nextBatch;capture=nextCapture;impostor=nextImpostor;activeLod=captureInputPair(manifest).lod;captureFiltering=filtering;sourceCutoff=family!.lods[activeLod][1].material.alphaTest;setMode(mode);setSourceCoverage(sourceCoverage);
   impostor!.uniforms.captureParallax.value=Number((document.getElementById('parallax') as HTMLInputElement).checked);
   impostor!.uniforms.captureHash.value=Number((document.getElementById('hash') as HTMLInputElement).checked);
-  status.textContent=JSON.stringify({heightM:manifest.options.heightM,views:manifest.views.length,gpuTextureBytes:capture!.bytes,
+  status.textContent=JSON.stringify({heightM:manifest.options.heightM,lod:activeLod,filtering:capture!.filtering,views:manifest.views.length,gpuTextureBytes:capture!.bytes,
     format:'RGBA8 colour + RGBA16F normal/depth + RGBA8 class (R used); explicit independent mip chains',
     limits:'Single tree and exact captured height. No game integration, instancing, cast shadows, wind or handoff.'},null,2);
 }
@@ -80,13 +99,14 @@ document.getElementById('load')!.onclick=async()=>{
     const files=Array.from((document.getElementById('capture') as HTMLInputElement).files??[]),manifestFile=files.find(f=>f.webkitRelativePath.split('/').length===2&&f.name==='capture-manifest.json');
     if(!a||!b||!manifestFile)throw new Error('Select both GLBs and one capture directory');
     const fileMap=new Map(files.map(file=>[file.webkitRelativePath.split('/').slice(1).join('/'),file]));status.textContent='Checking inputs and loading capture…';
-    await load(await a.arrayBuffer(),await b.arrayBuffer(),JSON.parse(await manifestFile.text()),async path=>{const file=fileMap.get(path);if(!file)throw new Error(`Missing capture ${path}`);return file.arrayBuffer();});
+    await load(await a.arrayBuffer(),await b.arrayBuffer(),JSON.parse(await manifestFile.text()),async path=>{const file=fileMap.get(path);if(!file)throw new Error(`Missing capture ${path}`);return file.arrayBuffer();},captureFiltering);
   }catch(error){status.textContent=String(error);}
 };
 (document.getElementById('mode') as HTMLSelectElement).onchange=event=>setMode((event.target as HTMLSelectElement).value as typeof mode);
 (document.getElementById('coverage') as HTMLSelectElement).onchange=event=>setSourceCoverage((event.target as HTMLSelectElement).value as typeof sourceCoverage);
+document.getElementById('filtering')!.onchange=event=>setCaptureFiltering((event.target as HTMLSelectElement).value as TreeCaptureFiltering);
 document.getElementById('parallax')!.onchange=event=>{if(impostor)impostor.uniforms.captureParallax.value=Number((event.target as HTMLInputElement).checked);};
 document.getElementById('hash')!.onchange=event=>{if(impostor)impostor.uniforms.captureHash.value=Number((event.target as HTMLInputElement).checked);};
 function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}addEventListener('resize',resize);resize();
 renderer.setAnimationLoop(()=>renderer.render(scene,camera));
-Object.assign(window,{__treeImpostorLab:{load,setMode,setSourceCoverage,probe,renderer,scene,camera,controls,sun,get capture(){return capture;},get impostor(){return impostor;},get family(){return family;},get ready(){return !!impostor&&!loading;}}});
+Object.assign(window,{__treeImpostorLab:{load,setMode,setSourceCoverage,setCaptureFiltering,probe,renderer,scene,camera,controls,sun,get capture(){return capture;},get filtering(){return captureFiltering;},get family(){return family;},get ready(){return !!impostor&&!loading;}}});
