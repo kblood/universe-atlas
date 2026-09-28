@@ -1,0 +1,63 @@
+{
+  "revision": "0074a5976e249e571587277cdd1d9e8dd75d177f",
+  "dirty": true,
+  "files": [
+    {
+      "path": "src/planet-canopy.ts",
+      "sha256": "aac7bf4833334f47ddc2de7ceda65c5c8153e00ea7898e1c18f1621296c061d1"
+    },
+    {
+      "path": "src/forest-slot-allocator.ts",
+      "sha256": "5bc86972b4f8b67af7474259ab35f6b96f8b73899f8771798c2bc1cdccc38423"
+    },
+    {
+      "path": "src/forest-coverage.ts",
+      "sha256": "a7e68679084a59c9954ec10955f876349ee685128dea13922f85505ce701a711"
+    },
+    {
+      "path": "src/forest-impostor.ts",
+      "sha256": "c0d1634a373785490223818076935ec01f1c01d8b5c7609e9efe215adea7c2ca"
+    },
+    {
+      "path": "src/tree-shape.ts",
+      "sha256": "9fa6e8d3effd1f966c5389ec59a9e30e2b701656dc12a50dff7f35b6bd939017"
+    },
+    {
+      "path": "src/forest-patch-selection.ts",
+      "sha256": "c0d242c5ca8b9f5655c9fcd0e5fbb47110dfceba9c81a0756304e1d0a80a7bbb"
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "ee92486fdf298dd97efa4145ddd96d12ef1b915585c76319c3506727477d5471"
+    },
+    {
+      "path": "src/local-aerial-perspective.ts",
+      "sha256": "cd97b5b204c295d1421f4d8e63ed167d97c56d8d5bfbc19bab448fb47f0a3c4f"
+    },
+    {
+      "path": "src/forest-census-worker.ts",
+      "sha256": "7495aafaeaf69929da60aaa2332886a4ee7c443a9257c9ec0f45aee5d9f45c0c"
+    },
+    {
+      "path": "tests/planet-canopy.test.mjs",
+      "sha256": "029a80770395b4c50dbf5b5242790103830139a311fb3420ac3856dbdacc839e"
+    }
+  ],
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 6,
+      "outputTokens": 133839,
+      "cacheReadInputTokens": 45173,
+      "cacheCreationInputTokens": 73097,
+      "webSearchRequests": 0,
+      "costUSD": 3.2706145999999996,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 27015,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "isError": false
+}
