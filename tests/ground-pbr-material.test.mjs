@@ -34,8 +34,12 @@ test('PBR texture periods align to the existing rebased local frame',()=>{
 
 test('per-renderer terrain accounting includes the shared PBR set once as a conservative reserve',async()=>{
   const renderer=await readFile(join(dirname(fileURLToPath(import.meta.url)),'..','src','planet-renderer.ts'),'utf8');
-  assert.match(renderer,/accountedBytes:this\.residentBytes\+GROUND_RESOURCE_BYTES\+oceanNormalBytes/);
-  assert.match(renderer,/reservedCombinedBytes:this\.residentBytes\+GROUND_RESOURCE_BYTES\+/);
+  // Rock-owned bytes join the combined total, but the shared PBR set stays in GROUND_RESOURCE_BYTES only.
+  const memory=await readFile(join(dirname(fileURLToPath(import.meta.url)),'..','src','renderer-memory.ts'),'utf8');
+  assert.match(renderer,/accountedBytes:memory\.accountedBytes,/);assert.match(renderer,/reservedCombinedBytes:memory\.reservedCombinedBytes,/);
+  assert.match(memory,/accountedBytes:p\.residentBytes\+GROUND_RESOURCE_BYTES\+p\.oceanNormalBytes\+p\.rockOwnedBytes,/);
+  assert.match(memory,/reservedCombinedBytes:p\.residentBytes\+GROUND_RESOURCE_BYTES\+/);
+  assert.equal(memory.match(/GROUND_RESOURCE_BYTES\+/g).length,2);
   assert.match(renderer,/groundAtlasBytes:GROUND_ATLAS_BYTES,groundPbrTextureBytes:GROUND_PBR_TEXTURE_BYTES/);
   assert.match(renderer,/groundPbrAccounting:'conservative per-renderer reserve; shared textures are loaded once'/);
 });

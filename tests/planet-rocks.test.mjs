@@ -21,6 +21,8 @@ const frustum=constant=>new THREE.Frustum(...Array.from({length:6},()=>new THREE
 const ALL=frustum(10),NONE=frustum(-10);
 // A single rock cell can cost up to slots x 3 terrain samples beyond the frame limit check.
 const MAX_CELL_SAMPLES=Math.max(...ROCK_TIERS.map(t=>t.slots*3));
+// A draw frame may overshoot its unit budget by at most one cell's slots.
+const MAX_SLOTS=Math.max(...ROCK_TIERS.map(t=>t.slots));
 
 function rig(body,waterLevelM=-1e6){
   const sample=terrainSampler(body,undefined,undefined,undefined,waterLevelM),classify=biomeClassifier(body,waterLevelM);
@@ -36,9 +38,10 @@ function rig(body,waterLevelM=-1e6){
     for(let i=0;i<frames;i++){
       rocks.update(input(v,extra));
       const d=rocks.diagnostics();
-      assert.ok(d.work.cells<=ROCK_CELLS_PER_FRAME,`cells per frame ${d.work.cells}`);
-      assert.ok(d.work.samples<ROCK_SAMPLES_PER_FRAME+MAX_CELL_SAMPLES,`samples per frame ${d.work.samples}`);
-      if(d.tiers.every(t=>t.wanted>0&&t.pending===0&&t.resident>=t.wanted))return {frames:i+1,diagnostics:d};
+      assert.ok(d.work.process.cells<=ROCK_CELLS_PER_FRAME,`cells per frame ${d.work.process.cells}`);
+      assert.ok(d.work.process.samples<ROCK_SAMPLES_PER_FRAME+MAX_CELL_SAMPLES,`samples per frame ${d.work.process.samples}`);
+      assert.ok(d.work.draw.units<=d.caps.drawUnitsPerFrame+MAX_SLOTS,`draw units per frame ${d.work.draw.units}`);
+      if(d.tiers.every(t=>t.wanted>0&&t.pending===0&&t.resident>=t.wanted)&&!d.work.draw.pending&&!d.work.draw.stale)return {frames:i+1,diagnostics:d};
     }
     assert.fail('rock field did not settle');
   };
@@ -132,12 +135,12 @@ test('draw work respects LOD caps, batch capacity, culling and change detection'
   const rebuilds=d.work.rebuilds;
   r.rocks.update(r.input(v,{gate:{surfaceSolid:true,families:structuredClone(r.gate.families)}}));
   assert.equal(r.rocks.diagnostics().work.rebuilds,rebuilds);assert.equal(r.attached.length,27);
-  // Everything outside the camera frustum: nothing drawn.
-  r.rocks.update(r.input(v,{frusta:[NONE]}));d=r.rocks.diagnostics();
-  assert.equal(d.drawn.total,0);assert.ok(d.cameraCulled>0);assert.equal(d.draws,0);
+  // Everything outside the camera frustum: only rocks within the near radius stay submitted.
+  d=r.settle(v,{frusta:[NONE]}).diagnostics;
+  assert.equal(d.drawn.total,d.nearUnculled);assert.ok(d.nearUnculled>0&&d.cameraCulled>0);
   // Shadow frustum keeps only near LODs as shadow casters.
-  r.rocks.update(r.input(v,{frusta:[NONE],shadowFrustum:ALL}));d=r.rocks.diagnostics();
-  assert.equal(d.drawn.lod2,0);assert.equal(d.shadowOnly,d.drawn.lod0+d.drawn.lod1);
+  d=r.settle(v,{frusta:[NONE],shadowFrustum:ALL}).diagnostics;
+  assert.equal(d.drawn.lod2,0);assert.equal(d.shadowOnly+d.nearUnculled,d.drawn.lod0+d.drawn.lod1);assert.ok(d.shadowOnly>0);
   r.rocks.dispose();
 });
 
@@ -182,7 +185,7 @@ test('renderer and app wiring gate rocks on the solid surface, not on life',()=>
   assert.match(main,/rocks:\s*st\.stage\s*===\s*'solid'/);
   const renderer=readFileSync(new URL('../src/planet-renderer.ts',import.meta.url),'utf8');
   assert.match(renderer,/this\.rocks\.update\(\{/);assert.match(renderer,/this\.rocks\.dispose\(\)/);
-  assert.match(renderer,/rocks:this\.rocks\.diagnostics\(\)/);
+  assert.match(renderer,/const rocks=this\.rocks\.diagnostics\(\);/);assert.match(renderer,/\{projection: 'cube-sphere',localAerial,rocks,/);
   // The barren moon's rock-bearing biosphere has no species at all.
   assert.equal(generateBiosphere(SEED,'airless',moon.id).species.length,0);
 });
