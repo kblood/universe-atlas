@@ -1,0 +1,22 @@
+{
+  "brief": {
+    "path": "examples/asset-briefs/atlas-family-lod1-capture-density-comparison.json",
+    "sha256": "51f96b43720d1ae3079eae14ade793e49e5141adb6f7b1742db4be248c2f0a8c"
+  },
+  "results": [
+    {
+      "family": "oak",
+      "directory": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-oak-lod1-capture-16m-64-sidecar-grid17-v1",
+      "manifestSha256": "bb92bf1619a76cb50a3f31a9a7cb41049d52bcfed81b40b61ff6b8ea1627b124",
+      "artifacts": 8092,
+      "covered": 473686,
+      "leaf": 298344,
+      "bark": 16916,
+      "area": 257392.328125,
+      "adapter": {
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "maxArrayLayers": 2048
+      }
+    }
+  ]
+}
