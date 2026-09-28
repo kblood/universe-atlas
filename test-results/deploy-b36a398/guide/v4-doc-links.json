@@ -1,0 +1,174 @@
+{
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "checkedAt": "2026-09-28T03:55:00.8310868Z",
+  "sources": [
+    "docs/tree-authoring-v4-2026-09-28.md",
+    "docs/tree-authoring-review-assessment-2026-09-28.md"
+  ],
+  "count": 21,
+  "failures": [],
+  "checks": [
+    {
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/docs/tree-authoring-v4-2026-09-28.md",
+      "source": "docs/tree-authoring-v4-2026-09-28.md"
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/tree-author-v4/atlas-tree-smoke-1790566779960/authoring-manifest.json",
+      "contentType": "application/json",
+      "href": "../test-results/tree-author-v4/atlas-tree-smoke-1790566779960/authoring-manifest.json",
+      "bytes": 3844
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/tree-author-v4/atlas-tree-smoke-1790566779960/validation.json",
+      "contentType": "application/json",
+      "href": "../test-results/tree-author-v4/atlas-tree-smoke-1790566779960/validation.json",
+      "bytes": 5973
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-repeat/authoring-manifest.json",
+      "contentType": "application/json",
+      "href": "../test-results/tree-author-v4/atlas-tree-smoke-1790566779960-repeat/authoring-manifest.json",
+      "bytes": 3893
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/tree-author-v4/atlas-tree-smoke-1790567076137/authoring-manifest.json",
+      "contentType": "application/json",
+      "href": "../test-results/tree-author-v4/atlas-tree-smoke-1790567076137/authoring-manifest.json",
+      "bytes": 3844
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/tree-author-v4/atlas-tree-smoke-1790567076137-repeat/authoring-manifest.json",
+      "contentType": "application/json",
+      "href": "../test-results/tree-author-v4/atlas-tree-smoke-1790567076137-repeat/authoring-manifest.json",
+      "bytes": 3893
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/tree-author-v4/smoke-repeat.log",
+      "contentType": null,
+      "href": "../test-results/tree-author-v4/smoke-repeat.log",
+      "bytes": 624
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/tree-author-v4/physical-audit.log",
+      "contentType": null,
+      "href": "../test-results/tree-author-v4/physical-audit.log",
+      "bytes": 532
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/tree-author-v4/authoring-receipt.json",
+      "contentType": "application/json",
+      "href": "../test-results/tree-author-v4/authoring-receipt.json",
+      "bytes": 3446
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/tree-author-v4/repeat-audit.json",
+      "contentType": "application/json",
+      "href": "../test-results/tree-author-v4/repeat-audit.json",
+      "bytes": 2583
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/docs/tree-authoring-review-assessment-2026-09-28.md",
+      "contentType": "text/markdown",
+      "href": "tree-authoring-review-assessment-2026-09-28.md",
+      "bytes": 3420
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/render-sheet.png",
+      "contentType": "image/png",
+      "href": "../test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/render-sheet.png",
+      "bytes": 1302697
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/render-sheet.png",
+      "contentType": "image/png",
+      "href": "../test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/render-sheet.png",
+      "bytes": 1303025
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/test-results/tree-author-v4/render-roundtrip.json",
+      "contentType": "application/json",
+      "href": "../test-results/tree-author-v4/render-roundtrip.json",
+      "bytes": 2473
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/docs/tree-authoring-v3-2026-09-28.md",
+      "contentType": "text/markdown",
+      "href": "tree-authoring-v3-2026-09-28.md",
+      "bytes": 4413
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/docs/tree-authoring-next-increment-2026-09-28.md",
+      "contentType": "text/markdown",
+      "href": "tree-authoring-next-increment-2026-09-28.md",
+      "bytes": 13098
+    },
+    {
+      "source": "docs/tree-authoring-v4-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/docs/desktop-realism-implementation-plan-2026-09-27.md",
+      "contentType": "text/markdown",
+      "href": "desktop-realism-implementation-plan-2026-09-27.md",
+      "bytes": 29401
+    },
+    {
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/docs/tree-authoring-review-assessment-2026-09-28.md",
+      "source": "docs/tree-authoring-review-assessment-2026-09-28.md"
+    },
+    {
+      "source": "docs/tree-authoring-review-assessment-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/docs/opus-5.5-tree-author-v3-review-2026-09-28.md",
+      "contentType": "text/markdown",
+      "href": "opus-5.5-tree-author-v3-review-2026-09-28.md",
+      "bytes": 7742
+    },
+    {
+      "source": "docs/tree-authoring-review-assessment-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/docs/opus-5.5-tree-author-v3-review-2026-09-28.metadata.json",
+      "contentType": "application/json",
+      "href": "opus-5.5-tree-author-v3-review-2026-09-28.metadata.json",
+      "bytes": 1486
+    },
+    {
+      "source": "docs/tree-authoring-review-assessment-2026-09-28.md",
+      "status": 200,
+      "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/docs/tree-authoring-v4-2026-09-28.md",
+      "contentType": "text/markdown",
+      "href": "tree-authoring-v4-2026-09-28.md",
+      "bytes": 4955
+    }
+  ]
+}

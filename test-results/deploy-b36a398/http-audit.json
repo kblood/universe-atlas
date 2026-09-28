@@ -1,0 +1,2181 @@
+{
+  "audit": "b36-live-guide-doc-and-assets",
+  "site": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "checkedAt": "2026-09-28T03:56:55.028Z",
+  "buildStamp": {
+    "status": 200,
+    "local": {
+      "commit": "b36a398b34d78b46a3eaf201e7fef68901a7c80a",
+      "dirty": false,
+      "builtAt": "2026-09-28T03:51:22.373Z"
+    },
+    "live": {
+      "status": 200,
+      "contentType": "application/json",
+      "commit": "b36a398b34d78b46a3eaf201e7fef68901a7c80a",
+      "dirty": false,
+      "builtAt": "2026-09-28T03:51:22.373Z"
+    },
+    "exactCommit": true,
+    "localClean": true,
+    "timestampMatches": true
+  },
+  "javascriptAssets": {
+    "count": 22,
+    "allMatchDistAndPrior580": true,
+    "entries": [
+      {
+        "name": "OrbitControls-C33he78E.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "8068f9d55af334b44a238ee5608ca1002026843c1b191ea9641d3af74193c52c",
+        "prior580Sha256": "8068f9d55af334b44a238ee5608ca1002026843c1b191ea9641d3af74193c52c",
+        "liveSha256": "8068f9d55af334b44a238ee5608ca1002026843c1b191ea9641d3af74193c52c",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "atlas-D_fLpHjv.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "a0707cf891ebfee84c9ce254c591c63a5714398ca8e28bf17bb427930d1f7e29",
+        "prior580Sha256": "a0707cf891ebfee84c9ce254c591c63a5714398ca8e28bf17bb427930d1f7e29",
+        "liveSha256": "a0707cf891ebfee84c9ce254c591c63a5714398ca8e28bf17bb427930d1f7e29",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "biomes-B2FSz8AO.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "6213e8f4da8320ec71d19d0c9e39deede091999530b9913031222d7fe58460ff",
+        "prior580Sha256": "6213e8f4da8320ec71d19d0c9e39deede091999530b9913031222d7fe58460ff",
+        "liveSha256": "6213e8f4da8320ec71d19d0c9e39deede091999530b9913031222d7fe58460ff",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "biosphere-CVMT8gpe.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "45688e5ba13d4176b559e22cd010bd66973948b4deb0e7f6e90d9a5cac7db0b6",
+        "prior580Sha256": "45688e5ba13d4176b559e22cd010bd66973948b4deb0e7f6e90d9a5cac7db0b6",
+        "liveSha256": "45688e5ba13d4176b559e22cd010bd66973948b4deb0e7f6e90d9a5cac7db0b6",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "biosphere-model-BxOjjDxI.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "4d8529f4671472589497cb12468606470989a190ef1103fc3571d0fb7737e979",
+        "prior580Sha256": "4d8529f4671472589497cb12468606470989a190ef1103fc3571d0fb7737e979",
+        "liveSha256": "4d8529f4671472589497cb12468606470989a190ef1103fc3571d0fb7737e979",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "catalog-Cs3U8xJB.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "2dcc20d12a182188e8b154ca9d0ffa1dc3cbf2014d5bc08aa4078da22cfc6e9b",
+        "prior580Sha256": "2dcc20d12a182188e8b154ca9d0ffa1dc3cbf2014d5bc08aa4078da22cfc6e9b",
+        "liveSha256": "2dcc20d12a182188e8b154ca9d0ffa1dc3cbf2014d5bc08aa4078da22cfc6e9b",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "clouds-CGGXURlv.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "4c19e442ba9c21d5bd28c606974ecbafa8265c97e1e3b478c75719e296d3b7fd",
+        "prior580Sha256": "4c19e442ba9c21d5bd28c606974ecbafa8265c97e1e3b478c75719e296d3b7fd",
+        "liveSha256": "4c19e442ba9c21d5bd28c606974ecbafa8265c97e1e3b478c75719e296d3b7fd",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "creatures-z4zMnOp4.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "5f6f373d7f4604e198a4cde08164af0d17cd81ce4cb25da9ba29b2392726787d",
+        "prior580Sha256": "5f6f373d7f4604e198a4cde08164af0d17cd81ce4cb25da9ba29b2392726787d",
+        "liveSha256": "5f6f373d7f4604e198a4cde08164af0d17cd81ce4cb25da9ba29b2392726787d",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "drainage-worker-Bp34AJ1h.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "08b032e56f2cb5268e8c24825461f864a558c1b4309c1663a3526cf0c31a0439",
+        "prior580Sha256": "08b032e56f2cb5268e8c24825461f864a558c1b4309c1663a3526cf0c31a0439",
+        "liveSha256": "08b032e56f2cb5268e8c24825461f864a558c1b4309c1663a3526cf0c31a0439",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "forest-census-worker-CpdaZJHJ.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "53c1ba117e7a0415f87cdd781dd3ba6f92b356844990c9a072b9706986ddfd89",
+        "prior580Sha256": "53c1ba117e7a0415f87cdd781dd3ba6f92b356844990c9a072b9706986ddfd89",
+        "liveSha256": "53c1ba117e7a0415f87cdd781dd3ba6f92b356844990c9a072b9706986ddfd89",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "ground-walker-B9BC5jac.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "34896728731d272dad5585fc81a68e4151abdc0db35b8e5396f1cd25830202ed",
+        "prior580Sha256": "34896728731d272dad5585fc81a68e4151abdc0db35b8e5396f1cd25830202ed",
+        "liveSha256": "34896728731d272dad5585fc81a68e4151abdc0db35b8e5396f1cd25830202ed",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "guide-time-JsQuz3LV.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "a3f69a8d03bffaa8bb7ce7d620691aef42fa7ffed203adb6059286f6b7feafea",
+        "prior580Sha256": "a3f69a8d03bffaa8bb7ce7d620691aef42fa7ffed203adb6059286f6b7feafea",
+        "liveSha256": "a3f69a8d03bffaa8bb7ce7d620691aef42fa7ffed203adb6059286f6b7feafea",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "planet-population-worker-DPoR_B8X.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "e90f8ed0b32b5e6b763662ed37ce2e92727aff1eaa8997cc593dd781669d3ce1",
+        "prior580Sha256": "e90f8ed0b32b5e6b763662ed37ce2e92727aff1eaa8997cc593dd781669d3ce1",
+        "liveSha256": "e90f8ed0b32b5e6b763662ed37ce2e92727aff1eaa8997cc593dd781669d3ce1",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "planet-worker-BpRIhApT.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "63244cb31d54ccd384482ece789259457c6bd6badc186017dff6b65669f91516",
+        "prior580Sha256": "63244cb31d54ccd384482ece789259457c6bd6badc186017dff6b65669f91516",
+        "liveSha256": "63244cb31d54ccd384482ece789259457c6bd6badc186017dff6b65669f91516",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "rapier-physics-iRel_T-y.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "73f8b5fe1e32ae64e8fde0354f3d0e9fc04b9ffa71c043d5b1ca93f786ff8679",
+        "prior580Sha256": "73f8b5fe1e32ae64e8fde0354f3d0e9fc04b9ffa71c043d5b1ca93f786ff8679",
+        "liveSha256": "73f8b5fe1e32ae64e8fde0354f3d0e9fc04b9ffa71c043d5b1ca93f786ff8679",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "river-worker-B6OWmDg5.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "9d5d876dffb667585760e15ee4accb5d08503e2b2e42776240c0a6ba66c25d0d",
+        "prior580Sha256": "9d5d876dffb667585760e15ee4accb5d08503e2b2e42776240c0a6ba66c25d0d",
+        "liveSha256": "9d5d876dffb667585760e15ee4accb5d08503e2b2e42776240c0a6ba66c25d0d",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "three.core-DYul8iZ1.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "bcc2dd17f1a58cfcb96b48f382a6f24a25f46a5f0e36ac02e5415e108161dc69",
+        "prior580Sha256": "bcc2dd17f1a58cfcb96b48f382a6f24a25f46a5f0e36ac02e5415e108161dc69",
+        "liveSha256": "bcc2dd17f1a58cfcb96b48f382a6f24a25f46a5f0e36ac02e5415e108161dc69",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "three.module-NATEk4NP.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "41530d4cf5b954f9f521b2ce84b45236e9bf9be2f3ff6746e3ff9302d002c96e",
+        "prior580Sha256": "41530d4cf5b954f9f521b2ce84b45236e9bf9be2f3ff6746e3ff9302d002c96e",
+        "liveSha256": "41530d4cf5b954f9f521b2ce84b45236e9bf9be2f3ff6746e3ff9302d002c96e",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "time-nav-zNzZqn8I.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "2ebe545821f1a2dc034464507d9d880a6fcc77777877241395ec681263507093",
+        "prior580Sha256": "2ebe545821f1a2dc034464507d9d880a6fcc77777877241395ec681263507093",
+        "liveSha256": "2ebe545821f1a2dc034464507d9d880a6fcc77777877241395ec681263507093",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "volumetric-clouds-8SQVk-_2.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "e4e9e5987587ae4f255e0d3a3dfc791863707150a6bcb18adabf8f4518ac601d",
+        "prior580Sha256": "e4e9e5987587ae4f255e0d3a3dfc791863707150a6bcb18adabf8f4518ac601d",
+        "liveSha256": "e4e9e5987587ae4f255e0d3a3dfc791863707150a6bcb18adabf8f4518ac601d",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "worker-Df1A3ASA.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "f224306858e7173b0104913d8a0ab9d025a5fbfd63802fabe2f27494b5e21db0",
+        "prior580Sha256": "f224306858e7173b0104913d8a0ab9d025a5fbfd63802fabe2f27494b5e21db0",
+        "liveSha256": "f224306858e7173b0104913d8a0ab9d025a5fbfd63802fabe2f27494b5e21db0",
+        "distMatch": true,
+        "prior580Match": true
+      },
+      {
+        "name": "world-time-C2zk4ykx.js",
+        "status": 200,
+        "contentType": "application/javascript",
+        "distSha256": "2043fc7fe4472a29415bd9f2f3e3218d4adb462c158ea500b709d72c750cf5d2",
+        "prior580Sha256": "2043fc7fe4472a29415bd9f2f3e3218d4adb462c158ea500b709d72c750cf5d2",
+        "liveSha256": "2043fc7fe4472a29415bd9f2f3e3218d4adb462c158ea500b709d72c750cf5d2",
+        "distMatch": true,
+        "prior580Match": true
+      }
+    ]
+  },
+  "guides": {
+    "count": 9,
+    "pages": [
+      {
+        "path": "guide/determinism.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Determinism · Universe Atlas Guide",
+        "liveTitle": "Determinism · Universe Atlas Guide",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/index.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Overview · Universe Atlas Guide",
+        "liveTitle": "Overview · Universe Atlas Guide",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/life.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Biospheres & life · Universe Atlas Guide",
+        "liveTitle": "Biospheres & life · Universe Atlas Guide",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/publishing.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Architecture & publishing · Universe Atlas Guide",
+        "liveTitle": "Architecture & publishing · Universe Atlas Guide",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/terrain.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Terrain generation · Universe Atlas Guide",
+        "liveTitle": "Terrain generation · Universe Atlas Guide",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/time.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Time & history · Universe Atlas Guide",
+        "liveTitle": "Time & history · Universe Atlas Guide",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/travel.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Travel & controls · Universe Atlas Guide",
+        "liveTitle": "Travel & controls · Universe Atlas Guide",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/universe.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Universe structure · Universe Atlas Guide",
+        "liveTitle": "Universe structure · Universe Atlas Guide",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/water-atmosphere.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Water & atmosphere · Universe Atlas Guide",
+        "liveTitle": "Water & atmosphere · Universe Atlas Guide",
+        "bodyMatchesDist": true,
+        "valid": true
+      }
+    ],
+    "localReferenceCount": 353
+  },
+  "documents": {
+    "sources": [
+      "docs/canopy-census-design-2026-09-28.md",
+      "docs/canopy-foundation-2026-09-28.md",
+      "docs/canopy-host-review-assessment-2026-09-28.md",
+      "docs/canopy-integration-contract-2026-09-28.md",
+      "docs/canopy-runtime-integration-2026-09-28.md",
+      "docs/canopy-water-review-assessment-2026-09-28.md",
+      "docs/canopy-water-validity-design-2026-09-28.md",
+      "docs/deployment-580936f-2026-09-28.md",
+      "docs/desktop-realism-validation-2026-09-28.md",
+      "docs/opus-5.5-canopy-host-review-2026-09-28.md",
+      "docs/opus-5.5-canopy-integration-review-2026-09-28.md",
+      "docs/opus-5.5-canopy-review-2026-09-28.md",
+      "docs/opus-5.5-canopy-water-review-2026-09-28.md",
+      "docs/opus-5.5-tree-author-v3-review-2026-09-28.md",
+      "docs/terrain-water-refresh-2026-09-28.md",
+      "docs/tree-asset-candidate-2026-09-28.md",
+      "docs/tree-authoring-next-increment-2026-09-28.md",
+      "docs/tree-authoring-review-assessment-2026-09-28.md",
+      "docs/tree-authoring-v3-2026-09-28.md",
+      "docs/tree-authoring-v4-2026-09-28.md",
+      "docs/tree-species-asset-contract-2026-09-28.md",
+      "test-results/acceptance-4c776b8/README.md",
+      "test-results/acceptance-98556a7/README.md"
+    ],
+    "linkedReferenceCount": 125,
+    "receipt": {
+      "path": "test-results/deploy-580936f/live-deployment.json",
+      "status": 200,
+      "previousCommit": "580936f503504a6d93b10e2806a9ad55ec750bdc",
+      "valid": true
+    },
+    "directReports": [
+      "test-results/deploy-580936f/canopy-flight/report.json",
+      "test-results/deploy-580936f/canopy-water-date-seek/report.json",
+      "test-results/deploy-580936f/desktop-rendering/report.json",
+      "test-results/deploy-580936f/guide/guide-report.json"
+    ]
+  },
+  "linkedResources": {
+    "count": 154,
+    "validCount": 154,
+    "resources": [
+      {
+        "path": "assets/theme-_FAD6hYY.css",
+        "froms": [
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/css",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/index.html",
+        "froms": [
+          "guide/determinism.html",
+          "guide/determinism.html",
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/publishing.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "index.html",
+        "froms": [
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/determinism.html",
+        "froms": [
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/index.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/time.html",
+        "froms": [
+          "guide/determinism.html",
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/universe.html",
+        "froms": [
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/terrain.html",
+        "froms": [
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/water-atmosphere.html",
+        "froms": [
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/life.html",
+        "froms": [
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/travel.html",
+        "froms": [
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "guide/publishing.html",
+        "froms": [
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "biosphere-lab.html",
+        "froms": [
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "creature-lab.html",
+        "froms": [
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "biome-lab.html",
+        "froms": [
+          "guide/determinism.html",
+          "guide/index.html",
+          "guide/life.html",
+          "guide/life.html",
+          "guide/publishing.html",
+          "guide/terrain.html",
+          "guide/time.html",
+          "guide/travel.html",
+          "guide/universe.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/time-and-coordinates-contract.md",
+        "froms": [
+          "guide/determinism.html",
+          "guide/time.html",
+          "guide/universe.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/deterministic-temporal-universe-design-2026-09-23.md",
+        "froms": [
+          "guide/determinism.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/terrain-water-refresh-2026-09-28.md",
+        "froms": [
+          "guide/index.html",
+          "guide/index.html",
+          "guide/life.html",
+          "docs/canopy-host-review-assessment-2026-09-28.md",
+          "docs/canopy-host-review-assessment-2026-09-28.md",
+          "docs/canopy-runtime-integration-2026-09-28.md",
+          "docs/deployment-580936f-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/canopy-foundation-2026-09-28.md",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html",
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/forest-canopy-census-481e693/README.md",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html",
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/forest-canopy-census-8c5ff7f/README.md",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html",
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/forest-impostor/report.json",
+        "froms": [
+          "guide/index.html"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/forest-impostor-field/report.json",
+        "froms": [
+          "guide/index.html"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/canopy-runtime-integration-2026-09-28.md",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html",
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-integration-review-2026-09-28.md",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html",
+          "guide/life.html",
+          "docs/canopy-integration-contract-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/acceptance-98556a7/README.md",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html",
+          "docs/canopy-host-review-assessment-2026-09-28.md",
+          "docs/terrain-water-refresh-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-water-date-seek-98556a7/report.json",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html",
+          "docs/canopy-host-review-assessment-2026-09-28.md",
+          "docs/canopy-runtime-integration-2026-09-28.md",
+          "docs/terrain-water-refresh-2026-09-28.md",
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/report.json",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html",
+          "docs/canopy-host-review-assessment-2026-09-28.md",
+          "docs/canopy-runtime-integration-2026-09-28.md",
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/README.md",
+        "froms": [
+          "guide/index.html",
+          "docs/canopy-runtime-integration-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/canopy-host-review-assessment-2026-09-28.md",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html",
+          "docs/canopy-runtime-integration-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/canopy-water-validity-design-2026-09-28.md",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html",
+          "docs/canopy-host-review-assessment-2026-09-28.md",
+          "docs/canopy-runtime-integration-2026-09-28.md",
+          "docs/deployment-580936f-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/canopy-water-review-assessment-2026-09-28.md",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html",
+          "docs/canopy-host-review-assessment-2026-09-28.md",
+          "docs/canopy-runtime-integration-2026-09-28.md",
+          "docs/canopy-water-validity-design-2026-09-28.md",
+          "docs/deployment-580936f-2026-09-28.md",
+          "docs/opus-5.5-canopy-water-review-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/forest-selection-transfer-2026-09-28.md",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/opus-5.5-transfer-review-2026-09-28.md",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/tree-asset-candidate-2026-09-28.md",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html",
+          "guide/life.html",
+          "docs/tree-authoring-next-increment-2026-09-28.md",
+          "docs/tree-authoring-v3-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/desktop-realism-implementation-plan-2026-09-27.md",
+        "froms": [
+          "guide/index.html",
+          "guide/life.html",
+          "guide/terrain.html",
+          "docs/tree-authoring-v3-2026-09-28.md",
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "README.md",
+        "froms": [
+          "guide/index.html",
+          "guide/publishing.html",
+          "guide/travel.html",
+          "guide/universe.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/temporal-universe-implementation-2026-09-23.md",
+        "froms": [
+          "guide/index.html",
+          "guide/publishing.html",
+          "guide/time.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/forest-impostor-experiment-2026-09-28.md",
+        "froms": [
+          "guide/life.html",
+          "docs/canopy-census-design-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/deploy-e8a848d/live-deployment.json",
+        "froms": [
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/forest-transfer-23de0b9/README.md",
+        "froms": [
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/desktop-render-profiling.md",
+        "froms": [
+          "guide/life.html",
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/tree-authoring-v4-2026-09-28.md",
+        "froms": [
+          "guide/life.html",
+          "guide/life.html",
+          "docs/tree-authoring-next-increment-2026-09-28.md",
+          "docs/tree-authoring-next-increment-2026-09-28.md",
+          "docs/tree-authoring-next-increment-2026-09-28.md",
+          "docs/tree-authoring-review-assessment-2026-09-28.md",
+          "docs/tree-authoring-v3-2026-09-28.md",
+          "docs/tree-species-asset-contract-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/tree-authoring-review-assessment-2026-09-28.md",
+        "froms": [
+          "guide/life.html",
+          "docs/tree-authoring-v3-2026-09-28.md",
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "assets/briefs/temperate-branching-tree-v1.json",
+        "froms": [
+          "guide/life.html",
+          "guide/life.html",
+          "docs/tree-authoring-next-increment-2026-09-28.md",
+          "docs/tree-species-asset-contract-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/tree-species-asset-contract-2026-09-28.md",
+        "froms": [
+          "guide/life.html",
+          "guide/life.html",
+          "docs/tree-asset-candidate-2026-09-28.md",
+          "docs/tree-authoring-next-increment-2026-09-28.md",
+          "docs/tree-authoring-v3-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/flora-recipe-cache-2026-09-28.md",
+        "froms": [
+          "guide/life.html",
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-review-2026-09-28.md",
+        "froms": [
+          "guide/life.html",
+          "guide/life.html",
+          "docs/canopy-foundation-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/desktop-rendering-validation-2026-09-28.md",
+        "froms": [
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/population-continuity-implementation-2026-09-27.md",
+        "froms": [
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/continuous-planet-detail.md",
+        "froms": [
+          "guide/life.html",
+          "guide/terrain.html",
+          "guide/travel.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/canopy-census-design-2026-09-28.md",
+        "froms": [
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/opus-5.5-census-design-review-2026-09-28.md",
+        "froms": [
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/opus-5.5-census-implementation-review-2026-09-28.md",
+        "froms": [
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/forest-census-protocol-review/report.json",
+        "froms": [
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/desktop-rendering-stage-c-2026-09-28.md",
+        "froms": [
+          "guide/life.html",
+          "guide/terrain.html",
+          "guide/water-atmosphere.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/tree-authoring-v3-2026-09-28.md",
+        "froms": [
+          "guide/life.html",
+          "docs/tree-authoring-next-increment-2026-09-28.md",
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/desktop-realism-assessment-2026-09-27.md",
+        "froms": [
+          "guide/life.html",
+          "guide/terrain.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/opus-5.5-desktop-realism-review-2026-09-27.md",
+        "froms": [
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/biosphere-lab-implementation-spec.md",
+        "froms": [
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/creature-lab-implementation-spec.md",
+        "froms": [
+          "guide/life.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/formation-and-life-integration-2026-09-23.md",
+        "froms": [
+          "guide/life.html",
+          "guide/time.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "build-info.json",
+        "froms": [
+          "guide/publishing.html"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/stable-shores.md",
+        "froms": [
+          "guide/terrain.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/walking-and-time.md",
+        "froms": [
+          "guide/terrain.html",
+          "guide/travel.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/terrain-v2-first-slice-spec.md",
+        "froms": [
+          "guide/terrain.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/surface-materials-and-survey.md",
+        "froms": [
+          "guide/terrain.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "assets/guide-time-JsQuz3LV.js",
+        "froms": [
+          "guide/time.html"
+        ],
+        "status": 200,
+        "contentType": "application/javascript",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "assets/three.core-DYul8iZ1.js",
+        "froms": [
+          "guide/time.html"
+        ],
+        "status": 200,
+        "contentType": "application/javascript",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "assets/world-time-C2zk4ykx.js",
+        "froms": [
+          "guide/time.html"
+        ],
+        "status": 200,
+        "contentType": "application/javascript",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "assets/catalog-Cs3U8xJB.js",
+        "froms": [
+          "guide/time.html"
+        ],
+        "status": 200,
+        "contentType": "application/javascript",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "assets/biosphere-model-BxOjjDxI.js",
+        "froms": [
+          "guide/time.html"
+        ],
+        "status": 200,
+        "contentType": "application/javascript",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "assets/time-nav-zNzZqn8I.js",
+        "froms": [
+          "guide/time.html"
+        ],
+        "status": 200,
+        "contentType": "application/javascript",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/background-hydrology-travel-2026-09-28.md",
+        "froms": [
+          "guide/travel.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/planet-local-rendering-design.md",
+        "froms": [
+          "guide/travel.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/exploration-corrections.md",
+        "froms": [
+          "guide/travel.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/planetary-orbit-validation.md",
+        "froms": [
+          "guide/travel.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/star-visibility-and-transitions.md",
+        "froms": [
+          "guide/travel.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/planetary-orbit-implementation.md",
+        "froms": [
+          "guide/universe.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "tests/cloud-comparison.html",
+        "froms": [
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/html",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/opus-5.5-rendering-review-2026-09-28.md",
+        "froms": [
+          "guide/water-atmosphere.html",
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/planet-rendering-validation-2026-09-27.md",
+        "froms": [
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/realistic-clouds-research-2026-09-27.md",
+        "froms": [
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/drainage-and-atmospheric-flight.md",
+        "froms": [
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/physical-rivers-and-ground-detail.md",
+        "froms": [
+          "guide/water-atmosphere.html"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/forest-census-review-fixes-2026-09-28.md",
+        "froms": [
+          "docs/canopy-census-design-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/forest-selection-cache-2026-09-28.md",
+        "froms": [
+          "docs/canopy-foundation-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-host-review-2026-09-28.md",
+        "froms": [
+          "docs/canopy-host-review-assessment-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-flight-post-alpha-fix-rerun/report.json",
+        "froms": [
+          "docs/canopy-runtime-integration-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-flight-post-alpha-fix-rerun/README.md",
+        "froms": [
+          "docs/canopy-runtime-integration-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/canopy-flight-final/report.json",
+        "froms": [
+          "docs/canopy-runtime-integration-2026-09-28.md",
+          "test-results/acceptance-4c776b8/README.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/acceptance-4c776b8/desktop-rendering-profile/report.json",
+        "froms": [
+          "docs/canopy-runtime-integration-2026-09-28.md",
+          "test-results/acceptance-4c776b8/README.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/opus-5.5-canopy-water-review-2026-09-28.md",
+        "froms": [
+          "docs/canopy-water-review-assessment-2026-09-28.md",
+          "docs/deployment-580936f-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-water-worker/report.json",
+        "froms": [
+          "docs/canopy-water-validity-design-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-water-host/report.json",
+        "froms": [
+          "docs/canopy-water-validity-design-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-water-validity-design/prototype.mjs",
+        "froms": [
+          "docs/canopy-water-validity-design-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/javascript",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-water-validity-design/water-300.json",
+        "froms": [
+          "docs/canopy-water-validity-design-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-water-validity-design/water-3000.json",
+        "froms": [
+          "docs/canopy-water-validity-design-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "tests/forest-water-validity.test.mjs",
+        "froms": [
+          "docs/canopy-water-validity-design-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/javascript",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-water-validity-design/river-probe.mjs",
+        "froms": [
+          "docs/canopy-water-validity-design-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/javascript",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-water-validity-design/river-water-patches.json",
+        "froms": [
+          "docs/canopy-water-validity-design-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/deploy-580936f/live-deployment.json",
+        "froms": [
+          "docs/deployment-580936f-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/deploy-580936f/canopy-flight/report.json",
+        "froms": [
+          "docs/deployment-580936f-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/deploy-580936f/canopy-water-date-seek/report.json",
+        "froms": [
+          "docs/deployment-580936f-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/deploy-580936f/desktop-rendering/report.json",
+        "froms": [
+          "docs/deployment-580936f-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/deploy-580936f/guide/guide-report.json",
+        "froms": [
+          "docs/deployment-580936f-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/desktop-realism-26b41f5/forest-hardware/report.json",
+        "froms": [
+          "docs/desktop-realism-validation-2026-09-28.md",
+          "docs/desktop-realism-validation-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "tests/desktop-forest-acceptance.browser.mjs",
+        "froms": [
+          "docs/desktop-realism-validation-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/javascript",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/desktop-realism-26b41f5/population-flight/report.json",
+        "froms": [
+          "docs/desktop-realism-validation-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/desktop-realism-26b41f5/forest-hardware/forest-warmed.png",
+        "froms": [
+          "docs/desktop-realism-validation-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/desktop-realism-26b41f5/forest-hardware/forest-turned.png",
+        "froms": [
+          "docs/desktop-realism-validation-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/deploy-a58ad07/live-deployment.json",
+        "froms": [
+          "docs/desktop-realism-validation-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-water-date-seek-c02ee95/failure.json",
+        "froms": [
+          "docs/terrain-water-refresh-2026-09-28.md",
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "tests/terrain-water-refresh.test.mjs",
+        "froms": [
+          "docs/terrain-water-refresh-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/javascript",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/terrain-water-refresh/baseline-fail.txt",
+        "froms": [
+          "docs/terrain-water-refresh-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/plain",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/terrain-water-refresh/fixed-pass.txt",
+        "froms": [
+          "docs/terrain-water-refresh-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/plain",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/tree-authoring-next-increment-2026-09-28.md",
+        "froms": [
+          "docs/tree-asset-candidate-2026-09-28.md",
+          "docs/tree-authoring-v3-2026-09-28.md",
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v4/render-roundtrip.json",
+        "froms": [
+          "docs/tree-authoring-next-increment-2026-09-28.md",
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v3-review-2026-09-28.md",
+        "froms": [
+          "docs/tree-authoring-review-assessment-2026-09-28.md",
+          "docs/tree-authoring-v3-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "text/markdown",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "docs/opus-5.5-tree-author-v3-review-2026-09-28.metadata.json",
+        "froms": [
+          "docs/tree-authoring-review-assessment-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v4/repeat-audit.json",
+        "froms": [
+          "docs/tree-authoring-review-assessment-2026-09-28.md",
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v3/authoring-manifest.json",
+        "froms": [
+          "docs/tree-authoring-v3-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v3/validation.json",
+        "froms": [
+          "docs/tree-authoring-v3-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/render-sheet.png",
+        "froms": [
+          "docs/tree-authoring-v3-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/hero.png",
+        "froms": [
+          "docs/tree-authoring-v3-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/wire.png",
+        "froms": [
+          "docs/tree-authoring-v3-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960/authoring-manifest.json",
+        "froms": [
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960/validation.json",
+        "froms": [
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-repeat/authoring-manifest.json",
+        "froms": [
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790567076137/authoring-manifest.json",
+        "froms": [
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790567076137-repeat/authoring-manifest.json",
+        "froms": [
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v4/smoke-repeat.log",
+        "froms": [
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v4/physical-audit.log",
+        "froms": [
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v4/authoring-receipt.json",
+        "froms": [
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/render-sheet.png",
+        "froms": [
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/render-sheet.png",
+        "froms": [
+          "docs/tree-authoring-v4-2026-09-28.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "tests/canopy-water-date-seek.browser.mjs",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "application/javascript",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-water-date-seek-98556a7/water-minus-4500m.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-water-date-seek-98556a7/water--4475m-1.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-water-date-seek-98556a7/water--4500m-2.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-water-date-seek-c02ee95/failure.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/flight-near-ground.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/flight-turned.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/flight-lateral.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/walking-close.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/walking-turned.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/walking-lateral-300m.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/canopy-flight-98556a7/settled.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-98556a7/report.json",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-98556a7/near-ground-warmed.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-98556a7/cloud-aa-0.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-98556a7/cloud-aa-2.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-98556a7/cloud-aa-4.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-98556a7/cloud-aa-4-2560x1440.png",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "image/png",
+        "bodyMatchesDist": true,
+        "valid": true
+      },
+      {
+        "path": "test-results/desktop-rendering-profile-contended-98556a7/report.json",
+        "froms": [
+          "test-results/acceptance-98556a7/README.md"
+        ],
+        "status": 200,
+        "contentType": "application/json",
+        "bodyMatchesDist": true,
+        "valid": true
+      }
+    ]
+  },
+  "issues": []
+}

@@ -1,0 +1,72 @@
+{
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "checkedAt": "2026-09-28T03:55:36.0497993Z",
+  "liveBuild": {
+    "commit": "b36a398b34d78b46a3eaf201e7fef68901a7c80a",
+    "dirty": false,
+    "builtAt": "2026-09-28T03:51:22.373Z"
+  },
+  "localBuild": {
+    "commit": "b36a398b34d78b46a3eaf201e7fef68901a7c80a",
+    "dirty": false,
+    "builtAt": "2026-09-28T03:51:22.373Z"
+  },
+  "guide": {
+    "errors": [],
+    "internalDestinations": 77,
+    "deployedRuntimeChecked": true,
+    "report": "guide/guide-report.json",
+    "ok": true,
+    "chapters": 9,
+    "widths": [
+      1440,
+      390,
+      320
+    ]
+  },
+  "authoringDocuments": {
+    "resourceHashes": [
+      {
+        "localSha256": "03106aa36a720202c8b63062ed06d5f2aaf6add9e15dfe099ce42bbadf372c86",
+        "status": 200,
+        "path": "docs/tree-authoring-v4-2026-09-28.md",
+        "matches": true,
+        "remoteSha256": "03106aa36a720202c8b63062ed06d5f2aaf6add9e15dfe099ce42bbadf372c86",
+        "bytes": 4955
+      },
+      {
+        "localSha256": "77eb626607f8546835f075c23b00925a803b09f9f10cb9c2ce0ad03a489feb5f",
+        "status": 200,
+        "path": "docs/tree-authoring-review-assessment-2026-09-28.md",
+        "matches": true,
+        "remoteSha256": "77eb626607f8546835f075c23b00925a803b09f9f10cb9c2ce0ad03a489feb5f",
+        "bytes": 3420
+      },
+      {
+        "localSha256": "8028b6654a6dee32361cd3dfbc47d7005312d0147f894c9a2276351fdcf9b653",
+        "status": 200,
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/render-sheet.png",
+        "matches": true,
+        "remoteSha256": "8028b6654a6dee32361cd3dfbc47d7005312d0147f894c9a2276351fdcf9b653",
+        "bytes": 1302697
+      },
+      {
+        "localSha256": "29c0d2c47c09317791e1518fa2e966419ce46f6fbdc84ae8ed6b59d85f26b2e7",
+        "status": 200,
+        "path": "test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/render-sheet.png",
+        "matches": true,
+        "remoteSha256": "29c0d2c47c09317791e1518fa2e966419ce46f6fbdc84ae8ed6b59d85f26b2e7",
+        "bytes": 1303025
+      }
+    ],
+    "sources": [
+      "docs/tree-authoring-v4-2026-09-28.md",
+      "docs/tree-authoring-review-assessment-2026-09-28.md"
+    ],
+    "linkFailures": [],
+    "linkChecks": 21,
+    "report": "guide/v4-doc-links.json"
+  },
+  "screenshots": "guide/",
+  "result": "pass"
+}
