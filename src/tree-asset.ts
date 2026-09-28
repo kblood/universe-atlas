@@ -3,6 +3,9 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {phaseFromPeriod} from './world-time.ts';
 import {installLeafTransmission,type LeafTransmissionOptions} from './tree-leaf-transmission.ts';
 import {InstanceUpdateRanges} from './instance-update-ranges.ts';
+import {installTreeForestCoverage} from './tree-forest-coverage.ts';
+import {quantizeForestCoverage} from './forest-coverage.ts';
+import {attachLocalAerial} from './local-aerial-perspective.ts';
 
 /** Experimental author-6 adapter. Assets are supplied explicitly; this does not
  * replace the canonical forest or invent a second species catalogue. */
@@ -96,9 +99,11 @@ function deform(material:THREE.Material,phase:{value:number}){
   material.customProgramCacheKey=()=> 'atlas-tree-physical-1';
 }
 export type TreeAssetFamily=Awaited<ReturnType<typeof loadTreeAssetFamily>>;
-export type TreeAssetOptions={foliageCoverage?:'mask'|'hash';leafTransmission?:LeafTransmissionOptions};
+export type TreeAssetOptions={foliageCoverage?:'mask'|'hash';leafTransmission?:LeafTransmissionOptions;forestCoverage?:boolean;
+  localAerial?:{planet:THREE.Object3D;frame:THREE.Object3D;radiusM:number;sun:{value:THREE.Vector3};enabled:{value:number};eyeHeight:{value:number}}};
 export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){
   if(options.foliageCoverage!==undefined&&!['mask','hash'].includes(options.foliageCoverage))throw new Error('Unsupported foliage coverage mode');
+  if(options.forestCoverage!==undefined&&typeof options.forestCoverage!=='boolean')throw new Error('Invalid forest coverage option');
   const prepared=prepareTreeLODPair(lod0,lod1),loader=new GLTFLoader();
   const loaded:THREE.Group[]=[];
   const textures=new Set<THREE.Texture>(),materials=new Set<THREE.Material>(),geometries=new Set<THREE.BufferGeometry>();
@@ -127,12 +132,32 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     }
     const phase={value:0};
     for(const material of materials)deform(material,phase);
+    if(options.forestCoverage)for(const material of materials)installTreeForestCoverage(material);
+    if(options.localAerial){
+      const air=options.localAerial;
+      // Both LOD batches have identity transforms in the forest's retained
+      // frame. Their shared materials therefore use identical air uniforms.
+      // Install before transmission, which guards the final material hook.
+      for(const mesh of lods[0])attachLocalAerial(mesh,air.planet,air.radiusM,air.sun,air.enabled,air.eyeHeight,undefined,air.frame);
+    }
+    // Conservative origin-centred sphere over both LODs, every supported
+    // skeleton height and rigid leaf-wind angle. Used before CPU culling.
+    let maxRadiusM=0;
+    for(const level of lods)for(const mesh of level){
+      const p=mesh.geometry.getAttribute('position'),pivot=mesh.geometry.getAttribute('_leaf_pivot'),branch=mesh.geometry.getAttribute('_branch_level');
+      for(let i=0;i<p.count;i++){
+        const radius=branch.getX(i)>3.5
+          ? Math.hypot(pivot.getX(i),pivot.getY(i),pivot.getZ(i))*22/TREE_REFERENCE_HEIGHT_M+Math.hypot(p.getX(i)-pivot.getX(i),p.getY(i)-pivot.getY(i),p.getZ(i)-pivot.getZ(i))
+          : Math.hypot(p.getX(i),p.getY(i),p.getZ(i))*22/TREE_REFERENCE_HEIGHT_M;
+        maxRadiusM=Math.max(maxRadiusM,radius);
+      }
+    }
     // Compose only after wind. Both LODs share this one foliage material;
     // bark and all custom shadow materials retain their previous lighting.
     const leafTransmission=options.leafTransmission===undefined?null:installLeafTransmission(lods[0][1].material,options.leafTransmission);
     let disposed=false,activeBatches=0;
     return {
-      lods,textures,leafTransmission,embeddedTextureBytes:prepared.embeddedTextureBytes,
+      lods,textures,leafTransmission,maxRadiusM,forestCoverage:!!options.forestCoverage,embeddedTextureBytes:prepared.embeddedTextureBytes,
       setDate(date:bigint){leafTransmission?.assertInstalled();phase.value=treeWindPhase(date);},
       createBatch(lod:0|1,capacity:number){
         if(disposed)throw new Error('Tree family is disposed');
@@ -143,11 +168,19 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
         // its first upload; hidden batches keep their pending ranges intact.
         tree.onUpload(()=>tree.clearUpdateRanges());
         const treeUpdates=new InstanceUpdateRanges();
+        const forest=options.forestCoverage?new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2).setUsage(THREE.DynamicDrawUsage):null;
+        const forestUpdates=new InstanceUpdateRanges();
+        if(forest){
+          for(let i=0;i<capacity;i++)forest.setXY(i,1,0);
+          forest.onUpload(()=>forest.clearUpdateRanges());
+        }
         const matrixUpdates=[new InstanceUpdateRanges(),new InstanceUpdateRanges()];
         const colorUpdates=[new InstanceUpdateRanges(),new InstanceUpdateRanges()];
-        const meshes=lods[lod].map(source=>{
+        const meshes=lods[lod].map((source,part)=>{
           const geometry=source.geometry.clone();geometry.setAttribute('instanceTree',tree);
+          if(forest)geometry.setAttribute('instanceForest',forest);
           const mesh=new THREE.InstancedMesh(geometry,source.material,capacity);mesh.count=0;
+          if(options.localAerial)mesh.onBeforeRender=lods[0][part].onBeforeRender;
           mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.castShadow=true;mesh.receiveShadow=true;
           mesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3).fill(1),3).setUsage(THREE.DynamicDrawUsage);
           mesh.instanceMatrix.onUpload(()=>mesh.instanceMatrix.clearUpdateRanges());
@@ -158,7 +191,9 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
           const common={map:source.material.map,alphaTest:source.material.alphaTest,alphaHash:source.material.alphaHash,side:source.material.side};
           mesh.customDepthMaterial=new THREE.MeshDepthMaterial({...common,depthPacking:THREE.RGBADepthPacking});
           mesh.customDistanceMaterial=new THREE.MeshDistanceMaterial(common);
-          deform(mesh.customDepthMaterial,phase);deform(mesh.customDistanceMaterial,phase);group.add(mesh);return mesh;
+          deform(mesh.customDepthMaterial,phase);deform(mesh.customDistanceMaterial,phase);
+          if(options.forestCoverage){installTreeForestCoverage(mesh.customDepthMaterial);installTreeForestCoverage(mesh.customDistanceMaterial);}
+          group.add(mesh);return mesh;
         });
         activeBatches++;let batchDisposed=false;
         return {group,meshes,
@@ -178,6 +213,9 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
             const tau=2*Math.PI;phaseOffset=((phaseOffset%tau)+tau)%tau;
             const scale=Math.fround(heightM/TREE_REFERENCE_HEIGHT_M),offset=Math.fround(phaseOffset);
             const newSlot=index===meshes[0].count;
+            if(newSlot&&forest&&(forest.getX(index)!==1||forest.getY(index)!==0)){
+              forest.setXY(index,1,0);forestUpdates.include(index,2);forestUpdates.flush(forest);
+            }
             if(tree.getX(index)!==scale||tree.getY(index)!==offset){
               tree.setXY(index,scale,offset);treeUpdates.include(index,2);treeUpdates.flush(tree);
             }
@@ -206,6 +244,11 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
                 attribute.setXYZ(index,...color);colorUpdates[part].include(index,3);colorUpdates[part].flush(attribute);
               }
             }
+          },
+          setCoverage(index:number,coverage:number,seed:number){
+            if(batchDisposed||!forest||!Number.isInteger(index)||index<0||index>=meshes[0].count||!Number.isFinite(coverage)||coverage<0||coverage>1||!Number.isInteger(seed)||seed<0||seed>255)throw new Error('Invalid canonical forest coverage');
+            const value=quantizeForestCoverage(coverage)/256;
+            if(forest.getX(index)!==value||forest.getY(index)!==seed){forest.setXY(index,value,seed);forestUpdates.include(index,2);forestUpdates.flush(forest);}
           },
           dispose(){if(batchDisposed)return;batchDisposed=true;activeBatches--;for(const mesh of meshes){mesh.geometry.dispose();mesh.customDepthMaterial?.dispose();mesh.customDistanceMaterial?.dispose();mesh.dispose();}group.clear();group.removeFromParent();},
         };

@@ -1,10 +1,41 @@
 import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {installLeafTransmission} from '../src/tree-leaf-transmission.ts';
+import {installTreeForestCoverage} from '../src/tree-forest-coverage.ts';
 import {createServer} from 'vite';
 const vite=await createServer({configFile:false,optimizeDeps:{noDiscovery:true},server:{middlewareMode:true,ws:false},appType:'custom'});
 const {localAerialReference,localAerialGLSL,attachLocalAerial}=await vite.ssrLoadModule('/src/local-aerial-perspective.ts');
 after(()=>vite.close());
+
+test('shared tree LOD materials use the explicit retained frame and compose before leaf transmission',()=>{
+  const planet=new THREE.Group(),frame=new THREE.Group(),radius=6e6;
+  planet.scale.setScalar(radius);planet.add(frame);frame.position.set(.01,.02,1);
+  const material=new THREE.MeshStandardMaterial({side:THREE.DoubleSide,metalness:0});
+  const source=new THREE.Mesh(new THREE.BoxGeometry(),material);
+  source.position.set(999,999,999); // Source is not a rendered scene object.
+  installTreeForestCoverage(material);
+  const uniforms=attachLocalAerial(source,planet,radius,{value:new THREE.Vector3(1,0,0)},
+    {value:1},{value:120},undefined,frame);
+  const transmission=installLeafTransmission(material,{factor:.35});
+  const shader={uniforms:{},vertexShader:THREE.ShaderLib.standard.vertexShader,fragmentShader:THREE.ShaderLib.standard.fragmentShader};
+  material.onBeforeCompile(shader,{});transmission.assertInstalled();
+  for(const code of ['atlasApplyLocalAir','atlasForestLevel','atlasLeafTransmission'])assert.ok(shader.fragmentShader.includes(code));
+  const camera=new THREE.PerspectiveCamera();camera.position.set(0,0,radius+120);camera.updateMatrixWorld();
+  for(const offset of [.01,.02]){
+    frame.position.x=offset;planet.updateMatrixWorld(true);
+    for(let lod=0;lod<2;lod++){
+      const mesh=new THREE.InstancedMesh(source.geometry,material,1);mesh.onBeforeRender=source.onBeforeRender;
+      frame.add(mesh);planet.updateMatrixWorld(true);
+      mesh.onBeforeRender({},new THREE.Scene(),camera,mesh.geometry,material,null);
+      assert.ok(Math.abs(uniforms.atlasAirObjectToPlanet.value.elements[12]-offset)<1e-12);
+      assert.ok(Math.abs(uniforms.atlasAirObjectToPlanet.value.elements[14]-1)<1e-12);
+      assert.equal(uniforms.atlasAirMetresPerViewUnit.value,1);
+      frame.remove(mesh);mesh.dispose();
+    }
+  }
+  source.geometry.dispose();material.dispose();
+});
 test('zero distance and airless surfaces preserve close material response',()=>{
   const light=[.0001,.1,.5];
   assert.deepEqual(localAerialReference(light,0,1,0,1),light);

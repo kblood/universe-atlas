@@ -1,0 +1,1216 @@
+FOLLOW-UP review. Initial review found mid-session slot gaps and malformed catalogue propagation: fixed by ordered initialization before slot churn and asset-only guarded catalogue validation, 26 focused CPU forest tests pass. New atmosphere integration needs review: options.localAerial injects planet/shared retained frame + sun/eyeHeight/enabled uniforms from PlanetRenderer. installLocalAerial on two source materials BEFORE leaf transmission, batches share source material callback but use explicit forest frame (all batch mesh/group transforms identity). Source meshes are not rendered. Shared uniform values therefore match for both LODs; callback updates retained frame each draw. CPU test covers composition+frame rebase. Check actual runtime correctness and missing guards. Previous review claimed thousands updateRanges from immediate flush, but InstanceUpdateRanges merges existing pending ranges and caps them to8, inspect supplied helper before repeating. Per-call CPU work remains distinct from actual GL transfer count. Real GPU game test ongoing.
+
+Review this experimental integration of existing EZ-Tree-derived GLBs into the ACTUAL Atlas planetary forest. Genuine Opus 5.5 source review, no tools. Prioritize concrete correctness/performance/lifecycle defects, <=900 words. This is a DEV-only explicitly loaded prototype, NOT visual acceptance or final species asset adoption. Main forwards already dated tree species and signed BigInt world time; no second life catalogue. PlanetForest retains canonical placement IDs, population heights 10–22m, old near/far ownership and slot reconciliation. Detailed family currently covers branching trees only; spire/unsupported heights/XR retain legacy geometry. The single geometry family is a labelled proxy: recipe height/palette/topology not yet adopted, far legacy canopy mismatches silhouette and final shadows/lighting still unfinished. Asset loading should be atomic, cancellable, leak-free, preserve old family on errors. New coverage hook composes after wind and before optional leaf transmission, all color/depth/distance passes. Sparse uploads retained. New conservative root-centred bound must cover all LODs, supported heights and rigid wind. Tests are in progress; do not assume passing. Check slot churn/truncation/reload/rebase, no gaps, coverage/ownership holes/double drawing, shader feature composition, async race/disposal, date/species churn, bounds. Distinguish blocking bugs from already declared follow-on visual work. Caller diff follows:
+diff --git a/src/main.ts b/src/main.ts
+index e8bd775..f636a51 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -287,6 +287,7 @@ function lifeGateContext(sys: StarSystem, body: Body, t: Ns): LifeGateContext |
+       value = {
+         tMyr: planetAgeMyr(entry.lc, t),
+         floraStage: stage, floraAvailableKinds: floraKindsFromSpecies(bio.species),
++        treeSpecies: bio.species.filter(s=>s.kind==='tree'),
+         faunaStage: stage, faunaAvailableArchetypes: faunaArchetypesFromSpecies(bio.species),
+         faunaSpecies: bio.species.filter((s): s is Species & { creature: NonNullable<Species['creature']> } => !!s.creature)
+           .map(s => ({ id: s.id, creature: s.creature })),
+@@ -5204,6 +5205,12 @@ async function boot() {
+ // Diagnostics and an explicit rendering freeze used by browser acceptance tests.
+ Object.defineProperty(window, "__atlas", {
+   value: {
++    async loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:import('./tree-asset.ts').TreeAssetOptions={}){
++      if(!import.meta.env.DEV)throw new Error('Experimental forest assets require a development build');
++      if(!planetTiles)throw new Error('Visit a planet before loading forest assets');
++      return planetTiles.loadForestTreeAssets(lod0,lod1,options);
++    },
++    clearForestTreeAssets(){planetTiles?.clearForestTreeAssets();},
+     setProfiling(enabled:boolean){renderProfile.setEnabled(enabled);},
+     resetProfile(){renderProfile.clear();},
+     setCloudSceneSamples(samples:0|2|4){
+diff --git a/src/planet-renderer.ts b/src/planet-renderer.ts
+index 9cd3002..59ee89d 100644
+--- a/src/planet-renderer.ts
++++ b/src/planet-renderer.ts
+@@ -30,6 +30,8 @@ import {surfaceCellsWithin,type SurfaceCell} from './surface-cell.ts';
+ import {biomeClassifier} from './surface-biomes.ts';
+ import {PlanetForest} from './planet-forest.ts';
+ import {PLANET_DETAIL} from './planet-detail.ts';
++import type {Species} from './biosphere-model.ts';
++import type {TreeAssetOptions} from './tree-asset.ts';
+ 
+ // Canonical surface cells own organisms. Demand extends past visible range;
+ // bounded habitat work retains old cells while new neighbours load.
+@@ -53,6 +55,7 @@ export interface LifeGateContext {
+   tMyr: number;
+   floraStage: FloraStage;
+   floraAvailableKinds?: readonly FloraKind[];
++  treeSpecies?: readonly Species[];
+   faunaStage: FaunaStage;
+   faunaAvailableArchetypes?: readonly CreatureArchetype[];
+   faunaSpecies?: readonly { id: string; creature: CreatureGenome }[];
+@@ -529,6 +532,13 @@ export class PlanetRenderer {
+    * `world-surface.ts`'s `biosphereStateAt`/`planetAgeMyr` -- see
+    * `LifeGateContext`'s own doc comment. */
+   setLifeContext(context: LifeGateContext | null): void { this.lifeContext = context; }
++  loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){
++    return this.forest.loadTreeAssets(lod0,lod1,{...options,localAerial:{
++      planet:this.group,frame:this.forest.group,radiusM:this.body.radiusM,
++      sun:this.sunUniform,enabled:this.localAirUniform,eyeHeight:this.eyeHeightUniform,
++    }});
++  }
++  clearForestTreeAssets(){this.forest.clearTreeAssets();}
+   private startWorker(index:number){
+     const generation=(this.workers[index]?.generation??0)+1,restarts=this.workers[index]?.restarts??0;
+     const worker=new Worker(new URL('./planet-worker.ts',import.meta.url),{type:'module'});
+@@ -787,7 +797,7 @@ export class PlanetRenderer {
+     // Visible forest density is centred on the observer's ground position.
+     // View direction may inform future prefetch, never population coverage:
+     // moving this focus ahead made turning in place replace dense forest.
+-    this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta);
++    this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta,worldNs,this.lifeContext?.treeSpecies);
+     if (this.relief === 1 && (contact||altitudeM<PLANET_DETAIL.groundLifeAltitudeM) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs); this.lifeMs=performance.now()-lifeStarted; }
+     else { this.hideLife(); this.lifeMs=0; }
+     const direction = eye.clone().normalize();
+
+
+FILE src/planet-forest.ts
+import * as THREE from 'three';
+import {createLegacyTreeGeometry as treeGeometry,treeQuaternion,LEGACY_TREE_BOUND} from './tree-shape.ts';
+import {PlanetCanopy,forestCellPatchKey} from './planet-canopy.ts';
+import {forestCoverageGLSL,quantizeForestCoverage} from './forest-coverage.ts';
+import {type Body,type V3} from './catalog.ts';
+import {terrainSampler} from './terrain.ts';
+import {biomeClassifier} from './surface-biomes.ts';
+import {forestPopulationCells,FAR_CROWN_PROBABILITY,type PopulationCell} from './planet-population.ts';
+import {forestHabitat,TREE_HABITAT_VERSION} from './forest-habitat.ts';
+import type {ForestSelectionCache} from './forest-selection-cache.ts';
+import {unpackForestSelection} from './forest-selection-transfer.ts';
+import {PLANET_DETAIL as B} from './planet-detail.ts';
+import {InstanceUpdateRanges as DirtyRange} from './instance-update-ranges.ts';
+import type {Species} from './biosphere-model.ts';
+import type {TreeAssetFamily,TreeAssetOptions} from './tree-asset.ts';
+import {forestTreeCatalogue,type ForestTreeBinding} from './forest-tree-catalogue.ts';
+
+type Resident={cell:PopulationCell;height:number;present:boolean;water:number;patchKey?:string};
+type TreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
+type AssetSlot={resident:Resident;originVersion:number;catalogueVersion:number};
+const loadTreeFamily:TreeLoader=async(a,b,options)=>(await import('./tree-asset.ts')).loadTreeAssetFamily(a,b,options);
+
+type BatchUpdates={residents:Resident[];originVersions:number[];slots:Map<string,number>;wanted:Resident[];wantedCoverage:number[];wantedIds:Set<string>;matrix:DirtyRange;color:DirtyRange;coverage:DirtyRange;seed:DirtyRange};
+const batchUpdates=():BatchUpdates=>({residents:[],originVersions:[],slots:new Map(),wanted:[],wantedCoverage:[],wantedIds:new Set(),matrix:new DirtyRange(),color:new DirtyRange(),coverage:new DirtyRange(),seed:new DirtyRange()});
+const crownBoundRadius=Math.hypot(...LEGACY_TREE_BOUND.extent)+Math.hypot(LEGACY_TREE_BOUND.center[0],LEGACY_TREE_BOUND.center[2]);
+
+/** Screen-door coverage changes visibility without shrinking a physical tree.
+ * alphaHash preserves opaque depth testing and avoids sorted transparent forests. */
+function forestMaterial(vertexColors:boolean){
+  const material=new THREE.MeshLambertMaterial({vertexColors,color:vertexColors?0xffffff:0x456c28});
+  material.onBeforeCompile=shader=>{
+    shader.vertexShader='attribute float instanceCoverage,instanceForestSeed;\nflat varying float vForestCoverage,vForestSeed;\n'+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvForestCoverage=instanceCoverage;vForestSeed=instanceForestSeed;');
+    shader.fragmentShader='flat varying float vForestCoverage,vForestSeed;\n'+forestCoverageGLSL+shader.fragmentShader;
+    shader.fragmentShader=shader.fragmentShader.replace('#include <alphahash_fragment>',`#ifdef USE_ALPHAHASH
+      diffuseColor.a *= vForestCoverage;
+      #include <alphahash_fragment>
+      #else
+      if(atlasForestHash(uint(vForestSeed+.5))>=atlasForestLevel(vForestCoverage))discard;
+      #endif`);
+  };
+  material.customProgramCacheKey=()=>`forest-coverage-2/${vertexColors}`;return material;
+}
+
+/** Bounded placement queue + retained habitat cache. Flight and walking call
+ * the same update. Work begins above visible range; no landing flag exists. */
+export class PlanetForest {
+  readonly group=new THREE.Group();
+  private meshes:THREE.InstancedMesh[];
+  private canopy:THREE.InstancedMesh;
+  private cache=new Map<string,Resident>();
+  private wanted:PopulationCell[]=[];
+  private queue:PopulationCell[]=[];
+  private center=new THREE.Vector3(Infinity,Infinity,Infinity);
+  private coverage:THREE.InstancedBufferAttribute[]=[];
+  private canopyCoverage!:THREE.InstancedBufferAttribute;
+  private retainedNear=new Set<string>();
+  private retainedMiddle=new Set<string>();
+  private fullCanopy:PlanetCanopy|null=null;
+  private immersiveMaterial=false;
+  private origin=new THREE.Vector3();
+  private originReady=false;
+  private originVersion=0;
+  private updates:BatchUpdates[]=[batchUpdates(),batchUpdates(),batchUpdates()];
+  private sample:ReturnType<typeof terrainSampler>;
+  private classify:ReturnType<typeof biomeClassifier>;
+  private habitat:ReturnType<typeof forestHabitat>;
+  private water=NaN;
+  private sampledRivers:Body['canonicalRivers'];private sampledHydrology:Body['hydrology'];
+  private matrix=new THREE.Matrix4();
+  private position=new THREE.Vector3();
+  private scale=new THREE.Vector3();
+  private quaternion=new THREE.Quaternion();
+  private yaw=new THREE.Quaternion();
+  private direction=new THREE.Vector3();
+  private color=new THREE.Color();
+  private bounds=new THREE.Sphere();
+  private disposed=false;
+  private assetRequest=0;
+  private assetLoading=false;
+  private assetError='';
+  private catalogueError='';
+  private assetFamily:TreeAssetFamily|null=null;
+  private assetBatches:ReturnType<TreeAssetFamily['createBatch']>[]=[];
+  private assetSlots:AssetSlot[][]=[[],[]];
+  private assetCounts=[0,0];
+  private catalogue=forestTreeCatalogue([]);
+  private catalogueInput:readonly Species[]|undefined;
+  private catalogueVersion=0;
+  private bindings=new WeakMap<Resident,ForestTreeBinding|null>();
+  private assetDraw=false;
+  private worldDate=0n;
+  private worker:Worker|null=null;
+  private selecting=false;
+  private selectionRequest=0;
+  private selectionDirection:V3|null=null;
+  private workerRestarts=0;
+  private workerFailures=0;
+  private selectionApplyMs=0;
+  private selectionTransfer:{bytes:number;cells:number;packMs:number;decodeMs:number}|null=null;
+  private selectionCacheStats:ReturnType<ForestSelectionCache['diagnostics']>|null=null;
+  private applySelection(direction:V3,cells:PopulationCell[],selectionMs:number){
+    const started=performance.now();
+    this.center.set(...direction);this.wanted=cells;
+    const incoming=new Set(cells.map(c=>c.id));for(const id of this.retainedNear)if(!incoming.has(id))this.retainedNear.delete(id);
+    for(const id of this.retainedMiddle)if(!incoming.has(id))this.retainedMiddle.delete(id);
+    this.queue=this.wanted.filter(cell=>this.cache.get(cell.id)?.water!==this.water);
+    if(this.cache.size+this.queue.length>B.populationCacheLimit){
+      const keep=new Set(this.wanted.map(c=>c.id));
+      for(const id of this.cache.keys())if(!keep.has(id))this.cache.delete(id);
+    }
+    this.selectionMs=selectionMs;this.selecting=false;this.selectionDirection=null;
+    this.selectionApplyMs=performance.now()-started;
+  }
+  visibleTrees=0;nearTrees=0;placementMs=0;selectionMs=0;
+  private matrixWrites=0;
+  private colorWrites=0;
+  private coverageWrites=0;
+  private scheduledUploadBytes=0;
+  private updateMs=0;
+  private farOwnedSkipped=0;
+  private originRebased=false;
+  constructor(private body:Body,private treeLoader:TreeLoader=loadTreeFamily){
+    this.sample=terrainSampler(body);this.classify=biomeClassifier(body);
+    this.habitat=forestHabitat(this.sample,this.classify,body.radiusM);
+    this.meshes=[B.forestNearCapacity,B.forestCapacity].map((capacity,i)=>{
+      const mesh=new THREE.InstancedMesh(treeGeometry(i===0?1:0),
+        forestMaterial(true),capacity);
+      const coverage=new THREE.InstancedBufferAttribute(new Float32Array(capacity),1);coverage.setUsage(THREE.DynamicDrawUsage);mesh.geometry.setAttribute('instanceCoverage',coverage);this.coverage.push(coverage);
+      mesh.geometry.setAttribute('instanceForestSeed',new THREE.InstancedBufferAttribute(new Uint16Array(capacity),1).setUsage(THREE.DynamicDrawUsage));
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      mesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3).fill(1),3).setUsage(THREE.DynamicDrawUsage);
+      mesh.frustumCulled=false;mesh.count=0;
+      this.group.add(mesh);return mesh;
+    });
+    this.canopy=new THREE.InstancedMesh(treeGeometry(0),forestMaterial(true),B.canopyCapacity);
+    this.canopyCoverage=new THREE.InstancedBufferAttribute(new Float32Array(B.canopyCapacity),1);this.canopyCoverage.setUsage(THREE.DynamicDrawUsage);this.canopy.geometry.setAttribute('instanceCoverage',this.canopyCoverage);
+    this.canopy.geometry.setAttribute('instanceForestSeed',new THREE.InstancedBufferAttribute(new Uint16Array(B.canopyCapacity),1).setUsage(THREE.DynamicDrawUsage));
+    this.canopy.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.canopy.frustumCulled=false;this.canopy.count=0;
+    this.canopy.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(B.canopyCapacity*3).fill(1),3).setUsage(THREE.DynamicDrawUsage);
+    // Initial bufferData uploads the complete allocation. Drop its consumed
+    // ranges as well as later partial uploads, so a first sparse edit does not
+    // resend initialization ranges. Hidden batches retain pending work.
+    for(const mesh of [...this.meshes,this.canopy])for(const attribute of [
+      mesh.instanceMatrix,mesh.instanceColor!,
+      mesh.geometry.getAttribute('instanceCoverage') as THREE.InstancedBufferAttribute,
+      mesh.geometry.getAttribute('instanceForestSeed') as THREE.InstancedBufferAttribute,
+    ])attribute.onUpload(()=>attribute.clearUpdateRanges());
+    this.group.add(this.canopy);this.group.name='Continuous planetary forest';
+    if(typeof Worker!=='undefined'){this.fullCanopy=new PlanetCanopy(body);this.group.add(this.fullCanopy.group);this.startWorker();}
+  }
+  /** Explicit local integration seam. Loading never changes canonical cells.
+   * The previous renderer remains active until both new batches are ready. */
+  async loadTreeAssets(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions={}){
+    if(this.disposed)throw new Error('Forest is disposed');
+    const request=++this.assetRequest;this.assetLoading=true;this.assetError='';
+    let family:TreeAssetFamily|null=null;const batches:ReturnType<TreeAssetFamily['createBatch']>[]=[];
+    try{
+      family=await this.treeLoader(a,b,{...options,forestCoverage:true});
+      if(this.disposed||request!==this.assetRequest){family.dispose();return false;}
+      if(!family.forestCoverage||!Number.isFinite(family.maxRadiusM)||family.maxRadiusM<=0)throw new Error('Tree family lacks forest coverage or conservative bounds');
+      batches.push(family.createBatch(0,B.forestNearCapacity));batches.push(family.createBatch(1,B.forestCapacity));
+      family.setDate(this.worldDate);
+      this.releaseTreeAssets();
+      this.assetFamily=family;this.assetBatches=batches;this.assetSlots=[[],[]];
+      for(const batch of batches){batch.group.visible=false;this.group.add(batch.group);}
+      return true;
+    }catch(error){
+      for(const batch of batches)batch.dispose();family?.dispose();
+      if(request===this.assetRequest)this.assetError=String(error);
+      throw error;
+    }finally{if(request===this.assetRequest)this.assetLoading=false;}
+  }
+  private releaseTreeAssets(){
+    for(const batch of this.assetBatches)batch.dispose();this.assetBatches=[];
+    this.assetFamily?.dispose();this.assetFamily=null;this.assetSlots=[[],[]];
+  }
+  clearTreeAssets(){
+    this.assetRequest++;this.assetLoading=false;this.assetError='';this.releaseTreeAssets();
+    this.assetCounts=[0,0];
+  }
+  private detailedSamples(){
+    const samples=[];
+    for(let batch=0;batch<this.assetSlots.length;batch++){
+      if(!this.group.visible||!this.assetBatches[batch]?.group.visible)continue;
+      let count=0;
+      // Diagnostics are read by the live HUD. Bound both scans and output,
+      // rather than allocating/filtering every resident on every read.
+      const slots=this.assetSlots[batch];
+      for(let index=0;index<Math.min(slots.length,64)&&count<8;index++){
+        const slot=slots[index],heightM=slot.resident.cell.heightM;
+        if(heightM<10||heightM>22)continue;
+        const binding=this.binding(slot.resident);if(binding?.recipe.family!=='branching')continue;
+        samples.push({batch,id:slot.resident.cell.id,speciesId:binding.recipe.speciesId,
+          recipe:binding.recipe.sourceFingerprint,heightM,...binding.appearance});count++;
+      }
+    }
+    return samples;
+  }
+  private setCatalogue(species:readonly Species[]|undefined){
+    if(species===this.catalogueInput)return;
+    this.catalogueInput=species;
+    let next:ReturnType<typeof forestTreeCatalogue>;
+    try{next=forestTreeCatalogue(species??[]);this.catalogueError='';}
+    catch(error){
+      // Reject malformed presentation data without interrupting the canonical
+      // forest or retrying the same immutable dated snapshot every frame.
+      this.catalogueError=String(error);next=forestTreeCatalogue([]);
+    }
+    if(next.signature===this.catalogue.signature)return;
+    this.catalogue=next;this.catalogueVersion++;this.bindings=new WeakMap();
+  }
+  private binding(resident:Resident){
+    if(!this.bindings.has(resident))this.bindings.set(resident,this.catalogue.resolve(resident.cell.id));
+    return this.bindings.get(resident)??null;
+  }
+  private startWorker(){
+    try{
+      const worker=new Worker(new URL('./planet-population-worker.ts',import.meta.url),{type:'module'});this.worker=worker;
+      worker.onmessage=({data})=>{
+        if(this.worker!==worker||!this.selecting)return;
+        if(!data||!Number.isSafeInteger(data.requestId)){this.failWorker(worker);return;}
+        if(data.requestId===this.selectionRequest){
+          const started=performance.now();let cells:PopulationCell[];
+          try{
+            if(!this.selectionDirection||!Number.isFinite(data.selectionMs)||data.selectionMs<0||
+              !Number.isFinite(data.packMs)||data.packMs<0)throw new Error('Invalid forest response metadata');
+            cells=unpackForestSelection(data.packed);
+          }catch{this.failWorker(worker);return;}
+          this.selectionTransfer={bytes:data.packed.buffer.byteLength,cells:cells.length,packMs:data.packMs,decodeMs:performance.now()-started};
+          // The main thread owns the requested centre; response metadata
+          // cannot move it, and duplicate completed replies are ignored.
+          // Application errors must surface as main-thread bugs, not use up
+          // a worker restart or be silently converted into a fallback.
+          this.selectionCacheStats=data.cache??null;this.applySelection(this.selectionDirection!,cells,data.selectionMs);
+        }
+      };
+      worker.onerror=event=>{event.preventDefault();this.failWorker(worker);};
+      worker.onmessageerror=()=>this.failWorker(worker);
+    }catch{this.worker=null;this.selecting=false;this.workerFailures++;}
+  }
+  private failWorker(worker:Worker){
+    if(this.worker!==worker)return;
+    worker.terminate();this.worker=null;this.selectionCacheStats=null;this.selectionTransfer=null;this.selectionDirection=null;this.selecting=false;this.workerFailures++;this.selectionRequest++;
+    if(this.workerRestarts<1){this.workerRestarts++;this.startWorker();}
+  }
+  /** Slots belong to resident IDs, not their current visibility/sort ordinal. */
+  private writeInstance(batch:number,index:number,resident:Resident,coverage:number){
+    const mesh=batch===2?this.canopy:this.meshes[batch],updates=this.updates[batch];
+    const changed=updates.residents[index]!==resident;
+    if(changed||updates.originVersions[index]!==this.originVersion){
+      const {cell,height}=resident,r=this.body.radiusM;
+      this.direction.set(...cell.direction);
+      this.position.copy(this.direction).multiplyScalar(1+height/r).sub(this.origin);
+      treeQuaternion(this.direction,cell.yaw,this.quaternion,this.yaw);
+      this.scale.setScalar(cell.heightM/r);
+      this.matrix.compose(this.position,this.quaternion,this.scale);mesh.setMatrixAt(index,this.matrix);
+      updates.matrix.include(index,16);updates.originVersions[index]=this.originVersion;this.matrixWrites++;
+    }
+    if(changed){
+      const roll=resident.cell.roll;
+      this.color.setRGB(.8+roll*.2,.85+roll*.15,.75+roll*.25);mesh.setColorAt(index,this.color);
+      updates.color.include(index,3);updates.residents[index]=resident;this.colorWrites++;
+      const seed=mesh.geometry.getAttribute('instanceForestSeed') as THREE.InstancedBufferAttribute;seed.setX(index,Math.min(255,Math.floor(roll*256)));updates.seed.include(index,1);
+    }
+    let detailed=false;
+    if(batch<2&&this.assetBatches.length){
+      const asset=this.assetBatches[batch],binding=this.binding(resident),cell=resident.cell;
+      const supportedHeight=cell.heightM>=10&&cell.heightM<=22;
+      detailed=this.assetDraw&&supportedHeight&&binding?.recipe.family==='branching';
+      const previous=this.assetSlots[batch][index];
+      if(!previous||previous.resident!==resident||previous.originVersion!==this.originVersion||previous.catalogueVersion!==this.catalogueVersion){
+        this.direction.set(...cell.direction);this.position.copy(this.direction).multiplyScalar(1+resident.height/this.body.radiusM).sub(this.origin);
+        treeQuaternion(this.direction,cell.yaw,this.quaternion,this.yaw);
+        this.scale.setScalar(1/this.body.radiusM);this.matrix.compose(this.position,this.quaternion,this.scale);
+        // The explicit proxy preserves the current near/far population height.
+        // Hidden unsupported slots need a valid placeholder to retain slot IDs.
+        asset.setInstance(index,this.matrix,supportedHeight?cell.heightM:16,(binding?.appearance.windPhase01??0)*2*Math.PI);
+        const bark=binding?.appearance.barkBrightness??1,leaf=binding?.appearance.foliageBrightness??1;
+        asset.setAppearance(index,[bark,bark,bark],[leaf,leaf,leaf]);
+        this.assetSlots[batch][index]={resident,originVersion:this.originVersion,catalogueVersion:this.catalogueVersion};
+      }
+      asset.setCoverage(index,detailed?coverage:0,Math.min(255,Math.floor(cell.roll*256)));
+    }
+    const attribute=batch===2?this.canopyCoverage:this.coverage[batch],value=Math.fround(detailed?0:coverage);
+    if(attribute.getX(index)!==value){attribute.setX(index,value);updates.coverage.include(index,1);this.coverageWrites++;}
+  }
+  private wantInstance(batch:number,resident:Resident,coverage:number){
+    coverage=quantizeForestCoverage(coverage)/256;
+    const updates=this.updates[batch];updates.wanted.push(resident);updates.wantedCoverage.push(coverage);updates.wantedIds.add(resident.cell.id);
+    this.fullCanopy?.own(resident.cell.id,coverage);
+  }
+  private reconcileBatch(batch:number){
+    const updates=this.updates[batch],mesh=batch===2?this.canopy:this.meshes[batch];
+    const coverage=batch===2?this.canopyCoverage:this.coverage[batch];
+    // A newly attached family has empty GPU batches while legacy slots already
+    // exist. Initialize those slots in slot order before removals or reordered
+    // demand can address a higher index. The final wanted pass sets ownership.
+    if(batch<2&&this.assetBatches.length&&!this.assetSlots[batch].length){
+      for(let index=0;index<updates.residents.length;index++)
+        this.writeInstance(batch,index,updates.residents[index],coverage.getX(index));
+    }
+    // A departure moves only the final resident into the hole. Reverse traversal
+    // ensures that moved residents have already been checked for retention.
+    for(let index=updates.residents.length-1;index>=0;index--){
+      const resident=updates.residents[index];if(updates.wantedIds.has(resident.cell.id))continue;
+      updates.slots.delete(resident.cell.id);
+      const last=updates.residents.length-1;
+      if(index!==last){
+        const moved=updates.residents[last];this.writeInstance(batch,index,moved,coverage.getX(last));
+        updates.slots.set(moved.cell.id,index);
+      }
+      updates.residents.pop();updates.originVersions.pop();
+    }
+    for(let i=0;i<updates.wanted.length;i++){
+      const resident=updates.wanted[i];let index=updates.slots.get(resident.cell.id);
+      if(index===undefined){index=updates.residents.length;updates.slots.set(resident.cell.id,index);}
+      this.writeInstance(batch,index,resident,updates.wantedCoverage[i]);
+    }
+    mesh.count=updates.residents.length;
+    if(batch<2&&this.assetBatches.length){
+      const asset=this.assetBatches[batch];asset.setCount(mesh.count);this.assetSlots[batch].length=mesh.count;
+      this.assetCounts[batch]=updates.residents.reduce((n,resident)=>n+Number(this.assetDraw&&resident.cell.heightM>=10&&resident.cell.heightM<=22&&this.binding(resident)?.recipe.family==='branching'),0);
+      asset.group.visible=this.assetCounts[batch]>0;
+      if(this.assetCounts[batch]===mesh.count)mesh.visible=false;
+    }
+    this.scheduledUploadBytes+=updates.matrix.flush(mesh.instanceMatrix);
+    if(mesh.instanceColor)this.scheduledUploadBytes+=updates.color.flush(mesh.instanceColor);
+    this.scheduledUploadBytes+=updates.coverage.flush(coverage);
+    this.scheduledUploadBytes+=updates.seed.flush(mesh.geometry.getAttribute('instanceForestSeed') as THREE.BufferAttribute);
+  }
+  update(eye:THREE.Vector3,groundDirection:V3,altitudeM:number,enabled:boolean,water:number,immersive:boolean,frusta:THREE.Frustum[]=[],worldNs=0n,treeSpecies?:readonly Species[]){
+    if(!Number.isFinite(water))throw new Error('Forest water level must be finite');
+    if(this.assetFamily)this.setCatalogue(treeSpecies);
+    this.worldDate=worldNs;this.assetFamily?.setDate(worldNs);
+    this.assetDraw=!!this.assetFamily&&!immersive;this.assetCounts=[0,0];
+    for(const batch of this.assetBatches)batch.group.visible=false;
+    const updateStarted=performance.now();
+    this.group.visible=enabled&&altitudeM<B.forestStreamAltitudeM;
+    this.visibleTrees=0;this.nearTrees=0;this.placementMs=0;this.selectionMs=0;
+    this.matrixWrites=0;this.colorWrites=0;this.coverageWrites=0;this.scheduledUploadBytes=0;this.originRebased=false;this.updateMs=0;this.farOwnedSkipped=0;
+    if(!this.group.visible){if(this.fullCanopy)this.fullCanopy.group.visible=false;return;}
+    const draw=altitudeM<B.forestPrepareAltitudeM;
+    for(const mesh of this.meshes)mesh.visible=draw;this.canopy.visible=draw;
+    if(!draw){
+      this.fullCanopy?.prepare(eye,groundDirection,altitudeM,water,enabled,immersive,this.origin);
+      this.fullCanopy?.finish();this.updateMs=performance.now()-updateStarted;return;
+    }
+    if(immersive!==this.immersiveMaterial){
+      this.immersiveMaterial=immersive;
+      for(const mesh of [...this.meshes,this.canopy]){const material=mesh.material as THREE.MeshLambertMaterial;material.alphaHash=immersive;material.needsUpdate=true;}
+    }
+    const hydrologyChanged=this.sampledRivers!==this.body.canonicalRivers||this.sampledHydrology!==this.body.hydrology;
+    if(water!==this.water||hydrologyChanged){
+      this.sampledRivers=this.body.canonicalRivers;this.sampledHydrology=this.body.hydrology;
+      if(hydrologyChanged)for(const resident of this.cache.values())resident.water=NaN;
+      this.water=water;this.sample=terrainSampler(this.body,undefined,undefined,undefined,water);
+      this.classify=biomeClassifier(this.body,water);
+      this.habitat=forestHabitat(this.sample,this.classify,this.body.radiusM);
+      // Selection depends only on identity/location, not water. Keep the single
+      // in-flight job and resident trees while bounded habitat refresh replaces
+      // them. Never queue another expensive selection on each playback bucket.
+      this.queue=this.wanted.filter(cell=>this.cache.get(cell.id)?.water!==water);
+    }
+    const r=this.body.radiusM,ground=this.direction.set(...groundDirection);
+    if(ground.distanceTo(this.center)*r>40&&!this.selecting){
+      if(this.worker){
+        const worker=this.worker;this.selecting=true;this.selectionDirection=[...groundDirection];
+        try{worker.postMessage({requestId:++this.selectionRequest,seed:this.body.seed,direction:groundDirection,radiusM:r});}
+        catch{this.failWorker(worker);}
+      }else{
+      const started=performance.now();
+      const cells=forestPopulationCells(this.body.seed,groundDirection,r,B.forestFootprintM+100,B.canopyFootprintM,B.forestCellM);
+      this.applySelection(groundDirection,cells,performance.now()-started);
+      }
+    }
+    const started=performance.now();
+    for(let count=0;this.queue.length&&count<B.placementSamplesPerFrame&&performance.now()-started<B.placementBudgetMs;count++){
+      const cell=this.queue.shift()!,habitat=this.habitat(cell);
+      this.cache.set(cell.id,{cell,height:habitat.groundHeightM,present:habitat.present,water});
+    }
+    this.placementMs=performance.now()-started;
+    // Retain the anchor across ordinary movement so static tree matrices need
+    // no rewrite. Rebase before Float32 conversion to preserve local precision.
+    if(!this.originReady||this.origin.distanceTo(eye)*r>=B.forestOriginRebaseM){
+      this.origin.copy(eye);this.group.position.copy(this.origin);this.originReady=true;
+      this.originVersion++;this.originRebased=true;
+    }
+    this.fullCanopy?.prepare(eye,groundDirection,altitudeM,water,enabled,immersive,this.origin);
+    const counts=[0,0],capacities=immersive?[64,1024]:[B.forestNearCapacity,B.forestCapacity];let canopyCount=0;
+    for(const updates of this.updates){updates.wanted.length=0;updates.wantedCoverage.length=0;updates.wantedIds.clear();}
+    const altitudeFade=1-THREE.MathUtils.smoothstep(altitudeM,B.forestPrepareAltitudeM-500,B.forestPrepareAltitudeM);
+    for(const cell of this.wanted){
+      const dx=cell.direction[0]-groundDirection[0],dy=cell.direction[1]-groundDirection[1],dz=cell.direction[2]-groundDirection[2];
+      if((dx*dx+dy*dy+dz*dz)*r*r<100*100)this.fullCanopy?.observeClose(cell.id,eye);
+      const resident=this.cache.get(cell.id);if(!resident)continue;
+      resident.patchKey??=forestCellPatchKey(cell.id);
+      if(resident.water===water&&this.fullCanopy?.currentPatch(resident.patchKey)){
+        const scale=1+resident.height/r,x=cell.direction[0]*scale-eye.x,y=cell.direction[1]*scale-eye.y,z=cell.direction[2]*scale-eye.z;
+        if((x*x+y*y+z*z)*r*r>=650*650){
+          // Complete current patches own this entire distant band. Keep stale
+          // water and missing patches on the full fallback/absence path below.
+          this.retainedNear.delete(cell.id);this.retainedMiddle.delete(cell.id);this.farOwnedSkipped++;continue;
+        }
+      }
+      this.fullCanopy?.noteNear(cell.id,resident.patchKey,resident.present,resident.water);
+      if(!resident.present)continue;
+      // Hide newly submerged old residents immediately while other habitat
+      // properties are refreshed. The current bucket sampler remains authority.
+      if(resident.water!==water&&this.body.water>0&&resident.height<=water){this.fullCanopy?.own(cell.id,1);continue;}
+      this.direction.set(...cell.direction);
+      this.position.copy(this.direction).multiplyScalar(1+resident.height/r);
+      this.bounds.center.copy(this.position).addScaledVector(this.direction,LEGACY_TREE_BOUND.center[1]*cell.heightM/r);this.bounds.radius=crownBoundRadius*cell.heightM/r;
+      if(this.assetDraw&&this.assetFamily){
+        this.bounds.center.copy(this.position);
+        this.bounds.radius=Math.max((Math.hypot(...LEGACY_TREE_BOUND.center)+crownBoundRadius)*cell.heightM,this.assetFamily.maxRadiusM)/r;
+      }
+      if(frusta.length&&!frusta.some(f=>f.intersectsSphere(this.bounds)))continue;
+      const distance=this.position.distanceTo(eye)*r;
+      const horizontal=Math.hypot(this.direction.x-groundDirection[0],this.direction.y-groundDirection[1],this.direction.z-groundDirection[2])*r;
+      // Detailed and distant draws refer to one canonical tree. A retained
+      // band prevents oscillation between equal-silhouette batches.
+      const wasNear=this.retainedNear.has(cell.id),nearLimit=wasNear?B.forestNearM+12:B.forestNearM-12;
+      let lod=distance<nearLimit?0:1;
+      if(lod===0)this.retainedNear.add(cell.id);else this.retainedNear.delete(cell.id);
+      if(distance>=B.forestRadiusM)continue;
+      const edgeCoverage=altitudeFade*(1-THREE.MathUtils.smoothstep(distance,B.forestRadiusM-300,B.forestRadiusM));
+      const paired=this.fullCanopy?.canHandoff(cell.id,resident.height,resident.patchKey)??false;
+      if(paired){
+        const middleLimit=this.retainedMiddle.has(cell.id)?600:550;
+        if(distance>=middleLimit){this.retainedMiddle.delete(cell.id);continue;}
+        this.retainedMiddle.add(cell.id);
+      }
+      if(cell.canopyRepresentative&&horizontal>B.forestFootprintM-100){
+        if(canopyCount>=(immersive?2048:B.canopyCapacity))continue;
+        this.wantInstance(2,resident,edgeCoverage);canopyCount++;continue;
+      }
+      if(counts[lod]>=capacities[lod]){if(lod===0)lod=1;else continue;}
+      if(counts[lod]>=capacities[lod])continue;
+      const fade=edgeCoverage*(paired||cell.canopyRepresentative?1:1-THREE.MathUtils.smoothstep(horizontal,B.forestFootprintM-130,B.forestFootprintM));
+      if(fade<=0)continue;
+      this.wantInstance(lod,resident,fade);counts[lod]++;
+    }
+    for(let i=0;i<3;i++)this.reconcileBatch(i);
+    this.fullCanopy?.finish();
+    this.nearTrees=counts[0];this.visibleTrees=counts[0]+counts[1]+canopyCount;
+    this.updateMs=performance.now()-updateStarted;
+  }
+  diagnostics(){return {visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
+    detailedTrees:{ready:!!this.assetFamily,loading:this.assetLoading,error:this.assetError||this.catalogueError,visible:[...this.assetCounts],species:this.catalogue.count,dateNs:this.worldDate.toString(),catalogueVersion:this.catalogueVersion,
+      heightPolicy:'canonical-population-proxy',geometryVariants:1,farRepresentation:'legacy-canonical-canopy',
+      samples:this.detailedSamples()},
+    candidateCells:this.wanted.length,canopyStands:0,farCanonicalTrees:this.group.visible?this.canopy.count:0,farSamplingFraction:FAR_CROWN_PROBABILITY,habitatVersion:TREE_HABITAT_VERSION,placementMs:this.placementMs,selectionMs:this.selectionMs,selectionPending:this.selecting,selectionWorker:!!this.worker,
+    representation:'canonical-tree-field',densityFocus:'observer-ground',instanceUpdates:'stable-slots-retained-origin-dirty-ranges',
+    selectionJobsInFlight:this.selecting?1:0,waterBucket:this.water,selectionApplyMs:this.selectionApplyMs,selectionCache:this.selectionCacheStats,selectionTransfer:this.selectionTransfer,fullCanopy:this.fullCanopy?.diagnostics()??null,
+    workerRestarts:this.workerRestarts,workerFailures:this.workerFailures,selectionMode:this.worker?'worker':'synchronous-fallback',
+    updateMs:this.updateMs,farOwnedSkipped:this.farOwnedSkipped,matrixWrites:this.matrixWrites,colorWrites:this.colorWrites,coverageWrites:this.coverageWrites,
+    scheduledUploadBytes:this.scheduledUploadBytes,originRebased:this.originRebased,originVersion:this.originVersion,originRebaseM:B.forestOriginRebaseM,
+    radiusM:B.forestRadiusM,heightRangeM:[10,22],cellSizeM:B.forestCellM,
+    allocatedBytes:[...this.meshes,this.canopy].reduce((s,m)=>s+m.instanceMatrix.array.byteLength+(m.instanceColor?.array.byteLength??0)+
+      Object.values(m.geometry.attributes).reduce((n,a)=>n+a.array.byteLength,0),0)*2};}
+  dispose(){if(this.disposed)return;this.disposed=true;this.clearTreeAssets();this.worker?.terminate();this.worker=null;this.fullCanopy?.dispose();this.fullCanopy=null;for(const mesh of [...this.meshes,this.canopy]){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();}this.cache.clear();this.group.removeFromParent();}
+}
+
+
+FILE src/tree-asset.ts
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {phaseFromPeriod} from './world-time.ts';
+import {installLeafTransmission,type LeafTransmissionOptions} from './tree-leaf-transmission.ts';
+import {InstanceUpdateRanges} from './instance-update-ranges.ts';
+import {installTreeForestCoverage} from './tree-forest-coverage.ts';
+import {quantizeForestCoverage} from './forest-coverage.ts';
+import {attachLocalAerial} from './local-aerial-perspective.ts';
+
+/** Experimental author-6 adapter. Assets are supplied explicitly; this does not
+ * replace the canonical forest or invent a second species catalogue. */
+export const TREE_REFERENCE_HEIGHT_M=16;
+export const TREE_WIND_PERIOD_NS=7_000_000_000n;
+export const treeWindPhase=(date:bigint)=>phaseFromPeriod(date,TREE_WIND_PERIOD_NS);
+
+type GLBDocument={json:any;binary:Uint8Array};
+function readGLB(buffer:ArrayBuffer):GLBDocument {
+  const view=new DataView(buffer);
+  if(buffer.byteLength<28||view.getUint32(0,true)!==0x46546c67||view.getUint32(4,true)!==2||view.getUint32(8,true)!==buffer.byteLength)throw new Error('Expected a complete glTF 2 GLB');
+  const length=view.getUint32(12,true),start=20+length;
+  if(view.getUint32(16,true)!==0x4e4f534a||start+8>buffer.byteLength||view.getUint32(start+4,true)!==0x004e4942||start+8+view.getUint32(start,true)!==buffer.byteLength)throw new Error('Expected JSON and embedded binary chunks');
+  const json=JSON.parse(new TextDecoder().decode(new Uint8Array(buffer,20,length)));
+  if(json.buffers?.length!==1||json.buffers[0].uri||json.extensionsRequired?.length)throw new Error('Only self-contained author-6 GLBs are supported');
+  if(json.nodes?.length!==1||json.nodes[0].mesh!==0||['matrix','translation','rotation','scale'].some(k=>json.nodes[0][k])||json.meshes?.length!==1||json.meshes[0].primitives?.length!==2)throw new Error('Expected one untransformed two-material tree');
+  if(json.materials?.length!==2||json.materials[0].name!=='MAT_AtlasBark'||json.materials[1].name!=='MAT_AtlasFoliage'||json.images?.length!==4)throw new Error('Expected author-6 bark and foliage');
+  if((json.materials[0].alphaMode??'OPAQUE')!=='OPAQUE'||json.materials[1].alphaMode!=='MASK'||(json.materials[1].alphaCutoff??.5)<=0)throw new Error('Tree foliage requires alpha MASK with a positive cutoff');
+  const formats:Record<string,string>={_WIND:'SCALAR',_BRANCH_LEVEL:'SCALAR',_LEAF_CENTER:'VEC3',_LEAF_PIVOT:'VEC3',POSITION:'VEC3',NORMAL:'VEC3',TEXCOORD_0:'VEC2',TANGENT:'VEC4'};
+  for(const [index,p] of json.meshes[0].primitives.entries()){
+    if(p.material!==index||p.mode!==undefined&&p.mode!==4||p.targets||Object.keys(p.attributes??{}).length!==8||!Object.keys(formats).every(k=>Number.isInteger(p.attributes?.[k])))throw new Error('Incomplete tree vertex contract');
+    const count=json.accessors[p.attributes.POSITION]?.count;
+    for(const [name,type] of Object.entries(formats)){
+      const a=json.accessors[p.attributes[name]];
+      if(!a||a.type!==type||a.componentType!==5126||a.normalized||a.sparse||!Number.isInteger(count)||count<1||a.count!==count)throw new Error(`Invalid tree accessor ${name}`);
+    }
+  }
+  return {json,binary:new Uint8Array(buffer,start+8,view.getUint32(start,true))};
+}
+function imageBytes(doc:GLBDocument,index:number){
+  const image=doc.json.images[index],view=doc.json.bufferViews[image.bufferView];
+  if(image.uri||image.mimeType!=='image/png'||!view||view.buffer!==0||!Number.isInteger(view.byteLength)||view.byteLength<=0)throw new Error('Expected an embedded PNG');
+  const start=view.byteOffset??0,end=start+view.byteLength;
+  if(start<0||end>doc.binary.length)throw new Error('Image outside GLB binary');
+  return doc.binary.subarray(start,end);
+}
+/** Check byte identity before sharing materials. LOD1 images are never decoded:
+ * its parser receives texture-free material placeholders with stable indices. */
+export function prepareTreeLODPair(lod0:ArrayBuffer,lod1:ArrayBuffer){
+  const a=readGLB(lod0),b=readGLB(lod1);
+  for(const key of ['materials','textures','samplers'])if(JSON.stringify(a.json[key])!==JSON.stringify(b.json[key]))throw new Error(`Tree LOD ${key} differ`);
+  let embeddedTextureBytes=0;
+  for(let i=0;i<4;i++){
+    const x=imageBytes(a,i),y=imageBytes(b,i);embeddedTextureBytes+=x.length;
+    if(x.length!==y.length||x.some((v,k)=>v!==y[k]))throw new Error(`Tree LOD image ${i} differs`);
+  }
+  const json=structuredClone(b.json);
+  json.materials=json.materials.map((m:any)=>({name:m.name}));delete json.images;delete json.textures;delete json.samplers;
+  // Keep the original binary offsets. Unused compressed PNG bytes remain in
+  // this temporary parse input, but do not allocate image/GPU resources.
+  const text=new TextEncoder().encode(JSON.stringify(json)),length=(text.length+3)&~3;
+  const buffer=new ArrayBuffer(28+length+b.binary.length),view=new DataView(buffer),bytes=new Uint8Array(buffer);
+  view.setUint32(0,0x46546c67,true);view.setUint32(4,2,true);view.setUint32(8,buffer.byteLength,true);
+  view.setUint32(12,length,true);view.setUint32(16,0x4e4f534a,true);bytes.fill(32,20,20+length);bytes.set(text,20);
+  view.setUint32(20+length,b.binary.length,true);view.setUint32(24+length,0x004e4942,true);bytes.set(b.binary,28+length);
+  return {lod1GeometryBuffer:buffer,embeddedTextureBytes};
+}
+
+/** CPU reference for shader audits. Scale skeleton/attachment coordinates,
+ * keeping every offset within a leaf card in metres, then rotate rigidly. */
+export function treeVertexMeters(position:THREE.Vector3,pivot:THREE.Vector3,leaf:boolean,heightM:number,windWeight:number,phase:number,instancePhase=0){
+  if(!Number.isFinite(heightM)||heightM<10||heightM>22)throw new Error('Prototype supports tree heights 10–22 m');
+  if(!leaf)return position.clone().multiplyScalar(heightM/TREE_REFERENCE_HEIGHT_M);
+  return position.clone().sub(pivot).applyAxisAngle(new THREE.Vector3(0,0,1),Math.sin(phase+instancePhase)*.12*windWeight).addScaledVector(pivot,heightM/TREE_REFERENCE_HEIGHT_M);
+}
+
+const declarations=`
+attribute float _wind, _branch_level;
+attribute vec3 _leaf_pivot;
+attribute vec2 instanceTree;
+uniform float atlasTreePhase;
+mat3 atlasLeafRotation(){
+  float angle=sin(atlasTreePhase+instanceTree.y)*.12*_wind;
+  float c=cos(angle),s=sin(angle);
+  return mat3(c,s,0.,-s,c,0.,0.,0.,1.);
+}
+`;
+function deform(material:THREE.Material,phase:{value:number}){
+  material.onBeforeCompile=shader=>{
+    shader.uniforms.atlasTreePhase=phase;
+    shader.vertexShader=declarations+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
+      if(_branch_level>3.5){objectNormal=atlasLeafRotation()*objectNormal;
+        #ifdef USE_TANGENT
+        objectTangent=atlasLeafRotation()*objectTangent;
+        #endif
+      }`);
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      transformed=_branch_level>3.5 ? _leaf_pivot*instanceTree.x+atlasLeafRotation()*(position-_leaf_pivot) : position*instanceTree.x;`);
+  };
+  material.customProgramCacheKey=()=> 'atlas-tree-physical-1';
+}
+export type TreeAssetFamily=Awaited<ReturnType<typeof loadTreeAssetFamily>>;
+export type TreeAssetOptions={foliageCoverage?:'mask'|'hash';leafTransmission?:LeafTransmissionOptions;forestCoverage?:boolean;
+  localAerial?:{planet:THREE.Object3D;frame:THREE.Object3D;radiusM:number;sun:{value:THREE.Vector3};enabled:{value:number};eyeHeight:{value:number}}};
+export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){
+  if(options.foliageCoverage!==undefined&&!['mask','hash'].includes(options.foliageCoverage))throw new Error('Unsupported foliage coverage mode');
+  if(options.forestCoverage!==undefined&&typeof options.forestCoverage!=='boolean')throw new Error('Invalid forest coverage option');
+  const prepared=prepareTreeLODPair(lod0,lod1),loader=new GLTFLoader();
+  const loaded:THREE.Group[]=[];
+  const textures=new Set<THREE.Texture>(),materials=new Set<THREE.Material>(),geometries=new Set<THREE.BufferGeometry>();
+  function collect(group:THREE.Group){group.traverse(o=>{
+    if(!(o instanceof THREE.Mesh))return;
+    geometries.add(o.geometry);
+    for(const m of Array.isArray(o.material)?o.material:[o.material]){
+      materials.add(m);for(const value of Object.values(m))if(value instanceof THREE.Texture)textures.add(value);
+    }
+  });}
+  function dispose(){for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures){t.dispose();if(typeof ImageBitmap!=='undefined'&&t.image instanceof ImageBitmap)t.image.close();}}
+  try {
+    for(const bytes of [lod0,prepared.lod1GeometryBuffer]){const gltf=await loader.parseAsync(bytes,'');loaded.push(gltf.scene);collect(gltf.scene);}
+    const lods=loaded.map(group=>{
+      const meshes:THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>[]=[];
+      group.traverse(o=>{if(o instanceof THREE.Mesh)meshes.push(o as THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>);});
+      if(meshes.length!==2||meshes.some(m=>Array.isArray(m.material)))throw new Error('Expected two tree primitives');
+      return meshes.sort((a,b)=>a.material.name.localeCompare(b.material.name));
+    });
+    for(let i=0;i<2;i++){lods[1][i].material.dispose();materials.delete(lods[1][i].material);lods[1][i].material=lods[0][i].material;}
+    // Explicit experiment: hashing samples fractional mip coverage instead of
+    // discarding every leaf texel below the GLB's fixed MASK cutoff. Preserve
+    // the imported MASK path by default, including historical captures.
+    if(options.foliageCoverage==='hash'){
+      lods[0][1].material.alphaTest=0;lods[0][1].material.alphaHash=true;
+    }
+    const phase={value:0};
+    for(const material of materials)deform(material,phase);
+    if(options.forestCoverage)for(const material of materials)installTreeForestCoverage(material);
+    if(options.localAerial){
+      const air=options.localAerial;
+      // Both LOD batches have identity transforms in the forest's retained
+      // frame. Their shared materials therefore use identical air uniforms.
+      // Install before transmission, which guards the final material hook.
+      for(const mesh of lods[0])attachLocalAerial(mesh,air.planet,air.radiusM,air.sun,air.enabled,air.eyeHeight,undefined,air.frame);
+    }
+    // Conservative origin-centred sphere over both LODs, every supported
+    // skeleton height and rigid leaf-wind angle. Used before CPU culling.
+    let maxRadiusM=0;
+    for(const level of lods)for(const mesh of level){
+      const p=mesh.geometry.getAttribute('position'),pivot=mesh.geometry.getAttribute('_leaf_pivot'),branch=mesh.geometry.getAttribute('_branch_level');
+      for(let i=0;i<p.count;i++){
+        const radius=branch.getX(i)>3.5
+          ? Math.hypot(pivot.getX(i),pivot.getY(i),pivot.getZ(i))*22/TREE_REFERENCE_HEIGHT_M+Math.hypot(p.getX(i)-pivot.getX(i),p.getY(i)-pivot.getY(i),p.getZ(i)-pivot.getZ(i))
+          : Math.hypot(p.getX(i),p.getY(i),p.getZ(i))*22/TREE_REFERENCE_HEIGHT_M;
+        maxRadiusM=Math.max(maxRadiusM,radius);
+      }
+    }
+    // Compose only after wind. Both LODs share this one foliage material;
+    // bark and all custom shadow materials retain their previous lighting.
+    const leafTransmission=options.leafTransmission===undefined?null:installLeafTransmission(lods[0][1].material,options.leafTransmission);
+    let disposed=false,activeBatches=0;
+    return {
+      lods,textures,leafTransmission,maxRadiusM,forestCoverage:!!options.forestCoverage,embeddedTextureBytes:prepared.embeddedTextureBytes,
+      setDate(date:bigint){leafTransmission?.assertInstalled();phase.value=treeWindPhase(date);},
+      createBatch(lod:0|1,capacity:number){
+        if(disposed)throw new Error('Tree family is disposed');
+        if(!Number.isInteger(capacity)||capacity<1||capacity>4096)throw new Error('Invalid tree capacity');
+        const group=new THREE.Group(),tree=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2).setUsage(THREE.DynamicDrawUsage);
+        // Three clears ranges after bufferSubData, but not initial bufferData.
+        // Clear only once the GPU has consumed this owned attribute, including
+        // its first upload; hidden batches keep their pending ranges intact.
+        tree.onUpload(()=>tree.clearUpdateRanges());
+        const treeUpdates=new InstanceUpdateRanges();
+        const forest=options.forestCoverage?new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2).setUsage(THREE.DynamicDrawUsage):null;
+        const forestUpdates=new InstanceUpdateRanges();
+        if(forest){
+          for(let i=0;i<capacity;i++)forest.setXY(i,1,0);
+          forest.onUpload(()=>forest.clearUpdateRanges());
+        }
+        const matrixUpdates=[new InstanceUpdateRanges(),new InstanceUpdateRanges()];
+        const colorUpdates=[new InstanceUpdateRanges(),new InstanceUpdateRanges()];
+        const meshes=lods[lod].map((source,part)=>{
+          const geometry=source.geometry.clone();geometry.setAttribute('instanceTree',tree);
+          if(forest)geometry.setAttribute('instanceForest',forest);
+          const mesh=new THREE.InstancedMesh(geometry,source.material,capacity);mesh.count=0;
+          if(options.localAerial)mesh.onBeforeRender=lods[0][part].onBeforeRender;
+          mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.castShadow=true;mesh.receiveShadow=true;
+          mesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3).fill(1),3).setUsage(THREE.DynamicDrawUsage);
+          mesh.instanceMatrix.onUpload(()=>mesh.instanceMatrix.clearUpdateRanges());
+          mesh.instanceColor.onUpload(()=>mesh.instanceColor!.clearUpdateRanges());
+          // Caller can install conservative curved-world bounds after integration.
+          // Shader scale/wind invalidates Three's unmodified geometry bounds.
+          mesh.frustumCulled=false;
+          const common={map:source.material.map,alphaTest:source.material.alphaTest,alphaHash:source.material.alphaHash,side:source.material.side};
+          mesh.customDepthMaterial=new THREE.MeshDepthMaterial({...common,depthPacking:THREE.RGBADepthPacking});
+          mesh.customDistanceMaterial=new THREE.MeshDistanceMaterial(common);
+          deform(mesh.customDepthMaterial,phase);deform(mesh.customDistanceMaterial,phase);
+          if(options.forestCoverage){installTreeForestCoverage(mesh.customDepthMaterial);installTreeForestCoverage(mesh.customDistanceMaterial);}
+          group.add(mesh);return mesh;
+        });
+        activeBatches++;let batchDisposed=false;
+        return {group,meshes,
+          setCount(count:number){
+            if(batchDisposed||!Number.isInteger(count)||count<0||count>meshes[0].count)throw new Error('Tree count can only truncate initialized slots');
+            for(const mesh of meshes)mesh.count=count;
+          },
+          /** Matrix contains yaw/translation and metres-to-scene-units only.
+           * Tree height is applied in the shader so leaves retain their size. */
+          setInstance(index:number,matrix:THREE.Matrix4,heightM:number,phaseOffset=0){
+            if(batchDisposed||!Number.isInteger(index)||index<0||index>=capacity||index>meshes[0].count||!Number.isFinite(heightM)||heightM<10||heightM>22||!Number.isFinite(phaseOffset)||matrix.elements.some(x=>!Number.isFinite(x)))throw new Error('Invalid tree instance or gap in initialized slots');
+            const e=matrix.elements,a=new THREE.Vector3(e[0],e[1],e[2]),b=new THREE.Vector3(e[4],e[5],e[6]),c=new THREE.Vector3(e[8],e[9],e[10]);
+            const scale2=a.lengthSq(),tolerance=scale2*1e-6;
+            if(!Number.isFinite(scale2)||scale2<=0||Math.abs(b.lengthSq()-scale2)>tolerance||Math.abs(c.lengthSq()-scale2)>tolerance||Math.abs(a.dot(b))>tolerance||Math.abs(a.dot(c))>tolerance||Math.abs(b.dot(c))>tolerance||matrix.determinant()<=0||e[3]!==0||e[7]!==0||e[11]!==0||e[15]!==1)throw new Error('Tree matrix requires rotation and positive uniform scene-unit scale');
+            // Phase stays representable as Float32 even for a caller's very
+            // large finite offset; the absolute universe date stays BigInt.
+            const tau=2*Math.PI;phaseOffset=((phaseOffset%tau)+tau)%tau;
+            const scale=Math.fround(heightM/TREE_REFERENCE_HEIGHT_M),offset=Math.fround(phaseOffset);
+            const newSlot=index===meshes[0].count;
+            if(newSlot&&forest&&(forest.getX(index)!==1||forest.getY(index)!==0)){
+              forest.setXY(index,1,0);forestUpdates.include(index,2);forestUpdates.flush(forest);
+            }
+            if(tree.getX(index)!==scale||tree.getY(index)!==offset){
+              tree.setXY(index,scale,offset);treeUpdates.include(index,2);treeUpdates.flush(tree);
+            }
+            for(const [part,mesh] of meshes.entries()){
+              const color=mesh.instanceColor!;
+              if(newSlot&&(color.getX(index)!==1||color.getY(index)!==1||color.getZ(index)!==1)){
+                color.setXYZ(index,1,1,1);colorUpdates[part].include(index,3);colorUpdates[part].flush(color);
+              }
+              const base=index*16,values=mesh.instanceMatrix.array;
+              if(matrix.elements.some((value,component)=>values[base+component]!==Math.fround(value))){
+                mesh.setMatrixAt(index,matrix);matrixUpdates[part].include(index,16);matrixUpdates[part].flush(mesh.instanceMatrix);
+              }
+              mesh.count=Math.max(mesh.count,index+1);
+            }
+          },
+          /** Linear RGB multipliers over the authored bark and leaf textures.
+           * Each part keeps its shared material; only this slot's color changes.
+           * Fresh or re-grown slots are white. Call when a retained slot changes tree identity;
+           * transform/rebase updates deliberately retain its current colors. */
+          setAppearance(index:number,bark:readonly[number,number,number],foliage:readonly[number,number,number]){
+            const colors=[bark,foliage];
+            if(batchDisposed||!Number.isInteger(index)||index<0||index>=meshes[0].count||colors.some(color=>!Array.isArray(color)||color.length!==3||[0,1,2].some(i=>!Number.isFinite(color[i])||color[i]<0||color[i]>2)))throw new Error('Tree appearance requires an initialized slot and linear RGB multipliers in [0,2]');
+            for(const [part,mesh] of meshes.entries()){
+              const attribute=mesh.instanceColor!,color=colors[part],base=index*3;
+              if(color.some((value,component)=>attribute.array[base+component]!==Math.fround(value))){
+                attribute.setXYZ(index,...color);colorUpdates[part].include(index,3);colorUpdates[part].flush(attribute);
+              }
+            }
+          },
+          setCoverage(index:number,coverage:number,seed:number){
+            if(batchDisposed||!forest||!Number.isInteger(index)||index<0||index>=meshes[0].count||!Number.isFinite(coverage)||coverage<0||coverage>1||!Number.isInteger(seed)||seed<0||seed>255)throw new Error('Invalid canonical forest coverage');
+            const value=quantizeForestCoverage(coverage)/256;
+            if(forest.getX(index)!==value||forest.getY(index)!==seed){forest.setXY(index,value,seed);forestUpdates.include(index,2);forestUpdates.flush(forest);}
+          },
+          dispose(){if(batchDisposed)return;batchDisposed=true;activeBatches--;for(const mesh of meshes){mesh.geometry.dispose();mesh.customDepthMaterial?.dispose();mesh.customDistanceMaterial?.dispose();mesh.dispose();}group.clear();group.removeFromParent();},
+        };
+      },
+      dispose(){if(disposed)return;if(activeBatches)throw new Error('Dispose tree batches before their family');disposed=true;dispose();},
+    };
+  }catch(error){dispose();throw error;}
+}
+
+
+FILE src/tree-forest-coverage.ts
+import type {Material} from 'three';
+import {forestCoverageGLSL} from './forest-coverage.ts';
+import {liveGlsl} from './tree-impostor-reference-shader.ts';
+
+/** Compose canonical forest ownership with native leaf alpha and wind. The
+ * same hook belongs on the color, depth and distance materials. */
+export function installTreeForestCoverage(material:Material){
+  const prior=material.onBeforeCompile,key=material.customProgramCacheKey;
+  const baseKey=key.call(material);
+  material.onBeforeCompile=function(shader,renderer){
+    prior.call(this,shader,renderer);
+    const vertexAnchor='#include <begin_vertex>',fragmentAnchor='#include <alphahash_fragment>';
+    function insert(source:string,anchor:string,replacement:string){
+      const live=liveGlsl(source),index=live.indexOf(anchor);
+      if(index<0||live.indexOf(anchor,index+anchor.length)>=0)throw new Error(`Forest tree shader anchor changed: ${anchor}`);
+      return source.slice(0,index)+replacement+source.slice(index+anchor.length);
+    }
+    shader.vertexShader='attribute vec2 instanceForest;\nflat varying vec2 vAtlasForest;\n'+insert(shader.vertexShader,vertexAnchor,vertexAnchor+'\nvAtlasForest=instanceForest;');
+    shader.fragmentShader='flat varying vec2 vAtlasForest;\n'+forestCoverageGLSL+insert(shader.fragmentShader,fragmentAnchor,
+      'if(atlasForestHash(uint(vAtlasForest.y+.5))>=atlasForestLevel(vAtlasForest.x))discard;\n'+fragmentAnchor);
+  };
+  material.customProgramCacheKey=()=>`${baseKey}/atlas-tree-forest-coverage-1`;
+}
+
+
+FILE src/forest-tree-catalogue.ts
+import type {Species} from './biosphere-model.ts';
+import {bindTreeSpecies,treeSpeciesRecipe,treeInstanceAppearance} from './tree-species-recipe.ts';
+
+/** This snapshot receives the already dated catalogue from main. It neither
+ * invents species nor evaluates a second date or lifecycle model. */
+export function forestTreeCatalogue(species:readonly Species[]){
+  const trees=species.filter(s=>s.kind==='tree'&&(s.family==='branching'||s.family==='spire')).slice().sort((a,b)=>a.id.localeCompare(b.id));
+  const recipes=new Map(trees.map(s=>[s.id,treeSpeciesRecipe(s)]));
+  if(recipes.size!==trees.length)throw new Error('Duplicate dated tree species');
+  const signature=JSON.stringify([...recipes.values()]);
+  return {signature,count:trees.length,
+    resolve(cellId:string){
+      const species=bindTreeSpecies(cellId,trees);if(!species)return null;
+      const recipe=recipes.get(species.id)!;
+      return {recipe,appearance:treeInstanceAppearance(recipe,cellId)};
+    },
+  };
+}
+export type ForestTreeBinding=NonNullable<ReturnType<ReturnType<typeof forestTreeCatalogue>['resolve']>>;
+
+
+FILE src/forest-coverage.ts
+/** Full coverage is 256, not 255: all 256 possible hash values must pass. */
+export const quantizeForestCoverage=(coverage:number)=>Math.floor(Math.max(0,Math.min(1,coverage))*256+.5);
+export const forestCoverageGLSL=`
+uint atlasForestHash(uint seed){
+  uvec2 pixel=uvec2(gl_FragCoord.xy);
+  uint h=pixel.x*1664525u+pixel.y*1013904223u;
+  h^=h>>16u;h*=2246822519u;h^=h>>13u;
+  return (h+seed)&255u;
+}
+uint atlasForestLevel(float coverage){return uint(clamp(coverage,0.0,1.0)*256.0+.5);}
+`;
+/** CPU oracle for the exact unsigned integer shader operation. */
+export function forestScreenHash(x:number,y:number,seed=0){
+  let h=(Math.imul(x>>>0,1664525)+Math.imul(y>>>0,1013904223))>>>0;
+  h=(h^(h>>>16))>>>0;h=Math.imul(h,2246822519)>>>0;h=(h^(h>>>13))>>>0;
+  return (h+seed)&255;
+}
+
+
+FILE src/tree-species-recipe.ts
+import type {Species} from './biosphere-model.ts';
+
+/** Presentation contract only: never part of canonical surface-cell addresses. */
+export const TREE_RECIPE_VERSION='tree-recipe-1';
+export const TREE_VARIANT_COUNT=8;
+export const TREE_ASSET_VERSION='temperate-branching-v1';
+
+export type TreeSpeciesRecipe=Readonly<{
+  version:typeof TREE_RECIPE_VERSION; speciesId:string; lineageId:string;
+  family:'branching'|'spire'; sourceFingerprint:string;
+  heightM:number; crownWidthM:number; trunkDiameterM:number;
+  branchCount:number; branchAngleRad:number; curvature:number;
+  leafLengthM:number; leafWidthM:number; leafDensity:number;
+  barkSRGB:string; foliageSRGB:string;
+}>;
+
+function hash(text:string){
+  let h=2166136261;
+  for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619);}
+  h^=h>>>16;h=Math.imul(h,0x7feb352d);h^=h>>>15;h=Math.imul(h,0x846ca68b);
+  return (h^(h>>>16))>>>0;
+}
+const unit=(...parts:unknown[])=>hash(JSON.stringify(parts))/0x100000000;
+
+/** The caller supplies the already dated/eligible catalogue species. Rendezvous
+ * assignment is independent of enumeration order and unrelated non-tree species.
+ * Adding a tree species can transfer some assignments; it does not move cells. */
+export function bindTreeSpecies(cellId:string,eligibleSpecies:readonly Species[]):Species|null {
+  if(!cellId)throw new Error('Canonical cell id is required');
+  let chosen:Species|null=null,best=-1;
+  for(const species of eligibleSpecies){
+    if(species.kind!=='tree'||(species.family!=='branching'&&species.family!=='spire'))continue;
+    const score=hash(JSON.stringify([cellId,species.id,'tree-species-binding-1']));
+    if(score>best||(score===best&&species.id<(chosen?.id??''))){chosen=species;best=score;}
+  }
+  return chosen;
+}
+
+/** Convert existing catalogue traits into a physical rendering envelope. The
+ * trunk/crown relationship is an art heuristic, not a botanical simulation. */
+export function treeSpeciesRecipe(species:Species):TreeSpeciesRecipe {
+  if(!species.id||!species.lineageId)throw new Error('Catalogue species and lineage ids are required');
+  if(species.kind!=='tree'||(species.family!=='branching'&&species.family!=='spire'))throw new Error('A catalogue tree species is required');
+  const t=species.traits;
+  for(const key of ['heightM','widthRatio','branchCount','branchAngle','curvature','leafLength','leafWidth','leafDensity'] as const)
+    if(!Number.isFinite(t[key]))throw new Error(`Non-finite tree trait ${key}`);
+  if(t.heightM<=0||t.widthRatio<=0||t.leafLength<=0||t.leafWidth<=0||t.branchCount<1||t.leafDensity<0||t.leafDensity>1)throw new Error('Invalid tree physical envelope');
+  if(!/^#[0-9a-f]{6}$/i.test(t.color)||!/^#[0-9a-f]{6}$/i.test(t.woodColor))throw new Error('Tree colours must be sRGB hex');
+  const source=[species.id,species.lineageId,species.family,t.heightM,t.widthRatio,t.branchCount,t.branchAngle,t.curvature,t.leafLength,t.leafWidth,t.leafDensity,t.color,t.woodColor];
+  return Object.freeze({version:TREE_RECIPE_VERSION,speciesId:species.id,lineageId:species.lineageId,family:species.family,
+    sourceFingerprint:hash(JSON.stringify(source)).toString(16).padStart(8,'0'),
+    heightM:t.heightM,crownWidthM:t.heightM*t.widthRatio,
+    trunkDiameterM:t.heightM*(species.family==='spire'?.026:.034),
+    branchCount:Math.round(t.branchCount),branchAngleRad:t.branchAngle,curvature:t.curvature,
+    leafLengthM:t.leafLength,leafWidthM:t.leafWidth,leafDensity:t.leafDensity,
+    barkSRGB:t.woodColor,foliageSRGB:t.color});
+}
+
+export function treeStructuralVariant(recipe:TreeSpeciesRecipe,variant:number){
+  if(!Number.isInteger(variant)||variant<0||variant>=TREE_VARIANT_COUNT)throw new Error('Tree variant is outside the bounded pool');
+  const u=(channel:string)=>unit(recipe.version,recipe.speciesId,recipe.sourceFingerprint,variant,channel);
+  const heightScale=.94+.12*u('height'),crownScale=.93+.14*u('crown');
+  return Object.freeze({variant,branchSeed:hash(JSON.stringify([recipe.version,recipe.speciesId,variant,'branches'])),
+    heightM:recipe.heightM*heightScale,crownWidthM:recipe.crownWidthM*heightScale*crownScale,
+    trunkDiameterM:recipe.trunkDiameterM*heightScale,
+    branchCount:Math.max(3,Math.round(recipe.branchCount*(.9+.2*u('branches')))),
+    branchAngleRad:recipe.branchAngleRad+(.08*u('angle')-.04),
+    curvature:recipe.curvature+(.08*u('curve')-.04),
+    // Leaves keep their species dimensions when the whole tree grows taller.
+    leafLengthM:recipe.leafLengthM,leafWidthM:recipe.leafWidthM,
+    leafDensity:Math.min(1,recipe.leafDensity*(.94+.12*u('density')))});
+}
+
+/** Cheap per-instance shader parameters. Tints multiply separate bark/leaf
+ * masks; they never choose a new topology or a new species. */
+export function treeInstanceAppearance(recipe:TreeSpeciesRecipe,cellId:string){
+  if(!cellId)throw new Error('Canonical cell id is required');
+  const u=(channel:string)=>unit(recipe.version,recipe.speciesId,cellId,channel);
+  return Object.freeze({variant:Math.floor(u('variant')*TREE_VARIANT_COUNT),
+    barkBrightness:.92+.16*u('bark'),foliageBrightness:.9+.2*u('foliage'),
+    windPhase01:u('wind'),textureVariant:Math.floor(u('texture')*4)});
+}
+
+export function treeGeometryCacheKey(recipe:TreeSpeciesRecipe,variant:number,lod:0|1|2,assetVersion=TREE_ASSET_VERSION){
+  if(![0,1,2].includes(lod)||!assetVersion)throw new Error('Tree asset version and valid LOD are required');
+  treeStructuralVariant(recipe,variant);
+  return JSON.stringify([recipe.version,assetVersion,recipe.speciesId,recipe.sourceFingerprint,variant,lod]);
+}
+
+
+FILE src/tree-leaf-transmission.ts
+import * as THREE from 'three';
+import {liveGlsl} from './tree-impostor-reference-shader.ts';
+
+/** Experimental thin, two-sided leaf response. Uses the sampled base colour
+ * times a linear tint for transmission: a bounded subset inspired by Khronos
+ * diffuse transmission, not a KHR_materials_diffuse_transmission importer.
+ * The host's specular/Fresnel calculations are retained verbatim. */
+export type LeafTransmissionOptions={factor?:number;tint?:readonly [number,number,number]};
+const VERSION='atlas-leaf-diffuse-1';
+const installed=new WeakSet<THREE.Material>();
+
+function replaceLiveOnce(source:string,anchor:string,replacement:string){
+  const live=liveGlsl(source),at=live.indexOf(anchor);
+  if(at<0||live.indexOf(anchor,at+anchor.length)>=0)throw new Error(`Leaf transmission shader hook changed: ${anchor}`);
+  return source.slice(0,at)+replacement+source.slice(at+anchor.length);
+}
+
+const declarations=`
+uniform float atlasLeafTransmission;
+uniform vec3 atlasLeafTransmissionTint;
+vec3 atlasLeafBackIrradiance = vec3(0.0);
+vec3 atlasLeafBackIblIrradiance = vec3(0.0);
+vec3 atlasLeafGeometricNormal = vec3(0.0);
+`;
+
+// Branch on a shared uniform so factor zero executes the exact original
+// diffuse expression and does not sample opposite-hemisphere environment maps.
+function split(original:string,expression:string){
+  return `if (atlasLeafTransmission > 0.0) {\n${expression}\n} else {\n${original}\n}`;
+}
+
+/** Exported for source-contract tests. Does not mutate global ShaderChunk. */
+export function patchLeafTransmissionShader(fragmentShader:string,physicalChunk=THREE.ShaderChunk.lights_physical_pars_fragment,normalChunk=THREE.ShaderChunk.normal_fragment_begin){
+  if(liveGlsl(fragmentShader).includes('atlasLeafTransmission'))throw new Error('Leaf transmission is already installed');
+  replaceLiveOnce(normalChunk,'vec3 nonPerturbedNormal = normal;','vec3 nonPerturbedNormal = normal;');
+  let chunk=physicalChunk;
+  const direct='reflectedLight.directDiffuse += irradiance * BRDF_Lambert( material.diffuseColor );';
+  chunk=replaceLiveOnce(chunk,direct,split(direct,`
+    vec3 backIrradiance = saturate(dot(-atlasLeafGeometricNormal, directLight.direction)) * directLight.color;
+    reflectedLight.directDiffuse += ((1.0-atlasLeafTransmission)*irradiance
+      + atlasLeafTransmission*atlasLeafTransmissionTint*backIrradiance) * BRDF_Lambert(material.diffuseColor);`));
+
+  const area='reflectedLight.directDiffuse += lightColor * material.diffuseColor * LTC_Evaluate( normal, viewDir, position, mat3( 1.0 ), rectCoords );';
+  chunk=replaceLiveOnce(chunk,area,split(area,`
+    reflectedLight.directDiffuse += lightColor * material.diffuseColor * (
+      (1.0-atlasLeafTransmission)*LTC_Evaluate(normal, viewDir, position, mat3(1.0), rectCoords)
+      + atlasLeafTransmission*atlasLeafTransmissionTint*LTC_Evaluate(-atlasLeafGeometricNormal, viewDir, position, mat3(1.0), rectCoords));`));
+
+  const indirect='reflectedLight.indirectDiffuse += irradiance * BRDF_Lambert( material.diffuseColor );';
+  chunk=replaceLiveOnce(chunk,indirect,split(indirect,`
+    reflectedLight.indirectDiffuse += ((1.0-atlasLeafTransmission)*irradiance
+      + atlasLeafTransmission*atlasLeafTransmissionTint*atlasLeafBackIrradiance) * BRDF_Lambert(material.diffuseColor);`));
+
+  const environment='reflectedLight.indirectDiffuse += diffuse * cosineWeightedIrradiance;';
+  chunk=replaceLiveOnce(chunk,environment,split(environment,`
+    reflectedLight.indirectDiffuse += diffuse * ((1.0-atlasLeafTransmission)*cosineWeightedIrradiance
+      + atlasLeafTransmission*atlasLeafTransmissionTint*atlasLeafBackIblIrradiance*RECIPROCAL_PI);`));
+  let shader=replaceLiveOnce(fragmentShader,'#include <lights_physical_pars_fragment>',declarations+chunk);
+  shader=replaceLiveOnce(shader,'#include <lights_fragment_begin>',`
+    // nonPerturbedNormal already includes vertex wind and DoubleSide flipping.
+    // Transmission follows the thin surface, not bumps that can cross its side.
+    atlasLeafGeometricNormal = nonPerturbedNormal;
+    #include <lights_fragment_begin>
+    if (atlasLeafTransmission > 0.0) {
+      atlasLeafBackIrradiance = getAmbientLightIrradiance(ambientLightColor);
+      #ifdef USE_LIGHT_PROBES
+        atlasLeafBackIrradiance += getLightProbeIrradiance(lightProbe, -atlasLeafGeometricNormal);
+      #endif
+      #if NUM_HEMI_LIGHTS > 0
+        #pragma unroll_loop_start
+        for ( int i = 0; i < NUM_HEMI_LIGHTS; i ++ ) {
+          atlasLeafBackIrradiance += getHemisphereLightIrradiance(hemisphereLights[ i ], -atlasLeafGeometricNormal);
+        }
+        #pragma unroll_loop_end
+      #endif
+    }`);
+  shader=replaceLiveOnce(shader,'#include <lights_fragment_maps>',`#include <lights_fragment_maps>
+    #if defined(USE_ENVMAP) && defined(STANDARD) && defined(ENVMAP_TYPE_CUBE_UV)
+      if (atlasLeafTransmission > 0.0) {
+        atlasLeafBackIblIrradiance = getIBLIrradiance(-atlasLeafGeometricNormal);
+      }
+    #endif`);
+  // Both opposite irradiances must exist before the host calls its indirect REs.
+  const live=liveGlsl(shader),end=live.indexOf('#include <lights_fragment_end>');
+  if(end<0||live.indexOf('#include <lights_fragment_end>',end+1)>=0||end<live.lastIndexOf('atlasLeafBackIblIrradiance = getIBLIrradiance'))throw new Error('Leaf transmission indirect-light order changed');
+  const normals=live.indexOf('#include <normal_fragment_maps>'),begin=live.indexOf('#include <lights_fragment_begin>'),maps=live.indexOf('#include <lights_fragment_maps>');
+  if(normals<0||live.indexOf('#include <normal_fragment_maps>',normals+1)>=0||normals>begin||begin>maps||maps>end)throw new Error('Leaf transmission normal/light order changed');
+  return shader;
+}
+
+function values(options:LeafTransmissionOptions){
+  if(options===null||typeof options!=='object'||Array.isArray(options)||Object.keys(options).some(key=>key!=='factor'&&key!=='tint'))throw new Error('Leaf transmission options must contain only factor and tint');
+  const factor=options.factor===undefined?0:options.factor,tint=options.tint===undefined?[1,1,1]:options.tint;
+  if(typeof factor!=='number'||!Number.isFinite(factor)||factor<0||factor>1||!Array.isArray(tint)||tint.length!==3||[0,1,2].some(i=>!Number.isFinite(tint[i])||tint[i]<0||tint[i]>1))throw new Error('Leaf transmission factor and linear tint must be in [0,1]');
+  return {factor,tint:[tint[0],tint[1],tint[2]] as const};
+}
+
+function validateMaterial(material:THREE.MeshStandardMaterial){
+  const physical=material as THREE.MeshPhysicalMaterial;
+  if(!material.isMeshStandardMaterial||material.side!==THREE.DoubleSide||material.metalness!==0||material.metalnessMap||material.lightMap||material.aoMap||(physical.transmission??0)!==0||physical.transmissionMap)throw new Error('Leaf transmission requires a two-sided dielectric without metalness maps, lightmaps, AO maps or glass transmission');
+}
+
+/** Call AFTER the wind/deformation adapter. Shared uniforms work for all
+ * instances and LODs; depth/distance materials are deliberately not changed.
+ * Material flags affecting the supported domain must remain valid at compile.
+ * Reapply explicitly if a material is cloned (Three does not clone hooks). */
+export function installLeafTransmission(material:THREE.MeshStandardMaterial,options:LeafTransmissionOptions={}){
+  const initial=values(options);validateMaterial(material);
+  if(installed.has(material))throw new Error('Leaf transmission is already installed on this material');
+  const factor={value:initial.factor},tint={value:new THREE.Vector3(...initial.tint)};
+  const previousCompile=material.onBeforeCompile;
+  // Capture the default key before installing our wrapper: Three's default key
+  // reads this.onBeforeCompile and would otherwise describe the wrapper itself.
+  const previousKey=material.customProgramCacheKey.bind(material);
+  const baseKey=previousKey();
+  const defaultKey=material.customProgramCacheKey===THREE.Material.prototype.customProgramCacheKey;
+  const compile:THREE.Material['onBeforeCompile']=function(this:THREE.Material,shader,renderer){
+    validateMaterial(material);
+    previousCompile.call(this,shader,renderer);
+    const patched=patchLeafTransmissionShader(shader.fragmentShader);
+    if(shader.uniforms.atlasLeafTransmission||shader.uniforms.atlasLeafTransmissionTint)throw new Error('Leaf transmission uniform collision');
+    shader.uniforms.atlasLeafTransmission=factor;
+    shader.uniforms.atlasLeafTransmissionTint=tint;
+    shader.fragmentShader=patched;
+  };
+  const key=()=>`${defaultKey?baseKey:previousKey()}|${VERSION}`;
+  material.onBeforeCompile=compile;material.customProgramCacheKey=key;
+  installed.add(material);material.needsUpdate=true;
+  return {
+    assertInstalled(){if(material.onBeforeCompile!==compile||material.customProgramCacheKey!==key)throw new Error('Leaf transmission hook was replaced after installation');},
+    /** Values update atomically; no material/program per tree or per setting. */
+    set(options:LeafTransmissionOptions){const next=values(options);factor.value=next.factor;tint.value.set(...next.tint);},
+    get factor(){return factor.value;},
+    get tint():readonly [number,number,number]{return [tint.value.x,tint.value.y,tint.value.z];},
+  };
+}
+
+
+FILE src/local-aerial-perspective.ts
+import * as THREE from 'three';
+
+/** Shared approximation for local solid surfaces. This preserves the existing
+ * terrain response; it is not a multiple-scattering atmosphere model. */
+export const LOCAL_AERIAL_VERSION='local-aerial-1';
+const attachedMaterials=new WeakSet<THREE.Material>();
+export const localAerialGLSL=`
+vec3 atlasApplyLocalAir(vec3 radiance,float distanceM,float eyeHeightM,float surfaceHeightM,float sunCosine,float enabled){
+  float airHeight=max(0.0,(eyeHeightM+surfaceHeightM)*.5);
+  float airFog=enabled*min(.92,1.0-exp(-distanceM/65000.0*exp(-airHeight/14000.0)));
+  float daylight=smoothstep(-.15,.15,sunCosine);
+  radiance=mix(radiance,mix(vec3(.020,.032,.055),vec3(.23,.43,.64),daylight),airFog);
+  return mix(radiance,max(radiance,vec3(.007,.011,.018)),airFog);
+}
+`;
+
+export function localAerialReference(radiance:readonly number[],distanceM:number,eyeHeightM:number,surfaceHeightM:number,sunCosine:number,enabled=1){
+  const height=Math.max(0,(eyeHeightM+surfaceHeightM)*.5);
+  const fog=enabled*Math.min(.92,1-Math.exp(-Math.max(0,distanceM)/65000*Math.exp(-height/14000)));
+  const t=Math.max(0,Math.min(1,(sunCosine+.15)/.3)),day=t*t*(3-2*t);
+  const night=[.020,.032,.055],noon=[.23,.43,.64],floor=[.007,.011,.018];
+  return radiance.map((v,i)=>{const haze=night[i]+(noon[i]-night[i])*day,x=v+(haze-v)*fog;return x+(Math.max(x,floor[i])-x)*fog;});
+}
+
+/** Instance transforms remain in their existing local precision frames. The
+ * GPU uses view-space distance; the planet-relative position is needed only
+ * for kilometre-scale density and daylight, not fine terrain or collision.
+ * Each supplied mesh must own its material (one material per batch is enough).
+ * An explicit frame permits identity-transformed batches in that SAME frame to
+ * share this material and its render callback. It is not per-object instancing. */
+export function attachLocalAerial(mesh:THREE.Mesh,planet:THREE.Object3D,radiusM:number,sun:{value:THREE.Vector3},enabled={value:1},eyeHeight?:{value:number},surfaceHit?:{local:string;view:string},frame:THREE.Object3D=mesh){
+  if(Array.isArray(mesh.material))throw new Error('Local aerial attachment expects one material per batch');
+  const material=mesh.material;
+  if(attachedMaterials.has(material))throw new Error('Local aerial material is already attached');
+  attachedMaterials.add(material);
+  const uniforms={
+    atlasAirObjectToPlanet:{value:new THREE.Matrix4()},atlasAirRadius:{value:radiusM},
+    atlasAirMetresPerViewUnit:{value:1},atlasAirEyeHeight:eyeHeight??{value:0},atlasAirSun:sun,
+    atlasAirEnabled:enabled,
+  };
+  const compile=material.onBeforeCompile;
+  const inheritedKey=material.customProgramCacheKey===THREE.Material.prototype.customProgramCacheKey?()=>compile.toString():material.customProgramCacheKey.bind(material);
+  material.onBeforeCompile=(shader,renderer)=>{
+    compile.call(material,shader,renderer);
+    const missing=!shader.vertexShader.includes('#include <project_vertex>')?'project_vertex':!shader.fragmentShader.includes('#include <opaque_fragment>')?'opaque_fragment':null;
+    if(missing){material.userData.localAerialVersion=`failed:${missing}`;return;}
+    material.userData.localAerialVersion=LOCAL_AERIAL_VERSION;
+    Object.assign(shader.uniforms,uniforms);
+    shader.vertexShader='uniform mat4 atlasAirObjectToPlanet; varying vec3 atlasAirPlanetPosition,atlasAirViewPosition;\n'+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>',`#include <project_vertex>
+      vec4 atlasAirLocalPosition=vec4(transformed,1.0);
+      #ifdef USE_INSTANCING
+        atlasAirLocalPosition=instanceMatrix*atlasAirLocalPosition;
+      #endif
+      atlasAirPlanetPosition=(atlasAirObjectToPlanet*atlasAirLocalPosition).xyz;
+      atlasAirViewPosition=mvPosition.xyz;`);
+    shader.fragmentShader=`uniform mat4 atlasAirObjectToPlanet;
+      uniform float atlasAirRadius,atlasAirMetresPerViewUnit,atlasAirEyeHeight,atlasAirEnabled;
+      uniform vec3 atlasAirSun;varying vec3 atlasAirPlanetPosition,atlasAirViewPosition;
+      ${localAerialGLSL}\n`+shader.fragmentShader;
+    shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`
+      vec3 atlasSurfacePlanet=${surfaceHit?`(atlasAirObjectToPlanet*vec4(${surfaceHit.local},1.0)).xyz`:'atlasAirPlanetPosition'};
+      outgoingLight=atlasApplyLocalAir(outgoingLight,length(${surfaceHit?.view??'atlasAirViewPosition'})*atlasAirMetresPerViewUnit,
+        atlasAirEyeHeight,(length(atlasSurfacePlanet)-1.0)*atlasAirRadius,
+        dot(normalize(atlasSurfacePlanet),atlasAirSun),atlasAirEnabled);
+      #include <opaque_fragment>`);
+  };
+  material.customProgramCacheKey=()=>inheritedKey()+'/'+LOCAL_AERIAL_VERSION+'/'+(surfaceHit?`${surfaceHit.local}/${surfaceHit.view}`:'mesh');
+  material.userData.localAerialVersion=LOCAL_AERIAL_VERSION;material.needsUpdate=true;
+  const inversePlanet=new THREE.Matrix4(),eye=new THREE.Vector3(),scale=new THREE.Vector3();
+  const before=mesh.onBeforeRender;
+  mesh.onBeforeRender=(renderer,scene,camera,geometry,mat,group)=>{
+    before.call(mesh,renderer,scene,camera,geometry,mat,group);
+    inversePlanet.copy(planet.matrixWorld).invert();
+    uniforms.atlasAirObjectToPlanet.value.multiplyMatrices(inversePlanet,frame.matrixWorld);
+    eye.setFromMatrixPosition(camera.matrixWorld).applyMatrix4(inversePlanet);
+    if(!eyeHeight)uniforms.atlasAirEyeHeight.value=(eye.length()-1)*radiusM;
+    scale.setFromMatrixScale(planet.matrixWorld);
+    uniforms.atlasAirMetresPerViewUnit.value=radiusM/Math.max(1e-20,Math.abs(scale.x));
+  };
+  return uniforms;
+}
+
+
+FILE src/instance-update-ranges.ts
+import type {BufferAttribute} from 'three';
+
+/** Component ranges, not byte ranges. Pending GPU uploads survive invisible
+ * frames. Keep at most eight ranges by merging the smallest gaps. */
+export class InstanceUpdateRanges {
+  private ranges:{start:number;end:number}[]=[];
+  include(index:number,components:number){
+    this.merge(index*components,(index+1)*components);
+  }
+  private merge(start:number,end:number){
+    for(let i=this.ranges.length-1;i>=0;i--){
+      const range=this.ranges[i];if(range.end<start||range.start>end)continue;
+      start=Math.min(start,range.start);end=Math.max(end,range.end);this.ranges.splice(i,1);
+    }
+    this.ranges.push({start,end});this.ranges.sort((a,b)=>a.start-b.start);
+    while(this.ranges.length>8){
+      let closest=0;
+      for(let i=1;i<this.ranges.length-1;i++)if(this.ranges[i+1].start-this.ranges[i].end<this.ranges[closest+1].start-this.ranges[closest].end)closest=i;
+      this.ranges[closest].end=this.ranges[closest+1].end;this.ranges.splice(closest+1,1);
+    }
+  }
+  flush(attribute:BufferAttribute){
+    if(!this.ranges.length)return 0;
+    for(const range of attribute.updateRanges)this.merge(range.start,range.start+range.count);
+    attribute.clearUpdateRanges();let components=0;
+    for(const range of this.ranges){attribute.addUpdateRange(range.start,range.end-range.start);components+=range.end-range.start;}
+    attribute.needsUpdate=true;this.ranges.length=0;
+    return components*attribute.array.BYTES_PER_ELEMENT;
+  }
+}

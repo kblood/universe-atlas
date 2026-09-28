@@ -1,0 +1,43 @@
+{
+  "revision": "b87c209cb8dc82e0464688498bbb7f23a427734e",
+  "dirty": true,
+  "files": [
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "fe3c9bde23d06753c9b479a5f7fe8da213d866b1d389ba39e4b5c5db8de5f563"
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "sha256": "2688dbfae20e92820ac121333faaab251c85a28876018fda00a99c057d47b04b"
+    },
+    {
+      "path": "src/tree-forest-coverage.ts",
+      "sha256": "c37f828571497c075f0877cdeebdce47b5a486065666c389c4168d778763ee59"
+    },
+    {
+      "path": "src/forest-tree-catalogue.ts",
+      "sha256": "11fea8d2e51a7002dd0aa17de0e8ddd00e73ff29b7a447aff989702110810258"
+    },
+    {
+      "path": "src/forest-coverage.ts",
+      "sha256": "a7e68679084a59c9954ec10955f876349ee685128dea13922f85505ce701a711"
+    },
+    {
+      "path": "src/tree-species-recipe.ts",
+      "sha256": "a7ad583f72e728be2ba4c75a56197c77b8333f2e17c1e9cd7d3de359949a327f"
+    },
+    {
+      "path": "src/tree-leaf-transmission.ts",
+      "sha256": "6f161c4ec513838f5516120288592855ec4f6ed4ccc8d7de5c83ae54a4c502d0"
+    },
+    {
+      "path": "src/local-aerial-perspective.ts",
+      "sha256": "bbedfc8e2893629a1d01f5904e9d3ab866ef544d082db6150ce397da2456e1c0"
+    },
+    {
+      "path": "src/instance-update-ranges.ts",
+      "sha256": "6ee7fd00142af2e3938fd8480c0bf46b80f7fb71c5492538f7c63c704631ac29"
+    }
+  ],
+  "wiringDiff": "diff --git a/src/main.ts b/src/main.ts\nindex e8bd775..f636a51 100644\n--- a/src/main.ts\n+++ b/src/main.ts\n@@ -287,6 +287,7 @@ function lifeGateContext(sys: StarSystem, body: Body, t: Ns): LifeGateContext |\n       value = {\n         tMyr: planetAgeMyr(entry.lc, t),\n         floraStage: stage, floraAvailableKinds: floraKindsFromSpecies(bio.species),\n+        treeSpecies: bio.species.filter(s=>s.kind==='tree'),\n         faunaStage: stage, faunaAvailableArchetypes: faunaArchetypesFromSpecies(bio.species),\n         faunaSpecies: bio.species.filter((s): s is Species & { creature: NonNullable<Species['creature']> } => !!s.creature)\n           .map(s => ({ id: s.id, creature: s.creature })),\n@@ -5204,6 +5205,12 @@ async function boot() {\n // Diagnostics and an explicit rendering freeze used by browser acceptance tests.\n Object.defineProperty(window, \"__atlas\", {\n   value: {\n+    async loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:import('./tree-asset.ts').TreeAssetOptions={}){\n+      if(!import.meta.env.DEV)throw new Error('Experimental forest assets require a development build');\n+      if(!planetTiles)throw new Error('Visit a planet before loading forest assets');\n+      return planetTiles.loadForestTreeAssets(lod0,lod1,options);\n+    },\n+    clearForestTreeAssets(){planetTiles?.clearForestTreeAssets();},\n     setProfiling(enabled:boolean){renderProfile.setEnabled(enabled);},\n     resetProfile(){renderProfile.clear();},\n     setCloudSceneSamples(samples:0|2|4){\ndiff --git a/src/planet-renderer.ts b/src/planet-renderer.ts\nindex 9cd3002..59ee89d 100644\n--- a/src/planet-renderer.ts\n+++ b/src/planet-renderer.ts\n@@ -30,6 +30,8 @@ import {surfaceCellsWithin,type SurfaceCell} from './surface-cell.ts';\n import {biomeClassifier} from './surface-biomes.ts';\n import {PlanetForest} from './planet-forest.ts';\n import {PLANET_DETAIL} from './planet-detail.ts';\n+import type {Species} from './biosphere-model.ts';\n+import type {TreeAssetOptions} from './tree-asset.ts';\n \n // Canonical surface cells own organisms. Demand extends past visible range;\n // bounded habitat work retains old cells while new neighbours load.\n@@ -53,6 +55,7 @@ export interface LifeGateContext {\n   tMyr: number;\n   floraStage: FloraStage;\n   floraAvailableKinds?: readonly FloraKind[];\n+  treeSpecies?: readonly Species[];\n   faunaStage: FaunaStage;\n   faunaAvailableArchetypes?: readonly CreatureArchetype[];\n   faunaSpecies?: readonly { id: string; creature: CreatureGenome }[];\n@@ -529,6 +532,13 @@ export class PlanetRenderer {\n    * `world-surface.ts`'s `biosphereStateAt`/`planetAgeMyr` -- see\n    * `LifeGateContext`'s own doc comment. */\n   setLifeContext(context: LifeGateContext | null): void { this.lifeContext = context; }\n+  loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){\n+    return this.forest.loadTreeAssets(lod0,lod1,{...options,localAerial:{\n+      planet:this.group,frame:this.forest.group,radiusM:this.body.radiusM,\n+      sun:this.sunUniform,enabled:this.localAirUniform,eyeHeight:this.eyeHeightUniform,\n+    }});\n+  }\n+  clearForestTreeAssets(){this.forest.clearTreeAssets();}\n   private startWorker(index:number){\n     const generation=(this.workers[index]?.generation??0)+1,restarts=this.workers[index]?.restarts??0;\n     const worker=new Worker(new URL('./planet-worker.ts',import.meta.url),{type:'module'});\n@@ -787,7 +797,7 @@ export class PlanetRenderer {\n     // Visible forest density is centred on the observer's ground position.\n     // View direction may inform future prefetch, never population coverage:\n     // moving this focus ahead made turning in place replace dense forest.\n-    this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta);\n+    this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta,worldNs,this.lifeContext?.treeSpecies);\n     if (this.relief === 1 && (contact||altitudeM<PLANET_DETAIL.groundLifeAltitudeM) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs); this.lifeMs=performance.now()-lifeStarted; }\n     else { this.hideLife(); this.lifeMs=0; }\n     const direction = eye.clone().normalize();\n"
+}

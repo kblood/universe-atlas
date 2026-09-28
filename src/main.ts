@@ -287,6 +287,7 @@ function lifeGateContext(sys: StarSystem, body: Body, t: Ns): LifeGateContext | 
       value = {
         tMyr: planetAgeMyr(entry.lc, t),
         floraStage: stage, floraAvailableKinds: floraKindsFromSpecies(bio.species),
+        treeSpecies: bio.species.filter(s=>s.kind==='tree'),
         faunaStage: stage, faunaAvailableArchetypes: faunaArchetypesFromSpecies(bio.species),
         faunaSpecies: bio.species.filter((s): s is Species & { creature: NonNullable<Species['creature']> } => !!s.creature)
           .map(s => ({ id: s.id, creature: s.creature })),
@@ -5204,6 +5205,12 @@ async function boot() {
 // Diagnostics and an explicit rendering freeze used by browser acceptance tests.
 Object.defineProperty(window, "__atlas", {
   value: {
+    async loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:import('./tree-asset.ts').TreeAssetOptions={}){
+      if(!import.meta.env.DEV)throw new Error('Experimental forest assets require a development build');
+      if(!planetTiles)throw new Error('Visit a planet before loading forest assets');
+      return planetTiles.loadForestTreeAssets(lod0,lod1,options);
+    },
+    clearForestTreeAssets(){planetTiles?.clearForestTreeAssets();},
     setProfiling(enabled:boolean){renderProfile.setEnabled(enabled);},
     resetProfile(){renderProfile.clear();},
     setCloudSceneSamples(samples:0|2|4){

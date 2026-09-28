@@ -25,8 +25,10 @@ export function localAerialReference(radiance:readonly number[],distanceM:number
 /** Instance transforms remain in their existing local precision frames. The
  * GPU uses view-space distance; the planet-relative position is needed only
  * for kilometre-scale density and daylight, not fine terrain or collision.
- * Each supplied mesh must own its material (one material per batch is enough). */
-export function attachLocalAerial(mesh:THREE.Mesh,planet:THREE.Object3D,radiusM:number,sun:{value:THREE.Vector3},enabled={value:1},eyeHeight?:{value:number},surfaceHit?:{local:string;view:string}){
+ * Each supplied mesh must own its material (one material per batch is enough).
+ * An explicit frame permits identity-transformed batches in that SAME frame to
+ * share this material and its render callback. It is not per-object instancing. */
+export function attachLocalAerial(mesh:THREE.Mesh,planet:THREE.Object3D,radiusM:number,sun:{value:THREE.Vector3},enabled={value:1},eyeHeight?:{value:number},surfaceHit?:{local:string;view:string},frame:THREE.Object3D=mesh){
   if(Array.isArray(mesh.material))throw new Error('Local aerial attachment expects one material per batch');
   const material=mesh.material;
   if(attachedMaterials.has(material))throw new Error('Local aerial material is already attached');
@@ -70,7 +72,7 @@ export function attachLocalAerial(mesh:THREE.Mesh,planet:THREE.Object3D,radiusM:
   mesh.onBeforeRender=(renderer,scene,camera,geometry,mat,group)=>{
     before.call(mesh,renderer,scene,camera,geometry,mat,group);
     inversePlanet.copy(planet.matrixWorld).invert();
-    uniforms.atlasAirObjectToPlanet.value.multiplyMatrices(inversePlanet,mesh.matrixWorld);
+    uniforms.atlasAirObjectToPlanet.value.multiplyMatrices(inversePlanet,frame.matrixWorld);
     eye.setFromMatrixPosition(camera.matrixWorld).applyMatrix4(inversePlanet);
     if(!eyeHeight)uniforms.atlasAirEyeHeight.value=(eye.length()-1)*radiusM;
     scale.setFromMatrixScale(planet.matrixWorld);

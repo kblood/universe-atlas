@@ -30,6 +30,8 @@ import {surfaceCellsWithin,type SurfaceCell} from './surface-cell.ts';
 import {biomeClassifier} from './surface-biomes.ts';
 import {PlanetForest} from './planet-forest.ts';
 import {PLANET_DETAIL} from './planet-detail.ts';
+import type {Species} from './biosphere-model.ts';
+import type {TreeAssetOptions} from './tree-asset.ts';
 
 // Canonical surface cells own organisms. Demand extends past visible range;
 // bounded habitat work retains old cells while new neighbours load.
@@ -53,6 +55,7 @@ export interface LifeGateContext {
   tMyr: number;
   floraStage: FloraStage;
   floraAvailableKinds?: readonly FloraKind[];
+  treeSpecies?: readonly Species[];
   faunaStage: FaunaStage;
   faunaAvailableArchetypes?: readonly CreatureArchetype[];
   faunaSpecies?: readonly { id: string; creature: CreatureGenome }[];
@@ -529,6 +532,13 @@ export class PlanetRenderer {
    * `world-surface.ts`'s `biosphereStateAt`/`planetAgeMyr` -- see
    * `LifeGateContext`'s own doc comment. */
   setLifeContext(context: LifeGateContext | null): void { this.lifeContext = context; }
+  loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){
+    return this.forest.loadTreeAssets(lod0,lod1,{...options,localAerial:{
+      planet:this.group,frame:this.forest.group,radiusM:this.body.radiusM,
+      sun:this.sunUniform,enabled:this.localAirUniform,eyeHeight:this.eyeHeightUniform,
+    }});
+  }
+  clearForestTreeAssets(){this.forest.clearTreeAssets();}
   private startWorker(index:number){
     const generation=(this.workers[index]?.generation??0)+1,restarts=this.workers[index]?.restarts??0;
     const worker=new Worker(new URL('./planet-worker.ts',import.meta.url),{type:'module'});
@@ -787,7 +797,7 @@ export class PlanetRenderer {
     // Visible forest density is centred on the observer's ground position.
     // View direction may inform future prefetch, never population coverage:
     // moving this focus ahead made turning in place replace dense forest.
-    this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta);
+    this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta,worldNs,this.lifeContext?.treeSpecies);
     if (this.relief === 1 && (contact||altitudeM<PLANET_DETAIL.groundLifeAltitudeM) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs); this.lifeMs=performance.now()-lifeStarted; }
     else { this.hideLife(); this.lifeMs=0; }
     const direction = eye.clone().normalize();
