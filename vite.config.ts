@@ -691,7 +691,7 @@ export default defineConfig({
       'test-results/desktop-realism-26b41f5/population-flight/01-contact.png',
       'test-results/desktop-realism-26b41f5/population-flight/02-fauna-low-flight.png',
     ])this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
-    for(const fileName of ['docs/opus-5.5-forest-implementation-review-2026-09-28.md','docs/opus-5.5-forest-implementation-review-2026-09-28.metadata.json','docs/desktop-render-profiling.md','docs/desktop-realism-implementation-plan-2026-09-27.md','docs/desktop-realism-proposal-2026-09-27.md','docs/desktop-realism-assessment-2026-09-27.md','docs/opus-5.5-desktop-realism-review-2026-09-27.md','docs/opus-5.5-desktop-realism-review-2026-09-27.metadata.json'])
+    for(const fileName of ['docs/desktop-realism-task-flow-2026-09-28.md','docs/opus-5.5-forest-implementation-review-2026-09-28.md','docs/opus-5.5-forest-implementation-review-2026-09-28.metadata.json','docs/desktop-render-profiling.md','docs/desktop-realism-implementation-plan-2026-09-27.md','docs/desktop-realism-proposal-2026-09-27.md','docs/desktop-realism-assessment-2026-09-27.md','docs/opus-5.5-desktop-realism-review-2026-09-27.md','docs/opus-5.5-desktop-realism-review-2026-09-27.metadata.json'])
       this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
     for(const fileName of ['docs/planet-rendering-validation-2026-09-27.md','docs/realistic-clouds-research-2026-09-27.md','docs/planet-local-rendering-design.md','docs/population-continuity-review-2026-09-27.md','docs/population-continuity-implementation-2026-09-27.md'])
       this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url),'utf8')});
