@@ -1,0 +1,116 @@
+{
+  "schema": "https://iwsdk.local/schemas/asset-brief/v1",
+  "id": "atlas-ez-tree-family-v1",
+  "kind": "environment-kit",
+  "purpose": "Adapt pinned EZ-Tree geometry into a tested Atlas GLB pair with physical cards, named materials, metric bark UVs and deterministic wind attributes.",
+  "target": {
+    "engine": "IWSDK",
+    "project": "universe-atlas",
+    "devices": [
+      "desktop-web"
+    ],
+    "metersPerUnit": 1,
+    "runtimeCoordinates": "right-handed-y-up"
+  },
+  "artDirection": {
+    "summary": "Measure believable broadleaf branching and canopy shape at matched 10, 16 and 22 metre heights. Preserve physical leaf-card dimensions and inspect source normals rather than silently correcting the reference.",
+    "styleTags": [
+      "realistic",
+      "broadleaf",
+      "reference-comparison"
+    ],
+    "references": [
+      "https://github.com/dgreenheck/ez-tree/tree/dcf309bd86bd521083d9c70f01f2de45fdc7c457"
+    ]
+  },
+  "deliverables": [
+    {
+      "type": "runtime",
+      "format": "glb",
+      "path": "atlas-ez-oak.glb",
+      "required": true
+    },
+    {
+      "type": "lod",
+      "format": "glb",
+      "path": "atlas-ez-oak.lod1.glb",
+      "required": true
+    },
+    {
+      "type": "manifest",
+      "format": "json",
+      "path": "family-manifest.json",
+      "required": true
+    }
+  ],
+  "constraints": {
+    "geometry": {
+      "lodCount": 2,
+      "maxMaterials": 2,
+      "collision": "none",
+      "maxTriangles": 18000
+    }
+  },
+  "acceptance": {
+    "visual": [
+      "Compare actual reference and Atlas shapes at matched height, camera, light and material conditions",
+      "Record source normal defects and every adapter override; no reference is accepted from topology counts alone"
+    ],
+    "technical": [
+      "Exact Atlas two-material/four-PNG graph retained between LODs",
+      "All eight required Float32 vertex attributes and finite MikkTSpace tangents",
+      "LOD0 at most18000 triangles, LOD1 at most5000 triangles",
+      "Retained leaves keep 1.2m card dimensions, pivot, UV tile and wind across LODs",
+      "Repeat outputs byte-identical under recorded toolchain; input files unchanged"
+    ],
+    "runtime": [
+      "Actual Atlas loader accepts pair and shares material images",
+      "Date replay gives deterministic wind at universe endpoints",
+      "Browser review measures LOD coverage rather than equating triangle budget with visual acceptance"
+    ]
+  },
+  "provenance": {
+    "sourceType": "derived",
+    "generator": {
+      "provider": "ez-tree",
+      "model": "seeded-procedural-geometry",
+      "checkpoint": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+      "version": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+      "workflow": "assetctl-tree-reference-family"
+    },
+    "prompt": "Convert the fixed 16m Oak reference to an Atlas GLB pair, preserving physical leaves, canonical attachment pivots and the source Atlas texture bytes.",
+    "seed": 35729,
+    "sourceUrl": "https://github.com/dgreenheck/ez-tree",
+    "sourceConsent": "licensed",
+    "parents": [
+      {
+        "relationship": "geometry-reference",
+        "sha256": "b219c25c26f5e7f72bafbfd1fe207660adb781ff1e546f6de7b529db963cc8cc",
+        "path": "Assets/_assetctl/ez-tree-oak-reference-a/reference-manifest.json"
+      },
+      {
+        "relationship": "material-template",
+        "sha256": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df",
+        "path": "Assets/_assetctl/atlas-tree-v7-color-a/atlas-branching-v1.glb"
+      }
+    ],
+    "license": {
+      "expression": "NOASSERTION",
+      "attribution": "EZ-Tree geometry: Daniel Greenheck (MIT). Atlas textures and material graph: original project authoring v7.",
+      "restrictions": [
+        "Retain upstream MIT notice; geometry comparison does not include any upstream photographs or textures"
+      ]
+    },
+    "notes": "Development candidate only, not a packaged asset. Upstream MIT notice preserved in tools/assetctl/vendor/ez-tree/LICENSE. Original Atlas texture license state remains NOASSERTION; no external textures imported."
+  },
+  "experiments": {
+    "providers": [
+      "ez-tree"
+    ],
+    "seeds": [
+      35729,
+      36330
+    ],
+    "selectionMetric": "Canopy shape, repeatability, physical dimensions, LOD continuity and adaptation effort"
+  }
+}

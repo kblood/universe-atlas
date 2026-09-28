@@ -1,0 +1,342 @@
+{
+  "schema": "https://iwsdk.local/schemas/asset-manifest/v1",
+  "asset": {
+    "id": "atlas-conifer-lod1",
+    "version": "candidate-1",
+    "purpose": "Adapt pinned EZ-Tree Pine Medium geometry to an Atlas-compatible conifer GLB pair with physical cards, named materials, metric bark UVs and deterministic wind attributes.",
+    "target": "desktop-web",
+    "sourceUrl": "https://github.com/dgreenheck/ez-tree",
+    "license": {
+      "expression": "NOASSERTION",
+      "attribution": "EZ-Tree Pine Medium geometry: Daniel Greenheck (MIT). Needle atlas: deterministic original IWSDK assetctl recipe, version atlas-needle-spray-1. Atlas bark textures/material graph: original project authoring; license remains NOASSERTION.",
+      "restrictions": [
+        "Retain the upstream EZ-Tree MIT notice",
+        "Do not infer a license for the retained Atlas bark images or material graph"
+      ]
+    },
+    "parentAssets": [
+      {
+        "relationship": "geometry-reference",
+        "sha256": "5ab42ed8e3e701ad3d89a6d72ae696c6b2c254cd5f1bd6cc7e0e29d890d3110e",
+        "path": "Assets/_assetctl/atlas-ez-conifer-reference-13977-16m-v2/reference-manifest.json"
+      },
+      {
+        "relationship": "material-template",
+        "sha256": "16daa4789a2f57fc831618c067a0840fa371bd82ea733a714efcc1d33fa41be4",
+        "path": "Assets/_assetctl/atlas-ez-conifer-template-v3/atlas-conifer-template.glb"
+      },
+      {
+        "relationship": "foliage-atlas-recipe",
+        "sha256": "a3d5d918e8890a2ab14905c6e8dd1b3fe7b1966d132fabb5004f7ff237268d13",
+        "path": "Assets/_assetctl/atlas-ez-conifer-template-v3/atlas-manifest.json"
+      }
+    ]
+  },
+  "content": {
+    "primaryFile": "spire/conifer-lod1.glb",
+    "files": [
+      {
+        "path": "spire/conifer-lod1.glb",
+        "sha256": "126cc179069cdeadf37bfa9fefa47b5be853040046be812a6e282e648f8d884b",
+        "bytes": 3304920
+      }
+    ]
+  },
+  "provenance": {
+    "jobId": "59aed817-f99b-4640-ae94-db621456cdd3",
+    "generatedAt": "2026-09-28T12:59:38.342Z",
+    "brief": {
+      "id": "atlas-ez-conifer-family-v1",
+      "path": "spire/asset-brief.json",
+      "sha256": "354ef461bf25e5c945498dc97932d7b2973fe2c14622e4f614d372ba4f8dd2c0",
+      "declaration": {
+        "sourceType": "derived",
+        "generator": {
+          "provider": "ez-tree+assetctl",
+          "model": "pinned-preset-and-deterministic-needle-atlas",
+          "checkpoint": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+          "version": "dcf309bd86bd521083d9c70f01f2de45fdc7c457+atlas-needle-spray-1",
+          "workflow": "assetctl-tree-reference-family"
+        },
+        "prompt": "Adapt the pinned Pine Medium geometry into the Atlas family contract. Use 1.2m square cards and a deterministic seed/versioned needle-spray atlas; preserve Atlas bark textures and record every material and geometry adaptation.",
+        "seed": 13977,
+        "sourceUrl": "https://github.com/dgreenheck/ez-tree",
+        "sourceConsent": "licensed",
+        "parents": [
+          {
+            "relationship": "geometry-reference",
+            "sha256": "5ab42ed8e3e701ad3d89a6d72ae696c6b2c254cd5f1bd6cc7e0e29d890d3110e",
+            "path": "Assets/_assetctl/atlas-ez-conifer-reference-13977-16m-v2/reference-manifest.json"
+          },
+          {
+            "relationship": "material-template",
+            "sha256": "16daa4789a2f57fc831618c067a0840fa371bd82ea733a714efcc1d33fa41be4",
+            "path": "Assets/_assetctl/atlas-ez-conifer-template-v3/atlas-conifer-template.glb"
+          },
+          {
+            "relationship": "foliage-atlas-recipe",
+            "sha256": "a3d5d918e8890a2ab14905c6e8dd1b3fe7b1966d132fabb5004f7ff237268d13",
+            "path": "Assets/_assetctl/atlas-ez-conifer-template-v3/atlas-manifest.json"
+          }
+        ],
+        "license": {
+          "expression": "NOASSERTION",
+          "attribution": "EZ-Tree Pine Medium geometry: Daniel Greenheck (MIT). Needle atlas: deterministic original IWSDK assetctl recipe, version atlas-needle-spray-1. Atlas bark textures/material graph: original project authoring; license remains NOASSERTION.",
+          "restrictions": [
+            "Retain the upstream EZ-Tree MIT notice",
+            "Do not infer a license for the retained Atlas bark images or material graph"
+          ]
+        },
+        "notes": "Development candidate only, not packaged or accepted. The authored needle atlas is generated from the bounded recipe and recorded seed; no external image or model input is used. Visual species match and Atlas bark provenance remain separate review gates."
+      }
+    },
+    "tools": {
+      "assetctl": "0.2.0",
+      "node": "v24.7.0"
+    },
+    "transformations": [
+      {
+        "stage": "package",
+        "timestamp": "2026-09-28T12:59:38.342Z"
+      },
+      {
+        "stage": "portable-bundle-relocation",
+        "timestamp": "2026-09-28T13:01:02.017Z",
+        "changes": [
+          "package manifest content and brief paths converted to bundle-relative POSIX paths"
+        ]
+      }
+    ]
+  },
+  "technical": {
+    "geometry": {
+      "meshes": 1,
+      "primitives": 2,
+      "vertices": 4657,
+      "triangles": 3476,
+      "bounds": {
+        "min": [
+          -4.968039512634277,
+          0,
+          -4.955089092254639
+        ],
+        "max": [
+          4.9366326332092285,
+          15.893488883972168,
+          4.382315158843994
+        ]
+      },
+      "degenerateIndexedTriangles": 0,
+      "nonFiniteAccessors": 0,
+      "meshDetails": [
+        {
+          "name": "SM_AtlasEzConifer_LOD1",
+          "primitives": [
+            {
+              "mode": 4,
+              "triangles": 2246,
+              "vertices": 2197,
+              "bounds": {
+                "min": [
+                  -4.142472743988037,
+                  0,
+                  -4.589371204376221
+                ],
+                "max": [
+                  3.8489956855773926,
+                  14.794148445129395,
+                  3.6415226459503174
+                ]
+              },
+              "material": "MAT_AtlasBark"
+            },
+            {
+              "mode": 4,
+              "triangles": 1230,
+              "vertices": 2460,
+              "bounds": {
+                "min": [
+                  -4.968039512634277,
+                  0.9362468719482422,
+                  -4.955089092254639
+                ],
+                "max": [
+                  4.9366326332092285,
+                  15.893488883972168,
+                  4.382315158843994
+                ]
+              },
+              "material": "MAT_AtlasFoliage"
+            }
+          ]
+        }
+      ]
+    },
+    "materials": [
+      {
+        "name": "MAT_AtlasBark",
+        "alphaMode": "OPAQUE",
+        "doubleSided": false
+      },
+      {
+        "name": "MAT_AtlasFoliage",
+        "alphaMode": "MASK",
+        "doubleSided": true
+      }
+    ],
+    "textures": [
+      {
+        "name": "MAT_AtlasBark_Normal",
+        "mimeType": "image/png",
+        "size": [
+          1024,
+          1024
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 4194304
+      },
+      {
+        "name": "MAT_AtlasBark_BaseColor",
+        "mimeType": "image/png",
+        "size": [
+          1024,
+          1024
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 4194304
+      },
+      {
+        "name": "MAT_AtlasFoliage_Normal",
+        "mimeType": "image/png",
+        "size": [
+          2048,
+          2048
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 16777216
+      },
+      {
+        "name": "MAT_AtlasFoliage_BaseColor",
+        "mimeType": "image/png",
+        "size": [
+          2048,
+          2048
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 16777216
+      }
+    ],
+    "skins": [],
+    "animations": [],
+    "extensions": {
+      "used": [
+        "KHR_materials_specular"
+      ],
+      "required": []
+    }
+  },
+  "qa": {
+    "valid": true,
+    "khronos": {
+      "errors": [],
+      "warnings": [],
+      "info": {
+        "version": "2.0",
+        "generator": "glTF-Transform v4.4.1",
+        "extensionsUsed": [
+          "KHR_materials_specular"
+        ],
+        "resources": [
+          {
+            "pointer": "/buffers/0",
+            "mimeType": "application/gltf-buffer",
+            "storage": "glb",
+            "byteLength": 3300776
+          },
+          {
+            "pointer": "/images/0",
+            "mimeType": "image/png",
+            "storage": "buffer-view",
+            "image": {
+              "width": 1024,
+              "height": 1024,
+              "format": "rgba",
+              "primaries": "srgb",
+              "transfer": "srgb",
+              "bits": 8
+            }
+          },
+          {
+            "pointer": "/images/1",
+            "mimeType": "image/png",
+            "storage": "buffer-view",
+            "image": {
+              "width": 1024,
+              "height": 1024,
+              "format": "rgba",
+              "primaries": "srgb",
+              "transfer": "srgb",
+              "bits": 8
+            }
+          },
+          {
+            "pointer": "/images/2",
+            "mimeType": "image/png",
+            "storage": "buffer-view",
+            "image": {
+              "width": 2048,
+              "height": 2048,
+              "format": "rgba",
+              "primaries": "srgb",
+              "transfer": "srgb",
+              "bits": 8
+            }
+          },
+          {
+            "pointer": "/images/3",
+            "mimeType": "image/png",
+            "storage": "buffer-view",
+            "image": {
+              "width": 2048,
+              "height": 2048,
+              "format": "rgba",
+              "primaries": "srgb",
+              "transfer": "srgb",
+              "bits": 8
+            }
+          }
+        ],
+        "animationCount": 0,
+        "materialCount": 2,
+        "hasMorphTargets": false,
+        "hasSkins": false,
+        "hasTextures": true,
+        "hasDefaultScene": true,
+        "drawCallCount": 2,
+        "totalVertexCount": 4657,
+        "totalTriangleCount": 3476,
+        "maxUVs": 1,
+        "maxInfluences": 0,
+        "maxAttributes": 8
+      }
+    },
+    "local": {
+      "nonFiniteAccessors": 0,
+      "degenerateIndexedTriangles": 0,
+      "skinQuality": {
+        "weightedVertices": 0,
+        "unweightedVertices": 0,
+        "overFourInfluenceVertices": 0,
+        "nonNormalizedWeightVertices": 0
+      }
+    }
+  }
+}

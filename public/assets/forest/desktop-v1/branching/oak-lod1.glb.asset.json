@@ -1,0 +1,330 @@
+{
+  "schema": "https://iwsdk.local/schemas/asset-manifest/v1",
+  "asset": {
+    "id": "atlas-oak-lod1",
+    "version": "candidate-1",
+    "purpose": "Adapt pinned EZ-Tree geometry into a tested Atlas GLB pair with physical cards, named materials, metric bark UVs and deterministic wind attributes.",
+    "target": "desktop-web",
+    "sourceUrl": "https://github.com/dgreenheck/ez-tree",
+    "license": {
+      "expression": "NOASSERTION",
+      "attribution": "EZ-Tree geometry: Daniel Greenheck (MIT). Atlas textures and material graph: original project authoring v7.",
+      "restrictions": [
+        "Retain upstream MIT notice; geometry comparison does not include any upstream photographs or textures"
+      ]
+    },
+    "parentAssets": [
+      {
+        "relationship": "geometry-reference",
+        "sha256": "b219c25c26f5e7f72bafbfd1fe207660adb781ff1e546f6de7b529db963cc8cc",
+        "path": "Assets/_assetctl/ez-tree-oak-reference-a/reference-manifest.json"
+      },
+      {
+        "relationship": "material-template",
+        "sha256": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df",
+        "path": "Assets/_assetctl/atlas-tree-v7-color-a/atlas-branching-v1.glb"
+      }
+    ]
+  },
+  "content": {
+    "primaryFile": "branching/oak-lod1.glb",
+    "files": [
+      {
+        "path": "branching/oak-lod1.glb",
+        "sha256": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9",
+        "bytes": 2603256
+      }
+    ]
+  },
+  "provenance": {
+    "jobId": "c93510c9-cc1d-465d-91be-15636267e7c5",
+    "generatedAt": "2026-09-28T12:59:37.232Z",
+    "brief": {
+      "id": "atlas-ez-tree-family-v1",
+      "path": "branching/asset-brief.json",
+      "sha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91",
+      "declaration": {
+        "sourceType": "derived",
+        "generator": {
+          "provider": "ez-tree",
+          "model": "seeded-procedural-geometry",
+          "checkpoint": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+          "version": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+          "workflow": "assetctl-tree-reference-family"
+        },
+        "prompt": "Convert the fixed 16m Oak reference to an Atlas GLB pair, preserving physical leaves, canonical attachment pivots and the source Atlas texture bytes.",
+        "seed": 35729,
+        "sourceUrl": "https://github.com/dgreenheck/ez-tree",
+        "sourceConsent": "licensed",
+        "parents": [
+          {
+            "relationship": "geometry-reference",
+            "sha256": "b219c25c26f5e7f72bafbfd1fe207660adb781ff1e546f6de7b529db963cc8cc",
+            "path": "Assets/_assetctl/ez-tree-oak-reference-a/reference-manifest.json"
+          },
+          {
+            "relationship": "material-template",
+            "sha256": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df",
+            "path": "Assets/_assetctl/atlas-tree-v7-color-a/atlas-branching-v1.glb"
+          }
+        ],
+        "license": {
+          "expression": "NOASSERTION",
+          "attribution": "EZ-Tree geometry: Daniel Greenheck (MIT). Atlas textures and material graph: original project authoring v7.",
+          "restrictions": [
+            "Retain upstream MIT notice; geometry comparison does not include any upstream photographs or textures"
+          ]
+        },
+        "notes": "Development candidate only, not a packaged asset. Upstream MIT notice preserved in tools/assetctl/vendor/ez-tree/LICENSE. Original Atlas texture license state remains NOASSERTION; no external textures imported."
+      }
+    },
+    "tools": {
+      "assetctl": "0.2.0",
+      "node": "v24.7.0"
+    },
+    "transformations": [
+      {
+        "stage": "package",
+        "timestamp": "2026-09-28T12:59:37.233Z"
+      },
+      {
+        "stage": "portable-bundle-relocation",
+        "timestamp": "2026-09-28T13:01:02.016Z",
+        "changes": [
+          "package manifest content and brief paths converted to bundle-relative POSIX paths"
+        ]
+      }
+    ]
+  },
+  "technical": {
+    "geometry": {
+      "meshes": 1,
+      "primitives": 2,
+      "vertices": 7648,
+      "triangles": 4866,
+      "bounds": {
+        "min": [
+          -6.470961093902588,
+          0,
+          -6.2733235359191895
+        ],
+        "max": [
+          5.216452598571777,
+          15.86973762512207,
+          4.564723968505859
+        ]
+      },
+      "degenerateIndexedTriangles": 0,
+      "nonFiniteAccessors": 0,
+      "meshDetails": [
+        {
+          "name": "SM_AtlasEzOak_LOD1",
+          "primitives": [
+            {
+              "mode": 4,
+              "triangles": 2206,
+              "vertices": 2328,
+              "bounds": {
+                "min": [
+                  -5.2546844482421875,
+                  0,
+                  -5.225091457366943
+                ],
+                "max": [
+                  4.199210166931152,
+                  14.717738151550293,
+                  3.7563412189483643
+                ]
+              },
+              "material": "MAT_AtlasBark"
+            },
+            {
+              "mode": 4,
+              "triangles": 2660,
+              "vertices": 5320,
+              "bounds": {
+                "min": [
+                  -6.470961093902588,
+                  2.291902542114258,
+                  -6.2733235359191895
+                ],
+                "max": [
+                  5.216452598571777,
+                  15.86973762512207,
+                  4.564723968505859
+                ]
+              },
+              "material": "MAT_AtlasFoliage"
+            }
+          ]
+        }
+      ]
+    },
+    "materials": [
+      {
+        "name": "MAT_AtlasBark",
+        "alphaMode": "OPAQUE",
+        "doubleSided": false
+      },
+      {
+        "name": "MAT_AtlasFoliage",
+        "alphaMode": "MASK",
+        "doubleSided": true
+      }
+    ],
+    "textures": [
+      {
+        "name": "MAT_AtlasBark_Normal",
+        "mimeType": "image/png",
+        "size": [
+          1024,
+          1024
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 4194304
+      },
+      {
+        "name": "MAT_AtlasBark_BaseColor",
+        "mimeType": "image/png",
+        "size": [
+          1024,
+          1024
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 4194304
+      },
+      {
+        "name": "MAT_AtlasFoliage_Normal",
+        "mimeType": "image/png",
+        "size": [
+          2048,
+          2048
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 16777216
+      },
+      {
+        "name": "MAT_AtlasFoliage_BaseColor",
+        "mimeType": "image/png",
+        "size": [
+          2048,
+          2048
+        ],
+        "colorSpace": null,
+        "channels": 4,
+        "format": "png",
+        "estimatedGpuBytesRgba8": 16777216
+      }
+    ],
+    "skins": [],
+    "animations": [],
+    "extensions": {
+      "used": [
+        "KHR_materials_specular"
+      ],
+      "required": []
+    }
+  },
+  "qa": {
+    "valid": true,
+    "khronos": {
+      "errors": [],
+      "warnings": [],
+      "info": {
+        "version": "2.0",
+        "generator": "glTF-Transform v4.4.1",
+        "extensionsUsed": [
+          "KHR_materials_specular"
+        ],
+        "resources": [
+          {
+            "pointer": "/buffers/0",
+            "mimeType": "application/gltf-buffer",
+            "storage": "glb",
+            "byteLength": 2599120
+          },
+          {
+            "pointer": "/images/0",
+            "mimeType": "image/png",
+            "storage": "buffer-view",
+            "image": {
+              "width": 1024,
+              "height": 1024,
+              "format": "rgba",
+              "primaries": "srgb",
+              "transfer": "srgb",
+              "bits": 8
+            }
+          },
+          {
+            "pointer": "/images/1",
+            "mimeType": "image/png",
+            "storage": "buffer-view",
+            "image": {
+              "width": 1024,
+              "height": 1024,
+              "format": "rgba",
+              "primaries": "srgb",
+              "transfer": "srgb",
+              "bits": 8
+            }
+          },
+          {
+            "pointer": "/images/2",
+            "mimeType": "image/png",
+            "storage": "buffer-view",
+            "image": {
+              "width": 2048,
+              "height": 2048,
+              "format": "rgba",
+              "primaries": "srgb",
+              "transfer": "srgb",
+              "bits": 8
+            }
+          },
+          {
+            "pointer": "/images/3",
+            "mimeType": "image/png",
+            "storage": "buffer-view",
+            "image": {
+              "width": 2048,
+              "height": 2048,
+              "format": "rgba",
+              "primaries": "srgb",
+              "transfer": "srgb",
+              "bits": 8
+            }
+          }
+        ],
+        "animationCount": 0,
+        "materialCount": 2,
+        "hasMorphTargets": false,
+        "hasSkins": false,
+        "hasTextures": true,
+        "hasDefaultScene": true,
+        "drawCallCount": 2,
+        "totalVertexCount": 7648,
+        "totalTriangleCount": 4866,
+        "maxUVs": 1,
+        "maxInfluences": 0,
+        "maxAttributes": 8
+      }
+    },
+    "local": {
+      "nonFiniteAccessors": 0,
+      "degenerateIndexedTriangles": 0,
+      "skinQuality": {
+        "weightedVertices": 0,
+        "unweightedVertices": 0,
+        "overFourInfluenceVertices": 0,
+        "nonNormalizedWeightVertices": 0
+      }
+    }
+  }
+}

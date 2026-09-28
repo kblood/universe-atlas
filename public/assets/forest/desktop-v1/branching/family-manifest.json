@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 1,
+  "operation": "atlas-ez-tree-family-1",
+  "status": "runtime-candidate-not-packaged",
+  "seed": 35729,
+  "height": 16,
+  "sources": {
+    "referenceManifestSha256": "b219c25c26f5e7f72bafbfd1fe207660adb781ff1e546f6de7b529db963cc8cc",
+    "artifacts": [
+      {
+        "path": "full.json",
+        "sha256": "dab8f58ce168719bf10a0920a7eca67094ca74e036e3af905c14c0bf9994de14"
+      },
+      {
+        "path": "skeleton.json",
+        "sha256": "5e013512d20d0b0f10eded0e0a6639b5fd58047f6810a55a4c8d2f788abaab78"
+      }
+    ],
+    "templateSha256": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df",
+    "upstreamRevision": "dcf309bd86bd521083d9c70f01f2de45fdc7c457"
+  },
+  "briefSha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91",
+  "provenance": {
+    "sourceType": "derived",
+    "generator": {
+      "provider": "ez-tree",
+      "model": "seeded-procedural-geometry",
+      "checkpoint": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+      "version": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+      "workflow": "assetctl-tree-reference-family"
+    },
+    "prompt": "Convert the fixed 16m Oak reference to an Atlas GLB pair, preserving physical leaves, canonical attachment pivots and the source Atlas texture bytes.",
+    "seed": 35729,
+    "sourceUrl": "https://github.com/dgreenheck/ez-tree",
+    "sourceConsent": "licensed",
+    "parents": [
+      {
+        "relationship": "geometry-reference",
+        "sha256": "b219c25c26f5e7f72bafbfd1fe207660adb781ff1e546f6de7b529db963cc8cc",
+        "path": "Assets/_assetctl/ez-tree-oak-reference-a/reference-manifest.json"
+      },
+      {
+        "relationship": "material-template",
+        "sha256": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df",
+        "path": "Assets/_assetctl/atlas-tree-v7-color-a/atlas-branching-v1.glb"
+      }
+    ],
+    "license": {
+      "expression": "NOASSERTION",
+      "attribution": "EZ-Tree geometry: Daniel Greenheck (MIT). Atlas textures and material graph: original project authoring v7.",
+      "restrictions": [
+        "Retain upstream MIT notice; geometry comparison does not include any upstream photographs or textures"
+      ]
+    },
+    "notes": "Development candidate only, not a packaged asset. Upstream MIT notice preserved in tools/assetctl/vendor/ez-tree/LICENSE. Original Atlas texture license state remains NOASSERTION; no external textures imported."
+  },
+  "adapterSha256": "8b076ed40e3be8b75c27e2fbbdb49cba8585604662a813d1dadaff2cd36da6fe",
+  "geometryAdapterSha256": "42e78c0f4ee9f788ae492d50d92081a8d264b8a3ec15b5dd7a709773ff071642",
+  "toolchain": {
+    "node": "v24.7.0",
+    "gltfTransform": "4.4.1",
+    "gltfTransformFunctions": "4.4.1",
+    "gltfTransformExtensions": "4.4.1",
+    "meshoptimizer": "0.25.0",
+    "mikkModuleSha256": "a27a8e3c71d2d47eab93c57e84d9190925df42cdbd820e07be15c8edc789c7ca"
+  },
+  "adaptations": [
+    "Atlas material/image graph retained",
+    "Leaf plane normals corrected; MikkTSpace tangents with counted UV-gradient fallback for cancellation (near cap0, mid cap1 corner)",
+    "Bark V measures arc metres; U fitted to base circumference and held through taper (texel density compresses at tips)",
+    "Deterministic 4x4 leaf tiles with V reversed and half-texel inset",
+    "Leaf sprig offset .048m; physical 1.2m cards unchanged",
+    "LOD1 uses half the original leaves with one plane each, same pivots/UV/wind; wood uses Meshoptimizer with normals/UV weights, locked borders, ratio .7/error .01"
+  ],
+  "limitations": [
+    "No canopy parity or LOD visual acceptance",
+    "Static trunk; date-driven leaf wind contract only",
+    "No collision, distant impostor, packaged asset or game integration"
+  ],
+  "levels": [
+    {
+      "lod": 0,
+      "triangles": 13806,
+      "vertices": 24060,
+      "bounds": {
+        "min": [
+          -6.4743571281433105,
+          0,
+          -6.3347320556640625
+        ],
+        "max": [
+          5.264985084533691,
+          15.96432876586914,
+          5.00840950012207
+        ]
+      },
+      "degenerateTangentFallbacks": 0,
+      "tangentFallbackUnit": "unwelded triangle corners with cancelled Mikk output; not a conditioning audit",
+      "simplification": null,
+      "validation": {
+        "valid": true,
+        "khronos": {
+          "errors": [],
+          "warnings": [],
+          "info": {
+            "version": "2.0",
+            "generator": "glTF-Transform v4.4.1",
+            "extensionsUsed": [
+              "KHR_materials_specular"
+            ],
+            "resources": [
+              {
+                "pointer": "/buffers/0",
+                "mimeType": "application/gltf-buffer",
+                "storage": "glb",
+                "byteLength": 3965720
+              },
+              {
+                "pointer": "/images/0",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 1024,
+                  "height": 1024,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              },
+              {
+                "pointer": "/images/1",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 1024,
+                  "height": 1024,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              },
+              {
+                "pointer": "/images/2",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 2048,
+                  "height": 2048,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              },
+              {
+                "pointer": "/images/3",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 2048,
+                  "height": 2048,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              }
+            ],
+            "animationCount": 0,
+            "materialCount": 2,
+            "hasMorphTargets": false,
+            "hasSkins": false,
+            "hasTextures": true,
+            "hasDefaultScene": true,
+            "drawCallCount": 2,
+            "totalVertexCount": 24060,
+            "totalTriangleCount": 13806,
+            "maxUVs": 1,
+            "maxInfluences": 0,
+            "maxAttributes": 8
+          }
+        },
+        "local": {
+          "nonFiniteAccessors": 0,
+          "degenerateIndexedTriangles": 0,
+          "skinQuality": {
+            "weightedVertices": 0,
+            "unweightedVertices": 0,
+            "overFourInfluenceVertices": 0,
+            "nonNormalizedWeightVertices": 0
+          }
+        }
+      }
+    },
+    {
+      "lod": 1,
+      "triangles": 4866,
+      "vertices": 7648,
+      "bounds": {
+        "min": [
+          -6.470961093902588,
+          0,
+          -6.2733235359191895
+        ],
+        "max": [
+          5.216452598571777,
+          15.86973762512207,
+          4.564723968505859
+        ]
+      },
+      "degenerateTangentFallbacks": 1,
+      "tangentFallbackUnit": "unwelded triangle corners with cancelled Mikk output; not a conditioning audit",
+      "simplification": {
+        "sourceTriangles": 3166,
+        "triangles": 2206,
+        "achievedRatio": 0.6967782691092862,
+        "reportedError": 0.007128681056201458,
+        "errorIncludesWeightedAttributes": true
+      },
+      "validation": {
+        "valid": true,
+        "khronos": {
+          "errors": [],
+          "warnings": [],
+          "info": {
+            "version": "2.0",
+            "generator": "glTF-Transform v4.4.1",
+            "extensionsUsed": [
+              "KHR_materials_specular"
+            ],
+            "resources": [
+              {
+                "pointer": "/buffers/0",
+                "mimeType": "application/gltf-buffer",
+                "storage": "glb",
+                "byteLength": 2599120
+              },
+              {
+                "pointer": "/images/0",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 1024,
+                  "height": 1024,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              },
+              {
+                "pointer": "/images/1",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 1024,
+                  "height": 1024,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              },
+              {
+                "pointer": "/images/2",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 2048,
+                  "height": 2048,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              },
+              {
+                "pointer": "/images/3",
+                "mimeType": "image/png",
+                "storage": "buffer-view",
+                "image": {
+                  "width": 2048,
+                  "height": 2048,
+                  "format": "rgba",
+                  "primaries": "srgb",
+                  "transfer": "srgb",
+                  "bits": 8
+                }
+              }
+            ],
+            "animationCount": 0,
+            "materialCount": 2,
+            "hasMorphTargets": false,
+            "hasSkins": false,
+            "hasTextures": true,
+            "hasDefaultScene": true,
+            "drawCallCount": 2,
+            "totalVertexCount": 7648,
+            "totalTriangleCount": 4866,
+            "maxUVs": 1,
+            "maxInfluences": 0,
+            "maxAttributes": 8
+          }
+        },
+        "local": {
+          "nonFiniteAccessors": 0,
+          "degenerateIndexedTriangles": 0,
+          "skinQuality": {
+            "weightedVertices": 0,
+            "unweightedVertices": 0,
+            "overFourInfluenceVertices": 0,
+            "nonNormalizedWeightVertices": 0
+          }
+        }
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "atlas-ez-oak.glb",
+      "bytes": 3969868,
+      "sha256": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068"
+    },
+    {
+      "path": "atlas-ez-oak.lod1.glb",
+      "bytes": 2603256,
+      "sha256": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9"
+    }
+  ]
+}

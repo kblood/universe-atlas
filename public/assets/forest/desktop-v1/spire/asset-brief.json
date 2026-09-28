@@ -1,0 +1,43 @@
+{
+  "schema": "https://iwsdk.local/schemas/asset-brief/v1",
+  "id": "atlas-ez-conifer-family-v1",
+  "kind": "environment-kit",
+  "purpose": "Adapt pinned EZ-Tree Pine Medium geometry to an Atlas-compatible conifer GLB pair with physical cards, named materials, metric bark UVs and deterministic wind attributes.",
+  "target": {"engine": "IWSDK", "project": "universe-atlas", "devices": ["desktop-web"], "metersPerUnit": 1, "runtimeCoordinates": "right-handed-y-up"},
+  "artDirection": {
+    "summary": "A development candidate for a conifer/spire family using the existing EZ-Tree Pine Medium preset. Needle cards use a deterministic authored atlas; silhouette, shading and in-game acceptance remain open.",
+    "styleTags": ["evergreen", "conifer", "runtime-adapter-candidate"],
+    "references": ["https://github.com/dgreenheck/ez-tree/tree/dcf309bd86bd521083d9c70f01f2de45fdc7c457"]
+  },
+  "deliverables": [
+    {"type": "runtime", "format": "glb", "path": "atlas-ez-conifer.glb", "required": true},
+    {"type": "lod", "format": "glb", "path": "atlas-ez-conifer.lod1.glb", "required": true},
+    {"type": "manifest", "format": "json", "path": "family-manifest.json", "required": true}
+  ],
+  "constraints": {"geometry": {"lodCount": 2, "maxMaterials": 2, "collision": "none", "maxTriangles": 18000}},
+  "acceptance": {
+    "visual": ["Review needle atlas and shape at near, mid and far distances; triangle budgets alone do not establish visual acceptance"],
+    "technical": ["Retain Atlas two-material glTF contract and four embedded PNG images", "All eight required Float32 vertex attributes and finite MikkTSpace tangents", "LOD0 at most 18000 triangles and LOD1 at most 5000 triangles", "Retained square foliage cards are exactly 1.2m with compatible pivots, UVs and wind", "Repeat outputs byte-identical and all source inputs unchanged"],
+    "runtime": ["Validate the asset through the existing tree-family loader and dated wind path", "No default game binding, species adoption, or distant representation is implied"]
+  },
+  "provenance": {
+    "sourceType": "derived",
+    "generator": {"provider": "ez-tree+assetctl", "model": "pinned-preset-and-deterministic-needle-atlas", "checkpoint": "dcf309bd86bd521083d9c70f01f2de45fdc7c457", "version": "dcf309bd86bd521083d9c70f01f2de45fdc7c457+atlas-needle-spray-1", "workflow": "assetctl-tree-reference-family"},
+    "prompt": "Adapt the pinned Pine Medium geometry into the Atlas family contract. Use 1.2m square cards and a deterministic seed/versioned needle-spray atlas; preserve Atlas bark textures and record every material and geometry adaptation.",
+    "seed": 13977,
+    "sourceUrl": "https://github.com/dgreenheck/ez-tree",
+    "sourceConsent": "licensed",
+    "parents": [
+      {"relationship": "geometry-reference", "sha256": "5ab42ed8e3e701ad3d89a6d72ae696c6b2c254cd5f1bd6cc7e0e29d890d3110e", "path": "Assets/_assetctl/atlas-ez-conifer-reference-13977-16m-v2/reference-manifest.json"},
+      {"relationship": "material-template", "sha256": "16daa4789a2f57fc831618c067a0840fa371bd82ea733a714efcc1d33fa41be4", "path": "Assets/_assetctl/atlas-ez-conifer-template-v3/atlas-conifer-template.glb"},
+      {"relationship": "foliage-atlas-recipe", "sha256": "a3d5d918e8890a2ab14905c6e8dd1b3fe7b1966d132fabb5004f7ff237268d13", "path": "Assets/_assetctl/atlas-ez-conifer-template-v3/atlas-manifest.json"}
+    ],
+    "license": {
+      "expression": "NOASSERTION",
+      "attribution": "EZ-Tree Pine Medium geometry: Daniel Greenheck (MIT). Needle atlas: deterministic original IWSDK assetctl recipe, version atlas-needle-spray-1. Atlas bark textures/material graph: original project authoring; license remains NOASSERTION.",
+      "restrictions": ["Retain the upstream EZ-Tree MIT notice", "Do not infer a license for the retained Atlas bark images or material graph"]
+    },
+    "notes": "Development candidate only, not packaged or accepted. The authored needle atlas is generated from the bounded recipe and recorded seed; no external image or model input is used. Visual species match and Atlas bark provenance remain separate review gates."
+  },
+  "experiments": {"providers": ["ez-tree", "assetctl"], "seeds": [13977], "selectionMetric": "Needle silhouette, canopy coverage, repeatability, loader compatibility, and LOD transition behavior"}
+}

@@ -577,3 +577,12 @@ explicit texture chain. Each family can supply its own sidecar. The focused
 34-test CPU scope passes; actual-game GPU upload, endpoint sampling and matched
 default/sidecar close/middle captures are next. A retained forest work list is
 also in progress to reduce repeated far-candidate checks. Neither stage is live.
+
+### Normal forest loading
+
+The [normal forest asset path](forest-asset-loading-2026-09-28.md) now includes a
+packaged Oak/Pine pair, bounded verified byte cache and a Trees setting. Eleven
+focused source/attachment/package checks cover integrity, cancellation, planet
+departure, retry and exact packaged bytes. The candidate uses offline foliage sidecars and starts fetching below
+6 km clearance. Detailed mode remains opt-in until normal-control browser checks,
+family appearance and matching far canopy are accepted; the site is not updated.

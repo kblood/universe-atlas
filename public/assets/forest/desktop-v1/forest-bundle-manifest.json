@@ -1,0 +1,551 @@
+{
+  "schemaVersion": 1,
+  "operation": "atlas-desktop-forest-bundle-1",
+  "status": "candidate-not-published",
+  "version": "candidate-1",
+  "target": "desktop-web",
+  "pathPolicy": "all resource paths are bundle-relative POSIX paths with no traversal, query or fragment",
+  "families": [
+    {
+      "kind": "branching",
+      "species": "oak",
+      "briefSha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91",
+      "license": {
+        "expression": "NOASSERTION",
+        "attribution": "EZ-Tree geometry: Daniel Greenheck (MIT). Atlas textures and material graph: original project authoring v7.",
+        "restrictions": [
+          "Retain upstream MIT notice; geometry comparison does not include any upstream photographs or textures"
+        ]
+      },
+      "sourceConsent": "licensed",
+      "generator": {
+        "provider": "ez-tree",
+        "model": "seeded-procedural-geometry",
+        "checkpoint": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+        "version": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+        "workflow": "assetctl-tree-reference-family"
+      },
+      "seed": 35729,
+      "parentAssets": [
+        {
+          "relationship": "geometry-reference",
+          "sha256": "b219c25c26f5e7f72bafbfd1fe207660adb781ff1e546f6de7b529db963cc8cc",
+          "path": "Assets/_assetctl/ez-tree-oak-reference-a/reference-manifest.json"
+        },
+        {
+          "relationship": "material-template",
+          "sha256": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df",
+          "path": "Assets/_assetctl/atlas-tree-v7-color-a/atlas-branching-v1.glb"
+        }
+      ],
+      "lod0": {
+        "path": "branching/oak-lod0.glb",
+        "role": "high-detail-glb",
+        "mediaType": "model/gltf-binary",
+        "bytes": 3969868,
+        "sha256": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068"
+      },
+      "lod1": {
+        "path": "branching/oak-lod1.glb",
+        "role": "reduced-detail-glb",
+        "mediaType": "model/gltf-binary",
+        "bytes": 2603256,
+        "sha256": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9"
+      },
+      "mipManifest": {
+        "path": "branching/foliage-mip-manifest.json",
+        "role": "foliage-mip-sidecar-manifest",
+        "mediaType": "application/json",
+        "bytes": 15739,
+        "sha256": "3b22162f9ce8f3c6caaf33a85bb2f066ec07084233e4d546631f75f5de6f8480"
+      },
+      "mipPayload": {
+        "path": "branching/foliage-mips.rgba8",
+        "role": "foliage-explicit-mip-levels",
+        "mediaType": "application/octet-stream",
+        "bytes": 5592064,
+        "sha256": "489bbfbc31c1c7375907f606d80817e918b8660bb9de0d91480bb2d4978484c6"
+      },
+      "brief": {
+        "path": "branching/asset-brief.json",
+        "role": "validated-asset-brief",
+        "mediaType": "application/json",
+        "bytes": 4422,
+        "sha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91"
+      },
+      "familyManifest": {
+        "path": "branching/family-manifest.json",
+        "role": "tree-family-provenance",
+        "mediaType": "application/json",
+        "bytes": 11135,
+        "sha256": "7d799d58172e0b63c1f5e098dc883ac9bf9d09390e1021986835bb2779b14729"
+      },
+      "assetctlPackageManifests": [
+        {
+          "path": "branching/oak-lod0.glb.asset.json",
+          "role": "assetctl-package-manifest",
+          "mediaType": "application/json",
+          "bytes": 9629,
+          "sha256": "5f250ec4f303f9cf1555b572dafc06cd28f482bce6c0b423493b7638bd474662"
+        },
+        {
+          "path": "branching/oak-lod1.glb.asset.json",
+          "role": "assetctl-package-manifest",
+          "mediaType": "application/json",
+          "bytes": 9623,
+          "sha256": "1f6ba630626f844bf67c0152f2ba9da413d7e2ebb2a1ac4eac1ac840fa2b2df9"
+        }
+      ],
+      "texture": {
+        "basePngSha256": "43368cb6820bfcb78efb8713b7ba6a47639566a75204ffee1678ee5967937284",
+        "width": 2048,
+        "height": 2048,
+        "cellGrid": [
+          4,
+          4
+        ],
+        "alphaCutoff": 0.5,
+        "maxLevel": 7,
+        "format": "RGBA8-straight-sRGB",
+        "baseCoverage": 0.18970775604248047,
+        "levels": [
+          {
+            "level": 1,
+            "width": 1024,
+            "height": 1024,
+            "offset": 0,
+            "byteLength": 4194304,
+            "sha256": "4e7845804c2a8d40413f543f63f54e581fa0040d5451ecbe4729dfdbf83cde0d",
+            "coverage": 0.1888713836669922,
+            "coverageError": -0.0008363723754882812
+          },
+          {
+            "level": 2,
+            "width": 512,
+            "height": 512,
+            "offset": 4194304,
+            "byteLength": 1048576,
+            "sha256": "4a0a318cb7ecaf0d963b7eb243b79413e2588b466b4c8dd34bfde3bfc22f5fe5",
+            "coverage": 0.18895339965820312,
+            "coverageError": -0.0007543563842773438
+          },
+          {
+            "level": 3,
+            "width": 256,
+            "height": 256,
+            "offset": 5242880,
+            "byteLength": 262144,
+            "sha256": "e0a4f92e1b72c6f37d3e794cae0dad7c96be6afef77dfecab445e22c646a90a8",
+            "coverage": 0.1897125244140625,
+            "coverageError": 0.00000476837158203125
+          },
+          {
+            "level": 4,
+            "width": 128,
+            "height": 128,
+            "offset": 5505024,
+            "byteLength": 65536,
+            "sha256": "21f2eb6678bce6e831dbdeb25254afd87c11ad4014a4cdbf924b3830efd4a150",
+            "coverage": 0.1895751953125,
+            "coverageError": -0.00013256072998046875
+          },
+          {
+            "level": 5,
+            "width": 64,
+            "height": 64,
+            "offset": 5570560,
+            "byteLength": 16384,
+            "sha256": "fe69ba5e022e6c1eb98a98bcbdb39740cb2b8675c59a0d18f277c8f0c46c47a1",
+            "coverage": 0.189453125,
+            "coverageError": -0.00025463104248046875
+          },
+          {
+            "level": 6,
+            "width": 32,
+            "height": 32,
+            "offset": 5586944,
+            "byteLength": 4096,
+            "sha256": "7877d1e243dfa85085527d2deeec34d00beedb38def06dff02fb5bdc93a95ab6",
+            "coverage": 0.19140625,
+            "coverageError": 0.0016984939575195312
+          },
+          {
+            "level": 7,
+            "width": 16,
+            "height": 16,
+            "offset": 5591040,
+            "byteLength": 1024,
+            "sha256": "883d7176cadb84e1fc13731f80138c4cfd73736e33429b647483634e45e7648d",
+            "coverage": 0.1953125,
+            "coverageError": 0.005604743957519531
+          }
+        ]
+      }
+    },
+    {
+      "kind": "spire",
+      "species": "conifer",
+      "briefSha256": "354ef461bf25e5c945498dc97932d7b2973fe2c14622e4f614d372ba4f8dd2c0",
+      "license": {
+        "expression": "NOASSERTION",
+        "attribution": "EZ-Tree Pine Medium geometry: Daniel Greenheck (MIT). Needle atlas: deterministic original IWSDK assetctl recipe, version atlas-needle-spray-1. Atlas bark textures/material graph: original project authoring; license remains NOASSERTION.",
+        "restrictions": [
+          "Retain the upstream EZ-Tree MIT notice",
+          "Do not infer a license for the retained Atlas bark images or material graph"
+        ]
+      },
+      "sourceConsent": "licensed",
+      "generator": {
+        "provider": "ez-tree+assetctl",
+        "model": "pinned-preset-and-deterministic-needle-atlas",
+        "checkpoint": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+        "version": "dcf309bd86bd521083d9c70f01f2de45fdc7c457+atlas-needle-spray-1",
+        "workflow": "assetctl-tree-reference-family"
+      },
+      "seed": 13977,
+      "parentAssets": [
+        {
+          "relationship": "geometry-reference",
+          "sha256": "5ab42ed8e3e701ad3d89a6d72ae696c6b2c254cd5f1bd6cc7e0e29d890d3110e",
+          "path": "Assets/_assetctl/atlas-ez-conifer-reference-13977-16m-v2/reference-manifest.json"
+        },
+        {
+          "relationship": "material-template",
+          "sha256": "16daa4789a2f57fc831618c067a0840fa371bd82ea733a714efcc1d33fa41be4",
+          "path": "Assets/_assetctl/atlas-ez-conifer-template-v3/atlas-conifer-template.glb"
+        },
+        {
+          "relationship": "foliage-atlas-recipe",
+          "sha256": "a3d5d918e8890a2ab14905c6e8dd1b3fe7b1966d132fabb5004f7ff237268d13",
+          "path": "Assets/_assetctl/atlas-ez-conifer-template-v3/atlas-manifest.json"
+        }
+      ],
+      "lod0": {
+        "path": "spire/conifer-lod0.glb",
+        "role": "high-detail-glb",
+        "mediaType": "model/gltf-binary",
+        "bytes": 4764524,
+        "sha256": "58ead3644a84f91d0d30658c827be0c04d6ab0b5a42f468397cd2474a1c06e3d"
+      },
+      "lod1": {
+        "path": "spire/conifer-lod1.glb",
+        "role": "reduced-detail-glb",
+        "mediaType": "model/gltf-binary",
+        "bytes": 3304920,
+        "sha256": "126cc179069cdeadf37bfa9fefa47b5be853040046be812a6e282e648f8d884b"
+      },
+      "mipManifest": {
+        "path": "spire/foliage-mip-manifest.json",
+        "role": "foliage-mip-sidecar-manifest",
+        "mediaType": "application/json",
+        "bytes": 16353,
+        "sha256": "6625dd9a805dad4d7641efe648bac31fd4cd1f049b8db09d17313c67149bff92"
+      },
+      "mipPayload": {
+        "path": "spire/foliage-mips.rgba8",
+        "role": "foliage-explicit-mip-levels",
+        "mediaType": "application/octet-stream",
+        "bytes": 5592064,
+        "sha256": "1be67c71812a392451e90789c47667aeeb6c92d010f29f3f11735f4353e0e576"
+      },
+      "brief": {
+        "path": "spire/asset-brief.json",
+        "role": "validated-asset-brief",
+        "mediaType": "application/json",
+        "bytes": 4310,
+        "sha256": "354ef461bf25e5c945498dc97932d7b2973fe2c14622e4f614d372ba4f8dd2c0"
+      },
+      "familyManifest": {
+        "path": "spire/family-manifest.json",
+        "role": "tree-family-provenance",
+        "mediaType": "application/json",
+        "bytes": 13152,
+        "sha256": "eceec3fc7396bd7f9ed5a197dd2beb67467cf14f77976ee406c31be628fa7738"
+      },
+      "assetctlPackageManifests": [
+        {
+          "path": "spire/conifer-lod0.glb.asset.json",
+          "role": "assetctl-package-manifest",
+          "mediaType": "application/json",
+          "bytes": 10684,
+          "sha256": "e47a8986dfef9ca91fa831fe52b5e128b5a2f68124bba359e65f20008d335417"
+        },
+        {
+          "path": "spire/conifer-lod1.glb.asset.json",
+          "role": "assetctl-package-manifest",
+          "mediaType": "application/json",
+          "bytes": 10679,
+          "sha256": "19ae62ea4f9056eab8dfa87879e3e7d80cfcb1cbc08c8ac7e9d2a75e18dfa63b"
+        }
+      ],
+      "texture": {
+        "basePngSha256": "144e6852a437108daafca9d9c98f207a6d0bcf4a2f13da70bd6cc316e99a79ac",
+        "width": 2048,
+        "height": 2048,
+        "cellGrid": [
+          4,
+          4
+        ],
+        "alphaCutoff": 0.5,
+        "maxLevel": 7,
+        "format": "RGBA8-straight-sRGB",
+        "baseCoverage": 0.04645085334777832,
+        "levels": [
+          {
+            "level": 1,
+            "width": 1024,
+            "height": 1024,
+            "offset": 0,
+            "byteLength": 4194304,
+            "sha256": "d69b5d64d99a81f845e9a561df718e5c0c5464e20616260b9c01e1849ad62889",
+            "coverage": 0.04645824432373047,
+            "coverageError": 0.0000073909759521484375
+          },
+          {
+            "level": 2,
+            "width": 512,
+            "height": 512,
+            "offset": 4194304,
+            "byteLength": 1048576,
+            "sha256": "b1bb539840abb3a8b6b10c0113851c60c7e1500b2f7e9435777582c2f4f2ddd2",
+            "coverage": 0.046390533447265625,
+            "coverageError": -0.00006031990051269531
+          },
+          {
+            "level": 3,
+            "width": 256,
+            "height": 256,
+            "offset": 5242880,
+            "byteLength": 262144,
+            "sha256": "938e15ef7ac791225648dcd4c26d816490c6f0d3da9d833efbc797812ac6fb77",
+            "coverage": 0.0465240478515625,
+            "coverageError": 0.00007319450378417969
+          },
+          {
+            "level": 4,
+            "width": 128,
+            "height": 128,
+            "offset": 5505024,
+            "byteLength": 65536,
+            "sha256": "c3e7e38d06f716df97677ef11e88325097de5b22c5cf072a4f2f34cda04ecc75",
+            "coverage": 0.0465087890625,
+            "coverageError": 0.00005793571472167969
+          },
+          {
+            "level": 5,
+            "width": 64,
+            "height": 64,
+            "offset": 5570560,
+            "byteLength": 16384,
+            "sha256": "72c779545a1d4863718dbb7d4cd59accc39fc5c0844f3fefb6d98a643f3adc37",
+            "coverage": 0.046875,
+            "coverageError": 0.0004241466522216797
+          },
+          {
+            "level": 6,
+            "width": 32,
+            "height": 32,
+            "offset": 5586944,
+            "byteLength": 4096,
+            "sha256": "b9d845eccd70e0aeafc0acffab36d51503f1df5b56d5511dd2275b5e9bae4b8d",
+            "coverage": 0.0458984375,
+            "coverageError": -0.0005524158477783203
+          },
+          {
+            "level": 7,
+            "width": 16,
+            "height": 16,
+            "offset": 5591040,
+            "byteLength": 1024,
+            "sha256": "d27aeeaaef46531daa3713636968742ccb4089c28397a5c90d0385cf6ff2b2bc",
+            "coverage": 0.0625,
+            "coverageError": 0.01604914665222168
+          }
+        ]
+      }
+    }
+  ],
+  "files": [
+    {
+      "path": "branching/oak-lod0.glb",
+      "role": "high-detail-glb",
+      "mediaType": "model/gltf-binary",
+      "bytes": 3969868,
+      "sha256": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068"
+    },
+    {
+      "path": "branching/oak-lod1.glb",
+      "role": "reduced-detail-glb",
+      "mediaType": "model/gltf-binary",
+      "bytes": 2603256,
+      "sha256": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9"
+    },
+    {
+      "path": "branching/foliage-mip-manifest.json",
+      "role": "foliage-mip-sidecar-manifest",
+      "mediaType": "application/json",
+      "bytes": 15739,
+      "sha256": "3b22162f9ce8f3c6caaf33a85bb2f066ec07084233e4d546631f75f5de6f8480"
+    },
+    {
+      "path": "branching/foliage-mips.rgba8",
+      "role": "foliage-explicit-mip-levels",
+      "mediaType": "application/octet-stream",
+      "bytes": 5592064,
+      "sha256": "489bbfbc31c1c7375907f606d80817e918b8660bb9de0d91480bb2d4978484c6"
+    },
+    {
+      "path": "branching/asset-brief.json",
+      "role": "validated-asset-brief",
+      "mediaType": "application/json",
+      "bytes": 4422,
+      "sha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91"
+    },
+    {
+      "path": "branching/family-manifest.json",
+      "role": "tree-family-provenance",
+      "mediaType": "application/json",
+      "bytes": 11135,
+      "sha256": "7d799d58172e0b63c1f5e098dc883ac9bf9d09390e1021986835bb2779b14729"
+    },
+    {
+      "path": "branching/oak-lod0.glb.asset.json",
+      "role": "assetctl-package-manifest",
+      "mediaType": "application/json",
+      "bytes": 9629,
+      "sha256": "5f250ec4f303f9cf1555b572dafc06cd28f482bce6c0b423493b7638bd474662"
+    },
+    {
+      "path": "branching/oak-lod1.glb.asset.json",
+      "role": "assetctl-package-manifest",
+      "mediaType": "application/json",
+      "bytes": 9623,
+      "sha256": "1f6ba630626f844bf67c0152f2ba9da413d7e2ebb2a1ac4eac1ac840fa2b2df9"
+    },
+    {
+      "path": "spire/conifer-lod0.glb",
+      "role": "high-detail-glb",
+      "mediaType": "model/gltf-binary",
+      "bytes": 4764524,
+      "sha256": "58ead3644a84f91d0d30658c827be0c04d6ab0b5a42f468397cd2474a1c06e3d"
+    },
+    {
+      "path": "spire/conifer-lod1.glb",
+      "role": "reduced-detail-glb",
+      "mediaType": "model/gltf-binary",
+      "bytes": 3304920,
+      "sha256": "126cc179069cdeadf37bfa9fefa47b5be853040046be812a6e282e648f8d884b"
+    },
+    {
+      "path": "spire/foliage-mip-manifest.json",
+      "role": "foliage-mip-sidecar-manifest",
+      "mediaType": "application/json",
+      "bytes": 16353,
+      "sha256": "6625dd9a805dad4d7641efe648bac31fd4cd1f049b8db09d17313c67149bff92"
+    },
+    {
+      "path": "spire/foliage-mips.rgba8",
+      "role": "foliage-explicit-mip-levels",
+      "mediaType": "application/octet-stream",
+      "bytes": 5592064,
+      "sha256": "1be67c71812a392451e90789c47667aeeb6c92d010f29f3f11735f4353e0e576"
+    },
+    {
+      "path": "spire/asset-brief.json",
+      "role": "validated-asset-brief",
+      "mediaType": "application/json",
+      "bytes": 4310,
+      "sha256": "354ef461bf25e5c945498dc97932d7b2973fe2c14622e4f614d372ba4f8dd2c0"
+    },
+    {
+      "path": "spire/family-manifest.json",
+      "role": "tree-family-provenance",
+      "mediaType": "application/json",
+      "bytes": 13152,
+      "sha256": "eceec3fc7396bd7f9ed5a197dd2beb67467cf14f77976ee406c31be628fa7738"
+    },
+    {
+      "path": "spire/conifer-lod0.glb.asset.json",
+      "role": "assetctl-package-manifest",
+      "mediaType": "application/json",
+      "bytes": 10684,
+      "sha256": "e47a8986dfef9ca91fa831fe52b5e128b5a2f68124bba359e65f20008d335417"
+    },
+    {
+      "path": "spire/conifer-lod1.glb.asset.json",
+      "role": "assetctl-package-manifest",
+      "mediaType": "application/json",
+      "bytes": 10679,
+      "sha256": "19ae62ea4f9056eab8dfa87879e3e7d80cfcb1cbc08c8ac7e9d2a75e18dfa63b"
+    },
+    {
+      "path": "licenses/ez-tree-MIT-LICENSE.txt",
+      "role": "third-party-geometry-license",
+      "mediaType": "text/plain",
+      "bytes": 1073,
+      "sha256": "20e4afadfb10c67952b3d73cd2982d21d165ab4ae82b0dd9e4d6f2166ee349b6"
+    }
+  ],
+  "delivery": {
+    "resourceCount": 17,
+    "filesBytes": 25933495,
+    "glbBytes": 14642568,
+    "mipPayloadBytes": 11184128,
+    "metadataBytes": 106799,
+    "transferBytesBeforeCompression": 25933495
+  },
+  "memoryEstimate": {
+    "scope": "foliage base-color texture only, one shared texture per family across LODs",
+    "baseLevelBytesPerFamily": 16777216,
+    "additionalMipBytesPerFamily": 5592064,
+    "chainBytesPerFamily": 22369280,
+    "allFamiliesChainBytes": 44738560,
+    "format": "uncompressed RGBA8; driver alignment/copies excluded"
+  },
+  "provenance": {
+    "briefs": [
+      {
+        "kind": "branching",
+        "sha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91"
+      },
+      {
+        "kind": "spire",
+        "sha256": "354ef461bf25e5c945498dc97932d7b2973fe2c14622e4f614d372ba4f8dd2c0"
+      }
+    ],
+    "sourceConsent": [
+      {
+        "kind": "branching",
+        "sourceConsent": "licensed",
+        "licenseExpression": "NOASSERTION"
+      },
+      {
+        "kind": "spire",
+        "sourceConsent": "licensed",
+        "licenseExpression": "NOASSERTION"
+      }
+    ],
+    "generatedBy": "assetctl package for each GLB plus bounded forest bundle manifest",
+    "thirdPartyLicenses": [
+      {
+        "name": "EZ-Tree",
+        "expression": "MIT",
+        "notice": {
+          "path": "licenses/ez-tree-MIT-LICENSE.txt",
+          "role": "third-party-geometry-license",
+          "mediaType": "text/plain",
+          "bytes": 1073,
+          "sha256": "20e4afadfb10c67952b3d73cd2982d21d165ab4ae82b0dd9e4d6f2166ee349b6"
+        },
+        "sourceRevision": "dcf309bd86bd521083d9c70f01f2de45fdc7c457"
+      }
+    ]
+  },
+  "limitations": [
+    "Candidate output only; not published or wired to runtime",
+    "Atlas texture license remains NOASSERTION",
+    "Foliage sidecars are regular uncompressed RGBA8 and level 0 remains in each GLB",
+    "Computed GPU bytes assume one 2048x2048 RGBA8 foliage texture and levels 1-7 shared across each family; no GPU measurement",
+    "EZ-Tree MIT license applies to upstream geometry only; Atlas textures/material graph remain NOASSERTION"
+  ]
+}

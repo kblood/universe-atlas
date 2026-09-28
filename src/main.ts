@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import {RenderProfile} from './render-profile.ts';
 import {SurfaceLighting} from './surface-lighting.ts';
+import {ForestAssetSource} from './forest-asset-source.ts';
+import {ForestAssetAttachment} from './forest-asset-attachment.ts';
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { AtlasVR, type VRMenu } from "./vr.ts";
 import {
@@ -594,6 +596,9 @@ let surfaceMesh: THREE.Mesh<
 let surfaceInfo: Surface | null = null;
 let surfaceDetail=new URLSearchParams(location.search).get('detail')!=='0';
 let surfaceLightingEnabled=new URLSearchParams(location.search).get('lighting')!=='0';
+let detailedForestEnabled=new URLSearchParams(location.search).get('trees')==='1';
+const forestAssetSource=new ForestAssetSource(new URL('assets/forest/desktop-v1/forest-bundle-manifest.json',document.baseURI));
+const forestAssetAttachment=new ForestAssetAttachment(forestAssetSource,()=>panel());
 let horizonAssist=new URLSearchParams(location.search).get('horizon')!=='0';
 let flightAlignment:({bodyId:string;altitudeM:number}&ReturnType<typeof alignPlanetaryDown>)|null=null;
 const surveys=new Map<string,SurfaceSite[]>(),surveyPending=new Set<string>();
@@ -1058,6 +1063,7 @@ function persist() {
   if(futureScenario!=='constant-dark-energy')q.set('fate',futureScenario);
   if(!surfaceDetail)q.set('detail','0');
   if(!surfaceLightingEnabled)q.set('lighting','0');
+  if(detailedForestEnabled)q.set('trees','1');
   if(!horizonAssist)q.set('horizon','0');
   if(state.body?.hydrology)q.set('river',state.body.hydrology.parentCatchmentId);
   writeTimeToUrl(q,epoch);
@@ -2843,7 +2849,7 @@ function spinCompensatedSunDirection(rawSun: V3, spin: SpinState, formationNs: N
   return v.toArray() as V3;
 }
 function updatePlanetTiles(dt: number) {
-  if (!planetTiles || !surfaceMesh) {surfaceLighting.disable();return;}
+  if (!planetTiles || !surfaceMesh) {surfaceLighting.disable();forestAssetAttachment.update(null,detailedForestEnabled&&!renderer.xr.isPresenting);return;}
   root.updateMatrixWorld(true);
   const eye = renderer.xr.isPresenting ? renderer.xr.getCamera().getWorldPosition(new THREE.Vector3()) : camera.position.clone();
   const local = planetTiles.group.worldToLocal(eye.clone()).toArray() as V3;
@@ -2860,6 +2866,11 @@ function updatePlanetTiles(dt: number) {
   light.target.updateMatrixWorld();light.updateMatrixWorld();
   const center=bodyPosition(state.body!,state.sys!,epoch);
   const clearance=surfaceClearance(state.body!,localPose().map((v,i)=>v-center[i]) as V3,snappedWaterLevelFor(state.body!));
+  // Prefetch before the near forest appears. Retain the adopted family while
+  // climbing, and release its GPU resources when leaving this planet or opting out.
+  const forestAttached=forestAssetAttachment.diagnostics();
+  const forestTarget=clearance.terrainClearance<6000||forestAttached.ready||forestAttached.loading?planetTiles:null;
+  forestAssetAttachment.update(forestTarget,detailedForestEnabled&&!renderer.xr.isPresenting);
   const shadowFrustum=surfaceLighting.update({planet:planetTiles.group,radiusM:state.body!.radiusM,
     eye,sun:worldSun,altitudeM:clearance.terrainClearance,atmosphere:state.body!.water>0,
     enabled:surfaceLightingEnabled&&reliefScale===1,immersive:renderer.xr.isPresenting});
@@ -4337,7 +4348,7 @@ function panel() {
       // rendering — "Find rivers" is navigation among existing rivers, not a
       // one-time discovery/build action.
       if(state.body!.kind==='planet'&&state.body!.water&&canonicalRegionsFor(state.body!.id).length>0)surfaceNav+=`<button id="river-find" ${riverState?.status==='building'?'disabled':''}>${riverState?.status==='building'?'Preparing a river region…':'Find rivers and a lake'}</button>`;
-      surfaceNav+=`<button id="surface-detail">Ground detail: ${surfaceDetail?'on':'off'}</button><button id="surface-lighting">Surface lighting: ${surfaceLightingEnabled?'detailed':'basic'}</button><details id="surface-survey" ${surveyOpen?'open':''}><summary>Surface destinations</summary><p class="subtle">Find named sites on this world's existing terrain. Fly to a site, then choose Land and walk.</p>${sites?sites.map(s=>`<button data-surface-site="${esc(s.id)}" class="surface-site"><strong>${esc(s.name)}</strong><span>${esc(s.category)} · ${esc(s.biome)}<br>${fmt(s.elevationM,0)} m · slope ${fmt(s.slopeDeg,1)}°</span></button>`).join(''):`<button id="survey-surface" ${surveyPending.has(surveyKey(state.body!))?'disabled':''}>${surveyPending.has(surveyKey(state.body!))?'Surveying terrain…':'Survey surface'}</button>`}<p class="subtle">Ground materials show sand, soil, rock and snow. Find rivers and a lake adds a local waterway with initial forest and ground-cover detail.</p></details>`;
+      surfaceNav+=`<button id="surface-detail">Ground detail: ${surfaceDetail?'on':'off'}</button><button id="surface-lighting">Surface lighting: ${surfaceLightingEnabled?'detailed':'basic'}</button><button id="forest-detail">Trees: ${detailedForestEnabled?(forestAssetAttachment.diagnostics().loading?'loading…':'detailed'):'basic'}</button>${detailedForestEnabled&&forestAssetAttachment.diagnostics().error?'<p class="subtle">Detailed trees could not load. Basic trees remain available.</p><button id="forest-retry">Retry detailed trees</button>':''}<details id="surface-survey" ${surveyOpen?'open':''}><summary>Surface destinations</summary><p class="subtle">Find named sites on this world's existing terrain. Fly to a site, then choose Land and walk.</p>${sites?sites.map(s=>`<button data-surface-site="${esc(s.id)}" class="surface-site"><strong>${esc(s.name)}</strong><span>${esc(s.category)} · ${esc(s.biome)}<br>${fmt(s.elevationM,0)} m · slope ${fmt(s.slopeDeg,1)}°</span></button>`).join(''):`<button id="survey-surface" ${surveyPending.has(surveyKey(state.body!))?'disabled':''}>${surveyPending.has(surveyKey(state.body!))?'Surveying terrain…':'Survey surface'}</button>`}<p class="subtle">Ground materials show sand, soil, rock and snow. Find rivers and a lake adds a local waterway with initial forest and ground-cover detail.</p></details>`;
     }
     if(surfaceNav&&state.body!.water){
       const d=drainage?.data,c=drainage?.catchment();
@@ -4472,6 +4483,8 @@ function panel() {
   });
   bind('surface-detail',()=>{surfaceDetail=!surfaceDetail;planetTiles?.setSurfaceDetail(surfaceDetail);persist();panel();});
   bind('surface-lighting',()=>{surfaceLightingEnabled=!surfaceLightingEnabled;persist();panel();});
+  bind('forest-detail',()=>{detailedForestEnabled=!detailedForestEnabled;persist();panel();});
+  bind('forest-retry',()=>forestAssetAttachment.retry());
   bind('horizon-assist',()=>{horizonAssist=!horizonAssist;persist();panel();});
   bind('walk-surface',()=>{if(walker||landing)takeoffWalk();else landOnWorld();});
   bind('hold-orbit', holdPlanetOrbit);
@@ -5290,6 +5303,7 @@ Object.defineProperty(window, "__atlas", {
       };
     },
     get surfaceLighting(){return {enabled:surfaceLightingEnabled,...surfaceLighting.diagnostics()};},
+    get forestAssets(){return {...forestAssetAttachment.diagnostics(),source:forestAssetSource.diagnostics()};},
     get era(){
       const idx=eraIndexAt(epoch);
       return {id:eraCheckpoint(idx).id,label:eraCheckpoint(idx).label,tNs:eraCheckpoint(idx).tNs.toString(),
