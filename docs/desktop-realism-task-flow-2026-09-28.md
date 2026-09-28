@@ -23,20 +23,26 @@ returning every decision to the parent.
 
 ## Current assignments
 
-1. **Luna guide + acceptance:** finish the bounded published-guide link fix on
-   main, commit, build, publish, and validate the deployed revision. Keep
-   experimental rendering changes out of this website-only release.
+1. **Luna guide + acceptance:** the website-only fix is deployed at `e0d9d9c`.
+   Nine guide chapters, 98 internal destinations and the in-game link passed
+   live verification. Future releases still require a committed candidate and
+   explicit live verification.
 2. **Claude Code / Opus 5.5, supervised and tested by Luna:** own the current
    Oak/Pine forest milestone from implementation through local acceptance in
    an isolated worktree. Improve coherent species presentation, bounded
    deterministic structural variants and near/middle/far transitions during
    normal low flight and walking. Choose rendering techniques from evidence;
    the captured diffuse-transfer experiment is optional, not prescribed.
-3. **Following forest integration:** Luna owns bounded ground-material,
-   undergrowth, asset-adapter and instrumentation tasks with separate file
-   ownership. Opus owns the coupled genome-compatible rig/animation task.
-   Assign concrete briefs before starting these queued jobs; they are not
-   currently claimed as running or complete.
+3. **Luna terrain implementation:** roughness propagation is integrated locally
+   with focused CPU checks; visual acceptance remains open. The next material
+   task covers physically scaled soil and rock PBR detail with licensed source
+   textures, shared resources and bounded memory.
+4. **Claude Code / Opus 5.5, supervised and tested by Luna:** the separate
+   `opus-fauna-continuous-20260928` branch is implementing one connected,
+   genome-compatible rigged quadruped in ordinary planetary fauna. Its process
+   is confirmed as Opus 5.5. Forest and fauna may implement CPU code in
+   parallel; their GPU/browser work remains serialized. Neither milestone is
+   accepted merely because its implementation job has started.
 
 ## Task flow
 
@@ -72,6 +78,10 @@ returning every decision to the parent.
   decision needed. Keep raw output in files.
 - Report substantive checkpoints or blockers, not frequent intent messages.
   Poll a known live process; do not relaunch because a wait timed out.
+- Capture test commands, revisions, exit status and output as the run starts;
+  save browser state before screenshots and use distinct attempt directories.
+  If output was truncated, record that limit rather than reconstruct a raw log
+  or rerun a completed suite solely for archival completeness.
 - Keep the active team small. Serialize GPU generation and browser performance
   measurements; coordinate ownership directly between workers. A CPU build
   must not overlap a timing window used for a performance claim.
