@@ -1,9 +1,15 @@
 import * as THREE from 'three';
 import {treeCaptureViews,treeViewBlend} from './tree-impostor-views.ts';
+import {packTreeCaptureLayer} from './tree-impostor-filter.ts';
+
+export type TreeCaptureFiltering='legacy-unassociated'|'coverage-weighted';
+export type TreeCaptureLoadOptions={filtering?:TreeCaptureFiltering};
 
 /** Development representation for one exact captured height/variant. No forest
  * residency, instancing, shadow casting or game handoff is installed here. */
-export async function loadTreeCapture(manifest:any,read:(path:string)=>Promise<ArrayBuffer>){
+export async function loadTreeCapture(manifest:any,read:(path:string)=>Promise<ArrayBuffer>,options:TreeCaptureLoadOptions={}){
+  const filtering=options.filtering??'legacy-unassociated';
+  if(!['legacy-unassociated','coverage-weighted'].includes(filtering))throw new Error('Unsupported tree capture filtering mode');
   if(!manifest||manifest.schemaVersion!==2||![3,9,17].includes(manifest.options?.grid)||manifest.rowOrder!=='bottom-to-top'||manifest.colour!=='linear-unassociated-rgb-area-coverage'||manifest.data!=='object-normal-xyz-normalized-frontmost-depth'||manifest.classification!=='leaf-fraction'||!Array.isArray(manifest.artifacts))throw new Error('Unsupported tree capture contract');
   const {grid,size,heightM}=manifest.options??{},views=treeCaptureViews(grid);
   if(manifest.operation!=='atlas-tree-impostor-capture-2'||manifest.version!=='tree-material-capture-2'||![32,64,128].includes(size)||!Number.isFinite(heightM)||heightM<10||heightM>22||!Number.isFinite(manifest.radius)||manifest.radius<=0||manifest.radius>100||!Array.isArray(manifest.center)||manifest.center.length!==3||manifest.center.some((x:number)=>!Number.isFinite(x)||Math.abs(x)>100))throw new Error('Invalid tree capture manifest');
@@ -11,26 +17,44 @@ export async function loadTreeCapture(manifest:any,read:(path:string)=>Promise<A
   const records=new Map<string,any>(manifest.artifacts.map((r:any)=>[r.path,r]));
   if(records.size!==manifest.artifacts.length)throw new Error('Duplicate capture attachment');
   const colours:{data:Uint8Array;width:number;height:number}[]=[],classes:typeof colours=[],data:{data:Uint16Array;width:number;height:number}[]=[];
+  async function readAttachment(viewIndex:number,mip:number,width:number,channel:'colour'|'data'|'classification'){
+    const channels=channel==='classification'?1:4,channelCount=width*width*channels;
+    const path=`view-${String(viewIndex).padStart(3,'0')}/mip-${mip}.${channel}.f32`,record=records.get(path);
+    if(!record||record.bytes!==channelCount*4)throw new Error('Capture attachment length is invalid');
+    const payload=await read(path);
+    if(payload.byteLength!==channelCount*4)throw new Error('Truncated capture attachment');
+    const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',payload)),v=>v.toString(16).padStart(2,'0')).join('');
+    if(hash!==record.sha256)throw new Error('Capture attachment hash mismatch');
+    return new Float32Array(payload);
+  }
   let bytes=0;
   for(let mip=0,width=size;width>=1;mip++,width/=2){
     const count=width*width*4,colour=new Uint8Array(count*views.length),values=new Uint16Array(colour.length),classification=new Uint8Array(colour.length);
-    for(const view of views)for(const channel of ['colour','data','classification'] as const){
-      const path=`view-${String(view.index).padStart(3,'0')}/mip-${mip}.${channel}.f32`,record=records.get(path);
-      const channels=channel==='classification'?1:4,channelCount=width*width*channels;
-      if(!record||record.bytes!==channelCount*4)throw new Error('Capture attachment length is invalid');
-      const payload=await read(path);
-      if(payload.byteLength!==channelCount*4)throw new Error('Truncated capture attachment');
-      const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',payload)),v=>v.toString(16).padStart(2,'0')).join('');
-      if(hash!==record.sha256)throw new Error('Capture attachment hash mismatch');
-      const floats=new Float32Array(payload);
-      for(let i=0;i<channelCount;i++){
-        const value=floats[i],offset=view.index*count+i;
-        if(!Number.isFinite(value)||value< (channel==='data'?-1.001:0)||value>1.001)throw new Error('Capture channel is outside its range');
-        if(channel==='colour'){
-          const encoded=i%4===3?value:value<=.0031308?12.92*value:1.055*value**(1/2.4)-.055;
-          colour[offset]=Math.round(Math.max(0,Math.min(1,encoded))*255);
-        }else if(channel==='data')values[offset]=THREE.DataUtils.toHalfFloat(value);
-        else classification[view.index*count+i*4]=Math.round(Math.max(0,Math.min(1,value))*255);
+    for(const view of views){
+      const [colourFloats,dataFloats,classFloats]=await Promise.all([
+        readAttachment(view.index,mip,width,'colour'),readAttachment(view.index,mip,width,'data'),readAttachment(view.index,mip,width,'classification'),
+      ]);
+      const layerOffset=view.index*count;
+      if(filtering==='coverage-weighted'){
+        const packed=packTreeCaptureLayer(colourFloats,dataFloats,classFloats);
+        colour.set(packed.colour,layerOffset);values.set(packed.data,layerOffset);classification.set(packed.classification,layerOffset);
+        continue;
+      }
+      for(let i=0;i<count;i++){
+        const value=colourFloats[i],offset=layerOffset+i;
+        if(!Number.isFinite(value)||value<0||value>1.001)throw new Error('Capture channel is outside its range');
+        const encoded=i%4===3?value:value<=.0031308?12.92*value:1.055*value**(1/2.4)-.055;
+        colour[offset]=Math.round(Math.max(0,Math.min(1,encoded))*255);
+      }
+      for(let i=0;i<count;i++){
+        const value=dataFloats[i],offset=layerOffset+i;
+        if(!Number.isFinite(value)||value < -1.001||value>1.001)throw new Error('Capture channel is outside its range');
+        values[offset]=THREE.DataUtils.toHalfFloat(value);
+      }
+      for(let i=0;i<width*width;i++){
+        const value=classFloats[i],offset=layerOffset+i*4;
+        if(!Number.isFinite(value)||value<0||value>1.001)throw new Error('Capture channel is outside its range');
+        classification[offset]=Math.round(Math.max(0,Math.min(1,value))*255);
       }
     }
     colours.push({data:colour,width,height:width});data.push({data:values,width,height:width});classes.push({data:classification,width,height:width});bytes+=colour.byteLength+values.byteLength+classification.byteLength;
@@ -52,7 +76,7 @@ export async function loadTreeCapture(manifest:any,read:(path:string)=>Promise<A
     texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;
     texture.generateMipmaps=false;texture.flipY=false;texture.needsUpdate=true;
   }
-  return {manifest,views,colourTexture,dataTexture,classTexture,bytes,
+  return {manifest,views,colourTexture,dataTexture,classTexture,bytes,filtering,
     dispose(){colourTexture.dispose();dataTexture.dispose();classTexture.dispose();}};
 }
 export type TreeCapture=Awaited<ReturnType<typeof loadTreeCapture>>;
@@ -61,7 +85,7 @@ const sampleGLSL=`
 precision highp sampler2DArray;
 uniform sampler2DArray captureColour,captureData,captureClass;
 uniform vec3 captureCenter,captureEye,captureDirection;
-uniform float captureRadius,captureOrtho,captureMip,captureMask,captureParallax,captureHash;
+uniform float captureRadius,captureOrtho,captureMip,captureMask,captureParallax,captureHash,captureCoverageWeighted;
 uniform vec3 captureWeights;
 uniform ivec3 captureLayers;
 uniform mat3 captureBasis0,captureBasis1,captureBasis2,captureNormalMatrix;
@@ -76,12 +100,15 @@ void captureSample(int layer,mat3 basis,vec3 ro,vec3 rd,out vec4 colour,out vec3
   vec2 uv=captureUV(ro+rd*t,basis);
   for(int step=0;step<2;step++){
     vec4 data=textureLod(captureData,vec3(clamp(uv,0.,1.),float(layer)),captureMip);
+    if(captureCoverageWeighted>.5){float alpha=textureLod(captureColour,vec3(clamp(uv,0.,1.),float(layer)),captureMip).a;data/=max(alpha,1e-6);}
     t=(plane+data.w*captureRadius*captureParallax)/denominator;uv=captureUV(ro+rd*t,basis);
   }
   if(any(lessThan(uv,vec2(0)))||any(greaterThan(uv,vec2(1)))||t<0.)return;
   colour=textureLod(captureColour,vec3(uv,float(layer)),captureMip);
   vec4 data=textureLod(captureData,vec3(uv,float(layer)),captureMip);
-  normal=dot(data.xyz,data.xyz)>1e-8?normalize(data.xyz):basis[2];leaf=textureLod(captureClass,vec3(uv,float(layer)),captureMip).r;
+  float alpha=max(colour.a,1e-6);vec4 classification=textureLod(captureClass,vec3(uv,float(layer)),captureMip);
+  if(captureCoverageWeighted>.5){colour.rgb/=alpha;data/=alpha;classification.r/=alpha;}
+  normal=dot(data.xyz,data.xyz)>1e-8?normalize(data.xyz):basis[2];leaf=classification.r;
   t=(plane+data.w*captureRadius)/denominator;
 }
 float captureNoise(vec2 p){return fract(52.9829189*fract(dot(floor(p),vec2(.06711056,.00583715))));}
@@ -90,14 +117,16 @@ float captureNoise(vec2 p){return fract(52.9829189*fract(dot(floor(p),vec2(.0671
 export class TreeCapturedImpostor {
   readonly mesh:THREE.Mesh<THREE.PlaneGeometry,THREE.MeshPhysicalMaterial>;
   readonly uniforms;
-  constructor(readonly capture:TreeCapture,sourceMaterials:readonly THREE.MeshStandardMaterial[]){
+  readonly capture:TreeCapture;
+  constructor(capture:TreeCapture,sourceMaterials:readonly THREE.MeshStandardMaterial[]){
+    this.capture=capture;
     if(sourceMaterials.length!==2||sourceMaterials.some(m=>m.metalness!==0)||sourceMaterials[0].name!=='MAT_AtlasBark'||sourceMaterials[1].name!=='MAT_AtlasFoliage')throw new Error('Impostor requires its bark/foliage source materials');
     const specular=sourceMaterials.map(m=>(m as THREE.MeshPhysicalMaterial).specularIntensity??1);
     const u=this.uniforms={
       captureColour:{value:capture.colourTexture},captureData:{value:capture.dataTexture},captureClass:{value:capture.classTexture},
       captureCenter:{value:new THREE.Vector3(...capture.manifest.center as [number,number,number])},captureRadius:{value:capture.manifest.radius},
       captureEye:{value:new THREE.Vector3()},captureDirection:{value:new THREE.Vector3()},captureOrtho:{value:0},captureMip:{value:0},captureMask:{value:0},
-      captureParallax:{value:1},captureHash:{value:0},
+      captureParallax:{value:1},captureHash:{value:0},captureCoverageWeighted:{value:Number(capture.filtering==='coverage-weighted')},
       captureWeights:{value:new THREE.Vector3()},captureLayers:{value:new Int32Array(3)},
       captureBasis0:{value:new THREE.Matrix3()},captureBasis1:{value:new THREE.Matrix3()},captureBasis2:{value:new THREE.Matrix3()},
       captureBillboardRight:{value:new THREE.Vector3()},captureBillboardUp:{value:new THREE.Vector3()},captureBillboardScale:{value:1},
@@ -153,7 +182,7 @@ float capturedSpecular=mix(captureSpecular.x,captureSpecular.y,captureLeaf);mate
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`#include <opaque_fragment>
 if(captureMask>.5)gl_FragColor=vec4(vec3(1),captureCoverage);`);
     };
-    material.customProgramCacheKey=()=> 'atlas-captured-tree-lab-1';
+    material.customProgramCacheKey=()=> `atlas-captured-tree-lab-2-${capture.filtering}`;
     this.mesh=new THREE.Mesh(new THREE.PlaneGeometry(2,2),material);this.mesh.frustumCulled=false;
     this.mesh.name='Authored tree capture reconstruction (development)';
     const inverse=new THREE.Matrix4(),localCamera=new THREE.Matrix4(),viewport=new THREE.Vector4();
