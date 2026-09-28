@@ -10,6 +10,9 @@ export default defineConfig({
       builtAt:new Date().toISOString(),
     },null,2)});
     for(const fileName of [
+      'docs/forest-asset-loading-2026-09-28.md',
+      'src/forest-asset-source.ts',
+      'tests/forest-asset-source.test.mjs',
       'docs/offline-foliage-mips-2026-09-28.md',
       'src/tree-foliage-sidecar.ts',
       'tests/tree-foliage-sidecar.test.mjs',
