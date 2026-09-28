@@ -7,6 +7,11 @@ repeatability, 10–22 m skeleton heights with fixed physical leaf dimensions,
 exported pivot/wind attributes, measured LOD budgets, and octahedral normal/depth
 capture quality.
 
+This is a source-only research snapshot; its statement below that no candidate
+was run refers to that review. The subsequent pinned EZ-Tree geometry
+comparison is documented in the [follow-up record](tree-ez-reference-2026-09-28.md).
+Its operation and fixture received a separate [Opus source review](opus-5.5-tree-reference-review-2026-09-28.md); that review did not render or accept the tree.
+
 ## Findings
 
 | Candidate | Reusable work | Atlas gaps and maturity | Best next comparison |

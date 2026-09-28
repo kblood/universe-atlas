@@ -1,0 +1,58 @@
+{
+  "reviewDate": "2026-09-28",
+  "reviewer": "Opus 5.5",
+  "returnedModel": "claude-opus-5-5",
+  "provider": "firstParty",
+  "scope": "Static source review only; no execution or visual acceptance. Follow-up fixes and browser evidence are assessed separately.",
+  "sourceRevision": "36d1c159455a27bff71e7b7ddec6efb1053216f4",
+  "sourceSnapshotDirty": true,
+  "reviewedInputs": [
+    {
+      "path": "../tools/assetctl/tree-reference.mjs",
+      "sha256": "9e7b9be3c49348b9c10b90a00b7738f57eb7874a9b30bbd53f20b236069abc91"
+    },
+    {
+      "path": "../tools/assetctl/tree-reference-runtime.mjs",
+      "sha256": "8926eb251cf28d2758d4c621f8afb8d42c2067e1933f42cb65337c305c9641dc"
+    },
+    {
+      "path": "../tools/assetctl/test/tree-reference.test.mjs",
+      "sha256": "256d65622b32e3515d1bb67f302fe5133186641b7dfbfafde8d23e4d94c6d6bc"
+    },
+    {
+      "path": "../tools/assetctl/vendor/ez-tree/src/lib/tree.js",
+      "sha256": "a1b7bd933cb2078e9373c9c853c620be8a3edc84a9edda6a4073c8ad2a31f934"
+    },
+    {
+      "path": "../examples/asset-briefs/atlas-ez-tree-reference.json",
+      "sha256": "3a395de635567de495b9e1318559773f92db84b980ca23fd65e36fc71613d088"
+    },
+    {
+      "path": "src/tree-reference-lab.ts",
+      "sha256": "9b01292b476182b1e9c4376ddad8891649e55a204fbde4f164ce9c93319fef48"
+    }
+  ],
+  "rawResponse": {
+    "path": "../test-results/opus-tree-reference-review/response.json",
+    "sha256": "94edf6d65b21b7c0b60e4ca62ded9177aa2d0824be3ea66e460f87d3d70266e1"
+  },
+  "rawInputs": {
+    "path": "../test-results/opus-tree-reference-review/inputs.json",
+    "sha256": "90aa2f8e70aadfce49e32661510a766f33d76f3ee024f46ccf4e155c7f95c6a0"
+  },
+  "usage": {
+    "inputTokens": 2,
+    "outputTokens": 11752,
+    "cacheReadInputTokens": 1459,
+    "cacheCreationInputTokens": 34551,
+    "webSearchRequests": 0,
+    "costUSD": 0.5117478,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 8700,
+    "canonicalModel": "claude-opus-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+  },
+  "responseSessionId": "25a2c353-0b77-4ed7-8703-2aa7678b53c3"
+}

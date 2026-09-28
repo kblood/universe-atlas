@@ -217,12 +217,20 @@ reconstruction reviews are archived with hashes; remaining rendering
 suggestions are not implemented wholesale. No capture asset is accepted or
 bound to a species.
 
-Following the user's request to check existing methods, the next tree increment
-starts with an [existing-implementation comparison](tree-existing-methods-2026-09-28.md).
-Benchmark a pinned EZ-Tree preset against the current generated family under
-the same scale, camera and lighting, and compare the Three.ez impostor reference
-on the same source asset before extending custom reconstruction. The source
-review establishes candidates; it does not establish visual or runtime winners.
+The [existing-implementation comparison](tree-existing-methods-2026-09-28.md)
+led to a pinned EZ-Tree oak geometry run and a local browser fixture. The
+[current comparison record](tree-ez-reference-2026-09-28.md) documents the
+seeded 16 m source, wood-reduced control, upstream LODs, leaf-card and normal
+differences and final browser comparison. In this one RTX 5090 fixture, the
+192-tree timer-query p50/p95 is 0.5828/0.6045 ms for EZ-Tree and
+0.7244/0.8129 ms for Atlas, with different geometry and submitted triangle
+counts; this is not a general performance claim. The visual result favors
+EZ-Tree's branching as the next source candidate, but card/material quality,
+normal correction, wind/pivot data, LOD budgets, packaging and runtime
+acceptance remain open. The [Opus source review](opus-5.5-tree-reference-review-2026-09-28.md)
+records applied adapter and manifest fixes but is not a visual acceptance.
+Nothing from the experiment has been adopted into the game. A Three.ez impostor
+benchmark against the same asset remains future work.
 
 Stages have dependencies. Beginning this programme does not mean replacing all
 subsystems at once. The first code increment targets B so detailed assets have

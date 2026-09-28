@@ -35,6 +35,8 @@ assets. See the [integration and acceptance record](docs/canopy-runtime-integrat
 
 The [v7 tree checkpoint](docs/tree-authoring-v7-2026-09-28.md) preserves geometry, alpha and normal data while correcting colour encoding; browser checks pass, but back-lit foliage remains dark and visual acceptance is open. An isolated [distance-capture experiment](docs/authored-tree-capture-2026-09-28.md) passes repeatability and technical audit checks for its 16 m capture, while its 22 m / 32-pixel capture loses all leaf classification and intermediate-view silhouette error remains high. Browser checks exercise all 81 capture directions without WebGL errors, but exact-axis matching does not generalize to intermediate views. The development lab has no forest instancing, wind, shadow casting or mesh handoff, and is not integrated into the game. Authored trees remain unaccepted; the live forest still uses legacy faceted shapes.
 
+A separate [pinned EZ-Tree reference comparison](docs/tree-ez-reference-2026-09-28.md) generates fixed-seed oak geometry and reduced-wood/upstream-LOD variants for a local browser review. The 16 m Oak has 13,806 full-detail triangles; the wood-reduced control retains its leaf mesh at 12,014. Its RTX 5090 fixture records six 60-frame samples and shows a fuller, less tiered crown, but the trees differ in geometry and leaf coverage, so these are not general performance results or visual acceptance. The reference is not in the game.
+
 The [tree authoring v4 candidate](docs/tree-authoring-v4-2026-09-28.md) passes
 physical export, repeat-generation and Blender/GLB render checks after the
 [Opus authoring review fixes](docs/tree-authoring-review-assessment-2026-09-28.md).
