@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createLegacyTreeGeometry as treeGeometry,treeQuaternion} from './tree-shape.ts';
 import {type Body,type V3} from './catalog.ts';
 import {terrainSampler} from './terrain.ts';
 import {biomeClassifier} from './surface-biomes.ts';
@@ -42,32 +43,6 @@ class DirtyRange {
 type BatchUpdates={residents:Resident[];originVersions:number[];slots:Map<string,number>;wanted:Resident[];wantedCoverage:number[];wantedIds:Set<string>;matrix:DirtyRange;color:DirtyRange;coverage:DirtyRange};
 const batchUpdates=():BatchUpdates=>({residents:[],originVersions:[],slots:new Map(),wanted:[],wantedCoverage:[],wantedIds:new Set(),matrix:new DirtyRange(),color:new DirtyRange(),coverage:new DirtyRange()});
 
-/** Matched metre-normalized silhouettes for near branches and distant crowns.
- * All geometry is authored here; no textures or external generated assets. */
-function treeGeometry(detail:number){
-  const positions:number[]=[],normals:number[]=[],colors:number[]=[];
-  const add=(g:THREE.BufferGeometry,scale:V3,position:V3,color:V3)=>{
-    g.scale(...scale);g.translate(...position);
-    const flat=g.index?g.toNonIndexed():g;
-    positions.push(...flat.attributes.position.array);normals.push(...flat.attributes.normal.array);
-    for(let i=0;i<flat.attributes.position.count;i++)colors.push(...color);
-    flat.dispose();if(flat!==g)g.dispose();
-  };
-  add(new THREE.CylinderGeometry(.018,.031,.64,detail?7:4),[1,1,1],[0,.32,0],[.25,.17,.10]);
-  if(detail)for(const side of [-1,1]){
-    const branch=new THREE.CylinderGeometry(.005,.012,.30,6);branch.rotateZ(side*.7);
-    add(branch,[1,1,1],[side*.075,.55,.02],[.25,.17,.10]);
-  }
-  for(const [x,y,z,s] of [[-.13,.65,.02,.23],[.13,.72,.03,.24],[0,.81,-.10,.23],[.015,.89,.035,.16]]){
-    add(new THREE.IcosahedronGeometry(1,detail),[s,s*.85,s],[x,y,z],[.16+y*.06,.29+y*.04,.08]);
-  }
-  const geometry=new THREE.BufferGeometry();
-  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
-  geometry.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));
-  geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
-  geometry.computeBoundingSphere();return geometry;
-}
-
 /** Screen-door coverage changes visibility without shrinking a physical tree.
  * alphaHash preserves opaque depth testing and avoids sorted transparent forests. */
 function forestMaterial(vertexColors:boolean){
@@ -107,7 +82,6 @@ export class PlanetForest {
   private scale=new THREE.Vector3();
   private quaternion=new THREE.Quaternion();
   private yaw=new THREE.Quaternion();
-  private up=new THREE.Vector3(0,1,0);
   private direction=new THREE.Vector3();
   private color=new THREE.Color();
   private bounds=new THREE.Sphere();
@@ -196,8 +170,7 @@ export class PlanetForest {
       const {cell,height}=resident,r=this.body.radiusM;
       this.direction.set(...cell.direction);
       this.position.copy(this.direction).multiplyScalar(1+height/r).sub(this.origin);
-      this.quaternion.setFromUnitVectors(this.up,this.direction);
-      this.yaw.setFromAxisAngle(this.direction,cell.yaw);this.quaternion.premultiply(this.yaw);
+      treeQuaternion(this.direction,cell.yaw,this.quaternion,this.yaw);
       this.scale.setScalar(cell.heightM/r);
       this.matrix.compose(this.position,this.quaternion,this.scale);mesh.setMatrixAt(index,this.matrix);
       updates.matrix.include(index,16);updates.originVersions[index]=this.originVersion;this.matrixWrites++;
