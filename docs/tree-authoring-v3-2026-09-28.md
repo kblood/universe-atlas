@@ -59,9 +59,9 @@ The candidate remains under
 authoring manifest are preserved there. Rendering worktree copies of the
 [manifest](../test-results/tree-author-v3/authoring-manifest.json) and
 [technical validation](../test-results/tree-author-v3/validation.json) provide
-stable review records. Luna's [corrected render sheet](../test-results/tree-author-v3/render-sheet-bounded-wire/render-sheet.png),
-[hero view](../test-results/tree-author-v3/render-sheet-bounded-wire/hero.png)
-and [bounded wire view](../test-results/tree-author-v3/render-sheet-bounded-wire/wire.png)
+stable review records. Luna's [corrected render sheet](../test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/render-sheet.png),
+[hero view](../test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/hero.png)
+and [bounded wire view](../test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/wire.png)
 show the current visual state.
 
 See the [authoring increment proposal and status](tree-authoring-next-increment-2026-09-28.md),
