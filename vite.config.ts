@@ -10,6 +10,16 @@ export default defineConfig({
       builtAt:new Date().toISOString(),
     },null,2)});
     for(const fileName of [
+      'docs/compact-tree-families-2026-09-28.md',
+      'src/compact-instance-slots.ts',
+      'src/forest-tree-family-library.ts',
+      'tests/compact-instance-slots.test.mjs',
+      'docs/opus-5.5-surface-progress-review-2026-09-28.md',
+      'docs/opus-5.5-surface-progress-review-2026-09-28.metadata.json',
+      'docs/surface-progress-review-assessment-2026-09-28.md',
+      'test-results/opus-surface-progress-review/inputs.json',
+      'test-results/opus-surface-progress-review/response.json',
+      'test-results/opus-surface-progress-review/luna-report-final.json',
       'docs/surface-lighting-2026-09-28.md',
       'test-results/tree-forest-live/live-publication-receipt.json',
       'src/surface-lighting.ts',

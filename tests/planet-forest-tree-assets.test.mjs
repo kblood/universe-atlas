@@ -23,7 +23,7 @@ function familyHarness({reject=false,forestCoverage=true,maxRadiusM=20}={}){
       setDate(date){dates.push(date);},
       createBatch(lod,capacity){
         const batch={lod,capacity,group:new THREE.Group(),instances:new Map(),coverage:new Map(),appearances:new Map(),count:0,initialized:0,disposed:0,
-          setInstance(i,matrix,heightM,phase){if(i>batch.initialized)throw new Error(`batch slot gap ${i} > ${batch.initialized}`);if(i===batch.initialized)batch.initialized++;batch.instances.set(i,{matrix:matrix.clone(),heightM,phase});},
+          setInstance(i,matrix,heightM,phase){if(i>batch.count)throw new Error(`batch slot gap ${i} > ${batch.count}`);if(i===batch.initialized)batch.initialized++;batch.count=Math.max(batch.count,i+1);batch.instances.set(i,{matrix:matrix.clone(),heightM,phase});},
           setAppearance(i,bark,foliage){batch.appearances.set(i,{bark:[...bark],foliage:[...foliage]});},
           setCoverage(i,coverage,seed){batch.coverage.set(i,{coverage,seed});},
           setCount(count){if(count>batch.initialized)throw new Error(`batch count ${count} exceeds initialized slots ${batch.initialized}`);batch.count=count;},dispose(){batch.disposed++;batch.group.removeFromParent();}};
@@ -60,9 +60,9 @@ test('dated catalogue attaches detailed branching instances while spire and unsu
     assert.equal(d.samples[0].id,cells[0].id);
     assert.equal(d.samples[0].speciesId,'branch');
     assert.equal(h.dates.at(-1),123n);
-    assert.equal(h.batches[0].count,3,'detailed batch retains stable slots for eligible, spire, and unsupported residents');
+    assert.equal(h.batches[0].count,1,'detailed batch submits only eligible residents');
     assert.equal(h.batches[0].coverage.get(0).coverage>0,true);
-    assert.equal(h.batches[0].coverage.get(1).coverage,0,'height 23m is placeholder geometry and cannot draw detailed coverage');
+    assert.equal(h.batches[0].coverage.has(1),false,'unsupported residents have no detailed GPU slot');
     assert.ok(f.meshes[0].geometry.getAttribute('instanceCoverage').getX(0)===0,'detailed branch suppresses legacy draw');
     assert.ok(f.meshes[0].geometry.getAttribute('instanceCoverage').getX(1)>0,'unsupported height stays on the legacy path');
   }finally{f.dispose();}
@@ -158,7 +158,7 @@ test('successful replacement disposes previous batches/family only after replace
   }finally{f.dispose();}
 });
 
-test('attaching after legacy slots exist initializes in order before reorder and interior removal',async()=>{
+test('attaching after legacy slots exist initializes only selected detailed slots without gaps',async()=>{
   const {f,h,step,cells}=fixture();
   try{
     step([],40n);assert.equal(f.meshes[0].count,3,'seed retained legacy residents before asset attach');
@@ -166,7 +166,7 @@ test('attaching after legacy slots exist initializes in order before reorder and
     f.wanted.reverse();f.wanted.splice(1,1);
     step([species()],41n);
     const batch=h.batches[0];
-    assert.equal(batch.initialized,3,'all extant slots were initialized in sequential order before compaction');
+    assert.equal(batch.initialized,2,'only the two selected supported slots are initialized');
     assert.equal(batch.count,2);
     assert.deepEqual(f.updates[0].residents.map(r=>r.cell.id),[cells[0].id,cells[2].id]);
     assert.equal(f.diagnostics().detailedTrees.visible[0],2);
@@ -236,4 +236,66 @@ test('overlapping family loads are newest-wins and dispose the stale result exac
     assert.equal(f.diagnostics().detailedTrees.loading,false);
     assert.equal(f.diagnostics().detailedTrees.error,'');
   }finally{f.dispose();}
+});
+
+const bothFamilies=()=>['branching','spire'].map(kind=>({kind,lod0:new ArrayBuffer(8),lod1:new ArrayBuffer(8)}));
+test('branching and spire use separate compact pools and suppress all supported legacy draws',async()=>{
+ const {f,h,step,cells}=fixture();cells[1].heightM=16;
+ try{
+  await f.loadTreeFamilies(bothFamilies());step([species('branch'),species('spire','spire')],100n);
+  const d=f.diagnostics().detailedTrees;
+  assert.equal(d.families.length,2);assert.equal(d.visible[0],3);
+  assert.equal(h.batches.reduce((n,b)=>n+b.count,0),3,'aggregate submissions equal selected supported trees');
+  assert.ok(d.families.every(x=>x.submitted[0]>0),'fixture covers both families');
+  assert.equal(f.meshes[0].visible,false,'no legacy vertex submission when both families cover every slot');
+  assert.equal(new Set(d.samples.map(x=>x.id)).size,3);assert.equal(h.dates.at(-1),100n);
+  const before=new Map(d.samples.map(x=>[x.id,x]));f.wanted.reverse();step([species('spire','spire'),species('branch')],100n);
+  for(const sample of f.diagnostics().detailedTrees.samples)assert.deepEqual(sample,before.get(sample.id));
+ }finally{f.dispose();}
+ assert.ok(h.families.every(x=>x.disposed===1));assert.ok(h.batches.every(x=>x.disposed===1));
+});
+test('family reassignment and empty demand regrow initialized compact slots without gaps',async()=>{
+ const {f,h,step,cells}=fixture();cells[1].heightM=16;
+ try{
+  await f.loadTreeFamilies(bothFamilies());step([species('all-branch')],1n);
+  assert.deepEqual(h.batches.map(x=>x.count),[3,0,0,0]);
+  step([species('all-spire','spire')],2n);assert.deepEqual(h.batches.map(x=>x.count),[0,0,3,0]);
+  step([],3n);assert.ok(h.batches.every(x=>x.count===0));
+  step([species('all-branch')],4n);assert.deepEqual(h.batches.map(x=>x.count),[3,0,0,0]);
+  assert.equal(f.meshes[0].visible,false);
+ }finally{f.dispose();}
+});
+test('failure in second family preserves active library and disposes partial replacement',async()=>{
+ const {f,h,step}=fixture();
+ try{
+  await load(f);step([species()],1n);const old=h.families[0],original=f.treeLoader;let calls=0;
+  f.treeLoader=async(...args)=>{if(++calls===2)throw new Error('pine load failed');return original(...args);};
+  await assert.rejects(f.loadTreeFamilies(bothFamilies()),/pine load failed/);
+  assert.equal(old.disposed,undefined);assert.equal(h.families[1].disposed,1);
+  assert.ok(h.batches.slice(2).every(x=>x.disposed===1));
+  step([species()],2n);assert.equal(f.diagnostics().detailedTrees.visible[0],2);
+  assert.equal(f.diagnostics().detailedTrees.families.length,1);
+ }finally{f.dispose();}
+});
+test('duplicate family requests are rejected without replacing or cancelling active state',async()=>{
+ const {f,h}=fixture();
+ try{
+  await load(f);const first=bothFamilies()[0];
+  await assert.rejects(f.loadTreeFamilies([first,first]),/unique/);
+  assert.equal(h.families.length,1);assert.equal(h.families[0].disposed,undefined);
+  assert.equal(f.diagnostics().detailedTrees.ready,true);
+ }finally{f.dispose();}
+});
+test('cancelling between family parses releases all staged assets and keeps latest request authoritative',async()=>{
+ const {f,h}=fixture();let resolve;const original=f.treeLoader;let calls=0;
+ f.treeLoader=(...args)=>++calls===2?new Promise(r=>{resolve=r;}):original(...args);
+ try{
+  const pending=f.loadTreeFamilies(bothFamilies());
+  while(!resolve)await new Promise(r=>setImmediate(r));
+  f.clearTreeAssets();let disposed=0,creates=0;
+  resolve({dispose(){disposed++;},createBatch(){creates++;}});
+  assert.equal(await pending,false);assert.equal(disposed,1);assert.equal(creates,0);
+  assert.equal(h.families[0].disposed,1);assert.ok(h.batches.every(x=>x.disposed===1));
+  assert.equal(f.diagnostics().detailedTrees.ready,false);
+ }finally{f.dispose();}
 });

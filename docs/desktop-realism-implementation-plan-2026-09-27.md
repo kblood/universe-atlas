@@ -49,9 +49,9 @@ distribution through moisture, slope, climate and substrate. Clustering, gaps,
 undergrowth and size distribution contribute to realism alongside mesh quality.
 
 Do not introduce a second independent species catalogue inside the renderer.
-Current canonical forest candidates have identities and dimensions but are not
-yet individually bound to complete dated plant species recipes. That binding is
-an explicit future integration task, not something the current forest proves.
+The local detailed renderer now binds canonical forest individuals to dated
+species recipes. Physical allometry and bounded structural variants remain
+unfinished; the initial asset adapter preserves canonical population heights.
 
 ### Blender and assetctl
 
@@ -557,3 +557,12 @@ detailed-tree lighting still needs the corrected capture: the family comparison
 had basic lighting selected. Fauna stencil warm-up also invalidated the initial
 steady-state assumption. No causal cache speedup or final realism acceptance is
 claimed. Live remains `8e16776`; these later changes are local checkpoints.
+
+### Compact family integration
+
+[Compact per-family slots](compact-tree-families-2026-09-28.md) are now integrated,
+with an atomic branching/spire library and 38 focused CPU tests. Unsupported
+trees no longer consume detailed GPU slots, and fully replaced legacy batches
+are hidden. The next actual-game comparison must measure submissions and verify
+identity, dated return, movement and shadows; no frame-rate improvement is yet
+claimed. Pine remains an asset candidate until its combined visual check passes.

@@ -539,7 +539,10 @@ export class PlanetRenderer {
    * `LifeGateContext`'s own doc comment. */
   setLifeContext(context: LifeGateContext | null): void { this.lifeContext = context; }
   loadForestTreeAssets(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){
-    return this.forest.loadTreeAssets(lod0,lod1,{...options,localAerial:{
+    return this.loadForestTreeFamilies([{kind:'branching',lod0,lod1}],options);
+  }
+  loadForestTreeFamilies(inputs:readonly import('./forest-tree-family-library.ts').ForestTreeFamilyInput[],options:TreeAssetOptions={}){
+    return this.forest.loadTreeFamilies(inputs,{...options,localAerial:{
       planet:this.group,frame:this.forest.group,radiusM:this.body.radiusM,
       sun:this.sunUniform,enabled:this.localAirUniform,eyeHeight:this.eyeHeightUniform,
     }});

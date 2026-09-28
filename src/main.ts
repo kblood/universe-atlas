@@ -5228,6 +5228,11 @@ Object.defineProperty(window, "__atlas", {
       return planetTiles.loadForestTreeAssets(lod0,lod1,options);
     },
     clearForestTreeAssets(){planetTiles?.clearForestTreeAssets();},
+    async loadForestTreeFamilies(inputs:readonly import('./forest-tree-family-library.ts').ForestTreeFamilyInput[],options:import('./tree-asset.ts').TreeAssetOptions={}){
+      if(!import.meta.env.DEV)throw new Error('Experimental forest assets require a development build');
+      if(!planetTiles)throw new Error('Visit a planet before loading forest assets');
+      return planetTiles.loadForestTreeFamilies(inputs,options);
+    },
     setProfiling(enabled:boolean){renderProfile.setEnabled(enabled);},
     resetProfile(){renderProfile.clear();},
     setCloudSceneSamples(samples:0|2|4){

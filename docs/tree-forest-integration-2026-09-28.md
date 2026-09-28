@@ -1,5 +1,10 @@
 # Local detailed-tree forest integration
 
+**Later checkpoint:** [compact family integration](compact-tree-families-2026-09-28.md)
+replaces the shared detailed slots described below with compact per-family
+batches and supports branching/spire loading together. The original evidence
+below remains historical; it does not validate the newer renderer or Pine.
+
 _Development-worktree status, 2026-09-28. The opt-in integration passes focused CPU/loader and one RTX 5090 browser fixture; it is not the published forest default or visual/performance acceptance._
 
 ## What the local path does

@@ -1,0 +1,57 @@
+import type {Group} from 'three';
+import type {TreeAssetFamily,TreeAssetOptions} from './tree-asset.ts';
+import {CompactInstanceSlots} from './compact-instance-slots.ts';
+
+export type ForestTreeKind='branching'|'spire';
+export type ForestTreeFamilyInput={kind:ForestTreeKind;lod0:ArrayBuffer;lod1:ArrayBuffer};
+export type ForestTreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
+type Batch=ReturnType<TreeAssetFamily['createBatch']>;
+export type ForestTreeFamilyEntry<T,S>={kind:ForestTreeKind;family:TreeAssetFamily;batches:Batch[];
+  pools:CompactInstanceSlots<T,S>[];wanted:T[][];coverage:Map<string,number>[]};
+
+/** Atomically replace a bounded family set; loading never owns population IDs.
+ * Every family's LOD draws have independent compact slots. Aggregate selection
+ * capacities are enforced upstream before residents are assigned to families. */
+export class ForestTreeFamilyLibrary<T,S>{
+  entries=new Map<ForestTreeKind,ForestTreeFamilyEntry<T,S>>();
+  loading=false;error='';maxRadiusM=0;
+  private request=0;private disposed=false;private date=0n;
+  private parent:Group;private loader:ForestTreeLoader;private key:(item:T)=>string;
+  private capacities:readonly[number,number];
+  constructor(parent:Group,loader:ForestTreeLoader,key:(item:T)=>string,capacities:readonly[number,number]){
+    this.parent=parent;this.loader=loader;this.key=key;this.capacities=capacities;
+  }
+  setDate(date:bigint){this.date=date;for(const entry of this.entries.values())entry.family.setDate(date);}
+  private release(entries:Iterable<ForestTreeFamilyEntry<T,S>>){
+    for(const entry of entries){for(const batch of entry.batches)batch.dispose();entry.family.dispose();}
+  }
+  async replace(inputs:readonly ForestTreeFamilyInput[],options:TreeAssetOptions={}):Promise<boolean>{
+    if(this.disposed)throw new Error('Forest is disposed');
+    if(inputs.length<1||inputs.length>2||new Set(inputs.map(x=>x.kind)).size!==inputs.length||
+      inputs.some(x=>x.kind!=='branching'&&x.kind!=='spire'))throw new Error('Expected unique branching/spire families');
+    const request=++this.request;this.loading=true;this.error='';
+    const pending:ForestTreeFamilyEntry<T,S>[]=[];let adopted=false;
+    try{
+      for(const input of inputs){
+        const family=await this.loader(input.lod0,input.lod1,{...options,forestCoverage:true});
+        const entry:ForestTreeFamilyEntry<T,S>={kind:input.kind,family,batches:[],pools:[],wanted:[[],[]],coverage:[new Map(),new Map()]};
+        pending.push(entry);
+        if(this.disposed||request!==this.request)return false;
+        if(!family.forestCoverage||!Number.isFinite(family.maxRadiusM)||family.maxRadiusM<=0)
+          throw new Error('Tree family lacks forest coverage or conservative bounds');
+        for(const lod of [0,1] as const){
+          const batch=family.createBatch(lod,this.capacities[lod]);batch.group.visible=false;entry.batches.push(batch);
+          entry.pools.push(new CompactInstanceSlots<T,S>(this.capacities[lod],this.key));
+        }
+      }
+      for(const entry of pending){entry.family.setDate(this.date);for(const batch of entry.batches)this.parent.add(batch.group);}
+      this.release(this.entries.values());
+      this.entries=new Map(pending.map(entry=>[entry.kind,entry]));
+      this.maxRadiusM=Math.max(...pending.map(entry=>entry.family.maxRadiusM));adopted=true;
+      return true;
+    }catch(error){if(request===this.request)this.error=String(error);throw error;}
+    finally{if(!adopted)this.release(pending);if(request===this.request)this.loading=false;}
+  }
+  clear(){this.request++;this.loading=false;this.error='';this.release(this.entries.values());this.entries.clear();this.maxRadiusM=0;}
+  dispose(){if(this.disposed)return;this.disposed=true;this.clear();}
+}
