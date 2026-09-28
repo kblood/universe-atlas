@@ -305,6 +305,24 @@ function activityClock(member: FaunaHerdMember) {
 /** Exact-date pose. Only bounded periodic remainders are converted to Number;
  * a 10^100-year date never becomes an imprecise floating-point second count. */
 export function faunaMemberPoseAtWorldNs(member: FaunaHerdMember, worldNs: bigint): FaunaMemberPose {
+  return faunaMemberActivityAtWorldNs(member, worldNs).pose;
+}
+
+/** The exact-date pose plus the bounded quantities a detailed rig needs to
+ * derive footfalls from the same path: how far round its orbit the member has
+ * walked, the orbit's walking period, and time spent in the current idle or
+ * walk window. All three are periodic remainders, so they stay exact for any date. */
+export interface FaunaMemberActivity {
+  pose: FaunaMemberPose;
+  /** Fraction [0, 1) of one orbit already walked (idle time excluded). */
+  travel: number;
+  /** Seconds to walk one full orbit; Infinity for a stationary member. */
+  revolutionS: number;
+  /** Seconds since the current idle or walk window began. */
+  stateS: number;
+}
+
+export function faunaMemberActivityAtWorldNs(member: FaunaHerdMember, worldNs: bigint): FaunaMemberActivity {
   const {gaitPeriod,cyclePeriod,offset}=activityClock(member);
   const elapsed = worldNs - CATALOGUE_EPOCH_NS + offset;
   const cycleRemainder=((elapsed%cyclePeriod)+cyclePeriod)%cyclePeriod;
@@ -318,11 +336,18 @@ export function faunaMemberPoseAtWorldNs(member: FaunaHerdMember, worldNs: bigin
   const angle = member.orbitPhase + (speed < 1e-9 ? 0 : Math.sign(member.orbitAngularSpeed) * Number(remainder) / Number(period) * Math.PI * 2);
   const gaitWindow = (elapsed - ((elapsed % gaitPeriod) + gaitPeriod) % gaitPeriod) / gaitPeriod;
   const gait: CreatureGait = ((gaitWindow % 3n) + 3n) % 3n === 0n ? 'idle' : 'walk';
-  return {
+  const pose: FaunaMemberPose = {
     x: member.anchorOffsetX + Math.cos(angle) * member.orbitRadiusM,
     z: member.anchorOffsetZ + Math.sin(angle) * member.orbitRadiusM,
     yaw: angle + Math.sign(member.orbitAngularSpeed || 1) * Math.PI * 0.5,
     gait,
+  };
+  const moving = speed >= 1e-9;
+  return {
+    pose,
+    travel: moving ? Number(remainder) / Number(period) : 0,
+    revolutionS: moving ? Number(period) / Number(NS) : Infinity,
+    stateS: Number(gait === 'idle' ? cycleRemainder : cycleRemainder - gaitPeriod) / Number(NS),
   };
 }
 
