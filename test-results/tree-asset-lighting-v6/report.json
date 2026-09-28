@@ -1,0 +1,401 @@
+{
+  "candidate": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707",
+  "lod0": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707\\atlas-branching-v1.glb",
+  "lod1": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707\\atlas-branching-v1.lod1.glb",
+  "url": "http://127.0.0.1:5196/",
+  "sourceRevision": "c7dee409d7a25e936e6eb22e5c9d32e732d0624d",
+  "hardwareEnabled": true,
+  "viewport": {
+    "width": 2560,
+    "height": 1440,
+    "deviceScaleFactor": 1
+  },
+  "date": "0",
+  "toneMapping": "ACESFilmicToneMapping",
+  "toneMappingExposure": 1.2,
+  "comparisons": [
+    {
+      "direction": "front",
+      "shadows": true,
+      "screenshot": "center-16m-front-shadows-on.png",
+      "state": {
+        "date": "0",
+        "lod": 0,
+        "population": 3,
+        "lightPosition": [
+          0,
+          25,
+          30
+        ],
+        "lightCastShadow": true,
+        "shadowMapEnabled": true,
+        "exposure": 1.2,
+        "render": {
+          "calls": 6,
+          "triangles": 64274
+        },
+        "materialValues": [
+          {
+            "name": "MAT_AtlasBark",
+            "color": [
+              1,
+              1,
+              1
+            ],
+            "roughness": 0.9100000262260437,
+            "metalness": 0,
+            "alphaTest": 0,
+            "normalMap": true
+          },
+          {
+            "name": "MAT_AtlasFoliage",
+            "color": [
+              1,
+              1,
+              1
+            ],
+            "roughness": 0.8399999737739563,
+            "metalness": 0,
+            "alphaTest": 0.5,
+            "normalMap": true
+          }
+        ]
+      }
+    },
+    {
+      "direction": "front",
+      "shadows": false,
+      "screenshot": "center-16m-front-shadows-off.png",
+      "state": {
+        "date": "0",
+        "lod": 0,
+        "population": 3,
+        "lightPosition": [
+          0,
+          25,
+          30
+        ],
+        "lightCastShadow": false,
+        "shadowMapEnabled": false,
+        "exposure": 1.2,
+        "render": {
+          "calls": 4,
+          "triangles": 32138
+        },
+        "materialValues": [
+          {
+            "name": "MAT_AtlasBark",
+            "color": [
+              1,
+              1,
+              1
+            ],
+            "roughness": 0.9100000262260437,
+            "metalness": 0,
+            "alphaTest": 0,
+            "normalMap": true
+          },
+          {
+            "name": "MAT_AtlasFoliage",
+            "color": [
+              1,
+              1,
+              1
+            ],
+            "roughness": 0.8399999737739563,
+            "metalness": 0,
+            "alphaTest": 0.5,
+            "normalMap": true
+          }
+        ]
+      }
+    },
+    {
+      "direction": "back",
+      "shadows": true,
+      "screenshot": "center-16m-back-shadows-on.png",
+      "state": {
+        "date": "0",
+        "lod": 0,
+        "population": 3,
+        "lightPosition": [
+          0,
+          25,
+          -30
+        ],
+        "lightCastShadow": true,
+        "shadowMapEnabled": true,
+        "exposure": 1.2,
+        "render": {
+          "calls": 6,
+          "triangles": 64274
+        },
+        "materialValues": [
+          {
+            "name": "MAT_AtlasBark",
+            "color": [
+              1,
+              1,
+              1
+            ],
+            "roughness": 0.9100000262260437,
+            "metalness": 0,
+            "alphaTest": 0,
+            "normalMap": true
+          },
+          {
+            "name": "MAT_AtlasFoliage",
+            "color": [
+              1,
+              1,
+              1
+            ],
+            "roughness": 0.8399999737739563,
+            "metalness": 0,
+            "alphaTest": 0.5,
+            "normalMap": true
+          }
+        ]
+      }
+    },
+    {
+      "direction": "back",
+      "shadows": false,
+      "screenshot": "center-16m-back-shadows-off.png",
+      "state": {
+        "date": "0",
+        "lod": 0,
+        "population": 3,
+        "lightPosition": [
+          0,
+          25,
+          -30
+        ],
+        "lightCastShadow": false,
+        "shadowMapEnabled": false,
+        "exposure": 1.2,
+        "render": {
+          "calls": 4,
+          "triangles": 32138
+        },
+        "materialValues": [
+          {
+            "name": "MAT_AtlasBark",
+            "color": [
+              1,
+              1,
+              1
+            ],
+            "roughness": 0.9100000262260437,
+            "metalness": 0,
+            "alphaTest": 0,
+            "normalMap": true
+          },
+          {
+            "name": "MAT_AtlasFoliage",
+            "color": [
+              1,
+              1,
+              1
+            ],
+            "roughness": 0.8399999737739563,
+            "metalness": 0,
+            "alphaTest": 0.5,
+            "normalMap": true
+          }
+        ]
+      }
+    }
+  ],
+  "alteredMaterialComparisons": [
+    {
+      "normalMapEnabled": false,
+      "baseColorMapEnabled": true,
+      "exposure": 1.2,
+      "shadows": false,
+      "screenshot": "center-16m-front-shadows-off-normalmap-off.png"
+    },
+    {
+      "normalMapEnabled": false,
+      "baseColorMapEnabled": false,
+      "alphaTest": 0,
+      "color": [
+        0.2140411404715882,
+        0.2140411404715882,
+        0.2140411404715882
+      ],
+      "exposure": 1.2,
+      "shadows": false,
+      "screenshot": "center-16m-front-shadows-off-neutral-half-srgb.png",
+      "limitation": "Without the base-color map, alpha cutout is removed and card quads are fully visible; this is a neutral illumination diagnostic, not a candidate material/render."
+    }
+  ],
+  "errors": [],
+  "failedRequests": [],
+  "limitations": [
+    "Standalone prototype lighting diagnostic; no gameplay lighting or realism acceptance.",
+    "Only one specimen is centered and the other batch instances are moved out of view."
+  ],
+  "materialsAndLighting": {
+    "materials": [
+      {
+        "name": "MAT_AtlasBark",
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "roughness": 0.9100000262260437,
+        "metalness": 0,
+        "alphaMode": "OPAQUE",
+        "alphaTest": 0,
+        "side": 0,
+        "map": true,
+        "mapColorSpace": "srgb",
+        "normalMap": true,
+        "normalMapColorSpace": "",
+        "normalScale": [
+          0.800000011920929,
+          0.800000011920929
+        ],
+        "aoMap": false,
+        "emissive": [
+          0,
+          0,
+          0
+        ],
+        "emissiveIntensity": 1
+      },
+      {
+        "name": "MAT_AtlasFoliage",
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "roughness": 0.8399999737739563,
+        "metalness": 0,
+        "alphaMode": "MASK",
+        "alphaTest": 0.5,
+        "side": 2,
+        "map": true,
+        "mapColorSpace": "srgb",
+        "normalMap": true,
+        "normalMapColorSpace": "",
+        "normalScale": [
+          0.550000011920929,
+          0.550000011920929
+        ],
+        "aoMap": false,
+        "emissive": [
+          0,
+          0,
+          0
+        ],
+        "emissiveIntensity": 1
+      }
+    ],
+    "foliageBaseColorPixels": {
+      "width": 2048,
+      "height": 2048,
+      "opaqueCount": 795692,
+      "opaqueRGBAmean": [
+        25.780902660828563,
+        57.30512811489873,
+        8.065914952016609,
+        255
+      ],
+      "transparentCount": 3398612,
+      "transparentRGBAMean": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "textures": [
+      {
+        "name": "MAT_AtlasBark_BaseColor",
+        "width": 1024,
+        "height": 1024,
+        "colorSpace": "srgb",
+        "format": 1023,
+        "minFilter": 1008,
+        "magFilter": 1006,
+        "generateMipmaps": true
+      },
+      {
+        "name": "MAT_AtlasBark_Normal",
+        "width": 1024,
+        "height": 1024,
+        "colorSpace": "",
+        "format": 1023,
+        "minFilter": 1008,
+        "magFilter": 1006,
+        "generateMipmaps": true
+      },
+      {
+        "name": "MAT_AtlasFoliage_BaseColor",
+        "width": 2048,
+        "height": 2048,
+        "colorSpace": "srgb",
+        "format": 1023,
+        "minFilter": 1008,
+        "magFilter": 1006,
+        "generateMipmaps": true
+      },
+      {
+        "name": "MAT_AtlasFoliage_Normal",
+        "width": 2048,
+        "height": 2048,
+        "colorSpace": "",
+        "format": 1023,
+        "minFilter": 1008,
+        "magFilter": 1006,
+        "generateMipmaps": true
+      }
+    ],
+    "sun": {
+      "color": [
+        1,
+        0.9215818562755338,
+        0.7835377915215659
+      ],
+      "intensity": 3,
+      "shadowMapSize": [
+        2048,
+        2048
+      ],
+      "bias": 0,
+      "normalBias": 0.035
+    },
+    "renderer": {
+      "toneMapping": 4,
+      "toneMappingExposure": 1.2,
+      "shadowMapType": 1
+    },
+    "hemi": [
+      {
+        "color": [
+          0.55201140150344,
+          0.7156935005005721,
+          0.8713671191959567
+        ],
+        "groundColor": [
+          0.05286064701616471,
+          0.06301001764564068,
+          0.025186859622305935
+        ],
+        "intensity": 1
+      }
+    ]
+  },
+  "materialMutationSetup": {
+    "original": {
+      "map": true,
+      "normalMap": true,
+      "alphaTest": 0.5
+    },
+    "colorSpace": "srgb"
+  }
+}
