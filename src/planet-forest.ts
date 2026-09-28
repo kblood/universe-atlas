@@ -668,8 +668,8 @@ export class PlanetForest {
     const estimatedPeakCpuBytes=baseMemory.retainedCpuBytes+canopyMemory.hostPersistentCpuBytes+
       Math.max(canopyMemory.hostScratchCpuBytes,canopyMemory.hostScratchPeakCpuBytes)+farAtlasCaptureCpuBytes;
     const memoryAccounting={version:'forest-resource-estimate-1',basis:'CPU typed-array/image byte lengths plus estimated WebGL buffer/texture storage; excludes driver padding, shader/program state and allocator overhead',
-      legacyBufferCpuBytes:legacyBuffers.totalBytes,legacyBufferGpuEstimateBytes:legacyBuffers.totalBytes,
-      familyBufferCpuBytes:familyBufferUsage.totalBytes,familyBufferGpuEstimateBytes:familyBufferUsage.totalBytes,
+      legacyBufferCpuBytes:legacyBuffers.totalBytes,legacyBufferGpuEstimateBytes:legacyBuffers.geometryGpuEstimateBytes+legacyBuffers.instanceGpuEstimateBytes,
+      familyBufferCpuBytes:familyBufferUsage.totalBytes,familyBufferGpuEstimateBytes:familyBufferUsage.geometryGpuEstimateBytes+familyBufferUsage.instanceGpuEstimateBytes,
       geometryCount:baseMemory.geometryCount,familyGeometryCount:familyBufferUsage.geometryCount,
       familyTextureCount:textures.textureCount,decodedImageSourceCount:textures.imageSourceCount,
       familyDecodedTextureCpuBytes:textures.decodedCpuBytes,familyGpuTextureEstimateBytes:textures.gpuEstimateBytes,embeddedImageFileBytes,

@@ -7,14 +7,14 @@ import * as THREE from 'three';
  * allocator overhead. Shared attributes, backing buffers, textures, and image
  * sources are counted once per ownership scope.
  */
-export type ForestBufferFootprint={geometryBytes:number;instanceBytes:number};
+export type ForestBufferFootprint={geometryBytes:number;instanceBytes:number;geometryGpuEstimateBytes:number;instanceGpuEstimateBytes:number};
 export type ForestTextureFootprint={decodedCpuBytes:number;gpuEstimateBytes:number;textureCount:number;imageSourceCount:number};
 export type ForestMemoryFootprint={geometryCpuBytes:number;geometryGpuEstimateBytes:number;instanceCpuBytes:number;instanceGpuEstimateBytes:number;
   decodedTextureCpuBytes:number;gpuTextureEstimateBytes:number;embeddedImageFileBytes:number;geometryCount:number;textureCount:number;
   imageSourceCount:number;estimatedGpuBytes:number;retainedCpuBytes:number};
 
 type ArrayView=ArrayBufferView&{buffer:ArrayBufferLike};
-type BufferAttributeLike={array?:ArrayView;data?:{array?:ArrayView}};
+type BufferAttributeLike={array?:ArrayView;data?:{array?:ArrayView;isInstancedInterleavedBuffer?:boolean};isInstancedBufferAttribute?:boolean};
 type GeometryLike={attributes?:Record<string,BufferAttributeLike>;index?:BufferAttributeLike|null};
 type MeshLike={geometry:GeometryLike;instanceMatrix?:BufferAttributeLike|null;instanceColor?:BufferAttributeLike|null};
 type TextureImageLike={width?:number;height?:number;naturalWidth?:number;naturalHeight?:number;videoWidth?:number;videoHeight?:number;data?:ArrayView};
@@ -58,23 +58,43 @@ function gpuTextureEstimate(texture:TextureLike){
 
 /** Count unique owned buffer allocations across arbitrary related meshes. */
 export function forestMeshBufferFootprint(meshes:Iterable<MeshLike>,extraGeometries:Iterable<GeometryLike>=[]):ForestBufferFootprint&{totalBytes:number;geometryCount:number}{
-  const buffers=new Set<ArrayBufferLike>(),geometryBuffers=new Set<ArrayBufferLike>(),instanceBuffers=new Set<ArrayBufferLike>(),geometries=new Set<GeometryLike>();
-  let geometryBytes=0,instanceBytes=0;
-  const add=(attribute:BufferAttributeLike|undefined|null,instance:boolean)=>{
-    const view=arrayView(attribute);if(!view||buffers.has(view.buffer))return;buffers.add(view.buffer);
-    const target=instance?instanceBuffers:geometryBuffers;target.add(view.buffer);
-    if(instance)instanceBytes+=view.buffer.byteLength;else geometryBytes+=view.buffer.byteLength;
+  // CPU retains backing allocations, while WebGLAttributes creates GPU
+  // buffers per BufferAttribute or shared InterleavedBuffer data. Subviews
+  // therefore count their full backing store on CPU but only their view size
+  // for GPU upload estimates.
+  const cpuBuffers=new Map<ArrayBufferLike,{bytes:number;instance:boolean}>(),gpuBuffers=new Map<object,{bytes:number;instance:boolean}>(),geometries=new Set<GeometryLike>();
+  let geometryBytes=0,instanceBytes=0,geometryGpuEstimateBytes=0,instanceGpuEstimateBytes=0;
+  const add=(attribute:BufferAttributeLike|undefined|null,forceInstance=false)=>{
+    const view=arrayView(attribute);if(!view)return;
+    const instance=forceInstance||attribute?.isInstancedBufferAttribute===true||attribute?.data?.isInstancedInterleavedBuffer===true;
+    let cpu=cpuBuffers.get(view.buffer);
+    if(!cpu){cpu={bytes:view.buffer.byteLength,instance};cpuBuffers.set(view.buffer,cpu);
+      if(instance)instanceBytes+=cpu.bytes;else geometryBytes+=cpu.bytes;
+    }else if(cpu.instance!==instance){
+      if(instance){geometryBytes-=cpu.bytes;instanceBytes+=cpu.bytes;}else{instanceBytes-=cpu.bytes;geometryBytes+=cpu.bytes;}
+      cpu.instance=instance;
+    }
+    const gpuKey=(attribute?.data??attribute) as object|undefined;if(!gpuKey)return;
+    const gpuBytes=attribute?.data?.array?.byteLength??attribute?.array?.byteLength??view.byteLength;
+    let gpu=gpuBuffers.get(gpuKey);
+    if(!gpu){gpu={bytes:gpuBytes,instance};gpuBuffers.set(gpuKey,gpu);
+      if(instance)instanceGpuEstimateBytes+=gpuBytes;else geometryGpuEstimateBytes+=gpuBytes;
+    }else if(gpu.instance!==instance){
+      if(instance){geometryGpuEstimateBytes-=gpu.bytes;instanceGpuEstimateBytes+=gpu.bytes;}else{instanceGpuEstimateBytes-=gpu.bytes;geometryGpuEstimateBytes+=gpu.bytes;}
+      gpu.instance=instance;
+    }
   };
   const addGeometry=(geometry:GeometryLike)=>{
     if(geometries.has(geometry))return;geometries.add(geometry);
-    for(const [name,attribute] of Object.entries(geometry.attributes??{}))add(attribute,name.startsWith('instance')||name.startsWith('tree'));
-    add(geometry.index,false);
+    for(const attribute of Object.values(geometry.attributes??{}))add(attribute);
+    add(geometry.index);
   };
   for(const geometry of extraGeometries)addGeometry(geometry);
   for(const mesh of meshes){
     addGeometry(mesh.geometry);add(mesh.instanceMatrix,true);add(mesh.instanceColor,true);
   }
-  return {geometryBytes,instanceBytes,totalBytes:geometryBytes+instanceBytes,geometryCount:geometries.size};
+  return {geometryBytes,instanceBytes,geometryGpuEstimateBytes,instanceGpuEstimateBytes,
+    totalBytes:geometryBytes+instanceBytes,geometryCount:geometries.size};
 }
 
 /** Count decoded CPU image sources separately from the estimated GPU texture
@@ -101,8 +121,8 @@ export function forestMemoryFootprint(input:{legacyMeshes:Iterable<MeshLike>;fam
   familyMeshes:Iterable<MeshLike>;familyTextures:Iterable<TextureLike>;embeddedImageFileBytes:number;farAtlasResidentBytes:number}):ForestMemoryFootprint{
   const geometry=forestMeshBufferFootprint([...input.legacyMeshes,...input.familyMeshes],input.familyGeometries);
   const textures=forestTextureFootprint(input.familyTextures);
-  const geometryCpuBytes=geometry.geometryBytes,geometryGpuEstimateBytes=geometry.geometryBytes;
-  const instanceCpuBytes=geometry.instanceBytes,instanceGpuEstimateBytes=geometry.instanceBytes;
+  const geometryCpuBytes=geometry.geometryBytes,geometryGpuEstimateBytes=geometry.geometryGpuEstimateBytes;
+  const instanceCpuBytes=geometry.instanceBytes,instanceGpuEstimateBytes=geometry.instanceGpuEstimateBytes;
   const estimatedGpuBytes=geometryGpuEstimateBytes+instanceGpuEstimateBytes+textures.gpuEstimateBytes+input.farAtlasResidentBytes;
   const retainedCpuBytes=geometryCpuBytes+instanceCpuBytes+textures.decodedCpuBytes;
   return {geometryCpuBytes,geometryGpuEstimateBytes,instanceCpuBytes,instanceGpuEstimateBytes,

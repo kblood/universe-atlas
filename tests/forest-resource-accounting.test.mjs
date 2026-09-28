@@ -7,7 +7,7 @@ test('mesh buffer estimates count shared and interleaved backing buffers once',(
   const geometry=new THREE.BufferGeometry(),positions=new Float32Array(9);
   const shared=new THREE.BufferAttribute(positions,3);
   geometry.setAttribute('position',shared);geometry.setAttribute('normal',shared);
-  geometry.setAttribute('instanceTree',{array:new Float32Array(2),itemSize:2,count:1});
+  geometry.setAttribute('instanceTree',new THREE.InstancedBufferAttribute(new Float32Array(2),2));
   geometry.setIndex(new THREE.BufferAttribute(new Uint16Array([0,1,2]),1));
   const interleaved=new Float32Array(8),other=new THREE.BufferGeometry();
   other.setAttribute('custom',{data:{array:interleaved},itemSize:2,count:4});
@@ -16,8 +16,29 @@ test('mesh buffer estimates count shared and interleaved backing buffers once',(
   const value=forestMeshBufferFootprint(meshes,[other]);
   assert.equal(value.geometryBytes,positions.byteLength+6+interleaved.byteLength);
   assert.equal(value.instanceBytes,8+matrix.array.byteLength+colour.array.byteLength);
+  assert.equal(value.geometryGpuEstimateBytes,positions.byteLength+6+interleaved.byteLength);
+  assert.equal(value.instanceGpuEstimateBytes,8+matrix.array.byteLength+colour.array.byteLength);
   assert.equal(value.geometryCount,2);
   assert.equal(value.totalBytes,value.geometryBytes+value.instanceBytes);
+});
+
+test('CPU shared backing stores and GPU attribute uploads use different identities and byte lengths',()=>{
+  const buffer=new ArrayBuffer(64),geometry=new THREE.BufferGeometry();
+  const left=new THREE.BufferAttribute(new Float32Array(buffer,0,4),1);
+  const right=new THREE.BufferAttribute(new Float32Array(buffer,32,4),1);
+  geometry.setAttribute('treePivot',left);geometry.setAttribute('treeStiffness',right);
+  const interleaved=new THREE.InterleavedBuffer(new Float32Array(12),3);
+  geometry.setAttribute('instanceRecord',new THREE.InterleavedBufferAttribute(interleaved,3,0));
+  const instancedData=new THREE.InstancedInterleavedBuffer(new Float32Array(8),2,1);
+  geometry.setAttribute('treeInstancedRecord',new THREE.InterleavedBufferAttribute(instancedData,2,0));
+  const result=forestMeshBufferFootprint([{geometry}]);
+  assert.equal(result.geometryBytes,64+interleaved.array.byteLength,
+    'tree-prefixed per-vertex attributes stay geometry data and shared CPU storage counts once');
+  assert.equal(result.instanceBytes,instancedData.array.byteLength,
+    'only the instanced interleaved data belongs to instance storage');
+  assert.equal(result.geometryGpuEstimateBytes,left.array.byteLength+right.array.byteLength+interleaved.array.byteLength,
+    'two BufferAttributes sharing a CPU backing store upload separate GPU buffers; interleaved views share one upload');
+  assert.equal(result.instanceGpuEstimateBytes,instancedData.array.byteLength);
 });
 
 test('shared textures count decoded image sources once and GPU storage per texture object',()=>{
