@@ -58,13 +58,15 @@ test('shader hook compensates weighted colour, depth/normal and leaf-class sampl
     assert.equal(proxy.uniforms.captureCoverageWeighted.value,expected);
     const shader={uniforms:{},vertexShader:'#include <begin_vertex>',fragmentShader:[
       '#include <logdepthbuf_fragment>','#include <alphahash_fragment>','#include <normal_fragment_begin>',
-      '#include <roughnessmap_fragment>','#include <lights_physical_fragment>','#include <lights_fragment_begin>','#include <opaque_fragment>',
+      '#include <roughnessmap_fragment>','#include <lights_physical_fragment>','#include <lights_fragment_begin>','#include <opaque_fragment>','#include <dithering_fragment>',
     ].join('\n')};
     proxy.mesh.material.onBeforeCompile(shader,{});
     assert.match(shader.fragmentShader,/captureCoverageWeighted/);
     assert.match(shader.fragmentShader,/data\s*\/=?\s*max\(alpha,1e-6\)/);
     assert.match(shader.fragmentShader,/colour\.rgb\s*\/=?\s*alpha/);
     assert.match(shader.fragmentShader,/classification\.r\s*\/=?\s*alpha/);
+    assert.match(shader.fragmentShader,/vec3\(-hitView\.z\)/,'depth diagnostic writes metric view depth after display transforms');
+    assert.match(shader.fragmentShader,/gl_FragColor\.a=captureCoverage/,'colour diagnostic retains continuous coverage');
     assert.equal(shader.uniforms.captureCoverageWeighted.value,expected);
     proxy.dispose();capture.dispose();
   }

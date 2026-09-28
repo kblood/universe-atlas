@@ -180,7 +180,12 @@ float capturedSpecular=mix(captureSpecular.x,captureSpecular.y,captureLeaf);mate
       if(!lightChunk.includes('vViewPosition'))throw new Error('Installed lighting chunk has changed');
       shader.fragmentShader=shader.fragmentShader.replace('#include <lights_fragment_begin>',lightChunk.replaceAll('vViewPosition','(-hitView.xyz)'));
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`#include <opaque_fragment>
-if(captureMask>.5)gl_FragColor=vec4(vec3(1),captureCoverage);`);
+if(captureMask>.5&&captureMask<2.5)gl_FragColor=vec4(vec3(1),captureCoverage);`);
+      // Diagnostic passes write after display transforms. Depth is metres
+      // along camera forward, matching the source mesh's vViewPosition.z.
+      shader.fragmentShader=shader.fragmentShader.replace('#include <dithering_fragment>',`#include <dithering_fragment>
+if(captureMask>1.5&&captureMask<2.5)gl_FragColor=vec4(vec3(-hitView.z),captureCoverage);
+else if(captureMask>2.5)gl_FragColor.a=captureCoverage;`);
     };
     material.customProgramCacheKey=()=> `atlas-captured-tree-lab-2-${capture.filtering}`;
     this.mesh=new THREE.Mesh(new THREE.PlaneGeometry(2,2),material);this.mesh.frustumCulled=false;

@@ -57,7 +57,8 @@ async function load(lod0:ArrayBuffer,lod1:ArrayBuffer,manifest:any,read:(path:st
     for(const mesh of nextFamily.lods[lod]){
       const material=mesh.material,previous=material.onBeforeCompile,key=material.customProgramCacheKey();
       material.onBeforeCompile=(shader,host)=>{previous.call(material,shader,host);shader.uniforms.treeLabMask=mask;shader.fragmentShader='uniform float treeLabMask;\n'+shader.fragmentShader;
-        shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','#include <opaque_fragment>\nif(treeLabMask>.5)gl_FragColor=vec4(vec3(1),1);');};
+        shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','#include <opaque_fragment>\nif(treeLabMask>.5&&treeLabMask<2.5)gl_FragColor=vec4(vec3(1),1);');
+        shader.fragmentShader=shader.fragmentShader.replace('#include <dithering_fragment>','#include <dithering_fragment>\nif(treeLabMask>1.5&&treeLabMask<2.5)gl_FragColor=vec4(vec3(vViewPosition.z),1);');};
       material.customProgramCacheKey=()=>key+'/capture-lab-mask';material.needsUpdate=true;
     }
     scene.add(nextBatch.group,nextImpostor.mesh);
@@ -72,24 +73,29 @@ async function load(lod0:ArrayBuffer,lod1:ArrayBuffer,manifest:any,read:(path:st
 }
 /** Fixed orthographic view for silhouette comparisons; returns pixels for the
  * independent browser harness. It restores all renderer and visibility state. */
-function probe(direction:readonly number[],representation:'mesh'|'capture',pixels=128,supersample=1){
+function probe(direction:readonly number[],representation:'mesh'|'capture',pixels=128,supersample=1,channel:'coverage'|'depth'|'colour'='coverage'){
   if(!capture||!impostor||!batch)throw new Error('Load a capture first');
-  if(direction.length!==3||direction.some(x=>!Number.isFinite(x))||!Number.isInteger(pixels)||pixels<32||pixels>512||![1,2,4].includes(supersample)||pixels*supersample>2048)throw new Error('Invalid probe');
+  if(direction.length!==3||direction.some(x=>!Number.isFinite(x))||!Number.isInteger(pixels)||pixels<32||pixels>512||![1,2,4,8,16,32].includes(supersample)||pixels*supersample>2048||!['coverage','depth','colour'].includes(channel))throw new Error('Invalid probe');
   const toward=new THREE.Vector3().fromArray(direction);if(toward.lengthSq()<1e-12)throw new Error('Invalid probe direction');toward.normalize();
   const center=new THREE.Vector3().fromArray(capture.manifest.center),radius=capture.manifest.radius;
   const view=new THREE.OrthographicCamera(-radius,radius,radius,-radius,.5,2*radius+1.5);view.position.copy(center).addScaledVector(toward,radius+1);
   view.up.set(...(Math.abs(toward.y)>.999?[0,0,1]:[0,1,0]) as [number,number,number]);view.lookAt(center);view.updateMatrixWorld(true);
   const resolution=pixels*supersample;
-  const target=new THREE.WebGLRenderTarget(resolution,resolution,{depthBuffer:true});target.samples=supersample===1?4:0;
+  const floating=channel!=='coverage';
+  const target=new THREE.WebGLRenderTarget(resolution,resolution,{depthBuffer:true,type:floating?THREE.FloatType:THREE.UnsignedByteType});target.samples=!floating&&supersample===1?4:0;
   const oldTarget=renderer.getRenderTarget(),oldMode=mode,background=scene.background,oldClear=new THREE.Color(),alpha=renderer.getClearAlpha();renderer.getClearColor(oldClear);
-  const data=new Uint8Array(resolution*resolution*4);
+  const data=floating?new Float32Array(resolution*resolution*4):new Uint8Array(resolution*resolution*4);
   try{
-    setMode(representation);mask.value=1;impostor.uniforms.captureMask.value=1;scene.background=null;renderer.setClearColor(0,0);
+    setMode(representation);mask.value=channel==='coverage'?1:channel==='depth'?2:3;impostor.uniforms.captureMask.value=mask.value;scene.background=null;renderer.setClearColor(0,0);
     renderer.setRenderTarget(target);renderer.clear();renderer.render(scene,view);renderer.readRenderTargetPixels(target,0,0,resolution,resolution,data);
     const gl=renderer.getContext(),error=gl.getError();if(error!==gl.NO_ERROR)throw new Error(`Probe GL error ${error}`);
     if(supersample===1)return Array.from(data);
     const reduced=new Float32Array(pixels*pixels*4);
-    for(let y=0;y<resolution;y++)for(let x=0;x<resolution;x++)for(let c=0;c<4;c++)reduced[(Math.floor(y/supersample)*pixels+Math.floor(x/supersample))*4+c]+=data[(y*resolution+x)*4+c]/(supersample*supersample);
+    for(let y=0;y<resolution;y++)for(let x=0;x<resolution;x++)for(let c=0;c<4;c++){
+      const p=(y*resolution+x)*4;
+      reduced[(Math.floor(y/supersample)*pixels+Math.floor(x/supersample))*4+c]+=data[p+c]*(floating&&c<3?data[p+3]:1)/(supersample*supersample);
+    }
+    if(floating)for(let p=0;p<reduced.length;p+=4)if(reduced[p+3]>0)for(let c=0;c<3;c++)reduced[p+c]/=reduced[p+3];
     return Array.from(reduced);
   }finally{renderer.setRenderTarget(oldTarget);renderer.setClearColor(oldClear,alpha);scene.background=background;mask.value=0;impostor.uniforms.captureMask.value=0;setMode(oldMode);target.dispose();}
 }
@@ -109,4 +115,4 @@ document.getElementById('parallax')!.onchange=event=>{if(impostor)impostor.unifo
 document.getElementById('hash')!.onchange=event=>{if(impostor)impostor.uniforms.captureHash.value=Number((event.target as HTMLInputElement).checked);};
 function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}addEventListener('resize',resize);resize();
 renderer.setAnimationLoop(()=>renderer.render(scene,camera));
-Object.assign(window,{__treeImpostorLab:{load,setMode,setSourceCoverage,setCaptureFiltering,probe,renderer,scene,camera,controls,sun,get capture(){return capture;},get filtering(){return captureFiltering;},get family(){return family;},get ready(){return !!impostor&&!loading;}}});
+Object.assign(window,{__treeImpostorLab:{load,setMode,setSourceCoverage,setCaptureFiltering,probe,renderer,scene,camera,controls,sun,get capture(){return capture;},get impostor(){return impostor;},get filtering(){return captureFiltering;},get family(){return family;},get ready(){return !!impostor&&!loading;}}});
