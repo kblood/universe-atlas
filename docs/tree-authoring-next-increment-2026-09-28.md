@@ -15,8 +15,8 @@ and [validation](../test-results/tree-author-v3/validation.json). Luna reviewed
 the corrected bounded-wire sheet: branching is less regular, but the crown is
 still sparse, asymmetric and tiered, and the leaves look pale. The prior wire
 panel was invalid due to the review modifier and is only a diagnostic. The
-[corrected sheet](../test-results/tree-author-v3/render-sheet-bounded-wire/render-sheet.png)
-and [hero view](../test-results/tree-author-v3/render-sheet-bounded-wire/hero.png)
+[corrected sheet](../test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/render-sheet.png)
+and [hero view](../test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/hero.png)
 show the current state. Opus 5.5 completed a source-only review and reported
 geometry, determinism and authoring/provenance blockers. Authoring v4 fixes are
 underway, but no v4 candidate has been produced or validated. See the [review
