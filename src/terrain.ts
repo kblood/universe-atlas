@@ -8,6 +8,7 @@ import {
 import { sampleRiverRegion } from './river-sample.ts';
 import {regionalLandformHeight,REGIONAL_LANDFORM_VERSION} from './regional-landform.ts';
 import type {RiverRegion} from './river-types.ts';
+import {activeRiverRegions} from './inland-rivers.ts';
 import {craterField, craterAgeGate, craterHeightDeltaAt, type CraterField, type CraterParams} from './planet-craters.ts';
 import {planetLandforms} from './planet-landforms.ts';
 
@@ -74,7 +75,11 @@ import {planetLandforms} from './planet-landforms.ts';
 // 1.5.0 adds physical regional ridges in every surface consumer. Canonical
 // drainage remains on the unchanged continental baseline; terrain golden
 // samples deliberately change and are checked across all four JS engines.
-export const TERRAIN_VERSION = "terrain-1.5.0";
+// 1.6.0 withdraws inland rivers and their regional lakes (inland-rivers.ts):
+// the default region set is empty, so no channel, lake bowl, wet bed or bank
+// tint is applied even when a Body still carries hydrology. Baseline rock,
+// landforms, craters and the dated ocean threshold are unchanged.
+export const TERRAIN_VERSION = "terrain-1.6.0";
 export {REGIONAL_LANDFORM_VERSION};
 export const ELEVATION_RANGE_M = 60000;
 /**
@@ -299,7 +304,13 @@ function buildCraterField(body: Body, surfaceAgeMyr: number): CraterField | null
  * in this closure is deliberate: an existing renderer or flight query cannot
  * observe a later body-model replacement halfway through a frame.
  *
- * `regions` defaults to `body.canonicalRivers` — the full, order-independent
+ * INLAND RIVERS ARE WITHDRAWN (terrain-1.6.0): `regions` defaults to
+ * `activeRiverRegions(body)`, which is empty in the application regardless of
+ * any attached `body.hydrology`/`body.canonicalRivers`. Only the archived river
+ * algorithm tests pass regions explicitly or opt back in; the description
+ * below documents that archived behaviour.
+ *
+ * `regions` formerly defaulted to `body.canonicalRivers` — the full, order-independent
  * hydrology EXISTENCE set for this body address, built proactively by
  * hydrology-registry.ts's ensureCanonicalHydrology (a worker job triggered
  * when the body becomes the focus/approach target, never by a UI "find" or
@@ -373,7 +384,7 @@ function buildCraterField(body: Body, surfaceAgeMyr: number): CraterField | null
  */
 export function terrainSampler(
   body: Body,
-  regions: RiverRegion[] = body.canonicalRivers ?? (body.hydrology ? [body.hydrology] : []),
+  regions: RiverRegion[] = activeRiverRegions(body),
   surfaceAgeMyr: number = DEFAULT_SURFACE_AGE_MYR,
   includeCraters: boolean = false,
   waterLevelM: number = 0,

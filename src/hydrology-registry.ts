@@ -3,6 +3,7 @@ import type {RiverRegion} from './river-types.ts';
 import {buildDrainage, RIVER_CANDIDATE_COUNT, type Catchment} from './drainage.ts';
 import {buildRiverRegion} from './river-generation.ts';
 import {biomeClassifier} from './surface-biomes.ts';
+import {inlandRiversEnabled} from './inland-rivers.ts';
 
 /**
  * Additive field, merged onto catalog.ts's Body interface via declaration
@@ -99,7 +100,8 @@ export function hydrologyStatus(bodyId: string): HydrologyStatus { return regist
  * no water is trivially ready (there is nothing to build).
  */
 export function hydrologyReady(body: Pick<Body, 'id' | 'kind' | 'water' | 'type'>): boolean {
-  if (!eligible(body)) return true;
+  // Withdrawn inland rivers never gate contact, landing or walking.
+  if (!inlandRiversEnabled() || !eligible(body)) return true;
   const status = registry.get(body.id)?.status;
   return status === 'ready' || status === 'error';
 }
@@ -136,7 +138,8 @@ function settle(body: Body, entry: Entry, catchments: Catchment[], regions: Rive
  * object), so no other call site needs to change to pick it up.
  */
 export function ensureCanonicalHydrology(body: Body): Promise<void> {
-  if (!eligible(body)) return Promise.resolve();
+  // Inland rivers are withdrawn (inland-rivers.ts): never start the worker.
+  if (!inlandRiversEnabled() || !eligible(body)) return Promise.resolve();
   const existing = registry.get(body.id);
   if (existing) {
     if (existing.status === 'ready') body.canonicalRivers = existing.regions;

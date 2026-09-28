@@ -73,7 +73,7 @@ render thread. `planet-forest.ts` retains the last working set until its
 replacement arrives, then spends a bounded amount of time evaluating habitat.
 Changing the camera changes the requested cells, not their seeded contents.
 Tree identity uses `surface-population-2`; regional geology uses
-`planet-landforms-1` and terrain version `terrain-1.5.0`.
+`planet-landforms-1` and terrain version `terrain-1.6.0` (inland rivers withdrawn).
 
 At sea-level changes, habitat samples are invalidated and evaluated against
 the new water bucket. Dated flora and fauna availability gates remain shared

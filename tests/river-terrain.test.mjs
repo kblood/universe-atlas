@@ -14,6 +14,12 @@ import {conservativeRiverBedM,riverFeatureAt,samplePhysicalRiverRegion,sampleRiv
 import {riverPhysicalField} from '../src/river-physical-field.ts';
 import {regionalLandformHeight} from '../src/regional-landform.ts';
 import {planetLandforms} from '../src/planet-landforms.ts';
+import {setArchivedInlandRiversForTesting} from '../src/inland-rivers.ts';
+
+// Archived river algorithm tests. Inland rivers are withdrawn from the
+// application (src/inland-rivers.ts); this process re-enables the archived
+// pipeline so the historical river behaviour stays covered unchanged.
+setArchivedInlandRiversForTesting(true);
 
 const radiusM=10000;
 const region={version:'river-region-1',id:'test/drainage-1/river-region-1',parentCatchmentId:'test/drainage-1',bodyId:'test',bodySeed:'river-terrain',radiusM,
@@ -95,7 +101,7 @@ test('inland water keeps a carved rock field and a separate visible water surfac
   // is computed via `surfaceQuery(body)(...)`/`terrainSampler(body)` with no
   // override, so `waterLevelM` defaults to `0` here too — a pure version-
   // string move, not a numeric one, exactly as the 1.4.1 re-pin above.
-  assert.equal(q.geologyVersion,'terrain-1.5.0');assert.equal(q.regionalGeologyVersion,'river-region-1');
+  assert.equal(q.geologyVersion,'terrain-1.6.0');assert.equal(q.regionalGeologyVersion,'river-region-1');
 });
 
 test('river shore bed and dry bank meet continuously without a submerged walking trench',()=>{

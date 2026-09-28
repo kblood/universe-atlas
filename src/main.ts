@@ -49,14 +49,12 @@ import {
   safeScaleFactorAt,canonicalDigest,
 } from './time-nav.ts';
 import {type SurfaceSite,SURVEY_VERSION} from './surface-survey.ts';
-import {DrainageMap} from './drainage-map.ts';
-import {ensureCanonicalHydrology,canonicalCatchmentsFor,canonicalRegionForCatchment,canonicalRegionsFor,rankAutoDestinations,resetHydrologyRegistry} from './hydrology-registry.ts';
-import {RIVER_VERSION,RIVER_SURFACE_VERSION,type RiverSite} from './river-types.ts';
+import {INLAND_RIVERS_UNAVAILABLE} from './inland-rivers.ts';
 import {type GroundWalker} from './ground-walker.ts';
 import { GalaxySpace } from "./galaxy-space.ts";
 import { ViewBlend } from "./view-transition.ts";
 import { systemLayout, type SystemScale } from "./system-layout.ts";
-import { ELEVATION_RANGE_M, terrainSampler, type planetSurface } from "./terrain.ts";
+import { ELEVATION_RANGE_M, TERRAIN_VERSION, terrainSampler, type planetSurface } from "./terrain.ts";
 import {biomeClassifier} from './surface-biomes.ts';
 import {
   galaxies,
@@ -558,7 +556,6 @@ let landAfterCruise=false,walkGeneration=0;
 function clearWalking(){walkGeneration++;walker?.dispose();walker=null;landing=null;landAfterCruise=false;planetTiles?.setContactFocus(null);}
 let orbitAssist: {bodyId: string; axis: THREE.Vector3; clearanceM?: number} | null = null;
 let surfaceJourney: {bodyId:string; direction:THREE.Vector3; up:THREE.Vector3} | null = null;
-let riverFlight:{bodyId:string;site:RiverSite;phase:'transfer'|'descent'}|null=null;
 let startCruiseAfterLook = false;
 let approachClearance = 3000;
 let approachAltitude: number | null = null;
@@ -602,215 +599,9 @@ const forestAssetAttachment=new ForestAssetAttachment(forestAssetSource,()=>pane
 let horizonAssist=new URLSearchParams(location.search).get('horizon')!=='0';
 let flightAlignment:({bodyId:string;altitudeM:number}&ReturnType<typeof alignPlanetaryDown>)|null=null;
 const surveys=new Map<string,SurfaceSite[]>(),surveyPending=new Set<string>();
-// A survey depends on terrainSampler's default, which now reads
-// body.canonicalRivers (see terrain.ts) rather than body.hydrology — key the
-// cache on that so a survey computed before the canonical registry resolved
-// is not served stale once it does.
-const surveyKey=(body:Body)=>body.seed+'/'+(body.canonicalRivers?'canonical':'baseline');
+// Surveys sample the baseline terrain only; inland rivers are withdrawn.
+const surveyKey=(body:Body)=>body.seed+'/'+TERRAIN_VERSION;
 let surveyOpen=false;
-let drainage:DrainageMap|null=null,drainageOpen=false;
-let riverSelectionToken=0;
-let riverState:{bodyId:string;parentId:string;status:'building'|'ready'|'error';error:string;buildMs:number}|null=null;
-// Set by boot() just before it navigates to a body that has a ?river=
-// deep-link address to restore (see focusBody's consumption of this and the
-// boot() call site below). focusBody performs the restore itself, awaited
-// in-line before it reports the view `ready`, for two reasons: (1) so the
-// proactive per-focus auto-pick never races the explicit restore's own
-// selectRiverDestination call over the shared riverSelectionToken (both used
-// to fire concurrent, mutually-invalidating job('surface',...) builds), and
-// (2) because `ready` is set by focusBody itself — if boot() instead awaited
-// its own separate selectRiverDestination call *after* awaiting navigate(),
-// `ready` (and so state.level==='body') would already be visible to
-// polling/deep-link observers before the river restore had even started.
-let pendingRiverRestore:string|null=null;
-// Kept as a no-op-preserving name: many unrelated navigation call sites
-// already call this defensively on leaving a view. There is no more
-// in-flight worker to cancel (selectRiverDestination only ever looks up an
-// already-built canonical region), so this now just invalidates any
-// in-flight selection via a generation token and clears transient UI state.
-function cancelRiverPreparation(){riverSelectionToken++;riverState=null;}
-function currentSunDirection(body:Body):V3{
-  return vec(bodyPosition(state.sys!.stars[0],state.sys!,epoch)).sub(vec(bodyPosition(body,state.sys!,epoch))).normalize().toArray() as V3;
-}
-/**
- * "Find rivers"/direct catchment selection/?river= restore all funnel
- * through here. This NEVER builds or decides what exists — existence is the
- * canonical top-RIVER_CANDIDATE_COUNT set, built proactively by
- * ensureCanonicalHydrology once this body becomes the focus/approach target
- * (see focusBody) — it only looks up an already-built canonical region
- * (awaiting the registry if that build is still in flight) and switches
- * which one currently gets the rich water-mesh/vegetation/heightmap-texture
- * detail render: 'auto' ranks the canonical, already-existing rivers by a
- * genuinely date-dependent sunlit-mouth preference (rankAutoDestinations)
- * and picks where to go; an explicit id (from the drainage panel or a
- * ?river= link) must name one of the canonical basins — a non-canonical
- * catchment id is rejected clearly rather than silently building a second,
- * uncontrolled existence path outside the canonical set.
- */
-async function selectRiverDestination(parentId:string,restore=false):Promise<boolean>{
-  const body=state.body;if(!body||!surfaceMesh||body.kind!=='planet'||!body.water||body.type==='Gas giant')return false;
-  const token=++riverSelectionToken;riverState=null;
-  await ensureCanonicalHydrology(body);
-  if(token!==riverSelectionToken||state.body!==body)return false;
-  const catchments=canonicalCatchmentsFor(body.id);
-  const owners=parentId==='auto'?rankAutoDestinations(catchments,currentSunDirection(body)):catchments.filter(c=>c.id===parentId);
-  const region=owners.map(c=>canonicalRegionForCatchment(body.id,c.id)).find((r):r is NonNullable<typeof r>=>!!r);
-  if(!region){
-    riverState={bodyId:body.id,parentId,status:'error',error:parentId==='auto'?'No canonical river on this world could be reached.':'This river address is not a canonical basin on this body.',buildMs:0};
-    panel();announce('No river region is available there. Try again or choose another catchment.');return false;
-  }
-  // Already showing this exact canonical region (very often true: the
-  // proactive focus-time auto-select above already ran the same ranking) —
-  // skip the redundant texture regen/restartPlanetTiles. That rebuild would
-  // throw away the live PlanetRenderer's already-streamed water/vegetation
-  // instances for no positional change, which is wasted work at best and a
-  // visible pop/regression at worst.
-  if(body.hydrology?.id===region.id){
-    riverState={bodyId:body.id,parentId:region.parentCatchmentId,status:'ready',error:'',buildMs:0};panel();
-    if(!restore)inspectRiver();
-    return true;
-  }
-  riverState={bodyId:body.id,parentId:region.parentCatchmentId,status:'building',error:'',buildMs:0};panel();
-  try{
-    const upgraded={...body,hydrology:region};
-    const data=await job('surface',{body:upgraded,width:1024,segments:192});
-    if(token!==riverSelectionToken||state.body!==body||!surfaceMesh)return false;
-    // This job is fire-and-forget from both focusBody's proactive auto-pick
-    // and (via that same path) boot()'s deep-link restore — neither of which
-    // is awaited by whoever is racing a ground landing/walk in parallel (see
-    // boot()'s own `void prepareLanding(saved)` for a `?walk=` URL, and
-    // prepareLanding()/landOnWorld()/takeoffWalk() for any ordinary in-app
-    // walk request). When a walker/landing exists, clearWalking() runs
-    // first: other deliberate restart call sites pair clearWalking() directly
-    // before restartPlanetTiles() for the same reason — a live GroundWalker's
-    // per-frame contactPatches closure reads whatever `planetTiles` currently
-    // is, and restartPlanetTiles() is about to dispose the resident
-    // PlanetRenderer (all its streamed/settled tiles) and build an empty one
-    // from scratch, at a *different* contact tile granularity once
-    // body.hydrology is set (contactPatches's `hasHydrology` switch to
-    // fineContactLevel, see planet-renderer.ts). Leaving a walker/landing
-    // wired to the doomed instance across that swap is untested and,
-    // unlike every other clearWalking()+restartPlanetTiles() pairing in this
-    // file, would be happening asynchronously behind the user's back rather
-    // than as the direct result of a deliberate action of theirs (toggling
-    // flight, changing relief, focusing a different body) — so instead of
-    // leaving an existing walker wired to disposed tiles or leaving the
-    // request permanently discarded, capture the in-flight intent here and
-    // reissue it below once the new PlanetRenderer exists, through the same
-    // prepareLanding() path any other landing takes (which also re-arms
-    // setContactFocus and the memoized RAPIER/ground-walker module init that
-    // a bare state restore would miss).
-    const resumeWalk=walker?{point:walker.position.toArray() as V3,launch:false}
-      :landing?{point:landing.point,launch:!!landing.launch}:null;
-    // A background detail refresh must not cancel a newer free-flight or
-    // approach command. Only walker/contact state needs rebuilding with the
-    // renderer; explicit river selection still intentionally changes travel.
-    const preserveTravel=restore&&!resumeWalk;
-    if(!preserveTravel){
-      clearWalking();
-      if(flight)toggleFlight();
-      riverFlight=null;surfaceJourney=null;autopilot=null;orbitAssist=null;planetLook=null;playing=false;
-    }
-    body.hydrology=region;
-    // Build the freshly-loaded river region's terrain mesh at whatever
-    // exaggeration the user currently has selected (reliefScale), rather
-    // than silently forcing reliefScale back to 1. `data.elevations` is
-    // always raw, unscaled physical height (see planetSurface in terrain.ts)
-    // — relief exaggeration is a purely client-side rendering multiplier
-    // applied here and in restartPlanetTiles' PlanetRenderer, so there is no
-    // physical-accuracy reason a river region must render unexaggerated.
-    // Forwarding the live reliefScale keeps this mesh consistent with the
-    // PlanetRenderer restartPlanetTiles() is about to build (which also
-    // reads the live reliefScale) instead of clobbering an explicit user
-    // choice made moments earlier (e.g. via the VR "Terrain relief" button)
-    // that this async job happened to race past.
-    replaceTerrain(surfaceMesh,body,data,reliefScale);surfaceInfo=data;detailedBody={mesh:surfaceMesh,body};
-    restartPlanetTiles();if(drainage)drainage.enabled=false;
-    riverState={bodyId:body.id,parentId:region.parentCatchmentId,status:'ready',error:'',buildMs:0};
-    // An explicit selection (restore=false: the drainage panel or a ?river=
-    // link) deliberately flies the camera to inspect that river via
-    // inspectRiver() below — that is itself a new, explicit override of any
-    // prior walk/landing, so it must win, not be fought by a resumed walk.
-    // Only the silent/background paths (the proactive per-focus auto-pick
-    // and a ?river= restore that already matched what was showing) resume
-    // the interrupted landing/walk instead.
-    if(!restore)inspectRiver();
-    else if(resumeWalk){
-      if(resumeWalk.launch){landing={point:resumeWalk.point,launch:true};planetTiles?.setContactFocus(resumeWalk.point);}
-      else void prepareLanding(resumeWalk.point);
-    }
-    persist();panel();
-    if(!preserveTravel)announce('River region ready. Inspect it or fly to a named bank, then land.');
-    return true;
-  }catch(error){
-    if(token!==riverSelectionToken)return false;
-    riverState={bodyId:body.id,parentId,status:'error',error:String(error),buildMs:0};
-    panel();announce('River region could not be shown. Retry or choose another catchment.');return false;
-  }
-}
-function inspectRiver(){
-  const body=state.body,r=body?.hydrology;if(!body||!r)return;
-  clearWalking();if(flight)toggleFlight();
-  riverFlight=null;surfaceJourney=null;orbitAssist=null;autopilot=null;planetLook=null;
-  if(drainage)drainage.enabled=false;
-  const d=vec(r.sites.find(s=>s.kind==='lake-shore')?.direction||r.origin);
-  const centre=vec(bodyPosition(body,state.sys!,epoch));rebaseSystem(centre);
-  const surface=surfaceSample(body,d.toArray() as V3);
-  if(!surface){announce('This world has no surface at this date.');return;}
-  const elevation=surface.visibleHeightM;
-  const span=Math.max(r.boundsM[2]-r.boundsM[0],r.boundsM[3]-r.boundsM[1]);
-  const target=d.clone().multiplyScalar((body.radiusM+elevation)*systemUnit);
-  const end=d.clone().multiplyScalar((body.radiusM+elevation+Math.max(6000,span*.65))*systemUnit);
-  camera.up.copy(vec(r.north));controls.minDistance=120*systemUnit;
-  tween={from:camera.position.clone(),to:end,targetFrom:controls.target.clone(),targetTo:target,start:performance.now(),duration:1300};
-  homePos.copy(end);homeTarget.copy(target);panel();
-}
-function flyRiverSite(site:RiverSite){
-  if(!state.body||renderer.xr.isPresenting)return;
-  clearWalking();if(!flight)toggleFlight();
-  riverFlight=null;surfaceJourney=null;autopilot=null;orbitAssist=null;planetLook=null;startCruiseAfterLook=false;tween=null;
-  if(drainage)drainage.enabled=false;
-  riverFlight={bodyId:state.body.id,site,phase:'transfer'};
-  announce('Flying to '+site.name+'. Arrival holds above the dry bank; choose Land and walk.');panel();
-}
-function exportRiver(){
-  const data=state.body?.hydrology;if(!data)return;
-  const url=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));
-  const a=document.createElement('a');a.href=url;a.download='universe-atlas-river-region.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
-}
-function clearDrainage(){drainage?.dispose();drainage=null;}
-function analyseDrainage(){
-  const body=state.body;if(!body||!body.water||body.kind==='star'||body.type==='Gas giant')return;
-  clearDrainage();drainageOpen=true;
-  const next=new DrainageMap(body,()=>{if(drainage===next)panel();});
-  drainage=next;scene.add(next.group);panel();
-}
-function inspectCatchment(){
-  const c=drainage?.catchment(),body=state.body;if(!c||!body)return;
-  clearWalking();if(flight)toggleFlight();
-  riverFlight=null;surfaceJourney=null;orbitAssist=null;autopilot=null;planetLook=null;
-  drainage!.enabled=true;
-  const data=drainage!.data!,direction=new THREE.Vector3();
-  for(let i=0;i<data.outlet.length;i++)if(data.outlet[i]===c.outlet)direction.addScaledVector(new THREE.Vector3().fromArray(data.directions,i*3),data.areas[i]);
-  direction.normalize();
-  let cosine=1;
-  for(let i=0;i<data.outlet.length;i++)if(data.outlet[i]===c.outlet)cosine=Math.min(cosine,direction.dot(new THREE.Vector3().fromArray(data.directions,i*3)));
-  const centre=vec(bodyPosition(body,state.sys!,epoch));
-  const radius=body.radiusM+20000*reliefScale+1500;
-  const span=radius*Math.sqrt(Math.max(0,1-cosine*cosine));
-  const distance=Math.max(body.radiusM+150000,radius*cosine+span/Math.sin(camera.fov*Math.PI/360)*1.15);
-  rebaseSystem(centre);
-  const target=direction.clone().multiplyScalar(radius*cosine*systemUnit),end=direction.clone().multiplyScalar(distance*systemUnit);
-  camera.up.set(0,1,0);if(Math.abs(direction.y)>.94)camera.up.set(0,0,1);
-  controls.minDistance=50000*systemUnit;
-  tween={from:camera.position.clone(),to:end,targetFrom:controls.target.clone(),targetTo:target,start:performance.now(),duration:1100};
-  homePos.copy(end);homeTarget.copy(target);panel();
-}
-function exportDrainage(){
-  const data=drainage?.export();if(!data)return;
-  const url=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));
-  const a=document.createElement('a');a.href=url;a.download='universe-atlas-drainage-'+state.body!.name+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
-}
 async function surveySurface(){
   const body=state.body;if(!body||surveyPending.has(surveyKey(body)))return;
   const key=surveyKey(body);surveyOpen=true;surveyPending.add(key);panel();
@@ -867,10 +658,8 @@ function disposeView(group: THREE.Group) {
   });
 }
 function clearView(retain = false) {
-  cancelRiverPreparation();riverFlight=null;
-  clearDrainage();
   clearWalking();
-  riverFlight=null;surfaceJourney = null; startCruiseAfterLook = false;
+  surfaceJourney = null; startCruiseAfterLook = false;
   systemMarkers = null; for(const glyph of galaxyGlyphs)glyph.preview?.stop();
   galaxyGlyphs = []; primordialGlyphs.length=0; opticalStarPoints.length=0; flightAim = null;
   planetTiles?.dispose(); planetTiles = null;
@@ -1065,7 +854,6 @@ function persist() {
   if(!surfaceLightingEnabled)q.set('lighting','0');
   if(detailedForestEnabled)q.set('trees','1');
   if(!horizonAssist)q.set('horizon','0');
-  if(state.body?.hydrology)q.set('river',state.body.hydrology.parentCatchmentId);
   writeTimeToUrl(q,epoch);
   if(walker){q.set('walk',walker.position.toArray().join(','));q.set('heading',camera.quaternion.toArray().join(','));}
   if (state.galaxy) q.set("g", state.galaxy.id);
@@ -1116,7 +904,7 @@ function seekDate(next:bigint){
   if(grounded&&body&&state.sys&&state.galaxy){
     const fallback=groundedSeekFallback(groundedSeekContextFor(state.galaxy,state.sys,body,next));
     if(fallback.scope!=='body'){
-      clearWalking();autopilot=null;orbitAssist=null;planetLook=null;riverFlight=null;surfaceJourney=null;playing=false;
+      clearWalking();autopilot=null;orbitAssist=null;planetLook=null;surfaceJourney=null;playing=false;
       epoch=next;
       const galaxy=state.galaxy,ref=state.ref,sys=state.sys;
       if(fallback.scope==='universe')void navigate('universe');
@@ -1129,7 +917,7 @@ function seekDate(next:bigint){
   }
   let groundedAnnounce='Date changed in observation hover. Land again when ready.';
   if(grounded&&body&&state.sys&&state.galaxy)groundedAnnounce=groundedSeekFallback(groundedSeekContextFor(state.galaxy,state.sys,body,next)).announce;
-  clearWalking();autopilot=null;orbitAssist=null;planetLook=null;riverFlight=null;surfaceJourney=null;playing=false;
+  clearWalking();autopilot=null;orbitAssist=null;planetLook=null;surfaceJourney=null;playing=false;
   epoch=next;positionSystem();
   if(state.level==='body'&&(nextStage==='accreting'||nextStage==='molten')){
     planetTiles?.dispose();planetTiles=null;
@@ -2098,7 +1886,7 @@ function applyPose(pose: TravelPose) {
 }
 function toggleFlight() {
   clearWalking();
-  riverFlight=null;surfaceJourney = null; startCruiseAfterLook = false;
+  surfaceJourney = null; startCruiseAfterLook = false;
   if (renderer.xr.isPresenting) return;
   flight = !flight;
   flightCruise=false;
@@ -2135,7 +1923,7 @@ function toggleFlight() {
 function beginTargetFlight() {
   flightCruise=false;
   clearWalking();
-  riverFlight=null;surfaceJourney = null; startCruiseAfterLook = false;
+  surfaceJourney = null; startCruiseAfterLook = false;
   planetLook = null;
   if (!selected) return;
   const kind = state.level === "universe" ? firstStarById(selected)?"primordial":"galaxy" : space ? "star" : "body";
@@ -2161,7 +1949,7 @@ function visitDatedStar(id:string){
 }
 function flyOutward() {
   clearWalking();
-  riverFlight=null;surfaceJourney = null; startCruiseAfterLook = false;
+  surfaceJourney = null; startCruiseAfterLook = false;
   planetLook = null;
   if (!flight) toggleFlight();
   orbitAssist = null; approachAltitude = null;
@@ -2247,38 +2035,6 @@ function updateFlight(dt: number) {
     for(const orbit of systemOrbits) if(orbit.visible!==showOrbits) orbit.visible=showOrbits;
   }
   if(walker||landing){updateWalking(dt);return;}
-  if(riverFlight&&residentSystem){
-    const body=bodyById(riverFlight.bodyId),site=riverFlight.site;
-    if(!body){riverFlight=null;return;}
-    const centre=vec(bodyPosition(body,state.sys!,epoch)),current=vec(localPose()).sub(centre);
-    const radial=current.clone().normalize(),goal=vec(site.direction),angle=radial.angleTo(goal);
-    let radius=current.length();
-    if(riverFlight.phase==='transfer'){
-      const safe=body.radiusM+Math.max(80000,body.radiusM*.04);
-      radius+=(safe-radius)*Math.min(1,dt*2);
-      if(current.length()>body.radiusM+30000){
-        const rotation=new THREE.Quaternion().setFromUnitVectors(radial,goal);
-        rotation.slerp(new THREE.Quaternion(),1-Math.min(1,dt*.35/Math.max(angle,1e-9)));radial.applyQuaternion(rotation);
-        if(angle*body.radiusM<.5){radial.copy(goal);riverFlight.phase='descent';}
-      }
-    }else{
-      radial.copy(goal);const groundSample=surfaceSample(body,site.direction);
-      if(!groundSample){riverFlight=null;announce('This world has no surface at this date.');return;}
-      const ground=groundSample.visibleHeightM;
-      const target=body.radiusM+ground+180,gap=target-radius;
-      radius+=Math.sign(gap)*Math.min(Math.abs(gap),Math.max(.5,Math.min(50000,Math.abs(gap)*2))*dt);
-      if(Math.abs(gap)<.1){riverFlight=null;announce('Holding above '+site.name+'. Choose Land and walk to visit the bank.');panel();}
-    }
-    const next=radial.multiplyScalar(radius).add(centre);
-    flightSpeed=next.distanceTo(vec(localPose()))/Math.max(dt,.001);flightDomain='system';
-    if(next.distanceTo(systemOrigin)>10000)rebaseSystem(next);
-    camera.position.copy(next.sub(systemOrigin).multiplyScalar(systemUnit));
-    const targetDirection=vec(site.lookDirection),lookSample=surfaceSample(body,site.lookDirection);
-    if(!lookSample){riverFlight=null;return;}
-    const h=lookSample.visibleHeightM;
-    const target=targetDirection.multiplyScalar(body.radiusM+h).add(centre).sub(systemOrigin).multiplyScalar(systemUnit);
-    camera.up.copy(goal);camera.lookAt(target);controls.target.copy(target);return;
-  }
   if (surfaceJourney && residentSystem) {
     const body=bodyById(surfaceJourney.bodyId)!, center=vec(bodyPosition(body,state.sys!,epoch));
     const relative=vec(localPose()).sub(center), radius=relative.length(), radial=relative.clone().normalize();
@@ -2298,7 +2054,7 @@ function updateFlight(dt: number) {
     camera.lookAt(center.clone().sub(systemOrigin).multiplyScalar(systemUnit));
     controls.target.copy(center.clone().sub(systemOrigin).multiplyScalar(systemUnit));
     if(angle<.002 && radius>body.radiusM+30000) {
-      riverFlight=null;surfaceJourney=null; approachAltitude=0; approachClearance=480;
+      surfaceJourney=null; approachAltitude=0; approachClearance=480;
       startCruiseAfterLook=true; autopilot={kind:'body',id:body.id};
     }
     return;
@@ -2659,7 +2415,7 @@ function updateFlightHud() {
 
 function approachPlanet(altitude: number) {
   clearWalking();
-  riverFlight=null;surfaceJourney = null; startCruiseAfterLook = false; approachClearance=3000;
+  surfaceJourney = null; startCruiseAfterLook = false; approachClearance=3000;
   planetLook = null;
   if (!state.body || renderer.xr.isPresenting) return;
   if (!flight) toggleFlight();
@@ -2714,10 +2470,8 @@ async function prepareLanding(savedPoint?:V3,contact=false){
   // field, not lifecycle stage, so without this a planet that is `engulfed`
   // by its star's giant phase -- or hasn't formed yet at this epoch -- could
   // still be landed on. Refuse before any state is torn down (toggleFlight/
-  // clearWalking below), so a refused replay from selectRiverDestination's
-  // resumeWalk (the captured in-flight landing intent reissued through this
-  // same function after restartPlanetTiles()) is a clean no-op rather than
-  // leaving anything mid-teardown or silently retried.
+  // clearWalking below), so a refused request (including a restored ?walk=
+  // bookmark) is a clean no-op rather than leaving anything mid-teardown.
   const lcEntry=lifecycleFor(state.sys!,body);
   if(lcEntry.kind!=='star'){
     const stage=planetStateAt(lcEntry.lc,lcEntry.starLc,epoch).stage;
@@ -2730,7 +2484,7 @@ async function prepareLanding(savedPoint?:V3,contact=false){
     }
   }
   if(!flight)toggleFlight();
-  clearWalking();autopilot=null;orbitAssist=null;riverFlight=null;surfaceJourney=null;planetLook=null;playing=false;
+  clearWalking();autopilot=null;orbitAssist=null;surfaceJourney=null;planetLook=null;playing=false;
   const relative=savedPoint?vec(savedPoint):vec(localPose()).sub(vec(bodyPosition(body,state.sys!,epoch)));
   const d=relative.normalize(),s=surfaceSample(body,d.toArray() as V3);
   if(!s){announce('This world has no surface at this date — landing is not possible.');panel();return;}
@@ -2885,7 +2639,6 @@ function updatePlanetTiles(dt: number) {
   // already uses (`bodyEntry.lc`/`bodyEntry.starLc`), never a fresh query.
   const waterLevelM = waterLevelFor(state.body!);
   planetTiles.update(local, innerHeight, camera.fov, dt, renderer.xr.isPresenting, sun, frusta, epoch, lifeGateContext(state.sys!, state.body!, epoch), waterLevelM,shadowFrustum);
-  drainage?.update(planetTiles.group.matrixWorld,(Math.hypot(...local)-1)*state.body!.radiusM,reliefScale);
   if (!renderer.xr.isPresenting && state.body) {
     // Keep metre-scale depth precision without clipping the distant system.
     const near = (walker||landing ? .03:Math.max(.03, Math.min(1000, clearance.terrainClearance * .005))) * systemUnit;
@@ -3739,38 +3492,10 @@ async function focusBody(body: Body, keepPose = false) {
   body=bodyById(body.id)||body;
   const focusEntry=lifecycleFor(state.sys!,body);
   const solidAtFocus=focusEntry.kind==='star'||planetStateAt(focusEntry.lc,focusEntry.starLc,epoch).stage==='solid';
-  // Consume any pending ?river= deep-link restore (see boot()) exactly once
-  // per focus, so it can never leak into a later, unrelated focusBody call.
-  const riverRestoreAddress=pendingRiverRestore;pendingRiverRestore=null;
-  // Proactive, deterministic, worker-driven: build this body's canonical
-  // hydrology set the moment it becomes the focus/approach target, never
-  // waiting on a "Find rivers" click. Once ready, auto-select a canonical
-  // destination for the rich water-mesh/vegetation detail render (restore
-  // mode: no camera fly-away) so that a body's visible river/lake dressing
-  // does not depend on whether the button was ever pressed — only WHICH
-  // canonical basin is auto-picked may still vary with date (sun-lit
-  // ranking), never whether one exists. Terrain height/colliders/survey
-  // never depend on this selection at all (see terrain.ts).
-  // When a ?river= deep-link restore is pending for this exact focus, skip
-  // the auto-pick here — it is performed explicitly, in-line, below (see
-  // riverRestoreAddress below) instead. Both would otherwise share one
-  // `riverSelectionToken` generation counter, so racing them started two
-  // redundant job('surface',...) builds that invalidated each other
-  // non-deterministically (worker-scheduling dependent) — the loser's result
-  // was discarded, and the URL's specific ?river= address could lose the
-  // race to the date-dependent 'auto' pick, leaving body.hydrology unset.
-  // ensureCanonicalHydrology still runs unconditionally so the canonical set
-  // this body needs is already built (and cached) by the time the explicit
-  // restore's own await on it resolves.
-  if(solidAtFocus&&body.kind==='planet'&&body.water>0&&body.type!=='Gas giant'){
-    void ensureCanonicalHydrology(body).then(()=>{
-      if(!riverRestoreAddress&&state.body===body&&!body.hydrology&&canonicalRegionsFor(body.id).length>0)void selectRiverDestination('auto',true);
-    });
-  }
-  cancelRiverPreparation();riverFlight=null;
-  clearDrainage();
+  // Inland rivers are withdrawn (inland-rivers.ts): focusing a body never
+  // builds canonical hydrology or selects a river region.
   clearWalking();
-  riverFlight=null;surfaceJourney=null;startCruiseAfterLook=false;
+  surfaceJourney=null;startCruiseAfterLook=false;
   planetTiles?.dispose(); planetTiles = null;
   orbitAssist = null;
   const token = ++bodyFocusToken,
@@ -3898,13 +3623,6 @@ async function focusBody(body: Body, keepPose = false) {
         "The system remains available; terrain detail could not be prepared.",
       );
     }
-  // Run any pending explicit ?river= restore in-line, awaited here — before
-  // `ready` (below) ever flips true — so a deep-link observer polling on
-  // `ready` can never observe this body as "arrived" with its restored river
-  // still missing (see riverRestoreAddress above).
-  let riverRestored=true;
-  if(riverRestoreAddress&&token===bodyFocusToken&&state.body?.id===body.id)
-    riverRestored=await selectRiverDestination(riverRestoreAddress,true);
   if (!keepPose) {
     await new Promise((r) =>
       setTimeout(r, Math.max(0, focusDuration - (performance.now() - started))),
@@ -3917,12 +3635,9 @@ async function focusBody(body: Body, keepPose = false) {
       controls.enabled = !flight && !renderer.xr.isPresenting;
     }
   }
-  return riverRestored;
 }
 function unfocusBody(keepPose: boolean) {
-  cancelRiverPreparation();riverFlight=null;
-  clearDrainage();
-  riverFlight=null;surfaceJourney=null;startCruiseAfterLook=false;
+  surfaceJourney=null;startCruiseAfterLook=false;
   planetLook = null;
   planetTiles?.dispose(); planetTiles = null;
   orbitAssist = null;
@@ -4341,30 +4056,7 @@ function panel() {
       if(life?.floraStage==='complex'&&life.floraAvailableKinds?.length)surfaceNav+='<button id="find-life" class="explore">Find living habitat</button>';
       const sites=surveys.get(surveyKey(state.body!));
       if(atmosphereHeightM(state.body!)>0)surfaceNav+=`<button id="horizon-assist">Atmospheric horizon assist: ${horizonAssist?'on':'off'}</button>`;
-      // Existence no longer gates this: canonicalRegionsFor is the pure,
-      // already-built existence set (see hydrology-registry.ts). The button
-      // is available whenever this world has at least one canonical river,
-      // regardless of whether one has already been selected for detail
-      // rendering — "Find rivers" is navigation among existing rivers, not a
-      // one-time discovery/build action.
-      if(state.body!.kind==='planet'&&state.body!.water&&canonicalRegionsFor(state.body!.id).length>0)surfaceNav+=`<button id="river-find" ${riverState?.status==='building'?'disabled':''}>${riverState?.status==='building'?'Preparing a river region…':'Find rivers and a lake'}</button>`;
-      surfaceNav+=`<button id="surface-detail">Ground detail: ${surfaceDetail?'on':'off'}</button><button id="surface-lighting">Surface lighting: ${surfaceLightingEnabled?'detailed':'basic'}</button><button id="forest-detail">Trees: ${detailedForestEnabled?(forestAssetAttachment.diagnostics().loading?'loading…':'detailed'):'basic'}</button>${detailedForestEnabled&&forestAssetAttachment.diagnostics().error?'<p class="subtle">Detailed trees could not load. Basic trees remain available.</p><button id="forest-retry">Retry detailed trees</button>':''}<details id="surface-survey" ${surveyOpen?'open':''}><summary>Surface destinations</summary><p class="subtle">Find named sites on this world's existing terrain. Fly to a site, then choose Land and walk.</p>${sites?sites.map(s=>`<button data-surface-site="${esc(s.id)}" class="surface-site"><strong>${esc(s.name)}</strong><span>${esc(s.category)} · ${esc(s.biome)}<br>${fmt(s.elevationM,0)} m · slope ${fmt(s.slopeDeg,1)}°</span></button>`).join(''):`<button id="survey-surface" ${surveyPending.has(surveyKey(state.body!))?'disabled':''}>${surveyPending.has(surveyKey(state.body!))?'Surveying terrain…':'Survey surface'}</button>`}<p class="subtle">Ground materials show sand, soil, rock and snow. Find rivers and a lake adds a local waterway with initial forest and ground-cover detail.</p></details>`;
-    }
-    if(surfaceNav&&state.body!.water){
-      const d=drainage?.data,c=drainage?.catchment();
-      surfaceNav+=`<details id="drainage-panel" ${drainageOpen?'open':''}><summary>Drainage atlas</summary><p class="subtle">Coarse catchments and proposed flow routes on this terrain. Choose a catchment to build a physical river pilot, or use Find rivers and a lake to discover a suitable region.</p>`;
-      if(!d)surfaceNav+=`<button id="drainage-build" ${drainage?.status==='building'?'disabled':''}>${drainage?.status==='building'?'Analysing planet…':drainage?.status==='error'?'Retry analysis':'Analyse drainage'}</button>${drainage?.error?`<p class="subtle">${esc(drainage.error)}</p>`:''}`;
-      else surfaceNav+=`<button id="drainage-toggle">${drainage?.enabled?'Hide':'Show'} drainage map</button><p class="drainage-legend">Cyan: flow routes · Amber: depressions<br>White: selected main route and endpoints</p><label for="drainage-catchment">Major catchments</label><select id="drainage-catchment">${d.catchments.map(x=>`<option value="${esc(x.id)}" ${x.id===c?.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>${c?`<p class="subtle"><strong>${esc(c.name)}</strong><br>${fmt(c.areaKm2,0)} km² contributing area<br>${fmt(c.lengthKm,0)} km sampled main route<br>${fmt(c.depressionKm2,0)} km² of conditioned depressions</p><div class="mini-buttons"><button id="drainage-inspect">Inspect basin</button><button id="drainage-head">Fly to headwaters</button><button id="drainage-mouth">Fly to outlet</button></div>`:''}<p class="subtle">Average sample spacing: ${fmt(d.stats.meanSpacingKm,0)} km. Map fades below 120 km and is hidden below 50 km; ground remains unchanged.</p><button id="drainage-export">Export drainage graph</button>`;
-      if(c)surfaceNav+=`<button id="river-build" ${riverState?.status==='building'?'disabled':''}>${riverState?.status==='building'?'Preparing river region…':'Build physical river region'}</button><p class="subtle">Create a versioned coastal pilot here with a river, a tributary and a lake. This changes local beds and banks; shared links retain this geology option.</p>`;
-      surfaceNav+='</details>';
-    }
-    if(surfaceNav&&(state.body!.hydrology||riverState?.bodyId===state.body!.id)){
-      const r=state.body!.hydrology;
-      surfaceNav+=`<details id="river-panel" open><summary>Rivers and lakes</summary>`;
-      if(r)surfaceNav+=`<p class="subtle">${r.channels.length} connected channels · ${r.lakes.length} lake<br>${fmt(r.stats.lengthM/1000,1)} km of river · regional pilot</p><button id="river-inspect">Inspect river region</button>${r.sites.map(s=>`<button class="surface-site" data-river-site="${esc(s.id)}"><strong>${esc(s.name)}</strong><span>${esc(s.kind.replaceAll('-',' '))} · fly to dry bank</span></button>`).join('')}<button id="river-export">Export river region</button><p class="subtle">Land on the bank to explore on foot. Rivers and lakes cannot be entered on foot yet.</p>`;
-      if(riverState?.status==='building')surfaceNav+='<p class="subtle">Preparing the shared terrain and water model…</p>';
-      if(riverState?.status==='error')surfaceNav+=`<p class="subtle">${esc(riverState.error)}</p><button id="river-retry">Retry river region</button>`;
-      surfaceNav+='</details>';
+      surfaceNav+=`<button id="surface-detail">Ground detail: ${surfaceDetail?'on':'off'}</button><button id="surface-lighting">Surface lighting: ${surfaceLightingEnabled?'detailed':'basic'}</button><button id="forest-detail">Trees: ${detailedForestEnabled?(forestAssetAttachment.diagnostics().loading?'loading…':'detailed'):'basic'}</button>${detailedForestEnabled&&forestAssetAttachment.diagnostics().error?'<p class="subtle">Detailed trees could not load. Basic trees remain available.</p><button id="forest-retry">Retry detailed trees</button>':''}<details id="surface-survey" ${surveyOpen?'open':''}><summary>Surface destinations</summary><p class="subtle">Find named sites on this world's existing terrain. Fly to a site, then choose Land and walk.</p>${sites?sites.map(s=>`<button data-surface-site="${esc(s.id)}" class="surface-site"><strong>${esc(s.name)}</strong><span>${esc(s.category)} · ${esc(s.biome)}<br>${fmt(s.elevationM,0)} m · slope ${fmt(s.slopeDeg,1)}°</span></button>`).join(''):`<button id="survey-surface" ${surveyPending.has(surveyKey(state.body!))?'disabled':''}>${surveyPending.has(surveyKey(state.body!))?'Surveying terrain…':'Survey surface'}</button>`}<p class="subtle">Ground materials show sand, soil, rock and snow. ${INLAND_RIVERS_UNAVAILABLE}</p></details>`;
     }
     const nav = `<div class="mini-buttons"><button id="fly-target" ${selected ? "" : "disabled"}>Fly to selection</button><button id="fly-outward">Fly outward</button><button id="toggle-flight">${flight ? "Stop flight" : "Fly freely"}</button>${mapped ? '<button id="approach-star">Approach selected star</button>' : ""}${datedStar?'<button id="visit-dated-star">Visit dated star</button>':''}</div><p class="subtle">Flight: drag to look · WASD move · Q/E down/up · wheel adjusts speed · Shift boosts · Esc stops. Touch: hold Fly forward below.</p><div class="mini-buttons"><button id="fly-forward">Hold: fly forward</button></div>`;
     if (state.level === "galaxy" && mapped)
@@ -4386,10 +4078,6 @@ function panel() {
   bind('stop-planet-follow',stopPlanetFollow);
   bind('leave-primordial',leaveFirstStar);
   bindStarTracker();
-  const drainageElement=$('drainage-panel') as HTMLDetailsElement|null;
-  if(drainageElement)drainageElement.ontoggle=()=>{if(drainageElement.isConnected)drainageOpen=drainageElement.open;};
-  const basinSelect=$('drainage-catchment') as HTMLSelectElement|null;
-  if(basinSelect)basinSelect.onchange=()=>drainage?.select(basinSelect.value);
   const surveyElement=$('surface-survey') as HTMLDetailsElement|null;
   if(surveyElement)surveyElement.ontoggle=()=>{if(surveyElement.isConnected)surveyOpen=surveyElement.open;};
   for(const button of content.querySelectorAll<HTMLButtonElement>('[data-surface-site]'))button.onclick=()=>{
@@ -4467,20 +4155,6 @@ function panel() {
   bind('terrain-flight', ()=>exploreTerrain());
   bind('find-life',()=>exploreTerrain(undefined,true));
   bind('survey-surface',()=>void surveySurface());
-  bind('drainage-build',analyseDrainage);
-  bind('river-build',()=>{const c=drainage?.catchment();if(c)void selectRiverDestination(c.id);});
-  bind('river-find',()=>void selectRiverDestination('auto'));
-  bind('river-retry',()=>{if(riverState)void selectRiverDestination(riverState.parentId);});
-  bind('river-inspect',inspectRiver);bind('river-export',exportRiver);
-  for(const button of content.querySelectorAll<HTMLButtonElement>('[data-river-site]'))button.onclick=()=>{
-    const site=state.body?.hydrology?.sites.find(s=>s.id===button.dataset.riverSite);if(site)flyRiverSite(site);
-  };
-  bind('drainage-toggle',()=>{if(drainage){drainage.enabled=!drainage.enabled;panel();}});
-  bind('drainage-inspect',inspectCatchment);
-  bind('drainage-export',exportDrainage);
-  for(const [id,site] of [['drainage-head','headwater'],['drainage-mouth','mouth']] as const)bind(id,()=>{
-    const c=drainage?.catchment();if(c){exploreTerrain(vec(c[site].direction));announce('Flying to '+c.name+' '+(site==='mouth'?'outlet':'headwater vicinity')+'. This is the existing terrain; channels are still in development.');}
-  });
   bind('surface-detail',()=>{surfaceDetail=!surfaceDetail;planetTiles?.setSurfaceDetail(surfaceDetail);persist();panel();});
   bind('surface-lighting',()=>{surfaceLightingEnabled=!surfaceLightingEnabled;persist();panel();});
   bind('forest-detail',()=>{detailedForestEnabled=!detailedForestEnabled;persist();panel();});
@@ -4584,9 +4258,6 @@ function exportData() {
     epochSeconds: Number(epoch)/1e9,
     date:dateRecord(epoch),
     surfaceSurvey:state.body?{version:SURVEY_VERSION,sites:surveys.get(surveyKey(state.body))||[]}:null,
-    drainage:drainage?.data?{version:drainage.data.version,geologyVersion:drainage.data.geologyVersion,stats:drainage.data.stats,catchments:drainage.data.catchments}:null,
-    riverRegion:state.body?.hydrology||null,
-    riverSurfaceVersion:state.body?.hydrology?RIVER_SURFACE_VERSION:null,
     identities:state.sys?[...state.sys.stars,...state.sys.planets,...state.sys.moons].map(identityRecord):[],
     stellarHistories:state.sys?.stars.map(stellarHistory),
     galaxy: state.galaxy || null,
@@ -4849,7 +4520,7 @@ window.addEventListener("keydown", (e) => {
     autopilot = null;
     flightCruise=false;
     orbitAssist = null; approachAltitude = null;
-    riverFlight=null;surfaceJourney=null;startCruiseAfterLook=false;
+    surfaceJourney=null;startCruiseAfterLook=false;
     planetLook = null;
     flightKeys.add(e.key.toLowerCase());
   }
@@ -4904,7 +4575,6 @@ $("generate").onclick = () => {
   galaxyLifecycles.clear();
   lifeGateCache = null;
   clearBiosphereHistoryCache();
-  resetHydrologyRegistry();
   void navigate("universe");
 };
 input.addEventListener("keydown", (e) => {
@@ -5203,22 +4873,18 @@ async function boot() {
       b = [...sys.stars, ...sys.planets, ...sys.moons].find(
         (b) => b.id === q.get("body"),
       );
-    const riverAddress=q.get('river');
-    // See pendingRiverRestore: when a body is deep-linked, its ?river=
-    // restore must run (and be awaited) *inside* focusBody, before `ready`
-    // flips true — not here, after navigate() has already resolved and
-    // `ready` may already be visible to a polling deep-link observer.
-    if(riverAddress&&b)pendingRiverRestore=riverAddress;
-    const navigateResult=await navigate(b ? "body" : "system", {
+    // A legacy ?river= address is deliberately ignored: inland rivers are
+    // withdrawn, so it opens the ordinary body view. compatibilityNoticeFromUrl
+    // (above) tells the visitor why; persist() then drops the parameter.
+    await navigate(b ? "body" : "system", {
       galaxy: g,
       coords: coords || (ref.cell.map((v) => Math.floor(v / 8)) as V3),
       ref,
       sys,
       body: b,
     });
-    const riverRestored=!riverAddress||(!!b&&navigateResult===true);
     const saved=q.get('walk')?.split(',').map(Number),heading=q.get('heading')?.split(',').map(Number);
-    if(b&&riverRestored&&saved?.length===3&&saved.every(Number.isFinite)&&Math.abs(Math.hypot(...saved)-b.radiusM)<30000){
+    if(b&&saved?.length===3&&saved.every(Number.isFinite)&&Math.abs(Math.hypot(...saved)-b.radiusM)<30000){
       if(heading?.length===4&&heading.every(Number.isFinite))camera.quaternion.fromArray(heading).normalize();
       void prepareLanding(saved as V3);
     }
@@ -5320,8 +4986,9 @@ Object.defineProperty(window, "__atlas", {
     setPlaying:(value:boolean)=>{playing=value;explorationPaused=!value;},
     setExplorationPaused:(value:boolean)=>{explorationPaused=value;playing=false;},
     get surfaceSurvey(){return state.body?surveys.get(surveyKey(state.body))||null:null;},
-    get drainage(){return drainage?.diagnostics()||null;},
-    get river(){return state.body?.hydrology?{status:riverState?.status||'ready',version:RIVER_VERSION,surfaceVersion:RIVER_SURFACE_VERSION,region:state.body.hydrology,buildMs:riverState?.buildMs||0,render:planetTiles?.diagnostics().river||null}:riverState;},
+    get drainage(){return null;},
+    // Inland rivers are withdrawn (inland-rivers.ts): never report a region.
+    get river(){return null;},
     get state() {
       return state;
     },
@@ -5365,7 +5032,6 @@ Object.defineProperty(window, "__atlas", {
         terrainCruise: orbitAssist?.clearanceM || null,
         horizonAssist,alignment:flightAlignment,
         surfaceJourney: !!surfaceJourney,
-        riverJourney:riverFlight?{siteId:riverFlight.site.id,phase:riverFlight.phase}:null,
         approachAltitude,
         flightAim,
         surface: state.body ? surfaceClearance(state.body, localPose().map((v,i)=>v-bodyPosition(state.body!,state.sys!,epoch)[i]) as V3, snappedWaterLevelFor(state.body)) : null,
@@ -5634,7 +5300,7 @@ vr = new AtlasVR(renderer, scene, camera, {
     clearWalking();
     flight = false;
     orbitAssist = null; approachAltitude = null; planetLook = null; autopilot = null;
-    riverFlight=null;surfaceJourney=null;startCruiseAfterLook=false;
+    surfaceJourney=null;startCruiseAfterLook=false;
     flightKeys.clear();
     camera.near = 0.02;
     camera.updateProjectionMatrix();

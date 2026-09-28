@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#080e17">
-  <meta name="description" content="Travel from the beginning of cosmic time to a distant future. Follow a star, descend to a planet, walk beside a river, and return to the same place and date in a universe reconstructed from its seed.">
+  <meta name="description" content="Travel from the beginning of cosmic time to a distant future. Follow a star, descend to a planet, walk its surface, and return to the same place and date in a universe reconstructed from its seed.">
   <title>Overview · Universe Atlas Guide</title>
   <link rel="stylesheet" href="./theme.css">
 </head>
@@ -24,7 +24,7 @@
     <main id="main">
       <div class="eyebrow">The Atlas field guide</div>
       <h1>A universe you can revisit.</h1>
-      <p class="lead">Travel from the beginning of cosmic time to a distant future. Follow a star, descend to a planet, walk beside a river, and return to the same place and date in a universe reconstructed from its seed.</p>
+      <p class="lead">Travel from the beginning of cosmic time to a distant future. Follow a star, descend to a planet, walk its surface, and return to the same place and date in a universe reconstructed from its seed.</p>
       <div class="meta"><span class="pill">Source review · 28 Sep 2026</span><span class="pill">Nine connected chapters</span><span class="pill">Desktop realism · staged work</span></div>
       <nav class="on-this-page" aria-label="On this page"><strong>In this chapter</strong><a href="#design">One address. One date. A world to explore.</a><a href="#chapters">Explore the systems</a><a href="#architecture">How the pieces connect</a><a href="#scope">What “beginning to end” means here</a><a href="#realism">Desktop realism, in stages</a></nav>
       <section id="design"><h2>One address. One date. A world to explore.</h2><div class="atlas-art" role="img" aria-label="Illustration of a planetary horizon under distant stars"><span>SPACE × TIME × SEED</span></div><p>Universe Atlas is a browser-based procedural explorer built with TypeScript and Three.js. Its catalogue, life histories and terrain are generated locally. The browser requests files from the website; it computes the worlds itself.</p><div class="stats"><div><strong>32</strong><span>galaxies in the interactive root catalogue</span></div><div><strong>13.787 Gyr</strong><span>catalogue reference age</span></div><div><strong>10<sup>100</sup> yr</strong><span>baseline timeline ceiling</span></div></div><p>The central design is to query a world at a location and time. A visit does not need to simulate every intervening year. Stable identities connect the universe map, local star field, planetary system, surface and dated biosphere.</p><div class="formula">World state = query(seed, canonical address, absolute time, model versions)</div><p>Rendering adds camera position, visible detail and performance budgets. Those choices decide what is drawn; the deterministic query defines what exists.</p></section>
