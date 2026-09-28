@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: pool is deterministic, frozen, bounded and stratified per family and version
+ok 1 - pool is deterministic, frozen, bounded and stratified per family and version
+  ---
+  duration_ms: 3.5664
+  type: 'test'
+  ...
+# Subtest: canonical identity chooses the variant; recipe version, species and cell are the only inputs
+ok 2 - canonical identity chooses the variant; recipe version, species and cell are the only inputs
+  ---
+  duration_ms: 1.3833
+  type: 'test'
+  ...
+# Subtest: roots, heights and tree yaw are invariant; only horizontal crown structure moves
+ok 3 - roots, heights and tree yaw are invariant; only horizontal crown structure moves
+  ---
+  duration_ms: 1.4337
+  type: 'test'
+  ...
+# Subtest: variants change real Oak and Pine geometry, and leaf thinning is shared by both LODs
+ok 4 - variants change real Oak and Pine geometry, and leaf thinning is shared by both LODs
+  ---
+  duration_ms: 222.1956
+  type: 'test'
+  ...
+# branching variant 0: max pivot displacement 1.412 m at 16 m
+# branching variant 1: max pivot displacement 0.938 m at 16 m
+# branching variant 2: max pivot displacement 1.164 m at 16 m
+# branching variant 3: max pivot displacement 0.885 m at 16 m
+# branching variant 4: max pivot displacement 0.737 m at 16 m
+# branching variant 5: max pivot displacement 0.899 m at 16 m
+# branching variant 6: max pivot displacement 0.684 m at 16 m
+# branching variant 7: max pivot displacement 1.428 m at 16 m
+# spire variant 0: max pivot displacement 0.735 m at 16 m
+# spire variant 1: max pivot displacement 0.923 m at 16 m
+# spire variant 2: max pivot displacement 0.784 m at 16 m
+# spire variant 3: max pivot displacement 0.549 m at 16 m
+# spire variant 4: max pivot displacement 0.888 m at 16 m
+# spire variant 5: max pivot displacement 1.086 m at 16 m
+# spire variant 6: max pivot displacement 1.149 m at 16 m
+# spire variant 7: max pivot displacement 0.540 m at 16 m
+# Subtest: area-preserving LOD card scale follows the real mesh leaf-area ratio
+ok 5 - area-preserving LOD card scale follows the real mesh leaf-area ratio
+  ---
+  duration_ms: 1.0043
+  type: 'test'
+  ...
+# Subtest: conservative sphere contains every actual LOD vertex for every variant, height, wind extreme and card scale
+ok 6 - conservative sphere contains every actual LOD vertex for every variant, height, wind extreme and card scale
+  ---
+  duration_ms: 382.6194
+  type: 'test'
+  ...
+# branching: authored 23.69 m, worst deformed vertex 23.45 m, bound 32.92 m
+# spire: authored 21.71 m, worst deformed vertex 25.09 m, bound 30.09 m
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 906.6862

@@ -151,7 +151,7 @@ test('area-preserving LOD card scale follows the real mesh leaf-area ratio',asyn
   }
 });
 
-test('conservative sphere contains every actual LOD vertex for every variant, height, wind extreme and card scale',async()=>{
+test('conservative sphere contains every actual LOD vertex for every variant, height, wind extreme and card scale',async t=>{
   for(const kind of ['branching','spire']){
     const {lods,metadata}=await family(kind),pool=forestStructuralVariants(kind);
     const lodScale=treeLodCardScale(metadata[0].profile,metadata[1].profile),cardMax=lodScale*FOREST_CARD_COMPENSATION.maxScale;
@@ -167,6 +167,7 @@ test('conservative sphere contains every actual LOD vertex for every variant, he
         }
       }
     }
+    t.diagnostic(`${kind}: authored ${Math.max(...metadata.map(m=>m.cullingBounds.radiusM)).toFixed(2)} m, worst deformed vertex ${worst.toFixed(2)} m, bound ${radiusM.toFixed(2)} m`);
     assert.ok(worst<=radiusM,`${kind}: ${worst} m escapes ${radiusM} m`);
     assert.ok(radiusM<worst*1.6,`${kind}: bound ${radiusM} m stays useful for culling (${worst} m)`);
   }
