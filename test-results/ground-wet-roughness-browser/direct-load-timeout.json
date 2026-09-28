@@ -1,0 +1,4 @@
+{
+  "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:5190/?seed=LETHRA-001&g=G001&system=G001%2FC2128%2C0%2C1%2F0&body=G001%2FC2128%2C0%2C1%2F0%2Fplanet%2F1&river=G001%2FC2128%2C0%2C1%2F0%2Fplanet%2F1%2Fdrainage-2%2Fn64%2Foutlet%2F16162&walk=-644405.6602933442%2C-4058619.5249037463%2C3178143.575785639&heading=-0.1494799676078727%2C0.3304398479634148%2C0.9318162953807203%2C0.013551303436017823\", waiting until \"load\"\u001b[22m\n",
+  "errors": []
+}
