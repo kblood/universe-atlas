@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {PlanetCanopy} from '../src/planet-canopy.ts';
+import {LEGACY_TREE_BOUND} from '../src/tree-shape.ts';
 import {galaxies,refByAddress,system} from '../src/catalog.ts';
 
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
@@ -148,6 +149,27 @@ test('water reconfiguration ignores stale generation replies and accepts the new
   }finally{h.restore();}
 });
 
+test('close canonical crowns require same-frame ownership; holes and submerged trees do not count as forced closes',()=>{
+  const h=begin(64),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`;
+  try{
+    const request=selectAndRequest(h,[a]);sendPatchResponse(h,request,[patch(a)]);h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    const id=`${a.face}/${a.n}/${a.x*8}/${a.y*8}`,slot=h.host.slots.get(id);assert.equal(slot,0);
+    const root=new THREE.Vector3().fromArray(h.host.bodyPositions,slot*3),rotation=new THREE.Quaternion().fromArray(h.host.renderer.rotations.array,slot*4);
+    const localBound=new THREE.Vector3(...LEGACY_TREE_BOUND.center).multiplyScalar(16).applyQuaternion(rotation);
+    const closeEye=root.add(localBound).multiplyScalar(1/body.radiusM);
+
+    h.host.prepare(closeEye,ground,100,0,true,false,nearOrigin);h.host.observeClose(id,closeEye);h.host.finish();
+    assert.equal(h.host.diagnostics().farForcedClose,1,'an unowned close crown is counted');
+    h.host.prepare(closeEye,ground,100,0,true,false,nearOrigin);h.host.observeClose(id,closeEye);h.host.own(id,1);h.host.finish();
+    assert.equal(h.host.diagnostics().farForcedClose,0,'near ownership applied in this frame prevents a forced far close');
+    h.host.prepare(closeEye,ground,100,0,true,false,nearOrigin);h.host.observeClose(id,closeEye);h.host.noteNear(id,key,false,0);h.host.finish();
+    assert.equal(h.host.diagnostics().nearAbsentInCensus,1);assert.equal(h.host.diagnostics().farForcedClose,0,'near absence suppresses the far copy');
+    assert.ok(body.water>0,'fixture needs a water-bearing body for submerged filtering');
+    h.host.prepare(closeEye,ground,100,200,true,false,nearOrigin);h.host.observeClose(id,closeEye);h.host.finish();
+    assert.equal(h.host.diagnostics().farForcedClose,0,'submerged roots are excluded from close checks');
+  }finally{h.restore();}
+});
+
 test('worker failure retries once and leaves near rendering available after the retry fails',()=>{
   const h=begin(64);
   try{
@@ -159,6 +181,58 @@ test('worker failure retries once and leaves near rendering available after the 
   }finally{h.restore();}
 });
 
+test('patch failures stop retrying after three attempts and an infinite wake does not spin',()=>{
+  const h=begin(64),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`;
+  try{
+    let request=selectAndRequest(h,[a]);
+    h.worker.emit({type:'error',phase:'request',generation:h.generation,requestId:request.requestId,context:h.context,error:'injected failure 1'});
+    assert.equal(h.host.retries.get(key).attempts,1);
+    h.host.retries.set(key,{attempts:2,after:0});h.host.retryWakeAt=0;
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    request=h.worker.sent.findLast(m=>m.type==='patches');assert.notEqual(request.requestId,undefined);
+    h.worker.emit({type:'error',phase:'request',generation:h.generation,requestId:request.requestId,context:h.context,error:'injected failure 3'});
+    assert.equal(h.host.retries.get(key).attempts,3);assert.equal(h.host.retries.get(key).after,Infinity);
+    const count=h.worker.sent.filter(m=>m.type==='patches').length;
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    assert.equal(h.worker.sent.filter(m=>m.type==='patches').length,count,'a permanently backed-off patch does not spin');
+  }finally{h.restore();}
+});
+
+test('a pending patch job cannot install results from the previous selection after a long move',()=>{
+  const h=begin(64),a=address(0,h.n),b=address(1,h.n);
+  try{
+    const first=selectAndRequest(h,[a]);
+    const turn=5000/body.radiusM,newGround=[Math.cos(turn),Math.sin(turn),0],newEye=new THREE.Vector3(...newGround);
+    h.host.prepare(newEye,newGround,100,0,true,false,nearOrigin);
+    const secondSelection=h.worker.sent.findLast(m=>m.type==='select');assert.ok(secondSelection.requestId>h.select.requestId);
+    h.worker.emit({type:'selection',generation:h.generation,requestId:secondSelection.requestId,context:h.context,
+      packed:Float64Array.from([b.face,b.n,b.x,b.y]),selectionMs:1});
+    h.host.prepare(newEye,newGround,100,0,true,false,nearOrigin);
+    assert.deepEqual([...h.host.desired.keys()],[`${b.face}/${b.n}/${b.x}/${b.y}`]);
+    h.worker.emit({type:'patches',generation:h.generation,requestId:first.requestId,context:h.context,patches:[patch(a)],done:true});
+    h.host.prepare(newEye,newGround,100,0,true,false,nearOrigin);
+    assert.equal(h.host.installed.has(`${a.face}/${a.n}/${a.x}/${a.y}`),false);
+    const latest=h.worker.sent.findLast(m=>m.type==='patches');
+    assert.ok(latest.requestId>first.requestId);assert.deepEqual(latest.addresses,[b]);
+  }finally{h.restore();}
+});
+
+test('water change during pending selection invalidates its reply before requesting the new context',()=>{
+  const h=begin(64);
+  try{
+    const oldSelection=h.select;
+    h.host.prepare(eye,ground,100,10,true,false,nearOrigin);
+    const configure=h.worker.sent.findLast(m=>m.type==='configure');assert.equal(configure.generation,h.generation+1);
+    h.worker.emit({type:'selection',generation:h.generation,requestId:oldSelection.requestId,context:h.context,
+      packed:new Float64Array(),selectionMs:1});
+    h.worker.emit({type:'ready',generation:configure.generation,context:contextB,n:h.n});
+    h.host.prepare(eye,ground,100,10,true,false,nearOrigin);
+    const current=h.worker.sent.findLast(m=>m.type==='select');assert.equal(current.generation,configure.generation);
+    assert.equal(h.host.diagnostics().selectionPending,true);
+    assert.equal(h.host.context,contextB);
+  }finally{h.restore();}
+});
+
 test('capacity overflow rejects a whole patch without a partial slot allocation',()=>{
   const h=begin(1),a=address(0,h.n);
   try{
@@ -166,6 +240,49 @@ test('capacity overflow rejects a whole patch without a partial slot allocation'
     h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
     assert.equal(h.host.capacityMisses,1);assert.equal(h.host.slots.size,0);assert.equal(h.host.installed.size,0);
     assert.equal(h.host.allocator.diagnostics().used,0);assert.equal(h.host.renderer.mesh.geometry.instanceCount,0);
+  }finally{h.restore();}
+});
+
+test('water refresh can replace a resident patch using its old slots',()=>{
+  const h=begin(2),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`;
+  try{
+    const first=selectAndRequest(h,[a]);sendPatchResponse(h,first,[patch(a)]);h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    assert.equal(h.host.slots.size,1);assert.equal(h.host.currentPatch(key),true);
+    h.host.prepare(eye,ground,100,10,true,false,nearOrigin);
+    const configure=h.worker.sent.findLast(m=>m.type==='configure');assert.equal(configure.generation,h.generation+1);
+    h.worker.emit({type:'ready',generation:configure.generation,context:contextB,n:h.n});
+    h.host.prepare(eye,ground,100,10,true,false,nearOrigin);
+    const selection=h.worker.sent.findLast(m=>m.type==='select');
+    h.worker.emit({type:'selection',generation:configure.generation,requestId:selection.requestId,context:contextB,
+      packed:Float64Array.from([a.face,a.n,a.x,a.y]),selectionMs:0});
+    h.host.prepare(eye,ground,100,10,true,false,nearOrigin);
+    const replacement=h.worker.sent.findLast(m=>m.type==='patches');
+    assert.ok(replacement&&replacement.generation===configure.generation);
+    h.worker.emit({type:'patches',generation:configure.generation,requestId:replacement.requestId,context:contextB,
+      patches:[patch(a,{present:2,candidates:64,context:contextB})],done:true});
+    h.host.prepare(eye,ground,100,10,true,false,nearOrigin);
+    assert.equal(h.host.slots.size,2,'the old one-tree allocation plus one free slot can hold the two-tree replacement');
+    assert.equal(h.host.currentPatch(key),true);
+  }finally{h.restore();}
+});
+
+test('replacement that still exceeds capacity retires the stale patch without a partial resident',()=>{
+  const h=begin(1),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`;
+  try{
+    const first=selectAndRequest(h,[a]);sendPatchResponse(h,first,[patch(a)]);h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    assert.equal(h.host.slots.size,1);
+    h.host.prepare(eye,ground,100,10,true,false,nearOrigin);
+    const configure=h.worker.sent.findLast(m=>m.type==='configure');
+    h.worker.emit({type:'ready',generation:configure.generation,context:contextB,n:h.n});h.host.prepare(eye,ground,100,10,true,false,nearOrigin);
+    const selection=h.worker.sent.findLast(m=>m.type==='select');
+    h.worker.emit({type:'selection',generation:configure.generation,requestId:selection.requestId,context:contextB,
+      packed:Float64Array.from([a.face,a.n,a.x,a.y]),selectionMs:0});h.host.prepare(eye,ground,100,10,true,false,nearOrigin);
+    const replacement=h.worker.sent.findLast(m=>m.type==='patches');
+    h.worker.emit({type:'patches',generation:configure.generation,requestId:replacement.requestId,context:contextB,
+      patches:[patch(a,{present:2,candidates:64,context:contextB})],done:true});h.host.prepare(eye,ground,100,10,true,false,nearOrigin);
+    assert.equal(h.host.installed.has(key),false);assert.equal(h.host.currentPatch(key),false);
+    assert.equal(h.host.slots.size,0);assert.equal(h.host.allocator.diagnostics().used,0);assert.equal(h.host.capacityMisses,1);
+    assert.equal(h.host.prepare(eye,ground,100,10,true,false,nearOrigin),true,'near legacy rendering remains enabled without the oversized far patch');
   }finally{h.restore();}
 });
 

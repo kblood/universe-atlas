@@ -6,6 +6,7 @@ import {type ForestCensusPatch,FOREST_CENSUS_STRIDE} from './forest-census.ts';
 import {type ForestPatchAddress,validateForestPatchAddress} from './forest-patch.ts';
 import {treeQuaternion} from './tree-shape.ts';
 import {quantizeForestCoverage} from './forest-coverage.ts';
+import {LEGACY_TREE_BOUND} from './tree-shape.ts';
 
 const patchKey=(a:ForestPatchAddress)=>`${a.face}/${a.n}/${a.x}/${a.y}`;
 export function forestCellPatchKey(id:string){const [face,n,x,y]=id.split('/').map(Number);return `${face}/${n}/${Math.floor(x/8)}/${Math.floor(y/8)}`;}
@@ -35,6 +36,7 @@ export class PlanetCanopy {
   private workerRestarts=0;private failures=0;private installedThisFrame=0;private installMs=0;private uploadBytes=0;
   private selectionMs=0;private selectionApplyMs=0;private capacityMisses=0;
   private nearPresentNotInCensus=0;private nearAbsentInCensus=0;
+  private closeCandidates:string[]=[];private farForcedClose=0;
   private body:Body;
   constructor(body:Body,capacity=229376){
     this.body=body;this.allocator=new ForestSlotAllocator(capacity);this.renderer=new ForestImpostors(capacity);
@@ -123,7 +125,13 @@ export class PlanetCanopy {
   }
   private install(patch:ForestCensusPatch){
     const key=patchKey(patch.address);if(!this.desired.has(key))return;
-    const range=this.allocator.allocate(patch.present);
+    let range=this.allocator.allocate(patch.present);
+    // A full cache must not pin stale water patches forever. Retire and retry
+    // within this same frame transaction; if it still cannot fit, that entire
+    // patch becomes missing and the existing near/legacy path remains owner.
+    if(!range&&this.installed.has(key)&&this.installed.get(key)!.water!==this.water){
+      this.remove(key);range=this.allocator.allocate(patch.present);
+    }
     if(!range){const after=performance.now()+1000;this.capacityMisses++;this.retries.set(key,{attempts:1,after});this.retryWakeAt=Math.min(this.retryWakeAt,after);return;}
     this.remove(key);const ids:string[]=[];
     for(let i=0;i<patch.present;i++){
@@ -140,7 +148,7 @@ export class PlanetCanopy {
   /** Call after the near render origin is chosen, before the near draw loop. */
   prepare(eye:THREE.Vector3,ground:V3,altitudeM:number,water:number,enabled:boolean,immersive:boolean,nearOrigin:THREE.Vector3){
     this.group.visible=enabled&&!immersive&&altitudeM<3500;this.installedThisFrame=0;this.installMs=0;this.uploadBytes=0;this.seen.clear();
-    this.nearPresentNotInCensus=0;this.nearAbsentInCensus=0;
+    this.nearPresentNotInCensus=0;this.nearAbsentInCensus=0;this.closeCandidates.length=0;this.farForcedClose=0;
     if(!this.group.visible)return false;
     this.renderer.uniforms.treeRuntime.value=1;
     this.renderer.uniforms.treeAltitudeCoverage.value=1-THREE.MathUtils.smoothstep(altitudeM,3000,3500);
@@ -201,15 +209,33 @@ export class PlanetCanopy {
     if(!this.group.visible)return;const index=this.slots.get(id);if(index===undefined)return;
     this.renderer.setOwnership(index,quantizeForestCoverage(coverage));this.seen.add(id);
   }
+  /** Called for nearby canonical candidates, including unresolved near samples.
+   * Only this bounded neighbourhood needs the exact rotated-bound check. */
+  observeClose(id:string,eye:THREE.Vector3){
+    if(!this.group.visible)return;const index=this.slots.get(id);if(index===undefined)return;
+    const height=this.renderer.positions.getW(index);if(height<=0||this.body.water>0&&this.heights[index]<=this.water)return;
+    this.rotation.fromArray(this.renderer.rotations.array,index*4);
+    this.position.fromArray(LEGACY_TREE_BOUND.center).multiplyScalar(height).applyQuaternion(this.rotation);
+    this.position.x+=this.bodyPositions[index*3]-eye.x*this.body.radiusM;
+    this.position.y+=this.bodyPositions[index*3+1]-eye.y*this.body.radiusM;
+    this.position.z+=this.bodyPositions[index*3+2]-eye.z*this.body.radiusM;
+    if(this.position.length()<=Math.hypot(...LEGACY_TREE_BOUND.extent)*height*1.1)this.closeCandidates.push(id);
+  }
   finish(){
     if(!this.group.visible)return;
     for(const id of this.previous)if(!this.seen.has(id)){const index=this.slots.get(id);if(index!==undefined)this.renderer.setOwnership(index,0);}
     const old=this.previous;this.previous=this.seen;this.seen=old;this.uploadBytes+=this.renderer.commit();
+    const edge=quantizeForestCoverage(this.renderer.uniforms.treeAltitudeCoverage.value);
+    for(const id of this.closeCandidates){const index=this.slots.get(id);if(index!==undefined&&this.renderer.ownership.array[index]<edge)this.farForcedClose++;}
   }
   diagnostics(){return {enabled:this.group.visible,ready:this.ready,context:this.context,generation:this.generation,patches:this.installed.size,trees:this.slots.size,
     selectedPatches:this.order.length,queuedPatches:this.pending.length,jobsInFlight:Number(!!this.request),selectionPending:!!this.selection,
     installedThisFrame:this.installedThisFrame,installMs:this.installMs,selectionMs:this.selectionMs,selectionApplyMs:this.selectionApplyMs,uploadBytes:this.uploadBytes,
     failures:this.failures,workerRestarts:this.workerRestarts,capacityMisses:this.capacityMisses,slots:this.allocator.diagnostics(),rebasePending:!!this.rebase,
-    nearPresentNotInCensus:this.nearPresentNotInCensus,nearAbsentInCensus:this.nearAbsentInCensus};}
+    nearPresentNotInCensus:this.nearPresentNotInCensus,nearAbsentInCensus:this.nearAbsentInCensus,
+    farForcedClose:this.farForcedClose,closeCandidateScope:'current near selection',
+    attributeBytes:this.renderer.positions.array.byteLength+this.renderer.rotations.array.byteLength+this.renderer.parameters.array.byteLength+this.renderer.ownership.array.byteLength,
+    retainedCoordinateBytes:this.bodyPositions.byteLength+this.heights.byteLength+this.waters.byteLength,
+    rebaseBufferBytes:this.rebase?.positions.byteLength??0};}
   dispose(){this.disposed=true;this.worker?.terminate();this.worker=null;this.renderer.dispose();this.installed.clear();this.slots.clear();this.pending=[];this.group.removeFromParent();}
 }

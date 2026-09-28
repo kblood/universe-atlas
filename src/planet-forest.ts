@@ -277,6 +277,8 @@ export class PlanetForest {
     for(const updates of this.updates){updates.wanted.length=0;updates.wantedCoverage.length=0;updates.wantedIds.clear();}
     const altitudeFade=1-THREE.MathUtils.smoothstep(altitudeM,B.forestPrepareAltitudeM-500,B.forestPrepareAltitudeM);
     for(const cell of this.wanted){
+      const dx=cell.direction[0]-groundDirection[0],dy=cell.direction[1]-groundDirection[1],dz=cell.direction[2]-groundDirection[2];
+      if((dx*dx+dy*dy+dz*dz)*r*r<100*100)this.fullCanopy?.observeClose(cell.id,eye);
       const resident=this.cache.get(cell.id);if(!resident)continue;
       resident.patchKey??=forestCellPatchKey(cell.id);this.fullCanopy?.noteNear(cell.id,resident.patchKey,resident.present,resident.water);
       if(!resident.present)continue;

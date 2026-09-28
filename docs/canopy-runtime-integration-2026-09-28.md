@@ -48,3 +48,21 @@ independent Luna acceptance and Opus implementation review remain required.
 Selection application currently costs about 7 ms occasionally; steady CPU
 forest iteration and terrain/life costs need improvement. No representative
 midrange hardware measurement or authored realistic asset acceptance exists.
+
+## Host hardening follow-up
+
+Luna found a full-cache water refresh case where a larger replacement patch
+could never reserve space while its obsolete predecessor remained resident.
+The host now tries reservation first, then retires that stale whole patch and
+retries within the same frame. If it still cannot fit, the whole patch falls
+back to the legacy path. No partial patch becomes authoritative.
+
+Fourteen host tests pass, including both replacement outcomes, stale replies
+during movement/water changes, bounded retries and close-crown ownership.
+`farForcedClose` reports unsuppressed close proxies among the current near
+candidate window; it is not a global GPU visibility count. Diagnostics now
+separate instance attribute storage, retained double-precision coordinates and
+temporary rebase storage. JavaScript object/map and worker memory are additional.
+
+Luna's full suite after this correction: 481/485 pass. The four existing
+failures concern time saturation, two version expectations and horizon gating.
