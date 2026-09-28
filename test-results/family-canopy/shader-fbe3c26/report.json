@@ -1,0 +1,7 @@
+{
+  "commit": "fbe3c2626ead2eee118661a32a584ce2914aa5eb",
+  "scope": "isolated actual-family shader compile and render, not game acceptance",
+  "errors": [],
+  "ok": false,
+  "failure": "Error: page.evaluate: Error: Tree vertex contains non-finite data or wind outside [0,1]\n    at deriveTreeCanopyMetadata (http://127.0.0.1:5197/src/tree-canopy-profile.ts:60:96)\n    at loadTreeAssetFamily (http://127.0.0.1:5197/src/tree-asset.ts:198:26)\n    at async eval (eval at evaluate (:303:30), <anonymous>:9:74)\n    at async <anonymous>:329:30"
+}

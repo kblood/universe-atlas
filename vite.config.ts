@@ -11,6 +11,11 @@ export default defineConfig({
     },null,2)});
     for(const fileName of [
       'docs/family-canopy-2026-09-28.md',
+      'test-results/family-canopy/README.md','test-results/family-canopy/shader-smoke.mjs',
+      'test-results/family-canopy/browser-fixes-cpu.log',
+      'test-results/family-canopy/shader-fbe3c26/report.json',
+      'test-results/family-canopy/shader-stride-fix/report.json',
+      'test-results/family-canopy/shader-ee26efa/report.json','test-results/family-canopy/shader-ee26efa/families.png',
       'docs/opus-near-far-family-assessment-2026-09-28.md',
       'test-results/opus-near-far-family-review/review.md',
       'test-results/opus-near-far-family-review/inputs.json',

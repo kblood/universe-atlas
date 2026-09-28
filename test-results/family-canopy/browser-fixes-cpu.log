@@ -1,0 +1,17 @@
+✔ family profile updates uniforms and packed appearance updates only the existing parameter channel (3.2356ms)
+✔ invalid profile is rejected before changing the active family uniforms (0.458ms)
+✔ Lambert shader composes family shape, linear color and conservative bounds with legacy fallback (1.1489ms)
+✔ interleaved GLTF vertex attributes produce the same profile and bounds as separate arrays (2.6424ms)
+✔ analytic profile uses four deterministic reference-height bands and metric card extent (0.9128ms)
+✔ guaranteed sphere contains every actual Oak and Pine LOD vertex at 10, 16, and 22 m under both extreme wind phases (183.9092ms)
+✔ alpha-weighted color mean decodes straight sRGB before averaging (2.1593ms)
+✔ base-color statistics apply linear material factor and pixel alpha cutoff coverage (1.0741ms)
+✔ invalid geometry, attributes, wind, and color inputs are rejected (0.8687ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 435.0257

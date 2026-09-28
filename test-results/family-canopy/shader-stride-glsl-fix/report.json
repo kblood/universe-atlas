@@ -1,0 +1,329 @@
+{
+  "commit": "fbe3c2626ead2eee118661a32a584ce2914aa5eb",
+  "scope": "isolated actual-family shader compile and render, not game acceptance",
+  "errors": [],
+  "result": {
+    "families": [
+      {
+        "kind": "branching",
+        "presentation": {
+          "enabled": true,
+          "lod0Profile": {
+            "referenceHeightM": 16,
+            "bands": [
+              {
+                "centerM": [
+                  -0.14753380688753995,
+                  3.7575758695602417,
+                  -2.9214032996784556
+                ],
+                "minY_M": 3.557729482650757,
+                "maxY_M": 3.9574222564697266,
+                "halfHeightM": 0.19984638690948486,
+                "populated": true,
+                "radiusM": 0.25876187025204567,
+                "count": 88
+              },
+              {
+                "centerM": [
+                  -0.3248116631700922,
+                  6.017857551574707,
+                  -1.08331255160289
+                ],
+                "minY_M": 4.037521839141846,
+                "maxY_M": 7.998193264007568,
+                "halfHeightM": 1.9803357124328613,
+                "populated": true,
+                "radiusM": 3.9568941010350507,
+                "count": 6952
+              },
+              {
+                "centerM": [
+                  -0.53311724749176,
+                  9.995719909667969,
+                  0.04229531440710484
+                ],
+                "minY_M": 8.004982948303223,
+                "maxY_M": 11.986456871032715,
+                "halfHeightM": 1.990736961364746,
+                "populated": true,
+                "radiusM": 3.5233254132901557,
+                "count": 12848
+              },
+              {
+                "centerM": [
+                  -0.2524276828800125,
+                  13.365409851074219,
+                  0.2336146610015575
+                ],
+                "minY_M": 12.013081550598145,
+                "maxY_M": 14.717738151550293,
+                "halfHeightM": 1.3523283004760742,
+                "populated": true,
+                "radiusM": 2.5804309952021276,
+                "count": 1392
+              }
+            ],
+            "maxLeafOffsetM": 1.298889995039597,
+            "radiusStatistic": "p90-visual-only"
+          },
+          "lod1Profile": {
+            "referenceHeightM": 16,
+            "bands": [
+              {
+                "centerM": [
+                  -0.14384163419405618,
+                  3.744940757751465,
+                  -2.9674156109491983
+                ],
+                "minY_M": 3.557729482650757,
+                "maxY_M": 3.932152032852173,
+                "halfHeightM": 0.187211275100708,
+                "populated": true,
+                "radiusM": 0.2715921396069669,
+                "count": 24
+              },
+              {
+                "centerM": [
+                  -0.3356933899763303,
+                  6.016611099243164,
+                  -1.0880580400914401
+                ],
+                "minY_M": 4.037521839141846,
+                "maxY_M": 7.995700359344482,
+                "halfHeightM": 1.9790892601013184,
+                "populated": true,
+                "radiusM": 3.9583075351035495,
+                "count": 1728
+              },
+              {
+                "centerM": [
+                  -0.5272788888662311,
+                  9.990653991699219,
+                  0.04511809979529487
+                ],
+                "minY_M": 8.004982948303223,
+                "maxY_M": 11.976325035095215,
+                "halfHeightM": 1.985671043395996,
+                "populated": true,
+                "radiusM": 3.5310840768108975,
+                "count": 3212
+              },
+              {
+                "centerM": [
+                  -0.2622028019362956,
+                  13.365409851074219,
+                  0.22510262656423233
+                ],
+                "minY_M": 12.013081550598145,
+                "maxY_M": 14.717738151550293,
+                "halfHeightM": 1.3523283004760742,
+                "populated": true,
+                "radiusM": 2.5694276577424313,
+                "count": 356
+              }
+            ],
+            "maxLeafOffsetM": 1.2988883411936138,
+            "radiusStatistic": "p90-visual-only"
+          },
+          "conservativeBounds": {
+            "centerM": [
+              0,
+              0,
+              0
+            ],
+            "radiusM": 23.68822338591605,
+            "heightRangeM": [
+              10,
+              22
+            ],
+            "maxWindAngleRad": 0.12
+          },
+          "barkLinearRgb": [
+            0.22575407715985008,
+            0.17336463161143806,
+            0.12498745923991807
+          ],
+          "foliageLinearRgb": [
+            0.10109128744792419,
+            0.2247408406510285,
+            0.031654273822880774
+          ],
+          "alphaCutoff": 0.5,
+          "baseCoverage": 0.18970775604248047
+        }
+      },
+      {
+        "kind": "spire",
+        "presentation": {
+          "enabled": true,
+          "lod0Profile": {
+            "referenceHeightM": 16,
+            "bands": [
+              {
+                "centerM": [
+                  -0.09306344384741452,
+                  3.0118467807769775,
+                  -1.07114732955341
+                ],
+                "minY_M": 2.0284883975982666,
+                "maxY_M": 3.9952051639556885,
+                "halfHeightM": 0.9833583831787109,
+                "populated": true,
+                "radiusM": 4.209722981686316,
+                "count": 1728
+              },
+              {
+                "centerM": [
+                  -0.19391877849002023,
+                  5.999766826629639,
+                  0.01705150620911714
+                ],
+                "minY_M": 4.0020060539245605,
+                "maxY_M": 7.997527599334717,
+                "halfHeightM": 1.9977607727050781,
+                "populated": true,
+                "radiusM": 2.9584398068562363,
+                "count": 6752
+              },
+              {
+                "centerM": [
+                  0.17409640488812678,
+                  10.002533912658691,
+                  0.2784725341274702
+                ],
+                "minY_M": 8.005476951599121,
+                "maxY_M": 11.999590873718262,
+                "halfHeightM": 1.9970569610595703,
+                "populated": true,
+                "radiusM": 1.6416008583633532,
+                "count": 6480
+              },
+              {
+                "centerM": [
+                  0.4581787115231283,
+                  13.357833862304688,
+                  0.5222411802385823
+                ],
+                "minY_M": 12.002575874328613,
+                "maxY_M": 14.713091850280762,
+                "halfHeightM": 1.3552579879760742,
+                "populated": true,
+                "radiusM": 0.5507905257621206,
+                "count": 4720
+              }
+            ],
+            "maxLeafOffsetM": 1.2988884162060725,
+            "radiusStatistic": "p90-visual-only"
+          },
+          "lod1Profile": {
+            "referenceHeightM": 16,
+            "bands": [
+              {
+                "centerM": [
+                  -0.05442480068161802,
+                  3.020578980445862,
+                  -1.0054973341384024
+                ],
+                "minY_M": 2.087491989135742,
+                "maxY_M": 3.9536659717559814,
+                "halfHeightM": 0.9330869913101196,
+                "populated": true,
+                "radiusM": 4.007996627570408,
+                "count": 212
+              },
+              {
+                "centerM": [
+                  -0.17448958925907257,
+                  6.0026538372039795,
+                  0.014314694174507994
+                ],
+                "minY_M": 4.007780075073242,
+                "maxY_M": 7.997527599334717,
+                "halfHeightM": 1.9948737621307373,
+                "populated": true,
+                "radiusM": 2.925360092006353,
+                "count": 844
+              },
+              {
+                "centerM": [
+                  0.17022279327986578,
+                  9.97880506515503,
+                  0.2662039400363055
+                ],
+                "minY_M": 8.005476951599121,
+                "maxY_M": 11.952133178710938,
+                "halfHeightM": 1.9733281135559082,
+                "populated": true,
+                "radiusM": 1.6374941168548678,
+                "count": 808
+              },
+              {
+                "centerM": [
+                  0.4530379329026745,
+                  13.360067367553711,
+                  0.5212595350290304
+                ],
+                "minY_M": 12.008418083190918,
+                "maxY_M": 14.711716651916504,
+                "halfHeightM": 1.351649284362793,
+                "populated": true,
+                "radiusM": 0.5671831924661431,
+                "count": 596
+              }
+            ],
+            "maxLeafOffsetM": 1.2988875520448695,
+            "radiusStatistic": "p90-visual-only"
+          },
+          "conservativeBounds": {
+            "centerM": [
+              0,
+              0,
+              0
+            ],
+            "radiusM": 21.709021474346244,
+            "heightRangeM": [
+              10,
+              22
+            ],
+            "maxWindAngleRad": 0.12
+          },
+          "barkLinearRgb": [
+            0.22575407715985008,
+            0.17336463161143806,
+            0.12498745923991807
+          ],
+          "foliageLinearRgb": [
+            0.08187955938802612,
+            0.14849181902514946,
+            0.03013967874798247
+          ],
+          "alphaCutoff": 0.5,
+          "baseCoverage": 0.04645085334777832
+        }
+      }
+    ],
+    "draws": 1,
+    "triangles": 4,
+    "glError": 0,
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "programs": [
+      {
+        "name": "",
+        "diagnostics": {
+          "runnable": true,
+          "programLog": "(1804,41-53): warning X3081: comma expression used where a vector constructor may have been intended\n\n\n\u0000",
+          "vertexShader": {
+            "log": "",
+            "prefix": "\n#define attribute in\n#define varying out\n#define texture2D texture\nprecision highp float;\n\tprecision highp int;\n\tprecision highp sampler2D;\n\tprecision highp samplerCube;\n\tprecision highp sampler3D;\n\tprecision highp sampler2DArray;\n\tprecision highp sampler2DShadow;\n\tprecision highp samplerCubeShadow;\n\tprecision highp sampler2DArrayShadow;\n\tprecision highp isampler2D;\n\tprecision highp isampler3D;\n\tprecision highp isamplerCube;\n\tprecision highp isampler2DArray;\n\tprecision highp usampler2D;\n\tprecision highp usampler3D;\n\tprecision highp usamplerCube;\n\tprecision highp usampler2DArray;\n\t\n#define HIGH_PRECISION\n#define SHADER_TYPE MeshLambertMaterial\n#define SHADER_NAME \n#define USE_LOGARITHMIC_DEPTH_BUFFER\nuniform mat4 modelMatrix;\nuniform mat4 modelViewMatrix;\nuniform mat4 projectionMatrix;\nuniform mat4 viewMatrix;\nuniform mat3 normalMatrix;\nuniform vec3 cameraPosition;\nuniform bool isOrthographic;\n#ifdef USE_INSTANCING\n\tattribute mat4 instanceMatrix;\n#endif\n#ifdef USE_INSTANCING_COLOR\n\tattribute vec3 instanceColor;\n#endif\n#ifdef USE_INSTANCING_MORPH\n\tuniform sampler2D morphTexture;\n#endif\nattribute vec3 position;\nattribute vec3 normal;\nattribute vec2 uv;\n#ifdef USE_UV1\n\tattribute vec2 uv1;\n#endif\n#ifdef USE_UV2\n\tattribute vec2 uv2;\n#endif\n#ifdef USE_UV3\n\tattribute vec2 uv3;\n#endif\n#ifdef USE_TANGENT\n\tattribute vec4 tangent;\n#endif\n#if defined( USE_COLOR_ALPHA )\n\tattribute vec4 color;\n#elif defined( USE_COLOR )\n\tattribute vec3 color;\n#endif\n#ifdef USE_SKINNING\n\tattribute vec4 skinIndex;\n\tattribute vec4 skinWeight;\n#endif\n\n"
+          },
+          "fragmentShader": {
+            "log": "",
+            "prefix": "#define varying in\nlayout(location = 0) out highp vec4 pc_fragColor;\n#define gl_FragColor pc_fragColor\n#define gl_FragDepthEXT gl_FragDepth\n#define texture2D texture\n#define textureCube texture\n#define texture2DProj textureProj\n#define texture2DLodEXT textureLod\n#define texture2DProjLodEXT textureProjLod\n#define textureCubeLodEXT textureLod\n#define texture2DGradEXT textureGrad\n#define texture2DProjGradEXT textureProjGrad\n#define textureCubeGradEXT textureGrad\nprecision highp float;\n\tprecision highp int;\n\tprecision highp sampler2D;\n\tprecision highp samplerCube;\n\tprecision highp sampler3D;\n\tprecision highp sampler2DArray;\n\tprecision highp sampler2DShadow;\n\tprecision highp samplerCubeShadow;\n\tprecision highp sampler2DArrayShadow;\n\tprecision highp isampler2D;\n\tprecision highp isampler3D;\n\tprecision highp isamplerCube;\n\tprecision highp isampler2DArray;\n\tprecision highp usampler2D;\n\tprecision highp usampler3D;\n\tprecision highp usamplerCube;\n\tprecision highp usampler2DArray;\n\t\n#define HIGH_PRECISION\n#define SHADER_TYPE MeshLambertMaterial\n#define SHADER_NAME \n#define ALPHA_TO_COVERAGE\n#define USE_LOGARITHMIC_DEPTH_BUFFER\nuniform mat4 viewMatrix;\nuniform vec3 cameraPosition;\nuniform bool isOrthographic;\nvec4 LinearTransferOETF( in vec4 value ) {\n\treturn value;\n}\nvec4 sRGBTransferEOTF( in vec4 value ) {\n\treturn vec4( mix( pow( value.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), value.rgb * 0.0773993808, vec3( lessThanEqual( value.rgb, vec3( 0.04045 ) ) ) ), value.a );\n}\nvec4 sRGBTransferOETF( in vec4 value ) {\n\treturn vec4( mix( pow( value.rgb, vec3( 0.41666 ) ) * 1.055 - vec3( 0.055 ), value.rgb * 12.92, vec3( lessThanEqual( value.rgb, vec3( 0.0031308 ) ) ) ), value.a );\n}\nvec4 linearToOutputTexel( vec4 value ) {\n\treturn sRGBTransferOETF( vec4( value.rgb * mat3( 1.0000,-0.0000,-0.0000,-0.0000,1.0000,0.0000,0.0000,0.0000,1.0000 ), value.a ) );\n}\nfloat luminance( const in vec3 rgb ) {\n\tconst vec3 weights = vec3( 0.2126, 0.7152, 0.0722 );\n\treturn dot( weights, rgb );\n}\n\n"
+          }
+        }
+      }
+    ]
+  },
+  "ok": true
+}
