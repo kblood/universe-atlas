@@ -13,7 +13,7 @@
     "done": true,
     "elapsedMs": 12,
     "slices": 4,
-    "maxSliceMs": 4.600000001490116,
+    "maxSliceMs": 4.100000001490116,
     "cache": {
       "context": "756f27a1c3d04a0e1afb36da42985dcf72101b8d6e89d36f7b15bdcb2bceb67b",
       "family": "e5cc1d89f84fcfad7c773fa58ecadacc21f381bca8f6995901eaabba91ca6a54",
@@ -35,7 +35,7 @@
     "requestId": 2,
     "context": "756f27a1c3d04a0e1afb36da42985dcf72101b8d6e89d36f7b15bdcb2bceb67b",
     "done": true,
-    "elapsedMs": 0.30000000074505806,
+    "elapsedMs": 0.19999999925494194,
     "slices": 2,
     "maxSliceMs": 0.10000000149011612,
     "cache": {
@@ -78,7 +78,7 @@
     "rangeM": 1200,
     "patches": 536,
     "cellsChecked": 13818,
-    "selectionMs": 2.699999999254942
+    "selectionMs": 1.300000000745058
   },
   "checks": [
     "exact Node/browser equality",

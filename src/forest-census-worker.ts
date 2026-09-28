@@ -58,13 +58,17 @@ self.onmessage=async({data})=>{
   try{
     if(data.type==='configure'){
       if(data.generation<=generation)return;
-      const previous=census??retainedCensus;
-      cancel();generation=data.generation;requestId=0;selectionRequest=0;census=null;radiusM=0;retainedCensus=previous;
+      const previous=census??retainedCensus,previousRadius=radiusM;
+      cancel();generation=data.generation;requestId=0;selectionRequest=0;census=null;retainedCensus=previous;
       const ownGeneration=generation;let source:ForestCensus;
-      try{source=await createForestCensus(data.body,data.waterLevelM,undefined,undefined,previous);}
+      try{
+        if(data.body)source=await createForestCensus(data.body,data.waterLevelM,undefined,undefined,previous);
+        else if(previous&&data.family===previous.family)source=await previous.atWater(data.waterLevelM);
+        else throw new Error('Water configure requires a matching retained body family');
+      }
       catch(error){if(ownGeneration===generation)fail(error,'configure');return;}
       if(ownGeneration!==generation)return;
-      census=source;retainedCensus=source;radiusM=data.body.radiusM;self.postMessage({type:'ready',generation,context:source.context,family:source.family,n:source.n,cache:source.diagnostics()});return;
+      census=source;retainedCensus=source;radiusM=data.body?.radiusM??previousRadius;self.postMessage({type:'ready',generation,context:source.context,family:source.family,n:source.n,cache:source.diagnostics()});return;
     }
     if(data.generation!==generation){
       if(data.generation>generation&&(data.type==='patches'||data.type==='select'))self.postMessage({type:'error',phase:data.type==='select'?'selection':'request',generation:data.generation,

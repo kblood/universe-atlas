@@ -88,6 +88,7 @@ export class PlanetForest {
   private classify:ReturnType<typeof biomeClassifier>;
   private habitat:ReturnType<typeof forestHabitat>;
   private water=NaN;
+  private sampledRivers:Body['canonicalRivers'];private sampledHydrology:Body['hydrology'];
   private matrix=new THREE.Matrix4();
   private position=new THREE.Vector3();
   private scale=new THREE.Vector3();
@@ -247,7 +248,10 @@ export class PlanetForest {
       this.immersiveMaterial=immersive;
       for(const mesh of [...this.meshes,this.canopy]){const material=mesh.material as THREE.MeshLambertMaterial;material.alphaHash=immersive;material.needsUpdate=true;}
     }
-    if(water!==this.water){
+    const hydrologyChanged=this.sampledRivers!==this.body.canonicalRivers||this.sampledHydrology!==this.body.hydrology;
+    if(water!==this.water||hydrologyChanged){
+      this.sampledRivers=this.body.canonicalRivers;this.sampledHydrology=this.body.hydrology;
+      if(hydrologyChanged)for(const resident of this.cache.values())resident.water=NaN;
       this.water=water;this.sample=terrainSampler(this.body,undefined,undefined,undefined,water);
       this.classify=biomeClassifier(this.body,water);
       this.habitat=forestHabitat(this.sample,this.classify,this.body.radiusM);

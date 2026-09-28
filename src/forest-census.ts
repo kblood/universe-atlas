@@ -13,6 +13,7 @@ export const FOREST_CENSUS_VERSION='forest-census-3';
  * ground height and representative flag. An absent record in a COMPLETE patch
  * proves absence; a pending/missing patch must never be treated as empty. */
 export const FOREST_CENSUS_STRIDE=9;
+const sha256=async(text:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text))),value=>value.toString(16).padStart(2,'0')).join('');
 export type ForestCensusPatch={
   context:string;address:ForestPatchAddress;testedCells:number;candidates:number;
   present:number;representatives:number;records:Float64Array;
@@ -58,15 +59,19 @@ export async function createForestCensus(body:Body,waterLevelM:number,maxBytes=4
     TERRAIN_VERSION,REGIONAL_LANDFORM_VERSION,LANDFORM_VERSION,BIOME_VERSION,RIVER_SURFACE_VERSION,FOREST_CELL_M,
     FOREST_PATCH_VERSION,FOREST_PATCH_SIDE,canonical(body)]);
   const snapshot=structuredClone(body);
-  const hash=async(text:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text))),value=>value.toString(16).padStart(2,'0')).join('');
-  const family=await hash(description),context=await hash(JSON.stringify([family,waterLevelM]));
+  const family=await sha256(description);
+  return censusForSnapshot(snapshot,family,waterLevelM,maxBytes,maxPatches,previous);
+}
+async function censusForSnapshot(snapshot:Body,family:string,waterLevelM:number,maxBytes:number,maxPatches:number,previous?:ForestCensus|null){
+  if(!Number.isFinite(waterLevelM))throw new Error('Invalid forest water level');
+  const context=await sha256(JSON.stringify([family,waterLevelM]));
   const validity=new ForestWaterValidity(waterLevelM);
   const sample=terrainSampler(snapshot,undefined,undefined,false,waterLevelM,validity.observe);
   const tracked:typeof sample=d=>{const result=sample(d);if(snapshot.water)validity.observe(result.groundHeightM);return result;};
   // Track every actual query, including probes whose slope rejects the tree.
   // Recording probe ground heights too is conservative (only centres classify).
   const habitat=forestHabitat(tracked,biomeClassifier(snapshot,waterLevelM),snapshot.radiusM,true);
-  const census=new ForestCensus(context,snapshot.seed,Math.ceil(2*snapshot.radiusM/FOREST_CELL_M),habitat,maxBytes,maxPatches,{family,validity});
+  const census=new ForestCensus(context,snapshot.seed,Math.ceil(2*snapshot.radiusM/FOREST_CELL_M),habitat,maxBytes,maxPatches,{family,validity,snapshot});
   if(previous)census.inherit(previous,waterLevelM);return census;
 }
 
@@ -79,13 +84,19 @@ export class ForestCensus {
   private bytes=0;private hits=0;private misses=0;private evictions=0;private sampled=0;
   readonly context:string;readonly n:number;readonly family:string|null;
   private validity:ForestWaterValidity|null;private reusedPatches=0;
+  private snapshot:Body|null;
   private seed:string;private habitat:ReturnType<typeof forestHabitat>;private maxBytes:number;private maxPatches:number;
   constructor(context:string,seed:string,n:number,
-    habitat:ReturnType<typeof forestHabitat>,maxBytes:number,maxPatches:number,options?:{family:string;validity:ForestWaterValidity}){
+    habitat:ReturnType<typeof forestHabitat>,maxBytes:number,maxPatches:number,options?:{family:string;validity:ForestWaterValidity;snapshot?:Body}){
     if(!Number.isSafeInteger(n)||n<1||!Number.isSafeInteger(maxBytes)||maxBytes<0||
       !Number.isSafeInteger(maxPatches)||maxPatches<0)throw new Error('Invalid forest census limits');
     this.context=context;this.seed=seed;this.n=n;this.habitat=habitat;this.maxBytes=maxBytes;this.maxPatches=maxPatches;
-    this.family=options?.family??null;this.validity=options?.validity??null;
+    this.family=options?.family??null;this.validity=options?.validity??null;this.snapshot=options?.snapshot??null;
+  }
+  /** Uses only the worker-owned immutable snapshot; never accepts a new body. */
+  atWater(water:number){
+    if(!this.snapshot||!this.family)throw new Error('Census has no reusable body snapshot');
+    return censusForSnapshot(this.snapshot,this.family,water,this.maxBytes,this.maxPatches,this);
   }
   private key(address:ForestPatchAddress){return `${address.face}/${address.n}/${address.x}/${address.y}`;}
   private copy(patch:ForestCensusPatch):ForestCensusPatch{return {...patch,address:{...patch.address},records:patch.records.slice(),

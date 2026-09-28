@@ -34,7 +34,9 @@ export class PlanetCanopy {
   private family:string|null=null;private reuse:MapIterator<Installed>|null=null;private reusedPatches=0;
   private configuredAt=0;private terminalFailure=false;private timeouts=0;
   private streaming=false;
-  private water=NaN;private center=new THREE.Vector3(Infinity,Infinity,Infinity);
+  private water=NaN;private configuredWater=NaN;
+  private configuredRivers:Body['canonicalRivers'];private configuredHydrology:Body['hydrology'];
+  private center=new THREE.Vector3(Infinity,Infinity,Infinity);
   private origin=new THREE.Vector3();private originReady=false;
   private bodyPositions:Float64Array;private heights:Float64Array;
   private rebase:{origin:THREE.Vector3;positions:Float32Array;cursor:number}|null=null;
@@ -57,15 +59,18 @@ export class PlanetCanopy {
       const worker=new Worker(new URL('./forest-census-worker.ts',import.meta.url),{type:'module'});this.worker=worker;
       worker.onmessage=({data})=>{if(this.worker===worker){try{this.receive(data);}catch{this.failWorker(worker);}}};
       worker.onerror=e=>{e.preventDefault();this.failWorker(worker);};worker.onmessageerror=()=>this.failWorker(worker);
-      this.configure();
+      this.configure(true);
     }catch{this.worker=null;this.failures++;this.terminalFailure=true;this.streaming=false;this.group.visible=false;}
   }
-  private configure(){
+  private configure(forceBody=false){
+    const sameBody=this.configuredRivers===this.body.canonicalRivers&&this.configuredHydrology===this.body.hydrology;
+    const family=!forceBody&&sameBody?this.family:null;
+    this.configuredWater=this.water;this.configuredRivers=this.body.canonicalRivers;this.configuredHydrology=this.body.hydrology;
     this.generation++;this.configuredAt=performance.now();this.ready=false;this.context='';this.request=null;this.selection=null;this.selectionApply=null;this.pending=[];this.retries.clear();this.reuse=null;this.reusedPatches=0;
     // Patch addresses depend on position, not water. Keep the existing window.
     if(!this.order.length)this.center.set(Infinity,Infinity,Infinity);
     this.requestCursor=0;this.retryWakeAt=Infinity;this.selectionRetryAt=0;
-    this.worker?.postMessage({type:'configure',generation:this.generation,body:this.body,waterLevelM:this.water});
+    this.worker?.postMessage({type:'configure',generation:this.generation,...(family?{family}:{body:this.body}),waterLevelM:this.configuredWater});
   }
   private failWorker(worker:Worker){
     if(this.worker!==worker)return;worker.terminate();this.worker=null;this.ready=false;this.request=null;this.selection=null;this.selectionApply=null;this.pending=[];this.reuse=null;this.failures++;
@@ -108,7 +113,7 @@ export class PlanetCanopy {
       if(!request.keys.delete(key)||p.context!==this.context||!(p.records instanceof Float64Array)||p.records.length!==p.present*FOREST_CENSUS_STRIDE||
         !Number.isInteger(p.present)||p.present<0||p.present>64||p.testedCells!==tested||
         !Number.isInteger(p.candidates)||p.candidates<p.present||p.candidates>tested||!Number.isInteger(p.representatives)||p.representatives<0||p.representatives>p.present)throw new Error('Invalid census patch');
-      if(p.waterInterval!==undefined&&(!validForestWaterInterval(p.waterInterval)||!forestWaterIntervalContains(p.waterInterval,this.water)))throw new Error('Invalid census water interval');
+      if(p.waterInterval!==undefined&&(!validForestWaterInterval(p.waterInterval)||!forestWaterIntervalContains(p.waterInterval,this.configuredWater)))throw new Error('Invalid census water interval');
       const offsets=new Set<number>();let representatives=0;
       for(let i=0;i<p.records.length;i+=FOREST_CENSUS_STRIDE){
         const r=p.records.subarray(i,i+FOREST_CENSUS_STRIDE),offset=r[0];
@@ -157,6 +162,7 @@ export class PlanetCanopy {
   }
   private install(patch:ForestCensusPatch){
     const key=patchKey(patch.address);if(!this.desired.has(key))return;
+    if(this.selectionApply&&this.selectionApply.phase!=='addresses'&&!this.selectionApply.desired.has(key))return;
     let range=this.allocator.allocate(patch.present);
     // A full cache must not pin stale water patches forever. Retire and retry
     // within this same frame transaction; if it still cannot fit, that entire
@@ -175,13 +181,13 @@ export class PlanetCanopy {
       this.position.sub(this.origin);treeQuaternion(this.direction,r[6],this.rotation,this.yaw);
       this.renderer.write(index,this.position,r[5],this.rotation,r[4],r[7]);
     }
-    this.installed.set(key,{address:patch.address,range,ids,water:this.water,family:this.family,waterInterval:patch.waterInterval});this.retries.delete(key);this.installedThisFrame+=patch.present;
+    this.installed.set(key,{address:patch.address,range,ids,water:this.configuredWater,family:this.family,waterInterval:patch.waterInterval});this.retries.delete(key);this.installedThisFrame+=patch.present;
   }
   /** Call after the near render origin is chosen, before the near draw loop. */
   prepare(eye:THREE.Vector3,ground:V3,altitudeM:number,water:number,enabled:boolean,immersive:boolean,nearOrigin:THREE.Vector3){
     if(!Number.isFinite(water))throw new Error('Canopy water level must be finite');
     const now=performance.now();
-    if(this.worker&&(!this.ready&&now-this.configuredAt>10000||this.request&&now-this.request.progressAt>10000||this.selection&&now-this.selection.started>10000)){
+    if(this.worker&&(!this.ready&&now-this.configuredAt>10000||this.request&&now-this.request.progressAt>10000||this.selection&&!this.selectionApply&&now-this.selection.started>10000)){
       this.timeouts++;this.failWorker(this.worker);
     }
     this.streaming=enabled&&!immersive&&!this.terminalFailure&&altitudeM<PLANET_DETAIL.forestStreamAltitudeM;
@@ -192,7 +198,12 @@ export class PlanetCanopy {
     this.renderer.uniforms.treeAltitudeCoverage.value=1-THREE.MathUtils.smoothstep(altitudeM,3000,3500);
     this.renderer.uniforms.treeWater.value=water;this.renderer.uniforms.treeHasWater.value=Number(this.body.water>0);
     if(!this.originReady){this.origin.set(...ground).multiplyScalar(this.body.radiusM);this.originReady=true;}
-    if(water!==this.water){this.water=water;if(this.worker){try{this.configure();}catch{this.failWorker(this.worker);}}}
+    this.water=water;
+    const bodyChanged=this.configuredRivers!==this.body.canonicalRivers||this.configuredHydrology!==this.body.hydrology;
+    // One configuration in flight. Target water still updates the shader every
+    // frame; replies are validated against their configured water snapshot.
+    if(this.worker&&this.ready&&(water!==this.configuredWater||bodyChanged)){try{this.configure();}catch{this.failWorker(this.worker);}}
+    if(bodyChanged)this.family=null;
     if(!this.worker&&this.failures===0)this.start();
     if(this.ready&&this.worker&&!this.selection&&performance.now()>=this.selectionRetryAt&&this.direction.set(...ground).distanceTo(this.center)*this.body.radiusM>150){
       this.selection={id:++this.serial,center:[...ground],started:performance.now()};
@@ -282,7 +293,7 @@ export class PlanetCanopy {
     const edge=quantizeForestCoverage(this.renderer.uniforms.treeAltitudeCoverage.value);
     for(const id of this.closeCandidates){const index=this.slots.get(id);if(index!==undefined&&this.renderer.ownership.array[index]<edge)this.farForcedClose++;}
   }
-  diagnostics(){return {enabled:this.group.visible,streaming:this.streaming,ready:this.ready,context:this.context,family:this.family,reusedPatches:this.reusedPatches,reusePending:!!this.reuse,generation:this.generation,patches:this.installed.size,trees:this.slots.size,
+  diagnostics(){return {enabled:this.group.visible,streaming:this.streaming,ready:this.ready,water:this.water,configuredWater:this.configuredWater,context:this.context,family:this.family,reusedPatches:this.reusedPatches,reusePending:!!this.reuse,generation:this.generation,patches:this.installed.size,trees:this.slots.size,
     selectedPatches:this.order.length,queuedPatches:this.pending.length,jobsInFlight:Number(!!this.request),selectionPending:!!this.selection,
     installedThisFrame:this.installedThisFrame,installMs:this.installMs,selectionMs:this.selectionMs,selectionApplyMs:this.selectionApplyMs,selectionApplySliceMs:this.selectionApplySliceMs,selectionApplyPending:!!this.selectionApply,uploadBytes:this.uploadBytes,
     failures:this.failures,workerRestarts:this.workerRestarts,terminalFailure:this.terminalFailure,timeouts:this.timeouts,capacityMisses:this.capacityMisses,slots:this.allocator.diagnostics(),rebasePending:!!this.rebase,

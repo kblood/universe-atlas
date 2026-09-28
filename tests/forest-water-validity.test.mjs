@@ -120,3 +120,19 @@ test('canonical river patch reuses only within its sampled H/G interval',async()
   const fresh=await createForestCensus(riverBody,insideWater);
   assert.deepEqual(complete(fresh,a).records,original.records,'reused and fresh canonical river censuses agree');
 });
+
+test('two water-only census hops reuse exact immutable records through both intervals',async()=>{
+  const first=await createForestCensus(body,300),source=complete(first,address);
+  const second=await first.atWater(1000);
+  assert.equal(second.family,first.family);assert.notEqual(second.context,first.context);
+  assert.equal(second.diagnostics().reusedPatches,1);
+  const secondPatch=complete(second,address);assert.deepEqual(secondPatch.records,source.records);
+  const [lo,hi]=secondPatch.waterInterval,water2=1000<hi?Math.min(1200,(1000+hi)/2):1000;
+  assert.ok(forestWaterIntervalContains(secondPatch.waterInterval,water2));
+  const third=await second.atWater(water2);
+  assert.equal(third.family,first.family);assert.notEqual(third.context,second.context);
+  assert.equal(third.diagnostics().reusedPatches,1);
+  const thirdPatch=complete(third,address),fresh=await createForestCensus(body,water2);
+  assert.deepEqual(thirdPatch.records,source.records);
+  assert.deepEqual(thirdPatch.records,complete(fresh,address).records);
+});

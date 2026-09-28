@@ -1,0 +1,56 @@
+{
+  "regions": 3,
+  "patches": [
+    {
+      "id": "G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/16162/river-region-2",
+      "site": {
+        "face": 3,
+        "n": 577212,
+        "x": 30205,
+        "y": 64259
+      },
+      "candidates": 33,
+      "present": 0,
+      "interval": [
+        -0.7286609376226583,
+        0.053449041485368345
+      ],
+      "riverSamples": 2,
+      "changedGround": 33
+    },
+    {
+      "id": "G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/3386/river-region-2",
+      "site": {
+        "face": 0,
+        "n": 577212,
+        "x": 7674,
+        "y": 58623
+      },
+      "candidates": 15,
+      "present": 0,
+      "interval": [
+        -0.9912448979988522,
+        0.05453550966583543
+      ],
+      "riverSamples": 3,
+      "changedGround": 15
+    },
+    {
+      "id": "G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/15237/river-region-2",
+      "site": {
+        "face": 3,
+        "n": 577212,
+        "x": 54002,
+        "y": 46333
+      },
+      "candidates": 35,
+      "present": 0,
+      "interval": [
+        -0.06822503455083823,
+        0.009520013903684899
+      ],
+      "riverSamples": 6,
+      "changedGround": 35
+    }
+  ]
+}

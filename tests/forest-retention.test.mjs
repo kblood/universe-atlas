@@ -79,6 +79,16 @@ test('selection worker gets one bounded restart and exposes permanent fallback',
     assert.equal(f.diagnostics().workerRestarts,1,'count actual restarts, not rejected restart attempts');
   }finally{f?.dispose();if(OriginalWorker===undefined)delete globalThis.Worker;else globalThis.Worker=OriginalWorker;}
 });
+test('late canonical hydrology attachment refreshes near habitat at unchanged water',()=>{
+  const {f,step}=fixture();f.body={...body};
+  try{
+    step();const residents=[...f.cache.values()],oldSample=f.sample;
+    f.body.canonicalRivers=[];step();
+    assert.notEqual(f.sample,oldSample);assert.equal(f.sampledRivers,f.body.canonicalRivers);
+    assert.ok(residents.every(r=>Number.isNaN(r.water)),'old resident metadata loses current-water authority');
+    assert.ok([...f.cache.values()].some(r=>!residents.includes(r)&&r.water===0),'bounded habitat work replaces old samples');
+  }finally{f.dispose();}
+});
 test('complete distant canopy skips near work while missing or stale water keeps fallback',()=>{
   const {f,step}=fixture();let current=true,notes=0;
   const cell=f.wanted[0],resident=f.cache.get(cell.id);cell.direction=new THREE.Vector3(800/body.radiusM,0,1).normalize().toArray();cell.canopyRepresentative=true;

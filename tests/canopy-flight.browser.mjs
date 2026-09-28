@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
-import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { browserArgs } from './browser-options.mjs';
@@ -12,6 +12,8 @@ const sourceCommit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).tr
 const sourceDirty=execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim().length>0;
 const sourceFiles=['src/planet-canopy.ts','src/planet-forest.ts','src/volumetric-clouds.ts'];
 const sourceFilesSha256=Object.fromEntries(await Promise.all(sourceFiles.map(async path=>[path,createHash('sha256').update(await readFile(path)).digest('hex')])));
+const buildInfo=JSON.parse(await readFile('dist/build-info.json','utf8'));
+const builtAssetSha256=Object.fromEntries(await Promise.all((await readdir('dist/assets')).filter(name=>name.endsWith('.js')).map(async name=>[name,createHash('sha256').update(await readFile(`dist/assets/${name}`)).digest('hex')])));
 const bodyId='G001/C2128,0,1/0/planet/1';
 const params=new URLSearchParams({seed:'LETHRA-001',g:'G001',system:'G001/C2128,0,1/0',body:bodyId,date:'435084631200000032044300000',wv:encodeVersions(CURRENT_VERSIONS)});
 await mkdir(out,{recursive:true});
@@ -29,7 +31,8 @@ const snap=()=>page.evaluate(()=>{
       surfaceJourney:t.surfaceJourney,terrainCruise:t.terrainCruise,surface:t.surface,explorationClock:t.explorationClock,systemUnit:t.systemUnit}:null,
     forest:f?{visible:f.visible,near:f.near,cached:f.cached,pending:f.pending,selectionPending:f.selectionPending,
       matrixWrites:f.matrixWrites,colorWrites:f.colorWrites,coverageWrites:f.coverageWrites,originVersion:f.originVersion,
-      selectionTransfer:f.selectionTransfer,selectionCache:f.selectionCache,fullCanopy:c}:null,
+      selectionTransfer:f.selectionTransfer,selectionCache:f.selectionCache,
+      handoff:f?{candidateCells:f.candidateCells,farOwnedSkipped:f.farOwnedSkipped}:null,fullCanopy:c}:null,
     terrain:tiles?{surfaceReady:tiles.surfaceReady,resident:tiles.resident,pending:tiles.pending,visible:tiles.visible,
       floraPresent:tiles.floraPresentCount,faunaDrawn:tiles.faunaDrawn?.length,faunaTerrainPending:tiles.faunaTerrainPending,
       updateMs:tiles.updateMs,lifeMs:tiles.lifeMs,drawFloraMs:tiles.drawFloraMs,drawFaunaMs:tiles.drawFaunaMs}:null};
@@ -49,6 +52,7 @@ const concise=()=>page.evaluate(()=>{
     terrainClearanceM:t?.surface?.terrainClearance,position:t?.position,heading:t?.heading,systemUnit:t?.systemUnit},
     forest:{visible:f?.visible,near:f?.near,cached:f?.cached,pending:f?.pending,matrixWrites:f?.matrixWrites,colorWrites:f?.colorWrites,
       coverageWrites:f?.coverageWrites,originVersion:f?.originVersion,selectionPending:f?.selectionPending,
+      handoff:f?{candidateCells:f.candidateCells,farOwnedSkipped:f.farOwnedSkipped}:null,
       fullCanopy:c?{context:c.context,generation:c.generation,ready:c.ready,trees:c.trees,patches:c.patches,selectedPatches:c.selectedPatches,
         queuedPatches:c.queuedPatches,jobsInFlight:c.jobsInFlight,selectionPending:c.selectionPending,uploadBytes:c.uploadBytes,
         installedThisFrame:c.installedThisFrame,installMs:c.installMs,selectionMs:c.selectionMs,selectionApplyMs:c.selectionApplyMs,
@@ -138,17 +142,17 @@ try{
   for(const samples of [0,2,4]){await page.evaluate(s=>window.__atlas.setCloudSceneSamples(s),samples);await page.waitForTimeout(1200);report.alpha.push(await captureAlpha(samples));}
   await page.evaluate(()=>{if(window.__canopyTrace)window.__canopyTrace.active=false;});
   report.trace=await page.evaluate(()=>window.__canopyTrace?.samples??[]);
-  const servedModuleSha256=Object.fromEntries(await Promise.all(sourceFiles.map(async path=>{const response=await fetch(new URL(path,base));if(!response.ok)throw new Error(`served source ${path}: HTTP ${response.status}`);return[path,createHash('sha256').update(await response.text()).digest('hex')];})));
-  report.environment={renderer:await page.evaluate(()=>{const gl=document.querySelector('canvas')?.getContext('webgl2'),ext=gl?.getExtension('WEBGL_debug_renderer_info');return ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'unavailable';}),viewport:[1440,1000],date:await page.evaluate(()=>window.__atlas.date),sourceCommit,sourceWorkingTreeDirty:sourceDirty,sourceFilesSha256,servedModuleSha256};
+  report.environment={renderer:await page.evaluate(()=>{const gl=document.querySelector('canvas')?.getContext('webgl2'),ext=gl?.getExtension('WEBGL_debug_renderer_info');return ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'unavailable';}),viewport:[1440,1000],date:await page.evaluate(()=>window.__atlas.date),sourceCommit,sourceWorkingTreeDirty:sourceDirty,sourceFilesSha256,buildInfo,builtAssetSha256};
   report.checks={flightLateralM:flightMovedM,walkingLateralM,flightTurn,walkTurn:report.phases.walkTurn,finalForest:await concise()};
   report.errors=errors;
   report.alphaPass=report.alpha.every(x=>x.alphaMin===255&&x.alphaMax===255&&x.nonOpaquePixels===0&&x.readFramebufferWasDefault);
-  report.ok=errors.length===0&&flightMovedM>300&&walkingLateralM>300&&report.phases.walkingClose.travel.walking?.active&&report.checks.finalForest.forest.fullCanopy?.nearPresentNotInCensus===0&&report.checks.finalForest.forest.fullCanopy?.nearAbsentInCensus===0&&report.alphaPass;
+  report.ok=errors.length===0&&flightMovedM>300&&walkingLateralM>300&&report.phases.walkingClose.travel.walking?.active&&report.checks.finalForest.forest.fullCanopy?.nearPresentNotInCensus===0&&report.checks.finalForest.forest.fullCanopy?.nearAbsentInCensus===0&&report.checks.finalForest.forest.handoff?.farOwnedSkipped>0&&report.alphaPass;
   await writeFile(`${out}/report.json`,JSON.stringify(report,null,2));
   assert.ok(flightMovedM>300,`flight moved laterally ${flightMovedM} m`);assert.ok(walkingLateralM>300,`walking moved laterally ${walkingLateralM} m`);
   assert.ok(report.phases.walkingClose.travel.walking?.active,'arrived in ground walker');
   assert.equal(report.checks.finalForest.forest.fullCanopy?.nearPresentNotInCensus,0,'near presence agrees with census');
   assert.equal(report.checks.finalForest.forest.fullCanopy?.nearAbsentInCensus,0,'near absence agrees with census');
+  assert.ok(report.checks.finalForest.forest.handoff?.farOwnedSkipped>0,'current canonical patches take ownership of near-cache trees beyond the fallback band');
   assert.equal(report.checks.finalForest.forest.fullCanopy?.failures,0,'census worker healthy');
   assert.equal(report.checks.finalForest.forest.fullCanopy?.capacityMisses,0,'canopy allocator retained capacity');
   assert.ok(report.alphaPass,'default framebuffer alpha is fully opaque for MSAA 0/2/4');

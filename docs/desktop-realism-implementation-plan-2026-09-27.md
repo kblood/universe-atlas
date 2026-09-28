@@ -2,10 +2,15 @@
 
 Date: 2026-09-27. Accepted direction; implementation started.
 
-Latest local progress: [first full-game canopy integration](canopy-runtime-integration-2026-09-28.md)
-loads complete canonical patches and transfers individual tree ownership.
-Initial desktop smoke checks pass; broader flight/review acceptance and release
-remain pending. This does not complete the realistic species assets stage.
+Latest local progress: [canopy runtime integration](canopy-runtime-integration-2026-09-28.md)
+connects complete canonical patches and individual tree ownership, with later
+checkpoint `4c776b8` starting prefetch below 5,500 m altitude and canopy
+rendering below 3,500 m altitude, with an outer fade from 3,700–4,000 m and
+residency to 4,500 m. It adds a progress watchdog, bounded static dirty-block
+uploads, and near-work skipping for complete distant patches. Its local
+acceptance is recorded in the [immutable Luna report](../test-results/acceptance-4c776b8/README.md);
+the live release remains `e8a848d`. This does not complete realistic species
+assets.
 Baseline before this work: `27e89c897369270728e5ef4118dcc144e40af7fc`.
 
 This is the current plan for planetary visual quality. It consolidates the
@@ -184,7 +189,7 @@ more. Structural diversity must not come from disconnected anatomy.
 | B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented; build, 53 targeted checks and RTX 5090 browser acceptance pass; see validation record |
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
 | D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; first Blender brief validates; forest integration, authored assets and resource cache pending |
-| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Local integration `213ca95` connects complete census patches to per-tree near/far ownership; first full-game stationary/turn checks pass. Broader flight, review and deployment acceptance remain pending; live `e8a848d` retains the previous representation |
+| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Local integration began at `213ca95`; `4c776b8` adds altitude-based prefetch/render thresholds, progress watchdog, static dirty blocks, and near-work skipping. Luna's production-preview flight/walk acceptance passes census agreement and alpha checks; see [evidence](../test-results/acceptance-4c776b8/README.md). Water interval reuse core is committed in `c02ee95`; review follow-up fixes are awaiting acceptance. See the [water design](canopy-water-validity-design-2026-09-28.md) and [Opus assessment](canopy-water-review-assessment-2026-09-28.md). Live `e8a848d` retains the previous representation |
 | F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | Two tree authoring proposals technically validated and visually reviewed; asset/runtime acceptance and other landscape work pending |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |
@@ -362,9 +367,11 @@ the existing faceted procedural tree shape; it is not an authored realistic
 tree asset. The lab counts jittered roots, so its 149,479 trees differ by one
 from the census probe's 149,478 cell-centre count. See the [field report](../test-results/forest-impostor-field/report.json).
 
-These proxy measurements remain unintegrated and unshipped. Full streaming,
-readiness-gated near/far ownership, dated life gates, shared aerial perspective,
-wind and shadows remain to be implemented and validated. The separate [census
+These specific lab measurements are not game-performance results and are not
+shipped. The faceted proxy representation was subsequently integrated locally
+at `213ca95` and validated in the `4c776b8` preview, while live remains
+`e8a848d`. Realistic authored trees, dated life gates, wind and shadows remain
+to be implemented and validated. The separate [census
 implementation review](opus-5.5-census-implementation-review-2026-09-28.md)
 records six passing tests and a browser-worker protocol pass; neither that
 review nor the proxy lab constitutes game acceptance. Follow-up protocol fixes received an Opus implementation review; six focused tests and the browser-worker protocol report pass, with no renderer or visual acceptance. See the [protocol report](../test-results/forest-census-protocol-review/report.json) and [implementation review](opus-5.5-census-implementation-review-2026-09-28.md).

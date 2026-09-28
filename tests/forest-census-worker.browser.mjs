@@ -149,7 +149,7 @@ try{
   const returnDry=await wait('ready',4);assert.equal(returnDry.family,ready.family);
   await send({type:'patches',generation:4,requestId:1,addresses});
   const dryAgain=await collect(4,1);assert.deepEqual(dryAgain.flatMap(p=>p.patches),expected);
-  await send({type:'configure',generation:5,body,waterLevelM:25});
+  await send({type:'configure',generation:5,family:returnDry.family,waterLevelM:25});
   const shifted=await wait('ready',5);
   assert.equal(shifted.family,ready.family);assert.notEqual(shifted.context,ready.context);
   assert.ok(shifted.cache.reusedPatches>0,'real worker retains complete inland patches across a water bucket');
@@ -159,6 +159,13 @@ try{
   const shiftedPatches=await collect(5,1);
   assert.deepEqual(shiftedPatches.flatMap(p=>p.patches),shiftExpected,'inherited browser patches equal fresh census at new water');
   assert.equal(shiftedPatches.at(-1).cache.sampledCandidates,0,'all fixture patches reused without resampling');
+  await send({type:'configure',generation:6,family:'f'.repeat(64),waterLevelM:30});
+  const mismatchedFamily=await wait('error',6);assert.equal(mismatchedFamily.phase,'configure');
+  await send({type:'configure',generation:7,family:returnDry.family,waterLevelM:50});
+  const secondShift=await wait('ready',7);assert.equal(secondShift.family,ready.family);
+  await send({type:'select',generation:7,requestId:1,center:d,rangeM:selectionRange});
+  const reusedSelection=await wait('selection',7,1);
+  assert.deepEqual(reusedSelection.packed,selected.packed,'retained radius survives failed water configure');
   await page.evaluate(()=>{
     window.preReadyMessages=[];window.preReadyErrors=[];window.preReadyWorker=new Worker('/src/forest-census-worker.ts',{type:'module'});
     window.preReadyWorker.onmessage=({data})=>window.preReadyMessages.push(data);

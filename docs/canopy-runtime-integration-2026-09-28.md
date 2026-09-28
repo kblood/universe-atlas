@@ -1,7 +1,9 @@
-# Desktop canopy: first game integration
+# Desktop canopy: local integration and acceptance
 
 The complete canonical census now feeds the desktop planet renderer. This is a
-local implementation checkpoint, not a deployment or completion of realism.
+local implementation and acceptance record, not a deployment or completion of
+realism. The first measured fixture below is from checkpoint `213ca95`; the
+later acceptance is for clean production-preview build `4c776b8`.
 
 ## Structure
 
@@ -40,11 +42,12 @@ The follow-up shader-hook unit test and fresh full-game browser run both pass:
 `test-results/canopy-runtime-aerial/report.json`. Its timing sample had large
 outliers; it establishes functional acceptance, not a performance improvement.
 
-## Remaining acceptance
+## First fixture limitations (213ca95)
 
-Moving flight, close fallback counters, precise ownership image comparisons,
-game-scale depth and final canvas alpha checks, dated water transitions,
-independent Luna acceptance and Opus implementation review remain required.
+At this checkpoint, moving flight, close fallback counters, precise ownership
+image comparisons, game-scale depth and final canvas alpha checks, dated water
+transitions, independent Luna acceptance and Opus implementation review
+remained required.
 Selection application currently costs about 7 ms occasionally; steady CPU
 forest iteration and terrain/life costs need improvement. No representative
 midrange hardware measurement or authored realistic asset acceptance exists.
@@ -93,9 +96,11 @@ failures, capacity misses or presence disagreements, and every canvas alpha
 byte is 255 at MSAA0/2/4. View units are metres. See the
 [snapshot note](../test-results/canopy-flight-post-alpha-fix-rerun/README.md).
 
-## Subsequent review fixes (new browser acceptance pending)
+## Follow-up implementation at 4c776b8
 
-- Streaming begins at 5.5 km while visibility still begins below 3.5 km.
+- Prefetch begins below 5,500 m altitude while canopy rendering begins below
+  3,500 m altitude; outer fade is at 3,700–4,000 m and residency reaches
+  4,500 m.
 - Configuration, selection and patch work have a 10 s progress watchdog.
   One restart is allowed; terminal failure hides the new representation and
   leaves the legacy path in control.
@@ -110,5 +115,32 @@ byte is 255 at MSAA0/2/4. View units are metres. See the
 - Complete current patches beyond 650 m bypass near placement/culling work.
   Stale water and missing patches retain the previous fallback path.
 
-The [review assessment](canopy-host-review-assessment-2026-09-28.md) tracks
-remaining work, including exact water validity and bounded selection application.
+## Luna production-preview acceptance (4c776b8)
+
+The clean `4c776b8` build passed the production build and 60 focused canopy,
+forest and rendering tests. Luna's RTX 5090 browser run traversed over 320 m in
+flight and walking, ended with 153,518 trees in 6,689 patches, and reported no
+queued work, failures, capacity misses or near/far disagreements. It skipped
+13,954 near-cache candidates already owned by canonical canopy patches. All
+framebuffer alpha samples were 255 at MSAA 0, 2 and 4. The full suite still has
+four unrelated existing failures. An 8-second profile records CPU planet-update
+p50/p95/p99/max of 11.5/17.3/19.2/26.9 ms and GPU pass-sum
+4.36/6.46/7.68/8.53 ms; these are diagnostics, not an FPS claim. Separate-run
+upload samples were lower at the observed maxima than the `e32d8d7` run, but
+system load was not controlled, so they do not establish a performance gain.
+
+See the [immutable acceptance report](../test-results/acceptance-4c776b8/README.md)
+and its [flight report](../test-results/acceptance-4c776b8/canopy-flight-final/report.json)
+and [profile report](../test-results/acceptance-4c776b8/desktop-rendering-profile/report.json).
+This is local acceptance only; no deployment was performed. The live release
+remains `e8a848d`. Legacy faceted trees remain in use, with no authored realistic
+tree assets or species-geometry integration accepted. XR, dated water
+transitions, cloud-edge comparison and broader visual realism remain open.
+
+The water-validity interval-reuse core was subsequently committed as `c02ee95`;
+it is outside the immutable `4c776b8` acceptance. Follow-up review fixes for
+coalesced water configuration, worker body-snapshot reuse, hydrology attachment
+refresh, watchdog queue accounting and atomic selection are awaiting acceptance.
+See the [water design](canopy-water-validity-design-2026-09-28.md) and its
+[Opus review assessment](canopy-water-review-assessment-2026-09-28.md), as well
+as the [host review assessment](canopy-host-review-assessment-2026-09-28.md).

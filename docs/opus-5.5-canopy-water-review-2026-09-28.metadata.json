@@ -1,0 +1,51 @@
+{
+  "revision": "4c776b8bb59a273ceddbb253fec5fdb12626fe99",
+  "dirty": true,
+  "files": [
+    {
+      "path": "src/forest-water-validity.ts",
+      "sha256": "8a668f7b3c1175833f770f4231853b6716fa5cac459890a9aac16a94544a3bd9"
+    },
+    {
+      "path": "src/forest-census.ts",
+      "sha256": "194b22758e8ad69e5278e0f60084e7dd90d3f803debb1f96e02fb84b8dbcc271"
+    },
+    {
+      "path": "src/forest-census-worker.ts",
+      "sha256": "152618b277960b2495efb1a6e7a55b2f087ba382c8cff8396c3969419baf44b9"
+    },
+    {
+      "path": "src/planet-canopy.ts",
+      "sha256": "254302b5f11fb52e5fad9e7c318f80fe1c27aad9f8c90d1a82192737000a1e17"
+    },
+    {
+      "path": "src/forest-habitat.ts",
+      "sha256": "f28824787bff40514249261a41f1a3702099396ea25659bdec6e38dcabb3a172"
+    },
+    {
+      "path": "src/surface-biomes.ts",
+      "sha256": "5c73127239dc7584e82b960ac092b8c139a5029119620cdd0122705a1a10587f"
+    },
+    {
+      "path": "src/terrain.ts",
+      "sha256": "0970c906613625b2b82a61a0b9e4b91dc0c6fced27262b9264a0d19c0d71607a"
+    }
+  ],
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 21895,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 36487,
+      "webSearchRequests": 0,
+      "costUSD": 0.7300958,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 18394,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "isError": false
+}

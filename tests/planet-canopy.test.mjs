@@ -95,12 +95,40 @@ test('large selection decoding is sliced and atomically swaps the old patch wind
     h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
     assert.equal(h.host.diagnostics().selectionApplyPending,true,'first bounded slice leaves application in progress');
     assert.deepEqual(h.host.order,[oldKey],'new window is not visible until its complete packed selection validates');
+    h.host.selection.started=performance.now()-11000;
+    h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
+    assert.equal(h.worker.terminated,false,'budgeted local decoding is not mistaken for a hung worker response');
+    assert.equal(h.host.timeouts,0);
     let frames=0;
     while(h.host.diagnostics().selectionApplyPending&&frames++<10)h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
     assert.ok(frames<10);assert.equal(h.host.order.length,addresses.length);
     assert.equal(h.host.order[0],`${addresses[0].face}/${addresses[0].n}/${addresses[0].x}/${addresses[0].y}`);
     assert.equal(h.host.order.at(-1),`${addresses.at(-1).face}/${addresses.at(-1).n}/${addresses.at(-1).x}/${addresses.at(-1).y}`);
     assert.equal(h.host.diagnostics().selectionApplyPending,false);
+  }finally{h.restore();}
+});
+
+test('old patch replies cannot install after the replacement address scan has completed',()=>{
+  const h=begin(64),a=address(0,h.n),oldKey=`${a.face}/${a.n}/${a.x}/${a.y}`;
+  try{
+    const oldRequest=selectAndRequest(h,[a]);
+    h.host.retries.clear();
+    for(let i=0;i<900;i++)h.host.retries.set(`stale-${i}`,{attempts:1,after:0});
+    h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
+    const selection=h.worker.sent.findLast(m=>m.type==='select');
+    const replacements=Array.from({length:1300},(_,i)=>address(i+1,h.n));
+    h.worker.emit({type:'selection',generation:h.generation,requestId:selection.requestId,context:h.context,
+      packed:Float64Array.from(replacements.flatMap(x=>[x.face,x.n,x.x,x.y])),selectionMs:1});
+    let frames=0;
+    while(h.host.selectionApply?.phase==='addresses'&&frames++<10)h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
+    assert.ok(frames<10);assert.equal(h.host.selectionApply?.phase,'retries','large stale retry cleanup keeps the candidate set private across frames');
+    h.worker.emit({type:'patches',generation:h.generation,requestId:oldRequest.requestId,context:h.context,
+      patches:[patch(a)],done:true});
+    h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
+    assert.equal(h.host.installed.has(oldKey),false,'the prior selection result is discarded once the new address scan completed');
+    let applyFrames=0;while(h.host.selectionApply&&applyFrames++<10)h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
+    assert.ok(applyFrames<10);
+    assert.equal(h.host.order.includes(oldKey),false);
   }finally{h.restore();}
 });
 
@@ -252,6 +280,53 @@ test('near absence during a water shift still suppresses the paired far instance
   }finally{h.restore();}
 });
 
+test('water targets coalesce to one follow-up configure and water-only messages omit the body',()=>{
+  const h=begin(64);
+  try{
+    h.host.prepare(eye,ground,100,5,true,false,nearOrigin);
+    const firstPending=h.worker.sent.findLast(m=>m.type==='configure');
+    assert.equal(firstPending.waterLevelM,5);assert.equal(firstPending.body,undefined);
+    assert.equal(firstPending.family,familyA);
+    h.host.prepare(eye,ground,100,10,true,false,nearOrigin);
+    h.host.prepare(eye,ground,100,20,true,false,nearOrigin);
+    assert.equal(h.worker.sent.filter(m=>m.type==='configure').length,2,'no parallel configure is sent while the first is unresolved');
+    assert.equal(h.host.configuredWater,5);assert.equal(h.host.water,20,'the newest target remains queued locally');
+    h.worker.emit({type:'ready',generation:firstPending.generation,context:contextB,family:familyA,n:h.n});
+    h.host.prepare(eye,ground,100,20,true,false,nearOrigin);
+    const latest=h.worker.sent.findLast(m=>m.type==='configure');
+    assert.equal(h.worker.sent.filter(m=>m.type==='configure').length,3,'latest target is configured only after readiness');
+    assert.equal(latest.waterLevelM,20);assert.equal(latest.body,undefined);assert.equal(latest.family,familyA);
+    assert.equal(h.host.configuredWater,20);assert.equal(h.host.ready,false);
+  }finally{h.restore();}
+});
+
+test('a lagging interval reply is validated against its configured water snapshot',()=>{
+  const h=begin(64),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`;
+  try{
+    h.host.prepare(eye,ground,100,5,true,false,nearOrigin);
+    const configure=h.worker.sent.findLast(m=>m.type==='configure');
+    h.worker.emit({type:'ready',generation:configure.generation,context:contextB,family:familyA,n:h.n});
+    h.host.water=20;h.host.request={id:444,keys:new Set([key]),progressAt:performance.now()};
+    h.host.receive({type:'patches',generation:configure.generation,requestId:444,context:contextB,
+      patches:[patch(a,{context:contextB,waterInterval:[-1,10]})],done:true});
+    assert.equal(h.host.pending.length,1,'the interval contains configured water 5 even though the target has advanced to 20');
+    assert.equal(h.host.pending[0].waterInterval[1],10);
+    h.host.prepare(eye,ground,100,20,true,false,nearOrigin);
+    const next=h.worker.sent.findLast(m=>m.type==='configure');assert.equal(next.waterLevelM,20);
+  }finally{h.restore();}
+});
+
+test('same-water river reference attachment forces a full-body worker configure',()=>{
+  const h=begin(64,{...body});
+  try{
+    h.host.body.canonicalRivers=[];
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    const configure=h.worker.sent.findLast(m=>m.type==='configure');
+    assert.equal(configure.waterLevelM,0);assert.equal(configure.family,undefined);
+    assert.equal(configure.body,h.host.body,'changed hydrology references are sent with the full canonical body');
+  }finally{h.restore();}
+});
+
 test('close canonical crowns require same-frame ownership; holes and submerged trees do not count as forced closes',()=>{
   const h=begin(64),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`;
   try{
@@ -277,7 +352,10 @@ test('worker failure retries once then disables the full canopy for legacy near 
   const h=begin(64);
   try{
     h.worker.error();assert.equal(h.worker.terminated,true);assert.equal(h.host.workerRestarts,1);
-    const retry=MockWorker.instances.at(-1);assert.notEqual(retry,h.worker);retry.error();
+    const retry=MockWorker.instances.at(-1);assert.notEqual(retry,h.worker);
+    const restartConfig=retry.sent.find(m=>m.type==='configure');assert.equal(restartConfig.body,h.host.body,'worker restart reconstructs from the canonical full body');
+    assert.equal(restartConfig.family,undefined);
+    retry.error();
     assert.equal(retry.terminated,true);assert.equal(h.host.workerRestarts,1);assert.equal(h.host.failures,2);
     const count=MockWorker.instances.length;assert.equal(h.host.prepare(eye,ground,100,0,true,false,nearOrigin),false);
     assert.equal(MockWorker.instances.length,count,'restart limit is bounded');assert.equal(h.host.diagnostics().terminalFailure,true);

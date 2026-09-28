@@ -1,8 +1,11 @@
 # Full forest census and far representation experiment
 
-This is active stage E design work after the deployed packed-transfer release.
-The worker census and isolated individual-tree experiment now exist; neither
-is integrated into the game or accepted as a deployed rendering feature.
+This document records the stage E design snapshot before the first renderer
+integration. Since then, local game integration began at `213ca95` and follow-up
+checkpoint `4c776b8` passed Luna's production-preview traversal checks. Neither
+checkpoint is deployed; live remains `e8a848d`. The isolated individual-tree
+lab and its measurements remain experiments, separate from the legacy faceted
+proxy geometry used by the local canopy renderer.
 See the [review fixes](forest-census-review-fixes-2026-09-28.md) and
 [representation measurements](forest-impostor-experiment-2026-09-28.md).
 

@@ -1,27 +1,47 @@
 # Live canopy review assessment
 
+This assessment records the host review findings and their status at the later
+local acceptance checkpoint `4c776b8`. That clean production-preview build
+passed Luna's flight/walk, handoff, census agreement and alpha checks; details
+are in the [immutable acceptance record](../test-results/acceptance-4c776b8/README.md).
+It remains local; live is `e8a848d`. The water-validity interval-reuse core is
+committed as `c02ee95`, but review follow-up fixes and full date-seek acceptance
+remain pending. See the [water design](canopy-water-validity-design-2026-09-28.md)
+and [Opus review assessment](canopy-water-review-assessment-2026-09-28.md).
+
 The [genuine Opus implementation review](opus-5.5-canopy-host-review-2026-09-28.md)
 audited a supplied working-tree snapshot. It supports the core ray intersection,
 normal, depth, shared hash and frame ownership transaction. It does not approve
 deployment or complete the desktop realism plan.
 
-## Required work before this release
+## Findings from the reviewed snapshot and follow-up status
 
-- Defer per-pixel hash discard until after derivative-based edge coverage, and
-  make instance-constant varyings flat. Recheck the actual near/far GPU partition.
-- Separate descent prefetch from visibility; the 150k-tree fill must start above
-  the visible 3.5 km band.
-- Disable the new representation after terminal worker failure and add a
-  progress watchdog for configuration, selection and census work.
-- Bound static attribute uploads for scattered installs/removals. Preserve
-  pending ranges across hidden frames; record movement upload percentiles.
-- Reduce avoidable near-loop work for complete distant patches. Keep checks
-  for stale water and missing patches, and verify with full-game timings.
-- Avoid whole-canopy churn on small water changes. A validity interval must
+- Defer per-pixel hash discard until after derivative-based edge coverage and
+  use flat instance-constant varyings. Follow-up shader review fixes are included
+  in `4c776b8`; RTX 5090 acceptance passed, while SwiftShader/Vulkan still fails
+  the strict edge threshold described below.
+- Separate descent prefetch from visibility. `4c776b8` starts prefetch below
+  5,500 m altitude and canopy rendering below 3,500 m altitude, with outer fade
+  at 3,700–4,000 m and residency to 4,500 m.
+- Disable the new representation after terminal worker failure and watchdog
+  configuration, selection and census progress. Implemented in `4c776b8`.
+- Bound static attribute uploads for scattered installs/removals and preserve
+  pending ranges across hidden frames. Static dirty blocks are implemented;
+  sampled movement upload counters are in the acceptance record. Comparisons
+  are separate runs, not controlled performance gains.
+- Reduce avoidable near-loop work for complete distant patches. Implemented in
+  `4c776b8`; water interval reuse core is in `c02ee95`, with review fixes and
+  full date-seek acceptance still pending.
+- Avoid whole-canopy churn on small water changes. The validity-interval core
+  is implemented in `c02ee95`; follow-up coalescing, immutable body-snapshot
+  reuse, hydrology attachment refresh, watchdog queue accounting and phased
+  selection fixes are under review and await acceptance. See the [water design](canopy-water-validity-design-2026-09-28.md)
+  and [Opus assessment](canopy-water-review-assessment-2026-09-28.md). A validity interval must
   include every terrain/ocean and biome threshold involved in presence and the
   slope probes. A heuristic derived only from present tree heights is unsafe:
   ocean classification can bypass river geometry and change ground height.
 - Move selection application out of the message callback into bounded work.
+  The current follow-up is under review and awaits full acceptance.
 
 ## Findings already addressed or requiring qualification
 
