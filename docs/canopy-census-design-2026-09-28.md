@@ -1,7 +1,10 @@
 # Full forest census and far representation experiment
 
 This is active stage E design work after the deployed packed-transfer release.
-It is not an implemented or accepted rendering feature.
+The worker census and isolated individual-tree experiment now exist; neither
+is integrated into the game or accepted as a deployed rendering feature.
+See the [review fixes](forest-census-review-fixes-2026-09-28.md) and
+[representation measurements](forest-impostor-experiment-2026-09-28.md).
 
 ## Required outcome
 
