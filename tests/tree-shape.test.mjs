@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import * as THREE from 'three';
-import {createLegacyTreeGeometry,treeQuaternion,LEGACY_TREE_LOBES} from '../src/tree-shape.ts';
+import {createLegacyTreeGeometry,treeQuaternion,LEGACY_TREE_LOBES,LEGACY_TREE_BOUND} from '../src/tree-shape.ts';
 
 test('shared shape preserves every shipped near/far geometry attribute byte',()=>{
   const expected=[
@@ -21,5 +21,18 @@ test('shared tree basis equals the shipped up-align then world-axis yaw, includi
     const d=new THREE.Vector3(...xyz).normalize(),expected=new THREE.Quaternion().setFromUnitVectors(up,d);
     expected.premultiply(new THREE.Quaternion().setFromAxisAngle(d,yaw));
     assert.deepEqual(treeQuaternion(d,yaw,new THREE.Quaternion(),scratch).toArray(),expected.toArray());
+  }
+});
+test('both normalized tree LODs fit the shared conservative bound',()=>{
+  for(const detail of [0,1]){
+  const geometry=createLegacyTreeGeometry(detail),position=geometry.getAttribute('position');
+  try{
+    assert.ok(position.count>0);
+    for(let i=0;i<position.count;i++)for(let axis=0;axis<3;axis++){
+      const value=position.getComponent(i,axis),center=LEGACY_TREE_BOUND.center[axis],extent=LEGACY_TREE_BOUND.extent[axis];
+      assert.ok(value>=center-extent-1e-6&&value<=center+extent+1e-6,
+        `vertex ${i} axis ${axis}: ${value} outside [${center-extent}, ${center+extent}]`);
+    }
+  }finally{geometry.dispose();}
   }
 });

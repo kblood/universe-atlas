@@ -3,6 +3,8 @@ import {createServer} from 'vite';
 import {mkdir,writeFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import {createForestCensus} from '../src/forest-census.ts';
+import {forestPatchAddresses} from '../src/forest-patch-selection.ts';
+import {populationCells,FOREST_CELL_M} from '../src/planet-population.ts';
 import {galaxies,refByAddress,system} from '../src/catalog.ts';
 
 const out=process.env.ATLAS_RESULTS||'test-results/forest-census-worker';
@@ -15,7 +17,7 @@ page.on('pageerror',error=>errors.push(String(error)));
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 const reference=await createForestCensus(body,0),n=reference.n;
 // Ground direction captured by the existing live navigation fixture.
-const d=[.7830496262,-.2907992331,.5497900408],u=-d[2]/d[0],v=d[1]/d[0];
+const rawDirection=[.7830496262,-.2907992331,.5497900408],length=Math.hypot(...rawDirection),d=rawDirection.map(v=>v/length),u=-d[2]/d[0],v=d[1]/d[0];
 const x=Math.floor((u+1)*n/16),y=Math.floor((v+1)*n/16);
 const addresses=Array.from({length:16},(_,i)=>({face:0,n,x:x+i%4,y:y+Math.floor(i/4)}));
 const normalize=patch=>({...patch,records:Array.from(patch.records)});
@@ -30,6 +32,7 @@ try{
     window.worker=new Worker('/src/forest-census-worker.ts',{type:'module'});
     window.worker.onmessage=({data})=>{
       if(data.patches)data.patches=data.patches.map(p=>({...p,records:Array.from(p.records)}));
+      if(data.packed){data.packedType=data.packed.constructor.name;data.packedLength=data.packed.length;data.packed=Array.from(data.packed);}
       window.messages.push(data);
     };
     window.worker.onerror=event=>window.workerErrors.push(event.message);
@@ -42,7 +45,7 @@ try{
   };
   const collect=async(generation,requestId)=>{
     await page.waitForFunction(({generation,requestId})=>window.workerErrors.length||window.messages.some(m=>m.generation===generation&&m.requestId===requestId&&(m.type==='error'||m.done)),{generation,requestId},{timeout:60000});
-    const packets=await page.evaluate(({generation,requestId})=>window.messages.filter(m=>m.generation===generation&&m.requestId===requestId),{generation,requestId});
+    const packets=await page.evaluate(({generation,requestId})=>window.messages.filter(m=>m.generation===generation&&m.requestId===requestId&&(m.type==='patches'||m.type==='error')),{generation,requestId});
     assert.ok(!packets.some(p=>p.type==='error'));assert.equal(packets.at(-1).done,true);
     for(const packet of packets.filter(p=>p.type==='patches'))assert.ok(packet.maxSliceMs<50,`worker slice ${packet.maxSliceMs}ms exceeds generous bound`);
     return packets;
@@ -67,6 +70,44 @@ try{
   const longExpected=longAddresses.map(complete);
   const protocolStart=await page.evaluate(()=>window.messages.length);
   await send({type:'patches',generation:1,requestId:6,addresses:longAddresses});
+  // The independent selection counter may use the same ID as the active patch job.
+  const selectionRange=1200;
+  const expectedSelection=forestPatchAddresses(d,body.radiusM,selectionRange);
+  const selectionCellCandidates=populationCells(body.seed,d,body.radiusM,selectionRange,FOREST_CELL_M);
+  assert.ok(selectionCellCandidates.length>0,'coverage fixture must include production-selected population cells');
+  const selectedByWorker=async(requestId,rangeM=selectionRange,center=d)=>{
+    await send({type:'select',generation:1,requestId,center,rangeM});
+    await page.waitForFunction(({requestId})=>window.messages.some(m=>(m.type==='selection'||m.type==='error')&&m.generation===1&&m.requestId===requestId),{requestId},{timeout:60000});
+    return page.evaluate(({requestId})=>window.messages.find(m=>(m.type==='selection'||m.type==='error')&&m.generation===1&&m.requestId===requestId),{requestId});
+  };
+  const selected=await selectedByWorker(6);
+  assert.equal(selected.type,'selection');assert.equal(selected.context,ready.context);
+  assert.equal(selected.packedType,'Float64Array');assert.equal(selected.packedLength%4,0);
+  assert.equal(selected.packed.length,selected.packedLength);
+  const packedAddresses=[];
+  for(let i=0;i<selected.packed.length;i+=4){
+    const [face,grid,xp,yp]=selected.packed.slice(i,i+4);
+    assert.ok(Number.isInteger(face)&&face>=0&&face<=5);
+    assert.equal(grid,n);
+    assert.ok(Number.isInteger(xp)&&xp>=0&&xp<Math.ceil(n/8));
+    assert.ok(Number.isInteger(yp)&&yp>=0&&yp<Math.ceil(n/8));
+    packedAddresses.push({face,n:grid,x:xp,y:yp});
+  }
+  assert.deepEqual(packedAddresses,expectedSelection,'packed selection preserves deterministic patch addresses');
+  const selectedKeys=new Set(packedAddresses.map(a=>`${a.face}/${a.n}/${a.x}/${a.y}`));
+  for(const cell of selectionCellCandidates){
+    const [face,grid,ix,iy]=cell.id.split('/').map(Number);
+    assert.ok(selectedKeys.has(`${face}/${grid}/${Math.floor(ix/8)}/${Math.floor(iy/8)}`),`selected patch covers ${cell.id}`);
+  }
+  const invalidSelection=await selectedByWorker(7,body.radiusM*.2);
+  assert.equal(invalidSelection.type,'error');assert.equal(invalidSelection.phase,'selection');
+  assert.equal(invalidSelection.generation,1);assert.equal(invalidSelection.requestId,7);
+  const staleSelection=await selectedByWorker(8,selectionRange,[1,0,0]);
+  assert.equal(staleSelection.type,'selection','a valid newer selection recovers after selection failure');
+  await send({type:'select',generation:2,requestId:9,center:d,rangeM:selectionRange});
+  await page.waitForFunction(()=>window.messages.some(m=>m.type==='error'&&m.phase==='selection'&&m.generation===2&&m.requestId===9),null,{timeout:60000});
+  const futureSelectionError=await page.evaluate(()=>window.messages.find(m=>m.type==='error'&&m.phase==='selection'&&m.generation===2&&m.requestId===9));
+  assert.equal(futureSelectionError.requestId,9);
   await send(null);
   await send({type:'unknown-census-message',generation:1,requestId:77});
   await send({type:'patches',generation:1,requestId:0,addresses:[]});
@@ -132,7 +173,8 @@ try{
   assert.deepEqual(await page.evaluate(()=>window.workerErrors),[]);assert.deepEqual(errors,[]);
   report={ok:true,scope:'Actual browser module worker; exact census and protocol checks, no renderer/visual claim',bodyId:body.id,patches:addresses.length,
     candidates:expected.reduce((s,p)=>s+p.candidates,0),present:expected.reduce((s,p)=>s+p.present,0),
-    cold:cold.at(-1),warm:warm.at(-1),checks:['exact Node/browser equality','address+offset identity reconstruction','cache reuse and transfer ownership','bounded batches and <50ms max-slice bound','cancellation','cancel after done silent','request/phase error attribution','protocol faults preserve live job','A-to-B supersession','invalid newer batch supersedes','pre-ready request rejection','configure error recovery','context race','stale generation rejection','water invalidation'],
+    cold:cold.at(-1),warm:warm.at(-1),selection:{requestId:6,patchRequestId:6,rangeM:selectionRange,patches:selected.packed.length/4,cellsChecked:selectionCellCandidates.length,selectionMs:selected.selectionMs},
+    checks:['exact Node/browser equality','address+offset identity reconstruction','cache reuse and transfer ownership','bounded batches and <50ms max-slice bound','selection counter independent from patch counter','packed selection grid validation','production-cell coverage by selected patches','selection errors preserve active patch job','future-generation selection error preserves active patch job','cancellation','cancel after done silent','request/phase error attribution','protocol faults preserve live job','A-to-B supersession','invalid newer batch supersedes','pre-ready request rejection','configure error recovery','context race','stale generation rejection','water invalidation'],
     limitations:['A worker-internal step exception with already completed patches was not induced: production exposes no fault-injection hook. The class-level step throw/recovery path is covered by the Node census test.'],errors};
   delete report.cold.patches;delete report.warm.patches;
   await writeFile(`${out}/report.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));

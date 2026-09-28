@@ -180,7 +180,13 @@ test('origin rebasing retains positions until the replacement buffer is complete
     h.host.prepare(distantEye,ground,100,0,true,false,nearOrigin);
     assert.equal(h.host.diagnostics().rebasePending,true);assert.deepEqual(Array.from(h.host.renderer.positions.array.slice(0,4)),before);
     assert.deepEqual(h.host.origin.toArray(),origin.toArray(),'origin stays put during sliced preparation');
-    h.host.prepare(distantEye,ground,100,0,true,false,nearOrigin);
+    for(let slice=0;slice<128&&h.host.diagnostics().rebasePending;slice++){
+      h.host.prepare(distantEye,ground,100,0,true,false,nearOrigin);
+      if(h.host.diagnostics().rebasePending){
+        assert.deepEqual(Array.from(h.host.renderer.positions.array.slice(0,4)),before);
+        assert.deepEqual(h.host.origin.toArray(),origin.toArray(),'origin stays put until all replacement positions are ready');
+      }
+    }
     assert.equal(h.host.diagnostics().rebasePending,false);assert.notDeepEqual(h.host.origin.toArray(),origin.toArray());
     assert.ok(Math.abs(h.host.renderer.positions.getX(slot)-(h.host.bodyPositions[slot*3]-h.host.origin.x))<.01);
     assert.ok(Math.abs(h.host.renderer.positions.getY(slot)-(h.host.bodyPositions[slot*3+1]-h.host.origin.y))<.01);
