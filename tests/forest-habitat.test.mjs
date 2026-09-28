@@ -2,6 +2,13 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {forestHabitat,TREE_HABITAT_VERSION} from '../src/forest-habitat.ts';
+
+test('strict census sampling never records a non-finite slope neighbour as absence',()=>{
+  const cell={direction:[1,0,0],roll:.2},classify=()=>({forestPotential:true});
+  const sampler=()=>{let calls=0;return ()=>({groundHeightM:calls++===0?200:NaN,wet:false});};
+  assert.equal(forestHabitat(sampler(),classify,6371000)(cell).present,false,'legacy near behavior remains explicit');
+  assert.throws(()=>forestHabitat(sampler(),classify,6371000,true)(cell),/Non-finite forest habitat slope/);
+});
 import {forestPatch} from '../src/forest-patch.ts';
 import {terrainSampler} from '../src/terrain.ts';
 import {biomeClassifier} from '../src/surface-biomes.ts';
