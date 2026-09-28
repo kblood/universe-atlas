@@ -1,0 +1,112 @@
+{
+  "capturedAt": "2026-09-28T13:53:25.083Z",
+  "revision": "fbe3c2626ead2eee118661a32a584ce2914aa5eb",
+  "gitStatus": "",
+  "files": [
+    {
+      "path": "src/forest-impostor.ts",
+      "sha256": "4a2b6a3db3f07eced9a2f90f7772b9ddb0c6cea287fcce3bdd84e51c601a3a6e",
+      "bytes": 23917
+    },
+    {
+      "path": "src/planet-canopy.ts",
+      "sha256": "188396abe0f01a9a18f0bb2509a63b0181da0f212b385ed0230da6b2a55c57ed",
+      "bytes": 28932
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "3063cda7bcdc00b54f9879d49b6f1d9868787fd2ce96d3cf9e1d91afea0024c8",
+      "bytes": 35335
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "sha256": "0c0ebb6180c3e2a957f364d347c75767bc841e22e801c2ecb1934ceab803de25",
+      "bytes": 24322
+    },
+    {
+      "path": "src/tree-canopy-profile.ts",
+      "sha256": "20b147d103a56bb4b06c109e03fb73f37bbada7c5bfaa0f5c149b6944e51bc40",
+      "bytes": 10548
+    },
+    {
+      "path": "src/forest-presentation.ts",
+      "sha256": "eeaef458396c2c248300345b814be6b68a3e2904f40ebed840d6eeda6a650b82",
+      "bytes": 1985
+    },
+    {
+      "path": "src/forest-tree-catalogue.ts",
+      "sha256": "11fea8d2e51a7002dd0aa17de0e8ddd00e73ff29b7a447aff989702110810258",
+      "bytes": 1092
+    },
+    {
+      "path": "src/tree-species-recipe.ts",
+      "sha256": "a7ad583f72e728be2ba4c75a56197c77b8333f2e17c1e9cd7d3de359949a327f",
+      "bytes": 5570
+    },
+    {
+      "path": "src/forest-tree-family-library.ts",
+      "sha256": "06a5f6782f1c541f469aa42e6d4449b270e5405254eb356eb9cda8b149315cfa",
+      "bytes": 4154
+    },
+    {
+      "path": "src/tree-shape.ts",
+      "sha256": "9fa6e8d3effd1f966c5389ec59a9e30e2b701656dc12a50dff7f35b6bd939017",
+      "bytes": 2576
+    },
+    {
+      "path": "src/forest-coverage.ts",
+      "sha256": "a7e68679084a59c9954ec10955f876349ee685128dea13922f85505ce701a711",
+      "bytes": 782
+    },
+    {
+      "path": "tests/forest-impostor-family.test.mjs",
+      "sha256": "0e37f40fe7c39edd3c2ced2056b9bb70525a9604c0022386a22d60875509d919",
+      "bytes": 3909
+    },
+    {
+      "path": "tests/planet-canopy.test.mjs",
+      "sha256": "b25e8452a605fb85a970727b7c085a933f818c86373b45032efb3631a86d6feb",
+      "bytes": 45595
+    },
+    {
+      "path": "tests/planet-forest-tree-assets.test.mjs",
+      "sha256": "61916a0d4949edb425364f5e3b96845bcf7cf72cb04a51a5def9cc492a054600",
+      "bytes": 21377
+    },
+    {
+      "path": "tests/tree-canopy-profile.test.mjs",
+      "sha256": "bfbbef80fa09cdc9bb323023ce02426bb6d8633823b8475637633a058a320627",
+      "bytes": 8512
+    },
+    {
+      "path": "docs/family-canopy-2026-09-28.md",
+      "sha256": "80bbbd5d281ad6a34fdfa849947b17dca5ad86207b0c82715e7cce48128c6a23",
+      "bytes": 4408
+    },
+    {
+      "path": "docs/opus-near-far-family-assessment-2026-09-28.md",
+      "sha256": "e49440fb21bb88644cdd462e3e90e33d3d719ab0017483c5a444906ce330b5dc",
+      "bytes": 5268
+    },
+    {
+      "path": "docs/compact-tree-families-2026-09-28.md",
+      "sha256": "a88a85e62aae508073bc02abca387995da6d628e7bae4a0b37b0ed05683cf6fb",
+      "bytes": 3695
+    },
+    {
+      "path": "docs/tree-ez-family-2026-09-28.md",
+      "sha256": "9d18947ca9c7adc1f02474a82d9dbf549df00072a61607899a23e1a68e15e07d",
+      "bytes": 6634
+    },
+    {
+      "path": "docs/offline-foliage-mips-2026-09-28.md",
+      "sha256": "56420ab74b553aed8f7992994bc502375eb991f8c23afffbc54ebb9099b86c1e",
+      "bytes": 5767
+    }
+  ],
+  "priorReview": "test-results/opus-near-far-family-review/review.md",
+  "priorFollowup": "test-results/opus-near-far-family-review/paired-390m-followup/review.md",
+  "promptSha256": "982224240d6d8536491d3c239d87734d5e3ac3c8ff13877b3e908eb5b7114209",
+  "model": "claude-opus-5-5",
+  "providerExpected": "firstParty"
+}

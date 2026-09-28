@@ -1,0 +1,111 @@
+{
+  "capturedAt": "2026-09-28T14:10:10.952Z",
+  "revision": "0e6e34600ac7597cc555d3c507cf9f93f5cf405f",
+  "gitStatus": "",
+  "sourceCheckpoint": "0e6e346",
+  "screenshotBuild": "ee26efa",
+  "evidence": [
+    {
+      "source": "C:/LLM/IWSDK/universe-atlas-acceptance/test-results/forest-asset-loading/normal-ui-ee26efa/02-loaded-normal-ui.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-family-canopy-implementation\\visual-followup\\actual-game-loaded-normal-ui.png",
+      "kind": "image",
+      "bytes": 1151214,
+      "sha256": "8ef6df4f0ae541e7cd6dbdbdba12de78409cf824916d70f267075bc5067b343d"
+    },
+    {
+      "source": "C:/LLM/IWSDK/universe-atlas-acceptance/test-results/forest-asset-loading/normal-ui-ee26efa/failure.json",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-family-canopy-implementation\\visual-followup\\actual-game-run-record.json",
+      "kind": "report",
+      "bytes": 158882,
+      "sha256": "1a7283b97f7e1fd5d8214cdc5ed1441fb6ccee05f89bc31b0ce4bbbcecb1c380"
+    },
+    {
+      "source": "test-results/family-canopy/shader-ee26efa/families.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-family-canopy-implementation\\visual-followup\\isolated-family-proxy-families.png",
+      "kind": "image",
+      "bytes": 20704,
+      "sha256": "8417a485d9c2c2561d9bfcaa0d23ced31228ccd2637d48b5ff1b1b629e76d32f"
+    },
+    {
+      "source": "test-results/family-canopy/shader-ee26efa/report.json",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-family-canopy-implementation\\visual-followup\\isolated-family-proxy-report.json",
+      "kind": "report",
+      "bytes": 14712,
+      "sha256": "11f4a79d23ed8c3aefe49e7aea426954e87e77f6c1d08f48722281d0896f0c14"
+    }
+  ],
+  "files": [
+    {
+      "path": "docs/authored-tree-distance-design-2026-09-28.md",
+      "sha256": "ac9b1d620f0c0182c9e6bc001a2b9163c0580cc3f627f3561cb3d0a773200f86",
+      "bytes": 9209
+    },
+    {
+      "path": "docs/authored-tree-capture-2026-09-28.md",
+      "sha256": "93cbf9b7b8e36e2bca2e51a51ba62a55374719e66c5a9d79358b39ca6f60b702",
+      "bytes": 5654
+    },
+    {
+      "path": "docs/family-canopy-2026-09-28.md",
+      "sha256": "af74de6bb13a1c54777ba58bd4c71d2e6aa4441677dfbf3606b79c607b01398a",
+      "bytes": 6553
+    },
+    {
+      "path": "docs/tree-foliage-minification-2026-09-28.md",
+      "sha256": "87eb4a2928998ad0520a819560c85a117a387d77fb3380eaad02e4275899aca7",
+      "bytes": 11452
+    },
+    {
+      "path": "docs/opus-near-far-family-assessment-2026-09-28.md",
+      "sha256": "e49440fb21bb88644cdd462e3e90e33d3d719ab0017483c5a444906ce330b5dc",
+      "bytes": 5268
+    },
+    {
+      "path": "docs/opus-5.5-tree-reconstruction-review-2026-09-28.md",
+      "sha256": "fcffbe1f908f0733d872a5e2a56be69cf6a3fb120bec26239ec03566b87f8b7a",
+      "bytes": 7967
+    }
+  ],
+  "sources": [
+    {
+      "path": "src/forest-impostor.ts",
+      "sha256": "5a69b14d76ab8a91114d79d41ac65316166c99825a1c21d10f56ca65ff8068bf",
+      "bytes": 26669
+    },
+    {
+      "path": "src/planet-canopy.ts",
+      "sha256": "615200b06bfefc148494d1b2e1b332448d3f49037fd3385fb48fa998ec4864b8",
+      "bytes": 29077
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "dd1b2aaa03f9cbd9481d7fc226bb0cab003ff0bd05e310708d3a8d44e8fa4899",
+      "bytes": 35427
+    },
+    {
+      "path": "src/tree-canopy-bounds.ts",
+      "sha256": "e143332fa6e5ec670f7c3e146c1da69a73335a4cc472089cd8653153b29d49c4",
+      "bytes": 3818
+    },
+    {
+      "path": "src/tree-canopy-profile.ts",
+      "sha256": "cb80b898a2f4af5494bcff1f6d926bf5873b1a929b085baec8b3c4b21bf13b89",
+      "bytes": 10705
+    },
+    {
+      "path": "src/forest-tree-catalogue.ts",
+      "sha256": "11fea8d2e51a7002dd0aa17de0e8ddd00e73ff29b7a447aff989702110810258",
+      "bytes": 1092
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "sha256": "0c0ebb6180c3e2a957f364d347c75767bc841e22e801c2ecb1934ceab803de25",
+      "bytes": 24322
+    }
+  ],
+  "analyticReview": "test-results/opus-family-canopy-implementation/review.md",
+  "analyticSnapshot": "test-results/opus-family-canopy-implementation/prompt.txt",
+  "promptSha256": "dd979ba7bbcb165d7178148a2e57efe233726bc52bb67eb394e1bac06027c227",
+  "model": "claude-opus-5-5",
+  "providerExpected": "firstParty"
+}
