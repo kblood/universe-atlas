@@ -17,6 +17,20 @@ let phase = 'startup';
 page.on('pageerror', error => errors.push(error.message));
 page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
 const waitFor = (predicate, timeout = 180000, arg) => page.waitForFunction(predicate, arg, { timeout });
+const waitWithProgress = async (name, predicate, timeout = 180000, arg) => {
+  const deadline = Date.now() + timeout;
+  phase = name;
+  while (Date.now() < deadline) {
+    const slice = Math.min(5000, deadline - Date.now());
+    try { await page.waitForFunction(predicate, arg, { timeout: slice }); return; }
+    catch (error) {
+      if (!String(error).includes('Timeout')) throw error;
+      await checkpoint(`${name}-pending`);
+    }
+  }
+  await checkpoint(`${name}-timeout`);
+  throw new Error(`Timed out waiting for ${name}`);
+};
 const checkpoint = async name => {
   phase = name;
   const state = await page.evaluate(() => {
@@ -25,7 +39,16 @@ const checkpoint = async name => {
       date: a.date?.offsetNs, camera: a.travel?.position, walking: a.travel?.walking,
       faunaVisibleCount: a.terrain?.tiles?.faunaVisibleCount,
       faunaDrawnCount: a.terrain?.tiles?.faunaDrawn?.length,
-      faunaNear: a.terrain?.tiles?.faunaNear } : null;
+      faunaNear: a.terrain?.tiles?.faunaNear,
+      surfaceReady: a.terrain?.tiles?.surfaceReady,
+      detailPatches: a.terrain?.tiles?.detailPatches,
+      contactLevel: a.terrain?.tiles?.contactLevel,
+      baseContactLevel: a.terrain?.tiles?.baseContactLevel,
+      maxLevel: a.terrain?.tiles?.maxLevel,
+      failures: a.terrain?.tiles?.failures,
+      terrainPending: a.terrain?.tiles?.pending,
+      lifePending: a.terrain?.tiles?.lifePending,
+      faunaTerrainPending: a.terrain?.tiles?.faunaTerrainPending } : null;
   }).catch(() => null);
   await writeFile(`${out}/progress.json`, JSON.stringify({ phase, state, errors }, null, 2));
 };
@@ -107,8 +130,7 @@ try {
   // readiness, so a source/landing population comparison uses one exact epoch.
   await waitFor(() => !!window.__atlas?.setExplorationPaused, 30000);
   await page.evaluate(() => window.__atlas.setExplorationPaused(true));
-  await checkpoint('close-body-ready');
-  await waitFor(id => window.__atlas?.ready && window.__atlas.state.level === 'body' &&
+  await waitWithProgress('close-body-ready', id => window.__atlas?.ready && window.__atlas.state.level === 'body' &&
     window.__atlas.state.body?.id === id && window.__atlas.terrain?.tiles?.ready, 180000, bodyId);
   const loadedDate = await page.evaluate(() => window.__atlas.date.offsetNs);
   await writeFile(`${out}/route-load.json`, JSON.stringify({
@@ -116,8 +138,7 @@ try {
     pausedImmediately: await page.evaluate(() => window.__atlas.travel.explorationClock.paused),
   }, null, 2));
   assert.equal(loadedDate, source.date, 'close route loads the exact source world epoch');
-  await checkpoint('walking-settled');
-  await waitFor(() => window.__atlas.travel.walking?.grounded, 180000);
+  await waitWithProgress('walking-settled', () => window.__atlas.travel.walking?.grounded, 180000);
   // Record the canonical target before any optional visibility/aiming work.
   // `faunaDrawn.position` is body-local normalized position, while the walker
   // position is body-local metres; convert before comparing distances.
