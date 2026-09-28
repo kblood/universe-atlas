@@ -1,0 +1,25 @@
+{
+  "kind": "bounded_cpu_diagnostic",
+  "status": "retained_frontier_does_not_settle_moved_contact",
+  "sourceCheckpoint": "58cce04",
+  "command": "node --test tests/terrain-streaming.mjs (initial focus-retarget attempt)",
+  "fixture": {
+    "seed": "LETHRA-001",
+    "body": "G001/C2128,0,1/0/planet/1",
+    "regionCatchmentOutlet": 3386,
+    "targetOffsetAlongBankTangentM": 160,
+    "targetSampler": { "wet": false, "walkable": true }
+  },
+  "observer": "held at the original contact point while the non-null contact focus moved 160 m",
+  "budget": { "frames": 600 },
+  "result": {
+    "contactReady": false,
+    "reason": "missing-leaf",
+    "requestedFineContactKeys": 25,
+    "missingLeafKeys": 14,
+    "missingResidentKeys": 0,
+    "unmorphedKeys": 0,
+    "firstMissingKey": "0/22/433409/3413199"
+  },
+  "scope": "This records a valid dry, walkable retarget that remained unresolved in the CPU renderer reproduction. It does not establish a frustum-culling cause or browser visual failure. The generic focus invalidation regression is covered separately; river-adjacent frontier settlement remains open."
+}

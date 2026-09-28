@@ -203,6 +203,11 @@ export class PlanetRenderer {
   setShoreDebug(options:ShoreDebug){Object.assign(this.debug,options);if(options.freezeSelection===false)this.selectionEye.setScalar(Infinity);}
   private sunUniform = {value:new THREE.Vector3(1,0,0)};
   private contactFocus:V3|null=null;
+  /** Contact tessellation is selected around this position, independently of
+   * camera position. Retaining it lets focus movement invalidate the leaf
+   * frontier even when both the old and new focus are non-null. */
+  private readonly selectionContactPoint=new THREE.Vector3(Infinity,Infinity,Infinity);
+  private lastContactReadiness:{reason:string;requested:number;missingLeaf:number;missingResident:number;unmorphed:number;sampleKey?:string}|null=null;
   private sample:ReturnType<typeof terrainSampler>;
   private leafIndex=new Map<string,Tile>();
   private retries=new Map<string,number>();
@@ -420,7 +425,16 @@ export class PlanetRenderer {
   private readonly faunaProxyMatrix = new THREE.Matrix4();
   private readonly faunaProxyScale = new THREE.Vector3();
   private readonly faunaGroundHeightAt=()=>this.faunaGroundValue;
-  setContactFocus(point:V3|null) { this.contactFocus=point; }
+  setContactFocus(point:V3|null) {
+    const previous=this.contactFocus;
+    this.contactFocus=point;
+    if(!point){if(previous!==null)this.selectionDirty=true;return;}
+    // Compare against the last selection anchor rather than the previous
+    // setter value so small per-frame walker steps accumulate. A one-metre
+    // deadband filters capsule settling noise while keeping collision support
+    // ahead of ordinary walking movement.
+    if(this.selectionContactPoint.distanceTo(new THREE.Vector3(...point))>1)this.selectionDirty=true;
+  }
   // `surfaceAgeMyr`: the body's real crater-bearing surface age, per
   // terrain.ts's `terrainSampler` doc comment and its `DEFAULT_SURFACE_AGE_MYR`
   // PROVENANCE RULE - this constructor has no host `StarLifecycle` to compute
@@ -888,6 +902,8 @@ export class PlanetRenderer {
     const leaves = this.leafIndex.size?[...this.leafIndex.values()]:[...ROOTS];
     if (this.rootsReady&&changed) {
       this.selectionEye.copy(eye);this.selectionContact=!!contact;this.selectionFrustum=viewNormals;this.selectionPixels=pixels;
+      if(contact)this.selectionContactPoint.copy(this.contactFocus?new THREE.Vector3(...this.contactFocus):eye);
+      else this.selectionContactPoint.set(Infinity,Infinity,Infinity);
       this.selectionDirty=false;
       const selectionStarted=performance.now();
       // Retain the prior frontier. Collapse distant sibling sets once, then
@@ -1252,19 +1268,29 @@ export class PlanetRenderer {
     // covers an unbuilt canonical river, so a settled capsule can never rest
     // on terrain that is about to change shape once the registry resolves.
     // hydrologyReady is unconditionally true while inland rivers are withdrawn.
-    if(!hydrologyReady(this.body))return null;
+    if(!hydrologyReady(this.body)){
+      this.lastContactReadiness={reason:'hydrology-not-ready',requested:0,missingLeaf:0,missingResident:0,unmorphed:0};
+      return null;
+    }
     const originKey=origin.join(',');if(originKey!==this.contactOrigin){this.contactGeometryCache.clear();this.contactOrigin=originKey;}
     const radial=new THREE.Vector3(...point).normalize(),up=new THREE.Vector3(0,1,0);
     if(Math.abs(radial.dot(up))>.9)up.set(1,0,0);
     const east=new THREE.Vector3().crossVectors(up,radial).normalize(),north=new THREE.Vector3().crossVectors(radial,east).normalize();
     const selected=new Map<string,Patch>(),level=this.needsFineContact?this.fineContactLevel:this.contactLevel;
     const offsets=this.needsFineContact?(()=>{const step=Math.min(.5,(2*this.body.radiusM/2**level)/4),values:number[]=[];for(let value=-1;value<=1+1e-9;value+=step)values.push(Math.min(1,value));return [...new Set(values.map(value=>Number(value.toFixed(9))))];})():[-12,0,12];
+    let missingLeaf=0,missingResident=0,unmorphed=0,sampleKey:string|undefined;
     for(const x of offsets)for(const y of offsets){
       const d=new THREE.Vector3(...point).addScaledVector(east,x).addScaledVector(north,y).toArray() as V3;
       const key=tileKey(directionTile(d,level)),p=this.patches.get(key);
-      if(!this.leafIndex.has(key)||!p||p.morph.value<1)return null;
+      if(!this.leafIndex.has(key)){sampleKey??=key;missingLeaf++;continue;}
+      if(!p){sampleKey??=key;missingResident++;continue;}
+      if(p.morph.value<1){sampleKey??=key;unmorphed++;continue;}
       selected.set(key,p);
     }
+    const requested=offsets.length*offsets.length;
+    const reason=missingLeaf?'missing-leaf':missingResident?'missing-resident':unmorphed?'morph-incomplete':'ready';
+    this.lastContactReadiness={reason,requested,missingLeaf,missingResident,unmorphed,sampleKey};
+    if(reason!=='ready')return null;
     return [...selected].map(([key,p])=>{
       const mask=p.edge.value.toArray();
       const signature=key+'/'+mask.join(''),cached=this.contactGeometryCache.get(signature);if(cached)return cached;
@@ -1285,7 +1311,7 @@ export class PlanetRenderer {
     // The shared texture belongs to the existing water reservation. Inland
     // diagnostics count it when present; ocean-only worlds count it here.
     const oceanNormalBytes=this.river?.diagnostics().resident?0:[...this.patches.values()].some(p=>p.ocean)?SHARED_WATER_NORMAL_ATLAS_BYTES:0;
-    return {projection: 'cube-sphere',localAerial,lifePackBuilds:this.lifePackBuilds, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
+    return {projection: 'cube-sphere',localAerial,lifePackBuilds:this.lifePackBuilds, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,frontierMaxLevel:Math.max(0,...[...this.leafIndex.values()].map(t=>t.level)),contactReadiness:this.lastContactReadiness,
       // Moving-sea-level verification/observability (this task): the
       // quantized bucket `this.sample`/`this.classify` and newly-dispatched
       // tile jobs are currently using, plus how many of the currently VISIBLE
