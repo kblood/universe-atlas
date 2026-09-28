@@ -3,6 +3,11 @@
 Updated 2026-09-28 following the user's request to reduce token use and give
 Luna more work and Claude Code / Opus 5.5 full implementation tasks.
 
+**Latest routing instruction:** the user switched the coordinating thread to
+Luna. All main implementation milestones go to Astra or genuine Claude Code /
+Opus 5.5. Luna coordinates and handles routine testing, deployment, guide/docs
+and bounded harness maintenance. Existing Opus jobs continue without restart.
+
 The scope and acceptance requirements remain in
 [the implementation plan](desktop-realism-implementation-plan-2026-09-27.md).
 This document changes execution ownership, not the product goal.
@@ -11,12 +16,13 @@ This document changes execution ownership, not the product goal.
 
 | Owner | Responsibility | Expected handoff |
 | --- | --- | --- |
-| Luna 6 implementation | Bounded fixes, asset adapters, instrumentation, UI integration, documentation and ordinary regression fixes | Committed implementation with focused checks and remaining limits |
-| Claude Code, Opus 5.5 | Substantial coupled implementation: rendering transitions, procedural geometry architecture, or rigged fauna | Design choices implemented and committed, with tests and normal-game evidence |
+| Luna 6 support | Routine test harnesses, documentation, deployment preparation and mechanical follow-ups | Scoped commit or reproducible evidence with remaining limits |
+| Astra or Claude Code, Opus 5.5 | All main implementation milestones, including rendering transitions, procedural geometry architecture and rigged fauna | Design choices implemented and committed, with tests and normal-game evidence |
 | Luna 6 acceptance | Independent acceptance, reproducible failures, routine fixes, build/package checks, committed deployments and live checks | Concise pass/fail receipt tied to an exact revision |
-| Parent coordinator | Product priorities, resource conflicts, integration and decisions that cross task boundaries | Integration decision and user-facing milestone status |
+| Luna parent coordinator | Product priorities, resource conflicts, integration and delegation across task boundaries | Integration decision and user-facing milestone status |
 
-Opus assignments are implementation jobs, not recurring review-only requests.
+Main milestones are delegated to Astra or Opus as complete implementation jobs.
+Opus assignments are not recurring review-only requests.
 Verify the actual Claude model from run metadata; never substitute another
 model while retaining the Opus label. Luna can complete ordinary fixes without
 returning every decision to the parent.
