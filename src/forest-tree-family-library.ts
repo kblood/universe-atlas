@@ -15,6 +15,9 @@ export type ForestTreeFamilyEntry<T,S>={kind:ForestTreeKind;family:TreeAssetFami
 export class ForestTreeFamilyLibrary<T,S>{
   entries=new Map<ForestTreeKind,ForestTreeFamilyEntry<T,S>>();
   loading=false;error='';maxRadiusM=0;
+  /** Changes only when the adopted presentation changes, not when a request
+   * starts or fails. Near/far pairing can key against this stable revision. */
+  revision=0;
   private request=0;private disposed=false;private date=0n;
   private parent:Group;private loader:ForestTreeLoader;private key:(item:T)=>string;
   private capacities:readonly[number,number];
@@ -48,11 +51,11 @@ export class ForestTreeFamilyLibrary<T,S>{
       for(const entry of pending){entry.family.setDate(this.date);for(const batch of entry.batches)this.parent.add(batch.group);}
       this.release(this.entries.values());
       this.entries=new Map(pending.map(entry=>[entry.kind,entry]));
-      this.maxRadiusM=Math.max(...pending.map(entry=>entry.family.maxRadiusM));adopted=true;
+      this.maxRadiusM=Math.max(...pending.map(entry=>entry.family.maxRadiusM));this.revision++;adopted=true;
       return true;
     }catch(error){if(request===this.request)this.error=String(error);throw error;}
     finally{if(!adopted)this.release(pending);if(request===this.request)this.loading=false;}
   }
-  clear(){this.request++;this.loading=false;this.error='';this.release(this.entries.values());this.entries.clear();this.maxRadiusM=0;}
+  clear(){this.request++;this.loading=false;this.error='';if(this.entries.size)this.revision++;this.release(this.entries.values());this.entries.clear();this.maxRadiusM=0;}
   dispose(){if(this.disposed)return;this.disposed=true;this.clear();}
 }

@@ -148,13 +148,17 @@ test('loader failure is diagnostic and preserves legacy rendering; invalid famil
 test('successful replacement disposes previous batches/family only after replacement is ready',async()=>{
   const {f,h}=fixture();
   try{
-    await load(f);const first=h.families[0],firstBatches=h.batches.slice();
+    assert.equal(f.assets.revision,0);
+    await load(f);const first=h.families[0],firstBatches=h.batches.slice();assert.equal(f.assets.revision,1);
     let resolve;const loader=async()=>new Promise(r=>{resolve=r;});f.treeLoader=loader;
-    const pending=load(f);assert.equal(first.disposed,undefined,'old family remains live while replacement loads');
+    const pending=load(f);assert.equal(first.disposed,undefined,'old family remains live while replacement loads');assert.equal(f.assets.revision,1);
     const replacement={forestCoverage:true,maxRadiusM:30,setDate(){},createBatch(lod){return {lod,group:new THREE.Group(),setInstance(){},setAppearance(){},setCoverage(){},setCount(){},dispose(){}};},dispose(){}};
     resolve(replacement);assert.equal(await pending,true);
+    assert.equal(f.assets.revision,2);
     assert.equal(first.disposed,1);assert.ok(firstBatches.every(b=>b.disposed===1));
     assert.equal(f.diagnostics().detailedTrees.ready,true);
+    f.clearTreeAssets();assert.equal(f.assets.revision,3);
+    f.clearTreeAssets();assert.equal(f.assets.revision,3,'clearing an empty library does not change presentation');
   }finally{f.dispose();}
 });
 
@@ -271,6 +275,7 @@ test('failure in second family preserves active library and disposes partial rep
   await load(f);step([species()],1n);const old=h.families[0],original=f.treeLoader;let calls=0;
   f.treeLoader=async(...args)=>{if(++calls===2)throw new Error('pine load failed');return original(...args);};
   await assert.rejects(f.loadTreeFamilies(bothFamilies()),/pine load failed/);
+  assert.equal(f.assets.revision,1,'failed replacement preserves the adopted presentation revision');
   assert.equal(old.disposed,undefined);assert.equal(h.families[1].disposed,1);
   assert.ok(h.batches.slice(2).every(x=>x.disposed===1));
   step([species()],2n);assert.equal(f.diagnostics().detailedTrees.visible[0],2);
