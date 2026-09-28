@@ -1,0 +1,34 @@
+{
+  "capturedAt": "2026-09-28T13:21:02.349Z",
+  "revision": "c2bca35d6fa618849efad1d30e7807a59b87fa02",
+  "gitStatus": "M docs/forest-worklist-2026-09-28.md\n M vite.config.ts",
+  "priorReview": "test-results/opus-near-far-family-review/review.md",
+  "priorInputRecord": "test-results/opus-near-far-family-review/inputs.json",
+  "priorPrompt": "test-results/opus-near-far-family-review/prompt.txt",
+  "files": [
+    {
+      "source": "C:/LLM/IWSDK/universe-atlas-acceptance/test-results/offline-foliage-mips/mid-pair-down-390m-rerun/default-mid-down-angle.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-near-far-family-review\\paired-390m-followup\\default-mid-down-angle.png",
+      "kind": "image",
+      "bytes": 2719185,
+      "sha256": "0725dd5055235516aef0da138ca208f9833e6370ec3ba7b180ebad2b02909065"
+    },
+    {
+      "source": "C:/LLM/IWSDK/universe-atlas-acceptance/test-results/offline-foliage-mips/mid-pair-down-390m-rerun/offline-mid-down-angle.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-near-far-family-review\\paired-390m-followup\\offline-mid-down-angle.png",
+      "kind": "image",
+      "bytes": 2777158,
+      "sha256": "4f58abee95a7c4ecd0ae96828092dd477ad61936f2b834d19b129b5d2fbd8026"
+    },
+    {
+      "source": "C:/LLM/IWSDK/universe-atlas-acceptance/test-results/offline-foliage-mips/mid-pair-down-390m-rerun/report.json",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-near-far-family-review\\paired-390m-followup\\report.json",
+      "kind": "report",
+      "bytes": 7391635,
+      "sha256": "dcb7f4ca5cb5d701356287a6eb87944d24848868f5fa1b8dd61442b6f57664c1"
+    }
+  ],
+  "promptSha256": "31783b4954dc12c0da52d78e21306ff61ba6896e673eba71e25c06f9525555a9",
+  "model": "claude-opus-5-5",
+  "providerExpected": "firstParty"
+}

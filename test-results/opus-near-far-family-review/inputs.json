@@ -1,0 +1,85 @@
+{
+  "capturedAt": "2026-09-28T13:15:25.939Z",
+  "revision": "970648e1435251d25f56c4f937734e53ab4f2702",
+  "gitStatus": "M docs/desktop-realism-implementation-plan-2026-09-27.md\n M package.json\n M src/planet-canopy.ts\n M src/planet-forest.ts\n M tests/forest-retention.test.mjs\n M tests/planet-canopy.test.mjs\n M vite.config.ts\n?? docs/forest-worklist-2026-09-28.md\n?? src/forest-ordered-work.ts\n?? tests/forest-ordered-work.test.mjs\n?? tests/planet-forest-worklist.test.mjs",
+  "files": [
+    {
+      "path": "src/forest-impostor.ts",
+      "sha256": "2bc8adf3dce8e6568ae48b4cc0d4c89f14372c0564b6724ae5d4aee963597220"
+    },
+    {
+      "path": "src/planet-canopy.ts",
+      "sha256": "9c10c480843c5911ba3886a91da9e1ece7986d2476fde02e48ca78bfa249b290"
+    },
+    {
+      "path": "src/forest-tree-catalogue.ts",
+      "sha256": "11fea8d2e51a7002dd0aa17de0e8ddd00e73ff29b7a447aff989702110810258"
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "sha256": "74274b7fe76c08bc6bd1b2de688ec89df52f9a47707f023617595402926d7fc3"
+    },
+    {
+      "path": "src/tree-species-recipe.ts",
+      "sha256": "a7ad583f72e728be2ba4c75a56197c77b8333f2e17c1e9cd7d3de359949a327f"
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "d9faf49ac5ca38a21a01b9237a280819a273449ed3bf67dd3700ac4ba044b6d7"
+    },
+    {
+      "path": "docs/tree-forest-integration-2026-09-28.md",
+      "sha256": "42df0999b5be01cc6d81ac3780a39a2cb35d96bf4aab5bb2e296305d02219148"
+    },
+    {
+      "path": "docs/compact-tree-families-2026-09-28.md",
+      "sha256": "a88a85e62aae508073bc02abca387995da6d628e7bae4a0b37b0ed05683cf6fb"
+    },
+    {
+      "path": "docs/tree-ez-family-2026-09-28.md",
+      "sha256": "9d18947ca9c7adc1f02474a82d9dbf549df00072a61607899a23e1a68e15e07d"
+    },
+    {
+      "path": "docs/offline-foliage-mips-2026-09-28.md",
+      "sha256": "d033fae220edf2e5150379c2c8e87bad092eb4f70381b684e26a22c3e48ac311"
+    },
+    {
+      "path": "docs/tree-species-asset-contract-2026-09-28.md",
+      "sha256": "c927c1e07a908c7fde600403b08c56f06257836b18305f82bf0d0e2baf931d05"
+    },
+    {
+      "path": "docs/opus-tree-family-review-2026-09-28.md",
+      "sha256": "c8f16f44f48f1c5cd5364f061637ccdc18ebb9a02134039be1bf7dc1d63b7a45"
+    },
+    {
+      "path": "test-results/compact-tree-families/README.md",
+      "sha256": "fffaff7da2e02ce2ed7250425f2203fc649268a59774a2cbceaec1c3c01e77f3"
+    }
+  ],
+  "evidence": [
+    {
+      "source": "C:/LLM/IWSDK/universe-atlas-acceptance/test-results/offline-foliage-mips/browser-run-2e00837/families-offline-mips-close.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-near-far-family-review\\families-offline-mips-close.png",
+      "kind": "image",
+      "bytes": 1912686,
+      "sha256": "d1e42d59cfc310ea54f44579d328a73cdc37a5b78446dbd51a86bbb1b90c44a8"
+    },
+    {
+      "source": "C:/LLM/IWSDK/universe-atlas-acceptance/test-results/offline-foliage-mips/browser-run-2e00837/offline-mid-390m.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-near-far-family-review\\offline-mid-390m.png",
+      "kind": "image",
+      "bytes": 2231155,
+      "sha256": "34656590a52cdb9814418e87e2d35246876905109bd18f51eea396a07cb222da"
+    },
+    {
+      "source": "C:/LLM/IWSDK/universe-atlas-acceptance/test-results/offline-foliage-mips/browser-run-2e00837/report.json",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-near-far-family-review\\offline-mips-report.json",
+      "kind": "report",
+      "bytes": 265245,
+      "sha256": "0afc92fb221e1cad29fba506159fc1112faa5697f5e87e35747d40eea64ee00f"
+    }
+  ],
+  "promptSha256": "393b9debc40b063f5c3e62536e3ef701e3cbd03d07eae6bfb058262c70e44e1e",
+  "model": "claude-opus-5-5",
+  "providerExpected": "firstParty"
+}

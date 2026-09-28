@@ -1,0 +1,8 @@
+This is a short evidence follow-up to your genuine Claude Opus 5.5 review at test-results/opus-near-far-family-review/review.md. That prior review's exact source snapshots, original prompt, revision and hashes are preserved in the sibling prompt.txt and inputs.json. Read those records and your prior review first; then inspect BOTH new same-pose/date 390 m screenshots and the accompanying acceptance report.
+
+New evidence paths:
+C:\LLM\IWSDK\universe-atlas-rendering\test-results\opus-near-far-family-review\paired-390m-followup\default-mid-down-angle.png
+C:\LLM\IWSDK\universe-atlas-rendering\test-results\opus-near-far-family-review\paired-390m-followup\offline-mid-down-angle.png
+Report: C:\LLM\IWSDK\universe-atlas-rendering\test-results\opus-near-far-family-review\paired-390m-followup\report.json
+
+The acceptance agent says these are a direct default-vs-offline-mip comparison from the same pose/date; both showed the same 250 Oak / 369 Pine middle submissions. Initial visual inspection: the offline-mip image restores foliage on nearby middle trees, but these dark, small family crowns still contrast sharply with the bright bulky rounded far-legacy ring. Verify what is actually visible in the images/report; do not accept that description without inspecting them. Determine whether this changes your earlier minimal recommendation, what it proves about alpha/mip contribution versus remaining geometry/color mismatch, and any correction needed to your prior factual statements. Be precise about capture scope and source/report hash provenance. Keep the follow-up concise (about 300–600 words). No code edits, commands, external research, new proxy system, or unrelated recommendations. Distinguish observed evidence from inference.
