@@ -2,9 +2,9 @@
 
 Independent source and screenshot review of snapshot 8278952aeab43923db85d62444dabe5583cec5df. The local runtime is newer than deployed release 8e16776. The response below is preserved verbatim; reviewer opinions and hypotheses are not test results. See [metadata](opus-5.5-surface-progress-review-2026-09-28.metadata.json) and [assessment](surface-progress-review-assessment-2026-09-28.md).
 
-## Evidence qualifications established after submission
+## Evidence qualifications
 
-The revised browser run completed after this prompt was captured. Its family F screenshots used **basic lighting**: detailed lighting was disabled after the legacy comparison and was not re-enabled before loading the trees. These images therefore do not assess the detailed-tree and new-lighting combination. The legacy detailed capture also still had 111 fauna terrain stencils pending (138 in the earlier failed run), despite lifePending being zero. Repeated packing in that window does not prove an invalidation regression; settled family captures held the counter at 325. The full report is preserved with the review as luna-report-final.json. Combined detailed lighting and fully warmed performance need another capture.
+The completed revised browser report was supplied to Opus through its Read tool. Its family F screenshots used **basic lighting**: detailed lighting was disabled after the legacy comparison and was not re-enabled before loading the trees. These images therefore do not assess the detailed-tree and new-lighting combination. The legacy detailed capture also still had 111 fauna terrain stencils pending (138 in the earlier failed run), despite lifePending being zero. Repeated packing in that window does not prove an invalidation regression; settled family captures held the counter at 325. The full report is preserved with the review as luna-report-final.json (byte-identical to the supplied luna-report.json). Combined detailed lighting and fully warmed performance need another capture.
 
 ## Original reviewer response
 

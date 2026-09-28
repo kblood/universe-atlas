@@ -62,7 +62,7 @@ fauna, clouds and broader desktop realism remain part of the active goal.
   shared-slot submission in source. Future savings must be measured after
   compaction with the same view and shadow setting.
 
-The complete report received after prompt submission is preserved as
+The complete report supplied to the reviewer is preserved as
 [luna-report-final.json](../test-results/opus-surface-progress-review/luna-report-final.json).
 The review and this assessment will join the next documentation publication;
 they have not yet been deployed.
