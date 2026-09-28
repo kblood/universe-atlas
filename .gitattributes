@@ -1,5 +1,6 @@
 # Preserve byte-hashed reference and review evidence across Windows checkouts.
 test-results/tree-reference-ez-oak/** -text
 test-results/opus-tree-reference-review/** -text
+test-results/tree-reference-ez-live/** -text
 src/tree-reference-lab.ts -text
 tree-reference-lab.html -text
