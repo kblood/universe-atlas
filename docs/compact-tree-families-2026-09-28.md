@@ -25,7 +25,7 @@ shapes and need matching family presentation.
 integration seam, like the earlier single-family loader. It accepts at most one
 branching and one spire entry. The earlier loader remains a branching-only
 wrapper. Both use the same atmosphere, dated wind, coverage and physical leaf
-contracts. Production does not fetch these candidate GLBs yet.
+contracts. The local [normal Trees control](forest-asset-loading-2026-09-28.md) now fetches the packaged pair when enabled; it is still awaiting browser acceptance and publication.
 
 Replacement is atomic: all families and their batches are prepared before the
 current library is released. Failed or cancelled loads dispose staged resources
