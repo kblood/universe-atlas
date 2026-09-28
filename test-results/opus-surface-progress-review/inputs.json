@@ -1,0 +1,90 @@
+{
+  "capturedAt": "2026-09-28T12:13:08.943Z",
+  "revision": "8278952aeab43923db85d62444dabe5583cec5df",
+  "gitStatus": "?? src/forest-patch-broadphase.ts\n?? tests/forest-patch-broadphase.test.mjs",
+  "files": [
+    {
+      "path": "docs/desktop-realism-implementation-plan-2026-09-27.md",
+      "sha256": "d08157f8379c7791dae3df86264ea04a86831c35b7a90f0023614f3d069af527"
+    },
+    {
+      "path": "docs/desktop-state-review-assessment-2026-09-28.md",
+      "sha256": "e9abef6edfe2aa162e2872bcf2e7c283f9642e5db70b0e21b95d5986c4d50d4c"
+    },
+    {
+      "path": "docs/surface-lighting-2026-09-28.md",
+      "sha256": "ba927377e59639a7b2ddba19ba0e45dc2c2aea0982af7c69a57e0e4f6adc1d90"
+    },
+    {
+      "path": "docs/tree-forest-integration-2026-09-28.md",
+      "sha256": "5832c4be47bb69f677f5cf9d52f9e05065238e7cc458e92c0b181b133127a80d"
+    },
+    {
+      "path": "src/surface-lighting.ts",
+      "sha256": "4348fd91f6d871aee09800d7bcd1547d8bf8cb9e53ebb1b52293a991e72eaf93"
+    },
+    {
+      "path": "src/terrain-shadow.ts",
+      "sha256": "f08967f239d3f68bc26e886b97bdb992c1cbdc022db8c6657ede194e5f9d091e"
+    },
+    {
+      "path": "src/forest-material.ts",
+      "sha256": "fc65be33dc821c59cd15b93aa83d5de0dc9d884665363675e55752fbc7d3657b"
+    },
+    {
+      "path": "src/life-shadow-priority.ts",
+      "sha256": "eeb3e01ffd9cbabcfbe48e5f94f69b30b25a55efd2c1e8e7ae6f0e1f26e63186"
+    },
+    {
+      "path": "src/tree-foliage-mips.ts",
+      "sha256": "eb147555089b6d33aa6635513852414167aa1e00f5547176e7e21865b66b9818"
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "37e2cd957c745bd1a8a80cfed3137979a1f026105051be1718ad92d2e5abb06d"
+    },
+    {
+      "path": "src/planet-renderer.ts",
+      "sha256": "f4b3c54f0cd8efde1dac88bd4d3180c5593de6f37ac8c3740aa4606a9cdcfb0f"
+    },
+    {
+      "path": "src/planet-canopy.ts",
+      "sha256": "b63cc25fd01b4f0f6ff63968b33192e7c85da1e588093eb0a29a4ecc43481c22"
+    },
+    {
+      "path": "src/forest-tree-catalogue.ts",
+      "sha256": "11fea8d2e51a7002dd0aa17de0e8ddd00e73ff29b7a447aff989702110810258"
+    },
+    {
+      "path": "src/tree-species-recipe.ts",
+      "sha256": "a7ad583f72e728be2ba4c75a56197c77b8333f2e17c1e9cd7d3de359949a327f"
+    },
+    {
+      "path": "test-results/surface-lighting/README.md",
+      "sha256": "a98becbdaf876b3976d5faa96e446c8f3867acdf8118d3475397fb7da8c416f8"
+    }
+  ],
+  "screenshots": [
+    {
+      "source": "test-results/surface-lighting/revised-run-2/legacy-detailed-close.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-surface-progress-review\\legacy-detailed-close.png",
+      "sha256": "07d2181de8eae2daa271f02aeff366655d1cce1d1934666fc17fea86e13d7697"
+    },
+    {
+      "source": "test-results/surface-lighting/revised-run-2/legacy-basic-close.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-surface-progress-review\\legacy-basic-close.png",
+      "sha256": "3a0accf1712782716177e4f101af816183cb205ee8468b9c2ca831040da2075d"
+    },
+    {
+      "source": "test-results/surface-lighting/revised-run-2/family-default-mips-close.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-surface-progress-review\\family-default-mips-close.png",
+      "sha256": "487578fe57b209f6165311025474818e6f142fe6950d6d53dbdf1090e1bdb37e"
+    },
+    {
+      "source": "test-results/surface-lighting/revised-run-2/family-coverage-mips-close.png",
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\opus-surface-progress-review\\family-coverage-mips-close.png",
+      "sha256": "4be74c871125ba72ee74ce90f25b49091a7511a74cd300863fa8485fdc93f0aa"
+    }
+  ],
+  "promptSha256": "84a24270acce981e5cd8416dfc75bdbf1140b66cc9eae3cfabb4c8bb3f856123"
+}

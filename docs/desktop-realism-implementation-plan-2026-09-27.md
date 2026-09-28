@@ -542,5 +542,18 @@ the [receipt](../test-results/tree-forest-live/live-publication-receipt.json)
 preserves the scope and earlier failures. Shared sky fill and a metre-scaled
 local sun shadow region are implemented behind the normal surface-lighting
 setting. [Implementation and validation status](surface-lighting-2026-09-28.md):
-69 focused CPU tests and the production build pass; actual-game visual and
-performance checks are pending. The complete forest-area acceptance remains open.
+69 focused CPU tests and the production build pass; initial actual-game lighting
+and timing captures are recorded in the implementation document. The complete
+forest-area acceptance remains open.
+
+### Updated Opus progress review — 2026-09-28
+
+The [updated independent review](opus-5.5-surface-progress-review-2026-09-28.md)
+inspected the current source and new actual-game captures. Its
+[assessment](surface-progress-review-assessment-2026-09-28.md) prioritizes compact
+family instance pools, completing the Pine family, matching the far canopy,
+correcting mip/loading issues, and reducing far candidate work. Combined
+detailed-tree lighting still needs the corrected capture: the family comparison
+had basic lighting selected. Fauna stencil warm-up also invalidated the initial
+steady-state assumption. No causal cache speedup or final realism acceptance is
+claimed. Live remains `8e16776`; these later changes are local checkpoints.
