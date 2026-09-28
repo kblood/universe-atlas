@@ -1,0 +1,117 @@
+{
+  "scope": "CPU texture coverage expectations, not rasterized mesh coverage",
+  "rows": [
+    {
+      "family": "oak",
+      "level": 0,
+      "meanAlpha": 0.18970775604248047,
+      "maskCoverage": 0.18970775604248047,
+      "hashToMaskRatio": 1
+    },
+    {
+      "family": "oak",
+      "level": 1,
+      "meanAlpha": 0.1484749700509033,
+      "maskCoverage": 0.1888713836669922,
+      "hashToMaskRatio": 0.7861168122360258
+    },
+    {
+      "family": "oak",
+      "level": 2,
+      "meanAlpha": 0.1743054857440597,
+      "maskCoverage": 0.18895339965820312,
+      "hashToMaskRatio": 0.9224786961195726
+    },
+    {
+      "family": "oak",
+      "level": 3,
+      "meanAlpha": 0.1886009066712313,
+      "maskCoverage": 0.1897125244140625,
+      "hashToMaskRatio": 0.9941405147274041
+    },
+    {
+      "family": "oak",
+      "level": 4,
+      "meanAlpha": 0.18814027075674158,
+      "maskCoverage": 0.1895751953125,
+      "hashToMaskRatio": 0.9924308422660831
+    },
+    {
+      "family": "oak",
+      "level": 5,
+      "meanAlpha": 0.18306908700980407,
+      "maskCoverage": 0.189453125,
+      "hashToMaskRatio": 0.9663028097837081
+    },
+    {
+      "family": "oak",
+      "level": 6,
+      "meanAlpha": 0.1809627757352942,
+      "maskCoverage": 0.19140625,
+      "hashToMaskRatio": 0.9454381752701085
+    },
+    {
+      "family": "oak",
+      "level": 7,
+      "meanAlpha": 0.20536151960784316,
+      "maskCoverage": 0.1953125,
+      "hashToMaskRatio": 1.051450980392157
+    },
+    {
+      "family": "pine",
+      "level": 0,
+      "meanAlpha": 0.04973236532771273,
+      "maskCoverage": 0.04645085334777832,
+      "hashToMaskRatio": 1.0706448158307378
+    },
+    {
+      "family": "pine",
+      "level": 1,
+      "meanAlpha": 0.05463856341793266,
+      "maskCoverage": 0.04645824432373047,
+      "hashToMaskRatio": 1.1760789546242874
+    },
+    {
+      "family": "pine",
+      "level": 2,
+      "meanAlpha": 0.060985475427978164,
+      "maskCoverage": 0.046390533447265625,
+      "hashToMaskRatio": 1.3146103503488125
+    },
+    {
+      "family": "pine",
+      "level": 3,
+      "meanAlpha": 0.06773783365885051,
+      "maskCoverage": 0.0465240478515625,
+      "hashToMaskRatio": 1.4559746364927606
+    },
+    {
+      "family": "pine",
+      "level": 4,
+      "meanAlpha": 0.07243939568014661,
+      "maskCoverage": 0.0465087890625,
+      "hashToMaskRatio": 1.5575420719468793
+    },
+    {
+      "family": "pine",
+      "level": 5,
+      "meanAlpha": 0.06661688112745116,
+      "maskCoverage": 0.046875,
+      "hashToMaskRatio": 1.421160130718958
+    },
+    {
+      "family": "pine",
+      "level": 6,
+      "meanAlpha": 0.07550551470588257,
+      "maskCoverage": 0.0458984375,
+      "hashToMaskRatio": 1.6450563204005053
+    },
+    {
+      "family": "pine",
+      "level": 7,
+      "meanAlpha": 0.11881127450980376,
+      "maskCoverage": 0.0625,
+      "hashToMaskRatio": 1.9009803921568602
+    }
+  ]
+}

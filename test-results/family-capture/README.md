@@ -89,6 +89,15 @@ overfills by 76–78%, with blurred IoU about 0.555. This is not grounds for a
 global foliage-mode switch. The family-specific behavior needs a coherent
 source/capture coverage contract and actual-game temporal review.
 
+`alpha-distribution.json` provides a CPU explanation for that distinction. The
+current sidecars preserve a fixed MASK cutoff, not mean alpha. Pine's expected
+hashed coverage / cutoff coverage grows from 1.071 at the original level to
+1.901 at mip 7; Oak's mip-7 ratio is 1.051. Thus combining the current Pine
+MASK correction with alpha hashing changes its intended density. Before any
+family-mode switch, compare hashing with mean-coverage mips (or the original
+chain) and retain a consistent source/capture sampling contract. This texture
+statistic does not by itself establish the mesh's screen-space coverage.
+
 ## Reproduce
 
 Keep rendering dev server on 5197, retained root captures present, and the GPU
