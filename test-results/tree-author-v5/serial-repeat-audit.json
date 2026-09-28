@@ -1,0 +1,54 @@
+{
+  "status": "pass",
+  "scope": "Four retained serial exports on this Blender build; GLB and PNG bytes independently hashed. Not a cross-machine guarantee.",
+  "runs": [
+    {
+      "candidate": "atlas-tree-smoke-1790569226563",
+      "executionThreads": 1,
+      "hashes": {
+        "atlas-branching-v1.glb": "e0d8b70e43904844d4dcfb64dab5f49309bdee5477507f3d6fef2db29e9d5b11",
+        "atlas-branching-v1.lod1.glb": "cd7bcf081cfa5cf5467c9c8a5acd904b4c4ad9b87d95f55b510330fb145a189a",
+        "MAT_AtlasBark_BaseColor.png": "fd55ccce7b35dbedc21fc49407cd11994c84fb1860a2fb7268429e5b06a06625",
+        "MAT_AtlasBark_Normal.png": "adca1682607142cec7e637b03e777755935524365de9656ae420a485ea2130b2",
+        "MAT_AtlasFoliage_BaseColor.png": "eb2d2c5656de3230d1a2bc9c059a4df64df9762c338546deba104c4c6a525eed",
+        "MAT_AtlasFoliage_Normal.png": "3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951"
+      }
+    },
+    {
+      "candidate": "atlas-tree-smoke-1790569226563-repeat",
+      "executionThreads": 1,
+      "hashes": {
+        "atlas-branching-v1.glb": "e0d8b70e43904844d4dcfb64dab5f49309bdee5477507f3d6fef2db29e9d5b11",
+        "atlas-branching-v1.lod1.glb": "cd7bcf081cfa5cf5467c9c8a5acd904b4c4ad9b87d95f55b510330fb145a189a",
+        "MAT_AtlasBark_BaseColor.png": "fd55ccce7b35dbedc21fc49407cd11994c84fb1860a2fb7268429e5b06a06625",
+        "MAT_AtlasBark_Normal.png": "adca1682607142cec7e637b03e777755935524365de9656ae420a485ea2130b2",
+        "MAT_AtlasFoliage_BaseColor.png": "eb2d2c5656de3230d1a2bc9c059a4df64df9762c338546deba104c4c6a525eed",
+        "MAT_AtlasFoliage_Normal.png": "3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951"
+      }
+    },
+    {
+      "candidate": "atlas-tree-smoke-1790569291675",
+      "executionThreads": 1,
+      "hashes": {
+        "atlas-branching-v1.glb": "e0d8b70e43904844d4dcfb64dab5f49309bdee5477507f3d6fef2db29e9d5b11",
+        "atlas-branching-v1.lod1.glb": "cd7bcf081cfa5cf5467c9c8a5acd904b4c4ad9b87d95f55b510330fb145a189a",
+        "MAT_AtlasBark_BaseColor.png": "fd55ccce7b35dbedc21fc49407cd11994c84fb1860a2fb7268429e5b06a06625",
+        "MAT_AtlasBark_Normal.png": "adca1682607142cec7e637b03e777755935524365de9656ae420a485ea2130b2",
+        "MAT_AtlasFoliage_BaseColor.png": "eb2d2c5656de3230d1a2bc9c059a4df64df9762c338546deba104c4c6a525eed",
+        "MAT_AtlasFoliage_Normal.png": "3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951"
+      }
+    },
+    {
+      "candidate": "atlas-tree-smoke-1790569291675-repeat",
+      "executionThreads": 1,
+      "hashes": {
+        "atlas-branching-v1.glb": "e0d8b70e43904844d4dcfb64dab5f49309bdee5477507f3d6fef2db29e9d5b11",
+        "atlas-branching-v1.lod1.glb": "cd7bcf081cfa5cf5467c9c8a5acd904b4c4ad9b87d95f55b510330fb145a189a",
+        "MAT_AtlasBark_BaseColor.png": "fd55ccce7b35dbedc21fc49407cd11994c84fb1860a2fb7268429e5b06a06625",
+        "MAT_AtlasBark_Normal.png": "adca1682607142cec7e637b03e777755935524365de9656ae420a485ea2130b2",
+        "MAT_AtlasFoliage_BaseColor.png": "eb2d2c5656de3230d1a2bc9c059a4df64df9762c338546deba104c4c6a525eed",
+        "MAT_AtlasFoliage_Normal.png": "3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951"
+      }
+    }
+  ]
+}

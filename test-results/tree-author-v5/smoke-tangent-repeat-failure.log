@@ -1,0 +1,38 @@
+✖ named tree authoring preserves candidates and exports finite UV/tangent/wind data (31586.559ms)
+✔ tree authoring rejects invalid version and non-original provenance before creating an output (2572.9664ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 34282.6962
+
+✖ failing tests:
+
+test at tools\assetctl\test\tree-family.test.mjs:15:1
+✖ named tree authoring preserves candidates and exports finite UV/tangent/wind data (31586.559ms)
+  AssertionError [ERR_ASSERTION]: GLB and sorted texture artifacts are byte-identical across fresh outputs
+  + actual - expected
+  
+    {
+      'MAT_AtlasBark_BaseColor.png': 'fd55ccce7b35dbedc21fc49407cd11994c84fb1860a2fb7268429e5b06a06625',
+      'MAT_AtlasBark_Normal.png': 'adca1682607142cec7e637b03e777755935524365de9656ae420a485ea2130b2',
+      'MAT_AtlasFoliage_BaseColor.png': 'eb2d2c5656de3230d1a2bc9c059a4df64df9762c338546deba104c4c6a525eed',
+      'MAT_AtlasFoliage_Normal.png': '3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951',
+  +   'atlas-branching-v1.glb': '9ed838f352cc37f83ef1bfed740e59f08c2a97ea44706c643c58d5d9aa8e721f',
+  -   'atlas-branching-v1.glb': '522ad55a51bbb0731e7ca371309fdaa37fdfd821c186a5d3c7339fffcc0860ed',
+      'atlas-branching-v1.lod1.glb': 'cd7bcf081cfa5cf5467c9c8a5acd904b4c4ad9b87d95f55b510330fb145a189a'
+    }
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/tools/assetctl/test/tree-family.test.mjs:80:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { 'atlas-branching-v1.glb': '9ed838f352cc37f83ef1bfed740e59f08c2a97ea44706c643c58d5d9aa8e721f', 'atlas-branching-v1.lod1.glb': 'cd7bcf081cfa5cf5467c9c8a5acd904b4c4ad9b87d95f55b510330fb145a189a', 'MAT_AtlasBark_BaseColor.png': 'fd55ccce7b35dbedc21fc49407cd11994c84fb1860a2fb7268429e5b06a06625', 'MAT_AtlasBark_Normal.png': 'adca1682607142cec7e637b03e777755935524365de9656ae420a485ea2130b2', 'MAT_AtlasFoliage_BaseColor.png': 'eb2d2c5656de3230d1a2bc9c059a4df64df9762c338546deba104c4c6a525eed', 'MAT_AtlasFoliage_Normal.png': '3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951' },
+    expected: { 'atlas-branching-v1.glb': '522ad55a51bbb0731e7ca371309fdaa37fdfd821c186a5d3c7339fffcc0860ed', 'atlas-branching-v1.lod1.glb': 'cd7bcf081cfa5cf5467c9c8a5acd904b4c4ad9b87d95f55b510330fb145a189a', 'MAT_AtlasBark_BaseColor.png': 'fd55ccce7b35dbedc21fc49407cd11994c84fb1860a2fb7268429e5b06a06625', 'MAT_AtlasBark_Normal.png': 'adca1682607142cec7e637b03e777755935524365de9656ae420a485ea2130b2', 'MAT_AtlasFoliage_BaseColor.png': 'eb2d2c5656de3230d1a2bc9c059a4df64df9762c338546deba104c4c6a525eed', 'MAT_AtlasFoliage_Normal.png': '3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,330 @@
+{
+  "schema": "https://iwsdk.local/schemas/tree-render-review-receipt/v1",
+  "candidate": "Assets/_assetctl/atlas-tree-smoke-1790568688082",
+  "reviewEnvironment": {
+    "blender": "5.1.1",
+    "platform": "Windows",
+    "operation": "assetctl blender render-sheet"
+  },
+  "assetFiles": {
+    "atlas-branching-v1.blend": {
+      "sha256": "9c0344b5df493e21de7afde544320a825c1b8227f96e478132f21042f8e6a141"
+    },
+    "atlas-branching-v1.glb": {
+      "sha256": "85fcf1947a08ba4e7b3a1fe5ed2f5326245f213ec0d2f4dc59c45c7ed49aad99"
+    },
+    "atlas-branching-v1.lod1.glb": {
+      "sha256": "cd7bcf081cfa5cf5467c9c8a5acd904b4c4ad9b87d95f55b510330fb145a189a"
+    }
+  },
+  "renderOutputs": {
+    "blend": "Assets/_assetctl/atlas-tree-smoke-1790568688082-v5-blend-review",
+    "lod0": "Assets/_assetctl/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review",
+    "lod1": "Assets/_assetctl/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review",
+    "seed1": "Assets/_assetctl/atlas-tree-smoke-1790568688082-v5-lod1-hashseed1",
+    "seed2": "Assets/_assetctl/atlas-tree-smoke-1790568688082-v5-lod1-hashseed2"
+  },
+  "geometry": {
+    "sourceBlendSceneTriangles": 18392,
+    "lod0Triangles": 14012,
+    "lod1Triangles": 4380,
+    "lod0BoundsMeters": [
+      12.878292083740234,
+      12.118000984191895,
+      16.00051498413086
+    ],
+    "lod1BoundsMeters": [
+      12.878292083740234,
+      12.118000984191895,
+      16.00051498413086
+    ],
+    "validation": "Both GLBs pass assetctl validation; zero degenerate indexed triangles and zero nonfinite accessors."
+  },
+  "lod0SourceRenderComparison": {
+    "sourceBlendVsLod0Glb": [
+      {
+        "view": "hero",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 3e-06,
+        "pixelsWithAnyChannelDeltaAbove8": 0,
+        "foregroundPixelsA": 24846,
+        "foregroundPixelsB": 24846,
+        "foregroundIoUThreshold12": 1.0
+      },
+      {
+        "view": "front",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 5e-06,
+        "pixelsWithAnyChannelDeltaAbove8": 0,
+        "foregroundPixelsA": 36784,
+        "foregroundPixelsB": 36784,
+        "foregroundIoUThreshold12": 1.0
+      },
+      {
+        "view": "right",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 8e-06,
+        "pixelsWithAnyChannelDeltaAbove8": 0,
+        "foregroundPixelsA": 34618,
+        "foregroundPixelsB": 34618,
+        "foregroundIoUThreshold12": 1.0
+      },
+      {
+        "view": "back",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 3e-06,
+        "pixelsWithAnyChannelDeltaAbove8": 0,
+        "foregroundPixelsA": 36363,
+        "foregroundPixelsB": 36363,
+        "foregroundIoUThreshold12": 1.0
+      },
+      {
+        "view": "top",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 1e-06,
+        "pixelsWithAnyChannelDeltaAbove8": 0,
+        "foregroundPixelsA": 54832,
+        "foregroundPixelsB": 54832,
+        "foregroundIoUThreshold12": 1.0
+      },
+      {
+        "view": "wire",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.038572,
+        "pixelsWithAnyChannelDeltaAbove8": 99,
+        "foregroundPixelsA": 27894,
+        "foregroundPixelsB": 27892,
+        "foregroundIoUThreshold12": 0.999068
+      }
+    ],
+    "interpretation": "Hero/front/right/back/top pixels identical; wire differs slightly (99 pixels exceed channel delta 8)."
+  },
+  "lodComparison": {
+    "lod0VsLod1": [
+      {
+        "view": "hero",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.100517,
+        "pixelsWithAnyChannelDeltaAbove8": 1001,
+        "foregroundPixelsA": 24846,
+        "foregroundPixelsB": 24752,
+        "foregroundIoUThreshold12": 0.995895
+      },
+      {
+        "view": "front",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.184205,
+        "pixelsWithAnyChannelDeltaAbove8": 1848,
+        "foregroundPixelsA": 36784,
+        "foregroundPixelsB": 36532,
+        "foregroundIoUThreshold12": 0.990876
+      },
+      {
+        "view": "right",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.174343,
+        "pixelsWithAnyChannelDeltaAbove8": 1721,
+        "foregroundPixelsA": 34618,
+        "foregroundPixelsB": 34513,
+        "foregroundIoUThreshold12": 0.990756
+      },
+      {
+        "view": "back",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.188,
+        "pixelsWithAnyChannelDeltaAbove8": 1857,
+        "foregroundPixelsA": 36363,
+        "foregroundPixelsB": 36216,
+        "foregroundIoUThreshold12": 0.988466
+      },
+      {
+        "view": "top",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.266776,
+        "pixelsWithAnyChannelDeltaAbove8": 2262,
+        "foregroundPixelsA": 54832,
+        "foregroundPixelsB": 54243,
+        "foregroundIoUThreshold12": 0.989222
+      },
+      {
+        "view": "wire",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.177917,
+        "pixelsWithAnyChannelDeltaAbove8": 2394,
+        "foregroundPixelsA": 27892,
+        "foregroundPixelsB": 27874,
+        "foregroundIoUThreshold12": 0.998566
+      }
+    ],
+    "interpretation": "Similar silhouettes with reduced fine wood. Foliage triangles remain 3,088 in both LODs, so reduction is primarily bark/wood."
+  },
+  "rawGlbCustomAttributeAudit": {
+    "method": "Parsed each GLB JSON/BIN accessor; combined primitive rows by attribute, sorted numeric tuples, packed little-endian float32, SHA-256 hashed. Compared each digest, type, domain and count with Blender render-sheet manifest.",
+    "matchesImportedManifests": true,
+    "lod0": [
+      {
+        "name": "_LEAF_CENTER",
+        "type": "FLOAT_VECTOR",
+        "domain": "POINT",
+        "count": 21607,
+        "sortedFloat32Sha256": "15365b63b3dce268a4858f3257929817623c7cfb7fc2fe041c62f76da00ebc44"
+      },
+      {
+        "name": "_WIND",
+        "type": "FLOAT",
+        "domain": "POINT",
+        "count": 21607,
+        "sortedFloat32Sha256": "2bd41cadf6c4e04a15361757dc246dcc2d0a363f7eca9cab8006f76a537971d9"
+      }
+    ],
+    "lod1": [
+      {
+        "name": "_LEAF_CENTER",
+        "type": "FLOAT_VECTOR",
+        "domain": "POINT",
+        "count": 7349,
+        "sortedFloat32Sha256": "fee3e599f201dc98f31682e914ff204b7f77a361c8317cc29763c6d17a38d3ea"
+      },
+      {
+        "name": "_WIND",
+        "type": "FLOAT",
+        "domain": "POINT",
+        "count": 7349,
+        "sortedFloat32Sha256": "6d77565aba64d65cc2c6abf3a166d250ae034ffdb67e80605ee2095278624969"
+      }
+    ]
+  },
+  "hashSeedRegression": {
+    "pythonHashSeeds": [
+      1,
+      2
+    ],
+    "renderResolution": [
+      128,
+      128
+    ],
+    "outputsPixelIdenticalAcrossSeeds": true,
+    "renderViews": [
+      {
+        "image": "hero",
+        "dimensions": [
+          128,
+          128
+        ],
+        "pixelIdentical": true,
+        "sha256Seed1": "65317b3bdb238dcabcf43a6c5cfd0ba470fb9e1271408024132574e92fd4bb0b",
+        "sha256Seed2": "b5e0bc5ae67bd8754c05fcf62213ab230f10cca274bada08bb022ffe6bf39249"
+      },
+      {
+        "image": "front",
+        "dimensions": [
+          128,
+          128
+        ],
+        "pixelIdentical": true,
+        "sha256Seed1": "5a30bca5ede26ce31d413f3d03c3b02af6caecb0b06288bf7c7ddce243f74f66",
+        "sha256Seed2": "4a9d851bdf43f92681c0f60170fa405072b490034952947687a82376effa0c6d"
+      },
+      {
+        "image": "right",
+        "dimensions": [
+          128,
+          128
+        ],
+        "pixelIdentical": true,
+        "sha256Seed1": "8645edfb4eea1304de515418c8677bcd65f85fad022abdea4736bb11478f3e79",
+        "sha256Seed2": "677098af1f787b311e30b02bb383548eb9441fff504fac69d7ce0ef88695e281"
+      },
+      {
+        "image": "back",
+        "dimensions": [
+          128,
+          128
+        ],
+        "pixelIdentical": true,
+        "sha256Seed1": "fee2451d1333a51e7cdcebaa15f85d85a32142f0a6e72eb722b50db9268f5d34",
+        "sha256Seed2": "f25a500d9c813aedf89b8ac74d218cbe2ed6f6ee3b4b4c812f4cfb7867293e49"
+      },
+      {
+        "image": "top",
+        "dimensions": [
+          128,
+          128
+        ],
+        "pixelIdentical": true,
+        "sha256Seed1": "b34d74019c5c552d35762404dde16c399f64b8b4f44d1b38e2a34a489bda641c",
+        "sha256Seed2": "024054a3eaac747e5adff7c8a044e72129ab39adb1f1bcbef53e22e7a59b3f19"
+      },
+      {
+        "image": "wire",
+        "dimensions": [
+          128,
+          128
+        ],
+        "pixelIdentical": true,
+        "sha256Seed1": "c5d46558f149129ed6c37a00626c770dfb44c71ea274955472fc8d525e01a88d",
+        "sha256Seed2": "551a9eed89a1a0750a653188a6947d92e7913290a2a9c1e12ff2796a2ba2e266"
+      },
+      {
+        "image": "render-sheet",
+        "dimensions": [
+          384,
+          256
+        ],
+        "pixelIdentical": true,
+        "sha256Seed1": "139c20e21671bed52f955dbd6fbd13fc65a86ba57f85de217a3d09b4e6b55b72",
+        "sha256Seed2": "139c20e21671bed52f955dbd6fbd13fc65a86ba57f85de217a3d09b4e6b55b72"
+      }
+    ],
+    "sortedCustomAttributeDigestsMatchRawGlb": true
+  },
+  "initialUnpatchedLod1RenderFailure": {
+    "status": "Initial import failed while importing LOD1 in Blender 5.1.1 due unordered custom-attribute iteration; GLB itself passed assetctl validation.",
+    "workaround": "Named render-sheet adapter preserves ordered custom-attribute iteration only during import and restores it afterward; no asset mutation."
+  },
+  "visualAssessment": {
+    "status": "Technical archive only; visual acceptance remains open.",
+    "limitations": [
+      "Top view exposes a bare radial crown center.",
+      "Foliage appears pale under review lighting.",
+      "LOD silhouette parity does not address reviewer concern about disconnected secondary bark and foliage appearance."
+    ]
+  },
+  "claimsLimit": "Checks establish repeatable import, custom-attribute preservation, and image/silhouette comparisons only; they do not establish realistic appearance or runtime/device acceptance."
+}

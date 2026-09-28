@@ -1,0 +1,56 @@
+{
+  "revision": "c1c357d286ecd7cfd7fe382396a7d38c2405999d",
+  "dirty": true,
+  "files": [
+    {
+      "path": "../tools/assetctl/blender/tree_family.py",
+      "sha256": "568e1d065fbdd4fed2559b5e076fd80de072d31f3a0cb95817148a95938a2536"
+    },
+    {
+      "path": "../tools/assetctl/blender/tree_mesh.py",
+      "sha256": "09a5bffc294c2164967335a4081469dc0473bb384bcaf49e27f90e487ff134ba"
+    },
+    {
+      "path": "../tools/assetctl/blender/tree_bark.py",
+      "sha256": "29aecded32388219ef28d675b707a0f161fc4326adc015c97b3746ee86f2233e"
+    },
+    {
+      "path": "../tools/assetctl/test/tree-family-glb.test.mjs",
+      "sha256": "f4b7f0d9c5f6920adb453c3c4b3e33042ea46d6941d923e22b691eb6d58da6af"
+    },
+    {
+      "path": "../tools/assetctl/blender/tree_skeleton.py",
+      "sha256": "d17250935436be052b6bbde498d3875ca9aebc0dcc9ea78ac9a729f177339069"
+    },
+    {
+      "path": "../tools/assetctl/blender/tree_foliage.py",
+      "sha256": "40a0a76c214602646a10591399a6c13cf55f510b1eec0795c6048a3ad0b0efdc"
+    },
+    {
+      "path": "../tools/assetctl/test/tree-family.test.mjs",
+      "sha256": "30143a7db1b16cb1625fdfa78ca8d3d206bb53e26d1878aec7b9a1c7448ff4d8"
+    },
+    {
+      "path": "assets/briefs/temperate-branching-tree-v1.json",
+      "sha256": "05ffb0c3e7595000d82d8a3bb689dbb2ba75368a6539c5c0969fbf5ea54c2c91"
+    }
+  ],
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 24092,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 24355,
+      "webSearchRequests": 0,
+      "costUSD": 0.6769798,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 21523,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "requestedModel": "claude-opus-5-5",
+  "scope": "Supplied source only, tools disabled; no execution by reviewer. Before the subsequent Blender importer compatibility fix and tightened bark audit."
+}

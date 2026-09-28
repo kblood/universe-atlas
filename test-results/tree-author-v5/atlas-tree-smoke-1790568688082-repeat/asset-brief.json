@@ -1,0 +1,42 @@
+{
+  "schema": "https://iwsdk.local/schemas/asset-brief/v1",
+  "id": "atlas-temperate-branching-tree-v1",
+  "kind": "environment-kit",
+  "purpose": "First realistic authored tree component family for Atlas species-driven structural variants and instanced desktop forests.",
+  "target": {"engine":"IWSDK","project":"universe-atlas","devices":["desktop-web"],"metersPerUnit":1,"runtimeCoordinates":"right-handed-y-up"},
+  "artDirection": {
+    "summary": "Believable broadleaf branching family: tapered trunk and connected limbs, irregular layered crown, thin shaped leaves, restrained bark relief and natural foliage transmission. Reference adult height 16 metres; species recipes define final dimensions.",
+    "styleTags": ["realistic","temperate","broadleaf","procedural-components","desktop-first"],
+    "references": [],
+    "negativePrompt": "solid faceted crown balls, disconnected floating branches, uniform repeated leaf fans, oversized leaves, baked directional lighting, cartoon saturation"
+  },
+  "deliverables": [
+    {"type":"source","path":"Assets/Atlas/Trees/temperate-branching-v1.blend","format":"blend","required":true},
+    {"type":"runtime","path":"Assets/Atlas/Trees/temperate-branching-v1.glb","format":"glb","required":true},
+    {"type":"lod","path":"Assets/Atlas/Trees/temperate-branching-v1.lod1.glb","format":"glb","required":true},
+    {"type":"lod","path":"Assets/Atlas/Trees/temperate-branching-v1.lod2.glb","format":"glb","required":true},
+    {"type":"collision","path":"Assets/Atlas/Trees/temperate-branching-v1.collision.json","format":"json","required":true},
+    {"type":"render-sheet","path":"Assets/_assetctl/atlas-tree-v1-review/render-sheet.png","format":"png","required":true},
+    {"type":"manifest","path":"Assets/Atlas/Trees/temperate-branching-v1.glb.asset.json","format":"json","required":true}
+  ],
+  "constraints": {
+    "geometry":{"maxTriangles":18000,"maxMaterials":2,"lodCount":3,"collision":"primitive"},
+    "textures":{"maxDimension":2048,"maxSets":2,"runtimeFormat":"ktx2-uastc"}
+  },
+  "acceptance": {
+    "visual":["Branch hierarchy remains connected and tapers continuously at 1, 10 and 50 metres","Leaves have species-controlled physical dimensions rather than scaling with the whole crown","Eight bounded variants are recognizably related but differ in branch arrangement and crown silhouette","Bark and foliage respond coherently at midday, grazing sun and overcast light"],
+    "technical":["Metres, root-contact pivot, right-handed Y-up GLB, applied transforms, deterministic names and explicit UVs","LOD0 at most 18000 triangles, LOD1 at most 5000, LOD2 at most 900; silhouettes and root agree within 0.02 metres","Separate bark and foliage masks/tints; wind weights and conservative animation bounds are explicit","No baked light/shadow in base colour; exported roughness/normal/alpha are checked in the actual renderer","Source blend, recipe seed/version, mesh/material hashes and sidecar provenance are preserved","Assetctl technical validation, render sheet and export/import round trip pass"],
+    "runtime":["In-game fixed valley descent, rotation, date replay and near/mid transition show stable identity and dimensions","Report full-frame CPU/GPU percentiles, calls, triangles, texture/geometry memory and alpha overdraw at 1440p","Structural variant cache remains within an explicit byte budget; load and eviction cannot change instances","Desktop hardware floor remains to be selected; RTX 5090 evidence alone is not acceptance for midrange hardware"]
+  },
+  "provenance": {
+    "sourceType":"original",
+    "generator":{"provider":"blender-authored","model":"procedural-tree-component-authoring","checkpoint":null,"version":"atlas-branching-author-5","workflow":"assetctl-blender-tree-family"},
+    "prompt":"Author connected tapered wood and physically scaled broadleaf components for species-directed variants; preserve editable source and all export provenance.",
+    "negativePrompt":"floating limbs, opaque crown blobs, baked sun lighting",
+    "seed":729281,
+    "sourceUrl":null,"sourceConsent":"not-applicable","parents":[],
+    "license":{"expression":"NOASSERTION","attribution":null,"restrictions":["Prototype assets require visual, LOD, provenance and runtime acceptance before packaging or shipping"]},
+    "notes":"Original procedural mesh and texture proposals have been authored through the named operation and reviewed. No external mesh, photograph or learned generator input is used. This brief does not assert a finished asset, resolved output license or a runtime budget pass."
+  },
+  "experiments":{"providers":["blender-authored"],"seeds":[729281],"selectionMetric":"Connected silhouette, physical leaf scale, LOD consistency, alpha overdraw, full-scene timing and cleanup cost"}
+}

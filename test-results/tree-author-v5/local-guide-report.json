@@ -1,0 +1,12 @@
+{
+  "base": "http://127.0.0.1:55486/webxr/IWSDK/universe-atlas/",
+  "chapters": 9,
+  "widths": [
+    1440,
+    390,
+    320
+  ],
+  "internalDestinations": 79,
+  "deployedRuntimeChecked": false,
+  "errors": []
+}

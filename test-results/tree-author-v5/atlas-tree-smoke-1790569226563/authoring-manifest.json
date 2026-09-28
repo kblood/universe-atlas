@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "operation": "atlas-branching-author-5",
+  "status": "proposal-needs-review",
+  "seed": 729281,
+  "blenderVersion": "5.1.1",
+  "pythonVersion": "3.13.9 (main, Jan 16 2026, 12:29:45) [MSC v.1944 64 bit (AMD64)]",
+  "blenderBuildHash": "b70da489d7f4",
+  "executionThreads": 1,
+  "geometryContentSha256": "d7be791b59e826928998210ab28b8955695408c90aa257e38fee2d2c5124e50c",
+  "lods": [
+    {
+      "level": 0,
+      "runtime": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569226563\\atlas-branching-v1.glb",
+      "triangles": 14012,
+      "maxTriangles": 18000,
+      "geometryContentSha256": "d7be791b59e826928998210ab28b8955695408c90aa257e38fee2d2c5124e50c",
+      "boundsM": {
+        "min": [
+          -6.0396833419799805,
+          0,
+          -6.427240371704102
+        ],
+        "max": [
+          6.838608264923096,
+          16.00051498413086,
+          5.690760612487793
+        ]
+      }
+    },
+    {
+      "level": 1,
+      "runtime": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569226563\\atlas-branching-v1.lod1.glb",
+      "triangles": 4380,
+      "maxTriangles": 5000,
+      "geometryContentSha256": "2efafdd4c87470894b06ac2a51b7afb0afad9f5f665bfd88b79855101a7d6348",
+      "boundsM": {
+        "min": [
+          -6.0396833419799805,
+          0,
+          -6.427240371704102
+        ],
+        "max": [
+          6.838608264923096,
+          16.00051498413086,
+          5.690760612487793
+        ]
+      }
+    }
+  ],
+  "materialContentSha256": "629766abd74d4dcb22215f7d48437303c69cc2b99b3891cad0c2a3fcd79b8dae",
+  "brief": {
+    "path": "universe-atlas-rendering/assets/briefs/temperate-branching-tree-v1.json",
+    "sha256": "05ffb0c3e7595000d82d8a3bb689dbb2ba75368a6539c5c0969fbf5ea54c2c91"
+  },
+  "authoringCodeSha256": "02458de7e8b3c412d4e9e4d1f240bb2ad93a6fa48448e52a8af2012911586cd1",
+  "foliageCodeSha256": "40a0a76c214602646a10591399a6c13cf55f510b1eec0795c6048a3ad0b0efdc",
+  "skeletonCodeSha256": "d17250935436be052b6bbde498d3875ca9aebc0dcc9ea78ac9a729f177339069",
+  "meshCodeSha256": "09a5bffc294c2164967335a4081469dc0473bb384bcaf49e27f90e487ff134ba",
+  "barkCodeSha256": "29aecded32388219ef28d675b707a0f161fc4326adc015c97b3746ee86f2233e",
+  "sourceType": "original",
+  "externalInputs": [],
+  "license": {
+    "expression": "NOASSERTION",
+    "attribution": null,
+    "restrictions": [
+      "Prototype assets require visual, LOD, provenance and runtime acceptance before packaging or shipping"
+    ]
+  },
+  "physicalReference": {
+    "stemHeightM": 12.8619384765625,
+    "actualHeightM": 16.00051498413086,
+    "skeletonVerticalScale": 1.28619384765625,
+    "cardDimensionsM": [
+      1,
+      1.2
+    ],
+    "leafLengthM": [
+      0.2,
+      0.32
+    ],
+    "rootPivot": [
+      0,
+      0,
+      0
+    ],
+    "leafCardCount": 1544,
+    "leafCenterCoordinates": "runtime-y-up",
+    "barkUvUnitsPerMetre": 1,
+    "foliage": "sixteen original staggered alpha-mask sprays, 1m by 1.2m cards"
+  },
+  "preExportAudit": {
+    "triangles": 14012,
+    "maxTriangles": 18000,
+    "materials": 2,
+    "uvLayers": 1,
+    "appliedTransforms": true,
+    "finitePositions": true
+  },
+  "limitations": [
+    "LOD2, collision and runtime wind binding are pending",
+    "LOD1 retains all foliage and primary wood; missing fine wood needs visual transition review",
+    "Eight structural variants and shared species atlas binding are pending",
+    "License resolution, KTX2/UASTC conversion and target-runtime acceptance are pending",
+    "Calibrated lighting, foliage transmission and render-sheet acceptance are pending",
+    "Branch intersections are overlapping surfaces; not a watertight sculpt",
+    "Textures are original procedural proposals; visual review required",
+    "Leaf count/coverage and close leaf materials need target-scene review"
+  ],
+  "artifacts": [
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569226563\\asset-brief.json",
+      "sha256": "05ffb0c3e7595000d82d8a3bb689dbb2ba75368a6539c5c0969fbf5ea54c2c91"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569226563\\atlas-branching-v1.blend",
+      "sha256": "53c25cd7b688c169607debb7f3fd5b219893df29ac2d33eb6087c3c60d3aa27a"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569226563\\atlas-branching-v1.glb",
+      "sha256": "e0d8b70e43904844d4dcfb64dab5f49309bdee5477507f3d6fef2db29e9d5b11"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569226563\\atlas-branching-v1.lod1.glb",
+      "sha256": "cd7bcf081cfa5cf5467c9c8a5acd904b4c4ad9b87d95f55b510330fb145a189a"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569226563\\MAT_AtlasBark_BaseColor.png",
+      "sha256": "fd55ccce7b35dbedc21fc49407cd11994c84fb1860a2fb7268429e5b06a06625"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569226563\\MAT_AtlasBark_Normal.png",
+      "sha256": "adca1682607142cec7e637b03e777755935524365de9656ae420a485ea2130b2"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569226563\\MAT_AtlasFoliage_BaseColor.png",
+      "sha256": "eb2d2c5656de3230d1a2bc9c059a4df64df9762c338546deba104c4c6a525eed"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569226563\\MAT_AtlasFoliage_Normal.png",
+      "sha256": "3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951"
+    }
+  ]
+}

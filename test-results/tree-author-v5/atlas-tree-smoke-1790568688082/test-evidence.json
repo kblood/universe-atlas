@@ -1,0 +1,48 @@
+{
+  "operation": "atlas-branching-author-5",
+  "candidate": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790568688082",
+  "repeat": "Assets/_assetctl/atlas-tree-smoke-1790568688082-repeat",
+  "brief": "Assets/_assetctl/atlas-tree-author-5-brief.json",
+  "briefContract": "pass",
+  "generationSmoke": "pass",
+  "generationTests": 2,
+  "lod0": {
+    "triangles": 14012,
+    "cap": 18000,
+    "valid": true,
+    "warnings": 0,
+    "errors": 0,
+    "sha256": "85fcf1947a08ba4e7b3a1fe5ed2f5326245f213ec0d2f4dc59c45c7ed49aad99"
+  },
+  "lod1": {
+    "triangles": 4380,
+    "cap": 5000,
+    "valid": true,
+    "warnings": 0,
+    "errors": 0,
+    "sha256": "cd7bcf081cfa5cf5467c9c8a5acd904b4c4ad9b87d95f55b510330fb145a189a"
+  },
+  "rawGlbAudit": {
+    "status": "pass",
+    "vertices": 21607,
+    "triangles": 14012,
+    "leafCards": 1544,
+    "foliageVertexRecords": 6294,
+    "barkRings": 14,
+    "barkArcPairs": 13,
+    "barkTexture": [
+      1024,
+      1024
+    ],
+    "foliageTextures": [
+      2048,
+      2048
+    ],
+    "exactLodFoliagePositionUvCenterWindParity": true
+  },
+  "limitations": [
+    "CPU and export validation only; render review pending.",
+    "No claim of runtime or headset acceptance.",
+    "Bark UV audit checks metric scale, not repeat-seam continuity."
+  ]
+}

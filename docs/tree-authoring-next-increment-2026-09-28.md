@@ -1,5 +1,18 @@
 # Proposed next tree-authoring increment — 2026-09-28
 
+## Latest checkpoint and next changes
+
+[V5](tree-authoring-v5-2026-09-28.md) completed denser atlas patterns, physical
+bark UVs, leaf-center attributes and a first LOD1. The [review assessment](tree-authoring-v5-review-assessment-2026-09-28.md)
+records problems that require the next authoring revision: periodic bark wrap,
+secondary wood support in LOD1, rigid-card wind weights/attachment pivots and
+crown topology/coverage. Tests now require the cross-LOD audit from the smoke,
+and serial Blender authoring prevents the observed tangent-repeat difference.
+These candidates remain unshipped. Earlier proposals below are design history;
+the desktop realism goal still includes runtime assets, terrain, fauna and full
+performance acceptance beyond authoring.
+
+
 **Status: v4 technical smoke, repeat and export roundtrip pass; visual asset
 acceptance remains open.** Opus 5.5's v3 source-review fixes are committed in
 `2a585b2`. The fresh v4 smoke and repeat have matching geometry/material-content

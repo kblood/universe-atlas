@@ -1,0 +1,24 @@
+{"candidate":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569291675\\atlas-branching-v1.glb","operation":"atlas-branching-author-5","vertices":21607,"triangles":14012,"leafCards":1544,"heightM":16.00051498413086,"bark":[1024,1024],"barkRingAudit":{"rings":14,"arcPairs":13},"foliageBase":[2048,2048],"foliageNormal":[2048,2048],"leafCenterAttribute":"_LEAF_CENTER","physicalAudit":"pass"}
+{"lod0":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569291675\\atlas-branching-v1.glb","lod1":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569291675\\atlas-branching-v1.lod1.glb","foliageVertices":6294,"positionUvCenterWind":"byte-value parity"}
+✔ exported tree GLB geometry carries metre-scaled cards, valid atlas UVs, finite tangent frames, wind and correctly sized textures (123.6027ms)
+✔ LOD1 keeps exact exported foliage positions, atlas UVs, leaf centers and wind weights from LOD0 (22.0553ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 221.2863
+
+{"candidate":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569291675","repeat":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790569291675-repeat","triangles":14012,"validation":"pass","sourcePreserved":true,"deterministicGeometry":true,"deterministicMaterials":true}
+✔ named tree authoring preserves candidates and exports finite UV/tangent/wind data (32747.7961ms)
+✔ tree authoring rejects invalid version and non-original provenance before creating an output (2679.9267ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 35554.6495
