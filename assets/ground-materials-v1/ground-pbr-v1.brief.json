@@ -1,0 +1,52 @@
+{
+  "schema": "https://iwsdk.local/schemas/asset-brief/v1",
+  "id": "atlas-ground-pbr-v1",
+  "kind": "texture",
+  "purpose": "Add metre-scaled authored soil and rocky-ground PBR detail to the Atlas terrain material while preserving its existing biome colours and continuous local frame.",
+  "target": {
+    "engine": "IWSDK",
+    "project": "universe-atlas",
+    "devices": ["desktop-web"],
+    "metersPerUnit": 1,
+    "runtimeCoordinates": "right-handed-y-up"
+  },
+  "artDirection": {
+    "summary": "Natural compacted soil and fractured rocky ground, used as close-range triplanar surface detail beneath the existing planet-specific palette.",
+    "styleTags": ["PBR", "metre-scaled", "triplanar", "CC0 source", "terrain"] ,
+    "references": [
+      "https://polyhaven.com/a/dirt",
+      "https://polyhaven.com/a/rock_ground"
+    ],
+    "negativePrompt": null
+  },
+  "deliverables": [
+    {"type":"source","path":"assets/ground-materials-v1/source/","format":"Poly Haven 1K source maps and CC0 provenance","required":true},
+    {"type":"texture","path":"assets/ground-materials-v1/runtime/","format":"512px RGBA albedo-roughness and tangent-space normal PNG maps","required":true},
+    {"type":"manifest","path":"assets/ground-materials-v1/ground-pbr-v1.asset.json","format":"assetctl texture-set package manifest","required":true}
+  ],
+  "constraints": {
+    "textures": {"maxDimension":512,"maxSets":2,"runtimeFormat":"png"}
+  },
+  "acceptance": {
+    "visual": [
+      "soil and rock texture detail is readable on grounded views without replacing the existing planet palette",
+      "soil and rock transitions follow the existing biome weights without visible tile seams"
+    ],
+    "technical": [
+      "source files match official Poly Haven file hashes and retain asset-level CC0 metadata",
+      "runtime maps use normal OpenGL tangent convention and match the 512 pixel memory budget",
+      "all shader coordinates remain continuous across adjacent tiles and local-frame rebases"
+    ],
+    "runtime": [
+      "browser comparison reaches a grounded dry-soil view and a wet riverbank view with no shader or WebGL errors"
+    ]
+  },
+  "provenance": {
+    "sourceType":"third-party",
+    "sourceConsent":"licensed",
+    "sourceUrl":"https://polyhaven.com/",
+    "license":{"expression":"CC0-1.0","attribution":"Poly Haven; source asset authors are recorded in manifest.json","restrictions":[]},
+    "parents":[],
+    "notes":"Runtime maps are downsampled and channel-packed from the two source PBR texture sets. Input file hashes and API metadata are preserved in bundle.json and ground-pbr-v1.asset.json. No generated geometry or model checkpoint is used."
+  }
+}

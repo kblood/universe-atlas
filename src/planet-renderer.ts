@@ -18,7 +18,7 @@ import {contactGeometry,type ContactPatch} from './terrain-contact.ts';
 import {hydrologyReady} from './hydrology-registry.ts';
 import type {RiverRegion} from './river-types.ts';
 import {riverFeatureAt} from './river-sample.ts';
-import {detailTexture,detailOrigin,MATERIAL_VERSION,groundVertexHeader,groundVertex,groundFragmentHeader,groundColor,groundRoughnessCode,groundNormalCode} from './ground-material.ts';
+import {detailTexture,detailOrigin,MATERIAL_VERSION,GROUND_PBR_TEXTURE_BYTES,acquireGroundPbrTextures,groundVertexHeader,groundVertex,groundFragmentHeader,groundColor,groundRoughnessCode,groundNormalCode} from './ground-material.ts';
 import {VolumetricClouds,CLOUD_TARGET_BUDGET_BYTES} from './volumetric-clouds.ts';
 import {ringSystemFor, ringActiveAt, createRingMesh, type RingSystem} from './planet-rings.ts';
 import {spinStateFor} from './stellar-evolution.ts';
@@ -64,7 +64,7 @@ export interface LifeGateContext {
   faunaSpecies?: readonly { id: string; creature: CreatureGenome }[];
 }
 
-type Patch ={ tile: Tile; mesh: THREE.Mesh; ocean:THREE.Mesh<THREE.BufferGeometry,OceanWaterMaterial>|null; localEye:{value:THREE.Vector3}; map: THREE.DataTexture; material: THREE.MeshStandardMaterial; morph: {value: number}; detail:{value:number}; edge:{value:THREE.Vector4}; data:ReturnType<typeof buildTile>; bytes:number; touched: number; waterBucket: number };
+type Patch ={ tile: Tile; mesh: THREE.Mesh; ocean:THREE.Mesh<THREE.BufferGeometry,OceanWaterMaterial>|null; localEye:{value:THREE.Vector3}; map: THREE.DataTexture; material: THREE.MeshStandardMaterial; morph: {value: number}; detail:{value:number}; pbrDetail:{value:number}; edge:{value:THREE.Vector4}; data:ReturnType<typeof buildTile>; bytes:number; touched: number; waterBucket: number };
 /** Selection estimates use the already resident lattice. Calling the complete
  * procedural geology twice for every leaf and parent stalled contact frames.
  * Collision continues to use the actual settled mesh and authoritative field. */
@@ -111,7 +111,7 @@ const TOTAL_BUDGET_BYTES=256*1024*1024;
 // reserved here, so terrain admission cannot consume their headroom.
 const WATER_ENVIRONMENT_RESERVE_BYTES=28*1024*1024;
 const LIFE_RESERVE_BYTES=16*1024*1024;
-const GROUND_ATLAS_BYTES=Math.ceil(256*256*4*(1+4/3));
+const GROUND_ATLAS_BYTES=Math.ceil(256*256*4*(1+4/3))+GROUND_PBR_TEXTURE_BYTES;
 const TERRAIN_BUDGET_BYTES=TOTAL_BUDGET_BYTES-WATER_ENVIRONMENT_RESERVE_BYTES-LIFE_RESERVE_BYTES-GROUND_ATLAS_BYTES;
 // n=32: 108336 bytes of geometry, doubled for CPU/GPU, plus a 130x130 RGBA
 // map with the existing conservative 7/3 mip allocation.
@@ -222,6 +222,7 @@ export class PlanetRenderer {
   private floraSurvivorCount=0;
   private floraSubmittedCount=0;
   private groundAtlas:THREE.DataTexture;
+  private readonly groundPbrTextures:ReturnType<typeof acquireGroundPbrTextures>;
   private residentBytes=0;
   private groundEnabled={value:1};
   setSurfaceDetail(enabled:boolean){this.groundEnabled.value=enabled?1:0;}
@@ -445,6 +446,7 @@ export class PlanetRenderer {
   private waterBucket = 0;
   constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,readonly anisotropy=1, private surfaceAgeMyr = DEFAULT_SURFACE_AGE_MYR) {
     this.groundAtlas=detailTexture(anisotropy);
+    this.groundPbrTextures=acquireGroundPbrTextures(anisotropy);
     this.sample=terrainSampler(body, undefined, surfaceAgeMyr);
     this.contactLevel=Math.max(14,Math.min(20,Math.ceil(Math.log2(2*body.radiusM/(PATCH_SEGMENTS*1.4)))));
     // Hydrology beds need sub-decimetre samples near the capsule. This is a
@@ -642,6 +644,7 @@ export class PlanetRenderer {
     const material = new THREE.MeshStandardMaterial({map, roughness: this.body.water ? .72 : .95});
     const morph = {value: 0};
     const detail={value:0};
+    const pbrDetail={value:0};
     const edge={value:new THREE.Vector4()};
     const localEye={value:new THREE.Vector3()};
     material.onBeforeCompile = shader => {
@@ -657,6 +660,12 @@ export class PlanetRenderer {
       shader.uniforms.groundAtlas={value:this.groundAtlas};
       shader.uniforms.groundEnabled=this.groundEnabled;
       shader.uniforms.groundPatch=detail;
+      shader.uniforms.groundSoilColorRoughness={value:this.groundPbrTextures.soilColor};
+      shader.uniforms.groundSoilNormal={value:this.groundPbrTextures.soilNormal};
+      shader.uniforms.groundRockColorRoughness={value:this.groundPbrTextures.rockColor};
+      shader.uniforms.groundRockNormal={value:this.groundPbrTextures.rockNormal};
+      shader.uniforms.groundPbrReady=this.groundPbrTextures.ready;
+      shader.uniforms.groundPbrPatch=pbrDetail;
       shader.uniforms.groundOrigin={value:new THREE.Vector3(...detailOrigin(d.anchor,this.body.radiusM))};
       shader.vertexShader = patchMorphHeader+'attribute float surfaceHeight,parentHeight; uniform vec3 tileAnchor; varying vec3 atlasSurface,atlasLocalM; varying float atlasHeightM;\n' + shader.vertexShader;
       shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `${patchMorphVertex} atlasSurface=transformed+tileAnchor;
@@ -674,7 +683,7 @@ export class PlanetRenderer {
           atlasEyeHeightM,atlasHeightM,dot(normalize(atlasSurface),atlasSun),atlasAir);
         #include <opaque_fragment>`);
     };
-    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v9/'+LOCAL_AERIAL_VERSION;
+    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v10/'+LOCAL_AERIAL_VERSION+'/ground-pbr-v1';
     const mesh = new THREE.Mesh(geometry, material);
     mesh.receiveShadow=true;mesh.castShadow=true;material.shadowSide=THREE.DoubleSide;
     mesh.customDepthMaterial=terrainDepthMaterial(morph,edge,d.width-2);
@@ -698,7 +707,7 @@ export class PlanetRenderer {
     }
     const bufferBytes=d.positions.byteLength+d.parents.byteLength+d.normals.byteLength+d.materials.byteLength+d.surfaceRoughness.byteLength+d.uvs.byteLength+d.indices.byteLength+d.surfaceHeight.byteLength+d.parentHeight.byteLength+(d.oceanPositions?.byteLength||0)+(d.oceanParents?.byteLength||0);
     const bytes=bufferBytes*2+Math.ceil(d.color.byteLength*(1+4/3));
-    this.patches.set(key, {tile: d.tile, mesh, ocean,localEye,map, material, morph, detail,edge,data:d,bytes,touched: this.frame,waterBucket});
+    this.patches.set(key, {tile: d.tile, mesh, ocean,localEye,map, material, morph, detail,pbrDetail,edge,data:d,bytes,touched: this.frame,waterBucket});
     this.residentBytes+=bytes;
   }
   // `worldNs`: elapsed Ns since the Big Bang (world-time.ts's absolute axis).
@@ -979,6 +988,7 @@ export class PlanetRenderer {
       const sphere=p.mesh.geometry.boundingSphere!;
       const near=eye.distanceTo(sphere.center.clone().add(p.mesh.position))-sphere.radius;
       p.detail.value=(distance-1)*this.body.radiusM<20000*this.relief+6000&&near*this.body.radiusM<6000?1:0;
+      p.pbrDetail.value=p.detail.value&&near*this.body.radiusM<1800?1:0;
       // Contact hand-off is enabled only after fine coverage has finished morphing.
     }
     this.previous = new Set(leaves.map(tileKey));
@@ -1277,7 +1287,9 @@ export class PlanetRenderer {
       contactLevel:this.contactFocus?(this.needsFineContact?this.fineContactLevel:this.contactLevel):null,baseContactLevel:this.contactFocus?this.contactLevel:null,minimumWaterLevel:this.minimumWaterLevel,underresolvedWaterTiles:this.underresolvedWaterTiles,waterRegionActive:this.waterRegionActive,accountedBytes:this.residentBytes+GROUND_ATLAS_BYTES+oceanNormalBytes,lifeReserveBytes:LIFE_RESERVE_BYTES,cloudTargetBudgetBytes:CLOUD_TARGET_BUDGET_BYTES,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,reservedCombinedBytes:this.residentBytes+GROUND_ATLAS_BYTES+WATER_ENVIRONMENT_RESERVE_BYTES+LIFE_RESERVE_BYTES+(this.clouds?.allocatedBytes??0)+this.pending.size*PENDING_TILE_BYTES,terrainResidentBytes:this.residentBytes,groundAtlasBytes:GROUND_ATLAS_BYTES,oceanNormalBytes,pendingReserveBytes:this.pending.size*PENDING_TILE_BYTES,materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:TOTAL_BUDGET_BYTES+(this.immersiveBudget?0:CLOUD_TARGET_BUDGET_BYTES),coreBudgetBytes:TOTAL_BUDGET_BYTES,failuresTotal:this.failuresTotal,updateMs:this.updateMs,lifeMs:this.lifeMs,rescatterMs:this.rescatterMs,drawFloraMs:this.drawFloraMs,drawFaunaMs:this.drawFaunaMs,faunaRigCount:this.faunaNear.diagnostics().active,faunaRepresentation:'individual-instanced-anatomy+near-skinned-body',faunaNear:this.faunaNear.diagnostics(),faunaCulledCount:this.faunaCulledCount,faunaBudgetDrops:this.faunaBudgetDrops,faunaDrawn:this.faunaDrawn,lifePending:this.lifeQueue.length-this.lifeQueueIndex,lifeResidentCells:this.lifeResidents.size,faunaAllocatedBytes:this.faunaRenderer.allocatedBytes+this.faunaNear.allocatedBytes,faunaTerrainPending:this.faunaGroundQueue.length,floraSlotCount:this.floraSlotCount,floraPresentCount:this.floraPresentCount,floraSurvivorCount:this.floraSurvivorCount,floraSubmittedCount:this.floraSubmittedCount,faunaAnchorCount:this.faunaAnchorCount,
       faunaHerdCount:this.faunaHerdCount,faunaVisibleCount:this.faunaVisibleCount,
       failures: this.failures.size, faces: [...new Set([...this.active].map(k => Number(k.split('/')[0])))],
-      detailPatches:[...this.active].filter(k=>this.groundEnabled.value&&this.patches.get(k)!.detail.value).length,
+        detailPatches:[...this.active].filter(k=>this.groundEnabled.value&&this.patches.get(k)!.detail.value).length,
+        pbrDetailPatches:[...this.active].filter(k=>this.groundEnabled.value&&this.patches.get(k)!.pbrDetail.value).length,
+        groundPbrReady:!!this.groundPbrTextures.ready.value,groundPbrTextureBytes:GROUND_PBR_TEXTURE_BYTES,
       oceanDraws:[...this.active].filter(k=>this.patches.get(k)!.ocean?.visible).length,
       maxVisibleSkirtDepthM:Math.max(0,...[...this.active].map(k=>this.patches.get(k)!.data.skirtDepthM)),
       debug:{...this.debug,activeTileIds:[...this.active],pendingTileIds:[...this.pending],eyeHeightM:this.eyeHeightUniform.value},
@@ -1293,7 +1305,7 @@ export class PlanetRenderer {
   dispose() {
     this.disposed = true;
     for(const slot of this.workers)slot.worker.terminate();
-    this.groundAtlas.dispose();
+      this.groundAtlas.dispose();this.groundPbrTextures.release();
     this.atmosphere?.dispose();
     this.clouds?.dispose();this.clouds=null;
     if(this.ring){
