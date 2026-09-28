@@ -42,6 +42,7 @@ test('daylight gates sky fill and shadow; orbital, XR and basic paths restore ba
   }
   lighting.update({...frame,atmosphere:false});assert.equal(lighting.sky.intensity,0);assert.ok(sun.castShadow);
   sun.intensity=0;lighting.update(frame);assert.equal(sun.castShadow,false);assert.equal(lighting.sky.intensity,0);
+  close(ambient.intensity,.22);
   lighting.disable();close(ambient.intensity,.22);
 });
 test('grazing light and altitude fade smoothly while retaining one fixed map allocation',()=>{

@@ -5,6 +5,14 @@ the current plan, implementation evidence and two actual-planet screenshots at
 release `8e16776`. Its [full response](opus-5.5-desktop-state-review-2026-09-28.md)
 is preserved separately from this implementation decision.
 
+**Subsequent evidence:** Luna's desktop live-navigation rerun passed on clean
+`8e16776`, alongside the guide and publication audit. The
+[receipt](../test-results/tree-forest-live/live-publication-receipt.json)
+records the scope; the earlier 320 px game-navigation failure remains
+inconclusive. The first implementation priority below is therefore satisfied
+for the desktop route. [Surface lighting](surface-lighting-2026-09-28.md) is now
+implemented locally and undergoing actual-game validation.
+
 ## Direction adopted
 
 The next deliverable is one coherent desktop forest area reached through normal

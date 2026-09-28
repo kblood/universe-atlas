@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {floraShadowOrder,compareFaunaVisibility} from './life-shadow-priority.ts';
 import {patchMorphHeader,patchMorphVertex,terrainDepthMaterial,boundMorphedTerrain} from './terrain-shadow.ts';
 import type {RenderProfile} from './render-profile.ts';
 import {attachLocalAerial,localAerialGLSL,LOCAL_AERIAL_VERSION} from './local-aerial-perspective.ts';
@@ -354,6 +355,8 @@ export class PlanetRenderer {
   private lifeWanted:LifeCell[]=[];
   private lifeQueue:LifeCell[]=[];
   private lifeQueueIndex=0;
+  private lifePackingDirty=true;
+  private lifePackBuilds=0;
   private faunaGroundQueue:LifeResident[]=[];
   private faunaGroundValue=0;
   private readonly faunaGenomes=new Map<string,CreatureGenome>();
@@ -362,6 +365,8 @@ export class PlanetRenderer {
   private faunaDrawn: {id:string;cell:string|undefined;position:V3;genome:CreatureGenome}[]=[];
   private readonly faunaBounds=new THREE.Sphere();
   private readonly floraCandidates = new FloraCandidateBuffer(LIFE_SLOT_CAPACITY);
+  private readonly floraDrawOrder=new Uint32Array(LIFE_SLOT_CAPACITY);
+  private readonly floraCameraVisible=new Uint8Array(LIFE_SLOT_CAPACITY);
   private readonly floraCullPlanes = new Float32Array(DEFAULT_FRUSTUM_PLANE_COUNT * 4);
   private readonly lifeScatterCenter = new THREE.Vector3(Infinity, Infinity, Infinity);
   private lifeScatterValid = false;
@@ -1019,6 +1024,7 @@ export class PlanetRenderer {
     const t2=performance.now();this.drawFauna(eye,worldNs,frustum,shadowFrustum);this.drawFaunaMs=performance.now()-t2;
   }
   private rescatterLife(point:THREE.Vector3):void {
+    this.lifePackingDirty=true;
     const d=point.clone().normalize().toArray() as V3,r=this.body.radiusM;
     const cells:LifeCell[]=[];
     const add=(range:number,size:number,layer:'flora'|'fauna')=>{
@@ -1058,7 +1064,7 @@ export class PlanetRenderer {
       const canonicalId=cell.id.split('/').slice(2).join('/');
       const herd=cell.layer==='fauna'?faunaHerdAt(this.body.seed,this.body.id,d,biome,gate,toSeconds(0),canonicalId):null;
       const resident:LifeResident={cell,height:sample.groundHeightM,biome,herd,ground:herd?.present?new Float64Array(FAUNA_GROUND_N**2):null,groundCursor:0};
-      this.lifeResidents.set(cell.id,resident);if(resident.ground)this.faunaGroundQueue.push(resident);
+      this.lifeResidents.set(cell.id,resident);this.lifePackingDirty=true;if(resident.ground)this.faunaGroundQueue.push(resident);
     }
     // Finish immutable herd terrain stencils incrementally; a herd is only
     // published once its entire stencil exists, avoiding elevation changes.
@@ -1070,8 +1076,12 @@ export class PlanetRenderer {
       const index=record.groundCursor++,x=(index%FAUNA_GROUND_N)*FAUNA_GROUND_STEP_M-FAUNA_GROUND_HALF_M,z=Math.floor(index/FAUNA_GROUND_N)*FAUNA_GROUND_STEP_M-FAUNA_GROUND_HALF_M;
       this.faunaGroundDirScratch.copy(up).addScaledVector(right,x/r).addScaledVector(forward,z/r).normalize();
       record.ground![index]=this.sample(this.faunaGroundDirScratch.toArray() as V3).groundHeightM;
-      if(record.groundCursor===FAUNA_GROUND_N**2)this.faunaGroundQueue.shift();
+      if(record.groundCursor===FAUNA_GROUND_N**2){this.faunaGroundQueue.shift();this.lifePackingDirty=true;}
     }
+    // The packed habitat and herd anchors are immutable between arrivals,
+    // completed terrain stencils and changed demand. Poses still update below.
+    if(!this.lifePackingDirty)return;
+    this.lifePackingDirty=false;this.lifePackBuilds++;
     let flora=0,fauna=0,herds=0;
     for(const cell of this.lifeWanted){
       const record=this.lifeResidents.get(cell.id);if(!record)continue;
@@ -1137,16 +1147,13 @@ export class PlanetRenderer {
     // `cull()` stays in the local (radius-normalized) frame the frustum
     // planes are expressed in; LOD banding converts to real meters first.
     this.floraRenderer.beginFrame();
-    const survivorCount = this.floraCandidates.cull(this.floraCullPlanes, shadowFrustum?0:DEFAULT_FRUSTUM_PLANE_COUNT);
-    this.floraSurvivorCount = survivorCount;
+    const cameraCount=this.floraCandidates.cull(this.floraCullPlanes,DEFAULT_FRUSTUM_PLANE_COUNT);
+    const survivorCount=floraShadowOrder(this.floraCandidates,cameraCount,shadowFrustum,this.lifeOrigin,this.floraDrawOrder,this.floraCameraVisible,this.faunaBounds);
+    this.floraSurvivorCount = cameraCount;
     this.floraSubmittedCount = 0;
     for (let slot = 0; slot < survivorCount; slot++) {
-      const idx = this.floraCandidates.survivorIndex(slot);
+      const idx = this.floraDrawOrder[slot];
       const cdx = this.floraCandidates.centerX[idx]!, cdy = this.floraCandidates.centerY[idx]!, cdz = this.floraCandidates.centerZ[idx]!;
-      if(shadowFrustum){
-        this.faunaBounds.center.set(cdx,cdy,cdz).add(this.lifeOrigin);this.faunaBounds.radius=this.floraCandidates.radius[idx];
-        if(!frustum.intersectsSphere(this.faunaBounds)&&!shadowFrustum.intersectsSphere(this.faunaBounds))continue;
-      }
       const distanceM = Math.sqrt(cdx * cdx + cdy * cdy + cdz * cdz) * radiusM;
       const lod = pickFloraLodBand(distanceM);
       if (lod === -1) continue;
@@ -1160,7 +1167,7 @@ export class PlanetRenderer {
   private drawFauna(eye:THREE.Vector3,worldNs:bigint,frustum:THREE.Frustum,shadowFrustum:THREE.Frustum|null):void {
     const radiusM=this.body.radiusM,rigTime=faunaRigSecondsAt(worldNs);
     this.faunaRenderer.beginFrame(this.lifeOrigin);this.faunaVisibleCount=0;this.faunaCulledCount=0;this.faunaBudgetDrops=0;this.faunaDrawn=[];
-    const visible:{member:FaunaHerdMember;position:THREE.Vector3;quaternion:THREE.Quaternion;distance:number;gait:ReturnType<typeof faunaMemberPoseAtWorldNs>['gait']}[]=[];
+    const visible:{cameraVisible:boolean;member:FaunaHerdMember;position:THREE.Vector3;quaternion:THREE.Quaternion;distance:number;gait:ReturnType<typeof faunaMemberPoseAtWorldNs>['gait']}[]=[];
     for(let a=0;a<this.faunaAnchorCount;a++){
       const herd=this.faunaHerds[a];if(!herd?.present)continue;
       this.faunaAnchorPos.fromArray(this.faunaAnchorDirections,a*3);
@@ -1177,11 +1184,12 @@ export class PlanetRenderer {
         const grounded=faunaGroundedTransform(this.faunaAnchorPos,this.faunaTangentRight,this.faunaTangentForward,this.faunaTangentUp,pose,this.faunaGroundHeightAt);
         const distance=eye.distanceTo(grounded.position)*radiusM;if(distance>FAUNA_FIELD_VISIBLE_M)continue;
         this.faunaBounds.center.copy(grounded.position).addScaledVector(this.faunaAnchorPos,3/radiusM);this.faunaBounds.radius=6/radiusM;
-        if(!frustum.intersectsSphere(this.faunaBounds)&&!shadowFrustum?.intersectsSphere(this.faunaBounds)){this.faunaCulledCount++;continue;}
-        visible.push({member,...grounded,distance,gait:pose.gait});
+        const cameraVisible=frustum.intersectsSphere(this.faunaBounds);
+        if(!cameraVisible&&!shadowFrustum?.intersectsSphere(this.faunaBounds)){this.faunaCulledCount++;continue;}
+        visible.push({cameraVisible,member,...grounded,distance,gait:pose.gait});
       }
     }
-    visible.sort((a,b)=>a.distance-b.distance||a.member.id.localeCompare(b.member.id));
+    visible.sort(compareFaunaVisibility);
     this.faunaProxyScale.setScalar(1/radiusM);
     for(const item of visible){
       if(this.faunaVisibleCount>=FAUNA_FIELD_CAPACITY){this.faunaBudgetDrops++;continue;}
@@ -1231,7 +1239,7 @@ export class PlanetRenderer {
     // The shared texture belongs to the existing water reservation. Inland
     // diagnostics count it when present; ocean-only worlds count it here.
     const oceanNormalBytes=this.river?.diagnostics().resident?0:[...this.patches.values()].some(p=>p.ocean)?SHARED_WATER_NORMAL_ATLAS_BYTES:0;
-    return {projection: 'cube-sphere',localAerial, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
+    return {projection: 'cube-sphere',localAerial,lifePackBuilds:this.lifePackBuilds, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,
       // Moving-sea-level verification/observability (this task): the
       // quantized bucket `this.sample`/`this.classify` and newly-dispatched
       // tile jobs are currently using, plus how many of the currently VISIBLE

@@ -40,7 +40,7 @@ export class SurfaceLighting {
     this.up.copy(eye).applyMatrix4(this.matrix.copy(planet.matrixWorld).invert()).normalize().transformDirection(planet.matrixWorld);
     const day=THREE.MathUtils.smoothstep(this.up.dot(sun),-.08,.2);
     const close=1-THREE.MathUtils.smoothstep(altitudeM,2500,6000);
-    const fill=atmosphere?day*close:0;
+    const fill=atmosphere&&this.sun.intensity>0?day*close:0;
     this.sky.position.copy(this.up);
     this.sky.intensity=.7*fill*Math.min(4,Math.max(0,this.sun.intensity)/3);
     this.ambient.intensity=this.baselineAmbient*(1-.6*fill);
