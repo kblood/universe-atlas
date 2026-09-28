@@ -52,7 +52,7 @@ async function walk(dir){
   return found;
 }
 
-const auditedRoots=['guide','docs','src','assets/briefs','test-results/tree-foliage-temporal','test-results/tree-leaf-transmission','test-results/opus-leaf-transmission-review'];
+const auditedRoots=['guide','docs','src','tests','assets/briefs','test-results/tree-foliage-temporal','test-results/tree-leaf-transmission','test-results/opus-leaf-transmission-review'];
 const resourcesByPath=new Map();
 for(const root of auditedRoots){
   for(const absolute of await walk(path.join(dist,root))){
