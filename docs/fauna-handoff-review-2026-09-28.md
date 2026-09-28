@@ -58,7 +58,17 @@ Focused regression in `tests/fauna-near-rig.test.mjs` checks actual materials
 constructed by both renderers, opaque/depth/shadow properties, neutral tint and
 emission, and unchanged linear instance coat colour after submission.
 
-Validation execution pending the serialized measurement window.
+Validation after the serialized measurement window cleared:
+
+- `node --test tests/fauna-near-rig.test.mjs tests/local-aerial-perspective.test.mjs`:
+  **13 passed, 0 failed, 0 skipped** (1.532 s). Includes the material regression,
+  existing rig/fallback membership and outer-transform checks, and aerial shader
+  attachment checks.
+- `node node_modules/typescript/bin/tsc --noEmit`: exit 0, no diagnostics.
+
+These checks used the existing dependency junction read-only. No install,
+production build, browser or GPU run was performed. They do not establish pixel
+visibility, silhouette/pose continuity or the GPU cost of the PBR change.
 
 ## Next visual check
 
