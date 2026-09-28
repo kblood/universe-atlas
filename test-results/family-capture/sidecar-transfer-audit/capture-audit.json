@@ -1,0 +1,24 @@
+{
+  "brief": {
+    "path": "examples/asset-briefs/atlas-family-lod1-diffuse-transfer.json",
+    "sha256": "2094cff80e0527c95c7470a0924ab70045b62f691da8f250c1b8ee2d1bdb8a52"
+  },
+  "results": [
+    {
+      "family": "oak",
+      "directory": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-oak-lod1-capture-16m-64-sidecar-transfer-v1",
+      "manifestSha256": "2b57683616b24017390bfe4233a2ff02acc0ec9f804ee3e91032a0f7e63b582e",
+      "artifacts": 2835,
+      "covered": 132278,
+      "leaf": 83306,
+      "bark": 4642,
+      "area": 71823.25,
+      "unchangedAttachments": 2268,
+      "transferValues": 11943207,
+      "adapter": {
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "maxArrayLayers": 2048
+      }
+    }
+  ]
+}
