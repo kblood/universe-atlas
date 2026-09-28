@@ -1,0 +1,30 @@
+{
+  "revision": "36d1c159455a27bff71e7b7ddec6efb1053216f4",
+  "dirty": true,
+  "files": [
+    {
+      "path": "../tools/assetctl/tree-reference.mjs",
+      "sha256": "9e7b9be3c49348b9c10b90a00b7738f57eb7874a9b30bbd53f20b236069abc91"
+    },
+    {
+      "path": "../tools/assetctl/tree-reference-runtime.mjs",
+      "sha256": "8926eb251cf28d2758d4c621f8afb8d42c2067e1933f42cb65337c305c9641dc"
+    },
+    {
+      "path": "../tools/assetctl/test/tree-reference.test.mjs",
+      "sha256": "256d65622b32e3515d1bb67f302fe5133186641b7dfbfafde8d23e4d94c6d6bc"
+    },
+    {
+      "path": "../tools/assetctl/vendor/ez-tree/src/lib/tree.js",
+      "sha256": "a1b7bd933cb2078e9373c9c853c620be8a3edc84a9edda6a4073c8ad2a31f934"
+    },
+    {
+      "path": "../examples/asset-briefs/atlas-ez-tree-reference.json",
+      "sha256": "3a395de635567de495b9e1318559773f92db84b980ca23fd65e36fc71613d088"
+    },
+    {
+      "path": "src/tree-reference-lab.ts",
+      "sha256": "9b01292b476182b1e9c4376ddad8891649e55a204fbde4f164ce9c93319fef48"
+    }
+  ]
+}

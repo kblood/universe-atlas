@@ -1,0 +1,505 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-09-28T07:24:11.918Z",
+  "appUrl": "http://127.0.0.1:5197/tree-reference-lab.html",
+  "renderer": {
+    "vendor": "WebKit",
+    "renderer": "WebKit WebGL",
+    "unmaskedVendor": "Google Inc. (NVIDIA)",
+    "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "shadingLanguage": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+    "timerQueryAvailable": true,
+    "playwright": "1.61.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.7827.55 Safari/537.36",
+    "viewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1
+    },
+    "hardwareFlag": true
+  },
+  "inputs": {
+    "Assets/_assetctl/atlas-tree-v7-color-a/atlas-branching-v1.glb": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df",
+    "Assets/_assetctl/atlas-tree-v7-color-a/atlas-branching-v1.lod1.glb": "6d071f129ff4dae730b3ad08b6b012bdab4d8f35070170776ea4adb27a865b25",
+    "Assets/_assetctl/ez-tree-oak-reference-a/reference-manifest.json": "b219c25c26f5e7f72bafbfd1fe207660adb781ff1e546f6de7b529db963cc8cc",
+    "Assets/_assetctl/ez-tree-oak-reference-a/full.json": "dab8f58ce168719bf10a0920a7eca67094ca74e036e3af905c14c0bf9994de14",
+    "Assets/_assetctl/ez-tree-oak-reference-a/wood-reduced.json": "38cc605d6ee26f19091a4c33f055432071cd7b5278c659aad361fcf75af21ed6",
+    "Assets/_assetctl/ez-tree-oak-reference-a/upstream-lod1.json": "fcbe47fbde0181ca05e94a3287e9b6273325fbe8585306c19f2823a4b7a4b6ff",
+    "Assets/_assetctl/ez-tree-oak-reference-a/upstream-lod2.json": "33233a1c5160f74973f8ca46a576c8b8fdbd2380ab1edd84b398cd1d0f5518f2"
+  },
+  "labSourceHashes": {
+    "tree-reference-lab.html": "110a04f7dc64a7c0c3691da54b1778687630dca437c2e8a731218843de92468a",
+    "src/tree-reference-lab.ts": "9ee91612088eaae8e17e89c7434ed3bc83de40982e22d1ef990bd2f061c04c55",
+    "src/tree-asset.ts": "c3c6409a63efaff9d8fdb913c7a87bb11dfcf599eb9621142bed9fe4fd1b2586"
+  },
+  "manifestSummary": {
+    "preset": "oak_medium",
+    "revision": "dcf309bd86bd521083d9c70f01f2de45fdc7c457",
+    "heightM": 16,
+    "lods": [
+      {
+        "id": "full",
+        "triangles": 13806,
+        "vertices": 24060,
+        "heightM": 16
+      },
+      {
+        "id": "wood-reduced",
+        "triangles": 12014,
+        "vertices": 22934,
+        "heightM": 16
+      },
+      {
+        "id": "upstream-lod1",
+        "triangles": 6694,
+        "vertices": 12294,
+        "heightM": 16.32331085205078
+      },
+      {
+        "id": "upstream-lod2",
+        "triangles": 3782,
+        "vertices": 6800,
+        "heightM": 16.277738571166992
+      }
+    ]
+  },
+  "foliageMapping": {
+    "statusText": "{\n  \"preset\": \"oak_medium\",\n  \"heightM\": 16,\n  \"population\": 1,\n  \"mode\": \"atlas\",\n  \"detail\": \"full\",\n  \"normalMode\": \"source\",\n  \"sourceRevision\": \"dcf309bd86bd521083d9c70f01f2de45fdc7c457\",\n  \"texturePolicy\": \"Atlas bark maps; Atlas top-left foliage tile on 1.2m square reference cards, V flipped so the sprig stem meets the attachment. Atlas native cards are 1x1.2m.\",\n  \"limits\": \"Static shape/LOD comparison. No external textures, source wind, shadow casting or game integration.\",\n  \"geometry\": [\n    {\n      \"id\": \"full\",\n      \"triangles\": 13806,\n      \"height\": 16\n    },\n    {\n      \"id\": \"wood-reduced\",\n      \"triangles\": 12014,\n      \"height\": 16\n    },\n    {\n      \"id\": \"upstream-lod1\",\n      \"triangles\": 6694,\n      \"height\": 16.32331085205078\n    },\n    {\n      \"id\": \"upstream-lod2\",\n      \"triangles\": 3782,\n      \"height\": 16.277738571166992\n    }\n  ]\n}",
+    "flippedTextures": [
+      {
+        "material": "MAT_AtlasFoliage",
+        "key": "map",
+        "repeat": [
+          0.25,
+          -0.25
+        ],
+        "offset": [
+          0,
+          0.25
+        ]
+      },
+      {
+        "material": "MAT_AtlasFoliage",
+        "key": "normalMap",
+        "repeat": [
+          0.25,
+          -0.25
+        ],
+        "offset": [
+          0,
+          0.25
+        ]
+      },
+      {
+        "material": "MAT_AtlasFoliage",
+        "key": "map",
+        "repeat": [
+          0.25,
+          -0.25
+        ],
+        "offset": [
+          0,
+          0.25
+        ]
+      },
+      {
+        "material": "MAT_AtlasFoliage",
+        "key": "normalMap",
+        "repeat": [
+          0.25,
+          -0.25
+        ],
+        "offset": [
+          0,
+          0.25
+        ]
+      },
+      {
+        "material": "MAT_AtlasFoliage",
+        "key": "map",
+        "repeat": [
+          0.25,
+          -0.25
+        ],
+        "offset": [
+          0,
+          0.25
+        ]
+      },
+      {
+        "material": "MAT_AtlasFoliage",
+        "key": "normalMap",
+        "repeat": [
+          0.25,
+          -0.25
+        ],
+        "offset": [
+          0,
+          0.25
+        ]
+      },
+      {
+        "material": "MAT_AtlasFoliage",
+        "key": "map",
+        "repeat": [
+          0.25,
+          -0.25
+        ],
+        "offset": [
+          0,
+          0.25
+        ]
+      },
+      {
+        "material": "MAT_AtlasFoliage",
+        "key": "normalMap",
+        "repeat": [
+          0.25,
+          -0.25
+        ],
+        "offset": [
+          0,
+          0.25
+        ]
+      }
+    ]
+  },
+  "visualComparisons": {
+    "matchedView": {
+      "cameraPosition": [
+        9,
+        9,
+        24
+      ],
+      "target": [
+        0,
+        8,
+        0
+      ],
+      "directionalLight": [
+        -30,
+        55,
+        25
+      ],
+      "hemisphere": true
+    },
+    "screenshots": [
+      "comparison.png",
+      "atlas-full-close.png",
+      "ez-full-source-normals-close.png",
+      "ez-full-geometric-normals-close.png",
+      "ez-wood-reduced-close.png",
+      "ez-upstream-lod1-close.png",
+      "ez-upstream-lod2-close.png"
+    ],
+    "limits": [
+      "Static geometry comparison only. No wind, shadows or game integration.",
+      "Reference cards retain the brief-defined 1.2m square size; Atlas native cards are 1x1.2m.",
+      "Both use Atlas bark and foliage texture images, but reference geometry uses foliage tile (0,0), reference UVs and source/geometric normals rather than native Atlas UVs and tangents."
+    ]
+  },
+  "measurements": {
+    "framesPerSample": 60,
+    "renderTimings": [
+      {
+        "mode": "atlas",
+        "detail": "full",
+        "population": 3,
+        "normalMode": "source",
+        "frames": 60,
+        "canvas": {
+          "width": 1440,
+          "height": 1000,
+          "pixelRatio": 1,
+          "devicePixelRatio": 1
+        },
+        "cpuSubmissionMs": {
+          "median": 0.29999999701976776,
+          "p95": 0.5
+        },
+        "gpuMs": {
+          "median": 0.012512,
+          "p95": 0.034016
+        },
+        "render": {
+          "frame": 163,
+          "calls": 2,
+          "triangles": 32136,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 10,
+          "textures": 5
+        },
+        "glError": 0
+      },
+      {
+        "mode": "atlas",
+        "detail": "full",
+        "population": 64,
+        "normalMode": "source",
+        "frames": 60,
+        "canvas": {
+          "width": 1440,
+          "height": 1000,
+          "pixelRatio": 1,
+          "devicePixelRatio": 1
+        },
+        "cpuSubmissionMs": {
+          "median": 0.20000000298023224,
+          "p95": 0.5
+        },
+        "gpuMs": {
+          "median": 0.168224,
+          "p95": 0.184576
+        },
+        "render": {
+          "frame": 245,
+          "calls": 2,
+          "triangles": 685568,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 10,
+          "textures": 5
+        },
+        "glError": 0
+      },
+      {
+        "mode": "atlas",
+        "detail": "full",
+        "population": 192,
+        "normalMode": "source",
+        "frames": 60,
+        "canvas": {
+          "width": 1440,
+          "height": 1000,
+          "pixelRatio": 1,
+          "devicePixelRatio": 1
+        },
+        "cpuSubmissionMs": {
+          "median": 0.20000000298023224,
+          "p95": 0.5
+        },
+        "gpuMs": {
+          "median": 0.724416,
+          "p95": 0.812896
+        },
+        "render": {
+          "frame": 327,
+          "calls": 2,
+          "triangles": 2056704,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 10,
+          "textures": 5
+        },
+        "glError": 0
+      },
+      {
+        "mode": "reference",
+        "detail": "full",
+        "population": 3,
+        "normalMode": "source",
+        "frames": 60,
+        "canvas": {
+          "width": 1440,
+          "height": 1000,
+          "pixelRatio": 1,
+          "devicePixelRatio": 1
+        },
+        "cpuSubmissionMs": {
+          "median": 0.20000000298023224,
+          "p95": 0.5
+        },
+        "gpuMs": {
+          "median": 0.04944,
+          "p95": 0.055584
+        },
+        "render": {
+          "frame": 409,
+          "calls": 2,
+          "triangles": 41418,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 10,
+          "textures": 5
+        },
+        "glError": 0
+      },
+      {
+        "mode": "reference",
+        "detail": "full",
+        "population": 64,
+        "normalMode": "source",
+        "frames": 60,
+        "canvas": {
+          "width": 1440,
+          "height": 1000,
+          "pixelRatio": 1,
+          "devicePixelRatio": 1
+        },
+        "cpuSubmissionMs": {
+          "median": 0.19999999552965164,
+          "p95": 0.5
+        },
+        "gpuMs": {
+          "median": 0.208512,
+          "p95": 0.228416
+        },
+        "render": {
+          "frame": 491,
+          "calls": 2,
+          "triangles": 883584,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 10,
+          "textures": 5
+        },
+        "glError": 0
+      },
+      {
+        "mode": "reference",
+        "detail": "full",
+        "population": 192,
+        "normalMode": "source",
+        "frames": 60,
+        "canvas": {
+          "width": 1440,
+          "height": 1000,
+          "pixelRatio": 1,
+          "devicePixelRatio": 1
+        },
+        "cpuSubmissionMs": {
+          "median": 0.19999999552965164,
+          "p95": 0.30000000447034836
+        },
+        "gpuMs": {
+          "median": 0.582848,
+          "p95": 0.604512
+        },
+        "render": {
+          "frame": 573,
+          "calls": 2,
+          "triangles": 2650752,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 10,
+          "textures": 5
+        },
+        "glError": 0
+      }
+    ],
+    "drawCallsExpected": 2,
+    "allSamplesTwoInstancedDraws": true,
+    "noFullGameClaim": true
+  },
+  "supplementalReferences": [
+    {
+      "name": "ash16m",
+      "root": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\ez-tree-reference-test-1790579495486-71808-ash",
+      "preset": "ash_medium",
+      "heightM": 16,
+      "inputHashes": {
+        "reference-manifest.json": "66a0be0290f271c7c403dd193a17b23a195d12732951bebcf6e60f108b8f03c2",
+        "full.json": "f99e2c3dbfb37de6340a08a471e9829cfa481d904bd7caef483a8d86debac128",
+        "wood-reduced.json": "dab3dd8416b5c00abd7a99dd9120e18dcd2ac8037f0986671e236d1f84669eaa",
+        "upstream-lod1.json": "4c39670e857e32ff310ba6d42c2af562685babadac4accbd98de071dd2c184b1",
+        "upstream-lod2.json": "910f8e2d94069a5b81836fc3f1bf382800b801b3e6805b8dd56d5be2f3ee2056"
+      },
+      "triangles": 20000,
+      "vertices": 28399,
+      "atlasScreenshot": "atlas-ash16m-scaled.png",
+      "screenshot": "ez-ash16m-full-geometric-normals.png",
+      "comparison": "comparison-ash16m.png",
+      "cameraScale": 1,
+      "note": "Atlas and reference are instantiated at the same requested height and camera is scaled proportionally; visual shape/card-density comparison only, no population timing matrix."
+    },
+    {
+      "name": "oak10m",
+      "root": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\ez-tree-oak-reference-10m",
+      "preset": "oak_medium",
+      "heightM": 10,
+      "inputHashes": {
+        "reference-manifest.json": "eec6e923d6726f6425e3bd8d536684ec881159e2e3f4ead0c85a9088b2720c9c",
+        "full.json": "e789b42a4e69ab19b000b166757467e62f800788f53fc67a36591b4af22569c9",
+        "wood-reduced.json": "4dc6f407efd234f7b64b2eeab7f4f16ed345a440a2ce230542c0bd59f6c6dbbe",
+        "upstream-lod1.json": "7f49d29faab8073fcf66249ed1458ac53c2c842da249c28b53b629c482f852ab",
+        "upstream-lod2.json": "fc9354b60ba3518f10fb2f3a7c7c53b5d9eebc059b455e2f6b141fc99db54e12"
+      },
+      "triangles": 13806,
+      "vertices": 24060,
+      "atlasScreenshot": "atlas-oak10m-scaled.png",
+      "screenshot": "ez-oak10m-full-geometric-normals.png",
+      "comparison": "comparison-oak10m.png",
+      "cameraScale": 0.625,
+      "note": "Atlas and reference are instantiated at the same requested height and camera is scaled proportionally; visual shape/card-density comparison only, no population timing matrix."
+    },
+    {
+      "name": "oak22m",
+      "root": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\ez-tree-oak-reference-22m",
+      "preset": "oak_medium",
+      "heightM": 22,
+      "inputHashes": {
+        "reference-manifest.json": "228a86a11fa2976f09e12e5ea3ff5b63e104330f1d3da3a7a95d93472d55d2d6",
+        "full.json": "b1a574b782516aa0d96625cc85d6b9860402b73359ae187f184e35db6c8f41af",
+        "wood-reduced.json": "9e5c98e89020088d109087310bf0884fa996659724e889bd0a326f1be97a59af",
+        "upstream-lod1.json": "b20d256fa3d1ec7a20987d6875c9e6f6828e87a0d3e86af79f37de40bec5828f",
+        "upstream-lod2.json": "a719c450c2a252919e8f1cf9d39b42574e0b3e40a7b5366ae87d30a509914452"
+      },
+      "triangles": 13806,
+      "vertices": 24060,
+      "atlasScreenshot": "atlas-oak22m-scaled.png",
+      "screenshot": "ez-oak22m-full-geometric-normals.png",
+      "comparison": "comparison-oak22m.png",
+      "cameraScale": 1.375,
+      "note": "Atlas and reference are instantiated at the same requested height and camera is scaled proportionally; visual shape/card-density comparison only, no population timing matrix."
+    }
+  ],
+  "guards": {
+    "badArtifactHashRejected": {
+      "rejected": true,
+      "message": "Error: Reference LOD hash mismatch"
+    },
+    "activeFamilyPreserved": true,
+    "measurementBlocksMutation": "Error: Measurement already in progress",
+    "memoryBeforeFailedLoad": {
+      "geometries": 10,
+      "textures": 5
+    },
+    "memoryAfterFailedLoad": {
+      "geometries": 10,
+      "textures": 5
+    },
+    "memoryBeforeSuccessfulReplacement": {
+      "geometries": 10,
+      "textures": 5
+    },
+    "memoryAfterSuccessfulReplacement": {
+      "geometries": 2,
+      "textures": 5
+    },
+    "rendererInfoCountsNotHigherAfterReplacement": true
+  },
+  "errors": {
+    "pageErrors": [],
+    "failedResponses": [],
+    "consoleErrors": [],
+    "finalMemory": {
+      "geometries": 4,
+      "textures": 5
+    }
+  },
+  "resourceCounterLimit": "renderer.info.memory reflects currently GPU-uploaded objects; the successful replacement changed geometries 10→2 because hidden detail groups were lazily uploaded. This is not a WebGL buffer-deletion or disposal proof."
+}

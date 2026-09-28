@@ -1,0 +1,1663 @@
+Review Atlas's actual EZ-Tree comparison operation and browser fixture. Source-only review, no tools. Prioritize actionable correctness findings, up to 900 words. The intent is to reuse known procedural generation rather than invent more tree logic. Upstream MIT source is pinned to dcf309bd86bd521083d9c70f01f2de45fdc7c457, unmodified, with all 27 source files SHA256 and Git blob verified. Named operation bundles fixed entry; no arbitrary scripts/options. Input brief validated; outputs fresh approved directories. Leaf size 1.2m means cluster cards, not individual leaves. Our Atlas texture contains leaf shapes about .2-.32m on native 1x1.2m cards; reference uses same tile on 1.2m square cards, difference disclosed. This is a static lab, NOT game implementation or package. Full reference 13806 triangles at 16m; wood-only reduced 12014 preserves exact leaf geometry; upstream LOD1 6694, LOD2 3782 and deliberately retain enlarged leaf controls. Source crossed second card normals are orthogonal on 5320 triangles, preserved with optional geometric normal correction in lab; reduced wood opposed normals are recorded. CPU tests currently pass deterministic export/card scale/geometry/fresh path checks. Browser testing in progress. Evaluate adaptation validity, leaf/pivot mapping, normals/LOD fairness, test blind spots, resource disposal and timing correctness. Do not demand features excluded from this research fixture. Highlight what evidence is still needed before adopting generator.
+FILE ../tools/assetctl/tree-reference.mjs
+import {readFile,writeFile,mkdir,realpath,stat} from 'node:fs/promises';
+import {dirname,join,relative,resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {createHash} from 'node:crypto';
+import {createRequire} from 'node:module';
+import {performance} from 'node:perf_hooks';
+import {workspaceRoot,resolveApprovedPath} from './path-policy.mjs';
+import {validateContractValue} from './contract.mjs';
+
+const revision='dcf309bd86bd521083d9c70f01f2de45fdc7c457';
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+export function treeReferenceOptions(argv){
+  const options={},allowed=new Set(['--brief','--output','--preset','--seed','--height','--project']);
+  for(let i=0;i<argv.length;i+=2){
+    const key=argv[i];if(!allowed.has(key)||key in options||!argv[i+1]||argv[i+1].startsWith('--'))throw new Error('Invalid or duplicate tree-reference option');options[key]=argv[i+1];
+  }
+  if(!options['--brief']||!options['--output'])throw new Error('tree-reference requires --brief and --output');
+  const preset=options['--preset']??'oak_medium',seed=Number(options['--seed']??35729),height=Number(options['--height']??16),project=options['--project']??'universe-atlas';
+  if(!['oak_medium','ash_medium'].includes(preset)||!Number.isInteger(seed)||seed<0||seed>2147483647||!Number.isFinite(height)||height<10||height>22||!['universe-atlas','universe-atlas-rendering'].includes(project))throw new Error('Unsupported reference settings');
+  return {brief:options['--brief'],output:options['--output'],preset,seed,height,project};
+}
+export async function generateTreeReference(argv){
+  const options=treeReferenceOptions(argv);
+  const briefPath=await realpath(resolveApprovedPath(options.brief,{mustExist:true}));resolveApprovedPath(briefPath);
+  if((await stat(briefPath)).size>1024*1024)throw new Error('Reference brief is too large');
+  const briefBytes=await readFile(briefPath),brief=JSON.parse(briefBytes),validation=await validateContractValue('asset-brief',brief);
+  if(!validation.valid)throw new Error(`Invalid reference brief: ${JSON.stringify(validation.errors)}`);
+  if(brief.provenance.generator?.version!==revision||brief.provenance.generator?.workflow!=='assetctl-tree-reference'||!(brief.experiments?.seeds??[brief.provenance.seed]).includes(options.seed))throw new Error('Brief must identify the pinned reference source and requested seed');
+  const output=resolveApprovedPath(options.output),parent=await realpath(dirname(output));resolveApprovedPath(parent);
+  const vendor=join(workspaceRoot,'tools/assetctl/vendor/ez-tree'),vendorBytes=await readFile(join(vendor,'vendor-manifest.json')),vendorManifest=JSON.parse(vendorBytes);
+  if(vendorManifest.revision!==revision||vendorManifest.files.length!==27)throw new Error('Unsupported vendored reference snapshot');
+  for(const file of vendorManifest.files){
+    if(!/^(LICENSE|README\.md|package\.json|src\/lib\/[a-zA-Z0-9_./-]+)$/.test(file.path)||file.path.split('/').includes('..'))throw new Error('Unexpected vendor path');
+    const bytes=await readFile(join(vendor,file.path));if(bytes.length!==file.bytes||hash(bytes)!==file.sha256)throw new Error(`Vendor source hash mismatch: ${file.path}`);
+  }
+  const project=join(workspaceRoot,options.project),requireProject=createRequire(join(project,'package.json')),{build}=requireProject('esbuild');
+  const entry=join(workspaceRoot,'tools/assetctl/tree-reference-runtime.mjs');
+  const bundle=await build({entryPoints:[entry],bundle:true,format:'esm',platform:'node',write:false,metafile:true,alias:{three:requireProject.resolve('three')},logLevel:'silent'});
+  const sourceFiles=[];for(const input of Object.keys(bundle.metafile.inputs)){
+    const file=resolve(input);sourceFiles.push({path:relative(workspaceRoot,file).replaceAll('\\','/'),sha256:hash(await readFile(file))});
+  }
+  // Exclusive directory and files preserve every earlier candidate.
+  await mkdir(output);resolveApprovedPath(await realpath(output));
+  try{
+    const runtimePath=join(output,'reference-runtime.mjs');
+    await writeFile(runtimePath,bundle.outputFiles[0].contents,{flag:'wx'});await writeFile(join(output,'asset-brief.json'),briefBytes,{flag:'wx'});
+    const {generateReference}=await import(pathToFileURL(runtimePath).href),start=performance.now();
+    const generated=generateReference(options),generationMs=performance.now()-start,artifacts=[];
+    if(generated.lods.some(lod=>lod.triangles>(brief.constraints.geometry?.maxTriangles??0)))throw new Error('Reference exceeds declared research geometry budget');
+    async function save(path,value){const bytes=Buffer.from(JSON.stringify(value));await writeFile(join(output,path),bytes,{flag:'wx'});artifacts.push({path,bytes:bytes.length,sha256:hash(bytes)});}
+    const {lods,skeleton,...metadata}=generated;
+    await save('skeleton.json',skeleton);
+    for(const lod of lods)await save(`${lod.id}.json`,lod);
+    const report={schemaVersion:1,operation:'atlas-ez-tree-reference-1',status:'geometry-comparison-not-packaged',...metadata,
+      source:{revision,repository:vendorManifest.repository,files:vendorManifest.files,vendorManifestSha256:hash(vendorBytes)},
+      briefSha256:hash(briefBytes),provenance:brief.provenance,sourceFiles,runtimeSha256:hash(bundle.outputFiles[0].contents),hostSha256:hash(await readFile(new URL(import.meta.url))),
+      toolchain:{node:process.version,esbuild:requireProject('esbuild/package.json').version,three:JSON.parse(await readFile(join(project,'node_modules/three/package.json'),'utf8')).version},
+      metrics:{generationMs,lods:lods.map(({id,detail,bounds,triangles,vertices,normalAudit})=>({id,detail,bounds,triangles,vertices,normalAudit}))},artifacts};
+    await writeFile(join(output,'reference-manifest.json'),JSON.stringify(report,null,2),{flag:'wx'});return report;
+  }catch(error){try{await writeFile(join(output,'reference-failure.json'),JSON.stringify({error:String(error)}),{flag:'wx'});}catch{}throw error;}
+}
+export async function treeReferenceCli(argv){const report=await generateTreeReference(argv);console.log(JSON.stringify({operation:report.operation,status:report.status,preset:report.preset,seed:report.seed,height:report.height,metrics:report.metrics},null,2));}
+
+
+FILE ../tools/assetctl/tree-reference-runtime.mjs
+// Fixed entry for the named assetctl operation. Upstream source is unmodified.
+import {Tree} from './vendor/ez-tree/src/lib/tree.js';
+import TreeOptions from './vendor/ez-tree/src/lib/options.js';
+import oak from './vendor/ez-tree/src/lib/presets/oak_medium.json';
+import ash from './vendor/ez-tree/src/lib/presets/ash_medium.json';
+
+const presets={oak_medium:oak,ash_medium:ash};
+const levels=[
+  {id:'full',detail:{}},
+  {id:'wood-reduced',detail:{sectionStride:3,segmentFactor:.75,leafStride:1,leafScale:1}},
+  {id:'upstream-lod1',detail:Tree.defaultLODLevels[1].detail},
+  {id:'upstream-lod2',detail:Tree.defaultLODLevels[2].detail},
+];
+function extract(geometry){
+  const vertices=geometry.attributes.position.count;
+  if(vertices>65535)throw new Error('Upstream Uint16 index capacity exceeded');
+  const result={};
+  for(const key of ['position','normal','uv']){
+    result[key]=Array.from(geometry.attributes[key].array);
+    if(result[key].some(x=>!Number.isFinite(x)))throw new Error('Nonfinite reference geometry');
+  }
+  result.index=Array.from(geometry.index.array);
+  if(result.index.some(i=>i<0||i>=vertices)||result.index.length%3)throw new Error('Invalid reference indices');
+  geometry.dispose();return result;
+}
+function bounds(meshes){
+  const min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity];
+  for(const mesh of meshes)for(let p=0;p<mesh.position.length;p++){
+    min[p%3]=Math.min(min[p%3],mesh.position[p]);max[p%3]=Math.max(max[p%3],mesh.position[p]);
+  }
+  return {min,max};
+}
+function normalsAudit(mesh){
+  let triangles=0,opposed=0,orthogonal=0,degenerate=0;
+  const p=mesh.position,n=mesh.normal,i=mesh.index;
+  for(let k=0;k<i.length;k+=3){
+    const a=i[k]*3,b=i[k+1]*3,c=i[k+2]*3;
+    const u=[p[b]-p[a],p[b+1]-p[a+1],p[b+2]-p[a+2]],v=[p[c]-p[a],p[c+1]-p[a+1],p[c+2]-p[a+2]];
+    const cross=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],length=Math.hypot(...cross);
+    if(length<1e-10){degenerate++;continue;}
+    const dot=(cross[0]*n[a]+cross[1]*n[a+1]+cross[2]*n[a+2])/length;
+    triangles++;if(dot<-.1)opposed++;if(Math.abs(dot)<.1)orthogonal++;
+  }
+  return {triangles,opposed,orthogonal,degenerate};
+}
+export function generateReference({preset,seed,height}){
+  if(!Object.hasOwn(presets,preset)||!Number.isInteger(seed)||seed<0||seed>2147483647||!Number.isFinite(height)||height<10||height>22)throw new Error('Invalid reference settings');
+  const options=new TreeOptions();options.copy(structuredClone(presets[preset]));
+  options.seed=seed;options.leaves.size=1.2;options.leaves.sizeVariance=0;
+  // Geometry-only reference: source normals are retained (including defects).
+  // Upstream wind/material code is not used in this static shape comparison.
+  options.leaves.roundedNormals=false;options.bark.textured=false;
+  const tree=new Tree(options),lods=[];
+  for(const {id,detail} of levels){
+    const generated=tree.createGeometry(detail),wood=extract(generated.branches),leaves=extract(generated.leaves);
+    const stride=detail.leafStride??1,billboard=detail.billboard??options.leaves.billboard,verticesPerLeaf=billboard==='double'?8:4;
+    const pivots=[];
+    for(let leaf=0;leaf<tree.skeleton.leaves.length;leaf+=stride){
+      const origin=tree.skeleton.leaves[leaf].origin;
+      for(let vertex=0;vertex<verticesPerLeaf;vertex++)pivots.push(origin.x,origin.y,origin.z);
+    }
+    if(pivots.length!==leaves.position.length)throw new Error('Upstream leaf ordering differs from declared skeleton mapping');
+    leaves.pivot=pivots;lods.push({id,detail,wood,leaves});
+  }
+  const full=lods[0],originalBounds=bounds([full.wood,full.leaves]);
+  // Scale wood and leaf attachment positions, retaining every local leaf-card
+  // dimension. Fit full-LOD height, then use the SAME scale for all LODs.
+  const heightAt=scale=>{
+    let top=0;
+    for(let p=1;p<full.wood.position.length;p+=3)top=Math.max(top,full.wood.position[p]*scale);
+    for(let p=1;p<full.leaves.position.length;p+=3)top=Math.max(top,full.leaves.position[p]+full.leaves.pivot[p]*(scale-1));
+    return top;
+  };
+  if(heightAt(0)>height||heightAt(100)<height)throw new Error('Cannot fit requested skeleton height');
+  let low=0,high=100;for(let step=0;step<48;step++){const middle=(low+high)/2;if(heightAt(middle)>height)high=middle;else low=middle;}
+  const scale=(low+high)/2;
+  for(const lod of lods){
+    for(let p=0;p<lod.wood.position.length;p++)lod.wood.position[p]=Math.fround(lod.wood.position[p]*scale);
+    for(let p=0;p<lod.leaves.position.length;p++){
+      lod.leaves.position[p]=Math.fround(lod.leaves.position[p]+lod.leaves.pivot[p]*(scale-1));
+      lod.leaves.pivot[p]=Math.fround(lod.leaves.pivot[p]*scale);
+    }
+    lod.bounds=bounds([lod.wood,lod.leaves]);
+    lod.triangles=(lod.wood.index.length+lod.leaves.index.length)/3;
+    lod.vertices=(lod.wood.position.length+lod.leaves.position.length)/3;
+    lod.normalAudit={wood:normalsAudit(lod.wood),leaves:normalsAudit(lod.leaves)};
+  }
+  const skeleton={branches:tree.skeleton.branches.map(b=>({...b,sections:b.sections.map(s=>({origin:s.origin.toArray(),orientation:s.orientation.toArray(),radius:s.radius}))})),
+    leaves:tree.skeleton.leaves.map(l=>({origin:l.origin.toArray(),orientation:l.orientation.toArray(),size:l.size}))};
+  tree.branchesMesh.geometry.dispose();tree.branchesMesh.material.dispose();tree.leavesMesh.geometry.dispose();tree.leavesMesh.material.dispose();
+  return {version:'atlas-ez-tree-reference-1',preset,seed,height,options,skeletonScale:scale,originalBounds,skeleton,lods,
+    adaptations:['Fixed 1.2m square leaf cards at full detail, zero size variance','Wood and attachment coordinates scaled to requested full-detail height; local card offsets retained','Source normals unmodified; upstream rounded normals disabled','Four detail settings share the same generated skeleton; upstream leaf-scale changes retained in control LODs'],
+    limitations:['Geometry comparison only; no external textures, packaged GLB, animation or game integration','Source normal defects are measured, not repaired','Native preset silhouette and Atlas adaptation require visual comparison']};
+}
+
+
+FILE ../tools/assetctl/test/tree-reference.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {existsSync} from 'node:fs';
+import {readFile} from 'node:fs/promises';
+import {join,resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {generateTreeReference,treeReferenceOptions} from '../tree-reference.mjs';
+import {workspaceRoot} from '../path-policy.mjs';
+
+const brief='examples/asset-briefs/atlas-ez-tree-reference.json';
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+const finite=array=>array.every(Number.isFinite);
+const same=(a,b)=>assert.deepEqual(a,b);
+const closeArrays=(a,b,tolerance,message)=>{
+  assert.equal(a.length,b.length,message);
+  for(let i=0;i<a.length;i++)assert.ok(Math.abs(a[i]-b[i])<=tolerance,`${message} at component ${i}: ${a[i]} vs ${b[i]}`);
+};
+
+test('EZ-Tree reference options accept only bounded, explicit presets and reject malformed arguments',()=>{
+  same(treeReferenceOptions(['--brief',brief,'--output','Assets/_assetctl/example']),{
+    brief,output:'Assets/_assetctl/example',preset:'oak_medium',seed:35729,height:16,project:'universe-atlas',
+  });
+  same(treeReferenceOptions(['--brief',brief,'--output','Assets/_assetctl/example','--preset','ash_medium','--seed','36330','--height','10','--project','universe-atlas-rendering']),{
+    brief,output:'Assets/_assetctl/example',preset:'ash_medium',seed:36330,height:10,project:'universe-atlas-rendering',
+  });
+  for(const args of [
+    [],['--brief',brief],['--output','out'],['--brief',brief,'--output','out','--brief',brief],
+    ['--brief',brief,'--output','out','--bad','1'],['--brief',brief,'--output','out','--preset','pine_medium'],
+    ['--brief',brief,'--output','out','--seed','-1'],['--brief',brief,'--output','out','--seed','1.5'],
+    ['--brief',brief,'--output','out','--seed','2147483648'],['--brief',brief,'--output','out','--height','9.99'],
+    ['--brief',brief,'--output','out','--height','22.01'],['--brief',brief,'--output','out','--height','NaN'],
+    ['--brief',brief,'--output','out','--project','unknown'],
+  ])assert.throws(()=>treeReferenceOptions(args),undefined,JSON.stringify(args));
+});
+
+test('EZ-Tree named reference preserves candidates, repeats deterministically, scales only skeleton placement, and records source defects',async()=>{
+  const suffix=`${Date.now()}-${process.pid}`;
+  const outputRelative=`Assets/_assetctl/ez-tree-reference-test-${suffix}`;
+  const repeatRelative=`${outputRelative}-repeat`;
+  const output=resolve(workspaceRoot,outputRelative),repeat=resolve(workspaceRoot,repeatRelative);
+  assert.equal(existsSync(output),false,'first generated review directory is fresh');
+  assert.equal(existsSync(repeat),false,'repeat review directory is fresh');
+  const briefPath=resolve(workspaceRoot,brief),briefBefore=hash(await readFile(briefPath));
+
+  const args=['--brief',brief,'--output',outputRelative,'--preset','oak_medium','--seed','35729','--height','16'];
+  const first=await generateTreeReference(args);
+  const second=await generateTreeReference([...args.slice(0,3),repeatRelative,...args.slice(4)]);
+  assert.equal(first.status,'geometry-comparison-not-packaged');
+  assert.equal(first.operation,'atlas-ez-tree-reference-1');
+  assert.equal(first.preset,'oak_medium');assert.equal(first.seed,35729);assert.equal(first.height,16);
+  assert.equal(first.source.revision,'dcf309bd86bd521083d9c70f01f2de45fdc7c457');
+  assert.equal(first.provenance.license.expression,'MIT');
+  assert.equal(first.provenance.license.attribution,'EZ-Tree, Copyright (c) 2024 Daniel Greenheck');
+  assert.match(first.provenance.notes,/not a packaged game asset/);
+  assert.equal(second.source.revision,first.source.revision);
+
+  const artifactMap=report=>new Map(report.artifacts.map(item=>[item.path,item.sha256]));
+  same(artifactMap(second),artifactMap(first),'all geometry/skeleton artifact bytes repeat exactly for the same seed and settings');
+  for(const artifact of first.artifacts){
+    const bytes=await readFile(join(output,artifact.path));
+    assert.equal(bytes.length,artifact.bytes,`${artifact.path} byte count matches manifest`);
+    assert.equal(hash(bytes),artifact.sha256,`${artifact.path} bytes match manifest hash`);
+  }
+
+  const readJSON=async(dir,name)=>JSON.parse(await readFile(join(dir,name),'utf8'));
+  const full=await readJSON(output,'full.json');
+  const woodReduced=await readJSON(output,'wood-reduced.json');
+  const upstream1=await readJSON(output,'upstream-lod1.json');
+  const upstream2=await readJSON(output,'upstream-lod2.json');
+  const skeleton=await readJSON(output,'skeleton.json');
+  const byId=new Map(first.metrics.lods.map(lod=>[lod.id,lod]));
+  assert.deepEqual([full.id,woodReduced.id,upstream1.id,upstream2.id],['full','wood-reduced','upstream-lod1','upstream-lod2']);
+  assert.equal(first.metrics.lods.length,4);
+
+  for(const lod of [full,woodReduced,upstream1,upstream2]){
+    assert.ok(lod.triangles>0&&lod.vertices>0);
+    assert.ok(lod.vertices<=65535,`${lod.id} stays within upstream Uint16 vertex capacity`);
+    assert.equal(lod.vertices,(lod.wood.position.length+lod.leaves.position.length)/3);
+    assert.equal(lod.triangles,(lod.wood.index.length+lod.leaves.index.length)/3);
+    for(const mesh of [lod.wood,lod.leaves]){
+      assert.equal(mesh.position.length%3,0);assert.equal(mesh.normal.length,mesh.position.length);
+      assert.equal(mesh.uv.length/2,mesh.position.length/3);
+      assert.ok(finite(mesh.position),`${lod.id} positions are finite`);
+      assert.ok(finite(mesh.normal),`${lod.id} normals are finite`);
+      assert.ok(finite(mesh.uv),`${lod.id} UVs are finite`);
+      assert.ok(mesh.index.length%3===0);
+      assert.ok(mesh.index.every(index=>Number.isInteger(index)&&index>=0&&index<mesh.position.length/3),`${lod.id} indices address valid vertices`);
+      if(mesh===lod.leaves){
+        assert.equal(mesh.pivot.length,mesh.position.length,'leaf attachment mapping has one vec3 per card vertex');
+        assert.ok(finite(mesh.pivot));
+      }
+    }
+    const metric=byId.get(lod.id);
+    assert.equal(lod.triangles,metric.triangles);
+    assert.deepEqual(lod.bounds,metric.bounds);
+    assert.equal(lod.bounds.min[1],0,`${lod.id} root remains at ground`);
+  }
+
+  assert.ok(skeleton.branches.length>0&&skeleton.leaves.length>0,'one shared generated skeleton is preserved');
+  assert.equal(full.leaves.index.length,woodReduced.leaves.index.length,'wood-only reduction keeps all foliage triangles');
+  same(full.leaves.position,woodReduced.leaves.position,'wood-only reduction keeps foliage positions');
+  same(full.leaves.normal,woodReduced.leaves.normal,'wood-only reduction keeps foliage normals');
+  same(full.leaves.uv,woodReduced.leaves.uv,'wood-only reduction keeps foliage UVs');
+  same(full.leaves.pivot,woodReduced.leaves.pivot,'wood-only reduction keeps attachment pivots');
+  same(full.leaves.index,woodReduced.leaves.index,'wood-only reduction keeps foliage topology');
+  assert.notDeepEqual(full.wood.index,woodReduced.wood.index,'wood-reduced setting changes wood topology');
+  assert.equal(full.leaves.index.length/3,10640);
+  assert.equal(woodReduced.normalAudit.wood.opposed,58,'known upstream wood-normal defect is recorded, not rewritten');
+  assert.equal(full.normalAudit.leaves.orthogonal,5320,'half of double-billboard leaf triangles have perpendicular normals in this source snapshot');
+  assert.equal(woodReduced.normalAudit.wood.degenerate,0,'the opposed-normal report is distinct from degenerate triangles');
+  assert.ok(upstream1.leaves.index.length<full.leaves.index.length);
+  assert.ok(upstream2.leaves.index.length<upstream1.leaves.index.length);
+  assert.match(first.limitations.join(' '),/normal defects are measured, not repaired/);
+  assert.ok(Math.abs(full.bounds.max[1]-16)<1e-5,'full LOD is fitted to the requested 16m height');
+  assert.notEqual(upstream1.bounds.max[1],16,'upstream LOD leafScale changes can exceed the full-LOD fit');
+
+  // The 1.2m dimension belongs to each square card cluster. Compare local
+  // vertex offsets from the attachment pivot so scaling the skeleton does not
+  // accidentally scale the card itself.
+  const firstCardOffsets=Array.from({length:24},(_,i)=>full.leaves.position[i]-full.leaves.pivot[i]);
+  const cardSpans=[0,1,2].map(axis=>{
+    const values=firstCardOffsets.filter((_,i)=>i%3===axis);
+    return Math.max(...values)-Math.min(...values);
+  });
+  assert.ok(Math.abs(Math.max(...cardSpans)-1.2)<1e-4,'at least one axis of the square card spans 1.2m');
+
+  const {generateReference}=await import(pathToFileURL(join(output,'reference-runtime.mjs')).href);
+  const low=generateReference({preset:'oak_medium',seed:35729,height:10});
+  const high=generateReference({preset:'oak_medium',seed:35729,height:22});
+  for(const generated of [low,high]){
+    const lod=generated.lods[0];
+    assert.ok(Math.abs(lod.bounds.max[1]-generated.height)<1e-5,`${generated.height}m fit is applied to full LOD`);
+    assert.equal(lod.vertices,(lod.wood.position.length+lod.leaves.position.length)/3);
+    const local=Array.from({length:24},(_,i)=>lod.leaves.position[i]-lod.leaves.pivot[i]);
+    closeArrays(local,firstCardOffsets,2e-6,'card offsets relative to skeleton pivots retain physical dimensions at alternate tree heights');
+  }
+
+  const protectedPath=join(output,'full.json'),before=hash(await readFile(protectedPath));
+  await assert.rejects(generateTreeReference(args),/fresh directory|EEXIST/);
+  assert.equal(hash(await readFile(protectedPath)),before,'refused overwrite leaves previous candidate intact');
+  assert.equal(hash(await readFile(briefPath)),briefBefore,'generation preserves the input brief');
+  const outside=resolve(workspaceRoot,'..',`ez-tree-reference-outside-${suffix}`);
+  await assert.rejects(generateTreeReference(['--brief',brief,'--output',outside]),/outside approved roots/);
+  assert.equal(existsSync(outside),false,'outside path is rejected before directory creation');
+});
+
+
+FILE ../tools/assetctl/vendor/ez-tree/src/lib/tree.js
+import * as THREE from 'three';
+import RNG from './rng';
+import { Branch } from './branch';
+import { Billboard, TreeType } from './enums';
+import TreeOptions from './options';
+import { loadPreset } from './presets/index';
+import { Trellis } from './trellis';
+
+export class Tree extends THREE.Group {
+  /**
+   * @type {RNG}
+   */
+  rng;
+
+  /**
+   * @type {TreeOptions}
+   */
+  options;
+
+  /**
+   * @type {Branch[]}
+   */
+  branchQueue = [];
+
+  /**
+   * @param {TreeOptions} params
+   */
+  constructor(options = new TreeOptions()) {
+    super();
+    this.name = 'Tree';
+    this.branchesMesh = new THREE.Mesh();
+    this.leavesMesh = new THREE.Mesh();
+    this.trellisMesh = null;
+    this.lod = null;
+    this.skeleton = null;
+    this.add(this.branchesMesh);
+    this.add(this.leavesMesh);
+    this.options = options;
+  }
+
+  update(elapsedTime) {
+    const leafShader = this.leavesMesh.material.userData.shader;
+    if (leafShader) {
+      leafShader.uniforms.uTime.value = elapsedTime;
+    }
+  }
+
+  /**
+   * Loads a preset tree from JSON 
+   * @param {string} preset 
+   */
+  loadPreset(name) {
+    const json = loadPreset(name);
+    this.loadFromJson(json);
+  }
+
+  /**
+   * Loads a tree from JSON
+   * @param {TreeOptions} json 
+   */
+  loadFromJson(json) {
+    this.options.copy(json);
+    this.generate();
+  }
+
+  /**
+   * @typedef {Object} LODDetail
+   * @property {number} [sectionStride=1] Sample every Nth section ring; the
+   *   first and last rings are always kept so branch endpoints stay put
+   * @property {number} [segmentFactor=1] Radial segment multiplier;
+   *   segments = max(3, round(segmentCount * segmentFactor))
+   * @property {number} [leafStride=1] Keep every Nth leaf
+   * @property {number} [leafScale=1] Size multiplier for the kept leaves,
+   *   typically 1/sqrt(kept fraction) to preserve canopy coverage
+   * @property {string} [billboard] Billboard mode override for this level
+   *   ('single' or 'double'); defaults to options.leaves.billboard
+   */
+
+  /**
+   * @typedef {Object} LODLevel
+   * @property {number} distance Camera distance at which this level activates
+   * @property {number} [hysteresis] Switch hysteresis as a fraction of distance
+   * @property {LODDetail} [detail] Meshing detail for this level
+   */
+
+  /**
+   * Default levels for generateLODs(). LOD1 is roughly 40% of the full
+   * triangle count, LOD2 roughly 20%.
+   * @type {LODLevel[]}
+   */
+  static defaultLODLevels = [
+    { distance: 0, detail: {} },
+    {
+      distance: 100,
+      hysteresis: 0.05,
+      detail: {
+        sectionStride: 3,
+        segmentFactor: 0.75,
+        leafStride: 2,
+        // Slightly under the area-preserving sqrt(2): individual leaves are
+        // still resolvable at this distance, so a full compensation reads as
+        // "bigger leaves" rather than "same canopy".
+        leafScale: 1.25,
+      },
+    },
+    {
+      distance: 250,
+      hysteresis: 0.05,
+      detail: {
+        sectionStride: 6,
+        segmentFactor: 0.4,
+        leafStride: 2,
+        // Deliberately under-compensated: full coverage compensation for the
+        // thinning + single billboard would need 2x scale, which reads as
+        // balloon leaves. A slightly sparser canopy with natural-size leaves
+        // looks better at this distance (fogged, 250+ units in the demo).
+        leafScale: 1.3,
+        billboard: Billboard.Single,
+      },
+    },
+  ];
+
+  /**
+   * Generate a new tree
+   */
+  generate() {
+    this.#clearLOD();
+    this.#generateSkeleton();
+
+    const buffers = this.#meshSkeleton();
+    this.branches = buffers.branches;
+    this.leaves = buffers.leaves;
+
+    this.createBranchesGeometry();
+    this.createLeavesGeometry();
+    this.createTrellis();
+  }
+
+  /**
+   * Generates the tree as a set of levels of detail hosted in a THREE.LOD
+   * object inside this group. The renderer switches levels automatically
+   * based on camera distance. All levels share one bark and one leaf
+   * material, so update() animates wind at every level.
+   * @param {LODLevel[]} levels Level descriptors, in any order
+   */
+  generateLODs(levels = Tree.defaultLODLevels) {
+    this.#clearLOD();
+    this.#generateSkeleton();
+
+    const barkMaterial = this.#createBarkMaterial();
+    const leafMaterial = this.#createLeafMaterial();
+
+    this.lod = new THREE.LOD();
+    this.lod.name = 'TreeLOD';
+
+    // THREE.LOD sorts its levels by distance internally, so sort here too and
+    // let the nearest level own the reused meshes regardless of input order.
+    const ordered = [...levels].sort(
+      (a, b) => (a.distance ?? 0) - (b.distance ?? 0),
+    );
+
+    ordered.forEach((level, index) => {
+      const buffers = this.#meshSkeleton(level.detail ?? {});
+
+      let branchesMesh, leavesMesh;
+      if (index === 0) {
+        // Reuse the existing meshes for the closest level so update(),
+        // traversal and the vertex/triangle count getters keep working.
+        this.branches = buffers.branches;
+        this.leaves = buffers.leaves;
+        branchesMesh = this.branchesMesh;
+        leavesMesh = this.leavesMesh;
+        branchesMesh.geometry.dispose();
+        branchesMesh.material.dispose();
+        leavesMesh.geometry.dispose();
+        leavesMesh.material.dispose();
+      } else {
+        branchesMesh = new THREE.Mesh();
+        leavesMesh = new THREE.Mesh();
+      }
+
+      branchesMesh.geometry = this.#buildBufferGeometry(buffers.branches);
+      branchesMesh.material = barkMaterial;
+      leavesMesh.geometry = this.#buildBufferGeometry(buffers.leaves);
+      leavesMesh.material = leafMaterial;
+
+      for (const mesh of [branchesMesh, leavesMesh]) {
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+      }
+
+      const group = new THREE.Group();
+      group.add(branchesMesh, leavesMesh);
+      this.lod.addLevel(group, level.distance ?? 0, level.hysteresis ?? 0);
+    });
+
+    this.add(this.lod);
+    this.createTrellis();
+  }
+
+  /**
+   * Builds branch and leaf geometry at the given detail level without
+   * modifying the tree's own meshes. Useful for external instancing or
+   * custom LOD systems. Reuses the current skeleton, generating one first
+   * if none exists.
+   * @param {LODDetail} detail
+   * @returns {{ branches: THREE.BufferGeometry, leaves: THREE.BufferGeometry }}
+   */
+  createGeometry(detail = {}) {
+    if (!this.skeleton) {
+      this.#generateSkeleton();
+    }
+    const buffers = this.#meshSkeleton(detail);
+    return {
+      branches: this.#buildBufferGeometry(buffers.branches),
+      leaves: this.#buildBufferGeometry(buffers.leaves),
+    };
+  }
+
+  /**
+   * Tears down any LOD state and restores the flat branches/leaves meshes
+   * as direct children, so generate() behaves as if LODs never existed.
+   */
+  #clearLOD() {
+    if (!this.lod) return;
+
+    this.lod.levels.forEach((level) => {
+      for (const mesh of level.object.children) {
+        // One level reuses branchesMesh/leavesMesh; their geometry and the
+        // shared materials are disposed by whichever generate path runs next.
+        if (mesh === this.branchesMesh || mesh === this.leavesMesh) continue;
+        mesh.geometry.dispose();
+      }
+    });
+
+    this.remove(this.lod);
+    this.lod = null;
+    this.add(this.branchesMesh, this.leavesMesh);
+  }
+
+  /**
+   * Grows the tree skeleton: the section frames of every branch and the
+   * placement of every leaf. All RNG consumption happens here, so any
+   * number of meshing passes can run against one skeleton without changing
+   * the tree's shape.
+   */
+  #generateSkeleton() {
+    this.skeleton = {
+      branches: [],
+      leaves: [],
+    };
+
+    this.rng = new RNG(this.options.seed);
+
+    // Create the trunk of the tree first
+    this.branchQueue.push(
+      new Branch(
+        new THREE.Vector3(),
+        new THREE.Euler(),
+        this.options.branch.length[0],
+        this.options.branch.radius[0],
+        0,
+        this.options.branch.sections[0],
+        this.options.branch.segments[0],
+      ),
+    );
+
+    while (this.branchQueue.length > 0) {
+      const branch = this.branchQueue.shift();
+      this.#growBranch(branch);
+    }
+  }
+
+  /**
+   * Meshes the current skeleton into geometry buffers at the given detail.
+   * Consumes no RNG, so it can run repeatedly with different detail specs.
+   * @param {LODDetail} detail
+   */
+  #meshSkeleton(detail = {}) {
+    const sectionStride = Math.max(1, Math.floor(detail.sectionStride ?? 1));
+    const segmentFactor = detail.segmentFactor ?? 1;
+    const leafStride = Math.max(1, Math.floor(detail.leafStride ?? 1));
+    const leafScale = detail.leafScale ?? 1;
+    const billboard = detail.billboard ?? this.options.leaves.billboard;
+
+    const branches = {
+      verts: [],
+      normals: [],
+      indices: [],
+      uvs: [],
+      windFactor: []
+    };
+
+    const leaves = {
+      verts: [],
+      normals: [],
+      indices: [],
+      uvs: [],
+    };
+
+    for (const skeletonBranch of this.skeleton.branches) {
+      this.#meshBranch(branches, skeletonBranch, sectionStride, segmentFactor);
+    }
+
+    for (let i = 0; i < this.skeleton.leaves.length; i += leafStride) {
+      this.#meshLeaf(leaves, this.skeleton.leaves[i], leafScale, billboard);
+    }
+
+    return { branches, leaves };
+  }
+
+  /**
+   * Grows a branch's skeleton, queueing child branches and recording leaf
+   * placements. Consumes RNG in the exact order of the original interleaved
+   * generator so seeds keep producing identical trees.
+   * @param {Branch} branch
+   * @returns
+   */
+  #growBranch(branch) {
+    let sectionOrientation = branch.orientation.clone();
+    let sectionOrigin = branch.origin.clone();
+    let sectionLength =
+      branch.length /
+      branch.sectionCount /
+      (this.options.type === 'Deciduous' ? this.options.branch.levels - 1 : 1);
+
+    // This information is used for generating child branches after the branch
+    // geometry has been constructed
+    let sections = [];
+
+    for (let i = 0; i <= branch.sectionCount; i++) {
+      let sectionRadius = branch.radius;
+
+      // If final section of final level, set radius to effecively zero
+      if (
+        i === branch.sectionCount &&
+        branch.level === this.options.branch.levels
+      ) {
+        sectionRadius = 0.001;
+      } else if (this.options.type === TreeType.Deciduous) {
+        sectionRadius *=
+          1 - this.options.branch.taper[branch.level] * (i / branch.sectionCount);
+      } else if (this.options.type === TreeType.Evergreen) {
+        // Evergreens do not have a terminal branch so they have a taper of 1
+        sectionRadius *= 1 - (i / branch.sectionCount);
+      }
+
+      // Use this information later on when generating child branches
+      sections.push({
+        origin: sectionOrigin.clone(),
+        orientation: sectionOrientation.clone(),
+        radius: sectionRadius,
+      });
+
+      sectionOrigin.add(
+        new THREE.Vector3(0, sectionLength, 0).applyEuler(sectionOrientation),
+      );
+
+      // Perturb the orientation of the next section randomly. The higher the
+      // gnarliness, the larger potential perturbation
+      const gnarliness =
+        Math.max(1, 1 / Math.sqrt(sectionRadius)) *
+        this.options.branch.gnarliness[branch.level];
+
+      sectionOrientation.x += this.rng.random(gnarliness, -gnarliness);
+      sectionOrientation.z += this.rng.random(gnarliness, -gnarliness);
+
+      // Apply growth force to the branch
+      const qSection = new THREE.Quaternion().setFromEuler(sectionOrientation);
+
+      const qTwist = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        this.options.branch.twist[branch.level],
+      );
+
+      qSection.multiply(qTwist);
+
+      // Rotate the section's growth direction toward force.direction (positive
+      // strength) or away from it (negative). The (sectionUp × target) axis
+      // makes force.direction behave as a real world axis: when sectionUp is
+      // already aligned with target the rotation is zero, so a vertical trunk
+      // with force=(0,1,0) doesn't get gnarliness drift amplified — the old
+      // slerp form was degenerate at qForce=identity and pushed branches in
+      // whatever random direction the section had drifted.
+      const sectionUp = new THREE.Vector3(0, 1, 0).applyQuaternion(qSection);
+      const target = new THREE.Vector3()
+        .copy(this.options.branch.force.direction)
+        .normalize();
+      const axis = new THREE.Vector3().crossVectors(sectionUp, target);
+      const sinFull = axis.length();
+      if (sinFull > 1e-6) {
+        axis.divideScalar(sinFull);
+        const fullAngle = Math.atan2(sinFull, sectionUp.dot(target));
+        const step = this.options.branch.force.strength / sectionRadius;
+        const clamped = Math.max(-fullAngle, Math.min(fullAngle, step));
+        qSection.premultiply(
+          new THREE.Quaternion().setFromAxisAngle(axis, clamped),
+        );
+      }
+
+      // Apply trellis force if enabled
+      if (this.options.trellis.enabled) {
+        const trellisResult = this.calculateTrellisForce(sectionOrigin, sectionRadius);
+        if (trellisResult) {
+          const qTrellis = new THREE.Quaternion().setFromUnitVectors(
+            new THREE.Vector3(0, 1, 0),
+            trellisResult.direction,
+          );
+          qSection.rotateTowards(qTrellis, trellisResult.strength);
+        }
+      }
+
+      sectionOrientation.setFromQuaternion(qSection);
+    }
+
+    this.skeleton.branches.push({
+      sections,
+      segmentCount: branch.segmentCount,
+      baseRadius: branch.radius,
+    });
+
+    // Deciduous trees have a terminal branch that grows out of the
+    // end of the parent branch
+    if (this.options.type === 'deciduous') {
+      const lastSection = sections[sections.length - 1];
+
+      if (branch.level < this.options.branch.levels) {
+        this.branchQueue.push(
+          new Branch(
+            lastSection.origin,
+            lastSection.orientation,
+            this.options.branch.length[branch.level + 1],
+            lastSection.radius,
+            branch.level + 1,
+            // Section count and segment count must be same as parent branch
+            // since the child branch is growing from the end of the parent branch
+            branch.sectionCount,
+            branch.segmentCount,
+          ),
+        );
+      } else {
+        this.#recordLeaf(lastSection.origin, lastSection.orientation);
+      }
+    }
+
+    // If we are on the last branch level, generate leaves
+    if (branch.level === this.options.branch.levels) {
+      this.generateLeaves(sections);
+    } else if (branch.level < this.options.branch.levels) {
+      this.generateChildBranches(
+        this.options.branch.children[branch.level],
+        branch.level + 1,
+        sections);
+    }
+  }
+
+  /**
+   * Generate branches from a parent branch
+   * @param {number} count The number of child branches to generate
+   * @param {number} level The level of the child branches
+   * @param {{
+   *  origin: THREE.Vector3,
+   *  orientation: THREE.Euler,
+   *  radius: number
+   * }[]} sections The parent branch's sections
+   * @returns
+   */
+  generateChildBranches(count, level, sections) {
+    const radialOffset = this.rng.random();
+    const startMin = this.options.branch.start[level];
+    const heightStep = (1.0 - startMin) / count;
+    const angleSlots = this.shuffledIndices(count);
+
+    for (let i = 0; i < count; i++) {
+      // Stratified sampling along the parent's length: jitter within slot [i, i+1]
+      // so children are spread evenly but not perfectly periodic.
+      let childBranchStart = startMin + (i + this.rng.random()) * heightStep;
+
+      // Find which sections are on either side of the child branch origin point
+      // so we can determine the origin, orientation and radius of the branch
+      const sectionIndex = Math.floor(childBranchStart * (sections.length - 1));
+      let sectionA, sectionB;
+      sectionA = sections[sectionIndex];
+      if (sectionIndex === sections.length - 1) {
+        sectionB = sectionA;
+      } else {
+        sectionB = sections[sectionIndex + 1];
+      }
+
+      // Find normalized distance from section A to section B (0 to 1)
+      const alpha =
+        (childBranchStart - sectionIndex / (sections.length - 1)) /
+        (1 / (sections.length - 1));
+
+      // Linearly interpolate origin from section A to section B
+      const childBranchOrigin = new THREE.Vector3().lerpVectors(
+        sectionA.origin,
+        sectionB.origin,
+        alpha,
+      );
+
+      // Linearly interpolate radius
+      const childBranchRadius =
+        this.options.branch.radius[level] *
+        ((1 - alpha) * sectionA.radius + alpha * sectionB.radius);
+
+      // Linearlly interpolate the orientation
+      const qA = new THREE.Quaternion().setFromEuler(sectionA.orientation);
+      const qB = new THREE.Quaternion().setFromEuler(sectionB.orientation);
+      const parentOrientation = new THREE.Euler().setFromQuaternion(
+        qB.slerp(qA, alpha),
+      );
+
+      // Stratified radial angle: each child gets a 2π/count slot, jittered ±½ slot.
+      // angleSlots[i] randomly permutes slot assignment so that the height slot
+      // and angle slot are uncorrelated — otherwise evergreens (where branch
+      // length depends on height) spiral their longest branches to a fixed side.
+      const radialJitter = this.rng.random(0.5, -0.5);
+      const radialAngle = 2.0 * Math.PI * (radialOffset + (angleSlots[i] + radialJitter) / count);
+      const q1 = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(1, 0, 0),
+        this.options.branch.angle[level] / (180 / Math.PI),
+      );
+      const q2 = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        radialAngle,
+      );
+      const q3 = new THREE.Quaternion().setFromEuler(parentOrientation);
+
+      const childBranchOrientation = new THREE.Euler().setFromQuaternion(
+        q3.multiply(q2.multiply(q1)),
+      );
+
+      let childBranchLength =
+        this.options.branch.length[level] *
+        (this.options.type === TreeType.Evergreen
+          ? 1.0 - childBranchStart
+          : 1.0);
+
+      this.branchQueue.push(
+        new Branch(
+          childBranchOrigin,
+          childBranchOrientation,
+          childBranchLength,
+          childBranchRadius,
+          level,
+          this.options.branch.sections[level],
+          this.options.branch.segments[level],
+        ),
+      );
+    }
+  }
+
+  /**
+   * Logic for spawning child branches from a parent branch's section
+   * @param {{
+  *  origin: THREE.Vector3,
+  *  orientation: THREE.Euler,
+  *  radius: number
+  * }[]} sections The parent branch's sections
+  * @returns
+  */
+  generateLeaves(sections) {
+    const radialOffset = this.rng.random();
+    const count = this.options.leaves.count;
+    const startMin = this.options.leaves.start;
+    const heightStep = (1.0 - startMin) / count;
+    const angleSlots = this.shuffledIndices(count);
+
+    for (let i = 0; i < count; i++) {
+      // Stratified sampling along the parent's length.
+      let leafStart = startMin + (i + this.rng.random()) * heightStep;
+
+      // Find which sections are on either side of the child branch origin point
+      // so we can determine the origin, orientation and radius of the branch
+      const sectionIndex = Math.floor(leafStart * (sections.length - 1));
+      let sectionA, sectionB;
+      sectionA = sections[sectionIndex];
+      if (sectionIndex === sections.length - 1) {
+        sectionB = sectionA;
+      } else {
+        sectionB = sections[sectionIndex + 1];
+      }
+
+      // Find normalized distance from section A to section B (0 to 1)
+      const alpha =
+        (leafStart - sectionIndex / (sections.length - 1)) /
+        (1 / (sections.length - 1));
+
+      // Linearly interpolate origin from section A to section B
+      const leafOrigin = new THREE.Vector3().lerpVectors(
+        sectionA.origin,
+        sectionB.origin,
+        alpha,
+      );
+
+      // Linearlly interpolate the orientation
+      const qA = new THREE.Quaternion().setFromEuler(sectionA.orientation);
+      const qB = new THREE.Quaternion().setFromEuler(sectionB.orientation);
+      const parentOrientation = new THREE.Euler().setFromQuaternion(
+        qB.slerp(qA, alpha),
+      );
+
+      // Stratified radial angle with permuted slot assignment.
+      // See generateChildBranches for rationale.
+      const radialJitter = this.rng.random(0.5, -0.5);
+      const radialAngle = 2.0 * Math.PI * (radialOffset + (angleSlots[i] + radialJitter) / count);
+      const q1 = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(1, 0, 0),
+        this.options.leaves.angle / (180 / Math.PI),
+      );
+      const q2 = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        radialAngle,
+      );
+      const q3 = new THREE.Quaternion().setFromEuler(parentOrientation);
+
+      const leafOrientation = new THREE.Euler().setFromQuaternion(
+        q3.multiply(q2.multiply(q1)),
+      );
+
+      this.#recordLeaf(leafOrigin, leafOrientation);
+    }
+  }
+
+  /**
+  * Records a leaf placement in the skeleton. The size variance is sampled
+  * here so the meshing passes stay RNG-free.
+  * @param {THREE.Vector3} origin The starting point of the leaf
+  * @param {THREE.Euler} orientation The orientation of the leaf
+  */
+  #recordLeaf(origin, orientation) {
+    const size =
+      this.options.leaves.size *
+      (1 +
+        this.rng.random(
+          this.options.leaves.sizeVariance,
+          -this.options.leaves.sizeVariance,
+        ));
+
+    this.skeleton.leaves.push({
+      origin: origin.clone(),
+      orientation: orientation.clone(),
+      size,
+    });
+  }
+
+  /**
+  * Emits the quad geometry for one skeleton leaf into the buffers
+  * @param {{verts: number[], normals: number[], indices: number[], uvs: number[]}} buffers
+  * @param {{origin: THREE.Vector3, orientation: THREE.Euler, size: number}} leaf
+  * @param {number} scale Size multiplier for this detail level
+  * @param {string} billboard Billboard mode for this detail level
+  */
+  #meshLeaf(buffers, leaf, scale, billboard) {
+    let i = buffers.verts.length / 3;
+
+    const { origin, orientation } = leaf;
+
+    // Width and length of the leaf quad
+    const leafSize = leaf.size * scale;
+
+    const W = leafSize;
+    const L = leafSize;
+
+    const createLeaf = (rotation) => {
+      // Create quad vertices
+      const v = [
+        new THREE.Vector3(-W / 2, L, 0),
+        new THREE.Vector3(-W / 2, 0, 0),
+        new THREE.Vector3(W / 2, 0, 0),
+        new THREE.Vector3(W / 2, L, 0),
+      ].map((v) =>
+        v
+          .applyEuler(new THREE.Euler(0, rotation, 0))
+          .applyEuler(orientation)
+          .add(origin),
+      );
+
+      buffers.verts.push(
+        v[0].x,
+        v[0].y,
+        v[0].z,
+        v[1].x,
+        v[1].y,
+        v[1].z,
+        v[2].x,
+        v[2].y,
+        v[2].z,
+        v[3].x,
+        v[3].y,
+        v[3].z,
+      );
+
+      const n = new THREE.Vector3(0, 0, 1).applyEuler(orientation);
+
+      // The normal vectors are an average of the direction of the leaf and the directions to the individual vertices.
+      // This creates a nice rounded shape while maintaining the canopy shape as a whole.
+      const roundedNormals = this.options.leaves.roundedNormals;
+      let n1 = roundedNormals ? new THREE.Vector3().copy(n).add(v[0]).sub(origin).normalize() : n;
+      let n2 = roundedNormals ? new THREE.Vector3().copy(n).add(v[1]).sub(origin).normalize() : n;
+      let n3 = roundedNormals ? new THREE.Vector3().copy(n).add(v[2]).sub(origin).normalize() : n;
+      let n4 = roundedNormals ? new THREE.Vector3().copy(n).add(v[3]).sub(origin).normalize() : n;
+
+      buffers.normals.push(
+        n1.x,
+        n1.y,
+        n1.z,
+        n2.x,
+        n2.y,
+        n2.z,
+        n3.x,
+        n3.y,
+        n3.z,
+        n4.x,
+        n4.y,
+        n4.z,
+      );
+      buffers.uvs.push(0, 1, 0, 0, 1, 0, 1, 1);
+      buffers.indices.push(i, i + 1, i + 2, i, i + 2, i + 3);
+      i += 4;
+    };
+
+    createLeaf(0);
+    if (billboard === Billboard.Double) {
+      createLeaf(Math.PI / 2);
+    }
+  }
+
+  /**
+   * Fisher-Yates shuffle of [0..count-1] using the tree's RNG so results stay
+   * seed-reproducible.
+   * @param {number} count
+   * @returns {number[]}
+   */
+  shuffledIndices(count) {
+    const arr = Array.from({ length: count }, (_, k) => k);
+    for (let k = count - 1; k > 0; k--) {
+      const r = Math.floor(this.rng.random() * (k + 1));
+      [arr[k], arr[r]] = [arr[r], arr[k]];
+    }
+    return arr;
+  }
+
+  /**
+   * Emits the ring geometry and indices for one skeleton branch
+   * @param {{verts: number[], normals: number[], indices: number[], uvs: number[]}} buffers
+   * @param {{sections: {origin: THREE.Vector3, orientation: THREE.Euler, radius: number}[], segmentCount: number, baseRadius: number}} skeletonBranch
+   * @param {number} sectionStride Sample every Nth section ring
+   * @param {number} segmentFactor Radial segment multiplier
+   */
+  #meshBranch(buffers, skeletonBranch, sectionStride, segmentFactor) {
+    const { sections, segmentCount, baseRadius } = skeletonBranch;
+
+    // Terminal branches inherit the parent's segmentCount, so parent and
+    // child resolve to the same reduced count and junctions stay sealed.
+    const segments = Math.max(3, Math.round(segmentCount * segmentFactor));
+
+    // Number of texture wraps around the branch's circumference. Scaling with
+    // the branch's base radius keeps bark feature size roughly consistent
+    // across thick trunks and thin twigs. Held constant for the whole branch
+    // so tapered sections share a wrap count and don't twist the texture
+    // longitudinally.
+    const wrapsX = Math.max(
+      1,
+      Math.round(baseRadius * this.options.bark.textureScale.x),
+    );
+
+    // Sample every Nth ring, always keeping the first and last so branch
+    // endpoints (and parent/child junctions) stay put across detail levels.
+    const sampled = [];
+    for (let i = 0; i < sections.length; i += sectionStride) {
+      sampled.push(sections[i]);
+    }
+    if ((sections.length - 1) % sectionStride !== 0) {
+      sampled.push(sections[sections.length - 1]);
+    }
+
+    // Used later for geometry index generation
+    const indexOffset = buffers.verts.length / 3;
+
+    for (let k = 0; k < sampled.length; k++) {
+      const section = sampled[k];
+
+      // Create the segments that make up this section.
+      let first;
+      for (let j = 0; j < segments; j++) {
+        let angle = (2.0 * Math.PI * j) / segments;
+
+        // Create the segment vertex
+        const vertex = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle))
+          .multiplyScalar(section.radius)
+          .applyEuler(section.orientation)
+          .add(section.origin);
+
+        const normal = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle))
+          .applyEuler(section.orientation)
+          .normalize();
+
+        // uv.y alternates by sampled ring position rather than original
+        // section index, so section skipping keeps the 0/1 tiling pattern.
+        const uv = new THREE.Vector2(
+          (j / segments) * wrapsX,
+          (k % 2 === 0) ? 0 : 1,
+        );
+
+        buffers.verts.push(...Object.values(vertex));
+        buffers.normals.push(...Object.values(normal));
+        buffers.uvs.push(...Object.values(uv));
+
+        if (j === 0) {
+          first = { vertex, normal, uv };
+        }
+      }
+
+      // Duplicate the first vertex so there is continuity in the UV mapping.
+      // u=wrapsX maps to the same texel as u=0 since wrapsX is an integer.
+      buffers.verts.push(...Object.values(first.vertex));
+      buffers.normals.push(...Object.values(first.normal));
+      buffers.uvs.push(wrapsX, first.uv.y);
+    }
+
+    // Build geometry for each section of the branch (cylinder without end caps)
+    let v1, v2, v3, v4;
+    const N = segments + 1;
+    for (let i = 0; i < sampled.length - 1; i++) {
+      // Build the quad for each segment of the section
+      for (let j = 0; j < segments; j++) {
+        v1 = indexOffset + i * N + j;
+        // The last segment wraps around back to the starting segment, so omit j + 1 term
+        v2 = indexOffset + i * N + (j + 1);
+        v3 = v1 + N;
+        v4 = v2 + N;
+        buffers.indices.push(v1, v3, v2, v2, v3, v4);
+      }
+    }
+  }
+
+  /**
+   * Builds a BufferGeometry from raw attribute buffers
+   * @param {{verts: number[], normals: number[], indices: number[], uvs: number[]}} buffers
+   * @returns {THREE.BufferGeometry}
+   */
+  #buildBufferGeometry(buffers) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute(
+      'position',
+      new THREE.BufferAttribute(new Float32Array(buffers.verts), 3),
+    );
+    g.setAttribute(
+      'normal',
+      new THREE.BufferAttribute(new Float32Array(buffers.normals), 3),
+    );
+    g.setAttribute(
+      'uv',
+      new THREE.BufferAttribute(new Float32Array(buffers.uvs), 2),
+    );
+    g.setIndex(
+      new THREE.BufferAttribute(new Uint16Array(buffers.indices), 1),
+    );
+    g.computeBoundingSphere();
+    return g;
+  }
+
+  /**
+   * Creates the bark material from the current options
+   * @returns {THREE.MeshStandardMaterial}
+   */
+  #createBarkMaterial() {
+    const mat = new THREE.MeshStandardMaterial({
+      name: 'branches',
+      flatShading: this.options.bark.flatShading,
+      color: new THREE.Color(this.options.bark.tint),
+      metalness: 0.0,
+      roughness: 1.0,
+    });
+
+    if (this.options.bark.textured) {
+      // textureScale.x is baked into UVs during meshing (wrapsX), so only
+      // the Y axis needs runtime scaling on the texture itself.
+      const scale = this.options.bark.textureScale;
+      const maps = this.options.bark.maps;
+      const apply = (texture) => {
+        if (!texture) return null;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.x = 1;
+        texture.repeat.y = 1 / scale.y;
+        return texture;
+      };
+      if (maps.color) mat.map = apply(maps.color);
+      if (maps.ao) mat.aoMap = apply(maps.ao);
+      if (maps.normal) mat.normalMap = apply(maps.normal);
+      if (maps.roughness) {
+        mat.roughnessMap = apply(maps.roughness);
+        // Point metalnessMap at the same texture: metalness stays 0 because
+        // the metalness factor is 0, and GLTFExporter reuses the texture
+        // as-is instead of synthesizing a merged metal/rough PNG (and
+        // warning about it) when the two slots differ.
+        mat.metalnessMap = mat.roughnessMap;
+      }
+    }
+
+    return mat;
+  }
+
+  /**
+   * Generates the geometry for the branches
+   */
+  createBranchesGeometry() {
+    this.branchesMesh.geometry.dispose();
+    this.branchesMesh.geometry = this.#buildBufferGeometry(this.branches);
+    this.branchesMesh.material.dispose();
+    this.branchesMesh.material = this.#createBarkMaterial();
+    this.branchesMesh.castShadow = true;
+    this.branchesMesh.receiveShadow = true;
+  }
+
+  /**
+   * Creates the leaf material, including the wind sway vertex shader, from
+   * the current options
+   * @returns {THREE.MeshStandardMaterial}
+   */
+  #createLeafMaterial() {
+    const mat = new THREE.MeshStandardMaterial({
+      name: 'leaves',
+      map: this.options.leaves.map ?? null,
+      color: new THREE.Color(this.options.leaves.tint),
+      side: THREE.DoubleSide,
+      alphaTest: this.options.leaves.alphaTest,
+      metalness: 0.0,
+      roughness: 1.0,
+      dithering: true
+    });
+
+    // Add custom shader code for branch swaying
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uTime = { value: 0 };
+      shader.uniforms.uWindStrength = { value: new THREE.Vector3(0.5, 0, 0.5) };
+      shader.uniforms.uWindFrequency = { value: 0.5 };
+      shader.uniforms.uWindScale = { value: 70 };
+      shader.uniforms.uCustomNormals = { value: this.options.leaves.roundedNormals };
+
+      shader.vertexShader = `
+        uniform float uTime;
+        uniform vec3 uWindStrength;
+        uniform float uWindFrequency;
+        uniform float uWindScale;
+        ` + shader.vertexShader;
+
+      // Add code for simplex noise
+      shader.vertexShader = shader.vertexShader.replace(
+        `void main() {`,
+        `
+        // GLSL Simplex Noise 3D
+        // Source: https://github.com/ashima/webgl-noise
+
+        vec3 mod289(vec3 x) {
+            return x - floor(x * (1.0 / 289.0)) * 289.0;
+        }
+
+        vec4 mod289(vec4 x) {
+            return x - floor(x * (1.0 / 289.0)) * 289.0;
+        }
+
+        vec4 permute(vec4 x) {
+            return mod289(((x*34.0)+1.0)*x);
+        }
+
+        vec4 taylorInvSqrt(vec4 r) {
+            return 1.79284291400159 - 0.85373472095314 * r;
+        }
+
+        vec3 fade(vec3 t) {
+            return t*t*t*(t*(t*6.0-15.0)+10.0);
+        }
+
+        // Classic Simplex Noise 3D
+        float simplex3(vec3 v) {
+            const vec2  C = vec2(1.0/6.0, 1.0/3.0);
+            const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
+
+            // First corner
+            vec3 i  = floor(v + dot(v, C.yyy) );
+            vec3 x0 = v - i + dot(i, C.xxx);
+
+            // Other corners
+            vec3 g = step(x0.yzx, x0.xyz);
+            vec3 l = 1.0 - g;
+            vec3 i1 = min( g.xyz, l.zxy );
+            vec3 i2 = max( g.xyz, l.zxy );
+
+            //  x0 = x0 - 0. + 0.0 * C 
+            vec3 x1 = x0 - i1 + C.xxx;
+            vec3 x2 = x0 - i2 + C.yyy; // 2.0 * C.x = 1/3 = C.y
+            vec3 x3 = x0 - D.yyy;      // -1.0 + 3.0 * C.x = -0.5
+
+            // Permutations
+            i = mod289(i);
+            vec4 p = permute( permute( permute( 
+                        i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
+                      + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) 
+                      + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+
+            // Gradients: 7x7 points over a square, mapped onto an octahedron.
+            // The ring size 17*17 = 289 is close to the mapping's singularity.
+            float n_ = 0.142857142857; // 1.0/7.0
+            vec3  ns = n_ * D.wyz - D.xzx;
+
+            vec4 j = p - 49.0 * floor(p * ns.z * ns.z);  //  mod(p,7*7)
+
+            vec4 x_ = floor(j * ns.z);
+            vec4 y_ = floor(j - 7.0 * x_ );    // mod(j,N)
+
+            vec4 x = x_ *ns.x + ns.yyyy;
+            vec4 y = y_ *ns.x + ns.yyyy;
+            vec4 h = 1.0 - abs(x) - abs(y);
+
+            vec4 b0 = vec4( x.xy, y.xy );
+            vec4 b1 = vec4( x.zw, y.zw );
+
+            vec4 s0 = floor(b0)*2.0 + 1.0;
+            vec4 s1 = floor(b1)*2.0 + 1.0;
+            vec4 sh = -step(h, vec4(0.0));
+
+            vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
+            vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
+
+            vec3 g0 = vec3(a0.xy,h.x);
+            vec3 g1 = vec3(a0.zw,h.y);
+            vec3 g2 = vec3(a1.xy,h.z);
+            vec3 g3 = vec3(a1.zw,h.w);
+
+            // Normalise gradients
+            vec4 norm = taylorInvSqrt(vec4(dot(g0,g0), dot(g1,g1), dot(g2,g2), dot(g3,g3)));
+            g0 *= norm.x;
+            g1 *= norm.y;
+            g2 *= norm.z;
+            g3 *= norm.w;
+
+            // Mix contributions from the four corners
+            vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+            m = m * m;
+            return 42.0 * dot( m*m, vec4( dot(g0,x0), dot(g1,x1), 
+                                          dot(g2,x2), dot(g3,x3) ) );
+        }
+          
+        void main() {`,
+      );
+
+      shader.vertexShader = shader.vertexShader.replace(
+        `#include <project_vertex>`,
+        `
+        vec4 mvPosition = vec4(transformed, 1.0);
+
+        float windOffset = 2.0 * 3.14 * simplex3(mvPosition.xyz / uWindScale);
+        vec3 windSway = uv.y * uWindStrength * (
+          0.5 * sin(uTime * uWindFrequency + windOffset) +
+          0.3 * sin(2.0 * uTime * uWindFrequency + 1.3 * windOffset) +
+          0.2 * sin(5.0 * uTime * uWindFrequency + 1.5 * windOffset)
+        );
+        mvPosition.xyz += windSway;
+
+        mvPosition = modelViewMatrix * mvPosition;
+        gl_Position = projectionMatrix * mvPosition;
+        `
+      );
+
+      // Skip the backface normal flip in normal_fragment_begin when using custom normals
+      shader.fragmentShader = `uniform bool uCustomNormals;\n` + shader.fragmentShader.replace(
+        '#include <normal_fragment_begin>',
+        THREE.ShaderChunk.normal_fragment_begin.replace(
+          'normal *= faceDirection;',
+          'if (!uCustomNormals) { normal *= faceDirection; }'
+        )
+      );
+
+      // Non-enumerable so JSON serialization (e.g. GLTFExporter's userData
+      // pass) skips the live shader object — Texture uniforms inside it are
+      // not serializable. update() still reads userData.shader normally.
+      Object.defineProperty(mat.userData, 'shader', {
+        value: shader,
+        configurable: true,
+        enumerable: false,
+      });
+    };
+
+    return mat;
+  }
+
+  /**
+   * Generates the geometry for the leaves
+   */
+  createLeavesGeometry() {
+    this.leavesMesh.geometry.dispose();
+    this.leavesMesh.geometry = this.#buildBufferGeometry(this.leaves);
+    this.leavesMesh.material.dispose();
+    this.leavesMesh.material = this.#createLeafMaterial();
+    this.leavesMesh.castShadow = true;
+    this.leavesMesh.receiveShadow = true;
+  }
+
+  /**
+   * Create or update the trellis geometry
+   */
+  createTrellis() {
+    // Remove old trellis if exists
+    if (this.trellisMesh) {
+      this.remove(this.trellisMesh);
+      this.trellisMesh.dispose();
+      this.trellisMesh = null;
+    }
+
+    // Create new trellis if enabled and visible
+    if (this.options.trellis.enabled && this.options.trellis.visible) {
+      this.trellisMesh = new Trellis(this.options.trellis);
+      this.trellisMesh.generate();
+      this.add(this.trellisMesh);
+    }
+  }
+
+  /**
+   * Find the nearest point on the trellis grid to a given position
+   * @param {THREE.Vector3} position
+   * @returns {THREE.Vector3}
+   */
+  getNearestTrellisPoint(position) {
+    const t = this.options.trellis;
+    const trellisX = t.position.x;
+    const trellisY = t.position.y;
+    const trellisZ = t.position.z;
+
+    // Trellis bounds
+    const minX = trellisX - t.width / 2;
+    const maxX = trellisX + t.width / 2;
+    const minY = trellisY;
+    const maxY = trellisY + t.height;
+
+    // Clamp position to trellis bounds for projection
+    const clampedX = Math.max(minX, Math.min(maxX, position.x));
+    const clampedY = Math.max(minY, Math.min(maxY, position.y));
+
+    // Find nearest horizontal line (Y = constant)
+    const nearestHLineY = Math.round((clampedY - minY) / t.spacing) * t.spacing + minY;
+    const finalHLineY = Math.max(minY, Math.min(maxY, nearestHLineY));
+
+    // Find nearest vertical line (X = constant)
+    const nearestVLineX = Math.round((clampedX - minX) / t.spacing) * t.spacing + minX;
+    const finalVLineX = Math.max(minX, Math.min(maxX, nearestVLineX));
+
+    // Point on nearest horizontal line (X can vary along the line)
+    const pointOnHLine = new THREE.Vector3(clampedX, finalHLineY, trellisZ);
+
+    // Point on nearest vertical line (Y can vary along the line)
+    const pointOnVLine = new THREE.Vector3(finalVLineX, clampedY, trellisZ);
+
+    // Return whichever is closer
+    const distH = position.distanceTo(pointOnHLine);
+    const distV = position.distanceTo(pointOnVLine);
+
+    return distH < distV ? pointOnHLine : pointOnVLine;
+  }
+
+  /**
+   * Calculate the force vector toward the nearest trellis point
+   * @param {THREE.Vector3} position Current section position
+   * @param {number} radius Current section radius
+   * @returns {{ direction: THREE.Vector3, strength: number } | null}
+   */
+  calculateTrellisForce(position, radius) {
+    const trellis = this.options.trellis;
+    const nearestPoint = this.getNearestTrellisPoint(position);
+
+    const distance = position.distanceTo(nearestPoint);
+
+    // Only apply force within max distance
+    if (distance > trellis.force.maxDistance) return null;
+    if (distance < 0.001) return null; // Avoid division by zero
+
+    // Calculate direction toward trellis
+    const direction = new THREE.Vector3()
+      .subVectors(nearestPoint, position)
+      .normalize();
+
+    // Calculate strength with distance falloff
+    // Closer = stronger force, scaled by inverse radius (like existing force)
+    const distanceFactor = 1 - Math.pow(
+      distance / trellis.force.maxDistance,
+      trellis.force.falloff,
+    );
+    const strength = trellis.force.strength * distanceFactor / radius;
+
+    return { direction, strength };
+  }
+
+  get vertexCount() {
+    return (this.branches.verts.length + this.leaves.verts.length) / 3;
+  }
+
+  get triangleCount() {
+    return (this.branches.indices.length + this.leaves.indices.length) / 3;
+  }
+}
+
+
+FILE ../examples/asset-briefs/atlas-ez-tree-reference.json
+{
+  "schema":"https://iwsdk.local/schemas/asset-brief/v1",
+  "id":"atlas-ez-tree-reference",
+  "kind":"environment-kit",
+  "purpose":"Compare an existing seeded tree generator with Atlas's authored family before further custom generation work.",
+  "target":{"engine":"IWSDK","project":"universe-atlas","devices":["desktop-web"],"metersPerUnit":1,"runtimeCoordinates":"right-handed-y-up"},
+  "artDirection":{"summary":"Measure believable broadleaf branching and canopy shape at matched 10, 16 and 22 metre heights. Preserve physical leaf-card dimensions and inspect source normals rather than silently correcting the reference.","styleTags":["realistic","broadleaf","reference-comparison"],"references":["https://github.com/dgreenheck/ez-tree/tree/dcf309bd86bd521083d9c70f01f2de45fdc7c457"]},
+  "deliverables":[
+    {"type":"source","path":"skeleton.json","format":"json","required":true},
+    {"type":"lod","path":"full.json","format":"json","required":true},
+    {"type":"lod","path":"wood-reduced.json","format":"json","required":true},
+    {"type":"manifest","path":"reference-manifest.json","format":"json","required":true},
+    {"type":"render-sheet","path":"comparison.png","format":"png","required":true}
+  ],
+  "constraints":{"geometry":{"maxTriangles":100000,"maxMaterials":2,"lodCount":4,"collision":"none"}},
+  "acceptance":{
+    "visual":["Compare actual reference and Atlas shapes at matched height, camera, light and material conditions","Record source normal defects and every adapter override; no reference is accepted from topology counts alone"],
+    "technical":["Pinned unmodified upstream source and MIT notice retained with SHA-256 file records","Repeated seed gives identical skeleton and geometry hashes","Scale wood and leaf attachments while full-detail local card size stays 1.2 metres","Reject Uint16 index overflow and nonfinite coordinates; report true triangles per detail level","The 100000-triangle ceiling bounds this research operation, not the production 18000/5000/900 LOD targets"],
+    "runtime":["Measure draw calls, triangles, generation time and hardware rendering under the same comparison fixture","No forest integration or shippable asset claim until packaging and actual runtime acceptance"]
+  },
+  "provenance":{"sourceType":"derived","generator":{"provider":"ez-tree","model":"seeded-procedural-geometry","checkpoint":"dcf309bd86bd521083d9c70f01f2de45fdc7c457","version":"dcf309bd86bd521083d9c70f01f2de45fdc7c457","workflow":"assetctl-tree-reference"},"prompt":"Generate pinned Oak Medium and Ash Medium preset controls at 10/16/22 metres; retain physical full-detail cards and record all adapted options.","seed":35729,"sourceUrl":"https://github.com/dgreenheck/ez-tree","sourceConsent":"licensed","parents":[],"license":{"expression":"MIT","attribution":"EZ-Tree, Copyright (c) 2024 Daniel Greenheck","restrictions":["Retain upstream MIT notice; geometry comparison does not include any upstream photographs or textures"]},"notes":"Fixed named operation and bounded presets only. Geometry-only output is a comparison artifact, not a packaged game asset."},
+  "experiments":{"providers":["ez-tree"],"seeds":[35729,36330],"selectionMetric":"Canopy shape, repeatability, physical dimensions, LOD continuity and adaptation effort"}
+}
+
+
+FILE src/tree-reference-lab.ts
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {loadTreeAssetFamily,type TreeAssetFamily} from './tree-asset.ts';
+
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(1);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;document.body.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#a6bfd0');
+const camera=new THREE.PerspectiveCamera(50,1,.1,20000);const controls=new OrbitControls(camera,renderer.domElement);
+const sun=new THREE.DirectionalLight(0xfff6e5,3);sun.position.set(-30,55,25);scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xc4dcf0,0x41472c,1));
+let family:TreeAssetFamily|undefined,atlas:ReturnType<TreeAssetFamily['createBatch']>|undefined;
+let references=new Map<string,THREE.Group>(),referenceTextures:THREE.Texture[]=[],referenceMaterials:THREE.MeshStandardMaterial[]=[];
+let mode='atlas',detail='full',normalMode='source',population=1,height=16,manifest:any,loading=false;
+const status=document.getElementById('status')!;
+async function sha(data:ArrayBuffer){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',data)),b=>b.toString(16).padStart(2,'0')).join('');}
+function geometry(data:any){
+  if(!Array.isArray(data.position)||data.position.length<9||data.position.length%3||data.position.length>65535*3||data.normal?.length!==data.position.length||data.uv?.length!==data.position.length/3*2||!Array.isArray(data.index)||data.index.length%3||data.index.length>300000)throw new Error('Invalid reference geometry shape');
+  if([...data.position,...data.normal,...data.uv].some(x=>!Number.isFinite(x)||Math.abs(x)>100000)||data.index.some((x:number)=>!Number.isInteger(x)||x<0||x>=data.position.length/3))throw new Error('Invalid reference geometry values');
+  const g=new THREE.BufferGeometry();for(const [key,size] of [['position',3],['normal',3],['uv',2]] as const)g.setAttribute(key,new THREE.Float32BufferAttribute(data[key],size));
+  g.setIndex(data.index);g.computeBoundingBox();g.computeBoundingSphere();g.userData.sourceNormals=g.attributes.normal.array.slice();return g;
+}
+function dispose(){
+  for(const group of references.values()){for(const child of group.children as THREE.InstancedMesh[]){child.geometry.dispose();child.dispose();}group.removeFromParent();}
+  references.clear();for(const material of referenceMaterials)material.dispose();for(const texture of referenceTextures)texture.dispose();referenceMaterials=[];referenceTextures=[];
+  atlas?.dispose();family?.dispose();atlas=undefined;family=undefined;
+}
+function show(){
+  if(atlas)atlas.group.visible=mode==='atlas';for(const [id,group] of references)group.visible=mode==='reference'&&id===detail;
+  status.textContent=manifest?JSON.stringify({preset:manifest.preset,heightM:height,population,mode,detail,normalMode,
+    sourceRevision:manifest.source.revision,
+    texturePolicy:'Atlas bark maps; Atlas foliage tile (0,0) on 1.2m square reference cards. Atlas native cards are 1x1.2m; this difference is retained.',
+    limits:'Static shape/LOD comparison. No external textures, source wind, shadow casting or game integration.',
+    geometry:manifest.metrics.lods.map((l:any)=>({id:l.id,triangles:l.triangles,height:l.bounds.max[1]}))},null,2):'Awaiting files.';
+}
+function setMode(value:string){if(!['atlas','reference'].includes(value))throw new Error('Invalid mode');mode=value;(document.getElementById('mode') as HTMLSelectElement).value=value;show();}
+function setDetail(value:string){if(manifest&&!references.has(value))throw new Error('Invalid detail');detail=value;(document.getElementById('detail') as HTMLSelectElement).value=value;show();}
+function setNormals(value:string){
+  if(!['source','geometric'].includes(value))throw new Error('Invalid normal mode');normalMode=value;
+  for(const group of references.values()){
+    const g=(group.children[1] as THREE.Mesh).geometry;
+    if(value==='geometric')g.computeVertexNormals();else g.setAttribute('normal',new THREE.Float32BufferAttribute(g.userData.sourceNormals.slice(),3));
+  }
+  (document.getElementById('normals') as HTMLSelectElement).value=value;show();
+}
+function setPopulation(value:number,reframe=true){
+  if(![1,3,64,192].includes(value))throw new Error('Invalid population');population=value;
+  if(!atlas)return;
+  atlas.setCount(0);const cols=Math.ceil(Math.sqrt(value)),rows=Math.ceil(value/cols),matrix=new THREE.Matrix4();
+  for(let i=0;i<value;i++){
+    const x=value===1?0:(i%cols-(cols-1)/2)*22,z=value===1?0:(Math.floor(i/cols)-(rows-1)/2)*22;
+    matrix.makeTranslation(x,0,z);atlas.setInstance(i,matrix,height,0);
+    for(const group of references.values())for(const mesh of group.children as THREE.InstancedMesh[]){mesh.setMatrixAt(i,matrix);mesh.count=value;mesh.instanceMatrix.needsUpdate=true;}
+  }
+  if(reframe){camera.position.set(value===1?24:cols*15,value===1?12:cols*8,value===1?36:cols*26);controls.target.set(0,height*.5,0);controls.update();}
+  (document.getElementById('population') as HTMLSelectElement).value=String(value);show();
+}
+async function load(a:ArrayBuffer,b:ArrayBuffer,m:any,read:(path:string)=>Promise<ArrayBuffer>){
+  if(loading)throw new Error('Load already in progress');loading=true;
+  let nextFamily:TreeAssetFamily|undefined,nextAtlas:typeof atlas;const nextGroups=new Map<string,THREE.Group>(),nextTextures:THREE.Texture[]=[],nextMaterials:THREE.MeshStandardMaterial[]=[];
+  try{
+    if(m.operation!=='atlas-ez-tree-reference-1'||m.source?.revision!=='dcf309bd86bd521083d9c70f01f2de45fdc7c457'||!Number.isFinite(m.height)||m.height<10||m.height>22||!Array.isArray(m.artifacts))throw new Error('Unsupported reference manifest');
+    nextFamily=await loadTreeAssetFamily(a,b);nextFamily.setDate(0n);nextAtlas=nextFamily.createBatch(0,192);
+    for(const source of nextFamily.lods[0]){const mat=source.material.clone();mat.onBeforeCompile=()=>{};mat.customProgramCacheKey=()=> 'atlas-reference-material-1';nextMaterials.push(mat);}
+    // Reuse one original Atlas foliage tile. Clone texture transforms without
+    // taking ownership of the family's shared ImageBitmap source.
+    for(const key of ['map','normalMap'] as const){
+      const texture=nextMaterials[1][key]?.clone();if(texture){texture.repeat.set(.25,.25);texture.offset.set(0,0);texture.needsUpdate=true;nextMaterials[1][key]=texture;nextTextures.push(texture);}
+    }
+    for(const id of ['full','wood-reduced','upstream-lod1','upstream-lod2']){
+      const path=`${id}.json`,record=m.artifacts.find((r:any)=>r.path===path);
+      if(!record||record.bytes>32*1024*1024)throw new Error('Missing or oversized reference LOD');const bytes=await read(path);
+      if(bytes.byteLength!==record.bytes||await sha(bytes)!==record.sha256)throw new Error('Reference LOD hash mismatch');
+      const data=JSON.parse(new TextDecoder().decode(bytes)),group=new THREE.Group();nextGroups.set(id,group);
+      for(const [i,part] of [data.wood,data.leaves].entries()){
+        const mesh=new THREE.InstancedMesh(geometry(part),nextMaterials[i],192);mesh.count=0;mesh.frustumCulled=false;group.add(mesh);
+      }
+    }
+  }catch(error){
+    for(const group of nextGroups.values())for(const child of group.children as THREE.InstancedMesh[]){child.geometry.dispose();child.dispose();}
+    for(const material of nextMaterials)material.dispose();for(const texture of nextTextures)texture.dispose();nextAtlas?.dispose();nextFamily?.dispose();throw error;
+  }finally{loading=false;}
+  dispose();family=nextFamily;atlas=nextAtlas;references=nextGroups;referenceTextures=nextTextures;referenceMaterials=nextMaterials;manifest=m;height=m.height;
+  scene.add(atlas!.group,...references.values());setNormals(normalMode);setPopulation(population);show();
+}
+/** CPU submission and GPU elapsed render measurements; no full-game claim. */
+async function measure(frames=60){
+  if(!family||!Number.isInteger(frames)||frames<10||frames>180)throw new Error('Invalid measurement');
+  renderer.setAnimationLoop(null);const gl=renderer.getContext() as WebGL2RenderingContext,ext=gl.getExtension('EXT_disjoint_timer_query_webgl2'),cpu:number[]=[],queries:WebGLQuery[]=[];
+  try{
+    for(let i=0;i<20;i++){renderer.render(scene,camera);await new Promise(requestAnimationFrame);}
+    for(let i=0;i<frames;i++){
+      const q=ext?gl.createQuery():null;if(q)gl.beginQuery(ext.TIME_ELAPSED_EXT,q);
+      const start=performance.now();renderer.render(scene,camera);cpu.push(performance.now()-start);
+      if(q){gl.endQuery(ext.TIME_ELAPSED_EXT);queries.push(q);}await new Promise(requestAnimationFrame);
+    }
+    const gpu:number[]=[];
+    for(let wait=0;queries.length&&wait<120;wait++){
+      if(gl.getParameter(ext.GPU_DISJOINT_EXT))throw new Error('Disjoint GPU measurement');
+      while(queries.length&&gl.getQueryParameter(queries[0],gl.QUERY_RESULT_AVAILABLE)){const q=queries.shift()!;gpu.push(gl.getQueryParameter(q,gl.QUERY_RESULT)/1e6);gl.deleteQuery(q);}
+      if(queries.length)await new Promise(requestAnimationFrame);
+    }
+    if(queries.length)throw new Error('GPU query timeout');
+    const stats=(x:number[])=>{const s=x.slice().sort((a,b)=>a-b);return s.length?{median:s[Math.floor(s.length*.5)],p95:s[Math.min(s.length-1,Math.floor(s.length*.95))]}:null;};
+    return {mode,detail,population,normalMode,frames,cpuSubmissionMs:stats(cpu),gpuMs:stats(gpu),render:{...renderer.info.render},memory:{...renderer.info.memory},glError:gl.getError()};
+  }finally{for(const q of queries)gl.deleteQuery(q);renderer.setAnimationLoop(()=>renderer.render(scene,camera));}
+}
+document.getElementById('load')!.onclick=async()=>{
+  try{
+    const a=(document.getElementById('lod0') as HTMLInputElement).files?.[0],b=(document.getElementById('lod1') as HTMLInputElement).files?.[0],files=Array.from((document.getElementById('reference') as HTMLInputElement).files??[]);
+    const mf=files.find(f=>f.webkitRelativePath.split('/').length===2&&f.name==='reference-manifest.json');if(!a||!b||!mf)throw new Error('Select Atlas pair and reference directory');
+    const map=new Map(files.map(f=>[f.webkitRelativePath.split('/').slice(1).join('/'),f]));await load(await a.arrayBuffer(),await b.arrayBuffer(),JSON.parse(await mf.text()),async p=>{const file=map.get(p);if(!file)throw new Error(`Missing ${p}`);return file.arrayBuffer();});
+  }catch(error){status.textContent=String(error);}
+};
+for(const [id,action] of [['mode',setMode],['detail',setDetail],['normals',setNormals]] as const)document.getElementById(id)!.onchange=e=>action((e.target as HTMLSelectElement).value);
+document.getElementById('population')!.onchange=e=>setPopulation(Number((e.target as HTMLSelectElement).value));
+function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}addEventListener('resize',resize);resize();setPopulation(1);
+renderer.setAnimationLoop(()=>renderer.render(scene,camera));
+Object.assign(window,{__treeReferenceLab:{load,setMode,setDetail,setNormals,setPopulation,measure,renderer,scene,camera,controls,sun,get manifest(){return manifest;},get ready(){return !!family&&!loading;}}});

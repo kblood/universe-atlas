@@ -1,0 +1,10 @@
+✔ EZ-Tree reference options accept only bounded, explicit presets and reject malformed arguments (1.1734ms)
+✔ EZ-Tree named reference preserves candidates, repeats deterministically, scales only skeleton placement, and records source defects (1420.6106ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1592.7761
