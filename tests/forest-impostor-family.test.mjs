@@ -54,6 +54,8 @@ test('Lambert shader composes family shape, linear color and conservative bounds
     }
     assert.match(shader.vertexShader,/familyBound>0.0\?vec3\(familyBound\)/);
     assert.match(shader.fragmentShader,/treeFamilyCone\(ro,rd,band.xyz\/16.0/);
+    assert.match(shader.fragmentShader,/float numerator=1\.0-dot\(n,o\)/,'integer cone plane distances are emitted as GLSL floats');
+    assert.doesNotMatch(shader.fragmentShader,/float numerator=-?\d+-dot\(n,o\)/);
     assert.match(shader.fragmentShader,/treeFamilyFoliage\[familyIndex\]\*brightness.y/);
     assert.match(shader.fragmentShader,/familyBound\/treeRootHeight.w/,'ray shift uses the family bound');
     assert.ok(!shader.fragmentShader.includes('baseCoverage'),'atlas occupancy is not treated as tree opacity');

@@ -12,6 +12,18 @@ function geometry(position,pivot,branch,wind){
   g.setAttribute('_wind',new THREE.Float32BufferAttribute(wind,1));
   return g;
 }
+
+test('interleaved GLTF vertex attributes produce the same profile and bounds as separate arrays',()=>{
+  const positions=[0,0,0,2,5,1,-2,9,1,1,15,-1],pivots=[0,0,0,1,5,1,-1,9,1,0,15,-1],branches=[0,4,4,4],winds=[0,.2,.6,1];
+  const separate=geometry(positions,pivots,branches,winds),interleaved=new THREE.BufferGeometry();
+  const data=new Float32Array(4*11);
+  for(let i=0;i<4;i++)data.set([123,...positions.slice(i*3,i*3+3),...pivots.slice(i*3,i*3+3),branches[i],winds[i],456,789],i*11);
+  const buffer=new THREE.InterleavedBuffer(data,11);
+  for(const [name,size,offset] of [['position',3,1],['_leaf_pivot',3,4],['_branch_level',1,7],['_wind',1,8]])
+    interleaved.setAttribute(name,new THREE.InterleavedBufferAttribute(buffer,size,offset));
+  try{assert.deepEqual(deriveTreeCanopyMetadata([interleaved]),deriveTreeCanopyMetadata([separate]));}
+  finally{separate.dispose();interleaved.dispose();}
+});
 function readFloatAttribute(doc,binary,index){
   const a=doc.accessors[index],v=doc.bufferViews[a.bufferView],components={SCALAR:1,VEC2:2,VEC3:3,VEC4:4}[a.type];
   assert.equal(a.componentType,5126);assert.ok(components);

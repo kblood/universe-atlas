@@ -10,7 +10,8 @@ export type ForestFamilyPresentation={enabled:boolean;lod1Profile:TreeCanopyProf
 const familyUniformGLSL=`uniform vec4 treeFamilyBands[8];uniform vec2 treeFamilyBandExtent[8];
   uniform vec3 treeFamilyBark[2],treeFamilyFoliage[2];uniform vec2 treeFamilyBounds;`;
 
-const vector=(v:readonly number[])=>`vec3(${v.map(x=>Number.isInteger(x)?`${x}.0`:String(x)).join(',')})`;
+const scalar=(x:number)=>Number.isInteger(x)?`${x}.0`:String(x);
+const vector=(v:readonly number[])=>`vec3(${v.map(scalar).join(',')})`;
 const quaternionGLSL=`
 vec3 treeRotate(vec4 q,vec3 v){return v+2.0*cross(q.xyz,cross(q.xyz,v)+q.w*v);}
 `;
@@ -31,7 +32,7 @@ function convexShader(name:string,geometry:THREE.BufferGeometry){
     vec3 o=(ro-centre)/radii,d=rd/radii;float enter=-1e20,leave=1e20,parallelOutside=0.0;
     vec3 enterNormal=vec3(0),leaveNormal=vec3(0);
     ${planes.map(p=>`{
-      vec3 n=${vector(p.slice(0,3))};float numerator=${p[3]}-dot(n,o),denominator=dot(n,d);
+      vec3 n=${vector(p.slice(0,3))};float numerator=${scalar(p[3])}-dot(n,o),denominator=dot(n,d);
       if(abs(denominator)<1e-8){if(numerator<0.0)parallelOutside=1.0;}
       else{float t=numerator/denominator;
         if(denominator<0.0){if(t>enter){enter=t;enterNormal=n;}}

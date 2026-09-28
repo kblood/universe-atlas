@@ -73,3 +73,19 @@ is claimed from these CPU checks. Next: actual-game close/middle/far captures,
 per-ID handoff checks, GPU compile/error inspection, measured timing and Opus
 review of the resulting scene. Structural species variants, species dimensions,
 ground cover, terrain and fauna remain part of the full implementation plan.
+
+## First actual-family browser check
+
+The isolated browser load exposed an interleaved-attribute bug in the profile
+helper: GLTFLoader's attribute arrays need their individual stride and offset.
+The helper now uses attribute accessors, with an interleaved/separate-array
+equivalence regression. A subsequent GPU compile exposed an integer plane
+constant in the new cone shader; the generator now emits explicit GLSL floats.
+Both failures are preserved under `test-results/family-canopy/`.
+
+After these fixes, the actual packaged Oak and Pine loaded and their analytic
+proxies rendered on RTX 5090 / ANGLE D3D11 with GL error zero and no browser
+errors. Nine focused regression checks and TypeScript pass. This is an isolated
+compile/render check, not the normal-control game acceptance. The close-up proxy
+image visibly contains smooth stacked broadleaf bands and solid conifer cones;
+it does not establish realistic foliage or a seamless distance transition.

@@ -1,4 +1,4 @@
-import type {BufferGeometry} from 'three';
+import type {BufferGeometry,BufferAttribute,InterleavedBufferAttribute} from 'three';
 
 /** Reference skeleton height used by the detailed tree vertex shader. */
 export const TREE_CANOPY_REFERENCE_HEIGHT_M = 16;
@@ -35,7 +35,8 @@ export type TreeCullingBounds = {
 };
 export type TreeCanopyMetadata = {profile: TreeCanopyProfile; cullingBounds: TreeCullingBounds};
 
-type Attributes = {position: Float32Array; pivot: Float32Array; branch: Float32Array; wind: Float32Array};
+type FloatAttribute=BufferAttribute|InterleavedBufferAttribute;
+type Attributes = {position: FloatAttribute; pivot: FloatAttribute; branch: FloatAttribute; wind: FloatAttribute};
 
 function readAttributes(geometries: readonly BufferGeometry[]): Attributes[] {
   if (!Array.isArray(geometries) || geometries.length === 0) throw new Error('At least one tree geometry is required');
@@ -46,8 +47,7 @@ function readAttributes(geometries: readonly BufferGeometry[]): Attributes[] {
     if (!position || position.itemSize !== 3 || !pivot || pivot.itemSize !== 3 || !branch || branch.itemSize !== 1 || !wind || wind.itemSize !== 1 ||
       position.count < 1 || pivot.count !== position.count || branch.count !== position.count || wind.count !== position.count ||
       ![position, pivot, branch, wind].every(a => a.array instanceof Float32Array)) throw new Error(`Tree geometry ${index} is missing valid float vertex attributes`);
-    return {position: position.array as Float32Array, pivot: pivot.array as Float32Array,
-      branch: branch.array as Float32Array, wind: wind.array as Float32Array};
+    return {position,pivot,branch,wind};
   });
 }
 
@@ -93,10 +93,12 @@ export function deriveTreeCanopyMetadata(geometries: readonly BufferGeometry[]):
   const samples: {x: number; y: number; z: number; band: number}[] = [];
   let maxLeafOffsetM = 0, cullingRadiusM = 0;
   for (const source of sources) {
-    for (let i = 0; i < source.branch.length; i++) {
-      const j = i * 3, px = source.position[j], py = source.position[j + 1], pz = source.position[j + 2];
-      const qx = source.pivot[j], qy = source.pivot[j + 1], qz = source.pivot[j + 2];
-      const branch = source.branch[i], wind = source.wind[i];
+    for (let i = 0; i < source.branch.count; i++) {
+      // GLTFLoader may share an interleaved buffer across attributes. Accessors
+      // honor its stride and offset; the raw arrays are not tightly packed.
+      const px = source.position.getX(i), py = source.position.getY(i), pz = source.position.getZ(i);
+      const qx = source.pivot.getX(i), qy = source.pivot.getY(i), qz = source.pivot.getZ(i);
+      const branch = source.branch.getX(i), wind = source.wind.getX(i);
       if (![px, py, pz, qx, qy, qz, branch, wind].every(finite) || wind < 0 || wind > 1) throw new Error('Tree vertex contains non-finite data or wind outside [0,1]');
       const leaf = branch > LEAF_BRANCH_LEVEL;
       cullingRadiusM = Math.max(cullingRadiusM, maxDeformedVertexRadius(px, py, pz, qx, qy, qz, leaf, wind));
