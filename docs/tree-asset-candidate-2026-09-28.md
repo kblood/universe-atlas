@@ -78,3 +78,7 @@ candidate manifests and source files are preserved.
 
 This is a reviewed proposal under the
 [tree contract](tree-species-asset-contract-2026-09-28.md), not a finished asset.
+The proposed corrections for height, branch distribution, foliage/material
+calibration, bounded variants and tree-specific LODs are collected in the
+[next authoring increment](tree-authoring-next-increment-2026-09-28.md). They
+are not implemented; the candidate remains unshipped and `NOASSERTION`.

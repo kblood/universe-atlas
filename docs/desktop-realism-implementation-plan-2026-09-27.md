@@ -189,6 +189,12 @@ more. Structural diversity must not come from disconnected anatomy.
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |
 
+Stage F's next tree-authoring changes are proposed, not implemented. The
+[authoring increment record](tree-authoring-next-increment-2026-09-28.md)
+specifies the 16 m height correction, irregular branch layout, calibrated
+foliage, eight seeded variants, LOD targets and provenance safeguards. The
+current candidate remains unshipped with license `NOASSERTION`.
+
 Stages have dependencies. Beginning this programme does not mean replacing all
 subsystems at once. The first code increment targets B so detailed assets have
 a more stable population renderer underneath them. It does not claim a realistic
