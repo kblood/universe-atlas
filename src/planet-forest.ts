@@ -22,6 +22,7 @@ import {forestPresentationFamily,packForestPresentation,FOREST_PRESENTATION_VERS
 import {FOREST_VARIANT_VERSION} from './tree-structural-variant.ts';
 import type {ForestFamilyPresentation} from './forest-impostor.ts';
 import type {ForestTreeKind} from './forest-tree-family-library.ts';
+import {ForestFarAtlas,FOREST_FAR_ATLAS_VERSION} from './forest-far-atlas.ts';
 
 type Resident={cell:PopulationCell;height:number;present:boolean;water:number;patchKey?:string};
 type TreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
@@ -30,6 +31,10 @@ const loadTreeFamily:TreeLoader=async(a,b,options)=>(await import('./tree-asset.
 
 type BatchUpdates={residents:Resident[];originVersions:number[];slots:Map<string,number>;wanted:Resident[];wantedCoverage:number[];wantedIds:Set<string>;matrix:DirtyRange;color:DirtyRange;coverage:DirtyRange;seed:DirtyRange};
 const batchUpdates=():BatchUpdates=>({residents:[],originVersions:[],slots:new Map(),wanted:[],wantedCoverage:[],wantedIds:new Set(),matrix:new DirtyRange(),color:new DirtyRange(),coverage:new DirtyRange(),seed:new DirtyRange()});
+/** Views baked per rendered frame (two small scratch renders plus mip copies
+ * each); 81 views per family complete in 27 frames per family. Families are
+ * baked one after another. */
+export const FOREST_FAR_ATLAS_VIEWS_PER_FRAME=3;
 const crownBoundRadius=Math.hypot(...LEGACY_TREE_BOUND.extent)+Math.hypot(LEGACY_TREE_BOUND.center[0],LEGACY_TREE_BOUND.center[2]);
 /** One structural choice per canonical individual: the dated binding's bounded
  * variant, applied only when the adopted family carries that pool member. */
@@ -105,6 +110,9 @@ export class PlanetForest {
   private presentedFamilies=new Map<ForestTreeKind,ForestFamilyPresentation>();
   private bindings=new WeakMap<Resident,ForestTreeBinding|null>();
   private assetDraw=false;
+  private farAtlases=new Map<ForestTreeKind,ForestFarAtlas>();
+  private farAtlasRevision=-1;
+  private farAtlasError='';
   private worldDate=0n;
   private worker:Worker|null=null;
   private selecting=false;
@@ -194,6 +202,53 @@ export class PlanetForest {
     this.assets.clear();
     this.assetCounts=[0,0];
   }
+  /** Create one far-atlas bake per adopted family. The atlas is an attachment
+   * of its library entry, so replace/clear/dispose release it (and detach it
+   * from the far renderer) before the family geometry it was captured from. */
+  private syncFarAtlases(){
+    if(!this.fullCanopy||this.farAtlasRevision===this.assets.revision)return;
+    this.farAtlasRevision=this.assets.revision;
+    for(const [kind,entry] of this.assets.entries){
+      const presentation=entry.family.canopyPresentation;
+      if(!presentation?.enabled||this.farAtlases.has(kind))continue;
+      let atlas:ForestFarAtlas;
+      try{
+        atlas=new ForestFarAtlas({kind,geometries:entry.family.lods[1].map(mesh=>mesh.geometry),
+          variants:presentation.structuralVariants??[],cardScale:entry.family.lod1CardScale??1,
+          createCaptureBatch:(lod,count)=>entry.family.createCaptureBatch(lod,count)});
+      }catch(error){this.farAtlasError=String(error);continue;}
+      const canopy=this.fullCanopy;
+      this.farAtlases.set(kind,atlas);
+      entry.attachments.push({dispose:()=>{
+        if(canopy.renderer.familyAtlas(kind)===atlas)canopy.renderer.setFamilyAtlas(kind,null);
+        if(this.farAtlases.get(kind)===atlas)this.farAtlases.delete(kind);
+        atlas.dispose();
+      }});
+    }
+  }
+  /** Pre-render hook: bakes a bounded number of far-atlas views outside XR and
+   * adopts each family's atlas once complete. Families draw the analytic
+   * band fallback until then, and permanently if their bake fails. */
+  renderFarAtlases(renderer:THREE.WebGLRenderer,xr=false){
+    if(this.disposed||!this.fullCanopy)return;
+    this.syncFarAtlases();
+    if(xr)return;
+    for(const [kind,atlas] of this.farAtlases){
+      if(atlas.state!=='baking')continue;
+      if(atlas.step(renderer,FOREST_FAR_ATLAS_VIEWS_PER_FRAME))this.fullCanopy.renderer.setFamilyAtlas(kind,atlas);
+      else if(atlas.error)this.farAtlasError=`${kind}: ${atlas.error}`;
+      break;
+    }
+  }
+  /** What the far canopy actually draws for the presented families. */
+  private farRepresentation(){
+    const presented=[...this.presentedFamilies.keys()];
+    if(!presented.length)return 'legacy-lobes';
+    const adopted=presented.filter(kind=>this.adoptedFarAtlas(kind)).length;
+    return adopted===presented.length?'captured-hemi-octahedral-atlas':adopted?'partial-atlas-with-band-fallback':'analytic-band-fallback';
+  }
+  // Diagnostics tolerate canopy hosts without a draw renderer, like the other optional host hooks.
+  private adoptedFarAtlas(kind:ForestTreeKind){return !!this.fullCanopy?.renderer?.familyAtlas(kind);}
   private detailedSamples(){
     const samples=[];
     for(const entry of this.assets.entries.values())for(let batch=0;batch<2;batch++){
@@ -212,6 +267,28 @@ export class PlanetForest {
       }
     }
     return samples;
+  }
+  /** Whole-population acceptance census; an explicit call, never read by the
+   * HUD. Every retained detailed slot per family and LOD contributes a record
+   * of its canonical presentation to an order-independent digest, so a replay
+   * can assert that the same trees reappear exactly, not just a bounded sample. */
+  presentationCensus(){
+    const hash=(text:string,seed:number)=>{let h=seed>>>0;for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),0x01000193)>>>0;return h.toString(16).padStart(8,'0');};
+    let eligible=0;for(const resident of this.cache.values())if(resident.present)eligible++;
+    return {dateNs:this.worldDate.toString(),catalogueVersion:this.catalogueVersion,selected:this.wanted.length,eligible,
+      farOwned:this.farOwnedSkipped,legacySubmitted:this.meshes.map(mesh=>mesh.visible?mesh.count:0),
+      families:[...this.assets.entries.values()].map(entry=>({kind:entry.kind,lods:entry.pools.map((pool,lod)=>{
+        const records:string[]=[],variants:Record<string,number>={};let unbound=0;
+        for(const resident of pool.items){
+          const binding=this.binding(resident);if(!binding){unbound++;continue;}
+          const variant=familyVariant(binding,entry.family.canopyPresentation??{})-1,a=binding.appearance;
+          records.push([resident.cell.id,binding.recipe.speciesId,binding.recipe.sourceFingerprint,resident.cell.heightM,variant,a.variant,a.windPhase01,a.barkBrightness,a.foliageBrightness].join('|'));
+          variants[variant]=(variants[variant]??0)+1;
+        }
+        const text=records.sort().join('\n');
+        return {owned:pool.items.length,submitted:this.group.visible&&entry.batches[lod].group.visible?pool.items.length:0,unbound,
+          variantHistogram:variants,digest:hash(text,0x811c9dc5)+hash(text,0x9747b28c)};
+      })}))};
   }
   /** Bounded HUD scan: the first 512 retained slots per LOD. Index -1 is authored structure. */
   private variantHistogram(entry:ForestTreeFamilyEntry<Resident,AssetSlot>){
@@ -566,7 +643,10 @@ export class PlanetForest {
   }
   diagnostics(){return {visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
     detailedTrees:{ready:this.assets.entries.size>0,loading:this.assets.loading,error:this.assets.error||this.catalogueError,visible:[...this.assetCounts],species:this.catalogue.count,dateNs:this.worldDate.toString(),catalogueVersion:this.catalogueVersion,
-      heightPolicy:'canonical-population-proxy',geometryVariants:this.assets.entries.size,farRepresentation:'family-porous-profile-with-legacy-fallback',presentationKey:this.canopyPresentationKey,instanceSlots:'compact-per-family',
+      heightPolicy:'canonical-population-proxy',geometryVariants:this.assets.entries.size,farRepresentation:this.farRepresentation(),
+      farAtlas:{version:FOREST_FAR_ATLAS_VERSION,error:this.farAtlasError,viewsPerFrame:FOREST_FAR_ATLAS_VIEWS_PER_FRAME,
+        adopted:(['branching','spire'] as const).filter(kind=>this.adoptedFarAtlas(kind)),
+        families:[...this.farAtlases.values()].map(atlas=>atlas.diagnostics())},presentationKey:this.canopyPresentationKey,instanceSlots:'compact-per-family',
       structuralVariantVersion:FOREST_VARIANT_VERSION,
       families:[...this.assets.entries.values()].map(entry=>({kind:entry.kind,
         submitted:entry.pools.map((pool,lod)=>this.group.visible&&entry.batches[lod].group.visible?pool.items.length:0),

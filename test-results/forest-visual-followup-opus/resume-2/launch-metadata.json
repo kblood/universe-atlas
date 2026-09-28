@@ -1,0 +1,38 @@
+{
+  "startedAt": "2026-09-28T18:16:41.728Z",
+  "sessionId": "fca86e0d-bd8d-4086-8382-5144d18e39e2",
+  "model": "claude-opus-5-5",
+  "providerExpected": "firstParty",
+  "revision": "3cea06046ac2becc8406dbefcb70bde48737bb22",
+  "gitStatus": "M src/forest-impostor.ts\n M src/forest-tree-family-library.ts\n M src/planet-forest.ts\n M src/tree-asset.ts\n M src/tree-impostor-views.ts\n?? src/forest-far-atlas.ts",
+  "worktree": "C:\\LLM\\IWSDK\\universe-atlas-forest-visual-fix",
+  "nodeModules": "local non-junction at worktree root",
+  "inputHashes": [
+    {
+      "path": "src/forest-impostor.ts",
+      "sha256": "57a760242263a013688b3a6b2240563a0e91e2d4df9f18754f492540806c52df"
+    },
+    {
+      "path": "src/forest-tree-family-library.ts",
+      "sha256": "54c1aa08dfb460099aedfcb2170c86cd3f01440c4dfba65caa0c4bc6f2caba2f"
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "0f82f58cad7d4d0985adc25460abf82f15f5ac85737197fe236d9e401b1252a6"
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "sha256": "b0173f33891be0be53b34ac8229b91e237997b9245802a8d0a01e78d2b7ec492"
+    },
+    {
+      "path": "src/tree-impostor-views.ts",
+      "sha256": "fd2111dfe015a1534c70175ef119a8857ab835ae05cd58c504160fc5dc5b8e3f"
+    },
+    {
+      "path": "src/forest-far-atlas.ts",
+      "sha256": "e1bd21330616131540932d3e924e52a6d28febf2e339e969dc8c0cfbc459ffe1"
+    }
+  ],
+  "promptPath": "test-results/forest-visual-followup-opus/resume-2/task-brief.md",
+  "previousAttempt": "../attempt-1-interrupted.json"
+}

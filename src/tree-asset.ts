@@ -11,6 +11,7 @@ import {installTreeFoliageSidecar,type TreeFoliageMipSidecar} from './tree-folia
 import {calibrateTreeLodCardScale,type TreeCoverageMesh,type TreeLodCoverageCalibration} from './tree-lod-coverage.ts';
 import {deriveTreeBaseColorStatistics,deriveTreeCanopyMetadata,type TreeCanopyProfile,type TreeCullingBounds,type TreeTrunkProfile} from './tree-canopy-profile.ts';
 import {forestVariantGLSL,forestVariantRadiusBound,forestVariantUniformData,FOREST_VARIANT_COUNT,type ForestStructuralVariant} from './tree-structural-variant.ts';
+import {installForestFarAtlasCapture,FOREST_FAR_ATLAS_VERSION} from './forest-far-atlas.ts';
 
 /** Experimental author-6 adapter. Assets are supplied explicitly; this does not
  * replace the canonical forest or invent a second species catalogue. */
@@ -448,6 +449,49 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
             if(forest.getX(index)!==value||forest.getY(index)!==seed){forest.setXY(index,value,seed);forestUpdates.include(index,2);forestUpdates.flush(forest);}
           },
           dispose(){if(batchDisposed)return;batchDisposed=true;activeBatches--;for(const mesh of meshes){mesh.geometry.dispose();mesh.customDepthMaterial?.dispose();mesh.customDistanceMaterial?.dispose();mesh.dispose();}group.clear();group.removeFromParent();},
+        };
+      },
+      /** Capture-only batch for the far atlas. Cloned materials share this
+       * family's textures and variant pool and run the same deform transform
+       * at rest wind with distance card growth disabled. Pass 0 writes linear
+       * albedo with unit coverage; pass 1 writes the capture-view normal xy,
+       * depth from the capture plane (in radii) and the leaf fraction. */
+      createCaptureBatch(lod:0|1,count:number){
+        if(disposed)throw new Error('Tree family is disposed');
+        if(!Number.isInteger(count)||count<1||count>64)throw new Error('Invalid capture batch size');
+        const pass={value:0},frame={value:new THREE.Vector2(1,1)};
+        const state:TreeShaderState={phase:{value:0},variantA:shaderState.variantA,variantB:shaderState.variantB,
+          view:{value:new THREE.Vector4()},cards:shaderState.cards};
+        const tree=new THREE.InstancedBufferAttribute(new Float32Array(count*2),2),shape=new THREE.InstancedBufferAttribute(new Float32Array(count*2),2);
+        for(let i=0;i<count;i++){tree.setXY(i,1,0);shape.setXY(i,0,lod===1?lod1CardScale:1);}
+        const group=new THREE.Group(),captureMaterials:THREE.Material[]=[];
+        const meshes=lods[lod].map(source=>{
+          const material=source.material.clone();material.toneMapped=false;material.fog=false;material.dithering=false;
+          material.transparent=false;material.blending=THREE.NoBlending;material.alphaToCoverage=false;captureMaterials.push(material);
+          // Capture binary MASK coverage; the far shader reproduces fractions.
+          if(source.material.name==='MAT_AtlasFoliage'){material.alphaHash=false;material.alphaTest=alphaCutoff;}
+          deform(material,state);
+          const compile=material.onBeforeCompile,key=material.customProgramCacheKey(),leaf=source.material.name==='MAT_AtlasFoliage';
+          material.onBeforeCompile=(shader,renderer)=>{
+            compile.call(material,shader,renderer);
+            Object.assign(shader.uniforms,{atlasCapturePass:pass,atlasCaptureFrame:frame});
+            shader.fragmentShader=installForestFarAtlasCapture(shader.fragmentShader,leaf);
+          };
+          material.customProgramCacheKey=()=>`${key}/${FOREST_FAR_ATLAS_VERSION}/capture/${material.name}`;
+          const geometry=source.geometry.clone();geometry.setAttribute('instanceTree',tree);geometry.setAttribute('instanceTreeShape',shape);
+          const mesh=new THREE.InstancedMesh(geometry,material,count);mesh.frustumCulled=false;mesh.castShadow=false;mesh.receiveShadow=false;
+          group.add(mesh);return mesh;
+        });
+        activeBatches++;let batchDisposed=false;
+        return {group,meshes,pass,frame,count,
+          /** `member` 0 keeps the authored structure; k selects pool member k-1. */
+          setMember(index:number,matrix:THREE.Matrix4,member:number){
+            if(batchDisposed||!Number.isInteger(index)||index<0||index>=count||!Number.isInteger(member)||member<0||member>variants.length)throw new Error('Invalid capture member');
+            shape.setX(index,member);shape.needsUpdate=true;
+            for(const mesh of meshes){mesh.setMatrixAt(index,matrix);mesh.instanceMatrix.needsUpdate=true;}
+          },
+          dispose(){if(batchDisposed)return;batchDisposed=true;activeBatches--;
+            for(const mesh of meshes){mesh.geometry.dispose();mesh.dispose();}for(const material of captureMaterials)material.dispose();group.clear();group.removeFromParent();},
         };
       },
       dispose(){if(disposed)return;if(activeBatches)throw new Error('Dispose tree batches before their family');disposed=true;dispose();},

@@ -5162,6 +5162,7 @@ renderer.setAnimationLoop(() => {
     // Reflections reuse the last map. Only the main scene refreshes it, once
     // per frame, including when clouds capture that scene into their target.
     renderer.shadowMap.needsUpdate=false;
+    renderProfile.pass('forestAtlas',()=>planetTiles?.renderForestAtlases(renderer,renderer.xr.isPresenting));
     renderProfile.pass('lakeReflection',()=>planetTiles?.renderLakeReflection(renderer,scene,camera,renderer.xr.isPresenting));
     renderer.shadowMap.needsUpdate=light.castShadow;
     if(!planetTiles?.renderCloudScene(renderer,scene,camera,renderProfile))renderProfile.pass('scene',()=>renderer.render(scene,camera));
@@ -5241,6 +5242,8 @@ Object.defineProperty(window, "__atlas", {
       return planetTiles.loadForestTreeAssets(lod0,lod1,options);
     },
     clearForestTreeAssets(){planetTiles?.clearForestTreeAssets();},
+    // Whole-population forest census for acceptance replays (explicit call).
+    forestPresentationCensus(){return planetTiles?.forestPresentationCensus()??null;},
     async loadForestTreeFamilies(inputs:readonly import('./forest-tree-family-library.ts').ForestTreeFamilyInput[],options:import('./tree-asset.ts').TreeAssetOptions={}){
       if(!import.meta.env.DEV)throw new Error('Experimental forest assets require a development build');
       if(!planetTiles)throw new Error('Visit a planet before loading forest assets');

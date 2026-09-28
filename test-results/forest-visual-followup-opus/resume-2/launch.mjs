@@ -1,0 +1,22 @@
+import { spawn } from 'node:child_process';
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash, randomUUID } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+
+const out='test-results/forest-visual-followup-opus/resume-2';
+const prompt=readFileSync(`${out}/task-brief.md`,'utf8');
+const model='claude-opus-5-5',sessionId=randomUUID();
+const revision=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+const status=execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim();
+const tracked=['src/forest-impostor.ts','src/forest-tree-family-library.ts','src/planet-forest.ts','src/tree-asset.ts','src/tree-impostor-views.ts','src/forest-far-atlas.ts'];
+const hashes=tracked.map(path=>({path,sha256:createHash('sha256').update(readFileSync(path)).digest('hex')}));
+const meta={startedAt:new Date().toISOString(),sessionId,model,providerExpected:'firstParty',revision,gitStatus:status,worktree:process.cwd(),nodeModules:'local non-junction at worktree root',inputHashes:hashes,promptPath:`${out}/task-brief.md`,previousAttempt:'../attempt-1-interrupted.json'};
+writeFileSync(`${out}/launch-metadata.json`,JSON.stringify(meta,null,2)+'\n');
+const args=['--print','--model',model,'--effort','high','--output-format','json','--tools','Read','Edit','Write','Bash','--allowedTools','Read','Edit','Write','Bash','--strict-mcp-config','--disable-slash-commands','--no-session-persistence','--safe-mode','--permission-mode','dontAsk','--session-id',sessionId];
+const child=spawn('C:/Users/Caldor/.local/bin/claude.exe',args,{cwd:process.cwd(),windowsHide:true,stdio:['pipe','pipe','pipe']});
+writeFileSync(`${out}/process.json`,JSON.stringify({sessionId,pid:child.pid??null,command:'claude.exe '+args.join(' '),startedAt:meta.startedAt},null,2)+'\n');
+let stdout='',stderr='';child.stdout.setEncoding('utf8');child.stderr.setEncoding('utf8');
+child.stdout.on('data',s=>{stdout+=s;appendFileSync(`${out}/stdout.log`,s);});child.stderr.on('data',s=>{stderr+=s;appendFileSync(`${out}/stderr.log`,s);});
+child.stdin.end(prompt);
+child.on('error',e=>{writeFileSync(`${out}/error.txt`,String(e));process.exitCode=1;});
+child.on('close',code=>{writeFileSync(`${out}/response.json`,stdout);writeFileSync(`${out}/exit.json`,JSON.stringify({code,endedAt:new Date().toISOString(),stdoutBytes:Buffer.byteLength(stdout),stderrBytes:Buffer.byteLength(stderr)},null,2)+'\n');console.log(JSON.stringify({code,sessionId,pid:child.pid,model,revision,stdoutBytes:Buffer.byteLength(stdout),stderrBytes:Buffer.byteLength(stderr)}));if(code)process.exitCode=code;});

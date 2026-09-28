@@ -66,11 +66,12 @@ export function viewBasis(direction){
   up=[f[1]*right[2]-f[2]*right[1],f[2]*right[0]-f[0]*right[2],f[0]*right[1]-f[1]*right[0]];
   return {right,up,forward:f};
 }
-/** Returns per-pixel coverage (0..1 from ss×ss samples) and foliage fraction.
- * `frame` = {centerM:[x,y,z], halfSizeM}. */
-export function rasterTree(tree,{variant=null,heightM=REFERENCE_M,cardScale=1,direction=[1,0,0],frame,size=256,ss=2}){
-  const {right,up}=viewBasis(direction),N=size*ss,depth=new Float32Array(N*N).fill(-Infinity),kind=new Uint8Array(N*N);
-  const {forward}=viewBasis(direction);
+/** Returns per-pixel coverage (0..1 from ss×ss samples), foliage fraction and
+ * coverage-weighted front depth along `forward` from the frame centre (m).
+ * Row 0 is the top of the image. `frame` = {centerM:[x,y,z], halfSizeM};
+ * `basis` = {right,up,forward} overrides the basis derived from `direction`. */
+export function rasterTree(tree,{variant=null,heightM=REFERENCE_M,cardScale=1,direction=[1,0,0],basis=null,frame,size=256,ss=2}){
+  const {right,up,forward}=basis??viewBasis(direction),N=size*ss,depth=new Float32Array(N*N).fill(-Infinity),kind=new Uint8Array(N*N);
   const scale=N/(2*frame.halfSizeM);
   const {atlas}=tree;
   for(const [partIndex,part] of [[1,tree.bark],[2,tree.foliage]]){
@@ -100,12 +101,12 @@ export function rasterTree(tree,{variant=null,heightM=REFERENCE_M,cardScale=1,di
       }
     }
   }
-  const coverage=new Float32Array(size*size),foliage=new Float32Array(size*size);
+  const coverage=new Float32Array(size*size),foliage=new Float32Array(size*size),front=new Float32Array(size*size);
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){
     const k=kind[y*N+x];if(!k)continue;const o=Math.floor(y/ss)*size+Math.floor(x/ss);
-    coverage[o]+=1/(ss*ss);if(k===2)foliage[o]+=1/(ss*ss);
+    coverage[o]+=1/(ss*ss);if(k===2)foliage[o]+=1/(ss*ss);front[o]+=depth[y*N+x]/(ss*ss);
   }
-  return {size,coverage,foliage};
+  return {size,coverage,foliage,front};
 }
 /** Grayscale (or RGB triplets) 8-bit PNG writer for evidence images. */
 export function encodePng(width,height,rgb){

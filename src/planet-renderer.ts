@@ -574,6 +574,10 @@ export class PlanetRenderer {
   private materialVisible(visible: boolean) {
     for (const m of Array.isArray(this.originalMaterial) ? this.originalMaterial : [this.originalMaterial]) m.visible = visible;
   }
+  /** Offscreen far-forest atlas bake: a bounded number of views per frame
+   * before the visible scene, never during XR. */
+  renderForestAtlases(renderer:THREE.WebGLRenderer,xr=false){this.forest.renderFarAtlases(renderer,xr);}
+  forestPresentationCensus(){return this.forest.presentationCensus();}
   renderLakeReflection(renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera,xr=false){
     if(!this.lakeReflection)return;
     if(!this.rootsReady||this.relief!==1||xr){this.lakeReflection.disable();return;}
