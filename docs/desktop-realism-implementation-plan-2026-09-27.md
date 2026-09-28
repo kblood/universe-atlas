@@ -205,10 +205,11 @@ See the [v7 validation](tree-authoring-v7-2026-09-28.md),
 [browser prototype](tree-browser-prototype-2026-09-28.md) and
 [next-increment proposal](tree-authoring-next-increment-2026-09-28.md). A
 separate [distance-proxy design](authored-tree-distance-design-2026-09-28.md)
-documents CPU-only view selection and capture bases; it does not implement an
-The distance stage now has a CPU capture baker and one-tree browser preview, but
-neither is integrated into the planetary renderer. Its [21 passing CPU checks](../test-results/tree-impostor-capture-v2/combined-cpu-test.log)
-cover capture reduction and view math. The separate [capture experiment](authored-tree-capture-2026-09-28.md)
+documents view selection and capture bases. The distance stage now has a GPU
+capture baker and one-tree browser preview; planetary integration remains open.
+Its [21 passing CPU checks](../test-results/tree-impostor-capture-v2/combined-cpu-test.log)
+cover capture reduction, view math, physical transforms and a separate GPU-packing
+helper. The [capture experiment](authored-tree-capture-2026-09-28.md)
 passes the 16 m technical audit on one adapter, while the 22 m low-resolution
 leaf-class result fails. Browser checks confirm exact-axis matching but retain
 a substantial intermediate-view silhouette mismatch. Opus source and
