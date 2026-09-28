@@ -1,0 +1,864 @@
+{
+  "ok": false,
+  "base": "http://127.0.0.1:5198/",
+  "out": "test-results/offline-foliage-mips/mid-pair-down-390m",
+  "body": "G001/C2128,0,1/0/planet/1",
+  "renderer": null,
+  "errors": [],
+  "sourceHashes": {
+    "src/main.ts": "d67239b4c7b412d71faa88badb2ffe116f3fea739b5ac0563707963b84094ecc",
+    "src/planet-renderer.ts": "a782aa3c3532365620ff4137cad71b91d02814044ac43c31401d58638918a400",
+    "src/planet-forest.ts": "f877c95a5e2d8c751a59fb1f3388e9b0221a360c9850136938a96a57b63c17ce",
+    "src/forest-tree-family-library.ts": "2034432b6d4f20fa7080422d7ced1bbc1d5b3d4ee6561e07f12e91f9499235b0",
+    "src/tree-asset.ts": "74274b7fe76c08bc6bd1b2de688ec89df52f9a47707f023617595402926d7fc3",
+    "src/tree-foliage-sidecar.ts": "e2c29de4087e0412592273577833a7662e184d2d9a59d92df18cc1a0e76ce457",
+    "src/tree-foliage-mips.ts": "9da8a7b2b1266ef14bbf65425a4497e3356081c4212561998ac5f4151c1d4abc",
+    "src/surface-lighting.ts": "cfde387709228b28f0dd6fdbd7ec9694f8021befbbc32c405fcb374c5d9792cb",
+    "src/planet-canopy.ts": "4920338ab06bbdf0bf20670604715680a6ee6811f9effc668afdc96487d0fdee",
+    "src/forest-material.ts": "481747086d342c8e9733cfb66f91fabef76036e51315c7dfdaf57ec618c64eb7",
+    "src/terrain-shadow.ts": "ab3c04e7647ae032deb058cd5d834d15f7691a28a48f93780026828e3b330fac",
+    "test-results/offline-foliage-mips/mid-pair.browser.mjs": "bda383b4fc3211f803ae525e73226ac1d7774b601a442beb5b91da8d21069094",
+    "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.glb": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+    "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.lod1.glb": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9",
+    "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.glb": "58ead3644a84f91d0d30658c827be0c04d6ab0b5a42f468397cd2474a1c06e3d",
+    "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.lod1.glb": "126cc179069cdeadf37bfa9fefa47b5be853040046be812a6e282e648f8d884b",
+    "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-oak-max7-e/mip-manifest.json": "3b22162f9ce8f3c6caaf33a85bb2f066ec07084233e4d546631f75f5de6f8480",
+    "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-oak-max7-e/foliage-mips.rgba8": "489bbfbc31c1c7375907f606d80817e918b8660bb9de0d91480bb2d4978484c6",
+    "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-conifer-max7-d/mip-manifest.json": "6625dd9a805dad4d7641efe648bac31fd4cd1f049b8db09d17313c67149bff92",
+    "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-conifer-max7-d/foliage-mips.rgba8": "1be67c71812a392451e90789c47667aeeb6c92d010f29f3f11735f4353e0e576"
+  },
+  "observedDateAfterFindLife": "435084631200000074227400000",
+  "defaultClose": {
+    "loadMs": 3601,
+    "state": {
+      "date": "435084631200000074227400000",
+      "body": "G001/C2128,0,1/0/planet/1",
+      "positionM": [
+        4067464.845413208,
+        -1507827.4657993726,
+        2860258.8771362305
+      ],
+      "heading": [
+        0.22045594567256768,
+        -0.11180428686552342,
+        -0.7692394563777172,
+        0.5892110285863797
+      ],
+      "clearanceM": 11.777593588798482,
+      "lighting": {
+        "enabled": true,
+        "active": true,
+        "altitudeM": 11.777593588798482,
+        "unitsPerM": 1,
+        "widthM": 320,
+        "depthM": 1000,
+        "mapSize": 2048,
+        "shadowIntensity": 1,
+        "skyIntensity": 0.7,
+        "ambientIntensity": 0.08800000000000001,
+        "allocated": true,
+        "estimatedTargetBytes": 33554432
+      },
+      "queues": {
+        "terrain": 0,
+        "life": 0,
+        "fauna": 0,
+        "forest": 0,
+        "selection": false
+      },
+      "visible": [
+        74,
+        635
+      ],
+      "families": [
+        {
+          "kind": "branching",
+          "submitted": [
+            28,
+            271
+          ],
+          "retainedSlots": [
+            28,
+            271
+          ],
+          "capacities": [
+            192,
+            4096
+          ],
+          "foliageMipmaps": null
+        },
+        {
+          "kind": "spire",
+          "submitted": [
+            46,
+            364
+          ],
+          "retainedSlots": [
+            46,
+            364
+          ],
+          "capacities": [
+            192,
+            4096
+          ],
+          "foliageMipmaps": null
+        }
+      ],
+      "samples": [
+        {
+          "batch": 0,
+          "family": "branching",
+          "id": "0/577212/85659/181618",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+          "recipe": "66ef8578",
+          "heightM": 15.231833853758872,
+          "variant": 0,
+          "barkBrightness": 0.9806829331815243,
+          "foliageBrightness": 1.0103708156384528,
+          "windPhase01": 0.8448956238571554,
+          "textureVariant": 3
+        },
+        {
+          "batch": 0,
+          "family": "branching",
+          "id": "0/577212/85660/181618",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 15.651995341293514,
+          "variant": 5,
+          "barkBrightness": 0.9796011298894882,
+          "foliageBrightness": 1.0084459316451102,
+          "windPhase01": 0.8326524822041392,
+          "textureVariant": 1
+        },
+        {
+          "batch": 0,
+          "family": "branching",
+          "id": "0/577212/85658/181618",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 19.535643929615617,
+          "variant": 2,
+          "barkBrightness": 0.9245437927171588,
+          "foliageBrightness": 0.9696733001153917,
+          "windPhase01": 0.004361846251413226,
+          "textureVariant": 1
+        },
+        {
+          "batch": 0,
+          "family": "branching",
+          "id": "0/577212/85661/181621",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+          "recipe": "66ef8578",
+          "heightM": 21.38922161795199,
+          "variant": 7,
+          "barkBrightness": 1.0600656563416124,
+          "foliageBrightness": 1.084952229866758,
+          "windPhase01": 0.8140907709021121,
+          "textureVariant": 3
+        },
+        {
+          "batch": 0,
+          "family": "branching",
+          "id": "0/577212/85657/181620",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+          "recipe": "66ef8578",
+          "heightM": 11.859474988654256,
+          "variant": 3,
+          "barkBrightness": 0.9382795093208551,
+          "foliageBrightness": 0.9459142055362463,
+          "windPhase01": 0.560251459479332,
+          "textureVariant": 2
+        },
+        {
+          "batch": 0,
+          "family": "branching",
+          "id": "0/577212/85657/181616",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+          "recipe": "66ef8578",
+          "heightM": 15.113567826338112,
+          "variant": 7,
+          "barkBrightness": 1.0209195283800363,
+          "foliageBrightness": 1.0651314141694457,
+          "windPhase01": 0.2633417556062341,
+          "textureVariant": 0
+        },
+        {
+          "batch": 0,
+          "family": "branching",
+          "id": "0/577212/85662/181617",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+          "recipe": "66ef8578",
+          "heightM": 21.163365243934095,
+          "variant": 3,
+          "barkBrightness": 0.9498068513348699,
+          "foliageBrightness": 0.9333874469157308,
+          "windPhase01": 0.9504329520277679,
+          "textureVariant": 1
+        },
+        {
+          "batch": 0,
+          "family": "branching",
+          "id": "0/577212/85663/181620",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 16.931878201663494,
+          "variant": 1,
+          "barkBrightness": 0.9602394489571453,
+          "foliageBrightness": 1.0750563187524675,
+          "windPhase01": 0.12599834194406867,
+          "textureVariant": 1
+        },
+        {
+          "batch": 1,
+          "family": "branching",
+          "id": "0/577212/85666/181620",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+          "recipe": "66ef8578",
+          "heightM": 14.225027710199356,
+          "variant": 5,
+          "barkBrightness": 0.9963070413842797,
+          "foliageBrightness": 1.0598614969290794,
+          "windPhase01": 0.7675171315204352,
+          "textureVariant": 2
+        },
+        {
+          "batch": 1,
+          "family": "branching",
+          "id": "0/577212/85663/181624",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+          "recipe": "66ef8578",
+          "heightM": 16.36058445647359,
+          "variant": 2,
+          "barkBrightness": 0.9813240533694625,
+          "foliageBrightness": 0.9863250398542732,
+          "windPhase01": 0.729709809878841,
+          "textureVariant": 0
+        },
+        {
+          "batch": 1,
+          "family": "branching",
+          "id": "0/577212/85665/181623",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+          "recipe": "66ef8578",
+          "heightM": 18.446089081466198,
+          "variant": 1,
+          "barkBrightness": 1.0026336891576648,
+          "foliageBrightness": 0.9485006422735751,
+          "windPhase01": 0.07999291713349521,
+          "textureVariant": 2
+        },
+        {
+          "batch": 1,
+          "family": "branching",
+          "id": "0/577212/85666/181622",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+          "recipe": "66ef8578",
+          "heightM": 20.042864012531936,
+          "variant": 6,
+          "barkBrightness": 1.0330950547009707,
+          "foliageBrightness": 0.9424182194285095,
+          "windPhase01": 0.6060041356831789,
+          "textureVariant": 0
+        },
+        {
+          "batch": 1,
+          "family": "branching",
+          "id": "0/577212/85662/181613",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+          "recipe": "66ef8578",
+          "heightM": 14.131219701841474,
+          "variant": 1,
+          "barkBrightness": 1.0696364957466722,
+          "foliageBrightness": 0.9898627205751837,
+          "windPhase01": 0.14166619861498475,
+          "textureVariant": 3
+        },
+        {
+          "batch": 1,
+          "family": "branching",
+          "id": "0/577212/85664/181614",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 21.720936813391745,
+          "variant": 6,
+          "barkBrightness": 1.0627310077473522,
+          "foliageBrightness": 1.0294427834451199,
+          "windPhase01": 0.8719668881967664,
+          "textureVariant": 2
+        },
+        {
+          "batch": 1,
+          "family": "branching",
+          "id": "0/577212/85667/181618",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+          "recipe": "8640a3f4",
+          "heightM": 14.650195708498359,
+          "variant": 7,
+          "barkBrightness": 1.0450715260952712,
+          "foliageBrightness": 1.0153988467529416,
+          "windPhase01": 0.7749006391968578,
+          "textureVariant": 3
+        },
+        {
+          "batch": 1,
+          "family": "branching",
+          "id": "0/577212/85663/181613",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+          "recipe": "66ef8578",
+          "heightM": 11.49319806881249,
+          "variant": 4,
+          "barkBrightness": 1.0304509334266185,
+          "foliageBrightness": 1.0838616387918591,
+          "windPhase01": 0.660272756125778,
+          "textureVariant": 1
+        },
+        {
+          "batch": 0,
+          "family": "spire",
+          "id": "0/577212/85661/181619",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/1",
+          "recipe": "ffb4da89",
+          "heightM": 12.424532762728631,
+          "variant": 1,
+          "barkBrightness": 1.02739962592721,
+          "foliageBrightness": 0.9230083214584738,
+          "windPhase01": 0.9001406531315297,
+          "textureVariant": 1
+        },
+        {
+          "batch": 0,
+          "family": "spire",
+          "id": "0/577212/85658/181617",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/1",
+          "recipe": "ffb4da89",
+          "heightM": 11.742654660716653,
+          "variant": 5,
+          "barkBrightness": 0.9900993275269866,
+          "foliageBrightness": 1.023221836052835,
+          "windPhase01": 0.14616668550297618,
+          "textureVariant": 1
+        },
+        {
+          "batch": 0,
+          "family": "spire",
+          "id": "0/577212/85661/181620",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/1",
+          "recipe": "ffb4da89",
+          "heightM": 13.487442716956139,
+          "variant": 1,
+          "barkBrightness": 0.9985945788398385,
+          "foliageBrightness": 1.083243516040966,
+          "windPhase01": 0.5434911057818681,
+          "textureVariant": 3
+        },
+        {
+          "batch": 0,
+          "family": "spire",
+          "id": "0/577212/85657/181618",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/1",
+          "recipe": "ffb4da89",
+          "heightM": 15.339447694830596,
+          "variant": 1,
+          "barkBrightness": 0.9244364545121789,
+          "foliageBrightness": 1.0881058022379875,
+          "windPhase01": 0.21034440211951733,
+          "textureVariant": 0
+        },
+        {
+          "batch": 0,
+          "family": "spire",
+          "id": "0/577212/85662/181619",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/1",
+          "recipe": "ffb4da89",
+          "heightM": 17.646128342486918,
+          "variant": 5,
+          "barkBrightness": 0.9301959253847599,
+          "foliageBrightness": 1.0309954272117465,
+          "windPhase01": 0.906511694425717,
+          "textureVariant": 1
+        },
+        {
+          "batch": 0,
+          "family": "spire",
+          "id": "0/577212/85661/181617",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+          "recipe": "4ae4ecf7",
+          "heightM": 20.570565619505942,
+          "variant": 4,
+          "barkBrightness": 1.0011396717652679,
+          "foliageBrightness": 0.9851977391634137,
+          "windPhase01": 0.06387733132578433,
+          "textureVariant": 2
+        },
+        {
+          "batch": 0,
+          "family": "spire",
+          "id": "0/577212/85660/181621",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+          "recipe": "4ae4ecf7",
+          "heightM": 12.865932679735124,
+          "variant": 1,
+          "barkBrightness": 0.9490229850262404,
+          "foliageBrightness": 1.0391237585805357,
+          "windPhase01": 0.3041421524249017,
+          "textureVariant": 3
+        },
+        {
+          "batch": 0,
+          "family": "spire",
+          "id": "0/577212/85659/181616",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/0",
+          "recipe": "b63c82e0",
+          "heightM": 11.115835333243012,
+          "variant": 0,
+          "barkBrightness": 0.9643512704968453,
+          "foliageBrightness": 0.9870304781477899,
+          "windPhase01": 0.5988918538205326,
+          "textureVariant": 1
+        },
+        {
+          "batch": 1,
+          "family": "spire",
+          "id": "0/577212/85665/181618",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/0",
+          "recipe": "b63c82e0",
+          "heightM": 16.00631228275597,
+          "variant": 2,
+          "barkBrightness": 1.0730160985141992,
+          "foliageBrightness": 1.045493133366108,
+          "windPhase01": 0.05646607489325106,
+          "textureVariant": 2
+        },
+        {
+          "batch": 1,
+          "family": "spire",
+          "id": "0/577212/85665/181622",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+          "recipe": "4ae4ecf7",
+          "heightM": 19.403788649477065,
+          "variant": 0,
+          "barkBrightness": 0.9225664284452796,
+          "foliageBrightness": 1.0100459547247738,
+          "windPhase01": 0.920988931786269,
+          "textureVariant": 2
+        },
+        {
+          "batch": 1,
+          "family": "spire",
+          "id": "0/577212/85666/181619",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/0",
+          "recipe": "b63c82e0",
+          "heightM": 21.200643462128937,
+          "variant": 2,
+          "barkBrightness": 1.0309480068087578,
+          "foliageBrightness": 1.0800887676887214,
+          "windPhase01": 0.7243706905283034,
+          "textureVariant": 3
+        },
+        {
+          "batch": 1,
+          "family": "spire",
+          "id": "0/577212/85666/181621",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+          "recipe": "4ae4ecf7",
+          "heightM": 17.082457818090916,
+          "variant": 7,
+          "barkBrightness": 1.0086328016966581,
+          "foliageBrightness": 1.0837500524707138,
+          "windPhase01": 0.08412397489883006,
+          "textureVariant": 2
+        },
+        {
+          "batch": 1,
+          "family": "spire",
+          "id": "0/577212/85664/181615",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+          "recipe": "4ae4ecf7",
+          "heightM": 21.053538074716926,
+          "variant": 3,
+          "barkBrightness": 0.9293200949952006,
+          "foliageBrightness": 0.9181793986819685,
+          "windPhase01": 0.12489114352501929,
+          "textureVariant": 0
+        },
+        {
+          "batch": 1,
+          "family": "spire",
+          "id": "0/577212/85666/181617",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/1",
+          "recipe": "ffb4da89",
+          "heightM": 15.75968813430518,
+          "variant": 1,
+          "barkBrightness": 0.9448927186056972,
+          "foliageBrightness": 1.031969459867105,
+          "windPhase01": 0.47294255532324314,
+          "textureVariant": 2
+        },
+        {
+          "batch": 1,
+          "family": "spire",
+          "id": "0/577212/85667/181619",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+          "recipe": "4ae4ecf7",
+          "heightM": 11.924674625508487,
+          "variant": 5,
+          "barkBrightness": 1.0796723737940193,
+          "foliageBrightness": 1.07122832396999,
+          "windPhase01": 0.49119584495201707,
+          "textureVariant": 3
+        },
+        {
+          "batch": 1,
+          "family": "spire",
+          "id": "0/577212/85661/181612",
+          "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/0",
+          "recipe": "b63c82e0",
+          "heightM": 13.585908386856318,
+          "variant": 0,
+          "barkBrightness": 1.0453497360274195,
+          "foliageBrightness": 0.9175741858314723,
+          "windPhase01": 0.9056283594109118,
+          "textureVariant": 2
+        }
+      ],
+      "draws": 302,
+      "triangles": 8244998
+    }
+  },
+  "failure": "TimeoutError: page.waitForFunction: Timeout 240000ms exceeded.",
+  "current": {
+    "date": "435084631200000074227400000",
+    "body": "G001/C2128,0,1/0/planet/1",
+    "positionM": [
+      4067800.671279907,
+      -1507937.4212120548,
+      2860428.044616699
+    ],
+    "heading": [
+      0.22045594567258875,
+      -0.11180428686548205,
+      -0.7692394563778227,
+      0.5892110285862421
+    ],
+    "clearanceM": 388.00889409622323,
+    "lighting": {
+      "enabled": true,
+      "active": true,
+      "altitudeM": 388.00889409622323,
+      "unitsPerM": 1,
+      "widthM": 320,
+      "depthM": 1000,
+      "mapSize": 2048,
+      "shadowIntensity": 0.8760731057657415,
+      "skyIntensity": 0.7,
+      "ambientIntensity": 0.08800000000000001,
+      "allocated": true,
+      "estimatedTargetBytes": 33554432
+    },
+    "queues": {
+      "terrain": 0,
+      "life": 28,
+      "fauna": 0,
+      "forest": 0,
+      "selection": false
+    },
+    "visible": [
+      0,
+      378
+    ],
+    "families": [
+      {
+        "kind": "branching",
+        "submitted": [
+          0,
+          165
+        ],
+        "retainedSlots": [
+          0,
+          165
+        ],
+        "capacities": [
+          192,
+          4096
+        ],
+        "foliageMipmaps": null
+      },
+      {
+        "kind": "spire",
+        "submitted": [
+          0,
+          213
+        ],
+        "retainedSlots": [
+          0,
+          213
+        ],
+        "capacities": [
+          192,
+          4096
+        ],
+        "foliageMipmaps": null
+      }
+    ],
+    "samples": [
+      {
+        "batch": 1,
+        "family": "branching",
+        "id": "0/577212/85666/181620",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+        "recipe": "66ef8578",
+        "heightM": 14.225027710199356,
+        "variant": 5,
+        "barkBrightness": 0.9963070413842797,
+        "foliageBrightness": 1.0598614969290794,
+        "windPhase01": 0.7675171315204352,
+        "textureVariant": 2
+      },
+      {
+        "batch": 1,
+        "family": "branching",
+        "id": "0/577212/85663/181624",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+        "recipe": "66ef8578",
+        "heightM": 16.36058445647359,
+        "variant": 2,
+        "barkBrightness": 0.9813240533694625,
+        "foliageBrightness": 0.9863250398542732,
+        "windPhase01": 0.729709809878841,
+        "textureVariant": 0
+      },
+      {
+        "batch": 1,
+        "family": "branching",
+        "id": "0/577212/85665/181623",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+        "recipe": "66ef8578",
+        "heightM": 18.446089081466198,
+        "variant": 1,
+        "barkBrightness": 1.0026336891576648,
+        "foliageBrightness": 0.9485006422735751,
+        "windPhase01": 0.07999291713349521,
+        "textureVariant": 2
+      },
+      {
+        "batch": 1,
+        "family": "branching",
+        "id": "0/577212/85666/181622",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+        "recipe": "66ef8578",
+        "heightM": 20.042864012531936,
+        "variant": 6,
+        "barkBrightness": 1.0330950547009707,
+        "foliageBrightness": 0.9424182194285095,
+        "windPhase01": 0.6060041356831789,
+        "textureVariant": 0
+      },
+      {
+        "batch": 1,
+        "family": "branching",
+        "id": "0/577212/85662/181613",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+        "recipe": "66ef8578",
+        "heightM": 14.131219701841474,
+        "variant": 1,
+        "barkBrightness": 1.0696364957466722,
+        "foliageBrightness": 0.9898627205751837,
+        "windPhase01": 0.14166619861498475,
+        "textureVariant": 3
+      },
+      {
+        "batch": 1,
+        "family": "branching",
+        "id": "0/577212/85664/181614",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+        "recipe": "8640a3f4",
+        "heightM": 21.720936813391745,
+        "variant": 6,
+        "barkBrightness": 1.0627310077473522,
+        "foliageBrightness": 1.0294427834451199,
+        "windPhase01": 0.8719668881967664,
+        "textureVariant": 2
+      },
+      {
+        "batch": 1,
+        "family": "branching",
+        "id": "0/577212/85667/181618",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/1",
+        "recipe": "8640a3f4",
+        "heightM": 14.650195708498359,
+        "variant": 7,
+        "barkBrightness": 1.0450715260952712,
+        "foliageBrightness": 1.0153988467529416,
+        "windPhase01": 0.7749006391968578,
+        "textureVariant": 3
+      },
+      {
+        "batch": 1,
+        "family": "branching",
+        "id": "0/577212/85663/181613",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/branching/2",
+        "recipe": "66ef8578",
+        "heightM": 11.49319806881249,
+        "variant": 4,
+        "barkBrightness": 1.0304509334266185,
+        "foliageBrightness": 1.0838616387918591,
+        "windPhase01": 0.660272756125778,
+        "textureVariant": 1
+      },
+      {
+        "batch": 1,
+        "family": "spire",
+        "id": "0/577212/85665/181618",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/0",
+        "recipe": "b63c82e0",
+        "heightM": 16.00631228275597,
+        "variant": 2,
+        "barkBrightness": 1.0730160985141992,
+        "foliageBrightness": 1.045493133366108,
+        "windPhase01": 0.05646607489325106,
+        "textureVariant": 2
+      },
+      {
+        "batch": 1,
+        "family": "spire",
+        "id": "0/577212/85665/181622",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+        "recipe": "4ae4ecf7",
+        "heightM": 19.403788649477065,
+        "variant": 0,
+        "barkBrightness": 0.9225664284452796,
+        "foliageBrightness": 1.0100459547247738,
+        "windPhase01": 0.920988931786269,
+        "textureVariant": 2
+      },
+      {
+        "batch": 1,
+        "family": "spire",
+        "id": "0/577212/85666/181619",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/0",
+        "recipe": "b63c82e0",
+        "heightM": 21.200643462128937,
+        "variant": 2,
+        "barkBrightness": 1.0309480068087578,
+        "foliageBrightness": 1.0800887676887214,
+        "windPhase01": 0.7243706905283034,
+        "textureVariant": 3
+      },
+      {
+        "batch": 1,
+        "family": "spire",
+        "id": "0/577212/85666/181621",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+        "recipe": "4ae4ecf7",
+        "heightM": 17.082457818090916,
+        "variant": 7,
+        "barkBrightness": 1.0086328016966581,
+        "foliageBrightness": 1.0837500524707138,
+        "windPhase01": 0.08412397489883006,
+        "textureVariant": 2
+      },
+      {
+        "batch": 1,
+        "family": "spire",
+        "id": "0/577212/85664/181615",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+        "recipe": "4ae4ecf7",
+        "heightM": 21.053538074716926,
+        "variant": 3,
+        "barkBrightness": 0.9293200949952006,
+        "foliageBrightness": 0.9181793986819685,
+        "windPhase01": 0.12489114352501929,
+        "textureVariant": 0
+      },
+      {
+        "batch": 1,
+        "family": "spire",
+        "id": "0/577212/85666/181617",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/1",
+        "recipe": "ffb4da89",
+        "heightM": 15.75968813430518,
+        "variant": 1,
+        "barkBrightness": 0.9448927186056972,
+        "foliageBrightness": 1.031969459867105,
+        "windPhase01": 0.47294255532324314,
+        "textureVariant": 2
+      },
+      {
+        "batch": 1,
+        "family": "spire",
+        "id": "0/577212/85667/181619",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/2",
+        "recipe": "4ae4ecf7",
+        "heightM": 11.924674625508487,
+        "variant": 5,
+        "barkBrightness": 1.0796723737940193,
+        "foliageBrightness": 1.07122832396999,
+        "windPhase01": 0.49119584495201707,
+        "textureVariant": 3
+      },
+      {
+        "batch": 1,
+        "family": "spire",
+        "id": "0/577212/85661/181612",
+        "speciesId": "biosphere-lab-3/planet/9422c17c313e0bc6/lineage/spire/0",
+        "recipe": "b63c82e0",
+        "heightM": 13.585908386856318,
+        "variant": 0,
+        "barkBrightness": 1.0453497360274195,
+        "foliageBrightness": 0.9175741858314723,
+        "windPhase01": 0.9056283594109118,
+        "textureVariant": 2
+      }
+    ],
+    "draws": 220,
+    "triangles": 3792866
+  },
+  "sourceIntegrity": {
+    "unchanged": true,
+    "start": {
+      "src/main.ts": "d67239b4c7b412d71faa88badb2ffe116f3fea739b5ac0563707963b84094ecc",
+      "src/planet-renderer.ts": "a782aa3c3532365620ff4137cad71b91d02814044ac43c31401d58638918a400",
+      "src/planet-forest.ts": "f877c95a5e2d8c751a59fb1f3388e9b0221a360c9850136938a96a57b63c17ce",
+      "src/forest-tree-family-library.ts": "2034432b6d4f20fa7080422d7ced1bbc1d5b3d4ee6561e07f12e91f9499235b0",
+      "src/tree-asset.ts": "74274b7fe76c08bc6bd1b2de688ec89df52f9a47707f023617595402926d7fc3",
+      "src/tree-foliage-sidecar.ts": "e2c29de4087e0412592273577833a7662e184d2d9a59d92df18cc1a0e76ce457",
+      "src/tree-foliage-mips.ts": "9da8a7b2b1266ef14bbf65425a4497e3356081c4212561998ac5f4151c1d4abc",
+      "src/surface-lighting.ts": "cfde387709228b28f0dd6fdbd7ec9694f8021befbbc32c405fcb374c5d9792cb",
+      "src/planet-canopy.ts": "4920338ab06bbdf0bf20670604715680a6ee6811f9effc668afdc96487d0fdee",
+      "src/forest-material.ts": "481747086d342c8e9733cfb66f91fabef76036e51315c7dfdaf57ec618c64eb7",
+      "src/terrain-shadow.ts": "ab3c04e7647ae032deb058cd5d834d15f7691a28a48f93780026828e3b330fac",
+      "test-results/offline-foliage-mips/mid-pair.browser.mjs": "bda383b4fc3211f803ae525e73226ac1d7774b601a442beb5b91da8d21069094",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.glb": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.lod1.glb": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.glb": "58ead3644a84f91d0d30658c827be0c04d6ab0b5a42f468397cd2474a1c06e3d",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.lod1.glb": "126cc179069cdeadf37bfa9fefa47b5be853040046be812a6e282e648f8d884b",
+      "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-oak-max7-e/mip-manifest.json": "3b22162f9ce8f3c6caaf33a85bb2f066ec07084233e4d546631f75f5de6f8480",
+      "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-oak-max7-e/foliage-mips.rgba8": "489bbfbc31c1c7375907f606d80817e918b8660bb9de0d91480bb2d4978484c6",
+      "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-conifer-max7-d/mip-manifest.json": "6625dd9a805dad4d7641efe648bac31fd4cd1f049b8db09d17313c67149bff92",
+      "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-conifer-max7-d/foliage-mips.rgba8": "1be67c71812a392451e90789c47667aeeb6c92d010f29f3f11735f4353e0e576"
+    },
+    "end": {
+      "src/main.ts": "d67239b4c7b412d71faa88badb2ffe116f3fea739b5ac0563707963b84094ecc",
+      "src/planet-renderer.ts": "a782aa3c3532365620ff4137cad71b91d02814044ac43c31401d58638918a400",
+      "src/planet-forest.ts": "f877c95a5e2d8c751a59fb1f3388e9b0221a360c9850136938a96a57b63c17ce",
+      "src/forest-tree-family-library.ts": "2034432b6d4f20fa7080422d7ced1bbc1d5b3d4ee6561e07f12e91f9499235b0",
+      "src/tree-asset.ts": "74274b7fe76c08bc6bd1b2de688ec89df52f9a47707f023617595402926d7fc3",
+      "src/tree-foliage-sidecar.ts": "e2c29de4087e0412592273577833a7662e184d2d9a59d92df18cc1a0e76ce457",
+      "src/tree-foliage-mips.ts": "9da8a7b2b1266ef14bbf65425a4497e3356081c4212561998ac5f4151c1d4abc",
+      "src/surface-lighting.ts": "cfde387709228b28f0dd6fdbd7ec9694f8021befbbc32c405fcb374c5d9792cb",
+      "src/planet-canopy.ts": "4920338ab06bbdf0bf20670604715680a6ee6811f9effc668afdc96487d0fdee",
+      "src/forest-material.ts": "481747086d342c8e9733cfb66f91fabef76036e51315c7dfdaf57ec618c64eb7",
+      "src/terrain-shadow.ts": "ab3c04e7647ae032deb058cd5d834d15f7691a28a48f93780026828e3b330fac",
+      "test-results/offline-foliage-mips/mid-pair.browser.mjs": "bda383b4fc3211f803ae525e73226ac1d7774b601a442beb5b91da8d21069094",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.glb": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.lod1.glb": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.glb": "58ead3644a84f91d0d30658c827be0c04d6ab0b5a42f468397cd2474a1c06e3d",
+      "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/atlas-ez-conifer.lod1.glb": "126cc179069cdeadf37bfa9fefa47b5be853040046be812a6e282e648f8d884b",
+      "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-oak-max7-e/mip-manifest.json": "3b22162f9ce8f3c6caaf33a85bb2f066ec07084233e4d546631f75f5de6f8480",
+      "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-oak-max7-e/foliage-mips.rgba8": "489bbfbc31c1c7375907f606d80817e918b8660bb9de0d91480bb2d4978484c6",
+      "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-conifer-max7-d/mip-manifest.json": "6625dd9a805dad4d7641efe648bac31fd4cd1f049b8db09d17313c67149bff92",
+      "C:/LLM/IWSDK/Assets/_assetctl/tree-foliage-mips-conifer-max7-d/foliage-mips.rgba8": "1be67c71812a392451e90789c47667aeeb6c92d010f29f3f11735f4353e0e576"
+    }
+  }
+}
