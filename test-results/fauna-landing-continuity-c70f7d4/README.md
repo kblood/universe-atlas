@@ -1,0 +1,7 @@
+# Fauna landing continuity probe
+
+The first landing probe on runtime `c70f7d4` did not establish a canonical-population defect. Its second-page wait timed out after 180 seconds while the walker was grounded; diagnostics then showed `lifePending=0`, `faunaTerrainPending=0`, 128 drawn fauna, and no active near rig. The source target ID/date had not been saved, so the run cannot show whether the same individual was still resident or whether only the camera frustum omitted it. The preserved failure screenshot and JSON are in `../fauna-near-body-plan-c70f7d4-run2/` (not copied here).
+
+Source inspection shows fauna IDs derive deterministically from body address, seed, and spatial-cell ID. Member pose is evaluated at `worldNs`. `faunaDrawn` contains only members within 120 m whose bounds intersect the camera or shadow frustum. Therefore absence from that list is not by itself proof that canonical population changed. Landing also restores a non-contact walking route that preserves horizontal heading but flattens pitch.
+
+`tests/fauna-near-body-plan.browser.mjs` now writes the selected source ID, cell, body-local position, genome, and exact `offsetNs` before navigation; freezes the restored route synchronously when `window.__atlas` is installed; asserts the loaded date equals the source date; and records grounded walker position plus the source target's presence and nearest drawn IDs in body-local metres. This is a fixture correction; no runtime source was changed. Browser rerun is pending the GPU slot.
