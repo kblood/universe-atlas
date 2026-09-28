@@ -47,6 +47,11 @@ export class PlanetCanopy {
   private selectionMs=0;private selectionApplyMs=0;private capacityMisses=0;
   private nearPresentNotInCensus=0;private nearAbsentInCensus=0;
   private closeCandidates:string[]=[];private farForcedClose=0;
+  // currentPatch is queried once in the near ownership gate and again inside
+  // noteNear. Many canonical trees share each census patch, so keep this
+  // read-only answer for the current prepare -> finish transaction.
+  private frameCurrentPatches=new Map<string,boolean>();
+  private patchLookupCacheHits=0;private patchLookupCacheMisses=0;
   private body:Body;
   constructor(body:Body,capacity=229376){
     this.body=body;this.allocator=new ForestSlotAllocator(capacity);this.renderer=new ForestImpostors(capacity);
@@ -186,6 +191,7 @@ export class PlanetCanopy {
   /** Call after the near render origin is chosen, before the near draw loop. */
   prepare(eye:THREE.Vector3,ground:V3,altitudeM:number,water:number,enabled:boolean,immersive:boolean,nearOrigin:THREE.Vector3){
     if(!Number.isFinite(water))throw new Error('Canopy water level must be finite');
+    this.frameCurrentPatches.clear();this.patchLookupCacheHits=0;this.patchLookupCacheMisses=0;
     const now=performance.now();
     if(this.worker&&(!this.ready&&now-this.configuredAt>10000||this.request&&now-this.request.progressAt>10000||this.selection&&!this.selectionApply&&now-this.selection.started>10000)){
       this.timeouts++;this.failWorker(this.worker);
@@ -255,7 +261,13 @@ export class PlanetCanopy {
     }
     return this.group.visible;
   }
-  currentPatch(key:string){const patch=this.installed.get(key);return this.group.visible&&this.ready&&patch?.water===this.water&&patch.family===this.family;}
+  currentPatch(key:string){
+    const cached=this.frameCurrentPatches.get(key);
+    if(cached!==undefined){this.patchLookupCacheHits++;return cached;}
+    this.patchLookupCacheMisses++;
+    const patch=this.installed.get(key),current=this.group.visible&&this.ready&&patch?.water===this.water&&patch.family===this.family;
+    this.frameCurrentPatches.set(key,current);return current;
+  }
   canHandoff(id:string,height:number,key=forestCellPatchKey(id)){
     const index=this.slots.get(id);
     // Canonical shape is independent of water. Matching roots may keep pairing
@@ -299,6 +311,7 @@ export class PlanetCanopy {
     failures:this.failures,workerRestarts:this.workerRestarts,terminalFailure:this.terminalFailure,timeouts:this.timeouts,capacityMisses:this.capacityMisses,slots:this.allocator.diagnostics(),rebasePending:!!this.rebase,
     nearPresentNotInCensus:this.nearPresentNotInCensus,nearAbsentInCensus:this.nearAbsentInCensus,
     farForcedClose:this.farForcedClose,closeCandidateScope:'current near selection',
+    patchLookupCache:{hits:this.patchLookupCacheHits,misses:this.patchLookupCacheMisses,keys:this.frameCurrentPatches.size},
     attributeBytes:this.renderer.positions.array.byteLength+this.renderer.rotations.array.byteLength+this.renderer.parameters.array.byteLength+this.renderer.ownership.array.byteLength,
     retainedCoordinateBytes:this.bodyPositions.byteLength+this.heights.byteLength,
     rebaseBufferBytes:this.rebase?.positions.byteLength??0};}

@@ -206,6 +206,45 @@ test('near ownership, absence suppression, and reused-slot previous IDs resolve 
   }finally{h.restore();}
 });
 
+test('caches current-patch ownership lookups only within one prepare transaction',()=>{
+  const h=begin(64),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`;
+  try{
+    const request=selectAndRequest(h,[a]);sendPatchResponse(h,request,[patch(a)]);
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    const installed=h.host.installed,originalGet=installed.get.bind(installed);let reads=0;
+    installed.get=key=>{reads++;return originalGet(key);};
+    const frameReads=reads;
+    assert.equal(h.host.currentPatch(key),true);assert.equal(h.host.currentPatch(key),true);
+    h.host.noteNear(`${a.face}/${a.n}/${a.x*8}/${a.y*8}`,key,true,0);
+    assert.equal(reads,frameReads+1,'repeated direct and near ownership checks share one patch-map lookup');
+    assert.deepEqual(h.host.diagnostics().patchLookupCache,{hits:2,misses:1,keys:1});
+
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    const nextFrameReads=reads;
+    assert.equal(h.host.currentPatch(key),true);assert.equal(h.host.currentPatch(key),true);
+    assert.equal(reads,nextFrameReads+1,'the next prepare transaction refreshes the patch answer');
+
+    h.host.prepare(eye,ground,100,10,true,false,nearOrigin);
+    const waterReads=reads;
+    assert.equal(h.host.currentPatch(key),false,'old-water patches cannot reuse the previous frame true value');
+    assert.equal(h.host.currentPatch(key),false);
+    assert.equal(reads,waterReads+1);
+  }finally{h.restore();}
+});
+
+test('a census arrival replaces a cached miss at the next frame boundary',()=>{
+  const h=begin(64),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`,id=`${a.face}/${a.n}/${a.x*8}/${a.y*8}`;
+  try{
+    assert.equal(h.host.currentPatch(key),false);
+    assert.equal(h.host.currentPatch(key),false);
+    const request=selectAndRequest(h,[a]);sendPatchResponse(h,request,[patch(a)]);
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    assert.equal(h.host.currentPatch(key),true,'the new prepare transaction sees the complete installed census patch');
+    h.host.noteNear(id,key,false,0);h.host.finish();
+    assert.equal(h.host.renderer.ownership.array[h.host.slots.get(id)],256,'near absence ownership still applies with cached patch validity');
+  }finally{h.restore();}
+});
+
 test('water reconfiguration ignores stale generation replies and accepts the new context',()=>{
   const h=begin(64),a=address(0,h.n);
   try{
