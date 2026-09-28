@@ -14,6 +14,7 @@ export default defineConfig({
       'docs/tree-authoring-v7-2026-09-28.md',
       'docs/tree-color-calibration-2026-09-28.md',
       'docs/authored-tree-capture-2026-09-28.md',
+      'docs/tree-existing-methods-2026-09-28.md',
       'docs/opus-5.5-tree-capture-review-2026-09-28.md',
       'docs/opus-5.5-tree-capture-review-2026-09-28.metadata.json',
       'docs/opus-5.5-tree-reconstruction-review-2026-09-28.md',
