@@ -33,7 +33,7 @@ assets. See the [integration and acceptance record](docs/canopy-runtime-integrat
 [immutable preview evidence](test-results/acceptance-98556a7/README.md),
 [water/date fix](docs/terrain-water-refresh-2026-09-28.md), and [Opus implementation review](docs/opus-5.5-canopy-integration-review-2026-09-28.md).
 
-The [v6 tree checkpoint](docs/tree-authoring-v6-2026-09-28.md) improves the crown, bark wrapping, leaf attachment data and LOD1 support. Physical/export/repeat checks pass after the [Opus source review](docs/opus-5.5-tree-author-v6-review-2026-09-28.md). Browser integration, LOD2 and profiling are next; these assets are not installed in the game.
+The [v6 tree checkpoint](docs/tree-authoring-v6-2026-09-28.md) improves the crown, bark wrapping, leaf attachment data and LOD1 support. Physical/export/repeat checks pass after the [Opus source review](docs/opus-5.5-tree-author-v6-review-2026-09-28.md). A [browser adapter and local lab](docs/tree-browser-prototype-2026-09-28.md) now implement shared LOD resources, physical leaf scaling, leaf flutter and shadow deformation. Luna's CPU and RTX 5090 browser checks pass after Opus review fixes. Lighting/artistic acceptance, LOD2 and planetary integration remain open; these assets are not installed in the game.
 
 The [tree authoring v4 candidate](docs/tree-authoring-v4-2026-09-28.md) passes
 physical export, repeat-generation and Blender/GLB render checks after the

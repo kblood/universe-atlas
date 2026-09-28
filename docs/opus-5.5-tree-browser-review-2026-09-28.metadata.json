@@ -1,0 +1,40 @@
+{
+  "date": "2026-09-28",
+  "requestedModel": "claude-opus-5-5",
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 13739,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 11612,
+      "webSearchRequests": 0,
+      "costUSD": 0.36797579999999996,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 10920,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "inputs": {
+    "revision": "1bd3af3acf6866226726a110c69ae4006378cb64",
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/tree-asset.ts",
+        "sha256": "aaf2d61d57dc91b67069e9573483f52f5bf4ac1ff6eda6f26f6b69afdcb2254c"
+      },
+      {
+        "path": "src/tree-asset-lab.ts",
+        "sha256": "0643665a619af412b4191db0dd3ccac29a680d5507212cbfdad0de1af3e1eb2d"
+      },
+      {
+        "path": "src/world-time.ts",
+        "sha256": "0e5b57435ec46fbfadc406995877bb1328f52518871e8dcef572d6e781cc5830"
+      }
+    ]
+  },
+  "isError": false,
+  "reviewScope": "Source-only initial browser prototype; pre-fix snapshot. No execution or visual acceptance."
+}

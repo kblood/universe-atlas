@@ -2,7 +2,7 @@
 
 ## Latest checkpoint and next changes
 
-[V6](tree-authoring-v6-2026-09-28.md) now passes its final export, physical and repeat checks after the review fixes. The next implementation stage is the shared-resource browser prototype, physical instance scaling, matched LOD2 and measured overdraw under game lighting. The original authoring proposals below remain history.
+[V6](tree-authoring-v6-2026-09-28.md) passes its export, physical and repeat checks after review fixes. The browser adapter at `src/tree-asset.ts` and development-only `tree-asset-lab.html` passes its recorded technical checks at `c7dee40`: CPU tests pass 5/5, and an RTX 5090 / D3D11 browser run at 2560 × 1440 covers both LODs at 3, 64 and 192 trees with no errors. It verifies LOD material/texture identity before LOD1 image decode; two PBR materials use four shared texture objects. Point-shadow rendering and load rollback are exercised. Opus source-review fixes are applied. This does not establish realism acceptance or full-game performance: the images show dark/backlit foliage and repetitive crowns. See the [browser prototype record](tree-browser-prototype-2026-09-28.md) and [Opus review](opus-5.5-tree-browser-review-2026-09-28.md). LOD2, planet/species binding, packaging and midrange profiling remain open. The original authoring proposals below remain design history.
 
 [V5](tree-authoring-v5-2026-09-28.md) completed denser atlas patterns, physical
 bark UVs, leaf-center attributes and a first LOD1. The [review assessment](tree-authoring-v5-review-assessment-2026-09-28.md)
@@ -15,12 +15,8 @@ the desktop realism goal still includes runtime assets, terrain, fauna and full
 performance acceptance beyond authoring.
 
 
-**Status: v4 technical smoke, repeat and export roundtrip pass; visual asset
-acceptance remains open.** Opus 5.5's v3 source-review fixes are committed in
-`2a585b2`. The fresh v4 smoke and repeat have matching geometry/material-content
-hashes and byte-identical GLB/PNG outputs. Luna's BLEND-to-GLB hero comparison
-differs by one green-channel pixel by one level, with matching foreground
-bounds; the six-view sheets differ only slightly. See the [v4 status record](tree-authoring-v4-2026-09-28.md)
+**Historical v4 checkpoint:** its technical smoke, repeat and export roundtrip
+passed while visual asset acceptance remained open. See the [v4 status record](tree-authoring-v4-2026-09-28.md)
 and [roundtrip metrics](../test-results/tree-author-v4/render-roundtrip.json).
 This remains an authoring experiment, not an accepted or shipped species asset.
 
@@ -140,7 +136,7 @@ green `0.22` in place of `0.27` and red `0.10` in place of `0.12`. These are
 review parameters, not approved final values. Keep base colour free of baked
 directional lighting; preserve separate bark and foliage masks.
 
-## 4. Generate a bounded family and tree-specific LODs — proposed, not implemented
+## 4. Generate a bounded family and complete the LOD set — partly implemented
 
 The current `tree-family` named operation accepts one brief seed and emits one
 candidate. The brief already validates and its `experiments.seeds` field is
@@ -165,22 +161,25 @@ and has an explicit fallback LOD.
 
 The eight structural variants must share one foliage atlas per species; do not
 duplicate the current 2048 × 2048 textures for each variant, which would
-multiply texture memory. The brief's LOD ceilings are LOD0 ≤18,000, LOD1 ≤5,000 and LOD2 ≤900
-triangles, with root and silhouette agreement within 0.02 m. Current
-`tools/assetctl/lod.mjs` uses generic 50% and 25% targets, so an 11,100-triangle
-source would target about 5,550 and 2,775 and miss both lower-level ceilings.
-Generate tree LODs from the same branch graph instead of relying on generic
-decimation alone:
+multiply texture memory. V6 now provides LOD0 and a tree-specific LOD1 within
+the brief's 18,000- and 5,000-triangle ceilings. The browser adapter's recorded
+checks verify shared LOD material/texture identity before image decoding. They
+do not establish runtime transition quality or full-game performance. LOD2, bounded variants
+and full-scene acceptance remain future work; the brief's LOD2 ceiling is 900
+triangles with root and silhouette agreement within 0.02 m. Generic
+`tools/assetctl/lod.mjs` decimation remains a comparison, not acceptance
+authority for foliage.
 
 - **LOD0:** full branching and leaf cards, with an 18,000-triangle hard gate.
-- **LOD1:** retain trunk and primary limbs; deterministically prune the least
-  visible terminal twig groups; use fewer tube segments/sides while retaining
-  the physical leaf cards. Aim near 4,500 triangles for margin under 5,000.
+- **LOD1:** V6 retains the trunk, primary structure and all foliage, while
+  simplifying secondary wood and retaining a bounded set of thick twigs. The
+  browser prototype checks shared material/texture identity before decoding
+  the LOD1 image; image ownership checks do not establish transition quality.
 - **LOD2:** use a 10–12 segment six-sided trunk, around ten major limbs with
   only a few segments, and a small set of leaf-cluster cards. Aim for 700–800
   triangles, preserving root contact and the crown's measured outer envelope.
 
-For all three, check alpha coverage/overdraw, wind weights, normals, UVs,
+For all three LODs, check alpha coverage/overdraw, wind weights, normals, UVs,
 triangle counts and actual exported bounds. Keep generic `assetctl lod` as a
 comparison and validator input, not the acceptance authority for foliage.
 
@@ -209,6 +208,14 @@ repeat and BLEND-to-GLB render comparison. The visual crown/material design and
 remaining asset, runtime and license gates are still open; see the
 [v4 status record](tree-authoring-v4-2026-09-28.md). The candidate remains
 unshipped with license `NOASSERTION`.
+
+The browser adapter is a development prototype with passing CPU and RTX 5090
+lab checks and applied Opus source-review fixes; see the [browser record](tree-browser-prototype-2026-09-28.md)
+and [review](opus-5.5-tree-browser-review-2026-09-28.md). Its 3/64/192-tree
+profiles, shared-resource checks, physical instance scaling, rigid-leaf wind
+and depth/distance hooks do not establish visual acceptance or full-game
+performance. The reviewed images show dark/backlit foliage and repetitive
+crowns. There is no LOD2, planet/species binding or packaged asset yet.
 
 ## Source records
 

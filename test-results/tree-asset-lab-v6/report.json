@@ -1,0 +1,886 @@
+{
+  "candidate": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707",
+  "lod0": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707\\atlas-branching-v1.glb",
+  "lod1": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707\\atlas-branching-v1.lod1.glb",
+  "url": "http://127.0.0.1:5196/",
+  "viewport": {
+    "width": 2560,
+    "height": 1440,
+    "deviceScaleFactor": 1
+  },
+  "hardwareEnabled": true,
+  "errors": [],
+  "failedRequests": [],
+  "profiles": [
+    {
+      "lod": 0,
+      "population": 3,
+      "renderer": {
+        "calls": 6,
+        "triangles": 64274,
+        "textures": 6,
+        "geometries": 4
+      },
+      "profile": {
+        "enabled": true,
+        "gpuAvailable": true,
+        "historyLimit": 600,
+        "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+        "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+        "pendingQueries": 1,
+        "pendingLimit": 48,
+        "skippedQueries": 0,
+        "disjointQueries": 0,
+        "expiredQueries": 0,
+        "lastDrawCalls": 6,
+        "lastTriangles": 64274,
+        "statistics": {
+          "frameIntervalMs": {
+            "samples": 180,
+            "p50": 16.599999997764826,
+            "p95": 17.5,
+            "p99": 18,
+            "max": 18.099999997764826
+          },
+          "cpu/trees-and-groundMs": {
+            "samples": 180,
+            "p50": 0.19999999925494194,
+            "p95": 0.30000000074505806,
+            "p99": 0.6000000014901161,
+            "max": 0.6999999992549419
+          },
+          "cpu/frameWorkMs": {
+            "samples": 180,
+            "p50": 0.19999999925494194,
+            "p95": 0.30000000074505806,
+            "p99": 0.6000000014901161,
+            "max": 0.6999999992549419
+          },
+          "drawCalls": {
+            "samples": 180,
+            "p50": 6,
+            "p95": 6,
+            "p99": 6,
+            "max": 6
+          },
+          "triangles": {
+            "samples": 180,
+            "p50": 64274,
+            "p95": 64274,
+            "p99": 64274,
+            "max": 64274
+          },
+          "gpu/trees-and-groundMs": {
+            "samples": 179,
+            "p50": 0.286336,
+            "p95": 0.32608,
+            "p99": 0.35696,
+            "max": 0.363968
+          },
+          "gpu/framePassSumMs": {
+            "samples": 179,
+            "p50": 0.286336,
+            "p95": 0.32608,
+            "p99": 0.35696,
+            "max": 0.363968
+          }
+        }
+      },
+      "instanceScaleAndPhaseRange": {
+        "count": 3,
+        "minScale": 0.625,
+        "maxScale": 1.375,
+        "finite": true
+      }
+    },
+    {
+      "lod": 0,
+      "population": 64,
+      "renderer": {
+        "calls": 6,
+        "triangles": 1371138,
+        "textures": 6,
+        "geometries": 4
+      },
+      "profile": {
+        "enabled": true,
+        "gpuAvailable": true,
+        "historyLimit": 600,
+        "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+        "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+        "pendingQueries": 1,
+        "pendingLimit": 48,
+        "skippedQueries": 0,
+        "disjointQueries": 0,
+        "expiredQueries": 0,
+        "lastDrawCalls": 6,
+        "lastTriangles": 1371138,
+        "statistics": {
+          "frameIntervalMs": {
+            "samples": 180,
+            "p50": 16.599999997764826,
+            "p95": 17.599999997764826,
+            "p99": 17.600000001490116,
+            "max": 17.699999999254942
+          },
+          "cpu/trees-and-groundMs": {
+            "samples": 180,
+            "p50": 0.10000000149011612,
+            "p95": 0.30000000074505806,
+            "p99": 0.6000000014901161,
+            "max": 1
+          },
+          "cpu/frameWorkMs": {
+            "samples": 180,
+            "p50": 0.19999999925494194,
+            "p95": 0.3999999985098839,
+            "p99": 0.6999999992549419,
+            "max": 1
+          },
+          "drawCalls": {
+            "samples": 180,
+            "p50": 6,
+            "p95": 6,
+            "p99": 6,
+            "max": 6
+          },
+          "triangles": {
+            "samples": 180,
+            "p50": 1371138,
+            "p95": 1371138,
+            "p99": 1371138,
+            "max": 1371138
+          },
+          "gpu/trees-and-groundMs": {
+            "samples": 179,
+            "p50": 1.517568,
+            "p95": 1.57808,
+            "p99": 1.60832,
+            "max": 1.610752
+          },
+          "gpu/framePassSumMs": {
+            "samples": 179,
+            "p50": 1.517568,
+            "p95": 1.57808,
+            "p99": 1.60832,
+            "max": 1.610752
+          }
+        }
+      },
+      "instanceScaleAndPhaseRange": {
+        "count": 64,
+        "minScale": 0.625,
+        "maxScale": 1.375,
+        "finite": true
+      }
+    },
+    {
+      "lod": 0,
+      "population": 192,
+      "renderer": {
+        "calls": 6,
+        "triangles": 4113410,
+        "textures": 6,
+        "geometries": 4
+      },
+      "profile": {
+        "enabled": true,
+        "gpuAvailable": true,
+        "historyLimit": 600,
+        "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+        "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+        "pendingQueries": 1,
+        "pendingLimit": 48,
+        "skippedQueries": 0,
+        "disjointQueries": 0,
+        "expiredQueries": 0,
+        "lastDrawCalls": 6,
+        "lastTriangles": 4113410,
+        "statistics": {
+          "frameIntervalMs": {
+            "samples": 180,
+            "p50": 16.599999997764826,
+            "p95": 17.5,
+            "p99": 17.899999998509884,
+            "max": 18
+          },
+          "cpu/trees-and-groundMs": {
+            "samples": 180,
+            "p50": 0.19999999925494194,
+            "p95": 0.30000000074505806,
+            "p99": 0.5,
+            "max": 0.6999999992549419
+          },
+          "cpu/frameWorkMs": {
+            "samples": 180,
+            "p50": 0.19999999925494194,
+            "p95": 0.3999999985098839,
+            "p99": 0.5999999977648258,
+            "max": 0.7999999970197678
+          },
+          "drawCalls": {
+            "samples": 180,
+            "p50": 6,
+            "p95": 6,
+            "p99": 6,
+            "max": 6
+          },
+          "triangles": {
+            "samples": 180,
+            "p50": 4113410,
+            "p95": 4113410,
+            "p99": 4113410,
+            "max": 4113410
+          },
+          "gpu/trees-and-groundMs": {
+            "samples": 179,
+            "p50": 2.188352,
+            "p95": 3.777152,
+            "p99": 3.840832,
+            "max": 3.884288
+          },
+          "gpu/framePassSumMs": {
+            "samples": 179,
+            "p50": 2.188352,
+            "p95": 3.777152,
+            "p99": 3.840832,
+            "max": 3.884288
+          }
+        }
+      },
+      "instanceScaleAndPhaseRange": {
+        "count": 192,
+        "minScale": 0.625,
+        "maxScale": 1.375,
+        "finite": true
+      }
+    },
+    {
+      "lod": 1,
+      "population": 3,
+      "renderer": {
+        "calls": 6,
+        "triangles": 28922,
+        "textures": 6,
+        "geometries": 6
+      },
+      "profile": {
+        "enabled": true,
+        "gpuAvailable": true,
+        "historyLimit": 600,
+        "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+        "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+        "pendingQueries": 1,
+        "pendingLimit": 48,
+        "skippedQueries": 0,
+        "disjointQueries": 0,
+        "expiredQueries": 0,
+        "lastDrawCalls": 6,
+        "lastTriangles": 28922,
+        "statistics": {
+          "frameIntervalMs": {
+            "samples": 181,
+            "p50": 16.599999997764826,
+            "p95": 17.600000001490116,
+            "p99": 18.100000001490116,
+            "max": 18.400000002235174
+          },
+          "cpu/trees-and-groundMs": {
+            "samples": 181,
+            "p50": 0.19999999925494194,
+            "p95": 0.30000000074505806,
+            "p99": 0.30000000074505806,
+            "max": 0.30000000074505806
+          },
+          "cpu/frameWorkMs": {
+            "samples": 181,
+            "p50": 0.19999999925494194,
+            "p95": 0.30000000074505806,
+            "p99": 0.4000000022351742,
+            "max": 0.4000000022351742
+          },
+          "drawCalls": {
+            "samples": 181,
+            "p50": 6,
+            "p95": 6,
+            "p99": 6,
+            "max": 6
+          },
+          "triangles": {
+            "samples": 181,
+            "p50": 28922,
+            "p95": 28922,
+            "p99": 28922,
+            "max": 28922
+          },
+          "gpu/trees-and-groundMs": {
+            "samples": 180,
+            "p50": 0.296448,
+            "p95": 0.324448,
+            "p99": 0.346112,
+            "max": 0.37552
+          },
+          "gpu/framePassSumMs": {
+            "samples": 180,
+            "p50": 0.296448,
+            "p95": 0.324448,
+            "p99": 0.346112,
+            "max": 0.37552
+          }
+        }
+      },
+      "instanceScaleAndPhaseRange": {
+        "count": 3,
+        "minScale": 0.625,
+        "maxScale": 1.375,
+        "finite": true
+      }
+    },
+    {
+      "lod": 1,
+      "population": 64,
+      "renderer": {
+        "calls": 6,
+        "triangles": 616962,
+        "textures": 6,
+        "geometries": 6
+      },
+      "profile": {
+        "enabled": true,
+        "gpuAvailable": true,
+        "historyLimit": 600,
+        "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+        "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+        "pendingQueries": 1,
+        "pendingLimit": 48,
+        "skippedQueries": 0,
+        "disjointQueries": 0,
+        "expiredQueries": 0,
+        "lastDrawCalls": 6,
+        "lastTriangles": 616962,
+        "statistics": {
+          "frameIntervalMs": {
+            "samples": 180,
+            "p50": 16.899999998509884,
+            "p95": 17.599999997764826,
+            "p99": 17.600000001490116,
+            "max": 17.899999998509884
+          },
+          "cpu/trees-and-groundMs": {
+            "samples": 180,
+            "p50": 0.10000000149011612,
+            "p95": 0.30000000074505806,
+            "p99": 0.30000000074505806,
+            "max": 0.30000000074505806
+          },
+          "cpu/frameWorkMs": {
+            "samples": 180,
+            "p50": 0.19999999925494194,
+            "p95": 0.30000000074505806,
+            "p99": 0.3999999985098839,
+            "max": 0.3999999985098839
+          },
+          "drawCalls": {
+            "samples": 180,
+            "p50": 6,
+            "p95": 6,
+            "p99": 6,
+            "max": 6
+          },
+          "triangles": {
+            "samples": 180,
+            "p50": 616962,
+            "p95": 616962,
+            "p99": 616962,
+            "max": 616962
+          },
+          "gpu/trees-and-groundMs": {
+            "samples": 179,
+            "p50": 1.236608,
+            "p95": 1.309184,
+            "p99": 1.33024,
+            "max": 1.34656
+          },
+          "gpu/framePassSumMs": {
+            "samples": 179,
+            "p50": 1.236608,
+            "p95": 1.309184,
+            "p99": 1.33024,
+            "max": 1.34656
+          }
+        }
+      },
+      "instanceScaleAndPhaseRange": {
+        "count": 64,
+        "minScale": 0.625,
+        "maxScale": 1.375,
+        "finite": true
+      }
+    },
+    {
+      "lod": 1,
+      "population": 192,
+      "renderer": {
+        "calls": 6,
+        "triangles": 1850882,
+        "textures": 6,
+        "geometries": 6
+      },
+      "profile": {
+        "enabled": true,
+        "gpuAvailable": true,
+        "historyLimit": 600,
+        "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+        "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+        "pendingQueries": 1,
+        "pendingLimit": 48,
+        "skippedQueries": 0,
+        "disjointQueries": 0,
+        "expiredQueries": 0,
+        "lastDrawCalls": 6,
+        "lastTriangles": 1850882,
+        "statistics": {
+          "frameIntervalMs": {
+            "samples": 180,
+            "p50": 16.600000001490116,
+            "p95": 17.5,
+            "p99": 17.899999998509884,
+            "max": 18.099999997764826
+          },
+          "cpu/trees-and-groundMs": {
+            "samples": 180,
+            "p50": 0.19999999925494194,
+            "p95": 0.30000000074505806,
+            "p99": 0.4000000022351742,
+            "max": 0.5
+          },
+          "cpu/frameWorkMs": {
+            "samples": 180,
+            "p50": 0.19999999925494194,
+            "p95": 0.30000000074505806,
+            "p99": 0.5,
+            "max": 0.5
+          },
+          "drawCalls": {
+            "samples": 180,
+            "p50": 6,
+            "p95": 6,
+            "p99": 6,
+            "max": 6
+          },
+          "triangles": {
+            "samples": 180,
+            "p50": 1850882,
+            "p95": 1850882,
+            "p99": 1850882,
+            "max": 1850882
+          },
+          "gpu/trees-and-groundMs": {
+            "samples": 179,
+            "p50": 1.747328,
+            "p95": 2.96064,
+            "p99": 3.043552,
+            "max": 3.08704
+          },
+          "gpu/framePassSumMs": {
+            "samples": 179,
+            "p50": 1.747328,
+            "p95": 2.96064,
+            "p99": 3.043552,
+            "max": 3.08704
+          }
+        }
+      },
+      "instanceScaleAndPhaseRange": {
+        "count": 192,
+        "minScale": 0.625,
+        "maxScale": 1.375,
+        "finite": true
+      }
+    }
+  ],
+  "screenshots": [
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\tree-asset-lab-v6\\lod0-population3.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\tree-asset-lab-v6\\lod0-population192.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\tree-asset-lab-v6\\lod1-population3.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\tree-asset-lab-v6\\lod1-population192.png"
+  ],
+  "limitations": [
+    "This browser lab is a standalone prototype, not game integration or headset acceptance.",
+    "GPU measurements cover the lab scene and include ground/shadows; they do not predict the game."
+  ],
+  "loaded": {
+    "diagnostics": {
+      "ready": true,
+      "loading": false,
+      "error": "",
+      "lod": 0,
+      "date": "0",
+      "specimenSkeletonHeightsM": [
+        10,
+        16,
+        22
+      ],
+      "textures": 4,
+      "materials": 2,
+      "shadowMaterials": 8,
+      "sharedMaterials": true,
+      "texturePNGContainerBytes": 1895740,
+      "textureRGBA8MipBytesEstimate": 55924048,
+      "renderer": {
+        "calls": 6,
+        "triangles": 64274,
+        "textures": 6,
+        "geometries": 4
+      },
+      "renderCPUSubmissionMs": 0.5,
+      "counterMeaning": "Draws include main and shadow passes; renderer textures include shadow targets; geometry counts track uploaded objects. Shared materials count PBR objects only; resource identity is not a measured GPU saving.",
+      "population": 3,
+      "profile": {
+        "enabled": true,
+        "gpuAvailable": true,
+        "historyLimit": 600,
+        "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+        "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+        "pendingQueries": 1,
+        "pendingLimit": 48,
+        "skippedQueries": 0,
+        "disjointQueries": 0,
+        "expiredQueries": 0,
+        "lastDrawCalls": 6,
+        "lastTriangles": 64274,
+        "statistics": {
+          "frameIntervalMs": {
+            "samples": 10,
+            "p50": 16.5,
+            "p95": 148.30000000074506,
+            "p99": 148.30000000074506,
+            "max": 148.30000000074506
+          },
+          "cpu/trees-and-groundMs": {
+            "samples": 10,
+            "p50": 0.5,
+            "p95": 147.40000000223517,
+            "p99": 147.40000000223517,
+            "max": 147.40000000223517
+          },
+          "cpu/frameWorkMs": {
+            "samples": 10,
+            "p50": 0.5999999977648258,
+            "p95": 147.40000000223517,
+            "p99": 147.40000000223517,
+            "max": 147.40000000223517
+          },
+          "drawCalls": {
+            "samples": 10,
+            "p50": 6,
+            "p95": 6,
+            "p99": 6,
+            "max": 6
+          },
+          "triangles": {
+            "samples": 10,
+            "p50": 64274,
+            "p95": 64274,
+            "p99": 64274,
+            "max": 64274
+          },
+          "gpu/trees-and-groundMs": {
+            "samples": 9,
+            "p50": 0.067008,
+            "p95": 5.162304,
+            "p99": 5.162304,
+            "max": 5.162304
+          },
+          "gpu/framePassSumMs": {
+            "samples": 9,
+            "p50": 0.067008,
+            "p95": 5.162304,
+            "p99": 5.162304,
+            "max": 5.162304
+          }
+        }
+      },
+      "lighting": "ACES exposure 1.2, sun 3, hemisphere 1; lab lighting, not whole-game acceptance",
+      "wind": "rigid leaf rotation only; branch wind pending"
+    },
+    "textureCount": 4,
+    "materialsByLod": [
+      [
+        "MAT_AtlasBark",
+        "MAT_AtlasFoliage"
+      ],
+      [
+        "MAT_AtlasBark",
+        "MAT_AtlasFoliage"
+      ]
+    ],
+    "materialReferenceEquality": [
+      true,
+      true
+    ],
+    "textureReferenceEquality": [
+      true,
+      true
+    ],
+    "geometryAttributes": [
+      [
+        [
+          "_wind",
+          "_branch_level",
+          "_leaf_center",
+          "_leaf_pivot",
+          "position",
+          "normal",
+          "uv",
+          "tangent"
+        ],
+        [
+          "_wind",
+          "_branch_level",
+          "_leaf_center",
+          "_leaf_pivot",
+          "position",
+          "normal",
+          "uv",
+          "tangent"
+        ]
+      ],
+      [
+        [
+          "_wind",
+          "_branch_level",
+          "_leaf_center",
+          "_leaf_pivot",
+          "position",
+          "normal",
+          "uv",
+          "tangent"
+        ],
+        [
+          "_wind",
+          "_branch_level",
+          "_leaf_center",
+          "_leaf_pivot",
+          "position",
+          "normal",
+          "uv",
+          "tangent"
+        ]
+      ]
+    ],
+    "lodMeshCounts": [
+      2,
+      2
+    ],
+    "hooks": [
+      {
+        "name": "MAT_AtlasBark",
+        "programKey": "atlas-tree-physical-1",
+        "deformsVertex": true,
+        "dateUniform": 0
+      },
+      {
+        "name": "MAT_AtlasFoliage",
+        "programKey": "atlas-tree-physical-1",
+        "deformsVertex": true,
+        "dateUniform": 0
+      },
+      {
+        "name": "MAT_AtlasBark",
+        "programKey": "atlas-tree-physical-1",
+        "deformsVertex": true,
+        "dateUniform": 0
+      },
+      {
+        "name": "MAT_AtlasFoliage",
+        "programKey": "atlas-tree-physical-1",
+        "deformsVertex": true,
+        "dateUniform": 0
+      }
+    ],
+    "light": {
+      "shadowMap": true,
+      "lights": [
+        {
+          "type": "DirectionalLight",
+          "castShadow": true
+        },
+        {
+          "type": "HemisphereLight",
+          "castShadow": false
+        }
+      ]
+    },
+    "renderer": "WebKit WebGL",
+    "unmaskedRenderer": {
+      "vendor": "Google Inc. (NVIDIA)",
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    }
+  },
+  "windDateEndpoints": [
+    {
+      "date": "0",
+      "phase": 0
+    },
+    {
+      "date": "6999999999",
+      "phase": 6.283185306281988
+    },
+    {
+      "date": "7000000000",
+      "phase": 0
+    },
+    {
+      "date": "-1",
+      "phase": 6.283185306281988
+    },
+    {
+      "date": "-7000000001",
+      "phase": 6.283185306281988
+    },
+    {
+      "date": "315576000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "phase": 1.7951958020513104
+    }
+  ],
+  "shadowDistanceHooks": [
+    {
+      "capacity": 3,
+      "meshes": [
+        {
+          "castShadow": true,
+          "receiveShadow": true,
+          "depthHook": true,
+          "distanceHook": true,
+          "depthKey": "atlas-tree-physical-1",
+          "distanceKey": "atlas-tree-physical-1",
+          "windAttribute": 8495,
+          "pivotAttribute": 8495,
+          "levelAttribute": 8495,
+          "instance": {
+            "0": 0.625,
+            "1": 0,
+            "2": 1,
+            "3": 0.699999988079071,
+            "4": 1.375,
+            "5": 1.399999976158142
+          }
+        },
+        {
+          "castShadow": true,
+          "receiveShadow": true,
+          "depthHook": true,
+          "distanceHook": true,
+          "depthKey": "atlas-tree-physical-1",
+          "distanceKey": "atlas-tree-physical-1",
+          "windAttribute": 5497,
+          "pivotAttribute": 5497,
+          "levelAttribute": 5497,
+          "instance": {
+            "0": 0.625,
+            "1": 0,
+            "2": 1,
+            "3": 0.699999988079071,
+            "4": 1.375,
+            "5": 1.399999976158142
+          }
+        }
+      ]
+    },
+    {
+      "capacity": 3,
+      "meshes": [
+        {
+          "castShadow": true,
+          "receiveShadow": true,
+          "depthHook": true,
+          "distanceHook": true,
+          "depthKey": "atlas-tree-physical-1",
+          "distanceKey": "atlas-tree-physical-1",
+          "windAttribute": 2067,
+          "pivotAttribute": 2067,
+          "levelAttribute": 2067,
+          "instance": {
+            "0": 0.625,
+            "1": 0,
+            "2": 1,
+            "3": 0.699999988079071,
+            "4": 1.375,
+            "5": 1.399999976158142
+          }
+        },
+        {
+          "castShadow": true,
+          "receiveShadow": true,
+          "depthHook": true,
+          "distanceHook": true,
+          "depthKey": "atlas-tree-physical-1",
+          "distanceKey": "atlas-tree-physical-1",
+          "windAttribute": 5497,
+          "pivotAttribute": 5497,
+          "levelAttribute": 5497,
+          "instance": {
+            "0": 0.625,
+            "1": 0,
+            "2": 1,
+            "3": 0.699999988079071,
+            "4": 1.375,
+            "5": 1.399999976158142
+          }
+        }
+      ]
+    }
+  ],
+  "gpu": {
+    "available": true,
+    "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+    "renderer": "WebKit WebGL",
+    "unmaskedRenderer": {
+      "vendor": "Google Inc. (NVIDIA)",
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    }
+  },
+  "batchContracts": {
+    "gapRejected": true,
+    "nonuniformRejected": true,
+    "reflectedRejected": true,
+    "truncateExpansionRejected": true,
+    "phaseNormalized": 0.25,
+    "countAfterTruncate": [
+      1,
+      1
+    ]
+  },
+  "failedLoadRollback": {
+    "rejected": true,
+    "oldFamilyPreserved": true,
+    "ready": true,
+    "loading": false
+  },
+  "pointShadowCompile": {
+    "type": "PointLight",
+    "castShadow": true,
+    "shadowMap": true,
+    "renderer": {
+      "frame": 58,
+      "calls": 18,
+      "triangles": 257090,
+      "points": 0,
+      "lines": 42
+    }
+  },
+  "successfulReload": {
+    "replaced": true,
+    "ready": true,
+    "textureCount": 4,
+    "memory": {
+      "textures": 6,
+      "geometries": 4
+    }
+  },
+  "sourceRevision": "c7dee409d7a25e936e6eb22e5c9d32e732d0624d",
+  "sourceDirty": true,
+  "sourceDirtyNote": "Runtime checkpoint c7dee40 was committed; the shared worktree also has parent-owned docs, package, and Vite config changes. The tested browser application code was tree-asset-lab.ts / tree-asset.ts at c7dee40.",
+  "visualInspection": "LOD0/LOD1 10 m, 16 m, 22 m examples remain upright with ground contact; directional shadows render. LOD0 and LOD1 screenshots appear structurally similar at the lab camera. This is a small controlled prototype scene, not game-level realism acceptance."
+}

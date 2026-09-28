@@ -26,11 +26,29 @@ This contract is not wired into the forest renderer yet. The current rendered
 population still uses its existing 10–22 m primitive silhouettes and canonical
 placement. Activating species geometry, physical envelopes and habitat binding
 requires an explicit appearance/population migration decision and a consistent
-canopy implementation. A named Blender authoring operation now produces a
-[v6 candidate with technical checks](tree-authoring-v6-2026-09-28.md), editable
-source and original textures. Visual quality, LODs, resource eviction and full
-asset acceptance remain unfinished. Review images and evidence document the candidates;
-no candidate tree geometry has been shipped in the game.
+canopy implementation.
+
+A browser adapter prototype is implemented in `src/tree-asset.ts` with a
+development-only `tree-asset-lab.html`. At `c7dee40`, its CPU suite passes 5/5;
+an RTX 5090 / D3D11 run at 2560 × 1440 completed both LODs at 3, 64 and 192
+trees with no browser errors. It checks shared LOD material/texture identity
+before decoding LOD1 images. Two PBR materials use four shared texture objects;
+point-shadow rendering and load rollback are exercised. Shader support covers
+physical leaf offsets/pivots, 10–22 m skeleton scaling, rigid-leaf wind with a
+`BigInt` period, and depth/distance hooks. Opus source-review fixes are applied.
+This is technical prototype validation, not visual acceptance or production
+integration: reviewed images show dark/backlit foliage and repetitive crowns.
+There is no LOD2, planet or species binding, packaged asset, or midrange-device
+profile in this stage. See the [browser prototype record](tree-browser-prototype-2026-09-28.md)
+and [Opus review](opus-5.5-tree-browser-review-2026-09-28.md).
+
+A named Blender authoring operation now produces a [v6 candidate with
+technical checks](tree-authoring-v6-2026-09-28.md), editable source and original
+textures. Visual quality, LOD2, structural variants, resource eviction and
+full asset acceptance remain unfinished. Review images and evidence document
+the candidates; no candidate tree geometry has been shipped in the game. See
+the [next increment proposal](tree-authoring-next-increment-2026-09-28.md) for
+the current browser-prototype scope and remaining work.
 
 Three source tests cover ordering/dated eligibility, physical envelopes,
 repeatable structural variation, bounded geometry keys and version changes.

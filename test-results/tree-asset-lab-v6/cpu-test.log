@@ -1,0 +1,13 @@
+✔ wind phase uses Euclidean BigInt dates at negative, period, and universe endpoints (0.6262ms)
+✔ physical leaf transforms scale the attachment pivot, retain card size, and rotate the rigid offset (0.4ms)
+✔ LOD pair validates matching embedded material/texture bytes and strips LOD1 texture descriptors before parse (19.4969ms)
+✔ LOD preparation rejects material and embedded image divergence before sharing (4.5535ms)
+✔ GLB contract rejects extra, malformed, normalized, and blended attributes (4.8054ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 145.4013

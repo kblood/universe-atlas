@@ -10,6 +10,11 @@ export default defineConfig({
       builtAt:new Date().toISOString(),
     },null,2)});
     for(const fileName of [
+      'docs/tree-browser-prototype-2026-09-28.md',
+      'docs/opus-5.5-tree-browser-review-2026-09-28.md',
+      'docs/opus-5.5-tree-browser-review-2026-09-28.metadata.json',
+      'test-results/tree-asset-lab-v6/report.json',
+      'test-results/tree-asset-lab-v6/cpu-test.log',
       'docs/opus-5.5-tree-author-v5-review-2026-09-28.md',
       'docs/opus-5.5-tree-author-v5-review-2026-09-28.metadata.json',
       'docs/tree-authoring-v5-2026-09-28.md',
@@ -238,6 +243,8 @@ export default defineConfig({
       'test-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-blend-calibrated/render-sheet.png',
       'test-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-lod0-calibrated/render-sheet.png',
       'test-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-lod1-calibrated/render-sheet.png',
+      'test-results/tree-asset-lab-v6/lod0-population3.png',
+      'test-results/tree-asset-lab-v6/lod0-population192.png',
       'test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/back.png',
       'test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/front.png',
       'test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/hero.png',
