@@ -95,3 +95,20 @@ Separate broad checks of the initial `a0dd78a` revision retain two existing
 failures: an extreme-time scale-factor Infinity expectation and an older
 history-version expectation. The full suite is not claimed green. These source
 and local browser checks do not by themselves establish live deployment.
+
+## Live release `e8a848d`
+
+The integrated commit was published with `dirty: false`. Luna 6's live movement
+and desktop fixtures pass with zero browser errors or worker failures/restarts.
+All 60 unique guide targets resolve. After 110.77 m lateral movement, the last
+packet contains 18,048 cells / 1,732,608 bytes; packing is 18.5 ms and decoding
+3.5 ms. Trees, flora, animals and terrain remain ready. The warmed 478-sample
+live profile records frame interval p50/p95 16.6/18.9 ms, CPU planet update
+9.5/13.0 ms and GPU pass sum 4.714/6.371 ms. These are one RTX 5090 fixture's
+measurements, with the same limits as the local checks above.
+
+The [deployment record](../test-results/deploy-e8a848d/live-deployment.json),
+[movement report](../test-results/deploy-e8a848d/forest-selection-cache-browser/report.json)
+and [rendering report](../test-results/deploy-e8a848d/desktop-rendering-acceptance/report.json)
+were committed after publication. Recording that evidence does not alter the
+deployed runtime. Continuous canopy and production assets remain unfinished.

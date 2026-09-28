@@ -179,7 +179,7 @@ more. Structural diversity must not come from disconnected anatomy.
 | B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented; build, 53 targeted checks and RTX 5090 browser acceptance pass; see validation record |
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
 | D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; first Blender brief validates; forest integration, authored assets and resource cache pending |
-| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Canonical patches, shared habitat and bounded worker selection cache implemented, reviewed and deployed; packed transfer and receiver fixes pass source/browser checks at `23de0b9`; publication, summary worker and visible canopy pending |
+| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Canonical patches, shared habitat and bounded worker selection cache implemented, reviewed and deployed; packed transfer and receiver fixes pass source/browser checks at `23de0b9` and live release `e8a848d`; summary worker and visible canopy pending |
 | F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | Two tree authoring proposals technically validated and visually reviewed; asset/runtime acceptance and other landscape work pending |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |
@@ -225,7 +225,7 @@ comparison, frame interval p50/p95 was 16.8/20.8 ms on this build and
 17.6/24.3 ms on the `66c7728` baseline, with zero browser errors in both runs.
 This is one fixture and one run: it shows no regression signal, not a general
 speedup or a 60 FPS guarantee. The [validation record](../test-results/forest-transfer-23de0b9/README.md)
-contains the evidence. Publication with the integrated source is pending. See
+contains the evidence. Integrated release `e8a848d` is deployed with a clean build stamp; Luna’s live movement/rendering checks and all 60 unique guide targets pass. The [deployment record](../test-results/deploy-e8a848d/live-deployment.json) preserves the evidence. See
 the [transfer review](opus-5.5-transfer-review-2026-09-28.md) and its
 assessment in the [transfer record](forest-selection-transfer-2026-09-28.md).
 Shader-based fades, larger precision-derived rebases and canopy handoff
@@ -332,7 +332,7 @@ general speedup or 60 FPS. See the
 [validation record](../test-results/forest-transfer-23de0b9/README.md), the
 completed [Opus review](opus-5.5-transfer-review-2026-09-28.md), and its
 assessment in the [transfer record](forest-selection-transfer-2026-09-28.md).
-Publication with the integrated source is pending.
+Integrated release `e8a848d` is deployed with a clean build stamp; Luna’s live movement/rendering checks and all 60 unique guide targets pass. The [deployment record](../test-results/deploy-e8a848d/live-deployment.json) preserves the evidence.
 
 ## 9. Reference techniques and boundaries
 
