@@ -91,6 +91,31 @@ returning every decision to the parent.
   An experiment must resolve a specific implementation decision before another
   experiment is launched.
 
+## Browser checks that avoid repeated setup
+
+- Start from a previously rendered seed, body, date and surface address. Do not
+  scan thousands of new landing sites just to check a shader. Broader habitat
+  searches belong to coverage testing after the basic route works.
+- Save the selected canonical identity, position and exact date before travel.
+  Exploration advances time by default: freeze it before readiness waits when
+  testing replay, and assert the restored date, navigation mode and camera pose.
+  A walking-to-flight transition is a separate navigation result, not proof of
+  a changed population.
+- Record the phase and a small state snapshot before long waits, then periodically
+  while waiting. Split readiness conditions so a missing animal cannot be
+  reported as a failure to become grounded. Keep full diagnostic dumps in files.
+- Capture useful state and images before optional panel collapse or screenshot
+  cleanup. A blocked cosmetic click must not discard substantive test evidence.
+  Check that the target is large enough and actually in frame before calling an
+  image a close-up.
+- Distinguish the canonical population, resident data and submitted draws.
+  `faunaDrawn` is filtered by distance and camera/shadow visibility; absence from
+  that list alone does not establish disappearance. Terrain `maxLevel` describes
+  visible tiles, so contact failures also need frontier and contact-gate state.
+- Reserve the GPU for active browser/capture work. Ordinary CPU work can overlap
+  visual checks; isolate both CPU and GPU load for performance measurements.
+  Release the slot explicitly when a run ends or switches to source diagnosis.
+
 ## Forest milestone invariants and evidence
 
 Preserve canonical individuals, positions, heights, yaw, dated species and
