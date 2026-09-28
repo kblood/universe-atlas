@@ -11,6 +11,11 @@ export default defineConfig({
     },null,2)});
     for(const fileName of [
       'docs/tree-forest-integration-2026-09-28.md',
+      'docs/opus-5.5-desktop-state-review-2026-09-28.md',
+      'docs/opus-5.5-desktop-state-review-2026-09-28.metadata.json',
+      'docs/desktop-state-review-assessment-2026-09-28.md',
+      'test-results/opus-desktop-state-review/inputs.json',
+      'test-results/opus-desktop-state-review/response.json',
       'test-results/tree-forest-integration/README.md',
       'test-results/tree-forest-integration/cpu.log',
       'test-results/tree-forest-integration/build.log',
