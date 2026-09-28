@@ -1,7 +1,8 @@
 import * as THREE from 'three';
+import {forestMaterial,forestDepthMaterial} from './forest-material.ts';
 import {createLegacyTreeGeometry as treeGeometry,treeQuaternion,LEGACY_TREE_BOUND} from './tree-shape.ts';
 import {PlanetCanopy,forestCellPatchKey} from './planet-canopy.ts';
-import {forestCoverageGLSL,quantizeForestCoverage} from './forest-coverage.ts';
+import {quantizeForestCoverage} from './forest-coverage.ts';
 import {type Body,type V3} from './catalog.ts';
 import {terrainSampler} from './terrain.ts';
 import {biomeClassifier} from './surface-biomes.ts';
@@ -23,24 +24,6 @@ const loadTreeFamily:TreeLoader=async(a,b,options)=>(await import('./tree-asset.
 type BatchUpdates={residents:Resident[];originVersions:number[];slots:Map<string,number>;wanted:Resident[];wantedCoverage:number[];wantedIds:Set<string>;matrix:DirtyRange;color:DirtyRange;coverage:DirtyRange;seed:DirtyRange};
 const batchUpdates=():BatchUpdates=>({residents:[],originVersions:[],slots:new Map(),wanted:[],wantedCoverage:[],wantedIds:new Set(),matrix:new DirtyRange(),color:new DirtyRange(),coverage:new DirtyRange(),seed:new DirtyRange()});
 const crownBoundRadius=Math.hypot(...LEGACY_TREE_BOUND.extent)+Math.hypot(LEGACY_TREE_BOUND.center[0],LEGACY_TREE_BOUND.center[2]);
-
-/** Screen-door coverage changes visibility without shrinking a physical tree.
- * alphaHash preserves opaque depth testing and avoids sorted transparent forests. */
-function forestMaterial(vertexColors:boolean){
-  const material=new THREE.MeshLambertMaterial({vertexColors,color:vertexColors?0xffffff:0x456c28});
-  material.onBeforeCompile=shader=>{
-    shader.vertexShader='attribute float instanceCoverage,instanceForestSeed;\nflat varying float vForestCoverage,vForestSeed;\n'+shader.vertexShader;
-    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvForestCoverage=instanceCoverage;vForestSeed=instanceForestSeed;');
-    shader.fragmentShader='flat varying float vForestCoverage,vForestSeed;\n'+forestCoverageGLSL+shader.fragmentShader;
-    shader.fragmentShader=shader.fragmentShader.replace('#include <alphahash_fragment>',`#ifdef USE_ALPHAHASH
-      diffuseColor.a *= vForestCoverage;
-      #include <alphahash_fragment>
-      #else
-      if(atlasForestHash(uint(vForestSeed+.5))>=atlasForestLevel(vForestCoverage))discard;
-      #endif`);
-  };
-  material.customProgramCacheKey=()=>`forest-coverage-2/${vertexColors}`;return material;
-}
 
 /** Bounded placement queue + retained habitat cache. Flight and walking call
  * the same update. Work begins above visible range; no landing flag exists. */
@@ -131,6 +114,7 @@ export class PlanetForest {
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3).fill(1),3).setUsage(THREE.DynamicDrawUsage);
       mesh.frustumCulled=false;mesh.count=0;
+      mesh.castShadow=true;mesh.receiveShadow=true;mesh.customDepthMaterial=forestDepthMaterial();
       this.group.add(mesh);return mesh;
     });
     this.canopy=new THREE.InstancedMesh(treeGeometry(0),forestMaterial(true),B.canopyCapacity);
@@ -329,7 +313,7 @@ export class PlanetForest {
     this.scheduledUploadBytes+=updates.coverage.flush(coverage);
     this.scheduledUploadBytes+=updates.seed.flush(mesh.geometry.getAttribute('instanceForestSeed') as THREE.BufferAttribute);
   }
-  update(eye:THREE.Vector3,groundDirection:V3,altitudeM:number,enabled:boolean,water:number,immersive:boolean,frusta:THREE.Frustum[]=[],worldNs=0n,treeSpecies?:readonly Species[]){
+  update(eye:THREE.Vector3,groundDirection:V3,altitudeM:number,enabled:boolean,water:number,immersive:boolean,frusta:THREE.Frustum[]=[],worldNs=0n,treeSpecies?:readonly Species[],shadowFrustum:THREE.Frustum|null=null){
     if(!Number.isFinite(water))throw new Error('Forest water level must be finite');
     if(this.assetFamily)this.setCatalogue(treeSpecies);
     this.worldDate=worldNs;this.assetFamily?.setDate(worldNs);
@@ -415,7 +399,7 @@ export class PlanetForest {
         this.bounds.center.copy(this.position);
         this.bounds.radius=Math.max((Math.hypot(...LEGACY_TREE_BOUND.center)+crownBoundRadius)*cell.heightM,this.assetFamily.maxRadiusM)/r;
       }
-      if(frusta.length&&!frusta.some(f=>f.intersectsSphere(this.bounds)))continue;
+      if(frusta.length&&!frusta.some(f=>f.intersectsSphere(this.bounds))&&!shadowFrustum?.intersectsSphere(this.bounds))continue;
       const distance=this.position.distanceTo(eye)*r;
       const horizontal=Math.hypot(this.direction.x-groundDirection[0],this.direction.y-groundDirection[1],this.direction.z-groundDirection[2])*r;
       // Detailed and distant draws refer to one canonical tree. A retained
@@ -459,5 +443,5 @@ export class PlanetForest {
     radiusM:B.forestRadiusM,heightRangeM:[10,22],cellSizeM:B.forestCellM,
     allocatedBytes:[...this.meshes,this.canopy].reduce((s,m)=>s+m.instanceMatrix.array.byteLength+(m.instanceColor?.array.byteLength??0)+
       Object.values(m.geometry.attributes).reduce((n,a)=>n+a.array.byteLength,0),0)*2};}
-  dispose(){if(this.disposed)return;this.disposed=true;this.clearTreeAssets();this.worker?.terminate();this.worker=null;this.fullCanopy?.dispose();this.fullCanopy=null;for(const mesh of [...this.meshes,this.canopy]){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();}this.cache.clear();this.group.removeFromParent();}
+  dispose(){if(this.disposed)return;this.disposed=true;this.clearTreeAssets();this.worker?.terminate();this.worker=null;this.fullCanopy?.dispose();this.fullCanopy=null;for(const mesh of [...this.meshes,this.canopy]){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();mesh.customDepthMaterial?.dispose();}this.cache.clear();this.group.removeFromParent();}
 }

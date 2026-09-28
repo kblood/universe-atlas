@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {patchMorphHeader,patchMorphVertex,terrainDepthMaterial,boundMorphedTerrain} from './terrain-shadow.ts';
 import type {RenderProfile} from './render-profile.ts';
 import {attachLocalAerial,localAerialGLSL,LOCAL_AERIAL_VERSION} from './local-aerial-perspective.ts';
 import { AU, type Body, type V3 } from './catalog.ts';
@@ -519,7 +520,7 @@ export class PlanetRenderer {
       (kind, lod) => floraGeometryToBufferGeometry(buildFloraGeometryData(kind, lod, floraSeedFor(kind))),
       () => new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.FrontSide }),
     );
-    for (const mesh of this.floraRenderer.meshes) { mesh.name = 'Flora field'; mesh.frustumCulled = false; this.floraGroup.add(mesh); }
+    for (const mesh of this.floraRenderer.meshes) { mesh.name = 'Flora field'; mesh.frustumCulled = false; mesh.castShadow=true;mesh.receiveShadow=true; this.floraGroup.add(mesh); }
     this.group.add(this.floraGroup,this.faunaRenderer.group);
     this.localAirUniform.value=this.atmosphere?1:0;
     for(const group of [this.forest.group,this.floraGroup,this.faunaRenderer.group])group.traverse(object=>{
@@ -612,7 +613,7 @@ export class PlanetRenderer {
     geometry.setAttribute('groundWeights',new THREE.BufferAttribute(d.materials,4,true));
     geometry.setAttribute('uv', new THREE.BufferAttribute(d.uvs, 2));
     geometry.setIndex(new THREE.BufferAttribute(d.indices, 1));
-    geometry.computeBoundingSphere();
+    boundMorphedTerrain(geometry);
     const map = new THREE.DataTexture(d.color, d.width, d.width);
     map.colorSpace = THREE.SRGBColorSpace;
     map.minFilter = THREE.LinearMipmapLinearFilter;map.magFilter = THREE.LinearFilter;
@@ -643,11 +644,8 @@ export class PlanetRenderer {
       shader.uniforms.groundEnabled=this.groundEnabled;
       shader.uniforms.groundPatch=detail;
       shader.uniforms.groundOrigin={value:new THREE.Vector3(...detailOrigin(d.anchor,this.body.radiusM))};
-      shader.vertexShader = 'attribute vec3 parentPosition; attribute float surfaceHeight,parentHeight; uniform float patchMorph,patchTexels; uniform vec4 patchEdges; uniform vec3 tileAnchor; varying vec3 atlasSurface,atlasLocalM; varying float atlasHeightM;\n' + shader.vertexShader;
-      shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `vec2 gridUV=(uv*(patchTexels+2.0)-1.0)/patchTexels;
-        float lockEdge=max(max((1.0-step(.00001,gridUV.x))*patchEdges.x,step(.99999,gridUV.x)*patchEdges.y),max((1.0-step(.00001,gridUV.y))*patchEdges.z,step(.99999,gridUV.y)*patchEdges.w));
-        float patchBlend=patchMorph*(1.0-lockEdge);
-        vec3 transformed = mix(parentPosition, position, patchBlend); atlasSurface=transformed+tileAnchor;
+      shader.vertexShader = patchMorphHeader+'attribute float surfaceHeight,parentHeight; uniform vec3 tileAnchor; varying vec3 atlasSurface,atlasLocalM; varying float atlasHeightM;\n' + shader.vertexShader;
+      shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `${patchMorphVertex} atlasSurface=transformed+tileAnchor;
         atlasLocalM=transformed*atlasRadius; atlasHeightM=mix(parentHeight,surfaceHeight,patchBlend); ${groundVertex}`);
       shader.vertexShader=groundVertexHeader+'\n'+shader.vertexShader;
       shader.fragmentShader='uniform vec3 atlasLocalEyeM,atlasSun;uniform float atlasRadius,atlasAir,atlasRelief,atlasEyeHeightM;varying vec3 atlasSurface,atlasLocalM;varying float atlasHeightM;\n'+shader.fragmentShader;
@@ -662,13 +660,15 @@ export class PlanetRenderer {
           atlasEyeHeightM,atlasHeightM,dot(normalize(atlasSurface),atlasSun),atlasAir);
         #include <opaque_fragment>`);
     };
-    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v7/'+LOCAL_AERIAL_VERSION;
+    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v8/'+LOCAL_AERIAL_VERSION;
     const mesh = new THREE.Mesh(geometry, material);
+    mesh.receiveShadow=true;mesh.castShadow=true;material.shadowSide=THREE.DoubleSide;
+    mesh.customDepthMaterial=terrainDepthMaterial(morph,edge,d.width-2);
     mesh.position.set(...d.anchor);
     mesh.visible = false;
     mesh.userData.planetTile = key;
-    // CPU culling below uses a conservative bound covering both morph endpoints.
-    mesh.frustumCulled = false;
+    // Retained off-camera shadow casters are culled separately by each camera.
+    mesh.frustumCulled = true;
     this.group.add(mesh);
     let ocean:Patch['ocean']=null;
     if(d.oceanPositions&&d.oceanParents&&!oceanPatchCullProof({positions:d.positions,parents:d.parents,oceanPositions:d.oceanPositions,oceanParents:d.oceanParents,baseVertices:(PATCH_SEGMENTS+1)**2,anchorDir:d.anchor,radiusM:this.body.radiusM}).canCull){
@@ -711,7 +711,7 @@ export class PlanetRenderer {
   // job dispatched this frame, and `this.sample`/`this.classify` whenever the
   // bucket changes, use the SAME snapped value, so any two tiles that share a
   // bucket are bit-identical at their shared edge by construction.
-  update(observer: V3, height: number, fov: number, dt: number, immersive = false, sun: V3 = [1,0,0], frusta: THREE.Frustum[] = [], worldNs: bigint = CATALOGUE_EPOCH_NS, life: LifeGateContext | null = this.lifeContext, waterLevelM: number = 0) {
+  update(observer: V3, height: number, fov: number, dt: number, immersive = false, sun: V3 = [1,0,0], frusta: THREE.Frustum[] = [], worldNs: bigint = CATALOGUE_EPOCH_NS, life: LifeGateContext | null = this.lifeContext, waterLevelM: number = 0,shadowFrustum:THREE.Frustum|null=null) {
     if (this.disposed) return;
     this.immersiveBudget=immersive;
     this.lifeContext = life;
@@ -797,14 +797,15 @@ export class PlanetRenderer {
     // Visible forest density is centred on the observer's ground position.
     // View direction may inform future prefetch, never population coverage:
     // moving this focus ahead made turning in place replace dense forest.
-    this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta,worldNs,this.lifeContext?.treeSpecies);
-    if (this.relief === 1 && (contact||altitudeM<PLANET_DETAIL.groundLifeAltitudeM) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs); this.lifeMs=performance.now()-lifeStarted; }
+    this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta,worldNs,this.lifeContext?.treeSpecies,shadowFrustum);
+    if (this.relief === 1 && (contact||altitudeM<PLANET_DETAIL.groundLifeAltitudeM) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs,shadowFrustum); this.lifeMs=performance.now()-lifeStarted; }
     else { this.hideLife(); this.lifeMs=0; }
     const direction = eye.clone().normalize();
     const pixels = height / (2 * Math.tan(fov * Math.PI / 360));
     if(this.waterRegion){const near=Math.max(1e-9,eye.distanceTo(this.waterRegion.center)-this.waterRegion.radius);this.waterRegionActive=this.waterRegion.radius*pixels/near>=8;}else this.waterRegionActive=false;
     const projectionCache=new Map<string,{visible:boolean;score:number;contactNear:number;waterPriority:boolean;finePriority:boolean}>();
-    const viewNormals=frusta.flatMap(f=>f.planes.flatMap(p=>p.normal.toArray()));
+    const retainedFrusta=shadowFrustum?[...frusta,shadowFrustum]:frusta;
+    const viewNormals=retainedFrusta.flatMap(f=>f.planes.flatMap(p=>p.normal.toArray()));
     const rotated=viewNormals.length!==this.selectionFrustum.length||viewNormals.some((v,i)=>Math.abs(v-this.selectionFrustum[i])>.001);
     const retryDue=[...this.retryAfter].some(([key,frame])=>this.frame>=frame&&!this.failures.has(key)&&!this.pending.has(key)&&!this.patches.has(key));
     // Rebuilding a full walking quadtree every 15 idle frames caused periodic
@@ -826,7 +827,7 @@ export class PlanetRenderer {
       if(resident?.mesh.geometry.boundingSphere){
         sphere.copy(resident.mesh.geometry.boundingSphere);sphere.center.add(resident.mesh.position);
       }
-      const visible = horizon && (!frusta.length || frusta.some(f => f.intersectsSphere(sphere)));
+      const visible = horizon && (!frusta.length || retainedFrusta.some(f => f.intersectsSphere(sphere)));
       if(!changed)return {visible,score:0,contactNear:Infinity,waterPriority:false,finePriority:false};
       const nearest = closestTileDirection(t,observer);
       const elevation=resident?patchHeightAt(resident,nearest):groundHeight*this.relief;
@@ -1003,7 +1004,7 @@ export class PlanetRenderer {
     this.floraRenderer.beginFrame();this.floraRenderer.endFrame();
     this.faunaRenderer.beginFrame(this.lifeOrigin);this.faunaRenderer.endFrame();
   }
-  private updateLife(eye: THREE.Vector3, contact: THREE.Vector3, frustum: THREE.Frustum | null, worldNs: bigint): void {
+  private updateLife(eye: THREE.Vector3, contact: THREE.Vector3, frustum: THREE.Frustum | null, worldNs: bigint,shadowFrustum:THREE.Frustum|null): void {
     const life=this.lifeContext;if(!life){this.hideLife();return;}
     const signature=`${this.waterBucket}|${life.floraStage}|${life.faunaStage}|${life.floraAvailableKinds?.join(',')}|${life.faunaAvailableArchetypes?.join(',')}|${life.faunaSpecies?.map(s=>s.id).join(',')??''}`;
     if(signature!==this.lifeSignature){this.lifeSignature=signature;this.lifeScatterValid=false;this.lifeResidents.clear();this.faunaGenomes.clear();this.faunaGroundQueue=[];}
@@ -1014,8 +1015,8 @@ export class PlanetRenderer {
     this.processLifeQueue();this.rescatterMs=performance.now()-t0;
     if(!frustum){this.hideLife();return;}
     this.lifeOrigin.copy(eye);this.floraGroup.position.copy(eye);
-    const t1=performance.now();this.drawFlora(life,eye,frustum);this.drawFloraMs=performance.now()-t1;
-    const t2=performance.now();this.drawFauna(eye,worldNs,frustum);this.drawFaunaMs=performance.now()-t2;
+    const t1=performance.now();this.drawFlora(life,eye,frustum,shadowFrustum);this.drawFloraMs=performance.now()-t1;
+    const t2=performance.now();this.drawFauna(eye,worldNs,frustum,shadowFrustum);this.drawFaunaMs=performance.now()-t2;
   }
   private rescatterLife(point:THREE.Vector3):void {
     const d=point.clone().normalize().toArray() as V3,r=this.body.radiusM;
@@ -1092,7 +1093,7 @@ export class PlanetRenderer {
   /** Per-frame flora cull+draw. See the module-header UNIT-MISMATCH FINDING
    * comment above `LifeGateContext` for why this does NOT call
    * flora-culling.ts's `drawFloraCandidates` convenience wrapper directly. */
-  private drawFlora(life: LifeGateContext, eye: THREE.Vector3, frustum: THREE.Frustum): void {
+  private drawFlora(life: LifeGateContext, eye: THREE.Vector3, frustum: THREE.Frustum,shadowFrustum:THREE.Frustum|null): void {
     for (let i = 0; i < DEFAULT_FRUSTUM_PLANE_COUNT; i++) {
       const p = frustum.planes[i]!;
       packCullPlane(this.floraCullPlanes, i, p.normal.x, p.normal.y, p.normal.z, p.constant+p.normal.dot(this.lifeOrigin));
@@ -1136,12 +1137,16 @@ export class PlanetRenderer {
     // `cull()` stays in the local (radius-normalized) frame the frustum
     // planes are expressed in; LOD banding converts to real meters first.
     this.floraRenderer.beginFrame();
-    const survivorCount = this.floraCandidates.cull(this.floraCullPlanes, DEFAULT_FRUSTUM_PLANE_COUNT);
+    const survivorCount = this.floraCandidates.cull(this.floraCullPlanes, shadowFrustum?0:DEFAULT_FRUSTUM_PLANE_COUNT);
     this.floraSurvivorCount = survivorCount;
     this.floraSubmittedCount = 0;
     for (let slot = 0; slot < survivorCount; slot++) {
       const idx = this.floraCandidates.survivorIndex(slot);
       const cdx = this.floraCandidates.centerX[idx]!, cdy = this.floraCandidates.centerY[idx]!, cdz = this.floraCandidates.centerZ[idx]!;
+      if(shadowFrustum){
+        this.faunaBounds.center.set(cdx,cdy,cdz).add(this.lifeOrigin);this.faunaBounds.radius=this.floraCandidates.radius[idx];
+        if(!frustum.intersectsSphere(this.faunaBounds)&&!shadowFrustum.intersectsSphere(this.faunaBounds))continue;
+      }
       const distanceM = Math.sqrt(cdx * cdx + cdy * cdy + cdz * cdz) * radiusM;
       const lod = pickFloraLodBand(distanceM);
       if (lod === -1) continue;
@@ -1152,7 +1157,7 @@ export class PlanetRenderer {
   }
   /** Visible animals are sorted before the finite GPU budget is allocated.
    * All distances use the same individual genome and animated representation. */
-  private drawFauna(eye:THREE.Vector3,worldNs:bigint,frustum:THREE.Frustum):void {
+  private drawFauna(eye:THREE.Vector3,worldNs:bigint,frustum:THREE.Frustum,shadowFrustum:THREE.Frustum|null):void {
     const radiusM=this.body.radiusM,rigTime=faunaRigSecondsAt(worldNs);
     this.faunaRenderer.beginFrame(this.lifeOrigin);this.faunaVisibleCount=0;this.faunaCulledCount=0;this.faunaBudgetDrops=0;this.faunaDrawn=[];
     const visible:{member:FaunaHerdMember;position:THREE.Vector3;quaternion:THREE.Quaternion;distance:number;gait:ReturnType<typeof faunaMemberPoseAtWorldNs>['gait']}[]=[];
@@ -1172,7 +1177,7 @@ export class PlanetRenderer {
         const grounded=faunaGroundedTransform(this.faunaAnchorPos,this.faunaTangentRight,this.faunaTangentForward,this.faunaTangentUp,pose,this.faunaGroundHeightAt);
         const distance=eye.distanceTo(grounded.position)*radiusM;if(distance>FAUNA_FIELD_VISIBLE_M)continue;
         this.faunaBounds.center.copy(grounded.position).addScaledVector(this.faunaAnchorPos,3/radiusM);this.faunaBounds.radius=6/radiusM;
-        if(!frustum.intersectsSphere(this.faunaBounds)){this.faunaCulledCount++;continue;}
+        if(!frustum.intersectsSphere(this.faunaBounds)&&!shadowFrustum?.intersectsSphere(this.faunaBounds)){this.faunaCulledCount++;continue;}
         visible.push({member,...grounded,distance,gait:pose.gait});
       }
     }
@@ -1253,7 +1258,7 @@ export class PlanetRenderer {
   }
   /** Diagnostic experiment for the current body; deliberately not a saved quality setting. */
   setCloudSceneSamples(samples:0|2|4){if(this.clouds)this.clouds.sceneSamples=samples;}
-  private release(p: Patch) { this.reflectionRevision++;this.residentBytes=Math.max(0,this.residentBytes-p.bytes);this.group.remove(p.mesh);if(p.ocean){this.group.remove(p.ocean);p.ocean.geometry.dispose();p.ocean.material.dispose();} p.mesh.geometry.dispose(); p.map.dispose(); p.material.dispose(); }
+  private release(p: Patch) { this.reflectionRevision++;this.residentBytes=Math.max(0,this.residentBytes-p.bytes);this.group.remove(p.mesh);if(p.ocean){this.group.remove(p.ocean);p.ocean.geometry.dispose();p.ocean.material.dispose();} p.mesh.customDepthMaterial?.dispose();p.mesh.geometry.dispose(); p.map.dispose(); p.material.dispose(); }
   dispose() {
     this.disposed = true;
     for(const slot of this.workers)slot.worker.terminate();

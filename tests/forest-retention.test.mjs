@@ -68,6 +68,19 @@ test('dirty uploads keep separated edits separate and preallocate instance colou
   }finally{f.dispose();}
 });
 
+test('off-camera sun casters retain canonical slots and only leave when both frusta exclude them',()=>{
+  const {f,eye,step,upload}=fixture();try{
+    step();upload();const slots=[...f.updates[0].slots];
+    const hidden={intersectsSphere:()=>false},shadow={intersectsSphere:()=>true};
+    f.update(eye,[0,0,1],20,true,0,false,[hidden],0n,undefined,shadow);
+    assert.deepEqual([...f.updates[0].slots],slots);assert.equal(f.diagnostics().matrixWrites,0);
+    assert.ok(f.meshes.every(m=>m.castShadow&&m.receiveShadow&&m.customDepthMaterial));
+    assert.equal(f.canopy.castShadow,false,'distant canonical canopy is outside the local caster budget');
+    f.update(eye,[0,0,1],20,true,0,false,[hidden],0n,undefined,hidden);
+    assert.equal(f.visibleTrees,0);
+  }finally{f.dispose();}
+});
+
 test('owned instance attributes clear consumed upload ranges before the next sparse edit',()=>{
   const {f,eye,step}=fixture();
   const moveCellToDistance=(cell,distance)=>{

@@ -534,3 +534,13 @@ then enable the accepted result through normal desktop loading/settings.
 Separate AA experiments and additional standalone tree labs are deferred.
 The local detailed-tree integration is committed; it is not the live default
 or proof that the broader realism goal is complete.
+
+### Progress — 2026-09-28, surface lighting
+
+Luna's deployed desktop navigation and publication checks now pass for `8e16776`;
+the [receipt](../test-results/tree-forest-live/live-publication-receipt.json)
+preserves the scope and earlier failures. Shared sky fill and a metre-scaled
+local sun shadow region are implemented behind the normal surface-lighting
+setting. [Implementation and validation status](surface-lighting-2026-09-28.md):
+69 focused CPU tests and the production build pass; actual-game visual and
+performance checks are pending. The complete forest-area acceptance remains open.

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import {RenderProfile} from './render-profile.ts';
+import {SurfaceLighting} from './surface-lighting.ts';
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { AtlasVR, type VRMenu } from "./vr.ts";
 import {
@@ -435,6 +436,9 @@ camera.setViewOffset(
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.autoUpdate=false;
 const renderProfile=new RenderProfile(renderer.getContext() as WebGL2RenderingContext);
 renderProfile.setEnabled(new URLSearchParams(location.search).get('profile')==='1');
 $("viewport").append(renderer.domElement);
@@ -486,7 +490,8 @@ const genericBackdrop = new THREE.Points(
   }),
 );
 scene.add(genericBackdrop);
-scene.add(new THREE.AmbientLight("#91b3cc", 0.22));
+const ambientLight=new THREE.AmbientLight("#91b3cc", 0.22);
+scene.add(ambientLight);
 // Shared with `positionSystem`'s self-normalising re-tint below -- keep a
 // single source of truth for the light's base (pre-lifecycle) colour so the
 // two spots can never drift out of sync.
@@ -495,6 +500,8 @@ const light = new THREE.DirectionalLight(LIGHT_BASE_COLOR, 3);
 light.position.set(-12, 5, 10);
 scene.add(light);
 scene.add(light.target);
+const surfaceLighting=new SurfaceLighting(light,ambientLight);
+scene.add(surfaceLighting.sky);
 const glowCanvas = document.createElement("canvas");
 glowCanvas.width = glowCanvas.height = 64;
 const ctx = glowCanvas.getContext("2d")!;
@@ -586,6 +593,7 @@ let surfaceMesh: THREE.Mesh<
 > | null = null;
 let surfaceInfo: Surface | null = null;
 let surfaceDetail=new URLSearchParams(location.search).get('detail')!=='0';
+let surfaceLightingEnabled=new URLSearchParams(location.search).get('lighting')!=='0';
 let horizonAssist=new URLSearchParams(location.search).get('horizon')!=='0';
 let flightAlignment:({bodyId:string;altitudeM:number}&ReturnType<typeof alignPlanetaryDown>)|null=null;
 const surveys=new Map<string,SurfaceSite[]>(),surveyPending=new Set<string>();
@@ -1049,6 +1057,7 @@ function persist() {
   if(viewMode==='observed')q.set('observe','1');
   if(futureScenario!=='constant-dark-energy')q.set('fate',futureScenario);
   if(!surfaceDetail)q.set('detail','0');
+  if(!surfaceLightingEnabled)q.set('lighting','0');
   if(!horizonAssist)q.set('horizon','0');
   if(state.body?.hydrology)q.set('river',state.body.hydrology.parentCatchmentId);
   writeTimeToUrl(q,epoch);
@@ -2834,10 +2843,10 @@ function spinCompensatedSunDirection(rawSun: V3, spin: SpinState, formationNs: N
   return v.toArray() as V3;
 }
 function updatePlanetTiles(dt: number) {
-  if (!planetTiles || !surfaceMesh) return;
+  if (!planetTiles || !surfaceMesh) {surfaceLighting.disable();return;}
   root.updateMatrixWorld(true);
   const eye = renderer.xr.isPresenting ? renderer.xr.getCamera().getWorldPosition(new THREE.Vector3()) : camera.position.clone();
-  const local = planetTiles.group.worldToLocal(eye).toArray() as V3;
+  const local = planetTiles.group.worldToLocal(eye.clone()).toArray() as V3;
   const rawSun = vec(bodyPosition(state.sys!.stars[0], state.sys!, epoch))
     .sub(vec(bodyPosition(state.body!, state.sys!, epoch))).normalize().toArray() as V3;
   const bodyEntry = lifecycleFor(state.sys!, state.body!);
@@ -2849,6 +2858,11 @@ function updatePlanetTiles(dt: number) {
   light.target.position.copy(eye);
   light.position.copy(eye).addScaledVector(worldSun,12);
   light.target.updateMatrixWorld();light.updateMatrixWorld();
+  const center=bodyPosition(state.body!,state.sys!,epoch);
+  const clearance=surfaceClearance(state.body!,localPose().map((v,i)=>v-center[i]) as V3,snappedWaterLevelFor(state.body!));
+  const shadowFrustum=surfaceLighting.update({planet:planetTiles.group,radiusM:state.body!.radiusM,
+    eye,sun:worldSun,altitudeM:clearance.terrainClearance,atmosphere:state.body!.water>0,
+    enabled:surfaceLightingEnabled&&reliefScale===1,immersive:renderer.xr.isPresenting});
   const views = renderer.xr.isPresenting ? renderer.xr.getCamera().cameras : [camera];
   const frusta = views.map(view => {
     view.updateMatrixWorld();
@@ -2859,13 +2873,11 @@ function updatePlanetTiles(dt: number) {
   // planet/moon resolves it from the SAME lifecycle pair `prepareLanding`
   // already uses (`bodyEntry.lc`/`bodyEntry.starLc`), never a fresh query.
   const waterLevelM = waterLevelFor(state.body!);
-  planetTiles.update(local, innerHeight, camera.fov, dt, renderer.xr.isPresenting, sun, frusta, epoch, lifeGateContext(state.sys!, state.body!, epoch), waterLevelM);
+  planetTiles.update(local, innerHeight, camera.fov, dt, renderer.xr.isPresenting, sun, frusta, epoch, lifeGateContext(state.sys!, state.body!, epoch), waterLevelM,shadowFrustum);
   drainage?.update(planetTiles.group.matrixWorld,(Math.hypot(...local)-1)*state.body!.radiusM,reliefScale);
   if (!renderer.xr.isPresenting && state.body) {
     // Keep metre-scale depth precision without clipping the distant system.
-    const center = bodyPosition(state.body, state.sys!, epoch);
-    const info = surfaceClearance(state.body, localPose().map((v,i) => v - center[i]) as V3, snappedWaterLevelFor(state.body));
-    const near = (walker||landing ? .03:Math.max(.03, Math.min(1000, info.terrainClearance * .005))) * systemUnit;
+    const near = (walker||landing ? .03:Math.max(.03, Math.min(1000, clearance.terrainClearance * .005))) * systemUnit;
     if (Math.abs(camera.near - near) > near * .1) { camera.near = near; camera.updateProjectionMatrix(); }
   }
 }
@@ -4325,7 +4337,7 @@ function panel() {
       // rendering — "Find rivers" is navigation among existing rivers, not a
       // one-time discovery/build action.
       if(state.body!.kind==='planet'&&state.body!.water&&canonicalRegionsFor(state.body!.id).length>0)surfaceNav+=`<button id="river-find" ${riverState?.status==='building'?'disabled':''}>${riverState?.status==='building'?'Preparing a river region…':'Find rivers and a lake'}</button>`;
-      surfaceNav+=`<button id="surface-detail">Ground detail: ${surfaceDetail?'on':'off'}</button><details id="surface-survey" ${surveyOpen?'open':''}><summary>Surface destinations</summary><p class="subtle">Find named sites on this world's existing terrain. Fly to a site, then choose Land and walk.</p>${sites?sites.map(s=>`<button data-surface-site="${esc(s.id)}" class="surface-site"><strong>${esc(s.name)}</strong><span>${esc(s.category)} · ${esc(s.biome)}<br>${fmt(s.elevationM,0)} m · slope ${fmt(s.slopeDeg,1)}°</span></button>`).join(''):`<button id="survey-surface" ${surveyPending.has(surveyKey(state.body!))?'disabled':''}>${surveyPending.has(surveyKey(state.body!))?'Surveying terrain…':'Survey surface'}</button>`}<p class="subtle">Ground materials show sand, soil, rock and snow. Find rivers and a lake adds a local waterway with initial forest and ground-cover detail.</p></details>`;
+      surfaceNav+=`<button id="surface-detail">Ground detail: ${surfaceDetail?'on':'off'}</button><button id="surface-lighting">Surface lighting: ${surfaceLightingEnabled?'detailed':'basic'}</button><details id="surface-survey" ${surveyOpen?'open':''}><summary>Surface destinations</summary><p class="subtle">Find named sites on this world's existing terrain. Fly to a site, then choose Land and walk.</p>${sites?sites.map(s=>`<button data-surface-site="${esc(s.id)}" class="surface-site"><strong>${esc(s.name)}</strong><span>${esc(s.category)} · ${esc(s.biome)}<br>${fmt(s.elevationM,0)} m · slope ${fmt(s.slopeDeg,1)}°</span></button>`).join(''):`<button id="survey-surface" ${surveyPending.has(surveyKey(state.body!))?'disabled':''}>${surveyPending.has(surveyKey(state.body!))?'Surveying terrain…':'Survey surface'}</button>`}<p class="subtle">Ground materials show sand, soil, rock and snow. Find rivers and a lake adds a local waterway with initial forest and ground-cover detail.</p></details>`;
     }
     if(surfaceNav&&state.body!.water){
       const d=drainage?.data,c=drainage?.catchment();
@@ -4459,6 +4471,7 @@ function panel() {
     const c=drainage?.catchment();if(c){exploreTerrain(vec(c[site].direction));announce('Flying to '+c.name+' '+(site==='mouth'?'outlet':'headwater vicinity')+'. This is the existing terrain; channels are still in development.');}
   });
   bind('surface-detail',()=>{surfaceDetail=!surfaceDetail;planetTiles?.setSurfaceDetail(surfaceDetail);persist();panel();});
+  bind('surface-lighting',()=>{surfaceLightingEnabled=!surfaceLightingEnabled;persist();panel();});
   bind('horizon-assist',()=>{horizonAssist=!horizonAssist;persist();panel();});
   bind('walk-surface',()=>{if(walker||landing)takeoffWalk();else landOnWorld();});
   bind('hold-orbit', holdPlanetOrbit);
@@ -5133,7 +5146,11 @@ renderer.setAnimationLoop(() => {
   const infoAutoReset=renderer.info.autoReset;
   if(renderProfile.enabled){renderer.info.reset();renderer.info.autoReset=false;}
   try{
+    // Reflections reuse the last map. Only the main scene refreshes it, once
+    // per frame, including when clouds capture that scene into their target.
+    renderer.shadowMap.needsUpdate=false;
     renderProfile.pass('lakeReflection',()=>planetTiles?.renderLakeReflection(renderer,scene,camera,renderer.xr.isPresenting));
+    renderer.shadowMap.needsUpdate=light.castShadow;
     if(!planetTiles?.renderCloudScene(renderer,scene,camera,renderProfile))renderProfile.pass('scene',()=>renderer.render(scene,camera));
   }finally{renderer.info.autoReset=infoAutoReset;}
   drawCount = renderer.info.render.calls;
@@ -5267,6 +5284,7 @@ Object.defineProperty(window, "__atlas", {
         lightColorHex:light.color.getHexString(),
       };
     },
+    get surfaceLighting(){return {enabled:surfaceLightingEnabled,...surfaceLighting.diagnostics()};},
     get era(){
       const idx=eraIndexAt(epoch);
       return {id:eraCheckpoint(idx).id,label:eraCheckpoint(idx).label,tNs:eraCheckpoint(idx).tNs.toString(),

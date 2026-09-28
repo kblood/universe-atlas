@@ -30,6 +30,7 @@ export class FaunaFieldRenderer {
     this.meshes=geometries.map((g,i)=>{
       const m=new THREE.InstancedMesh(g,new THREE.MeshLambertMaterial(),FAUNA_FIELD_CAPACITY*[4,10,4,10][i]);
       m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);m.frustumCulled=false;m.count=0;
+      m.castShadow=true;m.receiveShadow=true;
       m.name=['Fauna bodies and eyes','Fauna limbs necks tails','Fauna ears and horns','Fauna feet and armour'][i];
       this.group.add(m);return m;
     });

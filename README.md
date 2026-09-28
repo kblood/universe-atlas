@@ -4,6 +4,11 @@
 
 The [desktop realism and procedural life implementation plan](docs/desktop-realism-implementation-plan-2026-09-27.md) is the current planetary graphics roadmap. Desktop quality comes first: deterministic species recipes, cached structural variants, per-instance appearance, continuous canopy, shared lighting and genome-compatible animals. Canonical canopy streaming and bounded instance uploads are implemented; richer assets and their runtime integration remain in development.
 
+[Desktop surface lighting](docs/surface-lighting-2026-09-28.md) adds atmospheric
+sky fill and bounded local sun shadows through the normal planet panel. This
+source checkpoint passes focused CPU checks and its production build; in-game
+visual/performance acceptance and deployment are pending.
+
 A deterministic Three.js universe explorer, deployed at
 https://dionysus.dk/webxr/IWSDK/universe-atlas/.
 This README describes the current repository source; the deployed build can
