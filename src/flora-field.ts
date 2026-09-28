@@ -1432,7 +1432,10 @@ function addTaperedBranch(builder: PlantGeometryBuilder, start: PlantVec3, end: 
   for (let side = 0; side < ringSides; side++) {
     const next = (side + 1) % ringSides;
     const a = baseIndex + side, b = baseIndex + next, c = baseIndex + ringSides + side, d = baseIndex + ringSides + next;
-    builder.indices.push(a, c, b, b, c, d);
+    // With `up = axis × right`, ring angle advances around the outward radial
+    // direction. The same outward triangle order as addWoodyTube is
+    // (base[k], base[next], top[k]); the previous order faced into the stem.
+    builder.indices.push(a, b, c, b, d, c);
   }
 }
 

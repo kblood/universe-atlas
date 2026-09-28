@@ -158,6 +158,33 @@ test('geometry builders construct valid triangle data for every kind and LOD wit
   }
 });
 
+test('woody tree and flower triangles face the side their vertex normals describe', () => {
+  const expectedTriangles = { tree: [491, 133, 131], flower: [39, 26, 23] };
+  for (const kind of ['tree', 'flower']) {
+    for (let lod = 0; lod < FLORA_LOD_COUNT; lod++) {
+      const data = buildFloraGeometryData(kind, lod, 0x1234 + lod);
+      assert.equal(data.triangleCount, expectedTriangles[kind][lod], `${kind} LOD${lod} topology/count stays unchanged`);
+      for (let triangle = 0; triangle < data.indices.length; triangle += 3) {
+        const ia = data.indices[triangle] * 3;
+        const ib = data.indices[triangle + 1] * 3;
+        const ic = data.indices[triangle + 2] * 3;
+        const ux = data.positions[ib] - data.positions[ia];
+        const uy = data.positions[ib + 1] - data.positions[ia + 1];
+        const uz = data.positions[ib + 2] - data.positions[ia + 2];
+        const vx = data.positions[ic] - data.positions[ia];
+        const vy = data.positions[ic + 1] - data.positions[ia + 1];
+        const vz = data.positions[ic + 2] - data.positions[ia + 2];
+        const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+        const area = Math.hypot(nx, ny, nz);
+        assert.ok(area > 1e-12, `${kind} LOD${lod} triangle ${triangle / 3} is nondegenerate`);
+        const normalDot = [ia, ib, ic].reduce((sum, offset) =>
+          sum + nx * data.normals[offset] + ny * data.normals[offset + 1] + nz * data.normals[offset + 2], 0) / (3 * area);
+        assert.ok(normalDot > 0.1, `${kind} LOD${lod} triangle ${triangle / 3} winding agrees with its normals (${normalDot})`);
+      }
+    }
+  }
+});
+
 test('space-colonization tree growth is deterministic and produces a usable skeleton', () => {
   const a = generateProceduralTreeSkeleton({ seed: 777 });
   const b = generateProceduralTreeSkeleton({ seed: 777 });
