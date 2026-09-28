@@ -1,0 +1,94 @@
+{
+  "ok": true,
+  "base": "http://127.0.0.1:5199/",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "date": {
+    "version": "atlas-time-2",
+    "reference": "big-bang",
+    "offsetNs": "435084631200000068317800000",
+    "branchId": "baseline"
+  },
+  "movedM": 110.76221779873904,
+  "groundMovedM": 110.73772576017767,
+  "beforeCache": {
+    "patches": 6731,
+    "estimatedBytes": 17202896,
+    "maxBytes": 33554432,
+    "maxEntries": 30000,
+    "hits": 6656,
+    "misses": 41,
+    "visited": 6697,
+    "evictionsTotal": 0
+  },
+  "cache": {
+    "patches": 6788,
+    "estimatedBytes": 17348174,
+    "maxBytes": 33554432,
+    "maxEntries": 30000,
+    "hits": 6655,
+    "misses": 32,
+    "visited": 6687,
+    "evictionsTotal": 0
+  },
+  "transfer": {
+    "bytes": 1732896,
+    "cells": 18051,
+    "packMs": 15.299999998882413,
+    "decodeMs": 4.5
+  },
+  "workerResponsesBefore": 2,
+  "movedResponses": [
+    {
+      "requestId": 3,
+      "selectionMs": 53.30000000074506,
+      "packMs": 25.59999999962747,
+      "transferBytes": 1733568,
+      "transferCells": 18058,
+      "patches": 6756,
+      "estimatedBytes": 17267592,
+      "maxBytes": 33554432,
+      "maxEntries": 30000,
+      "hits": 6661,
+      "misses": 25,
+      "visited": 6686,
+      "evictionsTotal": 0
+    },
+    {
+      "requestId": 4,
+      "selectionMs": 25.200000001117587,
+      "packMs": 15.299999998882413,
+      "transferBytes": 1732896,
+      "transferCells": 18051,
+      "patches": 6788,
+      "estimatedBytes": 17348174,
+      "maxBytes": 33554432,
+      "maxEntries": 30000,
+      "hits": 6655,
+      "misses": 32,
+      "visited": 6687,
+      "evictionsTotal": 0
+    }
+  ],
+  "forest": {
+    "before": {
+      "visible": 2024,
+      "cached": 18309,
+      "pending": 0
+    },
+    "after": {
+      "visible": 2029,
+      "cached": 18721,
+      "pending": 0,
+      "workerRestarts": 0,
+      "workerFailures": 0
+    }
+  },
+  "life": {
+    "floraPresent": 1625,
+    "faunaDrawn": 128,
+    "faunaTerrainPending": 0,
+    "surfaceReady": true
+  },
+  "errors": []
+}
