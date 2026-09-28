@@ -1,0 +1,323 @@
+{
+  "schemaVersion": 1,
+  "operation": "tree-impostor-capture-audit-1",
+  "status": "pass-with-capture-limitation",
+  "checkedAt": "2026-09-28T06:29:13.547Z",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "adapterNote": "Determinism is verified only between same-adapter RTX 5090 D3D11 runs.",
+  "sourceCandidate": "Assets/_assetctl/atlas-tree-v7-color-a",
+  "sourceHashes": {
+    "asset-brief.json": "fd9bb11a0630dd4ad1d207156265aadaf36ae50f5f7ced9ff05e39505802d072",
+    "authoring-manifest.json": "07166b5f61bd827ee02fcd6c1b60575d8a4625e732293e36379d54c1b6aa494d",
+    "atlas-branching-v1.glb": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df",
+    "atlas-branching-v1.lod1.glb": "6d071f129ff4dae730b3ad08b6b012bdab4d8f35070170776ea4adb27a865b25"
+  },
+  "captures": [
+    {
+      "path": "Assets/_assetctl/tree-impostor-v7-color-a-v2-full-a",
+      "options": {
+        "grid": 9,
+        "size": 128,
+        "supersample": 4,
+        "heightM": 16
+      },
+      "views": 81,
+      "frames": 648,
+      "artifacts": 2592,
+      "coverageSum": 258570.6875,
+      "coveredSamples": 4137131,
+      "radius": 8.262592499358446,
+      "bounds": {
+        "min": [
+          -5.846503734588623,
+          0,
+          -5.393500804901123
+        ],
+        "max": [
+          5.975094318389893,
+          16.000028610229492,
+          4.909943103790283
+        ],
+        "windMargin": 0.13264757571117325
+      }
+    },
+    {
+      "path": "Assets/_assetctl/tree-impostor-v7-color-a-v2-full-b",
+      "options": {
+        "grid": 9,
+        "size": 128,
+        "supersample": 4,
+        "heightM": 16
+      },
+      "views": 81,
+      "frames": 648,
+      "artifacts": 2592,
+      "coverageSum": 258570.6875,
+      "coveredSamples": 4137131,
+      "radius": 8.262592499358446,
+      "bounds": {
+        "min": [
+          -5.846503734588623,
+          0,
+          -5.393500804901123
+        ],
+        "max": [
+          5.975094318389893,
+          16.000028610229492,
+          4.909943103790283
+        ],
+        "windMargin": 0.13264757571117325
+      }
+    },
+    {
+      "path": "Assets/_assetctl/tree-impostor-v7-color-a-v2-small-10m",
+      "options": {
+        "grid": 3,
+        "size": 32,
+        "supersample": 2,
+        "heightM": 10
+      },
+      "views": 9,
+      "frames": 54,
+      "artifacts": 216,
+      "coverageSum": 1740,
+      "coveredSamples": 6960,
+      "radius": 5.449467251756727,
+      "bounds": {
+        "min": [
+          -4.11342316865921,
+          0,
+          -3.8093783259391785
+        ],
+        "max": [
+          4.158468842506409,
+          10.369539022445679,
+          3.4899017214775085
+        ],
+        "windMargin": 0.13264757571117325
+      }
+    },
+    {
+      "path": "Assets/_assetctl/tree-impostor-v7-color-a-v2-small-22m",
+      "options": {
+        "grid": 3,
+        "size": 32,
+        "supersample": 2,
+        "heightM": 22
+      },
+      "views": 9,
+      "frames": 54,
+      "artifacts": 216,
+      "coverageSum": 238.25,
+      "coveredSamples": 953,
+      "radius": 11.084753612043272,
+      "bounds": {
+        "min": [
+          -7.579584300518036,
+          0,
+          -6.977623283863068
+        ],
+        "max": [
+          7.7917197942733765,
+          21.630518198013306,
+          6.329984486103058
+        ],
+        "windMargin": 0.13264757571117325
+      }
+    }
+  ],
+  "fullRepeat": {
+    "sameManifestBytes": true,
+    "identicalArtifacts": 2592,
+    "allOutputArtifactBytesMatch": true
+  },
+  "imageDataAudit": {
+    "coveredPixels": 435303,
+    "barkCoveredPixels": 24063,
+    "leafCoveredPixels": 333519,
+    "depthRange": [
+      -0.8630101680755615,
+      0.9682208895683289
+    ],
+    "maxNormalLengthError": {
+      "value": 4.995500768600891e-8,
+      "path": "view-037/mip-0.albedo.png"
+    },
+    "maxSrgbByteError": {
+      "value": 0,
+      "path": null
+    },
+    "maxCoverageMipAreaError": 0,
+    "totalBaseCoverage": 258570.6875,
+    "manifestCoverageSum": 258570.6875,
+    "mipChecks": 648,
+    "duplicateSouthPoleFiles": [
+      {
+        "mip": 0,
+        "suffix": "albedo.png",
+        "sha256": "f2711806eb7c59c57a83db1e3615cbfe9bead023207288084321926942b58d90"
+      },
+      {
+        "mip": 0,
+        "suffix": "colour.f32",
+        "sha256": "8eaf88274a17d1add22c339b34086aecbad6b04e67bc41de3d56c84ae53f6467"
+      },
+      {
+        "mip": 0,
+        "suffix": "data.f32",
+        "sha256": "886ed2bfdf896b28d7e8b768bb74c292e3c5b1197aa9538f761ca4df080b8ea5"
+      },
+      {
+        "mip": 1,
+        "suffix": "albedo.png",
+        "sha256": "3ab1d24bc990edbba87dc20280cb534cf96689f055cdcbe4f8edec2146e9acf7"
+      },
+      {
+        "mip": 1,
+        "suffix": "colour.f32",
+        "sha256": "a5d88fcbfdea236c7f826091f4269e95be09f993516c003dd0f80cc478956148"
+      },
+      {
+        "mip": 1,
+        "suffix": "data.f32",
+        "sha256": "2e48b384d7f737f974a81f4247bd3423ebff55ad5bdfc502cdf8d58c2f5bf2a9"
+      },
+      {
+        "mip": 2,
+        "suffix": "albedo.png",
+        "sha256": "ff44f4fa38c52c79be25c3398b39881f2ce071994e8661c2e96cf3490597e39b"
+      },
+      {
+        "mip": 2,
+        "suffix": "colour.f32",
+        "sha256": "ef3dff5baab8e14c1f0d9ce2733ea9e0eb2f0b45e7c0c5fde70d8ec7e345dcc8"
+      },
+      {
+        "mip": 2,
+        "suffix": "data.f32",
+        "sha256": "b91f2c1e945bab9748d098eecc9f0a142ff5cb30a6646b3668dd2ac4ee3f8965"
+      },
+      {
+        "mip": 3,
+        "suffix": "albedo.png",
+        "sha256": "2bb7f7f171a8356f13ef29570dd799aa898c1f3b232e3a04245be3f09895da8a"
+      },
+      {
+        "mip": 3,
+        "suffix": "colour.f32",
+        "sha256": "f82c6e5fdd8669af27852e65643b9ccf48e3bed1f565385e4ebeb4ed6e750648"
+      },
+      {
+        "mip": 3,
+        "suffix": "data.f32",
+        "sha256": "cabf5ff9c9448355c0f3ab3e29a3a9fe3418fe75a0920108eef8e4dab04cd18c"
+      },
+      {
+        "mip": 4,
+        "suffix": "albedo.png",
+        "sha256": "970775962cebe10720940bb75a9f9da2ddc53965313c315f5d41716d41641eb5"
+      },
+      {
+        "mip": 4,
+        "suffix": "colour.f32",
+        "sha256": "c7e71f2504f556f1a2ca6c65a458b9b839819550ea3f0e3f0fa6196529398643"
+      },
+      {
+        "mip": 4,
+        "suffix": "data.f32",
+        "sha256": "7fe9bd5f31fb7e99d26dbfe8bbff5a1bfef97281a1b2ae7e89915902143dbe24"
+      },
+      {
+        "mip": 5,
+        "suffix": "albedo.png",
+        "sha256": "f2e7209a054a12d91c82b6f5f4af2c4d48bab49a1b25c8066caf5c30d4473cad"
+      },
+      {
+        "mip": 5,
+        "suffix": "colour.f32",
+        "sha256": "e024c81d5efdcf484704f3fde1b10c219bfe4f1e00bdbae887ffe38f278e506f"
+      },
+      {
+        "mip": 5,
+        "suffix": "data.f32",
+        "sha256": "67450caa940cbca4257eb7fe1cf0f9f17b1aecb58c9a393cadb04d5c73db9dc6"
+      },
+      {
+        "mip": 6,
+        "suffix": "albedo.png",
+        "sha256": "8a200f0eaefb9edd91e57c6104cc22c9dcf414c7698573b21275970f2ba4c0ff"
+      },
+      {
+        "mip": 6,
+        "suffix": "colour.f32",
+        "sha256": "7f365c7dc277ba809741b952bc972289ef02b8c2ebd83cb2f43b33aaab00eb5f"
+      },
+      {
+        "mip": 6,
+        "suffix": "data.f32",
+        "sha256": "914b0bc8de5e1820ebb3f7e78c3316ae7689d3434c898cd8960d9844a12fb53a"
+      },
+      {
+        "mip": 7,
+        "suffix": "albedo.png",
+        "sha256": "425a660f330281401fc2f670832fecdf5879661af168679e4461090f07c52fc4"
+      },
+      {
+        "mip": 7,
+        "suffix": "colour.f32",
+        "sha256": "d4e888cedb63647ee9b808db8a29c2f55bd68f038b283bb90523a6e63d1df234"
+      },
+      {
+        "mip": 7,
+        "suffix": "data.f32",
+        "sha256": "44af3cd5ec3c2f5eca2fad9512eff6758d37bf9116caea9930cf2b998c2ee0da"
+      }
+    ]
+  },
+  "scaling": {
+    "height10BoundMaxY": 10.369539022445679,
+    "height16BoundMaxY": 16.000028610229492,
+    "height22BoundMaxY": 21.630518198013306,
+    "heightAndWidthMonotonic": true,
+    "rawAudits": [
+      {
+        "heightM": 10,
+        "coveredBarkPixels": 195,
+        "coveredFoliagePixels": 2765,
+        "depthRange": [
+          -0.48080483078956604,
+          0.9514269232749939
+        ],
+        "maxPngSrgbByteError": 0,
+        "mipCoverageViews": 9
+      },
+      {
+        "heightM": 22,
+        "coveredBarkPixels": 1115,
+        "coveredFoliagePixels": 0,
+        "depthRange": [
+          -0.557468056678772,
+          0.9756878614425659
+        ],
+        "maxPngSrgbByteError": 0,
+        "mipCoverageViews": 9
+      }
+    ]
+  },
+  "captureLimitations": [
+    "At the requested 22m / 32px / 2x diagnostic setting, foliage classification is absent across all views and mips; coverage is bark-only. This is a resolution/material-coverage limitation and is not an accepted tree asset result."
+  ],
+  "guards": {
+    "invalidOptionsRejected": true,
+    "outsidePathRejectedBeforeOutput": true,
+    "invalidProvenanceRejectedBeforeOutput": true,
+    "existingOutputRejectedUnchanged": true,
+    "invalidFixture": "Assets/_assetctl/tree-impostor-v7-invalid-provenance-62416"
+  },
+  "elapsedAuditMs": 3031,
+  "limitations": [
+    "Capture output is a proposal requiring render and runtime comparison.",
+    "No runtime impostor, LOD handoff, or in-game use was exercised.",
+    "Determinism is established only on the recorded GPU/driver/browser adapter."
+  ]
+}

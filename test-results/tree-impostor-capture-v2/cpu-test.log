@@ -1,0 +1,22 @@
+✔ reduction computes area coverage, unassociated linear RGB, normal vectors, leaf fraction and frontmost covered depth (1.1436ms)
+✔ normal reduction averages Cartesian object-space vectors directly (0.2968ms)
+✔ normals straddling an octahedral seam average toward the downward direction in Cartesian space (0.1554ms)
+✔ near-antipodal normal result uses the deepest covered source normal as deterministic fallback (0.1543ms)
+✔ frontmost depth ignores uncovered samples and empty output texels stay empty (0.9306ms)
+✔ mean area coverage is conserved through a complete factor-two mip chain (0.211ms)
+✔ padding copies nearest covered material/data without growing coverage, wrapping tiles or mutating input (0.6315ms)
+✔ invalid reduction and padding arguments are rejected (0.5767ms)
+✔ octahedral encoding round-trips axes, poles, fold seams and extreme finite magnitudes (12.2331ms)
+✔ odd capture grids provide three-view enclosing cones over every cell, fold, pole and sampled sphere direction (117.6087ms)
+✔ view builders reject invalid grids without mutating direction inputs or emitting inverted UV triangles (3.7669ms)
+✔ duplicated octahedral corner captures for the south pole have identical bases (0.7799ms)
+✔ seam and pole neighborhoods remain covered without imposing cross-threshold basis continuity (1.6069ms)
+✔ stored capture bases are deterministic, finite, orthonormal and right-handed, including fallback poles (2.8974ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 258.0601
