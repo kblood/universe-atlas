@@ -1,0 +1,6 @@
+{
+  "sessionId": "5870d674-6834-4126-a977-f5c2fbba3b48",
+  "pid": 52992,
+  "command": "claude.exe --print --model claude-opus-5-5 --effort high --output-format json --tools Read Edit Write Bash --allowedTools Read Edit Write Bash --strict-mcp-config --disable-slash-commands --no-session-persistence --safe-mode --permission-mode dontAsk --session-id 5870d674-6834-4126-a977-f5c2fbba3b48",
+  "startedAt": "2026-09-28T18:35:42.926Z"
+}
