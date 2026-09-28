@@ -5,6 +5,7 @@ import type {BufferAttribute} from 'three';
 export class ForestDirtyBlocks {
   private blocks:Uint8Array;private dirty=false;private capacity:number;private blockSize:number;
   constructor(capacity:number,blockSize=64){this.capacity=capacity;this.blockSize=blockSize;this.blocks=new Uint8Array(Math.ceil(capacity/blockSize));}
+  get byteLength(){return this.blocks.byteLength;}
   mark(index:number){this.blocks[Math.floor(index/this.blockSize)]=1;this.dirty=true;}
   clear(){this.blocks.fill(0);this.dirty=false;}
   flush(attribute:BufferAttribute){

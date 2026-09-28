@@ -447,6 +447,9 @@ export class ForestImpostors {
   }
   /** Adopt (or clear) a baked far atlas. Crowns fall back to the analytic
    * family bands whenever a family has no ready atlas. */
+  /** CPU-only bitsets beside the instance attributes. Typed mesh arrays are
+   * counted from `mesh.geometry` by the forest resource ledger. */
+  memorySidecarBytes(){return this.ownershipBlocks.byteLength+this.staticDirty.reduce((n,blocks)=>n+blocks.byteLength,0);}
   setFamilyAtlas(kind:'branching'|'spire',atlas:ForestFamilyAtlas|null){
     const family=kind==='branching'?0:1;
     if(atlas&&(![atlas.sphere.x,atlas.sphere.y,atlas.sphere.z,atlas.sphere.w].every(Number.isFinite)||atlas.sphere.w<=0||!atlas.colour?.texture||!atlas.data?.texture))

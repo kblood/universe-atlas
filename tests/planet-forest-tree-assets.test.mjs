@@ -8,6 +8,7 @@ const {PlanetForest}=await vite.ssrLoadModule('/src/planet-forest.ts');
 const {forestTreeCatalogue}=await vite.ssrLoadModule('/src/forest-tree-catalogue.ts');
 const {PlanetCanopy}=await vite.ssrLoadModule('/src/planet-canopy.ts');
 const {unpackForestPresentation}=await vite.ssrLoadModule('/src/forest-presentation.ts');
+const {forestMeshBufferFootprint}=await vite.ssrLoadModule('/src/forest-resource-accounting.ts');
 const {galaxies,refByAddress,system}=await vite.ssrLoadModule('/src/catalog.ts');
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 after(()=>vite.close());
@@ -201,13 +202,77 @@ test('successful replacement disposes previous batches/family only after replace
     await load(f);const first=h.families[0],firstBatches=h.batches.slice();assert.equal(f.assets.revision,1);
     let resolve;const loader=async()=>new Promise(r=>{resolve=r;});f.treeLoader=loader;
     const pending=load(f);assert.equal(first.disposed,undefined,'old family remains live while replacement loads');assert.equal(f.assets.revision,1);
-    const replacement={forestCoverage:true,maxRadiusM:30,setDate(){},createBatch(lod){return {lod,group:new THREE.Group(),setInstance(){},setAppearance(){},setCoverage(){},setCount(){},dispose(){}};},dispose(){}};
+    const observations=[];
+    const replacement={forestCoverage:true,maxRadiusM:30,setDate(){},createBatch(lod){
+      observations.push({pending:f.assets.pendingEntries.size,diagnostic:f.diagnostics().memoryAccounting.pendingFamilyReplacements});
+      return {lod,group:new THREE.Group(),setInstance(){},setAppearance(){},setCoverage(){},setCount(){},dispose(){}};
+    },dispose(){}};
     resolve(replacement);assert.equal(await pending,true);
+    assert.deepEqual(observations,[{pending:1,diagnostic:1},{pending:1,diagnostic:1}],
+      'both bounded LOD batches remain visible to memory accounting until atomic adoption');
     assert.equal(f.assets.revision,2);
     assert.equal(first.disposed,1);assert.ok(firstBatches.every(b=>b.disposed===1));
     assert.equal(f.diagnostics().detailedTrees.ready,true);
+    assert.equal(f.diagnostics().memoryAccounting.pendingFamilyReplacements,0,'adopted family is no longer counted as staging');
     f.clearTreeAssets();assert.equal(f.assets.revision,3);
     f.clearTreeAssets();assert.equal(f.assets.revision,3,'clearing an empty library does not change presentation');
+  }finally{f.dispose();}
+});
+
+test('resource accounting includes pending family ownership and releases replaced resources once',async()=>{
+  const {f}=fixture(),makeFamily=(onBatch=()=>{})=>{
+    const lods=[0,1].map(()=>Array.from({length:2},()=>{
+      const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(9),3));return {geometry};
+    }));
+    const texture={image:{width:4,height:4},mipmaps:[],generateMipmaps:false,minFilter:THREE.LinearFilter,
+      format:THREE.RGBAFormat,type:THREE.UnsignedByteType};
+    return {forestCoverage:true,maxRadiusM:10,lods,textures:new Set([texture]),embeddedTextureBytes:13,
+      setDate(){},createBatch(lod,capacity){onBatch();const meshes=lods[lod].map(source=>({geometry:source.geometry.clone(),
+        instanceMatrix:new THREE.InstancedBufferAttribute(new Float32Array(capacity*16),16),
+        instanceColor:new THREE.InstancedBufferAttribute(new Float32Array(capacity*3),3)}));
+        return {group:new THREE.Group(),meshes,setInstance(){},setAppearance(){},setCoverage(){},setCount(){},dispose(){for(const mesh of meshes)mesh.geometry.dispose();}};
+      },dispose(){for(const lod of lods)for(const mesh of lod)mesh.geometry.dispose();}};
+  };
+  try{
+    f.treeLoader=async()=>makeFamily();await load(f);
+    const adopted=f.diagnostics().memoryAccounting;
+    assert.ok(adopted.familyBufferCpuBytes>0);assert.equal(adopted.familyTextureCount,1);
+    assert.equal(adopted.familyGpuTextureEstimateBytes,64);assert.equal(adopted.embeddedImageFileBytes,13);
+    const observations=[];let resolve;
+    f.treeLoader=()=>new Promise(r=>{resolve=()=>r(makeFamily(()=>observations.push(f.diagnostics().memoryAccounting)));});
+    const pending=load(f);resolve();assert.equal(await pending,true);
+    assert.equal(observations.length,2);
+    assert.ok(observations.every(value=>value.pendingFamilyReplacements===1),'staging family remains owned while both LOD batches are created');
+    assert.ok(observations.every(value=>value.familyBufferCpuBytes>adopted.familyBufferCpuBytes),'old and staged families are both counted during replacement');
+    const replaced=f.diagnostics().memoryAccounting;
+    assert.equal(replaced.pendingFamilyReplacements,0);assert.equal(replaced.familyBufferCpuBytes,adopted.familyBufferCpuBytes);
+    const beforeAtlas=f.diagnostics().allocatedBytes;
+    f.farAtlases.set('branching',{diagnostics:()=>({bytes:1000,scratchBytes:100,captureBatchCpuBytes:50,
+      captureBatchGpuEstimateBytes:60,buildScratchPeakGpuBytes:300})});
+    const withAtlas=f.diagnostics();
+    assert.equal(withAtlas.memoryAccounting.farAtlasResidentGpuBytes,1000);
+    assert.equal(withAtlas.memoryAccounting.farAtlasScratchGpuBytes,100);
+    assert.equal(withAtlas.memoryAccounting.farAtlasCaptureBufferCpuBytes,50);
+    assert.equal(withAtlas.allocatedBytes-beforeAtlas,1210,'current total includes resident, scratch and capture buffers once');
+    assert.equal(withAtlas.memoryAccounting.estimatedPeakGpuBytes-withAtlas.memoryAccounting.estimatedGpuBytes,140,
+      'peak reports the complete transient atlas allocation, not just the current incomplete slice');
+    f.farAtlases.delete('branching');assert.equal(f.diagnostics().allocatedBytes,beforeAtlas,'released atlas resources leave the estimate');
+    f.clearTreeAssets();
+    const cleared=f.diagnostics().memoryAccounting;
+    assert.equal(cleared.familyBufferCpuBytes,0);assert.equal(cleared.familyTextureCount,0);
+  }finally{f.dispose();}
+});
+
+test('resource accounting includes canopy host arrays and canonical far-instance buffers',()=>{
+  const {f}=fixture(),canopy=new PlanetCanopy(body,64);f.fullCanopy=canopy;
+  try{
+    const memory=f.diagnostics().memoryAccounting,canopyBytes=canopy.memoryUsage();
+    assert.equal(memory.canopyHostPersistentCpuBytes,64*3*8+64*8+64*4+canopy.renderer.memorySidecarBytes());
+    assert.equal(memory.canopyCurrentScratchCpuBytes,0);
+    assert.equal(memory.legacyBufferCpuBytes,forestMeshBufferFootprint([...f.meshes,f.canopy,canopy.renderer.mesh]).totalBytes,
+      'far instance attributes are in the same shared-buffer accounting pass');
+    assert.deepEqual(memory.allocationCaps.legacyInstanceSlots,[192,4096,8192]);
+    assert.equal(canopyBytes.hostScratchPeakCpuBytes,64*3*4);
   }finally{f.dispose();}
 });
 
