@@ -46,7 +46,17 @@ test('stationary retained nonroot terrain leaf refreshes its water bucket while 
     catch(error){worker.onmessage?.({data:{key:data.key,error:String(error),waterBucket:data.waterBucket}});}
   }
   globalThis.Worker=ControlledWorker;
-  const renderer=new PlanetRenderer(body,host,maithea.radiusM,1,1);
+  // PlanetRenderer acquires browser PNG textures in its constructor. This CPU
+  // tile-refresh fixture never renders them, so return tiny uploadable textures
+  // instead of allowing Three.ImageLoader to reference `document` in Node.
+  const nativeTextureLoad=THREE.TextureLoader.prototype.load;
+  THREE.TextureLoader.prototype.load=function(_url,onLoad){
+    const texture=new THREE.DataTexture(new Uint8Array([128,128,128,255]),1,1,THREE.RGBAFormat);
+    texture.needsUpdate=true;onLoad?.(texture);return texture;
+  };
+  let renderer;
+  try{renderer=new PlanetRenderer(body,host,maithea.radiusM,1,1);}
+  finally{THREE.TextureLoader.prototype.load=nativeTextureLoad;}
   const eye=[1.01,0,0],sun=[1,0,0],frame=async water=>{renderer.update(eye,1080,65,1/60,false,sun,[],undefined,null,water);await new Promise(resolve=>setImmediate(resolve));};
   try{
     let diagnostics;
@@ -80,7 +90,7 @@ test('stationary retained nonroot terrain leaf refreshes its water bucket while 
     assert.equal(renderer.patches.get(leafKey)?.waterBucket,-179,'replacement echoes and installs the requested water bucket');
     assert.equal(renderer.diagnostics().staleWaterPatches,0,'all visible retained leaves are fresh after their responses drain');
   } finally {
-    renderer.dispose();host.geometry.dispose();host.material.dispose();globalThis.Worker=SavedWorker;
+    renderer?.dispose();host.geometry.dispose();host.material.dispose();globalThis.Worker=SavedWorker;
     const target=resolve(directory);
     assert.equal(dirname(target),resolve(tmpdir()));
     assert.ok(basename(target).startsWith('atlas-water-refresh-'));
