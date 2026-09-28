@@ -217,6 +217,13 @@ reconstruction reviews are archived with hashes; remaining rendering
 suggestions are not implemented wholesale. No capture asset is accepted or
 bound to a species.
 
+Following the user's request to check existing methods, the next tree increment
+starts with an [existing-implementation comparison](tree-existing-methods-2026-09-28.md).
+Benchmark a pinned EZ-Tree preset against the current generated family under
+the same scale, camera and lighting, and compare the Three.ez impostor reference
+on the same source asset before extending custom reconstruction. The source
+review establishes candidates; it does not establish visual or runtime winners.
+
 Stages have dependencies. Beginning this programme does not mean replacing all
 subsystems at once. The first code increment targets B so detailed assets have
 a more stable population renderer underneath them. It does not claim a realistic
