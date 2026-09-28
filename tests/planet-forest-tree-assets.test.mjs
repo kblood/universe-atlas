@@ -6,6 +6,8 @@ import {createServer} from 'vite';
 const vite=await createServer({configFile:false,optimizeDeps:{noDiscovery:true},server:{middlewareMode:true,hmr:false,ws:false},appType:'custom'});
 const {PlanetForest}=await vite.ssrLoadModule('/src/planet-forest.ts');
 const {forestTreeCatalogue}=await vite.ssrLoadModule('/src/forest-tree-catalogue.ts');
+const {PlanetCanopy}=await vite.ssrLoadModule('/src/planet-canopy.ts');
+const {unpackForestPresentation}=await vite.ssrLoadModule('/src/forest-presentation.ts');
 const {galaxies,refByAddress,system}=await vite.ssrLoadModule('/src/catalog.ts');
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 after(()=>vite.close());
@@ -47,6 +49,36 @@ function fixture(opts={}){
   return {f,h,eye,cells,step};
 }
 const load=async(f)=>f.loadTreeAssets(new ArrayBuffer(8),new ArrayBuffer(8));
+
+test('near and distant family selection share the dated catalogue and adopted library revision',async()=>{
+  const {f,h,cells,step}=fixture();
+  try{
+    await load(f);
+    h.families[0].canopyPresentation={enabled:true,lod1Profile:{referenceHeightM:16,maxLeafOffsetM:.5,
+      bands:Array.from({length:4},(_,i)=>({centerM:[0,i*4+2,0],radiusM:2,halfHeightM:1.5,populated:true}))},
+      conservativeBounds:{radiusM:25},barkLinearRgb:[.1,.08,.06],foliageLinearRgb:[.03,.08,.02]};
+    f.fullCanopy=new PlanetCanopy(body,64);
+    const dated=[species('oak'),species('ash'),species('pine','spire')];step(dated,123n);
+    const catalogue=forestTreeCatalogue(dated),key=f.fullCanopy.diagnostics().presentation.key;
+    for(const cell of cells){
+      const binding=catalogue.resolve(cell.id),code=f.fullCanopy.presentationResolve(cell.id,cell.heightM);
+      const decoded=unpackForestPresentation(code),supported=cell.heightM<=22&&binding.recipe.family==='branching';
+      assert.equal(decoded.kind,supported?'branching':null);
+      if(supported){
+        assert.ok(Math.abs(decoded.bark-binding.appearance.barkBrightness)<.001);
+        assert.ok(Math.abs(decoded.foliage-binding.appearance.foliageBrightness)<.001);
+        assert.equal(code,f.expectedCanopyPresentation(f.cache.get(cell.id)));
+      }
+    }
+    step([...dated].reverse(),123n);assert.equal(f.fullCanopy.diagnostics().presentation.key,key,'enumeration changes preserve the shared presentation revision');
+    step([],124n);assert.notEqual(f.fullCanopy.diagnostics().presentation.key,key);
+    assert.equal(f.fullCanopy.presentationResolve(cells[0].id,16),0);
+    step(dated,123n);assert.equal(f.fullCanopy.renderer.uniforms.treeFamilyBounds.value.x,25);
+    f.clearTreeAssets();step(dated,123n);
+    assert.equal(f.fullCanopy.presentationResolve(cells[0].id,16),0);
+    assert.equal(f.fullCanopy.renderer.uniforms.treeFamilyBounds.value.x,0,'turning basic restores distant fallback immediately');
+  }finally{f.dispose();}
+});
 
 test('dated catalogue attaches detailed branching instances while spire and unsupported heights retain legacy coverage',async()=>{
   const {f,h,cells,step}=fixture();

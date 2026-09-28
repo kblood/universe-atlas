@@ -10,6 +10,17 @@ export default defineConfig({
       builtAt:new Date().toISOString(),
     },null,2)});
     for(const fileName of [
+      'docs/family-canopy-2026-09-28.md',
+      'docs/opus-near-far-family-assessment-2026-09-28.md',
+      'test-results/opus-near-far-family-review/review.md',
+      'test-results/opus-near-far-family-review/inputs.json',
+      'test-results/opus-near-far-family-review/response.json',
+      'test-results/opus-near-far-family-review/paired-390m-followup/review.md',
+      'test-results/opus-near-far-family-review/paired-390m-followup/inputs.json',
+      'test-results/opus-near-far-family-review/paired-390m-followup/response.json',
+      'src/forest-presentation.ts','src/tree-canopy-profile.ts','src/forest-impostor.ts',
+      'tests/forest-presentation.test.mjs','tests/tree-canopy-profile.test.mjs','tests/forest-impostor-family.test.mjs',
+      'test-results/forest-asset-loading/family-canopy-cpu.log',
       'docs/forest-asset-loading-2026-09-28.md',
       'src/forest-asset-source.ts',
       'tests/forest-asset-source.test.mjs',

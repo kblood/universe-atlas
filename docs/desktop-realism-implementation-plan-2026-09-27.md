@@ -589,3 +589,13 @@ focused source/attachment/package checks cover integrity, cancellation, planet
 departure, retry and exact packaged bytes. The candidate uses offline foliage sidecars and starts fetching below
 6 km clearance. Detailed mode remains opt-in until normal-control browser checks,
 family appearance and matching far canopy are accepted; the site is not updated.
+
+### Matching the loaded families at distance
+
+The [family canopy integration](family-canopy-2026-09-28.md) now passes the same
+dated catalogue and adopted library revision to the distant renderer. It uses
+separate LOD profiles, texture-derived linear colors, packed per-instance
+brightness and bounded retagging without moving canonical trees. Focused CPU
+checks pass; actual GPU compilation, per-ID handoff continuity, Pine density,
+matched captures and performance still need browser acceptance. The analytic
+trunk remains an explicit temporary approximation. This local stage is not live.

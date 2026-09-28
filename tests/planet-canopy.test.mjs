@@ -10,6 +10,7 @@ const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).pl
 const ground=[1,0,0],eye=new THREE.Vector3(1,0,0),nearOrigin=new THREE.Vector3();
 const contextA='a'.repeat(64),contextB='b'.repeat(64);
 const familyA='f'.repeat(64),familyB='c'.repeat(64);
+import {packForestPresentation} from '../src/forest-presentation.ts';
 
 class MockWorker{
   static instances=[];
@@ -53,6 +54,29 @@ function selectAndRequest(h,addresses){
 function sendPatchResponse(h,request,patches,done=true){
   h.worker.emit({type:'patches',generation:h.generation,requestId:request.requestId,context:h.context,patches,done});
 }
+
+test('dated family retag preserves roots and requires matching appearance and canonical height for handoff',()=>{
+  const h=begin(64),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`,id=`${a.face}/${a.n}/${a.x*8}/${a.y*8}`;
+  try{
+    const oak=packForestPresentation('branching',.95,1.05),pine=packForestPresentation('spire',1.04,.96);
+    let calls=0;h.host.setPresentation('catalogue-A',(resolved,height)=>{calls++;assert.equal(resolved,id);assert.equal(height,16);return oak;},new Map());
+    const request=selectAndRequest(h,[a]);sendPatchResponse(h,request,[patch(a)]);
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);h.host.finish();
+    const index=h.host.slots.get(id),root=h.host.renderer.positions.array.slice(),rotation=h.host.renderer.rotations.array.slice();
+    assert.equal(h.host.canHandoff(id,120,key,16,oak),true);
+    assert.equal(h.host.canHandoff(id,120,key,17,oak),false);
+    assert.equal(h.host.canHandoff(id,121,key,16,oak),false);
+    assert.equal(h.host.canHandoff(id,120,key,16,pine),false);
+    const settledCalls=calls;h.host.canHandoff(id,120,key,16,oak);assert.equal(calls,settledCalls,'stationary handoff reuses the slot tag');
+    h.host.setPresentation('catalogue-B',()=>pine,new Map());
+    assert.equal(h.host.canHandoff(id,120,key,16,oak),false,'on-demand retag precedes near pairing');
+    assert.equal(h.host.canHandoff(id,120,key,16,pine),true);
+    assert.equal(h.host.renderer.parameters.getZ(index),pine);
+    assert.deepEqual(h.host.renderer.positions.array,root);assert.deepEqual(h.host.renderer.rotations.array,rotation);
+    h.host.setPresentation('basic',()=>0,new Map());assert.equal(h.host.canHandoff(id,120,key,16,0),true);
+    assert.equal(h.host.renderer.parameters.getZ(index),0);
+  }finally{h.restore();}
+});
 
 test('selection requests and queued census results stay bounded and installs are frame budgeted',()=>{
   const h=begin(4096),addresses=Array.from({length:70},(_,i)=>address(i,h.n));

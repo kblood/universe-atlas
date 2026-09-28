@@ -18,7 +18,9 @@ import {forestTreeCatalogue,type ForestTreeBinding} from './forest-tree-catalogu
 import {ForestTreeFamilyLibrary,type ForestTreeFamilyInput,type ForestTreeFamilyEntry} from './forest-tree-family-library.ts';
 import {ForestPatchBroadphase} from './forest-patch-broadphase.ts';
 import {ForestOrderedWorkIndex} from './forest-ordered-work.ts';
-import {forestPresentationFamily} from './forest-presentation.ts';
+import {forestPresentationFamily,packForestPresentation,FOREST_PRESENTATION_VERSION} from './forest-presentation.ts';
+import type {ForestFamilyPresentation} from './forest-impostor.ts';
+import type {ForestTreeKind} from './forest-tree-family-library.ts';
 
 type Resident={cell:PopulationCell;height:number;present:boolean;water:number;patchKey?:string};
 type TreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
@@ -78,6 +80,7 @@ export class PlanetForest {
   private catalogue=forestTreeCatalogue([]);
   private catalogueInput:readonly Species[]|undefined;
   private catalogueVersion=0;
+  private canopyPresentationKey='';
   private bindings=new WeakMap<Resident,ForestTreeBinding|null>();
   private assetDraw=false;
   private worldDate=0n;
@@ -203,6 +206,28 @@ export class PlanetForest {
     if(!this.bindings.has(resident))this.bindings.set(resident,this.catalogue.resolve(resident.cell.id));
     return this.bindings.get(resident)??null;
   }
+  private syncCanopyPresentation(){
+    if(!this.fullCanopy)return;
+    const key=`${FOREST_PRESENTATION_VERSION}/${this.catalogueVersion}/${this.assets.revision}/${Number(this.assetDraw)}`;
+    if(key===this.canopyPresentationKey)return;
+    const families=new Map<ForestTreeKind,ForestFamilyPresentation>();
+    if(this.assetDraw)for(const [kind,entry] of this.assets.entries){
+      const presentation=entry.family.canopyPresentation;
+      if(presentation?.enabled)families.set(kind,presentation);
+    }
+    const catalogue=this.catalogue;
+    this.fullCanopy.setPresentation?.(key,(id,heightM)=>{
+      if(!families.size)return 0;
+      const binding=catalogue.resolve(id),kind=forestPresentationFamily(binding,heightM,families);
+      return kind&&binding?packForestPresentation(kind,binding.appearance.barkBrightness,binding.appearance.foliageBrightness):0;
+    },families);
+    this.canopyPresentationKey=key;
+  }
+  private expectedCanopyPresentation(resident:Resident){
+    if(!this.assetDraw)return 0;
+    const binding=this.binding(resident),kind=forestPresentationFamily(binding,resident.cell.heightM,this.assets.entries);
+    return kind&&binding?packForestPresentation(kind,binding.appearance.barkBrightness,binding.appearance.foliageBrightness):0;
+  }
   private startWorker(){
     try{
       const worker=new Worker(new URL('./planet-population-worker.ts',import.meta.url),{type:'module'});this.worker=worker;
@@ -325,6 +350,7 @@ export class PlanetForest {
     if(this.assets.entries.size)this.setCatalogue(treeSpecies);
     this.worldDate=worldNs;this.assets.setDate(worldNs);
     this.assetDraw=this.assets.entries.size>0&&!immersive;this.assetCounts=[0,0];
+    this.syncCanopyPresentation();
     for(const entry of this.assets.entries.values())for(const batch of entry.batches)batch.group.visible=false;
     const updateStarted=performance.now();
     this.group.visible=enabled&&altitudeM<B.forestStreamAltitudeM;
@@ -442,7 +468,7 @@ export class PlanetForest {
       if(lod===0)this.retainedNear.add(cell.id);else this.retainedNear.delete(cell.id);
       if(distance>=B.forestRadiusM)continue;
       const edgeCoverage=altitudeFade*(1-THREE.MathUtils.smoothstep(distance,B.forestRadiusM-300,B.forestRadiusM));
-      const paired=this.fullCanopy?.canHandoff(cell.id,resident.height,resident.patchKey)??false;
+      const paired=this.fullCanopy?.canHandoff(cell.id,resident.height,resident.patchKey,cell.heightM,this.expectedCanopyPresentation(resident))??false;
       if(paired){
         const middleLimit=this.retainedMiddle.has(cell.id)?600:550;
         if(distance>=middleLimit){this.retainedMiddle.delete(cell.id);continue;}
@@ -465,11 +491,12 @@ export class PlanetForest {
   }
   diagnostics(){return {visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
     detailedTrees:{ready:this.assets.entries.size>0,loading:this.assets.loading,error:this.assets.error||this.catalogueError,visible:[...this.assetCounts],species:this.catalogue.count,dateNs:this.worldDate.toString(),catalogueVersion:this.catalogueVersion,
-      heightPolicy:'canonical-population-proxy',geometryVariants:this.assets.entries.size,farRepresentation:'legacy-canonical-canopy',instanceSlots:'compact-per-family',
+      heightPolicy:'canonical-population-proxy',geometryVariants:this.assets.entries.size,farRepresentation:'family-profile-with-legacy-fallback',presentationKey:this.canopyPresentationKey,instanceSlots:'compact-per-family',
       families:[...this.assets.entries.values()].map(entry=>({kind:entry.kind,
         submitted:entry.pools.map((pool,lod)=>this.group.visible&&entry.batches[lod].group.visible?pool.items.length:0),
         retainedSlots:entry.pools.map(pool=>pool.items.length),capacities:entry.pools.map(pool=>pool.capacity),foliageMipmaps:entry.family.foliageMipmaps??null})),
-      foliageMipmaps:this.assets.entries.get('branching')?.family.foliageMipmaps??null,samples:this.detailedSamples()},
+      foliageMipmaps:this.assets.entries.get('branching')?.family.foliageMipmaps??null,samples:this.detailedSamples(),
+      handoffSamples:this.detailedSamples().map(sample=>({id:sample.id,far:this.fullCanopy?.presentationSample?.(sample.id)??null}))},
     candidateCells:this.wanted.length,canopyStands:0,farCanonicalTrees:this.group.visible?this.canopy.count:0,farSamplingFraction:FAR_CROWN_PROBABILITY,habitatVersion:TREE_HABITAT_VERSION,placementMs:this.placementMs,selectionMs:this.selectionMs,selectionPending:this.selecting,selectionWorker:!!this.worker,
     representation:'canonical-tree-field',densityFocus:'observer-ground',instanceUpdates:'stable-slots-retained-origin-dirty-ranges',
     selectionJobsInFlight:this.selecting?1:0,waterBucket:this.water,selectionApplyMs:this.selectionApplyMs,selectionCache:this.selectionCacheStats,selectionTransfer:this.selectionTransfer,fullCanopy:this.fullCanopy?.diagnostics()??null,

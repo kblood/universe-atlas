@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type {Body,V3} from './catalog.ts';
-import {ForestImpostors} from './forest-impostor.ts';
+import {ForestImpostors,type ForestFamilyPresentation} from './forest-impostor.ts';
+import type {ForestTreeKind} from './forest-tree-family-library.ts';
 import {ForestSlotAllocator,type ForestSlotRange} from './forest-slot-allocator.ts';
 import {type ForestCensusPatch,FOREST_CENSUS_STRIDE} from './forest-census.ts';
 import {type ForestPatchAddress,validateForestPatchAddress} from './forest-patch.ts';
@@ -39,6 +40,11 @@ export class PlanetCanopy {
   private center=new THREE.Vector3(Infinity,Infinity,Infinity);
   private origin=new THREE.Vector3();private originReady=false;
   private bodyPositions:Float64Array;private heights:Float64Array;
+  private presentationVersions:Uint32Array;
+  private presentationKey='';private presentationVersion=0;
+  private presentationResolve:(id:string,heightM:number)=>number=()=>0;
+  private presentationRetag:MapIterator<[string,number]>|null=null;
+  private presentationRetagged=0;private presentationSliceMs=0;
   private rebase:{origin:THREE.Vector3;positions:Float32Array;cursor:number}|null=null;
   private seen=new Set<string>();private previous=new Set<string>();
   private position=new THREE.Vector3();private direction=new THREE.Vector3();
@@ -58,7 +64,24 @@ export class PlanetCanopy {
   constructor(body:Body,capacity=229376){
     this.body=body;this.allocator=new ForestSlotAllocator(capacity);this.renderer=new ForestImpostors(capacity);
     this.bodyPositions=new Float64Array(capacity*3);this.heights=new Float64Array(capacity);
+    this.presentationVersions=new Uint32Array(capacity);
     this.renderer.mesh.scale.setScalar(1/body.radiusM);this.group.add(this.renderer.mesh);this.group.name='Complete canonical canopy';this.group.visible=false;
+  }
+  /** The near owner supplies its existing dated catalogue and adopted library.
+   * Replacement touches bounded parameter slices, never population identity. */
+  setPresentation(key:string,resolve:(id:string,heightM:number)=>number,families:ReadonlyMap<ForestTreeKind,ForestFamilyPresentation>){
+    if(key===this.presentationKey)return;
+    this.presentationKey=key;this.presentationResolve=resolve;
+    this.presentationVersion++;
+    if(this.presentationVersion>0xffffffff){this.presentationVersions.fill(0);this.presentationVersion=1;}
+    this.renderer.setFamilyPresentation('branching',families.get('branching')??null);
+    this.renderer.setFamilyPresentation('spire',families.get('spire')??null);
+    this.presentationRetag=this.slots.entries();this.presentationRetagged=0;
+  }
+  private tagPresentation(id:string,index:number){
+    if(this.presentationVersions[index]===this.presentationVersion)return;
+    this.renderer.setPresentation(index,this.presentationResolve(id,this.renderer.positions.getW(index)));
+    this.presentationVersions[index]=this.presentationVersion;this.presentationRetagged++;
   }
   private start(){
     if(this.disposed||typeof Worker==='undefined')return;
@@ -163,6 +186,7 @@ export class PlanetCanopy {
     for(let i=0;i<patch.ids.length;i++){
       const index=patch.range.start+i;this.slots.delete(patch.ids[i]);
       this.renderer.retire(index);
+      this.presentationVersions[index]=0;
       if(this.rebase)this.rebase.positions.fill(0,index*4,index*4+4);
     }
     this.allocator.free(patch.range);this.installed.delete(key);this.invalidateCurrentPatchAnswers();return patch.ids.length;
@@ -187,6 +211,7 @@ export class PlanetCanopy {
       if(this.rebase)this.rebase.positions.set([this.position.x-this.rebase.origin.x,this.position.y-this.rebase.origin.y,this.position.z-this.rebase.origin.z,r[5]],index*4);
       this.position.sub(this.origin);treeQuaternion(this.direction,r[6],this.rotation,this.yaw);
       this.renderer.write(index,this.position,r[5],this.rotation,r[4],r[7]);
+      this.presentationVersions[index]=0;this.tagPresentation(id,index);
     }
     this.installed.set(key,{address:patch.address,range,ids,water:this.configuredWater,family:this.family,waterInterval:patch.waterInterval});this.invalidateCurrentPatchAnswers();this.retries.delete(key);this.installedThisFrame+=patch.present;
   }
@@ -240,6 +265,14 @@ export class PlanetCanopy {
       this.pending.shift();this.install(patch);work+=cost;
     }
     this.installMs=performance.now()-started;
+    // Nearby handoffs are updated on demand below. Other retained trees use a
+    // bounded slice, so a dated catalogue/library change cannot block a frame.
+    const presentationStarted=performance.now();let presentationCount=0;
+    while(this.presentationRetag&&presentationCount++<2048&&performance.now()-presentationStarted<2){
+      const next=this.presentationRetag.next();if(next.done){this.presentationRetag=null;break;}
+      this.tagPresentation(next.value[0],next.value[1]);
+    }
+    this.presentationSliceMs=performance.now()-presentationStarted;
     if(!this.rebase&&this.position.copy(eye).multiplyScalar(this.body.radiusM).distanceTo(this.origin)>8000){
       this.rebase={origin:this.position.clone(),positions:new Float32Array(this.renderer.positions.array.length),cursor:0};
     }
@@ -274,11 +307,19 @@ export class PlanetCanopy {
     this.frameCurrentPatches.set(key,current);return current;
   }
   currentPatchRevision(){return this.currentPatchVersion;}
-  canHandoff(id:string,height:number,key=forestCellPatchKey(id)){
+  presentationSample(id:string){
+    const index=this.slots.get(id);if(index===undefined)return null;
+    return {id,heightM:this.renderer.positions.getW(index),groundHeightM:this.heights[index],code:this.renderer.parameters.getZ(index),
+      current:this.presentationVersions[index]===this.presentationVersion,ownership:this.renderer.ownership.getX(index)};
+  }
+  canHandoff(id:string,height:number,key=forestCellPatchKey(id),treeHeightM?:number,presentationCode=0){
     const index=this.slots.get(id);
     // Canonical shape is independent of water. Matching roots may keep pairing
     // while current near absence/submersion suppresses obsolete far presence.
-    return this.group.visible&&index!==undefined&&this.installed.get(key)?.family===this.family&&Math.abs(this.heights[index]-height)<1e-6;
+    if(!this.group.visible||index===undefined||this.installed.get(key)?.family!==this.family||Math.abs(this.heights[index]-height)>=1e-6)return false;
+    this.tagPresentation(id,index);
+    return (treeHeightM===undefined||Math.abs(this.renderer.positions.getW(index)-treeHeightM)<1e-5)&&
+      this.presentationVersions[index]===this.presentationVersion&&this.renderer.parameters.getZ(index)===presentationCode;
   }
   noteNear(id:string,key:string,present:boolean,water:number){
     if(!this.group.visible)return;
@@ -298,11 +339,14 @@ export class PlanetCanopy {
     if(!this.group.visible)return;const index=this.slots.get(id);if(index===undefined)return;
     const height=this.renderer.positions.getW(index);if(height<=0||this.body.water>0&&this.heights[index]<=this.water)return;
     this.rotation.fromArray(this.renderer.rotations.array,index*4);
-    this.position.fromArray(LEGACY_TREE_BOUND.center).multiplyScalar(height).applyQuaternion(this.rotation);
+    const familyRadius=this.renderer.familyBoundRadius(index);
+    if(familyRadius>0)this.position.set(0,0,0);
+    else this.position.fromArray(LEGACY_TREE_BOUND.center).multiplyScalar(height).applyQuaternion(this.rotation);
     this.position.x+=this.bodyPositions[index*3]-eye.x*this.body.radiusM;
     this.position.y+=this.bodyPositions[index*3+1]-eye.y*this.body.radiusM;
     this.position.z+=this.bodyPositions[index*3+2]-eye.z*this.body.radiusM;
-    if(this.position.length()<=Math.hypot(...LEGACY_TREE_BOUND.extent)*height*1.1)this.closeCandidates.push(id);
+    const radius=familyRadius>0?Math.sqrt(3)*familyRadius:Math.hypot(...LEGACY_TREE_BOUND.extent)*height;
+    if(this.position.length()<=radius*1.1)this.closeCandidates.push(id);
   }
   finish(){
     if(!this.streaming)return;
@@ -317,6 +361,7 @@ export class PlanetCanopy {
     failures:this.failures,workerRestarts:this.workerRestarts,terminalFailure:this.terminalFailure,timeouts:this.timeouts,capacityMisses:this.capacityMisses,slots:this.allocator.diagnostics(),rebasePending:!!this.rebase,currentPatchRevision:this.currentPatchVersion,
     nearPresentNotInCensus:this.nearPresentNotInCensus,nearAbsentInCensus:this.nearAbsentInCensus,
     farForcedClose:this.farForcedClose,closeCandidateScope:'current near selection',
+    presentation:{key:this.presentationKey,version:this.presentationVersion,pending:!!this.presentationRetag,retagged:this.presentationRetagged,sliceMs:this.presentationSliceMs,versionBytes:this.presentationVersions.byteLength},
     patchLookupCache:{hits:this.patchLookupCacheHits,misses:this.patchLookupCacheMisses,keys:this.frameCurrentPatches.size},
     attributeBytes:this.renderer.positions.array.byteLength+this.renderer.rotations.array.byteLength+this.renderer.parameters.array.byteLength+this.renderer.ownership.array.byteLength,
     retainedCoordinateBytes:this.bodyPositions.byteLength+this.heights.byteLength,
