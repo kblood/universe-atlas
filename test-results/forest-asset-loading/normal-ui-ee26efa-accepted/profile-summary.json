@@ -1,0 +1,253 @@
+{
+  "schema": "atlas-stationary-cpu-profile-summary/v1",
+  "commit": "ee26efa79c891cd914122f4b642db8efdaacf592",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "profileWindowMs": 6000,
+  "sampleCount": 3982,
+  "profileFile": "stationary-6s.cpuprofile",
+  "renderTimings": {
+    "planetUpdate": {
+      "samples": 185,
+      "p50": 27.600000001490116,
+      "p95": 41.900000005960464,
+      "p99": 47.899999998509884,
+      "max": 49.899999998509884
+    },
+    "frameWork": {
+      "samples": 185,
+      "p50": 41.399999998509884,
+      "p95": 60.100000001490116,
+      "p99": 64.79999999701977,
+      "max": 68.69999999552965
+    },
+    "frameInterval": {
+      "samples": 185,
+      "p50": 43.70000000298023,
+      "p95": 62.399999998509884,
+      "p99": 71.10000000149012,
+      "max": 451.8999999985099
+    },
+    "gpuInstrumentedPassSum": {
+      "samples": 183,
+      "p50": 11.419072,
+      "p95": 18.162912,
+      "p99": 21.381088,
+      "max": 28.057152
+    },
+    "drawCalls": {
+      "samples": 185,
+      "p50": 239,
+      "p95": 240,
+      "p99": 240,
+      "max": 240
+    },
+    "triangles": {
+      "samples": 185,
+      "p50": 7015998,
+      "p95": 7055080,
+      "p99": 7059384,
+      "max": 7059694
+    }
+  },
+  "farWork": {
+    "selectionCells": 18066,
+    "groups": 5621,
+    "skippedGroups": 5457,
+    "skippedCells": 13038,
+    "activeCells": 5028,
+    "rebuilds": 611,
+    "patchGroups": 5621,
+    "readyGroups": 5621,
+    "invalidatedGroups": 0,
+    "refreshes": 688
+  },
+  "topSelfSamples": [
+    {
+      "samples": 492,
+      "function": "skipPatchKeys",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 457
+    },
+    {
+      "samples": 308,
+      "function": "update",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 457
+    },
+    {
+      "samples": 230,
+      "function": "noteNear",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 457
+    },
+    {
+      "samples": 185,
+      "function": "(program)",
+      "url": "",
+      "line": null
+    },
+    {
+      "samples": 170,
+      "function": "update",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 467
+    },
+    {
+      "samples": 137,
+      "function": "processLifeQueue",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 467
+    },
+    {
+      "samples": 83,
+      "function": "Pt",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 467
+    },
+    {
+      "samples": 77,
+      "function": "upload",
+      "url": "http://127.0.0.1:5199/assets/three.module-zE7o6GZi.js",
+      "line": 3805
+    },
+    {
+      "samples": 72,
+      "function": "resolve",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 457
+    },
+    {
+      "samples": 68,
+      "function": "(garbage collector)",
+      "url": "",
+      "line": null
+    },
+    {
+      "samples": 58,
+      "function": "qt",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 467
+    },
+    {
+      "samples": 57,
+      "function": "install",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 457
+    },
+    {
+      "samples": 47,
+      "function": "drawFauna",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 467
+    },
+    {
+      "samples": 45,
+      "function": "drawFlora",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 467
+    },
+    {
+      "samples": 45,
+      "function": "Ym",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 500
+    }
+  ],
+  "topInclusiveSamples": [
+    {
+      "samples": 3982,
+      "function": "(root)",
+      "url": "",
+      "line": null
+    },
+    {
+      "samples": 3706,
+      "function": "c",
+      "url": "http://127.0.0.1:5199/assets/three.module-zE7o6GZi.js",
+      "line": 1
+    },
+    {
+      "samples": 3699,
+      "function": "",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 523
+    },
+    {
+      "samples": 2472,
+      "function": "cpu",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 2
+    },
+    {
+      "samples": 2471,
+      "function": "",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 523
+    },
+    {
+      "samples": 2470,
+      "function": "$m",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 499
+    },
+    {
+      "samples": 2358,
+      "function": "update",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 467
+    },
+    {
+      "samples": 1443,
+      "function": "update",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 457
+    },
+    {
+      "samples": 745,
+      "function": "renderCloudScene",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 467
+    },
+    {
+      "samples": 740,
+      "function": "render",
+      "url": "http://127.0.0.1:5199/assets/volumetric-clouds-CcgXx4y1.js",
+      "line": 166
+    },
+    {
+      "samples": 733,
+      "function": "pass",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 2
+    },
+    {
+      "samples": 728,
+      "function": "cpu",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 2
+    },
+    {
+      "samples": 711,
+      "function": "",
+      "url": "http://127.0.0.1:5199/assets/volumetric-clouds-CcgXx4y1.js",
+      "line": 166
+    },
+    {
+      "samples": 709,
+      "function": "Qf.render",
+      "url": "http://127.0.0.1:5199/assets/three.module-zE7o6GZi.js",
+      "line": 3915
+    },
+    {
+      "samples": 492,
+      "function": "skipPatchKeys",
+      "url": "http://127.0.0.1:5199/assets/atlas-CSs6a1Cn.js",
+      "line": 457
+    }
+  ],
+  "limits": [
+    "One fixed desktop camera/pose after the normal UI load/retry/revisit flow.",
+    "DevTools sampling and opt-in renderer diagnostics describe this page/run; they are not whole-game performance claims.",
+    "Function names resolve against minified production bundle atlas-CSs6a1Cn.js; source line numbers are generated-bundle positions."
+  ]
+}

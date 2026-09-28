@@ -1,0 +1,131 @@
+{
+  "base": "http://127.0.0.1:5199/",
+  "expectedCommit": "7d7c8ba0bcdd42ad1de9d0ec600d89862d06d4ac",
+  "startedAt": "2026-09-28T13:37:36.965Z",
+  "scope": "HTTP package byte identity and clean build revision; no rendering test",
+  "requests": [
+    {
+      "path": "build-info.json",
+      "bytes": 117,
+      "sha256": "ff4cba9bc5817a5e7951925631c7c6049f895f2498f8259c855af618c2b88b4e",
+      "contentType": "application/json"
+    },
+    {
+      "path": "assets/forest/desktop-v1/forest-bundle-manifest.json",
+      "bytes": 19892,
+      "sha256": "21925ae3e5d5a38aefdde2df0901c1325ed80aae18640254eb62ba39e23545da",
+      "contentType": "application/json"
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/oak-lod0.glb",
+      "bytes": 3969868,
+      "sha256": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+      "contentType": "model/gltf-binary"
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/oak-lod1.glb",
+      "bytes": 2603256,
+      "sha256": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9",
+      "contentType": "model/gltf-binary"
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/foliage-mip-manifest.json",
+      "bytes": 15739,
+      "sha256": "3b22162f9ce8f3c6caaf33a85bb2f066ec07084233e4d546631f75f5de6f8480",
+      "contentType": "application/json"
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/foliage-mips.rgba8",
+      "bytes": 5592064,
+      "sha256": "489bbfbc31c1c7375907f606d80817e918b8660bb9de0d91480bb2d4978484c6",
+      "contentType": ""
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/asset-brief.json",
+      "bytes": 4422,
+      "sha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91",
+      "contentType": "application/json"
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/family-manifest.json",
+      "bytes": 11135,
+      "sha256": "7d799d58172e0b63c1f5e098dc883ac9bf9d09390e1021986835bb2779b14729",
+      "contentType": "application/json"
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/oak-lod0.glb.asset.json",
+      "bytes": 9629,
+      "sha256": "5f250ec4f303f9cf1555b572dafc06cd28f482bce6c0b423493b7638bd474662",
+      "contentType": "application/json"
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/oak-lod1.glb.asset.json",
+      "bytes": 9623,
+      "sha256": "1f6ba630626f844bf67c0152f2ba9da413d7e2ebb2a1ac4eac1ac840fa2b2df9",
+      "contentType": "application/json"
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/conifer-lod0.glb",
+      "bytes": 4764524,
+      "sha256": "58ead3644a84f91d0d30658c827be0c04d6ab0b5a42f468397cd2474a1c06e3d",
+      "contentType": "model/gltf-binary"
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/conifer-lod1.glb",
+      "bytes": 3304920,
+      "sha256": "126cc179069cdeadf37bfa9fefa47b5be853040046be812a6e282e648f8d884b",
+      "contentType": "model/gltf-binary"
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/foliage-mip-manifest.json",
+      "bytes": 16353,
+      "sha256": "6625dd9a805dad4d7641efe648bac31fd4cd1f049b8db09d17313c67149bff92",
+      "contentType": "application/json"
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/foliage-mips.rgba8",
+      "bytes": 5592064,
+      "sha256": "1be67c71812a392451e90789c47667aeeb6c92d010f29f3f11735f4353e0e576",
+      "contentType": ""
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/asset-brief.json",
+      "bytes": 4310,
+      "sha256": "354ef461bf25e5c945498dc97932d7b2973fe2c14622e4f614d372ba4f8dd2c0",
+      "contentType": "application/json"
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/family-manifest.json",
+      "bytes": 13152,
+      "sha256": "eceec3fc7396bd7f9ed5a197dd2beb67467cf14f77976ee406c31be628fa7738",
+      "contentType": "application/json"
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/conifer-lod0.glb.asset.json",
+      "bytes": 10684,
+      "sha256": "e47a8986dfef9ca91fa831fe52b5e128b5a2f68124bba359e65f20008d335417",
+      "contentType": "application/json"
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/conifer-lod1.glb.asset.json",
+      "bytes": 10679,
+      "sha256": "19ae62ea4f9056eab8dfa87879e3e7d80cfcb1cbc08c8ac7e9d2a75e18dfa63b",
+      "contentType": "application/json"
+    },
+    {
+      "path": "assets/forest/desktop-v1/licenses/ez-tree-MIT-LICENSE.txt",
+      "bytes": 1073,
+      "sha256": "20e4afadfb10c67952b3d73cd2982d21d165ab4ae82b0dd9e4d6f2166ee349b6",
+      "contentType": "text/plain"
+    }
+  ],
+  "build": {
+    "commit": "7d7c8ba0bcdd42ad1de9d0ec600d89862d06d4ac",
+    "dirty": false,
+    "builtAt": "2026-09-28T13:37:19.770Z"
+  },
+  "packageBytes": 25933495,
+  "resourceCount": 17,
+  "ok": true,
+  "finishedAt": "2026-09-28T13:37:37.423Z"
+}
