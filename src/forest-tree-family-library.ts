@@ -11,8 +11,11 @@ export type ForestTreeKind='branching'|'spire';
 export type ForestTreeFamilyInput={kind:ForestTreeKind;lod0:ArrayBuffer;lod1:ArrayBuffer;foliageMipSidecar?:TreeAssetOptions['foliageMipSidecar']};
 export type ForestTreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
 type Batch=ReturnType<TreeAssetFamily['createBatch']>;
+/** Resources derived from an adopted family (e.g. its far atlas bake). They are
+ * released before the family's own batches, so none outlives its geometry. */
+export type ForestTreeFamilyAttachment={dispose():void};
 export type ForestTreeFamilyEntry<T,S>={kind:ForestTreeKind;family:TreeAssetFamily;batches:Batch[];
-  pools:CompactInstanceSlots<T,S>[];wanted:T[][];coverage:Map<string,number>[]};
+  pools:CompactInstanceSlots<T,S>[];wanted:T[][];coverage:Map<string,number>[];attachments:ForestTreeFamilyAttachment[]};
 
 /** Atomically replace a bounded family set; loading never owns population IDs.
  * Every family's LOD draws have independent compact slots. Aggregate selection
@@ -31,7 +34,10 @@ export class ForestTreeFamilyLibrary<T,S>{
   }
   setDate(date:bigint){this.date=date;for(const entry of this.entries.values())entry.family.setDate(date);}
   private release(entries:Iterable<ForestTreeFamilyEntry<T,S>>){
-    for(const entry of entries){for(const batch of entry.batches)batch.dispose();entry.family.dispose();}
+    for(const entry of entries){
+      for(const attachment of entry.attachments.splice(0))attachment.dispose();
+      for(const batch of entry.batches)batch.dispose();entry.family.dispose();
+    }
   }
   async replace(inputs:readonly ForestTreeFamilyInput[],options:TreeAssetOptions={}):Promise<boolean>{
     if(this.disposed)throw new Error('Forest is disposed');
@@ -42,12 +48,12 @@ export class ForestTreeFamilyLibrary<T,S>{
     try{
       for(const input of inputs){
         // The game library always supplies the bounded per-family pool and the
-        // coverage-preserving foliage LOD; standalone labs opt in explicitly.
+        // silhouette-matched reduced foliage LOD; standalone labs opt in explicitly.
         const family=await this.loader(input.lod0,input.lod1,{...options,
           foliageMipSidecar:input.foliageMipSidecar??options.foliageMipSidecar,forestCoverage:true,
-          structuralVariants:forestStructuralVariants(input.kind),areaPreservingLod:true,
+          structuralVariants:forestStructuralVariants(input.kind),areaPreservingLod:true,silhouetteMatchedLod:true,
           cardCompensation:options.cardCompensation??FOREST_CARD_COMPENSATION});
-        const entry:ForestTreeFamilyEntry<T,S>={kind:input.kind,family,batches:[],pools:[],wanted:[[],[]],coverage:[new Map(),new Map()]};
+        const entry:ForestTreeFamilyEntry<T,S>={kind:input.kind,family,batches:[],pools:[],wanted:[[],[]],coverage:[new Map(),new Map()],attachments:[]};
         pending.push(entry);
         if(this.disposed||request!==this.request)return false;
         if(!family.forestCoverage||!Number.isFinite(family.maxRadiusM)||family.maxRadiusM<=0)

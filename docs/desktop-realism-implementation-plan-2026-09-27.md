@@ -54,6 +54,18 @@ frame-rate claim follows from these fixtures. See the [family integration](famil
 [normal loading record](forest-asset-loading-2026-09-28.md), and
 [retained work-list record](forest-worklist-2026-09-28.md).
 
+The isolated far-atlas follow-up (`c7e9205`, card-scale calibration `3cea060`)
+replaces the stacked analytic far bands with captures of the actual Oak and Pine
+LOD1 meshes. A local RTX 5090 run at 1440×1000 adopted both family atlases,
+preserved whole-population identity and occupancy on a frozen date replay, and
+showed separate irregular crowns instead of stacked discs. The 56.6 MB total
+atlas allocation is bounded but substantial. Dark sparse close Pine foliage,
+angular non-tree shrubs, and faceted terrain remain visible; this is a bounded
+representation improvement, not completion of forest realism. The final
+combined check remains pending on the rivers-disabled candidate. See the
+[hardware record](forest-far-atlas-hardware-acceptance-2026-09-28.md) and its
+[browser report](../test-results/forest-visual-followup-opus/resume-2/browser/report.json).
+
 Per-species physical dimensions, structural variants, accepted realistic
 foliage and far silhouettes, rocks and ground materials, terrain and fauna
 breadth, midrange performance targets, Quest quality and end-to-end visual

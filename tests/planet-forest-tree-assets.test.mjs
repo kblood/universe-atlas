@@ -312,7 +312,7 @@ test('near slots and far codes share one canonical structural variant across dat
   try{
     await f.loadTreeFamilies(bothFamilies());f.fullCanopy=new PlanetCanopy(body,64);
     assert.deepEqual(h.options.map(o=>o.structuralVariants.map(v=>v.kind)[0]),['branching','spire'],'library supplies each family its own pool');
-    assert.ok(h.options.every(o=>o.structuralVariants.length===8&&o.areaPreservingLod===true&&o.cardCompensation.maxScale>1));
+    assert.ok(h.options.every(o=>o.structuralVariants.length===8&&o.areaPreservingLod===true&&o.silhouetteMatchedLod===true&&o.cardCompensation.maxScale>1));
     const dated=[species('oak'),species('pine','spire')];step(dated,200n);
     assert.equal(assertVariantAgreement(f,'initial'),3);
     const d=f.diagnostics().detailedTrees;
@@ -419,5 +419,73 @@ test('each family receives its own offline mip sidecar while sharing atmosphere 
   await f.loadTreeFamilies(inputs,{localAerial});
   assert.equal(received[0].foliageMipSidecar,oak);assert.equal(received[1].foliageMipSidecar,pine);
   assert.ok(received.every(x=>x.localAerial===localAerial&&x.forestCoverage===true));
+ }finally{f.dispose();}
+});
+
+test('the far canopy bakes each adopted family atlas outside XR, adopts it, and drops it with its family',async()=>{
+ const {f,step}=fixture({variants:true}),original=f.treeLoader,captures=[];
+ let failBake=false;
+ f.treeLoader=async(a,b,options)=>{
+  const family=await original(a,b,options),geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,0,16,0,2,9,1],3));
+  geometry.setAttribute('_leaf_pivot',new THREE.Float32BufferAttribute([0,0,0,0,16,0,1.8,9,.8],3));
+  geometry.setAttribute('_branch_level',new THREE.Float32BufferAttribute([0,0,4],1));
+  Object.assign(family,{lods:[[],[{geometry},{geometry}]],lod1CardScale:1.3,createCaptureBatch(lod,count){
+   const batch={lod,count,group:new THREE.Group(),pass:{value:0},frame:{value:new THREE.Vector2()},disposed:0,
+    setMember(){if(failBake)throw new Error('capture failed');},dispose(){batch.disposed++;}};captures.push(batch);return batch;}});
+  return family;
+ };
+ let target=null;
+ const renderer={xr:{enabled:false},shadowMap:{autoUpdate:false},autoClear:true,renders:0,getRenderTarget:()=>target,getActiveCubeFace:()=>0,getActiveMipmapLevel:()=>0,
+  getClearColor:c=>c.set(0),getClearAlpha:()=>1,setClearColor(){},setRenderTarget(t){target=t;},clear(){},render(){renderer.renders++;}};
+ try{
+  await f.loadTreeFamilies(bothFamilies());f.fullCanopy=new PlanetCanopy(body,64);step();
+  let far=f.diagnostics().detailedTrees;
+  assert.equal(far.farRepresentation,'analytic-band-fallback','bands draw until a bake completes');
+  f.renderFarAtlases(renderer,true);
+  assert.equal(renderer.renders,0,'no offscreen bake during XR');
+  assert.equal(captures.length,2,'one capture batch per adopted family');assert.ok(captures.every(c=>c.lod===1));
+  for(let frame=0;frame<27;frame++)f.renderFarAtlases(renderer);
+  far=f.diagnostics().detailedTrees;
+  assert.equal(far.farRepresentation,'partial-atlas-with-band-fallback','families bake one after another');
+  assert.deepEqual(far.farAtlas.adopted,['branching']);
+  for(let frame=0;frame<27;frame++)f.renderFarAtlases(renderer);
+  far=f.diagnostics().detailedTrees;
+  assert.equal(far.farRepresentation,'captured-hemi-octahedral-atlas');assert.equal(far.farAtlas.error,'');
+  assert.deepEqual(far.farAtlas.families.map(x=>[x.kind,x.state,x.views,x.scratchBytes]),[['branching','ready',81,0],['spire','ready',81,0]]);
+  assert.ok(captures.every(c=>c.disposed===1),'capture batches are temporary');
+  const rendersAfterBake=renderer.renders;f.renderFarAtlases(renderer);assert.equal(renderer.renders,rendersAfterBake,'a ready atlas costs no further renders');
+  // Replacing the families releases their atlases before their geometry; the
+  // new families draw bands until rebaked, and a failed bake stays on bands.
+  failBake=true;await f.loadTreeFamilies(bothFamilies());step();
+  assert.equal(f.fullCanopy.renderer.familyAtlas('branching'),null);
+  f.renderFarAtlases(renderer);
+  far=f.diagnostics().detailedTrees;
+  assert.equal(far.farRepresentation,'analytic-band-fallback');assert.match(far.farAtlas.error,/branching: .*capture failed/);
+  assert.equal(far.farAtlas.families.find(x=>x.kind==='branching').state,'failed');
+ }finally{f.dispose();}
+ assert.ok(captures.every(c=>c.disposed===1));
+});
+test('whole-population presentation census covers every retained slot and replays exactly after a catalogue change',async()=>{
+ const {f,step,cells}=fixture();cells[1].heightM=16;
+ for(let i=0;i<21;i++){const cell={id:`canonical/extra-${i}`,direction:[0,0,1],roll:i/21,heightM:10+i%12,yaw:i*.3,distanceM:0};f.wanted.push(cell);f.cache.set(cell.id,{cell,height:0,present:true,water:0});}
+ const dated=[species('branch'),species('spire','spire')];
+ try{
+  await f.loadTreeFamilies(bothFamilies());step(dated,100n);
+  const census=f.presentationCensus(),samples=f.diagnostics().detailedTrees.samples;
+  assert.equal(census.selected,24);assert.equal(census.eligible,24);
+  const owned=census.families.reduce((n,x)=>n+x.lods.reduce((a,l)=>a+l.owned,0),0);
+  assert.equal(owned,24,'census counts every retained detailed slot');assert.ok(samples.length<owned,'the HUD sample is bounded, the census is not');
+  assert.ok(census.families.every(x=>x.lods.every(l=>l.unbound===0&&l.submitted===l.owned)));
+  assert.equal(census.families.reduce((n,x)=>n+Object.values(x.lods[0].variantHistogram).reduce((a,b)=>a+b,0),0),24);
+  const digests=c=>c.families.map(x=>[x.kind,x.lods.map(l=>l.digest)]);
+  f.wanted.reverse();step([...dated].reverse(),100n);
+  assert.deepEqual(digests(f.presentationCensus()),digests(census),'order independent');
+  step([species('other'),species('spire','spire')],200n);
+  assert.notDeepEqual(digests(f.presentationCensus()),digests(census),'a changed dated catalogue changes the recorded presentation');
+  step(dated,100n);
+  const replay=f.presentationCensus();
+  assert.deepEqual(digests(replay),digests(census),'same ids, species, recipes, heights, variants, wind and tint reappear');
+  assert.deepEqual({...replay,catalogueVersion:0},{...census,catalogueVersion:0});
  }finally{f.dispose();}
 });

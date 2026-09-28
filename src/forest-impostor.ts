@@ -5,6 +5,7 @@ import {ForestDirtyBlocks} from './forest-dirty-blocks.ts';
 import {forestPresentationGLSL,unpackForestPresentation,FOREST_PRESENTATION_VERSION} from './forest-presentation.ts';
 import type {TreeCanopyProfile,TreeCullingBounds,TreeTrunkProfile} from './tree-canopy-profile.ts';
 import {deriveFamilyProxyBounds,deriveVariantFamilyProxyBounds} from './tree-canopy-bounds.ts';
+import {forestFarAtlasCommonGLSL,forestFarAtlasGLSL,FOREST_FAR_ATLAS_VERSION} from './forest-far-atlas.ts';
 import {forestVariantEnvelope,forestVariantGLSL,forestVariantUniformData,FOREST_VARIANT_COUNT,FOREST_VARIANT_VERSION,type ForestStructuralVariant} from './tree-structural-variant.ts';
 
 export type ForestFamilyPresentation={enabled:boolean;lod1Profile:TreeCanopyProfile;conservativeBounds:TreeCullingBounds;
@@ -15,6 +16,14 @@ export type ForestFamilyPresentation={enabled:boolean;lod1Profile:TreeCanopyProf
   trunk?:TreeTrunkProfile|null;
   /** Same bounded pool as the detailed batches; absent/empty is authored structure. */
   structuralVariants?:readonly ForestStructuralVariant[]};
+/** Baked far atlas for one family: two array textures and the capture sphere
+ * (centre xyz, radius) divided by the 16 m reference height. */
+export type ForestFamilyAtlas={colour:{texture:THREE.Texture};data:{texture:THREE.Texture};sphere:THREE.Vector4};
+let emptyAtlas:THREE.DataArrayTexture|null=null;
+function emptyAtlasTexture(){
+  if(!emptyAtlas){emptyAtlas=new THREE.DataArrayTexture(new Uint8Array(4),1,1,1);emptyAtlas.needsUpdate=true;}
+  return emptyAtlas;
+}
 function validateFamilyPresentation(presentation:ForestFamilyPresentation|null,kind:'branching'|'spire'){
   if(!presentation?.enabled)return null;
   const {lod1Profile:profile,conservativeBounds:bounds,barkLinearRgb,foliageLinearRgb}=presentation;
@@ -147,6 +156,10 @@ export class ForestImpostors {
     // Zero projected area keeps the solid legacy crown; zero trunk height keeps the legacy trunk.
     treeFamilyDensity:{value:[new THREE.Vector4(),new THREE.Vector4()]},
     treeFamilyTrunk:{value:[new THREE.Vector3(),new THREE.Vector3()]},treeFamilyClump:{value:new THREE.Vector2(1,1)},
+    // Captured far atlas per family; the analytic bands remain while absent.
+    treeAtlasColour0:{value:emptyAtlasTexture() as THREE.Texture},treeAtlasColour1:{value:emptyAtlasTexture() as THREE.Texture},
+    treeAtlasData0:{value:emptyAtlasTexture() as THREE.Texture},treeAtlasData1:{value:emptyAtlasTexture() as THREE.Texture},
+    treeAtlasSphere:{value:[new THREE.Vector4(),new THREE.Vector4()]},treeAtlasReady:{value:new THREE.Vector2()},
     treeFamilyVariantA:{value:Array.from({length:2*FOREST_VARIANT_COUNT},(_,i)=>new THREE.Vector4().fromArray(identityVariants(),(i%FOREST_VARIANT_COUNT)*8))},
     treeFamilyVariantB:{value:Array.from({length:2*FOREST_VARIANT_COUNT},(_,i)=>new THREE.Vector4().fromArray(identityVariants(),(i%FOREST_VARIANT_COUNT)*8+4))},
   };
@@ -156,6 +169,8 @@ export class ForestImpostors {
   readonly ownership:THREE.InstancedBufferAttribute;
   private ownershipBlocks:Uint8Array;
   private ownershipDirty=false;
+  private familyAtlases:[ForestFamilyAtlas|null,ForestFamilyAtlas|null]=[null,null];
+  private familyPresentations:[ForestFamilyPresentation|null,ForestFamilyPresentation|null]=[null,null];
   private staticDirty:ForestDirtyBlocks[];
   constructor(capacity:number){
     if(!Number.isInteger(capacity)||capacity<1||capacity>229376)throw new Error('Invalid forest impostor capacity');
@@ -177,7 +192,9 @@ export class ForestImpostors {
       shader.vertexShader=`attribute vec4 treePositionHeight,treeRotation,treeParameters;attribute float treeOwnership;
         uniform vec3 treeCamera,treeViewDirection;uniform float treeOrthographic,treeBoundInflation,treeRadiusScale,treePixelScale;
         uniform float treeRuntime,treeAltitudeCoverage,treeWater,treeHasWater;uniform vec2 treeDrawRange;uniform mat4 treeClipToLocal;
-        varying vec3 treeRayPoint;flat varying vec4 treeRootHeight,treeQ,treeData;flat varying float treeNearLevel,treeEdgeLevel;${quaternionGLSL}${forestPresentationGLSL}${familyUniformGLSL}\n`+shader.vertexShader;
+        varying vec3 treeRayPoint;flat varying vec4 treeRootHeight,treeQ,treeData;flat varying float treeNearLevel,treeEdgeLevel;
+        uniform vec4 treeAtlasSphere[2];uniform vec2 treeAtlasReady;flat varying vec3 treeAtlasViews,treeAtlasWeights;flat varying float treeAtlasLod;
+        ${quaternionGLSL}${forestPresentationGLSL}${familyUniformGLSL}${forestFarAtlasCommonGLSL}\n`+shader.vertexShader;
       shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`
         treeRootHeight=treePositionHeight;treeQ=treeRotation;treeData=treeParameters;
         float h=treePositionHeight.w;vec3 root=treePositionHeight.xyz;
@@ -215,12 +232,25 @@ export class ForestImpostors {
         }
         if(h<=0.0||treeEdgeLevel<=treeNearLevel)transformed=root;
         treeRayPoint=transformed;
+        // Per-tree view blend and atlas level from the crown centre direction.
+        treeAtlasViews=vec3(0);treeAtlasWeights=vec3(0);treeAtlasLod=0.0;
+        if(familyBound>0.0){int atlasFamily=int(familyCode)-1;
+          if((atlasFamily==0?treeAtlasReady.x:treeAtlasReady.y)>.5){
+            vec4 sphere=treeAtlasSphere[atlasFamily];vec3 atlasCentre=root+treeRotate(treeQ,sphere.xyz*h);
+            vec3 toEye=treeOrthographic>.5?-treeViewDirection:treeCamera-atlasCentre;
+            treeHemiBlend(treeRotate(vec4(-treeQ.xyz,treeQ.w),toEye),TREE_ATLAS_GRID,treeAtlasViews,treeAtlasWeights);
+            float pixelM=treePixelScale*(treeOrthographic>.5?1.0:length(treeCamera-atlasCentre));
+            treeAtlasLod=clamp(log2(max(pixelM*TREE_ATLAS_TILE/(2.0*sphere.w*h),1e-3)),0.0,TREE_ATLAS_MAX_MIP);
+          }
+        }
       `);
       shader.fragmentShader=`uniform vec3 treeCamera,treeViewDirection;
         uniform float treeOrthographic,treeRadiusScale,treeMaskOnly,treeFaceted,treeEdgeAA,treeSampleAA,treePixelScale;
         uniform mat4 treeModelView,treeProjection;uniform mat3 treeNormalMatrix;
         varying vec3 treeRayPoint;flat varying vec4 treeRootHeight,treeQ,treeData;flat varying float treeNearLevel,treeEdgeLevel;
-        ${quaternionGLSL}${forestCoverageGLSL}${forestPresentationGLSL}${familyUniformGLSL}${forestVariantGLSL}${intersectGLSL}${facetedGLSL}\n`+shader.fragmentShader;
+        uniform sampler2DArray treeAtlasColour0,treeAtlasColour1,treeAtlasData0,treeAtlasData1;uniform vec4 treeAtlasSphere[2];uniform vec2 treeAtlasReady;
+        flat varying vec3 treeAtlasViews,treeAtlasWeights;flat varying float treeAtlasLod;
+        ${quaternionGLSL}${forestCoverageGLSL}${forestPresentationGLSL}${familyUniformGLSL}${forestVariantGLSL}${intersectGLSL}${facetedGLSL}${forestFarAtlasCommonGLSL}${forestFarAtlasGLSL}\n`+shader.fragmentShader;
       if(renderer.capabilities.logarithmicDepthBuffer)shader.fragmentShader='#ifndef USE_LOGARITHMIC_DEPTH_BUFFER\n#error Atlas forest requires the installed logarithmic depth define\n#endif\n'+shader.fragmentShader;
       const lobes=LEGACY_TREE_LOBES.map(([x,y,z,s])=>{
         const args=`ro,rd,${vector([x,y,z])},${vector([s,s*.85,s])}*treeRadiusScale,${vector([.16+y*.06,.29+y*.04,.08])},best,treeHitNormal,treeHitColour`;
@@ -246,8 +276,34 @@ export class ForestImpostors {
         }
         ro+=rd*max(0.0,dot(rayBoundCenter-ro,rd)-rayBoundRadius);
         float best=1e20,treeCoverage=0.0;vec3 treeHitNormal=vec3(0,1,0),treeHitColour=vec3(0);
-        bool treePorous=false;
-        if(familyBound>0.0){
+        bool treePorous=false,treeAtlas=false;vec3 treeAtlasAnchor=ro;
+        if(familyBound>0.0&&treeAtlasWeights!=vec3(0)){
+          // Captured far atlas: three hemi-octahedral views of the same
+          // structural member, blended by coverage. It already contains the
+          // trunk, so no analytic part is drawn for this tree.
+          int familyIndex=int(familyCode)-1;vec2 brightness=forestFamilyBrightness(treeData.z);
+          float member=float(clamp(forestFamilyVariant(treeData.z),0,${FOREST_VARIANT_COUNT-1}));
+          vec4 sphere=treeAtlasSphere[familyIndex],atlasColour=vec4(0);vec3 atlasNormal=vec3(0);float atlasLeaf=0.0,atlasDistance=0.0;
+          if(familyIndex==0){
+            treeAtlasView(treeAtlasColour0,treeAtlasData0,treeAtlasViews.x,treeAtlasWeights.x,member,treeAtlasLod,sphere,ro,rd,atlasColour,atlasNormal,atlasLeaf,atlasDistance);
+            treeAtlasView(treeAtlasColour0,treeAtlasData0,treeAtlasViews.y,treeAtlasWeights.y,member,treeAtlasLod,sphere,ro,rd,atlasColour,atlasNormal,atlasLeaf,atlasDistance);
+            treeAtlasView(treeAtlasColour0,treeAtlasData0,treeAtlasViews.z,treeAtlasWeights.z,member,treeAtlasLod,sphere,ro,rd,atlasColour,atlasNormal,atlasLeaf,atlasDistance);
+          }else{
+            treeAtlasView(treeAtlasColour1,treeAtlasData1,treeAtlasViews.x,treeAtlasWeights.x,member,treeAtlasLod,sphere,ro,rd,atlasColour,atlasNormal,atlasLeaf,atlasDistance);
+            treeAtlasView(treeAtlasColour1,treeAtlasData1,treeAtlasViews.y,treeAtlasWeights.y,member,treeAtlasLod,sphere,ro,rd,atlasColour,atlasNormal,atlasLeaf,atlasDistance);
+            treeAtlasView(treeAtlasColour1,treeAtlasData1,treeAtlasViews.z,treeAtlasWeights.z,member,treeAtlasLod,sphere,ro,rd,atlasColour,atlasNormal,atlasLeaf,atlasDistance);
+          }
+          treeAtlas=true;treePorous=true;treeAtlasAnchor=ro+rd*dot(sphere.xyz-ro,rd);
+          if(atlasColour.a>1e-4){
+            best=atlasDistance/atlasColour.a;
+            float leafFraction=clamp(atlasLeaf/atlasColour.a,0.0,1.0);
+            treeCoverage=treeAtlasHeightCoverage(atlasColour.a,leafFraction,treeRootHeight.w);
+            treeHitColour=atlasColour.rgb/atlasColour.a*mix(brightness.x,brightness.y,leafFraction);
+            treeHitNormal=dot(atlasNormal,atlasNormal)>1e-8?normalize(atlasNormal):-rd;
+            // Two-sided leaves face the viewer, as in the detailed material.
+            if(leafFraction>.5&&dot(treeHitNormal,rd)>0.0)treeHitNormal=-treeHitNormal;
+          }
+        }else if(familyBound>0.0){
           int familyIndex=int(familyCode)-1;vec2 brightness=forestFamilyBrightness(treeData.z);
           // Same bounded structural member as the detailed batches, evaluated at
           // each band centre: horizontal scale, tier twist and top-weighted lean.
@@ -304,11 +360,13 @@ export class ForestImpostors {
         }
         // Complete derivative-based edge coverage before any per-pixel hash
         // discard. Derivatives in divergent discarded lanes are undefined.
+        // Object-space hashed alpha for the atlas; derivatives before discard.
+        float treeAtlasThreshold=treeAtlasAlphaThreshold(treeAtlasAnchor*treeRootHeight.w);
         if(best==1e20||treeUnowned)discard;
-        // Without MSAA alpha-to-coverage, porous crown coverage becomes an
-        // stable screen/tree hash dither rather than a solid silhouette.
-        if(treePorous&&treeSampleAA<.5&&
-          float(atlasVariantHash(uvec3(uvec2(gl_FragCoord.xy),uint(treeData.w+.5)),9u)&65535u)/65536.0>=treeCoverage)discard;
+        // Without MSAA alpha-to-coverage, porous crown coverage becomes a
+        // stable hash dither rather than a solid silhouette.
+        if(treePorous&&treeSampleAA<.5&&(treeAtlas?treeAtlasThreshold:
+          float(atlasVariantHash(uvec3(uvec2(gl_FragCoord.xy),uint(treeData.w+.5)),9u)&65535u)/65536.0)>=treeCoverage)discard;
         vec3 treeHit=treeRootHeight.xyz+treeRotate(treeQ,(ro+rd*best)*treeRootHeight.w);
         vec4 treeHitView=treeModelView*vec4(treeHit,1.0),treeClip=treeProjection*treeHitView;
         if(treeHitView.z>=0.0||treeClip.w<=0.0||treeClip.z < -treeClip.w||treeClip.z > treeClip.w)discard;
@@ -327,7 +385,7 @@ export class ForestImpostors {
       `);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','if(treeMaskOnly>.5)outgoingLight=vec3(1.0);\n#include <opaque_fragment>');
     };
-    material.customProgramCacheKey=()=>`${LEGACY_TREE_SHAPE_VERSION}/analytic-impostor-7/${FOREST_PRESENTATION_VERSION}/${FOREST_VARIANT_VERSION}`;
+    material.customProgramCacheKey=()=>`${LEGACY_TREE_SHAPE_VERSION}/analytic-impostor-7/${FOREST_PRESENTATION_VERSION}/${FOREST_VARIANT_VERSION}/${FOREST_FAR_ATLAS_VERSION}`;
     this.mesh=new THREE.Mesh(geometry,material);this.mesh.name='Canonical forest analytic impostors';this.mesh.frustumCulled=false;
     this.mesh.userData.localAerialSurfaceHit={local:'treeHit',view:'treeHitView.xyz'};
     const inverse=new THREE.Matrix4(),localCamera=new THREE.Matrix4(),viewport=new THREE.Vector4();
@@ -351,6 +409,7 @@ export class ForestImpostors {
   setFamilyPresentation(kind:'branching'|'spire',presentation:ForestFamilyPresentation|null){
     const family=kind==='branching'?0:1,offset=family*4;
     const proxy=validateFamilyPresentation(presentation,kind);
+    this.familyPresentations[family]=presentation;
     const enabled=presentation?.enabled?presentation:null,variants=enabled?.structuralVariants??[],trunk=enabled?.trunk??null;
     // Disabled families reset to identity structure, legacy trunk and solid crowns.
     const variantData=forestVariantUniformData(variants);
@@ -366,9 +425,18 @@ export class ForestImpostors {
       // Include the drawn trunk (measured or legacy) as well as the leaf envelopes.
       const trunkRadius=trunk?Math.hypot(trunk.baseRadiusM,trunk.heightM)/16:Math.hypot(LEGACY_TREE_TRUNK.baseRadius,LEGACY_TREE_TRUNK.height);
       const radius=Math.max(bounds.radiusM,trunkRadius*22);
-      this.uniforms.treeFamilyBounds.value.setComponent(family,radius);
-      this.uniforms.treeFamilyCenter.value[family].fromArray(proxy!.centerPerHeight);
-      this.uniforms.treeFamilyExtent.value[family].fromArray(proxy!.extentPerHeight);
+      const centre=new THREE.Vector3().fromArray(proxy!.centerPerHeight),extent=new THREE.Vector3().fromArray(proxy!.extentPerHeight);
+      const atlas=this.familyAtlases[family];let boundRadius=radius;
+      if(atlas){
+        // The captured crown can reach past the band envelope: draw the union.
+        const s=atlas.sphere,sphere=new THREE.Vector3(s.x,s.y,s.z);
+        const min=centre.clone().sub(extent).min(sphere.clone().subScalar(s.w)),max=centre.clone().add(extent).max(sphere.clone().addScalar(s.w));
+        centre.copy(min).add(max).multiplyScalar(.5);extent.copy(max).sub(min).multiplyScalar(.5);
+        boundRadius=Math.max(radius,(sphere.length()+s.w)*22);
+      }
+      this.uniforms.treeFamilyBounds.value.setComponent(family,boundRadius);
+      this.uniforms.treeFamilyCenter.value[family].copy(centre);
+      this.uniforms.treeFamilyExtent.value[family].copy(extent);
       this.uniforms.treeFamilyMargin.value.setComponent(family,proxy!.metricMarginM);
       this.uniforms.treeFamilyBark.value[family].fromArray(barkLinearRgb);this.uniforms.treeFamilyFoliage.value[family].fromArray(foliageLinearRgb);
       profile.bands.forEach((band,i)=>{
@@ -377,6 +445,21 @@ export class ForestImpostors {
       });
     }else this.uniforms.treeFamilyBounds.value.setComponent(family,0);
   }
+  /** Adopt (or clear) a baked far atlas. Crowns fall back to the analytic
+   * family bands whenever a family has no ready atlas. */
+  setFamilyAtlas(kind:'branching'|'spire',atlas:ForestFamilyAtlas|null){
+    const family=kind==='branching'?0:1;
+    if(atlas&&(![atlas.sphere.x,atlas.sphere.y,atlas.sphere.z,atlas.sphere.w].every(Number.isFinite)||atlas.sphere.w<=0||!atlas.colour?.texture||!atlas.data?.texture))
+      throw new Error('Invalid far atlas');
+    this.familyAtlases[family]=atlas;
+    this.uniforms[family===0?'treeAtlasColour0':'treeAtlasColour1'].value=atlas?atlas.colour.texture:emptyAtlasTexture();
+    this.uniforms[family===0?'treeAtlasData0':'treeAtlasData1'].value=atlas?atlas.data.texture:emptyAtlasTexture();
+    if(atlas)this.uniforms.treeAtlasSphere.value[family].copy(atlas.sphere);else this.uniforms.treeAtlasSphere.value[family].set(0,0,0,0);
+    this.uniforms.treeAtlasReady.value.setComponent(family,atlas?1:0);
+    // Re-derive the drawn box for the current presentation.
+    this.setFamilyPresentation(kind,this.familyPresentations[family]);
+  }
+  familyAtlas(kind:'branching'|'spire'){return this.familyAtlases[kind==='branching'?0:1];}
   setFamilyPresentations(families:ReadonlyMap<'branching'|'spire',ForestFamilyPresentation>){
     // Validate the entire replacement before changing either active family.
     for(const kind of ['branching','spire'] as const)validateFamilyPresentation(families.get(kind)??null,kind);

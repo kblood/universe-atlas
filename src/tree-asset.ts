@@ -8,8 +8,10 @@ import {quantizeForestCoverage} from './forest-coverage.ts';
 import {attachLocalAerial} from './local-aerial-perspective.ts';
 import {installTreeFoliageCoverageMipmaps,type InstalledTreeFoliageMipChain} from './tree-foliage-mips.ts';
 import {installTreeFoliageSidecar,type TreeFoliageMipSidecar} from './tree-foliage-sidecar.ts';
+import {calibrateTreeLodCardScale,type TreeCoverageMesh,type TreeLodCoverageCalibration} from './tree-lod-coverage.ts';
 import {deriveTreeBaseColorStatistics,deriveTreeCanopyMetadata,type TreeCanopyProfile,type TreeCullingBounds,type TreeTrunkProfile} from './tree-canopy-profile.ts';
 import {forestVariantGLSL,forestVariantRadiusBound,forestVariantUniformData,FOREST_VARIANT_COUNT,type ForestStructuralVariant} from './tree-structural-variant.ts';
+import {installForestFarAtlasCapture,FOREST_FAR_ATLAS_VERSION} from './forest-far-atlas.ts';
 
 /** Experimental author-6 adapter. Assets are supplied explicitly; this does not
  * replace the canonical forest or invent a second species catalogue. */
@@ -165,7 +167,7 @@ export type TreeCanopyPresentation={
   trunk:TreeTrunkProfile|null;
   /** The bounded pool also used by the detailed batches; empty for authored structure only. */
   structuralVariants:readonly ForestStructuralVariant[];
-  /** Area-preserving card scale applied to the reduced LOD1 foliage. */
+  /** Card scale applied to the reduced LOD1 foliage (area-preserving or silhouette-matched). */
   lod1CardScale:number;
 };
 export type TreeCardCompensation={targetPixels:number;maxScale:number};
@@ -175,6 +177,9 @@ export type TreeAssetOptions={foliageCoverage?:'mask'|'hash';foliageMipmaps?:boo
   structuralVariants?:readonly ForestStructuralVariant[];
   /** Enlarge reduced LOD1 cards so its total leaf area matches LOD0. */
   areaPreservingLod?:boolean;
+  /** Instead match LOD0's measured projected opaque area, bounded above by the
+   * leaf-area scale. Requires areaPreservingLod. */
+  silhouetteMatchedLod?:boolean;
   /** Distance-driven card growth when cards approach pixel size. */
   cardCompensation?:TreeCardCompensation};
 
@@ -191,6 +196,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
   if(options.forestCoverage!==undefined&&typeof options.forestCoverage!=='boolean')throw new Error('Invalid forest coverage option');
   if(options.foliageMipmaps!==undefined&&typeof options.foliageMipmaps!=='boolean')throw new Error('Invalid foliage mip option');
   if(options.foliageMipmaps&&options.foliageMipSidecar)throw new Error('Choose offline or runtime foliage mips, not both');
+  if(options.silhouetteMatchedLod&&!options.areaPreservingLod)throw new Error('Silhouette-matched LOD requires the area-preserving bound');
   const cards=options.cardCompensation;
   if(cards!==undefined&&(!cards||!Number.isFinite(cards.targetPixels)||cards.targetPixels<=0||cards.targetPixels>64||!Number.isFinite(cards.maxScale)||cards.maxScale<1||cards.maxScale>2))
     throw new Error('Invalid tree card compensation');
@@ -225,9 +231,22 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     // temporary CPU copy is only used for once-per-load statistics.
     return context.getImageData(0,0,width!,height!).data;
   }
-  function textureStatistics(material:THREE.MeshStandardMaterial,cutoff:number){
+  function textureStatistics(material:THREE.MeshStandardMaterial,cutoff:number,pixels?:Uint8ClampedArray){
     if(!material.map)throw new Error(`Tree material ${material.name} has no base-color texture`);
-    return deriveTreeBaseColorStatistics(texturePixels(material.map),[material.color.r,material.color.g,material.color.b,material.opacity],cutoff);
+    return deriveTreeBaseColorStatistics(pixels??texturePixels(material.map),[material.color.r,material.color.g,material.color.b,material.opacity],cutoff);
+  }
+  function coverageMesh(meshes:THREE.Mesh[]):TreeCoverageMesh{
+    const part=(geometry:THREE.BufferGeometry)=>{
+      const copy=(name:string,size:number)=>{
+        const a=geometry.getAttribute(name);if(!a)return null;
+        const out=new Float32Array(a.count*size);
+        for(let i=0;i<a.count;i++)for(let c=0;c<size;c++)out[i*size+c]=a.getComponent(i,c);
+        return out;
+      };
+      const position=copy('position',3);if(!position)throw new Error('Tree geometry has no positions');
+      return {position,uv:copy('uv',2),pivot:copy('_leaf_pivot',3),level:copy('_branch_level',1),index:geometry.index?geometry.index.array:null};
+    };
+    return {bark:part(meshes[0]!.geometry),foliage:part(meshes[1]!.geometry)};
   }
   try {
     for(const bytes of [lod0,prepared.lod1GeometryBuffer]){const gltf=await loader.parseAsync(bytes,'');loaded.push(gltf.scene);collect(gltf.scene);}
@@ -273,7 +292,18 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     // actual reduced geometry rather than a merged near/far percentile.
     const lod0Metadata=deriveTreeCanopyMetadata(lods[0].map(mesh=>mesh.geometry));
     const lod1Metadata=deriveTreeCanopyMetadata(lods[1].map(mesh=>mesh.geometry));
-    const lod1CardScale=options.areaPreservingLod?treeLodCardScale(lod0Metadata.profile,lod1Metadata.profile):1;
+    const foliage=lods[0][1].material;
+    if(!foliage.map)throw new Error('Tree foliage has no base-color texture');
+    const foliagePixels=texturePixels(foliage.map);
+    const areaCardScale=options.areaPreservingLod?treeLodCardScale(lod0Metadata.profile,lod1Metadata.profile):1;
+    // Leaf-area equality over-inflates the reduced crown; measure silhouettes.
+    let lodCoverage:TreeLodCoverageCalibration|null=null;
+    if(options.silhouetteMatchedLod){
+      const image=foliage.map.image as {width:number;height:number};
+      lodCoverage=calibrateTreeLodCardScale(coverageMesh(lods[0]),coverageMesh(lods[1]),
+        {width:image.width,height:image.height,rgba:foliagePixels,cutoffByte:Math.ceil(alphaCutoff*255)},areaCardScale);
+    }
+    const lod1CardScale=lodCoverage?lodCoverage.cardScale:areaCardScale;
     const compensationMax=cards?.maxScale??1;
     if(cards)shaderState.cards.value.set(lod0Metadata.profile.cardExtentM??lod0Metadata.profile.maxLeafOffsetM,cards.targetPixels,cards.maxScale);
     const authoredRadius=Math.max(lod0Metadata.cullingBounds.radiusM,lod1Metadata.cullingBounds.radiusM);
@@ -282,9 +312,8 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     const cardScaleMax=Math.max(1,lod1CardScale)*compensationMax;
     const conservativeBounds:TreeCullingBounds={...lod0Metadata.cullingBounds,
       radiusM:variants.length||cardScaleMax>1?forestVariantRadiusBound(variants,authoredRadius,maxLeafOffsetM,cardScaleMax):authoredRadius};
-    const foliage=lods[0][1].material;
     const barkStatistics=textureStatistics(lods[0][0].material,0);
-    const foliageStatistics=textureStatistics(foliage,alphaCutoff);
+    const foliageStatistics=textureStatistics(foliage,alphaCutoff,foliagePixels);
     // Beer-Lambert reference density for distant crowns: randomly oriented
     // cards project half their one-sided area; the atlas cutoff removes gaps.
     const foliageProjectedAreaM2=lod0Metadata.profile.bands.map(band=>.5*(band.leafAreaM2??0)*foliageStatistics.baseCoverage) as [number,number,number,number];
@@ -302,7 +331,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
       lods,textures,leafTransmission,maxRadiusM,canopyPresentation,forestCoverage:!!options.forestCoverage,embeddedTextureBytes:prepared.embeddedTextureBytes,
       foliageMipmaps:foliageMipChain?{source:options.foliageMipSidecar?'offline-sidecar':'runtime-build',payloadBytes:foliageMipPayloadBytes,
         setupMs:foliageMipSetupMs,levels:foliageMipChain.report,baseCoverage:foliageMipChain.baseCoverage}:null,
-      structuralVariantCount:variants.length,lod1CardScale,cardCompensation:cards?{...cards,cardExtentM:shaderState.cards.value.x}:null,
+      structuralVariantCount:variants.length,lod1CardScale,lodCoverage,cardCompensation:cards?{...cards,cardExtentM:shaderState.cards.value.x}:null,
       setDate(date:bigint){leafTransmission?.assertInstalled();phase.value=treeWindPhase(date);},
       /** Last main-camera state used by distance card growth; shadow passes reuse it. */
       viewState(){return shaderState.view.value.clone();},
@@ -420,6 +449,49 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
             if(forest.getX(index)!==value||forest.getY(index)!==seed){forest.setXY(index,value,seed);forestUpdates.include(index,2);forestUpdates.flush(forest);}
           },
           dispose(){if(batchDisposed)return;batchDisposed=true;activeBatches--;for(const mesh of meshes){mesh.geometry.dispose();mesh.customDepthMaterial?.dispose();mesh.customDistanceMaterial?.dispose();mesh.dispose();}group.clear();group.removeFromParent();},
+        };
+      },
+      /** Capture-only batch for the far atlas. Cloned materials share this
+       * family's textures and variant pool and run the same deform transform
+       * at rest wind with distance card growth disabled. Pass 0 writes linear
+       * albedo with unit coverage; pass 1 writes the capture-view normal xy,
+       * depth from the capture plane (in radii) and the leaf fraction. */
+      createCaptureBatch(lod:0|1,count:number){
+        if(disposed)throw new Error('Tree family is disposed');
+        if(!Number.isInteger(count)||count<1||count>64)throw new Error('Invalid capture batch size');
+        const pass={value:0},frame={value:new THREE.Vector2(1,1)};
+        const state:TreeShaderState={phase:{value:0},variantA:shaderState.variantA,variantB:shaderState.variantB,
+          view:{value:new THREE.Vector4()},cards:shaderState.cards};
+        const tree=new THREE.InstancedBufferAttribute(new Float32Array(count*2),2),shape=new THREE.InstancedBufferAttribute(new Float32Array(count*2),2);
+        for(let i=0;i<count;i++){tree.setXY(i,1,0);shape.setXY(i,0,lod===1?lod1CardScale:1);}
+        const group=new THREE.Group(),captureMaterials:THREE.Material[]=[];
+        const meshes=lods[lod].map(source=>{
+          const material=source.material.clone();material.toneMapped=false;material.fog=false;material.dithering=false;
+          material.transparent=false;material.blending=THREE.NoBlending;material.alphaToCoverage=false;captureMaterials.push(material);
+          // Capture binary MASK coverage; the far shader reproduces fractions.
+          if(source.material.name==='MAT_AtlasFoliage'){material.alphaHash=false;material.alphaTest=alphaCutoff;}
+          deform(material,state);
+          const compile=material.onBeforeCompile,key=material.customProgramCacheKey(),leaf=source.material.name==='MAT_AtlasFoliage';
+          material.onBeforeCompile=(shader,renderer)=>{
+            compile.call(material,shader,renderer);
+            Object.assign(shader.uniforms,{atlasCapturePass:pass,atlasCaptureFrame:frame});
+            shader.fragmentShader=installForestFarAtlasCapture(shader.fragmentShader,leaf);
+          };
+          material.customProgramCacheKey=()=>`${key}/${FOREST_FAR_ATLAS_VERSION}/capture/${material.name}`;
+          const geometry=source.geometry.clone();geometry.setAttribute('instanceTree',tree);geometry.setAttribute('instanceTreeShape',shape);
+          const mesh=new THREE.InstancedMesh(geometry,material,count);mesh.frustumCulled=false;mesh.castShadow=false;mesh.receiveShadow=false;
+          group.add(mesh);return mesh;
+        });
+        activeBatches++;let batchDisposed=false;
+        return {group,meshes,pass,frame,count,
+          /** `member` 0 keeps the authored structure; k selects pool member k-1. */
+          setMember(index:number,matrix:THREE.Matrix4,member:number){
+            if(batchDisposed||!Number.isInteger(index)||index<0||index>=count||!Number.isInteger(member)||member<0||member>variants.length)throw new Error('Invalid capture member');
+            shape.setX(index,member);shape.needsUpdate=true;
+            for(const mesh of meshes){mesh.setMatrixAt(index,matrix);mesh.instanceMatrix.needsUpdate=true;}
+          },
+          dispose(){if(batchDisposed)return;batchDisposed=true;activeBatches--;
+            for(const mesh of meshes){mesh.geometry.dispose();mesh.dispose();}for(const material of captureMaterials)material.dispose();group.clear();group.removeFromParent();},
         };
       },
       dispose(){if(disposed)return;if(activeBatches)throw new Error('Dispose tree batches before their family');disposed=true;dispose();},
