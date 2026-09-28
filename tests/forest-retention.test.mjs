@@ -163,7 +163,7 @@ test('complete distant canopy skips near work while missing or stale water keeps
   try{
     step();assert.equal(f.diagnostics().farOwnedSkipped,1);assert.equal(notes,5);assert.equal(f.canopy.count,0);
     current=false;notes=0;step();assert.equal(f.diagnostics().farOwnedSkipped,0);assert.equal(notes,6);assert.equal(f.canopy.count,1);
-    current=true;resident.water=-1;notes=0;step();assert.equal(f.diagnostics().farOwnedSkipped,0);assert.equal(notes,6,'stale water remains on the immediate suppression path');
+    current=true;resident.water=-1;f.patchBroadphase.updateResident(cell.id,{groundHeightM:resident.height,water:-1});notes=0;step();assert.equal(f.diagnostics().farOwnedSkipped,0);assert.equal(notes,6,'stale water remains on the immediate suppression path');
   }finally{f.dispose();}
 });
 

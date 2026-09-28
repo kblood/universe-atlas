@@ -52,7 +52,9 @@ export class PlanetCanopy {
   // read-only answer for the current prepare -> finish transaction.
   private frameCurrentPatches=new Map<string,boolean>();
   private patchLookupCacheHits=0;private patchLookupCacheMisses=0;
+  private currentPatchVersion=0;
   private body:Body;
+  private invalidateCurrentPatchAnswers(){this.currentPatchVersion++;}
   constructor(body:Body,capacity=229376){
     this.body=body;this.allocator=new ForestSlotAllocator(capacity);this.renderer=new ForestImpostors(capacity);
     this.bodyPositions=new Float64Array(capacity*3);this.heights=new Float64Array(capacity);
@@ -65,20 +67,20 @@ export class PlanetCanopy {
       worker.onmessage=({data})=>{if(this.worker===worker){try{this.receive(data);}catch{this.failWorker(worker);}}};
       worker.onerror=e=>{e.preventDefault();this.failWorker(worker);};worker.onmessageerror=()=>this.failWorker(worker);
       this.configure(true);
-    }catch{this.worker=null;this.failures++;this.terminalFailure=true;this.streaming=false;this.group.visible=false;}
+    }catch{this.worker=null;this.failures++;this.terminalFailure=true;this.streaming=false;this.group.visible=false;this.invalidateCurrentPatchAnswers();}
   }
   private configure(forceBody=false){
     const sameBody=this.configuredRivers===this.body.canonicalRivers&&this.configuredHydrology===this.body.hydrology;
     const family=!forceBody&&sameBody?this.family:null;
     this.configuredWater=this.water;this.configuredRivers=this.body.canonicalRivers;this.configuredHydrology=this.body.hydrology;
-    this.generation++;this.configuredAt=performance.now();this.ready=false;this.context='';this.request=null;this.selection=null;this.selectionApply=null;this.pending=[];this.retries.clear();this.reuse=null;this.reusedPatches=0;
+    this.generation++;this.configuredAt=performance.now();this.ready=false;this.context='';this.request=null;this.selection=null;this.selectionApply=null;this.pending=[];this.retries.clear();this.reuse=null;this.reusedPatches=0;this.invalidateCurrentPatchAnswers();
     // Patch addresses depend on position, not water. Keep the existing window.
     if(!this.order.length)this.center.set(Infinity,Infinity,Infinity);
     this.requestCursor=0;this.retryWakeAt=Infinity;this.selectionRetryAt=0;
     this.worker?.postMessage({type:'configure',generation:this.generation,...(family?{family}:{body:this.body}),waterLevelM:this.configuredWater});
   }
   private failWorker(worker:Worker){
-    if(this.worker!==worker)return;worker.terminate();this.worker=null;this.ready=false;this.request=null;this.selection=null;this.selectionApply=null;this.pending=[];this.reuse=null;this.failures++;
+    if(this.worker!==worker)return;worker.terminate();this.worker=null;this.ready=false;this.request=null;this.selection=null;this.selectionApply=null;this.pending=[];this.reuse=null;this.failures++;this.invalidateCurrentPatchAnswers();
     if(this.workerRestarts<1){this.workerRestarts++;this.start();}
     else{this.terminalFailure=true;this.streaming=false;this.group.visible=false;}
   }
@@ -88,7 +90,7 @@ export class PlanetCanopy {
     if(data.type==='ready'){
       if(typeof data.context!=='string'||data.context.length!==64||data.n!==Math.ceil(2*this.body.radiusM/18))throw new Error('Invalid census ready');
       if(data.family!==undefined&&(typeof data.family!=='string'||!/^[a-f0-9]{64}$/.test(data.family)))throw new Error('Invalid census family');
-      this.ready=true;this.context=data.context;this.family=data.family??null;
+      this.ready=true;this.context=data.context;this.family=data.family??null;this.invalidateCurrentPatchAnswers();
       this.reuse=this.family?this.installed.values():null;return;
     }
     if(data.type==='error'){
@@ -163,7 +165,7 @@ export class PlanetCanopy {
       this.renderer.retire(index);
       if(this.rebase)this.rebase.positions.fill(0,index*4,index*4+4);
     }
-    this.allocator.free(patch.range);this.installed.delete(key);return patch.ids.length;
+    this.allocator.free(patch.range);this.installed.delete(key);this.invalidateCurrentPatchAnswers();return patch.ids.length;
   }
   private install(patch:ForestCensusPatch){
     const key=patchKey(patch.address);if(!this.desired.has(key))return;
@@ -186,7 +188,7 @@ export class PlanetCanopy {
       this.position.sub(this.origin);treeQuaternion(this.direction,r[6],this.rotation,this.yaw);
       this.renderer.write(index,this.position,r[5],this.rotation,r[4],r[7]);
     }
-    this.installed.set(key,{address:patch.address,range,ids,water:this.configuredWater,family:this.family,waterInterval:patch.waterInterval});this.retries.delete(key);this.installedThisFrame+=patch.present;
+    this.installed.set(key,{address:patch.address,range,ids,water:this.configuredWater,family:this.family,waterInterval:patch.waterInterval});this.invalidateCurrentPatchAnswers();this.retries.delete(key);this.installedThisFrame+=patch.present;
   }
   /** Call after the near render origin is chosen, before the near draw loop. */
   prepare(eye:THREE.Vector3,ground:V3,altitudeM:number,water:number,enabled:boolean,immersive:boolean,nearOrigin:THREE.Vector3){
@@ -196,20 +198,23 @@ export class PlanetCanopy {
     if(this.worker&&(!this.ready&&now-this.configuredAt>10000||this.request&&now-this.request.progressAt>10000||this.selection&&!this.selectionApply&&now-this.selection.started>10000)){
       this.timeouts++;this.failWorker(this.worker);
     }
+    const previousVisible=this.group.visible,previousWater=this.water;
     this.streaming=enabled&&!immersive&&!this.terminalFailure&&altitudeM<PLANET_DETAIL.forestStreamAltitudeM;
-    this.group.visible=this.streaming&&altitudeM<PLANET_DETAIL.forestPrepareAltitudeM;this.installedThisFrame=0;this.installMs=0;this.uploadBytes=0;this.seen.clear();
+    this.group.visible=this.streaming&&altitudeM<PLANET_DETAIL.forestPrepareAltitudeM;
+    if(previousVisible!==this.group.visible)this.invalidateCurrentPatchAnswers();
+    this.installedThisFrame=0;this.installMs=0;this.uploadBytes=0;this.seen.clear();
     this.nearPresentNotInCensus=0;this.nearAbsentInCensus=0;this.closeCandidates.length=0;this.farForcedClose=0;
     if(!this.streaming)return false;
     this.renderer.uniforms.treeRuntime.value=1;
     this.renderer.uniforms.treeAltitudeCoverage.value=1-THREE.MathUtils.smoothstep(altitudeM,3000,3500);
     this.renderer.uniforms.treeWater.value=water;this.renderer.uniforms.treeHasWater.value=Number(this.body.water>0);
     if(!this.originReady){this.origin.set(...ground).multiplyScalar(this.body.radiusM);this.originReady=true;}
-    this.water=water;
+    this.water=water;if(previousWater!==water)this.invalidateCurrentPatchAnswers();
     const bodyChanged=this.configuredRivers!==this.body.canonicalRivers||this.configuredHydrology!==this.body.hydrology;
     // One configuration in flight. Target water still updates the shader every
     // frame; replies are validated against their configured water snapshot.
     if(this.worker&&this.ready&&(water!==this.configuredWater||bodyChanged)){try{this.configure();}catch{this.failWorker(this.worker);}}
-    if(bodyChanged)this.family=null;
+    if(bodyChanged&&this.family!==null){this.family=null;this.invalidateCurrentPatchAnswers();}
     if(!this.worker&&this.failures===0)this.start();
     if(this.ready&&this.worker&&!this.selection&&performance.now()>=this.selectionRetryAt&&this.direction.set(...ground).distanceTo(this.center)*this.body.radiusM>150){
       this.selection={id:++this.serial,center:[...ground],started:performance.now()};
@@ -223,7 +228,7 @@ export class PlanetCanopy {
       const next=this.reuse.next();if(next.done){this.reuse=null;break;}work++;
       const patch=next.value;
       if(patch.water!==water&&patch.family===this.family&&forestWaterIntervalContains(patch.waterInterval,water)){
-        patch.water=water;this.reusedPatches++;
+        patch.water=water;this.reusedPatches++;this.invalidateCurrentPatchAnswers();
       }
     }
     while(this.evictions.length&&work<512&&performance.now()-started<2){
@@ -268,6 +273,7 @@ export class PlanetCanopy {
     const patch=this.installed.get(key),current=this.group.visible&&this.ready&&patch?.water===this.water&&patch.family===this.family;
     this.frameCurrentPatches.set(key,current);return current;
   }
+  currentPatchRevision(){return this.currentPatchVersion;}
   canHandoff(id:string,height:number,key=forestCellPatchKey(id)){
     const index=this.slots.get(id);
     // Canonical shape is independent of water. Matching roots may keep pairing
@@ -308,12 +314,12 @@ export class PlanetCanopy {
   diagnostics(){return {enabled:this.group.visible,streaming:this.streaming,ready:this.ready,water:this.water,configuredWater:this.configuredWater,context:this.context,family:this.family,reusedPatches:this.reusedPatches,reusePending:!!this.reuse,generation:this.generation,patches:this.installed.size,trees:this.slots.size,
     selectedPatches:this.order.length,queuedPatches:this.pending.length,jobsInFlight:Number(!!this.request),selectionPending:!!this.selection,
     installedThisFrame:this.installedThisFrame,installMs:this.installMs,selectionMs:this.selectionMs,selectionApplyMs:this.selectionApplyMs,selectionApplySliceMs:this.selectionApplySliceMs,selectionApplyPending:!!this.selectionApply,uploadBytes:this.uploadBytes,
-    failures:this.failures,workerRestarts:this.workerRestarts,terminalFailure:this.terminalFailure,timeouts:this.timeouts,capacityMisses:this.capacityMisses,slots:this.allocator.diagnostics(),rebasePending:!!this.rebase,
+    failures:this.failures,workerRestarts:this.workerRestarts,terminalFailure:this.terminalFailure,timeouts:this.timeouts,capacityMisses:this.capacityMisses,slots:this.allocator.diagnostics(),rebasePending:!!this.rebase,currentPatchRevision:this.currentPatchVersion,
     nearPresentNotInCensus:this.nearPresentNotInCensus,nearAbsentInCensus:this.nearAbsentInCensus,
     farForcedClose:this.farForcedClose,closeCandidateScope:'current near selection',
     patchLookupCache:{hits:this.patchLookupCacheHits,misses:this.patchLookupCacheMisses,keys:this.frameCurrentPatches.size},
     attributeBytes:this.renderer.positions.array.byteLength+this.renderer.rotations.array.byteLength+this.renderer.parameters.array.byteLength+this.renderer.ownership.array.byteLength,
     retainedCoordinateBytes:this.bodyPositions.byteLength+this.heights.byteLength,
     rebaseBufferBytes:this.rebase?.positions.byteLength??0};}
-  dispose(){this.disposed=true;this.worker?.terminate();this.worker=null;this.renderer.dispose();this.installed.clear();this.slots.clear();this.pending=[];this.group.removeFromParent();}
+  dispose(){this.disposed=true;this.invalidateCurrentPatchAnswers();this.group.visible=false;this.worker?.terminate();this.worker=null;this.renderer.dispose();this.installed.clear();this.slots.clear();this.pending=[];this.group.removeFromParent();}
 }

@@ -575,8 +575,11 @@ The [offline sidecar loader](offline-foliage-mips-2026-09-28.md) validates the
 source foliage PNG and every baked mip by SHA-256 before installing a shared
 explicit texture chain. Each family can supply its own sidecar. The focused
 34-test CPU scope passes; actual-game GPU upload, endpoint sampling and matched
-default/sidecar close/middle captures are next. A retained forest work list is
-also in progress to reduce repeated far-candidate checks. Neither stage is live.
+default/sidecar close/middle captures are next. A separate [retained forest
+work list](forest-worklist-2026-09-28.md) now skips complete far census patches
+while preserving canonical order, the 650 m cutoff, and fallback behavior.
+Focused tests and TypeScript checks pass; game CPU comparison and browser
+acceptance are pending, so this source increment is not live.
 
 ### Normal forest loading
 

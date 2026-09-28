@@ -16,6 +16,8 @@ import type {Species} from './biosphere-model.ts';
 import type {TreeAssetFamily,TreeAssetOptions} from './tree-asset.ts';
 import {forestTreeCatalogue,type ForestTreeBinding} from './forest-tree-catalogue.ts';
 import {ForestTreeFamilyLibrary,type ForestTreeFamilyInput,type ForestTreeFamilyEntry} from './forest-tree-family-library.ts';
+import {ForestPatchBroadphase} from './forest-patch-broadphase.ts';
+import {ForestOrderedWorkIndex} from './forest-ordered-work.ts';
 
 type Resident={cell:PopulationCell;height:number;present:boolean;water:number;patchKey?:string};
 type TreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
@@ -41,6 +43,15 @@ export class PlanetForest {
   private retainedNear=new Set<string>();
   private retainedMiddle=new Set<string>();
   private fullCanopy:PlanetCanopy|null=null;
+  private patchBroadphase:ForestPatchBroadphase;
+  private workIndex:ForestOrderedWorkIndex;
+  private broadphaseSelectionReady=false;
+  private workStateVersion=0;
+  private workBuiltStateVersion=-1;
+  private workCanopyRevision=-2;
+  private workReferenceEye=new THREE.Vector3();
+  private workReferenceEyeReady=false;
+  private workListRefreshes=0;
   private immersiveMaterial=false;
   private origin=new THREE.Vector3();
   private originReady=false;
@@ -81,6 +92,7 @@ export class PlanetForest {
   private applySelection(direction:V3,cells:PopulationCell[],selectionMs:number){
     const started=performance.now();
     this.center.set(...direction);this.wanted=cells;
+    this.setWorkSelection(cells);
     const incoming=new Set(cells.map(c=>c.id));for(const id of this.retainedNear)if(!incoming.has(id))this.retainedNear.delete(id);
     for(const id of this.retainedMiddle)if(!incoming.has(id))this.retainedMiddle.delete(id);
     this.queue=this.wanted.filter(cell=>this.cache.get(cell.id)?.water!==this.water);
@@ -98,8 +110,11 @@ export class PlanetForest {
   private scheduledUploadBytes=0;
   private updateMs=0;
   private farOwnedSkipped=0;
+  private farWorkDiagnostics:Record<string,number>={selectionCells:0,groups:0,skippedGroups:0,skippedCells:0,activeCells:0,rebuilds:0};
   private originRebased=false;
   constructor(private body:Body,private treeLoader:TreeLoader=loadTreeFamily){
+    this.patchBroadphase=new ForestPatchBroadphase(body.radiusM,forestCellPatchKey);
+    this.workIndex=new ForestOrderedWorkIndex(forestCellPatchKey);
     this.assets=new ForestTreeFamilyLibrary(this.group,(a,b,options)=>this.treeLoader(a,b,options),resident=>resident.cell.id,[B.forestNearCapacity,B.forestCapacity]);
     this.sample=terrainSampler(body);this.classify=biomeClassifier(body);
     this.habitat=forestHabitat(this.sample,this.classify,body.radiusM);
@@ -129,6 +144,16 @@ export class PlanetForest {
     ])attribute.onUpload(()=>attribute.clearUpdateRanges());
     this.group.add(this.canopy);this.group.name='Continuous planetary forest';
     if(typeof Worker!=='undefined'){this.fullCanopy=new PlanetCanopy(body);this.group.add(this.fullCanopy.group);this.startWorker();}
+  }
+  private setWorkSelection(cells:readonly PopulationCell[]){
+    this.workIndex.setSelection(cells);
+    this.workStateVersion++;
+    this.broadphaseSelectionReady=Number.isFinite(this.water);
+    if(!this.broadphaseSelectionReady)return;
+    this.patchBroadphase.setSelection(cells,this.water,cell=>{
+      const resident=this.cache.get(cell.id);
+      return resident&&resident.water===this.water?{groundHeightM:resident.height,water:resident.water}:null;
+    });
   }
   /** Explicit local integration seam. Loading never changes canonical cells.
    * The previous renderer remains active until both new batches are ready. */
@@ -319,6 +344,8 @@ export class PlanetForest {
     if(water!==this.water||hydrologyChanged){
       this.sampledRivers=this.body.canonicalRivers;this.sampledHydrology=this.body.hydrology;
       if(hydrologyChanged)for(const resident of this.cache.values())resident.water=NaN;
+      this.patchBroadphase.setWater(water);if(hydrologyChanged)this.patchBroadphase.invalidate();
+      this.workStateVersion++;
       this.water=water;this.sample=terrainSampler(this.body,undefined,undefined,undefined,water);
       this.classify=biomeClassifier(this.body,water);
       this.habitat=forestHabitat(this.sample,this.classify,this.body.radiusM);
@@ -343,6 +370,8 @@ export class PlanetForest {
     for(let count=0;this.queue.length&&count<B.placementSamplesPerFrame&&performance.now()-started<B.placementBudgetMs;count++){
       const cell=this.queue.shift()!,habitat=this.habitat(cell);
       this.cache.set(cell.id,{cell,height:habitat.groundHeightM,present:habitat.present,water});
+      this.patchBroadphase.updateResident(cell.id,{groundHeightM:habitat.groundHeightM,water});
+      this.workStateVersion++;
     }
     this.placementMs=performance.now()-started;
     // Retain the anchor across ordinary movement so static tree matrices need
@@ -352,10 +381,32 @@ export class PlanetForest {
       this.originVersion++;this.originRebased=true;
     }
     this.fullCanopy?.prepare(eye,groundDirection,altitudeM,water,enabled,immersive,this.origin);
+    if(!this.broadphaseSelectionReady||this.workIndex.diagnostics().selectionCells!==this.wanted.length){
+      this.patchBroadphase.setWater(water);this.setWorkSelection(this.wanted);
+    }
+    const eyeMeters=this.position.set(eye.x*r,eye.y*r,eye.z*r);
+    const canopyRevision=this.fullCanopy?(typeof this.fullCanopy.currentPatchRevision==='function'?this.fullCanopy.currentPatchRevision():NaN):-1;
+    const moved=this.workReferenceEyeReady&&eyeMeters.distanceToSquared(this.workReferenceEye)>20*20;
+    const refresh=canopyRevision!==this.workCanopyRevision||this.workStateVersion!==this.workBuiltStateVersion||moved;
+    let workIndices=this.workIndex.currentIndices();
+    if(refresh){
+      const skippedPatches=this.fullCanopy?.group.visible?this.patchBroadphase.skipPatchKeys(
+        [eyeMeters.x,eyeMeters.y,eyeMeters.z],water,key=>this.fullCanopy?.currentPatch(key)??false,B.forestFootprintM+20):new Set<string>();
+      workIndices=this.workIndex.updateSkipped(skippedPatches);
+      for(const id of this.workIndex.newlySkippedIds()){this.retainedNear.delete(id);this.retainedMiddle.delete(id);}
+      this.workReferenceEye.copy(eyeMeters);this.workReferenceEyeReady=true;
+      this.workCanopyRevision=canopyRevision;this.workBuiltStateVersion=this.workStateVersion;this.workListRefreshes++;
+    }
+    const workStats=this.workIndex.diagnostics(),patchStats=this.patchBroadphase.diagnostics();
+    this.farWorkDiagnostics={...workStats,patchGroups:patchStats.groups,readyGroups:patchStats.readyGroups,
+      invalidatedGroups:patchStats.invalidatedGroups,skippedGroups:patchStats.skippedGroups,
+      skippedCells:workStats.skippedCells,activeCells:workStats.activeCells,refreshes:this.workListRefreshes};
+    this.farOwnedSkipped=workStats.skippedCells;
     const counts=[0,0],capacities=immersive?[64,1024]:[B.forestNearCapacity,B.forestCapacity];let canopyCount=0;
     for(const updates of this.updates){updates.wanted.length=0;updates.wantedCoverage.length=0;updates.wantedIds.clear();}
     const altitudeFade=1-THREE.MathUtils.smoothstep(altitudeM,B.forestPrepareAltitudeM-500,B.forestPrepareAltitudeM);
-    for(const cell of this.wanted){
+    for(const index of workIndices){
+      const cell=this.wanted[index];if(!cell)continue;
       const dx=cell.direction[0]-groundDirection[0],dy=cell.direction[1]-groundDirection[1],dz=cell.direction[2]-groundDirection[2];
       if((dx*dx+dy*dy+dz*dz)*r*r<100*100)this.fullCanopy?.observeClose(cell.id,eye);
       const resident=this.cache.get(cell.id);if(!resident)continue;
@@ -422,7 +473,7 @@ export class PlanetForest {
     representation:'canonical-tree-field',densityFocus:'observer-ground',instanceUpdates:'stable-slots-retained-origin-dirty-ranges',
     selectionJobsInFlight:this.selecting?1:0,waterBucket:this.water,selectionApplyMs:this.selectionApplyMs,selectionCache:this.selectionCacheStats,selectionTransfer:this.selectionTransfer,fullCanopy:this.fullCanopy?.diagnostics()??null,
     workerRestarts:this.workerRestarts,workerFailures:this.workerFailures,selectionMode:this.worker?'worker':'synchronous-fallback',
-    updateMs:this.updateMs,farOwnedSkipped:this.farOwnedSkipped,matrixWrites:this.matrixWrites,colorWrites:this.colorWrites,coverageWrites:this.coverageWrites,
+    updateMs:this.updateMs,farOwnedSkipped:this.farOwnedSkipped,farWork:this.farWorkDiagnostics,matrixWrites:this.matrixWrites,colorWrites:this.colorWrites,coverageWrites:this.coverageWrites,
     scheduledUploadBytes:this.scheduledUploadBytes,originRebased:this.originRebased,originVersion:this.originVersion,originRebaseM:B.forestOriginRebaseM,
     radiusM:B.forestRadiusM,heightRangeM:[10,22],cellSizeM:B.forestCellM,
     allocatedBytes:[...this.meshes,this.canopy].reduce((s,m)=>s+m.instanceMatrix.array.byteLength+(m.instanceColor?.array.byteLength??0)+

@@ -66,6 +66,7 @@ export default defineConfig({
       'test-results/surface-lighting/closeup-run/lighting-dated-detailed.png',
       'test-results/surface-lighting/closeup-run/cpu-profile.cpuprofile',
       'docs/tree-forest-integration-2026-09-28.md',
+      'docs/forest-worklist-2026-09-28.md',
       'docs/opus-5.5-desktop-state-review-2026-09-28.md',
       'docs/opus-5.5-desktop-state-review-2026-09-28.metadata.json',
       'docs/desktop-state-review-assessment-2026-09-28.md',
@@ -86,8 +87,9 @@ export default defineConfig({
       'test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-date-return.png',
       'test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-after-movement.png',
       'src/forest-tree-catalogue.ts','src/tree-forest-coverage.ts',
-      'src/planet-forest.ts','src/local-aerial-perspective.ts',
+      'src/planet-forest.ts','src/planet-canopy.ts','src/forest-patch-broadphase.ts','src/forest-ordered-work.ts','src/local-aerial-perspective.ts',
       'tests/planet-forest-tree-assets.test.mjs','tests/tree-forest-coverage.test.mjs',
+      'tests/forest-patch-broadphase.test.mjs','tests/forest-ordered-work.test.mjs','tests/planet-forest-worklist.test.mjs','tests/planet-canopy.test.mjs','tests/forest-retention.test.mjs',
     ])this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
     for(const fileName of [
       'docs/tree-three-ez-impostor-2026-09-28.md',

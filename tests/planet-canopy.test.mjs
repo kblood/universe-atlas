@@ -80,6 +80,25 @@ test('selection requests and queued census results stay bounded and installs are
   }finally{h.restore();}
 });
 
+test('current-patch revision tracks ownership/readiness changes but not stationary queries',()=>{
+  const h=begin(4096),a=address(0,h.n),key=`${a.face}/${a.n}/${a.x}/${a.y}`;
+  try{
+    const ready=h.host.currentPatchRevision();
+    assert.equal(h.host.currentPatch(key),false);
+    assert.equal(h.host.currentPatchRevision(),ready,'querying ownership is read-only');
+    const request=selectAndRequest(h,[a]);
+    sendPatchResponse(h,request,[patch(a)]);h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    const installed=h.host.currentPatchRevision();
+    assert.ok(installed>ready,'installing a complete current patch invalidates cached decisions');
+    assert.equal(h.host.currentPatch(key),true);
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
+    assert.equal(h.host.currentPatchRevision(),installed,'stationary prepare with unchanged ownership does not bump revision');
+    h.host.prepare(eye,ground,100,5,true,false,nearOrigin);
+    assert.ok(h.host.currentPatchRevision()>installed,'a water reconfiguration invalidates current-patch decisions');
+    assert.equal(h.host.currentPatch(key),false);
+  }finally{h.restore();}
+});
+
 test('large selection decoding is sliced and atomically swaps the old patch window',()=>{
   const h=begin(64),a=address(0,h.n),oldKey=`${a.face}/${a.n}/${a.x}/${a.y}`;
   try{
