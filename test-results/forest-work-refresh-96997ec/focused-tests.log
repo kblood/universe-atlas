@@ -1,0 +1,26 @@
+✔ active indices retain the original canonical order as distant patches become owned (2.1004ms)
+✔ a census fallback reintroduces whole patches without changing source order (0.2834ms)
+✔ selection replacement resets retained work and stale skip keys (0.2012ms)
+✔ incremental patch transitions match full canonical rebuilds without rebuilding the whole list (12.7887ms)
+✔ group skip agrees with per-cell oracle across movement, patch validity and global cell order (9.4822ms)
+✔ partial, stale-water, invalidated-hydrology and unavailable-census groups always fall back (3.5579ms)
+✔ water changes, habitat replacements, and later arrivals rebuild conservative bounds before skipping (2.6881ms)
+✔ selection replacement drops old keys and a census arriving after a miss enables only fresh skips (1.3707ms)
+✔ invalid inputs fail closed and diagnostics report bounds readiness (0.8674ms)
+✔ distance boundary uses the conservative margin and never skips an inside group (0.3468ms)
+✔ local resident edits re-evaluate only their patch and stale roots become non-skippable (0.9728ms)
+✔ patch invalidation snapshots acknowledge only versions actually consumed (2.4264ms)
+✔ global invalidation advances the epoch and supersedes pending local keys (0.649ms)
+✔ an unconsumed local-key journal is bounded by escalating to a full-reset epoch (3.2743ms)
+✔ owned far patches reduce per-cell work while preserving canonical capacity winners (20.8909ms)
+✔ movement stays safe within the cached 20m margin and crossing it refreshes at the 650m cutoff (12.011ms)
+✔ census loss and stale water reintroduce fallback work immediately (10.3586ms)
+✔ local patch refreshes use the frozen 20m anchor across a movement reversal (6.1597ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1067.6943
