@@ -62,27 +62,19 @@ export function forestMeshBufferFootprint(meshes:Iterable<MeshLike>,extraGeometr
   // buffers per BufferAttribute or shared InterleavedBuffer data. Subviews
   // therefore count their full backing store on CPU but only their view size
   // for GPU upload estimates.
-  const cpuBuffers=new Map<ArrayBufferLike,{bytes:number;instance:boolean}>(),gpuBuffers=new Map<object,{bytes:number;instance:boolean}>(),geometries=new Set<GeometryLike>();
-  let geometryBytes=0,instanceBytes=0,geometryGpuEstimateBytes=0,instanceGpuEstimateBytes=0;
+  const cpuBuffers=new Map<ArrayBufferLike,{bytes:number;geometry:boolean;instance:boolean}>(),
+    gpuBuffers=new Map<object,{bytes:number;geometry:boolean;instance:boolean}>(),geometries=new Set<GeometryLike>();
   const add=(attribute:BufferAttributeLike|undefined|null,forceInstance=false)=>{
     const view=arrayView(attribute);if(!view)return;
     const instance=forceInstance||attribute?.isInstancedBufferAttribute===true||attribute?.data?.isInstancedInterleavedBuffer===true;
     let cpu=cpuBuffers.get(view.buffer);
-    if(!cpu){cpu={bytes:view.buffer.byteLength,instance};cpuBuffers.set(view.buffer,cpu);
-      if(instance)instanceBytes+=cpu.bytes;else geometryBytes+=cpu.bytes;
-    }else if(cpu.instance!==instance){
-      if(instance){geometryBytes-=cpu.bytes;instanceBytes+=cpu.bytes;}else{instanceBytes-=cpu.bytes;geometryBytes+=cpu.bytes;}
-      cpu.instance=instance;
-    }
+    if(!cpu){cpu={bytes:view.buffer.byteLength,geometry:false,instance:false};cpuBuffers.set(view.buffer,cpu);}
+    if(instance)cpu.instance=true;else cpu.geometry=true;
     const gpuKey=(attribute?.data??attribute) as object|undefined;if(!gpuKey)return;
     const gpuBytes=attribute?.data?.array?.byteLength??attribute?.array?.byteLength??view.byteLength;
     let gpu=gpuBuffers.get(gpuKey);
-    if(!gpu){gpu={bytes:gpuBytes,instance};gpuBuffers.set(gpuKey,gpu);
-      if(instance)instanceGpuEstimateBytes+=gpuBytes;else geometryGpuEstimateBytes+=gpuBytes;
-    }else if(gpu.instance!==instance){
-      if(instance){geometryGpuEstimateBytes-=gpu.bytes;instanceGpuEstimateBytes+=gpu.bytes;}else{instanceGpuEstimateBytes-=gpu.bytes;geometryGpuEstimateBytes+=gpu.bytes;}
-      gpu.instance=instance;
-    }
+    if(!gpu){gpu={bytes:gpuBytes,geometry:false,instance:false};gpuBuffers.set(gpuKey,gpu);}
+    if(instance)gpu.instance=true;else gpu.geometry=true;
   };
   const addGeometry=(geometry:GeometryLike)=>{
     if(geometries.has(geometry))return;geometries.add(geometry);
@@ -93,6 +85,11 @@ export function forestMeshBufferFootprint(meshes:Iterable<MeshLike>,extraGeometr
   for(const mesh of meshes){
     addGeometry(mesh.geometry);add(mesh.instanceMatrix,true);add(mesh.instanceColor,true);
   }
+  let geometryBytes=0,instanceBytes=0,geometryGpuEstimateBytes=0,instanceGpuEstimateBytes=0;
+  // A shared backing allocation is counted once under geometry if it is used
+  // by both kinds; this attribution is deterministic regardless of traversal.
+  for(const value of cpuBuffers.values())if(value.geometry||!value.instance)geometryBytes+=value.bytes;else instanceBytes+=value.bytes;
+  for(const value of gpuBuffers.values())if(value.geometry||!value.instance)geometryGpuEstimateBytes+=value.bytes;else instanceGpuEstimateBytes+=value.bytes;
   return {geometryBytes,instanceBytes,geometryGpuEstimateBytes,instanceGpuEstimateBytes,
     totalBytes:geometryBytes+instanceBytes,geometryCount:geometries.size};
 }
