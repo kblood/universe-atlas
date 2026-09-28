@@ -14,7 +14,7 @@ test('flora resident cache invalidates on water and habitat gate changes', () =>
   ]) assert.ok(signature[1].includes(field), `signature includes ${field}`);
 
   assert.match(renderer,
-    /if\(signature!==this\.lifeSignature\)\{this\.lifeSignature=signature;this\.lifeScatterValid=false;this\.lifeResidents\.clear\(\);this\.faunaGenomes\.clear\(\);this\.faunaGroundQueue=\[\];\}/,
+    /if\(signature!==this\.lifeSignature\)\{this\.lifeSignature=signature;this\.lifeScatterValid=false;this\.lifeResidents\.clear\(\);this\.faunaGenomes\.clear\(\);(?:this\.faunaNear\.clear\(\);)?this\.faunaGroundQueue=\[\];\}/,
     'a changed signature evicts residents and invalidates their recipes');
   assert.match(renderer,
     /type LifeResident=\{[^}]*floraRecipe\?:FloraRecipe\}/,

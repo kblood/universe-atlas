@@ -6,96 +6,38 @@ Execution ownership follows the [Luna and Claude Code task flow](desktop-realism
 Luna owns bounded implementation and acceptance; Claude Code / Opus 5.5 owns
 substantial implementation milestones. The product scope below remains intact.
 
-**Water-feature decision (2026-09-28):** inland rivers and the regional lakes
-attached to river regions are withdrawn in the separate rivers-off candidate
-based on published runtime `e0d9d9c`. That candidate keeps dated global oceans
-and ordinary terrain, while old river algorithms and their tests remain
-archived. Further river-realism work is paused until the feature is reconsidered;
-this does not close the broader ground, forest or terrain-quality work below.
-The candidate is integrated in this local rendering branch and has not been
-promoted to the live site.
+**Water-feature decision (2026-09-28):** the published runtime withdraws inland
+rivers and the regional lakes attached to them. Dated global oceans and ordinary
+terrain remain. The archived river algorithms stay in the source; further river
+realism work is paused pending a later product decision. See the [published
+river-withdrawal record](../test-results/deploy-4796b1a/README.md).
 
-## Current status snapshot — live site `e0d9d9c`
+## Current status snapshot — published runtime `4796b1a`
 
-The live site includes the website-only follow-up at `e0d9d9c`; its runtime is
-still the deployed `8c03f41` stage. That stage passed the ordinary browser
-loading checks: 759 detailed trees appeared on attach, 753 identities matched
-after a one-day shift and return, the deliberate Oak 503 retained fallback
-trees and Retry succeeded, and revisiting reused the package with 20 requests
-total. See the [forest-loading summary](../test-results/forest-asset-loading/README.md).
-These checks do not approve the tree appearance or establish a general
-performance target.
+The public site is on runtime `4796b1a`. It renders the dated global ocean and
+supports ordinary descent and ground contact; inland rivers and their regional
+lakes are unavailable. Its understory and many visible plants still use the
+faceted procedural shapes that motivate the current vegetation work. The
+[deployment record](../test-results/deploy-4796b1a/README.md) includes the
+live river-link and grounded checks.
 
-The later local structural-variant stage `d1f6182` passed CPU tests and build,
-but normal-flight visual review rejected its stacked far discs; its date replay
-was inconclusive. That experiment is not deployed. A separate fauna candidate
-`7ca4b62` adds genome-proportioned connected skinned quadrupeds near the camera,
-with the current instanced fauna retained as fallback. Its focused CPU tests and
-type-check pass (124 focused tests in Opus's run; my independent rerun passed all
-17 new fauna tests), but it has not had browser/GPU visual or performance
-acceptance. The 80/95 m handoff, local aerial material behavior, shadows, and
-device cost remain open. See the [fauna body-plan record](fauna-near-body-plan-2026-09-28.md).
+## Current local candidate — combined rendering head `c9ba64f`
 
-An earlier `ee26efa` preview measured one stationary RTX 5090 pose at 41.4 ms
-p50 / 60.1 ms p95 frame work. That single-pose measurement remains historical;
-it is not a before/after speedup result or a general frame-rate claim.
+The local combined branch contains optional packaged tree-family loading,
+experimental far-tree presentation, connected near-body fauna, detailed ground
+materials and the rivers-off behavior. The combined candidate is undergoing
+normal-game review; its appearance and performance are not accepted or
+published. Detailed trees still use the canonical 10–22 m population height
+proxy rather than species recipe stature, crown-width and trunk limits, so
+consistent species allometry remains open. This milestone targets the visibly
+faceted grass and shrub geometry in the existing instanced flora path while
+preserving placement, identity, habitat and date decisions. It starts from
+`c9ba64f`; measurements, tests and screenshot review will be recorded before
+any adoption.
 
-The local far-crown visual review rejected the solid analytic band shapes as a
-realism direction. The replacement experiment captures actual Oak and Pine
-LOD1 meshes at their fixed 16 m source height: each uses 81 views, 64 px per
-view, and 7,077,456 bytes of explicit mipmapped GPU texture data. In the
-33 px intermediate-view A/B, coverage-weighted filtering measured blurred IoU
-0.873 for Oak with −6.37% area error, and 0.838 for Pine with −6.73% area
-error. Pine's reference samples disagree by about 20% (264 versus 528 covered
-samples), so those scores do not establish reference convergence. The captures
-are still lab experiments: no visual approval, continuous forest integration,
-or production adoption. See the [visual decision](family-canopy-visual-decision-2026-09-28.md),
-[capture filtering report](../test-results/family-capture/filtering-v3/report.json),
-and [capture comparison notes](authored-tree-capture-2026-09-28.md).
-
-The local normal-loading, family-canopy, and retained work-list records remain
-useful implementation evidence, with their limits stated separately. Physical
-species dimensions, accepted foliage and far silhouettes, ground/rock and
-terrain materials, fauna breadth, performance targets on midrange hardware,
-Quest quality, and end-to-end visual acceptance remain open. No general
-frame-rate claim follows from these fixtures. See the [family integration](family-canopy-2026-09-28.md),
-[compact family record](compact-tree-families-2026-09-28.md),
-[normal loading record](forest-asset-loading-2026-09-28.md), and
-[retained work-list record](forest-worklist-2026-09-28.md).
-
-The isolated far-atlas follow-up (`c7e9205`, card-scale calibration `3cea060`)
-replaces the stacked analytic far bands with captures of the actual Oak and Pine
-LOD1 meshes. A local RTX 5090 run at 1440×1000 adopted both family atlases,
-preserved whole-population identity and occupancy on a frozen date replay, and
-showed separate irregular crowns instead of stacked discs. The 56.6 MB total
-atlas allocation is bounded but substantial. Dark sparse close Pine foliage,
-angular non-tree shrubs, and faceted terrain remain visible; this is a bounded
-representation improvement, not completion of forest realism. The final
-combined check on the rivers-disabled branch remains pending. See the
-[hardware record](forest-far-atlas-hardware-acceptance-2026-09-28.md) and its
-[browser report](../test-results/forest-visual-followup-opus/resume-2/browser/report.json).
-
-Per-species physical dimensions, structural variants, accepted realistic
-foliage and far silhouettes, rocks and ground materials, terrain and fauna
-breadth, midrange performance targets, Quest quality and end-to-end visual
-acceptance remain open. No general frame-rate claim follows from CPU tests.
-
-Historical deployment `580936f` included the canopy runtime through `98556a7`:
-complete canonical patches and individual ownership, 5,500 m altitude
-prefetch, 3,500 m altitude rendering, water-aware patch reuse and retained
-terrain refresh during date changes. The [integration record](canopy-runtime-integration-2026-09-28.md)
-links its immutable RTX 5090 date-seek and flight/walking evidence; the
-[deployment receipt](deployment-580936f-2026-09-28.md) preserves that earlier
-build and byte audit. It is historical evidence, not the current live stamp.
-Baseline before this work: `27e89c897369270728e5ef4118dcc144e40af7fc`.
-
-This is the current plan for planetary visual quality. It consolidates the
-[proposal](desktop-realism-proposal-2026-09-27.md), the
-[independent Opus 5.5 review](opus-5.5-desktop-realism-review-2026-09-27.md),
-the [review assessment](desktop-realism-assessment-2026-09-27.md), and the
-subsequent agreement on procedural trees and instance variation. Those review
-records remain historical inputs. This document owns implementation order and
-status; dated validation reports own measured results.
+The dated sections below retain experiment and checkpoint records. Their
+measurements belong to the named fixture and do not imply current deployment,
+visual acceptance or a general performance result.
 
 ## 1. Product target
 
@@ -126,9 +68,11 @@ distribution through moisture, slope, climate and substrate. Clustering, gaps,
 undergrowth and size distribution contribute to realism alongside mesh quality.
 
 Do not introduce a second independent species catalogue inside the renderer.
-The local detailed renderer now binds canonical forest individuals to dated
-species recipes. Physical allometry and bounded structural variants remain
-unfinished; the initial asset adapter preserves canonical population heights.
+The local detailed renderer binds canonical forest individuals to dated species
+eligibility, but detailed mesh scale still follows the canonical population's
+10–22 m height proxy; recipe-specific height, crown width and trunk constraints
+do not yet bound its geometry. Physical allometry, consistent near/far species
+envelopes and bounded structural variants remain unfinished.
 
 ### Blender and assetctl
 
@@ -267,20 +211,20 @@ more. Structural diversity must not come from disconnected anatomy.
 
 | Stage | Deliverables | Status |
 | --- | --- | --- |
-| A. Record direction | This plan, related MD links/status, guide explanations | Written; guide updated by Luna 6 |
-| B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented; build, 53 targeted checks and RTX 5090 browser acceptance pass; see validation record |
-| C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
-| D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | The deployed runtime through `8c03f41` passes full production UI acceptance for package load, fallback, deliberate 503/retry and planet revisit; see the [current forest-loading summary](../test-results/forest-asset-loading/README.md). Family profiles, bounds and material colors are derived at load, with focused CPU checks and TypeScript passing. The normal UI result verifies lifecycle, not tree visual quality. Physical species allometry, structural variants, midrange performance and broader asset acceptance remain open. See the [family](family-canopy-2026-09-28.md) and [normal-loading](forest-asset-loading-2026-09-28.md) records. |
-| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Runtime stage `8c03f41` is deployed and its normal UI flow passes, but the distant canopy still does not match detailed tree silhouettes. The distant renderer uses the dated binding and each loaded family's LOD1 profile. Focused CPU checks and an isolated Oak/Pine compile/render check pass; the `96997ec` incremental far-worklist change also passes CPU checks and build. These technical checks do not resolve matching close/middle/far appearance, handoff continuity, Pine density, performance targets or visual acceptance. The analytic trunk and solid bands remain approximations. See [family canopy integration](family-canopy-2026-09-28.md) and [canopy visual decision](family-canopy-visual-decision-2026-09-28.md). |
-| F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | The Oak/Pine package and runtime path are deployed through `8c03f41`, with the normal UI lifecycle verified, but the assets are not visually accepted as realistic trees. The implementation has separate measured geometry profiles and an offline-sidecar eligibility gate; it does not yet provide per-species dimensions or structural variants. Realistic foliage/material response, continuous LOD silhouette, ground/rocks/terrain breadth, fauna, midrange/XR profiling and full visual acceptance remain open. V7 texture encoding and earlier capture/authoring checks are historical experiments, not acceptance. See the [local family integration record](tree-forest-integration-2026-09-28.md), [family canopy record](family-canopy-2026-09-28.md), [v7 record](tree-authoring-v7-2026-09-28.md) and [capture record](authored-tree-capture-2026-09-28.md). |
-| G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
-| H. Breadth | More biomes/species and separately measured Quest profile | Planned |
+| A. Record direction | This plan, related records and guide explanations | Complete; scope and current deployment are summarized above |
+| B. Forest foundation | Stable populations, retained origins and bounded instance updates | Implemented in the deployed runtime; supports continuous population sampling, not realistic vegetation by itself |
+| C. Pipeline baseline | Shared lighting, terrain materials, antialiasing and bounded shadows | Common aerial perspective and detailed ground-material paths exist locally; device-wide frame targets and complete lighting/shadow acceptance remain open |
+| D. Procedural asset contract | Species binding, physical envelopes, variants, bark/leaf materials and instance parameters | Oak/Pine family loading and metadata are integrated in the local branch, but detailed trees still use the canonical 10–22 m height proxy instead of species recipe allometry. Per-species bounds, consistent near/far dimensions, broad variants, visual approval and midrange performance remain open |
+| E. Continuous canopy | Shared population from near view through distance | Local census and far-representation paths exist, but the current far silhouette/hand-off remains visually unaccepted; see the [family integration](family-canopy-2026-09-28.md) and [visual decision](family-canopy-visual-decision-2026-09-28.md) |
+| F. Realistic landscape | Trees, rocks, metre-scaled ground detail, understory and shared wind | Ground-material detail is integrated locally. A bounded grass/shrub geometry update is underway in the ordinary instanced flora path; the current renderer still uses the faceted shapes until the candidate passes review. Rocks, realistic tree acceptance and full landscape breadth remain open |
+| G. Realistic fauna | Genome-compatible form, deterministic identity and grounded motion | Near-body rig and dated movement are implemented in the local branch; the combined c9 candidate remains under review. Obstacle avoidance, foot placement, broader species and device cost remain open |
+| H. Breadth | More biomes/species and separately measured Quest profile | Future work after desktop visual and performance gates |
 
-### Historical checkpoints before `fbe3c26`
+### Historical checkpoints and experiment records
 
-The records below preserve earlier implementation snapshots. Their status
-sentences describe the checkpoint named in each heading/record; the current
-state is summarized above and in the dated family records.
+The records below preserve earlier implementation snapshots and non-shipped
+experiments. Their status sentences describe the named checkpoint, not the
+current deployment; current state is summarized above and in the dated records.
 
 [V5 authoring](tree-authoring-v5-2026-09-28.md) exports a 14,012-triangle tree
 and a 4,380-triangle LOD1 with identical foliage. The [Opus follow-up](tree-authoring-v5-review-assessment-2026-09-28.md)
