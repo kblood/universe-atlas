@@ -1,0 +1,12 @@
+Initial implementation-only harness failures (not calibration assertion failures):
+
+Run 1: Blender generated both fresh outputs, then the test harness aborted while hashing PNGs:
+  ReferenceError [Error]: createSHA is not defined
+  at bytesToSha (color-calibration.test.mjs)
+  Root cause: stale helper name after adding SHA-256; corrected to createHash.
+
+Run 2: all calibration and path assertions passed, then summary-file writing failed:
+  ReferenceError [Error]: writeFile is not defined
+  Root cause: omitted fs/promises import; added import.
+
+Final rerun passed all assertions; see color-calibration-test.log and calibration-test-summary.json.

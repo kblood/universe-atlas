@@ -34,6 +34,9 @@ using known reference values. Do not increase scene exposure to hide an asset
 encoding error. Leaf transmission, environment lighting and crown variation
 remain separate visual work after that calibration.
 
+The [fixed colour calibration](tree-color-calibration-2026-09-28.md) now records
+the actual byte/float PNG behavior and the proposed next generator contract.
+
 The diagnostic harness is `tests/tree-asset-lighting.browser.mjs`. It leaves
 the source assets and production materials unchanged; transient test material
 changes are restored. This record preserves a local diagnostic, not a game

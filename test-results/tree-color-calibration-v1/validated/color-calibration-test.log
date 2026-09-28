@@ -1,0 +1,10 @@
+{"operation":"color-calibration-1","output":"Assets/_assetctl/color-calibration-1790572938094-40092","repeat":"Assets/_assetctl/color-calibration-1790572938094-40092-repeat","blenderVersion":"5.1.1","pngBitDepths":{"byte-raw":8,"byte-srgb-encoded":8,"float-srgb":16},"rawPoint18Byte":46,"encodedPoint18Byte":118,"floatPoint18Sample":30235,"floatPoint18Raw":[30235],"floatEncodingObserved":"srgb-encoded","transparentEncoded":[93,134,53,0],"transparentFloat":[23957,34544,13499,0],"sharpFloatDisplay":[118,118,118,255],"pngsDeterministic":true,"noOverwriteRejected":true,"outsidePathRejected":true,"inputRejected":true}
+✔ fixed color calibration records byte/float PNG behavior, sRGB transfer, alpha, determinism and path guards (6857.701ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6959.7659
