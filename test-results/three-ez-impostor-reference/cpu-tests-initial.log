@@ -1,0 +1,10 @@
+{"firstPath":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\three-ez-impostor-reference-test-1790584002951-69312","repeatPath":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\three-ez-impostor-reference-test-1790584002951-69312-repeat","bundleBytes":27267,"bundleSha256":"3d29cb7e45f265c434b0090d62a093639a71d0f1fe415d6f00e24bd7ac573180","sourceFileCount":12,"allVendorFileCount":17,"externalImports":["three","three","three","three"],"limitations":["Hemisphere only: upstream full-octahedron reconstruction is unfinished","Static capture: no Atlas wind or custom deformation","No shadow, depth, lighting or visual acceptance from bundling"],"invalidBriefPath":"C:\\LLM\\IWSDK\\Assets\\_assetctl\\three-ez-impostor-reference-test-1790584002951-69312-invalid-brief\\invalid-brief.json"}
+✔ bundles the pinned Three.ez source reproducibly without executing it (194.6246ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 345.1534

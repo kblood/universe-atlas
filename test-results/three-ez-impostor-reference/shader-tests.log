@@ -1,0 +1,11 @@
+✔ audits a pinned Three MeshStandard shader and repairs only live hooks (7.4069ms)
+✔ liveGlsl masks line and block comments without shifting shader offsets (0.3208ms)
+✔ rejects missing, duplicate and changed structural shader hooks (0.4452ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 152.4143

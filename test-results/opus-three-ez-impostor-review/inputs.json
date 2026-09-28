@@ -1,0 +1,54 @@
+{
+  "revision": "c93087678dcd5f1ee5577242621d3cdf146bd338",
+  "dirty": true,
+  "files": [
+    {
+      "path": "../tools/assetctl/tree-impostor-reference.mjs",
+      "sha256": "00a3540a36bcadfa8444dbd33f3017f7698e017b9ba60249802e40f085988cc1"
+    },
+    {
+      "path": "../tools/assetctl/test/tree-impostor-reference.test.mjs",
+      "sha256": "845017af32d9a33104375ff9f8314e699281e8707b88e78edc386ccd5e2a9690"
+    },
+    {
+      "path": "../examples/asset-briefs/atlas-three-ez-impostor-reference.json",
+      "sha256": "0cf84c3edfc3a1d0f08ddc94758257c3012ec52834b91ad8825e0ee4752307c4"
+    },
+    {
+      "path": "src/tree-impostor-reference-lab.ts",
+      "sha256": "e8b9ba4a9684dec0369682e7720db965da9b38533d38bba1a8928380e55e5fa6"
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "sha256": "c3c6409a63efaff9d8fdb913c7a87bb11dfcf599eb9621142bed9fe4fd1b2586"
+    },
+    {
+      "path": "../tools/assetctl/vendor/three-ez-impostor/src/core/octahedralImpostor.ts",
+      "sha256": "2588e36d3b2ef07c2183d9ae3065f11221d9ffe2f16716ce7a9c85c241f03421"
+    },
+    {
+      "path": "../tools/assetctl/vendor/three-ez-impostor/src/core/octahedralImpostorMaterial.ts",
+      "sha256": "f95dbcdf253dad1718b555b03226bf0b2627f21b5281e3e7041c7a9bb0a453d7"
+    },
+    {
+      "path": "../tools/assetctl/vendor/three-ez-impostor/src/utils/createTextureAtlas.ts",
+      "sha256": "1c5f46fc619aa26a6c3009971c07bc565ab90f7eb626c029142031c7e5393c2c"
+    },
+    {
+      "path": "../tools/assetctl/vendor/three-ez-impostor/src/shaders/impostor/octahedral_impostor_shader_params_vertex.glsl",
+      "sha256": "22488c77fd6d8b50fda428b024140d6727d3ed5fb052045cbbab5680418107f7"
+    },
+    {
+      "path": "../tools/assetctl/vendor/three-ez-impostor/src/shaders/impostor/octahedral_impostor_shader_vertex.glsl",
+      "sha256": "76505602076dc61eac3d05548eaf00a924956c3c278c4c92926a5b1b568e5698"
+    },
+    {
+      "path": "../tools/assetctl/vendor/three-ez-impostor/src/shaders/impostor/octahedral_impostor_shader_params_fragment.glsl",
+      "sha256": "c5b6a4276256ae41a3fde90a3c3b186977545fa738eb5780eeed375d106d9e6b"
+    },
+    {
+      "path": "../tools/assetctl/vendor/three-ez-impostor/src/shaders/atlas_texture/octahedral_atlas_fragment.glsl",
+      "sha256": "d83853379135936e2a1cd89eec36afa08c8713671a3e12627891df821c006588"
+    }
+  ]
+}

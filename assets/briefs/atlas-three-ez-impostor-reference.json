@@ -1,0 +1,88 @@
+{
+  "schema": "https://iwsdk.local/schemas/asset-brief/v1",
+  "id": "atlas-three-ez-impostor-reference",
+  "kind": "environment-kit",
+  "purpose": "Benchmark the pinned Three.ez hemisphere impostor against the same Atlas mesh, cameras, pixel footprint and lighting.",
+  "target": {
+    "engine": "IWSDK",
+    "project": "universe-atlas",
+    "devices": [
+      "desktop-web"
+    ],
+    "metersPerUnit": 1,
+    "runtimeCoordinates": "right-handed-y-up"
+  },
+  "artDirection": {
+    "summary": "Preserve canopy coverage over camera directions and distance. Record defects in the unmodified published implementation before adapting it.",
+    "styleTags": [
+      "realistic",
+      "broadleaf",
+      "reference-comparison"
+    ],
+    "references": [
+      "https://github.com/agargaro/octahedral-impostor/tree/ca0046a49fef8f8c75745a6e49e52752ef3cf8e3"
+    ]
+  },
+  "deliverables": [
+    {
+      "type": "manifest",
+      "format": "json",
+      "path": "reference-manifest.json",
+      "required": true
+    }
+  ],
+  "constraints": {
+    "geometry": {
+      "lodCount": 2,
+      "maxMaterials": 2,
+      "collision": "none",
+      "maxTriangles": 18000
+    }
+  },
+  "acceptance": {
+    "visual": [
+      "Compare silhouettes at capture axes, between views, and near the top; show source and impostor together",
+      "Record canopy loss, view changes and lighting differences without treating draw reduction as visual acceptance"
+    ],
+    "technical": [
+      "Pinned upstream files and library bundle retain source hashes and MIT notice",
+      "Fresh output preserves inputs; repeated bundles match bytes",
+      "Only three is external; no caller code or bundles are executed by the build operation"
+    ],
+    "runtime": [
+      "Measure full mesh and hemisphere impostor at identical camera and object bounds",
+      "Audit GL errors, GPU timings and view-dependent coverage; static capture only"
+    ]
+  },
+  "provenance": {
+    "sourceType": "derived",
+    "generator": {
+      "provider": "three-ez",
+      "model": "octahedral-impostor",
+      "version": "ca0046a49fef8f8c75745a6e49e52752ef3cf8e3",
+      "workflow": "assetctl-tree-impostor-reference"
+    },
+    "prompt": "Bundle the unmodified MIT reference for a matched Atlas tree rendering comparison.",
+    "seed": 35729,
+    "sourceUrl": "https://github.com/agargaro/octahedral-impostor/tree/ca0046a49fef8f8c75745a6e49e52752ef3cf8e3",
+    "sourceConsent": "licensed",
+    "parents": [],
+    "license": {
+      "expression": "MIT",
+      "attribution": "Andrea Gargaro; retain the upstream MIT notice",
+      "restrictions": [
+        "This brief covers the library bundle; tree and texture provenance remain in their separate family manifest"
+      ]
+    },
+    "notes": "Research library bundle, not a packaged tree asset; hemisphere-only upstream reconstruction. Geometry and texture inputs are preserved separately."
+  },
+  "experiments": {
+    "providers": [
+      "three-ez"
+    ],
+    "seeds": [
+      35729
+    ],
+    "selectionMetric": "Canopy shape, repeatability, physical dimensions, LOD continuity and adaptation effort"
+  }
+}

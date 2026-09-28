@@ -39,6 +39,8 @@ A separate [pinned EZ-Tree reference comparison](docs/tree-ez-reference-2026-09-
 
 Adapter candidate F turns that reference into an Atlas-material GLB pair: 13,806-triangle LOD0 and 4,866-triangle LOD1, retaining 1.2 m cards, pivots and wind data. It is a separate browser lab, not the default forest or a shipped asset; canopy/LOD appearance and material quality remain under review. The live app checkpoint `cc25635` still uses its legacy tree shapes. See the [candidate F status](docs/tree-ez-family-2026-09-28.md).
 
+The current [Three.ez impostor comparison](docs/tree-three-ez-impostor-2026-09-28.md) isolates an upstream texture-atlas colour defect and measures distant coverage against a converged mesh reference. The existing proxy and Three.js alpha hashing retain substantially more coverage than the experimental mesh's default alpha mask. Lighting, view continuity and game adoption remain open. The next material work is described in the [foliage minification comparison](docs/tree-foliage-minification-2026-09-28.md) and [leaf diffuse-transmission note](docs/leaf-diffuse-transmission-2026-09-28.md).
+
 The [tree authoring v4 candidate](docs/tree-authoring-v4-2026-09-28.md) passes
 physical export, repeat-generation and Blender/GLB render checks after the
 [Opus authoring review fixes](docs/tree-authoring-review-assessment-2026-09-28.md).

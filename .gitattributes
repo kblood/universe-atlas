@@ -13,5 +13,9 @@ src/vendor/three-ez-impostor/** -text
 src/tree-impostor-reference-lab.ts -text
 src/tree-impostor-reference-shader.ts -text
 tree-impostor-reference-lab.html -text
-test-results/three-ez-impostor-reference/** -text
-test-results/opus-three-ez-impostor-review/** -text
+test-results/three-ez-impostor-reference/** -text whitespace=cr-at-eol
+test-results/opus-three-ez-impostor-review/** -text whitespace=cr-at-eol
+# Preserve whitespace in the exact upstream source supplied to the reviewer.
+test-results/opus-three-ez-impostor-review/prompt.txt -whitespace
+assets/briefs/atlas-three-ez-impostor-reference.json -text whitespace=cr-at-eol
+test-results/tree-three-ez-live/** -text whitespace=cr-at-eol

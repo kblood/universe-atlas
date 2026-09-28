@@ -1,0 +1,536 @@
+{
+  "candidate": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f",
+  "inputHashes": {
+    "near": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+    "mid": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9"
+  },
+  "sourceHashes": {
+    "tree-impostor-reference-lab.html": "f0a9f08456478acea9f9380011fb00496f6c077c69f14bb43f0c8231cc9f4348",
+    "src/tree-impostor-reference-lab.ts": "a76d9a6b1af50c3184a8d05ad646d910de8610d8285ce392324a667a2f117d83",
+    "src/tree-impostor-reference-shader.ts": "08be44cbb1aaf730898f677d49ed32cd4c1341256d2a1245a582c8cc6272090f",
+    "src/tree-asset.ts": "c3c6409a63efaff9d8fdb913c7a87bb11dfcf599eb9621142bed9fe4fd1b2586",
+    "src/vendor/three-ez-impostor/impostor-reference.js": "3d29cb7e45f265c434b0090d62a093639a71d0f1fe415d6f00e24bd7ac573180"
+  },
+  "browserVersion": "149.0.7827.55",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "metadata": {
+    "revision": "ca0046a49fef8f8c75745a6e49e52752ef3cf8e3",
+    "bundleSha256": "3d29cb7e45f265c434b0090d62a093639a71d0f1fe415d6f00e24bd7ac573180",
+    "threeRevision": "181",
+    "grid": 16,
+    "textureSize": 2048,
+    "mapIncludeFix": true
+  },
+  "probe": "All comparisons use alpha channel; 256px 4x mesh is the resolution reference, not temporal AA.",
+  "results": [
+    {
+      "tag": "horizon0",
+      "d": [
+        0,
+        0,
+        1
+      ],
+      "settings": {
+        "before": {
+          "alphaTest": 0.5,
+          "alphaHash": false
+        }
+      },
+      "regularReferenceArea": 17874.0625,
+      "hashReferenceArea": 17921,
+      "regularVsHash256SS4Mae": 0.0030775070190429688,
+      "outputs": [
+        {
+          "pixels": 8,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 17,
+            "areaBPixels": 17,
+            "binaryIoU": 0.7,
+            "softIoU": 0.650931245272218,
+            "weightedAreaA": 17.5009765625,
+            "weightedAreaB": 17,
+            "weightedAreaRatio": 0.9713743652697953
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 17,
+            "areaBPixels": 17,
+            "binaryIoU": 1,
+            "softIoU": 0.769297463104684,
+            "weightedAreaA": 17.5009765625,
+            "weightedAreaB": 17,
+            "weightedAreaRatio": 0.9713743652697953
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 17,
+            "areaBPixels": 17,
+            "binaryIoU": 0.7,
+            "softIoU": 0.7,
+            "weightedAreaA": 17,
+            "weightedAreaB": 17,
+            "weightedAreaRatio": 1
+          }
+        },
+        {
+          "pixels": 16,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 69,
+            "areaBPixels": 77,
+            "binaryIoU": 0.825,
+            "softIoU": 0.7968552764688855,
+            "weightedAreaA": 70.00390625,
+            "weightedAreaB": 77,
+            "weightedAreaRatio": 1.0999386194966798
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 69,
+            "areaBPixels": 77,
+            "binaryIoU": 0.8961038961038961,
+            "softIoU": 0.829759173440705,
+            "weightedAreaA": 70.00390625,
+            "weightedAreaB": 77,
+            "weightedAreaRatio": 1.0999386194966798
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 77,
+            "areaBPixels": 77,
+            "binaryIoU": 0.8780487804878049,
+            "softIoU": 0.8780487804878049,
+            "weightedAreaA": 77,
+            "weightedAreaB": 77,
+            "weightedAreaRatio": 1
+          }
+        },
+        {
+          "pixels": 32,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 280,
+            "areaBPixels": 300,
+            "binaryIoU": 0.8831168831168831,
+            "softIoU": 0.844206734874478,
+            "weightedAreaA": 280.015625,
+            "weightedAreaB": 300,
+            "weightedAreaRatio": 1.0713687852240388
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 280,
+            "areaBPixels": 291,
+            "binaryIoU": 0.9554794520547946,
+            "softIoU": 0.8909391957881393,
+            "weightedAreaA": 280.015625,
+            "weightedAreaB": 291,
+            "weightedAreaRatio": 1.0392277216673176
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 300,
+            "areaBPixels": 291,
+            "binaryIoU": 0.8584905660377359,
+            "softIoU": 0.8584905660377359,
+            "weightedAreaA": 300,
+            "weightedAreaB": 291,
+            "weightedAreaRatio": 0.97
+          }
+        },
+        {
+          "pixels": 64,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 1141,
+            "areaBPixels": 1185,
+            "binaryIoU": 0.9112571898110107,
+            "softIoU": 0.8863393707684144,
+            "weightedAreaA": 1120.0625,
+            "weightedAreaB": 1185,
+            "weightedAreaRatio": 1.0579766754087383
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 1141,
+            "areaBPixels": 1118,
+            "binaryIoU": 0.9626411815812337,
+            "softIoU": 0.9245554279111327,
+            "weightedAreaA": 1120.0625,
+            "weightedAreaB": 1118,
+            "weightedAreaRatio": 0.9981585849003962
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 1185,
+            "areaBPixels": 1118,
+            "binaryIoU": 0.8954732510288066,
+            "softIoU": 0.8954732510288066,
+            "weightedAreaA": 1185,
+            "weightedAreaB": 1118,
+            "weightedAreaRatio": 0.9434599156118143
+          }
+        },
+        {
+          "pixels": 128,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 4535,
+            "areaBPixels": 4580,
+            "binaryIoU": 0.932372270510918,
+            "softIoU": 0.9168539920133287,
+            "weightedAreaA": 4480.25,
+            "weightedAreaB": 4580,
+            "weightedAreaRatio": 1.022264382567937
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 4535,
+            "areaBPixels": 4361,
+            "binaryIoU": 0.9440559440559441,
+            "softIoU": 0.9269329264970304,
+            "weightedAreaA": 4480.25,
+            "weightedAreaB": 4361,
+            "weightedAreaRatio": 0.9733831817420903
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 4580,
+            "areaBPixels": 4361,
+            "binaryIoU": 0.9137414383561644,
+            "softIoU": 0.9137414383561644,
+            "weightedAreaA": 4580,
+            "weightedAreaB": 4361,
+            "weightedAreaRatio": 0.9521834061135371
+          }
+        }
+      ]
+    },
+    {
+      "tag": "diagonal45-elevation15",
+      "d": [
+        0.6830127018922194,
+        0.25881904510252074,
+        0.6830127018922194
+      ],
+      "settings": {
+        "before": {
+          "alphaTest": 0.5,
+          "alphaHash": false
+        }
+      },
+      "regularReferenceArea": 15299.875,
+      "hashReferenceArea": 15345.6875,
+      "regularVsHash256SS4Mae": 0.0028181076049804688,
+      "outputs": [
+        {
+          "pixels": 8,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 15,
+            "areaBPixels": 17,
+            "binaryIoU": 0.7777777777777778,
+            "softIoU": 0.7236401549785885,
+            "weightedAreaA": 14.98602294921875,
+            "weightedAreaB": 17,
+            "weightedAreaRatio": 1.1343903621131344
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 15,
+            "areaBPixels": 15,
+            "binaryIoU": 1,
+            "softIoU": 0.7371830458012298,
+            "weightedAreaA": 14.98602294921875,
+            "weightedAreaB": 15,
+            "weightedAreaRatio": 1.0009326724527656
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 17,
+            "areaBPixels": 15,
+            "binaryIoU": 0.7777777777777778,
+            "softIoU": 0.7777777777777778,
+            "weightedAreaA": 17,
+            "weightedAreaB": 15,
+            "weightedAreaRatio": 0.8823529411764706
+          }
+        },
+        {
+          "pixels": 16,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 57,
+            "areaBPixels": 62,
+            "binaryIoU": 0.8888888888888888,
+            "softIoU": 0.7971927577323297,
+            "weightedAreaA": 59.944091796875,
+            "weightedAreaB": 62,
+            "weightedAreaRatio": 1.0342970948678578
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 57,
+            "areaBPixels": 62,
+            "binaryIoU": 0.9193548387096774,
+            "softIoU": 0.8125909501638464,
+            "weightedAreaA": 59.944091796875,
+            "weightedAreaB": 62,
+            "weightedAreaRatio": 1.0342970948678578
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 62,
+            "areaBPixels": 62,
+            "binaryIoU": 0.9076923076923077,
+            "softIoU": 0.9076923076923077,
+            "weightedAreaA": 62,
+            "weightedAreaB": 62,
+            "weightedAreaRatio": 1
+          }
+        },
+        {
+          "pixels": 32,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 244,
+            "areaBPixels": 264,
+            "binaryIoU": 0.9026217228464419,
+            "softIoU": 0.8509228296281413,
+            "weightedAreaA": 239.7763671875,
+            "weightedAreaB": 264,
+            "weightedAreaRatio": 1.1010259396980422
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 244,
+            "areaBPixels": 245,
+            "binaryIoU": 0.9482071713147411,
+            "softIoU": 0.8685459616738247,
+            "weightedAreaA": 239.7763671875,
+            "weightedAreaB": 245,
+            "weightedAreaRatio": 1.0217854364621983
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 264,
+            "areaBPixels": 245,
+            "binaryIoU": 0.8851851851851852,
+            "softIoU": 0.8851851851851852,
+            "weightedAreaA": 264,
+            "weightedAreaB": 245,
+            "weightedAreaRatio": 0.928030303030303
+          }
+        },
+        {
+          "pixels": 64,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 970,
+            "areaBPixels": 1023,
+            "binaryIoU": 0.899904671115348,
+            "softIoU": 0.8728094781132354,
+            "weightedAreaA": 959.10546875,
+            "weightedAreaB": 1023,
+            "weightedAreaRatio": 1.0666188790824784
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 970,
+            "areaBPixels": 961,
+            "binaryIoU": 0.9505050505050505,
+            "softIoU": 0.9062775104030528,
+            "weightedAreaA": 959.10546875,
+            "weightedAreaB": 961,
+            "weightedAreaRatio": 1.0019753106532372
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 1023,
+            "areaBPixels": 961,
+            "binaryIoU": 0.8859315589353612,
+            "softIoU": 0.8859315589353612,
+            "weightedAreaA": 1023,
+            "weightedAreaB": 961,
+            "weightedAreaRatio": 0.9393939393939394
+          }
+        },
+        {
+          "pixels": 128,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 3877,
+            "areaBPixels": 3952,
+            "binaryIoU": 0.9345193970842599,
+            "softIoU": 0.9133380419011354,
+            "weightedAreaA": 3836.421875,
+            "weightedAreaB": 3952,
+            "weightedAreaRatio": 1.0301265420659713
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 3877,
+            "areaBPixels": 3819,
+            "binaryIoU": 0.9163346613545816,
+            "softIoU": 0.9039341866989982,
+            "weightedAreaA": 3836.421875,
+            "weightedAreaB": 3819,
+            "weightedAreaRatio": 0.9954588219002896
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 3952,
+            "areaBPixels": 3819,
+            "binaryIoU": 0.8962908735968765,
+            "softIoU": 0.8962908735968765,
+            "weightedAreaA": 3952,
+            "weightedAreaB": 3819,
+            "weightedAreaRatio": 0.9663461538461539
+          }
+        }
+      ]
+    },
+    {
+      "tag": "top",
+      "d": [
+        0,
+        1,
+        0
+      ],
+      "settings": {
+        "before": {
+          "alphaTest": 0.5,
+          "alphaHash": false
+        }
+      },
+      "regularReferenceArea": 14142.625,
+      "hashReferenceArea": 14188.875,
+      "regularVsHash256SS4Mae": 0.0027751922607421875,
+      "outputs": [
+        {
+          "pixels": 8,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 13,
+            "areaBPixels": 14,
+            "binaryIoU": 0.9285714285714286,
+            "softIoU": 0.7468509467254056,
+            "weightedAreaA": 13.8563232421875,
+            "weightedAreaB": 14,
+            "weightedAreaRatio": 1.0103690391239615
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 13,
+            "areaBPixels": 14,
+            "binaryIoU": 0.9285714285714286,
+            "softIoU": 0.7468509467254056,
+            "weightedAreaA": 13.8563232421875,
+            "weightedAreaB": 14,
+            "weightedAreaRatio": 1.0103690391239615
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 14,
+            "areaBPixels": 14,
+            "binaryIoU": 1,
+            "softIoU": 1,
+            "weightedAreaA": 14,
+            "weightedAreaB": 14,
+            "weightedAreaRatio": 1
+          }
+        },
+        {
+          "pixels": 16,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 55,
+            "areaBPixels": 61,
+            "binaryIoU": 0.8412698412698413,
+            "softIoU": 0.7978299880868005,
+            "weightedAreaA": 55.42529296875,
+            "weightedAreaB": 61,
+            "weightedAreaRatio": 1.1005805604743153
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 55,
+            "areaBPixels": 55,
+            "binaryIoU": 0.9642857142857143,
+            "softIoU": 0.8265381943883567,
+            "weightedAreaA": 55.42529296875,
+            "weightedAreaB": 55,
+            "weightedAreaRatio": 0.9923267348538908
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 61,
+            "areaBPixels": 55,
+            "binaryIoU": 0.8412698412698413,
+            "softIoU": 0.8412698412698413,
+            "weightedAreaA": 61,
+            "weightedAreaB": 55,
+            "weightedAreaRatio": 0.9016393442622951
+          }
+        },
+        {
+          "pixels": 32,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 222,
+            "areaBPixels": 245,
+            "binaryIoU": 0.8830645161290323,
+            "softIoU": 0.8560886755373275,
+            "weightedAreaA": 221.701171875,
+            "weightedAreaB": 245,
+            "weightedAreaRatio": 1.105091136541833
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 222,
+            "areaBPixels": 223,
+            "binaryIoU": 0.9777777777777777,
+            "softIoU": 0.890130415653199,
+            "weightedAreaA": 221.701171875,
+            "weightedAreaB": 223,
+            "weightedAreaRatio": 1.0058584630564438
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 245,
+            "areaBPixels": 223,
+            "binaryIoU": 0.8870967741935484,
+            "softIoU": 0.8870967741935484,
+            "weightedAreaA": 245,
+            "weightedAreaB": 223,
+            "weightedAreaRatio": 0.9102040816326531
+          }
+        },
+        {
+          "pixels": 64,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 891,
+            "areaBPixels": 928,
+            "binaryIoU": 0.9087093389296957,
+            "softIoU": 0.8843871553902501,
+            "weightedAreaA": 886.8046875,
+            "weightedAreaB": 928,
+            "weightedAreaRatio": 1.046453647664103
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 891,
+            "areaBPixels": 870,
+            "binaryIoU": 0.9610244988864143,
+            "softIoU": 0.9168300458598292,
+            "weightedAreaA": 886.8046875,
+            "weightedAreaB": 870,
+            "weightedAreaRatio": 0.9810502946850966
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 928,
+            "areaBPixels": 870,
+            "binaryIoU": 0.9046610169491526,
+            "softIoU": 0.9046610169491526,
+            "weightedAreaA": 928,
+            "weightedAreaB": 870,
+            "weightedAreaRatio": 0.9375
+          }
+        },
+        {
+          "pixels": 128,
+          "hashNativeVsHash256SS4": {
+            "areaAPixels": 3583,
+            "areaBPixels": 3646,
+            "binaryIoU": 0.9241416023422944,
+            "softIoU": 0.9063484767548273,
+            "weightedAreaA": 3547.21875,
+            "weightedAreaB": 3646,
+            "weightedAreaRatio": 1.0278475213855927
+          },
+          "proxyNativeVsHash256SS4": {
+            "areaAPixels": 3583,
+            "areaBPixels": 3512,
+            "binaryIoU": 0.9438356164383561,
+            "softIoU": 0.92226524273497,
+            "weightedAreaA": 3547.21875,
+            "weightedAreaB": 3512,
+            "weightedAreaRatio": 0.9900714468201319
+          },
+          "hashNativeVsProxyNative": {
+            "areaAPixels": 3646,
+            "areaBPixels": 3512,
+            "binaryIoU": 0.9052435453819537,
+            "softIoU": 0.9052435453819537,
+            "weightedAreaA": 3646,
+            "weightedAreaB": 3512,
+            "weightedAreaRatio": 0.9632473944048272
+          }
+        }
+      ]
+    }
+  ],
+  "glErrors": [],
+  "pageErrors": []
+}

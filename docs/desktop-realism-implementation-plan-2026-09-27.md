@@ -229,8 +229,13 @@ EZ-Tree's branching as the next source candidate, but card/material quality,
 normal correction, wind/pivot data, LOD budgets, packaging and runtime
 acceptance remain open. The [Opus source review](opus-5.5-tree-reference-review-2026-09-28.md)
 records applied adapter and manifest fixes but is not a visual acceptance.
-Nothing from the experiment has been adopted into the game. A Three.ez impostor
-benchmark against the same asset remains future work.
+Nothing from the experiment has been adopted into the game. The subsequent
+[Three.ez impostor comparison](tree-three-ez-impostor-2026-09-28.md) uses the
+same Atlas-material GLB, preserves an unmodified baseline, and tests an isolated
+colour-include repair. Native distant coverage and hemisphere limitations must
+be resolved before choosing a game representation. Its
+[Opus review assessment](opus-three-ez-impostor-review-2026-09-28.md) separates
+library defects, fixture corrections and unimplemented calibration checks.
 
 The [EZ-Tree family adapter candidate F](tree-ez-family-2026-09-28.md) now
 emits a local two-LOD GLB pair with Atlas materials, physical cards, attachment
@@ -243,6 +248,20 @@ back-lighting issues.
 GLB validation is not canopy or LOD acceptance, and its runtime browser lab
 does not change the deployed default. Live checkpoint `cc25635` still draws
 the legacy tree shapes. No asset from this adapter has been adopted in the game.
+
+The [leaf diffuse-transmission note](leaf-diffuse-transmission-2026-09-28.md)
+describes the next lighting experiment. The installed material/loader does not
+support the Khronos extension even though the export tool can serialize it.
+The proposed opt-in thin-leaf response requires separate lighting and shadow
+validation; it is not a completed renderer feature.
+
+Before accepting the new textured tree at distance, address its measured
+minification loss. In three converged-reference views, the current alpha-masked
+mesh retains about 13% of reference coverage at a 32 px output; the existing
+impostor retains about 103%. The [foliage filtering comparison](tree-foliage-minification-2026-09-28.md)
+prioritizes existing Three.js material options and established coverage-preserving
+mip generation. Those findings apply to the experimental tree family, not a
+replacement already deployed in the game.
 
 Stages have dependencies. Beginning this programme does not mean replacing all
 subsystems at once. The first code increment targets B so detailed assets have

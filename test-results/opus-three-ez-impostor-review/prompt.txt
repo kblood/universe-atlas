@@ -1,0 +1,1304 @@
+Review this actual Atlas comparison fixture, source-only no tools, <=1000 words. User wants realism and existing techniques over reinvented tree/impostor systems. We pin unmodified MIT Three.ez source, esbuild only GLSL bundling with external three, named path-checked brief-gated operation. CPU independent bundler tests pass. New browser lab compares actual static16m EZ-Tree family F fullmesh (13806tri, Atlas2materials/4images) to upstream hemisphere impostor (2tri,256views2048atlas). Upper hemisphere only; full source branchTODO untouched. Static tree no wind/customdeformation; we deliberately clone plain source material and strip Atlas vertex hook so capture andfullmesh same geometry. Boundingsphere is taken from actual upstreamtransform to match cameras. Supersampled silhouette probes compare identical perspectivecamera/objectfootprint; sourcealpha.5/capturefactoryreconstructalpha.4 disclosed. Litproxy one roughness.9 vs separatewood/leaf.9/.84, no claim exactmaterialparity. Robust wrapper restoresrenderer/materialstate and disposes temporarycapturematerials; onecaptureperpage, finaldisposeownedtargets. GPUprofile fixtureonly no shadow/gameadoption. Luna running actual browser probes, results pending. Identify concrete errors in camera/normalspace/comparisonmethod/resourcehandling/captureencoding or shaderintegration; prioritize meaningful fixes. Do not recommend rewriting unpublished algorithm before benchmarking unmodified baseline. Propose how to distinguish actualupstream limitationsfromtestharnesserrors. Scope is to decide whether reuse improves continuous distantcanopy; tests alone won't implyvisualacceptance.
+FILE ../tools/assetctl/tree-impostor-reference.mjs
+/** Bundle a fixed, hash-checked upstream library. Never execute caller code. */
+import {readFile,writeFile,mkdir,realpath,stat} from 'node:fs/promises';
+import {join,dirname,resolve,relative} from 'node:path';
+import {createHash} from 'node:crypto';
+import {createRequire} from 'node:module';
+import {workspaceRoot,resolveApprovedPath} from './path-policy.mjs';
+import {validateContractValue} from './contract.mjs';
+
+const revision='ca0046a49fef8f8c75745a6e49e52752ef3cf8e3';
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+async function approved(value){const path=await realpath(resolveApprovedPath(value,{mustExist:true}));resolveApprovedPath(path);return path;}
+export async function buildImpostorReference(argv){
+  const opts={};
+  for(let i=0;i<argv.length;i+=2){const key=argv[i];if(!['--brief','--output'].includes(key)||Object.hasOwn(opts,key)||!argv[i+1]||argv[i+1].startsWith('--'))throw new Error('Invalid reference option');opts[key]=argv[i+1];}
+  if(!opts['--brief']||!opts['--output'])throw new Error('Reference requires --brief and --output');
+  const briefPath=await approved(opts['--brief']);if((await stat(briefPath)).size>1024*1024)throw new Error('Brief too large');
+  const briefBytes=await readFile(briefPath),brief=JSON.parse(briefBytes),checked=await validateContractValue('asset-brief',brief);
+  if(!checked.valid||brief.id!=='atlas-three-ez-impostor-reference'||brief.provenance.generator.version!==revision)throw new Error('Invalid pinned reference brief');
+  const output=resolveApprovedPath(opts['--output']);await approved(dirname(output));
+  const vendor=join(workspaceRoot,'tools/assetctl/vendor/three-ez-impostor'),vendorBytes=await readFile(join(vendor,'vendor-manifest.json')),manifest=JSON.parse(vendorBytes);
+  if(manifest.revision!==revision||manifest.files.length!==17)throw new Error('Unsupported reference snapshot');
+  for(const file of manifest.files){
+    if(!/^(LICENSE|README\.md|package\.json|src\/[a-zA-Z0-9_./-]+)$/.test(file.path)||file.path.split('/').includes('..'))throw new Error('Unexpected vendor path');
+    const bytes=await readFile(await approved(join(vendor,file.path)));
+    if(bytes.length!==file.bytes||hash(bytes)!==file.sha256)throw new Error(`Vendor hash mismatch: ${file.path}`);
+  }
+  const requireProject=createRequire(join(workspaceRoot,'universe-atlas/package.json')),{build}=requireProject('esbuild');
+  const bundle=await build({entryPoints:[join(vendor,'src/core/octahedralImpostor.ts')],bundle:true,format:'esm',platform:'browser',external:['three'],loader:{'.glsl':'text'},write:false,metafile:true,logLevel:'silent',banner:{js:`// Three.ez MIT reference ${revision}; see adjacent LICENSE and reference-manifest.json.`}});
+  const code=bundle.outputFiles[0].contents,sourceFiles=[];
+  for(const key of Object.keys(bundle.metafile.inputs)){const path=resolve(key);sourceFiles.push({path:relative(workspaceRoot,path).replaceAll('\\','/'),sha256:hash(await readFile(path))});}
+  const externalImports=Object.values(bundle.metafile.outputs).flatMap(x=>x.imports).filter(x=>x.external).map(x=>x.path);
+  if(externalImports.some(x=>x!=='three'))throw new Error('Unexpected external dependency');
+  await mkdir(output);await approved(output);
+  try{
+    const license=await readFile(join(vendor,'LICENSE'));
+    for(const [name,bytes] of [['impostor-reference.js',code],['LICENSE',license],['asset-brief.json',briefBytes]])await writeFile(join(output,name),bytes,{flag:'wx'});
+    const result={operation:'atlas-three-ez-impostor-reference-1',status:'unmodified-source-bundle-not-runtime-acceptance',revision,repository:manifest.repository,vendorManifestSha256:hash(vendorBytes),sourceFiles,
+      briefSha256:hash(briefBytes),hostSha256:hash(await readFile(new URL(import.meta.url))),toolchain:{node:process.version,esbuild:requireProject('esbuild/package.json').version},externalImports,
+      limitations:['Hemisphere only: upstream full-octahedron reconstruction is unfinished','Static capture: no Atlas wind or custom deformation','No shadow, depth, lighting or visual acceptance from bundling'],
+      artifacts:[{path:'impostor-reference.js',bytes:code.length,sha256:hash(code)},{path:'LICENSE',bytes:license.length,sha256:hash(license)}]};
+    await writeFile(join(output,'reference-manifest.json'),JSON.stringify(result,null,2),{flag:'wx'});return result;
+  }catch(error){await writeFile(join(output,'reference-failure.json'),JSON.stringify({error:String(error)}),{flag:'wx'});throw error;}
+}
+export async function treeImpostorReferenceCli(args){console.log(JSON.stringify(await buildImpostorReference(args),null,2));}
+
+
+FILE ../tools/assetctl/test/tree-impostor-reference.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {existsSync} from 'node:fs';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {join,resolve,relative} from 'node:path';
+import {buildImpostorReference} from '../tree-impostor-reference.mjs';
+import {workspaceRoot} from '../path-policy.mjs';
+
+const briefPath=join(workspaceRoot,'examples/asset-briefs/atlas-three-ez-impostor-reference.json');
+const vendorRoot=join(workspaceRoot,'tools/assetctl/vendor/three-ez-impostor');
+const outputParent=join(workspaceRoot,'Assets/_assetctl');
+const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
+const bytesAt=path=>readFile(path);
+const baseName=`three-ez-impostor-reference-test-${Date.now()}-${process.pid}`;
+
+test('bundles the pinned Three.ez source reproducibly without executing it',async()=>{
+  const briefBefore=await bytesAt(briefPath),vendorManifestPath=join(vendorRoot,'vendor-manifest.json'),vendorManifestBefore=await bytesAt(vendorManifestPath),vendorManifest=JSON.parse(vendorManifestBefore);
+  const vendorHashes=new Map();
+  for(const item of vendorManifest.files)vendorHashes.set(item.path,digest(await bytesAt(join(vendorRoot,item.path))));
+  const firstPath=join(outputParent,baseName),repeatPath=join(outputParent,`${baseName}-repeat`);
+  const first=await buildImpostorReference(['--brief',briefPath,'--output',firstPath]);
+  const second=await buildImpostorReference(['--brief',briefPath,'--output',repeatPath]);
+
+  assert.equal(first.operation,'atlas-three-ez-impostor-reference-1');
+  assert.equal(first.status,'unmodified-source-bundle-not-runtime-acceptance');
+  assert.equal(first.revision,'ca0046a49fef8f8c75745a6e49e52752ef3cf8e3');
+  assert.equal(first.repository,'https://github.com/agargaro/octahedral-impostor');
+  assert.equal(first.vendorManifestSha256,digest(vendorManifestBefore));
+  assert.equal(first.briefSha256,digest(briefBefore));
+  assert.equal(first.sourceFiles.length>0,true);
+  assert.equal(first.sourceFiles.length<=vendorManifest.files.length,true);
+  for(const source of first.sourceFiles){
+    const rel=source.path.replaceAll('\\','/');
+    assert.match(rel,/^tools\/assetctl\/vendor\/three-ez-impostor\//,`bundled source stays under pinned vendor: ${rel}`);
+    const vendorRelative=rel.slice('tools/assetctl/vendor/three-ez-impostor/'.length);
+    assert.equal(vendorHashes.get(vendorRelative),source.sha256,`source hash is pinned by vendor manifest: ${rel}`);
+  }
+  assert.equal(first.externalImports.length>0,true);
+  assert.deepEqual([...new Set(first.externalImports)],['three'],'Three is the sole external dependency; repeated imports are permitted');
+  assert.deepEqual(first.limitations,[
+    'Hemisphere only: upstream full-octahedron reconstruction is unfinished',
+    'Static capture: no Atlas wind or custom deformation',
+    'No shadow, depth, lighting or visual acceptance from bundling',
+  ]);
+
+  const bundle=await bytesAt(join(firstPath,'impostor-reference.js')),repeatBundle=await bytesAt(join(repeatPath,'impostor-reference.js'));
+  const license=await bytesAt(join(firstPath,'LICENSE')),repeatLicense=await bytesAt(join(repeatPath,'LICENSE'));
+  const copiedBrief=await bytesAt(join(firstPath,'asset-brief.json'));
+  const manifestBytes=await bytesAt(join(firstPath,'reference-manifest.json')),manifest=JSON.parse(manifestBytes);
+  assert.equal(bundle.length,first.artifacts.find(a=>a.path==='impostor-reference.js').bytes);
+  assert.equal(digest(bundle),first.artifacts.find(a=>a.path==='impostor-reference.js').sha256);
+  assert.deepEqual(bundle,repeatBundle,'fixed source and brief yield identical ESM bundle bytes');
+  assert.deepEqual(license,repeatLicense,'MIT license is preserved byte-for-byte');
+  assert.match(license.toString('utf8'),/MIT License/);
+  assert.deepEqual(copiedBrief,briefBefore,'source brief copied byte-for-byte');
+  assert.equal(manifest.briefSha256,digest(copiedBrief));
+  assert.equal(manifest.artifacts.find(a=>a.path==='LICENSE').sha256,digest(license));
+  assert.equal(manifest.artifacts.find(a=>a.path==='impostor-reference.js').sha256,digest(bundle));
+  assert.deepEqual(manifest,first,'returned manifest equals preserved machine-readable manifest');
+  assert.match(bundle.toString('utf8'),/from ["']three["']/,'bundle references the external Three dependency');
+  assert.match(bundle.toString('utf8'),/octahedral/i,'upstream library code and shader text are bundled');
+  assert.ok(!bundle.toString('utf8').includes('file://'),'bundle has no local-file dependency');
+
+  const allVendorAfter=await Promise.all(vendorManifest.files.map(async item=>[item.path,digest(await bytesAt(join(vendorRoot,item.path)))]));
+  assert.deepEqual(new Map(allVendorAfter),vendorHashes,'pinned source tree was not modified');
+  assert.deepEqual(await bytesAt(vendorManifestPath),vendorManifestBefore,'vendor manifest is unchanged');
+  assert.deepEqual(await bytesAt(briefPath),briefBefore,'approved brief is unchanged');
+
+  await assert.rejects(buildImpostorReference(['--brief',briefPath,'--output',firstPath]),/already exists|EEXIST/i,'existing output is never overwritten');
+  await assert.rejects(buildImpostorReference(['--brief',briefPath,'--output','../three-ez-impostor-outside']),/outside approved roots/i);
+  for(const args of [
+    [],['--brief',briefPath],['--output',firstPath],['--brief',briefPath,'--output',repeatPath,'--extra','x'],
+    ['--brief',briefPath,'--brief',briefPath,'--output',repeatPath],
+  ])await assert.rejects(buildImpostorReference(args),/Invalid reference option|requires --brief and --output/i);
+
+  const invalidDir=join(outputParent,`${baseName}-invalid-brief`);await mkdir(invalidDir);
+  const invalidBrief=JSON.parse(briefBefore);invalidBrief.provenance.generator.version='unpinned';
+  const invalidBriefPath=join(invalidDir,'invalid-brief.json');await writeFile(invalidBriefPath,JSON.stringify(invalidBrief,null,2));
+  const invalidOutput=join(outputParent,`${baseName}-invalid-output`);
+  await assert.rejects(buildImpostorReference(['--brief',invalidBriefPath,'--output',invalidOutput]),/Invalid pinned reference brief/);
+  assert.equal(existsSync(invalidOutput),false,'invalid brief fails before creating output directory');
+
+  console.log(JSON.stringify({firstPath,repeatPath,bundleBytes:bundle.length,bundleSha256:digest(bundle),sourceFileCount:first.sourceFiles.length,allVendorFileCount:vendorManifest.files.length,externalImports:first.externalImports,limitations:first.limitations,invalidBriefPath}));
+});
+
+
+FILE ../examples/asset-briefs/atlas-three-ez-impostor-reference.json
+{
+  "schema": "https://iwsdk.local/schemas/asset-brief/v1",
+  "id": "atlas-three-ez-impostor-reference",
+  "kind": "environment-kit",
+  "purpose": "Benchmark the pinned Three.ez hemisphere impostor against the same Atlas mesh, cameras, pixel footprint and lighting.",
+  "target": {
+    "engine": "IWSDK",
+    "project": "universe-atlas",
+    "devices": [
+      "desktop-web"
+    ],
+    "metersPerUnit": 1,
+    "runtimeCoordinates": "right-handed-y-up"
+  },
+  "artDirection": {
+    "summary": "Preserve canopy coverage over camera directions and distance. Record defects in the unmodified published implementation before adapting it.",
+    "styleTags": [
+      "realistic",
+      "broadleaf",
+      "reference-comparison"
+    ],
+    "references": [
+      "https://github.com/agargaro/octahedral-impostor/tree/ca0046a49fef8f8c75745a6e49e52752ef3cf8e3"
+    ]
+  },
+  "deliverables": [
+    {
+      "type": "manifest",
+      "format": "json",
+      "path": "reference-manifest.json",
+      "required": true
+    }
+  ],
+  "constraints": {
+    "geometry": {
+      "lodCount": 2,
+      "maxMaterials": 2,
+      "collision": "none",
+      "maxTriangles": 18000
+    }
+  },
+  "acceptance": {
+    "visual": [
+      "Compare silhouettes at capture axes, between views, and near the top; show source and impostor together",
+      "Record canopy loss, view changes and lighting differences without treating draw reduction as visual acceptance"
+    ],
+    "technical": [
+      "Pinned upstream files and library bundle retain source hashes and MIT notice",
+      "Fresh output preserves inputs; repeated bundles match bytes",
+      "Only three is external; no caller code or bundles are executed by the build operation"
+    ],
+    "runtime": [
+      "Measure full mesh and hemisphere impostor at identical camera and object bounds",
+      "Audit GL errors, GPU timings and view-dependent coverage; static capture only"
+    ]
+  },
+  "provenance": {
+    "sourceType": "derived",
+    "generator": {
+      "provider": "three-ez",
+      "model": "octahedral-impostor",
+      "version": "ca0046a49fef8f8c75745a6e49e52752ef3cf8e3",
+      "workflow": "assetctl-tree-impostor-reference"
+    },
+    "prompt": "Bundle the unmodified MIT reference for a matched Atlas tree rendering comparison.",
+    "seed": 35729,
+    "sourceUrl": "https://github.com/agargaro/octahedral-impostor/tree/ca0046a49fef8f8c75745a6e49e52752ef3cf8e3",
+    "sourceConsent": "licensed",
+    "parents": [],
+    "license": {
+      "expression": "MIT",
+      "attribution": "Andrea Gargaro; retain the upstream MIT notice",
+      "restrictions": [
+        "This brief covers the library bundle; tree and texture provenance remain in their separate family manifest"
+      ]
+    },
+    "notes": "Research library bundle, not a packaged tree asset; hemisphere-only upstream reconstruction. Geometry and texture inputs are preserved separately."
+  },
+  "experiments": {
+    "providers": [
+      "three-ez"
+    ],
+    "seeds": [
+      35729
+    ],
+    "selectionMetric": "Canopy shape, repeatability, physical dimensions, LOD continuity and adaptation effort"
+  }
+}
+
+
+FILE src/tree-impostor-reference-lab.ts
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {loadTreeAssetFamily,type TreeAssetFamily} from './tree-asset.ts';
+import {OctahedralImpostor} from './vendor/three-ez-impostor/impostor-reference.js';
+import {RenderProfile} from './render-profile.ts';
+
+const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(1);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;renderer.outputColorSpace=THREE.SRGBColorSpace;
+document.body.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#a6bfd0');
+const camera=new THREE.PerspectiveCamera(50,1,.1,10000);camera.position.set(28,18,46);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,8,0);controls.update();
+const sun=new THREE.DirectionalLight(0xfff6e5,3);sun.position.set(-30,55,25);scene.add(sun,new THREE.HemisphereLight(0xc4dcf0,0x41472c,1));
+const profile=new RenderProfile(renderer.getContext() as WebGL2RenderingContext);profile.setEnabled(true);
+const status=document.getElementById('status')!,mask={value:0};
+let attempted=false,ready=false,family:TreeAssetFamily|undefined,source:THREE.Group|undefined,proxy:OctahedralImpostor|undefined;
+let mode:'mesh'|'impostor'='mesh',metadata:Record<string,unknown>={};
+let sphere=new THREE.Sphere(),last=performance.now();
+const captureTargets=new Set<NonNullable<Parameters<typeof renderer.setRenderTarget>[0]>>();
+function setMode(value:typeof mode){if(!['mesh','impostor'].includes(value))throw new Error('Unsupported mode');mode=value;if(source)source.visible=mode==='mesh';if(proxy)proxy.visible=mode==='impostor';(document.getElementById('mode') as HTMLSelectElement).value=mode;}
+function addMask(material:THREE.MeshStandardMaterial){
+  const original=material.onBeforeCompile,key=material.customProgramCacheKey();
+  material.onBeforeCompile=(shader,host)=>{original.call(material,shader,host);shader.uniforms.labMask=mask;shader.fragmentShader='uniform float labMask;\n'+shader.fragmentShader;
+    shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','#include <opaque_fragment>\nif(labMask>.5)gl_FragColor=vec4(vec3(1),1);');};
+  material.customProgramCacheKey=()=>key+'/reference-mask';material.needsUpdate=true;
+}
+async function digest(bytes:ArrayBuffer){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('');}
+async function load(near:ArrayBuffer,mid:ArrayBuffer,options:{grid?:number;textureSize?:number}={}){
+  if(attempted)throw new Error('Reload the one-capture research lab before another capture');attempted=true;
+  const grid=options.grid??16,textureSize=options.textureSize??2048;
+  if(![8,16,32].includes(grid)||![1024,2048,4096].includes(textureSize)||textureSize%grid)throw new Error('Unsupported bounded atlas settings');
+  family=await loadTreeAssetFamily(near,mid);source=new THREE.Group();
+  for(const mesh of family.lods[0]){
+    const material=mesh.material.clone();material.onBeforeCompile=()=>{};material.customProgramCacheKey=()=> 'atlas-static-source';
+    source.add(new THREE.Mesh(mesh.geometry,material));
+  }
+  source.updateMatrixWorld(true);
+  const bounds=new THREE.Box3().setFromObject(source);bounds.getBoundingSphere(sphere);
+  const originals=new Map(source.children.map(x=>[x,(x as THREE.Mesh).material]));
+  const captureMaterials=new Set<THREE.Material>();
+  source.traverse(object=>{if((object as THREE.Mesh).isMesh)object.onBeforeRender=(_r,_s,_c,_g,material)=>{if(![...originals.values()].includes(material))captureMaterials.add(material);};});
+  const saved={target:renderer.getRenderTarget(),ratio:renderer.getPixelRatio(),viewport:renderer.getViewport(new THREE.Vector4()),scissor:renderer.getScissor(new THREE.Vector4()),scissorTest:renderer.getScissorTest(),clear:renderer.getClearColor(new THREE.Color()),alpha:renderer.getClearAlpha()};
+  const setTarget=renderer.setRenderTarget.bind(renderer),start=performance.now();
+  renderer.setRenderTarget=(target,...args)=>{if(target&&target!==saved.target)captureTargets.add(target);return setTarget(target,...args);};
+  try{
+    proxy=new OctahedralImpostor({target:source,renderer,baseType:THREE.MeshStandardMaterial,useHemiOctahedron:true,textureSize,spritesPerSide:grid,alphaClamp:.4});
+  }finally{
+    renderer.setRenderTarget=setTarget;renderer.setRenderTarget(saved.target);renderer.setPixelRatio(saved.ratio);renderer.setViewport(saved.viewport);renderer.setScissor(saved.scissor);renderer.setScissorTest(saved.scissorTest);renderer.setClearColor(saved.clear,saved.alpha);
+    for(const [object,material] of originals){(object as THREE.Mesh).material=material;delete object.userData.ez_originalMaterial;object.onBeforeRender=()=>{};}
+    for(const material of captureMaterials)material.dispose();
+  }
+  const captureWallMs=performance.now()-start;
+  // Upstream billboard position/size lives in a shader uniform, outside its
+  // unit-plane CPU bounds. Disable culling for this single-object comparison.
+  proxy.frustumCulled=false;proxy.material.roughness=.9;proxy.material.metalness=0;
+  for(const mesh of source.children)addMask((mesh as THREE.Mesh).material as THREE.MeshStandardMaterial);addMask(proxy.material);
+  // Use exactly the capture's own sphere for matched framing. The upstream
+  // union-of-mesh-spheres differs from Box3.getBoundingSphere.
+  const transform=(proxy.material as any).ezImpostorUniforms.impostorTransform.value as THREE.Matrix4;
+  sphere.center.setFromMatrixPosition(transform);sphere.radius=new THREE.Vector3().setFromMatrixScale(transform).x/2;
+  scene.add(source,proxy);setMode(mode);ready=true;
+  metadata={revision:'ca0046a49fef8f8c75745a6e49e52752ef3cf8e3',inputHashes:{near:await digest(near),mid:await digest(mid)},grid,textureSize,viewPixels:textureSize/grid,captureWallMs,
+    center:sphere.center.toArray(),radius:sphere.radius,sourceTriangles:family.lods[0].reduce((n,m)=>n+m.geometry.index!.count/3,0),proxyTriangles:2,
+    atlasRGBA8MipEstimateBytes:Math.round(2*textureSize**2*4*4/3),retainedCaptureTargets:captureTargets.size,
+    sourceMaterials:family.lods[0].map(m=>({name:m.material.name,roughness:m.material.roughness,metalness:m.material.metalness,alphaTest:m.material.alphaTest})),proxyMaterial:{roughness:.9,metalness:0,alphaClamp:.4},
+    limitations:['Unmodified upstream hemi-only reconstruction; below-centre views outside its support','Static 16m source, no Atlas wind or physical-height deformation','Proxy uses one roughness; source uses separate bark/leaf PBR','No ground, shadows, species or game integration']};
+  status.textContent=JSON.stringify(metadata,null,2);profile.clear();return metadata;
+}
+function probe(representation:typeof mode,direction:number[],pixels=128,supersample=1,silhouette=true){
+  if(!ready||!source||!proxy)throw new Error('Not loaded');
+  if(!['mesh','impostor'].includes(representation)||direction.length!==3||direction.some(x=>!Number.isFinite(x))||![32,64,128,256].includes(pixels)||![1,2,4].includes(supersample))throw new Error('Invalid probe');
+  const toward=new THREE.Vector3().fromArray(direction);if(toward.lengthSq()<1e-12)throw new Error('Zero direction');toward.normalize();
+  const distance=sphere.radius*30,view=new THREE.PerspectiveCamera(2*Math.atan(sphere.radius*1.05/distance)*180/Math.PI,1,.1,distance+sphere.radius*2);
+  view.position.copy(sphere.center).addScaledVector(toward,distance);view.up.set(...(Math.abs(toward.y)>.999?[0,0,1]:[0,1,0]) as [number,number,number]);view.lookAt(sphere.center);view.updateMatrixWorld(true);
+  const size=pixels*supersample,target=new THREE.WebGLRenderTarget(size,size,{depthBuffer:true});
+  const saved={target:renderer.getRenderTarget(),background:scene.background,mode,clear:renderer.getClearColor(new THREE.Color()),alpha:renderer.getClearAlpha()};
+  const data=new Uint8Array(size*size*4);
+  try{
+    setMode(representation);scene.background=null;renderer.setClearColor(0,0);mask.value=Number(silhouette);renderer.setRenderTarget(target);renderer.clear();renderer.render(scene,view);renderer.readRenderTargetPixels(target,0,0,size,size,data);
+    const gl=renderer.getContext(),error=gl.getError();if(error!==gl.NO_ERROR)throw new Error(`Probe GL error ${error}`);
+    if(supersample===1)return Array.from(data);
+    const reduced=new Float32Array(pixels*pixels*4);
+    for(let y=0;y<size;y++)for(let x=0;x<size;x++)for(let c=0;c<4;c++)reduced[(Math.floor(y/supersample)*pixels+Math.floor(x/supersample))*4+c]+=data[(y*size+x)*4+c]/(supersample*supersample);
+    return Array.from(reduced);
+  }finally{renderer.setRenderTarget(saved.target);renderer.setClearColor(saved.clear,saved.alpha);scene.background=saved.background;mask.value=0;setMode(saved.mode);target.dispose();}
+}
+function dispose(){ready=false;renderer.setAnimationLoop(null);for(const target of captureTargets)target.dispose();for(const mesh of source?.children??[]){((mesh as THREE.Mesh).material as THREE.Material).dispose();}proxy?.geometry.dispose();proxy?.material.dispose();family?.dispose();renderer.dispose();}
+document.getElementById('load')!.onclick=async()=>{try{const near=(document.getElementById('near') as HTMLInputElement).files?.[0],mid=(document.getElementById('mid') as HTMLInputElement).files?.[0];if(!near||!mid)throw new Error('Select both GLBs');status.textContent='Capturing…';await load(await near.arrayBuffer(),await mid.arrayBuffer());}catch(error){status.textContent=String(error);}};
+(document.getElementById('mode') as HTMLSelectElement).onchange=e=>setMode((e.target as HTMLSelectElement).value as typeof mode);
+function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}addEventListener('resize',resize);resize();
+renderer.setAnimationLoop(()=>{const now=performance.now();profile.beginFrame(now-last);last=now;profile.pass('tree-reference',()=>renderer.render(scene,camera));profile.endFrame(renderer.info.render.calls,renderer.info.render.triangles);});
+Object.assign(window,{__impostorReferenceLab:{load,setMode,probe,dispose,renderer,scene,camera,controls,profile,sun,get metadata(){return metadata;},get ready(){return ready;},get source(){return source;},get proxy(){return proxy;}}});
+
+
+FILE src/tree-asset.ts
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {phaseFromPeriod} from './world-time.ts';
+
+/** Experimental author-6 adapter. Assets are supplied explicitly; this does not
+ * replace the canonical forest or invent a second species catalogue. */
+export const TREE_REFERENCE_HEIGHT_M=16;
+export const TREE_WIND_PERIOD_NS=7_000_000_000n;
+export const treeWindPhase=(date:bigint)=>phaseFromPeriod(date,TREE_WIND_PERIOD_NS);
+
+type GLBDocument={json:any;binary:Uint8Array};
+function readGLB(buffer:ArrayBuffer):GLBDocument {
+  const view=new DataView(buffer);
+  if(buffer.byteLength<28||view.getUint32(0,true)!==0x46546c67||view.getUint32(4,true)!==2||view.getUint32(8,true)!==buffer.byteLength)throw new Error('Expected a complete glTF 2 GLB');
+  const length=view.getUint32(12,true),start=20+length;
+  if(view.getUint32(16,true)!==0x4e4f534a||start+8>buffer.byteLength||view.getUint32(start+4,true)!==0x004e4942||start+8+view.getUint32(start,true)!==buffer.byteLength)throw new Error('Expected JSON and embedded binary chunks');
+  const json=JSON.parse(new TextDecoder().decode(new Uint8Array(buffer,20,length)));
+  if(json.buffers?.length!==1||json.buffers[0].uri||json.extensionsRequired?.length)throw new Error('Only self-contained author-6 GLBs are supported');
+  if(json.nodes?.length!==1||json.nodes[0].mesh!==0||['matrix','translation','rotation','scale'].some(k=>json.nodes[0][k])||json.meshes?.length!==1||json.meshes[0].primitives?.length!==2)throw new Error('Expected one untransformed two-material tree');
+  if(json.materials?.length!==2||json.materials[0].name!=='MAT_AtlasBark'||json.materials[1].name!=='MAT_AtlasFoliage'||json.images?.length!==4)throw new Error('Expected author-6 bark and foliage');
+  if((json.materials[0].alphaMode??'OPAQUE')!=='OPAQUE'||json.materials[1].alphaMode!=='MASK'||(json.materials[1].alphaCutoff??.5)<=0)throw new Error('Tree foliage requires alpha MASK with a positive cutoff');
+  const formats:Record<string,string>={_WIND:'SCALAR',_BRANCH_LEVEL:'SCALAR',_LEAF_CENTER:'VEC3',_LEAF_PIVOT:'VEC3',POSITION:'VEC3',NORMAL:'VEC3',TEXCOORD_0:'VEC2',TANGENT:'VEC4'};
+  for(const [index,p] of json.meshes[0].primitives.entries()){
+    if(p.material!==index||p.mode!==undefined&&p.mode!==4||p.targets||Object.keys(p.attributes??{}).length!==8||!Object.keys(formats).every(k=>Number.isInteger(p.attributes?.[k])))throw new Error('Incomplete tree vertex contract');
+    const count=json.accessors[p.attributes.POSITION]?.count;
+    for(const [name,type] of Object.entries(formats)){
+      const a=json.accessors[p.attributes[name]];
+      if(!a||a.type!==type||a.componentType!==5126||a.normalized||a.sparse||!Number.isInteger(count)||count<1||a.count!==count)throw new Error(`Invalid tree accessor ${name}`);
+    }
+  }
+  return {json,binary:new Uint8Array(buffer,start+8,view.getUint32(start,true))};
+}
+function imageBytes(doc:GLBDocument,index:number){
+  const image=doc.json.images[index],view=doc.json.bufferViews[image.bufferView];
+  if(image.uri||image.mimeType!=='image/png'||!view||view.buffer!==0||!Number.isInteger(view.byteLength)||view.byteLength<=0)throw new Error('Expected an embedded PNG');
+  const start=view.byteOffset??0,end=start+view.byteLength;
+  if(start<0||end>doc.binary.length)throw new Error('Image outside GLB binary');
+  return doc.binary.subarray(start,end);
+}
+/** Check byte identity before sharing materials. LOD1 images are never decoded:
+ * its parser receives texture-free material placeholders with stable indices. */
+export function prepareTreeLODPair(lod0:ArrayBuffer,lod1:ArrayBuffer){
+  const a=readGLB(lod0),b=readGLB(lod1);
+  for(const key of ['materials','textures','samplers'])if(JSON.stringify(a.json[key])!==JSON.stringify(b.json[key]))throw new Error(`Tree LOD ${key} differ`);
+  let embeddedTextureBytes=0;
+  for(let i=0;i<4;i++){
+    const x=imageBytes(a,i),y=imageBytes(b,i);embeddedTextureBytes+=x.length;
+    if(x.length!==y.length||x.some((v,k)=>v!==y[k]))throw new Error(`Tree LOD image ${i} differs`);
+  }
+  const json=structuredClone(b.json);
+  json.materials=json.materials.map((m:any)=>({name:m.name}));delete json.images;delete json.textures;delete json.samplers;
+  // Keep the original binary offsets. Unused compressed PNG bytes remain in
+  // this temporary parse input, but do not allocate image/GPU resources.
+  const text=new TextEncoder().encode(JSON.stringify(json)),length=(text.length+3)&~3;
+  const buffer=new ArrayBuffer(28+length+b.binary.length),view=new DataView(buffer),bytes=new Uint8Array(buffer);
+  view.setUint32(0,0x46546c67,true);view.setUint32(4,2,true);view.setUint32(8,buffer.byteLength,true);
+  view.setUint32(12,length,true);view.setUint32(16,0x4e4f534a,true);bytes.fill(32,20,20+length);bytes.set(text,20);
+  view.setUint32(20+length,b.binary.length,true);view.setUint32(24+length,0x004e4942,true);bytes.set(b.binary,28+length);
+  return {lod1GeometryBuffer:buffer,embeddedTextureBytes};
+}
+
+/** CPU reference for shader audits. Scale skeleton/attachment coordinates,
+ * keeping every offset within a leaf card in metres, then rotate rigidly. */
+export function treeVertexMeters(position:THREE.Vector3,pivot:THREE.Vector3,leaf:boolean,heightM:number,windWeight:number,phase:number,instancePhase=0){
+  if(!Number.isFinite(heightM)||heightM<10||heightM>22)throw new Error('Prototype supports tree heights 10–22 m');
+  if(!leaf)return position.clone().multiplyScalar(heightM/TREE_REFERENCE_HEIGHT_M);
+  return position.clone().sub(pivot).applyAxisAngle(new THREE.Vector3(0,0,1),Math.sin(phase+instancePhase)*.12*windWeight).addScaledVector(pivot,heightM/TREE_REFERENCE_HEIGHT_M);
+}
+
+const declarations=`
+attribute float _wind, _branch_level;
+attribute vec3 _leaf_pivot;
+attribute vec2 instanceTree;
+uniform float atlasTreePhase;
+mat3 atlasLeafRotation(){
+  float angle=sin(atlasTreePhase+instanceTree.y)*.12*_wind;
+  float c=cos(angle),s=sin(angle);
+  return mat3(c,s,0.,-s,c,0.,0.,0.,1.);
+}
+`;
+function deform(material:THREE.Material,phase:{value:number}){
+  material.onBeforeCompile=shader=>{
+    shader.uniforms.atlasTreePhase=phase;
+    shader.vertexShader=declarations+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
+      if(_branch_level>3.5){objectNormal=atlasLeafRotation()*objectNormal;
+        #ifdef USE_TANGENT
+        objectTangent=atlasLeafRotation()*objectTangent;
+        #endif
+      }`);
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      transformed=_branch_level>3.5 ? _leaf_pivot*instanceTree.x+atlasLeafRotation()*(position-_leaf_pivot) : position*instanceTree.x;`);
+  };
+  material.customProgramCacheKey=()=> 'atlas-tree-physical-1';
+}
+export type TreeAssetFamily=Awaited<ReturnType<typeof loadTreeAssetFamily>>;
+export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,options:{foliageCoverage?:'mask'|'hash'}={}){
+  if(options.foliageCoverage!==undefined&&!['mask','hash'].includes(options.foliageCoverage))throw new Error('Unsupported foliage coverage mode');
+  const prepared=prepareTreeLODPair(lod0,lod1),loader=new GLTFLoader();
+  const loaded:THREE.Group[]=[];
+  const textures=new Set<THREE.Texture>(),materials=new Set<THREE.Material>(),geometries=new Set<THREE.BufferGeometry>();
+  function collect(group:THREE.Group){group.traverse(o=>{
+    if(!(o instanceof THREE.Mesh))return;
+    geometries.add(o.geometry);
+    for(const m of Array.isArray(o.material)?o.material:[o.material]){
+      materials.add(m);for(const value of Object.values(m))if(value instanceof THREE.Texture)textures.add(value);
+    }
+  });}
+  function dispose(){for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures){t.dispose();if(typeof ImageBitmap!=='undefined'&&t.image instanceof ImageBitmap)t.image.close();}}
+  try {
+    for(const bytes of [lod0,prepared.lod1GeometryBuffer]){const gltf=await loader.parseAsync(bytes,'');loaded.push(gltf.scene);collect(gltf.scene);}
+    const lods=loaded.map(group=>{
+      const meshes:THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>[]=[];
+      group.traverse(o=>{if(o instanceof THREE.Mesh)meshes.push(o as THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>);});
+      if(meshes.length!==2||meshes.some(m=>Array.isArray(m.material)))throw new Error('Expected two tree primitives');
+      return meshes.sort((a,b)=>a.material.name.localeCompare(b.material.name));
+    });
+    for(let i=0;i<2;i++){lods[1][i].material.dispose();materials.delete(lods[1][i].material);lods[1][i].material=lods[0][i].material;}
+    // Explicit experiment: hashing samples fractional mip coverage instead of
+    // discarding every leaf texel below the GLB's fixed MASK cutoff. Preserve
+    // the imported MASK path by default, including historical captures.
+    if(options.foliageCoverage==='hash'){
+      lods[0][1].material.alphaTest=0;lods[0][1].material.alphaHash=true;
+    }
+    const phase={value:0};
+    for(const material of materials)deform(material,phase);
+    let disposed=false,activeBatches=0;
+    return {
+      lods,textures,embeddedTextureBytes:prepared.embeddedTextureBytes,
+      setDate(date:bigint){phase.value=treeWindPhase(date);},
+      createBatch(lod:0|1,capacity:number){
+        if(disposed)throw new Error('Tree family is disposed');
+        if(!Number.isInteger(capacity)||capacity<1||capacity>4096)throw new Error('Invalid tree capacity');
+        const group=new THREE.Group(),tree=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2).setUsage(THREE.DynamicDrawUsage);
+        const meshes=lods[lod].map(source=>{
+          const geometry=source.geometry.clone();geometry.setAttribute('instanceTree',tree);
+          const mesh=new THREE.InstancedMesh(geometry,source.material,capacity);mesh.count=0;
+          mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.castShadow=true;mesh.receiveShadow=true;
+          // Caller can install conservative curved-world bounds after integration.
+          // Shader scale/wind invalidates Three's unmodified geometry bounds.
+          mesh.frustumCulled=false;
+          const common={map:source.material.map,alphaTest:source.material.alphaTest,alphaHash:source.material.alphaHash,side:source.material.side};
+          mesh.customDepthMaterial=new THREE.MeshDepthMaterial({...common,depthPacking:THREE.RGBADepthPacking});
+          mesh.customDistanceMaterial=new THREE.MeshDistanceMaterial(common);
+          deform(mesh.customDepthMaterial,phase);deform(mesh.customDistanceMaterial,phase);group.add(mesh);return mesh;
+        });
+        activeBatches++;let batchDisposed=false;
+        return {group,meshes,
+          setCount(count:number){
+            if(batchDisposed||!Number.isInteger(count)||count<0||count>meshes[0].count)throw new Error('Tree count can only truncate initialized slots');
+            for(const mesh of meshes)mesh.count=count;
+          },
+          /** Matrix contains yaw/translation and metres-to-scene-units only.
+           * Tree height is applied in the shader so leaves retain their size. */
+          setInstance(index:number,matrix:THREE.Matrix4,heightM:number,phaseOffset=0){
+            if(batchDisposed||!Number.isInteger(index)||index<0||index>=capacity||index>meshes[0].count||!Number.isFinite(heightM)||heightM<10||heightM>22||!Number.isFinite(phaseOffset)||matrix.elements.some(x=>!Number.isFinite(x)))throw new Error('Invalid tree instance or gap in initialized slots');
+            const e=matrix.elements,a=new THREE.Vector3(e[0],e[1],e[2]),b=new THREE.Vector3(e[4],e[5],e[6]),c=new THREE.Vector3(e[8],e[9],e[10]);
+            const scale2=a.lengthSq(),tolerance=scale2*1e-6;
+            if(!Number.isFinite(scale2)||scale2<=0||Math.abs(b.lengthSq()-scale2)>tolerance||Math.abs(c.lengthSq()-scale2)>tolerance||Math.abs(a.dot(b))>tolerance||Math.abs(a.dot(c))>tolerance||Math.abs(b.dot(c))>tolerance||matrix.determinant()<=0||e[3]!==0||e[7]!==0||e[11]!==0||e[15]!==1)throw new Error('Tree matrix requires rotation and positive uniform scene-unit scale');
+            // Phase stays representable as Float32 even for a caller's very
+            // large finite offset; the absolute universe date stays BigInt.
+            const tau=2*Math.PI;phaseOffset=((phaseOffset%tau)+tau)%tau;
+            tree.setXY(index,heightM/TREE_REFERENCE_HEIGHT_M,phaseOffset);tree.needsUpdate=true;
+            for(const mesh of meshes){mesh.setMatrixAt(index,matrix);mesh.instanceMatrix.needsUpdate=true;mesh.count=Math.max(mesh.count,index+1);}
+          },
+          dispose(){if(batchDisposed)return;batchDisposed=true;activeBatches--;for(const mesh of meshes){mesh.geometry.dispose();mesh.customDepthMaterial?.dispose();mesh.customDistanceMaterial?.dispose();mesh.dispose();}group.clear();group.removeFromParent();},
+        };
+      },
+      dispose(){if(disposed)return;if(activeBatches)throw new Error('Dispose tree batches before their family');disposed=true;dispose();},
+    };
+  }catch(error){dispose();throw error;}
+}
+
+
+FILE ../tools/assetctl/vendor/three-ez-impostor/src/core/octahedralImpostor.ts
+import { Material, Matrix4, Mesh, Plane, PlaneGeometry, Sphere } from 'three';
+import { computeObjectBoundingSphere } from '../utils/computeObjectBoundingSphere.js';
+import { CreateOctahedralImpostor, createOctahedralImpostorMaterial } from './octahedralImpostorMaterial.js';
+
+export class OctahedralImpostor<M extends Material = Material> extends Mesh<PlaneGeometry, M> {
+  constructor(materialOrParams: M | CreateOctahedralImpostor<M>) {
+    super(new PlaneGeometry(), null);
+
+    if (!(materialOrParams as M).isOctahedralImpostorMaterial) {
+      const mesh = (materialOrParams as CreateOctahedralImpostor<M>).target;
+      const sphere = computeObjectBoundingSphere(mesh, new Sphere(), true); // TODO compute it once
+
+      const scale = sphere.radius * 2;
+      const translation = sphere.center.clone();
+      materialOrParams.transform = new Matrix4().makeScale(scale, scale, scale).setPosition(translation);
+
+      materialOrParams = createOctahedralImpostorMaterial(materialOrParams as CreateOctahedralImpostor<M>);
+    }
+
+    this.material = materialOrParams as M;
+  }
+
+  public override clone(): this {
+    const impostor = new OctahedralImpostor(this.material);
+    impostor.scale.copy(this.scale);
+    impostor.position.copy(this.position);
+    return impostor as this;
+  }
+}
+
+
+FILE ../tools/assetctl/vendor/three-ez-impostor/src/core/octahedralImpostorMaterial.ts
+import { IUniform, Material, Matrix4 } from 'three';
+import shaderChunkMapFragment from '../shaders/impostor/octahedral_impostor_shader_map_fragment.glsl';
+import shaderChunkNormalFragmentBegin from '../shaders/impostor/octahedral_impostor_shader_normal_fragment_begin.glsl';
+import shaderChunkParamsFragment from '../shaders/impostor/octahedral_impostor_shader_params_fragment.glsl';
+import shaderChunkParamsVertex from '../shaders/impostor/octahedral_impostor_shader_params_vertex.glsl';
+import shaderChunkVertex from '../shaders/impostor/octahedral_impostor_shader_vertex.glsl';
+import { createTextureAtlas, CreateTextureAtlasParams } from '../utils/createTextureAtlas.js';
+
+// TODO: fix normal from top
+// TODO: use not standard normalMap uniform
+// TODO: use define to avoid paralax mapping if useless
+
+export type OctahedralImpostorDefinesKeys = 'EZ_USE_HEMI_OCTAHEDRON' | 'EZ_USE_NORMAL' | 'EZ_USE_ORM' | 'EZ_TRANSPARENT';
+export type OctahedralImpostorDefines = { [key in OctahedralImpostorDefinesKeys]?: boolean };
+
+export type UniformValue<T> = T extends IUniform<infer U> ? U : never;
+export type MaterialConstructor<T extends Material> = new () => T;
+
+export interface OctahedralImpostorUniforms {
+  spritesPerSide: IUniform<number>;
+  // ormMap: IUniform<Texture>;
+  // parallaxScale: IUniform<number>;
+  alphaClamp: IUniform<number>;
+  impostorTransform: IUniform<Matrix4>;
+}
+
+export interface CreateOctahedralImpostor<T extends Material> extends OctahedralImpostorMaterial, CreateTextureAtlasParams {
+  baseType: MaterialConstructor<T>;
+}
+
+export interface OctahedralImpostorMaterial {
+  transparent?: boolean;
+  // parallaxScale?: number;
+  alphaClamp?: number;
+  transform?: Matrix4;
+}
+
+declare module 'three' {
+  interface Material extends OctahedralImpostorMaterial {
+    isOctahedralImpostorMaterial: boolean;
+    ezImpostorUniforms?: OctahedralImpostorUniforms;
+    ezImpostorDefines?: OctahedralImpostorDefines;
+  }
+}
+
+export function createOctahedralImpostorMaterial<T extends Material>(parameters: CreateOctahedralImpostor<T>): T {
+  if (!parameters) throw new Error('createOctahedralImpostorMaterial: parameters is required.');
+  if (!parameters.baseType) throw new Error('createOctahedralImpostorMaterial: baseType is required.');
+  if (!parameters.useHemiOctahedron) throw new Error('createOctahedralImpostorMaterial: useHemiOctahedron is required.');
+
+  const { albedo, normalDepth } = createTextureAtlas(parameters); // TODO normal only if lights
+
+  const material = new parameters.baseType();
+  material.isOctahedralImpostorMaterial = true;
+  material.transparent = parameters.transparent ?? false;
+  (material as any).map = albedo; // TODO remove any
+  (material as any).normalMap = normalDepth; // TODO only if lights
+
+  material.ezImpostorDefines = {};
+
+  if (parameters.useHemiOctahedron) material.ezImpostorDefines.EZ_USE_HEMI_OCTAHEDRON = true;
+  if (parameters.transparent) material.ezImpostorDefines.EZ_TRANSPARENT = true;
+  material.ezImpostorDefines.EZ_USE_NORMAL = true; // TODO only if lights
+  // material.ezImpostorDefines.EZ_USE_ORM = true; // TODO only if lights
+
+  const { transform, spritesPerSide, alphaClamp } = parameters;
+
+  material.ezImpostorUniforms = {
+    spritesPerSide: { value: spritesPerSide ?? 16 }, // TODO config default value
+    // ormMap: { value: null },
+    // parallaxScale: { value: parallaxScale ?? 0 },
+    alphaClamp: { value: alphaClamp ?? 0.4 },
+    impostorTransform: { value: transform }
+  };
+
+  overrideMaterialCompilation(material);
+
+  return material;
+}
+
+function overrideMaterialCompilation(material: Material): void {
+  const onBeforeCompileBase = material.onBeforeCompile;
+
+  material.onBeforeCompile = (shader, renderer) => {
+    shader.defines = { ...shader.defines, ...material.ezImpostorDefines };
+    shader.uniforms = { ...shader.uniforms, ...material.ezImpostorUniforms };
+
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <clipping_planes_pars_vertex>', shaderChunkParamsVertex)
+      .replace('#include <project_vertex>', shaderChunkVertex);
+
+    // TODO improve
+    shader.fragmentShader = shader.fragmentShader
+      .replace('vec4 diffuseColor = vec4( diffuse, opacity );', `${shaderChunkMapFragment}\n vec4 diffuseColor = vec4( diffuse, opacity );`)
+      .replace('#include <clipping_planes_pars_fragment>', shaderChunkParamsFragment)
+      .replace('#include <normal_fragment_begin>', shaderChunkNormalFragmentBegin)
+      .replace('#include <normal_fragment_maps>', '// #include <normal_fragment_maps>')
+      .replace('#include <map_fragment>', 'diffuseColor *= blendedColor;'); // todo separate file
+
+    onBeforeCompileBase?.call(material, shader, renderer);
+  };
+
+  const customProgramCacheKeyBase = material.customProgramCacheKey;
+
+  material.customProgramCacheKey = () => {
+    const hemiOcta = !!material.ezImpostorDefines.EZ_USE_HEMI_OCTAHEDRON;
+    const useNormal = !!material.ezImpostorDefines.EZ_USE_NORMAL;
+    const useOrm = !!material.ezImpostorDefines.EZ_USE_ORM;
+    const transparent = !!material.transparent;
+
+    return `ez_${hemiOcta}_${transparent}_${useNormal}_${useOrm}_${customProgramCacheKeyBase.call(material)}`;
+  };
+}
+
+// export class OctahedralImpostorMaterial extends ShaderMaterial {
+
+//   // @ts-expect-error: It's defined as a property in class, but is overridden here as an accessor.
+//   public override get transparent(): boolean { return this._transparent; }
+//   public override set transparent(value) {
+//     this._transparent = value;
+//     this.depthWrite = !value;
+//     this.updateDefines(value, 'EZ_TRANSPARENT');
+//   }
+
+//   public get parallaxScale(): number { return this.uniforms.parallaxScale.value; }
+//   public set parallaxScale(value) { this.setUniform('parallaxScale', value); }
+
+//   public get alphaClamp(): number { return this.uniforms.alphaClamp.value; }
+//   public set alphaClamp(value) { this.setUniform('alphaClamp', value); }
+
+//   protected setUniform<T extends keyof OctahedralImpostorUniforms>(key: T, value: UniformValue<OctahedralImpostorUniforms[T]>): void {
+//     if (!this.uniforms) return;
+
+//     if (!this.uniforms[key]) {
+//       this.uniforms[key] = { value } as IUniform;
+//       return;
+//     }
+
+//     this.uniforms[key].value = value;
+//   }
+
+//   protected updateDefines(value: unknown, key: OctahedralImpostorDefines): void {
+//     if (!this.defines) return;
+
+//     this.needsUpdate = true;
+//     if (value) this.defines[key] = '';
+//     else delete this.defines[key];
+//   }
+
+//   // @ts-expect-error Property 'clone' is not assignable to the same property in base type 'ShaderMaterial'.
+//   public override clone(): OctahedralImpostorMaterial {
+//     return new OctahedralImpostorMaterial({
+//       spritesPerSide: this.spritesPerSide,
+//       useHemiOctahedron: this.useHemiOctahedron,
+//       albedo: this.albedo,
+//       normalDepthMap: this.normalDepthMap,
+//       ormMap: this.ormMap,
+//       transparent: this.transparent,
+//       parallaxScale: this.parallaxScale,
+//       alphaClamp: this.alphaClamp
+//     });
+//   }
+// }
+
+
+FILE ../tools/assetctl/vendor/three-ez-impostor/src/utils/createTextureAtlas.ts
+import { GLSL3, IUniform, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, Mesh, MeshStandardMaterial, NearestFilter, NearestMipMapNearestFilter, Object3D, ObjectSpaceNormalMap, OrthographicCamera, ShaderMaterial, Sphere, TangentSpaceNormalMap, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { computeObjectBoundingSphere } from './computeObjectBoundingSphere.js';
+import { hemiOctaGridToDir, octaGridToDir } from './octahedronUtils.js';
+
+import fragmentShader from '../shaders/atlas_texture/octahedral_atlas_fragment.glsl';
+import vertexShader from '../shaders/atlas_texture/octahedral_atlas_vertex.glsl';
+
+type OldRendererData = { renderTarget: WebGLRenderTarget; oldPixelRatio: number; oldScissorTest: boolean; oldClearAlpha: number };
+
+/**
+ * Parameters used to generate a texture atlas from a 3D object.
+ * The atlas is created by rendering multiple views of the object arranged in a grid.
+ */
+export interface CreateTextureAtlasParams {
+  /**
+   * The WebGL renderer used to render the object from multiple directions.
+   */
+  renderer: WebGLRenderer;
+  /**
+   * Whether to use a hemispherical octahedral projection instead of a full octahedral one.
+   * Use this to generate views covering only the upper hemisphere of the object.
+   */
+  useHemiOctahedron: boolean;
+  /**
+   * The 3D object to render from multiple directions.
+   * Typically a `Mesh`, `Group`, or any `Object3D` hierarchy.
+   */
+  target: Object3D;
+  /**
+   * The full size (in pixels) of the resulting square texture atlas.
+   * For example, 2048 will result in a 2048×2048 texture.
+   * @default 2048
+   */
+  textureSize?: number;
+  /**
+   * Number of sprite cells per side of the atlas grid.
+   * For example, 16 will result in 16×16 = 256 unique views.
+   * @default 16
+   */
+  spritesPerSide?: number;
+  /**
+   * A multiplier applied to the camera's distance from the object's bounding sphere.
+   * Controls how far the camera is placed from the object when rendering each view.
+   * @default 1
+   */
+  cameraFactor?: number;
+}
+
+export interface TextureAtlas {
+  /**
+   * The WebGL render target used to render the object from multiple directions.
+   */
+  renderTarget: WebGLRenderTarget;
+  /**
+   * The albedo texture containing the rendered views of the object.
+   * Each sprite cell contains a unique view from a different direction.
+   */
+  albedo: Texture;
+  /**
+   * The normal and depth map texture.
+   * Contains normals and depth information for each sprite cell.
+   * This can be used for lighting and depth effects.
+   */
+  normalDepth: Texture;
+}
+
+const camera = new OrthographicCamera();
+const bSphere = new Sphere();
+const oldScissor = new Vector4();
+const oldViewport = new Vector4();
+const coords = new Vector2();
+const userDataMaterialKey = 'ez_originalMaterial';
+
+export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtlas {
+  const { renderer, target, useHemiOctahedron } = params;
+
+  if (!renderer) throw new Error('"renderer" is mandatory.');
+  if (!target) throw new Error('"target" is mandatory.');
+  if (useHemiOctahedron == null) throw new Error('"useHemiOctahedron" is mandatory.');
+
+  const atlasSize = params.textureSize ?? 2048;
+  const countPerSide = params.spritesPerSide ?? 16;
+  const countPerSideMinusOne = countPerSide - 1;
+  const spriteSize = atlasSize / countPerSide;
+
+  // with some models, the bounding sphere was not accurate so we rercompute it
+  computeObjectBoundingSphere(target, bSphere, true);
+
+  const cameraFactor = params.cameraFactor ?? 1;
+  updateCamera();
+
+  const { renderTarget, oldPixelRatio, oldScissorTest, oldClearAlpha } = setupRenderer();
+  overrideTargetMaterial(target);
+
+  for (let row = 0; row < countPerSide; row++) {
+    for (let col = 0; col < countPerSide; col++) {
+      renderView(col, row);
+    }
+  }
+
+  restoreRenderer();
+  restoreTargetMaterial(target);
+
+  return {
+    renderTarget,
+    albedo: renderTarget.textures[0],
+    normalDepth: renderTarget.textures[1]
+  };
+
+  function overrideTargetMaterial(target: Object3D): void {
+    target.traverse((mesh) => {
+      if ((mesh as Mesh).material) {
+        const material = (mesh as Mesh).material as MeshStandardMaterial | MeshStandardMaterial[];
+        mesh.userData[userDataMaterialKey] = material; // TODO use map instead
+        const overrideMaterial = Array.isArray(material) ? material.map((mat) => createMaterial(mat)) : createMaterial(material);
+        (mesh as Mesh).material = overrideMaterial;
+      }
+    });
+  }
+
+  function createMaterial(material: MeshStandardMaterial): ShaderMaterial {
+    const hasMap = !!material.map;
+    const hasAlphaMap = !!material.alphaMap;
+    const hasNormalMap = !!material.normalMap;
+    const hasBumpMap = !!material.bumpMap;
+    const hasDisplacementMap = !!material.displacementMap;
+    const hasAlphaTest = material.alphaTest > 0;
+
+    const uniforms: { [uniform: string]: IUniform } = {
+      diffuse: { value: material.color },
+      opacity: { value: material.opacity }
+    };
+
+    // From MeshBasicMaterial
+
+    if (hasAlphaTest) {
+      uniforms['alphaTest'] = { value: material.alphaTest };
+    }
+
+    if (hasMap) {
+      uniforms['map'] = { value: material.map };
+      uniforms['mapTransform'] = { value: material.map.matrix };
+    }
+
+    if (hasAlphaMap) {
+      uniforms['alphaMap'] = { value: material.alphaMap };
+      uniforms['alphaMapTransform'] = { value: material.alphaMap.matrix };
+    }
+
+    // From MeshNormalMaterial and MeshDepthMaterial
+
+    if (hasNormalMap) {
+      uniforms['normalMap'] = { value: material.normalMap };
+      uniforms['normalScale'] = { value: material.normalScale };
+      uniforms['normalMapTransform'] = { value: material.normalMap.matrix };
+    }
+
+    if (hasBumpMap) {
+      uniforms['bumpMap'] = { value: material.bumpMap };
+      uniforms['bumpScale'] = { value: material.bumpScale };
+      uniforms['bumpMapTransform'] = { value: material.bumpMap.matrix };
+    }
+
+    if (hasDisplacementMap) {
+      uniforms['displacementMap'] = { value: material.displacementMap };
+      uniforms['displacementScale'] = { value: material.displacementScale };
+      uniforms['displacementBias'] = { value: material.displacementBias };
+      uniforms['displacementMapTransform'] = { value: material.displacementMap.matrix };
+    }
+
+    const defines = {};
+
+    if (hasMap || hasAlphaMap || hasNormalMap || hasBumpMap || hasDisplacementMap) {
+      defines['USE_UV'] = '';
+    }
+
+    const shaderMaterial = new ShaderMaterial({
+      uniforms,
+      defines,
+      vertexShader,
+      fragmentShader,
+      glslVersion: GLSL3,
+      transparent: material.transparent,
+      side: material.side,
+      alphaHash: material.alphaHash,
+      depthFunc: material.depthFunc,
+      depthWrite: material.depthWrite,
+      depthTest: material.depthTest,
+      blending: material.blending,
+      blendSrc: material.blendSrc,
+      blendDst: material.blendDst,
+      blendEquation: material.blendEquation,
+      blendSrcAlpha: material.blendSrcAlpha,
+      blendDstAlpha: material.blendDstAlpha,
+      blendEquationAlpha: material.blendEquationAlpha,
+      premultipliedAlpha: material.premultipliedAlpha,
+      alphaToCoverage: material.alphaToCoverage,
+      blendAlpha: material.blendAlpha,
+      blendColor: material.blendColor,
+      colorWrite: material.colorWrite,
+      forceSinglePass: material.forceSinglePass,
+      vertexColors: material.vertexColors,
+      precision: material.precision,
+      visible: material.visible
+    });
+
+    shaderMaterial.onBeforeCompile = (shader) => {
+      if (hasMap) {
+        shader.map = true;
+        shader.mapUv = 'uv';
+      }
+
+      if (hasAlphaMap) {
+        shader.alphaMap = true;
+        shader.alphaMapUv = 'uv';
+      }
+
+      if (hasNormalMap) {
+        shader.normalMap = true;
+        shader.normalMapUv = 'uv';
+        shader.normalMapTangentSpace = material.normalMapType === TangentSpaceNormalMap;
+        shader.normalMapObjectSpace = material.normalMapType === ObjectSpaceNormalMap;
+      }
+
+      if (hasBumpMap) {
+        shader.bumpMap = true;
+        shader.bumpMapUv = 'uv';
+      }
+
+      if (hasDisplacementMap) {
+        shader.displacementMap = true;
+        shader.displacementMapUv = 'uv';
+      }
+
+      shader.flatShading = material.flatShading;
+      shader.alphaTest = hasAlphaTest;
+    };
+
+    return shaderMaterial;
+  }
+
+  function restoreTargetMaterial(target: Object3D): void {
+    target.traverse((mesh) => {
+      if (mesh.userData[userDataMaterialKey]) {
+        (mesh as Mesh).material = mesh.userData[userDataMaterialKey];
+        delete mesh.userData[userDataMaterialKey];
+      }
+    });
+  }
+
+  function renderView(col: number, row: number): void {
+    coords.set(col / (countPerSideMinusOne), row / (countPerSideMinusOne));
+
+    if (useHemiOctahedron) hemiOctaGridToDir(coords, camera.position);
+    else octaGridToDir(coords, camera.position);
+
+    camera.position.setLength(bSphere.radius * cameraFactor).add(bSphere.center);
+    camera.lookAt(bSphere.center);
+
+    const xOffset = (col / countPerSide) * atlasSize;
+    const yOffset = (row / countPerSide) * atlasSize;
+    renderer.setViewport(xOffset, yOffset, spriteSize, spriteSize);
+    renderer.setScissor(xOffset, yOffset, spriteSize, spriteSize);
+    renderer.render(target, camera);
+  }
+
+  function updateCamera(): void {
+    camera.left = -bSphere.radius;
+    camera.right = bSphere.radius;
+    camera.top = bSphere.radius;
+    camera.bottom = -bSphere.radius;
+
+    camera.zoom = cameraFactor;
+    camera.near = 0.001;
+    camera.far = bSphere.radius * 2 + 0.001;
+
+    camera.updateProjectionMatrix();
+  }
+
+  function setupRenderer(): OldRendererData {
+    const oldPixelRatio = renderer.getPixelRatio();
+    const oldScissorTest = renderer.getScissorTest();
+    const oldClearAlpha = renderer.getClearAlpha();
+    renderer.getScissor(oldScissor);
+    renderer.getViewport(oldViewport);
+
+    const renderTarget = new WebGLRenderTarget(atlasSize, atlasSize, { count: 2, generateMipmaps: true });
+
+    const albedo = 0;
+    const normalDepth = 1;
+
+    renderTarget.textures[albedo].minFilter = LinearMipmapLinearFilter;
+    renderTarget.textures[albedo].magFilter = LinearFilter;
+    renderTarget.textures[albedo].type = UnsignedByteType;
+    renderTarget.textures[albedo].colorSpace = LinearSRGBColorSpace;
+    // renderTarget.textures[albedo].colorSpace = renderer.outputColorSpace;
+
+    renderTarget.textures[normalDepth].minFilter = NearestMipMapNearestFilter;
+    renderTarget.textures[normalDepth].magFilter = NearestFilter;
+    renderTarget.textures[normalDepth].type = UnsignedByteType; // because is packed
+    // renderTarget.textures[normalDepth].type = HalfFloatType; // TODO parametric
+    renderTarget.textures[normalDepth].colorSpace = LinearSRGBColorSpace;
+
+    renderer.setRenderTarget(renderTarget);
+    renderer.setScissorTest(true);
+    renderer.setPixelRatio(1);
+    renderer.setClearAlpha(0);
+
+    return { renderTarget, oldPixelRatio, oldScissorTest, oldClearAlpha };
+  }
+
+  function restoreRenderer(): void {
+    renderer.setRenderTarget(null);
+    renderer.setScissorTest(oldScissorTest);
+    renderer.setViewport(oldViewport.x, oldViewport.y, oldViewport.z, oldViewport.w);
+    renderer.setScissor(oldScissor.x, oldScissor.y, oldScissor.z, oldScissor.w);
+    renderer.setPixelRatio(oldPixelRatio);
+    renderer.setClearAlpha(oldClearAlpha);
+  }
+}
+
+
+FILE ../tools/assetctl/vendor/three-ez-impostor/src/shaders/impostor/octahedral_impostor_shader_params_vertex.glsl
+#include <clipping_planes_pars_vertex>
+
+uniform mat4 impostorTransform;
+uniform float spritesPerSide;
+
+flat varying vec4 vSpritesWeight;
+flat varying vec2 vSprite1;
+flat varying vec2 vSprite2;
+flat varying vec2 vSprite3;
+varying vec2 vSpriteUV1;
+varying vec2 vSpriteUV2;
+varying vec2 vSpriteUV3;
+// varying vec2 vSpriteViewDir1;
+// varying vec2 vSpriteViewDir2;
+// varying vec2 vSpriteViewDir3;
+
+// #ifdef EZ_USE_NORMAL
+// flat varying vec3 vSpriteNormal1;
+// flat varying vec3 vSpriteNormal2;
+// flat varying vec3 vSpriteNormal3;
+// #endif
+
+vec2 encodeDirection(vec3 direction) {
+  #ifdef EZ_USE_HEMI_OCTAHEDRON
+
+  vec3 octahedron = direction / dot(direction, sign(direction));
+  return vec2(1.0 + octahedron.x + octahedron.z, 1.0 + octahedron.z - octahedron.x) * 0.5;
+
+  #else
+
+  // TODO: Implement full octahedral encoding
+
+  #endif
+}
+
+vec3 decodeDirection(vec2 gridIndex, vec2 spriteCountMinusOne) {
+  vec2 gridUV = gridIndex / spriteCountMinusOne;
+
+  #ifdef EZ_USE_HEMI_OCTAHEDRON
+
+  vec3 position = vec3(gridUV.x - gridUV.y, 0.0, -1.0 + gridUV.x + gridUV.y);
+  position.y = 1.0 - abs(position.x) - abs(position.z);
+
+  #else
+
+    // TODO: Implement full octahedral decoding
+
+  #endif
+
+  return normalize(position);
+}
+
+void computePlaneBasis(vec3 normal, out vec3 tangent, out vec3 bitangent) {
+  vec3 up = vec3(0.0, 1.0, 0.0);
+
+  if(normal.y > 0.999)
+    up = vec3(-1.0, 0.0, 0.0);
+
+  #ifndef EZ_USE_HEMI_OCTAHEDRON
+  if(normal.y < -0.999)
+    up = vec3(1.0, 0.0, 0.0);
+  #endif
+
+  tangent = normalize(cross(up, normal));
+  bitangent = cross(normal, tangent);
+}
+
+vec3 projectVertex(vec3 normal) {
+  vec3 x, y;
+  computePlaneBasis(normal, x, y);
+  return x * position.x + y * position.y;
+}
+
+void computeSpritesWeight(vec2 gridFract) {
+  vSpritesWeight = vec4(min(1.0 - gridFract.x, 1.0 - gridFract.y), abs(gridFract.x - gridFract.y), min(gridFract.x, gridFract.y), ceil(gridFract.x - gridFract.y));
+}
+
+vec2 projectToPlaneUV(vec3 normal, vec3 tangent, vec3 bitangent, vec3 cameraPosition, vec3 viewDir) {
+  float denom = dot(viewDir, normal);
+  
+  // // Avoid division by zero when view direction is parallel to plane
+  // if (abs(denom) < 1e-6) {
+  //   return vec2(0.5); // Return center UV as fallback
+  // }
+  
+  float t = -dot(cameraPosition, normal) / denom;
+
+  vec3 hit = cameraPosition + viewDir * t;
+  vec2 uv = vec2(dot(tangent, hit), dot(bitangent, hit));
+  return uv + 0.5;
+}
+
+vec3 projectDirectionToBasis(vec3 dir, vec3 normal, vec3 tangent, vec3 bitangent) {
+  return vec3(dot(dir, tangent), dot(dir, bitangent), dot(dir, normal));
+}
+
+
+FILE ../tools/assetctl/vendor/three-ez-impostor/src/shaders/impostor/octahedral_impostor_shader_vertex.glsl
+// #include <project_vertex>
+
+vec2 spritesMinusOne = vec2(spritesPerSide - 1.0);
+
+#if defined USE_INSTANCING || defined USE_INSTANCING_INDIRECT
+mat4 transformedInstanceMatrix = instanceMatrix * impostorTransform;
+vec3 cameraPosLocal = (inverse(transformedInstanceMatrix * modelMatrix) * vec4(cameraPosition, 1.0)).xyz;
+#else
+vec3 cameraPosLocal = (inverse(impostorTransform * modelMatrix) * vec4(cameraPosition, 1.0)).xyz;
+#endif
+
+vec3 cameraDir = normalize(cameraPosLocal);
+
+vec3 projectedVertex = projectVertex(cameraDir);
+vec3 viewDirLocal = normalize(projectedVertex - cameraPosLocal);
+
+vec2 grid = encodeDirection(cameraDir) * spritesMinusOne;
+vec2 gridFloor = min(floor(grid), spritesMinusOne);
+
+vec2 gridFract = fract(grid);
+
+computeSpritesWeight(gridFract);
+
+vSprite1 = gridFloor;
+vSprite2 = min(vSprite1 + mix(vec2(0.0, 1.0), vec2(1.0, 0.0), vSpritesWeight.w), spritesMinusOne);
+vSprite3 = min(vSprite1 + vec2(1.0), spritesMinusOne);
+
+vec3 spriteNormal1 = decodeDirection(vSprite1, spritesMinusOne);
+vec3 spriteNormal2 = decodeDirection(vSprite2, spritesMinusOne);
+vec3 spriteNormal3 = decodeDirection(vSprite3, spritesMinusOne);
+
+// #ifdef EZ_USE_NORMAL
+// vSpriteNormal1 = spriteNormal1;
+// vSpriteNormal2 = spriteNormal2;
+// vSpriteNormal3 = spriteNormal3;
+// #endif
+
+vec3 planeX1, planeY1, planeX2, planeY2, planeX3, planeY3;
+computePlaneBasis(spriteNormal1, planeX1, planeY1);
+computePlaneBasis(spriteNormal2, planeX2, planeY2);
+computePlaneBasis(spriteNormal3, planeX3, planeY3);
+
+vSpriteUV1 = projectToPlaneUV(spriteNormal1, planeX1, planeY1, cameraPosLocal, viewDirLocal);
+vSpriteUV2 = projectToPlaneUV(spriteNormal2, planeX2, planeY2, cameraPosLocal, viewDirLocal);
+vSpriteUV3 = projectToPlaneUV(spriteNormal3, planeX3, planeY3, cameraPosLocal, viewDirLocal);
+
+// vSpriteViewDir1 = projectDirectionToBasis(-viewDirLocal, spriteNormal1, planeX1, planeY1).xy;
+// vSpriteViewDir2 = projectDirectionToBasis(-viewDirLocal, spriteNormal2, planeX2, planeY2).xy;
+// vSpriteViewDir3 = projectDirectionToBasis(-viewDirLocal, spriteNormal3, planeX3, planeY3).xy;
+
+vec4 mvPosition = vec4(projectedVertex, 1.0);
+
+#if defined USE_INSTANCING || defined USE_INSTANCING_INDIRECT
+    mvPosition = transformedInstanceMatrix * mvPosition;
+# else
+    mvPosition = impostorTransform * mvPosition;
+#endif
+
+mvPosition = modelViewMatrix * mvPosition;
+
+gl_Position = projectionMatrix * mvPosition;
+
+
+FILE ../tools/assetctl/vendor/three-ez-impostor/src/shaders/impostor/octahedral_impostor_shader_params_fragment.glsl
+#include <clipping_planes_pars_fragment>
+
+uniform float spritesPerSide;
+// uniform float parallaxScale;
+uniform float alphaClamp;
+
+#ifdef EZ_USE_ORM
+uniform sampler2D ormMap;
+#endif
+
+flat varying vec4 vSpritesWeight;
+flat varying vec2 vSprite1;
+flat varying vec2 vSprite2;
+flat varying vec2 vSprite3;
+varying vec2 vSpriteUV1;
+varying vec2 vSpriteUV2;
+varying vec2 vSpriteUV3;
+// varying vec2 vSpriteViewDir1;
+// varying vec2 vSpriteViewDir2;
+// varying vec2 vSpriteViewDir3;
+
+// #ifdef EZ_USE_NORMAL
+// flat varying vec3 vSpriteNormal1;
+// flat varying vec3 vSpriteNormal2;
+// flat varying vec3 vSpriteNormal3;
+// #endif
+
+#ifdef EZ_USE_NORMAL
+vec3 blendNormals(vec2 uv1, vec2 uv2, vec2 uv3) {
+  vec3 normalDepth1 = unpackRGBToNormal(texture2D(normalMap, uv1).rgb); // we're reading twice if parallax enabled
+  vec3 normalDepth2 = unpackRGBToNormal(texture2D(normalMap, uv2).rgb);
+  vec3 normalDepth3 = unpackRGBToNormal(texture2D(normalMap, uv3).rgb);
+
+  // Fix normal if blended bad
+
+  return normalize(normalDepth1.xyz * vSpritesWeight.x + normalDepth2.xyz * vSpritesWeight.y + normalDepth3.xyz * vSpritesWeight.z);
+}
+#endif
+
+// // temporaly removed
+// vec2 parallaxUV(vec2 uv_f, vec2 frame, vec2 xy_f, float frame_size, float weight) {
+//   // vec2 spriteUv = frame_size * (frame + uv_f);
+//   // float depth = texture(normalMap, spriteUv).a;
+//   // vec2 parallaxOffset = xy_f * depth * parallaxScale; // * weight;
+//   // uv_f = clamp(uv_f + parallaxOffset, vec2(0.0), vec2(1.0));
+//   // return frame_size * (frame + uv_f);
+
+//   uv_f = clamp(uv_f, vec2(0), vec2(1));
+// 	vec2 uv_quad = frame_size * (frame + uv_f);
+//   float n_depth = max(0.0, 0.5 - texture(normalMap, uv_quad).a);
+
+//   uv_f = xy_f * n_depth * parallaxScale * (1.0 - weight) + uv_f;
+// 	uv_f = clamp(uv_f, vec2(0), vec2(1));
+// 	uv_f =  frame_size * (frame + uv_f);
+// 	return clamp(uv_f, vec2(0), vec2(1));
+// }
+
+vec2 getUV(vec2 uv_f, vec2 frame, float frame_size) {
+  uv_f = clamp(uv_f, vec2(0), vec2(1));
+	vec2 uv_quad = frame_size * (frame + uv_f);
+	uv_f =  frame_size * (frame + uv_f);
+	return clamp(uv_f, vec2(0), vec2(1));
+}
+
+
+FILE ../tools/assetctl/vendor/three-ez-impostor/src/shaders/atlas_texture/octahedral_atlas_fragment.glsl
+#define NORMAL
+uniform vec3 diffuse;
+uniform float opacity;
+#if defined( FLAT_SHADED ) || defined( USE_BUMPMAP ) || defined( USE_NORMALMAP_TANGENTSPACE )
+	varying vec3 vViewPosition;
+#endif
+#include <packing>
+#include <normal_pars_fragment>
+#include <bumpmap_pars_fragment>
+#include <normalmap_pars_fragment>
+#include <common>
+#include <color_pars_fragment>
+#include <uv_pars_fragment>
+#include <map_pars_fragment>
+#include <alphamap_pars_fragment>
+#include <alphatest_pars_fragment>
+#include <alphahash_pars_fragment>
+varying vec2 vHighPrecisionZW;
+
+layout(location = 0) out vec4 gAlbedo;
+layout(location = 1) out vec4 gNormalDepth;
+
+void main() {
+	vec4 diffuseColor = vec4( diffuse, opacity );
+	#include <map_fragment>
+	#include <color_fragment>
+	#include <alphamap_fragment>
+	#include <alphatest_fragment>
+	#include <alphahash_fragment>
+
+	if (diffuseColor.a <= 0.2) { // TODO custom code
+		discard;
+	}
+
+	// #include <opaque_fragment>
+    #ifdef OPAQUE
+		diffuseColor.a = 1.0;
+	#endif
+	#ifdef USE_TRANSMISSION
+		diffuseColor.a *= material.transmissionAlpha;
+	#endif
+	gAlbedo = diffuseColor;
+
+	// // #include <colorspace_fragment>
+	gAlbedo = linearToOutputTexel( gAlbedo );
+
+	// // #include <premultiplied_alpha_fragment>
+    #ifdef PREMULTIPLIED_ALPHA
+		gAlbedo.rgb *= gAlbedo.a;
+	#endif
+
+	#include <normal_fragment_begin>
+	#include <normal_fragment_maps>
+
+	float fragCoordZ = 0.5 * vHighPrecisionZW[ 0 ] / vHighPrecisionZW[ 1 ] + 0.5;
+	gNormalDepth = vec4( packNormalToRGB( normal ), 1.0 - fragCoordZ );
+}

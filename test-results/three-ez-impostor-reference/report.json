@@ -1,0 +1,1193 @@
+{
+  "candidate": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f",
+  "nearPath": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f\\atlas-ez-oak.glb",
+  "midPath": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f\\atlas-ez-oak.lod1.glb",
+  "url": "http://127.0.0.1:5197/",
+  "browserVersion": "149.0.7827.55",
+  "viewport": {
+    "width": 1600,
+    "height": 1000,
+    "deviceScaleFactor": 1
+  },
+  "hardwareEnabled": true,
+  "inputHashes": {
+    "near": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+    "mid": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9"
+  },
+  "sourceHashes": {
+    "tree-impostor-reference-lab.html": "b38e76ad6b3c9383599750e622b1b8d5b52a1b913b63fd8979116105e337c86f",
+    "src/tree-impostor-reference-lab.ts": "7ae64931790df598c15ef341389e390f7659265e45a4dc69bc2564190aa08856",
+    "src/tree-asset.ts": "c3c6409a63efaff9d8fdb913c7a87bb11dfcf599eb9621142bed9fe4fd1b2586",
+    "src/render-profile.ts": "91896338e8cb444a292bc41653637dde76df0ab1102ea24c750f1daacdb20799",
+    "src/vendor/three-ez-impostor/impostor-reference.js": "3d29cb7e45f265c434b0090d62a093639a71d0f1fe415d6f00e24bd7ac573180"
+  },
+  "probeGrid": {
+    "grid": 16,
+    "textureSize": 2048,
+    "viewPixels": 128,
+    "supersample": 2
+  },
+  "directions": [
+    {
+      "azimuth": 0,
+      "elevation": 0,
+      "tag": "az0-el0",
+      "vector": [
+        0,
+        0,
+        1
+      ],
+      "meshAreaPixels": 4549,
+      "impostorAreaPixels": 4448,
+      "intersectionPixels": 4395,
+      "unionPixels": 4602,
+      "iou": 0.9550195567144719,
+      "meshWeightedArea": 4423.5,
+      "impostorWeightedArea": 4333.5,
+      "weightedAreaRatio": 0.9796541200406917,
+      "finite": true,
+      "meshMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el0-mesh.png",
+      "impostorMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el0-impostor.png"
+    },
+    {
+      "azimuth": 45,
+      "elevation": 0,
+      "tag": "az45-el0",
+      "vector": [
+        0.7071067811865475,
+        0,
+        0.7071067811865476
+      ],
+      "meshAreaPixels": 3998,
+      "impostorAreaPixels": 4019,
+      "intersectionPixels": 3897,
+      "unionPixels": 4120,
+      "iou": 0.945873786407767,
+      "meshWeightedArea": 3885.25,
+      "impostorWeightedArea": 3927,
+      "weightedAreaRatio": 1.0107457692555177,
+      "finite": true,
+      "meshMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az45-el0-mesh.png",
+      "impostorMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az45-el0-impostor.png"
+    },
+    {
+      "azimuth": 90,
+      "elevation": 0,
+      "tag": "az90-el0",
+      "vector": [
+        1,
+        0,
+        6.123233995736766e-17
+      ],
+      "meshAreaPixels": 3913,
+      "impostorAreaPixels": 3837,
+      "intersectionPixels": 3801,
+      "unionPixels": 3949,
+      "iou": 0.9625221575082299,
+      "meshWeightedArea": 3810.25,
+      "impostorWeightedArea": 3754,
+      "weightedAreaRatio": 0.9852371891608163,
+      "finite": true,
+      "meshMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az90-el0-mesh.png",
+      "impostorMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az90-el0-impostor.png"
+    },
+    {
+      "azimuth": 135,
+      "elevation": 0,
+      "tag": "az135-el0",
+      "vector": [
+        0.7071067811865476,
+        0,
+        -0.7071067811865475
+      ],
+      "meshAreaPixels": 4398,
+      "impostorAreaPixels": 4399,
+      "intersectionPixels": 4299,
+      "unionPixels": 4498,
+      "iou": 0.9557581147176523,
+      "meshWeightedArea": 4266.75,
+      "impostorWeightedArea": 4277,
+      "weightedAreaRatio": 1.00240229683014,
+      "finite": true
+    },
+    {
+      "azimuth": 180,
+      "elevation": 0,
+      "tag": "az180-el0",
+      "vector": [
+        1.2246467991473532e-16,
+        0,
+        -1
+      ],
+      "meshAreaPixels": 4519,
+      "impostorAreaPixels": 4448,
+      "intersectionPixels": 4390,
+      "unionPixels": 4577,
+      "iou": 0.9591435438059864,
+      "meshWeightedArea": 4386.75,
+      "impostorWeightedArea": 4333.5,
+      "weightedAreaRatio": 0.9878611728500598,
+      "finite": true
+    },
+    {
+      "azimuth": 225,
+      "elevation": 0,
+      "tag": "az225-el0",
+      "vector": [
+        -0.7071067811865475,
+        0,
+        -0.7071067811865477
+      ],
+      "meshAreaPixels": 3979,
+      "impostorAreaPixels": 3993,
+      "intersectionPixels": 3886,
+      "unionPixels": 4086,
+      "iou": 0.951052373959863,
+      "meshWeightedArea": 3870.25,
+      "impostorWeightedArea": 3896.75,
+      "weightedAreaRatio": 1.0068471029003294,
+      "finite": true
+    },
+    {
+      "azimuth": 270,
+      "elevation": 0,
+      "tag": "az270-el0",
+      "vector": [
+        -1,
+        0,
+        -1.8369701987210297e-16
+      ],
+      "meshAreaPixels": 3902,
+      "impostorAreaPixels": 3837,
+      "intersectionPixels": 3789,
+      "unionPixels": 3950,
+      "iou": 0.959240506329114,
+      "meshWeightedArea": 3799.5,
+      "impostorWeightedArea": 3753.75,
+      "weightedAreaRatio": 0.9879589419660482,
+      "finite": true
+    },
+    {
+      "azimuth": 315,
+      "elevation": 0,
+      "tag": "az315-el0",
+      "vector": [
+        -0.7071067811865477,
+        0,
+        0.7071067811865474
+      ],
+      "meshAreaPixels": 4381,
+      "impostorAreaPixels": 4389,
+      "intersectionPixels": 4286,
+      "unionPixels": 4484,
+      "iou": 0.955842997323818,
+      "meshWeightedArea": 4253,
+      "impostorWeightedArea": 4268,
+      "weightedAreaRatio": 1.003526922172584,
+      "finite": true
+    },
+    {
+      "azimuth": 0,
+      "elevation": 15,
+      "tag": "az0-el15",
+      "vector": [
+        0,
+        0.25881904510252074,
+        0.9659258262890683
+      ],
+      "meshAreaPixels": 4365,
+      "impostorAreaPixels": 4365,
+      "intersectionPixels": 4206,
+      "unionPixels": 4524,
+      "iou": 0.9297082228116711,
+      "meshWeightedArea": 4251.25,
+      "impostorWeightedArea": 4283,
+      "weightedAreaRatio": 1.0074683916495148,
+      "finite": true,
+      "meshMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el15-mesh.png",
+      "impostorMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el15-impostor.png"
+    },
+    {
+      "azimuth": 45,
+      "elevation": 15,
+      "tag": "az45-el15",
+      "vector": [
+        0.6830127018922193,
+        0.25881904510252074,
+        0.6830127018922194
+      ],
+      "meshAreaPixels": 3899,
+      "impostorAreaPixels": 3916,
+      "intersectionPixels": 3761,
+      "unionPixels": 4054,
+      "iou": 0.9277257030093734,
+      "meshWeightedArea": 3780.5,
+      "impostorWeightedArea": 3832.5,
+      "weightedAreaRatio": 1.013754794339373,
+      "finite": true
+    },
+    {
+      "azimuth": 90,
+      "elevation": 15,
+      "tag": "az90-el15",
+      "vector": [
+        0.9659258262890683,
+        0.25881904510252074,
+        5.914589856893349e-17
+      ],
+      "meshAreaPixels": 3920,
+      "impostorAreaPixels": 3946,
+      "intersectionPixels": 3772,
+      "unionPixels": 4094,
+      "iou": 0.9213483146067416,
+      "meshWeightedArea": 3810.5,
+      "impostorWeightedArea": 3863.75,
+      "weightedAreaRatio": 1.013974544023094,
+      "finite": true
+    },
+    {
+      "azimuth": 135,
+      "elevation": 15,
+      "tag": "az135-el15",
+      "vector": [
+        0.6830127018922194,
+        0.25881904510252074,
+        -0.6830127018922193
+      ],
+      "meshAreaPixels": 4440,
+      "impostorAreaPixels": 4411,
+      "intersectionPixels": 4299,
+      "unionPixels": 4552,
+      "iou": 0.9444200351493849,
+      "meshWeightedArea": 4325.5,
+      "impostorWeightedArea": 4319.5,
+      "weightedAreaRatio": 0.9986128771240319,
+      "finite": true
+    },
+    {
+      "azimuth": 180,
+      "elevation": 15,
+      "tag": "az180-el15",
+      "vector": [
+        1.1829179713786698e-16,
+        0.25881904510252074,
+        -0.9659258262890683
+      ],
+      "meshAreaPixels": 4465,
+      "impostorAreaPixels": 4458,
+      "intersectionPixels": 4332,
+      "unionPixels": 4591,
+      "iou": 0.9435852755390982,
+      "meshWeightedArea": 4342,
+      "impostorWeightedArea": 4377.25,
+      "weightedAreaRatio": 1.0081183786273606,
+      "finite": true
+    },
+    {
+      "azimuth": 225,
+      "elevation": 15,
+      "tag": "az225-el15",
+      "vector": [
+        -0.6830127018922193,
+        0.25881904510252074,
+        -0.6830127018922195
+      ],
+      "meshAreaPixels": 3992,
+      "impostorAreaPixels": 3976,
+      "intersectionPixels": 3860,
+      "unionPixels": 4108,
+      "iou": 0.9396299902629016,
+      "meshWeightedArea": 3867.75,
+      "impostorWeightedArea": 3892.75,
+      "weightedAreaRatio": 1.0064637062891861,
+      "finite": true
+    },
+    {
+      "azimuth": 270,
+      "elevation": 15,
+      "tag": "az270-el15",
+      "vector": [
+        -0.9659258262890683,
+        0.25881904510252074,
+        -1.7743769570680046e-16
+      ],
+      "meshAreaPixels": 3862,
+      "impostorAreaPixels": 3918,
+      "intersectionPixels": 3708,
+      "unionPixels": 4072,
+      "iou": 0.9106090373280943,
+      "meshWeightedArea": 3744.25,
+      "impostorWeightedArea": 3840.25,
+      "weightedAreaRatio": 1.0256393136142083,
+      "finite": true
+    },
+    {
+      "azimuth": 315,
+      "elevation": 15,
+      "tag": "az315-el15",
+      "vector": [
+        -0.6830127018922195,
+        0.25881904510252074,
+        0.6830127018922192
+      ],
+      "meshAreaPixels": 4176,
+      "impostorAreaPixels": 4187,
+      "intersectionPixels": 4056,
+      "unionPixels": 4307,
+      "iou": 0.9417227768748548,
+      "meshWeightedArea": 4053.25,
+      "impostorWeightedArea": 4103.25,
+      "weightedAreaRatio": 1.0123357799296862,
+      "finite": true
+    },
+    {
+      "azimuth": 0,
+      "elevation": 45,
+      "tag": "az0-el45",
+      "vector": [
+        0,
+        0.7071067811865475,
+        0.7071067811865476
+      ],
+      "meshAreaPixels": 3609,
+      "impostorAreaPixels": 3395,
+      "intersectionPixels": 3331,
+      "unionPixels": 3673,
+      "iou": 0.906888102368636,
+      "meshWeightedArea": 3507.5,
+      "impostorWeightedArea": 3287.5,
+      "weightedAreaRatio": 0.9372772630078403,
+      "finite": true
+    },
+    {
+      "azimuth": 45,
+      "elevation": 45,
+      "tag": "az45-el45",
+      "vector": [
+        0.5,
+        0.7071067811865475,
+        0.5000000000000001
+      ],
+      "meshAreaPixels": 3391,
+      "impostorAreaPixels": 3424,
+      "intersectionPixels": 3279,
+      "unionPixels": 3536,
+      "iou": 0.9273190045248869,
+      "meshWeightedArea": 3311.5,
+      "impostorWeightedArea": 3358.5,
+      "weightedAreaRatio": 1.0141929639136342,
+      "finite": true,
+      "meshMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az45-el45-mesh.png",
+      "impostorMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az45-el45-impostor.png"
+    },
+    {
+      "azimuth": 90,
+      "elevation": 45,
+      "tag": "az90-el45",
+      "vector": [
+        0.7071067811865476,
+        0.7071067811865475,
+        4.329780281177467e-17
+      ],
+      "meshAreaPixels": 3651,
+      "impostorAreaPixels": 3646,
+      "intersectionPixels": 3531,
+      "unionPixels": 3766,
+      "iou": 0.9375995751460435,
+      "meshWeightedArea": 3550.25,
+      "impostorWeightedArea": 3562.25,
+      "weightedAreaRatio": 1.0033800436588973,
+      "finite": true
+    },
+    {
+      "azimuth": 135,
+      "elevation": 45,
+      "tag": "az135-el45",
+      "vector": [
+        0.5000000000000001,
+        0.7071067811865475,
+        -0.5
+      ],
+      "meshAreaPixels": 4124,
+      "impostorAreaPixels": 4182,
+      "intersectionPixels": 3997,
+      "unionPixels": 4309,
+      "iou": 0.9275934091436528,
+      "meshWeightedArea": 4014.75,
+      "impostorWeightedArea": 4099.25,
+      "weightedAreaRatio": 1.0210473877576436,
+      "finite": true
+    },
+    {
+      "azimuth": 180,
+      "elevation": 45,
+      "tag": "az180-el45",
+      "vector": [
+        8.659560562354934e-17,
+        0.7071067811865475,
+        -0.7071067811865476
+      ],
+      "meshAreaPixels": 3993,
+      "impostorAreaPixels": 3790,
+      "intersectionPixels": 3747,
+      "unionPixels": 4036,
+      "iou": 0.928394449950446,
+      "meshWeightedArea": 3895.75,
+      "impostorWeightedArea": 3713.25,
+      "weightedAreaRatio": 0.9531540781620997,
+      "finite": true
+    },
+    {
+      "azimuth": 225,
+      "elevation": 45,
+      "tag": "az225-el45",
+      "vector": [
+        -0.5,
+        0.7071067811865475,
+        -0.5000000000000001
+      ],
+      "meshAreaPixels": 3699,
+      "impostorAreaPixels": 3675,
+      "intersectionPixels": 3582,
+      "unionPixels": 3792,
+      "iou": 0.944620253164557,
+      "meshWeightedArea": 3606.75,
+      "impostorWeightedArea": 3596.75,
+      "weightedAreaRatio": 0.9972274208082068,
+      "finite": true
+    },
+    {
+      "azimuth": 270,
+      "elevation": 45,
+      "tag": "az270-el45",
+      "vector": [
+        -0.7071067811865476,
+        0.7071067811865475,
+        -1.29893408435324e-16
+      ],
+      "meshAreaPixels": 3581,
+      "impostorAreaPixels": 3540,
+      "intersectionPixels": 3462,
+      "unionPixels": 3659,
+      "iou": 0.9461601530472806,
+      "meshWeightedArea": 3498.5,
+      "impostorWeightedArea": 3491.75,
+      "weightedAreaRatio": 0.998070601686437,
+      "finite": true
+    },
+    {
+      "azimuth": 315,
+      "elevation": 45,
+      "tag": "az315-el45",
+      "vector": [
+        -0.5000000000000001,
+        0.7071067811865475,
+        0.4999999999999999
+      ],
+      "meshAreaPixels": 3385,
+      "impostorAreaPixels": 3451,
+      "intersectionPixels": 3262,
+      "unionPixels": 3574,
+      "iou": 0.9127028539451595,
+      "meshWeightedArea": 3317.25,
+      "impostorWeightedArea": 3381.75,
+      "weightedAreaRatio": 1.0194438164141986,
+      "finite": true
+    },
+    {
+      "azimuth": 0,
+      "elevation": 85,
+      "tag": "az0-el85",
+      "vector": [
+        0,
+        0.9961946980917455,
+        0.08715574274765814
+      ],
+      "meshAreaPixels": 3519,
+      "impostorAreaPixels": 3443,
+      "intersectionPixels": 3390,
+      "unionPixels": 3572,
+      "iou": 0.9490481522956327,
+      "meshWeightedArea": 3432.5,
+      "impostorWeightedArea": 3352.25,
+      "weightedAreaRatio": 0.9766205389657684,
+      "finite": true,
+      "meshMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el85-mesh.png",
+      "impostorMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el85-impostor.png"
+    },
+    {
+      "azimuth": 45,
+      "elevation": 85,
+      "tag": "az45-el85",
+      "vector": [
+        0.061628416716219325,
+        0.9961946980917455,
+        0.06162841671621933
+      ],
+      "meshAreaPixels": 3553,
+      "impostorAreaPixels": 3522,
+      "intersectionPixels": 3434,
+      "unionPixels": 3641,
+      "iou": 0.9431474869541335,
+      "meshWeightedArea": 3454,
+      "impostorWeightedArea": 3459.25,
+      "weightedAreaRatio": 1.0015199768384482,
+      "finite": true
+    },
+    {
+      "azimuth": 90,
+      "elevation": 85,
+      "tag": "az90-el85",
+      "vector": [
+        0.08715574274765814,
+        0.9961946980917455,
+        5.336750069161484e-18
+      ],
+      "meshAreaPixels": 3587,
+      "impostorAreaPixels": 3490,
+      "intersectionPixels": 3443,
+      "unionPixels": 3634,
+      "iou": 0.9474408365437534,
+      "meshWeightedArea": 3503.5,
+      "impostorWeightedArea": 3409,
+      "weightedAreaRatio": 0.973026973026973,
+      "finite": true
+    },
+    {
+      "azimuth": 135,
+      "elevation": 85,
+      "tag": "az135-el85",
+      "vector": [
+        0.06162841671621933,
+        0.9961946980917455,
+        -0.061628416716219325
+      ],
+      "meshAreaPixels": 3619,
+      "impostorAreaPixels": 3558,
+      "intersectionPixels": 3480,
+      "unionPixels": 3697,
+      "iou": 0.9413037598052475,
+      "meshWeightedArea": 3529.25,
+      "impostorWeightedArea": 3505.5,
+      "weightedAreaRatio": 0.9932705248990579,
+      "finite": true
+    },
+    {
+      "azimuth": 180,
+      "elevation": 85,
+      "tag": "az180-el85",
+      "vector": [
+        1.0673500138322967e-17,
+        0.9961946980917455,
+        -0.08715574274765814
+      ],
+      "meshAreaPixels": 3621,
+      "impostorAreaPixels": 3522,
+      "intersectionPixels": 3476,
+      "unionPixels": 3667,
+      "iou": 0.9479138260158168,
+      "meshWeightedArea": 3529.25,
+      "impostorWeightedArea": 3441.5,
+      "weightedAreaRatio": 0.9751363604165191,
+      "finite": true
+    },
+    {
+      "azimuth": 225,
+      "elevation": 85,
+      "tag": "az225-el85",
+      "vector": [
+        -0.061628416716219325,
+        0.9961946980917455,
+        -0.061628416716219346
+      ],
+      "meshAreaPixels": 3596,
+      "impostorAreaPixels": 3565,
+      "intersectionPixels": 3488,
+      "unionPixels": 3673,
+      "iou": 0.9496324530356657,
+      "meshWeightedArea": 3506.75,
+      "impostorWeightedArea": 3507.5,
+      "weightedAreaRatio": 1.0002138732444572,
+      "finite": true
+    },
+    {
+      "azimuth": 270,
+      "elevation": 85,
+      "tag": "az270-el85",
+      "vector": [
+        -0.08715574274765814,
+        0.9961946980917455,
+        -1.6010250207484453e-17
+      ],
+      "meshAreaPixels": 3565,
+      "impostorAreaPixels": 3491,
+      "intersectionPixels": 3440,
+      "unionPixels": 3616,
+      "iou": 0.9513274336283186,
+      "meshWeightedArea": 3482.5,
+      "impostorWeightedArea": 3407.75,
+      "weightedAreaRatio": 0.9785355348169419,
+      "finite": true
+    },
+    {
+      "azimuth": 315,
+      "elevation": 85,
+      "tag": "az315-el85",
+      "vector": [
+        -0.061628416716219346,
+        0.9961946980917455,
+        0.06162841671621931
+      ],
+      "meshAreaPixels": 3548,
+      "impostorAreaPixels": 3513,
+      "intersectionPixels": 3427,
+      "unionPixels": 3634,
+      "iou": 0.9430379746835443,
+      "meshWeightedArea": 3454.25,
+      "impostorWeightedArea": 3459.75,
+      "weightedAreaRatio": 1.0015922414417022,
+      "finite": true
+    },
+    {
+      "azimuth": 0,
+      "elevation": 90,
+      "tag": "top",
+      "vector": [
+        0,
+        1,
+        6.123233995736766e-17
+      ],
+      "meshAreaPixels": 3564,
+      "impostorAreaPixels": 3573,
+      "intersectionPixels": 3462,
+      "unionPixels": 3675,
+      "iou": 0.9420408163265306,
+      "meshWeightedArea": 3485.5,
+      "impostorWeightedArea": 3514.75,
+      "weightedAreaRatio": 1.0083919093386888,
+      "finite": true,
+      "meshMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\top-mesh.png",
+      "impostorMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\top-impostor.png"
+    },
+    {
+      "azimuth": 0,
+      "elevation": -5,
+      "tag": "az0-el-5",
+      "unsupported": true,
+      "vector": [
+        0,
+        -0.08715574274765817,
+        0.9961946980917455
+      ],
+      "meshAreaPixels": 4509,
+      "impostorAreaPixels": 4213,
+      "intersectionPixels": 3972,
+      "unionPixels": 4750,
+      "iou": 0.8362105263157895,
+      "meshWeightedArea": 4398.25,
+      "impostorWeightedArea": 4092,
+      "weightedAreaRatio": 0.9303700335360655,
+      "finite": true,
+      "note": "Below-centre view is outside the pinned hemi reference support; retained as a diagnostic.",
+      "meshMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el-5-mesh.png",
+      "impostorMaskPath": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el-5-impostor.png"
+    },
+    {
+      "azimuth": 45,
+      "elevation": -5,
+      "tag": "az45-el-5",
+      "unsupported": true,
+      "vector": [
+        0.7044160264027586,
+        -0.08715574274765817,
+        0.7044160264027587
+      ],
+      "meshAreaPixels": 4003,
+      "impostorAreaPixels": 4036,
+      "intersectionPixels": 3753,
+      "unionPixels": 4286,
+      "iou": 0.8756416238917406,
+      "meshWeightedArea": 3894.25,
+      "impostorWeightedArea": 3954.25,
+      "weightedAreaRatio": 1.0154073313218206,
+      "finite": true,
+      "note": "Below-centre view is outside the pinned hemi reference support; retained as a diagnostic."
+    },
+    {
+      "azimuth": 90,
+      "elevation": -5,
+      "tag": "az90-el-5",
+      "unsupported": true,
+      "vector": [
+        0.9961946980917455,
+        -0.08715574274765817,
+        6.099933241728101e-17
+      ],
+      "meshAreaPixels": 3913,
+      "impostorAreaPixels": 3853,
+      "intersectionPixels": 3716,
+      "unionPixels": 4050,
+      "iou": 0.9175308641975308,
+      "meshWeightedArea": 3807.75,
+      "impostorWeightedArea": 3781,
+      "weightedAreaRatio": 0.9929748539163548,
+      "finite": true,
+      "note": "Below-centre view is outside the pinned hemi reference support; retained as a diagnostic."
+    },
+    {
+      "azimuth": 135,
+      "elevation": -5,
+      "tag": "az135-el-5",
+      "unsupported": true,
+      "vector": [
+        0.7044160264027587,
+        -0.08715574274765817,
+        -0.7044160264027586
+      ],
+      "meshAreaPixels": 4345,
+      "impostorAreaPixels": 4354,
+      "intersectionPixels": 4163,
+      "unionPixels": 4536,
+      "iou": 0.9177689594356261,
+      "meshWeightedArea": 4213,
+      "impostorWeightedArea": 4273.25,
+      "weightedAreaRatio": 1.0143009731782577,
+      "finite": true,
+      "note": "Below-centre view is outside the pinned hemi reference support; retained as a diagnostic."
+    },
+    {
+      "azimuth": 180,
+      "elevation": -5,
+      "tag": "az180-el-5",
+      "unsupported": true,
+      "vector": [
+        1.2199866483456202e-16,
+        -0.08715574274765817,
+        -0.9961946980917455
+      ],
+      "meshAreaPixels": 4492,
+      "impostorAreaPixels": 4224,
+      "intersectionPixels": 4051,
+      "unionPixels": 4665,
+      "iou": 0.8683815648445874,
+      "meshWeightedArea": 4364,
+      "impostorWeightedArea": 4143.75,
+      "weightedAreaRatio": 0.9495302474793768,
+      "finite": true,
+      "note": "Below-centre view is outside the pinned hemi reference support; retained as a diagnostic."
+    },
+    {
+      "azimuth": 225,
+      "elevation": -5,
+      "tag": "az225-el-5",
+      "unsupported": true,
+      "vector": [
+        -0.7044160264027586,
+        -0.08715574274765817,
+        -0.7044160264027588
+      ],
+      "meshAreaPixels": 3974,
+      "impostorAreaPixels": 3966,
+      "intersectionPixels": 3788,
+      "unionPixels": 4152,
+      "iou": 0.9123314065510597,
+      "meshWeightedArea": 3860.75,
+      "impostorWeightedArea": 3885,
+      "weightedAreaRatio": 1.0062811629864663,
+      "finite": true,
+      "note": "Below-centre view is outside the pinned hemi reference support; retained as a diagnostic."
+    },
+    {
+      "azimuth": 270,
+      "elevation": -5,
+      "tag": "az270-el-5",
+      "unsupported": true,
+      "vector": [
+        -0.9961946980917455,
+        -0.08715574274765817,
+        -1.82997997251843e-16
+      ],
+      "meshAreaPixels": 3891,
+      "impostorAreaPixels": 3856,
+      "intersectionPixels": 3711,
+      "unionPixels": 4036,
+      "iou": 0.9194747274529237,
+      "meshWeightedArea": 3784.25,
+      "impostorWeightedArea": 3771.5,
+      "weightedAreaRatio": 0.9966307722798441,
+      "finite": true,
+      "note": "Below-centre view is outside the pinned hemi reference support; retained as a diagnostic."
+    },
+    {
+      "azimuth": 315,
+      "elevation": -5,
+      "tag": "az315-el-5",
+      "unsupported": true,
+      "vector": [
+        -0.7044160264027588,
+        -0.08715574274765817,
+        0.7044160264027585
+      ],
+      "meshAreaPixels": 4422,
+      "impostorAreaPixels": 4363,
+      "intersectionPixels": 4194,
+      "unionPixels": 4591,
+      "iou": 0.9135264648224788,
+      "meshWeightedArea": 4298.25,
+      "impostorWeightedArea": 4242,
+      "weightedAreaRatio": 0.9869132786599197,
+      "finite": true,
+      "note": "Below-centre view is outside the pinned hemi reference support; retained as a diagnostic."
+    }
+  ],
+  "distanceFootprints": [
+    {
+      "tag": "front-horizon",
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 32,
+      "supersample": 2,
+      "meshAreaPixels": 214,
+      "impostorAreaPixels": 295,
+      "iou": 0.7254237288135593
+    },
+    {
+      "tag": "front-horizon",
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 64,
+      "supersample": 2,
+      "meshAreaPixels": 1106,
+      "impostorAreaPixels": 1129,
+      "iou": 0.9588080631025416
+    },
+    {
+      "tag": "front-horizon",
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "pixels": 128,
+      "supersample": 2,
+      "meshAreaPixels": 4549,
+      "impostorAreaPixels": 4448,
+      "iou": 0.9550195567144719
+    },
+    {
+      "tag": "front-15deg",
+      "direction": [
+        0,
+        0.25881904510252074,
+        0.9659258262890683
+      ],
+      "pixels": 32,
+      "supersample": 2,
+      "meshAreaPixels": 209,
+      "impostorAreaPixels": 289,
+      "iou": 0.7231833910034602
+    },
+    {
+      "tag": "front-15deg",
+      "direction": [
+        0,
+        0.25881904510252074,
+        0.9659258262890683
+      ],
+      "pixels": 64,
+      "supersample": 2,
+      "meshAreaPixels": 1071,
+      "impostorAreaPixels": 1110,
+      "iou": 0.9300884955752212
+    },
+    {
+      "tag": "front-15deg",
+      "direction": [
+        0,
+        0.25881904510252074,
+        0.9659258262890683
+      ],
+      "pixels": 128,
+      "supersample": 2,
+      "meshAreaPixels": 4365,
+      "impostorAreaPixels": 4365,
+      "iou": 0.9297082228116711
+    },
+    {
+      "tag": "up",
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "pixels": 32,
+      "supersample": 2,
+      "meshAreaPixels": 151,
+      "impostorAreaPixels": 227,
+      "iou": 0.6651982378854625
+    },
+    {
+      "tag": "up",
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "pixels": 64,
+      "supersample": 2,
+      "meshAreaPixels": 875,
+      "impostorAreaPixels": 902,
+      "iou": 0.9570484581497798
+    },
+    {
+      "tag": "up",
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "pixels": 128,
+      "supersample": 2,
+      "meshAreaPixels": 3564,
+      "impostorAreaPixels": 3573,
+      "iou": 0.9420408163265306
+    }
+  ],
+  "screenshots": [
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el0-mesh.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el0-impostor.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az45-el0-mesh.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az45-el0-impostor.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az90-el0-mesh.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az90-el0-impostor.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el15-mesh.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el15-impostor.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az45-el45-mesh.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az45-el45-impostor.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el85-mesh.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el85-impostor.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\top-mesh.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\top-impostor.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el-5-mesh.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\masks\\az0-el-5-impostor.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\front-mesh.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\front-impostor.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\back-mesh.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\back-impostor.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\top-mesh.png",
+    "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\three-ez-impostor-reference\\top-impostor.png"
+  ],
+  "profiles": [
+    {
+      "mode": "mesh",
+      "frames": 180,
+      "diagnostics": {
+        "enabled": true,
+        "gpuAvailable": true,
+        "historyLimit": 600,
+        "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+        "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+        "pendingQueries": 1,
+        "pendingLimit": 48,
+        "skippedQueries": 0,
+        "disjointQueries": 0,
+        "expiredQueries": 0,
+        "lastDrawCalls": 2,
+        "lastTriangles": 13806,
+        "statistics": {
+          "frameIntervalMs": {
+            "samples": 180,
+            "p50": 16.600000001490116,
+            "p95": 17.69999999552965,
+            "p99": 18.100000001490116,
+            "max": 18.399999998509884
+          },
+          "cpu/tree-referenceMs": {
+            "samples": 180,
+            "p50": 0.20000000298023224,
+            "p95": 0.5,
+            "p99": 0.6999999955296516,
+            "max": 0.7000000029802322
+          },
+          "cpu/frameWorkMs": {
+            "samples": 180,
+            "p50": 0.29999999701976776,
+            "p95": 0.6000000014901161,
+            "p99": 0.8000000044703484,
+            "max": 0.8999999985098839
+          },
+          "drawCalls": {
+            "samples": 180,
+            "p50": 2,
+            "p95": 2,
+            "p99": 2,
+            "max": 2
+          },
+          "triangles": {
+            "samples": 180,
+            "p50": 13806,
+            "p95": 13806,
+            "p99": 13806,
+            "max": 13806
+          },
+          "gpu/tree-referenceMs": {
+            "samples": 179,
+            "p50": 0.06608,
+            "p95": 0.070496,
+            "p99": 0.087712,
+            "max": 0.103392
+          },
+          "gpu/framePassSumMs": {
+            "samples": 179,
+            "p50": 0.06608,
+            "p95": 0.070496,
+            "p99": 0.087712,
+            "max": 0.103392
+          }
+        }
+      }
+    },
+    {
+      "mode": "impostor",
+      "frames": 180,
+      "diagnostics": {
+        "enabled": true,
+        "gpuAvailable": true,
+        "historyLimit": 600,
+        "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+        "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+        "pendingQueries": 1,
+        "pendingLimit": 48,
+        "skippedQueries": 0,
+        "disjointQueries": 0,
+        "expiredQueries": 0,
+        "lastDrawCalls": 1,
+        "lastTriangles": 2,
+        "statistics": {
+          "frameIntervalMs": {
+            "samples": 180,
+            "p50": 16.600000001490116,
+            "p95": 17.600000001490116,
+            "p99": 18,
+            "max": 18.100000001490116
+          },
+          "cpu/tree-referenceMs": {
+            "samples": 180,
+            "p50": 0.19999999552965164,
+            "p95": 0.3999999985098839,
+            "p99": 0.5,
+            "max": 0.6000000014901161
+          },
+          "cpu/frameWorkMs": {
+            "samples": 180,
+            "p50": 0.20000000298023224,
+            "p95": 0.5,
+            "p99": 0.6000000014901161,
+            "max": 0.7000000029802322
+          },
+          "drawCalls": {
+            "samples": 180,
+            "p50": 1,
+            "p95": 1,
+            "p99": 1,
+            "max": 1
+          },
+          "triangles": {
+            "samples": 180,
+            "p50": 2,
+            "p95": 2,
+            "p99": 2,
+            "max": 2
+          },
+          "gpu/tree-referenceMs": {
+            "samples": 179,
+            "p50": 0.032288,
+            "p95": 0.03536,
+            "p99": 0.043264,
+            "max": 3.266272
+          },
+          "gpu/framePassSumMs": {
+            "samples": 179,
+            "p50": 0.032288,
+            "p95": 0.03536,
+            "p99": 0.043264,
+            "max": 3.266272
+          }
+        }
+      }
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failedRequests": [],
+  "limitations": [
+    "Pinned Three.ez hemi-only reference implementation; below-centre views are outside supported coverage.",
+    "Static 16 m source; no Atlas wind or physical-height deformation.",
+    "Mesh and proxy use different material models; no ground, shadows, species, or game integration.",
+    "Measurements describe this isolated lab and are not full-game or production performance claims."
+  ],
+  "loaded": {
+    "metadata": {
+      "revision": "ca0046a49fef8f8c75745a6e49e52752ef3cf8e3",
+      "inputHashes": {
+        "near": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+        "mid": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9"
+      },
+      "grid": 16,
+      "textureSize": 2048,
+      "viewPixels": 128,
+      "captureWallMs": 111.89999999850988,
+      "center": [
+        -0.5692449812239855,
+        8.313237791708005,
+        -0.6959608793588894
+      ],
+      "radius": 8.413995023402151,
+      "sourceTriangles": 13806,
+      "proxyTriangles": 2,
+      "atlasRGBA8MipEstimateBytes": 44739243,
+      "retainedCaptureTargets": 1,
+      "sourceMaterials": [
+        {
+          "name": "MAT_AtlasBark",
+          "roughness": 0.9100000262260437,
+          "metalness": 0,
+          "alphaTest": 0
+        },
+        {
+          "name": "MAT_AtlasFoliage",
+          "roughness": 0.8399999737739563,
+          "metalness": 0,
+          "alphaTest": 0.5
+        }
+      ],
+      "proxyMaterial": {
+        "roughness": 0.9,
+        "metalness": 0,
+        "alphaClamp": 0.4
+      },
+      "limitations": [
+        "Unmodified upstream hemi-only reconstruction; below-centre views outside its support",
+        "Static 16m source, no Atlas wind or physical-height deformation",
+        "Proxy uses one roughness; source uses separate bark/leaf PBR",
+        "No ground, shadows, species or game integration"
+      ]
+    },
+    "renderer": "WebKit WebGL",
+    "unmaskedRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.7827.55 Safari/537.36",
+    "canvas": {
+      "width": 1600,
+      "height": 1000
+    },
+    "sourceChildren": 2,
+    "proxyVisible": false
+  },
+  "glErrors": []
+}

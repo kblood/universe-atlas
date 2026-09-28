@@ -16,6 +16,12 @@ keeps the same pinned source and adds Atlas materials, pivots and wind
 attributes in a standalone lab; it does not adopt the generator in the live
 forest.
 
+A later [Three.ez browser comparison](tree-three-ez-impostor-2026-09-28.md)
+executes the pinned hemisphere implementation against the Atlas GLB pair.
+It preserves the original rendering and an optional guarded colour-include
+repair. This follow-up supplies measurements; the source-only findings below
+remain the historical research snapshot.
+
 ## Findings
 
 | Candidate | Reusable work | Atlas gaps and maturity | Best next comparison |

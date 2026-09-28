@@ -10,6 +10,42 @@ export default defineConfig({
       builtAt:new Date().toISOString(),
     },null,2)});
     for(const fileName of [
+      'docs/tree-three-ez-impostor-2026-09-28.md',
+      'assets/briefs/atlas-three-ez-impostor-reference.json',
+      'docs/opus-three-ez-impostor-review-2026-09-28.md',
+      'docs/leaf-diffuse-transmission-2026-09-28.md',
+      'docs/tree-foliage-minification-2026-09-28.md',
+      'test-results/opus-three-ez-impostor-review/response.json',
+      'test-results/opus-three-ez-impostor-review/inputs.json',
+      'test-results/three-ez-impostor-reference/README.md',
+      'test-results/three-ez-impostor-reference/report.json',
+      'test-results/three-ez-impostor-reference/run.mjs',
+      'test-results/three-ez-impostor-reference/cpu-tests.log',
+      'test-results/three-ez-impostor-reference/shader-tests.log',
+      'test-results/three-ez-impostor-reference/native-map-fix/report.json',
+      'test-results/three-ez-impostor-reference/native-map-fix/README.md',
+      'test-results/three-ez-impostor-reference/native-map-fix/alpha-hash-followup.json',
+      'test-results/three-ez-impostor-reference/native-map-fix/alpha-hash-followup.mjs',
+      'test-results/three-ez-impostor-reference/native-map-fix/run.mjs',
+      'test-results/three-ez-impostor-reference/native-map-fix/yaw-continuity.json',
+      'test-results/three-ez-impostor-reference/native-map-fix/yaw-continuity.mjs',
+      'test-results/three-ez-impostor-reference/native-map-fix/front-mesh.png',
+      'test-results/three-ez-impostor-reference/native-map-fix/front-mid.png',
+      'test-results/three-ez-impostor-reference/native-map-fix/front-impostor.png',
+      'test-results/three-ez-impostor-reference/native-map-fix/back-mesh.png',
+      'test-results/three-ez-impostor-reference/native-map-fix/back-mid.png',
+      'test-results/three-ez-impostor-reference/native-map-fix/back-impostor.png',
+      'test-results/three-ez-impostor-reference/native-map-fix/top-mesh.png',
+      'test-results/three-ez-impostor-reference/native-map-fix/top-mid.png',
+      'test-results/three-ez-impostor-reference/native-map-fix/top-impostor.png',
+      'test-results/three-ez-impostor-reference/front-mesh.png',
+      'test-results/three-ez-impostor-reference/front-impostor.png',
+      'test-results/three-ez-impostor-reference/back-mesh.png',
+      'test-results/three-ez-impostor-reference/back-impostor.png',
+      'test-results/three-ez-impostor-reference/top-mesh.png',
+      'test-results/three-ez-impostor-reference/top-impostor.png',
+      'test-results/three-ez-impostor-reference/baseline-source/tree-impostor-reference-lab.ts',
+      'test-results/three-ez-impostor-reference/baseline-source/tree-impostor-reference-lab.html',
       'docs/tree-browser-prototype-2026-09-28.md',
       'docs/tree-authoring-v7-2026-09-28.md',
       'docs/tree-color-calibration-2026-09-28.md',
@@ -410,6 +446,14 @@ export default defineConfig({
       'test-results/fauna-closeup-6b87e13/01-fauna-closeup.png',
       'test-results/fauna-closeup-6b87e13/02-fauna-paused-repeat.png',
     ])this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
+    // Keep the mask images named by the comparison reports inspectable online.
+    for(const [directory,tags,modes] of [
+      ['test-results/three-ez-impostor-reference',['az0-el0','az45-el0','az90-el0','az0-el15','az45-el45','az0-el85','top','az0-el-5'],['mesh','impostor']],
+      ['test-results/three-ez-impostor-reference/native-map-fix',['az0-el0','az45-el0','az0-el15','az45-el45','az0-el85','top','az0-el-5','az0-el-20'],['mesh','mid','impostor']],
+    ] as const)for(const tag of tags)for(const mode of modes){
+      const fileName=`${directory}/masks/${tag}-${mode}.png`;
+      this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
+    }
     // Explicit review artifacts linked by the desktop acceptance record.
     // Do not publish arbitrary scratch files from test-results.
     for(const fileName of [

@@ -1,0 +1,2908 @@
+{
+  "candidate": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f",
+  "inputHashes": {
+    "near": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+    "mid": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9"
+  },
+  "sourceHashes": {
+    "tree-impostor-reference-lab.html": "f0a9f08456478acea9f9380011fb00496f6c077c69f14bb43f0c8231cc9f4348",
+    "src/tree-impostor-reference-lab.ts": "a76d9a6b1af50c3184a8d05ad646d910de8610d8285ce392324a667a2f117d83",
+    "src/tree-impostor-reference-shader.ts": "08be44cbb1aaf730898f677d49ed32cd4c1341256d2a1245a582c8cc6272090f",
+    "src/tree-asset.ts": "c3c6409a63efaff9d8fdb913c7a87bb11dfcf599eb9621142bed9fe4fd1b2586",
+    "src/vendor/three-ez-impostor/impostor-reference.js": "3d29cb7e45f265c434b0090d62a093639a71d0f1fe415d6f00e24bd7ac573180"
+  },
+  "browserVersion": "149.0.7827.55",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "bundleSha256": "3d29cb7e45f265c434b0090d62a093639a71d0f1fe415d6f00e24bd7ac573180",
+  "metadata": {
+    "revision": "ca0046a49fef8f8c75745a6e49e52752ef3cf8e3",
+    "threeRevision": "181",
+    "mapIncludeFix": true,
+    "shaderAudits": [
+      {
+        "repairMapInclude": true,
+        "before": {
+          "impostorTransform": true,
+          "blendedColor": true,
+          "impostorTransformDeclarations": 1,
+          "blendedColorDeclarations": 1,
+          "blendedColorApplied": 0,
+          "liveProjectIncludes": 0,
+          "liveMapIncludes": 1,
+          "liveNormalMapIncludes": 0
+        },
+        "after": {
+          "impostorTransform": true,
+          "blendedColor": true,
+          "impostorTransformDeclarations": 1,
+          "blendedColorDeclarations": 1,
+          "blendedColorApplied": 1,
+          "liveProjectIncludes": 0,
+          "liveMapIncludes": 0,
+          "liveNormalMapIncludes": 0
+        }
+      }
+    ],
+    "grid": 16,
+    "textureSize": 2048
+  },
+  "convergence": [
+    {
+      "tag": "horizon0",
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "referenceResolution": 256,
+      "referenceSupersamples": [
+        1,
+        2,
+        4
+      ],
+      "resolutionConvergence": {
+        "reference256": {
+          "areaBySupersample": {
+            "1": 17694,
+            "2": 17836.25,
+            "4": 17874.0625
+          },
+          "mae1to2": 0.009487152099609375,
+          "mae2to4": 0.004010200500488281,
+          "mae1to4": 0.010769844055175781
+        },
+        "nativeOutputs": [
+          {
+            "pixels": 8,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 17,
+              "areaB": 2,
+              "binaryIoU": 0.11764705882352941,
+              "softIoU": 0.1121915987145803,
+              "weightedAreaA": 17.45513916015625,
+              "weightedAreaB": 2,
+              "weightedAreaRatio": 0.11457943598440477
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 17,
+              "areaB": 17,
+              "binaryIoU": 1,
+              "softIoU": 0.7685244360902256,
+              "weightedAreaA": 17.45513916015625,
+              "weightedAreaB": 17,
+              "weightedAreaRatio": 0.9739252058674406
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 2,
+              "areaB": 17,
+              "binaryIoU": 0.11764705882352941,
+              "softIoU": 0.11764705882352941,
+              "weightedAreaA": 2,
+              "weightedAreaB": 17,
+              "weightedAreaRatio": 8.5
+            }
+          },
+          {
+            "pixels": 16,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 68,
+              "areaB": 15,
+              "binaryIoU": 0.16901408450704225,
+              "softIoU": 0.17975944690445791,
+              "weightedAreaA": 69.820556640625,
+              "weightedAreaB": 15,
+              "weightedAreaRatio": 0.21483644247075895
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 68,
+              "areaB": 77,
+              "binaryIoU": 0.8831168831168831,
+              "softIoU": 0.8288664183076104,
+              "weightedAreaA": 69.820556640625,
+              "weightedAreaB": 77,
+              "weightedAreaRatio": 1.102827071349896
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 15,
+              "areaB": 77,
+              "binaryIoU": 0.1794871794871795,
+              "softIoU": 0.1794871794871795,
+              "weightedAreaA": 15,
+              "weightedAreaB": 77,
+              "weightedAreaRatio": 5.133333333333334
+            }
+          },
+          {
+            "pixels": 32,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 280,
+              "areaB": 38,
+              "binaryIoU": 0.1357142857142857,
+              "softIoU": 0.12847506842463566,
+              "weightedAreaA": 279.2822265625,
+              "weightedAreaB": 38,
+              "weightedAreaRatio": 0.13606308023148067
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 280,
+              "areaB": 291,
+              "binaryIoU": 0.9554794520547946,
+              "softIoU": 0.8907300742409967,
+              "weightedAreaA": 279.2822265625,
+              "weightedAreaB": 291,
+              "weightedAreaRatio": 1.0419567459831809
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 38,
+              "areaB": 291,
+              "binaryIoU": 0.13058419243986255,
+              "softIoU": 0.13058419243986255,
+              "weightedAreaA": 38,
+              "weightedAreaB": 291,
+              "weightedAreaRatio": 7.657894736842105
+            }
+          },
+          {
+            "pixels": 64,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 1137,
+              "areaB": 698,
+              "binaryIoU": 0.6124780316344464,
+              "softIoU": 0.6130110595047175,
+              "weightedAreaA": 1117.12890625,
+              "weightedAreaB": 698,
+              "weightedAreaRatio": 0.6248159868524573
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 1137,
+              "areaB": 1118,
+              "binaryIoU": 0.9625761531766753,
+              "softIoU": 0.9248712419641866,
+              "weightedAreaA": 1117.12890625,
+              "weightedAreaB": 1118,
+              "weightedAreaRatio": 1.0007797611762854
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 698,
+              "areaB": 1118,
+              "binaryIoU": 0.6228775692582663,
+              "softIoU": 0.6228775692582663,
+              "weightedAreaA": 698,
+              "weightedAreaB": 1118,
+              "weightedAreaRatio": 1.6017191977077363
+            }
+          },
+          {
+            "pixels": 128,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 4512,
+              "areaB": 4228,
+              "binaryIoU": 0.9361984935755427,
+              "softIoU": 0.9181330686572514,
+              "weightedAreaA": 4468.515625,
+              "weightedAreaB": 4228,
+              "weightedAreaRatio": 0.9461754987149675
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 4512,
+              "areaB": 4361,
+              "binaryIoU": 0.9475417032484635,
+              "softIoU": 0.9279076114769199,
+              "weightedAreaA": 4468.515625,
+              "weightedAreaB": 4361,
+              "weightedAreaRatio": 0.9759392975156039
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 4228,
+              "areaB": 4361,
+              "binaryIoU": 0.9454133635334089,
+              "softIoU": 0.9454133635334089,
+              "weightedAreaA": 4228,
+              "weightedAreaB": 4361,
+              "weightedAreaRatio": 1.031456953642384
+            }
+          }
+        ]
+      }
+    },
+    {
+      "tag": "diagonal45-elevation15",
+      "direction": [
+        0.6830127018922194,
+        0.25881904510252074,
+        0.6830127018922194
+      ],
+      "referenceResolution": 256,
+      "referenceSupersamples": [
+        1,
+        2,
+        4
+      ],
+      "resolutionConvergence": {
+        "reference256": {
+          "areaBySupersample": {
+            "1": 15122,
+            "2": 15269.25,
+            "4": 15299.875
+          },
+          "mae1to2": 0.008106231689453125,
+          "mae2to4": 0.0035190582275390625,
+          "mae1to4": 0.0095367431640625
+        },
+        "nativeOutputs": [
+          {
+            "pixels": 8,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 15,
+              "areaB": 2,
+              "binaryIoU": 0.13333333333333333,
+              "softIoU": 0.13381561801745864,
+              "weightedAreaA": 14.9412841796875,
+              "weightedAreaB": 2,
+              "weightedAreaRatio": 0.13385730275574148
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 15,
+              "areaB": 15,
+              "binaryIoU": 1,
+              "softIoU": 0.7367405534962597,
+              "weightedAreaA": 14.9412841796875,
+              "weightedAreaB": 15,
+              "weightedAreaRatio": 1.003929770668061
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 2,
+              "areaB": 15,
+              "binaryIoU": 0.13333333333333333,
+              "softIoU": 0.13333333333333333,
+              "weightedAreaA": 2,
+              "weightedAreaB": 15,
+              "weightedAreaRatio": 7.5
+            }
+          },
+          {
+            "pixels": 16,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 57,
+              "areaB": 8,
+              "binaryIoU": 0.14035087719298245,
+              "softIoU": 0.13270053214064184,
+              "weightedAreaA": 59.76513671875,
+              "weightedAreaB": 8,
+              "weightedAreaRatio": 0.13385730275574148
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 57,
+              "areaB": 62,
+              "binaryIoU": 0.9193548387096774,
+              "softIoU": 0.8116534266130526,
+              "weightedAreaA": 59.76513671875,
+              "weightedAreaB": 62,
+              "weightedAreaRatio": 1.0373940963569963
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 8,
+              "areaB": 62,
+              "binaryIoU": 0.12903225806451613,
+              "softIoU": 0.12903225806451613,
+              "weightedAreaA": 8,
+              "weightedAreaB": 62,
+              "weightedAreaRatio": 7.75
+            }
+          },
+          {
+            "pixels": 32,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 242,
+              "areaB": 33,
+              "binaryIoU": 0.13636363636363635,
+              "softIoU": 0.12549792749044544,
+              "weightedAreaA": 239.060546875,
+              "weightedAreaB": 33,
+              "weightedAreaRatio": 0.1380403434668584
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 242,
+              "areaB": 245,
+              "binaryIoU": 0.9558232931726908,
+              "softIoU": 0.8676920526307857,
+              "weightedAreaA": 239.060546875,
+              "weightedAreaB": 245,
+              "weightedAreaRatio": 1.0248449742236456
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 33,
+              "areaB": 245,
+              "binaryIoU": 0.1346938775510204,
+              "softIoU": 0.1346938775510204,
+              "weightedAreaA": 33,
+              "weightedAreaB": 245,
+              "weightedAreaRatio": 7.424242424242424
+            }
+          },
+          {
+            "pixels": 64,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 965,
+              "areaB": 611,
+              "binaryIoU": 0.633160621761658,
+              "softIoU": 0.6284489686579159,
+              "weightedAreaA": 956.2421875,
+              "weightedAreaB": 611,
+              "weightedAreaRatio": 0.6389594686231097
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 965,
+              "areaB": 961,
+              "binaryIoU": 0.9533468559837728,
+              "softIoU": 0.905866546550278,
+              "weightedAreaA": 956.2421875,
+              "weightedAreaB": 961,
+              "weightedAreaRatio": 1.0049755308458403
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 611,
+              "areaB": 961,
+              "binaryIoU": 0.63579604578564,
+              "softIoU": 0.63579604578564,
+              "weightedAreaA": 611,
+              "weightedAreaB": 961,
+              "weightedAreaRatio": 1.5728314238952537
+            }
+          },
+          {
+            "pixels": 128,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 3868,
+              "areaB": 3640,
+              "binaryIoU": 0.9390495867768595,
+              "softIoU": 0.9203263796776397,
+              "weightedAreaA": 3824.96875,
+              "weightedAreaB": 3640,
+              "weightedAreaRatio": 0.9516417617790995
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 3868,
+              "areaB": 3819,
+              "binaryIoU": 0.9179141716566867,
+              "softIoU": 0.9043048046119292,
+              "weightedAreaA": 3824.96875,
+              "weightedAreaB": 3819,
+              "weightedAreaRatio": 0.99843952973472
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 3640,
+              "areaB": 3819,
+              "binaryIoU": 0.8984474420972257,
+              "softIoU": 0.8984474420972257,
+              "weightedAreaA": 3640,
+              "weightedAreaB": 3819,
+              "weightedAreaRatio": 1.0491758241758242
+            }
+          }
+        ]
+      }
+    },
+    {
+      "tag": "top",
+      "direction": [
+        0,
+        1,
+        0
+      ],
+      "referenceResolution": 256,
+      "referenceSupersamples": [
+        1,
+        2,
+        4
+      ],
+      "resolutionConvergence": {
+        "reference256": {
+          "areaBySupersample": {
+            "1": 13942,
+            "2": 14100.75,
+            "4": 14142.625
+          },
+          "mae1to2": 0.007541656494140625,
+          "mae2to4": 0.003337860107421875,
+          "mae1to4": 0.008783340454101562
+        },
+        "nativeOutputs": [
+          {
+            "pixels": 8,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 13,
+              "areaB": 3,
+              "binaryIoU": 0.23076923076923078,
+              "softIoU": 0.2172156866211188,
+              "weightedAreaA": 13.8111572265625,
+              "weightedAreaB": 3,
+              "weightedAreaRatio": 0.2172156866211188
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 13,
+              "areaB": 14,
+              "binaryIoU": 0.9285714285714286,
+              "softIoU": 0.7467262634936211,
+              "weightedAreaA": 13.8111572265625,
+              "weightedAreaB": 14,
+              "weightedAreaRatio": 1.0136732042318877
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 3,
+              "areaB": 14,
+              "binaryIoU": 0.21428571428571427,
+              "softIoU": 0.21428571428571427,
+              "weightedAreaA": 3,
+              "weightedAreaB": 14,
+              "weightedAreaRatio": 4.666666666666667
+            }
+          },
+          {
+            "pixels": 16,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 55,
+              "areaB": 3,
+              "binaryIoU": 0.05454545454545454,
+              "softIoU": 0.05428528499332703,
+              "weightedAreaA": 55.24462890625,
+              "weightedAreaB": 3,
+              "weightedAreaRatio": 0.0543039216552797
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 55,
+              "areaB": 55,
+              "binaryIoU": 0.9642857142857143,
+              "softIoU": 0.8262121512373265,
+              "weightedAreaA": 55.24462890625,
+              "weightedAreaB": 55,
+              "weightedAreaRatio": 0.995571897013461
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 3,
+              "areaB": 55,
+              "binaryIoU": 0.05454545454545454,
+              "softIoU": 0.05454545454545454,
+              "weightedAreaA": 3,
+              "weightedAreaB": 55,
+              "weightedAreaRatio": 18.333333333333332
+            }
+          },
+          {
+            "pixels": 32,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 221,
+              "areaB": 28,
+              "binaryIoU": 0.12669683257918551,
+              "softIoU": 0.12668923397823992,
+              "weightedAreaA": 220.978515625,
+              "weightedAreaB": 28,
+              "weightedAreaRatio": 0.12670915052898596
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 221,
+              "areaB": 223,
+              "binaryIoU": 0.9733333333333334,
+              "softIoU": 0.8897414581428215,
+              "weightedAreaA": 220.978515625,
+              "weightedAreaB": 223,
+              "weightedAreaRatio": 1.009147877427281
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 28,
+              "areaB": 223,
+              "binaryIoU": 0.12556053811659193,
+              "softIoU": 0.12556053811659193,
+              "weightedAreaA": 28,
+              "weightedAreaB": 223,
+              "weightedAreaRatio": 7.964285714285714
+            }
+          },
+          {
+            "pixels": 64,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 889,
+              "areaB": 511,
+              "binaryIoU": 0.5748031496062992,
+              "softIoU": 0.5737706362987316,
+              "weightedAreaA": 883.9140625,
+              "weightedAreaB": 511,
+              "weightedAreaRatio": 0.5781104992884984
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 889,
+              "areaB": 870,
+              "binaryIoU": 0.9609810479375697,
+              "softIoU": 0.9176974066354597,
+              "weightedAreaA": 883.9140625,
+              "weightedAreaB": 870,
+              "weightedAreaRatio": 0.9842585800019444
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 511,
+              "areaB": 870,
+              "binaryIoU": 0.5873563218390805,
+              "softIoU": 0.5873563218390805,
+              "weightedAreaA": 511,
+              "weightedAreaB": 870,
+              "weightedAreaRatio": 1.7025440313111546
+            }
+          },
+          {
+            "pixels": 128,
+            "meshNativeVsMesh256SS4": {
+              "areaA": 3569,
+              "areaB": 3334,
+              "binaryIoU": 0.9325307950727884,
+              "softIoU": 0.9152788244980462,
+              "weightedAreaA": 3535.65625,
+              "weightedAreaB": 3334,
+              "weightedAreaRatio": 0.9429649729099089
+            },
+            "proxyNativeVsMesh256SS4": {
+              "areaA": 3569,
+              "areaB": 3512,
+              "binaryIoU": 0.9431942919868277,
+              "softIoU": 0.9226096852981419,
+              "weightedAreaA": 3535.65625,
+              "weightedAreaB": 3512,
+              "weightedAreaRatio": 0.9933092336111577
+            },
+            "meshNativeVsProxyNative": {
+              "areaA": 3334,
+              "areaB": 3512,
+              "binaryIoU": 0.9235740376510255,
+              "softIoU": 0.9235740376510255,
+              "weightedAreaA": 3334,
+              "weightedAreaB": 3512,
+              "weightedAreaRatio": 1.0533893221355728
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "samples": [
+    {
+      "segment": "boundary45",
+      "yaw": 35,
+      "elevation": 15,
+      "direction": [
+        0.5540322932223234,
+        0.25881904510252074,
+        0.7912401152362238
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 634,
+          "impostorCoverage": 973,
+          "nativeProxyMeshMae": 0.083740234375,
+          "meshStepMae": null,
+          "impostorStepMae": null
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3761,
+          "impostorCoverage": 3828,
+          "nativeProxyMeshMae": 0.02362060546875,
+          "meshStepMae": null,
+          "impostorStepMae": null
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 35.5,
+      "elevation": 15,
+      "direction": [
+        0.5609159823235937,
+        0.25881904510252074,
+        0.7863752047630809
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 626,
+          "impostorCoverage": 997,
+          "nativeProxyMeshMae": 0.091064453125,
+          "meshStepMae": 0.01123046875,
+          "impostorStepMae": 0.00732421875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3752,
+          "impostorCoverage": 3925,
+          "nativeProxyMeshMae": 0.02301025390625,
+          "meshStepMae": 0.00384521484375,
+          "impostorStepMae": 0.00860595703125
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 36,
+      "elevation": 15,
+      "direction": [
+        0.5677569555011356,
+        0.25881904510252074,
+        0.7814504087735197
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 622,
+          "impostorCoverage": 993,
+          "nativeProxyMeshMae": 0.090576171875,
+          "meshStepMae": 0.0078125,
+          "impostorStepMae": 0.00341796875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3749,
+          "impostorCoverage": 3925,
+          "nativeProxyMeshMae": 0.022216796875,
+          "meshStepMae": 0.00347900390625,
+          "impostorStepMae": 0.0028076171875
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 36.5,
+      "elevation": 15,
+      "direction": [
+        0.5745546917883556,
+        0.25881904510252074,
+        0.776466102309822
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 610,
+          "impostorCoverage": 990,
+          "nativeProxyMeshMae": 0.0927734375,
+          "meshStepMae": 0.00830078125,
+          "impostorStepMae": 0.002197265625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3731,
+          "impostorCoverage": 3924,
+          "nativeProxyMeshMae": 0.02276611328125,
+          "meshStepMae": 0.00390625,
+          "impostorStepMae": 0.00274658203125
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 37,
+      "elevation": 15,
+      "direction": [
+        0.581308673511317,
+        0.25881904510252074,
+        0.7714226649462228
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 611,
+          "impostorCoverage": 982,
+          "nativeProxyMeshMae": 0.090576171875,
+          "meshStepMae": 0.006103515625,
+          "impostorStepMae": 0.00341796875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3737,
+          "impostorCoverage": 3877,
+          "nativeProxyMeshMae": 0.021728515625,
+          "meshStepMae": 0.0045166015625,
+          "impostorStepMae": 0.00885009765625
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 37.5,
+      "elevation": 15,
+      "direction": [
+        0.5880183863281625,
+        0.25881904510252074,
+        0.7663204807600037
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 617,
+          "impostorCoverage": 981,
+          "nativeProxyMeshMae": 0.08984375,
+          "meshStepMae": 0.01123046875,
+          "impostorStepMae": 0.003173828125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3724,
+          "impostorCoverage": 3860,
+          "nativeProxyMeshMae": 0.0208740234375,
+          "meshStepMae": 0.00457763671875,
+          "impostorStepMae": 0.00421142578125
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 38,
+      "elevation": 15,
+      "direction": [
+        0.5946833192682832,
+        0.25881904510252074,
+        0.7611599383022444
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 612,
+          "impostorCoverage": 979,
+          "nativeProxyMeshMae": 0.090576171875,
+          "meshStepMae": 0.008056640625,
+          "impostorStepMae": 0.00244140625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3729,
+          "impostorCoverage": 3859,
+          "nativeProxyMeshMae": 0.0196533203125,
+          "meshStepMae": 0.00482177734375,
+          "impostorStepMae": 0.00201416015625
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 38.5,
+      "elevation": 15,
+      "direction": [
+        0.6013029647712318,
+        0.25881904510252074,
+        0.7559414305682327
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 606,
+          "impostorCoverage": 972,
+          "nativeProxyMeshMae": 0.08984375,
+          "meshStepMae": 0.01220703125,
+          "impostorStepMae": 0.001708984375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3711,
+          "impostorCoverage": 3849,
+          "nativeProxyMeshMae": 0.0201416015625,
+          "meshStepMae": 0.0040283203125,
+          "impostorStepMae": 0.0023193359375
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 39,
+      "elevation": 15,
+      "direction": [
+        0.6078768187253738,
+        0.25881904510252074,
+        0.7506653549675371
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 610,
+          "impostorCoverage": 961,
+          "nativeProxyMeshMae": 0.086669921875,
+          "meshStepMae": 0.00732421875,
+          "impostorStepMae": 0.003173828125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3701,
+          "impostorCoverage": 3772,
+          "nativeProxyMeshMae": 0.01995849609375,
+          "meshStepMae": 0.0042724609375,
+          "impostorStepMae": 0.00555419921875
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 39.5,
+      "elevation": 15,
+      "direction": [
+        0.6144043805062791,
+        0.25881904510252074,
+        0.7453321132937415
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 611,
+          "impostorCoverage": 958,
+          "nativeProxyMeshMae": 0.085693359375,
+          "meshStepMae": 0.011474609375,
+          "impostorStepMae": 0.001708984375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3697,
+          "impostorCoverage": 3774,
+          "nativeProxyMeshMae": 0.01934814453125,
+          "meshStepMae": 0.005126953125,
+          "impostorStepMae": 0.0015869140625
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 40,
+      "elevation": 15,
+      "direction": [
+        0.6208851530148456,
+        0.25881904510252074,
+        0.739942111693848
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 623,
+          "impostorCoverage": 957,
+          "nativeProxyMeshMae": 0.08203125,
+          "meshStepMae": 0.00830078125,
+          "impostorStepMae": 0.001220703125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3687,
+          "impostorCoverage": 3783,
+          "nativeProxyMeshMae": 0.01904296875,
+          "meshStepMae": 0.004150390625,
+          "impostorStepMae": 0.00177001953125
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 40.5,
+      "elevation": 15,
+      "direction": [
+        0.6273186427151555,
+        0.25881904510252074,
+        0.7344957606373468
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 620,
+          "impostorCoverage": 959,
+          "nativeProxyMeshMae": 0.082763671875,
+          "meshStepMae": 0.012451171875,
+          "impostorStepMae": 0.0009765625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3693,
+          "impostorCoverage": 3786,
+          "nativeProxyMeshMae": 0.01812744140625,
+          "meshStepMae": 0.0047607421875,
+          "impostorStepMae": 0.00152587890625
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 41,
+      "elevation": 15,
+      "direction": [
+        0.6337043596720594,
+        0.25881904510252074,
+        0.728993474884957
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 625,
+          "impostorCoverage": 957,
+          "nativeProxyMeshMae": 0.0810546875,
+          "meshStepMae": 0.009033203125,
+          "impostorStepMae": 0.00048828125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3687,
+          "impostorCoverage": 3797,
+          "nativeProxyMeshMae": 0.01806640625,
+          "meshStepMae": 0.0037841796875,
+          "impostorStepMae": 0.00262451171875
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 41.5,
+      "elevation": 15,
+      "direction": [
+        0.6400418175884885,
+        0.25881904510252074,
+        0.7234356734570416
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 626,
+          "impostorCoverage": 955,
+          "nativeProxyMeshMae": 0.080322265625,
+          "meshStepMae": 0.008544921875,
+          "impostorStepMae": 0.0009765625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3674,
+          "impostorCoverage": 3795,
+          "nativeProxyMeshMae": 0.01873779296875,
+          "meshStepMae": 0.00469970703125,
+          "impostorStepMae": 0.0018310546875
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 42,
+      "elevation": 15,
+      "direction": [
+        0.6463305338424854,
+        0.25881904510252074,
+        0.7178227796016975
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 624,
+          "impostorCoverage": 954,
+          "nativeProxyMeshMae": 0.08056640625,
+          "meshStepMae": 0.005859375,
+          "impostorStepMae": 0.001708984375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3660,
+          "impostorCoverage": 3782,
+          "nativeProxyMeshMae": 0.01953125,
+          "meshStepMae": 0.0035400390625,
+          "impostorStepMae": 0.00140380859375
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 42.5,
+      "elevation": 15,
+      "direction": [
+        0.6525700295239598,
+        0.25881904510252074,
+        0.7121552207625227
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 630,
+          "impostorCoverage": 953,
+          "nativeProxyMeshMae": 0.078857421875,
+          "meshStepMae": 0.005859375,
+          "impostorStepMae": 0.001220703125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3666,
+          "impostorCoverage": 3754,
+          "nativeProxyMeshMae": 0.0203857421875,
+          "meshStepMae": 0.0042724609375,
+          "impostorStepMae": 0.00244140625
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 43,
+      "elevation": 15,
+      "direction": [
+        0.6587598294711584,
+        0.25881904510252074,
+        0.7064334285460661
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 622,
+          "impostorCoverage": 949,
+          "nativeProxyMeshMae": 0.079833984375,
+          "meshStepMae": 0.009765625,
+          "impostorStepMae": 0.001953125,
+          "meshVs4xNoiseMae": 0.08392333984375,
+          "impostorVs4xMeshMae": 0.0235595703125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3657,
+          "impostorCoverage": 3742,
+          "nativeProxyMeshMae": 0.02154541015625,
+          "meshStepMae": 0.00494384765625,
+          "impostorStepMae": 0.0018310546875,
+          "meshVs4xNoiseMae": 0.01837158203125,
+          "impostorVs4xMeshMae": 0.02376556396484375
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 43.5,
+      "elevation": 15,
+      "direction": [
+        0.6648994623068503,
+        0.25881904510252074,
+        0.7006578386889571
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 617,
+          "impostorCoverage": 947,
+          "nativeProxyMeshMae": 0.0810546875,
+          "meshStepMae": 0.010498046875,
+          "impostorStepMae": 0.00146484375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3658,
+          "impostorCoverage": 3732,
+          "nativeProxyMeshMae": 0.0240478515625,
+          "meshStepMae": 0.00408935546875,
+          "impostorStepMae": 0.0015869140625
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 44,
+      "elevation": 15,
+      "direction": [
+        0.6709884604742247,
+        0.25881904510252074,
+        0.6948288910247251
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 616,
+          "impostorCoverage": 941,
+          "nativeProxyMeshMae": 0.080322265625,
+          "meshStepMae": 0.008544921875,
+          "impostorStepMae": 0.001953125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3661,
+          "impostorCoverage": 3722,
+          "nativeProxyMeshMae": 0.02508544921875,
+          "meshStepMae": 0.00469970703125,
+          "impostorStepMae": 0.0023193359375
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 44.5,
+      "elevation": 15,
+      "direction": [
+        0.6770263602724964,
+        0.25881904510252074,
+        0.688947029450302
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 611,
+          "impostorCoverage": 960,
+          "nativeProxyMeshMae": 0.085205078125,
+          "meshStepMae": 0.011474609375,
+          "impostorStepMae": 0.007568359375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3639,
+          "impostorCoverage": 3828,
+          "nativeProxyMeshMae": 0.02423095703125,
+          "meshStepMae": 0.0042724609375,
+          "impostorStepMae": 0.008056640625
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 45,
+      "elevation": 15,
+      "direction": [
+        0.6830127018922193,
+        0.25881904510252074,
+        0.6830127018922194
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 611,
+          "impostorCoverage": 961,
+          "nativeProxyMeshMae": 0.08544921875,
+          "meshStepMae": 0.009765625,
+          "impostorStepMae": 0.001708984375,
+          "meshVs4xNoiseMae": 0.08441162109375,
+          "impostorVs4xMeshMae": 0.022918701171875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3640,
+          "impostorCoverage": 3819,
+          "nativeProxyMeshMae": 0.02435302734375,
+          "meshStepMae": 0.00445556640625,
+          "impostorStepMae": 0.00323486328125,
+          "meshVs4xNoiseMae": 0.018047332763671875,
+          "impostorVs4xMeshMae": 0.022998809814453125
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 45.5,
+      "elevation": 15,
+      "direction": [
+        0.688947029450302,
+        0.25881904510252074,
+        0.6770263602724964
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 617,
+          "impostorCoverage": 955,
+          "nativeProxyMeshMae": 0.08251953125,
+          "meshStepMae": 0.00732421875,
+          "impostorStepMae": 0.001953125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3636,
+          "impostorCoverage": 3815,
+          "nativeProxyMeshMae": 0.02447509765625,
+          "meshStepMae": 0.00390625,
+          "impostorStepMae": 0.0025634765625
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 46,
+      "elevation": 15,
+      "direction": [
+        0.694828891024725,
+        0.25881904510252074,
+        0.6709884604742248
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 607,
+          "impostorCoverage": 954,
+          "nativeProxyMeshMae": 0.084716796875,
+          "meshStepMae": 0.0068359375,
+          "impostorStepMae": 0.002685546875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3638,
+          "impostorCoverage": 3791,
+          "nativeProxyMeshMae": 0.02215576171875,
+          "meshStepMae": 0.00439453125,
+          "impostorStepMae": 0.0089111328125
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 46.5,
+      "elevation": 15,
+      "direction": [
+        0.700657838688957,
+        0.25881904510252074,
+        0.6648994623068504
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 604,
+          "impostorCoverage": 952,
+          "nativeProxyMeshMae": 0.0849609375,
+          "meshStepMae": 0.008544921875,
+          "impostorStepMae": 0.00341796875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3618,
+          "impostorCoverage": 3772,
+          "nativeProxyMeshMae": 0.02197265625,
+          "meshStepMae": 0.0048828125,
+          "impostorStepMae": 0.00482177734375
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 47,
+      "elevation": 15,
+      "direction": [
+        0.706433428546066,
+        0.25881904510252074,
+        0.6587598294711584
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 605,
+          "impostorCoverage": 951,
+          "nativeProxyMeshMae": 0.0849609375,
+          "meshStepMae": 0.009033203125,
+          "impostorStepMae": 0.002197265625,
+          "meshVs4xNoiseMae": 0.0846405029296875,
+          "impostorVs4xMeshMae": 0.0243072509765625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3617,
+          "impostorCoverage": 3762,
+          "nativeProxyMeshMae": 0.02130126953125,
+          "meshStepMae": 0.00433349609375,
+          "impostorStepMae": 0.003173828125,
+          "meshVs4xNoiseMae": 0.018428802490234375,
+          "impostorVs4xMeshMae": 0.021495819091796875
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 47.5,
+      "elevation": 15,
+      "direction": [
+        0.7121552207625228,
+        0.25881904510252074,
+        0.6525700295239598
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 604,
+          "impostorCoverage": 944,
+          "nativeProxyMeshMae": 0.08447265625,
+          "meshStepMae": 0.012451171875,
+          "impostorStepMae": 0.002685546875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3616,
+          "impostorCoverage": 3748,
+          "nativeProxyMeshMae": 0.019775390625,
+          "meshStepMae": 0.00347900390625,
+          "impostorStepMae": 0.001708984375
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 48,
+      "elevation": 15,
+      "direction": [
+        0.7178227796016975,
+        0.25881904510252074,
+        0.6463305338424854
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 603,
+          "impostorCoverage": 933,
+          "nativeProxyMeshMae": 0.08203125,
+          "meshStepMae": 0.009033203125,
+          "impostorStepMae": 0.004638671875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3615,
+          "impostorCoverage": 3685,
+          "nativeProxyMeshMae": 0.0201416015625,
+          "meshStepMae": 0.00433349609375,
+          "impostorStepMae": 0.00518798828125
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 48.5,
+      "elevation": 15,
+      "direction": [
+        0.7234356734570415,
+        0.25881904510252074,
+        0.6400418175884885
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 604,
+          "impostorCoverage": 940,
+          "nativeProxyMeshMae": 0.083984375,
+          "meshStepMae": 0.010986328125,
+          "impostorStepMae": 0.003662109375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3604,
+          "impostorCoverage": 3692,
+          "nativeProxyMeshMae": 0.0189208984375,
+          "meshStepMae": 0.00518798828125,
+          "impostorStepMae": 0.00189208984375
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 49,
+      "elevation": 15,
+      "direction": [
+        0.7289934748849569,
+        0.25881904510252074,
+        0.6337043596720595
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 606,
+          "impostorCoverage": 941,
+          "nativeProxyMeshMae": 0.084228515625,
+          "meshStepMae": 0.01025390625,
+          "impostorStepMae": 0.001220703125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3590,
+          "impostorCoverage": 3695,
+          "nativeProxyMeshMae": 0.01898193359375,
+          "meshStepMae": 0.0048828125,
+          "impostorStepMae": 0.00189208984375
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 49.5,
+      "elevation": 15,
+      "direction": [
+        0.7344957606373468,
+        0.25881904510252074,
+        0.6273186427151554
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 601,
+          "impostorCoverage": 939,
+          "nativeProxyMeshMae": 0.08447265625,
+          "meshStepMae": 0.009033203125,
+          "impostorStepMae": 0.0009765625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3585,
+          "impostorCoverage": 3700,
+          "nativeProxyMeshMae": 0.01959228515625,
+          "meshStepMae": 0.00408935546875,
+          "impostorStepMae": 0.00177001953125
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 50,
+      "elevation": 15,
+      "direction": [
+        0.739942111693848,
+        0.25881904510252074,
+        0.6208851530148457
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 597,
+          "impostorCoverage": 941,
+          "nativeProxyMeshMae": 0.0849609375,
+          "meshStepMae": 0.0087890625,
+          "impostorStepMae": 0.0009765625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3580,
+          "impostorCoverage": 3701,
+          "nativeProxyMeshMae": 0.02056884765625,
+          "meshStepMae": 0.00433349609375,
+          "impostorStepMae": 0.00152587890625
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 50.5,
+      "elevation": 15,
+      "direction": [
+        0.7453321132937415,
+        0.25881904510252074,
+        0.6144043805062791
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 592,
+          "impostorCoverage": 939,
+          "nativeProxyMeshMae": 0.085205078125,
+          "meshStepMae": 0.008056640625,
+          "impostorStepMae": 0.00146484375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3575,
+          "impostorCoverage": 3687,
+          "nativeProxyMeshMae": 0.021484375,
+          "meshStepMae": 0.00421142578125,
+          "impostorStepMae": 0.0018310546875
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 51,
+      "elevation": 15,
+      "direction": [
+        0.750665354967537,
+        0.25881904510252074,
+        0.6078768187253739
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 603,
+          "impostorCoverage": 937,
+          "nativeProxyMeshMae": 0.0830078125,
+          "meshStepMae": 0.009033203125,
+          "impostorStepMae": 0.00048828125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3554,
+          "impostorCoverage": 3675,
+          "nativeProxyMeshMae": 0.02288818359375,
+          "meshStepMae": 0.00457763671875,
+          "impostorStepMae": 0.00146484375
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 51.5,
+      "elevation": 15,
+      "direction": [
+        0.7559414305682326,
+        0.25881904510252074,
+        0.6013029647712319
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 603,
+          "impostorCoverage": 932,
+          "nativeProxyMeshMae": 0.082275390625,
+          "meshStepMae": 0.01025390625,
+          "impostorStepMae": 0.001708984375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3537,
+          "impostorCoverage": 3666,
+          "nativeProxyMeshMae": 0.02349853515625,
+          "meshStepMae": 0.00482177734375,
+          "impostorStepMae": 0.00177001953125
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 52,
+      "elevation": 15,
+      "direction": [
+        0.7611599383022444,
+        0.25881904510252074,
+        0.5946833192682833
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 591,
+          "impostorCoverage": 926,
+          "nativeProxyMeshMae": 0.084228515625,
+          "meshStepMae": 0.00830078125,
+          "impostorStepMae": 0.001953125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3536,
+          "impostorCoverage": 3650,
+          "nativeProxyMeshMae": 0.0238037109375,
+          "meshStepMae": 0.00445556640625,
+          "impostorStepMae": 0.0018310546875
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 52.5,
+      "elevation": 15,
+      "direction": [
+        0.7663204807600037,
+        0.25881904510252074,
+        0.5880183863281625
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 603,
+          "impostorCoverage": 920,
+          "nativeProxyMeshMae": 0.080810546875,
+          "meshStepMae": 0.00830078125,
+          "impostorStepMae": 0.00244140625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3536,
+          "impostorCoverage": 3638,
+          "nativeProxyMeshMae": 0.0250244140625,
+          "meshStepMae": 0.0042724609375,
+          "impostorStepMae": 0.0018310546875
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 53,
+      "elevation": 15,
+      "direction": [
+        0.7714226649462228,
+        0.25881904510252074,
+        0.5813086735113171
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 606,
+          "impostorCoverage": 914,
+          "nativeProxyMeshMae": 0.07958984375,
+          "meshStepMae": 0.009521484375,
+          "impostorStepMae": 0.001953125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3547,
+          "impostorCoverage": 3629,
+          "nativeProxyMeshMae": 0.0263671875,
+          "meshStepMae": 0.00408935546875,
+          "impostorStepMae": 0.00189208984375
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 53.5,
+      "elevation": 15,
+      "direction": [
+        0.776466102309822,
+        0.25881904510252074,
+        0.5745546917883557
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 600,
+          "impostorCoverage": 946,
+          "nativeProxyMeshMae": 0.08544921875,
+          "meshStepMae": 0.00927734375,
+          "impostorStepMae": 0.0087890625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3545,
+          "impostorCoverage": 3741,
+          "nativeProxyMeshMae": 0.0269775390625,
+          "meshStepMae": 0.0047607421875,
+          "impostorStepMae": 0.007568359375
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 54,
+      "elevation": 15,
+      "direction": [
+        0.7814504087735197,
+        0.25881904510252074,
+        0.5677569555011356
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 601,
+          "impostorCoverage": 943,
+          "nativeProxyMeshMae": 0.08447265625,
+          "meshStepMae": 0.009033203125,
+          "impostorStepMae": 0.002197265625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3529,
+          "impostorCoverage": 3748,
+          "nativeProxyMeshMae": 0.02777099609375,
+          "meshStepMae": 0.004638671875,
+          "impostorStepMae": 0.00262451171875
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 54.5,
+      "elevation": 15,
+      "direction": [
+        0.7863752047630808,
+        0.25881904510252074,
+        0.5609159823235939
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 611,
+          "impostorCoverage": 942,
+          "nativeProxyMeshMae": 0.081787109375,
+          "meshStepMae": 0.00830078125,
+          "impostorStepMae": 0.003662109375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3538,
+          "impostorCoverage": 3752,
+          "nativeProxyMeshMae": 0.026611328125,
+          "meshStepMae": 0.00469970703125,
+          "impostorStepMae": 0.0030517578125
+        }
+      ]
+    },
+    {
+      "segment": "boundary45",
+      "yaw": 55,
+      "elevation": 15,
+      "direction": [
+        0.7912401152362238,
+        0.25881904510252074,
+        0.5540322932223235
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 607,
+          "impostorCoverage": 934,
+          "nativeProxyMeshMae": 0.080810546875,
+          "meshStepMae": 0.0087890625,
+          "impostorStepMae": 0.00341796875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3532,
+          "impostorCoverage": 3693,
+          "nativeProxyMeshMae": 0.02215576171875,
+          "meshStepMae": 0.004150390625,
+          "impostorStepMae": 0.00982666015625
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 80,
+      "elevation": 15,
+      "direction": [
+        0.9512512425641977,
+        0.25881904510252074,
+        0.1677312594965207
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 617,
+          "impostorCoverage": 951,
+          "nativeProxyMeshMae": 0.08154296875,
+          "meshStepMae": null,
+          "impostorStepMae": null
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3562,
+          "impostorCoverage": 3805,
+          "nativeProxyMeshMae": 0.02459716796875,
+          "meshStepMae": null,
+          "impostorStepMae": null
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 80.5,
+      "elevation": 15,
+      "direction": [
+        0.9526787346218609,
+        0.25881904510252074,
+        0.1594237450680077
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 625,
+          "impostorCoverage": 950,
+          "nativeProxyMeshMae": 0.079345703125,
+          "meshStepMae": 0.0078125,
+          "impostorStepMae": 0.003173828125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3567,
+          "impostorCoverage": 3832,
+          "nativeProxyMeshMae": 0.02581787109375,
+          "meshStepMae": 0.00396728515625,
+          "impostorStepMae": 0.00396728515625
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 81,
+      "elevation": 15,
+      "direction": [
+        0.9540336765054371,
+        0.25881904510252074,
+        0.15110408990407342
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 624,
+          "impostorCoverage": 946,
+          "nativeProxyMeshMae": 0.07958984375,
+          "meshStepMae": 0.006591796875,
+          "impostorStepMae": 0.001953125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3581,
+          "impostorCoverage": 3834,
+          "nativeProxyMeshMae": 0.02484130859375,
+          "meshStepMae": 0.004150390625,
+          "impostorStepMae": 0.0028076171875
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 81.5,
+      "elevation": 15,
+      "direction": [
+        0.9553159650308558,
+        0.25881904510252074,
+        0.14277292757866988
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 620,
+          "impostorCoverage": 946,
+          "nativeProxyMeshMae": 0.0810546875,
+          "meshStepMae": 0.0068359375,
+          "impostorStepMae": 0.001953125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3603,
+          "impostorCoverage": 3822,
+          "nativeProxyMeshMae": 0.02239990234375,
+          "meshStepMae": 0.0045166015625,
+          "impostorStepMae": 0.0023193359375
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 82,
+      "elevation": 15,
+      "direction": [
+        0.9565255025468812,
+        0.25881904510252074,
+        0.13443089254206336
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 623,
+          "impostorCoverage": 948,
+          "nativeProxyMeshMae": 0.080322265625,
+          "meshStepMae": 0.009033203125,
+          "impostorStepMae": 0.001953125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3608,
+          "impostorCoverage": 3812,
+          "nativeProxyMeshMae": 0.021728515625,
+          "meshStepMae": 0.00408935546875,
+          "impostorStepMae": 0.003173828125
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 82.5,
+      "elevation": 15,
+      "direction": [
+        0.9576621969425486,
+        0.25881904510252074,
+        0.12607862007251922
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 612,
+          "impostorCoverage": 949,
+          "nativeProxyMeshMae": 0.082763671875,
+          "meshStepMae": 0.008056640625,
+          "impostorStepMae": 0.002197265625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3601,
+          "impostorCoverage": 3800,
+          "nativeProxyMeshMae": 0.02215576171875,
+          "meshStepMae": 0.00433349609375,
+          "impostorStepMae": 0.002685546875
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 83,
+      "elevation": 15,
+      "direction": [
+        0.9587259616541788,
+        0.25881904510252074,
+        0.1177167462279233
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 620,
+          "impostorCoverage": 948,
+          "nativeProxyMeshMae": 0.08056640625,
+          "meshStepMae": 0.00927734375,
+          "impostorStepMae": 0.002685546875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3601,
+          "impostorCoverage": 3807,
+          "nativeProxyMeshMae": 0.0230712890625,
+          "meshStepMae": 0.00341796875,
+          "impostorStepMae": 0.00286865234375
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 83.5,
+      "elevation": 15,
+      "direction": [
+        0.9597167156719707,
+        0.25881904510252074,
+        0.10934590779734323
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 610,
+          "impostorCoverage": 950,
+          "nativeProxyMeshMae": 0.0830078125,
+          "meshStepMae": 0.00732421875,
+          "impostorStepMae": 0.001953125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3607,
+          "impostorCoverage": 3816,
+          "nativeProxyMeshMae": 0.02276611328125,
+          "meshStepMae": 0.004150390625,
+          "impostorStepMae": 0.00299072265625
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 84,
+      "elevation": 15,
+      "direction": [
+        0.9606343835461697,
+        0.25881904510252074,
+        0.10096674225253469
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 620,
+          "impostorCoverage": 957,
+          "nativeProxyMeshMae": 0.082763671875,
+          "meshStepMae": 0.00927734375,
+          "impostorStepMae": 0.002685546875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3603,
+          "impostorCoverage": 3834,
+          "nativeProxyMeshMae": 0.02264404296875,
+          "meshStepMae": 0.00341796875,
+          "impostorStepMae": 0.0032958984375
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 84.5,
+      "elevation": 15,
+      "direction": [
+        0.9614788953928145,
+        0.25881904510252074,
+        0.09257988769939499
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 618,
+          "impostorCoverage": 961,
+          "nativeProxyMeshMae": 0.084228515625,
+          "meshStepMae": 0.0107421875,
+          "impostorStepMae": 0.001953125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3601,
+          "impostorCoverage": 3870,
+          "nativeProxyMeshMae": 0.02423095703125,
+          "meshStepMae": 0.004638671875,
+          "impostorStepMae": 0.0037841796875
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 85,
+      "elevation": 15,
+      "direction": [
+        0.9622501868990583,
+        0.25881904510252074,
+        0.08418598282936916
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 628,
+          "impostorCoverage": 963,
+          "nativeProxyMeshMae": 0.081787109375,
+          "meshStepMae": 0.0078125,
+          "impostorStepMae": 0.00146484375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3603,
+          "impostorCoverage": 3861,
+          "nativeProxyMeshMae": 0.0235595703125,
+          "meshStepMae": 0.004150390625,
+          "impostorStepMae": 0.00250244140625
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 85.5,
+      "elevation": 15,
+      "direction": [
+        0.9629481993280665,
+        0.25881904510252074,
+        0.07578566687081179
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 622,
+          "impostorCoverage": 963,
+          "nativeProxyMeshMae": 0.083740234375,
+          "meshStepMae": 0.00830078125,
+          "impostorStepMae": 0.00341796875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3607,
+          "impostorCoverage": 3839,
+          "nativeProxyMeshMae": 0.0220947265625,
+          "meshStepMae": 0.0040283203125,
+          "impostorStepMae": 0.0040283203125
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 86,
+      "elevation": 15,
+      "direction": [
+        0.9635728795234904,
+        0.25881904510252074,
+        0.06737957954030607
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 622,
+          "impostorCoverage": 965,
+          "nativeProxyMeshMae": 0.084228515625,
+          "meshStepMae": 0.0068359375,
+          "impostorStepMae": 0.00244140625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3616,
+          "impostorCoverage": 3836,
+          "nativeProxyMeshMae": 0.021484375,
+          "meshStepMae": 0.00506591796875,
+          "impostorStepMae": 0.00225830078125
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 86.5,
+      "elevation": 15,
+      "direction": [
+        0.9641241799135144,
+        0.25881904510252074,
+        0.05896836099394751
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 627,
+          "impostorCoverage": 965,
+          "nativeProxyMeshMae": 0.08349609375,
+          "meshStepMae": 0.009033203125,
+          "impostorStepMae": 0.0029296875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3630,
+          "impostorCoverage": 3833,
+          "nativeProxyMeshMae": 0.02069091796875,
+          "meshStepMae": 0.00390625,
+          "impostorStepMae": 0.00250244140625
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 87,
+      "elevation": 15,
+      "direction": [
+        0.9646020585144796,
+        0.25881904510252074,
+        0.05055265177859417
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 626,
+          "impostorCoverage": 961,
+          "nativeProxyMeshMae": 0.082275390625,
+          "meshStepMae": 0.008544921875,
+          "impostorStepMae": 0.001953125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3625,
+          "impostorCoverage": 3830,
+          "nativeProxyMeshMae": 0.02069091796875,
+          "meshStepMae": 0.00445556640625,
+          "impostorStepMae": 0.00250244140625
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 87.5,
+      "elevation": 15,
+      "direction": [
+        0.9650064789340802,
+        0.25881904510252074,
+        0.042133092783085344
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 622,
+          "impostorCoverage": 959,
+          "nativeProxyMeshMae": 0.082763671875,
+          "meshStepMae": 0.00927734375,
+          "impostorStepMae": 0.0029296875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3638,
+          "impostorCoverage": 3855,
+          "nativeProxyMeshMae": 0.01983642578125,
+          "meshStepMae": 0.00408935546875,
+          "impostorStepMae": 0.00372314453125
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 88,
+      "elevation": 15,
+      "direction": [
+        0.9653374103741355,
+        0.25881904510252074,
+        0.03371032518943597
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 629,
+          "impostorCoverage": 955,
+          "nativeProxyMeshMae": 0.080078125,
+          "meshStepMae": 0.010009765625,
+          "impostorStepMae": 0.0029296875,
+          "meshVs4xNoiseMae": 0.0810089111328125,
+          "impostorVs4xMeshMae": 0.0216522216796875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3635,
+          "impostorCoverage": 3854,
+          "nativeProxyMeshMae": 0.01910400390625,
+          "meshStepMae": 0.00421142578125,
+          "impostorStepMae": 0.00384521484375,
+          "meshVs4xNoiseMae": 0.01902008056640625,
+          "impostorVs4xMeshMae": 0.018524169921875
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 88.5,
+      "elevation": 15,
+      "direction": [
+        0.9655948276329348,
+        0.25881904510252074,
+        0.02528499042400859
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 633,
+          "impostorCoverage": 966,
+          "nativeProxyMeshMae": 0.082275390625,
+          "meshStepMae": 0.0068359375,
+          "impostorStepMae": 0.004638671875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3647,
+          "impostorCoverage": 3847,
+          "nativeProxyMeshMae": 0.0185546875,
+          "meshStepMae": 0.0037841796875,
+          "impostorStepMae": 0.00360107421875
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 89,
+      "elevation": 15,
+      "direction": [
+        0.9657787111071577,
+        0.25881904510252074,
+        0.0168577301086656
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 629,
+          "impostorCoverage": 969,
+          "nativeProxyMeshMae": 0.083984375,
+          "meshStepMae": 0.00732421875,
+          "impostorStepMae": 0.003662109375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3650,
+          "impostorCoverage": 3812,
+          "nativeProxyMeshMae": 0.019287109375,
+          "meshStepMae": 0.00433349609375,
+          "impostorStepMae": 0.00518798828125
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 89.5,
+      "elevation": 15,
+      "direction": [
+        0.9658890467933654,
+        0.25881904510252074,
+        0.008429186011907692
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 624,
+          "impostorCoverage": 973,
+          "nativeProxyMeshMae": 0.086181640625,
+          "meshStepMae": 0.007080078125,
+          "impostorStepMae": 0.00439453125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3668,
+          "impostorCoverage": 3801,
+          "nativeProxyMeshMae": 0.01983642578125,
+          "meshStepMae": 0.00341796875,
+          "impostorStepMae": 0.00396728515625
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 90,
+      "elevation": 15,
+      "direction": [
+        0.9659258262890683,
+        0.25881904510252074,
+        5.914589856893349e-17
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 623,
+          "impostorCoverage": 970,
+          "nativeProxyMeshMae": 0.086669921875,
+          "meshStepMae": 0.007568359375,
+          "impostorStepMae": 0.003173828125,
+          "meshVs4xNoiseMae": 0.083831787109375,
+          "impostorVs4xMeshMae": 0.024383544921875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3680,
+          "impostorCoverage": 3852,
+          "nativeProxyMeshMae": 0.0225830078125,
+          "meshStepMae": 0.0045166015625,
+          "impostorStepMae": 0.00592041015625,
+          "meshVs4xNoiseMae": 0.0178070068359375,
+          "impostorVs4xMeshMae": 0.02325439453125
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 90.5,
+      "elevation": 15,
+      "direction": [
+        0.9658890467933654,
+        0.25881904510252074,
+        -0.008429186011907576
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 629,
+          "impostorCoverage": 961,
+          "nativeProxyMeshMae": 0.08251953125,
+          "meshStepMae": 0.00927734375,
+          "impostorStepMae": 0.004638671875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3676,
+          "impostorCoverage": 3840,
+          "nativeProxyMeshMae": 0.0213623046875,
+          "meshStepMae": 0.004150390625,
+          "impostorStepMae": 0.003662109375
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 91,
+      "elevation": 15,
+      "direction": [
+        0.9657787111071577,
+        0.25881904510252074,
+        -0.016857730108665696
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 630,
+          "impostorCoverage": 964,
+          "nativeProxyMeshMae": 0.0830078125,
+          "meshStepMae": 0.009521484375,
+          "impostorStepMae": 0.002197265625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3689,
+          "impostorCoverage": 3856,
+          "nativeProxyMeshMae": 0.02008056640625,
+          "meshStepMae": 0.00445556640625,
+          "impostorStepMae": 0.0037841796875
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 91.5,
+      "elevation": 15,
+      "direction": [
+        0.9655948276329348,
+        0.25881904510252074,
+        -0.025284990424008474
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 629,
+          "impostorCoverage": 965,
+          "nativeProxyMeshMae": 0.08447265625,
+          "meshStepMae": 0.007080078125,
+          "impostorStepMae": 0.003173828125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3687,
+          "impostorCoverage": 3884,
+          "nativeProxyMeshMae": 0.01910400390625,
+          "meshStepMae": 0.0040283203125,
+          "impostorStepMae": 0.00537109375
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 92,
+      "elevation": 15,
+      "direction": [
+        0.9653374103741355,
+        0.25881904510252074,
+        -0.03371032518943563
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 641,
+          "impostorCoverage": 969,
+          "nativeProxyMeshMae": 0.08154296875,
+          "meshStepMae": 0.009765625,
+          "impostorStepMae": 0.00439453125,
+          "meshVs4xNoiseMae": 0.0809478759765625,
+          "impostorVs4xMeshMae": 0.0222015380859375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3697,
+          "impostorCoverage": 3885,
+          "nativeProxyMeshMae": 0.0189208984375,
+          "meshStepMae": 0.003173828125,
+          "impostorStepMae": 0.00262451171875,
+          "meshVs4xNoiseMae": 0.017391204833984375,
+          "impostorVs4xMeshMae": 0.019107818603515625
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 92.5,
+      "elevation": 15,
+      "direction": [
+        0.9650064789340802,
+        0.25881904510252074,
+        -0.04213309278308502
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 646,
+          "impostorCoverage": 967,
+          "nativeProxyMeshMae": 0.079833984375,
+          "meshStepMae": 0.009521484375,
+          "impostorStepMae": 0.0009765625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3713,
+          "impostorCoverage": 3888,
+          "nativeProxyMeshMae": 0.01873779296875,
+          "meshStepMae": 0.004638671875,
+          "impostorStepMae": 0.00213623046875
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 93,
+      "elevation": 15,
+      "direction": [
+        0.9646020585144796,
+        0.25881904510252074,
+        -0.05055265177859384
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 642,
+          "impostorCoverage": 978,
+          "nativeProxyMeshMae": 0.0830078125,
+          "meshStepMae": 0.00732421875,
+          "impostorStepMae": 0.003173828125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3710,
+          "impostorCoverage": 3894,
+          "nativeProxyMeshMae": 0.019287109375,
+          "meshStepMae": 0.00347900390625,
+          "impostorStepMae": 0.003173828125
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 93.5,
+      "elevation": 15,
+      "direction": [
+        0.9641241799135144,
+        0.25881904510252074,
+        -0.05896836099394761
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 638,
+          "impostorCoverage": 979,
+          "nativeProxyMeshMae": 0.084228515625,
+          "meshStepMae": 0.0078125,
+          "impostorStepMae": 0.000732421875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3716,
+          "impostorCoverage": 3896,
+          "nativeProxyMeshMae": 0.01953125,
+          "meshStepMae": 0.00341796875,
+          "impostorStepMae": 0.0023193359375
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 94,
+      "elevation": 15,
+      "direction": [
+        0.9635728795234904,
+        0.25881904510252074,
+        -0.06737957954030596
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 635,
+          "impostorCoverage": 983,
+          "nativeProxyMeshMae": 0.08642578125,
+          "meshStepMae": 0.008056640625,
+          "impostorStepMae": 0.0029296875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3719,
+          "impostorCoverage": 3905,
+          "nativeProxyMeshMae": 0.019775390625,
+          "meshStepMae": 0.00384521484375,
+          "impostorStepMae": 0.00225830078125
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 94.5,
+      "elevation": 15,
+      "direction": [
+        0.9629481993280665,
+        0.25881904510252074,
+        -0.07578566687081167
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 646,
+          "impostorCoverage": 992,
+          "nativeProxyMeshMae": 0.08544921875,
+          "meshStepMae": 0.008056640625,
+          "impostorStepMae": 0.002197265625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3729,
+          "impostorCoverage": 3914,
+          "nativeProxyMeshMae": 0.02044677734375,
+          "meshStepMae": 0.0040283203125,
+          "impostorStepMae": 0.00360107421875
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 95,
+      "elevation": 15,
+      "direction": [
+        0.9622501868990583,
+        0.25881904510252074,
+        -0.08418598282936926
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 648,
+          "impostorCoverage": 994,
+          "nativeProxyMeshMae": 0.08544921875,
+          "meshStepMae": 0.00732421875,
+          "impostorStepMae": 0.00146484375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3729,
+          "impostorCoverage": 3948,
+          "nativeProxyMeshMae": 0.02203369140625,
+          "meshStepMae": 0.00390625,
+          "impostorStepMae": 0.005126953125
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 95.5,
+      "elevation": 15,
+      "direction": [
+        0.9614788953928146,
+        0.25881904510252074,
+        -0.09257988769939487
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 648,
+          "impostorCoverage": 995,
+          "nativeProxyMeshMae": 0.086181640625,
+          "meshStepMae": 0.00927734375,
+          "impostorStepMae": 0.002685546875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3750,
+          "impostorCoverage": 3970,
+          "nativeProxyMeshMae": 0.0228271484375,
+          "meshStepMae": 0.00433349609375,
+          "impostorStepMae": 0.0028076171875
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 96,
+      "elevation": 15,
+      "direction": [
+        0.9606343835461698,
+        0.25881904510252074,
+        -0.10096674225253457
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 654,
+          "impostorCoverage": 989,
+          "nativeProxyMeshMae": 0.082763671875,
+          "meshStepMae": 0.00927734375,
+          "impostorStepMae": 0.0029296875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3757,
+          "impostorCoverage": 3962,
+          "nativeProxyMeshMae": 0.02117919921875,
+          "meshStepMae": 0.00372314453125,
+          "impostorStepMae": 0.0030517578125
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 96.5,
+      "elevation": 15,
+      "direction": [
+        0.9597167156719707,
+        0.25881904510252074,
+        -0.10934590779734332
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 653,
+          "impostorCoverage": 993,
+          "nativeProxyMeshMae": 0.083984375,
+          "meshStepMae": 0.008544921875,
+          "impostorStepMae": 0.00244140625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3765,
+          "impostorCoverage": 3953,
+          "nativeProxyMeshMae": 0.0198974609375,
+          "meshStepMae": 0.0047607421875,
+          "impostorStepMae": 0.00323486328125
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 97,
+      "elevation": 15,
+      "direction": [
+        0.9587259616541789,
+        0.25881904510252074,
+        -0.11771674622792319
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 665,
+          "impostorCoverage": 994,
+          "nativeProxyMeshMae": 0.081787109375,
+          "meshStepMae": 0.01025390625,
+          "impostorStepMae": 0.000732421875
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3778,
+          "impostorCoverage": 3955,
+          "nativeProxyMeshMae": 0.02008056640625,
+          "meshStepMae": 0.00445556640625,
+          "impostorStepMae": 0.0018310546875
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 97.5,
+      "elevation": 15,
+      "direction": [
+        0.9576621969425487,
+        0.25881904510252074,
+        -0.12607862007251888
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 659,
+          "impostorCoverage": 994,
+          "nativeProxyMeshMae": 0.083251953125,
+          "meshStepMae": 0.01171875,
+          "impostorStepMae": 0.001953125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3774,
+          "impostorCoverage": 3949,
+          "nativeProxyMeshMae": 0.02081298828125,
+          "meshStepMae": 0.0050048828125,
+          "impostorStepMae": 0.001953125
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 98,
+      "elevation": 15,
+      "direction": [
+        0.9565255025468813,
+        0.25881904510252074,
+        -0.13443089254206306
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 669,
+          "impostorCoverage": 994,
+          "nativeProxyMeshMae": 0.080810546875,
+          "meshStepMae": 0.01171875,
+          "impostorStepMae": 0.0009765625
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3772,
+          "impostorCoverage": 3957,
+          "nativeProxyMeshMae": 0.02044677734375,
+          "meshStepMae": 0.0047607421875,
+          "impostorStepMae": 0.002197265625
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 98.5,
+      "elevation": 15,
+      "direction": [
+        0.9553159650308558,
+        0.25881904510252074,
+        -0.14277292757866958
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 670,
+          "impostorCoverage": 998,
+          "nativeProxyMeshMae": 0.0810546875,
+          "meshStepMae": 0.007568359375,
+          "impostorStepMae": 0.00146484375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3783,
+          "impostorCoverage": 3980,
+          "nativeProxyMeshMae": 0.02093505859375,
+          "meshStepMae": 0.00433349609375,
+          "impostorStepMae": 0.00262451171875
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 99,
+      "elevation": 15,
+      "direction": [
+        0.954033676505437,
+        0.25881904510252074,
+        -0.15110408990407354
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 672,
+          "impostorCoverage": 998,
+          "nativeProxyMeshMae": 0.08056640625,
+          "meshStepMae": 0.009765625,
+          "impostorStepMae": 0.00146484375
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3793,
+          "impostorCoverage": 3985,
+          "nativeProxyMeshMae": 0.0208740234375,
+          "meshStepMae": 0.0052490234375,
+          "impostorStepMae": 0.00213623046875
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 99.5,
+      "elevation": 15,
+      "direction": [
+        0.952678734621861,
+        0.25881904510252074,
+        -0.15942374506800758
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 688,
+          "impostorCoverage": 1002,
+          "nativeProxyMeshMae": 0.0771484375,
+          "meshStepMae": 0.00830078125,
+          "impostorStepMae": 0.001953125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3802,
+          "impostorCoverage": 3986,
+          "nativeProxyMeshMae": 0.02001953125,
+          "meshStepMae": 0.00457763671875,
+          "impostorStepMae": 0.00238037109375
+        }
+      ]
+    },
+    {
+      "segment": "boundary90",
+      "yaw": 100,
+      "elevation": 15,
+      "direction": [
+        0.9512512425641977,
+        0.25881904510252074,
+        -0.1677312594965206
+      ],
+      "rows": [
+        {
+          "pixels": 64,
+          "meshCoverage": 677,
+          "impostorCoverage": 1002,
+          "nativeProxyMeshMae": 0.080322265625,
+          "meshStepMae": 0.007080078125,
+          "impostorStepMae": 0.001953125
+        },
+        {
+          "pixels": 128,
+          "meshCoverage": 3824,
+          "impostorCoverage": 3979,
+          "nativeProxyMeshMae": 0.01934814453125,
+          "meshStepMae": 0.0045166015625,
+          "impostorStepMae": 0.00335693359375
+        }
+      ]
+    }
+  ],
+  "pageErrors": []
+}
