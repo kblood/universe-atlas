@@ -10,38 +10,10 @@ import {forestHabitat,TREE_HABITAT_VERSION} from './forest-habitat.ts';
 import type {ForestSelectionCache} from './forest-selection-cache.ts';
 import {unpackForestSelection} from './forest-selection-transfer.ts';
 import {PLANET_DETAIL as B} from './planet-detail.ts';
+import {InstanceUpdateRanges as DirtyRange} from './instance-update-ranges.ts';
 
 type Resident={cell:PopulationCell;height:number;present:boolean;water:number;patchKey?:string};
 
-/** Component ranges, not byte ranges. Preserve pending updates if a batch was
- * culled or hidden before Three uploaded it. Driver upload bytes are separate. */
-class DirtyRange {
-  private ranges:{start:number;end:number}[]=[];
-  include(index:number,components:number){
-    this.merge(index*components,(index+1)*components);
-  }
-  private merge(start:number,end:number){
-    for(let i=this.ranges.length-1;i>=0;i--){
-      const range=this.ranges[i];if(range.end<start||range.start>end)continue;
-      start=Math.min(start,range.start);end=Math.max(end,range.end);this.ranges.splice(i,1);
-    }
-    this.ranges.push({start,end});this.ranges.sort((a,b)=>a.start-b.start);
-    // Bound range submission overhead. Merge the closest gap, rather than
-    // uploading the entire span between two unrelated changed tree slots.
-    while(this.ranges.length>8){
-      let closest=0;for(let i=1;i<this.ranges.length-1;i++)if(this.ranges[i+1].start-this.ranges[i].end<this.ranges[closest+1].start-this.ranges[closest].end)closest=i;
-      this.ranges[closest].end=this.ranges[closest+1].end;this.ranges.splice(closest+1,1);
-    }
-  }
-  flush(attribute:THREE.BufferAttribute){
-    if(!this.ranges.length)return 0;
-    for(const range of attribute.updateRanges)this.merge(range.start,range.start+range.count);
-    attribute.clearUpdateRanges();let components=0;
-    for(const range of this.ranges){attribute.addUpdateRange(range.start,range.end-range.start);components+=range.end-range.start;}
-    attribute.needsUpdate=true;this.ranges.length=0;
-    return components*attribute.array.BYTES_PER_ELEMENT;
-  }
-}
 type BatchUpdates={residents:Resident[];originVersions:number[];slots:Map<string,number>;wanted:Resident[];wantedCoverage:number[];wantedIds:Set<string>;matrix:DirtyRange;color:DirtyRange;coverage:DirtyRange;seed:DirtyRange};
 const batchUpdates=():BatchUpdates=>({residents:[],originVersions:[],slots:new Map(),wanted:[],wantedCoverage:[],wantedIds:new Set(),matrix:new DirtyRange(),color:new DirtyRange(),coverage:new DirtyRange(),seed:new DirtyRange()});
 const crownBoundRadius=Math.hypot(...LEGACY_TREE_BOUND.extent)+Math.hypot(LEGACY_TREE_BOUND.center[0],LEGACY_TREE_BOUND.center[2]);
@@ -145,6 +117,14 @@ export class PlanetForest {
     this.canopy.geometry.setAttribute('instanceForestSeed',new THREE.InstancedBufferAttribute(new Uint16Array(B.canopyCapacity),1).setUsage(THREE.DynamicDrawUsage));
     this.canopy.instanceMatrix.setUsage(THREE.DynamicDrawUsage);this.canopy.frustumCulled=false;this.canopy.count=0;
     this.canopy.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(B.canopyCapacity*3).fill(1),3).setUsage(THREE.DynamicDrawUsage);
+    // Initial bufferData uploads the complete allocation. Drop its consumed
+    // ranges as well as later partial uploads, so a first sparse edit does not
+    // resend initialization ranges. Hidden batches retain pending work.
+    for(const mesh of [...this.meshes,this.canopy])for(const attribute of [
+      mesh.instanceMatrix,mesh.instanceColor!,
+      mesh.geometry.getAttribute('instanceCoverage') as THREE.InstancedBufferAttribute,
+      mesh.geometry.getAttribute('instanceForestSeed') as THREE.InstancedBufferAttribute,
+    ])attribute.onUpload(()=>attribute.clearUpdateRanges());
     this.group.add(this.canopy);this.group.name='Continuous planetary forest';
     if(typeof Worker!=='undefined'){this.fullCanopy=new PlanetCanopy(body);this.group.add(this.fullCanopy.group);this.startWorker();}
   }

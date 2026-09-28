@@ -1,0 +1,40 @@
+✔ stationary and reordered demand preserve instance slots without matrix or colour writes (10.8172ms)
+✔ frustum departure swap-removes one slot instead of rewriting the batch tail (3.0288ms)
+✔ retained origin rebases without changing canonical root placement (3.7386ms)
+✔ water changes do not enqueue additional water-independent selection jobs (2.4216ms)
+✔ dirty uploads keep separated edits separate and preallocate instance colours (2.0971ms)
+✔ selection worker gets one bounded restart and exposes permanent fallback (3.0957ms)
+✔ late canonical hydrology attachment refreshes near habitat at unchanged water (2.9261ms)
+✔ complete distant canopy skips near work while missing or stale water keeps fallback (3.5211ms)
+✔ packed selection applies once, ignores stale replies and recovers from decode and message errors (3.2546ms)
+✔ malformed response envelope and synchronous post failure cannot leave selection pending (2.6615ms)
+✔ main selection application defects remain visible and do not consume worker recovery (2.542ms)
+✔ keeps separated component intervals separate and sorts them (1.594ms)
+✔ deduplicates duplicate, overlapping, and adjacent slot updates (0.1723ms)
+✔ caps at eight ranges by merging the smallest gap without dropping updates (0.2787ms)
+✔ pending attribute ranges survive hidden frames and merge when visible again (0.1545ms)
+✔ a simulated GPU consumption clears submitted ranges but preserves later edits (0.1363ms)
+✔ zero-work flush preserves old pending ranges and does not increment version (0.0856ms)
+✔ upload byte counts use the typed array element size (0.1611ms)
+✔ deterministic sparse edits all remain covered after bounded coalescing (0.6906ms)
+✔ wind phase uses Euclidean BigInt dates at negative, period, and universe endpoints (0.9111ms)
+✔ physical leaf transforms scale the attachment pivot, retain card size, and rotate the rigid offset (0.551ms)
+✔ LOD pair validates matching embedded material/texture bytes and strips LOD1 texture descriptors before parse (30.0729ms)
+✔ LOD preparation rejects material and embedded image divergence before sharing (13.0681ms)
+✔ GLB contract rejects extra, malformed, normalized, and blended attributes (10.1303ms)
+✔ audits a pinned Three MeshStandard shader and repairs only live hooks (12.7034ms)
+✔ liveGlsl masks line and block comments without shifting shader offsets (0.3091ms)
+✔ rejects missing, duplicate and changed structural shader hooks (0.3489ms)
+✔ default values preserve zero-transmission expressions and public setting updates are atomic (1.9674ms)
+✔ patch preserves the host specular paths and branches around every added diffuse contribution (0.9823ms)
+✔ install composes prior compile hooks and cache key while exposing shared uniforms (3.3555ms)
+✔ source guards ignore comment-shaped anchors and reject missing or duplicate live hooks (1.8212ms)
+✔ installation rejects materials outside the explicitly supported leaf domain (0.8221ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 808.993

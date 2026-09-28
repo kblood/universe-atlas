@@ -1,0 +1,18 @@
+{
+  "revision": "bee6294eb179fe9323960fed9633d6f7271da077",
+  "dirty": true,
+  "files": [
+    {
+      "path": "src/instance-update-ranges.ts",
+      "sha256": "6ee7fd00142af2e3938fd8480c0bf46b80f7fb71c5492538f7c63c704631ac29"
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "sha256": "954adc0f642de379fcb7c111d30c5fe9a125986771acac3acd6b6b03a699d1df"
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "ae2180cb40ecd548db3ed0e79e26bcd1003d38219d5c9df59467ae116301e15b"
+    }
+  ]
+}

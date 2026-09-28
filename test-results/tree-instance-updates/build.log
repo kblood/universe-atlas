@@ -1,0 +1,702 @@
+
+> universe-atlas@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 130 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/test-results/tree-leaf-transmission/tsc.log                                                                        0.00 kB
+dist/build-info.json                                                                                                    0.12 kB │ gzip:     0.13 kB
+dist/test-results/tree-foliage-temporal/isolated-final/hash/lod0/smoke.json                                             0.15 kB │ gzip:     0.14 kB
+dist/test-results/tree-foliage-temporal/isolated-final/hash/lod1/smoke.json                                             0.15 kB │ gzip:     0.14 kB
+dist/test-results/tree-foliage-temporal/isolated-final/mask/lod0/smoke.json                                             0.15 kB │ gzip:     0.14 kB
+dist/test-results/tree-foliage-temporal/isolated-final/mask/lod1/smoke.json                                             0.15 kB │ gzip:     0.13 kB
+dist/test-results/deploy-580936f/guide/guide-report.json                                                                0.21 kB │ gzip:     0.18 kB
+dist/test-results/tree-impostor-render-v2-hardware/node-test.log                                                        0.23 kB
+dist/test-results/terrain-water-refresh/fixed-pass.txt                                                                  0.24 kB │ gzip:     0.19 kB
+dist/test-results/three-ez-impostor-reference/shader-tests.log                                                          0.37 kB
+dist/test-results/tree-reference-ez-oak/cpu-tests.log                                                                   0.37 kB
+dist/test-results/tree-ez-family-v1/cpu-tap.log                                                                         0.40 kB
+dist/test-results/tree-impostor-v7-color-a/capture-v2-portability-tests.log                                             0.50 kB
+dist/docs/opus-tree-family-review-2026-09-28.metadata.json                                                              0.52 kB │ gzip:     0.31 kB
+dist/test-results/tree-author-v3/physical-audit.log                                                                     0.53 kB
+dist/test-results/tree-author-v4/physical-audit.log                                                                     0.53 kB
+dist/test-results/tree-author-v4/smoke-repeat.log                                                                       0.62 kB
+dist/test-results/tree-leaf-transmission/node-test.log                                                                  0.63 kB
+dist/test-results/background-hydrology-regression/baseline-37f0e89-failure.json                                         0.63 kB │ gzip:     0.36 kB
+dist/test-results/tree-asset-lab-v6/cpu-test.log                                                                        0.64 kB
+dist/test-results/opus-leaf-transmission-review/followup/inputs.json                                                    0.65 kB │ gzip:     0.34 kB
+dist/test-results/tree-ez-family-v1/loader-tests.log                                                                    0.65 kB
+dist/test-results/tree-color-calibration-v1/validated/initial-test-harness-failures.log                                 0.65 kB
+dist/test-results/opus-tree-capture-review/inputs.json                                                                  0.69 kB │ gzip:     0.39 kB
+dist/test-results/tree-foliage-temporal/baseline-source/manifest.json                                                   0.71 kB │ gzip:     0.37 kB
+dist/test-results/tree-impostor-views-v1/cpu-test.log                                                                   0.79 kB
+dist/test-results/tree-leaf-transmission/tree-regression.log                                                            0.90 kB
+dist/test-results/opus-tree-reconstruction-review/inputs.json                                                           0.97 kB │ gzip:     0.47 kB
+dist/test-results/opus-tree-reference-review/inputs.json                                                                1.03 kB │ gzip:     0.49 kB
+dist/test-results/opus-tree-reference-family-review/inputs.json                                                         1.05 kB │ gzip:     0.50 kB
+dist/test-results/three-ez-impostor-reference/cpu-tests.log                                                             1.14 kB
+dist/test-results/canopy-water-validity-design/river-water-patches.json                                                 1.19 kB │ gzip:     0.38 kB
+dist/test-results/canopy-flight-post-alpha-fix-rerun/README.md                                                          1.19 kB
+dist/docs/opus-5.5-tree-browser-review-2026-09-28.metadata.json                                                         1.23 kB │ gzip:     0.62 kB
+dist/test-results/canopy-proxy-75a7d3b/experiment-doc-link-check.json                                                   1.23 kB │ gzip:     0.23 kB
+dist/test-results/three-ez-impostor-reference/baseline-source/tree-impostor-reference-lab.html                          1.28 kB │ gzip:     0.75 kB
+dist/docs/opus-5.5-tree-distance-review-2026-09-28.metadata.json                                                        1.32 kB │ gzip:     0.67 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082/test-evidence.json                                      1.34 kB │ gzip:     0.65 kB
+dist/test-results/tree-author-v6/atlas-tree-smoke-1790570381707/independent-artifact-hash-audit.json                    1.34 kB │ gzip:     0.56 kB
+dist/docs/opus-5.5-census-implementation-review-2026-09-28.metadata.json                                                1.37 kB │ gzip:     0.65 kB
+dist/test-results/tree-leaf-transmission/final-cpu.log                                                                  1.41 kB
+dist/test-results/canopy-water-validity-design/water-300.json                                                           1.46 kB │ gzip:     0.70 kB
+dist/test-results/canopy-water-validity-design/water-3000.json                                                          1.46 kB │ gzip:     0.71 kB
+dist/docs/opus-5.5-tree-author-v3-review-2026-09-28.metadata.json                                                       1.49 kB │ gzip:     0.71 kB
+dist/docs/opus-5.5-canopy-water-review-2026-09-28.metadata.json                                                         1.50 kB │ gzip:     0.71 kB
+dist/docs/opus-5.5-canopy-integration-review-2026-09-28.metadata.json                                                   1.53 kB │ gzip:     0.74 kB
+dist/test-results/three-ez-impostor-reference/masks/az45-el45-impostor.png                                              1.53 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-impostor.png                               1.53 kB
+dist/test-results/fauna-closeup-6b87e13/report.json                                                                     1.55 kB │ gzip:     0.74 kB
+dist/docs/opus-5.5-canopy-review-2026-09-28.metadata.json                                                               1.57 kB │ gzip:     0.77 kB
+dist/test-results/three-ez-impostor-reference/masks/top-impostor.png                                                    1.59 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/top-impostor.png                                     1.59 kB
+dist/docs/opus-5.5-tree-author-v7-review-2026-09-28.metadata.json                                                       1.60 kB │ gzip:     0.76 kB
+dist/test-results/tree-impostor-capture-v2/cpu-test.log                                                                 1.60 kB
+dist/test-results/forest-selection-66c7728/README.md                                                                    1.62 kB
+dist/test-results/three-ez-impostor-reference/masks/az45-el45-mesh.png                                                  1.62 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-mesh.png                                   1.62 kB
+dist/test-results/tree-author-v5/smoke-integrated-audit.log                                                             1.66 kB
+dist/docs/flora-recipe-cache-2026-09-28.md                                                                              1.66 kB
+dist/test-results/forest-canopy-census-8c5ff7f/browser-worker-report.json                                               1.67 kB │ gzip:     0.57 kB
+dist/docs/opus-5.5-tree-author-v6-review-2026-09-28.metadata.json                                                       1.68 kB │ gzip:     0.78 kB
+dist/test-results/three-ez-impostor-reference/masks/az0-el85-impostor.png                                               1.68 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-impostor.png                                1.68 kB
+dist/test-results/three-ez-impostor-reference/masks/az90-el0-mesh.png                                                   1.70 kB
+dist/test-results/three-ez-impostor-reference/masks/az0-el85-mesh.png                                                   1.71 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-mesh.png                                    1.71 kB
+dist/test-results/three-ez-impostor-reference/masks/az45-el0-impostor.png                                               1.71 kB
+dist/test-results/three-ez-impostor-reference/masks/top-mesh.png                                                        1.71 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-impostor.png                                1.71 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/top-mesh.png                                         1.71 kB
+dist/test-results/forest-selection-66c7728/browser-movement-lateral-hardware/report.json                                1.74 kB │ gzip:     0.68 kB
+dist/docs/opus-5.5-selection-cache-review-2026-09-28.metadata.json                                                      1.74 kB │ gzip:     0.81 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-impostor.png                               1.74 kB
+dist/test-results/three-ez-impostor-reference/masks/az45-el0-mesh.png                                                   1.75 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-mesh.png                                    1.75 kB
+dist/test-results/tree-author-v6/repeat-audit.json                                                                      1.75 kB │ gzip:     0.62 kB
+dist/test-results/three-ez-impostor-reference/masks/az90-el0-impostor.png                                               1.77 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-mesh.png                                   1.78 kB
+dist/test-results/three-ez-impostor-reference/masks/az0-el15-impostor.png                                               1.78 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-impostor.png                                1.78 kB
+dist/docs/opus-5.5-tree-capture-review-2026-09-28.metadata.json                                                         1.82 kB │ gzip:     0.87 kB
+dist/test-results/three-ez-impostor-reference/masks/az0-el0-mesh.png                                                    1.84 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-mesh.png                                     1.84 kB
+dist/test-results/background-hydrology-regression/README.md                                                             1.84 kB
+dist/test-results/deploy-6f7cb21/forest-selection-cache-browser/report.json                                             1.84 kB │ gzip:     0.70 kB
+dist/test-results/three-ez-impostor-reference/masks/az0-el15-mesh.png                                                   1.89 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-mesh.png                                    1.89 kB
+dist/test-results/three-ez-impostor-reference/masks/az0-el-5-mesh.png                                                   1.89 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-mesh.png                                    1.89 kB
+dist/docs/opus-5.5-rendering-review-2026-09-28.metadata.json                                                            1.90 kB │ gzip:     0.94 kB
+dist/test-results/three-ez-impostor-reference/masks/az0-el0-impostor.png                                                1.91 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-impostor.png                                 1.91 kB
+dist/test-results/canopy-water-validity-design/river-probe.mjs                                                          1.92 kB
+dist/test-results/three-ez-impostor-reference/masks/az0-el-5-impostor.png                                               1.92 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-impostor.png                                1.92 kB
+dist/docs/opus-5.5-transfer-review-2026-09-28.metadata.json                                                             1.95 kB │ gzip:     0.86 kB
+dist/docs/opus-5.5-canopy-host-review-2026-09-28.metadata.json                                                          1.95 kB │ gzip:     0.88 kB
+dist/docs/opus-5.5-census-design-review-2026-09-28.metadata.json                                                        1.96 kB │ gzip:     0.92 kB
+dist/test-results/tree-foliage-temporal/isolated-final/hash/lod0/smoke-128-date0.png                                    1.97 kB
+dist/test-results/background-hydrology-regression/fixed-cb03169-life-report.json                                        1.98 kB │ gzip:     0.52 kB
+dist/test-results/background-hydrology-regression/fixed-cb03169-land-report.json                                        1.98 kB │ gzip:     0.52 kB
+dist/test-results/forest-canopy-census-8c5ff7f/README.md                                                                1.99 kB
+dist/test-results/tree-foliage-temporal/baseline-source/tree-asset-lab.html                                             1.99 kB │ gzip:     1.02 kB
+dist/test-results/opus-leaf-transmission-review/inputs.json                                                             2.03 kB │ gzip:     0.74 kB
+dist/test-results/tree-foliage-temporal/isolated-final/mask/lod0/smoke-128-date0.png                                    2.03 kB
+dist/test-results/desktop-realism-26b41f5/population-flight/report.json                                                 2.03 kB │ gzip:     0.86 kB
+dist/docs/opus-5.5-tree-author-v5-review-2026-09-28.metadata.json                                                       2.04 kB │ gzip:     0.91 kB
+dist/docs/opus-5.5-forest-implementation-review-2026-09-28.metadata.json                                                2.07 kB │ gzip:     0.91 kB
+dist/test-results/forest-selection-transfer/benchmark.json                                                              2.09 kB │ gzip:     0.72 kB
+dist/test-results/deploy-114a16e/background-hydrology-life/report.json                                                  2.09 kB │ gzip:     0.54 kB
+dist/test-results/deploy-114a16e/background-hydrology-land/report.json                                                  2.09 kB │ gzip:     0.54 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/render-sheet.json                         2.11 kB │ gzip:     0.68 kB
+dist/docs/forest-census-review-fixes-2026-09-28.md                                                                      2.12 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/render-sheet.json                       2.13 kB │ gzip:     0.68 kB
+dist/test-results/forest-transfer-23de0b9/browser-movement-hardware/report.json                                         2.13 kB │ gzip:     0.80 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el45-mid.png                                    2.15 kB
+dist/docs/opus-5.5-tree-reconstruction-review-2026-09-28.metadata.json                                                  2.15 kB │ gzip:     0.98 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/render-sheet.json                       2.16 kB │ gzip:     0.68 kB
+dist/docs/opus-5.5-tree-reference-review-2026-09-28.metadata.json                                                       2.17 kB │ gzip:     0.98 kB
+dist/test-results/tree-ez-family-v1/cpu-tests.log                                                                       2.18 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/top-mid.png                                          2.18 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el85-mid.png                                     2.19 kB
+dist/test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/render-sheet.json             2.19 kB │ gzip:     0.68 kB
+dist/test-results/deploy-e8a848d/forest-selection-cache-browser/report.json                                             2.21 kB │ gzip:     0.80 kB
+dist/test-results/forest-census-protocol-review/report.json                                                             2.26 kB │ gzip:     0.82 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/gl-check.mjs                                                2.27 kB
+dist/test-results/tree-impostor-capture-v2/combined-cpu-test.log                                                        2.31 kB
+dist/test-results/opus-three-ez-impostor-review/inputs.json                                                             2.33 kB │ gzip:     0.84 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az45-el0-mid.png                                     2.33 kB
+dist/test-results/tree-author-v6/atlas-tree-smoke-1790570381707/test-evidence.json                                      2.36 kB │ gzip:     1.01 kB
+dist/test-results/deploy-37f0e89/live-deployment.json                                                                   2.38 kB │ gzip:     1.14 kB
+dist/test-results/forest-canopy-census-481e693/README.md                                                                2.44 kB
+dist/test-results/tree-author-v4/render-roundtrip.json                                                                  2.47 kB │ gzip:     0.99 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el15-mid.png                                     2.48 kB
+dist/test-results/terrain-water-refresh/baseline-fail.txt                                                               2.48 kB │ gzip:     0.96 kB
+dist/docs/fable-5.1-plan-review.metadata.json                                                                           2.50 kB │ gzip:     1.00 kB
+dist/docs/tree-lighting-diagnosis-2026-09-28.md                                                                         2.56 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-20-mid.png                                    2.57 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el0-mid.png                                      2.58 kB
+dist/test-results/tree-author-v4/repeat-audit.json                                                                      2.58 kB │ gzip:     0.97 kB
+dist/docs/background-hydrology-travel-2026-09-28.md                                                                     2.59 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/masks/az0-el-5-mid.png                                     2.61 kB
+dist/test-results/tree-foliage-temporal/isolated-final/mask/lod1/smoke-128-date0.png                                    2.69 kB
+dist/test-results/tree-foliage-temporal/isolated-final/hash/lod1/smoke-128-date0.png                                    2.72 kB
+dist/docs/formation-and-life-integration-2026-09-23.md                                                                  2.74 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/render-sheet.json                2.78 kB │ gzip:     0.91 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/render-sheet.json                2.79 kB │ gzip:     0.91 kB
+dist/test-results/forest-transfer-23de0b9/README.md                                                                     2.79 kB
+dist/biome-lab.html                                                                                                     2.90 kB │ gzip:     1.33 kB
+dist/test-results/tree-ez-family-v1/README.md                                                                           2.95 kB
+dist/test-results/tree-author-v5/smoke-tangent-repeat-failure.log                                                       2.95 kB
+dist/docs/canopy-water-review-assessment-2026-09-28.md                                                                  2.95 kB
+dist/docs/deployment-580936f-2026-09-28.md                                                                              2.99 kB
+dist/docs/terrain-water-refresh-2026-09-28.md                                                                           3.09 kB
+dist/docs/opus-5.5-desktop-realism-review-2026-09-27.metadata.json                                                      3.10 kB │ gzip:     1.33 kB
+dist/test-results/canopy-proxy-75a7d3b/README.md                                                                        3.10 kB
+dist/test-results/forest-selection-cache/benchmark.json                                                                 3.13 kB │ gzip:     0.86 kB
+dist/test-results/tree-leaf-transmission/README.md                                                                      3.14 kB
+dist/docs/canopy-foundation-2026-09-28.md                                                                               3.16 kB
+dist/assets/briefs/atlas-three-ez-impostor-reference.json                                                               3.19 kB │ gzip:     1.39 kB
+dist/tests/cloud-comparison.html                                                                                        3.20 kB │ gzip:     1.41 kB
+dist/test-results/canopy-proxy-75a7d3b/field/report.json                                                                3.26 kB │ gzip:     1.17 kB
+dist/test-results/forest-impostor-field/report.json                                                                     3.27 kB │ gzip:     1.18 kB
+dist/test-results/tree-author-v5/serial-repeat-audit.json                                                               3.27 kB │ gzip:     0.60 kB
+dist/test-results/tree-foliage-temporal/README.md                                                                       3.29 kB
+dist/test-results/tree-author-v3/authoring-manifest.json                                                                3.32 kB │ gzip:     1.39 kB
+dist/test-results/forest-canopy-census-481e693/worker-census.json                                                       3.36 kB │ gzip:     1.05 kB
+dist/docs/tree-authoring-review-assessment-2026-09-28.md                                                                3.42 kB
+dist/test-results/tree-author-v4/authoring-receipt.json                                                                 3.45 kB │ gzip:     1.19 kB
+dist/test-results/acceptance-98556a7/README.md                                                                          3.50 kB
+dist/test-results/canopy-water-worker/report.json                                                                       3.52 kB │ gzip:     1.11 kB
+dist/docs/tree-color-calibration-2026-09-28.md                                                                          3.52 kB
+dist/test-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-lod0-calibrated/render-sheet.json               3.54 kB │ gzip:     1.13 kB
+dist/test-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-lod1-calibrated/render-sheet.json               3.54 kB │ gzip:     1.13 kB
+dist/test-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-blend-calibrated/render-sheet.json              3.54 kB │ gzip:     1.12 kB
+dist/test-results/tree-foliage-temporal/isolated-final/README.md                                                        3.56 kB
+dist/test-results/three-ez-impostor-reference/README.md                                                                 3.59 kB
+dist/docs/opus-tree-family-review-2026-09-28.md                                                                         3.63 kB
+dist/test-results/acceptance-4c776b8/README.md                                                                          3.63 kB
+dist/docs/tree-species-asset-contract-2026-09-28.md                                                                     3.64 kB
+dist/docs/desktop-render-profiling.md                                                                                   3.65 kB
+dist/docs/canopy-census-design-2026-09-28.md                                                                            3.71 kB
+dist/docs/star-visibility-and-transitions.md                                                                            3.73 kB
+dist/test-results/tree-foliage-temporal/isolated-report/README.md                                                       3.75 kB
+dist/docs/opus-three-ez-impostor-review-2026-09-28.md                                                                   3.83 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960/authoring-manifest.json                                 3.84 kB │ gzip:     1.65 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790567076137/authoring-manifest.json                                 3.84 kB │ gzip:     1.65 kB
+dist/test-results/tree-authoring-v7/tree-family-v7-run.log                                                              3.88 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-repeat/authoring-manifest.json                          3.89 kB │ gzip:     1.65 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790567076137-repeat/authoring-manifest.json                          3.89 kB │ gzip:     1.66 kB
+dist/docs/opus-5.5-tree-reference-review-2026-09-28.md                                                                  4.08 kB
+dist/docs/desktop-rendering-stage-c-2026-09-28.md                                                                       4.12 kB
+dist/docs/ground-realism-spec.md                                                                                        4.23 kB
+dist/docs/tree-authoring-v5-review-assessment-2026-09-28.md                                                             4.31 kB
+dist/docs/fable-review-brief.md                                                                                         4.32 kB
+dist/docs/tree-authoring-v3-2026-09-28.md                                                                               4.40 kB
+dist/assets/briefs/atlas-ez-tree-family-v1.json                                                                         4.42 kB │ gzip:     1.88 kB
+dist/docs/tree-authoring-v7-2026-09-28.md                                                                               4.43 kB
+dist/docs/opus-leaf-transmission-review-2026-09-28.md                                                                   4.53 kB
+dist/test-results/deploy-114a16e/live-deployment.json                                                                   4.53 kB │ gzip:     1.47 kB
+dist/test-results/deploy-6f7cb21/live-deployment.json                                                                   4.57 kB │ gzip:     1.53 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/gl-check.json                                               4.60 kB │ gzip:     0.39 kB
+dist/docs/planetary-orbit-validation.md                                                                                 4.64 kB
+dist/docs/tree-asset-candidate-2026-09-28.md                                                                            4.74 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-repeat/asset-brief.json                                 4.82 kB │ gzip:     2.14 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082/asset-brief.json                                        4.82 kB │ gzip:     2.14 kB
+dist/docs/tree-authoring-v4-2026-09-28.md                                                                               4.87 kB
+dist/assets/briefs/temperate-branching-tree-v1.json                                                                     4.96 kB │ gzip:     2.21 kB
+dist/tests/terrain-water-refresh.test.mjs                                                                               5.00 kB
+dist/docs/opus-5.5-tree-author-v7-review-2026-09-28.md                                                                  5.03 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/README.md                                                  5.04 kB
+dist/creature-lab.html                                                                                                  5.09 kB │ gzip:     1.97 kB
+dist/test-results/deploy-e8a848d/live-deployment.json                                                                   5.20 kB │ gzip:     1.76 kB
+dist/docs/canopy-host-review-assessment-2026-09-28.md                                                                   5.24 kB
+dist/biosphere-lab.html                                                                                                 5.26 kB │ gzip:     2.15 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082/authoring-manifest.json                                 5.54 kB │ gzip:     2.07 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-repeat/authoring-manifest.json                          5.61 kB │ gzip:     2.07 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790569226563/authoring-manifest.json                                 5.63 kB │ gzip:     2.12 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790569291675/authoring-manifest.json                                 5.63 kB │ gzip:     2.12 kB
+dist/test-results/canopy-water-host/report.json                                                                         5.65 kB │ gzip:     1.35 kB
+dist/docs/authored-tree-capture-2026-09-28.md                                                                           5.65 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790569226563-repeat/authoring-manifest.json                          5.70 kB │ gzip:     2.12 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790569291675-repeat/authoring-manifest.json                          5.70 kB │ gzip:     2.12 kB
+dist/test-results/tree-author-v3/validation.json                                                                        5.73 kB │ gzip:     1.39 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960/validation.json                                         5.73 kB │ gzip:     1.39 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790567076137/validation.json                                         5.73 kB │ gzip:     1.39 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/alpha-hash-followup.mjs                                    5.79 kB
+dist/docs/forest-selection-cache-2026-09-28.md                                                                          5.84 kB
+dist/docs/desktop-rendering-validation-2026-09-28.md                                                                    6.04 kB
+dist/test-results/deploy-580936f/guide-links.json                                                                       6.05 kB │ gzip:     1.07 kB
+dist/docs/forest-impostor-experiment-2026-09-28.md                                                                      6.09 kB
+dist/docs/planet-rendering-validation-2026-09-27.md                                                                     6.16 kB
+dist/docs/opus-5.5-transfer-review-2026-09-28.md                                                                        6.19 kB
+dist/docs/temporal-universe-implementation-2026-09-23.md                                                                6.19 kB
+dist/test-results/canopy-water-validity-design/prototype.mjs                                                            6.39 kB
+dist/docs/tree-authoring-v5-2026-09-28.md                                                                               6.50 kB
+dist/docs/canopy-integration-contract-2026-09-28.md                                                                     6.54 kB
+dist/docs/opus-5.5-tree-author-v6-review-2026-09-28.md                                                                  6.57 kB
+dist/docs/tree-ez-family-2026-09-28.md                                                                                  6.63 kB
+dist/docs/opus-5.5-tree-author-v5-review-2026-09-28.md                                                                  6.70 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/yaw-continuity.mjs                                         6.73 kB
+dist/test-results/tree-author-v6/atlas-tree-smoke-1790570381707-repeat/authoring-manifest.json                          6.75 kB │ gzip:     2.59 kB
+dist/test-results/tree-author-v6/atlas-tree-smoke-1790570381707/authoring-manifest.json                                 6.75 kB │ gzip:     2.58 kB
+dist/docs/forest-selection-transfer-2026-09-28.md                                                                       6.82 kB
+dist/docs/cosmic-history-simulation-plan-2026-09-23.md                                                                  6.93 kB
+dist/docs/opus-5.5-tree-distance-review-2026-09-28.md                                                                   6.93 kB
+dist/tests/desktop-forest-acceptance.browser.mjs                                                                        7.01 kB
+dist/test-results/tree-foliage-temporal/baseline-source/world-time.ts                                                   7.09 kB
+dist/docs/tree-authoring-v6-2026-09-28.md                                                                               7.11 kB
+dist/docs/opus-5.5-selection-cache-review-2026-09-28.md                                                                 7.16 kB
+dist/docs/terrain-v2-first-slice-spec.md                                                                                7.33 kB
+dist/docs/opus-5.5-tree-capture-review-2026-09-28.md                                                                    7.42 kB
+dist/tests/background-hydrology-flight.browser.mjs                                                                      7.43 kB
+dist/test-results/background-hydrology-regression/background-hydrology-flight.browser.mjs                               7.43 kB
+dist/docs/opus-5.5-tree-browser-review-2026-09-28.md                                                                    7.52 kB
+dist/test-results/tree-foliage-temporal/baseline-source/tree-asset-lab.ts                                               7.57 kB
+dist/test-results/opus-leaf-transmission-review/followup/response.json                                                  7.68 kB │ gzip:     3.68 kB
+dist/docs/desktop-realism-validation-2026-09-28.md                                                                      7.74 kB
+dist/docs/opus-5.5-tree-author-v3-review-2026-09-28.md                                                                  7.74 kB
+dist/guide/universe.html                                                                                                7.91 kB │ gzip:     3.18 kB
+dist/docs/opus-5.5-tree-reconstruction-review-2026-09-28.md                                                             7.97 kB
+dist/docs/population-continuity-implementation-2026-09-27.md                                                            8.11 kB
+dist/test-results/tree-color-calibration-v1/validated/color-calibration.json                                            8.25 kB │ gzip:     1.21 kB
+dist/docs/tree-browser-prototype-2026-09-28.md                                                                          8.27 kB
+dist/test-results/tree-color-calibration-v1/validated/calibration-test-summary.json                                     8.27 kB │ gzip:     1.17 kB
+dist/guide/determinism.html                                                                                             8.30 kB │ gzip:     3.43 kB
+dist/docs/research-creature-locomotion-references-2026-09-14.md                                                         8.49 kB
+dist/test-results/deploy-a58ad07/live-deployment.json                                                                   8.51 kB │ gzip:     2.00 kB
+dist/test-results/opus-tree-capture-review/response.json                                                                8.90 kB │ gzip:     4.31 kB
+dist/docs/physical-river-pilot-spec.md                                                                                  8.94 kB
+dist/test-results/deploy-580936f/live-deployment.json                                                                   8.97 kB │ gzip:     2.48 kB
+dist/docs/fable-review-assessment.md                                                                                    9.19 kB
+dist/src/tree-leaf-transmission.ts                                                                                      9.20 kB
+dist/docs/authored-tree-distance-design-2026-09-28.md                                                                   9.21 kB
+dist/docs/tree-existing-methods-2026-09-28.md                                                                           9.21 kB
+dist/test-results/tree-asset-lighting-v7-color-a/report.json                                                            9.22 kB │ gzip:     1.69 kB
+dist/docs/leaf-diffuse-transmission-2026-09-28.md                                                                       9.23 kB
+dist/test-results/tree-asset-lighting-v6/report.json                                                                    9.29 kB │ gzip:     1.71 kB
+dist/tests/forest-selection-cache.browser.mjs                                                                           9.30 kB
+dist/test-results/tree-impostor-v7-color-a/capture-v2-audit.json                                                        9.32 kB │ gzip:     3.05 kB
+dist/test-results/tree-authoring-v7/smoke/authoring-manifest.json                                                       9.34 kB │ gzip:     2.90 kB
+dist/test-results/tree-authoring-v7/repeat/authoring-manifest.json                                                      9.34 kB │ gzip:     2.90 kB
+dist/test-results/opus-tree-reconstruction-review/response.json                                                         9.37 kB │ gzip:     4.51 kB
+dist/docs/desktop-realism-proposal-2026-09-27.md                                                                        9.43 kB
+dist/docs/desktop-realism-assessment-2026-09-27.md                                                                      9.44 kB
+dist/docs/tree-three-ez-impostor-2026-09-28.md                                                                          9.44 kB
+dist/test-results/opus-three-ez-impostor-review/response.json                                                           9.66 kB │ gzip:     4.62 kB
+dist/test-results/desktop-realism-26b41f5/forest-hardware/report.json                                                   9.68 kB │ gzip:     2.43 kB
+dist/docs/tree-ez-reference-2026-09-28.md                                                                               9.73 kB
+dist/test-results/tree-foliage-temporal/run.mjs                                                                         9.78 kB
+dist/tests/forest-water-validity.test.mjs                                                                               9.86 kB
+dist/test-results/opus-tree-reference-review/response.json                                                              9.87 kB │ gzip:     4.74 kB
+dist/test-results/desktop-rendering-921de57/report.json                                                                 9.91 kB │ gzip:     2.66 kB
+dist/docs/canopy-water-validity-design-2026-09-28.md                                                                   10.02 kB
+dist/tests/desktop-rendering-acceptance.browser.mjs                                                                    10.04 kB
+dist/docs/canopy-runtime-integration-2026-09-28.md                                                                     10.16 kB
+dist/tests/canopy-water-date-seek.browser.mjs                                                                          10.17 kB
+dist/docs/opus-5.5-canopy-water-review-2026-09-28.md                                                                   10.19 kB
+dist/docs/research-creature-anatomy-references-2026-09-14.md                                                           10.22 kB
+dist/index.html                                                                                                        10.27 kB │ gzip:     3.89 kB
+dist/test-results/three-ez-impostor-reference/baseline-source/tree-impostor-reference-lab.ts                           10.35 kB
+dist/docs/continuous-planet-detail.md                                                                                  10.39 kB
+dist/docs/opus-5.5-rendering-review-2026-09-28.md                                                                      10.49 kB
+dist/test-results/opus-tree-reference-family-review/response.json                                                      10.51 kB │ gzip:     4.98 kB
+dist/test-results/three-ez-impostor-reference/run.mjs                                                                  10.54 kB
+dist/test-results/canopy-runtime-aerial/report.json                                                                    10.56 kB │ gzip:     2.82 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082/v5-render-review-receipt.json                          10.60 kB │ gzip:     2.86 kB
+dist/docs/opus-5.5-census-implementation-review-2026-09-28.md                                                          10.64 kB
+dist/test-results/canopy-runtime/report.json                                                                           10.66 kB │ gzip:     2.82 kB
+dist/test-results/opus-leaf-transmission-review/response.json                                                          10.75 kB │ gzip:     5.03 kB
+dist/guide/time.html                                                                                                   10.89 kB │ gzip:     4.26 kB
+dist/docs/ground-realism.md                                                                                            11.07 kB
+dist/test-results/tree-ez-family-v1/family-manifest.json                                                               11.14 kB │ gzip:     2.91 kB
+dist/guide/publishing.html                                                                                             11.29 kB │ gzip:     4.35 kB
+dist/docs/tree-foliage-minification-2026-09-28.md                                                                      11.45 kB
+dist/guide/water-atmosphere.html                                                                                       11.62 kB │ gzip:     4.53 kB
+dist/guide/terrain.html                                                                                                11.80 kB │ gzip:     4.74 kB
+dist/guide/index.html                                                                                                  11.91 kB │ gzip:     4.46 kB
+dist/test-results/tree-leaf-transmission/actual-tree/integration.mjs                                                   11.94 kB
+dist/docs/realistic-clouds-research-2026-09-27.md                                                                      12.02 kB
+dist/docs/biome-lab-spec.md                                                                                            12.29 kB
+dist/docs/creature-diversity-and-motion-plan-2026-09-14.md                                                             12.30 kB
+dist/test-results/tree-authoring-v7/smoke/validation.json                                                              12.47 kB │ gzip:     1.70 kB
+dist/test-results/tree-author-v6/atlas-tree-smoke-1790570381707/validation.json                                        12.47 kB │ gzip:     1.70 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082/validation.json                                        12.48 kB │ gzip:     1.70 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790569226563/validation.json                                        12.48 kB │ gzip:     1.70 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790569291675/validation.json                                        12.48 kB │ gzip:     1.70 kB
+dist/test-results/tree-author-v6/atlas-tree-smoke-1790570381707/v6final-calibrated-render-review-receipt.json          12.52 kB │ gzip:     3.06 kB
+dist/docs/population-continuity-review-2026-09-27.md                                                                   12.53 kB
+dist/test-results/tree-foliage-temporal/isolated-probe.mjs                                                             12.56 kB
+dist/assets/planet-population-worker-DPoR_B8X.js                                                                       12.80 kB
+dist/test-results/tree-impostor-v7-color-a/capture-v2-portability-audit.json                                           12.80 kB │ gzip:     3.81 kB
+dist/test-results/desktop-rendering-stage-c-absolute-date/report.json                                                  13.02 kB │ gzip:     2.96 kB
+dist/test-results/tree-foliage-temporal/baseline-source/tree-asset.ts                                                  13.08 kB
+dist/docs/stable-shores.md                                                                                             13.23 kB
+dist/docs/creature-lab-implementation-spec.md                                                                          13.55 kB
+dist/docs/research-evolutionary-history-2026-09-14.md                                                                  13.57 kB
+dist/test-results/tree-foliage-temporal/hash/report.json                                                               13.69 kB │ gzip:     2.22 kB
+dist/test-results/tree-foliage-temporal/mask/report.json                                                               13.73 kB │ gzip:     2.23 kB
+dist/docs/surface-materials-and-survey.md                                                                              13.79 kB
+dist/test-results/desktop-rendering-6b87e13/report.json                                                                13.86 kB │ gzip:     3.02 kB
+dist/test-results/forest-selection-66c7728/desktop-rendering-hardware/report.json                                      13.94 kB │ gzip:     3.08 kB
+dist/assets/drainage-worker-Bp34AJ1h.js                                                                                13.99 kB
+dist/test-results/tree-foliage-temporal/render-target-probes/report.json                                               13.99 kB │ gzip:     1.16 kB
+dist/docs/opus-5.5-forest-implementation-review-2026-09-28.md                                                          14.03 kB
+dist/test-results/forest-transfer-23de0b9/desktop-rendering-baseline-66c-production-preview/report.json                14.11 kB │ gzip:     3.10 kB
+dist/test-results/forest-transfer-23de0b9/desktop-rendering-production-preview/report.json                             14.21 kB │ gzip:     3.14 kB
+dist/test-results/forest-transfer-23de0b9/desktop-rendering-hardware/report.json                                       14.25 kB │ gzip:     3.15 kB
+dist/docs/planet-local-rendering-design.md                                                                             14.26 kB
+dist/guide/travel.html                                                                                                 14.31 kB │ gzip:     5.67 kB
+dist/test-results/deploy-114a16e/desktop-rendering-acceptance/report.json                                              14.41 kB │ gzip:     3.07 kB
+dist/docs/deterministic-temporal-universe-design-2026-09-23.md                                                         14.47 kB
+dist/docs/exploration-corrections.md                                                                                   14.56 kB
+dist/tests/tree-impostor-rendering.test.mjs                                                                            14.57 kB
+dist/test-results/deploy-6f7cb21/desktop-rendering-acceptance/report.json                                              14.60 kB │ gzip:     3.15 kB
+dist/docs/drainage-and-atmospheric-flight.md                                                                           14.65 kB
+dist/test-results/deploy-e8a848d/desktop-rendering-acceptance/report.json                                              14.88 kB │ gzip:     3.23 kB
+dist/docs/tree-authoring-next-increment-2026-09-28.md                                                                  15.31 kB
+dist/docs/walking-and-time.md                                                                                          15.31 kB
+dist/test-results/tree-reference-ez-oak/browser-report.json                                                            15.46 kB │ gzip:     3.96 kB
+dist/test-results/tree-leaf-transmission/browser-check.mjs                                                             15.48 kB
+dist/test-results/acceptance-4c776b8/desktop-rendering-profile/report.json                                             15.48 kB │ gzip:     3.52 kB
+dist/docs/opus-5.5-canopy-host-review-2026-09-28.md                                                                    15.53 kB
+dist/test-results/desktop-rendering-profile-98556a7/report.json                                                        15.65 kB │ gzip:     3.59 kB
+dist/docs/planetary-orbit-implementation.md                                                                            15.80 kB
+dist/docs/physical-rivers-and-ground-detail.md                                                                         15.85 kB
+dist/test-results/desktop-rendering-profile-contended-98556a7/report.json                                              15.86 kB │ gzip:     3.67 kB
+dist/test-results/deploy-580936f/desktop-rendering/report.json                                                         15.92 kB │ gzip:     3.67 kB
+dist/docs/biosphere-lab-implementation-spec.md                                                                         16.47 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/run.mjs                                                   16.51 kB
+dist/src/tree-asset.ts                                                                                                 16.52 kB
+dist/docs/planet-validation-labs-2026-09-14.md                                                                         16.79 kB
+dist/docs/research-vegetation-rocks-2026-09-14.md                                                                      17.06 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/alpha-hash-followup.json                                  17.81 kB │ gzip:     3.05 kB
+dist/docs/research-species-and-simulation-2026-09-14.md                                                                17.89 kB
+dist/docs/opus-5.5-census-design-review-2026-09-28.md                                                                  18.07 kB
+dist/docs/opus-5.5-canopy-integration-review-2026-09-28.md                                                             18.22 kB
+dist/docs/research-planet-biome-generation-2026-09-14.md                                                               19.35 kB
+dist/test-results/tree-asset-lab-v7-color-a/color-comparison-v6-v7.json                                                19.66 kB │ gzip:     3.78 kB
+dist/docs/opus-5.5-desktop-realism-review-2026-09-27.md                                                                19.79 kB
+dist/docs/research-procedural-flora-geology-2026-09-14.md                                                              19.98 kB
+dist/docs/research-procedural-fauna-habitats-2026-09-14.md                                                             20.08 kB
+dist/guide/life.html                                                                                                   20.75 kB │ gzip:     6.87 kB
+dist/test-results/tree-ez-family-v1/run.mjs                                                                            21.19 kB
+dist/test-results/tree-foliage-temporal/isolated-final/mask/report.json                                                21.36 kB │ gzip:     2.52 kB
+dist/test-results/tree-reference-ez-oak/reference-manifest.json                                                        21.45 kB │ gzip:     4.74 kB
+dist/test-results/tree-foliage-temporal/isolated-final/hash/report.json                                                21.49 kB │ gzip:     2.68 kB
+dist/docs/research-terrain-river-validation-2026-09-14.md                                                              23.26 kB
+dist/docs/planet-realism-goal.md                                                                                       23.48 kB
+dist/docs/terrain-research-2026-09-13.md                                                                               23.68 kB
+dist/test-results/tree-leaf-transmission/browser-final/directional-back-T1.png                                         23.93 kB
+dist/test-results/canopy-proxy-75a7d3b/guide-link-check.json                                                           23.95 kB │ gzip:     1.46 kB
+dist/test-results/tree-asset-lab-v7-color-a/report.json                                                                23.99 kB │ gzip:     3.17 kB
+dist/docs/opus-5.5-canopy-review-2026-09-28.md                                                                         24.66 kB
+dist/assets/river-worker-B6OWmDg5.js                                                                                   24.94 kB
+dist/test-results/tree-asset-lab-v6/report.json                                                                        25.52 kB │ gzip:     3.49 kB
+dist/docs/living-worlds-and-time-roadmap.md                                                                            26.25 kB
+dist/docs/fable-5.1-plan-review.md                                                                                     28.55 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/report.json                                                30.77 kB │ gzip:     4.19 kB
+dist/README.md                                                                                                         31.12 kB
+dist/test-results/canopy-proxy-75a7d3b/silhouette/report.json                                                          33.70 kB │ gzip:     5.54 kB
+dist/test-results/forest-impostor/report.json                                                                          33.83 kB │ gzip:     5.61 kB
+dist/docs/procedural-biospheres-next-plan-2026-09-14.md                                                                34.23 kB
+dist/docs/desktop-realism-implementation-plan-2026-09-27.md                                                            35.44 kB
+dist/test-results/three-ez-impostor-reference/report.json                                                              35.76 kB │ gzip:     6.10 kB
+dist/test-results/tree-foliage-temporal/report.json                                                                    36.93 kB │ gzip:     4.64 kB
+dist/test-results/canopy-water-date-seek-c02ee95/failure.json                                                          39.63 kB │ gzip:     4.30 kB
+dist/test-results/tree-impostor-render-v2-hardware/browser-report.json                                                 42.18 kB │ gzip:     4.31 kB
+dist/test-results/tree-foliage-temporal/isolated-report/report.json                                                    43.09 kB │ gzip:     3.42 kB
+dist/test-results/tree-foliage-temporal/isolated-final/report.json                                                     50.01 kB │ gzip:     4.53 kB
+dist/test-results/forest-canopy-census-8c5ff7f/unit-tests.log                                                          54.58 kB
+dist/test-results/canopy-depth-ownership-accepted/report.json                                                          59.86 kB │ gzip:     6.58 kB
+dist/test-results/tree-leaf-transmission/actual-tree/family-f-corrected/report.json                                    59.98 kB │ gzip:     4.51 kB
+dist/test-results/deploy-580936f/guide/live-era-9.png                                                                  61.37 kB
+dist/test-results/canopy-water-date-seek-98556a7/report.json                                                           62.57 kB │ gzip:     3.97 kB
+dist/test-results/deploy-580936f/canopy-water-date-seek/report.json                                                    62.58 kB │ gzip:     3.99 kB
+dist/test-results/deploy-580936f/guide/live-era-5.png                                                                  63.23 kB
+dist/test-results/tree-leaf-transmission/browser-final/report.json                                                     72.33 kB │ gzip:     5.27 kB
+dist/assets/planet-worker-BpRIhApT.js                                                                                  75.82 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/yaw-continuity.json                                       79.27 kB │ gzip:     8.58 kB
+dist/assets/worker-Df1A3ASA.js                                                                                         80.98 kB
+dist/docs/time-and-coordinates-contract.md                                                                            113.34 kB
+dist/assets/forest-census-worker-CpdaZJHJ.js                                                                          138.03 kB
+dist/test-results/deploy-580936f/guide/live-era-0.png                                                                 164.94 kB
+dist/test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/hero.png                    204.18 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/hero.png                                204.59 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/hero.png                              204.66 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/hero.png                       206.47 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/hero.png                       207.37 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/hero.png                              207.44 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/report.json                                              212.44 kB │ gzip:    27.39 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/wire.png                                214.36 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/wire.png                              214.37 kB
+dist/test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/wire.png                    214.50 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/wire.png                       218.51 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/wire.png                       218.77 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/wire.png                              218.78 kB
+dist/test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/front.png                   237.37 kB
+dist/test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/back.png                    237.46 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/back.png                                237.70 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/back.png                              237.77 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/front.png                               238.30 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/front.png                             238.37 kB
+dist/test-results/three-ez-impostor-reference/back-impostor.png                                                       239.23 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/right.png                      242.12 kB
+dist/test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/right.png                   243.51 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/right.png                      243.56 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/right.png                             243.64 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/right.png                               243.74 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/right.png                             243.81 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/back.png                       245.48 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/back-impostor.png                                        245.96 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/back.png                       246.60 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/back.png                              246.67 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/front.png                      246.86 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/front.png                      247.97 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/front.png                             248.05 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/top.png                        253.91 kB
+dist/test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/top.png                     257.13 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/top.png                        258.30 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/top.png                               258.38 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/top.png                                 258.94 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/top.png                               259.01 kB
+dist/test-results/three-ez-impostor-reference/front-impostor.png                                                      295.59 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/front-impostor.png                                       301.49 kB
+dist/test-results/three-ez-impostor-reference/top-impostor.png                                                        302.24 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/top-impostor.png                                         310.18 kB
+dist/test-results/deploy-580936f/guide/time-390.png                                                                   346.60 kB
+dist/test-results/deploy-580936f/guide/terrain-390.png                                                                356.36 kB
+dist/test-results/deploy-580936f/guide/terrain-1440.png                                                               377.26 kB
+dist/test-results/tree-foliage-temporal/mask/yaw-0.35deg.png                                                          402.79 kB
+dist/test-results/tree-foliage-temporal/mask/yaw-0.70deg.png                                                          403.86 kB
+dist/test-results/tree-foliage-temporal/mask/wind-1750000000.png                                                      405.20 kB
+dist/test-results/tree-foliage-temporal/mask/wind-0-a.png                                                             405.36 kB
+dist/test-results/tree-foliage-temporal/mask/wind-0-b.png                                                             405.36 kB
+dist/test-results/tree-foliage-temporal/mask/wind-7s.png                                                              405.36 kB
+dist/test-results/tree-foliage-temporal/mask/wind-neg7s.png                                                           405.36 kB
+dist/test-results/tree-foliage-temporal/mask/yaw-0.00deg.png                                                          405.36 kB
+dist/test-results/tree-foliage-temporal/mask/yaw-1.05deg.png                                                          405.96 kB
+dist/test-results/tree-foliage-temporal/mask/lod1-front-shadows-on.png                                                406.43 kB
+dist/test-results/tree-reference-ez-oak/atlas-oak22m-scaled.png                                                       413.83 kB
+dist/test-results/tree-foliage-temporal/mask/lod0-front-shadows-on.png                                                415.83 kB
+dist/test-results/tree-asset-lab-v6/lod0-population3.png                                                              416.31 kB
+dist/test-results/tree-foliage-temporal/mask/lod1-back-shadows-on.png                                                 419.34 kB
+dist/test-results/tree-foliage-temporal/mask/lod0-back-shadows-on.png                                                 420.75 kB
+dist/test-results/deploy-580936f/guide/time-1440.png                                                                  424.05 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/top-mid.png                                              427.24 kB
+dist/test-results/tree-foliage-temporal/hash/lod1-front-shadows-on.png                                                433.29 kB
+dist/test-results/tree-foliage-temporal/hash/yaw-0.35deg.png                                                          433.37 kB
+dist/test-results/tree-foliage-temporal/hash/yaw-0.70deg.png                                                          434.68 kB
+dist/test-results/tree-foliage-temporal/hash/wind-1750000000.png                                                      435.43 kB
+dist/test-results/tree-foliage-temporal/hash/wind-0-a.png                                                             435.58 kB
+dist/test-results/tree-foliage-temporal/hash/wind-0-b.png                                                             435.58 kB
+dist/test-results/tree-foliage-temporal/hash/wind-7s.png                                                              435.58 kB
+dist/test-results/tree-foliage-temporal/hash/wind-neg7s.png                                                           435.58 kB
+dist/test-results/tree-foliage-temporal/hash/yaw-0.00deg.png                                                          435.58 kB
+dist/test-results/tree-foliage-temporal/hash/yaw-1.05deg.png                                                          436.36 kB
+dist/test-results/tree-foliage-temporal/hash/lod0-front-shadows-on.png                                                438.00 kB
+dist/test-results/tree-foliage-temporal/hash/lod0-back-shadows-on.png                                                 450.00 kB
+dist/test-results/tree-foliage-temporal/hash/lod1-back-shadows-on.png                                                 451.79 kB
+dist/test-results/tree-reference-ez-oak/atlas-ash16m-scaled.png                                                       455.31 kB
+dist/test-results/tree-reference-ez-oak/atlas-full-close.png                                                          456.24 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/back-mid.png                                             462.60 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/top-mesh.png                                             489.75 kB
+dist/test-results/three-ez-impostor-reference/top-mesh.png                                                            489.75 kB
+dist/test-results/deploy-580936f/guide/index-390.png                                                                  490.94 kB
+dist/test-results/tree-asset-lighting-v6/center-16m-back-shadows-off.png                                              495.16 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/lod1-population3.png                                      499.35 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/lod0-population3.png                                      506.98 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/front-mid.png                                            511.26 kB
+dist/test-results/tree-reference-ez-oak/atlas-oak10m-scaled.png                                                       516.29 kB
+dist/test-results/tree-asset-lighting-v6/center-16m-back-shadows-on.png                                               519.77 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/back-mesh.png                                            523.70 kB
+dist/test-results/three-ez-impostor-reference/back-mesh.png                                                           523.70 kB
+dist/test-results/tree-reference-ez-oak/ez-upstream-lod2-close.png                                                    536.97 kB
+dist/test-results/background-hydrology-regression/baseline-37f0e89-failure.png                                        537.84 kB
+dist/test-results/tree-reference-ez-oak/ez-wood-reduced-close.png                                                     543.99 kB
+dist/test-results/tree-reference-ez-oak/ez-full-source-normals-close.png                                              544.61 kB
+dist/test-results/tree-reference-ez-oak/ez-upstream-lod1-close.png                                                    553.64 kB
+dist/test-results/tree-asset-lighting-v6/center-16m-front-shadows-off.png                                             557.06 kB
+dist/test-results/tree-asset-lighting-v6/center-16m-front-shadows-on.png                                              572.36 kB
+dist/test-results/tree-reference-ez-oak/ez-oak22m-full-geometric-normals.png                                          576.00 kB
+dist/test-results/deploy-580936f/guide/index-1440.png                                                                 586.18 kB
+dist/test-results/tree-reference-ez-oak/ez-full-geometric-normals-close.png                                           592.46 kB
+dist/test-results/three-ez-impostor-reference/native-map-fix/front-mesh.png                                           612.59 kB
+dist/test-results/three-ez-impostor-reference/front-mesh.png                                                          612.59 kB
+dist/test-results/fauna-closeup-6b87e13/01-fauna-closeup.png                                                          614.44 kB
+dist/test-results/fauna-closeup-6b87e13/02-fauna-paused-repeat.png                                                    614.45 kB
+dist/test-results/tree-reference-ez-oak/ez-oak10m-full-geometric-normals.png                                          616.86 kB
+dist/test-results/deploy-580936f/canopy-flight/settled.png                                                            633.94 kB
+dist/test-results/deploy-580936f/canopy-flight/walking-lateral-300m.png                                               633.94 kB
+dist/test-results/canopy-flight-98556a7/settled.png                                                                   653.06 kB
+dist/test-results/canopy-flight-98556a7/walking-lateral-300m.png                                                      653.06 kB
+dist/test-results/canopy-flight-post-alpha-fix-rerun/report.json                                                      662.38 kB │ gzip:    21.89 kB
+dist/test-results/tree-asset-lighting-v7-color-a/center-16m-back-shadows-off.png                                      662.53 kB
+dist/test-results/tree-reference-ez-oak/ez-ash16m-full-geometric-normals.png                                          667.45 kB
+dist/test-results/canopy-flight-post-alpha-fix-rerun/settled.png                                                      667.64 kB
+dist/test-results/acceptance-4c776b8/canopy-flight-final/settled.png                                                  667.75 kB
+dist/test-results/acceptance-4c776b8/canopy-flight-final/walking-lateral-300m.png                                     667.75 kB
+dist/test-results/forest-impostor-field/impostor-120m.png                                                             667.99 kB
+dist/test-results/acceptance-4c776b8/canopy-flight-final/report.json                                                  668.05 kB │ gzip:    22.83 kB
+dist/test-results/acceptance-4c776b8/canopy-flight-final/walking-turned.png                                           670.73 kB
+dist/test-results/canopy-flight-98556a7/walking-turned.png                                                            670.78 kB
+dist/test-results/deploy-580936f/canopy-flight/walking-turned.png                                                     673.74 kB
+dist/test-results/canopy-flight-98556a7/report.json                                                                   683.87 kB │ gzip:    24.25 kB
+dist/test-results/deploy-580936f/canopy-flight/report.json                                                            685.03 kB │ gzip:    24.25 kB
+dist/test-results/forest-impostor-field/reference-120m.png                                                            696.53 kB
+dist/test-results/deploy-580936f/canopy-flight/walking-close.png                                                      709.34 kB
+dist/test-results/canopy-flight-post-alpha-fix-rerun/walking-close.png                                                709.81 kB
+dist/test-results/acceptance-4c776b8/canopy-flight-final/walking-close.png                                            712.92 kB
+dist/test-results/canopy-flight-98556a7/walking-close.png                                                             718.55 kB
+dist/test-results/acceptance-4c776b8/desktop-rendering-profile/cloud-aa-0.png                                         728.43 kB
+dist/test-results/acceptance-4c776b8/desktop-rendering-profile/near-ground-warmed.png                                 728.43 kB
+dist/test-results/tree-reference-ez-oak/comparison-oak22m.png                                                         753.98 kB
+dist/test-results/tree-asset-lighting-v7-color-a/center-16m-front-shadows-on.png                                      763.11 kB
+dist/test-results/acceptance-4c776b8/desktop-rendering-profile/cloud-aa-2.png                                         786.00 kB
+dist/test-results/desktop-realism-26b41f5/population-flight/01-contact.png                                            793.48 kB
+dist/test-results/deploy-e8a848d/desktop-rendering-acceptance/near-ground-warmed.png                                  794.42 kB
+dist/test-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-0.png                                          794.42 kB
+dist/test-results/desktop-rendering-profile-98556a7/cloud-aa-0.png                                                    796.57 kB
+dist/test-results/desktop-rendering-profile-98556a7/near-ground-warmed.png                                            796.57 kB
+dist/test-results/tree-reference-ez-oak/comparison.png                                                                797.46 kB
+dist/test-results/desktop-rendering-6b87e13/forest-turned.png                                                         812.56 kB
+dist/test-results/acceptance-4c776b8/desktop-rendering-profile/forest-turned.png                                      813.21 kB
+dist/test-results/tree-asset-lab-v7-color-a/lod1-population3.png                                                      826.35 kB
+dist/test-results/deploy-580936f/canopy-flight/flight-lateral.png                                                     827.92 kB
+dist/test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-back-on.png                              828.24 kB
+dist/test-results/canopy-flight-98556a7/flight-lateral.png                                                            830.31 kB
+dist/test-results/acceptance-4c776b8/canopy-flight-final/flight-lateral.png                                           830.42 kB
+dist/test-results/tree-asset-lab-v7-color-a/lod0-population3.png                                                      833.51 kB
+dist/test-results/acceptance-4c776b8/desktop-rendering-profile/cloud-aa-4.png                                         834.43 kB
+dist/test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-back-off.png                             841.25 kB
+dist/test-results/deploy-e8a848d/desktop-rendering-acceptance/forest-turned.png                                       842.94 kB
+dist/test-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-2.png                                          844.02 kB
+dist/test-results/desktop-rendering-profile-98556a7/cloud-aa-2.png                                                    849.71 kB
+dist/test-results/deploy-580936f/canopy-flight/flight-near-ground.png                                                 854.17 kB
+dist/test-results/desktop-realism-26b41f5/population-flight/02-fauna-low-flight.png                                   854.84 kB
+dist/test-results/deploy-e8a848d/forest-selection-cache-browser/after-move.png                                        856.73 kB
+dist/test-results/deploy-6f7cb21/desktop-rendering-acceptance/cloud-aa-0.png                                          856.94 kB
+dist/test-results/deploy-6f7cb21/desktop-rendering-acceptance/near-ground-warmed.png                                  857.00 kB
+dist/test-results/canopy-flight-post-alpha-fix-rerun/flight-near-ground.png                                           857.01 kB
+dist/test-results/canopy-runtime-aerial/forest-warmed.png                                                             857.96 kB
+dist/test-results/canopy-runtime/forest-warmed.png                                                                    858.02 kB
+dist/test-results/desktop-rendering-profile-98556a7/forest-turned.png                                                 858.28 kB
+dist/test-results/deploy-6f7cb21/forest-selection-cache-browser/after-move.png                                        858.71 kB
+dist/test-results/acceptance-4c776b8/canopy-flight-final/flight-near-ground.png                                       858.79 kB
+dist/test-results/deploy-114a16e/desktop-rendering-acceptance/near-ground-warmed.png                                  858.95 kB
+dist/test-results/deploy-114a16e/desktop-rendering-acceptance/cloud-aa-0.png                                          858.95 kB
+dist/test-results/deploy-580936f/desktop-rendering/cloud-aa-0.png                                                     859.02 kB
+dist/test-results/deploy-580936f/desktop-rendering/near-ground-warmed.png                                             859.02 kB
+dist/test-results/deploy-580936f/desktop-rendering/forest-turned.png                                                  859.93 kB
+dist/test-results/canopy-flight-98556a7/flight-near-ground.png                                                        860.07 kB
+dist/test-results/canopy-runtime-aerial/forest-turned.png                                                             861.11 kB
+dist/test-results/canopy-runtime/forest-turned.png                                                                    865.32 kB
+dist/test-results/deploy-6f7cb21/desktop-rendering-acceptance/forest-turned.png                                       868.56 kB
+dist/test-results/deploy-114a16e/desktop-rendering-acceptance/forest-turned.png                                       873.42 kB
+dist/test-results/desktop-rendering-6b87e13/near-ground-warmed.png                                                    876.31 kB
+dist/test-results/desktop-rendering-6b87e13/cloud-aa-0.png                                                            876.31 kB
+dist/test-results/canopy-flight-98556a7/flight-turned.png                                                             879.69 kB
+dist/test-results/acceptance-4c776b8/canopy-flight-final/flight-turned.png                                            880.87 kB
+dist/test-results/deploy-580936f/canopy-flight/flight-turned.png                                                      883.26 kB
+dist/test-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-4.png                                          890.14 kB
+dist/test-results/tree-reference-ez-oak/comparison-ash16m.png                                                         892.03 kB
+dist/test-results/desktop-rendering-profile-98556a7/cloud-aa-4.png                                                    898.25 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/close-lod1-front-shadows-off.png                          908.37 kB
+dist/test-results/tree-reference-ez-oak/comparison-oak10m.png                                                         919.96 kB
+dist/test-results/deploy-6f7cb21/desktop-rendering-acceptance/cloud-aa-2.png                                          921.18 kB
+dist/test-results/deploy-114a16e/desktop-rendering-acceptance/cloud-aa-2.png                                          921.23 kB
+dist/test-results/deploy-580936f/desktop-rendering/cloud-aa-2.png                                                     929.84 kB
+dist/test-results/desktop-rendering-6b87e13/cloud-aa-2.png                                                            939.98 kB
+dist/test-results/desktop-realism-26b41f5/forest-hardware/forest-turned.png                                           968.14 kB
+dist/test-results/deploy-114a16e/desktop-rendering-acceptance/cloud-aa-4.png                                          977.35 kB
+dist/test-results/deploy-6f7cb21/desktop-rendering-acceptance/cloud-aa-4.png                                          979.03 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/date1750000000.png                                        985.89 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/date0-a.png                                               986.39 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/date0-b.png                                               986.39 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/date7000000000.png                                        986.39 kB
+dist/test-results/desktop-realism-26b41f5/forest-hardware/forest-warmed.png                                           986.43 kB
+dist/test-results/deploy-580936f/desktop-rendering/cloud-aa-4.png                                                     991.20 kB
+dist/test-results/desktop-rendering-6b87e13/cloud-aa-4.png                                                            998.14 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/close-lod1-back-shadows-off.png                         1,022.17 kB
+dist/test-results/canopy-water-date-seek-98556a7/water--4500m-2.png                                                 1,038.73 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/close-lod0-front-shadows-off.png                        1,038.88 kB
+dist/test-results/deploy-580936f/canopy-water-date-seek/water--4500m-2.png                                          1,042.74 kB
+dist/test-results/canopy-water-date-seek-98556a7/water-minus-4500m.png                                              1,047.59 kB
+dist/test-results/deploy-580936f/canopy-water-date-seek/water-minus-4500m.png                                       1,052.82 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/close-lod0-back-shadows-off.png                         1,107.40 kB
+dist/test-results/forest-impostor-field/reference-1200m.png                                                         1,140.76 kB
+dist/test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-front-on.png                           1,148.87 kB
+dist/test-results/tree-leaf-transmission/actual-tree/family-f-corrected/lod0-front-off.png                          1,225.94 kB
+dist/test-results/forest-impostor-field/impostor-1200m.png                                                          1,229.00 kB
+dist/test-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-lod1-calibrated/render-sheet.png            1,292.89 kB
+dist/test-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-blend-calibrated/render-sheet.png           1,294.06 kB
+dist/test-results/tree-author-v6/atlas-tree-smoke-1790570381707-v6final-lod0-calibrated/render-sheet.png            1,294.11 kB
+dist/test-results/tree-author-v3/atlas-tree-smoke-1790566084092-render-sheet-bounded-wire/render-sheet.png          1,298.80 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-blend-review/render-sheet.png                    1,302.70 kB
+dist/test-results/tree-author-v4/atlas-tree-smoke-1790566779960-v4-glb-review/render-sheet.png                      1,303.03 kB
+dist/test-results/canopy-water-date-seek-98556a7/water--4475m-1.png                                                 1,317.85 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod1-ordered-review/render-sheet.png             1,321.15 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-lod0-ordered-review/render-sheet.png             1,329.31 kB
+dist/test-results/tree-author-v5/atlas-tree-smoke-1790568688082-v5-blend-review/render-sheet.png                    1,329.63 kB
+dist/test-results/deploy-580936f/canopy-water-date-seek/water--4475m-1.png                                          1,335.67 kB
+dist/test-results/canopy-water-date-seek-c02ee95/failure.png                                                        1,342.30 kB
+dist/test-results/forest-transfer-23de0b9/desktop-rendering-production-preview/near-ground-warmed.png               1,541.36 kB
+dist/test-results/forest-transfer-23de0b9/desktop-rendering-baseline-66c-production-preview/near-ground-warmed.png  1,543.18 kB
+dist/test-results/forest-transfer-23de0b9/browser-movement-hardware/after-move.png                                  1,543.32 kB
+dist/test-results/forest-selection-66c7728/browser-movement-lateral-hardware/after-move.png                         1,545.84 kB
+dist/test-results/acceptance-4c776b8/desktop-rendering-profile/near-ground-resized-2560x1440.png                    1,665.28 kB
+dist/test-results/acceptance-4c776b8/desktop-rendering-profile/cloud-aa-4-2560x1440.png                             1,800.45 kB
+dist/test-results/desktop-rendering-profile-98556a7/near-ground-resized-2560x1440.png                               1,821.81 kB
+dist/test-results/deploy-e8a848d/desktop-rendering-acceptance/near-ground-resized-2560x1440.png                     1,842.40 kB
+dist/test-results/deploy-580936f/desktop-rendering/near-ground-resized-2560x1440.png                                1,933.26 kB
+dist/test-results/desktop-rendering-profile-98556a7/cloud-aa-4-2560x1440.png                                        1,937.29 kB
+dist/test-results/deploy-e8a848d/desktop-rendering-acceptance/cloud-aa-4-2560x1440.png                              1,949.25 kB
+dist/test-results/deploy-6f7cb21/desktop-rendering-acceptance/near-ground-resized-2560x1440.png                     1,982.13 kB
+dist/test-results/deploy-114a16e/desktop-rendering-acceptance/near-ground-resized-2560x1440.png                     1,989.18 kB
+dist/test-results/desktop-rendering-6b87e13/near-ground-resized-2560x1440.png                                       2,043.07 kB
+dist/test-results/deploy-580936f/desktop-rendering/cloud-aa-4-2560x1440.png                                         2,083.26 kB
+dist/test-results/deploy-6f7cb21/desktop-rendering-acceptance/cloud-aa-4-2560x1440.png                              2,120.09 kB
+dist/test-results/deploy-114a16e/desktop-rendering-acceptance/cloud-aa-4-2560x1440.png                              2,130.36 kB
+dist/test-results/desktop-rendering-6b87e13/cloud-aa-4-2560x1440.png                                                2,183.02 kB
+dist/test-results/tree-asset-lab-v6/lod0-population192.png                                                          2,740.54 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/lod0-population192.png                                  2,969.12 kB
+dist/test-results/tree-ez-family-v1/candidate-f-canvasfinal/lod1-population192.png                                  3,108.54 kB
+dist/test-results/tree-asset-lab-v7-color-a/lod1-population192.png                                                  6,485.34 kB
+dist/test-results/tree-asset-lab-v7-color-a/lod0-population192.png                                                  6,589.98 kB
+dist/assets/creatures-Dz1A-1jE.css                                                                                      3.77 kB │ gzip:     1.38 kB
+dist/assets/biomes-DLMe64wO.css                                                                                         4.74 kB │ gzip:     1.74 kB
+dist/assets/biosphere-Br8XVK-7.css                                                                                      5.96 kB │ gzip:     2.08 kB
+dist/assets/theme-_FAD6hYY.css                                                                                          7.44 kB │ gzip:     2.45 kB
+dist/assets/atlas-72-JTDok.css                                                                                         12.84 kB │ gzip:     3.87 kB
+dist/assets/guide-time-JsQuz3LV.js                                                                                      1.10 kB │ gzip:     0.57 kB
+dist/assets/world-time-C2zk4ykx.js                                                                                      1.47 kB │ gzip:     0.82 kB
+dist/assets/clouds-CGGXURlv.js                                                                                          3.12 kB │ gzip:     1.52 kB
+dist/assets/ground-walker-B9BC5jac.js                                                                                   4.87 kB │ gzip:     1.81 kB
+dist/assets/catalog-Cs3U8xJB.js                                                                                         8.13 kB │ gzip:     3.93 kB
+dist/assets/OrbitControls-C33he78E.js                                                                                  19.14 kB │ gzip:     4.35 kB
+dist/assets/creatures-z4zMnOp4.js                                                                                      20.91 kB │ gzip:     8.91 kB
+dist/assets/volumetric-clouds-8SQVk-_2.js                                                                              21.72 kB │ gzip:     8.59 kB
+dist/assets/biosphere-model-BxOjjDxI.js                                                                                22.88 kB │ gzip:     8.11 kB
+dist/assets/biosphere-CVMT8gpe.js                                                                                      24.26 kB │ gzip:     9.83 kB
+dist/assets/biomes-B2FSz8AO.js                                                                                         26.12 kB │ gzip:     9.70 kB
+dist/assets/time-nav-zNzZqn8I.js                                                                                       86.65 kB │ gzip:    31.57 kB
+dist/assets/three.core-DYul8iZ1.js                                                                                    187.90 kB │ gzip:    52.91 kB
+dist/assets/three.module-NATEk4NP.js                                                                                  346.27 kB │ gzip:    87.39 kB
+dist/assets/atlas-xbqO9dOd.js                                                                                         351.10 kB │ gzip:   118.71 kB
+dist/assets/rapier-physics-iRel_T-y.js                                                                              2,853.14 kB │ gzip: 1,077.80 kB
+
+(!) Some chunks are larger than 800 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.60s

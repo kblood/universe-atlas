@@ -67,6 +67,60 @@ test('dirty uploads keep separated edits separate and preallocate instance colou
     assert.equal(f.meshes[0].instanceMatrix.updateRanges.reduce((n,r)=>n+r.count,0),32);
   }finally{f.dispose();}
 });
+
+test('owned instance attributes clear consumed upload ranges before the next sparse edit',()=>{
+  const {f,eye,step}=fixture();
+  const moveCellToDistance=(cell,distance)=>{
+    const angle=distance/body.radiusM;cell.direction=[Math.sin(angle),0,Math.cos(angle)];cell.distanceM=distance;
+  };
+  try{
+    // Exercise the near, far, and canopy instance batches in one update.
+    for(let i=0;i<6;i++)moveCellToDistance(f.wanted[i],i<2?8+i*8:i<5?120+(i-2)*40:600);
+    f.wanted[5].canopyRepresentative=true;
+    step();
+    const owned=[];
+    for(const [batch,mesh] of [...f.meshes,f.canopy].entries()){
+      const attrs=[
+        ['matrix',mesh.instanceMatrix],
+        ['color',mesh.instanceColor],
+        ['coverage',mesh.geometry.getAttribute('instanceCoverage')],
+        ['seed',mesh.geometry.getAttribute('instanceForestSeed')],
+      ];
+      assert.ok(mesh.count>0,`batch ${batch} has an initialized instance`);
+      for(const [name,attribute] of attrs){
+        assert.ok(attribute.updateRanges.length>0,`batch ${batch} ${name} has pending initial data`);
+        assert.equal(typeof attribute.onUploadCallback,'function',`batch ${batch} ${name} has an upload callback`);
+        owned.push({batch,name,attribute});
+      }
+    }
+
+    // CPU-only simulation of Three's onUpload callback after initial bufferData.
+    for(const {batch,name,attribute} of owned){
+      const version=attribute.version;
+      attribute.onUploadCallback();
+      assert.deepEqual(attribute.updateRanges,[],`initial upload clears batch ${batch} ${name}`);
+      assert.equal(attribute.version,version,`callback bookkeeping does not schedule a new upload for ${name}`);
+    }
+
+    const old=f.cache.get('fixture/0');f.cache.set('fixture/0',{...old,height:old.height+.1});
+    step();
+    const nearSlot=f.updates[0].slots.get('fixture/0'),rangesFor=(mesh,name)=>{
+      const attribute=name==='matrix'?mesh.instanceMatrix:name==='color'?mesh.instanceColor:mesh.geometry.getAttribute(name==='coverage'?'instanceCoverage':'instanceForestSeed');
+      return attribute.updateRanges.map(range=>({...range}));
+    };
+    const near=f.meshes[0];
+    assert.deepEqual(rangesFor(near,'matrix'),[{start:nearSlot*16,count:16}]);
+    assert.deepEqual(rangesFor(near,'color'),[{start:nearSlot*3,count:3}]);
+    assert.deepEqual(rangesFor(near,'seed'),[{start:nearSlot,count:1}]);
+    assert.deepEqual(rangesFor(near,'coverage'),[],'unchanged coverage does not get re-uploaded');
+    for(const mesh of [f.meshes[1],f.canopy])for(const name of ['matrix','color','coverage','seed'])
+      assert.deepEqual(rangesFor(mesh,name),[],`untouched ${name} batch remains clean`);
+    assert.equal(f.diagnostics().matrixWrites,1);
+    assert.equal(f.diagnostics().colorWrites,1);
+    assert.equal(f.diagnostics().coverageWrites,0);
+  }finally{f.dispose();}
+});
+
 test('selection worker gets one bounded restart and exposes permanent fallback',()=>{
   const OriginalWorker=globalThis.Worker,workers=[];
   globalThis.Worker=class {constructor(){workers.push(this);}terminate(){}postMessage(){}};

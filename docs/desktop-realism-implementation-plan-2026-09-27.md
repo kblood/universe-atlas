@@ -249,6 +249,14 @@ GLB validation is not canopy or LOD acceptance, and its runtime browser lab
 does not change the deployed default. Live checkpoint `cc25635` still draws
 the legacy tree shapes. No asset from this adapter has been adopted in the game.
 
+The [instance streaming stage](tree-instance-streaming-2026-09-28.md) now
+shares the forest's bounded update-range helper with the detailed adapter,
+skips unchanged Float32 transforms/height/phase, and supports separate bark and
+leaf tints without per-tree materials. Owned instance buffers clear consumed
+ranges after their initial GPU upload as well as later updates. This is
+integration preparation: dated species, dimension agreement across the far
+canopy, realistic asset handoff and forest-scale cost remain open.
+
 The [leaf diffuse-transmission note](leaf-diffuse-transmission-2026-09-28.md)
 records an opt-in shader prototype. Its independent Opus review and 13 focused
 CPU/GLB checks pass; synthetic calibration and corrected family-F tree browser

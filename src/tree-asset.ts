@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {phaseFromPeriod} from './world-time.ts';
 import {installLeafTransmission,type LeafTransmissionOptions} from './tree-leaf-transmission.ts';
+import {InstanceUpdateRanges} from './instance-update-ranges.ts';
 
 /** Experimental author-6 adapter. Assets are supplied explicitly; this does not
  * replace the canonical forest or invent a second species catalogue. */
@@ -137,10 +138,20 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
         if(disposed)throw new Error('Tree family is disposed');
         if(!Number.isInteger(capacity)||capacity<1||capacity>4096)throw new Error('Invalid tree capacity');
         const group=new THREE.Group(),tree=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2).setUsage(THREE.DynamicDrawUsage);
+        // Three clears ranges after bufferSubData, but not initial bufferData.
+        // Clear only once the GPU has consumed this owned attribute, including
+        // its first upload; hidden batches keep their pending ranges intact.
+        tree.onUpload(()=>tree.clearUpdateRanges());
+        const treeUpdates=new InstanceUpdateRanges();
+        const matrixUpdates=[new InstanceUpdateRanges(),new InstanceUpdateRanges()];
+        const colorUpdates=[new InstanceUpdateRanges(),new InstanceUpdateRanges()];
         const meshes=lods[lod].map(source=>{
           const geometry=source.geometry.clone();geometry.setAttribute('instanceTree',tree);
           const mesh=new THREE.InstancedMesh(geometry,source.material,capacity);mesh.count=0;
           mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.castShadow=true;mesh.receiveShadow=true;
+          mesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3).fill(1),3).setUsage(THREE.DynamicDrawUsage);
+          mesh.instanceMatrix.onUpload(()=>mesh.instanceMatrix.clearUpdateRanges());
+          mesh.instanceColor.onUpload(()=>mesh.instanceColor!.clearUpdateRanges());
           // Caller can install conservative curved-world bounds after integration.
           // Shader scale/wind invalidates Three's unmodified geometry bounds.
           mesh.frustumCulled=false;
@@ -165,8 +176,36 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
             // Phase stays representable as Float32 even for a caller's very
             // large finite offset; the absolute universe date stays BigInt.
             const tau=2*Math.PI;phaseOffset=((phaseOffset%tau)+tau)%tau;
-            tree.setXY(index,heightM/TREE_REFERENCE_HEIGHT_M,phaseOffset);tree.needsUpdate=true;
-            for(const mesh of meshes){mesh.setMatrixAt(index,matrix);mesh.instanceMatrix.needsUpdate=true;mesh.count=Math.max(mesh.count,index+1);}
+            const scale=Math.fround(heightM/TREE_REFERENCE_HEIGHT_M),offset=Math.fround(phaseOffset);
+            const newSlot=index===meshes[0].count;
+            if(tree.getX(index)!==scale||tree.getY(index)!==offset){
+              tree.setXY(index,scale,offset);treeUpdates.include(index,2);treeUpdates.flush(tree);
+            }
+            for(const [part,mesh] of meshes.entries()){
+              const color=mesh.instanceColor!;
+              if(newSlot&&(color.getX(index)!==1||color.getY(index)!==1||color.getZ(index)!==1)){
+                color.setXYZ(index,1,1,1);colorUpdates[part].include(index,3);colorUpdates[part].flush(color);
+              }
+              const base=index*16,values=mesh.instanceMatrix.array;
+              if(matrix.elements.some((value,component)=>values[base+component]!==Math.fround(value))){
+                mesh.setMatrixAt(index,matrix);matrixUpdates[part].include(index,16);matrixUpdates[part].flush(mesh.instanceMatrix);
+              }
+              mesh.count=Math.max(mesh.count,index+1);
+            }
+          },
+          /** Linear RGB multipliers over the authored bark and leaf textures.
+           * Each part keeps its shared material; only this slot's color changes.
+           * Fresh or re-grown slots are white. Call when a retained slot changes tree identity;
+           * transform/rebase updates deliberately retain its current colors. */
+          setAppearance(index:number,bark:readonly[number,number,number],foliage:readonly[number,number,number]){
+            const colors=[bark,foliage];
+            if(batchDisposed||!Number.isInteger(index)||index<0||index>=meshes[0].count||colors.some(color=>!Array.isArray(color)||color.length!==3||[0,1,2].some(i=>!Number.isFinite(color[i])||color[i]<0||color[i]>2)))throw new Error('Tree appearance requires an initialized slot and linear RGB multipliers in [0,2]');
+            for(const [part,mesh] of meshes.entries()){
+              const attribute=mesh.instanceColor!,color=colors[part],base=index*3;
+              if(color.some((value,component)=>attribute.array[base+component]!==Math.fround(value))){
+                attribute.setXYZ(index,...color);colorUpdates[part].include(index,3);colorUpdates[part].flush(attribute);
+              }
+            }
           },
           dispose(){if(batchDisposed)return;batchDisposed=true;activeBatches--;for(const mesh of meshes){mesh.geometry.dispose();mesh.customDepthMaterial?.dispose();mesh.customDistanceMaterial?.dispose();mesh.dispose();}group.clear();group.removeFromParent();},
         };

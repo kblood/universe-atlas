@@ -1,0 +1,647 @@
+{
+  "candidate": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f",
+  "lod0": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f\\atlas-ez-oak.glb",
+  "lod1": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f\\atlas-ez-oak.lod1.glb",
+  "url": "http://127.0.0.1:5197/",
+  "commit": "550aaf99c3189b2591dea53789edcc64f7b27ad7",
+  "sourceHashes": {
+    "src/tree-asset.ts": "2c9afe40c4d525084ab762f62186578e3333d6f0b66b74fb5e335e4eefa3fc74",
+    "src/instance-update-ranges.ts": "6ee7fd00142af2e3938fd8480c0bf46b80f7fb71c5492538f7c63c704631ac29",
+    "src/tree-asset-lab.ts": "34c713baeced84239c2a3b93c68f0de8e67fb1d43583a2eaffd872ad8522abe4"
+  },
+  "viewport": {
+    "width": 1440,
+    "height": 1000,
+    "deviceScaleFactor": 1
+  },
+  "hardwareEnabled": true,
+  "glbHashes": {
+    "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f\\atlas-ez-oak.glb": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+    "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f\\atlas-ez-oak.lod1.glb": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9"
+  },
+  "errors": [],
+  "failedRequests": [],
+  "failures": [
+    {
+      "name": "instance height and wind phase are stored separately from the transform",
+      "detail": [
+        1.03125,
+        0.4000000059604645,
+        0.6875,
+        0.10000000149011612
+      ]
+    },
+    {
+      "name": "mask 0 preserves the expected MASK/HASH shadow path",
+      "detail": [
+        {
+          "alphaTest": 0,
+          "alphaHash": false
+        },
+        {
+          "alphaTest": 0.5,
+          "alphaHash": false
+        }
+      ]
+    },
+    {
+      "name": "mask 0.35 preserves the expected MASK/HASH shadow path",
+      "detail": [
+        {
+          "alphaTest": 0,
+          "alphaHash": false
+        },
+        {
+          "alphaTest": 0.5,
+          "alphaHash": false
+        }
+      ]
+    },
+    {
+      "name": "hash 0 preserves the expected MASK/HASH shadow path",
+      "detail": [
+        {
+          "alphaTest": 0,
+          "alphaHash": false
+        },
+        {
+          "alphaTest": 0,
+          "alphaHash": true
+        }
+      ]
+    },
+    {
+      "name": "hash 0.35 preserves the expected MASK/HASH shadow path",
+      "detail": [
+        {
+          "alphaTest": 0,
+          "alphaHash": false
+        },
+        {
+          "alphaTest": 0,
+          "alphaHash": true
+        }
+      ]
+    }
+  ],
+  "tests": {
+    "freshBatch": {
+      "white": [
+        [
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1
+        ]
+      ],
+      "count": [
+        192,
+        192
+      ],
+      "sharedLODMaterials": [
+        true,
+        true
+      ],
+      "initializedRanges": [
+        {
+          "matrix": [
+            {
+              "start": 16,
+              "count": 3056
+            }
+          ],
+          "tree": [
+            {
+              "start": 0,
+              "count": 384
+            }
+          ],
+          "color": []
+        },
+        {
+          "matrix": [
+            {
+              "start": 16,
+              "count": 3056
+            }
+          ],
+          "tree": [
+            {
+              "start": 0,
+              "count": 384
+            }
+          ],
+          "color": []
+        }
+      ],
+      "afterFirstUpload": [
+        {
+          "matrix": [],
+          "tree": [],
+          "color": []
+        },
+        {
+          "matrix": [],
+          "tree": [],
+          "color": []
+        }
+      ]
+    },
+    "unchanged": {
+      "versions": {
+        "before": {
+          "matrix": [
+            191,
+            191
+          ],
+          "tree": 192,
+          "color": [
+            0,
+            0
+          ]
+        },
+        "after": {
+          "matrix": [
+            191,
+            191
+          ],
+          "tree": 192,
+          "color": [
+            0,
+            0
+          ]
+        },
+        "ranges": [
+          {
+            "matrix": [],
+            "tree": [],
+            "color": []
+          },
+          {
+            "matrix": [],
+            "tree": [],
+            "color": []
+          }
+        ]
+      }
+    },
+    "sparseUpdates": {
+      "parts": [
+        {
+          "matrix": [
+            {
+              "start": 0,
+              "count": 16
+            },
+            {
+              "start": 3056,
+              "count": 16
+            }
+          ],
+          "tree": [
+            {
+              "start": 0,
+              "count": 2
+            },
+            {
+              "start": 382,
+              "count": 2
+            }
+          ],
+          "color": [
+            {
+              "start": 0,
+              "count": 3
+            },
+            {
+              "start": 573,
+              "count": 3
+            }
+          ]
+        },
+        {
+          "matrix": [
+            {
+              "start": 0,
+              "count": 16
+            },
+            {
+              "start": 3056,
+              "count": 16
+            }
+          ],
+          "tree": [
+            {
+              "start": 0,
+              "count": 2
+            },
+            {
+              "start": 382,
+              "count": 2
+            }
+          ],
+          "color": [
+            {
+              "start": 0,
+              "count": 3
+            },
+            {
+              "start": 573,
+              "count": 3
+            }
+          ]
+        }
+      ],
+      "instanceTree": [
+        1.03125,
+        0.4000000059604645,
+        0.6875,
+        0.10000000149011612
+      ],
+      "colors": [
+        {
+          "slot0": [
+            1.149999976158142,
+            0.8999999761581421,
+            0.8199999928474426
+          ],
+          "slot191": [
+            0.8199999928474426,
+            1.100000023841858,
+            0.8999999761581421
+          ]
+        },
+        {
+          "slot0": [
+            0.7699999809265137,
+            1.0800000429153442,
+            0.8399999737739563
+          ],
+          "slot191": [
+            1.0800000429153442,
+            0.800000011920929,
+            0.9200000166893005
+          ]
+        }
+      ]
+    },
+    "hiddenRanges": {
+      "pending": [
+        {
+          "matrix": [
+            {
+              "start": 0,
+              "count": 16
+            },
+            {
+              "start": 112,
+              "count": 16
+            },
+            {
+              "start": 3056,
+              "count": 16
+            }
+          ],
+          "color": [
+            {
+              "start": 0,
+              "count": 3
+            },
+            {
+              "start": 21,
+              "count": 3
+            },
+            {
+              "start": 573,
+              "count": 3
+            }
+          ]
+        },
+        {
+          "matrix": [
+            {
+              "start": 0,
+              "count": 16
+            },
+            {
+              "start": 112,
+              "count": 16
+            },
+            {
+              "start": 3056,
+              "count": 16
+            }
+          ],
+          "color": [
+            {
+              "start": 0,
+              "count": 3
+            },
+            {
+              "start": 21,
+              "count": 3
+            },
+            {
+              "start": 573,
+              "count": 3
+            }
+          ]
+        }
+      ],
+      "afterHiddenDraw": [
+        {
+          "matrix": [
+            {
+              "start": 0,
+              "count": 16
+            },
+            {
+              "start": 112,
+              "count": 16
+            },
+            {
+              "start": 3056,
+              "count": 16
+            }
+          ],
+          "color": [
+            {
+              "start": 0,
+              "count": 3
+            },
+            {
+              "start": 21,
+              "count": 3
+            },
+            {
+              "start": 573,
+              "count": 3
+            }
+          ]
+        },
+        {
+          "matrix": [
+            {
+              "start": 0,
+              "count": 16
+            },
+            {
+              "start": 112,
+              "count": 16
+            },
+            {
+              "start": 3056,
+              "count": 16
+            }
+          ],
+          "color": [
+            {
+              "start": 0,
+              "count": 3
+            },
+            {
+              "start": 21,
+              "count": 3
+            },
+            {
+              "start": 573,
+              "count": 3
+            }
+          ]
+        }
+      ],
+      "afterVisibleDraw": [
+        {
+          "matrix": [],
+          "color": []
+        },
+        {
+          "matrix": [],
+          "color": []
+        }
+      ]
+    },
+    "pixelTint": {
+      "baselinePixels": {
+        "hash": "8467430b",
+        "width": 1440,
+        "height": 1000,
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "glErrors": []
+      },
+      "tintedPixels": {
+        "hash": "8fef9bf3",
+        "width": 1440,
+        "height": 1000,
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "glErrors": []
+      },
+      "restoredPixels": {
+        "hash": "8467430b",
+        "width": 1440,
+        "height": 1000,
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "glErrors": []
+      },
+      "limitation": "Framebuffer hash covers the complete lab canvas; only slot 0 is inside the camera frustum."
+    },
+    "invalidAppearance": {
+      "before": [
+        {
+          "version": 6,
+          "slot": [
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "version": 6,
+          "slot": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      "after": [
+        {
+          "version": 6,
+          "slot": [
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "version": 6,
+          "slot": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "label": "null bark",
+          "rejected": true,
+          "error": "Error: Tree appearance requires an initialized slot and linear RGB multipliers in [0,2]"
+        },
+        {
+          "label": "null foliage",
+          "rejected": true,
+          "error": "Error: Tree appearance requires an initialized slot and linear RGB multipliers in [0,2]"
+        },
+        {
+          "label": "sparse bark",
+          "rejected": true,
+          "error": "Error: Tree appearance requires an initialized slot and linear RGB multipliers in [0,2]"
+        },
+        {
+          "label": "sparse foliage",
+          "rejected": true,
+          "error": "Error: Tree appearance requires an initialized slot and linear RGB multipliers in [0,2]"
+        },
+        {
+          "label": "out of range",
+          "rejected": true,
+          "error": "Error: Tree appearance requires an initialized slot and linear RGB multipliers in [0,2]"
+        },
+        {
+          "label": "negative",
+          "rejected": true,
+          "error": "Error: Tree appearance requires an initialized slot and linear RGB multipliers in [0,2]"
+        },
+        {
+          "label": "NaN",
+          "rejected": true,
+          "error": "Error: Tree appearance requires an initialized slot and linear RGB multipliers in [0,2]"
+        }
+      ]
+    },
+    "slotReuse": {
+      "before": [
+        [
+          0.8199999928474426,
+          1.100000023841858,
+          0.8999999761581421
+        ],
+        [
+          1.0800000429153442,
+          0.800000011920929,
+          0.9200000166893005
+        ]
+      ],
+      "after": [
+        [
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1
+        ]
+      ],
+      "count": [
+        192,
+        192
+      ]
+    },
+    "lifecycle": {
+      "groupParent": null,
+      "useAfterDisposeRejected": true,
+      "familyPrematureDisposeRejected": true,
+      "labStillReady": true
+    },
+    "coverageAndTransmission": [
+      {
+        "foliageCoverage": "mask",
+        "factor": 0,
+        "alphaTest": 0.5,
+        "alphaHash": false,
+        "coverageMaterials": [
+          {
+            "alphaTest": 0,
+            "alphaHash": false
+          },
+          {
+            "alphaTest": 0.5,
+            "alphaHash": false
+          }
+        ],
+        "hash": "616803e1",
+        "glErrors": [],
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      {
+        "foliageCoverage": "mask",
+        "factor": 0.35,
+        "alphaTest": 0.5,
+        "alphaHash": false,
+        "coverageMaterials": [
+          {
+            "alphaTest": 0,
+            "alphaHash": false
+          },
+          {
+            "alphaTest": 0.5,
+            "alphaHash": false
+          }
+        ],
+        "hash": "b08b2af7",
+        "glErrors": [],
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      {
+        "foliageCoverage": "hash",
+        "factor": 0,
+        "alphaTest": 0,
+        "alphaHash": true,
+        "coverageMaterials": [
+          {
+            "alphaTest": 0,
+            "alphaHash": false
+          },
+          {
+            "alphaTest": 0,
+            "alphaHash": true
+          }
+        ],
+        "hash": "6a02f95f",
+        "glErrors": [],
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      {
+        "foliageCoverage": "hash",
+        "factor": 0.35,
+        "alphaTest": 0,
+        "alphaHash": true,
+        "coverageMaterials": [
+          {
+            "alphaTest": 0,
+            "alphaHash": false
+          },
+          {
+            "alphaTest": 0,
+            "alphaHash": true
+          }
+        ],
+        "hash": "2d63d9f6",
+        "glErrors": [],
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      }
+    ]
+  },
+  "limitations": [
+    "Prototype tree-family batch update test only; it does not test PlanetForest integration or whole-game performance.",
+    "A hidden batch retains pending BufferAttribute update ranges until its visible draw uploads them."
+  ],
+  "failure": "AssertionError [ERR_ASSERTION]: 5 browser assertions failed; see C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\tree-instance-updates\\run-1790591446468\\report.json\n\n5 !== 0\n"
+}
