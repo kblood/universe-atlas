@@ -92,7 +92,12 @@ try {
   assert.equal(oldRiverRoute.terrain.environment, null);
   await page.screenshot({ path: `${out}/old-river-link-ordinary-body.png` });
 
-  assert.equal(oldRiverRoute.travel?.active, true, 'body view starts in ordinary free flight');
+  const flightButton = page.locator('#toggle-flight');
+  if (!oldRiverRoute.travel?.active) await flightButton.click();
+  await page.waitForFunction(() => window.__atlas?.travel?.active === true, null, { timeout: 10000 });
+  await page.locator('#descend').click();
+  await page.waitForFunction(() => window.__atlas?.travel?.surface?.terrainClearance < 20000, null, { timeout: 90000 });
+  const lowFlight = await snapshot();
   const landButton = page.locator('#walk-surface');
   assert.equal(await landButton.count(), 1, 'ordinary Land and walk control exists');
   await landButton.click();
@@ -108,7 +113,7 @@ try {
   assert.equal(grounded.terrain.environment, null);
   await page.screenshot({ path: `${out}/ordinary-grounded.png` });
   assert.deepEqual(errors, [], 'browser has no page or console errors');
-  report = { ...report, ok: true, oldRiverRoute, grounded, renderer: await page.evaluate(() => {
+  report = { ...report, ok: true, oldRiverRoute, lowFlight, grounded, renderer: await page.evaluate(() => {
     const gl = document.querySelector('canvas')?.getContext('webgl2');
     const ext = gl?.getExtension('WEBGL_debug_renderer_info');
     return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'unavailable';

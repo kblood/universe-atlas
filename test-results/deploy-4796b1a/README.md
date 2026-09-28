@@ -1,0 +1,7 @@
+# Rivers withdrawal live verification
+
+Release commit `4796b1ae9f83a91902dd5240d62651077307345d` was published from a clean tree. The live `/build-info.json` reports that exact commit with `dirty: false` (`2026-09-28T19:03:08.134Z`). The release checkout's `dist` was the byte reference: `index.html` matched, and all 23 JavaScript assets (4,414,815 bytes total) matched SHA-256 exactly. See [asset receipt](live-assets.json).
+
+The RTX 5090 / ANGLE D3D11 browser route passed at 1440×1000. It opened an old `?river=` bookmark as the ordinary Maithea body, showed the unavailable-rivers notice, removed the retired query parameter, and exposed no river controls or river/drainage diagnostics. At catalogue epoch, the expected and rendered ocean level was −4500 m; 15 ocean patches were visible. The route entered free flight, descended to about 19.9 km, then landed and reached grounded state with contact level 18, surface ready, about 1.64 m terrain clearance, zero terrain failures, and no browser errors. The settled view reported 25 ocean patches and null river/reflection/environment diagnostics.
+
+See [live route report](river-route/report.json), [old river link](river-route/old-river-link-ordinary-body.png), and [grounded view](river-route/ordinary-grounded.png). The same browser scenario passed locally on runtime build `5130bd53`; local evidence is [here](../inland-rivers-disabled-5130bd5-landing-rerun/README.md). This verifies withdrawal routing and continued ocean rendering; it does not assess water visual quality or tree/fauna realism.

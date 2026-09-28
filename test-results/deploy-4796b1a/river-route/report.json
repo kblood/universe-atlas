@@ -1,0 +1,886 @@
+{
+  "ok": true,
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "buildInfo": {
+    "commit": "4796b1ae9f83a91902dd5240d62651077307345d",
+    "dirty": false,
+    "builtAt": "2026-09-28T19:03:08.134Z"
+  },
+  "seed": "LETHRA-001",
+  "systemId": "G001/C2128,0,1/0",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "dateNs": "435084631200000000000000000",
+  "expectedOcean": {
+    "globalOceanAvailable": true,
+    "waterLevelM": -4500,
+    "renderWaterLevelM": -4500
+  },
+  "oldRiverRoute": {
+    "ready": true,
+    "level": "body",
+    "bodyId": "G001/C2128,0,1/0/planet/1",
+    "date": {
+      "version": "atlas-time-2",
+      "reference": "big-bang",
+      "offsetNs": "435084631200000000000000000",
+      "branchId": "baseline"
+    },
+    "oceanExpectedFromFixture": null,
+    "riverDiagnostic": null,
+    "drainageDiagnostic": null,
+    "notice": {
+      "hidden": false,
+      "text": "Inland rivers and their regional lakes are currently unavailable. This river link opens the ordinary world instead. This bookmark predates the current combined model. Planet and life details may differ."
+    },
+    "riverControls": [],
+    "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/?seed=LETHRA-001&wv=atlas-time-2%2Catlas-address-1%2Catlas-cosmology-2-radiation%2Catlas-2.0.0%2Catlas-history-3-remnant-cooling%2Catlas-surface-7-no-inland-rivers%2Cterrain-1.6.0%2Cbiosphere-lab-3%2Catlas-galaxy-history-2&mv=atlas-time-2%7Catlas-address-1%7Catlas-cosmology-2-radiation%7Catlas-2.0.0%7Catlas-history-3-remnant-cooling%7Catlas-surface-7-no-inland-rivers%7Cterrain-1.6.0%7Cbiosphere-lab-3%7Catlas-galaxy-history-2%7Catlas-background-radiation-1%7Catlas-biosphere-query-5-dated-suitability%7Catlas-primordial-2-address-lineage%7Catlas-stellar-cohorts-5-address-lineage%7Catlas-future-constant-lambda-1%7Catlas-alternate-fates-1%7Catlas-observed-sky-1%7Catlas-cmb-illustration-1%7Catlas-surface-cell-1&bv=atlas-client-2026-09-28-no-inland-rivers-1&g=G001&sector=266%2C0%2C0&system=G001%2FC2128%2C0%2C1%2F0&body=G001%2FC2128%2C0%2C1%2F0%2Fplanet%2F1",
+    "travel": {
+      "active": false,
+      "landing": false,
+      "walking": null,
+      "surface": {
+        "minimum": 5203624.892808608,
+        "altitude": 15065230.510150556,
+        "terrainElevation": 8716.180342741185,
+        "terrainClearance": 15056514.329807814,
+        "clearance": 15056512.689807814
+      },
+      "clearance": 0
+    },
+    "terrain": {
+      "version": "ground-material-1",
+      "waterLevelM": -4500,
+      "oceanDraws": 15,
+      "river": null,
+      "reflection": null,
+      "environment": null,
+      "contactLevel": null,
+      "baseContactLevel": null,
+      "surfaceReady": false,
+      "resident": 18,
+      "pending": 4,
+      "failures": 0
+    },
+    "buttons": [
+      {
+        "id": "generate",
+        "text": "Generate ↗"
+      },
+      {
+        "id": "",
+        "text": "Universe"
+      },
+      {
+        "id": "",
+        "text": "Esensara"
+      },
+      {
+        "id": "",
+        "text": "Local stars"
+      },
+      {
+        "id": "",
+        "text": "Isowyn"
+      },
+      {
+        "id": "",
+        "text": "Maithea"
+      },
+      {
+        "id": "",
+        "text": "Big Bang"
+      },
+      {
+        "id": "",
+        "text": "Hot plasma & first nuclei"
+      },
+      {
+        "id": "",
+        "text": "Recombination / CMB"
+      },
+      {
+        "id": "",
+        "text": "First stars"
+      },
+      {
+        "id": "",
+        "text": "Galaxy assembly"
+      },
+      {
+        "id": "",
+        "text": "Catalogue reference (\"now\")"
+      },
+      {
+        "id": "",
+        "text": "Stelliferous era ends"
+      },
+      {
+        "id": "",
+        "text": "Degenerate era"
+      },
+      {
+        "id": "",
+        "text": "Black-hole era"
+      },
+      {
+        "id": "",
+        "text": "Heat death proxy"
+      },
+      {
+        "id": "time-apply",
+        "text": "Go to year"
+      },
+      {
+        "id": "time-reset",
+        "text": "Catalogue epoch"
+      },
+      {
+        "id": "time-day-back",
+        "text": "−1 day"
+      },
+      {
+        "id": "time-day-forward",
+        "text": "+1 day"
+      },
+      {
+        "id": "collapse",
+        "text": "☰"
+      },
+      {
+        "id": "walk-surface",
+        "text": "Land and walk"
+      },
+      {
+        "id": "terrain-flight",
+        "text": "Fly over terrain"
+      },
+      {
+        "id": "find-life",
+        "text": "Find living habitat"
+      },
+      {
+        "id": "horizon-assist",
+        "text": "Atmospheric horizon assist: on"
+      },
+      {
+        "id": "surface-detail",
+        "text": "Ground detail: on"
+      },
+      {
+        "id": "surface-lighting",
+        "text": "Surface lighting: detailed"
+      },
+      {
+        "id": "forest-detail",
+        "text": "Trees: basic"
+      },
+      {
+        "id": "survey-surface",
+        "text": "Survey surface"
+      },
+      {
+        "id": "fly-target",
+        "text": "Fly to selection"
+      },
+      {
+        "id": "fly-outward",
+        "text": "Fly outward"
+      },
+      {
+        "id": "toggle-flight",
+        "text": "Fly freely"
+      },
+      {
+        "id": "fly-forward",
+        "text": "Hold: fly forward"
+      },
+      {
+        "id": "export",
+        "text": "↓ Export"
+      },
+      {
+        "id": "bookmark",
+        "text": "☆ Bookmark"
+      },
+      {
+        "id": "",
+        "text": "Accretion disc11.4 B years"
+      },
+      {
+        "id": "",
+        "text": "Molten world11.4 B years"
+      },
+      {
+        "id": "",
+        "text": "Solid ground11.5 B years"
+      },
+      {
+        "id": "",
+        "text": "Ocean begins11.5 B years"
+      },
+      {
+        "id": "",
+        "text": "First microbes11.6 B years"
+      },
+      {
+        "id": "",
+        "text": "First plants12.1 B years"
+      },
+      {
+        "id": "",
+        "text": "First animals12.2 B years"
+      },
+      {
+        "id": "",
+        "text": "Reference date13.8 B years"
+      },
+      {
+        "id": "follow-planet",
+        "text": "Follow from formation"
+      },
+      {
+        "id": "",
+        "text": "KelelsaraView moon↗"
+      },
+      {
+        "id": "",
+        "text": "SaelusView moon↗"
+      },
+      {
+        "id": "",
+        "text": "SaorvaView moon↗"
+      },
+      {
+        "id": "approach",
+        "text": "Approach low orbit"
+      },
+      {
+        "id": "descend",
+        "text": "Descend to 10 km"
+      },
+      {
+        "id": "hold-orbit",
+        "text": "Hold orbit"
+      },
+      {
+        "id": "relief",
+        "text": "Terrain relief ×1"
+      },
+      {
+        "id": "verify",
+        "text": "Verify seed"
+      },
+      {
+        "id": "copy",
+        "text": "Copy view link"
+      },
+      {
+        "id": "find-address",
+        "text": "Go to address"
+      },
+      {
+        "id": "back",
+        "text": "← Back"
+      },
+      {
+        "id": "reset",
+        "text": "⌖ Fit view"
+      },
+      {
+        "id": "help",
+        "text": "?"
+      },
+      {
+        "id": "close-help",
+        "text": "Start exploring"
+      },
+      {
+        "id": "enter-vr",
+        "text": "VR requires a headset"
+      }
+    ],
+    "status": "Physical scale · continuous planetary terrain and system flight"
+  },
+  "lowFlight": {
+    "ready": true,
+    "level": "body",
+    "bodyId": "G001/C2128,0,1/0/planet/1",
+    "date": {
+      "version": "atlas-time-2",
+      "reference": "big-bang",
+      "offsetNs": "435084631200000000000000000",
+      "branchId": "baseline"
+    },
+    "oceanExpectedFromFixture": null,
+    "riverDiagnostic": null,
+    "drainageDiagnostic": null,
+    "notice": {
+      "hidden": false,
+      "text": "Inland rivers and their regional lakes are currently unavailable. This river link opens the ordinary world instead. This bookmark predates the current combined model. Planet and life details may differ."
+    },
+    "riverControls": [],
+    "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/?seed=LETHRA-001&wv=atlas-time-2%2Catlas-address-1%2Catlas-cosmology-2-radiation%2Catlas-2.0.0%2Catlas-history-3-remnant-cooling%2Catlas-surface-7-no-inland-rivers%2Cterrain-1.6.0%2Cbiosphere-lab-3%2Catlas-galaxy-history-2&mv=atlas-time-2%7Catlas-address-1%7Catlas-cosmology-2-radiation%7Catlas-2.0.0%7Catlas-history-3-remnant-cooling%7Catlas-surface-7-no-inland-rivers%7Cterrain-1.6.0%7Cbiosphere-lab-3%7Catlas-galaxy-history-2%7Catlas-background-radiation-1%7Catlas-biosphere-query-5-dated-suitability%7Catlas-primordial-2-address-lineage%7Catlas-stellar-cohorts-5-address-lineage%7Catlas-future-constant-lambda-1%7Catlas-alternate-fates-1%7Catlas-observed-sky-1%7Catlas-cmb-illustration-1%7Catlas-surface-cell-1&bv=atlas-client-2026-09-28-no-inland-rivers-1&g=G001&sector=266%2C0%2C0&system=G001%2FC2128%2C0%2C1%2F0&body=G001%2FC2128%2C0%2C1%2F0%2Fplanet%2F1",
+    "travel": {
+      "active": true,
+      "landing": false,
+      "walking": null,
+      "surface": {
+        "minimum": 5203624.892807558,
+        "altitude": 28630.96514127869,
+        "terrainElevation": 8716.180341691615,
+        "terrainClearance": 19914.784799587076,
+        "clearance": 19913.144799587317
+      },
+      "clearance": 17055.388193011284
+    },
+    "terrain": {
+      "version": "ground-material-1",
+      "waterLevelM": -4500,
+      "oceanDraws": 12,
+      "river": null,
+      "reflection": null,
+      "environment": null,
+      "contactLevel": null,
+      "baseContactLevel": null,
+      "surfaceReady": true,
+      "resident": 210,
+      "pending": 0,
+      "failures": 0
+    },
+    "buttons": [
+      {
+        "id": "generate",
+        "text": "Generate ↗"
+      },
+      {
+        "id": "",
+        "text": "Universe"
+      },
+      {
+        "id": "",
+        "text": "Esensara"
+      },
+      {
+        "id": "",
+        "text": "Local stars"
+      },
+      {
+        "id": "",
+        "text": "Isowyn"
+      },
+      {
+        "id": "",
+        "text": "Maithea"
+      },
+      {
+        "id": "",
+        "text": "Big Bang"
+      },
+      {
+        "id": "",
+        "text": "Hot plasma & first nuclei"
+      },
+      {
+        "id": "",
+        "text": "Recombination / CMB"
+      },
+      {
+        "id": "",
+        "text": "First stars"
+      },
+      {
+        "id": "",
+        "text": "Galaxy assembly"
+      },
+      {
+        "id": "",
+        "text": "Catalogue reference (\"now\")"
+      },
+      {
+        "id": "",
+        "text": "Stelliferous era ends"
+      },
+      {
+        "id": "",
+        "text": "Degenerate era"
+      },
+      {
+        "id": "",
+        "text": "Black-hole era"
+      },
+      {
+        "id": "",
+        "text": "Heat death proxy"
+      },
+      {
+        "id": "time-apply",
+        "text": "Go to year"
+      },
+      {
+        "id": "time-reset",
+        "text": "Catalogue epoch"
+      },
+      {
+        "id": "time-day-back",
+        "text": "−1 day"
+      },
+      {
+        "id": "time-day-forward",
+        "text": "+1 day"
+      },
+      {
+        "id": "collapse",
+        "text": "☰"
+      },
+      {
+        "id": "walk-surface",
+        "text": "Land and walk"
+      },
+      {
+        "id": "terrain-flight",
+        "text": "Fly over terrain"
+      },
+      {
+        "id": "find-life",
+        "text": "Find living habitat"
+      },
+      {
+        "id": "horizon-assist",
+        "text": "Atmospheric horizon assist: on"
+      },
+      {
+        "id": "surface-detail",
+        "text": "Ground detail: on"
+      },
+      {
+        "id": "surface-lighting",
+        "text": "Surface lighting: detailed"
+      },
+      {
+        "id": "forest-detail",
+        "text": "Trees: basic"
+      },
+      {
+        "id": "survey-surface",
+        "text": "Survey surface"
+      },
+      {
+        "id": "fly-target",
+        "text": "Fly to selection"
+      },
+      {
+        "id": "fly-outward",
+        "text": "Fly outward"
+      },
+      {
+        "id": "toggle-flight",
+        "text": "Stop flight"
+      },
+      {
+        "id": "fly-forward",
+        "text": "Hold: fly forward"
+      },
+      {
+        "id": "export",
+        "text": "↓ Export"
+      },
+      {
+        "id": "bookmark",
+        "text": "☆ Bookmark"
+      },
+      {
+        "id": "",
+        "text": "Accretion disc11.4 B years"
+      },
+      {
+        "id": "",
+        "text": "Molten world11.4 B years"
+      },
+      {
+        "id": "",
+        "text": "Solid ground11.5 B years"
+      },
+      {
+        "id": "",
+        "text": "Ocean begins11.5 B years"
+      },
+      {
+        "id": "",
+        "text": "First microbes11.6 B years"
+      },
+      {
+        "id": "",
+        "text": "First plants12.1 B years"
+      },
+      {
+        "id": "",
+        "text": "First animals12.2 B years"
+      },
+      {
+        "id": "",
+        "text": "Reference date13.8 B years"
+      },
+      {
+        "id": "follow-planet",
+        "text": "Follow from formation"
+      },
+      {
+        "id": "",
+        "text": "KelelsaraView moon↗"
+      },
+      {
+        "id": "",
+        "text": "SaelusView moon↗"
+      },
+      {
+        "id": "",
+        "text": "SaorvaView moon↗"
+      },
+      {
+        "id": "approach",
+        "text": "Approach low orbit"
+      },
+      {
+        "id": "descend",
+        "text": "Descend to 10 km"
+      },
+      {
+        "id": "hold-orbit",
+        "text": "Hold orbit"
+      },
+      {
+        "id": "relief",
+        "text": "Terrain relief ×1"
+      },
+      {
+        "id": "verify",
+        "text": "Verify seed"
+      },
+      {
+        "id": "copy",
+        "text": "Copy view link"
+      },
+      {
+        "id": "find-address",
+        "text": "Go to address"
+      },
+      {
+        "id": "back",
+        "text": "← Back"
+      },
+      {
+        "id": "reset",
+        "text": "⌖ Fit view"
+      },
+      {
+        "id": "help",
+        "text": "?"
+      },
+      {
+        "id": "close-help",
+        "text": "Start exploring"
+      },
+      {
+        "id": "enter-vr",
+        "text": "VR requires a headset"
+      }
+    ],
+    "status": "Physical scale · continuous planetary terrain and system flight"
+  },
+  "grounded": {
+    "ready": true,
+    "level": "body",
+    "bodyId": "G001/C2128,0,1/0/planet/1",
+    "date": {
+      "version": "atlas-time-2",
+      "reference": "big-bang",
+      "offsetNs": "435084631200000000000000000",
+      "branchId": "baseline"
+    },
+    "oceanExpectedFromFixture": null,
+    "riverDiagnostic": null,
+    "drainageDiagnostic": null,
+    "notice": {
+      "hidden": false,
+      "text": "Inland rivers and their regional lakes are currently unavailable. This river link opens the ordinary world instead. This bookmark predates the current combined model. Planet and life details may differ."
+    },
+    "riverControls": [],
+    "url": "https://dionysus.dk/webxr/IWSDK/universe-atlas/?seed=LETHRA-001&wv=atlas-time-2%2Catlas-address-1%2Catlas-cosmology-2-radiation%2Catlas-2.0.0%2Catlas-history-3-remnant-cooling%2Catlas-surface-7-no-inland-rivers%2Cterrain-1.6.0%2Cbiosphere-lab-3%2Catlas-galaxy-history-2&mv=atlas-time-2%7Catlas-address-1%7Catlas-cosmology-2-radiation%7Catlas-2.0.0%7Catlas-history-3-remnant-cooling%7Catlas-surface-7-no-inland-rivers%7Cterrain-1.6.0%7Cbiosphere-lab-3%7Catlas-galaxy-history-2%7Catlas-background-radiation-1%7Catlas-biosphere-query-5-dated-suitability%7Catlas-primordial-2-address-lineage%7Catlas-stellar-cohorts-5-address-lineage%7Catlas-future-constant-lambda-1%7Catlas-alternate-fates-1%7Catlas-observed-sky-1%7Catlas-cmb-illustration-1%7Catlas-surface-cell-1&bv=atlas-client-2026-09-28-no-inland-rivers-1&walk=-3696590.3459500754%2C770776.6929623992%2C-3580339.039203153&heading=-0.25456218691805765%2C0.6976562959751315%2C-0.6009463928547745%2C-0.2955287102678702&g=G001&sector=266%2C0%2C0&system=G001%2FC2128%2C0%2C1%2F0&body=G001%2FC2128%2C0%2C1%2F0%2Fplanet%2F1",
+    "travel": {
+      "active": true,
+      "landing": false,
+      "walking": {
+        "grounded": true,
+        "position": [
+          -3696590.3461143957,
+          770776.6929509616,
+          -3580339.0393165904
+        ],
+        "speed": 0
+      },
+      "surface": {
+        "minimum": 5203624.892792846,
+        "altitude": 8717.820523809642,
+        "terrainElevation": 8716.18032697945,
+        "terrainClearance": 1.640196830192508,
+        "clearance": 0.0001968303695321083
+      },
+      "clearance": 16762.10804668255
+    },
+    "terrain": {
+      "version": "ground-material-1",
+      "waterLevelM": -4500,
+      "oceanDraws": 25,
+      "river": null,
+      "reflection": null,
+      "environment": null,
+      "contactLevel": 18,
+      "baseContactLevel": 18,
+      "surfaceReady": true,
+      "resident": 577,
+      "pending": 4,
+      "failures": 0
+    },
+    "buttons": [
+      {
+        "id": "generate",
+        "text": "Generate ↗"
+      },
+      {
+        "id": "",
+        "text": "Universe"
+      },
+      {
+        "id": "",
+        "text": "Esensara"
+      },
+      {
+        "id": "",
+        "text": "Local stars"
+      },
+      {
+        "id": "",
+        "text": "Isowyn"
+      },
+      {
+        "id": "",
+        "text": "Maithea"
+      },
+      {
+        "id": "",
+        "text": "Big Bang"
+      },
+      {
+        "id": "",
+        "text": "Hot plasma & first nuclei"
+      },
+      {
+        "id": "",
+        "text": "Recombination / CMB"
+      },
+      {
+        "id": "",
+        "text": "First stars"
+      },
+      {
+        "id": "",
+        "text": "Galaxy assembly"
+      },
+      {
+        "id": "",
+        "text": "Catalogue reference (\"now\")"
+      },
+      {
+        "id": "",
+        "text": "Stelliferous era ends"
+      },
+      {
+        "id": "",
+        "text": "Degenerate era"
+      },
+      {
+        "id": "",
+        "text": "Black-hole era"
+      },
+      {
+        "id": "",
+        "text": "Heat death proxy"
+      },
+      {
+        "id": "time-apply",
+        "text": "Go to year"
+      },
+      {
+        "id": "time-reset",
+        "text": "Catalogue epoch"
+      },
+      {
+        "id": "time-day-back",
+        "text": "−1 day"
+      },
+      {
+        "id": "time-day-forward",
+        "text": "+1 day"
+      },
+      {
+        "id": "collapse",
+        "text": "☰"
+      },
+      {
+        "id": "walk-surface",
+        "text": "Return to flight"
+      },
+      {
+        "id": "terrain-flight",
+        "text": "Fly over terrain"
+      },
+      {
+        "id": "find-life",
+        "text": "Find living habitat"
+      },
+      {
+        "id": "horizon-assist",
+        "text": "Atmospheric horizon assist: on"
+      },
+      {
+        "id": "surface-detail",
+        "text": "Ground detail: on"
+      },
+      {
+        "id": "surface-lighting",
+        "text": "Surface lighting: detailed"
+      },
+      {
+        "id": "forest-detail",
+        "text": "Trees: basic"
+      },
+      {
+        "id": "survey-surface",
+        "text": "Survey surface"
+      },
+      {
+        "id": "fly-target",
+        "text": "Fly to selection"
+      },
+      {
+        "id": "fly-outward",
+        "text": "Fly outward"
+      },
+      {
+        "id": "toggle-flight",
+        "text": "Stop flight"
+      },
+      {
+        "id": "fly-forward",
+        "text": "Hold: fly forward"
+      },
+      {
+        "id": "export",
+        "text": "↓ Export"
+      },
+      {
+        "id": "bookmark",
+        "text": "☆ Bookmark"
+      },
+      {
+        "id": "",
+        "text": "Accretion disc11.4 B years"
+      },
+      {
+        "id": "",
+        "text": "Molten world11.4 B years"
+      },
+      {
+        "id": "",
+        "text": "Solid ground11.5 B years"
+      },
+      {
+        "id": "",
+        "text": "Ocean begins11.5 B years"
+      },
+      {
+        "id": "",
+        "text": "First microbes11.6 B years"
+      },
+      {
+        "id": "",
+        "text": "First plants12.1 B years"
+      },
+      {
+        "id": "",
+        "text": "First animals12.2 B years"
+      },
+      {
+        "id": "",
+        "text": "Reference date13.8 B years"
+      },
+      {
+        "id": "follow-planet",
+        "text": "Follow from formation"
+      },
+      {
+        "id": "",
+        "text": "KelelsaraView moon↗"
+      },
+      {
+        "id": "",
+        "text": "SaelusView moon↗"
+      },
+      {
+        "id": "",
+        "text": "SaorvaView moon↗"
+      },
+      {
+        "id": "approach",
+        "text": "Approach low orbit"
+      },
+      {
+        "id": "descend",
+        "text": "Descend to 10 km"
+      },
+      {
+        "id": "hold-orbit",
+        "text": "Hold orbit"
+      },
+      {
+        "id": "relief",
+        "text": "Terrain relief ×1"
+      },
+      {
+        "id": "verify",
+        "text": "Verify seed"
+      },
+      {
+        "id": "copy",
+        "text": "Copy view link"
+      },
+      {
+        "id": "find-address",
+        "text": "Go to address"
+      },
+      {
+        "id": "back",
+        "text": "← Back"
+      },
+      {
+        "id": "reset",
+        "text": "⌖ Fit view"
+      },
+      {
+        "id": "help",
+        "text": "?"
+      },
+      {
+        "id": "close-help",
+        "text": "Start exploring"
+      },
+      {
+        "id": "enter-vr",
+        "text": "VR requires a headset"
+      }
+    ],
+    "status": "Walking · WASD move · Shift run · Space jump · Return to flight to take off."
+  },
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "errors": []
+}

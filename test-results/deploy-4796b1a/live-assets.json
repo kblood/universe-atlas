@@ -1,0 +1,134 @@
+{
+  "ok": true,
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "expectedCommit": "4796b1ae9f83a91902dd5240d62651077307345d",
+  "stamp": {
+    "commit": "4796b1ae9f83a91902dd5240d62651077307345d",
+    "dirty": false,
+    "builtAt": "2026-09-28T19:03:08.134Z"
+  },
+  "dist": "C:/LLM/IWSDK/universe-atlas/dist",
+  "index": {
+    "bytes": 10090,
+    "sha256": "f36844b2f7d9d17c7ca608c49a2fbb8b3d2cc06c040e47a05dcbf2ad4ba9233d"
+  },
+  "jsCount": 23,
+  "jsBytes": 4414815,
+  "assets": [
+    {
+      "name": "BufferGeometryUtils-BoC6a6Pk.js",
+      "bytes": 4894,
+      "sha256": "c0e8bbe2f5fc44bbc3773b5608e10ae431d06cb147530b4125dd2286dae5dbc8"
+    },
+    {
+      "name": "OrbitControls-CpY0pxSj.js",
+      "bytes": 19145,
+      "sha256": "e61113b7b9bc654fcd9f7885d482d5ba28e51a19f2abf99f935e9c60897ace64"
+    },
+    {
+      "name": "atlas-5Vg8onlO.js",
+      "bytes": 344730,
+      "sha256": "39cfb04b863cdc791684de62eb80128cc0932fa529d3a2a35491f34ddc35c7ee"
+    },
+    {
+      "name": "biomes-GOna10i0.js",
+      "bytes": 22397,
+      "sha256": "6994790a7a175656787b5459ea45e0681624cf4d756d3733b7dc24b82618415c"
+    },
+    {
+      "name": "biosphere-btAp_50b.js",
+      "bytes": 24263,
+      "sha256": "6f207cfb9c5d8f73d04b810ae2a45267cf7e01fa4dee87c655f1cfe9239be488"
+    },
+    {
+      "name": "biosphere-model-C_M_4Pgu.js",
+      "bytes": 22882,
+      "sha256": "0ced478afc355b3c1fc0f6fe08a3b864f349e222af8782dc97ae5f6945edad29"
+    },
+    {
+      "name": "catalog-BafDYuJw.js",
+      "bytes": 8127,
+      "sha256": "098f0fe17a2d57b70126fb89b6a9431b4d1a844731fe4234df99d1f3f016f33e"
+    },
+    {
+      "name": "clouds-CUAUc0FM.js",
+      "bytes": 3121,
+      "sha256": "8f8da72f8c3bb00a80b6028c25986589085c34336147fb21cc93bab4b46ba865"
+    },
+    {
+      "name": "creatures-BKEMI5gj.js",
+      "bytes": 20909,
+      "sha256": "6d3000e6e7d86e634a71295fd353549b764a86ceee5ec995fb94dc9f98c17421"
+    },
+    {
+      "name": "forest-census-worker-BVntW7uA.js",
+      "bytes": 138035,
+      "sha256": "70564a29f85cafb62ee7026f9bab9e44b3c24a23b2348c9d5235d989a2899c35"
+    },
+    {
+      "name": "ground-walker-E7SJ_Wc4.js",
+      "bytes": 4872,
+      "sha256": "3471a8861744bf863c399f99112784e561ab3a928c9f62ba9f580b8b434839e0"
+    },
+    {
+      "name": "guide-time-DlPdKDkF.js",
+      "bytes": 1095,
+      "sha256": "d009d4cecfcc5a2a03d2196e3f1abd8224a07951ee198d2d94b6f1d946f896bd"
+    },
+    {
+      "name": "planet-population-worker-DPoR_B8X.js",
+      "bytes": 12798,
+      "sha256": "e90f8ed0b32b5e6b763662ed37ce2e92727aff1eaa8997cc593dd781669d3ce1"
+    },
+    {
+      "name": "planet-worker-CcJd0rvX.js",
+      "bytes": 74186,
+      "sha256": "53e23d33d492ef5ab32895954182a4492511a4cb94e34298d459b67f043e5646"
+    },
+    {
+      "name": "rapier-physics-iRel_T-y.js",
+      "bytes": 2853140,
+      "sha256": "73f8b5fe1e32ae64e8fde0354f3d0e9fc04b9ffa71c043d5b1ca93f786ff8679"
+    },
+    {
+      "name": "river-worker-B6OWmDg5.js",
+      "bytes": 24938,
+      "sha256": "9d5d876dffb667585760e15ee4accb5d08503e2b2e42776240c0a6ba66c25d0d"
+    },
+    {
+      "name": "three.core-DqhqnxMV.js",
+      "bytes": 226094,
+      "sha256": "f63fd0f63548ac51d4c95a0a707a7cb05a0bf3475d067e60299370e02b42aa40"
+    },
+    {
+      "name": "three.module-B5c8EtgX.js",
+      "bytes": 346279,
+      "sha256": "8ba4f10943b9bb0107d52ce3f710adcb719816e39bb24d02828d81fb393dfa6b"
+    },
+    {
+      "name": "time-nav-DW0laDS5.js",
+      "bytes": 86959,
+      "sha256": "40160ec612aa82322f25d575b3055e3713de6d29c1d33bc7cce141d73f281eaf"
+    },
+    {
+      "name": "tree-asset-C3rL-e0y.js",
+      "bytes": 71634,
+      "sha256": "65116a7756ecb7b8d5942af28289ee9c5c5d682f255126d2f83dd034208c2a22"
+    },
+    {
+      "name": "volumetric-clouds-CY9Bu9FL.js",
+      "bytes": 21730,
+      "sha256": "be04e50357326653afd9f6300fb43537c9f47b068e0a82314a9d8a882530521e"
+    },
+    {
+      "name": "worker-B4RwgYje.js",
+      "bytes": 80990,
+      "sha256": "3844e230976badb72af3671e6c2245f31f8904cfe60205dd0c91305a9af467b6"
+    },
+    {
+      "name": "world-time-jlnosqkt.js",
+      "bytes": 1597,
+      "sha256": "b0cc64d653287bc49a2f3f544bbc2e9f90ecb3d8f75ff558c6845d78531873fd"
+    }
+  ]
+}

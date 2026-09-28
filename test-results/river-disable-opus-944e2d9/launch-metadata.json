@@ -1,0 +1,49 @@
+{
+  "startedAt": "2026-09-28T18:35:42.926Z",
+  "sessionId": "5870d674-6834-4126-a977-f5c2fbba3b48",
+  "model": "claude-opus-5-5",
+  "providerExpected": "firstParty",
+  "revision": "e0d9d9c07509f53fa3a3385afb3e587c9c5b7999",
+  "gitStatus": "",
+  "worktree": "C:\\LLM\\IWSDK\\universe-atlas-disable-rivers",
+  "nodeModules": "physical local install at worktree root; no install allowed during task",
+  "inputHashes": [
+    {
+      "path": "src/main.ts",
+      "sha256": "1d51125b50fa3564b09ca7a562d01c6ffaa54164d623ec1bb099fb592400a0ed"
+    },
+    {
+      "path": "src/terrain.ts",
+      "sha256": "45b12e8f3bf4e5a543b4cf96833def3f873d07249a1274b21ef54bb40057d890"
+    },
+    {
+      "path": "src/world-surface.ts",
+      "sha256": "62f8c0eeab6b64b8671a6afe92886e8597289d1b7c4e3450b067774bce90ac05"
+    },
+    {
+      "path": "src/planet-tiles.ts",
+      "sha256": "9b75fa25af3239794736603e322ab7d2ca6b9ba0a2df771aab75731f989bd4fe"
+    },
+    {
+      "path": "src/planet-renderer.ts",
+      "sha256": "a782aa3c3532365620ff4137cad71b91d02814044ac43c31401d58638918a400"
+    },
+    {
+      "path": "src/hydrology-registry.ts",
+      "sha256": "c03d96bb0970f2bd1f9c6fc4133c3dd3b7bbf16b14dea5cbcbcbe5e963cbb01d"
+    },
+    {
+      "path": "src/river-generation.ts",
+      "sha256": "7a6b8f38ff73a409d39db31a3dad09607647b41f2709b1d27ab81402b07a8f50"
+    },
+    {
+      "path": "src/river-types.ts",
+      "sha256": "360a7355acc904de5daa57426a62852d6c3ef2ed1a7edfe4a906cd08edb265bb"
+    },
+    {
+      "path": "src/time-nav.ts",
+      "sha256": "20c0653e41c8ddd9cf0da173df0321b041ee098ebffff0c83309fb9bf6b0af49"
+    }
+  ],
+  "promptPath": "test-results/river-disable-opus/run-1/task-brief.md"
+}
