@@ -37,7 +37,7 @@ test('stellar fixture histories are order-independent with distinct remnant line
   const a=stellarHistory(sun),b=stellarHistory(massive);
   assert.equal(a.outcome,'white-dwarf');assert.equal(b.outcome,'black-hole');
   // TIME_VERSION bumped atlas-time-1 -> atlas-time-2 and HISTORY_VERSION bumped
-  // atlas-history-fixtures-1 -> atlas-history-2 (docs/time-and-coordinates-contract.md
+  // atlas-history-fixtures-1 -> atlas-history-3-remnant-cooling (docs/time-and-coordinates-contract.md
   // §6.2, §6.3): the clock origin moved from the catalogue epoch to the Big
   // Bang, so formationNs is now an absolute, always-positive instant
   // (billions of years after t=0n) instead of a negative catalogue-relative

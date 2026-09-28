@@ -101,33 +101,20 @@ test('sanity: corpus is non-trivial', () => {
 });
 
 // ---------------------------------------------------------------------------
-// §4.1's documented scaleFactorAt saturation boundary (cosmology.ts's own
-// header: "Saturates to +Infinity past tGyr/T_LAMBDA_GYR ~ 710 (t ~ 8.3e12
-// yr)"). Pinned here (empirically, via binary search on the real exported
-// function, not by re-deriving T_LAMBDA_GYR) so a future change to H0/
-// OMEGA_LAMBDA can't silently move this documented boundary without a test
-// noticing. Anything past it MUST go through the log-space helpers.
+// scaleFactorAt is a finite rendering adapter capped at exp(600); log-space
+// helpers preserve the increasing physical scale beyond that representable
+// adapter ceiling.
 // ---------------------------------------------------------------------------
-test('scaleFactorAt saturation boundary is pinned near the documented ~8.3e12 yr, and lnScaleFactorAt stays finite straddling it', () => {
-  let loYears = 1n, hiYears = tenToThe(14); // Number.isFinite(scaleFactorAt) at lo, +Infinity at hi (both assumed true, checked below)
-  assert.ok(Number.isFinite(scaleFactorAt(loYears * YEAR_NS)), 'sanity: lower bracket must be finite');
-  assert.equal(scaleFactorAt(hiYears * YEAR_NS), Infinity, 'sanity: upper bracket must already be saturated');
-  for (let i = 0; i < 64; i++) {
-    const mid = (loYears + hiYears) / 2n;
-    if (mid === loYears) break;
-    if (Number.isFinite(scaleFactorAt(mid * YEAR_NS))) loYears = mid; else hiYears = mid;
+test('scaleFactorAt stays finite at its adapter ceiling while lnScaleFactorAt keeps increasing', () => {
+  const cap = Math.exp(600);
+  const beforeCap = scaleFactorAt(tenToThe(12) * YEAR_NS);
+  assert.ok(Number.isFinite(beforeCap) && beforeCap < cap);
+  for (const exp of [14, 40, 100]) {
+    const t = tenToThe(exp) * YEAR_NS;
+    assert.equal(scaleFactorAt(t), cap, `scaleFactorAt(1e${exp} yr) should use its finite render-adapter cap`);
+    assert.ok(Number.isFinite(lnScaleFactorAt(t)));
   }
-  const boundaryYears = Number(loYears);
-  assert.ok(boundaryYears > 8.0e12 && boundaryYears < 8.6e12,
-    `documented saturation boundary moved: measured ${boundaryYears.toExponential(6)} yr, expected within [8.0e12, 8.6e12] yr (doc says ~8.3e12)`);
-  assert.ok(Number.isFinite(scaleFactorAt(loYears * YEAR_NS)));
-  assert.equal(scaleFactorAt(hiYears * YEAR_NS), Infinity);
-  // The log-space helper must stay finite and monotonic straddling the exact
-  // measured boundary, where scaleFactorAt itself has already broken down.
-  const lnLo = lnScaleFactorAt(loYears * YEAR_NS);
-  const lnHi = lnScaleFactorAt(hiYears * YEAR_NS);
-  assert.ok(Number.isFinite(lnLo) && Number.isFinite(lnHi) && lnHi > lnLo,
-    `lnScaleFactorAt must stay finite and increasing straddling the saturation boundary: lo=${lnLo} hi=${lnHi}`);
+  assert.ok(lnScaleFactorAt(tenToThe(14) * YEAR_NS) < lnScaleFactorAt(tenToThe(40) * YEAR_NS));
 });
 
 // ---------------------------------------------------------------------------

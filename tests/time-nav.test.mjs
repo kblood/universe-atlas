@@ -210,10 +210,12 @@ test('horizon gating: safeScaleFactorAt and galaxyVisibility are always finite, 
     }
   }
 });
-test('horizon gating: a galaxy far outside the shrinking late-time horizon is not visible', () => {
-  const t = tenToThe(14) * YEAR_NS; // well past the horizon's collapse
-  const vis = galaxyVisibility(10, t); // 10 Mpc comoving, larger than the ~1e-a Mpc horizon there
-  assert.equal(vis.visible, false);
+test('horizon gating: late-time particle horizon approaches a finite comoving limit', () => {
+  const t = tenToThe(14) * YEAR_NS;
+  const within = galaxyVisibility(10, t);
+  const outside = galaxyVisibility(20_000, t);
+  assert.equal(within.visible, true, '10 Mpc remains inside the ~19,514 Mpc particle horizon');
+  assert.equal(outside.visible, false, '20,000 Mpc is beyond the finite late-time particle horizon');
 });
 test('horizon gating: the observer\'s own galaxy (comoving distance 0) is always visible', () => {
   for (const exp of [12, 50, 100]) {

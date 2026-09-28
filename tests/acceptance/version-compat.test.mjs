@@ -74,12 +74,12 @@ test('WorldVersions bundle round-trips through JSON (the persisted save/bookmark
 
 test('§6.2 version-bump table: every constant this migration was supposed to land on has its exact contractual value', () => {
   assert.equal(TIME_VERSION, 'atlas-time-2', 'was atlas-time-1: origin moved from catalogue epoch to Big Bang');
-  assert.equal(HISTORY_VERSION, 'atlas-history-2', 'was atlas-history-fixtures-1: promoted to authoritative existence-gating source');
+  assert.equal(HISTORY_VERSION, 'atlas-history-3-remnant-cooling', 'current authoritative lifecycle algorithm includes remnant cooling');
   assert.equal(BIOSPHERE_VERSION, 'biosphere-lab-3', 'was biosphere-lab-2: reseeded by body address + rekeyed to planet age');
-  assert.equal(SURFACE_VERSION, 'atlas-surface-2', 'was atlas-surface-1: surfaceQuery gains t-driven existence/ocean gating');
+  assert.equal(SURFACE_VERSION, 'atlas-surface-6-lifecycle-sampler', 'current surface and lifecycle sampling contract');
   assert.equal(CATALOG_VERSION, 'atlas-2.0.0', 'was atlas-1.0.0: address space gains cluster/group hierarchy levels');
   assert.equal(ADDRESS_VERSION, 'atlas-address-1', 'new module');
-  assert.equal(COSMOLOGY_VERSION, 'atlas-cosmology-1', 'new module');
+  assert.equal(COSMOLOGY_VERSION, 'atlas-cosmology-2-radiation', 'current background includes the radiation-era model');
 });
 
 test('FINDING (not this suite\'s fault, reported for visibility): §6.2 explicitly requires TERRAIN_VERSION stay fixed at "terrain-1.2.0" ("deliberate: ... its version shouldn\'t either"); the live value has since moved', () => {

@@ -7,28 +7,27 @@ import {
 import {CATALOGUE_EPOCH_NS, UNIVERSE_END_NS, tenToThe, YEAR_NS} from '../src/world-time.ts';
 import {canonicalJSON} from './canonical-json.mjs';
 
-test('COSMOLOGY_VERSION is the contract value', () => {
-  assert.equal(COSMOLOGY_VERSION, 'atlas-cosmology-1');
+test('COSMOLOGY_VERSION is the current radiation-background contract value', () => {
+  assert.equal(COSMOLOGY_VERSION, 'atlas-cosmology-2-radiation');
 });
 
 test('a(CATALOGUE_EPOCH_NS) === 1 within 1e-12 and a(t) is monotone increasing', () => {
   assert.ok(Math.abs(scaleFactorAt(CATALOGUE_EPOCH_NS) - 1) < 1e-12, `a(now)=${scaleFactorAt(CATALOGUE_EPOCH_NS)}`);
   assert.equal(scaleFactorAt(0n), 0);
-  // sinh() overflows to +Infinity around tGyr ~ 8.3e12 (x = tGyr/T_LAMBDA_GYR ~ 710,
-  // the IEEE double sinh overflow threshold) — strict monotonicity is only a
-  // meaningful, checkable property below that saturation point.
+  // scaleFactorAt is capped at exp(600) for finite position adapters; the
+  // log-space path carries the continued growth beyond this ceiling.
   const samples = [0n, 1_000_000n*YEAR_NS, 100_000_000n*YEAR_NS, 1_000_000_000n*YEAR_NS,
     CATALOGUE_EPOCH_NS, CATALOGUE_EPOCH_NS*2n, tenToThe(12)*YEAR_NS];
   for (let i = 1; i < samples.length; i++) {
     assert.ok(scaleFactorAt(samples[i]) > scaleFactorAt(samples[i-1]),
       `a(t) must increase: a(${samples[i-1]})=${scaleFactorAt(samples[i-1])} >= a(${samples[i]})=${scaleFactorAt(samples[i])}`);
   }
-  // Beyond saturation a(t) is still non-decreasing (it pins at +Infinity, the
-  // correct de-Sitter "grows without bound" limit for a proxy heat-death axis).
+  // Beyond the adapter ceiling a(t) remains finite and pinned, while ln(a)
+  // continues to grow in its dedicated helper.
   let previous = scaleFactorAt(samples[samples.length-1]);
   for (const t of [tenToThe(14)*YEAR_NS, tenToThe(40)*YEAR_NS, UNIVERSE_END_NS]) {
     const a = scaleFactorAt(t);
-    assert.ok(a >= previous, `a(t) must never decrease: a(${t})=${a} < ${previous}`);
+    assert.ok(a >= previous && Number.isFinite(a), `finite adapter must never decrease: a(${t})=${a} < ${previous}`);
     previous = a;
   }
 });
@@ -36,7 +35,7 @@ test('a(CATALOGUE_EPOCH_NS) === 1 within 1e-12 and a(t) is monotone increasing',
 test('a(t) handles the full 0n..UNIVERSE_END_NS range without throwing or producing NaN', () => {
   for (const t of [0n, CATALOGUE_EPOCH_NS, UNIVERSE_END_NS, UNIVERSE_END_NS - 1n]) {
     const a = scaleFactorAt(t);
-    assert.ok(Number.isFinite(a) || a === Infinity, `a(${t}) must be a finite number or +Infinity, got ${a}`);
+    assert.ok(Number.isFinite(a), `a(${t}) must remain finite through its adapter cap, got ${a}`);
     assert.ok(!Number.isNaN(a));
   }
 });

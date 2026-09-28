@@ -138,9 +138,12 @@ export type WorldVersions = {
 ```
 
 A `WorldVersions` bundle is part of every save/bookmark/URL, exactly as the
-existing manifest concept in the v1 spec (§3) describes. Loading an old bundle
-with a stale `time` or `history` version routes through the one-shot migration
-shim in §6.2, not silent reinterpretation.
+existing manifest concept in the v1 spec (§3) describes. The URL migration
+shim in §6.2 handles legacy date-axis encodings; it does not migrate outputs
+between historical algorithm versions. At present only `time` is read by the
+URL resolver. Reproducing a bookmark created under an older history or
+cosmology algorithm requires the corresponding historical implementation;
+the current application does not transparently reseed or reconstruct it.
 
 ⚠ **Scope note, added 2026-09-17 after the `surfaceQuery`/`surfaceAt` divergence
 finding (§2.6). `WorldVersions` covers the pure generator/query layer only** —
@@ -1284,49 +1287,43 @@ them is the main risk to the t-seek-independence acceptance test:
 
 ## 4. Space over time
 
-### 4.1 Expansion: a simple, exactly-anchored ΛCDM-ish `a(t)`
+### 4.1 Expansion: an exactly-anchored radiation + matter + dark-energy `a(t)`
 
-Use the closed-form flat-ΛCDM solution for a matter+dark-energy universe
-(ignoring the brief radiation-dominated era — acceptable, since nothing
-renders there but the "explanatory placeholder" from §3.1):
+The implemented model is a homogeneous, flat radiation + matter + constant-
+dark-energy background, normalized so `a(CATALOGUE_EPOCH_NS) = 1`. It uses a
+tabulated log-scale-factor history for the early era and a stable log-space
+late-time solution. It is an explanatory expansion model, not inflation or a
+structure-formation simulation:
 
 ```ts
-// src/cosmology.ts (Package A) — continuous quantity, ordinary doubles are fine (§1.2 rule 3).
-export const COSMOLOGY_VERSION = 'atlas-cosmology-1';
-const H0_KM_S_MPC = 67.4;        // Planck 2018
-const OMEGA_LAMBDA = 0.685;      // Planck 2018
-const HUBBLE_TIME_GYR = 977.79 / H0_KM_S_MPC;                 // ≈ 14.51 Gyr
-const T_LAMBDA_GYR = (2 / 3) * HUBBLE_TIME_GYR / Math.sqrt(OMEGA_LAMBDA); // ≈ 11.70 Gyr
-const A_UNNORMALIZED = (tGyr: number) => Math.sinh(Math.max(0, tGyr) / T_LAMBDA_GYR) ** (2 / 3);
-const A_NOW = A_UNNORMALIZED(13.787);
-
-export function scaleFactorAt(t: Ns): number {
-  const tGyr = Number(t) / Number(YEAR_NS) / 1e9;
-  return A_UNNORMALIZED(tGyr) / A_NOW; // normalized so a(CATALOGUE_EPOCH_NS) === 1 exactly
-}
+// src/cosmic-background.ts and src/cosmology.ts
+export const COSMOLOGY_VERSION = 'atlas-cosmology-2-radiation';
+export function lnScaleFactorAt(t: Ns): number; // finite, increasing log-space result
+export function scaleFactorAt(t: Ns): number;   // exp(min(600, lnScaleFactorAt(t)))
 ```
 
-**Addendum 2026-09-16 — numerical range.** The snippet above is the
-specification; the landed `src/cosmology.ts` also exports `lnScaleFactorAt`,
-`scaleRatio`, `properDistanceLn` and `hubbleHorizonComovingMpc`. Those exist
-because `scaleFactorAt` silently saturates to `+Infinity` past `t ≈ 8.3e12` yr
-(`Math.sinh` overflow) — which is a negligible fraction of the way to a
-`10^100` yr ceiling, so **any caller that must stay finite into the far future
-uses the log-space variants, not `scaleFactorAt`**. Note also the
-`Math.max(0, tGyr)` clamp above: `a(t)` treats every `t < 0` as the Big Bang
-instant rather than extrapolating backwards.
+`scaleFactorAt` is a finite position adapter capped at `exp(600)`; it does not
+overflow to infinity. The uncapped result remains available from
+`lnScaleFactorAt`, while `scaleRatio` and `properDistanceLn` preserve useful
+relative and distance calculations at very late dates. Callers that need the
+continued far-future growth must use those log-space helpers rather than infer
+it from the capped adapter.
 
-Normalizing by `A_NOW` sidesteps needing the exact `(Ωm/ΩΛ)^{1/3}` prefactor
-entirely: by construction `a(CATALOGUE_EPOCH_NS) = 1`, which means **today's
+The simultaneous-date galaxy visibility helper uses the **comoving particle
+horizon**, not the shrinking comoving Hubble radius returned by
+`hubbleHorizonComovingMpc`. In this constant-dark-energy approximation the
+particle horizon grows toward a finite limit of about 19,514 Mpc. This is not a
+past-light-cone or observed-sky calculation.
+
+The normalization pins `a(CATALOGUE_EPOCH_NS) = 1`, which means **today's
 frozen galaxy positions are unchanged** — this is the continuity requirement
 from the existing v1 spec ("freeze galaxy... motion in v1... a static
-snapshot") satisfied as a special case of the new time-aware model, not
-contradicted by it. `a(t) → 0` as `t → 0` (`sinh(x) ~ x` for small `x` gives
-`a ∝ t^{2/3}`, the correct matter-dominated early-time behaviour); `a(t)`
-grows asymptotically exponentially for large `t`, the correct de-Sitter
-far-future behaviour. Both edges are known simplifications (no radiation era,
-no eventual causal disconnection of bound structures) — flagged in §7, not
-hidden.
+snapshot") satisfied as a special case of the new time-aware model. The
+radiation term governs the early background; the model still does not attempt
+inflation or detailed entropy-transfer transitions. At late times `a(t)` grows
+asymptotically exponentially in the constant-dark-energy approximation, and
+the comoving particle horizon approaches a finite limit. These are background
+approximations, not a simulation of bound-structure evolution.
 
 ### 4.2 Galaxy comoving position, peculiar motion, and mergers
 
@@ -1526,12 +1523,12 @@ any package starts its implementation.
 | Constant | Old → New | Why |
 |---|---|---|
 | `TIME_VERSION` | `atlas-time-1` → `atlas-time-2` | origin moves from catalogue epoch to Big Bang; `epoch=0n` now means a different instant |
-| `HISTORY_VERSION` | `atlas-history-fixtures-1` → `atlas-history-2` | promoted from export-only heuristic sidecar to authoritative existence-gating source (`visualEvolution: true`) |
+| `HISTORY_VERSION` | `atlas-history-fixtures-1` → `atlas-history-2` → current `atlas-history-3-remnant-cooling` | promoted to authoritative existence gating, then extended with remnant cooling; current exact identifier is pinned by tests |
 | `BIOSPHERE_VERSION` | `biosphere-lab-2` → `biosphere-lab-3` | reseeded by body address + rekeyed to planet age; species existence timing output changes |
-| `SURFACE_VERSION` | `atlas-surface-1` → `atlas-surface-2` | `surfaceQuery` gains `t`-driven existence/ocean-dry-out gating |
+| `SURFACE_VERSION` | `atlas-surface-1` → `atlas-surface-2` → current `atlas-surface-6-lifecycle-sampler` | added dated existence/ocean gating and subsequent lifecycle-sampler updates; current exact identifier is pinned by tests |
 | `VERSION` (catalog) | `atlas-1.0.0` → `atlas-2.0.0` | address space gains two hierarchy levels (cluster/group), even though legacy group `(0,0,0)` output is required to stay byte-identical |
 | `ADDRESS_VERSION` | *(new)* `atlas-address-1` | new module |
-| `COSMOLOGY_VERSION` | *(new)* `atlas-cosmology-1` | new module |
+| `COSMOLOGY_VERSION` | *(new)* `atlas-cosmology-1` → current `atlas-cosmology-2-radiation` | current background includes radiation, matter and constant dark energy; current exact identifier is pinned by tests |
 | `TERRAIN_VERSION` | `terrain-1.2.0` → `terrain-1.4.1` | **corrected 2026-09-16**: this row originally predicted "unchanged," reasoning that existence/formation gating lives in `world-surface.ts` outside `terrainSampler`. That still holds for *gating*, but `terrainSampler` itself changed three times. `1.3.0`: `**`/`Math.pow` replaced with explicit multiplication (§1.2 two-class math), and the sampler now takes the canonical river region set instead of the UI-mutated `body.hydrology`. `1.4.0`: optional crater displacement, a pure function of `(seed, address, t)` with surface age threaded from the clamped `planetAgeMyr` convention. `1.4.1`: craters default **off** at both layers (`planetSurface`'s `applyCraters` and `terrainSampler`'s `includeCraters`) — see the perf note below. Each bump is a statement that the *algorithm* changed; only the four-engine golden gate can certify what the *output* did |
 | *(perf constraint, not a version)* | — | Craters are wired, deterministic and tested, but **disabled by default**, because they are a per-sample cost in paths with hard real-time budgets. Enabling them took `planetSurface` from 346 ms to 10,913 ms on a 1024×192 call, took a full 37-body system from 331 ms to 261 s against `job()`'s 60 s timeout, and took `buildTile` at level 22 from ~6–11 ms to 180–235 ms, which broke walking outright. A timeout there does not fail loudly — it silently strands the app at `level:'sector'`. Re-enabling by default requires spatial acceleration (bucket craters by direction so each sample tests only nearby ones), not a larger timeout |
 | `VERSION` (`catalog.ts`) | `atlas-1.0.0` → `atlas-2.0.0` | **2026-09-16**: `ihash()` rewritten. The old z-multiplier `2147483647` (2^31−1) is nearly degenerate under `Math.imul` — almost linear, with very poor avalanche — and `s` was XORed in raw and unmixed; every input now uses an odd, high-entropy multiplier and passes through a murmur3 `fmix32` finalizer. Correct, deliberate, and correctly recorded here rather than under `TERRAIN_VERSION`, which does not own it |
