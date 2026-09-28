@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "expectedCommit": "e0d9d9c07509f53fa3a3385afb3e587c9c5b7999",
+  "build": {
+    "commit": "e0d9d9c07509f53fa3a3385afb3e587c9c5b7999",
+    "dirty": false,
+    "builtAt": "2026-09-28T15:51:35.652Z"
+  },
+  "resource": "test-results/forest-asset-loading/README.md",
+  "status": 200,
+  "bytes": 4353,
+  "localSha256": "320f3e1a458bd004c5f3a12c0d533dd8a91ed7d81a3d3c3a28485b9f7fc08ffd",
+  "liveSha256": "320f3e1a458bd004c5f3a12c0d533dd8a91ed7d81a3d3c3a28485b9f7fc08ffd",
+  "matchesDist": true
+}

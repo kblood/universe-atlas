@@ -1,0 +1,161 @@
+{
+  "ok": true,
+  "checkedAt": "2026-09-28T15:58:00.280Z",
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "expectedCommit": "e0d9d9c07509f53fa3a3385afb3e587c9c5b7999",
+  "build": {
+    "commit": "e0d9d9c07509f53fa3a3385afb3e587c9c5b7999",
+    "dirty": false,
+    "builtAt": "2026-09-28T15:51:35.652Z"
+  },
+  "packageRoot": "assets/forest/desktop-v1",
+  "fileCount": 18,
+  "bytes": 25953387,
+  "allMatchDist": true,
+  "files": [
+    {
+      "path": "assets/forest/desktop-v1/branching/asset-brief.json",
+      "status": 200,
+      "bytes": 4422,
+      "localSha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91",
+      "liveSha256": "be5da6e9c03cded663383df1cd33e90f63c17a9a2d3f1eae594226a5ef275d91",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/family-manifest.json",
+      "status": 200,
+      "bytes": 11135,
+      "localSha256": "7d799d58172e0b63c1f5e098dc883ac9bf9d09390e1021986835bb2779b14729",
+      "liveSha256": "7d799d58172e0b63c1f5e098dc883ac9bf9d09390e1021986835bb2779b14729",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/foliage-mip-manifest.json",
+      "status": 200,
+      "bytes": 15739,
+      "localSha256": "3b22162f9ce8f3c6caaf33a85bb2f066ec07084233e4d546631f75f5de6f8480",
+      "liveSha256": "3b22162f9ce8f3c6caaf33a85bb2f066ec07084233e4d546631f75f5de6f8480",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/foliage-mips.rgba8",
+      "status": 200,
+      "bytes": 5592064,
+      "localSha256": "489bbfbc31c1c7375907f606d80817e918b8660bb9de0d91480bb2d4978484c6",
+      "liveSha256": "489bbfbc31c1c7375907f606d80817e918b8660bb9de0d91480bb2d4978484c6",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/oak-lod0.glb",
+      "status": 200,
+      "bytes": 3969868,
+      "localSha256": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+      "liveSha256": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/oak-lod0.glb.asset.json",
+      "status": 200,
+      "bytes": 9629,
+      "localSha256": "5f250ec4f303f9cf1555b572dafc06cd28f482bce6c0b423493b7638bd474662",
+      "liveSha256": "5f250ec4f303f9cf1555b572dafc06cd28f482bce6c0b423493b7638bd474662",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/oak-lod1.glb",
+      "status": 200,
+      "bytes": 2603256,
+      "localSha256": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9",
+      "liveSha256": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/branching/oak-lod1.glb.asset.json",
+      "status": 200,
+      "bytes": 9623,
+      "localSha256": "1f6ba630626f844bf67c0152f2ba9da413d7e2ebb2a1ac4eac1ac840fa2b2df9",
+      "liveSha256": "1f6ba630626f844bf67c0152f2ba9da413d7e2ebb2a1ac4eac1ac840fa2b2df9",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/forest-bundle-manifest.json",
+      "status": 200,
+      "bytes": 19892,
+      "localSha256": "21925ae3e5d5a38aefdde2df0901c1325ed80aae18640254eb62ba39e23545da",
+      "liveSha256": "21925ae3e5d5a38aefdde2df0901c1325ed80aae18640254eb62ba39e23545da",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/licenses/ez-tree-MIT-LICENSE.txt",
+      "status": 200,
+      "bytes": 1073,
+      "localSha256": "20e4afadfb10c67952b3d73cd2982d21d165ab4ae82b0dd9e4d6f2166ee349b6",
+      "liveSha256": "20e4afadfb10c67952b3d73cd2982d21d165ab4ae82b0dd9e4d6f2166ee349b6",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/asset-brief.json",
+      "status": 200,
+      "bytes": 4310,
+      "localSha256": "354ef461bf25e5c945498dc97932d7b2973fe2c14622e4f614d372ba4f8dd2c0",
+      "liveSha256": "354ef461bf25e5c945498dc97932d7b2973fe2c14622e4f614d372ba4f8dd2c0",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/conifer-lod0.glb",
+      "status": 200,
+      "bytes": 4764524,
+      "localSha256": "58ead3644a84f91d0d30658c827be0c04d6ab0b5a42f468397cd2474a1c06e3d",
+      "liveSha256": "58ead3644a84f91d0d30658c827be0c04d6ab0b5a42f468397cd2474a1c06e3d",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/conifer-lod0.glb.asset.json",
+      "status": 200,
+      "bytes": 10684,
+      "localSha256": "e47a8986dfef9ca91fa831fe52b5e128b5a2f68124bba359e65f20008d335417",
+      "liveSha256": "e47a8986dfef9ca91fa831fe52b5e128b5a2f68124bba359e65f20008d335417",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/conifer-lod1.glb",
+      "status": 200,
+      "bytes": 3304920,
+      "localSha256": "126cc179069cdeadf37bfa9fefa47b5be853040046be812a6e282e648f8d884b",
+      "liveSha256": "126cc179069cdeadf37bfa9fefa47b5be853040046be812a6e282e648f8d884b",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/conifer-lod1.glb.asset.json",
+      "status": 200,
+      "bytes": 10679,
+      "localSha256": "19ae62ea4f9056eab8dfa87879e3e7d80cfcb1cbc08c8ac7e9d2a75e18dfa63b",
+      "liveSha256": "19ae62ea4f9056eab8dfa87879e3e7d80cfcb1cbc08c8ac7e9d2a75e18dfa63b",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/family-manifest.json",
+      "status": 200,
+      "bytes": 13152,
+      "localSha256": "eceec3fc7396bd7f9ed5a197dd2beb67467cf14f77976ee406c31be628fa7738",
+      "liveSha256": "eceec3fc7396bd7f9ed5a197dd2beb67467cf14f77976ee406c31be628fa7738",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/foliage-mip-manifest.json",
+      "status": 200,
+      "bytes": 16353,
+      "localSha256": "6625dd9a805dad4d7641efe648bac31fd4cd1f049b8db09d17313c67149bff92",
+      "liveSha256": "6625dd9a805dad4d7641efe648bac31fd4cd1f049b8db09d17313c67149bff92",
+      "matches": true
+    },
+    {
+      "path": "assets/forest/desktop-v1/spire/foliage-mips.rgba8",
+      "status": 200,
+      "bytes": 5592064,
+      "localSha256": "1be67c71812a392451e90789c47667aeeb6c92d010f29f3f11735f4353e0e576",
+      "liveSha256": "1be67c71812a392451e90789c47667aeeb6c92d010f29f3f11735f4353e0e576",
+      "matches": true
+    }
+  ]
+}

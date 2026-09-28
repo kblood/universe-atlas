@@ -1,0 +1,54 @@
+{
+  "schema": "iwsdk-atlas-live-release-receipt-v1",
+  "checkedAt": "2026-09-28T16:00:50Z",
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "commit": "e0d9d9c07509f53fa3a3385afb3e587c9c5b7999",
+  "dirty": false,
+  "releaseScript": "C:/LLM/IWSDK/release.ps1 universe-atlas",
+  "releaseExit": 0,
+  "releaseLog": "release.log",
+  "guide": {
+    "result": "pass",
+    "report": "guide/guide-report.json",
+    "chapters": 9,
+    "widths": [1440, 390, 320],
+    "internalDestinations": 98,
+    "noJavaScript": true,
+    "eraAnchors": [0, 5, 9],
+    "inGameGuideLink": true,
+    "errors": [],
+    "assets": "guide/*.png"
+  },
+  "forestPackage": {
+    "result": "pass",
+    "audit": "package-byte-audit.json",
+    "files": 18,
+    "bytes": 25953387,
+    "allMatchReleaseDist": true
+  },
+  "linkedForestReadme": {
+    "result": "pass",
+    "audit": "readme-byte-audit.json",
+    "status": 200,
+    "bytes": 4353,
+    "sha256": "320f3e1a458bd004c5f3a12c0d533dd8a91ed7d81a3d3c3a28485b9f7fc08ffd",
+    "matchesReleaseDist": true,
+    "previousCommitFailureResolved": "../deploy-8c03f41/guide-initial-failure.json"
+  },
+  "defaults": {
+    "result": "pass",
+    "report": "defaults/ordinary-defaults.json",
+    "screenshot": "defaults/00-ordinary-url-default.png",
+    "treesEnabled": false,
+    "surfaceLightingEnabled": true,
+    "surfaceLightingActiveAtUniverseView": false,
+    "forestRequests": 0,
+    "errors": []
+  },
+  "normalUi": {
+    "result": "pass on unchanged runtime at prior live commit 8c03f41",
+    "report": "../deploy-8c03f41/normal-ui/report.json",
+    "notes": "e0d9d9c changes only docs, guide content and Vite publication allowlist; no src runtime changes."
+  },
+  "visualAcceptance": "open; this release fixes guide publication and records the opt-in forest optimization stage, not final forest realism acceptance."
+}

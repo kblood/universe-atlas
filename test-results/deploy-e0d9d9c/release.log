@@ -1,0 +1,72 @@
+**********************
+PowerShell transcript start
+Start time: 20260928175117
+Username: DESKTOP-N09QOSU\Caldor
+RunAs User: DESKTOP-N09QOSU\Caldor
+Configuration Name: 
+Machine: DESKTOP-N09QOSU (Microsoft Windows NT 10.0.26100.0)
+Host Application: C:\Program Files\PowerShell\7\pwsh.dll -Command try { [Console]::OutputEncoding=[System.Text.Encoding]::UTF8 } catch {}
+Start-Transcript -Path C:\LLM\IWSDK\release-e0d9d9c.log -Force; .\release.ps1 universe-atlas; $releaseExit=$LASTEXITCODE; Stop-Transcript; if ($releaseExit -ne 0) { exit $releaseExit }
+Process ID: 26172
+PSVersion: 7.6.6
+PSEdition: Core
+GitCommitId: 7.6.6
+OS: Microsoft Windows 10.0.26100
+Platform: Win32NT
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1, 6.0, 7.0
+PSRemotingProtocolVersion: 2.4
+SerializationVersion: 1.1.0.1
+WSManStackVersion: 3.0
+**********************
+Transcript started, output file is C:\LLM\IWSDK\release-e0d9d9c.log
+
+=== Building universe-atlas ===
+› Ask Codex to do anything
+
+=== Preparing staging on 35.228.204.127 ===
+    /var/www/html/webxr/IWSDK/.staging-universe-atlas-6b829d4f
+› Ask Codex to do anything
+
+=== Uploading dist/ ===
+    + assets
+› Ask Codex to do anything
+    + docs
+› Ask Codex to do anything
+    + guide
+› Ask Codex to do anything
+    + src
+› Ask Codex to do anything
+    + test-results
+› Ask Codex to do anything
+    + tests
+› Ask Codex to do anything
+    + biome-lab.html
+› Ask Codex to do anything
+    + biosphere-lab.html
+› Ask Codex to do anything
+    + build-info.json
+› Ask Codex to do anything
+    + creature-lab.html
+› Ask Codex to do anything
+    + index.html
+› Ask Codex to do anything
+    + rapier-LICENSE.txt
+› Ask Codex to do anything
+    + README.md
+› Ask Codex to do anything
+    + river-geometry-LICENSES.txt
+› Ask Codex to do anything
+    + three-LICENSE.txt
+› Ask Codex to do anything
+    + .htaccess (shared)
+› Ask Codex to do anything
+
+=== Atomic swap to live path ===
+› Ask Codex to do anything
+
+Done.
+  Live: https://dionysus.dk/webxr/IWSDK/universe-atlas/
+**********************
+PowerShell transcript end
+End time: 20260928175507
+**********************

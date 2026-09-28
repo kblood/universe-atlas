@@ -1,0 +1,13 @@
+import {createHash} from 'node:crypto';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import path from 'node:path';
+const base='https://dionysus.dk/webxr/IWSDK/universe-atlas/';
+const expected='e0d9d9c07509f53fa3a3385afb3e587c9c5b7999';
+const rel='test-results/forest-asset-loading/README.md';
+const localPath=path.resolve('C:/LLM/IWSDK/universe-atlas/dist',rel);
+const local=await readFile(localPath),response=await fetch(new URL(rel,base)),remote=Buffer.from(await response.arrayBuffer());
+const sha=b=>createHash('sha256').update(b).digest('hex');
+const stampResponse=await fetch(new URL('build-info.json',base)),stamp=await stampResponse.json();
+const report={ok:response.status===200&&local.equals(remote)&&stamp.commit===expected&&stamp.dirty===false,base,expectedCommit:expected,build:stamp,resource:rel,status:response.status,bytes:remote.length,localSha256:sha(local),liveSha256:sha(remote),matchesDist:local.equals(remote)};
+await mkdir('test-results/deploy-e0d9d9c',{recursive:true});await writeFile('test-results/deploy-e0d9d9c/readme-byte-audit.json',JSON.stringify(report,null,2));
+if(!report.ok)process.exit(1);console.log(JSON.stringify(report,null,2));
