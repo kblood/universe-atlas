@@ -1,0 +1,57 @@
+{
+  "requestedModel": "claude-opus-5-5",
+  "actualModel": "claude-opus-5-5",
+  "provider": "firstParty",
+  "sourceRevision": "481e6936bbd84c68dd4de3b7bda810fab63ee455",
+  "inputFiles": [
+    {
+      "path": "docs/canopy-census-design-2026-09-28.md",
+      "sha256": "f54069f7d59a4df453c4c0cdde754c321c9abe720d6429251c68246c5603c527"
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "dfe6dc81bc0011554ec9e3567b665384ebb3693802aaae4208d713c15d086ab9"
+    },
+    {
+      "path": "src/forest-patch.ts",
+      "sha256": "7bf314970b0c73c78e9dec01877906bef02dc135176761143f3a3419b845b96c"
+    },
+    {
+      "path": "src/forest-habitat.ts",
+      "sha256": "a470d5c423c132133895a7c95654661feaa5fc75180255e060d37e243fc876db"
+    },
+    {
+      "path": "src/forest-selection-cache.ts",
+      "sha256": "bc01f2d849b530ff4b889fe345e1da49ad877739e78f04fe901ae63ad7a8ebc5"
+    },
+    {
+      "path": "src/planet-detail.ts",
+      "sha256": "b82b90391bafa993d860f77738544834767d918665ccfbe46d461308b54a45ab"
+    },
+    {
+      "path": "src/planet-population.ts",
+      "sha256": "5c29d92f684aeec42a75bab1c939d9815e18959627f28ae0b4ddb752eadd62e6"
+    },
+    {
+      "path": "src/local-aerial-perspective.ts",
+      "sha256": "ef408cbc9526e39526d09009999e0c15dcced24bcb553adc09d42923a8124088"
+    }
+  ],
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 55459,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 21594,
+      "webSearchRequests": 0,
+      "costUSD": 1.2822318000000001,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 48463,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "notes": "Source-backed design review; estimates are not measurements. Draft design was uncommitted; hashes preserve exact reviewed content. Actual census implementation was not in this review bundle."
+}

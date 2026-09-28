@@ -7,10 +7,14 @@ export const FOREST_PATCH_SIDE=8;
 export type ForestPatchAddress=Readonly<{face:number;n:number;x:number;y:number}>;
 export type ForestPatch=Readonly<{key:string;address:ForestPatchAddress;testedCells:number;cells:readonly PopulationCell[]}>;
 
-export function forestPatch(seed:string,address:ForestPatchAddress):ForestPatch {
+export function validateForestPatchAddress(address:ForestPatchAddress){
   const {face,n,x,y}=address,side=FOREST_PATCH_SIDE;
   if(!Number.isInteger(face)||face<0||face>5||!Number.isSafeInteger(n)||n<1||
     !Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x<0||y<0||x>=Math.ceil(n/side)||y>=Math.ceil(n/side))throw new Error('Invalid forest patch address');
+}
+export function forestPatch(seed:string,address:ForestPatchAddress):ForestPatch {
+  validateForestPatchAddress(address);
+  const {face,n,x,y}=address,side=FOREST_PATCH_SIDE;
   const cells:PopulationCell[]=[];
   const x0=x*side,y0=y*side,x1=Math.min(n,x0+side),y1=Math.min(n,y0+side);
   for(let iy=y0;iy<y1;iy++)for(let ix=x0;ix<x1;ix++){
