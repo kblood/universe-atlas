@@ -1,0 +1,57 @@
+{
+  "requestedModel": "claude-opus-5-5",
+  "actualModel": "claude-opus-5-5",
+  "provider": "firstParty",
+  "sourceRevision": "a0dd78a7d462edc56399ade376b5dbe14e55f898",
+  "inputFiles": [
+    {
+      "path": "src/forest-selection-transfer.ts",
+      "sha256": "50a35933cb6e5debab97cf356354232bb7015a6eca3a66d2f16fb2f72689028d"
+    },
+    {
+      "path": "src/planet-population-worker.ts",
+      "sha256": "c46688305876f3b0366d34ec860bf169630c06ec47006090dd6b3b8d9be025b3"
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "a75347d55eeac654a5d5fcc662df09549a1040e7eb7247b78242f2967149c5fe"
+    },
+    {
+      "path": "src/planet-detail.ts",
+      "sha256": "b82b90391bafa993d860f77738544834767d918665ccfbe46d461308b54a45ab"
+    },
+    {
+      "path": "tests/forest-selection-transfer.test.mjs",
+      "sha256": "936624b8b6d3e0d2a6f7d24d300dbceebb1fd440c0424185c5d176c0343e21a1"
+    },
+    {
+      "path": "tests/forest-retention.test.mjs",
+      "sha256": "ba6822c780cd734b1c6313849d0ae7a600c8f0d07e91d0687279f11425f995e6"
+    },
+    {
+      "path": "tests/forest-selection-transfer-benchmark.mjs",
+      "sha256": "0f572e0cf434941152f43c8ca34408bbdf6055f0c34220298e47843f02211d32"
+    },
+    {
+      "path": "docs/forest-selection-transfer-2026-09-28.md",
+      "sha256": "56e6b474e22fba8f673b56f488c4e7057e796108140c0c34d2aae5daccf50b77"
+    }
+  ],
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 10252,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 18904,
+      "webSearchRequests": 0,
+      "costUSD": 0.3565718,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 8013,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "notes": "Verbatim read-only source review. Receiver corrections and test followups recorded in forest-selection-transfer-2026-09-28.md."
+}

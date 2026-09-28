@@ -13,6 +13,7 @@ test('transfer preserves every double, identity, order and representative flag a
     const moved=structuredClone(packet,{transfer:[packet.buffer]});
     assert.equal(packet.buffer.byteLength,0,'sender releases response buffer');
     assert.equal(bytes,cells.length*96);
+    assert.deepEqual(unpack(moved),cells);
     assert.equal(JSON.stringify(unpack(moved)),JSON.stringify(cells));
     assert.deepEqual(cache.select(direction,750,4500),cells,'transfer does not detach resident patch cache');
   }
@@ -22,6 +23,9 @@ test('empty and optional representative fields survive round trips',()=>{
   const cell={id:'0/2/0/1',direction:[1,0,0],roll:.5,heightM:15,yaw:0,distanceM:0};
   assert.deepEqual(unpack(pack([cell])),[cell]);
   assert.throws(()=>pack([{...cell,id:'0/02/0/1'}]));
+  assert.throws(()=>pack([{...cell,direction:[1,0]}]));
+  const signedZero={...cell,direction:[1,-0,0],yaw:-0,distanceM:-0};
+  assert.deepEqual(unpack(pack([signedZero])),[signedZero],'strict equality preserves negative zero');
 });
 test('malformed, excessive and detached buffers reject without yielding a partial selection',()=>{
   const cell={id:'0/2/0/1',direction:[1,0,0],roll:.5,heightM:15,yaw:0,distanceM:0,canopyRepresentative:false};

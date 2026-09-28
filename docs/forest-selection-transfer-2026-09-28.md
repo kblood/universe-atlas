@@ -42,3 +42,28 @@ new protocol. They cover real face/seam/corner selections, transfer detachment,
 cache ownership, optional fields, malformed/excessive/detached packets, stale
 responses, recovery and fallback. The production build passes. No new canopy
 coverage, tree asset, habitat rule or visual appearance is enabled here.
+
+## Opus 5.5 review and receiver corrections
+
+[The independent review of a0dd78a](opus-5.5-transfer-review-2026-09-28.md)
+found no merge blockers and recommended two receiver fixes. The main thread
+now keeps its own copy of the requested direction, rejects a null envelope,
+and only catches protocol/decode errors. A defect in selection application
+surfaces as a main-thread error instead of silently consuming worker recovery.
+Completed duplicate replies are ignored, and synchronous postMessage failures
+also clear pending state. Tests additionally check direction length and strict
+negative-zero preservation. Seventeen focused tests now pass.
+
+The review's statement that a detached zero-length buffer decodes harmlessly
+is inaccurate: creating its Float64Array throws, and the receiver recovers.
+The one-restart allowance belongs to each PlanetForest instance, not the whole
+browser session. Replacing a planet renderer creates a new allowance. Within
+one instance, two failures do leave synchronous fallback active. A protocol cap
+overflow follows the same path; larger working sets need an explicit redesign.
+
+Follow-ups include cheaper worker packing, reason-coded failure diagnostics,
+a hung-worker timeout, and browser long-task comparison with the old path.
+The 25-sample p95 above is the second-worst measured sample, not a statistically
+strong tail-latency guarantee. Current transport diagnostics measure explicit
+decode/application; they cannot retrospectively time structured-clone work
+before a message handler starts. No browser frame-speedup claim is made.

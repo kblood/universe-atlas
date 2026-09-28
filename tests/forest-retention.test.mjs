@@ -85,15 +85,17 @@ test('packed selection applies once, ignores stale replies and recovers from dec
   globalThis.Worker=class {constructor(){workers.push(this);}terminate(){}postMessage(){}};
   let f;
   try{
-    f=new PlanetForest(body);f.selectionRequest=10;f.selecting=true;
+    f=new PlanetForest(body);f.selectionRequest=10;f.selecting=true;f.selectionDirection=[1,0,0];
     const cell={id:'0/2/0/1',direction:[1,0,0],roll:.5,heightM:15,yaw:0,distanceM:0,canopyRepresentative:true};
     workers[0].onmessage({data:{requestId:9,packed:null}});
     assert.equal(f.selecting,true);assert.equal(f.workerFailures,0);
-    workers[0].onmessage({data:{requestId:10,direction:[1,0,0],packed:packForestSelection([cell]),selectionMs:3,packMs:1}});
+    workers[0].onmessage({data:{requestId:10,direction:[0,1,0],packed:packForestSelection([cell]),selectionMs:3,packMs:1}});
     assert.deepEqual(f.wanted,[cell]);assert.equal(f.selecting,false);
+    assert.deepEqual(f.center.toArray(),[1,0,0],'request owns selection centre');
+    workers[0].onmessage({data:{requestId:10,packed:null}});assert.equal(f.workerFailures,0,'completed duplicate ignored');
     assert.equal(f.diagnostics().selectionTransfer.bytes,96);
-    f.selectionRequest++;f.selecting=true;
-    workers[0].onmessage({data:{requestId:11,packed:{version:99}}});
+    f.selectionRequest++;f.selecting=true;f.selectionDirection=[1,0,0];
+    workers[0].onmessage({data:{requestId:11,packed:{version:99},selectionMs:1,packMs:1}});
     assert.equal(workers.length,2);assert.equal(f.selecting,false);assert.deepEqual(f.wanted,[cell]);
     assert.equal(f.diagnostics().selectionTransfer,null);
     workers[0].onmessage({data:{requestId:f.selectionRequest,packed:null}});
@@ -101,5 +103,29 @@ test('packed selection applies once, ignores stale replies and recovers from dec
     f.selecting=true;workers[1].onmessageerror({});
     assert.equal(f.selecting,false);assert.equal(f.diagnostics().selectionMode,'synchronous-fallback');
     assert.equal(f.workerFailures,2);assert.equal(f.workerRestarts,1);
+  }finally{f?.dispose();if(OriginalWorker===undefined)delete globalThis.Worker;else globalThis.Worker=OriginalWorker;}
+});
+
+test('malformed response envelope and synchronous post failure cannot leave selection pending',()=>{
+  const OriginalWorker=globalThis.Worker,workers=[];
+  globalThis.Worker=class {constructor(){workers.push(this);}terminate(){}postMessage(){throw new Error('clone failed');}};
+  let f;
+  try{
+    f=new PlanetForest(body);f.selecting=true;workers[0].onmessage({data:null});
+    assert.equal(f.selecting,false);assert.equal(f.workerFailures,1);
+    f.update(new THREE.Vector3(0,0,1.00001),[0,0,1],50,true,0,false);
+    assert.equal(f.selecting,false);assert.equal(f.workerFailures,2);assert.equal(f.diagnostics().selectionMode,'synchronous-fallback');
+  }finally{f?.dispose();if(OriginalWorker===undefined)delete globalThis.Worker;else globalThis.Worker=OriginalWorker;}
+});
+
+test('main selection application defects remain visible and do not consume worker recovery',()=>{
+  const OriginalWorker=globalThis.Worker,workers=[];
+  globalThis.Worker=class {constructor(){workers.push(this);}terminate(){}postMessage(){}};
+  let f;
+  try{
+    f=new PlanetForest(body);f.selecting=true;f.selectionDirection=[1,0,0];
+    f.applySelection=()=>{throw new Error('application defect');};
+    assert.throws(()=>workers[0].onmessage({data:{requestId:0,packed:packForestSelection([]),selectionMs:1,packMs:0}}),/application defect/);
+    assert.equal(f.workerFailures,0);assert.equal(f.workerRestarts,0);
   }finally{f?.dispose();if(OriginalWorker===undefined)delete globalThis.Worker;else globalThis.Worker=OriginalWorker;}
 });

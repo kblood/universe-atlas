@@ -24,7 +24,7 @@ export function packForestSelection(cells:PopulationCell[]):ForestSelectionTrans
   const a=new Float64Array(cells.length*STRIDE);
   for(let i=0;i<cells.length;i++){
     const c=cells[i],parts=c.id.split('/').map(Number),k=i*STRIDE;
-    if(parts.length!==4||parts.join('/')!==c.id)throw new Error('Invalid forest transfer address');
+    if(parts.length!==4||parts.join('/')!==c.id||c.direction.length!==3)throw new Error('Invalid forest transfer address');
     a.set([...parts,...c.direction,c.roll,c.heightM,c.yaw,c.distanceM,c.canopyRepresentative===undefined?-1:Number(c.canopyRepresentative)],k);
     if(!validRecord(a,k))throw new Error('Invalid forest transfer record');
   }

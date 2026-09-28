@@ -114,6 +114,7 @@ export class PlanetForest {
   private worker:Worker|null=null;
   private selecting=false;
   private selectionRequest=0;
+  private selectionDirection:V3|null=null;
   private workerRestarts=0;
   private workerFailures=0;
   private selectionApplyMs=0;
@@ -128,7 +129,7 @@ export class PlanetForest {
       const keep=new Set(this.wanted.map(c=>c.id));
       for(const id of this.cache.keys())if(!keep.has(id))this.cache.delete(id);
     }
-    this.selectionMs=selectionMs;this.selecting=false;
+    this.selectionMs=selectionMs;this.selecting=false;this.selectionDirection=null;
     this.selectionApplyMs=performance.now()-started;
   }
   visibleTrees=0;nearTrees=0;placementMs=0;selectionMs=0;
@@ -161,12 +162,21 @@ export class PlanetForest {
     try{
       const worker=new Worker(new URL('./planet-population-worker.ts',import.meta.url),{type:'module'});this.worker=worker;
       worker.onmessage=({data})=>{
-        if(this.worker===worker&&data.requestId===this.selectionRequest){
+        if(this.worker!==worker||!this.selecting)return;
+        if(!data||!Number.isSafeInteger(data.requestId)){this.failWorker(worker);return;}
+        if(data.requestId===this.selectionRequest){
+          const started=performance.now();let cells:PopulationCell[];
           try{
-            const started=performance.now(),cells=unpackForestSelection(data.packed);
-            this.selectionTransfer={bytes:data.packed.buffer.byteLength,cells:cells.length,packMs:data.packMs,decodeMs:performance.now()-started};
-            this.selectionCacheStats=data.cache??null;this.applySelection(data.direction,cells,data.selectionMs);
-          }catch{this.failWorker(worker);}
+            if(!this.selectionDirection||!Number.isFinite(data.selectionMs)||data.selectionMs<0||
+              !Number.isFinite(data.packMs)||data.packMs<0)throw new Error('Invalid forest response metadata');
+            cells=unpackForestSelection(data.packed);
+          }catch{this.failWorker(worker);return;}
+          this.selectionTransfer={bytes:data.packed.buffer.byteLength,cells:cells.length,packMs:data.packMs,decodeMs:performance.now()-started};
+          // The main thread owns the requested centre; response metadata
+          // cannot move it, and duplicate completed replies are ignored.
+          // Application errors must surface as main-thread bugs, not use up
+          // a worker restart or be silently converted into a fallback.
+          this.selectionCacheStats=data.cache??null;this.applySelection(this.selectionDirection!,cells,data.selectionMs);
         }
       };
       worker.onerror=event=>{event.preventDefault();this.failWorker(worker);};
@@ -175,7 +185,7 @@ export class PlanetForest {
   }
   private failWorker(worker:Worker){
     if(this.worker!==worker)return;
-    worker.terminate();this.worker=null;this.selectionCacheStats=null;this.selectionTransfer=null;this.selecting=false;this.workerFailures++;this.selectionRequest++;
+    worker.terminate();this.worker=null;this.selectionCacheStats=null;this.selectionTransfer=null;this.selectionDirection=null;this.selecting=false;this.workerFailures++;this.selectionRequest++;
     if(this.workerRestarts<1){this.workerRestarts++;this.startWorker();}
   }
   /** Slots belong to resident IDs, not their current visibility/sort ordinal. */
@@ -246,7 +256,9 @@ export class PlanetForest {
     const r=this.body.radiusM,ground=this.direction.set(...groundDirection);
     if(ground.distanceTo(this.center)*r>40&&!this.selecting){
       if(this.worker){
-        this.selecting=true;this.worker.postMessage({requestId:++this.selectionRequest,seed:this.body.seed,direction:groundDirection,radiusM:r});
+        const worker=this.worker;this.selecting=true;this.selectionDirection=[...groundDirection];
+        try{worker.postMessage({requestId:++this.selectionRequest,seed:this.body.seed,direction:groundDirection,radiusM:r});}
+        catch{this.failWorker(worker);}
       }else{
       const started=performance.now();
       const cells=forestPopulationCells(this.body.seed,groundDirection,r,B.forestFootprintM+100,B.canopyFootprintM,B.forestCellM);

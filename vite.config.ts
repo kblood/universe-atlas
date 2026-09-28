@@ -16,6 +16,8 @@ export default defineConfig({
       'docs/canopy-foundation-2026-09-28.md',
       'docs/forest-selection-cache-2026-09-28.md',
       'docs/forest-selection-transfer-2026-09-28.md',
+      'docs/opus-5.5-transfer-review-2026-09-28.md',
+      'docs/opus-5.5-transfer-review-2026-09-28.metadata.json',
       'test-results/forest-selection-transfer/benchmark.json',
       'docs/opus-5.5-selection-cache-review-2026-09-28.md',
       'docs/opus-5.5-selection-cache-review-2026-09-28.metadata.json',
