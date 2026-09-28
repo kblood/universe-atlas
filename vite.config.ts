@@ -29,6 +29,7 @@ export default defineConfig({
       'tests/forest-presentation.test.mjs','tests/tree-canopy-profile.test.mjs','tests/forest-impostor-family.test.mjs',
       'test-results/forest-asset-loading/family-canopy-cpu.log',
       'docs/forest-asset-loading-2026-09-28.md',
+      'docs/terrain-material-wet-roughness-2026-09-28.md',
       'docs/family-canopy-visual-decision-2026-09-28.md',
       'docs/captured-family-relighting-2026-09-28.md',
       'test-results/family-capture/filtering-v3/report.json',

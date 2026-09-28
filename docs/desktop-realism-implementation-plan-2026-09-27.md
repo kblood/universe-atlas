@@ -190,6 +190,12 @@ features without adding an unversioned terrain height field. GPU grass patches
 are a candidate for dense cover; occupancy remains consistent with the world
 query and tile height data.
 
+The local [wet-surface roughness increment](terrain-material-wet-roughness-2026-09-28.md)
+now carries the existing sampler response through tile workers into the ground
+shader, preserving dry biome targets. Three focused CPU checks and TypeScript
+pass. Normal-game visual verification remains open after browser-harness
+timeouts; this is not acceptance of realistic ground materials.
+
 ## 5. Lighting, atmosphere, clouds and frame budget
 
 Establish a common sun/sky, aerial perspective and exposure contract across
