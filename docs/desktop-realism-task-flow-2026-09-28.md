@@ -46,6 +46,12 @@ returning every decision to the parent.
 2. Give the implementer a dedicated worktree for a substantial task. Allow
    implementation decisions, focused tests and staged commits. Avoid parallel
    agents editing the same files or sharing an index.
+   Dependency directories must also be isolated if the worker may install or
+   repair packages. Before `npm ci`, installation or cleanup, resolve
+   `node_modules` and check for junctions/symlinks. Never mutate dependencies
+   through a link to another worktree. Remove only the link itself using an
+   appropriate nonrecursive operation, then install locally from the lockfile.
+   Do not kill another worktree's dev server to unlock shared dependencies.
 3. Let the implementer fix its own routine failures. Escalate only an actual
    scope decision, incompatible invariant or unresolved technical blocker.
 4. Luna independently checks the resulting revision. Reuse existing fixtures;
