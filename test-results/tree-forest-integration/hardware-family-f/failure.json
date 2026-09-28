@@ -1,0 +1,19 @@
+{
+  "ok": false,
+  "base": "http://127.0.0.1:5197/",
+  "out": "test-results/tree-forest-integration/hardware-family-f",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "assetRoot": "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f",
+  "assetBytes": {
+    "lod0": 3969868,
+    "lod1": 2603256
+  },
+  "dates": {
+    "initial": "435084631200000032044300000",
+    "shifted": "435084631231536032044300000"
+  },
+  "phases": [],
+  "errors": [],
+  "failure": "Error: page.evaluate: Target page, context or browser has been closed",
+  "current": null
+}

@@ -1,0 +1,121 @@
+{
+  "schema": "tree-forest-integration-provenance-1",
+  "run": "hardware-family-f-verified",
+  "testedBaseCommit": "b87c209cb8dc82e0464688498bbb7f23a427734e",
+  "postRunCommit": "474c94459cfa4b974a2f479472c352573d59f382",
+  "worktreeDirty": true,
+  "runtimeSourceRawHashesMatchPostRun": true,
+  "sourceFiles": {
+    "rawWorkingFileSha256": {
+      "src/tree-asset.ts": "2688dbfae20e92820ac121333faaab251c85a28876018fda00a99c057d47b04b",
+      "src/tree-forest-coverage.ts": "c37f828571497c075f0877cdeebdce47b5a486065666c389c4168d778763ee59",
+      "src/local-aerial-perspective.ts": "bbedfc8e2893629a1d01f5904e9d3ab866ef544d082db6150ce397da2456e1c0",
+      "src/planet-forest.ts": "fe3c9bde23d06753c9b479a5f7fe8da213d866b1d389ba39e4b5c5db8de5f563",
+      "src/planet-renderer.ts": "39d8b6a968a957d2117b1ca78e231b12674b4f3a4a1e93f0fb25795ddd33ff55"
+    },
+    "lfNormalizedSha256": {
+      "src/tree-asset.ts": "2688dbfae20e92820ac121333faaab251c85a28876018fda00a99c057d47b04b",
+      "src/tree-forest-coverage.ts": "c37f828571497c075f0877cdeebdce47b5a486065666c389c4168d778763ee59",
+      "src/local-aerial-perspective.ts": "bbedfc8e2893629a1d01f5904e9d3ab866ef544d082db6150ce397da2456e1c0",
+      "src/planet-forest.ts": "2175e39fe641fdcfe0ea5ca7882f5a0a692821d28604c400a8f19df732f41161",
+      "src/planet-renderer.ts": "a710ebdec2477953e365bfd07ebd3f63f2326a1d282587f28784097a6ea38f1a"
+    },
+    "runSnapshotSha256": {
+      "src/tree-asset.ts": "2688DBFAE20E92820AC121333FAAAB251C85A28876018FDA00A99C057D47B04B",
+      "src/tree-forest-coverage.ts": "C37F828571497C075F0877CDEEBDCE47B5A486065666C389C4168D778763EE59",
+      "src/local-aerial-perspective.ts": "BBEDFC8E2893629A1D01F5904E9D3AB866EF544D082DB6150CE397DA2456E1C0",
+      "src/planet-forest.ts": "FE3C9BDE23D06753C9B479A5F7FE8DA213D866B1D389BA39E4B5C5DB8DE5F563",
+      "src/planet-renderer.ts": "39D8B6A968A957D2117B1CA78E231B12674B4F3A4A1E93F0FB25795DDD33FF55"
+    },
+    "currentOnlyAfterRun": {
+      "reason": "These two files were added to the runner hash set after the GPU run; their hashes are a post-run source snapshot only.",
+      "rawWorkingFileSha256": {
+        "src/main.ts": "8f9913ac2b6ba0476101c328afdd4520427b0f245f14f82295ed4de52472843f",
+        "src/forest-tree-catalogue.ts": "11fea8d2e51a7002dd0aa17de0e8ddd00e73ff29b7a447aff989702110810258"
+      },
+      "lfNormalizedSha256": {
+        "src/main.ts": "33d8d5e0b601bc994c5bccc9cf2981b763bcdd24aa0dfab358174fef5cf4521c",
+        "src/forest-tree-catalogue.ts": "11fea8d2e51a7002dd0aa17de0e8ddd00e73ff29b7a447aff989702110810258"
+      }
+    }
+  },
+  "inputs": {
+    "sha256": {
+      "lod0": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068",
+      "lod1": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9",
+      "currentRunner": "3f98c922e6b7087720578570d3613cbab85a082e6d32640fd875ab0a6b5de613"
+    },
+    "paths": {
+      "lod0": "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.glb",
+      "lod1": "C:/LLM/IWSDK/Assets/_assetctl/atlas-ez-family-f/atlas-ez-oak.lod1.glb",
+      "currentRunner": "test-results/tree-forest-integration/acceptance.browser.mjs"
+    },
+    "executedRunnerSha256AtRun": "D35CF87B8151F4B68EAE324E9C88A304EBD3E52B69727A57F2F3155A91040AFC",
+    "currentRunnerSha256": "3f98c922e6b7087720578570d3613cbab85a082e6d32640fd875ab0a6b5de613"
+  },
+  "environment": {
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "viewport": [
+      1440,
+      1000
+    ],
+    "deviceScaleFactor": 1,
+    "glError": 0,
+    "consoleAndPageErrors": 0,
+    "assetBytes": {
+      "lod0": 3969868,
+      "lod1": 2603256
+    }
+  },
+  "findings": {
+    "detailedTreeCounts": {
+      "initial": [
+        0,
+        206
+      ],
+      "afterMovement": [
+        10,
+        159
+      ]
+    },
+    "catalogueSpecies": 5,
+    "dateReplay": {
+      "baselineSampleCount": 8,
+      "returnedSampleCount": 8,
+      "matchingIds": 8,
+      "mismatches": []
+    },
+    "movement": {
+      "distanceM": 316.8670264508067,
+      "originVersionBefore": 13,
+      "originVersionAfter": 15,
+      "thresholdM": 256,
+      "originRebased": false
+    },
+    "localAerial": {
+      "meshes": 24,
+      "attached": 24,
+      "failures": []
+    }
+  },
+  "artifactsSha256": {
+    "hardware-family-f-verified/report.json": "334fa89ce9c6cde6cccab6be5ec67868083a2fa0580ac2500062ac991553358f",
+    "hardware-family-f-verified/detailed-forest-initial.png": "7460ee9a973482b2392c69a0729715c4366f817a05ad3234070b77aeebf1e4eb",
+    "hardware-family-f-verified/detailed-forest-date-shift.png": "91678aa7c2d481c523b14d246c14f1c20c0e79570f026099438f784862495537",
+    "hardware-family-f-verified/detailed-forest-date-return.png": "28634bd59553d41ad4551f0bd22c1947be5b3b8b651cd3f6b16460b580dc06f8",
+    "hardware-family-f-verified/detailed-forest-after-movement.png": "72d1f4bb736793eb2ffd647489e0178d6787f91f3b34effe657b4364e310c75e",
+    "tree-forest-integration/README.md": "7905a3b39cd3a5d74323895856ce4ddd2770b2e2a6052940672c849a5bbb6d53"
+  },
+  "postRunGitStatus": [
+    "M docs/desktop-realism-implementation-plan-2026-09-27.md",
+    " M guide/life.html",
+    " M vite.config.ts",
+    "?? docs/tree-forest-integration-2026-09-28.md"
+  ],
+  "limitations": [
+    "Coverage was exercised through the live forest fade, but values 0, 0.5, and 1 were not independently controlled.",
+    "The date replay compares bounded catalogue/presentation diagnostics and does not prove pixel-identical animated wind.",
+    "No shadow-pass-specific assertion, performance claim, or visual realism acceptance was made.",
+    "The report was generated on a dirty development worktree; exact runtime source bytes are recorded and matched to the post-run source snapshot."
+  ]
+}

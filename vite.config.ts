@@ -10,6 +10,26 @@ export default defineConfig({
       builtAt:new Date().toISOString(),
     },null,2)});
     for(const fileName of [
+      'docs/tree-forest-integration-2026-09-28.md',
+      'test-results/tree-forest-integration/README.md',
+      'test-results/tree-forest-integration/cpu.log',
+      'test-results/tree-forest-integration/build.log',
+      'test-results/tree-forest-integration/acceptance.browser.mjs',
+      'test-results/tree-forest-integration/opus/response.json',
+      'test-results/tree-forest-integration/opus/inputs.json',
+      'test-results/tree-forest-integration/opus-followup/response.json',
+      'test-results/tree-forest-integration/opus-followup/inputs.json',
+      'test-results/tree-forest-integration/hardware-family-f-verified/report.json',
+      'test-results/tree-forest-integration/hardware-family-f-verified/provenance.json',
+      'test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-initial.png',
+      'test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-date-shift.png',
+      'test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-date-return.png',
+      'test-results/tree-forest-integration/hardware-family-f-verified/detailed-forest-after-movement.png',
+      'src/forest-tree-catalogue.ts','src/tree-forest-coverage.ts',
+      'src/planet-forest.ts','src/local-aerial-perspective.ts',
+      'tests/planet-forest-tree-assets.test.mjs','tests/tree-forest-coverage.test.mjs',
+    ])this.emitFile({type:'asset',fileName,source:readFileSync(new URL(fileName,import.meta.url))});
+    for(const fileName of [
       'docs/tree-three-ez-impostor-2026-09-28.md',
       'assets/briefs/atlas-three-ez-impostor-reference.json',
       'docs/opus-three-ez-impostor-review-2026-09-28.md',

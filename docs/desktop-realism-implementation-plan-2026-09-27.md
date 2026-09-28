@@ -187,9 +187,9 @@ more. Structural diversity must not come from disconnected anatomy.
 | A. Record direction | This plan, related MD links/status, guide explanations | Written; guide updated by Luna 6 |
 | B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented; build, 53 targeted checks and RTX 5090 browser acceptance pass; see validation record |
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
-| D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; first Blender brief validates; forest integration, authored assets and resource cache pending |
+| D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; a development-only family loader binds supported branching species into detailed forest batches. Focused CPU/loader suite: 58 pass, 0 skips; one RTX 5090 game fixture passed date-replay and 316.87 m movement checks with no browser or GL errors. Opus follow-up confirms aerial composition and slot lifecycle. Asset acceptance, per-species dimensions, structural variants, resource cache, visual acceptance and performance claims remain open |
 | E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Published release `580936f` includes canopy runtime through `98556a7`: complete census patches, near/far ownership, altitude prefetch/render thresholds, bounded uploads, water-aware patch reuse, and retained terrain refresh on date changes. RTX 5090 date-seek and flight/walk acceptance are linked in the [integration record](canopy-runtime-integration-2026-09-28.md), with the [live deployment receipt](deployment-580936f-2026-09-28.md). Legacy faceted tree shapes remain; authored realism, midrange performance validation, XR and broader visual signoff are open. The earlier deployed `e8a848d` used sparse distant representatives |
-| F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | V7 applies the versioned linear-RGB-to-sRGB byte conversion and passes export/repeat and browser checks; back-lit foliage remains dark. A separate v2 capture lab passes repeat/mip/CPU audits for a 16 m tree, but the 22 m / 32-pixel capture has no leaf classification and arbitrary-view silhouette error remains high. Neither prototype is integrated into the forest or visually accepted. The [browser prototype](tree-browser-prototype-2026-09-28.md), [v7 record](tree-authoring-v7-2026-09-28.md), [colour calibration](tree-color-calibration-2026-09-28.md) and [capture record](authored-tree-capture-2026-09-28.md) hold details. LOD2, species/canopy binding, packaging, midrange/XR profiling and other landscape assets remain open. |
+| F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | V7 applies the versioned linear-RGB-to-sRGB byte conversion and passes export/repeat and browser checks; back-lit foliage remains dark. A separate v2 capture lab passes repeat/mip/CPU audits for a 16 m tree, but the 22 m / 32-pixel capture has no leaf classification and arbitrary-view silhouette error remains high. A development-only local path attaches a supplied family to supported branching species in detailed near/middle batches. Its 58 focused CPU/loader checks pass; one RTX 5090 game fixture passed date-replay and movement checks, and Opus follow-up confirmed aerial composition and slot lifecycle. Detailed candidate crowns look thinner than the faceted legacy trees; no visual acceptance or general performance result is claimed. The published default and far canopy remain legacy. See the [browser prototype](tree-browser-prototype-2026-09-28.md), [v7 record](tree-authoring-v7-2026-09-28.md), [colour calibration](tree-color-calibration-2026-09-28.md), [capture record](authored-tree-capture-2026-09-28.md) and [local forest integration record](tree-forest-integration-2026-09-28.md). LOD2, per-species dimensions, structural variants, packaging, midrange/XR profiling and other landscape assets remain open. |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |
 
@@ -198,9 +198,18 @@ Historical checkpoint: [v5 authoring](tree-authoring-v5-2026-09-28.md) exports a
 Stage F has a v7 colour-encoding increment and a browser lab. V7 preserves v6
 geometry, alpha and normal data while converting the declared linear RGB recipe
 to sRGB bytes. Export, repeat and browser checks pass; the colour reads greener,
-but the back-lit canopy remains dark. This is not visual acceptance or game
-integration. The current forest still uses legacy faceted shapes; LOD2,
-species/canopy binding, variants, packaging and midrange profiling remain open.
+but the back-lit canopy remains dark. This is not visual acceptance. The
+published default still uses legacy faceted shapes. A separate opt-in
+development path now loads a supplied family for supported branching species
+in detailed near/middle slots. Its RTX 5090 fixture checks date replay and
+316.87 m movement; the family aerial hook attached to all 24 meshes in that
+fixture. The follow-up review confirms shader composition and slot lifecycle,
+but flags shader warm-up, mixed-batch vertex work, upload diagnostics, asset
+error containment, update-to-render clear/swap behavior and off-camera
+shadows for further checking. The detailed candidate crowns look thinner than
+the legacy shapes, so these results are not visual acceptance or a performance
+claim. The far canopy still uses the legacy shape, and LOD2, per-species
+dimensions, variants, packaging and midrange profiling remain open.
 See the [v7 validation](tree-authoring-v7-2026-09-28.md),
 [browser prototype](tree-browser-prototype-2026-09-28.md) and
 [next-increment proposal](tree-authoring-next-increment-2026-09-28.md). A
@@ -246,16 +255,20 @@ replays leaf wind pixel-exactly when returning to the same date. The linked
 record includes isolated GPU measurements and visibly unresolved canopy and
 back-lighting issues.
 GLB validation is not canopy or LOD acceptance, and its runtime browser lab
-does not change the deployed default. Live checkpoint `cc25635` still draws
-the legacy tree shapes. No asset from this adapter has been adopted in the game.
+does not change the deployed default. A separate local integration path now
+accepts supplied families for supported species in the detailed near/middle
+batches; it is not enabled by the deployed default. Live checkpoint `cc25635`
+still draws the legacy tree shapes. No asset from this adapter has been
+accepted as a game species. See the [local forest integration record](tree-forest-integration-2026-09-28.md).
 
-The [instance streaming stage](tree-instance-streaming-2026-09-28.md) now
-shares the forest's bounded update-range helper with the detailed adapter,
-skips unchanged Float32 transforms/height/phase, and supports separate bark and
-leaf tints without per-tree materials. Owned instance buffers clear consumed
-ranges after their initial GPU upload as well as later updates. This is
-integration preparation: dated species, dimension agreement across the far
-canopy, realistic asset handoff and forest-scale cost remain open.
+The [instance streaming stage](tree-instance-streaming-2026-09-28.md) shares
+the forest's bounded update-range helper with the detailed adapter, skips
+unchanged Float32 transforms/height/phase, and supports separate bark and leaf
+tints without per-tree materials. Owned instance buffers clear consumed ranges
+after their initial GPU upload as well as later updates. The [local forest
+integration record](tree-forest-integration-2026-09-28.md) describes the new
+development-only binding path, its passing CPU/loader checks, and remaining
+far-silhouette, shadow and mixed-batch cost checks.
 
 The [leaf diffuse-transmission note](leaf-diffuse-transmission-2026-09-28.md)
 records an opt-in shader prototype. Its independent Opus review and 13 focused
