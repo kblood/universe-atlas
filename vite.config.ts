@@ -10,6 +10,18 @@ export default defineConfig({
       builtAt:new Date().toISOString(),
     },null,2)});
     for(const fileName of [
+      'test-results/combined-understory-integration/README.md',
+      'test-results/combined-visual-acceptance-c9ba64f/README.md',
+      'test-results/understory-opus/README.md',
+      'test-results/deploy-4796b1a/README.md',
+      'test-results/deploy-4796b1a/live-assets.json',
+      'test-results/deploy-4796b1a/river-route/report.json',
+      'test-results/deploy-4796b1a/river-route/old-river-link-ordinary-body.png',
+      'test-results/deploy-4796b1a/river-route/ordinary-grounded.png',
+      'test-results/inland-rivers-disabled-5130bd5-landing-rerun/README.md',
+      'test-results/inland-rivers-disabled-5130bd5-landing-rerun/report.json',
+      'test-results/inland-rivers-disabled-5130bd5-landing-rerun/old-river-link-ordinary-body.png',
+      'test-results/inland-rivers-disabled-5130bd5-landing-rerun/ordinary-grounded.png',
       'docs/family-canopy-2026-09-28.md',
       'src/tree-canopy-bounds.ts','tests/tree-canopy-bounds.test.mjs',
       'test-results/family-canopy/review-fixes-cpu.log',

@@ -19,7 +19,7 @@ Across the full capacities of all three LODs, grass plus shrub geometry totals 9
 
 ## Verification
 
-Genuine first-party Opus 5.5 (`claude-opus-5-5`, session `afb6f577-4739-47b2-a1ac-1d962c4e5bc0`, PID 620) started from clean `c9ba64f98a7112a2ddaba50c05d48a90dbd3d321`; launch metadata is in [`run-1`](run-1/launch-metadata.json), with the final response and process receipt alongside it. Its implementation commit is `3093fe8`.
+Genuine first-party Opus 5.5 (`claude-opus-5-5`, session `afb6f577-4739-47b2-a1ac-1d962c4e5bc0`, PID 620) started from clean `c9ba64f98a7112a2ddaba50c05d48a90dbd3d321`. Launch metadata, final response and process receipt are retained locally under `test-results/understory-opus/run-1/` in the implementation worktree; those local job files are not website downloads. Its implementation commit is `3093fe8`.
 
 - Focused flora command: 33/33 passed (`flora-understory-geometry`, `flora-field`, `flora-culling`, `flora-recipe`).
 - `npx tsc --noEmit -p .`: passed.

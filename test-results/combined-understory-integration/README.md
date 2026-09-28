@@ -22,3 +22,16 @@ reported allocation limits are not new admission controls. Geometry tests do
 not establish appearance, animation quality, or performance. Browser review of
 this merged candidate and its individual fauna handoff remains pending. The
 published runtime remains `4796b1a`.
+
+## Guide publication follow-up
+
+The guide and current plan now distinguish the live runtime from `a755f1b`.
+Recent evidence links were missing from the explicit Vite publication list;
+the rivers-off live/local receipts and current understory/combined summaries
+are now included. A CPU check invoked the actual `generateBundle` plugin and
+resolved all 319 relative guide links against its 809 emitted files, HTML
+entry points and public files: zero missing destinations. The first check
+misnormalised the root link as `./index.html`; normalising the final path fixed
+that checker error. This verifies publication wiring, not deployed HTTP
+responses or browser layout. The existing browser guide check still applies
+before release. No runtime rebuild occurred during the active visual review.
