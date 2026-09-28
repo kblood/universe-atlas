@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 
 export const SURFACE_SHADOW = {widthM:320, depthM:1000, mapSize:2048, normalBiasM:.06} as const;
+/** Linear sky-dome colour and the linear albedo of the surroundings. The lower
+ * hemisphere radiates what that ground reflects: albedo x (direct sun on the
+ * ground + sky dome). The previous code used the albedo itself as that
+ * radiance, about a fifth of the reflected sunlight at midday, which left
+ * shaded flanks, bellies, legs and trunks near black next to sunlit ground. */
+export const SURFACE_SKY_COLOR = new THREE.Color('#b5cce3');
+export const SURFACE_GROUND_ALBEDO = new THREE.Color('#697451');
 export type SurfaceLightingFrame = {
   planet:THREE.Object3D; radiusM:number; eye:THREE.Vector3; sun:THREE.Vector3;
   altitudeM:number; atmosphere:boolean; enabled:boolean; immersive:boolean;
@@ -10,7 +17,7 @@ export type SurfaceLightingFrame = {
  * while the renderer changes units during descent. It changes presentation,
  * never terrain sampling, canonical populations or the simulated clock. */
 export class SurfaceLighting {
-  readonly sky=new THREE.HemisphereLight('#b5cce3','#697451',0);
+  readonly sky=new THREE.HemisphereLight(SURFACE_SKY_COLOR,SURFACE_GROUND_ALBEDO,0);
   readonly localFrustum=new THREE.Frustum();
   private up=new THREE.Vector3(); private center=new THREE.Vector3();
   private right=new THREE.Vector3(); private vertical=new THREE.Vector3();
@@ -30,7 +37,7 @@ export class SurfaceLighting {
   }
   disable(){
     this.active=false;this.sun.castShadow=false;this.sun.shadow.intensity=0;
-    this.sky.intensity=0;this.ambient.intensity=this.baselineAmbient;
+    this.sky.intensity=0;this.sky.groundColor.copy(SURFACE_GROUND_ALBEDO);this.ambient.intensity=this.baselineAmbient;
   }
   update(frame:SurfaceLightingFrame):THREE.Frustum|null{
     const {planet,radiusM,eye,sun,altitudeM,enabled,immersive,atmosphere}=frame;
@@ -42,7 +49,14 @@ export class SurfaceLighting {
     const close=1-THREE.MathUtils.smoothstep(altitudeM,2500,6000);
     const fill=atmosphere&&this.sun.intensity>0?day*close:0;
     this.sky.position.copy(this.up);
-    this.sky.intensity=.7*fill*Math.min(4,Math.max(0,this.sun.intensity)/3);
+    const skyIntensity=.7*fill*Math.min(4,Math.max(0,this.sun.intensity)/3);
+    this.sky.intensity=skyIntensity;
+    if(skyIntensity>0){
+      // Hemisphere colours are scaled by one intensity, so express the ground
+      // irradiance per unit of sky intensity. Linear RGB throughout.
+      const direct=Math.max(0,this.up.dot(sun))*Math.max(0,this.sun.intensity)/skyIntensity;
+      this.sky.groundColor.copy(this.sun.color).multiplyScalar(direct).add(this.sky.color).multiply(SURFACE_GROUND_ALBEDO);
+    }
     this.ambient.intensity=this.baselineAmbient*(1-.6*fill);
     const strength=day*(1-THREE.MathUtils.smoothstep(altitudeM,300,700));
     if(strength<=0||this.sun.intensity<=0)return null;

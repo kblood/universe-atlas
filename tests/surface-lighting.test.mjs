@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {SurfaceLighting,SURFACE_SHADOW} from '../src/surface-lighting.ts';
+import {SurfaceLighting,SURFACE_SHADOW,SURFACE_GROUND_ALBEDO} from '../src/surface-lighting.ts';
 import {terrainDepthMaterial,patchMorphHeader,patchMorphVertex,boundMorphedTerrain} from '../src/terrain-shadow.ts';
 import {forestMaterial,forestDepthMaterial} from '../src/forest-material.ts';
 
@@ -73,4 +73,21 @@ test('legacy colour and depth discard identical hidden canonical slots',()=>{
     assert.ok(shader.fragmentShader.includes('if(atlasForestHash(uint(vForestSeed+.5))>=atlasForestLevel(vForestCoverage))discard;'));
     material.dispose();
   }
+});
+test('ground fill is sunlit ground albedo, so shaded undersides are not near black',()=>{
+  const {lighting,frame,sun}=fixture();lighting.update(frame);
+  const s=lighting.sky.intensity,cos=Math.max(0,frame.sun.y);
+  // Irradiance on a downward-facing surface = albedo x irradiance reaching the ground.
+  const reflected=lighting.sky.groundColor.clone().multiplyScalar(s);
+  const expected=sun.color.clone().multiplyScalar(cos*sun.intensity).add(lighting.sky.color.clone().multiplyScalar(s)).multiply(SURFACE_GROUND_ALBEDO);
+  for(const c of ['r','g','b'])close(reflected[c],expected[c],1e-9);
+  // Midday bounce is several times the old fixed albedo-as-radiance fill.
+  for(const c of ['r','g','b'])assert.ok(reflected[c]>3*SURFACE_GROUND_ALBEDO[c]*s,`${c} bounce`);
+  // A lower sun reflects less; the sky colour itself is unchanged.
+  const sky=lighting.sky.color.clone();
+  lighting.update({...frame,sun:new THREE.Vector3(1,.25,0).normalize()});
+  assert.ok(lighting.sky.groundColor.r*lighting.sky.intensity<reflected.r);
+  assert.ok(lighting.sky.color.equals(sky));
+  // Orbital/basic paths restore the plain albedo with zero intensity.
+  lighting.disable();assert.equal(lighting.sky.intensity,0);assert.ok(lighting.sky.groundColor.equals(SURFACE_GROUND_ALBEDO));
 });
