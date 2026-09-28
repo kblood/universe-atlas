@@ -1,0 +1,119 @@
+{
+  "schema": "https://iwsdk.local/schemas/render-sheet/v1",
+  "source": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707\\atlas-branching-v1.lod1.glb",
+  "sheet": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707-v6final-lod1-calibrated\\render-sheet.png",
+  "views": [
+    {
+      "view": "hero",
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707-v6final-lod1-calibrated\\hero.png"
+    },
+    {
+      "view": "front",
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707-v6final-lod1-calibrated\\front.png"
+    },
+    {
+      "view": "right",
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707-v6final-lod1-calibrated\\right.png"
+    },
+    {
+      "view": "back",
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707-v6final-lod1-calibrated\\back.png"
+    },
+    {
+      "view": "top",
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707-v6final-lod1-calibrated\\top.png"
+    },
+    {
+      "view": "wire",
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707-v6final-lod1-calibrated\\wire.png"
+    }
+  ],
+  "bounds": {
+    "minimum": [
+      -5.846503734588623,
+      -4.909943103790283,
+      0.0
+    ],
+    "maximum": [
+      5.975094318389893,
+      5.393500804901123,
+      16.000028610229492
+    ],
+    "center": [
+      0.06429529190063477,
+      0.24177885055541992,
+      8.000014305114746
+    ],
+    "dimensions": [
+      11.821598052978516,
+      10.303443908691406,
+      16.000028610229492
+    ]
+  },
+  "calibration": {
+    "enabled": true,
+    "referenceLinearReflectance": 0.18,
+    "viewTransform": "AgX",
+    "look": "None",
+    "exposure": 0.0,
+    "gamma": 1.0
+  },
+  "render": {
+    "width": 512,
+    "height": 512,
+    "layout": "3x2",
+    "engine": "Eevee with duplicate wireframe overlay"
+  },
+  "importWorkaround": "Blender 5.1.1 ordered custom attributes",
+  "customAttributes": [
+    {
+      "object": "SM_AtlasBranching_LOD1",
+      "name": "_WIND",
+      "type": "FLOAT",
+      "domain": "POINT",
+      "count": 7564,
+      "sortedFloat32Sha256": "badc6bfcf763236a70d3881357ed4536eaeb93d6a0594c4d24fbd8d920a83db0"
+    },
+    {
+      "object": "SM_AtlasBranching_LOD1",
+      "name": "_BRANCH_LEVEL",
+      "type": "FLOAT",
+      "domain": "POINT",
+      "count": 7564,
+      "sortedFloat32Sha256": "5556c20479b41464ccce7af50af72ded94964683af6f5efc2a7182be8c31f0e0"
+    },
+    {
+      "object": "SM_AtlasBranching_LOD1",
+      "name": "_LEAF_CENTER",
+      "type": "FLOAT_VECTOR",
+      "domain": "POINT",
+      "count": 7564,
+      "sortedFloat32Sha256": "156eab86ace1cdd36c828f67ad1d9dad1de9445177bd6d75274a03fb6dce9388"
+    },
+    {
+      "object": "SM_AtlasBranching_LOD1",
+      "name": "_LEAF_PIVOT",
+      "type": "FLOAT_VECTOR",
+      "domain": "POINT",
+      "count": 7564,
+      "sortedFloat32Sha256": "481cdd338bb08ab47f0495ee4b13a2e9eb772a7b6339d1c660eb022f6fb2444b"
+    }
+  ],
+  "scene": {
+    "blenderVersion": "5.1.1",
+    "objects": 6,
+    "meshes": 2,
+    "materials": 3,
+    "armatures": 0,
+    "actions": 0,
+    "triangles": 4832,
+    "objectNames": [
+      "SM_AtlasBranching_LOD1",
+      "ASSETCTL_Linear18PercentGrey",
+      "ASSETCTL_ReviewCamera",
+      "ASSETCTL_ReviewLight_0",
+      "ASSETCTL_ReviewLight_1",
+      "ASSETCTL_ReviewLight_2"
+    ]
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "operation": "atlas-branching-author-6",
+  "schemaVersion": 2,
+  "artifactPathBase": "manifest-directory",
+  "candidate": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-tree-smoke-1790570381707",
+  "repeat": "Assets/_assetctl/atlas-tree-smoke-1790570381707-repeat",
+  "brief": "Assets/_assetctl/atlas-tree-author-6-brief.json",
+  "briefContract": "pass",
+  "generationSmoke": "pass",
+  "generationTests": 2,
+  "lod0": {
+    "triangles": 10712,
+    "cap": 18000,
+    "vertices": 13992,
+    "valid": true,
+    "warnings": 0,
+    "errors": 0,
+    "sha256": "24c051d5a3f09112fc4aa6c4b92f95abb4f8fde6df2dbcc791396f3c85b1a702"
+  },
+  "lod1": {
+    "triangles": 4820,
+    "cap": 5000,
+    "vertices": 7564,
+    "valid": true,
+    "warnings": 0,
+    "errors": 0,
+    "sha256": "6f167c3182a78a43cea3fd1ac9e5bb42ff504af609f3d4965be27f2c88fcf713"
+  },
+  "rawGlbAudit": {
+    "status": "pass",
+    "leafCards": 1356,
+    "foliageVertexRecords": 5497,
+    "exactLodFoliagePositionUvCenterPivotWindParity": true,
+    "primaryWoodVertexRecords": 971,
+    "exactTrunkPrimaryParity": true,
+    "lod0Levels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "lod1Levels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "trunkTubes": 1,
+    "primaryTubes": 16,
+    "barkRings": 127,
+    "barkArcPairs": 110,
+    "barkPeriod": "0.125m / exact128px",
+    "barkTexture": [
+      1024,
+      1024
+    ],
+    "foliageTextures": [
+      2048,
+      2048
+    ],
+    "retainedTwigCount": 32,
+    "droppedTwigCount": 646,
+    "transparentPadding": {
+      "transparentPixels": 3398612,
+      "greenPaddingPixels": 3398612,
+      "maxGreenByte": 61
+    },
+    "transparentRgbCheck": "pass; no mip-chain claim"
+  },
+  "limitations": [
+    "No runtime integration, species variant coverage, wind deformation, gameplay LOD transition, or target-device performance was tested.",
+    "Static calibrated Blender render review is not gameplay or device acceptance."
+  ],
+  "independentArtifactHashAudit": "Assets/_assetctl/atlas-tree-smoke-1790570381707/independent-artifact-hash-audit.json",
+  "allManifestArtifactsRehashed": true,
+  "allGlbAndPngBytesIdenticalAcrossFreshOutputs": true,
+  "calibratedRenderReview": "Assets/_assetctl/atlas-tree-smoke-1790570381707/v6final-calibrated-render-review-receipt.json"
+}

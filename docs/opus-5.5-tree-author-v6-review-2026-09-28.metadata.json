@@ -1,0 +1,48 @@
+{
+  "revision": "80b82d31f0a3bb5ea7b0147d826d38c85e77aa9b",
+  "dirty": true,
+  "files": [
+    {
+      "path": "../tools/assetctl/blender/tree_family.py",
+      "sha256": "0227965866cfda3cd079df5ca1d0d554bfb71f78a3a67b3a09bf0090098928e0"
+    },
+    {
+      "path": "../tools/assetctl/blender/tree_mesh.py",
+      "sha256": "81ea6515430a634ee21a92f4c9f7bedfbf4de314165dfabe7e44277747f93152"
+    },
+    {
+      "path": "../tools/assetctl/blender/tree_bark.py",
+      "sha256": "4b88c1014400ca682d011a59c34f93b61a4bc7741a64668ce085858051617a75"
+    },
+    {
+      "path": "../tools/assetctl/blender/tree_skeleton.py",
+      "sha256": "973030536be61192fc08b965029ab6b08ebb60098c476d876ac61357abf87a9b"
+    },
+    {
+      "path": "../tools/assetctl/blender/tree_foliage.py",
+      "sha256": "40a0a76c214602646a10591399a6c13cf55f510b1eec0795c6048a3ad0b0efdc"
+    },
+    {
+      "path": "assets/briefs/temperate-branching-tree-v1.json",
+      "sha256": "e360feff4984e25ffa0d9ccb74697bc5ac5946bff9d05777abf06d906ebbc3cd"
+    }
+  ],
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 20772,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 16439,
+      "webSearchRequests": 0,
+      "costUSD": 0.5472518,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 18179,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "requestedModel": "claude-opus-5-5",
+  "scope": "Supplied source only, tools disabled. Reviews initial v6 candidate, before the documented post-review corrections."
+}

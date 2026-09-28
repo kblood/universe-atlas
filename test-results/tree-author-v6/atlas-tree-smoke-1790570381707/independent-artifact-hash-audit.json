@@ -1,0 +1,40 @@
+{
+  "source": "atlas-branching-author-6",
+  "candidate": "Assets/_assetctl/atlas-tree-smoke-1790570381707",
+  "repeat": "Assets/_assetctl/atlas-tree-smoke-1790570381707-repeat",
+  "manifestArtifactsChecked": 16,
+  "allMatchManifest": true,
+  "reproducibleGlbPng": [
+    {
+      "path": "atlas-branching-v1.glb",
+      "identical": true,
+      "sha256": "24c051d5a3f09112fc4aa6c4b92f95abb4f8fde6df2dbcc791396f3c85b1a702"
+    },
+    {
+      "path": "atlas-branching-v1.lod1.glb",
+      "identical": true,
+      "sha256": "6f167c3182a78a43cea3fd1ac9e5bb42ff504af609f3d4965be27f2c88fcf713"
+    },
+    {
+      "path": "MAT_AtlasBark_BaseColor.png",
+      "identical": true,
+      "sha256": "cbd5d9cab04d10381141e63180d9a1e97b8c31796cb5fc7b9f480554386887ae"
+    },
+    {
+      "path": "MAT_AtlasBark_Normal.png",
+      "identical": true,
+      "sha256": "ef4fd931e8b0a9db10a75945d1ee4fc02570151c9d181edd7b19b22a73ba5706"
+    },
+    {
+      "path": "MAT_AtlasFoliage_BaseColor.png",
+      "identical": true,
+      "sha256": "eb2d2c5656de3230d1a2bc9c059a4df64df9762c338546deba104c4c6a525eed"
+    },
+    {
+      "path": "MAT_AtlasFoliage_Normal.png",
+      "identical": true,
+      "sha256": "3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951"
+    }
+  ],
+  "allGlbPngRepeatIdentical": true
+}

@@ -1,0 +1,29 @@
+{
+  "status": "pass",
+  "rootToolCommit": "4e17e72",
+  "scope": "Both actual GLBs and four PNGs independently hashed in each retained run. Source BLEND hashes verified against their own manifests; BLEND bytes not compared between runs.",
+  "runs": [
+    {
+      "candidate": "atlas-tree-smoke-1790570381707",
+      "hashes": {
+        "atlas-branching-v1.glb": "24c051d5a3f09112fc4aa6c4b92f95abb4f8fde6df2dbcc791396f3c85b1a702",
+        "atlas-branching-v1.lod1.glb": "6f167c3182a78a43cea3fd1ac9e5bb42ff504af609f3d4965be27f2c88fcf713",
+        "MAT_AtlasBark_BaseColor.png": "cbd5d9cab04d10381141e63180d9a1e97b8c31796cb5fc7b9f480554386887ae",
+        "MAT_AtlasBark_Normal.png": "ef4fd931e8b0a9db10a75945d1ee4fc02570151c9d181edd7b19b22a73ba5706",
+        "MAT_AtlasFoliage_BaseColor.png": "eb2d2c5656de3230d1a2bc9c059a4df64df9762c338546deba104c4c6a525eed",
+        "MAT_AtlasFoliage_Normal.png": "3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951"
+      }
+    },
+    {
+      "candidate": "atlas-tree-smoke-1790570381707-repeat",
+      "hashes": {
+        "atlas-branching-v1.glb": "24c051d5a3f09112fc4aa6c4b92f95abb4f8fde6df2dbcc791396f3c85b1a702",
+        "atlas-branching-v1.lod1.glb": "6f167c3182a78a43cea3fd1ac9e5bb42ff504af609f3d4965be27f2c88fcf713",
+        "MAT_AtlasBark_BaseColor.png": "cbd5d9cab04d10381141e63180d9a1e97b8c31796cb5fc7b9f480554386887ae",
+        "MAT_AtlasBark_Normal.png": "ef4fd931e8b0a9db10a75945d1ee4fc02570151c9d181edd7b19b22a73ba5706",
+        "MAT_AtlasFoliage_BaseColor.png": "eb2d2c5656de3230d1a2bc9c059a4df64df9762c338546deba104c4c6a525eed",
+        "MAT_AtlasFoliage_Normal.png": "3bf5a89ac301717f22d2dc0368e757b189eb92851fac7852f29cb54183f63951"
+      }
+    }
+  ]
+}

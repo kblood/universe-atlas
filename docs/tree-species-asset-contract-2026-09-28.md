@@ -27,7 +27,7 @@ population still uses its existing 10–22 m primitive silhouettes and canonical
 placement. Activating species geometry, physical envelopes and habitat binding
 requires an explicit appearance/population migration decision and a consistent
 canopy implementation. A named Blender authoring operation now produces a
-[v5 candidate with technical checks](tree-authoring-v5-2026-09-28.md), editable
+[v6 candidate with technical checks](tree-authoring-v6-2026-09-28.md), editable
 source and original textures. Visual quality, LODs, resource eviction and full
 asset acceptance remain unfinished. Review images and evidence document the candidates;
 no candidate tree geometry has been shipped in the game.

@@ -1,0 +1,428 @@
+{
+  "schema": "https://iwsdk.local/schemas/tree-render-review-receipt/v3",
+  "candidate": "Assets/_assetctl/atlas-tree-smoke-1790570381707",
+  "assetFiles": {
+    "atlas-branching-v1.blend": "cee9670eb61161d23e8a0a11a30e52dea218986d92193b84618aedd4e1627730",
+    "atlas-branching-v1.glb": "24c051d5a3f09112fc4aa6c4b92f95abb4f8fde6df2dbcc791396f3c85b1a702",
+    "atlas-branching-v1.lod1.glb": "6f167c3182a78a43cea3fd1ac9e5bb42ff504af609f3d4965be27f2c88fcf713"
+  },
+  "operationVersion": "atlas-branching-author-6",
+  "seed": 729281,
+  "reviewProfile": {
+    "enabled": true,
+    "referenceLinearReflectance": 0.18,
+    "viewTransform": "AgX",
+    "look": "None",
+    "exposure": 0.0,
+    "gamma": 1.0
+  },
+  "renderOutputs": {
+    "blend": "Assets/_assetctl/atlas-tree-smoke-1790570381707-v6final-blend-calibrated",
+    "lod0": "Assets/_assetctl/atlas-tree-smoke-1790570381707-v6final-lod0-calibrated",
+    "lod1": "Assets/_assetctl/atlas-tree-smoke-1790570381707-v6final-lod1-calibrated"
+  },
+  "lodGeometry": [
+    {
+      "level": 0,
+      "runtime": "atlas-branching-v1.glb",
+      "triangles": 10712,
+      "maxTriangles": 18000,
+      "geometryContentSha256": "6e8cfa0853edd18f990c55a4d3c6a08eac6fbfbfd7b936c9e829615e8d8ba076",
+      "boundsM": {
+        "min": [
+          -5.846503734588623,
+          0,
+          -5.393500804901123
+        ],
+        "max": [
+          5.975094318389893,
+          16.000028610229492,
+          4.909943103790283
+        ]
+      },
+      "trianglesByBranchLevel": {
+        "0": 236,
+        "1": 1008,
+        "2": 2688,
+        "3": 4068,
+        "4": 2712
+      },
+      "measuredAudit": {
+        "materials": 2,
+        "uvLayers": 1,
+        "appliedTransforms": true,
+        "finitePositions": true
+      }
+    },
+    {
+      "level": 1,
+      "runtime": "atlas-branching-v1.lod1.glb",
+      "triangles": 4820,
+      "maxTriangles": 5000,
+      "geometryContentSha256": "d1d93993c95ffa3ade9cc8d3d4d8f8246615a2ab50df215da25d37320aada7e5",
+      "boundsM": {
+        "min": [
+          -5.846503734588623,
+          0,
+          -5.393500804901123
+        ],
+        "max": [
+          5.975094318389893,
+          16.000028610229492,
+          4.909943103790283
+        ]
+      },
+      "trianglesByBranchLevel": {
+        "0": 236,
+        "1": 1008,
+        "2": 672,
+        "3": 192,
+        "4": 2712
+      },
+      "measuredAudit": {
+        "materials": 2,
+        "uvLayers": 1,
+        "appliedTransforms": true,
+        "finitePositions": true
+      }
+    }
+  ],
+  "sourceAndRenderTriangleCounts": {
+    "sourceBlendWithBothLodsAndCube": 15544,
+    "lod0Glb": 10712,
+    "lod1Glb": 4820,
+    "renderCountIncludesReferenceCube12Triangles": true
+  },
+  "rawGlbAttributeAudit": {
+    "method": "Parsed each GLB binary accessors, combined primitive values per requested attribute, sorted numeric tuples, packed little-endian float32, SHA-256; matched manifest count/type/domain/digest.",
+    "allAttributesMatchImportedManifests": true,
+    "lod0": [
+      {
+        "name": "_BRANCH_LEVEL",
+        "type": "FLOAT",
+        "domain": "POINT",
+        "count": 13992,
+        "sortedFloat32Sha256": "346680b65a421aca2bb453249853fb443092517302f45fb77d9d80314085abc1"
+      },
+      {
+        "name": "_LEAF_CENTER",
+        "type": "FLOAT_VECTOR",
+        "domain": "POINT",
+        "count": 13992,
+        "sortedFloat32Sha256": "761f4e067706ec82bfbc26688aa03df4ece43315c4db839cf2d3ea1acc6ddaf4"
+      },
+      {
+        "name": "_LEAF_PIVOT",
+        "type": "FLOAT_VECTOR",
+        "domain": "POINT",
+        "count": 13992,
+        "sortedFloat32Sha256": "37fd9540d8ba7ce081c552d10272abea010c94b91307b9ae6e18ee72ad57bfcb"
+      },
+      {
+        "name": "_WIND",
+        "type": "FLOAT",
+        "domain": "POINT",
+        "count": 13992,
+        "sortedFloat32Sha256": "d315d6c4c495bc75cfb09532ed8073bf869b36521f0741f753d6959b28b7ff15"
+      }
+    ],
+    "lod1": [
+      {
+        "name": "_BRANCH_LEVEL",
+        "type": "FLOAT",
+        "domain": "POINT",
+        "count": 7564,
+        "sortedFloat32Sha256": "5556c20479b41464ccce7af50af72ded94964683af6f5efc2a7182be8c31f0e0"
+      },
+      {
+        "name": "_LEAF_CENTER",
+        "type": "FLOAT_VECTOR",
+        "domain": "POINT",
+        "count": 7564,
+        "sortedFloat32Sha256": "156eab86ace1cdd36c828f67ad1d9dad1de9445177bd6d75274a03fb6dce9388"
+      },
+      {
+        "name": "_LEAF_PIVOT",
+        "type": "FLOAT_VECTOR",
+        "domain": "POINT",
+        "count": 7564,
+        "sortedFloat32Sha256": "481cdd338bb08ab47f0495ee4b13a2e9eb772a7b6339d1c660eb022f6fb2444b"
+      },
+      {
+        "name": "_WIND",
+        "type": "FLOAT",
+        "domain": "POINT",
+        "count": 7564,
+        "sortedFloat32Sha256": "badc6bfcf763236a70d3881357ed4536eaeb93d6a0594c4d24fbd8d920a83db0"
+      }
+    ]
+  },
+  "imageComparisons": {
+    "lod0VsLod1": [
+      {
+        "view": "hero",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.0499,
+        "pixelsDeltaAbove8": 431,
+        "foregroundIoUThreshold12": 0.998317,
+        "foregroundPixelsA": 27926,
+        "foregroundPixelsB": 27895
+      },
+      {
+        "view": "front",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.110282,
+        "pixelsDeltaAbove8": 1137,
+        "foregroundIoUThreshold12": 0.993043,
+        "foregroundPixelsA": 35268,
+        "foregroundPixelsB": 35204
+      },
+      {
+        "view": "right",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.111154,
+        "pixelsDeltaAbove8": 1090,
+        "foregroundIoUThreshold12": 0.994814,
+        "foregroundPixelsA": 33869,
+        "foregroundPixelsB": 33835
+      },
+      {
+        "view": "back",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.109275,
+        "pixelsDeltaAbove8": 1120,
+        "foregroundIoUThreshold12": 0.992824,
+        "foregroundPixelsA": 35163,
+        "foregroundPixelsB": 35098
+      },
+      {
+        "view": "top",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.037645,
+        "pixelsDeltaAbove8": 186,
+        "foregroundIoUThreshold12": 0.999027,
+        "foregroundPixelsA": 40091,
+        "foregroundPixelsB": 40052
+      },
+      {
+        "view": "wire",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.114896,
+        "pixelsDeltaAbove8": 1619,
+        "foregroundIoUThreshold12": 0.998913,
+        "foregroundPixelsA": 32168,
+        "foregroundPixelsB": 32165
+      }
+    ],
+    "blendVsLod0": [
+      {
+        "view": "hero",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 3e-06,
+        "pixelsDeltaAbove8": 0,
+        "foregroundIoUThreshold12": 1.0,
+        "foregroundPixelsA": 27926,
+        "foregroundPixelsB": 27926
+      },
+      {
+        "view": "front",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 1.8e-05,
+        "pixelsDeltaAbove8": 0,
+        "foregroundIoUThreshold12": 1.0,
+        "foregroundPixelsA": 35268,
+        "foregroundPixelsB": 35268
+      },
+      {
+        "view": "right",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 1.5e-05,
+        "pixelsDeltaAbove8": 0,
+        "foregroundIoUThreshold12": 1.0,
+        "foregroundPixelsA": 33869,
+        "foregroundPixelsB": 33869
+      },
+      {
+        "view": "back",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 1e-05,
+        "pixelsDeltaAbove8": 0,
+        "foregroundIoUThreshold12": 1.0,
+        "foregroundPixelsA": 35163,
+        "foregroundPixelsB": 35163
+      },
+      {
+        "view": "top",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 8e-06,
+        "pixelsDeltaAbove8": 0,
+        "foregroundIoUThreshold12": 1.0,
+        "foregroundPixelsA": 40091,
+        "foregroundPixelsB": 40091
+      },
+      {
+        "view": "wire",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.036312,
+        "pixelsDeltaAbove8": 95,
+        "foregroundIoUThreshold12": 0.998726,
+        "foregroundPixelsA": 32169,
+        "foregroundPixelsB": 32168
+      }
+    ],
+    "v6aLod0VsFinalLod0": [
+      {
+        "view": "hero",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.002424,
+        "pixelsDeltaAbove8": 0,
+        "foregroundIoUThreshold12": 1.0,
+        "foregroundPixelsA": 27926,
+        "foregroundPixelsB": 27926
+      },
+      {
+        "view": "front",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.006858,
+        "pixelsDeltaAbove8": 0,
+        "foregroundIoUThreshold12": 0.99983,
+        "foregroundPixelsA": 35268,
+        "foregroundPixelsB": 35268
+      },
+      {
+        "view": "right",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.00604,
+        "pixelsDeltaAbove8": 0,
+        "foregroundIoUThreshold12": 0.999911,
+        "foregroundPixelsA": 33870,
+        "foregroundPixelsB": 33869
+      },
+      {
+        "view": "back",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.00714,
+        "pixelsDeltaAbove8": 0,
+        "foregroundIoUThreshold12": 0.999744,
+        "foregroundPixelsA": 35162,
+        "foregroundPixelsB": 35163
+      },
+      {
+        "view": "top",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.000785,
+        "pixelsDeltaAbove8": 0,
+        "foregroundIoUThreshold12": 1.0,
+        "foregroundPixelsA": 40091,
+        "foregroundPixelsB": 40091
+      },
+      {
+        "view": "wire",
+        "dimensions": [
+          512,
+          512
+        ],
+        "meanAbsoluteRGB": 0.00265,
+        "pixelsDeltaAbove8": 0,
+        "foregroundIoUThreshold12": 0.999969,
+        "foregroundPixelsA": 32167,
+        "foregroundPixelsB": 32168
+      }
+    ]
+  },
+  "centerCoverageImageProxy": {
+    "v6a": {
+      "bboxCenterPx": [
+        282,
+        255
+      ],
+      "windowPx": 64,
+      "cornerBackgroundRGB": [
+        58.0,
+        58.0,
+        58.0
+      ],
+      "darkBackgroundPixelFraction": 0.008301
+    },
+    "finalV6": {
+      "bboxCenterPx": [
+        282,
+        255
+      ],
+      "windowPx": 64,
+      "cornerBackgroundRGB": [
+        58.0,
+        58.0,
+        58.0
+      ],
+      "darkBackgroundPixelFraction": 0.008301
+    },
+    "interpretation": "Top-view background fraction in a fixed window; image proxy only."
+  },
+  "visualAssessment": {
+    "observations": [
+      "The LOD0 and LOD1 views retain the more filled central crown; the center opening is still visible but small.",
+      "LOD1 retains visible secondary support and the six views show a close appearance, though some twig and cap changes may be too fine to judge at this scale.",
+      "The broader crown silhouette is less helical/tiered than v5; some banding remains.",
+      "Calibrated reference cube and AgX profile make a fixed visual comparison possible, but the display gray cube is bright under studio lighting. Leaf color looks bright green; no texture darkening inference from this render alone.",
+      "Per-tube bark phase continuity and end-cap correctness need closeup or quantitative seam inspection; six standard views do not establish them."
+    ],
+    "status": "Visual review only; no runtime/device or LOD distance acceptance."
+  },
+  "limitations": [
+    "No runtime integration, species variant coverage, wind deformation, actual gameplay transitions, or target-device performance was tested.",
+    "The named render-sheet image metrics include the calibration cube; source BLEND contains both LOD meshes."
+  ],
+  "claimsLimit": "Technical audit confirms imported custom-attribute preservation and static six-view comparison only; it does not approve realistic appearance or shipping."
+}

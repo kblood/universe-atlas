@@ -2,6 +2,8 @@
 
 ## Latest checkpoint and next changes
 
+[V6](tree-authoring-v6-2026-09-28.md) now passes its final export, physical and repeat checks after the review fixes. The next implementation stage is the shared-resource browser prototype, physical instance scaling, matched LOD2 and measured overdraw under game lighting. The original authoring proposals below remain history.
+
 [V5](tree-authoring-v5-2026-09-28.md) completed denser atlas patterns, physical
 bark UVs, leaf-center attributes and a first LOD1. The [review assessment](tree-authoring-v5-review-assessment-2026-09-28.md)
 records problems that require the next authoring revision: periodic bark wrap,
