@@ -1,0 +1,20 @@
+✔ one planet loads once and leaving retains the shared byte source (4.0895ms)
+✔ changing planets during transfer cannot install into the departed planet (0.7005ms)
+✔ disabling during parse clears staged adoption and ignores its completion (1.819ms)
+✔ failure keeps the fallback active and explicit retry may succeed (0.8653ms)
+✔ packaged forest retains every declared byte and the upstream notice (44.9167ms)
+✔ normal bundle loader parses both actual GLB pairs with matching offline foliage data (146.0857ms)
+✔ bundle validates bounded local resources and requires both distinct families (3.7904ms)
+✔ one shared load verifies all resources and caches only a complete family pair (28.8977ms)
+✔ native-style fetch receives the global receiver rather than the asset source (2.1661ms)
+✔ integrity or size failures retain no partial bundle and a later load can retry (7.8396ms)
+✔ clear aborts in-flight work and stale completion cannot replace a subsequent load (1.4495ms)
+✔ HTTP errors and oversized streamed manifests fail without caching (2.1246ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 426.0048

@@ -63,6 +63,12 @@ Normal-control travel, cold/warm network timing and GPU-resource disposal still
 require browser acceptance. Matching distant family shapes, lighter shadows
 and the remaining landscape content are separate unfinished parts of the plan.
 
+The first normal-control browser run found a native-fetch receiver error before
+any asset request. The source loader now calls fetch with the browser global
+receiver. A regression check reproduces the receiver requirement; the focused
+loading/package suite now has 12 passing tests. Browser rerun is pending. This
+failure left the basic forest visible and exposed the retry control.
+
 ## Publication byte audit
 
 `tests/forest-asset-publication.mjs` checks the served build revision and all 17

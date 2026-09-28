@@ -45,6 +45,12 @@ test('one shared load verifies all resources and caches only a complete family p
   source.clear();assert.equal(source.diagnostics().retainedBytes,0);
   await source.load();assert.equal(f.requests.length,18);
 });
+test('native-style fetch receives the global receiver rather than the asset source',async()=>{
+  const f=fixture(),source=new ForestAssetSource(url,function(...args){
+    assert.equal(this,globalThis,'browser-native fetch rejects a class instance receiver');return f.fetcher(...args);
+  });
+  const bundle=await source.load();assert.equal(bundle.inputs.length,2);assert.equal(f.requests.length,9);source.clear();
+});
 test('integrity or size failures retain no partial bundle and a later load can retry',async()=>{
   for(const mode of ['hash','short','long']){
     const f=fixture(),key=new URL(f.manifest.families[0].lod0.path,url).href,original=f.files.get(key);

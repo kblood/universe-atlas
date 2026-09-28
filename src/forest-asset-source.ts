@@ -64,7 +64,9 @@ export class ForestAssetSource{
   diagnostics(){return {loading:!!this.pending,ready:!!this.cached,version:this.cached?.version??null,
     retainedBytes:this.cached?.bytes??0,byteLimit:FOREST_BUNDLE_BYTE_LIMIT,error:this.error};}
   private async read(url:URL,limit:number,signal:AbortSignal){
-    const response=await this.fetcher(url,{signal,redirect:'error',credentials:'same-origin'});
+    // Browser fetch is a Window method. A stored callback invoked as
+    // this.fetcher(...) receives this class instead and can fail before I/O.
+    const response=await this.fetcher.call(globalThis,url,{signal,redirect:'error',credentials:'same-origin'});
     if(!response.ok)throw new Error(`Forest asset HTTP ${response.status}: ${url.pathname}`);
     const declared=Number(response.headers.get('content-length'));
     if(Number.isFinite(declared)&&declared>limit)throw new Error('Forest asset exceeds byte limit');
