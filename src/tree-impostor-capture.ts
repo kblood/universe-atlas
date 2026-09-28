@@ -50,10 +50,10 @@ export function padCapture(layer:CaptureLayer,steps=4):CaptureLayer {
 }
 
 export async function captureTree(lod0:ArrayBuffer,lod1:ArrayBuffer,
-  options:{grid:number;size:number;supersample:number;heightM:number},
+  options:{grid:number;size:number;supersample:number;heightM:number;lod?:0|1},
   receive:(view:number,mip:number,layer:CaptureLayer)=>Promise<void>){
-  const {grid,size,supersample,heightM}=options,views=treeCaptureViews(grid);
-  if(![32,64,128].includes(size)||![1,2,4].includes(supersample)||!Number.isFinite(heightM)||heightM<10||heightM>22)throw new Error('Unsupported tree capture settings');
+  const {grid,size,supersample,heightM}=options,lod=options.lod??0,views=treeCaptureViews(grid);
+  if(![32,64,128].includes(size)||![1,2,4,8].includes(supersample)||![0,1].includes(lod)||!Number.isFinite(heightM)||heightM<10||heightM>22)throw new Error('Unsupported tree capture settings');
   const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance',alpha:true});
   renderer.setSize(size*supersample,size*supersample);renderer.setPixelRatio(1);
   renderer.toneMapping=THREE.NoToneMapping;renderer.outputColorSpace=THREE.LinearSRGBColorSpace;
@@ -66,10 +66,10 @@ export async function captureTree(lod0:ArrayBuffer,lod1:ArrayBuffer,
     if(!gl.getExtension('EXT_color_buffer_float'))throw new Error('Tree capture requires EXT_color_buffer_float');
     if(size*supersample>gl.getParameter(gl.MAX_TEXTURE_SIZE))throw new Error('Capture target exceeds device texture limit');
     family=await loadTreeAssetFamily(lod0,lod1);family.setDate(0n);
-    batch=family.createBatch(0,1);batch.setInstance(0,new THREE.Matrix4(),heightM,0);
+    batch=family.createBatch(lod,1);batch.setInstance(0,new THREE.Matrix4(),heightM,0);
     const scene=new THREE.Scene();scene.add(batch.group);
     const points:THREE.Vector3[]=[],bounds=new THREE.Box3();let windMargin=0;
-    for(const mesh of family.lods[0]){
+    for(const mesh of family.lods[lod]){
       const attrs=mesh.geometry.attributes;
       for(let i=0;i<attrs.position.count;i++){
         const p=new THREE.Vector3().fromBufferAttribute(attrs.position,i),pivot=new THREE.Vector3().fromBufferAttribute(attrs._leaf_pivot,i);
@@ -83,7 +83,7 @@ export async function captureTree(lod0:ArrayBuffer,lod1:ArrayBuffer,
     if(Math.abs(bounds.min.y)>.02)throw new Error('Captured tree root must remain at ground contact');
     const distance=radius+1,camera=new THREE.OrthographicCamera(-radius,radius,radius,-radius,.5,2*radius+1.5);
     const uniforms={pass:{value:0},viewToObject:{value:new THREE.Matrix3()},distance:{value:distance},radius:{value:radius}};
-    for(const mesh of family.lods[0]){
+    for(const mesh of family.lods[lod]){
       const material=mesh.material,previous=material.onBeforeCompile,previousKey=material.customProgramCacheKey();
       material.toneMapped=false;material.fog=false;material.dithering=false;
       material.onBeforeCompile=(shader,host)=>{
