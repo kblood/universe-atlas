@@ -141,9 +141,12 @@ A `WorldVersions` bundle is part of every save/bookmark/URL, exactly as the
 existing manifest concept in the v1 spec (§3) describes. The URL migration
 shim in §6.2 handles legacy date-axis encodings; it does not migrate outputs
 between historical algorithm versions. At present only `time` is read by the
-URL resolver. Reproducing a bookmark created under an older history or
-cosmology algorithm requires the corresponding historical implementation;
-the current application does not transparently reseed or reconstruct it.
+URL resolver. Other encoded version fields are not compared, rejected, or used
+to dispatch an older implementation. An old bookmark can therefore be
+evaluated by the current algorithms and silently produce different output.
+Matching historical behavior requires the corresponding historical
+implementation; this is a compatibility gap, not an automatic migration or
+reconstruction.
 
 ⚠ **Scope note, added 2026-09-17 after the `surfaceQuery`/`surfaceAt` divergence
 finding (§2.6). `WorldVersions` covers the pure generator/query layer only** —
