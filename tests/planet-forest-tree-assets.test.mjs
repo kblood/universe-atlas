@@ -9,15 +9,19 @@ const {forestTreeCatalogue}=await vite.ssrLoadModule('/src/forest-tree-catalogue
 const {PlanetCanopy}=await vite.ssrLoadModule('/src/planet-canopy.ts');
 const {unpackForestPresentation}=await vite.ssrLoadModule('/src/forest-presentation.ts');
 const {forestMeshBufferFootprint}=await vite.ssrLoadModule('/src/forest-resource-accounting.ts');
+const {forestTreeDimensions,TREE_ALLOMETRY_VERSION}=await vite.ssrLoadModule('/src/tree-allometry.ts');
 const {galaxies,refByAddress,system}=await vite.ssrLoadModule('/src/catalog.ts');
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 after(()=>vite.close());
 
-const species=(id='tree-a',family='branching')=>({id,name:id,lineageId:`lineage-${id}`,parentId:null,
+const species=(id='tree-a',family='branching',heightM=16)=>({id,name:id,lineageId:`lineage-${id}`,parentId:null,
   kind:'tree',family,birthMyr:0,deathMyr:null,
-  traits:{heightM:16,widthRatio:.65,branchCount:8,branchAngle:.7,leafLength:.8,leafWidth:.4,leafDensity:.7,curvature:.2,legRatio:0,bodyLength:0,headRatio:0,tailLength:0,color:'#52743b',woodColor:'#62422d'},
+  traits:{heightM,widthRatio:.65,branchCount:8,branchAngle:.7,leafLength:.8,leafWidth:.4,leafDensity:.7,curvature:.2,legRatio:0,bodyLength:0,headRatio:0,tailLength:0,color:'#52743b',woodColor:'#62422d'},
   niche:{minTempK:0,maxTempK:1000,minMoisture:0,maxMoisture:1,maxSlope:90},diet:'producer',dispersal:'land'});
 
+// Oak-like reference measurements; tests/tree-allometry.test.mjs measures the packaged GLBs.
+const ALLOMETRY=Object.freeze({version:'tree-allometry-1',referenceHeightM:16,crownRadiusM:4.25,cardExtentM:1.3,trunkRadiusM:.31,
+  skeletonRadiusM:5.34,skeletonHeightM:14.72,maxLeafOffsetM:1.3,variantScale:1.14,variantLeanFraction:.045,cardScaleMax:2.7});
 function familyHarness({reject=false,forestCoverage=true,maxRadiusM=20,presentationEnabled=true,variants=false}={}){
   const families=[],dates=[],batches=[],options=[];
   const loader=async(_a,_b,received)=>{
@@ -26,13 +30,13 @@ function familyHarness({reject=false,forestCoverage=true,maxRadiusM=20,presentat
     const family={forestCoverage:forestCoverage&&received.forestCoverage,maxRadiusM,
       canopyPresentation:{enabled:presentationEnabled,lod1Profile:{referenceHeightM:16,maxLeafOffsetM:.5,
         bands:Array.from({length:4},(_,i)=>({centerM:[0,i*4+2,0],radiusM:2,halfHeightM:1.5,populated:true,count:4}))},
-        conservativeBounds:{radiusM:maxRadiusM},barkLinearRgb:[.1,.08,.06],foliageLinearRgb:[.03,.08,.02],
+        conservativeBounds:{radiusM:maxRadiusM},barkLinearRgb:[.1,.08,.06],foliageLinearRgb:[.03,.08,.02],allometry:ALLOMETRY,
         // Like the real loader, adopt the pool the library supplies for this family.
         ...(variants?{structuralVariants:received.structuralVariants,foliageProjectedAreaM2:[0,40,60,20],trunk:{heightM:14,baseRadiusM:.3,topRadiusM:.2}}:{})},
       setDate(date){dates.push(date);},
       createBatch(lod,capacity){
         const batch={lod,capacity,group:new THREE.Group(),instances:new Map(),coverage:new Map(),appearances:new Map(),count:0,initialized:0,disposed:0,
-          setInstance(i,matrix,heightM,phase,variant=0){if(i>batch.count)throw new Error(`batch slot gap ${i} > ${batch.count}`);if(i===batch.initialized)batch.initialized++;batch.count=Math.max(batch.count,i+1);batch.instances.set(i,{matrix:matrix.clone(),heightM,phase,variant});},
+          setInstance(i,matrix,heightM,phase,variant=0,allometry={crownRatio:1,trunkRatio:1}){if(i>batch.count)throw new Error(`batch slot gap ${i} > ${batch.count}`);if(i===batch.initialized)batch.initialized++;batch.count=Math.max(batch.count,i+1);batch.instances.set(i,{matrix:matrix.clone(),heightM,phase,variant,allometry:{...allometry}});},
           setAppearance(i,bark,foliage){batch.appearances.set(i,{bark:[...bark],foliage:[...foliage]});},
           setCoverage(i,coverage,seed){batch.coverage.set(i,{coverage,seed});},
           setCount(count){if(count>batch.initialized)throw new Error(`batch count ${count} exceeds initialized slots ${batch.initialized}`);batch.count=count;},dispose(){batch.disposed++;batch.group.removeFromParent();}};
@@ -62,8 +66,9 @@ test('a no-sidecar diagnostic family keeps both near and far game presentation o
   try{
     await load(f);f.fullCanopy=new PlanetCanopy(body,64);step();
     assert.deepEqual(f.diagnostics().detailedTrees.visible,[0,0]);
-    assert.equal(f.fullCanopy.presentationResolve(cells[0].id,16),0);
-    assert.equal(f.expectedCanopyPresentation(f.cache.get(cells[0].id)),0);
+    assert.equal(f.fullCanopy.presentationResolve(cells[0].id,16).code,0);
+    assert.deepEqual(f.fullCanopy.presentationResolve(cells[0].id,16),f.expectedCanopyPresentation(f.cache.get(cells[0].id)),'far and near agree on legacy dimensions');
+    assert.deepEqual(f.diagnostics().detailedTrees.allometry.near.reasons,{'family-not-presented':3});
     assert.ok(f.meshes[0].visible&&f.meshes[0].count>0);
   }finally{f.dispose();}
 });
@@ -74,37 +79,46 @@ test('near and distant family selection share the dated catalogue and adopted li
     await load(f);
     h.families[0].canopyPresentation={enabled:true,lod1Profile:{referenceHeightM:16,maxLeafOffsetM:.5,
       bands:Array.from({length:4},(_,i)=>({centerM:[0,i*4+2,0],radiusM:2,halfHeightM:1.5,populated:true,count:4}))},
-      conservativeBounds:{radiusM:25},barkLinearRgb:[.1,.08,.06],foliageLinearRgb:[.03,.08,.02]};
+      conservativeBounds:{radiusM:25},barkLinearRgb:[.1,.08,.06],foliageLinearRgb:[.03,.08,.02],allometry:ALLOMETRY};
     f.fullCanopy=new PlanetCanopy(body,64);
     const dated=[species('oak'),species('ash'),species('pine','spire')];step(dated,123n);
     const catalogue=forestTreeCatalogue(dated),key=f.fullCanopy.diagnostics().presentation.key;
     for(const cell of cells){
-      const binding=catalogue.resolve(cell.id),code=f.fullCanopy.presentationResolve(cell.id,cell.heightM);
-      const decoded=unpackForestPresentation(code),supported=cell.heightM<=22&&binding.recipe.family==='branching';
+      // Canonical 23 m on cell b does not gate: the dated species decides.
+      const binding=catalogue.resolve(cell.id),far=f.fullCanopy.presentationResolve(cell.id,cell.heightM);
+      const decoded=unpackForestPresentation(far.code),supported=binding.recipe.family==='branching';
       assert.equal(decoded.kind,supported?'branching':null);
+      assert.deepEqual(far,f.expectedCanopyPresentation(f.cache.get(cell.id)),'far retag equals the near handoff expectation');
       if(supported){
         assert.ok(Math.abs(decoded.bark-binding.appearance.barkBrightness)<.001);
         assert.ok(Math.abs(decoded.foliage-binding.appearance.foliageBrightness)<.001);
-        assert.equal(code,f.expectedCanopyPresentation(f.cache.get(cell.id)));
       }
     }
     step([...dated].reverse(),123n);assert.equal(f.fullCanopy.diagnostics().presentation.key,key,'enumeration changes preserve the shared presentation revision');
     step([],124n);assert.notEqual(f.fullCanopy.diagnostics().presentation.key,key);
-    assert.equal(f.fullCanopy.presentationResolve(cells[0].id,16),0);
+    assert.deepEqual(f.fullCanopy.presentationResolve(cells[0].id,16),{code:0,heightM:16,ratioCode:96+256*96},'unbound trees keep the canonical proxy with identity proportions');
     step(dated,123n);assert.equal(f.fullCanopy.renderer.uniforms.treeFamilyBounds.value.x,25);
     f.clearTreeAssets();step(dated,123n);
-    assert.equal(f.fullCanopy.presentationResolve(cells[0].id,16),0);
+    assert.equal(f.fullCanopy.presentationResolve(cells[0].id,16).code,0);
     assert.equal(f.fullCanopy.renderer.uniforms.treeFamilyBounds.value.x,0,'turning basic restores distant fallback immediately');
   }finally{f.dispose();}
 });
 
-test('dated catalogue attaches detailed branching instances while spire and unsupported heights retain legacy coverage',async()=>{
+test('dated catalogue attaches detailed branching instances while below-envelope and unloaded-family species retain legacy coverage',async()=>{
   const {f,h,cells,step}=fixture();
   try{
     assert.equal(await load(f),true);
-    step([species('branch'),species('spire','spire')],123n);
+    // Cell a binds the 16 m species; b and c bind the 5 m species (below the family envelope).
+    step([species('branch'),species('short','branching',5)],123n);
     const d=f.diagnostics().detailedTrees;
     assert.deepEqual(d.visible,[1,0]);
+    assert.deepEqual(d.allometry.near.reasons,{'height-below-family-envelope':2});
+    assert.deepEqual(d.allometry.near.representation,{family:1,legacy:2});
+    const short=f.dimensions(f.cache.get(cells[1].id));
+    assert.equal(short.representation,'legacy');assert.ok(short.heightM>4.5&&short.heightM<5.5,'legacy draw uses the species height, not the 23 m canonical proxy');
+    const legacyScale=new THREE.Vector3();new THREE.Matrix4().fromArray(f.meshes[0].instanceMatrix.array,16).decompose(new THREE.Vector3(),new THREE.Quaternion(),legacyScale);
+    assert.ok(Math.abs(legacyScale.x*body.radiusM-short.heightM)<1e-3,'legacy matrix carries the rendered height');
+    assert.equal(f.meshes[0].geometry.getAttribute('instanceTreeAllometry').getX(1),short.ratioCode-(96+256*96));
     assert.equal(d.dateNs,'123');
     assert.equal(d.samples.length,1);
     assert.equal(d.samples[0].id,cells[0].id);
@@ -114,7 +128,11 @@ test('dated catalogue attaches detailed branching instances while spire and unsu
     assert.equal(h.batches[0].coverage.get(0).coverage>0,true);
     assert.equal(h.batches[0].coverage.has(1),false,'unsupported residents have no detailed GPU slot');
     assert.ok(f.meshes[0].geometry.getAttribute('instanceCoverage').getX(0)===0,'detailed branch suppresses legacy draw');
-    assert.ok(f.meshes[0].geometry.getAttribute('instanceCoverage').getX(1)>0,'unsupported height stays on the legacy path');
+    assert.ok(f.meshes[0].geometry.getAttribute('instanceCoverage').getX(1)>0,'below-envelope species stays on the legacy path');
+    // Only branching is loaded: a spire-bound resident records the missing family.
+    step([species('branch'),species('spire','spire')],124n);
+    assert.deepEqual(f.diagnostics().detailedTrees.allometry.near.reasons,{'family-not-presented':1});
+    assert.deepEqual(f.diagnostics().detailedTrees.visible,[2,0]);
   }finally{f.dispose();}
 });
 
@@ -141,7 +159,7 @@ test('reordering retained canonical cells and rebasing preserves species, phase,
 test('empty or non-tree dated catalogue clears detail draw and restores legacy coverage',async()=>{
   const {f,step}=fixture();
   try{
-    await load(f);step([species()],1n);assert.equal(f.diagnostics().detailedTrees.visible[0],2);
+    await load(f);step([species()],1n);assert.equal(f.diagnostics().detailedTrees.visible[0],3);
     step([],2n);assert.deepEqual(f.diagnostics().detailedTrees.visible,[0,0]);
     assert.ok(f.meshes[0].geometry.getAttribute('instanceCoverage').getX(0)>0);
     step([{...species('grass'),kind:'grass',family:'blade'}],3n);
@@ -153,7 +171,7 @@ test('empty or non-tree dated catalogue clears detail draw and restores legacy c
 test('immersive mode hides detailed batches and restores legacy representation',async()=>{
   const {f,h,step}=fixture();
   try{
-    await load(f);step([species()],10n,false);assert.equal(f.diagnostics().detailedTrees.visible[0],2);
+    await load(f);step([species()],10n,false);assert.equal(f.diagnostics().detailedTrees.visible[0],3);
     step([species()],10n,true);assert.deepEqual(f.diagnostics().detailedTrees.visible,[0,0]);
     assert.ok(h.batches[0].group.visible===false);
     assert.ok(f.meshes[0].geometry.getAttribute('instanceCoverage').getX(0)>0);
@@ -267,7 +285,10 @@ test('resource accounting includes canopy host arrays and canonical far-instance
   const {f}=fixture(),canopy=new PlanetCanopy(body,64);f.fullCanopy=canopy;
   try{
     const memory=f.diagnostics().memoryAccounting,canopyBytes=canopy.memoryUsage();
-    assert.equal(memory.canopyHostPersistentCpuBytes,64*3*8+64*8+64*4+canopy.renderer.memorySidecarBytes());
+    // Body positions, ground heights, canonical census heights, presentation versions.
+    assert.equal(memory.canopyHostPersistentCpuBytes,64*3*8+64*8+64*4+64*4+canopy.renderer.memorySidecarBytes());
+    // One Float32 ratio code per legacy slot (near 192, mid 4096, canopy 8192); far ratios reuse an existing float.
+    assert.deepEqual(f.diagnostics().detailedTrees.allometry.channelBytes,{legacyRatios:(192+4096+8192)*4,detailedTreeParameters:{},farPacked:0,canopyCanonicalHeights:64*4});
     assert.equal(memory.canopyCurrentScratchCpuBytes,0);
     assert.equal(memory.legacyBufferCpuBytes,forestMeshBufferFootprint([...f.meshes,f.canopy,canopy.renderer.mesh]).totalBytes,
       'far instance attributes are in the same shared-buffer accounting pass');
@@ -325,18 +346,28 @@ test('malformed dated catalogue reports error, preserves legacy draw, and recove
     assert.ok(f.meshes[0].geometry.getAttribute('instanceCoverage').getX(0)>0,'legacy trees remain visible on invalid catalogue input');
     step([species('recovered')],52n);
     assert.equal(f.diagnostics().detailedTrees.error,'');
-    assert.equal(f.diagnostics().detailedTrees.visible[0],2);
+    assert.equal(f.diagnostics().detailedTrees.visible[0],3);
   }finally{f.dispose();}
 });
 
-test('malformed dated catalogue is ignored safely while detail family is absent',()=>{
-  const {f,step}=fixture();
+test('malformed dated catalogue is reported safely while detail family is absent and legacy keeps canonical proxy',()=>{
+  const {f,step,cells}=fixture();
   try{
     const duplicate=species('duplicate');
     assert.doesNotThrow(()=>step([duplicate,{...duplicate,name:'duplicate copy'}],60n));
-    assert.equal(f.diagnostics().detailedTrees.error,'');
+    assert.match(f.diagnostics().detailedTrees.error,/Duplicate dated tree species/);
     assert.equal(f.diagnostics().detailedTrees.species,0);
+    assert.deepEqual(f.diagnostics().detailedTrees.allometry.near.reasons,{'no-dated-species':3});
     assert.ok(f.meshes[0].geometry.getAttribute('instanceCoverage').getX(0)>0);
+    const drawn=()=>Array.from({length:f.meshes[0].count},(_,i)=>{const scale=new THREE.Vector3();
+      new THREE.Matrix4().fromArray(f.meshes[0].instanceMatrix.array,i*16).decompose(new THREE.Vector3(),new THREE.Quaternion(),scale);
+      return Math.round(scale.x*body.radiusM*1e3)/1e3;}).sort((a,b)=>a-b);
+    assert.deepEqual(drawn(),cells.map(c=>c.heightM).sort((a,b)=>a-b),'unbound trees keep the canonical proxy height');
+    // Without any family, a valid dated catalogue still sizes the legacy forest by species.
+    step([species('valid',undefined,12)],61n);
+    const species12=cells.map(c=>Math.round(f.dimensions(f.cache.get(c.id)).heightM*1e3)/1e3).sort((a,b)=>a-b);
+    assert.ok(species12.every(h=>h>11&&h<13));assert.deepEqual(drawn(),species12);
+    assert.deepEqual(f.diagnostics().detailedTrees.allometry.near.reasons,{'family-not-presented':3});
   }finally{f.dispose();}
 });
 
@@ -365,9 +396,13 @@ function assertVariantAgreement(f,label){
     const binding=f.binding(resident),instance=entry.batches[lod].instances.get(slot);
     assert.equal(binding.recipe.family,kind);
     assert.equal(instance.variant,binding.appearance.variant+1,`${label}: near slot ${slot} uses its resident's pool member`);
-    const code=f.expectedCanopyPresentation(resident),decoded=unpackForestPresentation(code);
+    const expected=f.expectedCanopyPresentation(resident),decoded=unpackForestPresentation(expected.code);
     assert.equal(decoded.kind,kind);assert.equal(decoded.variant,binding.appearance.variant,`${label}: far code carries the same member`);
-    assert.equal(f.fullCanopy.presentationResolve(resident.cell.id,resident.cell.heightM),code,`${label}: far retag equals handoff expectation`);
+    assert.deepEqual(f.fullCanopy.presentationResolve(resident.cell.id,resident.cell.heightM),expected,`${label}: far retag equals handoff expectation`);
+    // Exact near parameters equal the far height/ratio channel.
+    const d=forestTreeDimensions(binding,resident.cell.heightM,f.presentedFamilies);
+    assert.equal(instance.heightM,d.heightM);assert.equal(expected.heightM,d.heightM);assert.equal(expected.ratioCode,d.ratioCode);
+    assert.deepEqual(instance.allometry,{crownRatio:d.crownRatio,trunkRatio:d.trunkRatio},`${label}: near ratios`);
     checked++;
   });
   return checked;
@@ -398,7 +433,7 @@ test('near slots and far codes share one canonical structural variant across dat
     assert.equal(assertVariantAgreement(f,'slot reuse'),2);
     // Family unload: far falls back to the legacy code immediately.
     f.clearTreeAssets();step(renamed,300n);
-    assert.equal(f.fullCanopy.presentationResolve(cells[0].id,16),0,'no family: far legacy fallback');
+    assert.equal(f.fullCanopy.presentationResolve(cells[0].id,16).code,0,'no family: far legacy fallback');
   }finally{f.dispose();}
 });
 test('a family without a structural pool keeps authored structure in near and far paths',async()=>{
@@ -408,7 +443,7 @@ test('a family without a structural pool keeps authored structure in near and fa
     for(const [slot,instance] of h.batches[0].instances){
       assert.equal(instance.variant,0,`slot ${slot} keeps authored structure`);
       const resident=f.assets.entries.get('branching').pools[0].items[slot];
-      assert.equal(unpackForestPresentation(f.expectedCanopyPresentation(resident)).variant,0);
+      assert.equal(unpackForestPresentation(f.expectedCanopyPresentation(resident).code).variant,0);
     }
   }finally{f.dispose();}
 });
@@ -447,7 +482,7 @@ test('failure in second family preserves active library and disposes partial rep
   assert.equal(f.assets.revision,1,'failed replacement preserves the adopted presentation revision');
   assert.equal(old.disposed,undefined);assert.equal(h.families[1].disposed,1);
   assert.ok(h.batches.slice(2).every(x=>x.disposed===1));
-  step([species()],2n);assert.equal(f.diagnostics().detailedTrees.visible[0],2);
+  step([species()],2n);assert.equal(f.diagnostics().detailedTrees.visible[0],3);
   assert.equal(f.diagnostics().detailedTrees.families.length,1);
  }finally{f.dispose();}
 });

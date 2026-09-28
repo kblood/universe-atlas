@@ -9,6 +9,11 @@ import {treeQuaternion} from './tree-shape.ts';
 import {quantizeForestCoverage} from './forest-coverage.ts';
 import {PLANET_DETAIL} from './planet-detail.ts';
 import {forestWaterIntervalContains,validForestWaterInterval,type ForestWaterInterval} from './forest-water-validity.ts';
+import {TREE_ALLOMETRY_IDENTITY_CODE} from './tree-allometry.ts';
+
+/** Far presentation for one canonical tree. A bare number is a presentation
+ * code drawn at the canonical height with identity proportions. */
+export type CanopyPresentation=number|{code:number;heightM:number;ratioCode:number};
 
 const patchKey=(a:ForestPatchAddress)=>`${a.face}/${a.n}/${a.x}/${a.y}`;
 const MAX_DIRTY_CURRENT_PATCH_KEYS=8192;
@@ -40,9 +45,11 @@ export class PlanetCanopy {
   private center=new THREE.Vector3(Infinity,Infinity,Infinity);
   private origin=new THREE.Vector3();private originReady=false;
   private bodyPositions:Float64Array;private heights:Float64Array;
+  /** Canonical census height (10–22 m proxy); the drawn height is presentation. */
+  private canonicalHeights:Float32Array;
   private presentationVersions:Uint32Array;
   private presentationKey='';private presentationVersion=0;
-  private presentationResolve:(id:string,heightM:number)=>number=()=>0;
+  private presentationResolve:(id:string,canonicalHeightM:number)=>CanopyPresentation=()=>0;
   private presentationRetag:MapIterator<[string,number]>|null=null;
   private presentationPassVersion=0;
   private presentationRetagged=0;private presentationSliceMs=0;
@@ -75,18 +82,19 @@ export class PlanetCanopy {
   }
   constructor(body:Body,capacity=229376){
     this.body=body;this.allocator=new ForestSlotAllocator(capacity);this.renderer=new ForestImpostors(capacity);
-    this.bodyPositions=new Float64Array(capacity*3);this.heights=new Float64Array(capacity);
+    this.bodyPositions=new Float64Array(capacity*3);this.heights=new Float64Array(capacity);this.canonicalHeights=new Float32Array(capacity);
     this.presentationVersions=new Uint32Array(capacity);
     this.renderer.mesh.scale.setScalar(1/body.radiusM);this.group.add(this.renderer.mesh);this.group.name='Complete canonical canopy';this.group.visible=false;
   }
   /** Persistent CPU-only host arrays and current rebase scratch. Map/set/
    * string/worker runtime heap is not a byte-exact measurable buffer. */
-  memoryUsage(){return {hostPersistentCpuBytes:this.bodyPositions.byteLength+this.heights.byteLength+
+  memoryUsage(){return {hostPersistentCpuBytes:this.bodyPositions.byteLength+this.heights.byteLength+this.canonicalHeights.byteLength+
       this.presentationVersions.byteLength+this.renderer.memorySidecarBytes(),
     hostScratchCpuBytes:this.rebase?.positions.byteLength??0,hostScratchPeakCpuBytes:this.bodyPositions.length*4};}
+  canonicalHeightBytes(){return this.canonicalHeights.byteLength;}
   /** The near owner supplies its existing dated catalogue and adopted library.
    * Replacement touches bounded parameter slices, never population identity. */
-  setPresentation(key:string,resolve:(id:string,heightM:number)=>number,families:ReadonlyMap<ForestTreeKind,ForestFamilyPresentation>){
+  setPresentation(key:string,resolve:(id:string,canonicalHeightM:number)=>CanopyPresentation,families:ReadonlyMap<ForestTreeKind,ForestFamilyPresentation>){
     if(key===this.presentationKey)return;
     this.renderer.setFamilyPresentations(families);
     this.presentationKey=key;this.presentationResolve=resolve;
@@ -99,7 +107,12 @@ export class PlanetCanopy {
   }
   private tagPresentation(id:string,index:number){
     if(this.presentationVersions[index]===this.presentationVersion)return;
-    this.renderer.setPresentation(index,this.presentationResolve(id,this.renderer.positions.getW(index)));
+    const canonical=this.canonicalHeights[index],value=this.presentationResolve(id,canonical);
+    const presentation=typeof value==='number'?{code:value,heightM:canonical,ratioCode:TREE_ALLOMETRY_IDENTITY_CODE}:value;
+    this.renderer.setPresentation(index,presentation.code);
+    this.renderer.setAllometry(index,presentation.heightM,presentation.ratioCode);
+    // A rebase already past this slot copied the previous drawn height.
+    if(this.rebase&&index<this.rebase.cursor)this.rebase.positions[index*4+3]=this.renderer.positions.getW(index);
     this.presentationVersions[index]=this.presentationVersion;this.presentationRetagged++;
   }
   private start(){
@@ -226,7 +239,7 @@ export class PlanetCanopy {
       const r=patch.records.subarray(i*FOREST_CENSUS_STRIDE,(i+1)*FOREST_CENSUS_STRIDE),index=range.start+i,offset=r[0],a=patch.address;
       const id=`${a.face}/${a.n}/${a.x*8+offset%8}/${a.y*8+Math.floor(offset/8)}`;ids.push(id);this.slots.set(id,index);
       this.direction.set(r[1],r[2],r[3]);this.position.copy(this.direction).multiplyScalar(this.body.radiusM+r[7]);
-      this.position.toArray(this.bodyPositions,index*3);this.heights[index]=r[7];
+      this.position.toArray(this.bodyPositions,index*3);this.heights[index]=r[7];this.canonicalHeights[index]=r[5];
       if(this.rebase)this.rebase.positions.set([this.position.x-this.rebase.origin.x,this.position.y-this.rebase.origin.y,this.position.z-this.rebase.origin.z,r[5]],index*4);
       this.position.sub(this.origin);treeQuaternion(this.direction,r[6],this.rotation,this.yaw);
       this.renderer.write(index,this.position,r[5],this.rotation,r[4],r[7]);
@@ -337,16 +350,20 @@ export class PlanetCanopy {
   }
   presentationSample(id:string){
     const index=this.slots.get(id);if(index===undefined)return null;
-    return {id,heightM:this.renderer.positions.getW(index),groundHeightM:this.heights[index],code:this.renderer.parameters.getZ(index),
+    const allometry=this.renderer.allometry(index);
+    return {id,heightM:allometry.heightM,canonicalHeightM:this.canonicalHeights[index],ratioCode:allometry.ratioCode,crownRatio:allometry.crownRatio,trunkRatio:allometry.trunkRatio,
+      groundHeightM:this.heights[index],code:this.renderer.parameters.getZ(index),
       current:this.presentationVersions[index]===this.presentationVersion,ownership:this.renderer.ownership.getX(index)};
   }
-  canHandoff(id:string,height:number,key=forestCellPatchKey(id),treeHeightM?:number,presentationCode=0){
+  /** `treeHeightM` and `ratioCode` are the near tree's rendered dimensions. */
+  canHandoff(id:string,height:number,key=forestCellPatchKey(id),treeHeightM?:number,presentationCode=0,ratioCode?:number){
     const index=this.slots.get(id);
     // Canonical shape is independent of water. Matching roots may keep pairing
     // while current near absence/submersion suppresses obsolete far presence.
     if(!this.group.visible||index===undefined||this.installed.get(key)?.family!==this.family||Math.abs(this.heights[index]-height)>=1e-6)return false;
     this.tagPresentation(id,index);
     return (treeHeightM===undefined||Math.abs(this.renderer.positions.getW(index)-treeHeightM)<1e-5)&&
+      (ratioCode===undefined||this.renderer.allometry(index).ratioCode===ratioCode)&&
       this.presentationVersions[index]===this.presentationVersion&&this.renderer.parameters.getZ(index)===presentationCode;
   }
   noteNear(id:string,key:string,present:boolean,water:number){
@@ -391,7 +408,7 @@ export class PlanetCanopy {
     presentation:{key:this.presentationKey,version:this.presentationVersion,pending:!!this.presentationRetag,retagged:this.presentationRetagged,sliceMs:this.presentationSliceMs,versionBytes:this.presentationVersions.byteLength},
     patchLookupCache:{hits:this.patchLookupCacheHits,misses:this.patchLookupCacheMisses,keys:this.frameCurrentPatches.size},
     attributeBytes:this.renderer.positions.array.byteLength+this.renderer.rotations.array.byteLength+this.renderer.parameters.array.byteLength+this.renderer.ownership.array.byteLength,
-    retainedCoordinateBytes:this.bodyPositions.byteLength+this.heights.byteLength,
+    retainedCoordinateBytes:this.bodyPositions.byteLength+this.heights.byteLength,canonicalHeightBytes:this.canonicalHeights.byteLength,
     rebaseBufferBytes:this.rebase?.positions.byteLength??0};}
   dispose(){this.disposed=true;this.invalidateCurrentPatchAnswers();this.group.visible=false;this.worker?.terminate();this.worker=null;this.renderer.dispose();this.installed.clear();this.slots.clear();this.pending=[];this.group.removeFromParent();}
 }

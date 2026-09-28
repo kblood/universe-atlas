@@ -74,13 +74,13 @@ test('analytic profile uses four deterministic reference-height bands and metric
   assert.equal(result.profile.radiusStatistic,'p90-visual-only');
   assert.ok(result.cullingBounds.radiusM>0);
   for(const band of result.profile.bands.filter(b=>b.populated)){
-    const envelope=Math.hypot(...band.centerM)*22/16+Math.hypot(band.radiusM,band.halfHeightM)*22/16+result.profile.maxLeafOffsetM;
+    const scale=TREE_CANOPY_HEIGHT_RANGE_M[1]/16,envelope=Math.hypot(...band.centerM)*scale+Math.hypot(band.radiusM,band.halfHeightM)*scale+result.profile.maxLeafOffsetM;
     assert.ok(result.cullingBounds.radiusM+1e-6>=envelope,'culling sphere encloses each shader band envelope');
   }
   g.dispose();
 });
 
-test('guaranteed sphere contains every actual Oak and Pine LOD vertex at 10, 16, and 22 m under both extreme wind phases',async()=>{
+test('guaranteed sphere contains every actual Oak and Pine LOD vertex across the rendered height envelope under both extreme wind phases',async()=>{
   for(const path of [
     '../public/assets/forest/desktop-v1/branching/oak-lod0.glb','../public/assets/forest/desktop-v1/branching/oak-lod1.glb',
     '../public/assets/forest/desktop-v1/spire/conifer-lod0.glb','../public/assets/forest/desktop-v1/spire/conifer-lod1.glb',
@@ -90,7 +90,7 @@ test('guaranteed sphere contains every actual Oak and Pine LOD vertex at 10, 16,
     assert.equal(metadata.cullingBounds.heightRangeM[1],TREE_CANOPY_HEIGHT_RANGE_M[1]);
     for(const g of geometries){
       const p=g.getAttribute('position'),q=g.getAttribute('_leaf_pivot'),branch=g.getAttribute('_branch_level'),wind=g.getAttribute('_wind');
-      for(let i=0;i<p.count;i++)for(const h of [10,16,22])for(const sign of [-1,1]){
+      for(let i=0;i<p.count;i++)for(const h of [TREE_CANOPY_HEIGHT_RANGE_M[0],16,TREE_CANOPY_HEIGHT_RANGE_M[1]])for(const sign of [-1,1]){
         const leaf=branch.getX(i)>3.5,point=deformedVertex([p.getX(i),p.getY(i),p.getZ(i)],[q.getX(i),q.getY(i),q.getZ(i)],leaf,wind.getX(i),h,sign);
         assert.ok(Math.hypot(...point)<=metadata.cullingBounds.radiusM+1e-5,`${path} vertex ${i} escapes at ${h} m, wind ${sign}`);
       }

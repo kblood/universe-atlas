@@ -255,12 +255,14 @@ test('far impostors adopt a baked atlas per family, draw its union bound and fal
     assert.equal(f.uniforms.treeAtlasReady.value.y,0);assert.deepEqual(f.uniforms.treeFamilyExtent.value[1].toArray(),before.toArray());
     const shader={uniforms:{},vertexShader:THREE.ShaderLib.lambert.vertexShader,fragmentShader:THREE.ShaderLib.lambert.fragmentShader};
     f.mesh.material.onBeforeCompile(shader,{capabilities:{logarithmicDepthBuffer:false,reversedDepthBuffer:false}});
-    assert.ok(shader.vertexShader.includes('treeHemiBlend(treeRotate(vec4(-treeQ.xyz,treeQ.w),toEye),TREE_ATLAS_GRID,treeAtlasViews,treeAtlasWeights);'));
+    // Views are chosen in the allometry-scaled atlas frame (identity for kc=1).
+    assert.ok(shader.vertexShader.includes('treeHemiBlend(treeRotate(vec4(-treeQ.xyz,treeQ.w),toEye)/atlasScale,TREE_ATLAS_GRID,treeAtlasViews,treeAtlasWeights);'));
     assert.ok(shader.fragmentShader.includes('if(familyBound>0.0&&treeAtlasWeights!=vec3(0)){'),'atlas path');
     assert.ok(shader.fragmentShader.includes('}else if(familyBound>0.0){'),'band fallback remains for unbaked families');
-    assert.ok(shader.fragmentShader.includes('treeCoverage=treeAtlasHeightCoverage(atlasColour.a,leafFraction,treeRootHeight.w);'));
+    // Coverage uses the crown-area-equivalent height of the stretched member.
+    assert.ok(shader.fragmentShader.includes('treeCoverage=treeAtlasHeightCoverage(atlasColour.a,leafFraction,treeRootHeight.w*sqrt(allometry.x));'));
     assert.ok(forestFarAtlasCommonGLSL.includes(`TREE_ATLAS_GRID=${L.grid}.0`));
-    assert.ok(f.mesh.material.customProgramCacheKey().endsWith(FOREST_FAR_ATLAS_VERSION));
+    assert.ok(f.mesh.material.customProgramCacheKey().endsWith(`${FOREST_FAR_ATLAS_VERSION}/tree-allometry-1`));
   }finally{f.dispose();}
 });
 

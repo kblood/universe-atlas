@@ -3,7 +3,9 @@ import type {BufferGeometry,BufferAttribute,InterleavedBufferAttribute} from 'th
 /** Reference skeleton height used by the detailed tree vertex shader. */
 export const TREE_CANOPY_REFERENCE_HEIGHT_M = 16;
 export const TREE_CANOPY_WIND_MAX_ANGLE_RAD = 0.12;
-export const TREE_CANOPY_HEIGHT_RANGE_M = [10, 22] as const;
+/** Rendered family heights supported by the detailed skeleton (tree-allometry-1
+ * envelope). Canonical population heights are separate and never read here. */
+export const TREE_CANOPY_HEIGHT_RANGE_M = [8, 24] as const;
 const LEAF_BRANCH_LEVEL = 3.5;
 const BAND_COUNT = 4;
 
@@ -33,13 +35,17 @@ export type TreeCanopyProfile = {
   /** 75th-percentile leaf vertex offset: representative metric card extent. */
   cardExtentM?: number;
   trunk?: TreeTrunkProfile | null;
+  /** 95th-percentile horizontal foliage-pivot distance from the trunk axis. */
+  crownRadiusM?: number;
+  /** Maximum horizontal distance and |y| of any bark vertex or foliage pivot. */
+  skeleton?: {radiusM: number; heightM: number};
   radiusStatistic: 'p90-visual-only';
 };
 export type TreeCullingBounds = {
   /** Origin-centred sphere enclosing all supported scaled and wind-deformed vertices. */
   centerM: [0, 0, 0];
   radiusM: number;
-  heightRangeM: [10, 22];
+  heightRangeM: [8, 24];
   maxWindAngleRad: number;
 };
 export type TreeCanopyMetadata = {profile: TreeCanopyProfile; cullingBounds: TreeCullingBounds};
@@ -79,7 +85,7 @@ function maxDeformedVertexRadius(px: number, py: number, pz: number, qx: number,
   const ox = px - qx, oy = py - qy, oz = pz - qz, maxAngle = TREE_CANOPY_WIND_MAX_ANGLE_RAD * wind;
   let maximum = 0;
   // For fixed angle, squared distance is convex in uniform skeleton scale, so
-  // its maximum over 10..22 m is at an endpoint. Angular maxima occur at the
+  // its maximum over the supported height range is at an endpoint. Angular maxima occur at the
   // interval ends or where A cos(theta)+B sin(theta) has a stationary point.
   const A = qx * ox + qy * oy, B = -qx * oy + qy * ox;
   const candidates = [-maxAngle, maxAngle];
@@ -100,9 +106,9 @@ function maxDeformedVertexRadius(px: number, py: number, pz: number, qx: number,
 export function deriveTreeCanopyMetadata(geometries: readonly BufferGeometry[]): TreeCanopyMetadata {
   const sources = readAttributes(geometries);
   const samples: {x: number; y: number; z: number; band: number}[] = [];
-  const leafOffsets: number[] = [], trunk: {y: number; r: number}[] = [];
+  const leafOffsets: number[] = [], trunk: {y: number; r: number}[] = [], crownRadii: number[] = [];
   const bandArea = [0, 0, 0, 0];
-  let maxLeafOffsetM = 0, cullingRadiusM = 0;
+  let maxLeafOffsetM = 0, cullingRadiusM = 0, skeletonRadiusM = 0, skeletonHeightM = 0;
   const bandOf = (y: number) => Math.max(0, Math.min(BAND_COUNT - 1, Math.floor(y / TREE_CANOPY_REFERENCE_HEIGHT_M * BAND_COUNT)));
   for (const [sourceIndex, source] of sources.entries()) {
     // Leaf-card area is metric: cards keep their size at every tree height.
@@ -128,11 +134,14 @@ export function deriveTreeCanopyMetadata(geometries: readonly BufferGeometry[]):
       const leaf = branch > LEAF_BRANCH_LEVEL;
       cullingRadiusM = Math.max(cullingRadiusM, maxDeformedVertexRadius(px, py, pz, qx, qy, qz, leaf, wind));
       if (!leaf) {
+        skeletonRadiusM = Math.max(skeletonRadiusM, Math.hypot(px, pz)); skeletonHeightM = Math.max(skeletonHeightM, Math.abs(py));
         if (branch < .5) trunk.push({y: py, r: Math.hypot(px, pz)});
         continue;
       }
       const x = qx, y = qy, z = qz;
       samples.push({x, y, z, band: bandOf(y)});
+      crownRadii.push(Math.hypot(qx, qz));
+      skeletonRadiusM = Math.max(skeletonRadiusM, Math.hypot(qx, qz)); skeletonHeightM = Math.max(skeletonHeightM, Math.abs(qy));
       const offset = Math.hypot(px - qx, py - qy, pz - qz);
       leafOffsets.push(offset);
       maxLeafOffsetM = Math.max(maxLeafOffsetM, offset);
@@ -159,8 +168,9 @@ export function deriveTreeCanopyMetadata(geometries: readonly BufferGeometry[]):
   // scale with the skeleton; card offsets remain metric and are added unchanged.
   for (const band of bands) {
     if (!band.populated) continue;
-    const envelope = Math.hypot(...band.centerM) * 22 / 16 +
-      Math.hypot(band.radiusM, band.halfHeightM) * 22 / 16 + maxLeafOffsetM;
+    const scale = TREE_CANOPY_HEIGHT_RANGE_M[1] / TREE_CANOPY_REFERENCE_HEIGHT_M;
+    const envelope = Math.hypot(...band.centerM) * scale +
+      Math.hypot(band.radiusM, band.halfHeightM) * scale + maxLeafOffsetM;
     cullingRadiusM = Math.max(cullingRadiusM, envelope);
   }
   if (!finite(cullingRadiusM) || cullingRadiusM <= 0 || !finite(maxLeafOffsetM)) throw new Error('Invalid derived tree bounds');
@@ -173,8 +183,9 @@ export function deriveTreeCanopyMetadata(geometries: readonly BufferGeometry[]):
     if (heightM > 0 && baseRadiusM > 0 && [heightM, baseRadiusM, topRadiusM].every(finite)) trunkProfile = {heightM, baseRadiusM, topRadiusM: Math.min(topRadiusM, baseRadiusM)};
   }
   return {
-    profile: {referenceHeightM: 16, bands, maxLeafOffsetM, cardExtentM: percentile(leafOffsets, .75), trunk: trunkProfile, radiusStatistic: 'p90-visual-only'},
-    cullingBounds: {centerM: [0, 0, 0], radiusM: cullingRadiusM, heightRangeM: [10, 22], maxWindAngleRad: TREE_CANOPY_WIND_MAX_ANGLE_RAD},
+    profile: {referenceHeightM: 16, bands, maxLeafOffsetM, cardExtentM: percentile(leafOffsets, .75), trunk: trunkProfile,
+      crownRadiusM: percentile(crownRadii, .95), skeleton: {radiusM: skeletonRadiusM, heightM: skeletonHeightM}, radiusStatistic: 'p90-visual-only'},
+    cullingBounds: {centerM: [0, 0, 0], radiusM: cullingRadiusM, heightRangeM: [TREE_CANOPY_HEIGHT_RANGE_M[0], TREE_CANOPY_HEIGHT_RANGE_M[1]], maxWindAngleRad: TREE_CANOPY_WIND_MAX_ANGLE_RAD},
   };
 }
 

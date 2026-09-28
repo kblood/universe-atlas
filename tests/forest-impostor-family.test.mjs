@@ -57,7 +57,9 @@ test('Lambert shader composes family shape, linear color and conservative bounds
       assert.equal((source.match(/float familyCode=forestFamilyCode\(treeData.z\);/g)||[]).length,1);
       assert.match(source,/uniform vec4 treeFamilyBands\[8\]/);
     }
-    assert.match(shader.vertexShader,/extent=treeFamilyExtent\[familyIndex\]\*h\+vec3\(treeFamilyMargin\[familyIndex\]\)/);
+    assert.match(shader.vertexShader,/boundCentre=treeFamilyCenter\[familyIndex\]\*h;extent=treeFamilyExtent\[familyIndex\]\*h;/);
+    assert.match(shader.vertexShader,/treeAllometryBox\(boundCentre,extent,allometry,boundLean\);\s*extent\+=vec3\(boundMargin\);/,'allometry maps the box before the metric card margin');
+    assert.match(shader.fragmentShader,/source=treeAllometryPoint\(band\.xyz\/16\.0,treeFamilyTrunk\[familyIndex\]\.y,allometry\)/,'bands follow the near radial map');
     assert.match(shader.fragmentShader,/treeFamilyConeSpan\(bandRo,bandRd,vec3\(0\),radii/);
     assert.match(shader.fragmentShader,/vec3 centre=atlasVariantPoint\(source,1\.0,variantA,variantB\)/,'far bands use the detailed variant transform');
     assert.match(shader.fragmentShader,/forestFamilyVariant\(treeData.z\)/);
@@ -69,7 +71,7 @@ test('Lambert shader composes family shape, linear color and conservative bounds
     assert.match(shader.fragmentShader,/fwidth\(remaining\)/,'ellipsoid edge coverage follows the AA contract');
     assert.doesNotMatch(shader.fragmentShader,/familyCode==1.0&&best<1e20\)treeCoverage=1.0/);
     assert.ok(!shader.fragmentShader.includes('baseCoverage'),'atlas occupancy is not treated as tree opacity');
-    assert.match(f.mesh.material.customProgramCacheKey(),/forest-presentation-2\/forest-structural-variant-1/);
+    assert.match(f.mesh.material.customProgramCacheKey(),/forest-presentation-3\/forest-structural-variant-1\/.*\/tree-allometry-1$/);
   }finally{f.dispose();}
 });
 

@@ -10,8 +10,10 @@ import {installTreeFoliageCoverageMipmaps,type InstalledTreeFoliageMipChain} fro
 import {installTreeFoliageSidecar,type TreeFoliageMipSidecar} from './tree-foliage-sidecar.ts';
 import {calibrateTreeLodCardScale,type TreeCoverageMesh,type TreeLodCoverageCalibration} from './tree-lod-coverage.ts';
 import {deriveTreeBaseColorStatistics,deriveTreeCanopyMetadata,type TreeCanopyProfile,type TreeCullingBounds,type TreeTrunkProfile} from './tree-canopy-profile.ts';
-import {forestVariantGLSL,forestVariantRadiusBound,forestVariantUniformData,FOREST_VARIANT_COUNT,type ForestStructuralVariant} from './tree-structural-variant.ts';
+import {forestVariantEnvelope,forestVariantGLSL,forestVariantRadiusBound,forestVariantUniformData,FOREST_VARIANT_COUNT,type ForestStructuralVariant} from './tree-structural-variant.ts';
 import {installForestFarAtlasCapture,FOREST_FAR_ATLAS_VERSION} from './forest-far-atlas.ts';
+import {forestFamilyEnvelopeRadius,treeAllometryGLSL,treeAllometryRadial,treeAllometryReference,
+  TREE_ALLOMETRY_VERSION,TREE_FAMILY_ALLOMETRY_ENVELOPE,type TreeAllometryReference} from './tree-allometry.ts';
 
 /** Experimental author-6 adapter. Assets are supplied explicitly; this does not
  * replace the canonical forest or invent a second species catalogue. */
@@ -73,18 +75,32 @@ export function prepareTreeLODPair(lod0:ArrayBuffer,lod1:ArrayBuffer){
   return {lod1GeometryBuffer:buffer,embeddedTextureBytes,foliagePng:imageBytes(a,foliageImage)};
 }
 
-/** CPU reference for shader audits. Scale skeleton/attachment coordinates,
- * keeping every offset within a leaf card in metres, then rotate rigidly. */
-export function treeVertexMeters(position:THREE.Vector3,pivot:THREE.Vector3,leaf:boolean,heightM:number,windWeight:number,phase:number,instancePhase=0){
-  if(!Number.isFinite(heightM)||heightM<10||heightM>22)throw new Error('Prototype supports tree heights 10–22 m');
-  if(!leaf)return position.clone().multiplyScalar(heightM/TREE_REFERENCE_HEIGHT_M);
-  return position.clone().sub(pivot).applyAxisAngle(new THREE.Vector3(0,0,1),Math.sin(phase+instancePhase)*.12*windWeight).addScaledVector(pivot,heightM/TREE_REFERENCE_HEIGHT_M);
+export type TreeInstanceAllometry={crownRatio:number;trunkRatio:number};
+const IDENTITY_ALLOMETRY:TreeInstanceAllometry=Object.freeze({crownRatio:1,trunkRatio:1});
+function validInstanceAllometry(a:TreeInstanceAllometry){
+  const E=TREE_FAMILY_ALLOMETRY_ENVELOPE;
+  return !!a&&Number.isFinite(a.crownRatio)&&Number.isFinite(a.trunkRatio)&&a.crownRatio>=E.crownRatio[0]&&a.crownRatio<=E.crownRatio[1]&&
+    a.trunkRatio>=E.trunkRatio[0]&&a.trunkRatio<=E.trunkRatio[1];
+}
+/** CPU reference for shader audits. Map skeleton/attachment coordinates through
+ * the species allometry (radial trunk/crown ratios, then height scale), keeping
+ * every offset within a leaf card in metres, then rotate rigidly. */
+export function treeVertexMeters(position:THREE.Vector3,pivot:THREE.Vector3,leaf:boolean,heightM:number,windWeight:number,phase:number,instancePhase=0,
+  allometry:TreeInstanceAllometry&{trunkRadiusM:number}={...IDENTITY_ALLOMETRY,trunkRadiusM:0}){
+  const [minH,maxH]=TREE_FAMILY_ALLOMETRY_ENVELOPE.heightM;
+  if(!Number.isFinite(heightM)||heightM<minH||heightM>maxH)throw new Error(`Detailed trees support rendered heights ${minH}–${maxH} m`);
+  if(!validInstanceAllometry(allometry)||!Number.isFinite(allometry.trunkRadiusM)||allometry.trunkRadiusM<0)throw new Error('Invalid tree allometry');
+  const s=heightM/TREE_REFERENCE_HEIGHT_M;
+  const map=(p:THREE.Vector3)=>{const [x,z]=treeAllometryRadial(p.x,p.z,allometry.trunkRadiusM,allometry.crownRatio,allometry.trunkRatio);return new THREE.Vector3(x*s,p.y*s,z*s);};
+  if(!leaf)return map(position);
+  return position.clone().sub(pivot).applyAxisAngle(new THREE.Vector3(0,0,1),Math.sin(phase+instancePhase)*.12*windWeight).add(map(pivot));
 }
 
 const declarations=`
 attribute float _wind, _branch_level;
 attribute vec3 _leaf_pivot;
-attribute vec2 instanceTree;
+// x: rendered height / 16 m, y: wind phase, z/w: crown and trunk ratios.
+attribute vec4 instanceTree;
 // x: 0 = authored structure, k = bounded variant k-1. y: static LOD card scale.
 attribute vec2 instanceTreeShape;
 uniform float atlasTreePhase;
@@ -93,7 +109,10 @@ uniform vec4 atlasTreeVariantA[${FOREST_VARIANT_COUNT}],atlasTreeVariantB[${FORE
 uniform vec4 atlasTreeView;
 // Representative card extent (m), target projected size (px), maximum scale.
 uniform vec3 atlasTreeCards;
+// Reference-skeleton trunk base radius separating trunk and crown ratios.
+uniform float atlasTreeTrunkRadius;
 ${forestVariantGLSL}
+${treeAllometryGLSL}
 mat3 atlasLeafRotation(){
   float angle=sin(atlasTreePhase+instanceTree.y)*.12*_wind;
   float c=cos(angle),s=sin(angle);
@@ -119,12 +138,20 @@ float atlasTreeCardScale(){
   return s;
 }
 `;
-type TreeShaderState={phase:{value:number};variantA:{value:THREE.Vector4[]};variantB:{value:THREE.Vector4[]};view:{value:THREE.Vector4};cards:{value:THREE.Vector3}};
+type TreeShaderState={phase:{value:number};trunkRadius:{value:number};variantA:{value:THREE.Vector4[]};variantB:{value:THREE.Vector4[]};view:{value:THREE.Vector4};cards:{value:THREE.Vector3}};
 function deform(material:THREE.Material,state:TreeShaderState){
   material.onBeforeCompile=shader=>{
-    Object.assign(shader.uniforms,{atlasTreePhase:state.phase,atlasTreeVariantA:state.variantA,atlasTreeVariantB:state.variantB,atlasTreeView:state.view,atlasTreeCards:state.cards});
+    Object.assign(shader.uniforms,{atlasTreePhase:state.phase,atlasTreeTrunkRadius:state.trunkRadius,atlasTreeVariantA:state.variantA,atlasTreeVariantB:state.variantB,atlasTreeView:state.view,atlasTreeCards:state.cards});
     shader.vertexShader=declarations+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
+      if(_branch_level<=3.5){
+        // Bark follows the horizontal allometry; rigid leaf cards do not.
+        float allometryK=treeAllometryHorizontalRatio(position.xz,atlasTreeTrunkRadius,instanceTree.zw);
+        objectNormal=normalize(vec3(objectNormal.x/allometryK,objectNormal.y,objectNormal.z/allometryK));
+        #ifdef USE_TANGENT
+        objectTangent.xyz=normalize(vec3(objectTangent.x*allometryK,objectTangent.y,objectTangent.z*allometryK));
+        #endif
+      }
       if(_branch_level>3.5){objectNormal=atlasLeafRotation()*objectNormal;
         #ifdef USE_TANGENT
         objectTangent=atlasLeafRotation()*objectTangent;
@@ -141,12 +168,12 @@ function deform(material:THREE.Material,state:TreeShaderState){
         if(_branch_level>3.5){
           // Card offsets stay metric; removed clumps collapse in every pass.
           float cardScale=atlasVariantRemovesLeaf(_leaf_pivot,instanceTreeShape.x,variantB)?0.0:atlasTreeCardScale();
-          transformed=atlasVariantPoint(_leaf_pivot*instanceTree.x,treeHeightM,variantA,variantB)+
+          transformed=atlasVariantPoint(treeAllometryPoint(_leaf_pivot,atlasTreeTrunkRadius,instanceTree.zw)*instanceTree.x,treeHeightM,variantA,variantB)+
             atlasVariantRotate(atlasLeafRotation()*(position-_leaf_pivot),atlasTreeTwist())*cardScale;
-        }else transformed=atlasVariantPoint(position*instanceTree.x,treeHeightM,variantA,variantB);
+        }else transformed=atlasVariantPoint(treeAllometryPoint(position,atlasTreeTrunkRadius,instanceTree.zw)*instanceTree.x,treeHeightM,variantA,variantB);
       }`);
   };
-  material.customProgramCacheKey=()=> 'atlas-tree-physical-2';
+  material.customProgramCacheKey=()=>`atlas-tree-physical-3/${TREE_ALLOMETRY_VERSION}`;
 }
 export type TreeAssetFamily=Awaited<ReturnType<typeof loadTreeAssetFamily>>;
 export type TreeCanopyPresentation={
@@ -169,6 +196,8 @@ export type TreeCanopyPresentation={
   structuralVariants:readonly ForestStructuralVariant[];
   /** Card scale applied to the reduced LOD1 foliage (area-preserving or silhouette-matched). */
   lod1CardScale:number;
+  /** Reference measurements for species allometry; null keeps the family out of rendering. */
+  allometry:TreeAllometryReference|null;
 };
 export type TreeCardCompensation={targetPixels:number;maxScale:number};
 export type TreeAssetOptions={foliageCoverage?:'mask'|'hash';foliageMipmaps?:boolean;foliageMipSidecar?:TreeFoliageMipSidecar;leafTransmission?:LeafTransmissionOptions;forestCoverage?:boolean;
@@ -276,7 +305,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     }
     const phase={value:0};
     const vectors=(offset:number)=>Array.from({length:FOREST_VARIANT_COUNT},(_,i)=>new THREE.Vector4().fromArray(variantData,i*8+offset));
-    const shaderState:TreeShaderState={phase,variantA:{value:vectors(0)},variantB:{value:vectors(4)},
+    const shaderState:TreeShaderState={phase,trunkRadius:{value:0},variantA:{value:vectors(0)},variantB:{value:vectors(4)},
       view:{value:new THREE.Vector4()},cards:{value:new THREE.Vector3(1,1,1)}};
     const viewEye=new THREE.Vector3(),viewInverse=new THREE.Matrix4(),viewport=new THREE.Vector4();
     for(const material of materials)deform(material,shaderState);
@@ -310,8 +339,17 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     const maxLeafOffsetM=Math.max(lod0Metadata.profile.maxLeafOffsetM,lod1Metadata.profile.maxLeafOffsetM);
     // Variants, LOD card scale and distance growth all enlarge the vertex set.
     const cardScaleMax=Math.max(1,lod1CardScale)*compensationMax;
+    // A family without measured trunk/crown references cannot map species
+    // dimensions; it stays loaded but every tree records a legacy fallback.
+    const envelope=forestVariantEnvelope(variants);
+    let allometry:TreeAllometryReference|null=null;
+    try{allometry=treeAllometryReference(lod0Metadata.profile,lod1Metadata.profile,{variantScale:envelope.scale,variantLeanFraction:envelope.leanFraction,cardScaleMax});}
+    catch{allometry=null;}
+    shaderState.trunkRadius.value=allometry?.trunkRadiusM??0;
+    const identityRadius=variants.length||cardScaleMax>1?forestVariantRadiusBound(variants,authoredRadius,maxLeafOffsetM,cardScaleMax):authoredRadius;
+    // Encloses every rendered height, crown/trunk ratio, variant and card scale.
     const conservativeBounds:TreeCullingBounds={...lod0Metadata.cullingBounds,
-      radiusM:variants.length||cardScaleMax>1?forestVariantRadiusBound(variants,authoredRadius,maxLeafOffsetM,cardScaleMax):authoredRadius};
+      radiusM:Math.max(identityRadius,allometry?forestFamilyEnvelopeRadius(allometry):0)};
     const barkStatistics=textureStatistics(lods[0][0].material,0);
     const foliageStatistics=textureStatistics(foliage,alphaCutoff,foliagePixels);
     // Beer-Lambert reference density for distant crowns: randomly oriented
@@ -321,7 +359,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
       lod0Profile:lod0Metadata.profile,lod1Profile:lod1Metadata.profile,conservativeBounds,
       barkLinearRgb:barkStatistics.linearRgb,foliageLinearRgb:foliageStatistics.linearRgb,
       alphaCutoff,baseCoverage:foliageStatistics.baseCoverage,foliageProjectedAreaM2,
-      trunk:lod0Metadata.profile.trunk??null,structuralVariants:variants,lod1CardScale};
+      trunk:lod0Metadata.profile.trunk??null,structuralVariants:variants,lod1CardScale,allometry};
     const maxRadiusM=conservativeBounds.radiusM;
     // Compose only after wind. Both LODs share this one foliage material;
     // bark and all custom shadow materials retain their previous lighting.
@@ -338,7 +376,9 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
       createBatch(lod:0|1,capacity:number){
         if(disposed)throw new Error('Tree family is disposed');
         if(!Number.isInteger(capacity)||capacity<1||capacity>4096)throw new Error('Invalid tree capacity');
-        const group=new THREE.Group(),tree=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2).setUsage(THREE.DynamicDrawUsage);
+        const treeData=new Float32Array(capacity*4);
+        for(let i=0;i<capacity;i++)treeData.set([1,0,1,1],i*4);
+        const group=new THREE.Group(),tree=new THREE.InstancedBufferAttribute(treeData,4).setUsage(THREE.DynamicDrawUsage);
         // Three clears ranges after bufferSubData, but not initial bufferData.
         // Clear only once the GPU has consumed this owned attribute, including
         // its first upload; hidden batches keep their pending ranges intact.
@@ -397,10 +437,13 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
             for(const mesh of meshes)mesh.count=count;
           },
           /** Matrix contains yaw/translation and metres-to-scene-units only.
-           * Tree height is applied in the shader so leaves retain their size.
-           * `variant` 0 keeps the authored structure; k selects pool member k-1. */
-          setInstance(index:number,matrix:THREE.Matrix4,heightM:number,phaseOffset=0,variant=0){
-            if(batchDisposed||!Number.isInteger(index)||index<0||index>=capacity||index>meshes[0].count||!Number.isFinite(heightM)||heightM<10||heightM>22||!Number.isFinite(phaseOffset)||matrix.elements.some(x=>!Number.isFinite(x)))throw new Error('Invalid tree instance or gap in initialized slots');
+           * Rendered height and crown/trunk ratios are applied in the shader so
+           * leaves retain their size. `variant` 0 keeps the authored structure;
+           * k selects pool member k-1. */
+          setInstance(index:number,matrix:THREE.Matrix4,heightM:number,phaseOffset=0,variant=0,allometry:TreeInstanceAllometry=IDENTITY_ALLOMETRY){
+            const [minH,maxH]=TREE_FAMILY_ALLOMETRY_ENVELOPE.heightM;
+            if(batchDisposed||!Number.isInteger(index)||index<0||index>=capacity||index>meshes[0].count||!Number.isFinite(heightM)||heightM<minH||heightM>maxH||!Number.isFinite(phaseOffset)||matrix.elements.some(x=>!Number.isFinite(x)))throw new Error('Invalid tree instance or gap in initialized slots');
+            if(!validInstanceAllometry(allometry)||!canopyPresentation.allometry&&(allometry.crownRatio!==1||allometry.trunkRatio!==1))throw new Error('Tree allometry is outside the family envelope');
             if(!Number.isInteger(variant)||variant<0||variant>variants.length)throw new Error('Tree structural variant is outside the loaded pool');
             const e=matrix.elements,a=new THREE.Vector3(e[0],e[1],e[2]),b=new THREE.Vector3(e[4],e[5],e[6]),c=new THREE.Vector3(e[8],e[9],e[10]);
             const scale2=a.lengthSq(),tolerance=scale2*1e-6;
@@ -409,12 +452,13 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
             // large finite offset; the absolute universe date stays BigInt.
             const tau=2*Math.PI;phaseOffset=((phaseOffset%tau)+tau)%tau;
             const scale=Math.fround(heightM/TREE_REFERENCE_HEIGHT_M),offset=Math.fround(phaseOffset);
+            const crown=Math.fround(allometry.crownRatio),trunk=Math.fround(allometry.trunkRatio);
             const newSlot=index===meshes[0].count;
             if(newSlot&&forest&&(forest.getX(index)!==1||forest.getY(index)!==0)){
               forest.setXY(index,1,0);forestUpdates.include(index,2);forestUpdates.flush(forest);
             }
-            if(tree.getX(index)!==scale||tree.getY(index)!==offset){
-              tree.setXY(index,scale,offset);treeUpdates.include(index,2);treeUpdates.flush(tree);
+            if(tree.getX(index)!==scale||tree.getY(index)!==offset||tree.getZ(index)!==crown||tree.getW(index)!==trunk){
+              tree.setXYZW(index,scale,offset,crown,trunk);treeUpdates.include(index,4);treeUpdates.flush(tree);
             }
             if(shape.getX(index)!==variant){shape.setX(index,variant);shapeUpdates.include(index,2);shapeUpdates.flush(shape);}
             for(const [part,mesh] of meshes.entries()){
@@ -460,10 +504,11 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
         if(disposed)throw new Error('Tree family is disposed');
         if(!Number.isInteger(count)||count<1||count>64)throw new Error('Invalid capture batch size');
         const pass={value:0},frame={value:new THREE.Vector2(1,1)};
-        const state:TreeShaderState={phase:{value:0},variantA:shaderState.variantA,variantB:shaderState.variantB,
+        const state:TreeShaderState={phase:{value:0},trunkRadius:shaderState.trunkRadius,variantA:shaderState.variantA,variantB:shaderState.variantB,
           view:{value:new THREE.Vector4()},cards:shaderState.cards};
-        const tree=new THREE.InstancedBufferAttribute(new Float32Array(count*2),2),shape=new THREE.InstancedBufferAttribute(new Float32Array(count*2),2);
-        for(let i=0;i<count;i++){tree.setXY(i,1,0);shape.setXY(i,0,lod===1?lod1CardScale:1);}
+        // Atlas members are captured at the 16 m reference with authored proportions.
+        const tree=new THREE.InstancedBufferAttribute(new Float32Array(count*4),4),shape=new THREE.InstancedBufferAttribute(new Float32Array(count*2),2);
+        for(let i=0;i<count;i++){tree.setXYZW(i,1,0,1,1);shape.setXY(i,0,lod===1?lod1CardScale:1);}
         const group=new THREE.Group(),captureMaterials:THREE.Material[]=[];
         const meshes=lods[lod].map(source=>{
           const material=source.material.clone();material.toneMapped=false;material.fog=false;material.dithering=false;

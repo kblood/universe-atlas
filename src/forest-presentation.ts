@@ -1,15 +1,14 @@
-import type {ForestTreeBinding} from './forest-tree-catalogue.ts';
 import type {ForestTreeKind} from './forest-tree-family-library.ts';
 
-export const FOREST_PRESENTATION_VERSION='forest-presentation-2';
+export const FOREST_PRESENTATION_VERSION='forest-presentation-3';
 const LOW=.8,RANGE=.4,VARIANT_STRIDE=262144,VARIANTS=8;
 /** Shared eligibility for detailed and family-aware distant presentation.
- * The caller supplies the binding from the one already dated catalogue. */
-export function forestPresentationFamily(binding:ForestTreeBinding|null,heightM:number,
+ * The caller supplies the one allometry decision for the individual (from its
+ * dated binding); height limits live in that decision, never here. */
+export function forestPresentationFamily(dimensions:{representation:'family'|'legacy';kind:ForestTreeKind|null}|null,
   available:{has:(kind:ForestTreeKind)=>boolean}):ForestTreeKind|null{
-  if(!binding||!Number.isFinite(heightM)||heightM<10||heightM>22)return null;
-  const kind=binding.recipe.family;
-  return available.has(kind)?kind:null;
+  if(!dimensions||dimensions.representation!=='family'||!dimensions.kind)return null;
+  return available.has(dimensions.kind)?dimensions.kind:null;
 }
 
 /** Fits family, two bounded brightness values and the bounded structural

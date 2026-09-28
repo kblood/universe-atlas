@@ -1,5 +1,6 @@
 import {LEGACY_TREE_TRUNK} from './tree-shape.ts';
-import {TREE_CANOPY_REFERENCE_HEIGHT_M,type TreeCanopyProfile,type TreeTrunkProfile} from './tree-canopy-profile.ts';
+import {TREE_CANOPY_HEIGHT_RANGE_M,TREE_CANOPY_REFERENCE_HEIGHT_M,type TreeCanopyProfile,type TreeTrunkProfile} from './tree-canopy-profile.ts';
+import {treeAllometryBox} from './tree-allometry.ts';
 
 export type FamilyProxyBounds={
   /** Centre of the proxy's linear-height box per metre of canonical tree height. */
@@ -8,6 +9,8 @@ export type FamilyProxyBounds={
   extentPerHeight:[number,number,number];
   /** Constant metric margin for leaf-card offsets, independent of tree height. */
   metricMarginM:number;
+  /** Horizontal extent per metre of height contributed by structural lean. */
+  leanPerHeight?:number;
 };
 export type EvaluatedFamilyProxyBounds={centerM:[number,number,number];extentM:[number,number,number]};
 
@@ -57,17 +60,20 @@ export function deriveVariantFamilyProxyBounds(profile:TreeCanopyProfile,envelop
     radius=Math.max(radius,trunk.baseRadiusM/TREE_CANOPY_REFERENCE_HEIGHT_M);
   }
   const horizontal=envelope.scale*radius+envelope.leanFraction;
-  return {centerPerHeight:[0,(minY+maxY)/2,0],extentPerHeight:[horizontal,(maxY-minY)/2,horizontal],metricMarginM:base.metricMarginM*envelope.scale};
+  return {centerPerHeight:[0,(minY+maxY)/2,0],extentPerHeight:[horizontal,(maxY-minY)/2,horizontal],metricMarginM:base.metricMarginM*envelope.scale,leanPerHeight:envelope.leanFraction};
 }
 
-/** Scale only the skeleton envelope. Leaf/card margins remain in metres. */
-export function evaluateFamilyProxyBounds(bounds:FamilyProxyBounds,heightM:number):EvaluatedFamilyProxyBounds{
-  if(!bounds||!Number.isFinite(heightM)||heightM<10||heightM>22||!bounds.centerPerHeight||bounds.centerPerHeight.length!==3||
+/** Scale only the skeleton envelope by rendered height and the horizontal
+ * crown/trunk ratios (same box growth as the far shader). Leaf/card margins remain in metres. */
+export function evaluateFamilyProxyBounds(bounds:FamilyProxyBounds,heightM:number,ratios:{crownRatio:number;trunkRatio:number}={crownRatio:1,trunkRatio:1}):EvaluatedFamilyProxyBounds{
+  if(!bounds||!Number.isFinite(heightM)||heightM<TREE_CANOPY_HEIGHT_RANGE_M[0]||heightM>TREE_CANOPY_HEIGHT_RANGE_M[1]||
+    !ratios||!finite(ratios.crownRatio)||!finite(ratios.trunkRatio)||ratios.crownRatio<=0||ratios.trunkRatio<=0||!bounds.centerPerHeight||bounds.centerPerHeight.length!==3||
     !bounds.extentPerHeight||bounds.extentPerHeight.length!==3||!finite(bounds.metricMarginM)||bounds.metricMarginM<0||
     ![...bounds.centerPerHeight,...bounds.extentPerHeight].every(finite)||bounds.extentPerHeight.some(x=>x<=0))
     throw new Error('Invalid family proxy bounds or unsupported tree height');
+  const box=treeAllometryBox(bounds.centerPerHeight,bounds.extentPerHeight,ratios.crownRatio,ratios.trunkRatio,bounds.leanPerHeight??0);
   return {
-    centerM:bounds.centerPerHeight.map(x=>x*heightM) as [number,number,number],
-    extentM:bounds.extentPerHeight.map(x=>x*heightM+bounds.metricMarginM) as [number,number,number],
+    centerM:box.center.map(x=>x*heightM) as [number,number,number],
+    extentM:box.extent.map(x=>x*heightM+bounds.metricMarginM) as [number,number,number],
   };
 }

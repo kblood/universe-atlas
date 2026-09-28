@@ -2,14 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {forestPresentationFamily,packForestPresentation,unpackForestPresentation} from '../src/forest-presentation.ts';
 
-test('presentation eligibility uses the supplied dated binding and loaded family set',()=>{
-  const branching={recipe:{family:'branching'}},spire={recipe:{family:'spire'}},empty=new Set(),oak=new Set(['branching']),both=new Set(['branching','spire']);
-  for(const height of [10,16,22]){
-    assert.equal(forestPresentationFamily(branching,height,oak),'branching');assert.equal(forestPresentationFamily(spire,height,oak),null);
-    assert.equal(forestPresentationFamily(spire,height,both),'spire');assert.equal(forestPresentationFamily(branching,height,empty),null);
-    assert.equal(forestPresentationFamily(null,height,both),null);
-  }
-  for(const height of [NaN,Infinity,-1,9.99,22.01])assert.equal(forestPresentationFamily(branching,height,both),null);
+test('presentation eligibility follows the allometry representation and loaded family set, not a height window',()=>{
+  const branching={representation:'family',kind:'branching'},spire={representation:'family',kind:'spire'},empty=new Set(),oak=new Set(['branching']),both=new Set(['branching','spire']);
+  assert.equal(forestPresentationFamily(branching,oak),'branching');assert.equal(forestPresentationFamily(spire,oak),null);
+  assert.equal(forestPresentationFamily(spire,both),'spire');assert.equal(forestPresentationFamily(branching,empty),null);
+  assert.equal(forestPresentationFamily(null,both),null);
+  // Legacy dimensions (unbound, out-of-envelope, missing reference) never select a family.
+  for(const kind of [null,'branching','spire'])assert.equal(forestPresentationFamily({representation:'legacy',kind},both),null);
 });
 test('family brightness codes survive float storage and decode within one quantization half-step',()=>{
   assert.deepEqual(unpackForestPresentation(0),{kind:null,bark:1,foliage:1,variant:0});

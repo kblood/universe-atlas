@@ -1,12 +1,13 @@
 import {TREE_VARIANT_COUNT} from './tree-species-recipe.ts';
 import type {ForestTreeKind} from './forest-tree-family-library.ts';
+import {TREE_CANOPY_HEIGHT_RANGE_M} from './tree-canopy-profile.ts';
 
 /** Appearance version for bounded per-family structural variants. It is not a
  * population, species or placement version: canonical cells never read it. */
 export const FOREST_VARIANT_VERSION='forest-structural-variant-1';
 export const FOREST_VARIANT_COUNT=TREE_VARIANT_COUNT;
 
-/** Per-family limits. Heights stay canonical; only horizontal crown structure,
+/** Per-family limits. Heights follow the rendered allometry; only horizontal crown structure,
  * tier rotation and clump presence change. Roots stay at the canonical ground. */
 export const FOREST_VARIANT_LIMITS:Readonly<Record<ForestTreeKind,Readonly<{anisotropy:number;leanFraction:number;twistRad:number;thinning:number;clumpRefM:number}>>>=Object.freeze({
   branching:Object.freeze({anisotropy:.16,leanFraction:.045,twistRad:.55,thinning:.14,clumpRefM:1.6}),
@@ -116,7 +117,7 @@ export function forestVariantRadiusBound(pool:readonly ForestStructuralVariant[]
   const {scale,leanFraction}=forestVariantEnvelope(pool);
   // |pivot| <= R+m. Horizontal scale/twist/lean act on the skeleton only;
   // the rotated card offset may then grow to cardScaleMax*m.
-  return scale*(radiusM+maxLeafOffsetM)+leanFraction*22+cardScaleMax*maxLeafOffsetM;
+  return scale*(radiusM+maxLeafOffsetM)+leanFraction*TREE_CANOPY_HEIGHT_RANGE_M[1]+cardScaleMax*maxLeafOffsetM;
 }
 
 /** Two vec4 per variant: (scaleX, scaleZ, leanX, leanZ), (twist, thinning, clump, 0). */

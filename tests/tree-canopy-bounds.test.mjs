@@ -107,7 +107,10 @@ test('empty bands are excluded and invalid profiles or heights are rejected',()=
   assert.throws(()=>deriveFamilyProxyBounds(profile([populated([NaN,0,0],1,1),emptyBand(),emptyBand(),emptyBand()])),/Invalid crown band/);
   assert.throws(()=>deriveFamilyProxyBounds(profile([populated([0,1,0],-1,1),emptyBand(),emptyBand(),emptyBand()])),/Invalid crown band/);
   assert.throws(()=>deriveFamilyProxyBounds(profile([populated([0,1,0],1,1),emptyBand(),emptyBand()])),/Invalid canopy/);
-  assert.throws(()=>evaluateFamilyProxyBounds(bounds,9.99),/unsupported/);
-  assert.throws(()=>evaluateFamilyProxyBounds(bounds,22.01),/unsupported/);
+  // Family envelope is the allometry range [8,24] m, not the canonical 10-22 m proxy.
+  assert.doesNotThrow(()=>evaluateFamilyProxyBounds(bounds,8));assert.doesNotThrow(()=>evaluateFamilyProxyBounds(bounds,24));
+  assert.throws(()=>evaluateFamilyProxyBounds(bounds,7.99),/unsupported/);
+  assert.throws(()=>evaluateFamilyProxyBounds(bounds,24.01),/unsupported/);
+  for(const ratios of [{crownRatio:0,trunkRatio:1},{crownRatio:1,trunkRatio:NaN},null])assert.throws(()=>evaluateFamilyProxyBounds(bounds,16,ratios),/unsupported/);
   assert.throws(()=>evaluateFamilyProxyBounds({...bounds,metricMarginM:-1},16),/Invalid family/);
 });
