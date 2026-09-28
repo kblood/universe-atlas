@@ -1,0 +1,772 @@
+[
+  {
+    "Source": "guide/index.html",
+    "Href": "../assets/theme-_FAD6hYY.css",
+    "Resolved": "/assets/theme-_FAD6hYY.css",
+    "Exists": true,
+    "Target": "dist\\assets\\theme-_FAD6hYY.css"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "#main",
+    "Resolved": "/guide/index.html",
+    "Exists": true,
+    "Target": "dist\\guide\\index.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "index.html",
+    "Resolved": "/guide/index.html",
+    "Exists": true,
+    "Target": "dist\\guide\\index.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../",
+    "Resolved": "/",
+    "Exists": true,
+    "Target": "dist\\index.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "index.html",
+    "Resolved": "/guide/index.html",
+    "Exists": true,
+    "Target": "dist\\guide\\index.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "determinism.html",
+    "Resolved": "/guide/determinism.html",
+    "Exists": true,
+    "Target": "dist\\guide\\determinism.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "time.html",
+    "Resolved": "/guide/time.html",
+    "Exists": true,
+    "Target": "dist\\guide\\time.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "universe.html",
+    "Resolved": "/guide/universe.html",
+    "Exists": true,
+    "Target": "dist\\guide\\universe.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "terrain.html",
+    "Resolved": "/guide/terrain.html",
+    "Exists": true,
+    "Target": "dist\\guide\\terrain.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "water-atmosphere.html",
+    "Resolved": "/guide/water-atmosphere.html",
+    "Exists": true,
+    "Target": "dist\\guide\\water-atmosphere.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "life.html",
+    "Resolved": "/guide/life.html",
+    "Exists": true,
+    "Target": "dist\\guide\\life.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "travel.html",
+    "Resolved": "/guide/travel.html",
+    "Exists": true,
+    "Target": "dist\\guide\\travel.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "publishing.html",
+    "Resolved": "/guide/publishing.html",
+    "Exists": true,
+    "Target": "dist\\guide\\publishing.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../biosphere-lab.html",
+    "Resolved": "/biosphere-lab.html",
+    "Exists": true,
+    "Target": "dist\\biosphere-lab.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../creature-lab.html",
+    "Resolved": "/creature-lab.html",
+    "Exists": true,
+    "Target": "dist\\creature-lab.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../biome-lab.html",
+    "Resolved": "/biome-lab.html",
+    "Exists": true,
+    "Target": "dist\\biome-lab.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../../",
+    "Resolved": "/",
+    "Exists": true,
+    "Target": "dist\\index.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "#design",
+    "Resolved": "/guide/index.html",
+    "Exists": true,
+    "Target": "dist\\guide\\index.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "#chapters",
+    "Resolved": "/guide/index.html",
+    "Exists": true,
+    "Target": "dist\\guide\\index.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "#architecture",
+    "Resolved": "/guide/index.html",
+    "Exists": true,
+    "Target": "dist\\guide\\index.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "#scope",
+    "Resolved": "/guide/index.html",
+    "Exists": true,
+    "Target": "dist\\guide\\index.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "#realism",
+    "Resolved": "/guide/index.html",
+    "Exists": true,
+    "Target": "dist\\guide\\index.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "determinism.html",
+    "Resolved": "/guide/determinism.html",
+    "Exists": true,
+    "Target": "dist\\guide\\determinism.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "time.html",
+    "Resolved": "/guide/time.html",
+    "Exists": true,
+    "Target": "dist\\guide\\time.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "universe.html",
+    "Resolved": "/guide/universe.html",
+    "Exists": true,
+    "Target": "dist\\guide\\universe.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "terrain.html",
+    "Resolved": "/guide/terrain.html",
+    "Exists": true,
+    "Target": "dist\\guide\\terrain.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "water-atmosphere.html",
+    "Resolved": "/guide/water-atmosphere.html",
+    "Exists": true,
+    "Target": "dist\\guide\\water-atmosphere.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "life.html",
+    "Resolved": "/guide/life.html",
+    "Exists": true,
+    "Target": "dist\\guide\\life.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "travel.html",
+    "Resolved": "/guide/travel.html",
+    "Exists": true,
+    "Target": "dist\\guide\\travel.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "publishing.html",
+    "Resolved": "/guide/publishing.html",
+    "Exists": true,
+    "Target": "dist\\guide\\publishing.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../docs/canopy-foundation-2026-09-28.md",
+    "Resolved": "/docs/canopy-foundation-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\canopy-foundation-2026-09-28.md"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../test-results/forest-canopy-census-481e693/README.md",
+    "Resolved": "/test-results/forest-canopy-census-481e693/README.md",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-canopy-census-481e693\\README.md"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../test-results/forest-canopy-census-8c5ff7f/README.md",
+    "Resolved": "/test-results/forest-canopy-census-8c5ff7f/README.md",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-canopy-census-8c5ff7f\\README.md"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../test-results/forest-impostor/report.json",
+    "Resolved": "/test-results/forest-impostor/report.json",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-impostor\\report.json"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../test-results/forest-impostor-field/report.json",
+    "Resolved": "/test-results/forest-impostor-field/report.json",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-impostor-field\\report.json"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../docs/forest-selection-transfer-2026-09-28.md",
+    "Resolved": "/docs/forest-selection-transfer-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\forest-selection-transfer-2026-09-28.md"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../docs/opus-5.5-transfer-review-2026-09-28.md",
+    "Resolved": "/docs/opus-5.5-transfer-review-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\opus-5.5-transfer-review-2026-09-28.md"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../docs/opus-5.5-canopy-review-2026-09-28.md",
+    "Resolved": "/docs/opus-5.5-canopy-review-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\opus-5.5-canopy-review-2026-09-28.md"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../test-results/forest-transfer-23de0b9/README.md",
+    "Resolved": "/test-results/forest-transfer-23de0b9/README.md",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-transfer-23de0b9\\README.md"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../docs/tree-asset-candidate-2026-09-28.md",
+    "Resolved": "/docs/tree-asset-candidate-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\tree-asset-candidate-2026-09-28.md"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../docs/desktop-realism-implementation-plan-2026-09-27.md",
+    "Resolved": "/docs/desktop-realism-implementation-plan-2026-09-27.md",
+    "Exists": true,
+    "Target": "dist\\docs\\desktop-realism-implementation-plan-2026-09-27.md"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../README.md",
+    "Resolved": "/README.md",
+    "Exists": true,
+    "Target": "dist\\README.md"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../docs/temporal-universe-implementation-2026-09-23.md",
+    "Resolved": "/docs/temporal-universe-implementation-2026-09-23.md",
+    "Exists": true,
+    "Target": "dist\\docs\\temporal-universe-implementation-2026-09-23.md"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "../",
+    "Resolved": "/",
+    "Exists": true,
+    "Target": "dist\\index.html"
+  },
+  {
+    "Source": "guide/index.html",
+    "Href": "determinism.html",
+    "Resolved": "/guide/determinism.html",
+    "Exists": true,
+    "Target": "dist\\guide\\determinism.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../assets/theme-_FAD6hYY.css",
+    "Resolved": "/assets/theme-_FAD6hYY.css",
+    "Exists": true,
+    "Target": "dist\\assets\\theme-_FAD6hYY.css"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "#main",
+    "Resolved": "/guide/life.html",
+    "Exists": true,
+    "Target": "dist\\guide\\life.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "index.html",
+    "Resolved": "/guide/index.html",
+    "Exists": true,
+    "Target": "dist\\guide\\index.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../",
+    "Resolved": "/",
+    "Exists": true,
+    "Target": "dist\\index.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "index.html",
+    "Resolved": "/guide/index.html",
+    "Exists": true,
+    "Target": "dist\\guide\\index.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "determinism.html",
+    "Resolved": "/guide/determinism.html",
+    "Exists": true,
+    "Target": "dist\\guide\\determinism.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "time.html",
+    "Resolved": "/guide/time.html",
+    "Exists": true,
+    "Target": "dist\\guide\\time.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "universe.html",
+    "Resolved": "/guide/universe.html",
+    "Exists": true,
+    "Target": "dist\\guide\\universe.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "terrain.html",
+    "Resolved": "/guide/terrain.html",
+    "Exists": true,
+    "Target": "dist\\guide\\terrain.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "water-atmosphere.html",
+    "Resolved": "/guide/water-atmosphere.html",
+    "Exists": true,
+    "Target": "dist\\guide\\water-atmosphere.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "life.html",
+    "Resolved": "/guide/life.html",
+    "Exists": true,
+    "Target": "dist\\guide\\life.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "travel.html",
+    "Resolved": "/guide/travel.html",
+    "Exists": true,
+    "Target": "dist\\guide\\travel.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "publishing.html",
+    "Resolved": "/guide/publishing.html",
+    "Exists": true,
+    "Target": "dist\\guide\\publishing.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../biosphere-lab.html",
+    "Resolved": "/biosphere-lab.html",
+    "Exists": true,
+    "Target": "dist\\biosphere-lab.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../creature-lab.html",
+    "Resolved": "/creature-lab.html",
+    "Exists": true,
+    "Target": "dist\\creature-lab.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../biome-lab.html",
+    "Resolved": "/biome-lab.html",
+    "Exists": true,
+    "Target": "dist\\biome-lab.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../../",
+    "Resolved": "/",
+    "Exists": true,
+    "Target": "dist\\index.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "#history",
+    "Resolved": "/guide/life.html",
+    "Exists": true,
+    "Target": "dist\\guide\\life.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "#habitats",
+    "Resolved": "/guide/life.html",
+    "Exists": true,
+    "Target": "dist\\guide\\life.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "#flora",
+    "Resolved": "/guide/life.html",
+    "Exists": true,
+    "Target": "dist\\guide\\life.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "#fauna",
+    "Resolved": "/guide/life.html",
+    "Exists": true,
+    "Target": "dist\\guide\\life.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "#labs",
+    "Resolved": "/guide/life.html",
+    "Exists": true,
+    "Target": "dist\\guide\\life.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../test-results/forest-canopy-census-481e693/README.md",
+    "Resolved": "/test-results/forest-canopy-census-481e693/README.md",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-canopy-census-481e693\\README.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../test-results/forest-canopy-census-8c5ff7f/README.md",
+    "Resolved": "/test-results/forest-canopy-census-8c5ff7f/README.md",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-canopy-census-8c5ff7f\\README.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/forest-impostor-experiment-2026-09-28.md",
+    "Resolved": "/docs/forest-impostor-experiment-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\forest-impostor-experiment-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/forest-census-review-fixes-2026-09-28.md",
+    "Resolved": "/docs/forest-census-review-fixes-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\forest-census-review-fixes-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../test-results/deploy-e8a848d/live-deployment.json",
+    "Resolved": "/test-results/deploy-e8a848d/live-deployment.json",
+    "Exists": true,
+    "Target": "dist\\test-results\\deploy-e8a848d\\live-deployment.json"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/opus-5.5-transfer-review-2026-09-28.md",
+    "Resolved": "/docs/opus-5.5-transfer-review-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\opus-5.5-transfer-review-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/forest-selection-transfer-2026-09-28.md",
+    "Resolved": "/docs/forest-selection-transfer-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\forest-selection-transfer-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../test-results/forest-transfer-23de0b9/README.md",
+    "Resolved": "/test-results/forest-transfer-23de0b9/README.md",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-transfer-23de0b9\\README.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/desktop-render-profiling.md",
+    "Resolved": "/docs/desktop-render-profiling.md",
+    "Exists": true,
+    "Target": "dist\\docs\\desktop-render-profiling.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../assets/briefs/temperate-branching-tree-v1.json",
+    "Resolved": "/assets/briefs/temperate-branching-tree-v1.json",
+    "Exists": true,
+    "Target": "dist\\assets\\briefs\\temperate-branching-tree-v1.json"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/tree-species-asset-contract-2026-09-28.md",
+    "Resolved": "/docs/tree-species-asset-contract-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\tree-species-asset-contract-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/flora-recipe-cache-2026-09-28.md",
+    "Resolved": "/docs/flora-recipe-cache-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\flora-recipe-cache-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/tree-asset-candidate-2026-09-28.md",
+    "Resolved": "/docs/tree-asset-candidate-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\tree-asset-candidate-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/canopy-foundation-2026-09-28.md",
+    "Resolved": "/docs/canopy-foundation-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\canopy-foundation-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/opus-5.5-canopy-review-2026-09-28.md",
+    "Resolved": "/docs/opus-5.5-canopy-review-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\opus-5.5-canopy-review-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/desktop-rendering-validation-2026-09-28.md",
+    "Resolved": "/docs/desktop-rendering-validation-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\desktop-rendering-validation-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../biosphere-lab.html",
+    "Resolved": "/biosphere-lab.html",
+    "Exists": true,
+    "Target": "dist\\biosphere-lab.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../creature-lab.html",
+    "Resolved": "/creature-lab.html",
+    "Exists": true,
+    "Target": "dist\\creature-lab.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../biome-lab.html",
+    "Resolved": "/biome-lab.html",
+    "Exists": true,
+    "Target": "dist\\biome-lab.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/population-continuity-implementation-2026-09-27.md",
+    "Resolved": "/docs/population-continuity-implementation-2026-09-27.md",
+    "Exists": true,
+    "Target": "dist\\docs\\population-continuity-implementation-2026-09-27.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/continuous-planet-detail.md",
+    "Resolved": "/docs/continuous-planet-detail.md",
+    "Exists": true,
+    "Target": "dist\\docs\\continuous-planet-detail.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/canopy-foundation-2026-09-28.md",
+    "Resolved": "/docs/canopy-foundation-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\canopy-foundation-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/canopy-census-design-2026-09-28.md",
+    "Resolved": "/docs/canopy-census-design-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\canopy-census-design-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/opus-5.5-census-design-review-2026-09-28.md",
+    "Resolved": "/docs/opus-5.5-census-design-review-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\opus-5.5-census-design-review-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/opus-5.5-census-implementation-review-2026-09-28.md",
+    "Resolved": "/docs/opus-5.5-census-implementation-review-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\opus-5.5-census-implementation-review-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../test-results/forest-census-protocol-review/report.json",
+    "Resolved": "/test-results/forest-census-protocol-review/report.json",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-census-protocol-review\\report.json"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../test-results/forest-canopy-census-481e693/README.md",
+    "Resolved": "/test-results/forest-canopy-census-481e693/README.md",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-canopy-census-481e693\\README.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../test-results/forest-canopy-census-8c5ff7f/README.md",
+    "Resolved": "/test-results/forest-canopy-census-8c5ff7f/README.md",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-canopy-census-8c5ff7f\\README.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/opus-5.5-canopy-review-2026-09-28.md",
+    "Resolved": "/docs/opus-5.5-canopy-review-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\opus-5.5-canopy-review-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/desktop-render-profiling.md",
+    "Resolved": "/docs/desktop-render-profiling.md",
+    "Exists": true,
+    "Target": "dist\\docs\\desktop-render-profiling.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/desktop-rendering-stage-c-2026-09-28.md",
+    "Resolved": "/docs/desktop-rendering-stage-c-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\desktop-rendering-stage-c-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/flora-recipe-cache-2026-09-28.md",
+    "Resolved": "/docs/flora-recipe-cache-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\flora-recipe-cache-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/tree-species-asset-contract-2026-09-28.md",
+    "Resolved": "/docs/tree-species-asset-contract-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\tree-species-asset-contract-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../assets/briefs/temperate-branching-tree-v1.json",
+    "Resolved": "/assets/briefs/temperate-branching-tree-v1.json",
+    "Exists": true,
+    "Target": "dist\\assets\\briefs\\temperate-branching-tree-v1.json"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/tree-asset-candidate-2026-09-28.md",
+    "Resolved": "/docs/tree-asset-candidate-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\tree-asset-candidate-2026-09-28.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/desktop-realism-implementation-plan-2026-09-27.md",
+    "Resolved": "/docs/desktop-realism-implementation-plan-2026-09-27.md",
+    "Exists": true,
+    "Target": "dist\\docs\\desktop-realism-implementation-plan-2026-09-27.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/desktop-realism-assessment-2026-09-27.md",
+    "Resolved": "/docs/desktop-realism-assessment-2026-09-27.md",
+    "Exists": true,
+    "Target": "dist\\docs\\desktop-realism-assessment-2026-09-27.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/opus-5.5-desktop-realism-review-2026-09-27.md",
+    "Resolved": "/docs/opus-5.5-desktop-realism-review-2026-09-27.md",
+    "Exists": true,
+    "Target": "dist\\docs\\opus-5.5-desktop-realism-review-2026-09-27.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/biosphere-lab-implementation-spec.md",
+    "Resolved": "/docs/biosphere-lab-implementation-spec.md",
+    "Exists": true,
+    "Target": "dist\\docs\\biosphere-lab-implementation-spec.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/creature-lab-implementation-spec.md",
+    "Resolved": "/docs/creature-lab-implementation-spec.md",
+    "Exists": true,
+    "Target": "dist\\docs\\creature-lab-implementation-spec.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "../docs/formation-and-life-integration-2026-09-23.md",
+    "Resolved": "/docs/formation-and-life-integration-2026-09-23.md",
+    "Exists": true,
+    "Target": "dist\\docs\\formation-and-life-integration-2026-09-23.md"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "water-atmosphere.html",
+    "Resolved": "/guide/water-atmosphere.html",
+    "Exists": true,
+    "Target": "dist\\guide\\water-atmosphere.html"
+  },
+  {
+    "Source": "guide/life.html",
+    "Href": "travel.html",
+    "Resolved": "/guide/travel.html",
+    "Exists": true,
+    "Target": "dist\\guide\\travel.html"
+  }
+]

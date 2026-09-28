@@ -1,0 +1,14 @@
+✔ far proxy bounds instance allocation and validates physical transforms (2.2769ms)
+✔ hidden batches retain uploads without accumulating unbounded ranges (2.3291ms)
+✔ patch selector conservatively covers production cells at face centres, edges, corners and real forest site (12951.8333ms)
+✔ patch selector rejects invalid or unbounded work (3.4973ms)
+✔ shared shape preserves every shipped near/far geometry attribute byte (10.1991ms)
+✔ shared tree basis equals the shipped up-align then world-axis yaw, including poles (0.4731ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13183.6348

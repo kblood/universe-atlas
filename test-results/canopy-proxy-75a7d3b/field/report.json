@@ -1,0 +1,123 @@
+{
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "trees": 149479,
+  "patches": 6684,
+  "workerMs": 1443.5,
+  "cache": {
+    "context": "7fbd9d6d0af73b7f357fca460096991966d7389bf5c1bb4db802ea50f1ccb1cf",
+    "patches": 6684,
+    "estimatedBytes": 13234368,
+    "maxBytes": 50331648,
+    "maxPatches": 16000,
+    "hits": 0,
+    "misses": 6684,
+    "evictionsTotal": 0,
+    "sampledCandidates": 205347,
+    "activeCandidates": 0
+  },
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "instanceBytes": 7174992,
+  "samples": [
+    {
+      "useFar": false,
+      "height": 120,
+      "samples": 40,
+      "cpuSubmitMs": {
+        "p50": 0.19999999925494194,
+        "p95": 0.40000000037252903
+      },
+      "gpuMs": {
+        "samples": 40,
+        "p50": 2.475424,
+        "p95": 2.485184
+      },
+      "drawCalls": 2,
+      "triangles": 14382752
+    },
+    {
+      "useFar": true,
+      "height": 120,
+      "samples": 40,
+      "cpuSubmitMs": {
+        "p50": 0.19999999925494194,
+        "p95": 0.599999999627471
+      },
+      "gpuMs": {
+        "samples": 40,
+        "p50": 2.567424,
+        "p95": 2.630624
+      },
+      "drawCalls": 2,
+      "triangles": 331726
+    },
+    {
+      "useFar": false,
+      "height": 1200,
+      "samples": 40,
+      "cpuSubmitMs": {
+        "p50": 0.19999999925494194,
+        "p95": 0.40000000037252903
+      },
+      "gpuMs": {
+        "samples": 40,
+        "p50": 4.559616,
+        "p95": 4.752288
+      },
+      "drawCalls": 2,
+      "triangles": 14382752
+    },
+    {
+      "useFar": true,
+      "height": 1200,
+      "samples": 40,
+      "cpuSubmitMs": {
+        "p50": 0.19999999925494194,
+        "p95": 0.2999999988824129
+      },
+      "gpuMs": {
+        "samples": 40,
+        "p50": 2.585568,
+        "p95": 2.745952
+      },
+      "drawCalls": 2,
+      "triangles": 331726
+    }
+  ],
+  "scope": "Isolated full population and coarse terrain lab; no live streaming, shadows, aerial perspective, wind or game frame-time claim",
+  "ok": true,
+  "errors": [],
+  "recordedAt": "2026-09-28T01:28:21.356Z",
+  "source": {
+    "baseCommit": "75a7d3b337f0ae6659ff6b0943798cbd2371ab29",
+    "files": [
+      {
+        "path": "src/forest-impostor.ts",
+        "sha256": "586a9454bdd1b82dc0fe2a88a675d72f7860d4688487cc5458527973d3d96065"
+      },
+      {
+        "path": "src/tree-shape.ts",
+        "sha256": "eee7302ca35b7c0eb0fba10ba43760a5dd71c548026446c4fd46cb47c4f77047"
+      },
+      {
+        "path": "src/forest-patch-selection.ts",
+        "sha256": "89bdbf1fdbfd435582390767b19904f7feac0afa5d449f0078ac298dd5e3ad38"
+      },
+      {
+        "path": "src/forest-census.ts",
+        "sha256": "3a91ef9320c92fc7ec53e877f629daa3f59aaee0ac20e92e2e994eb80b471716"
+      },
+      {
+        "path": "tests/forest-impostor-field-lab.mjs",
+        "sha256": "fc4ef303646df38e765adde180364c9667fe5ee6ac01691f2f5b0fb8cea79b94"
+      },
+      {
+        "path": "tests/forest-impostor-field-worker.mjs",
+        "sha256": "2f603eafc711c4bebf14a4ea29c212a792cef7c529c025bd8657b3ee148f1f2d"
+      },
+      {
+        "path": "tests/forest-impostor-field.browser.mjs",
+        "sha256": "d352efe6645b95644f7e7f3b8ef0c682348cce0bc5a3148f0456015ab22b2607"
+      }
+    ]
+  }
+}

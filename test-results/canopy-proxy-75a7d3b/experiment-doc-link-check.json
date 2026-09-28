@@ -1,0 +1,37 @@
+[
+  {
+    "Href": "../test-results/forest-impostor/report.json",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-impostor\\report.json"
+  },
+  {
+    "Href": "../test-results/forest-impostor-field/report.json",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-impostor-field\\report.json"
+  },
+  {
+    "Href": "../test-results/forest-impostor-field/reference-120m.png",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-impostor-field\\reference-120m.png"
+  },
+  {
+    "Href": "../test-results/forest-impostor-field/impostor-120m.png",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-impostor-field\\impostor-120m.png"
+  },
+  {
+    "Href": "../test-results/forest-impostor-field/reference-1200m.png",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-impostor-field\\reference-1200m.png"
+  },
+  {
+    "Href": "../test-results/forest-impostor-field/impostor-1200m.png",
+    "Exists": true,
+    "Target": "dist\\test-results\\forest-impostor-field\\impostor-1200m.png"
+  },
+  {
+    "Href": "opus-5.5-census-design-review-2026-09-28.md",
+    "Exists": true,
+    "Target": "dist\\docs\\opus-5.5-census-design-review-2026-09-28.md"
+  }
+]

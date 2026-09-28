@@ -75,6 +75,12 @@ the worker's 16,000-entry completed-result cache and is not a heap measurement.
 
 ## Still required before enabling in the game
 
+Luna independently repeated the prototype tests and checked production guide
+links at `75a7d3b`/`deb9ca8`; see the
+[validation record](../test-results/canopy-proxy-75a7d3b/README.md).
+The [draft integration contract](canopy-integration-contract-2026-09-28.md)
+describes the next stage and remains subject to review.
+
 1. Bound host requests, queued replies, resident slots and installation work.
    Preserve completed results through movement and expose missing/failed state.
 2. Retain a stable local origin and prove submillimetre placement agreement with
