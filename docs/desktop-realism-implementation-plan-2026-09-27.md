@@ -179,7 +179,7 @@ more. Structural diversity must not come from disconnected anatomy.
 | B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented; build, 53 targeted checks and RTX 5090 browser acceptance pass; see validation record |
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
 | D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; first Blender brief validates; forest integration, authored assets and resource cache pending |
-| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Canonical patches, shared habitat and bounded worker selection cache implemented, reviewed and deployed; packed worker transfer implemented at `a0dd78a`; summary worker and visible canopy pending |
+| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Canonical patches, shared habitat and bounded worker selection cache implemented, reviewed and deployed; packed transfer at `a0dd78a` with Opus fixes in `23de0b9`; final browser retest, summary worker and visible canopy pending |
 | F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | Two tree authoring proposals technically validated and visually reviewed; asset/runtime acceptance and other landscape work pending |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |
@@ -194,7 +194,7 @@ forest, a completed asset generator or a complete performance solution.
 `planet-renderer.ts` no longer offsets visible forest density with camera heading.
 `planet-forest.ts` retains its origin until 256 m movement, caches instance slot
 identity/origin version, and submits dirty matrix/colour/coverage ranges only.
-Worker selections have request IDs to reject stale water-context results.
+Worker selections use request IDs to reject stale or terminated-worker replies.
 Upload/write counters and forest-update CPU timing are exposed in diagnostics.
 The [population implementation record](population-continuity-implementation-2026-09-27.md)
 documents scope and limitations. This is a retained-buffer foundation; complete
@@ -216,11 +216,15 @@ and identified compacted-slot rewrites and water-triggered selection backlog.
 The follow-up increment implemented stable per-batch ID slots with swap-removal,
 up to eight coalesced dirty ranges, preallocated colours, water-only habitat
 refresh, and a bounded worker restart. Six source unit cases cover these repairs.
-Packed selection transfer is now implemented at checkpoint `a0dd78a`; its Node
-benchmark and protocol checks are recorded below. Browser validation and an
-independent Opus review of this increment are pending. Shader-based fades,
-larger precision-derived rebases and canopy handoff hysteresis remain follow-on
-work; none is silently declared complete.
+Packed selection transfer is implemented at checkpoint `a0dd78a`; its Node
+benchmark and protocol checks are recorded below. The initial browser check on
+`a0dd78a` passed. Opus 5.5 reviewed the receiver and found no merge blockers;
+two recommended fixes were applied in `23de0b9`. A browser retest of that final
+receiver build is in progress. See the
+[transfer review](opus-5.5-transfer-review-2026-09-28.md) and its assessment in
+the [transfer record](forest-selection-transfer-2026-09-28.md). Shader-based
+fades, larger precision-derived rebases and canopy handoff hysteresis remain
+follow-on work; none is silently declared complete.
 
 ## 8. Acceptance for later verification
 
@@ -314,8 +318,11 @@ The [Node worker benchmark](forest-selection-transfer-2026-09-28.md) compares
 23.33/32.70 ms p50/p95 round trip; packed transfer including encode/decode
 measured 13.79/19.42 ms. Selection itself is excluded. These are Node
 worker-thread measurements on the development machine, not browser frame or
-GPU improvement claims. Browser validation and independent Opus review remain
-pending.
+GPU improvement claims. The initial browser check on `a0dd78a` passed, then
+Opus 5.5 reviewed the receiver and its two recommended fixes were committed as
+`23de0b9`. The final receiver build is being retested in the browser; the
+[review](opus-5.5-transfer-review-2026-09-28.md) is complete and its assessment
+is included in the [transfer record](forest-selection-transfer-2026-09-28.md).
 
 ## 9. Reference techniques and boundaries
 
