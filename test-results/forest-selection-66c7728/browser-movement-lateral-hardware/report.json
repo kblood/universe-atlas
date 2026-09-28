@@ -1,0 +1,80 @@
+{
+  "ok": true,
+  "base": "http://127.0.0.1:5199/",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "date": {
+    "version": "atlas-time-2",
+    "reference": "big-bang",
+    "offsetNs": "435084631200000067793200000",
+    "branchId": "baseline"
+  },
+  "movedM": 110.16462421359896,
+  "groundMovedM": 110.14025059772939,
+  "beforeCache": {
+    "patches": 6731,
+    "estimatedBytes": 17202896,
+    "maxBytes": 33554432,
+    "maxEntries": 30000,
+    "hits": 6656,
+    "misses": 41,
+    "visited": 6697,
+    "evictionsTotal": 0
+  },
+  "cache": {
+    "patches": 6788,
+    "estimatedBytes": 17348174,
+    "maxBytes": 33554432,
+    "maxEntries": 30000,
+    "hits": 6655,
+    "misses": 32,
+    "visited": 6687,
+    "evictionsTotal": 0
+  },
+  "workerResponsesBefore": 2,
+  "movedResponses": [
+    {
+      "requestId": 3,
+      "patches": 6756,
+      "estimatedBytes": 17267592,
+      "maxBytes": 33554432,
+      "maxEntries": 30000,
+      "hits": 6660,
+      "misses": 25,
+      "visited": 6685,
+      "evictionsTotal": 0
+    },
+    {
+      "requestId": 4,
+      "patches": 6788,
+      "estimatedBytes": 17348174,
+      "maxBytes": 33554432,
+      "maxEntries": 30000,
+      "hits": 6655,
+      "misses": 32,
+      "visited": 6687,
+      "evictionsTotal": 0
+    }
+  ],
+  "forest": {
+    "before": {
+      "visible": 2019,
+      "cached": 18309,
+      "pending": 0
+    },
+    "after": {
+      "visible": 2030,
+      "cached": 18716,
+      "pending": 0,
+      "workerRestarts": 0,
+      "workerFailures": 0
+    }
+  },
+  "life": {
+    "floraPresent": 1624,
+    "faunaDrawn": 128,
+    "faunaTerrainPending": 0,
+    "surfaceReady": true
+  },
+  "errors": []
+}

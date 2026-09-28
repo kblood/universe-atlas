@@ -1,0 +1,597 @@
+{
+  "ok": true,
+  "base": "http://127.0.0.1:5199/",
+  "bodyId": "G001/C2128,0,1/0/planet/1",
+  "date": {
+    "version": "atlas-time-2",
+    "reference": "big-bang",
+    "offsetNs": "435084631200000064193900000",
+    "branchId": "baseline"
+  },
+  "viewport": [
+    1440,
+    1000
+  ],
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "errors": [],
+  "nearGround": {
+    "terrainClearanceM": 99.97457942552296,
+    "floraPresent": 1623,
+    "faunaVisible": 128,
+    "faunaDrawn": 128
+  },
+  "cloudSamples": {
+    "0": {
+      "version": "cloud-volume-2",
+      "enabled": true,
+      "representation": "raymarched-volume",
+      "temporalHistory": false,
+      "steps": 64,
+      "lightSteps": 5,
+      "sampleLimit": "disabled",
+      "requestedSceneSamples": 0,
+      "effectiveSceneSamples": 0,
+      "supportedSceneSamples": [],
+      "estimatedTargetBytes": 28800000,
+      "estimatedBytes": 29813468,
+      "targetBudgetBytes": 167772160,
+      "sceneResolutionScale": 1,
+      "eyes": 1,
+      "targets": [
+        {
+          "width": 1440,
+          "height": 1000,
+          "samples": 0
+        }
+      ],
+      "cloudTargets": [
+        {
+          "width": 1440,
+          "height": 1000
+        }
+      ],
+      "layers": {
+        "baseM": 800,
+        "lowTopM": 4200,
+        "highBaseM": 6500,
+        "topM": 8500
+      }
+    },
+    "2": {
+      "version": "cloud-volume-2",
+      "enabled": true,
+      "representation": "raymarched-volume",
+      "temporalHistory": false,
+      "steps": 64,
+      "lightSteps": 5,
+      "sampleLimit": "none",
+      "requestedSceneSamples": 2,
+      "effectiveSceneSamples": 2,
+      "supportedSceneSamples": [
+        8,
+        4,
+        2,
+        1
+      ],
+      "estimatedTargetBytes": 63360000,
+      "estimatedBytes": 64373468,
+      "targetBudgetBytes": 167772160,
+      "sceneResolutionScale": 1,
+      "eyes": 1,
+      "targets": [
+        {
+          "width": 1440,
+          "height": 1000,
+          "samples": 2
+        }
+      ],
+      "cloudTargets": [
+        {
+          "width": 1440,
+          "height": 1000
+        }
+      ],
+      "layers": {
+        "baseM": 800,
+        "lowTopM": 4200,
+        "highBaseM": 6500,
+        "topM": 8500
+      }
+    },
+    "4": {
+      "version": "cloud-volume-2",
+      "enabled": true,
+      "representation": "raymarched-volume",
+      "temporalHistory": false,
+      "steps": 64,
+      "lightSteps": 5,
+      "sampleLimit": "none",
+      "requestedSceneSamples": 4,
+      "effectiveSceneSamples": 4,
+      "supportedSceneSamples": [
+        8,
+        4,
+        2,
+        1
+      ],
+      "estimatedTargetBytes": 97920000,
+      "estimatedBytes": 98933468,
+      "targetBudgetBytes": 167772160,
+      "sceneResolutionScale": 1,
+      "eyes": 1,
+      "targets": [
+        {
+          "width": 1440,
+          "height": 1000,
+          "samples": 4
+        }
+      ],
+      "cloudTargets": [
+        {
+          "width": 1440,
+          "height": 1000
+        }
+      ],
+      "layers": {
+        "baseM": 800,
+        "lowTopM": 4200,
+        "highBaseM": 6500,
+        "topM": 8500
+      }
+    }
+  },
+  "resizedFour": {
+    "version": "cloud-volume-2",
+    "enabled": true,
+    "representation": "raymarched-volume",
+    "temporalHistory": false,
+    "steps": 64,
+    "lightSteps": 5,
+    "sampleLimit": "budget",
+    "requestedSceneSamples": 4,
+    "effectiveSceneSamples": 2,
+    "supportedSceneSamples": [
+      8,
+      4,
+      2,
+      1
+    ],
+    "estimatedTargetBytes": 162201600,
+    "estimatedBytes": 163215068,
+    "targetBudgetBytes": 167772160,
+    "sceneResolutionScale": 1,
+    "eyes": 1,
+    "targets": [
+      {
+        "width": 2560,
+        "height": 1440,
+        "samples": 2
+      }
+    ],
+    "cloudTargets": [
+      {
+        "width": 2560,
+        "height": 1440
+      }
+    ],
+    "layers": {
+      "baseM": 800,
+      "lowTopM": 4200,
+      "highBaseM": 6500,
+      "topM": 8500
+    }
+  },
+  "resizedClouds": {
+    "version": "cloud-volume-2",
+    "enabled": true,
+    "representation": "raymarched-volume",
+    "temporalHistory": false,
+    "steps": 64,
+    "lightSteps": 5,
+    "sampleLimit": "disabled",
+    "requestedSceneSamples": 0,
+    "effectiveSceneSamples": 0,
+    "supportedSceneSamples": [
+      8,
+      4,
+      2,
+      1
+    ],
+    "estimatedTargetBytes": 73728000,
+    "estimatedBytes": 74741468,
+    "targetBudgetBytes": 167772160,
+    "sceneResolutionScale": 1,
+    "eyes": 1,
+    "targets": [
+      {
+        "width": 2560,
+        "height": 1440,
+        "samples": 0
+      }
+    ],
+    "cloudTargets": [
+      {
+        "width": 2560,
+        "height": 1440
+      }
+    ],
+    "layers": {
+      "baseM": 800,
+      "lowTopM": 4200,
+      "highBaseM": 6500,
+      "topM": 8500
+    }
+  },
+  "floraRecipeBuilds": 0,
+  "localAerial": {
+    "meshes": 19,
+    "attached": 19,
+    "failures": []
+  },
+  "warmed": {
+    "visible": 2033,
+    "near": 0,
+    "cached": 18309,
+    "pending": 0,
+    "matrixWrites": 0,
+    "colorWrites": 0,
+    "coverageWrites": 0,
+    "originVersion": 13,
+    "selectionPending": false
+  },
+  "stationarySecond": {
+    "visible": 2033,
+    "matrixWrites": 0,
+    "colorWrites": 0,
+    "coverageWrites": 0,
+    "originVersion": 13
+  },
+  "terrainDiagnostics": {
+    "forest": {
+      "visible": 2033,
+      "near": 0,
+      "cached": 18309,
+      "pending": 0,
+      "candidateCells": 18063,
+      "canopyStands": 0,
+      "farCanonicalTrees": 1412,
+      "farSamplingFraction": 0.065,
+      "habitatVersion": "tree-habitat-1",
+      "placementMs": 0,
+      "selectionMs": 0,
+      "selectionPending": false,
+      "selectionWorker": true,
+      "representation": "canonical-tree-field",
+      "densityFocus": "observer-ground",
+      "instanceUpdates": "stable-slots-retained-origin-dirty-ranges",
+      "selectionJobsInFlight": 0,
+      "waterBucket": -4500,
+      "selectionApplyMs": 5.299999998882413,
+      "selectionCache": {
+        "patches": 6731,
+        "estimatedBytes": 17202896,
+        "maxBytes": 33554432,
+        "maxEntries": 30000,
+        "hits": 6656,
+        "misses": 41,
+        "visited": 6697,
+        "evictionsTotal": 0
+      },
+      "workerRestarts": 0,
+      "workerFailures": 0,
+      "selectionMode": "worker",
+      "updateMs": 2.5,
+      "matrixWrites": 0,
+      "colorWrites": 0,
+      "coverageWrites": 0,
+      "scheduledUploadBytes": 0,
+      "originRebased": false,
+      "originVersion": 13,
+      "originRebaseM": 256,
+      "radiusM": 4000,
+      "heightRangeM": [
+        10,
+        22
+      ],
+      "cellSizeM": 18,
+      "allocatedBytes": 2123808
+    },
+    "floraRecipeBuilds": 0,
+    "localAerial": {
+      "meshes": 19,
+      "attached": 19,
+      "failures": []
+    },
+    "updateMs": 7.199999999254942,
+    "lifeMs": 2.699999999254942,
+    "rescatterMs": 1,
+    "drawFloraMs": 0.40000000037252903,
+    "drawFaunaMs": 1.299999998882413,
+    "residentTiles": 653,
+    "pendingTiles": 0,
+    "visibleTiles": 148,
+    "surfaceReady": true,
+    "waterBucket": -180,
+    "floraSlots": 2213,
+    "floraSubmitted": 0,
+    "faunaDrawn": 128,
+    "faunaTerrainPending": 0,
+    "tileSelection": {
+      "activeTileIds": [
+        "0/8/39/79",
+        "0/7/21/39",
+        "0/6/11/19",
+        "0/11/305/643",
+        "0/11/306/643",
+        "0/11/307/643",
+        "0/10/155/320",
+        "0/10/154/321",
+        "0/10/155/321",
+        "0/13/1217/2577",
+        "0/12/609/1288",
+        "0/14/2432/5156",
+        "0/14/2433/5156",
+        "0/14/2432/5157",
+        "0/14/2433/5157",
+        "0/13/1217/2578",
+        "0/13/1217/2579",
+        "0/12/609/1289",
+        "0/11/305/644",
+        "0/13/1217/2580",
+        "0/12/609/1290",
+        "0/12/609/1291",
+        "0/12/610/1290",
+        "0/12/611/1290",
+        "0/12/610/1291",
+        "0/12/611/1291",
+        "0/11/306/644",
+        "0/11/307/644",
+        "0/11/306/645",
+        "0/11/307/645",
+        "0/11/305/646",
+        "0/10/154/322",
+        "0/10/155/322",
+        "0/10/154/323",
+        "0/10/155/323",
+        "0/9/78/160",
+        "0/9/79/160",
+        "0/9/78/161",
+        "0/9/79/161",
+        "0/8/39/82",
+        "0/8/40/80",
+        "0/8/41/80",
+        "0/8/40/81",
+        "0/8/41/81",
+        "0/7/21/40",
+        "0/7/21/41",
+        "0/6/11/20",
+        "0/7/21/42",
+        "0/6/11/21",
+        "0/6/11/22",
+        "0/6/12/20",
+        "0/6/13/20",
+        "0/6/12/21",
+        "0/6/13/21",
+        "0/5/7/10",
+        "0/5/6/11",
+        "0/5/7/11",
+        "0/5/7/12",
+        "0/4/4/4",
+        "0/4/5/4",
+        "0/4/4/5",
+        "0/4/5/5",
+        "0/3/3/2",
+        "0/4/4/6",
+        "0/4/5/6",
+        "0/4/4/7",
+        "0/4/5/7",
+        "0/3/3/3",
+        "0/2/2/1",
+        "0/2/3/1",
+        "0/3/3/4",
+        "0/2/2/2",
+        "0/2/3/0",
+        "0/5/7/8",
+        "0/6/12/18",
+        "0/6/13/18",
+        "0/6/12/19",
+        "0/6/13/19",
+        "0/5/7/9",
+        "0/16/9719/20628",
+        "0/17/19435/41251",
+        "0/17/19435/41252",
+        "0/17/19435/41253",
+        "0/8/40/79",
+        "0/8/41/79",
+        "0/10/153/323",
+        "0/10/154/324",
+        "0/10/155/324",
+        "0/10/155/325",
+        "0/8/40/82",
+        "0/8/41/82",
+        "0/8/41/83",
+        "0/14/2433/5160",
+        "0/15/4862/10316",
+        "0/15/4863/10316",
+        "0/15/4863/10317",
+        "0/15/4862/10311",
+        "0/15/4863/10311",
+        "0/15/4861/10311",
+        "0/16/9720/20624",
+        "0/16/9721/20624",
+        "0/16/9720/20625",
+        "0/16/9721/20625",
+        "0/15/4861/10312",
+        "0/16/9720/20626",
+        "0/16/9721/20626",
+        "0/16/9720/20627",
+        "0/16/9721/20627",
+        "0/15/4861/10313",
+        "0/16/9720/20628",
+        "0/16/9721/20628",
+        "0/16/9720/20629",
+        "0/16/9721/20629",
+        "0/15/4861/10314",
+        "0/15/4860/10315",
+        "0/15/4861/10315",
+        "0/9/78/162",
+        "0/9/79/162",
+        "0/9/78/163",
+        "0/9/79/163",
+        "0/4/7/2",
+        "0/4/6/3",
+        "0/4/7/3",
+        "0/4/5/3",
+        "0/14/2432/5158",
+        "0/14/2433/5158",
+        "0/14/2432/5159",
+        "0/14/2433/5159",
+        "0/15/4862/10314",
+        "0/15/4863/10314",
+        "0/15/4862/10315",
+        "0/15/4863/10315",
+        "0/15/4862/10312",
+        "0/15/4863/10312",
+        "0/15/4862/10313",
+        "0/15/4863/10313",
+        "0/14/2433/5154",
+        "0/14/2432/5155",
+        "0/14/2433/5155",
+        "0/3/4/1",
+        "3/2/3/0",
+        "0/16/9719/20624",
+        "0/16/9718/20625",
+        "0/16/9719/20625",
+        "0/16/9718/20626",
+        "0/16/9719/20626",
+        "0/16/9718/20627",
+        "0/16/9719/20627"
+      ],
+      "pendingTileIds": [],
+      "eyeHeightM": 1148.6670931744195
+    }
+  },
+  "turn": {
+    "visible": 2048,
+    "near": 0,
+    "positionDeltaM": 0,
+    "headingDeltaQuaternionNorm": 0.41968093673131435,
+    "matrixWrites": 0,
+    "colorWrites": 0,
+    "originVersion": 13
+  },
+  "profile": {
+    "enabled": true,
+    "gpuAvailable": true,
+    "historyLimit": 600,
+    "method": "Non-overlapping EXT_disjoint_timer_query_webgl2 passes; delayed availability polling",
+    "gpuTotalMeaning": "Sum of instrumented rendering passes from complete frames; excludes CPU work and presentation wait",
+    "pendingQueries": 7,
+    "pendingLimit": 48,
+    "skippedQueries": 0,
+    "disjointQueries": 0,
+    "expiredQueries": 0,
+    "lastDrawCalls": 243,
+    "lastTriangles": 735028,
+    "statistics": {
+      "frameIntervalMs": {
+        "samples": 476,
+        "p50": 16.59999999962747,
+        "p95": 19.100000001490116,
+        "p99": 23.5,
+        "max": 32.5
+      },
+      "cpu/planetUpdateMs": {
+        "samples": 476,
+        "p50": 9.599999999627471,
+        "p95": 13,
+        "p99": 15.299999998882413,
+        "max": 23.09999999962747
+      },
+      "cpu/lakeReflectionMs": {
+        "samples": 476,
+        "p50": 0.19999999925494194,
+        "p95": 0.2999999988824129,
+        "p99": 0.40000000037252903,
+        "max": 0.599999999627471
+      },
+      "cpu/sceneCaptureMs": {
+        "samples": 476,
+        "p50": 2.299999998882413,
+        "p95": 3.5,
+        "p99": 4.699999999254942,
+        "max": 5.200000001117587
+      },
+      "cpu/cloudIntegrationMs": {
+        "samples": 476,
+        "p50": 0,
+        "p95": 0.10000000149011612,
+        "p99": 0.10000000149011612,
+        "max": 0.19999999925494194
+      },
+      "cpu/cloudResolveMs": {
+        "samples": 476,
+        "p50": 0,
+        "p95": 0.09999999962747097,
+        "p99": 0.10000000149011612,
+        "max": 0.19999999925494194
+      },
+      "cpu/frameWorkMs": {
+        "samples": 476,
+        "p50": 13.600000001490116,
+        "p95": 18.09999999962747,
+        "p99": 22.299999998882413,
+        "max": 31.800000000745058
+      },
+      "drawCalls": {
+        "samples": 476,
+        "p50": 243,
+        "p95": 243,
+        "p99": 243,
+        "max": 243
+      },
+      "triangles": {
+        "samples": 476,
+        "p50": 735028,
+        "p95": 735028,
+        "p99": 735124,
+        "max": 735124
+      },
+      "gpu/lakeReflectionMs": {
+        "samples": 475,
+        "p50": 0,
+        "p95": 0.000032,
+        "p99": 0.000032,
+        "max": 0.000032
+      },
+      "gpu/sceneCaptureMs": {
+        "samples": 474,
+        "p50": 3.301248,
+        "p95": 5.412544,
+        "p99": 6.168256,
+        "max": 6.878656
+      },
+      "gpu/cloudIntegrationMs": {
+        "samples": 474,
+        "p50": 0.531488,
+        "p95": 2.207584,
+        "p99": 2.791392,
+        "max": 3.446976
+      },
+      "gpu/cloudResolveMs": {
+        "samples": 474,
+        "p50": 0.033696,
+        "p95": 0.977664,
+        "p99": 1.797536,
+        "max": 2.100864
+      },
+      "gpu/framePassSumMs": {
+        "samples": 474,
+        "p50": 4.111776000000001,
+        "p95": 6.191616,
+        "p99": 7.444384,
+        "max": 8.850591999999999
+      }
+    }
+  }
+}

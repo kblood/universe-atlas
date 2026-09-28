@@ -61,3 +61,24 @@ Lazy jitter construction and packed transferable worker results remain useful
 follow-ups for cold latency and main-thread receive costs. Enlarging the forest
 range still requires a new cache/headroom review; a finite cache cannot promise
 warm performance for an arbitrarily large working set.
+
+## Luna 6 hardware acceptance
+
+Exact runtime checkpoint `66c7728` passes its build, 57 targeted source tests
+and the RTX 5090 desktop fixture. During a measured 110.14 m lateral surface
+move, two new selection responses arrived. The latest reused 6,655 patches,
+built 32, and accounted for 17.35 MB of its 32 MiB allowance. Trees, flora and
+128 animals remained drawn; terrain was ready; browser errors, worker failures
+and restarts were all zero.
+
+The stationary 476-sample profile reports frame interval p50/p95 16.6/19.1 ms,
+CPU planet update 9.6/13.0 ms, and GPU pass sum 4.11/6.19 ms. This is one
+development-machine fixture, not a midrange hardware or fast-travel guarantee.
+The revised movement test measures surface displacement: a 60 m 3D move can
+be mostly vertical and also need not cross a selector centre's 40 m threshold.
+
+- [Validation record](../test-results/forest-selection-66c7728/README.md)
+- [Rendering report](../test-results/forest-selection-66c7728/desktop-rendering-hardware/report.json)
+- [Movement/cache report](../test-results/forest-selection-66c7728/browser-movement-lateral-hardware/report.json)
+- [After movement](../test-results/forest-selection-66c7728/browser-movement-lateral-hardware/after-move.png)
+- [Browser fixture source](../tests/forest-selection-cache.browser.mjs)
