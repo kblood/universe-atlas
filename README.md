@@ -29,6 +29,7 @@ RTX 5090 preview evidence covers repeatable date replay with 6,301 patches and
 not establish midrange performance or a general 60 FPS result. The current
 forest still uses legacy faceted proxy trees rather than realistic authored
 assets. See the [integration and acceptance record](docs/canopy-runtime-integration-2026-09-28.md),
+[release 580936f deployment receipt](docs/deployment-580936f-2026-09-28.md),
 [immutable preview evidence](test-results/acceptance-98556a7/README.md),
 [water/date fix](docs/terrain-water-refresh-2026-09-28.md), and [Opus implementation review](docs/opus-5.5-canopy-integration-review-2026-09-28.md).
 

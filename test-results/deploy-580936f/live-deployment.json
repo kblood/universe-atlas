@@ -1,0 +1,246 @@
+{
+  "base": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "checkedAt": "2026-09-28T03:25:51.3511332Z",
+  "liveBuild": {
+    "commit": "580936f503504a6d93b10e2806a9ad55ec750bdc",
+    "dirty": false,
+    "builtAt": "2026-09-28T03:18:06.402Z"
+  },
+  "localBuild": {
+    "commit": "580936f503504a6d93b10e2806a9ad55ec750bdc",
+    "dirty": false,
+    "builtAt": "2026-09-28T03:18:06.402Z"
+  },
+  "assets": {
+    "mismatches": [],
+    "count": 22,
+    "matches": 22,
+    "entries": [
+      {
+        "localSha256": "a0707cf891ebfee84c9ce254c591c63a5714398ca8e28bf17bb427930d1f7e29",
+        "name": "atlas-D_fLpHjv.js",
+        "match": true,
+        "liveSha256": "a0707cf891ebfee84c9ce254c591c63a5714398ca8e28bf17bb427930d1f7e29"
+      },
+      {
+        "localSha256": "6213e8f4da8320ec71d19d0c9e39deede091999530b9913031222d7fe58460ff",
+        "name": "biomes-B2FSz8AO.js",
+        "match": true,
+        "liveSha256": "6213e8f4da8320ec71d19d0c9e39deede091999530b9913031222d7fe58460ff"
+      },
+      {
+        "localSha256": "45688e5ba13d4176b559e22cd010bd66973948b4deb0e7f6e90d9a5cac7db0b6",
+        "name": "biosphere-CVMT8gpe.js",
+        "match": true,
+        "liveSha256": "45688e5ba13d4176b559e22cd010bd66973948b4deb0e7f6e90d9a5cac7db0b6"
+      },
+      {
+        "localSha256": "4d8529f4671472589497cb12468606470989a190ef1103fc3571d0fb7737e979",
+        "name": "biosphere-model-BxOjjDxI.js",
+        "match": true,
+        "liveSha256": "4d8529f4671472589497cb12468606470989a190ef1103fc3571d0fb7737e979"
+      },
+      {
+        "localSha256": "2dcc20d12a182188e8b154ca9d0ffa1dc3cbf2014d5bc08aa4078da22cfc6e9b",
+        "name": "catalog-Cs3U8xJB.js",
+        "match": true,
+        "liveSha256": "2dcc20d12a182188e8b154ca9d0ffa1dc3cbf2014d5bc08aa4078da22cfc6e9b"
+      },
+      {
+        "localSha256": "4c19e442ba9c21d5bd28c606974ecbafa8265c97e1e3b478c75719e296d3b7fd",
+        "name": "clouds-CGGXURlv.js",
+        "match": true,
+        "liveSha256": "4c19e442ba9c21d5bd28c606974ecbafa8265c97e1e3b478c75719e296d3b7fd"
+      },
+      {
+        "localSha256": "5f6f373d7f4604e198a4cde08164af0d17cd81ce4cb25da9ba29b2392726787d",
+        "name": "creatures-z4zMnOp4.js",
+        "match": true,
+        "liveSha256": "5f6f373d7f4604e198a4cde08164af0d17cd81ce4cb25da9ba29b2392726787d"
+      },
+      {
+        "localSha256": "08b032e56f2cb5268e8c24825461f864a558c1b4309c1663a3526cf0c31a0439",
+        "name": "drainage-worker-Bp34AJ1h.js",
+        "match": true,
+        "liveSha256": "08b032e56f2cb5268e8c24825461f864a558c1b4309c1663a3526cf0c31a0439"
+      },
+      {
+        "localSha256": "53c1ba117e7a0415f87cdd781dd3ba6f92b356844990c9a072b9706986ddfd89",
+        "name": "forest-census-worker-CpdaZJHJ.js",
+        "match": true,
+        "liveSha256": "53c1ba117e7a0415f87cdd781dd3ba6f92b356844990c9a072b9706986ddfd89"
+      },
+      {
+        "localSha256": "34896728731d272dad5585fc81a68e4151abdc0db35b8e5396f1cd25830202ed",
+        "name": "ground-walker-B9BC5jac.js",
+        "match": true,
+        "liveSha256": "34896728731d272dad5585fc81a68e4151abdc0db35b8e5396f1cd25830202ed"
+      },
+      {
+        "localSha256": "a3f69a8d03bffaa8bb7ce7d620691aef42fa7ffed203adb6059286f6b7feafea",
+        "name": "guide-time-JsQuz3LV.js",
+        "match": true,
+        "liveSha256": "a3f69a8d03bffaa8bb7ce7d620691aef42fa7ffed203adb6059286f6b7feafea"
+      },
+      {
+        "localSha256": "8068f9d55af334b44a238ee5608ca1002026843c1b191ea9641d3af74193c52c",
+        "name": "OrbitControls-C33he78E.js",
+        "match": true,
+        "liveSha256": "8068f9d55af334b44a238ee5608ca1002026843c1b191ea9641d3af74193c52c"
+      },
+      {
+        "localSha256": "e90f8ed0b32b5e6b763662ed37ce2e92727aff1eaa8997cc593dd781669d3ce1",
+        "name": "planet-population-worker-DPoR_B8X.js",
+        "match": true,
+        "liveSha256": "e90f8ed0b32b5e6b763662ed37ce2e92727aff1eaa8997cc593dd781669d3ce1"
+      },
+      {
+        "localSha256": "63244cb31d54ccd384482ece789259457c6bd6badc186017dff6b65669f91516",
+        "name": "planet-worker-BpRIhApT.js",
+        "match": true,
+        "liveSha256": "63244cb31d54ccd384482ece789259457c6bd6badc186017dff6b65669f91516"
+      },
+      {
+        "localSha256": "73f8b5fe1e32ae64e8fde0354f3d0e9fc04b9ffa71c043d5b1ca93f786ff8679",
+        "name": "rapier-physics-iRel_T-y.js",
+        "match": true,
+        "liveSha256": "73f8b5fe1e32ae64e8fde0354f3d0e9fc04b9ffa71c043d5b1ca93f786ff8679"
+      },
+      {
+        "localSha256": "9d5d876dffb667585760e15ee4accb5d08503e2b2e42776240c0a6ba66c25d0d",
+        "name": "river-worker-B6OWmDg5.js",
+        "match": true,
+        "liveSha256": "9d5d876dffb667585760e15ee4accb5d08503e2b2e42776240c0a6ba66c25d0d"
+      },
+      {
+        "localSha256": "bcc2dd17f1a58cfcb96b48f382a6f24a25f46a5f0e36ac02e5415e108161dc69",
+        "name": "three.core-DYul8iZ1.js",
+        "match": true,
+        "liveSha256": "bcc2dd17f1a58cfcb96b48f382a6f24a25f46a5f0e36ac02e5415e108161dc69"
+      },
+      {
+        "localSha256": "41530d4cf5b954f9f521b2ce84b45236e9bf9be2f3ff6746e3ff9302d002c96e",
+        "name": "three.module-NATEk4NP.js",
+        "match": true,
+        "liveSha256": "41530d4cf5b954f9f521b2ce84b45236e9bf9be2f3ff6746e3ff9302d002c96e"
+      },
+      {
+        "localSha256": "2ebe545821f1a2dc034464507d9d880a6fcc77777877241395ec681263507093",
+        "name": "time-nav-zNzZqn8I.js",
+        "match": true,
+        "liveSha256": "2ebe545821f1a2dc034464507d9d880a6fcc77777877241395ec681263507093"
+      },
+      {
+        "localSha256": "e4e9e5987587ae4f255e0d3a3dfc791863707150a6bcb18adabf8f4518ac601d",
+        "name": "volumetric-clouds-8SQVk-_2.js",
+        "match": true,
+        "liveSha256": "e4e9e5987587ae4f255e0d3a3dfc791863707150a6bcb18adabf8f4518ac601d"
+      },
+      {
+        "localSha256": "f224306858e7173b0104913d8a0ab9d025a5fbfd63802fabe2f27494b5e21db0",
+        "name": "worker-Df1A3ASA.js",
+        "match": true,
+        "liveSha256": "f224306858e7173b0104913d8a0ab9d025a5fbfd63802fabe2f27494b5e21db0"
+      },
+      {
+        "localSha256": "2043fc7fe4472a29415bd9f2f3e3218d4adb462c158ea500b709d72c750cf5d2",
+        "name": "world-time-C2zk4ykx.js",
+        "match": true,
+        "liveSha256": "2043fc7fe4472a29415bd9f2f3e3218d4adb462c158ea500b709d72c750cf5d2"
+      }
+    ]
+  },
+  "hardware": {
+    "viewport": [
+      1440,
+      1000
+    ],
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+  },
+  "guide": {
+    "chapters": 9,
+    "deployedRuntimeChecked": true,
+    "internalDestinations": 74,
+    "ok": true,
+    "widths": [
+      1440,
+      390,
+      320
+    ],
+    "report": "guide/guide-report.json",
+    "errors": []
+  },
+  "dateWater": {
+    "errors": [],
+    "ok": true,
+    "phases": [
+      {
+        "stalePatches": 0,
+        "reusedPatches": 0,
+        "lifeStage": "complex",
+        "terrainPending": 0,
+        "generation": 1,
+        "forestFamily": "94b2a1c58d25d2d94ee1bcf23c96fbb0b03c7e271e9bbea8140156f6dadfe6f1",
+        "waterLevelM": -4500,
+        "label": "baseline-minus-4500m"
+      },
+      {
+        "stalePatches": 0,
+        "reusedPatches": 6309,
+        "lifeStage": "complex",
+        "terrainPending": 0,
+        "generation": 2,
+        "forestFamily": "94b2a1c58d25d2d94ee1bcf23c96fbb0b03c7e271e9bbea8140156f6dadfe6f1",
+        "waterLevelM": -4475,
+        "label": "water--4475m"
+      },
+      {
+        "stalePatches": 0,
+        "reusedPatches": 6309,
+        "lifeStage": "complex",
+        "terrainPending": 0,
+        "generation": 3,
+        "forestFamily": "94b2a1c58d25d2d94ee1bcf23c96fbb0b03c7e271e9bbea8140156f6dadfe6f1",
+        "waterLevelM": -4500,
+        "label": "water--4500m"
+      }
+    ],
+    "report": "canopy-water-date-seek/report.json"
+  },
+  "flight": {
+    "sourceCommit": "580936f503504a6d93b10e2806a9ad55ec750bdc",
+    "workerRestarts": 0,
+    "errors": [],
+    "farOwnedSkipped": 13947,
+    "ok": true,
+    "jobsInFlight": 0,
+    "alphaPass": true,
+    "report": "canopy-flight/report.json",
+    "sourceWorkingTreeDirty": false,
+    "systemUnit": 1,
+    "failures": 0,
+    "queuedPatches": 0,
+    "patches": 6688,
+    "nearAbsentMismatch": 0,
+    "trees": 153514,
+    "nearPresentMismatch": 0,
+    "flightLateralM": 320.74257387163914,
+    "walkTravelledM": 323.11097214566234
+  },
+  "desktopRendering": {
+    "gpuSamples": 451,
+    "report": "desktop-rendering/report.json",
+    "cpuPlanetUpdateP95Ms": 16.900000002235174,
+    "errors": [],
+    "gpuPassSumP95Ms": 6.772031999999999,
+    "cloudSamples": {
+      "aa4": 4,
+      "aa0": 0,
+      "aa2": 2
+    },
+    "ok": true,
+    "cpuSamples": 453,
+    "cpuFrameWorkP95Ms": 22.600000001490116,
+    "gpuPassSumMaxMs": 13.216704
+  }
+}

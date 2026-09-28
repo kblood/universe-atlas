@@ -2,12 +2,14 @@
 
 Date: 2026-09-27. Accepted direction; implementation started.
 
-Latest build includes the canopy runtime through `98556a7`: complete canonical
+Published release `580936f` includes the canopy runtime through `98556a7`: complete canonical
 patches and individual ownership, 5,500 m altitude prefetch, 3,500 m altitude
 rendering, water-aware patch reuse, and retained terrain refresh during date
 changes. The [integration record](canopy-runtime-integration-2026-09-28.md)
-links the immutable RTX 5090 date-seek and flight/walking evidence. This does
-not complete realistic species assets or establish midrange performance.
+links the immutable RTX 5090 date-seek and flight/walking evidence; the
+[deployment receipt](deployment-580936f-2026-09-28.md) records the live build
+and byte audit. This does not complete realistic species assets or establish
+midrange performance.
 Baseline before this work: `27e89c897369270728e5ef4118dcc144e40af7fc`.
 
 This is the current plan for planetary visual quality. It consolidates the
@@ -186,7 +188,7 @@ more. Structural diversity must not come from disconnected anatomy.
 | B. Forest foundation | Observer-centred density, retained origins and dirty uploads, upload diagnostics | Implemented; build, 53 targeted checks and RTX 5090 browser acceptance pass; see validation record |
 | C. Pipeline baseline | Fixed valley/routes, complete-game timings, AA/depth decisions, consistent lighting and bounded shadows | Profiling and shared aerial perspective implemented; optional scene AA experiment reviewed; final lighting/AA/shadows pending |
 | D. Procedural asset contract | Existing species binding, physical envelopes, variant cache, asset brief, bark/leaf masks and instance parameters | Species recipe/variant/key contract tested; first Blender brief validates; forest integration, authored assets and resource cache pending |
-| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Canopy runtime through `98556a7` includes complete census patches, near/far ownership, altitude prefetch/render thresholds, bounded uploads, water-aware patch reuse, and retained terrain refresh on date changes. RTX 5090 date-seek and flight/walk acceptance are linked in the [integration record](canopy-runtime-integration-2026-09-28.md). Legacy faceted tree shapes remain; authored realism, midrange performance validation, XR and broader visual signoff are open. The earlier deployed `e8a848d` used sparse distant representatives |
+| E. Continuous canopy | Spatial batches, shared population summaries, matching near/mid/far/orbital appearance | Published release `580936f` includes canopy runtime through `98556a7`: complete census patches, near/far ownership, altitude prefetch/render thresholds, bounded uploads, water-aware patch reuse, and retained terrain refresh on date changes. RTX 5090 date-seek and flight/walk acceptance are linked in the [integration record](canopy-runtime-integration-2026-09-28.md), with the [live deployment receipt](deployment-580936f-2026-09-28.md). Legacy faceted tree shapes remain; authored realism, midrange performance validation, XR and broader visual signoff are open. The earlier deployed `e8a848d` used sparse distant representatives |
 | F. Realistic landscape | One authored tree family, rocks, ground textures, grass/shrubs and shared wind | Two tree authoring proposals technically validated and visually reviewed; asset/runtime acceptance and other landscape work pending |
 | G. Realistic fauna | One compatible rig, deterministic paths and grounded animation | Planned |
 | H. Breadth | More biomes/species and separately measured Quest profile | Planned |

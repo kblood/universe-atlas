@@ -1,0 +1,166 @@
+{
+  "audit": "live-static-guide-links",
+  "site": "https://dionysus.dk/webxr/IWSDK/universe-atlas/",
+  "checkedAt": "2026-09-28T03:22:26.707Z",
+  "localHead": "580936f503504a6d93b10e2806a9ad55ec750bdc",
+  "buildInfo": {
+    "status": 200,
+    "contentType": "application/json",
+    "body": {
+      "commit": "580936f503504a6d93b10e2806a9ad55ec750bdc",
+      "dirty": false,
+      "builtAt": "2026-09-28T03:18:06.402Z"
+    },
+    "commitMatches": true,
+    "clean": true,
+    "error": null
+  },
+  "guides": {
+    "count": 9,
+    "passed": 9,
+    "pages": [
+      {
+        "path": "guide/determinism.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Determinism · Universe Atlas Guide",
+        "remoteTitle": "Determinism · Universe Atlas Guide",
+        "titleMatches": true,
+        "error": null
+      },
+      {
+        "path": "guide/index.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Overview · Universe Atlas Guide",
+        "remoteTitle": "Overview · Universe Atlas Guide",
+        "titleMatches": true,
+        "error": null
+      },
+      {
+        "path": "guide/life.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Biospheres & life · Universe Atlas Guide",
+        "remoteTitle": "Biospheres & life · Universe Atlas Guide",
+        "titleMatches": true,
+        "error": null
+      },
+      {
+        "path": "guide/publishing.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Architecture & publishing · Universe Atlas Guide",
+        "remoteTitle": "Architecture & publishing · Universe Atlas Guide",
+        "titleMatches": true,
+        "error": null
+      },
+      {
+        "path": "guide/terrain.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Terrain generation · Universe Atlas Guide",
+        "remoteTitle": "Terrain generation · Universe Atlas Guide",
+        "titleMatches": true,
+        "error": null
+      },
+      {
+        "path": "guide/time.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Time & history · Universe Atlas Guide",
+        "remoteTitle": "Time & history · Universe Atlas Guide",
+        "titleMatches": true,
+        "error": null
+      },
+      {
+        "path": "guide/travel.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Travel & controls · Universe Atlas Guide",
+        "remoteTitle": "Travel & controls · Universe Atlas Guide",
+        "titleMatches": true,
+        "error": null
+      },
+      {
+        "path": "guide/universe.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Universe structure · Universe Atlas Guide",
+        "remoteTitle": "Universe structure · Universe Atlas Guide",
+        "titleMatches": true,
+        "error": null
+      },
+      {
+        "path": "guide/water-atmosphere.html",
+        "status": 200,
+        "contentType": "text/html",
+        "title": "Water & atmosphere · Universe Atlas Guide",
+        "remoteTitle": "Water & atmosphere · Universe Atlas Guide",
+        "titleMatches": true,
+        "error": null
+      }
+    ],
+    "localReferenceCount": 284,
+    "uniqueLocalTargets": 81,
+    "brokenReferences": [],
+    "appEntrypoint": {
+      "path": "./",
+      "classification": "expected application shell; excluded from guide-static fallback check",
+      "title": "Universe Atlas · IWSDK",
+      "status": 200,
+      "contentType": "text/html"
+    }
+  },
+  "documentation": {
+    "sourceFiles": [
+      "docs/canopy-census-design-2026-09-28.md",
+      "docs/canopy-foundation-2026-09-28.md",
+      "docs/canopy-host-review-assessment-2026-09-28.md",
+      "docs/canopy-integration-contract-2026-09-28.md",
+      "docs/canopy-runtime-integration-2026-09-28.md",
+      "docs/canopy-water-review-assessment-2026-09-28.md",
+      "docs/canopy-water-validity-design-2026-09-28.md",
+      "docs/desktop-realism-implementation-plan-2026-09-27.md",
+      "docs/desktop-rendering-stage-c-2026-09-28.md",
+      "docs/desktop-rendering-validation-2026-09-28.md",
+      "docs/opus-5.5-canopy-host-review-2026-09-28.md",
+      "docs/opus-5.5-canopy-integration-review-2026-09-28.md",
+      "docs/opus-5.5-canopy-review-2026-09-28.md",
+      "docs/opus-5.5-canopy-water-review-2026-09-28.md",
+      "docs/opus-5.5-census-design-review-2026-09-28.md",
+      "docs/opus-5.5-census-implementation-review-2026-09-28.md",
+      "docs/terrain-water-refresh-2026-09-28.md",
+      "test-results/acceptance-4c776b8/README.md"
+    ],
+    "sourceFilesChecked": [
+      "docs/canopy-census-design-2026-09-28.md",
+      "docs/canopy-foundation-2026-09-28.md",
+      "docs/canopy-host-review-assessment-2026-09-28.md",
+      "docs/canopy-integration-contract-2026-09-28.md",
+      "docs/canopy-runtime-integration-2026-09-28.md",
+      "docs/canopy-water-review-assessment-2026-09-28.md",
+      "docs/canopy-water-validity-design-2026-09-28.md",
+      "docs/desktop-realism-implementation-plan-2026-09-27.md",
+      "docs/desktop-rendering-stage-c-2026-09-28.md",
+      "docs/desktop-rendering-validation-2026-09-28.md",
+      "docs/opus-5.5-canopy-host-review-2026-09-28.md",
+      "docs/opus-5.5-canopy-integration-review-2026-09-28.md",
+      "docs/opus-5.5-canopy-review-2026-09-28.md",
+      "docs/opus-5.5-canopy-water-review-2026-09-28.md",
+      "docs/opus-5.5-census-design-review-2026-09-28.md",
+      "docs/opus-5.5-census-implementation-review-2026-09-28.md",
+      "docs/terrain-water-refresh-2026-09-28.md",
+      "test-results/acceptance-4c776b8/README.md"
+    ],
+    "markdownReferenceCount": 92,
+    "uniqueLocalTargets": 70,
+    "brokenReferences": []
+  },
+  "summary": {
+    "guidePagesFailed": 0,
+    "guideTargetsFailed": 0,
+    "reviewWaterAcceptanceLinksFailed": 0,
+    "ok": true
+  }
+}
