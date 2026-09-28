@@ -13,7 +13,7 @@ import {rendererMemoryAccounting,RENDERER_MEMORY_BUDGET} from '../src/renderer-m
 import {
   PlanetRocks,ROCK_LOD_CAPS,ROCK_DRAW_UNITS_PER_FRAME,ROCK_NEAR_UNCULLED_M,ROCK_WORST_CASE_BYTES,ROCK_BUDGET_BYTES,
   ROCK_REF_BYTES,ROCK_DRAW_JOB_BYTES,ROCK_RECORD_BYTES,ROCK_CELL_RECORD_BYTES,ROCK_SURFACE_CELL_BYTES,ROCK_TRANSIENT_BYTES,
-  ROCK_MAX_RESCATTER_CANDIDATES,ROCK_ORIGIN_REBASE_M,ROCK_NEAR_MAX,ROCK_PUBLISH_MAX,ROCK_KEY_PLANE_REACH_M,
+  ROCK_MAX_RESCATTER_CANDIDATES,ROCK_ORIGIN_REBASE_M,ROCK_NEAR_MAX,ROCK_PUBLISH_MAX,ROCK_KEY_PLANE_REACH_M,ROCK_WORK_HISTORY,ROCK_DRAW_TARGET_MS,
 } from '../src/planet-rocks.ts';
 import {moon,moonFamilies,CORNER,unit,saturatedRecords,fixtureCounts,cameraFrustum,eyeAt,injectSaturated,flatSampler,rockClassifier,SEED} from './rock-saturated-fixture.mjs';
 
@@ -484,6 +484,46 @@ test('a still view is not re-traversed when only an out-of-reach frustum plane c
   assert.equal(rocks.diagnostics().work.draw.jobsStarted,1,'an in-reach plane change starts a job');
   flush(rocks,input({frusta:[near]}));
   assertParity(rocks,{name:'far-in-reach',eye:eye0,frusta:[near],shadow:null},'far-in-reach');
+  rocks.dispose();
+});
+
+test('rock work history: per-frame rings summarise enabled frames against the 1.5 ms target and job frames',()=>{
+  const rocks=saturated(500);
+  rocks.resetWorkHistory();
+  const view={frusta:[cameraFrustum(moon,eye0,.1)]};
+  const {frames}=flush(rocks,input(view));
+  for(let i=0;i<5;i++)rocks.update(input(view));
+  const w=rocks.workSummary();
+  assert.equal(ROCK_DRAW_TARGET_MS,1.5);
+  assert.equal(w.targetMs,1.5);
+  assert.equal(w.historyLimit,ROCK_WORK_HISTORY);
+  assert.equal(w.frames,frames+5);
+  assert.equal(w.enabledFrames,frames+5);
+  for(const k of ['updateMs','processMs','drawMs','drawUnits'])assert.equal(w[k].samples,frames+5,k);
+  assert.ok(w.drawUnits.max<=500+Math.max(...ROCK_TIERS.map(t=>t.slots))||w.drawUnits.max<=ROCK_PUBLISH_MAX);
+  assert.ok(w.jobFrames.samples>=1&&w.jobFrames.max>1,'saturated jobs span frames');
+  assert.equal(typeof w.overTarget.draw,'number');
+  // Still frames after the publish do no traversal.
+  const units=rocks.diagnostics().work.draw.units;assert.equal(units,0);
+  rocks.resetWorkHistory();
+  assert.equal(rocks.workSummary().frames,0);
+  for(let i=0;i<ROCK_WORK_HISTORY+10;i++)rocks.update(input(view));
+  assert.equal(rocks.workSummary().frames,ROCK_WORK_HISTORY,'history is a bounded ring');
+  rocks.dispose();
+});
+
+test('published rock probe: nearest drawn rocks with canonical placement fields',()=>{
+  const rocks=saturated();
+  flush(rocks,input({frusta:[cameraFrustum(moon,eye0,.1)]}));
+  const probe=rocks.publishedRockProbe(eye0,40),published=new Set(rocks.publishedRocks());
+  assert.equal(probe.length,Math.min(40,published.size));
+  for(let i=0;i<probe.length;i++){
+    const p=probe[i];
+    assert.ok(published.has(`${p.id}@${p.lod}`));
+    if(i)assert.ok(p.distanceM>=probe[i-1].distanceM);
+    assert.ok(p.heightM>0&&p.widthM>=p.diameterM*.5&&p.sinkM>=0&&p.sinkM<p.heightM,`${p.id}: height ${p.heightM} sink ${p.sinkM}`);
+    assert.equal(p.direction.length,3);assert.equal(p.up.length,3);
+  }
   rocks.dispose();
 });
 

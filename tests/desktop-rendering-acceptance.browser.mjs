@@ -74,9 +74,25 @@ try {
   const distance = Math.hypot(...turned.position.map((v, i) => v - stationary.position[i]));
   const headingChange = Math.hypot(...turned.heading.map((v, i) => v - beforeHeading[i]));
   await page.screenshot({ path: `${out}/forest-turned.png` });
-  await page.evaluate(() => { window.__atlas.setProfiling(true); window.__atlas.resetProfile(); });
+  await page.evaluate(() => { window.__atlas.setProfiling(true); window.__atlas.resetProfile(); window.__atlas.resetRockWork(); });
+  const profileStartHeading = (await snap()).heading;
   await page.waitForTimeout(8000);
+  // The drag turn is still settling during this window; rock draw jobs follow it.
+  const profileHeadingDelta = Math.hypot(...(await snap()).heading.map((v, i) => v - profileStartHeading[i]));
   const profile = await page.evaluate(() => window.__atlas.renderProfile);
+  // Rock CPU work over the same 8 s window (per rock update; performance.now()
+  // resolution applies), plus drawn counts and combined bytes at its end.
+  const rocks = await page.evaluate(() => {
+    const t = window.__atlas.terrain.tiles, r = t.rocks;
+    return { enabled: r.enabled, reason: r.reason, drawn: r.drawn, draws: r.draws, triangles: r.triangles,
+      tiers: r.tiers.map(x => ({ id: x.id, wanted: x.wanted, resident: x.resident, rocks: x.rocks, pending: x.pending })),
+      bytes: { owned: r.bytes.total, peak: r.bytes.peak, transient: r.bytes.transient, worstCase: r.bytes.worstCase, budget: r.bytes.budget,
+        geometry: r.bytes.geometry, instances: r.bytes.instances, records: r.bytes.records, textures: r.bytes.textures },
+      combined: { rockOwnedBytes: t.rockOwnedBytes, rockPeakBytes: t.rockPeakBytes, rockReserveBytes: t.rockReserveBytes, accountedBytes: t.accountedBytes,
+        reservedCombinedBytes: t.reservedCombinedBytes, budgetBytes: t.budgetBytes, rockAccounting: t.rockAccounting },
+      work: window.__atlas.rockWork(), lastFrame: r.work, collision: r.collision, maxJobFrames: r.work.draw.maxJobFrames,
+      timer: { crossOriginIsolated: self.crossOriginIsolated, note: 'performance.now() is coarsened (0.1 ms without cross-origin isolation)' } };
+  });
   await page.evaluate(() => window.__atlas.setProfiling(false));
   report = {
     ok: false, base, bodyId, date: warmed.date, viewport: [1440, 1000],
@@ -120,6 +136,7 @@ try {
       headingDeltaQuaternionNorm: headingChange, matrixWrites: turned.forest.matrixWrites,
       colorWrites: turned.forest.colorWrites, originVersion: turned.forest.originVersion },
     profile,
+    rocks: { ...rocks, profileHeadingDeltaQuaternionNorm: profileHeadingDelta },
   };
   await writeFile(`${out}/report.json`, JSON.stringify(report, null, 2));
   assert.ok(warmed.forest.visible > 200, `forest populated (${warmed.forest.visible})`);
@@ -145,6 +162,12 @@ try {
   assert.ok(headingChange > 0.05, `camera heading changed (${headingChange})`);
   assert.ok(distance < 0.1, `observer stayed in place (${distance}m)`);
   assert.equal(turned.forest.originVersion, stationary.forest.originVersion, 'turning in place does not rebase forest origin');
+  assert.equal(rocks.enabled, true, `rocks enabled near the ground (${rocks.reason})`);
+  assert.ok(rocks.drawn.total > 0, 'rocks drawn near the ground');
+  assert.ok(rocks.bytes.peak <= rocks.bytes.budget, 'rock peak bytes within the rock budget');
+  assert.equal(rocks.combined.rockOwnedBytes, rocks.bytes.owned, 'rock-owned bytes folded into combined accounting');
+  assert.ok(rocks.combined.reservedCombinedBytes <= rocks.combined.budgetBytes, 'combined reservation within budget');
+  assert.ok(rocks.work.enabledFrames > 0 && rocks.work.jobFrames.max <= 4, `rock draw jobs stay bounded to a few frames (${rocks.work.jobFrames.max})`);
   assert.deepEqual(errors, [], 'browser has no page or console errors');
   report.ok = true;
   await writeFile(`${out}/report.json`, JSON.stringify(report, null, 2));

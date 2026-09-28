@@ -4917,6 +4917,12 @@ Object.defineProperty(window, "__atlas", {
     forestPresentationCensus(){return planetTiles?.forestPresentationCensus()??null;},
     // Canonical surface-rock census around the current ground focus.
     rockCensus(){return planetTiles?.rockCensus()??null;},
+    // Drawn rocks (sorted id@lod), drawn-rock ground/water probe, and the
+    // per-frame rock CPU work history. Explicit acceptance calls only.
+    rockPublished(){return planetTiles?.publishedRocks()??null;},
+    rockProbe(limit=64){return planetTiles?.rockProbe(limit)??null;},
+    rockWork(){return planetTiles?.rockWork()??null;},
+    resetRockWork(){planetTiles?.resetRockWork();},
     async loadForestTreeFamilies(inputs:readonly import('./forest-tree-family-library.ts').ForestTreeFamilyInput[],options:import('./tree-asset.ts').TreeAssetOptions={}){
       if(!import.meta.env.DEV)throw new Error('Experimental forest assets require a development build');
       if(!planetTiles)throw new Error('Visit a planet before loading forest assets');
