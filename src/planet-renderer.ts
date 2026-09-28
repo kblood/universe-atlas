@@ -927,7 +927,10 @@ export class PlanetRenderer {
     for (const p of this.patches.values()){p.mesh.visible = false;if(p.ocean)p.ocean.visible=false;}
     for (const t of leaves) {
       const key = tileKey(t), p = this.patches.get(key);
-      protectedKeys.add(key);
+      // A retained frontier can stop refining while its baked water bucket is
+      // stale. Request freshness independently of camera/LOD selection changes.
+      // The previous complete tile stays visible until its replacement lands.
+      request(t);
       let ancestor=t;while(ancestor.level>0){ancestor={face:ancestor.face,level:ancestor.level-1,x:Math.floor(ancestor.x/2),y:Math.floor(ancestor.y/2)};protectedKeys.add(tileKey(ancestor));}
       if (!p) continue;
       p.touched = this.frame;
