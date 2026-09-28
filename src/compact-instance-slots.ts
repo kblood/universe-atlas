@@ -1,0 +1,41 @@
+/** Dense GPU slots with canonical identity. Surviving slots stay in place;
+ * removal fills only the hole from the tail. Selection order remains the
+ * caller's responsibility, so compaction cannot change capacity winners. */
+export class CompactInstanceSlots<T,S> {
+  readonly items:T[]=[];
+  readonly states:S[]=[];
+  private indices=new Map<string,number>();
+  private wanted=new Set<string>();
+  readonly capacity:number;
+  private key:(item:T)=>string;
+  constructor(capacity:number,key:(item:T)=>string){
+    if(!Number.isSafeInteger(capacity)||capacity<0)throw new Error('Invalid slot capacity');
+    this.capacity=capacity;this.key=key;
+  }
+  reconcile(items:readonly T[],write:(index:number,item:T,previous:S|undefined)=>S):number{
+    if(items.length>this.capacity)throw new Error('Compact instance capacity exceeded');
+    this.wanted.clear();
+    for(const item of items){
+      const id=this.key(item);
+      if(this.wanted.has(id))throw new Error(`Duplicate compact instance ${id}`);
+      this.wanted.add(id);
+    }
+    for(let index=this.items.length-1;index>=0;index--){
+      const id=this.key(this.items[index]);if(this.wanted.has(id))continue;
+      this.indices.delete(id);
+      const last=this.items.length-1;
+      if(index!==last){
+        const moved=this.items[last];
+        this.states[index]=write(index,moved,this.states[index]);
+        this.items[index]=moved;this.indices.set(this.key(moved),index);
+      }
+      this.items.pop();this.states.pop();
+    }
+    for(const item of items){
+      const id=this.key(item),index=this.indices.get(id)??this.items.length;
+      this.states[index]=write(index,item,this.states[index]);
+      this.items[index]=item;this.indices.set(id,index);
+    }
+    return this.items.length;
+  }
+}
