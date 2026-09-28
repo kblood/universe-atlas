@@ -10,6 +10,16 @@ test('zero distance and airless surfaces preserve close material response',()=>{
   assert.deepEqual(localAerialReference(light,0,1,0,1),light);
   assert.deepEqual(localAerialReference(light,50000,1,0,1,0),light);
 });
+test('analytic surfaces use actual hit positions for atmospheric distance and height',()=>{
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshLambertMaterial());
+  attachLocalAerial(mesh,new THREE.Group(),6e6,{value:new THREE.Vector3(1,0,0)},{value:1},undefined,{local:'treeHit',view:'treeHitView.xyz'});
+  const shader={uniforms:{},vertexShader:THREE.ShaderLib.lambert.vertexShader,fragmentShader:THREE.ShaderLib.lambert.fragmentShader};
+  mesh.material.onBeforeCompile(shader,{});
+  assert.match(shader.fragmentShader,/atlasAirObjectToPlanet\*vec4\(treeHit,1\.0\)/);
+  assert.match(shader.fragmentShader,/length\(treeHitView.xyz\)\*atlasAirMetresPerViewUnit/);
+  assert.match(mesh.material.customProgramCacheKey(),/treeHit\/treeHitView.xyz/);
+  mesh.geometry.dispose();mesh.material.dispose();
+});
 test('shared aerial approximation reproduces previous terrain formula',()=>{
   for(const distance of [1,100,4000,65000])for(const altitude of [-50,0,3000,20000])for(const cosine of [-1,0,1]){
     const light=[.015,.06,.22],airFog=Math.min(.92,1-Math.exp(-distance/65000*Math.exp(-Math.max(0,(altitude+10)*.5)/14000)));

@@ -10,7 +10,7 @@ import {FOREST_PATCH_SIDE,type ForestPatchAddress} from './forest-patch.ts';
  * omitting a production-selected candidate is not. Distance is chord metres,
  * matching populationCells. Intended for local (< 0.1R) forest working sets. */
 export function forestPatchAddresses(center:V3,radiusM:number,rangeM:number,maxPatches=32768):ForestPatchAddress[]{
-  if(!center.every(Number.isFinite)||Math.abs(Math.hypot(...center)-1)>1e-6||
+  if(!Array.isArray(center)||center.length!==3||!center.every(Number.isFinite)||Math.abs(Math.hypot(...center)-1)>1e-6||
     !Number.isFinite(radiusM)||radiusM<=0||!Number.isFinite(rangeM)||rangeM<0||rangeM>radiusM*.1||
     !Number.isSafeInteger(maxPatches)||maxPatches<1)throw new Error('Invalid forest patch selection');
   const n=Math.ceil(2*radiusM/FOREST_CELL_M),angular=rangeM/radiusM,side=FOREST_PATCH_SIDE;

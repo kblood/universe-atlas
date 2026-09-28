@@ -1,0 +1,50 @@
+{
+  "revision": "deb9ca8d342308734d63d4fae57a9b4c926dd599",
+  "files": [
+    {
+      "path": "src/forest-impostor.ts",
+      "sha256": "efb3500e737003c7e6576d037140bc2e2094feaf20bb66fd854fc6dd976e3043"
+    },
+    {
+      "path": "src/tree-shape.ts",
+      "sha256": "c9e4c7750ebc50ea77a1fbddd18f73a79f514f1487f4271d694d2c4a9de0ccd0"
+    },
+    {
+      "path": "src/forest-patch-selection.ts",
+      "sha256": "f93561ace8b1bcdf54132dd889a04ec6c21f1acc3b7be92363f7baf476c832ef"
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "0f7e0fbd95430f88b80792a9020ccf14b87a5110c3f5f1d51efef963983f45e9"
+    },
+    {
+      "path": "src/local-aerial-perspective.ts",
+      "sha256": "ef408cbc9526e39526d09009999e0c15dcced24bcb553adc09d42923a8124088"
+    },
+    {
+      "path": "docs/forest-impostor-experiment-2026-09-28.md",
+      "sha256": "ead05ab14d9092888f4b55fb70ddd747c998df3aff8e20b0eec57e4984df0355"
+    },
+    {
+      "path": "src/forest-census-worker.ts",
+      "sha256": "9ce653fca13e309c45dca177804ac71ed952e3434c8e56676a35b4590a0d00dd"
+    }
+  ],
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 46974,
+      "cacheReadInputTokens": 1459,
+      "cacheCreationInputTokens": 27629,
+      "webSearchRequests": 0,
+      "costUSD": 1.1608118,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 40114,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "isError": false
+}

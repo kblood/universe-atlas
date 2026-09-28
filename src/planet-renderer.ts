@@ -520,7 +520,7 @@ export class PlanetRenderer {
     this.group.add(this.floraGroup,this.faunaRenderer.group);
     this.localAirUniform.value=this.atmosphere?1:0;
     for(const group of [this.forest.group,this.floraGroup,this.faunaRenderer.group])group.traverse(object=>{
-      if(object instanceof THREE.Mesh)attachLocalAerial(object,this.group,body.radiusM,this.sunUniform,this.localAirUniform,this.eyeHeightUniform);
+      if(object instanceof THREE.Mesh)attachLocalAerial(object,this.group,body.radiusM,this.sunUniform,this.localAirUniform,this.eyeHeightUniform,object.userData.localAerialSurfaceHit);
     });
   }
 

@@ -1,8 +1,33 @@
 # Proposed live canopy integration contract
 
 Draft for the next implementation stage. The census worker and renderer lab
-are committed, but this host/renderer connection does not exist yet. Opus is
-reviewing this direction alongside the actual proxy source at `deb9ca8`.
+are committed, but this host/renderer connection is still being implemented.
+The [completed Opus review](opus-5.5-canopy-integration-review-2026-09-28.md)
+supports per-instance ownership and requires the corrections below.
+
+## Review decisions
+
+- Quantize coverage to 257 levels (0..256); use the identical unsigned integer
+  screen hash in every owning shader. A per-tree seed decorrelates different
+  trees while remaining identical for both representations of one tree.
+- Use a separate dynamic Uint16 ownership attribute (256-slot / 512-byte dirty
+  blocks), with static transform attributes. Full=256 suppresses far rendering
+  both for a near owner and for a current near query proving absence.
+- Allocate each complete patch contiguously with generation-checked tokens.
+  Installs, near ownership and GPU flush occur in that order in one update.
+- Prefer a binary middle-mesh/far-proxy handoff beyond the close LOD range,
+  with hysteresis. Keep fractional coverage for outer/altitude fades and the
+  existing fallback. Verify image differences in the game before acceptance.
+- Collapse zero-weight quads in the vertex shader. Close fault cases need a
+  bounded full-viewport ray path and a `farForcedClose` counter.
+- Verify actual game depth mode, canvas/postprocess alpha and lighting hooks.
+  Far canopy remains off in XR until stereo and multiview acceptance.
+- Move patch-window enumeration into the census worker, leaving only bounded
+  request/response decoding and installation on the main thread.
+
+The review's illustrative upload totals must be replaced with actual capacity
+accounting: a 229,376-slot vec4 position buffer is 3,670,016 bytes. The original
+crown has 20 planes per lobe; the review's plane-count shorthand is inaccurate.
 
 ## Exact ownership during approach
 

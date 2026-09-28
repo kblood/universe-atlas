@@ -26,7 +26,7 @@ export function localAerialReference(radiance:readonly number[],distanceM:number
  * GPU uses view-space distance; the planet-relative position is needed only
  * for kilometre-scale density and daylight, not fine terrain or collision.
  * Each supplied mesh must own its material (one material per batch is enough). */
-export function attachLocalAerial(mesh:THREE.Mesh,planet:THREE.Object3D,radiusM:number,sun:{value:THREE.Vector3},enabled={value:1},eyeHeight?:{value:number}){
+export function attachLocalAerial(mesh:THREE.Mesh,planet:THREE.Object3D,radiusM:number,sun:{value:THREE.Vector3},enabled={value:1},eyeHeight?:{value:number},surfaceHit?:{local:string;view:string}){
   if(Array.isArray(mesh.material))throw new Error('Local aerial attachment expects one material per batch');
   const material=mesh.material;
   if(attachedMaterials.has(material))throw new Error('Local aerial material is already attached');
@@ -52,16 +52,18 @@ export function attachLocalAerial(mesh:THREE.Mesh,planet:THREE.Object3D,radiusM:
       #endif
       atlasAirPlanetPosition=(atlasAirObjectToPlanet*atlasAirLocalPosition).xyz;
       atlasAirViewPosition=mvPosition.xyz;`);
-    shader.fragmentShader=`uniform float atlasAirRadius,atlasAirMetresPerViewUnit,atlasAirEyeHeight,atlasAirEnabled;
+    shader.fragmentShader=`uniform mat4 atlasAirObjectToPlanet;
+      uniform float atlasAirRadius,atlasAirMetresPerViewUnit,atlasAirEyeHeight,atlasAirEnabled;
       uniform vec3 atlasAirSun;varying vec3 atlasAirPlanetPosition,atlasAirViewPosition;
       ${localAerialGLSL}\n`+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`
-      outgoingLight=atlasApplyLocalAir(outgoingLight,length(atlasAirViewPosition)*atlasAirMetresPerViewUnit,
-        atlasAirEyeHeight,(length(atlasAirPlanetPosition)-1.0)*atlasAirRadius,
-        dot(normalize(atlasAirPlanetPosition),atlasAirSun),atlasAirEnabled);
+      vec3 atlasSurfacePlanet=${surfaceHit?`(atlasAirObjectToPlanet*vec4(${surfaceHit.local},1.0)).xyz`:'atlasAirPlanetPosition'};
+      outgoingLight=atlasApplyLocalAir(outgoingLight,length(${surfaceHit?.view??'atlasAirViewPosition'})*atlasAirMetresPerViewUnit,
+        atlasAirEyeHeight,(length(atlasSurfacePlanet)-1.0)*atlasAirRadius,
+        dot(normalize(atlasSurfacePlanet),atlasAirSun),atlasAirEnabled);
       #include <opaque_fragment>`);
   };
-  material.customProgramCacheKey=()=>inheritedKey()+'/'+LOCAL_AERIAL_VERSION;
+  material.customProgramCacheKey=()=>inheritedKey()+'/'+LOCAL_AERIAL_VERSION+'/'+(surfaceHit?`${surfaceHit.local}/${surfaceHit.view}`:'mesh');
   material.userData.localAerialVersion=LOCAL_AERIAL_VERSION;material.needsUpdate=true;
   const inversePlanet=new THREE.Matrix4(),eye=new THREE.Vector3(),scale=new THREE.Vector3();
   const before=mesh.onBeforeRender;

@@ -1,8 +1,10 @@
 import {createForestCensus,type ForestCensus,type ForestCensusPatch} from './forest-census.ts';
 import {validateForestPatchAddress,type ForestPatchAddress} from './forest-patch.ts';
+import {forestPatchAddresses} from './forest-patch-selection.ts';
 
 const MAX_BATCH_PATCHES=64,RESULT_BATCH=8,SLICE_MS=4,SLICE_CANDIDATES=8;
 let generation=0,requestId=0,census:ForestCensus|null=null;
+let radiusM=0,selectionRequest=0;
 // A local MessageChannel yields to incoming worker messages without the nested
 // setTimeout minimum-delay clamp throttling thousands of short census slices.
 const wakeup=new MessageChannel();let scheduled=false;
@@ -47,7 +49,7 @@ self.onmessage=async({data})=>{
   // Malformed envelopes never cancel or impersonate an unrelated valid job.
   try{
     if(!data||!Number.isSafeInteger(data.generation)||data.generation<1)throw new Error('Invalid census generation');
-    if(!['configure','patches','cancel'].includes(data.type))throw new Error('Invalid census message type');
+    if(!['configure','patches','cancel','select'].includes(data.type))throw new Error('Invalid census message type');
     if(data.type!=='configure'&&(!Number.isSafeInteger(data.requestId)||data.requestId<1))throw new Error('Invalid census request');
   }catch(error){
     self.postMessage({type:'error',phase:'protocol',generation,requestId:null,error:String(error)});return;
@@ -55,16 +57,27 @@ self.onmessage=async({data})=>{
   try{
     if(data.type==='configure'){
       if(data.generation<=generation)return;
-      cancel();generation=data.generation;requestId=0;census=null;
+      cancel();generation=data.generation;requestId=0;selectionRequest=0;census=null;radiusM=0;
       const ownGeneration=generation;let source:ForestCensus;
       try{source=await createForestCensus(data.body,data.waterLevelM);}
       catch(error){if(ownGeneration===generation)fail(error,'configure');return;}
       if(ownGeneration!==generation)return;
-      census=source;self.postMessage({type:'ready',generation,context:source.context,n:source.n});return;
+      census=source;radiusM=data.body.radiusM;self.postMessage({type:'ready',generation,context:source.context,n:source.n});return;
     }
     if(data.generation!==generation){
-      if(data.generation>generation&&data.type==='patches')self.postMessage({type:'error',phase:'request',generation:data.generation,
+      if(data.generation>generation&&(data.type==='patches'||data.type==='select'))self.postMessage({type:'error',phase:data.type==='select'?'selection':'request',generation:data.generation,
         requestId:data.requestId,context:null,error:'Forest census is not configured for this generation'});
+      return;
+    }
+    if(data.type==='select'){
+      if(data.requestId<=selectionRequest)return;selectionRequest=data.requestId;
+      try{
+        if(!census)throw new Error('Forest census is not configured');
+        const started=performance.now(),addresses=forestPatchAddresses(data.center,radiusM,data.rangeM);
+        const packed=new Float64Array(addresses.length*4);
+        addresses.forEach((a,i)=>packed.set([a.face,a.n,a.x,a.y],i*4));
+        self.postMessage({type:'selection',generation,requestId:selectionRequest,context:census.context,packed,selectionMs:performance.now()-started},[packed.buffer]);
+      }catch(error){self.postMessage({type:'error',phase:'selection',generation,requestId:selectionRequest,context:census?.context??null,error:String(error)});}
       return;
     }
     if(data.type==='cancel'){

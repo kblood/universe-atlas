@@ -1,6 +1,11 @@
 # Desktop realism and procedural life: implementation plan
 
 Date: 2026-09-27. Accepted direction; implementation started.
+
+Latest local progress: [first full-game canopy integration](canopy-runtime-integration-2026-09-28.md)
+loads complete canonical patches and transfers individual tree ownership.
+Initial desktop smoke checks pass; broader flight/review acceptance and release
+remain pending. This does not complete the realistic species assets stage.
 Baseline before this work: `27e89c897369270728e5ef4118dcc144e40af7fc`.
 
 This is the current plan for planetary visual quality. It consolidates the

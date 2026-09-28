@@ -33,3 +33,4 @@ The near sample did not show a GPU-time improvement; the 1,200 m sample was lowe
 - `field/report.json`, `reference-120m.png`, `impostor-120m.png`, `reference-1200m.png`, `impostor-1200m.png`.
 
 This remains a prototype experiment. It is not connected to live forest streaming. The field lab does not include wind, shadows, aerial perspective, near/far replacement, full scene residency, or temporal subpixel stability. The experiment document lists integration requirements and remaining acceptance work.
+

@@ -9,6 +9,7 @@ export const LEGACY_TREE_LOBES:readonly (readonly [number,number,number,number])
   Object.freeze([0,.81,-.10,.23] as const),Object.freeze([.015,.89,.035,.16] as const),
 ]);
 export const LEGACY_TREE_TRUNK=Object.freeze({topRadius:.018,baseRadius:.031,height:.64});
+export const LEGACY_TREE_BOUND=Object.freeze({center:Object.freeze([.005,.52,-.03]),extent:Object.freeze([.38,.54,.31])});
 const up=new THREE.Vector3(0,1,0);
 export function treeQuaternion(direction:THREE.Vector3,yaw:number,target:THREE.Quaternion,scratch:THREE.Quaternion){
   target.setFromUnitVectors(up,direction);scratch.setFromAxisAngle(direction,yaw);return target.premultiply(scratch);
