@@ -1,6 +1,6 @@
 # Foliage coverage under minification
 
-_Research and initial diagnostic, 2026-09-28. No game change or visual acceptance._
+_Static coverage research and temporal browser check, 2026-09-28. No game change or visual acceptance._
 
 ## Current signal
 
@@ -16,6 +16,35 @@ weighted pixels out of 279.28, while the proxy covers 291. These are whole-tree
 silhouette measurements, including wood, rather than isolated leaf counts.
 See the [convergence record](../test-results/three-ez-impostor-reference/native-map-fix/yaw-continuity.json).
 Keep alpha coverage separate from colour, lighting and full-tree visual acceptance.
+
+## Temporal browser check
+
+A separate RTX 5090 / Chromium check compared family F's existing `mask` and
+`hash` settings at population 192 for both LODs. It confirms the dated leaf
+wind returns to the same captured image at date 0, +7 s and −7 s, and on a
+repeated date-0 capture. Date 1.75 s changes pixels in both modes. This is
+fixed-camera date replay, not a measurement of moving-camera hash noise or
+temporal antialiasing.
+
+| Coverage mode | LOD | CPU tree/ground p95 | GPU tree/ground pass p95 |
+| --- | ---: | ---: | ---: |
+| MASK | 0 | 1.0 ms | 2.651 ms |
+| MASK | 1 | 0.7 ms | 0.806 ms |
+| HASH | 0 | 0.9 ms | 3.394 ms |
+| HASH | 1 | 0.9 ms | 1.171 ms |
+
+Each profile used 120 warm-up and 180 sampled frames with shadows on. These
+serial scene-lab samples are descriptive, not whole-game performance results
+or a comparison proving either mode faster. Both modes were checked at three
+trees in front/back views and both LODs. The foliage coverage mode propagated
+to its depth and distance shadow materials; bark remained unmasked and
+unhashed. The check does not demonstrate shadow-quality acceptance.
+
+The camera-yaw captures compare whole 1200 × 900 frames, including camera and
+background movement, so their changed-pixel counts do not isolate hash noise.
+The separate zero-footprint render-target probe is a failed harness attempt;
+its zero-coverage measurements are invalid, not evidence. The full methods and
+captures are in the [temporal browser record](../test-results/tree-foliage-temporal/README.md).
 
 ## Reuse the current material and texture paths
 

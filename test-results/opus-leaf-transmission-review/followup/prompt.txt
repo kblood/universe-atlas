@@ -1,0 +1,583 @@
+Focused follow-up of your earlier real Opus review below. Source-only no tools <=650 words. Implementation changes: transmitted cosine/area/hemisphere/probe/IBL now uses nonPerturbedNormal, assigned BEFORE direct loops, with normal/light chunk order guard. Reflection keeps shading normals. Added aoMap exclusion, assertInstalled, blackbase and castShadow fixture options, area cameraX .6. Actual tree GLB leaf doubleSided true,metallicFactor0,no metalroughnessmap, rough.84,specular.44,normal.55; loader now installs only optional foliage after deform, retains absent option baseline, returns control. Lab UI supports off/0/.35/.5/1. Browser checks running (not yet accepted), initial exact-zero assertion found hemi error1.86e-9 and now uses documented1e-7 tolerance. Other initial test assertion incorrectly expected front reflection atT1; harness being corrected. Existing8tree GLB/wind/reference CPU regressions pass; prototype CPU independently tested. Please identify remaining actual code errors, distinguish limits frommust-fix, check integration/disposal/callback and inputguard concerns. No complete Khronos conformance or visual acceptance claim. Is source now suitable for bounded actual-tree visual test?
+PRIOR REVIEW
+# Review: opt-in thin-leaf diffuse transmission (source-only)
+
+**Verdict:** The shader patch is structurally sound. The anchors are unique, the globals are declared before use, and the hemisphere logic is right under `DoubleSide`. The main defects are in the **lab fixtures**, which miss the failure modes most likely to show up on real trees. There is also one **design decision (normal-mapped cosine)** to settle before GPU sign-off.
+
+## What I checked and found correct
+
+- **Order.** Declarations replace the `lights_physical_pars_fragment` include, so the uniforms and globals come before `RE_*`. `vec3(0.0)` is a legal constant initializer for a global. The back irradiances are assigned after `lights_fragment_begin` and `lights_fragment_maps` and before `lights_fragment_end`, which is the only place the indirect REs run.
+- **Anchors.** All four chunk anchors are distinct and live, so `replaceLiveOnce` fails loudly on drift. The hemi loop matches Three's unroll regex (`i ++`) and is resolved after `NUM_HEMI_LIGHTS` substitution.
+- **Hemisphere.** `geometryNormal` has already been flipped by `faceDirection`. So `-geometryNormal` always points to the side away from the viewer, for front and back views alike. For tangent-space normal maps, the back face's perturbed normal is exactly the negated front one, because both `tbn` columns and `normal` are flipped.
+- **Area LTC basis.** With `-N`, `T1` is unchanged and `T2` flips, so the basis is `(T1, −T2, −N)`. Its determinant equals the host's, so handedness and winding sign are preserved. With `mInv = I`, the diffuse result is rotation-invariant about the axis, so the basis is correct.
+- **Cache key.** Capturing `baseKey` before the wrapper replaces the default key correctly avoids self-describing wrapper text. Per-material `onBeforeCompile` still runs on shared programs, so each material gets its own uniform objects.
+- **Energy.** `(1−f)·cosF + f·t·cosB`, with `t ≤ 1`, never exceeds the host's two-sided Lambert. Specular, multiscatter and sheen inputs are untouched.
+
+## Must-fix
+
+1. **Normal-mapped transmission leaks light from the wrong geometric side (design decision).** `dot(-N_perturbed, L)` can be positive for a light on the *viewed* side when the perturbation tilts away at grazing angles. The front-lit face then gains "transmission" and loses `(1−f)` of its reflection. The host already shows this leak for reflection; this patch adds a second copy of it.
+   - For thin leaves, I recommend computing the transmission cosine (and the back probe, hemi and IBL lookups) from the **geometric** normal (`nonPerturbedNormal`).
+   - Caveat: the direct-light loops run *inside* `lights_fragment_begin`. A global set in your current post-begin hook would be too late for them. Assign it in a hook *before* `#include <lights_fragment_begin>`, after `normal_fragment_maps`.
+   - If you keep the shading normal, record that as an explicit limitation, together with the grazing test below.
+
+2. **The "T0 pixel-identical" claim is stronger than the mechanism can guarantee.** `plain` and `adapted` compile to different programs. On ANGLE/D3D in particular, uniform branches can be flattened and FMA contraction can differ.
+   - Make the T0 gate a measured `max|Δ|` over all pixels. Expect 0 on your GPU, but set a documented tolerance, for example `1e-6` relative.
+   - Report exact identity only when you actually observe it.
+
+3. **The LTC singular point sits inside your probe window.** With `x = .02` at distance 4, the foot of the perpendicular (V ∥ N) projects to about 2 px from center, inside the 120–136 window. The host's `T1 = normalize(V − N(V·N))` loses orthogonality there to cancellation. This is **inherited**: `−N` has the same singular set. The patch evaluates it twice but does not introduce it.
+   - For area tests, offset the camera about 0.6 so the point leaves the window.
+   - Also report per-pixel outliers, not just the window mean and `finite`.
+
+4. **Self-shadowing on the backlit side is untested and newly exposed.**
+   - Tree foliage has `castShadow = true`. The lab leaf does not cast.
+   - Previously, a face turned away from the light got `dotNL = 0`, which hid shadow acne and terminator artifacts from comparing the leaf against its own depth.
+   - Transmission now lights exactly those fragments.
+   - Add a variant with `leaf.castShadow = true`. Backlit transmission at `f = 1` should match the non-casting leaf within tolerance. Tune `bias` and `normalBias` there; normal bias along a normal that faces away from the light pushes deeper into self-shadow.
+
+5. **"Specular preserved" is untested.** The default `specular: 0` gives F0 = F90 = 0.
+   - Add a base-color option.
+   - Test: base color black, `specular = 1`, directional light and environment, any `f`/`tint`. The adapted render must equal the plain render.
+
+6. **Integration traps for the first tree.** These are not bugs in the current module, but they will bite on first use:
+   - glTF `metallicFactor` defaults to **1**.
+   - A `metallicRoughnessTexture` becomes `metalnessMap`.
+   - `doubleSided` defaults to false.
+
+   Any of these makes `installLeafTransmission` throw. Check the author-6 foliage JSON for all three. Separately, `deform()` overwrites `onBeforeCompile` and the cache key without chaining. If it is ever re-run after install, transmission disappears silently while the WeakSet still reports it installed. Return an `assertInstalled()` from the control that checks `material.onBeforeCompile === wrapper`.
+
+**Minor:** throwing from `onBeforeCompile` breaks the frame loop mid-render. That is acceptable as a loud guard, but document it. The compile-time `metalness !== 0` check is unnecessary, since `diffuseColor` already scales by `1 − metalness`, but it is harmless.
+
+## Explicit limits (document, don't fix)
+
+| Behavior | Inherited or new |
+|---|---|
+| LTC V∥N singularity; horizon-clip approximation | Inherited, now evaluated twice |
+| Rect-area lights unshadowed, so transmission shines through blockers | Inherited; more visible through canopies |
+| Env diffuse scaled by front-view `1 − max(scatter)` while direct diffuse is not | Inherited inconsistency, now applied to transmitted light |
+| Opaque shadow maps give zero leaf-to-leaf transmission, so only outer-canopy leaves glow | Inherent to this approach |
+| `aoMap` (front-hemisphere AO) multiplies transmitted indirect light | New effect of the patch; reject `aoMap` or document |
+| Perturbed-normal wrong-side leak | Host has it for reflection; new for transmission unless fixed (#1) |
+| Lightmaps excluded because the lightmap is added after the back-irradiance hook | Correctly rejected |
+| One factor/tint per material; no per-tree variation | Deliberate |
+| Extra PMREM tap plus SH evaluation per leaf fragment | New cost; measure under foliage overdraw |
+
+## Is baseColor × tint a reasonable first experiment?
+
+Yes, provided you track two caveats:
+
+- **Brightness and hue range.** Because `tint ≤ 1`, transmitted light can never be brighter or more saturated than reflected light. You can still make it yellower, for example `(1, 1, .6)`. The backlit glow of real leaves comes mostly from the light's intensity, not the transmittance, so this is fine for a first pass.
+- **Baked texture content.** Any baked AO or highlights in the albedo texture also appear in transmission.
+
+Also note that `f` removes front reflectance. Sweeps over `f` therefore darken front-lit leaves, so compare looks at matched front-lit brightness. Start around `f = 0.3–0.5`.
+
+## Small runtime checks with the highest catch rate
+
+1. **Opposite-face identity (hemisphere and normal maps).** At `f = 1`, `tint = 1`, `specular = 0`, the adapted front view should equal the plain back view (center mean) for every light type, with and without `normalMap`. This holds because the back face's shading normal is exactly `−N_front`. With #1 applied, extend this to the geometric-normal variant.
+2. **Wrong-side zero.** At `f = 1`, a front light with the front view gives direct diffuse of 0.
+3. **Grazing leak.** Use `normalMap`, a front light, `angle` around 75–85°, and `f = 1`. Expect transmission ≈ 0. This test fails today by design; it documents #1.
+4. **Zero-factor continuity.** The result at `f = 1e-6` should be within about 1e-5 of the result at `f = 0`. This catches bugs that exist only inside the `> 0` branch. Also include the T0 `max|Δ|` check against `plain`.
+5. **Blocker.** With a back light, `blocker` on and `f = 1`, the shadowed center should fall to the shadowed level for directional, point and spot lights. For area lights, expect and record the leak.
+6. **Self-shadow.** The `castShadow` leaf variant from #4.
+7. **Specular identity.** The black-base-color check from #5.
+
+Each of these is one or two `probe()` calls plus a comparison. None of them requires new infrastructure.
+FILE src/tree-leaf-transmission.ts
+import * as THREE from 'three';
+import {liveGlsl} from './tree-impostor-reference-shader.ts';
+
+/** Experimental thin, two-sided leaf response. Uses the sampled base colour
+ * times a linear tint for transmission: a bounded subset inspired by Khronos
+ * diffuse transmission, not a KHR_materials_diffuse_transmission importer.
+ * The host's specular/Fresnel calculations are retained verbatim. */
+export type LeafTransmissionOptions={factor?:number;tint?:readonly [number,number,number]};
+const VERSION='atlas-leaf-diffuse-1';
+const installed=new WeakSet<THREE.Material>();
+
+function replaceLiveOnce(source:string,anchor:string,replacement:string){
+  const live=liveGlsl(source),at=live.indexOf(anchor);
+  if(at<0||live.indexOf(anchor,at+anchor.length)>=0)throw new Error(`Leaf transmission shader hook changed: ${anchor}`);
+  return source.slice(0,at)+replacement+source.slice(at+anchor.length);
+}
+
+const declarations=`
+uniform float atlasLeafTransmission;
+uniform vec3 atlasLeafTransmissionTint;
+vec3 atlasLeafBackIrradiance = vec3(0.0);
+vec3 atlasLeafBackIblIrradiance = vec3(0.0);
+vec3 atlasLeafGeometricNormal = vec3(0.0);
+`;
+
+// Branch on a shared uniform so factor zero executes the exact original
+// diffuse expression and does not sample opposite-hemisphere environment maps.
+function split(original:string,expression:string){
+  return `if (atlasLeafTransmission > 0.0) {\n${expression}\n} else {\n${original}\n}`;
+}
+
+/** Exported for source-contract tests. Does not mutate global ShaderChunk. */
+export function patchLeafTransmissionShader(fragmentShader:string,physicalChunk=THREE.ShaderChunk.lights_physical_pars_fragment){
+  if(liveGlsl(fragmentShader).includes('atlasLeafTransmission'))throw new Error('Leaf transmission is already installed');
+  let chunk=physicalChunk;
+  const direct='reflectedLight.directDiffuse += irradiance * BRDF_Lambert( material.diffuseColor );';
+  chunk=replaceLiveOnce(chunk,direct,split(direct,`
+    vec3 backIrradiance = saturate(dot(-atlasLeafGeometricNormal, directLight.direction)) * directLight.color;
+    reflectedLight.directDiffuse += ((1.0-atlasLeafTransmission)*irradiance
+      + atlasLeafTransmission*atlasLeafTransmissionTint*backIrradiance) * BRDF_Lambert(material.diffuseColor);`));
+
+  const area='reflectedLight.directDiffuse += lightColor * material.diffuseColor * LTC_Evaluate( normal, viewDir, position, mat3( 1.0 ), rectCoords );';
+  chunk=replaceLiveOnce(chunk,area,split(area,`
+    reflectedLight.directDiffuse += lightColor * material.diffuseColor * (
+      (1.0-atlasLeafTransmission)*LTC_Evaluate(normal, viewDir, position, mat3(1.0), rectCoords)
+      + atlasLeafTransmission*atlasLeafTransmissionTint*LTC_Evaluate(-atlasLeafGeometricNormal, viewDir, position, mat3(1.0), rectCoords));`));
+
+  const indirect='reflectedLight.indirectDiffuse += irradiance * BRDF_Lambert( material.diffuseColor );';
+  chunk=replaceLiveOnce(chunk,indirect,split(indirect,`
+    reflectedLight.indirectDiffuse += ((1.0-atlasLeafTransmission)*irradiance
+      + atlasLeafTransmission*atlasLeafTransmissionTint*atlasLeafBackIrradiance) * BRDF_Lambert(material.diffuseColor);`));
+
+  const environment='reflectedLight.indirectDiffuse += diffuse * cosineWeightedIrradiance;';
+  chunk=replaceLiveOnce(chunk,environment,split(environment,`
+    reflectedLight.indirectDiffuse += diffuse * ((1.0-atlasLeafTransmission)*cosineWeightedIrradiance
+      + atlasLeafTransmission*atlasLeafTransmissionTint*atlasLeafBackIblIrradiance*RECIPROCAL_PI);`));
+  let shader=replaceLiveOnce(fragmentShader,'#include <lights_physical_pars_fragment>',declarations+chunk);
+  shader=replaceLiveOnce(shader,'#include <lights_fragment_begin>',`
+    // nonPerturbedNormal already includes vertex wind and DoubleSide flipping.
+    // Transmission follows the thin surface, not bumps that can cross its side.
+    atlasLeafGeometricNormal = nonPerturbedNormal;
+    #include <lights_fragment_begin>
+    if (atlasLeafTransmission > 0.0) {
+      atlasLeafBackIrradiance = getAmbientLightIrradiance(ambientLightColor);
+      #ifdef USE_LIGHT_PROBES
+        atlasLeafBackIrradiance += getLightProbeIrradiance(lightProbe, -atlasLeafGeometricNormal);
+      #endif
+      #if NUM_HEMI_LIGHTS > 0
+        #pragma unroll_loop_start
+        for ( int i = 0; i < NUM_HEMI_LIGHTS; i ++ ) {
+          atlasLeafBackIrradiance += getHemisphereLightIrradiance(hemisphereLights[ i ], -atlasLeafGeometricNormal);
+        }
+        #pragma unroll_loop_end
+      #endif
+    }`);
+  shader=replaceLiveOnce(shader,'#include <lights_fragment_maps>',`#include <lights_fragment_maps>
+    #if defined(USE_ENVMAP) && defined(STANDARD) && defined(ENVMAP_TYPE_CUBE_UV)
+      if (atlasLeafTransmission > 0.0) {
+        atlasLeafBackIblIrradiance = getIBLIrradiance(-atlasLeafGeometricNormal);
+      }
+    #endif`);
+  // Both opposite irradiances must exist before the host calls its indirect REs.
+  const live=liveGlsl(shader),end=live.indexOf('#include <lights_fragment_end>');
+  if(end<0||live.indexOf('#include <lights_fragment_end>',end+1)>=0||end<live.lastIndexOf('atlasLeafBackIblIrradiance = getIBLIrradiance'))throw new Error('Leaf transmission indirect-light order changed');
+  const normals=live.indexOf('#include <normal_fragment_maps>'),begin=live.indexOf('#include <lights_fragment_begin>'),maps=live.indexOf('#include <lights_fragment_maps>');
+  if(normals<0||live.indexOf('#include <normal_fragment_maps>',normals+1)>=0||normals>begin||begin>maps||maps>end)throw new Error('Leaf transmission normal/light order changed');
+  return shader;
+}
+
+function values(options:LeafTransmissionOptions){
+  const factor=options.factor??0,tint=options.tint??[1,1,1];
+  if(!Number.isFinite(factor)||factor<0||factor>1||!Array.isArray(tint)||tint.length!==3||tint.some(x=>!Number.isFinite(x)||x<0||x>1))throw new Error('Leaf transmission factor and linear tint must be in [0,1]');
+  return {factor,tint:tint as readonly [number,number,number]};
+}
+
+function validateMaterial(material:THREE.MeshStandardMaterial){
+  const physical=material as THREE.MeshPhysicalMaterial;
+  if(!material.isMeshStandardMaterial||material.side!==THREE.DoubleSide||material.metalness!==0||material.metalnessMap||material.lightMap||material.aoMap||(physical.transmission??0)!==0||physical.transmissionMap)throw new Error('Leaf transmission requires a two-sided dielectric without metalness maps, lightmaps, AO maps or glass transmission');
+}
+
+/** Call AFTER the wind/deformation adapter. Shared uniforms work for all
+ * instances and LODs; depth/distance materials are deliberately not changed.
+ * Material flags affecting the supported domain must remain valid at compile.
+ * Reapply explicitly if a material is cloned (Three does not clone hooks). */
+export function installLeafTransmission(material:THREE.MeshStandardMaterial,options:LeafTransmissionOptions={}){
+  const initial=values(options);validateMaterial(material);
+  if(installed.has(material))throw new Error('Leaf transmission is already installed on this material');
+  const factor={value:initial.factor},tint={value:new THREE.Vector3(...initial.tint)};
+  const previousCompile=material.onBeforeCompile;
+  // Capture the default key before installing our wrapper: Three's default key
+  // reads this.onBeforeCompile and would otherwise describe the wrapper itself.
+  const previousKey=material.customProgramCacheKey.bind(material);
+  const baseKey=previousKey();
+  const defaultKey=material.customProgramCacheKey===THREE.Material.prototype.customProgramCacheKey;
+  const compile:THREE.Material['onBeforeCompile']=function(this:THREE.Material,shader,renderer){
+    validateMaterial(material);
+    previousCompile.call(this,shader,renderer);
+    const patched=patchLeafTransmissionShader(shader.fragmentShader);
+    if(shader.uniforms.atlasLeafTransmission||shader.uniforms.atlasLeafTransmissionTint)throw new Error('Leaf transmission uniform collision');
+    shader.uniforms.atlasLeafTransmission=factor;
+    shader.uniforms.atlasLeafTransmissionTint=tint;
+    shader.fragmentShader=patched;
+  };
+  const key=()=>`${defaultKey?baseKey:previousKey()}|${VERSION}`;
+  material.onBeforeCompile=compile;material.customProgramCacheKey=key;
+  installed.add(material);material.needsUpdate=true;
+  return {
+    assertInstalled(){if(material.onBeforeCompile!==compile||material.customProgramCacheKey!==key)throw new Error('Leaf transmission hook was replaced after installation');},
+    /** Values update atomically; no material/program per tree or per setting. */
+    set(options:LeafTransmissionOptions){const next=values(options);factor.value=next.factor;tint.value.set(...next.tint);},
+    get factor(){return factor.value;},
+    get tint():readonly [number,number,number]{return [tint.value.x,tint.value.y,tint.value.z];},
+  };
+}
+
+
+FILE src/leaf-transmission-lab.ts
+import * as THREE from 'three';
+import {RectAreaLightUniformsLib} from 'three/addons/lights/RectAreaLightUniformsLib.js';
+import {installLeafTransmission} from './tree-leaf-transmission.ts';
+
+// Synthetic calibration, deliberately separate from the tree art/coverage lab.
+// Read a float linear target before tone mapping or sRGB encoding.
+export type LeafProbe={
+  adapter?:boolean;factor?:number;tint?:[number,number,number];
+  light?:'directional'|'point'|'spot'|'area'|'hemi'|'ambient'|'probe'|'environment';
+  backLight?:boolean;backView?:boolean;angle?:number;normalMap?:boolean;
+  shadows?:boolean;blocker?:boolean;specular?:number;castShadow?:boolean;
+  baseColor?:[number,number,number];cameraX?:number;
+};
+RectAreaLightUniformsLib.init();
+const renderer=new THREE.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});
+renderer.setSize(256,256);renderer.setPixelRatio(1);renderer.toneMapping=THREE.NoToneMapping;
+renderer.outputColorSpace=THREE.LinearSRGBColorSpace;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
+document.querySelector('#view')!.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0,0,0);
+const camera=new THREE.PerspectiveCamera(35,1,.1,30);camera.position.set(.02,0,4);camera.lookAt(0,0,0);
+const target=new THREE.WebGLRenderTarget(256,256,{type:THREE.FloatType,format:THREE.RGBAFormat,depthBuffer:true});
+target.texture.colorSpace=THREE.LinearSRGBColorSpace;
+const normalMap=new THREE.DataTexture(new Uint8Array([191,128,238,255]),1,1);normalMap.needsUpdate=true;
+const parameters={color:new THREE.Color().setRGB(.3,.55,.12),roughness:.8,metalness:0,side:THREE.DoubleSide};
+const plain=new THREE.MeshPhysicalMaterial(parameters),adapted=new THREE.MeshPhysicalMaterial(parameters);
+const control=installLeafTransmission(adapted);
+const geometry=new THREE.PlaneGeometry(2,2);geometry.computeTangents();
+const leaf=new THREE.Mesh(geometry,plain);leaf.receiveShadow=true;scene.add(leaf);
+const occluder=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.05),new THREE.MeshBasicMaterial({color:0x888888}));
+occluder.castShadow=true;scene.add(occluder);
+// Shadow-only blocker: hides it in the colour pass while keeping shadow draws.
+occluder.material.colorWrite=false;occluder.material.depthWrite=false;
+
+const directional=new THREE.DirectionalLight(0xffffff,.5);
+directional.castShadow=true;directional.shadow.mapSize.set(1024,1024);
+Object.assign(directional.shadow.camera,{left:-2,right:2,top:2,bottom:-2,near:.1,far:12});
+directional.shadow.camera.updateProjectionMatrix();directional.shadow.bias=-.0001;
+const point=new THREE.PointLight(0xffffff,4.5,0,2);point.castShadow=true;point.shadow.mapSize.set(512,512);point.shadow.bias=-.0001;
+const spot=new THREE.SpotLight(0xffffff,4.5,0,Math.PI/4,0,2);spot.castShadow=true;spot.shadow.mapSize.set(512,512);spot.shadow.bias=-.0001;
+const area=new THREE.RectAreaLight(0xffffff,2,2,2);
+const hemi=new THREE.HemisphereLight(0x3355ff,0xff4400,.5);
+const ambient=new THREE.AmbientLight(0xffffff,.5);
+const probe=new THREE.LightProbe(new THREE.SphericalHarmonics3());
+probe.sh.coefficients[0].set(.5,.5,.5);probe.sh.coefficients[2].set(.1,.05,-.05);
+const lights={directional,point,spot,area,hemi,ambient,probe};
+scene.add(...Object.values(lights),directional.target,spot.target);
+
+// A directional, non-uniform environment makes a wrong hemisphere observable.
+const envScene=new THREE.Scene();
+const envMaterials=[0xff2200,0x0022ff,0x2244ff,0xff4400,0x33ff55,0xff2255].map(color=>new THREE.MeshBasicMaterial({color,side:THREE.BackSide}));
+const envBox=new THREE.Mesh(new THREE.BoxGeometry(10,10,10),envMaterials);envScene.add(envBox);
+const pmrem=new THREE.PMREMGenerator(renderer),envTarget=pmrem.fromScene(envScene,.05,.1,20);pmrem.dispose();
+envBox.geometry.dispose();envMaterials.forEach(m=>m.dispose());
+
+function configure(options:LeafProbe={}){
+  const o={adapter:true,factor:0,tint:[1,1,1] as [number,number,number],light:'directional' as const,backLight:false,backView:false,angle:0,normalMap:false,shadows:false,blocker:false,specular:0,castShadow:false,baseColor:[.3,.55,.12] as [number,number,number],cameraX:options.light==='area'?.6:.02,...options};
+  control.set({factor:o.factor,tint:o.tint});
+  control.assertInstalled();
+  for(const m of [plain,adapted]){
+    if(!!m.normalMap!==o.normalMap){m.normalMap=o.normalMap?normalMap:null;m.needsUpdate=true;}
+    m.specularIntensity=o.specular;
+    m.color.setRGB(...o.baseColor);
+  }
+  leaf.material=o.adapter?adapted:plain;
+  leaf.rotation.y=o.angle;leaf.receiveShadow=o.shadows;leaf.castShadow=o.castShadow;
+  camera.position.set(o.cameraX,0,o.backView?-4:4);camera.lookAt(0,0,0);
+  const z=o.backLight?-3:3;
+  for(const [name,light] of Object.entries(lights)){light.visible=name===o.light;light.position.set(.2,.15,z);}
+  area.lookAt(0,0,0);hemi.position.set(0,0,z);
+  occluder.position.set(.08,.06,z/3);occluder.visible=o.blocker&&o.shadows;
+  scene.environment=o.light==='environment'?envTarget.texture:null;
+  scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
+  return o;
+}
+
+function probePixels(options:LeafProbe={}){
+  const effective=configure(options),pixels=new Float32Array(256*256*4);
+  renderer.setRenderTarget(target);renderer.render(scene,camera);
+  renderer.readRenderTargetPixels(target,0,0,256,256,pixels);renderer.setRenderTarget(null);
+  renderer.render(scene,camera);
+  const center=[0,0,0];let finite=true;
+  for(const value of pixels)if(!Number.isFinite(value))finite=false;
+  for(let y=120;y<136;y++)for(let x=120;x<136;x++)for(let c=0;c<3;c++)center[c]+=pixels[(y*256+x)*4+c]/256;
+  const error=renderer.getContext().getError();
+  const result={effective,center,finite,glError:error,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles};
+  document.querySelector('#report')!.textContent=JSON.stringify(result,null,2);
+  return {...result,pixels:Array.from(pixels)};
+}
+function dispose(){target.dispose();envTarget.dispose();normalMap.dispose();geometry.dispose();plain.dispose();adapted.dispose();occluder.geometry.dispose();occluder.material.dispose();for(const light of [directional,point,spot])light.dispose();renderer.dispose();}
+(window as any).__leafTransmissionLab={probe:probePixels,configure,renderer,scene,camera,leaf,plain,adapted,control,dispose};
+document.querySelector('#front')!.addEventListener('click',()=>probePixels({factor:.5}));
+document.querySelector('#back')!.addEventListener('click',()=>probePixels({factor:.5,backLight:true}));
+document.querySelector('#baseline')!.addEventListener('click',()=>probePixels({adapter:false,backLight:true}));
+probePixels();
+
+
+FILE src/tree-asset.ts
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {phaseFromPeriod} from './world-time.ts';
+import {installLeafTransmission,type LeafTransmissionOptions} from './tree-leaf-transmission.ts';
+
+/** Experimental author-6 adapter. Assets are supplied explicitly; this does not
+ * replace the canonical forest or invent a second species catalogue. */
+export const TREE_REFERENCE_HEIGHT_M=16;
+export const TREE_WIND_PERIOD_NS=7_000_000_000n;
+export const treeWindPhase=(date:bigint)=>phaseFromPeriod(date,TREE_WIND_PERIOD_NS);
+
+type GLBDocument={json:any;binary:Uint8Array};
+function readGLB(buffer:ArrayBuffer):GLBDocument {
+  const view=new DataView(buffer);
+  if(buffer.byteLength<28||view.getUint32(0,true)!==0x46546c67||view.getUint32(4,true)!==2||view.getUint32(8,true)!==buffer.byteLength)throw new Error('Expected a complete glTF 2 GLB');
+  const length=view.getUint32(12,true),start=20+length;
+  if(view.getUint32(16,true)!==0x4e4f534a||start+8>buffer.byteLength||view.getUint32(start+4,true)!==0x004e4942||start+8+view.getUint32(start,true)!==buffer.byteLength)throw new Error('Expected JSON and embedded binary chunks');
+  const json=JSON.parse(new TextDecoder().decode(new Uint8Array(buffer,20,length)));
+  if(json.buffers?.length!==1||json.buffers[0].uri||json.extensionsRequired?.length)throw new Error('Only self-contained author-6 GLBs are supported');
+  if(json.nodes?.length!==1||json.nodes[0].mesh!==0||['matrix','translation','rotation','scale'].some(k=>json.nodes[0][k])||json.meshes?.length!==1||json.meshes[0].primitives?.length!==2)throw new Error('Expected one untransformed two-material tree');
+  if(json.materials?.length!==2||json.materials[0].name!=='MAT_AtlasBark'||json.materials[1].name!=='MAT_AtlasFoliage'||json.images?.length!==4)throw new Error('Expected author-6 bark and foliage');
+  if((json.materials[0].alphaMode??'OPAQUE')!=='OPAQUE'||json.materials[1].alphaMode!=='MASK'||(json.materials[1].alphaCutoff??.5)<=0)throw new Error('Tree foliage requires alpha MASK with a positive cutoff');
+  const formats:Record<string,string>={_WIND:'SCALAR',_BRANCH_LEVEL:'SCALAR',_LEAF_CENTER:'VEC3',_LEAF_PIVOT:'VEC3',POSITION:'VEC3',NORMAL:'VEC3',TEXCOORD_0:'VEC2',TANGENT:'VEC4'};
+  for(const [index,p] of json.meshes[0].primitives.entries()){
+    if(p.material!==index||p.mode!==undefined&&p.mode!==4||p.targets||Object.keys(p.attributes??{}).length!==8||!Object.keys(formats).every(k=>Number.isInteger(p.attributes?.[k])))throw new Error('Incomplete tree vertex contract');
+    const count=json.accessors[p.attributes.POSITION]?.count;
+    for(const [name,type] of Object.entries(formats)){
+      const a=json.accessors[p.attributes[name]];
+      if(!a||a.type!==type||a.componentType!==5126||a.normalized||a.sparse||!Number.isInteger(count)||count<1||a.count!==count)throw new Error(`Invalid tree accessor ${name}`);
+    }
+  }
+  return {json,binary:new Uint8Array(buffer,start+8,view.getUint32(start,true))};
+}
+function imageBytes(doc:GLBDocument,index:number){
+  const image=doc.json.images[index],view=doc.json.bufferViews[image.bufferView];
+  if(image.uri||image.mimeType!=='image/png'||!view||view.buffer!==0||!Number.isInteger(view.byteLength)||view.byteLength<=0)throw new Error('Expected an embedded PNG');
+  const start=view.byteOffset??0,end=start+view.byteLength;
+  if(start<0||end>doc.binary.length)throw new Error('Image outside GLB binary');
+  return doc.binary.subarray(start,end);
+}
+/** Check byte identity before sharing materials. LOD1 images are never decoded:
+ * its parser receives texture-free material placeholders with stable indices. */
+export function prepareTreeLODPair(lod0:ArrayBuffer,lod1:ArrayBuffer){
+  const a=readGLB(lod0),b=readGLB(lod1);
+  for(const key of ['materials','textures','samplers'])if(JSON.stringify(a.json[key])!==JSON.stringify(b.json[key]))throw new Error(`Tree LOD ${key} differ`);
+  let embeddedTextureBytes=0;
+  for(let i=0;i<4;i++){
+    const x=imageBytes(a,i),y=imageBytes(b,i);embeddedTextureBytes+=x.length;
+    if(x.length!==y.length||x.some((v,k)=>v!==y[k]))throw new Error(`Tree LOD image ${i} differs`);
+  }
+  const json=structuredClone(b.json);
+  json.materials=json.materials.map((m:any)=>({name:m.name}));delete json.images;delete json.textures;delete json.samplers;
+  // Keep the original binary offsets. Unused compressed PNG bytes remain in
+  // this temporary parse input, but do not allocate image/GPU resources.
+  const text=new TextEncoder().encode(JSON.stringify(json)),length=(text.length+3)&~3;
+  const buffer=new ArrayBuffer(28+length+b.binary.length),view=new DataView(buffer),bytes=new Uint8Array(buffer);
+  view.setUint32(0,0x46546c67,true);view.setUint32(4,2,true);view.setUint32(8,buffer.byteLength,true);
+  view.setUint32(12,length,true);view.setUint32(16,0x4e4f534a,true);bytes.fill(32,20,20+length);bytes.set(text,20);
+  view.setUint32(20+length,b.binary.length,true);view.setUint32(24+length,0x004e4942,true);bytes.set(b.binary,28+length);
+  return {lod1GeometryBuffer:buffer,embeddedTextureBytes};
+}
+
+/** CPU reference for shader audits. Scale skeleton/attachment coordinates,
+ * keeping every offset within a leaf card in metres, then rotate rigidly. */
+export function treeVertexMeters(position:THREE.Vector3,pivot:THREE.Vector3,leaf:boolean,heightM:number,windWeight:number,phase:number,instancePhase=0){
+  if(!Number.isFinite(heightM)||heightM<10||heightM>22)throw new Error('Prototype supports tree heights 10–22 m');
+  if(!leaf)return position.clone().multiplyScalar(heightM/TREE_REFERENCE_HEIGHT_M);
+  return position.clone().sub(pivot).applyAxisAngle(new THREE.Vector3(0,0,1),Math.sin(phase+instancePhase)*.12*windWeight).addScaledVector(pivot,heightM/TREE_REFERENCE_HEIGHT_M);
+}
+
+const declarations=`
+attribute float _wind, _branch_level;
+attribute vec3 _leaf_pivot;
+attribute vec2 instanceTree;
+uniform float atlasTreePhase;
+mat3 atlasLeafRotation(){
+  float angle=sin(atlasTreePhase+instanceTree.y)*.12*_wind;
+  float c=cos(angle),s=sin(angle);
+  return mat3(c,s,0.,-s,c,0.,0.,0.,1.);
+}
+`;
+function deform(material:THREE.Material,phase:{value:number}){
+  material.onBeforeCompile=shader=>{
+    shader.uniforms.atlasTreePhase=phase;
+    shader.vertexShader=declarations+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
+      if(_branch_level>3.5){objectNormal=atlasLeafRotation()*objectNormal;
+        #ifdef USE_TANGENT
+        objectTangent=atlasLeafRotation()*objectTangent;
+        #endif
+      }`);
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      transformed=_branch_level>3.5 ? _leaf_pivot*instanceTree.x+atlasLeafRotation()*(position-_leaf_pivot) : position*instanceTree.x;`);
+  };
+  material.customProgramCacheKey=()=> 'atlas-tree-physical-1';
+}
+export type TreeAssetFamily=Awaited<ReturnType<typeof loadTreeAssetFamily>>;
+export type TreeAssetOptions={foliageCoverage?:'mask'|'hash';leafTransmission?:LeafTransmissionOptions};
+export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){
+  if(options.foliageCoverage!==undefined&&!['mask','hash'].includes(options.foliageCoverage))throw new Error('Unsupported foliage coverage mode');
+  const prepared=prepareTreeLODPair(lod0,lod1),loader=new GLTFLoader();
+  const loaded:THREE.Group[]=[];
+  const textures=new Set<THREE.Texture>(),materials=new Set<THREE.Material>(),geometries=new Set<THREE.BufferGeometry>();
+  function collect(group:THREE.Group){group.traverse(o=>{
+    if(!(o instanceof THREE.Mesh))return;
+    geometries.add(o.geometry);
+    for(const m of Array.isArray(o.material)?o.material:[o.material]){
+      materials.add(m);for(const value of Object.values(m))if(value instanceof THREE.Texture)textures.add(value);
+    }
+  });}
+  function dispose(){for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures){t.dispose();if(typeof ImageBitmap!=='undefined'&&t.image instanceof ImageBitmap)t.image.close();}}
+  try {
+    for(const bytes of [lod0,prepared.lod1GeometryBuffer]){const gltf=await loader.parseAsync(bytes,'');loaded.push(gltf.scene);collect(gltf.scene);}
+    const lods=loaded.map(group=>{
+      const meshes:THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>[]=[];
+      group.traverse(o=>{if(o instanceof THREE.Mesh)meshes.push(o as THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>);});
+      if(meshes.length!==2||meshes.some(m=>Array.isArray(m.material)))throw new Error('Expected two tree primitives');
+      return meshes.sort((a,b)=>a.material.name.localeCompare(b.material.name));
+    });
+    for(let i=0;i<2;i++){lods[1][i].material.dispose();materials.delete(lods[1][i].material);lods[1][i].material=lods[0][i].material;}
+    // Explicit experiment: hashing samples fractional mip coverage instead of
+    // discarding every leaf texel below the GLB's fixed MASK cutoff. Preserve
+    // the imported MASK path by default, including historical captures.
+    if(options.foliageCoverage==='hash'){
+      lods[0][1].material.alphaTest=0;lods[0][1].material.alphaHash=true;
+    }
+    const phase={value:0};
+    for(const material of materials)deform(material,phase);
+    // Compose only after wind. Both LODs share this one foliage material;
+    // bark and all custom shadow materials retain their previous lighting.
+    const leafTransmission=options.leafTransmission===undefined?null:installLeafTransmission(lods[0][1].material,options.leafTransmission);
+    let disposed=false,activeBatches=0;
+    return {
+      lods,textures,leafTransmission,embeddedTextureBytes:prepared.embeddedTextureBytes,
+      setDate(date:bigint){leafTransmission?.assertInstalled();phase.value=treeWindPhase(date);},
+      createBatch(lod:0|1,capacity:number){
+        if(disposed)throw new Error('Tree family is disposed');
+        if(!Number.isInteger(capacity)||capacity<1||capacity>4096)throw new Error('Invalid tree capacity');
+        const group=new THREE.Group(),tree=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2).setUsage(THREE.DynamicDrawUsage);
+        const meshes=lods[lod].map(source=>{
+          const geometry=source.geometry.clone();geometry.setAttribute('instanceTree',tree);
+          const mesh=new THREE.InstancedMesh(geometry,source.material,capacity);mesh.count=0;
+          mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.castShadow=true;mesh.receiveShadow=true;
+          // Caller can install conservative curved-world bounds after integration.
+          // Shader scale/wind invalidates Three's unmodified geometry bounds.
+          mesh.frustumCulled=false;
+          const common={map:source.material.map,alphaTest:source.material.alphaTest,alphaHash:source.material.alphaHash,side:source.material.side};
+          mesh.customDepthMaterial=new THREE.MeshDepthMaterial({...common,depthPacking:THREE.RGBADepthPacking});
+          mesh.customDistanceMaterial=new THREE.MeshDistanceMaterial(common);
+          deform(mesh.customDepthMaterial,phase);deform(mesh.customDistanceMaterial,phase);group.add(mesh);return mesh;
+        });
+        activeBatches++;let batchDisposed=false;
+        return {group,meshes,
+          setCount(count:number){
+            if(batchDisposed||!Number.isInteger(count)||count<0||count>meshes[0].count)throw new Error('Tree count can only truncate initialized slots');
+            for(const mesh of meshes)mesh.count=count;
+          },
+          /** Matrix contains yaw/translation and metres-to-scene-units only.
+           * Tree height is applied in the shader so leaves retain their size. */
+          setInstance(index:number,matrix:THREE.Matrix4,heightM:number,phaseOffset=0){
+            if(batchDisposed||!Number.isInteger(index)||index<0||index>=capacity||index>meshes[0].count||!Number.isFinite(heightM)||heightM<10||heightM>22||!Number.isFinite(phaseOffset)||matrix.elements.some(x=>!Number.isFinite(x)))throw new Error('Invalid tree instance or gap in initialized slots');
+            const e=matrix.elements,a=new THREE.Vector3(e[0],e[1],e[2]),b=new THREE.Vector3(e[4],e[5],e[6]),c=new THREE.Vector3(e[8],e[9],e[10]);
+            const scale2=a.lengthSq(),tolerance=scale2*1e-6;
+            if(!Number.isFinite(scale2)||scale2<=0||Math.abs(b.lengthSq()-scale2)>tolerance||Math.abs(c.lengthSq()-scale2)>tolerance||Math.abs(a.dot(b))>tolerance||Math.abs(a.dot(c))>tolerance||Math.abs(b.dot(c))>tolerance||matrix.determinant()<=0||e[3]!==0||e[7]!==0||e[11]!==0||e[15]!==1)throw new Error('Tree matrix requires rotation and positive uniform scene-unit scale');
+            // Phase stays representable as Float32 even for a caller's very
+            // large finite offset; the absolute universe date stays BigInt.
+            const tau=2*Math.PI;phaseOffset=((phaseOffset%tau)+tau)%tau;
+            tree.setXY(index,heightM/TREE_REFERENCE_HEIGHT_M,phaseOffset);tree.needsUpdate=true;
+            for(const mesh of meshes){mesh.setMatrixAt(index,matrix);mesh.instanceMatrix.needsUpdate=true;mesh.count=Math.max(mesh.count,index+1);}
+          },
+          dispose(){if(batchDisposed)return;batchDisposed=true;activeBatches--;for(const mesh of meshes){mesh.geometry.dispose();mesh.customDepthMaterial?.dispose();mesh.customDistanceMaterial?.dispose();mesh.dispose();}group.clear();group.removeFromParent();},
+        };
+      },
+      dispose(){if(disposed)return;if(activeBatches)throw new Error('Dispose tree batches before their family');disposed=true;dispose();},
+    };
+  }catch(error){dispose();throw error;}
+}
+
+
+FILE src/tree-asset-lab.ts
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {loadTreeAssetFamily,type TreeAssetFamily,type TreeAssetOptions} from './tree-asset.ts';
+import {RenderProfile} from './render-profile.ts';
+
+const $=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.2;renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
+renderer.info.autoReset=false; // Explicit frame reset includes both shadow and main draws.
+const profile=new RenderProfile(renderer.getContext() as WebGL2RenderingContext);profile.setEnabled(true);
+$('viewport').append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#a6bfd0');
+const camera=new THREE.PerspectiveCamera(50,1,.1,400);camera.position.set(40,22,64);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,9,0);controls.update();
+const sun=new THREE.DirectionalLight(0xfff6e5,3);sun.position.set(-30,55,25);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-45,right:45,top:35,bottom:-35,near:1,far:140});sun.shadow.normalBias=.035;scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xc4dcf0,0x41472c,1));
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180),new THREE.MeshStandardMaterial({color:0x72765b,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+const grid=new THREE.GridHelper(100,20,0x465246,0x697463);grid.position.y=.01;scene.add(grid);
+let family:TreeAssetFamily|undefined,batches:ReturnType<TreeAssetFamily['createBatch']>[]=[];
+let date=0n,lod:0|1=0,loading=false,loadError='',frames=0,last=performance.now(),renderCPUms=0;
+let population=3;
+let foliageCoverage:'mask'|'hash'='mask';
+function setLOD(value:0|1){lod=value;$<HTMLSelectElement>('lod').value=String(lod);batches.forEach((batch,i)=>batch.group.visible=i===lod);}
+function setDate(value:bigint){date=value;family?.setDate(date);if(document.activeElement!==$('date'))$<HTMLInputElement>('date').value=String(date);}
+function diagnostics(){return {ready:!!family,loading,error:loadError,lod,date:String(date),foliageCoverage,specimenSkeletonHeightsM:[10,16,22],textures:family?.textures.size??0,
+  leafTransmission:family?.leafTransmission?{factor:family.leafTransmission.factor,tint:family.leafTransmission.tint}:null,
+  coverageMaterials:family?{color:family.lods[0].map(m=>({name:m.material.name,alphaTest:m.material.alphaTest,alphaHash:m.material.alphaHash})),shadows:batches.map(b=>b.meshes.map(m=>({depth:{alphaTest:m.customDepthMaterial!.alphaTest,alphaHash:m.customDepthMaterial!.alphaHash},distance:{alphaTest:m.customDistanceMaterial!.alphaTest,alphaHash:m.customDistanceMaterial!.alphaHash}})))}:null,
+  materials:family?new Set(family.lods.flat().map(m=>m.material)).size:0,shadowMaterials:batches.length*4,sharedMaterials:family?.lods[0].every((m,i)=>m.material===family!.lods[1][i].material)??false,
+  texturePNGContainerBytes:family?.embeddedTextureBytes??0,textureRGBA8MipBytesEstimate:family?[...family.textures].reduce((sum,t)=>{const image=t.image as {width:number;height:number};let w=image.width,h=image.height,total=0;while(true){total+=w*h*4;if(!t.generateMipmaps||w===1&&h===1)break;w=Math.max(1,Math.floor(w/2));h=Math.max(1,Math.floor(h/2));}return sum+total;},0):0,
+  renderer:{calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries},renderCPUSubmissionMs:renderCPUms,
+  counterMeaning:'Draws include main and shadow passes; renderer textures include shadow targets; geometry counts track uploaded objects. Shared materials count PBR objects only; resource identity is not a measured GPU saving.',
+  population,profile:profile.diagnostics(),lighting:'ACES exposure 1.2, sun 3, hemisphere 1; lab lighting, not whole-game acceptance',wind:'rigid leaf rotation only; branch wind pending'};}
+function populate(target:typeof batches,count:number){
+  for(const batch of target){
+    for(let i=0;i<count;i++){
+      const x=count===3?(i-1)*22:(i%16-7.5)*8,z=count===3?0:(Math.floor(i/16)-Math.ceil(count/16)/2)*8;
+      batch.setInstance(i,new THREE.Matrix4().makeRotationY(i*2.399963).setPosition(x,0,z),count===3?[10,16,22][i]:10+(i*7%13),i*.7);
+    }
+    batch.setCount(count);
+  }
+}
+function setPopulation(count:number){
+  if(![3,64,192].includes(count))throw new Error('Unsupported lab population');
+  population=count;populate(batches,count);$<HTMLSelectElement>('population').value=String(count);profile.clear();
+}
+async function load(buffers:[ArrayBuffer,ArrayBuffer],options:TreeAssetOptions={}){
+  if(loading)throw new Error('Tree load already in progress');loading=true;loadError='';$('status').textContent='Loading and checking texture identity…';
+  let next:TreeAssetFamily|undefined;const nextBatches:typeof batches=[];
+  try{
+    next=await loadTreeAssetFamily(...buffers,options);
+    for(const level of [0,1] as const){
+      const batch=next.createBatch(level,192);nextBatches.push(batch);
+    }
+    populate(nextBatches,population);
+    next.setDate(date);nextBatches.forEach((batch,i)=>{batch.group.visible=i===lod;scene.add(batch.group);});
+  }catch(error){for(const batch of nextBatches)batch.dispose();next?.dispose();loadError=String(error);throw error;}
+  finally{loading=false;}
+  // Commit only after all fallible preparation/scene attachment succeeded.
+  const oldFamily=family,oldBatches=batches;family=next;batches=nextBatches;foliageCoverage=options.foliageCoverage??'mask';$<HTMLSelectElement>('coverage').value=foliageCoverage;
+  $<HTMLSelectElement>('transmission').value=family.leafTransmission?String(family.leafTransmission.factor):'off';
+  for(const batch of oldBatches)batch.dispose();oldFamily?.dispose();profile.clear();
+}
+$('load-assets').onclick=async()=>{
+  const a=$<HTMLInputElement>('lod0-file').files?.[0],b=$<HTMLInputElement>('lod1-file').files?.[0];
+  if(!a||!b){$('status').textContent='Select both exported GLBs.';return;}
+  const transmission=$<HTMLSelectElement>('transmission').value;
+  try{await load([await a.arrayBuffer(),await b.arrayBuffer()],{foliageCoverage:$<HTMLSelectElement>('coverage').value as 'mask'|'hash',...(transmission==='off'?{}:{leafTransmission:{factor:Number(transmission)}})});}catch(error){$('status').textContent=String(error);}
+};
+$<HTMLSelectElement>('lod').onchange=()=>setLOD($<HTMLSelectElement>('lod').value==='1'?1:0);
+$<HTMLSelectElement>('population').onchange=()=>setPopulation(Number($<HTMLSelectElement>('population').value));
+$<HTMLInputElement>('date').onchange=()=>{try{setDate(BigInt($<HTMLInputElement>('date').value));loadError='';}catch{loadError='Enter an integer nanosecond date.';}};
+function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
+addEventListener('resize',resize);resize();
+renderer.setAnimationLoop(()=>{
+  const now=performance.now(),delta=now-last;last=now;
+  if($<HTMLInputElement>('animate').checked)setDate(date+BigInt(Math.round(delta*1e6)));
+  profile.beginFrame(delta);renderer.info.reset();const start=performance.now();profile.pass('trees-and-ground',()=>renderer.render(scene,camera));renderCPUms=performance.now()-start;
+  profile.endFrame(renderer.info.render.calls,renderer.info.render.triangles);
+  if(++frames%30===0&&(family||loadError))$('status').textContent=JSON.stringify(diagnostics(),null,2);
+});
+Object.assign(window,{__treeAssetLab:{load,setDate,setLOD,setPopulation,diagnostics,renderer,scene,camera,profile,sun,ground,grid,controls,get family(){return family;},get batches(){return batches;}}});

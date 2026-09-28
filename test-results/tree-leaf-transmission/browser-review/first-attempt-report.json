@@ -1,0 +1,634 @@
+{
+  "url": "http://127.0.0.1:5197/",
+  "output": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\tree-leaf-transmission\\browser-review",
+  "viewport": {
+    "width": 1024,
+    "height": 768
+  },
+  "hardwareEnabled": true,
+  "scope": "Synthetic 256x256 linear-light shader calibration only; not tree realism, performance, or game acceptance.",
+  "errors": [],
+  "failedRequests": [],
+  "probes": [
+    {
+      "name": "plain-directional",
+      "effective": {
+        "adapter": false,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "directional",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.0475815507088555,
+        0.08723284499137662,
+        0.019032618518394884
+      ],
+      "meanLuma": 0.04643811673908559,
+      "maxLuma": 0.07387892809361218,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "adapted-zero-directional",
+      "effective": {
+        "adapter": true,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "directional",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.0475815507088555,
+        0.08723284499137662,
+        0.019032618518394884
+      ],
+      "meanLuma": 0.04643811673908559,
+      "maxLuma": 0.07387892809361218,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "plain-point",
+      "effective": {
+        "adapter": false,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "point",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.0472216877824394,
+        0.08657309229602106,
+        0.018888672908360604
+      ],
+      "meanLuma": 0.041681724379191695,
+      "maxLuma": 0.07413483816348015,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "adapted-zero-point",
+      "effective": {
+        "adapter": true,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "point",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.0472216877824394,
+        0.08657309229602106,
+        0.018888672908360604
+      ],
+      "meanLuma": 0.041681724379191695,
+      "maxLuma": 0.07413483816348015,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "plain-spot",
+      "effective": {
+        "adapter": false,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "spot",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.0472216877824394,
+        0.08657309229602106,
+        0.018888672908360604
+      ],
+      "meanLuma": 0.041681724379191695,
+      "maxLuma": 0.07413483816348015,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "adapted-zero-spot",
+      "effective": {
+        "adapter": true,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "spot",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.0472216877824394,
+        0.08657309229602106,
+        0.018888672908360604
+      ],
+      "meanLuma": 0.041681724379191695,
+      "maxLuma": 0.07413483816348015,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "plain-area",
+      "effective": {
+        "adapter": false,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "area",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.6
+      },
+      "center": [
+        0.07326779948198237,
+        0.1343242959701456,
+        0.029307117925782222
+      ],
+      "meanLuma": 0.06273525036330937,
+      "maxLuma": 0.11468836091272532,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "adapted-zero-area",
+      "effective": {
+        "adapter": true,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "area",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.6
+      },
+      "center": [
+        0.07326779948198237,
+        0.1343242959701456,
+        0.029307117925782222
+      ],
+      "meanLuma": 0.06273525036330937,
+      "maxLuma": 0.11468836091272532,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "plain-hemi",
+      "effective": {
+        "adapter": false,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "hemi",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.0015806386923031823,
+        0.007951849140226841,
+        0.019098591059446335
+      ],
+      "meanLuma": 0.004652757496068164,
+      "maxLuma": 0.007402124714548699,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "adapted-zero-hemi",
+      "effective": {
+        "adapter": true,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "hemi",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.0015806386923031823,
+        0.007951849140226841,
+        0.019098589684290346
+      ],
+      "meanLuma": 0.004652757448408197,
+      "maxLuma": 0.00740212458006572,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "plain-ambient",
+      "effective": {
+        "adapter": false,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "ambient",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.047746483236551285,
+        0.08753521740436554,
+        0.019098591059446335
+      ],
+      "meanLuma": 0.046599083306800654,
+      "maxLuma": 0.07413500809818505,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "adapted-zero-ambient",
+      "effective": {
+        "adapter": true,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "ambient",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.047746483236551285,
+        0.08753521740436554,
+        0.019098591059446335
+      ],
+      "meanLuma": 0.046599083306800654,
+      "maxLuma": 0.07413500809818505,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "plain-probe",
+      "effective": {
+        "adapter": false,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "probe",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.052086278796195984,
+        0.0865337997674942,
+        0.014971275813877583
+      ],
+      "meanLuma": 0.04654152791784722,
+      "maxLuma": 0.07404344257954508,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "adapted-zero-probe",
+      "effective": {
+        "adapter": true,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "probe",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.05208628252148628,
+        0.0865337923169136,
+        0.014971275813877583
+      ],
+      "meanLuma": 0.04654152506618492,
+      "maxLuma": 0.07404343804288656,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "plain-environment",
+      "effective": {
+        "adapter": false,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "environment",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.04768066480755806,
+        0.40739747881889343,
+        0.023935547098517418
+      ],
+      "meanLuma": 0.19060505329030653,
+      "maxLuma": 0.30323573268987236,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    },
+    {
+      "name": "adapted-zero-environment",
+      "effective": {
+        "adapter": true,
+        "factor": 0,
+        "tint": [
+          1,
+          1,
+          1
+        ],
+        "light": "environment",
+        "backLight": false,
+        "backView": false,
+        "angle": 0,
+        "normalMap": false,
+        "shadows": false,
+        "blocker": false,
+        "specular": 0,
+        "castShadow": false,
+        "baseColor": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "cameraX": 0.02
+      },
+      "center": [
+        0.04768066480755806,
+        0.40739747881889343,
+        0.023935547098517418
+      ],
+      "meanLuma": 0.19060505329030653,
+      "maxLuma": 0.30323573268987236,
+      "coveredPixels": 65536,
+      "finite": true,
+      "glError": 0
+    }
+  ],
+  "screenshots": [],
+  "limitations": [
+    "No GPU performance claims.",
+    "The fixture uses one flat plane and synthetic lighting to isolate shader behavior."
+  ],
+  "source": {
+    "../../src/tree-leaf-transmission.ts": {
+      "sha256": "694d0568a730d64eb17ea023e5739baeb58728c0c023c87cc4482a1ce5237336",
+      "mtime": "2026-09-28T09:35:07.889Z"
+    },
+    "../../src/leaf-transmission-lab.ts": {
+      "sha256": "31f6bdb576fdd080a0ff8f78720ad239cc46405d6dea1b6ed9ba2ef5b939f620",
+      "mtime": "2026-09-28T09:34:57.449Z"
+    },
+    "../../leaf-transmission-lab.html": {
+      "sha256": "76bae191b2722f95463c4b636018f424fccc1aebcad481ff3468afce68b68df2",
+      "mtime": "2026-09-28T09:28:34.074Z"
+    }
+  },
+  "renderer": {
+    "renderer": "WebKit WebGL",
+    "vendor": "WebKit",
+    "unmasked": {
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "vendor": "Google Inc. (NVIDIA)"
+    }
+  },
+  "failure": "AssertionError [ERR_ASSERTION]: hemi factor-zero adapter matches plain shader\n+ actual - expected\n\n+ 1.862645149230957e-9\n- 0\n"
+}

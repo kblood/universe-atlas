@@ -1,0 +1,50 @@
+{
+  "revision": "78f3df306b84fed74d820d634d67f94288ccd322",
+  "dirty": true,
+  "files": [
+    {
+      "path": "src/tree-leaf-transmission.ts",
+      "sha256": "0e96f13905c0be5a9ac51235d224035b69d4399b4f9bde9b893f9ccaa5745f92"
+    },
+    {
+      "path": "src/leaf-transmission-lab.ts",
+      "sha256": "22b563d5be8383b5ea57d79bbf8e69feaaab0493794d666bf46c4795cdaea93a"
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "sha256": "c3c6409a63efaff9d8fdb913c7a87bb11dfcf599eb9621142bed9fe4fd1b2586"
+    },
+    {
+      "path": "src/tree-impostor-reference-shader.ts",
+      "sha256": "08be44cbb1aaf730898f677d49ed32cd4c1341256d2a1245a582c8cc6272090f"
+    },
+    {
+      "path": "node_modules/three/src/renderers/shaders/ShaderChunk/lights_physical_pars_fragment.glsl.js",
+      "sha256": "076a8cf631212cdf1696dab6e82b23c4c9473d2d61f5dbee4b76b6edd833455e"
+    },
+    {
+      "path": "node_modules/three/src/renderers/shaders/ShaderChunk/lights_fragment_begin.glsl.js",
+      "sha256": "8275f4d42336bc715ec466c87b9dda2873c91a36858c2f585f3308533f04368d"
+    },
+    {
+      "path": "node_modules/three/src/renderers/shaders/ShaderChunk/lights_fragment_maps.glsl.js",
+      "sha256": "be1a1d8d9e1c59d1ad2785f8598519779aa6b44ec8cad0fa9e462f19c6e6e5ad"
+    },
+    {
+      "path": "node_modules/three/src/renderers/shaders/ShaderChunk/lights_fragment_end.glsl.js",
+      "sha256": "c45aa2234c3f7bed6d985bce636c65813d7af888474a31a1adcc0727d86d17ca"
+    },
+    {
+      "path": "node_modules/three/src/renderers/shaders/ShaderChunk/normal_fragment_begin.glsl.js",
+      "sha256": "37945cf80f1241efa3d3016c09f6e7602a17671ebcba7acb4b1f8293c0522c23"
+    },
+    {
+      "path": "node_modules/three/src/renderers/shaders/ShaderChunk/normal_fragment_maps.glsl.js",
+      "sha256": "12e259e9fc6cc918cc9d981b0626106bd486255d888755ea4076d9156d7adcbf"
+    },
+    {
+      "path": "node_modules/three/src/renderers/shaders/ShaderChunk/aomap_fragment.glsl.js",
+      "sha256": "fefcc44a84254b93317a2002f02f408915b26961228314538b49ae019ea584ca"
+    }
+  ]
+}

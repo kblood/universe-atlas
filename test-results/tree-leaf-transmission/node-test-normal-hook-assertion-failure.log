@@ -1,0 +1,33 @@
+✔ default values preserve zero-transmission expressions and public setting updates are atomic (1.8212ms)
+✔ patch preserves the host specular paths and branches around every added diffuse contribution (0.758ms)
+✔ install composes prior compile hooks and cache key while exposing shared uniforms (2.2139ms)
+✖ source guards ignore comment-shaped anchors and reject missing or duplicate live hooks (1.146ms)
+✔ installation rejects materials outside the explicitly supported leaf domain (0.5011ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 155.3658
+
+✖ failing tests:
+
+test at tests\tree-leaf-transmission.test.mjs:113:1
+✖ source guards ignore comment-shaped anchors and reject missing or duplicate live hooks (1.146ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-rendering/tests/tree-leaf-transmission.test.mjs:125:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /shader hook changed/,
+    operator: 'throws',
+    diff: 'simple'
+  }

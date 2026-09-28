@@ -1,0 +1,22 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: hemi factor-zero adapter matches plain shader
++ actual - expected
+
++ 1.862645149230957e-9
+- 0
+
+    at file:///C:/LLM/IWSDK/universe-atlas-rendering/test-results/tree-leaf-transmission/browser-check.mjs:66:12
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processImmediate (node:internal/timers:473:9) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 1.862645149230957e-9,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.7.0

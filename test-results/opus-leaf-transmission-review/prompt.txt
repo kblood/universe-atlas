@@ -1,0 +1,1449 @@
+Review actual opt-in thin-leaf diffuse-transmission prototype for Atlas, source-only no tools, <=1200 words. User wants desktop realistic procedural forests, reuse established methods. This is inspired by KHR_materials_diffuse_transmission's Lambert front/back split, explicitly NOT extension-conformant/importer: transmitted color = existing sampled diffuse/baseColor * linear tint, bounded0..1; existing super-three0.181 specular/Fresnel/multiscatter expressions preserved; no new full-BRDF energy-conservation claim. Tree adapter itself still not integrated with this module; install must follow deform(). Only double-sided dielectric, no lightmaps/metalmaps/glass allowed. T0 intended pixel-identical baseline. No source trees shipped yet. New synthetic float-linear plane lab offers front/back/view flip/normalmap/shadow blocker/directional/point/spot/area/hemi/ambient/probe/nonuniformPMREM tests. Actual GPU run pending; CPU independent Luna tests pending. Review concrete defects in shader function order, source guards, opposite lighting, areaLTC basis, indirect/environment/AO, shadow interaction, uniform/cache/hook composition, fixture comparisons; prioritize must-fix vs explicit limits. Is baseColor*tint restriction a reasonable first foliage experiment? What small runtime checks best catch wrong hemisphere, normal maps, zero-factor regressions, light leaking? Do not ask for a new generator or a giant framework. Identify if known host limitations (e.g. LTC exact-normal V/N singular, host BRDF behavior) are inherited versus newly introduced.
+FILE src/tree-leaf-transmission.ts
+import * as THREE from 'three';
+import {liveGlsl} from './tree-impostor-reference-shader.ts';
+
+/** Experimental thin, two-sided leaf response. Uses the sampled base colour
+ * times a linear tint for transmission: a bounded subset inspired by Khronos
+ * diffuse transmission, not a KHR_materials_diffuse_transmission importer.
+ * The host's specular/Fresnel calculations are retained verbatim. */
+export type LeafTransmissionOptions={factor?:number;tint?:readonly [number,number,number]};
+const VERSION='atlas-leaf-diffuse-1';
+const installed=new WeakSet<THREE.Material>();
+
+function replaceLiveOnce(source:string,anchor:string,replacement:string){
+  const live=liveGlsl(source),at=live.indexOf(anchor);
+  if(at<0||live.indexOf(anchor,at+anchor.length)>=0)throw new Error(`Leaf transmission shader hook changed: ${anchor}`);
+  return source.slice(0,at)+replacement+source.slice(at+anchor.length);
+}
+
+const declarations=`
+uniform float atlasLeafTransmission;
+uniform vec3 atlasLeafTransmissionTint;
+vec3 atlasLeafBackIrradiance = vec3(0.0);
+vec3 atlasLeafBackIblIrradiance = vec3(0.0);
+`;
+
+// Branch on a shared uniform so factor zero executes the exact original
+// diffuse expression and does not sample opposite-hemisphere environment maps.
+function split(original:string,expression:string){
+  return `if (atlasLeafTransmission > 0.0) {\n${expression}\n} else {\n${original}\n}`;
+}
+
+/** Exported for source-contract tests. Does not mutate global ShaderChunk. */
+export function patchLeafTransmissionShader(fragmentShader:string,physicalChunk=THREE.ShaderChunk.lights_physical_pars_fragment){
+  if(liveGlsl(fragmentShader).includes('atlasLeafTransmission'))throw new Error('Leaf transmission is already installed');
+  let chunk=physicalChunk;
+  const direct='reflectedLight.directDiffuse += irradiance * BRDF_Lambert( material.diffuseColor );';
+  chunk=replaceLiveOnce(chunk,direct,split(direct,`
+    vec3 backIrradiance = saturate(dot(-geometryNormal, directLight.direction)) * directLight.color;
+    reflectedLight.directDiffuse += ((1.0-atlasLeafTransmission)*irradiance
+      + atlasLeafTransmission*atlasLeafTransmissionTint*backIrradiance) * BRDF_Lambert(material.diffuseColor);`));
+
+  const area='reflectedLight.directDiffuse += lightColor * material.diffuseColor * LTC_Evaluate( normal, viewDir, position, mat3( 1.0 ), rectCoords );';
+  chunk=replaceLiveOnce(chunk,area,split(area,`
+    reflectedLight.directDiffuse += lightColor * material.diffuseColor * (
+      (1.0-atlasLeafTransmission)*LTC_Evaluate(normal, viewDir, position, mat3(1.0), rectCoords)
+      + atlasLeafTransmission*atlasLeafTransmissionTint*LTC_Evaluate(-normal, viewDir, position, mat3(1.0), rectCoords));`));
+
+  const indirect='reflectedLight.indirectDiffuse += irradiance * BRDF_Lambert( material.diffuseColor );';
+  chunk=replaceLiveOnce(chunk,indirect,split(indirect,`
+    reflectedLight.indirectDiffuse += ((1.0-atlasLeafTransmission)*irradiance
+      + atlasLeafTransmission*atlasLeafTransmissionTint*atlasLeafBackIrradiance) * BRDF_Lambert(material.diffuseColor);`));
+
+  const environment='reflectedLight.indirectDiffuse += diffuse * cosineWeightedIrradiance;';
+  chunk=replaceLiveOnce(chunk,environment,split(environment,`
+    reflectedLight.indirectDiffuse += diffuse * ((1.0-atlasLeafTransmission)*cosineWeightedIrradiance
+      + atlasLeafTransmission*atlasLeafTransmissionTint*atlasLeafBackIblIrradiance*RECIPROCAL_PI);`));
+  let shader=replaceLiveOnce(fragmentShader,'#include <lights_physical_pars_fragment>',declarations+chunk);
+  shader=replaceLiveOnce(shader,'#include <lights_fragment_begin>',`#include <lights_fragment_begin>
+    if (atlasLeafTransmission > 0.0) {
+      atlasLeafBackIrradiance = getAmbientLightIrradiance(ambientLightColor);
+      #ifdef USE_LIGHT_PROBES
+        atlasLeafBackIrradiance += getLightProbeIrradiance(lightProbe, -geometryNormal);
+      #endif
+      #if NUM_HEMI_LIGHTS > 0
+        #pragma unroll_loop_start
+        for ( int i = 0; i < NUM_HEMI_LIGHTS; i ++ ) {
+          atlasLeafBackIrradiance += getHemisphereLightIrradiance(hemisphereLights[ i ], -geometryNormal);
+        }
+        #pragma unroll_loop_end
+      #endif
+    }`);
+  shader=replaceLiveOnce(shader,'#include <lights_fragment_maps>',`#include <lights_fragment_maps>
+    #if defined(USE_ENVMAP) && defined(STANDARD) && defined(ENVMAP_TYPE_CUBE_UV)
+      if (atlasLeafTransmission > 0.0) {
+        atlasLeafBackIblIrradiance = getIBLIrradiance(-geometryNormal);
+      }
+    #endif`);
+  // Both opposite irradiances must exist before the host calls its indirect REs.
+  const live=liveGlsl(shader),end=live.indexOf('#include <lights_fragment_end>');
+  if(end<0||live.indexOf('#include <lights_fragment_end>',end+1)>=0||end<live.lastIndexOf('atlasLeafBackIblIrradiance = getIBLIrradiance'))throw new Error('Leaf transmission indirect-light order changed');
+  return shader;
+}
+
+function values(options:LeafTransmissionOptions){
+  const factor=options.factor??0,tint=options.tint??[1,1,1];
+  if(!Number.isFinite(factor)||factor<0||factor>1||!Array.isArray(tint)||tint.length!==3||tint.some(x=>!Number.isFinite(x)||x<0||x>1))throw new Error('Leaf transmission factor and linear tint must be in [0,1]');
+  return {factor,tint:tint as readonly [number,number,number]};
+}
+
+function validateMaterial(material:THREE.MeshStandardMaterial){
+  const physical=material as THREE.MeshPhysicalMaterial;
+  if(!material.isMeshStandardMaterial||material.side!==THREE.DoubleSide||material.metalness!==0||material.metalnessMap||material.lightMap||(physical.transmission??0)!==0||physical.transmissionMap)throw new Error('Leaf transmission requires a two-sided dielectric without metalness maps, lightmaps or glass transmission');
+}
+
+/** Call AFTER the wind/deformation adapter. Shared uniforms work for all
+ * instances and LODs; depth/distance materials are deliberately not changed.
+ * Material flags affecting the supported domain must remain valid at compile.
+ * Reapply explicitly if a material is cloned (Three does not clone hooks). */
+export function installLeafTransmission(material:THREE.MeshStandardMaterial,options:LeafTransmissionOptions={}){
+  const initial=values(options);validateMaterial(material);
+  if(installed.has(material))throw new Error('Leaf transmission is already installed on this material');
+  const factor={value:initial.factor},tint={value:new THREE.Vector3(...initial.tint)};
+  const previousCompile=material.onBeforeCompile;
+  // Capture the default key before installing our wrapper: Three's default key
+  // reads this.onBeforeCompile and would otherwise describe the wrapper itself.
+  const previousKey=material.customProgramCacheKey.bind(material);
+  const baseKey=previousKey();
+  const defaultKey=material.customProgramCacheKey===THREE.Material.prototype.customProgramCacheKey;
+  material.onBeforeCompile=function(shader,renderer){
+    validateMaterial(material);
+    previousCompile.call(this,shader,renderer);
+    const patched=patchLeafTransmissionShader(shader.fragmentShader);
+    if(shader.uniforms.atlasLeafTransmission||shader.uniforms.atlasLeafTransmissionTint)throw new Error('Leaf transmission uniform collision');
+    shader.uniforms.atlasLeafTransmission=factor;
+    shader.uniforms.atlasLeafTransmissionTint=tint;
+    shader.fragmentShader=patched;
+  };
+  material.customProgramCacheKey=()=>`${defaultKey?baseKey:previousKey()}|${VERSION}`;
+  installed.add(material);material.needsUpdate=true;
+  return {
+    /** Values update atomically; no material/program per tree or per setting. */
+    set(options:LeafTransmissionOptions){const next=values(options);factor.value=next.factor;tint.value.set(...next.tint);},
+    get factor(){return factor.value;},
+    get tint():readonly [number,number,number]{return [tint.value.x,tint.value.y,tint.value.z];},
+  };
+}
+
+
+FILE src/leaf-transmission-lab.ts
+import * as THREE from 'three';
+import {RectAreaLightUniformsLib} from 'three/addons/lights/RectAreaLightUniformsLib.js';
+import {installLeafTransmission} from './tree-leaf-transmission.ts';
+
+// Synthetic calibration, deliberately separate from the tree art/coverage lab.
+// Read a float linear target before tone mapping or sRGB encoding.
+export type LeafProbe={
+  adapter?:boolean;factor?:number;tint?:[number,number,number];
+  light?:'directional'|'point'|'spot'|'area'|'hemi'|'ambient'|'probe'|'environment';
+  backLight?:boolean;backView?:boolean;angle?:number;normalMap?:boolean;
+  shadows?:boolean;blocker?:boolean;specular?:number;
+};
+RectAreaLightUniformsLib.init();
+const renderer=new THREE.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});
+renderer.setSize(256,256);renderer.setPixelRatio(1);renderer.toneMapping=THREE.NoToneMapping;
+renderer.outputColorSpace=THREE.LinearSRGBColorSpace;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
+document.querySelector('#view')!.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0,0,0);
+const camera=new THREE.PerspectiveCamera(35,1,.1,30);camera.position.set(.02,0,4);camera.lookAt(0,0,0);
+const target=new THREE.WebGLRenderTarget(256,256,{type:THREE.FloatType,format:THREE.RGBAFormat,depthBuffer:true});
+target.texture.colorSpace=THREE.LinearSRGBColorSpace;
+const normalMap=new THREE.DataTexture(new Uint8Array([191,128,238,255]),1,1);normalMap.needsUpdate=true;
+const parameters={color:new THREE.Color().setRGB(.3,.55,.12),roughness:.8,metalness:0,side:THREE.DoubleSide};
+const plain=new THREE.MeshPhysicalMaterial(parameters),adapted=new THREE.MeshPhysicalMaterial(parameters);
+const control=installLeafTransmission(adapted);
+const geometry=new THREE.PlaneGeometry(2,2);geometry.computeTangents();
+const leaf=new THREE.Mesh(geometry,plain);leaf.receiveShadow=true;scene.add(leaf);
+const occluder=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.05),new THREE.MeshBasicMaterial({color:0x888888}));
+occluder.castShadow=true;scene.add(occluder);
+// Shadow-only blocker: hides it in the colour pass while keeping shadow draws.
+occluder.material.colorWrite=false;occluder.material.depthWrite=false;
+
+const directional=new THREE.DirectionalLight(0xffffff,.5);
+directional.castShadow=true;directional.shadow.mapSize.set(1024,1024);
+Object.assign(directional.shadow.camera,{left:-2,right:2,top:2,bottom:-2,near:.1,far:12});
+directional.shadow.camera.updateProjectionMatrix();directional.shadow.bias=-.0001;
+const point=new THREE.PointLight(0xffffff,4.5,0,2);point.castShadow=true;point.shadow.mapSize.set(512,512);point.shadow.bias=-.0001;
+const spot=new THREE.SpotLight(0xffffff,4.5,0,Math.PI/4,0,2);spot.castShadow=true;spot.shadow.mapSize.set(512,512);spot.shadow.bias=-.0001;
+const area=new THREE.RectAreaLight(0xffffff,2,2,2);
+const hemi=new THREE.HemisphereLight(0x3355ff,0xff4400,.5);
+const ambient=new THREE.AmbientLight(0xffffff,.5);
+const probe=new THREE.LightProbe(new THREE.SphericalHarmonics3());
+probe.sh.coefficients[0].set(.5,.5,.5);probe.sh.coefficients[2].set(.1,.05,-.05);
+const lights={directional,point,spot,area,hemi,ambient,probe};
+scene.add(...Object.values(lights),directional.target,spot.target);
+
+// A directional, non-uniform environment makes a wrong hemisphere observable.
+const envScene=new THREE.Scene();
+const envMaterials=[0xff2200,0x0022ff,0x2244ff,0xff4400,0x33ff55,0xff2255].map(color=>new THREE.MeshBasicMaterial({color,side:THREE.BackSide}));
+const envBox=new THREE.Mesh(new THREE.BoxGeometry(10,10,10),envMaterials);envScene.add(envBox);
+const pmrem=new THREE.PMREMGenerator(renderer),envTarget=pmrem.fromScene(envScene,.05,.1,20);pmrem.dispose();
+envBox.geometry.dispose();envMaterials.forEach(m=>m.dispose());
+
+function configure(options:LeafProbe={}){
+  const o={adapter:true,factor:0,tint:[1,1,1] as [number,number,number],light:'directional' as const,backLight:false,backView:false,angle:0,normalMap:false,shadows:false,blocker:false,specular:0,...options};
+  control.set({factor:o.factor,tint:o.tint});
+  for(const m of [plain,adapted]){
+    if(!!m.normalMap!==o.normalMap){m.normalMap=o.normalMap?normalMap:null;m.needsUpdate=true;}
+    m.specularIntensity=o.specular;
+  }
+  leaf.material=o.adapter?adapted:plain;
+  leaf.rotation.y=o.angle;leaf.receiveShadow=o.shadows;
+  camera.position.set(.02,0,o.backView?-4:4);camera.lookAt(0,0,0);
+  const z=o.backLight?-3:3;
+  for(const [name,light] of Object.entries(lights)){light.visible=name===o.light;light.position.set(.2,.15,z);}
+  area.lookAt(0,0,0);hemi.position.set(0,0,z);
+  occluder.position.set(.08,.06,z/3);occluder.visible=o.blocker&&o.shadows;
+  scene.environment=o.light==='environment'?envTarget.texture:null;
+  scene.updateMatrixWorld(true);camera.updateMatrixWorld(true);
+  return o;
+}
+
+function probePixels(options:LeafProbe={}){
+  const effective=configure(options),pixels=new Float32Array(256*256*4);
+  renderer.setRenderTarget(target);renderer.render(scene,camera);
+  renderer.readRenderTargetPixels(target,0,0,256,256,pixels);renderer.setRenderTarget(null);
+  renderer.render(scene,camera);
+  const center=[0,0,0];let finite=true;
+  for(const value of pixels)if(!Number.isFinite(value))finite=false;
+  for(let y=120;y<136;y++)for(let x=120;x<136;x++)for(let c=0;c<3;c++)center[c]+=pixels[(y*256+x)*4+c]/256;
+  const error=renderer.getContext().getError();
+  const result={effective,center,finite,glError:error,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles};
+  document.querySelector('#report')!.textContent=JSON.stringify(result,null,2);
+  return {...result,pixels:Array.from(pixels)};
+}
+function dispose(){target.dispose();envTarget.dispose();normalMap.dispose();geometry.dispose();plain.dispose();adapted.dispose();occluder.geometry.dispose();occluder.material.dispose();for(const light of [directional,point,spot])light.dispose();renderer.dispose();}
+(window as any).__leafTransmissionLab={probe:probePixels,configure,renderer,scene,camera,leaf,plain,adapted,control,dispose};
+document.querySelector('#front')!.addEventListener('click',()=>probePixels({factor:.5}));
+document.querySelector('#back')!.addEventListener('click',()=>probePixels({factor:.5,backLight:true}));
+document.querySelector('#baseline')!.addEventListener('click',()=>probePixels({adapter:false,backLight:true}));
+probePixels();
+
+
+FILE src/tree-asset.ts
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {phaseFromPeriod} from './world-time.ts';
+
+/** Experimental author-6 adapter. Assets are supplied explicitly; this does not
+ * replace the canonical forest or invent a second species catalogue. */
+export const TREE_REFERENCE_HEIGHT_M=16;
+export const TREE_WIND_PERIOD_NS=7_000_000_000n;
+export const treeWindPhase=(date:bigint)=>phaseFromPeriod(date,TREE_WIND_PERIOD_NS);
+
+type GLBDocument={json:any;binary:Uint8Array};
+function readGLB(buffer:ArrayBuffer):GLBDocument {
+  const view=new DataView(buffer);
+  if(buffer.byteLength<28||view.getUint32(0,true)!==0x46546c67||view.getUint32(4,true)!==2||view.getUint32(8,true)!==buffer.byteLength)throw new Error('Expected a complete glTF 2 GLB');
+  const length=view.getUint32(12,true),start=20+length;
+  if(view.getUint32(16,true)!==0x4e4f534a||start+8>buffer.byteLength||view.getUint32(start+4,true)!==0x004e4942||start+8+view.getUint32(start,true)!==buffer.byteLength)throw new Error('Expected JSON and embedded binary chunks');
+  const json=JSON.parse(new TextDecoder().decode(new Uint8Array(buffer,20,length)));
+  if(json.buffers?.length!==1||json.buffers[0].uri||json.extensionsRequired?.length)throw new Error('Only self-contained author-6 GLBs are supported');
+  if(json.nodes?.length!==1||json.nodes[0].mesh!==0||['matrix','translation','rotation','scale'].some(k=>json.nodes[0][k])||json.meshes?.length!==1||json.meshes[0].primitives?.length!==2)throw new Error('Expected one untransformed two-material tree');
+  if(json.materials?.length!==2||json.materials[0].name!=='MAT_AtlasBark'||json.materials[1].name!=='MAT_AtlasFoliage'||json.images?.length!==4)throw new Error('Expected author-6 bark and foliage');
+  if((json.materials[0].alphaMode??'OPAQUE')!=='OPAQUE'||json.materials[1].alphaMode!=='MASK'||(json.materials[1].alphaCutoff??.5)<=0)throw new Error('Tree foliage requires alpha MASK with a positive cutoff');
+  const formats:Record<string,string>={_WIND:'SCALAR',_BRANCH_LEVEL:'SCALAR',_LEAF_CENTER:'VEC3',_LEAF_PIVOT:'VEC3',POSITION:'VEC3',NORMAL:'VEC3',TEXCOORD_0:'VEC2',TANGENT:'VEC4'};
+  for(const [index,p] of json.meshes[0].primitives.entries()){
+    if(p.material!==index||p.mode!==undefined&&p.mode!==4||p.targets||Object.keys(p.attributes??{}).length!==8||!Object.keys(formats).every(k=>Number.isInteger(p.attributes?.[k])))throw new Error('Incomplete tree vertex contract');
+    const count=json.accessors[p.attributes.POSITION]?.count;
+    for(const [name,type] of Object.entries(formats)){
+      const a=json.accessors[p.attributes[name]];
+      if(!a||a.type!==type||a.componentType!==5126||a.normalized||a.sparse||!Number.isInteger(count)||count<1||a.count!==count)throw new Error(`Invalid tree accessor ${name}`);
+    }
+  }
+  return {json,binary:new Uint8Array(buffer,start+8,view.getUint32(start,true))};
+}
+function imageBytes(doc:GLBDocument,index:number){
+  const image=doc.json.images[index],view=doc.json.bufferViews[image.bufferView];
+  if(image.uri||image.mimeType!=='image/png'||!view||view.buffer!==0||!Number.isInteger(view.byteLength)||view.byteLength<=0)throw new Error('Expected an embedded PNG');
+  const start=view.byteOffset??0,end=start+view.byteLength;
+  if(start<0||end>doc.binary.length)throw new Error('Image outside GLB binary');
+  return doc.binary.subarray(start,end);
+}
+/** Check byte identity before sharing materials. LOD1 images are never decoded:
+ * its parser receives texture-free material placeholders with stable indices. */
+export function prepareTreeLODPair(lod0:ArrayBuffer,lod1:ArrayBuffer){
+  const a=readGLB(lod0),b=readGLB(lod1);
+  for(const key of ['materials','textures','samplers'])if(JSON.stringify(a.json[key])!==JSON.stringify(b.json[key]))throw new Error(`Tree LOD ${key} differ`);
+  let embeddedTextureBytes=0;
+  for(let i=0;i<4;i++){
+    const x=imageBytes(a,i),y=imageBytes(b,i);embeddedTextureBytes+=x.length;
+    if(x.length!==y.length||x.some((v,k)=>v!==y[k]))throw new Error(`Tree LOD image ${i} differs`);
+  }
+  const json=structuredClone(b.json);
+  json.materials=json.materials.map((m:any)=>({name:m.name}));delete json.images;delete json.textures;delete json.samplers;
+  // Keep the original binary offsets. Unused compressed PNG bytes remain in
+  // this temporary parse input, but do not allocate image/GPU resources.
+  const text=new TextEncoder().encode(JSON.stringify(json)),length=(text.length+3)&~3;
+  const buffer=new ArrayBuffer(28+length+b.binary.length),view=new DataView(buffer),bytes=new Uint8Array(buffer);
+  view.setUint32(0,0x46546c67,true);view.setUint32(4,2,true);view.setUint32(8,buffer.byteLength,true);
+  view.setUint32(12,length,true);view.setUint32(16,0x4e4f534a,true);bytes.fill(32,20,20+length);bytes.set(text,20);
+  view.setUint32(20+length,b.binary.length,true);view.setUint32(24+length,0x004e4942,true);bytes.set(b.binary,28+length);
+  return {lod1GeometryBuffer:buffer,embeddedTextureBytes};
+}
+
+/** CPU reference for shader audits. Scale skeleton/attachment coordinates,
+ * keeping every offset within a leaf card in metres, then rotate rigidly. */
+export function treeVertexMeters(position:THREE.Vector3,pivot:THREE.Vector3,leaf:boolean,heightM:number,windWeight:number,phase:number,instancePhase=0){
+  if(!Number.isFinite(heightM)||heightM<10||heightM>22)throw new Error('Prototype supports tree heights 10–22 m');
+  if(!leaf)return position.clone().multiplyScalar(heightM/TREE_REFERENCE_HEIGHT_M);
+  return position.clone().sub(pivot).applyAxisAngle(new THREE.Vector3(0,0,1),Math.sin(phase+instancePhase)*.12*windWeight).addScaledVector(pivot,heightM/TREE_REFERENCE_HEIGHT_M);
+}
+
+const declarations=`
+attribute float _wind, _branch_level;
+attribute vec3 _leaf_pivot;
+attribute vec2 instanceTree;
+uniform float atlasTreePhase;
+mat3 atlasLeafRotation(){
+  float angle=sin(atlasTreePhase+instanceTree.y)*.12*_wind;
+  float c=cos(angle),s=sin(angle);
+  return mat3(c,s,0.,-s,c,0.,0.,0.,1.);
+}
+`;
+function deform(material:THREE.Material,phase:{value:number}){
+  material.onBeforeCompile=shader=>{
+    shader.uniforms.atlasTreePhase=phase;
+    shader.vertexShader=declarations+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
+      if(_branch_level>3.5){objectNormal=atlasLeafRotation()*objectNormal;
+        #ifdef USE_TANGENT
+        objectTangent=atlasLeafRotation()*objectTangent;
+        #endif
+      }`);
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      transformed=_branch_level>3.5 ? _leaf_pivot*instanceTree.x+atlasLeafRotation()*(position-_leaf_pivot) : position*instanceTree.x;`);
+  };
+  material.customProgramCacheKey=()=> 'atlas-tree-physical-1';
+}
+export type TreeAssetFamily=Awaited<ReturnType<typeof loadTreeAssetFamily>>;
+export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,options:{foliageCoverage?:'mask'|'hash'}={}){
+  if(options.foliageCoverage!==undefined&&!['mask','hash'].includes(options.foliageCoverage))throw new Error('Unsupported foliage coverage mode');
+  const prepared=prepareTreeLODPair(lod0,lod1),loader=new GLTFLoader();
+  const loaded:THREE.Group[]=[];
+  const textures=new Set<THREE.Texture>(),materials=new Set<THREE.Material>(),geometries=new Set<THREE.BufferGeometry>();
+  function collect(group:THREE.Group){group.traverse(o=>{
+    if(!(o instanceof THREE.Mesh))return;
+    geometries.add(o.geometry);
+    for(const m of Array.isArray(o.material)?o.material:[o.material]){
+      materials.add(m);for(const value of Object.values(m))if(value instanceof THREE.Texture)textures.add(value);
+    }
+  });}
+  function dispose(){for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures){t.dispose();if(typeof ImageBitmap!=='undefined'&&t.image instanceof ImageBitmap)t.image.close();}}
+  try {
+    for(const bytes of [lod0,prepared.lod1GeometryBuffer]){const gltf=await loader.parseAsync(bytes,'');loaded.push(gltf.scene);collect(gltf.scene);}
+    const lods=loaded.map(group=>{
+      const meshes:THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>[]=[];
+      group.traverse(o=>{if(o instanceof THREE.Mesh)meshes.push(o as THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>);});
+      if(meshes.length!==2||meshes.some(m=>Array.isArray(m.material)))throw new Error('Expected two tree primitives');
+      return meshes.sort((a,b)=>a.material.name.localeCompare(b.material.name));
+    });
+    for(let i=0;i<2;i++){lods[1][i].material.dispose();materials.delete(lods[1][i].material);lods[1][i].material=lods[0][i].material;}
+    // Explicit experiment: hashing samples fractional mip coverage instead of
+    // discarding every leaf texel below the GLB's fixed MASK cutoff. Preserve
+    // the imported MASK path by default, including historical captures.
+    if(options.foliageCoverage==='hash'){
+      lods[0][1].material.alphaTest=0;lods[0][1].material.alphaHash=true;
+    }
+    const phase={value:0};
+    for(const material of materials)deform(material,phase);
+    let disposed=false,activeBatches=0;
+    return {
+      lods,textures,embeddedTextureBytes:prepared.embeddedTextureBytes,
+      setDate(date:bigint){phase.value=treeWindPhase(date);},
+      createBatch(lod:0|1,capacity:number){
+        if(disposed)throw new Error('Tree family is disposed');
+        if(!Number.isInteger(capacity)||capacity<1||capacity>4096)throw new Error('Invalid tree capacity');
+        const group=new THREE.Group(),tree=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2).setUsage(THREE.DynamicDrawUsage);
+        const meshes=lods[lod].map(source=>{
+          const geometry=source.geometry.clone();geometry.setAttribute('instanceTree',tree);
+          const mesh=new THREE.InstancedMesh(geometry,source.material,capacity);mesh.count=0;
+          mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.castShadow=true;mesh.receiveShadow=true;
+          // Caller can install conservative curved-world bounds after integration.
+          // Shader scale/wind invalidates Three's unmodified geometry bounds.
+          mesh.frustumCulled=false;
+          const common={map:source.material.map,alphaTest:source.material.alphaTest,alphaHash:source.material.alphaHash,side:source.material.side};
+          mesh.customDepthMaterial=new THREE.MeshDepthMaterial({...common,depthPacking:THREE.RGBADepthPacking});
+          mesh.customDistanceMaterial=new THREE.MeshDistanceMaterial(common);
+          deform(mesh.customDepthMaterial,phase);deform(mesh.customDistanceMaterial,phase);group.add(mesh);return mesh;
+        });
+        activeBatches++;let batchDisposed=false;
+        return {group,meshes,
+          setCount(count:number){
+            if(batchDisposed||!Number.isInteger(count)||count<0||count>meshes[0].count)throw new Error('Tree count can only truncate initialized slots');
+            for(const mesh of meshes)mesh.count=count;
+          },
+          /** Matrix contains yaw/translation and metres-to-scene-units only.
+           * Tree height is applied in the shader so leaves retain their size. */
+          setInstance(index:number,matrix:THREE.Matrix4,heightM:number,phaseOffset=0){
+            if(batchDisposed||!Number.isInteger(index)||index<0||index>=capacity||index>meshes[0].count||!Number.isFinite(heightM)||heightM<10||heightM>22||!Number.isFinite(phaseOffset)||matrix.elements.some(x=>!Number.isFinite(x)))throw new Error('Invalid tree instance or gap in initialized slots');
+            const e=matrix.elements,a=new THREE.Vector3(e[0],e[1],e[2]),b=new THREE.Vector3(e[4],e[5],e[6]),c=new THREE.Vector3(e[8],e[9],e[10]);
+            const scale2=a.lengthSq(),tolerance=scale2*1e-6;
+            if(!Number.isFinite(scale2)||scale2<=0||Math.abs(b.lengthSq()-scale2)>tolerance||Math.abs(c.lengthSq()-scale2)>tolerance||Math.abs(a.dot(b))>tolerance||Math.abs(a.dot(c))>tolerance||Math.abs(b.dot(c))>tolerance||matrix.determinant()<=0||e[3]!==0||e[7]!==0||e[11]!==0||e[15]!==1)throw new Error('Tree matrix requires rotation and positive uniform scene-unit scale');
+            // Phase stays representable as Float32 even for a caller's very
+            // large finite offset; the absolute universe date stays BigInt.
+            const tau=2*Math.PI;phaseOffset=((phaseOffset%tau)+tau)%tau;
+            tree.setXY(index,heightM/TREE_REFERENCE_HEIGHT_M,phaseOffset);tree.needsUpdate=true;
+            for(const mesh of meshes){mesh.setMatrixAt(index,matrix);mesh.instanceMatrix.needsUpdate=true;mesh.count=Math.max(mesh.count,index+1);}
+          },
+          dispose(){if(batchDisposed)return;batchDisposed=true;activeBatches--;for(const mesh of meshes){mesh.geometry.dispose();mesh.customDepthMaterial?.dispose();mesh.customDistanceMaterial?.dispose();mesh.dispose();}group.clear();group.removeFromParent();},
+        };
+      },
+      dispose(){if(disposed)return;if(activeBatches)throw new Error('Dispose tree batches before their family');disposed=true;dispose();},
+    };
+  }catch(error){dispose();throw error;}
+}
+
+
+FILE src/tree-impostor-reference-shader.ts
+/** Adapter for the pinned Three.ez reference; the vendored source stays untouched. */
+export type ReferenceShader = {vertexShader:string;fragmentShader:string};
+
+// Keep offsets and newlines so a match in live GLSL can be replaced in the original.
+export function liveGlsl(source:string):string {
+  return source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g, comment=>comment.replace(/[^\r\n]/g,' '));
+}
+
+export function auditImpostorShader(shader:ReferenceShader) {
+  const vertex=liveGlsl(shader.vertexShader),fragment=liveGlsl(shader.fragmentShader);
+  const includes=(source:string,name:string)=>(source.match(new RegExp('^[ \\t]*#include[ \\t]+<'+name+'>','gm'))??[]).length;
+  const impostorTransformDeclarations=(vertex.match(/\buniform\s+mat4\s+impostorTransform\s*;/g)??[]).length;
+  const blendedColorDeclarations=(fragment.match(/\bvec4\s+blendedColor\b/g)??[]).length;
+  return {
+    impostorTransform:impostorTransformDeclarations===1,
+    blendedColor:blendedColorDeclarations===1,
+    impostorTransformDeclarations,blendedColorDeclarations,
+    blendedColorApplied:(fragment.match(/\bdiffuseColor\s*\*=\s*blendedColor\s*;/g)??[]).length,
+    liveProjectIncludes:includes(vertex,'project_vertex'),
+    liveMapIncludes:includes(fragment,'map_fragment'),
+    liveNormalMapIncludes:includes(fragment,'normal_fragment_maps'),
+  };
+}
+
+export function adaptImpostorShader(shader:ReferenceShader,repairMapInclude:boolean) {
+  const before=auditImpostorShader(shader);
+  if(!before.impostorTransform||!before.blendedColor||before.liveProjectIncludes||before.liveNormalMapIncludes)
+    throw new Error('Pinned impostor shader hooks changed');
+  if(repairMapInclude){
+    // Upstream String.replace hits its own commented include before the real one.
+    // Replace only the one live include, using comment-stripped source offsets.
+    if(before.liveMapIncludes!==1||before.blendedColorApplied!==0)
+      throw new Error('Unexpected pinned map-fragment state');
+    const match=/^[ \t]*#include[ \t]+<map_fragment>/m.exec(liveGlsl(shader.fragmentShader))!;
+    shader.fragmentShader=shader.fragmentShader.slice(0,match.index)+'diffuseColor *= blendedColor;'+shader.fragmentShader.slice(match.index+match[0].length);
+  }
+  const after=auditImpostorShader(shader);
+  if(repairMapInclude&&(after.liveMapIncludes!==0||after.blendedColorApplied!==1))
+    throw new Error('Impostor map repair did not apply exactly once');
+  return {repairMapInclude,before,after};
+}
+
+
+FILE node_modules/three/src/renderers/shaders/ShaderChunk/lights_physical_pars_fragment.glsl.js
+export default /* glsl */`
+
+uniform sampler2D dfgLUT;
+
+struct PhysicalMaterial {
+
+	vec3 diffuseColor;
+	float roughness;
+	vec3 specularColor;
+	float specularF90;
+	float dispersion;
+
+	#ifdef USE_CLEARCOAT
+		float clearcoat;
+		float clearcoatRoughness;
+		vec3 clearcoatF0;
+		float clearcoatF90;
+	#endif
+
+	#ifdef USE_IRIDESCENCE
+		float iridescence;
+		float iridescenceIOR;
+		float iridescenceThickness;
+		vec3 iridescenceFresnel;
+		vec3 iridescenceF0;
+	#endif
+
+	#ifdef USE_SHEEN
+		vec3 sheenColor;
+		float sheenRoughness;
+	#endif
+
+	#ifdef IOR
+		float ior;
+	#endif
+
+	#ifdef USE_TRANSMISSION
+		float transmission;
+		float transmissionAlpha;
+		float thickness;
+		float attenuationDistance;
+		vec3 attenuationColor;
+	#endif
+
+	#ifdef USE_ANISOTROPY
+		float anisotropy;
+		float alphaT;
+		vec3 anisotropyT;
+		vec3 anisotropyB;
+	#endif
+
+};
+
+// temporary
+vec3 clearcoatSpecularDirect = vec3( 0.0 );
+vec3 clearcoatSpecularIndirect = vec3( 0.0 );
+vec3 sheenSpecularDirect = vec3( 0.0 );
+vec3 sheenSpecularIndirect = vec3(0.0 );
+
+vec3 Schlick_to_F0( const in vec3 f, const in float f90, const in float dotVH ) {
+    float x = clamp( 1.0 - dotVH, 0.0, 1.0 );
+    float x2 = x * x;
+    float x5 = clamp( x * x2 * x2, 0.0, 0.9999 );
+
+    return ( f - vec3( f90 ) * x5 ) / ( 1.0 - x5 );
+}
+
+// Moving Frostbite to Physically Based Rendering 3.0 - page 12, listing 2
+// https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
+float V_GGX_SmithCorrelated( const in float alpha, const in float dotNL, const in float dotNV ) {
+
+	float a2 = pow2( alpha );
+
+	float gv = dotNL * sqrt( a2 + ( 1.0 - a2 ) * pow2( dotNV ) );
+	float gl = dotNV * sqrt( a2 + ( 1.0 - a2 ) * pow2( dotNL ) );
+
+	return 0.5 / max( gv + gl, EPSILON );
+
+}
+
+// Microfacet Models for Refraction through Rough Surfaces - equation (33)
+// http://graphicrants.blogspot.com/2013/08/specular-brdf-reference.html
+// alpha is "roughness squared" in Disney’s reparameterization
+float D_GGX( const in float alpha, const in float dotNH ) {
+
+	float a2 = pow2( alpha );
+
+	float denom = pow2( dotNH ) * ( a2 - 1.0 ) + 1.0; // avoid alpha = 0 with dotNH = 1
+
+	return RECIPROCAL_PI * a2 / pow2( denom );
+
+}
+
+// https://google.github.io/filament/Filament.md.html#materialsystem/anisotropicmodel/anisotropicspecularbrdf
+#ifdef USE_ANISOTROPY
+
+	float V_GGX_SmithCorrelated_Anisotropic( const in float alphaT, const in float alphaB, const in float dotTV, const in float dotBV, const in float dotTL, const in float dotBL, const in float dotNV, const in float dotNL ) {
+
+		float gv = dotNL * length( vec3( alphaT * dotTV, alphaB * dotBV, dotNV ) );
+		float gl = dotNV * length( vec3( alphaT * dotTL, alphaB * dotBL, dotNL ) );
+		float v = 0.5 / ( gv + gl );
+
+		return saturate(v);
+
+	}
+
+	float D_GGX_Anisotropic( const in float alphaT, const in float alphaB, const in float dotNH, const in float dotTH, const in float dotBH ) {
+
+		float a2 = alphaT * alphaB;
+		highp vec3 v = vec3( alphaB * dotTH, alphaT * dotBH, a2 * dotNH );
+		highp float v2 = dot( v, v );
+		float w2 = a2 / v2;
+
+		return RECIPROCAL_PI * a2 * pow2 ( w2 );
+
+	}
+
+#endif
+
+#ifdef USE_CLEARCOAT
+
+	// GGX Distribution, Schlick Fresnel, GGX_SmithCorrelated Visibility
+	vec3 BRDF_GGX_Clearcoat( const in vec3 lightDir, const in vec3 viewDir, const in vec3 normal, const in PhysicalMaterial material) {
+
+		vec3 f0 = material.clearcoatF0;
+		float f90 = material.clearcoatF90;
+		float roughness = material.clearcoatRoughness;
+
+		float alpha = pow2( roughness ); // UE4's roughness
+
+		vec3 halfDir = normalize( lightDir + viewDir );
+
+		float dotNL = saturate( dot( normal, lightDir ) );
+		float dotNV = saturate( dot( normal, viewDir ) );
+		float dotNH = saturate( dot( normal, halfDir ) );
+		float dotVH = saturate( dot( viewDir, halfDir ) );
+
+		vec3 F = F_Schlick( f0, f90, dotVH );
+
+		float V = V_GGX_SmithCorrelated( alpha, dotNL, dotNV );
+
+		float D = D_GGX( alpha, dotNH );
+
+		return F * ( V * D );
+
+	}
+
+#endif
+
+vec3 BRDF_GGX( const in vec3 lightDir, const in vec3 viewDir, const in vec3 normal, const in PhysicalMaterial material ) {
+
+	vec3 f0 = material.specularColor;
+	float f90 = material.specularF90;
+	float roughness = material.roughness;
+
+	float alpha = pow2( roughness ); // UE4's roughness
+
+	vec3 halfDir = normalize( lightDir + viewDir );
+
+	float dotNL = saturate( dot( normal, lightDir ) );
+	float dotNV = saturate( dot( normal, viewDir ) );
+	float dotNH = saturate( dot( normal, halfDir ) );
+	float dotVH = saturate( dot( viewDir, halfDir ) );
+
+	vec3 F = F_Schlick( f0, f90, dotVH );
+
+	#ifdef USE_IRIDESCENCE
+
+		F = mix( F, material.iridescenceFresnel, material.iridescence );
+
+	#endif
+
+	#ifdef USE_ANISOTROPY
+
+		float dotTL = dot( material.anisotropyT, lightDir );
+		float dotTV = dot( material.anisotropyT, viewDir );
+		float dotTH = dot( material.anisotropyT, halfDir );
+		float dotBL = dot( material.anisotropyB, lightDir );
+		float dotBV = dot( material.anisotropyB, viewDir );
+		float dotBH = dot( material.anisotropyB, halfDir );
+
+		float V = V_GGX_SmithCorrelated_Anisotropic( material.alphaT, alpha, dotTV, dotBV, dotTL, dotBL, dotNV, dotNL );
+
+		float D = D_GGX_Anisotropic( material.alphaT, alpha, dotNH, dotTH, dotBH );
+
+	#else
+
+		float V = V_GGX_SmithCorrelated( alpha, dotNL, dotNV );
+
+		float D = D_GGX( alpha, dotNH );
+
+	#endif
+
+	return F * ( V * D );
+
+}
+
+// Rect Area Light
+
+// Real-Time Polygonal-Light Shading with Linearly Transformed Cosines
+// by Eric Heitz, Jonathan Dupuy, Stephen Hill and David Neubelt
+// code: https://github.com/selfshadow/ltc_code/
+
+vec2 LTC_Uv( const in vec3 N, const in vec3 V, const in float roughness ) {
+
+	const float LUT_SIZE = 64.0;
+	const float LUT_SCALE = ( LUT_SIZE - 1.0 ) / LUT_SIZE;
+	const float LUT_BIAS = 0.5 / LUT_SIZE;
+
+	float dotNV = saturate( dot( N, V ) );
+
+	// texture parameterized by sqrt( GGX alpha ) and sqrt( 1 - cos( theta ) )
+	vec2 uv = vec2( roughness, sqrt( 1.0 - dotNV ) );
+
+	uv = uv * LUT_SCALE + LUT_BIAS;
+
+	return uv;
+
+}
+
+float LTC_ClippedSphereFormFactor( const in vec3 f ) {
+
+	// Real-Time Area Lighting: a Journey from Research to Production (p.102)
+	// An approximation of the form factor of a horizon-clipped rectangle.
+
+	float l = length( f );
+
+	return max( ( l * l + f.z ) / ( l + 1.0 ), 0.0 );
+
+}
+
+vec3 LTC_EdgeVectorFormFactor( const in vec3 v1, const in vec3 v2 ) {
+
+	float x = dot( v1, v2 );
+
+	float y = abs( x );
+
+	// rational polynomial approximation to theta / sin( theta ) / 2PI
+	float a = 0.8543985 + ( 0.4965155 + 0.0145206 * y ) * y;
+	float b = 3.4175940 + ( 4.1616724 + y ) * y;
+	float v = a / b;
+
+	float theta_sintheta = ( x > 0.0 ) ? v : 0.5 * inversesqrt( max( 1.0 - x * x, 1e-7 ) ) - v;
+
+	return cross( v1, v2 ) * theta_sintheta;
+
+}
+
+vec3 LTC_Evaluate( const in vec3 N, const in vec3 V, const in vec3 P, const in mat3 mInv, const in vec3 rectCoords[ 4 ] ) {
+
+	// bail if point is on back side of plane of light
+	// assumes ccw winding order of light vertices
+	vec3 v1 = rectCoords[ 1 ] - rectCoords[ 0 ];
+	vec3 v2 = rectCoords[ 3 ] - rectCoords[ 0 ];
+	vec3 lightNormal = cross( v1, v2 );
+
+	if( dot( lightNormal, P - rectCoords[ 0 ] ) < 0.0 ) return vec3( 0.0 );
+
+	// construct orthonormal basis around N
+	vec3 T1, T2;
+	T1 = normalize( V - N * dot( V, N ) );
+	T2 = - cross( N, T1 ); // negated from paper; possibly due to a different handedness of world coordinate system
+
+	// compute transform
+	mat3 mat = mInv * transpose( mat3( T1, T2, N ) );
+
+	// transform rect
+	vec3 coords[ 4 ];
+	coords[ 0 ] = mat * ( rectCoords[ 0 ] - P );
+	coords[ 1 ] = mat * ( rectCoords[ 1 ] - P );
+	coords[ 2 ] = mat * ( rectCoords[ 2 ] - P );
+	coords[ 3 ] = mat * ( rectCoords[ 3 ] - P );
+
+	// project rect onto sphere
+	coords[ 0 ] = normalize( coords[ 0 ] );
+	coords[ 1 ] = normalize( coords[ 1 ] );
+	coords[ 2 ] = normalize( coords[ 2 ] );
+	coords[ 3 ] = normalize( coords[ 3 ] );
+
+	// calculate vector form factor
+	vec3 vectorFormFactor = vec3( 0.0 );
+	vectorFormFactor += LTC_EdgeVectorFormFactor( coords[ 0 ], coords[ 1 ] );
+	vectorFormFactor += LTC_EdgeVectorFormFactor( coords[ 1 ], coords[ 2 ] );
+	vectorFormFactor += LTC_EdgeVectorFormFactor( coords[ 2 ], coords[ 3 ] );
+	vectorFormFactor += LTC_EdgeVectorFormFactor( coords[ 3 ], coords[ 0 ] );
+
+	// adjust for horizon clipping
+	float result = LTC_ClippedSphereFormFactor( vectorFormFactor );
+
+/*
+	// alternate method of adjusting for horizon clipping (see reference)
+	// refactoring required
+	float len = length( vectorFormFactor );
+	float z = vectorFormFactor.z / len;
+
+	const float LUT_SIZE = 64.0;
+	const float LUT_SCALE = ( LUT_SIZE - 1.0 ) / LUT_SIZE;
+	const float LUT_BIAS = 0.5 / LUT_SIZE;
+
+	// tabulated horizon-clipped sphere, apparently...
+	vec2 uv = vec2( z * 0.5 + 0.5, len );
+	uv = uv * LUT_SCALE + LUT_BIAS;
+
+	float scale = texture2D( ltc_2, uv ).w;
+
+	float result = len * scale;
+*/
+
+	return vec3( result );
+
+}
+
+// End Rect Area Light
+
+#if defined( USE_SHEEN )
+
+// https://github.com/google/filament/blob/master/shaders/src/brdf.fs
+float D_Charlie( float roughness, float dotNH ) {
+
+	float alpha = pow2( roughness );
+
+	// Estevez and Kulla 2017, "Production Friendly Microfacet Sheen BRDF"
+	float invAlpha = 1.0 / alpha;
+	float cos2h = dotNH * dotNH;
+	float sin2h = max( 1.0 - cos2h, 0.0078125 ); // 2^(-14/2), so sin2h^2 > 0 in fp16
+
+	return ( 2.0 + invAlpha ) * pow( sin2h, invAlpha * 0.5 ) / ( 2.0 * PI );
+
+}
+
+// https://github.com/google/filament/blob/master/shaders/src/brdf.fs
+float V_Neubelt( float dotNV, float dotNL ) {
+
+	// Neubelt and Pettineo 2013, "Crafting a Next-gen Material Pipeline for The Order: 1886"
+	return saturate( 1.0 / ( 4.0 * ( dotNL + dotNV - dotNL * dotNV ) ) );
+
+}
+
+vec3 BRDF_Sheen( const in vec3 lightDir, const in vec3 viewDir, const in vec3 normal, vec3 sheenColor, const in float sheenRoughness ) {
+
+	vec3 halfDir = normalize( lightDir + viewDir );
+
+	float dotNL = saturate( dot( normal, lightDir ) );
+	float dotNV = saturate( dot( normal, viewDir ) );
+	float dotNH = saturate( dot( normal, halfDir ) );
+
+	float D = D_Charlie( sheenRoughness, dotNH );
+	float V = V_Neubelt( dotNV, dotNL );
+
+	return sheenColor * ( D * V );
+
+}
+
+#endif
+
+// This is a curve-fit approximation to the "Charlie sheen" BRDF integrated over the hemisphere from
+// Estevez and Kulla 2017, "Production Friendly Microfacet Sheen BRDF". The analysis can be found
+// in the Sheen section of https://drive.google.com/file/d/1T0D1VSyR4AllqIJTQAraEIzjlb5h4FKH/view?usp=sharing
+float IBLSheenBRDF( const in vec3 normal, const in vec3 viewDir, const in float roughness ) {
+
+	float dotNV = saturate( dot( normal, viewDir ) );
+
+	float r2 = roughness * roughness;
+
+	float a = roughness < 0.25 ? -339.2 * r2 + 161.4 * roughness - 25.9 : -8.48 * r2 + 14.3 * roughness - 9.95;
+
+	float b = roughness < 0.25 ? 44.0 * r2 - 23.7 * roughness + 3.26 : 1.97 * r2 - 3.27 * roughness + 0.72;
+
+	float DG = exp( a * dotNV + b ) + ( roughness < 0.25 ? 0.0 : 0.1 * ( roughness - 0.25 ) );
+
+	return saturate( DG * RECIPROCAL_PI );
+
+}
+
+// DFG LUT sampling for physically-based rendering.
+// Uses a precomputed lookup table for the split-sum approximation
+// used in indirect specular lighting.
+// Reference: "Real Shading in Unreal Engine 4" by Brian Karis
+vec2 DFGApprox( const in vec3 normal, const in vec3 viewDir, const in float roughness ) {
+
+	float dotNV = saturate( dot( normal, viewDir ) );
+	vec2 uv = vec2( roughness, dotNV );
+	return texture2D( dfgLUT, uv ).rg;
+
+}
+
+vec3 EnvironmentBRDF( const in vec3 normal, const in vec3 viewDir, const in vec3 specularColor, const in float specularF90, const in float roughness ) {
+
+	vec2 fab = DFGApprox( normal, viewDir, roughness );
+
+	return specularColor * fab.x + specularF90 * fab.y;
+
+}
+
+// Fdez-Agüera's "Multiple-Scattering Microfacet Model for Real-Time Image Based Lighting"
+// Approximates multiscattering in order to preserve energy.
+// http://www.jcgt.org/published/0008/01/03/
+#ifdef USE_IRIDESCENCE
+void computeMultiscatteringIridescence( const in vec3 normal, const in vec3 viewDir, const in vec3 specularColor, const in float specularF90, const in float iridescence, const in vec3 iridescenceF0, const in float roughness, inout vec3 singleScatter, inout vec3 multiScatter ) {
+#else
+void computeMultiscattering( const in vec3 normal, const in vec3 viewDir, const in vec3 specularColor, const in float specularF90, const in float roughness, inout vec3 singleScatter, inout vec3 multiScatter ) {
+#endif
+
+	vec2 fab = DFGApprox( normal, viewDir, roughness );
+
+	#ifdef USE_IRIDESCENCE
+
+		vec3 Fr = mix( specularColor, iridescenceF0, iridescence );
+
+	#else
+
+		vec3 Fr = specularColor;
+
+	#endif
+
+	vec3 FssEss = Fr * fab.x + specularF90 * fab.y;
+
+	float Ess = fab.x + fab.y;
+	float Ems = 1.0 - Ess;
+
+	vec3 Favg = Fr + ( 1.0 - Fr ) * 0.047619; // 1/21
+	vec3 Fms = FssEss * Favg / ( 1.0 - Ems * Favg );
+
+	singleScatter += FssEss;
+	multiScatter += Fms * Ems;
+
+}
+
+// GGX BRDF with multi-scattering energy compensation for direct lighting
+// Based on "Practical Multiple Scattering Compensation for Microfacet Models"
+// https://blog.selfshadow.com/publications/turquin/ms_comp_final.pdf
+vec3 BRDF_GGX_Multiscatter( const in vec3 lightDir, const in vec3 viewDir, const in vec3 normal, const in PhysicalMaterial material ) {
+
+	// Single-scattering BRDF (standard GGX)
+	vec3 singleScatter = BRDF_GGX( lightDir, viewDir, normal, material );
+
+	// Multi-scattering compensation
+	float dotNL = saturate( dot( normal, lightDir ) );
+	float dotNV = saturate( dot( normal, viewDir ) );
+
+	// Precomputed DFG values for view and light directions
+	vec2 dfgV = DFGApprox( vec3(0.0, 0.0, 1.0), vec3(sqrt(1.0 - dotNV * dotNV), 0.0, dotNV), material.roughness );
+	vec2 dfgL = DFGApprox( vec3(0.0, 0.0, 1.0), vec3(sqrt(1.0 - dotNL * dotNL), 0.0, dotNL), material.roughness );
+
+	// Single-scattering energy for view and light
+	vec3 FssEss_V = material.specularColor * dfgV.x + material.specularF90 * dfgV.y;
+	vec3 FssEss_L = material.specularColor * dfgL.x + material.specularF90 * dfgL.y;
+
+	float Ess_V = dfgV.x + dfgV.y;
+	float Ess_L = dfgL.x + dfgL.y;
+
+	// Energy lost to multiple scattering
+	float Ems_V = 1.0 - Ess_V;
+	float Ems_L = 1.0 - Ess_L;
+
+	// Average Fresnel reflectance
+	vec3 Favg = material.specularColor + ( 1.0 - material.specularColor ) * 0.047619; // 1/21
+
+	// Multiple scattering contribution
+	vec3 Fms = FssEss_V * FssEss_L * Favg / ( 1.0 - Ems_V * Ems_L * Favg * Favg + EPSILON );
+
+	// Energy compensation factor
+	float compensationFactor = Ems_V * Ems_L;
+
+	vec3 multiScatter = Fms * compensationFactor;
+
+	return singleScatter + multiScatter;
+
+}
+
+#if NUM_RECT_AREA_LIGHTS > 0
+
+	void RE_Direct_RectArea_Physical( const in RectAreaLight rectAreaLight, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in PhysicalMaterial material, inout ReflectedLight reflectedLight ) {
+
+		vec3 normal = geometryNormal;
+		vec3 viewDir = geometryViewDir;
+		vec3 position = geometryPosition;
+		vec3 lightPos = rectAreaLight.position;
+		vec3 halfWidth = rectAreaLight.halfWidth;
+		vec3 halfHeight = rectAreaLight.halfHeight;
+		vec3 lightColor = rectAreaLight.color;
+		float roughness = material.roughness;
+
+		vec3 rectCoords[ 4 ];
+		rectCoords[ 0 ] = lightPos + halfWidth - halfHeight; // counterclockwise; light shines in local neg z direction
+		rectCoords[ 1 ] = lightPos - halfWidth - halfHeight;
+		rectCoords[ 2 ] = lightPos - halfWidth + halfHeight;
+		rectCoords[ 3 ] = lightPos + halfWidth + halfHeight;
+
+		vec2 uv = LTC_Uv( normal, viewDir, roughness );
+
+		vec4 t1 = texture2D( ltc_1, uv );
+		vec4 t2 = texture2D( ltc_2, uv );
+
+		mat3 mInv = mat3(
+			vec3( t1.x, 0, t1.y ),
+			vec3(    0, 1,    0 ),
+			vec3( t1.z, 0, t1.w )
+		);
+
+		// LTC Fresnel Approximation by Stephen Hill
+		// http://blog.selfshadow.com/publications/s2016-advances/s2016_ltc_fresnel.pdf
+		vec3 fresnel = ( material.specularColor * t2.x + ( vec3( 1.0 ) - material.specularColor ) * t2.y );
+
+		reflectedLight.directSpecular += lightColor * fresnel * LTC_Evaluate( normal, viewDir, position, mInv, rectCoords );
+
+		reflectedLight.directDiffuse += lightColor * material.diffuseColor * LTC_Evaluate( normal, viewDir, position, mat3( 1.0 ), rectCoords );
+
+	}
+
+#endif
+
+void RE_Direct_Physical( const in IncidentLight directLight, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in PhysicalMaterial material, inout ReflectedLight reflectedLight ) {
+
+	float dotNL = saturate( dot( geometryNormal, directLight.direction ) );
+
+	vec3 irradiance = dotNL * directLight.color;
+
+	#ifdef USE_CLEARCOAT
+
+		float dotNLcc = saturate( dot( geometryClearcoatNormal, directLight.direction ) );
+
+		vec3 ccIrradiance = dotNLcc * directLight.color;
+
+		clearcoatSpecularDirect += ccIrradiance * BRDF_GGX_Clearcoat( directLight.direction, geometryViewDir, geometryClearcoatNormal, material );
+
+	#endif
+
+	#ifdef USE_SHEEN
+
+		sheenSpecularDirect += irradiance * BRDF_Sheen( directLight.direction, geometryViewDir, geometryNormal, material.sheenColor, material.sheenRoughness );
+
+	#endif
+
+	reflectedLight.directSpecular += irradiance * BRDF_GGX_Multiscatter( directLight.direction, geometryViewDir, geometryNormal, material );
+
+	reflectedLight.directDiffuse += irradiance * BRDF_Lambert( material.diffuseColor );
+}
+
+void RE_IndirectDiffuse_Physical( const in vec3 irradiance, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in PhysicalMaterial material, inout ReflectedLight reflectedLight ) {
+
+	reflectedLight.indirectDiffuse += irradiance * BRDF_Lambert( material.diffuseColor );
+
+}
+
+void RE_IndirectSpecular_Physical( const in vec3 radiance, const in vec3 irradiance, const in vec3 clearcoatRadiance, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in PhysicalMaterial material, inout ReflectedLight reflectedLight) {
+
+	#ifdef USE_CLEARCOAT
+
+		clearcoatSpecularIndirect += clearcoatRadiance * EnvironmentBRDF( geometryClearcoatNormal, geometryViewDir, material.clearcoatF0, material.clearcoatF90, material.clearcoatRoughness );
+
+	#endif
+
+	#ifdef USE_SHEEN
+
+		sheenSpecularIndirect += irradiance * material.sheenColor * IBLSheenBRDF( geometryNormal, geometryViewDir, material.sheenRoughness );
+
+	#endif
+
+	// Both indirect specular and indirect diffuse light accumulate here
+
+	vec3 singleScattering = vec3( 0.0 );
+	vec3 multiScattering = vec3( 0.0 );
+	vec3 cosineWeightedIrradiance = irradiance * RECIPROCAL_PI;
+
+	#ifdef USE_IRIDESCENCE
+
+		computeMultiscatteringIridescence( geometryNormal, geometryViewDir, material.specularColor, material.specularF90, material.iridescence, material.iridescenceFresnel, material.roughness, singleScattering, multiScattering );
+
+	#else
+
+		computeMultiscattering( geometryNormal, geometryViewDir, material.specularColor, material.specularF90, material.roughness, singleScattering, multiScattering );
+
+	#endif
+
+	vec3 totalScattering = singleScattering + multiScattering;
+	vec3 diffuse = material.diffuseColor * ( 1.0 - max( max( totalScattering.r, totalScattering.g ), totalScattering.b ) );
+
+	reflectedLight.indirectSpecular += radiance * singleScattering;
+	reflectedLight.indirectSpecular += multiScattering * cosineWeightedIrradiance;
+
+	reflectedLight.indirectDiffuse += diffuse * cosineWeightedIrradiance;
+
+}
+
+#define RE_Direct				RE_Direct_Physical
+#define RE_Direct_RectArea		RE_Direct_RectArea_Physical
+#define RE_IndirectDiffuse		RE_IndirectDiffuse_Physical
+#define RE_IndirectSpecular		RE_IndirectSpecular_Physical
+
+// ref: https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
+float computeSpecularOcclusion( const in float dotNV, const in float ambientOcclusion, const in float roughness ) {
+
+	return saturate( pow( dotNV + ambientOcclusion, exp2( - 16.0 * roughness - 1.0 ) ) - 1.0 + ambientOcclusion );
+
+}
+`;
+
+
+FILE node_modules/three/src/renderers/shaders/ShaderChunk/lights_fragment_begin.glsl.js
+export default /* glsl */`
+/**
+ * This is a template that can be used to light a material, it uses pluggable
+ * RenderEquations (RE)for specific lighting scenarios.
+ *
+ * Instructions for use:
+ * - Ensure that both RE_Direct, RE_IndirectDiffuse and RE_IndirectSpecular are defined
+ * - Create a material parameter that is to be passed as the third parameter to your lighting functions.
+ *
+ * TODO:
+ * - Add area light support.
+ * - Add sphere light support.
+ * - Add diffuse light probe (irradiance cubemap) support.
+ */
+
+vec3 geometryPosition = - vViewPosition;
+vec3 geometryNormal = normal;
+vec3 geometryViewDir = ( isOrthographic ) ? vec3( 0, 0, 1 ) : normalize( vViewPosition );
+
+vec3 geometryClearcoatNormal = vec3( 0.0 );
+
+#ifdef USE_CLEARCOAT
+
+	geometryClearcoatNormal = clearcoatNormal;
+
+#endif
+
+#ifdef USE_IRIDESCENCE
+
+	float dotNVi = saturate( dot( normal, geometryViewDir ) );
+
+	if ( material.iridescenceThickness == 0.0 ) {
+
+		material.iridescence = 0.0;
+
+	} else {
+
+		material.iridescence = saturate( material.iridescence );
+
+	}
+
+	if ( material.iridescence > 0.0 ) {
+
+		material.iridescenceFresnel = evalIridescence( 1.0, material.iridescenceIOR, dotNVi, material.iridescenceThickness, material.specularColor );
+
+		// Iridescence F0 approximation
+		material.iridescenceF0 = Schlick_to_F0( material.iridescenceFresnel, 1.0, dotNVi );
+
+	}
+
+#endif
+
+IncidentLight directLight;
+
+#if ( NUM_POINT_LIGHTS > 0 ) && defined( RE_Direct )
+
+	PointLight pointLight;
+	#if defined( USE_SHADOWMAP ) && NUM_POINT_LIGHT_SHADOWS > 0
+	PointLightShadow pointLightShadow;
+	#endif
+
+	#pragma unroll_loop_start
+	for ( int i = 0; i < NUM_POINT_LIGHTS; i ++ ) {
+
+		pointLight = pointLights[ i ];
+
+		getPointLightInfo( pointLight, geometryPosition, directLight );
+
+		#if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_POINT_LIGHT_SHADOWS )
+		pointLightShadow = pointLightShadows[ i ];
+		directLight.color *= ( directLight.visible && receiveShadow ) ? getPointShadow( pointShadowMap[ i ], pointLightShadow.shadowMapSize, pointLightShadow.shadowIntensity, pointLightShadow.shadowBias, pointLightShadow.shadowRadius, vPointShadowCoord[ i ], pointLightShadow.shadowCameraNear, pointLightShadow.shadowCameraFar ) : 1.0;
+		#endif
+
+		RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+
+	}
+	#pragma unroll_loop_end
+
+#endif
+
+#if ( NUM_SPOT_LIGHTS > 0 ) && defined( RE_Direct )
+
+	SpotLight spotLight;
+	vec4 spotColor;
+	vec3 spotLightCoord;
+	bool inSpotLightMap;
+
+	#if defined( USE_SHADOWMAP ) && NUM_SPOT_LIGHT_SHADOWS > 0
+	SpotLightShadow spotLightShadow;
+	#endif
+
+	#pragma unroll_loop_start
+	for ( int i = 0; i < NUM_SPOT_LIGHTS; i ++ ) {
+
+		spotLight = spotLights[ i ];
+
+		getSpotLightInfo( spotLight, geometryPosition, directLight );
+
+		// spot lights are ordered [shadows with maps, shadows without maps, maps without shadows, none]
+		#if ( UNROLLED_LOOP_INDEX < NUM_SPOT_LIGHT_SHADOWS_WITH_MAPS )
+		#define SPOT_LIGHT_MAP_INDEX UNROLLED_LOOP_INDEX
+		#elif ( UNROLLED_LOOP_INDEX < NUM_SPOT_LIGHT_SHADOWS )
+		#define SPOT_LIGHT_MAP_INDEX NUM_SPOT_LIGHT_MAPS
+		#else
+		#define SPOT_LIGHT_MAP_INDEX ( UNROLLED_LOOP_INDEX - NUM_SPOT_LIGHT_SHADOWS + NUM_SPOT_LIGHT_SHADOWS_WITH_MAPS )
+		#endif
+
+		#if ( SPOT_LIGHT_MAP_INDEX < NUM_SPOT_LIGHT_MAPS )
+			spotLightCoord = vSpotLightCoord[ i ].xyz / vSpotLightCoord[ i ].w;
+			inSpotLightMap = all( lessThan( abs( spotLightCoord * 2. - 1. ), vec3( 1.0 ) ) );
+			spotColor = texture2D( spotLightMap[ SPOT_LIGHT_MAP_INDEX ], spotLightCoord.xy );
+			directLight.color = inSpotLightMap ? directLight.color * spotColor.rgb : directLight.color;
+		#endif
+
+		#undef SPOT_LIGHT_MAP_INDEX
+
+		#if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_SPOT_LIGHT_SHADOWS )
+		spotLightShadow = spotLightShadows[ i ];
+		directLight.color *= ( directLight.visible && receiveShadow ) ? getShadow( spotShadowMap[ i ], spotLightShadow.shadowMapSize, spotLightShadow.shadowIntensity, spotLightShadow.shadowBias, spotLightShadow.shadowRadius, vSpotLightCoord[ i ] ) : 1.0;
+		#endif
+
+		RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+
+	}
+	#pragma unroll_loop_end
+
+#endif
+
+#if ( NUM_DIR_LIGHTS > 0 ) && defined( RE_Direct )
+
+	DirectionalLight directionalLight;
+	#if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
+	DirectionalLightShadow directionalLightShadow;
+	#endif
+
+	#pragma unroll_loop_start
+	for ( int i = 0; i < NUM_DIR_LIGHTS; i ++ ) {
+
+		directionalLight = directionalLights[ i ];
+
+		getDirectionalLightInfo( directionalLight, directLight );
+
+		#if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_DIR_LIGHT_SHADOWS )
+		directionalLightShadow = directionalLightShadows[ i ];
+		directLight.color *= ( directLight.visible && receiveShadow ) ? getShadow( directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowIntensity, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, vDirectionalShadowCoord[ i ] ) : 1.0;
+		#endif
+
+		RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+
+	}
+	#pragma unroll_loop_end
+
+#endif
+
+#if ( NUM_RECT_AREA_LIGHTS > 0 ) && defined( RE_Direct_RectArea )
+
+	RectAreaLight rectAreaLight;
+
+	#pragma unroll_loop_start
+	for ( int i = 0; i < NUM_RECT_AREA_LIGHTS; i ++ ) {
+
+		rectAreaLight = rectAreaLights[ i ];
+		RE_Direct_RectArea( rectAreaLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+
+	}
+	#pragma unroll_loop_end
+
+#endif
+
+#if defined( RE_IndirectDiffuse )
+
+	vec3 iblIrradiance = vec3( 0.0 );
+
+	vec3 irradiance = getAmbientLightIrradiance( ambientLightColor );
+
+	#if defined( USE_LIGHT_PROBES )
+
+		irradiance += getLightProbeIrradiance( lightProbe, geometryNormal );
+
+	#endif
+
+	#if ( NUM_HEMI_LIGHTS > 0 )
+
+		#pragma unroll_loop_start
+		for ( int i = 0; i < NUM_HEMI_LIGHTS; i ++ ) {
+
+			irradiance += getHemisphereLightIrradiance( hemisphereLights[ i ], geometryNormal );
+
+		}
+		#pragma unroll_loop_end
+
+	#endif
+
+#endif
+
+#if defined( RE_IndirectSpecular )
+
+	vec3 radiance = vec3( 0.0 );
+	vec3 clearcoatRadiance = vec3( 0.0 );
+
+#endif
+`;
+
+
+FILE node_modules/three/src/renderers/shaders/ShaderChunk/lights_fragment_maps.glsl.js
+export default /* glsl */`
+#if defined( RE_IndirectDiffuse )
+
+	#ifdef USE_LIGHTMAP
+
+		vec4 lightMapTexel = texture2D( lightMap, vLightMapUv );
+		vec3 lightMapIrradiance = lightMapTexel.rgb * lightMapIntensity;
+
+		irradiance += lightMapIrradiance;
+
+	#endif
+
+	#if defined( USE_ENVMAP ) && defined( STANDARD ) && defined( ENVMAP_TYPE_CUBE_UV )
+
+		iblIrradiance += getIBLIrradiance( geometryNormal );
+
+	#endif
+
+#endif
+
+#if defined( USE_ENVMAP ) && defined( RE_IndirectSpecular )
+
+	#ifdef USE_ANISOTROPY
+
+		radiance += getIBLAnisotropyRadiance( geometryViewDir, geometryNormal, material.roughness, material.anisotropyB, material.anisotropy );
+
+	#else
+
+		radiance += getIBLRadiance( geometryViewDir, geometryNormal, material.roughness );
+
+	#endif
+
+	#ifdef USE_CLEARCOAT
+
+		clearcoatRadiance += getIBLRadiance( geometryViewDir, geometryClearcoatNormal, material.clearcoatRoughness );
+
+	#endif
+
+#endif
+`;
+
+
+FILE node_modules/three/src/renderers/shaders/ShaderChunk/lights_fragment_end.glsl.js
+export default /* glsl */`
+#if defined( RE_IndirectDiffuse )
+
+	RE_IndirectDiffuse( irradiance, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+
+#endif
+
+#if defined( RE_IndirectSpecular )
+
+	RE_IndirectSpecular( radiance, iblIrradiance, clearcoatRadiance, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+
+#endif
+`;
+
+
+FILE node_modules/three/src/renderers/shaders/ShaderChunk/normal_fragment_begin.glsl.js
+export default /* glsl */`
+float faceDirection = gl_FrontFacing ? 1.0 : - 1.0;
+
+#ifdef FLAT_SHADED
+
+	vec3 fdx = dFdx( vViewPosition );
+	vec3 fdy = dFdy( vViewPosition );
+	vec3 normal = normalize( cross( fdx, fdy ) );
+
+#else
+
+	vec3 normal = normalize( vNormal );
+
+	#ifdef DOUBLE_SIDED
+
+		normal *= faceDirection;
+
+	#endif
+
+#endif
+
+#if defined( USE_NORMALMAP_TANGENTSPACE ) || defined( USE_CLEARCOAT_NORMALMAP ) || defined( USE_ANISOTROPY )
+
+	#ifdef USE_TANGENT
+
+		mat3 tbn = mat3( normalize( vTangent ), normalize( vBitangent ), normal );
+
+	#else
+
+		mat3 tbn = getTangentFrame( - vViewPosition, normal,
+		#if defined( USE_NORMALMAP )
+			vNormalMapUv
+		#elif defined( USE_CLEARCOAT_NORMALMAP )
+			vClearcoatNormalMapUv
+		#else
+			vUv
+		#endif
+		);
+
+	#endif
+
+	#if defined( DOUBLE_SIDED ) && ! defined( FLAT_SHADED )
+
+		tbn[0] *= faceDirection;
+		tbn[1] *= faceDirection;
+
+	#endif
+
+#endif
+
+#ifdef USE_CLEARCOAT_NORMALMAP
+
+	#ifdef USE_TANGENT
+
+		mat3 tbn2 = mat3( normalize( vTangent ), normalize( vBitangent ), normal );
+
+	#else
+
+		mat3 tbn2 = getTangentFrame( - vViewPosition, normal, vClearcoatNormalMapUv );
+
+	#endif
+
+	#if defined( DOUBLE_SIDED ) && ! defined( FLAT_SHADED )
+
+		tbn2[0] *= faceDirection;
+		tbn2[1] *= faceDirection;
+
+	#endif
+
+#endif
+
+// non perturbed normal for clearcoat among others
+
+vec3 nonPerturbedNormal = normal;
+
+`;
+
+
+FILE node_modules/three/src/renderers/shaders/ShaderChunk/normal_fragment_maps.glsl.js
+export default /* glsl */`
+
+#ifdef USE_NORMALMAP_OBJECTSPACE
+
+	normal = texture2D( normalMap, vNormalMapUv ).xyz * 2.0 - 1.0; // overrides both flatShading and attribute normals
+
+	#ifdef FLIP_SIDED
+
+		normal = - normal;
+
+	#endif
+
+	#ifdef DOUBLE_SIDED
+
+		normal = normal * faceDirection;
+
+	#endif
+
+	normal = normalize( normalMatrix * normal );
+
+#elif defined( USE_NORMALMAP_TANGENTSPACE )
+
+	vec3 mapN = texture2D( normalMap, vNormalMapUv ).xyz * 2.0 - 1.0;
+	mapN.xy *= normalScale;
+
+	normal = normalize( tbn * mapN );
+
+#elif defined( USE_BUMPMAP )
+
+	normal = perturbNormalArb( - vViewPosition, normal, dHdxy_fwd(), faceDirection );
+
+#endif
+`;
+
+
+FILE node_modules/three/src/renderers/shaders/ShaderChunk/aomap_fragment.glsl.js
+export default /* glsl */`
+#ifdef USE_AOMAP
+
+	// reads channel R, compatible with a combined OcclusionRoughnessMetallic (RGB) texture
+	float ambientOcclusion = ( texture2D( aoMap, vAoMapUv ).r - 1.0 ) * aoMapIntensity + 1.0;
+
+	reflectedLight.indirectDiffuse *= ambientOcclusion;
+
+	#if defined( USE_CLEARCOAT ) 
+		clearcoatSpecularIndirect *= ambientOcclusion;
+	#endif
+
+	#if defined( USE_SHEEN ) 
+		sheenSpecularIndirect *= ambientOcclusion;
+	#endif
+
+	#if defined( USE_ENVMAP ) && defined( STANDARD )
+
+		float dotNV = saturate( dot( geometryNormal, geometryViewDir ) );
+
+		reflectedLight.indirectSpecular *= computeSpecularOcclusion( dotNV, ambientOcclusion, material.roughness );
+
+	#endif
+
+#endif
+`;

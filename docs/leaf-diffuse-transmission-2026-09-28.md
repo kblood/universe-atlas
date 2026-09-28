@@ -1,156 +1,109 @@
-# Leaf diffuse transmission: implementation note
+# Leaf diffuse transmission — 2026-09-28
 
-_Research and implementation proposal, 2026-09-28. No runtime implementation
-or visual acceptance is included in this note._
+## Current prototype status
 
-## Current support gap
+`src/tree-leaf-transmission.ts` now contains an opt-in thin-leaf lighting
+prototype. The module type-checks and has received a genuine
+[Opus 5.5 source review](opus-leaf-transmission-review-2026-09-28.md).
+Five independent CPU tests and TypeScript checking pass. A final-source
+RTX 5090 browser calibration completed 70 probes with no page, console,
+request or WebGL errors. Source hashes are retained with the results.
+The tree-family loader now accepts an optional `leafTransmission` setting,
+and the tree lab exposes off, zero, 0.35, 0.5 and one on load. It defaults to off
+and is not connected to the planetary game. It does not parse or implement the complete
+`KHR_materials_diffuse_transmission` extension.
 
-Atlas foliage uses `MeshPhysicalMaterial` through `super-three@0.181.0`, loaded
-with Three.js's `GLTFLoader`. That material supports specular reflection and
-glass-like transmission, but the local material and loader sources contain no
-`diffuseTransmission` property or `KHR_materials_diffuse_transmission` handler.
-The asset pipeline's glTF-Transform 4.4.1 extension package does define and
-serialize the extension. That is authoring/transport support; it does not make
-the runtime render the effect.
+The helper patches the pinned Three physical-light shader for a two-sided leaf
+material. Its bounded model moves a factor of the base-colour diffuse response
+to the opposite hemisphere, multiplied by a linear RGB tint. It covers direct
+lights, rectangle-area lights, ambient/probe/hemisphere contributions, and the
+cube-UV diffuse environment term present in this shader. The host's specular,
+Fresnel, clearcoat, and sheen expressions remain unchanged. This is not a claim
+of a fully energy-conserving BRDF or extension conformance; indirect-light
+approximations and the supported renderer configuration still need validation.
 
-The current visible problem is foliage that stays dark on its backlit side.
-Changing exposure or base color globally would also alter bark, ground, sky,
-and unlit foliage areas, so it would conceal rather than solve the lighting
-gap.
+The factor defaults to zero. At zero the shader runs the original diffuse
+expressions and avoids opposite-hemisphere environment sampling. Nonzero values
+are shared uniforms, so changing the setting does not create per-tree or
+per-instance materials. The helper composes with the material's existing
+`onBeforeCompile` and program-cache key; it must be installed after the tree
+wind/deformation hook. Shader anchors must match exactly once or installation
+fails closed. It does not change the custom depth or distance materials, alpha
+mask, shadow silhouette, or wind deformation.
 
-## Recommended next step
+Transmission now uses `nonPerturbedNormal`: the view-facing surface normal
+after vertex/wind deformation, before normal-map perturbation. Reflection keeps
+its existing normal mapping. This avoids classifying light as passing through
+a planar leaf just because its normal-map bumps tilt past a grazing light.
+The opposite normal is assigned before the direct-light loop and is also used
+for transmitted hemisphere/probe/environment and rectangle-light contributions.
+The normal/light chunk order is checked. This is an intentional change from
+the initial source sent to Opus, which used the perturbed shading normal.
 
-Prototype a small, opt-in material shader hook for thin leaves, guided by
-`KHR_materials_diffuse_transmission`, while retaining the existing
-`MeshPhysicalMaterial` PBR path. The extension models a thin-surface Lambert
-diffuse BRDF/BTDF energy split: transmission moves a proportion of the
-non-specular diffuse response from reflection on the lit side to diffuse
-transmission on the opposite side. Specular reflection and Fresnel weighting
-remain intact. This is diffuse light through a thin surface, not refracted
-glass transmission.
+The supported-material guard requires a two-sided dielectric and rejects
+metalness maps, light maps, AO maps, and glass-style physical transmission.
+An assertion detects later replacement of the composed shader or cache-key
+hook. A guard failure during compilation throws; it does not silently fall back.
+The calibration fixture is `leaf-transmission-lab.html`: float linear output,
+direct/area/ambient/probe/hemisphere/environment light, both face orientations,
+normal maps, black-base specular isolation, and casting/non-casting leaves with
+optional blockers. The actual-tree comparison remains separate from this
+calibration; these results do not establish a realistic forest or a frame budget.
 
-Keep the first experiment narrowly scoped to foliage material data and the
-physical shader's diffuse-light terms. Preserve existing base color, alpha
-mask, normal-map, roughness, wind, and shadow behavior. Do not replace the
-physical shader with the Three.js example `SubsurfaceScatteringShader`: that
-example is a GDC 2011 approximate Phong/additive scattering effect, not the
-same energy-conserving PBR contract.
+## Calibrated results
 
-### Concrete adapter shape in the current tree loader
+See the [final 70-probe report](../test-results/tree-leaf-transmission/browser-final/report.json)
+and [browser harness](../test-results/tree-leaf-transmission/browser-check.mjs).
+The fixture reads a 256 × 256 float target in linear light without tone mapping.
+It ran on ANGLE/RTX 5090 Direct3D11. The original exact-zero assertion was
+replaced with a declared maximum absolute tolerance of `1e-7` after measuring
+compiler rounding across the separately compiled shaders.
 
-`src/tree-asset.ts` imports each LOD through `GLTFLoader`, shares the LOD0
-materials with LOD1 after checking its material and texture identity, then
-calls `deform()` on every shared material. The leaf material is named
-`MAT_AtlasFoliage`; the adapter can limit the diffuse-transmission hook to that
-material. `deform()` currently owns `onBeforeCompile` and sets a fixed
-`customProgramCacheKey`, so transmission must compose with this hook rather
-than replace it. The hook should preserve the current vertex edits for
-`_leaf_pivot`, `_wind`, normal, and tangent. The custom depth and distance
-materials should keep the existing deformation and alpha mask only; diffuse
-transmission changes color lighting, not depth or shadow silhouettes.
+| Check | Observed result |
+| --- | --- |
+| Original shader versus transmission factor zero, eight light types | Maximum absolute difference `7.45e-9`; six paths exactly equal, hemisphere and light-probe paths differ slightly |
+| Directional front/back and face flip | Factor one transmits opposite-side light and gives zero same-side diffuse in the neutral fixture |
+| White tint under symmetric ambient | Factor one equals the original output exactly |
+| Black base colour, nonzero specular, direct and environment light | Transmission changes no pixels |
+| Normal map on/off at full transmission | Tested transmitted-light pixels are identical, confirming the unperturbed-normal choice |
+| Directional, point and spot blockers | Shadowed central samples become zero; unblocked samples remain lit |
+| Casting versus non-casting flat leaf, zero normal bias | Pixel-identical in this fixture |
+| Casting flat leaf with authored-normal bias `0.035` | Reproduces the backlit self-shadow failure; maximum absolute difference `0.0872` from the unbiased result |
 
-For the color shader, use the pinned `super-three@0.181.0` physical-lighting
-chunks as the injection boundary, with fail-closed source checks against the
-expected chunk contents:
+Nonzero area, hemisphere, probe and environment paths were also exercised as
+changed-response checks; they are not extension-conformance comparisons.
+The fixture includes the source tree's roughness `0.84`, specular factor `0.44`
+and normal scale `0.55` in an additional sample.
 
-1. In `lights_physical_pars_fragment`, adapt `RE_Direct_Physical`'s diffuse
-   accumulation to split the Lambert term by `T`: front-side irradiance gets
-   `(1-T) * baseColor`, and opposite-side irradiance gets `T * transmissionColor`.
-   Keep the existing direct specular, clearcoat, and sheen expressions
-   unchanged. This is where directional, point, and spot-light shadowing has
-   already multiplied the light color, so using the same `directLight.color`
-   preserves the shadow result.
-2. Extend the indirect-light path to carry irradiance from the opposite
-   hemisphere alongside Three's existing irradiance. `lights_fragment_begin`
-   evaluates ambient, light-probe, and hemisphere contributions; evaluate
-   directional probe/hemisphere terms for `-geometryNormal` as well.
-   `lights_fragment_maps` adds light-map and environment terms, so decide and
-   test their directional treatment there rather than silently treating all
-   of them as front-side light.
-3. Split the indirect diffuse accumulation in both
-   `RE_IndirectDiffuse_Physical` and the diffuse portion of
-   `RE_IndirectSpecular_Physical`. Three accumulates environment-related
-   diffuse in the latter after specular multiscattering compensation; changing
-   only the direct-light function or `RE_IndirectDiffuse_Physical` would leave
-   some diffuse illumination unsplit. Leave its specular radiance and
-   multiscatter calculations unchanged.
+The tree lab now uses normal bias zero and depth bias `-0.0001` consistently
+for original and transmission materials. That is an experimental shadow
+setting for this metres-based lab, not a planetary shadow-bias policy. The
+earlier MASK/HASH timing/date run used its saved original shadow settings;
+its source snapshot and results remain unchanged.
 
-Use a uniform `diffuseTransmissionFactor` initially, with an optional
-transmission color factor. If textures are added, sample a linear scalar from
-the extension's alpha channel and sRGB-decode its color texture through the
-normal Three texture path. The render hook is an extension-guided prototype;
-GLTFLoader currently ignores this extension and the tree adapter rejects any
-`extensionsRequired`. Until there is an explicit asset-to-material contract,
-feed the opt-in values through a lab-only parameter or loader plugin rather
-than implying imported extension values are active. A future parser change
-must distinguish optional from required extensions instead of rejecting all
-required extensions indiscriminately.
+## Earlier design rationale
 
-The adapter must use the final `geometryNormal` after
-`normal_fragment_begin` and `normal_fragment_maps`. Three flips that normal
-for `DoubleSide` using `gl_FrontFacing` and adjusts tangent-frame direction
-before applying tangent-space maps. Atlas's wind deformation also rotates the
-leaf normal and tangent in `beginnormal_vertex`. Computing the light-side test
-from the undeformed attribute normal, the geometric face orientation, or a
-separate unflipped normal would give incorrect results on back faces or moving
-leaves. The transmission term should therefore be inserted in the lighting
-functions, after the normal map has been applied, and use the same
-view-facing shading normal as the existing BRDF.
+This prototype follows the narrow proposal below: address dark back-lit leaves
+in the foliage lighting path while keeping ordinary PBR, base colour, alpha,
+normal maps, roughness, wind, shadows, and non-leaf materials intact. The glTF
+extension describes thin-surface diffuse transmission, not refracted glass.
+Three's `SubsurfaceScatteringShader` is a separate GDC 2011 approximate
+Phong/additive effect, not the same PBR contract.
 
-Three's rectangle-area-light diffuse term is accumulated through
-`RE_Direct_RectArea_Physical`, separately from `RE_Direct_Physical`; a
-directional-light-only patch is not full support. Indirect lightmaps also do
-not expose the original incident direction. The first controlled experiment
-can either implement and validate those paths or explicitly limit its claim to
-the light types and indirect sources it handles. Do not claim extension
-conformance until all supported direct and indirect paths, including Fresnel
-and specular preservation, have been checked.
-
-The glTF extension is currently marked **Release Candidate**. A runtime hook
-should therefore be described as an implementation guided by the extension,
-not claimed conformant until its complete required behavior is verified. Do
-not upgrade Three.js solely in expectation of support; first verify a released
-version's material and loader implementation and test it with Atlas's runtime.
-
-## Validation before adoption
-
-Use one neutral leaf fixture and one current tree fixture with fixed exposure,
-environment, sun, and camera. Compare front lit, back lit, grazing, and
-shadowed leaves while changing only diffuse-transmission inputs. Confirm:
-
-- diffuse reflection and diffuse transmission exchange energy without
-  increasing the combined diffuse response;
-- front and back direct-light cases for directional, point, spot, and area
-  lights, plus the implemented indirect/environment sources, preserve the
-  expected energy split;
-- Fresnel/specular response is numerically unchanged as transmission varies,
-  while direct shadows still attenuate the transmitted diffuse term;
-- the standard glTF tangent-space normal convention (+Y) remains correct, and
-  `DoubleSide` does not invert the transmission side or break normal mapping;
-- base color, alpha coverage, wind motion, and ordinary non-leaf PBR materials
-  match the baseline when transmission is zero;
-- the effect improves the dark backlit foliage case without changing global
-  exposure or brightening unlit surfaces.
-
-Check shader replacement counts and program-cache keys as part of the adapter
-tests. A missing or changed Three shader anchor should fail the prototype
-closed rather than silently compiling an unmodified or partially modified
-shader. Test zero transmission against the current baseline, then increase the
-factor in controlled steps on both sides of a thin plane before testing the
-tree fixture. Include a wind pose and both face orientations to catch normal
-and tangent sign errors.
-
-Keep transmission opt-in and disabled by default until these checks pass.
-Measure shader cost on the target desktop profile before extending the path to
-Quest. A plain RGB leaf asset can use a material factor first; texture-driven
-factor/color inputs should wait until the runtime and asset round trip are
-verified.
+Before adoption, compare zero and increasing transmission values on a neutral
+leaf fixture and a tree under fixed exposure, environment, sun, and camera.
+Check front-lit, back-lit, grazing and shadowed leaves; direct-light shadows;
+both face orientations; the +Y tangent-space normal convention; and wind poses.
+Verify specular/Fresnel is unchanged and non-leaf materials match the zero
+baseline. Browser and target-desktop shader-cost checks remain outstanding;
+Quest extension is a later decision. Do not upgrade Three solely in
+expectation of built-in support.
 
 ## Sources
 
-- Khronos [`KHR_materials_diffuse_transmission` specification](https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_diffuse_transmission/README.md) — status, thin-surface model, energy split, and texture channels.
-- Three.js [`MeshPhysicalMaterial` reference](https://threejs.org/docs/pages/MeshPhysicalMaterial.html) — documented built-in physical material features; physically based `transmission` is a glass-like effect.
-- Local Three.js [`lights_physical_pars_fragment`](../node_modules/three/src/renderers/shaders/ShaderChunk/lights_physical_pars_fragment.glsl.js), [`lights_fragment_begin`](../node_modules/three/src/renderers/shaders/ShaderChunk/lights_fragment_begin.glsl.js), [`lights_fragment_maps`](../node_modules/three/src/renderers/shaders/ShaderChunk/lights_fragment_maps.glsl.js), and [`normal_fragment_maps`](../node_modules/three/src/renderers/shaders/ShaderChunk/normal_fragment_maps.glsl.js) at the app's pinned `super-three@0.181.0` — current direct/indirect lighting and post-normal-map insertion points.
-- Local [`tree-asset.ts`](../src/tree-asset.ts) — current imported foliage material, deformation hook, and custom depth/distance material behavior.
-- Three.js [`SubsurfaceScatteringShader` source](https://github.com/mrdoob/three.js/blob/r181/examples/jsm/shaders/SubsurfaceScatteringShader.js) — example shader and its GDC 2011 approximation basis.
-- glTF-Transform [`KHRMaterialsDiffuseTransmission` extension source](https://github.com/donmccurdy/glTF-Transform/blob/v4.4.1/packages/extensions/src/khr-materials-diffuse-transmission/extension.ts) — local pipeline's serialization support; this does not imply runtime shading support.
+- Khronos [`KHR_materials_diffuse_transmission`](https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_diffuse_transmission/README.md) — thin-surface model and extension status.
+- Three.js [`MeshPhysicalMaterial`](https://threejs.org/docs/pages/MeshPhysicalMaterial.html) — documented physical material features.
+- Local [`tree-leaf-transmission.ts`](../src/tree-leaf-transmission.ts) — current experimental shader patch and material guards.
+- Installed Three shader chunks `lights_physical_pars_fragment`, `lights_fragment_begin`, and `lights_fragment_maps` at pinned `super-three@0.181.0`; exact review inputs are retained with the Opus record.
+- [`tree-asset.ts`](../src/tree-asset.ts) — optional foliage-only integration after the shared family wind/deformation hook.
+- Three.js [`SubsurfaceScatteringShader`](https://github.com/mrdoob/three.js/blob/r181/examples/jsm/shaders/SubsurfaceScatteringShader.js) — separate approximate scattering example.

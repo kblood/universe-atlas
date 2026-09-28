@@ -1,0 +1,22 @@
+{
+  "revision": "53b41ea63ca31e9bcffcf071329585a34760432e",
+  "dirty": true,
+  "files": [
+    {
+      "path": "src/tree-leaf-transmission.ts",
+      "sha256": "694d0568a730d64eb17ea023e5739baeb58728c0c023c87cc4482a1ce5237336"
+    },
+    {
+      "path": "src/leaf-transmission-lab.ts",
+      "sha256": "31f6bdb576fdd080a0ff8f78720ad239cc46405d6dea1b6ed9ba2ef5b939f620"
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "sha256": "109033ea24dc21aee9bc7a2a7fc673ae18c23369f864b9974c4ba833baf6e1c5"
+    },
+    {
+      "path": "src/tree-asset-lab.ts",
+      "sha256": "3cc2867816bc17e4651d20df8e474a4373209e3a59cbe8de12fee01072d433be"
+    }
+  ]
+}
