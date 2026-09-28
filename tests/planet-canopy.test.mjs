@@ -106,7 +106,11 @@ test('presentation replacement validates before adoption and rapid dates preserv
   }finally{h.restore();}
 });
 
-test('selection requests and queued census results stay bounded and installs are frame budgeted',()=>{
+test('selection requests and queued census results stay bounded and installs are frame budgeted',t=>{
+  // This test verifies deterministic operation quotas, not real machine speed.
+  // With a fixed monotonic clock each call exercises the full 512-step ceiling;
+  // the separate production implementation still stops when its 2 ms slice expires.
+  t.mock.method(performance,'now',()=>0);
   const h=begin(4096),addresses=Array.from({length:70},(_,i)=>address(i,h.n));
   try{
     const request=selectAndRequest(h,addresses);
@@ -129,6 +133,21 @@ test('selection requests and queued census results stay bounded and installs are
     const nextRequest=h.worker.sent.findLast(m=>m.type==='patches');
     assert.equal(nextRequest.addresses.length,addresses.length-request.addresses.length,
       'the remaining selection is requested only after the first bounded batch drains');
+  }finally{h.restore();}
+});
+
+test('selection application stops at the injected monotonic two millisecond deadline',t=>{
+  const h=begin(64),n=h.n;
+  try{
+    const addresses=Array.from({length:1300},(_,i)=>[0,n,i,1000]);
+    h.host.selection={id:999,center:[...ground],started:0};
+    h.host.selectionApply={packed:Float64Array.from(addresses.flat()),offset:0,desired:new Map(),order:[],phase:'addresses',iterator:null,evictions:[],workMs:0,workerMs:0};
+    let now=0;t.mock.method(performance,'now',()=>{now+=.01;return now;});
+    h.host.applySelectionSlice(0);
+    const offset=h.host.selectionApply.offset;
+    assert.ok(offset>0&&offset<addresses.length*4,`deadline preserves a partial scan (${offset/4} of ${addresses.length})`);
+    assert.equal(offset%4,0,'only complete address records are applied');
+    assert.ok(h.host.selectionApply.workMs>=2,'the injected clock crossed the bounded slice deadline');
   }finally{h.restore();}
 });
 

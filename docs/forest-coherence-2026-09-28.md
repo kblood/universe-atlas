@@ -66,9 +66,7 @@ The same deterministic structure is applied at every distance: near LOD0, mid LO
 | `npm test` (full) | 667 pass, 5 fail, 3 skipped | `cpu-full-suite.log` |
 | `npm run build` | tsc + Vite build succeeded (existing >800 kB chunk warning) | — |
 
-**The 5 full-suite failures are not caused by this branch:**
-- Four are cosmology/time version pins (`atlas-cosmology-2-radiation` vs pinned `-1`, `atlas-history-3-remnant-cooling` vs `-2`, and two dependent checks). Their sources are unchanged since `75eb074`.
-- The fifth, `planet-canopy` "installs are frame budgeted", is a millisecond-budget test. It fails only under parallel load and passes alone and in the serial focused run.
+**The recorded full-suite run had 5 failures; it was not green.** Four are existing cosmology/time version-pin mismatches (`atlas-cosmology-2-radiation` vs pinned `-1`, `atlas-history-3-remnant-cooling` vs `-2`, and two dependent checks). Their sources are unchanged on this branch. The fifth is `planet-canopy`'s “remaining selection is requested only after the first bounded batch drains” assertion. It failed in the full parallel suite and passed in the isolated/serial run. The test combines deterministic quotas with production's wall-clock 2 ms slice, so suite scheduling can affect its drain expectation. A follow-up test change replaces wall time with a fixed clock for the quota/drain assertion and adds a separate injected-clock test proving that selection work stops after the 2 ms deadline. The historical full-suite failure remains recorded; it has not been rerun after that test-only change.
 
 **New test coverage:**
 - Variant determinism, stratification, bounds and frozen pools.
