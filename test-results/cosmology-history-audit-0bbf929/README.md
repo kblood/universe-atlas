@@ -43,10 +43,13 @@ post-commit run.
 
 ## Full suite on the aligned revision
 
-On commit `16f9e2fd8f09d2d9c6fc7d1b1534b1f77c88dff5`, `npm test` exited 0:
-**664 tests, 661 passed, 0 failed, 3 skipped** (54.2 seconds). The three
-skips are optional retained-tree GLB checks that require `ATLAS_TREE_CANDIDATE`
-or explicit LOD paths. No dependency or environment failures occurred.
+On commit `16f9e2fd8f09d2d9c6fc7d1b1534b1f77c88dff5`, command `npm test`
+exited **0**: **664 tests, 661 passed, 0 failed, 3 skipped** (54.2 seconds).
+The three skips are optional retained-tree GLB checks that require
+`ATLAS_TREE_CANDIDATE` or explicit LOD paths. No dependency or environment
+failures occurred. The tool returned test output in truncated chunks; no raw
+full-suite log was retained, so these counts are the recorded summary rather
+than a saved transcript.
 
 Version-field handling is not a compatibility migration: fields other than
 `time` are not compared or dispatched. Old bookmarks may be evaluated by the
