@@ -1,0 +1,61 @@
+{
+  "capturedAt": "2026-09-28T11:25:03.773Z",
+  "revision": "8e16776b20effaa1e2bd89a6de4b47654a1cae5e",
+  "gitStatus": "",
+  "files": [
+    {
+      "path": "docs/desktop-realism-implementation-plan-2026-09-27.md",
+      "sha256": "802dcdb423f4fa3fb6d649af437866a436f8e474536b98df0f1bf85ac4eacfa1"
+    },
+    {
+      "path": "docs/desktop-rendering-stage-c-2026-09-28.md",
+      "sha256": "29efe70af02d5e3c0e32a027e24fb305b739fcea3b006c96c085b5db7136435a"
+    },
+    {
+      "path": "docs/tree-forest-integration-2026-09-28.md",
+      "sha256": "5832c4be47bb69f677f5cf9d52f9e05065238e7cc458e92c0b181b133127a80d"
+    },
+    {
+      "path": "docs/tree-foliage-minification-2026-09-28.md",
+      "sha256": "87eb4a2928998ad0520a819560c85a117a387d77fb3380eaad02e4275899aca7"
+    },
+    {
+      "path": "docs/canopy-runtime-integration-2026-09-28.md",
+      "sha256": "67f033e52f8e0f5122fcdb5d37547d8df8c549ecc608db530b26ec7d8635829e"
+    },
+    {
+      "path": "src/planet-forest.ts",
+      "sha256": "fe3c9bde23d06753c9b479a5f7fe8da213d866b1d389ba39e4b5c5db8de5f563"
+    },
+    {
+      "path": "src/tree-asset.ts",
+      "sha256": "2688dbfae20e92820ac121333faaab251c85a28876018fda00a99c057d47b04b"
+    },
+    {
+      "path": "src/forest-tree-catalogue.ts",
+      "sha256": "11fea8d2e51a7002dd0aa17de0e8ddd00e73ff29b7a447aff989702110810258"
+    },
+    {
+      "path": "src/tree-species-recipe.ts",
+      "sha256": "a7ad583f72e728be2ba4c75a56197c77b8333f2e17c1e9cd7d3de359949a327f"
+    },
+    {
+      "path": "test-results/tree-forest-integration/README.md",
+      "sha256": "7905a3b39cd3a5d74323895856ce4ddd2770b2e2a6052940672c849a5bbb6d53"
+    },
+    {
+      "path": "test-results/tree-forest-live/second-run-failure.json",
+      "sha256": "ddf3b5a951227ddb418455a365e488fcc2982fb1ef20d1d17f1286cbde24a250"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\tree-forest-integration\\hardware-family-f-verified\\detailed-forest-initial.png",
+      "sha256": "7460ee9a973482b2392c69a0729715c4366f817a05ad3234070b77aeebf1e4eb"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\universe-atlas-rendering\\test-results\\tree-forest-integration\\hardware-family-f-verified\\detailed-forest-after-movement.png",
+      "sha256": "72d1f4bb736793eb2ffd647489e0178d6787f91f3b34effe657b4364e310c75e"
+    }
+  ]
+}

@@ -521,3 +521,16 @@ shared meshes with individual transforms/colours. Custom shape/colour masks need
 our shader and data contract. [Cascaded shadows](https://threejs.org/docs/pages/CSM.html)
 and [Bruneton's atmosphere reference](https://ebruneton.github.io/precomputed_atmospheric_scattering/)
 are candidate techniques, not validated Atlas dependencies.
+
+## 10. Direction after the current-state review — 2026-09-28
+
+The user-requested [Opus 5.5 review](opus-5.5-desktop-state-review-2026-09-28.md)
+recommends prioritizing one coherent, lit forest area reached through ordinary
+game controls. The [assessment and acceptance criteria](desktop-state-review-assessment-2026-09-28.md)
+retain the full objective and order the next work: resolve the live navigation
+check; establish vegetation lighting and bounded shadows; combine existing
+branching/conifer assets and foliage mip correction; match the distant canopy;
+then enable the accepted result through normal desktop loading/settings.
+Separate AA experiments and additional standalone tree labs are deferred.
+The local detailed-tree integration is committed; it is not the live default
+or proof that the broader realism goal is complete.

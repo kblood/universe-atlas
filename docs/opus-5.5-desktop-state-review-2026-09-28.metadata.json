@@ -1,0 +1,15 @@
+{
+  "capturedAt": "2026-09-28T11:25:03.773Z",
+  "revision": "8e16776b20effaa1e2bd89a6de4b47654a1cae5e",
+  "model": "claude-opus-5-5",
+  "provider": "firstParty",
+  "isError": false,
+  "numTurns": 3,
+  "permissionDenials": [],
+  "toolsEnabled": [
+    "Read"
+  ],
+  "durationMs": 91697,
+  "inputs": "../test-results/opus-desktop-state-review/inputs.json",
+  "rawResponse": "../test-results/opus-desktop-state-review/response.json"
+}

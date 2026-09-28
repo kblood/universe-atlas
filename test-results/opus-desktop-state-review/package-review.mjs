@@ -1,0 +1,8 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+const root='test-results/opus-desktop-state-review';
+const response=JSON.parse(readFileSync(`${root}/response.json`,'utf8'));
+const inputs=JSON.parse(readFileSync(`${root}/inputs.json`,'utf8'));
+if(response.is_error||!response.modelUsage?.['claude-opus-5-5']||response.modelUsage['claude-opus-5-5'].provider!=='firstParty')throw new Error('Expected genuine successful Opus 5.5 review');
+const note=`_Independent source and screenshot review, 2026-09-28. Snapshot: clean source/live release \`8e16776\`. Opus was given the plan, implementation records, source, local integration screenshots and the then-unresolved live smoke result. The response below is preserved verbatim; its estimates and recommendations are reviewer judgments, not additional test results. See the [response metadata](opus-5.5-desktop-state-review-2026-09-28.metadata.json) and [implementation assessment](desktop-state-review-assessment-2026-09-28.md)._\n\n`;
+writeFileSync('docs/opus-5.5-desktop-state-review-2026-09-28.md',note+response.result+'\n');
+writeFileSync('docs/opus-5.5-desktop-state-review-2026-09-28.metadata.json',JSON.stringify({capturedAt:inputs.capturedAt,revision:inputs.revision,model:'claude-opus-5-5',provider:response.modelUsage['claude-opus-5-5'].provider,isError:response.is_error,numTurns:response.num_turns,permissionDenials:response.permission_denials,toolsEnabled:['Read'],durationMs:response.duration_ms,inputs:'../test-results/opus-desktop-state-review/inputs.json',rawResponse:'../test-results/opus-desktop-state-review/response.json'},null,2)+'\n');
