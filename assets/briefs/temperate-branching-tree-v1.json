@@ -30,13 +30,13 @@
   },
   "provenance": {
     "sourceType":"original",
-    "generator":{"provider":"blender-authored","model":"procedural-tree-component-authoring","checkpoint":null,"version":"atlas-branching-author-6","workflow":"assetctl-blender-tree-family"},
+    "generator":{"provider":"blender-authored","model":"procedural-tree-component-authoring","checkpoint":null,"version":"atlas-branching-author-7","workflow":"assetctl-blender-tree-family"},
     "prompt":"Author connected tapered wood and physically scaled broadleaf components for species-directed variants; preserve editable source and all export provenance.",
     "negativePrompt":"floating limbs, opaque crown blobs, baked sun lighting",
     "seed":729281,
     "sourceUrl":null,"sourceConsent":"not-applicable","parents":[],
     "license":{"expression":"NOASSERTION","attribution":null,"restrictions":["Prototype assets require visual, LOD, provenance and runtime acceptance before packaging or shipping"]},
-    "notes":"Original procedural mesh and texture proposals have been authored through the named operation and reviewed. No external mesh, photograph or learned generator input is used. This brief does not assert a finished asset, resolved output license or a runtime budget pass."
+    "notes":"Version 7 declares procedural bark/foliage RGB as linear reflectance and explicitly encodes it for byte sRGB textures, based on the saved color calibration. Alpha and normal-map data remain unchanged. Original procedural mesh and texture proposals use no external mesh, photograph or learned generator input. This brief does not assert a finished asset, resolved output license or a runtime budget pass."
   },
   "experiments":{"providers":["blender-authored"],"seeds":[729281],"selectionMetric":"Connected silhouette, physical leaf scale, LOD consistency, alpha overdraw, full-scene timing and cleanup cost"}
 }
