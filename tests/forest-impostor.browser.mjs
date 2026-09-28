@@ -14,23 +14,31 @@ let report;
 try{
   await page.route(`${base}/impostor-test`,r=>r.fulfill({contentType:'text/html',body:'<!doctype html><style>body{margin:0;background:#223}</style><script type="module" src="/tests/forest-impostor-lab.mjs"></script>'}));
   await page.goto(`${base}/impostor-test`);await page.waitForFunction(()=>window.labReady,{}, {timeout:90000});assert.deepEqual(errors,[]);
-  report=await page.evaluate(()=>{
+  report=await page.evaluate(async()=>{
     const lab=window.impostorLab;lab.far.uniforms.treeFaceted.value=0;const full=lab.compare(1);
     let low=.75,high=1;for(let i=0;i<8;i++){const scale=(low+high)/2,result=lab.compare(scale),mean=result.ratios.reduce((s,v)=>s+v,0)/64;if(mean>1)high=scale;else low=scale;}
     const fitted=lab.compare((low+high)/2);lab.far.uniforms.treeFaceted.value=1;
-    const faceted=lab.compare(1),inflated=lab.compare(1,2),masks=lab.verifyMasks(),perspective=lab.verifyDepthAndPerspective(),antialiasing=lab.verifyAntialiasing();
+    const faceted=lab.compare(1),inflated=lab.compare(1,2),masks=lab.verifyMasks(),perspective=[1,1e-3,1e-6].flatMap(scale=>lab.verifyDepthAndPerspective(scale)),antialiasing=lab.verifyAntialiasing();
+    const ownership=await lab.verifyOwnership();
     const gl=lab.renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');
     return {acceptedRepresentation:'faceted mesh planes',acceptedScale:1,rejectedRepresentation:'fitted smooth ellipsoids',
       renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'unavailable',poses:lab.poses,referenceAreas:lab.referenceAreas,
-      uncalibrated:full,fitted,faceted,inflated,masks,perspective,antialiasing,meanError:faceted.ratios.reduce((s,v)=>s+Math.abs(v-1),0)/64,maxError:Math.max(...faceted.ratios.map(v=>Math.abs(v-1)))};
+      uncalibrated:full,fitted,faceted,inflated,masks,perspective,antialiasing,ownership,meanError:faceted.ratios.reduce((s,v)=>s+Math.abs(v-1),0)/64,maxError:Math.max(...faceted.ratios.map(v=>Math.abs(v-1)))};
   });
   assert.ok(report.referenceAreas.every(x=>x>100),'reference draws visible silhouettes');
   assert.ok(report.fitted.areas.every(x=>x>100),'impostor draws visible silhouettes');
   // Rasterization/interpolation can disagree at a boundary. Check actual masks,
   // not net area alone: every changed pixel must touch the one-pixel silhouette edge.
   assert.ok(report.maxError<.001,'faceted shape preserves projected area to 0.1%');
+  for(const sample of report.ownership){assert.equal(sample.interior,0,'paired near/far hash has no interior coverage holes');assert.ok(sample.changed<=32,'ownership partition differs only at silhouette edges');}
   for(const aa of report.antialiasing){assert.equal(aa.enabled,Number(aa.samples>1));assert.ok(aa.maxRelativeAreaError<.01,'MSAA projected coverage stays within 1%');}
-  for(const masks of [...report.masks,...report.perspective])for(const key of ['reference','bounds']){
+  // Regional flight and walking use metre view units. An additional 1e-6
+  // stress case intentionally records log(1+depth) precision loss, not support
+  // for drawing close trees in compressed astronomical coordinates.
+  report.compressedScaleStress={accepted:false,viewUnitsPerMetre:1e-6,
+    reason:'Installed logarithmic depth loses precision adding tiny view depths to 1; close vegetation requires regional metre coordinates',
+    results:report.perspective.filter(p=>p.viewUnitsPerMetre===1e-6)};
+  for(const masks of [...report.masks,...report.perspective.filter(p=>p.viewUnitsPerMetre>=1e-3)])for(const key of ['reference','bounds']){
     assert.equal(masks[key].interior,0,`${key} has no interior silhouette mismatch`);
     assert.ok(masks[key].changed<=32,`${key} has at most 32 edge pixel differences`);
   }
@@ -38,7 +46,7 @@ try{
   await page.evaluate(()=>window.impostorLab.show(true));await page.screenshot({path:`${out}/impostor.png`});
   await page.evaluate(()=>window.impostorLab.show(false,[1,.4,2],1,true));await page.screenshot({path:`${out}/reference-lit.png`});
   await page.evaluate(()=>window.impostorLab.show(true,[1,.4,2],1,true));await page.screenshot({path:`${out}/impostor-lit.png`});
-  assert.deepEqual(errors,[]);report.ok=true;report.errors=errors;report.scope='Isolated 64-view orthographic silhouettes, perspective bounds and opaque depth at 24/64/650/4000m; not game/streaming acceptance';
+  assert.deepEqual(errors,[]);report.ok=true;report.errors=errors;report.scope='Isolated 64-view silhouettes; perspective bounds/opaque depth at 24/64/650/4000m in metre and 1e-3 view units; six actual-shader ownership partitions. The 1e-6 compressed-coordinate stress case is NOT accepted. Not full game/streaming acceptance.';
   report.recordedAt=new Date().toISOString();report.source={baseCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),files:[]};
   for(const path of ['src/forest-impostor.ts','src/tree-shape.ts','tests/forest-impostor-lab.mjs','tests/forest-impostor.browser.mjs'])report.source.files.push({path,sha256:createHash('sha256').update(await readFile(path)).digest('hex')});
   await writeFile(`${out}/report.json`,JSON.stringify(report,null,2));console.log(JSON.stringify({ok:true,renderer:report.renderer,acceptedScale:report.acceptedScale,rejectedEllipsoidFitScale:report.fitted.scale,meanError:report.meanError,maxError:report.maxError}));

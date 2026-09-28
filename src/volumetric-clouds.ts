@@ -205,6 +205,7 @@ void main(){
 }`;
 
 const resolveFragment=fragment.slice(0,fragment.indexOf('void main(){'))+`
+uniform bool opaqueOutput;
 uniform sampler2D cloudColor;
 uniform vec2 cloudSize;
 void main(){
@@ -239,7 +240,9 @@ void main(){
     cloud+=texture2D(cloudColor,uv)*w;weight+=w;
   }
   cloud/=max(weight,.00001);
-  gl_FragColor=vec4(cloud.rgb+(1.-cloud.a)*background.rgb,background.a);
+  // MSAA has already resolved geometric coverage into RGB. Exporting the
+  // alpha-to-coverage value to the browser would composite tree edges twice.
+  gl_FragColor=vec4(cloud.rgb+(1.-cloud.a)*background.rgb,opaqueOutput?1.0:background.a);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }`;
@@ -307,7 +310,7 @@ export class VolumetricClouds {
     this.mesh.onBeforeRender=(_r,_s,camera)=>configureView(camera);
     this.scene.add(this.mesh);
     this.resolveMaterial=new THREE.ShaderMaterial({vertexShader:vertex,fragmentShader:resolveFragment,
-      uniforms:{...this.material.uniforms,cloudColor:{value:null},cloudSize:{value:new THREE.Vector2()}},depthTest:false,depthWrite:false});
+      uniforms:{...this.material.uniforms,cloudColor:{value:null},cloudSize:{value:new THREE.Vector2()},opaqueOutput:{value:true}},depthTest:false,depthWrite:false});
     this.resolveMesh=new THREE.Mesh(new THREE.PlaneGeometry(2,2),this.resolveMaterial);this.resolveMesh.frustumCulled=false;
     this.resolveMesh.onBeforeRender=(_r,_s,camera)=>{
       configureView(camera);
@@ -379,7 +382,7 @@ export class VolumetricClouds {
     u.steps.value=quality.steps;u.lightSteps.value=quality.lightSteps;
     u.coverageScale.value=this.coverageScale;u.extinctionScale.value=this.extinctionScale;
     u.logarithmicDepth.value=renderer.capabilities.logarithmicDepthBuffer;u.cloudsEnabled.value=this.enabled;
-    this.captures=[];
+    this.captures=[];this.resolveMaterial.uniforms.opaqueOutput.value=!presenting;
     const viewAutoUpdates=views.map(view=>view.matrixWorldAutoUpdate);
     try{
       // XR sub-camera world matrices already include the user's rig transform.

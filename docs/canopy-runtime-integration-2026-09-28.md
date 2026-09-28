@@ -66,3 +66,25 @@ temporary rebase storage. JavaScript object/map and worker memory are additional
 
 Luna's full suite after this correction: 481/485 pass. The four existing
 failures concern time saturation, two version expectations and horizon gating.
+
+## Shader and compositing follow-up
+
+The extended GPU lab checks opaque occlusion at 24, 64, 650 and 4,000 metres,
+three camera directions and both metre and 0.001 view units per metre. It also
+compiles the game's actual near-tree coverage material and checks six ownership
+levels against the far proxy. Accepted cases have no interior mask differences;
+edge differences stay within the original threshold.
+
+A separate 0.000001 view-unit stress probe is **not accepted**: adding tiny
+view depths to 1 in the installed logarithmic depth convention loses precision.
+It reports up to 523 differing edge pixels and two interior pixels in occluded
+close views. Regional flight and walking use metre coordinates; this result is
+an explicit reason to keep vegetation in that local scale. The test report
+retains the failed stress measurements instead of claiming universal scaling.
+
+Luna's first independent flight/walk run settled without worker failures,
+population disagreements or uploads after over 600 metres of combined travel.
+It found partial final canvas alpha at MSAA2/4 (838/1,093 pixels below 255).
+The desktop cloud composite now exports opaque alpha after RGB coverage is
+resolved; XR retains its previous alpha semantics. Unit checks pass and a new
+full-game alpha/flight run is pending.

@@ -41,6 +41,13 @@ test('AA reduces sample count before sacrificing native scene detail',()=>{
 });
 
 const terrestrial = { hasAtmosphere: true, hasOcean: true, temperatureK: 285, radiusM: 6_200_000, spinPeriodS: 86_400 };
+test('desktop resolve exports opaque alpha after scene MSAA coverage is resolved',()=>{
+  const clouds=new VolumetricClouds(terrestrial,new THREE.Group());
+  try{
+    assert.equal(clouds.resolveMaterial.uniforms.opaqueOutput.value,true);
+    assert.match(clouds.resolveMaterial.fragmentShader,/opaqueOutput\?1\.0:background\.a/);
+  }finally{clouds.dispose();}
+});
 
 test('Beer-Lambert cloud extinction is bounded, monotonic and composable', () => {
   const sigma = 0.00018;
