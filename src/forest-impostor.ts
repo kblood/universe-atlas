@@ -7,7 +7,7 @@ import type {TreeCanopyProfile,TreeCullingBounds,TreeTrunkProfile} from './tree-
 import {deriveFamilyProxyBounds,deriveVariantFamilyProxyBounds} from './tree-canopy-bounds.ts';
 import {forestFarAtlasCommonGLSL,forestFarAtlasGLSL,FOREST_FAR_ATLAS_VERSION} from './forest-far-atlas.ts';
 import {forestVariantEnvelope,forestVariantGLSL,forestVariantUniformData,FOREST_VARIANT_COUNT,FOREST_VARIANT_VERSION,type ForestStructuralVariant} from './tree-structural-variant.ts';
-import {packTreeAllometryParameter,treeAllometryBox,treeAllometryGLSL,unpackTreeAllometryParameter,unpackTreeAllometryRatios,
+import {packTreeAllometryParameter,treeAllometryAtlasStretch,treeAllometryBox,treeAllometryGLSL,unpackTreeAllometryParameter,unpackTreeAllometryRatios,
   TREE_ALLOMETRY_IDENTITY_CODE,TREE_ALLOMETRY_VERSION,TREE_FAMILY_ALLOMETRY_ENVELOPE,TREE_LEGACY_ALLOMETRY_ENVELOPE,type TreeAllometryReference} from './tree-allometry.ts';
 
 export type ForestFamilyPresentation={enabled:boolean;lod1Profile:TreeCanopyProfile;conservativeBounds:TreeCullingBounds;
@@ -46,7 +46,7 @@ const familyUniformGLSL=`uniform vec4 treeFamilyBands[8];uniform vec2 treeFamily
   uniform vec3 treeFamilyBark[2],treeFamilyFoliage[2],treeFamilyCenter[2],treeFamilyExtent[2];
   uniform vec2 treeFamilyBounds,treeFamilyMargin,treeFamilyLean;
   uniform vec4 treeFamilyDensity[2],treeFamilyVariantA[${2*FOREST_VARIANT_COUNT}],treeFamilyVariantB[${2*FOREST_VARIANT_COUNT}];
-  uniform vec3 treeFamilyTrunk[2];uniform vec2 treeFamilyClump;`;
+  uniform vec3 treeFamilyTrunk[2],treeFamilyAllometry[2];uniform vec2 treeFamilyClump;`;
 const identityVariants=()=>forestVariantUniformData([]);
 
 const scalar=(x:number)=>Number.isInteger(x)?`${x}.0`:String(x);
@@ -162,6 +162,8 @@ export class ForestImpostors {
     // Zero projected area keeps the solid legacy crown; zero trunk height keeps the legacy trunk.
     treeFamilyDensity:{value:[new THREE.Vector4(),new THREE.Vector4()]},
     treeFamilyTrunk:{value:[new THREE.Vector3(),new THREE.Vector3()]},treeFamilyClump:{value:new THREE.Vector2(1,1)},
+    // Allometry reference per family (trunk radius, p95 crown radius, card extent; m).
+    treeFamilyAllometry:{value:[new THREE.Vector3(),new THREE.Vector3()]},
     // Captured far atlas per family; the analytic bands remain while absent.
     treeAtlasColour0:{value:emptyAtlasTexture() as THREE.Texture},treeAtlasColour1:{value:emptyAtlasTexture() as THREE.Texture},
     treeAtlasData0:{value:emptyAtlasTexture() as THREE.Texture},treeAtlasData1:{value:emptyAtlasTexture() as THREE.Texture},
@@ -216,12 +218,15 @@ export class ForestImpostors {
         vec2 allometry=treeAllometryRatios(treeData.x);
         vec3 boundCentre=${vector(LEGACY_TREE_BOUND.center)}*h;
         vec3 extent=${vector(LEGACY_TREE_BOUND.extent)}*h;
-        float boundLean=0.0,boundMargin=0.0;
+        float boundLean=0.0,boundMargin=0.0,atlasStretch=allometry.x;
         if(familyBound>0.0){int familyIndex=int(familyCode)-1;
           boundCentre=treeFamilyCenter[familyIndex]*h;extent=treeFamilyExtent[familyIndex]*h;
           boundLean=treeFamilyLean[familyIndex]*h;boundMargin=treeFamilyMargin[familyIndex];
+          atlasStretch=treeAllometryAtlasStretch(h,allometry,treeFamilyAllometry[familyIndex]);
         }
-        treeAllometryBox(boundCentre,extent,allometry,boundLean);
+        // The atlas member is stretched to the detailed crown width, which the
+        // scaled cards can put beyond the crown ratio: grow by the larger.
+        treeAllometryBox(boundCentre,extent,vec2(max(allometry.x,atlasStretch),allometry.y),boundLean);
         extent+=vec3(boundMargin);
         vec3 centre=root+treeRotate(treeQ,boundCentre);
         vec3 facing=treeOrthographic>.5?-treeViewDirection:normalize(treeCamera-centre);
@@ -247,8 +252,8 @@ export class ForestImpostors {
         treeAtlasViews=vec3(0);treeAtlasWeights=vec3(0);treeAtlasLod=0.0;
         if(familyBound>0.0){int atlasFamily=int(familyCode)-1;
           if((atlasFamily==0?treeAtlasReady.x:treeAtlasReady.y)>.5){
-            // The captured member is stretched horizontally by the crown ratio.
-            vec3 atlasScale=vec3(allometry.x,1.0,allometry.x);
+            // The captured member is stretched horizontally to the detailed crown width.
+            vec3 atlasScale=vec3(atlasStretch,1.0,atlasStretch);
             vec4 sphere=treeAtlasSphere[atlasFamily];vec3 atlasCentre=root+treeRotate(treeQ,sphere.xyz*atlasScale*h);
             vec3 toEye=treeOrthographic>.5?-treeViewDirection:treeCamera-atlasCentre;
             treeHemiBlend(treeRotate(vec4(-treeQ.xyz,treeQ.w),toEye)/atlasScale,TREE_ATLAS_GRID,treeAtlasViews,treeAtlasWeights);
@@ -280,13 +285,14 @@ export class ForestImpostors {
         vec3 rd=normalize(treeRotate(inverseQ,rayDirection));
         float familyCode=forestFamilyCode(treeData.z);
         float familyBound=familyCode==1.0?treeFamilyBounds.x:(familyCode==2.0?treeFamilyBounds.y:0.0);
-        vec2 allometry=treeAllometryRatios(treeData.x);
+        vec2 allometry=treeAllometryRatios(treeData.x);float atlasStretch=allometry.x;
         // Shift the ray close to the tree before small-primitive quadratics.
         // Subtracting huge nearly equal squared camera distances loses leaves.
         vec3 rayBoundCenter=vec3(0,.52,0);float rayBoundRadius=2.0*max(1.0,max(allometry.x,allometry.y));
         if(familyBound>0.0){int familyIndex=int(familyCode)-1;
+          atlasStretch=treeAllometryAtlasStretch(treeRootHeight.w,allometry,treeFamilyAllometry[familyIndex]);
           vec3 rayExtent=treeFamilyExtent[familyIndex];rayBoundCenter=treeFamilyCenter[familyIndex];
-          treeAllometryBox(rayBoundCenter,rayExtent,allometry,treeFamilyLean[familyIndex]);
+          treeAllometryBox(rayBoundCenter,rayExtent,vec2(max(allometry.x,atlasStretch),allometry.y),treeFamilyLean[familyIndex]);
           rayBoundRadius=length(rayExtent+vec3(treeFamilyMargin[familyIndex]/treeRootHeight.w));
         }
         ro+=rd*max(0.0,dot(rayBoundCenter-ro,rd)-rayBoundRadius);
@@ -300,8 +306,8 @@ export class ForestImpostors {
           float member=float(clamp(forestFamilyVariant(treeData.z),0,${FOREST_VARIANT_COUNT-1}));
           vec4 sphere=treeAtlasSphere[familyIndex],atlasColour=vec4(0);vec3 atlasNormal=vec3(0);float atlasLeaf=0.0,atlasDistance=0.0;
           // Sample the reference capture in its own frame: the whole member,
-          // trunk included, is stretched horizontally by the crown ratio.
-          vec3 atlasScale=vec3(allometry.x,1.0,allometry.x),atlasRo=ro/atlasScale,atlasRd=rd/atlasScale;
+          // trunk included, is stretched horizontally to the detailed crown width.
+          vec3 atlasScale=vec3(atlasStretch,1.0,atlasStretch),atlasRo=ro/atlasScale,atlasRd=rd/atlasScale;
           if(familyIndex==0){
             treeAtlasView(treeAtlasColour0,treeAtlasData0,treeAtlasViews.x,treeAtlasWeights.x,member,treeAtlasLod,sphere,atlasRo,atlasRd,atlasColour,atlasNormal,atlasLeaf,atlasDistance);
             treeAtlasView(treeAtlasColour0,treeAtlasData0,treeAtlasViews.y,treeAtlasWeights.y,member,treeAtlasLod,sphere,atlasRo,atlasRd,atlasColour,atlasNormal,atlasLeaf,atlasDistance);
@@ -315,8 +321,8 @@ export class ForestImpostors {
           if(atlasColour.a>1e-4){
             best=atlasDistance/atlasColour.a;
             float leafFraction=clamp(atlasLeaf/atlasColour.a,0.0,1.0);
-            // Metric leaves over a crown whose side area scales by h^2 * crown ratio.
-            treeCoverage=treeAtlasHeightCoverage(atlasColour.a,leafFraction,treeRootHeight.w*sqrt(allometry.x));
+            // Scaled cards over a crown whose side area scales by h^2 * stretch.
+            treeCoverage=treeAtlasLeafCoverage(atlasColour.a,leafFraction,treeAllometryLeafDepthScale(treeRootHeight.w,allometry,treeFamilyAllometry[familyIndex]));
             treeHitColour=atlasColour.rgb/atlasColour.a*mix(brightness.x,brightness.y,leafFraction);
             treeHitNormal=dot(atlasNormal,atlasNormal)>1e-8?normalize(atlasNormal/atlasScale):-rd;
             // Two-sided leaves face the viewer, as in the detailed material.
@@ -328,7 +334,7 @@ export class ForestImpostors {
           // each band centre: horizontal scale, tier twist and top-weighted lean.
           int variantIndex=familyIndex*${FOREST_VARIANT_COUNT}+clamp(forestFamilyVariant(treeData.z),0,${FOREST_VARIANT_COUNT-1});
           vec4 variantA=treeFamilyVariantA[variantIndex],variantB=treeFamilyVariantB[variantIndex];
-          vec4 density=treeFamilyDensity[familyIndex];float heightM=treeRootHeight.w;
+          vec4 density=treeFamilyDensity[familyIndex];float heightM=treeRootHeight.w,cardScale=treeAllometryCardScale(heightM,allometry,treeFamilyAllometry[familyIndex]);
           treePorous=dot(density,vec4(1))>0.0;
           // Stable reference-frame clumps fade to their mean once a clump nears pixel size.
           float pixelM=treePixelScale*(treeOrthographic>.5?1.0:length(treeCamera-treeRootHeight.xyz));
@@ -338,9 +344,9 @@ export class ForestImpostors {
             int bandIndex=familyIndex*4+i;vec4 band=treeFamilyBands[bandIndex];
             if(band.w<0.0)continue;
             vec2 ext=treeFamilyBandExtent[bandIndex];
-            // Pivots scale with the skeleton; leaf-card offsets remain metres.
+            // Pivots scale with the skeleton; leaf-card offsets follow the card scale.
             // Cone corners use a split margin to stay inside the same bound.
-            float margin=ext.y/heightM*(familyCode==2.0?.70710678:1.0);
+            float margin=cardScale*ext.y/heightM*(familyCode==2.0?.70710678:1.0);
             // Species allometry first, as in the detailed vertex shader.
             vec3 source=treeAllometryPoint(band.xyz/16.0,treeFamilyTrunk[familyIndex].y,allometry);float level=clamp(source.y,0.0,1.0),theta=variantB.x*level;
             vec2 crownScale=mix(vec2(1.0),variantA.xy,atlasVariantCrownWeight(level));
@@ -355,12 +361,12 @@ export class ForestImpostors {
             edgeCoverage=max(edgeCoverage,bandCoverage);
             if(density[i]>0.0&&bandCoverage>0.0){
               // Beer-Lambert: sigma = opaque projected leaf area / crown volume.
-              // Leaf area is metric; the skeleton volume grows with height.
+              // Leaf area scales by the card area; the skeleton volume grows with height.
               float volume=(familyCode==2.0?2.0943951:4.1887902)*radii.x*radii.y*radii.z*heightM*heightM*heightM;
               vec3 entryM=(ro+rd*span.x)*heightM;
               uint clumpHash=atlasVariantHash(uvec3(ivec3(floor(entryM/clumpM))+1024),uint(treeData.w+.5)*4u+uint(i)+1u);
               float clump=mix(1.0,.25+1.5*float(clumpHash&65535u)/65535.0,clumpAmplitude);
-              transmittance*=1.0-bandCoverage*(1.0-exp(-density[i]/volume*span.y*heightM*clump));
+              transmittance*=1.0-bandCoverage*(1.0-exp(-density[i]*cardScale*cardScale/volume*span.y*heightM*clump));
             }else if(bandCoverage>0.0)transmittance*=1.0-bandCoverage;
           }
           treeCoverage=treePorous?1.0-transmittance:edgeCoverage;
@@ -408,7 +414,7 @@ export class ForestImpostors {
       `);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','if(treeMaskOnly>.5)outgoingLight=vec3(1.0);\n#include <opaque_fragment>');
     };
-    material.customProgramCacheKey=()=>`${LEGACY_TREE_SHAPE_VERSION}/analytic-impostor-8/${FOREST_PRESENTATION_VERSION}/${FOREST_VARIANT_VERSION}/${FOREST_FAR_ATLAS_VERSION}/${TREE_ALLOMETRY_VERSION}`;
+    material.customProgramCacheKey=()=>`${LEGACY_TREE_SHAPE_VERSION}/analytic-impostor-9/${FOREST_PRESENTATION_VERSION}/${FOREST_VARIANT_VERSION}/${FOREST_FAR_ATLAS_VERSION}/${TREE_ALLOMETRY_VERSION}`;
     this.mesh=new THREE.Mesh(geometry,material);this.mesh.name='Canonical forest analytic impostors';this.mesh.frustumCulled=false;
     this.mesh.userData.localAerialSurfaceHit={local:'treeHit',view:'treeHitView.xyz'};
     const inverse=new THREE.Matrix4(),localCamera=new THREE.Matrix4(),viewport=new THREE.Vector4();
@@ -442,6 +448,8 @@ export class ForestImpostors {
     }
     this.uniforms.treeFamilyDensity.value[family].fromArray(enabled?.foliageProjectedAreaM2??[0,0,0,0]);
     this.uniforms.treeFamilyTrunk.value[family].set(...(trunk?[trunk.heightM/16,trunk.baseRadiusM/16,trunk.topRadiusM/16] as const:[0,0,0] as const));
+    const reference=enabled?.allometry??null;
+    this.uniforms.treeFamilyAllometry.value[family].set(...(reference?[reference.trunkRadiusM,reference.crownRadiusM,reference.cardExtentM] as const:[0,0,0] as const));
     this.uniforms.treeFamilyClump.value.setComponent(family,variants[0]?.clumpRefM??1);
     if(enabled){
       const {lod1Profile:profile,conservativeBounds:bounds,barkLinearRgb,foliageLinearRgb}=enabled;
@@ -525,13 +533,15 @@ export class ForestImpostors {
   proxyBounds(index:number,center:THREE.Vector3,extent:THREE.Vector3){
     const height=this.positions.getW(index),family=this.parameters.getZ(index)%4;
     const {crownRatio,trunkRatio}=unpackTreeAllometryParameter(this.parameters.getX(index));
-    let lean=0,margin=0;
+    let lean=0,margin=0,boxCrown=crownRatio;
     if((family===1||family===2)&&this.uniforms.treeFamilyBounds.value.getComponent(family-1)>0){
+      const r=this.uniforms.treeFamilyAllometry.value[family-1]!;
+      boxCrown=Math.max(crownRatio,treeAllometryAtlasStretch({trunkRadiusM:r.x,crownRadiusM:r.y,cardExtentM:r.z},height,crownRatio,trunkRatio));
       center.copy(this.uniforms.treeFamilyCenter.value[family-1]).multiplyScalar(height);
       extent.copy(this.uniforms.treeFamilyExtent.value[family-1]).multiplyScalar(height);
       lean=this.uniforms.treeFamilyLean.value.getComponent(family-1)*height;margin=this.uniforms.treeFamilyMargin.value.getComponent(family-1);
     }else{center.fromArray(LEGACY_TREE_BOUND.center).multiplyScalar(height);extent.fromArray(LEGACY_TREE_BOUND.extent).multiplyScalar(height);}
-    const box=treeAllometryBox(center.toArray(),extent.toArray(),crownRatio,trunkRatio,lean);
+    const box=treeAllometryBox(center.toArray(),extent.toArray(),boxCrown,trunkRatio,lean);
     center.fromArray(box.center);extent.fromArray(box.extent).addScalar(margin);
     extent.multiplyScalar(Math.max(1,this.uniforms.treeRadiusScale.value));
   }

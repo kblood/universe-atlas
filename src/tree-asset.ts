@@ -12,7 +12,7 @@ import {calibrateTreeLodCardScale,type TreeCoverageMesh,type TreeLodCoverageCali
 import {deriveTreeBaseColorStatistics,deriveTreeCanopyMetadata,type TreeCanopyProfile,type TreeCullingBounds,type TreeTrunkProfile} from './tree-canopy-profile.ts';
 import {forestVariantEnvelope,forestVariantGLSL,forestVariantRadiusBound,forestVariantUniformData,FOREST_VARIANT_COUNT,type ForestStructuralVariant} from './tree-structural-variant.ts';
 import {installForestFarAtlasCapture,FOREST_FAR_ATLAS_VERSION} from './forest-far-atlas.ts';
-import {forestFamilyEnvelopeRadius,treeAllometryGLSL,treeAllometryRadial,treeAllometryReference,
+import {forestFamilyEnvelopeRadius,treeAllometryCardScale,treeAllometryGLSL,treeAllometryRadial,treeAllometryReference,
   TREE_ALLOMETRY_VERSION,TREE_FAMILY_ALLOMETRY_ENVELOPE,type TreeAllometryReference} from './tree-allometry.ts';
 
 /** Experimental author-6 adapter. Assets are supplied explicitly; this does not
@@ -76,6 +76,8 @@ export function prepareTreeLODPair(lod0:ArrayBuffer,lod1:ArrayBuffer){
 }
 
 export type TreeInstanceAllometry={crownRatio:number;trunkRatio:number};
+/** Family reference for the CPU oracle; without crown/card radii cards keep their authored size. */
+type TreeOracleAllometry=TreeInstanceAllometry&{trunkRadiusM:number;crownRadiusM?:number;cardExtentM?:number};
 const IDENTITY_ALLOMETRY:TreeInstanceAllometry=Object.freeze({crownRatio:1,trunkRatio:1});
 function validInstanceAllometry(a:TreeInstanceAllometry){
   const E=TREE_FAMILY_ALLOMETRY_ENVELOPE;
@@ -83,17 +85,20 @@ function validInstanceAllometry(a:TreeInstanceAllometry){
     a.trunkRatio>=E.trunkRatio[0]&&a.trunkRatio<=E.trunkRatio[1];
 }
 /** CPU reference for shader audits. Map skeleton/attachment coordinates through
- * the species allometry (radial trunk/crown ratios, then height scale), keeping
- * every offset within a leaf card in metres, then rotate rigidly. */
+ * the species allometry (radial trunk/crown ratios, then height scale), scale
+ * every offset within a leaf card by the allometry card scale, then rotate rigidly. */
 export function treeVertexMeters(position:THREE.Vector3,pivot:THREE.Vector3,leaf:boolean,heightM:number,windWeight:number,phase:number,instancePhase=0,
-  allometry:TreeInstanceAllometry&{trunkRadiusM:number}={...IDENTITY_ALLOMETRY,trunkRadiusM:0}){
+  allometry:TreeOracleAllometry={...IDENTITY_ALLOMETRY,trunkRadiusM:0}){
   const [minH,maxH]=TREE_FAMILY_ALLOMETRY_ENVELOPE.heightM;
   if(!Number.isFinite(heightM)||heightM<minH||heightM>maxH)throw new Error(`Detailed trees support rendered heights ${minH}–${maxH} m`);
   if(!validInstanceAllometry(allometry)||!Number.isFinite(allometry.trunkRadiusM)||allometry.trunkRadiusM<0)throw new Error('Invalid tree allometry');
   const s=heightM/TREE_REFERENCE_HEIGHT_M;
   const map=(p:THREE.Vector3)=>{const [x,z]=treeAllometryRadial(p.x,p.z,allometry.trunkRadiusM,allometry.crownRatio,allometry.trunkRatio);return new THREE.Vector3(x*s,p.y*s,z*s);};
   if(!leaf)return map(position);
-  return position.clone().sub(pivot).applyAxisAngle(new THREE.Vector3(0,0,1),Math.sin(phase+instancePhase)*.12*windWeight).add(map(pivot));
+  const reference=allometry.crownRadiusM!==undefined&&allometry.cardExtentM!==undefined?
+    {trunkRadiusM:allometry.trunkRadiusM,crownRadiusM:allometry.crownRadiusM,cardExtentM:allometry.cardExtentM}:null;
+  return position.clone().sub(pivot).multiplyScalar(treeAllometryCardScale(reference,heightM,allometry.crownRatio,allometry.trunkRatio))
+    .applyAxisAngle(new THREE.Vector3(0,0,1),Math.sin(phase+instancePhase)*.12*windWeight).add(map(pivot));
 }
 
 const declarations=`
@@ -111,6 +116,8 @@ uniform vec4 atlasTreeView;
 uniform vec3 atlasTreeCards;
 // Reference-skeleton trunk base radius separating trunk and crown ratios.
 uniform float atlasTreeTrunkRadius;
+// Allometry reference: trunk radius, p95 crown radius, card extent (m); zero keeps authored cards.
+uniform vec3 atlasTreeAllometry;
 ${forestVariantGLSL}
 ${treeAllometryGLSL}
 mat3 atlasLeafRotation(){
@@ -123,7 +130,10 @@ vec4 atlasTreeVariantParameterB(){int i=int(instanceTreeShape.x-.5);return insta
 // Tier rotation follows the reference skeleton height, so normals and leaves
 // turn with the branch that carries them.
 float atlasTreeTwist(){return atlasTreeVariantParameterB().x*clamp((_branch_level>3.5?_leaf_pivot.y:position.y)/${TREE_REFERENCE_HEIGHT_M}.0,0.0,1.0);}
+// LOD card scale, allometry card scale (foliage clumps follow the crown's side
+// area) and bounded distance compensation for sub-pixel cards.
 float atlasTreeCardScale(){
+  float allometryCard=treeAllometryCardScale(instanceTree.x*${TREE_REFERENCE_HEIGHT_M}.0,instanceTree.zw,atlasTreeAllometry);
   float s=max(1.0,instanceTreeShape.y);
   if(atlasTreeView.w>0.0&&atlasTreeCards.z>1.0){
     #ifdef USE_INSTANCING
@@ -132,16 +142,16 @@ float atlasTreeCardScale(){
       vec3 root=vec3(0);float unitsPerMetre=1.0;
     #endif
     float distanceM=length(atlasTreeView.xyz-root)/max(unitsPerMetre,1e-30);
-    float pixels=atlasTreeCards.x*s*atlasTreeView.w/max(distanceM,1e-3);
+    float pixels=atlasTreeCards.x*allometryCard*s*atlasTreeView.w/max(distanceM,1e-3);
     s*=clamp(sqrt(atlasTreeCards.y/max(pixels,1e-3)),1.0,atlasTreeCards.z);
   }
-  return s;
+  return s*allometryCard;
 }
 `;
-type TreeShaderState={phase:{value:number};trunkRadius:{value:number};variantA:{value:THREE.Vector4[]};variantB:{value:THREE.Vector4[]};view:{value:THREE.Vector4};cards:{value:THREE.Vector3}};
+type TreeShaderState={phase:{value:number};trunkRadius:{value:number};allometry:{value:THREE.Vector3};variantA:{value:THREE.Vector4[]};variantB:{value:THREE.Vector4[]};view:{value:THREE.Vector4};cards:{value:THREE.Vector3}};
 function deform(material:THREE.Material,state:TreeShaderState){
   material.onBeforeCompile=shader=>{
-    Object.assign(shader.uniforms,{atlasTreePhase:state.phase,atlasTreeTrunkRadius:state.trunkRadius,atlasTreeVariantA:state.variantA,atlasTreeVariantB:state.variantB,atlasTreeView:state.view,atlasTreeCards:state.cards});
+    Object.assign(shader.uniforms,{atlasTreePhase:state.phase,atlasTreeTrunkRadius:state.trunkRadius,atlasTreeAllometry:state.allometry,atlasTreeVariantA:state.variantA,atlasTreeVariantB:state.variantB,atlasTreeView:state.view,atlasTreeCards:state.cards});
     shader.vertexShader=declarations+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
       if(_branch_level<=3.5){
@@ -166,7 +176,7 @@ function deform(material:THREE.Material,state:TreeShaderState){
         vec4 variantA=atlasTreeVariantParameterA(),variantB=atlasTreeVariantParameterB();
         float treeHeightM=instanceTree.x*${TREE_REFERENCE_HEIGHT_M}.0;
         if(_branch_level>3.5){
-          // Card offsets stay metric; removed clumps collapse in every pass.
+          // Card offsets follow the allometry card scale; removed clumps collapse in every pass.
           float cardScale=atlasVariantRemovesLeaf(_leaf_pivot,instanceTreeShape.x,variantB)?0.0:atlasTreeCardScale();
           transformed=atlasVariantPoint(treeAllometryPoint(_leaf_pivot,atlasTreeTrunkRadius,instanceTree.zw)*instanceTree.x,treeHeightM,variantA,variantB)+
             atlasVariantRotate(atlasLeafRotation()*(position-_leaf_pivot),atlasTreeTwist())*cardScale;
@@ -305,7 +315,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     }
     const phase={value:0};
     const vectors=(offset:number)=>Array.from({length:FOREST_VARIANT_COUNT},(_,i)=>new THREE.Vector4().fromArray(variantData,i*8+offset));
-    const shaderState:TreeShaderState={phase,trunkRadius:{value:0},variantA:{value:vectors(0)},variantB:{value:vectors(4)},
+    const shaderState:TreeShaderState={phase,trunkRadius:{value:0},allometry:{value:new THREE.Vector3()},variantA:{value:vectors(0)},variantB:{value:vectors(4)},
       view:{value:new THREE.Vector4()},cards:{value:new THREE.Vector3(1,1,1)}};
     const viewEye=new THREE.Vector3(),viewInverse=new THREE.Matrix4(),viewport=new THREE.Vector4();
     for(const material of materials)deform(material,shaderState);
@@ -346,6 +356,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     try{allometry=treeAllometryReference(lod0Metadata.profile,lod1Metadata.profile,{variantScale:envelope.scale,variantLeanFraction:envelope.leanFraction,cardScaleMax});}
     catch{allometry=null;}
     shaderState.trunkRadius.value=allometry?.trunkRadiusM??0;
+    shaderState.allometry.value.set(allometry?.trunkRadiusM??0,allometry?.crownRadiusM??0,allometry?.cardExtentM??0);
     const identityRadius=variants.length||cardScaleMax>1?forestVariantRadiusBound(variants,authoredRadius,maxLeafOffsetM,cardScaleMax):authoredRadius;
     // Encloses every rendered height, crown/trunk ratio, variant and card scale.
     const conservativeBounds:TreeCullingBounds={...lod0Metadata.cullingBounds,
@@ -504,7 +515,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
         if(disposed)throw new Error('Tree family is disposed');
         if(!Number.isInteger(count)||count<1||count>64)throw new Error('Invalid capture batch size');
         const pass={value:0},frame={value:new THREE.Vector2(1,1)};
-        const state:TreeShaderState={phase:{value:0},trunkRadius:shaderState.trunkRadius,variantA:shaderState.variantA,variantB:shaderState.variantB,
+        const state:TreeShaderState={phase:{value:0},trunkRadius:shaderState.trunkRadius,allometry:shaderState.allometry,variantA:shaderState.variantA,variantB:shaderState.variantB,
           view:{value:new THREE.Vector4()},cards:shaderState.cards};
         // Atlas members are captured at the 16 m reference with authored proportions.
         const tree=new THREE.InstancedBufferAttribute(new Float32Array(count*4),4),shape=new THREE.InstancedBufferAttribute(new Float32Array(count*2),2);

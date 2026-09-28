@@ -8,25 +8,71 @@ import {LEGACY_TREE_LOBES,LEGACY_TREE_TRUNK} from './tree-shape.ts';
  * occupancy, position, yaw, date and species binding never read it; changing
  * it changes only the drawn geometry. The canonical 10–22 m population height
  * remains a canonical record, used for drawing only when no dated species binds. */
-export const TREE_ALLOMETRY_VERSION='tree-allometry-1';
+export const TREE_ALLOMETRY_VERSION='tree-allometry-2';
 export const TREE_ALLOMETRY_REFERENCE_HEIGHT_M=16;
 
 /** Crown and trunk ratios are relative to height-proportional scaling of the
  * representation's reference (1 = the authored proportions). Both near and far
- * paths use the same 8-bit value: k = min + q*step, with 1 exactly encodable. */
-export const TREE_ALLOMETRY_RATIO=Object.freeze({min:.25,step:1/128,levels:256});
+ * paths use the same 8-bit value: k = min + q*step, with 1 exactly encodable.
+ * v2 lowers the minimum from .25 to .125 so slender conifer recipes encode. */
+export const TREE_ALLOMETRY_RATIO=Object.freeze({min:.125,step:1/128,levels:256});
 export const TREE_ALLOMETRY_RATIO_MAX=TREE_ALLOMETRY_RATIO.min+(TREE_ALLOMETRY_RATIO.levels-1)*TREE_ALLOMETRY_RATIO.step;
 
-/** Detailed family envelope (v1). Skeletons scale with height while leaf cards
- * stay metric, so the leaf-area density of a crown changes with the inverse of
- * its projected skeleton area. Beyond these limits the packaged Oak/Pine skeleton
- * is not used: heights fall back to the legacy primitive at physical size and
- * ratios clamp, each with a recorded reason. */
+/** Detailed family envelope (v2). The skeleton scales with height and its
+ * crown radially by the crown ratio; leaf cards (foliage clumps) scale by
+ * `treeAllometryCardScale`, which keeps the side-view leaf-area density of the
+ * authored 16 m crown over the drawn silhouette. Beyond these limits the packaged Oak/Pine skeleton is not
+ * used: heights fall back to the legacy primitive at physical size and ratios
+ * clamp, each with a recorded reason. */
 export const TREE_FAMILY_ALLOMETRY_ENVELOPE=Object.freeze({
   heightM:TREE_CANOPY_HEIGHT_RANGE_M,
-  crownRatio:Object.freeze([.5,1.75] as const),
+  crownRatio:Object.freeze([.125,1.75] as const),
   trunkRatio:Object.freeze([.5,1.5] as const),
 });
+/** Foliage-card scale bounds. Cards never grow past the authored size, so every
+ * existing card/leaf bound stays conservative; the floor keeps clumps visible. */
+export const TREE_ALLOMETRY_CARD=Object.freeze({min:.2,max:1});
+export type TreeAllometryCrownReference={trunkRadiusM:number;crownRadiusM:number;cardExtentM:number};
+const validCrownReference=(r:TreeAllometryCrownReference|null|undefined):r is TreeAllometryCrownReference=>
+  !!r&&[r.trunkRadiusM,r.crownRadiusM,r.cardExtentM].every(finite)&&r.crownRadiusM>r.trunkRadiusM&&r.trunkRadiusM>=0&&r.cardExtentM>=0;
+/** Card scale per unit height scale (u = c/s) that keeps the authored side-view
+ * leaf-area density. The family has a fixed clump count, so card area (c^2)
+ * must follow the drawn side area (s^2 x stretch), where the stretch (drawn
+ * half-width over the 16 m identity half-width rc+ce, per unit s) itself
+ * contains the card fringe: (rc+ce)u^2 - ce*u - A = 0 with A = tr*rt + cr*(rc-rt).
+ * u = 1 at identity ratios. */
+function cardScalePerHeight(r:TreeAllometryCrownReference,crownRatio:number,trunkRatio:number){
+  const A=trunkRatio*r.trunkRadiusM+crownRatio*(r.crownRadiusM-r.trunkRadiusM),R=r.crownRadiusM+r.cardExtentM;
+  return (r.cardExtentM+Math.sqrt(r.cardExtentM*r.cardExtentM+4*R*A))/(2*R);
+}
+/** Leaf-card (foliage clump) scale of one family draw, derived from the family
+ * reference, rendered height and both ratio codes, so no channel is added.
+ * Without a reference (legacy, unpresented) cards keep their authored size. */
+export function treeAllometryCardScale(reference:TreeAllometryCrownReference|null,heightM:number,crownRatio:number,trunkRatio:number){
+  if(![heightM,crownRatio,trunkRatio].every(finite)||heightM<=0||crownRatio<=0||trunkRatio<=0)throw new Error('Invalid tree card scale input');
+  if(!validCrownReference(reference))return 1;
+  return clamp(heightM/TREE_ALLOMETRY_REFERENCE_HEIGHT_M*cardScalePerHeight(reference,crownRatio,trunkRatio),TREE_ALLOMETRY_CARD.min,TREE_ALLOMETRY_CARD.max);
+}
+/** Drawn crown half-width (m): mapped p95 pivot spread plus the scaled card extent. */
+export function treeAllometryCrownHalfWidthM(reference:TreeAllometryCrownReference,heightM:number,crownRatio:number,trunkRatio:number){
+  const s=heightM/TREE_ALLOMETRY_REFERENCE_HEIGHT_M,r=reference;
+  return s*(trunkRatio*r.trunkRadiusM+crownRatio*(r.crownRadiusM-r.trunkRadiusM))+treeAllometryCardScale(reference,heightM,crownRatio,trunkRatio)*r.cardExtentM;
+}
+/** Horizontal stretch of the 16 m far-atlas capture (identity ratios, unit
+ * cards) that gives the detailed crown width at this height and ratios. Without
+ * a family reference it is the crown ratio. Mirrors GLSL `treeAllometryAtlasStretch`. */
+export function treeAllometryAtlasStretch(reference:TreeAllometryCrownReference|null,heightM:number,crownRatio:number,trunkRatio:number){
+  if(!validCrownReference(reference)||!(heightM>0))return crownRatio;
+  const s=heightM/TREE_ALLOMETRY_REFERENCE_HEIGHT_M;
+  return treeAllometryCrownHalfWidthM(reference,heightM,crownRatio,trunkRatio)/(s*(reference.crownRadiusM+reference.cardExtentM));
+}
+/** Leaf optical-depth scale of a far-atlas member, relative to its 16 m
+ * capture: card area over drawn side area, c^2/(s^2 x stretch). Exactly 1
+ * unless the card scale is clamped. Mirrors GLSL `treeAllometryLeafDepthScale`. */
+export function treeAllometryLeafDepthScale(reference:TreeAllometryCrownReference|null,heightM:number,crownRatio:number,trunkRatio:number){
+  const s=heightM/TREE_ALLOMETRY_REFERENCE_HEIGHT_M,c=treeAllometryCardScale(reference,heightM,crownRatio,trunkRatio);
+  return c*c/(s*s*treeAllometryAtlasStretch(reference,heightM,crownRatio,trunkRatio));
+}
 /** The legacy primitive has no metric leaves; any positive species height up to
  * the catalogue's own trait limit is drawn at its physical size. */
 export const TREE_LEGACY_ALLOMETRY_ENVELOPE=Object.freeze({heightM:Object.freeze([.1,40] as const)});
@@ -76,6 +122,8 @@ export type ForestTreeDimensions=Readonly<{
   legacyRatioCode:number;
   /** Physical dimensions drawn after quantization and clamping. */
   crownWidthM:number;trunkDiameterM:number;
+  /** Foliage-card scale (family draws; 1 for legacy). */
+  cardScale:number;
   /** Individual species dimensions before representation limits. */
   targetHeightM:number;targetCrownWidthM:number;targetTrunkDiameterM:number;
   reasons:readonly TreeAllometryReason[];
@@ -166,7 +214,7 @@ function legacyDimensions(speciesId:string|null,heightM:number,crownWidthM:numbe
   if(Math.abs(crownRatio-crownTarget)>half+1e-12)reasons.push('legacy-crown-ratio-clamped');
   if(Math.abs(trunkRatio-trunkTarget)>half+1e-12)reasons.push('legacy-trunk-ratio-clamped');
   return Object.freeze({version:TREE_ALLOMETRY_VERSION,representation:'legacy' as const,kind:null,speciesId,heightM:h,crownRatio,trunkRatio,
-    ratioCode:crownQ+256*trunkQ,legacyRatioCode:crownQ+256*trunkQ,crownWidthM:crownRatio*h*L.crownDiameterPerHeight,trunkDiameterM:trunkRatio*h*L.trunkDiameterPerHeight,
+    ratioCode:crownQ+256*trunkQ,legacyRatioCode:crownQ+256*trunkQ,crownWidthM:crownRatio*h*L.crownDiameterPerHeight,trunkDiameterM:trunkRatio*h*L.trunkDiameterPerHeight,cardScale:1,
     targetHeightM:heightM,targetCrownWidthM:crownWidthM,targetTrunkDiameterM:trunkDiameterM,reasons:Object.freeze(reasons)});
 }
 
@@ -197,19 +245,30 @@ export function forestTreeDimensions(binding:ForestTreeBinding|null,canonicalHei
   const trunkTarget=D/(2*scale*rt),trunkLimited=clamp(trunkTarget,...E.trunkRatio);
   if(trunkLimited!==trunkTarget)reasons.push('trunk-ratio-clamped');
   const trunkQ=quantizeTreeAllometryRatio(trunkLimited),trunkRatio=treeAllometryRatioFromCode(trunkQ);
-  // Crown spread = mapped pivot spread plus metric cards on both sides. The
-  // radial map moves a pivot at rc to trunk*rt + crown*(rc-rt).
-  const crownTarget=((W/2-reference.cardExtentM)/scale-trunkRatio*rt)/(rc-rt),crownLimited=clamp(crownTarget,...E.crownRatio);
-  if(crownLimited!==crownTarget)reasons.push('crown-ratio-clamped');
-  const crownQ=quantizeTreeAllometryRatio(crownLimited),crownRatio=treeAllometryRatioFromCode(crownQ);
-  const crownWidthM=2*(scale*(trunkRatio*rt+crownRatio*(rc-rt))+reference.cardExtentM),trunkDiameterM=2*scale*trunkRatio*rt;
+  // Crown spread = mapped pivot spread plus the scaled cards on both sides. The
+  // radial map moves a pivot at rc to trunk*rt + crown*(rc-rt); the card scale
+  // also grows with the crown ratio, so the half-width is monotonic in it.
+  const half=(crown:number)=>treeAllometryCrownHalfWidthM(reference,heightM,crown,trunkRatio),target=W/2;
+  const loQ=quantizeTreeAllometryRatio(E.crownRatio[0]),hiQ=quantizeTreeAllometryRatio(E.crownRatio[1]);
+  let crownQ:number;
+  if(!(target>=half(E.crownRatio[0])&&target<=half(E.crownRatio[1]))){
+    reasons.push('crown-ratio-clamped');crownQ=target<half(E.crownRatio[0])?loQ:hiQ;
+  }else{
+    let lo:number=E.crownRatio[0],hi:number=E.crownRatio[1];
+    for(let i=0;i<48;i++){const mid=(lo+hi)/2;if(half(mid)<target)lo=mid;else hi=mid;}
+    // Nearest drawn width among the neighbouring codes (the map is not linear).
+    const q0=quantizeTreeAllometryRatio((lo+hi)/2),error=(q:number)=>Math.abs(half(treeAllometryRatioFromCode(q))-target);crownQ=q0;
+    for(const q of [q0-1,q0+1])if(q>=loQ&&q<=hiQ&&error(q)<error(crownQ))crownQ=q;
+  }
+  const crownRatio=treeAllometryRatioFromCode(crownQ),cardScale=treeAllometryCardScale(reference,heightM,crownRatio,trunkRatio);
+  const crownWidthM=2*half(crownRatio),trunkDiameterM=2*scale*trunkRatio*rt;
   // A hidden or mid-range legacy draw of this individual matches the drawn family widths.
   const L=LEGACY_TREE_ALLOMETRY,legacyCrown=crownWidthM/(heightM*L.crownDiameterPerHeight),legacyTrunk=trunkDiameterM/(heightM*L.trunkDiameterPerHeight);
-  const legacyRatioCode=packTreeAllometryRatios(legacyCrown,legacyTrunk),legacy=unpackTreeAllometryRatios(legacyRatioCode),half=TREE_ALLOMETRY_RATIO.step/2;
-  if(Math.abs(legacy.crownRatio-legacyCrown)>half+1e-12)reasons.push('legacy-crown-ratio-clamped');
-  if(Math.abs(legacy.trunkRatio-legacyTrunk)>half+1e-12)reasons.push('legacy-trunk-ratio-clamped');
+  const legacyRatioCode=packTreeAllometryRatios(legacyCrown,legacyTrunk),legacy=unpackTreeAllometryRatios(legacyRatioCode),halfStep=TREE_ALLOMETRY_RATIO.step/2;
+  if(Math.abs(legacy.crownRatio-legacyCrown)>halfStep+1e-12)reasons.push('legacy-crown-ratio-clamped');
+  if(Math.abs(legacy.trunkRatio-legacyTrunk)>halfStep+1e-12)reasons.push('legacy-trunk-ratio-clamped');
   return Object.freeze({version:TREE_ALLOMETRY_VERSION,representation:'family' as const,kind,speciesId:recipe.speciesId,heightM,crownRatio,trunkRatio,
-    ratioCode:crownQ+256*trunkQ,legacyRatioCode,crownWidthM,trunkDiameterM,targetHeightM:H,targetCrownWidthM:W,targetTrunkDiameterM:D,reasons:Object.freeze(reasons)});
+    ratioCode:crownQ+256*trunkQ,legacyRatioCode,crownWidthM,trunkDiameterM,cardScale,targetHeightM:H,targetCrownWidthM:W,targetTrunkDiameterM:D,reasons:Object.freeze(reasons)});
 }
 
 /** CPU oracle of `treeAllometryRadial`: the trunk core scales by the trunk
@@ -222,7 +281,8 @@ export function treeAllometryRadial(x:number,z:number,trunkRadius:number,crownRa
   return [x*mapped/r,z*mapped/r];
 }
 /** Reference-skeleton point (16 m frame) to rendered tree-frame metres, before
- * the structural variant. Leaf-card offsets are added afterwards, unscaled. */
+ * the structural variant. Leaf-card offsets are added afterwards, scaled by
+ * `treeAllometryCardScale`. */
 export function treeAllometryPoint(point:readonly [number,number,number],reference:{trunkRadiusM:number},dimensions:{heightM:number;crownRatio:number;trunkRatio:number}):[number,number,number]{
   const s=dimensions.heightM/TREE_ALLOMETRY_REFERENCE_HEIGHT_M;
   const [x,z]=treeAllometryRadial(point[0],point[2],reference.trunkRadiusM,dimensions.crownRatio,dimensions.trunkRatio);
@@ -260,8 +320,24 @@ export function treeAllometryBox(center:readonly number[],extent:readonly number
     extent:[grow(extent[0],center[0]),extent[1],grow(extent[2],center[2])] as [number,number,number]};
 }
 
-/** Shared GLSL; `ratios` is (crown, trunk). */
+/** Shared GLSL; `ratios` is (crown, trunk). `family` is the reference trunk
+ * radius, p95 crown radius and card extent in metres (all zero: no reference). */
 export const treeAllometryGLSL=`
+float treeAllometryCardScale(float heightM,vec2 ratios,vec3 family){
+  if(family.y<=family.x)return 1.0;
+  float A=ratios.y*family.x+ratios.x*(family.y-family.x),R=family.y+family.z;
+  float u=(family.z+sqrt(family.z*family.z+4.0*R*A))/(2.0*R);
+  return clamp(heightM/${TREE_ALLOMETRY_REFERENCE_HEIGHT_M}.0*u,${TREE_ALLOMETRY_CARD.min},${TREE_ALLOMETRY_CARD.max}.0);
+}
+float treeAllometryAtlasStretch(float heightM,vec2 ratios,vec3 family){
+  if(family.y<=family.x||heightM<=0.0)return ratios.x;
+  float s=heightM/${TREE_ALLOMETRY_REFERENCE_HEIGHT_M}.0;
+  return (s*(ratios.y*family.x+ratios.x*(family.y-family.x))+treeAllometryCardScale(heightM,ratios,family)*family.z)/(s*(family.y+family.z));
+}
+float treeAllometryLeafDepthScale(float heightM,vec2 ratios,vec3 family){
+  float s=heightM/${TREE_ALLOMETRY_REFERENCE_HEIGHT_M}.0,c=treeAllometryCardScale(heightM,ratios,family);
+  return c*c/(s*s*treeAllometryAtlasStretch(heightM,ratios,family));
+}
 vec2 treeAllometryRatios(float packed){
   return vec2(${TREE_ALLOMETRY_RATIO.min})+vec2(mod(floor(packed/256.0),256.0),floor(packed/65536.0))*${TREE_ALLOMETRY_RATIO.step};
 }

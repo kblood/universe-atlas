@@ -3,9 +3,10 @@ import type {BufferGeometry,BufferAttribute,InterleavedBufferAttribute} from 'th
 /** Reference skeleton height used by the detailed tree vertex shader. */
 export const TREE_CANOPY_REFERENCE_HEIGHT_M = 16;
 export const TREE_CANOPY_WIND_MAX_ANGLE_RAD = 0.12;
-/** Rendered family heights supported by the detailed skeleton (tree-allometry-1
- * envelope). Canonical population heights are separate and never read here. */
-export const TREE_CANOPY_HEIGHT_RANGE_M = [8, 24] as const;
+/** Rendered family heights supported by the detailed skeleton (tree-allometry
+ * envelope; v2 lowered 8 m to 4 m so small dated species keep their family).
+ * Canonical population heights are separate and never read here. */
+export const TREE_CANOPY_HEIGHT_RANGE_M = [4, 24] as const;
 const LEAF_BRANCH_LEVEL = 3.5;
 const BAND_COUNT = 4;
 
@@ -45,7 +46,7 @@ export type TreeCullingBounds = {
   /** Origin-centred sphere enclosing all supported scaled and wind-deformed vertices. */
   centerM: [0, 0, 0];
   radiusM: number;
-  heightRangeM: [8, 24];
+  heightRangeM: [4, 24];
   maxWindAngleRad: number;
 };
 export type TreeCanopyMetadata = {profile: TreeCanopyProfile; cullingBounds: TreeCullingBounds};
