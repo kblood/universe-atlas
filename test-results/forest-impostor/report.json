@@ -1,4 +1,7 @@
 {
+  "acceptedRepresentation": "faceted mesh planes",
+  "acceptedScale": 1,
+  "rejectedRepresentation": "fitted smooth ellipsoids",
   "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
   "poses": [
     [
@@ -2026,9 +2029,9 @@
   "ok": true,
   "errors": [],
   "scope": "Isolated 64-view orthographic silhouettes, perspective bounds and opaque depth at 24/64/650/4000m; not game/streaming acceptance",
-  "recordedAt": "2026-09-28T01:25:10.374Z",
+  "recordedAt": "2026-09-28T01:32:30.484Z",
   "source": {
-    "baseCommit": "2da9f63ca68e62b604b4899d7b38c4007eca9f45",
+    "baseCommit": "10a5a7752f86bf9e99c3d8c5cbfe0663e5891278",
     "files": [
       {
         "path": "src/forest-impostor.ts",
@@ -2044,7 +2047,7 @@
       },
       {
         "path": "tests/forest-impostor.browser.mjs",
-        "sha256": "febe0819afcde692dbd98984c157a9b7a1db91289710b3f4213aed4ed2f435ce"
+        "sha256": "e457200ef4bed7166ef88ea1d96e1b86c120fe1007b180139c6736f71c197430"
       }
     ]
   }

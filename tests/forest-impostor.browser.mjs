@@ -20,7 +20,8 @@ try{
     const fitted=lab.compare((low+high)/2);lab.far.uniforms.treeFaceted.value=1;
     const faceted=lab.compare(1),inflated=lab.compare(1,2),masks=lab.verifyMasks(),perspective=lab.verifyDepthAndPerspective(),antialiasing=lab.verifyAntialiasing();
     const gl=lab.renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');
-    return {renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'unavailable',poses:lab.poses,referenceAreas:lab.referenceAreas,
+    return {acceptedRepresentation:'faceted mesh planes',acceptedScale:1,rejectedRepresentation:'fitted smooth ellipsoids',
+      renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'unavailable',poses:lab.poses,referenceAreas:lab.referenceAreas,
       uncalibrated:full,fitted,faceted,inflated,masks,perspective,antialiasing,meanError:faceted.ratios.reduce((s,v)=>s+Math.abs(v-1),0)/64,maxError:Math.max(...faceted.ratios.map(v=>Math.abs(v-1)))};
   });
   assert.ok(report.referenceAreas.every(x=>x>100),'reference draws visible silhouettes');
@@ -40,6 +41,6 @@ try{
   assert.deepEqual(errors,[]);report.ok=true;report.errors=errors;report.scope='Isolated 64-view orthographic silhouettes, perspective bounds and opaque depth at 24/64/650/4000m; not game/streaming acceptance';
   report.recordedAt=new Date().toISOString();report.source={baseCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),files:[]};
   for(const path of ['src/forest-impostor.ts','src/tree-shape.ts','tests/forest-impostor-lab.mjs','tests/forest-impostor.browser.mjs'])report.source.files.push({path,sha256:createHash('sha256').update(await readFile(path)).digest('hex')});
-  await writeFile(`${out}/report.json`,JSON.stringify(report,null,2));console.log(JSON.stringify({ok:true,renderer:report.renderer,scale:report.fitted.scale,meanError:report.meanError,maxError:report.maxError}));
+  await writeFile(`${out}/report.json`,JSON.stringify(report,null,2));console.log(JSON.stringify({ok:true,renderer:report.renderer,acceptedScale:report.acceptedScale,rejectedEllipsoidFitScale:report.fitted.scale,meanError:report.meanError,maxError:report.maxError}));
 }catch(error){await writeFile(`${out}/failure.json`,JSON.stringify({error:String(error),errors,report},null,2));await page.screenshot({path:`${out}/failure.png`}).catch(()=>{});throw error;}
 finally{await page.evaluate(()=>window.impostorLab?.dispose()).catch(()=>{});await browser.close();await server.close();}
