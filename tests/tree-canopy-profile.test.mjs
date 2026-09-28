@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as THREE from 'three';
-import {alphaWeightedLinearRgbMean,deriveTreeCanopyMetadata,TREE_CANOPY_HEIGHT_RANGE_M,TREE_CANOPY_REFERENCE_HEIGHT_M,TREE_CANOPY_WIND_MAX_ANGLE_RAD} from '../src/tree-canopy-profile.ts';
+import {alphaWeightedLinearRgbMean,deriveTreeBaseColorStatistics,deriveTreeCanopyMetadata,TREE_CANOPY_HEIGHT_RANGE_M,TREE_CANOPY_REFERENCE_HEIGHT_M,TREE_CANOPY_WIND_MAX_ANGLE_RAD} from '../src/tree-canopy-profile.ts';
 
 function geometry(position,pivot,branch,wind){
   const g=new THREE.BufferGeometry();
@@ -103,6 +103,16 @@ test('alpha-weighted color mean decodes straight sRGB before averaging',()=>{
   const reference=byte=>{const c=byte/255;return c<=.04045?c/12.92:((c+.055)/1.055)**2.4;};
   const sample=[17,89,201,128],expected=[0,1,2].map(i=>reference(sample[i]));
   assert.ok(clamped.linearRgb.every((x,i)=>Math.abs(x-expected[i])<1e-15),'LUT result matches the scalar sRGB transfer function');
+});
+
+test('base-color statistics apply linear material factor and pixel alpha cutoff coverage',()=>{
+  const pixels=new Uint8Array([255,128,0,255,0,255,0,128,20,30,40,0]);
+  const result=deriveTreeBaseColorStatistics(pixels,[.5,.25,1,.5],.5);
+  const mean=alphaWeightedLinearRgbMean(pixels);
+  assert.deepEqual(result.linearRgb,mean.linearRgb.map((x,i)=>x*[.5,.25,1][i]));
+  assert.equal(result.baseCoverage,1/3,'only the opaque texel meets cutoff after the material alpha factor');
+  assert.throws(()=>deriveTreeBaseColorStatistics(pixels,[1,1,1,2],.5),/Invalid glTF/);
+  assert.throws(()=>deriveTreeBaseColorStatistics(pixels,[1,1,1,1],1.01),/Invalid glTF/);
 });
 
 test('invalid geometry, attributes, wind, and color inputs are rejected',()=>{

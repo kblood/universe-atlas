@@ -160,3 +160,26 @@ export function alphaWeightedLinearRgbMean(rgba: ArrayLike<number>): {linearRgb:
   if (weight <= 0) throw new Error('RGBA pixels have no alpha weight');
   return {linearRgb: [r / weight, g / weight, b / weight], alphaWeight: weight, pixelCount: rgba.length / 4};
 }
+
+/** Texture-space color summary. `baseColorFactor` is already linear, matching
+ * Three's material color; alpha cutoff coverage measures pixels, never canopy area. */
+export function deriveTreeBaseColorStatistics(rgba: ArrayLike<number>,
+  baseColorFactor: readonly [number, number, number, number], alphaCutoff: number) {
+  if (!Array.isArray(baseColorFactor) || baseColorFactor.length !== 4 ||
+    !baseColorFactor.every(x => Number.isFinite(x) && x >= 0 && x <= 1) ||
+    !Number.isFinite(alphaCutoff) || alphaCutoff < 0 || alphaCutoff > 1) throw new Error('Invalid glTF base color factor or alpha cutoff');
+  const mean = alphaWeightedLinearRgbMean(rgba);
+  let covered = 0;
+  for (let i = 3; i < rgba.length; i += 4) {
+    const alpha = rgba[i];
+    if (!(rgba instanceof Uint8Array || rgba instanceof Uint8ClampedArray) &&
+      (!Number.isInteger(alpha) || alpha < 0 || alpha > 255)) throw new Error('RGBA values must be integer bytes');
+    if (alpha / 255 * baseColorFactor[3] >= alphaCutoff) covered++;
+  }
+  return {
+    linearRgb: [mean.linearRgb[0] * baseColorFactor[0], mean.linearRgb[1] * baseColorFactor[1], mean.linearRgb[2] * baseColorFactor[2]] as [number, number, number],
+    baseCoverage: covered / mean.pixelCount,
+    pixelCount: mean.pixelCount,
+    alphaWeight: mean.alphaWeight,
+  };
+}

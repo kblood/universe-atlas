@@ -8,6 +8,7 @@ import {quantizeForestCoverage} from './forest-coverage.ts';
 import {attachLocalAerial} from './local-aerial-perspective.ts';
 import {installTreeFoliageCoverageMipmaps,type InstalledTreeFoliageMipChain} from './tree-foliage-mips.ts';
 import {installTreeFoliageSidecar,type TreeFoliageMipSidecar} from './tree-foliage-sidecar.ts';
+import {deriveTreeBaseColorStatistics,deriveTreeCanopyMetadata,type TreeCanopyProfile,type TreeCullingBounds} from './tree-canopy-profile.ts';
 
 /** Experimental author-6 adapter. Assets are supplied explicitly; this does not
  * replace the canonical forest or invent a second species catalogue. */
@@ -104,6 +105,19 @@ function deform(material:THREE.Material,phase:{value:number}){
   material.customProgramCacheKey=()=> 'atlas-tree-physical-1';
 }
 export type TreeAssetFamily=Awaited<ReturnType<typeof loadTreeAssetFamily>>;
+export type TreeCanopyPresentation={
+  /** Eligible only when the caller supplied the validated offline foliage sidecar. */
+  enabled:boolean;
+  lod0Profile:TreeCanopyProfile;
+  lod1Profile:TreeCanopyProfile;
+  /** Origin-centred conservative union for both actual LOD vertex sets. */
+  conservativeBounds:TreeCullingBounds;
+  barkLinearRgb:[number,number,number];
+  foliageLinearRgb:[number,number,number];
+  alphaCutoff:number;
+  /** Fraction of foliage texture pixels meeting cutoff; not whole-crown opacity. */
+  baseCoverage:number;
+};
 export type TreeAssetOptions={foliageCoverage?:'mask'|'hash';foliageMipmaps?:boolean;foliageMipSidecar?:TreeFoliageMipSidecar;leafTransmission?:LeafTransmissionOptions;forestCoverage?:boolean;
   localAerial?:{planet:THREE.Object3D;frame:THREE.Object3D;radiusM:number;sun:{value:THREE.Vector3};enabled:{value:number};eyeHeight:{value:number}}};
 export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,options:TreeAssetOptions={}){
@@ -123,6 +137,27 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     }
   });}
   function dispose(){foliageMipChain?.dispose();for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures){t.dispose();if(typeof ImageBitmap!=='undefined'&&t.image instanceof ImageBitmap)t.image.close();}}
+  function texturePixels(texture:THREE.Texture):Uint8ClampedArray{
+    const image=texture.image as CanvasImageSource&{width?:number;height?:number};
+    const width=image?.width,height=image?.height;
+    if(!Number.isInteger(width)||!Number.isInteger(height)||width!<=0||height!<=0)throw new Error('Tree base-color image has invalid dimensions');
+    let canvas:OffscreenCanvas|HTMLCanvasElement,context:OffscreenCanvasRenderingContext2D|CanvasRenderingContext2D|null;
+    if(typeof OffscreenCanvas!=='undefined'){
+      canvas=new OffscreenCanvas(width!,height!);context=canvas.getContext('2d',{willReadFrequently:true});
+    }else if(typeof document!=='undefined'){
+      const element=document.createElement('canvas');element.width=width!;element.height=height!;canvas=element;
+      context=element.getContext('2d',{willReadFrequently:true});
+    }else throw new Error('Tree base-color statistics require a 2D canvas');
+    if(!context)throw new Error('Could not create tree base-color statistics canvas');
+    context.drawImage(image,0,0,width!,height!);
+    // getImageData returns straight-alpha sRGB bytes in pixel row order. This
+    // temporary CPU copy is only used for once-per-load statistics.
+    return context.getImageData(0,0,width!,height!).data;
+  }
+  function textureStatistics(material:THREE.MeshStandardMaterial,cutoff:number){
+    if(!material.map)throw new Error(`Tree material ${material.name} has no base-color texture`);
+    return deriveTreeBaseColorStatistics(texturePixels(material.map),[material.color.r,material.color.g,material.color.b,material.opacity],cutoff);
+  }
   try {
     for(const bytes of [lod0,prepared.lod1GeometryBuffer]){const gltf=await loader.parseAsync(bytes,'');loaded.push(gltf.scene);collect(gltf.scene);}
     const lods=loaded.map(group=>{
@@ -142,6 +177,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
       }else foliageMipChain=await installTreeFoliageCoverageMipmaps(foliage.map,{alphaCutoff:foliage.alphaTest});
       foliageMipSetupMs=performance.now()-started;
     }
+    const alphaCutoff=lods[0][1].material.alphaTest;
     // Explicit experiment: hashing samples fractional mip coverage instead of
     // discarding every leaf texel below the GLB's fixed MASK cutoff. Preserve
     // the imported MASK path by default, including historical captures.
@@ -158,24 +194,26 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
       // Install before transmission, which guards the final material hook.
       for(const mesh of lods[0])attachLocalAerial(mesh,air.planet,air.radiusM,air.sun,air.enabled,air.eyeHeight,undefined,air.frame);
     }
-    // Conservative origin-centred sphere over both LODs, every supported
-    // skeleton height and rigid leaf-wind angle. Used before CPU culling.
-    let maxRadiusM=0;
-    for(const level of lods)for(const mesh of level){
-      const p=mesh.geometry.getAttribute('position'),pivot=mesh.geometry.getAttribute('_leaf_pivot'),branch=mesh.geometry.getAttribute('_branch_level');
-      for(let i=0;i<p.count;i++){
-        const radius=branch.getX(i)>3.5
-          ? Math.hypot(pivot.getX(i),pivot.getY(i),pivot.getZ(i))*22/TREE_REFERENCE_HEIGHT_M+Math.hypot(p.getX(i)-pivot.getX(i),p.getY(i)-pivot.getY(i),p.getZ(i)-pivot.getZ(i))
-          : Math.hypot(p.getX(i),p.getY(i),p.getZ(i))*22/TREE_REFERENCE_HEIGHT_M;
-        maxRadiusM=Math.max(maxRadiusM,radius);
-      }
-    }
+    // Keep LOD profile samples separate so the far representation follows the
+    // actual reduced geometry rather than a merged near/far percentile.
+    const lod0Metadata=deriveTreeCanopyMetadata(lods[0].map(mesh=>mesh.geometry));
+    const lod1Metadata=deriveTreeCanopyMetadata(lods[1].map(mesh=>mesh.geometry));
+    const conservativeBounds:TreeCullingBounds={...lod0Metadata.cullingBounds,
+      radiusM:Math.max(lod0Metadata.cullingBounds.radiusM,lod1Metadata.cullingBounds.radiusM)};
+    const foliage=lods[0][1].material;
+    const barkStatistics=textureStatistics(lods[0][0].material,0);
+    const foliageStatistics=textureStatistics(foliage,alphaCutoff);
+    const canopyPresentation:TreeCanopyPresentation={enabled:!!options.foliageMipSidecar,
+      lod0Profile:lod0Metadata.profile,lod1Profile:lod1Metadata.profile,conservativeBounds,
+      barkLinearRgb:barkStatistics.linearRgb,foliageLinearRgb:foliageStatistics.linearRgb,
+      alphaCutoff,baseCoverage:foliageStatistics.baseCoverage};
+    const maxRadiusM=conservativeBounds.radiusM;
     // Compose only after wind. Both LODs share this one foliage material;
     // bark and all custom shadow materials retain their previous lighting.
     const leafTransmission=options.leafTransmission===undefined?null:installLeafTransmission(lods[0][1].material,options.leafTransmission);
     let disposed=false,activeBatches=0;
     return {
-      lods,textures,leafTransmission,maxRadiusM,forestCoverage:!!options.forestCoverage,embeddedTextureBytes:prepared.embeddedTextureBytes,
+      lods,textures,leafTransmission,maxRadiusM,canopyPresentation,forestCoverage:!!options.forestCoverage,embeddedTextureBytes:prepared.embeddedTextureBytes,
       foliageMipmaps:foliageMipChain?{source:options.foliageMipSidecar?'offline-sidecar':'runtime-build',payloadBytes:foliageMipPayloadBytes,
         setupMs:foliageMipSetupMs,levels:foliageMipChain.report,baseCoverage:foliageMipChain.baseCoverage}:null,
       setDate(date:bigint){leafTransmission?.assertInstalled();phase.value=treeWindPhase(date);},
