@@ -35,3 +35,4 @@ src/instance-update-ranges.ts -text
 test-results/tree-instance-updates/** -text whitespace=cr-at-eol
 test-results/tree-instance-updates/opus/prompt.txt -whitespace
 test-results/opus-forest-work-capture-review/** -text
+test-results/family-capture/**/source-snapshots/*.raw.bin -text
