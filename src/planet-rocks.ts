@@ -120,6 +120,33 @@ export const ROCK_WORST_CASE_BYTES=(()=>{
  * leaves at least 10% headroom. PlanetRenderer reserves exactly this inside
  * its combined core budget. */
 export const ROCK_BUDGET_BYTES=28*1024*1024;
+/** Farthest any wanted rock can be from the eye: tier range, cell margin, the
+ * cell's own extent and the largest rock, with slack. A frustum plane whose
+ * inside half-space contains the eye by more than this cannot reject any rock,
+ * so it is left out of the draw key (see `draw`). */
+export const ROCK_KEY_PLANE_REACH_M=Math.max(...ROCK_TIERS.map(t=>t.rangeM+t.marginM+2*t.cellSizeM+4*t.sizeMax))+64;
+/** Percentile summary with the same nearest-rank rule as render-profile's
+ * profileSummary (that module is not importable by Node's strip-only tests). */
+function workPercentiles(values:readonly number[]){
+  if(!values.length)return {samples:0,p50:null,p95:null,p99:null,max:null};
+  const sorted=[...values].sort((a,b)=>a-b),at=(q:number)=>sorted[Math.min(sorted.length-1,Math.ceil(q*sorted.length)-1)]!;
+  return {samples:sorted.length,p50:at(.5),p95:at(.95),p99:at(.99),max:sorted[sorted.length-1]!};
+}
+/** Per-update CPU work history kept for browser acceptance: the most recent
+ * frames' update/process/draw ms and draw units, plus the frame span of each
+ * published job. Fixed-size typed rings; recording never allocates. */
+export const ROCK_WORK_HISTORY=600;
+/** Draw-traversal target used to report per-frame over-target counts. It is
+ * the configured process guard (ROCK_WORK_BUDGET_MS), not an accepted
+ * frame budget. */
+export const ROCK_DRAW_TARGET_MS=ROCK_WORK_BUDGET_MS;
+class WorkRing{
+  readonly values:Float64Array;private next=0;private size=0;
+  constructor(capacity:number){this.values=new Float64Array(capacity);}
+  push(value:number){this.values[this.next]=value;this.next=(this.next+1)%this.values.length;if(this.size<this.values.length)this.size++;}
+  clear(){this.next=0;this.size=0;}
+  list(){const out:number[]=[];for(let i=0;i<this.size;i++)out.push(this.values[(this.next-this.size+i+this.values.length)%this.values.length]!);return out;}
+}
 export const ROCK_COLLISION_NOTE='none: rocks are visual only; walker, landing and fauna do not collide with them';
 
 export type RockTextureLease={ready:{value:number};rockColor:THREE.Texture|null;rockNormal:THREE.Texture|null};
@@ -279,6 +306,10 @@ export class PlanetRocks {
   private readonly scratch={position:new THREE.Vector3(),quaternion:new THREE.Quaternion(),yaw:new THREE.Quaternion(),scale:new THREE.Vector3(),up:new THREE.Vector3(),matrix:new THREE.Matrix4(),color:new THREE.Color()};
   private stats={cells:0,samples:0,rescatters:0,cameraCulled:0,shadowOnly:0,nearUnculled:0,budgetDrops:0,nearDrops:0,drawn:[0,0,0],draws:0,triangles:0,rebuilds:0,updateMs:0,processMs:0,drawMs:0,rescatterMs:0,
     drawUnits:0,drawCells:0,drawRocks:0,drawCellsSkipped:0,drawCellsCulled:0,jobsStarted:0,publishedThisFrame:0,publishInstances:0,publishDeferred:0,lastJobFrames:0,maxJobFrames:0,maxDrawUnits:0,stale:false};
+  /** Per update (enabled or not): total, process and draw ms, draw units, and
+   * whether the rock gate was open. Job frame spans are recorded at publish. */
+  private history={update:new WorkRing(ROCK_WORK_HISTORY),process:new WorkRing(ROCK_WORK_HISTORY),draw:new WorkRing(ROCK_WORK_HISTORY),
+    units:new WorkRing(ROCK_WORK_HISTORY),enabled:new WorkRing(ROCK_WORK_HISTORY),jobFrames:new WorkRing(ROCK_WORK_HISTORY)};
   constructor(options:PlanetRocksOptions){
     this.options=options;this.body=options.body;
     this.drawUnitsPerFrame=Math.max(1,Math.floor(options.drawUnitsPerFrame??ROCK_DRAW_UNITS_PER_FRAME));
@@ -378,7 +409,27 @@ export class PlanetRocks {
     s.drawMs=performance.now()-d0;
     return this.finish(started);
   }
-  private finish(started:number){this.stats.updateMs=performance.now()-started;}
+  private finish(started:number){
+    const s=this.stats,h=this.history;s.updateMs=performance.now()-started;
+    h.update.push(s.updateMs);h.process.push(s.processMs);h.draw.push(s.drawMs);h.units.push(s.drawUnits);h.enabled.push(this.reason==='ok'?1:0);
+  }
+  /** Clears the per-frame work history (a new measurement window). */
+  resetWorkHistory(){for(const ring of Object.values(this.history))ring.clear();}
+  /** Percentiles of the recorded per-update work. `enabledFrames` counts
+   * updates with the gate open; `overTarget` counts updates whose draw
+   * traversal (or total rock update) exceeded ROCK_DRAW_TARGET_MS. */
+  workSummary(){
+    const h=this.history,update=h.update.list(),draw=h.draw.list(),enabled=h.enabled.list();
+    const over=(values:number[])=>values.reduce((a,v)=>a+(v>ROCK_DRAW_TARGET_MS?1:0),0);
+    const enabledDraw=draw.filter((_,i)=>enabled[i]===1),enabledUpdate=update.filter((_,i)=>enabled[i]===1);
+    return {historyLimit:ROCK_WORK_HISTORY,targetMs:ROCK_DRAW_TARGET_MS,
+      targetNote:'configured rock work guard used as the per-frame traversal target; not an accepted frame budget',
+      frames:update.length,enabledFrames:enabledDraw.length,
+      updateMs:workPercentiles(enabledUpdate),processMs:workPercentiles(h.process.list().filter((_,i)=>enabled[i]===1)),drawMs:workPercentiles(enabledDraw),
+      drawUnits:workPercentiles(h.units.list().filter((_,i)=>enabled[i]===1)),
+      overTarget:{draw:over(enabledDraw),update:over(enabledUpdate)},
+      jobFrames:workPercentiles(h.jobFrames.list())};
+  }
   private clearAll(){if(this.tiers.some(t=>t.residents.size||t.wanted.length))this.clearResidents();this.hide();}
   /** At most one tier refreshes its canonical neighbourhood per frame. */
   private rescatter(focus:THREE.Vector3,altitudeM:number){
@@ -491,7 +542,23 @@ export class PlanetRocks {
    * never restart a running job, so continuous motion cannot starve it. */
   private draw(eye:THREE.Vector3,frusta:readonly THREE.Frustum[],shadow:THREE.Frustum|null){
     const r=this.body.radiusM,q=(x:number)=>Math.round(x*r*20);
-    const planes=(f:THREE.Frustum|null)=>f?f.planes.map(p=>`${p.normal.x.toFixed(4)},${p.normal.y.toFixed(4)},${p.normal.z.toFixed(4)},${(p.constant*r).toFixed(2)}`).join(';'):'';
+    // Planes are keyed by their normal (1e-4) and their signed distance from
+    // the eye in metres (1 cm), never by their constant about the planet
+    // centre: that constant is -n.eye, so a 1e-6 rad drift of a plane through
+    // the eye moves it by ~5 m on a 5,000 km body. A slowly settling camera
+    // turn then restarted a full draw traversal every frame while the view
+    // looked still. A plane that cannot reject any rock within reach of the
+    // eye is keyed as '*': at astronomical far/near ratios the far plane's
+    // extracted normal is floating-point noise that changes frame to frame
+    // (both found on the living planet, 2026-09-29).
+    const reach=ROCK_KEY_PLANE_REACH_M/r;
+    // Integer steps (`||0` folds -0), so values near zero do not flip between
+    // "-0.00" and "0.00" spellings.
+    const step=(v:number,scale:number)=>Math.round(v*scale)||0;
+    const planes=(f:THREE.Frustum|null)=>f?f.planes.map(p=>{
+      const d=p.normal.dot(eye)+p.constant;
+      return d>reach?'*':`${step(p.normal.x,1e4)},${step(p.normal.y,1e4)},${step(p.normal.z,1e4)},${step(d*r,100)}`;
+    }).join(';'):'';
     const key=`${this.residentsVersion}|${this.originVersion}|${q(eye.x)},${q(eye.y)},${q(eye.z)}|${frusta.map(planes).join('/')}|${planes(shadow)}`;
     this.group.visible=true;
     const full=this.drawUnitsPerFrame,frame=++this.drawFrame;
@@ -590,7 +657,7 @@ export class PlanetRocks {
     this.group.position.copy(job.origin);
     const s=this.stats;
     Object.assign(s,{drawn:[...job.drawn],draws,triangles,cameraCulled:job.culled,shadowOnly:job.shadowOnly,nearUnculled:job.near,budgetDrops:job.drops,nearDrops:job.nearDrops});
-    s.rebuilds++;s.publishedThisFrame++;s.lastJobFrames=job.frames;s.maxJobFrames=Math.max(s.maxJobFrames,job.frames);
+    s.rebuilds++;s.publishedThisFrame++;s.lastJobFrames=job.frames;this.history.jobFrames.push(job.frames);s.maxJobFrames=Math.max(s.maxJobFrames,job.frames);
     this.publishedKey=job.key;this.publishedFrame=job.startFrame;this.job=null;
   }
   /** Remaining cells in the running draw job, and an upper bound on its
@@ -607,6 +674,22 @@ export class PlanetRocks {
     const out:string[]=[];
     for(const b of this.batches)for(let i=0;i<b.count;i++)out.push(`${b.published[i]!.id}@${b.lod}`);
     return out.sort();
+  }
+  /** The published (drawn) rocks nearest a planet-local unit point, with the
+   * canonical data acceptance needs to check scale, embedding and gating.
+   * Explicit diagnostic call; never read per frame. */
+  publishedRockProbe(eye:THREE.Vector3,limit=64){
+    const r=this.body.radiusM,out:{rock:RuntimeRock;lod:RockLod;distanceM:number;heightM:number}[]=[];
+    for(const b of this.batches)for(let i=0;i<b.count;i++){
+      const rock=b.published[i]!,g=1+rock.groundHeightM/r,d=rock.direction;
+      const distanceM=Math.hypot(d[0]*g-eye.x,d[1]*g-eye.y,d[2]*g-eye.z)*r;
+      const family=this.families.findIndex(f=>f.id===rock.familyId),shape=this.shapes[family*ROCK_VARIANTS+rock.variant];
+      out.push({rock,lod:b.lod,distanceM,heightM:(shape?.height??0)*rock.diameterM*rock.aspect[1]});
+    }
+    out.sort((a,b)=>a.distanceM-b.distanceM||(a.rock.id<b.rock.id?-1:1));
+    return out.slice(0,Math.max(0,limit)).map(({rock,lod,distanceM,heightM})=>({id:rock.id,tier:rock.tier,form:rock.form,familyId:rock.familyId,variant:rock.variant,lod,
+      distanceM,diameterM:rock.diameterM,widthM:rock.diameterM*Math.max(rock.aspect[0],rock.aspect[2]),heightM,sinkM:rock.sinkM,groundHeightM:rock.groundHeightM,
+      direction:[...rock.direction] as V3,up:[...rock.up] as V3,aspect:[...rock.aspect] as V3,yaw:rock.yaw}));
   }
   /** Resident canonical rocks in the current wanted neighbourhood. */
   private *residentRocks(){for(const state of this.tiers)for(const cell of state.wanted){const record=state.residents.get(cell.id);if(record)yield* record.rocks;}}

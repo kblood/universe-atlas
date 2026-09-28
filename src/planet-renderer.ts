@@ -4,7 +4,7 @@ import {patchMorphHeader,patchMorphVertex,terrainDepthMaterial,boundMorphedTerra
 import type {RenderProfile} from './render-profile.ts';
 import {attachLocalAerial,localAerialGLSL,LOCAL_AERIAL_VERSION} from './local-aerial-perspective.ts';
 import { AU, type Body, type V3 } from './catalog.ts';
-import { children, tileDirection, closestTileDirection, tileKey, directionTile, tileNeighbour, PATCH_SEGMENTS, type Tile, type buildTile } from './planet-tiles.ts';
+import { children, tileDirection, closestTileDirection, tileKey, directionTile, directionCoordinates, tileNeighbour, PATCH_SEGMENTS, type Tile, type buildTile } from './planet-tiles.ts';
 import {terrainSampler, DEFAULT_SURFACE_AGE_MYR} from './terrain.ts';
 import { PlanetAtmosphere } from './planet-atmosphere.ts';
 import {RiverWater} from './river-water.ts';
@@ -190,6 +190,7 @@ export class PlanetRenderer {
   private environment:RiverEnvironment|null=null;
   private forest:PlanetForest;
   private rocks:PlanetRocks;
+  private readonly lastEye=new THREE.Vector3();
   private lowFlightDetail=false;
   private surfaceReady=false;
   private eyeHeightUniform = {value:0};
@@ -613,6 +614,63 @@ export class PlanetRenderer {
   renderForestAtlases(renderer:THREE.WebGLRenderer,xr=false){this.forest.renderFarAtlases(renderer,xr);}
   forestPresentationCensus(){return this.forest.presentationCensus();}
   rockCensus(){return this.rocks.census();}
+  /** Sorted `id@lod` of the drawn rocks (replay comparisons; explicit call). */
+  publishedRocks(){return this.rocks.publishedRocks();}
+  rockWork(){return this.rocks.workSummary();}
+  resetRockWork(){this.rocks.resetWorkHistory();}
+  /** Height (m) of the terrain surface as drawn this frame along a planet
+   * direction: the finest visible patch containing it, the same triangle
+   * split and morph/edge-lock blend as the patch vertex shader, intersected
+   * with the radial ray. Null where no visible patch covers the direction.
+   * Diagnostic only; reads resident geometry, changes nothing. */
+  renderedGroundHeightM(direction:V3){
+    const l=Math.hypot(...direction),d:V3=[direction[0]/l,direction[1]/l,direction[2]/l];
+    let patch:Patch|undefined;
+    for(let level=30;level>=0&&!patch;level--){const key=tileKey(directionTile(d,level));if(this.active.has(key))patch=this.patches.get(key);}
+    if(!patch)return null;
+    const t=patch.tile,n=PATCH_SEGMENTS,stride=n+1,{u,v}=directionCoordinates(d),cells=2**t.level;
+    const gx=Math.max(0,Math.min(n,((u+1)*.5*cells-t.x)*n)),gy=Math.max(0,Math.min(n,((v+1)*.5*cells-t.y)*n));
+    const ix=Math.min(n-1,Math.floor(gx)),iy=Math.min(n-1,Math.floor(gy)),a=gx-ix,b=gy-iy;
+    const pos=patch.data.positions,par=patch.data.parents,anchor=patch.data.anchor,edge=patch.edge.value,morph=patch.morph.value;
+    const vertex=(x:number,y:number):V3=>{
+      const lock=(x===0&&edge.x>0)||(x===n&&edge.y>0)||(y===0&&edge.z>0)||(y===n&&edge.w>0),blend=lock?0:morph,i=(y*stride+x)*3;
+      return [anchor[0]+par[i]!+(pos[i]!-par[i]!)*blend,anchor[1]+par[i+1]!+(pos[i+1]!-par[i+1]!)*blend,anchor[2]+par[i+2]!+(pos[i+2]!-par[i+2]!)*blend];
+    };
+    // Index order per cell: (a, a+1, a+stride+1) and (a, a+stride+1, a+stride).
+    const p0=vertex(ix,iy),p1=a>=b?vertex(ix+1,iy):vertex(ix+1,iy+1),p2=a>=b?vertex(ix+1,iy+1):vertex(ix,iy+1);
+    const e1=[p1[0]-p0[0],p1[1]-p0[1],p1[2]-p0[2]],e2=[p2[0]-p0[0],p2[1]-p0[1],p2[2]-p0[2]];
+    const nx=e1[1]!*e2[2]!-e1[2]!*e2[1]!,ny=e1[2]!*e2[0]!-e1[0]!*e2[2]!,nz=e1[0]!*e2[1]!-e1[1]!*e2[0]!;
+    const denom=nx*d[0]+ny*d[1]+nz*d[2];if(Math.abs(denom)<1e-300)return null;
+    const k=(nx*p0[0]+ny*p0[1]+nz*p0[2])/denom;
+    return {heightM:(k-1)*this.body.radiusM,level:t.level,morph,tile:tileKey(t)};
+  }
+  /** Drawn rocks nearest the last update's eye, each checked against the
+   * drawn terrain (centre and four base points at 30% of the footprint) and
+   * the canonical sampler/sea level. Explicit acceptance diagnostic. */
+  rockProbe(limit=64){
+    const r=this.body.radiusM,eye=this.lastEye,water=this.waterBucket*WATER_LEVEL_BUCKET_M;
+    const rocks=this.rocks.publishedRockProbe(eye,limit).map(rock=>{
+      const d=rock.direction,up=rock.up,g=1+rock.groundHeightM/r;
+      const ref=Math.abs(up[1])>.92?[1,0,0]:[0,1,0];
+      let ex=ref[1]!*up[2]-ref[2]!*up[1],ey=ref[2]!*up[0]-ref[0]!*up[2],ez=ref[0]!*up[1]-ref[1]!*up[0];const el=Math.hypot(ex,ey,ez);ex/=el;ey/=el;ez/=el;
+      const nx=up[1]*ez-up[2]*ey,ny=up[2]*ex-up[0]*ez,nz=up[0]*ey-up[1]*ex;
+      // Base centre: the mesh base (y=0) is moved sinkM along up into the ground.
+      const bx=d[0]*g-up[0]*rock.sinkM/r,by=d[1]*g-up[1]*rock.sinkM/r,bz=d[2]*g-up[2]*rock.sinkM/r,off=.3*rock.widthM/r;
+      const points=[[0,0],[1,0],[-1,0],[0,1],[0,-1]].map(([x,z])=>{
+        const px=bx+(ex*x+nx*z)*off,py=by+(ey*x+ny*z)*off,pz=bz+(ez*x+nz*z)*off,len=Math.hypot(px,py,pz);
+        const baseHeightM=(len-1)*r,dir:V3=[px/len,py/len,pz/len],drawn=this.renderedGroundHeightM(dir),canonical=this.sample(dir);
+        return {baseHeightM,renderedGroundM:drawn?.heightM??null,canonicalGroundM:canonical.groundHeightM,
+          gapM:drawn?baseHeightM-drawn.heightM:null,level:drawn?.level??null,morph:drawn?.morph??null};
+      });
+      const centre=this.sample(d);
+      return {...rock,renderedGroundM:points[0]!.renderedGroundM,tileLevel:points[0]!.level,morph:points[0]!.morph,
+        canonicalDeltaM:points[0]!.renderedGroundM===null?null:points[0]!.renderedGroundM-rock.groundHeightM,
+        // Positive gap: the base point is above the drawn ground (air under the rock there).
+        maxBaseGapM:Math.max(...points.map(p=>p.gapM??-Infinity)),minTopClearanceM:points[0]!.renderedGroundM===null?null:rock.groundHeightM-rock.sinkM+rock.heightM-points[0]!.renderedGroundM,
+        ocean:!!centre.ocean,wet:!!centre.wet,aboveWaterM:rock.groundHeightM-water,points};
+    });
+    return {eye:eye.toArray(),waterLevelM:water,bodyWater:this.body.water,rocks};
+  }
   renderLakeReflection(renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera,xr=false){
     if(!this.lakeReflection)return;
     if(!this.rootsReady||this.relief!==1||xr){this.lakeReflection.disable();return;}
@@ -853,6 +911,7 @@ export class PlanetRenderer {
     // View direction may inform future prefetch, never population coverage:
     // moving this focus ahead made turning in place replace dense forest.
     this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta,worldNs,this.lifeContext?.treeSpecies,shadowFrustum);
+    this.lastEye.copy(eye);
     this.rocks.update({eye,focus:lifeFocus,altitudeM,gate:this.lifeContext?.rocks,relief:this.relief,waterLevelM:snappedWaterLevelM,frusta,shadowFrustum});
     if (this.relief === 1 && (contact||altitudeM<PLANET_DETAIL.groundLifeAltitudeM) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs,shadowFrustum); this.lifeMs=performance.now()-lifeStarted; }
     else { this.hideLife(); this.lifeMs=0; }

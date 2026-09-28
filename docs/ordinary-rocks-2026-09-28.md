@@ -12,6 +12,13 @@ It supersedes the byte figures, draw description and "accounted separately"
 statement in the original sections below; they are kept as the record of
 `4c392e6`.
 
+**Browser acceptance (2026-09-29, branch `opus55/rock-acceptance-20260928`):**
+see [rock-acceptance-2026-09-28.md](rock-acceptance-2026-09-28.md). It covers
+barren and living captures, sea-level gating and replay, and contended browser
+CPU timings. It fixes a draw-key defect that re-ran the traversal every frame
+in still views, and it records a terrain stale-water starvation that the
+28 MiB rock reserve makes reachable. Rocks remain visual-only (no collision).
+
 ## Architecture and versions
 
 | Layer | File | Version |
@@ -359,12 +366,15 @@ Commands (Windows, Node v24.7.0):
     published view).
   - Cap drops at saturation (`budgetDrops`, as in `4c392e6`) remain for
     non-near rocks.
-  - The 28 MiB reservation lowers the terrain admission budget by 28 MiB. Its
-    effect on terrain residency has not been browser-tested.
+  - The 28 MiB reservation lowers the terrain admission budget by 28 MiB.
+    Browser-tested on 2026-09-29: at a still coastal hover it leaves stale
+    sea-level patches unable to rebuild after a date seek. See
+    rock-acceptance-2026-09-28.md, "Unresolved".
   - Record, SurfaceCell, slot and job bytes are V8-calibrated estimates, not
     browser measurements.
 - **Collision.** None. Rocks are visual only: the walker, landing and fauna
-  pass through them. No collision behaviour was added.
+  pass through them. No collision behaviour was added. This stays the case
+  unless a separate collision task is approved.
 - **Other.** Rocks may overlap trees and fauna, since there is no
   cross-population exclusion. Rocks are hidden above 960 m altitude and when
   relief ≠ 1. The record-byte figure is an estimate, not a heap measurement.

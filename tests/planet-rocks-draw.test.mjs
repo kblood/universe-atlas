@@ -13,7 +13,7 @@ import {rendererMemoryAccounting,RENDERER_MEMORY_BUDGET} from '../src/renderer-m
 import {
   PlanetRocks,ROCK_LOD_CAPS,ROCK_DRAW_UNITS_PER_FRAME,ROCK_NEAR_UNCULLED_M,ROCK_WORST_CASE_BYTES,ROCK_BUDGET_BYTES,
   ROCK_REF_BYTES,ROCK_DRAW_JOB_BYTES,ROCK_RECORD_BYTES,ROCK_CELL_RECORD_BYTES,ROCK_SURFACE_CELL_BYTES,ROCK_TRANSIENT_BYTES,
-  ROCK_MAX_RESCATTER_CANDIDATES,ROCK_ORIGIN_REBASE_M,ROCK_NEAR_MAX,ROCK_PUBLISH_MAX,
+  ROCK_MAX_RESCATTER_CANDIDATES,ROCK_ORIGIN_REBASE_M,ROCK_NEAR_MAX,ROCK_PUBLISH_MAX,ROCK_KEY_PLANE_REACH_M,ROCK_WORK_HISTORY,ROCK_DRAW_TARGET_MS,
 } from '../src/planet-rocks.ts';
 import {moon,moonFamilies,CORNER,unit,saturatedRecords,fixtureCounts,cameraFrustum,eyeAt,injectSaturated,flatSampler,rockClassifier,SEED} from './rock-saturated-fixture.mjs';
 
@@ -453,5 +453,100 @@ test('moving: rocks within the near radius, less the distance moved since the pu
     }
   }
   assert.ok(maxAge>1&&checked>1000,`max age ${maxAge}, checked ${checked}`);
+  rocks.dispose();
+});
+
+test('a still view is not re-traversed when only an out-of-reach frustum plane changes (astronomical far plane noise)',()=>{
+  const rocks=saturated(),r=moon.radiusM;
+  const base=cameraFrustum(moon,eye0,.4,{far:600});
+  const withFar=(normal,distanceM)=>{
+    const f=base.clone(),n=normal.clone().normalize();
+    // Plane 4 is THREE's far plane; place it `distanceM` beyond the eye along `n`.
+    f.planes[4].set(n,-n.dot(eye0)+distanceM/r);
+    return f;
+  };
+  // The far distance of the page camera is ~1e15 m; its extracted normal jitters frame to frame.
+  const noisy=[new THREE.Vector3(-.4465,-.0558,.893),new THREE.Vector3(-.7064,-.0442,.7064),new THREE.Vector3(-.7044,-.088,.7044)];
+  flush(rocks,input({frusta:[withFar(noisy[0],1e15)]}));
+  const before=rocks.publishedRocks();
+  for(let i=0;i<30;i++){
+    rocks.update(input({frusta:[withFar(noisy[i%3],1e15*(1+i*1e-9))]}));
+    const w=rocks.diagnostics().work.draw;
+    assert.equal(w.jobsStarted,0,`frame ${i}: no job for a noise-only far plane`);
+    assert.equal(w.units,0,`frame ${i}: no draw units`);
+    assert.equal(w.stale,false);
+  }
+  assert.deepEqual(rocks.publishedRocks(),before);
+  // A plane within reach still keys the view: moving it starts a job, and the result matches the reference pass.
+  assert.ok(ROCK_KEY_PLANE_REACH_M>ROCK_TIERS.at(-1).rangeM&&ROCK_KEY_PLANE_REACH_M<2*ROCK_TIERS.at(-1).rangeM);
+  const near=withFar(noisy[0],ROCK_KEY_PLANE_REACH_M*.25);
+  rocks.update(input({frusta:[near]}));
+  assert.equal(rocks.diagnostics().work.draw.jobsStarted,1,'an in-reach plane change starts a job');
+  flush(rocks,input({frusta:[near]}));
+  assertParity(rocks,{name:'far-in-reach',eye:eye0,frusta:[near],shadow:null},'far-in-reach');
+  rocks.dispose();
+});
+
+test('rock work history: per-frame rings summarise enabled frames against the 1.5 ms target and job frames',()=>{
+  const rocks=saturated(500);
+  rocks.resetWorkHistory();
+  const view={frusta:[cameraFrustum(moon,eye0,.1)]};
+  const {frames}=flush(rocks,input(view));
+  for(let i=0;i<5;i++)rocks.update(input(view));
+  const w=rocks.workSummary();
+  assert.equal(ROCK_DRAW_TARGET_MS,1.5);
+  assert.equal(w.targetMs,1.5);
+  assert.equal(w.historyLimit,ROCK_WORK_HISTORY);
+  assert.equal(w.frames,frames+5);
+  assert.equal(w.enabledFrames,frames+5);
+  for(const k of ['updateMs','processMs','drawMs','drawUnits'])assert.equal(w[k].samples,frames+5,k);
+  assert.ok(w.drawUnits.max<=500+Math.max(...ROCK_TIERS.map(t=>t.slots))||w.drawUnits.max<=ROCK_PUBLISH_MAX);
+  assert.ok(w.jobFrames.samples>=1&&w.jobFrames.max>1,'saturated jobs span frames');
+  assert.equal(typeof w.overTarget.draw,'number');
+  // Still frames after the publish do no traversal.
+  const units=rocks.diagnostics().work.draw.units;assert.equal(units,0);
+  rocks.resetWorkHistory();
+  assert.equal(rocks.workSummary().frames,0);
+  for(let i=0;i<ROCK_WORK_HISTORY+10;i++)rocks.update(input(view));
+  assert.equal(rocks.workSummary().frames,ROCK_WORK_HISTORY,'history is a bounded ring');
+  rocks.dispose();
+});
+
+test('published rock probe: nearest drawn rocks with canonical placement fields',()=>{
+  const rocks=saturated();
+  flush(rocks,input({frusta:[cameraFrustum(moon,eye0,.1)]}));
+  const probe=rocks.publishedRockProbe(eye0,40),published=new Set(rocks.publishedRocks());
+  assert.equal(probe.length,Math.min(40,published.size));
+  for(let i=0;i<probe.length;i++){
+    const p=probe[i];
+    assert.ok(published.has(`${p.id}@${p.lod}`));
+    if(i)assert.ok(p.distanceM>=probe[i-1].distanceM);
+    assert.ok(p.heightM>0&&p.widthM>=p.diameterM*.5&&p.sinkM>=0&&p.sinkM<p.heightM,`${p.id}: height ${p.heightM} sink ${p.sinkM}`);
+    assert.equal(p.direction.length,3);assert.equal(p.up.length,3);
+  }
+  rocks.dispose();
+});
+
+test('a settling camera turn (micro-radian drift per frame) does not restart the draw traversal every frame',()=>{
+  const rocks=saturated();
+  // Yaw and pitch both drift: pitch changes each plane's constant about the
+  // planet centre by ~radius x angle, which the draw key must not see.
+  const view=(yaw,pitch=-.25)=>({frusta:[cameraFrustum(moon,eye0,yaw,{far:1e12,pitch})]});
+  flush(rocks,input(view(.7)));
+  let jobs=0,units=0;
+  // The tail of a settling turn: 1e-7 rad per frame, halving every 20 frames.
+  let yaw=.7,pitch=-.25;
+  for(let i=0;i<60;i++){
+    yaw+=1e-7*Math.pow(.5,i/20);pitch+=1e-7*Math.pow(.5,i/20);
+    rocks.update(input(view(yaw,pitch)));
+    const w=rocks.diagnostics().work.draw;jobs+=w.jobsStarted;units+=w.units;
+  }
+  assert.ok(jobs<=1,`${jobs} draw jobs started over 60 near-still frames`);
+  // A real turn still re-keys: 0.01 rad starts a job and converges to the reference pass.
+  const turned=view(yaw+.01,pitch);
+  rocks.update(input(turned));
+  assert.equal(rocks.diagnostics().work.draw.jobsStarted,1);
+  flush(rocks,input(turned));
+  assertParity(rocks,{name:'turned',eye:eye0,frusta:turned.frusta,shadow:null},'turned');
   rocks.dispose();
 });
