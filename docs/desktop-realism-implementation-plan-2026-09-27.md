@@ -273,6 +273,12 @@ reconstruction reviews are archived with hashes; remaining rendering
 suggestions are not implemented wholesale. No capture asset is accepted or
 bound to a species.
 
+An isolated Oak/Pine comparison found that opt-in per-view relighting improves
+the captured proxy's intermediate-view luminance match, but both families
+remain outside the comparison gate. Probe values are linear, untone-mapped
+image-space measurements in arbitrary renderer units; this is not visual or
+game acceptance. See the [relighting record](captured-family-relighting-2026-09-28.md).
+
 The [existing-implementation comparison](tree-existing-methods-2026-09-28.md)
 led to a pinned EZ-Tree oak geometry run and a local browser fixture. The
 [current comparison record](tree-ez-reference-2026-09-28.md) documents the
