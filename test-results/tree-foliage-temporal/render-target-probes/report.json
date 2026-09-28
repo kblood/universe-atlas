@@ -1,0 +1,536 @@
+{
+  "inputHashes": [
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f\\atlas-ez-oak.glb",
+      "sha256": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068"
+    },
+    {
+      "path": "C:\\LLM\\IWSDK\\Assets\\_assetctl\\atlas-ez-family-f\\atlas-ez-oak.lod1.glb",
+      "sha256": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9"
+    }
+  ],
+  "browserVersion": "149.0.7827.55",
+  "url": "http://127.0.0.1:5197/tree-asset-lab.html",
+  "modes": {
+    "mask": {
+      "setup": {
+        "mode": "mask",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "vendor": "Google Inc. (NVIDIA)"
+      },
+      "footprints": [
+        {
+          "outputPixels": 16,
+          "highResolutionPixels": 512,
+          "cameraDistanceM": 137.24844291261175,
+          "meshNativeVsDownsampled": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          },
+          "highResolutionCoverageFraction": 0,
+          "nativeCoverageFraction": 0
+        },
+        {
+          "outputPixels": 32,
+          "highResolutionPixels": 512,
+          "cameraDistanceM": 68.62422145630588,
+          "meshNativeVsDownsampled": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "highResolutionCoverageFraction": 0,
+          "nativeCoverageFraction": 0
+        }
+      ],
+      "wind": [
+        {
+          "outputPixels": 16,
+          "date": "0",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          }
+        },
+        {
+          "outputPixels": 16,
+          "date": "1750000000",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          }
+        },
+        {
+          "outputPixels": 16,
+          "date": "7000000000",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          }
+        },
+        {
+          "outputPixels": 16,
+          "date": "-7000000000",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          }
+        },
+        {
+          "outputPixels": 32,
+          "date": "0",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          }
+        },
+        {
+          "outputPixels": 32,
+          "date": "1750000000",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          }
+        },
+        {
+          "outputPixels": 32,
+          "date": "7000000000",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          }
+        },
+        {
+          "outputPixels": 32,
+          "date": "-7000000000",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          }
+        }
+      ],
+      "yaw": [
+        {
+          "degrees": 0,
+          "highResolution": 512,
+          "meshNativeVsDownsampled": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "nativeCoverageFraction": 0
+        },
+        {
+          "degrees": 0.25,
+          "highResolution": 512,
+          "meshNativeVsDownsampled": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "nativeCoverageFraction": 0
+        },
+        {
+          "degrees": 0.5,
+          "highResolution": 512,
+          "meshNativeVsDownsampled": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "nativeCoverageFraction": 0
+        },
+        {
+          "degrees": 0.75,
+          "highResolution": 512,
+          "meshNativeVsDownsampled": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "nativeCoverageFraction": 0
+        }
+      ]
+    },
+    "hash": {
+      "setup": {
+        "mode": "hash",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5090 (0x00002B85) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "vendor": "Google Inc. (NVIDIA)"
+      },
+      "footprints": [
+        {
+          "outputPixels": 16,
+          "highResolutionPixels": 512,
+          "cameraDistanceM": 137.24844291261175,
+          "meshNativeVsDownsampled": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          },
+          "highResolutionCoverageFraction": 0,
+          "nativeCoverageFraction": 0
+        },
+        {
+          "outputPixels": 32,
+          "highResolutionPixels": 512,
+          "cameraDistanceM": 68.62422145630588,
+          "meshNativeVsDownsampled": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "highResolutionCoverageFraction": 0,
+          "nativeCoverageFraction": 0
+        }
+      ],
+      "wind": [
+        {
+          "outputPixels": 16,
+          "date": "0",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          }
+        },
+        {
+          "outputPixels": 16,
+          "date": "1750000000",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          }
+        },
+        {
+          "outputPixels": 16,
+          "date": "7000000000",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          }
+        },
+        {
+          "outputPixels": 16,
+          "date": "-7000000000",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 256
+          }
+        },
+        {
+          "outputPixels": 32,
+          "date": "0",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          }
+        },
+        {
+          "outputPixels": 32,
+          "date": "1750000000",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          }
+        },
+        {
+          "outputPixels": 32,
+          "date": "7000000000",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          }
+        },
+        {
+          "outputPixels": 32,
+          "date": "-7000000000",
+          "highDownsampledMaskPixels": 0,
+          "nativeMaskPixels": 0,
+          "highCapturePixels": 512,
+          "nativeVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "highVsDate0": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          }
+        }
+      ],
+      "yaw": [
+        {
+          "degrees": 0,
+          "highResolution": 512,
+          "meshNativeVsDownsampled": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "nativeCoverageFraction": 0
+        },
+        {
+          "degrees": 0.25,
+          "highResolution": 512,
+          "meshNativeVsDownsampled": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "nativeCoverageFraction": 0
+        },
+        {
+          "degrees": 0.5,
+          "highResolution": 512,
+          "meshNativeVsDownsampled": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "nativeCoverageFraction": 0
+        },
+        {
+          "degrees": 0.75,
+          "highResolution": 512,
+          "meshNativeVsDownsampled": {
+            "iou": 1,
+            "changedPixels": 0,
+            "areaA": 0,
+            "areaB": 0,
+            "pixels": 1024
+          },
+          "nativeCoverageFraction": 0
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "512/1024 render-target samples are high-resolution references, not converged ground truth.",
+    "Coverage is a color-difference silhouette estimate against a constant background, not per-pixel alpha; rendered tree materials are opaque.",
+    "Only one centered specimen is retained in this isolated lab render. This is not game integration or TAA evaluation."
+  ],
+  "errors": []
+}

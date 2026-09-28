@@ -1,0 +1,25 @@
+{
+  "capturedFrom": "C:\\LLM\\IWSDK\\universe-atlas-rendering",
+  "files": [
+    {
+      "sha256": "cde6e9de84eba934d35652bbe8eabb8f77adbb5e01595d80c816a8b34007a30e",
+      "name": "tree-asset-lab.html",
+      "bytes": 1992
+    },
+    {
+      "sha256": "584b78b99d42142e70f47c5c0f5a59df1f8a2b5fb433e6e075cb6c27d85503a1",
+      "name": "tree-asset-lab.ts",
+      "bytes": 7574
+    },
+    {
+      "sha256": "c3c6409a63efaff9d8fdb913c7a87bb11dfcf599eb9621142bed9fe4fd1b2586",
+      "name": "tree-asset.ts",
+      "bytes": 13078
+    },
+    {
+      "sha256": "0e5b57435ec46fbfadc406995877bb1328f52518871e8dcef572d6e781cc5830",
+      "name": "world-time.ts",
+      "bytes": 7090
+    }
+  ]
+}

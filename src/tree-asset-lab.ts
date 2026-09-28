@@ -22,9 +22,11 @@ const grid=new THREE.GridHelper(100,20,0x465246,0x697463);grid.position.y=.01;sc
 let family:TreeAssetFamily|undefined,batches:ReturnType<TreeAssetFamily['createBatch']>[]=[];
 let date=0n,lod:0|1=0,loading=false,loadError='',frames=0,last=performance.now(),renderCPUms=0;
 let population=3;
+let foliageCoverage:'mask'|'hash'='mask';
 function setLOD(value:0|1){lod=value;$<HTMLSelectElement>('lod').value=String(lod);batches.forEach((batch,i)=>batch.group.visible=i===lod);}
 function setDate(value:bigint){date=value;family?.setDate(date);if(document.activeElement!==$('date'))$<HTMLInputElement>('date').value=String(date);}
-function diagnostics(){return {ready:!!family,loading,error:loadError,lod,date:String(date),specimenSkeletonHeightsM:[10,16,22],textures:family?.textures.size??0,
+function diagnostics(){return {ready:!!family,loading,error:loadError,lod,date:String(date),foliageCoverage,specimenSkeletonHeightsM:[10,16,22],textures:family?.textures.size??0,
+  coverageMaterials:family?{color:family.lods[0].map(m=>({name:m.material.name,alphaTest:m.material.alphaTest,alphaHash:m.material.alphaHash})),shadows:batches.map(b=>b.meshes.map(m=>({depth:{alphaTest:m.customDepthMaterial!.alphaTest,alphaHash:m.customDepthMaterial!.alphaHash},distance:{alphaTest:m.customDistanceMaterial!.alphaTest,alphaHash:m.customDistanceMaterial!.alphaHash}})))}:null,
   materials:family?new Set(family.lods.flat().map(m=>m.material)).size:0,shadowMaterials:batches.length*4,sharedMaterials:family?.lods[0].every((m,i)=>m.material===family!.lods[1][i].material)??false,
   texturePNGContainerBytes:family?.embeddedTextureBytes??0,textureRGBA8MipBytesEstimate:family?[...family.textures].reduce((sum,t)=>{const image=t.image as {width:number;height:number};let w=image.width,h=image.height,total=0;while(true){total+=w*h*4;if(!t.generateMipmaps||w===1&&h===1)break;w=Math.max(1,Math.floor(w/2));h=Math.max(1,Math.floor(h/2));}return sum+total;},0):0,
   renderer:{calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries},renderCPUSubmissionMs:renderCPUms,
@@ -43,11 +45,11 @@ function setPopulation(count:number){
   if(![3,64,192].includes(count))throw new Error('Unsupported lab population');
   population=count;populate(batches,count);$<HTMLSelectElement>('population').value=String(count);profile.clear();
 }
-async function load(buffers:[ArrayBuffer,ArrayBuffer]){
+async function load(buffers:[ArrayBuffer,ArrayBuffer],options:{foliageCoverage?:'mask'|'hash'}={}){
   if(loading)throw new Error('Tree load already in progress');loading=true;loadError='';$('status').textContent='Loading and checking texture identity…';
   let next:TreeAssetFamily|undefined;const nextBatches:typeof batches=[];
   try{
-    next=await loadTreeAssetFamily(...buffers);
+    next=await loadTreeAssetFamily(...buffers,options);
     for(const level of [0,1] as const){
       const batch=next.createBatch(level,192);nextBatches.push(batch);
     }
@@ -56,13 +58,13 @@ async function load(buffers:[ArrayBuffer,ArrayBuffer]){
   }catch(error){for(const batch of nextBatches)batch.dispose();next?.dispose();loadError=String(error);throw error;}
   finally{loading=false;}
   // Commit only after all fallible preparation/scene attachment succeeded.
-  const oldFamily=family,oldBatches=batches;family=next;batches=nextBatches;
+  const oldFamily=family,oldBatches=batches;family=next;batches=nextBatches;foliageCoverage=options.foliageCoverage??'mask';$<HTMLSelectElement>('coverage').value=foliageCoverage;
   for(const batch of oldBatches)batch.dispose();oldFamily?.dispose();profile.clear();
 }
 $('load-assets').onclick=async()=>{
   const a=$<HTMLInputElement>('lod0-file').files?.[0],b=$<HTMLInputElement>('lod1-file').files?.[0];
   if(!a||!b){$('status').textContent='Select both exported GLBs.';return;}
-  try{await load([await a.arrayBuffer(),await b.arrayBuffer()]);}catch(error){$('status').textContent=String(error);}
+  try{await load([await a.arrayBuffer(),await b.arrayBuffer()],{foliageCoverage:$<HTMLSelectElement>('coverage').value as 'mask'|'hash'});}catch(error){$('status').textContent=String(error);}
 };
 $<HTMLSelectElement>('lod').onchange=()=>setLOD($<HTMLSelectElement>('lod').value==='1'?1:0);
 $<HTMLSelectElement>('population').onchange=()=>setPopulation(Number($<HTMLSelectElement>('population').value));
@@ -76,4 +78,4 @@ renderer.setAnimationLoop(()=>{
   profile.endFrame(renderer.info.render.calls,renderer.info.render.triangles);
   if(++frames%30===0&&(family||loadError))$('status').textContent=JSON.stringify(diagnostics(),null,2);
 });
-Object.assign(window,{__treeAssetLab:{load,setDate,setLOD,setPopulation,diagnostics,renderer,scene,camera,profile,get family(){return family;},get batches(){return batches;}}});
+Object.assign(window,{__treeAssetLab:{load,setDate,setLOD,setPopulation,diagnostics,renderer,scene,camera,profile,sun,ground,grid,controls,get family(){return family;},get batches(){return batches;}}});
