@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import {RenderProfile,systemTimer} from './render-profile.ts';
 import {staticQualitySettings} from './quality-settings.ts';
+import {levelForward} from './view-heading.ts';
 import {SurfaceLighting} from './surface-lighting.ts';
 import {ForestAssetSource} from './forest-asset-source.ts';
 import {ForestAssetAttachment} from './forest-asset-attachment.ts';
@@ -2479,15 +2480,6 @@ function startTerrainCruise() {
   orbitAssist={bodyId:body.id,axis:new THREE.Vector3().crossVectors(radial,tangent.normalize()).normalize(),clearanceM:600};
   if(landAfterCruise){landAfterCruise=false;void prepareLanding();}
   panel();
-}
-/** The level walking direction for a camera orientation. Near vertical views
- * use the screen-up vector: forward when looking down, but backward when
- * looking up (the top of an upward view points behind the observer), which
- * previously turned restored upward headings about π away. */
-function levelForward(quaternion:THREE.Quaternion,up:THREE.Vector3){
-  const view=new THREE.Vector3(0,0,-1).applyQuaternion(quaternion),forward=view.clone().projectOnPlane(up);
-  if(forward.lengthSq()<.01)forward.set(0,1,0).applyQuaternion(quaternion).multiplyScalar(view.dot(up)>0?-1:1).projectOnPlane(up);
-  return forward.normalize();
 }
 async function prepareLanding(savedPoint?:V3,contact=false,savedHeading?:THREE.Quaternion){
   const body=state.body;

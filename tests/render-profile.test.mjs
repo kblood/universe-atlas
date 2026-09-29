@@ -2,7 +2,7 @@ import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'vite';
 const vite=await createServer({configFile:false,optimizeDeps:{noDiscovery:true},server:{middlewareMode:true,hmr:false,ws:false},appType:'custom'});
-const {RenderProfile,profileSummary}=await vite.ssrLoadModule('/src/render-profile.ts');
+const {RenderProfile,profileSummary,systemTimer,CPU_SYSTEMS}=await vite.ssrLoadModule('/src/render-profile.ts');
 after(()=>vite.close());
 
 function fakeGL({supported=true}={}){
@@ -75,4 +75,31 @@ test('context loss releases pending state and reacquires extension on restoratio
   const gl=fakeGL(),p=new RenderProfile(gl);p.setEnabled(true);p.beginFrame(16);p.pass('scene',()=>{});p.endFrame(1,1);
   gl.lose(true);p.beginFrame(16);assert.equal(p.diagnostics().pendingQueries,0);assert.equal(p.diagnostics().gpuAvailable,false);
   gl.lose(false);p.beginFrame(16);assert.equal(p.diagnostics().gpuAvailable,true);
+});
+test('per-system CPU samples are recorded every frame with an unattributed remainder',()=>{
+  const p=new RenderProfile(fakeGL({supported:false}));p.setEnabled(true);
+  assert.equal(systemTimer.enabled,true,'profiling enables the shared system timer');
+  for(let i=0;i<3;i++){p.beginFrame(16);p.endFrame(1,1,i===1?{forest:2,rocks:.5}:{});}
+  const stats=p.diagnostics().statistics;
+  for(const name of CPU_SYSTEMS)assert.equal(stats[`cpu/system/${name}Ms`].samples,3,name);
+  assert.equal(stats['cpu/system/forestMs'].max,2);assert.equal(stats['cpu/system/forestMs'].p50,0,'idle frames record zero, not nothing');
+  assert.ok(stats['cpu/system/otherMs'].max>=0);
+  p.beginFrame(16);p.endFrame(1,1);assert.equal(p.diagnostics().statistics['cpu/system/forestMs'].samples,3,'no systems argument, no system samples');
+  p.setEnabled(false);assert.equal(systemTimer.enabled,false);assert.equal(systemTimer.start(),0,'disabled timer costs no clock read');
+});
+test('system timer accumulates per frame and frame CPU totals reset each frame',()=>{
+  const p=new RenderProfile(fakeGL({supported:false}));p.setEnabled(true);
+  systemTimer.add('shadow',1);systemTimer.add('shadow',2);assert.deepEqual(systemTimer.take(),{shadow:3});assert.deepEqual(systemTimer.take(),{});
+  p.beginFrame(16);p.cpu('scene',()=>{});p.cpu('scene',()=>{});assert.ok(p.frameCpuMs('scene')>=0);p.endFrame(1,1);
+  p.beginFrame(16);assert.equal(p.frameCpuMs('scene'),0);p.endFrame(1,1);p.setEnabled(false);
+});
+test('hitch counters cover every frame; long histories are configurable and bounded',()=>{
+  const p=new RenderProfile(fakeGL({supported:false}));p.setEnabled(true);p.setHistoryLimit(2000);
+  for(const ms of [16,34,51,120,16])p.beginFrame(ms),p.endFrame(1,1);
+  assert.deepEqual(p.diagnostics().hitches,{frames:5,over33:3,over50:2,over100:1,maxIntervalMs:120});
+  for(let i=0;i<1500;i++){p.beginFrame(16);p.endFrame(1,1);}
+  assert.equal(p.samples(['frameIntervalMs']).frameIntervalMs.length,1505);
+  p.setHistoryLimit(1e9);for(let i=0;i<40000;i++){p.beginFrame(16);p.endFrame(1,1);}
+  assert.equal(p.diagnostics().statistics.frameIntervalMs.samples,36000,'history cap');
+  p.clear();assert.equal(p.diagnostics().hitches.frames,0);p.setEnabled(false);
 });
