@@ -41,7 +41,7 @@ type Resident={cell:PopulationCell;height:number;present:boolean;water:number;pa
   expCode:number;expHeightM:number;expRatio:number;
   slotVersion:number;slot:number;patchVersion:number;current:boolean;handoffVersion:number;handoff:boolean;
   /** Demand of the current loop pass (`wantPass`): batch and quantized coverage. */
-  wantPass:number;wantBatch:number;wantCoverage:number;poolPass:number;
+  wantPass:number;wantBatch:number;wantCoverage:number;poolPass:number;selectionPass:number;
   /** Last slot written per legacy batch / detailed LOD; hints verified by identity. */
   legacySlots:number[]|undefined;detailSlots:number[]|undefined};
 /** Habitat cache keyed by canonical id. Every replacement marks the previous
@@ -63,7 +63,7 @@ const planar=(frustum:THREE.Frustum)=>Array.isArray(frustum.planes)&&frustum.pla
 const residentOf=(cell:PopulationCell,height:number,present:boolean,water:number):Resident=>({cell,height,present,water,patchKey:undefined,stale:false,
   epoch:-1,invariantHeight:NaN,dims:null,detail:undefined,px:0,py:0,pz:0,bx:0,by:0,bz:0,br:0,expCode:0,expHeightM:0,expRatio:0,
   slotVersion:-1,slot:-1,patchVersion:-1,current:false,handoffVersion:-1,handoff:false,
-  wantPass:-1,wantBatch:-1,wantCoverage:0,poolPass:-1,legacySlots:undefined,detailSlots:undefined});
+  wantPass:-1,wantBatch:-1,wantCoverage:0,poolPass:-1,selectionPass:-1,legacySlots:undefined,detailSlots:undefined});
 type TreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
 type AssetSlot={resident:Resident;originVersion:number;catalogueVersion:number;dimensions:ForestTreeDimensions};
 const loadTreeFamily:TreeLoader=async(a,b,options)=>(await import('./tree-asset.ts')).loadTreeAssetFamily(a,b,options);
@@ -184,12 +184,20 @@ export class PlanetForest {
     const started=performance.now();
     this.center.set(...direction);this.wanted=cells;
     this.setWorkSelection(cells);
-    const incoming=new Set(cells.map(c=>c.id));for(const id of this.retainedNear)if(!incoming.has(id))this.retainedNear.delete(id);
-    for(const id of this.retainedMiddle)if(!incoming.has(id))this.retainedMiddle.delete(id);
-    this.queue=this.wanted.filter(cell=>this.cache.get(cell.id)?.water!==this.water);
+    // setWorkSelection marked every cached resident of `cells` with this pass;
+    // an id without a resident falls back to a set of the incoming ids.
+    const pass=this.selectionPass,residents=this.residentByIndex;let incoming:Set<string>|undefined;
+    const selected=(id:string)=>{
+      const resident=this.cache.get(id);if(resident)return resident.selectionPass===pass;
+      return (incoming??=new Set(cells.map(c=>c.id))).has(id);
+    };
+    for(const id of this.retainedNear)if(!selected(id))this.retainedNear.delete(id);
+    for(const id of this.retainedMiddle)if(!selected(id))this.retainedMiddle.delete(id);
+    const queue:PopulationCell[]=[];
+    for(let index=0;index<cells.length;index++)if(residents[index]?.water!==this.water)queue.push(cells[index]);
+    this.queue=queue;
     if(this.cache.size+this.queue.length>B.populationCacheLimit){
-      const keep=new Set(this.wanted.map(c=>c.id));
-      for(const id of this.cache.keys())if(!keep.has(id))this.cache.delete(id);
+      for(const [id,resident] of this.cache)if(resident.selectionPass!==pass)this.cache.delete(id);
     }
     this.selectionMs=selectionMs;this.selecting=false;this.selectionDirection=null;
     this.selectionApplyMs=performance.now()-started;
@@ -219,6 +227,8 @@ export class PlanetForest {
   private slottedCanopy=false;
   // Loop pass counter for resident demand marks, and per-pool duplicate marks.
   private wantPass=0;private poolPass=0;
+  // Marks cached residents that belong to the latest work selection.
+  private selectionPass=0;
   constructor(private body:Body,private treeLoader:TreeLoader=loadTreeFamily){
     this.patchBroadphase=new ForestPatchBroadphase(body.radiusM,forestCellPatchKey);
     this.workIndex=new ForestOrderedWorkIndex(forestCellPatchKey);
@@ -256,16 +266,26 @@ export class PlanetForest {
     if(typeof Worker!=='undefined'){this.fullCanopy=new PlanetCanopy(body);this.group.add(this.fullCanopy.group);this.startWorker();}
   }
   private setWorkSelection(cells:readonly PopulationCell[]){
-    this.workIndex.setSelection(cells);
-    this.residentByIndex=new Array(cells.length);this.residentCellByIndex=new Array(cells.length);
+    // One cache lookup and one patch key per cell, shared by both indexes.
+    const count=cells.length,residents:(Resident|undefined)[]=new Array(count),residentCells:(PopulationCell|undefined)[]=new Array(count),keys:string[]=new Array(count);
+    const pass=++this.selectionPass;
+    for(let index=0;index<count;index++){
+      const cell=cells[index];
+      if(!cell||typeof cell.id!=='string'){keys[index]='';continue;}
+      const resident=this.cache.get(cell.id);
+      if(resident){resident.selectionPass=pass;residents[index]=resident;residentCells[index]=cell;keys[index]=resident.patchKey??=forestCellPatchKey(cell.id);}
+      else keys[index]=forestCellPatchKey(cell.id);
+    }
+    this.workIndex.setSelection(cells,keys);
+    this.residentByIndex=residents;this.residentCellByIndex=residentCells;
     this.workStateVersion++;
     this.workSelectionRevision++;
     this.broadphaseSelectionReady=Number.isFinite(this.water);
     if(!this.broadphaseSelectionReady)return;
-    this.patchBroadphase.setSelection(cells,this.water,cell=>{
-      const resident=this.cache.get(cell.id);
+    this.patchBroadphase.setSelection(cells,this.water,(cell,index)=>{
+      const resident=residents[index];
       return resident&&resident.water===this.water?{groundHeightM:resident.height,water:resident.water}:null;
-    });
+    },keys);
   }
   /** Explicit local integration seam. Loading never changes canonical cells.
    * The previous renderer remains active until both new batches are ready. */

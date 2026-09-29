@@ -17,7 +17,13 @@ export type CanopyPresentation=number|{code:number;heightM:number;ratioCode:numb
 
 const patchKey=(a:ForestPatchAddress)=>`${a.face}/${a.n}/${a.x}/${a.y}`;
 const MAX_DIRTY_CURRENT_PATCH_KEYS=8192;
-export function forestCellPatchKey(id:string){const [face,n,x,y]=id.split('/').map(Number);return `${face}/${n}/${Math.floor(x/8)}/${Math.floor(y/8)}`;}
+export function forestCellPatchKey(id:string){
+  // Same result as destructuring id.split('/').map(Number), without the arrays.
+  const a=id.indexOf('/'),b=a<0?-1:id.indexOf('/',a+1),c=b<0?-1:id.indexOf('/',b+1);
+  if(c<0){const [face,n,x,y]=id.split('/').map(Number);return `${face}/${n}/${Math.floor(x/8)}/${Math.floor(y/8)}`;}
+  const d=id.indexOf('/',c+1),x=Number(id.slice(b+1,c)),y=Number(d<0?id.slice(c+1):id.slice(c+1,d));
+  return `${Number(id.slice(0,a))}/${Number(id.slice(a+1,b))}/${Math.floor(x/8)}/${Math.floor(y/8)}`;
+}
 type Installed={address:ForestPatchAddress;range:ForestSlotRange;ids:string[];water:number;family:string|null;waterInterval?:ForestWaterInterval};
 type Request={id:number;keys:Set<string>;progressAt:number};
 type SelectionApply={packed:Float64Array;offset:number;desired:Map<string,ForestPatchAddress>;order:string[];

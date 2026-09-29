@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {PlanetCanopy} from '../src/planet-canopy.ts';
+import {PlanetCanopy,forestCellPatchKey} from '../src/planet-canopy.ts';
 import {LEGACY_TREE_BOUND} from '../src/tree-shape.ts';
 import {galaxies,refByAddress,system} from '../src/catalog.ts';
 import {PLANET_DETAIL} from '../src/planet-detail.ts';
@@ -733,4 +733,11 @@ test('origin rebasing retains positions until the replacement buffer is complete
     assert.ok(Math.abs(h.host.renderer.positions.getX(slot)-(h.host.bodyPositions[slot*3]-h.host.origin.x))<.01);
     assert.ok(Math.abs(h.host.renderer.positions.getY(slot)-(h.host.bodyPositions[slot*3+1]-h.host.origin.y))<.01);
   }finally{h.restore();}
+});
+test('forestCellPatchKey matches the split-and-map reference for well-formed and malformed ids',()=>{
+  const reference=id=>{const [face,n,x,y]=id.split('/').map(Number);return `${face}/${n}/${Math.floor(x/8)}/${Math.floor(y/8)}`;};
+  const ids=['0/577212/86057/181405','5/1/0/0','3/12/-9/17','2/64/7.5/8','1/2/3/4/5','1/2/3/4/','1/2/3','1/2','1','','a/b/c/d','/1//2',' 1/ 2/3 /4','1/2/0x10/1e3','1/2/3/-0'];
+  let seed=7;const rand=()=>(seed=(seed*1103515245+12345)>>>0)/2**32;
+  for(let i=0;i<2000;i++)ids.push(`${Math.floor(rand()*6)}/${Math.floor(rand()*1e6)}/${Math.floor(rand()*1e6)}/${Math.floor(rand()*1e6)}`);
+  for(const id of ids)assert.equal(forestCellPatchKey(id),reference(id),id);
 });

@@ -8,7 +8,7 @@ import {forestModule,createForestScene,gitSource} from './forest-frame-fixture.m
 
 const args=process.argv.slice(2),arg=(name,fallback)=>{const i=args.indexOf(name);return i>=0?args[i+1]:fallback;};
 const revision=arg('--ref',null),N=Number(arg('--frames',240)),censusRangeM=Number(arg('--census',4500));
-const FILES=['src/planet-forest.ts','src/planet-canopy.ts','src/forest-ordered-work.ts','src/forest-patch-broadphase.ts','src/compact-instance-slots.ts','src/instance-update-ranges.ts'];
+const FILES=['src/planet-forest.ts','src/planet-canopy.ts','src/forest-ordered-work.ts','src/forest-patch-broadphase.ts','src/compact-instance-slots.ts','src/instance-update-ranges.ts','src/forest-selection-transfer.ts'];
 const sources={};
 if(revision)for(const path of FILES){const text=gitSource(revision,path);if(text!==null)sources[path]=text;}
 const {module,cleanup}=await forestModule({prefix:'atlas-forest-bench-',sources});

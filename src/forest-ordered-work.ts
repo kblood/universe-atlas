@@ -18,16 +18,22 @@ export class ForestOrderedWorkIndex {
     this.keyForCell=keyForCell;
   }
 
-  setSelection(cells:readonly {id:string}[]){
+  /** `patchKeys`, when given, is keyForCell(cells[i].id) for every cell. */
+  setSelection(cells:readonly {id:string}[],patchKeys?:readonly string[]){
     if(!Array.isArray(cells)||cells.some(cell=>!cell||typeof cell.id!=='string'))throw new Error('Invalid forest work selection');
-    const groups=new Map<string,number[]>(),keys:string[]=[];
+    if(patchKeys!==undefined&&(!Array.isArray(patchKeys)||patchKeys.length!==cells.length))throw new Error('Invalid forest work patch keys');
+    const groups=new Map<string,number[]>(),keys:string[]=[],indices:number[]=[];
+    // Neighbouring cells usually share a patch: reuse the last group's list.
+    let lastKey='',lastMembers:number[]|undefined;
     for(let index=0;index<cells.length;index++){
-      const key=this.keyForCell(cells[index].id);if(typeof key!=='string'||!key)throw new Error('Invalid forest work patch key');
-      keys.push(key);
+      const key=patchKeys?patchKeys[index]:this.keyForCell(cells[index].id);if(typeof key!=='string'||!key)throw new Error('Invalid forest work patch key');
+      keys.push(key);indices.push(index);
+      if(key===lastKey){lastMembers!.push(index);continue;}
       const members=groups.get(key);if(members)members.push(index);else groups.set(key,[index]);
+      lastKey=key;lastMembers=members??groups.get(key);
     }
     this.cells=cells;this.keys=keys;this.groups=groups;this.skipped.clear();this.lastNewlySkipped=[];
-    this.indices=Array.from({length:cells.length},(_,index)=>index);this.rebuildCount++;
+    this.indices=indices;this.rebuildCount++;
   }
 
   /** Update only when census/habitat readiness changes which patches can be
