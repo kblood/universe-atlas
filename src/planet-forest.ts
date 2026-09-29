@@ -771,7 +771,8 @@ export class PlanetForest {
     if(lod<0)return [this.canopy,...(this.fullCanopy?[this.fullCanopy.group]:[])];
     return [this.meshes[lod],...[...this.assets.entries.values()].flatMap(entry=>entry.batches[lod]?[entry.batches[lod].group]:[])];
   }
-  backlog(){return {forestPending:this.queue.length,forestSelectionPending:this.selecting,forestVisible:this.visibleTrees,forestNear:this.nearTrees,forestOriginVersion:this.originVersion,
+  backlog(){return {forestPending:this.queue.length,forestSelectionPending:this.selecting,forestVisible:this.visibleTrees,forestNear:this.nearTrees,
+    forestFarTrees:!this.group.visible?0:(this.canopy.visible?this.canopy.count:0)+(this.fullCanopy?.group.visible?this.fullCanopy.diagnostics().trees:0),forestOriginVersion:this.originVersion,
     forestMatrixWrites:this.matrixWrites,forestColorWrites:this.colorWrites,forestCoverageWrites:this.coverageWrites,forestSelectionApplyMs:this.selectionApplyMs,forestUpdateMs:this.updateMs};}
   dispose(){if(this.disposed)return;this.disposed=true;this.assets.dispose();this.worker?.terminate();this.worker=null;this.fullCanopy?.dispose();this.fullCanopy=null;for(const mesh of [...this.meshes,this.canopy]){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();mesh.customDepthMaterial?.dispose();}this.cache.clear();this.group.removeFromParent();}
 }

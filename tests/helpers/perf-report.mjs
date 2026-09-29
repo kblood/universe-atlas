@@ -59,18 +59,18 @@ export function cpuTotal(captures,condition){
 export function gpuRows(attributions){
   const stat=(a,key,q)=>a.find(x=>x.hidden===key)?.gpu?.[q]??null;
   const rows=BUDGET_ROWS.map(r=>{
-    const perRepeat=attributions.map(a=>{
-      const base=median([stat(a,'none','p95'),stat(a,'none-after','p95')]);
-      if(r.gpuHide==='all-hidden')return stat(a,'all','p95');
-      const hidden=stat(a,r.gpuHide[0],'p95');
+    const delta=q=>median(attributions.map(a=>{
+      const base=median([stat(a,'none',q),stat(a,'none-after',q)]);
+      if(r.gpuHide==='all-hidden')return stat(a,'all',q);
+      const hidden=stat(a,r.gpuHide[0],q);
       return base===null||hidden===null?null:Math.max(0,base-hidden);
-    });
-    const host=median(perRepeat);
-    return {row:r.row,budget:r.gpu,hostP95:host,targetP95:host===null?null:host*GPU_RATIO,
+    }));
+    const host=delta('p95');
+    return {row:r.row,budget:r.gpu,hostP95:host,hostP50:delta('p50'),targetP95:host===null?null:host*GPU_RATIO,
       bracket:host===null?null:[host*GPU_BRACKET[0],host*GPU_BRACKET[1]],verdict:verdict(host===null?null:host*GPU_RATIO,r.gpu),note:r.gpuNote??null};
   });
   const total=median(attributions.map(a=>median([stat(a,'none','p95'),stat(a,'none-after','p95')])));
-  rows.push({row:TOTAL_ROW.row,budget:TOTAL_ROW.gpu,hostP95:total,targetP95:total===null?null:total*GPU_RATIO,
+  rows.push({row:TOTAL_ROW.row,budget:TOTAL_ROW.gpu,hostP95:total,hostP50:median(attributions.map(a=>median([stat(a,'none','p50'),stat(a,'none-after','p50')]))),targetP95:total===null?null:total*GPU_RATIO,
     bracket:total===null?null:[total*GPU_BRACKET[0],total*GPU_BRACKET[1]],verdict:verdict(total===null?null:total*GPU_RATIO,TOTAL_ROW.gpu)});
   return rows;
 }
@@ -84,8 +84,12 @@ export function markdownSummary(report){
   L.push(`- Browser: ${report.browser?.version} · WebGL: ${report.runs?.[0]?.webgl?.renderer??'?'} · crossOriginIsolated: ${report.runs?.map(r=>r.crossOriginIsolated).join('/')}`);
   L.push(`- Host: ${report.host?.cpu?.model} (${report.host?.cpu?.logicalProcessors} logical), harness affinity ${report.host?.affinity?.mask} · GPU ${report.gpuBefore?.gpu?.name} driver ${report.gpuBefore?.gpu?.driver_version}, power limit ${report.gpuBefore?.gpu?.['power.limit']} W`);
   L.push(`- Viewport ${report.config.viewport.join('×')} DPR 1 · repeats ${report.config.repeats} · conditions ${report.config.conditions.join(', ')}`);
+  if(report.lockWaits?.some(w=>w.waitedMs>0))L.push(`- GPU-lock waits before runs (not contention: the lock is exclusive while held): ${report.lockWaits.map(w=>`${w.condition} r${w.repeat} ${Math.round((w.waitedMs??0)/1000)} s`).join(', ')}`);
+  L.push(`- Host CPU load before runs (max of 3 s): ${report.runs?.map(r=>r.cpuLoadBefore?.maxPct??'?').join(', ')} % · GPU util before: ${report.runs?.map(r=>r.gpuBefore?.maxUtilizationPct??'?').join(', ')} %`);
   L.push(`- GPU clock lock declared: ${report.config.gpuClockLock??'none'} · observed graphics clock p50 per run: ${report.runs?.map(r=>r.gpuSamples?.graphicsClockMHz?.p50??'?').join(', ')} MHz`);
-  L.push(`- CPU proxy: 9950X, CDP throttle ${CPU_PROXY_RATE}×, affinity ${report.host?.affinity?.mask} (${report.host?.affinity?.mask==='0xFFF'?'6C/12T proxy':'NOT the 0xFFF proxy mask'}) · GPU ratio proxy ×${GPU_RATIO} (bracket ${GPU_BRACKET.join('–')}×)`,'');
+  const proxyRun=report.runs?.find(r=>r.condition==='cpu-proxy');
+  const proxyMask=proxyRun?.browserAffinity?.find(b=>b.mask)?.mask??report.host?.affinity?.mask;
+  L.push(`- CPU proxy: 9950X, CDP throttle ${CPU_PROXY_RATE}×, browser affinity ${proxyMask??'?'} (${proxyMask==='0xFFF'?'6C/12T proxy':'NOT the 0xFFF proxy mask'}; harness ${report.host?.affinity?.mask}) · native runs: all cores, CPU rows ×${CPU_PROXY_RATE} · GPU ratio proxy ×${GPU_RATIO} (bracket ${GPU_BRACKET.join('–')}×)`,'');
   if(report.verdict)L.push(`**Overall: ${report.verdict.overall}** (CPU ${report.verdict.cpu}, GPU ${report.verdict.gpu}${contended?', contended':''})`,'');
   for(const block of report.budget??[]){
     L.push(`## ${block.title}`,'');
@@ -95,9 +99,9 @@ export function markdownSummary(report){
       const t=block.total;
       L.push(`| **${t.row}** | ${fmt(t.budget,1)} | ${fmt(t.hostP95)} | ${fmt(t.targetP95)} | ${t.verdict} | frame interval p95 host ${fmt(t.frameIntervalHostP95)} → ${fmt(t.frameIntervalTargetP95)} ms (${t.frameIntervalVerdict} vs 16.7) |`,'');
     }else{
-      L.push('| System | Budget ms | Host p95 ms | ×5.4 ms | Bracket 4.5–6.5× | Verdict | Note |','|---|---:|---:|---:|---|---|---|');
-      for(const r of block.rows)L.push(`| ${r.row} | ${fmt(r.budget,1)} | ${fmt(r.hostP95,3)} | ${fmt(r.targetP95)} | ${r.bracket?`${fmt(r.bracket[0])}–${fmt(r.bracket[1])}`:'—'} | ${r.verdict} | ${r.note??''} |`);
-      L.push('');
+      L.push('| System | Budget ms | Host Δp95 ms | ×5.4 ms | Bracket 4.5–6.5× | Verdict | Host Δp50 ms (×5.4) | Note |','|---|---:|---:|---:|---|---|---|---|');
+      for(const r of block.rows)L.push(`| ${r.row} | ${fmt(r.budget,1)} | ${fmt(r.hostP95,3)} | ${fmt(r.targetP95)} | ${r.bracket?`${fmt(r.bracket[0])}–${fmt(r.bracket[1])}`:'—'} | ${r.verdict} | ${fmt(r.hostP50,3)} (${fmt(r.hostP50===null||r.hostP50===undefined?null:r.hostP50*GPU_RATIO)}) | ${r.note??''} |`);
+      L.push('','Row = p95 of the frame pass sum with nothing hidden (median of before/after) minus p95 with that system hidden, clamped at 0. Single-system deltas are noisy (about ±0.3 ms host), so Δp50 is shown alongside. Overhead = pass sum with every attributable system hidden; Total = unhidden pass sum.','');
     }
   }
   if(report.scenarioTable?.length){

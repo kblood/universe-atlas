@@ -23,7 +23,7 @@ import {spawn,execFileSync} from 'node:child_process';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import {acquireGpuLock} from './helpers/gpu-lock.mjs';
-import {nvidiaSnapshot,startGpuSampler,processAffinity,browserAffinities,cpuInfo} from './helpers/perf-host.mjs';
+import {nvidiaSnapshot,startGpuSampler,processAffinity,browserAffinities,setBrowserAffinity,cpuInfo,cpuLoad} from './helpers/perf-host.mjs';
 import {cpuRows,cpuTotal,gpuRows,markdownSummary,median,CPU_PROXY_RATE} from './helpers/perf-report.mjs';
 import {encodeVersions,CURRENT_VERSIONS} from '../src/time-nav.ts';
 import {galaxies,refByAddress,system,bodyPosition} from '../src/catalog.ts';
@@ -44,6 +44,8 @@ const config={
   build:env.ATLAS_PERF_SKIP_BUILD!=='1',allowDirty:env.ATLAS_PERF_ALLOW_DIRTY==='1',
   owner:env.ATLAS_PERF_OWNER||'desktop-perf harness',gpuClockLock:env.ATLAS_PERF_GPU_CLOCK_LOCK||null,
   lockRetryMs:Number(env.ATLAS_PERF_LOCK_RETRY_MS||60000),
+  // cpu-proxy: the harness pins its own browser to this mask (6C/12T); 'none' disables.
+  cpuProxyAffinity:env.ATLAS_PERF_CPU_AFFINITY==='none'?null:Number(env.ATLAS_PERF_CPU_AFFINITY||0xFFF),
 };
 const W=(ms)=>SHORT?Math.max(1500,Math.round(ms/4)):ms;
 const CHROME_FLAGS=['--use-angle=d3d11','--enable-gpu','--disable-gpu-vsync','--disable-frame-rate-limit','--force-device-scale-factor=1',
@@ -158,7 +160,7 @@ const INIT_SCRIPT=()=>{
     const now=performance.now(),set=(k,c)=>{if(m[k]===undefined&&c)m[k]=now;};
     let s=null;try{s=a.perfSample();}catch{return;}const b=s.backlog;
     set('api',true);set('ready',a.ready);set('surfaceReady',b?.surfaceReady);set('grounded',s.walking);
-    set('forest',b?.forestVisible>0);set('flora',b?.floraSubmitted>0);set('fauna',b?.faunaVisible>0);set('rocks',b?.rocksDrawn>0);
+    set('forest',b?.forestVisible>0||b?.forestFarTrees>0);set('flora',b?.floraSubmitted>0);set('fauna',b?.faunaVisible>0);set('rocks',b?.rocksDrawn>0);
     set('settled',!!b&&s.walking&&b.surfaceReady&&b.terrainPending===0&&b.forestPending===0&&!b.forestSelectionPending&&b.lifePending===0&&b.faunaTerrainPending===0);
     if(m.hitches10s===undefined&&m.firstFrame!==undefined&&now-m.firstFrame>=10000){
       try{m.hitches10s=a.renderProfile.hitches;}catch{}
@@ -174,7 +176,7 @@ async function browserRun(condition,repeat){
   const run={condition,repeat,lock:{owner:lock.owner,waitedMs:lock.waitedMs},errors:[],scenarios:{},started:new Date().toISOString()};
   let browser=null,sampler=null;
   try{
-    run.gpuBefore=await nvidiaSnapshot('before');
+    run.gpuBefore=await nvidiaSnapshot('before');run.cpuLoadBefore=await cpuLoad();
     sampler=startGpuSampler();
     const launchedAt=Date.now();
     browser=await chromium.launch({headless:true,args:CHROME_FLAGS});
@@ -187,6 +189,7 @@ async function browserRun(condition,repeat){
     const cdp=await context.newCDPSession(page);
     const throttle=condition==='cpu-proxy'?config.cpuThrottle:1;
     await cdp.send('Emulation.setCPUThrottlingRate',{rate:throttle});run.cpuThrottleRate=throttle;
+    if(condition==='cpu-proxy'&&config.cpuProxyAffinity)run.affinitySet=await setBrowserAffinity(launchedAt-2000,config.cpuProxyAffinity);
     run.browserAffinity=await browserAffinities(launchedAt-2000);
     const ev=(fn,arg)=>page.evaluate(fn,arg);
     const waitFor=(fn,arg,timeout=180000)=>page.waitForFunction(fn,arg,{timeout,polling:100});
@@ -302,7 +305,7 @@ async function browserRun(condition,repeat){
           let clearedMs=null;const started=Date.now();
           await ev(()=>{window.__atlas.setProfileHistory(36000);window.__atlas.setProfiling(true);window.__atlas.resetProfile();});
           await ev(d=>window.__atlas.seek(d),date.toString());
-          const c=await capture(`S4 ${poseName} ${label}`,W(12000),{sampleMs:100,onSample:async s=>{
+          const c=await capture(`S4 ${poseName} ${label}`,12000,{sampleMs:100,onSample:async s=>{
             const b=s.backlog;if(clearedMs===null&&b&&b.staleWaterPatches===0&&b.terrainPending===0&&s.t>200)clearedMs=Date.now()-started;return false;}});
           steps.push({label,date:date.toString(),staleClearedMs:clearedMs,peakReservedCombinedBytes:c.peakReservedCombinedBytes,budgetBytes:c.budgetBytes,
             withinBudget:c.budgetBytes!==null&&c.peakReservedCombinedBytes<=c.budgetBytes,capture:c});
@@ -325,12 +328,12 @@ async function browserRun(condition,repeat){
     // S6 flight -> landing from 15 km through the clouds.
     if(config.scenarios.includes('S6')){
       await setPose(POSES.high15km);const st=await settle('S6',60000);await sleep(1000);
-      const c=await capture('S6 descent 15 km → 1.7 m',W(45000),{motion:{descentPerS:.3,minDescentMps:3,clearanceM:1.7},sampleMs:100,
+      const c=await capture('S6 descent 15 km → 1.7 m',60000,{motion:{descentPerS:.3,minDescentMps:3,clearanceM:1.7},sampleMs:100,
         onSample:async s=>s.clearanceM!==null&&s.clearanceM<1.8});
       const first=(pred)=>c.backlogSeries.find(pred)?.clearanceM??null;
       const at=(pred)=>c.backlogSeries.find(pred)?.t??null;
       const clearance125=at(s=>s.clearanceM!==null&&s.clearanceM<=125);
-      const signals={forestFirstClearanceM:first(s=>s.forestVisible>0),floraFirstClearanceM:first(s=>s.floraSubmitted>0),faunaFirstClearanceM:first(s=>s.faunaVisible>0),
+      const signals={forestFirstClearanceM:first(s=>s.forestVisible>0||s.forestFarTrees>0),forestTreesFirstClearanceM:first(s=>s.forestVisible>0),floraFirstClearanceM:first(s=>s.floraSubmitted>0),faunaFirstClearanceM:first(s=>s.faunaVisible>0),
         rocksFirstClearanceM:first(s=>s.rocksDrawn>0),reached125mAtMs:clearance125,touchdownAtMs:at(s=>s.clearanceM!==null&&s.clearanceM<1.8)};
       signals.forestBelow3500=signals.forestFirstClearanceM!==null&&signals.forestFirstClearanceM<=3500;
       signals.lifeBefore125=signals.floraFirstClearanceM!==null&&signals.floraFirstClearanceM>=125;
@@ -374,11 +377,13 @@ const reasons=new Set();
 for(const r of report.runs){
   for(const snap of [r.gpuBefore,r.gpuAfter])for(const c of snap?.contenders??[])reasons.add(`foreign GPU process ${c}`);
   if((r.gpuBefore?.maxUtilizationPct??0)>15)reasons.add(`GPU ${r.gpuBefore.maxUtilizationPct}% busy before run ${r.condition} r${r.repeat}`);
-  if(r.lock?.waitedMs>0)reasons.add(`waited ${Math.round(r.lock.waitedMs/1000)} s for GPU lock (other agents active on this PC)`);
+  if((r.cpuLoadBefore?.maxPct??0)>20)reasons.add(`host CPU ${r.cpuLoadBefore.maxPct}% busy before run ${r.condition} r${r.repeat} (other agents' CPU work)`);
+  for(const b of r.gpuBefore?.userBrowsers??[])reasons.add(`user browser open (may hold WebGL/video): ${b.split(/[\\/]/).pop()}`);
   if(r.failed)reasons.add(`run ${r.condition} r${r.repeat} failed`);
 }
 if(config.allowDirty&&(dirtyTree||buildInfo.dirty))reasons.add('dirty tree (development run)');
 report.contentionReasons=[...reasons];report.contended=reasons.size>0;
+report.lockWaits=report.runs.map(r=>({condition:r.condition,repeat:r.repeat,waitedMs:r.lock?.waitedMs??null}));
 report.errors=[...new Set(report.runs.flatMap(r=>r.errors))];
 
 const captureOf=(run,path)=>path.split('.').reduce((o,k)=>o?.[k],run.scenarios);
@@ -396,7 +401,7 @@ for(const condition of config.conditions){
     if(path.startsWith('S2'))signals=`origin changed: ${runs.map(r=>r.scenarios.S2?.originVersionChanged).join('/')}`;
     if(path==='S1.groundPaused')signals=`forest writes (sampled) ${caps.map(c=>c.forestWritesSampled.matrix+c.forestWritesSampled.color).join('/')}`;
     if(path.startsWith('S3'))signals=`selection applies max ms ${runs.map(r=>captureOf(r,path.replace('.capture','.selectionApply'))?.maxMs?.toFixed?.(1)??'—').join('/')}`;
-    if(path==='S6.capture')signals=runs.map(r=>{const s=r.scenarios.S6?.signals;return s?`forest@${s.forestFirstClearanceM?.toFixed?.(0)} flora@${s.floraFirstClearanceM?.toFixed?.(0)} rocks@${s.rocksFirstClearanceM?.toFixed?.(0)} m`:'—';}).join('; ');
+    if(path==='S6.capture')signals=runs.map(r=>{const s=r.scenarios.S6?.signals,f=v=>v===null||v===undefined?'never':`${v.toFixed(0)} m`;return s?`first seen: forest ${f(s.forestFirstClearanceM)}, trees ${f(s.forestTreesFirstClearanceM)}, flora ${f(s.floraFirstClearanceM)}, fauna ${f(s.faunaFirstClearanceM)}, rocks ${f(s.rocksFirstClearanceM)}`:'—';}).join('; ');
     report.scenarioTable.push({condition,scenario:title,p50:m('p50'),p95:m('p95'),p99:m('p99'),max:m('max'),
       cpuP95:median(caps.map(c=>c.stats?.['cpu/frameWorkMs']?.p95??null)),gpuP95:median(caps.map(c=>c.stats?.['gpu/framePassSumMs']?.p95??null)),
       over33:median(caps.map(c=>c.hitches?.over33??null)),over50:median(caps.map(c=>c.hitches?.over50??null)),longTasks:median(caps.map(c=>c.longTasks?.count??null)),signals});

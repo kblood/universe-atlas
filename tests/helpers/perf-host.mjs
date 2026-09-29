@@ -113,6 +113,29 @@ export async function browserAffinities(sinceMs){
   }catch(error){return [{error:String(error.message||error)}];}
 }
 
+/** Host CPU load (Win32_Processor LoadPercentage, 3 samples 1 s apart). */
+export async function cpuLoad(){
+  if(platform()!=='win32')return {samples:[],maxPct:null,note:'Windows only'};
+  try{
+    const {stdout}=await run('powershell',['-NoProfile','-Command',
+      '1..3 | ForEach-Object { (Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average; Start-Sleep -Milliseconds 1000 }'],{timeout:30000});
+    const samples=stdout.trim().split(/\s+/).map(Number).filter(Number.isFinite);
+    return {samples,maxPct:samples.length?Math.max(...samples):null};
+  }catch(error){return {samples:[],maxPct:null,error:String(error.message||error)};}
+}
+
+/** Sets the processor affinity of chrome processes started after `sinceMs`
+ * (the harness's own browser). Children spawned later inherit it on Windows. */
+export async function setBrowserAffinity(sinceMs,mask){
+  if(platform()!=='win32')return {applied:[],note:'Windows only'};
+  const since=new Date(sinceMs).toISOString();
+  try{
+    const {stdout}=await run('powershell',['-NoProfile','-Command',
+      `Get-Process | Where-Object { ($_.ProcessName -like 'chrome*') -and $_.StartTime -ge [datetime]'${since}' } | ForEach-Object { try { $_.ProcessorAffinity=[IntPtr]${Number(mask)}; '{0} ok' -f $_.Id } catch { '{0} fail' -f $_.Id } }`],{timeout:20000});
+    return {mask:'0x'+Number(mask).toString(16).toUpperCase(),applied:stdout.trim().split(/\r?\n/).filter(Boolean)};
+  }catch(error){return {applied:[],error:String(error.message||error)};}
+}
+
 export function cpuInfo(){
   const list=cpus();
   return {model:list[0]?.model?.trim()??null,logicalProcessors:list.length,totalMemoryBytes:totalmem(),os:`${platform()} ${release()}`,node:process.version};
