@@ -568,7 +568,7 @@ const opticalStarPoints:{mesh:THREE.Mesh;point:THREE.Points<THREE.BufferGeometry
 let flightAim: string | null = null;
 let walker:GroundWalker|null=null;
 let walkingModule:typeof import('./ground-walker.ts')|null=null;
-let landing:{point:V3;launch?:boolean;contact?:boolean}|null=null;
+let landing:{point:V3;launch?:boolean;contact?:boolean;heading?:THREE.Quaternion}|null=null;
 let landAfterCruise=false,walkGeneration=0;
 function clearWalking(){walkGeneration++;walker?.dispose();walker=null;landing=null;landAfterCruise=false;planetTiles?.setContactFocus(null);}
 let orbitAssist: {bodyId: string; axis: THREE.Vector3; clearanceM?: number} | null = null;
@@ -2480,7 +2480,16 @@ function startTerrainCruise() {
   if(landAfterCruise){landAfterCruise=false;void prepareLanding();}
   panel();
 }
-async function prepareLanding(savedPoint?:V3,contact=false){
+/** The level walking direction for a camera orientation. Near vertical views
+ * use the screen-up vector: forward when looking down, but backward when
+ * looking up (the top of an upward view points behind the observer), which
+ * previously turned restored upward headings about π away. */
+function levelForward(quaternion:THREE.Quaternion,up:THREE.Vector3){
+  const view=new THREE.Vector3(0,0,-1).applyQuaternion(quaternion),forward=view.clone().projectOnPlane(up);
+  if(forward.lengthSq()<.01)forward.set(0,1,0).applyQuaternion(quaternion).multiplyScalar(view.dot(up)>0?-1:1).projectOnPlane(up);
+  return forward.normalize();
+}
+async function prepareLanding(savedPoint?:V3,contact=false,savedHeading?:THREE.Quaternion){
   const body=state.body;
   if(!body||body.kind==='star'||body.type==='Gas giant'||renderer.xr.isPresenting)return;
   // §2.6 existence gate: `walkable` above only reflects the immutable rock
@@ -2513,7 +2522,7 @@ async function prepareLanding(savedPoint?:V3,contact=false){
     const eye=vec(point).setLength(vec(point).length()+12).add(vec(bodyPosition(body,state.sys!,epoch)));
     rebaseSystem(eye);camera.position.set(0,0,0);
   }
-  landing={point,contact};planetTiles?.setContactFocus(point);panel();
+  landing={point,contact,heading:savedHeading?.clone()};planetTiles?.setContactFocus(point);panel();
   const token=walkGeneration;
   announce('Preparing ground for landing. The scene stays visible while nearby terrain refines.');
   try{const mod=await import('./ground-walker.ts');await mod.initWalking();if(token===walkGeneration)walkingModule=mod;}
@@ -2558,11 +2567,13 @@ function updateWalking(dt:number){
         if(!result)throw new Error('GroundWalker queried a surface outside the solid epoch');
         return result;
       };
-      const preserveHeading=landing.contact;
+      const preserveHeading=landing.contact,savedHeading=landing.heading;
       walker=new walkingModule.GroundWalker(body,landing.point,walkerSurface as ReturnType<typeof surfaceQuery>,epoch);landing=null;
-      const up=walker.position.clone().normalize(),forward=camera.getWorldDirection(new THREE.Vector3()).projectOnPlane(up);
-      if(forward.lengthSq()<.01)forward.set(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(up);
-      camera.up.copy(up);if(!preserveHeading)camera.lookAt(camera.position.clone().add(forward.normalize()));
+      const up=walker.position.clone().normalize();
+      camera.up.copy(up);
+      // A restored ?walk=&heading= address reproduces the saved view exactly.
+      if(savedHeading)camera.quaternion.copy(savedHeading);
+      else if(!preserveHeading)camera.lookAt(camera.position.clone().add(levelForward(camera.quaternion,up)));
       announce('Walking · WASD move · Shift run · Space jump · Return to flight to take off.');panel();persist();
     }
   }
@@ -4687,6 +4698,45 @@ renderer.domElement.addEventListener("webglcontextlost", (e) => {
   ready = false;
   announce("Graphics context lost. Reload to restore the atlas.");
 });
+/** Perf-harness scripted motion (debug API only): constant-rate yaw about the
+ * local vertical and constant ground speed along the level heading, holding a
+ * terrain clearance or descending toward it. Driven by frame dt, so rates are
+ * wall-clock constant regardless of frame pacing. */
+type PerfMotion={yawRadPerS:number;speedMps:number;clearanceM:number|null;descentPerS:number;minDescentMps:number};
+let perfMotion:PerfMotion|null=null;
+function perfBodyRelative(){
+  const center=vec(bodyPosition(state.body!,state.sys!,epoch));
+  return {center,relative:vec(localPose()).sub(center)};
+}
+function placePerfCamera(center:THREE.Vector3,relative:THREE.Vector3){
+  const next=relative.clone().add(center);
+  if(next.distanceTo(systemOrigin)>128)rebaseSystem(next);
+  camera.position.copy(next.sub(systemOrigin).multiplyScalar(systemUnit));
+  controls.target.copy(camera.position).add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(systemUnit));
+}
+function applyPerfMotion(dt:number){
+  if(!perfMotion||!state.body||!state.sys||!flight||walker||landing||renderer.xr.isPresenting)return;
+  const {center,relative}=perfBodyRelative(),up=relative.clone().normalize();
+  if(perfMotion.yawRadPerS)camera.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(up,-perfMotion.yawRadPerS*dt)).normalize();
+  if(perfMotion.speedMps){
+    const forward=levelForward(camera.quaternion,up);
+    relative.addScaledVector(forward,perfMotion.speedMps*dt);
+    // Keep the view's pitch relative to the new local vertical.
+    camera.quaternion.premultiply(new THREE.Quaternion().setFromUnitVectors(up,relative.clone().normalize())).normalize();
+  }
+  if(perfMotion.clearanceM!==null){
+    const info=surfaceClearance(state.body,relative.toArray() as V3,snappedWaterLevelFor(state.body));
+    let clearance=perfMotion.clearanceM;
+    if(perfMotion.descentPerS>0){
+      const current=info.terrainClearance,rate=Math.max(perfMotion.minDescentMps,current*perfMotion.descentPerS);
+      clearance=Math.max(perfMotion.clearanceM,current-rate*dt);
+    }
+    relative.setLength(state.body.radiusM+info.terrainElevation+clearance);
+  }
+  camera.up.copy(relative.clone().normalize());
+  flightSpeed=Math.abs(perfMotion.speedMps);
+  placePerfCamera(center,relative);
+}
 let last = performance.now();
 let lastDateSave=0;
 const projected = new THREE.Vector3();
@@ -4723,6 +4773,7 @@ renderer.setAnimationLoop(() => {
   if (!renderer.xr.isPresenting && !flight) controls.update();
   updateExplorationClock(elapsedSeconds);
   updateFlight(dt);
+  applyPerfMotion(dt);
   if (!renderer.xr.isPresenting && (flight ? camera.view?.enabled : !camera.view?.enabled)) updateCameraViewport();
   vr?.update(dt);
   renderProfile.cpu('planetUpdate',()=>updatePlanetTiles(dt));
@@ -4920,8 +4971,9 @@ async function boot() {
     });
     const saved=q.get('walk')?.split(',').map(Number),heading=q.get('heading')?.split(',').map(Number);
     if(b&&saved?.length===3&&saved.every(Number.isFinite)&&Math.abs(Math.hypot(...saved)-b.radiusM)<30000){
-      if(heading?.length===4&&heading.every(Number.isFinite))camera.quaternion.fromArray(heading).normalize();
-      void prepareLanding(saved as V3);
+      const savedHeading=heading?.length===4&&heading.every(Number.isFinite)?new THREE.Quaternion().fromArray(heading).normalize():undefined;
+      if(savedHeading)camera.quaternion.copy(savedHeading);
+      void prepareLanding(saved as V3,false,savedHeading);
     }
   } else if (coords) await navigate("sector", { galaxy: g, coords });
   else await navigate("galaxy", { galaxy: g });
@@ -4977,6 +5029,30 @@ Object.defineProperty(window, "__atlas", {
       return [...hiddenProfilingSystems];
     },
     get hiddenSystems(){return [...hiddenProfilingSystems];},
+    /** Exact free-flight pose (perf harness): body-relative metres + camera quaternion. */
+    setPose(position:V3,heading:[number,number,number,number]){
+      if(!state.body||!state.sys||state.level!=='body')throw new Error('setPose needs a focused body');
+      if(position?.length!==3||!position.every(Number.isFinite)||heading?.length!==4||!heading.every(Number.isFinite))throw new Error('setPose(position[3], heading[4])');
+      if(renderer.xr.isPresenting)throw new Error('setPose is desktop-only');
+      clearWalking();
+      if(!flight)toggleFlight();
+      autopilot=null;orbitAssist=null;surfaceJourney=null;planetLook=null;approachAltitude=null;tween=null;flightCruise=false;
+      startCruiseAfterLook=false;landAfterCruise=false;flightKeys.clear();
+      const center=vec(bodyPosition(state.body,state.sys,epoch)),relative=vec(position);
+      rebaseSystem(relative.clone().add(center));camera.position.set(0,0,0);
+      camera.quaternion.fromArray(heading).normalize();camera.up.copy(relative.clone().normalize());
+      placePerfCamera(center,relative);
+      return {position:localPose().map((v,i)=>v-center.toArray()[i]),heading:camera.quaternion.toArray()};
+    },
+    /** Scripted constant-rate motion; null stops it. Degrees and metres. */
+    setPerfMotion(motion:{yawDegPerS?:number;speedMps?:number;clearanceM?:number|null;descentPerS?:number;minDescentMps?:number}|null){
+      if(!motion){perfMotion=null;return null;}
+      const finite=(v:unknown,fallback:number)=>typeof v==='number'&&Number.isFinite(v)?v:fallback;
+      perfMotion={yawRadPerS:finite(motion.yawDegPerS,0)*Math.PI/180,speedMps:finite(motion.speedMps,0),
+        clearanceM:motion.clearanceM===undefined||motion.clearanceM===null?null:finite(motion.clearanceM,0),
+        descentPerS:finite(motion.descentPerS,0),minDescentMps:finite(motion.minDescentMps,0)};
+      return {...perfMotion};
+    },
     /** Every active quality setting that shapes desktop frame cost. */
     qualitySettings(){
       const gl=renderer.getContext(),attributes=gl.getContextAttributes(),tiles=planetTiles?.diagnostics();
@@ -4999,7 +5075,8 @@ Object.defineProperty(window, "__atlas", {
       const memory=(performance as unknown as {memory?:{usedJSHeapSize:number;totalJSHeapSize:number;jsHeapSizeLimit:number}}).memory;
       return {t:performance.now(),frame:frameCount,backlog:planetTiles?.backlog()??null,
         heap:memory?{used:memory.usedJSHeapSize,total:memory.totalJSHeapSize,limit:memory.jsHeapSizeLimit}:null,
-        position:localPose(),heading:camera.quaternion.toArray(),walking:!!walker,flight};
+        position:localPose(),heading:camera.quaternion.toArray(),walking:!!walker,flight,
+        clearanceM:state.body&&state.sys?surfaceClearance(state.body,perfBodyRelative().relative.toArray() as V3,snappedWaterLevelFor(state.body)).terrainClearance:null};
     },
     shoreDebug(options:import('./planet-renderer.ts').ShoreDebug){planetTiles?.setShoreDebug(options);},
     get date(){return dateRecord(epoch);},

@@ -1483,7 +1483,13 @@ export class PlanetRenderer {
     let staleWaterPatches=0;for(const key of this.active)if(this.patches.get(key)!.waterBucket!==this.waterBucket)staleWaterPatches++;
     return {terrainPending:this.pending.size,terrainResident:this.patches.size,terrainVisible:this.active.size,staleWaterPatches,
       lifePending:this.lifeQueue.length-this.lifeQueueIndex,faunaTerrainPending:this.faunaGroundQueue.length,
-      floraSubmitted:this.floraSubmittedCount,faunaVisible:this.faunaVisibleCount,...this.forest.backlog()};
+      floraSubmitted:this.floraSubmittedCount,faunaVisible:this.faunaVisibleCount,faunaNearRigs:this.faunaNear.group.children.filter(o=>o.visible).length,
+      rocksDrawn:this.rocksDrawnForProfiling(),...this.forest.backlog()};
+  }
+  private rocksDrawnForProfiling(){
+    let drawn=0;if(!this.rocks.group.visible)return 0;
+    this.rocks.group.traverse(o=>{const mesh=o as THREE.InstancedMesh;if(mesh.isInstancedMesh&&mesh.visible)drawn+=mesh.count;});
+    return drawn;
   }
   renderCloudScene(renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera,profile?:RenderProfile){
     return this.clouds?.render(renderer,scene,camera,profile)??false;

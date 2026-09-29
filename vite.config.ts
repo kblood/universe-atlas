@@ -1,11 +1,19 @@
 import { defineConfig } from "vite";
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+// Cross-origin isolation for local dev/preview: un-coarsened performance.now()
+// (5 µs instead of 100 µs) for the perf harness. The app loads no
+// cross-origin resources. The deployed site's headers are configured separately.
+const crossOriginIsolation={'Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'require-corp','Cross-Origin-Resource-Policy':'same-origin'};
 export default defineConfig({
   base: "./",
+  server: {headers: crossOriginIsolation},
+  preview: {headers: crossOriginIsolation},
   plugins: [{name: 'publish-orbit-docs', generateBundle() {
     this.emitFile({type:'asset',fileName:'build-info.json',source:JSON.stringify({
       commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
+      branch:execFileSync('git',['rev-parse','--abbrev-ref','HEAD'],{encoding:'utf8'}).trim(),
+      subject:execFileSync('git',['log','-1','--format=%s'],{encoding:'utf8'}).trim(),
       dirty:execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim().length>0,
       builtAt:new Date().toISOString(),
     },null,2)});
