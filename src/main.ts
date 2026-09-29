@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import {RenderProfile} from './render-profile.ts';
+import {RenderProfile,systemTimer} from './render-profile.ts';
+import {staticQualitySettings} from './quality-settings.ts';
 import {SurfaceLighting} from './surface-lighting.ts';
 import {ForestAssetSource} from './forest-asset-source.ts';
 import {ForestAssetAttachment} from './forest-asset-attachment.ts';
@@ -446,6 +447,17 @@ renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.shadowMap.autoUpdate=false;
 const renderProfile=new RenderProfile(renderer.getContext() as WebGL2RenderingContext);
 renderProfile.setEnabled(new URLSearchParams(location.search).get('profile')==='1');
+// Shadow-map CPU share of scene submission (per-system CPU attribution). The
+// wrapper is a timing no-op while profiling is disabled.
+{
+  const shadowRender=renderer.shadowMap.render.bind(renderer.shadowMap);
+  renderer.shadowMap.render=(...args:Parameters<typeof shadowRender>)=>{
+    const started=systemTimer.start();try{return shadowRender(...args);}finally{systemTimer.stop('shadow',started);}
+  };
+}
+/** Debug GPU attribution: systems hidden for one render at a frozen pose. */
+const PROFILING_SYSTEMS=['terrain','sky','forestNear','forestMiddle','forestFar','flora','fauna','rocks','clouds','shadow'] as const;
+const hiddenProfilingSystems=new Set<string>();
 $("viewport").append(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -4833,15 +4845,22 @@ renderer.setAnimationLoop(() => {
   // existing terrain/environment; XR deliberately retains procedural sky.
   const infoAutoReset=renderer.info.autoReset;
   if(renderProfile.enabled){renderer.info.reset();renderer.info.autoReset=false;}
+  // Debug-only: hide attributed systems for this render, restored below.
+  const hiddenObjects:[THREE.Object3D,boolean][]=[];
+  if(hiddenProfilingSystems.size&&planetTiles)for(const name of hiddenProfilingSystems)
+    for(const object of planetTiles.profilingObjects(name)){hiddenObjects.push([object,object.visible]);object.visible=false;}
   try{
     // Reflections reuse the last map. Only the main scene refreshes it, once
     // per frame, including when clouds capture that scene into their target.
     renderer.shadowMap.needsUpdate=false;
     renderProfile.pass('forestAtlas',()=>planetTiles?.renderForestAtlases(renderer,renderer.xr.isPresenting));
     renderProfile.pass('lakeReflection',()=>planetTiles?.renderLakeReflection(renderer,scene,camera,renderer.xr.isPresenting));
-    renderer.shadowMap.needsUpdate=light.castShadow;
-    if(!planetTiles?.renderCloudScene(renderer,scene,camera,renderProfile))renderProfile.pass('scene',()=>renderer.render(scene,camera));
-  }finally{renderer.info.autoReset=infoAutoReset;}
+    renderer.shadowMap.needsUpdate=light.castShadow&&!hiddenProfilingSystems.has('shadow');
+    if(hiddenProfilingSystems.has('clouds')||!planetTiles?.renderCloudScene(renderer,scene,camera,renderProfile))renderProfile.pass('scene',()=>renderer.render(scene,camera));
+  }finally{
+    renderer.info.autoReset=infoAutoReset;
+    for(let i=hiddenObjects.length-1;i>=0;i--)hiddenObjects[i][0].visible=hiddenObjects[i][1];
+  }
   drawCount = renderer.info.render.calls;
   if (now - lastStats > 900) {
     lastStats = now;
@@ -4850,7 +4869,17 @@ renderer.setAnimationLoop(() => {
     $("performance").textContent =
       `${state.level.toUpperCase()} · ${drawCount} draws · p95 ${p95.toFixed(0)} ms`;
   }
-  renderProfile.endFrame(drawCount,renderer.info.render.triangles);
+  let systems:Parameters<RenderProfile['endFrame']>[2];
+  if(renderProfile.enabled){
+    // Non-overlapping per-system CPU attribution for this frame.
+    const t=systemTimer.take(),cpu=(name:string)=>renderProfile.frameCpuMs(name),v=(name:string)=>t[name]??0;
+    const renderCpu=cpu('forestAtlas')+cpu('lakeReflection')+cpu('scene')+cpu('sceneCapture');
+    const planetParts=v('sky')+v('clouds')+v('forestTotal')+v('rocks')+v('lifeScatter')+v('flora')+v('fauna');
+    systems={terrainTiles:Math.max(0,v('planetUpdate')-planetParts),sky:v('sky'),forest:Math.max(0,v('forestTotal')-v('canopy')),canopy:v('canopy'),
+      flora:v('flora'),lifeScatter:v('lifeScatter'),fauna:v('fauna'),rocks:v('rocks'),
+      clouds:v('clouds')+cpu('cloudIntegration')+cpu('cloudResolve'),submission:Math.max(0,renderCpu-v('shadow')),shadow:v('shadow')};
+  }
+  renderProfile.endFrame(drawCount,renderer.info.render.triangles,systems);
 });
 async function boot() {
   const q = new URLSearchParams(location.search);
@@ -4937,6 +4966,41 @@ Object.defineProperty(window, "__atlas", {
       planetTiles?.setCloudSceneSamples(samples);
     },
     get renderProfile(){return renderProfile.diagnostics();},
+    // Desktop perf harness (docs/desktop-perf-harness-2026-09-29.md).
+    setProfileHistory(limit:number){renderProfile.setHistoryLimit(limit);},
+    renderProfileSamples(names:string[]){return renderProfile.samples(names);},
+    get profilingSystems(){return [...PROFILING_SYSTEMS];},
+    /** Debug GPU attribution: hide one system for rendering only (frozen pose). */
+    setSystemVisible(name:string,visible:boolean){
+      if(!(PROFILING_SYSTEMS as readonly string[]).includes(name))throw new Error(`Unknown profiling system ${name}; expected ${PROFILING_SYSTEMS.join(', ')}`);
+      if(visible)hiddenProfilingSystems.delete(name);else hiddenProfilingSystems.add(name);
+      return [...hiddenProfilingSystems];
+    },
+    get hiddenSystems(){return [...hiddenProfilingSystems];},
+    /** Every active quality setting that shapes desktop frame cost. */
+    qualitySettings(){
+      const gl=renderer.getContext(),attributes=gl.getContextAttributes(),tiles=planetTiles?.diagnostics();
+      return {
+        url:{trees:detailedForestEnabled,detail:surfaceDetail,lighting:surfaceLightingEnabled,horizon:horizonAssist,observed:viewMode==='observed',reliefScale},
+        renderer:{pixelRatio:renderer.getPixelRatio(),devicePixelRatio,pixelRatioCap:1.7,cssViewport:[innerWidth,innerHeight],
+          drawingBuffer:[gl.drawingBufferWidth,gl.drawingBufferHeight],antialias:attributes?.antialias??null,logarithmicDepthBuffer:true,
+          toneMapping:renderer.toneMapping,toneMappingExposure:renderer.toneMappingExposure,shadowMapEnabled:renderer.shadowMap.enabled,
+          shadowMapType:renderer.shadowMap.type,shadowCasterLight:light.castShadow,anisotropy:Math.min(8,renderer.capabilities.getMaxAnisotropy()),
+          maxAnisotropy:renderer.capabilities.getMaxAnisotropy(),xr:renderer.xr.isPresenting},
+        clouds:tiles?.clouds??null,
+        forestAssets:forestAssetAttachment.diagnostics(),
+        surfaceLighting:{enabled:surfaceLightingEnabled,...surfaceLighting.diagnostics()},
+        hiddenSystems:[...hiddenProfilingSystems],
+        ...staticQualitySettings(),
+      };
+    },
+    /** Cheap sample for perf time series: backlog, heap, pose. */
+    perfSample(){
+      const memory=(performance as unknown as {memory?:{usedJSHeapSize:number;totalJSHeapSize:number;jsHeapSizeLimit:number}}).memory;
+      return {t:performance.now(),frame:frameCount,backlog:planetTiles?.backlog()??null,
+        heap:memory?{used:memory.usedJSHeapSize,total:memory.totalJSHeapSize,limit:memory.jsHeapSizeLimit}:null,
+        position:localPose(),heading:camera.quaternion.toArray(),walking:!!walker,flight};
+    },
     shoreDebug(options:import('./planet-renderer.ts').ShoreDebug){planetTiles?.setShoreDebug(options);},
     get date(){return dateRecord(epoch);},
     // Package D diagnostics (contract §6.4): a pure function of the current

@@ -3,6 +3,7 @@ import {forestMaterial,forestDepthMaterial} from './forest-material.ts';
 import {createLegacyTreeGeometry as treeGeometry,treeQuaternion} from './tree-shape.ts';
 import {PlanetCanopy,forestCellPatchKey} from './planet-canopy.ts';
 import {quantizeForestCoverage} from './forest-coverage.ts';
+import {systemTimer} from './render-profile.ts';
 import {type Body,type V3} from './catalog.ts';
 import {terrainSampler} from './terrain.ts';
 import {biomeClassifier} from './surface-biomes.ts';
@@ -512,8 +513,8 @@ export class PlanetForest {
     const draw=altitudeM<B.forestPrepareAltitudeM;
     for(const mesh of this.meshes)mesh.visible=draw;this.canopy.visible=draw;
     if(!draw){
-      this.fullCanopy?.prepare(eye,groundDirection,altitudeM,water,enabled,immersive,this.origin);
-      this.fullCanopy?.finish();this.updateMs=performance.now()-updateStarted;return;
+      const canopyStarted=systemTimer.start();this.fullCanopy?.prepare(eye,groundDirection,altitudeM,water,enabled,immersive,this.origin);
+      this.fullCanopy?.finish();systemTimer.stop('canopy',canopyStarted);this.updateMs=performance.now()-updateStarted;return;
     }
     if(immersive!==this.immersiveMaterial){
       this.immersiveMaterial=immersive;
@@ -562,7 +563,7 @@ export class PlanetForest {
       this.origin.copy(eye);this.group.position.copy(this.origin);this.originReady=true;
       this.originVersion++;this.originRebased=true;
     }
-    this.fullCanopy?.prepare(eye,groundDirection,altitudeM,water,enabled,immersive,this.origin);
+    const canopyStarted=systemTimer.start();this.fullCanopy?.prepare(eye,groundDirection,altitudeM,water,enabled,immersive,this.origin);systemTimer.stop('canopy',canopyStarted);
     const selectionMismatch=!this.broadphaseSelectionReady||this.workIndex.diagnostics().selectionCells!==this.wanted.length;
     if(selectionMismatch){
       this.patchBroadphase.setWater(water);this.setWorkSelection(this.wanted);
@@ -686,7 +687,7 @@ export class PlanetForest {
       this.wantInstance(lod,resident,fade);counts[lod]++;
     }
     for(let i=0;i<3;i++)this.reconcileBatch(i);
-    this.fullCanopy?.finish();
+    const canopyFinish=systemTimer.start();this.fullCanopy?.finish();systemTimer.stop('canopy',canopyFinish);
     this.nearTrees=counts[0];this.visibleTrees=counts[0]+counts[1]+canopyCount;
     this.updateMs=performance.now()-updateStarted;
   }
@@ -764,5 +765,12 @@ export class PlanetForest {
     radiusM:B.forestRadiusM,canonicalHeightRangeM:[10,22],renderedHeightRangeM:this.nearAllometry.renderedHeightRangeM,cellSizeM:B.forestCellM,
       allocatedBytes:memoryAccounting.currentCombinedEstimateBytes,memoryAccounting};
   }
+  /** Debug-only GPU attribution: objects of one presentation tier (see PlanetRenderer.profilingObjects). */
+  profilingObjects(tier:'forestNear'|'forestMiddle'|'forestFar'):THREE.Object3D[]{
+    const lod=tier==='forestNear'?0:tier==='forestMiddle'?1:-1;
+    if(lod<0)return [this.canopy,...(this.fullCanopy?[this.fullCanopy.group]:[])];
+    return [this.meshes[lod],...[...this.assets.entries.values()].flatMap(entry=>entry.batches[lod]?[entry.batches[lod].group]:[])];
+  }
+  backlog(){return {forestPending:this.queue.length,forestSelectionPending:this.selecting,forestVisible:this.visibleTrees,forestNear:this.nearTrees,forestOriginVersion:this.originVersion};}
   dispose(){if(this.disposed)return;this.disposed=true;this.assets.dispose();this.worker?.terminate();this.worker=null;this.fullCanopy?.dispose();this.fullCanopy=null;for(const mesh of [...this.meshes,this.canopy]){mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();mesh.customDepthMaterial?.dispose();}this.cache.clear();this.group.removeFromParent();}
 }
