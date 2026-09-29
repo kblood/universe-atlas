@@ -91,15 +91,19 @@ export const groundVertex=`groundPosition=transformed*atlasRadius+groundOrigin; 
 export const groundFragmentHeader=`
 uniform sampler2D groundAtlas,groundSoilColorRoughness,groundSoilNormal,groundRockColorRoughness,groundRockNormal; uniform float groundEnabled,groundPatch,groundPbrPatch,groundPbrReady,groundHabitat; uniform mat3 normalMatrix;
 varying vec3 groundPosition,groundNormal; varying vec4 groundMix; varying float groundSurfaceRoughnessV;
-vec4 groundTri(vec3 p,vec3 w){return texture2D(groundAtlas,p.yz)*w.x+texture2D(groundAtlas,p.zx)*w.y+texture2D(groundAtlas,p.xy)*w.z;}
-vec4 groundPbrTri(sampler2D t,vec3 p,vec3 w){return texture2D(t,p.yz)*w.x+texture2D(t,p.zx)*w.y+texture2D(t,p.xy)*w.z;}
+// Explicit-gradient triplanar fetches: the gradients are taken in uniform
+// control flow (dx/dy of the same coordinates the implicit form would use), so
+// the fetches may sit behind per-fragment weight tests and are skipped where
+// their weight is exactly zero without changing any sampled value.
+vec4 groundTri(vec3 p,vec3 w,vec3 dx,vec3 dy){return textureGrad(groundAtlas,p.yz,dx.yz,dy.yz)*w.x+textureGrad(groundAtlas,p.zx,dx.zx,dy.zx)*w.y+textureGrad(groundAtlas,p.xy,dx.xy,dy.xy)*w.z;}
+vec4 groundPbrTri(sampler2D t,vec3 p,vec3 w,vec3 dx,vec3 dy){return textureGrad(t,p.yz,dx.yz,dy.yz)*w.x+textureGrad(t,p.zx,dx.zx,dy.zx)*w.y+textureGrad(t,p.xy,dx.xy,dy.xy)*w.z;}
 vec3 groundPbrNormalAxisX(vec3 c,float side){vec3 n=normalize(c*2.0-1.0);n.xy*=.78;return normalize(vec3(side*n.z,n.x,n.y));}
 vec3 groundPbrNormalAxisY(vec3 c,float side){vec3 n=normalize(c*2.0-1.0);n.xy*=.78;return normalize(vec3(n.y,side*n.z,n.x));}
 vec3 groundPbrNormalAxisZ(vec3 c,float side){vec3 n=normalize(c*2.0-1.0);n.xy*=.78;return normalize(vec3(n.x,n.y,side*n.z));}
-vec3 groundPbrTriNormal(sampler2D t,vec3 p,vec3 w,vec3 n){
- vec3 x=groundPbrNormalAxisX(texture2D(t,p.yz).rgb,n.x<0.0?-1.0:1.0);
- vec3 y=groundPbrNormalAxisY(texture2D(t,p.zx).rgb,n.y<0.0?-1.0:1.0);
- vec3 z=groundPbrNormalAxisZ(texture2D(t,p.xy).rgb,n.z<0.0?-1.0:1.0);
+vec3 groundPbrTriNormal(sampler2D t,vec3 p,vec3 w,vec3 n,vec3 dx,vec3 dy){
+ vec3 x=groundPbrNormalAxisX(textureGrad(t,p.yz,dx.yz,dy.yz).rgb,n.x<0.0?-1.0:1.0);
+ vec3 y=groundPbrNormalAxisY(textureGrad(t,p.zx,dx.zx,dy.zx).rgb,n.y<0.0?-1.0:1.0);
+ vec3 z=groundPbrNormalAxisZ(textureGrad(t,p.xy,dx.xy,dy.xy).rgb,n.z<0.0?-1.0:1.0);
  return normalize(x*w.x+y*w.y+z*w.z);
 }
 `;
@@ -112,23 +116,32 @@ vec4 groundCoarse=vec4(.5),groundFine=vec4(.5),groundMacro=vec4(.5);
 float groundPbrMixWeight=0.0,groundPbrRoughness=.9;
 vec4 groundSoilPbr=vec4(1.0),groundRockPbr=vec4(1.0);
 vec3 groundPbrObjectNormal=normalize(groundNormal);
-// Uniform branch keeps texture derivatives valid and skips six fetches on
-// disabled or distant patches. Fine per-fragment distance fade stays smooth.
-if(groundEnabled*groundPatch>.5){
-  groundCoarse=groundTri(groundPosition/16.0,groundAxis);
-  groundFine=groundTri(groundPosition,groundAxis);
-  groundMacro=groundTri(groundPosition/256.0,groundAxis);
+// Screen-space gradients of the ground position, taken in uniform control flow.
+vec3 groundDx=dFdx(groundPosition),groundDy=dFdy(groundPosition);
+// The uniform branch skips the fetches on disabled or distant patches; inside
+// it, fragments past the fine distance fade (weight exactly zero) skip them too.
+if(groundEnabled*groundPatch>.5&&groundFade>0.0){
+  groundCoarse=groundTri(groundPosition/16.0,groundAxis,groundDx/16.0,groundDy/16.0);
+  groundFine=groundTri(groundPosition,groundAxis,groundDx,groundDy);
+  groundMacro=groundTri(groundPosition/256.0,groundAxis,groundDx/256.0,groundDy/256.0);
 }
 float groundSoilRockWeight=groundW.x+groundW.y+groundW.z;
 float groundPbrRockMix=groundW.z/max(groundSoilRockWeight,.0001);
 float groundPbrFade=1.0-smoothstep(600.0,1800.0,length(atlasLocalM-atlasLocalEyeM));
 groundPbrMixWeight=groundPbrReady*groundPbrPatch*groundPbrFade*min(1.0,groundSoilRockWeight);
-if(groundEnabled*groundPatch>.5&&groundPbrPatch>.5&&groundPbrReady>.5){
-  vec3 groundPbrPos=groundPosition/${GROUND_PBR_REPEAT_M.toFixed(1)};
-  groundSoilPbr=groundPbrTri(groundSoilColorRoughness,groundPbrPos,groundAxis);
-  groundRockPbr=groundPbrTri(groundRockColorRoughness,groundPbrPos,groundAxis);
-  vec3 soilN=groundPbrTriNormal(groundSoilNormal,groundPbrPos,groundAxis,groundNormal);
-  vec3 rockN=groundPbrTriNormal(groundRockNormal,groundPbrPos,groundAxis,groundNormal);
+// Every PBR term is scaled by groundPbrMixWeight or by a rock/soil mix, so a
+// fragment whose weight is exactly zero keeps the defaults above bit-for-bit.
+if(groundEnabled*groundPatch>.5&&groundPbrPatch>.5&&groundPbrReady>.5&&groundPbrMixWeight>0.0){
+  vec3 groundPbrPos=groundPosition/${GROUND_PBR_REPEAT_M.toFixed(1)},groundPbrDx=groundDx/${GROUND_PBR_REPEAT_M.toFixed(1)},groundPbrDy=groundDy/${GROUND_PBR_REPEAT_M.toFixed(1)};
+  vec3 soilN=groundPbrObjectNormal,rockN=groundPbrObjectNormal;
+  if(groundPbrRockMix<1.0){
+    groundSoilPbr=groundPbrTri(groundSoilColorRoughness,groundPbrPos,groundAxis,groundPbrDx,groundPbrDy);
+    soilN=groundPbrTriNormal(groundSoilNormal,groundPbrPos,groundAxis,groundNormal,groundPbrDx,groundPbrDy);
+  }
+  if(groundPbrRockMix>0.0){
+    groundRockPbr=groundPbrTri(groundRockColorRoughness,groundPbrPos,groundAxis,groundPbrDx,groundPbrDy);
+    rockN=groundPbrTriNormal(groundRockNormal,groundPbrPos,groundAxis,groundNormal,groundPbrDx,groundPbrDy);
+  }
   vec4 groundPbrColor=mix(groundSoilPbr,groundRockPbr,groundPbrRockMix);
   groundPbrRoughness=groundPbrColor.a;
   groundPbrObjectNormal=normalize(mix(soilN,rockN,groundPbrRockMix));
@@ -149,7 +162,7 @@ if(groundPbrMixWeight>0.0&&groundSoilRockWeight>.001){
 diffuseColor.rgb=mix(diffuseColor.rgb,groundAlbedo*(.82+groundSignal*.32),groundFade);
 // Millimetre-scale grain stays subtle at eye height; centimetre amplitudes on
 // sub-centimetre atlas features made grazing shores alternate black and gold.
-float groundFootprint=max(length(dFdx(groundPosition)),length(dFdy(groundPosition)));
+float groundFootprint=max(length(groundDx),length(groundDy));
 float fineNormalFade=1.0-smoothstep(.008,.08,groundFootprint);
 float groundBump=(dot(groundW,vec4(groundFine.a*.001,groundFine.r*.002+groundFine.g*.0025,groundFine.g*.004,groundFine.a*.0007))*fineNormalFade+groundW.z*groundCoarse.b*.012)*groundFade;
 `;
