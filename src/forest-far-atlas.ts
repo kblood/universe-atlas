@@ -13,7 +13,8 @@ import {forestMeshBufferFootprint} from './forest-resource-accounting.ts';
  * matching scratch level. Far instances sample three views per tree and
  * reproduce fractional coverage with alpha-to-coverage (MSAA) or object-space
  * hashed alpha, never a fixed threshold that would turn crowns into discs. */
-export const FOREST_FAR_ATLAS_VERSION='forest-far-atlas-1';
+// 2: captures use the mip-aware foliage cutoff (tree-foliage-lod-cutoff-1).
+export const FOREST_FAR_ATLAS_VERSION='forest-far-atlas-2';
 export const FOREST_FAR_ATLAS_LAYOUT=Object.freeze({grid:9,tile:64,columns:4,rows:2,supersample:4,maxMip:6,
   captureLod:1 as 0|1,referenceHeightM:16,viewVersion:TREE_HEMI_VIEW_VERSION});
 const L=FOREST_FAR_ATLAS_LAYOUT;

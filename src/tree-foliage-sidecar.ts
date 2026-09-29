@@ -68,7 +68,7 @@ export async function installTreeFoliageSidecar(texture:Texture,sidecar:TreeFoli
   const oldMipmaps=texture.mipmaps,oldGenerate=texture.generateMipmaps;
   texture.mipmaps=mipmaps as unknown as typeof texture.mipmaps;texture.generateMipmaps=false;texture.needsUpdate=true;
   installed.add(texture);let disposed=false;
-  return {report:chain.report,baseCoverage:chain.baseCoverage,baseCellCoverage:chain.baseCellCoverage,cellGrid:chain.cellGrid,
+  return {levels:chain.levels.map(level=>({width:level.width,height:level.height,data:level.data})),report:chain.report,baseCoverage:chain.baseCoverage,baseCellCoverage:chain.baseCellCoverage,cellGrid:chain.cellGrid,
     alphaCutoff:chain.alphaCutoff,payloadBytes:chain.payloadBytes,maxLevel:chain.maxLevel,
     dispose(){if(disposed)return;disposed=true;
       if(texture.mipmaps===mipmaps){texture.mipmaps=oldMipmaps;texture.generateMipmaps=oldGenerate;texture.needsUpdate=true;}

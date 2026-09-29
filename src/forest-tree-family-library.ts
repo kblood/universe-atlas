@@ -55,8 +55,12 @@ export class ForestTreeFamilyLibrary<T,S>{
       for(const input of inputs){
         // The game library always supplies the bounded per-family pool and the
         // silhouette-matched reduced foliage LOD; standalone labs opt in explicitly.
+        const sidecar=input.foliageMipSidecar??options.foliageMipSidecar;
         const family=await this.loader(input.lod0,input.lod1,{...options,
-          foliageMipSidecar:input.foliageMipSidecar??options.foliageMipSidecar,forestCoverage:true,
+          foliageMipSidecar:sidecar,forestCoverage:true,
+          // Mip-aware cutoff keeps LOD1 crowns (and the atlas they are captured
+          // into) at base coverage; it needs the MASK sidecar chain.
+          foliageLodCutoff:options.foliageLodCutoff??(!!sidecar&&options.foliageCoverage!=='hash'),
           structuralVariants:forestStructuralVariants(input.kind),areaPreservingLod:true,silhouetteMatchedLod:true,
           cardCompensation:options.cardCompensation??FOREST_CARD_COMPENSATION});
         const entry:ForestTreeFamilyEntry<T,S>={kind:input.kind,family,batches:[],pools:[],wanted:[[],[]],coverage:[new Map(),new Map()],attachments:[]};

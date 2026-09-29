@@ -23,7 +23,9 @@ export type TreeFoliageMipLevelReport={
 export type TreeFoliageMipPixelChain={levels:TreeFoliageMipPixels[];report:TreeFoliageMipLevelReport[];
   baseCoverage:number;baseCellCoverage:number[];cellGrid:[number,number];alphaCutoff:number};
 export type InstalledTreeFoliageMipChain={report:TreeFoliageMipLevelReport[];baseCoverage:number;baseCellCoverage:number[];
-  cellGrid:[number,number];alphaCutoff:number;dispose():void};
+  cellGrid:[number,number];alphaCutoff:number;dispose():void;
+  /** Installed levels 1..n as uploaded, for load-time calibration; the owner may drop it afterwards. */
+  levels?:TreeFoliageMipPixels[]};
 
 function assertOptions(width:number,height:number,options:TreeFoliageMipOptions){
   const columns=options.cellColumns??TREE_FOLIAGE_ATLAS_COLUMNS,rows=options.cellRows??TREE_FOLIAGE_ATLAS_ROWS;
@@ -170,7 +172,7 @@ export async function installTreeFoliageCoverageMipmaps(texture:Texture,options:
     const oldMipmaps=texture.mipmaps,oldGenerateMipmaps=texture.generateMipmaps;
     texture.mipmaps=mipmaps as unknown as typeof texture.mipmaps;texture.generateMipmaps=false;texture.needsUpdate=true;
     let disposed=false;
-		const installed:InstalledTreeFoliageMipChain={report:chain.report,baseCoverage:chain.baseCoverage,baseCellCoverage:chain.baseCellCoverage,cellGrid:chain.cellGrid,alphaCutoff:chain.alphaCutoff,
+		const installed:InstalledTreeFoliageMipChain={levels:chain.levels.slice(1),report:chain.report,baseCoverage:chain.baseCoverage,baseCellCoverage:chain.baseCellCoverage,cellGrid:chain.cellGrid,alphaCutoff:chain.alphaCutoff,
 			dispose(){
 				if(disposed)return;disposed=true;
 				if(texture.mipmaps===mipmaps){texture.mipmaps=oldMipmaps;texture.generateMipmaps=oldGenerateMipmaps;texture.needsUpdate=true;}
