@@ -75,6 +75,75 @@ export function gpuRows(attributions){
   return rows;
 }
 
+/** Aggregates a harness report in place: contention, budget tables, scenario
+ * distribution, S0 load, S4 seek and S6 descent tables, verdicts. Pure over
+ * report.json, so `node tests/helpers/perf-report.mjs <report.json>` re-renders. */
+export function aggregateReport(report){
+  const config=report.config;
+  report.gpuBefore=report.runs[0]?.gpuBefore??null;
+  report.gpuBefore=report.runs[0]?.gpuBefore??null;
+  const reasons=new Set();
+  for(const r of report.runs){
+    for(const snap of [r.gpuBefore,r.gpuAfter])for(const c of snap?.contenders??[])reasons.add(`foreign GPU process ${c}`);
+    if((r.gpuBefore?.maxUtilizationPct??0)>15)reasons.add(`GPU ${r.gpuBefore.maxUtilizationPct}% busy before run ${r.condition} r${r.repeat}`);
+    if((r.cpuLoadBefore?.maxPct??0)>20)reasons.add(`host CPU ${r.cpuLoadBefore.maxPct}% busy before run ${r.condition} r${r.repeat} (other agents' CPU work)`);
+    for(const b of r.gpuBefore?.userBrowsers??[])reasons.add(`user browser open (may hold WebGL/video): ${b.split(/[\\/]/).pop()}`);
+    if(r.failed)reasons.add(`run ${r.condition} r${r.repeat} failed`);
+  }
+  if(config.allowDirty&&(report.build?.treeDirty||report.build?.dirty))reasons.add('dirty tree (development run)');
+  report.contentionReasons=[...reasons];report.contended=reasons.size>0;
+  report.lockWaits=report.runs.map(r=>({condition:r.condition,repeat:r.repeat,waitedMs:r.lock?.waitedMs??null}));
+  report.errors=[...new Set(report.runs.flatMap(r=>r.errors))];
+
+  const captureOf=(run,path)=>path.split('.').reduce((o,k)=>o?.[k],run.scenarios);
+  const SCENARIO_CAPTURES=[['S1 ground paused','S1.groundPaused'],['S1 ground realtime','S1.groundRealtime'],['S1 100 m paused','S1.low100Paused'],
+    ['S2 turning 90°/s','S2.capture'],['S3 flight 40 m/s @120 m','S3.flight.capture'],['S3 walk 1.6 m/s','S3.walk.capture'],
+    ['S5 traverse out','S5.out'],['S5 traverse back','S5.back'],['S6 descent','S6.capture']];
+  report.budget=[];report.scenarioTable=[];
+  const cpuVerdicts=[];
+  for(const condition of config.conditions){
+    const runs=report.runs.filter(r=>r.condition===condition&&!r.failed);
+    for(const [title,path] of SCENARIO_CAPTURES){
+      const caps=runs.map(r=>captureOf(r,path)).filter(Boolean);if(!caps.length)continue;
+      const m=key=>median(caps.map(c=>c.stats?.frameIntervalMs?.[key]??null));
+      let signals='';
+      if(path.startsWith('S2'))signals=`origin changed: ${runs.map(r=>r.scenarios.S2?.originVersionChanged).join('/')}`;
+      if(path==='S1.groundPaused')signals=`forest writes (sampled) ${caps.map(c=>c.forestWritesSampled.matrix+c.forestWritesSampled.color).join('/')}`;
+      if(path.startsWith('S3'))signals=`selection applies max ms ${runs.map(r=>captureOf(r,path.replace('.capture','.selectionApply'))?.maxMs?.toFixed?.(1)??'—').join('/')}`;
+      if(path==='S6.capture')signals=runs.map(r=>{const s=r.scenarios.S6?.signals,f=v=>v===null||v===undefined?'never':`${v.toFixed(0)} m`;return s?`first seen: forest ${f(s.forestFirstClearanceM)}, trees ${f(s.forestTreesFirstClearanceM)}, flora ${f(s.floraFirstClearanceM)}, fauna ${f(s.faunaFirstClearanceM)}, rocks ${f(s.rocksFirstClearanceM)}`:'—';}).join('; ');
+      report.scenarioTable.push({condition,scenario:title,p50:m('p50'),p95:m('p95'),p99:m('p99'),max:m('max'),
+        cpuP95:median(caps.map(c=>c.stats?.['cpu/frameWorkMs']?.p95??null)),gpuP95:median(caps.map(c=>c.stats?.['gpu/framePassSumMs']?.p95??null)),
+        over33:median(caps.map(c=>c.hitches?.over33??null)),over50:median(caps.map(c=>c.hitches?.over50??null)),longTasks:median(caps.map(c=>c.longTasks?.count??null)),signals});
+      if(['S1.groundPaused','S1.low100Paused','S2.capture','S3.flight.capture','S3.walk.capture'].includes(path)){
+        const rows=cpuRows(caps,condition),total=cpuTotal(caps,condition);
+        report.budget.push({kind:'cpu',title:`CPU — ${title} — ${condition}${condition==='native'?` (host ×${CPU_PROXY_RATE})`:' (CDP 1.7× throttle, direct)'}`,rows,total});
+        cpuVerdicts.push(...rows.map(r=>r.verdict),total.verdict);
+      }
+    }
+  }
+  const gpuVerdicts=[];
+  const nativeRuns=report.runs.filter(r=>r.condition==='native'&&r.gpuAttribution);
+  for(const pose of ['low100','groundEye']){
+    const attributions=nativeRuns.map(r=>r.gpuAttribution.find(a=>a.pose===pose)?.rows).filter(Boolean);
+    if(!attributions.length)continue;
+    const rows=gpuRows(attributions);
+    report.budget.push({kind:'gpu',title:`GPU ratio proxy — hide-one-system at frozen pose ${pose} (native, ×5.4)`,rows});
+    gpuVerdicts.push(...rows.map(r=>r.verdict));
+  }
+  report.coldLoad=report.runs.flatMap(r=>['cold','warm'].map(cache=>{const m=r.scenarios.S0?.[cache];return m?{condition:r.condition,repeat:r.repeat,cache,milestones:m,hitches10s:m.hitches10s,longTasks10s:m.longTasks10s}:null;}).filter(Boolean));
+  const agg=v=>v.includes('FAIL')?'FAIL':v.includes('PASS')?'PASS':'n/a';
+  report.verdict={cpu:agg(cpuVerdicts),gpu:agg(gpuVerdicts)};
+  report.verdict.overall=`${report.verdict.cpu==='PASS'&&report.verdict.gpu==='PASS'?'PASS':'FAIL'}${report.contended?' (CONTENDED)':''}${config.short?' (SHORT windows)':''}`;
+  report.ok=report.runs.length>0&&report.runs.every(r=>!r.failed);
+  report.seekTable=report.runs.flatMap(r=>['inland','shore'].flatMap(site=>(r.scenarios.S4?.[site]?.steps??[]).map(st=>({condition:r.condition,repeat:r.repeat,site,step:st.label,
+    clearedMs:st.staleClearedMs,windowMs:st.windowMs??12000,staleMax:st.staleMax??Math.max(0,...(st.capture?.backlogSeries??[]).map(x=>x.staleWaterPatches??0)),
+    staleAtEnd:st.staleAtEnd??st.capture?.backlogSeries?.at(-1)?.staleWaterPatches??null,peakReservedMiB:st.peakReservedCombinedBytes/2**20,budgetMiB:st.budgetBytes/2**20,
+    withinBudget:st.withinBudget,over50:st.capture?.hitches?.over50??null,maxIntervalMs:st.capture?.hitches?.maxIntervalMs??null}))));
+  report.descentTable=report.runs.filter(r=>r.scenarios.S6?.signals).map(r=>({condition:r.condition,repeat:r.repeat,...r.scenarios.S6.signals,
+    over50:r.scenarios.S6.capture?.hitches?.over50??null,maxIntervalMs:r.scenarios.S6.capture?.hitches?.maxIntervalMs??null}));
+  return report;
+}
+
 export function markdownSummary(report){
   const L=[];
   const contended=report.contended;
@@ -116,6 +185,29 @@ export function markdownSummary(report){
     for(const c of report.coldLoad)L.push(`| ${c.condition} | ${c.repeat} | ${c.cache} | ${['ready','surfaceReady','forest','flora','fauna','rocks','settled'].map(k=>fmt(c.milestones?.[k],0)).join(' | ')} | ${c.hitches10s?`${c.hitches10s.over33}/${c.hitches10s.over50}`:'—'} | ${c.longTasks10s??'—'} |`);
     L.push('');
   }
+  if(report.seekTable?.length){
+    L.push('## S4 date seek A→B→A (plan: staleWaterPatches → 0 within 3 s; reserved ≤ budget)','');
+    L.push('| Condition | Repeat | Site | Step | Stale→0 & pending→0 ms | Stale max / at end | Peak reserved MiB / budget | >50 ms frames | Max frame ms |','|---|---|---|---|---:|---|---|---:|---:|');
+    for(const s of report.seekTable)L.push(`| ${s.condition} | ${s.repeat} | ${s.site} | ${s.step} | ${s.clearedMs===null?`not within ${Math.round(s.windowMs/1000)} s`:fmt(s.clearedMs,0)} | ${s.staleMax} / ${s.staleAtEnd??'—'} | ${fmt(s.peakReservedMiB,0)} / ${fmt(s.budgetMiB,0)} ${s.withinBudget?'✓':'✗'} | ${s.over50??'—'} | ${fmt(s.maxIntervalMs,0)} |`);
+    L.push('');
+  }
+  if(report.descentTable?.length){
+    L.push('## S6 descent 15 km → 1.7 m: clearance at first appearance (plan: forest ≤ 3,500 m; life/rocks ≤ 350 m and before 125 m)','');
+    L.push('| Condition | Repeat | Forest any tier m | Trees LOD0/1 m | Flora m | Fauna m | Rocks m | 125 m at ms | Touchdown ms | >50 ms frames | Max frame ms |','|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|');
+    for(const d of report.descentTable)L.push(`| ${d.condition} | ${d.repeat} | ${fmt(d.forestFirstClearanceM,0)} | ${fmt(d.forestTreesFirstClearanceM,0)} | ${fmt(d.floraFirstClearanceM,0)} | ${fmt(d.faunaFirstClearanceM,0)} | ${fmt(d.rocksFirstClearanceM,0)} | ${fmt(d.reached125mAtMs,0)} | ${fmt(d.touchdownAtMs,0)} | ${d.over50??'—'} | ${fmt(d.maxIntervalMs,0)} |`);
+    L.push('');
+  }
   if(report.errors?.length)L.push('## Page errors','',...report.errors.slice(0,20).map(e=>`- ${e}`),'');
   return L.join('\n');
+}
+
+// CLI: re-aggregate a saved report.json and rewrite summary.md next to it.
+if(import.meta.url===`file:///${process.argv[1]?.replace(/\\/g,'/').replace(/^\//,'')}`){
+  const {readFile,writeFile}=await import('node:fs/promises');
+  const {dirname,join}=await import('node:path');
+  const file=process.argv[2];if(!file)throw new Error('usage: node tests/helpers/perf-report.mjs <report.json>');
+  const report=aggregateReport(JSON.parse(await readFile(file,'utf8')));
+  await writeFile(file,JSON.stringify(report,null,2));
+  await writeFile(join(dirname(file),'summary.md'),markdownSummary(report));
+  console.log(`${join(dirname(file),'summary.md')}: ${report.verdict.overall}`);
 }

@@ -77,14 +77,33 @@ proxies; it is **not** RTX 3060 evidence.
 - `tests/desktop-perf.browser.mjs` runs the scenarios S0–S6 from the plan at
   2560×1440, DPR 1, against the production `vite preview` on port 5195. It
   builds first and fails if `dist/build-info.json` is not HEAD or is dirty.
-- It runs 3 repeats × conditions `native` and `cpu-proxy` (CDP
-  `Emulation.setCPUThrottlingRate` 1.7). Each condition × repeat gets a
-  **fresh browser**, and the condition order alternates per repeat.
+- It runs 3 repeats × conditions `native` and `cpu-proxy`. Each condition ×
+  repeat gets a **fresh browser**, and the condition order alternates per
+  repeat.
+  - `native` runs on all cores. Its CPU rows are scaled × 1.7.
+  - `cpu-proxy` uses CDP `Emulation.setCPUThrottlingRate` 1.7. The harness also
+    pins its own chrome processes to affinity `0xFFF` (6C/12T) right after
+    launch, via `ProcessorAffinity`. Children spawned later inherit the mask.
+    The per-process masks are recorded. Set `ATLAS_PERF_CPU_AFFINITY=none` to
+    disable pinning, or pass another mask.
 - `tests/helpers/gpu-lock.mjs` wraps each browser run in the machine-wide GPU
   lock (`mkdir C:/LLM/IWSDK/.gpu-browser-lock` plus `owner.txt`). The harness
   waits for the lock, retrying every 60 s. It launches no browser without the
   lock. It releases the lock in `finally` as soon as the browser closes, and
-  also on exit or SIGINT. It never breaks a lock that belongs to someone else.
+  also on exit or SIGINT. While it holds the lock, a 60 s heartbeat rewrites
+  `owner.txt`.
+
+  **Stale-lock guard** (coordinator rule, 2026-09-29): a lock is taken over
+  only when both of these are true:
+  - its `owner.txt` is older than 20 min (`ATLAS_GPU_LOCK_STALE_MS`);
+  - no `chrome`, `chrome-headless-shell`, `headless_shell` or `chromium`
+    process is running.
+
+  The takeover is logged as `TOOK OVER stale lock …`, with the old owner. It
+  works by renaming the stale directory away (only if `owner.txt` is unchanged)
+  and then re-running the atomic `mkdir`. A live lock is never broken, and
+  release never removes a lock that is no longer ours. `tests/gpu-lock.test.mjs`
+  covers these cases (3 tests, part of `npm test`).
 - `tests/helpers/perf-host.mjs` records the host and GPU state:
   - an nvidia-smi snapshot before and after each run: name, driver, pstate,
     power limit and draw, clocks and max clocks, clock-event reasons, the
@@ -111,23 +130,28 @@ proxies; it is **not** RTX 3060 evidence.
 
   Each row gets PASS or FAIL, and there are overall CPU, GPU and overall
   verdicts. A run is labelled **CONTENDED** if any of these is true:
-  - a foreign GPU process (another browser, python, blender, node, …) appears
-    in the process table;
+  - a foreign GPU process (a headless browser, python, blender, node, …) appears
+    in the nvidia-smi process table;
   - GPU utilisation was above 15 % before the run;
-  - the run waited for the lock;
+  - host CPU load was above 20 % before the run. Other agents' builds and
+    tests show up here, and the GPU lock does not serialise them;
+  - a user browser (Opera, Brave, Edge, Firefox) is open;
   - a run failed;
   - the tree was dirty.
 
+  Waiting for the lock is recorded but is not contention, because the lock is
+  exclusive while held.
+
 | Scenario | What the harness does |
 |---|---|
-| S0 | Cold `goto` of a `walk=&heading=` URL, then a warm reload. Milestones from a 50 ms in-page poller: `api, firstFrame, ready, surfaceReady, grounded, forest, flora, fauna, rocks, settled`. Hitches and long tasks in the first 10 s. |
+| S0 | Cold `goto` of a `walk=&heading=` URL, then a warm reload. Milestones from a 50 ms in-page poller: `api, firstFrame, ready, surfaceReady, grounded, forest (trees or far canopy), flora, fauna, rocks, settled`. Flora and fauna count only while their groups are visible. Hitches and long tasks in the first 10 s. |
 | S1 | Walking eye at 1.7 m: 10 s paused, then 10 s realtime. 100 m pose: 10 s paused. Sampled forest matrix/colour writes. |
 | GPU attribution | Native only, at the 100 m and 1.7 m poses. Keys `none, <each system>, all, none-after`: 600 ms warm-up, then 2.5 s capture of the `gpu/framePassSumMs` p95. Row = baseline (median of `none`, `none-after`) − hidden. Overhead = `all`. |
 | S2 | 90°/s yaw for 8 s at 1.7 m clearance. Checks whether the forest origin version changes. |
 | S3 | 40 m/s at 120 m for 20 s. 1.6 m/s at 1.7 m for 20 s: a walk proxy, because the walker's own speed is fixed at 4 m/s. Records selection-apply changes and max, plus the backlog series. |
 | S4 | Inland hover at 160 m, then the deterministic shore site (`findShoreSite`) at 160 m. A→B→A seek (A = `…032044300000`, −4500 m; B = one 25 m bucket higher, −4475 m, same orbital phase). Records time to `staleWaterPatches=0` and `terrainPending=0`, and peak `reservedCombinedBytes` against the budget. |
 | S5 | 30 m/s for 20 s outwards, a 180° turn, then 20 s back at 1.7 m, sampled at 10 Hz. Records representation counts (forest near and visible, flora, fauna visible, near rigs). |
-| S6 | `setPose` 15 km above the site, then descent (0.3/s exponential, minimum 3 m/s) to 1.7 m through the clouds. Records the clearance at which forest, flora, fauna and rocks first appear, and the frame distribution. |
+| S6 | `setPose` 15 km above the site, then descent (0.3/s exponential, minimum 3 m/s) to 1.7 m through the clouds, within at most 60 s (never shortened). Records the clearance at which forest (any tier, including the far canopy), trees (LOD0/1), flora, fauna and rocks first appear, and the frame distribution. |
 
 ## How to run
 
@@ -138,9 +162,11 @@ takes and releases the GPU lock itself.
 # Plain native + CPU-proxy run (3 repeats, all scenarios):
 node tests/desktop-perf.browser.mjs
 
-# CPU proxy as specified (6C/12T): run the harness with affinity 0xFFF so the
-# browser it spawns inherits the mask (recorded per chrome process):
-cmd /c start "" /affinity FFF /wait node tests/desktop-perf.browser.mjs
+# The harness pins the cpu-proxy browser to 0xFFF itself. Alternatively, pin the
+# WHOLE harness (every condition, including native) the way the plan describes.
+# From PowerShell, /b keeps the output in this console:
+cmd /c start `"`" /b /affinity FFF /wait node tests/desktop-perf.browser.mjs
+# (From cmd.exe: start "" /b /affinity FFF /wait node tests/desktop-perf.browser.mjs)
 
 # Useful variants:
 $env:ATLAS_PERF_REPEATS=1; $env:ATLAS_PERF_SCENARIOS='S1,S2'; node tests/desktop-perf.browser.mjs

@@ -24,7 +24,7 @@ import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import {acquireGpuLock} from './helpers/gpu-lock.mjs';
 import {nvidiaSnapshot,startGpuSampler,processAffinity,browserAffinities,setBrowserAffinity,cpuInfo,cpuLoad} from './helpers/perf-host.mjs';
-import {cpuRows,cpuTotal,gpuRows,markdownSummary,median,CPU_PROXY_RATE} from './helpers/perf-report.mjs';
+import {aggregateReport,markdownSummary,CPU_PROXY_RATE} from './helpers/perf-report.mjs';
 import {encodeVersions,CURRENT_VERSIONS} from '../src/time-nav.ts';
 import {galaxies,refByAddress,system,bodyPosition} from '../src/catalog.ts';
 import {parseAddress} from '../src/address.ts';
@@ -48,6 +48,7 @@ const config={
   cpuProxyAffinity:env.ATLAS_PERF_CPU_AFFINITY==='none'?null:Number(env.ATLAS_PERF_CPU_AFFINITY||0xFFF),
 };
 const W=(ms)=>SHORT?Math.max(1500,Math.round(ms/4)):ms;
+const S4_WINDOW_MS=30000;
 const CHROME_FLAGS=['--use-angle=d3d11','--enable-gpu','--disable-gpu-vsync','--disable-frame-rate-limit','--force-device-scale-factor=1',
   '--disable-renderer-backgrounding','--disable-background-timer-throttling','--disable-backgrounding-occluded-windows','--enable-precise-memory-info'];
 for(const c of config.conditions)if(!['native','cpu-proxy'].includes(c))throw new Error(`Unknown condition ${c}`);
@@ -305,9 +306,12 @@ async function browserRun(condition,repeat){
           let clearedMs=null;const started=Date.now();
           await ev(()=>{window.__atlas.setProfileHistory(36000);window.__atlas.setProfiling(true);window.__atlas.resetProfile();});
           await ev(d=>window.__atlas.seek(d),date.toString());
-          const c=await capture(`S4 ${poseName} ${label}`,12000,{sampleMs:100,onSample:async s=>{
-            const b=s.backlog;if(clearedMs===null&&b&&b.staleWaterPatches===0&&b.terrainPending===0&&s.t>200)clearedMs=Date.now()-started;return false;}});
-          steps.push({label,date:date.toString(),staleClearedMs:clearedMs,peakReservedCombinedBytes:c.peakReservedCombinedBytes,budgetBytes:c.budgetBytes,
+          // Up to 30 s; stops 2 s after the refresh has drained (plan bound: 3 s).
+          const c=await capture(`S4 ${poseName} ${label}`,S4_WINDOW_MS,{sampleMs:100,onSample:async s=>{
+            const b=s.backlog;if(clearedMs===null&&b&&b.staleWaterPatches===0&&b.terrainPending===0&&s.t>200)clearedMs=Date.now()-started;
+            return clearedMs!==null&&Date.now()-started>clearedMs+2000;}});
+          steps.push({label,date:date.toString(),windowMs:S4_WINDOW_MS,staleClearedMs:clearedMs,
+            staleMax:Math.max(0,...c.backlogSeries.map(x=>x.staleWaterPatches??0)),staleAtEnd:c.backlogSeries.at(-1)?.staleWaterPatches??null,peakReservedCombinedBytes:c.peakReservedCombinedBytes,budgetBytes:c.budgetBytes,
             withinBudget:c.budgetBytes!==null&&c.peakReservedCombinedBytes<=c.budgetBytes,capture:c});
         }
         return {pose:poseName,settle:st,steps};
@@ -370,62 +374,9 @@ try{
   }
 }finally{stopPreview();}
 
-// ---- Aggregate --------------------------------------------------------------
+// ---- Aggregate (tests/helpers/perf-report.mjs; re-runnable on a saved report.json) ----
 report.browser={version:report.runs[0]?.browserVersion,flags:CHROME_FLAGS};
-report.gpuBefore=report.runs[0]?.gpuBefore??null;
-const reasons=new Set();
-for(const r of report.runs){
-  for(const snap of [r.gpuBefore,r.gpuAfter])for(const c of snap?.contenders??[])reasons.add(`foreign GPU process ${c}`);
-  if((r.gpuBefore?.maxUtilizationPct??0)>15)reasons.add(`GPU ${r.gpuBefore.maxUtilizationPct}% busy before run ${r.condition} r${r.repeat}`);
-  if((r.cpuLoadBefore?.maxPct??0)>20)reasons.add(`host CPU ${r.cpuLoadBefore.maxPct}% busy before run ${r.condition} r${r.repeat} (other agents' CPU work)`);
-  for(const b of r.gpuBefore?.userBrowsers??[])reasons.add(`user browser open (may hold WebGL/video): ${b.split(/[\\/]/).pop()}`);
-  if(r.failed)reasons.add(`run ${r.condition} r${r.repeat} failed`);
-}
-if(config.allowDirty&&(dirtyTree||buildInfo.dirty))reasons.add('dirty tree (development run)');
-report.contentionReasons=[...reasons];report.contended=reasons.size>0;
-report.lockWaits=report.runs.map(r=>({condition:r.condition,repeat:r.repeat,waitedMs:r.lock?.waitedMs??null}));
-report.errors=[...new Set(report.runs.flatMap(r=>r.errors))];
-
-const captureOf=(run,path)=>path.split('.').reduce((o,k)=>o?.[k],run.scenarios);
-const SCENARIO_CAPTURES=[['S1 ground paused','S1.groundPaused'],['S1 ground realtime','S1.groundRealtime'],['S1 100 m paused','S1.low100Paused'],
-  ['S2 turning 90°/s','S2.capture'],['S3 flight 40 m/s @120 m','S3.flight.capture'],['S3 walk 1.6 m/s','S3.walk.capture'],
-  ['S5 traverse out','S5.out'],['S5 traverse back','S5.back'],['S6 descent','S6.capture']];
-report.budget=[];report.scenarioTable=[];
-const cpuVerdicts=[];
-for(const condition of config.conditions){
-  const runs=report.runs.filter(r=>r.condition===condition&&!r.failed);
-  for(const [title,path] of SCENARIO_CAPTURES){
-    const caps=runs.map(r=>captureOf(r,path)).filter(Boolean);if(!caps.length)continue;
-    const m=key=>median(caps.map(c=>c.stats?.frameIntervalMs?.[key]??null));
-    let signals='';
-    if(path.startsWith('S2'))signals=`origin changed: ${runs.map(r=>r.scenarios.S2?.originVersionChanged).join('/')}`;
-    if(path==='S1.groundPaused')signals=`forest writes (sampled) ${caps.map(c=>c.forestWritesSampled.matrix+c.forestWritesSampled.color).join('/')}`;
-    if(path.startsWith('S3'))signals=`selection applies max ms ${runs.map(r=>captureOf(r,path.replace('.capture','.selectionApply'))?.maxMs?.toFixed?.(1)??'—').join('/')}`;
-    if(path==='S6.capture')signals=runs.map(r=>{const s=r.scenarios.S6?.signals,f=v=>v===null||v===undefined?'never':`${v.toFixed(0)} m`;return s?`first seen: forest ${f(s.forestFirstClearanceM)}, trees ${f(s.forestTreesFirstClearanceM)}, flora ${f(s.floraFirstClearanceM)}, fauna ${f(s.faunaFirstClearanceM)}, rocks ${f(s.rocksFirstClearanceM)}`:'—';}).join('; ');
-    report.scenarioTable.push({condition,scenario:title,p50:m('p50'),p95:m('p95'),p99:m('p99'),max:m('max'),
-      cpuP95:median(caps.map(c=>c.stats?.['cpu/frameWorkMs']?.p95??null)),gpuP95:median(caps.map(c=>c.stats?.['gpu/framePassSumMs']?.p95??null)),
-      over33:median(caps.map(c=>c.hitches?.over33??null)),over50:median(caps.map(c=>c.hitches?.over50??null)),longTasks:median(caps.map(c=>c.longTasks?.count??null)),signals});
-    if(['S1.groundPaused','S1.low100Paused','S2.capture','S3.flight.capture','S3.walk.capture'].includes(path)){
-      const rows=cpuRows(caps,condition),total=cpuTotal(caps,condition);
-      report.budget.push({kind:'cpu',title:`CPU — ${title} — ${condition}${condition==='native'?` (host ×${CPU_PROXY_RATE})`:' (CDP 1.7× throttle, direct)'}`,rows,total});
-      cpuVerdicts.push(...rows.map(r=>r.verdict),total.verdict);
-    }
-  }
-}
-const gpuVerdicts=[];
-const nativeRuns=report.runs.filter(r=>r.condition==='native'&&r.gpuAttribution);
-for(const pose of ['low100','groundEye']){
-  const attributions=nativeRuns.map(r=>r.gpuAttribution.find(a=>a.pose===pose)?.rows).filter(Boolean);
-  if(!attributions.length)continue;
-  const rows=gpuRows(attributions);
-  report.budget.push({kind:'gpu',title:`GPU ratio proxy — hide-one-system at frozen pose ${pose} (native, ×5.4)`,rows});
-  gpuVerdicts.push(...rows.map(r=>r.verdict));
-}
-report.coldLoad=report.runs.flatMap(r=>['cold','warm'].map(cache=>{const m=r.scenarios.S0?.[cache];return m?{condition:r.condition,repeat:r.repeat,cache,milestones:m,hitches10s:m.hitches10s,longTasks10s:m.longTasks10s}:null;}).filter(Boolean));
-const agg=v=>v.includes('FAIL')?'FAIL':v.includes('PASS')?'PASS':'n/a';
-report.verdict={cpu:agg(cpuVerdicts),gpu:agg(gpuVerdicts)};
-report.verdict.overall=`${report.verdict.cpu==='PASS'&&report.verdict.gpu==='PASS'?'PASS':'FAIL'}${report.contended?' (CONTENDED)':''}${config.short?' (SHORT windows)':''}`;
-report.ok=report.runs.length>0&&report.runs.every(r=>!r.failed);
+aggregateReport(report);
 await save();
 await writeFile(`${out}/summary.md`,markdownSummary(report));
 log(`report: ${out}/report.json  summary: ${out}/summary.md  overall: ${report.verdict.overall}`);
