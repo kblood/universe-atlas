@@ -6,6 +6,7 @@ import {forestPresentationGLSL,unpackForestPresentation,FOREST_PRESENTATION_VERS
 import type {TreeCanopyProfile,TreeCullingBounds,TreeTrunkProfile} from './tree-canopy-profile.ts';
 import {deriveFamilyProxyBounds,deriveVariantFamilyProxyBounds} from './tree-canopy-bounds.ts';
 import {forestFarAtlasCommonGLSL,forestFarAtlasGLSL,FOREST_FAR_ATLAS_VERSION} from './forest-far-atlas.ts';
+import {forestFoliageLobeGLSL,installForestFoliageLobe,FOREST_FOLIAGE_LOBE_VERSION} from './forest-foliage-lobe.ts';
 import {forestVariantEnvelope,forestVariantGLSL,forestVariantUniformData,FOREST_VARIANT_COUNT,FOREST_VARIANT_VERSION,type ForestStructuralVariant} from './tree-structural-variant.ts';
 import {packTreeAllometryParameter,treeAllometryAtlasStretch,treeAllometryBox,treeAllometryGLSL,unpackTreeAllometryParameter,unpackTreeAllometryRatios,
   TREE_ALLOMETRY_IDENTITY_CODE,TREE_ALLOMETRY_VERSION,TREE_FAMILY_ALLOMETRY_ENVELOPE,TREE_LEGACY_ALLOMETRY_ENVELOPE,type TreeAllometryReference} from './tree-allometry.ts';
@@ -268,7 +269,7 @@ export class ForestImpostors {
         varying vec3 treeRayPoint;flat varying vec4 treeRootHeight,treeQ,treeData;flat varying float treeNearLevel,treeEdgeLevel;
         uniform sampler2DArray treeAtlasColour0,treeAtlasColour1,treeAtlasData0,treeAtlasData1;uniform vec4 treeAtlasSphere[2];uniform vec2 treeAtlasReady;
         flat varying vec3 treeAtlasViews,treeAtlasWeights;flat varying float treeAtlasLod;
-        ${quaternionGLSL}${forestCoverageGLSL}${forestPresentationGLSL}${familyUniformGLSL}${forestVariantGLSL}${intersectGLSL}${facetedGLSL}${forestFarAtlasCommonGLSL}${forestFarAtlasGLSL}${treeAllometryGLSL}\n`+shader.fragmentShader;
+        ${quaternionGLSL}${forestCoverageGLSL}${forestPresentationGLSL}${familyUniformGLSL}${forestVariantGLSL}${intersectGLSL}${facetedGLSL}${forestFarAtlasCommonGLSL}${forestFarAtlasGLSL}${treeAllometryGLSL}${forestFoliageLobeGLSL}\n`+installForestFoliageLobe(shader.fragmentShader);
       if(renderer.capabilities.logarithmicDepthBuffer)shader.fragmentShader='#ifndef USE_LOGARITHMIC_DEPTH_BUFFER\n#error Atlas forest requires the installed logarithmic depth define\n#endif\n'+shader.fragmentShader;
       const lobes=LEGACY_TREE_LOBES.map(([x,y,z,s])=>{
         const args=`ro,rd,treeAllometryPoint(${vector([x,y,z])},${scalar(LEGACY_TREE_TRUNK.baseRadius)},allometry),${vector([s,s*.85,s])}*vec3(allometry.x,1.0,allometry.x)*treeRadiusScale,${vector([.16+y*.06,.29+y*.04,.08])},best,treeHitNormal,treeHitColour`;
@@ -321,6 +322,8 @@ export class ForestImpostors {
           if(atlasColour.a>1e-4){
             best=atlasDistance/atlasColour.a;
             float leafFraction=clamp(atlasLeaf/atlasColour.a,0.0,1.0);
+            // Leaf texels light as a lobe of card normals, like the detailed crowns.
+            treeFoliageLobe=leafFraction;
             // Scaled cards over a crown whose side area scales by h^2 * stretch.
             treeCoverage=treeAtlasLeafCoverage(atlasColour.a,leafFraction,treeAllometryLeafDepthScale(treeRootHeight.w,allometry,treeFamilyAllometry[familyIndex]));
             treeHitColour=atlasColour.rgb/atlasColour.a*mix(brightness.x,brightness.y,leafFraction);
@@ -414,7 +417,7 @@ export class ForestImpostors {
       `);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','if(treeMaskOnly>.5)outgoingLight=vec3(1.0);\n#include <opaque_fragment>');
     };
-    material.customProgramCacheKey=()=>`${LEGACY_TREE_SHAPE_VERSION}/analytic-impostor-9/${FOREST_PRESENTATION_VERSION}/${FOREST_VARIANT_VERSION}/${FOREST_FAR_ATLAS_VERSION}/${TREE_ALLOMETRY_VERSION}`;
+    material.customProgramCacheKey=()=>`${LEGACY_TREE_SHAPE_VERSION}/analytic-impostor-10/${FOREST_FOLIAGE_LOBE_VERSION}/${FOREST_PRESENTATION_VERSION}/${FOREST_VARIANT_VERSION}/${FOREST_FAR_ATLAS_VERSION}/${TREE_ALLOMETRY_VERSION}`;
     this.mesh=new THREE.Mesh(geometry,material);this.mesh.name='Canonical forest analytic impostors';this.mesh.frustumCulled=false;
     this.mesh.userData.localAerialSurfaceHit={local:'treeHit',view:'treeHitView.xyz'};
     const inverse=new THREE.Matrix4(),localCamera=new THREE.Matrix4(),viewport=new THREE.Vector4();

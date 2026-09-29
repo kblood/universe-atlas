@@ -147,6 +147,17 @@ export function bandMetrics(image, hidden, dist, bands = HANDOFF_BANDS_M) {
     treeLuma: a.tree ? +(a.luma / a.tree).toFixed(4) : null, treeRgb: a.tree ? [a.r, a.g, a.b].map(x => +(x / a.tree).toFixed(1)) : null,
     groundLuma: a.pixels ? +(a.groundLuma / a.pixels).toFixed(4) : null }));
 }
+function pairedBands(a, b, hidden, dist, bands = HANDOFF_BANDS_M) {
+  const differs = (img, o) => Math.max(Math.abs(img[o] - hidden[o]), Math.abs(img[o + 1] - hidden[o + 1]), Math.abs(img[o + 2] - hidden[o + 2])) > THRESHOLD;
+  const acc = bands.map(() => ({ pixels: 0, la: 0, lb: 0 }));
+  for (let p = 0; p < W * H; p++) {
+    const d = dist[p]; if (!Number.isFinite(d)) continue;
+    const k = bands.findIndex(([lo, hi]) => d >= lo && d < hi), o = p * 4; if (k < 0 || !differs(a, o) || !differs(b, o)) continue;
+    acc[k].pixels++; acc[k].la += luma(a[o], a[o + 1], a[o + 2]); acc[k].lb += luma(b[o], b[o + 1], b[o + 2]);
+  }
+  return acc.map((x, k) => ({ band: bands[k], pixels: x.pixels, lumaA: x.pixels ? +(x.la / x.pixels).toFixed(4) : null, lumaB: x.pixels ? +(x.lb / x.pixels).toFixed(4) : null,
+    ratio: x.pixels && x.lb ? +(x.la / x.lb).toFixed(3) : null }));
+}
 async function capture(file) {
   await page.waitForTimeout(700);
   const png = await page.screenshot({ path: `${out}/${file}` });
@@ -157,6 +168,7 @@ async function forestDebug(options) { return page.evaluate(o => window.__atlas.f
 async function runView(view) {
   await openPose();
   const ground = await state(), walkerGround = V(pose.walkPosition);
+  let aimBodyLocal = null;
   if (view.clearanceM !== null) {
     await page.evaluate(h => window.__atlas.launchTo(h), view.clearanceM);
     await waitFor(h => !window.__atlas.travel.walking && !window.__atlas.travel.landing && Math.abs((window.__atlas.travel.surface?.terrainClearance ?? 0) - h) < Math.max(3, h * .05), view.clearanceM, 120000);
@@ -164,32 +176,45 @@ async function runView(view) {
     fwd.sub(up.clone().multiplyScalar(fwd.dot(up))).normalize();
     const aim = walkerGround.clone().addScaledVector(fwd, view.aimM).normalize().multiplyScalar(walkerGround.length());
     await aimAt(aim.toArray()); await settled(1500); await aimAt(aim.toArray(), 2); await settled(800);
+    aimBodyLocal = aim.toArray();
   }
   const s = await state();
-  const record = report.views[view.name] = { clearanceM: s.clearanceM, cameraBodyLocal: V(s.position).sub(V(s.center)).toArray(), heading: s.heading, groundState: ground.forest, variants: {} };
+  const record = report.views[view.name] = { aimBodyLocal, clearanceM: s.clearanceM, cameraBodyLocal: V(s.position).sub(V(s.center)).toArray(), heading: s.heading, groundState: ground.forest, variants: {} };
   log(`${view.name}: clearance ${s.clearanceM?.toFixed(1)} m`);
   const dist = await distanceMap(s);
   await forestDebug({ hideColour: true });
   const hidden = await capture(`${view.name}-hidden.png`);
   await forestDebug({ hideColour: false });
+  const images = {};
   for (const handoff of VARIANTS[view.name]) {
     await forestDebug({ middleHandoffM: handoff }); await page.waitForTimeout(400);
     const name = handoff === null ? 'default' : `h${handoff}`;
     const image = await capture(`${view.name}-${name}.png`);
+    images[name] = image.data ?? image;
     const st = await state();
     record.variants[name] = { handoffM: handoff, forest: st.forest, bands: bandMetrics(image.data ?? image, hidden.data ?? hidden, dist) };
     log(`${view.name} ${name}: ` + record.variants[name].bands.filter(b => b.pixels > 2000).map(b => `${b.band[0]}-${b.band[1]} cov ${b.coverage} L ${b.treeLuma}`).join(' | '));
   }
   await forestDebug({ middleHandoffM: null });
-  if (view.name === 'alt160') {
-    // Turning: 30 degrees away and back must reproduce the default image (no retained-band pop).
-    await drag(Math.PI / 6 / .003, 0); await page.waitForTimeout(800); await capture(`${view.name}-turned-30.png`);
-    await drag(-Math.PI / 6 / .003, 0); await page.waitForTimeout(800);
-    const back = await capture(`${view.name}-turned-back.png`), def = await readFile(`${out}/${view.name}-default.png`).then(decodePngRgba);
-    let changed = 0; const a = back.data ?? back, b = def.data ?? def;
-    for (let p = 0; p < W * H; p++) if (Math.max(Math.abs(a[p * 4] - b[p * 4]), Math.abs(a[p * 4 + 1] - b[p * 4 + 1]), Math.abs(a[p * 4 + 2] - b[p * 4 + 2])) > THRESHOLD) changed++;
-    record.turnBackChangedFraction = +(changed / (W * H)).toFixed(5);
-    log(`${view.name}: turned 30 deg and back, ${changed} px differ`);
+  if (images.default && images.h150) {
+    // Same pixels, same trees: default draws LOD1 inside 550 m, h150 draws the far atlas.
+    record.pairedDefaultVsH150 = pairedBands(images.default, images.h150, hidden.data ?? hidden, dist);
+    log(`${view.name} paired LOD1/far luma: ` + record.pairedDefaultVsH150.filter(b => b.pixels > 2000).map(b => `${b.band[0]}-${b.band[1]} ${b.lumaA}/${b.lumaB} x${b.ratio}`).join(' | '));
+  }
+  if (view.aimM !== null) {
+    // Turning: 30 degrees away and back (re-aimed at the same ground point) must
+    // reproduce the default per-band presentation; the retained +50 m band may
+    // not leave a different LOD1/far split behind.
+    const aim = record.aimBodyLocal;
+    await drag(Math.PI / 6 / .003, 0); await settled(600); await capture(`${view.name}-turned-30.png`);
+    await aimAt(aim, 4); await settled(600);
+    const back = await capture(`${view.name}-turned-back.png`), s2 = await state();
+    const bands = bandMetrics(back.data ?? back, hidden.data ?? hidden, await distanceMap(s2)), def = record.variants.default.bands;
+    record.turnBack = { bands, maxAbsCoverageDelta: 0, maxAbsLumaDelta: 0 };
+    bands.forEach((b, i) => { if (b.pixels < 2000 || def[i].pixels < 2000 || b.treeLuma === null || def[i].treeLuma === null) return;
+      record.turnBack.maxAbsCoverageDelta = Math.max(record.turnBack.maxAbsCoverageDelta, +Math.abs(b.coverage - def[i].coverage).toFixed(4));
+      record.turnBack.maxAbsLumaDelta = Math.max(record.turnBack.maxAbsLumaDelta, +Math.abs(b.treeLuma - def[i].treeLuma).toFixed(4)); });
+    log(`${view.name}: turned 30 deg and back, max band |dCoverage| ${record.turnBack.maxAbsCoverageDelta} |dLuma| ${record.turnBack.maxAbsLumaDelta}`);
   }
   await save();
 }
