@@ -5022,7 +5022,10 @@ Object.defineProperty(window, "__atlas", {
     },
     get hiddenSystems(){return [...hiddenProfilingSystems];},
     /** Exact free-flight pose (perf harness): body-relative metres + camera quaternion. */
-    setPose(position:V3,heading:[number,number,number,number]){
+    /** Frozen perf pose: body-relative metres + camera quaternion. With
+     * `clearanceM` the position is snapped radially to the app's own terrain
+     * (so harness poses do not depend on a Node-side terrain replica). */
+    setPose(position:V3,heading:[number,number,number,number],clearanceM?:number){
       if(!state.body||!state.sys||state.level!=='body')throw new Error('setPose needs a focused body');
       if(position?.length!==3||!position.every(Number.isFinite)||heading?.length!==4||!heading.every(Number.isFinite))throw new Error('setPose(position[3], heading[4])');
       if(renderer.xr.isPresenting)throw new Error('setPose is desktop-only');
@@ -5031,6 +5034,8 @@ Object.defineProperty(window, "__atlas", {
       autopilot=null;orbitAssist=null;surfaceJourney=null;planetLook=null;approachAltitude=null;tween=null;flightCruise=false;
       startCruiseAfterLook=false;landAfterCruise=false;flightKeys.clear();
       const center=vec(bodyPosition(state.body,state.sys,epoch)),relative=vec(position);
+      if(typeof clearanceM==='number'&&Number.isFinite(clearanceM))
+        relative.setLength(state.body.radiusM+surfaceClearance(state.body,relative.toArray() as V3,snappedWaterLevelFor(state.body)).terrainElevation+clearanceM);
       rebaseSystem(relative.clone().add(center));camera.position.set(0,0,0);
       camera.quaternion.fromArray(heading).normalize();camera.up.copy(relative.clone().normalize());
       placePerfCamera(center,relative);

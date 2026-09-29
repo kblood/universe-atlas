@@ -221,7 +221,7 @@ async function browserRun(condition,repeat){
         peakReservedCombinedBytes:peakReserved,budgetBytes:series.find(s=>s.backlog)?.backlog.budgetBytes??null,
         originVersions:[...new Set(series.map(s=>s.backlog?.forestOriginVersion))]};
     };
-    const setPose=async pose=>ev(p=>window.__atlas.setPose(p.position,p.heading),pose);
+    const setPose=async pose=>ev(p=>window.__atlas.setPose(p.position,p.heading,p.clearanceM),pose);
 
     // S0 cold + warm load, landing at the ground-eye pose.
     const t0=Date.now();
