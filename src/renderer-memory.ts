@@ -19,6 +19,26 @@ export const TERRAIN_BUDGET_BYTES=TOTAL_BUDGET_BYTES-WATER_ENVIRONMENT_RESERVE_B
 // n=32: 108336 bytes of geometry, doubled for CPU/GPU, plus a 130x130 RGBA
 // map with the existing conservative 7/3 mip allocation.
 export const PENDING_TILE_BYTES=108336*2+Math.ceil(67600*7/3);
+/** Terrain byte-pressure policy (docs/terrain-budget-2026-09-29.md).
+ * - New tiles (a key with no resident copy) are admitted only below
+ *   `budget - refreshReserveBytes(inFlight)`. The reserve is `inFlight`
+ *   worst-case pending tiles, so a same-key rebuild (a resident tile baked at a
+ *   stale sea-level bucket) can always reserve its replacement beside the
+ *   resident copy while `install` releases that copy.
+ * - Ordinary (non-contact) splits that need new tiles stop at
+ *   `TERRAIN_SPLIT_FRACTION` of the budget. Pressure starts only above that
+ *   same fraction (a shrunk budget, or mandatory contact support) and ends
+ *   below `TERRAIN_PRESSURE_EXIT_FRACTION`. Refinement therefore cannot re-enter
+ *   pressure on its own, and a stationary view does not oscillate. */
+export const TERRAIN_SPLIT_FRACTION=.94;
+export const TERRAIN_PRESSURE_ENTER_FRACTION=.94;
+export const TERRAIN_PRESSURE_EXIT_FRACTION=.90;
+export const refreshReserveBytes=(inFlight:number)=>Math.max(1,inFlight)*PENDING_TILE_BYTES;
+export function terrainAdmission(p:{budgetBytes:number;residentBytes:number;pendingTiles:number;inFlight:number}){
+  const reserve=refreshReserveBytes(p.inFlight),next=p.residentBytes+(p.pendingTiles+1)*PENDING_TILE_BYTES;
+  return {refreshReserveBytes:reserve,admissionCeilingBytes:p.budgetBytes-reserve,splitCeilingBytes:p.budgetBytes*TERRAIN_SPLIT_FRACTION,
+    newTileFits:next<=p.budgetBytes-reserve,refreshFits:next<=p.budgetBytes};
+}
 export const RENDERER_MEMORY_BUDGET=Object.freeze({coreBytes:TOTAL_BUDGET_BYTES,terrainBytes:TERRAIN_BUDGET_BYTES,waterEnvironmentReserveBytes:WATER_ENVIRONMENT_RESERVE_BYTES,
   lifeReserveBytes:LIFE_RESERVE_BYTES,rockReserveBytes:ROCK_RESERVE_BYTES,groundResourceBytes:GROUND_RESOURCE_BYTES,pendingTileBytes:PENDING_TILE_BYTES});
 /** Combined renderer memory.
