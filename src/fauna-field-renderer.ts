@@ -15,6 +15,17 @@ export const FAUNA_FIELD_EYE_DETAIL_M=60;
 /** Forward-looking low flight needs more than the old 280 m proxy range. */
 export const FAUNA_FIELD_VISIBLE_M=600;
 const UP=new THREE.Vector3(0,1,0);
+/** Parsed genome colours. `Color.set(string)` runs a regex parse and an
+ * sRGB-to-linear conversion; it was a third of the fauna frame (512 animals
+ * × ~30 parts). The cached Color holds exactly what `set` produced. Genome
+ * colours are a small, stable palette; the bound only guards pathological
+ * content. */
+const colorCache=new Map<string,THREE.Color>();
+function faunaColor(style:string):THREE.Color {
+  let color=colorCache.get(style);
+  if(!color){if(colorCache.size>=4096)colorCache.clear();color=new THREE.Color().set(style);colorCache.set(style,color);}
+  return color;
+}
 
 /** Instanced fallback for specimens outside the near rig pool. Anatomy is
  * drawn as four primitive batches using the same genome and base coat lighting
@@ -27,13 +38,8 @@ export class FaunaFieldRenderer {
   private meshes:THREE.InstancedMesh[];
   private counts=[0,0,0,0];
   private animalCount=0;
-  private local=new THREE.Matrix4();
-  private combined=new THREE.Matrix4();
-  private position=new THREE.Vector3();
-  private scale=new THREE.Vector3();
   private quaternion=new THREE.Quaternion();
   private direction=new THREE.Vector3();
-  private color=new THREE.Color();
   private a=new THREE.Vector3();
   private b=new THREE.Vector3();
   constructor(){
@@ -48,12 +54,35 @@ export class FaunaFieldRenderer {
     this.group.name='Stable dated fauna';
   }
   beginFrame(origin:THREE.Vector3){this.group.position.copy(origin);this.counts.fill(0);this.animalCount=0;}
+  /** Writes `parent × compose((x,y,z), rotation ?? identity, (sx,sy,sz))`
+   * straight into instance `counts[kind]`. The arithmetic is exactly
+   * three.js `Matrix4.compose` followed by `multiplyMatrices`, term for
+   * term and in the same order (zero terms included), so every Float32 lane
+   * is bit-identical to the former `setMatrixAt(multiplyMatrices(...))`; it
+   * only skips two Matrix4 round trips per part. */
   private part(kind:number,parent:THREE.Matrix4,x:number,y:number,z:number,sx:number,sy:number,sz:number,color:string,rotation?:THREE.Quaternion){
-    this.position.set(x,y,z);this.scale.set(sx,sy,sz);
-    this.local.compose(this.position,rotation??this.quaternion.identity(),this.scale);
-    this.combined.multiplyMatrices(parent,this.local);
-    const mesh=this.meshes[kind],index=this.counts[kind]++;
-    mesh.setMatrixAt(index,this.combined);mesh.setColorAt(index,this.color.set(color));
+    let b11:number,b21:number,b31:number,b12:number,b22:number,b32:number,b13:number,b23:number,b33:number;
+    if(rotation){
+      const qx=rotation.x,qy=rotation.y,qz=rotation.z,qw=rotation.w;
+      const x2=qx+qx,y2=qy+qy,z2=qz+qz,xx=qx*x2,xy=qx*y2,xz=qx*z2,yy=qy*y2,yz=qy*z2,zz=qz*z2,wx=qw*x2,wy=qw*y2,wz=qw*z2;
+      b11=(1-(yy+zz))*sx;b21=(xy+wz)*sx;b31=(xz-wy)*sx;
+      b12=(xy-wz)*sy;b22=(1-(xx+zz))*sy;b32=(yz+wx)*sy;
+      b13=(xz+wy)*sz;b23=(yz-wx)*sz;b33=(1-(xx+yy))*sz;
+    }else{
+      // compose() with the identity quaternion (0,0,0,1): every product term is exactly 0 or 1.
+      b11=(1-(0+0))*sx;b21=(0+0)*sx;b31=(0-0)*sx;
+      b12=(0-0)*sy;b22=(1-(0+0))*sy;b32=(0+0)*sy;
+      b13=(0+0)*sz;b23=(0-0)*sz;b33=(1-(0+0))*sz;
+    }
+    const ae=parent.elements;
+    const a11=ae[0],a12=ae[4],a13=ae[8],a14=ae[12],a21=ae[1],a22=ae[5],a23=ae[9],a24=ae[13];
+    const a31=ae[2],a32=ae[6],a33=ae[10],a34=ae[14],a41=ae[3],a42=ae[7],a43=ae[11],a44=ae[15];
+    const mesh=this.meshes[kind],index=this.counts[kind]++,te=mesh.instanceMatrix.array as Float32Array,o=index*16;
+    te[o]=a11*b11+a12*b21+a13*b31+a14*0;te[o+4]=a11*b12+a12*b22+a13*b32+a14*0;te[o+8]=a11*b13+a12*b23+a13*b33+a14*0;te[o+12]=a11*x+a12*y+a13*z+a14*1;
+    te[o+1]=a21*b11+a22*b21+a23*b31+a24*0;te[o+5]=a21*b12+a22*b22+a23*b32+a24*0;te[o+9]=a21*b13+a22*b23+a23*b33+a24*0;te[o+13]=a21*x+a22*y+a23*z+a24*1;
+    te[o+2]=a31*b11+a32*b21+a33*b31+a34*0;te[o+6]=a31*b12+a32*b22+a33*b32+a34*0;te[o+10]=a31*b13+a32*b23+a33*b33+a34*0;te[o+14]=a31*x+a32*y+a33*z+a34*1;
+    te[o+3]=a41*b11+a42*b21+a43*b31+a44*0;te[o+7]=a41*b12+a42*b22+a43*b32+a44*0;te[o+11]=a41*b13+a42*b23+a43*b33+a44*0;te[o+15]=a41*x+a42*y+a43*z+a44*1;
+    mesh.setColorAt(index,faunaColor(color));
   }
   private segment(parent:THREE.Matrix4,a:THREE.Vector3,b:THREE.Vector3,radius:number,color:string){
     this.direction.subVectors(b,a);const length=this.direction.length();
