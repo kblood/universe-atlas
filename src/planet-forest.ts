@@ -39,7 +39,7 @@ type Resident={cell:PopulationCell;height:number;present:boolean;water:number;pa
   px:number;py:number;pz:number;bx:number;by:number;bz:number;br:number;
   /** Expected far presentation (code, drawn height, ratio code). */
   expCode:number;expHeightM:number;expRatio:number;
-  slotVersion:number;slot:number;patchVersion:number;current:boolean;handoffVersion:number;handoff:boolean;
+  slotVersion:number;slot:number;slotInstall:number;patchVersion:number;current:boolean;handoffVersion:number;handoff:boolean;
   /** Demand of the current loop pass (`wantPass`): batch and quantized coverage. */
   wantPass:number;wantBatch:number;wantCoverage:number;poolPass:number;selectionPass:number;
   /** Last slot written per legacy batch / detailed LOD; hints verified by identity. */
@@ -62,7 +62,7 @@ class ResidentCache extends Map<string,Resident>{
 const planar=(frustum:THREE.Frustum)=>Array.isArray(frustum.planes)&&frustum.planes.length===6;
 const residentOf=(cell:PopulationCell,height:number,present:boolean,water:number):Resident=>({cell,height,present,water,patchKey:undefined,stale:false,
   epoch:-1,invariantHeight:NaN,dims:null,detail:undefined,px:0,py:0,pz:0,bx:0,by:0,bz:0,br:0,expCode:0,expHeightM:0,expRatio:0,
-  slotVersion:-1,slot:-1,patchVersion:-1,current:false,handoffVersion:-1,handoff:false,
+  slotVersion:-1,slot:-1,slotInstall:-1,patchVersion:-1,current:false,handoffVersion:-1,handoff:false,
   wantPass:-1,wantBatch:-1,wantCoverage:0,poolPass:-1,selectionPass:-1,legacySlots:undefined,detailSlots:undefined});
 type TreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
 type AssetSlot={resident:Resident;originVersion:number;catalogueVersion:number;dimensions:ForestTreeDimensions};
@@ -793,7 +793,7 @@ export class PlanetForest {
     const {middleEnterM,middleLeaveM,farOwnedM}=this.handoff;
     // Hosts without the slot API (test doubles) take the id-keyed calls, uncached.
     const canopy=this.fullCanopy,slotted=this.slottedCanopy=!!canopy&&typeof canopy.slotOf==='function';
-    const slotRevision=slotted?canopy!.slotRevision():-1,patchRevision=slotted?canopy!.currentPatchRevision():-1;
+    const slotRevision=slotted?canopy!.slotRevision():-1,installRevision=slotted?canopy!.installRevision():-1,patchRevision=slotted?canopy!.currentPatchRevision():-1;
     const views=frusta.length,planeCount=(views+(shadowFrustum?1:0))*24;
     // Six-plane frusta are tested inline on cached bounds; other cullers
     // (test doubles) keep their own intersectsSphere.
@@ -819,7 +819,12 @@ export class PlanetForest {
       }
       resident.patchKey??=forestCellPatchKey(cell.id);
       if(slotted){
-        if(resident.slotVersion!==slotRevision){resident.slot=canopy.slotOf(cell.id);resident.slotVersion=slotRevision;}
+        if(resident.slotVersion!==slotRevision){
+          // Removals cannot create a slot for a miss; a held slot is verified by identity.
+          const slot=resident.slot;
+          if(slot>=0?!canopy.slotHolds(slot,cell.id):resident.slotInstall!==installRevision)resident.slot=canopy.slotOf(cell.id);
+          resident.slotVersion=slotRevision;resident.slotInstall=installRevision;
+        }
         if(resident.patchVersion!==patchRevision){resident.current=canopy.currentPatch(resident.patchKey);resident.patchVersion=patchRevision;}
       }
       if(resident.epoch!==this.presentationEpoch||resident.invariantHeight!==resident.height)this.invariants(resident);

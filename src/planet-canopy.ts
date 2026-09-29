@@ -65,6 +65,10 @@ export class PlanetCanopy {
   private seen=new Set<number>();private previous=new Set<number>();
   // Revision of the id -> slot map (install/remove), for owners caching slots.
   private slotVersion=0;
+  // Inverse of `slots` (slot -> id) and a revision advanced only by installs:
+  // a cached slot still holding its id, or a cached miss with no install
+  // since, is still the answer of slotOf.
+  private slotIds:(string|undefined)[];private installVersion=0;
   private position=new THREE.Vector3();private direction=new THREE.Vector3();
   private rotation=new THREE.Quaternion();private yaw=new THREE.Quaternion();
   private workerRestarts=0;private failures=0;private installedThisFrame=0;private installMs=0;private uploadBytes=0;
@@ -98,7 +102,7 @@ export class PlanetCanopy {
   constructor(body:Body,capacity=229376){
     this.body=body;this.allocator=new ForestSlotAllocator(capacity);this.renderer=new ForestImpostors(capacity);
     this.bodyPositions=new Float64Array(capacity*3);this.heights=new Float64Array(capacity);this.canonicalHeights=new Float32Array(capacity);
-    this.presentationVersions=new Uint32Array(capacity);
+    this.presentationVersions=new Uint32Array(capacity);this.slotIds=new Array<string|undefined>(capacity).fill(undefined);
     this.renderer.mesh.scale.setScalar(1/body.radiusM);this.group.add(this.renderer.mesh);this.group.name='Complete canonical canopy';this.group.visible=false;
   }
   /** Persistent CPU-only host arrays and current rebase scratch. Map/set/
@@ -231,7 +235,7 @@ export class PlanetCanopy {
   private remove(key:string){
     const patch=this.installed.get(key);if(!patch)return 0;
     for(let i=0;i<patch.ids.length;i++){
-      const index=patch.range.start+i;this.slots.delete(patch.ids[i]);
+      const index=patch.range.start+i;this.slots.delete(patch.ids[i]);this.slotIds[index]=undefined;
       this.renderer.retire(index);
       this.presentationVersions[index]=0;
       if(this.rebase)this.rebase.positions.fill(0,index*4,index*4+4);
@@ -249,10 +253,10 @@ export class PlanetCanopy {
       this.remove(key);range=this.allocator.allocate(patch.present);
     }
     if(!range){const after=performance.now()+1000;this.capacityMisses++;this.retries.set(key,{attempts:1,after});this.retryWakeAt=Math.min(this.retryWakeAt,after);return;}
-    this.remove(key);const ids:string[]=[];this.slotVersion++;
+    this.remove(key);const ids:string[]=[];this.slotVersion++;this.installVersion++;
     for(let i=0;i<patch.present;i++){
       const r=patch.records.subarray(i*FOREST_CENSUS_STRIDE,(i+1)*FOREST_CENSUS_STRIDE),index=range.start+i,offset=r[0],a=patch.address;
-      const id=`${a.face}/${a.n}/${a.x*8+offset%8}/${a.y*8+Math.floor(offset/8)}`;ids.push(id);this.slots.set(id,index);
+      const id=`${a.face}/${a.n}/${a.x*8+offset%8}/${a.y*8+Math.floor(offset/8)}`;ids.push(id);this.slots.set(id,index);this.slotIds[index]=id;
       this.direction.set(r[1],r[2],r[3]);this.position.copy(this.direction).multiplyScalar(this.body.radiusM+r[7]);
       this.position.toArray(this.bodyPositions,index*3);this.heights[index]=r[7];this.canonicalHeights[index]=r[5];
       if(this.rebase)this.rebase.positions.set([this.position.x-this.rebase.origin.x,this.position.y-this.rebase.origin.y,this.position.z-this.rebase.origin.z,r[5]],index*4);
@@ -361,6 +365,9 @@ export class PlanetCanopy {
   /** Slot of a canonical id, or -1; valid while slotRevision() is unchanged. */
   slotOf(id:string){return this.slots.get(id)??-1;}
   slotRevision(){return this.slotVersion;}
+  installRevision(){return this.installVersion;}
+  /** Whether `slot` currently holds `id` (then slotOf(id)===slot). */
+  slotHolds(slot:number,id:string){return this.slotIds[slot]===id;}
   /** First element of nearFrameState(): changes with any answer of currentPatch,
    * canHandoff or observeClose (and with visibility and water). */
   nearStateRevision(){return this.nearStateVersion;}
@@ -453,5 +460,5 @@ export class PlanetCanopy {
     attributeBytes:this.renderer.positions.array.byteLength+this.renderer.rotations.array.byteLength+this.renderer.parameters.array.byteLength+this.renderer.ownership.array.byteLength,
     retainedCoordinateBytes:this.bodyPositions.byteLength+this.heights.byteLength,canonicalHeightBytes:this.canonicalHeights.byteLength,
     rebaseBufferBytes:this.rebase?.positions.byteLength??0};}
-  dispose(){this.disposed=true;this.invalidateCurrentPatchAnswers();this.group.visible=false;this.worker?.terminate();this.worker=null;this.renderer.dispose();this.installed.clear();this.slots.clear();this.pending=[];this.group.removeFromParent();}
+  dispose(){this.disposed=true;this.invalidateCurrentPatchAnswers();this.group.visible=false;this.worker?.terminate();this.worker=null;this.renderer.dispose();this.installed.clear();this.slots.clear();this.slotIds.fill(undefined);this.slotVersion++;this.installVersion++;this.pending=[];this.group.removeFromParent();}
 }
