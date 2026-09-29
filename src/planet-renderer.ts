@@ -1333,6 +1333,11 @@ export class PlanetRenderer {
   }
   private hideLife(): void {
     this.floraRecipeBuilds=0;
+    // Hidden life draws nothing: its per-frame counters must say so too. The
+    // flora counters used to keep the last drawn frame's values, so a 15 km
+    // observer reported ~1,093 submitted flora instances (desktop perf
+    // baseline, S6) although every flora mesh count was already 0.
+    this.floraPresentCount=0;this.floraSurvivorCount=0;this.floraSubmittedCount=0;this.faunaCameraVisibleCount=0;
     this.faunaVisibleCount=0;this.faunaCulledCount=0;this.faunaBudgetDrops=0;this.faunaDrawn=[];
     this.floraRenderer.beginFrame();this.floraRenderer.endFrame();
     this.faunaRenderer.beginFrame(this.lifeOrigin);this.faunaRenderer.endFrame();this.faunaNear.hide();
