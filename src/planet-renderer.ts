@@ -837,7 +837,7 @@ export class PlanetRenderer {
       waterGeometry.setAttribute('uv',geometry.getAttribute('uv'));
       waterGeometry.setIndex(geometry.index);waterGeometry.setDrawRange(0,PATCH_SEGMENTS*PATCH_SEGMENTS*6);
       const normalAnchorDir=new THREE.Vector3(...d.anchor).normalize().toArray() as V3;
-      const waterMaterial=createOceanWaterMaterial({radiusM:this.body.radiusM,normalAnchorDir,phaseOriginM:detailOrigin(d.anchor,this.body.radiusM),patchMorph:morph,patchEdges:edge,patchTexels:{value:d.width-2},waveSeed:hashSeedString(this.body.seed+'/'+this.body.id)});
+      const waterMaterial=createOceanWaterMaterial({radiusM:this.body.radiusM,normalAnchorDir,phaseOriginM:detailOrigin(d.anchor,this.body.radiusM),waveOriginM:d.anchor.map(v=>v*this.body.radiusM) as V3,patchMorph:morph,patchEdges:edge,patchTexels:{value:d.width-2},waveSeed:hashSeedString(this.body.seed+'/'+this.body.id)});
       ocean=new THREE.Mesh(waterGeometry,waterMaterial);ocean.position.copy(mesh.position);ocean.visible=false;ocean.frustumCulled=false;
       this.group.add(ocean);
     }

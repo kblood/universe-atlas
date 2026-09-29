@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type {V3} from './catalog.ts';
 import {acquireWaterNormalAtlas,releaseWaterNormalAtlas,WATER_NORMAL_ATLAS_METRES_PER_REPEAT} from './water-normal-atlas.ts';
-import {generateOceanWaveField,hashSeedString,maxOceanWaveAmplitudeM,oceanGerstnerVertexGLSL,oceanWaveUniformArrays,OCEAN_GERSTNER_WAVE_COUNT,type GerstnerWave,type OceanPhaseS} from './ocean-gerstner.ts';
+import {generateOceanWaveField,hashSeedString,maxOceanWaveAmplitudeM,oceanGerstnerVertexGLSL,oceanWavePhaseOffsets,oceanWaveUniformArrays,OCEAN_GERSTNER_WAVE_COUNT,type GerstnerWave,type OceanPhaseS} from './ocean-gerstner.ts';
 
 type ScalarUniform={value:number};
 type VectorUniform={value:THREE.Vector4};
@@ -9,7 +9,17 @@ export type OceanWaterDebug={freezeWater?:boolean;flat?:boolean;depth?:boolean};
 export type OceanWaterPatchOptions={
   radiusM:number;
   normalAnchorDir:V3|THREE.Vector3;
+  /** Planar phase origin in metres: the patch anchor wrapped modulo
+   * DETAIL_PERIOD_M (ground-material.ts's detailOrigin) for float32 precision.
+   * The normal-atlas ripples are exactly periodic in that wrap. */
   phaseOriginM:V3|THREE.Vector3;
+  /** Unwrapped anchor in metres (anchor * radiusM). The Gerstner waves are
+   * not periodic in the wrap, so each wave gets a phase offset for
+   * `waveOriginM - phaseOriginM` (see oceanWavePhaseOffsets). Omitted means
+   * phaseOriginM is already unwrapped (offsets zero); a patch whose origin
+   * is wrapped must pass it, or neighbouring patches in different wrap cells
+   * show a seam (docs/ocean-seam-2026-09-29.md). */
+  waveOriginM?:V3|THREE.Vector3;
   /** References owned by the terrain patch, so ocean and bed share morph state. */
   patchMorph:ScalarUniform;
   patchEdges:VectorUniform;
@@ -55,11 +65,13 @@ export function createOceanWaterMaterial(options:OceanWaterPatchOptions):OceanWa
   const waves=generateOceanWaveField(waveSeed,waveCount);
   const waveArrays=oceanWaveUniformArrays(waves);
   const maxWaveAmplitudeM=maxOceanWaveAmplitudeM(waves);
+  const phaseOrigin=vector(options.phaseOriginM),waveOrigin=options.waveOriginM?vector(options.waveOriginM):phaseOrigin;
+  const wavePhase=oceanWavePhaseOffsets(waves,waveOrigin.x-phaseOrigin.x,waveOrigin.z-phaseOrigin.z);
   const uniforms={
     oceanRadiusM:{value:options.radiusM},oceanNormalAnchor:{value:vector(options.normalAnchorDir).clone().normalize()},oceanPhaseOriginM:{value:vector(options.phaseOriginM).clone()},
     patchMorph:options.patchMorph,patchEdges:options.patchEdges,patchTexels:typeof options.patchTexels==='number'?{value:options.patchTexels}:options.patchTexels,
     oceanEyeM:{value:new THREE.Vector3()},oceanSun:{value:new THREE.Vector3(1,0,0)},oceanTime:{value:0},oceanFlat:{value:0},oceanDepthDebug:{value:0},oceanNormalAtlas:{value:normalAtlas},oceanNormalRepeatM:{value:WATER_NORMAL_ATLAS_METRES_PER_REPEAT},
-    oceanWaveDir:{value:waveArrays.dir.map(([x,z])=>new THREE.Vector2(x,z))},oceanWaveAmplitudeM:{value:waveArrays.amplitudeM},oceanWaveNumber:{value:waveArrays.waveNumber},oceanWaveSpeed:{value:waveArrays.speedMps},
+    oceanWaveDir:{value:waveArrays.dir.map(([x,z])=>new THREE.Vector2(x,z))},oceanWaveAmplitudeM:{value:waveArrays.amplitudeM},oceanWaveNumber:{value:waveArrays.waveNumber},oceanWaveSpeed:{value:waveArrays.speedMps},oceanWavePhase:{value:wavePhase},
   };
   const material=new THREE.ShaderMaterial({
     uniforms,
@@ -79,7 +91,9 @@ void main(){
   // Real Gerstner displacement: a deterministic analytic function of world
   // position and time only (never of patchMorph/LOD), so neighbouring
   // patches -- and the same patch across LOD levels -- sample the identical
-  // wave field and never show a seam.
+  // wave field and never show a seam. wavePosM uses the 4096 m-wrapped
+  // origin; oceanWavePhase (per wave, per patch) restores the unwrapped
+  // world phase, since the wavelengths do not divide 4096 m.
   vec2 wavePosM=transformed.xz*oceanRadiusM+oceanPhaseOriginM.xz;
   float waveHeightM; vec2 waveSlope;
   oceanGerstner(wavePosM,oceanTime,waveHeightM,waveSlope);

@@ -199,15 +199,47 @@ uniform vec2 oceanWaveDir[OCEAN_WAVE_COUNT];
 uniform float oceanWaveAmplitudeM[OCEAN_WAVE_COUNT];
 uniform float oceanWaveNumber[OCEAN_WAVE_COUNT];
 uniform float oceanWaveSpeed[OCEAN_WAVE_COUNT];
+uniform float oceanWavePhase[OCEAN_WAVE_COUNT];
 void oceanGerstner(in vec2 posM,in float t,out float heightM,out vec2 slope){
   heightM=0.0;slope=vec2(0.0);
   for(int i=0;i<OCEAN_WAVE_COUNT;i++){
     float k=oceanWaveNumber[i];
-    float phase=k*dot(oceanWaveDir[i],posM)+t*oceanWaveSpeed[i];
+    float phase=k*dot(oceanWaveDir[i],posM)+oceanWavePhase[i]+t*oceanWaveSpeed[i];
     heightM+=sin(phase)*oceanWaveAmplitudeM[i];
     slope+=(k*oceanWaveAmplitudeM[i]*cos(phase))*oceanWaveDir[i];
   }
 }`;
+}
+
+/**
+ * Per-wave phase offsets (radians, in [0, 2*PI)) that let a patch evaluate
+ * the Gerstner sum at a WRAPPED planar origin and still land on the one
+ * global wave field.
+ *
+ * Ocean patches phase their waves at `posM = local + wrappedOrigin`, where
+ * wrappedOrigin is the patch anchor in metres reduced modulo a period
+ * (ground-material.ts's DETAIL_PERIOD_M, 4096 m) so float32 keeps
+ * millimetre precision. The normal-atlas ripples repeat exactly at that
+ * period, but the Gerstner wavelengths (8-42 m, arbitrary) do not, so
+ * without a correction two neighbouring patches whose anchors fall in
+ * different 4096 m cells disagree on every wave's phase along their shared
+ * edge: a visible straight seam (docs/ocean-seam-2026-09-29.md).
+ *
+ * For each wave this returns `k * dot(dir, shift) mod 2*PI` with
+ * `shift = exactOrigin - wrappedOrigin` (x/z metres), computed in float64
+ * from the float32 wave number and direction the shader actually uses, so
+ * `k*dot(dir, local + wrappedOrigin) + offset` equals the phase at the exact
+ * world position modulo 2*PI. The shift is a multiple of the wrap period, so
+ * the reduced offset is exact to ~1e-9 rad even at planetary radii.
+ */
+export function oceanWavePhaseOffsets(waves: GerstnerWave[], shiftXM: number, shiftZM: number): number[] {
+  const tau = Math.PI * 2;
+  return waves.map((w) => {
+    const k = Math.fround(tau / w.wavelengthM);
+    const phase = (k * Math.fround(w.dirX)) * shiftXM + (k * Math.fround(w.dirZ)) * shiftZM;
+    const wrapped = phase - Math.floor(phase / tau) * tau;
+    return wrapped >= tau ? 0 : wrapped;
+  });
 }
 
 /** Builds the four parallel-array uniform values oceanGerstnerVertexGLSL's
