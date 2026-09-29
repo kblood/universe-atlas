@@ -68,10 +68,15 @@ export class PlanetCanopy {
   private patchLookupCacheHits=0;private patchLookupCacheMisses=0;
   private currentPatchVersion=0;
   private currentPatchEpoch=0;
+  // Revision of every host answer the near loop reads (currentPatch, slot
+  // membership, handoff pairing, close bounds). A near owner may replay its
+  // previous frame only while this, and its own inputs, are unchanged.
+  private nearStateVersion=0;
+  private repeatNear=false;private repeatCounts=[0,0];private repeatClose:string[]=[];
   private dirtyCurrentPatchKeys=new Map<string,number>();
   private body:Body;
   private invalidateCurrentPatchAnswers(key?:string){
-    this.currentPatchVersion++;
+    this.currentPatchVersion++;this.nearStateVersion++;
     if(key){
       if(!this.dirtyCurrentPatchKeys.has(key)&&this.dirtyCurrentPatchKeys.size>=MAX_DIRTY_CURRENT_PATCH_KEYS){
         this.currentPatchEpoch++;this.dirtyCurrentPatchKeys.clear();return;
@@ -98,7 +103,7 @@ export class PlanetCanopy {
     if(key===this.presentationKey)return;
     this.renderer.setFamilyPresentations(families);
     this.presentationKey=key;this.presentationResolve=resolve;
-    this.presentationVersion++;
+    this.presentationVersion++;this.nearStateVersion++;
     if(this.presentationVersion>0xffffffff){this.presentationVersions.fill(0);this.presentationVersion=1;}
     // Keep the cursor moving under rapid date/library changes. Restarting at
     // the first slot on every key change can starve the far end indefinitely.
@@ -113,7 +118,7 @@ export class PlanetCanopy {
     this.renderer.setAllometry(index,presentation.heightM,presentation.ratioCode);
     // A rebase already past this slot copied the previous drawn height.
     if(this.rebase&&index<this.rebase.cursor)this.rebase.positions[index*4+3]=this.renderer.positions.getW(index);
-    this.presentationVersions[index]=this.presentationVersion;this.presentationRetagged++;
+    this.presentationVersions[index]=this.presentationVersion;this.presentationRetagged++;this.nearStateVersion++;
   }
   private start(){
     if(this.disposed||typeof Worker==='undefined')return;
@@ -260,7 +265,7 @@ export class PlanetCanopy {
     this.group.visible=this.streaming&&altitudeM<PLANET_DETAIL.forestPrepareAltitudeM;
     if(previousVisible!==this.group.visible)this.invalidateCurrentPatchAnswers();
     this.installedThisFrame=0;this.installMs=0;this.uploadBytes=0;this.seen.clear();
-    this.nearPresentNotInCensus=0;this.nearAbsentInCensus=0;this.closeCandidates.length=0;this.farForcedClose=0;
+    this.nearPresentNotInCensus=0;this.nearAbsentInCensus=0;this.closeCandidates.length=0;this.farForcedClose=0;this.repeatNear=false;
     if(!this.streaming)return false;
     this.renderer.uniforms.treeRuntime.value=1;
     this.renderer.uniforms.treeAltitudeCoverage.value=1-THREE.MathUtils.smoothstep(altitudeM,3000,3500);
@@ -318,7 +323,7 @@ export class PlanetCanopy {
         const index=r.cursor++,height=this.renderer.positions.getW(index);
         if(height>0)r.positions.set([this.bodyPositions[index*3]-r.origin.x,this.bodyPositions[index*3+1]-r.origin.y,this.bodyPositions[index*3+2]-r.origin.z,height],index*4);
       }
-      if(r.cursor>=this.renderer.mesh.geometry.instanceCount){this.origin.copy(r.origin);this.uploadBytes+=this.renderer.replacePositions(r.positions);this.rebase=null;}
+      if(r.cursor>=this.renderer.mesh.geometry.instanceCount){this.origin.copy(r.origin);this.uploadBytes+=this.renderer.replacePositions(r.positions);this.rebase=null;this.nearStateVersion++;}
     }
     this.group.position.copy(this.origin).multiplyScalar(1/this.body.radiusM).sub(nearOrigin);
     if(this.ready&&this.worker&&!this.request&&!this.pending.length&&!this.selection&&!this.reuse){
@@ -343,6 +348,16 @@ export class PlanetCanopy {
     this.frameCurrentPatches.set(key,current);return current;
   }
   currentPatchRevision(){return this.currentPatchVersion;}
+  /** Changes whenever any near-loop answer or the drawn state it gates may
+   * change; includes visibility, streaming and the water bucket. */
+  nearFrameState(){return [this.nearStateVersion,Number(this.group.visible),Number(this.streaming),this.water] as const;}
+  /** Replace this frame's near ownership pass with the previous frame's. Only
+   * valid when the owner's inputs and nearFrameState() match that frame. */
+  repeatNearFrame(){
+    if(!this.streaming)return;
+    this.repeatNear=true;[this.nearPresentNotInCensus,this.nearAbsentInCensus]=this.repeatCounts;
+    this.closeCandidates.length=0;for(const id of this.repeatClose)this.closeCandidates.push(id);
+  }
   currentPatchChanges(){return {globalRevision:this.currentPatchEpoch,revision:this.currentPatchVersion,keys:[...this.dirtyCurrentPatchKeys.entries()] as [string,number][]};}
   acknowledgeCurrentPatchChanges(snapshot:{globalRevision:number;revision:number;keys:readonly (readonly [string,number])[]}){
     if(snapshot.globalRevision!==this.currentPatchEpoch)return;
@@ -394,8 +409,14 @@ export class PlanetCanopy {
   }
   finish(){
     if(!this.streaming)return;
-    for(const id of this.previous)if(!this.seen.has(id)){const index=this.slots.get(id);if(index!==undefined)this.renderer.setOwnership(index,0);}
-    const old=this.previous;this.previous=this.seen;this.seen=old;this.uploadBytes+=this.renderer.commit();
+    if(!this.repeatNear){
+      // A repeated frame owns exactly `previous` again at unchanged levels.
+      for(const id of this.previous)if(!this.seen.has(id)){const index=this.slots.get(id);if(index!==undefined)this.renderer.setOwnership(index,0);}
+      const old=this.previous;this.previous=this.seen;this.seen=old;
+      this.repeatCounts[0]=this.nearPresentNotInCensus;this.repeatCounts[1]=this.nearAbsentInCensus;
+      this.repeatClose.length=0;for(const id of this.closeCandidates)this.repeatClose.push(id);
+    }
+    this.repeatNear=false;this.uploadBytes+=this.renderer.commit();
     const edge=quantizeForestCoverage(this.renderer.uniforms.treeAltitudeCoverage.value);
     for(const id of this.closeCandidates){const index=this.slots.get(id);if(index!==undefined&&this.renderer.ownership.array[index]<edge)this.farForcedClose++;}
   }

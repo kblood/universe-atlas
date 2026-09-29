@@ -161,6 +161,19 @@ export class PlanetForest {
   private farOwnedSkipped=0;
   private farWorkDiagnostics:Record<string,unknown>={selectionCells:0,groups:0,skippedGroups:0,skippedCells:0,activeCells:0,rebuilds:0};
   private originRebased=false;
+  /** Near/middle -> far canopy handoff bands (metres from the eye). A paired
+   * middle tree enters the canopy at `middleEnterM` and returns inside
+   * `middleLeaveM`; complete current patches own everything past `farOwnedM`. */
+  handoff={middleEnterM:550,middleLeaveM:600,farOwnedM:650};
+  // Exact still-frame replay (docs/forest-cpu-2026-09-29.md). `frameKey` holds
+  // every input of the last computed near loop; `repeatable` is set only when
+  // that loop left its own hysteresis and the canopy host unchanged, i.e. the
+  // frame was a fixed point and recomputing it would reproduce its outputs.
+  private frameKey:number[]=[];private nextFrameKey:number[]=[];private repeatable=false;
+  private repeated=0;
+  private lastFrame={visibleTrees:0,nearTrees:0,farOwnedSkipped:0,assetCounts:[0,0],meshVisible:[false,false,false],
+    batchVisible:new Map<unknown,boolean>(),nearAllometry:allometryTally()};
+  private retainedEdits=0;
   constructor(private body:Body,private treeLoader:TreeLoader=loadTreeFamily){
     this.patchBroadphase=new ForestPatchBroadphase(body.radiusM,forestCellPatchKey);
     this.workIndex=new ForestOrderedWorkIndex(forestCellPatchKey);
@@ -495,6 +508,23 @@ export class PlanetForest {
     this.scheduledUploadBytes+=updates.seed.flush(mesh.geometry.getAttribute('instanceForestSeed') as THREE.BufferAttribute);
     this.scheduledUploadBytes+=updates.allometry.flush(mesh.geometry.getAttribute('instanceTreeAllometry') as THREE.BufferAttribute);
   }
+  /** Every input the near loop and reconcile read, other than state they own. */
+  private buildFrameKey(key:number[],eye:THREE.Vector3,groundDirection:V3,altitudeM:number,water:number,immersive:boolean,frusta:readonly THREE.Frustum[],shadowFrustum:THREE.Frustum|null){
+    key.length=0;
+    key.push(eye.x,eye.y,eye.z,groundDirection[0],groundDirection[1],groundDirection[2],altitudeM,water,Number(immersive),
+      this.workListRefreshes,this.workRefreshReasons.incrementalPatch,this.workStateVersion,this.workSelectionRevision,this.workHabitatRevision,
+      this.workGlobalHabitatRevision,this.originVersion,this.catalogueVersion,this.assets.revision,Number(this.assetDraw),
+      this.handoff.middleEnterM,this.handoff.middleLeaveM,this.handoff.farOwnedM,this.wanted.length,frusta.length,shadowFrustum?1:0);
+    if(this.fullCanopy)key.push(...this.fullCanopy.nearFrameState());else key.push(-1);
+    for(const frustum of frusta)for(const plane of frustum.planes)key.push(plane.normal.x,plane.normal.y,plane.normal.z,plane.constant);
+    if(shadowFrustum)for(const plane of shadowFrustum.planes)key.push(plane.normal.x,plane.normal.y,plane.normal.z,plane.constant);
+    return key;
+  }
+  private sameFrameKey(){
+    const a=this.frameKey,b=this.nextFrameKey;if(a.length!==b.length)return false;
+    for(let i=0;i<a.length;i++)if(a[i]!==b[i])return false;
+    return true;
+  }
   update(eye:THREE.Vector3,groundDirection:V3,altitudeM:number,enabled:boolean,water:number,immersive:boolean,frusta:THREE.Frustum[]=[],worldNs=0n,treeSpecies?:readonly Species[],shadowFrustum:THREE.Frustum|null=null){
     if(!Number.isFinite(water))throw new Error('Forest water level must be finite');
     // Species dimensions apply to every representation, including the legacy
@@ -624,9 +654,25 @@ export class PlanetForest {
       globalHabitatRevision:this.workGlobalHabitatRevision,builtGlobalHabitatRevision:this.workBuiltGlobalHabitatRevision,
       canopyRevision:this.fullCanopy?.currentPatchRevision?.()??-1,canopyEpoch:canopyChanges.globalRevision,workStateRevision:this.workStateVersion,builtWorkStateRevision:this.workBuiltStateVersion};
     this.farOwnedSkipped=workStats.skippedCells;
+    this.buildFrameKey(this.nextFrameKey,eye,groundDirection,altitudeM,water,immersive,frusta,shadowFrustum);
+    if(this.repeatable&&this.sameFrameKey()){
+      // Identical inputs at a fixed point: the loop and reconcile would
+      // reproduce the last frame exactly and write nothing. Restore what the
+      // frame reset above and replay the canopy ownership pass.
+      const last=this.lastFrame;
+      this.visibleTrees=last.visibleTrees;this.nearTrees=last.nearTrees;this.farOwnedSkipped=last.farOwnedSkipped;
+      this.assetCounts=[...last.assetCounts];this.nearAllometry=last.nearAllometry;
+      this.meshes[0].visible=last.meshVisible[0];this.meshes[1].visible=last.meshVisible[1];this.canopy.visible=last.meshVisible[2];
+      for(const entry of this.assets.entries.values())for(const batch of entry.batches)batch.group.visible=last.batchVisible.get(batch)??false;
+      this.fullCanopy?.repeatNearFrame();this.repeated++;
+      const canopyFinish=systemTimer.start();this.fullCanopy?.finish();systemTimer.stop('canopy',canopyFinish);
+      this.updateMs=performance.now()-updateStarted;return;
+    }
+    const canopyStateBefore=this.fullCanopy?this.fullCanopy.nearFrameState()[0]:-1,retainedEditsBefore=this.retainedEdits;
     const counts=[0,0],capacities=immersive?[64,1024]:[B.forestNearCapacity,B.forestCapacity];let canopyCount=0;
     for(const updates of this.updates){updates.wanted.length=0;updates.wantedCoverage.length=0;updates.wantedIds.clear();}
     const altitudeFade=1-THREE.MathUtils.smoothstep(altitudeM,B.forestPrepareAltitudeM-500,B.forestPrepareAltitudeM);
+    const {middleEnterM,middleLeaveM,farOwnedM}=this.handoff;
     for(const index of workIndices){
       const cell=this.wanted[index];if(!cell)continue;
       const dx=cell.direction[0]-groundDirection[0],dy=cell.direction[1]-groundDirection[1],dz=cell.direction[2]-groundDirection[2];
@@ -635,10 +681,12 @@ export class PlanetForest {
       resident.patchKey??=forestCellPatchKey(cell.id);
       if(resident.water===water&&this.fullCanopy?.currentPatch(resident.patchKey)){
         const scale=1+resident.height/r,x=cell.direction[0]*scale-eye.x,y=cell.direction[1]*scale-eye.y,z=cell.direction[2]*scale-eye.z;
-        if((x*x+y*y+z*z)*r*r>=650*650){
+        if((x*x+y*y+z*z)*r*r>=farOwnedM*farOwnedM){
           // Complete current patches own this entire distant band. Keep stale
           // water and missing patches on the full fallback/absence path below.
-          this.retainedNear.delete(cell.id);this.retainedMiddle.delete(cell.id);this.farOwnedSkipped++;continue;
+          if(this.retainedNear.delete(cell.id))this.retainedEdits++;
+          if(this.retainedMiddle.delete(cell.id))this.retainedEdits++;
+          this.farOwnedSkipped++;continue;
         }
       }
       this.fullCanopy?.noteNear(cell.id,resident.patchKey,resident.present,resident.water);
@@ -666,15 +714,16 @@ export class PlanetForest {
       // band prevents oscillation between equal-silhouette batches.
       const wasNear=this.retainedNear.has(cell.id),nearLimit=wasNear?B.forestNearM+12:B.forestNearM-12;
       let lod=distance<nearLimit?0:1;
-      if(lod===0)this.retainedNear.add(cell.id);else this.retainedNear.delete(cell.id);
+      if(lod===0){if(!wasNear){this.retainedNear.add(cell.id);this.retainedEdits++;}}
+      else if(wasNear){this.retainedNear.delete(cell.id);this.retainedEdits++;}
       if(distance>=B.forestRadiusM)continue;
       const edgeCoverage=altitudeFade*(1-THREE.MathUtils.smoothstep(distance,B.forestRadiusM-300,B.forestRadiusM));
       const expected=this.expectedCanopyPresentation(resident);
       const paired=this.fullCanopy?.canHandoff(cell.id,resident.height,resident.patchKey,expected.heightM,expected.code,expected.ratioCode)??false;
       if(paired){
-        const middleLimit=this.retainedMiddle.has(cell.id)?600:550;
-        if(distance>=middleLimit){this.retainedMiddle.delete(cell.id);continue;}
-        this.retainedMiddle.add(cell.id);
+        const wasMiddle=this.retainedMiddle.has(cell.id),middleLimit=wasMiddle?middleLeaveM:middleEnterM;
+        if(distance>=middleLimit){if(wasMiddle){this.retainedMiddle.delete(cell.id);this.retainedEdits++;}continue;}
+        if(!wasMiddle){this.retainedMiddle.add(cell.id);this.retainedEdits++;}
       }
       if(cell.canopyRepresentative&&horizontal>B.forestFootprintM-100){
         if(canopyCount>=(immersive?2048:B.canopyCapacity))continue;
@@ -689,6 +738,17 @@ export class PlanetForest {
     for(let i=0;i<3;i++)this.reconcileBatch(i);
     const canopyFinish=systemTimer.start();this.fullCanopy?.finish();systemTimer.stop('canopy',canopyFinish);
     this.nearTrees=counts[0];this.visibleTrees=counts[0]+counts[1]+canopyCount;
+    // Replayable only if this loop was already at its fixed point: no
+    // hysteresis membership changed and no canopy answer was retagged.
+    this.repeatable=this.retainedEdits===retainedEditsBefore&&(this.fullCanopy?this.fullCanopy.nearFrameState()[0]:-1)===canopyStateBefore;
+    if(this.repeatable){
+      const swap=this.frameKey;this.frameKey=this.nextFrameKey;this.nextFrameKey=swap;
+      const last=this.lastFrame;
+      last.visibleTrees=this.visibleTrees;last.nearTrees=this.nearTrees;last.farOwnedSkipped=this.farOwnedSkipped;
+      last.assetCounts=[...this.assetCounts];last.nearAllometry=this.nearAllometry;
+      last.meshVisible=[this.meshes[0].visible,this.meshes[1].visible,this.canopy.visible];
+      last.batchVisible.clear();for(const entry of this.assets.entries.values())for(const batch of entry.batches)last.batchVisible.set(batch,batch.group.visible);
+    }
     this.updateMs=performance.now()-updateStarted;
   }
   diagnostics(){
@@ -760,7 +820,7 @@ export class PlanetForest {
     representation:'canonical-tree-field',densityFocus:'observer-ground',instanceUpdates:'stable-slots-retained-origin-dirty-ranges',
     selectionJobsInFlight:this.selecting?1:0,waterBucket:this.water,selectionApplyMs:this.selectionApplyMs,selectionCache:this.selectionCacheStats,selectionTransfer:this.selectionTransfer,fullCanopy:this.fullCanopy?.diagnostics()??null,
     workerRestarts:this.workerRestarts,workerFailures:this.workerFailures,selectionMode:this.worker?'worker':'synchronous-fallback',
-    updateMs:this.updateMs,farOwnedSkipped:this.farOwnedSkipped,farWork:this.farWorkDiagnostics,matrixWrites:this.matrixWrites,colorWrites:this.colorWrites,coverageWrites:this.coverageWrites,
+    updateMs:this.updateMs,frameRepeats:this.repeated,frameRepeatable:this.repeatable,farOwnedSkipped:this.farOwnedSkipped,farWork:this.farWorkDiagnostics,matrixWrites:this.matrixWrites,colorWrites:this.colorWrites,coverageWrites:this.coverageWrites,
     scheduledUploadBytes:this.scheduledUploadBytes,originRebased:this.originRebased,originVersion:this.originVersion,originRebaseM:B.forestOriginRebaseM,
     radiusM:B.forestRadiusM,canonicalHeightRangeM:[10,22],renderedHeightRangeM:this.nearAllometry.renderedHeightRangeM,cellSizeM:B.forestCellM,
       allocatedBytes:memoryAccounting.currentCombinedEstimateBytes,memoryAccounting};
