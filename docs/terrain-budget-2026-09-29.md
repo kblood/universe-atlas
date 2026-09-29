@@ -217,14 +217,24 @@ frames (0.25°/frame) per round.
 | `5ad62a6` (before) | 2.014 | 2.033 | 2.830 | 2.951 | 3.010 | 4.112 |
 | `a096cf4` (leaf loop) | 0.056 | 0.053 | 0.092 | 1.358 | 1.319 | 2.189 |
 | `e2548db` (plus selection caches) | 0.053 | 0.051 | 0.082 | 0.819 | 0.768 | 1.382 |
-| BENCH_FINAL_ROW |
+| `d9c6577` (final; rerun with `5ad62a6` at 1.997 / 2.012 / 2.616 and 2.970 / 2.991 / 3.947) | 0.059 | 0.051 | 0.107 | 0.845 | 0.788 | 1.360 |
 
 The stationary frame is about 38× cheaper. A turning frame still runs a full
 selection pass (frustum-dependent scores), so it is about 3.6× cheaper.
 
 ## Tests and build
 
-TESTS_AND_BUILD
+- **Full serial suite:** `node --test --test-concurrency=1` over the
+  `package.json` list, run on `d9c6577` code (HEAD moved to the docs-only
+  `e4cbcd8` during the run). Result: 810 tests, 807 pass, 0 fail, 3 skipped,
+  246 s.
+  - The 3 skips are the `ATLAS_TREE_CANDIDATE` GLB checks, the same ones
+    skipped at the baseline.
+  - The baseline at `9420bdd` was 807 tests, 804 pass, 3 skip. The three new
+    tests are the starvation test (44.7 s), the request-order test (0.1 s)
+    and the leaf-loop digest (39.5 s).
+- **Build:** `npm run build` (`tsc --noEmit && vite build`) passed.
+  `build-info.json` is `e4cbcd8`, `dirty: false`.
 
 ## Unresolved (not claimed)
 
