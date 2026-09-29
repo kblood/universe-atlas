@@ -131,6 +131,9 @@ export function benchPoses(){
   push(240,'realtime',()=>{dateNs+=frameNs(1/60);});
   push(240,'turn',()=>{dateNs+=frameNs(1/60);yawDeg+=1.5;});
   push(240,'walk',()=>{dateNs+=frameNs(1/60);direction=moveAlong(direction,yawDeg,1.6/60);});
+  // Exploration-paused movement (the harness's S2 turn and S3 walk run at a paused date).
+  push(240,'paused-turn',()=>{yawDeg+=1.5;});
+  push(240,'paused-walk',()=>{direction=moveAlong(direction,yawDeg,1.6/60);});
   return poses;
 }
 

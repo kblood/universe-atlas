@@ -1735,7 +1735,7 @@ export class PlanetRenderer {
       this.faunaDrawnItems[this.faunaDrawnCount]=item;this.faunaDrawnGenomes[this.faunaDrawnCount++]=genome;
       if(rigged.has(item.member.id)){this.faunaVisibleCount++;continue;}
       this.faunaProxyMatrix.compose(this.faunaLocalScratch.copy(item.position).sub(this.lifeOrigin),item.quaternion,this.faunaProxyScale);
-      if(this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance))this.faunaVisibleCount++;else this.faunaBudgetDrops++;
+      if(this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member))this.faunaVisibleCount++;else this.faunaBudgetDrops++;
     }
     this.faunaRenderer.endFrame();
   }
