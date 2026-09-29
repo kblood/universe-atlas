@@ -569,7 +569,7 @@ const opticalStarPoints:{mesh:THREE.Mesh;point:THREE.Points<THREE.BufferGeometry
 let flightAim: string | null = null;
 let walker:GroundWalker|null=null;
 let walkingModule:typeof import('./ground-walker.ts')|null=null;
-let landing:{point:V3;launch?:boolean;contact?:boolean;heading?:THREE.Quaternion}|null=null;
+let landing:{point:V3;launch?:boolean;contact?:boolean;heading?:THREE.Quaternion;clearanceM?:number}|null=null;
 let landAfterCruise=false,walkGeneration=0;
 function clearWalking(){walkGeneration++;walker?.dispose();walker=null;landing=null;landAfterCruise=false;planetTiles?.setContactFocus(null);}
 let orbitAssist: {bodyId: string; axis: THREE.Vector3; clearanceM?: number} | null = null;
@@ -2548,7 +2548,7 @@ function updateWalking(dt:number){
     const patches=landing.launch?null:planetTiles.contactPatches(landing.point,landing.point);
     const launchSurface=landing.launch?surfaceSample(body,d.toArray() as V3):null;
     if(landing.launch&&!launchSurface){clearWalking();return;}
-    const target=landing.launch?body.radiusM+launchSurface!.rockHeightM+160:point.length()+(patches&&walkingModule? .72:landing.contact?Math.max(.72,current.length()-point.length()):12);
+    const target=landing.launch?body.radiusM+launchSurface!.rockHeightM+(landing.clearanceM??160):point.length()+(patches&&walkingModule? .72:landing.contact?Math.max(.72,current.length()-point.length()):12);
     const gap=target-current.length(),step=Math.sign(gap)*Math.min(Math.abs(gap),Math.max(.5,Math.min(5000,Math.abs(gap)*2))*dt);
     const next=d.multiplyScalar(current.length()+step).add(center);
     if(next.distanceTo(systemOrigin)>128)rebaseSystem(next);
@@ -4989,6 +4989,30 @@ Object.defineProperty(window, "__atlas", {
       return planetTiles.loadForestTreeAssets(lod0,lod1,options);
     },
     clearForestTreeAssets(){planetTiles?.clearForestTreeAssets();},
+    // Acceptance probes: LOD1 -> far-atlas hand-off override and forest colour
+    // isolation (presentation only), and a vertical launch from the walker to
+    // an exact terrain clearance (the "Return to flight" path, default 160 m).
+    forestDebug(options:{middleHandoffM?:number|null;hideColour?:boolean}){return planetTiles?.forestDebug(options)??null;},
+    // First terrain hit (m) of body-local rays; null beyond maxM. Acceptance
+    // image banding only (renders nothing, changes nothing).
+    surfaceRays(origin:V3,directions:V3[],maxM=4000){
+      const body=state.body;if(!body||body.kind==='star')return null;
+      const height=(p:THREE.Vector3)=>p.length()-body.radiusM-(surfaceSample(body,p.clone().normalize().toArray() as V3)?.rockHeightM??0);
+      return directions.map(d=>{
+        const o=vec(origin),dir=vec(d).normalize(),p=new THREE.Vector3();let t=0,step=2;
+        while(t<maxM){
+          const next=t+step;p.copy(o).addScaledVector(dir,next);
+          if(height(p)<=0){let lo=t,hi=next;for(let i=0;i<14;i++){const mid=(lo+hi)/2;p.copy(o).addScaledVector(dir,mid);if(height(p)<=0)hi=mid;else lo=mid;}return hi;}
+          t=next;step=Math.max(2,t*.02);
+        }
+        return null;
+      });
+    },
+    launchTo(clearanceM:number){
+      if(!walker||!state.body||!(Number.isFinite(clearanceM)&&clearanceM>=2&&clearanceM<=5000))throw new Error('launchTo needs a grounded walker and 2-5000 m');
+      const relative=vec(localPose()).sub(vec(bodyPosition(state.body,state.sys!,epoch)));
+      clearWalking();landing={point:relative.toArray() as V3,launch:true,clearanceM};panel();
+    },
     // Whole-population forest census for acceptance replays (explicit call).
     forestPresentationCensus(){return planetTiles?.forestPresentationCensus()??null;},
     // Canonical surface-rock census around the current ground focus.

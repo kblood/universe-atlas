@@ -8,6 +8,7 @@ import {quantizeForestCoverage} from './forest-coverage.ts';
 import {attachLocalAerial} from './local-aerial-perspective.ts';
 import {installTreeFoliageCoverageMipmaps,type InstalledTreeFoliageMipChain} from './tree-foliage-mips.ts';
 import {installTreeFoliageSidecar,type TreeFoliageMipSidecar} from './tree-foliage-sidecar.ts';
+import {calibrateTreeFoliageLodCutoffs,installTreeFoliageLodCutoff,type TreeFoliageLodCutoffs} from './tree-foliage-cutoff.ts';
 import {calibrateTreeLodCardScale,type TreeCoverageMesh,type TreeLodCoverageCalibration} from './tree-lod-coverage.ts';
 import {deriveTreeBaseColorStatistics,deriveTreeCanopyMetadata,type TreeCanopyProfile,type TreeCullingBounds,type TreeTrunkProfile} from './tree-canopy-profile.ts';
 import {forestVariantEnvelope,forestVariantGLSL,forestVariantRadiusBound,forestVariantUniformData,FOREST_VARIANT_COUNT,type ForestStructuralVariant} from './tree-structural-variant.ts';
@@ -220,7 +221,11 @@ export type TreeAssetOptions={foliageCoverage?:'mask'|'hash';foliageMipmaps?:boo
    * leaf-area scale. Requires areaPreservingLod. */
   silhouetteMatchedLod?:boolean;
   /** Distance-driven card growth when cards approach pixel size. */
-  cardCompensation?:TreeCardCompensation};
+  cardCompensation?:TreeCardCompensation;
+  /** Replace the fixed MASK cutoff by a per-mip-level cutoff that keeps the
+   * base level's coverage under trilinear filtering (colour, shadow and far
+   * atlas capture passes alike). Requires coverage mips and MASK foliage. */
+  foliageLodCutoff?:boolean};
 
 /** Area-preserving scale for the reduced foliage LOD. Cards are metric, so the
  * leaf-area ratio of the two actual LOD meshes fixes it; bounded to [1,3]. */
@@ -236,6 +241,9 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
   if(options.foliageMipmaps!==undefined&&typeof options.foliageMipmaps!=='boolean')throw new Error('Invalid foliage mip option');
   if(options.foliageMipmaps&&options.foliageMipSidecar)throw new Error('Choose offline or runtime foliage mips, not both');
   if(options.silhouetteMatchedLod&&!options.areaPreservingLod)throw new Error('Silhouette-matched LOD requires the area-preserving bound');
+  if(options.foliageLodCutoff!==undefined&&typeof options.foliageLodCutoff!=='boolean')throw new Error('Invalid foliage LOD cutoff option');
+  if(options.foliageLodCutoff&&(!(options.foliageMipmaps||options.foliageMipSidecar)||options.foliageCoverage==='hash'))
+    throw new Error('Foliage LOD cutoff requires coverage mips and MASK foliage');
   const cards=options.cardCompensation;
   if(cards!==undefined&&(!cards||!Number.isFinite(cards.targetPixels)||cards.targetPixels<=0||cards.targetPixels>64||!Number.isFinite(cards.maxScale)||cards.maxScale<1||cards.maxScale>2))
     throw new Error('Invalid tree card compensation');
@@ -313,6 +321,19 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     if(options.foliageCoverage==='hash'){
       lods[0][1].material.alphaTest=0;lods[0][1].material.alphaHash=true;
     }
+    // Calibrate once against the uploaded chain, then drop the level copies.
+    let foliageLodCutoff:(TreeFoliageLodCutoffs&{setupMs:number})|null=null;
+    let basePixels:Uint8ClampedArray|null=null;
+    if(options.foliageLodCutoff){
+      const levels=foliageMipChain?.levels,map=lods[0][1].material.map!;
+      if(!levels||!foliageMipChain)throw new Error('Foliage LOD cutoff needs the installed mip levels');
+      const started=performance.now(),image=map.image as {width:number;height:number};
+      basePixels=texturePixels(map);
+      foliageLodCutoff={...calibrateTreeFoliageLodCutoffs([{width:image.width,height:image.height,data:basePixels},...levels],
+        foliageMipChain.baseCoverage,alphaCutoff),setupMs:0};
+      foliageLodCutoff.setupMs=performance.now()-started;
+    }
+    if(foliageMipChain)delete foliageMipChain.levels;
     const phase={value:0};
     const vectors=(offset:number)=>Array.from({length:FOREST_VARIANT_COUNT},(_,i)=>new THREE.Vector4().fromArray(variantData,i*8+offset));
     const shaderState:TreeShaderState={phase,trunkRadius:{value:0},allometry:{value:new THREE.Vector3()},variantA:{value:vectors(0)},variantB:{value:vectors(4)},
@@ -320,6 +341,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     const viewEye=new THREE.Vector3(),viewInverse=new THREE.Matrix4(),viewport=new THREE.Vector4();
     for(const material of materials)deform(material,shaderState);
     if(options.forestCoverage)for(const material of materials)installTreeForestCoverage(material);
+    if(foliageLodCutoff)installTreeFoliageLodCutoff(lods[0][1].material,foliageLodCutoff);
     if(options.localAerial){
       const air=options.localAerial;
       // Both LOD batches have identity transforms in the forest's retained
@@ -333,7 +355,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
     const lod1Metadata=deriveTreeCanopyMetadata(lods[1].map(mesh=>mesh.geometry));
     const foliage=lods[0][1].material;
     if(!foliage.map)throw new Error('Tree foliage has no base-color texture');
-    const foliagePixels=texturePixels(foliage.map);
+    const foliagePixels=basePixels??texturePixels(foliage.map);
     const areaCardScale=options.areaPreservingLod?treeLodCardScale(lod0Metadata.profile,lod1Metadata.profile):1;
     // Leaf-area equality over-inflates the reduced crown; measure silhouettes.
     let lodCoverage:TreeLodCoverageCalibration|null=null;
@@ -380,7 +402,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
       lods,textures,leafTransmission,maxRadiusM,canopyPresentation,forestCoverage:!!options.forestCoverage,embeddedTextureBytes:prepared.embeddedTextureBytes,
       foliageMipmaps:foliageMipChain?{source:options.foliageMipSidecar?'offline-sidecar':'runtime-build',payloadBytes:foliageMipPayloadBytes,
         setupMs:foliageMipSetupMs,levels:foliageMipChain.report,baseCoverage:foliageMipChain.baseCoverage}:null,
-      structuralVariantCount:variants.length,lod1CardScale,lodCoverage,cardCompensation:cards?{...cards,cardExtentM:shaderState.cards.value.x}:null,
+      structuralVariantCount:variants.length,lod1CardScale,lodCoverage,foliageLodCutoff,cardCompensation:cards?{...cards,cardExtentM:shaderState.cards.value.x}:null,
       setDate(date:bigint){leafTransmission?.assertInstalled();phase.value=treeWindPhase(date);},
       /** Last main-camera state used by distance card growth; shadow passes reuse it. */
       viewState(){return shaderState.view.value.clone();},
@@ -439,6 +461,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
           mesh.customDistanceMaterial=new THREE.MeshDistanceMaterial(common);
           deform(mesh.customDepthMaterial,shaderState);deform(mesh.customDistanceMaterial,shaderState);
           if(options.forestCoverage){installTreeForestCoverage(mesh.customDepthMaterial);installTreeForestCoverage(mesh.customDistanceMaterial);}
+          if(foliageLodCutoff&&part===1){installTreeFoliageLodCutoff(mesh.customDepthMaterial,foliageLodCutoff);installTreeFoliageLodCutoff(mesh.customDistanceMaterial,foliageLodCutoff);}
           group.add(mesh);return mesh;
         });
         activeBatches++;let batchDisposed=false;
@@ -527,6 +550,7 @@ export async function loadTreeAssetFamily(lod0:ArrayBuffer,lod1:ArrayBuffer,opti
           // Capture binary MASK coverage; the far shader reproduces fractions.
           if(source.material.name==='MAT_AtlasFoliage'){material.alphaHash=false;material.alphaTest=alphaCutoff;}
           deform(material,state);
+          if(foliageLodCutoff&&source.material.name==='MAT_AtlasFoliage')installTreeFoliageLodCutoff(material,foliageLodCutoff);
           const compile=material.onBeforeCompile,key=material.customProgramCacheKey(),leaf=source.material.name==='MAT_AtlasFoliage';
           material.onBeforeCompile=(shader,renderer)=>{
             compile.call(material,shader,renderer);
