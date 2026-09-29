@@ -186,3 +186,12 @@ The following are new deterministic tests, all in `package.json`'s test list:
 - `tests/tree-handoff-debug.test.mjs` (2 tests):
   - library option gating
   - `setDebug` validation and restore
+
+Full serial run at `25ecd21`: `node --test --test-concurrency=1` over all 114 files in `package.json`.
+
+| Tests | Pass | Fail | Cancelled | Skipped | Duration |
+|---|---|---|---|---|---|
+| 818 | 815 | 0 | 0 | 3 | 160 s |
+
+- The 3 skips are the existing `ATLAS_TREE_CANDIDATE` tests. The tree-families baseline was 798 tests, 795 pass, 3 skipped; this branch adds 20 tests.
+- `npm run build` (`tsc --noEmit && vite build`) passes. The only warning is the existing chunk-size notice for `rapier-physics` (2,853 kB).
