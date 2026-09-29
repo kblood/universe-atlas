@@ -270,6 +270,18 @@ function faunaArchetypesFromSpecies(species: readonly Species[]): readonly Creat
 // walking). `biosphereStateAt` composes a full species timeline lookup, so
 // this avoids repeating that work every single frame for no change in input.
 let lifeGateCache: { key: string; value: LifeGateContext | null } | null = null;
+/** The last computed context and its sources. In realtime the date (so the
+ * memo key) changes every frame while the living world does not: the dated
+ * species list holds the same Species records until a whole-Myr boundary or
+ * a stage change. When every source matches, the previous context object is
+ * returned unchanged, so its derived arrays are not rebuilt and consumers can
+ * short-circuit on identity (PlanetRenderer.updateLife's life signature). */
+let lifeGateSources: { seed: string; body: Body; lc: unknown; solid: boolean; stage: FloraStage; tMyr: number; species: readonly Species[]; rocks: unknown; value: LifeGateContext } | null = null;
+function sameRefs<T>(a: readonly T[], b: readonly T[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
 /** The `LifeGateContext` `PlanetRenderer.update()`'s 9th argument needs,
  * computed from world-surface.ts's SAFE `biosphereStateAt` query (never the
  * raw `biosphereAt` — see this task's report for why) and `planetAgeMyr`
@@ -286,9 +298,16 @@ function lifeGateContext(sys: StarSystem, body: Body, t: Ns): LifeGateContext | 
     const st = planetSnapshotFor(sys,body,t).state;
     if (st.stage === 'molten' || st.stage === 'solid') {
       const bio = planetSnapshotFor(sys,body,t).biosphere();
-      const stage = toLifeStage(bio.stage);
+      const stage = toLifeStage(bio.stage), tMyr = planetAgeMyr(entry.lc, t), solid = st.stage === 'solid';
+      const rocks = solid ? biosphereHistoryFor(seed, body.id, body, entry.lc).rocks : null;
+      const prev = lifeGateSources;
+      if (prev && prev.seed === seed && prev.body === body && prev.lc === entry.lc && prev.solid === solid && prev.stage === stage
+        && Object.is(prev.tMyr, tMyr) && prev.rocks === rocks && sameRefs(prev.species, bio.species)) {
+        lifeGateCache = { key, value: prev.value };
+        return prev.value;
+      }
       value = {
-        tMyr: planetAgeMyr(entry.lc, t),
+        tMyr,
         floraStage: stage, floraAvailableKinds: floraKindsFromSpecies(bio.species),
         treeSpecies: bio.species.filter(s=>s.kind==='tree'),
         faunaStage: stage, faunaAvailableArchetypes: faunaArchetypesFromSpecies(bio.species),
@@ -296,10 +315,11 @@ function lifeGateContext(sys: StarSystem, body: Body, t: Ns): LifeGateContext | 
           .map(s => ({ id: s.id, creature: s.creature })),
         // Rocks follow the solid surface, not life: the same body-keyed
         // history supplies RockFamily records on barren and living worlds.
-        rocks: st.stage === 'solid'
-          ? { surfaceSolid: true, families: biosphereHistoryFor(seed, body.id, body, entry.lc).rocks }
+        rocks: rocks
+          ? { surfaceSolid: true, families: rocks }
           : { surfaceSolid: false, families: [] },
       };
+      lifeGateSources = { seed, body, lc: entry.lc, solid, stage, tMyr, species: bio.species, rocks, value };
     }
   }
   lifeGateCache = { key, value };

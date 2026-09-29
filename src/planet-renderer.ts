@@ -413,6 +413,8 @@ export class PlanetRenderer {
   // `LifeGateContext` for the overall design). ------------------------------
   private lifeContext: LifeGateContext | null = null;
   private lifeSignature = '';
+  private lifeSignatureContext: LifeGateContext | null = null;
+  private lifeSignatureWater = NaN;
   private floraRenderer!: FloraFieldRenderer;
   private classify!: ReturnType<typeof biomeClassifier>;
   private readonly faunaRenderer=new FaunaFieldRenderer();
@@ -1375,8 +1377,13 @@ export class PlanetRenderer {
   }
   private updateLife(eye: THREE.Vector3, contact: THREE.Vector3, frustum: THREE.Frustum | null, worldNs: bigint,shadowFrustum:THREE.Frustum|null): void {
     const life=this.lifeContext;if(!life){this.hideLife();return;}
+    // The context object is immutable and main.ts returns the same object while
+    // nothing life-relevant changes, so the signature string is rebuilt only for
+    // a new context or water bucket.
+    if(life!==this.lifeSignatureContext||this.waterBucket!==this.lifeSignatureWater){this.lifeSignatureContext=life;this.lifeSignatureWater=this.waterBucket;
     const signature=`${this.waterBucket}|${life.floraStage}|${life.faunaStage}|${life.floraAvailableKinds?.join(',')}|${life.faunaAvailableArchetypes?.join(',')}|${life.faunaSpecies?.map(s=>s.id).join(',')??''}`;
     if(signature!==this.lifeSignature){this.lifeSignature=signature;this.lifeScatterValid=false;this.lifeResidents.clear();this.faunaGenomes.clear();this.faunaNear.clear();this.faunaGroundQueue=[];this.faunaFrameKeyValid=false;}
+    }
     const t0=performance.now();
     if(!this.lifeScatterValid||contact.distanceTo(this.lifeScatterCenter)*this.body.radiusM>LIFE_RESCATTER_THRESHOLD_M){
       this.rescatterLife(contact);this.lifeScatterCenter.copy(contact);this.lifeScatterValid=true;
