@@ -39,7 +39,11 @@ type Resident={cell:PopulationCell;height:number;present:boolean;water:number;pa
   px:number;py:number;pz:number;bx:number;by:number;bz:number;br:number;
   /** Expected far presentation (code, drawn height, ratio code). */
   expCode:number;expHeightM:number;expRatio:number;
-  slotVersion:number;slot:number;patchVersion:number;current:boolean;handoffVersion:number;handoff:boolean};
+  slotVersion:number;slot:number;patchVersion:number;current:boolean;handoffVersion:number;handoff:boolean;
+  /** Demand of the current loop pass (`wantPass`): batch and quantized coverage. */
+  wantPass:number;wantBatch:number;wantCoverage:number;poolPass:number;
+  /** Last slot written per legacy batch / detailed LOD; hints verified by identity. */
+  legacySlots:number[]|undefined;detailSlots:number[]|undefined};
 /** Habitat cache keyed by canonical id. Every replacement marks the previous
  * resident stale (work-index lookups refetch it) and advances `revision`,
  * which is part of the still-frame key. */
@@ -58,13 +62,14 @@ class ResidentCache extends Map<string,Resident>{
 const planar=(frustum:THREE.Frustum)=>Array.isArray(frustum.planes)&&frustum.planes.length===6;
 const residentOf=(cell:PopulationCell,height:number,present:boolean,water:number):Resident=>({cell,height,present,water,patchKey:undefined,stale:false,
   epoch:-1,invariantHeight:NaN,dims:null,detail:undefined,px:0,py:0,pz:0,bx:0,by:0,bz:0,br:0,expCode:0,expHeightM:0,expRatio:0,
-  slotVersion:-1,slot:-1,patchVersion:-1,current:false,handoffVersion:-1,handoff:false});
+  slotVersion:-1,slot:-1,patchVersion:-1,current:false,handoffVersion:-1,handoff:false,
+  wantPass:-1,wantBatch:-1,wantCoverage:0,poolPass:-1,legacySlots:undefined,detailSlots:undefined});
 type TreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
 type AssetSlot={resident:Resident;originVersion:number;catalogueVersion:number;dimensions:ForestTreeDimensions};
 const loadTreeFamily:TreeLoader=async(a,b,options)=>(await import('./tree-asset.ts')).loadTreeAssetFamily(a,b,options);
 
-type BatchUpdates={residents:Resident[];originVersions:number[];dimensions:ForestTreeDimensions[];slots:Map<string,number>;wanted:Resident[];wantedCoverage:number[];wantedIds:Set<string>;matrix:DirtyRange;color:DirtyRange;coverage:DirtyRange;seed:DirtyRange;allometry:DirtyRange};
-const batchUpdates=():BatchUpdates=>({residents:[],originVersions:[],dimensions:[],slots:new Map(),wanted:[],wantedCoverage:[],wantedIds:new Set(),matrix:new DirtyRange(),color:new DirtyRange(),coverage:new DirtyRange(),seed:new DirtyRange(),allometry:new DirtyRange()});
+type BatchUpdates={residents:Resident[];originVersions:number[];dimensions:ForestTreeDimensions[];slots:Map<string,number>;wanted:Resident[];wantedCoverage:number[];matrix:DirtyRange;color:DirtyRange;coverage:DirtyRange;seed:DirtyRange;allometry:DirtyRange};
+const batchUpdates=():BatchUpdates=>({residents:[],originVersions:[],dimensions:[],slots:new Map(),wanted:[],wantedCoverage:[],matrix:new DirtyRange(),color:new DirtyRange(),coverage:new DirtyRange(),seed:new DirtyRange(),allometry:new DirtyRange()});
 type AllometryTally={representation:{family:number;legacy:number};reasons:Partial<Record<TreeAllometryReason,number>>;renderedHeightRangeM:[number,number]|null};
 const allometryTally=():AllometryTally=>({representation:{family:0,legacy:0},reasons:{},renderedHeightRangeM:null});
 function tallyAllometry(tally:AllometryTally,dimensions:ForestTreeDimensions){
@@ -212,6 +217,8 @@ export class PlanetForest {
     batchVisible:new Map<unknown,boolean>(),nearAllometry:allometryTally()};
   private retainedEdits=0;
   private slottedCanopy=false;
+  // Loop pass counter for resident demand marks, and per-pool duplicate marks.
+  private wantPass=0;private poolPass=0;
   constructor(private body:Body,private treeLoader:TreeLoader=loadTreeFamily){
     this.patchBroadphase=new ForestPatchBroadphase(body.radiusM,forestCellPatchKey);
     this.workIndex=new ForestOrderedWorkIndex(forestCellPatchKey);
@@ -495,6 +502,7 @@ export class PlanetForest {
       updates.color.include(index,3);updates.residents[index]=resident;this.colorWrites++;
       const seed=mesh.geometry.getAttribute('instanceForestSeed') as THREE.InstancedBufferAttribute;seed.setX(index,Math.min(255,Math.floor(roll*256)));updates.seed.include(index,1);
     }
+    (resident.legacySlots??=[-1,-1,-1])[batch]=index;
     const detailed=batch<2&&!!this.detailEntry(resident);
     const attribute=batch===2?this.canopyCoverage:this.coverage[batch],value=Math.fround(detailed?0:coverage);
     if(attribute.getX(index)!==value){attribute.setX(index,value);updates.coverage.include(index,1);this.coverageWrites++;}
@@ -521,12 +529,23 @@ export class PlanetForest {
       asset.setAppearance(index,[bark,bark,bark],[leaf,leaf,leaf]);
       state={resident,originVersion:this.originVersion,catalogueVersion:this.catalogueVersion,dimensions};
     }
-    asset.setCoverage(index,entry.coverage[lod].get(cell.id)!,Math.min(255,Math.floor(cell.roll*256)));
+    // This pass's demanded coverage for the identity (the slot may hold a
+    // replaced resident object moved into a departure hole).
+    asset.setCoverage(index,this.currentOf(resident)!.wantCoverage,Math.min(255,Math.floor(cell.roll*256)));
+    (resident.detailSlots??=[-1,-1])[lod]=index;
     return state!;
+  }
+  /** The cache's resident for this one's identity (itself unless replaced). */
+  private currentOf(resident:Resident){return resident.stale?this.cache.get(resident.cell.id):resident;}
+  /** Whether this identity is demanded in `batch` by the current loop pass. */
+  private wantedIn(resident:Resident,batch:number){
+    const current=this.currentOf(resident);
+    return !!current&&current.wantPass===this.wantPass&&current.wantBatch===batch;
   }
   private wantInstance(batch:number,resident:Resident,coverage:number){
     coverage=quantizeForestCoverage(coverage)/256;
-    const updates=this.updates[batch];updates.wanted.push(resident);updates.wantedCoverage.push(coverage);updates.wantedIds.add(resident.cell.id);
+    const updates=this.updates[batch];updates.wanted.push(resident);updates.wantedCoverage.push(coverage);
+    resident.wantPass=this.wantPass;resident.wantBatch=batch;resident.wantCoverage=coverage;
     tallyAllometry(this.nearAllometry,this.dimensions(resident));
     if(this.slottedCanopy)this.fullCanopy!.ownSlot(resident.slot,coverage);else this.fullCanopy?.own(resident.cell.id,coverage);
   }
@@ -534,13 +553,19 @@ export class PlanetForest {
     const updates=this.updates[batch],mesh=batch===2?this.canopy:this.meshes[batch];
     const coverage=batch===2?this.canopyCoverage:this.coverage[batch];
     if(batch<2){
-      for(const entry of this.assets.entries.values()){entry.wanted[batch].length=0;entry.coverage[batch].clear();}
+      for(const entry of this.assets.entries.values())entry.wanted[batch].length=0;
       for(let i=0;i<updates.wanted.length;i++){
         const resident=updates.wanted[i],entry=this.detailEntry(resident);if(!entry)continue;
-        entry.wanted[batch].push(resident);entry.coverage[batch].set(resident.cell.id,updates.wantedCoverage[i]);
+        entry.wanted[batch].push(resident);
       }
       for(const entry of this.assets.entries.values()){
-        const count=entry.pools[batch].reconcile(entry.wanted[batch],(index,resident,previous)=>this.writeDetailed(entry,batch,index,resident,previous));
+        // Membership and slots come from demand marks and verified slot hints;
+        // same result as the keyed CompactInstanceSlots.reconcile.
+        const wanted=entry.wanted[batch],pass=++this.poolPass;
+        for(const resident of wanted){if(resident.poolPass===pass)throw new Error(`Duplicate compact instance ${resident.cell.id}`);resident.poolPass=pass;}
+        const count=entry.pools[batch].reconcileMarked(wanted,(index,resident,previous)=>this.writeDetailed(entry,batch,index,resident,previous),
+          resident=>{const current=this.currentOf(resident);return !!current&&current.wantPass===this.wantPass&&current.wantBatch===batch&&this.detailEntry(current)===entry;},
+          resident=>resident.detailSlots?.[batch]??-1);
         entry.batches[batch].setCount(count);entry.batches[batch].group.visible=count>0;
         this.assetCounts[batch]+=count;
       }
@@ -548,7 +573,7 @@ export class PlanetForest {
     // A departure moves only the final resident into the hole. Reverse traversal
     // ensures that moved residents have already been checked for retention.
     for(let index=updates.residents.length-1;index>=0;index--){
-      const resident=updates.residents[index];if(updates.wantedIds.has(resident.cell.id))continue;
+      const resident=updates.residents[index];if(this.wantedIn(resident,batch))continue;
       updates.slots.delete(resident.cell.id);
       const last=updates.residents.length-1;
       if(index!==last){
@@ -558,7 +583,9 @@ export class PlanetForest {
       updates.residents.pop();updates.originVersions.pop();updates.dimensions.pop();
     }
     for(let i=0;i<updates.wanted.length;i++){
-      const resident=updates.wanted[i];let index=updates.slots.get(resident.cell.id);
+      // A resident already in its hinted slot is mapped there by `slots` too.
+      const resident=updates.wanted[i],hint=resident.legacySlots?.[batch]??-1;
+      let index=hint>=0&&updates.residents[hint]===resident?hint:updates.slots.get(resident.cell.id);
       if(index===undefined){index=updates.residents.length;updates.slots.set(resident.cell.id,index);}
       this.writeInstance(batch,index,resident,updates.wantedCoverage[i]);
     }
@@ -740,7 +767,8 @@ export class PlanetForest {
     }
     const canopyStateBefore=this.nearStateRevision(),retainedEditsBefore=this.retainedEdits;
     const counts=[0,0],capacities=immersive?[64,1024]:[B.forestNearCapacity,B.forestCapacity];let canopyCount=0;
-    for(const updates of this.updates){updates.wanted.length=0;updates.wantedCoverage.length=0;updates.wantedIds.clear();}
+    for(const updates of this.updates){updates.wanted.length=0;updates.wantedCoverage.length=0;}
+    this.wantPass++;
     const altitudeFade=1-THREE.MathUtils.smoothstep(altitudeM,B.forestPrepareAltitudeM-500,B.forestPrepareAltitudeM);
     const {middleEnterM,middleLeaveM,farOwnedM}=this.handoff;
     // Hosts without the slot API (test doubles) take the id-keyed calls, uncached.

@@ -38,4 +38,33 @@ export class CompactInstanceSlots<T,S> {
     }
     return this.items.length;
   }
+  /** reconcile() without hashing a key per item: the same slots, writes and
+   * write order, for a caller that already knows (a) whether a retained item's
+   * identity is wanted in this pass and (b) a candidate slot for each wanted
+   * item, verified here against `items`. The caller guarantees `items` holds
+   * no duplicate identity; reconcile() is the checked general form. */
+  reconcileMarked(items:readonly T[],write:(index:number,item:T,previous:S|undefined)=>S,
+    retained:(item:T)=>boolean,slotHint:(item:T)=>number):number{
+    if(items.length>this.capacity)throw new Error('Compact instance capacity exceeded');
+    for(let index=this.items.length-1;index>=0;index--){
+      if(retained(this.items[index]))continue;
+      this.indices.delete(this.key(this.items[index]));
+      const last=this.items.length-1;
+      if(index!==last){
+        const moved=this.items[last];
+        this.states[index]=write(index,moved,this.states[index]);
+        this.items[index]=moved;this.indices.set(this.key(moved),index);
+      }
+      this.items.pop();this.states.pop();
+    }
+    for(const item of items){
+      // A hinted slot holding this very item already maps its identity there.
+      const hint=slotHint(item);let index:number;
+      if(hint>=0&&hint<this.items.length&&this.items[hint]===item)index=hint;
+      else{const id=this.key(item);index=this.indices.get(id)??this.items.length;this.indices.set(id,index);}
+      this.states[index]=write(index,item,this.states[index]);
+      this.items[index]=item;
+    }
+    return this.items.length;
+  }
 }

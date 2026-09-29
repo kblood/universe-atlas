@@ -33,3 +33,20 @@ test('randomized demand retains exact membership with contiguous initialized slo
   assert.equal(new Set(gpu).size,gpu.length);assert.equal(pool.states.length,gpu.length);
  }
 });
+test('marked reconcile matches keyed reconcile slot for slot, write for write',()=>{
+ // Identities are re-created with fresh objects sometimes, as the forest's
+ // habitat cache replaces residents; hints are sometimes stale or wrong.
+ let seed=99;const random=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/2**32);
+ const keyed=new CompactInstanceSlots(12,x=>x.id),marked=new CompactInstanceSlots(12,x=>x.id);
+ const log=[[],[]],writer=k=>(i,x,old)=>{log[k].push([i,x.id,x.v,old?.id??null,old?.v??null]);return x;};
+ let current=new Map(Array.from({length:16},(_,i)=>[String(i),{id:String(i),v:0}]));
+ for(let n=0;n<2000;n++){
+  if(random()<.3){const id=String(Math.floor(random()*16));current.set(id,{id,v:n});}
+  const wanted=[...current.values()].filter(()=>random()>.45).sort(()=>random()-.5).slice(0,12);
+  const ids=new Set(wanted.map(x=>x.id));
+  keyed.reconcile(wanted,writer(0));
+  marked.reconcileMarked(wanted,writer(1),x=>ids.has(x.id),x=>random()<.2?Math.floor(random()*14)-1:marked.items.indexOf(x));
+  assert.deepEqual(log[1],log[0]);assert.deepEqual(marked.items,keyed.items);assert.deepEqual(marked.states,keyed.states);
+  log[0].length=0;log[1].length=0;
+ }
+});
