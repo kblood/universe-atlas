@@ -238,10 +238,12 @@ export class ForestFarAtlas{
   }
 }
 
-/** CPU twin of `treeAtlasHeightCoverage`. */
-export function forestFarAtlasHeightCoverage(coverage:number,leafFraction:number,heightM:number){
-  if(![coverage,leafFraction,heightM].every(Number.isFinite)||heightM<=0)throw new Error('Invalid far atlas coverage input');
-  const f=Math.min(1,Math.max(0,leafFraction)),k=1+f*((L.referenceHeightM/heightM)**2-1);
+/** CPU twin of `treeAtlasLeafCoverage`. `leafDepthScale` is the drawn
+ * member's leaf optical depth relative to its 16 m capture
+ * (`treeAllometryLeafDepthScale`: card area over drawn side area). */
+export function forestFarAtlasLeafCoverage(coverage:number,leafFraction:number,leafDepthScale:number){
+  if(![coverage,leafFraction,leafDepthScale].every(Number.isFinite)||leafDepthScale<=0)throw new Error('Invalid far atlas coverage input');
+  const f=Math.min(1,Math.max(0,leafFraction)),k=1+f*(leafDepthScale-1);
   return 1-Math.min(1,Math.max(0,1-coverage))**k;
 }
 
@@ -283,11 +285,12 @@ void treeAtlasView(sampler2DArray colourMap,sampler2DArray dataMap,float view,fl
   vec3 local=right*n.x+up*n.y+toward*sqrt(max(0.0,1.0-dot(n,n)));
   colour+=c*weight;surfaceNormal+=local*(c.a*weight);leaf+=d.w*weight;hitDistance+=t*c.a*weight;
 }
-// Captured at the 16 m reference. Leaf cards stay metric while the skeleton
-// scales with height, so leaf area per crown area scales by (16/h)^2: scale
-// the optical depth of the leaf share. Bark scales with the skeleton.
-float treeAtlasHeightCoverage(float coverage,float leafFraction,float heightM){
-  float k=mix(1.0,${L.referenceHeightM*L.referenceHeightM}.0/(heightM*heightM),clamp(leafFraction,0.0,1.0));
+// Captured at the 16 m reference with unit cards. A drawn member's leaf area
+// per side area differs by leafDepthScale (card area over drawn side area,
+// treeAllometryLeafDepthScale): scale the optical depth of the leaf share.
+// Bark scales with the skeleton.
+float treeAtlasLeafCoverage(float coverage,float leafFraction,float leafDepthScale){
+  float k=mix(1.0,leafDepthScale,clamp(leafFraction,0.0,1.0));
   return 1.0-pow(clamp(1.0-coverage,0.0,1.0),k);
 }
 // Object-space hashed alpha (Wyman & McGuire 2017), stable under motion.

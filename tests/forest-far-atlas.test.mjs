@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {
   ForestFarAtlas,FOREST_FAR_ATLAS_LAYOUT as L,FOREST_FAR_ATLAS_LEVELS,FOREST_FAR_ATLAS_VIEWS,FOREST_FAR_ATLAS_VERSION,
-  forestFarAtlasBytes,forestFarAtlasScratchBytes,forestFarAtlasSphere,forestFarAtlasTileOffset,forestFarAtlasHeightCoverage,
+  forestFarAtlasBytes,forestFarAtlasScratchBytes,forestFarAtlasSphere,forestFarAtlasTileOffset,forestFarAtlasLeafCoverage,
   installForestFarAtlasCapture,forestFarAtlasGLSL,forestFarAtlasCommonGLSL,
 } from '../src/forest-far-atlas.ts';
 import {decodeHemiTreeView,encodeHemiTreeView,hemiTreeViewBlend,hemiTreeViewGLSL,treeCaptureBasis,treeHemiCaptureViews} from '../src/tree-impostor-views.ts';
@@ -11,6 +11,8 @@ import {forestStructuralVariants,FOREST_VARIANT_COUNT} from '../src/tree-structu
 import {ForestImpostors} from '../src/forest-impostor.ts';
 import {ForestTreeFamilyLibrary} from '../src/forest-tree-family-library.ts';
 import {calibrateTreeLodCardScale} from '../src/tree-lod-coverage.ts';
+import {treeAllometryAtlasStretch,treeAllometryCardScale,treeAllometryLeafDepthScale,TREE_ALLOMETRY_VERSION} from '../src/tree-allometry.ts';
+import {familyReference} from './helpers/tree-allometry-profiles.mjs';
 import {loadRasterTree,deformedPositions} from './helpers/tree-raster.mjs';
 import {captureSphere,captureTile,reconstruct,direct,compare,neededViews,rasterGeometry} from './helpers/far-atlas-emulation.mjs';
 
@@ -131,7 +133,7 @@ test('CPU emulation: atlas reconstruction reproduces the packaged LOD1 member si
     const lod0=await loadRasterTree(kind,0),lod1=await loadRasterTree(kind,1);
     const alpha={width:lod0.atlas.width,height:lod0.atlas.height,rgba:lod0.atlas.data,cutoffByte:128};
     const cardScale=calibrateTreeLodCardScale(lod0,lod1,alpha,kind==='branching'?2:2.83).cardScale;
-    const variants=forestStructuralVariants(kind),sphere=captureSphere(lod1,variants,cardScale);
+    const variants=forestStructuralVariants(kind),sphere=captureSphere(lod1,variants,cardScale),{reference}=await familyReference(kind);
     for(const direction of directions){
       assert.ok(!treeHemiCaptureViews(L.grid).some(v=>dot(v.towardCamera,direction)>1-1e-6),'held-out view');
       const own=[],wrong=[];
@@ -142,11 +144,26 @@ test('CPU emulation: atlas reconstruction reproduces the packaged LOD1 member si
         const native=compare(atlas.coverage,truth.coverage);
         assert.ok(native.areaRatio>.88&&native.areaRatio<1.08,`${kind} member ${member} area ${native.areaRatio}`);
         own.push(native.l1);wrong.push(compare(atlas.coverage,direct(lod1,{variant:variants[(member+4)%8],cardScale,sphere,direction,size}).coverage).l1);
-        // Metric cards: the (16/h)^2 optical-depth rule restores short and tall crowns.
-        for(const heightM of [10,22]){
-          const truthH=direct(lod1,{variant:variants[member],cardScale,sphere,direction,heightM,size});
+        // Density-preserving cards: a short crown is the reference scaled
+        // uniformly, so the atlas needs no correction (leaf depth scale 1).
+        {
+          const heightM=10,c=treeAllometryCardScale(reference,heightM,1,1);
+          assert.ok(Math.abs(treeAllometryLeafDepthScale(reference,heightM,1,1)-1)<1e-12);
+          const truthH=direct(lod1,{variant:variants[member],cardScale:cardScale*c,sphere,direction,heightM,size});
           const raw=compare(atlas.coverage,truthH.coverage).areaRatio;
-          const corrected=compare(atlas.coverage.map((a,i)=>a>0?forestFarAtlasHeightCoverage(a,atlas.leaf[i]/a,heightM):0),truthH.coverage).areaRatio;
+          assert.ok(raw>.88&&raw<1.08,`${kind} ${heightM} m area ${raw}`);
+        }
+        // Above 16 m the card scale clamps at 1: cards are sparser than the
+        // reference and the leaf optical-depth rule restores the crown. The
+        // emulation reconstructs without the horizontal stretch, so its depth
+        // scale is c^2/s^2 (the shader's per-drawn-area value times the stretch).
+        {
+          const heightM=22,c=treeAllometryCardScale(reference,heightM,1,1),stretch=treeAllometryAtlasStretch(reference,heightM,1,1);
+          assert.equal(c,1);assert.ok(stretch<1);
+          const truthH=direct(lod1,{variant:variants[member],cardScale:cardScale*c,sphere,direction,heightM,size});
+          const raw=compare(atlas.coverage,truthH.coverage).areaRatio;
+          const depth=treeAllometryLeafDepthScale(reference,heightM,1,1)*stretch;
+          const corrected=compare(atlas.coverage.map((a,i)=>a>0?forestFarAtlasLeafCoverage(a,atlas.leaf[i]/a,depth):0),truthH.coverage).areaRatio;
           assert.ok(Math.abs(Math.log(corrected))<Math.abs(Math.log(raw))*.6,`${kind} ${heightM} m raw ${raw} corrected ${corrected}`);
           assert.ok(corrected>.7&&corrected<1.15,`${kind} ${heightM} m corrected ${corrected}`);
         }
@@ -156,15 +173,15 @@ test('CPU emulation: atlas reconstruction reproduces the packaged LOD1 member si
   }
 });
 
-test('height coverage twin is identity at the reference height and only rescales leaf optical depth',()=>{
-  assert.ok(forestFarAtlasGLSL.includes('float k=mix(1.0,256.0/(heightM*heightM),clamp(leafFraction,0.0,1.0));'));
+test('leaf coverage twin is identity at depth scale 1 and only rescales leaf optical depth',()=>{
+  assert.ok(forestFarAtlasGLSL.includes('float k=mix(1.0,leafDepthScale,clamp(leafFraction,0.0,1.0));'));
   for(const a of [0,.2,.5,.9,1]){
-    assert.ok(Math.abs(forestFarAtlasHeightCoverage(a,1,16)-a)<1e-12);
-    assert.ok(Math.abs(forestFarAtlasHeightCoverage(a,0,10)-a)<1e-12,'bark scales with the skeleton');
+    assert.ok(Math.abs(forestFarAtlasLeafCoverage(a,1,1)-a)<1e-12);
+    assert.ok(Math.abs(forestFarAtlasLeafCoverage(a,0,2.5)-a)<1e-12,'bark scales with the skeleton');
   }
-  assert.ok(forestFarAtlasHeightCoverage(.5,1,10)>.5&&forestFarAtlasHeightCoverage(.5,1,22)<.5);
-  assert.equal(forestFarAtlasHeightCoverage(1,1,22),1,'opaque texels stay opaque');
-  assert.throws(()=>forestFarAtlasHeightCoverage(.5,1,0));
+  assert.ok(forestFarAtlasLeafCoverage(.5,1,2.56)>.5&&forestFarAtlasLeafCoverage(.5,1,.53)<.5);
+  assert.equal(forestFarAtlasLeafCoverage(1,1,.53),1,'opaque texels stay opaque');
+  assert.throws(()=>forestFarAtlasLeafCoverage(.5,1,0));
 });
 
 function fakeSource(){
@@ -259,10 +276,12 @@ test('far impostors adopt a baked atlas per family, draw its union bound and fal
     assert.ok(shader.vertexShader.includes('treeHemiBlend(treeRotate(vec4(-treeQ.xyz,treeQ.w),toEye)/atlasScale,TREE_ATLAS_GRID,treeAtlasViews,treeAtlasWeights);'));
     assert.ok(shader.fragmentShader.includes('if(familyBound>0.0&&treeAtlasWeights!=vec3(0)){'),'atlas path');
     assert.ok(shader.fragmentShader.includes('}else if(familyBound>0.0){'),'band fallback remains for unbaked families');
-    // Coverage uses the crown-area-equivalent height of the stretched member.
-    assert.ok(shader.fragmentShader.includes('treeCoverage=treeAtlasHeightCoverage(atlasColour.a,leafFraction,treeRootHeight.w*sqrt(allometry.x));'));
+    // Coverage rescales leaf optical depth by card area over drawn side area.
+    assert.ok(shader.fragmentShader.includes('treeCoverage=treeAtlasLeafCoverage(atlasColour.a,leafFraction,treeAllometryLeafDepthScale(treeRootHeight.w,allometry,treeFamilyAllometry[familyIndex]));'));
+    // The member is stretched to the detailed crown width, not the crown ratio.
+    assert.ok(shader.fragmentShader.includes('vec3 atlasScale=vec3(atlasStretch,1.0,atlasStretch),atlasRo=ro/atlasScale,atlasRd=rd/atlasScale;'));
     assert.ok(forestFarAtlasCommonGLSL.includes(`TREE_ATLAS_GRID=${L.grid}.0`));
-    assert.ok(f.mesh.material.customProgramCacheKey().endsWith(`${FOREST_FAR_ATLAS_VERSION}/tree-allometry-1`));
+    assert.ok(f.mesh.material.customProgramCacheKey().endsWith(`${FOREST_FAR_ATLAS_VERSION}/${TREE_ALLOMETRY_VERSION}`));
   }finally{f.dispose();}
 });
 

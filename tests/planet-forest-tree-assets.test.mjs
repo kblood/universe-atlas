@@ -9,7 +9,7 @@ const {forestTreeCatalogue}=await vite.ssrLoadModule('/src/forest-tree-catalogue
 const {PlanetCanopy}=await vite.ssrLoadModule('/src/planet-canopy.ts');
 const {unpackForestPresentation}=await vite.ssrLoadModule('/src/forest-presentation.ts');
 const {forestMeshBufferFootprint}=await vite.ssrLoadModule('/src/forest-resource-accounting.ts');
-const {forestTreeDimensions,TREE_ALLOMETRY_VERSION}=await vite.ssrLoadModule('/src/tree-allometry.ts');
+const {forestTreeDimensions,TREE_ALLOMETRY_VERSION,TREE_ALLOMETRY_IDENTITY_CODE}=await vite.ssrLoadModule('/src/tree-allometry.ts');
 const {galaxies,refByAddress,system}=await vite.ssrLoadModule('/src/catalog.ts');
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
 after(()=>vite.close());
@@ -20,7 +20,7 @@ const species=(id='tree-a',family='branching',heightM=16)=>({id,name:id,lineageI
   niche:{minTempK:0,maxTempK:1000,minMoisture:0,maxMoisture:1,maxSlope:90},diet:'producer',dispersal:'land'});
 
 // Oak-like reference measurements; tests/tree-allometry.test.mjs measures the packaged GLBs.
-const ALLOMETRY=Object.freeze({version:'tree-allometry-1',referenceHeightM:16,crownRadiusM:4.25,cardExtentM:1.3,trunkRadiusM:.31,
+const ALLOMETRY=Object.freeze({version:TREE_ALLOMETRY_VERSION,referenceHeightM:16,crownRadiusM:4.25,cardExtentM:1.3,trunkRadiusM:.31,
   skeletonRadiusM:5.34,skeletonHeightM:14.72,maxLeafOffsetM:1.3,variantScale:1.14,variantLeanFraction:.045,cardScaleMax:2.7});
 function familyHarness({reject=false,forestCoverage=true,maxRadiusM=20,presentationEnabled=true,variants=false}={}){
   const families=[],dates=[],batches=[],options=[];
@@ -96,7 +96,7 @@ test('near and distant family selection share the dated catalogue and adopted li
     }
     step([...dated].reverse(),123n);assert.equal(f.fullCanopy.diagnostics().presentation.key,key,'enumeration changes preserve the shared presentation revision');
     step([],124n);assert.notEqual(f.fullCanopy.diagnostics().presentation.key,key);
-    assert.deepEqual(f.fullCanopy.presentationResolve(cells[0].id,16),{code:0,heightM:16,ratioCode:96+256*96},'unbound trees keep the canonical proxy with identity proportions');
+    assert.deepEqual(f.fullCanopy.presentationResolve(cells[0].id,16),{code:0,heightM:16,ratioCode:TREE_ALLOMETRY_IDENTITY_CODE},'unbound trees keep the canonical proxy with identity proportions');
     step(dated,123n);assert.equal(f.fullCanopy.renderer.uniforms.treeFamilyBounds.value.x,25);
     f.clearTreeAssets();step(dated,123n);
     assert.equal(f.fullCanopy.presentationResolve(cells[0].id,16).code,0);
@@ -108,17 +108,17 @@ test('dated catalogue attaches detailed branching instances while below-envelope
   const {f,h,cells,step}=fixture();
   try{
     assert.equal(await load(f),true);
-    // Cell a binds the 16 m species; b and c bind the 5 m species (below the family envelope).
-    step([species('branch'),species('short','branching',5)],123n);
+    // Cell a binds the 16 m species; b and c bind the 3 m species (below the 4 m family envelope).
+    step([species('branch'),species('short','branching',3)],123n);
     const d=f.diagnostics().detailedTrees;
     assert.deepEqual(d.visible,[1,0]);
     assert.deepEqual(d.allometry.near.reasons,{'height-below-family-envelope':2});
     assert.deepEqual(d.allometry.near.representation,{family:1,legacy:2});
     const short=f.dimensions(f.cache.get(cells[1].id));
-    assert.equal(short.representation,'legacy');assert.ok(short.heightM>4.5&&short.heightM<5.5,'legacy draw uses the species height, not the 23 m canonical proxy');
+    assert.equal(short.representation,'legacy');assert.ok(short.heightM>2.5&&short.heightM<3.5,'legacy draw uses the species height, not the 23 m canonical proxy');
     const legacyScale=new THREE.Vector3();new THREE.Matrix4().fromArray(f.meshes[0].instanceMatrix.array,16).decompose(new THREE.Vector3(),new THREE.Quaternion(),legacyScale);
     assert.ok(Math.abs(legacyScale.x*body.radiusM-short.heightM)<1e-3,'legacy matrix carries the rendered height');
-    assert.equal(f.meshes[0].geometry.getAttribute('instanceTreeAllometry').getX(1),short.ratioCode-(96+256*96));
+    assert.equal(f.meshes[0].geometry.getAttribute('instanceTreeAllometry').getX(1),short.ratioCode-TREE_ALLOMETRY_IDENTITY_CODE);
     assert.equal(d.dateNs,'123');
     assert.equal(d.samples.length,1);
     assert.equal(d.samples[0].id,cells[0].id);

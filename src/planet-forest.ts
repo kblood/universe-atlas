@@ -25,7 +25,7 @@ import type {ForestTreeKind} from './forest-tree-family-library.ts';
 import {ForestFarAtlas,FOREST_FAR_ATLAS_VERSION,FOREST_FAR_ATLAS_VIEWS} from './forest-far-atlas.ts';
 import {forestMemoryFootprint,forestMeshBufferFootprint,forestTextureFootprint} from './forest-resource-accounting.ts';
 import {forestFamilyBoundRadius,forestTreeDimensions,legacyTreeBoundSphere,unpackTreeAllometryRatios,TREE_ALLOMETRY_IDENTITY_CODE,TREE_ALLOMETRY_VERSION,
-  TREE_FAMILY_ALLOMETRY_ENVELOPE,TREE_LEGACY_ALLOMETRY_ENVELOPE,type ForestTreeDimensions,type TreeAllometryReason} from './tree-allometry.ts';
+  TREE_ALLOMETRY_CARD,TREE_FAMILY_ALLOMETRY_ENVELOPE,TREE_LEGACY_ALLOMETRY_ENVELOPE,type ForestTreeDimensions,type TreeAllometryReason} from './tree-allometry.ts';
 
 type Resident={cell:PopulationCell;height:number;present:boolean;water:number;patchKey?:string};
 type TreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
@@ -279,7 +279,7 @@ export class PlanetForest {
         const d=slot.dimensions;
         samples.push({batch,family:entry.kind,id:slot.resident.cell.id,speciesId:binding.recipe.speciesId,
           recipe:binding.recipe.sourceFingerprint,canonicalHeightM:slot.resident.cell.heightM,heightM:d.heightM,
-          crownWidthM:d.crownWidthM,trunkDiameterM:d.trunkDiameterM,crownRatio:d.crownRatio,trunkRatio:d.trunkRatio,ratioCode:d.ratioCode,
+          crownWidthM:d.crownWidthM,trunkDiameterM:d.trunkDiameterM,crownRatio:d.crownRatio,trunkRatio:d.trunkRatio,cardScale:d.cardScale,ratioCode:d.ratioCode,
           allometryReasons:[...d.reasons],...binding.appearance,
           structuralVariant:familyVariant(binding,entry.family.canopyPresentation??{})-1});count++;
       }
@@ -734,7 +734,7 @@ export class PlanetForest {
     return {visible:this.visibleTrees,near:this.nearTrees,cached:this.cache.size,pending:this.queue.length,
     detailedTrees:{ready:this.assets.entries.size>0,loading:this.assets.loading,error:this.assets.error||this.catalogueError,visible:[...this.assetCounts],species:this.catalogue.count,dateNs:this.worldDate.toString(),catalogueVersion:this.catalogueVersion,
       heightPolicy:'species-allometry',
-      allometry:{version:TREE_ALLOMETRY_VERSION,familyEnvelope:TREE_FAMILY_ALLOMETRY_ENVELOPE,legacyHeightRangeM:TREE_LEGACY_ALLOMETRY_ENVELOPE.heightM,
+      allometry:{version:TREE_ALLOMETRY_VERSION,familyEnvelope:TREE_FAMILY_ALLOMETRY_ENVELOPE,cardScale:TREE_ALLOMETRY_CARD,legacyHeightRangeM:TREE_LEGACY_ALLOMETRY_ENVELOPE.heightM,
         near:this.nearAllometry,far:{...this.farAllometry,scope:'retagged since presentation key change'},
         familyBoundRadiusM:Object.fromEntries([...this.presentedFamilies].map(([kind,p])=>[kind,p.conservativeBounds.radiusM])),
         // Instance channels carrying rendered dimensions (already inside memoryAccounting).

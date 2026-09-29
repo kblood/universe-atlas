@@ -12,9 +12,9 @@ import {forestMaterial,forestDepthMaterial} from '../src/forest-material.ts';
 import {createLegacyTreeGeometry,LEGACY_TREE_TRUNK} from '../src/tree-shape.ts';
 import {treeVertexMeters} from '../src/tree-asset.ts';
 import {forestTreeDimensions,forestFamilyBoundRadius,forestFamilyEnvelopeRadius,legacyTreeBoundSphere,packTreeAllometryParameter,
-  packTreeAllometryRatios,quantizeTreeAllometryRatio,treeAllometryGLSL,treeAllometryPoint,treeAllometryRadial,treeAllometryRatioFromCode,
+  packTreeAllometryRatios,quantizeTreeAllometryRatio,treeAllometryAtlasStretch,treeAllometryCardScale,treeAllometryCrownHalfWidthM,treeAllometryGLSL,treeAllometryLeafDepthScale,treeAllometryPoint,treeAllometryRadial,treeAllometryRatioFromCode,
   unpackTreeAllometryParameter,unpackTreeAllometryRatios,validateTreeAllometryReference,LEGACY_TREE_ALLOMETRY,TREE_ALLOMETRY_IDENTITY_CODE,
-  TREE_ALLOMETRY_RATIO,TREE_ALLOMETRY_REASONS,TREE_ALLOMETRY_VERSION,TREE_FAMILY_ALLOMETRY_ENVELOPE,TREE_LEGACY_ALLOMETRY_ENVELOPE} from '../src/tree-allometry.ts';
+  TREE_ALLOMETRY_CARD,TREE_ALLOMETRY_RATIO,TREE_ALLOMETRY_REASONS,TREE_ALLOMETRY_VERSION,TREE_FAMILY_ALLOMETRY_ENVELOPE,TREE_LEGACY_ALLOMETRY_ENVELOPE} from '../src/tree-allometry.ts';
 import {familyGeometries,familyReference} from './helpers/tree-allometry-profiles.mjs';
 
 const KINDS=['branching','spire'];
@@ -66,7 +66,19 @@ test('species dimensions follow the dated recipe across dates and both families'
       assert.ok(d.heightM>=E.heightM[0]&&d.heightM<=E.heightM[1]);
       assert.equal(d.ratioCode,packTreeAllometryRatios(d.crownRatio,d.trunkRatio));
       if(!d.reasons.includes('trunk-ratio-clamped'))assert.ok(Math.abs(d.trunkDiameterM-individual.trunkDiameterM)<=s*r.trunkRadiusM*STEP+1e-9,'trunk within one half quantization step');
-      if(!d.reasons.includes('crown-ratio-clamped'))assert.ok(Math.abs(d.crownWidthM-individual.crownWidthM)<=s*(r.crownRadiusM-r.trunkRadiusM)*STEP+1e-9,'crown within one half quantization step');
+      // Documented crown tolerance: the drawn width (mapped pivots plus scaled
+      // cards) is the nearest code, so the error is at most half the width
+      // change to an adjacent crown code.
+      const width=k=>2*treeAllometryCrownHalfWidthM(r,d.heightM,k,d.trunkRatio);
+      assert.ok(Math.abs(width(d.crownRatio)-d.crownWidthM)<1e-9,'crown width is the drawn width');
+      const step=Math.max(...[-STEP,STEP].map(x=>d.crownRatio+x).filter(k=>k>=E.crownRatio[0]&&k<=E.crownRatio[1]).map(k=>Math.abs(width(k)-d.crownWidthM)));
+      if(!d.reasons.includes('crown-ratio-clamped'))assert.ok(Math.abs(d.crownWidthM-individual.crownWidthM)<=step/2+1e-9,'crown within half an adjacent-code width step');
+      assert.equal(d.cardScale,treeAllometryCardScale(r,d.heightM,d.crownRatio,d.trunkRatio));
+      assert.ok(d.cardScale>=TREE_ALLOMETRY_CARD.min&&d.cardScale<=TREE_ALLOMETRY_CARD.max);
+      // Recipe tolerances measured on this fixture (docs/tree-families-2026-09-28.md).
+      assert.ok(Math.abs(d.crownWidthM/individual.crownWidthM-1)<=.02,`${d.speciesId} crown ${d.crownWidthM} vs ${individual.crownWidthM}`);
+      assert.ok(Math.abs(d.trunkDiameterM/individual.trunkDiameterM-1)<=.01,`${d.speciesId} trunk ${d.trunkDiameterM} vs ${individual.trunkDiameterM}`);
+      assert.deepEqual(d.reasons,[],`${d.speciesId} draws without any clamp`);
       seen.family.add(d.kind);seen.speciesByKind[d.kind].add(d.speciesId);seen.heights.add(d.heightM);
       seen.slenderness[d.kind].push(d.crownWidthM/d.heightM);
     }else{
@@ -79,6 +91,8 @@ test('species dimensions follow the dated recipe across dates and both families'
   assert.ok(seen.heights.size>=12,'heights differ per species and individual variant, not one proxy');
   const mean=a=>a.reduce((n,x)=>n+x,0)/a.length;
   assert.ok(mean(seen.slenderness.spire)<mean(seen.slenderness.branching),'conifer crowns stay narrower per metre of height');
+  assert.ok(mean(seen.slenderness.spire)<.3,`conifers are slender, not minimum-crown blobs (${mean(seen.slenderness.spire)})`);
+  assert.deepEqual(seen.reasons,{},'no clamp or legacy fallback on the dated fixture');
   test.diagnostic?.(JSON.stringify(seen.reasons));
 });
 
@@ -116,7 +130,7 @@ test('ratio and far parameter channels are exact in Float32 and the GLSL decode 
   for(let q=0;q<TREE_ALLOMETRY_RATIO.levels;q++){
     const k=treeAllometryRatioFromCode(q);assert.equal(Math.fround(k),k);assert.equal(quantizeTreeAllometryRatio(k),q);
   }
-  assert.equal(treeAllometryRatioFromCode(TREE_ALLOMETRY_IDENTITY_CODE%256),1);assert.equal(TREE_ALLOMETRY_IDENTITY_CODE,96+256*96);
+  assert.equal(treeAllometryRatioFromCode(TREE_ALLOMETRY_IDENTITY_CODE%256),1);assert.equal(TREE_ALLOMETRY_IDENTITY_CODE,112+256*112);
   for(const roll of [0,.2,.5,.999999])for(const code of [0,TREE_ALLOMETRY_IDENTITY_CODE,65535,packTreeAllometryRatios(1.62,.55)]){
     const value=packTreeAllometryParameter(roll,code);
     assert.ok(value<2**24);assert.equal(Math.fround(value),value);
@@ -134,12 +148,19 @@ test('near, mid, far and legacy paths receive the same height and proportions',(
   const decisions=bindings.map(b=>forestTreeDimensions(b,16,families)).filter(d=>d.representation==='family');
   assert.ok(decisions.length>0);
   for(const d of decisions.slice(0,24)){
-    const r=packaged[d.kind].reference,allometry={crownRatio:d.crownRatio,trunkRatio:d.trunkRatio,trunkRadiusM:r.trunkRadiusM};
-    // Detailed near/mid CPU oracle: bark follows the radial map; leaf cards stay metric.
+    const r=packaged[d.kind].reference,allometry={crownRatio:d.crownRatio,trunkRatio:d.trunkRatio,trunkRadiusM:r.trunkRadiusM,crownRadiusM:r.crownRadiusM,cardExtentM:r.cardExtentM};
+    // Detailed near/mid CPU oracle: bark follows the radial map; leaf cards follow the card scale.
     const bark=new THREE.Vector3(1.1,6,-.4),pivot=new THREE.Vector3(2.5,11,1.2),corner=pivot.clone().add(new THREE.Vector3(.3,-.2,.25));
     assert.deepEqual(treeVertexMeters(bark,bark,false,d.heightM,0,0,0,allometry).toArray().map(x=>+x.toFixed(9)),treeAllometryPoint(bark.toArray(),r,d).map(x=>+x.toFixed(9)));
     const leaf=treeVertexMeters(corner,pivot,true,d.heightM,0,0,0,allometry);
-    assert.ok(Math.abs(leaf.distanceTo(new THREE.Vector3(...treeAllometryPoint(pivot.toArray(),r,d)))-corner.distanceTo(pivot))<1e-9,'card offsets stay in metres');
+    assert.ok(Math.abs(leaf.distanceTo(new THREE.Vector3(...treeAllometryPoint(pivot.toArray(),r,d)))-corner.distanceTo(pivot)*d.cardScale)<1e-9,'card offsets follow the card scale');
+    // Far atlas: the stretched capture has the detailed crown width, and its
+    // leaf optical depth equals the detailed card density (scale 1 unless clamped).
+    const s=d.heightM/16,stretch=treeAllometryAtlasStretch(r,d.heightM,d.crownRatio,d.trunkRatio);
+    assert.ok(Math.abs(2*stretch*s*(r.crownRadiusM+r.cardExtentM)-d.crownWidthM)<1e-9,'far atlas width equals the detailed width');
+    const depth=treeAllometryLeafDepthScale(r,d.heightM,d.crownRatio,d.trunkRatio);
+    if(d.cardScale>TREE_ALLOMETRY_CARD.min&&d.cardScale<TREE_ALLOMETRY_CARD.max)assert.ok(Math.abs(depth-1)<1e-9,`leaf density preserved (${depth})`);
+    else assert.ok(Math.abs(depth-d.cardScale**2/(s*s*stretch))<1e-12);
     // Legacy stand-in draws the same physical crown width and trunk diameter.
     const legacy=unpackTreeAllometryRatios(d.legacyRatioCode),L=LEGACY_TREE_ALLOMETRY;
     if(!d.reasons.includes('legacy-crown-ratio-clamped'))assert.ok(Math.abs(legacy.crownRatio*d.heightM*L.crownDiameterPerHeight-d.crownWidthM)<=d.heightM*L.crownDiameterPerHeight*STEP/2+1e-9);
@@ -153,11 +174,15 @@ test('near, mid, far and legacy paths receive the same height and proportions',(
         barkLinearRgb:[.1,.08,.06],foliageLinearRgb:[.03,.08,.02],trunk:p0.profile.trunk,structuralVariants:pool,allometry:reference});
       assert.ok(Math.abs(f.uniforms.treeFamilyTrunk.value[kind==='branching'?0:1].y*16-reference.trunkRadiusM)<1e-12,'far and near split trunk and crown at one radius');
       const proxy=deriveVariantFamilyProxyBounds(p1.profile,forestVariantEnvelope(pool),p0.profile.trunk);
-      for(const d of [{heightM:8,crownRatio:.5,trunkRatio:1.5},{heightM:17.25,crownRatio:1.25,trunkRatio:.75},{heightM:24,crownRatio:1.75,trunkRatio:1.5}]){
+      for(const d of [{heightM:8,crownRatio:.5,trunkRatio:1.5},{heightM:8,crownRatio:.5,trunkRatio:.5},{heightM:4,crownRatio:.125,trunkRatio:1},
+        {heightM:17.25,crownRatio:1.25,trunkRatio:.75},{heightM:24,crownRatio:1.75,trunkRatio:1.5}]){
         f.write(0,new THREE.Vector3(),16,new THREE.Quaternion(),.5,0);f.setPresentation(0,kind==='branching'?1:2);
         f.setAllometry(0,d.heightM,packTreeAllometryRatios(d.crownRatio,d.trunkRatio));
         const centre=new THREE.Vector3(),extent=new THREE.Vector3();f.proxyBounds(0,centre,extent);
-        const expected=evaluateFamilyProxyBounds(proxy,d.heightM,d);
+        // The box grows by the larger of the crown ratio and the atlas stretch.
+        const stretch=treeAllometryAtlasStretch(reference,d.heightM,d.crownRatio,d.trunkRatio);
+        const expected=evaluateFamilyProxyBounds(proxy,d.heightM,{crownRatio:Math.max(d.crownRatio,stretch),trunkRatio:d.trunkRatio});
+        if(d.trunkRatio<1&&d.heightM<16)assert.ok(stretch>d.crownRatio,'small slender trees need the stretch term');
         centre.toArray().forEach((x,i)=>assert.ok(Math.abs(x-expected.centerM[i])<1e-5,`${kind} centre`));
         extent.toArray().forEach((x,i)=>assert.ok(Math.abs(x-expected.extentM[i])<1e-5,`${kind} extent`));
       }
@@ -229,6 +254,9 @@ test('species allometry reuses one far atlas and one uniform set per family',asy
   // Atlas members are captured once per family at the 16 m reference with authored proportions.
   const source=await readFile(new URL('../src/tree-asset.ts',import.meta.url),'utf8');
   assert.match(source,/for\(let i=0;i<count;i\+\+\)\{tree\.setXYZW\(i,1,0,1,1\);/);
+  // Detailed cards use the same shared card scale from the measured family reference.
+  assert.ok(source.includes('float allometryCard=treeAllometryCardScale(instanceTree.x*${TREE_REFERENCE_HEIGHT_M}.0,instanceTree.zw,atlasTreeAllometry);'));
+  assert.ok(source.includes('shaderState.allometry.value.set(allometry?.trunkRadiusM??0,allometry?.crownRadiusM??0,allometry?.cardExtentM??0);'));
 });
 
 test('fallbacks are explicit, counted by reason, and invalid channels are rejected',()=>{
@@ -240,9 +268,12 @@ test('fallbacks are explicit, counted by reason, and invalid channels are reject
   assert.deepEqual(one(species('oak'),new Map([['branching',{allometry:null}]])).reasons,['family-missing-allometry-reference']);
   const broken={...packaged.branching.reference,crownRadiusM:NaN};
   assert.deepEqual(one(species('oak'),new Map([['branching',{allometry:broken}]])).reasons,['family-missing-allometry-reference']);
-  const short=one(species('shrubby-oak','branching',5));
+  // tree-allometry-2 draws 4-8 m trees as the family; only shrub-sized trees fall back.
+  const small=one(species('small-oak','branching',5));
+  assert.deepEqual([small.representation,small.reasons],['family',[]]);
+  const short=one(species('shrubby-oak','branching',3));
   assert.deepEqual([short.representation,short.reasons],['legacy',['height-below-family-envelope']]);
-  assert.ok(short.heightM>=5*.94&&short.heightM<5*1.06,'below-envelope species draws at its physical height');
+  assert.ok(short.heightM>=3*.94&&short.heightM<3*1.06,'below-envelope species draws at its physical height');
   const tall=one(species('giant-pine','spire',26));
   assert.deepEqual([tall.representation,tall.reasons],['legacy',['height-above-family-envelope']]);
   assert.ok(tall.heightM>24&&tall.heightM<=TREE_LEGACY_ALLOMETRY_ENVELOPE.heightM[1]);
@@ -267,4 +298,37 @@ test('fallbacks are explicit, counted by reason, and invalid channels are reject
   const p=new THREE.Vector3(1,2,3);
   for(const h of [E.heightM[0]-.01,E.heightM[1]+.01])assert.throws(()=>treeVertexMeters(p,p,false,h,0,0),/rendered heights/);
   assert.throws(()=>treeVertexMeters(p,p,false,16,0,0,0,{crownRatio:2,trunkRatio:1,trunkRadiusM:.3}),/Invalid tree allometry/);
+});
+
+test('card scale, atlas stretch and leaf depth scale: GLSL matches the CPU twins',()=>{
+  // Transliterate the three shared GLSL functions to JavaScript and evaluate them.
+  const names=['treeAllometryCardScale','treeAllometryAtlasStretch','treeAllometryLeafDepthScale'];
+  const source=names.map(name=>{
+    const start=treeAllometryGLSL.indexOf(`float ${name}(`);assert.ok(start>=0,name);
+    return treeAllometryGLSL.slice(start,treeAllometryGLSL.indexOf('\n}',start)+2);
+  }).join('\n')
+    .replace(/float (\w+)\((?:float|vec2|vec3) (\w+),(?:float|vec2|vec3) (\w+),(?:float|vec2|vec3) (\w+)\)\{/g,'function $1($2,$3,$4){')
+    .replace(/\bfloat /g,'let ').replace(/\bsqrt\(/g,'Math.sqrt(');
+  const glsl=new Function('clamp',`${source}\nreturn {${names.join(',')}};`)((x,a,b)=>Math.min(b,Math.max(a,x)));
+  const f32=Math.fround;
+  for(const kind of KINDS){
+    const r=packaged[kind].reference,family={x:r.trunkRadiusM,y:r.crownRadiusM,z:r.cardExtentM};
+    for(const heightM of [4,6.5,8,12.3,16,20,24])for(const crownRatio of [E.crownRatio[0],.3,.62,1,1.5,E.crownRatio[1]])for(const trunkRatio of [.5,1,1.5]){
+      const ratios={x:crownRatio,y:trunkRatio},close=(a,b,what)=>assert.ok(Math.abs(a-b)<=1e-9*Math.max(1,Math.abs(b)),`${kind} ${what} ${a} vs ${b}`);
+      close(glsl.treeAllometryCardScale(heightM,ratios,family),treeAllometryCardScale(r,heightM,crownRatio,trunkRatio),'card');
+      close(glsl.treeAllometryAtlasStretch(heightM,ratios,family),treeAllometryAtlasStretch(r,heightM,crownRatio,trunkRatio),'stretch');
+      close(glsl.treeAllometryLeafDepthScale(heightM,ratios,family),treeAllometryLeafDepthScale(r,heightM,crownRatio,trunkRatio),'depth');
+    }
+    // Identity ratios at 16 m reproduce the capture: unit cards, no stretch, unit depth.
+    assert.equal(f32(treeAllometryCardScale(r,16,1,1)),1);assert.ok(Math.abs(treeAllometryAtlasStretch(r,16,1,1)-1)<1e-12);
+    // Monotonic drawn half-width in the crown ratio (the bisection's premise).
+    for(const heightM of [4,10,24]){let previous=-Infinity;
+      for(let q=0;q<TREE_ALLOMETRY_RATIO.levels;q++){const k=treeAllometryRatioFromCode(q);if(k>E.crownRatio[1])break;
+        const w=treeAllometryCrownHalfWidthM(r,heightM,k,1);assert.ok(w>previous,`${kind} ${heightM} m half-width is monotonic`);previous=w;}
+    }
+  }
+  // Without a family reference (legacy / unpresented) cards keep their authored size.
+  assert.equal(treeAllometryCardScale(null,8,.5,1),1);assert.equal(treeAllometryAtlasStretch(null,8,.5,1),.5);
+  assert.equal(glsl.treeAllometryCardScale(8,{x:.5,y:1},{x:0,y:0,z:0}),1);
+  assert.throws(()=>treeAllometryCardScale(packaged.spire.reference,0,1,1));
 });
