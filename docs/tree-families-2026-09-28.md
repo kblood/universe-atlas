@@ -180,6 +180,11 @@ Live runtime samples of the same individuals (`report.json`, `diagnostics.detail
 | oak | W 5.29 m, crown ratio 0.5, `crown-ratio-clamped` | W 5.08 m (recipe 5.075), crown ratio 0.719, card scale 0.524, no reasons |
 | small0 | never in the family samples; drawn as the legacy lollipop at every distance | branching family in batch 0 at 8, 15 and 50 m; W 4.39 m (recipe 4.38), crown ratio 0.758, card scale 0.443 |
 
+The per-shot labels in `after-*.log` and `report.json` `expected` are the script's expectation, not an observation. In the `after-detailed` run it expects legacy everywhere, because the script only sets `treesOn` when the param is literally `1`, and `pose.json` also carries the before-era `legacy-under-envelope` tag for small0. What was actually observed:
+- `diagnostics.detailed.targetSample` / `observedBatch`, i.e. the "(sample batch 0)" suffix.
+- `diagnostics.detailedTrees.allometry.near.representation`: family 734 / legacy 0 with no reasons in `after-detailed`, against legacy 696 (`family-not-presented`) in `after-legacy`.
+- The images.
+
 The marked overlays (`*-marked.png`) draw the "drawn crown" bar from the reused pose file. In the `after-*` runs that yellow bar therefore still shows the **before** width. Use the table above for after-change widths.
 
 Observations:
