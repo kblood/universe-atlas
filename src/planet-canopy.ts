@@ -62,7 +62,9 @@ export class PlanetCanopy {
   private rebase:{origin:THREE.Vector3;positions:Float32Array;cursor:number}|null=null;
   // Slots owned by the near forest this frame and last frame. A slot freed or
   // reused since last frame was reset to zero ownership by retire/write.
-  private seen=new Set<number>();private previous=new Set<number>();
+  // Near-owned slots of this and the previous frame, in first-owned order
+  // (insertion-ordered sets); `seenStamp[slot]===frameStamp` marks this frame's.
+  private seen:number[]=[];private previous:number[]=[];private seenStamp:Uint32Array;private frameStamp=1;
   // Revision of the id -> slot map (install/remove), for owners caching slots.
   private slotVersion=0;
   // Inverse of `slots` (slot -> id) and a revision advanced only by installs:
@@ -102,7 +104,7 @@ export class PlanetCanopy {
   constructor(body:Body,capacity=229376){
     this.body=body;this.allocator=new ForestSlotAllocator(capacity);this.renderer=new ForestImpostors(capacity);
     this.bodyPositions=new Float64Array(capacity*3);this.heights=new Float64Array(capacity);this.canonicalHeights=new Float32Array(capacity);
-    this.presentationVersions=new Uint32Array(capacity);this.slotIds=new Array<string|undefined>(capacity).fill(undefined);
+    this.presentationVersions=new Uint32Array(capacity);this.slotIds=new Array<string|undefined>(capacity).fill(undefined);this.seenStamp=new Uint32Array(capacity);
     this.renderer.mesh.scale.setScalar(1/body.radiusM);this.group.add(this.renderer.mesh);this.group.name='Complete canonical canopy';this.group.visible=false;
   }
   /** Persistent CPU-only host arrays and current rebase scratch. Map/set/
@@ -278,7 +280,8 @@ export class PlanetCanopy {
     this.streaming=enabled&&!immersive&&!this.terminalFailure&&altitudeM<PLANET_DETAIL.forestStreamAltitudeM;
     this.group.visible=this.streaming&&altitudeM<PLANET_DETAIL.forestPrepareAltitudeM;
     if(previousVisible!==this.group.visible)this.invalidateCurrentPatchAnswers();
-    this.installedThisFrame=0;this.installMs=0;this.uploadBytes=0;this.seen.clear();
+    this.installedThisFrame=0;this.installMs=0;this.uploadBytes=0;this.seen.length=0;
+    if(++this.frameStamp>0xffffffff){this.seenStamp.fill(0);this.frameStamp=1;}
     this.nearPresentNotInCensus=0;this.nearAbsentInCensus=0;this.closeCandidates.length=0;this.farForcedClose=0;this.repeatNear=false;
     if(!this.streaming)return false;
     this.renderer.uniforms.treeRuntime.value=1;
@@ -420,7 +423,8 @@ export class PlanetCanopy {
   own(id:string,coverage:number){this.ownSlot(this.slotOf(id),coverage);}
   ownSlot(slot:number,coverage:number){
     if(!this.group.visible||slot<0)return;
-    this.renderer.setOwnership(slot,quantizeForestCoverage(coverage));this.seen.add(slot);
+    this.renderer.setOwnership(slot,quantizeForestCoverage(coverage));
+    if(this.seenStamp[slot]!==this.frameStamp){this.seenStamp[slot]=this.frameStamp;this.seen.push(slot);}
   }
   /** Called for nearby canonical candidates, including unresolved near samples.
    * Only this bounded neighbourhood needs the exact rotated-bound check. */
@@ -440,7 +444,8 @@ export class PlanetCanopy {
     if(!this.streaming)return;
     if(!this.repeatNear){
       // A repeated frame owns exactly `previous` again at unchanged levels.
-      for(const index of this.previous)if(!this.seen.has(index))this.renderer.setOwnership(index,0);
+      const stamp=this.frameStamp,seenStamp=this.seenStamp;
+      for(const index of this.previous)if(seenStamp[index]!==stamp)this.renderer.setOwnership(index,0);
       const old=this.previous;this.previous=this.seen;this.seen=old;
       this.repeatCounts[0]=this.nearPresentNotInCensus;this.repeatCounts[1]=this.nearAbsentInCensus;
       this.repeatClose.length=0;for(const id of this.closeCandidates)this.repeatClose.push(id);
