@@ -8,6 +8,16 @@ export const PATCH_SEGMENTS = 32;
 export const PATCH_TEXTURE = 128;
 export type Tile = { face: number; level: number; x: number; y: number };
 export const tileKey = (t: Tile) => `${t.face}/${t.level}/${t.x}/${t.y}`;
+/** Exact numeric tile identity: `((8+face)*2^L + y)*2^L + x`. Each level
+ * occupies [8*4^L, 14*4^L), so codes are unique across faces and levels, and
+ * every code stays below 2^53 through level 24 (14*4^24 < 2^52). Terrain
+ * leaves never exceed level 24 (fineContactLevel is clamped to 24); deeper or
+ * negative levels return -1, which is never a leaf's code. */
+export const TILE_CODE_MAX_LEVEL=24;
+export function tileCode(t:Tile){
+  if(t.level<0||t.level>TILE_CODE_MAX_LEVEL)return -1;
+  const n=2**t.level;return ((8+t.face)*n+t.y)*n+t.x;
+}
 export function directionCoordinates(d: V3) {
   const [x,y,z]=d, ax=Math.abs(x),ay=Math.abs(y),az=Math.abs(z);
   const face=ax>=ay&&ax>=az?(x>=0?0:1):ay>=az?(y>=0?2:3):(z>=0?4:5);
