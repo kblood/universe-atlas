@@ -15,7 +15,14 @@ export const FAUNA_FIELD_EYE_DETAIL_M=60;
 /** Forward-looking low flight needs more than the old 280 m proxy range. */
 export const FAUNA_FIELD_VISIBLE_M=600;
 const UP=new THREE.Vector3(0,1,0);
-function sameLanes(a:Float64Array,b:ArrayLike<number>):boolean{for(let i=0;i<16;i++)if(!Object.is(a[i],b[i]))return false;return true;}
+/** True when a part drawn under parent `b` would produce the lanes recorded
+ * under parent `a`, up to the translation sums `replay` re-adds: every
+ * rotation/scale lane equal, and each translation lane's `t * 0` term (its
+ * sign, or NaN) equal, since that term enters the rotation/scale lanes. */
+function sameLanes(a:Float64Array,b:ArrayLike<number>):boolean{
+  for(let i=0;i<12;i++)if(!Object.is(a[i],b[i]))return false;
+  return Object.is(a[15],b[15])&&Object.is(a[12]!*0,b[12]!*0)&&Object.is(a[13]!*0,b[13]!*0)&&Object.is(a[14]!*0,b[14]!*0);
+}
 /** Parsed genome colours. `Color.set(string)` runs a regex parse and an
  * sRGB-to-linear conversion; it was a third of the fauna frame (512 animals
  * × ~30 parts). The cached Color holds exactly what `set` produced. Genome
@@ -32,9 +39,13 @@ function faunaColor(style:string):THREE.Color {
  * the inputs that produced it. `FaunaFieldRenderer.submit` is a pure function
  * of (genome, parent, timeS, gait, eye detail), so while those repeat, as on
  * every frame at a paused date, replaying the recorded lanes writes exactly
- * the values drawing would. */
+ * the values drawing would. A part's translation lane is
+ * `((a11·x + a12·y) + a13·z) + a14` with a14 the parent's (origin-relative)
+ * translation, so the record keeps that partial sum in double precision and
+ * replay adds the current parent translation: moving the eye (and so the
+ * life origin) at a paused date still replays, bit for bit. */
 type AnimalRecord={genome:CreatureGenome|null;timeS:number;gait:CreatureGait|null;eyes:boolean;parent:Float64Array;
-  parts:number;kinds:Uint8Array;matrices:Float32Array;colors:THREE.Color[];valid:boolean;frame:number};
+  parts:number;kinds:Uint8Array;matrices:Float32Array;sums:Float64Array;colors:THREE.Color[];valid:boolean;frame:number};
 const RECORD_PARTS=48;
 
 /** Instanced fallback for specimens outside the near rig pool. Anatomy is
@@ -100,7 +111,10 @@ export class FaunaFieldRenderer {
     const record=this.recording;
     if(record){
       if(record.parts>=RECORD_PARTS||o+16>te.length)record.valid=false;
-      else{const n=record.parts++,m=n*16;record.kinds[n]=kind;record.colors[n]=rgb;for(let k=0;k<16;k++)record.matrices[m+k]=te[o+k]!;}
+      else{
+        const n=record.parts++,m=n*16,s=n*3;record.kinds[n]=kind;record.colors[n]=rgb;for(let k=0;k<16;k++)record.matrices[m+k]=te[o+k]!;
+        record.sums[s]=a11*x+a12*y+a13*z;record.sums[s+1]=a21*x+a22*y+a23*z;record.sums[s+2]=a31*x+a32*y+a33*z;
+      }
     }
   }
   private segment(parent:THREE.Matrix4,a:THREE.Vector3,b:THREE.Vector3,radius:number,color:string){
@@ -119,10 +133,10 @@ export class FaunaFieldRenderer {
     let record=this.records.get(key);
     if(record){
       record.frame=this.frame;
-      if(record.valid&&record.genome===g&&record.gait===gait&&record.eyes===eyes&&Object.is(record.timeS,timeS)&&sameLanes(record.parent,pe)){this.replay(record);return true;}
+      if(record.valid&&record.genome===g&&record.gait===gait&&record.eyes===eyes&&Object.is(record.timeS,timeS)&&sameLanes(record.parent,pe)){this.replay(record,pe);return true;}
     }else{
       record={genome:null,timeS:NaN,gait:null,eyes:false,parent:new Float64Array(16),parts:0,kinds:new Uint8Array(RECORD_PARTS),
-        matrices:new Float32Array(RECORD_PARTS*16),colors:[],valid:false,frame:this.frame};
+        matrices:new Float32Array(RECORD_PARTS*16),sums:new Float64Array(RECORD_PARTS*3),colors:[],valid:false,frame:this.frame};
       this.records.set(key,record);
     }
     // A new date (realtime): draw only; record from the next repeat on.
@@ -132,10 +146,12 @@ export class FaunaFieldRenderer {
     try{this.draw(g,parent,timeS,gait,distanceM);}finally{this.recording=null;}
     return true;
   }
-  private replay(record:AnimalRecord){
+  private replay(record:AnimalRecord,pe:ArrayLike<number>){
+    const tx=pe[12]!,ty=pe[13]!,tz=pe[14]!,sums=record.sums;
     for(let n=0;n<record.parts;n++){
-      const kind=record.kinds[n]!,mesh=this.meshes[kind]!,index=this.counts[kind]++,te=mesh.instanceMatrix.array as Float32Array,o=index*16,m=n*16;
-      for(let k=0;k<16;k++)te[o+k]=record.matrices[m+k]!;
+      const kind=record.kinds[n]!,mesh=this.meshes[kind]!,index=this.counts[kind]++,te=mesh.instanceMatrix.array as Float32Array,o=index*16,m=n*16,s=n*3;
+      for(let k=0;k<12;k++)te[o+k]=record.matrices[m+k]!;
+      te[o+12]=sums[s]!+tx;te[o+13]=sums[s+1]!+ty;te[o+14]=sums[s+2]!+tz;te[o+15]=record.matrices[m+15]!;
       mesh.setColorAt(index,record.colors[n]!);
     }
   }

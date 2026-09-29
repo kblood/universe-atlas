@@ -115,12 +115,14 @@ export function digestPoses(){
   push(1,'shadow-on',()=>{shadow=true;});
   push(60,'fast-flight',()=>{dateNs+=frameNs(1/60);clearanceM=40;pitchDeg=-15;direction=moveAlong(direction,yawDeg,30/60);});
   push(20,'paused-hover',()=>{});
+  push(20,'paused-flight',()=>{direction=moveAlong(direction,yawDeg,30/60);});   // harness S3 flight: paused date, moving eye
   push(10,'climb-out',()=>{clearanceM+=60;});                          // crosses the 350 m life gate
   push(8,'high',()=>{dateNs+=frameNs(1/60);});
   push(10,'descend',()=>{clearanceM=Math.max(1.7,clearanceM-70);});
   push(30,'return-realtime',()=>{dateNs+=frameNs(1/60);yawDeg+=1;});
   push(5,'teleport-15km',()=>{clearanceM=15000;});                   // harness S6: setPose from the ground
   push(3,'teleport-ground',()=>{clearanceM=1.7;});
+  push(30,'paused-walk',()=>{direction=moveAlong(direction,yawDeg,1.6/60);yawDeg+=.5;}); // harness S3 walk
   push(1,'seek-back',()=>{dateNs=DATE+3n*NS;});push(15,'paused-end');
   return poses;
 }
