@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import {rendererModule,maithea,createRenderer,nextTurn} from './terrain-renderer-fixture.mjs';
 import {terrainSampler} from '../src/terrain.ts';
 
-test('saturated terrain budget: a stationary sea-level change refreshes every visible patch within budget, also after the budget shrinks',async()=>{
+test('saturated terrain budget: a stationary sea-level change refreshes every visible patch within budget, also after the budget shrinks',async t=>{
   const {module,cleanup}=await rendererModule({prefix:'atlas-terrain-budget-'});
   const body=maithea(),fx=createRenderer(module,body),renderer=fx.renderer,P=module.PENDING_TILE_BYTES;
   const ground=terrainSampler(body,undefined,undefined,undefined,-4500)([1,0,0]).visibleHeightM;
@@ -35,6 +35,7 @@ test('saturated terrain budget: a stationary sea-level change refreshes every vi
     assert.equal(d.refreshReserveBytes,renderer.workers.length*2*P,'refresh reserve is maxInFlight worst-case tiles');
     assert.equal(d.terrainPressure,false);
     const frontier=JSON.stringify(d.debug.activeTileIds);
+    t.diagnostic(`settled: resident ${d.resident} tiles ${d.terrainResidentBytes} B (${(d.terrainResidentBytes/d.terrainBudgetBytes).toFixed(4)} of ${d.terrainBudgetBytes}), visible ${d.visible}, splitsBlockedByBytes max ${blockedSplits}, refreshReserve ${d.refreshReserveBytes}`);
 
     // 2. Stationary seek to the next water bucket: every visible patch must
     // refresh without any selection change, and reservation stays in budget.
@@ -48,6 +49,7 @@ test('saturated terrain budget: a stationary sea-level change refreshes every vi
       return {frames,stalePeak,blocked,final:d.staleWaterPatches};
     };
     const first=await seek(-4475,'seek -4475');
+    t.diagnostic(`seek -4475 (stationary): ${JSON.stringify(first)}, blockedAdmissionsTotal ${d.blockedAdmissionsTotal}`);
     assert.ok(first.stalePeak>200,`seek makes the frontier stale (${first.stalePeak})`);
     assert.equal(first.final,0,`stale patches resolve (${JSON.stringify(first)})`);
     assert.equal(first.blocked,0,'no same-key refresh is byte-blocked at the split ceiling');
@@ -73,7 +75,9 @@ test('saturated terrain budget: a stationary sea-level change refreshes every vi
     assert.ok(recovered>=0,`pressure resolves while stationary (resident ${d.terrainResidentBytes} budget ${budgetOverride})`);
     assert.ok(exitResident<budgetOverride*.9,`pressure exits below the 0.90 fraction (${exitResident/budgetOverride})`);
     assert.ok(d.terrainResidentBytes<=d.terrainSplitCeilingBytes,'refinement regrows only to the split ceiling');
+    t.diagnostic(`shrink to ${budgetOverride}: pressure entries ${d.terrainPressureEntries}, exit resident ${(exitResident/budgetOverride).toFixed(4)} of budget, recovered at frame ${recovered}, resident ${d.terrainResidentBytes} (${(d.terrainResidentBytes/budgetOverride).toFixed(4)})`);
     const second=await seek(-4450,'seek -4450 after shrink');
+    t.diagnostic(`seek -4450 after shrink: ${JSON.stringify(second)}`);
     assert.equal(second.final,0,`stale patches resolve under the shrunk budget (${JSON.stringify(second)})`);
     // Hysteresis: a stationary view settles; it does not cycle 0.90 <-> 0.94.
     let settled=null,changes=0,pressureFrames=0;
