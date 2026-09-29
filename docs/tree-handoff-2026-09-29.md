@@ -193,5 +193,5 @@ Full serial run at `25ecd21`: `node --test --test-concurrency=1` over all 114 fi
 |---|---|---|---|---|---|
 | 818 | 815 | 0 | 0 | 3 | 160 s |
 
-- The 3 skips are the existing `ATLAS_TREE_CANDIDATE` tests. The tree-families baseline was 798 tests, 795 pass, 3 skipped; this branch adds 20 tests.
+- The 3 skips are the existing `ATLAS_TREE_CANDIDATE` tests. This branch adds 10 tests in 3 files; the rest came in with the merge base `0071d3c`.
 - `npm run build` (`tsc --noEmit && vite build`) passes. The only warning is the existing chunk-size notice for `rapier-physics` (2,853 kB).
