@@ -48,7 +48,15 @@ const LIFE_LOAD_MARGIN_M = 48;
 const FLORA_KIND_CULL_RADIUS_M: Record<FloraKind, number> = { tree: 6, shrub: 2.5, grass: 1, flower: .6 };
 const LIFE_UP_Y = new THREE.Vector3(0, 1, 0);
 type LifeCell=SurfaceCell & {layer:'flora'|'fauna';cellSizeM:number};
-type LifeResident={cell:LifeCell;height:number;biome:FloraBiomeSample;herd:FaunaHerd|null;ground:Float64Array|null;groundCursor:number;floraRecipe?:FloraRecipe};
+type LifeResident={cell:LifeCell;height:number;biome:FloraBiomeSample;herd:FaunaHerd|null;ground:Float64Array|null;groundCursor:number;floraRecipe?:FloraRecipe;floraPose?:FloraPose};
+/** A flora resident's origin-independent draw terms at (recipe, tMyr, relief,
+ * radius, packed height and direction): its drawn kind (null when absent or a
+ * tree), planet-local position, cull radius and the rotation/scale lanes of
+ * its instance matrix, each computed by the exact former per-frame
+ * operations. Only the origin-relative translation changes per frame, and
+ * `compose` writes that straight into lanes 12-14. */
+type FloraPose={recipe:FloraRecipe;tMyr:number;relief:number;radiusM:number;heightM:number;dx:number;dy:number;dz:number;
+  kind:FloraKind|null;px:number;py:number;pz:number;cullRadiusLocal:number;lanes:Float64Array};
 /** One pooled drawFauna record per potentially drawn animal. */
 type FaunaVisibleItem={cameraVisible:boolean;member:FaunaHerdMember;position:THREE.Vector3;quaternion:THREE.Quaternion;distance:number;gait:FaunaMemberActivity['pose']['gait'];activity:FaunaMemberActivity;anchor:number};
 /** A resident herd's dated poses at `ns` and its conservative bounds. */
@@ -1471,33 +1479,28 @@ export class PlanetRenderer {
     const radiusM = this.body.radiusM, relief = this.relief, b = this.floraBiomeScratch;
     this.floraPresentCount = 0;
     this.floraRecipeBuilds=0;
+    const origin = this.lifeOrigin;
     for (let i = 0; i < this.floraSlotCount; i++) {
-      const wb = i * 4;
-      b.weights[0] = this.floraSlotWeights[wb]!; b.weights[1] = this.floraSlotWeights[wb + 1]!; b.weights[2] = this.floraSlotWeights[wb + 2]!; b.weights[3] = this.floraSlotWeights[wb + 3]!;
-      b.forestPotential = !!this.floraSlotForest[i]; b.moisture = this.floraSlotMoisture[i]!; b.slopeDeg = this.floraSlotSlopeDeg[i]!; b.ocean = !!this.floraSlotOcean[i];
-      const sb = i * 3;
-      this.lifeDirTuple[0] = this.floraSlotDir[sb]!; this.lifeDirTuple[1] = this.floraSlotDir[sb + 1]!; this.lifeDirTuple[2] = this.floraSlotDir[sb + 2]!;
-      const resident=this.floraSlotResidents[i];
-      // Preserve the original Float32 habitat inputs above. Cache follows the
+      const sb = i * 3, resident=this.floraSlotResidents[i];
+      const dx = this.floraSlotDir[sb]!, dy = this.floraSlotDir[sb + 1]!, dz = this.floraSlotDir[sb + 2]!, heightM = this.floraSlotHeightM[i]!;
+      // Preserve the original Float32 habitat inputs below. Cache follows the
       // canonical resident, never the transient packed slot. Water/gate changes
       // already replace these residents; eviction releases their recipes.
-      if(!resident.floraRecipe){resident.floraRecipe=prepareFlora(this.body.seed,this.body.id,this.lifeDirTuple,b,gate);this.floraRecipeBuilds++;}
-      const instance = floraFromRecipe(resident.floraRecipe,tMyr);
-      if (!instance.present) continue;
-      if(instance.kind==='tree')continue; // The continuous forest owns trees at every altitude.
+      if(!resident.floraRecipe){
+        const wb = i * 4;
+        b.weights[0] = this.floraSlotWeights[wb]!; b.weights[1] = this.floraSlotWeights[wb + 1]!; b.weights[2] = this.floraSlotWeights[wb + 2]!; b.weights[3] = this.floraSlotWeights[wb + 3]!;
+        b.forestPotential = !!this.floraSlotForest[i]; b.moisture = this.floraSlotMoisture[i]!; b.slopeDeg = this.floraSlotSlopeDeg[i]!; b.ocean = !!this.floraSlotOcean[i];
+        this.lifeDirTuple[0] = dx; this.lifeDirTuple[1] = dy; this.lifeDirTuple[2] = dz;
+        resident.floraRecipe=prepareFlora(this.body.seed,this.body.id,this.lifeDirTuple,b,gate);this.floraRecipeBuilds++;
+      }
+      let pose=resident.floraPose;
+      if(!pose||pose.recipe!==resident.floraRecipe||!Object.is(pose.tMyr,tMyr)||!Object.is(pose.relief,relief)||!Object.is(pose.radiusM,radiusM)
+        ||!Object.is(pose.heightM,heightM)||!Object.is(pose.dx,dx)||!Object.is(pose.dy,dy)||!Object.is(pose.dz,dz))pose=resident.floraPose=this.floraPoseOf(resident.floraRecipe,tMyr,relief,radiusM,heightM,dx,dy,dz,pose);
+      if(pose.kind===null)continue; // Absent, or a tree: the continuous forest owns trees at every altitude.
       this.floraPresentCount++;
-      const dx = this.lifeDirTuple[0], dy = this.lifeDirTuple[1], dz = this.lifeDirTuple[2];
-      const heightM = this.floraSlotHeightM[i]!, r = 1 + heightM * relief / radiusM;
-      this.floraScratchPos.set(dx * r, dy * r, dz * r).sub(this.lifeOrigin);
-      this.floraScratchDirVec.set(dx, dy, dz);
-      this.floraScratchAlignQuat.setFromUnitVectors(LIFE_UP_Y, this.floraScratchDirVec);
-      this.floraScratchYawQuat.setFromAxisAngle(this.floraScratchDirVec, instance.rotationY);
-      this.floraScratchFinalQuat.multiplyQuaternions(this.floraScratchYawQuat, this.floraScratchAlignQuat);
-      const localScale = instance.scale / radiusM;
-      this.floraScratchScale.setScalar(localScale);
-      this.floraScratchMatrix.compose(this.floraScratchPos, this.floraScratchFinalQuat, this.floraScratchScale);
-      const cullRadiusLocal = (FLORA_KIND_CULL_RADIUS_M[instance.kind] * instance.scale) / radiusM;
-      this.floraCandidates.push(instance.kind, this.floraScratchPos.x, this.floraScratchPos.y, this.floraScratchPos.z, cullRadiusLocal, this.floraScratchMatrix.elements);
+      const px = pose.px - origin.x, py = pose.py - origin.y, pz = pose.pz - origin.z, lanes = pose.lanes;
+      lanes[12] = px; lanes[13] = py; lanes[14] = pz;
+      this.floraCandidates.push(pose.kind, px, py, pz, pose.cullRadiusLocal, lanes);
     }
     // Inlined `drawFloraCandidates` (see the UNIT-MISMATCH FINDING above):
     // `cull()` stays in the local (radius-normalized) frame the frustum
@@ -1517,6 +1520,29 @@ export class PlanetRenderer {
       if(this.floraRenderer.submit(kind, lod, this.floraCandidates.matrices, idx * 16))this.floraSubmittedCount++;
     }
     this.floraRenderer.endFrame();
+  }
+  /** The former per-frame flora slot operations, evaluated once per input
+   * change (see `FloraPose`). `compose`'s rotation/scale lanes do not depend
+   * on the position it is given. */
+  private floraPoseOf(recipe:FloraRecipe,tMyr:number,relief:number,radiusM:number,heightM:number,dx:number,dy:number,dz:number,reuse:FloraPose|undefined):FloraPose {
+    const pose:FloraPose=reuse??{recipe,tMyr,relief,radiusM,heightM,dx,dy,dz,kind:null,px:0,py:0,pz:0,cullRadiusLocal:0,lanes:new Float64Array(16)};
+    pose.recipe=recipe;pose.tMyr=tMyr;pose.relief=relief;pose.radiusM=radiusM;pose.heightM=heightM;pose.dx=dx;pose.dy=dy;pose.dz=dz;pose.kind=null;
+    const instance = floraFromRecipe(recipe,toMyr(tMyr));
+    if (!instance.present || instance.kind==='tree') return pose;
+    const r = 1 + heightM * relief / radiusM;
+    pose.px = dx * r; pose.py = dy * r; pose.pz = dz * r;
+    this.floraScratchPos.set(pose.px, pose.py, pose.pz);
+    this.floraScratchDirVec.set(dx, dy, dz);
+    this.floraScratchAlignQuat.setFromUnitVectors(LIFE_UP_Y, this.floraScratchDirVec);
+    this.floraScratchYawQuat.setFromAxisAngle(this.floraScratchDirVec, instance.rotationY);
+    this.floraScratchFinalQuat.multiplyQuaternions(this.floraScratchYawQuat, this.floraScratchAlignQuat);
+    const localScale = instance.scale / radiusM;
+    this.floraScratchScale.setScalar(localScale);
+    this.floraScratchMatrix.compose(this.floraScratchPos, this.floraScratchFinalQuat, this.floraScratchScale);
+    pose.lanes.set(this.floraScratchMatrix.elements);
+    pose.cullRadiusLocal = (FLORA_KIND_CULL_RADIUS_M[instance.kind] * instance.scale) / radiusM;
+    pose.kind = instance.kind;
+    return pose;
   }
   /** Tangent frame for packed herd `a`; false when the herd is beyond the
    * coarse visibility range. Shared by drawing and `faunaTrace`. */

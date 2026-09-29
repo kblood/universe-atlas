@@ -123,6 +123,8 @@ export function digestPoses(){
   push(5,'teleport-15km',()=>{clearanceM=15000;});                   // harness S6: setPose from the ground
   push(3,'teleport-ground',()=>{clearanceM=1.7;});
   push(30,'paused-walk',()=>{direction=moveAlong(direction,yawDeg,1.6/60);yawDeg+=.5;}); // harness S3 walk
+  // tMyr is whole Myr: +1 Myr keeps the living species (no life-signature reset) but changes every flora scale.
+  push(1,'seek+1Myr',()=>{dateNs+=1_000_000n*31_557_600n*NS;});push(6,'paused-after-Myr');
   push(1,'seek-back',()=>{dateNs=DATE+3n*NS;});push(15,'paused-end');
   return poses;
 }
