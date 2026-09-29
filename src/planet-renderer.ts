@@ -196,6 +196,13 @@ export class PlanetRenderer {
   private leafLoopDirty=true;
   private morphingLeaves=0;
   private readonly shownPatches:Patch[]=[];
+  // Selection caches. The ancestor maps depend only on the leaf set (keyed by
+  // the `leafTiles` array, replaced on every rebuild). Projected distance terms
+  // depend only on observer, contact, sea level and the resident patch, so a
+  // turn in place reuses them while frustum-dependent visibility is redone.
+  private selectionAncestors:{tiles:Tile[];parents:Map<string,Tile>;deepest:Map<string,number>}|null=null;
+  private readonly projectionDistance=new Map<string,{resident:Patch|undefined;near:number;contactNear:number}>();
+  private readonly projectionDistanceKey:number[]=[];
   private readonly leafFrameKey:number[]=[];
   private leafFrameKeyValid=false;
   private readonly oceanFrameScratch:OceanWaterPatchFrame={localEyeM:new THREE.Vector3(),sunDirection:new THREE.Vector3()};
@@ -963,6 +970,13 @@ export class PlanetRenderer {
     // CPU stalls. Refine for real pose/projection changes or arriving tiles;
     // conservative visibility culling still runs on every frame below.
     const changed=!this.debug.freezeSelection&&(this.selectionDirty||completions.length>0||retryDue||!this.leafIndex.size||this.selectionContact!==!!contact||rotated||Math.abs(pixels-this.selectionPixels)>.5||eye.distanceTo(this.selectionEye)*this.body.radiusM>(contact?.distanceTo(eye)||0)*this.body.radiusM*.02+.5);
+    if(changed){
+      // Invalidate projected distance terms when any of their inputs moved.
+      const k=this.projectionDistanceKey,values=[observer[0],observer[1],observer[2],contact?contact.x:NaN,contact?contact.y:NaN,contact?contact.z:NaN,snappedWaterLevelM,groundHeight,this.relief];
+      let same=k.length===values.length;
+      for(let i=0;i<values.length;i++){if(!Object.is(k[i],values[i]))same=false;k[i]=values[i];}
+      if(!same)this.projectionDistance.clear();
+    }
     const projected = (t: Tile) => {
       const key=tileKey(t),cached=projectionCache.get(key);if(cached)return cached;
       const center = new THREE.Vector3(...tileDirection(t, .5, .5));
@@ -980,12 +994,17 @@ export class PlanetRenderer {
       }
       const visible = horizon && (!frusta.length || retainedFrusta.some(f => f.intersectsSphere(sphere)));
       if(!changed)return {visible,score:0,contactNear:Infinity,waterPriority:false,finePriority:false};
-      const nearest = closestTileDirection(t,observer);
-      const elevation=resident?patchHeightAt(resident,nearest):groundHeight*this.relief;
-      const ground=new THREE.Vector3(...nearest).multiplyScalar(1+Math.max(this.body.water?snappedWaterLevelM*this.relief:-Infinity,elevation)/this.body.radiusM);
-      const near = Math.max(1e-9, eye.distanceTo(ground));
-      let contactNear=Infinity;
-      if(contact&&contactDirection){const d=closestTileDirection(t,contact.toArray() as V3);contactNear=contactDirection.distanceTo(new THREE.Vector3(...d))*this.body.radiusM;}
+      let distances=this.projectionDistance.get(key);
+      if(!distances||distances.resident!==resident){
+        const nearest = closestTileDirection(t,observer);
+        const elevation=resident?patchHeightAt(resident,nearest):groundHeight*this.relief;
+        const ground=new THREE.Vector3(...nearest).multiplyScalar(1+Math.max(this.body.water?snappedWaterLevelM*this.relief:-Infinity,elevation)/this.body.radiusM);
+        const near = Math.max(1e-9, eye.distanceTo(ground));
+        let contactNear=Infinity;
+        if(contact&&contactDirection){const d=closestTileDirection(t,contact.toArray() as V3);contactNear=contactDirection.distanceTo(new THREE.Vector3(...d))*this.body.radiusM;}
+        distances={resident,near,contactNear};this.projectionDistance.set(key,distances);
+      }
+      const {near,contactNear}=distances;
       // Projected patch span also budgets texture resolution. It deliberately
       // overestimates error instead of claiming a measured terrain error bound.
       const contactPriority=contactNear<28&&t.level<this.contactLevel;
@@ -1014,11 +1033,19 @@ export class PlanetRenderer {
       // Retain the prior frontier. Collapse distant sibling sets once, then
       // refine incrementally; rebuilding all 450 leaves from six roots on
       // every flight frame was a dominant source of main-thread stalls.
-      const initial=new Map(leaves.map(t=>[tileKey(t),t])),parents=new Map<string,Tile>(),deepest=new Map<string,number>();
+      // `initial` is only queried for membership: the cached leaf index holds
+      // exactly the starting leaves (it is empty only for the six roots).
+      const initial:ReadonlyMap<string,Tile>=this.leafIndex.size?this.leafIndex:new Map(leaves.map(t=>[tileKey(t),t]));
       const urgent=Math.max(...leaves.map(t=>t.level<(contact?(this.needsFineContact?this.fineContactLevel:this.contactLevel):this.contactLevel)?projected(t).score:0));
-      for(const leaf of leaves){let t=leaf;while(t.level>0){t={face:t.face,level:t.level-1,x:Math.floor(t.x/2),y:Math.floor(t.y/2)};
-        const key=tileKey(t);deepest.set(key,Math.max(deepest.get(key)??0,leaf.level));
-        if(t.level===leaf.level-1)parents.set(key,t);}}
+      let ancestors=this.selectionAncestors;
+      if(!ancestors||ancestors.tiles!==this.leafTiles||!this.leafIndex.size){
+        const parents=new Map<string,Tile>(),deepest=new Map<string,number>();
+        for(const leaf of leaves){let t=leaf;while(t.level>0){t={face:t.face,level:t.level-1,x:Math.floor(t.x/2),y:Math.floor(t.y/2)};
+          const key=tileKey(t);deepest.set(key,Math.max(deepest.get(key)??0,leaf.level));
+          if(t.level===leaf.level-1)parents.set(key,t);}}
+        ancestors={tiles:this.leafTiles,parents,deepest};this.selectionAncestors=this.leafIndex.size?ancestors:null;
+      }
+      const {parents,deepest}=ancestors;
       // Byte pressure: merge the lowest-scoring eligible parents until their
       // children's bytes bring residency below the exit fraction. The score
       // rule below cannot do this in a byte-saturated frontier: every parent
