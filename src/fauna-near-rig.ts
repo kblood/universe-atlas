@@ -66,6 +66,8 @@ export class FaunaNearRigs {
   private readonly placeholder = new THREE.BufferGeometry();
   private frame = 0;
   private disposed = false;
+  /** Candidates of the last update that wanted a body not yet built. */
+  private lastFallbacks = 0;
   private stats = { builds: 0, failures: 0, evictions: 0, abandoned: 0, fallbacks: 0, buildMs: 0 };
 
   constructor(options: FaunaNearOptions = {}) {
@@ -104,13 +106,13 @@ export class FaunaNearRigs {
     if (this.disposed) return drawn;
     this.frame++;
     const chosen: FaunaNearCandidate[] = [];
-    let wanted: FaunaNearCandidate | null = null;
+    let wanted: FaunaNearCandidate | null = null, fallbacks = 0;
     for (const candidate of candidates) {
       const id = candidate.member.id, active = this.slots.some(s => s.memberId === id);
       if (candidate.distanceM > (active ? this.exitM : this.enterM) || this.failed.has(id) || drawn.has(id)) continue;
       if (chosen.length >= this.capacity) break;
       if (this.cache.has(id)) { chosen.push(candidate); drawn.add(id); }
-      else { this.stats.fallbacks++; wanted ??= candidate; }
+      else { this.stats.fallbacks++; fallbacks++; wanted ??= candidate; }
     }
     // Keep existing assignments stable, then fill freed slots.
     const assigned = new Map<string, Slot>();
@@ -126,8 +128,18 @@ export class FaunaNearRigs {
     }
     this.advanceBuild(wanted);
     this.evict();
+    this.lastFallbacks = fallbacks;
     return drawn;
   }
+
+  /**
+   * True when repeating the last `update` with the same candidates would
+   * change nothing: no body is building, none was wanted, so selection,
+   * slots, poses, cache and stats would all come out identical (`used`
+   * stamps of the chosen bodies stay the newest, so eviction order is
+   * unchanged). A caller with unchanged candidates may then skip the call.
+   */
+  get idle(): boolean { return !this.disposed && this.frame > 0 && this.build === null && this.lastFallbacks === 0; }
 
   private bindSlot(slot: Slot, id: string, cached: Cached) {
     slot.memberId = id; slot.mesh.geometry = cached.geometry;

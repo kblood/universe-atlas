@@ -294,12 +294,26 @@ export function faunaMemberGenome(member: FaunaHerdMember): CreatureGenome {
 /** Individual idle schedules share the orbit's seeded phase, with no new
  * random stream or accumulated state. Quantize once to nanoseconds so both
  * public pose adapters use the same window boundaries. */
-function activityClock(member: FaunaHerdMember) {
+type ActivityClock={gaitPeriod:bigint;cyclePeriod:bigint;offset:bigint;period:bigint;speed:number;inputs:[number,number,number]};
+/** Per-member constants of the activity schedule. A member record is
+ * immutable once a herd is generated, so the clock is memoized per record
+ * (WeakMap: it lives exactly as long as the herd), revalidated against its
+ * three inputs. Every value is computed by
+ * the same expressions as before; only the BigInt conversions per member per
+ * frame are gone. */
+const activityClocks=new WeakMap<FaunaHerdMember,ActivityClock>();
+function activityClock(member: FaunaHerdMember):ActivityClock {
+  let clock=activityClocks.get(member);
+  if(clock&&clock.inputs[0]===member.gaitPeriodS&&clock.inputs[1]===member.orbitPhase&&clock.inputs[2]===member.orbitAngularSpeed)return clock;
   const gaitPeriod=BigInt(Math.max(1,Math.round(member.gaitPeriodS*Number(NS))));
   const cyclePeriod=3n*gaitPeriod;
   const turn=((member.orbitPhase/(Math.PI*2))%1+1)%1;
   const offset=BigInt(Math.round(turn*Number(cyclePeriod)))%cyclePeriod;
-  return {gaitPeriod,cyclePeriod,offset};
+  const speed = Math.abs(member.orbitAngularSpeed);
+  const period = speed < 1e-9 ? 1n : BigInt(Math.max(1, Math.round((Math.PI * 2 / speed) * Number(NS))));
+  clock={gaitPeriod,cyclePeriod,offset,period,speed,inputs:[member.gaitPeriodS,member.orbitPhase,member.orbitAngularSpeed]};
+  activityClocks.set(member,clock);
+  return clock;
 }
 
 /** Exact-date pose. Only bounded periodic remainders are converted to Number;
@@ -323,15 +337,13 @@ export interface FaunaMemberActivity {
 }
 
 export function faunaMemberActivityAtWorldNs(member: FaunaHerdMember, worldNs: bigint): FaunaMemberActivity {
-  const {gaitPeriod,cyclePeriod,offset}=activityClock(member);
+  const {gaitPeriod,cyclePeriod,offset,period,speed}=activityClock(member);
   const elapsed = worldNs - CATALOGUE_EPOCH_NS + offset;
   const cycleRemainder=((elapsed%cyclePeriod)+cyclePeriod)%cyclePeriod;
   // Integrate the periodic idle/walk schedule analytically. Idle pauses both
   // translation and gait, with no accumulated state and no seek dependence.
   const activeElapsed=(elapsed-cycleRemainder)/cyclePeriod*(2n*gaitPeriod)+(cycleRemainder>gaitPeriod?cycleRemainder-gaitPeriod:0n)
     -(offset>gaitPeriod?offset-gaitPeriod:0n);
-  const speed = Math.abs(member.orbitAngularSpeed);
-  const period = speed < 1e-9 ? 1n : BigInt(Math.max(1, Math.round((Math.PI * 2 / speed) * Number(NS))));
   const remainder = ((activeElapsed % period) + period) % period;
   const angle = member.orbitPhase + (speed < 1e-9 ? 0 : Math.sign(member.orbitAngularSpeed) * Number(remainder) / Number(period) * Math.PI * 2);
   const gaitWindow = (elapsed - ((elapsed % gaitPeriod) + gaitPeriod) % gaitPeriod) / gaitPeriod;
@@ -418,17 +430,34 @@ export function faunaGroundedTransform(
   pose: FaunaMemberPose,
   groundHeightAt: (worldPosition: THREE.Vector3) => number,
 ): { position: THREE.Vector3; quaternion: THREE.Quaternion } {
-  const position = anchorWorld.clone()
+  const position=new THREE.Vector3(),quaternion=new THREE.Quaternion();
+  faunaGroundedTransformInto(anchorWorld,tangentRight,tangentForward,up,pose,groundHeightAt,position,quaternion);
+  return { position, quaternion };
+}
+const groundedFacing=new THREE.Vector3(),groundedUp=new THREE.Vector3(),groundedSide=new THREE.Vector3(),groundedBasis=new THREE.Matrix4();
+/** `faunaGroundedTransform` written into caller-owned `position` and
+ * `quaternion`, so the per-frame draw path allocates nothing. The same
+ * operations run in the same order, so the results are bit-identical. */
+export function faunaGroundedTransformInto(
+  anchorWorld: THREE.Vector3,
+  tangentRight: THREE.Vector3,
+  tangentForward: THREE.Vector3,
+  up: THREE.Vector3,
+  pose: FaunaMemberPose,
+  groundHeightAt: (worldPosition: THREE.Vector3) => number,
+  position: THREE.Vector3,
+  quaternion: THREE.Quaternion,
+): void {
+  position.copy(anchorWorld)
     .addScaledVector(tangentRight, pose.x)
     .addScaledVector(tangentForward, pose.z);
   position.addScaledVector(up, groundHeightAt(position));
-  const facing = tangentRight.clone().multiplyScalar(Math.cos(pose.yaw)).addScaledVector(tangentForward, Math.sin(pose.yaw)).normalize();
+  const facing = groundedFacing.copy(tangentRight).multiplyScalar(Math.cos(pose.yaw)).addScaledVector(tangentForward, Math.sin(pose.yaw)).normalize();
   // Creature anatomy faces +X and stands along +Y. A shortest-arc rotation
   // from +Z alone leaves arbitrary roll on a spherical planet.
-  const radialUp=up.clone().normalize(),side=new THREE.Vector3().crossVectors(facing,radialUp).normalize();
+  const radialUp=groundedUp.copy(up).normalize(),side=groundedSide.crossVectors(facing,radialUp).normalize();
   facing.crossVectors(radialUp,side).normalize();
-  const quaternion = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(facing,radialUp,side));
-  return { position, quaternion };
+  quaternion.setFromRotationMatrix(groundedBasis.makeBasis(facing,radialUp,side));
 }
 
 // ---------------------------------------------------------------------------
