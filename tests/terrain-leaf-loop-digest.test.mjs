@@ -8,15 +8,31 @@
 // local eye, ocean uniforms, water bucket and LRU stamp.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {rendererModule,maithea} from './terrain-renderer-fixture.mjs';
 import {runScenario,digestPoses,gitRendererSource} from './terrain-leaf-scenario.mjs';
 
 // Parent of the leaf-loop change: the terrain budget fix, before caching.
 const REFERENCE='5ad62a6';
 
+// The request-order policy added after the leaf-loop change
+// (`deferUndrawnRefreshes`) is a behaviour change, not an optimization. It is
+// applied to the reference with the worktree's own function text, so the
+// comparison still isolates the cached loop from the policy.
+function withRequestOrder(source){
+  const current=readFileSync(new URL('../src/planet-renderer.ts',import.meta.url),'utf8');
+  const fn=current.replace(/\r\n/g,'\n').match(/\/\*\* Request order[\s\S]*?\nexport function deferUndrawnRefreshes[\s\S]*?\n}\n/);
+  assert.ok(fn,'deferUndrawnRefreshes found in the worktree renderer');
+  const unique='    const unique = new Map(wanted.map(t => [tileKey(t), t]));\n',roots='const ROOTS: Tile[] = Array.from';
+  assert.equal(source.split(unique).length,2,'reference request map anchor');
+  assert.equal(source.split(roots).length,2,'reference ROOTS anchor');
+  return source.replace(unique,unique+'    deferUndrawnRefreshes(unique,this.patches);\n').replace(roots,fn[0]+roots);
+}
+
 test('cached terrain leaf loop is output-identical to the reference loop for a fixed pose sequence',async t=>{
-  const source=gitRendererSource(REFERENCE);
-  if(source===null){t.skip(`git object ${REFERENCE} unavailable`);return;}
+  const raw=gitRendererSource(REFERENCE);
+  if(raw===null){t.skip(`git object ${REFERENCE} unavailable`);return;}
+  const source=withRequestOrder(raw);
   const body=maithea(),poses=digestPoses();
   const reference=await rendererModule({prefix:'atlas-leaf-ref-',rendererSource:source});
   const current=await rendererModule({prefix:'atlas-leaf-cur-'});

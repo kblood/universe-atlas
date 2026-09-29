@@ -91,3 +91,17 @@ test('saturated terrain budget: a stationary sea-level change refreshes every vi
     assert.equal(changes,0,'drawn frontier is stable while stationary');
   }finally{fx.dispose();await cleanup();}
 });
+
+test('request order: rebuilds of undrawn resident patches move behind all other requests, order otherwise kept',async()=>{
+  const {module,cleanup}=await rendererModule({prefix:'atlas-terrain-order-'});
+  try{
+    const tile=i=>({face:0,level:3,x:i,y:0});
+    const unique=new Map(['a','b','c','d','e'].map((k,i)=>[k,tile(i)]));
+    // a: new key; b: drawn stale; c: undrawn stale; d: new key; e: undrawn stale.
+    const patches=new Map([['b',{mesh:{visible:true}}],['c',{mesh:{visible:false}}],['e',{mesh:{visible:false}}]]);
+    module.rendererExports.deferUndrawnRefreshes(unique,patches);
+    assert.deepEqual([...unique.keys()],['a','b','d','c','e']);
+    assert.deepEqual(unique.get('c'),tile(2),'values move with their keys');
+    const empty=new Map();module.rendererExports.deferUndrawnRefreshes(empty,patches);assert.equal(empty.size,0);
+  }finally{await cleanup();}
+});

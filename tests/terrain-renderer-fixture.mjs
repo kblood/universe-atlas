@@ -24,9 +24,10 @@ export async function rendererModule({prefix='atlas-terrain-fixture-',rendererSo
   await build({bundle:true,platform:'node',format:'esm',outfile:output,logLevel:'silent',plugins,stdin:{resolveDir:root,sourcefile:'terrain-fixture-entry.mjs',contents:`
     import * as THREE from 'three';
     import {buildTile,tileKey} from './src/planet-tiles.ts';
-    import {PlanetRenderer} from './src/planet-renderer.ts';
+    import * as rendererExports from './src/planet-renderer.ts';
+    const {PlanetRenderer}=rendererExports;
     import {PENDING_TILE_BYTES,TERRAIN_BUDGET_BYTES} from './src/renderer-memory.ts';
-    export {THREE,buildTile,tileKey,PlanetRenderer,PENDING_TILE_BYTES,TERRAIN_BUDGET_BYTES};
+    export {THREE,buildTile,tileKey,PlanetRenderer,rendererExports,PENDING_TILE_BYTES,TERRAIN_BUDGET_BYTES};
   `}});
   const module=await import(pathToFileURL(output).href);
   return {module,async cleanup(){

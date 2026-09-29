@@ -91,6 +91,17 @@ function patchHeightAt(patch:Patch,d:V3){
 type LeafRecord={tile:Tile;key:string;code:number;center:THREE.Vector3;bound:number;
   neighbourCodes:number[];neighbourParentCodes:number[];neighbourChildCodes:number[];
   spherePatch:Patch|null;sphere:THREE.Sphere};
+/** Request order (docs/terrain-budget-2026-09-29.md): a rebuild of a resident
+ * patch that is not drawn this frame (an off-screen leaf, a fallback ancestor)
+ * moves behind every other request, keeping relative order. With workers as
+ * the bottleneck, a sea-level seek then refreshes the drawn sea first instead
+ * of spending its first seconds on leaves behind the camera. */
+export function deferUndrawnRefreshes(unique:Map<string,Tile>,patches:ReadonlyMap<string,{mesh:{visible:boolean}}>){
+  if(!unique.size)return;
+  const deferred:[string,Tile][]=[];
+  for(const [key,tile] of unique){const p=patches.get(key);if(p&&!p.mesh.visible)deferred.push([key,tile]);}
+  for(const [key,tile] of deferred){unique.delete(key);unique.set(key,tile);}
+}
 const ROOTS: Tile[] = Array.from({length: 6}, (_,face) => ({face, level: 0, x: 0, y: 0}));
 export const TILE_CACHE_LIMIT = 256;
 export const TILE_DRAW_LIMIT = 150;
@@ -1261,6 +1272,7 @@ export class PlanetRenderer {
       if (!protectedKeys.has(p.key)&&!this.leafProtected.has(p.key)) { this.release(p); this.patches.delete(p.key); }
     }
     const unique = wanted;
+    deferUndrawnRefreshes(unique,this.patches);
     this.blockedRefreshes=0;this.blockedAdmissions=0;
     for (const [key, tile] of unique) {
       if(this.debug.freezeSelection)break;
