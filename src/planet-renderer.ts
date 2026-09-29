@@ -26,7 +26,7 @@ import {spinStateFor} from './stellar-evolution.ts';
 import {CATALOGUE_EPOCH_NS} from './world-time.ts';
 import {prepareFlora, floraFromRecipe, toMyr, buildFloraGeometryData, floraGeometryToBufferGeometry, FLORA_KIND_NAMES, type FloraRecipe, type FloraKind, type FloraBiosphereGate, type FloraBiomeSample, type FloraStage} from './flora-field.ts';
 import {FloraFieldRenderer, FloraCandidateBuffer, packCullPlane, pickFloraLodBand, DEFAULT_FRUSTUM_PLANE_COUNT} from './flora-culling.ts';
-import {faunaHerdAt, faunaMemberActivityAtWorldNs, faunaRigSecondsAt, faunaMemberGenome, faunaGroundedTransform, toSeconds, type FaunaHerd, type FaunaHerdMember, type FaunaMemberActivity, type FaunaBiosphereGate, type FaunaStage, type CreatureArchetype, type CreatureGenome} from './fauna-runtime.ts';
+import {faunaHerdAt, faunaMemberActivityAtWorldNs, faunaRigSecondsAt, faunaMemberGenome, faunaGroundedTransform, faunaGroundedTransformInto, toSeconds, type FaunaHerd, type FaunaHerdMember, type FaunaMemberActivity, type FaunaBiosphereGate, type FaunaStage, type CreatureArchetype, type CreatureGenome} from './fauna-runtime.ts';
 import {FaunaFieldRenderer,FAUNA_FIELD_CAPACITY,FAUNA_FIELD_VISIBLE_M} from './fauna-field-renderer.ts';
 import {FaunaNearRigs,FAUNA_NEAR_RIG_EXIT_M,type FaunaNearCandidate} from './fauna-near-rig.ts';
 import {faunaGroundHeight,FAUNA_GROUND_N,FAUNA_GROUND_HALF_M,FAUNA_GROUND_STEP_M} from './fauna-ground.ts';
@@ -49,6 +49,11 @@ const FLORA_KIND_CULL_RADIUS_M: Record<FloraKind, number> = { tree: 6, shrub: 2.
 const LIFE_UP_Y = new THREE.Vector3(0, 1, 0);
 type LifeCell=SurfaceCell & {layer:'flora'|'fauna';cellSizeM:number};
 type LifeResident={cell:LifeCell;height:number;biome:FloraBiomeSample;herd:FaunaHerd|null;ground:Float64Array|null;groundCursor:number;floraRecipe?:FloraRecipe};
+/** One pooled drawFauna record per potentially drawn animal. */
+type FaunaVisibleItem={cameraVisible:boolean;member:FaunaHerdMember;position:THREE.Vector3;quaternion:THREE.Quaternion;distance:number;gait:FaunaMemberActivity['pose']['gait'];activity:FaunaMemberActivity;anchor:number};
+/** A resident herd's dated poses at `ns` and its conservative bounds. */
+type FaunaHerdPoses={ns:bigint|null;relief:number;members:readonly FaunaHerdMember[];activity:FaunaMemberActivity[];position:THREE.Vector3[];quaternion:THREE.Quaternion[];
+  hMid:number;halfRangeM:number;reachM:number;ground:(x:number,z:number)=>number;center:THREE.Vector3;sphere:THREE.Sphere;placeRadiusM:number};
 
 /** Context this file needs from main.ts to gate/date flora and fauna -- the
  * caller (main.ts, which owns world-surface.ts's `biosphereStateAt` and
@@ -419,7 +424,24 @@ export class PlanetRenderer {
   private readonly faunaGenomes=new Map<string,CreatureGenome>();
   private faunaCulledCount=0;
   private faunaBudgetDrops=0;
-  private faunaDrawn: {id:string;cell:string|undefined;position:V3;genome:CreatureGenome}[]=[];
+  // drawFauna per-frame state: pooled records, retained candidate lists, the
+  // still-frame key and the last drawn set (docs/life-cpu-2026-09-29.md).
+  private readonly faunaPoseCache=new WeakMap<LifeResident,FaunaHerdPoses>();
+  private readonly faunaItemPool:FaunaVisibleItem[]=[];
+  private readonly faunaVisibleList:FaunaVisibleItem[]=[];
+  private readonly faunaNearPool:FaunaNearCandidate[]=[];
+  private readonly faunaNearList:FaunaNearCandidate[]=[];
+  private faunaRigged:Set<string>=new Set();
+  private readonly faunaDrawnItems:FaunaVisibleItem[]=[];
+  private readonly faunaDrawnGenomes:CreatureGenome[]=[];
+  private faunaDrawnCount=0;
+  private faunaDrawnList:{id:string;cell:string|undefined;position:V3;genome:CreatureGenome}[]|null=null;
+  private readonly faunaFrameKey=new Float64Array(64);
+  private readonly faunaFrameScratch=new Float64Array(64);
+  private faunaFrameKeyLength=0;
+  private faunaFrameKeyValid=false;
+  private faunaFrameNs:bigint|null=null;
+  private readonly faunaLocalScratch=new THREE.Vector3();
   private readonly faunaBounds=new THREE.Sphere();
   private readonly floraCandidates = new FloraCandidateBuffer(LIFE_SLOT_CAPACITY);
   private readonly floraDrawOrder=new Uint32Array(LIFE_SLOT_CAPACITY);
@@ -1338,14 +1360,15 @@ export class PlanetRenderer {
     // observer reported ~1,093 submitted flora instances (desktop perf
     // baseline, S6) although every flora mesh count was already 0.
     this.floraPresentCount=0;this.floraSurvivorCount=0;this.floraSubmittedCount=0;this.faunaCameraVisibleCount=0;
-    this.faunaVisibleCount=0;this.faunaCulledCount=0;this.faunaBudgetDrops=0;this.faunaDrawn=[];
+    this.faunaVisibleCount=0;this.faunaCulledCount=0;this.faunaBudgetDrops=0;
+    this.faunaDrawnCount=0;this.faunaDrawnList=null;this.faunaFrameKeyValid=false;this.faunaVisibleList.length=0;this.faunaNearList.length=0;this.faunaRigged=new Set();
     this.floraRenderer.beginFrame();this.floraRenderer.endFrame();
     this.faunaRenderer.beginFrame(this.lifeOrigin);this.faunaRenderer.endFrame();this.faunaNear.hide();
   }
   private updateLife(eye: THREE.Vector3, contact: THREE.Vector3, frustum: THREE.Frustum | null, worldNs: bigint,shadowFrustum:THREE.Frustum|null): void {
     const life=this.lifeContext;if(!life){this.hideLife();return;}
     const signature=`${this.waterBucket}|${life.floraStage}|${life.faunaStage}|${life.floraAvailableKinds?.join(',')}|${life.faunaAvailableArchetypes?.join(',')}|${life.faunaSpecies?.map(s=>s.id).join(',')??''}`;
-    if(signature!==this.lifeSignature){this.lifeSignature=signature;this.lifeScatterValid=false;this.lifeResidents.clear();this.faunaGenomes.clear();this.faunaNear.clear();this.faunaGroundQueue=[];}
+    if(signature!==this.lifeSignature){this.lifeSignature=signature;this.lifeScatterValid=false;this.lifeResidents.clear();this.faunaGenomes.clear();this.faunaNear.clear();this.faunaGroundQueue=[];this.faunaFrameKeyValid=false;}
     const t0=performance.now();
     if(!this.lifeScatterValid||contact.distanceTo(this.lifeScatterCenter)*this.body.radiusM>LIFE_RESCATTER_THRESHOLD_M){
       this.rescatterLife(contact);this.lifeScatterCenter.copy(contact);this.lifeScatterValid=true;
@@ -1553,49 +1576,165 @@ export class PlanetRenderer {
     });
     return {frame:{worldNs:worldNs.toString(),eye:eye.toArray(),drawn:this.faunaDrawn.length,cameraVisible:this.faunaCameraVisibleCount,capacity:FAUNA_FIELD_CAPACITY,budgetDrops:this.faunaBudgetDrops,culled:this.faunaCulledCount,anchors:this.faunaAnchorCount,near:this.faunaNear.diagnostics().activeMembers.map(m=>m.id)},individuals};
   }
+  /** Dated poses of one resident herd at one instant, retained while the date,
+   * relief and packing are unchanged, plus a conservative bound of every
+   * member's position and draw sphere. Keyed by the resident (WeakMap), so it
+   * lives exactly as long as the resident herd. */
+  private faunaHerdRecord(a:number):FaunaHerdPoses {
+    const resident=this.faunaSurfaces[a],members=this.faunaHerds[a]!.members,relief=this.relief;
+    let record=this.faunaPoseCache.get(resident);
+    if(!record||record.relief!==relief||record.members!==members){
+      const ground=resident.ground!;
+      let hMin=Infinity,hMax=-Infinity;for(let i=0;i<ground.length;i++){const h=ground[i]*relief;if(h<hMin)hMin=h;if(h>hMax)hMax=h;}
+      let reach=0;for(const m of members)reach=Math.max(reach,Math.hypot(m.anchorOffsetX,m.anchorOffsetZ)+m.orbitRadiusM);
+      record={ns:null,relief,members,activity:[],position:members.map(()=>new THREE.Vector3()),quaternion:members.map(()=>new THREE.Quaternion()),
+        hMid:(hMin+hMax)/2,halfRangeM:(hMax-hMin)/2,reachM:reach,ground:(x,z)=>faunaGroundHeight(ground,x,z)*relief,
+        center:new THREE.Vector3(),sphere:new THREE.Sphere(),placeRadiusM:0};
+      this.faunaPoseCache.set(resident,record);
+    }
+    return record;
+  }
+  /** `record`'s member poses at `worldNs` (after `faunaHerdFrame(a)`),
+   * evaluated once per herd per date with the exact draw-path operations. */
+  private faunaHerdPoses(record:FaunaHerdPoses,a:number,worldNs:bigint):FaunaHerdPoses {
+    if(record.ns!==worldNs){
+      const members=record.members,ground=this.faunaSurfaces[a].ground!,relief=record.relief;
+      for(let i=0;i<members.length;i++){
+        const activity=faunaMemberActivityAtWorldNs(members[i],worldNs);record.activity[i]=activity;
+        this.faunaGroundValue=faunaGroundHeight(ground,activity.pose.x,activity.pose.z)*relief;
+        faunaGroundedTransformInto(this.faunaAnchorPos,this.faunaTangentRight,this.faunaTangentForward,this.faunaTangentUp,activity.pose,this.faunaGroundHeightAt,record.position[i],record.quaternion[i]);
+      }
+      record.ns=worldNs;
+    }
+    return record;
+  }
+  /** Conservative herd bound for anchor `a` (after `faunaHerdFrame(a)`), in
+   * the same radius-normalized frame as the member spheres. A member sits at
+   * anchor + right·x + forward·z + up·h with |right| = |forward| = 1/r
+   * (orthogonal), up = anchor/r, |(x, z)| ≤ reach and h within the stencil's
+   * [min, max] (bilinear, clamped). Its draw sphere is centred 3 m above
+   * that with radius 6 m. The herd sphere is centred at anchor·(1+(hMid+3)/r)
+   * and covers every member sphere with a 1 cm margin (float error is ~1e-9 m),
+   * so a herd sphere outside a frustum plane proves every member sphere is too.
+   * `placeRadiusM` bounds member positions around anchor·(1+hMid/r). */
+  private faunaHerdBounds(record:FaunaHerdPoses):void {
+    const radiusM=this.body.radiusM,anchorScale=this.faunaAnchorPos.length();
+    const spread=record.reachM+anchorScale*record.halfRangeM;
+    record.placeRadiusM=spread+.01;
+    record.center.copy(this.faunaAnchorPos).multiplyScalar(1+record.hMid/radiusM);
+    record.sphere.center.copy(this.faunaAnchorPos).multiplyScalar(1+(record.hMid+3)/radiusM);
+    record.sphere.radius=(spread+6+.01)/radiusM;
+  }
+  /** True when this fauna frame's inputs equal the last drawn frame's: eye
+   * (= life origin), date, camera and shadow frusta, relief and the packed
+   * herd set. Every per-member result is then identical to the last frame. */
+  private faunaFrameUnchanged(eye:THREE.Vector3,worldNs:bigint,frustum:THREE.Frustum,shadowFrustum:THREE.Frustum|null):boolean {
+    const next=this.faunaFrameScratch,key=this.faunaFrameKey;let i=0;
+    next[i++]=eye.x;next[i++]=eye.y;next[i++]=eye.z;next[i++]=this.relief;next[i++]=this.lifePackBuilds;next[i++]=this.faunaAnchorCount;
+    for(const plane of frustum.planes){next[i++]=plane.normal.x;next[i++]=plane.normal.y;next[i++]=plane.normal.z;next[i++]=plane.constant;}
+    next[i++]=shadowFrustum?1:0;
+    if(shadowFrustum)for(const plane of shadowFrustum.planes){next[i++]=plane.normal.x;next[i++]=plane.normal.y;next[i++]=plane.normal.z;next[i++]=plane.constant;}
+    let same=this.faunaFrameKeyValid&&this.faunaFrameNs===worldNs&&this.faunaFrameKeyLength===i;
+    // Object.is semantics: NaN never matches, and -0 is not +0.
+    for(let k=0;k<i;k++){const v=next[k];if(!Object.is(v,key[k])){same=false;key[k]=v;}}
+    this.faunaFrameKeyLength=i;this.faunaFrameNs=worldNs;this.faunaFrameKeyValid=true;
+    return same;
+  }
+  private faunaGenomeOf(member:FaunaHerdMember):CreatureGenome {
+    let genome=this.faunaGenomes.get(member.id);if(!genome){genome=faunaMemberGenome(member);this.faunaGenomes.set(member.id,genome);}return genome;
+  }
+  /** `faunaDrawn` for diagnostics, built from the last drawn frame's records
+   * only when read (once per frame), never on the draw path. */
+  private get faunaDrawn():{id:string;cell:string|undefined;position:V3;genome:CreatureGenome}[] {
+    if(!this.faunaDrawnList){
+      this.faunaDrawnList=[];
+      for(let i=0;i<this.faunaDrawnCount;i++){const item=this.faunaDrawnItems[i];this.faunaDrawnList.push({id:item.member.id,cell:item.member.spatialCellId,position:item.position.toArray() as V3,genome:this.faunaDrawnGenomes[i]});}
+    }
+    return this.faunaDrawnList;
+  }
   /** Visible animals are sorted before the finite GPU budget is allocated.
-   * All distances use the same individual genome and animated representation. */
+   * All distances use the same individual genome and animated representation.
+   *
+   * CPU shape (docs/life-cpu-2026-09-29.md), every result identical to the
+   * former per-member loop (tests/life-cpu-digest.test.mjs):
+   * - an unchanged frame (same eye, date, frusta, packing) re-submits nothing
+   *   and skips the near rigs too once they are idle;
+   * - each herd is tested once against the frusta and the draw range with a
+   *   conservative bound, so culled and out-of-range herds evaluate no member;
+   * - dated poses are cached per herd per date, so a paused observer who
+   *   turns or moves re-evaluates no BigInt schedule or grounded transform;
+   * - per-frame records, near-rig candidates and matrices are pooled. */
   private drawFauna(eye:THREE.Vector3,worldNs:bigint,frustum:THREE.Frustum,shadowFrustum:THREE.Frustum|null):void {
     const radiusM=this.body.radiusM,rigTime=faunaRigSecondsAt(worldNs);
-    this.faunaRenderer.beginFrame(this.lifeOrigin);this.faunaVisibleCount=0;this.faunaCulledCount=0;this.faunaBudgetDrops=0;this.faunaDrawn=[];
-    const visible:{cameraVisible:boolean;member:FaunaHerdMember;position:THREE.Vector3;quaternion:THREE.Quaternion;distance:number;gait:FaunaMemberActivity['pose']['gait'];activity:FaunaMemberActivity;anchor:number}[]=[];
     this.faunaTraceEye.copy(eye);this.faunaTraceNs=worldNs;this.faunaTraceFrustum.copy(frustum);
     this.faunaTraceShadowValid=!!shadowFrustum;if(shadowFrustum)this.faunaTraceShadow.copy(shadowFrustum);
+    if(this.faunaFrameUnchanged(eye,worldNs,frustum,shadowFrustum)){
+      // Same candidates: only a near-rig build finishing can change the frame.
+      if(this.faunaNear.idle)return;
+      const rigged=this.faunaNear.update(this.faunaNearList);
+      const changed=rigged.size!==this.faunaRigged.size||[...rigged].some(id=>!this.faunaRigged.has(id));
+      this.faunaRigged=rigged;
+      if(changed)this.submitFauna(rigTime);
+      return;
+    }
+    this.faunaCulledCount=0;
+    const visible=this.faunaVisibleList;visible.length=0;
+    const pool=this.faunaItemPool,limitM=FAUNA_FIELD_VISIBLE_M;
     for(let a=0;a<this.faunaAnchorCount;a++){
       const herd=this.faunaHerds[a];if(!herd?.present)continue;
       // One coarse check per herd; no allocations or terrain queries here.
       if(!this.faunaHerdFrame(a,eye))continue;
-      for(const member of herd.members){
-        const activity=faunaMemberActivityAtWorldNs(member,worldNs),pose=activity.pose;
-        const grounded=this.faunaPlace(a,pose);
-        const distance=eye.distanceTo(grounded.position)*radiusM;if(distance>FAUNA_FIELD_VISIBLE_M)continue;
-        const cameraVisible=this.faunaBoundsIntersect(grounded.position,frustum);
-        if(!cameraVisible&&!(shadowFrustum&&this.faunaBoundsIntersect(grounded.position,shadowFrustum))){this.faunaCulledCount++;continue;}
-        visible.push({cameraVisible,member,...grounded,distance,gait:pose.gait,activity,anchor:a});
+      const record=this.faunaHerdRecord(a);
+      this.faunaHerdBounds(record);
+      const centreM=eye.distanceTo(record.center)*radiusM;
+      if(centreM-record.placeRadiusM>limitM)continue;                       // every member beyond range
+      const allInRange=centreM+record.placeRadiusM<=limitM;
+      const camera=frustum.intersectsSphere(record.sphere),shadow=!!shadowFrustum&&shadowFrustum.intersectsSphere(record.sphere);
+      if(!camera&&!shadow&&allInRange){this.faunaCulledCount+=herd.members.length;continue;}
+      const poses=this.faunaHerdPoses(record,a,worldNs),members=record.members;
+      for(let i=0;i<members.length;i++){
+        const position=poses.position[i];
+        const distance=eye.distanceTo(position)*radiusM;if(distance>limitM)continue;
+        const cameraVisible=camera&&this.faunaBoundsIntersect(position,frustum);
+        if(!cameraVisible&&!(shadow&&this.faunaBoundsIntersect(position,shadowFrustum!))){this.faunaCulledCount++;continue;}
+        const activity=poses.activity[i];
+        let item=pool[visible.length];
+        if(!item)pool.push(item={cameraVisible,member:members[i],position,quaternion:poses.quaternion[i],distance,gait:activity.pose.gait,activity,anchor:a});
+        else{item.cameraVisible=cameraVisible;item.member=members[i];item.position=position;item.quaternion=poses.quaternion[i];item.distance=distance;item.gait=activity.pose.gait;item.activity=activity;item.anchor=a;}
+        visible.push(item);
       }
     }
     visible.sort(compareFaunaVisibility);
     this.faunaCameraVisibleCount=0;for(const item of visible)if(item.cameraVisible)this.faunaCameraVisibleCount++;
     this.faunaProxyScale.setScalar(1/radiusM);
-    const genomeOf=(member:FaunaHerdMember)=>{let genome=this.faunaGenomes.get(member.id);if(!genome){genome=faunaMemberGenome(member);this.faunaGenomes.set(member.id,genome);}return genome;};
     // The nearest camera-visible animals may draw as skinned bodies posed on
     // their herd's ground stencil, with the same outer transform as below.
     // Anything not rigged this frame keeps the instanced representation.
-    const near:FaunaNearCandidate[]=[],relief=this.relief;
+    const near=this.faunaNearList,nearPool=this.faunaNearPool;near.length=0;
     for(const item of visible){
       if(!item.cameraVisible||item.distance>FAUNA_NEAR_RIG_EXIT_M||near.length>=this.faunaNear.capacity*2)break;
-      const ground=this.faunaSurfaces[item.anchor].ground!;
-      near.push({member:item.member,genome:genomeOf(item.member),distanceM:item.distance,activity:item.activity,rigSeconds:rigTime,
-        matrix:new THREE.Matrix4().compose(item.position.clone().sub(this.lifeOrigin),item.quaternion,this.faunaProxyScale),
-        ground:(x,z)=>faunaGroundHeight(ground,x,z)*relief});
+      let candidate=nearPool[near.length];
+      if(!candidate)nearPool.push(candidate={member:item.member,genome:this.faunaGenomeOf(item.member),distanceM:0,activity:item.activity,rigSeconds:0,matrix:new THREE.Matrix4(),ground:()=>0});
+      candidate.member=item.member;candidate.genome=this.faunaGenomeOf(item.member);candidate.distanceM=item.distance;candidate.activity=item.activity;candidate.rigSeconds=rigTime;
+      candidate.matrix.compose(this.faunaLocalScratch.copy(item.position).sub(this.lifeOrigin),item.quaternion,this.faunaProxyScale);
+      candidate.ground=this.faunaPoseCache.get(this.faunaSurfaces[item.anchor])!.ground;
+      near.push(candidate);
     }
-    const rigged=this.faunaNear.update(near);
-    for(const item of visible){
+    this.faunaRigged=this.faunaNear.update(near);
+    this.submitFauna(rigTime);
+  }
+  /** Instanced submission of the retained sorted visible list; the rigged
+   * animals count against the budget but draw as near rigs. */
+  private submitFauna(rigTime:number):void {
+    this.faunaRenderer.beginFrame(this.lifeOrigin);this.faunaVisibleCount=0;this.faunaBudgetDrops=0;
+    this.faunaDrawnCount=0;this.faunaDrawnList=null;
+    const rigged=this.faunaRigged;
+    for(const item of this.faunaVisibleList){
       if(this.faunaVisibleCount>=FAUNA_FIELD_CAPACITY){this.faunaBudgetDrops++;continue;}
-      const genome=genomeOf(item.member);
-      this.faunaDrawn.push({id:item.member.id,cell:item.member.spatialCellId,position:item.position.toArray() as V3,genome});
+      const genome=this.faunaGenomeOf(item.member);
+      this.faunaDrawnItems[this.faunaDrawnCount]=item;this.faunaDrawnGenomes[this.faunaDrawnCount++]=genome;
       if(rigged.has(item.member.id)){this.faunaVisibleCount++;continue;}
-      item.position.sub(this.lifeOrigin);this.faunaProxyMatrix.compose(item.position,item.quaternion,this.faunaProxyScale);
+      this.faunaProxyMatrix.compose(this.faunaLocalScratch.copy(item.position).sub(this.lifeOrigin),item.quaternion,this.faunaProxyScale);
       if(this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance))this.faunaVisibleCount++;else this.faunaBudgetDrops++;
     }
     this.faunaRenderer.endFrame();
