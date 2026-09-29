@@ -1,5 +1,7 @@
 import * as THREE from "three";
-import {RenderProfile} from './render-profile.ts';
+import {RenderProfile,systemTimer} from './render-profile.ts';
+import {staticQualitySettings} from './quality-settings.ts';
+import {levelForward} from './view-heading.ts';
 import {SurfaceLighting} from './surface-lighting.ts';
 import {ForestAssetSource} from './forest-asset-source.ts';
 import {ForestAssetAttachment} from './forest-asset-attachment.ts';
@@ -446,6 +448,17 @@ renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.shadowMap.autoUpdate=false;
 const renderProfile=new RenderProfile(renderer.getContext() as WebGL2RenderingContext);
 renderProfile.setEnabled(new URLSearchParams(location.search).get('profile')==='1');
+// Shadow-map CPU share of scene submission (per-system CPU attribution). The
+// wrapper is a timing no-op while profiling is disabled.
+{
+  const shadowRender=renderer.shadowMap.render.bind(renderer.shadowMap);
+  renderer.shadowMap.render=(...args:Parameters<typeof shadowRender>)=>{
+    const started=systemTimer.start();try{return shadowRender(...args);}finally{systemTimer.stop('shadow',started);}
+  };
+}
+/** Debug GPU attribution: systems hidden for one render at a frozen pose. */
+const PROFILING_SYSTEMS=['terrain','sky','forestNear','forestMiddle','forestFar','flora','fauna','rocks','clouds','shadow'] as const;
+const hiddenProfilingSystems=new Set<string>();
 $("viewport").append(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -556,7 +569,7 @@ const opticalStarPoints:{mesh:THREE.Mesh;point:THREE.Points<THREE.BufferGeometry
 let flightAim: string | null = null;
 let walker:GroundWalker|null=null;
 let walkingModule:typeof import('./ground-walker.ts')|null=null;
-let landing:{point:V3;launch?:boolean;contact?:boolean}|null=null;
+let landing:{point:V3;launch?:boolean;contact?:boolean;heading?:THREE.Quaternion}|null=null;
 let landAfterCruise=false,walkGeneration=0;
 function clearWalking(){walkGeneration++;walker?.dispose();walker=null;landing=null;landAfterCruise=false;planetTiles?.setContactFocus(null);}
 let orbitAssist: {bodyId: string; axis: THREE.Vector3; clearanceM?: number} | null = null;
@@ -2471,7 +2484,7 @@ function startTerrainCruise() {
   if(landAfterCruise){landAfterCruise=false;void prepareLanding();}
   panel();
 }
-async function prepareLanding(savedPoint?:V3,contact=false){
+async function prepareLanding(savedPoint?:V3,contact=false,savedHeading?:THREE.Quaternion){
   const body=state.body;
   if(!body||body.kind==='star'||body.type==='Gas giant'||renderer.xr.isPresenting)return;
   // §2.6 existence gate: `walkable` above only reflects the immutable rock
@@ -2504,7 +2517,7 @@ async function prepareLanding(savedPoint?:V3,contact=false){
     const eye=vec(point).setLength(vec(point).length()+12).add(vec(bodyPosition(body,state.sys!,epoch)));
     rebaseSystem(eye);camera.position.set(0,0,0);
   }
-  landing={point,contact};planetTiles?.setContactFocus(point);panel();
+  landing={point,contact,heading:savedHeading?.clone()};planetTiles?.setContactFocus(point);panel();
   const token=walkGeneration;
   announce('Preparing ground for landing. The scene stays visible while nearby terrain refines.');
   try{const mod=await import('./ground-walker.ts');await mod.initWalking();if(token===walkGeneration)walkingModule=mod;}
@@ -2549,11 +2562,13 @@ function updateWalking(dt:number){
         if(!result)throw new Error('GroundWalker queried a surface outside the solid epoch');
         return result;
       };
-      const preserveHeading=landing.contact;
+      const preserveHeading=landing.contact,savedHeading=landing.heading;
       walker=new walkingModule.GroundWalker(body,landing.point,walkerSurface as ReturnType<typeof surfaceQuery>,epoch);landing=null;
-      const up=walker.position.clone().normalize(),forward=camera.getWorldDirection(new THREE.Vector3()).projectOnPlane(up);
-      if(forward.lengthSq()<.01)forward.set(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(up);
-      camera.up.copy(up);if(!preserveHeading)camera.lookAt(camera.position.clone().add(forward.normalize()));
+      const up=walker.position.clone().normalize();
+      camera.up.copy(up);
+      // A restored ?walk=&heading= address reproduces the saved view exactly.
+      if(savedHeading)camera.quaternion.copy(savedHeading);
+      else if(!preserveHeading)camera.lookAt(camera.position.clone().add(levelForward(camera.quaternion,up)));
       announce('Walking · WASD move · Shift run · Space jump · Return to flight to take off.');panel();persist();
     }
   }
@@ -4678,6 +4693,45 @@ renderer.domElement.addEventListener("webglcontextlost", (e) => {
   ready = false;
   announce("Graphics context lost. Reload to restore the atlas.");
 });
+/** Perf-harness scripted motion (debug API only): constant-rate yaw about the
+ * local vertical and constant ground speed along the level heading, holding a
+ * terrain clearance or descending toward it. Driven by frame dt, so rates are
+ * wall-clock constant regardless of frame pacing. */
+type PerfMotion={yawRadPerS:number;speedMps:number;clearanceM:number|null;descentPerS:number;minDescentMps:number};
+let perfMotion:PerfMotion|null=null;
+function perfBodyRelative(){
+  const center=vec(bodyPosition(state.body!,state.sys!,epoch));
+  return {center,relative:vec(localPose()).sub(center)};
+}
+function placePerfCamera(center:THREE.Vector3,relative:THREE.Vector3){
+  const next=relative.clone().add(center);
+  if(next.distanceTo(systemOrigin)>128)rebaseSystem(next);
+  camera.position.copy(next.sub(systemOrigin).multiplyScalar(systemUnit));
+  controls.target.copy(camera.position).add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(systemUnit));
+}
+function applyPerfMotion(dt:number){
+  if(!perfMotion||!state.body||!state.sys||!flight||walker||landing||renderer.xr.isPresenting)return;
+  const {center,relative}=perfBodyRelative(),up=relative.clone().normalize();
+  if(perfMotion.yawRadPerS)camera.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(up,-perfMotion.yawRadPerS*dt)).normalize();
+  if(perfMotion.speedMps){
+    const forward=levelForward(camera.quaternion,up);
+    relative.addScaledVector(forward,perfMotion.speedMps*dt);
+    // Keep the view's pitch relative to the new local vertical.
+    camera.quaternion.premultiply(new THREE.Quaternion().setFromUnitVectors(up,relative.clone().normalize())).normalize();
+  }
+  if(perfMotion.clearanceM!==null){
+    const info=surfaceClearance(state.body,relative.toArray() as V3,snappedWaterLevelFor(state.body));
+    let clearance=perfMotion.clearanceM;
+    if(perfMotion.descentPerS>0){
+      const current=info.terrainClearance,rate=Math.max(perfMotion.minDescentMps,current*perfMotion.descentPerS);
+      clearance=Math.max(perfMotion.clearanceM,current-rate*dt);
+    }
+    relative.setLength(state.body.radiusM+info.terrainElevation+clearance);
+  }
+  camera.up.copy(relative.clone().normalize());
+  flightSpeed=Math.abs(perfMotion.speedMps);
+  placePerfCamera(center,relative);
+}
 let last = performance.now();
 let lastDateSave=0;
 const projected = new THREE.Vector3();
@@ -4714,6 +4768,7 @@ renderer.setAnimationLoop(() => {
   if (!renderer.xr.isPresenting && !flight) controls.update();
   updateExplorationClock(elapsedSeconds);
   updateFlight(dt);
+  applyPerfMotion(dt);
   if (!renderer.xr.isPresenting && (flight ? camera.view?.enabled : !camera.view?.enabled)) updateCameraViewport();
   vr?.update(dt);
   renderProfile.cpu('planetUpdate',()=>updatePlanetTiles(dt));
@@ -4836,15 +4891,22 @@ renderer.setAnimationLoop(() => {
   // existing terrain/environment; XR deliberately retains procedural sky.
   const infoAutoReset=renderer.info.autoReset;
   if(renderProfile.enabled){renderer.info.reset();renderer.info.autoReset=false;}
+  // Debug-only: hide attributed systems for this render, restored below.
+  const hiddenObjects:[THREE.Object3D,boolean][]=[];
+  if(hiddenProfilingSystems.size&&planetTiles)for(const name of hiddenProfilingSystems)
+    for(const object of planetTiles.profilingObjects(name)){hiddenObjects.push([object,object.visible]);object.visible=false;}
   try{
     // Reflections reuse the last map. Only the main scene refreshes it, once
     // per frame, including when clouds capture that scene into their target.
     renderer.shadowMap.needsUpdate=false;
     renderProfile.pass('forestAtlas',()=>planetTiles?.renderForestAtlases(renderer,renderer.xr.isPresenting));
     renderProfile.pass('lakeReflection',()=>planetTiles?.renderLakeReflection(renderer,scene,camera,renderer.xr.isPresenting));
-    renderer.shadowMap.needsUpdate=light.castShadow;
-    if(!planetTiles?.renderCloudScene(renderer,scene,camera,renderProfile))renderProfile.pass('scene',()=>renderer.render(scene,camera));
-  }finally{renderer.info.autoReset=infoAutoReset;}
+    renderer.shadowMap.needsUpdate=light.castShadow&&!hiddenProfilingSystems.has('shadow');
+    if(hiddenProfilingSystems.has('clouds')||!planetTiles?.renderCloudScene(renderer,scene,camera,renderProfile))renderProfile.pass('scene',()=>renderer.render(scene,camera));
+  }finally{
+    renderer.info.autoReset=infoAutoReset;
+    for(let i=hiddenObjects.length-1;i>=0;i--)hiddenObjects[i][0].visible=hiddenObjects[i][1];
+  }
   drawCount = renderer.info.render.calls;
   if (now - lastStats > 900) {
     lastStats = now;
@@ -4853,7 +4915,17 @@ renderer.setAnimationLoop(() => {
     $("performance").textContent =
       `${state.level.toUpperCase()} · ${drawCount} draws · p95 ${p95.toFixed(0)} ms`;
   }
-  renderProfile.endFrame(drawCount,renderer.info.render.triangles);
+  let systems:Parameters<RenderProfile['endFrame']>[2];
+  if(renderProfile.enabled){
+    // Non-overlapping per-system CPU attribution for this frame.
+    const t=systemTimer.take(),cpu=(name:string)=>renderProfile.frameCpuMs(name),v=(name:string)=>t[name]??0;
+    const renderCpu=cpu('forestAtlas')+cpu('lakeReflection')+cpu('scene')+cpu('sceneCapture');
+    const planetParts=v('sky')+v('clouds')+v('forestTotal')+v('rocks')+v('lifeScatter')+v('flora')+v('fauna');
+    systems={terrainTiles:Math.max(0,v('planetUpdate')-planetParts),sky:v('sky'),forest:Math.max(0,v('forestTotal')-v('canopy')),canopy:v('canopy'),
+      flora:v('flora'),lifeScatter:v('lifeScatter'),fauna:v('fauna'),rocks:v('rocks'),
+      clouds:v('clouds')+cpu('cloudIntegration')+cpu('cloudResolve'),submission:Math.max(0,renderCpu-v('shadow')),shadow:v('shadow')};
+  }
+  renderProfile.endFrame(drawCount,renderer.info.render.triangles,systems);
 });
 async function boot() {
   const q = new URLSearchParams(location.search);
@@ -4894,8 +4966,9 @@ async function boot() {
     });
     const saved=q.get('walk')?.split(',').map(Number),heading=q.get('heading')?.split(',').map(Number);
     if(b&&saved?.length===3&&saved.every(Number.isFinite)&&Math.abs(Math.hypot(...saved)-b.radiusM)<30000){
-      if(heading?.length===4&&heading.every(Number.isFinite))camera.quaternion.fromArray(heading).normalize();
-      void prepareLanding(saved as V3);
+      const savedHeading=heading?.length===4&&heading.every(Number.isFinite)?new THREE.Quaternion().fromArray(heading).normalize():undefined;
+      if(savedHeading)camera.quaternion.copy(savedHeading);
+      void prepareLanding(saved as V3,false,savedHeading);
     }
   } else if (coords) await navigate("sector", { galaxy: g, coords });
   else await navigate("galaxy", { galaxy: g });
@@ -4940,6 +5013,71 @@ Object.defineProperty(window, "__atlas", {
       planetTiles?.setCloudSceneSamples(samples);
     },
     get renderProfile(){return renderProfile.diagnostics();},
+    // Desktop perf harness (docs/desktop-perf-harness-2026-09-29.md).
+    setProfileHistory(limit:number){renderProfile.setHistoryLimit(limit);},
+    renderProfileSamples(names:string[]){return renderProfile.samples(names);},
+    get profilingSystems(){return [...PROFILING_SYSTEMS];},
+    /** Debug GPU attribution: hide one system for rendering only (frozen pose). */
+    setSystemVisible(name:string,visible:boolean){
+      if(!(PROFILING_SYSTEMS as readonly string[]).includes(name))throw new Error(`Unknown profiling system ${name}; expected ${PROFILING_SYSTEMS.join(', ')}`);
+      if(visible)hiddenProfilingSystems.delete(name);else hiddenProfilingSystems.add(name);
+      return [...hiddenProfilingSystems];
+    },
+    get hiddenSystems(){return [...hiddenProfilingSystems];},
+    /** Exact free-flight pose (perf harness): body-relative metres + camera quaternion. */
+    /** Frozen perf pose: body-relative metres + camera quaternion. With
+     * `clearanceM` the position is snapped radially to the app's own terrain
+     * (so harness poses do not depend on a Node-side terrain replica). */
+    setPose(position:V3,heading:[number,number,number,number],clearanceM?:number){
+      if(!state.body||!state.sys||state.level!=='body')throw new Error('setPose needs a focused body');
+      if(position?.length!==3||!position.every(Number.isFinite)||heading?.length!==4||!heading.every(Number.isFinite))throw new Error('setPose(position[3], heading[4])');
+      if(renderer.xr.isPresenting)throw new Error('setPose is desktop-only');
+      clearWalking();
+      if(!flight)toggleFlight();
+      autopilot=null;orbitAssist=null;surfaceJourney=null;planetLook=null;approachAltitude=null;tween=null;flightCruise=false;
+      startCruiseAfterLook=false;landAfterCruise=false;flightKeys.clear();
+      const center=vec(bodyPosition(state.body,state.sys,epoch)),relative=vec(position);
+      if(typeof clearanceM==='number'&&Number.isFinite(clearanceM))
+        relative.setLength(state.body.radiusM+surfaceClearance(state.body,relative.toArray() as V3,snappedWaterLevelFor(state.body)).terrainElevation+clearanceM);
+      rebaseSystem(relative.clone().add(center));camera.position.set(0,0,0);
+      camera.quaternion.fromArray(heading).normalize();camera.up.copy(relative.clone().normalize());
+      placePerfCamera(center,relative);
+      return {position:localPose().map((v,i)=>v-center.toArray()[i]),heading:camera.quaternion.toArray()};
+    },
+    /** Scripted constant-rate motion; null stops it. Degrees and metres. */
+    setPerfMotion(motion:{yawDegPerS?:number;speedMps?:number;clearanceM?:number|null;descentPerS?:number;minDescentMps?:number}|null){
+      if(!motion){perfMotion=null;return null;}
+      const finite=(v:unknown,fallback:number)=>typeof v==='number'&&Number.isFinite(v)?v:fallback;
+      perfMotion={yawRadPerS:finite(motion.yawDegPerS,0)*Math.PI/180,speedMps:finite(motion.speedMps,0),
+        clearanceM:motion.clearanceM===undefined||motion.clearanceM===null?null:finite(motion.clearanceM,0),
+        descentPerS:finite(motion.descentPerS,0),minDescentMps:finite(motion.minDescentMps,0)};
+      return {...perfMotion};
+    },
+    /** Every active quality setting that shapes desktop frame cost. */
+    qualitySettings(){
+      const gl=renderer.getContext(),attributes=gl.getContextAttributes(),tiles=planetTiles?.diagnostics();
+      return {
+        url:{trees:detailedForestEnabled,detail:surfaceDetail,lighting:surfaceLightingEnabled,horizon:horizonAssist,observed:viewMode==='observed',reliefScale},
+        renderer:{pixelRatio:renderer.getPixelRatio(),devicePixelRatio,pixelRatioCap:1.7,cssViewport:[innerWidth,innerHeight],
+          drawingBuffer:[gl.drawingBufferWidth,gl.drawingBufferHeight],antialias:attributes?.antialias??null,logarithmicDepthBuffer:true,
+          toneMapping:renderer.toneMapping,toneMappingExposure:renderer.toneMappingExposure,shadowMapEnabled:renderer.shadowMap.enabled,
+          shadowMapType:renderer.shadowMap.type,shadowCasterLight:light.castShadow,anisotropy:Math.min(8,renderer.capabilities.getMaxAnisotropy()),
+          maxAnisotropy:renderer.capabilities.getMaxAnisotropy(),xr:renderer.xr.isPresenting},
+        clouds:tiles?.clouds??null,
+        forestAssets:forestAssetAttachment.diagnostics(),
+        surfaceLighting:{enabled:surfaceLightingEnabled,...surfaceLighting.diagnostics()},
+        hiddenSystems:[...hiddenProfilingSystems],
+        ...staticQualitySettings(),
+      };
+    },
+    /** Cheap sample for perf time series: backlog, heap, pose. */
+    perfSample(){
+      const memory=(performance as unknown as {memory?:{usedJSHeapSize:number;totalJSHeapSize:number;jsHeapSizeLimit:number}}).memory;
+      return {t:performance.now(),frame:frameCount,backlog:planetTiles?.backlog()??null,
+        heap:memory?{used:memory.usedJSHeapSize,total:memory.totalJSHeapSize,limit:memory.jsHeapSizeLimit}:null,
+        position:localPose(),heading:camera.quaternion.toArray(),walking:!!walker,flight,
+        clearanceM:state.body&&state.sys?surfaceClearance(state.body,perfBodyRelative().relative.toArray() as V3,snappedWaterLevelFor(state.body)).terrainClearance:null};
+    },
     shoreDebug(options:import('./planet-renderer.ts').ShoreDebug){planetTiles?.setShoreDebug(options);},
     get date(){return dateRecord(epoch);},
     // Package D diagnostics (contract §6.4): a pure function of the current

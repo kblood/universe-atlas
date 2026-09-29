@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {floraShadowOrder,compareFaunaVisibility} from './life-shadow-priority.ts';
 import {patchMorphHeader,patchMorphVertex,terrainDepthMaterial,boundMorphedTerrain} from './terrain-shadow.ts';
-import type {RenderProfile} from './render-profile.ts';
+import {type RenderProfile,systemTimer} from './render-profile.ts';
 import {attachLocalAerial,localAerialGLSL,LOCAL_AERIAL_VERSION} from './local-aerial-perspective.ts';
 import { AU, type Body, type V3 } from './catalog.ts';
 import { children, tileDirection, closestTileDirection, tileKey, tileCode, directionTile, directionCoordinates, tileNeighbour, PATCH_SEGMENTS, type Tile, type buildTile } from './planet-tiles.ts';
@@ -42,7 +42,7 @@ import type {TreeAssetOptions} from './tree-asset.ts';
 
 // Canonical surface cells own organisms. Demand extends past visible range;
 // bounded habitat work retains old cells while new neighbours load.
-const LIFE_SLOT_CAPACITY = 6000;
+export const LIFE_SLOT_CAPACITY = 6000;
 const LIFE_RESCATTER_THRESHOLD_M = 16;
 const LIFE_LOAD_MARGIN_M = 48;
 const FLORA_KIND_CULL_RADIUS_M: Record<FloraKind, number> = { tree: 6, shrub: 2.5, grass: 1, flower: .6 };
@@ -930,8 +930,8 @@ export class PlanetRenderer {
     // contact chunks. A 512-leaf full quadtree can consume that headroom.
     const cacheLimit=contact||this.lowFlightDetail?768:TILE_CACHE_LIMIT,drawLimit=contact?450:this.lowFlightDetail?390:(immersive?102:TILE_DRAW_LIMIT);
     this.eyeHeightUniform.value=(distance-1)*this.body.radiusM;this.sunUniform.value.set(...sun);
-    this.atmosphere?.update(eye, new THREE.Vector3(...sun));
-    this.clouds?.update(this.body.seed,this.body.id,worldNs,this.sunUniform.value);
+    const skyStarted=systemTimer.start();this.atmosphere?.update(eye, new THREE.Vector3(...sun));systemTimer.stop('sky',skyStarted);
+    const cloudsStarted=systemTimer.start();this.clouds?.update(this.body.seed,this.body.id,worldNs,this.sunUniform.value);systemTimer.stop('clouds',cloudsStarted);
     // Ring existence toggle only -- geometry/texture are baked once at
     // construction (ringSystemFor/createRingMesh are pure functions of the
     // body, not of time), so this is a cheap per-frame boolean, not a rebuild.
@@ -949,8 +949,10 @@ export class PlanetRenderer {
     // (ocean-water-material.ts's setFrame/setDebug, river-water.ts's
     // setDebug/update), so external freeze behaviour is unchanged.
     const oceanPhaseS=oceanPhaseSeconds(worldNs);
+    const environmentStarted=systemTimer.start();
     this.river?.update(observer,sun,oceanPhaseS,this.relief);
     if(this.environment){this.environment.group.visible=this.relief===1;if(this.relief===1)this.environment.update(observer,dt,sun);}
+    systemTimer.stop('sky',environmentStarted);
     // Flora/fauna: shared by low flight and walking. The historical contact
     // focus) exactly like `this.environment` above, so orbit/flight incur
     // zero cost from this layer. `frusta[0]` is reused directly (already
@@ -964,9 +966,13 @@ export class PlanetRenderer {
     // Visible forest density is centred on the observer's ground position.
     // View direction may inform future prefetch, never population coverage:
     // moving this focus ahead made turning in place replace dense forest.
+    const forestStarted=systemTimer.start();
     this.forest.update(eye,forestFocus.toArray() as V3,altitudeM,forestEnabled,snappedWaterLevelM,immersive,frusta,worldNs,this.lifeContext?.treeSpecies,shadowFrustum);
+    systemTimer.stop('forestTotal',forestStarted);
     this.lastEye.copy(eye);
+    const rocksStarted=systemTimer.start();
     this.rocks.update({eye,focus:lifeFocus,altitudeM,gate:this.lifeContext?.rocks,relief:this.relief,waterLevelM:snappedWaterLevelM,frusta,shadowFrustum});
+    systemTimer.stop('rocks',rocksStarted);
     if (this.relief === 1 && (contact||altitudeM<PLANET_DETAIL.groundLifeAltitudeM) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs,shadowFrustum); this.lifeMs=performance.now()-lifeStarted; }
     else { this.hideLife(); this.lifeMs=0; }
     const direction = eye.clone().normalize();
@@ -1292,7 +1298,7 @@ export class PlanetRenderer {
       this.pending.add(key);
       this.workers[this.nextWorker=(this.nextWorker+1)%this.workers.length].worker.postMessage({key, tile, body: this.body, relief: this.relief, waterLevelM: snappedWaterLevelM, waterBucket});
     }
-    this.updateMs=performance.now()-started;
+    this.updateMs=performance.now()-started;systemTimer.add('planetUpdate',this.updateMs);
   }
   private leafRecord(tile:Tile,code:number):LeafRecord{
     const neighbours=[0,1,2,3].map(e=>tileNeighbour(tile,e));
@@ -1339,11 +1345,11 @@ export class PlanetRenderer {
     if(!this.lifeScatterValid||contact.distanceTo(this.lifeScatterCenter)*this.body.radiusM>LIFE_RESCATTER_THRESHOLD_M){
       this.rescatterLife(contact);this.lifeScatterCenter.copy(contact);this.lifeScatterValid=true;
     }
-    this.processLifeQueue();this.rescatterMs=performance.now()-t0;
+    this.processLifeQueue();this.rescatterMs=performance.now()-t0;systemTimer.add('lifeScatter',this.rescatterMs);
     if(!frustum){this.hideLife();return;}
     this.lifeOrigin.copy(eye);this.floraGroup.position.copy(eye);
-    const t1=performance.now();this.drawFlora(life,eye,frustum,shadowFrustum);this.drawFloraMs=performance.now()-t1;
-    const t2=performance.now();this.drawFauna(eye,worldNs,frustum,shadowFrustum);this.drawFaunaMs=performance.now()-t2;
+    const t1=performance.now();this.drawFlora(life,eye,frustum,shadowFrustum);this.drawFloraMs=performance.now()-t1;systemTimer.add('flora',this.drawFloraMs);
+    const t2=performance.now();this.drawFauna(eye,worldNs,frustum,shadowFrustum);this.drawFaunaMs=performance.now()-t2;systemTimer.add('fauna',this.drawFaunaMs);
   }
   private rescatterLife(point:THREE.Vector3):void {
     this.lifePackingDirty=true;
@@ -1671,6 +1677,40 @@ export class PlanetRenderer {
       debug:{...this.debug,activeTileIds:[...this.active],pendingTileIds:[...this.pending],eyeHeightM:this.eyeHeightUniform.value},
       skirtPatches:[...this.active].filter(k=>this.patches.get(k)!.mesh.geometry.drawRange.count>PATCH_SEGMENTS*PATCH_SEGMENTS*6).length,
       vertices: [...this.active].reduce((n,k) => n + this.patches.get(k)!.mesh.geometry.attributes.position.count, 0)};
+  }
+  /** Debug-only GPU attribution (hide-one-system at a frozen pose): the
+   * objects belonging to a named system. The caller hides them only for the
+   * duration of one render and restores their visibility, so canonical
+   * content, selection, caches and each system's own visibility state are untouched. */
+  profilingObjects(system:string):THREE.Object3D[]{
+    const patches=[...this.patches.values()];
+    switch(system){
+      case 'terrain':return patches.map(p=>p.mesh);
+      case 'sky':return [...patches.flatMap(p=>p.ocean?[p.ocean]:[]),...(this.atmosphere?[this.atmosphere.mesh]:[]),...(this.environment?[this.environment.group]:[]),...(this.ring?[this.ring]:[])];
+      case 'forestNear':case 'forestMiddle':case 'forestFar':return this.forest.profilingObjects(system);
+      case 'flora':return [this.floraGroup];
+      case 'fauna':return [this.faunaRenderer.group];
+      case 'rocks':return [this.rocks.group];
+      default:return [];
+    }
+  }
+  /** Cheap per-sample streaming backlog for perf captures (no allocation-heavy diagnostics). */
+  backlog(){
+    let staleWaterPatches=0;for(const key of this.active)if(this.patches.get(key)!.waterBucket!==this.waterBucket)staleWaterPatches++;
+    return {surfaceReady:this.surfaceReady,terrainPending:this.pending.size,terrainResident:this.patches.size,terrainVisible:this.active.size,staleWaterPatches,
+      lifePending:this.lifeQueue.length-this.lifeQueueIndex,faunaTerrainPending:this.faunaGroundQueue.length,
+      floraSubmitted:this.floraGroup.visible?this.floraSubmittedCount:0,faunaVisible:this.faunaRenderer.group.visible?this.faunaVisibleCount:0,faunaNearRigs:this.faunaNear.group.children.filter(o=>o.visible).length,
+      rocksDrawn:this.rocksDrawnForProfiling(),...this.forest.backlog(),...this.memoryForProfiling()};
+  }
+  private memoryForProfiling(){
+    const oceanNormalBytes=this.river?.diagnostics().resident?0:[...this.patches.values()].some(p=>p.ocean)?SHARED_WATER_NORMAL_ATLAS_BYTES:0;
+    const memory=rendererMemoryAccounting({residentBytes:this.residentBytes,oceanNormalBytes,rockOwnedBytes:this.rocks.ownedBytes().total,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,pendingTiles:this.pending.size});
+    return {accountedBytes:memory.accountedBytes,reservedCombinedBytes:memory.reservedCombinedBytes,budgetBytes:TOTAL_BUDGET_BYTES+(this.immersiveBudget?0:CLOUD_TARGET_BUDGET_BYTES)};
+  }
+  private rocksDrawnForProfiling(){
+    let drawn=0;if(!this.rocks.group.visible)return 0;
+    this.rocks.group.traverse(o=>{const mesh=o as THREE.InstancedMesh;if(mesh.isInstancedMesh&&mesh.visible)drawn+=mesh.count;});
+    return drawn;
   }
   renderCloudScene(renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera,profile?:RenderProfile){
     return this.clouds?.render(renderer,scene,camera,profile)??false;
