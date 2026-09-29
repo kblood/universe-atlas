@@ -62,6 +62,12 @@ function packFamilyPresentation(kind:ForestTreeKind,binding:ForestTreeBinding,pr
  * the same update. Work begins above visible range; no landing flag exists. */
 export class PlanetForest {
   readonly group=new THREE.Group();
+  /** Acceptance probes only; never canonical state. `middleHandoffM` overrides
+   * the paired LOD1 -> far-atlas distance (retained band +50 m). `hideColour`
+   * stops forest colour/depth writes while shadow casters still draw, so two
+   * renders of one pose differ exactly in the tree pixels. */
+  private debug:{middleHandoffM:number|null;hideColour:boolean}={middleHandoffM:null,hideColour:false};
+  private debugWrites=new Map<THREE.Material,[boolean,boolean]>();
   private meshes:THREE.InstancedMesh[];
   private canopy:THREE.InstancedMesh;
   private cache=new Map<string,Resident>();
@@ -671,7 +677,7 @@ export class PlanetForest {
       const expected=this.expectedCanopyPresentation(resident);
       const paired=this.fullCanopy?.canHandoff(cell.id,resident.height,resident.patchKey,expected.heightM,expected.code,expected.ratioCode)??false;
       if(paired){
-        const middleLimit=this.retainedMiddle.has(cell.id)?600:550;
+        const middle=this.debug.middleHandoffM??550,middleLimit=this.retainedMiddle.has(cell.id)?middle+50:middle;
         if(distance>=middleLimit){this.retainedMiddle.delete(cell.id);continue;}
         this.retainedMiddle.add(cell.id);
       }
@@ -689,6 +695,29 @@ export class PlanetForest {
     this.fullCanopy?.finish();
     this.nearTrees=counts[0];this.visibleTrees=counts[0]+counts[1]+canopyCount;
     this.updateMs=performance.now()-updateStarted;
+  }
+  setDebug(options:{middleHandoffM?:number|null;hideColour?:boolean}){
+    const m=options.middleHandoffM;
+    if(m!==undefined){
+      if(m!==null&&!(Number.isFinite(m)&&m>=B.forestNearM&&m<=B.forestFootprintM))throw new Error('Debug middle hand-off must lie between the near and footprint radii');
+      this.debug.middleHandoffM=m;this.retainedMiddle.clear();
+    }
+    if(options.hideColour!==undefined){
+      this.debug.hideColour=!!options.hideColour;
+      this.group.traverse(object=>{
+        if(!(object instanceof THREE.Mesh))return;
+        for(const material of Array.isArray(object.material)?object.material:[object.material]){
+          if(this.debug.hideColour){
+            if(!this.debugWrites.has(material))this.debugWrites.set(material,[material.colorWrite,material.depthWrite]);
+            material.colorWrite=false;material.depthWrite=false;
+          }else{
+            const saved=this.debugWrites.get(material);
+            if(saved){[material.colorWrite,material.depthWrite]=saved;this.debugWrites.delete(material);}
+          }
+        }
+      });
+    }
+    return {...this.debug};
   }
   diagnostics(){
     const ownedEntries=this.assets.ownedEntries;

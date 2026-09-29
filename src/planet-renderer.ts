@@ -583,6 +583,8 @@ export class PlanetRenderer {
     }});
   }
   clearForestTreeAssets(){this.forest.clearTreeAssets();}
+  /** Acceptance probe: forest hand-off override / colour isolation (planet-forest.ts). */
+  forestDebug(options:Parameters<PlanetForest['setDebug']>[0]){return this.forest.setDebug(options);}
   private startWorker(index:number){
     const generation=(this.workers[index]?.generation??0)+1,restarts=this.workers[index]?.restarts??0;
     const worker=new Worker(new URL('./planet-worker.ts',import.meta.url),{type:'module'});
