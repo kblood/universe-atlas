@@ -34,7 +34,7 @@ import {surfaceCellsWithin,type SurfaceCell} from './surface-cell.ts';
 import {biomeClassifier} from './surface-biomes.ts';
 import {PlanetForest} from './planet-forest.ts';
 import {PlanetRocks} from './planet-rocks.ts';
-import {TOTAL_BUDGET_BYTES,LIFE_RESERVE_BYTES,ROCK_RESERVE_BYTES,TERRAIN_BUDGET_BYTES,PENDING_TILE_BYTES,rendererMemoryAccounting} from './renderer-memory.ts';
+import {TOTAL_BUDGET_BYTES,LIFE_RESERVE_BYTES,ROCK_RESERVE_BYTES,TERRAIN_BUDGET_BYTES,PENDING_TILE_BYTES,TERRAIN_PRESSURE_ENTER_FRACTION,TERRAIN_PRESSURE_EXIT_FRACTION,rendererMemoryAccounting,terrainAdmission} from './renderer-memory.ts';
 import type {RockGate} from './rock-field.ts';
 import {PLANET_DETAIL} from './planet-detail.ts';
 import type {Species} from './biosphere-model.ts';
@@ -217,6 +217,14 @@ export class PlanetRenderer {
   private selectionDirty=false;
   private mergeCursor=0;
   private mergeRemaining=0;
+  // Byte-pressure hysteresis and admission observability (renderer-memory.ts).
+  private terrainPressure=false;
+  private terrainPressureEntries=0;
+  private blockedRefreshes=0;
+  private blockedAdmissions=0;
+  private blockedRefreshesTotal=0;
+  private blockedAdmissionsTotal=0;
+  private splitsBlockedByBytes=0;
   private updateMs=0;
   private lifeMs=0;
   private rescatterMs=0;
@@ -849,6 +857,13 @@ export class PlanetRenderer {
       if (message.result) this.install(message.key, message.result, message.waterBucket??0);
       else this.failed(message.key);
     }
+    // Pressure is re-evaluated every frame, not only when the view changes: a
+    // stationary view whose budget shrank (or whose mandatory contact support
+    // grew) must still merge and evict. Entering pressure schedules one
+    // selection pass; merges it performs keep the pass going.
+    const terrainBudget=this.terrainBudgetBytes;
+    if(!this.terrainPressure&&this.residentBytes>terrainBudget*TERRAIN_PRESSURE_ENTER_FRACTION){this.terrainPressure=true;this.terrainPressureEntries++;this.selectionDirty=true;}
+    else if(this.terrainPressure&&this.residentBytes<terrainBudget*TERRAIN_PRESSURE_EXIT_FRACTION)this.terrainPressure=false;
     const wanted: Tile[] = [], protectedKeys = new Set<string>();
     const request = (t: Tile) => {
       const key = tileKey(t);
@@ -980,7 +995,29 @@ export class PlanetRenderer {
       for(const leaf of leaves){let t=leaf;while(t.level>0){t={face:t.face,level:t.level-1,x:Math.floor(t.x/2),y:Math.floor(t.y/2)};
         const key=tileKey(t);deepest.set(key,Math.max(deepest.get(key)??0,leaf.level));
         if(t.level===leaf.level-1)parents.set(key,t);}}
-      const mergeCandidates=[...parents.entries()],mergeStarted=performance.now();
+      // Byte pressure: merge the lowest-scoring eligible parents until their
+      // children's bytes bring residency below the exit fraction. The score
+      // rule below cannot do this in a byte-saturated frontier: every parent
+      // outranks the best starved leaf, so `score<urgent/4` is never true.
+      if(this.terrainPressure){
+        const excess=this.residentBytes-terrainBudget*(TERRAIN_PRESSURE_EXIT_FRACTION-.01),eligible:{key:string;parent:Tile;kids:string[];score:number}[]=[];
+        for(const [key,parent] of parents){
+          const kids=children(parent).map(tileKey);if(!kids.every(k=>initial.has(k))||!this.patches.has(key))continue;
+          const projection=projected(parent);
+          if(contact&&((projection.contactNear<28&&parent.level<this.contactLevel)||(this.needsFineContact&&projection.contactNear<3&&parent.level<this.fineContactLevel)))continue;
+          if([0,1,2,3].some(e=>(deepest.get(tileKey(tileNeighbour(parent,e)))??0)>parent.level+1))continue;
+          eligible.push({key,parent,kids,score:projection.score});
+        }
+        eligible.sort((a,b)=>a.score-b.score||(a.key<b.key?-1:a.key>b.key?1:0));
+        const removed=new Set<string>();let freed=0;
+        for(const merge of eligible){
+          if(freed>=excess)break;
+          for(const kid of merge.kids){removed.add(kid);freed+=this.patches.get(kid)?.bytes??0;}
+          leaves.push(merge.parent);this.selectionDirty=true;
+        }
+        if(removed.size){let write=0;for(const t of leaves)if(!removed.has(tileKey(t)))leaves[write++]=t;leaves.length=write;}
+      }
+      const mergeCandidates=this.terrainPressure?[]:[...parents.entries()],mergeStarted=performance.now();
       if(this.mergeRemaining<=0)this.mergeRemaining=mergeCandidates.length;
       else this.mergeRemaining=Math.min(this.mergeRemaining,mergeCandidates.length);
       let scanned=0;
@@ -996,7 +1033,7 @@ export class PlanetRenderer {
         // oscillation at L21 while the capsule waited forever for L22.
         if(contact&&((projection.contactNear<28&&parent.level<this.contactLevel)||
           (this.needsFineContact&&projection.contactNear<3&&parent.level<this.fineContactLevel)))continue;
-        const pressure=leaves.length>drawLimit-60||this.residentBytes>this.terrainBudgetBytes*.94;
+        const pressure=leaves.length>drawLimit-60||this.terrainPressure;
         if(score>(immersive?210:160)&&!(pressure&&score<urgent/4))continue;
         if([0,1,2,3].some(e=>(deepest.get(tileKey(tileNeighbour(parent,e)))??0)>parent.level+1))continue;
         if(!this.patches.has(key))continue;
@@ -1007,6 +1044,12 @@ export class PlanetRenderer {
       this.mergeRemaining=Math.max(0,this.mergeRemaining-scanned);
       if(this.mergeRemaining>0)this.selectionDirty=true;
       const iterations=contact?256:24;
+      // Byte-aware splitting: a split that needs tiles not yet resident or
+      // pending is only requested while the whole pass's missing children fit
+      // below the split ceiling (mandatory contact support: the admission
+      // ceiling). Under pressure only mandatory support may split.
+      const plannedKeys=new Set<string>();
+      this.splitsBlockedByBytes=0;
       for (let iteration = 0; iteration < iterations; iteration++) {
         if(iteration>0&&performance.now()-selectionStarted>3){this.selectionDirty=true;break;}
         const index=new Map(leaves.map(t=>[tileKey(t),t]));
@@ -1038,6 +1081,15 @@ export class PlanetRenderer {
           if(contact){for(let pass=0;pass<20;pass++){const lower=[0,1,2,3].map(e=>neighbour(t,e)).find(n=>n&&n.level<t.level);if(!lower)break;t=lower;}}
           if (leaves.length + 3 > drawLimit) break;
           const kids = children(t);
+          const mandatory=candidate.score>1e8;
+          if(this.terrainPressure&&!mandatory){this.splitsBlockedByBytes++;continue;}
+          const missing=kids.map(tileKey).filter(key=>!this.patches.has(key)&&!this.pending.has(key)&&!plannedKeys.has(key));
+          if(missing.length){
+            const admission=terrainAdmission({budgetBytes:terrainBudget,residentBytes:this.residentBytes,pendingTiles:this.pending.size,inFlight:this.workers.length*2});
+            const ceiling=mandatory?admission.admissionCeilingBytes:admission.splitCeilingBytes;
+            if(this.residentBytes+(this.pending.size+plannedKeys.size+missing.length)*PENDING_TILE_BYTES>ceiling){this.splitsBlockedByBytes++;continue;}
+            for(const key of missing)plannedKeys.add(key);
+          }
           kids.forEach(request);
           if (leaves.length + 3 <= drawLimit && kids.every(k => this.patches.has(tileKey(k)))) {
             leaves.splice(leaves.indexOf(t), 1, ...kids);
@@ -1096,13 +1148,19 @@ export class PlanetRenderer {
     // includes pending work, so late completions cannot grow the cache forever.
     // Reserve one worst-case worker result before admitting it. This maintains
     // the combined cap even when a worker completion arrives after selection.
-    const bytePressure=()=>this.residentBytes+(this.pending.size+1)*PENDING_TILE_BYTES>this.terrainBudgetBytes;
+    // Unprotected tiles are evicted to keep ordinary refinement below its split
+    // ceiling, and under pressure down to the exit fraction.
+    const inFlight=this.workers.length*2;
+    const splitCeiling=terrainAdmission({budgetBytes:terrainBudget,residentBytes:0,pendingTiles:0,inFlight}).splitCeilingBytes;
+    const bytePressure=()=>this.residentBytes+(this.pending.size+1)*PENDING_TILE_BYTES>splitCeiling||
+      (this.terrainPressure&&this.residentBytes>=terrainBudget*TERRAIN_PRESSURE_EXIT_FRACTION);
     for (const p of [...this.patches.values()].sort((a,b) => a.touched - b.touched)) {
       if (this.patches.size + this.pending.size < cacheLimit - 2&&!bytePressure()) break;
       const key = tileKey(p.tile);
       if (!protectedKeys.has(key)) { this.release(p); this.patches.delete(key); }
     }
     const unique = new Map(wanted.map(t => [tileKey(t), t]));
+    this.blockedRefreshes=0;this.blockedAdmissions=0;
     for (const [key, tile] of unique) {
       if(this.debug.freezeSelection)break;
       // Was a flat cap of 2 in-flight requests even though a single worker
@@ -1110,7 +1168,14 @@ export class PlanetRenderer {
       // pool (one extra slot per worker) so every worker can have work
       // queued without letting too many completions land in the same frame
       // and burst the main-thread upload/compile work that follows each one.
-      if (this.pending.size >= this.workers.length*2 || this.patches.size + this.pending.size >= cacheLimit||this.residentBytes+(this.pending.size+1)*PENDING_TILE_BYTES>this.terrainBudgetBytes) break;
+      if (this.pending.size >= inFlight) break;
+      // A same-key rebuild (resident at a stale water bucket) may use the
+      // refresh reserve: `install` releases the resident copy it replaces, so
+      // it adds no cache entry. New keys must leave that reserve free.
+      const admission=terrainAdmission({budgetBytes:terrainBudget,residentBytes:this.residentBytes,pendingTiles:this.pending.size,inFlight});
+      if(this.patches.has(key)){
+        if(!admission.refreshFits){this.blockedRefreshes++;this.blockedRefreshesTotal++;continue;}
+      }else if(this.patches.size + this.pending.size >= cacheLimit||!admission.newTileFits){this.blockedAdmissions++;this.blockedAdmissionsTotal++;continue;}
       this.pending.add(key);
       this.workers[this.nextWorker=(this.nextWorker+1)%this.workers.length].worker.postMessage({key, tile, body: this.body, relief: this.relief, waterLevelM: snappedWaterLevelM, waterBucket});
     }
@@ -1443,6 +1508,13 @@ export class PlanetRenderer {
       // a stuck rebuild.
       waterLevelM: this.waterBucket*WATER_LEVEL_BUCKET_M, waterBucket: this.waterBucket,
       staleWaterPatches:[...this.active].filter(k=>this.patches.get(k)!.waterBucket!==this.waterBucket).length,
+      // Terrain admission (renderer-memory.ts terrainAdmission): the reserve
+      // only same-key stale rebuilds may use, and last-frame/total counts of
+      // requests that were byte- or count-blocked.
+      ...(()=>{const a=terrainAdmission({budgetBytes:this.terrainBudgetBytes,residentBytes:this.residentBytes,pendingTiles:this.pending.size,inFlight:this.workers.length*2});
+        return {refreshReserveBytes:a.refreshReserveBytes,terrainBudgetBytes:this.terrainBudgetBytes,terrainAdmissionCeilingBytes:a.admissionCeilingBytes,terrainSplitCeilingBytes:a.splitCeilingBytes,
+          terrainReservedBytes:this.residentBytes+this.pending.size*PENDING_TILE_BYTES,terrainPressure:this.terrainPressure,terrainPressureEntries:this.terrainPressureEntries,
+          blockedRefreshes:this.blockedRefreshes,blockedAdmissions:this.blockedAdmissions,blockedRefreshesTotal:this.blockedRefreshesTotal,blockedAdmissionsTotal:this.blockedAdmissionsTotal,splitsBlockedByBytes:this.splitsBlockedByBytes};})(),
       maxLevel: Math.max(0, ...[...this.active].map(k => this.patches.get(k)!.tile.level)), cacheLimit: this.contactFocus||this.lowFlightDetail?768:TILE_CACHE_LIMIT,
       contactLevel:this.contactFocus?(this.needsFineContact?this.fineContactLevel:this.contactLevel):null,baseContactLevel:this.contactFocus?this.contactLevel:null,minimumWaterLevel:this.minimumWaterLevel,underresolvedWaterTiles:this.underresolvedWaterTiles,waterRegionActive:this.waterRegionActive,accountedBytes:memory.accountedBytes,lifeReserveBytes:LIFE_RESERVE_BYTES,rockOwnedBytes:rocks.bytes.total,rockPeakBytes:rocks.bytes.peak,rockReserveBytes:ROCK_RESERVE_BYTES,rockAccounting:'rock-owned (textures excluded) in accountedBytes; ROCK_RESERVE_BYTES in reservedCombinedBytes',cloudTargetBudgetBytes:CLOUD_TARGET_BUDGET_BYTES,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,reservedCombinedBytes:memory.reservedCombinedBytes,terrainResidentBytes:this.residentBytes,groundAtlasBytes:GROUND_ATLAS_BYTES,groundPbrTextureBytes:GROUND_PBR_TEXTURE_BYTES,groundPbrAccounting:'conservative per-renderer reserve; shared textures are loaded once',oceanNormalBytes,pendingReserveBytes:this.pending.size*PENDING_TILE_BYTES,materialVersion:MATERIAL_VERSION,surfaceDetail:!!this.groundEnabled.value,budgetBytes:TOTAL_BUDGET_BYTES+(this.immersiveBudget?0:CLOUD_TARGET_BUDGET_BYTES),coreBudgetBytes:TOTAL_BUDGET_BYTES,failuresTotal:this.failuresTotal,updateMs:this.updateMs,lifeMs:this.lifeMs,rescatterMs:this.rescatterMs,drawFloraMs:this.drawFloraMs,drawFaunaMs:this.drawFaunaMs,faunaRigCount:this.faunaNear.diagnostics().active,faunaRepresentation:'individual-instanced-anatomy+near-skinned-body',faunaNear:this.faunaNear.diagnostics(),faunaCulledCount:this.faunaCulledCount,faunaBudgetDrops:this.faunaBudgetDrops,faunaDrawn:this.faunaDrawn,lifePending:this.lifeQueue.length-this.lifeQueueIndex,lifeResidentCells:this.lifeResidents.size,faunaAllocatedBytes:this.faunaRenderer.allocatedBytes+this.faunaNear.allocatedBytes,faunaTerrainPending:this.faunaGroundQueue.length,floraSlotCount:this.floraSlotCount,floraPresentCount:this.floraPresentCount,floraSurvivorCount:this.floraSurvivorCount,floraSubmittedCount:this.floraSubmittedCount,faunaAnchorCount:this.faunaAnchorCount,
       faunaHerdCount:this.faunaHerdCount,faunaVisibleCount:this.faunaVisibleCount,
