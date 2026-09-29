@@ -28,7 +28,37 @@ import {forestMemoryFootprint,forestMeshBufferFootprint,forestTextureFootprint} 
 import {forestFamilyBoundRadius,forestTreeDimensions,legacyTreeBoundSphere,unpackTreeAllometryRatios,TREE_ALLOMETRY_IDENTITY_CODE,TREE_ALLOMETRY_VERSION,
   TREE_ALLOMETRY_CARD,TREE_FAMILY_ALLOMETRY_ENVELOPE,TREE_LEGACY_ALLOMETRY_ENVELOPE,type ForestTreeDimensions,type TreeAllometryReason} from './tree-allometry.ts';
 
-type Resident={cell:PopulationCell;height:number;present:boolean;water:number;patchKey?:string};
+/** One sampled canonical tree. Everything below `stale` is a cache owned by
+ * PlanetForest: presentation invariants valid for one `epoch` (catalogue and
+ * presented-family key), and far-canopy answers valid for one host revision. */
+type Resident={cell:PopulationCell;height:number;present:boolean;water:number;patchKey?:string;
+  /** Replaced in the habitat cache by a newer sample of the same cell. */
+  stale:boolean;
+  epoch:number;invariantHeight:number;dims:ForestTreeDimensions|null;detail:ForestTreeFamilyEntry<Resident,AssetSlot>|undefined;
+  /** Root position and view/shadow bound sphere, planet-radius units. */
+  px:number;py:number;pz:number;bx:number;by:number;bz:number;br:number;
+  /** Expected far presentation (code, drawn height, ratio code). */
+  expCode:number;expHeightM:number;expRatio:number;
+  slotVersion:number;slot:number;patchVersion:number;current:boolean;handoffVersion:number;handoff:boolean};
+/** Habitat cache keyed by canonical id. Every replacement marks the previous
+ * resident stale (work-index lookups refetch it) and advances `revision`,
+ * which is part of the still-frame key. */
+class ResidentCache extends Map<string,Resident>{
+  revision=0;
+  override set(id:string,resident:Resident){
+    const previous=super.get(id);if(previous&&previous!==resident)previous.stale=true;
+    this.revision++;return super.set(id,resident);
+  }
+  override delete(id:string){
+    const previous=super.get(id);if(previous)previous.stale=true;
+    this.revision++;return super.delete(id);
+  }
+  override clear(){for(const resident of super.values())resident.stale=true;this.revision++;super.clear();}
+}
+const planar=(frustum:THREE.Frustum)=>Array.isArray(frustum.planes)&&frustum.planes.length===6;
+const residentOf=(cell:PopulationCell,height:number,present:boolean,water:number):Resident=>({cell,height,present,water,patchKey:undefined,stale:false,
+  epoch:-1,invariantHeight:NaN,dims:null,detail:undefined,px:0,py:0,pz:0,bx:0,by:0,bz:0,br:0,expCode:0,expHeightM:0,expRatio:0,
+  slotVersion:-1,slot:-1,patchVersion:-1,current:false,handoffVersion:-1,handoff:false});
 type TreeLoader=(a:ArrayBuffer,b:ArrayBuffer,options:TreeAssetOptions)=>Promise<TreeAssetFamily>;
 type AssetSlot={resident:Resident;originVersion:number;catalogueVersion:number;dimensions:ForestTreeDimensions};
 const loadTreeFamily:TreeLoader=async(a,b,options)=>(await import('./tree-asset.ts')).loadTreeAssetFamily(a,b,options);
@@ -41,7 +71,9 @@ function tallyAllometry(tally:AllometryTally,dimensions:ForestTreeDimensions){
   tally.representation[dimensions.representation]++;
   for(const reason of dimensions.reasons)tally.reasons[reason]=(tally.reasons[reason]??0)+1;
   const range=tally.renderedHeightRangeM;
-  tally.renderedHeightRangeM=range?[Math.min(range[0],dimensions.heightM),Math.max(range[1],dimensions.heightM)]:[dimensions.heightM,dimensions.heightM];
+  // Each tally owns its range array; widen it in place (heights are finite).
+  if(!range)tally.renderedHeightRangeM=[dimensions.heightM,dimensions.heightM];
+  else{if(dimensions.heightM<range[0])range[0]=dimensions.heightM;if(dimensions.heightM>range[1])range[1]=dimensions.heightM;}
 }
 /** Views baked per rendered frame (two small scratch renders plus mip copies
  * each); 81 views per family complete in 27 frames per family. Families are
@@ -65,7 +97,7 @@ export class PlanetForest {
   readonly group=new THREE.Group();
   private meshes:THREE.InstancedMesh[];
   private canopy:THREE.InstancedMesh;
-  private cache=new Map<string,Resident>();
+  private cache=new ResidentCache();
   private wanted:PopulationCell[]=[];
   private queue:PopulationCell[]=[];
   private center=new THREE.Vector3(Infinity,Infinity,Infinity);
@@ -120,8 +152,13 @@ export class PlanetForest {
   private canopyPresentationKey='';
   private presentedFamilies=new Map<ForestTreeKind,ForestFamilyPresentation>();
   private bindings=new WeakMap<Resident,ForestTreeBinding|null>();
-  // One rendered-dimension decision per resident for the current presentation key.
-  private dimensionCache=new WeakMap<Resident,ForestTreeDimensions>();
+  // One rendered-dimension decision per resident for the current presentation
+  // key: residents cache their invariants for this epoch (see invariants()).
+  private presentationEpoch=0;
+  // Current resident of each selected work index, filled lazily from `cache`.
+  private residentByIndex:(Resident|undefined)[]=[];private residentCellByIndex:(PopulationCell|undefined)[]=[];
+  // View then shadow frustum planes (nx,ny,nz,constant) for the frame.
+  private framePlanes=new Float64Array(0);
   private nearAllometry=allometryTally();
   private farAllometry=allometryTally();
   private assetDraw=false;
@@ -174,6 +211,7 @@ export class PlanetForest {
   private lastFrame={visibleTrees:0,nearTrees:0,farOwnedSkipped:0,assetCounts:[0,0],meshVisible:[false,false,false],
     batchVisible:new Map<unknown,boolean>(),nearAllometry:allometryTally()};
   private retainedEdits=0;
+  private slottedCanopy=false;
   constructor(private body:Body,private treeLoader:TreeLoader=loadTreeFamily){
     this.patchBroadphase=new ForestPatchBroadphase(body.radiusM,forestCellPatchKey);
     this.workIndex=new ForestOrderedWorkIndex(forestCellPatchKey);
@@ -212,6 +250,7 @@ export class PlanetForest {
   }
   private setWorkSelection(cells:readonly PopulationCell[]){
     this.workIndex.setSelection(cells);
+    this.residentByIndex=new Array(cells.length);this.residentCellByIndex=new Array(cells.length);
     this.workStateVersion++;
     this.workSelectionRevision++;
     this.broadphaseSelectionReady=Number.isFinite(this.water);
@@ -343,7 +382,7 @@ export class PlanetForest {
       this.catalogueError=String(error);next=forestTreeCatalogue([]);
     }
     if(next.signature===this.catalogue.signature)return;
-    this.catalogue=next;this.catalogueVersion++;this.bindings=new WeakMap();this.dimensionCache=new WeakMap();
+    this.catalogue=next;this.catalogueVersion++;this.bindings=new WeakMap();this.presentationEpoch++;
   }
   private binding(resident:Resident){
     if(!this.bindings.has(resident))this.bindings.set(resident,this.catalogue.resolve(resident.cell.id));
@@ -368,18 +407,37 @@ export class PlanetForest {
       const kind=forestPresentationFamily(d,families);
       return {code:kind&&binding?packFamilyPresentation(kind,binding,families.get(kind)!):0,heightM:d.heightM,ratioCode:d.ratioCode};
     },families);
-    this.presentedFamilies=families;this.dimensionCache=new WeakMap();this.farAllometry=far;
+    this.presentedFamilies=families;this.presentationEpoch++;this.farAllometry=far;
     this.canopyPresentationKey=key;
   }
   /** Rendered dimensions of one canonical individual under the current key. */
   private dimensions(resident:Resident){
-    let d=this.dimensionCache.get(resident);
-    if(!d){d=forestTreeDimensions(this.binding(resident),resident.cell.heightM,this.presentedFamilies);this.dimensionCache.set(resident,d);}
-    return d;
+    if(resident.epoch!==this.presentationEpoch||resident.invariantHeight!==resident.height)this.invariants(resident);
+    return resident.dims!;
   }
-  private expectedCanopyPresentation(resident:Resident){
-    const binding=this.binding(resident),d=this.dimensions(resident),kind=forestPresentationFamily(d,this.presentedFamilies);
-    return {code:kind&&binding?packFamilyPresentation(kind,binding,this.presentedFamilies.get(kind)!):0,heightM:d.heightM,ratioCode:d.ratioCode};
+  /** Presentation invariants of one resident under the current epoch: rendered
+   * dimensions, detailed family, expected far presentation, root position and
+   * the view/shadow bound sphere (the individual's family skeleton with
+   * variant, lean, wind and card growth, or the legacy primitive). */
+  private invariants(resident:Resident){
+    const binding=this.binding(resident),families=this.presentedFamilies,r=this.body.radiusM,cell=resident.cell;
+    const d=forestTreeDimensions(binding,cell.heightM,families),kind=forestPresentationFamily(d,families);
+    resident.dims=d;resident.epoch=this.presentationEpoch;resident.invariantHeight=resident.height;
+    resident.detail=this.assetDraw&&kind?this.assets.entries.get(kind):undefined;
+    resident.expCode=kind&&binding?packFamilyPresentation(kind,binding,families.get(kind)!):0;resident.expHeightM=d.heightM;resident.expRatio=d.ratioCode;
+    resident.handoffVersion=-1;
+    const [x,y,z]=cell.direction,scale=1+resident.height/r;
+    resident.px=x*scale;resident.py=y*scale;resident.pz=z*scale;
+    const reference=d.kind?families.get(d.kind)?.allometry:null;
+    if(d.representation==='family'&&reference){
+      // Root-centred; also encloses the legacy stand-in of the same widths.
+      const legacy=legacyTreeBoundSphere({heightM:d.heightM,...unpackTreeAllometryRatios(d.legacyRatioCode)});
+      resident.bx=resident.px;resident.by=resident.py;resident.bz=resident.pz;
+      resident.br=Math.max(forestFamilyBoundRadius(reference,d),legacy.centerHeightM+legacy.radiusM)/r;
+    }else{
+      const sphere=legacyTreeBoundSphere(d),lift=sphere.centerHeightM/r;
+      resident.bx=resident.px+x*lift;resident.by=resident.py+y*lift;resident.bz=resident.pz+z*lift;resident.br=sphere.radiusM/r;
+    }
   }
   private startWorker(){
     try{
@@ -441,10 +499,14 @@ export class PlanetForest {
     const attribute=batch===2?this.canopyCoverage:this.coverage[batch],value=Math.fround(detailed?0:coverage);
     if(attribute.getX(index)!==value){attribute.setX(index,value);updates.coverage.include(index,1);this.coverageWrites++;}
   }
+  /** Far presentation the near tree expects the canopy to draw. */
+  private expectedCanopyPresentation(resident:Resident){
+    if(resident.epoch!==this.presentationEpoch||resident.invariantHeight!==resident.height)this.invariants(resident);
+    return {code:resident.expCode,heightM:resident.expHeightM,ratioCode:resident.expRatio};
+  }
   private detailEntry(resident:Resident){
-    if(!this.assetDraw)return undefined;
-    const kind=forestPresentationFamily(this.dimensions(resident),this.presentedFamilies);
-    return kind?this.assets.entries.get(kind):undefined;
+    if(resident.epoch!==this.presentationEpoch||resident.invariantHeight!==resident.height)this.invariants(resident);
+    return resident.detail;
   }
   private writeDetailed(entry:ForestTreeFamilyEntry<Resident,AssetSlot>,lod:number,index:number,resident:Resident,previous:AssetSlot|undefined):AssetSlot{
     const asset=entry.batches[lod],binding=this.binding(resident)!,cell=resident.cell,dimensions=this.dimensions(resident);
@@ -466,7 +528,7 @@ export class PlanetForest {
     coverage=quantizeForestCoverage(coverage)/256;
     const updates=this.updates[batch];updates.wanted.push(resident);updates.wantedCoverage.push(coverage);updates.wantedIds.add(resident.cell.id);
     tallyAllometry(this.nearAllometry,this.dimensions(resident));
-    this.fullCanopy?.own(resident.cell.id,coverage);
+    if(this.slottedCanopy)this.fullCanopy!.ownSlot(resident.slot,coverage);else this.fullCanopy?.own(resident.cell.id,coverage);
   }
   private reconcileBatch(batch:number){
     const updates=this.updates[batch],mesh=batch===2?this.canopy:this.meshes[batch];
@@ -513,12 +575,20 @@ export class PlanetForest {
     key.length=0;
     key.push(eye.x,eye.y,eye.z,groundDirection[0],groundDirection[1],groundDirection[2],altitudeM,water,Number(immersive),
       this.workListRefreshes,this.workRefreshReasons.incrementalPatch,this.workStateVersion,this.workSelectionRevision,this.workHabitatRevision,
-      this.workGlobalHabitatRevision,this.originVersion,this.catalogueVersion,this.assets.revision,Number(this.assetDraw),
+      this.workGlobalHabitatRevision,this.cache.revision,this.originVersion,this.catalogueVersion,this.assets.revision,Number(this.assetDraw),
       this.handoff.middleEnterM,this.handoff.middleLeaveM,this.handoff.farOwnedM,this.wanted.length,frusta.length,shadowFrustum?1:0);
-    if(this.fullCanopy)key.push(...this.fullCanopy.nearFrameState());else key.push(-1);
-    for(const frustum of frusta)for(const plane of frustum.planes)key.push(plane.normal.x,plane.normal.y,plane.normal.z,plane.constant);
-    if(shadowFrustum)for(const plane of shadowFrustum.planes)key.push(plane.normal.x,plane.normal.y,plane.normal.z,plane.constant);
+    // A host without a near-state revision is never replayed (NaN never matches).
+    if(this.fullCanopy)key.push(...(typeof this.fullCanopy.nearFrameState==='function'?this.fullCanopy.nearFrameState():[NaN]));else key.push(-1);
+    // Only a plain six-plane frustum is keyed; any other culler never replays.
+    for(const frustum of shadowFrustum?[...frusta,shadowFrustum]:frusta){
+      if(!planar(frustum)){key.push(NaN);continue;}
+      for(const plane of frustum.planes)key.push(plane.normal.x,plane.normal.y,plane.normal.z,plane.constant);
+    }
     return key;
+  }
+  private nearStateRevision(){
+    const canopy=this.fullCanopy;
+    return !canopy?-1:typeof canopy.nearStateRevision==='function'?canopy.nearStateRevision():NaN;
   }
   private sameFrameKey(){
     const a=this.frameKey,b=this.nextFrameKey;if(a.length!==b.length)return false;
@@ -581,7 +651,7 @@ export class PlanetForest {
     const started=performance.now();
     for(let count=0;this.queue.length&&count<B.placementSamplesPerFrame&&performance.now()-started<B.placementBudgetMs;count++){
       const cell=this.queue.shift()!,habitat=this.habitat(cell);
-      this.cache.set(cell.id,{cell,height:habitat.groundHeightM,present:habitat.present,water});
+      this.cache.set(cell.id,residentOf(cell,habitat.groundHeightM,habitat.present,water));
       this.patchBroadphase.updateResident(cell.id,{groundHeightM:habitat.groundHeightM,water});
       this.workStateVersion++;
       this.workHabitatRevision++;
@@ -668,19 +738,45 @@ export class PlanetForest {
       const canopyFinish=systemTimer.start();this.fullCanopy?.finish();systemTimer.stop('canopy',canopyFinish);
       this.updateMs=performance.now()-updateStarted;return;
     }
-    const canopyStateBefore=this.fullCanopy?this.fullCanopy.nearFrameState()[0]:-1,retainedEditsBefore=this.retainedEdits;
+    const canopyStateBefore=this.nearStateRevision(),retainedEditsBefore=this.retainedEdits;
     const counts=[0,0],capacities=immersive?[64,1024]:[B.forestNearCapacity,B.forestCapacity];let canopyCount=0;
     for(const updates of this.updates){updates.wanted.length=0;updates.wantedCoverage.length=0;updates.wantedIds.clear();}
     const altitudeFade=1-THREE.MathUtils.smoothstep(altitudeM,B.forestPrepareAltitudeM-500,B.forestPrepareAltitudeM);
     const {middleEnterM,middleLeaveM,farOwnedM}=this.handoff;
+    // Hosts without the slot API (test doubles) take the id-keyed calls, uncached.
+    const canopy=this.fullCanopy,slotted=this.slottedCanopy=!!canopy&&typeof canopy.slotOf==='function';
+    const slotRevision=slotted?canopy!.slotRevision():-1,patchRevision=slotted?canopy!.currentPatchRevision():-1;
+    const views=frusta.length,planeCount=(views+(shadowFrustum?1:0))*24;
+    // Six-plane frusta are tested inline on cached bounds; other cullers
+    // (test doubles) keep their own intersectsSphere.
+    const inline=frusta.every(planar)&&(!shadowFrustum||planar(shadowFrustum));
+    if(this.framePlanes.length<planeCount)this.framePlanes=new Float64Array(planeCount);
+    const planes=this.framePlanes;
+    if(inline)for(let f=0,o=0;f<views+(shadowFrustum?1:0);f++)for(const plane of (f<views?frusta[f]:shadowFrustum!).planes){
+      planes[o++]=plane.normal.x;planes[o++]=plane.normal.y;planes[o++]=plane.normal.z;planes[o++]=plane.constant;
+    }
+    // Frustum.intersectsSphere over frustum `f`, written out on cached bounds.
+    const inside=(f:number,x:number,y:number,z:number,negRadius:number)=>{
+      for(let o=f*24,end=o+24;o<end;o+=4)if(planes[o]*x+planes[o+1]*y+planes[o+2]*z+planes[o+3]<negRadius)return false;
+      return true;
+    };
     for(const index of workIndices){
       const cell=this.wanted[index];if(!cell)continue;
       const dx=cell.direction[0]-groundDirection[0],dy=cell.direction[1]-groundDirection[1],dz=cell.direction[2]-groundDirection[2];
-      if((dx*dx+dy*dy+dz*dz)*r*r<100*100)this.fullCanopy?.observeClose(cell.id,eye);
-      const resident=this.cache.get(cell.id);if(!resident)continue;
+      if((dx*dx+dy*dy+dz*dz)*r*r<100*100)canopy?.observeClose(cell.id,eye);
+      let resident=this.residentByIndex[index];
+      // The cell check keeps the lookup exact even if `wanted` is edited in place.
+      if(resident===undefined||resident.stale||this.residentCellByIndex[index]!==cell){
+        resident=this.cache.get(cell.id);if(!resident)continue;this.residentByIndex[index]=resident;this.residentCellByIndex[index]=cell;
+      }
       resident.patchKey??=forestCellPatchKey(cell.id);
-      if(resident.water===water&&this.fullCanopy?.currentPatch(resident.patchKey)){
-        const scale=1+resident.height/r,x=cell.direction[0]*scale-eye.x,y=cell.direction[1]*scale-eye.y,z=cell.direction[2]*scale-eye.z;
+      if(slotted){
+        if(resident.slotVersion!==slotRevision){resident.slot=canopy.slotOf(cell.id);resident.slotVersion=slotRevision;}
+        if(resident.patchVersion!==patchRevision){resident.current=canopy.currentPatch(resident.patchKey);resident.patchVersion=patchRevision;}
+      }
+      if(resident.epoch!==this.presentationEpoch||resident.invariantHeight!==resident.height)this.invariants(resident);
+      if(resident.water===water&&canopy&&(slotted?resident.current:canopy.currentPatch(resident.patchKey))){
+        const x=resident.px-eye.x,y=resident.py-eye.y,z=resident.pz-eye.z;
         if((x*x+y*y+z*z)*r*r>=farOwnedM*farOwnedM){
           // Complete current patches own this entire distant band. Keep stale
           // water and missing patches on the full fallback/absence path below.
@@ -689,27 +785,23 @@ export class PlanetForest {
           this.farOwnedSkipped++;continue;
         }
       }
-      this.fullCanopy?.noteNear(cell.id,resident.patchKey,resident.present,resident.water);
+      if(slotted)canopy!.noteNearSlot(resident.slot,resident.current,resident.present,resident.water);
+      else canopy?.noteNear(cell.id,resident.patchKey,resident.present,resident.water);
       if(!resident.present)continue;
       // Hide newly submerged old residents immediately while other habitat
       // properties are refreshed. The current bucket sampler remains authority.
-      if(resident.water!==water&&this.body.water>0&&resident.height<=water){this.fullCanopy?.own(cell.id,1);continue;}
-      this.direction.set(...cell.direction);
-      this.position.copy(this.direction).multiplyScalar(1+resident.height/r);
-      // View and shadow culling use the individual's rendered dimensions:
-      // family skeleton with variant, lean, wind and card growth, or the legacy primitive.
-      const dimensions=this.dimensions(resident),reference=dimensions.kind?this.presentedFamilies.get(dimensions.kind)?.allometry:null;
-      if(dimensions.representation==='family'&&reference){
-        // Root-centred; also encloses the legacy stand-in of the same widths.
-        const legacy=legacyTreeBoundSphere({heightM:dimensions.heightM,...unpackTreeAllometryRatios(dimensions.legacyRatioCode)});
-        this.bounds.center.copy(this.position);this.bounds.radius=Math.max(forestFamilyBoundRadius(reference,dimensions),legacy.centerHeightM+legacy.radiusM)/r;
-      }else{
-        const sphere=legacyTreeBoundSphere(dimensions);
-        this.bounds.center.copy(this.position).addScaledVector(this.direction,sphere.centerHeightM/r);this.bounds.radius=sphere.radiusM/r;
+      if(resident.water!==water&&this.body.water>0&&resident.height<=water){if(slotted)canopy!.ownSlot(resident.slot,1);else canopy?.own(cell.id,1);continue;}
+      // View and shadow culling use the individual's rendered dimensions.
+      if(views&&!inline){
+        this.bounds.center.set(resident.bx,resident.by,resident.bz);this.bounds.radius=resident.br;
+        if(!frusta.some(f=>f.intersectsSphere(this.bounds))&&!shadowFrustum?.intersectsSphere(this.bounds))continue;
+      }else if(views){
+        const negRadius=-resident.br;let visible=false;
+        for(let f=0;f<views&&!visible;f++)visible=inside(f,resident.bx,resident.by,resident.bz,negRadius);
+        if(!visible&&!(shadowFrustum&&inside(views,resident.bx,resident.by,resident.bz,negRadius)))continue;
       }
-      if(frusta.length&&!frusta.some(f=>f.intersectsSphere(this.bounds))&&!shadowFrustum?.intersectsSphere(this.bounds))continue;
-      const distance=this.position.distanceTo(eye)*r;
-      const horizontal=Math.hypot(this.direction.x-groundDirection[0],this.direction.y-groundDirection[1],this.direction.z-groundDirection[2])*r;
+      const ex=resident.px-eye.x,ey=resident.py-eye.y,ez=resident.pz-eye.z,distance=Math.sqrt(ex*ex+ey*ey+ez*ez)*r;
+      const horizontal=Math.hypot(cell.direction[0]-groundDirection[0],cell.direction[1]-groundDirection[1],cell.direction[2]-groundDirection[2])*r;
       // Detailed and distant draws refer to one canonical tree. A retained
       // band prevents oscillation between equal-silhouette batches.
       const wasNear=this.retainedNear.has(cell.id),nearLimit=wasNear?B.forestNearM+12:B.forestNearM-12;
@@ -718,8 +810,17 @@ export class PlanetForest {
       else if(wasNear){this.retainedNear.delete(cell.id);this.retainedEdits++;}
       if(distance>=B.forestRadiusM)continue;
       const edgeCoverage=altitudeFade*(1-THREE.MathUtils.smoothstep(distance,B.forestRadiusM-300,B.forestRadiusM));
-      const expected=this.expectedCanopyPresentation(resident);
-      const paired=this.fullCanopy?.canHandoff(cell.id,resident.height,resident.patchKey,expected.heightM,expected.code,expected.ratioCode)??false;
+      let paired=false;
+      if(canopy&&!slotted)paired=canopy.canHandoff(cell.id,resident.height,resident.patchKey,resident.expHeightM,resident.expCode,resident.expRatio);
+      else if(canopy){
+        // The answer holds until any host answer may change (install, remove,
+        // retag, visibility); a retag inside the call is part of the answer.
+        if(resident.handoffVersion!==canopy.nearStateRevision()){
+          resident.handoff=canopy.canHandoff(cell.id,resident.height,resident.patchKey,resident.expHeightM,resident.expCode,resident.expRatio);
+          resident.handoffVersion=canopy.nearStateRevision();
+        }
+        paired=resident.handoff;
+      }
       if(paired){
         const wasMiddle=this.retainedMiddle.has(cell.id),middleLimit=wasMiddle?middleLeaveM:middleEnterM;
         if(distance>=middleLimit){if(wasMiddle){this.retainedMiddle.delete(cell.id);this.retainedEdits++;}continue;}
@@ -740,7 +841,7 @@ export class PlanetForest {
     this.nearTrees=counts[0];this.visibleTrees=counts[0]+counts[1]+canopyCount;
     // Replayable only if this loop was already at its fixed point: no
     // hysteresis membership changed and no canopy answer was retagged.
-    this.repeatable=this.retainedEdits===retainedEditsBefore&&(this.fullCanopy?this.fullCanopy.nearFrameState()[0]:-1)===canopyStateBefore;
+    this.repeatable=this.retainedEdits===retainedEditsBefore&&this.nearStateRevision()===canopyStateBefore;
     if(this.repeatable){
       const swap=this.frameKey;this.frameKey=this.nextFrameKey;this.nextFrameKey=swap;
       const last=this.lastFrame;

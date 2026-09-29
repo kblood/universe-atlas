@@ -54,7 +54,11 @@ export class PlanetCanopy {
   private presentationPassVersion=0;
   private presentationRetagged=0;private presentationSliceMs=0;
   private rebase:{origin:THREE.Vector3;positions:Float32Array;cursor:number}|null=null;
-  private seen=new Set<string>();private previous=new Set<string>();
+  // Slots owned by the near forest this frame and last frame. A slot freed or
+  // reused since last frame was reset to zero ownership by retire/write.
+  private seen=new Set<number>();private previous=new Set<number>();
+  // Revision of the id -> slot map (install/remove), for owners caching slots.
+  private slotVersion=0;
   private position=new THREE.Vector3();private direction=new THREE.Vector3();
   private rotation=new THREE.Quaternion();private yaw=new THREE.Quaternion();
   private workerRestarts=0;private failures=0;private installedThisFrame=0;private installMs=0;private uploadBytes=0;
@@ -226,7 +230,7 @@ export class PlanetCanopy {
       this.presentationVersions[index]=0;
       if(this.rebase)this.rebase.positions.fill(0,index*4,index*4+4);
     }
-    this.allocator.free(patch.range);this.installed.delete(key);this.invalidateCurrentPatchAnswers(key);return patch.ids.length;
+    this.allocator.free(patch.range);this.installed.delete(key);this.slotVersion++;this.invalidateCurrentPatchAnswers(key);return patch.ids.length;
   }
   private install(patch:ForestCensusPatch){
     const key=patchKey(patch.address);if(!this.desired.has(key))return;
@@ -239,7 +243,7 @@ export class PlanetCanopy {
       this.remove(key);range=this.allocator.allocate(patch.present);
     }
     if(!range){const after=performance.now()+1000;this.capacityMisses++;this.retries.set(key,{attempts:1,after});this.retryWakeAt=Math.min(this.retryWakeAt,after);return;}
-    this.remove(key);const ids:string[]=[];
+    this.remove(key);const ids:string[]=[];this.slotVersion++;
     for(let i=0;i<patch.present;i++){
       const r=patch.records.subarray(i*FOREST_CENSUS_STRIDE,(i+1)*FOREST_CENSUS_STRIDE),index=range.start+i,offset=r[0],a=patch.address;
       const id=`${a.face}/${a.n}/${a.x*8+offset%8}/${a.y*8+Math.floor(offset/8)}`;ids.push(id);this.slots.set(id,index);
@@ -348,6 +352,12 @@ export class PlanetCanopy {
     this.frameCurrentPatches.set(key,current);return current;
   }
   currentPatchRevision(){return this.currentPatchVersion;}
+  /** Slot of a canonical id, or -1; valid while slotRevision() is unchanged. */
+  slotOf(id:string){return this.slots.get(id)??-1;}
+  slotRevision(){return this.slotVersion;}
+  /** First element of nearFrameState(): changes with any answer of currentPatch,
+   * canHandoff or observeClose (and with visibility and water). */
+  nearStateRevision(){return this.nearStateVersion;}
   /** Changes whenever any near-loop answer or the drawn state it gates may
    * change; includes visibility, streaming and the water bucket. */
   nearFrameState(){return [this.nearStateVersion,Number(this.group.visible),Number(this.streaming),this.water] as const;}
@@ -383,15 +393,21 @@ export class PlanetCanopy {
   }
   noteNear(id:string,key:string,present:boolean,water:number){
     if(!this.group.visible)return;
-    if(water===this.water&&this.currentPatch(key)){
-      if(present&&!this.slots.has(id))this.nearPresentNotInCensus++;
-      if(!present&&this.slots.has(id))this.nearAbsentInCensus++;
-    }
-    if(!present&&water===this.water)this.own(id,1);
+    this.noteNearSlot(this.slotOf(id),water===this.water&&this.currentPatch(key),present,water);
   }
-  own(id:string,coverage:number){
-    if(!this.group.visible)return;const index=this.slots.get(id);if(index===undefined)return;
-    this.renderer.setOwnership(index,quantizeForestCoverage(coverage));this.seen.add(id);
+  /** noteNear with the caller's cached slot and currentPatch answer. */
+  noteNearSlot(slot:number,current:boolean,present:boolean,water:number){
+    if(!this.group.visible)return;
+    if(water===this.water&&current){
+      if(present&&slot<0)this.nearPresentNotInCensus++;
+      if(!present&&slot>=0)this.nearAbsentInCensus++;
+    }
+    if(!present&&water===this.water)this.ownSlot(slot,1);
+  }
+  own(id:string,coverage:number){this.ownSlot(this.slotOf(id),coverage);}
+  ownSlot(slot:number,coverage:number){
+    if(!this.group.visible||slot<0)return;
+    this.renderer.setOwnership(slot,quantizeForestCoverage(coverage));this.seen.add(slot);
   }
   /** Called for nearby canonical candidates, including unresolved near samples.
    * Only this bounded neighbourhood needs the exact rotated-bound check. */
@@ -411,7 +427,7 @@ export class PlanetCanopy {
     if(!this.streaming)return;
     if(!this.repeatNear){
       // A repeated frame owns exactly `previous` again at unchanged levels.
-      for(const id of this.previous)if(!this.seen.has(id)){const index=this.slots.get(id);if(index!==undefined)this.renderer.setOwnership(index,0);}
+      for(const index of this.previous)if(!this.seen.has(index))this.renderer.setOwnership(index,0);
       const old=this.previous;this.previous=this.seen;this.seen=old;
       this.repeatCounts[0]=this.nearPresentNotInCensus;this.repeatCounts[1]=this.nearAbsentInCensus;
       this.repeatClose.length=0;for(const id of this.closeCandidates)this.repeatClose.push(id);
