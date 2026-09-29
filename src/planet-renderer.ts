@@ -1481,10 +1481,15 @@ export class PlanetRenderer {
   /** Cheap per-sample streaming backlog for perf captures (no allocation-heavy diagnostics). */
   backlog(){
     let staleWaterPatches=0;for(const key of this.active)if(this.patches.get(key)!.waterBucket!==this.waterBucket)staleWaterPatches++;
-    return {terrainPending:this.pending.size,terrainResident:this.patches.size,terrainVisible:this.active.size,staleWaterPatches,
+    return {surfaceReady:this.surfaceReady,terrainPending:this.pending.size,terrainResident:this.patches.size,terrainVisible:this.active.size,staleWaterPatches,
       lifePending:this.lifeQueue.length-this.lifeQueueIndex,faunaTerrainPending:this.faunaGroundQueue.length,
       floraSubmitted:this.floraSubmittedCount,faunaVisible:this.faunaVisibleCount,faunaNearRigs:this.faunaNear.group.children.filter(o=>o.visible).length,
-      rocksDrawn:this.rocksDrawnForProfiling(),...this.forest.backlog()};
+      rocksDrawn:this.rocksDrawnForProfiling(),...this.forest.backlog(),...this.memoryForProfiling()};
+  }
+  private memoryForProfiling(){
+    const oceanNormalBytes=this.river?.diagnostics().resident?0:[...this.patches.values()].some(p=>p.ocean)?SHARED_WATER_NORMAL_ATLAS_BYTES:0;
+    const memory=rendererMemoryAccounting({residentBytes:this.residentBytes,oceanNormalBytes,rockOwnedBytes:this.rocks.ownedBytes().total,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,pendingTiles:this.pending.size});
+    return {accountedBytes:memory.accountedBytes,reservedCombinedBytes:memory.reservedCombinedBytes,budgetBytes:TOTAL_BUDGET_BYTES+(this.immersiveBudget?0:CLOUD_TARGET_BUDGET_BYTES)};
   }
   private rocksDrawnForProfiling(){
     let drawn=0;if(!this.rocks.group.visible)return 0;
