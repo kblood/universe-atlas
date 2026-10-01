@@ -42,7 +42,7 @@ test('caster transforms, geometry, instances, materials and depth uniforms inval
     ['geometry attribute rewritten',w=>w.inside.geometry.attributes.position.needsUpdate=true],
     ['geometry swapped',w=>w.inside.geometry=new THREE.BoxGeometry(1,1,1)],
     ['draw range',w=>w.inside.geometry.setDrawRange(0,12)],
-    ['instance matrices',w=>w.trees.instanceMatrix.needsUpdate=true],
+    ['instance matrices',w=>{w.trees.setMatrixAt(2,new THREE.Matrix4().makeTranslation(1,0,0));w.trees.instanceMatrix.needsUpdate=true;}],
     ['instance count',w=>w.trees.count=5],
     ['material side',w=>w.inside.material.side=THREE.DoubleSide],
     ['material shadowSide',w=>w.inside.material.shadowSide=THREE.BackSide],
@@ -78,6 +78,8 @@ test('changes Three would not draw into the map do not invalidate',()=>{
     ['hidden caster changed',w=>{w.inside.visible=false;w.check();w.inside.position.x+=3;}],
     ['main camera turned',w=>w.camera.rotation.y+=.3],
     ['colour-only uniform object',w=>w.inside.material.color.set(0xff0000)],
+    ['instances rewritten with identical contents',w=>{for(let i=0;i<4;i++){const m=new THREE.Matrix4();w.trees.getMatrixAt(i,m);w.trees.setMatrixAt(i,m);}w.trees.instanceMatrix.needsUpdate=true;}],
+    ['unused instance slot changed',w=>{w.trees.setMatrixAt(6,new THREE.Matrix4().makeTranslation(9,0,0));w.trees.instanceMatrix.needsUpdate=true;}],
   ]){
     const w=world();w.check();w.check();
     mutate(w);assert.equal(w.check(),true,name);

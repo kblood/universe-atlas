@@ -16,7 +16,10 @@ import * as THREE from 'three';
  * cache can only fail towards re-rendering. */
 export type UniformLookup=(material:THREE.Material)=>Record<string,{value:unknown}>|undefined;
 export type ShadowCacheReason='hit'|'disabled'|'first'|'light'|'casters'|'uncacheable';
-export type ShadowCacheStats={hits:number;misses:number;lastReason:ShadowCacheReason;lastCasters:number;lastLength:number;uncacheable:string|null};
+/** Where the last 'casters' miss first differed: the caster, the value's
+ * offset within that caster's record, and the two values (diagnostics). */
+export type ShadowCacheChange={object:string;id:number;offset:number;before:number;after:number};
+export type ShadowCacheStats={hits:number;misses:number;lastReason:ShadowCacheReason;lastCasters:number;lastLength:number;uncacheable:string|null;lastChange:ShadowCacheChange|null};
 
 const identities=new WeakMap<object,number>();
 let nextIdentity=1;
@@ -24,6 +27,28 @@ let nextIdentity=1;
 function identity(value:object){let id=identities.get(value);if(id===undefined){id=nextIdentity++;identities.set(value,id);}return id;}
 
 const DEFAULT_ON_BEFORE_SHADOW=THREE.Object3D.prototype.onBeforeShadow;
+
+/** Content generation of the used part of an instance buffer. Some systems
+ * rewrite (and flag) every instance each frame even when nothing moved; a
+ * version bump with identical contents keeps its generation, so the cache
+ * still hits. The comparison runs only when the version changed. */
+type ContentRecord={version:number;length:number;generation:number;snapshot:Float32Array};
+const contents=new WeakMap<THREE.BufferAttribute,ContentRecord>();
+let nextGeneration=1;
+function contentGeneration(attribute:THREE.BufferAttribute,length:number){
+  const array=attribute.array as Float32Array;length=Math.min(length,array.length);
+  let record=contents.get(attribute);
+  if(record&&record.version===attribute.version&&record.length===length)return record.generation;
+  if(!record){record={version:-1,length:-1,generation:0,snapshot:new Float32Array(0)};contents.set(attribute,record);}
+  let same=record.length===length;
+  if(same){const a=array,b=record.snapshot;for(let i=0;i<length;i++)if(a[i]!==b[i]&&!(a[i]!==a[i]&&b[i]!==b[i])){same=false;break;}}
+  if(!same){
+    if(record.snapshot.length<length)record.snapshot=new Float32Array(Math.max(length,record.snapshot.length*2));
+    record.snapshot.set(array.subarray(0,length));record.length=length;record.generation=nextGeneration++;
+  }
+  record.version=attribute.version;
+  return record.generation;
+}
 
 class Signature{
   data=new Float64Array(8192);length=0;
@@ -65,7 +90,8 @@ class Signature{
 
 export class ShadowMapCache{
   enabled=true;
-  readonly stats:ShadowCacheStats={hits:0,misses:0,lastReason:'first',lastCasters:0,lastLength:0,uncacheable:null};
+  readonly stats:ShadowCacheStats={hits:0,misses:0,lastReason:'first',lastCasters:0,lastLength:0,uncacheable:null,lastChange:null};
+  private casterStarts:number[]=[];private casterObjects:THREE.Object3D[]=[];
   private current=new Signature();
   private rendered=new Signature();
   private hasRendered=false;
@@ -82,7 +108,7 @@ export class ShadowMapCache{
    * this render would produce, so it may be skipped. False: render, and this
    * signature becomes the reference for later frames. */
   canSkip(lights:readonly THREE.Light[],scene:THREE.Object3D,camera:THREE.Camera,type:THREE.ShadowMapType):boolean{
-    const s=this.current;s.reset();this.casters=0;this.camera=camera;
+    const s=this.current;s.reset();this.casters=0;this.camera=camera;this.casterStarts.length=0;this.casterObjects.length=0;
     s.push(type);s.push(lights.length);s.push(camera.layers.mask);
     for(const light of lights){
       const shadow=(light as THREE.DirectionalLight).shadow as THREE.LightShadow|undefined;
@@ -107,8 +133,14 @@ export class ShadowMapCache{
     else if(s.equals(this.rendered))reason='hit';
     else{
       reason='casters';
-      const a=s.data,b=this.rendered.data;
-      for(let i=0;i<Math.min(this.lightLength,this.rendered.length);i++){const x=a[i]!,y=b[i]!;if(x!==y&&!(x!==x&&y!==y)){reason='light';break;}}
+      const a=s.data,b=this.rendered.data,n=Math.min(s.length,this.rendered.length);
+      let first=n;for(let i=0;i<n;i++){const x=a[i]!,y=b[i]!;if(x!==y&&!(x!==x&&y!==y)){first=i;break;}}
+      if(first<this.lightLength)reason='light';
+      else{
+        let c=-1;for(let k=0;k<this.casterStarts.length&&this.casterStarts[k]!<=first;k++)c=k;
+        const object=c>=0?this.casterObjects[c]!:null;
+        this.stats.lastChange={object:object?(object.name||object.type):'(structure)',id:object?.id??-1,offset:c>=0?first-this.casterStarts[c]!:first,before:b[first]??NaN,after:a[first]??NaN};
+      }
     }
     this.stats.lastReason=reason;this.stats.lastCasters=this.casters;this.stats.lastLength=s.length;this.stats.uncacheable=s.uncacheable;
     if(reason==='hit'){this.stats.hits++;return true;}
@@ -122,7 +154,7 @@ export class ShadowMapCache{
     const s=this.current,camera=this.camera!;
     const o=object as THREE.Mesh&{isLine?:boolean;isPoints?:boolean;isInstancedMesh?:boolean;isBatchedMesh?:boolean;isSkinnedMesh?:boolean};
     if(object.layers.test(camera.layers)&&(o.isMesh||o.isLine||o.isPoints)&&object.castShadow&&(!object.frustumCulled||this.frustum!.intersectsObject(object))){
-      this.casters++;
+      this.casters++;this.casterStarts.push(s.length);this.casterObjects.push(object);
       if(object.onBeforeShadow!==DEFAULT_ON_BEFORE_SHADOW)s.fail('onBeforeShadow');
       if(o.isBatchedMesh)s.fail('batched mesh');
       s.push(-3);s.push(object.id);s.pushArray(object.matrixWorld.elements);
@@ -135,7 +167,7 @@ export class ShadowMapCache{
         else{s.push(identity(attribute));s.push((attribute as THREE.BufferAttribute).version);}
       }
       s.push(geometry.groups.length);for(const g of geometry.groups){s.push(g.start);s.push(g.count);s.push(g.materialIndex??0);}
-      if(o.isInstancedMesh){const m=object as THREE.InstancedMesh;s.push(m.count);s.push(identity(m.instanceMatrix));s.push(m.instanceMatrix.version);}
+      if(o.isInstancedMesh){const m=object as THREE.InstancedMesh;s.push(m.count);s.push(identity(m.instanceMatrix));s.push(contentGeneration(m.instanceMatrix,m.count*16));}
       if(o.isSkinnedMesh){const m=object as THREE.SkinnedMesh;s.push(m.skeleton.bones.length);s.pushArray(m.skeleton.boneMatrices??[]);s.pushArray(m.bindMatrix.elements);}
       if(o.morphTargetInfluences)s.pushArray(o.morphTargetInfluences);
       const materials=Array.isArray(o.material)?o.material:[o.material];
