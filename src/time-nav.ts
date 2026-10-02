@@ -32,6 +32,9 @@ import { TERRAIN_VERSION } from './terrain.ts';
 import { BIOSPHERE_VERSION } from './biosphere-model.ts';
 import { GALAXY_HISTORY_VERSION } from './galaxy-history.ts';
 import { INLAND_RIVERS_UNAVAILABLE, INLAND_RIVERS_UNAVAILABLE_NOTICE } from './inland-rivers.ts';
+import { BIOME_VERSION, SURVEY_VERSION } from './surface-biomes.ts';
+import { CLIMATE_VERSION } from './surface-climate.ts';
+import { HABITAT_SUITABILITY_VERSION } from './habitat-suitability.ts';
 
 /** The build's current WorldVersions bundle (contract §1.3) — threaded
  * through every save/bookmark/URL per requirement 6. */
@@ -51,10 +54,14 @@ export const MODEL_MANIFEST_ID = [
   ...Object.values(CURRENT_VERSIONS),BACKGROUND_VERSION,
   BIOSPHERE_QUERY_VERSION,PRIMORDIAL_POPULATION_VERSION,STELLAR_COHORT_VERSION,
   FUTURE_SCENARIO_VERSION,ALTERNATE_FATE_VERSION,OBSERVED_SKY_VERSION,CMB_FIELD_VERSION,SURFACE_CELL_VERSION,
+  // 2026-10 biome-climate increment: the classifier, its climate field, the
+  // habitat evaluation and the survey change what a bookmark lands on.
+  BIOME_VERSION,CLIMATE_VERSION,HABITAT_SUITABILITY_VERSION,SURVEY_VERSION,
 ].join('|');
 /** Consumer changes can affect a bookmark without changing generator data.
- * 2026-09-28: river/drainage navigation and rendering withdrawn. */
-export const BUILD_VERSION = 'atlas-client-2026-09-28-no-inland-rivers-1';
+ * 2026-09-28: river/drainage navigation and rendering withdrawn.
+ * 2026-10: climate-driven snow, forest window and labels (biome-climate-1). */
+export const BUILD_VERSION = 'atlas-client-2026-10-biome-climate-1';
 
 // ---------------------------------------------------------------------------
 // §3.2 playback tiers.

@@ -324,3 +324,25 @@ test('a genuinely pre-4D-contract URL (no wv at all) still falls back to the CAT
   const params = new URLSearchParams(`date=${offsetNs}`);
   assert.equal(resolveTimeFromUrl(params), CATALOGUE_EPOCH_NS + offsetNs);
 });
+
+// ---------------------------------------------------------------------------
+// 2026-10 biome-climate increment (W1-A-CLASSIFIER): the classifier, its
+// shared climate field, the habitat evaluation and the survey are pinned and
+// folded into MODEL_MANIFEST_ID, so an older bookmark shows the one-time
+// "predates the current combined model" notice instead of silently landing on
+// different ground. A change here must be a deliberate, reviewed bump.
+// ---------------------------------------------------------------------------
+test('biome-climate model versions are pinned and part of the model manifest', async () => {
+  const { BIOME_VERSION, SURVEY_VERSION } = await import('../../src/surface-biomes.ts');
+  const { CLIMATE_VERSION } = await import('../../src/surface-climate.ts');
+  const { HABITAT_SUITABILITY_VERSION } = await import('../../src/habitat-suitability.ts');
+  const { SURVEY_VERSION: SURVEY_REEXPORT } = await import('../../src/surface-survey.ts');
+  const { MODEL_MANIFEST_ID } = await import('../../src/time-nav.ts');
+  assert.equal(BIOME_VERSION, 'surface-biomes-2-climate', 'was surface-biomes-1: climate snowline, treeline forest window and labels, dry belt');
+  assert.equal(CLIMATE_VERSION, 'surface-climate-1', 'new: per-planet annual climate field');
+  assert.equal(HABITAT_SUITABILITY_VERSION, 'habitat-suitability-1', 'new: niche evaluation against the climate field');
+  assert.equal(SURVEY_VERSION, 'surface-survey-2', 'was surface-survey-1: survey sites move through classifier v2');
+  assert.equal(SURVEY_REEXPORT, SURVEY_VERSION);
+  const parts = MODEL_MANIFEST_ID.split('|');
+  for (const v of [BIOME_VERSION, CLIMATE_VERSION, HABITAT_SUITABILITY_VERSION, SURVEY_VERSION]) assert.ok(parts.includes(v), `${v} missing from MODEL_MANIFEST_ID`);
+});
