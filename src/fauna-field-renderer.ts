@@ -15,6 +15,38 @@ export const FAUNA_FIELD_EYE_DETAIL_M=60;
 /** Forward-looking low flight needs more than the old 280 m proxy range. */
 export const FAUNA_FIELD_VISIBLE_M=600;
 const UP=new THREE.Vector3(0,1,0);
+/** True when a part drawn under parent `b` would produce the lanes recorded
+ * under parent `a`, up to the translation sums `replay` re-adds: every
+ * rotation/scale lane equal, and each translation lane's `t * 0` term (its
+ * sign, or NaN) equal, since that term enters the rotation/scale lanes. */
+function sameLanes(a:Float64Array,b:ArrayLike<number>):boolean{
+  for(let i=0;i<12;i++)if(!Object.is(a[i],b[i]))return false;
+  return Object.is(a[15],b[15])&&Object.is(a[12]!*0,b[12]!*0)&&Object.is(a[13]!*0,b[13]!*0)&&Object.is(a[14]!*0,b[14]!*0);
+}
+/** Parsed genome colours. `Color.set(string)` runs a regex parse and an
+ * sRGB-to-linear conversion; it was a third of the fauna frame (512 animals
+ * × ~30 parts). The cached Color holds exactly what `set` produced. Genome
+ * colours are a small, stable palette; the bound only guards pathological
+ * content. */
+const colorCache=new Map<string,THREE.Color>();
+function faunaColor(style:string):THREE.Color {
+  let color=colorCache.get(style);
+  if(!color){if(colorCache.size>=4096)colorCache.clear();color=new THREE.Color().set(style);colorCache.set(style,color);}
+  return color;
+}
+
+/** One animal's instance output (kinds, Float32 matrix lanes, colours) and
+ * the inputs that produced it. `FaunaFieldRenderer.submit` is a pure function
+ * of (genome, parent, timeS, gait, eye detail), so while those repeat, as on
+ * every frame at a paused date, replaying the recorded lanes writes exactly
+ * the values drawing would. A part's translation lane is
+ * `((a11·x + a12·y) + a13·z) + a14` with a14 the parent's (origin-relative)
+ * translation, so the record keeps that partial sum in double precision and
+ * replay adds the current parent translation: moving the eye (and so the
+ * life origin) at a paused date still replays, bit for bit. */
+type AnimalRecord={genome:CreatureGenome|null;timeS:number;gait:CreatureGait|null;eyes:boolean;parent:Float64Array;
+  parts:number;kinds:Uint8Array;matrices:Float32Array;sums:Float64Array;colors:THREE.Color[];valid:boolean;frame:number};
+const RECORD_PARTS=48;
 
 /** Instanced fallback for specimens outside the near rig pool. Anatomy is
  * drawn as four primitive batches using the same genome and base coat lighting
@@ -27,15 +59,13 @@ export class FaunaFieldRenderer {
   private meshes:THREE.InstancedMesh[];
   private counts=[0,0,0,0];
   private animalCount=0;
-  private local=new THREE.Matrix4();
-  private combined=new THREE.Matrix4();
-  private position=new THREE.Vector3();
-  private scale=new THREE.Vector3();
   private quaternion=new THREE.Quaternion();
   private direction=new THREE.Vector3();
-  private color=new THREE.Color();
   private a=new THREE.Vector3();
   private b=new THREE.Vector3();
+  private readonly records=new Map<object,AnimalRecord>();
+  private recording:AnimalRecord|null=null;
+  private frame=0;
   constructor(){
     const geometries=[new THREE.SphereGeometry(1,10,7),new THREE.CylinderGeometry(1,1,1,7),new THREE.ConeGeometry(1,1,6),new THREE.BoxGeometry(1,1,1)];
     this.meshes=geometries.map((g,i)=>{
@@ -47,13 +77,45 @@ export class FaunaFieldRenderer {
     });
     this.group.name='Stable dated fauna';
   }
-  beginFrame(origin:THREE.Vector3){this.group.position.copy(origin);this.counts.fill(0);this.animalCount=0;}
+  beginFrame(origin:THREE.Vector3){this.group.position.copy(origin);this.counts.fill(0);this.animalCount=0;this.frame++;}
+  /** Writes `parent × compose((x,y,z), rotation ?? identity, (sx,sy,sz))`
+   * straight into instance `counts[kind]`. The arithmetic is exactly
+   * three.js `Matrix4.compose` followed by `multiplyMatrices`, term for
+   * term and in the same order (zero terms included), so every Float32 lane
+   * is bit-identical to the former `setMatrixAt(multiplyMatrices(...))`; it
+   * only skips two Matrix4 round trips per part. */
   private part(kind:number,parent:THREE.Matrix4,x:number,y:number,z:number,sx:number,sy:number,sz:number,color:string,rotation?:THREE.Quaternion){
-    this.position.set(x,y,z);this.scale.set(sx,sy,sz);
-    this.local.compose(this.position,rotation??this.quaternion.identity(),this.scale);
-    this.combined.multiplyMatrices(parent,this.local);
-    const mesh=this.meshes[kind],index=this.counts[kind]++;
-    mesh.setMatrixAt(index,this.combined);mesh.setColorAt(index,this.color.set(color));
+    let b11:number,b21:number,b31:number,b12:number,b22:number,b32:number,b13:number,b23:number,b33:number;
+    if(rotation){
+      const qx=rotation.x,qy=rotation.y,qz=rotation.z,qw=rotation.w;
+      const x2=qx+qx,y2=qy+qy,z2=qz+qz,xx=qx*x2,xy=qx*y2,xz=qx*z2,yy=qy*y2,yz=qy*z2,zz=qz*z2,wx=qw*x2,wy=qw*y2,wz=qw*z2;
+      b11=(1-(yy+zz))*sx;b21=(xy+wz)*sx;b31=(xz-wy)*sx;
+      b12=(xy-wz)*sy;b22=(1-(xx+zz))*sy;b32=(yz+wx)*sy;
+      b13=(xz+wy)*sz;b23=(yz-wx)*sz;b33=(1-(xx+yy))*sz;
+    }else{
+      // compose() with the identity quaternion (0,0,0,1): every product term is exactly 0 or 1.
+      b11=(1-(0+0))*sx;b21=(0+0)*sx;b31=(0-0)*sx;
+      b12=(0-0)*sy;b22=(1-(0+0))*sy;b32=(0+0)*sy;
+      b13=(0+0)*sz;b23=(0-0)*sz;b33=(1-(0+0))*sz;
+    }
+    const ae=parent.elements;
+    const a11=ae[0],a12=ae[4],a13=ae[8],a14=ae[12],a21=ae[1],a22=ae[5],a23=ae[9],a24=ae[13];
+    const a31=ae[2],a32=ae[6],a33=ae[10],a34=ae[14],a41=ae[3],a42=ae[7],a43=ae[11],a44=ae[15];
+    const mesh=this.meshes[kind],index=this.counts[kind]++,te=mesh.instanceMatrix.array as Float32Array,o=index*16;
+    te[o]=a11*b11+a12*b21+a13*b31+a14*0;te[o+4]=a11*b12+a12*b22+a13*b32+a14*0;te[o+8]=a11*b13+a12*b23+a13*b33+a14*0;te[o+12]=a11*x+a12*y+a13*z+a14*1;
+    te[o+1]=a21*b11+a22*b21+a23*b31+a24*0;te[o+5]=a21*b12+a22*b22+a23*b32+a24*0;te[o+9]=a21*b13+a22*b23+a23*b33+a24*0;te[o+13]=a21*x+a22*y+a23*z+a24*1;
+    te[o+2]=a31*b11+a32*b21+a33*b31+a34*0;te[o+6]=a31*b12+a32*b22+a33*b32+a34*0;te[o+10]=a31*b13+a32*b23+a33*b33+a34*0;te[o+14]=a31*x+a32*y+a33*z+a34*1;
+    te[o+3]=a41*b11+a42*b21+a43*b31+a44*0;te[o+7]=a41*b12+a42*b22+a43*b32+a44*0;te[o+11]=a41*b13+a42*b23+a43*b33+a44*0;te[o+15]=a41*x+a42*y+a43*z+a44*1;
+    const rgb=faunaColor(color);
+    mesh.setColorAt(index,rgb);
+    const record=this.recording;
+    if(record){
+      if(record.parts>=RECORD_PARTS||o+16>te.length)record.valid=false;
+      else{
+        const n=record.parts++,m=n*16,s=n*3;record.kinds[n]=kind;record.colors[n]=rgb;for(let k=0;k<16;k++)record.matrices[m+k]=te[o+k]!;
+        record.sums[s]=a11*x+a12*y+a13*z;record.sums[s+1]=a21*x+a22*y+a23*z;record.sums[s+2]=a31*x+a32*y+a33*z;
+      }
+    }
   }
   private segment(parent:THREE.Matrix4,a:THREE.Vector3,b:THREE.Vector3,radius:number,color:string){
     this.direction.subVectors(b,a);const length=this.direction.length();
@@ -61,8 +123,39 @@ export class FaunaFieldRenderer {
     this.part(1,parent,(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2,radius,length,radius,color,this.quaternion);
   }
   /** parent is a metre-to-radius-normalized transform with LOCAL translation. */
-  submit(g:CreatureGenome,parent:THREE.Matrix4,timeS:number,gait:CreatureGait,distanceM=0):boolean{
+  /** `key` (e.g. the herd member) enables replay of this animal's last
+   * output when every input repeats. Recording starts only once the date has
+   * repeated for the animal, so realtime frames pay no copy cost. */
+  submit(g:CreatureGenome,parent:THREE.Matrix4,timeS:number,gait:CreatureGait,distanceM=0,key?:object):boolean{
     if(this.animalCount>=FAUNA_FIELD_CAPACITY)return false;this.animalCount++;
+    if(!key){this.draw(g,parent,timeS,gait,distanceM);return true;}
+    const eyes=distanceM<=FAUNA_FIELD_EYE_DETAIL_M,pe=parent.elements;
+    let record=this.records.get(key);
+    if(record){
+      record.frame=this.frame;
+      if(record.valid&&record.genome===g&&record.gait===gait&&record.eyes===eyes&&Object.is(record.timeS,timeS)&&sameLanes(record.parent,pe)){this.replay(record,pe);return true;}
+    }else{
+      record={genome:null,timeS:NaN,gait:null,eyes:false,parent:new Float64Array(16),parts:0,kinds:new Uint8Array(RECORD_PARTS),
+        matrices:new Float32Array(RECORD_PARTS*16),sums:new Float64Array(RECORD_PARTS*3),colors:[],valid:false,frame:this.frame};
+      this.records.set(key,record);
+    }
+    // A new date (realtime): draw only; record from the next repeat on.
+    if(!Object.is(record.timeS,timeS)){record.timeS=timeS;record.valid=false;this.draw(g,parent,timeS,gait,distanceM);return true;}
+    record.genome=g;record.gait=gait;record.eyes=eyes;record.parent.set(pe);record.parts=0;record.valid=true;
+    this.recording=record;
+    try{this.draw(g,parent,timeS,gait,distanceM);}finally{this.recording=null;}
+    return true;
+  }
+  private replay(record:AnimalRecord,pe:ArrayLike<number>){
+    const tx=pe[12]!,ty=pe[13]!,tz=pe[14]!,sums=record.sums;
+    for(let n=0;n<record.parts;n++){
+      const kind=record.kinds[n]!,mesh=this.meshes[kind]!,index=this.counts[kind]++,te=mesh.instanceMatrix.array as Float32Array,o=index*16,m=n*16,s=n*3;
+      for(let k=0;k<12;k++)te[o+k]=record.matrices[m+k]!;
+      te[o+12]=sums[s]!+tx;te[o+13]=sums[s+1]!+ty;te[o+14]=sums[s+2]!+tz;te[o+15]=record.matrices[m+15]!;
+      mesh.setColorAt(index,record.colors[n]!);
+    }
+  }
+  private draw(g:CreatureGenome,parent:THREE.Matrix4,timeS:number,gait:CreatureGait,distanceM:number){
     const moving=gait!=='idle',phase=timeS*g.walkSpeed/Math.max(.2,g.strideLength)*Math.PI*2;
     const bob=moving?Math.sin(phase*2)*g.legLength*.012:Math.sin(timeS*1.8)*.006;
     const torsoY=g.legLength+g.torsoHeight*.36+bob;
@@ -91,10 +184,13 @@ export class FaunaFieldRenderer {
     if(g.armor>.05){const plates=Math.max(2,Math.min(6,Math.round(2+g.armor*4)));
       for(let i=0;i<plates;i++)this.part(3,parent,-g.torsoLength*.3+i*g.torsoLength*.6/Math.max(1,plates-1),torsoY+g.torsoHeight*.38,0,g.torsoLength/plates*.75,g.torsoHeight*.09,g.torsoWidth*1.02,g.accentColor);
     }
-    return true;
   }
-  endFrame(){for(let i=0;i<this.meshes.length;i++){const m=this.meshes[i];m.count=this.counts[i];m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;}}
+  endFrame(){
+    for(let i=0;i<this.meshes.length;i++){const m=this.meshes[i];m.count=this.counts[i];m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;}
+    // Bound the records (~3 KB each) to animals submitted this frame once they exceed twice the capacity.
+    if(this.records.size>FAUNA_FIELD_CAPACITY*2)for(const [key,record] of this.records)if(record.frame!==this.frame)this.records.delete(key);
+  }
   get count(){return this.animalCount;}
   get allocatedBytes(){return this.meshes.reduce((sum,m)=>sum+m.instanceMatrix.array.byteLength+(m.instanceColor?.array.byteLength??0)+Object.values(m.geometry.attributes).reduce((n,a)=>n+a.array.byteLength,0),0)*2;}
-  dispose(){for(const m of this.meshes){m.geometry.dispose();(m.material as THREE.Material).dispose();}this.group.removeFromParent();}
+  dispose(){this.records.clear();for(const m of this.meshes){m.geometry.dispose();(m.material as THREE.Material).dispose();}this.group.removeFromParent();}
 }
