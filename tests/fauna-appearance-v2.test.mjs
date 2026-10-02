@@ -10,6 +10,7 @@ import {
   faunaAdultCoat, faunaFarCoatMean, faunaFarMean, faunaFarSpeciesId, faunaLineageCoat, linearHexOf, faunaSpeciesCoat, faunaSpeciesDimorphism, inheritedFaunaFamily, sampleFaunaCoat,
 } from '../src/fauna-appearance.ts';
 import { coatMeanColor, coatMinFeature, hexToLinear } from '../src/fauna-coat-fields.ts';
+import { COAT_MARK_BITS } from '../src/fauna-coat-vocab.ts';
 import { PIGMENT_FAMILIES } from '../src/fauna-coat-vocab.ts';
 import { buildQuadrupedBody, primitiveDistance, quadrupedBodyBuildSteps, QUADRUPED_BODY_VERSION, QUADRUPED_GRID_POINT_BUDGET } from '../src/fauna-body-plan.ts';
 
@@ -155,12 +156,14 @@ test('the far-LOD palette base is the species-model body mean of the adult coat,
 test('far-LOD mean cost: 512 new realistic genomes of warm species stay within about 15 ms', t => {
   // The reviewer's bench: 12 founders (incl. one piebald and one bands species,
   // the two patterns that also sample their own layout), warmed, then 512 new
-  // individuals; the best of five bursts damps scheduler noise.
+  // individuals; the best of nine bursts damps scheduler and GC noise left by
+  // the tests before it (a collection between bursts when --expose-gc is on).
   const founders = Array.from({ length: 12 }, (_, i) => generateCreatureGenome(`BENCH-${i}`, ARCHETYPES[i % 4]));
   let start = performance.now();
   for (let i = 0; i < 20; i++) realisticIndividualCreatureGenome(founders[i % 12], `warm-${i}`, i % 4, 'adult');
   const coldMs = performance.now() - start, bursts = [];
-  for (let r = 0; r < 5; r++) {
+  for (let r = 0; r < 9; r++) {
+    globalThis.gc?.();
     start = performance.now();
     for (let i = 0; i < 512; i++) realisticIndividualCreatureGenome(founders[i % 12], `herd-${r}-${i}`, i % 4, i % 5 === 0 ? 'juvenile' : 'adult');
     bursts.push(performance.now() - start);
@@ -333,17 +336,27 @@ test('juvenile fawn spots: whole discs of at least four mesh cells, two-cell gap
     assert.ok(Math.hypot(L.spacing * .4, L.rowGap * .8) - 2.2 * L.radius >= 2 * cell - 1e-9, `${s.id} row gap`);
     // Mesh: the spot layer's vertices form whole discs (connected components of
     // torso and thigh vertices it whitens), never single vertices or slivers.
-    const plain = { ...g, appearance: { ...g.appearance, coat: { ...g.appearance.coat, juvenileSpots: 0 } } };
+    // Disc geometry is measured on a pattern-neutral copy (no pattern, no region
+    // marks): a pale stripe or blaze under part of a disc hides that part in a
+    // colour difference although the disc itself is whole.
+    const neutral = { ...g.appearance.coat, contrast: 0, marks: COAT_MARK_BITS['juvenile-spots'] };
+    const spotted = { ...g, appearance: { ...g.appearance, coat: neutral } };
+    const plain = { ...g, appearance: { ...g.appearance, coat: { ...neutral, juvenileSpots: 0 } } };
     const regions = vertexRegions(body), P = body.positions, n = body.bodyVertexCount, diff = new Float64Array(n);
-    let outside = 0;
+    let outside = 0, darker = 0;
     for (let v = 0; v < n; v++) {
       const surface = { dorsal: body.normals[v * 3 + 1], cellM: body.cellM }, region = regions[v];
-      const a = sampleFaunaCoat(g, P[v * 3], P[v * 3 + 1], P[v * 3 + 2], body.plan.torsoY, region, surface);
+      // On the real coat a spot only ever lifts the local colour towards cream.
+      const real = sampleFaunaCoat(g, P[v * 3], P[v * 3 + 1], P[v * 3 + 2], body.plan.torsoY, region, surface);
+      const realPlain = sampleFaunaCoat({ ...g, appearance: { ...g.appearance, coat: { ...g.appearance.coat, juvenileSpots: 0 } } }, P[v * 3], P[v * 3 + 1], P[v * 3 + 2], body.plan.torsoY, region, surface);
+      darker = Math.max(darker, ...real.map((c, k) => Math.min(realPlain[k], .55) - c));
+      const a = sampleFaunaCoat(spotted, P[v * 3], P[v * 3 + 1], P[v * 3 + 2], body.plan.torsoY, region, surface);
       const b = sampleFaunaCoat(plain, P[v * 3], P[v * 3 + 1], P[v * 3 + 2], body.plan.torsoY, region, surface);
       diff[v] = Math.max(...a.map((c, k) => Math.abs(c - b[k])));
       if (region !== 'torso' && region !== 'upper') outside = Math.max(outside, diff[v]);
     }
     assert.equal(outside, 0, `${s.id} spots only on the torso and thigh`);
+    assert.ok(darker <= 1e-9, `${s.id} a spot darkened a channel below cream by ${darker}`);
     const peak = Math.max(...diff), parent = Int32Array.from({ length: n }, (_, i) => i);
     const find = i => { while (parent[i] !== i) i = parent[i] = parent[parent[i]]; return i; };
     const marked = Array.from(diff, d => d > .15 * peak);

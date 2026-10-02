@@ -106,8 +106,10 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
   // canonical, so adding a phenotype cannot reroll species or ancestry IDs.
   // Individual body size: +-4.5% (v1) and +-7% for coat phenotypes (uniform),
   // closer to the spread of wild ungulate populations.
-  // Body condition (girth and depth): +-5.5% (v1) and +-9% for coat phenotypes.
-  const size=1+i.size*(isCoatPhenotype(a)?.07:.045),condition=1+i.condition*(isCoatPhenotype(a)?.09:.055);
+  // Body condition (girth and depth): +-5.5% (v1) and +-9% for coat phenotypes,
+  // +-13% for low-slung coat phenotypes (bears and badgers swing widely with season).
+  // Long-neck size spans +-10% (adult giraffe shoulder heights differ by ~20%).
+  const size=1+i.size*(isCoatPhenotype(a)?(genome.archetype==='long-neck'?.1:.07):.045),condition=1+i.condition*(isCoatPhenotype(a)?(genome.archetype==='low-slung'?.13:.09):.055);
   for(const field of ['torsoLength','torsoHeight','torsoWidth','legLength','stanceWidth','neckLength','neckRise','headLength','headWidth','tailLength','footLength','footWidth','hornLength','earLength','strideLength'] as const)apply(field,size);
   apply('torsoLength',1+p.mass*.035);apply('torsoHeight',(1+p.mass*.055)*condition);
   apply('torsoWidth',(1+p.mass*.075)*condition);apply('stanceWidth',1+p.mass*.065);
@@ -117,9 +119,11 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
   apply('earLength',1+i.ears*.12);
   // Individual proportions (fauna-appearance-2): limb, neck and tail lengths
   // relative to the trunk vary within a population (limb +-4%, neck +-7%,
-  // tail +-10%), so siblings differ in silhouette and not only in size.
+  // tail +-10%), so siblings differ in silhouette and not only in size. Long
+  // necks vary +-14% and long-neck limbs +-6% (giraffe neck-to-leg ratios
+  // differ between individuals).
   const coatPhenotype=isCoatPhenotype(a);
-  const limbIndividual=coatPhenotype?1+(i.limb??0)*.04:1,neckIndividual=coatPhenotype?1+(i.neck??0)*.07:1;
+  const limbIndividual=coatPhenotype?1+(i.limb??0)*(genome.archetype==='long-neck'?.06:.04):1,neckIndividual=coatPhenotype?1+(i.neck??0)*(genome.archetype==='long-neck'?.14:.07):1;
   if(coatPhenotype){
     apply('legLength',limbIndividual);apply('strideLength',limbIndividual);
     apply('neckLength',neckIndividual);apply('neckRise',neckIndividual);apply('tailLength',1+(i.tail??0)*.1);

@@ -456,12 +456,22 @@ export function faunaAdultCoat(archetype: CreatureArchetype, speciesCoat: CoatGe
 const INDIVIDUAL_MARKS: Readonly<Record<CreatureArchetype, readonly CoatMarkName[]>> = { browser: ['socks', 'blaze'], runner: ['socks', 'blaze'], 'long-neck': ['socks'], 'low-slung': [] };
 /** The fauna-appearance-2 individual layer, from stream
  * `<individualKey>/coat-individual-v2`, on top of the shared coat drift:
- * overall tone (sRGB value x(1 +-0.14)), contrast +-0.15, countershade +-0.1,
+ * overall tone (sRGB value x(1 +-0.14), +-0.22 low-slung, +-0.2 long-neck),
+ * then (appended) the mark shade alone (+-0.18 low-slung, +-0.3 long-neck: giraffe
+ * patches run from pale orange to near black between individuals), contrast +-0.15, countershade +-0.1,
  * belly line +-0.05, coverage +-0.05, warp +-0.15, scale +-6%, and a 0.12
  * flip per stocking and blaze mark. Draw order is append-only. */
+/** Individual tone spread (sRGB value) per archetype. Bears and badgers run
+ * from pale to near-black colour phases within one population, and giraffe
+ * patches darken with age and sex, so the low-slung and long-neck archetypes
+ * vary more than deer and antelope. */
+const INDIVIDUAL_VALUE: Readonly<Record<CreatureArchetype, number>> = { browser: .14, runner: .14, 'low-slung': .22, 'long-neck': .2 };
+/** Extra individual darkening of the mark colour alone (patch, stripe and band
+ * shade), appended to the stream: 0 keeps the shared tone. */
+const INDIVIDUAL_ACCENT: Readonly<Record<CreatureArchetype, number>> = { browser: 0, runner: 0, 'low-slung': .18, 'long-neck': .3 };
 function faunaIndividualCoat(archetype: CreatureArchetype, coat: CoatGenome, individualKey: string): CoatGenome {
   const rand = coatRandom(`${individualKey}/coat-individual-v2`), s = () => rand() * 2 - 1;
-  const value = Math.pow(1 + .14 * s(), 2.2), contrast = .15 * s(), countershade = .1 * s(), bellyLine = .05 * s();
+  const value = Math.pow(1 + INDIVIDUAL_VALUE[archetype] * s(), 2.2), contrast = .15 * s(), countershade = .1 * s(), bellyLine = .05 * s();
   // Stripe and band counts vary more between individuals (zebra torso stripe
   // counts span roughly +-10%) than spot sizes do.
   const linear = coat.pattern === 'stripes' || coat.pattern === 'bands' || coat.pattern === 'brindle';
@@ -470,6 +480,9 @@ function faunaIndividualCoat(archetype: CreatureArchetype, coat: CoatGenome, ind
   for (const name of ['socks', 'blaze'] as const) if (rand() < .12 && INDIVIDUAL_MARKS[archetype].includes(name)) marks ^= COAT_MARK_BITS[name];
   const R = COAT_GENOME_RANGES, colours = { ...coat.colours };
   for (const role of ['base', 'accent', 'belly'] as const) colours[role] = coat.colours[role].map(c => clamp(c * value, 0, 1)) as CoatRGB;
+  // Appended draw: the mark shade alone (stream order of the draws above is unchanged).
+  const accent = Math.pow(1 + INDIVIDUAL_ACCENT[archetype] * s(), 2.2);
+  if (INDIVIDUAL_ACCENT[archetype] > 0) colours.accent = colours.accent.map(c => clamp(c * accent, 0, 1)) as CoatRGB;
   return {
     ...coat, colours, marks,
     contrast: clamp(coat.contrast + contrast, R.contrast[0], R.contrast[1]),
@@ -644,6 +657,8 @@ function prepare(genome: CreatureGenome, x: number, y: number, z: number, torsoY
  * on the torso surface (forward x, arc length from the spine) with a radius of
  * at least 2.1 mesh cells (over a four-cell diameter) and gaps of at least two
  * cells. Same colour and strength as the library layer. */
+/** Linear cream of fawn spots (the WP1 juvenile-spot white). */
+const FAWN_CREAM = [.6, .585, .55] as const;
 const FAWN_SPOT_CELLS = 2.1, FAWN_DEFAULT_CELL = .024, FAWN_SALT = 0x5a1f7e31, FAWN_JITTER = .1, FAWN_X0 = -.36, FAWN_X1 = .28;
 export interface FaunaFawnSpotLayout { radius: number; spacing: number; rowGap: number; rows: readonly number[] }
 /** Spot layout in torso lengths for a near body whose vertex cell is
@@ -716,8 +731,11 @@ export function sampleFaunaCoat(genome: CreatureGenome, x: number, y: number, z:
     const TL = Math.max(genome.torsoLength, 1e-3), cell = surface?.cellM !== undefined && surface.cellM > 0 ? surface.cellM / TL : 0;
     const k = fawnSpotMask(coat.seed, x / TL, (y - torsoY) / TL, z / TL, cell, genome.torsoHeight / 2 / TL, genome.torsoWidth / 2 / TL);
     if (k > 0) {
+      // The spot is the pale belly cream, but always at least halfway from the
+      // local coat to cream, so a disc crossing a pale band stays a whole disc
+      // instead of showing only where it overlaps the dark band.
       const b = coat.colours.belly, t = .85 * coat.juvenileSpots * k;
-      OUT[0] = mix(OUT[0]!, mix(b[0]!, .6, .55), t); OUT[1] = mix(OUT[1]!, mix(b[1]!, .585, .55), t); OUT[2] = mix(OUT[2]!, mix(b[2]!, .55, .55), t);
+      for (let c = 0; c < 3; c++) { const cream = FAWN_CREAM[c]!; OUT[c] = mix(OUT[c]!, Math.max(mix(b[c]!, cream, .55), mix(OUT[c]!, cream, .5)), t); }
     }
   }
   return [OUT[0]!, OUT[1]!, OUT[2]!];
