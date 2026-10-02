@@ -7,7 +7,7 @@ import { generateBiosphere } from '../src/biosphere-model.ts';
 import { generateCreatureGenome, realisticIndividualCreatureGenome, validateCreatureGenome } from '../src/creature-model.ts';
 import {
   FAUNA_APPEARANCE_LEGACY_VERSION, FAUNA_APPEARANCE_VERSION, MORPHOLOGY_FAMILIES, createFaunaAppearance, faunaArmorShare, faunaCoatMark, faunaCoatMaxScale,
-  faunaFarCoatMean, faunaLineageCoat, faunaSpeciesCoat, faunaSpeciesDimorphism, inheritedFaunaFamily, sampleFaunaCoat,
+  faunaAdultCoat, faunaFarCoatMean, faunaFarMean, faunaFarSpeciesId, faunaLineageCoat, linearHexOf, faunaSpeciesCoat, faunaSpeciesDimorphism, inheritedFaunaFamily, sampleFaunaCoat,
 } from '../src/fauna-appearance.ts';
 import { coatMeanColor, coatMinFeature, hexToLinear } from '../src/fauna-coat-fields.ts';
 import { PIGMENT_FAMILIES } from '../src/fauna-coat-vocab.ts';
@@ -131,18 +131,42 @@ test('family envelopes: long necks stay long and padded legs stay short at every
   }
 });
 
-test('the far-LOD palette base is the body-weighted mean of the adult coat, close to coatMeanColor', t => {
-  let worst = 0, canonical = [];
+test('the far-LOD palette base is the species-model body mean of the adult coat, close to the exact mean and coatMeanColor', t => {
+  const exactErrors = [], canonical = [];
   for (const species of planets.slice(0, 25)) for (const s of species) for (let v = 0; v < 4; v++) {
     const a = createFaunaAppearance(s.creature, `${s.id}/mean`, v, 'adult'), juvenile = createFaunaAppearance(s.creature, `${s.id}/mean`, v, 'juvenile');
     assert.deepEqual(juvenile.palette, a.palette, 'the far colour never depends on growth stage');
-    const exact = faunaFarCoatMean(a.coat, inheritedFaunaFamily(s.creature), faunaArmorShare(s.creature, inheritedFaunaFamily(s.creature))), base = hexToLinear(a.palette.base);
-    worst = Math.max(worst, ...exact.map((c, i) => Math.abs(c - base[i])));
+    const family = inheritedFaunaFamily(s.creature), armour = faunaArmorShare(s.creature, family), base = hexToLinear(a.palette.base);
+    const speciesCoat = faunaSpeciesCoat(s.creature).coat;
+    assert.equal(a.palette.base, linearHexOf(faunaFarMean(faunaFarSpeciesId(s.creature), speciesCoat, s.creature.archetype, a.coat, family, armour)));
+    // A cold model (fresh memo id) gives the same colour as the warm one.
+    assert.equal(a.palette.base, linearHexOf(faunaFarMean(`${faunaFarSpeciesId(s.creature)}|cold-${v}`, speciesCoat, s.creature.archetype, a.coat, family, armour)));
+    exactErrors.push(Math.max(...faunaFarCoatMean(a.coat, family, armour).map((c, i) => Math.abs(c - base[i]))));
     canonical.push(Math.max(...coatMeanColor(a.coat).map((c, i) => Math.abs(c - base[i]))));
   }
-  t.diagnostic(`max |palette.base - farMean| ${worst.toFixed(4)} (sRGB hex quantisation); median |palette.base - coatMeanColor| ${median(canonical).toFixed(4)}`);
-  assert.ok(worst <= .006, `palette mean error ${worst}`);
+  // The species model is not the exact canonical mean of each individual's own
+  // reseeded layout: its acceptance bound is the near body (corpus tests below).
+  const sorted = [...exactErrors].sort((a, b) => a - b), p95 = sorted[Math.floor(sorted.length * .95)];
+  t.diagnostic(`|palette.base - exact faunaFarCoatMean| median ${median(exactErrors).toFixed(4)} p95 ${p95.toFixed(4)} max ${sorted.at(-1).toFixed(4)}; median |palette.base - coatMeanColor| ${median(canonical).toFixed(4)}`);
+  assert.ok(median(exactErrors) <= .01 && p95 <= .03, 'the species model tracks the exact individual mean');
   assert.ok(median(canonical) <= .04, 'the body weighting is a small correction to the canonical coat mean');
+});
+
+test('far-LOD mean cost: 512 new realistic genomes of warm species stay within about 15 ms', t => {
+  // The reviewer's bench: 12 founders (incl. one piebald and one bands species,
+  // the two patterns that also sample their own layout), warmed, then 512 new
+  // individuals; the best of five bursts damps scheduler noise.
+  const founders = Array.from({ length: 12 }, (_, i) => generateCreatureGenome(`BENCH-${i}`, ARCHETYPES[i % 4]));
+  let start = performance.now();
+  for (let i = 0; i < 20; i++) realisticIndividualCreatureGenome(founders[i % 12], `warm-${i}`, i % 4, 'adult');
+  const coldMs = performance.now() - start, bursts = [];
+  for (let r = 0; r < 5; r++) {
+    start = performance.now();
+    for (let i = 0; i < 512; i++) realisticIndividualCreatureGenome(founders[i % 12], `herd-${r}-${i}`, i % 4, i % 5 === 0 ? 'juvenile' : 'adult');
+    bursts.push(performance.now() - start);
+  }
+  t.diagnostic(JSON.stringify({ coldTwelveSpeciesMs: +coldMs.toFixed(1), burstsMs: bursts.map(b => +b.toFixed(1)) }));
+  assert.ok(Math.min(...bursts) <= 15, `512 genomes took ${Math.min(...bursts)} ms`);
 });
 
 /** Max channel |area-weighted near-body mean linear RGB - linear(g.color)|. */
@@ -255,6 +279,26 @@ test('96 corpus bodies: the far colour is the near-body mean; budgets and bounde
 
 // Structural parts (wings, trunk) are tinted from g.color itself in both LODs,
 // so the coat continuity is measured on the continuous skin for these.
+test('every coat pattern: the species-model far colour tracks the near body', t => {
+  // Piebald and reticulated are bounded relative to the exact canonical mean,
+  // which itself misses their near bodies (patch layout; measured 0.073 and
+  // 0.056 over 120 specimens each).
+  const rows = {};
+  for (const pattern of ['plain', 'spots', 'rosettes', 'reticulated', 'stripes', 'bands', 'saddle', 'dorsal-stripe', 'dapple', 'piebald', 'roan', 'brindle']) for (const s of speciesWithPattern(pattern, 3)) {
+    const g = realisticIndividualCreatureGenome(s.creature, `${s.id}/far-pattern`, 2, 'adult'), family = g.morphology.family;
+    const body = buildQuadrupedBody(g), model = nearFarError(body, g);
+    const exactGenome = { ...g, color: linearHexOf(faunaFarCoatMean(faunaAdultCoat(s.creature.archetype, faunaSpeciesCoat(s.creature).coat, g.appearance.individualKey), family, faunaArmorShare(s.creature, family))) };
+    const exact = nearFarError(body, exactGenome), row = rows[pattern] ??= { model: 0, exact: 0, n: 0 };
+    row.model = Math.max(row.model, model); row.exact = Math.max(row.exact, exact); row.n++;
+  }
+  t.diagnostic(JSON.stringify(Object.fromEntries(Object.entries(rows).map(([k, v]) => [k, { model: +v.model.toFixed(3), exact: +v.exact.toFixed(3), n: v.n }]))));
+  for (const [pattern, row] of Object.entries(rows)) {
+    assert.equal(row.n, 3, pattern);
+    if (pattern === 'piebald' || pattern === 'reticulated') assert.ok(row.model <= Math.max(.04, row.exact + .02), `${pattern} model ${row.model} exact ${row.exact}`);
+    else assert.ok(row.model <= .04, `${pattern} near/far ${row.model}`);
+  }
+});
+
 test('explicit morphology families keep the far colour at the near skin mean', t => {
   let worst = 0;
   for (const archetype of ARCHETYPES) for (const family of MORPHOLOGY_FAMILIES) {

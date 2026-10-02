@@ -1,5 +1,5 @@
 /** Deterministic, metre-based quadruped anatomy shared by the lab data and rig. */
-import { createFaunaAppearance, FAUNA_APPEARANCE_LEGACY_VERSION, FAUNA_APPEARANCE_VERSION, FAUNA_JUVENILE_PROPORTIONS, FAUNA_REFERENCE_JUVENILE_MATURITY, faunaAdultCoat, faunaArmorShare, faunaCoatErrors, faunaFarCoatMeanCached, faunaLineageKey, faunaSpeciesCoat, faunaSpeciesKey, inheritedFaunaFamily, isPigmentFamily, linearHexOf, MORPHOLOGY_FAMILIES, type FaunaAppearance, type FaunaMorphology, type FaunaMorphologyFamily } from './fauna-appearance.ts';
+import { createFaunaAppearance, FAUNA_APPEARANCE_LEGACY_VERSION, FAUNA_APPEARANCE_VERSION, FAUNA_JUVENILE_PROPORTIONS, FAUNA_REFERENCE_JUVENILE_MATURITY, faunaAdultCoat, faunaArmorShare, faunaCoatErrors, faunaFarMean, faunaFarSpeciesId, faunaSpeciesCoat, inheritedFaunaFamily, isPigmentFamily, linearHexOf, MORPHOLOGY_FAMILIES, type FaunaAppearance, type FaunaMorphology, type FaunaMorphologyFamily } from './fauna-appearance.ts';
 export type CreatureArchetype = 'browser'|'runner'|'low-slung'|'long-neck';
 export interface CreatureGenome {
   version:string; archetype:CreatureArchetype;
@@ -163,7 +163,7 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
   // An explicit family draws a different body, so its far colour is re-weighted
   // to that body (stage-invariant: the adult-equivalent armour is used).
   if(family!==undefined&&isCoatPhenotype(a)&&family!==inheritedFaunaFamily(genome)){
-    a.palette.base=linearHexOf(faunaFarCoatMeanCached(`${faunaSpeciesKey(genome)}|${faunaLineageKey(genome)}|${a.individualKey}`,faunaAdultCoat(genome.archetype,faunaSpeciesCoat(genome).coat,a.individualKey),selected,faunaArmorShare(g,selected)));
+    {const species=faunaSpeciesCoat(genome).coat;a.palette.base=linearHexOf(faunaFarMean(faunaFarSpeciesId(genome),species,genome.archetype,faunaAdultCoat(genome.archetype,species,a.individualKey),selected,faunaArmorShare(g,selected)));}
   }
   // Male barrel width survives the authored family ratio envelopes.
   if(sex==='male')g.torsoWidth*=1+.06*dimorphism;

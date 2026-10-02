@@ -219,17 +219,232 @@ export function faunaFarCoatMean(coat: CoatGenome, family: FaunaMorphologyFamily
   if (armorShare > 0) { const t = sums.armor!; for (let i = 0; i < 3; i++) out[i]! += armorShare * t[i]! / t[3]!; }
   return out;
 }
-/** Memoised per individual and family, so the adult and juvenile genomes and
- * repeated specimen requests share one canonical evaluation (about 0.3-1 ms). */
-const FAR_MEANS = new Map<string, CoatRGB>();
-export function faunaFarCoatMeanCached(key: string, coat: CoatGenome, family: FaunaMorphologyFamily, armorShare: number): CoatRGB {
-  const id = `${key}|${family}|${armorShare}`, cached = FAR_MEANS.get(id);
-  if (cached) return cached;
-  const mean = faunaFarCoatMean(coat, family, armorShare);
-  if (FAR_MEANS.size >= 4096) FAR_MEANS.clear();
-  FAR_MEANS.set(id, mean);
-  return mean;
+/** Memoised species models (see faunaFarMean). */
+const FAR_MODELS = new Map<string, FarModel>();
+/** Canonical samples are grouped like the near body's regions; index order
+ * torso, neck, head, tail, upper, lower, foot (as in faunaFarCoatMean). */
+const FAR_GROUP_OF: Partial<Record<CoatRegion, number>> = { torso: 0, neck: 1, head: 2, muzzle: 2, ear: 2, tail: 3, 'tail-tip': 3, 'limb-upper': 4, 'limb-lower': 5, foot: 6 };
+/** The species base model uses every canonical sample; slopes, the direct
+ * layout means and their stride-matched base use every fourth (128). */
+const FAR_GROUPS = 7, FAR_STRIDE = 4;
+const SOCK_GROUPS = 1 << 5 | 1 << 6, HEAD_GROUP = 1 << 2, ALL_GROUPS = (1 << FAR_GROUPS) - 1;
+/** Coats whose canonical mean depends on the individual pattern layout (two or
+ * three patches or bands per body) rather than only on its statistics. Measured
+ * against the near body over 120 specimens per pattern, the species model alone
+ * misses by up to 0.2 on piebald and 0.046 on bands. Piebald individuals
+ * evaluate their own coat on every fourth canonical sample (128 evaluations,
+ * ~0.11 ms; the exact mean itself misses the near body by up to 0.073 there).
+ * Bands individuals only probe their raw pattern mask on the samples of the
+ * groups they cross and move each group along the species threshold slope by
+ * the mask change (79 probes, ~0.04 ms; within 0.038 of the near body). The
+ * same mask term measured to 0.15 on piebald, whose white patches do not track
+ * the threshold slope. Reticulated (exact mean itself 0.056, model 0.061) and
+ * stripes (0.048) stay on the model: a layout term would cost every individual
+ * of a common pattern. */
+const FAR_LAYOUT_PATTERNS: ReadonlySet<ResolvedCoatPattern> = new Set<ResolvedCoatPattern>(['piebald']);
+const FAR_MASK_PATTERNS: ReadonlySet<ResolvedCoatPattern> = new Set<ResolvedCoatPattern>(['bands']);
+/** Groups whose layout term applies: bands only on the torso, neck and tail
+ * they cross (all groups measured no better); piebald patches everywhere. */
+const FAR_LAYOUT_GROUPS: Partial<Record<ResolvedCoatPattern, number>> = { bands: 1 << 0 | 1 << 1 | 1 << 3 };
+const LIN_A = .3, LIN_D = .2;
+const LIN_B0 = new Float64Array(3), LIN_B1 = new Float64Array(3);
+/** A coat's per-group mean colour as an exact linear function of its three
+ * pigment roles: evaluateCoat mixes base, accent and belly with weights that
+ * do not depend on the colours, so per group (7 entries)
+ * mean[ch] = w0 base[ch] + w1 accent[ch] + w2 belly[ch] + k[ch], then the weight. */
+type FarLinear = Float64Array;
+type FarSlopeField = 'contrast' | 'countershade' | 'threshold' | 'bellyLine';
+interface FarModel {
+  species: CoatGenome;
+  /** Layout patterns: per-group strided mean pattern mask of the species coat
+   * and its threshold derivative (see farLayoutMask). */
+  mask: Float64Array | undefined; maskSlope: Float64Array | undefined;
+  /** Marks an individual may flip (faunaIndividualCoat): socks and blaze. */
+  flipBits: number;
+  base: FarLinear; flipped: FarLinear | undefined;
+  /** Head group at greying 1 (greying enters linearly), unflipped and flipped. */
+  grey: FarLinear; greyFlipped: FarLinear | undefined;
+  /** d(mean)/d(field) at the species coat (linear models, every fourth sample). */
+  slopes: readonly (readonly [FarSlopeField, FarLinear])[];
+  /** Mean plate grain of the dorsal armour samples. */
+  armour: number;
 }
+function scaleClamped(coat: CoatGenome, cell: number): CoatGenome {
+  const max = faunaCoatMaxScale(coat, cell);
+  return coat.scale > max ? { ...coat, scale: max } : coat;
+}
+/** The linear model of `coat` over the canonical samples of the groups in
+ * `mask` (every `stride`-th sample); `sub`, when
+ * given, also receives the strided subset. */
+function farLinear(coat: CoatGenome, mask: number, stride: number, sub?: FarLinear, subStride = FAR_STRIDE): FarLinear {
+  const filtered = scaleClamped(coat, FAR_MEAN_CELL), fp = coatFootprint(coat, FAR_MEAN_CELL), A = LIN_A, D = LIN_D;
+  const uniform: CoatGenome = { ...filtered, colours: { ...filtered.colours, base: [A, A, A], accent: [A, A, A], belly: [A, A, A] } };
+  const basis: CoatGenome = { ...filtered, colours: { ...filtered.colours, base: [A + D, A, A], accent: [A, A + D, A], belly: [A, A, A + D] } };
+  const out = new Float64Array(FAR_GROUPS * 7), samples = coatCanonicalSamples();
+  const accumulate = (target: FarLinear, g: number, w: number, w0: number, w1: number, w2: number) => {
+    const o = g * 7, sum = w0 + w1 + w2;
+    target[o]! += w0 * w; target[o + 1]! += w1 * w; target[o + 2]! += w2 * w;
+    for (let c = 0; c < 3; c++) target[o + 3 + c]! += (LIN_B0[c]! - A * sum) * w;
+    target[o + 6]! += w;
+  };
+  for (let i = 0; i < samples.length; i += stride) {
+    const s = samples[i]!, g = FAR_GROUP_OF[s.region] ?? 0;
+    if (!(mask >> g & 1)) continue;
+    Object.assign(MEAN_SAMPLE, s); MEAN_SAMPLE.footprint = fp;
+    evaluateCoat(basis, MEAN_SAMPLE, LIN_B1, 0); evaluateCoat(uniform, MEAN_SAMPLE, LIN_B0, 0);
+    const w0 = (LIN_B1[0]! - LIN_B0[0]!) / D, w1 = (LIN_B1[1]! - LIN_B0[1]!) / D, w2 = (LIN_B1[2]! - LIN_B0[2]!) / D;
+    accumulate(out, g, s.weight, w0, w1, w2);
+    if (sub && i % subStride === 0) accumulate(sub, g, s.weight, w0, w1, w2);
+  }
+  for (const target of sub ? [out, sub] : [out]) for (let g = 0; g < FAR_GROUPS; g++) {
+    const o = g * 7, w = target[o + 6]!;
+    if (w > 0) for (let j = 0; j < 6; j++) target[o + j]! /= w;
+  }
+  return out;
+}
+/** Group g of a linear model at the given colours (linear RGB), into out. */
+function farGroupColour(model: FarLinear, g: number, colours: CoatGenome['colours'], out: CoatRGB): void {
+  const o = g * 7, b = colours.base, a = colours.accent, l = colours.belly;
+  for (let c = 0; c < 3; c++) out[c] = model[o]! * b[c]! + model[o + 1]! * a[c]! + model[o + 2]! * l[c]! + model[o + 3 + c]!;
+}
+/** Slope steps: contrast and countershade enter evaluateCoat linearly, so a
+ * one-sided step is exact; threshold and the belly line use central steps. */
+const FAR_SLOPES: readonly (readonly [FarSlopeField, number, boolean])[] = [['contrast', .1, false], ['countershade', .1, false], ['threshold', .04, true], ['bellyLine', .04, true]];
+// Individual scale and warp drift are not modelled: slopes in them were measured
+// to make the near/far error worse (the pattern reseed dominates them).
+const FAR_PROBE = new Float64Array(5);
+/** Per-group weighted mean of the raw pattern mask (coatPatternProbe) over
+ * every fourth canonical sample of the pattern's layout groups, into out. */
+function farLayoutMask(coat: CoatGenome, out: Float64Array): Float64Array {
+  const filtered = scaleClamped(coat, FAR_MEAN_CELL), fp = coatFootprint(coat, FAR_MEAN_CELL), samples = coatCanonicalSamples();
+  const groups = FAR_LAYOUT_GROUPS[coat.pattern] ?? ALL_GROUPS;
+  out.fill(0);
+  for (let i = 0; i < samples.length; i += FAR_STRIDE) {
+    const s = samples[i]!, g = FAR_GROUP_OF[s.region] ?? 0;
+    if (FAR_DIRECT_COUNTS[g]! < 3 || !(groups >> g & 1)) continue;
+    Object.assign(MEAN_SAMPLE, s); MEAN_SAMPLE.footprint = fp;
+    coatPatternProbe(filtered, MEAN_SAMPLE, FAR_PROBE);
+    out[g * 2]! += FAR_PROBE[0]! * s.weight; out[g * 2 + 1]! += s.weight;
+  }
+  for (let g = 0; g < FAR_GROUPS; g++) if (out[g * 2 + 1]! > 0) out[g * 2]! /= out[g * 2 + 1]!;
+  return out;
+}
+function farModel(id: string, species: CoatGenome, archetype: CreatureArchetype): FarModel {
+  const cached = FAR_MODELS.get(id);
+  if (cached) return cached;
+  let flipBits = 0;
+  for (const name of INDIVIDUAL_MARKS[archetype]) flipBits |= COAT_MARK_BITS[name];
+  const sub = new Float64Array(FAR_GROUPS * 7), base = farLinear(species, ALL_GROUPS, 1, sub, FAR_STRIDE);
+  const flippedCoat: CoatGenome = { ...species, marks: species.marks ^ flipBits };
+  const slopes = FAR_SLOPES.map(([field, h, central]) => {
+    const up = farLinear({ ...species, [field]: species[field] + h }, ALL_GROUPS, FAR_STRIDE);
+    const down = central ? farLinear({ ...species, [field]: species[field] - h }, ALL_GROUPS, FAR_STRIDE) : sub;
+    const slope = new Float64Array(up.length);
+    for (let i = 0; i < up.length; i++) slope[i] = i % 7 === 6 ? 0 : (up[i]! - down[i]!) / (central ? 2 * h : h);
+    return [field, slope] as const;
+  });
+  // Armour plates draw plate x grain; the grain mean is taken at plate 0.5.
+  const plate: CoatGenome = { ...scaleClamped(species, FAR_MEAN_CELL), colours: { ...species.colours, plate: [.5, .5, .5] } };
+  let grain = 0, weight = 0;
+  for (const s of coatCanonicalSamples()) if (s.region === 'torso' && s.dorsal > .3) {
+    Object.assign(MEAN_SAMPLE, s); MEAN_SAMPLE.region = 'armor'; MEAN_SAMPLE.footprint = coatFootprint(species, FAR_MEAN_CELL);
+    evaluateCoat(plate, MEAN_SAMPLE, MEAN_OUT, 0); grain += MEAN_OUT[0]! / .5 * s.weight; weight += s.weight;
+  }
+  let mask: Float64Array | undefined, maskSlope: Float64Array | undefined;
+  if (FAR_MASK_PATTERNS.has(species.pattern)) {
+    mask = farLayoutMask(species, new Float64Array(FAR_GROUPS * 2));
+    const up = farLayoutMask({ ...species, threshold: species.threshold + .04 }, new Float64Array(FAR_GROUPS * 2));
+    const down = farLayoutMask({ ...species, threshold: species.threshold - .04 }, new Float64Array(FAR_GROUPS * 2));
+    maskSlope = new Float64Array(FAR_GROUPS);
+    for (let g = 0; g < FAR_GROUPS; g++) maskSlope[g] = (up[g * 2]! - down[g * 2]!) / .08;
+  }
+  const model: FarModel = {
+    species, flipBits, base, slopes, armour: grain / weight, mask, maskSlope,
+    flipped: flipBits ? farLinear(flippedCoat, SOCK_GROUPS | HEAD_GROUP, 1) : undefined,
+    grey: farLinear({ ...species, greying: 1 }, HEAD_GROUP, 1),
+    greyFlipped: flipBits & COAT_MARK_BITS.blaze ? farLinear({ ...flippedCoat, greying: 1 }, HEAD_GROUP, 1) : undefined,
+  };
+  if (FAR_MODELS.size >= 256) FAR_MODELS.clear();
+  FAR_MODELS.set(id, model);
+  return model;
+}
+/** Number of strided canonical samples per group. */
+const FAR_DIRECT_COUNTS: readonly number[] = (() => {
+  const counts = new Array<number>(FAR_GROUPS).fill(0), samples = coatCanonicalSamples();
+  for (let i = 0; i < samples.length; i += FAR_STRIDE) counts[FAR_GROUP_OF[samples[i]!.region] ?? 0]!++;
+  return counts;
+})();
+const FAR_GROUP_MEANS = Array.from({ length: FAR_GROUPS }, (): CoatRGB => [0, 0, 0]);
+const FAR_TMP: CoatRGB = [0, 0, 0], FAR_TMP2: CoatRGB = [0, 0, 0];
+const FAR_DIRECT = new Float64Array(FAR_GROUPS * 4), FAR_MASK = new Float64Array(FAR_GROUPS * 2);
+/** Far-LOD colour (linear) of one individual's adult coat, without
+ * evaluating its whole canonical body. The species model (memoised per
+ * `speciesId`, about 2 ms once per species) is exact in the individual's
+ * colours, socks/blaze flips and greying, and first-order in its contrast,
+ * countershade, threshold and belly line; layout-dependent patterns
+ * (FAR_LAYOUT_PATTERNS) also evaluate the individual's own coat on every
+ * fourth canonical sample. About 3 us per individual (about 0.1 ms for
+ * layout-dependent patterns) against 0.45 ms for faunaFarCoatMean; the
+ * near/far bound is tested on the 96 corpus bodies. A coat that is not an
+ * individual of this species falls back to the exact mean. */
+export function faunaFarMean(speciesId: string, species: CoatGenome, archetype: CreatureArchetype, coat: CoatGenome, family: FaunaMorphologyFamily, armorShare = 0): CoatRGB {
+  const m = farModel(speciesId, species, archetype), flip = (coat.marks ^ m.species.marks) | 0;
+  if (coat.pattern !== m.species.pattern || flip & ~m.flipBits) return faunaFarCoatMean(coat, family, armorShare);
+  const C = coat.colours, socks = flip & COAT_MARK_BITS.socks, blaze = flip & COAT_MARK_BITS.blaze;
+  for (let g = 0; g < FAR_GROUPS; g++) {
+    const out = FAR_GROUP_MEANS[g]!, flipped = (g === 5 || g === 6) ? socks : g === 2 ? blaze : 0;
+    farGroupColour(flipped ? m.flipped! : m.base, g, C, out);
+    if (g === 2 && coat.greying > 0) {
+      farGroupColour(blaze ? m.greyFlipped! : m.grey, 2, C, FAR_TMP);
+      for (let c = 0; c < 3; c++) out[c] = mix(out[c]!, FAR_TMP[c]!, coat.greying);
+    }
+    for (const [field, slope] of m.slopes) {
+      const delta = coat[field] - m.species[field];
+      if (delta === 0) continue;
+      farGroupColour(slope, g, C, FAR_TMP2);
+      for (let c = 0; c < 3; c++) out[c]! += delta * FAR_TMP2[c]!;
+    }
+  }
+  if (m.mask && m.maskSlope) {
+    // Layout term: the individual's own mean mask, beyond what its threshold
+    // change already explains, moves each group along the threshold slope.
+    const ind = farLayoutMask(coat, FAR_MASK), dt = coat.threshold - m.species.threshold, ts = m.slopes.find(([f]) => f === 'threshold')![1];
+    for (let g = 0; g < FAR_GROUPS; g++) {
+      const k = m.maskSlope[g]!;
+      if (ind[g * 2 + 1]! <= 0 || Math.abs(k) < 1e-3) continue;
+      const residual = (ind[g * 2]! - m.mask[g * 2]! - k * dt) / k;
+      farGroupColour(ts, g, C, FAR_TMP2);
+      for (let c = 0; c < 3; c++) FAR_GROUP_MEANS[g]![c]! += residual * FAR_TMP2[c]!;
+    }
+  } else if (FAR_LAYOUT_PATTERNS.has(coat.pattern)) {
+    // The individual's own layout: a direct mean over every fourth sample
+    // replaces the model in each group that has at least three of them.
+    const filtered = scaleClamped(coat, FAR_MEAN_CELL), fp = coatFootprint(coat, FAR_MEAN_CELL), samples = coatCanonicalSamples();
+    FAR_DIRECT.fill(0);
+    const groups = FAR_LAYOUT_GROUPS[coat.pattern] ?? ALL_GROUPS;
+    for (let i = 0; i < samples.length; i += FAR_STRIDE) {
+      const s = samples[i]!, g = FAR_GROUP_OF[s.region] ?? 0, o = g * 4;
+      if (FAR_DIRECT_COUNTS[g]! < 3 || !(groups >> g & 1)) continue;
+      Object.assign(MEAN_SAMPLE, s); MEAN_SAMPLE.footprint = fp;
+      evaluateCoat(filtered, MEAN_SAMPLE, MEAN_OUT, 0);
+      FAR_DIRECT[o]! += MEAN_OUT[0]! * s.weight; FAR_DIRECT[o + 1]! += MEAN_OUT[1]! * s.weight; FAR_DIRECT[o + 2]! += MEAN_OUT[2]! * s.weight; FAR_DIRECT[o + 3]! += s.weight;
+    }
+    for (let g = 0; g < FAR_GROUPS; g++) {
+      const o = g * 4, w = FAR_DIRECT[o + 3]!;
+      if (w > 0) for (let c = 0; c < 3; c++) FAR_GROUP_MEANS[g]![c] = FAR_DIRECT[o + c]! / w;
+    }
+  }
+  const shares = FAUNA_FAR_REGION_SHARES[family], parts = [shares.torso, shares.neck, shares.head, shares.tail, shares.upper, shares.lower, shares.foot];
+  const total = parts.reduce((n, w) => n + w, 0), coatShare = 1 - armorShare, out: CoatRGB = [0, 0, 0];
+  for (let g = 0; g < FAR_GROUPS; g++) {
+    const share = parts[g]! / total * coatShare, mean = FAR_GROUP_MEANS[g]!;
+    for (let c = 0; c < 3; c++) out[c]! += share * (g === 6 ? mix(mean[c]!, HOOF[c]!, shares.footHoof) : mean[c]!);
+  }
+  if (armorShare > 0) for (let c = 0; c < 3; c++) out[c]! += armorShare * coat.colours.plate[c]! * m.armour;
+  return out;
+}
+/** Memo key of a species' far-LOD model (species and lineage channels). */
+export function faunaFarSpeciesId(genome: CreatureGenome): string { return `${faunaSpeciesKey(genome)}|${faunaLineageKey(genome)}`; }
 
 /** An individual's adult coat: the species coat with its individual drift. */
 export function faunaAdultCoat(archetype: CreatureArchetype, speciesCoat: CoatGenome, individualKey: string): CoatGenome {
@@ -271,12 +486,29 @@ export function faunaJuvenileSpotStrength(maturity: number): number { return 1 -
 
 /** Channels depend on identity, never date, camera, quality or life stage
  * (stage only sets maturity and the juvenile coat). */
+/** Species-level channels of createFaunaAppearance, memoised per species so a
+ * burst of new herd members pays only for its individual channels. */
+interface SpeciesAppearance {
+  farId: string; lineage: FaunaLineageCoat; coat: CoatGenome;
+  mass: number; limb: number; neck: number; roughness: number; dimorphism: number; hornlessFemales: boolean;
+}
+const SPECIES_APPEARANCES = new Map<string, SpeciesAppearance>();
+function speciesAppearance(genome: CreatureGenome): SpeciesAppearance {
+  const farId = faunaFarSpeciesId(genome), cached = SPECIES_APPEARANCES.get(farId);
+  if (cached) return cached;
+  const species = faunaSpeciesKey(genome), { lineage, coat } = faunaSpeciesCoat(genome), { dimorphism, hornlessFemales } = faunaSpeciesDimorphism(genome);
+  const value: SpeciesAppearance = {
+    farId, lineage, coat, dimorphism, hornlessFemales,
+    mass: signed(`${species}/mass`), limb: signed(`${species}/limb`), neck: signed(`${species}/neck`), roughness: .84 + signed(`${species}/roughness`) * .035,
+  };
+  if (SPECIES_APPEARANCES.size >= 512) SPECIES_APPEARANCES.clear();
+  SPECIES_APPEARANCES.set(farId, value);
+  return value;
+}
+
 export function createFaunaAppearance(genome: CreatureGenome, id: string, variant: number, stage: 'adult' | 'juvenile'): FaunaAppearance {
-  const species = faunaSpeciesKey(genome);
   const key = `${id}/${variant}/appearance-v1`;
-  const mass = signed(`${species}/mass`), limb = signed(`${species}/limb`), neck = signed(`${species}/neck`);
-  const { lineage, coat: speciesCoat } = faunaSpeciesCoat(genome);
-  const { dimorphism, hornlessFemales } = faunaSpeciesDimorphism(genome);
+  const { farId, lineage, coat: speciesCoat, mass, limb, neck, roughness, dimorphism, hornlessFemales } = speciesAppearance(genome);
   // The individual coat drift supersedes the v1 +-14% brightness channel.
   const adultCoat = faunaAdultCoat(genome.archetype, speciesCoat, key);
   const maturity = stage === 'adult' ? 1 : .22 + .23 * unit(`${key}/maturity-v2`);
@@ -285,12 +517,13 @@ export function createFaunaAppearance(genome: CreatureGenome, id: string, varian
     juvenileSpots: adultCoat.marks & COAT_MARK_BITS['juvenile-spots'] ? faunaJuvenileSpotStrength(maturity) : 0,
     greying: 0,
   };
-  // The far-LOD palette is the adult coat's exact mean, so it never depends on stage.
-  const mean = faunaFarCoatMeanCached(`${species}|${faunaLineageKey(genome)}|${key}`, adultCoat, inheritedFaunaFamily(genome), faunaArmorShare(genome, inheritedFaunaFamily(genome)));
+  // The far-LOD palette is the adult coat's body mean, so it never depends on stage.
+  const family = inheritedFaunaFamily(genome);
+  const mean = faunaFarMean(farId, speciesCoat, genome.archetype, adultCoat, family, faunaArmorShare(genome, family));
   return {
     version: FAUNA_APPEARANCE_VERSION, individualKey: key, markingSeed: hash(`${key}/markings`), pattern: genome.pattern,
     palette: { base: linearHexOf(mean), marking: linearHexOf(adultCoat.colours.accent), belly: linearHexOf(adultCoat.colours.belly) },
-    roughness: .84 + signed(`${species}/roughness`) * .035,
+    roughness,
     profile: { mass, limb, neck, dimorphism, hornlessFemales },
     individual: { size: signed(`${key}/size`), condition: signed(`${key}/condition`), muzzle: signed(`${key}/muzzle`), ears: signed(`${key}/ears`), sex: unit(`${key}/sex-v2`) < .5 ? 'male' : 'female', coatPhase: unit(`${key}/coat-phase-v2`),
       limb: signed(`${key}/limb-v2`), neck: signed(`${key}/neck-v2`), tail: signed(`${key}/tail-v2`) },
