@@ -18,6 +18,10 @@ export default defineConfig({
       builtAt:new Date().toISOString(),
     },null,2)});
     for(const fileName of [
+      'docs/fauna-realism-next-2026-10-02.md',
+      'docs/fauna-variation-plan-2026-10-02.md',
+      'docs/fauna-anatomy-increment-2026-10-02.md',
+      'docs/fauna-structural-variation-2026-10-02.md',
       'test-results/combined-understory-integration/README.md',
       'test-results/combined-visual-acceptance-c9ba64f/README.md',
       'test-results/understory-opus/README.md',

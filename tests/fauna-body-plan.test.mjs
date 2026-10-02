@@ -95,8 +95,10 @@ test('proportions respond to the genome fields they are derived from', () => {
   assert.ok(wide.box.max[2] - wide.box.min[2] > (ref.box.max[2] - ref.box.min[2]) * 1.15, 'a broader torso and stance widen the body');
   const upper = measure({ ...base, upperLegFraction: .6 });
   assert.ok(upper.data.plan.legs[0].upperLength / upper.data.plan.legs[0].lowerLength > ref.data.plan.legs[0].upperLength / ref.data.plan.legs[0].lowerLength);
-  const armoured = createQuadrupedPlan({ ...base, armor: .8 }), plain = createQuadrupedPlan({ ...base, armor: 0 });
+  const armoured = createQuadrupedPlan({ ...base, archetype: 'low-slung', armor: .8 }), plain = createQuadrupedPlan({ ...base, armor: 0 });
   assert.ok(armoured.primitives.filter(p => p.region === 'armor').length >= 4 && plain.primitives.every(p => p.region !== 'armor'));
+  for (const archetype of ['browser', 'runner', 'long-neck'])
+    assert.ok(createQuadrupedPlan({ ...base, archetype, armor: .8 }).primitives.every(p => p.region !== 'armor'), `${archetype} has no incidental dorsal plates`);
   assert.equal(createQuadrupedPlan({ ...base, hornLength: 0 }).appendages.filter(a => a.kind === 'horn').length, 0);
   assert.equal(createQuadrupedPlan({ ...base, hornLength: .3 }).appendages.filter(a => a.kind === 'horn').length, 2);
   // Clade envelopes stay distinct at a common seed.

@@ -29,6 +29,8 @@ export interface FaunaNearCandidate {
   /** The same radius-normalized, origin-relative transform the instanced fallback uses. */
   matrix: THREE.Matrix4;
   activity: FaunaMemberActivity; ground: FaunaGround; rigSeconds: number;
+  /** Lab-only pose choice; ordinary planetary candidates use dated behaviour. */
+  behaviour?: 'auto' | 'feed' | 'alert';
 }
 export interface FaunaNearOptions {
   capacity?: number; cacheSize?: number; buildBudgetMs?: number;
@@ -49,6 +51,9 @@ export function faunaBodyGeometry(data: QuadrupedBodyData): THREE.BufferGeometry
   geometry.name = `Fauna body ${data.plan.genome.archetype}`;
   geometry.userData.bodyVersion = data.plan.version;
   geometry.userData.faceFeatures = data.faceFeatures;
+  geometry.userData.structuralVertexCount = data.structuralVertexCount;
+  geometry.userData.structuralTriangleCount = data.structuralTriangleCount;
+  geometry.userData.morphology = data.plan.genome.morphology;
   return geometry;
 }
 
@@ -145,6 +150,7 @@ export class FaunaNearRigs {
 
   private bindSlot(slot: Slot, id: string, cached: Cached) {
     slot.memberId = id; slot.mesh.geometry = cached.geometry;
+    slot.material.roughness = cached.plan.genome.appearance?.roughness ?? .86;
     cached.plan.bones.forEach((bone, i) => {
       const parent = bone.parent >= 0 ? cached.plan.bones[bone.parent]!.rest : [0, 0, 0];
       slot.bones[i]!.position.set(bone.rest[0] - parent[0]!, bone.rest[1] - parent[1]!, bone.rest[2] - parent[2]!);
@@ -155,7 +161,7 @@ export class FaunaNearRigs {
   }
 
   private poseSlot(slot: Slot, plan: QuadrupedPlan, candidate: FaunaNearCandidate) {
-    const pose = quadrupedPoseAt(plan, candidate.member, candidate.activity, candidate.ground, candidate.rigSeconds);
+    const pose = quadrupedPoseAt(plan, candidate.member, candidate.activity, candidate.ground, candidate.rigSeconds, { behaviour: candidate.behaviour });
     for (let i = 0; i < slot.bones.length; i++) { slot.bones[i]!.position.fromArray(pose.positions, i * 3); slot.bones[i]!.quaternion.fromArray(pose.quaternions, i * 4); }
     slot.bones[0]!.updateMatrixWorld(true);
     slot.mesh.matrix.copy(candidate.matrix); slot.mesh.matrixWorldNeedsUpdate = true;

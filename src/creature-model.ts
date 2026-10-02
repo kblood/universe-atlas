@@ -1,4 +1,5 @@
 /** Deterministic, metre-based quadruped anatomy shared by the lab data and rig. */
+import { createFaunaAppearance, FAUNA_APPEARANCE_VERSION, FAUNA_JUVENILE_PROPORTIONS, inheritedFaunaFamily, MORPHOLOGY_FAMILIES, type FaunaAppearance, type FaunaMorphology, type FaunaMorphologyFamily } from './fauna-appearance.ts';
 export type CreatureArchetype = 'browser'|'runner'|'low-slung'|'long-neck';
 export interface CreatureGenome {
   version:string; archetype:CreatureArchetype;
@@ -10,6 +11,9 @@ export interface CreatureGenome {
   color:string; accentColor:string; pattern:'plain'|'stripes'|'spots';
   walkSpeed:number; runSpeed:number; strideLength:number;
   mutationLog:string[];
+  /** Optional additive presentation contracts; absent on unchanged v1 founders. */
+  appearance?:FaunaAppearance;
+  morphology?:FaunaMorphology;
 }
 
 export const CREATURE_GENOME_VERSION = 'creature-genome-1';
@@ -24,9 +28,9 @@ function clamp(value:number,low:number,high:number):number { return Math.max(low
 function round(value:number):number { return Math.round(value*1000)/1000; }
 function requireSeed(seed:string):void { if(typeof seed!=='string'||!seed.trim()||seed.length>160) throw new Error('seed must be a non-empty string up to 160 characters'); }
 function requireArchetype(archetype:CreatureArchetype):void { if(!ARCHETYPES.includes(archetype)) throw new Error(`Unknown creature archetype: ${String(archetype)}`); }
-function copy(g:CreatureGenome):CreatureGenome { return {...g,mutationLog:[...g.mutationLog]}; }
+function copy(g:CreatureGenome):CreatureGenome { return {...g,mutationLog:[...g.mutationLog],...(g.appearance?{appearance:{...g.appearance,palette:{...g.appearance.palette},profile:{...g.appearance.profile},individual:{...g.appearance.individual},growth:{...g.appearance.growth}}}:{}),...(g.morphology?{morphology:{...g.morphology}}:{})}; }
 
-type Shape = Omit<CreatureGenome,'version'|'archetype'|'color'|'accentColor'|'pattern'|'mutationLog'>;
+type Shape = Omit<CreatureGenome,'version'|'archetype'|'color'|'accentColor'|'pattern'|'mutationLog'|'appearance'|'morphology'>;
 const BASE:Record<CreatureArchetype,Shape> = {
   browser: {torsoLength:1.72,torsoHeight:.82,torsoWidth:.68,legLength:1.08,upperLegFraction:.53,stanceWidth:.76,neckLength:.58,neckRise:.34,headLength:.48,headWidth:.32,tailLength:.48,footLength:.25,footWidth:.15,hornLength:.22,earLength:.18,armor:.08,walkSpeed:1.05,runSpeed:3.15,strideLength:.9},
   runner: {torsoLength:1.94,torsoHeight:.66,torsoWidth:.48,legLength:1.46,upperLegFraction:.52,stanceWidth:.58,neckLength:.38,neckRise:.2,headLength:.44,headWidth:.25,tailLength:1.05,footLength:.3,footWidth:.11,hornLength:0,earLength:.24,armor:.02,walkSpeed:1.55,runSpeed:5.6,strideLength:1.35},
@@ -81,6 +85,76 @@ export function individualCreatureGenome(genome:CreatureGenome,id:string,variant
   return normalized(g);
 }
 
+/** Opt-in phenotype. Canonical genome generation and the legacy individual
+ * evaluator above remain unchanged, including their deterministic channels. */
+export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:string,variant:number,stage:'adult'|'juvenile'='adult',family?:FaunaMorphologyFamily):CreatureGenome {
+  if(validateCreatureGenome(genome).length) throw new Error('Invalid creature genome');
+  if(typeof id!=='string'||!id||!Number.isInteger(variant)||variant<0||variant>3||(stage!=='adult'&&stage!=='juvenile')) throw new Error('Invalid creature specimen request');
+  if(family!==undefined&&!MORPHOLOGY_FAMILIES.includes(family)) throw new Error('Invalid fauna morphology family');
+  const selected=family??inheritedFaunaFamily(genome),g=copy(genome);
+  const a=createFaunaAppearance(genome,id,variant,stage),p=a.profile,i=a.individual;
+  const apply=(field:keyof Shape,factor:number)=>{g[field]=round(g[field]*factor);};
+  // Small, correlated species axes: mass broadens trunk, stance and supporting
+  // feet together; limb length changes stride and speed together. Founders stay
+  // canonical, so adding a phenotype cannot reroll species or ancestry IDs.
+  const size=1+i.size*.045,condition=1+i.condition*.055;
+  for(const field of ['torsoLength','torsoHeight','torsoWidth','legLength','stanceWidth','neckLength','neckRise','headLength','headWidth','tailLength','footLength','footWidth','hornLength','earLength','strideLength'] as const)apply(field,size);
+  apply('torsoLength',1+p.mass*.035);apply('torsoHeight',(1+p.mass*.055)*condition);
+  apply('torsoWidth',(1+p.mass*.075)*condition);apply('stanceWidth',1+p.mass*.065);
+  apply('footWidth',1+p.mass*.05);apply('legLength',1+p.limb*.055-p.mass*.025);
+  apply('strideLength',1+p.limb*.055-p.mass*.025);apply('neckLength',1+p.neck*.07);
+  apply('neckRise',1+p.neck*.06);apply('headLength',1+i.muzzle*.065);apply('headWidth',1+i.condition*.035);
+  apply('earLength',1+i.ears*.12);
+
+  // Explicit alternate families use authored ratio envelopes. Species-specific
+  // length and condition survive, while incompatible inherited parts are removed.
+  if(family!==undefined){
+    const ratios:Record<FaunaMorphologyFamily,[number,number,number,number,number,number]>={
+      ungulate:[.48,.39,.64,.34,.28,.17],cursorial:[.34,.26,.76,.23,.25,.14],
+      padded:[.29,.48,.35,.18,.31,.24],'long-neck':[.46,.35,.83,.88,.25,.16],
+      proboscidean:[.57,.49,.51,.17,.34,.29],winged:[.39,.34,.63,.34,.27,.17],
+    };
+    const r=ratios[selected],length=g.torsoLength;
+    g.torsoHeight=length*r[0]*condition;g.torsoWidth=length*r[1]*condition;
+    g.legLength=length*r[2]*(1+p.limb*.035);g.neckLength=length*r[3]*(1+p.neck*.035);
+    g.headLength=length*r[4]*(1+i.muzzle*.065);g.headWidth=length*r[5];
+    g.neckRise=g.neckLength*(selected==='long-neck'?.59:.45);
+    g.stanceWidth=g.torsoWidth*1.1;g.footWidth=g.torsoWidth*(selected==='proboscidean'?.27:.23);
+    g.footLength=g.footWidth*1.5;g.strideLength=g.legLength*.82;
+    g.hornLength=selected==='ungulate'?Math.min(g.hornLength,g.headLength*.65):0;
+    g.armor=selected==='padded'?Math.min(g.armor,.4):0;
+  }
+  if(selected==='proboscidean'){
+    g.torsoHeight=Math.max(g.torsoHeight,g.torsoLength*.48);g.headWidth=Math.max(g.headWidth,g.headLength*.77);
+    g.footWidth=Math.max(g.footWidth,g.torsoWidth*.25);g.hornLength=0;g.armor=0;
+    g.earLength=Math.max(g.earLength,g.headLength*.52);
+  }
+  // Adapt speed to the actual limb length, retaining inherited gait personality.
+  const limbRatio=g.legLength/genome.legLength;
+  g.walkSpeed*=Math.sqrt(limbRatio);g.runSpeed*=Math.sqrt(limbRatio);
+  g.strideLength=Math.min(g.strideLength,g.legLength*.96);
+  if(stage==='juvenile'){
+    const growthFamily:CreatureArchetype=selected==='long-neck'?'long-neck':selected==='cursorial'?'runner':selected==='padded'||selected==='proboscidean'?'low-slung':'browser';
+    const q=FAUNA_JUVENILE_PROPORTIONS[growthFamily];
+    apply('torsoLength',q.trunk);apply('torsoHeight',q.trunk);apply('torsoWidth',q.width);
+    apply('legLength',q.limb);apply('stanceWidth',q.width);apply('neckLength',q.neck);apply('neckRise',q.neck);
+    apply('headLength',q.head);apply('headWidth',q.head);apply('footLength',q.foot);apply('footWidth',q.foot);
+    apply('earLength',q.ear);apply('tailLength',q.trunk);apply('hornLength',.18);apply('armor',.6);
+    apply('strideLength',q.limb);apply('walkSpeed',Math.sqrt(q.limb));apply('runSpeed',Math.sqrt(q.limb));
+  }
+  normalized(g);
+  // Feet must remain narrower than stance, and preferred stride below leg reach.
+  g.footWidth=round(Math.min(g.footWidth,g.stanceWidth*.55));
+  g.strideLength=round(Math.min(g.strideLength,g.legLength*.96));
+  g.appearance=a;
+  // Shared coarse/facial colours use the exact phenotype palette too; the
+  // original species genome remains untouched and keeps its inherited colours.
+  g.color=a.palette.base;g.accentColor=a.palette.marking;
+  g.morphology={version:'fauna-morphology-1',family:selected,footType:selected==='ungulate'||selected==='long-neck'?'hoof':selected==='padded'||selected==='proboscidean'?'broad-pad':'paw',trunkLength:selected==='proboscidean'?round(Math.min(1.45,g.headLength*1.9)):0,wingSpan:selected==='winged'?round(g.torsoLength*1.85):0,wingState:selected==='winged'?'folded':'none'};
+  g.mutationLog.push(`${selected} phenotype; ${stage} anatomy and identity-preserving coat`);
+  return g;
+}
+
 export function validateCreatureGenome(genome:CreatureGenome):string[] {
   const errors:string[]=[]; if(!genome||typeof genome!=='object'){return ['genome must be an object'];}
   if(genome.version!==CREATURE_GENOME_VERSION) errors.push('unsupported genome version');
@@ -93,5 +167,30 @@ export function validateCreatureGenome(genome:CreatureGenome):string[] {
   if(!/^#[0-9a-f]{6}$/i.test(genome.color)||!/^#[0-9a-f]{6}$/i.test(genome.accentColor)) errors.push('colors must be #RRGGBB');
   if(!['plain','stripes','spots'].includes(genome.pattern)) errors.push('unknown pattern');
   if(!Array.isArray(genome.mutationLog)||!genome.mutationLog.every(x=>typeof x==='string')) errors.push('mutationLog must be string[]');
+  if(genome.appearance!==undefined){
+    const a=genome.appearance;
+    if(!a||a.version!==FAUNA_APPEARANCE_VERSION)errors.push('unsupported fauna appearance version');
+    else {
+      if(typeof a.individualKey!=='string'||!a.individualKey||!Number.isInteger(a.markingSeed)||a.markingSeed<0||a.markingSeed>0xffffffff)errors.push('invalid appearance identity');
+      if(!['plain','stripes','spots'].includes(a.pattern))errors.push('invalid appearance pattern');
+      if(!a.palette||!['base','marking','belly'].every(k=>/^#[0-9a-f]{6}$/i.test((a.palette as unknown as Record<string,string>)[k]??'')))errors.push('invalid appearance palette');
+      if(!Number.isFinite(a.roughness)||a.roughness<.65||a.roughness>1)errors.push('invalid coat roughness');
+      if(!a.profile||!['mass','limb','neck'].every(k=>Number.isFinite((a.profile as unknown as Record<string,number>)[k])&&Math.abs((a.profile as unknown as Record<string,number>)[k]!)<=1))errors.push('invalid species profile');
+      if(!a.individual||!['size','condition','muzzle','ears'].every(k=>Number.isFinite((a.individual as unknown as Record<string,number>)[k])&&Math.abs((a.individual as unknown as Record<string,number>)[k]!)<=1))errors.push('invalid individual profile');
+      if(!a.growth||!['adult','juvenile'].includes(a.growth.stage)||!Number.isFinite(a.growth.maturity)||a.growth.maturity<0||a.growth.maturity>1)errors.push('invalid growth profile');
+    }
+  }
+  if(genome.morphology!==undefined){
+    const m=genome.morphology;
+    if(!m||m.version!=='fauna-morphology-1'||!MORPHOLOGY_FAMILIES.includes(m.family))errors.push('unsupported fauna morphology');
+    else {
+      if(!['paw','hoof','broad-pad'].includes(m.footType))errors.push('invalid morphology feet');
+      if(!Number.isFinite(m.trunkLength)||m.trunkLength<0||m.trunkLength>1.5||!Number.isFinite(m.wingSpan)||m.wingSpan<0||m.wingSpan>6)errors.push('invalid morphology appendage dimensions');
+      if(m.wingState!=='none'&&m.wingState!=='folded')errors.push('invalid wing state');
+      if((m.family==='winged')!==(m.wingSpan>0)||m.wingState!==(m.family==='winged'?'folded':'none')||(m.family==='proboscidean')!==(m.trunkLength>0))errors.push('incoherent morphology appendages');
+      const feet=m.family==='ungulate'||m.family==='long-neck'?'hoof':m.family==='padded'||m.family==='proboscidean'?'broad-pad':'paw';
+      if(m.footType!==feet)errors.push('incoherent morphology feet');
+    }
+  }
   return errors;
 }

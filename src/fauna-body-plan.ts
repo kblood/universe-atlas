@@ -1,5 +1,7 @@
 import type { CreatureGenome } from './creature-model.ts';
 import { quadrupedFaceBuildSteps, type FaunaFaceFeature, type FaunaFaceAttachment } from './fauna-face.ts';
+import { sampleFaunaCoat } from './fauna-appearance.ts';
+import { appendFaunaStructuralFeatures } from './fauna-structural-appendages.ts';
 
 /**
  * One continuous, skinned quadruped body plan derived from an existing
@@ -19,7 +21,7 @@ import { quadrupedFaceBuildSteps, type FaunaFaceFeature, type FaunaFaceAttachmen
  */
 export type Vec3 = [number, number, number];
 
-export const QUADRUPED_BODY_VERSION = 'quadruped-body-2';
+export const QUADRUPED_BODY_VERSION = 'quadruped-body-3';
 export const QUADRUPED_BONE_NAMES = [
   'root', 'pelvis', 'spine', 'chest', 'neck1', 'neck2', 'head', 'tail1', 'tail2', 'tail3',
   'rear-left-upper', 'rear-left-lower', 'rear-left-foot',
@@ -86,6 +88,7 @@ export interface QuadrupedBodyData {
   vertexCount: number; triangleCount: number;
   cellM: number; grid: [number, number, number];
   faceFeatures: FaunaFaceFeature[];
+  structuralVertexCount: number; structuralTriangleCount: number;
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -150,15 +153,21 @@ export function createQuadrupedPlan(genome: CreatureGenome): QuadrupedPlan {
 
   // Torso: hindquarters, barrel and a deeper chest joined into one trunk.
   ellipsoid(BONE.pelvis, 'torso', [-TL * .2, torsoY + th * .03, 0], [TL * .33, th * .47, TW * .48], 0);
-  const trunk = .9 * Math.min(th * .47, TW * .48);
-  cone(BONE.spine, 'torso', [-TL * .2, torsoY, 0], [TL * .17, torsoY, 0], trunk, trunk, th * .14);
+  // The abdomen is an oval barrel with a slight tuck toward the pelvis;
+  // a round axial capsule made thin animals look like rigid tubes.
+  ellipsoid(BONE.spine, 'torso', [-TL * .035, torsoY + th * .025, 0], [TL * .36, th * .42, TW * .43], th * .14);
   ellipsoid(BONE.chest, 'torso', [TL * .17, torsoY - th * .01, 0], [TL * .36, th * .52, TW * .5], th * .14);
   // Neck, head and muzzle.
   const neckRoot = clamp(HW * .55, .03, Math.min(th * .38, TW * .45)), neckEnd = Math.max(HW * .3, .02);
   cone(BONE.neck1, 'neck', neckBase, neckMid, neckRoot, (neckRoot + neckEnd) / 2, neckRoot * .8);
   cone(BONE.neck2, 'neck', neckMid, neckTip, (neckRoot + neckEnd) / 2, neckEnd, neckEnd * .6);
-  ellipsoid(BONE.head, 'head', headCentre, [HL * .34, HW * .45, HW * .46], neckEnd * .8);
+  const broadSkull = g.morphology?.family === 'proboscidean';
+  ellipsoid(BONE.head, 'head', headCentre, [HL * .34, HW * (broadSkull ? .57 : .45), HW * (broadSkull ? .51 : .46)], neckEnd * .8);
   cone(BONE.head, 'head', muzzleBase, muzzleTip, HW * .34, HW * .2, HW * .18);
+  // Joined mandible and nasal bridge give the muzzle a lower jaw and a
+  // flattened, broad nose while preserving the existing facial landmarks.
+  ellipsoid(BONE.head, 'head', [neckTip[0] + HL * .34, neckTip[1] - HW * .12, 0], [HL * .32, HW * .25, HW * .32], HW * .12);
+  ellipsoid(BONE.head, 'head', [muzzleTip[0] - HL * .025, muzzleTip[1] + HW * .035, 0], [HL * .15, HW * .22, HW * .25], HW * .09);
   // Tail: three tapering segments, each owned by its own bone.
   if (g.tailLength > .04) for (let i = 0; i < 3; i++) {
     const r0 = Math.max(TW * (.13 - i * .03), .012), r1 = Math.max(TW * (.1 - i * .03), .008);
@@ -182,11 +191,36 @@ export function createQuadrupedPlan(genome: CreatureGenome): QuadrupedPlan {
       hip, knee, ankle, toe, upperLength, lowerLength, footLength, footAngle, hipRadius, kneeRadius, ankleRadius, toeRadius, pole });
     setRest(upperBone, hip); setRest(upperBone + 1, knee); setRest(upperBone + 2, ankle);
     // The limb root sits inside the trunk; blending there forms haunch/shoulder.
+    // These longitudinal muscle volumes fade into the moving upper limb and
+    // the trunk instead of presenting a spherical shoulder stuck to its side.
+    const muscleCentre = lerp3(hip, knee, rear ? .22 : .18);
+    ellipsoid(upperBone, 'upper', muscleCentre,
+      [hipRadius * (rear ? 1.0 : .83), Math.min(upperLength * .37, th * .39), hipRadius * .75], hipRadius * .65);
     cone(upperBone, 'upper', hip, knee, hipRadius, kneeRadius, hipRadius * .55);
     cone(upperBone + 1, 'lower', knee, ankle, kneeRadius, ankleRadius, kneeRadius * .5);
     cone(upperBone + 2, 'foot', ankle, toe, ankleRadius, toeRadius, ankleRadius * .45);
+    // Broad toe pad/hoof; its sole remains at y=0 in the bind pose. Do not
+    // change the IK contact point or the existing 22-bone skeleton.
+    const footType = g.morphology?.footType;
+    if (footType === 'hoof') {
+      // Two joined keratin toes; the forward split stays visible beyond the
+      // supporting round ankle volume without disconnecting the skin.
+      for (const digit of [-1, 1]) ellipsoid(upperBone + 2, 'foot',
+        [toe[0] + toeRadius * .55, toeRadius * .88, toe[2] + digit * g.footWidth * .24],
+        [toeRadius * 1.15, toeRadius * .88, g.footWidth * .22], 0);
+    } else if (footType === 'paw') {
+      ellipsoid(upperBone + 2, 'foot', [toe[0], toe[1], toe[2]], [toeRadius * 1.1, toeRadius, g.footWidth * .46], 0);
+      for (const digit of [-1, 0, 1]) ellipsoid(upperBone + 2, 'foot',
+        [toe[0] + toeRadius * (.7 - Math.abs(digit) * .1), toeRadius * .68, toe[2] + digit * g.footWidth * .29],
+        [toeRadius * .85, toeRadius * .68, g.footWidth * .21], 0);
+    } else {
+      ellipsoid(upperBone + 2, 'foot', [toe[0] + toeRadius * .1, toe[1], toe[2]],
+        [toeRadius * (footType === 'broad-pad' || g.archetype === 'low-slung' ? 1.55 : 1.3), toeRadius, g.footWidth * .49], 0);
+    }
   }
-  if (g.armor > .05) {
+  // Dorsal armor belongs to the authored low-bodied family. Legacy browser
+  // genomes carry a small nonzero armor value that produced accidental plates.
+  if (g.archetype === 'low-slung' && g.armor > .05) {
     const plates = Math.max(2, Math.min(6, Math.round(2 + g.armor * 4)));
     for (let i = 0; i < plates; i++) {
       const x = -TL * .3 + i * TL * .6 / Math.max(1, plates - 1);
@@ -195,7 +229,13 @@ export function createQuadrupedPlan(genome: CreatureGenome): QuadrupedPlan {
   }
   const appendages: QuadrupedAppendage[] = [];
   for (const side of [-1, 1]) {
-    if (g.earLength > .01) { const base: Vec3 = [neckTip[0] - HL * .02, neckTip[1] + HW * .3, side * HW * .26]; appendages.push({ kind: 'ear', bone: BONE.head, base, tip: add(base, scale(norm([-.35, 1, side * .45]), g.earLength + HW * .2)), radius: Math.max(HW * .12, .012) }); }
+    if (g.earLength > .01) {
+      const lateral = g.morphology?.family === 'proboscidean';
+      const base: Vec3 = [neckTip[0] - HL * .02, neckTip[1] + HW * (lateral ? .2 : .3), side * HW * (lateral ? .32 : .26)];
+      appendages.push({ kind: 'ear', bone: BONE.head, base,
+        tip: add(base, scale(norm(lateral ? [-.12, -.12, side] : [-.35, 1, side * .45]), g.earLength + HW * .2)),
+        radius: Math.max(HW * (lateral ? .25 : .12), .012) });
+    }
     if (g.hornLength > .01) { const base: Vec3 = [neckTip[0] + HL * .1, neckTip[1] + HW * .35, side * HW * .2]; appendages.push({ kind: 'horn', bone: BONE.head, base, tip: add(base, scale(norm([.35, 1, side * .25]), g.hornLength + HW * .2)), radius: Math.max(HW * .1, .01) }); }
   }
   const eyes: Vec3[] = [-1, 1].map(side => [neckTip[0] + HL * .3, neckTip[1] + HW * .2, side * HW * .36]);
@@ -344,7 +384,10 @@ export function* quadrupedBodyBuildSteps(genome: CreatureGenome): Generator<void
   // Appendages: rigid lathe cones rooted inside the skull, weighted to the head.
   const appendageStart = bodyVertexCount, appendageKinds: ('ear' | 'inner-ear' | 'horn')[] = [];
   for (const a of plan.appendages) {
-    const axis = norm(sub(a.tip, a.base)), ref: Vec3 = Math.abs(axis[1]) < .9 ? [0, 1, 0] : [1, 0, 0];
+    const lateralEar = a.kind === 'ear' && plan.genome.morphology?.family === 'proboscidean';
+    // Lateral pinnae spread in the vertical/lateral plane rather than turning
+    // into horizontal fins when their axis moves away from upright.
+    const axis = norm(sub(a.tip, a.base)), ref: Vec3 = lateralEar ? [1, 0, 0] : Math.abs(axis[1]) < .9 ? [0, 1, 0] : [1, 0, 0];
     const u = norm([axis[1] * ref[2] - axis[2] * ref[1], axis[2] * ref[0] - axis[0] * ref[2], axis[0] * ref[1] - axis[1] * ref[0]]);
     const v: Vec3 = [axis[1] * u[2] - axis[2] * u[1], axis[2] * u[0] - axis[0] * u[2], axis[0] * u[1] - axis[1] * u[0]];
     // A pinna widens beyond its embedded root, then tapers into a cupped,
@@ -371,6 +414,9 @@ export function* quadrupedBodyBuildSteps(genome: CreatureGenome): Generator<void
       indices.push(last + s, last + n, tip, start + n, start + s, base);
     }
   }
+  const structuralStart = positions.length / 3, structuralTriangleStart = indices.length / 3;
+  const structural = appendFaunaStructuralFeatures(plan, positions, indices);
+  const structuralVertexCount = positions.length / 3 - structuralStart, structuralTriangleCount = indices.length / 3 - structuralTriangleStart;
   const faceStart = positions.length / 3, faceColors: Vec3[] = [];
   const faceAttachments: FaunaFaceAttachment[] = [];
   const faceFeatures = yield* quadrupedFaceBuildSteps(plan, positions, indices, bodyTriangleCount, faceColors, faceAttachments);
@@ -407,6 +453,9 @@ export function* quadrupedBodyBuildSteps(genome: CreatureGenome): Generator<void
         boneWeight[skinIndex[source]!] += skinWeight[source]! * Math.max(0, attachment.weights[i]!);
       }
       color = faceColors[v - faceStart]!;
+    } else if (v >= structuralStart) {
+      boneWeight[structural.bones[v - structuralStart]!] = 1;
+      color = structural.colors[v - structuralStart]!;
     } else if (v >= appendageStart) {
       boneWeight[BONE.head] = 1;
       const kind = appendageKinds[v - appendageStart];
@@ -421,10 +470,14 @@ export function* quadrupedBodyBuildSteps(genome: CreatureGenome): Generator<void
       }
       const region = plan.primitives[nearest]!.region, ny0 = normals[v * 3 + 1]!;
       const mark = region === 'torso' || region === 'neck' || region === 'upper' || region === 'tail' ? coatMark(plan, x, y) : 0;
-      color = lerp3(base, accent, mark * .6);
+      color = sampleFaunaCoat(plan.genome, x, y, z, plan.torsoY) ?? lerp3(base, accent, mark * .6);
       if (region === 'torso' || region === 'neck' || region === 'upper') color = lerp3(color, lerp3(accent, [1, 1, 1], .15), Math.max(0, -ny0 - .15) * .45);
       if (region === 'lower') color = scale(color, .82);
-      if (region === 'foot') color = lerp3(scale(color, .7), hoof, clamp((plan.legs[0]!.ankle[1] - y) / Math.max(plan.legs[0]!.ankle[1], 1e-3) * 1.6, 0, .9));
+      if (region === 'foot') {
+        const footType = plan.genome.morphology?.footType;
+        const darkening = footType === 'paw' ? .3 : footType === 'broad-pad' ? .55 : .9;
+        color = lerp3(scale(color, .7), hoof, clamp((plan.legs[0]!.ankle[1] - y) / Math.max(plan.legs[0]!.ankle[1], 1e-3) * 1.6, 0, darkening));
+      }
       if (region === 'armor') color = scale(accent, .85);
     }
     // Keep the four strongest bones, then quantize to an exact 255 sum.
@@ -444,7 +497,7 @@ export function* quadrupedBodyBuildSteps(genome: CreatureGenome): Generator<void
     if (v % 4096 === 4095) yield;
   }
   const index = vertexCount > 65535 ? new Uint32Array(indices) : new Uint16Array(indices);
-  return { plan, positions: positionArray, normals, colors, skinIndex, skinWeight, index, bodyVertexCount, bodyTriangleCount, vertexCount, triangleCount: indices.length / 3, cellM: cell, grid: [nx, ny, nz], faceFeatures };
+  return { plan, positions: positionArray, normals, colors, skinIndex, skinWeight, index, bodyVertexCount, bodyTriangleCount, vertexCount, triangleCount: indices.length / 3, cellM: cell, grid: [nx, ny, nz], faceFeatures, structuralVertexCount, structuralTriangleCount };
 }
 
 export function buildQuadrupedBody(genome: CreatureGenome): QuadrupedBodyData {

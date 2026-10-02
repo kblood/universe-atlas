@@ -72,10 +72,26 @@ export function faunaGaitSchedule(plan: QuadrupedPlan, member: FaunaPathMember, 
   const circumference = Math.PI * 2 * Math.max(member.orbitRadiusM, 1e-3);
   const speed = Number.isFinite(revolutionS) && revolutionS > 0 ? circumference / revolutionS : 0;
   // Slow walkers shorten their stride instead of stepping unnaturally slowly.
-  const preferred = plan.gait.strideM * (.6 + .4 * clamp(speed / Math.max(plan.genome.walkSpeed, .1), 0, 1));
+  const preferred = Math.min(plan.gait.strideM, plan.genome.legLength * 1.2) * (.6 + .4 * clamp(speed / Math.max(plan.genome.walkSpeed, .1), 0, 1));
   const cycles = Math.max(3, Math.round(circumference / preferred));
   return { cyclesPerRevolution: cycles, cycleM: circumference / cycles, frequencyHz: speed > 0 ? cycles / revolutionS : 0, duty: plan.gait.duty, liftM: plan.gait.liftM };
 }
+
+/** Authored motion envelopes, not a biological simulation. Identity affects
+ * small idle motions without changing the canonical path or activity clock. */
+export function faunaMotionTraits(plan: QuadrupedPlan, memberId: string) {
+  const g = plan.genome, massShape = clamp(g.torsoWidth / g.legLength, .2, 1.8);
+  return {
+    breathPeriodS: (3.2 + massShape * .5) * (.94 + hashUnit(`${memberId}/breath-rate`) * .12),
+    breathPhase: hashUnit(`${memberId}/breath-phase`) * Math.PI * 2,
+    breathM: clamp(g.torsoHeight * .0045, .001, .006),
+    tailPhase: hashUnit(`${memberId}/tail-phase`) * Math.PI * 2,
+    tailAmplitude: clamp(g.tailLength / Math.max(g.torsoLength, .1), .08, .8) * .18,
+    headAmplitude: clamp(g.headWidth / Math.max(g.neckLength, .1), .12, 1) * .035,
+  };
+}
+
+export interface FaunaPoseOptions { behaviour?: 'auto' | 'feed' | 'alert' }
 
 /** Body frame after walking `travel` revolutions (any real value). */
 function frameAt(member: FaunaPathMember, travel: number) {
@@ -108,7 +124,7 @@ const v3 = (p: Vec3) => new THREE.Vector3(p[0], p[1], p[2]);
  * Pose at one exact date. Pure: identical inputs give identical output
  * regardless of which dates were evaluated before.
  */
-export function quadrupedPoseAt(plan: QuadrupedPlan, member: FaunaPathMember, activity: FaunaMemberActivity, ground: FaunaGround, rigSeconds: number): QuadrupedPose {
+export function quadrupedPoseAt(plan: QuadrupedPlan, member: FaunaPathMember, activity: FaunaMemberActivity, ground: FaunaGround, rigSeconds: number, options: FaunaPoseOptions = {}): QuadrupedPose {
   const g = plan.genome, schedule = faunaGaitSchedule(plan, member, activity.revolutionS);
   const moving = schedule.frequencyHz > 0, walking = moving && activity.pose.gait === 'walk', tau = Math.max(0, activity.stateS);
   const N = schedule.cyclesPerRevolution, phase = activity.travel * N, duty = schedule.duty;
@@ -128,7 +144,9 @@ export function quadrupedPoseAt(plan: QuadrupedPlan, member: FaunaPathMember, ac
   // --- Trunk: follow the stencil under hips and shoulders, with gait bob. ---
   const TL = g.torsoLength, hRear = groundLocal(-.3 * TL, 0), hFront = groundLocal(.3 * TL, 0);
   const pitch = Math.atan2(hFront - hRear, .6 * TL);
-  const bob = -Math.cos(phase * Math.PI * 4) * g.legLength * .012 * locomotion + Math.sin(rigSeconds * Math.PI * 2 / 3.4) * .004;
+  const traits = faunaMotionTraits(plan, member.id);
+  const breath = Math.sin(rigSeconds * Math.PI * 2 / traits.breathPeriodS + traits.breathPhase);
+  const bob = -Math.cos(phase * Math.PI * 4) * g.legLength * .012 * locomotion + breath * traits.breathM;
   const roll = Math.sin(phase * Math.PI * 2) * .025 * locomotion;
   const positions = new Float64Array(BONES * 3), quaternions = new Float64Array(BONES * 4);
   const local = Array.from({ length: BONES }, () => new THREE.Quaternion());
@@ -136,10 +154,10 @@ export function quadrupedPoseAt(plan: QuadrupedPlan, member: FaunaPathMember, ac
   // Pelvis sits on the straight line through the ground under hips and shoulders.
   offsets[BONE.pelvis]!.y += (hRear + hFront) / 2 - (.2 / .6) * (hFront - hRear) + bob;
   local[BONE.pelvis]!.setFromEuler(new THREE.Euler(roll, 0, pitch, 'XYZ'));
-  local[BONE.spine]!.setFromAxisAngle(Z, Math.sin(rigSeconds * Math.PI * 2 / 3.4) * .01);
+  local[BONE.spine]!.setFromAxisAngle(Z, breath * .006);
 
   // --- Tail: idle sway and a gait-locked swing. ---
-  const sway = Math.sin(rigSeconds * Math.PI * 2 * .23) * .14 * (1 - locomotion) + Math.sin(phase * Math.PI * 2) * .1 * locomotion;
+  const sway = Math.sin(rigSeconds * Math.PI * 2 * .23 + traits.tailPhase) * traits.tailAmplitude * (1 - locomotion) + Math.sin(phase * Math.PI * 2) * .1 * locomotion;
   for (let i = 0; i < 3; i++) local[BONE.tail1 + i]!.setFromEuler(new THREE.Euler(0, sway * (1 + i * .35) * (i ? .6 : 1), i ? -.06 : -.12));
 
   // Forward kinematics up to the trunk and neck root.
@@ -152,10 +170,13 @@ export function quadrupedPoseAt(plan: QuadrupedPlan, member: FaunaPathMember, ac
   for (const i of [BONE.root, BONE.pelvis, BONE.spine, BONE.chest, BONE.neck1]) fk(i);
 
   // --- Neck and head: nod while walking; in idle either graze or look round. ---
-  const idleWeight = 1 - locomotion, grazes = hashUnit(`${member.id}|${Math.round(activity.travel * 1e6)}`) < .62;
+  const idleWeight = 1 - locomotion, grazes = options.behaviour === 'feed' || (options.behaviour !== 'alert' && hashUnit(`${member.id}|${Math.round(activity.travel * 1e6)}`) < .62);
   // Rise before the idle window ends so walking never starts with a lowered head.
-  const envelope = walking ? 0 : smooth((tau - 1.2) / 1.4) * (1 - smooth((tau - (member.gaitPeriodS - 2.4)) / 1.4));
-  const graze = grazes ? envelope * idleWeight : 0, look = grazes ? 0 : envelope * idleWeight;
+  const envelope = walking ? 0 : options.behaviour === 'feed' ? 1 : smooth((tau - 1.2) / 1.4) * (1 - smooth((tau - (member.gaitPeriodS - 2.4)) / 1.4));
+  // A long rigid inspection trunk must not sweep through the floor during
+  // neck flexion. Its feeding articulation needs a future segmented rig.
+  const hasTrunk = (g.morphology?.trunkLength ?? 0) > 0;
+  const graze = grazes && !hasTrunk ? envelope * idleWeight : 0, look = grazes && !hasTrunk ? 0 : envelope * idleWeight;
   const neckVector = v3(plan.neckTip).sub(v3(plan.neckBase)), neckReach = neckVector.length();
   const neckRest = Math.atan2(neckVector.y, neckVector.x);
   const headDown = -.55 * graze;
@@ -178,7 +199,7 @@ export function quadrupedPoseAt(plan: QuadrupedPlan, member: FaunaPathMember, ac
   // Head orientation is set in body terms, so grazing points the muzzle down
   // and a walking head stays near level whatever the neck and slope angles.
   qa.copy(worldQ[BONE.neck2]!).invert();
-  qb.setFromEuler(new THREE.Euler(0, lookYaw, headDown + Math.sin(tau * Math.PI * 2 / 3.1) * .06 * graze, 'YZX'));
+  qb.setFromEuler(new THREE.Euler(0, lookYaw + Math.sin(rigSeconds * .7 + traits.breathPhase) * traits.headAmplitude * idleWeight * (1 - graze), headDown + Math.sin(tau * Math.PI * 2 / 3.1) * .06 * graze, 'YZX'));
   local[BONE.head]!.multiplyQuaternions(qa, qb);
   for (const i of [BONE.head, BONE.tail1, BONE.tail2, BONE.tail3]) fk(i);
 

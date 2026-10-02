@@ -63,7 +63,7 @@
 import * as THREE from 'three';
 import {
   generateCreatureGenome,
-  individualCreatureGenome,
+  realisticIndividualCreatureGenome,
   validateCreatureGenome,
   type CreatureArchetype,
   type CreatureGenome,
@@ -288,7 +288,7 @@ export function faunaHerdAt(
 /** Reproduces `member`'s genome deterministically via `creature-model.ts`. */
 export function faunaMemberGenome(member: FaunaHerdMember): CreatureGenome {
   const founder = member.speciesGenome ?? generateCreatureGenome(member.genomeSeed, member.archetype);
-  return individualCreatureGenome(founder, member.id, member.variant, member.stage);
+  return realisticIndividualCreatureGenome(founder, member.id, member.variant, member.stage);
 }
 
 /** Individual idle schedules share the orbit's seeded phase, with no new

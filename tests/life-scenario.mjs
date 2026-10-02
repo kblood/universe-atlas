@@ -34,14 +34,17 @@ export function gitSource(revision,path){
 }
 
 /** Bundles the renderer; with `revision`, every LIFE_FILES entry that exists
- * at that revision replaces the working-tree file. Returns null when the
- * revision is unavailable. */
-export async function lifeRendererModule({prefix='atlas-life-',revision=null,patch={}}={}){
+ * at that revision replaces the working-tree file. `sharedSources` supplies
+ * explicit source snapshots used identically by both comparison bundles; it
+ * is for intentionally changed content models, never optimisation code.
+ * Returns null when the revision is unavailable. */
+export async function lifeRendererModule({prefix='atlas-life-',revision=null,patch={},sharedSources={}}={}){
   const replaced=new Map();
   if(revision){
     for(const path of LIFE_FILES){const s=gitSource(revision,path);if(s!==null)replaced.set(resolve(root,path),patch[path]?patch[path](s):s);}
     if(!replaced.size)return null;
   }
+  for(const [path,source] of Object.entries(sharedSources))replaced.set(resolve(root,path),source);
   const directory=await mkdtemp(join(tmpdir(),prefix)),output=join(directory,'renderer.mjs');
   const plugins=[{name:'life-revision',setup(b){
     b.onLoad({filter:/\.ts$/},async args=>{const s=replaced.get(resolve(args.path));return s===undefined?undefined:{contents:s,loader:'ts',resolveDir:dirname(args.path)};});

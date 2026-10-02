@@ -1,5 +1,14 @@
 # Realistic fauna and variation plan
 
+## Structural expansion and implementation status
+
+The user expanded the direction to different limbs, paws, hooves, trunks, long
+necks and wings. The [structural variation milestone](fauna-structural-variation-2026-10-02.md)
+records six implemented morphology families, production-skin comparison and
+shareable specimen links, plus the remaining rig/topology work. The original
+ordered plan below remains the broader roadmap; its future items are not all
+complete. Wings and trunks currently share existing chest/head bones.
+
 ## Direction and current baseline
 
 The target is animals with believable anatomy, surfaces and movement, with

@@ -8,7 +8,8 @@ import { CATALOGUE_EPOCH_NS } from './world-time.ts';
 /** A single production rig on a flat inspection floor. The specimen stays
  * centred while its actual dated body pose is evaluated on a demo orbit.
  * The orbit is a lab fixture; it never creates a planetary member or species. */
-export function createFaunaSkinInspector(genome: CreatureGenome, id: string): CreatureRig {
+export type FaunaInspectionPose = 'dated' | 'idle' | 'walk' | 'feed';
+export function createFaunaSkinInspector(genome: CreatureGenome, id: string, options: { pose?: FaunaInspectionPose } = {}): CreatureRig {
   // A deliberate synchronous one-specimen build for the inspector. Planetary
   // pools retain their normal time slicing and capacity limits.
   const pool = new FaunaNearRigs({ capacity: 1, cacheSize: 1, now: () => 0 });
@@ -34,6 +35,14 @@ export function createFaunaSkinInspector(genome: CreatureGenome, id: string): Cr
       if (!Number.isFinite(time)) throw new Error('Fauna inspection time must be finite');
       const date = CATALOGUE_EPOCH_NS + BigInt(Math.round(time * 1e9));
       candidate.activity = faunaMemberActivityAtWorldNs(member, date);
+      if (options.pose && options.pose !== 'dated') {
+        const walking = options.pose === 'walk', revolutionS = Math.PI * 2 * radius / genome.walkSpeed;
+        candidate.activity = { ...candidate.activity,
+          pose: { ...candidate.activity.pose, gait: walking ? 'walk' : 'idle' },
+          travel: walking ? ((time / revolutionS) % 1 + 1) % 1 : 0,
+          revolutionS: walking ? revolutionS : Infinity, stateS: walking ? time + 1 : member.gaitPeriodS / 2 };
+        candidate.behaviour = options.pose === 'feed' ? 'feed' : 'alert';
+      }
       candidate.rigSeconds = faunaRigSecondsAt(date);
       pool.update([candidate]);
       const pose = pool.poseOf(id)!;

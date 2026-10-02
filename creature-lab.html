@@ -21,7 +21,18 @@
         <label>Reference date (Myr) <input id="date-myr" type="number" min="-20000" max="20000" step="1" value="0"></label>
         <label>Species <select id="species"></select></label>
         <label class="check"><input id="normalize" type="checkbox"> Normalized display scale</label>
-        <div id="skin-controls" hidden><label>Frame <select id="skin-focus"><option value="body">Whole animal</option><option value="head">Head and face</option></select></label><label>Pose time (seconds) <input id="skin-time" type="number" min="0" max="120" step="0.1" value="0"></label><p>Scrub the planetary idle/walk cycle. The specimen stays centred on a flat inspection floor.</p></div>
+        <div id="skin-controls" hidden>
+          <label>Body family <select id="skin-family"><option value="inherited">Inherited species</option><option value="ungulate">Hoofed browser</option><option value="cursorial">Hoofed runner</option><option value="padded">Pawed quadruped</option><option value="long-neck">Long-necked browser</option><option value="proboscidean">Trunked browser</option><option value="winged">Winged quadruped (experimental)</option></select></label>
+          <label>View <select id="skin-view"><option value="three-quarter">Three-quarter</option><option value="side">Side</option><option value="front">Front</option></select></label>
+          <label>Frame <select id="skin-focus"><option value="body">Whole animal</option><option value="head">Head and face</option></select></label>
+          <label>Pose <select id="skin-pose"><option value="dated">Dated activity</option><option value="idle">Standing</option><option value="walk">Walking</option><option value="feed">Feeding</option></select></label>
+          <label>Pose time (seconds) <input id="skin-time" type="number" min="0" max="120" step="0.1" value="0"></label>
+          <button id="skin-play" type="button">Play pose</button>
+          <p>Pose time is shared by both specimens. Animals stay centred on a flat inspection floor at their actual metre scale.</p>
+          <label class="check"><input id="skin-compare" type="checkbox"> Compare two individuals</label>
+          <div id="skin-compare-controls" hidden><label>Second individual <select id="compare-variant"><option value="0">Specimen 01</option><option value="1" selected>Specimen 02</option><option value="2">Specimen 03</option><option value="3">Specimen 04</option></select></label>
+          <label>Second growth stage <select id="compare-growth"><option value="adult">Adult</option><option value="juvenile">Juvenile</option></select></label></div>
+        </div>
         <div id="anatomy-controls"><label class="check"><input id="skeleton" type="checkbox"> Actual solved skeleton</label><label class="check"><input id="neutral" type="checkbox"> Neutral material</label><label>Individual <select id="variant"><option value="0">Specimen 01</option><option value="1">Specimen 02</option><option value="2">Specimen 03</option><option value="3">Specimen 04</option></select></label><label>Growth <select id="growth"><option value="adult">Adult</option><option value="juvenile">Juvenile</option></select></label></div>
         <div id="arena-controls"><label>Gait <select id="gait"><option value="idle">Idle</option><option value="walk">Walk</option><option value="run">Run</option></select></label><label>Terrain <select id="terrain"><option value="flat">Flat</option><option value="slope">Slope</option><option value="steps">Steps</option></select></label><label>Crowd <select id="crowd"><option value="1">1 actor</option><option value="8">8 actors</option><option value="16">16 actors</option></select></label><div class="button-row"><button id="play">Pause</button><button id="reset">Reset</button></div><label>Time <input id="time" type="number" min="0" max="20" value="0" step="0.01"></label></div>
       </div>
@@ -29,6 +40,7 @@
       <section><h2>Selected species</h2><div id="species-detail" class="detail"></div></section>
       <section id="ancestry-panel" hidden><h2>Actual parent chain</h2><div id="ancestry-list"></div></section>
       <section><h2>Live diagnostics</h2><div id="metrics" class="metrics"></div></section>
+      <button id="share-specimen" class="wide">Copy specimen link</button><p id="share-status" role="status"></p><label id="share-fallback" hidden>Specimen link <input id="share-link" readonly aria-label="Specimen link"></label>
       <button id="export-json" class="wide">Export complete lab JSON</button>
     </aside>
     <section class="caption"><span id="caption-eyebrow" class="eyebrow">COMMON METRE SCALE</span><h2 id="caption-title">Twelve procedural specimens</h2><p id="caption-copy">Rigid body parts are articulated by an inspectable quadruped rig. Smooth skin deformation is later work.</p></section>

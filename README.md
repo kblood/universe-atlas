@@ -1,5 +1,16 @@
 # Universe Atlas
 
+## Structural fauna variation — 2026-10-02
+
+Creature Lab's **Planet skin** now supports six body families: ungulate,
+cursorial, padded, long-neck, proboscidean and a speculative grounded winged
+quadruped. Coherent proportion changes, paws/hooves/pads, trunks, folded wings,
+individual coats and distinct juvenile growth are described in the
+[structural variation milestone](docs/fauna-structural-variation-2026-10-02.md).
+Compare two specimens at the same metre scale and copy a link to the exact
+specimen, family, life stage and inspection pose. Trunk and wing articulation,
+flight, seamless distant representations and full visual realism remain open.
+
 ## Fauna generation increment — 2026-10-02
 
 The [realistic fauna work plan](docs/fauna-realism-next-2026-10-02.md) starts
