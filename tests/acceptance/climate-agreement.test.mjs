@@ -44,9 +44,11 @@ test('orbit/tile colour and ground classifier agree on 20k land directions x 4 w
     const sample = terrainSampler(body), classify = biomeClassifier(body);
     const climate = surfaceClimate(climateForcingFor(body)), o = createClimateSample(), grain = grainOf(body);
     let land = 0, snowLabel = 0, forest = 0, partialSnow = 0;
-    for (let i = 0; land < N; i++) {
-      assert.ok(i < N * 8, `${body.name}: fewer than ${N} land directions in ${N * 8} probes`);
-      const d = fib(i, N * 8), s = sample(d);
+    // The WHOLE sphere (uniform Fibonacci set), never a prefix: a prefix of the
+    // Fibonacci order is one polar cap. M is sized so every world has >= N land.
+    const M = 3 * N;
+    for (let i = 0; i < M; i++) {
+      const d = fib(i, M), s = sample(d);
       if (s.ocean) continue;
       land++;
       const h = s.groundHeightM; // includeCraters=false: post-landform, pre-crater
@@ -68,8 +70,8 @@ test('orbit/tile colour and ground classifier agree on 20k land directions x 4 w
         assert.fail(`${body.name} forest ${d}: forestPotential without the colour's forest suitability`);
       snowLabel += b.name === 'Alpine / polar snow'; forest += b.forestPotential; partialSnow += o.snowFraction > 0 && o.snowFraction < 1;
     }
-    // Non-vacuity: the sampled land must exercise the snow and forest branches
-    // somewhere across the four worlds (checked per world below as a log).
+    assert.ok(land >= N, `${body.name}: ${land} land directions, need ${N}`);
+    // Non-vacuity: each world must exercise the snow or forest branch.
     console.log(`# ${body.name}: land ${land}, snow-labelled ${snowLabel}, forestPotential ${forest}, partial snow ${partialSnow}`);
     assert.ok(snowLabel + forest > 0, `${body.name} exercises the climate branches`);
   }
