@@ -100,6 +100,9 @@ test('weights[3] === snowFraction, weights are a partition, labels stay within t
     for(let i=0;i<2000;i++){
       const d=fib(i,2000),h=((i*7919)%20000)-1000,up=[1,.95,.8,.6,.3][i%5],c=classify(d,h,up);
       assert.equal(c.weights[3],c.snowFraction);
+      // Fauna contract: weights[1] already carries (1-snowFraction); consumers must not apply it twice.
+      assert.ok(c.weights[0]+c.weights[1]<=1-c.snowFraction+1e-12);
+      if(c.snowFraction===1)assert.equal(c.weights[1],0);
       assert.ok(c.weights.every(x=>x>=0&&x<=1));
       assert.ok(Math.abs(c.weights.reduce((a,x)=>a+x,0)-1)<1e-12);
       assert.ok(LABELS.has(c.name),c.name);

@@ -59,6 +59,10 @@ function forcingForBody(body:Body):ClimateForcing {
  *   treeline01, climateCode, forestSuitability01 (0 where forestPotential is
  *   false), climateVersion. Presence/kind consumers must read only these annual
  *   fields, never a season phase.
+ * - Fauna contract: weights[1] (herd/turf) is already (1-sand)(1-snow)(1-rock),
+ *   so it carries the (1-snowFraction) factor. A consumer must NOT multiply it
+ *   by (1-snowFraction) again; snow/alpine-adapted species key off
+ *   snowFraction and climateCode instead of weights[1].
  *
  * `waterLevelM` (additive, default `0` - the literal this already
  * hardcoded): docs/time-and-coordinates-contract.md §2.5/§2.6 - this is one
