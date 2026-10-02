@@ -1,12 +1,18 @@
 import { MORPHOLOGY_FAMILIES, type FaunaMorphologyFamily } from './fauna-appearance.ts';
 import {DEER_INDIVIDUAL_RECIPE, templateMorphLocks, type TemplateRecipe} from './fauna-template-phenotype.ts';
 import {COMPOSER_RECIPE_MAX_TEXT} from './fauna-composer-recipe.ts';
+import {FAUNA_REVIEW_PRESET_IDS, type FaunaReviewPresetId} from './fauna-review-environment.ts';
 /** Portable specimen identity and inspection state. Camera gestures are deliberately
  * excluded: shared links open the same named frame, measured in metres. */
 export type LabMode = 'gallery' | 'anatomy' | 'arena' | 'ancestry' | 'skin' | 'composer';
 export const COMPOSER_LAB_MOTIONS = ['neutral', 'idle', 'walk', 'display'] as const;
 export type ComposerLabMotion = typeof COMPOSER_LAB_MOTIONS[number];
 export type SkinPose = 'dated' | 'neutral' | 'idle' | 'walk' | 'feed';
+/** Composer herd sizes: one animal, or a herd of individuals of the same species. */
+export const COMPOSER_HERD_SIZES = [1, 6, 9, 12] as const;
+export type ComposerHerdSize = typeof COMPOSER_HERD_SIZES[number];
+/** Modes whose links carry the review lighting preset. */
+const LIGHT_MODES: readonly LabMode[] = ['composer', 'skin'];
 export interface CreatureLabState {
   seed: string; profile: 'temperate' | 'arid' | 'cold' | 'airless'; species: string;
   mode: LabMode; variant: number; growth: 'adult' | 'juvenile';
@@ -17,6 +23,10 @@ export interface CreatureLabState {
   bodyCondition: number; neckLength: number; legLength: number; muzzleLength: number; earSize: number; juvenile: number;
   /** Modular composer (mode 'composer' only): encoded recipes are decoded and validated by the Lab. */
   recipe: string; compareRecipe: string; composerSeed: string; motion: ComposerLabMotion;
+  /** Composer herd size (composer only; comparison always shows one animal per recipe). */
+  herd: ComposerHerdSize;
+  /** Review lighting preset (composer and planet-skin modes). */
+  light: FaunaReviewPresetId;
 }
 export const DEFAULT_LAB_STATE: Readonly<CreatureLabState> = Object.freeze({
   seed: 'LETHRA-BIOSPHERE-01', profile: 'temperate', species: '', mode: 'gallery',
@@ -24,11 +34,13 @@ export const DEFAULT_LAB_STATE: Readonly<CreatureLabState> = Object.freeze({
   compare: false, compareVariant: 1, compareGrowth: 'adult', neutral: false, skeleton: false, source: 'procedural', assetHash: '', sidecarHash: '', replayVersion: 1,
   templateRecipe: 'manual', morphLocks: '',
   bodyCondition: 0, neckLength: 0, legLength: 0, muzzleLength: 0, earSize: 0, juvenile: 0,
-  recipe: '', compareRecipe: '', composerSeed: 'composer-1', motion: 'walk',
+  recipe: '', compareRecipe: '', composerSeed: 'composer-1', motion: 'walk', herd: 1, light: 'studio',
 });
-const COMPOSER_KEYS = ['recipe', 'compareRecipe', 'composerSeed', 'motion'] as const;
+/** Composer-only keys: never written by other modes; repeated values reject a composer link. */
+const COMPOSER_KEYS = ['recipe', 'compareRecipe', 'composerSeed', 'motion', 'herd'] as const;
 /** Keys a composer link writes; everything else keeps its default on replay. */
-const COMPOSER_URL_KEYS = ['mode', ...COMPOSER_KEYS, 'compare', 'time', 'view', 'neutral', 'skeleton'] as const;
+const COMPOSER_URL_KEYS = ['mode', ...COMPOSER_KEYS, 'compare', 'time', 'view', 'neutral', 'skeleton', 'light'] as const;
+const isHerdSize = (value: string | null) => (COMPOSER_HERD_SIZES as readonly number[]).some(n => String(n) === value);
 export function parseCreatureLabState(search: string | URLSearchParams): CreatureLabState {
   const q = typeof search === 'string' ? new URLSearchParams(search) : search;
   const choice = <T extends string>(key: string, values: readonly T[], fallback: T): T => {
@@ -68,14 +80,31 @@ export function parseCreatureLabState(search: string | URLSearchParams): Creatur
     recipe: (q.get('recipe') || '').slice(0, COMPOSER_RECIPE_MAX_TEXT + 1), compareRecipe: (q.get('compareRecipe') || '').slice(0, COMPOSER_RECIPE_MAX_TEXT + 1),
     composerSeed: clean('composerSeed', DEFAULT_LAB_STATE.composerSeed, 160),
     motion: choice('motion', COMPOSER_LAB_MOTIONS, 'walk'),
+    herd: isHerdSize(q.get('herd')) ? Number(q.get('herd')) as ComposerHerdSize : 1,
+    light: choice('light', FAUNA_REVIEW_PRESET_IDS, 'studio'),
   };
+}
+/** Visible notices for link values that were replaced by a default rather than rejected
+ * (an unsupported herd size or lighting preset). Empty when the link is used as written. */
+export function creatureLabInputNotices(search: string | URLSearchParams): string[] {
+  const q = typeof search === 'string' ? new URLSearchParams(search) : search, out: string[] = [];
+  if (q.get('mode') === 'composer' && q.has('herd') && !isHerdSize(q.get('herd')))
+    out.push(`Herd size "${q.get('herd')!.slice(0, 12)}" is not available (choose 1, 6, 9 or 12); showing 1 animal.`);
+  if (LIGHT_MODES.includes(q.get('mode') as LabMode) && q.has('light') && !(FAUNA_REVIEW_PRESET_IDS as readonly string[]).includes(q.get('light')!))
+    out.push(`Lighting "${q.get('light')!.slice(0, 24)}" is not available; using Studio.`);
+  return out;
+}
+/** A repeated lighting parameter is ambiguous and rejects composer and planet-skin links. */
+export function creatureLabLightInputError(search: string | URLSearchParams): string | null {
+  const q = typeof search === 'string' ? new URLSearchParams(search) : search;
+  return LIGHT_MODES.includes(q.get('mode') as LabMode) && q.getAll('light').length > 1 ? 'Invalid link: repeated light' : null;
 }
 /** Composer links are rejected, not reinterpreted, when identity parameters repeat or the motion is unknown.
  * Recipe text errors (version, size) are reported by decodeComposerRecipe. */
 export function creatureLabComposerInputError(search: string | URLSearchParams): string | null {
   const q = typeof search === 'string' ? new URLSearchParams(search) : search;
   if (q.get('mode') !== 'composer') return null;
-  for (const key of COMPOSER_KEYS) if (q.getAll(key).length > 1) return `Invalid composer link: repeated ${key}`;
+  for (const key of [...COMPOSER_KEYS, 'light']) if (q.getAll(key).length > 1) return `Invalid composer link: repeated ${key}`;
   if (q.has('motion') && !(COMPOSER_LAB_MOTIONS as readonly string[]).includes(q.get('motion')!)) return `Invalid composer link: unknown motion "${q.get('motion')!.slice(0, 24)}"`;
   return null;
 }
@@ -100,6 +129,7 @@ export function creatureLabUrl(base: string, state: CreatureLabState): string {
   for (const [key, value] of Object.entries(state)) {
     if (composer ? !(COMPOSER_URL_KEYS as readonly string[]).includes(key) : (COMPOSER_KEYS as readonly string[]).includes(key)) continue;
     if (key === 'compareRecipe' && !state.compare) continue;
+    if (key === 'light' && !LIGHT_MODES.includes(state.mode)) continue;
     url.searchParams.set(key, typeof value === 'boolean' ? (value ? '1' : '0') : String(value));
   }
   return url.href;
