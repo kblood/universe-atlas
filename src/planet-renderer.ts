@@ -33,6 +33,7 @@ import {FaunaNearRigs,FAUNA_NEAR_RIG_EXIT_M,type FaunaNearCandidate} from './fau
 import {faunaGroundHeight,FAUNA_GROUND_N,FAUNA_GROUND_HALF_M,FAUNA_GROUND_STEP_M} from './fauna-ground.ts';
 import {surfaceCellsWithin,type SurfaceCell} from './surface-cell.ts';
 import {biomeClassifier} from './surface-biomes.ts';
+import {temperateHabitat} from './surface-climate.ts';
 import {PlanetForest} from './planet-forest.ts';
 import {PlanetRocks} from './planet-rocks.ts';
 import {TOTAL_BUDGET_BYTES,LIFE_RESERVE_BYTES,ROCK_RESERVE_BYTES,TERRAIN_BUDGET_BYTES,PENDING_TILE_BYTES,TERRAIN_PRESSURE_ENTER_FRACTION,TERRAIN_PRESSURE_EXIT_FRACTION,rendererMemoryAccounting,terrainAdmission} from './renderer-memory.ts';
@@ -827,7 +828,7 @@ export class PlanetRenderer {
       shader.uniforms.atlasLocalEyeM=localEye;shader.uniforms.atlasEyeHeightM=this.eyeHeightUniform;shader.uniforms.atlasSun=this.sunUniform;
       shader.uniforms.atlasRadius={value:this.body.radiusM};
       shader.uniforms.atlasAir=this.localAirUniform;
-      shader.uniforms.groundHabitat={value:this.body.water>0&&this.body.temperatureK>=250&&this.body.temperatureK<=325&&this.body.type!=='Ice world'&&this.body.type!=='Volcanic world'?1:0};
+      shader.uniforms.groundHabitat={value:temperateHabitat(this.body)?1:0};
       shader.uniforms.atlasRelief={value:this.relief};
       shader.uniforms.groundAtlas={value:this.groundAtlas};
       shader.uniforms.groundEnabled=this.groundEnabled;
@@ -855,7 +856,7 @@ export class PlanetRenderer {
           atlasEyeHeightM,atlasHeightM,dot(normalize(atlasSurface),atlasSun),atlasAir);
         #include <opaque_fragment>`);
     };
-    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v10/'+LOCAL_AERIAL_VERSION+'/ground-pbr-v1';
+    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v11/'+LOCAL_AERIAL_VERSION+'/ground-pbr-v2-climate';
     const mesh = new THREE.Mesh(geometry, material);
     mesh.receiveShadow=true;mesh.castShadow=true;material.shadowSide=THREE.DoubleSide;
     mesh.customDepthMaterial=terrainDepthMaterial(morph,edge,d.width-2);
