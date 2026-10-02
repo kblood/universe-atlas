@@ -104,7 +104,9 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
   // Small, correlated species axes: mass broadens trunk, stance and supporting
   // feet together; limb length changes stride and speed together. Founders stay
   // canonical, so adding a phenotype cannot reroll species or ancestry IDs.
-  const size=1+i.size*.045,condition=1+i.condition*.055;
+  // Individual body size: +-4.5% (v1) and +-7% for coat phenotypes (uniform),
+  // closer to the spread of wild ungulate populations.
+  const size=1+i.size*(isCoatPhenotype(a)?.07:.045),condition=1+i.condition*.055;
   for(const field of ['torsoLength','torsoHeight','torsoWidth','legLength','stanceWidth','neckLength','neckRise','headLength','headWidth','tailLength','footLength','footWidth','hornLength','earLength','strideLength'] as const)apply(field,size);
   apply('torsoLength',1+p.mass*.035);apply('torsoHeight',(1+p.mass*.055)*condition);
   apply('torsoWidth',(1+p.mass*.075)*condition);apply('stanceWidth',1+p.mass*.065);
@@ -151,7 +153,7 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
   // An explicit family draws a different body, so its far colour is re-weighted
   // to that body (stage-invariant: the adult-equivalent armour is used).
   if(family!==undefined&&isCoatPhenotype(a)&&family!==inheritedFaunaFamily(genome)){
-    a.palette.base=linearHexOf(faunaFarCoatMeanCached(`${faunaSpeciesKey(genome)}|${faunaLineageKey(genome)}|${a.individualKey}`,faunaAdultCoat(faunaSpeciesCoat(genome).coat,a.individualKey),selected,faunaArmorShare(g)));
+    a.palette.base=linearHexOf(faunaFarCoatMeanCached(`${faunaSpeciesKey(genome)}|${faunaLineageKey(genome)}|${a.individualKey}`,faunaAdultCoat(genome.archetype,faunaSpeciesCoat(genome).coat,a.individualKey),selected,faunaArmorShare(g,selected)));
   }
   // Male barrel width survives the authored family ratio envelopes.
   if(sex==='male')g.torsoWidth*=1+.06*dimorphism;
@@ -235,6 +237,7 @@ export function validateCreatureGenome(genome:CreatureGenome):string[] {
       if(a.version===FAUNA_APPEARANCE_VERSION){
         errors.push(...faunaCoatErrors(a.coat));
         if(!a.individual||(a.individual.sex!=='female'&&a.individual.sex!=='male'))errors.push('invalid individual sex');
+        if(!a.individual||!Number.isFinite(a.individual.coatPhase)||a.individual.coatPhase!<0||a.individual.coatPhase!>1)errors.push('invalid individual coat phase');
         if(!a.profile||!Number.isFinite(a.profile.dimorphism)||a.profile.dimorphism<0||a.profile.dimorphism>1||typeof a.profile.hornlessFemales!=='boolean')errors.push('invalid species dimorphism');
         if(!a.lineage||!isPigmentFamily(a.lineage.family)||typeof a.lineage.pattern!=='string')errors.push('invalid coat lineage');
         if(!a.growth||!Number.isFinite(a.growth.lateral)||a.growth.lateral!<.5||a.growth.lateral!>2)errors.push('invalid coat growth frame');

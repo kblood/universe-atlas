@@ -136,7 +136,7 @@ test('the far-LOD palette base is the body-weighted mean of the adult coat, clos
   for (const species of planets.slice(0, 25)) for (const s of species) for (let v = 0; v < 4; v++) {
     const a = createFaunaAppearance(s.creature, `${s.id}/mean`, v, 'adult'), juvenile = createFaunaAppearance(s.creature, `${s.id}/mean`, v, 'juvenile');
     assert.deepEqual(juvenile.palette, a.palette, 'the far colour never depends on growth stage');
-    const exact = faunaFarCoatMean(a.coat, inheritedFaunaFamily(s.creature), faunaArmorShare(s.creature)), base = hexToLinear(a.palette.base);
+    const exact = faunaFarCoatMean(a.coat, inheritedFaunaFamily(s.creature), faunaArmorShare(s.creature, inheritedFaunaFamily(s.creature))), base = hexToLinear(a.palette.base);
     worst = Math.max(worst, ...exact.map((c, i) => Math.abs(c - base[i])));
     canonical.push(Math.max(...coatMeanColor(a.coat).map((c, i) => Math.abs(c - base[i]))));
   }

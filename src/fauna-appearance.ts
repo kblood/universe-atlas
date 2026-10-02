@@ -37,7 +37,9 @@ export interface FaunaAppearance {
   roughness: number;
   /** Species axes. dimorphism (0.15..0.7) scales the sex differences of this species. */
   profile: { mass: number; limb: number; neck: number; dimorphism: number; hornlessFemales: boolean };
-  individual: { size: number; condition: number; muzzle: number; ears: number; sex: FaunaSex };
+  /** coatPhase (v2, 0..1): the individual's offset of banded and striped
+   * coats along the body, in pattern periods; absent in v1. */
+  individual: { size: number; condition: number; muzzle: number; ears: number; sex: FaunaSex; coatPhase?: number };
   /** maturity is 1 for adults and continuous 0.22..0.45 for juveniles.
    * lateral (v2) maps the body's z into the adult coat frame: 1 for adults,
    * adult/juvenile torso width-to-length for juveniles; absent in v1. */
@@ -148,22 +150,29 @@ export function faunaSpeciesCoat(genome: CreatureGenome): { lineage: FaunaLineag
 }
 
 /** Area shares of the near body's coat regions per morphology family
- * (adult quadruped-body-4 skins, measured over 4 archetypes x 4 specimens;
+ * (quadruped-body-4 skins, the mean of the normalised adult and juvenile
+ * shares measured over 4 archetypes x 4 specimens each, so the one
+ * stage-invariant far colour serves both stages;
  * ears, horns and structural parts excluded, as they follow the far colour),
  * and the mean hoof/pad darkening of the feet. */
 export const FAUNA_FAR_REGION_SHARES: Readonly<Record<FaunaMorphologyFamily, { torso: number; neck: number; head: number; tail: number; upper: number; lower: number; foot: number; footHoof: number }>> = {
-  ungulate: { torso: .428, neck: .055, head: .040, tail: .023, upper: .274, lower: .107, foot: .058, footHoof: .67 },
-  cursorial: { torso: .393, neck: .041, head: .039, tail: .019, upper: .319, lower: .142, foot: .034, footHoof: .265 },
-  padded: { torso: .492, neck: .038, head: .076, tail: .040, upper: .105, lower: .091, foot: .102, footHoof: .425 },
-  'long-neck': { torso: .335, neck: .159, head: .029, tail: .017, upper: .305, lower: .108, foot: .038, footHoof: .661 },
-  proboscidean: { torso: .367, neck: .036, head: .069, tail: .021, upper: .209, lower: .097, foot: .090, footHoof: .447 },
-  winged: { torso: .219, neck: .036, head: .023, tail: .012, upper: .129, lower: .054, foot: .026, footHoof: .267 },
+  ungulate: { torso: .380, neck: .065, head: .052, tail: .021, upper: .289, lower: .124, foot: .069, footHoof: .671 },
+  cursorial: { torso: .353, neck: .055, head: .054, tail: .017, upper: .324, lower: .154, foot: .043, footHoof: .267 },
+  padded: { torso: .465, neck: .033, head: .104, tail: .038, upper: .130, lower: .104, foot: .126, footHoof: .413 },
+  'long-neck': { torso: .298, neck: .155, head: .037, tail: .015, upper: .319, lower: .129, foot: .046, footHoof: .665 },
+  proboscidean: { torso: .364, neck: .053, head: .095, tail: .021, upper: .231, lower: .118, foot: .118, footHoof: .441 },
+  winged: { torso: .382, neck: .085, head: .061, tail: .021, upper: .268, lower: .122, foot: .061, footHoof: .268 },
 };
 const HOOF: CoatRGB = [.035, .03, .026];
 /** Area share of dorsal armour plates (low-slung bodies only). */
-export function faunaArmorShare(genome: Pick<CreatureGenome, 'archetype' | 'armor'>): number { return genome.archetype === 'low-slung' && genome.armor > .05 ? clamp(.25 * genome.armor, 0, .2) : 0; }
+export function faunaArmorShare(genome: Pick<CreatureGenome, 'archetype' | 'armor'>, family: FaunaMorphologyFamily): number {
+  // Proboscideans carry no plates (their armour is zeroed by the phenotype).
+  return family !== 'proboscidean' && genome.archetype === 'low-slung' && genome.armor > .05 ? clamp(.25 * genome.armor, 0, .2) : 0;
+}
 
-const MEAN_SAMPLE: CoatSample = { x: 0, y: 0, z: 0, dorsal: 0, region: 'torso', along: 0 };
+const MEAN_SAMPLE: CoatSample = { x: 0, y: 0, z: 0, dorsal: 0, region: 'torso', along: 0, footprint: 0 };
+/** Typical near-skin cell size in torso lengths (measured 0.019-0.026). */
+const FAR_MEAN_CELL = .022;
 const MEAN_OUT = new Float64Array(3);
 /** Far-LOD colour of a coat (linear): the canonical coat evaluated per
  * region, weighted by the family's near-body region shares, with hoof
@@ -174,12 +183,17 @@ export function faunaFarCoatMean(coat: CoatGenome, family: FaunaMorphologyFamily
   const sums: Record<string, [number, number, number, number]> = {};
   const add = (key: string, w: number) => { const t = sums[key] ??= [0, 0, 0, 0]; t[0] += MEAN_OUT[0]! * w; t[1] += MEAN_OUT[1]! * w; t[2] += MEAN_OUT[2]! * w; t[3] += w; };
   const groups: Partial<Record<CoatRegion, string>> = { torso: 'torso', neck: 'neck', head: 'head', muzzle: 'head', ear: 'head', tail: 'tail', 'tail-tip': 'tail', 'limb-upper': 'upper', 'limb-lower': 'lower', foot: 'foot' };
+  // The near skins sample with a footprint of about one cell (0.02 torso
+  // lengths) and the matching scale clamp, which softens fine marks; the far
+  // mean uses the same filtering so both LODs agree.
+  const filtered = clampedCoat(coat, FAR_MEAN_CELL);
   for (const s of coatCanonicalSamples()) {
-    evaluateCoat(coat, s, MEAN_OUT, 0);
+    Object.assign(MEAN_SAMPLE, s); MEAN_SAMPLE.footprint = FAR_MEAN_CELL;
+    evaluateCoat(filtered, MEAN_SAMPLE, MEAN_OUT, 0);
     add(groups[s.region] ?? 'torso', s.weight);
     if (armorShare > 0 && s.region === 'torso' && s.dorsal > .3) {
-      Object.assign(MEAN_SAMPLE, s); MEAN_SAMPLE.region = 'armor';
-      evaluateCoat(coat, MEAN_SAMPLE, MEAN_OUT, 0); add('armor', s.weight);
+      MEAN_SAMPLE.region = 'armor';
+      evaluateCoat(filtered, MEAN_SAMPLE, MEAN_OUT, 0); add('armor', s.weight);
     }
   }
   const shares = FAUNA_FAR_REGION_SHARES[family], out: CoatRGB = [0, 0, 0];
@@ -208,7 +222,36 @@ export function faunaFarCoatMeanCached(key: string, coat: CoatGenome, family: Fa
 }
 
 /** An individual's adult coat: the species coat with its individual drift. */
-export function faunaAdultCoat(speciesCoat: CoatGenome, individualKey: string): CoatGenome { return applyCoatDrift(speciesCoat, coatIndividualDrift(`${individualKey}/coat`, 1)); }
+export function faunaAdultCoat(archetype: CreatureArchetype, speciesCoat: CoatGenome, individualKey: string): CoatGenome {
+  const drifted = applyCoatDrift(speciesCoat, coatIndividualDrift(`${individualKey}/coat`, 1));
+  return faunaIndividualCoat(archetype, drifted, individualKey);
+}
+/** Region marks that differ between individuals of one species, as stockings
+ * and blazes do in wild cattle, equids and deer (not on broad low-slung heads). */
+const INDIVIDUAL_MARKS: Readonly<Record<CreatureArchetype, readonly CoatMarkName[]>> = { browser: ['socks', 'blaze'], runner: ['socks', 'blaze'], 'long-neck': ['socks'], 'low-slung': [] };
+/** The fauna-appearance-2 individual layer, from stream
+ * `<individualKey>/coat-individual-v2`, on top of the shared coat drift:
+ * overall tone (sRGB value x(1 +-0.14)), contrast +-0.15, countershade +-0.1,
+ * belly line +-0.05, coverage +-0.05, warp +-0.15, scale +-6%, and a 0.12
+ * flip per stocking and blaze mark. Draw order is append-only. */
+function faunaIndividualCoat(archetype: CreatureArchetype, coat: CoatGenome, individualKey: string): CoatGenome {
+  const rand = coatRandom(`${individualKey}/coat-individual-v2`), s = () => rand() * 2 - 1;
+  const value = Math.pow(1 + .14 * s(), 2.2), contrast = .15 * s(), countershade = .1 * s(), bellyLine = .05 * s();
+  const threshold = .05 * s(), warp = .15 * s(), scale = 1 + .06 * s();
+  let marks = coat.marks;
+  for (const name of ['socks', 'blaze'] as const) if (rand() < .12 && INDIVIDUAL_MARKS[archetype].includes(name)) marks ^= COAT_MARK_BITS[name];
+  const R = COAT_GENOME_RANGES, colours = { ...coat.colours };
+  for (const role of ['base', 'accent', 'belly'] as const) colours[role] = coat.colours[role].map(c => clamp(c * value, 0, 1)) as CoatRGB;
+  return {
+    ...coat, colours, marks,
+    contrast: clamp(coat.contrast + contrast, R.contrast[0], R.contrast[1]),
+    countershade: clamp(coat.countershade + countershade, R.countershade[0], R.countershade[1]),
+    bellyLine: clamp(coat.bellyLine + bellyLine, R.bellyLine[0], R.bellyLine[1]),
+    threshold: clamp(coat.threshold + threshold, R.threshold[0], R.threshold[1]),
+    warp: clamp(coat.warp + warp, R.warp[0], R.warp[1]),
+    scale: clamp(coat.scale * scale, R.scale[0], R.scale[1]),
+  };
+}
 
 /** Juvenile-spot strength: full up to maturity 0.3, gone by 0.7. */
 export function faunaJuvenileSpotStrength(maturity: number): number { return 1 - smooth(.3, .7, maturity); }
@@ -222,7 +265,7 @@ export function createFaunaAppearance(genome: CreatureGenome, id: string, varian
   const { lineage, coat: speciesCoat } = faunaSpeciesCoat(genome);
   const { dimorphism, hornlessFemales } = faunaSpeciesDimorphism(genome);
   // The individual coat drift supersedes the v1 +-14% brightness channel.
-  const adultCoat = faunaAdultCoat(speciesCoat, key);
+  const adultCoat = faunaAdultCoat(genome.archetype, speciesCoat, key);
   const maturity = stage === 'adult' ? 1 : .22 + .23 * unit(`${key}/maturity-v2`);
   const coat: CoatGenome = stage === 'adult' ? adultCoat : {
     ...adultCoat,
@@ -230,13 +273,13 @@ export function createFaunaAppearance(genome: CreatureGenome, id: string, varian
     greying: 0,
   };
   // The far-LOD palette is the adult coat's exact mean, so it never depends on stage.
-  const mean = faunaFarCoatMeanCached(`${species}|${faunaLineageKey(genome)}|${key}`, adultCoat, inheritedFaunaFamily(genome), faunaArmorShare(genome));
+  const mean = faunaFarCoatMeanCached(`${species}|${faunaLineageKey(genome)}|${key}`, adultCoat, inheritedFaunaFamily(genome), faunaArmorShare(genome, inheritedFaunaFamily(genome)));
   return {
     version: FAUNA_APPEARANCE_VERSION, individualKey: key, markingSeed: hash(`${key}/markings`), pattern: genome.pattern,
     palette: { base: linearHexOf(mean), marking: linearHexOf(adultCoat.colours.accent), belly: linearHexOf(adultCoat.colours.belly) },
     roughness: .84 + signed(`${species}/roughness`) * .035,
     profile: { mass, limb, neck, dimorphism, hornlessFemales },
-    individual: { size: signed(`${key}/size`), condition: signed(`${key}/condition`), muzzle: signed(`${key}/muzzle`), ears: signed(`${key}/ears`), sex: unit(`${key}/sex-v2`) < .5 ? 'male' : 'female' },
+    individual: { size: signed(`${key}/size`), condition: signed(`${key}/condition`), muzzle: signed(`${key}/muzzle`), ears: signed(`${key}/ears`), sex: unit(`${key}/sex-v2`) < .5 ? 'male' : 'female', coatPhase: unit(`${key}/coat-phase-v2`) },
     growth: { stage, maturity, lateral: 1 },
     coat,
     lineage: { family: lineage.family, pattern: lineage.pattern },
@@ -323,13 +366,20 @@ function clampedCoat(coat: CoatGenome, cell: number): CoatGenome {
   return clampResult;
 }
 
+/** Individual offset (torso lengths) of banded and striped coats: up to one
+ * pattern period, so every animal's bands fall differently on its body. */
+function bandPhase(a: FaunaAppearance): number {
+  const c = a.coat;
+  if ((c.pattern !== 'bands' && c.pattern !== 'stripes') || !Number.isFinite(a.individual.coatPhase)) return 0;
+  return a.individual.coatPhase! / (COAT_CELLS_PER_BODY[c.pattern] * c.scale);
+}
 const SAMPLE: CoatSample = { x: 0, y: 0, z: 0, dorsal: 0, region: 'torso', along: 0, footprint: 0 };
 const OUT = new Float64Array(3);
 
 /** Fills SAMPLE in torso-length units (x forward, y from the torso axis, z signed). */
 function prepare(genome: CreatureGenome, x: number, y: number, z: number, torsoY: number, region: string | undefined, surface: FaunaCoatSurface | undefined): CoatGenome {
   const a = genome.appearance!, TL = Math.max(genome.torsoLength, 1e-3);
-  SAMPLE.x = x / TL; SAMPLE.y = (y - torsoY) / TL; SAMPLE.z = z / TL * (a.growth.lateral ?? 1);
+  SAMPLE.x = x / TL + bandPhase(a); SAMPLE.y = (y - torsoY) / TL; SAMPLE.z = z / TL * (a.growth.lateral ?? 1);
   SAMPLE.dorsal = surface?.dorsal !== undefined && Number.isFinite(surface.dorsal) ? clamp(surface.dorsal, -1, 1) : clamp(2 * (y - torsoY) / Math.max(genome.torsoHeight, .05), -1, 1);
   SAMPLE.region = (region !== undefined && REGION_MAP[region]) || 'torso';
   SAMPLE.along = surface?.along !== undefined && Number.isFinite(surface.along) ? clamp(surface.along, 0, 1) : 0;
