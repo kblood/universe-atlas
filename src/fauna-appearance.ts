@@ -39,7 +39,12 @@ export interface FaunaAppearance {
   profile: { mass: number; limb: number; neck: number; dimorphism: number; hornlessFemales: boolean };
   /** coatPhase (v2, 0..1): the individual's offset of banded and striped
    * coats along the body, in pattern periods; absent in v1. */
-  individual: { size: number; condition: number; muzzle: number; ears: number; sex: FaunaSex; coatPhase?: number };
+  individual: {
+    size: number; condition: number; muzzle: number; ears: number; sex: FaunaSex;
+    /** fauna-appearance-2 only: band phase (0..1) and signed limb, neck and
+     * tail proportion axes (-1..1); a v1 appearance has none of them. */
+    coatPhase?: number; limb?: number; neck?: number; tail?: number;
+  };
   /** maturity is 1 for adults and continuous 0.22..0.45 for juveniles.
    * lateral (v2) maps the body's z into the adult coat frame: 1 for adults,
    * adult/juvenile torso width-to-length for juveniles; absent in v1. */
@@ -170,6 +175,11 @@ export function faunaArmorShare(genome: Pick<CreatureGenome, 'archetype' | 'armo
   return family !== 'proboscidean' && genome.archetype === 'low-slung' && genome.armor > .05 ? clamp(.25 * genome.armor, 0, .2) : 0;
 }
 
+/** Sampling footprint for a mesh cell of `cell` torso lengths. Vertex colours
+ * are interpolated linearly across each triangle, so a rosette ring narrower
+ * than about two cells would be reconstructed as straight, grid-aligned blocks;
+ * its edge filter therefore spans two cells. Other patterns use one cell. */
+function coatFootprint(coat: CoatGenome, cell: number): number { return coat.pattern === 'rosettes' ? 2 * cell : cell; }
 const MEAN_SAMPLE: CoatSample = { x: 0, y: 0, z: 0, dorsal: 0, region: 'torso', along: 0, footprint: 0 };
 /** Typical near-skin cell size in torso lengths (measured 0.019-0.026). */
 const FAR_MEAN_CELL = .022;
@@ -188,7 +198,7 @@ export function faunaFarCoatMean(coat: CoatGenome, family: FaunaMorphologyFamily
   // mean uses the same filtering so both LODs agree.
   const filtered = clampedCoat(coat, FAR_MEAN_CELL);
   for (const s of coatCanonicalSamples()) {
-    Object.assign(MEAN_SAMPLE, s); MEAN_SAMPLE.footprint = FAR_MEAN_CELL;
+    Object.assign(MEAN_SAMPLE, s); MEAN_SAMPLE.footprint = coatFootprint(coat, FAR_MEAN_CELL);
     evaluateCoat(filtered, MEAN_SAMPLE, MEAN_OUT, 0);
     add(groups[s.region] ?? 'torso', s.weight);
     if (armorShare > 0 && s.region === 'torso' && s.dorsal > .3) {
@@ -237,7 +247,10 @@ const INDIVIDUAL_MARKS: Readonly<Record<CreatureArchetype, readonly CoatMarkName
 function faunaIndividualCoat(archetype: CreatureArchetype, coat: CoatGenome, individualKey: string): CoatGenome {
   const rand = coatRandom(`${individualKey}/coat-individual-v2`), s = () => rand() * 2 - 1;
   const value = Math.pow(1 + .14 * s(), 2.2), contrast = .15 * s(), countershade = .1 * s(), bellyLine = .05 * s();
-  const threshold = .05 * s(), warp = .15 * s(), scale = 1 + .06 * s();
+  // Stripe and band counts vary more between individuals (zebra torso stripe
+  // counts span roughly +-10%) than spot sizes do.
+  const linear = coat.pattern === 'stripes' || coat.pattern === 'bands' || coat.pattern === 'brindle';
+  const threshold = .05 * s(), warp = .15 * s(), scale = 1 + (linear ? .1 : .06) * s();
   let marks = coat.marks;
   for (const name of ['socks', 'blaze'] as const) if (rand() < .12 && INDIVIDUAL_MARKS[archetype].includes(name)) marks ^= COAT_MARK_BITS[name];
   const R = COAT_GENOME_RANGES, colours = { ...coat.colours };
@@ -279,7 +292,8 @@ export function createFaunaAppearance(genome: CreatureGenome, id: string, varian
     palette: { base: linearHexOf(mean), marking: linearHexOf(adultCoat.colours.accent), belly: linearHexOf(adultCoat.colours.belly) },
     roughness: .84 + signed(`${species}/roughness`) * .035,
     profile: { mass, limb, neck, dimorphism, hornlessFemales },
-    individual: { size: signed(`${key}/size`), condition: signed(`${key}/condition`), muzzle: signed(`${key}/muzzle`), ears: signed(`${key}/ears`), sex: unit(`${key}/sex-v2`) < .5 ? 'male' : 'female', coatPhase: unit(`${key}/coat-phase-v2`) },
+    individual: { size: signed(`${key}/size`), condition: signed(`${key}/condition`), muzzle: signed(`${key}/muzzle`), ears: signed(`${key}/ears`), sex: unit(`${key}/sex-v2`) < .5 ? 'male' : 'female', coatPhase: unit(`${key}/coat-phase-v2`),
+      limb: signed(`${key}/limb-v2`), neck: signed(`${key}/neck-v2`), tail: signed(`${key}/tail-v2`) },
     growth: { stage, maturity, lateral: 1 },
     coat,
     lineage: { family: lineage.family, pattern: lineage.pattern },
@@ -344,10 +358,11 @@ const REGION_MAP: Readonly<Record<string, CoatRegion>> = {
  * stripe period) spans `k / (cells per body x scale)` torso lengths and must
  * cover at least four mesh cells. Spots use coatMinFeature (spot diameter)
  * exactly; thin lines (reticulation, rosette rings) are carried by the
- * footprint instead of being clamped away. Roan, saddle and dorsal stripes are
+ * footprint instead of being clamped away, but a rosette's dark centre must
+ * still span five cells or it renders as a square block (k 0.4). Roan, saddle and dorsal stripes are
  * not cellular and need no clamp. */
 const CLAMP_FEATURE: Partial<Record<ResolvedCoatPattern, number>> = {
-  rosettes: .5, reticulated: .67, dapple: .67, stripes: .67, bands: .67, brindle: .67, piebald: .67,
+  rosettes: .4, reticulated: .67, dapple: .67, stripes: .67, bands: .67, brindle: .67, piebald: .67,
 };
 /** Largest pattern scale whose marks span 4 cells of `cell` torso lengths. */
 export function faunaCoatMaxScale(coat: CoatGenome, cell: number): number {
@@ -384,7 +399,7 @@ function prepare(genome: CreatureGenome, x: number, y: number, z: number, torsoY
   SAMPLE.region = (region !== undefined && REGION_MAP[region]) || 'torso';
   SAMPLE.along = surface?.along !== undefined && Number.isFinite(surface.along) ? clamp(surface.along, 0, 1) : 0;
   const cell = surface?.cellM !== undefined && surface.cellM > 0 ? surface.cellM / TL : 0;
-  SAMPLE.footprint = cell;
+  SAMPLE.footprint = coatFootprint(a.coat, cell);
   return cell > 0 ? clampedCoat(a.coat, cell) : a.coat;
 }
 

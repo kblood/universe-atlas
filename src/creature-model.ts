@@ -106,7 +106,8 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
   // canonical, so adding a phenotype cannot reroll species or ancestry IDs.
   // Individual body size: +-4.5% (v1) and +-7% for coat phenotypes (uniform),
   // closer to the spread of wild ungulate populations.
-  const size=1+i.size*(isCoatPhenotype(a)?.07:.045),condition=1+i.condition*.055;
+  // Body condition (girth and depth): +-5.5% (v1) and +-9% for coat phenotypes.
+  const size=1+i.size*(isCoatPhenotype(a)?.07:.045),condition=1+i.condition*(isCoatPhenotype(a)?.09:.055);
   for(const field of ['torsoLength','torsoHeight','torsoWidth','legLength','stanceWidth','neckLength','neckRise','headLength','headWidth','tailLength','footLength','footWidth','hornLength','earLength','strideLength'] as const)apply(field,size);
   apply('torsoLength',1+p.mass*.035);apply('torsoHeight',(1+p.mass*.055)*condition);
   apply('torsoWidth',(1+p.mass*.075)*condition);apply('stanceWidth',1+p.mass*.065);
@@ -114,6 +115,15 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
   apply('strideLength',1+p.limb*.055-p.mass*.025);apply('neckLength',1+p.neck*.07);
   apply('neckRise',1+p.neck*.06);apply('headLength',1+i.muzzle*.065);apply('headWidth',1+i.condition*.035);
   apply('earLength',1+i.ears*.12);
+  // Individual proportions (fauna-appearance-2): limb, neck and tail lengths
+  // relative to the trunk vary within a population (limb +-4%, neck +-7%,
+  // tail +-10%), so siblings differ in silhouette and not only in size.
+  const coatPhenotype=isCoatPhenotype(a);
+  const limbIndividual=coatPhenotype?1+(i.limb??0)*.04:1,neckIndividual=coatPhenotype?1+(i.neck??0)*.07:1;
+  if(coatPhenotype){
+    apply('legLength',limbIndividual);apply('strideLength',limbIndividual);
+    apply('neckLength',neckIndividual);apply('neckRise',neckIndividual);apply('tailLength',1+(i.tail??0)*.1);
+  }
   // Sexual dimorphism (fauna-appearance-2): males are larger with longer horns;
   // females carry reduced horns, none at all in strongly dimorphic species
   // whose females are hornless. A legacy v1 appearance has no sex channel.
@@ -137,7 +147,7 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
     };
     const r=ratios[selected],length=g.torsoLength;
     g.torsoHeight=length*r[0]*condition;g.torsoWidth=length*r[1]*condition;
-    g.legLength=length*r[2]*(1+p.limb*.035);g.neckLength=length*r[3]*(1+p.neck*.035);
+    g.legLength=length*r[2]*(1+p.limb*.035)*limbIndividual;g.neckLength=length*r[3]*(1+p.neck*.035)*neckIndividual;
     g.headLength=length*r[4]*(1+i.muzzle*.065);g.headWidth=length*r[5];
     g.neckRise=g.neckLength*(selected==='long-neck'?.59:.45);
     g.stanceWidth=g.torsoWidth*1.1;g.footWidth=g.torsoWidth*(selected==='proboscidean'?.27:.23);
@@ -157,9 +167,6 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
   }
   // Male barrel width survives the authored family ratio envelopes.
   if(sex==='male')g.torsoWidth*=1+.06*dimorphism;
-  // Family envelope: a long-necked browser never drifts below a 0.6 neck/torso
-  // ratio (descendant drift measured 1.464 m -> 0.794 m without it).
-  if(isCoatPhenotype(a)&&selected==='long-neck'&&g.neckLength<g.torsoLength*.6){const lift=g.torsoLength*.6/g.neckLength;g.neckLength*=lift;g.neckRise*=lift;}
   // Adapt speed to the actual limb length, retaining inherited gait personality.
   const limbRatio=g.legLength/genome.legLength;
   g.walkSpeed*=Math.sqrt(limbRatio);g.runSpeed*=Math.sqrt(limbRatio);
@@ -177,7 +184,10 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
       apply('strideLength',q.limb);apply('walkSpeed',Math.sqrt(q.limb));apply('runSpeed',Math.sqrt(q.limb));
     }
   }
-  // Family envelope: padded quadrupeds keep short legs at every growth stage.
+  // Family envelopes, at every growth stage: a long-necked browser never drifts
+  // below a 0.6 neck/torso ratio (descendant drift measured 1.464 m -> 0.794 m
+  // without it), and padded quadrupeds keep short legs.
+  if(isCoatPhenotype(a)&&selected==='long-neck'&&g.neckLength<g.torsoLength*.6){const lift=g.torsoLength*.6/g.neckLength;g.neckLength*=lift;g.neckRise*=lift;}
   if(isCoatPhenotype(a)&&selected==='padded')g.legLength=Math.min(g.legLength,g.torsoLength*.445);
   normalized(g);
   // Feet must remain narrower than stance, and preferred stride below leg reach.
@@ -240,6 +250,7 @@ export function validateCreatureGenome(genome:CreatureGenome):string[] {
         if(!a.individual||!Number.isFinite(a.individual.coatPhase)||a.individual.coatPhase!<0||a.individual.coatPhase!>1)errors.push('invalid individual coat phase');
         if(!a.profile||!Number.isFinite(a.profile.dimorphism)||a.profile.dimorphism<0||a.profile.dimorphism>1||typeof a.profile.hornlessFemales!=='boolean')errors.push('invalid species dimorphism');
         if(!a.lineage||!isPigmentFamily(a.lineage.family)||typeof a.lineage.pattern!=='string')errors.push('invalid coat lineage');
+        for(const axis of ['limb','neck','tail'] as const){const v=a.individual?.[axis];if(v!==undefined&&(!Number.isFinite(v)||v<-1||v>1))errors.push(`invalid individual ${axis} axis`);}
         if(!a.growth||!Number.isFinite(a.growth.lateral)||a.growth.lateral!<.5||a.growth.lateral!>2)errors.push('invalid coat growth frame');
       }
       if(typeof a.individualKey!=='string'||!a.individualKey||!Number.isInteger(a.markingSeed)||a.markingSeed<0||a.markingSeed>0xffffffff)errors.push('invalid appearance identity');
