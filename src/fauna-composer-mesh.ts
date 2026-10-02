@@ -145,24 +145,44 @@ interface Ring {
 }
 /** Lofts closed rings; caps are rounded. Winding is outward when the
  * ring basis (v = u x t, u, t) is right-handed, which this function enforces. */
+type RingBasis = {t: THREE.Vector3; u: THREE.Vector3; v: THREE.Vector3};
+const ringBasis = (r: Ring): RingBasis => { const t = r.t.clone().normalize(); let u = r.u.clone().addScaledVector(t, -r.u.dot(t)); if (u.lengthSq() < 1e-10) u = Math.abs(t.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0), u.addScaledVector(t, -u.dot(t)); u.normalize(); return {t, u, v: V().crossVectors(u, t)}; };
+/** Position of a ring's vertex at angle `a` (superellipse section, lobes, squash), exactly as `loft` emits it. */
+function ringPoint(r: Ring, b: RingBasis, a: number, out: THREE.Vector3, scale = 1, shift = 0) {
+  const {t, u, v} = b, e = 2 / (r.n ?? 2), ca = Math.cos(a), sa = Math.sin(a);
+  const cx = e === 1 ? ca : Math.sign(ca) * Math.pow(Math.abs(ca), e), sy = e === 1 ? sa : Math.sign(sa) * Math.pow(Math.abs(sa), e);
+  let rx = r.rx, ry = sa < 0 ? r.ryBelow ?? r.ry : r.ry;
+  if (r.lobe) { const [dl, dd] = r.lobe(a); rx = Math.max(1e-4, rx + dl); if (sa > 0) ry = Math.max(1e-4, ry + dd); }
+  const kx = cx * rx * scale, ky = sy * ry * scale;
+  out.set(r.c.x + t.x * shift + v.x * kx + u.x * ky, r.c.y + t.y * shift + v.y * kx + u.y * ky, r.c.z + t.z * shift + v.z * kx + u.z * ky);
+  if (r.squash) { const [n, f] = r.squash, dn = -f * ((out.x - r.c.x) * n.x + (out.y - r.c.y) * n.y + (out.z - r.c.z) * n.z); out.x += n.x * dn; out.y += n.y * dn; out.z += n.z * dn; }
+  return out;
+}
+/** Every triangle edge length a loft of `rings` would emit between consecutive rings (caps excluded). */
+function loftEdgeLengths(rings: Ring[], segments: number, include: (i: number) => boolean): number[] {
+  const out: number[] = [], pts = rings.map(r => { const b = ringBasis(r); return Array.from({length: segments}, (_, k) => ringPoint(r, b, TAU * k / segments, V())); });
+  for (let i = 0; i + 1 < rings.length; i++) {
+    if (!include(i)) continue;
+    const A = pts[i]!, B = pts[i + 1]!;
+    for (let k = 0; k < segments; k++) {
+      const a = A[k]!, b = A[(k + 1) % segments]!, c = B[k]!, d = B[(k + 1) % segments]!;
+      out.push(a.distanceTo(b), b.distanceTo(c), c.distanceTo(a), b.distanceTo(d), d.distanceTo(c), c.distanceTo(b));
+    }
+  }
+  return out;
+}
 function loft(s: Skin, rings: Ring[], segments: number, capStart = 0.6, capEnd = 0.6) {
   if (rings.length < 2) return;
   const ids: number[][] = [];
-  const basis = (r: Ring) => { const t = r.t.clone().normalize(); let u = r.u.clone().addScaledVector(t, -r.u.dot(t)); if (u.lengthSq() < 1e-10) u = Math.abs(t.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0), u.addScaledVector(t, -u.dot(t)); u.normalize(); return {t, u, v: V().crossVectors(u, t)}; };
+  const basis = ringBasis;
   const p = V();
   /** Emits one ring; with `colours` the vertices reuse those colours (cap rings copy their boundary ring, whose
    * colour they match to within the cap's tiny extent), otherwise each vertex samples the ring's colour field. */
   const ringIds = (r: Ring, scale = 1, shift = 0, colours?: RGB[], record?: RGB[]) => {
-    const {t, u, v} = basis(r), out: number[] = [], e = 2 / (r.n ?? 2);
-    const cx0 = r.c.x + t.x * shift, cy0 = r.c.y + t.y * shift, cz0 = r.c.z + t.z * shift;
+    const b = basis(r), out: number[] = [];
     for (let k = 0; k < segments; k++) {
-      const a = TAU * k / segments, ca = Math.cos(a), sa = Math.sin(a);
-      const cx = e === 1 ? ca : Math.sign(ca) * Math.pow(Math.abs(ca), e), sy = e === 1 ? sa : Math.sign(sa) * Math.pow(Math.abs(sa), e);
-      let rx = r.rx, ry = sa < 0 ? r.ryBelow ?? r.ry : r.ry;
-      if (r.lobe) { const [dl, dd] = r.lobe(a); rx = Math.max(1e-4, rx + dl); if (sa > 0) ry = Math.max(1e-4, ry + dd); }
-      const kx = cx * rx * scale, ky = sy * ry * scale;
-      p.set(cx0 + v.x * kx + u.x * ky, cy0 + v.y * kx + u.y * ky, cz0 + v.z * kx + u.z * ky);
-      if (r.squash) { const [n, f] = r.squash, dn = -f * ((p.x - r.c.x) * n.x + (p.y - r.c.y) * n.y + (p.z - r.c.z) * n.z); p.x += n.x * dn; p.y += n.y * dn; p.z += n.z * dn; }
+      const a = TAU * k / segments;
+      ringPoint(r, b, a, p, scale, shift);
       const col = colours ? colours[k]! : r.color(a, p);
       record?.push(col);
       out.push(s.v(p, col, r.w, r.region));
@@ -246,6 +266,33 @@ function centripetal(p0: THREE.Vector3, p1: THREE.Vector3, p2: THREE.Vector3, p3
   };
 }
 
+/** Largest centreline turn allowed between consecutive rings before a midpoint ring is inserted. */
+const MAX_RING_TURN = 12 * Math.PI / 180;
+/**
+ * Adaptive ring placement: wherever two consecutive stations (segment k, fraction f) differ in tangent by more
+ * than MAX_RING_TURN, a station is inserted halfway in chain parameter (k + f), up to three levels deep. Only
+ * sharply bent joints gain rings, so a straight chain keeps its spec'd tessellation.
+ */
+function refineStations<S extends {k: number; f: number; kind: ComposerSkinRing['kind']}>(plan: S[], tangent: (s: {k: number; f: number}) => THREE.Vector3, segCount: number): S[] {
+  let cur = plan, tans = cur.map(st => tangent(st).clone().normalize());
+  for (let pass = 0; pass < 3; pass++) {
+    const next: S[] = [cur[0]!], nextT: THREE.Vector3[] = [tans[0]!];
+    let added = false;
+    for (let i = 1; i < cur.length; i++) {
+      const a = cur[i - 1]!, b = cur[i]!;
+      if (tans[i - 1]!.angleTo(tans[i]!) > MAX_RING_TURN) {
+        const tm = (a.k + a.f + b.k + b.f) / 2, k = Math.min(segCount - 1, Math.floor(tm)), f = tm - k;
+        const st = {...a, k, f, kind: f < 0.12 || f > 0.88 ? 'joint' : 'bone'} as S;
+        next.push(st); nextT.push(tangent(st).clone().normalize()); added = true;
+      }
+      next.push(b); nextT.push(tans[i]!);
+    }
+    cur = next; tans = nextT;
+    if (!added) break;
+  }
+  return cur;
+}
+
 // ------------------------------------------------------------------ head stations
 interface HeadStation {x: number; w: number; h: number; yc: number}
 /** The cranial station where the head loft starts (and the neck blend ends), in head-bone units. */
@@ -293,13 +340,13 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
 
   // ---- individual stream: fixed draw order, mesh-local, never colorSeed
   const ind = composerRandom(`composer-skin-ind-v1/${traits.coat.driftKey}`);
-  const u9: number[] = []; for (let i = 0; i < 10; i++) u9.push(ind());
+  const u9: number[] = []; for (let i = 0; i < 12; i++) u9.push(ind());
   const word = (u: number) => Math.floor(u * 4294967296) >>> 0;
   const mottleSeed = word(u9[0]!), mottleAmp = jv * (0.05 + 0.07 * u9[1]!);
   const bellyShift = jv * (u9[2]! - 0.5) * 0.24, countershadeScale = 1 + jv * (u9[3]! - 0.5) * 0.3;
   const soil = jv * 0.45 * u9[4]!, soilHeight = 0.12 + 0.3 * u9[5]!;
-  // overall coat tone: individuals of one species differ in shade by about +-14% perceptual lightness
-  const tone = 1 + jv * (u9[9]! - 0.5) * 0.28;
+  // overall coat tone: individuals of one species differ in shade by about +-17% perceptual lightness
+  const tone = 1 + jv * (u9[9]! - 0.5) * 0.34;
   const individual: SkinIndividual = {traits, jv, osteoSeed: word(u9[6]!), plateSeed: word(u9[7]!), featherSeed: word(u9[8]!)};
 
   // ---- coat genome (built once per creature)
@@ -307,7 +354,9 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
     coatIndividualDrift(traits.coat.driftKey, r.variability));
   if (jv > 0) genome = {...genome, bellyLine: clamp(genome.bellyLine + bellyShift, -1, 1), countershade: clamp(genome.countershade * countershadeScale, 0, 1)};
   const requestedScale = genome.scale;
-  const pal = genome.colours as Palette;
+  // bare parts vary per individual too: skin and keratin pigment together (+-15% perceptual), iris shade (+-10%)
+  const skinMul = (1 + jv * (u9[10]! - 0.5) * 0.3) ** 2.2, eyeMul = (1 + jv * (u9[11]! - 0.5) * 0.2) ** 2.2;
+  const pal = {...genome.colours, skin: scaleC(genome.colours.skin, skinMul), keratin: scaleC(genome.colours.keratin, skinMul), eye: scaleC(genome.colours.eye, eyeMul)} as Palette;
   const male = traits.sex === 'male' && r.dimorphism > 0;
   const SOIL: RGB = [0.155, 0.117, 0.08];
 
@@ -403,9 +452,11 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
       if (k + 1 < curves.length && fellBack.has(k + 1) && f > 0.88) t.lerp(chordDir(k + 1), (f - 0.88) / 0.24);
       return {c: ext[k]!.clone().lerp(ext[k + 1]!, f), t: t.normalize()};
     };
-    const rings: Ring[] = [], metas: Meta[] = [];
+    // ring plan: regular rings, joint rings at +-12%, then adaptive midpoints wherever the centreline turns too fast
+    type Station = {k: number; f: number; kind: ComposerSkinRing['kind']};
+    let plan: Station[] = [];
     segs.forEach(({bone}, k) => {
-      const prev = segs[k - 1]?.bone, next = segs[k + 1]?.bone, R = o.ringsFor(bone);
+      const R = o.ringsFor(bone);
       let fr: number[] = [];
       for (let i = 0; i < R; i++) fr.push(i / R);
       if (k === segs.length - 1) fr.push(1);
@@ -416,7 +467,13 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
       fr = fr.filter(f => ![...extras].some(e => Math.abs(f - e) < 0.04));
       fr = [...fr, ...extras].sort((a, b) => a - b);
       if (k === 0 && o.rootF !== undefined) { const f3 = o.rootF, gap = 0.5 / R; fr = [f3, ...fr.filter(f => f > f3 + gap)]; }
-      for (const f of fr) {
+      for (const f of fr) plan.push({k, f, kind: k === 0 && f === o.rootF ? 'root' : extras.has(f) ? 'joint' : 'bone'});
+    });
+    plan = refineStations(plan, st => evalSeg(st.k, st.f).t, segs.length);
+    const rings: Ring[] = [], metas: Meta[] = [];
+    segs.forEach(({bone}, k) => {
+      const prev = segs[k - 1]?.bone, next = segs[k + 1]?.bone;
+      for (const {f, kind} of plan.filter(st => st.k === k)) {
         const sec = sampleSec(k, f), ripple = o.ripple ? o.ripple(bone, f) : 1;
         const {c, t} = evalSeg(k, f), up = axis(bone, 0, 1, 0);
         let weights: W;
@@ -427,7 +484,7 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
         else weights = [[bone.index, 1]];
         if (k === 0 && rings.length === 0 && o.startWeights) weights = o.startWeights;
         const ring: Ring = {c, t, u: up, rx: sec.w * ripple, ry: sec.h * ripple, w: weights, color: () => [0, 0, 0]};
-        const meta: Meta = {kind: k === 0 && f === o.rootF ? 'root' : extras.has(f) ? 'joint' : 'bone', bone, k, f, sec, fp: 0, along: 0, region: 'torso'};
+        const meta: Meta = {kind, bone, k, f, sec, fp: 0, along: 0, region: 'torso'};
         o.dress(ring, meta);
         // the spline centreline may sag below the straight bone line: keep the underside above the joint-underside line
         const lineY = mix(sections[k]!.yc - sections[k]!.h, sections[k + 1]!.yc - sections[k + 1]!.h, f);
@@ -527,8 +584,12 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
   const blendCount = clamp(Math.ceil(Math.abs(Math.log(ratio)) / Math.log(1.12)), 2, 5);
   const headWeightAt = (x: number) => x <= 0.1 * H ? 0.35 * x / (0.1 * H) : Math.min(0.7, 0.35 + 0.35 * (x - 0.1 * H) / (0.12 * H));
   const blendRings: Ring[] = [], blendMetas: Meta[] = [];
-  for (let i = 1; i <= blendCount; i++) {
-    const sb = i / blendCount, x = station0.x * sb, last = i === blendCount;
+  // blend stations: uniform in sb, then refined where the neck-to-head centreline turns faster than MAX_RING_TURN
+  const headAxis = axis(hb, 1, 0, 0), lastAxial = axialChain.rings[axialChain.rings.length - 1]!;
+  const blendPlan = refineStations([{k: 0, f: 0, kind: 'blend' as const}, ...Array.from({length: blendCount}, (_, i) => ({k: 0, f: (i + 1) / blendCount, kind: 'blend' as const}))],
+    st => st.f === 0 ? lastAxial.t : st.f === 1 ? headAxis : axialChain.evalSeg(axialSegs.length, st.f).t, 1).slice(1).map(st => st.f);
+  for (const sb of blendPlan) {
+    const x = station0.x * sb, last = sb === 1;
     const {c, t} = axialChain.evalSeg(axialSegs.length, sb);
     const w = lastSec.w * (station0.w / lastSec.w) ** sb, h = lastSec.h * (station0.h / lastSec.h) ** sb;
     const hw = headWeightAt(x), up = last ? axis(hb, 0, 1, 0) : axis(lastSeg, 0, 1, 0).lerp(axis(hb, 0, 1, 0), sb).normalize();
@@ -548,14 +609,8 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
   const axialRings = [...axialChain.rings, ...blendRings], axialMetas = [...axialChain.metas, ...blendMetas];
   setFootprints(axialRings, axialMetas, axialRadial);
   // ---- pattern scale clamp: keep a mean pattern cell at least four torso edges across
-  const torsoEdges: number[] = [];
-  for (let i = 0; i + 1 < axialRings.length; i++) {
-    if (axialMetas[i]!.bone.part !== 'torso' || axialMetas[i + 1]!.bone.part !== 'torso') continue;
-    const a = axialRings[i]!, b = axialRings[i + 1]!;
-    const perim = (x: Ring) => { const p = x.rx, q = 0.5 * (x.ry + (x.ryBelow ?? x.ry)); return Math.PI * (3 * (p + q) - Math.sqrt((3 * p + q) * (p + 3 * q))); };
-    const circ = (perim(a) + perim(b)) / 2 / axialRadial, ax = a.c.distanceTo(b.c), diag = Math.hypot(circ, ax);
-    torsoEdges.push(circ, circ, ax, ax, diag, diag);
-  }
+  // the exact triangle edges the loft will emit between torso-region rings (same superellipse, lobes and squash)
+  const torsoEdges = loftEdgeLengths(axialRings, axialRadial, i => axialMetas[i]!.region === 'torso' && axialMetas[i + 1]!.region === 'torso');
   torsoEdges.sort((a, b) => a - b);
   const torsoEdge = torsoEdges.length ? torsoEdges[torsoEdges.length >> 1]! : 0;
   const cells = COAT_CELLS_PER_BODY[genome.pattern];
