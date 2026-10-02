@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "fauna-retained-revision-1",
+  "template": "deer-doe-v1",
+  "assetId": "atlas-deer-doe-v1",
+  "assetHash": "23233caf7427587e88ce74a25a347297d8e67da0fd6b0fa7c811b0c544d5a6b3",
+  "sidecarHash": "5d4caf2e1e7ba6faef5b36b1f450ae6caf0520063666f00fa371919ca5a19b60",
+  "files": {
+    "deer-doe.glb": {
+      "sha256": "23233caf7427587e88ce74a25a347297d8e67da0fd6b0fa7c811b0c544d5a6b3",
+      "bytes": 5761612
+    },
+    "fauna-template.json": {
+      "sha256": "5d4caf2e1e7ba6faef5b36b1f450ae6caf0520063666f00fa371919ca5a19b60",
+      "bytes": 52682
+    },
+    "authoring-manifest.json": {
+      "sha256": "60f098763a4094683b59ce2d40f80b247f758abbc8259485b5e06ccdf0d2acab",
+      "bytes": 37754
+    }
+  },
+  "validation": {
+    "sidecarContract": true,
+    "namedRigAndMorphContract": true,
+    "khronosErrors": 0,
+    "khronosWarnings": 2,
+    "neutralDefaults": {
+      "valid": false,
+      "meshes": [
+        {
+          "index": 0,
+          "targets": 14,
+          "declaredWeights": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      "errors": [
+        "mesh 0[0]: nonzero or invalid default 1",
+        "mesh 0[1]: nonzero or invalid default 1",
+        "mesh 0[2]: nonzero or invalid default 1",
+        "mesh 0[3]: nonzero or invalid default 1",
+        "mesh 0[4]: nonzero or invalid default 1",
+        "mesh 0[5]: nonzero or invalid default 1",
+        "mesh 0[6]: nonzero or invalid default 1",
+        "mesh 0[7]: nonzero or invalid default 1",
+        "mesh 0[8]: nonzero or invalid default 1",
+        "mesh 0[9]: nonzero or invalid default 1",
+        "mesh 0[10]: nonzero or invalid default 1",
+        "mesh 0[11]: nonzero or invalid default 1",
+        "mesh 0[12]: nonzero or invalid default 1",
+        "mesh 0[13]: nonzero or invalid default 1"
+      ]
+    },
+    "scope": "Runtime file contract only; retains historical raw defaults and review defects without declaring visual, animation, neutral-source or device acceptance"
+  },
+  "status": "retained-asset-bytes-not-acceptance"
+}

@@ -1,5 +1,13 @@
 # Realistic fauna and variation plan
 
+## Current implementation direction
+
+The [Blender and morph plan](fauna-blender-morph-plan-2026-10-02.md) supersedes
+the procedural-only next slice below. It records the limb diagnosis,
+CharacterCreator reuse, a Blender-authored reference animal and ordered family
+expansion. Historical implementation statements below reflect their original
+milestone; consult the structural milestone and new plan for current status.
+
 ## Structural expansion and implementation status
 
 The user expanded the direction to different limbs, paws, hooves, trunks, long

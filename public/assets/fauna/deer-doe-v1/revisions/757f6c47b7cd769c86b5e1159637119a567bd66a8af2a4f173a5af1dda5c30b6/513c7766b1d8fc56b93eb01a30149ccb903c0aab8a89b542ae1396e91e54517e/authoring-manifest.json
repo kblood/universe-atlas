@@ -1,0 +1,1419 @@
+{
+  "schemaVersion": 2,
+  "operation": "atlas-fauna-author-1",
+  "status": "proposal-needs-review",
+  "artifactPathBase": "manifest-directory",
+  "sourceType": "original",
+  "externalInputs": [],
+  "license": {
+    "expression": "NOASSERTION",
+    "attribution": null,
+    "restrictions": [
+      "Review candidate: resolve original asset license and visual/runtime acceptance before packaging for publication"
+    ]
+  },
+  "ownership": "Original project-authored internal candidate; no third-party asset license is assigned.",
+  "seed": 10022026,
+  "blenderVersion": "5.1.1",
+  "inputsPreserved": true,
+  "neutralDefaultAudit": {
+    "source": [
+      {
+        "stage": "before .blend save",
+        "targets": 12,
+        "nonzeroValues": 0
+      },
+      {
+        "stage": "before GLB export",
+        "targets": 12,
+        "nonzeroValues": 0
+      }
+    ],
+    "exported": {
+      "meshTargetCounts": [
+        12
+      ],
+      "meshDefaultWeights": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "nodeDefaultWeights": [],
+      "rule": "absent or explicit zero on every mesh and node"
+    }
+  },
+  "exportColourAudit": {
+    "channel": "COLOR_0",
+    "linearMeanRGB": [
+      0.30559449603240324,
+      0.17112309980222293,
+      0.08664679982170997
+    ],
+    "linearMinRGB": [
+      0.03559929808499275,
+      0.01680018310826276,
+      0.0069886320286869615
+    ],
+    "linearMaxRGB": [
+      0.5332722972457465,
+      0.40198367284657055,
+      0.25015640497444114
+    ],
+    "fakeWhiteRejected": true
+  },
+  "limbSectionAudit": {
+    "sectionCount": 56,
+    "coordinatePlane": "per-section local plane or runtime XZ",
+    "stage": "authored cage before subdivision",
+    "sections": [
+      {
+        "section": "L_rear_collar_0",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.07344234899463534,
+        "minimumSignedTurnSquareMetres": 0.00012679232118966983,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_collar_1",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.04235842108173059,
+        "minimumSignedTurnSquareMetres": 0.00031039124851039296,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_0",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.033063845692858196,
+        "minimumSignedTurnSquareMetres": 0.0006292065667301561,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_1",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.01854942919781854,
+        "minimumSignedTurnSquareMetres": 0.00035299664290211474,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_2",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.008119011012708954,
+        "minimumSignedTurnSquareMetres": 0.000154504617632778,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_3",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.005660655652360909,
+        "minimumSignedTurnSquareMetres": 0.00010772268674082153,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_4",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.004898348450833853,
+        "minimumSignedTurnSquareMetres": 9.32158988047882e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_5",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0037472374158074584,
+        "minimumSignedTurnSquareMetres": 7.13099200603251e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_6",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0030369767659803315,
+        "minimumSignedTurnSquareMetres": 5.779394135163596e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_7",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.002400189997309206,
+        "minimumSignedTurnSquareMetres": 4.567571578021311e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_8",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0018307570572051093,
+        "minimumSignedTurnSquareMetres": 3.483917381470747e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_9",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0012796931662773757,
+        "minimumSignedTurnSquareMetres": 2.4352647483905088e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_10",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0021491501108375152,
+        "minimumSignedTurnSquareMetres": 4.0898380362832526e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_11",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0024797887604581237,
+        "minimumSignedTurnSquareMetres": 4.719037016162608e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_rear_12",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0027522595080253787,
+        "minimumSignedTurnSquareMetres": 5.237564239676806e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_collar_0",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.07743843378228969,
+        "minimumSignedTurnSquareMetres": 0.0001203194212162789,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_collar_1",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.044862386971606924,
+        "minimumSignedTurnSquareMetres": 0.00030245028272478597,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_0",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.033063845692858196,
+        "minimumSignedTurnSquareMetres": 0.0006292065667301561,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_1",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.01854942919781854,
+        "minimumSignedTurnSquareMetres": 0.00035299664290211474,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_2",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.008119011012708954,
+        "minimumSignedTurnSquareMetres": 0.000154504617632778,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_3",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.005660655652360909,
+        "minimumSignedTurnSquareMetres": 0.00010772268674082153,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_4",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.004898348450833853,
+        "minimumSignedTurnSquareMetres": 9.32158988047882e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_5",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0037472374158074584,
+        "minimumSignedTurnSquareMetres": 7.13099200603251e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_6",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0030369767659803315,
+        "minimumSignedTurnSquareMetres": 5.779394135163596e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_7",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.002400189997309206,
+        "minimumSignedTurnSquareMetres": 4.567571578021311e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_8",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0018307570572051093,
+        "minimumSignedTurnSquareMetres": 3.483917381470747e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_9",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0012796931662773757,
+        "minimumSignedTurnSquareMetres": 2.4352647483905088e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_10",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0021491501108375152,
+        "minimumSignedTurnSquareMetres": 4.0898380362832526e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_11",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0024797887604581237,
+        "minimumSignedTurnSquareMetres": 4.719037016162608e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_rear_12",
+        "vertices": 16,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.0027522595080253787,
+        "minimumSignedTurnSquareMetres": 5.237564239676806e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_front_collar_0",
+        "vertices": 12,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.04913434538912416,
+        "minimumSignedTurnSquareMetres": 0.0009411315132962423,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_front_collar_1",
+        "vertices": 12,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.03254322236655778,
+        "minimumSignedTurnSquareMetres": 0.0006233398764742822,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_front_0",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.019352410799935216,
+        "minimumSignedTurnSquareMetres": 0.00037068073010626534,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_front_1",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.010499714993024156,
+        "minimumSignedTurnSquareMetres": 0.0002011146132741004,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_front_2",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.006423355478260007,
+        "minimumSignedTurnSquareMetres": 0.00012303457334539303,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_front_3",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.0033734377617777866,
+        "minimumSignedTurnSquareMetres": 6.461585508521495e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_front_4",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.001988181412395207,
+        "minimumSignedTurnSquareMetres": 3.808216850398338e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_front_5",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.0023881704720665198,
+        "minimumSignedTurnSquareMetres": 4.574371509669106e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_front_6",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.0014823126704168743,
+        "minimumSignedTurnSquareMetres": 2.839266100229665e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_front_7",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.0012293784118382334,
+        "minimumSignedTurnSquareMetres": 2.3547856527805777e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_front_8",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.0020646499059262524,
+        "minimumSignedTurnSquareMetres": 3.954687358520559e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_front_9",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.002382288300714741,
+        "minimumSignedTurnSquareMetres": 4.5631054361283674e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "L_front_10",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.0026440459319267973,
+        "minimumSignedTurnSquareMetres": 5.0644781172781705e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_front_collar_0",
+        "vertices": 12,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.04913436619763485,
+        "minimumSignedTurnSquareMetres": 0.0009411336181665269,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_front_collar_1",
+        "vertices": 12,
+        "coordinatePlane": "local collar plane",
+        "signedAreaSquareMetres": 0.03254323095276122,
+        "minimumSignedTurnSquareMetres": 0.0006233407822041725,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_front_0",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.019352410799935216,
+        "minimumSignedTurnSquareMetres": 0.00037068073010626534,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_front_1",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.010499714993024156,
+        "minimumSignedTurnSquareMetres": 0.0002011146132741004,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_front_2",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.006423355478260007,
+        "minimumSignedTurnSquareMetres": 0.00012303457334539303,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_front_3",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.0033734377617777866,
+        "minimumSignedTurnSquareMetres": 6.461585508521495e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_front_4",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.001988181412395207,
+        "minimumSignedTurnSquareMetres": 3.808216850398338e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_front_5",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.0023881704720665198,
+        "minimumSignedTurnSquareMetres": 4.574371509669106e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_front_6",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.0014823126704168743,
+        "minimumSignedTurnSquareMetres": 2.839266100229665e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_front_7",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.0012293784118382334,
+        "minimumSignedTurnSquareMetres": 2.3547856527805777e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_front_8",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.0020646499059262524,
+        "minimumSignedTurnSquareMetres": 3.954687358520559e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_front_9",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.002382288300714741,
+        "minimumSignedTurnSquareMetres": 4.5631054361283674e-05,
+        "nonAdjacentEdgeIntersections": []
+      },
+      {
+        "section": "R_front_10",
+        "vertices": 12,
+        "coordinatePlane": "runtime XZ",
+        "signedAreaSquareMetres": 0.0026440459319267973,
+        "minimumSignedTurnSquareMetres": 5.0644781172781705e-05,
+        "nonAdjacentEdgeIntersections": []
+      }
+    ]
+  },
+  "ownershipGradientAudit": [
+    {
+      "region": "L_rear",
+      "maximumGradientPerMetre": 5.0,
+      "beforeGradientPerMetre": 21.234503013496443,
+      "afterGradientPerMetre": 5.000000000000008,
+      "maximumOwnershipReduction": 0.07223717886718767,
+      "maximumRemainingOwnership": 1.0,
+      "verticesChanged": 79,
+      "finalAssignedGradientPerMetre": 5.000013014227019,
+      "triangleEdgesAudited": 21912,
+      "massPreservation": "Axial/limb shares preserved separately within four final influences."
+    },
+    {
+      "region": "R_rear",
+      "maximumGradientPerMetre": 5.0,
+      "beforeGradientPerMetre": 21.234503013496443,
+      "afterGradientPerMetre": 5.000000000000008,
+      "maximumOwnershipReduction": 0.0743382740516833,
+      "maximumRemainingOwnership": 1.0,
+      "verticesChanged": 82,
+      "finalAssignedGradientPerMetre": 5.0000049114748295,
+      "triangleEdgesAudited": 21912,
+      "massPreservation": "Axial/limb shares preserved separately within four final influences."
+    }
+  ],
+  "distalMixtureAudit": {
+    "authoring": [
+      {
+        "maximumGradientPerMetre": 8.0,
+        "beforeGradientPerMetre": 58.212635485579646,
+        "envelopeGradientPerMetre": 8.000000000000009,
+        "verticesChanged": 44,
+        "maximumShareReduction": 0.26988526209539343,
+        "hipSlotsAdded": 0,
+        "subExportInfluencesMerged": 25,
+        "distalFoldedIntoHip": 0,
+        "side": "L",
+        "finalAssignedGradientPerMetre": 8.000010742287484,
+        "finalMaximumExcess": 6.758924994687554e-08,
+        "storageTolerance": 3e-07,
+        "maximumHindTotalChange": 2.9802322387695312e-08,
+        "nonLimbWeightsChanged": 0,
+        "triangleEdgesAudited": 21912,
+        "vertexDomain": "unsplit Blender authoring vertices; GLB UV seams duplicate some of them"
+      },
+      {
+        "maximumGradientPerMetre": 8.0,
+        "beforeGradientPerMetre": 58.212635485579646,
+        "envelopeGradientPerMetre": 8.000000000000007,
+        "verticesChanged": 43,
+        "maximumShareReduction": 0.26988526209539343,
+        "hipSlotsAdded": 0,
+        "subExportInfluencesMerged": 24,
+        "distalFoldedIntoHip": 0,
+        "side": "R",
+        "finalAssignedGradientPerMetre": 8.000002969973197,
+        "finalMaximumExcess": 3.670339246419907e-08,
+        "storageTolerance": 3e-07,
+        "maximumHindTotalChange": 1.4901161193847656e-08,
+        "nonLimbWeightsChanged": 0,
+        "triangleEdgesAudited": 21912,
+        "vertexDomain": "unsplit Blender authoring vertices; GLB UV seams duplicate some of them"
+      }
+    ],
+    "exported": {
+      "stage": "decoded exported GLB after io_scene_gltf2 influence drop and renormalization",
+      "triangleAndWeldEdges": 25204,
+      "weldEdges": 1700,
+      "maximumWeightSumError": 1.2665987014770508e-07,
+      "tolerancePerMetre": 0.0001,
+      "weldTolerance": 5.960464477539063e-08,
+      "sides": {
+        "L": {
+          "normalizedDistalShare": {
+            "maximumGradientPerMetre": 8.0,
+            "measuredGradientPerMetre": 8.000009795302216,
+            "maximumWeldDifference": 0.0,
+            "maximumExcess": 6.163092684113858e-08,
+            "violations": 0
+          },
+          "totalHindOwnership": {
+            "maximumGradientPerMetre": 5.0,
+            "measuredGradientPerMetre": 5.000027096719352,
+            "maximumWeldDifference": 0.0,
+            "maximumExcess": 1.1367151488139715e-06,
+            "violations": 0
+          }
+        },
+        "R": {
+          "normalizedDistalShare": {
+            "maximumGradientPerMetre": 8.0,
+            "measuredGradientPerMetre": 8.0000029387805,
+            "maximumWeldDifference": 0.0,
+            "maximumExcess": 3.6467181885324607e-08,
+            "violations": 0
+          },
+          "totalHindOwnership": {
+            "maximumGradientPerMetre": 5.0,
+            "measuredGradientPerMetre": 5.000030002413974,
+            "maximumWeldDifference": 0.0,
+            "maximumExcess": 1.2586073966369682e-06,
+            "violations": 0
+          }
+        }
+      }
+    }
+  },
+  "axialFieldAudit": {
+    "method": "Continuous inverse-square distance field over measured pelvis/spine/chest/neck1/neck2/head bone segments (start joint, end mean child joint; head uses its authored tail), gated on chest/neck1 joints and faded to the rigid head; blended with the previous exported vector, top four normalized, exporter 1e-4 floor applied once. Replaces the hard x>.48/y>1.02 candidate switch on the largest connected coat component only, excluding vertices shared with other materials.",
+    "bones": [
+      "pelvis",
+      "spine",
+      "chest",
+      "neck1",
+      "neck2",
+      "head"
+    ],
+    "radiusMetres": 0.035,
+    "power": 2,
+    "headGateX": [
+      0.77,
+      0.9
+    ],
+    "entranceGate": {
+      "x": [
+        0.19999999284744263,
+        0.44
+      ],
+      "y": [
+        0.8100000286102295,
+        0.9199999809265137
+      ]
+    },
+    "segments": {
+      "pelvis": [
+        [
+          -0.4300000071525574,
+          0.9800000190734863,
+          -0.0
+        ],
+        [
+          -0.4100000262260437,
+          0.9925000071525574,
+          0.0
+        ]
+      ],
+      "spine": [
+        [
+          -0.11999999731779099,
+          0.9700000286102295,
+          -0.0
+        ],
+        [
+          0.3199999928474426,
+          0.9700000286102295,
+          0.0
+        ]
+      ],
+      "chest": [
+        [
+          0.3199999928474426,
+          0.9700000286102295,
+          -0.0
+        ],
+        [
+          0.35333332419395447,
+          1.0733332633972168,
+          0.0
+        ]
+      ],
+      "neck1": [
+        [
+          0.5,
+          1.0199999809265137,
+          -0.0
+        ],
+        [
+          0.6600000262260437,
+          1.2400000095367432,
+          0.0
+        ]
+      ],
+      "neck2": [
+        [
+          0.6600000262260437,
+          1.2400000095367432,
+          -0.0
+        ],
+        [
+          0.800000011920929,
+          1.4199999570846558,
+          0.0
+        ]
+      ],
+      "head": [
+        [
+          0.800000011920929,
+          1.4199999570846558,
+          -0.0
+        ],
+        [
+          1.1299999952316284,
+          1.3200000524520874,
+          0.0
+        ]
+      ]
+    },
+    "selection": {
+      "bodyMaterial": 0,
+      "bodyMaterialComponents": 5,
+      "largestComponentVertices": 5009,
+      "otherBodyMaterialComponentVertices": 1092,
+      "otherMaterialVertices": 1287,
+      "sharedOtherMaterialVertices": 48,
+      "selectedVertices": 4961,
+      "headOrHoofTaggedExcluded": 0
+    },
+    "selectedBodySkinVertices": 4961,
+    "fieldVerticesProcessed": 1178,
+    "storedWeightVerticesChanged": 974,
+    "storedWeightVerticesChangedOver1e-6": 974,
+    "unselectedVerticesUnchanged": 2401,
+    "protectedLimbBearingVertices": 2932,
+    "protectedCentralBellyVertices": 71,
+    "protectedVerticesChanged": 0,
+    "hindBearingVerticesChanged": 0,
+    "subExportLimbInfluencesRemoved": 110,
+    "maximumRemovedLimbInfluence": 0.0,
+    "maximumInfluences": 4,
+    "maximumNormalizationError": 4.470348358154297e-08,
+    "maximumStorageRoundoff": 2.977212354426939e-08,
+    "maximumMixtureGradientPerMetre": {
+      "before": 127.96976277779844,
+      "after": 20.717315739908543
+    },
+    "vertexDomain": "unsplit Blender authoring vertices; GLB UV seams duplicate some of them"
+  },
+  "poseCorrectiveAuthoring": {
+    "targets": [],
+    "maximumDisplacementMetres": 0.0,
+    "jointDeltas": "no pose targets in this base-topology review",
+    "purpose": "Review rebuilt femoral topology without corrective assistance; runtime framework retained.",
+    "probeBasis": "Earlier corrective experiments preserved in candidates019 and021; not applied to this rebuilt base."
+  },
+  "authoringCodeSha256": "a03ef5f83eae3c63c256a5a6ddbfd2b06f2a22636da1973408c35a9e05aab487",
+  "authoringSourceSnapshot": "fauna-authoring-source.py",
+  "coatBake": {
+    "version": "deer-coat-2",
+    "sourceType": "original",
+    "sourceSha256": "22fba1d8d86b83e9a7466ae6d4533d913ae4d9ea784356adc7a75d71925089f8",
+    "seed": 10022026,
+    "gpuUsed": false,
+    "elapsedSeconds": 93.20551889999479,
+    "method": "Domain-warped rest-space fields, vertex-continuous footprint attenuation, four subpixel samples, conservative UV edges; derivative tangent normal encoding",
+    "regions": [
+      "torso",
+      "neck",
+      "head",
+      "left-ear",
+      "right-ear",
+      "limbs"
+    ],
+    "regionOwnershipGroups": [
+      "L_front",
+      "L_front_hoof",
+      "L_rear",
+      "L_rear_hoof",
+      "R_front",
+      "R_front_hoof",
+      "R_rear",
+      "R_rear_hoof",
+      "body",
+      "head"
+    ],
+    "directionsRuntime": [
+      [
+        -1,
+        -0.16,
+        0
+      ],
+      [
+        -0.45,
+        -0.9,
+        0
+      ],
+      [
+        1,
+        -0.12,
+        0
+      ],
+      [
+        -0.15,
+        0.85,
+        -0.5
+      ],
+      [
+        -0.15,
+        0.85,
+        0.5
+      ],
+      [
+        0,
+        -1,
+        0
+      ]
+    ],
+    "maps": [
+      {
+        "file": "deer-coat-basecolor.png",
+        "width": 2048,
+        "height": 2048,
+        "colourSpace": "sRGB",
+        "sha256": "c31b5e264be80d08bf3af13ba0ed42014a8f6e58a09eb78af841b3e97f503aa3",
+        "bytes": 1808459,
+        "pixels": {
+          "min": [
+            229.0,
+            239.0,
+            238.0
+          ],
+          "max": [
+            255.0,
+            255.0,
+            255.0
+          ],
+          "mean": [
+            248.07128405570984,
+            249.99506521224976,
+            250.0251076221466
+          ],
+          "stddev": [
+            7.443589962825967,
+            4.529783652503815,
+            4.592651675522667
+          ]
+        }
+      },
+      {
+        "file": "deer-coat-normal.png",
+        "width": 2048,
+        "height": 2048,
+        "colourSpace": "Non-Color",
+        "sha256": "12a188e52c4b14c299f3531a7124fd519924c0852a3d4e38f9c528267cf9b13d",
+        "bytes": 1548650,
+        "pixels": {
+          "min": [
+            120.0,
+            121.0,
+            255.0
+          ],
+          "max": [
+            135.0,
+            133.0,
+            255.0
+          ],
+          "mean": [
+            127.71212267875671,
+            127.71368432044983,
+            255.0
+          ],
+          "stddev": [
+            1.0745550529868622,
+            0.7041228833414481,
+            0.0
+          ]
+        }
+      },
+      {
+        "file": "deer-coat-orm.png",
+        "width": 1024,
+        "height": 1024,
+        "colourSpace": "Non-Color",
+        "sha256": "4b73d8f755d15388c71ceba028863d59efe84452644dc600b8b4e797c2ccd526",
+        "bytes": 442530,
+        "pixels": {
+          "min": [
+            255.0,
+            184.0,
+            0.0
+          ],
+          "max": [
+            255.0,
+            229.0,
+            0.0
+          ],
+          "mean": [
+            255.0,
+            203.54461669921875,
+            0.0
+          ],
+          "stddev": [
+            0.0,
+            4.2379388376433536,
+            0.0
+          ]
+        }
+      }
+    ],
+    "sharedRgba8MipBytesEstimate": 50331644,
+    "pixelAuditStage": "Authored byte arrays before PNG writer; decoded exported GLB maps require the independent audit",
+    "sampling": {
+      "tileSize": 64,
+      "maximumFieldBatchTexels": 4232,
+      "paddingPixels2048": 16,
+      "normalMaximumSurfaceSlope": 0.12,
+      "roughnessBounds": [
+        0.68,
+        0.9
+      ],
+      "noPhotoPixels": true,
+      "subpixelSamples": 4,
+      "domainWarpAmplitudeMetres": 0.0022,
+      "fullContrastAtTexelsPerNoiseCell": 3,
+      "zeroContrastBelowTexelsPerNoiseCell": 1.5,
+      "worldPixelFootprintMinMedianMaxMetres": [
+        0.0009848979534581304,
+        0.0012801091652363539,
+        0.022828031331300735
+      ],
+      "persistentAtlasArrayBytes": 61865984,
+      "memoryEstimateExcludes": "Blender images, mesh, transient image-write buffer and small triangle/tile arrays"
+    },
+    "coverage": {
+      "coatTriangles": 12144,
+      "interiorOverlaps": 0,
+      "coveredTexels": 1964240,
+      "coveredFraction": 0.4683113098144531,
+      "conservativeEdgeTexels": 19399,
+      "paddedTexels": 2408834,
+      "trianglesWithoutPixelCenters": 197,
+      "texelsPerMetreMinMedianMax": [
+        153.13720595256945,
+        801.221408166811,
+        1386.7530748466638
+      ]
+    },
+    "normalAudit": {
+      "maximumDecodedLengthError": 0.002104640007019043,
+      "allAboveTangentPlane": true
+    },
+    "seamAudit": {
+      "pairedUvSeams": 814,
+      "samples": 2442,
+      "uncoveredSamples": 0,
+      "maxColourByteDelta": 3.0,
+      "maxRoughnessByteDelta": 5.0,
+      "maxModelNormalAngleDegrees": 1.804542497958537,
+      "nonmanifoldEdges": 0,
+      "sampleMethod": "Nearest atlas texel at 25/50/75 percent of each paired topology edge; normals decoded through each derivative frame",
+      "p95ColourByteDelta": 1.0,
+      "p95ModelNormalAngleDegrees": 0.5431714124226942,
+      "coverageComplete": true
+    },
+    "quality": {
+      "minimumInteriorCoverageFraction": 0.4,
+      "seamThresholds": {
+        "uncoveredSamples": 0,
+        "p95ModelNormalAngleDegrees": 6.0,
+        "maxModelNormalAngleDegrees": 18.0,
+        "p95ColourByteDelta": 8.0,
+        "maxColourByteDelta": 24.0
+      },
+      "seamEvidenceUsesNearestTexels": true,
+      "failures": []
+    },
+    "uvPreparation": {
+      "acceptance": "Chart construction only; actual interior overlap, density and coverage audited during bake",
+      "chartFaceCounts": {
+        "L_front-0": 235,
+        "L_front-1": 233,
+        "L_rear-0": 375,
+        "L_rear-1": 377,
+        "R_front-0": 233,
+        "R_front-1": 235,
+        "R_rear-0": 375,
+        "R_rear-1": 377,
+        "body-0": 986,
+        "body-1": 988,
+        "ear-0-0": 109,
+        "ear-0-1": 107,
+        "ear-1-0": 109,
+        "ear-1-1": 107,
+        "head-0": 421,
+        "head-1": 421,
+        "lid-0-0-0": 14,
+        "lid-0-0-1": 15,
+        "lid-0-1-0": 64,
+        "lid-0-1-1": 38,
+        "lid-0-2-0": 22,
+        "lid-0-2-1": 39,
+        "lid-1-0-0": 14,
+        "lid-1-0-1": 15,
+        "lid-1-1-0": 38,
+        "lid-1-1-1": 64,
+        "lid-1-2-0": 18,
+        "lid-1-2-1": 43,
+        "other-1-0-0": 8,
+        "other-1-0-1": 8,
+        "other-1-1-0": 113,
+        "other-1-1-1": 113,
+        "other-1-2-0": 41,
+        "other-1-2-1": 41,
+        "other-2-0-0": 197,
+        "other-2-0-1": 253,
+        "other-2-1-0": 142,
+        "other-2-1-1": 142,
+        "other-2-2-0": 67,
+        "other-2-2-1": 79
+      },
+      "elapsedSeconds": 5.6369518999999855,
+      "explicitLidChartFaces": 384,
+      "layout": {
+        "areaMeaning": "Sum of triangle areas; raster overlap and interior-coverage gates remain authoritative",
+        "coatIslandCount": 40,
+        "coatIslands": [
+          {
+            "faceCount": 986,
+            "firstFace": 24,
+            "meanTexelsPerMetre": 800.8655991409464,
+            "surfaceAreaM2": 1.0365795672689717,
+            "uvArea": 0.1585119532428767
+          },
+          {
+            "faceCount": 988,
+            "firstFace": 0,
+            "meanTexelsPerMetre": 800.5955967178537,
+            "surfaceAreaM2": 1.0329823742249502,
+            "uvArea": 0.15785538468316518
+          },
+          {
+            "faceCount": 377,
+            "firstFace": 2978,
+            "meanTexelsPerMetre": 800.965241383115,
+            "surfaceAreaM2": 0.10270302236210296,
+            "uvArea": 0.015709076674220057
+          },
+          {
+            "faceCount": 375,
+            "firstFace": 1978,
+            "meanTexelsPerMetre": 800.9642775178271,
+            "surfaceAreaM2": 0.102393933979778,
+            "uvArea": 0.0156617619575794
+          },
+          {
+            "faceCount": 377,
+            "firstFace": 2002,
+            "meanTexelsPerMetre": 800.9646864367746,
+            "surfaceAreaM2": 0.10194717792958585,
+            "uvArea": 0.015593443881205427
+          },
+          {
+            "faceCount": 375,
+            "firstFace": 2954,
+            "meanTexelsPerMetre": 800.9629908992064,
+            "surfaceAreaM2": 0.10166251527643447,
+            "uvArea": 0.015549837154627766
+          },
+          {
+            "faceCount": 285,
+            "firstFace": 1137,
+            "meanTexelsPerMetre": 800.9789520988146,
+            "surfaceAreaM2": 0.09457983851826773,
+            "uvArea": 0.014467079616139578
+          },
+          {
+            "faceCount": 285,
+            "firstFace": 1122,
+            "meanTexelsPerMetre": 800.9773347595739,
+            "surfaceAreaM2": 0.09448812158652883,
+            "uvArea": 0.014452992083977989
+          },
+          {
+            "faceCount": 233,
+            "firstFace": 4518,
+            "meanTexelsPerMetre": 800.957198854593,
+            "surfaceAreaM2": 0.07137760291199689,
+            "uvArea": 0.010917436446560735
+          },
+          {
+            "faceCount": 233,
+            "firstFace": 3898,
+            "meanTexelsPerMetre": 800.9721776014627,
+            "surfaceAreaM2": 0.07137492379729124,
+            "uvArea": 0.010917434990966868
+          },
+          {
+            "faceCount": 235,
+            "firstFace": 4534,
+            "meanTexelsPerMetre": 800.9991741601705,
+            "surfaceAreaM2": 0.06975064509948463,
+            "uvArea": 0.010669706193623285
+          },
+          {
+            "faceCount": 235,
+            "firstFace": 3882,
+            "meanTexelsPerMetre": 800.9640896719071,
+            "surfaceAreaM2": 0.06975675223002537,
+            "uvArea": 0.010669705650077077
+          },
+          {
+            "faceCount": 136,
+            "firstFace": 6270,
+            "meanTexelsPerMetre": 799.8715422942131,
+            "surfaceAreaM2": 0.02444274274811834,
+            "uvArea": 0.0037284688921652505
+          },
+          {
+            "faceCount": 136,
+            "firstFace": 5264,
+            "meanTexelsPerMetre": 799.8713004004393,
+            "surfaceAreaM2": 0.024442744915856095,
+            "uvArea": 0.003728466967734073
+          },
+          {
+            "faceCount": 109,
+            "firstFace": 6344,
+            "meanTexelsPerMetre": 800.9853844748836,
+            "surfaceAreaM2": 0.015886756921188024,
+            "uvArea": 0.0024301021473709383
+          },
+          {
+            "faceCount": 109,
+            "firstFace": 5342,
+            "meanTexelsPerMetre": 800.9852525731557,
+            "surfaceAreaM2": 0.015886755590250587,
+            "uvArea": 0.002430101143434671
+          },
+          {
+            "faceCount": 107,
+            "firstFace": 6380,
+            "meanTexelsPerMetre": 800.998417468928,
+            "surfaceAreaM2": 0.015507250606848315,
+            "uvArea": 0.002372128530128581
+          },
+          {
+            "faceCount": 107,
+            "firstFace": 5370,
+            "meanTexelsPerMetre": 800.9982450952463,
+            "surfaceAreaM2": 0.015507243057423611,
+            "uvArea": 0.0023721263543441395
+          },
+          {
+            "faceCount": 64,
+            "firstFace": 6848,
+            "meanTexelsPerMetre": 801.0149008438457,
+            "surfaceAreaM2": 0.0002974757303006706,
+            "uvArea": 4.5506436155084984e-05
+          },
+          {
+            "faceCount": 60,
+            "firstFace": 5842,
+            "meanTexelsPerMetre": 801.0010576966334,
+            "surfaceAreaM2": 0.00026419699307047087,
+            "uvArea": 4.041421475758922e-05
+          },
+          {
+            "faceCount": 38,
+            "firstFace": 6784,
+            "meanTexelsPerMetre": 801.0171580989327,
+            "surfaceAreaM2": 0.00017322311250406218,
+            "uvArea": 2.649900524329118e-05
+          },
+          {
+            "faceCount": 38,
+            "firstFace": 5778,
+            "meanTexelsPerMetre": 801.0088503277296,
+            "surfaceAreaM2": 0.00017315691739317222,
+            "uvArea": 2.648832951251956e-05
+          },
+          {
+            "faceCount": 33,
+            "firstFace": 6787,
+            "meanTexelsPerMetre": 801.0178053072731,
+            "surfaceAreaM2": 0.0001723533851103577,
+            "uvArea": 2.636600029955194e-05
+          },
+          {
+            "faceCount": 29,
+            "firstFace": 5781,
+            "meanTexelsPerMetre": 800.9980294848322,
+            "surfaceAreaM2": 0.00016098385261043187,
+            "uvArea": 2.4625514180920408e-05
+          },
+          {
+            "faceCount": 10,
+            "firstFace": 5927,
+            "meanTexelsPerMetre": 801.0223538560333,
+            "surfaceAreaM2": 5.826137337222193e-05,
+            "uvArea": 8.912716349840366e-06
+          },
+          {
+            "faceCount": 10,
+            "firstFace": 6933,
+            "meanTexelsPerMetre": 801.0211582812713,
+            "surfaceAreaM2": 5.823310471841581e-05,
+            "uvArea": 8.90836527123184e-06
+          },
+          {
+            "faceCount": 9,
+            "firstFace": 5911,
+            "meanTexelsPerMetre": 801.0183256534192,
+            "surfaceAreaM2": 5.704815058668186e-05,
+            "uvArea": 8.7270320143773e-06
+          },
+          {
+            "faceCount": 9,
+            "firstFace": 6917,
+            "meanTexelsPerMetre": 801.0198357925377,
+            "surfaceAreaM2": 5.692888185763678e-05,
+            "uvArea": 8.7088195268592e-06
+          },
+          {
+            "faceCount": 7,
+            "firstFace": 5920,
+            "meanTexelsPerMetre": 801.0165697727558,
+            "surfaceAreaM2": 2.841309483239228e-05,
+            "uvArea": 4.346519538067639e-06
+          },
+          {
+            "faceCount": 7,
+            "firstFace": 6926,
+            "meanTexelsPerMetre": 801.0221872201364,
+            "surfaceAreaM2": 2.828450125183013e-05,
+            "uvArea": 4.3269085034936e-06
+          },
+          {
+            "faceCount": 4,
+            "firstFace": 5882,
+            "meanTexelsPerMetre": 800.9551495538791,
+            "surfaceAreaM2": 2.798748388550222e-05,
+            "uvArea": 4.280754755114913e-06
+          },
+          {
+            "faceCount": 6,
+            "firstFace": 5906,
+            "meanTexelsPerMetre": 801.0105175623938,
+            "surfaceAreaM2": 2.7677636664948564e-05,
+            "uvArea": 4.2339481614028784e-06
+          },
+          {
+            "faceCount": 6,
+            "firstFace": 6912,
+            "meanTexelsPerMetre": 801.019402985905,
+            "surfaceAreaM2": 2.7673452840299676e-05,
+            "uvArea": 4.233402065345615e-06
+          },
+          {
+            "faceCount": 9,
+            "firstFace": 6965,
+            "meanTexelsPerMetre": 801.0340359786184,
+            "surfaceAreaM2": 2.6405942321619913e-05,
+            "uvArea": 4.039649684650648e-06
+          },
+          {
+            "faceCount": 9,
+            "firstFace": 5959,
+            "meanTexelsPerMetre": 801.0154227434732,
+            "surfaceAreaM2": 2.6404970141214043e-05,
+            "uvArea": 4.0393132323401915e-06
+          },
+          {
+            "faceCount": 8,
+            "firstFace": 5938,
+            "meanTexelsPerMetre": 801.0447117442732,
+            "surfaceAreaM2": 1.890278054083453e-05,
+            "uvArea": 2.89187357616072e-06
+          },
+          {
+            "faceCount": 8,
+            "firstFace": 6944,
+            "meanTexelsPerMetre": 801.0252531019687,
+            "surfaceAreaM2": 1.889166919084547e-05,
+            "uvArea": 2.8900332755821267e-06
+          },
+          {
+            "faceCount": 8,
+            "firstFace": 5951,
+            "meanTexelsPerMetre": 801.0160935982021,
+            "surfaceAreaM2": 1.701011418963726e-05,
+            "uvArea": 2.602134903051389e-06
+          },
+          {
+            "faceCount": 8,
+            "firstFace": 6957,
+            "meanTexelsPerMetre": 801.0328694820153,
+            "surfaceAreaM2": 1.6899696222190094e-05,
+            "uvArea": 2.585351920103562e-06
+          },
+          {
+            "faceCount": 4,
+            "firstFace": 5946,
+            "meanTexelsPerMetre": 801.0272800102238,
+            "surfaceAreaM2": 1.2452886696232155e-05,
+            "uvArea": 1.905042836591875e-06
+          }
+        ],
+        "coatSurfaceAreaM2": 3.0630188347554044,
+        "coatTriangleAreaFraction": 0.4683047379759609
+      },
+      "method": "Topology-owned half-charts plus cut lid shells; angle unwrap, area-normalized coat-only concave pack",
+      "missingOwnedCoatVertices": 0,
+      "nonmanifoldEdges": 0,
+      "packedMaterial": "MAT_DeerCoat",
+      "packingMarginFraction": 0.015625,
+      "regionOwnershipGroups": [
+        "L_front",
+        "L_front_hoof",
+        "L_rear",
+        "L_rear_hoof",
+        "R_front",
+        "R_front_hoof",
+        "R_rear",
+        "R_rear_hoof",
+        "body",
+        "head"
+      ],
+      "requestedInterIslandMarginPixels": 32,
+      "seamEdges": 1556,
+      "surfaceAreaNormalized": true,
+      "version": "deer-coat-2"
+    },
+    "acceptance": "Bake checks only; decoded GLB map audit, morphed grazing-light and seam review remain required"
+  },
+  "coatAuthoringSourceSnapshot": "fauna-coat-source.py",
+  "coatAuthoringCodeSha256": "22fba1d8d86b83e9a7466ae6d4533d913ae4d9ea784356adc7a75d71925089f8",
+  "brief": {
+    "path": "asset-brief.json",
+    "sha256": "cae4b649e8ba607481c7f0046a1b86dab1bebdb3521364d6b141661d68b68043"
+  },
+  "preExportAudit": {
+    "triangles": 14608,
+    "maxTriangles": 20000,
+    "materials": 3,
+    "bones": 27,
+    "morphTargets": 12,
+    "uvLayers": 1,
+    "maxInfluences": 4,
+    "weightsMethod": "Rear total ownership constrained to5/metre over actual tessellated triangle edges and audited after final four-bone assignment; axial/limb shares preserved separately. Fore ownership smoothstep(.10,.85); rear distal share first capped by section mask (0/.12/.55/1), then the FINAL normalized distal share (1-hip/limb total) is bounded to8/metre over the same triangle edges by moving distal weight to the hip only; limb totals and axial weights unchanged. Distal remnants at or below the exporter 1e-4 influence floor merge into the largest distal bone. Stored and exported mixtures are re-audited. Removed proximal weight returns to axial bones. Largest connected coat-component skin without exported limb influence and without other-material faces uses a continuous axial/neck distance field (axialFieldAudit) instead of hard trunk/neck/head candidate sets.",
+    "topology": "Connected torso/neck/head/limbs quad loft with authored head sectors; rooted ears, orbit-framed eyes/lids, skin-conforming rhinarium/nostrils/lip and hoof detail shells are separate islands."
+  },
+  "limitations": [
+    "Authored reference approximation, not scanned anatomy.",
+    "Morph combinations and locomotion require runtime review.",
+    "No LOD, collision, corneal refraction or animated facial rig in this candidate.",
+    "No automatic production or device approval."
+  ],
+  "artifacts": [
+    {
+      "path": "asset-brief.json",
+      "sha256": "cae4b649e8ba607481c7f0046a1b86dab1bebdb3521364d6b141661d68b68043"
+    },
+    {
+      "path": "deer-coat-basecolor.png",
+      "sha256": "c31b5e264be80d08bf3af13ba0ed42014a8f6e58a09eb78af841b3e97f503aa3"
+    },
+    {
+      "path": "deer-coat-normal.png",
+      "sha256": "12a188e52c4b14c299f3531a7124fd519924c0852a3d4e38f9c528267cf9b13d"
+    },
+    {
+      "path": "deer-coat-orm.png",
+      "sha256": "4b73d8f755d15388c71ceba028863d59efe84452644dc600b8b4e797c2ccd526"
+    },
+    {
+      "path": "deer-coat.png",
+      "sha256": "ed09a67f28b9e950cb324ff24bc6bab8a6f2cfac1cf8b5fe065bdff3205e072d"
+    },
+    {
+      "path": "deer-doe.blend",
+      "sha256": "21fe1f3e31eacf332997fcd89f3c676e0bf32eca53c0a754d2eb09520798e23d"
+    },
+    {
+      "path": "deer-doe.glb",
+      "sha256": "757f6c47b7cd769c86b5e1159637119a567bd66a8af2a4f173a5af1dda5c30b6"
+    },
+    {
+      "path": "fauna-authoring-source.py",
+      "sha256": "a03ef5f83eae3c63c256a5a6ddbfd2b06f2a22636da1973408c35a9e05aab487"
+    },
+    {
+      "path": "fauna-coat-source.py",
+      "sha256": "22fba1d8d86b83e9a7466ae6d4533d913ae4d9ea784356adc7a75d71925089f8"
+    },
+    {
+      "path": "fauna-template.json",
+      "sha256": "513c7766b1d8fc56b93eb01a30149ccb903c0aab8a89b542ae1396e91e54517e"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "fauna-retained-revision-1",
+  "template": "deer-doe-v1",
+  "assetId": "atlas-deer-doe-v1",
+  "assetHash": "757f6c47b7cd769c86b5e1159637119a567bd66a8af2a4f173a5af1dda5c30b6",
+  "sidecarHash": "513c7766b1d8fc56b93eb01a30149ccb903c0aab8a89b542ae1396e91e54517e",
+  "files": {
+    "deer-doe.glb": {
+      "sha256": "757f6c47b7cd769c86b5e1159637119a567bd66a8af2a4f173a5af1dda5c30b6",
+      "bytes": 5865816
+    },
+    "fauna-template.json": {
+      "sha256": "513c7766b1d8fc56b93eb01a30149ccb903c0aab8a89b542ae1396e91e54517e",
+      "bytes": 47585
+    },
+    "authoring-manifest.json": {
+      "sha256": "48f45c8c1aa68d2eebc3e7d37187b5cfc19a3a250e8facd96c118410f38aa59f",
+      "bytes": 47370
+    }
+  },
+  "validation": {
+    "sidecarContract": true,
+    "namedRigAndMorphContract": true,
+    "khronosErrors": 0,
+    "khronosWarnings": 2,
+    "neutralDefaults": {
+      "valid": true,
+      "meshes": [
+        {
+          "index": 0,
+          "targets": 12,
+          "declaredWeights": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "scope": "Runtime file contract only; retains historical raw defaults and review defects without declaring visual, animation, neutral-source or device acceptance"
+  },
+  "status": "retained-asset-bytes-not-acceptance"
+}

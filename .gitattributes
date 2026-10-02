@@ -38,3 +38,6 @@ test-results/tree-instance-updates/** -text whitespace=cr-at-eol
 test-results/tree-instance-updates/opus/prompt.txt -whitespace
 test-results/opus-forest-work-capture-review/** -text
 test-results/family-capture/**/source-snapshots/*.raw.bin -text
+
+# Immutable fauna revision paths contain SHA-256 hashes of exact bytes.
+public/assets/fauna/** -text whitespace=cr-at-eol

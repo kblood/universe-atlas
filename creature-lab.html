@@ -17,19 +17,51 @@
     <aside class="side-panel">
       <span class="eyebrow">RIGGED QUADRUPED EXPERIMENT</span><h1 id="title">Creature gallery</h1><p id="description"></p>
       <div class="controls">
-        <label>Mode <select id="mode"><option value="gallery">Gallery</option><option value="skin">Planet skin</option><option value="anatomy">Anatomy</option><option value="arena">Arena</option><option value="ancestry">Ancestry</option></select></label>
+        <label>Mode <select id="mode"><option value="composer">Modular composer (experimental)</option><option value="gallery">Gallery</option><option value="skin">Planet skin</option><option value="anatomy">Anatomy</option><option value="arena">Arena</option><option value="ancestry">Ancestry</option></select></label>
+        <div id="composer-controls" hidden>
+          <p id="composer-limitations" class="composer-limitations">Experimental procedural creatures: simple smooth shapes without fur, scales or feather detail. Motion stays on the ground; wings fold and spread but flight is not simulated. Checked on desktop browsers only.</p>
+          <label>Starting animal <select id="composer-preset"></select></label>
+          <div class="composer-seed-row"><label>Random seed <input id="composer-seed" maxlength="160" value="composer-1"></label><button id="composer-randomize" type="button">Random combination</button><button id="composer-next-seed" type="button">New seed</button></div>
+          <label class="check"><input id="composer-compare" type="checkbox"> Compare two animals</label>
+          <label hidden>Edit which animal <select id="composer-edit-target"><option value="first">First (left)</option><option value="second">Second (right)</option></select></label>
+          <p id="composer-edit-hint" role="status"></p>
+          <div id="composer-parts"></div>
+          <fieldset class="composer-group"><legend>Motion and view</legend>
+            <label>Motion <select id="composer-motion"></select></label>
+            <div class="button-row"><button id="composer-play" type="button">Play</button><button id="composer-frame" type="button">Frame animals</button></div>
+            <label>Pose time (seconds) <input id="composer-time" type="number" min="0" max="120" step="0.01" value="0"></label>
+            <label>Scrub within one cycle <input id="composer-phase" type="range" min="0" max="1" step="0.001" value="0"></label>
+            <label>View <select id="composer-view"><option value="three-quarter">Three-quarter</option><option value="side">Side</option><option value="front">Front</option></select></label>
+          </fieldset>
+          <section aria-label="Part adjustments"><h2>How parts were fitted together</h2><div id="composer-constraints" class="composer-notes"></div></section>
+          <div id="composer-issues" class="notice" hidden></div>
+        </div>
         <label>Reference date (Myr) <input id="date-myr" type="number" min="-20000" max="20000" step="1" value="0"></label>
         <label>Species <select id="species"></select></label>
         <label class="check"><input id="normalize" type="checkbox"> Normalized display scale</label>
         <div id="skin-controls" hidden>
+          <label>Source <select id="skin-source"><option value="procedural">Planet procedural skin</option><option value="blender-reference">Blender reference</option></select></label>
+          <div id="template-controls" hidden>
+            <p>Authored deer reference candidate. Inspect the bind pose, standing and centred walk. This is a shape and motion review, not an accepted production animal.</p>
+            <button id="template-apply-recipe" type="button">Apply individual recipe</button>
+            <p id="template-recipe-status" role="status">Manual shape | 0 locked traits</p>
+            <p>Within this deer template, unlocked traits follow Seed, Profile, Species, Individual and Growth after applying the recipe. Editing a slider returns to manual shape. Date and pose do not change identity. Body family applies only to the procedural comparison.</p>
+            <div class="morph-row"><label>Body condition <input id="morph-bodyCondition" type="range" min="-1" max="1" step="0.01" value="0"><output id="value-bodyCondition">0</output></label><label class="trait-lock"><input id="lock-bodyCondition" type="checkbox" aria-label="Lock body condition"> Lock</label></div>
+            <div class="morph-row"><label>Neck length <input id="morph-neckLength" type="range" min="-1" max="1" step="0.01" value="0"><output id="value-neckLength">0</output></label><label class="trait-lock"><input id="lock-neckLength" type="checkbox" aria-label="Lock neck length"> Lock</label></div>
+            <div class="morph-row"><label>Leg length <input id="morph-legLength" type="range" min="-1" max="1" step="0.01" value="0"><output id="value-legLength">0</output></label><label class="trait-lock"><input id="lock-legLength" type="checkbox" aria-label="Lock leg length"> Lock</label></div>
+            <div class="morph-row"><label>Muzzle length <input id="morph-muzzleLength" type="range" min="-1" max="1" step="0.01" value="0"><output id="value-muzzleLength">0</output></label><label class="trait-lock"><input id="lock-muzzleLength" type="checkbox" aria-label="Lock muzzle length"> Lock</label></div>
+            <div class="morph-row"><label>Ear size <input id="morph-earSize" type="range" min="-1" max="1" step="0.01" value="0"><output id="value-earSize">0</output></label><label class="trait-lock"><input id="lock-earSize" type="checkbox" aria-label="Lock ear size"> Lock</label></div>
+            <div class="morph-row"><label>Juvenile shape <input id="morph-juvenile" type="range" min="0" max="1" step="0.01" value="0"><output id="value-juvenile">0</output></label><label class="trait-lock"><input id="lock-juvenile" type="checkbox" aria-label="Lock juvenile shape"> Lock</label></div>
+            <button id="template-reset" type="button">Reset shape and locks</button>
+          </div>
           <label>Body family <select id="skin-family"><option value="inherited">Inherited species</option><option value="ungulate">Hoofed browser</option><option value="cursorial">Hoofed runner</option><option value="padded">Pawed quadruped</option><option value="long-neck">Long-necked browser</option><option value="proboscidean">Trunked browser</option><option value="winged">Winged quadruped (experimental)</option></select></label>
           <label>View <select id="skin-view"><option value="three-quarter">Three-quarter</option><option value="side">Side</option><option value="front">Front</option></select></label>
           <label>Frame <select id="skin-focus"><option value="body">Whole animal</option><option value="head">Head and face</option></select></label>
-          <label>Pose <select id="skin-pose"><option value="dated">Dated activity</option><option value="idle">Standing</option><option value="walk">Walking</option><option value="feed">Feeding</option></select></label>
+          <label>Pose <select id="skin-pose"><option value="dated">Dated activity</option><option value="neutral">Bind pose</option><option value="idle">Standing</option><option value="walk">Walking</option><option value="feed">Feeding</option></select></label>
           <label>Pose time (seconds) <input id="skin-time" type="number" min="0" max="120" step="0.1" value="0"></label>
           <button id="skin-play" type="button">Play pose</button>
-          <p>Pose time is shared by both specimens. Animals stay centred on a flat inspection floor at their actual metre scale.</p>
-          <label class="check"><input id="skin-compare" type="checkbox"> Compare two individuals</label>
+          <p>Pose time is shared by both specimens. Animals stay centred at their actual metre scale. A centred walk is a treadmill inspection; stationary world contacts are validated separately.</p>
+          <label class="check"><input id="skin-compare" type="checkbox"> <span id="compare-label">Compare two individuals</span></label>
           <div id="skin-compare-controls" hidden><label>Second individual <select id="compare-variant"><option value="0">Specimen 01</option><option value="1" selected>Specimen 02</option><option value="2">Specimen 03</option><option value="3">Specimen 04</option></select></label>
           <label>Second growth stage <select id="compare-growth"><option value="adult">Adult</option><option value="juvenile">Juvenile</option></select></label></div>
         </div>
@@ -37,7 +69,7 @@
         <div id="arena-controls"><label>Gait <select id="gait"><option value="idle">Idle</option><option value="walk">Walk</option><option value="run">Run</option></select></label><label>Terrain <select id="terrain"><option value="flat">Flat</option><option value="slope">Slope</option><option value="steps">Steps</option></select></label><label>Crowd <select id="crowd"><option value="1">1 actor</option><option value="8">8 actors</option><option value="16">16 actors</option></select></label><div class="button-row"><button id="play">Pause</button><button id="reset">Reset</button></div><label>Time <input id="time" type="number" min="0" max="20" value="0" step="0.01"></label></div>
       </div>
       <section id="notice" class="notice" hidden></section>
-      <section><h2>Selected species</h2><div id="species-detail" class="detail"></div></section>
+      <section><h2 id="species-heading">Selected species</h2><div id="species-detail" class="detail"></div></section>
       <section id="ancestry-panel" hidden><h2>Actual parent chain</h2><div id="ancestry-list"></div></section>
       <section><h2>Live diagnostics</h2><div id="metrics" class="metrics"></div></section>
       <button id="share-specimen" class="wide">Copy specimen link</button><p id="share-status" role="status"></p><label id="share-fallback" hidden>Specimen link <input id="share-link" readonly aria-label="Specimen link"></label>

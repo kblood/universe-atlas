@@ -1,0 +1,63 @@
+{
+  "schema": "https://iwsdk.local/schemas/asset-brief/v1",
+  "id": "atlas-pawed-red-fox-v1",
+  "kind": "creature",
+  "purpose": "PLANNED REVIEW ONLY: independently authored red fox digitigrade reference, next after the deer quality gate; no asset or runtime family is implemented by this brief.",
+  "target": {"engine":"IWSDK","project":"universe-atlas","devices":["desktop-web"],"metersPerUnit":1,"runtimeCoordinates":"right-handed-y-up"},
+  "artDirection": {
+    "summary": "Adult Vulpes vulpes red-phase fox with tapered muzzle, cupped triangular ears, coherent scapular and pelvic anatomy, four articulated load-bearing toes per paw and a long bushy tail. Original fox topology and rig; references and juvenile proportions require review before authoring.",
+    "styleTags": ["realistic","red-fox","digitigrade","pawed","desktop-first","planned-review"],
+    "references": ["docs/fauna-pawed-reference-plan-2026-10-02.md","docs/fauna-blender-morph-plan-2026-10-02.md","https://www.nps.gov/yell/learn/nature/red-fox.htm","https://digimorph.geo.utexas.edu/specimens/Vulpes_vulpes/female/","https://commons.wikimedia.org/w/index.php?title=File:Skeletal_specimen_of_Red_fox.jpg&oldid=1252657742","https://vanat.ahc.umn.edu/run/plate4.html","https://www.nps.gov/mora/planyourvisit/upload/Carnivore-Tracks-12-20-21_508.pdf"],
+    "negativePrompt": "stretched deer, hoof paws, human hands, plantigrade hindlimbs, reversed stifles, floating eyelids or ears, pinched groin, cylindrical tail, toy face, baked directional shadows"
+  },
+  "deliverables": [
+    {"type":"source","path":"Assets/Atlas/Fauna/pawed-red-fox-v1/red-fox.blend","format":"blend","required":true},
+    {"type":"runtime","path":"Assets/Atlas/Fauna/pawed-red-fox-v1/red-fox.glb","format":"glb","required":true},
+    {"type":"texture","path":"Assets/Atlas/Fauna/pawed-red-fox-v1/fox-coat-basecolor.png","format":"png","required":true},
+    {"type":"texture","path":"Assets/Atlas/Fauna/pawed-red-fox-v1/fox-coat-normal.png","format":"png","required":true},
+    {"type":"texture","path":"Assets/Atlas/Fauna/pawed-red-fox-v1/fox-coat-orm.png","format":"png","required":true},
+    {"type":"manifest","path":"Assets/Atlas/Fauna/pawed-red-fox-v1/fauna-template.json","format":"json","required":true},
+    {"type":"manifest","path":"Assets/Atlas/Fauna/pawed-red-fox-v1/authoring-manifest.json","format":"json","required":true},
+    {"type":"manifest","path":"Assets/Atlas/Fauna/pawed-red-fox-v1/red-fox.glb.asset.json","format":"json","required":true},
+    {"type":"render-sheet","path":"Assets/_assetctl/pawed-red-fox-v1-review/render-sheet.png","format":"png","required":true}
+  ],
+  "constraints": {
+    "geometry":{"maxTriangles":20000,"maxMaterials":3,"lodCount":0,"collision":"none"},
+    "textures":{"maxDimension":2048,"maxSets":2,"runtimeFormat":"png"}
+  },
+  "acceptance": {
+    "visual": [
+      "Deer reference quality gate passes before fox generation or runtime family expansion begins; all fox deliverables remain planned until produced and reviewed",
+      "Species-specific side, front, rear, top and three-quarter reference comparisons approve fox head, shoulder, loin, tail and four-toed paws; retain source credits and reference limitations",
+      "Neutral and walking mesh preserves shoulder, groin, abdominal volume and attached facial features; inspect wireframe, head and pad close-ups in neutral and grazing light",
+      "Juvenile and bounded adult variation use fox-specific proportions, preserve individual coat identity and pass both-side review; no uniform scale-only juvenile"
+    ],
+    "technical": [
+      "Actual GLB passes assetctl and Khronos checks and Blender reimport; metres, Y up, Atlas +X forward, explicit UVs and deterministic names",
+      "At most 20000 triangles, 3 materials, 48 bones, 4 normalized skin influences per vertex and 16 named morph targets; proposed 47-bone graph includes individual main toes",
+      "At most 2 texture sets and dimension 2048; shared decoded RGBA8 allocation including mips at most 48 MiB over ALL maps, preferably basecolor and normal 2048, ORM 1024; metallic zero and no baked directional light",
+      "Exported named joint parentage, neutral local transforms and per-target local joint deltas match the authored fox graph; no assumption of the deer 27-bone motion graph",
+      "Independent actual connected-skin intersection and full-body deformation tests cover neutral, both limbs, interacting morph extremes and gait phases; retain edge ratios 0.45 to 1.8 and reject crossings or local reversals",
+      "Authoring manifest preserves brief/source/tool hashes, seed, source ownership, license state, reference ledger, review outcomes and exact output hashes; use fresh candidate paths without overwriting prior source"
+    ],
+    "runtime": [
+      "Family-specific motion measures actual skinned pad/toe contacts, all-sole clearance, stance drift, reach limits and measured segment lengths; deterministic forward/backward seeking",
+      "Two independently morphed skeleton instances and six nearby animals preserve identity and saved specimen replay; repeated switches dispose resources and memory remains bounded",
+      "Record actual desktop CPU/GPU frame cost and shared texture memory; no performance, animation or XR acceptance inferred from schema validation",
+      "Only accepted fox source revisions may enter Creature Lab or world defaults; publish requires resolved original asset license, packaged provenance and visual/runtime acceptance"
+    ]
+  },
+  "provenance": {
+    "sourceType":"original",
+    "generator":{"provider":"blender-authored","model":"planned-fox-template-authoring","checkpoint":null,"version":"planned-v1","workflow":"planned-assetctl-fox-template"},
+    "prompt":"PLANNED ONLY: after reference deer acceptance, author an original anatomically grounded red fox with a distinct digitigrade paw rig, connected deformation topology, genuine bounded morphs and preserved source/provenance.",
+    "negativePrompt":"deer mesh rescale, imported human mesh, hoof replacement only, thin inverted groin triangles, rigid unarticulated paws",
+    "seed":10022027,
+    "sourceUrl":null,
+    "sourceConsent":"not-applicable",
+    "parents":[],
+    "license":{"expression":"NOASSERTION","attribution":null,"restrictions":["Planned review asset only; resolve original asset licensing and visual/runtime acceptance before publication","Linked references retain their individual rights; no source photograph, CT data or mesh is incorporated"]},
+    "notes":"No fox generation, model download, checkpoint, GPU run or runtime family expansion has occurred. Generator fields describe a proposed original Blender workflow, not an available operation or completed run. Credits and rights limitations are in docs/fauna-pawed-reference-plan-2026-10-02.md. Any reused CharacterCreator-derived runtime algorithms retain their separate MIT attribution. Deliverable paths are eventual package targets; future runs write fresh Assets/_assetctl/red-fox-candidate-NNN directories. LODs and headset qualification require later work. Seed is reserved, not a record of execution."
+  },
+  "experiments":{"providers":["blender-authored"],"seeds":[10022027],"selectionMetric":"Planned: species-specific anatomy, connected topology, both-side pad contact and deformation, coherent morph growth, and measured desktop cost"}
+}

@@ -1,0 +1,62 @@
+{
+  "schema": "https://iwsdk.local/schemas/asset-brief/v1",
+  "id": "atlas-deer-doe-v1",
+  "kind": "creature",
+  "purpose": "Blender-authored reference doe with anatomical limb chains and actual morph targets for realistic Atlas fauna customization.",
+  "target": {"engine":"IWSDK","project":"universe-atlas","devices":["desktop-web"],"metersPerUnit":1,"runtimeCoordinates":"right-handed-y-up"},
+  "artDirection": {
+    "summary": "Natural deer-like browsing doe with cloven hooves, distinguishable elbow/carpus and stifle/hock, tapered muzzle, lateral eyes, cupped ears and restrained short coat. Species-specific anatomy review precedes acceptance.",
+    "styleTags": ["realistic","deer","short-coat","anatomical","desktop-first"],
+    "references": ["docs/fauna-blender-morph-plan-2026-10-02.md", "docs/fauna-deer-reference-review-2026-10-02.md"],
+    "negativePrompt": "smooth toy animal, disconnected limb masses, spherical muzzle, reversed elbow/stifle, horse hoof, baked directional shadows, exaggerated glossy skin"
+  },
+  "deliverables": [
+    {"type":"source","path":"Assets/Atlas/Fauna/deer-doe-v1/deer-doe.blend","format":"blend","required":true},
+    {"type":"runtime","path":"Assets/Atlas/Fauna/deer-doe-v1/deer-doe.glb","format":"glb","required":true},
+    {"type":"source","path":"Assets/Atlas/Fauna/deer-doe-v1/deer-coat-basecolor.png","format":"png","required":true},
+    {"type":"source","path":"Assets/Atlas/Fauna/deer-doe-v1/deer-coat-normal.png","format":"png","required":true},
+    {"type":"source","path":"Assets/Atlas/Fauna/deer-doe-v1/deer-coat-orm.png","format":"png","required":true},
+    {"type":"manifest","path":"Assets/Atlas/Fauna/deer-doe-v1/fauna-template.json","format":"json","required":true},
+    {"type":"manifest","path":"Assets/Atlas/Fauna/deer-doe-v1/authoring-manifest.json","format":"json","required":true},
+    {"type":"manifest","path":"Assets/Atlas/Fauna/deer-doe-v1/deer-doe.glb.asset.json","format":"json","required":true},
+    {"type":"render-sheet","path":"Assets/_assetctl/deer-doe-v1-review/render-sheet.png","format":"png","required":true}
+  ],
+  "constraints": {
+    "geometry":{"maxTriangles":20000,"maxMaterials":3,"lodCount":0,"collision":"none"},
+    "textures":{"maxDimension":2048,"maxSets":2,"runtimeFormat":"png"}
+  },
+  "acceptance": {
+    "visual":[
+      "Front, side and three-quarter silhouettes read as an adult doe against attributed deer references; face and cloven feet survive close inspection",
+      "Elbow, carpus, stifle, hock and fetlock have separate anatomically appropriate landmarks",
+      "Neutral, adult/juvenile and interacting morph extremes preserve plausible anatomy and attachment clearance",
+      "Short-coat surface response and eyes remain natural under neutral and grazing illumination; no baked directional light"
+    ],
+    "technical":[
+      "GLB passes assetctl validation and Blender reimport; explicit UVs, metre scale, Y up and Atlas +X forward",
+      "LOD0 at most 20000 triangles, 3 materials, 2048 texture dimension; at most 48 bones and 4 normalized skin influences per vertex",
+      "Original deer-coat-1 maps evaluated on the neutral surface: base color and tangent normal at most 2048 square, ORM at most 1024 square; total shared decoded RGBA8 mip estimate at most 48 MiB on desktop",
+      "Actual GLB embeds nonconstant base color, normal and roughness maps with correct material bindings; metallic zero, no baked occlusion or directional light; seam and morphed shading review required",
+      "At most 16 named morph targets; neutral joint transforms and per-target local joint deltas agree with exported GLB",
+      "Mesh and joint changes agree at neutral, individual extremes and paired extremes; original source and prior candidates remain unchanged",
+      "Authoring manifest records source brief hash, tool version, seed, file hashes, authorship and unresolved acceptance status"
+    ],
+    "runtime":[
+      "Creature Lab loads the authored asset and genuine morphs without errors; saved specimen links reproduce controls",
+      "Six nearby animals, repeated switches and disposal preserve bounded geometry/skeleton/texture resources; report CPU/GPU frame costs and memory",
+      "Individual coat identity, catalogue IDs and dated replay are preserved",
+      "Desktop candidate only until actual animation/deformation review and separate headset qualification; no XR approval inferred"
+    ]
+  },
+  "provenance": {
+    "sourceType":"original",
+    "generator":{"provider":"blender-authored","model":"fauna-template-authoring","checkpoint":null,"version":"atlas-fauna-author-1","workflow":"assetctl-blender-fauna-template"},
+    "prompt":"Author an anatomically grounded deer-like doe with connected organic contours, explicit limb joints, cloven hooves, weighted rig, actual shape keys, joint deltas and preserved Blender source.",
+    "negativePrompt":"toy primitives, omitted elbow/stifle, one generic reversed knee, unarticulated appendages",
+    "seed":10022026,
+    "sourceUrl":null,"sourceConsent":"not-applicable","parents":[],
+    "license":{"expression":"NOASSERTION","attribution":null,"restrictions":["Review candidate: resolve original asset license and visual/runtime acceptance before packaging for publication"]},
+    "notes":"Original mesh/material authoring with no imported human mesh or learned model input. References guide anatomy but are not embedded into assets. CharacterCreator-derived runtime algorithms carry separate MIT attribution. Fixed output names describe eventual packaged deliverables; candidate runs write fresh review directories. LODs and production movement are subsequent gates, not supplied by this initial neutral asset brief."
+  },
+  "experiments":{"providers":["blender-authored"],"seeds":[10022026],"selectionMetric":"Deer anatomy, neutral silhouette, morph/joint consistency, deformation quality and measured runtime cost"}
+}

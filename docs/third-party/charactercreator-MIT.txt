@@ -1,0 +1,35 @@
+CharacterCreator code adaptation provenance
+
+Repository: https://github.com/kblood/CharacterCreator
+Revision: d9d72e7628c4a7b4bfa1127627104042fe887e12
+Source: web/character.js
+Source permalink: https://github.com/kblood/CharacterCreator/blob/d9d72e7628c4a7b4bfa1127627104042fe887e12/web/character.js
+Adapted in: src/fauna-template.ts
+Adaptation: bipolar morph weights, product corrective recipes, rest-pose capture
+and inverse-bind rebasing. Atlas replaces human slider definitions with a
+validated animal sidecar and uses parent-local additive joint deltas. No human
+mesh, texture, MPFB source code or animation clip is included in this adaptation.
+
+The upstream license text follows verbatim.
+
+MIT License
+
+Copyright (c) 2026 Kasper Olesen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
