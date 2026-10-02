@@ -117,7 +117,7 @@ test('an unsupported herd size or lighting falls back with a visible notice', ()
   assert.deepEqual(creatureLabInputNotices('?mode=gallery&herd=7&light=x'), [], 'legacy modes ignore composer-only keys');
 });
 
-test('a v1 recipe link opens and re-shares as v2 with the same species', () => {
+test('a v1 recipe link opens and re-shares as v3 with the same species', () => {
   const fixture = JSON.parse(readFileSync(new URL('./fixtures/composer-v1-links.json', import.meta.url), 'utf8'));
   const giraffe = fixture.presets.find(p => p.id === 'giraffe');
   const opened = parseCreatureLabState(`?mode=composer&recipe=${encodeURIComponent(giraffe.text)}&time=1.25`);
@@ -125,9 +125,9 @@ test('a v1 recipe link opens and re-shares as v2 with the same species', () => {
   const decoded = decodeComposerRecipe(opened.recipe);
   assert.equal(decoded.error, null); assert.deepEqual(decoded.issues, []);
   assert.ok(composerSpeciesEqual(decoded.recipe, composerPreset('giraffe')), 'old preset link still names the preset');
-  // The Lab re-shares what it decoded: always version 2.
+  // The Lab re-shares what it decoded: always version 3.
   const reshared = share({...opened, recipe: encodeComposerRecipe(decoded.recipe)});
-  assert.match(reshared.searchParams.get('recipe'), /^v2\*/);
+  assert.match(reshared.searchParams.get('recipe'), /^v3\*/);
   assert.equal(reshared.searchParams.get('light'), 'studio');
   assert.deepEqual(decodeComposerRecipe(reshared.searchParams.get('recipe')).recipe, decoded.recipe);
 });
@@ -166,4 +166,140 @@ test('preset identity is species-only; herd recipes are consecutive individuals 
   assert.equal(herdSeed(40, 2), 42);
   assert.deepEqual(composerHerdRecipes({...giraffe, individualSeed: 5, sex: 'male'}, 1), [{...giraffe, individualSeed: 5, sex: 'male'}], 'one animal is the recipe itself');
   assert.equal(new Set(composerHerdRecipes(giraffe, 9).map(r => encodeComposerRecipe(r))).size, 9);
+});
+
+// ---- Face round (recipe v3, fauna-composer-face-1), WP6: Lab link handling and option hints
+
+const baselineV2 = JSON.parse(readFileSync(new URL('./fixtures/composer-baseline-v2.json', import.meta.url), 'utf8'));
+const v1Fixture = JSON.parse(readFileSync(new URL('./fixtures/composer-v1-links.json', import.meta.url), 'utf8'));
+/** Opens `text` as the Lab does (URL -> state -> decode), re-shares it, and opens the re-shared link again. */
+function labRoundTrip(text, extra = {}) {
+  const opened = parseCreatureLabState(share(composerState({recipe: text, ...extra})).search);
+  assert.equal(opened.recipe, text, 'the link carries the text unchanged');
+  assert.equal(creatureLabComposerInputError(share(opened).search), null);
+  const decoded = decodeComposerRecipe(opened.recipe);
+  assert.equal(decoded.error, null, text.slice(0, 60));
+  const reshared = share({...opened, recipe: encodeComposerRecipe(decoded.recipe)});
+  const again = decodeComposerRecipe(parseCreatureLabState(reshared.search).recipe);
+  return {opened, decoded, reshared, again};
+}
+
+test('v1, v2 and v3 composer links round-trip through the Lab; re-shared links are v3 and stable', () => {
+  const v1 = v1Fixture.presets.map(p => p.text), v2 = [...baselineV2.wild.slice(0, 64), ...baselineV2.coherent.slice(0, 64).map(c => c.encoded)];
+  assert.ok(v1.length >= 9 && v1.every(t => t.startsWith('v1*'))); assert.ok(v2.length === 128 && v2.every(t => t.startsWith('v2*')));
+  const v3 = ['dinosaur', 'turtle', 'giraffe', 'bird', 'ostrich', 'rhinoceros', 'ape', 'worm', 'centipede', 'shelled-giraffe-bird', 'trunked-centipede', 'winged-ape-rhino']
+    .map(id => encodeComposerRecipe({...composerPreset(id), eyes: 'horizontal', iris: 'amber'}));
+  v3.push(encodeComposerRecipe({...composerPreset('ape'), horns: 'nasal', eyes: 'compound', iris: 'red'}));
+  for (const text of [...v1, ...v2, ...v3]) {
+    const {decoded, reshared, again} = labRoundTrip(text, {herd: 6, light: 'planet-noon'});
+    const recipe = reshared.searchParams.get('recipe');
+    assert.match(recipe, /^v3\*/);
+    assert.deepEqual(again.recipe, decoded.recipe, 'the re-shared link builds the same animal');
+    assert.deepEqual(again.issues, [], 'a re-shared v3 link carries no adjustments');
+    assert.equal(encodeComposerRecipe(again.recipe), recipe, 'v3 text is a fixed point');
+    assert.equal(reshared.searchParams.get('herd'), '6'); assert.equal(reshared.searchParams.get('light'), 'planet-noon');
+    if (text.startsWith('v3*')) { assert.equal(recipe, text, 'a v3 link re-shares byte-identically'); assert.deepEqual(decoded.issues, []); }
+  }
+  // v3 keeps the explicit face choices, including a disclosed (unbuilt) horn
+  const ape = decodeComposerRecipe(v3.at(-1)).recipe;
+  assert.equal(ape.horns, 'nasal'); assert.equal(ape.eyes, 'compound'); assert.equal(ape.iris, 'red');
+});
+
+test('legacy trunk links migrate visibly: muzzle+trunk becomes Proboscis, beak+trunk drops the trunk', () => {
+  const giraffe = v1Fixture.presets.find(p => p.id === 'giraffe').text, turtle = v1Fixture.presets.find(p => p.id === 'turtle').text;
+  const muzzle = labRoundTrip(giraffe.replace('trunk_none', 'trunk_trunk'));
+  assert.equal(muzzle.decoded.recipe.head, 'proboscis'); assert.equal(muzzle.decoded.recipe.trunk, 'trunk');
+  assert.ok(muzzle.decoded.issues.some(i => /^Trunk: now a face type/.test(i)), muzzle.decoded.issues.join(' | '));
+  const beak = labRoundTrip(turtle.replace('trunk_none', 'trunk_trunk'));
+  assert.equal(beak.decoded.recipe.head, 'beak'); assert.equal(beak.decoded.recipe.trunk, 'none');
+  assert.ok(beak.decoded.issues.some(i => /^Trunk: removed/.test(i)), beak.decoded.issues.join(' | '));
+  for (const r of [muzzle, beak]) assert.deepEqual(r.again.issues, [], 'the migration is reported once, then the v3 link is clean');
+});
+
+test('a malformed v3 recipe text is rejected, not reinterpreted', () => {
+  const good = encodeComposerRecipe(composerPreset('giraffe')), body = good.slice(good.indexOf('*'));
+  for (const bad of [`V3${body}`, `v3.0${body}`, `v03${body}`, `v3 ${body}`, ` v3${body}`, `v3x${body}`, `v4${body}`, `v3${body.replace('*', '')}`, `3${body}`, `v${body}`]) {
+    const q = `?mode=composer&recipe=${encodeURIComponent(bad)}`, state = parseCreatureLabState(q);
+    const decoded = decodeComposerRecipe(state.recipe);
+    assert.equal(decoded.recipe, null, `rejected: ${bad.slice(0, 16)}`); assert.match(decoded.error, /Unsupported composer recipe version/);
+  }
+  // v3 fields cannot be smuggled into older text: a v2 link with eyes/iris ignores them and says so
+  const v2 = baselineV2.wild[0], smuggled = decodeComposerRecipe(`${v2}*eyes_compound*iris_red`);
+  assert.equal(smuggled.recipe.eyes, 'auto'); assert.equal(smuggled.recipe.iris, 'auto');
+  assert.ok(smuggled.issues.includes('Ignored unknown recipe field "eyes".') && smuggled.issues.includes('Ignored unknown recipe field "iris".'));
+  // unknown v3 values are bounded and listed, never silently kept
+  const odd = decodeComposerRecipe(good.replace('eyes_auto', 'eyes_banana').replace('iris_auto', 'iris_blue'));
+  assert.equal(odd.recipe.eyes, 'auto'); assert.equal(odd.recipe.iris, 'auto');
+  assert.ok(odd.issues.some(i => /Unknown eyes "banana"/.test(i)) && odd.issues.some(i => /Unknown iris "blue"/.test(i)));
+  // repeated recipe parameters reject the whole link
+  const q = new URLSearchParams({mode: 'composer', recipe: good}); q.append('recipe', good);
+  assert.match(creatureLabComposerInputError(q), /repeated recipe/);
+});
+
+test('Lab controls: every recipe key except the derived trunk has a control; Head and neck order', async () => {
+  const {COMPOSER_CONTROL_KEYS} = await import('../src/creature-lab-composer.ts');
+  const {COMPOSER_RECIPE_KEYS} = await import('../src/fauna-composer-recipe.ts');
+  assert.deepEqual([...COMPOSER_CONTROL_KEYS].sort(), COMPOSER_RECIPE_KEYS.filter(k => k !== 'trunk').sort());
+  const i = COMPOSER_CONTROL_KEYS.indexOf('neckLength');
+  assert.deepEqual(COMPOSER_CONTROL_KEYS.slice(i, i + 8), ['neckLength', 'head', 'headSize', 'snoutLength', 'trunkLength', 'eyes', 'iris', 'horns']);
+});
+
+test('option hints match FACE_HEADGEAR and FACE_EYES exhaustively (7 faces x 5 horns, 7 faces x 6 eye types)', async () => {
+  const {composerOptionText, composerOptionHint, COMPOSER_OPTION_HINTS: H} = await import('../src/creature-lab-composer.ts');
+  const {COMPOSER_FACES, COMPOSER_HORNS, COMPOSER_EYE_TYPES, COMPOSER_IRIS, FACE_HEADGEAR, FACE_EYES, resolveComposerEyes} = await import('../src/fauna-composer-face.ts');
+  assert.equal(COMPOSER_FACES.length, 7); assert.equal(COMPOSER_HORNS.length, 5); assert.equal(COMPOSER_EYE_TYPES.length, 6);
+  const base = composerPreset('giraffe'), eyeName = {round: 'round', horizontal: 'horizontal bar', 'vertical-slit': 'vertical slit', compound: 'compound', eyespot: 'eyespots'};
+  let hornCells = 0, disclosed = 0, unbuilt = 0, eyeCells = 0;
+  for (const head of COMPOSER_FACES) {
+    for (const horns of COMPOSER_HORNS) {
+      hornCells++;
+      const r = {...base, head}, cell = FACE_HEADGEAR[head][horns], text = composerOptionText(r, 'horns', horns), hint = composerOptionHint(r, 'horns', horns);
+      const expected = cell.built === horns ? '' : cell.built === 'none' ? H.notBuilt : cell.built === 'paired' ? H.brow : cell.built === 'crest' ? H.casque : null;
+      assert.notEqual(expected, null, `${head}/${horns}: no hint for built ${cell.built}`);
+      assert.equal(hint, expected, `${head}/${horns}`); assert.ok(text.endsWith(expected) && text.length > expected.length);
+      assert.equal(composerOptionText(r, 'horns', horns, false) + hint, text, 'the hint is a pure suffix');
+      // hints depend only on the face, never on the currently chosen horn
+      assert.equal(composerOptionText({...r, horns: 'paired'}, 'horns', horns), text);
+      if (expected) disclosed++;
+      if (expected === H.notBuilt) unbuilt++;
+    }
+    for (const eyes of COMPOSER_EYE_TYPES) {
+      eyeCells++;
+      const r = {...base, head}, text = composerOptionText(r, 'eyes', eyes);
+      if (eyes === 'auto') { const e = resolveComposerEyes({...r, eyes: 'auto'}); assert.equal(text, `Automatic (${eyeName[e.built]}, ${e.irisBuilt ? e.irisBuilt.replace('-', ' ') : 'no iris'})`); continue; }
+      const allowed = FACE_EYES[head].includes(eyes), hint = composerOptionHint(r, 'eyes', eyes);
+      if (allowed) assert.equal(hint, '', `${head}/${eyes}`);
+      else {
+        const built = head === 'mandibles' ? 'compound' : head === 'blunt' ? 'eyespot' : resolveComposerEyes({...r, eyes: 'auto'}).built;
+        assert.equal(hint, ` — built as ${eyeName[built]}`, `${head}/${eyes}`); assert.equal(resolveComposerEyes({...r, eyes}).built, built);
+      }
+      assert.ok(text.endsWith(hint));
+    }
+    // iris: no effect exactly on faces whose eyes have no iris
+    const noIris = resolveComposerEyes({...base, head}).irisBuilt === null;
+    assert.equal(noIris, head === 'mandibles' || head === 'blunt');
+    for (const iris of COMPOSER_IRIS) assert.equal(composerOptionHint({...base, head}, 'iris', iris), iris !== 'auto' && noIris ? H.noEffect : '', `${head}/${iris}`);
+  }
+  assert.equal(hornCells, 35); assert.equal(eyeCells, 42);
+  assert.equal(disclosed, 20, 'round doc: 20 of 35 cells are disclosed'); assert.equal(unbuilt, 18, 'and 18 of those build nothing');
+  // plan acceptance spot checks
+  const beak = {...base, head: 'beak'};
+  assert.ok(composerOptionText(beak, 'horns', 'paired').endsWith(' — not built on this face'));
+  assert.ok(composerOptionText(beak, 'horns', 'ossicones').endsWith(' — not built on this face'));
+  assert.ok(composerOptionText(beak, 'horns', 'nasal').endsWith(' — built as a casque'));
+  assert.equal(composerOptionText(beak, 'horns', 'crest'), 'Crest or casque');
+  assert.ok(composerOptionText({...base, head: 'jaws'}, 'horns', 'ossicones').endsWith(' — built as brow horns'));
+  assert.ok(composerOptionText({...base, head: 'muzzle', feet: 'hoof'}, 'eyes', 'auto').startsWith('Automatic (horizontal bar, '));
+  assert.equal(composerOptionText({...base, head: 'mandibles'}, 'iris', 'auto'), 'Automatic (no iris)');
+  assert.equal(composerOptionText({...base, head: 'mandibles'}, 'iris', 'red'), 'Red — no effect on this face');
+});
+
+test('option hint rendering never changes the encoded link', async () => {
+  const {composerOptionText, COMPOSER_HINTED_KEYS} = await import('../src/creature-lab-composer.ts');
+  const {COMPOSER_CHOICES} = await import('../src/fauna-composer-recipe.ts');
+  for (const id of ['giraffe', 'bird', 'ape', 'worm', 'centipede', 'trunked-centipede', 'shelled-giraffe-bird']) {
+    const r = composerPreset(id), before = encodeComposerRecipe(r), frozen = JSON.stringify(r);
+    for (const hints of [true, false, true]) for (const key of COMPOSER_HINTED_KEYS) for (const v of COMPOSER_CHOICES[key]) composerOptionText(r, key, v, hints);
+    assert.equal(JSON.stringify(r), frozen, `${id}: the recipe is not mutated`); assert.equal(encodeComposerRecipe(r), before, `${id}: link byte-identical`);
+  }
 });

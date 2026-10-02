@@ -24,6 +24,76 @@ await withGpuLock({owner:'composer-independent-ui',timeoutMs:60000,staleMs:Infin
   const shoot=name=>page.screenshot({path:join(output,`${name}.png`),fullPage:true});
   await page.goto(target.href,{waitUntil:'networkidle'});await page.waitForSelector('#composer-preset',{state:'visible',timeout:30000});await pause();
   for(const id of presets){await page.selectOption('#composer-preset',id);const s=await settle();assert.equal(s.actors[0].preset,id);assert(s.actors[0].details.withinBudget);assert(s.actors[0].bounds.min.concat(s.actors[0].bounds.max).every(Number.isFinite));await shoot(`preset-${id}`);evidence.push({check:'preset',id,state:s});}
+  let s0;
+  // ---- Face round (recipe v3): Face/Eyes/Iris controls, option hints, legacy trunk links, Head and face framing.
+  const optionTexts=key=>page.$$eval(`#composer-${key} option`,os=>os.map(o=>({value:o.value,text:o.textContent})));
+  const textOf=async(key,value)=>(await optionTexts(key)).find(o=>o.value===value)?.text;
+  const lab=async()=>page.evaluate(()=>window.__creatureLab.specimenUrl);
+  assert((await optionTexts('head')).some(o=>o.value==='proboscis'),'Face select offers Proboscis');
+  assert.equal(await page.locator('#composer-trunk').count(),0,'no Trunk control');
+  assert.equal((await page.locator('label:has(#composer-head)').innerText()).split('\n')[0].trim().startsWith('Face'),true);
+  assert.match(await page.locator('label:has(#composer-eyes)').innerText(),/^Eyes \(pupil\)/);
+  assert.match(await page.locator('label:has(#composer-iris)').innerText(),/^Iris colour/);
+  assert.match(await page.locator('label:has(#composer-horns)').innerText(),/^Horns and headgear/);
+  await page.selectOption('#composer-preset','giraffe');s0=await settle();
+  assert(await page.locator('#composer-trunkLength').isDisabled(),'Proboscis length disabled on a muzzle');assert.equal((await page.locator('#composer-trunkLength-why').innerText()).trim(),'Only a Proboscis face has a trunk.');
+  assert.match(await textOf('eyes','auto'),/^Automatic \(horizontal bar, (dark brown|brown)\)$/,'giraffe auto eye resolves to a horizontal bar');
+  await page.selectOption('#composer-head','proboscis');s0=await settle();
+  assert.equal(s0.actors[0].recipe.head,'proboscis');assert.equal(s0.actors[0].recipe.trunk,'trunk');assert(s0.actors[0].details.parts.some(p=>p.part==='trunk'),'giraffe + Proboscis builds a trunk part');
+  assert(!(await page.locator('#composer-trunkLength').isDisabled()),'Proboscis length enabled on a proboscis face');
+  assert.match(await textOf('horns','nasal'),/ — not built on this face$/);await shoot('face-giraffe-proboscis');
+  // beak face: per-option headgear hints
+  await page.selectOption('#composer-preset','bird');s0=await settle();
+  for(const v of ['paired','ossicones'])assert.match(await textOf('horns',v),/ — not built on this face$/,`beak ${v}`);
+  assert.match(await textOf('horns','nasal'),/ — built as a casque$/);assert.equal(await textOf('horns','crest'),'Crest or casque');
+  for(const v of ['compound','eyespot'])assert.match(await textOf('eyes',v),/ — built as round$/,`beak eye ${v}`);
+  // hint rendering: strip every hinted option text, re-render (edit-target change re-runs showControls), compare
+  const hintedState=async()=>({url:await lab(),values:await page.$$eval('#composer-horns,#composer-eyes,#composer-iris',els=>els.map(e=>e.value)),texts:await Promise.all(['horns','eyes','iris'].map(optionTexts)),builds:(await state()).builds});
+  const hinted=await hintedState();
+  await page.evaluate(()=>{for(const id of ['composer-horns','composer-eyes','composer-iris'])for(const o of document.getElementById(id).options)o.textContent=o.value;});
+  const stripped=await hintedState();assert.equal(stripped.url,hinted.url,'link byte-identical without hints');
+  await page.dispatchEvent('#composer-edit-target','change');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>r())));
+  const rerendered=await hintedState();
+  assert.equal(rerendered.url,hinted.url,'link byte-identical after re-rendering hints');assert.deepEqual(rerendered.values,hinted.values,'selection unchanged');assert.deepEqual(rerendered.texts,hinted.texts,'hints restored');assert.equal(rerendered.builds,hinted.builds,'re-rendering hints never rebuilds');
+  evidence.push({check:'hint-toggle',url:hinted.url,builds:hinted.builds,beakHorns:hinted.texts[0],beakEyes:hinted.texts[1],beakIris:hinted.texts[2]});
+  await shoot('face-bird-hints');await page.locator('fieldset:has(#composer-horns)').screenshot({path:join(output,'panel-head-and-neck-bird.png')});
+  // flat face + nasal: disclosed, not built
+  await page.selectOption('#composer-preset','ape');await settle();await page.selectOption('#composer-horns','nasal');s0=await settle();
+  assert.equal(s0.actors[0].recipe.horns,'nasal','the chosen horn stays in the recipe');
+  assert(!s0.actors[0].details.parts.some(p=>p.part==='horn'),'no horn part on a primate face');
+  assert.match(await page.locator('#composer-constraints').innerText(),/Not built: primate faces carry no horns\./);
+  assert.equal(await page.locator('#composer-horns').inputValue(),'nasal');await shoot('face-ape-nasal-disclosed');await page.locator('fieldset:has(#composer-horns)').screenshot({path:join(output,'panel-head-and-neck-ape-nasal.png')});await page.locator('#composer-constraints').screenshot({path:join(output,'panel-constraints-ape-nasal.png')});
+  // centipede: compound eyes, iris has no effect
+  await page.selectOption('#composer-preset','centipede');await settle();
+  assert.equal(await textOf('iris','auto'),'Automatic (no iris)');assert.match(await textOf('iris','red'),/ — no effect on this face$/);assert.match(await textOf('eyes','round'),/ — built as compound$/);
+  // legacy v1 trunk links through the real Lab
+  const v1=JSON.parse(await readFile(new URL('./fixtures/composer-v1-links.json',import.meta.url),'utf8')).presets;
+  const openLink=async text=>{const u=new URL(target.href);u.search='';u.searchParams.set('mode','composer');u.searchParams.set('recipe',text);await page.goto(u.href,{waitUntil:'networkidle'});return settle();};
+  let legacy=await openLink(v1.find(p=>p.id==='turtle').text.replace('trunk_none','trunk_trunk'));
+  assert.equal(legacy.actors[0].recipe.head,'beak');assert.equal(legacy.actors[0].recipe.trunk,'none');
+  assert(await page.locator('#composer-issues').isVisible());const issuesText=await page.locator('#composer-issues').innerText();
+  assert.match(issuesText,/This link was adjusted:/);assert.match(issuesText,/Trunk: removed/);await shoot('legacy-v1-beak-trunk');await page.locator('#composer-issues').screenshot({path:join(output,'panel-issues-legacy-beak-trunk.png')});evidence.push({check:'legacy-beak-trunk',issues:legacy.issues});
+  legacy=await openLink(v1.find(p=>p.id==='giraffe').text.replace('trunk_none','trunk_trunk'));
+  assert.equal(await page.locator('#composer-head').inputValue(),'proboscis','v1 muzzle+trunk shows Face = Proboscis');assert(legacy.actors[0].details.parts.some(p=>p.part==='trunk'));
+  assert.match(await page.locator('#composer-issues').innerText(),/Trunk: now a face type/);await shoot('legacy-v1-muzzle-trunk');evidence.push({check:'legacy-muzzle-trunk',issues:legacy.issues});
+  await page.goto(target.href,{waitUntil:'networkidle'});await page.waitForSelector('#composer-preset',{state:'visible',timeout:30000});await pause();
+  // Head and face framing: the head bounds fill >= 40% of the viewport height
+  const headFill=()=>page.evaluate(()=>{const c=window.__creatureLab.camera,h=window.__creatureLab.composer.headEnvelope,V=c.matrixWorldInverse,P=c.projectionMatrix;
+   const mul=(m,v)=>[0,1,2,3].map(r=>m[r]*v[0]+m[4+r]*v[1]+m[8+r]*v[2]+m[12+r]*v[3]);let y0=Infinity,y1=-Infinity,x0=Infinity,x1=-Infinity;
+   for(const x of [h.min[0],h.max[0]])for(const y of [h.min[1],h.max[1]])for(const z of [h.min[2],h.max[2]]){const p=mul(P,mul(V,[x,y,z,1]));y0=Math.min(y0,p[1]/p[3]);y1=Math.max(y1,p[1]/p[3]);x0=Math.min(x0,p[0]/p[3]);x1=Math.max(x1,p[0]/p[3]);}
+   return {heightFraction:(y1-y0)/2,widthFraction:(x1-x0)/2,inside:y0>=-1.001&&y1<=1.001&&x0>=-1.001&&x1<=1.001,head:h,camera:c.position,target:c.target};});
+  assert.equal(await page.locator('#composer-focus').inputValue(),'body');
+  const framing=[];
+  for(const [id,label] of [['ape','ape'],['worm','worm'],['rhinoceros','pachyderm'],['trunked-centipede','proboscis']]){
+   await page.selectOption('#composer-focus','body');await page.selectOption('#composer-preset',id);await settle();const body=await headFill();
+   await page.selectOption('#composer-focus','head');s0=await settle();assert.equal(s0.focus,'head');const fill=await headFill();
+   for(const view of ['three-quarter','side','front']){await page.selectOption('#composer-view',view);await settle();const f=await headFill();framing.push({id,label,view,body:body.heightFraction,...f});
+    assert(f.heightFraction>=.4,`${label} ${view}: head fills ${(f.heightFraction*100).toFixed(1)}% of the viewport height`);assert(f.inside,`${label} ${view}: head inside the frame`);
+    await page.locator('#viewport').screenshot({path:join(output,`head-frame-${label}-${view}.png`)});}
+   await page.selectOption('#composer-view','three-quarter');assert(fill.heightFraction>body.heightFraction,`${label}: head framing is closer than whole-animal framing`);
+  }
+  assert.equal(new URL(await lab()).searchParams.has('focus'),false,'framing is not stored in the link');
+  await page.selectOption('#composer-focus','body');await settle();evidence.push({check:'head-frame',framing});
   // Independent editing must retain the rest of the selected recipe.
   await page.selectOption('#composer-preset','turtle');const before=await settle();await page.selectOption('#composer-head','mandibles');let s=await settle();assert.equal(s.actors[0].recipe.head,'mandibles');for(const [key,value]of Object.entries(before.actors[0].recipe))if(key!=='head')assert.deepEqual(s.actors[0].recipe[key],value,`head preserves ${key}`);
   await page.locator('#composer-neckLength').fill('1.3');await page.selectOption('#composer-wings','feathered');s=await settle();assert.equal(s.actors[0].recipe.neckLength,1.3);assert.equal(s.actors[0].recipe.armor,'dome');assert.equal(s.actors[0].recipe.wings,'feathered');assert.match(await page.locator('#composer-constraints').innerText(),/shell|rim/i);await shoot('manual-shell-neck-wings');
