@@ -60,23 +60,31 @@ test('every v1 fixture text decodes with no error and no issue and keeps all 26 
   assert.ok(presets >= 12 && others > 300, `presets ${presets}, others ${others}`);
 });
 
-test('legacy colour identity: migrated neutral v1 recipes build the HEAD skin digest byte for byte', () => {
+// The v1 head-skin digests (captured at 1ec5072) are frozen history: skin-2
+// (WP3) and graph-2 (WP4) change every legacy skin by design, which is the
+// documented drift for old links. composer-skin2-links.json pins the new build
+// of the same 28 migrated texts; bone counts must still equal v1 (no new bones).
+const skin2 = JSON.parse(readFileSync(new URL('./fixtures/composer-skin2-links.json', import.meta.url), 'utf8'));
+test('legacy recipes: migrated neutral v1 texts build the pinned skin-2 digest byte for byte, with v1 bone counts', () => {
   let checked = 0;
-  for (const [text, head] of Object.entries(fixture.headSkinDigests.byText)) {
+  assert.deepEqual(Object.keys(skin2.byText).sort(), Object.keys(fixture.headSkinDigests.byText).sort());
+  for (const [text, v1] of Object.entries(fixture.headSkinDigests.byText)) {
+    const pinned = skin2.byText[text];
     const decoded = decodeComposerRecipe(text).recipe;
     // a non-preset v1 text is neutral already; a preset text is checked with its v1 fields only (v2 keys neutral)
     const neutral = presetOf(decoded) ? {...decoded, ...COMPOSER_V2_DEFAULTS} : decoded;
     const derived = deriveComposerIndividual(neutral);
     assert.equal(derived.traits.neutral, true, text);
     const graph = buildComposerGraph(derived.recipe), skin = buildComposerSkin(graph);
-    assert.equal(digest(skin.positions, skin.index, skin.skinIndex, skin.skinWeight, skin.colors), head.skin, text);
-    assert.deepEqual([skin.vertexCount, skin.triangleCount, graph.bones.length], [head.vertices, head.triangles, head.bones], text);
+    assert.equal(digest(skin.positions, skin.index, skin.skinIndex, skin.skinWeight, skin.colors), pinned.skin, text);
+    assert.deepEqual([skin.vertexCount, skin.triangleCount, graph.bones.length], [pinned.vertices, pinned.triangles, pinned.bones], text);
+    assert.equal(graph.bones.length, v1.bones, `${text}: graph-2 adds no bones`);
     checked++;
   }
   assert.equal(checked, 28);
   // and through the public creature factory
   const text = fixture.fixtureSeeds[3].text, c = createComposerCreature(decodeComposerRecipe(text).recipe);
-  try { assert.equal(digest(c.skin.positions, c.skin.index, c.skin.skinIndex, c.skin.skinWeight, c.skin.colors), fixture.headSkinDigests.byText[text].skin); assert.deepEqual(c.individual.deltas, []); }
+  try { assert.equal(digest(c.skin.positions, c.skin.index, c.skin.skinIndex, c.skin.skinWeight, c.skin.colors), skin2.byText[text].skin); assert.deepEqual(c.individual.deltas, []); }
   finally { c.dispose(); }
 });
 
