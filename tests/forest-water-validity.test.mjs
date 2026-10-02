@@ -49,7 +49,7 @@ test('real patch interval records primary and every evaluated slope probe, inclu
   for(const cell of forestPatch(body.seed,address).cells){
     const s=track(cell.direction);primary++;
     const biome=classify(cell.direction,s.groundHeightM);
-    const preSlope=!s.wet&&biome.forestPotential&&cell.roll<.76;
+    const preSlope=!s.wet&&biome.forestPotential&&cell.roll<.76*biome.forestSuitability01;
     const result=checked(cell);
     if(!preSlope)continue;
     eligible++;probes+=2;

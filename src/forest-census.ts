@@ -1,6 +1,8 @@
 import type {Body} from './catalog.ts';
 import {terrainSampler,TERRAIN_VERSION,REGIONAL_LANDFORM_VERSION} from './terrain.ts';
 import {biomeClassifier,BIOME_VERSION} from './surface-biomes.ts';
+import {CLIMATE_VERSION} from './surface-climate.ts';
+import {HABITAT_SUITABILITY_VERSION} from './habitat-suitability.ts';
 import {LANDFORM_VERSION} from './planet-landforms.ts';
 import {RIVER_SURFACE_VERSION} from './river-types.ts';
 import {forestHabitat,TREE_HABITAT_VERSION} from './forest-habitat.ts';
@@ -56,7 +58,7 @@ export async function createForestCensus(body:Body,waterLevelM:number,maxBytes=4
   if(!Number.isFinite(body.radiusM)||body.radiusM<=0||!Number.isFinite(waterLevelM)||
     !Number.isSafeInteger(maxBytes)||maxBytes<0||!Number.isSafeInteger(maxPatches)||maxPatches<0)throw new Error('Invalid forest census context');
   const description=JSON.stringify([FOREST_CENSUS_VERSION,POPULATION_VERSION,TREE_HABITAT_VERSION,
-    TERRAIN_VERSION,REGIONAL_LANDFORM_VERSION,LANDFORM_VERSION,BIOME_VERSION,RIVER_SURFACE_VERSION,FOREST_CELL_M,
+    TERRAIN_VERSION,REGIONAL_LANDFORM_VERSION,LANDFORM_VERSION,BIOME_VERSION,CLIMATE_VERSION,HABITAT_SUITABILITY_VERSION,RIVER_SURFACE_VERSION,FOREST_CELL_M,
     FOREST_PATCH_VERSION,FOREST_PATCH_SIDE,canonical(body)]);
   const snapshot=structuredClone(body);
   const family=await sha256(description);
