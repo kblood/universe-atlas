@@ -7,7 +7,7 @@ import { generateBiosphere } from '../src/biosphere-model.ts';
 import { generateCreatureGenome, realisticIndividualCreatureGenome, validateCreatureGenome } from '../src/creature-model.ts';
 import {
   FAUNA_APPEARANCE_LEGACY_VERSION, FAUNA_APPEARANCE_VERSION, MORPHOLOGY_FAMILIES, createFaunaAppearance, faunaArmorShare, faunaCoatMark, faunaCoatMaxScale, faunaFawnSpotLayout,
-  faunaAdultCoat, faunaFarCoatMean, faunaFarMean, faunaFarSpeciesId, faunaLineageCoat, linearHexOf, faunaSpeciesCoat, faunaSpeciesDimorphism, inheritedFaunaFamily, sampleFaunaCoat,
+  faunaAdultCoat, faunaFarCoatMean, faunaFarMean, faunaFarSpeciesId, faunaJuvenileStockingStrength, faunaLineageCoat, linearHexOf, faunaSpeciesCoat, faunaSpeciesDimorphism, inheritedFaunaFamily, sampleFaunaCoat,
 } from '../src/fauna-appearance.ts';
 import { coatMeanColor, coatMinFeature, hexToLinear } from '../src/fauna-coat-fields.ts';
 import { COAT_MARK_BITS } from '../src/fauna-coat-vocab.ts';
@@ -386,4 +386,70 @@ test('evaluation is pure and deterministic, with signed lateral coordinates', ()
     if (l.some((v, k) => Math.abs(v - r[k]) > .02)) differs++;
   }
   assert.ok(differs > 5, 'left and right flanks carry different markings');
+});
+
+test('proboscidean floors carry the individual body condition, head breadth and ear size', t => {
+  // Inherited proboscidean species (the floors bind there; an explicit family
+  // envelope already scales torso height by condition).
+  const founders = [];
+  for (const species of planets) for (const s of species) if (founders.length < 8 && inheritedFaunaFamily(s.creature) === 'proboscidean') founders.push(s);
+  assert.equal(founders.length, 8);
+  const ratios = [], ears = [], round = 1.5e-3;
+  for (const s of founders) for (let v = 0; v < 4; v++) {
+    const g = realisticIndividualCreatureGenome(s.creature, `${s.id}/floor`, v, 'adult'), ind = g.appearance.individual;
+    assert.equal(g.morphology.family, 'proboscidean');
+    // Coat phenotypes: condition +-13% (low-slung) or +-9%, ears +-12%, head breadth +-3.5%.
+    const condition = 1 + ind.condition * (s.creature.archetype === 'low-slung' ? .13 : .09);
+    assert.ok(g.torsoHeight / g.torsoLength >= .48 * condition - round, `${s.id}/${v} torso floor`);
+    assert.ok(g.headWidth / g.headLength >= .77 * (1 + ind.condition * .035) - round, `${s.id}/${v} head floor`);
+    assert.ok(g.earLength / g.headLength >= .52 * (1 + ind.ears * .12) - round, `${s.id}/${v} ear floor`);
+    ratios.push(g.torsoHeight / g.torsoLength); ears.push(g.earLength / g.headLength);
+  }
+  const spread = values => Math.max(...values) - Math.min(...values);
+  t.diagnostic(JSON.stringify({ torsoHeightRatio: [Math.min(...ratios), Math.max(...ratios)].map(v => +v.toFixed(3)), earRatio: [Math.min(...ears), Math.max(...ears)].map(v => +v.toFixed(3)) }));
+  // The bare floor made every such adult exactly .48 tall and gave every individual one ear ratio.
+  assert.ok(spread(ratios) > .04, `proboscidean torso height ratio spread ${spread(ratios)}`);
+  assert.ok(spread(ears) > .04, `proboscidean ear ratio spread ${spread(ears)}`);
+});
+
+test('low-slung individuals flip stockings only, at the shared 12% rate', t => {
+  let individuals = 0, flipped = 0;
+  for (const species of planets.slice(0, 120)) for (const s of species) {
+    if (s.creature.archetype !== 'low-slung') continue;
+    const speciesMarks = faunaSpeciesCoat(s.creature).coat.marks;
+    for (let v = 0; v < 4; v++) {
+      const a = createFaunaAppearance(s.creature, `${s.id}/stockings`, v, 'adult'), flip = a.coat.marks ^ speciesMarks;
+      assert.equal(flip & ~COAT_MARK_BITS.socks, 0, `${s.id}/${v} flips only stockings`);
+      individuals++; if (flip) flipped++;
+    }
+  }
+  t.diagnostic(JSON.stringify({ individuals, flipped, rate: +(flipped / individuals).toFixed(3) }));
+  assert.ok(individuals >= 400);
+  assert.ok(flipped / individuals > .07 && flipped / individuals < .17, `stocking flip rate ${flipped / individuals}`);
+});
+
+test('juvenile stockings develop with maturity; adult stockings are unchanged', () => {
+  assert.equal(+faunaJuvenileStockingStrength(.2).toFixed(9), .4);
+  assert.equal(faunaJuvenileStockingStrength(.7), 1);
+  assert.equal(faunaJuvenileStockingStrength(1), 1);
+  for (let m = .2; m < .7; m += .05) assert.ok(faunaJuvenileStockingStrength(m + .05) >= faunaJuvenileStockingStrength(m));
+  let checked = 0;
+  for (const species of planets.slice(0, 40)) for (const s of species) {
+    if (checked >= 12) break;
+    const g = realisticIndividualCreatureGenome(s.creature, `${s.id}/young-legs`, 0, 'juvenile');
+    if (!(g.appearance.coat.marks & COAT_MARK_BITS.socks)) continue;
+    const k = faunaJuvenileStockingStrength(g.appearance.growth.maturity);
+    const bare = { ...g, appearance: { ...g.appearance, coat: { ...g.appearance.coat, marks: g.appearance.coat.marks & ~COAT_MARK_BITS.socks } } };
+    const grown = { ...g, appearance: { ...g.appearance, growth: { ...g.appearance.growth, stage: 'adult', maturity: 1 } } };
+    for (const [region, along] of [['foot', .5], ['lower', .9], ['lower', .6]]) {
+      const surface = { dorsal: 0, along, cellM: .03 }, x = .2, y = -.4, z = .1;
+      const young = sampleFaunaCoat(g, x, y, z, 0, region, surface), none = sampleFaunaCoat(bare, x, y, z, 0, region, surface), full = sampleFaunaCoat(grown, x, y, z, 0, region, surface);
+      for (let c = 0; c < 3; c++) assert.ok(Math.abs(young[c] - (none[c] + (full[c] - none[c]) * k)) < 1e-12, `${s.id} ${region} stocking blend`);
+    }
+    // Above the knee and on the torso the juvenile coat is the adult coat.
+    assert.deepEqual(sampleFaunaCoat({ ...g, appearance: { ...g.appearance, coat: { ...g.appearance.coat, juvenileSpots: 0 } } }, .2, .1, .1, 0, 'upper', { dorsal: 0, along: .2 }),
+      sampleFaunaCoat({ ...grown, appearance: { ...grown.appearance, coat: { ...grown.appearance.coat, juvenileSpots: 0 } } }, .2, .1, .1, 0, 'upper', { dorsal: 0, along: .2 }));
+    checked++;
+  }
+  assert.ok(checked >= 6, `stockinged juveniles checked ${checked}`);
 });

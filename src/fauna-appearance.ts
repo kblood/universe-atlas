@@ -452,8 +452,11 @@ export function faunaAdultCoat(archetype: CreatureArchetype, speciesCoat: CoatGe
   return faunaIndividualCoat(archetype, drifted, individualKey);
 }
 /** Region marks that differ between individuals of one species, as stockings
- * and blazes do in wild cattle, equids and deer (not on broad low-slung heads). */
-const INDIVIDUAL_MARKS: Readonly<Record<CreatureArchetype, readonly CoatMarkName[]>> = { browser: ['socks', 'blaze'], runner: ['socks', 'blaze'], 'long-neck': ['socks'], 'low-slung': [] };
+ * and blazes do in wild cattle, equids and deer (not on broad low-slung heads).
+ * Low-slung bodies flip stockings only: dark-legged and uniform individuals
+ * occur in one population of bears, wolverines and tapirs. The flip reuses the
+ * existing per-mark draw, so the stream order is unchanged. */
+const INDIVIDUAL_MARKS: Readonly<Record<CreatureArchetype, readonly CoatMarkName[]>> = { browser: ['socks', 'blaze'], runner: ['socks', 'blaze'], 'long-neck': ['socks'], 'low-slung': ['socks'] };
 /** The fauna-appearance-2 individual layer, from stream
  * `<individualKey>/coat-individual-v2`, on top of the shared coat drift:
  * overall tone (sRGB value x(1 +-0.14), +-0.22 low-slung, +-0.2 long-neck),
@@ -684,8 +687,11 @@ function withoutLibrarySpots(coat: CoatGenome): CoatGenome {
  * the spine in surface coordinates (arc length from the spine); the two flank
  * rows are laid out in side projection, which stays continuous across the
  * torso/thigh seam, so a flank spot over the hip is painted whole on both. */
+let fawnLayoutCell = NaN, fawnLayout: FaunaFawnSpotLayout | undefined;
 function fawnSpotMask(seed: number, x: number, dy: number, z: number, cell: number, halfH: number, halfW: number): number {
-  const L = faunaFawnSpotLayout(cell);
+  // One body shares one cell size: reuse its layout instead of allocating per vertex.
+  if (cell !== fawnLayoutCell || !fawnLayout) { fawnLayoutCell = cell; fawnLayout = faunaFawnSpotLayout(cell); }
+  const L = fawnLayout;
   if (x < FAWN_X0 - 2 * L.radius || x > FAWN_X1 + 2 * L.radius) return 0;
   const rLoc = Math.hypot(dy, z), arc = Math.atan2(Math.abs(z), dy) * rLoc, side = z >= 0 ? 1 : 2, e = .6 * (cell > 0 ? cell : FAWN_DEFAULT_CELL);
   const top = halfH * Math.cos(Math.min(L.rows[0]! / Math.max(halfH, 1e-3), Math.PI / 2)), flank = Math.abs(z) >= .4 * halfW;
@@ -720,11 +726,15 @@ export function sampleFaunaCoat(genome: CreatureGenome, x: number, y: number, z:
   if (!a) return undefined;
   if (a.version !== FAUNA_APPEARANCE_VERSION || !a.coat) return sampleLegacyCoat(genome, x, y, z, torsoY);
   const coat = prepare(genome, x, y, z, torsoY, region, surface);
+  const stockings = a.growth.stage === 'juvenile' && (coat.marks & COAT_MARK_BITS.socks) !== 0 && (SAMPLE.region === 'limb-lower' || SAMPLE.region === 'foot');
   if (!(coat.marks & COAT_MARK_BITS['juvenile-spots']) || !(coat.juvenileSpots > 0)) {
     evaluateCoat(coat, SAMPLE, OUT, 0);
+    if (stockings) developingStockings(coat, a.growth.maturity);
     return [OUT[0]!, OUT[1]!, OUT[2]!];
   }
-  evaluateCoat(withoutLibrarySpots(coat), SAMPLE, OUT, 0);
+  const unspotted = withoutLibrarySpots(coat);
+  evaluateCoat(unspotted, SAMPLE, OUT, 0);
+  if (stockings) developingStockings(unspotted, a.growth.maturity);
   // The thigh continues the flank, so spots cut by the torso/limb region seam
   // stay whole discs; the neck is excluded (its surface leaves the torso axis).
   if (SAMPLE.region === 'torso' || SAMPLE.region === 'limb-upper') {
@@ -739,6 +749,25 @@ export function sampleFaunaCoat(genome: CreatureGenome, x: number, y: number, z:
     }
   }
   return [OUT[0]!, OUT[1]!, OUT[2]!];
+}
+
+/** Stocking strength of a juvenile (0.4 at maturity 0.2, 0.7 at 0.45, 1 by
+ * 0.7). Leg stockings darken and sharpen with age: gaur and banteng calves
+ * are near body-coloured below the knee, and bear cubs and young tapirs lack
+ * the adults' dark legs. The young's lower legs also take a larger share of
+ * the skin (by about half), so full-strength stockings would make juveniles
+ * read darker than their stage-invariant far colour. */
+export function faunaJuvenileStockingStrength(maturity: number): number { return mix(.4, 1, smooth(.2, .7, maturity)); }
+let sockSource: CoatGenome | undefined, sockResult: CoatGenome | undefined;
+const SOCK_OUT = new Float64Array(3);
+/** Blends OUT (the stockinged lower leg) toward the same point without
+ * stockings, by the juvenile's undeveloped share. */
+function developingStockings(coat: CoatGenome, maturity: number): void {
+  const k = faunaJuvenileStockingStrength(maturity);
+  if (k >= 1) return;
+  if (coat !== sockSource) { sockSource = coat; sockResult = { ...coat, marks: coat.marks & ~COAT_MARK_BITS.socks }; }
+  evaluateCoat(sockResult!, SAMPLE, SOCK_OUT, 0);
+  for (let c = 0; c < 3; c++) OUT[c] = mix(SOCK_OUT[c]!, OUT[c]!, k);
 }
 
 const PROBE = new Float64Array(5);

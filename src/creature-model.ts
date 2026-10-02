@@ -160,9 +160,16 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
     g.armor=selected==='padded'?Math.min(g.armor,.4):0;
   }
   if(selected==='proboscidean'){
-    g.torsoHeight=Math.max(g.torsoHeight,g.torsoLength*.48);g.headWidth=Math.max(g.headWidth,g.headLength*.77);
+    // The proboscidean floors are species proportions. For coat phenotypes they
+    // carry the individual's body condition, head breadth and ear size, which
+    // a bare floor erased (every adult had torso height exactly .48 of its
+    // length and the same ear ratio). Elephant body condition, and ear size and
+    // outline, differ visibly between individuals of one population (ears are
+    // used to identify them).
+    const floorTorso=coatPhenotype?condition:1,floorHead=coatPhenotype?1+i.condition*.035:1,floorEar=coatPhenotype?1+i.ears*.12:1;
+    g.torsoHeight=Math.max(g.torsoHeight,g.torsoLength*.48*floorTorso);g.headWidth=Math.max(g.headWidth,g.headLength*.77*floorHead);
     g.footWidth=Math.max(g.footWidth,g.torsoWidth*.25);g.hornLength=0;g.armor=0;
-    g.earLength=Math.max(g.earLength,g.headLength*.52);
+    g.earLength=Math.max(g.earLength,g.headLength*.52*floorEar);
   }
   // An explicit family draws a different body, so its far colour is re-weighted
   // to that body (stage-invariant: the adult-equivalent armour is used).
