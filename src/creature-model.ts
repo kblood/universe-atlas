@@ -171,6 +171,12 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
     g.footWidth=Math.max(g.footWidth,g.torsoWidth*.25);g.hornLength=0;g.armor=0;
     g.earLength=Math.max(g.earLength,g.headLength*.52*floorEar);
   }
+  // Headgear only where real animals carry it (fauna face round WP3): horns
+  // grow on hoofed browsers (bovids, giraffids), never on the face of a padded
+  // badger/bear-like animal, a runner or a proboscidean. The founder genome
+  // keeps its hornLength (no new draws, no species reroll); only the drawn
+  // phenotype drops it, and the drop is disclosed in the mutation log.
+  if(selected!=='ungulate'&&g.hornLength>0){g.hornLength=0;g.mutationLog.push(`${selected} face: horns not grown (only hoofed browsers carry horns)`);}
   // An explicit family draws a different body, so its far colour is re-weighted
   // to that body (stage-invariant: the adult-equivalent armour is used).
   if(family!==undefined&&isCoatPhenotype(a)&&family!==inheritedFaunaFamily(genome)){
