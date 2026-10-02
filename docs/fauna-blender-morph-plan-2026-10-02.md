@@ -6,7 +6,9 @@ to Opus 5.5. Follow [the modular composer plan](fauna-modular-composer-plan-2026
 before further deer-only polishing. The active goal continues; retained deer
 work is a reusable reference, not a prerequisite for other body plans.
 
-Status: researched implementation plan; implementation goal created and active.
+Status: implementation ongoing; the first modular desktop preview is
+[deployed and verified](fauna-modular-preview-2026-10-02.md). The broader realism
+goal remains active.
 Date: 2026-10-02.
 
 ## Direction and evidence

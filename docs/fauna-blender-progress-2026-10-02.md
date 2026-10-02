@@ -4,10 +4,11 @@
 across dinosaurs, turtles, giraffes, birds, ostriches, rhinos, apes, worms and
 centipedes are the immediate objective. Follow the
 [modular composer amendment](fauna-modular-composer-plan-2026-10-02.md).
-Opus 5.5 owns implementation in a fresh session. Deer shoulder028 was stopped
-and its partial code/review output preserved; no028 export or deployment was
-performed. Candidate027 remains the validated authored reference. The requested
-next deploy will demonstrate modular combinations, with realism work continuing.
+Opus 5.5 completed the modular implementation. The first desktop preview is
+now [deployed and verified](fauna-modular-preview-2026-10-02.md), with realism
+work continuing. Deer shoulder028 was stopped and its partial code/review
+output preserved; no028 export or deployment was performed. Candidate027
+remains the retained authored reference.
 
 The [full plan](fauna-blender-morph-plan-2026-10-02.md) remains active. This log
 records actual candidate results; a technical pass is not a visual approval.
@@ -791,3 +792,19 @@ work resumes. Keep the broader realism goal open.
 The shared assetctl source also retains the interrupted experimental028
 shoulder work. Candidate027 remains the retained verified export; the current
 Blender authoring source is not a newly accepted export checkpoint.
+
+## First modular preview deployed and verified
+
+The user resumed work with explicit deployment, documentation, commit and push
+instructions. The clean application checkpoint `9d3b84c` was built and published
+as `fauna-preview-20261002-01`. The full final suite passed 951 tests with four
+skipped and no failures (955 total). The independent UI suite passed on both
+the packaged static site and the public HTTPS URL. All 52 packaged files and
+the preview manifest matched the local bytes; protected Apache configuration
+was checked over SSH. Root inspected the packaged and live comparison images.
+
+See [the deployment record and usage guide](fauna-modular-preview-2026-10-02.md)
+for the direct link, source/build identity, evidence locations, retained package
+and remaining limitations. This supersedes the earlier publication-pending
+checkpoint. Realistic surfaces, wider collision qualification and headset
+acceptance remain open.

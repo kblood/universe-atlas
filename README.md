@@ -1,5 +1,17 @@
 # Universe Atlas
 
+## Modular Creature Lab preview — 2026-10-02
+
+[Open the deployed creature composer](https://dionysus.dk/webxr/IWSDK/universe-atlas/fauna-preview-20261002-01/creature-lab.html?mode=composer).
+Start with nine animal-inspired presets or three hybrids, then independently
+change body layout, limbs, feet, head, neck, wings, shell, tail and trunk.
+Compare two animals and copy a link that preserves both recipes and the pose.
+
+This is an experimental desktop preview with stylised procedural geometry.
+Realistic surfaces, flight and headset qualification remain open. See the
+[deployment record and usage guide](docs/fauna-modular-preview-2026-10-02.md)
+for the verified build, tests and current limitations.
+
 ## Structural fauna variation — 2026-10-02
 
 Creature Lab's **Planet skin** now supports six body families: ungulate,

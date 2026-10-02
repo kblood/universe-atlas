@@ -1,5 +1,10 @@
 # Modular creature composer: current priority
 
+**Deployment milestone:** the first experimental desktop preview is live.
+See the [deployment record and usage guide](fauna-modular-preview-2026-10-02.md)
+for the link, verified build and acceptance evidence. The broader realism goal
+continues; this milestone delivers composable parts and working lab controls.
+
 This amendment follows the user's explicit correction on 2 October 2026. It
 supersedes the deer-first ordering in the earlier fauna plan. The active goal
 continues, with structural variety and a testable modular Creature Lab first.
