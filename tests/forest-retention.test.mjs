@@ -216,3 +216,19 @@ test('main selection application defects remain visible and do not consume worke
     assert.equal(f.workerFailures,0);assert.equal(f.workerRestarts,0);
   }finally{f?.dispose();if(OriginalWorker===undefined)delete globalThis.Worker;else globalThis.Worker=OriginalWorker;}
 });
+test('selection apply prunes retention, queue and cache exactly by incoming identity',()=>{
+  const {f,step}=fixture();try{
+    step();
+    const cells=f.wanted.slice(0,4),fresh={...cells[0],id:'fixture/fresh'},dry={...cells[1],id:'fixture/dry'};
+    f.cache.set(dry.id,{cell:dry,height:0,present:true,water:1});
+    for(let i=0;i<24000;i++){const cell={...cells[0],id:'filler/'+i};f.cache.set(cell.id,{cell,height:0,present:true,water:0});}
+    f.retainedNear=new Set(['fixture/0','fixture/5','fixture/fresh','missing/near']);
+    f.retainedMiddle=new Set(['fixture/1','fixture/4','fixture/dry','missing/middle']);
+    const incoming=[...cells,fresh,dry];
+    f.applySelection([0,0,1],incoming,1);
+    assert.deepEqual([...f.retainedNear],['fixture/0','fixture/fresh']);
+    assert.deepEqual([...f.retainedMiddle],['fixture/1','fixture/dry']);
+    assert.deepEqual(f.queue.map(c=>c.id),['fixture/fresh','fixture/dry']);
+    assert.deepEqual([...f.cache.keys()].sort(),['fixture/0','fixture/1','fixture/2','fixture/3','fixture/dry']);
+  }finally{f.dispose();}
+});

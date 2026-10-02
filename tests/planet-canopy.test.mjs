@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {PlanetCanopy} from '../src/planet-canopy.ts';
+import {PlanetCanopy,forestCellPatchKey} from '../src/planet-canopy.ts';
 import {LEGACY_TREE_BOUND} from '../src/tree-shape.ts';
 import {galaxies,refByAddress,system} from '../src/catalog.ts';
 import {PLANET_DETAIL} from '../src/planet-detail.ts';
@@ -732,5 +732,38 @@ test('origin rebasing retains positions until the replacement buffer is complete
     assert.equal(h.host.diagnostics().rebasePending,false);assert.notDeepEqual(h.host.origin.toArray(),origin.toArray());
     assert.ok(Math.abs(h.host.renderer.positions.getX(slot)-(h.host.bodyPositions[slot*3]-h.host.origin.x))<.01);
     assert.ok(Math.abs(h.host.renderer.positions.getY(slot)-(h.host.bodyPositions[slot*3+1]-h.host.origin.y))<.01);
+  }finally{h.restore();}
+});
+test('forestCellPatchKey matches the split-and-map reference for well-formed and malformed ids',()=>{
+  const reference=id=>{const [face,n,x,y]=id.split('/').map(Number);return `${face}/${n}/${Math.floor(x/8)}/${Math.floor(y/8)}`;};
+  const ids=['0/577212/86057/181405','5/1/0/0','3/12/-9/17','2/64/7.5/8','1/2/3/4/5','1/2/3/4/','1/2/3','1/2','1','','a/b/c/d','/1//2',' 1/ 2/3 /4','1/2/0x10/1e3','1/2/3/-0'];
+  let seed=7;const rand=()=>(seed=(seed*1103515245+12345)>>>0)/2**32;
+  for(let i=0;i<2000;i++)ids.push(`${Math.floor(rand()*6)}/${Math.floor(rand()*1e6)}/${Math.floor(rand()*1e6)}/${Math.floor(rand()*1e6)}`);
+  for(const id of ids)assert.equal(forestCellPatchKey(id),reference(id),id);
+});
+test('slot identity and install revision keep a cached slot equal to slotOf across removal and reuse',()=>{
+  const h=begin(1),a=address(0,h.n),b=address(1,h.n),keyA=`${a.face}/${a.n}/${a.x}/${a.y}`,keyB=`${b.face}/${b.n}/${b.x}/${b.y}`;
+  const idA=`${a.face}/${a.n}/${a.x*8}/${a.y*8}`,idB=`${b.face}/${b.n}/${b.x*8}/${b.y*8}`,ids=[idA,idB,'0/1/2/3'];
+  // The PlanetForest cache rule: re-look a held slot only if it no longer
+  // holds the id, and a miss only after an install.
+  const cache=new Map(ids.map(id=>[id,{slot:-1,version:-1,install:-1}]));
+  const check=label=>{
+    const version=h.host.slotRevision(),install=h.host.installRevision();
+    for(const id of ids){
+      const c=cache.get(id);
+      if(c.version!==version){if(c.slot>=0?!h.host.slotHolds(c.slot,id):c.install!==install)c.slot=h.host.slotOf(id);c.version=version;c.install=install;}
+      assert.equal(c.slot,h.host.slotOf(id),`${label}: ${id}`);
+    }
+  };
+  try{
+    check('empty');
+    const request=selectAndRequest(h,[a]);sendPatchResponse(h,request,[patch(a)]);
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);check('A installed');
+    assert.equal(h.host.slotHolds(0,idA),true);
+    h.host.remove(keyA);check('A removed');assert.equal(h.host.slotHolds(0,idA),false);
+    h.host.desired.set(keyB,b);h.host.pending.push(patch(b));
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);check('B reuses A slot');
+    h.host.remove(keyB);h.host.desired.set(keyA,a);h.host.pending.push(patch(a));
+    h.host.prepare(eye,ground,100,0,true,false,nearOrigin);check('A reinstalled');
   }finally{h.restore();}
 });

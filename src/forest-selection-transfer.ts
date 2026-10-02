@@ -9,14 +9,14 @@ export const FOREST_TRANSFER_MAX_CELLS=65536;
 export type ForestSelectionTransfer={version:number;count:number;buffer:ArrayBuffer};
 
 function validRecord(a:Float64Array,k:number){
-  const [face,n,x,y]=[a[k],a[k+1],a[k+2],a[k+3]];
+  const face=a[k],n=a[k+1],x=a[k+2],y=a[k+3],representative=a[k+11];
   return Number.isInteger(face)&&face>=0&&face<6&&Number.isSafeInteger(n)&&n>0&&
     Number.isInteger(x)&&x>=0&&x<n&&Number.isInteger(y)&&y>=0&&y<n&&
     Number.isFinite(a[k+4])&&Number.isFinite(a[k+5])&&Number.isFinite(a[k+6])&&
     Math.abs(Math.hypot(a[k+4],a[k+5],a[k+6])-1)<1e-10&&
     Number.isFinite(a[k+7])&&a[k+7]>=0&&a[k+7]<1&&
     Number.isFinite(a[k+8])&&a[k+8]>0&&Number.isFinite(a[k+9])&&
-    Number.isFinite(a[k+10])&&a[k+10]>=0&&[-1,0,1].includes(a[k+11]);
+    Number.isFinite(a[k+10])&&a[k+10]>=0&&(representative===-1||representative===0||representative===1);
 }
 
 export function packForestSelection(cells:PopulationCell[]):ForestSelectionTransfer {
