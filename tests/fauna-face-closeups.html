@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Composer face close-ups</title>
+<!-- Review page for tests/fauna-face-closeups.browser.mjs (manual review tool, not an npm test).
+  Builds one composer specimen per call to window.faceCloseups.draw(spec) and renders a 3 x 2 sheet:
+  front, side (left), three-quarter (front-left), top, left-eye macro and the whole animal. -->
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #111; color: #eee; font: 13px system-ui, sans-serif; overflow: hidden; }
+  #top { position: absolute; left: 0; top: 0; width: 1680px; height: 112px; padding: 6px 10px; box-sizing: border-box;
+    background: #1d2226; overflow: hidden; line-height: 1.35; }
+  #top b { font-size: 15px; }
+  #top .dim { color: #9fb0bd; }
+  canvas { display: block; position: absolute; left: 0; top: 112px; }
+  .cap { position: absolute; background: #000b; padding: 2px 6px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="top">loading</div>
+<script type="module">
+import * as THREE from 'three';
+import {createComposerCreature} from '/src/fauna-composer.ts';
+import {decodeComposerRecipe, composerPreset} from '/src/fauna-composer-recipe.ts';
+import {COAT_REGIONS} from '/src/fauna-coat-vocab.ts';
+import {applyFaunaReviewLighting} from '/src/fauna-review-environment.ts';
+
+const PW = 560, PH = 420, COLS = 3, ROWS = 2, TOP = 112;
+const HEAD_GROUP = ['head', 'eyes', 'mouth', 'horn', 'trunk'];
+const EYE_REGION = COAT_REGIONS.indexOf('eye');
+const renderer = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true});
+renderer.setPixelRatio(1); renderer.setSize(PW * COLS, PH * ROWS);
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+document.body.append(renderer.domElement);
+const scene = new THREE.Scene(), lab = applyFaunaReviewLighting(scene, 'planet-noon');
+renderer.toneMappingExposure = lab.preset.exposure;
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({color: lab.preset.ground, roughness: 0.95}));
+ground.rotation.x = -Math.PI / 2; ground.position.y = -0.002; scene.add(ground);
+const cam = new THREE.PerspectiveCamera(30, PW / PH, 0.001, 500);
+const caps = [];
+let animal = null;
+
+/** 6 significant digits: report numbers stay byte-stable and readable. */
+const r6 = x => typeof x === 'number' && Number.isFinite(x) ? Number(x.toPrecision(6)) : x;
+const v6 = v => v.toArray().map(r6);
+
+function posedPoint(i, normalAttr) {
+  const p = new THREE.Vector3();
+  animal.mesh.getVertexPosition(i, p);          // applies the bone transforms (posed, mesh space)
+  p.applyMatrix4(animal.mesh.matrixWorld);
+  if (!normalAttr) return {p};
+  // posed normal: transform a point a small step along the bind normal and difference it
+  const pos = animal.mesh.geometry.attributes.position, eps = 1e-3;
+  const q = new THREE.Vector3().fromBufferAttribute(pos, i).addScaledVector(new THREE.Vector3().fromBufferAttribute(normalAttr, i), eps);
+  animal.mesh.applyBoneTransform(i, q); q.applyMatrix4(animal.mesh.matrixWorld);
+  return {p, n: q.sub(p).normalize()};
+}
+function sphereOf(points) {
+  const box = new THREE.Box3().setFromPoints(points), c = box.getCenter(new THREE.Vector3());
+  let r = 0; for (const q of points) r = Math.max(r, q.distanceTo(c));
+  return {c, r: Math.max(r, 1e-4), box};
+}
+function partVertices(skin, test) {
+  const out = new Set();
+  for (const p of skin.parts) if (test(p))
+    for (let t = p.firstTriangle * 3; t < (p.firstTriangle + p.triangles) * 3; t++) out.add(skin.index[t]);
+  return out;
+}
+function shoot(panel, centre, radius, dir, label, {pad = 1.12, distance = null, up = null} = {}) {
+  const col = panel % COLS, row = Math.floor(panel / COLS);
+  const half = THREE.MathUtils.degToRad(15), hfov = Math.atan(Math.tan(half) * PW / PH);
+  const d = distance ?? radius / Math.sin(Math.min(half, hfov)) * pad;
+  const n = dir.clone().normalize();
+  cam.position.copy(centre).addScaledVector(n, d);
+  cam.near = Math.max(d / 400, 1e-5); cam.far = d * 20 + 60;
+  const upv = up ?? (Math.abs(n.y) > 0.97 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0));
+  cam.up.copy(upv); cam.lookAt(centre); cam.updateProjectionMatrix();
+  const y = (ROWS - 1 - row) * PH;
+  renderer.setViewport(col * PW, y, PW, PH); renderer.setScissor(col * PW, y, PW, PH); renderer.setScissorTest(true);
+  renderer.render(scene, cam);
+  const el = document.createElement('div'); el.className = 'cap';
+  el.style.left = (col * PW + 4) + 'px'; el.style.top = (TOP + row * PH + 4) + 'px'; el.textContent = label;
+  document.body.append(el); caps.push(el);
+}
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c]));
+
+function recipeOf(spec, livePresets) {
+  if (livePresets && spec.source?.kind === 'preset') return {recipe: composerPreset(spec.source.id), issues: [], built: 'live composerPreset'};
+  const dec = decodeComposerRecipe(spec.text);
+  if (dec.error || !dec.recipe) throw new Error(`${spec.name}: ${dec.error}`);
+  return {recipe: dec.recipe, issues: dec.issues, built: 'frozen text'};
+}
+
+window.faceCloseups = {
+  ready: true,
+  draw(spec, options = {}) {
+    for (const c of caps.splice(0)) c.remove();
+    if (animal) { animal.dispose(); animal = null; }
+    const {recipe, issues, built} = recipeOf(spec, !!options.livePresets);
+    animal = createComposerCreature(recipe);
+    scene.add(animal.group);
+    animal.update('neutral', 0);
+    const b0 = animal.bounds();
+    animal.group.position.set(0, -b0.min.y, 0); animal.group.updateMatrixWorld(true);
+    const skin = animal.skin, geo = animal.mesh.geometry, normals = geo.attributes.normal;
+
+    // head axes from the posed head bone
+    const pose = animal.lastPose, hi = animal.graph.chains.head, hq = new THREE.Quaternion().fromArray(pose.quaternions, hi * 4);
+    const up = new THREE.Vector3(0, 1, 0), fwd = new THREE.Vector3(1, 0, 0).applyQuaternion(hq);
+    const headPitchDeg = THREE.MathUtils.radToDeg(Math.asin(Math.max(-1, Math.min(1, fwd.y))));
+    fwd.y = 0; if (fwd.lengthSq() < 1e-8) fwd.set(1, 0, 0); fwd.normalize();
+    const right = new THREE.Vector3().crossVectors(fwd, up).normalize(), left = right.clone().negate();
+
+    // framing: posed head-group vertices (identical method before and after the round)
+    const headVerts = [...partVertices(skin, p => HEAD_GROUP.includes(p.part))];
+    const hs = sphereOf(headVerts.map(i => posedPoint(i).p));
+    let headBoundsCheck = null;
+    if (typeof animal.headBounds === 'function') {
+      const hb = animal.headBounds().clone(); hb.translate(animal.group.position);
+      const c = hb.getCenter(new THREE.Vector3());
+      headBoundsCheck = {centreOffsetOverRadius: r6(c.distanceTo(hs.c) / hs.r), size: v6(hb.getSize(new THREE.Vector3()))};
+    }
+
+    // eyes: vertices of 'eyes' parts plus any eye-region vertex (compound eyes and eyespots live in the head part)
+    const eyeSet = partVertices(skin, p => p.part === 'eyes');
+    for (let i = 0; i < skin.vertexCount; i++) if (skin.regions[i] === EYE_REGION) eyeSet.add(i);
+    const eyeIdx = [...eyeSet].sort((a, b) => a - b);
+    let eye = null;
+    const panels = [];
+    shoot(0, hs.c, hs.r, fwd.clone().addScaledVector(up, 0.12), 'front (head axis)'); panels.push('front');
+    shoot(1, hs.c, hs.r, left.clone().addScaledVector(up, 0.08), 'side (left)'); panels.push('side');
+    shoot(2, hs.c, hs.r, fwd.clone().multiplyScalar(0.75).add(left).addScaledVector(up, 0.35), 'three-quarter (front-left)'); panels.push('three-quarter');
+    shoot(3, hs.c, hs.r, up.clone().addScaledVector(fwd, 0.35), 'top (from above)', {up: fwd.clone()}); panels.push('top');
+    if (eyeIdx.length) {
+      const posed = new Map(eyeIdx.map(i => [i, posedPoint(i, normals)]));
+      const lat = eyeIdx.map(i => posed.get(i).p.clone().sub(hs.c).dot(right));
+      // two lateral eyes leave the midline empty; a single frontal eye (blunt disc) straddles it
+      const lateral = Math.min(...lat.map(Math.abs)) > 0.02 * hs.r && Math.min(...lat) < 0 && Math.max(...lat) > 0;
+      const leftIdx = lateral ? eyeIdx.filter((_, k) => lat[k] < 0) : eyeIdx, leftSet = new Set(leftIdx);
+      const leftPts = leftIdx.map(i => posed.get(i));
+      const s1 = sphereOf(leftPts.map(x => x.p)), er = s1.r;
+      // occluders: posed head-group triangles (the eye's own triangles included, so its far side counts as hidden)
+      const hgTris = [];
+      for (const p of skin.parts) if (HEAD_GROUP.includes(p.part)) for (let t = p.firstTriangle; t < p.firstTriangle + p.triangles; t++) hgTris.push(t);
+      const pc = new Map();
+      const P = i => { let v = pc.get(i); if (!v) { v = posed.get(i)?.p ?? posedPoint(i).p; pc.set(i, v); } return v; };
+      const tri = hgTris.map(t => [skin.index[t * 3], skin.index[t * 3 + 1], skin.index[t * 3 + 2]]).filter(([a, b, c]) => {
+        // only triangles near the eye can occlude a camera 4 er away
+        const near = q => P(q).distanceTo(s1.c) < 7 * er; return near(a) || near(b) || near(c);
+      }).map(ids => ({ids, a: P(ids[0]), b: P(ids[1]), c: P(ids[2])}));
+      const e1 = new THREE.Vector3(), e2 = new THREE.Vector3(), pv = new THREE.Vector3(), tv = new THREE.Vector3(), qv = new THREE.Vector3(), dir = new THREE.Vector3();
+      const blocked = (from, to, id) => {
+        dir.copy(to).sub(from); const len = dir.length(); dir.divideScalar(len);
+        for (const t of tri) {
+          if (t.ids[0] === id || t.ids[1] === id || t.ids[2] === id) continue;
+          e1.copy(t.b).sub(t.a); e2.copy(t.c).sub(t.a); pv.crossVectors(dir, e2); const det = e1.dot(pv);
+          if (Math.abs(det) < 1e-14) continue;
+          const inv = 1 / det; tv.copy(from).sub(t.a); const u = tv.dot(pv) * inv; if (u < 0 || u > 1) continue;
+          qv.crossVectors(tv, e1); const v = dir.dot(qv) * inv; if (v < 0 || u + v > 1) continue;
+          const s = e2.dot(qv) * inv; if (s > 1e-6 && s < len * (1 - 1e-4)) return true;
+        }
+        return false;
+      };
+      const step = Math.max(1, Math.floor(leftIdx.length / 36)), samples = leftIdx.filter((_, k) => k % step === 0);
+      const visibleFrom = n => { const cam = s1.c.clone().addScaledVector(n, 4 * er); let k = 0; for (const i of samples) if (!blocked(cam, posed.get(i).p, i)) k++; return k / samples.length; };
+      // outward normal: an open eye patch (coherent normals) gives its own gaze; a closed eye ellipsoid (normals
+      // sum to ~0) is viewed from the front-hemisphere direction that exposes most of it (within 0.1 of the best),
+      // ties broken toward the skull-surface normal around the eye
+      const sumN = new THREE.Vector3(); for (const x of leftPts) sumN.add(x.n);
+      const skullN = new THREE.Vector3(); let skullSamples = 0;
+      for (const i of partVertices(skin, p => p.part === 'head' && !/ears?\b/.test(p.label))) {
+        if (eyeSet.has(i)) continue;
+        const {p, n: ni} = posedPoint(i, normals);
+        if (p.distanceTo(s1.c) > 2.5 * er) continue;
+        skullN.add(ni); skullSamples++;
+      }
+      if (skullN.lengthSq() < 1e-12) skullN.copy(s1.c).sub(hs.c).addScaledVector(fwd, -s1.c.clone().sub(hs.c).dot(fwd));
+      if (skullN.lengthSq() < 1e-12) skullN.copy(fwd);
+      skullN.normalize();
+      let n, normalSource;
+      if (sumN.length() / leftPts.length > 0.3) { n = sumN.clone().normalize(); normalSource = 'eye-patch normals'; }
+      else {
+        // closed eye: the skull-surface normal around it, clamped to where an observer stands (front hemisphere,
+        // the eye's own side, elevation -30..45 deg)
+        const yaw = Math.atan2(skullN.dot(left), skullN.dot(fwd)), pitch = Math.asin(Math.max(-1, Math.min(1, skullN.y)));
+        const deg = Math.PI / 180, cy = lateral ? Math.min(Math.max(yaw, 0), 90 * deg) : Math.min(Math.max(yaw, -90 * deg), 90 * deg), cp = Math.min(Math.max(pitch, -30 * deg), 45 * deg);
+        n = fwd.clone().multiplyScalar(Math.cos(cy) * Math.cos(cp)).addScaledVector(left, Math.sin(cy) * Math.cos(cp)).addScaledVector(up, Math.sin(cp)).normalize();
+        normalSource = Math.abs(cy - yaw) + Math.abs(cp - pitch) > 1e-9 ? 'skull normal (clamped)' : 'skull normal';
+      }
+      const visible = visibleFrom(n);
+      shoot(4, s1.c, er, n, `eye macro (${lateral ? 'left eye' : 'frontal eye'}, ${normalSource}, 4 x er = ${(4 * er * 1000).toFixed(1)} mm)`, {distance: 4 * er}); panels.push('eye-macro');
+      const rel = s1.c.clone().sub(hs.c), yawOf = v => THREE.MathUtils.radToDeg(Math.atan2(-v.dot(right), v.dot(fwd))), pitchOf = v => THREE.MathUtils.radToDeg(Math.asin(Math.max(-1, Math.min(1, v.y))));
+      eye = {vertices: eyeIdx.length, leftVertices: leftPts.length, lateral, er: r6(er), erOverHeadRadius: r6(er / hs.r),
+        viewYawDeg: r6(yawOf(n)), viewPitchDeg: r6(pitchOf(n)), skullNormalYawDeg: r6(yawOf(skullN)), skullNormalPitchDeg: r6(pitchOf(skullN)),
+        visibleFraction: r6(visible), centreFromHead: [r6(rel.dot(fwd)), r6(rel.y), r6(-rel.dot(right))], normalSource, skullSamples};
+    } else {
+      shoot(4, hs.c, hs.r * 0.5, fwd.clone().addScaledVector(left, 0.6), 'eye macro: no eye vertices (head front close-up)'); panels.push('eye-macro (none)');
+    }
+    const body = animal.bounds(), bc = body.getCenter(new THREE.Vector3()), br = body.getSize(new THREE.Vector3()).length() / 2;
+    shoot(5, bc, br, fwd.clone().multiplyScalar(0.8).add(left).addScaledVector(up, 0.45), 'whole animal'); panels.push('whole');
+    renderer.setScissorTest(false);
+
+    const d = animal.details(), r = recipe;
+    const headParts = d.parts.filter(p => HEAD_GROUP.includes(p.part));
+    const headTriangles = headParts.reduce((a, p) => a + p.triangles, 0);
+    const opt = k => (k in r ? ` ${k}=${esc(r[k])}` : '');
+    document.querySelector('#top').innerHTML =
+      `<b>${esc(spec.name)}</b> <span class="dim">[${esc(spec.group)}] ${esc(spec.why ?? '')} | ${esc(built)}</span><br>` +
+      `face=${esc(r.head)} horns=${esc(r.horns)} trunk=${esc(r.trunk)}${r.trunk === 'trunk' ? ' (' + r.trunkLength + ')' : ''}${opt('eyes')}${opt('iris')} headSize=${r.headSize} snout=${r.snoutLength} layout=${esc(r.layout)} legs=${esc(r.legs)} feet=${esc(r.feet)} palette=${esc(r.palette)} maturity=${r.maturity}` +
+      ` | head pitch ${headPitchDeg.toFixed(0)}&deg; | head-group ${headTriangles} tris` +
+      (eye ? ` | eye er ${(eye.er * 1000).toFixed(1)} mm (${eye.erOverHeadRadius} of head r), ${eye.vertices} eye verts${eye.lateral ? '' : ' (single/front)'}` : ' | no eye vertices') + '<br>' +
+      `<span class="dim">constraints: ${esc(d.constraints.map(c => c.part + ': ' + c.effect).join(' | ') || 'none')}${issues.length ? ' | decode: ' + esc(issues.join(' ')) : ''}</span>`;
+
+    return {
+      name: spec.name, group: spec.group, face: r.head, built,
+      recipe: Object.fromEntries(['head', 'horns', 'trunk', 'trunkLength', 'eyes', 'iris', 'headSize', 'snoutLength', 'layout', 'legs', 'feet', 'palette', 'maturity', 'colorSeed'].filter(k => k in r).map(k => [k, r[k]])),
+      decodeIssues: issues,
+      versions: {graph: animal.graph.version, skin: skin.version},
+      totals: {vertices: d.vertices, triangles: d.triangles, bones: d.bones},
+      headGroupTriangles: headTriangles,
+      parts: d.parts.map(p => ({part: p.part, label: p.label, triangles: p.triangles})),
+      constraints: d.constraints,
+      headPitchDeg: r6(headPitchDeg), headRadius: r6(hs.r), headBoundsCheck,
+      eye, panels,
+    };
+  },
+};
+document.querySelector('#top').textContent = 'ready';
+</script>
+</body>
+</html>
