@@ -84,40 +84,51 @@ test('every v1 fixture text decodes with no error, only face-migration issues, a
 
 // The v1 head-skin digests (captured at 1ec5072) are frozen history: skin-2
 // (WP3) and graph-2 (WP4) change every legacy skin by design, which is the
-// documented drift for old links. composer-skin2-links.json pins the new build
-// of the same 28 migrated texts; bone counts must still equal v1 (no new bones),
-// except that a trunk dropped by the face rules (fauna-composer-face-1) removes
-// its 6 trunk bones. The face round repinned exactly 13 entries (driftFromV2).
+// documented drift for old links. composer-skin2-links.json keeps the skin-2 pins
+// (and the face round's 13 face-rule repins) as history; composer-skin3-links.json
+// pins the skin-3 build of the same 28 migrated texts. Skin-3 (fauna-composer-eye-1,
+// face round WP4) rebuilt the eyes of every face, so all 28 entries drift from their
+// skin-2 pin with driftFromSkin2 = 'fauna-composer-eye-1: eyes rebuilt'; the 13 that
+// the face rules repinned keep that reason as faceDrift. Bone counts must still equal
+// v1 (no new bones), except that a trunk dropped by the face rules removes 6 bones.
 const skin2 = JSON.parse(readFileSync(new URL('./fixtures/composer-skin2-links.json', import.meta.url), 'utf8'));
-test('legacy recipes: migrated neutral v1 texts build the pinned skin-2 digest byte for byte, with v1 bone counts', () => {
-  let checked = 0, repinned = 0;
-  assert.deepEqual(Object.keys(skin2.byText).sort(), Object.keys(fixture.headSkinDigests.byText).sort());
+const skin3 = JSON.parse(readFileSync(new URL('./fixtures/composer-skin3-links.json', import.meta.url), 'utf8'));
+test('legacy recipes: migrated neutral v1 texts build the pinned skin-3 digest byte for byte, with v1 bone counts', () => {
+  let checked = 0, faceRepinned = 0;
+  assert.deepEqual(Object.keys(skin3.byText).sort(), Object.keys(fixture.headSkinDigests.byText).sort());
+  assert.equal(skin3.capturedAt.skin, 'fauna-composer-skin-3');
   for (const [text, v1] of Object.entries(fixture.headSkinDigests.byText)) {
-    const pinned = skin2.byText[text];
+    const pinned = skin3.byText[text], previous = skin2.byText[text];
     const decoded = decodeComposerRecipe(text).recipe;
     // a non-preset v1 text is neutral already; a preset text is checked with its v1 fields only (v2 keys neutral)
     const neutral = presetOf(decoded) ? {...decoded, ...COMPOSER_V2_DEFAULTS} : decoded;
     const dropped = decodeComposerRecipe(text).issues.some(issue => issue.startsWith('Trunk: removed'));
-    if (pinned.driftFromV2) {
-      repinned++;
-      // a repin is explained: a horn the face does not build, or a dropped trunk
+    // every skin-2 pin drifted for one documented reason: the eyes were rebuilt
+    assert.equal(pinned.driftFromSkin2, 'fauna-composer-eye-1: eyes rebuilt', text);
+    assert.equal(pinned.skin2, previous.skin, `${text}: the skin-2 pin it replaces`);
+    assert.notEqual(pinned.skin, previous.skin, `${text}: a repin must differ from the pin it replaces`);
+    assert.equal(pinned.faceDrift ?? null, previous.driftFromV2 ?? null, `${text}: the face-rule reason is carried over`);
+    if (pinned.faceDrift) {
+      faceRepinned++;
+      // a face repin is explained: a horn the face does not build, or a dropped trunk
       const hornChanged = composerHeadgearBuild(decoded).built !== decoded.horns;
-      assert.equal(pinned.driftFromV2, dropped ? 'fauna-composer-face-1: trunk dropped' : 'fauna-composer-face-1: horn not built on face', text);
+      assert.equal(pinned.faceDrift, dropped ? 'fauna-composer-face-1: trunk dropped' : 'fauna-composer-face-1: horn not built on face', text);
       assert.ok(dropped || hornChanged, `${text}: repin without a face-rule cause`);
     }
     const derived = deriveComposerIndividual(neutral);
     assert.equal(derived.traits.neutral, true, text);
     const graph = buildComposerGraph(derived.recipe), skin = buildComposerSkin(graph);
     assert.equal(digest(skin.positions, skin.index, skin.skinIndex, skin.skinWeight, skin.colors), pinned.skin, text);
+    assert.equal(digest(skin.gloss), pinned.gloss, `${text}: gloss`);
     assert.deepEqual([skin.vertexCount, skin.triangleCount, graph.bones.length], [pinned.vertices, pinned.triangles, pinned.bones], text);
     assert.equal(graph.bones.length, v1.bones - (dropped ? 6 : 0), `${text}: graph-2 adds no bones; a dropped trunk removes 6`);
     checked++;
   }
   assert.equal(checked, 28);
-  assert.equal(repinned, 13);
+  assert.equal(faceRepinned, 13);
   // and through the public creature factory
   const text = fixture.fixtureSeeds[3].text, c = createComposerCreature(decodeComposerRecipe(text).recipe);
-  try { assert.equal(digest(c.skin.positions, c.skin.index, c.skin.skinIndex, c.skin.skinWeight, c.skin.colors), skin2.byText[text].skin); assert.deepEqual(c.individual.deltas, []); }
+  try { assert.equal(digest(c.skin.positions, c.skin.index, c.skin.skinIndex, c.skin.skinWeight, c.skin.colors), skin3.byText[text].skin); assert.deepEqual(c.individual.deltas, []); }
   finally { c.dispose(); }
 });
 

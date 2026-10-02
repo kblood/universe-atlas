@@ -35,6 +35,41 @@ export interface ComposerCreature {
   dispose(): void;
 }
 
+/** Per-vertex gloss (the skin's `gloss`, attribute `composerGloss`): roughness falls toward this value with it, which
+ * gives the cornea a real specular highlight. Gloss 0 leaves the material's roughness untouched. */
+export const COMPOSER_GLOSS_ROUGHNESS = 0.06;
+export const COMPOSER_GLOSS_CACHE_KEY = 'composer-gloss-1';
+/** The shader edits behind the gloss channel: [chunk anchor, replacement]. Each anchor must occur exactly once. */
+export const COMPOSER_GLOSS_PATCH = Object.freeze({
+  vertex: [
+    ['#include <common>', '#include <common>\nattribute float composerGloss;\nvarying float vComposerGloss;'],
+    ['#include <begin_vertex>', '#include <begin_vertex>\nvComposerGloss = composerGloss;'],
+  ] as readonly (readonly [string, string])[],
+  fragment: [
+    ['#include <common>', '#include <common>\nvarying float vComposerGloss;'],
+    ['#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, ${COMPOSER_GLOSS_ROUGHNESS.toFixed(2)}, vComposerGloss);`],
+  ] as readonly (readonly [string, string])[],
+});
+/** Applies COMPOSER_GLOSS_PATCH to a MeshStandardMaterial program; throws when an anchor is not present exactly once
+ * (a three.js upgrade that renames a chunk must fail loudly, not silently drop the highlight). */
+export function patchComposerGlossShader(shader: {vertexShader: string; fragmentShader: string}): void {
+  if (shader.vertexShader.includes('composerGloss') || shader.fragmentShader.includes('vComposerGloss')) throw new Error('composer gloss: shader already patched');
+  const apply = (src: string, edits: readonly (readonly [string, string])[], stage: string) => edits.reduce((out, [anchor, replacement]) => {
+    const n = out.split(anchor).length - 1;
+    if (n !== 1) throw new Error(`composer gloss: ${stage} anchor ${anchor} occurs ${n} times`);
+    return out.replace(anchor, replacement);
+  }, src);
+  shader.vertexShader = apply(shader.vertexShader, COMPOSER_GLOSS_PATCH.vertex, 'vertex');
+  shader.fragmentShader = apply(shader.fragmentShader, COMPOSER_GLOSS_PATCH.fragment, 'fragment');
+}
+/** The creature's coloured material: vertex colours, roughness 0.82, and the gloss channel. */
+export function createComposerColouredMaterial(): THREE.MeshStandardMaterial {
+  const material = new THREE.MeshStandardMaterial({vertexColors: true, roughness: 0.82, metalness: 0});
+  material.onBeforeCompile = shader => patchComposerGlossShader(shader);
+  material.customProgramCacheKey = () => COMPOSER_GLOSS_CACHE_KEY;
+  return material;
+}
+
 export function createComposerCreature(input: ComposerRecipe): ComposerCreature {
   const started = performance.now();
   const recipe = normalizeComposerRecipe(input).recipe;
@@ -49,10 +84,11 @@ export function createComposerCreature(input: ComposerRecipe): ComposerCreature 
   geometry.setAttribute('color', new THREE.BufferAttribute(skin.colors, 3));
   geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skin.skinIndex, 4));
   geometry.setAttribute('skinWeight', new THREE.BufferAttribute(skin.skinWeight, 4));
+  geometry.setAttribute('composerGloss', new THREE.BufferAttribute(skin.gloss, 1));
   geometry.setIndex(new THREE.BufferAttribute(skin.index, 1));
   geometry.computeVertexNormals();
   geometry.userData.composer = {graph: graph.version, skin: skin.version};
-  const coloured = new THREE.MeshStandardMaterial({vertexColors: true, roughness: 0.82, metalness: 0});
+  const coloured = createComposerColouredMaterial();
   const neutralMaterial = new THREE.MeshStandardMaterial({color: '#a9aba6', roughness: 0.9, metalness: 0});
   const mesh = new THREE.SkinnedMesh(geometry, coloured);
   mesh.name = 'composer-skin'; mesh.castShadow = true; mesh.receiveShadow = true;

@@ -1,4 +1,4 @@
-// Composer skin 2 anatomy: neck-to-head blend, limb roots, splined bends, section shape, budgets and the
+// Composer skin anatomy (skin-2, eyes skin-3): neck-to-head blend, limb roots, splined bends, section shape, budgets and the
 // separation of colour inputs from geometry. Measured on the actual skin buffers and the skin's debug rings.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,7 +24,8 @@ const partGeometry = (skin, pred) => {
 };
 
 test('skin version and the spec tessellation', () => {
-  assert.equal(COMPOSER_SKIN_VERSION, 'fauna-composer-skin-2');
+  assert.equal(COMPOSER_SKIN_VERSION, 'fauna-composer-skin-3');
+  assert.equal(COMPOSER_SKIN_TESSELLATION.eyeRadial, 20, 'lidded eye rings (fauna-composer-eye-1)');
   assert.equal(COMPOSER_SKIN_TESSELLATION.torsoRadial, 28);
   assert.equal(COMPOSER_SKIN_TESSELLATION.legRadial, 16);
   assert.equal(COMPOSER_SKIN_TESSELLATION.rootRings, 4);
@@ -150,6 +151,21 @@ test('individual traits reshape horns and ears; neutral traits equal a forced-ne
   const n0 = buildComposerSkin(ng), n1 = buildComposerSkin(ng, {traits: forced});
   for (const pred of [horn, ears, eyes]) assert.equal(digest(partGeometry(n0, pred)), digest(partGeometry(n1, pred)));
   assert.equal(digest(n0.positions, n0.colors, n0.index), digest(n1.positions, n1.colors, n1.index), 'neutral traits are the identity');
+});
+
+test('eyes scale with the individual eyeScale and the allometric eyeRel, for every eye kind', () => {
+  for (const id of ['giraffe', 'bird', 'dinosaur', 'ape', 'centipede', 'worm']) {
+    const graph = buildComposerGraph(effective(composerPreset(id))), traits = composerIndividualTraits(graph.recipe);
+    const er = t => buildComposerSkin(graph, {traits: t, debug: true}).debug.eyes.map(e => e.er);
+    const base = er(traits);
+    const big = er({...traits, eyeScale: traits.eyeScale * 1.25, neutral: false});
+    const rel = er({...traits, allometry: {...traits.allometry, eyeRel: traits.allometry.eyeRel * 0.8}, neutral: false});
+    assert.equal(base.length, 2, id);
+    base.forEach((r, i) => {
+      assert.ok(Math.abs(big[i] / r - 1.25) < 1e-9, `${id}: eyeScale x1.25 gives er x${(big[i] / r).toFixed(4)}`);
+      assert.ok(Math.abs(rel[i] / r - 0.8) < 1e-9, `${id}: eyeRel x0.8 gives er x${(rel[i] / r).toFixed(4)}`);
+    });
+  }
 });
 
 test('the underside of every chain ring stays above the joint-underside line within the clamp floor', () => {
