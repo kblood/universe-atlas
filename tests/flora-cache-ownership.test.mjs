@@ -14,10 +14,10 @@ test('flora resident cache invalidates on water and habitat gate changes', () =>
   ]) assert.ok(signature[1].includes(field), `signature includes ${field}`);
 
   assert.match(renderer,
-    /if\(signature!==this\.lifeSignature\)\{this\.lifeSignature=signature;this\.lifeScatterValid=false;this\.lifeResidents\.clear\(\);this\.faunaGenomes\.clear\(\);(?:this\.faunaNear\.clear\(\);)?this\.faunaGroundQueue=\[\];\}/,
+    /if\(signature!==this\.lifeSignature\)\{this\.lifeSignature=signature;this\.lifeScatterValid=false;this\.lifeResidents\.clear\(\);this\.faunaGenomes\.clear\(\);(?:this\.faunaNear\.clear\(\);)?this\.faunaGroundQueue=\[\];(?:this\.faunaFrameKeyValid=false;)?\}/,
     'a changed signature evicts residents and invalidates their recipes');
   assert.match(renderer,
-    /type LifeResident=\{[^}]*floraRecipe\?:FloraRecipe\}/,
+    /type LifeResident=\{[^}]*floraRecipe\?:FloraRecipe[;}]/,
     'recipe cache is owned by the resident whose habitat inputs produced it');
 });
 
@@ -35,7 +35,7 @@ test('canonical resident recipes survive packed slot reorder and are released on
     /this\.floraSlotResidents\[flora\]=record[\s\S]*?this\.floraSlotResidents\.length=flora/,
     'transient packed slots carry resident references through reordering');
   assert.match(renderer,
-    /const resident=this\.floraSlotResidents\[i\][\s\S]*?if\(!resident\.floraRecipe\)\{resident\.floraRecipe=prepareFlora/,
+    /\bresident=this\.floraSlotResidents\[i\][\s\S]*?if\(!resident\.floraRecipe\)\{[\s\S]*?resident\.floraRecipe=prepareFlora/,
     'date evaluation reads and fills the recipe on that resident, not on its slot');
   assert.doesNotMatch(renderer, /floraRecipes?\s*=\s*new Map<number,/,
     'recipe ownership is not attached to a transient numeric slot');

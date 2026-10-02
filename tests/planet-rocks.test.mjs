@@ -182,7 +182,7 @@ test('materials reuse the shared rock PBR lease only for near LODs and own no te
 
 test('renderer and app wiring gate rocks on the solid surface, not on life',()=>{
   const main=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
-  assert.match(main,/rocks:\s*st\.stage\s*===\s*'solid'/);
+  assert.match(main,/solid\s*=\s*st\.stage\s*===\s*'solid'/);assert.match(main,/const rocks\s*=\s*solid\s*\?/);assert.match(main,/rocks:\s*rocks\s*\?\s*\{\s*surfaceSolid:\s*true/);
   const renderer=readFileSync(new URL('../src/planet-renderer.ts',import.meta.url),'utf8');
   assert.match(renderer,/this\.rocks\.update\(\{/);assert.match(renderer,/this\.rocks\.dispose\(\)/);
   assert.match(renderer,/const rocks=this\.rocks\.diagnostics\(\);/);assert.match(renderer,/\{projection: 'cube-sphere',localAerial,rocks,/);
