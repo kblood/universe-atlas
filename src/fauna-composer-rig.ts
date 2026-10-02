@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {composerConstraints, composerWingSpanLimit, normalizeComposerRecipe, type ComposerConstraint, type ComposerRecipe} from './fauna-composer-recipe.ts';
+import {composerIndividualTraits, type ComposerIndividualTraits} from './fauna-composer-individual.ts';
 
 /** Variable articulated body-plan graph for the modular composer. It is
  * deliberately separate from the fixed 22-bone quadruped rig: limbless,
@@ -7,7 +8,7 @@ import {composerConstraints, composerWingSpanLimit, normalizeComposerRecipe, typ
  * Every bone has an explicit parent, rest length and bind frame (local +X
  * along the bone, +Y dorsal). Creature space: metres, +X forward, +Y up,
  * +Z to the animal's right, ground at y = 0. */
-export const COMPOSER_GRAPH_VERSION = 'fauna-composer-graph-1';
+export const COMPOSER_GRAPH_VERSION = 'fauna-composer-graph-2';
 /** Desktop preview budget. Not a Quest qualification. */
 export const COMPOSER_BUDGET = Object.freeze({maxBones: 160, maxVertices: 48000, maxTriangles: 80000, drawCallsPerCreature: 2});
 export const COMPOSER_MOTIONS = ['neutral', 'idle', 'walk', 'display'] as const;
@@ -69,6 +70,10 @@ export interface ComposerGraph {
     wingSemiSpan: number; armLength: number; legRadius: number; armRadius: number; torsoPitch: number;
   };
   locomotion: ComposerLocomotion;
+  /** The individual this graph was built for (composerIndividualTraits of the effective recipe). poseComposer reads its
+   * motion desync (phase, period, duty, lift, breathing and look phases); the build reads limb robustness, leg segment
+   * jitter, torso profile terms and carriage. Neutral traits build the version-1 rest skeleton bit for bit. */
+  traits: ComposerIndividualTraits;
 }
 /** A leg's ground support. `contact` is the sole point under the foot in the centred display frame;
  * `world` adds the walk's travel along +X. `extension` is socket-to-hock distance / (upper + lower). */
@@ -158,6 +163,8 @@ const toBone = (bone: ComposerBone, local: Vec3) => v3(local).applyQuaternion(q4
 export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
   const recipe = normalizeComposerRecipe(input).recipe;
   const constraints = composerConstraints(recipe);
+  // The individual: rest-pose terms below are exact identities (x * 1, x + 0) for neutral traits.
+  const traits = composerIndividualTraits(recipe), variability = recipe.variability;
   const b: Builder = {bones: []};
   const layout = recipe.layout, L = recipe.bodyLength;
   const axialLong = layout === 'limbless' || layout === 'many-legged';
@@ -175,16 +182,26 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
   let legReach = legged ? recipe.legLength * L : 0;
   if (layout === 'many-legged' && recipe.legs !== 'arthropod') legReach = Math.min(legReach, 0.45 * L);
   const legSpec = LEG[recipe.legs], footSpec = FOOT[recipe.feet];
-  const segs = (reach: number) => legSpec.seg.map(f => f * reach);
+  // Individual segment proportions: each segment fraction x (1 + jitter), renormalised to the original sum so the
+  // leg's reach is unchanged. Fore and hind legs jitter independently.
+  const jitteredSeg = (jitter: readonly number[]): number[] => {
+    if (legSpec.seg.every((_, k) => jitter[k] === 0)) return legSpec.seg;
+    const raw = legSpec.seg.map((f, k) => f * (1 + jitter[k]!)), sum0 = legSpec.seg.reduce((a, x) => a + x, 0), sum1 = raw.reduce((a, x) => a + x, 0);
+    return raw.map(f => f * sum0 / sum1);
+  };
+  const segFore = jitteredSeg(traits.segmentJitter.fore), segHind = jitteredSeg(traits.segmentJitter.hind);
+  const segs = (reach: number, fore = false) => (fore ? segFore : segHind).map(f => f * reach);
+  // Individual metapodial tilt (three-segment legs): +-0.04 rad per unit of the limb latent.
+  const hindTilt = legSpec.tilt + (legSpec.seg.length === 3 ? 0.04 * variability * traits.limb : 0);
   const footHeight = (reach: number) => footSpec.h * reach, footLength = (reach: number) => footSpec.l * reach;
   /** Socket height above ground for a leg of `reach` at rest, and lateral foot offset. */
-  const legRest = (reach: number) => {
-    const s = segs(reach), two = s[0]! + s[1]!, meta = s[2] ?? 0, tilt = sprawl ? 0 : legSpec.tilt;
+  const legRest = (reach: number, fore = false) => {
+    const s = segs(reach, fore), two = s[0]! + s[1]!, meta = s[2] ?? 0, tilt = sprawl ? 0 : hindTilt;
     if (sprawl) { const lateral = 0.55 * two, ext = 0.8 * two; return {height: footHeight(reach) + meta + Math.sqrt(ext * ext - lateral * lateral), lateral}; }
     const back = meta * Math.sin(tilt), ext = legSpec.ext * two;
     return {height: footHeight(reach) + meta * Math.cos(tilt) + Math.sqrt(Math.max(0, ext * ext - back * back)), lateral: 0};
   };
-  const legRestHeightPerReach = legged ? legRest(1).height : 0;
+  const legRestHeightPerReach = legged ? legRest(1, true).height : 0;
 
   // ---- axial chain counts and lengths
   const nTorso = layout === 'many-legged' ? recipe.legPairs : layout === 'limbless' ? 12 : 4;
@@ -196,6 +213,12 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
     : Math.max(0.1 * L, recipe.tailLength * L * (axialLong ? 0.4 : 1)) * (recipe.tail === 'feather-fan' ? 0.25 : 1);
   const nTail = recipe.tail === 'none' ? 0 : recipe.tail === 'stub' || recipe.tail === 'feather-fan' ? 2 : recipe.tail === 'tufted' ? 5 : 7;
 
+  // Individual torso profile terms (latents already scaled by variability): a deeper or shallower brisket, a sagging
+  // or tucked belly (plus body condition), a heavier or lighter rump and a tucked or full waist. Depth terms move the
+  // ventral line only, so the topline (and the mesh-side withers lobe) keeps its shape.
+  const lobe = traits.torso, condition = traits.condition;
+  const shaped = lobe.chest !== 0 || lobe.belly !== 0 || lobe.rump !== 0 || lobe.waist !== 0 || condition !== 0;
+  const bump = (u: number, centre: number, sigma: number) => Math.exp(-0.5 * ((u - centre) / sigma) ** 2);
   // torso profile, rear (u=0) to front (u=1)
   const profile = (u: number): ComposerSection => {
     let wm = 1, hm = 1, yc = 0;
@@ -208,6 +231,13 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
       if (recipe.tail === 'none' && u < 0.12) { wm *= mix(0.82, 1, u / 0.12); hm *= mix(0.86, 1, u / 0.12); }
       // an upright body with arms gets a shoulder girdle, so the arms hang from lateral shoulders, not beside the neck
       if (layout === 'biped' && recipe.arms !== 'none') wm *= 1 + 0.22 * smooth(0.55, 0.8, u) * (1 - 0.6 * smooth(0.9, 1, u));
+      if (shaped) {
+        hm *= 1 + 0.06 * lobe.rump * bump(u, 0.1, 0.1);
+        wm *= 1 - 0.08 * lobe.waist * bump(u, 0.3, 0.1);
+        // ventral drop as a fraction of the section's depth: brisket at u 0.7-0.9, belly sag at mid-body
+        const drop = Math.max(-0.3, 0.1 * lobe.chest * bump(u, 0.8, 0.08) + (0.08 * lobe.belly + 0.04 * condition) * bump(u, 0.5, 0.2)) * h * hm;
+        return sec(w * wm, h * hm + drop / 2, yc - drop / 2);
+      }
     }
     return sec(w * wm, h * hm, yc);
   };
@@ -272,6 +302,7 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
     const tipR = recipe.tail === 'reptile' ? 0.06 : recipe.tail === 'club' ? 0.16 : recipe.tail === 'tufted' ? 0.09 : 0.3;
     let droop0 = layout === 'biped' ? (recipe.posture > 0.6 ? -1.0 : -0.05 - pitch * 0.4) : layout === 'quadruped' ? (recipe.tail === 'tufted' ? -1.05 : -0.35) : -0.08;
     if (axialLong) droop0 = -0.02;
+    else droop0 += traits.carriage.tail; // individual tail carriage (raised or hanging); the rest clearance below still applies
     const droopStep = layout === 'biped' && recipe.posture > 0.6 ? 0.18 : recipe.tail === 'tufted' ? -0.06 : axialLong ? 0 : -0.07;
     // the tail starts where torso_0 actually starts (a limbless torso is re-seated on its belly)
     let pos = v3(b.bones[torso[0]!]!.restPosition), tl = tailLength / nTail;
@@ -302,6 +333,8 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
     neckElev0 = Math.max(pitch, e); neckElev1 = Math.max(0.05, e * 0.75); headPitch = recipe.head === 'beak' ? -0.12 : -0.3;
     if (layout === 'biped' && recipe.posture > 0.6) { neckElev0 = Math.max(pitch * 0.9, e); neckElev1 = Math.max(0.6, e); headPitch = -0.08; }
   }
+  // individual carriage: a raised or lowered neck, and a head pitch that partly compensates (traits correlate them)
+  neckElev0 += traits.carriage.neck; neckElev1 += traits.carriage.neck; headPitch += traits.carriage.headPitch;
   {
     let pos = neckBase.clone(); const nl = neckLength / nNeck;
     for (let i = 0; i < nNeck; i++) {
@@ -342,28 +375,34 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
 
   // ---- limbs
   const limbs: ComposerLimb[] = [];
-  const legRadius = legged ? (recipe.legs === 'arthropod' ? 0.05 * legReach : clamp(0.42 * Math.min(w, h), 0.055 * legReach, 0.16 * legReach) * (recipe.legs === 'pillar' ? 1.3 : 1)) : 0;
+  // Limb robustness: allometric (thicker limbs for heavier animals, L^(0.09 allometry)) times the individual's build.
+  // It scales the clamped species radius, so allometry acts even where the 0.055-0.16 x reach clamp binds.
+  const limbScale = traits.allometry.limbRobust * traits.limbRadius;
+  const legRadius = legged ? (recipe.legs === 'arthropod' ? 0.05 * legReach : clamp(0.42 * Math.min(w, h), 0.055 * legReach, 0.16 * legReach) * (recipe.legs === 'pillar' ? 1.3 : 1)) * limbScale : 0;
   let lengthened = false;
   const addLeg = (pair: number, side: -1 | 1, socketBone: number, socket: Vec3, reach: number, frontLimb: boolean, phase: number) => {
     const sock = toBone(b.bones[socketBone]!, socket);
-    let rest = legRest(reach);
+    // Fore-limb conventions (elbow pole behind, upright metapodial, fore segment jitter) apply to the front pair of a
+    // quadruped or sprawler. Every pair of a many-legged body is built alike, so its knees all bend the same way.
+    const foreStyle = frontLimb && layout !== 'many-legged';
+    let rest = legRest(reach, foreStyle);
     // Fit the actual socket height: narrow a sprawl, then lengthen the leg if the foot still cannot reach the ground.
     for (let k = 0; k < 8; k++) {
-      const s2 = segs(reach), two = s2[0]! + s2[1]!, meta = s2[2] ?? 0, tilt = sprawl ? 0 : frontLimb ? 0 : legSpec.tilt;
+      const s2 = segs(reach, foreStyle), two = s2[0]! + s2[1]!, meta = s2[2] ?? 0, tilt = sprawl ? 0 : foreStyle ? 0 : hindTilt;
       const back = meta * Math.sin(tilt), dy = sock.y - (footHeight(reach) + meta * Math.cos(tilt)), limit = 0.95 * two;
       if (sprawl) rest = {...rest, lateral: Math.min(rest.lateral, Math.sqrt(Math.max(0, limit * limit - dy * dy - back * back)))};
       if (Math.hypot(dy, back, sprawl ? rest.lateral : 0) <= limit * 1.0001) break;
-      reach *= Math.min(1.5, Math.hypot(dy, back) / limit * 1.01); rest = legRest(reach); lengthened = true;
+      reach *= Math.min(1.5, Math.hypot(dy, back) / limit * 1.01); rest = legRest(reach, foreStyle); lengthened = true;
     }
-    const s = segs(reach), fh = footHeight(reach), fl = footLength(reach);
+    const s = segs(reach, foreStyle), fh = footHeight(reach), fl = footLength(reach);
     const r0 = legRadius * (frontLimb && layout === 'quadruped' ? 0.92 : 1);
     const radii = s.length === 3 ? [r0, r0 * 0.6, r0 * 0.36, r0 * 0.3] : recipe.legs === 'arthropod' ? [r0, r0 * 0.8, r0 * 0.5] : recipe.legs === 'pillar' ? [r0, r0 * 0.86, r0 * 0.8] : [r0, r0 * 0.66, r0 * 0.5];
     const radii0 = (i: number) => radii[i]!;
     // the thigh carries a proximal muscle mass that tapers to the knee (a drumstick, not a constant-width stalk)
     const thigh = r0 * composerLimbMass(recipe, 'leg');
     const contact = V(sock.x, 0, sprawl ? sock.z + side * rest.lateral : sock.z);
-    const pole = sprawl ? V(0, 1, 0.35 * side) : frontLimb ? V(-1, 0, 0) : V(1, 0, 0);
-    const tilt = sprawl ? 0 : frontLimb ? 0 : legSpec.tilt;
+    const pole = sprawl ? V(0, 1, 0.35 * side) : foreStyle ? V(-1, 0, 0) : V(1, 0, 0);
+    const tilt = sprawl ? 0 : foreStyle ? 0 : hindTilt;
     const limb: ComposerLimb = {index: limbs.length, kind: 'leg', side, pair, front: frontLimb, socketBone, socket, bones: [], segments: s, pole: arr3(pole), metaTilt: tilt, footHeight: fh, footLength: fl,
       footExtent: [0.45 * fl + 1.6 * radii0(s.length) + 0.3 * fh, 1.4 * fl + 1.6 * radii0(s.length) + 1.6 * fh], rest: arr3(contact), phase};
     const joints = solveLeg(limb, sock, contact, new THREE.Quaternion());
@@ -376,15 +415,20 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
     limb.bones.push(addBone(b, {name: `leg_${pair}_${side < 0 ? 'L' : 'R'}_foot`, parent, part: 'foot', side, limb: limb.index, length: fl, driver: 'ik', position: joints.points[s.length]!, quaternion: joints.frames[s.length]!, start: sec(radii[s.length]!, fh)}));
     limbs.push(limb);
   };
-  const locomotion = locomotionFor(recipe, legReach, socketHeight, legSpec, sprawl, L);
+  const locomotion = locomotionFor(recipe, legReach, socketHeight, legSpec, sprawl, L, traits);
   if (layout === 'biped') {
     for (const side of [-1, 1] as const) addLeg(0, side, torso[0]!, hipSocketLocal(side), legReach, false, side < 0 ? 0 : 0.5);
   } else if (layout === 'quadruped' || layout === 'sprawled') {
     const frontSocket = toBone(front, shoulderSocketLocal(1));
     frontLegReach = layout === 'quadruped' ? clamp(frontSocket.y / legRestHeightPerReach, legReach * 0.5, legReach * 2) : legReach;
     if (layout === 'quadruped' && Math.abs(frontLegReach - legReach) > 0.03 * legReach) constraints.push({part: 'Front legs', chosen: recipe.legLength.toFixed(2), effect: `${frontLegReach > legReach ? 'Lengthened' : 'Shortened'} to ${(frontLegReach / L).toFixed(2)} body lengths so both pairs reach the ground with this shoulder height.`});
-    // lateral-sequence walk for quadrupeds; diagonal pairs for sprawlers
-    const phases = layout === 'quadruped' ? {hind: [0, 0.5], fore: [0.25, 0.75]} : {hind: [0.5, 0], fore: [0, 0.5]};
+    // Stance starts at phase 0 and phase = cycle + limb.phase, so a foot touches down at cycle = 1 - limb.phase.
+    // Quadrupeds walk a lateral sequence (LH 0, LF 0.25, RH 0.5, RF 0.75), as most mammals and fauna-locomotion's
+    // WALK_PHASE_OFFSETS do. Primate-like bodies (flat face, grasping hands, none of the horns or wings of a hybrid)
+    // walk the primate diagonal sequence (LH 0, RF 0.25, RH 0.5, LF 0.75). Sprawlers move diagonal pairs together
+    // (LH with RF, RH with LF). Index 0 is side -1 (left).
+    const primateLike = recipe.head === 'flat-face' && (recipe.arms === 'grasping' || recipe.feet === 'hand') && recipe.horns === 'none' && recipe.wings === 'none';
+    const phases = layout === 'quadruped' ? {hind: [0, 0.5], fore: primateLike ? [0.25, 0.75] : [0.75, 0.25]} : {hind: [0.5, 0], fore: [0, 0.5]};
     for (const side of [-1, 1] as const) addLeg(0, side, torso[0]!, hipSocketLocal(side), legReach, false, phases.hind[side < 0 ? 0 : 1]!);
     for (const side of [-1, 1] as const) addLeg(1, side, torso[nTorso - 1]!, shoulderSocketLocal(side), frontLegReach, true, phases.fore[side < 0 ? 0 : 1]!);
   } else if (layout === 'many-legged') {
@@ -394,7 +438,7 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
 
   // arms: biped forelimbs, or an extra non-walking pair at the front
   const armLength = recipe.arms === 'none' ? 0 : recipe.armLength * L * (recipe.arms === 'small' ? 0.55 : 1) * (axialLong ? 0.45 : 1);
-  const armRadius = armLength ? clamp(0.3 * Math.min(w, h), 0.045 * armLength, 0.11 * armLength) * (recipe.arms === 'small' ? 0.8 : 1) : 0;
+  const armRadius = armLength ? clamp(0.3 * Math.min(w, h), 0.045 * armLength, 0.11 * armLength) * (recipe.arms === 'small' ? 0.8 : 1) * limbScale : 0;
   if (armLength > 0) {
     // shoulders sit on the body surface below the front end, so the arm and its proximal mass stay visible
     const carrier = b.bones[torso[nTorso - 1]!]!, s = profile((nTorso - 1 + 0.62) / nTorso);
@@ -446,7 +490,7 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
     chains: {torso, tail, neck, head, trunk},
     dims: {bodyLength: L, torsoWidth: w, torsoHeight: h, legReach, frontLegReach, socketHeight, headLength, craniumWidth: craniumW, craniumHeight: craniumH, snoutLength,
       neckLength, tailLength, trunkLength, wingSemiSpan, armLength, legRadius, armRadius, torsoPitch: pitch},
-    locomotion,
+    locomotion, traits,
   };
   if (legged) fitStride(graph);
   return graph;
@@ -456,9 +500,15 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
  * COMPOSER_MAX_STANCE_EXTENSION of its reach; continuity then keeps unsampled instants reachable. */
 function fitStride(graph: ComposerGraph) {
   const loco = graph.locomotion, samples = 96, original = loco.stride;
+  // Stance extension peaks at touchdown and liftoff (foot at +-stride/2), so those instants are sampled exactly as well;
+  // uniform samples alone missed the peak by up to 4e-4 on short legs.
+  const legs = graph.limbs.filter(l => l.kind === 'leg'), phase0 = graph.traits.motion.phase;
   const worst = () => {
     let e = 0;
-    for (let k = 0; k < samples; k++) for (const c of poseComposer(graph, 'walk', (k + 0.37) / samples * loco.period).contacts) if (c.stance) e = Math.max(e, c.extension);
+    const times: number[] = [];
+    for (let k = 0; k < samples; k++) times.push((k + 0.37) / samples * loco.period);
+    for (const l of legs) for (const p of [1e-9, loco.duty * (1 - 1e-9)]) times.push((((p - l.phase - phase0) % 1 + 1) % 1) * loco.period);
+    for (const t of times) for (const c of poseComposer(graph, 'walk', t).contacts) if (c.stance) e = Math.max(e, c.extension);
     for (const c of poseComposer(graph, 'neutral', 0).contacts) e = Math.max(e, c.extension);
     return e;
   };
@@ -467,20 +517,23 @@ function fitStride(graph: ComposerGraph) {
   else if (loco.stride < original * 0.6) graph.constraints.push({part: 'Walking', chosen: graph.recipe.legs, effect: `Stride shortened to ${(loco.stride / Math.max(1e-9, original) * 100).toFixed(0)}% so planted feet stay within reach.`});
 }
 
-function locomotionFor(recipe: ComposerRecipe, reach: number, socketHeight: number, legSpec: {seg: number[]; tilt: number; ext: number}, sprawl: boolean, L: number): ComposerLocomotion {
+/** Gait parameters. The individual's motion traits scale the period (so fitStride sees it), shift the duty factor and
+ * scale the swing lift; neutral traits leave every value exactly as the species builds it. */
+function locomotionFor(recipe: ComposerRecipe, reach: number, socketHeight: number, legSpec: {seg: number[]; tilt: number; ext: number}, sprawl: boolean, L: number, traits: ComposerIndividualTraits): ComposerLocomotion {
+  const motion = traits.motion;
   if (recipe.layout === 'limbless') {
     const peristaltic = recipe.torso === 'annulated';
-    const period = clamp(1.4 * Math.sqrt(L), 1.1, 3.2);
+    const period = clamp(1.4 * Math.sqrt(L), 1.1, 3.2) * motion.periodScale;
     return {gait: peristaltic ? 'peristaltic-crawl' : 'serpentine-crawl', period, duty: 1, stride: 0, speed: (peristaltic ? 0.08 : 0.3) * L / period, lift: 0, bob: 0, sway: 0};
   }
-  const period = clamp(1.25 * Math.sqrt(Math.max(0.01, socketHeight)), 0.6, 2.2);
-  const duty = recipe.layout === 'biped' ? 0.6 : recipe.layout === 'quadruped' ? 0.66 : recipe.layout === 'sprawled' ? 0.7 : 0.62;
+  const period = clamp(1.25 * Math.sqrt(Math.max(0.01, socketHeight)), 0.6, 2.2) * motion.periodScale;
+  const duty = (recipe.layout === 'biped' ? 0.6 : recipe.layout === 'quadruped' ? 0.66 : recipe.layout === 'sprawled' ? 0.7 : 0.62) + motion.dutyDelta;
   const two = (legSpec.seg[0]! + legSpec.seg[1]!) * reach;
   // Largest stride whose extreme stance positions keep the two-bone chain within 96% reach.
   const ext = sprawl ? 0.8 * two : legSpec.ext * two;
   const halfMax = Math.sqrt(Math.max(0, (COMPOSER_MAX_STANCE_EXTENSION * two) ** 2 - ext * ext));
   const stride = Math.min(2 * halfMax * 0.92, 0.75 * reach * (recipe.layout === 'many-legged' ? 0.6 : 1));
-  const lift = Math.min(0.12 * reach, 0.5 * (two - ext) + 0.06 * reach);
+  const lift = Math.min(0.12 * reach, 0.5 * (two - ext) + 0.06 * reach) * motion.liftScale;
   const gait = recipe.layout === 'biped' ? 'biped-walk' : recipe.layout === 'quadruped' ? 'quadruped-walk' : recipe.layout === 'sprawled' ? 'sprawling-walk' : 'metachronal-wave';
   const bob = (recipe.layout === 'biped' ? 0.018 : recipe.layout === 'quadruped' ? 0.008 : 0) * socketHeight;
   const sway = recipe.layout === 'sprawled' ? (recipe.armor === 'dome' ? 0.03 : 0.12) : recipe.layout === 'many-legged' ? 0.05 : 0;
@@ -685,7 +738,9 @@ export function poseComposer(graph: ComposerGraph, motion: ComposerMotion, time:
   const positions = new Float64Array(n * 3), quaternions = new Float64Array(n * 4), radialScale = new Float64Array(n).fill(1), chordScale = new Float64Array(n).fill(1);
   const world: {p: THREE.Vector3; q: THREE.Quaternion}[] = new Array(n);
   const offsets: (THREE.Quaternion | undefined)[] = new Array(n);
-  const cycle = t / loco.period;
+  // individual desync: a herd started together does not step, breathe or look around in lockstep
+  const desync = graph.traits.motion;
+  const cycle = t / loco.period + desync.phase;
   const moving = motion === 'walk', idle = motion === 'idle', display = motion === 'display';
   const add = (i: number, q: THREE.Quaternion) => { offsets[i] = offsets[i] ? offsets[i]!.multiply(q) : q; };
   const pitchQ = (a: number) => axisQ(Z_AXIS, a), yawQ = (a: number) => axisQ(Y_AXIS, a), rollQ = (a: number) => axisQ(X_AXIS, a);
@@ -708,19 +763,29 @@ export function poseComposer(graph: ComposerGraph, motion: ComposerMotion, time:
     tail.forEach((bi, i) => add(bi, yawQ(0.07 * Math.sin(TAU * cycle - 0.7 * (i + 1)))));
   }
   if (idle || display) {
-    const breath = 1 + 0.012 * Math.sin(TAU * t / 3.4);
+    // Breathing slows with size (about L^0.25: 2.3 s for a 0.2 m bird, 4 s for a 2 m rhino).
+    const breathPeriod = 3.4 * clamp(Math.pow(graph.dims.bodyLength, 0.25), 0.6, 1.8);
+    const breath = 1 + 0.012 * Math.sin(TAU * (t / breathPeriod + desync.breathPhase));
     for (const bi of torso) radialScale[bi] = breath;
-    const look = idle ? 0.22 * Math.sin(TAU * t / 7.3) : 0.12 * Math.sin(TAU * t / 4.1);
-    const nod = idle ? 0.07 * Math.sin(TAU * t / 5.2) : -0.12 - 0.05 * Math.sin(TAU * t / 2.7);
-    neck.forEach(bi => add(bi, yawQ(look / Math.max(1, neck.length)).multiply(pitchQ((display ? 0.1 : 0) + nod / Math.max(1, neck.length)))));
+    const lp = desync.lookPhase;
+    const look = idle ? 0.22 * Math.sin(TAU * (t / 7.3 + lp)) : 0.12 * Math.sin(TAU * (t / 4.1 + lp));
+    const nod = idle ? 0.07 * Math.sin(TAU * (t / 5.2 + lp)) : -0.12 - 0.05 * Math.sin(TAU * (t / 2.7 + lp));
+    // The look turns about world up (gravity), shared along the neck: each neck bone turns by look/n about the vertical
+    // expressed in its own rest frame. A bone-local yaw would mostly roll a raised neck (a giraffe turned its head ~6 deg).
+    const nNeck = Math.max(1, neck.length);
+    neck.forEach(bi => {
+      const vertical = UP.clone().applyQuaternion(q4(graph.bones[bi]!.restQuaternion).invert());
+      add(bi, axisQ(vertical, look / nNeck).multiply(pitchQ((display ? 0.1 : 0) + nod / nNeck)));
+    });
     add(head, pitchQ(display ? 0.18 : nod * 0.5));
-    tail.forEach((bi, i) => add(bi, yawQ((idle ? 0.1 : 0.16) * Math.sin(TAU * t / (idle ? 3.1 : 1.9) - 0.6 * i)).multiply(pitchQ(display && i < 3 ? 0.12 : 0))));
+    tail.forEach((bi, i) => add(bi, yawQ((idle ? 0.1 : 0.16) * Math.sin(TAU * (t / (idle ? 3.1 : 1.9) + lp) - 0.6 * i)).multiply(pitchQ(display && i < 3 ? 0.12 : 0))));
   }
   const lowestTorso = () => torso.reduce((lo, bi) => Math.min(lo, world[bi]!.p.y - graph.bones[bi]!.start.h), Infinity);
   // trunk curl
   if (trunk.length && motion !== 'neutral') {
-    const curl = display ? 0.38 + 0.12 * Math.sin(TAU * t / 2.4) : moving ? 0.05 * Math.sin(TAU * cycle) : 0.08 * Math.sin(TAU * t / 4.6);
-    const sway = (moving ? 0.12 * Math.sin(TAU * cycle + 1) : 0.1 * Math.sin(TAU * t / 3.3));
+    const lp = desync.lookPhase;
+    const curl = display ? 0.38 + 0.12 * Math.sin(TAU * (t / 2.4 + lp)) : moving ? 0.05 * Math.sin(TAU * cycle) : 0.08 * Math.sin(TAU * (t / 4.6 + lp));
+    const sway = (moving ? 0.12 * Math.sin(TAU * cycle + 1) : 0.1 * Math.sin(TAU * (t / 3.3 + lp)));
     trunk.forEach((bi, i) => add(bi, pitchQ(curl * (0.4 + i * 0.25)).multiply(yawQ(sway * (i ? 0.4 : 1)))));
   }
   // wings: fold (idle/walk), spread and slow grounded display beats
@@ -783,9 +848,18 @@ export function poseComposer(graph: ComposerGraph, motion: ComposerMotion, time:
       const phase = ((cycle + limb.phase) % 1 + 1) % 1;
       if (phase < loco.duty) { const u = phase / loco.duty; contact.x = rest.x + loco.stride * (0.5 - u); }
       else {
-        const u = (phase - loco.duty) / (1 - loco.duty), e = u * u * (3 - 2 * u);
-        contact.x = rest.x + loco.stride * (-0.5 + e); contact.y = loco.lift * Math.sin(Math.PI * u); stance = false;
-        footPitch = recipe.feet === 'spike' ? 0 : 0.35 * Math.sin(Math.PI * u) * (u < 0.5 ? -1 : 0.4);
+        // Swing, in the body frame, from -stride/2 to +stride/2. The world foot follows a minimum-jerk path: it covers
+        // stride + speed x swing time with the quintic 6u^5 - 15u^4 + 10u^3, so it leaves and meets the ground with zero
+        // world velocity and zero acceleration. In the body frame that is a curve whose end tangents (-speed x swing
+        // time) match the stance foot's body-frame velocity; it dips slightly behind the liftoff point first, as a real
+        // foot does. (A cubic Hermite with the same end tangents still reaches ~0.3 x body speed within 2% of liftoff.)
+        // y = lift 16u^2(1-u)^2 has zero vertical velocity at touchdown. Pitch: toe down (heel up) through push-off,
+        // toe up before heel strike; both factors vanish at u = 0.5, so the asymmetric scale introduces no jump.
+        const u = (phase - loco.duty) / (1 - loco.duty), u3 = u * u * u;
+        const carried = loco.speed * (1 - loco.duty) * loco.period, s = u3 * (10 + u * (6 * u - 15));
+        contact.x = rest.x - loco.stride * 0.5 + (loco.stride + carried) * s - carried * u;
+        contact.y = loco.lift * 16 * u * u * (1 - u) * (1 - u); stance = false;
+        footPitch = recipe.feet === 'spike' ? 0 : -0.35 * Math.sin(TAU * u) * Math.sin(Math.PI * u) * (u < 0.5 ? 1 : 0.4);
         // Toe-down pitch rotates the front of the sole down by front*sin(pitch); never more than the current lift.
         const reach = footPitch < 0 ? limb.footExtent[1] : limb.footExtent[0];
         footPitch = Math.sign(footPitch) * Math.min(Math.abs(footPitch), Math.asin(Math.min(1, contact.y / Math.max(1e-9, reach))));
@@ -811,7 +885,12 @@ export function poseComposer(graph: ComposerGraph, motion: ComposerMotion, time:
     const target = restLocal.applyQuaternion(carrier.q).add(carrier.p);
     const reach = limb.segments[0]! + limb.segments[1]!;
     let curl = 0.25, wrist = 0.15;
-    if (moving && recipe.layout === 'biped') { target.x += 0.22 * reach * Math.sin(TAU * (cycle + limb.phase)); }
+    if (moving && recipe.layout === 'biped') {
+      // Arms swing against the same-side leg: the left hand is furthest back as the left foot touches down. Small
+      // (theropod) arms and forward-pitched bodies hold their arms still; upright grasping arms swing fully.
+      const swing = recipe.arms === 'small' ? 0 : clamp((recipe.posture - 0.4) / 0.2, 0, 1);
+      if (swing > 0) target.x += swing * 0.22 * reach * Math.cos(TAU * (cycle + limb.phase));
+    }
     if (idle) { curl = 0.35 + 0.25 * Math.sin(TAU * t / 2.8 + limb.side); }
     if (display) { target.add(V(0.35 * reach, 0.55 * reach + 0.1 * reach * Math.sin(TAU * t / 1.7 + limb.side), 0)); curl = 0.9 + 0.5 * Math.sin(TAU * t / 1.3); wrist = -0.3; }
     const floor = limb.segments[2]! + limb.segments[3]! + 0.02 * reach;
