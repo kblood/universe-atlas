@@ -552,7 +552,10 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
     if (hindU !== undefined) lat += 0.10 * sec.w * gauss(u, hindU, 0.08) * c2 * upper;
     lat -= 0.06 * sec.w * gauss(u, 0.25, 0.1) * c2 * lower;
     if (male) lat += 0.08 * r.dimorphism * sec.w * smooth(0.72, 0.86, u) * c2 * upper;
-    return [clamp(lat, -latCap, latCap), dor];
+    // the lobes die out at both ends of the torso: a lobe still standing at the last torso ring would end in a
+    // step (a collar) where the neck or tail starts
+    const ends = smooth(0, 0.06, u) * smooth(1, 0.9, u);
+    return [clamp(lat, -latCap, latCap) * ends, dor * ends];
   };
   const torsoU = (bone: ComposerBone, f: number) => ((torsoStartOf.get(bone.index) ?? 0) + f * bone.length) / Math.max(torsoTotal, 1e-9);
   const axialRegion = (bone: ComposerBone, f: number): [CoatRegion, number] => {
@@ -888,10 +891,10 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
 
 /** Head-surface colour helpers shared by the neck blend rings and the head loft, so the seam matches exactly. */
 function makeHeadColours(r: ComposerRecipe, d: ComposerGraph['dims'], coatAt: CoatAt, radial: number, scale: number) {
-  const H = d.headLength, sn = d.snoutLength, muzzleFrom = r.head === 'muzzle' || r.head === 'jaws' || r.head === 'flat-face' ? 0.4 * H : Infinity;
+  const H = d.headLength, sn = d.snoutLength, muzzleFrom = r.head === 'muzzle' || r.head === 'jaws' ? 0.4 * H : Infinity;
   const region = (x: number): CoatRegion => x >= muzzleFrom ? 'muzzle' : 'head';
-  // a flat face has almost no snout, so the cranium spans the whole head: 'along' runs over the full length and a
-  // facial mask stays on the face instead of capping the crown
+  // a flat face is bare skin (its own lofts) in front of a furred cranium: the fur rim around the face is head,
+  // never muzzle, and 'along' spans the whole head so a facial mark only shades the brow instead of capping it
   const headSpan = r.head === 'flat-face' ? H + sn : 0.4 * H + sn;
   const along = (x: number) => x >= muzzleFrom ? clamp((x - muzzleFrom) / Math.max(sn, 1e-3), 0, 1) : clamp(x / headSpan, 0, 1);
   const col = (x: number, sw: number, sh: number) => {
