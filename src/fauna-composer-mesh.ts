@@ -158,6 +158,30 @@ function ringPoint(r: Ring, b: RingBasis, a: number, out: THREE.Vector3, scale =
   if (r.squash) { const [n, f] = r.squash, dn = -f * ((out.x - r.c.x) * n.x + (out.y - r.c.y) * n.y + (out.z - r.c.z) * n.z); out.x += n.x * dn; out.y += n.y * dn; out.z += n.z * dn; }
   return out;
 }
+/** Do consecutive ring planes cross within the rings' own radius (inside of a bend)? Margin 0.9 of the spacing. */
+function ringsCross(a: Ring, b: Ring): boolean {
+  const ds = a.c.distanceTo(b.c), ang = a.t.angleTo(b.t), r = Math.max(a.rx, a.ry, a.ryBelow ?? a.ry, b.rx, b.ry, b.ryBelow ?? b.ry);
+  return ang * r > 0.9 * ds;
+}
+/** Smooths ring orientations (tangents only) with a Gaussian over arc length, sigma = k x the local radius, raising k
+ * until no consecutive pair crosses (one-sided windows at the chain ends; with `fixLast` the last frame is kept). */
+function fanOutBends(rings: Ring[], fixLast = false): void {
+  if (rings.length < 4 || !rings.slice(0, -1).some((r, i) => ringsCross(r, rings[i + 1]!))) return;
+  const t0 = rings.map(r => r.t.clone().normalize()), arc = [0];
+  for (let i = 1; i < rings.length; i++) arc.push(arc[i - 1]! + rings[i - 1]!.c.distanceTo(rings[i]!.c));
+  const rad = rings.map(r => Math.max(r.rx, r.ry, r.ryBelow ?? r.ry)), acc = new THREE.Vector3();
+  for (const k of [0.5, 0.8, 1.2, 1.8, 2.5, 3.5]) {
+    for (let i = 0; i < rings.length; i++) {
+      const sigma = Math.max(1e-6, k * rad[i]!);
+      acc.set(0, 0, 0);
+      for (let j = 0; j < rings.length; j++) { const d = (arc[j]! - arc[i]!) / sigma; if (Math.abs(d) < 3) acc.addScaledVector(t0[j]!, Math.exp(-0.5 * d * d)); }
+      // a fixed last frame: the smoothing tapers out over two sigmas before it
+      const keep = fixLast ? Math.min(1, (arc[arc.length - 1]! - arc[i]!) / (2 * sigma)) : 1;
+      rings[i]!.t.copy(t0[i]!).lerp(acc.normalize(), keep).normalize();
+    }
+    if (!rings.slice(0, -1).some((r, i) => ringsCross(r, rings[i + 1]!))) return;
+  }
+}
 /** Every triangle edge length a loft of `rings` would emit between consecutive rings (caps excluded). */
 function loftEdgeLengths(rings: Ring[], segments: number, include: (i: number) => boolean): Float64Array {
   const pairs: number[] = [];
@@ -627,6 +651,11 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
     blendRings.push(ring); blendMetas.push(meta);
   }
   const axialRings = [...axialChain.rings, ...blendRings], axialMetas = [...axialChain.metas, ...blendMetas];
+  // ring planes must not cross on the inside of a bend (a thick torso turning up into the neck pinches the back
+  // into a crease): wherever consecutive rings turn by more than their spacing allows at their radius, the ring
+  // orientations are smoothed over a window that grows with the radius until no pair crosses; centres stay on the
+  // spline. The last ring is the head's first station and keeps the head frame; the tail tip is free.
+  fanOutBends(axialRings, true);
   setFootprints(axialRings, axialMetas, axialRadial);
   // ---- pattern scale clamp: keep a mean pattern cell at least four torso edges across
   // the exact triangle edges the loft will emit between torso-region rings (same superellipse, lobes and squash)
