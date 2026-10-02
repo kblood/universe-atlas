@@ -35,7 +35,7 @@ try {
     const adult = await settle();
     assert.equal(adult.actorCount, 1);
     assert.equal(adult.skinDetails.length, 1);
-    assert.equal(adult.skinDetails[0].version, 'quadruped-body-3');
+    assert.equal(adult.skinDetails[0].version, 'quadruped-body-4');
     assert.equal(adult.skinDetails[0].features.length, 6);
     assert.equal(adult.skinDetails[0].bones, 22);
     await page.screenshot({ path: path.join(output, `${archetype}-body.png`) });

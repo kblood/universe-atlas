@@ -51,7 +51,7 @@ try {
         const name = `${family}-species${s + 1}-individual${variant + 1}-${growth}`;
         await set({ 'skin-family': family, variant, growth, 'skin-focus': 'body', 'skin-view': 'three-quarter', 'skin-pose': 'idle', 'skin-time': 3, neutral: false, skeleton: false });
         const sample = await settle();
-        assert.equal(sample.skinDetails.length, 1); assert.equal(sample.skinDetails[0].version, 'quadruped-body-3');
+        assert.equal(sample.skinDetails.length, 1); assert.equal(sample.skinDetails[0].version, 'quadruped-body-4');
         assert.equal(sample.individuals[0].genome.morphology.family, family);
         assert.deepEqual(sample.individuals[0].scale, [1, 1, 1]);
         await page.locator('#viewport').screenshot({ path: path.join(output, `${name}-body.png`) });

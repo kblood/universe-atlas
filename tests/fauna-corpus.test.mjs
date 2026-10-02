@@ -6,7 +6,7 @@ import { generateCreatureGenome, realisticIndividualCreatureGenome } from '../sr
 import { buildQuadrupedBody, quadrupedBodyBytes, QUADRUPED_GRID_POINT_BUDGET } from '../src/fauna-body-plan.ts';
 import { createFaunaSkinInspector } from '../src/fauna-skin-inspector.ts';
 
-const report = { generator: 'quadruped-body-3', createdAt: new Date().toISOString(), specimens: [], boundaries: [],
+const report = { generator: 'quadruped-body-4', createdAt: new Date().toISOString(), specimens: [], boundaries: [],
   limits: { triangles: 40000, gridPoints: QUADRUPED_GRID_POINT_BUDGET, edgeStretch: 3.5, surfacePenetrationM: .05, footSurfaceGapM: .06, solverPenetrationM: .012, reachFraction: .06 },
   notes: ['CPU wall time depends on machine and concurrent work.', 'Flat-floor production rig review; no GPU, flight, or Quest qualification.'] };
 after(async () => {
