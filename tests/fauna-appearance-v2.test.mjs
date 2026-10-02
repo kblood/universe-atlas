@@ -124,12 +124,17 @@ test('individuals: sex ratio, dimorphic horns and continuous neonatal juveniles'
       assert.ok(young.hornLength <= adult.hornLength * Math.min(m * m, .2) + .0015, 'horn buds scale with maturity squared');
     }
     const mean = v => v.reduce((a, b) => a + b, 0) / Math.max(1, v.length);
-    if (dimorphism >= .4 && s.creature.hornLength > 0 && horns.male.length && horns.female.length) ratios.push(mean(horns.female) > 0 ? mean(horns.male) / mean(horns.female) : Infinity);
+    // Only species whose males actually grow horns count (fauna face round WP3:
+    // padded low-slung species no longer grow horns, and an all-zero species
+    // would otherwise enter as a vacuous Infinity ratio).
+    if (dimorphism >= .4 && s.creature.hornLength > 0 && horns.male.length && horns.female.length && mean(horns.male) > 0) ratios.push(mean(horns.female) > 0 ? mean(horns.male) / mean(horns.female) : Infinity);
   }
   const atQuarter = heads.filter(h => Math.abs(h.m - .25) <= .03);
   t.diagnostic(JSON.stringify({ maleShare: males / total, dimorphicHornedSpecies: ratios.length, minHornRatio: Math.min(...ratios), medianHornRatio: median(ratios), juvenilesNearQuarter: atQuarter.length, minHeadRatio: Math.min(...atQuarter.map(h => h.ratio)) }));
   assert.ok(Math.abs(males / total - .5) < .06);
-  assert.ok(ratios.length >= 10);
+  // 211 before the face round (90 of them padded species with horns); WP3
+  // grows horns on hoofed browsers only, leaving exactly 121 dimorphic horned species.
+  assert.equal(ratios.length, 121);
   assert.ok(ratios.every(r => r >= 1.6), `male/female horn ratio ${Math.min(...ratios)}`);
   assert.ok(atQuarter.length >= 20 && atQuarter.every(h => h.ratio >= 1.2), 'juvenile head/torso at maturity 0.25 is at least 1.2x adult');
 });
