@@ -34,7 +34,8 @@ async function setPart(page, key, value) {
   if (key in COMPOSER_CHOICES) { await page.selectOption(`#composer-${key}`, String(value)); await settle(page); } else await setRange(page, key, value);
 }
 async function seek(page, time) { await page.fill('#composer-time', String(time)); await page.waitForFunction(t => Math.abs(window.__creatureLab.time - t) < 1e-9, time); }
-const COAT_KEYS = ['palette', 'colorSeed', 'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade'], TYPE_SPECIMEN_NOOP = ['variability', 'dimorphism'];
+const COAT_KEYS = ['palette', 'colorSeed', 'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade'], TYPE_SPECIMEN_NOOP = ['variability', 'dimorphism'], EYE_KEYS = ['eyes', 'iris'];
+const CONTROL_KEYS = COMPOSER_RECIPE_KEYS.filter(key => key !== 'trunk');
 const digestPose = c => c.actors.map(a => a.pose.positions.map(v => v.toFixed(9)).join(',')).join('|');
 // Neck and tail are lofted into the continuous body tube (skin part 'torso'), so they are checked by their bone chains.
 const partSet = a => { const s = a.details.structure, out = new Set(a.details.parts.filter(p => p.triangles > 0).map(p => p.part));
@@ -60,7 +61,9 @@ try {
       check('time advances while playing', (await page.evaluate(() => window.__creatureLab.time)) > t0);
       check('composer panel visible', await page.isVisible('#composer-controls'));
       check('limitations visible', /flight is not simulated/i.test(await page.textContent('#composer-limitations')));
-      for (const key of COMPOSER_RECIPE_KEYS) check(`control ${key} exists`, await page.locator(`#composer-${key}`).count() === 1);
+      // recipe v3: the trunk is derived from the face (Face = Proboscis) and has no control of its own
+      for (const key of CONTROL_KEYS) check(`control ${key} exists`, await page.locator(`#composer-${key}`).count() === 1);
+      check('no Trunk control (derived from the face)', await page.locator('#composer-trunk').count() === 0);
       await pause(page);
 
       // 2. All presets: structure, finite bounds, screenshots.
@@ -86,7 +89,7 @@ try {
       // 3. Each independent part once: intended field changes, unrelated fields preserved.
       report.steps.parts = []; const coatColour = {};
       await page.selectOption('#composer-preset', 'giraffe'); await settle(page);
-      for (const key of COMPOSER_RECIPE_KEYS) {
+      for (const key of CONTROL_KEYS) {
         const before = (await composer(page)).actors[0];
         const disabled = key === 'marks' ? await page.isDisabled('#composer-mark-socks') : await page.isDisabled(`#composer-${key}`);
         if (disabled) { report.steps.parts.push({key, skipped: await page.textContent(`#composer-${key}-why`)}); continue; }
@@ -121,6 +124,8 @@ try {
             coatColour[key] = clampNoted && stripesRepaint;
           }
         }
+        // Eye type and iris colour: the built eye (geometry and iris colour) belongs to the eye package; recorded here, asserted there.
+        else if (EYE_KEYS.includes(key)) report.steps.eyeKeys = {...report.steps.eyeKeys, [key]: {value, geometryChanged, colourChanged: after.colorDigest !== before.colorDigest}};
         else if (TYPE_SPECIMEN_NOOP.includes(key)) check(`part ${key} explains why the type specimen is unchanged`, /type specimen/i.test(await page.textContent(`#composer-${key}-why`)) && after.skinDigest === before.skinDigest);
         else if (!['hands', 'armLength'].includes(key)) check(`part ${key} changes structure or shape`, geometryChanged);
         report.steps.parts.push({key, value, changed, vertices: [before.details.vertices, after.details.vertices]});
@@ -148,7 +153,8 @@ try {
         ['rhino-hands-reptile-tail', 'rhinoceros', [['arms', 'grasping'], ['hands', 'hand'], ['tail', 'reptile'], ['tailLength', 1.2]], ['horn', 'arm', 'hand', 'tail']],
         ['winged-beaked-dinosaur', 'dinosaur', [['wings', 'membrane'], ['head', 'beak']], ['wing', 'tail', 'leg']],
         ['centipede-jaws-tail', 'centipede', [['head', 'jaws'], ['tail', 'reptile'], ['tailLength', 0.6]], ['tail', 'leg']],
-        ['worm-trunk-shell', 'worm', [['trunk', 'trunk'], ['armor', 'dome'], ['head', 'muzzle']], ['trunk', 'armor']],
+        // recipe v3: a trunk is the Proboscis face (there is no Trunk control)
+        ['worm-trunk-shell', 'worm', [['head', 'proboscis'], ['armor', 'dome']], ['trunk', 'armor']],
       ];
       report.steps.hybrids = [];
       for (const [name, start, edits, expectParts] of hybrids) {
@@ -181,7 +187,7 @@ try {
       await page.waitForFunction(() => document.getElementById('share-status').textContent.length > 0);
       const shared = await page.evaluate(() => window.__creatureLab.specimenUrl), original = await composer(page);
       report.steps.share = {url: shared};
-      check('share url has composer params', /mode=composer/.test(shared) && /recipe=v2/.test(shared) && !/bodyCondition/.test(shared), shared);
+      check('share url has composer params', /mode=composer/.test(shared) && /recipe=v3/.test(shared) && !/bodyCondition/.test(shared), shared);
       const replay = await context.newPage(); replay.on('pageerror', e => errors.push(`replay: ${e.message}`));
       await replay.goto(shared, {waitUntil: 'networkidle'}); await settle(replay);
       const restored = await composer(replay);
