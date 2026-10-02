@@ -9,6 +9,8 @@
 // Options: --preset a,b (ids) | --recipe <encoded text>; --herd N; --seedBase S; --maturityRow;
 //   --views side,three-quarter; --cell 300; --mpp 0.02 | giraffe=0.02,rhinoceros=0.015;
 //   --set key=value,key=value (recipe overrides, e.g. dimorphism=0.8); --sexRow (female/male pair at seedBase).
+//   --coherent N [--coherentBase S] [--coherentIndividual I]: a sheet of N coherent random species
+//   (randomCoherentComposerRecipe seeds S..S+N-1), each cell fitted to its animal.
 // The output directory must not exist (evidence is never overwritten). Other packages run this read-only.
 import {existsSync, mkdirSync, writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
@@ -120,7 +122,7 @@ export function projectedBounds(skin, view) {
 
 // ---------------------------------------------------------------- CLI
 function parseArgs(argv) {
-  const o = {preset: [], herd: 12, seedBase: 1, maturityRow: false, sexRow: false, views: ['side', 'three-quarter'], cell: 300, mpp: {}, set: {}, recipe: null, out: null};
+  const o = {coherent: 0, coherentBase: 0, coherentIndividual: 0, preset: [], herd: 12, seedBase: 1, maturityRow: false, sexRow: false, views: ['side', 'three-quarter'], cell: 300, mpp: {}, set: {}, recipe: null, out: null};
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i], next = () => { const v = argv[++i]; if (v === undefined) throw new Error(`${a} needs a value`); return v; };
     if (a === '--preset') o.preset.push(...next().split(',').filter(Boolean));
@@ -134,6 +136,9 @@ function parseArgs(argv) {
     else if (a === '--mpp') { const v = next(); if (/^[\d.]+$/.test(v)) o.mpp['*'] = Number(v); else for (const kv of v.split(',')) { const [k, x] = kv.split('='); o.mpp[k] = Number(x); } }
     else if (a === '--set') for (const kv of next().split(',')) { const [k, x] = kv.split('='); o.set[k] = x !== undefined && x.trim() !== '' && Number.isFinite(Number(x)) ? Number(x) : x; }
     else if (a === '--out') o.out = next();
+    else if (a === '--coherent') o.coherent = Math.max(1, Math.min(48, Math.floor(Number(next()))));
+    else if (a === '--coherentBase') o.coherentBase = Math.max(0, Math.floor(Number(next())));
+    else if (a === '--coherentIndividual') o.coherentIndividual = Math.max(0, Math.min(9999, Math.floor(Number(next()))));
     else throw new Error(`Unknown option ${a}`);
   }
   if (!o.out) throw new Error('--out <new directory> is required');
@@ -196,11 +201,49 @@ function renderSheet(name, species, opts, view, mpp) {
   return {png: encodePng(W, H, img), meta, width: W, height: H};
 }
 
+/** Coherent random species, one type specimen per cell, each cell scaled to fit its animal (scale bar per cell). */
+async function renderSpeciesSheet(opts, view) {
+  const {coherentComposerSpecies} = await import('../src/fauna-composer-species.ts');
+  const C = opts.cell, cols = 6, labelH = 34, titleH = 40, n = opts.coherent;
+  const rows = Math.ceil(n / cols), W = cols * C, H = titleH + rows * (C + labelH);
+  const img = new Uint8Array(W * H * 3).fill(250), meta = [];
+  drawText(img, W, 8, 8, `coherent species ${opts.coherentBase}..${opts.coherentBase + n - 1} - ${view} - each cell fitted; bar = 0.5 m`, [20, 20, 20], 2);
+  drawText(img, W, 8, 22, `stream composer-species-v1/<seed>, ${opts.coherentIndividual ? `individual ${opts.coherentIndividual}` : 'type specimens (individual 0)'}${Object.keys(opts.set).length ? `, set ${Object.entries(opts.set).map(([k, v]) => `${k}=${v}`).join(',')}` : ''}`, [90, 90, 90], 2);
+  for (let i = 0; i < n; i++) {
+    const seed = String(opts.coherentBase + i), s = coherentComposerSpecies(seed), recipe = {...s.recipe, ...opts.set, individualSeed: opts.coherentIndividual};
+    const b = build(recipe), side = projectedBounds(b.skin, 'side'), pb = projectedBounds(b.skin, view);
+    const ext = Math.max(side.x1 - side.x0, side.y1 - side.y0) * 1.25 / C, mpp = Number(ext.toPrecision(2));
+    const ox = C / 2 - ((pb.x0 + pb.x1) / 2) / mpp, oy = C - 10 + pb.y0 / mpp - ((C - 20) - (pb.y1 - pb.y0) / mpp) / 2;
+    const cx = (i % cols) * C, cy = titleH + Math.floor(i / cols) * (C + labelH);
+    const {rgb} = rasterSkin(b.skin, {view, mpp, width: C, height: C, ox, oy});
+    for (let py = 0; py < C; py++) for (let px = 0; px < C; px++) img.set(rgb.subarray((py * C + px) * 3, (py * C + px) * 3 + 3), ((cy + py) * W + cx + px) * 3);
+    if (view === 'side') { const gy = Math.round(oy); if (gy >= 0 && gy < C) for (let px = 0; px < C; px++) img.set([150, 150, 140], ((cy + gy) * W + cx + px) * 3); }
+    const bar = Math.round(0.5 / mpp); for (let px = 0; px < Math.min(bar, C - 16); px++) for (let d = 0; d < 3; d++) img.set([40, 40, 40], ((cy + C - 6 + d) * W + cx + 8 + px) * 3);
+    for (let px = 0; px < C; px++) img.set([200, 200, 195], (cy * W + cx + px) * 3);
+    for (let py = 0; py < C; py++) img.set([200, 200, 195], ((cy + py) * W + cx) * 3);
+    drawText(img, W, cx + 4, cy + C + 4, `${seed} ${s.archetype}${s.attempt ? ` r${s.attempt}` : ''}`, [30, 30, 30], 2);
+    drawText(img, W, cx + 4, cy + C + 18, `l=${b.info.bodyLength.toFixed(2)}m ${recipe.palette}/${recipe.pattern} ${b.info.triangles}t`, [80, 80, 80], 2);
+    meta.push({seed, archetype: s.archetype, attempt: s.attempt, balance: s.balance, mpp, input: encodeComposerRecipe(normalizeComposerRecipe(recipe).recipe), ...b.info});
+  }
+  return {png: encodePng(W, H, img), meta, width: W, height: H};
+}
+
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const out = resolve(opts.out);
   if (existsSync(out)) { console.error(`Refusing to write into existing directory ${out}`); process.exit(2); }
   mkdirSync(out, {recursive: true});
+  if (opts.coherent) {
+    const summary = {tool: 'fauna-composer-silhouettes', mode: 'coherent', recipeVersion: COMPOSER_RECIPE_VERSION, options: {...opts, out}, sheets: []};
+    for (const view of opts.views) {
+      const t0 = performance.now(), sheet = await renderSpeciesSheet(opts, view), file = `coherent-${view}.png`;
+      writeFileSync(resolve(out, file), sheet.png);
+      summary.sheets.push({view, file, width: sheet.width, height: sheet.height, ms: Math.round(performance.now() - t0), cells: sheet.meta});
+      console.log(`${file} ${sheet.width}x${sheet.height} (${Math.round(performance.now() - t0)} ms)`);
+    }
+    writeFileSync(resolve(out, 'sheet.json'), JSON.stringify(summary, null, 1) + '\n');
+    return;
+  }
   const species = [];
   for (const id of opts.preset) species.push([id, {...composerPreset(id), ...opts.set}]);
   if (opts.recipe) { const d = decodeComposerRecipe(opts.recipe); if (d.error) throw new Error(d.error); species.push(['recipe', {...d.recipe, ...opts.set}]); }
