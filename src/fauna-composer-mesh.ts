@@ -1114,14 +1114,15 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
     // the open end is closed by a flat disc hidden inside the joined muzzle and trunk (each part stays a closed surface)
     if (trunk0 !== undefined) { trunkJoin = rings[rings.length - 1]!; capFlat(s, trunkJoin, seg, 1); }
     tipX = tip.x; tipY = tip.y; tipH = tip.h;
-    // flap ears: thin, broad and set low on the side of the cranium, their rear edge flaring 20 degrees outward
+    // flap ears: thin, broad and set low on the side of the cranium, standing clear of the neck with their rear edge
+    // flaring 30 degrees outward (an elephant's ear hangs beside, not inside, its thick neck)
     s.begin('head', `${r.head} ears`);
     s.region = REGION.ear;
     for (const side of [-1, 1]) {
-      const back = 20 * Math.PI / 180, e1 = ax.clone().multiplyScalar(Math.cos(back)).addScaledVector(az, -side * Math.sin(back)).normalize();
+      const back = 30 * Math.PI / 180, e1 = ax.clone().multiplyScalar(Math.cos(back)).addScaledVector(az, -side * Math.sin(back)).normalize();
       const out = az.clone().multiplyScalar(side * Math.cos(back)).addScaledVector(ax, Math.sin(back)).normalize();
-      const centre = at(hb, 0.02 * H, 0.45 * cH, side * 0.85 * cW).addScaledVector(e1, -0.12 * H * es).addScaledVector(ay, -0.1 * H * es).addScaledVector(out, 0.02 * H * es);
-      ellipsoid(s, centre, [e1, ay, out], [0.17 * H * es, 0.21 * H * es, 0.015 * H * es], w, (_a, f, p) => mixC(coatAt(p, 0.4, 'ear', f), pal.skin, 0.25), 8, 4);
+      const centre = at(hb, 0.02 * H, 0.4 * cH, side * 0.9 * cW).addScaledVector(e1, -0.15 * H * es).addScaledVector(ay, -0.12 * H * es).addScaledVector(out, 0.06 * H * es);
+      ellipsoid(s, centre, [e1, ay, out], [0.21 * H * es, 0.25 * H * es, 0.015 * H * es], w, (_a, f, p) => mixC(coatAt(p, 0.4, 'ear', f), pal.skin, 0.25), 14, 4);
     }
     // the lower lip under the trunk base (its own 'mouth' part)
     s.begin('mouth', 'lower lip');
