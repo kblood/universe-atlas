@@ -12,7 +12,9 @@ const ROOT=new URL('../',import.meta.url);
 const SRC=new URL('src/',ROOT).href;
 const {galaxies,refByAddress,sector,system}=await import(SRC+'catalog.ts');
 const {terrainSampler}=await import(SRC+'terrain.ts');
-const {biomeClassifier}=await import(SRC+'surface-biomes.ts');
+// The 'legacy' column is the frozen surface-biomes-1 classifier, not the live
+// (surface-biomes-2-climate) one, which already reads this climate.
+const {legacyClassifier:biomeClassifier}=await import(new URL('tests/helpers/surface-biomes-1-legacy.mjs',ROOT).href);
 const {spinStateFor}=await import(SRC+'stellar-evolution.ts');
 const SC=await import(SRC+'surface-climate.ts');
 const outArg=process.argv[2];

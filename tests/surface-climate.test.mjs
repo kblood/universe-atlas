@@ -156,7 +156,9 @@ test('legacyMoisture is bit-identical to the classifier; temperateHabitat equals
     }
   }
   const renderer=readFileSync(new URL('../src/planet-renderer.ts',import.meta.url),'utf8');
-  assert.ok(renderer.includes("this.body.water>0&&this.body.temperatureK>=250&&this.body.temperatureK<=325&&this.body.type!=='Ice world'&&this.body.type!=='Volcanic world'"),'renderer gate moved; re-check parity');
+  // W1-D moved the inline renderer gate to temperateHabitat(this.body); the value
+  // parity of that function with the old inline gate is asserted just below.
+  assert.ok(renderer.includes("groundHabitat={value:temperateHabitat(this.body)?1:0}"),'renderer gate moved; re-check parity');
   const gate=b=>b.water>0&&b.temperatureK>=250&&b.temperatureK<=325&&b.type!=='Ice world'&&b.type!=='Volcanic world';
   assert.equal(firstSystems.length,2000);
   for(const b of allBodies)assert.equal(temperateHabitat(b),gate(b),b.id);

@@ -241,6 +241,15 @@ test('model versions record the withdrawal and old bookmarks explain it',()=>{
   const notice=compatibilityNoticeFromUrl(old);
   assert.match(notice,/older surface, terrain model versions/);
   assert.ok(notice.includes(INLAND_RIVERS_UNAVAILABLE),'old surface/terrain bookmark explains the withdrawal');
+  const preTerrain=new URLSearchParams(current);
+  preTerrain.set('wv',encodeVersions({...CURRENT_VERSIONS,terrain:'terrain-1.5.0'}));
+  assert.ok(compatibilityNoticeFromUrl(preTerrain).includes(INLAND_RIVERS_UNAVAILABLE),'a pre-1.6.0 terrain bookmark explains the withdrawal');
+  // terrain-1.6.0 had already withdrawn rivers; its only difference is the 1.7.0 climate colour.
+  const postWithdrawal=new URLSearchParams(current);
+  postWithdrawal.set('wv',encodeVersions({...CURRENT_VERSIONS,terrain:'terrain-1.6.0'}));
+  const postNotice=compatibilityNoticeFromUrl(postWithdrawal);
+  assert.match(postNotice,/older terrain model versions/);
+  assert.ok(!postNotice.includes(INLAND_RIVERS_UNAVAILABLE),'a terrain-1.6.0 bookmark never showed rivers');
 });
 
 test('legacy ?river= URLs get a concise unavailable notice and open the ordinary body view',()=>{

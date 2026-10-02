@@ -12,7 +12,9 @@ import {galaxies,refByAddress,system} from '../src/catalog.ts';
 import {setArchivedInlandRiversForTesting} from '../src/inland-rivers.ts';
 
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
-const address={face:2,n:Math.ceil(2*body.radiusM/18),x:42120,y:62028};
+// surface-biomes-2-climate turned the old face:2 patch to snow (no slope-rejected
+// trees left); this face:4 patch has 35 eligible cells and 30 slope-rejected trees.
+const address={face:4,n:Math.ceil(2*body.radiusM/18),x:25214,y:46241};
 function complete(census,a){let result=census.start(a);while(!result)result=census.step(8);return result;}
 
 test('interval boundaries preserve strict ocean comparisons exactly',()=>{

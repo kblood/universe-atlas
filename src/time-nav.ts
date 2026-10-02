@@ -290,6 +290,11 @@ export function compatibilityNoticeFromUrl(params:URLSearchParams):string|null {
   if(!params.has('river'))return model;
   return model?`${INLAND_RIVERS_UNAVAILABLE_NOTICE} ${model}`:INLAND_RIVERS_UNAVAILABLE_NOTICE;
 }
+/** True for a terrain version older than terrain-1.6.0 (or one this build cannot parse). */
+function terrainPredatesRiverWithdrawal(version:string):boolean {
+  const m=/^terrain-(\d+)\.(\d+)\./.exec(version);
+  return !m||Number(m[1])<1||(Number(m[1])===1&&Number(m[2])<6);
+}
 function modelCompatibilityNotice(params:URLSearchParams,explainRivers:boolean):string|null {
   const oldBundle=params.get('wv');
   if(!oldBundle)return null;
@@ -297,8 +302,10 @@ function modelCompatibilityNotice(params:URLSearchParams,explainRivers:boolean):
   if(!decoded)return 'This bookmark has an unrecognized world-version record. Its scenery may differ from the saved view.';
   const differences=(Object.keys(CURRENT_VERSIONS) as (keyof WorldVersions)[])
     .filter(key=>decoded[key]!==CURRENT_VERSIONS[key]);
-  // terrain-1.6.0/atlas-surface-7 withdrew inland rivers and their lakes.
-  const riverNote=explainRivers&&(differences.includes('terrain')||differences.includes('surface'))?` ${INLAND_RIVERS_UNAVAILABLE}`:'';
+  // terrain-1.6.0/atlas-surface-7 withdrew inland rivers and their lakes. Only a
+  // bookmark from before that withdrawal gets the river sentence; a later terrain
+  // bump (e.g. terrain-1.6.0 -> 1.7.0 climate colour) never showed rivers.
+  const riverNote=explainRivers&&(differences.includes('surface')||(differences.includes('terrain')&&terrainPredatesRiverWithdrawal(decoded.terrain)))?` ${INLAND_RIVERS_UNAVAILABLE}`:'';
   if(differences.length)return `This bookmark uses older ${differences.join(', ')} model versions.${riverNote} Its world may look different.`;
   if(params.get('mv')!==MODEL_MANIFEST_ID)return 'This bookmark predates the current combined model. Planet and life details may differ.';
   if(params.get('bv')!==BUILD_VERSION)return 'This bookmark was viewed with a different Atlas build. Presentation may differ.';

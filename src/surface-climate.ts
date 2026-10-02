@@ -230,13 +230,16 @@ const forcingCache=new Map<string,ClimateForcing>();
 /**
  * The climate forcing of a catalogue body, cached (FIFO, at most 64 bodies;
  * eviction never changes values because the forcing is a pure function of the
- * key). opts.anchorTempK replaces body.temperatureK (e.g. a dated or
+ * key, which holds every body field the forcing reads). opts.anchorTempK replaces body.temperatureK (e.g. a dated or
  * luminosity-corrected temperature later); opts.lapseKPerM overrides the
  * gravity-derived lapse rate for calibration studies only.
  */
 export function climateForcingFor(body:Body,opts?:{anchorTempK?:number;lapseKPerM?:number}):ClimateForcing {
   const anchorTempK=opts?.anchorTempK??body.temperatureK;
-  const key=body.seed+'|'+anchorTempK+(opts?.lapseKPerM===undefined?'':'|lapse='+opts.lapseKPerM);
+  // Every body field the forcing reads is in the key (water/type feed frozen and
+  // habitat, mass/radius feed gravity), so a derived body that shares a seed and
+  // temperature with a catalogue body never reads that body's forcing.
+  const key=[body.seed,anchorTempK,body.water,body.type,body.massKg,body.radiusM].join('|')+(opts?.lapseKPerM===undefined?'':'|lapse='+opts.lapseKPerM);
   const hit=forcingCache.get(key);
   if(hit)return hit;
   const g=surfaceGravityMS2(body);
