@@ -150,3 +150,20 @@ test('an oversize recipe (1201 characters) still fails visibly instead of trunca
   assert.match(decodeComposerRecipe(state.recipe).error, /longer than 1200/);
   assert.equal(parseCreatureLabState(`?mode=composer&recipe=${text}yyyy`).recipe.length, 1201);
 });
+
+test('preset identity is species-only; herd recipes are consecutive individuals with young every fourth', async () => {
+  const {composerPresetOf, composerHerdRecipes, herdSeed} = await import('../src/creature-lab-composer.ts');
+  const giraffe = composerPreset('giraffe');
+  for (const change of [{individualSeed: 17}, {sex: 'female'}, {sex: 'male'}, {maturity: .4}, {condition: .5}, {individualSeed: 9999, maturity: .2}])
+    assert.equal(composerPresetOf({...giraffe, ...change}), 'giraffe', JSON.stringify(change));
+  assert.equal(composerPresetOf({...giraffe, neckLength: 1.2}), null, 'anatomy edit is a custom combination');
+  assert.equal(composerPresetOf({...giraffe, pattern: 'spots'}), null, 'coat is part of the species');
+  const herd = composerHerdRecipes({...giraffe, individualSeed: 0}, 12);
+  assert.deepEqual(herd.map(r => r.individualSeed), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  assert.deepEqual(herd.map(r => r.maturity), [1, 1, 1, .3, 1, 1, 1, .4, 1, 1, 1, .5]);
+  assert.ok(herd.every(r => r.sex === 'auto' && composerSpeciesEqual(r, giraffe)));
+  assert.deepEqual(composerHerdRecipes({...giraffe, individualSeed: 9998}, 6).map(r => r.individualSeed), [9998, 9999, 1, 2, 3, 4], 'wraps 9999 -> 1');
+  assert.equal(herdSeed(40, 2), 42);
+  assert.deepEqual(composerHerdRecipes({...giraffe, individualSeed: 5, sex: 'male'}, 1), [{...giraffe, individualSeed: 5, sex: 'male'}], 'one animal is the recipe itself');
+  assert.equal(new Set(composerHerdRecipes(giraffe, 9).map(r => encodeComposerRecipe(r))).size, 9);
+});
