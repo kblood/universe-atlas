@@ -17,9 +17,11 @@
 // Each root decodes the text with its own decodeComposerRecipe and builds exactly what createComposerCreature builds
 // (normalize -> deriveComposerIndividual -> buildComposerGraph -> buildComposerSkin), without a renderer.
 // Per skin part (key `part|label`, numbered when repeated) it hashes, rebased to the part's own vertex range:
-// topology (indices minus the first vertex), positions, colours and skin weights (skinIndex + skinWeight), plus
+// topology (indices minus the first vertex), positions, colours and skin weights (influencing bone NAME + skinWeight), plus
 // regions and any other per-vertex Float32/Uint8 channel present in BOTH roots. A channel present in only one root
-// is listed under channelsOnlyIn and does not count as a part change. Per bone (keyed by name) it hashes the rest
+// is listed under channelsOnlyIn and does not count as a part change. Weights are hashed by bone NAME, so renumbered
+// bones (e.g. a removed trunk chain) do not flag unchanged limbs. A removed+added pair of the same part kind with
+// identical hashes is a pure relabel: listed under relabelledParts, not counted as changed. Per bone (keyed by name) it hashes the rest
 // state: parent, part, side, restPosition, restQuaternion, offset, restLocal, length and the start/end sections.
 // Prints {changedParts:{part:count}, changedBones, recipesChanged, unchangedRecipes, ...} as JSON.
 import {createHash} from 'node:crypto';
@@ -121,7 +123,15 @@ function extraChannels(skin) {
   return out;
 }
 
-function partHashes(skin, channels) {
+/** Bone identity per skin influence: the bone's NAME (FNV-1a), 0 for an unused influence. Removing or inserting
+ * bones elsewhere renumbers skinIndex; hashing names keeps a limb whose weights are unchanged equal. */
+function boneNameIds(graph, skin) {
+  const fnv = t => { let h = 0x811c9dc5; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h || 1; };
+  const ids = graph.bones.map(b => fnv(b.name)), out = new Uint32Array(skin.skinIndex.length);
+  for (let i = 0; i < out.length; i++) out[i] = skin.skinWeight[i] === 0 ? 0 : ids[skin.skinIndex[i]] ?? 0xffffffff;
+  return out;
+}
+function partHashes(skin, channels, nameIds) {
   const idx = skin.index, seen = new Map(), out = new Map();
   for (const p of skin.parts) {
     const base = `${p.part}|${p.label}`, n = (seen.get(base) ?? 0) + 1; seen.set(base, n);
@@ -134,7 +144,7 @@ function partHashes(skin, channels) {
     const span = (arr, k) => arr.subarray(lo * k, (hi + 1) * k);
     const rec = {part: p.part, label: p.label, triangles: p.triangles, vertices: hi - lo + 1,
       topology: sha(local), position: sha(span(skin.positions, 3)), colour: sha(span(skin.colors, 3)),
-      weight: sha(span(skin.skinIndex, 4), span(skin.skinWeight, 4)), region: skin.regions ? sha(span(skin.regions, 1)) : null, extra: {}};
+      weight: sha(span(nameIds, 4), span(skin.skinWeight, 4)), region: skin.regions ? sha(span(skin.regions, 1)) : null, extra: {}};
     for (const [ch, k] of Object.entries(channels)) rec.extra[ch] = sha(span(skin[ch], k));
     out.set(key, rec);
   }
@@ -160,7 +170,7 @@ export async function partDiff({base, head, texts}) {
   const B = await loadRoot(base), Hd = await loadRoot(head);
   const list = collectTexts(texts, B, Hd);
   const summary = {schema: 'composer-part-diff-1', base: B.dir, head: Hd.dir, texts, recipes: list.length,
-    changedParts: {}, changedBones: 0, recipesChanged: 0, unchangedRecipes: 0, errors: [], channelsOnlyIn: {}, comparedExtraChannels: [], changed: []};
+    changedParts: {}, changedBones: 0, recipesChanged: 0, unchangedRecipes: 0, errors: [], relabelledParts: [], channelsOnlyIn: {}, comparedExtraChannels: [], changed: []};
   for (const {name, text} of list) {
     const a = build(B, text), b = build(Hd, text);
     if (a.error || b.error) { summary.errors.push({name, base: a.error ?? null, head: b.error ?? null}); continue; }
@@ -170,7 +180,7 @@ export async function partDiff({base, head, texts}) {
       else (summary.channelsOnlyIn[k] ??= {base: 0, head: 0})[ca[k] ? 'base' : 'head']++;
     }
     for (const k of Object.keys(both)) if (!summary.comparedExtraChannels.includes(k)) summary.comparedExtraChannels.push(k);
-    const pa = partHashes(a.skin, both), pb = partHashes(b.skin, both);
+    const pa = partHashes(a.skin, both, boneNameIds(a.graph, a.skin)), pb = partHashes(b.skin, both, boneNameIds(b.graph, b.skin));
     const parts = [];
     for (const key of new Set([...pa.keys(), ...pb.keys()])) {
       const x = pa.get(key), y = pb.get(key);
@@ -178,12 +188,21 @@ export async function partDiff({base, head, texts}) {
       const fields = FIELDS.filter(f => x[f] !== y[f]).concat(Object.keys(both).filter(ch => x.extra[ch] !== y.extra[ch]));
       if (fields.length) parts.push({key, part: x.part, change: 'changed', fields, triangles: [x.triangles, y.triangles]});
     }
+    // labels are not geometry: a removed and an added part of the same kind with identical hashes is a relabel
+    const sig = r => [r.part, ...FIELDS.map(k => r[k]), ...Object.keys(both).map(ch => r.extra[ch])].join('|');
+    const relabelled = [];
+    for (const rem of parts.filter(p => p.change === 'removed')) {
+      const x = pa.get(rem.key), add = parts.find(p => p.change === 'added' && !p.paired && sig(pb.get(p.key)) === sig(x));
+      if (add) { add.paired = rem.paired = true; relabelled.push({from: rem.key, to: add.key}); }
+    }
+    for (let i = parts.length - 1; i >= 0; i--) if (parts[i].paired) parts.splice(i, 1);
     const ba = boneHashes(a.graph), bb = boneHashes(b.graph), bones = [];
     for (const key of new Set([...ba.keys(), ...bb.keys()])) {
       const x = ba.get(key), y = bb.get(key);
       if (x !== y) bones.push({bone: key, change: !x ? 'added' : !y ? 'removed' : 'changed'});
     }
     const orderChanged = [...ba.keys()].join() !== [...bb.keys()].join();
+    if (relabelled.length) summary.relabelledParts.push({name, relabelled});
     if (parts.length || bones.length || orderChanged) {
       summary.recipesChanged++;
       for (const p of parts) summary.changedParts[p.part] = (summary.changedParts[p.part] ?? 0) + 1;
