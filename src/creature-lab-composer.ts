@@ -118,10 +118,12 @@ export function composerHerdRecipes(species:ComposerRecipe,n:number):ComposerRec
 }
 /** Herd grid: three columns along the body axis (+X), rows across it; odd rows offset by half a column so
  * animals behind show between those in front. Spacing is at least 1.6 body lengths and never closer
- * than the largest motion envelope (necks and tails overrun 1.6 body lengths on long animals). */
+ * than the largest motion envelope (necks and tails overrun 1.6 body lengths on long animals). A small fixed
+ * per-slot offset (at most 5% of a column, 15% of a row) breaks the parade-ground look without overlaps. */
 function herdSlots(n:number,length:number,size:THREE.Vector3){
  const sx=Math.max(1.6*length,size.x*1.12),sz=Math.max(1.6*length,size.z*1.5),rows=Math.ceil(n/3);
- return Array.from({length:n},(_,i)=>{const col=i%3,row=Math.floor(i/3);return new THREE.Vector3((col-1)*sx+(row%2?sx*.5:0)-sx*.25,0,(row-(rows-1)/2)*sz);});
+ const jitter=(i:number,k:number)=>{const h=Math.sin((i+1)*12.9898+k*78.233)*43758.5453;return 2*(h-Math.floor(h))-1;};
+ return Array.from({length:n},(_,i)=>{const col=i%3,row=Math.floor(i/3);return new THREE.Vector3((col-1)*sx+(row%2?sx*.5:0)-sx*.25+(n>1?.05*sx*jitter(i,0):0),0,(row-(rows-1)/2)*sz+(n>1?.15*sz*jitter(i,1):0));});
 }
 
 function makeTrack(envelope:THREE.Box3):Track{

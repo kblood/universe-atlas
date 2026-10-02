@@ -10,7 +10,7 @@ import {browserArgs} from './browser-options.mjs';
 import {withGpuLock} from './helpers/gpu-lock.mjs';
 import {COMPOSER_CHOICES, COMPOSER_PRESET_IDS, COMPOSER_RANGES, COMPOSER_RECIPE_KEYS, COMPOSER_PRESETS} from '../src/fauna-composer-recipe.ts';
 
-const base = new URL('.', process.env.ATLAS_URL || 'http://127.0.0.1:5193/');
+const base = new URL('.', process.env.ATLAS_URL || 'http://127.0.0.1:5205/');
 const output = process.env.ATLAS_RESULTS || 'test-results/fauna-opus-modular-001/browser';
 await mkdir(output, {recursive: true});
 const lab = query => new URL(`creature-lab.html${query}`, base).href;
@@ -22,7 +22,7 @@ const expectedLegs = r => r.layout === 'limbless' ? 0 : r.layout === 'biped' ? 2
 async function shot(page, name) { const path = join(output, `${name}.png`); await page.screenshot({path}); report.screenshots.push(path); }
 const composer = page => page.evaluate(() => window.__creatureLab.composer);
 async function settle(page) {
-  await page.waitForFunction(() => { const c = window.__creatureLab; return c.ready && c.mode === 'composer' && c.composer?.actors.length > 0; }, null, {timeout: 30000});
+  await page.waitForFunction(() => { const c = window.__creatureLab; return c.ready && c.mode === 'composer' && c.composer?.actors.length > 0 && !c.composer.building; }, null, {timeout: 60000});
 }
 async function pause(page) { if ((await composer(page)).playing) await page.click('#composer-play'); }
 async function setRange(page, key, value) {
@@ -30,9 +30,11 @@ async function setRange(page, key, value) {
   await settle(page);
 }
 async function setPart(page, key, value) {
+  if (key === 'marks') { await page.evaluate(value => { for (const box of document.querySelectorAll('#composer-marks input[data-mark]')) { const bit = {socks: 1, mask: 2, blaze: 4, 'tail-tip': 8, 'tail-rings': 16, 'ear-tips': 32, 'rump-patch': 64, 'juvenile-spots': 128}[box.dataset.mark]; if (box.checked !== !!(value & bit)) box.click(); } }, value); await settle(page); return; }
   if (key in COMPOSER_CHOICES) { await page.selectOption(`#composer-${key}`, String(value)); await settle(page); } else await setRange(page, key, value);
 }
 async function seek(page, time) { await page.fill('#composer-time', String(time)); await page.waitForFunction(t => Math.abs(window.__creatureLab.time - t) < 1e-9, time); }
+const COAT_KEYS = ['palette', 'colorSeed', 'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade'], TYPE_SPECIMEN_NOOP = ['variability', 'dimorphism'];
 const digestPose = c => c.actors.map(a => a.pose.positions.map(v => v.toFixed(9)).join(',')).join('|');
 // Neck and tail are lofted into the continuous body tube (skin part 'torso'), so they are checked by their bone chains.
 const partSet = a => { const s = a.details.structure, out = new Set(a.details.parts.filter(p => p.triangles > 0).map(p => p.part));
@@ -82,15 +84,17 @@ try {
       check('worm has no legs', !byId.worm.parts.includes('leg') && !byId.worm.parts.includes('foot'));
 
       // 3. Each independent part once: intended field changes, unrelated fields preserved.
-      report.steps.parts = [];
+      report.steps.parts = []; const coatColour = {};
       await page.selectOption('#composer-preset', 'giraffe'); await settle(page);
       for (const key of COMPOSER_RECIPE_KEYS) {
         const before = (await composer(page)).actors[0];
-        const disabled = await page.isDisabled(`#composer-${key}`);
+        const disabled = key === 'marks' ? await page.isDisabled('#composer-mark-socks') : await page.isDisabled(`#composer-${key}`);
         if (disabled) { report.steps.parts.push({key, skipped: await page.textContent(`#composer-${key}-why`)}); continue; }
         let value;
-        if (key in COMPOSER_CHOICES) value = COMPOSER_CHOICES[key].find(v => v !== before.recipe[key] && !(key === 'layout' && v === 'limbless'));
-        else { const [min, max] = COMPOSER_RANGES[key]; value = key === 'legPairs' ? before.recipe[key] : Number((min + (max - min) * (before.recipe[key] > (min + max) / 2 ? 0.3 : 0.7)).toFixed(key === 'colorSeed' ? 0 : 2)); }
+        if (key === 'marks') value = before.recipe.marks ^ 1;
+        else if (key === 'sex') value = before.individual.sex === 'female' ? 'male' : 'female';
+        else if (key in COMPOSER_CHOICES) value = COMPOSER_CHOICES[key].find(v => v !== before.recipe[key] && !(key === 'layout' && v === 'limbless') && !(key === 'pattern' && v === 'plain'));
+        else { const [min, max] = COMPOSER_RANGES[key]; value = key === 'legPairs' ? before.recipe[key] : Number((min + (max - min) * (before.recipe[key] > (min + max) / 2 ? 0.3 : 0.7)).toFixed(COMPOSER_RANGES[key][2] >= 1 ? 0 : 2)); }
         await setPart(page, key, value);
         const after = (await composer(page)).actors[0];
         const changed = COMPOSER_RECIPE_KEYS.filter(k => after.recipe[k] !== before.recipe[k]);
@@ -98,9 +102,20 @@ try {
         check(`part ${key} applied`, after.recipe[key] === value, {value, got: after.recipe[key]});
         check(`part ${key} preserves unrelated fields`, changed.every(k => allowed.includes(k)), changed);
         const geometryChanged = after.skinDigest !== before.skinDigest || after.details.bones !== before.details.bones || digestPose({actors: [after]}) !== digestPose({actors: [before]});
-        if (!['palette', 'colorSeed', 'hands', 'armLength'].includes(key)) check(`part ${key} changes structure or shape`, geometryChanged);
+        // Coat keys change colour only; variability and dimorphism have no effect on the type specimen (individual 0) and say so.
+        if (COAT_KEYS.includes(key)) { coatColour[key] = after.colorDigest !== before.colorDigest; check(`part ${key} leaves the geometry unchanged`, after.skinDigest === before.skinDigest); }
+        else if (TYPE_SPECIMEN_NOOP.includes(key)) check(`part ${key} explains why the type specimen is unchanged`, /type specimen/i.test(await page.textContent(`#composer-${key}-why`)) && after.skinDigest === before.skinDigest);
+        else if (!['hands', 'armLength'].includes(key)) check(`part ${key} changes structure or shape`, geometryChanged);
         report.steps.parts.push({key, value, changed, vertices: [before.details.vertices, after.details.vertices]});
       }
+
+      // Palette and colour seed always repaint. The coat keys (pattern, marks, scale, contrast, countershade) repaint once the
+      // coat painter (round package WP3) is merged; before that none of them does. Either all applicable ones repaint or none.
+      report.steps.coatColour = coatColour;
+      check('palette and colour seed repaint the skin', coatColour.palette && coatColour.colorSeed, coatColour);
+      const coatPainted = ['pattern', 'marks', 'patternScale', 'patternContrast', 'countershade'].filter(k => k in coatColour);
+      report.steps.coatPainter = coatPainted.some(k => coatColour[k]) ? 'present' : 'not in this build (WP3 coat painter not merged)';
+      if (report.steps.coatPainter === 'present') check('every coat key repaints the skin', coatPainted.every(k => coatColour[k]), coatColour);
 
       // 4. Constraints are visible; inapplicable controls explain why.
       await page.selectOption('#composer-preset', 'worm'); await settle(page);
@@ -149,7 +164,7 @@ try {
       await page.waitForFunction(() => document.getElementById('share-status').textContent.length > 0);
       const shared = await page.evaluate(() => window.__creatureLab.specimenUrl), original = await composer(page);
       report.steps.share = {url: shared};
-      check('share url has composer params', /mode=composer/.test(shared) && /recipe=v1/.test(shared) && !/bodyCondition/.test(shared), shared);
+      check('share url has composer params', /mode=composer/.test(shared) && /recipe=v2/.test(shared) && !/bodyCondition/.test(shared), shared);
       const replay = await context.newPage(); replay.on('pageerror', e => errors.push(`replay: ${e.message}`));
       await replay.goto(shared, {waitUntil: 'networkidle'}); await settle(replay);
       const restored = await composer(replay);
@@ -233,6 +248,101 @@ try {
       check('bounded normalization listed', b.issues.length >= 4 && await bounded.isVisible('#composer-issues') && b.actors[0].recipe.bodyLength === 6, b.issues);
       report.steps.malformed.push({name: 'bounded', issues: b.issues}); await bounded.close();
 
+      // 10b. Coat and Individual controls, generators, herd and lighting.
+      report.steps.wp5 = {};
+      const fresh = await context.newPage(); fresh.on('pageerror', e => errors.push(`wp5: ${e.message}`));
+      await fresh.goto(lab('?mode=composer'), {waitUntil: 'networkidle'}); await settle(fresh); await pause(fresh);
+      check('marks are 8 labelled checkboxes', await fresh.locator('#composer-marks input[type=checkbox]').count() === 8 && /Socks/.test(await fresh.textContent('#composer-marks')) && /Juvenile spots/.test(await fresh.textContent('#composer-marks')));
+      check('maturity slider labelled Age', /^Age\b/.test((await fresh.locator('label:has(#composer-maturity)').innerText()).trim()));
+      check('lighting select visible in composer mode', await fresh.isVisible('#lighting') && (await fresh.inputValue('#lighting')) === 'studio');
+      await fresh.selectOption('#composer-preset', 'giraffe'); await settle(fresh);
+      const g0 = await composer(fresh);
+      await fresh.click('#composer-next-individual'); await settle(fresh);
+      let g1 = await composer(fresh);
+      check('Next individual increments individualSeed', g1.actors[0].recipe.individualSeed === g0.actors[0].recipe.individualSeed + 1, g1.actors[0].recipe.individualSeed);
+      check('individual keeps the preset identity', g1.actors[0].preset === 'giraffe' && (await fresh.inputValue('#composer-preset')) === 'giraffe' && /^Giraffe-like · individual 1/.test(await fresh.textContent('#caption-title')), await fresh.textContent('#caption-title'));
+      check('individual differs from the type specimen', g1.actors[0].skinDigest !== g0.actors[0].skinDigest && g1.actors[0].individual.deltas.length > 0);
+      check('individual deltas listed', /This individual/.test(await fresh.textContent('#composer-constraints')) && (await fresh.locator('#composer-constraints .composer-deltas li').count()) === g1.actors[0].individual.deltas.length);
+      await setRange(fresh, 'maturity', 0.4); await setPart(fresh, 'sex', 'male');
+      g1 = await composer(fresh);
+      check('sex and age keep the preset identity', g1.actors[0].preset === 'giraffe' && /juvenile male/.test(await fresh.textContent('#caption-title')), await fresh.textContent('#caption-title'));
+      await shot(fresh, 'giraffe-individual-1-juvenile-male');
+      await setRange(fresh, 'neckLength', 1.2);
+      check('anatomy edit becomes a custom combination', (await composer(fresh)).actors[0].preset === null && (await fresh.inputValue('#composer-preset')) === 'custom' && /^Custom combination/.test(await fresh.textContent('#caption-title')));
+      await setRange(fresh, 'individualSeed', 9999); await fresh.click('#composer-next-individual'); await settle(fresh);
+      check('Next individual wraps 9999 to 1', (await composer(fresh)).actors[0].recipe.individualSeed === 1);
+      await fresh.selectOption('#composer-preset', 'worm'); await settle(fresh);
+      check('sex disabled without dimorphism', await fresh.isDisabled('#composer-sex') && /no sex differences/i.test(await fresh.textContent('#composer-sex-why')));
+      await fresh.selectOption('#composer-preset', 'bird'); await settle(fresh);
+      check('plain coat disables pattern scale', await fresh.isDisabled('#composer-patternScale') && /plain coat/i.test(await fresh.textContent('#composer-patternScale-why')));
+      await setPart(fresh, 'marks', 128);
+      check('juvenile spots note on an adult', /young animals/i.test(await fresh.textContent('#composer-marks-why')));
+      // Generators: wild hybrid, plausible species, and New seed repeating the last kind.
+      check('wild hybrid button relabelled', (await fresh.textContent('#composer-randomize')).trim() === 'Wild hybrid' && /Random plausible species/.test(await fresh.textContent('#composer-random-species')));
+      await fresh.fill('#composer-seed', 'wp5-plausible-3'); await fresh.click('#composer-random-species'); await settle(fresh);
+      const p1 = await composer(fresh);
+      check('plausible species labelled', /^Plausible /.test(await fresh.textContent('#caption-title')) && p1.generator === 'plausible', await fresh.textContent('#caption-title'));
+      await shot(fresh, 'plausible-species-wp5-plausible-3');
+      await fresh.click('#composer-random-species'); await settle(fresh);
+      check('plausible species is seeded', (await composer(fresh)).actors[0].encoded === p1.actors[0].encoded);
+      await fresh.click('#composer-next-seed'); await settle(fresh);
+      const p2 = await composer(fresh);
+      check('New seed repeats the plausible generator', p2.seed === 'wp5-plausible-4' && p2.generator === 'plausible' && p2.actors[0].encoded !== p1.actors[0].encoded && /^Plausible /.test(await fresh.textContent('#caption-title')), {seed: p2.seed, generator: p2.generator});
+      await fresh.click('#composer-randomize'); await settle(fresh);
+      const w1 = await composer(fresh);
+      check('wild hybrid differs from plausible species', w1.generator === 'wild' && w1.actors[0].encoded !== p2.actors[0].encoded);
+      // Herd: built one animal per frame with a visible status, 12 distinct individuals; comparison disables it.
+      await fresh.selectOption('#composer-preset', 'rhinoceros'); await settle(fresh);
+      const herdStart = Date.now();
+      await fresh.selectOption('#composer-herd', '12');
+      const sawBuilding = await fresh.waitForFunction(() => /Building \d+\/12/.test(document.getElementById('status').textContent), null, {timeout: 5000, polling: 'raf'}).then(() => true, () => false);
+      await settle(fresh);
+      const herdWallMs = Date.now() - herdStart;
+      await fresh.waitForTimeout(300);
+      const herd = await composer(fresh);
+      const seeds = herd.actors.map(a => a.individual.seed), young = herd.actors.filter(a => a.individual.maturity < .75).length;
+      check('herd status shows Building i/N', sawBuilding);
+      check('herd of 12 has 12 distinct individuals', herd.actors.length === 12 && new Set(seeds).size === 12 && new Set(herd.actors.map(a => a.skinDigest)).size === 12, seeds);
+      check('herd has three young', young === 3, young);
+      check('herd within triangle budget', herd.herdStats.triangles <= 480000, herd.herdStats);
+      check('herd status lists totals as desktop preview', /triangles · .* vertices · \d+ draw calls \| desktop preview/.test(await fresh.textContent('#status')), await fresh.textContent('#status'));
+      const herdCalls = await fresh.evaluate(() => window.__creatureLab.renderer.calls);
+      check('herd draw calls within 25', herdCalls <= 25, herdCalls);
+      report.steps.wp5.herd = {species: 'rhinoceros', stats: herd.herdStats, observedWallMs: herdWallMs, seeds, sexes: herd.actors.map(a => a.individual.sex), maturity: herd.actors.map(a => a.individual.maturity), drawCalls: herdCalls, status: await fresh.textContent('#status')};
+      await shot(fresh, 'herd-rhinoceros-12-studio');
+      // Lighting select, shared with the herd.
+      await fresh.selectOption('#lighting', 'planet-noon'); await fresh.waitForTimeout(300);
+      const lit = await fresh.evaluate(() => window.__creatureLab.lighting);
+      check('lighting switches to planet-noon', lit.preset === 'planet-noon' && lit.fillKeyRatio > .2 && lit.fillKeyRatio < .35 && lit.shadows, lit);
+      report.steps.wp5.lighting = lit;
+      await shot(fresh, 'herd-rhinoceros-12-planet-noon');
+      await fresh.click('#share-specimen'); await fresh.waitForFunction(() => document.getElementById('share-status').textContent.length > 0);
+      const herdLink = await fresh.evaluate(() => window.__creatureLab.specimenUrl);
+      check('herd and light are shared', new URL(herdLink).searchParams.get('herd') === '12' && new URL(herdLink).searchParams.get('light') === 'planet-noon', herdLink);
+      const herdReplay = await context.newPage(); herdReplay.on('pageerror', e => errors.push(`herd replay: ${e.message}`));
+      await herdReplay.goto(herdLink, {waitUntil: 'networkidle'}); await settle(herdReplay);
+      const hr = await composer(herdReplay);
+      check('herd replays identically', hr.actors.map(a => a.encoded).join() === herd.actors.map(a => a.encoded).join() && (await herdReplay.evaluate(() => window.__creatureLab.lighting.preset)) === 'planet-noon');
+      await herdReplay.close();
+      await fresh.check('#composer-compare'); await fresh.waitForFunction(() => window.__creatureLab.composer?.actors.length === 2 && !window.__creatureLab.composer.building);
+      check('compare disables the herd', await fresh.isDisabled('#composer-herd') && (await composer(fresh)).herd === 1);
+      await fresh.uncheck('#composer-compare'); await settle(fresh);
+      await fresh.close();
+      // Unavailable herd size: visible notice, one animal.
+      const odd = await context.newPage(); odd.on('pageerror', e => errors.push(`herd7: ${e.message}`));
+      await odd.goto(lab('?mode=composer&herd=7&light=planet-noon'), {waitUntil: 'networkidle'}); await settle(odd);
+      const oddState = await composer(odd);
+      check('herd=7 falls back to 1 with a visible notice', oddState.actors.length === 1 && await odd.isVisible('#composer-issues') && /Herd size "7"/.test(await odd.textContent('#composer-issues')));
+      check('light=planet-noon link applies', (await odd.evaluate(() => window.__creatureLab.lighting.preset)) === 'planet-noon');
+      await odd.close();
+      const skinLight = await context.newPage(); skinLight.on('pageerror', e => errors.push(`skin light: ${e.message}`));
+      await skinLight.goto(lab('?mode=skin&pose=idle&light=disco'), {waitUntil: 'networkidle'}); await skinLight.waitForFunction(() => window.__creatureLab?.ready, null, {timeout: 30000});
+      check('skin mode unknown light shows a notice and uses studio', await skinLight.isVisible('#input-notices') && (await skinLight.evaluate(() => window.__creatureLab.lighting.preset)) === 'studio');
+      await skinLight.selectOption('#lighting', 'planet-evening'); await skinLight.waitForTimeout(300);
+      check('skin mode offers lighting', (await skinLight.evaluate(() => window.__creatureLab.lighting.preset)) === 'planet-evening' && /light=planet-evening/.test(await skinLight.evaluate(() => window.__creatureLab.specimenUrl)));
+      await shot(skinLight, 'skin-planet-evening');
+      await skinLight.close();
+
       // 11. Mobile layout.
       await page.setViewportSize({width: 390, height: 844}); await page.waitForTimeout(300);
       const mobile = await page.evaluate(() => { const r = document.querySelector('#viewport canvas').getBoundingClientRect(); return {canvas: [r.width, r.height], panel: document.getElementById('composer-preset').getBoundingClientRect().width}; });
@@ -245,8 +355,8 @@ try {
         const p = await context.newPage(); p.on('pageerror', e => errors.push(`${query}: ${e.message}`));
         await p.goto(lab(query), {waitUntil: 'networkidle'});
         await p.waitForFunction(() => window.__creatureLab?.ready, null, {timeout: 30000});
-        const legacy = await p.evaluate(() => ({mode: window.__creatureLab.mode, url: window.__creatureLab.specimenUrl, composer: window.__creatureLab.composer, panel: !document.getElementById('composer-controls').hidden}));
-        check(`legacy ${query} unaffected`, legacy.composer === null && !legacy.panel && !/recipe=|composerSeed=|motion=/.test(legacy.url), legacy);
+        const legacy = await p.evaluate(() => ({mode: window.__creatureLab.mode, url: window.__creatureLab.specimenUrl, composer: window.__creatureLab.composer, panel: !document.getElementById('composer-controls').hidden, lighting: window.__creatureLab.lighting.preset}));
+        check(`legacy ${query} unaffected`, legacy.composer === null && !legacy.panel && !/recipe=|composerSeed=|motion=|herd=/.test(legacy.url) && legacy.lighting === 'studio' && (legacy.mode === 'skin' || !/light=/.test(legacy.url)), legacy);
         await p.close();
       }
       check('no page or console errors', errors.length === 0, errors);
