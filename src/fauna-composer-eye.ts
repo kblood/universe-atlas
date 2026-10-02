@@ -42,7 +42,10 @@ export const EYE_PATCH = Object.freeze({
   clip: [0.8, 0.84, 0.9, 0.98] as readonly number[],
   /** eye centre below the skull surface; every ring's lift above the skin under it: the eyeball (+ the cornea dome toward
    * the centre), the lid margin, the outer lid (at most outerLidDrop below the margin) and the orbit */
-  recess: 0.2, eyeLift: 0.06, corneaLift: 0.30, lidLift: 0.12, outerLidLift: 0.08, outerLidDrop: 0.06, orbitLift: 0.01,
+  recess: 0.2, eyeLift: 0.03, lidLift: 0.10, outerLidLift: 0.08, outerLidDrop: 0.06, orbitLift: 0.01,
+  /** the exposed eyeball is a sphere cap of this radius cut at the limbus (height ~0.34 er, rim slope ~41 deg), so a
+   * light within ~80 deg of the view finds a mirror normal on it: the corneal highlight */
+  corneaRadius: 1.4,
   /** a rim vertex looks for the skull surface within this distance of the hit plane */
   rimSearch: 1.0,
   /** a rim vertex whose line misses takes the depth of the closest skull point within this distance */
@@ -218,7 +221,8 @@ export function buildEyePatch(o: EyePatchOptions): EyePatch {
   let rimFallbacks = 0;
   const at = (x: number, y: number, z: number): Vec3 => [c0[0] + (a[0] * x + b[0] * y + g[0] * z) * er, c0[1] + (a[1] * x + b[1] * y + g[1] * z) * er, c0[2] + (a[2] * x + b[2] * y + g[2] * z) * er];
   const push = (p: Vec3, role: EyeRole, gl: number, hit: RayHit | null = null) => { positions.push(p[0], p[1], p[2]); roles.push(EYE_ROLE[role]); gloss.push(gl); surface.push(hit); return positions.length / 3 - 1; };
-  const lift = (x: number, y: number) => { const rho = Math.min(1, Math.hypot(x, y) / E.limbus); return E.corneaLift * (1 - rho * rho); };
+  const capR2 = E.corneaRadius * E.corneaRadius, capBase = Math.sqrt(capR2 - E.limbus * E.limbus);
+  const lift = (x: number, y: number) => { const rho = Math.min(E.limbus, Math.hypot(x, y)); return Math.sqrt(capR2 - rho * rho) - capBase; };
   /** the almond's vertical extent at in-plane x (inner rings are clipped to a fraction of it) */
   const lidY = (x: number, upper: boolean) => { const c = Math.max(-1, Math.min(1, x / E.lid.w)), s = Math.sqrt(1 - c * c); return (upper ? E.lid.above : E.lid.below) * s * (1 - 0.25 * c * c); };
   const clipY = (x: number, y: number, k: number) => { const lim = k * lidY(x, y >= 0); return Math.sign(y) * Math.min(Math.abs(y), lim); };
@@ -237,7 +241,9 @@ export function buildEyePatch(o: EyePatchOptions): EyePatch {
     return [E.recess, null];
   };
   // centre and inner rings (pupil edge, inner iris, iris, limbus): one smooth cornea dome, raised so that it clears the
-  // skin under every one of its vertices by eyeLift (a per-vertex seat would crumple the dome over a skull crease)
+  // skin under its pupil and iris by eyeLift (a per-vertex seat would crumple the dome over a skull crease). The limbus
+  // does not lift the dome: where the skull slopes across the eye it may dip under the skin, which reads as the lid
+  // overlapping the eyeball instead of the whole eye standing proud of a sloped face.
   const slit = o.type === 'vertical-slit';
   const inner: [EyeRole, (t: number) => [number, number], number][] = [
     ['pupil', t => pupilPoint(o.type, t), E.clip[0]!],
@@ -247,7 +253,7 @@ export function buildEyePatch(o: EyePatchOptions): EyePatch {
   ];
   const dome: {x: number; y: number; role: EyeRole; hit: RayHit | null}[] = [];
   let base = -Infinity;
-  const seat = (x: number, y: number, role: EyeRole) => { const [sz, hit] = surfaceZ(x, y); base = Math.max(base, sz - lift(x, y)); dome.push({x, y, role, hit}); };
+  const seat = (x: number, y: number, role: EyeRole) => { const [sz, hit] = surfaceZ(x, y); if (role !== 'limbus') base = Math.max(base, sz - lift(x, y)); dome.push({x, y, role, hit}); };
   seat(0, 0, 'pupil');
   for (const [role, shape, k] of inner) for (let i = 0; i < N; i++) { const [x, y0] = shape(th(i)), y = clipY(x, y0, k); seat(x, y, role); }
   dome.forEach(({x, y, role, hit}, i) => { if (i % N === 1 || i === 0) rings.push(positions.length / 3); push(at(x, y, base + E.eyeLift + lift(x, y)), role, EYE_GLOSS.cornea, hit); });

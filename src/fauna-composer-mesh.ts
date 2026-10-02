@@ -1081,10 +1081,14 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
     tipX = 0.36 * H + len; tipY = -0.42 * cH; tipH = 0.34 * cH;
   } else if (skull === 'blunt') {
     const xt = 0.6 * H + sn * 0.3, base = hc.col(xt, 0.75 * cW, 0.75 * cH);
+    const capFrom = s.ni / 3;
     loft(s, [first(), station(xt, 0.75 * cW, 0.75 * cH, 0, (a, p) => mixC(base(a, p), pal.skin, 0.5))], seg, 0.2, 0.75);
-    // the frontal mouth disc (bare skin, not an eye)
+    // the frontal mouth disc (bare skin, not an eye), seated on the cap's front: it used to float 0.72 cW ahead of the
+    // cap station, beyond the rounded cap end; now its centre sits 0.01 H inside the cap surface found along the axis
+    const capHit = raycastFirstHit(headLocalTriangles(s, hb, capFrom, s.ni / 3), [xt, 0, 0], [1, 0, 0]);
+    const discX = capHit ? capHit.point[0] - 0.01 * H : xt + 0.72 * cW;
     s.region = REGION.muzzle;
-    ellipsoid(s, at(hb, 0.6 * H + sn * 0.3 + 0.72 * cW, 0, 0), [ax, ay, az], [0.03 * H, 0.32 * cH, 0.32 * cW], w, () => mouthDisc, 10, 3);
+    ellipsoid(s, at(hb, discX, 0, 0), [ax, ay, az], [0.03 * H, 0.32 * cH, 0.32 * cW], w, () => mouthDisc, 10, 3);
     tipX = 0.6 * H + sn * 0.3 + 0.7 * cW; tipY = 0; tipH = 0.5 * cH;
   } else {
     // mandibles: arthropod head capsule with antennae and pincer mouthparts
@@ -1278,6 +1282,12 @@ function buildEyes(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
     }
   }
   s.end();
+}
+/** Triangles [from, to) of the skin, as a head-local soup (9 numbers each, the head bone's rest frame). */
+function headLocalTriangles(s: Skin, hb: ComposerBone, from: number, to: number): Float64Array {
+  const qInv = new THREE.Quaternion(...hb.restQuaternion).invert(), P0 = V(...hb.restPosition), tmp = V(), out = new Float64Array((to - from) * 9);
+  for (let i = from * 3, o = 0; i < to * 3; i++, o += 3) { const v = s.ix[i]!; tmp.set(s.p[v * 3]!, s.p[v * 3 + 1]!, s.p[v * 3 + 2]!).sub(P0).applyQuaternion(qInv); out[o] = tmp.x; out[o + 1] = tmp.y; out[o + 2] = tmp.z; }
+  return out;
 }
 /** Every ring vertex of a lidded eye lies within this many er of its centre (orbit 1.55 er in plane, the rim search
  * and the closest-point search at most 2.5 er deep), so the skull triangles beyond it never affect the patch. */
