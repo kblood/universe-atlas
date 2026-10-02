@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { buildComposerGraph, poseComposer, COMPOSER_MOTIONS, COMPOSER_BUDGET } from '../src/fauna-composer-rig.ts';
 import { COMPOSER_PRESETS, COMPOSER_LAYOUTS, normalizeComposerRecipe, randomComposerRecipe } from '../src/fauna-composer-recipe.ts';
 import { createComposerCreature } from '../src/fauna-composer.ts';
+import { deriveComposerIndividual } from '../src/fauna-composer-individual.ts';
 
 // Independent checks use returned joint transforms and authored section shapes,
 // never pose.diagnostics as the acceptance measurement. Geometry/surface QA is
@@ -20,7 +21,16 @@ for (const layout of COMPOSER_LAYOUTS) for (const long of [false, true]) {
     posture: 1, neckLength: 1.5, arms: 'grasping', wings: 'membrane', trunk: 'trunk',
   }).recipe });
 }
+// Individuals (graph-2): every preset at seeds 1, 7 and 42, plus a juvenile (maturity 0.3), built from the effective
+// recipe exactly as createComposerCreature builds them. Seed 0 is the preset itself (above).
+for (const [id, recipe] of Object.entries(COMPOSER_PRESETS)) {
+  for (const seed of [1, 7, 42]) cases.push({ id: `${id}-seed-${seed}`, recipe: deriveComposerIndividual({...recipe, individualSeed: seed}).recipe });
+  cases.push({ id: `${id}-juvenile`, recipe: deriveComposerIndividual({...recipe, individualSeed: 7, maturity: 0.3}).recipe });
+}
 const graphs = cases.map(c => ({ ...c, graph: buildComposerGraph(c.recipe) }));
+// Bone counts of the fixed cases at graph-1 (b8c00bf .. 0a6fd24): graph-2 adds no bones. The worst case is the 12-pair
+// many-legged boundary with arms, wings, trunk and a full neck (142).
+const HEAD_BONE_COUNTS = Object.fromEntries(cases.slice(0, 34).map((c, i) => [c.id, [31,21,32,24,27,24,20,15,79,26,63,40,42,40,38,41,19,45,73,21,26,40,38,31,42,42,46,46,54,54,54,54,61,142][i]]));
 const vec = a => new THREE.Vector3(...a);
 const pos = (p, i) => new THREE.Vector3().fromArray(p.positions, i * 3);
 const quat = (p, i) => new THREE.Quaternion().fromArray(p.quaternions, i * 4);
@@ -44,6 +54,7 @@ test('independent graph has real variable support counts and valid parent chains
     const expected = g.recipe.layout === 'limbless' ? 0 : g.recipe.layout === 'biped' ? 2 : g.recipe.layout === 'many-legged' ? 2*g.recipe.legPairs : 4;
     if (g.limbs.filter(l=>l.kind==='leg').length !== expected) fail('support count', expected);
     if (g.bones.length > COMPOSER_BUDGET.maxBones) fail('bone budget',g.bones.length);
+    if (HEAD_BONE_COUNTS[id] !== undefined && g.bones.length !== HEAD_BONE_COUNTS[id]) fail('bone count changed from graph-1', `${g.bones.length} vs ${HEAD_BONE_COUNTS[id]}`);
     if (new Set(g.bones.map(b=>b.name)).size !== g.bones.length) fail('duplicate bone names');
     for (const b of g.bones) {
       if (!(b.parent >= -1 && b.parent < b.index)) fail('invalid parent', b.name);
@@ -100,7 +111,7 @@ test('independent posed joints preserve chain lengths and socket attachment', ()
 });
 
 test('independent foot support stays grounded and stance positions do not slide', () => {
-  const failures=[]; let maxStanceSlip=0,maxStanceHeight=0,minSwingSole=Infinity,frames=0;
+  const failures=[]; let maxStanceSlip=0,maxStanceHeight=0,minSwingSole=Infinity,maxStanceExtension=0,frames=0;
   for(const {id,graph:g} of graphs) {
     const legs=g.limbs.filter(l=>l.kind==='leg'); let previous;
     if(legs.length && !(g.locomotion.stride>0 && g.locomotion.speed>0)) failures.push({id,reason:'walking has no forward travel',stride:g.locomotion.stride,speed:g.locomotion.speed});
@@ -117,6 +128,9 @@ test('independent foot support stays grounded and stance positions do not slide'
         if(contact.stance) {
           maxStanceHeight=Math.max(maxStanceHeight,Math.abs(sole.y));
           if(Math.abs(sole.y)>1e-6) failures.push({id,time,limb:l.index,reason:'stance sole off ground',height:sole.y,reach:contact.reachError});
+          // socket to hock (three-segment legs) or ankle (two-segment legs): bones[2] starts there in both
+          const extension=pos(p,l.bones[0]).distanceTo(pos(p,l.bones[2]))/(l.segments[0]+l.segments[1]); maxStanceExtension=Math.max(maxStanceExtension,extension);
+          if(extension>0.985+1e-9) failures.push({id,time,limb:l.index,reason:'stance leg overextended',extension});
           const before=previous?.find(c=>c.limb===l.index);
           if(before?.stance) {const slip=before.world.distanceTo(world); maxStanceSlip=Math.max(maxStanceSlip,slip); if(slip>1e-6) failures.push({id,time,limb:l.index,reason:'stance slides',slip});}
         } else {minSwingSole=Math.min(minSwingSole,sole.y);if(sole.y < -1e-6) failures.push({id,time,limb:l.index,reason:'swing sole penetrates',height:sole.y});}
@@ -124,7 +138,7 @@ test('independent foot support stays grounded and stance positions do not slide'
       previous=actual;
     }
   }
-  finish('contacts',failures,{frames,maxStanceSlip,maxStanceHeight,minSwingSole});
+  finish('contacts',failures,{frames,maxStanceSlip,maxStanceHeight,minSwingSole,maxStanceExtension});
 });
 
 test('independent torso section support clears floor, with real belly support for limbless bodies', () => {
@@ -144,9 +158,12 @@ test('independent torso section support clears floor, with real belly support fo
   finish('body-support',failures,{minClearance,maxLimblessGap});
 });
 
-test('actual skinned surface vertices stay above the floor through preset poses', () => {
+test('actual skinned surface vertices stay above the floor through preset and individual poses', () => {
   const failures=[];let minY=Infinity,frames=0;const perPreset=[];
-  for(const [id,recipe] of Object.entries(COMPOSER_PRESETS)) {
+  // presets, then individuals: createComposerCreature derives the individual from the species recipe itself
+  const skinCases=[...Object.entries(COMPOSER_PRESETS)];
+  for(const [id,recipe] of Object.entries(COMPOSER_PRESETS)) { for(const seed of [1,42]) skinCases.push([`${id}-seed-${seed}`,{...recipe,individualSeed:seed}]); skinCases.push([`${id}-juvenile`,{...recipe,individualSeed:7,maturity:.3}]); }
+  for(const [id,recipe] of skinCases) {
     const c=createComposerCreature(recipe);
     try {
       const parts=c.skin.parts.map(part=>{

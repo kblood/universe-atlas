@@ -500,9 +500,15 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
  * COMPOSER_MAX_STANCE_EXTENSION of its reach; continuity then keeps unsampled instants reachable. */
 function fitStride(graph: ComposerGraph) {
   const loco = graph.locomotion, samples = 96, original = loco.stride;
+  // Stance extension peaks at touchdown and liftoff (foot at +-stride/2), so those instants are sampled exactly as well;
+  // uniform samples alone missed the peak by up to 4e-4 on short legs.
+  const legs = graph.limbs.filter(l => l.kind === 'leg'), phase0 = graph.traits.motion.phase;
   const worst = () => {
     let e = 0;
-    for (let k = 0; k < samples; k++) for (const c of poseComposer(graph, 'walk', (k + 0.37) / samples * loco.period).contacts) if (c.stance) e = Math.max(e, c.extension);
+    const times: number[] = [];
+    for (let k = 0; k < samples; k++) times.push((k + 0.37) / samples * loco.period);
+    for (const l of legs) for (const p of [1e-9, loco.duty * (1 - 1e-9)]) times.push((((p - l.phase - phase0) % 1 + 1) % 1) * loco.period);
+    for (const t of times) for (const c of poseComposer(graph, 'walk', t).contacts) if (c.stance) e = Math.max(e, c.extension);
     for (const c of poseComposer(graph, 'neutral', 0).contacts) e = Math.max(e, c.extension);
     return e;
   };
