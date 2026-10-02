@@ -28,6 +28,9 @@ export interface ComposerCreature {
   setNeutral(value: boolean): void;
   /** World-space bounds of the currently posed skin. */
   bounds(): THREE.Box3;
+  /** Rest-pose bounds (creature space, metres) of the face: skin parts head, eyes, mouth, horn and trunk.
+   * Computed once at build; a fresh copy per call. Empty when the skin has none of those parts. */
+  headBounds(): THREE.Box3;
   details(): ComposerCreatureDetails;
   dispose(): void;
 }
@@ -61,6 +64,7 @@ export function createComposerCreature(input: ComposerRecipe): ComposerCreature 
   mesh.updateMatrixWorld(true);
   mesh.bind(new THREE.Skeleton(bones));
   const group = new THREE.Group(); group.name = 'composer-creature'; group.add(mesh);
+  const restHeadBounds = composerHeadBounds(skin);
 
   const segments = composerSkeletonSegments(graph);
   const linePositions = new Float32Array((segments.length + graph.bones.length) * 6);
@@ -107,6 +111,7 @@ export function createComposerCreature(input: ComposerRecipe): ComposerCreature 
       mesh.computeBoundingBox();
       return mesh.boundingBox!.clone().applyMatrix4(mesh.matrixWorld);
     },
+    headBounds() { return restHeadBounds.clone(); },
     details() {
       const structure = composerStructure(graph);
       return {
@@ -131,3 +136,17 @@ export function createComposerCreature(input: ComposerRecipe): ComposerCreature 
   return creature;
 }
 export {composerConstraints};
+
+const HEAD_PARTS: ReadonlySet<string> = new Set(['head', 'eyes', 'mouth', 'horn', 'trunk']);
+/** Rest-pose bounds of every vertex referenced by a triangle of the face parts. */
+export function composerHeadBounds(skin: ComposerSkin): THREE.Box3 {
+  const box = new THREE.Box3(), p = new THREE.Vector3(), pos = skin.positions;
+  for (const part of skin.parts) {
+    if (!HEAD_PARTS.has(part.part)) continue;
+    for (let i = part.firstTriangle * 3, end = (part.firstTriangle + part.triangles) * 3; i < end; i++) {
+      const v = skin.index[i]! * 3;
+      box.expandByPoint(p.set(pos[v]!, pos[v + 1]!, pos[v + 2]!));
+    }
+  }
+  return box;
+}

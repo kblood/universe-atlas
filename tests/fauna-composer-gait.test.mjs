@@ -239,7 +239,10 @@ test('neutral identity: neutral recipes build the graph-1 rest skeleton bit for 
   };
   const per = list.map(([id, r]) => { const recipe = normalizeComposerRecipe(r).recipe, g = buildComposerGraph(recipe); assert.equal(g.traits.neutral, true, id); return restDigest(g); });
   assert.equal(per.length, 435);
-  assert.equal(createHash('sha256').update(per.join('')).digest('hex'), '616ab685f50894fc620ff95a321ebf2daccc55b0e33aee23500b7888ffbe0a66');
+  // Face round repin (fauna-composer-face-1, base a9e3654): was 616ab685f50894fc620ff95a321ebf2daccc55b0e33aee23500b7888ffbe0a66.
+  // Exactly 81 of the 435 rest digests changed and all 81 are dropped trunks (a trunk drawn or linked on a non-muzzle face:
+  // 78 legacy texts + 3 random draws), compared recipe by recipe against a9e3654; the other 354 are bit-identical.
+  assert.equal(createHash('sha256').update(per.join('')).digest('hex'), '3710768dc6ea90ad8bace030f75e0a5ed997d50faf6ae8f8cf9ac411a94e407e');
   const presets = {dinosaur: '5ca42245ef7eb62a', turtle: '71aec60226a20f4e', giraffe: 'f0f50d9d7a17e692', bird: '077f406187aae8b6', ostrich: '1739d106b47409a7', rhinoceros: '5ba09676464c8b12',
     ape: '285e7a12f65178dc', worm: '480f8d770ed23553', centipede: 'f4cba80e3fac0914', 'shelled-giraffe-bird': '4570c2077e2a062d', 'trunked-centipede': '8410f000f12d1fc0', 'winged-ape-rhino': 'f83279ddbffb2dd6'};
   Object.keys(COMPOSER_PRESETS).forEach((id, i) => assert.equal(per[i].slice(0, 16), presets[id], id));

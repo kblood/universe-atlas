@@ -61,7 +61,8 @@ test('layouts are structurally different, not relabelled', () => {
 });
 
 test('hybrids keep every chosen part and report adaptations instead of dropping them', () => {
-  const hybrid = normalizeComposerRecipe({...COMPOSER_PRESETS.worm, armor: 'dome', trunk: 'trunk', wings: 'membrane', arms: 'grasping'}).recipe;
+  // v3: a trunk grows only from the Proboscis face, so the trunked worm hybrid chooses that face
+  const hybrid = normalizeComposerRecipe({...COMPOSER_PRESETS.worm, armor: 'dome', head: 'proboscis', wings: 'membrane', arms: 'grasping'}).recipe;
   const g = buildComposerGraph(hybrid), skin = buildComposerSkin(g), parts = new Set(skin.parts.filter(p => p.triangles).map(p => p.part));
   for (const part of ['armor', 'trunk', 'wing', 'arm', 'hand']) assert.ok(parts.has(part), part);
   const reported = g.constraints.map(c => c.part);
@@ -117,7 +118,7 @@ test('recipe text and lab URLs round-trip every field; legacy URLs are unchanged
   assert.match(creatureLabComposerInputError('?mode=composer&motion=fly'), /unknown motion/);
   assert.equal(creatureLabComposerInputError('?mode=skin&recipe=a&recipe=b'), null);
   assert.match(decodeComposerRecipe(parseCreatureLabState(`?mode=composer&recipe=v1*${'x'.repeat(3000)}`).recipe).error, /longer than/);
-  assert.match(decodeComposerRecipe('v3*layout_biped').error, /Unsupported/);
+  assert.match(decodeComposerRecipe('v4*layout_biped').error, /Unsupported/);
   assert.match(decodeComposerRecipe('v999*layout_biped').error, /Unsupported/);
 });
 

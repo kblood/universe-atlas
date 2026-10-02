@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {composerConstraints, composerWingSpanLimit, normalizeComposerRecipe, type ComposerConstraint, type ComposerRecipe} from './fauna-composer-recipe.ts';
 import {composerIndividualTraits, type ComposerIndividualTraits} from './fauna-composer-individual.ts';
+import {composerSkullOf, type ComposerSkull} from './fauna-composer-face.ts';
 
 /** Variable articulated body-plan graph for the modular composer. It is
  * deliberately separate from the fixed 22-bone quadruped rig: limbless,
@@ -141,7 +142,8 @@ const LEG: Record<ComposerRecipe['legs'], {seg: number[]; tilt: number; ext: num
 const FOOT: Record<ComposerRecipe['feet'], {h: number; l: number}> = {
   hoof: {h: 0.07, l: 0.1}, paw: {h: 0.045, l: 0.14}, claw: {h: 0.03, l: 0.24}, pad: {h: 0.08, l: 0.16}, hand: {h: 0.04, l: 0.26}, spike: {h: 0.1, l: 0.03},
 };
-const HEAD_SCALE: Record<ComposerRecipe['head'], number> = {muzzle: 1, jaws: 1.15, beak: 0.9, 'flat-face': 0.9, blunt: 0.6, mandibles: 0.7};
+/** Keyed by the built skull (composerSkullOf): until WP5 builds a real proboscis face it builds the muzzle skull. */
+const HEAD_SCALE: Record<ComposerSkull, number> = {muzzle: 1, jaws: 1.15, beak: 0.9, 'flat-face': 0.9, blunt: 0.6, mandibles: 0.7};
 
 interface Builder {bones: ComposerBone[]}
 function addBone(b: Builder, spec: {name: string; parent: number; part: ComposerPart; side?: -1 | 0 | 1; limb?: number; length: number; driver?: 'fk' | 'ik'; position: THREE.Vector3; quaternion: THREE.Quaternion; start: ComposerSection; end?: ComposerSection}): number {
@@ -173,9 +175,10 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
   const shape = TORSO[recipe.torso], radial = (axialLong ? 0.42 : 1) * recipe.girth * L;
   let w = shape.w * radial, h = shape.h * radial;
   const scaleBody = Math.cbrt(L * w * h);
-  const headLength = recipe.headSize * HEAD_SCALE[recipe.head] * scaleBody * (axialLong ? 1 : 1.25);
-  const craniumH = headLength * (recipe.head === 'flat-face' ? 0.42 : recipe.head === 'blunt' ? 0.5 : recipe.head === 'mandibles' ? 0.3 : 0.34);
-  const craniumW = craniumH * (recipe.head === 'mandibles' ? 1.4 : recipe.head === 'jaws' ? 0.95 : 0.9);
+  const skull = composerSkullOf(recipe.head);
+  const headLength = recipe.headSize * HEAD_SCALE[skull] * scaleBody * (axialLong ? 1 : 1.25);
+  const craniumH = headLength * (skull === 'flat-face' ? 0.42 : skull === 'blunt' ? 0.5 : skull === 'mandibles' ? 0.3 : 0.34);
+  const craniumW = craniumH * (skull === 'mandibles' ? 1.4 : skull === 'jaws' ? 0.95 : 0.9);
   const snoutLength = headLength * recipe.snoutLength * 0.62;
 
   // ---- legs: dimensions decide body height
@@ -330,7 +333,7 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
   else if (layout === 'many-legged') { neckElev0 = 0.05; neckElev1 = 0.02; headPitch = -0.08; }
   else {
     const e = mix(0.12, 1.25, clamp(recipe.neckLength / 1.3, 0, 1));
-    neckElev0 = Math.max(pitch, e); neckElev1 = Math.max(0.05, e * 0.75); headPitch = recipe.head === 'beak' ? -0.12 : -0.3;
+    neckElev0 = Math.max(pitch, e); neckElev1 = Math.max(0.05, e * 0.75); headPitch = skull === 'beak' ? -0.12 : -0.3;
     if (layout === 'biped' && recipe.posture > 0.6) { neckElev0 = Math.max(pitch * 0.9, e); neckElev1 = Math.max(0.6, e); headPitch = -0.08; }
   }
   // individual carriage: a raised or lowered neck, and a head pitch that partly compensates (traits correlate them)
@@ -362,7 +365,7 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
   if (trunkLength > 0) {
     const hb = b.bones[head]!, n = 6, tl = trunkLength / n;
     const baseR = Math.max(craniumH * 0.3, headLength * 0.09), tipR = baseR * 0.38;
-    let pos = toBone(hb, [headLength * 0.18 + snoutLength * 0.92 + headLength * 0.32, recipe.head === 'beak' || recipe.head === 'mandibles' ? craniumH * 0.25 : -craniumH * 0.05, 0]);
+    let pos = toBone(hb, [headLength * 0.18 + snoutLength * 0.92 + headLength * 0.32, skull === 'beak' || skull === 'mandibles' ? craniumH * 0.25 : -craniumH * 0.05, 0]);
     for (let i = 0; i < n; i++) {
       const angle = -0.45 - 1.05 * Math.pow(i / (n - 1), 1.2) + headPitch;
       const dir = V(Math.cos(angle), Math.sin(angle), 0);
@@ -427,7 +430,7 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
     // WALK_PHASE_OFFSETS do. Primate-like bodies (flat face, grasping hands, none of the horns or wings of a hybrid)
     // walk the primate diagonal sequence (LH 0, RF 0.25, RH 0.5, LF 0.75). Sprawlers move diagonal pairs together
     // (LH with RF, RH with LF). Index 0 is side -1 (left).
-    const primateLike = recipe.head === 'flat-face' && (recipe.arms === 'grasping' || recipe.feet === 'hand') && recipe.horns === 'none' && recipe.wings === 'none';
+    const primateLike = skull === 'flat-face' && (recipe.arms === 'grasping' || recipe.feet === 'hand') && recipe.horns === 'none' && recipe.wings === 'none';
     const phases = layout === 'quadruped' ? {hind: [0, 0.5], fore: primateLike ? [0.25, 0.75] : [0.75, 0.25]} : {hind: [0.5, 0], fore: [0, 0.5]};
     for (const side of [-1, 1] as const) addLeg(0, side, torso[0]!, hipSocketLocal(side), legReach, false, phases.hind[side < 0 ? 0 : 1]!);
     for (const side of [-1, 1] as const) addLeg(1, side, torso[nTorso - 1]!, shoulderSocketLocal(side), frontLegReach, true, phases.fore[side < 0 ? 0 : 1]!);
@@ -757,7 +760,7 @@ export function poseComposer(graph: ComposerGraph, motion: ComposerMotion, time:
     if (recipe.layout === 'biped') { rootP.y += -loco.bob * twoStep; rootQ.multiply(rollQ(0.035 * Math.sin(TAU * cycle))).multiply(yawQ(0.04 * Math.sin(TAU * cycle))); }
     else if (recipe.layout === 'quadruped') { rootP.y += -loco.bob * twoStep; rootQ.multiply(rollQ(0.015 * Math.sin(TAU * cycle))); }
     if (loco.sway) torso.forEach((bi, i) => { if (i) add(bi, yawQ(loco.sway * Math.sin(TAU * cycle - i * 0.9))); });
-    const bob = recipe.head === 'beak' && recipe.layout === 'biped' ? 0.16 : 0.05;
+    const bob = composerSkullOf(recipe.head) === 'beak' && recipe.layout === 'biped' ? 0.16 : 0.05;
     neck.forEach((bi, i) => add(bi, pitchQ((i % 2 ? -1 : 1) * bob * Math.sin(TAU * cycle * 2) / Math.max(1, neck.length * 0.6))));
     add(head, pitchQ(-0.5 * bob * Math.sin(TAU * cycle * 2)));
     tail.forEach((bi, i) => add(bi, yawQ(0.07 * Math.sin(TAU * cycle - 0.7 * (i + 1)))));

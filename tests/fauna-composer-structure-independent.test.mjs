@@ -11,6 +11,7 @@ import {buildComposerSkin} from '../src/fauna-composer-mesh.ts';
 import {createComposerCreature} from '../src/fauna-composer.ts';
 import {deriveComposerIndividual} from '../src/fauna-composer-individual.ts';
 import {COAT_PATTERNS} from '../src/fauna-coat-vocab.ts';
+import {FACE_HEADGEAR} from '../src/fauna-composer-face.ts';
 
 const digest=(...arrays)=>{const h=createHash('sha256');for(const a of arrays)h.update(Buffer.from(a.buffer,a.byteOffset,a.byteLength));return h.digest('hex');};
 const build=input=>{const recipe=normalizeComposerRecipe(input).recipe,graph=buildComposerGraph(recipe);return{recipe,graph,skin:buildComposerSkin(graph)};};
@@ -39,13 +40,44 @@ test('96 actual mixed specimens have finite indexed surfaces, normalized skinnin
 
 function partGeometry(skin,parts){const positions=[];for(const p of skin.parts)if(parts.includes(p.part))for(let i=p.firstTriangle*3;i<(p.firstTriangle+p.triangles)*3;i++){const v=skin.index[i]*3;positions.push(...skin.positions.subarray(v,v+3));}return new Float32Array(positions);}
 test('every torso/head/surface/appendage choice changes actual geometry with fixed palette and seed',()=>{
+ // v3 (fauna-composer-face-1): the trunk is derived from the face, so 'proboscis' is the head choice that grows it
+ // (its head-part set includes the trunk); eyes and iris are not structural keys here. Horns are checked per face
+ // below, because a face builds only the headgear it can carry.
  const base={...composerPreset('dinosaur'),palette:'earth',colorSeed:1,arms:'grasping',tailLength:1};
- for(const[key,parts]of Object.entries({torso:['torso'],head:['head','mouth'],armor:['armor'],wings:['wing'],feet:['foot'],hands:['hand'],horns:['horn'],trunk:['trunk'],tail:['torso','tail-tip']})){
-  const signatures=new Set(),previous=[];for(const choice of COMPOSER_CHOICES[key]){const {skin}=build({...base,[key]:choice}),a=partGeometry(skin,parts);signatures.add(digest(a));report.structural.push({key,choice,triangles:a.length/9,hash:digest(a)});
+ const distinct=(key,variants,parts)=>{const signatures=new Set(),previous=[];for(const[choice,recipe]of variants){const {skin}=build(recipe),a=partGeometry(skin,parts);signatures.add(digest(a));report.structural.push({key,choice,triangles:a.length/9,hash:digest(a)});
    for(const b of previous)if(a.length===b.length){let maxDelta=0;for(let i=0;i<a.length;i++)maxDelta=Math.max(maxDelta,Math.abs(a[i]-b[i]));assert.ok(maxDelta>base.bodyLength*.001,`${key}/${choice}: equal-topology variation must exceed 0.1% of body length`);}previous.push(a);
   }
-  assert.equal(signatures.size,COMPOSER_CHOICES[key].length,`${key} choices must change positions/topology, not just colors/labels`);
- }
+  assert.equal(signatures.size,variants.length,`${key} choices must change positions/topology, not just colors/labels`);};
+ for(const[key,parts]of Object.entries({torso:['torso'],head:['head','mouth','trunk'],armor:['armor'],wings:['wing'],feet:['foot'],hands:['hand'],tail:['torso','tail-tip']}))
+  distinct(key,COMPOSER_CHOICES[key].map(choice=>[choice,{...base,[key]:choice}]),parts);
+ assert.ok(COMPOSER_CHOICES.head.includes('proboscis'));
+ // every built horn kind: nasal, paired and ossicones on a giraffe muzzle, the crest on the dinosaur's jaws
+ const giraffe={...composerPreset('giraffe'),palette:'earth',colorSeed:1};
+ distinct('horns',[['none',{...giraffe,horns:'none'}],['nasal',{...giraffe,horns:'nasal'}],['paired',{...giraffe,horns:'paired'}],['ossicones',{...giraffe,horns:'ossicones'}],['crest (jaws)',{...base,horns:'crest'}]],['horn']);
+ assert.notEqual(digest(partGeometry(build({...base,horns:'crest'}).skin,['horn'])),digest(partGeometry(build({...base,horns:'none'}).skin,['horn'])),'jaws crest is built');
+});
+
+test('a horn kind the face does not build is bit-identical to horns none in every skin array',()=>{
+ // One specimen per face; every omitted cell of FACE_HEADGEAR (built 'none' for a chosen kind) is checked.
+ // The CHOSEN horn stays part of the species identity (composerSpeciesKey hashes the chosen anatomy, projecting only
+ // proboscis -> muzzle, so no herd re-rolls), and with variability > 0 the species key seeds the individual draw.
+ // An omitted horn is therefore compared at variability 0, the type specimen, where the species key cannot reach the
+ // build: there every skin array equals the 'none' build. At the preset variability only 'no horn part' is asserted.
+ const specimen={muzzle:'giraffe',proboscis:'trunked-centipede',jaws:'dinosaur',beak:'bird','flat-face':'ape',blunt:'worm',mandibles:'centipede'};
+ const all=s=>digest(s.positions,s.index,s.skinIndex,s.skinWeight,s.colors);
+ let omitted=0;
+ for(const[face,row]of Object.entries(FACE_HEADGEAR)){const recipe={...composerPreset(specimen[face]),head:face},flat={...recipe,variability:0};
+  const noneFlat=all(build({...flat,horns:'none'}).skin);
+  for(const[horn,cell]of Object.entries(row)){if(horn==='none')continue;
+   const flatSkin=build({...flat,horns:horn}).skin;
+   if(cell.built!=='none'){assert.notEqual(all(flatSkin),noneFlat,`${face} + ${horn} is built (as ${cell.built}) and must differ from none`);continue;}
+   omitted++;
+   assert.equal(all(flatSkin),noneFlat,`${face} + ${horn} (variability 0): every skin array equals none`);
+   assert.ok(!build({...recipe,horns:horn}).skin.parts.some(p=>p.part==='horn'),`${face} + ${horn}: no horn part`);}}
+ assert.equal(omitted,1+3+2+4+4+4,'muzzle 1, proboscis 3, beak 2, flat-face/blunt/mandibles 4 each');
+ // the named examples: an ape with a nose horn, a worm with paired horns
+ for(const[id,horn]of[['ape','nasal'],['worm','paired']]){const p={...composerPreset(id),variability:0};
+  assert.equal(all(build({...p,horns:horn}).skin),all(build(p).skin),`${id} + ${horn} (variability 0)`);}
 });
 
 test('legal numeric endpoints and maximal combinations retain finite bounded actual geometry',()=>{

@@ -3,6 +3,7 @@ import {composerHash, composerRandom, type ComposerRecipe} from './fauna-compose
 import {COAT_REGIONS, type CoatRegion} from './fauna-coat-vocab.ts';
 import {COAT_CELLS_PER_BODY, applyCoatDrift, coatIndividualDrift, defaultCoatGenome, evaluateCoat, hash3u, valueNoise3, type CoatGenome} from './fauna-coat-fields.ts';
 import {composerIndividualTraits, type ComposerIndividualTraits} from './fauna-composer-individual.ts';
+import {composerHeadgearBuild, composerSkullOf, type ComposerSkull} from './fauna-composer-face.ts';
 import {composerFeatherFanSpan, composerWingChord, composerWingThickness, type ComposerBone, type ComposerGraph, type ComposerLimb, type ComposerSection, type Vec3} from './fauna-composer-rig.ts';
 
 /** Procedural, experimental skin for a composer graph. Every visible part is
@@ -330,7 +331,7 @@ function refineStations<S extends {k: number; f: number; kind: ComposerSkinRing[
 // ------------------------------------------------------------------ head stations
 interface HeadStation {x: number; w: number; h: number; yc: number}
 /** The cranial station where the head loft starts (and the neck blend ends), in head-bone units. */
-function headFirstStation(head: ComposerRecipe['head'], H: number, cW: number, cH: number): HeadStation {
+function headFirstStation(head: ComposerSkull, H: number, cW: number, cH: number): HeadStation {
   const x = 0.22 * H;
   if (head === 'muzzle' || head === 'jaws') { const fl = head === 'jaws' ? 0.82 : 1; return {x, w: 0.982 * cW, h: 0.973 * cH * fl, yc: -0.0133 * cH}; }
   if (head === 'beak') return {x, w: cW, h: cH, yc: 0.02 * cH};
@@ -598,7 +599,7 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
     return ['torso', torsoU(bone, f)];
   };
   const hb = bones[head]!, H = d.headLength;
-  const station0 = headFirstStation(r.head, H, d.craniumWidth, d.craniumHeight);
+  const station0 = headFirstStation(composerSkullOf(r.head), H, d.craniumWidth, d.craniumHeight);
   const hc1 = at(hb, station0.x, station0.yc), hc2 = at(hb, 0.5 * H, station0.yc);
   const axialRadial = torsoSeg || annulated ? T.torsoRadialBanded : T.torsoRadial;
   const headCtx = makeHeadColours(r, d, coatAt, axialRadial, scale);
@@ -942,11 +943,12 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
 
 /** Head-surface colour helpers shared by the neck blend rings and the head loft, so the seam matches exactly. */
 function makeHeadColours(r: ComposerRecipe, d: ComposerGraph['dims'], coatAt: CoatAt, radial: number, scale: number) {
-  const H = d.headLength, sn = d.snoutLength, muzzleFrom = r.head === 'muzzle' || r.head === 'jaws' ? 0.4 * H : Infinity;
+  const skull = composerSkullOf(r.head);
+  const H = d.headLength, sn = d.snoutLength, muzzleFrom = skull === 'muzzle' || skull === 'jaws' ? 0.4 * H : Infinity;
   const region = (x: number): CoatRegion => x >= muzzleFrom ? 'muzzle' : 'head';
   // a flat face is bare skin (its own lofts) in front of a furred cranium: the fur rim around the face is head,
   // never muzzle, and 'along' spans the whole head so a facial mark only shades the brow instead of capping it
-  const headSpan = r.head === 'flat-face' ? H + sn : 0.4 * H + sn;
+  const headSpan = skull === 'flat-face' ? H + sn : 0.4 * H + sn;
   const along = (x: number) => x >= muzzleFrom ? clamp((x - muzzleFrom) / Math.max(sn, 1e-3), 0, 1) : clamp(x / headSpan, 0, 1);
   const col = (x: number, sw: number, sh: number) => {
     const reg = region(x), al = along(x), fp = TAU * 0.5 * (sw + sh) / radial / scale;
@@ -957,6 +959,8 @@ function makeHeadColours(r: ComposerRecipe, d: ComposerGraph['dims'], coatAt: Co
 
 function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette, at: At, axis: Axis, hc: ReturnType<typeof makeHeadColours>, st0: HeadStation, firstWeights: W, ind: SkinIndividual, coatAt: CoatAt) {
   const r = graph.recipe, d = graph.dims, H = d.headLength, cW = d.craniumWidth, cH = d.craniumHeight, sn = d.snoutLength, tr = ind.traits;
+  // the built skull (proboscis builds the muzzle skull until WP5) and the headgear the face actually carries
+  const skull = composerSkullOf(r.head), hg = composerHeadgearBuild(r);
   const ax = axis(hb, 1, 0, 0), ay = axis(hb, 0, 1, 0), az = axis(hb, 0, 0, 1), w = [[hb.index, 1]] as W;
   const seg = hc.radial;
   const station = (x: number, sw: number, sh: number, yc: number, color?: (a: number, p: THREE.Vector3) => RGB): Ring => ({c: at(hb, x, yc), t: ax, u: ay, rx: sw, ry: sh, w, color: color ?? hc.col(x, sw, sh), region: REGION[hc.region(x)]});
@@ -965,8 +969,8 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
   s.begin('head', r.head);
   s.region = REGION.head;
   let tipX = 0.4 * H + sn, tipY = -0.2 * cH, tipH = 0.5 * cH;
-  if (r.head === 'muzzle' || r.head === 'jaws') {
-    const jaws = r.head === 'jaws', flatten = jaws ? 0.82 : 1;
+  if (skull === 'muzzle' || skull === 'jaws') {
+    const jaws = skull === 'jaws', flatten = jaws ? 0.82 : 1;
     const rings = [first(), station(0.36 * H, 0.92 * cW, 0.88 * cH * flatten, -0.06 * cH)];
     const n = 4;
     for (let i = 1; i <= n; i++) {
@@ -982,7 +986,7 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
       const f = 0.15 + 0.13 * k, x = 0.4 * H + sn * f, sw = mix(0.8, 0.5, f) * cW * 0.93, y = mix(-0.08, -0.12, f) * cH - mix(0.82, 0.36, f) * cH * 0.25;
       tube(s, [at(hb, x, y, side * sw), at(hb, x + 0.01 * H, y - 0.07 * cH, side * sw * 0.97)], [0.028 * cH, 0.004 * cH], [w, w], () => [0.92, 0.9, 0.82], 5, 0.2, 0.1);
     }
-    if (!jaws && r.horns !== 'ossicones' && r.horns !== 'paired') {
+    if (!jaws && hg.built !== 'ossicones' && hg.built !== 'paired') {
       s.begin('head', `${r.head} ears`);
       s.region = REGION.ear;
       const es = tr.earScale;
@@ -991,7 +995,7 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
         ellipsoid(s, base.clone().addScaledVector(dir, 0.16 * H * es), [dir, ax.clone().negate(), az], [0.18 * H * es, 0.03 * H * es, 0.09 * H * es], w, (_a, f, p) => mixC(coatAt(p, 0.4, 'ear', f), pal.skin, 0.25), 8, 4);
       }
     }
-  } else if (r.head === 'beak') {
+  } else if (skull === 'beak') {
     loft(s, [first(), station(0.4 * H, 0.62 * cW, 0.66 * cH, 0.02 * cH)], seg, 0.2, 0.3);
     const len = Math.max(sn, 0.15 * H), n = 6, upper: Ring[] = [], lower: Ring[] = [];
     for (let i = 0; i <= n; i++) {
@@ -1003,7 +1007,7 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
     for (const rg of [...upper, ...lower]) rg.region = REGION.muzzle;
     loft(s, upper, 12, 0.2, 0.3); loft(s, lower, 10, 0.2, 0.3);
     tipX = 0.36 * H + len; tipY = -0.05 * cH; tipH = 0.1 * cH;
-  } else if (r.head === 'flat-face') {
+  } else if (skull === 'flat-face') {
     const skinBelow = (base: (a: number, p: THREE.Vector3) => RGB) => (a: number, p: THREE.Vector3) => Math.sin(a) < 0.2 ? pal.skin : base(a, p);
     loft(s, [first(), station(0.4 * H, 0.86 * cW, 0.86 * cH, -0.02 * cH, skinBelow(hc.col(0.4 * H, 0.86 * cW, 0.86 * cH))), station(0.48 * H, 0.55 * cW, 0.5 * cH, -0.1 * cH, () => pal.skin)], seg, 0.2, 0.45);
     const len = Math.max(0.05 * H, sn * 0.6);
@@ -1013,7 +1017,7 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
     const es = tr.earScale;
     for (const side of [-1, 1]) ellipsoid(s, at(hb, 0.12 * H, 0, side * 0.96 * cW), [ax, ay, az], [0.08 * H * es, 0.2 * cH * es, 0.05 * cW * es], w, () => pal.skin, 8, 4);
     tipX = 0.36 * H + len; tipY = -0.42 * cH; tipH = 0.34 * cH;
-  } else if (r.head === 'blunt') {
+  } else if (skull === 'blunt') {
     const xt = 0.6 * H + sn * 0.3, base = hc.col(xt, 0.75 * cW, 0.75 * cH);
     loft(s, [first(), station(xt, 0.75 * cW, 0.75 * cH, 0, (a, p) => mixC(base(a, p), pal.skin, 0.5))], seg, 0.2, 0.75);
     s.region = REGION.eye;
@@ -1038,44 +1042,45 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
   }
   s.end();
   // eyes
-  if (r.head !== 'blunt' && r.head !== 'mandibles') {
+  if (skull !== 'blunt' && skull !== 'mandibles') {
     s.begin('eyes', 'eyes');
     s.region = REGION.eye;
-    const er = (r.head === 'beak' ? 0.17 : r.head === 'flat-face' ? 0.11 : 0.13) * cH * tr.eyeScale * tr.allometry.eyeRel;
-    const [ex, ey, ez] = r.head === 'beak' ? [0.2 * H, 0.3 * cH, 0.86 * cW] : r.head === 'flat-face' ? [0.43 * H, 0.06 * cH, 0.42 * cW] : r.head === 'jaws' ? [0.24 * H, 0.52 * cH, 0.72 * cW] : [0.3 * H, 0.38 * cH, 0.8 * cW];
+    const er = (skull === 'beak' ? 0.17 : skull === 'flat-face' ? 0.11 : 0.13) * cH * tr.eyeScale * tr.allometry.eyeRel;
+    const [ex, ey, ez] = skull === 'beak' ? [0.2 * H, 0.3 * cH, 0.86 * cW] : skull === 'flat-face' ? [0.43 * H, 0.06 * cH, 0.42 * cW] : skull === 'jaws' ? [0.24 * H, 0.52 * cH, 0.72 * cW] : [0.3 * H, 0.38 * cH, 0.8 * cW];
     for (const side of [-1, 1]) ellipsoid(s, at(hb, ex, ey, side * ez), [ax, ay, az], [er, er, er * 0.8], w, (a) => Math.cos(a) * side > 0.75 ? [0.5, 0.48, 0.42] : pal.eye, COMPOSER_SKIN_TESSELLATION.eyeRadial, COMPOSER_SKIN_TESSELLATION.eyeStations);
     s.end();
   }
-  // horns: length x hornScale, curl rotated by hornCurl, left/right x (1 +- hornAsym)
-  if (r.horns !== 'none') {
-    s.begin('horn', r.horns);
+  // horns: length x hornScale, curl rotated by hornCurl, left/right x (1 +- hornAsym). Only the headgear the face
+  // carries is built (FACE_HEADGEAR); an omitted kind builds exactly what 'none' builds.
+  if (hg.built !== 'none') {
+    s.begin('horn', hg.built);
     s.region = REGION.horn;
     const hs = tr.hornScale, curl = tr.hornCurl, asym = tr.hornAsym, thick = 0.5 + 0.5 * hs;
     const hornCol = (i: number, n: number, p: THREE.Vector3) => mixC(coatAt(p, 1, 'horn', i / n), pal.keratin, 0.35 + 0.65 * i / n);
     const curled = (pts: THREE.Vector3[], base: THREE.Vector3, about: THREE.Vector3, angle: number) => angle === 0 ? pts : pts.map((p, i) => i === 0 ? p : p.clone().sub(base).applyAxisAngle(about, angle * i / (pts.length - 1)).add(base));
     const grow = (pts: THREE.Vector3[], k: number) => k === 1 ? pts : pts.map((p, i) => i === 0 ? p : p.clone().sub(pts[0]!).multiplyScalar(k).add(pts[0]!));
-    if (r.horns === 'nasal') {
-      const forehead = r.trunk === 'trunk';
-      const x0 = forehead ? 0.12 * H : 0.4 * H + sn * 0.65, y0 = forehead ? 0.9 * cH : (r.head === 'muzzle' ? -0.24 * cH * 0.65 : tipY) + tipH * 0.9 + 0.05 * cH;
+    if (hg.built === 'nasal') {
+      // a nasal horn is never built on a trunk face, so the old forehead relocation is gone
+      const x0 = 0.4 * H + sn * 0.65, y0 = (skull === 'muzzle' ? -0.24 * cH * 0.65 : tipY) + tipH * 0.9 + 0.05 * cH;
       const big = 0.5 * H * hs, root = at(hb, x0, y0, 0);
       const pts = curled([0, 0.33, 0.66, 1].map(f => at(hb, x0 + big * (0.12 * f - 0.25 * f * f), y0 + big * f, 0)), root, az, -curl);
       tube(s, [at(hb, x0, y0 - 0.12 * cH, 0), ...pts], [0.15 * H, 0.14 * H, 0.1 * H, 0.05 * H, 0.008 * H].map(x => x * thick), [w, w, w, w, w], (i, _a, p) => hornCol(i, 4, p), 10, 0.2, 0.15);
-      const x1 = forehead ? -0.02 * H : x0 - 0.25 * H, y1 = forehead ? cH * 0.9 : y0 + 0.08 * cH, k2 = hs * (1 + asym);
+      const x1 = x0 - 0.25 * H, y1 = y0 + 0.08 * cH, k2 = hs * (1 + asym);
       tube(s, [at(hb, x1, y1 - 0.1 * cH, 0), at(hb, x1 + 0.02 * H * k2, y1 + 0.12 * H * k2, 0), at(hb, x1 - 0.02 * H * k2, y1 + 0.22 * H * k2, 0)], [0.09 * H, 0.06 * H, 0.008 * H].map(x => x * (0.5 + 0.5 * k2)), [w, w, w], (i, _a, p) => hornCol(i, 2, p), 8, 0.2, 0.15);
-    } else if (r.horns === 'paired') {
+    } else if (hg.built === 'paired') {
       for (const side of [-1, 1]) {
         const k = hs * (1 + side * asym), raw = [V(0.05, 0.7, 0.55), V(0.0, 0.95, 0.85), V(-0.12, 1.25, 1.15), V(-0.15, 1.75, 1.2), V(-0.05, 2.1, 1.0)].map(p => at(hb, p.x * H, p.y * cH, side * p.z * cW));
         const pts = curled(grow(raw, k), raw[0]!, az, -curl * side);
         tube(s, pts, [0.1 * H, 0.08 * H, 0.06 * H, 0.035 * H, 0.006 * H].map(x => x * (0.5 + 0.5 * k)), pts.map(() => w), (i, _a, p) => hornCol(i, 4, p), 9, 0.2, 0.15);
       }
-    } else if (r.horns === 'ossicones') {
+    } else if (hg.built === 'ossicones') {
       for (const side of [-1, 1]) {
         const k = hs * (1 + side * asym), base = at(hb, 0.02 * H, 0.8 * cH, side * 0.35 * cW);
         const [, top] = curled(grow([base, at(hb, -0.03 * H, 0.8 * cH + 0.32 * H, side * 0.42 * cW)], k), base, az, -curl);
         tube(s, [base, top!], [0.055 * H, 0.045 * H].map(x => x * (0.5 + 0.5 * k)), [w, w], (_i, a, p) => mixC(coatAt(p, Math.sin(a), 'head', 0.2), pal.accent, 0.3), 9, 0.2, 0.2);
         ellipsoid(s, top!, [ax, ay, az], [0.06 * H, 0.06 * H, 0.06 * H].map(x => x * (0.5 + 0.5 * k)) as [number, number, number], w, () => pal.keratin, 8, 4);
       }
-    } else if (r.horns === 'crest') {
+    } else if (hg.built === 'crest') {
       const crestH = Math.max(0.5 * cH, 0.25 * H) * hs;
       slab(s, at(hb, 0, 0.82 * cH, 0), ax, ay, [[-0.12 * H, 0], [0.05 * H, crestH * 0.9], [0.22 * H, crestH], [0.42 * H, crestH * 0.45], [0.5 * H, 0]], 0.07 * cW, w, (x, y) => mixC(pal.accent, pal.plate, y / crestH * 0.6 + x * 0));
     }
