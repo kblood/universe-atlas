@@ -21,10 +21,10 @@ for (const layout of COMPOSER_LAYOUTS) for (const long of [false, true]) {
     posture: 1, neckLength: 1.5, arms: 'grasping', wings: 'membrane', trunk: 'trunk',
   }).recipe });
 }
-// Individuals (graph-2): every preset at seeds 1, 7 and 42, plus a juvenile (maturity 0.3), built from the effective
-// recipe exactly as createComposerCreature builds them. Seed 0 is the preset itself (above).
+// Individuals (graph-2): every preset at seeds 0, 1, 7 and 42, plus a juvenile (maturity 0.3), built from the effective
+// recipe exactly as createComposerCreature builds them. The raw presets (above) are built without derivation.
 for (const [id, recipe] of Object.entries(COMPOSER_PRESETS)) {
-  for (const seed of [1, 7, 42]) cases.push({ id: `${id}-seed-${seed}`, recipe: deriveComposerIndividual({...recipe, individualSeed: seed}).recipe });
+  for (const seed of [0, 1, 7, 42]) cases.push({ id: `${id}-seed-${seed}`, recipe: deriveComposerIndividual({...recipe, individualSeed: seed}).recipe });
   cases.push({ id: `${id}-juvenile`, recipe: deriveComposerIndividual({...recipe, individualSeed: 7, maturity: 0.3}).recipe });
 }
 const graphs = cases.map(c => ({ ...c, graph: buildComposerGraph(c.recipe) }));
