@@ -1,8 +1,10 @@
 import {hash64,type Body,type V3} from './catalog.ts';
 import {terrainSampler} from './terrain.ts';
 import {surfaceNormal} from './planet-tiles.ts';
-import {biomeClassifier} from './surface-biomes.ts';
-export const SURVEY_VERSION='surface-survey-1';
+import {biomeClassifier,SURVEY_VERSION} from './surface-biomes.ts';
+/** 'surface-survey-2' (declared in surface-biomes.ts, see there): candidates and
+ * categories are unchanged; sites move with classifier v2. */
+export {SURVEY_VERSION};
 export type SurfaceSite={id:string;name:string;direction:V3;elevationM:number;biome:string;slopeDeg:number;category:string};
 /** Fixed global candidates keep site identity independent of view/LOD or requests.
  * A reconnaissance list, not a claim to have sampled every beach or mountain. */
