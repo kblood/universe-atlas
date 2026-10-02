@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 
-export const SURFACE_SHADOW = {widthM:320, depthM:1000, mapSize:2048, normalBiasM:.06} as const;
+// normalBiasM .06 -> .16 (biome wave 1): at .06 the 320 m / 2048 map sun shadow
+// self-shadowed gentle snow and sand slopes into km-scale "dune ripple" bands
+// (W1-D snow-diagnosis4: basic lighting and .16 both remove them).
+export const SURFACE_SHADOW = {widthM:320, depthM:1000, mapSize:2048, normalBiasM:.16} as const;
 /** Linear sky-dome colour and the linear albedo of the surroundings. The lower
  * hemisphere radiates what that ground reflects: albedo x (direct sun on the
  * ground + sky dome). The previous code used the albedo itself as that
