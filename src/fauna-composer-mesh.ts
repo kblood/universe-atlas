@@ -370,12 +370,19 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
   const coatOut = new Float64Array(3);
   const sample = {x: 0, y: 0, z: 0, dorsal: 0, region: 'torso' as CoatRegion, along: 0, footprint: 0};
   const groundRef = Math.max(d.legReach, d.frontLegReach, 1e-3);
+  const plainGenome = genome.pattern === 'bands' ? {...genome, pattern: 'plain' as const} : null;
   const coatAt: CoatAt = (p, dorsal, region, along, fp = 0) => {
     const dx = p.x - origin.x, dy = p.y - origin.y;
     sample.x = (dx * fwd.x + dy * fwd.y) / scale; sample.y = (dy * fwd.x - dx * fwd.y) / scale; sample.z = p.z / scale;
     sample.dorsal = clamp(dorsal, -1, 1); sample.region = region; sample.along = clamp(along, 0, 1); sample.footprint = fp;
     evaluateCoat(genome, sample, coatOut, 0);
     let c: RGB = [coatOut[0]!, coatOut[1]!, coatOut[2]!];
+    // body bands continued as rings down every leg read as a striped sock (toy-like); reptile limbs carry the
+    // banding faintly, as scale-row shading, so it fades to 40% strength there
+    if (plainGenome && (region === 'limb-upper' || region === 'limb-lower' || region === 'foot')) {
+      evaluateCoat(plainGenome, sample, coatOut, 0);
+      c = mixC([coatOut[0]!, coatOut[1]!, coatOut[2]!], c, 0.4);
+    }
     if (region === 'eye' || region === 'horn' || region === 'armor') return c;
     // individual tone, low-frequency mottling and darker males along the back, as perceptual (sRGB-like)
     // lightness factors so dark coats vary visibly too (linear factor = perceptual factor ^ 2.2)
@@ -581,7 +588,10 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
   const lastSeg = axialSegs[axialSegs.length - 1]!.bone, lastSec = axialChain.sections[axialChain.sections.length - 1]!;
   const meanR = (w: number, h: number) => (w + h) / 2;
   const ratio = meanR(station0.w, station0.h) / Math.max(1e-6, meanR(lastSec.w, lastSec.h));
-  const blendCount = clamp(Math.ceil(Math.abs(Math.log(ratio)) / Math.log(1.12)), 2, 5);
+  // the radius eases into the head station (zero slope there) so the cranium does not rise as a ridge behind the
+  // blend; the ease doubles the steepest step, hence twice the rings of a geometric ramp
+  const blendCount = clamp(Math.ceil(2 * Math.abs(Math.log(ratio)) / Math.log(1.12)), 2, 9);
+  const blendEase = (sb: number) => 1 - (1 - sb) * (1 - sb);
   const headWeightAt = (x: number) => x <= 0.1 * H ? 0.35 * x / (0.1 * H) : Math.min(0.7, 0.35 + 0.35 * (x - 0.1 * H) / (0.12 * H));
   const blendRings: Ring[] = [], blendMetas: Meta[] = [];
   // blend stations: uniform in sb, then refined where the neck-to-head centreline turns faster than MAX_RING_TURN
@@ -591,7 +601,7 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
   for (const sb of blendPlan) {
     const x = station0.x * sb, last = sb === 1;
     const {c, t} = axialChain.evalSeg(axialSegs.length, sb);
-    const w = lastSec.w * (station0.w / lastSec.w) ** sb, h = lastSec.h * (station0.h / lastSec.h) ** sb;
+    const eb = blendEase(sb), w = lastSec.w * (station0.w / lastSec.w) ** eb, h = lastSec.h * (station0.h / lastSec.h) ** eb;
     const hw = headWeightAt(x), up = last ? axis(hb, 0, 1, 0) : axis(lastSeg, 0, 1, 0).lerp(axis(hb, 0, 1, 0), sb).normalize();
     const ring: Ring = {c: last ? hc1.clone() : c, t: last ? axis(hb, 1, 0, 0) : t, u: up, rx: last ? station0.w : w, ry: last ? station0.h : h, w: [[lastSeg.index, 1 - hw], [hb.index, hw]], color: () => [0, 0, 0]};
     const region: CoatRegion = sb < 0.5 ? 'neck' : headCtx.region(x), along = sb < 0.5 ? 1 : headCtx.along(x);
@@ -678,6 +688,26 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
     if (f > 0.5 && next) { const wn = 0.5 * smooth(0.5, 1, f); return [[next.index, wn], [carrier.index, 1 - wn]]; }
     return [[carrier.index, 1]];
   };
+  // body containment: superellipse norm of a point against the axial loft, interpolated between bracketing rings
+  // (lobes ignored; < 1 is inside). Infinity when no ring pair brackets the point.
+  const axialBases = axialRings.map(ringBasis), tq = V();
+  const sectionNorm = (r: Ring, b: RingBasis, p: THREE.Vector3) => {
+    tq.copy(p).sub(r.c);
+    const x = tq.dot(b.v), y = tq.dot(b.u), e = r.n ?? 2, ry = y < 0 ? r.ryBelow ?? r.ry : r.ry;
+    return (Math.abs(x / r.rx) ** e + Math.abs(y / ry) ** e) ** (1 / e);
+  };
+  const torsoNorm = (p: THREE.Vector3) => {
+    let best = Infinity;
+    for (let i = 0; i + 1 < axialRings.length; i++) {
+      const a = axialRings[i]!, b = axialRings[i + 1]!, da = tq.copy(p).sub(a.c).dot(axialBases[i]!.t), db = tq.copy(p).sub(b.c).dot(axialBases[i + 1]!.t);
+      if (da < 0 || db > 0) continue;
+      const lam = da / Math.max(1e-12, da - db);
+      best = Math.min(best, (1 - lam) * sectionNorm(a, axialBases[i]!, p) + lam * sectionNorm(b, axialBases[i + 1]!, p));
+    }
+    return best;
+  };
+  const rp = V();
+  const ringNorm = (ring: Ring, radial: number) => { const b = ringBasis(ring); let m = 0; for (let k = 0; k < radial; k++) m = Math.max(m, torsoNorm(ringPoint(ring, b, TAU * k / radial, rp))); return m; };
   const limbChain = (limb: ComposerLimb, segBones: ComposerBone[], kind: 'leg' | 'arm', chainName: string) => {
     const arth = kind === 'leg' && r.legs === 'arthropod';
     const radial = kind === 'arm' ? T.armRadial : arth ? T.legRadialArthropod : T.legRadial;
@@ -707,6 +737,7 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
     const x0 = xe - 0.3 * rE / cosI, x3 = Math.max(x0 + 0.6 * rE, xe + 0.1 * rE);
     const f3 = clamp(x3 / upper.length, 0.01, 0.45);
     const thighCap = Math.abs(limb.socket[2]) * 0.9;
+    const sideRoom = csec.w * 1.05 - Math.abs(local(S).z);
     const latCapLimb = 0.35 * Math.max(2 * Math.abs(limb.socket[2]), 1e-6);
     const deepCannon = kind === 'leg' && (r.legs === 'unguligrade' || r.legs === 'digitigrade');
     const basisCache = new WeakMap<Ring, {u: THREE.Vector3; v: THREE.Vector3}>();
@@ -730,12 +761,16 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
         meta.region = region; meta.along = along; ring.region = REGION[region];
         let k = 1;
         if (!arth) {
-          if (bi === 0) k += 0.45 * smooth(0, 0.2, f) * (1 - smooth(0.3, 0.7, f));   // thigh / upper arm
+          if (bi === 0) k += 0.45 * (1 - smooth(0.25, 0.75, f));                        // thigh / upper arm: a taper, never a bump below the body
           if (bi === 1) k += 0.12 * gauss(f, 0.45, 0.15);                             // gaskin / forearm
-          if (bi >= 1) k += 0.12 * (1 - smooth(0.03, 0.14, f));                       // condyle at the joint
+          // condyle at the joint; graviportal pillar legs are columnar, with barely a knob at the elbow and knee
+          if (bi >= 1) k += (r.legs === 'pillar' ? 0.04 : 0.12) * (1 - smooth(0.03, 0.14, f));
         }
-        let rx = Math.min(sec.w * k, sec.w + latCapLimb);
+        // muscle mass deepens a limb fore-aft (ry, the bend plane) more than it widens it (rx): thighs are
+        // laterally flat, and the upper limb never bulges past the body's side wall
+        let rx = Math.min(sec.w * (1 + 0.8 * (k - 1)), sec.w + latCapLimb);
         const ry = sec.h * k;
+        if (bi === 0) rx = Math.min(rx, Math.max(sec.w, sideRoom));
         // upright limbs: the thigh never crosses the body midline
         if (bi === 0 && Math.abs(axis(bone, 0, 0, 1).z) > 0.7 && Math.abs(axis(bone, 1, 0, 0).y) > 0.6) rx = Math.min(rx, Math.max(thighCap, 0.55 * sec.w));
         ring.rx = rx; ring.ry = ry; ring.ryBelow = ry;
@@ -754,17 +789,52 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
     const cw = carrierWeights(carrier, fc);
     const rootRings: Ring[] = [], rootMetas: Meta[] = [];
     const ROOT: [number, number, number][] = [[0, 1, 0.18], [1 / 3, 0.7, 0.12], [2 / 3, 0.35, 0.06]];
+    // the first root ring must lie wholly inside the body, or its cap shows as a sleeve: sink it deeper, then shrink it
+    const ringAt = (x: number, g: number): Ring => {
+      const ring: Ring = {c: S.clone().addScaledVector(dir, x), t: dir.clone(), u: ring3.u.clone(), rx: ring3.rx * g, ry: ring3.ry * g, ryBelow: (ring3.ryBelow ?? ring3.ry) * g, w: [], color: () => [0, 0, 0]};
+      if (squashDir) ring.squash = [squashDir, 0.4];
+      return ring;
+    };
+    let xRoot = x0, gRoot = 1.15;
+    if (Number.isFinite(torsoNorm(S.clone().addScaledVector(dir, x0)))) {
+      const fits = (x: number, g: number) => ringNorm(ringAt(x, g), radial) <= 0.96;
+      let j = 0;
+      while (j < 8 && !fits(xRoot, gRoot)) { j++; xRoot = x0 - j * 0.15 * rE; }
+      if (!fits(xRoot, gRoot)) {
+        let lo = 0.3, hi = 1.15;
+        for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (fits(xRoot, m)) lo = m; else hi = m; }
+        gRoot = lo;
+      }
+    }
     for (const [sF, carrierShare, cavityK] of ROOT) {
-      const grow = mix(1.15, 1, sF), c = S.clone().addScaledVector(dir, x0).lerp(ring3.c, sF), t = dir.clone().lerp(ring3.t, sF).normalize();
+      const grow = sF === 0 ? gRoot : mix(1.15, 1, sF), c = S.clone().addScaledVector(dir, xRoot).lerp(ring3.c, sF), t = dir.clone().lerp(ring3.t, sF).normalize();
       const weights: W = [...cw.map(([b, w]) => [b, w * carrierShare] as [number, number]), [upper.index, 1 - carrierShare]];
       const ring: Ring = {c, t, u: ring3.u.clone(), rx: ring3.rx * grow, ry: ring3.ry * grow, ryBelow: (ring3.ryBelow ?? ring3.ry) * grow, w: weights, region: REGION['limb-upper'], color: () => [0, 0, 0]};
       if (squashDir) ring.squash = [squashDir, 0.4 * (1 - sF)];
-      const meta: Meta = {kind: 'root', bone: upper, k: 0, f: mix(x0, x3, sF) / upper.length, sec: meta3.sec, fp: 0, along: 0, region: 'limb-upper'};
+      const meta: Meta = {kind: 'root', bone: upper, k: 0, f: mix(xRoot, x3, sF) / upper.length, sec: meta3.sec, fp: 0, along: 0, region: 'limb-upper'};
       // stretch: cavity shading where the limb meets the body, strongest on the ventral side
       ring.color = (a, p) => scaleC(limbColour(ring, 'limb-upper', 0, meta.fp, 1, a, p), 1 - cavityK * (0.5 + 0.5 * smooth(0.2, -0.6, torsoDorsal(p))));
       rootRings.push(ring); rootMetas.push(meta);
     }
     const rings = [...rootRings, ...chain.rings], metas = [...rootMetas, ...chain.metas];
+    // buried rings must stay buried: a ring whose centre is inside the body but whose side pokes out of the flank
+    // (the body narrows toward the belly) slides toward the midline, then narrows laterally, until it fits
+    const zC = axis(carrier, 0, 0, 1);
+    for (const ring of rings) {
+      const cn = torsoNorm(ring.c);
+      if (!(cn < 1) || ringNorm(ring, radial) <= 0.97) continue;
+      const lz = local(ring.c).z, inward = zC.clone().multiplyScalar(-Math.sign(lz) || 0), c0 = ring.c.clone(), rx0 = ring.rx;
+      const fit = (shift: number, sx: number) => { ring.c.copy(c0).addScaledVector(inward, shift); ring.rx = rx0 * sx; return ringNorm(ring, radial) <= 0.97; };
+      // only a flank poke is corrected: when even a ring narrowed to half width at 0.8 of the way to the midline
+      // still sticks out, the excess is fore-aft (a limb at the very front of the chest) and the ring stays as built
+      let shift = 0.8 * Math.abs(lz), sx = 1;
+      if (fit(shift, 1)) { let lo = 0, hi = shift; for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (fit(m, 1)) hi = m; else lo = m; } shift = hi; }
+      else if (fit(shift, 0.5)) { let lo = 0.5, hi = 1; for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (fit(shift, m)) lo = m; else hi = m; } sx = lo; }
+      else { ring.c.copy(c0); ring.rx = rx0; continue; }
+      // rings near the surface take part of the correction, so the leg leaves the body without a kink
+      const w = cn < 0.9 ? 1 : (1 - cn) / 0.1;
+      ring.c.copy(c0).addScaledVector(inward, shift * w); ring.rx = rx0 * mix(1, sx, w);
+    }
     setFootprints(rings, metas, radial);
     // a small start cap keeps the buried root closed (positive part volume) without a visible collar
     loft(s, rings, radial, 0.1, kind === 'arm' ? 0.3 : 0.4);
@@ -820,7 +890,10 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
 function makeHeadColours(r: ComposerRecipe, d: ComposerGraph['dims'], coatAt: CoatAt, radial: number, scale: number) {
   const H = d.headLength, sn = d.snoutLength, muzzleFrom = r.head === 'muzzle' || r.head === 'jaws' || r.head === 'flat-face' ? 0.4 * H : Infinity;
   const region = (x: number): CoatRegion => x >= muzzleFrom ? 'muzzle' : 'head';
-  const along = (x: number) => x >= muzzleFrom ? clamp((x - muzzleFrom) / Math.max(sn, 1e-3), 0, 1) : clamp(x / (0.4 * H + sn), 0, 1);
+  // a flat face has almost no snout, so the cranium spans the whole head: 'along' runs over the full length and a
+  // facial mask stays on the face instead of capping the crown
+  const headSpan = r.head === 'flat-face' ? H + sn : 0.4 * H + sn;
+  const along = (x: number) => x >= muzzleFrom ? clamp((x - muzzleFrom) / Math.max(sn, 1e-3), 0, 1) : clamp(x / headSpan, 0, 1);
   const col = (x: number, sw: number, sh: number) => {
     const reg = region(x), al = along(x), fp = TAU * 0.5 * (sw + sh) / radial / scale;
     return (a: number, p: THREE.Vector3): RGB => coatAt(p, ringDorsal(a, sw, sh), reg, al, fp);
