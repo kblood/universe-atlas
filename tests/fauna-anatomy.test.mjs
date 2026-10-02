@@ -5,8 +5,8 @@ import { createQuadrupedPlan, buildQuadrupedBody, quadrupedBodyDistance, QUADRUP
 
 const families = ['browser', 'runner', 'low-slung', 'long-neck'];
 
-test('body version 3 joins shoulder and haunch muscle volumes to the existing limb chains', () => {
-  assert.equal(QUADRUPED_BODY_VERSION, 'quadruped-body-3');
+test('body version 4 joins shoulder and haunch muscle volumes to the existing limb chains', () => {
+  assert.equal(QUADRUPED_BODY_VERSION, 'quadruped-body-4');
   for (const family of families) {
     const plan = createQuadrupedPlan(generateCreatureGenome('ANATOMY-MUSCLE', family));
     assert.equal(plan.bones.length, 22);

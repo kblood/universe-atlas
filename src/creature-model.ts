@@ -1,5 +1,5 @@
 /** Deterministic, metre-based quadruped anatomy shared by the lab data and rig. */
-import { createFaunaAppearance, FAUNA_APPEARANCE_VERSION, FAUNA_JUVENILE_PROPORTIONS, inheritedFaunaFamily, MORPHOLOGY_FAMILIES, type FaunaAppearance, type FaunaMorphology, type FaunaMorphologyFamily } from './fauna-appearance.ts';
+import { createFaunaAppearance, FAUNA_APPEARANCE_LEGACY_VERSION, FAUNA_APPEARANCE_VERSION, FAUNA_JUVENILE_PROPORTIONS, FAUNA_REFERENCE_JUVENILE_MATURITY, faunaAdultCoat, faunaArmorShare, faunaCoatErrors, faunaFarMean, faunaFarSpeciesId, faunaSpeciesCoat, inheritedFaunaFamily, isPigmentFamily, linearHexOf, MORPHOLOGY_FAMILIES, type FaunaAppearance, type FaunaMorphology, type FaunaMorphologyFamily } from './fauna-appearance.ts';
 export type CreatureArchetype = 'browser'|'runner'|'low-slung'|'long-neck';
 export interface CreatureGenome {
   version:string; archetype:CreatureArchetype;
@@ -28,7 +28,14 @@ function clamp(value:number,low:number,high:number):number { return Math.max(low
 function round(value:number):number { return Math.round(value*1000)/1000; }
 function requireSeed(seed:string):void { if(typeof seed!=='string'||!seed.trim()||seed.length>160) throw new Error('seed must be a non-empty string up to 160 characters'); }
 function requireArchetype(archetype:CreatureArchetype):void { if(!ARCHETYPES.includes(archetype)) throw new Error(`Unknown creature archetype: ${String(archetype)}`); }
-function copy(g:CreatureGenome):CreatureGenome { return {...g,mutationLog:[...g.mutationLog],...(g.appearance?{appearance:{...g.appearance,palette:{...g.appearance.palette},profile:{...g.appearance.profile},individual:{...g.appearance.individual},growth:{...g.appearance.growth}}}:{}),...(g.morphology?{morphology:{...g.morphology}}:{})}; }
+function copy(g:CreatureGenome):CreatureGenome { return {...g,mutationLog:[...g.mutationLog],...(g.appearance?{appearance:copyAppearance(g.appearance)}:{}),...(g.morphology?{morphology:{...g.morphology}}:{})}; }
+/** Deep copy of the optional appearance block (a v1 block has no coat or lineage). */
+function copyAppearance(a:FaunaAppearance):FaunaAppearance {
+  const out:FaunaAppearance={...a,palette:{...a.palette},profile:{...a.profile},individual:{...a.individual},growth:{...a.growth}};
+  if(a.coat)out.coat={...a.coat,colours:Object.fromEntries(Object.entries(a.coat.colours).map(([role,c])=>[role,[...c]])) as FaunaAppearance['coat']['colours']};
+  if(a.lineage)out.lineage={...a.lineage};
+  return out;
+}
 
 type Shape = Omit<CreatureGenome,'version'|'archetype'|'color'|'accentColor'|'pattern'|'mutationLog'|'appearance'|'morphology'>;
 const BASE:Record<CreatureArchetype,Shape> = {
@@ -97,7 +104,12 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
   // Small, correlated species axes: mass broadens trunk, stance and supporting
   // feet together; limb length changes stride and speed together. Founders stay
   // canonical, so adding a phenotype cannot reroll species or ancestry IDs.
-  const size=1+i.size*.045,condition=1+i.condition*.055;
+  // Individual body size: +-4.5% (v1) and +-7% for coat phenotypes (uniform),
+  // closer to the spread of wild ungulate populations.
+  // Body condition (girth and depth): +-5.5% (v1) and +-9% for coat phenotypes,
+  // +-13% for low-slung coat phenotypes (bears and badgers swing widely with season).
+  // Long-neck size spans +-10% (adult giraffe shoulder heights differ by ~20%).
+  const size=1+i.size*(isCoatPhenotype(a)?(genome.archetype==='long-neck'?.1:.07):.045),condition=1+i.condition*(isCoatPhenotype(a)?(genome.archetype==='low-slung'?.13:.09):.055);
   for(const field of ['torsoLength','torsoHeight','torsoWidth','legLength','stanceWidth','neckLength','neckRise','headLength','headWidth','tailLength','footLength','footWidth','hornLength','earLength','strideLength'] as const)apply(field,size);
   apply('torsoLength',1+p.mass*.035);apply('torsoHeight',(1+p.mass*.055)*condition);
   apply('torsoWidth',(1+p.mass*.075)*condition);apply('stanceWidth',1+p.mass*.065);
@@ -105,6 +117,29 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
   apply('strideLength',1+p.limb*.055-p.mass*.025);apply('neckLength',1+p.neck*.07);
   apply('neckRise',1+p.neck*.06);apply('headLength',1+i.muzzle*.065);apply('headWidth',1+i.condition*.035);
   apply('earLength',1+i.ears*.12);
+  // Individual proportions (fauna-appearance-2): limb, neck and tail lengths
+  // relative to the trunk vary within a population (limb +-4%, neck +-7%,
+  // tail +-10%), so siblings differ in silhouette and not only in size. Long
+  // necks vary +-14% and long-neck limbs +-6% (giraffe neck-to-leg ratios
+  // differ between individuals).
+  const coatPhenotype=isCoatPhenotype(a);
+  const limbIndividual=coatPhenotype?1+(i.limb??0)*(genome.archetype==='long-neck'?.06:.04):1,neckIndividual=coatPhenotype?1+(i.neck??0)*(genome.archetype==='long-neck'?.14:.07):1;
+  if(coatPhenotype){
+    apply('legLength',limbIndividual);apply('strideLength',limbIndividual);
+    apply('neckLength',neckIndividual);apply('neckRise',neckIndividual);apply('tailLength',1+(i.tail??0)*.1);
+  }
+  // Sexual dimorphism (fauna-appearance-2): males are larger with longer horns;
+  // females carry reduced horns, none at all in strongly dimorphic species
+  // whose females are hornless. A legacy v1 appearance has no sex channel.
+  const sex=i.sex,dimorphism=Number.isFinite(p.dimorphism)?p.dimorphism:0;
+  if(sex==='male'){
+    const larger=1+.06*dimorphism;
+    for(const field of ['torsoLength','torsoHeight','torsoWidth','legLength','stanceWidth','neckLength','neckRise','headLength','headWidth','tailLength','footLength','footWidth','hornLength','earLength','strideLength'] as const)apply(field,larger);
+    apply('hornLength',1+.4*dimorphism);
+  } else if(sex==='female'){
+    apply('hornLength',1-.7*dimorphism);
+    if(p.hornlessFemales)g.hornLength=0;
+  }
 
   // Explicit alternate families use authored ratio envelopes. Species-specific
   // length and condition survive, while incompatible inherited parts are removed.
@@ -116,7 +151,7 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
     };
     const r=ratios[selected],length=g.torsoLength;
     g.torsoHeight=length*r[0]*condition;g.torsoWidth=length*r[1]*condition;
-    g.legLength=length*r[2]*(1+p.limb*.035);g.neckLength=length*r[3]*(1+p.neck*.035);
+    g.legLength=length*r[2]*(1+p.limb*.035)*limbIndividual;g.neckLength=length*r[3]*(1+p.neck*.035)*neckIndividual;
     g.headLength=length*r[4]*(1+i.muzzle*.065);g.headWidth=length*r[5];
     g.neckRise=g.neckLength*(selected==='long-neck'?.59:.45);
     g.stanceWidth=g.torsoWidth*1.1;g.footWidth=g.torsoWidth*(selected==='proboscidean'?.27:.23);
@@ -125,34 +160,83 @@ export function realisticIndividualCreatureGenome(genome:CreatureGenome,id:strin
     g.armor=selected==='padded'?Math.min(g.armor,.4):0;
   }
   if(selected==='proboscidean'){
-    g.torsoHeight=Math.max(g.torsoHeight,g.torsoLength*.48);g.headWidth=Math.max(g.headWidth,g.headLength*.77);
+    // The proboscidean floors are species proportions. For coat phenotypes they
+    // carry the individual's body condition, head breadth and ear size, which
+    // a bare floor erased (every adult had torso height exactly .48 of its
+    // length and the same ear ratio). Elephant body condition, and ear size and
+    // outline, differ visibly between individuals of one population (ears are
+    // used to identify them).
+    const floorTorso=coatPhenotype?condition:1,floorHead=coatPhenotype?1+i.condition*.035:1,floorEar=coatPhenotype?1+i.ears*.12:1;
+    g.torsoHeight=Math.max(g.torsoHeight,g.torsoLength*.48*floorTorso);g.headWidth=Math.max(g.headWidth,g.headLength*.77*floorHead);
     g.footWidth=Math.max(g.footWidth,g.torsoWidth*.25);g.hornLength=0;g.armor=0;
-    g.earLength=Math.max(g.earLength,g.headLength*.52);
+    g.earLength=Math.max(g.earLength,g.headLength*.52*floorEar);
   }
+  // An explicit family draws a different body, so its far colour is re-weighted
+  // to that body (stage-invariant: the adult-equivalent armour is used).
+  if(family!==undefined&&isCoatPhenotype(a)&&family!==inheritedFaunaFamily(genome)){
+    {const species=faunaSpeciesCoat(genome).coat;a.palette.base=linearHexOf(faunaFarMean(faunaFarSpeciesId(genome),species,genome.archetype,faunaAdultCoat(genome.archetype,species,a.individualKey),selected,faunaArmorShare(g,selected)));}
+  }
+  // Male barrel width survives the authored family ratio envelopes.
+  if(sex==='male')g.torsoWidth*=1+.06*dimorphism;
   // Adapt speed to the actual limb length, retaining inherited gait personality.
   const limbRatio=g.legLength/genome.legLength;
   g.walkSpeed*=Math.sqrt(limbRatio);g.runSpeed*=Math.sqrt(limbRatio);
   g.strideLength=Math.min(g.strideLength,g.legLength*.96);
+  const adultWidthRatio=g.torsoWidth/g.torsoLength;
   if(stage==='juvenile'){
     const growthFamily:CreatureArchetype=selected==='long-neck'?'long-neck':selected==='cursorial'?'runner':selected==='padded'||selected==='proboscidean'?'low-slung':'browser';
     const q=FAUNA_JUVENILE_PROPORTIONS[growthFamily];
-    apply('torsoLength',q.trunk);apply('torsoHeight',q.trunk);apply('torsoWidth',q.width);
-    apply('legLength',q.limb);apply('stanceWidth',q.width);apply('neckLength',q.neck);apply('neckRise',q.neck);
-    apply('headLength',q.head);apply('headWidth',q.head);apply('footLength',q.foot);apply('footWidth',q.foot);
-    apply('earLength',q.ear);apply('tailLength',q.trunk);apply('hornLength',.18);apply('armor',.6);
-    apply('strideLength',q.limb);apply('walkSpeed',Math.sqrt(q.limb));apply('runSpeed',Math.sqrt(q.limb));
+    if(isCoatPhenotype(a))juvenileProportions(g,q,a.growth.maturity);
+    else {
+      apply('torsoLength',q.trunk);apply('torsoHeight',q.trunk);apply('torsoWidth',q.width);
+      apply('legLength',q.limb);apply('stanceWidth',q.width);apply('neckLength',q.neck);apply('neckRise',q.neck);
+      apply('headLength',q.head);apply('headWidth',q.head);apply('footLength',q.foot);apply('footWidth',q.foot);
+      apply('earLength',q.ear);apply('tailLength',q.trunk);apply('hornLength',.18);apply('armor',.6);
+      apply('strideLength',q.limb);apply('walkSpeed',Math.sqrt(q.limb));apply('runSpeed',Math.sqrt(q.limb));
+    }
   }
+  // Family envelopes, at every growth stage: a long-necked browser never drifts
+  // below a 0.6 neck/torso ratio (descendant drift measured 1.464 m -> 0.794 m
+  // without it), and padded quadrupeds keep short legs.
+  if(isCoatPhenotype(a)&&selected==='long-neck'&&g.neckLength<g.torsoLength*.6){const lift=g.torsoLength*.6/g.neckLength;g.neckLength*=lift;g.neckRise*=lift;}
+  if(isCoatPhenotype(a)&&selected==='padded')g.legLength=Math.min(g.legLength,g.torsoLength*.445);
   normalized(g);
   // Feet must remain narrower than stance, and preferred stride below leg reach.
   g.footWidth=round(Math.min(g.footWidth,g.stanceWidth*.55));
   g.strideLength=round(Math.min(g.strideLength,g.legLength*.96));
+  // Juvenile coats are laid out in the adult's lateral frame, so a young
+  // body (relatively narrower than it will be) carries the same markings.
+  if(isCoatPhenotype(a)&&stage==='juvenile')a.growth.lateral=Math.round(adultWidthRatio/(g.torsoWidth/g.torsoLength)*1e6)/1e6;
   g.appearance=a;
   // Shared coarse/facial colours use the exact phenotype palette too; the
   // original species genome remains untouched and keeps its inherited colours.
   g.color=a.palette.base;g.accentColor=a.palette.marking;
   g.morphology={version:'fauna-morphology-1',family:selected,footType:selected==='ungulate'||selected==='long-neck'?'hoof':selected==='padded'||selected==='proboscidean'?'broad-pad':'paw',trunkLength:selected==='proboscidean'?round(Math.min(1.45,g.headLength*1.9)):0,wingSpan:selected==='winged'?round(g.torsoLength*1.85):0,wingState:selected==='winged'?'folded':'none'};
-  g.mutationLog.push(`${selected} phenotype; ${stage} anatomy and identity-preserving coat`);
+  g.mutationLog.push(`${selected} phenotype; ${stage} anatomy and identity-preserving coat${sex?`; ${sex}`:''}`);
   return g;
+}
+
+function isCoatPhenotype(a:FaunaAppearance):boolean { return a.version===FAUNA_APPEARANCE_VERSION&&!!a.coat; }
+
+
+/** Continuous juvenile growth (fauna-appearance-2). FAUNA_JUVENILE_PROPORTIONS
+ * were authored at maturity 0.28; they are interpolated by (1-m)/(1-0.28), so a
+ * maturity-0.22 neonate is younger and a 0.45 yearling older than that review
+ * stage. On top: a neonatal head (+0.05 head/torso at m 0.22, fading to adult),
+ * legs relative to the trunk x(1+0.12(1-m)) and horn buds x m^2 (at most 0.2).
+ * The short neonatal muzzle (x(0.8+0.2m)) is drawn by the body plan. */
+function juvenileProportions(g:CreatureGenome,q:typeof FAUNA_JUVENILE_PROPORTIONS[CreatureArchetype],m:number):void {
+  const t=(1-m)/(1-FAUNA_REFERENCE_JUVENILE_MATURITY),at=(v:number)=>1-(1-v)*t;
+  const trunk=at(q.trunk),width=at(q.width),limb=at(q.limb)*(1+.12*(1-m)),neck=at(q.neck),head=at(q.head),foot=at(q.foot),ear=at(q.ear);
+  const scale=(field:keyof Shape,factor:number)=>{g[field]=round(g[field]*factor);};
+  scale('torsoLength',trunk);scale('torsoHeight',trunk);scale('torsoWidth',width);
+  scale('legLength',limb);scale('stanceWidth',width);scale('neckLength',neck);scale('neckRise',neck);
+  scale('footLength',foot);scale('footWidth',foot);scale('earLength',ear);scale('tailLength',trunk);
+  // Neonatal head: a proportionally larger cranium, fading linearly to maturity.
+  const headLength=g.headLength*head,neonatal=.05*(1-m)/(1-.22)*g.torsoLength,grow=(headLength+neonatal)/headLength;
+  g.headLength=round(headLength*grow);g.headWidth=round(g.headWidth*head*grow);
+  scale('hornLength',Math.min(m*m,.2));scale('armor',.6);
+  scale('strideLength',limb);scale('walkSpeed',Math.sqrt(limb));scale('runSpeed',Math.sqrt(limb));
 }
 
 export function validateCreatureGenome(genome:CreatureGenome):string[] {
@@ -169,8 +253,17 @@ export function validateCreatureGenome(genome:CreatureGenome):string[] {
   if(!Array.isArray(genome.mutationLog)||!genome.mutationLog.every(x=>typeof x==='string')) errors.push('mutationLog must be string[]');
   if(genome.appearance!==undefined){
     const a=genome.appearance;
-    if(!a||a.version!==FAUNA_APPEARANCE_VERSION)errors.push('unsupported fauna appearance version');
+    if(!a||(a.version!==FAUNA_APPEARANCE_VERSION&&a.version!==FAUNA_APPEARANCE_LEGACY_VERSION))errors.push('unsupported fauna appearance version');
     else {
+      if(a.version===FAUNA_APPEARANCE_VERSION){
+        errors.push(...faunaCoatErrors(a.coat));
+        if(!a.individual||(a.individual.sex!=='female'&&a.individual.sex!=='male'))errors.push('invalid individual sex');
+        if(!a.individual||!Number.isFinite(a.individual.coatPhase)||a.individual.coatPhase!<0||a.individual.coatPhase!>1)errors.push('invalid individual coat phase');
+        if(!a.profile||!Number.isFinite(a.profile.dimorphism)||a.profile.dimorphism<0||a.profile.dimorphism>1||typeof a.profile.hornlessFemales!=='boolean')errors.push('invalid species dimorphism');
+        if(!a.lineage||!isPigmentFamily(a.lineage.family)||typeof a.lineage.pattern!=='string')errors.push('invalid coat lineage');
+        for(const axis of ['limb','neck','tail'] as const){const v=a.individual?.[axis];if(v!==undefined&&(!Number.isFinite(v)||v<-1||v>1))errors.push(`invalid individual ${axis} axis`);}
+        if(!a.growth||!Number.isFinite(a.growth.lateral)||a.growth.lateral!<.5||a.growth.lateral!>2)errors.push('invalid coat growth frame');
+      }
       if(typeof a.individualKey!=='string'||!a.individualKey||!Number.isInteger(a.markingSeed)||a.markingSeed<0||a.markingSeed>0xffffffff)errors.push('invalid appearance identity');
       if(!['plain','stripes','spots'].includes(a.pattern))errors.push('invalid appearance pattern');
       if(!a.palette||!['base','marking','belly'].every(k=>/^#[0-9a-f]{6}$/i.test((a.palette as unknown as Record<string,string>)[k]??'')))errors.push('invalid appearance palette');

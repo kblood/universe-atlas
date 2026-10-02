@@ -50,8 +50,18 @@ test('96-specimen review corpus: inherited identity, deterministic variation, va
         assert.deepEqual(adult.appearance.individual, juvenile.appearance.individual);
         assert.deepEqual(adult.appearance.profile, juvenile.appearance.profile);
         assert.equal(adult.morphology.family, juvenile.morphology.family);
-        const adultCoat=coatAt(adult,.173,-.12,.31),youngCoat=coatAt(juvenile,.173,-.12,.31);
-        assert.ok(adultCoat.every((value,i)=>Math.abs(value-youngCoat[i])<1e-12), 'normalized growth coordinates preserve coat markings');
+        // fauna-appearance-2: the coat genome is the adult's except for the
+        // stage channels (juvenile spots, greying); in torso-length space the
+        // same markings land on the grown body within a small tolerance (the
+        // juvenile trunk is slightly narrower relative to its length).
+        assert.deepEqual({...juvenile.appearance.coat,juvenileSpots:0,greying:adult.appearance.coat.greying},{...adult.appearance.coat,juvenileSpots:0});
+        const stageless={...juvenile,appearance:{...juvenile.appearance,coat:adult.appearance.coat}};
+        let matching=0,points=0;
+        for(let u=-.4;u<=.41;u+=.1)for(const v of [-.3,-.1,.1,.3])for(const w of [-.35,.31]){
+          const adultCoat=coatAt(adult,u,v,w),youngCoat=coatAt(stageless,u,v,w);points++;
+          if(adultCoat.every((value,i)=>Math.abs(value-youngCoat[i])<.04))matching++;
+        }
+        assert.ok(matching>=points*.85, `normalized growth coordinates preserve coat markings (${matching}/${points})`);
         assert.ok(juvenile.torsoLength < adult.torsoLength);
         assert.ok(juvenile.legLength < adult.legLength);
         assert.ok(juvenile.headLength / juvenile.torsoLength > adult.headLength / adult.torsoLength * 1.1, 'young head is proportionally larger');
