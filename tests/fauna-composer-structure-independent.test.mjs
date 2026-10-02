@@ -9,9 +9,13 @@ import {composerPreset,COMPOSER_PRESET_IDS,COMPOSER_CHOICES,COMPOSER_RANGES,norm
 import {buildComposerGraph,COMPOSER_BUDGET} from '../src/fauna-composer-rig.ts';
 import {buildComposerSkin} from '../src/fauna-composer-mesh.ts';
 import {createComposerCreature} from '../src/fauna-composer.ts';
+import {deriveComposerIndividual} from '../src/fauna-composer-individual.ts';
+import {COAT_PATTERNS} from '../src/fauna-coat-vocab.ts';
 
 const digest=(...arrays)=>{const h=createHash('sha256');for(const a of arrays)h.update(Buffer.from(a.buffer,a.byteOffset,a.byteLength));return h.digest('hex');};
 const build=input=>{const recipe=normalizeComposerRecipe(input).recipe,graph=buildComposerGraph(recipe);return{recipe,graph,skin:buildComposerSkin(graph)};};
+/** What createComposerCreature builds: the species recipe through the individual derivation. */
+const buildIndividual=input=>build(deriveComposerIndividual(normalizeComposerRecipe(input).recipe).recipe);
 const report={scope:'Experimental CPU geometry, structural diversity, deterministic replay and resource ownership; no visual, self-intersection or device acceptance.',corpusDefinition:'12 presets x 4 palette seeds x 2 explicit body sizes; no juvenile control exists',sourceHashes:Object.fromEntries(['recipe','rig','mesh',''].map(s=>{const p=`src/fauna-composer${s?'-'+s:''}.ts`;return[p,createHash('sha256').update(readFileSync(new URL('../'+p,import.meta.url))).digest('hex')];})),corpus:[],structural:[],failures:[]};
 after(()=>{if(process.env.COMPOSER_STRUCTURE_REPORT)writeFileSync(process.env.COMPOSER_STRUCTURE_REPORT,JSON.stringify(report,null,2)+'\n');});
 function audit({skin:s,graph:g},id,record=true){
@@ -45,7 +49,9 @@ test('every torso/head/surface/appendage choice changes actual geometry with fix
 });
 
 test('legal numeric endpoints and maximal combinations retain finite bounded actual geometry',()=>{
- const failures=[];for(const layout of COMPOSER_CHOICES.layout)for(const endpoint of[0,1]){const recipe={...composerPreset('trunked-centipede'),layout};for(const[key,range]of Object.entries(COMPOSER_RANGES))recipe[key]=range[endpoint];const errors=audit(build(recipe),`${layout}/all-${endpoint?'maximum':'minimum'}`,false);if(errors.length)failures.push({layout,endpoint,errors});}report.endpointFailures=failures;assert.deepEqual(failures,[]);
+ // The v2 keys (coat, variation strengths, individual seed, maturity, condition) take their extremes too, and every
+ // recipe is built through the individual derivation exactly as createComposerCreature builds it, for both sexes.
+ const failures=[];for(const layout of COMPOSER_CHOICES.layout)for(const endpoint of[0,1])for(const sex of['female','male']){const recipe={...composerPreset('trunked-centipede'),layout,sex};for(const[key,range]of Object.entries(COMPOSER_RANGES))recipe[key]=range[endpoint];const errors=audit(buildIndividual(recipe),`${layout}/all-${endpoint?'maximum':'minimum'}/${sex}`,false);if(errors.length)failures.push({layout,endpoint,sex,errors});}report.endpointFailures=failures;assert.deepEqual(failures,[]);
 });
 
 test('buffer audit rejects real malformed triangle, weight and coordinate negative controls',()=>{
@@ -72,4 +78,20 @@ test('independent instances dispose every owned resource exactly once without da
  const coloured=a.mesh.material;a.setNeutral(true);const neutral=a.mesh.material,lines=a.group.getObjectByName('composer-skeleton'),owned=[a.mesh.geometry,coloured,neutral,lines.geometry,lines.material],counts=new Map(owned.map(x=>[x,0]));for(const x of owned)x.addEventListener('dispose',()=>counts.set(x,counts.get(x)+1));
  let skeletonDisposals=0;const disposeSkeleton=a.mesh.skeleton.dispose.bind(a.mesh.skeleton);a.mesh.skeleton.dispose=()=>{skeletonDisposals++;disposeSkeleton();};
  assert.notEqual(a.mesh.geometry,b.mesh.geometry);assert.notEqual(a.mesh.skeleton,b.mesh.skeleton);assert.notEqual(coloured,b.mesh.material);b.update('display',.7);const before=digest(posedVertices(b));a.setSkeletonVisible(true);assert.equal(a.details().drawCalls,2);a.dispose();a.dispose();assert.deepEqual([...counts.values()],[1,1,1,1,1]);assert.equal(skeletonDisposals,1);assert.equal(a.group.parent,null);assert.equal(b.group.parent,parent);assert.equal(digest(posedVertices(b)),before);assert.throws(()=>a.update('walk',0),/disposed/);b.dispose();
+});
+
+test('coat keys never change anatomy; the individual seed does when variation is on; individuals replay exactly',()=>{
+ const anatomy=s=>digest(s.positions,s.index,s.skinIndex,s.skinWeight);
+ for(const id of COMPOSER_PRESET_IDS){const species={...composerPreset(id),individualSeed:5},ref=buildIndividual(species).skin,refHash=anatomy(ref);
+  for(const change of[{pattern:COAT_PATTERNS[(COAT_PATTERNS.indexOf(species.pattern)+3)%COAT_PATTERNS.length]},{marks:species.marks^0xff},{colorSeed:(species.colorSeed+4321)%10000},{patternScale:1.95,patternContrast:0.1,countershade:0.05},{palette:'sable'}])
+   assert.equal(anatomy(buildIndividual({...species,...change}).skin),refHash,`${id}: ${Object.keys(change).join('+')} must not change positions, index or skinning`);
+  const other=buildIndividual({...species,individualSeed:6}).skin;
+  assert.notEqual(anatomy(other),refHash,`${id}: another individual must change geometry when variability > 0`);
+  assert.equal(anatomy(buildIndividual({...species,individualSeed:6,variability:0,sex:'female'}).skin),anatomy(buildIndividual({...species,individualSeed:5,variability:0,sex:'female'}).skin),`${id}: variability 0 makes same-sex seeds clones`);
+  const replay=buildIndividual(decodeComposerRecipe(encodeComposerRecipe(species)).recipe).skin;
+  assert.equal(digest(replay.positions,replay.index,replay.skinIndex,replay.skinWeight,replay.colors),digest(ref.positions,ref.index,ref.skinIndex,ref.skinWeight,ref.colors),`${id}: individual replay`);
+ }
+ // createComposerCreature builds exactly the derived individual
+ const recipe={...composerPreset('giraffe'),individualSeed:11,maturity:0.6},c=createComposerCreature(recipe);
+ try{const s=buildIndividual(recipe).skin;assert.equal(digest(c.skin.positions,c.skin.index),digest(s.positions,s.index));assert.deepEqual(c.individual.effectiveRecipe,deriveComposerIndividual(recipe).recipe);assert.deepEqual(c.details().individual,c.individual);}finally{c.dispose();}
 });
