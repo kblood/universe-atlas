@@ -39,7 +39,7 @@ const $=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 const esc=(s:string)=>s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]!));
 const GROUPS:{title:string;keys:Key[];extra?:string}[]=[
  {title:"Body",keys:["layout","legPairs","bodyLength","girth","posture","torso","armor"]},
- {title:"Head and neck",keys:["neckLength","head","headSize","snoutLength","horns","trunk","trunkLength"]},
+ {title:"Head and neck",keys:["neckLength","head","headSize","snoutLength","horns","trunkLength"]},
  {title:"Legs and arms",keys:["legs","legLength","feet","arms","armLength","hands"]},
  {title:"Wings and tail",keys:["wings","wingSpan","tail","tailLength"]},
  {title:"Colour",keys:["palette","colorSeed"]},
@@ -48,18 +48,19 @@ const GROUPS:{title:string;keys:Key[];extra?:string}[]=[
   extra:`<button id="composer-next-individual" type="button">Next individual</button><p class="composer-hint">Individual keys pick one animal of the species; the species controls above stay unchanged, so the starting animal is kept.</p>`},
 ];
 const FIELD:Record<Key,string>={layout:"Body layout",legPairs:"Walking leg pairs",bodyLength:"Body length",girth:"Girth",posture:"Posture (low to upright)",torso:"Torso",armor:"Shell or armour",
- neckLength:"Neck length",head:"Head",headSize:"Head size",snoutLength:"Snout or beak length",horns:"Horns",trunk:"Trunk",trunkLength:"Trunk length",
+ neckLength:"Neck length",head:"Face",headSize:"Head size",snoutLength:"Snout or beak length",horns:"Horns",trunk:"Trunk",trunkLength:"Proboscis length",
  legs:"Leg type",legLength:"Leg length",feet:"Feet",arms:"Arms (not used for walking)",armLength:"Arm length",hands:"Hands",
  wings:"Wings (ground display only)",wingSpan:"Wing span",tail:"Tail",tailLength:"Tail length",palette:"Colours",colorSeed:"Colour variation",
  pattern:"Coat pattern",marks:"Markings",patternScale:"Pattern scale",patternContrast:"Pattern contrast",countershade:"Pale belly (countershading)",
  dimorphism:"Male/female difference",variability:"Individual variation",allometry:"Size scaling (allometry)",
- individualSeed:"Individual (0 = type specimen)",sex:"Sex",maturity:"Age (young to adult)",condition:"Body condition (lean to heavy)"};
+ individualSeed:"Individual (0 = type specimen)",sex:"Sex",maturity:"Age (young to adult)",condition:"Body condition (lean to heavy)",
+ eyes:"Eyes",iris:"Iris colour"};
 const MARK_LABEL:Record<CoatMarkName,string>={socks:"Socks (pale lower legs)",mask:"Face mask","blaze":"Blaze (pale face stripe)","tail-tip":"Tail tip","tail-rings":"Tail rings","ear-tips":"Ear tips","rump-patch":"Rump patch","juvenile-spots":"Juvenile spots"};
 const VALUE:Record<string,string>={
  "layout:limbless":"Limbless (worm, snake)","layout:biped":"Two legs (bird, ape, dinosaur)","layout:quadruped":"Four upright legs (mammal)","layout:sprawled":"Four sprawling legs (turtle, lizard)","layout:many-legged":"Many legs (centipede)",
  "torso:slim":"Slim","torso:barrel":"Barrel","torso:deep-chest":"Deep chest","torso:flat":"Flat","torso:annulated":"Ringed (worm)","torso:segmented":"Segmented (arthropod)",
- "head:muzzle":"Muzzle (mammal)","head:jaws":"Toothed jaws (reptile)","head:beak":"Beak (bird, turtle)","head:flat-face":"Flat face (ape)","head:blunt":"Blunt (worm)","head:mandibles":"Mandibles (centipede)",
- "horns:none":"None","horns:nasal":"Nose horn (rhino)","horns:paired":"Paired horns","horns:ossicones":"Ossicones (giraffe)","horns:crest":"Head crest",
+ "head:muzzle":"Muzzle (mammal)","head:jaws":"Toothed jaws (reptile)","head:beak":"Beak (bird, turtle)","head:flat-face":"Flat face (ape)","head:blunt":"Blunt (worm)","head:mandibles":"Mandibles (centipede)","head:proboscis":"Proboscis / trunk (elephant, tapir)",
+ "horns:none":"None","horns:nasal":"Nose horn (rhino)","horns:paired":"Paired horns","horns:ossicones":"Ossicones (giraffe)","horns:crest":"Crest or casque",
  "legs:pillar":"Pillar (elephant, rhino)","legs:plantigrade":"Flat-footed (bear, ape)","legs:digitigrade":"Toe-walking (dog, bird)","legs:unguligrade":"Tip-toe hooved (deer, giraffe)","legs:arthropod":"Jointed (insect, centipede)",
  "feet:hoof":"Hooves","feet:paw":"Paws","feet:claw":"Clawed toes","feet:pad":"Round pads","feet:hand":"Hand-like feet","feet:spike":"Spiked tips",
  "arms:none":"None","arms:small":"Small arms","arms:grasping":"Long grasping arms","hands:hand":"Hands with fingers","hands:claw":"Claws","hands:pincer":"Pincers",
@@ -88,7 +89,7 @@ function why(r:ComposerRecipe,key:Key):string{
  if((key==="armLength"||key==="hands")&&r.arms==="none")return "No arms are selected.";
  if(key==="wingSpan"&&r.wings==="none")return "No wings are selected.";
  if(key==="tailLength"&&r.tail==="none")return "No tail is selected.";
- if(key==="trunkLength"&&r.trunk==="none")return "No trunk is selected.";
+ if(key==="trunkLength"&&r.head!=="proboscis")return "Only a Proboscis face has a trunk.";
  if(key==="sex"&&r.dimorphism===0)return "This species has no sex differences (Male/female difference is 0).";
  if((key==="patternScale"||key==="patternContrast")&&resolveCoatPattern(r.pattern,r.palette)==="plain")return "A plain coat has no pattern to scale or sharpen.";
  return "";

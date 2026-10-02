@@ -9,12 +9,17 @@
  * pattern, marks and pigment family come from archetype-weighted tables.
  *
  * Determinism: stream 'composer-species-v1/<seed>'; a rejected draw resamples on
- * '<seed>/r1' .. '<seed>/r8'. Every draw order below is append-only. */
+ * '<seed>/r1' .. '<seed>/r8'. Every draw order below is append-only.
+ *
+ * fauna-composer-face-1 changes only the post-draw rewrites: a drawn trunk on a muzzle
+ * becomes the proboscis face (a trunk anywhere else is dropped), the horns become the kind
+ * the face builds, and eyes and iris are 'auto'. No draw is added or moved. */
 import * as THREE from 'three';
-import {COMPOSER_PRESET_IDS, COMPOSER_RANGES, COMPOSER_V2_DEFAULTS, COMPOSER_RECIPE_VERSION, composerPreset, composerRandom, composerSpeciesEqual, normalizeComposerRecipe,
+import {COMPOSER_PRESET_IDS, COMPOSER_RANGES, COMPOSER_V2_DEFAULTS, COMPOSER_V3_DEFAULTS, COMPOSER_RECIPE_VERSION, composerPreset, composerRandom, composerSpeciesEqual, normalizeComposerRecipe,
   type ComposerLayout, type ComposerNumberKey, type ComposerRecipe} from './fauna-composer-recipe.ts';
 import {buildComposerGraph, type ComposerGraph} from './fauna-composer-rig.ts';
 import {COAT_MARK_BITS, type CoatPaletteId, type CoatPattern, type CoatMarkName} from './fauna-coat-vocab.ts';
+import {composerHeadgearBuild} from './fauna-composer-face.ts';
 
 export const COMPOSER_SPECIES_GENERATOR_VERSION = 'composer-species-v1';
 export const COMPOSER_ARCHETYPES = ['ungulate-grazer', 'giraffid', 'pachyderm', 'cursorial-carnivore', 'theropod', 'ratite', 'bird', 'sprawler-lizard', 'tortoise', 'primate', 'myriapod', 'worm'] as const;
@@ -142,7 +147,7 @@ function drawSpecies(stream: string, archetype: ComposerArchetype | undefined): 
   const kind = pickW(COMPOSER_ARCHETYPES.map(a => [a, COMPOSER_ARCHETYPE_PRIORS[a].weight] as const));
   const a = archetype ?? kind, p = COMPOSER_ARCHETYPE_PRIORS[a];
   const latent = {size: z(), limb: z(), neck: z(), robust: z()};
-  const r: ComposerRecipe = {...composerPreset('giraffe'), ...COMPOSER_V2_DEFAULTS, version: COMPOSER_RECIPE_VERSION, layout: p.layout};
+  const r: ComposerRecipe = {...composerPreset('giraffe'), ...COMPOSER_V2_DEFAULTS, ...COMPOSER_V3_DEFAULTS, version: COMPOSER_RECIPE_VERSION, layout: p.layout};
   const out = r as unknown as Record<string, unknown>;
   // numeric fields in COMPOSER_RANGES order, one own latent each
   for (const key of Object.keys(COMPOSER_RANGES) as ComposerNumberKey[]) {
@@ -178,8 +183,9 @@ function drawSpecies(stream: string, archetype: ComposerArchetype | undefined): 
   const wingRoll = rand();
   // ---- anatomical exclusions (every rule keeps the result coherent; none is a composerConstraints trigger)
   if (r.head === 'mandibles' && r.layout !== 'many-legged') r.head = 'jaws';
-  if (r.trunk === 'trunk' && r.head !== 'muzzle') r.trunk = 'none';
-  if (r.trunk === 'trunk' && r.horns === 'nasal') r.horns = 'none';
+  // a trunk is a nose: it makes a muzzle the proboscis face, and is dropped on any other face
+  if (r.trunk === 'trunk') { if (r.head === 'muzzle') r.head = 'proboscis'; else r.trunk = 'none'; }
+  if (r.trunk === 'trunk' && r.head === 'proboscis' && r.horns === 'nasal') r.horns = 'none';
   if (r.tail === 'feather-fan' && !(r.layout === 'biped' && r.head === 'beak')) r.tail = 'stub';
   if (r.armor === 'dome' && r.layout !== 'sprawled' && r.layout !== 'quadruped') r.armor = 'none';
   if (r.armor === 'dome' && r.wings !== 'none') r.wings = 'none';
@@ -191,6 +197,9 @@ function drawSpecies(stream: string, archetype: ComposerArchetype | undefined): 
   if (r.layout === 'biped' && r.posture > 0.6 && r.tail !== 'none') r.tailLength = Math.min(r.tailLength, 1);
   if (r.wings !== 'none') r.wingSpan = Math.min(r.wingSpan, a === 'ratite' ? 1.4 : 3.6);
   if (r.wings === 'none') r.wingSpan = numberIn('wingSpan', 1 + wingRoll);
+  // face rules: only headgear the face builds; eyes and iris resolve automatically
+  r.horns = composerHeadgearBuild(r).built;
+  r.eyes = 'auto'; r.iris = 'auto';
   r.variability = 1; r.allometry = 1; r.individualSeed = 0; r.sex = 'auto'; r.maturity = 1; r.condition = 0;
   return {recipe: normalizeComposerRecipe(r).recipe, archetype: a};
 }

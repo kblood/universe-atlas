@@ -1,13 +1,16 @@
-// Recipe v2, individual variation and the coherent species generator (WP2).
+// Recipe v2/v3, individual variation and the coherent species generator (WP2; face round WP1).
 // The v1 fixture was captured at commit 1ec5072 (before v2) and is the compatibility oracle.
+// Recipe v3 (fauna-composer-face-1) migrates v1/v2 trunks into the face: muzzle + trunk becomes 'proboscis',
+// a trunk on any other face is removed; both are reported as issues.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {
-  COMPOSER_PRESET_IDS, COMPOSER_RANGES, COMPOSER_RECIPE_KEYS, COMPOSER_RECIPE_VERSION, COMPOSER_SPECIES_KEYS, COMPOSER_V1_KEYS, COMPOSER_V2_DEFAULTS,
-  composerConstraints, composerPreset, composerRecipesEqual, composerSpeciesEqual, decodeComposerRecipe, encodeComposerRecipe, normalizeComposerRecipe, randomComposerRecipe,
+  COMPOSER_PRESET_IDS, COMPOSER_RANGES, COMPOSER_RECIPE_KEYS, COMPOSER_RECIPE_VERSION, COMPOSER_SPECIES_KEYS, COMPOSER_V1_KEYS, COMPOSER_V2_DEFAULTS, COMPOSER_V2_KEYS, COMPOSER_V3_DEFAULTS,
+  composerConstraints, composerLegacyPresetId, composerPreset, composerRecipesEqual, composerSpeciesEqual, decodeComposerRecipe, drawComposerRandomV1, encodeComposerRecipe, normalizeComposerRecipe, randomComposerRecipe,
 } from '../src/fauna-composer-recipe.ts';
+import {composerHeadgearBuild} from '../src/fauna-composer-face.ts';
 import {COMPOSER_BUDGET, buildComposerGraph} from '../src/fauna-composer-rig.ts';
 import {buildComposerSkin} from '../src/fauna-composer-mesh.ts';
 import {createComposerCreature} from '../src/fauna-composer.ts';
@@ -19,38 +22,56 @@ const fixture = JSON.parse(readFileSync(new URL('./fixtures/composer-v1-links.js
 const allEntries = [...fixture.presets, ...fixture.fixtureSeeds, ...fixture.extremes, ...fixture.wild];
 const digest = (...arrays) => { const h = createHash('sha256'); for (const a of arrays) h.update(Buffer.from(a.buffer, a.byteOffset, a.byteLength)); return h.digest('hex'); };
 const v1Values = recipe => fixture.keys.map(key => recipe[key]);
-const presetOf = recipe => COMPOSER_PRESET_IDS.find(id => COMPOSER_V1_KEYS.every(key => composerPreset(id)[key] === recipe[key]));
+// a (migrated) v1 text's preset: the redesigned hybrids still match their legacy v1 values
+const presetOf = recipe => composerLegacyPresetId(recipe);
 const v2Only = COMPOSER_RECIPE_KEYS.filter(key => !COMPOSER_V1_KEYS.includes(key));
+const LATER_DEFAULTS = {...COMPOSER_V2_DEFAULTS, ...COMPOSER_V3_DEFAULTS};
+/** The 26 v1 values a v1 text has after the v3 face migration. */
+const migratedV1 = values => { const r = Object.fromEntries(fixture.keys.map((k, i) => [k, values[i]])); if (r.trunk === 'trunk') { if (r.head === 'muzzle') r.head = 'proboscis'; else r.trunk = 'none'; } return fixture.keys.map(k => r[k]); };
+const MIGRATION_ISSUE = /^Trunk: (now a face type; this muzzle became Face = Proboscis\.|removed\. A trunk is a nose and only grows on a mammal muzzle; this [a-z-]+ face is kept\. Choose Face -> Proboscis for a trunk\.)$/;
 const mean = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
 const cv = xs => { const m = mean(xs); return Math.sqrt(xs.reduce((a, x) => a + (x - m) ** 2, 0) / (xs.length - 1)) / m; };
 const pearson = (a, b) => { const ma = mean(a), mb = mean(b); let ab = 0, aa = 0, bb = 0; for (let i = 0; i < a.length; i++) { ab += (a[i] - ma) * (b[i] - mb); aa += (a[i] - ma) ** 2; bb += (b[i] - mb) ** 2; } return ab / Math.sqrt(aa * bb); };
 const withoutAllometry = traits => { const {allometry, ...rest} = traits; return rest; };
 
-test('fixture: the key list is the frozen v1 order and v2 keys are appended', () => {
+test('fixture: the key list is the frozen v1 order and v2, then v3 keys are appended', () => {
   assert.deepEqual([...COMPOSER_V1_KEYS], fixture.keys);
   assert.deepEqual(COMPOSER_RECIPE_KEYS.slice(0, 26), fixture.keys);
-  assert.equal(COMPOSER_RECIPE_VERSION, 2);
+  assert.deepEqual([...COMPOSER_V2_KEYS], [...fixture.keys, 'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade', 'dimorphism', 'variability', 'allometry', 'individualSeed', 'sex', 'maturity', 'condition']);
+  assert.ok(Object.isFrozen(COMPOSER_V2_KEYS));
+  assert.deepEqual([...COMPOSER_RECIPE_KEYS], [...COMPOSER_V2_KEYS, 'eyes', 'iris']);
+  assert.equal(COMPOSER_RECIPE_VERSION, 3);
   assert.deepEqual(COAT_PALETTE_IDS.slice(0, 6), [...LEGACY_PALETTE_IDS]);
   assert.equal(allEntries.length, 12 + 128 + 27 + 256);
 });
 
-test('every v1 fixture text decodes with no error and no issue and keeps all 26 v1 values', () => {
-  let presets = 0, others = 0;
+test('every v1 fixture text decodes with no error, only face-migration issues, and keeps all 26 v1 values (face-migrated)', () => {
+  let presets = 0, others = 0, migrated = 0;
   for (const entry of allEntries) {
     const {recipe, issues, error} = decodeComposerRecipe(entry.text);
     assert.equal(error, null, entry.text);
-    assert.deepEqual(issues, [], entry.text);
-    assert.deepEqual(v1Values(recipe), entry.values, entry.text);
-    assert.equal(recipe.version, 2);
+    for (const issue of issues) assert.match(issue, MIGRATION_ISSUE, entry.text);
+    assert.equal(issues.length, entry.values[fixture.keys.indexOf('trunk')] === 'trunk' ? 1 : 0, entry.text);
+    migrated += issues.length;
+    assert.deepEqual(v1Values(recipe), migratedV1(entry.values), entry.text);
+    assert.equal(recipe.version, 3);
     const id = presetOf(recipe);
     if (id) {
-      // a v1 preset link names the preset: it adopts the preset's v2 species values
+      // a v1 preset link names the preset: it adopts the preset's later species values and keeps its own v1 choices
       presets++;
-      assert.ok(composerSpeciesEqual(recipe, composerPreset(id)), `${entry.text} -> ${id}`);
-      assert.ok(composerRecipesEqual(recipe, composerPreset(id)), `${entry.text} -> ${id} (individual keys neutral)`);
+      for (const key of COMPOSER_SPECIES_KEYS) if (!COMPOSER_V1_KEYS.includes(key)) assert.equal(recipe[key], composerPreset(id)[key], `${entry.text} -> ${id}: ${key}`);
+      // the redesigned hybrids keep the legacy horn (disclosed); every other preset link is the preset itself
+      if (['shelled-giraffe-bird', 'trunked-centipede', 'winged-ape-rhino'].includes(id)) {
+        assert.equal(composerRecipesEqual(recipe, {...composerPreset(id), horns: recipe.horns}), true, `${entry.text} -> ${id} (legacy horn kept)`);
+        assert.notEqual(recipe.horns, composerPreset(id).horns);
+        assert.ok(composerConstraints(recipe).some(c => c.part === 'Horns' && c.chosen === recipe.horns), `${id}: legacy horn disclosed`);
+      } else {
+        assert.ok(composerSpeciesEqual(recipe, composerPreset(id)), `${entry.text} -> ${id}`);
+        assert.ok(composerRecipesEqual(recipe, composerPreset(id)), `${entry.text} -> ${id} (individual keys neutral)`);
+      }
     } else {
       others++;
-      for (const key of v2Only) assert.equal(recipe[key], COMPOSER_V2_DEFAULTS[key], `${entry.text}: ${key} default`);
+      for (const key of v2Only) assert.equal(recipe[key], LATER_DEFAULTS[key], `${entry.text}: ${key} default`);
       const derived = deriveComposerIndividual(recipe);
       assert.equal(derived.traits.neutral, true, entry.text);
       assert.deepEqual(derived.recipe, recipe, entry.text);
@@ -58,54 +79,72 @@ test('every v1 fixture text decodes with no error and no issue and keeps all 26 
     }
   }
   assert.ok(presets >= 12 && others > 300, `presets ${presets}, others ${others}`);
+  assert.ok(migrated > 0);
 });
 
 // The v1 head-skin digests (captured at 1ec5072) are frozen history: skin-2
 // (WP3) and graph-2 (WP4) change every legacy skin by design, which is the
 // documented drift for old links. composer-skin2-links.json pins the new build
-// of the same 28 migrated texts; bone counts must still equal v1 (no new bones).
+// of the same 28 migrated texts; bone counts must still equal v1 (no new bones),
+// except that a trunk dropped by the face rules (fauna-composer-face-1) removes
+// its 6 trunk bones. The face round repinned exactly 13 entries (driftFromV2).
 const skin2 = JSON.parse(readFileSync(new URL('./fixtures/composer-skin2-links.json', import.meta.url), 'utf8'));
 test('legacy recipes: migrated neutral v1 texts build the pinned skin-2 digest byte for byte, with v1 bone counts', () => {
-  let checked = 0;
+  let checked = 0, repinned = 0;
   assert.deepEqual(Object.keys(skin2.byText).sort(), Object.keys(fixture.headSkinDigests.byText).sort());
   for (const [text, v1] of Object.entries(fixture.headSkinDigests.byText)) {
     const pinned = skin2.byText[text];
     const decoded = decodeComposerRecipe(text).recipe;
     // a non-preset v1 text is neutral already; a preset text is checked with its v1 fields only (v2 keys neutral)
     const neutral = presetOf(decoded) ? {...decoded, ...COMPOSER_V2_DEFAULTS} : decoded;
+    const dropped = decodeComposerRecipe(text).issues.some(issue => issue.startsWith('Trunk: removed'));
+    if (pinned.driftFromV2) {
+      repinned++;
+      // a repin is explained: a horn the face does not build, or a dropped trunk
+      const hornChanged = composerHeadgearBuild(decoded).built !== decoded.horns;
+      assert.equal(pinned.driftFromV2, dropped ? 'fauna-composer-face-1: trunk dropped' : 'fauna-composer-face-1: horn not built on face', text);
+      assert.ok(dropped || hornChanged, `${text}: repin without a face-rule cause`);
+    }
     const derived = deriveComposerIndividual(neutral);
     assert.equal(derived.traits.neutral, true, text);
     const graph = buildComposerGraph(derived.recipe), skin = buildComposerSkin(graph);
     assert.equal(digest(skin.positions, skin.index, skin.skinIndex, skin.skinWeight, skin.colors), pinned.skin, text);
     assert.deepEqual([skin.vertexCount, skin.triangleCount, graph.bones.length], [pinned.vertices, pinned.triangles, pinned.bones], text);
-    assert.equal(graph.bones.length, v1.bones, `${text}: graph-2 adds no bones`);
+    assert.equal(graph.bones.length, v1.bones - (dropped ? 6 : 0), `${text}: graph-2 adds no bones; a dropped trunk removes 6`);
     checked++;
   }
   assert.equal(checked, 28);
+  assert.equal(repinned, 13);
   // and through the public creature factory
   const text = fixture.fixtureSeeds[3].text, c = createComposerCreature(decodeComposerRecipe(text).recipe);
   try { assert.equal(digest(c.skin.positions, c.skin.index, c.skin.skinIndex, c.skin.skinWeight, c.skin.colors), skin2.byText[text].skin); assert.deepEqual(c.individual.deltas, []); }
   finally { c.dispose(); }
 });
 
-test('versions: v1 and v2 decode, every other version is rejected', () => {
-  for (const text of ['v3*layout_biped', 'v999*layout_biped', 'v0*layout_biped', 'v2.1*layout_biped', 'V2*layout_biped']) {
+test('versions: v1, v2 and v3 decode, every other version is rejected', () => {
+  for (const text of ['v4*layout_biped', 'v999*layout_biped', 'v0*layout_biped', 'v3.1*layout_biped', 'V3*layout_biped', 'v2.1*layout_biped', 'V2*layout_biped']) {
     const result = decodeComposerRecipe(text);
     assert.equal(result.recipe, null, text);
     assert.match(result.error, /Unsupported/, text);
   }
   assert.equal(decodeComposerRecipe('v1*layout_biped').error, null);
   assert.equal(decodeComposerRecipe('v2*layout_biped').error, null);
+  assert.equal(decodeComposerRecipe('v3*layout_biped').error, null);
+  // a v2 text does not know the v3 keys
+  const v2 = decodeComposerRecipe('v2*layout_biped*eyes_round');
+  assert.equal(v2.recipe.eyes, 'auto');
+  assert.match(v2.issues[0], /unknown recipe field "eyes"/);
+  assert.equal(decodeComposerRecipe('v3*layout_biped*eyes_round').recipe.eyes, 'round');
   // a v1 text does not know the v2 keys: they are reported and ignored
   const v1 = decodeComposerRecipe('v1*layout_biped*maturity_0.3');
   assert.equal(v1.recipe.maturity, 1);
   assert.equal(v1.issues.length, 1);
   assert.match(v1.issues[0], /unknown recipe field "maturity"/);
   assert.equal(decodeComposerRecipe('v2*layout_biped*maturity_0.3').recipe.maturity, 0.3);
-  assert.ok(encodeComposerRecipe(composerPreset('giraffe')).startsWith('v2*'));
+  assert.ok(encodeComposerRecipe(composerPreset('giraffe')).startsWith('v3*'));
 });
 
-test('v2 round trips: presets, 256 coherent species, 128 wild hybrids and range extremes (max length reported)', () => {
+test('v3 round trips: presets, 256 coherent species, 128 wild hybrids and range extremes (max length reported)', () => {
   const corpus = [...COMPOSER_PRESET_IDS.map(composerPreset)];
   for (let i = 0; i < 256; i++) corpus.push({...randomCoherentComposerRecipe(String(i)), individualSeed: i * 37 % 10000, sex: ['auto', 'female', 'male'][i % 3], maturity: 0.2 + (i % 81) / 100, condition: ((i % 41) - 20) / 20});
   for (let i = 0; i < 128; i++) corpus.push({...randomComposerRecipe(String(i)), pattern: 'brindle', marks: i * 2 % 256});
@@ -123,17 +162,22 @@ test('v2 round trips: presets, 256 coherent species, 128 wild hybrids and range 
     assert.deepEqual(decodeComposerRecipe(new URLSearchParams(url).get('composer')).recipe, recipe);
     if (text.length > maxLength) { maxLength = text.length; longest = text; }
   }
-  assert.ok(maxLength <= 650, `max encoded length ${maxLength}: ${longest}`);
-  console.log(`# max v2 encoded length ${maxLength} (limit 650; COMPOSER_RECIPE_MAX_TEXT 1200)`);
+  assert.ok(maxLength < 700, `max encoded length ${maxLength}: ${longest}`);
+  console.log(`# max v3 encoded length ${maxLength} (limit 700; COMPOSER_RECIPE_MAX_TEXT 1200)`);
 });
 
-test('wild stream: randomComposerRecipe(String(i)) keeps the HEAD v1 fields for i = 0..255', () => {
+test('wild stream: drawComposerRandomV1(String(i)) keeps the HEAD v1 fields for i = 0..255; randomComposerRecipe only applies the face rules', () => {
   assert.equal(fixture.wild.length, 256);
   for (const entry of fixture.wild) {
-    const recipe = randomComposerRecipe(entry.seed);
-    assert.deepEqual(v1Values(recipe), entry.values, entry.seed);
-    for (const key of v2Only) assert.equal(recipe[key], COMPOSER_V2_DEFAULTS[key]);
+    const draw = drawComposerRandomV1(entry.seed), recipe = randomComposerRecipe(entry.seed);
+    assert.deepEqual(v1Values(draw), entry.values, entry.seed);
+    for (const key of v2Only) assert.equal(draw[key], LATER_DEFAULTS[key]);
     assert.ok(LEGACY_PALETTE_IDS.includes(recipe.palette));
+    // the post-pass: trunk -> face, horns -> the built kind, eyes/iris auto; nothing else moves
+    const expected = {...draw};
+    if (expected.trunk === 'trunk') { if (expected.head === 'muzzle') expected.head = 'proboscis'; else expected.trunk = 'none'; }
+    expected.horns = composerHeadgearBuild(expected).built;
+    assert.deepEqual(recipe, expected, entry.seed);
   }
 });
 

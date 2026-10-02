@@ -1,4 +1,5 @@
 import {COAT_PALETTE_IDS, COAT_PATTERNS, LEGACY_PALETTE_IDS, type CoatPaletteId, type CoatPattern} from './fauna-coat-vocab.ts';
+import {COMPOSER_EYE_TYPES, COMPOSER_IRIS, composerFaceConstraints, composerHeadgearBuild, migrateLegacyFace} from './fauna-composer-face.ts';
 
 /** Versioned, bounded recipe for the experimental modular creature composer.
  * Every part is chosen independently. The recipe never names an asset path:
@@ -8,15 +9,21 @@ import {COAT_PALETTE_IDS, COAT_PATTERNS, LEGACY_PALETTE_IDS, type CoatPaletteId,
  * Version 2 appends coat keys (pattern .. countershade), species variation keys
  * (dimorphism, variability, allometry) and individual keys (individualSeed, sex,
  * maturity, condition). Version 1 text still decodes: its 26 fields are kept and
- * the new keys take neutral defaults, so a v1 animal builds exactly as before. */
-export const COMPOSER_RECIPE_VERSION = 2;
+ * the new keys take neutral defaults, so a v1 animal builds exactly as before.
+ *
+ * Version 3 (fauna-composer-face-1) appends 'proboscis' to the face (head) choices and the
+ * keys eyes and iris. The `trunk` key stays in its encoded position but is DERIVED: a trunk
+ * exists exactly on a proboscis face. v1/v2 text and objects are migrated (migrateLegacyFace):
+ * muzzle + trunk becomes proboscis, a trunk on any other face is removed. */
+export const COMPOSER_RECIPE_VERSION = 3;
 export const COMPOSER_RECIPE_MAX_TEXT = 1200;
 
 export const COMPOSER_LAYOUTS = ['limbless', 'biped', 'quadruped', 'sprawled', 'many-legged'] as const;
 export const COMPOSER_CHOICES = {
   layout: COMPOSER_LAYOUTS,
   torso: ['slim', 'barrel', 'deep-chest', 'flat', 'annulated', 'segmented'],
-  head: ['muzzle', 'jaws', 'beak', 'flat-face', 'blunt', 'mandibles'],
+  /** The face. 'proboscis' (v3) is the trunk face. */
+  head: ['muzzle', 'jaws', 'beak', 'flat-face', 'blunt', 'mandibles', 'proboscis'],
   horns: ['none', 'nasal', 'paired', 'ossicones', 'crest'],
   legs: ['pillar', 'plantigrade', 'digitigrade', 'unguligrade', 'arthropod'],
   feet: ['hoof', 'paw', 'claw', 'pad', 'hand', 'spike'],
@@ -25,11 +32,14 @@ export const COMPOSER_CHOICES = {
   tail: ['none', 'stub', 'reptile', 'tufted', 'feather-fan', 'club'],
   armor: ['none', 'dome', 'plates', 'osteoderms', 'bands'],
   wings: ['none', 'feathered', 'membrane'],
+  /** Derived from the face since v3: 'trunk' exactly when head is 'proboscis'. */
   trunk: ['none', 'trunk'],
   /** Legacy six first (v1 indices), then the fauna-coat-1 pigment families. */
   palette: COAT_PALETTE_IDS,
   pattern: COAT_PATTERNS,
   sex: ['auto', 'female', 'male'],
+  eyes: COMPOSER_EYE_TYPES,
+  iris: COMPOSER_IRIS,
 } as const;
 export type ComposerLayout = typeof COMPOSER_LAYOUTS[number];
 type Choices = typeof COMPOSER_CHOICES;
@@ -117,17 +127,22 @@ export interface ComposerRecipe {
   sex: Choices['sex'][number];
   maturity: number;
   condition: number;
+  // ---- v3 face (species)
+  eyes: Choices['eyes'][number];
+  iris: Choices['iris'][number];
 }
 /** The 26 version-1 keys, in their v1 encoding order. */
 export const COMPOSER_V1_KEYS = ['layout', 'legPairs', 'bodyLength', 'girth', 'posture', 'torso', 'neckLength', 'head', 'headSize', 'snoutLength', 'horns',
   'legs', 'legLength', 'feet', 'arms', 'armLength', 'hands', 'tail', 'tailLength', 'armor', 'wings', 'wingSpan', 'trunk', 'trunkLength', 'palette', 'colorSeed'] as const;
-/** Encoding order: v1 keys, then the v2 keys appended (append-only). */
-export const COMPOSER_RECIPE_KEYS = [...COMPOSER_V1_KEYS,
-  'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade', 'dimorphism', 'variability', 'allometry', 'individualSeed', 'sex', 'maturity', 'condition'] as const;
+/** The 38 version-2 keys, in their v2 encoding order (frozen). */
+export const COMPOSER_V2_KEYS = Object.freeze([...COMPOSER_V1_KEYS,
+  'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade', 'dimorphism', 'variability', 'allometry', 'individualSeed', 'sex', 'maturity', 'condition'] as const);
+/** Encoding order: v2 keys, then the v3 keys appended (append-only). */
+export const COMPOSER_RECIPE_KEYS = [...COMPOSER_V2_KEYS, 'eyes', 'iris'] as const;
 export type ComposerRecipeKey = typeof COMPOSER_RECIPE_KEYS[number];
-/** What makes the species: anatomy, coat and variation strengths. Equal species keys = same species. */
+/** What makes the species: anatomy, coat, variation strengths and eyes. Equal species keys = same species. */
 export const COMPOSER_SPECIES_KEYS = [...COMPOSER_V1_KEYS,
-  'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade', 'dimorphism', 'variability', 'allometry'] as const;
+  'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade', 'dimorphism', 'variability', 'allometry', 'eyes', 'iris'] as const;
 /** What makes one animal of that species. */
 export const COMPOSER_INDIVIDUAL_KEYS = ['individualSeed', 'sex', 'maturity', 'condition'] as const;
 
@@ -136,16 +151,19 @@ export const COMPOSER_INDIVIDUAL_KEYS = ['individualSeed', 'sex', 'maturity', 'c
 export interface ComposerConstraint { part: string; chosen: string; effect: string }
 
 const base: ComposerRecipe = {
-  version: 2, layout: 'quadruped', legPairs: 2, bodyLength: 1, girth: 1, posture: 0.2, torso: 'slim', neckLength: 0.4, head: 'muzzle', headSize: 1, snoutLength: 0.6,
+  version: 3, layout: 'quadruped', legPairs: 2, bodyLength: 1, girth: 1, posture: 0.2, torso: 'slim', neckLength: 0.4, head: 'muzzle', headSize: 1, snoutLength: 0.6,
   horns: 'none', legs: 'digitigrade', legLength: 0.8, feet: 'paw', arms: 'none', armLength: 0.6, hands: 'hand', tail: 'tufted', tailLength: 0.6,
   armor: 'none', wings: 'none', wingSpan: 2, trunk: 'none', trunkLength: 0.8, palette: 'earth', colorSeed: 1,
   pattern: 'auto', marks: 0, patternScale: 1, patternContrast: 1, countershade: 0.8, dimorphism: 0, variability: 0, allometry: 0,
-  individualSeed: 0, sex: 'auto', maturity: 1, condition: 0,
+  individualSeed: 0, sex: 'auto', maturity: 1, condition: 0, eyes: 'auto', iris: 'auto',
 };
-type V2Key = Exclude<ComposerRecipeKey, typeof COMPOSER_V1_KEYS[number]>;
+type V2Key = Exclude<typeof COMPOSER_V2_KEYS[number], typeof COMPOSER_V1_KEYS[number]>;
+type V3Key = Exclude<ComposerRecipeKey, typeof COMPOSER_V2_KEYS[number]>;
 /** Neutral values of the keys version 2 added; a v1 recipe gets exactly these. */
 export const COMPOSER_V2_DEFAULTS: Readonly<Pick<ComposerRecipe, V2Key>> = Object.freeze(Object.fromEntries(
-  COMPOSER_RECIPE_KEYS.filter(k => !(COMPOSER_V1_KEYS as readonly string[]).includes(k)).map(k => [k, base[k]])) as Pick<ComposerRecipe, V2Key>);
+  COMPOSER_V2_KEYS.filter(k => !(COMPOSER_V1_KEYS as readonly string[]).includes(k)).map(k => [k, base[k]])) as Pick<ComposerRecipe, V2Key>);
+/** Neutral values of the keys version 3 added; a v1 or v2 recipe gets exactly these. */
+export const COMPOSER_V3_DEFAULTS: Readonly<Pick<ComposerRecipe, V3Key>> = Object.freeze({eyes: 'auto', iris: 'auto'});
 const preset = (p: Partial<ComposerRecipe>): Readonly<ComposerRecipe> => Object.freeze({ ...base, ...p });
 
 /** Every preset is a variable species (variability 1, allometry 1). Its individual keys stay neutral,
@@ -181,14 +199,18 @@ export const COMPOSER_PRESETS = {
     legs: 'arthropod', legLength: 0.2, feet: 'spike', tail: 'none', tailLength: 0, armor: 'bands', palette: 'ink', colorSeed: 909,
     dimorphism: 0, ...TYPE }),
   // Named hybrids show independent composition; they are starting points, not species.
+  // fauna-composer-face-1 redesign (reversible; legacy v1 links keep their old horn, see LEGACY_PRESET_V1): every part a
+  // hybrid preset shows is built. shelled-giraffe-bird carries a casque (Crest) instead of ossicones, which a beak cannot
+  // grow; trunked-centipede has the Proboscis face and no nose horn (a trunk face has no nose bones); winged-ape-rhino
+  // drops the nose horn, which a primate face cannot carry.
   'shelled-giraffe-bird': preset({ layout: 'biped', legPairs: 1, bodyLength: 0.9, girth: 1.2, posture: 0.3, torso: 'barrel', neckLength: 1.3, head: 'beak', headSize: 0.9, snoutLength: 0.5,
-    horns: 'ossicones', legs: 'unguligrade', legLength: 1.3, feet: 'hoof', tail: 'stub', tailLength: 0.3, armor: 'dome', wings: 'feathered', wingSpan: 1.6, palette: 'savanna', colorSeed: 2718,
+    horns: 'crest', legs: 'unguligrade', legLength: 1.3, feet: 'hoof', tail: 'stub', tailLength: 0.3, armor: 'dome', wings: 'feathered', wingSpan: 1.6, palette: 'savanna', colorSeed: 2718,
     dimorphism: 0, ...TYPE }),
-  'trunked-centipede': preset({ layout: 'many-legged', legPairs: 7, bodyLength: 1.4, girth: 1.3, posture: 0, torso: 'segmented', neckLength: 0.3, head: 'muzzle', headSize: 1, snoutLength: 0.4,
-    horns: 'nasal', legs: 'pillar', legLength: 0.24, feet: 'pad', tail: 'tufted', tailLength: 0.2, armor: 'bands', trunk: 'trunk', trunkLength: 1, palette: 'slate', colorSeed: 3141,
+  'trunked-centipede': preset({ layout: 'many-legged', legPairs: 7, bodyLength: 1.4, girth: 1.3, posture: 0, torso: 'segmented', neckLength: 0.3, head: 'proboscis', headSize: 1, snoutLength: 0.4,
+    horns: 'none', legs: 'pillar', legLength: 0.24, feet: 'pad', tail: 'tufted', tailLength: 0.2, armor: 'bands', trunk: 'trunk', trunkLength: 1, palette: 'slate', colorSeed: 3141,
     dimorphism: 0, ...TYPE }),
   'winged-ape-rhino': preset({ layout: 'quadruped', bodyLength: 1.2, girth: 1.25, posture: 0.25, torso: 'deep-chest', neckLength: 0.15, head: 'flat-face', headSize: 1.1, snoutLength: 0.5,
-    horns: 'nasal', legs: 'plantigrade', legLength: 0.7, feet: 'hand', arms: 'grasping', armLength: 0.8, hands: 'hand', tail: 'club', tailLength: 0.8, wings: 'membrane', wingSpan: 2.4, palette: 'earth', colorSeed: 1618,
+    horns: 'none', legs: 'plantigrade', legLength: 0.7, feet: 'hand', arms: 'grasping', armLength: 0.8, hands: 'hand', tail: 'club', tailLength: 0.8, wings: 'membrane', wingSpan: 2.4, palette: 'earth', colorSeed: 1618,
     dimorphism: 0, ...TYPE }),
 } satisfies Record<string, Readonly<ComposerRecipe>>;
 export type ComposerPresetId = keyof typeof COMPOSER_PRESETS;
@@ -203,6 +225,18 @@ export function composerPreset(id: ComposerPresetId): ComposerRecipe {
   return { ...COMPOSER_PRESETS[id] };
 }
 export function isComposerPresetId(id: unknown): id is ComposerPresetId { return typeof id === 'string' && Object.hasOwn(COMPOSER_PRESETS, id); }
+/** The v1 values the redesigned hybrid presets had (after face migration), so an old v1 preset link still names its
+ * preset. Such a link keeps its own (now disclosed) horn choice. */
+const LEGACY_PRESET_V1: Partial<Record<ComposerPresetId, Partial<ComposerRecipe>>> = {
+  'shelled-giraffe-bird': {horns: 'ossicones'}, 'trunked-centipede': {horns: 'nasal'}, 'winged-ape-rhino': {horns: 'nasal'},
+};
+/** The preset a (migrated) v1 recipe was encoded from: all 26 v1 fields equal that preset's v1 values. */
+export function composerLegacyPresetId(recipe: ComposerRecipe): ComposerPresetId | undefined {
+  return COMPOSER_PRESET_IDS.find(id => {
+    const p = {...COMPOSER_PRESETS[id], ...LEGACY_PRESET_V1[id]};
+    return COMPOSER_V1_KEYS.every(key => p[key] === recipe[key]);
+  });
+}
 
 const roundStep = (value: number, step: number) => step >= 1 ? Math.round(value) : Math.round(value / step) * step;
 const fix = (value: number) => Number(value.toFixed(4));
@@ -213,13 +247,18 @@ export function composerLegPairRange(layout: ComposerLayout): [number, number] {
 }
 
 /** Bounds every field. Out-of-range or unknown values are replaced and listed in `issues`.
- * Version 1 and 2 objects are accepted (keys v1 lacks take their neutral defaults); the output is always version 2. */
+ * Version 1, 2 and 3 objects are accepted (keys an older version lacks take their neutral defaults); the output is
+ * always version 3. A version 1 or 2 object is migrated first (migrateLegacyFace: muzzle + trunk becomes the
+ * proboscis face, a trunk on another face is removed, each with an issue). Then the trunk is always derived from the
+ * face; for version 3 or version-less objects a stale `trunk` field is ignored silently, so editing a proboscis back to
+ * a muzzle never re-promotes it. */
 export function normalizeComposerRecipe(input: unknown): { recipe: ComposerRecipe; issues: string[] } {
   const issues: string[] = [];
   const record = !!input && typeof input === 'object' && !Array.isArray(input);
-  const source = (record ? input : {}) as Record<string, unknown>;
+  let source = (record ? input : {}) as Record<string, unknown>;
   if (!record) issues.push('Recipe was not a plain object; defaults used.');
-  if (record && 'version' in source && source.version !== 1 && source.version !== COMPOSER_RECIPE_VERSION) issues.push(`Recipe version ${String(source.version).slice(0, 12)} is not supported; fields were read as version ${COMPOSER_RECIPE_VERSION}.`);
+  if (record && 'version' in source && source.version !== 1 && source.version !== 2 && source.version !== COMPOSER_RECIPE_VERSION) issues.push(`Recipe version ${String(source.version).slice(0, 12)} is not supported; fields were read as version ${COMPOSER_RECIPE_VERSION}.`);
+  if (record && (source.version === 1 || source.version === 2)) { source = {...source}; migrateLegacyFace(source, issues); }
   const recipe = { ...base } as ComposerRecipe;
   const r = recipe as unknown as Record<string, unknown>;
   for (const key of Object.keys(COMPOSER_CHOICES) as ComposerChoiceKey[]) {
@@ -243,6 +282,7 @@ export function normalizeComposerRecipe(input: unknown): { recipe: ComposerRecip
     if ('legPairs' in source) issues.push(`${recipe.layout} body uses ${lo === hi ? lo : `${lo}-${hi}`} leg pairs; ${recipe.legPairs} set to ${next}.`);
     recipe.legPairs = next;
   }
+  recipe.trunk = recipe.head === 'proboscis' ? 'trunk' : 'none';
   recipe.version = COMPOSER_RECIPE_VERSION;
   return { recipe, issues };
 }
@@ -264,10 +304,7 @@ export function composerConstraints(recipe: ComposerRecipe): ComposerConstraint[
     out.push({ part: 'Wings', chosen: recipe.wings, effect: 'Wing roots are moved to the shell rim instead of the back.' });
   if (recipe.armor === 'plates' && recipe.layout === 'many-legged')
     out.push({ part: 'Armor', chosen: 'plates', effect: 'One plate per body segment.' });
-  if (recipe.trunk === 'trunk' && (recipe.head === 'beak' || recipe.head === 'mandibles'))
-    out.push({ part: 'Trunk', chosen: 'trunk', effect: `Grows from above the ${recipe.head === 'beak' ? 'beak' : 'mandibles'}; it does not replace the mouth.` });
-  if (recipe.horns === 'nasal' && recipe.trunk === 'trunk')
-    out.push({ part: 'Horn', chosen: 'nasal', effect: 'Moved back onto the forehead to leave room for the trunk.' });
+  out.push(...composerFaceConstraints(recipe));
   if (recipe.arms !== 'none' && recipe.layout !== 'biped')
     out.push({ part: 'Arms', chosen: recipe.arms, effect: recipe.layout === 'limbless' ? 'Attached behind the head; the body still crawls.' : 'Added as an extra pair in front of the walking legs; they do not touch the ground.' });
   if (recipe.arms === 'none' && recipe.hands !== 'hand')
@@ -302,12 +339,12 @@ export function composerRandom(seed: string): () => number {
   return () => { state = (state + 0x6d2b79f5) >>> 0; let t = state; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 
-/** Seeded structural combination ("wild"): each part is drawn independently, so the
- * result mixes anatomy from different presets rather than choosing one. The stream
- * 'composer-random-v1/' and its draw order are frozen; the v2 keys keep their
- * neutral defaults and take no draws. For plausible animals use
- * randomCoherentComposerRecipe (fauna-composer-species.ts). */
-export function randomComposerRecipe(seed: string): ComposerRecipe {
+/** The six v1 faces: the frozen wild draw picks uniformly from exactly these (never 'proboscis'). */
+const COMPOSER_V1_FACES = ['muzzle', 'jaws', 'beak', 'flat-face', 'blunt', 'mandibles'] as const;
+/** The frozen wild draw: stream 'composer-random-v1/' with its fixed draw order, byte-identical to the v1/v2
+ * generator. The v2 and v3 keys keep their neutral defaults and take no draws. The result is the raw draw (it may
+ * carry a trunk or horns the face cannot have); randomComposerRecipe applies the face rules to it. */
+export function drawComposerRandomV1(seed: string): ComposerRecipe {
   const rand = composerRandom(`composer-random-v1/${String(seed).slice(0, 160)}`);
   const pick = <T>(list: readonly T[], weights?: number[]): T => {
     if (!weights) return list[Math.floor(rand() * list.length) % list.length]!;
@@ -320,11 +357,11 @@ export function randomComposerRecipe(seed: string): ComposerRecipe {
   const [lo, hi] = composerLegPairRange(layout);
   const legs = layout === 'many-legged' ? pick(COMPOSER_CHOICES.legs, [1, 0.5, 0.4, 0.3, 2.5]) : pick(COMPOSER_CHOICES.legs, [1, 1, 1.2, 1, 0.4]);
   const r: ComposerRecipe = {
-    ...COMPOSER_V2_DEFAULTS, version: COMPOSER_RECIPE_VERSION, layout, legPairs: lo + Math.floor(rand() * (hi - lo + 1)),
+    ...COMPOSER_V2_DEFAULTS, ...COMPOSER_V3_DEFAULTS, version: COMPOSER_RECIPE_VERSION, layout, legPairs: lo + Math.floor(rand() * (hi - lo + 1)),
     bodyLength: layout === 'limbless' || layout === 'many-legged' ? range('bodyLength', 0.4, 2) : range('bodyLength', 0.3, 2.4),
     girth: range('girth', 0.75, 1.4), posture: range('posture'),
     torso: layout === 'limbless' ? pick(['annulated', 'slim', 'segmented'] as const) : layout === 'many-legged' ? pick(['segmented', 'annulated', 'flat'] as const) : pick(['slim', 'barrel', 'deep-chest', 'flat'] as const),
-    neckLength: layout === 'limbless' ? 0 : range('neckLength', 0, 1.5), head: pick(COMPOSER_CHOICES.head), headSize: range('headSize', 0.7, 1.4), snoutLength: range('snoutLength', 0.1, 1.2),
+    neckLength: layout === 'limbless' ? 0 : range('neckLength', 0, 1.5), head: pick(COMPOSER_V1_FACES), headSize: range('headSize', 0.7, 1.4), snoutLength: range('snoutLength', 0.1, 1.2),
     horns: pick(COMPOSER_CHOICES.horns, [2.5, 1, 1, 1, 1]), legs,
     legLength: layout === 'many-legged' ? range('legLength', 0.12, 0.4) : layout === 'sprawled' ? range('legLength', 0.3, 0.7) : range('legLength', 0.4, 1.6),
     feet: legs === 'arthropod' ? pick(['spike', 'claw', 'hand'] as const, [3, 1, 0.5]) : pick(COMPOSER_CHOICES.feet, [1, 1, 1, 1, 0.6, 0.3]),
@@ -334,27 +371,43 @@ export function randomComposerRecipe(seed: string): ComposerRecipe {
     trunk: pick(COMPOSER_CHOICES.trunk, [3, 1]), trunkLength: range('trunkLength', 0.4, 1.2), palette: pick(LEGACY_PALETTE_IDS), colorSeed: Math.floor(rand() * 10000),
   };
   if (r.tail === 'none') r.tailLength = 0;
+  return r;
+}
+/** Seeded structural combination ("wild"): each part is drawn independently, so the
+ * result mixes anatomy from different presets rather than choosing one. The draw is
+ * drawComposerRandomV1 (frozen); a post-pass then obeys the face rules without any new
+ * draw: a trunk on a muzzle becomes the proboscis face, a trunk on another face is
+ * dropped, the horns become the kind the face builds, and eyes and iris are 'auto'.
+ * For plausible animals use randomCoherentComposerRecipe (fauna-composer-species.ts). */
+export function randomComposerRecipe(seed: string): ComposerRecipe {
+  const r = drawComposerRandomV1(seed);
+  if (r.trunk === 'trunk') { if (r.head === 'muzzle') r.head = 'proboscis'; else r.trunk = 'none'; }
+  r.horns = composerHeadgearBuild(r).built;
+  r.eyes = 'auto'; r.iris = 'auto';
   return normalizeComposerRecipe(r).recipe;
 }
 
 const NUMBER_KEYS = new Set<string>(Object.keys(COMPOSER_RANGES));
-/** Compact, URL-safe text: `v2*layout_biped*bodyLength_1.6*...` (form-encoding leaves `*`, `_`, `.`, `-` intact). Always writes version 2. */
+/** Compact, URL-safe text: `v3*layout_biped*bodyLength_1.6*...` (form-encoding leaves `*`, `_`, `.`, `-` intact). Always writes version 3. */
 export function encodeComposerRecipe(recipe: ComposerRecipe): string {
   const { recipe: r } = normalizeComposerRecipe(recipe);
   return [`v${COMPOSER_RECIPE_VERSION}`, ...COMPOSER_RECIPE_KEYS.map(key => `${key}_${String(r[key])}`)].join('*');
 }
 /** Decodes shared text. An unsupported version or oversized text is an error
  * (nothing is built); unknown or out-of-range fields are bounded and listed.
- * 'v1*' text reads only the 26 v1 fields and raises no issue for the keys it lacks:
- * they take neutral defaults, except that a v1 text whose 26 fields equal a preset's
- * adopts that preset's v2 species values (so an old preset link still names the preset). */
+ * 'v1*' text reads only the 26 v1 fields and 'v2*' text the 38 v2 fields; neither raises an
+ * issue for the keys it lacks: they take neutral defaults, except that a v1 text whose 26
+ * fields equal a preset's adopts that preset's later species values (so an old preset link
+ * still names the preset). v1 and v2 text is face-migrated (migrateLegacyFace), and the
+ * migration is reported in `issues`. In v3 text the trunk follows the face. */
 export function decodeComposerRecipe(text: string): { recipe: ComposerRecipe | null; issues: string[]; error: string | null } {
   if (typeof text !== 'string' || !text.trim()) return { recipe: null, issues: [], error: 'Empty composer recipe.' };
   if (text.length > COMPOSER_RECIPE_MAX_TEXT) return { recipe: null, issues: [], error: `Composer recipe is longer than ${COMPOSER_RECIPE_MAX_TEXT} characters.` };
   const [version, ...pairs] = text.split('*');
-  const legacy = version === 'v1';
-  if (!legacy && version !== `v${COMPOSER_RECIPE_VERSION}`) return { recipe: null, issues: [], error: `Unsupported composer recipe version "${String(version).slice(0, 12)}".` };
-  const known: readonly string[] = legacy ? COMPOSER_V1_KEYS : COMPOSER_RECIPE_KEYS;
+  const textVersion = version === 'v1' ? 1 : version === 'v2' ? 2 : version === `v${COMPOSER_RECIPE_VERSION}` ? COMPOSER_RECIPE_VERSION : 0;
+  if (!textVersion) return { recipe: null, issues: [], error: `Unsupported composer recipe version "${String(version).slice(0, 12)}".` };
+  const legacy = textVersion === 1;
+  const known: readonly string[] = textVersion === 1 ? COMPOSER_V1_KEYS : textVersion === 2 ? COMPOSER_V2_KEYS : COMPOSER_RECIPE_KEYS;
   const source: Record<string, unknown> = {}, issues: string[] = [];
   for (const pair of pairs) {
     const split = pair.indexOf('_'), key = split > 0 ? pair.slice(0, split) : pair, value = split > 0 ? pair.slice(split + 1) : '';
@@ -362,16 +415,21 @@ export function decodeComposerRecipe(text: string): { recipe: ComposerRecipe | n
     if (key in source) { issues.push(`Repeated recipe field "${key}"; first value kept.`); continue; }
     source[key] = NUMBER_KEYS.has(key) ? (value.trim() ? Number(value) : NaN) : value;
   }
-  const normalized = normalizeComposerRecipe(source);
+  // the version marker makes normalize migrate v1/v2 text (it is not a recipe field of the text)
+  const normalized = normalizeComposerRecipe({...source, version: textVersion});
+  if (textVersion === COMPOSER_RECIPE_VERSION && 'trunk' in source && source.trunk !== normalized.recipe.trunk)
+    issues.push('Trunk follows the Face; trunk field ignored.');
+  // normalize (migration included) THEN the preset match, so a v1 trunked-centipede text matches the migrated preset
   if (legacy) upgradeLegacyPreset(normalized.recipe);
   return { recipe: normalized.recipe, issues: [...issues, ...normalized.issues], error: null };
 }
-/** v1 preset links keep their preset identity: copy that preset's v2 species values. */
+/** v1 preset links keep their preset identity: copy that preset's later species values (the v1 fields already
+ * match, or are the legacy choices a redesigned preset used to have, which the link keeps). */
 function upgradeLegacyPreset(recipe: ComposerRecipe): void {
-  const id = COMPOSER_PRESET_IDS.find(id => COMPOSER_V1_KEYS.every(key => COMPOSER_PRESETS[id][key] === recipe[key]));
+  const id = composerLegacyPresetId(recipe);
   if (!id) return;
   const r = recipe as unknown as Record<string, unknown>, p = COMPOSER_PRESETS[id] as unknown as Record<string, unknown>;
-  for (const key of COMPOSER_SPECIES_KEYS) r[key] = p[key];
+  for (const key of COMPOSER_SPECIES_KEYS) if (!(COMPOSER_V1_KEYS as readonly string[]).includes(key)) r[key] = p[key];
 }
 /** Every key (species and individual) is equal. */
 export function composerRecipesEqual(a: ComposerRecipe, b: ComposerRecipe): boolean {

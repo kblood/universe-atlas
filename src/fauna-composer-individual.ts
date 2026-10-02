@@ -25,9 +25,11 @@
  * Code that holds an effective recipe (rig, skin) calls composerIndividualTraits. */
 import {COMPOSER_RANGES, composerHash, composerRandom, normalizeComposerRecipe, type ComposerNumberKey, type ComposerRecipe} from './fauna-composer-recipe.ts';
 import {COAT_MARK_BITS} from './fauna-coat-vocab.ts';
+import {composerAnatomyProjection} from './fauna-composer-face.ts';
 
 export const COMPOSER_INDIVIDUAL_VERSION = 'fauna-composer-individual-2';
-/** Anatomical choice keys: the only species keys the individual stream depends on. */
+/** Anatomical choice keys: the only species keys the individual stream depends on. Frozen: eyes and iris are
+ * deliberately NOT here (an eye or iris choice never re-rolls a herd). */
 export const COMPOSER_ANATOMY_CHOICE_KEYS = ['layout', 'torso', 'head', 'horns', 'legs', 'feet', 'arms', 'hands', 'tail', 'armor', 'wings', 'trunk'] as const;
 export type ComposerSex = 'none' | 'female' | 'male';
 
@@ -83,9 +85,12 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 const c9 = (x: number) => { const y = Math.round(x * 1e9) / 1e9; return y === 0 ? 0 : y; };
 const hex8 = (n: number) => n.toString(16).padStart(8, '0');
 
-/** Hash of the anatomical choice keys (derivation never changes them). */
+/** Hash of the anatomical choice keys (derivation never changes them). It hashes composerAnatomyProjection(recipe):
+ * the proboscis face projects to the legacy muzzle (its derived trunk is kept), so a migrated muzzle+trunk link keeps
+ * its species key, individuals and coat drift. */
 export function composerSpeciesKey(recipe: ComposerRecipe): string {
-  return hex8(composerHash(COMPOSER_ANATOMY_CHOICE_KEYS.map(key => `${key}_${String(recipe[key])}`).join('*')));
+  const projected = composerAnatomyProjection(recipe);
+  return hex8(composerHash(COMPOSER_ANATOMY_CHOICE_KEYS.map(key => `${key}_${String(projected[key])}`).join('*')));
 }
 
 interface Draws {

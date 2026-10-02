@@ -18,7 +18,9 @@ for (const layout of COMPOSER_LAYOUTS) for (const long of [false, true]) {
   cases.push({ id: `${layout}-${long ? 'long' : 'short'}-boundary`, recipe: normalizeComposerRecipe({
     ...COMPOSER_PRESETS.dinosaur, layout, legPairs: long ? 12 : 3,
     bodyLength: long ? 6 : .2, girth: 1.6, legLength: long ? 1.8 : .1,
-    posture: 1, neckLength: 1.5, arms: 'grasping', wings: 'membrane', trunk: 'trunk',
+    // v3 (fauna-composer-face-1): a trunk grows only from the Proboscis face, so the worst case chooses that face
+    // (the WP1 shim rigs it exactly like legacy muzzle + trunk) and keeps its graph-1 bone counts
+    posture: 1, neckLength: 1.5, arms: 'grasping', wings: 'membrane', head: 'proboscis', trunk: 'trunk',
   }).recipe });
 }
 // Individuals (graph-2): every preset at seeds 0, 1, 7 and 42, plus a juvenile (maturity 0.3), built from the effective
@@ -30,7 +32,9 @@ for (const [id, recipe] of Object.entries(COMPOSER_PRESETS)) {
 const graphs = cases.map(c => ({ ...c, graph: buildComposerGraph(c.recipe) }));
 // Bone counts of the fixed cases at graph-1 (b8c00bf .. 0a6fd24): graph-2 adds no bones. The worst case is the 12-pair
 // many-legged boundary with arms, wings, trunk and a full neck (142).
-const HEAD_BONE_COUNTS = Object.fromEntries(cases.slice(0, 34).map((c, i) => [c.id, [31,21,32,24,27,24,20,15,79,26,63,40,42,40,38,41,19,45,73,21,26,40,38,31,42,42,46,46,54,54,54,54,61,142][i]]));
+// Face round (fauna-composer-face-1) repins: mixed-0 (42 -> 36), mixed-1 (40 -> 34) and mixed-2 (38 -> 32) draw a trunk on
+// a non-muzzle face; the face rules drop that trunk and its 6 trunk bones. No other count changes.
+const HEAD_BONE_COUNTS = Object.fromEntries(cases.slice(0, 34).map((c, i) => [c.id, [31,21,32,24,27,24,20,15,79,26,63,40,36,34,32,41,19,45,73,21,26,40,38,31,42,42,46,46,54,54,54,54,61,142][i]]));
 const vec = a => new THREE.Vector3(...a);
 const pos = (p, i) => new THREE.Vector3().fromArray(p.positions, i * 3);
 const quat = (p, i) => new THREE.Quaternion().fromArray(p.quaternions, i * 4);
