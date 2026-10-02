@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {composerConstraints, normalizeComposerRecipe, type ComposerConstraint, type ComposerRecipe} from './fauna-composer-recipe.ts';
 import {buildComposerGraph, composerSkeletonSegments, composerStructure, poseComposer, COMPOSER_BUDGET, type ComposerGraph, type ComposerMotion, type ComposerPose} from './fauna-composer-rig.ts';
 import {buildComposerSkin, type ComposerSkin} from './fauna-composer-mesh.ts';
+import {deriveComposerIndividual, type ComposerIndividualTraits} from './fauna-composer-individual.ts';
 
 /** Experimental modular creature: one skinned mesh (one draw call) driven by
  * the composer's own variable skeleton, plus an optional skeleton overlay.
@@ -14,9 +15,13 @@ export interface ComposerCreatureDetails {
   parts: {part: string; label: string; triangles: number; bones: number}[];
   budget: typeof COMPOSER_BUDGET; withinBudget: boolean;
   buildMs: number;
+  individual: ComposerCreatureIndividual;
 }
+/** The individual this creature is: its traits, the changes applied to the species recipe, and the recipe actually built. */
+export interface ComposerCreatureIndividual {traits: ComposerIndividualTraits; deltas: string[]; effectiveRecipe: ComposerRecipe}
 export interface ComposerCreature {
   group: THREE.Group; mesh: THREE.SkinnedMesh; graph: ComposerGraph; skin: ComposerSkin;
+  readonly individual: ComposerCreatureIndividual;
   readonly lastPose: ComposerPose | undefined;
   update(motion: ComposerMotion, time: number): ComposerPose;
   setSkeletonVisible(value: boolean): void;
@@ -30,7 +35,9 @@ export interface ComposerCreature {
 export function createComposerCreature(input: ComposerRecipe): ComposerCreature {
   const started = performance.now();
   const recipe = normalizeComposerRecipe(input).recipe;
-  const graph = buildComposerGraph(recipe);
+  // The only caller of deriveComposerIndividual: the rig and skin receive the effective recipe.
+  const derived = deriveComposerIndividual(recipe);
+  const graph = buildComposerGraph(derived.recipe);
   const skin = buildComposerSkin(graph);
   if (skin.vertexCount > COMPOSER_BUDGET.maxVertices || skin.triangleCount > COMPOSER_BUDGET.maxTriangles)
     throw new Error(`Composer skin exceeds the desktop preview budget (${skin.vertexCount} vertices, ${skin.triangleCount} triangles).`);
@@ -76,8 +83,10 @@ export function createComposerCreature(input: ComposerRecipe): ComposerCreature 
     });
     lineGeometry.attributes.position!.needsUpdate = true;
   };
+  const cloneIndividual = (): ComposerCreatureIndividual => ({traits: structuredClone(derived.traits), deltas: [...derived.deltas], effectiveRecipe: {...derived.recipe}});
   const creature: ComposerCreature = {
     group, mesh, graph, skin,
+    get individual() { return cloneIndividual(); },
     get lastPose() { return lastPose; },
     update(motion, time) {
       if (disposed) throw new Error('Composer creature was disposed');
@@ -107,6 +116,7 @@ export function createComposerCreature(input: ComposerRecipe): ComposerCreature 
         budget: COMPOSER_BUDGET,
         withinBudget: skin.vertexCount <= COMPOSER_BUDGET.maxVertices && skin.triangleCount <= COMPOSER_BUDGET.maxTriangles && graph.bones.length <= COMPOSER_BUDGET.maxBones,
         buildMs,
+        individual: cloneIndividual(),
       };
     },
     dispose() {

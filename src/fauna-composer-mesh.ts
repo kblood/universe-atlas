@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {composerHash, composerRandom, type ComposerRecipe} from './fauna-composer-recipe.ts';
+import {COAT_PALETTE_HEX} from './fauna-coat-vocab.ts';
 import {composerFeatherFanSpan, composerLimbMass, composerWingChord, composerWingThickness, type ComposerBone, type ComposerGraph, type ComposerSection, type Vec3} from './fauna-composer-rig.ts';
 
 /** Procedural, experimental skin for a composer graph. Every visible part is
@@ -119,14 +120,8 @@ function slab(s: Skin, origin: THREE.Vector3, e1: THREE.Vector3, e2: THREE.Vecto
 }
 
 // ------------------------------------------------------------------ palette
-const PALETTES: Record<ComposerRecipe['palette'], Record<'base' | 'accent' | 'belly' | 'keratin' | 'skin' | 'eye' | 'horn' | 'plate', string>> = {
-  earth: {base: '#7a5a3c', accent: '#4a3322', belly: '#b89c78', keratin: '#2e2620', skin: '#8d6e5a', eye: '#120d0a', horn: '#6b6156', plate: '#5e4a36'},
-  savanna: {base: '#c99a52', accent: '#6b3f1d', belly: '#ead8b0', keratin: '#2b241d', skin: '#8a6a4a', eye: '#100c08', horn: '#4a3a2a', plate: '#9a6a3a'},
-  reptile: {base: '#5e7a3a', accent: '#37502a', belly: '#cfc890', keratin: '#3b3a2a', skin: '#6e7a4a', eye: '#2a2008', horn: '#8a8060', plate: '#7a6a3a'},
-  plumage: {base: '#2f6fa8', accent: '#e0a020', belly: '#e8e2d0', keratin: '#e09a30', skin: '#c06040', eye: '#0a0a0a', horn: '#333038', plate: '#a03a2a'},
-  slate: {base: '#6d6f70', accent: '#4c4e50', belly: '#8e8c88', keratin: '#3a3836', skin: '#7a7470', eye: '#0d0d0d', horn: '#9a948a', plate: '#585a5a'},
-  ink: {base: '#2c2b31', accent: '#c84a2a', belly: '#5e5249', keratin: '#18161a', skin: '#6a5a50', eye: '#070707', horn: '#3a3030', plate: '#3a2c2c'},
-};
+// WP2 wave-1 shim: the six legacy rows of COAT_PALETTE_HEX are the former literal table, byte for byte.
+const PALETTES = COAT_PALETTE_HEX;
 type Palette = Record<keyof typeof PALETTES['earth'], RGB>;
 function palette(recipe: ComposerRecipe): Palette {
   const rand = composerRandom(`composer-colour/${recipe.palette}/${recipe.colorSeed}`), out = {} as Palette;

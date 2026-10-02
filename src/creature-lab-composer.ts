@@ -32,11 +32,16 @@ const GROUPS:{title:string;keys:Key[]}[]=[
  {title:"Legs and arms",keys:["legs","legLength","feet","arms","armLength","hands"]},
  {title:"Wings and tail",keys:["wings","wingSpan","tail","tailLength"]},
  {title:"Colour",keys:["palette","colorSeed"]},
+ {title:"Coat",keys:["pattern","marks","patternScale","patternContrast","countershade"]},
+ {title:"Individual",keys:["individualSeed","sex","maturity","condition","variability","dimorphism","allometry"]},
 ];
 const FIELD:Record<Key,string>={layout:"Body layout",legPairs:"Walking leg pairs",bodyLength:"Body length",girth:"Girth",posture:"Posture (low to upright)",torso:"Torso",armor:"Shell or armour",
  neckLength:"Neck length",head:"Head",headSize:"Head size",snoutLength:"Snout or beak length",horns:"Horns",trunk:"Trunk",trunkLength:"Trunk length",
  legs:"Leg type",legLength:"Leg length",feet:"Feet",arms:"Arms (not used for walking)",armLength:"Arm length",hands:"Hands",
- wings:"Wings (ground display only)",wingSpan:"Wing span",tail:"Tail",tailLength:"Tail length",palette:"Colours",colorSeed:"Colour variation"};
+ wings:"Wings (ground display only)",wingSpan:"Wing span",tail:"Tail",tailLength:"Tail length",palette:"Colours",colorSeed:"Colour variation",
+ pattern:"Coat pattern",marks:"Markings (bit flags)",patternScale:"Pattern scale",patternContrast:"Pattern contrast",countershade:"Pale belly (countershading)",
+ dimorphism:"Male/female difference",variability:"Individual variation",allometry:"Size scaling (allometry)",
+ individualSeed:"Individual (0 = type specimen)",sex:"Sex",maturity:"Maturity (young to adult)",condition:"Body condition (lean to heavy)"};
 const VALUE:Record<string,string>={
  "layout:limbless":"Limbless (worm, snake)","layout:biped":"Two legs (bird, ape, dinosaur)","layout:quadruped":"Four upright legs (mammal)","layout:sprawled":"Four sprawling legs (turtle, lizard)","layout:many-legged":"Many legs (centipede)",
  "torso:slim":"Slim","torso:barrel":"Barrel","torso:deep-chest":"Deep chest","torso:flat":"Flat","torso:annulated":"Ringed (worm)","torso:segmented":"Segmented (arthropod)",
@@ -49,11 +54,15 @@ const VALUE:Record<string,string>={
  "armor:none":"None","armor:dome":"Domed shell (turtle)","armor:plates":"Back plates","armor:osteoderms":"Bony studs","armor:bands":"Banded segments",
  "wings:none":"None","wings:feathered":"Feathered","wings:membrane":"Skin membrane (bat)","trunk:none":"None","trunk:trunk":"Trunk (elephant)",
  "palette:earth":"Earth","palette:savanna":"Savanna","palette:reptile":"Reptile green","palette:plumage":"Bright plumage","palette:slate":"Slate grey","palette:ink":"Dark ink",
+ "palette:tawny":"Tawny","palette:rufous":"Rufous (red-brown)","palette:dun":"Dun","palette:fawn":"Fawn","palette:grey":"Grey","palette:sable":"Sable (dark brown)","palette:olive":"Olive","palette:ochre":"Ochre",
+ "pattern:auto":"Automatic (from colours)","pattern:plain":"Plain","pattern:spots":"Spots","pattern:rosettes":"Rosettes","pattern:reticulated":"Reticulated (giraffe)","pattern:stripes":"Stripes",
+ "pattern:bands":"Bands","pattern:saddle":"Dark saddle","pattern:dorsal-stripe":"Dorsal stripe","pattern:dapple":"Dapple","pattern:piebald":"Piebald","pattern:roan":"Roan","pattern:brindle":"Brindle",
+ "sex:auto":"Automatic (from individual)","sex:female":"Female","sex:male":"Male",
 };
 const MOTION_LABEL:Record<ComposerMotion,string>={neutral:"Rest pose (unanimated)",idle:"Standing",walk:"Walking",display:"Display (wings, arms, trunk)"};
 const isChoice=(key:Key):key is ComposerChoiceKey=>key in COMPOSER_CHOICES;
 const ratioKeys=new Set<Key>(["neckLength","snoutLength","legLength","armLength","tailLength","wingSpan","trunkLength"]);
-function formatValue(key:Key,value:number){return key==="bodyLength"?`${value.toFixed(2)} m`:key==="legPairs"||key==="colorSeed"?String(value):ratioKeys.has(key)?`${value.toFixed(2)} × body`:value.toFixed(2);}
+function formatValue(key:Key,value:number){return key==="bodyLength"?`${value.toFixed(2)} m`:key==="legPairs"||key==="colorSeed"||key==="marks"||key==="individualSeed"?String(value):ratioKeys.has(key)?`${value.toFixed(2)} × body`:value.toFixed(2);}
 /** Why a control has no effect on the current recipe; empty when it applies. */
 function why(r:ComposerRecipe,key:Key):string{
  const limbless=r.layout==="limbless";

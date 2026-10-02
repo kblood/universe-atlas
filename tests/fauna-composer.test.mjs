@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import * as THREE from 'three';
 import {COMPOSER_PRESETS, COMPOSER_PRESET_IDS, COMPOSER_LAYOUTS, COMPOSER_RECIPE_KEYS, composerPreset, normalizeComposerRecipe, randomComposerRecipe,
   encodeComposerRecipe, decodeComposerRecipe, composerRecipesEqual, composerConstraints} from '../src/fauna-composer-recipe.ts';
@@ -50,9 +51,13 @@ test('layouts are structurally different, not relabelled', () => {
   const parts = id => new Set(built.find(b => b.id === id).skin.parts.filter(p => p.triangles).map(p => p.part));
   assert.ok(parts('turtle').has('armor') && parts('bird').has('wing') && parts('rhinoceros').has('horn') && parts('ape').has('hand') && parts('trunked-centipede').has('trunk'));
   assert.ok(!parts('worm').has('leg') && !parts('worm').has('foot'));
-  // Feet are distinct geometry, not one shared shape.
-  const footTris = feet => { const g = buildComposerGraph({...composerPreset('giraffe'), feet}); return buildComposerSkin(g).parts.filter(p => p.part === 'foot').reduce((a, p) => a + p.triangles, 0); };
-  assert.equal(new Set(['hoof', 'paw', 'claw', 'pad', 'hand', 'spike'].map(footTris)).size, 6);
+  // Feet are distinct geometry, not one shared shape: each foot type has its own foot-part geometry hash.
+  const footHash = feet => {
+    const skin = buildComposerSkin(buildComposerGraph({...composerPreset('giraffe'), feet})), h = createHash('sha256');
+    for (const p of skin.parts.filter(p => p.part === 'foot')) for (let i = p.firstTriangle * 3; i < (p.firstTriangle + p.triangles) * 3; i++) { const v = skin.index[i] * 3; h.update(Buffer.from(skin.positions.buffer, skin.positions.byteOffset + v * 4, 12)); }
+    return h.digest('hex');
+  };
+  assert.equal(new Set(['hoof', 'paw', 'claw', 'pad', 'hand', 'spike'].map(footHash)).size, 6);
 });
 
 test('hybrids keep every chosen part and report adaptations instead of dropping them', () => {
@@ -112,7 +117,8 @@ test('recipe text and lab URLs round-trip every field; legacy URLs are unchanged
   assert.match(creatureLabComposerInputError('?mode=composer&motion=fly'), /unknown motion/);
   assert.equal(creatureLabComposerInputError('?mode=skin&recipe=a&recipe=b'), null);
   assert.match(decodeComposerRecipe(parseCreatureLabState(`?mode=composer&recipe=v1*${'x'.repeat(3000)}`).recipe).error, /longer than/);
-  assert.match(decodeComposerRecipe('v2*layout_biped').error, /Unsupported/);
+  assert.match(decodeComposerRecipe('v3*layout_biped').error, /Unsupported/);
+  assert.match(decodeComposerRecipe('v999*layout_biped').error, /Unsupported/);
 });
 
 test('seeded random combinations are deterministic and mix parts across presets', () => {
