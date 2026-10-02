@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {composerConstraints, composerWingSpanLimit, normalizeComposerRecipe, type ComposerConstraint, type ComposerRecipe} from './fauna-composer-recipe.ts';
 import {composerIndividualTraits, type ComposerIndividualTraits} from './fauna-composer-individual.ts';
-import {composerSkullOf, type ComposerSkull} from './fauna-composer-face.ts';
+import {COMPOSER_FACE_GEOMETRY, PROBOSCIS_TRUNK_BASE, PROBOSCIS_TRUNK_BEND, composerFaceTip, composerHeadPitch} from './fauna-composer-face-geometry.ts';
 
 /** Variable articulated body-plan graph for the modular composer. It is
  * deliberately separate from the fixed 22-bone quadruped rig: limbless,
@@ -9,7 +9,7 @@ import {composerSkullOf, type ComposerSkull} from './fauna-composer-face.ts';
  * Every bone has an explicit parent, rest length and bind frame (local +X
  * along the bone, +Y dorsal). Creature space: metres, +X forward, +Y up,
  * +Z to the animal's right, ground at y = 0. */
-export const COMPOSER_GRAPH_VERSION = 'fauna-composer-graph-2';
+export const COMPOSER_GRAPH_VERSION = 'fauna-composer-graph-3';
 /** Desktop preview budget. Not a Quest qualification. */
 export const COMPOSER_BUDGET = Object.freeze({maxBones: 160, maxVertices: 48000, maxTriangles: 80000, drawCallsPerCreature: 2});
 export const COMPOSER_MOTIONS = ['neutral', 'idle', 'walk', 'display'] as const;
@@ -142,8 +142,6 @@ const LEG: Record<ComposerRecipe['legs'], {seg: number[]; tilt: number; ext: num
 const FOOT: Record<ComposerRecipe['feet'], {h: number; l: number}> = {
   hoof: {h: 0.07, l: 0.1}, paw: {h: 0.045, l: 0.14}, claw: {h: 0.03, l: 0.24}, pad: {h: 0.08, l: 0.16}, hand: {h: 0.04, l: 0.26}, spike: {h: 0.1, l: 0.03},
 };
-/** Keyed by the built skull (composerSkullOf): until WP5 builds a real proboscis face it builds the muzzle skull. */
-const HEAD_SCALE: Record<ComposerSkull, number> = {muzzle: 1, jaws: 1.15, beak: 0.9, 'flat-face': 0.9, blunt: 0.6, mandibles: 0.7};
 
 interface Builder {bones: ComposerBone[]}
 function addBone(b: Builder, spec: {name: string; parent: number; part: ComposerPart; side?: -1 | 0 | 1; limb?: number; length: number; driver?: 'fk' | 'ik'; position: THREE.Vector3; quaternion: THREE.Quaternion; start: ComposerSection; end?: ComposerSection}): number {
@@ -175,11 +173,12 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
   const shape = TORSO[recipe.torso], radial = (axialLong ? 0.42 : 1) * recipe.girth * L;
   let w = shape.w * radial, h = shape.h * radial;
   const scaleBody = Math.cbrt(L * w * h);
-  const skull = composerSkullOf(recipe.head);
-  const headLength = recipe.headSize * HEAD_SCALE[skull] * scaleBody * (axialLong ? 1 : 1.25);
-  const craniumH = headLength * (skull === 'flat-face' ? 0.42 : skull === 'blunt' ? 0.5 : skull === 'mandibles' ? 0.3 : 0.34);
-  const craniumW = craniumH * (skull === 'mandibles' ? 1.4 : skull === 'jaws' ? 0.95 : 0.9);
-  const snoutLength = headLength * recipe.snoutLength * 0.62;
+  // per-face skull proportions (fauna-composer-face-geometry-1): the legacy faces keep their graph-2 numbers
+  const face = recipe.head, faceGeo = COMPOSER_FACE_GEOMETRY[face];
+  const headLength = recipe.headSize * faceGeo.headScale * scaleBody * (axialLong ? 1 : 1.25);
+  const craniumH = headLength * faceGeo.craniumHeight;
+  const craniumW = craniumH * faceGeo.craniumWidth;
+  const snoutLength = headLength * recipe.snoutLength * faceGeo.snout;
 
   // ---- legs: dimensions decide body height
   let legReach = legged ? recipe.legLength * L : 0;
@@ -328,13 +327,13 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
   // long axial bodies (centipede, worm) carry the head on a broad neck so the body flows into it without a step
   const headNeckR = Math.min(craniumW, craniumH) * (axialLong ? 0.8 : 0.62);
   const neckBaseR = Math.max(Math.min(frontSec.w, frontSec.h) * (axialLong ? 1 : 0.62), headNeckR);
-  let neckElev0: number, neckElev1: number, headPitch: number;
-  if (layout === 'limbless') { neckElev0 = 0.32; neckElev1 = 0.18; headPitch = -0.12; }
-  else if (layout === 'many-legged') { neckElev0 = 0.05; neckElev1 = 0.02; headPitch = -0.08; }
+  let neckElev0: number, neckElev1: number, headPitch = composerHeadPitch(face, layout, recipe.posture);
+  if (layout === 'limbless') { neckElev0 = 0.32; neckElev1 = 0.18; }
+  else if (layout === 'many-legged') { neckElev0 = 0.05; neckElev1 = 0.02; }
   else {
     const e = mix(0.12, 1.25, clamp(recipe.neckLength / 1.3, 0, 1));
-    neckElev0 = Math.max(pitch, e); neckElev1 = Math.max(0.05, e * 0.75); headPitch = skull === 'beak' ? -0.12 : -0.3;
-    if (layout === 'biped' && recipe.posture > 0.6) { neckElev0 = Math.max(pitch * 0.9, e); neckElev1 = Math.max(0.6, e); headPitch = -0.08; }
+    neckElev0 = Math.max(pitch, e); neckElev1 = Math.max(0.05, e * 0.75);
+    if (layout === 'biped' && recipe.posture > 0.6) { neckElev0 = Math.max(pitch * 0.9, e); neckElev1 = Math.max(0.6, e); }
   }
   // individual carriage: a raised or lowered neck, and a head pitch that partly compensates (traits correlate them)
   neckElev0 += traits.carriage.neck; neckElev1 += traits.carriage.neck; headPitch += traits.carriage.headPitch;
@@ -359,18 +358,22 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
   const head = addBone(b, {name: 'head', parent: neck[neck.length - 1]!, part: 'head', length: headLength, position: neckEnd, quaternion: composerFrame(V(Math.cos(headPitch), Math.sin(headPitch), 0), UP), start: sec(craniumW, craniumH), end: sec(craniumW * 0.5, craniumH * 0.5)});
   if (layout === 'limbless') resolveRestClearance(b, [...neck, head]);
 
-  // ---- trunk from the snout tip
+  // ---- trunk: a proboscis face's nose, growing from the face tip (composerFaceTip, shared with the skin), whose
+  // section it continues: the skin's first trunk ring is the muzzle's last station
   const trunk: number[] = [];
   const trunkLength = recipe.trunk === 'trunk' ? recipe.trunkLength * 2.1 * headLength : 0;
   if (trunkLength > 0) {
     const hb = b.bones[head]!, n = 6, tl = trunkLength / n;
-    const baseR = Math.max(craniumH * 0.3, headLength * 0.09), tipR = baseR * 0.38;
-    let pos = toBone(hb, [headLength * 0.18 + snoutLength * 0.92 + headLength * 0.32, skull === 'beak' || skull === 'mandibles' ? craniumH * 0.25 : -craniumH * 0.05, 0]);
+    const tip = composerFaceTip(face, {headLength, craniumWidth: craniumW, craniumHeight: craniumH, snoutLength});
+    const baseR = PROBOSCIS_TRUNK_BASE * Math.min(tip.w, tip.h), tipR = baseR * 0.38;
+    let pos = toBone(hb, [tip.x, tip.y, 0]);
     for (let i = 0; i < n; i++) {
-      const angle = -0.45 - 1.05 * Math.pow(i / (n - 1), 1.2) + headPitch;
+      const angle = -PROBOSCIS_TRUNK_BEND * Math.pow(i / (n - 1), 1.2) + headPitch; // leaves the face along the head axis
+      // the frame keeps its lateral axis +Z as the trunk curls past vertical (an UP reference flips it there, which
+      // twisted the skin band at that joint half a turn: the 'plug' near the tip of graph-2 trunks)
       const dir = V(Math.cos(angle), Math.sin(angle), 0);
       const r0 = mix(baseR, tipR, i / n), r1 = mix(baseR, tipR, (i + 1) / n);
-      trunk.push(addBone(b, {name: `trunk_${i}`, parent: i ? trunk[i - 1]! : head, part: 'trunk', length: tl, position: pos.clone(), quaternion: composerFrame(dir, UP), start: sec(r0, r0), end: sec(r1, r1)}));
+      trunk.push(addBone(b, {name: `trunk_${i}`, parent: i ? trunk[i - 1]! : head, part: 'trunk', length: tl, position: pos.clone(), quaternion: composerFrame(dir, V(-dir.y, dir.x, 0)), start: sec(r0, r0), end: sec(r1, r1)}));
       pos.addScaledVector(dir, tl);
     }
     resolveRestClearance(b, trunk);
@@ -430,7 +433,9 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
     // WALK_PHASE_OFFSETS do. Primate-like bodies (flat face, grasping hands, none of the horns or wings of a hybrid)
     // walk the primate diagonal sequence (LH 0, RF 0.25, RH 0.5, LF 0.75). Sprawlers move diagonal pairs together
     // (LH with RF, RH with LF). Index 0 is side -1 (left).
-    const primateLike = skull === 'flat-face' && (recipe.arms === 'grasping' || recipe.feet === 'hand') && recipe.horns === 'none' && recipe.wings === 'none';
+    // Still the recipe's horns field (not the built headgear): switching it would change gait for flat-face recipes
+    // with an omitted horn, which this round keeps out of scope (bones change only for proboscis recipes).
+    const primateLike = face === 'flat-face' && (recipe.arms === 'grasping' || recipe.feet === 'hand') && recipe.horns === 'none' && recipe.wings === 'none';
     const phases = layout === 'quadruped' ? {hind: [0, 0.5], fore: primateLike ? [0.25, 0.75] : [0.75, 0.25]} : {hind: [0.5, 0], fore: [0, 0.5]};
     for (const side of [-1, 1] as const) addLeg(0, side, torso[0]!, hipSocketLocal(side), legReach, false, phases.hind[side < 0 ? 0 : 1]!);
     for (const side of [-1, 1] as const) addLeg(1, side, torso[nTorso - 1]!, shoulderSocketLocal(side), frontLegReach, true, phases.fore[side < 0 ? 0 : 1]!);
@@ -760,7 +765,7 @@ export function poseComposer(graph: ComposerGraph, motion: ComposerMotion, time:
     if (recipe.layout === 'biped') { rootP.y += -loco.bob * twoStep; rootQ.multiply(rollQ(0.035 * Math.sin(TAU * cycle))).multiply(yawQ(0.04 * Math.sin(TAU * cycle))); }
     else if (recipe.layout === 'quadruped') { rootP.y += -loco.bob * twoStep; rootQ.multiply(rollQ(0.015 * Math.sin(TAU * cycle))); }
     if (loco.sway) torso.forEach((bi, i) => { if (i) add(bi, yawQ(loco.sway * Math.sin(TAU * cycle - i * 0.9))); });
-    const bob = composerSkullOf(recipe.head) === 'beak' && recipe.layout === 'biped' ? 0.16 : 0.05;
+    const bob = recipe.head === 'beak' && recipe.layout === 'biped' ? 0.16 : 0.05;
     neck.forEach((bi, i) => add(bi, pitchQ((i % 2 ? -1 : 1) * bob * Math.sin(TAU * cycle * 2) / Math.max(1, neck.length * 0.6))));
     add(head, pitchQ(-0.5 * bob * Math.sin(TAU * cycle * 2)));
     tail.forEach((bi, i) => add(bi, yawQ(0.07 * Math.sin(TAU * cycle - 0.7 * (i + 1)))));

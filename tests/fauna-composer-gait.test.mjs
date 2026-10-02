@@ -51,8 +51,8 @@ function sequence(g) {
   return {order: sorted.map(x => x.leg), rel: sorted.map(x => +x.rel.toFixed(4))};
 }
 
-test('graph-2 carries the traits of the recipe it built', () => {
-  assert.equal(COMPOSER_GRAPH_VERSION, 'fauna-composer-graph-2');
+test('graph-3 carries the traits of the recipe it built', () => {
+  assert.equal(COMPOSER_GRAPH_VERSION, 'fauna-composer-graph-3');
   for (const seed of [0, 3]) {
     const g = graphOf({...COMPOSER_PRESETS.giraffe, individualSeed: seed});
     assert.deepEqual(g.traits, composerIndividualTraits(g.recipe));
@@ -242,9 +242,12 @@ test('neutral identity: neutral recipes build the graph-1 rest skeleton bit for 
   // Face round repin (fauna-composer-face-1, base a9e3654): was 616ab685f50894fc620ff95a321ebf2daccc55b0e33aee23500b7888ffbe0a66.
   // Exactly 81 of the 435 rest digests changed and all 81 are dropped trunks (a trunk drawn or linked on a non-muzzle face:
   // 78 legacy texts + 3 random draws), compared recipe by recipe against a9e3654; the other 354 are bit-identical.
-  assert.equal(createHash('sha256').update(per.join('')).digest('hex'), '3710768dc6ea90ad8bace030f75e0a5ed997d50faf6ae8f8cf9ac411a94e407e');
+  // Face round WP5 repin (graph-3, fauna-composer-face-geometry-1, base 179485c): was 3710768dc6ea90ad8bace030f75e0a5ed997d50faf6ae8f8cf9ac411a94e407e.
+  // Exactly 17 of the 435 rest digests changed and all 17 are proboscis faces (own head proportions; the trunk grows from
+  // the muzzle tip station along the head axis, its bone frames keep +Z lateral past vertical), compared recipe by recipe against 179485c; the other 418 are bit-identical.
+  assert.equal(createHash('sha256').update(per.join('')).digest('hex'), '5bac90d9db270f0b9191b80e5038c1df9403c3fe17989f855ba45c79fe55d4a9');
   const presets = {dinosaur: '5ca42245ef7eb62a', turtle: '71aec60226a20f4e', giraffe: 'f0f50d9d7a17e692', bird: '077f406187aae8b6', ostrich: '1739d106b47409a7', rhinoceros: '5ba09676464c8b12',
-    ape: '285e7a12f65178dc', worm: '480f8d770ed23553', centipede: 'f4cba80e3fac0914', 'shelled-giraffe-bird': '4570c2077e2a062d', 'trunked-centipede': '8410f000f12d1fc0', 'winged-ape-rhino': 'f83279ddbffb2dd6'};
+    ape: '285e7a12f65178dc', worm: '480f8d770ed23553', centipede: 'f4cba80e3fac0914', 'shelled-giraffe-bird': '4570c2077e2a062d', 'trunked-centipede': '52c8238a70ae7148', 'winged-ape-rhino': 'f83279ddbffb2dd6'};
   Object.keys(COMPOSER_PRESETS).forEach((id, i) => assert.equal(per[i].slice(0, 16), presets[id], id));
 });
 
