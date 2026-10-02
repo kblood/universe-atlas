@@ -230,7 +230,7 @@ test('renderer: stale river attachments add no river water/reflection and dry-gr
 });
 
 test('model versions record the withdrawal and old bookmarks explain it',()=>{
-  assert.equal(TERRAIN_VERSION,'terrain-1.6.0');
+  assert.equal(TERRAIN_VERSION,'terrain-1.7.0-climate-colour');
   assert.equal(SURFACE_VERSION,'atlas-surface-7-no-inland-rivers');
   assert.equal(CURRENT_VERSIONS.terrain,TERRAIN_VERSION);
   assert.equal(CURRENT_VERSIONS.surface,SURFACE_VERSION);

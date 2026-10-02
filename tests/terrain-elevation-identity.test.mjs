@@ -13,25 +13,12 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {galaxies,refByAddress,sector,system} from '../src/catalog.ts';
+import {galaxies,sector,system} from '../src/catalog.ts';
 import {baseTerrainSampler,terrainSampler} from '../src/terrain.ts';
+import {fib,maithea,goldenTerrainBodies,waterWorlds} from './terrain-climate-fixtures.mjs';
 
 export const ELEVATION_IDENTITY_SHA256='4f6021aafa19091ee059b94a6119867d953881d17fe624da758f1764bd7e89f8';
 export const KEPT_PALETTE_COLOUR_SHA256='06d335ce6a1fbf309a65f5b195098a8a0e1324979de27fdb448b173f73ff84ac';
-
-export function fib(i,n){const y=1-2*(i+.5)/n,p=i*2.399963229728653,r=Math.sqrt(1-y*y);return [Math.cos(p)*r,y,Math.sin(p)*r];}
-
-export function maithea(){
-  const g0=galaxies('LETHRA-001')[0];
-  return system(refByAddress(g0,'G001/C2128,0,1/0')).planets[1];
-}
-/** Same selection as tests/golden/generator.ts computeGolden(). */
-export function goldenTerrainBodies(){
-  const refs=[];
-  for(const g of galaxies('LETHRA-GOLDEN-001').slice(0,3))
-    for(const c of [[266,0,0],[0,0,0],[-2,-1,-2],[12,-4,7]])refs.push(...sector(g,c).refs);
-  return refs.slice(0,220).map(system).flatMap(s=>s.planets).filter(p=>p.type!=='Gas giant').slice(0,6);
-}
 
 export function elevationIdentityDigest(n=4096){
   const bodies=[maithea(),...goldenTerrainBodies().slice(0,5)];
@@ -49,13 +36,6 @@ export function elevationIdentityDigest(n=4096){
     }
   }
   return {sha:hash.digest('hex'),ids};
-}
-
-/** The four water worlds the colour work is judged on (W0-CLIMATE report picks). */
-export function waterWorlds(){
-  const g0=galaxies('LETHRA-001')[0];
-  const at=(addr,i)=>system(refByAddress(g0,addr)).planets[i];
-  return [maithea(),at('G001/C2142,3,4/0',0),at('G001/C2143,4,3/0',1),at('G001/C2142,6,1/1',1)];
 }
 
 /**
