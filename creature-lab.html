@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#08131a" />
     <title>Creature Lab · Universe Atlas</title>
-    <style>#creature-labels{position:fixed;z-index:2;inset:82px 370px 32px 0;pointer-events:none}.creature-card{position:absolute;pointer-events:auto;max-width:142px;padding:5px 7px;border:1px solid #477b79;border-radius:4px;background:#08171bd9;color:#e3f0e8;font-size:10px;text-align:center;transform:translateX(-50%)}.creature-card span{display:block;color:#9bbab4;font-size:9px;margin-top:2px}.creature-card.archive{border-color:#9b7444;color:#f0d098}#creature-labels.anatomy,#creature-labels.arena{display:none}@media(max-width:850px){#creature-labels{inset:118px 0 0}}</style>
+    <style>#creature-labels{position:fixed;z-index:2;inset:82px 370px 32px 0;pointer-events:none}.creature-card{position:absolute;pointer-events:auto;max-width:142px;padding:5px 7px;border:1px solid #477b79;border-radius:4px;background:#08171bd9;color:#e3f0e8;font-size:10px;text-align:center;transform:translateX(-50%)}.creature-card span{display:block;color:#9bbab4;font-size:9px;margin-top:2px}.creature-card.archive{border-color:#9b7444;color:#f0d098}#creature-labels.anatomy,#creature-labels.arena{display:none}@media(max-width:850px){#creature-labels{inset:118px 0 0}}
+      .composer-random-row{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:6px}.composer-random-row button{white-space:normal;line-height:1.2}
+      .composer-marks{display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;font-size:11px}.composer-marks>span{grid-column:1/-1;color:#cfe2dc}.composer-marks label.check{margin:0}.composer-marks .composer-why{grid-column:1/-1}
+      .composer-why.composer-info{color:#9fc4bb}.composer-hint{margin:0;font-size:10px;color:#9bbab4}
+      .composer-individual{margin:4px 0 6px;font-size:11px}.composer-individual summary{cursor:pointer;color:#d8ebe4}.composer-deltas{margin:2px 0 4px;padding-left:16px;color:#b6ccc9}
+      @media(max-width:850px){.composer-random-row{grid-template-columns:1fr 1fr}.composer-random-row button:nth-child(2){grid-column:1/-1}}</style>
   </head>
   <body>
     <main id="viewport" aria-label="Inspectable procedural creature laboratory"></main><section id="creature-labels" aria-label="Displayed creature labels"></section>
@@ -21,8 +26,10 @@
         <div id="composer-controls" hidden>
           <p id="composer-limitations" class="composer-limitations">Experimental procedural creatures: simple smooth shapes without fur, scales or feather detail. Motion stays on the ground; wings fold and spread but flight is not simulated. Checked on desktop browsers only.</p>
           <label>Starting animal <select id="composer-preset"></select></label>
-          <div class="composer-seed-row"><label>Random seed <input id="composer-seed" maxlength="160" value="composer-1"></label><button id="composer-randomize" type="button">Random combination</button><button id="composer-next-seed" type="button">New seed</button></div>
+          <label>Random seed <input id="composer-seed" maxlength="160" value="composer-1"></label>
+          <div class="composer-random-row"><button id="composer-randomize" type="button" title="Every part drawn independently: anything can combine with anything.">Wild hybrid</button><button id="composer-random-species" type="button" title="A plausible animal drawn from real body plans (hoofed animals, carnivores, birds, lizards ...).">Random plausible species</button><button id="composer-next-seed" type="button" title="Next seed with the random kind used last.">New seed</button></div>
           <label class="check"><input id="composer-compare" type="checkbox"> Compare two animals</label>
+          <label>Show <select id="composer-herd"></select><small id="composer-herd-why" class="composer-why" hidden>Comparison shows one animal per recipe; turn it off to show a herd.</small></label>
           <label hidden>Edit which animal <select id="composer-edit-target"><option value="first">First (left)</option><option value="second">Second (right)</option></select></label>
           <p id="composer-edit-hint" role="status"></p>
           <div id="composer-parts"></div>
@@ -65,10 +72,11 @@
           <div id="skin-compare-controls" hidden><label>Second individual <select id="compare-variant"><option value="0">Specimen 01</option><option value="1" selected>Specimen 02</option><option value="2">Specimen 03</option><option value="3">Specimen 04</option></select></label>
           <label>Second growth stage <select id="compare-growth"><option value="adult">Adult</option><option value="juvenile">Juvenile</option></select></label></div>
         </div>
-        <div id="anatomy-controls"><label class="check"><input id="skeleton" type="checkbox"> Actual solved skeleton</label><label class="check"><input id="neutral" type="checkbox"> Neutral material</label><label>Individual <select id="variant"><option value="0">Specimen 01</option><option value="1">Specimen 02</option><option value="2">Specimen 03</option><option value="3">Specimen 04</option></select></label><label>Growth <select id="growth"><option value="adult">Adult</option><option value="juvenile">Juvenile</option></select></label></div>
+        <div id="anatomy-controls"><label id="lighting-row" hidden>Lighting <select id="lighting"></select></label><label class="check"><input id="skeleton" type="checkbox"> Actual solved skeleton</label><label class="check"><input id="neutral" type="checkbox"> Neutral material</label><label>Individual <select id="variant"><option value="0">Specimen 01</option><option value="1">Specimen 02</option><option value="2">Specimen 03</option><option value="3">Specimen 04</option></select></label><label>Growth <select id="growth"><option value="adult">Adult</option><option value="juvenile">Juvenile</option></select></label></div>
         <div id="arena-controls"><label>Gait <select id="gait"><option value="idle">Idle</option><option value="walk">Walk</option><option value="run">Run</option></select></label><label>Terrain <select id="terrain"><option value="flat">Flat</option><option value="slope">Slope</option><option value="steps">Steps</option></select></label><label>Crowd <select id="crowd"><option value="1">1 actor</option><option value="8">8 actors</option><option value="16">16 actors</option></select></label><div class="button-row"><button id="play">Pause</button><button id="reset">Reset</button></div><label>Time <input id="time" type="number" min="0" max="20" value="0" step="0.01"></label></div>
       </div>
       <section id="notice" class="notice" hidden></section>
+      <section id="input-notices" class="notice" role="status" hidden></section>
       <section><h2 id="species-heading">Selected species</h2><div id="species-detail" class="detail"></div></section>
       <section id="ancestry-panel" hidden><h2>Actual parent chain</h2><div id="ancestry-list"></div></section>
       <section><h2>Live diagnostics</h2><div id="metrics" class="metrics"></div></section>
