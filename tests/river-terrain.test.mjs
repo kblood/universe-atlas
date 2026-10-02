@@ -101,7 +101,7 @@ test('inland water keeps a carved rock field and a separate visible water surfac
   // is computed via `surfaceQuery(body)(...)`/`terrainSampler(body)` with no
   // override, so `waterLevelM` defaults to `0` here too — a pure version-
   // string move, not a numeric one, exactly as the 1.4.1 re-pin above.
-  assert.equal(q.geologyVersion,'terrain-1.6.0');assert.equal(q.regionalGeologyVersion,'river-region-1');
+  assert.equal(q.geologyVersion,'terrain-1.7.0-climate-colour');assert.equal(q.regionalGeologyVersion,'river-region-1');
 });
 
 test('river shore bed and dry bank meet continuously without a submerged walking trench',()=>{

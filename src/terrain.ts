@@ -12,6 +12,7 @@ import {activeRiverRegions} from './inland-rivers.ts';
 import {craterField, craterAgeGate, craterHeightDeltaAt, type CraterField, type CraterParams} from './planet-craters.ts';
 import {planetLandforms} from './planet-landforms.ts';
 import {DRY_SURFACE_ROUGHNESS,WET_SURFACE_ROUGHNESS} from './surface-roughness.ts';
+import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_CALIBRATION,CLIMATE_VERSION,type ClimateSample} from './surface-climate.ts';
 
 // Bumped from terrain-1.3.0: `terrainSampler` gained the ABILITY to sum
 // procedural impact craters (planet-craters.ts) into `elevationM` for any
@@ -80,7 +81,20 @@ import {DRY_SURFACE_ROUGHNESS,WET_SURFACE_ROUGHNESS} from './surface-roughness.t
 // the default region set is empty, so no channel, lake bowl, wet bed or bank
 // tint is applied even when a Body still carries hydrology. Baseline rock,
 // landforms, craters and the dated ocean threshold are unchanged.
-export const TERRAIN_VERSION = "terrain-1.6.0";
+// 1.7.0-climate-colour (docs/biome-climate-increment-1-plan-2026-10-02.json,
+// W1-B): water-world LAND colour in `terrainSampler` (orbit texture and tile
+// colour maps) now comes from the shared annual climate (surface-climate.ts,
+// per-planet gravity lapse rate) at the post-landform, pre-crater height:
+// `waterWorldLandColour`. It replaces the additive latitude snow rule, the fixed
+// (elev-1500)/4300 grey and the 0.18-0.52 arid push, and lets forest
+// suitability green the forested belts. Elevation, groundHeight and ocean are
+// bit-identical (tests/terrain-elevation-identity.test.mjs), and
+// `baseTerrainSampler` (drainage/river inputs) keeps its legacy output exactly.
+// Ocean, sea-ice, Ice-world, Volcanic, barren and gas-giant colours are
+// unchanged. Only the terrain and combined golden digests move.
+export const TERRAIN_VERSION = "terrain-1.7.0-climate-colour";
+/** The climate model whose fields the water-world land colour reads. */
+export const TERRAIN_CLIMATE_VERSION = CLIMATE_VERSION;
 export {REGIONAL_LANDFORM_VERSION};
 export const ELEVATION_RANGE_M = 60000;
 /**
@@ -123,6 +137,67 @@ export type SurfaceSample = {
 const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 const mix = (a: number[], b: number[], t: number) =>
   a.map((v, i) => v + (b[i] - v) * clamp(t));
+
+/** The macro-continent seed and its seeded direction-noise helper. One
+ * definition shared by `baseTerrainSampler` and `terrainSampler`'s climate
+ * colour path, so the grain noises n(d,115,35) and n(d,R/800,74) can never
+ * drift to a different seed derivation in one of them. */
+function macroNoise(body: Body) {
+  const code = Number(hash64(body.seed + "/macro-v1") & 0xffffffffn);
+  const n = (d: V3, f: number, seed: number) =>
+    noise(d[0] * f + 13, d[1] * f + 37, d[2] * f + 19, code + seed);
+  return { code, n };
+}
+
+/**
+ * Water-world land colour v2 (terrain-1.7.0-climate-colour), 0..255 per channel
+ * BEFORE the grain factor. Pure function of one annual `ClimateSample`
+ * (surface-climate.ts, sampled at the same post-landform height) and that
+ * height. Zones, low to high (or warm to cold):
+ *  - aridity: humid green to dry tan (legacy endpoints);
+ *  - forest suitability: darker green, so forested belts read green from orbit;
+ *  - above the climatic treeline (treeline01 -> 0, warmest month below
+ *    T_TREE_WARMEST_K): ALPINE MEADOW / TUNDRA, olive when humid and grey-tan
+ *    steppe when dry. This is the zone the classifier names 'Mountain meadow'
+ *    (treeline01 < .5), so the macro colour stays herbaceous there instead of
+ *    reading as bare rock;
+ *  - a further TREE_RAMP_K colder (warmest month T_TREE-2*ramp .. T_TREE-ramp,
+ *    the fell-field just below the snowline): bare rock/scree grey, ramped in
+ *    over 160-760 m so cold polar lowland stays tundra rather than rock. This
+ *    replaces the fixed (elev-1500)/4300 grey;
+ *  - below 120 m: the legacy coastal sand strip;
+ *  - snow: `climate.snowFraction` exactly, the same value the classifier reads,
+ *    so the orbit/tile colour and the ground classification agree by
+ *    construction.
+ * Deviation from the plan's single grey term, which painted every treeless
+ * zone (meadow included) bare-rock grey: see this package's report.
+ */
+export function waterWorldLandColour(climate: ClimateSample, heightM: number, out: number[] = [0, 0, 0]): number[] {
+  // Scalar form of the mix() chain (v + (b - v) * clamp(t) per channel): the
+  // per-land-sample budget (+0.2 us) does not allow eight array allocations.
+  const arid = clamp(climate.aridity01);
+  const forest = clamp(0.35 * climate.forestSuitability01);
+  const treeless = clamp(1 - climate.treeline01);
+  const fell = clamp((ALPINE_ROCK_WARMEST_K - climate.warmestMonthK) / TREE_RAMP_K) * clamp((heightM - 160) / 600);
+  const coast = heightM < 120 ? clamp(heightM / 120) : -1;
+  const snow = clamp(climate.snowFraction);
+  for (let i = 0; i < 3; i++) {
+    let v = HUMID[i] + (ARID[i] - HUMID[i]) * arid;
+    v += (FOREST[i] - v) * forest;
+    const meadow = MEADOW_HUMID[i] + (MEADOW_DRY[i] - MEADOW_HUMID[i]) * arid;
+    v += (meadow - v) * treeless;
+    v += (ROCK[i] - v) * fell;
+    if (coast >= 0) v = SAND[i] + (v - SAND[i]) * coast;
+    out[i] = v + (SNOW[i] - v) * snow;
+  }
+  return out;
+}
+const HUMID = [40, 89, 48], ARID = [173, 145, 89], FOREST = [34, 70, 38];
+const MEADOW_HUMID = [92, 106, 66], MEADOW_DRY = [146, 136, 104];
+const ROCK = [134, 124, 107], SAND = [185, 175, 128], SNOW = [216, 228, 226];
+const TREE_RAMP_K = CLIMATE_CALIBRATION.TREE_RAMP_K;
+/** Warmest-month temperature below which the alpine meadow gives way to rock. */
+const ALPINE_ROCK_WARMEST_K = CLIMATE_CALIBRATION.T_TREE_WARMEST_K - TREE_RAMP_K;
 
 /** Shared dry-bank tint for orbit pixels and terrain-tile colour maps. The
  * sampler's normalized bank/influence field owns both the shoreline falloff
@@ -175,11 +250,44 @@ function regionalBankColor(body:Body,d:V3,elevationM:number,color:number[],river
  * defaults to the exact `0` literal both already depend on - byte-identical
  * output, nothing upstream of `elevationM` touched. */
 export function baseTerrainSampler(body: Body, waterLevelM: number = 0) {
-  const code = Number(hash64(body.seed + "/macro-v1") & 0xffffffffn);
-  const n = (d: V3, f: number, seed: number) =>
-    noise(d[0] * f + 13, d[1] * f + 37, d[2] * f + 19, code + seed);
-  const sea = 0.37 + body.water * 0.22;
+  const core = baseTerrainCore(body, waterLevelM);
+  // Public shape is the historical four fields; the core's extra grain fields
+  // and its deferred water-land colour are internal to terrainSampler.
   return (d: V3) => {
+    const s = core.sample(d, false);
+    return { elevationM: s.elevationM, ocean: s.ocean, color: s.color!, roughness: s.roughness };
+  };
+}
+
+/** Internal: the terrain-1.1.0 field shared by `baseTerrainSampler` and
+ * `terrainSampler`. `deferWaterLand` (terrainSampler's climate path only)
+ * skips the legacy water-world land colour, which that path replaces, and
+ * returns `color: null` there; `legacyWaterLandColour` recomputes it exactly
+ * for the rare direction the base calls land but the post-landform surface
+ * calls ocean (which keeps the base colour). With `deferWaterLand=false` every
+ * returned value is computed by the same expressions, in the same order, as
+ * terrain-1.6.0's baseTerrainSampler (pinned by
+ * tests/terrain-elevation-identity.test.mjs). */
+function baseTerrainCore(body: Body, waterLevelM: number) {
+  const { code, n } = macroNoise(body);
+  const sea = 0.37 + body.water * 0.22;
+  // Legacy water-world land colour (pre-grain), terrain-1.6.0 expressions.
+  const legacyWaterLandColour = (d: V3, elevationM: number): number[] => {
+    const latitude = Math.abs(d[1]);
+    const snow = clamp(
+      (latitude - 0.79) * 7 + Math.max(0, elevationM - 2600) / 3300,
+    );
+    const moisture = n(d, 5, 30);
+    const aridity = clamp(
+      (0.5 - moisture) * 4 + (latitude > 0.18 && latitude < 0.52 ? 0.17 : 0),
+    );
+    let color = mix([40, 89, 48], [173, 145, 89], aridity);
+    color = mix(color, [134, 124, 107], clamp((elevationM - 1500) / 4300));
+    if (elevationM < 120)
+      color = mix([185, 175, 128], color, elevationM / 120);
+    return mix(color, [216, 228, 226], snow);
+  };
+  const sample = (d: V3, deferWaterLand: boolean) => {
     const macro = macroHeightCode(code, d);
     if (body.type === "Gas giant") {
       const turbulence = n(d, 9, 24),
@@ -188,8 +296,10 @@ export function baseTerrainSampler(body: Body, waterLevelM: number = 0) {
       return {
         elevationM: 0,
         ocean: false,
-        color: mix([135, 98, 68], [225, 197, 153], bands * 0.8 + fine * 0.2),
+        color: mix([135, 98, 68], [225, 197, 153], bands * 0.8 + fine * 0.2) as number[] | null,
         roughness: 1,
+        grain: 1,
+        localGrain: 1,
       };
     }
     const coast =
@@ -220,10 +330,7 @@ export function baseTerrainSampler(body: Body, waterLevelM: number = 0) {
     }
     const ocean = !!body.water && elevationM < waterLevelM;
     const latitude = Math.abs(d[1]);
-    const snow = clamp(
-      (latitude - 0.79) * 7 + Math.max(0, elevationM - 2600) / 3300,
-    );
-    let color: number[];
+    let color: number[] | null;
     if (ocean) {
       color = mix(
         [26, 114, 139],
@@ -233,15 +340,7 @@ export function baseTerrainSampler(body: Body, waterLevelM: number = 0) {
       if (latitude > 0.94)
         color = mix(color, [202, 225, 234], clamp((latitude - 0.94) * 25));
     } else if (body.water) {
-      const moisture = n(d, 5, 30);
-      const aridity = clamp(
-        (0.5 - moisture) * 4 + (latitude > 0.18 && latitude < 0.52 ? 0.17 : 0),
-      );
-      color = mix([40, 89, 48], [173, 145, 89], aridity);
-      color = mix(color, [134, 124, 107], clamp((elevationM - 1500) / 4300));
-      if (elevationM < 120)
-        color = mix([185, 175, 128], color, elevationM / 120);
-      color = mix(color, [216, 228, 226], snow);
+      color = deferWaterLand ? null : legacyWaterLandColour(d, elevationM);
     } else if (body.type === "Ice world") {
       color = mix([119, 156, 178], [218, 232, 239], macro * 0.8 + ridges * 0.2);
     } else if (body.type === "Volcanic world") {
@@ -254,10 +353,13 @@ export function baseTerrainSampler(body: Body, waterLevelM: number = 0) {
     return {
       elevationM,
       ocean,
-      color: color.map((v) => clamp(v * grain * localGrain, 0, 255)),
+      color: color ? color.map((v) => clamp(v * grain * localGrain, 0, 255)) : null,
       roughness: ocean ? WET_SURFACE_ROUGHNESS : DRY_SURFACE_ROUGHNESS,
+      grain,
+      localGrain,
     };
   };
+  return { sample, legacyWaterLandColour };
 }
 
 /**
@@ -391,7 +493,7 @@ export function terrainSampler(
   waterLevelM: number = 0,
   onOceanThreshold?: (heightM:number)=>void,
 ) {
-  const base = baseTerrainSampler(body, waterLevelM);
+  const core = baseTerrainCore(body, waterLevelM);
   const landforms=planetLandforms(body);
   const candidates = regions.length > 1 ? [...regions].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0) : regions;
   // `includeCraters=false` skips building a CraterField at all (not merely
@@ -405,8 +507,25 @@ export function terrainSampler(
   // function's own comment for the measured crash this avoids). Every other
   // caller in this package always leaves this at its default `true`.
   const craters = includeCraters ? buildCraterField(body, surfaceAgeMyr) : null;
+  // Climate colour v2 (terrain-1.7.0-climate-colour): water worlds only. Built
+  // once per sampler; the forcing is cached per body in surface-climate.ts.
+  // The per-sample path reuses one scratch sample (no allocation in the
+  // climate call) and the identical seeded grain helper `baseTerrainSampler`
+  // uses, so colour = waterWorldLandColour(climate, h) x grain x localGrain.
+  const climate = body.water ? surfaceClimate(climateForcingFor(body)) : null;
+  const climateScratch = climate ? createClimateSample() : null;
+  // The grain factors come from the base core itself (its n(d,115,35) and
+  // n(d,R/800,74) via the shared macroNoise helper), so they cannot drift.
+  const localGrainF = body.radiusM / 800;
+  const { n: grainNoise } = macroNoise(body);
+  const applyGrain = (c: number[], grain: number, localGrain: number) => {
+    // In place on a fresh array; the same clamp(v * grain * localGrain)
+    // expression, in the same order, that baseTerrainSampler applies.
+    for (let i = 0; i < 3; i++) c[i] = clamp(c[i] * grain * localGrain, 0, 255);
+    return c;
+  };
   return (d: V3) => {
-    const sample = base(d);
+    const sample = core.sample(d, climate !== null);
     // Craters never touch the seafloor shape in this pass (see this
     // function's own doc comment): only the exposed dry/rocky elevation
     // gains a crater delta, and `ocean` itself keeps deciding land/sea from
@@ -418,12 +537,25 @@ export function terrainSampler(
     const ocean=!!body.water&&uncrateredHeightM<waterLevelM;
     const craterDeltaM = craters && !ocean ? craterHeightDeltaAt(craters, d) : 0;
     const elevationM = uncrateredHeightM + craterDeltaM;
+    // Water-world land: climate colour at the post-landform, pre-crater height
+    // (the same height family the classifier gets via groundHeightM, minus
+    // the crater delta, which never feeds colour). Every other palette keeps
+    // the base sampler's colour unchanged.
+    let surfaceColor: number[];
+    if (climate && !ocean) {
+      const c = waterWorldLandColour(climate(d, uncrateredHeightM, climateScratch!), uncrateredHeightM);
+      // The base reports localGrain=1 where IT saw ocean; the land colour
+      // always takes the land local grain, as baseTerrainSampler's land does.
+      const localGrain = sample.ocean ? .88 + grainNoise(d, localGrainF, 74) * .24 : sample.localGrain;
+      surfaceColor = applyGrain(c, sample.grain, localGrain);
+    } else if (sample.color) surfaceColor = sample.color;
+    else surfaceColor = applyGrain(core.legacyWaterLandColour(d, sample.elevationM), sample.grain, sample.localGrain);
     const baseline:SurfaceSample = {
       // Keep the common no-region path to one result allocation. Do not spread
       // a sampler result for every tile vertex: this is the hot terrain loop.
       elevationM,
       ocean,
-      color: sample.color,
+      color: surfaceColor,
       roughness: sample.roughness,
       rockHeightM: elevationM,
       waterLevelM: ocean ? 0 : null,
@@ -451,7 +583,7 @@ export function terrainSampler(
       const waterLevelM = river.waterLevelM;
       // Inland water shares the water palette used by orbit previews. River
       // material selection is carried in bank/waterKind for nearby terrain.
-      const color = wet ? [24, 105, 132] : regionalBankColor(body,d,landform,sample.color,river);
+      const color = wet ? [24, 105, 132] : regionalBankColor(body,d,landform,surfaceColor,river);
       const waterHeightM=waterLevelM;
       return {
         elevationM: rockHeightM,
