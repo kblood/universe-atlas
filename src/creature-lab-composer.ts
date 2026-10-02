@@ -244,8 +244,16 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
 
  function showControls(){
   const r=recipes[editing()],id=composerPresetOf(r),h=herd();presetSelect.value=id??"custom";
+  // The skin clamps a pattern finer than its mesh can draw (spots would break into triangles): say so, since
+  // pattern scales above the limit then look the same. Read from the edited animal's built skin.
+  const coat=actors.find(a=>a.side===editing())?.creature.skin.coatScale;
+  const clampNote=(key:Key)=>{
+   if(key!=="patternScale"||!coat||coat.effective>=coat.requested*(1-1e-6))return "";
+   const limit=r.patternScale*coat.effective/coat.requested;
+   return `This body's mesh can draw this ${coat.pattern} pattern only up to scale ${limit.toFixed(2)}`+(limit<COMPOSER_RANGES.patternScale[0]?" (below this range, so every setting looks the same here).":"; finer settings look the same.");
+  };
   for(const key of COMPOSER_RECIPE_KEYS){
-   const reason=why(r,key),info=reason?"":note(r,key,h),noteEl=$(`composer-${key}-why`);
+   const reason=why(r,key),info=reason?"":note(r,key,h)||clampNote(key),noteEl=$(`composer-${key}-why`);
    noteEl.hidden=!(reason||info);noteEl.textContent=reason||info;noteEl.classList.toggle("composer-info",!reason&&!!info);
    if(key==="marks"){for(const m of markBoxes){m.el.checked=!!(r.marks&COAT_MARK_BITS[m.name]);m.el.disabled=!!reason;}continue;}
    const el=field(key);

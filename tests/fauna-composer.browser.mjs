@@ -103,7 +103,24 @@ try {
         check(`part ${key} preserves unrelated fields`, changed.every(k => allowed.includes(k)), changed);
         const geometryChanged = after.skinDigest !== before.skinDigest || after.details.bones !== before.details.bones || digestPose({actors: [after]}) !== digestPose({actors: [before]});
         // Coat keys change colour only; variability and dimorphism have no effect on the type specimen (individual 0) and say so.
-        if (COAT_KEYS.includes(key)) { coatColour[key] = after.colorDigest !== before.colorDigest; check(`part ${key} leaves the geometry unchanged`, after.skinDigest === before.skinDigest); }
+        if (COAT_KEYS.includes(key)) {
+          coatColour[key] = after.colorDigest !== before.colorDigest; check(`part ${key} leaves the geometry unchanged`, after.skinDigest === before.skinDigest);
+          // The skin clamps a pattern finer than its mesh can draw (WP3); spots on this giraffe clamp below the whole
+          // slider range. A clamped scale must say so in the control's note, and the scale must still repaint a
+          // pattern the body can resolve (stripes: every scale draws).
+          if (key === 'patternScale' && !coatColour[key]) {
+            const note = await page.isVisible('#composer-patternScale-why') ? await page.textContent('#composer-patternScale-why') : '';
+            const clampNoted = /mesh can draw/i.test(note);
+            await setPart(page, 'pattern', 'stripes');
+            const striped = (await composer(page)).actors[0];
+            const stripedValue = striped.recipe.patternScale === COMPOSER_RANGES.patternScale[0] ? COMPOSER_RANGES.patternScale[1] : COMPOSER_RANGES.patternScale[0];
+            await setPart(page, key, stripedValue);
+            const rescaled = (await composer(page)).actors[0];
+            const stripesRepaint = rescaled.colorDigest !== striped.colorDigest && rescaled.skinDigest === striped.skinDigest;
+            report.steps.patternScaleClamp = {pattern: before.recipe.pattern, value, note, clampNoted, stripes: {from: striped.recipe.patternScale, to: stripedValue, repaints: stripesRepaint}};
+            coatColour[key] = clampNoted && stripesRepaint;
+          }
+        }
         else if (TYPE_SPECIMEN_NOOP.includes(key)) check(`part ${key} explains why the type specimen is unchanged`, /type specimen/i.test(await page.textContent(`#composer-${key}-why`)) && after.skinDigest === before.skinDigest);
         else if (!['hands', 'armLength'].includes(key)) check(`part ${key} changes structure or shape`, geometryChanged);
         report.steps.parts.push({key, value, changed, vertices: [before.details.vertices, after.details.vertices]});

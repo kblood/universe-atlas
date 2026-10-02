@@ -58,6 +58,9 @@ export interface ComposerSkin {
   /** Triangle ranges per anatomical part (start/count in triangles). */
   parts: {part: ComposerSkinPart; label: string; firstTriangle: number; triangles: number; bones: number[]}[];
   vertexCount: number; triangleCount: number;
+  /** Pattern scale asked for vs drawn: the pattern clamp keeps a mean pattern cell at least four torso
+   * edges across, so above `effective` a finer scale looks the same on this body (the Lab says so). */
+  coatScale: {pattern: string; requested: number; effective: number};
   debug?: ComposerSkinDebug;
 }
 export interface ComposerSkinOptions {
@@ -928,7 +931,7 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
   s.end();
 
   const positions = new Float32Array(s.p.subarray(0, s.nv * 3)), colors = s.c.slice(0, s.nv * 3), skinIndex = s.si.slice(0, s.nv * 4), skinWeight = s.sw.slice(0, s.nv * 4), index = s.ix.slice(0, s.ni), regions = s.rg.slice(0, s.nv);
-  const out: ComposerSkin = {version: COMPOSER_SKIN_VERSION, positions, colors, skinIndex, skinWeight, index, regions, parts: s.parts, vertexCount: positions.length / 3, triangleCount: index.length / 3};
+  const out: ComposerSkin = {version: COMPOSER_SKIN_VERSION, positions, colors, skinIndex, skinWeight, index, regions, parts: s.parts, vertexCount: positions.length / 3, triangleCount: index.length / 3, coatScale: {pattern: genome.pattern, requested: requestedScale, effective: genome.scale}};
   if (options.debug) out.debug = {
     rings: debugRings!, splineFallbacks,
     coat: {pattern: genome.pattern, requestedScale, effectiveScale: genome.scale, cellsPerBody: cells, meanCellDiameter: cells > 0 ? scale / (cells * genome.scale) : Infinity, torsoEdgeEstimate: torsoEdge},
