@@ -20,6 +20,7 @@ export function cloudSceneSampleChoice(requested:number,supported:readonly numbe
 const WEATHER_WIDTH=128, WEATHER_HEIGHT=64;
 const noiseDataCache=new Map<number,Uint8Array>();
 export type CloudQuality = 'desktop' | 'immersive';
+export type CloudStepQuality = { resolution: number; steps: number; lightSteps: number };
 export const CLOUD_QUALITY = Object.freeze({
   desktop: { resolution: 1, steps: 64, lightSteps: 5 },
   immersive: { resolution: .5, steps: 32, lightSteps: 3 },
@@ -205,11 +206,23 @@ void main(){
 }`;
 
 const resolveFragment=fragment.slice(0,fragment.indexOf('void main(){'))+`
-uniform bool opaqueOutput;
+uniform bool opaqueOutput,sceneUpscale;
 uniform sampler2D cloudColor;
-uniform vec2 cloudSize;
+uniform vec2 cloudSize,sceneSize;
+// Reduced-resolution scene capture (quality profile): Catmull-Rom upscale from
+// five bilinear taps (corner taps dropped). Linear HDR, so clamp the lobes.
+vec4 sceneBackground(vec2 uv){
+  if(!sceneUpscale)return texture2D(sceneColor,uv);
+  vec2 position=uv*sceneSize,centre=floor(position-.5)+.5,f=position-centre;
+  vec2 w0=f*(-.5+f*(1.-.5*f)),w1=1.+f*f*(-2.5+1.5*f),w2=f*(.5+f*(2.-1.5*f)),w3=f*f*(-.5+.5*f);
+  vec2 w12=w1+w2,t0=(centre-1.)/sceneSize,t3=(centre+2.)/sceneSize,t12=(centre+w2/w12)/sceneSize;
+  vec4 c=texture2D(sceneColor,vec2(t12.x,t0.y))*(w12.x*w0.y)+texture2D(sceneColor,vec2(t0.x,t12.y))*(w0.x*w12.y)
+    +texture2D(sceneColor,t12)*(w12.x*w12.y)+texture2D(sceneColor,vec2(t3.x,t12.y))*(w3.x*w12.y)+texture2D(sceneColor,vec2(t12.x,t3.y))*(w12.x*w3.y);
+  float w=w12.x*w0.y+w0.x*w12.y+w12.x*w12.y+w3.x*w12.y+w12.x*w3.y;
+  return max(c/w,vec4(0.));
+}
 void main(){
-  vec4 background=texture2D(sceneColor,vUv);
+  vec4 background=sceneBackground(vUv);
   float depth=texture2D(sceneDepth,vUv).r;
   if(cloudsEnabled&&depth<.9999999){
     vec4 clip=inverseProjection*vec4(vUv*2.-1.,0.,1.);
@@ -277,7 +290,12 @@ export class VolumetricClouds {
   private captures: { camera: THREE.Camera; target: THREE.WebGLRenderTarget }[] = [];
   private disposed = false;
   private sceneResolutionScale=1;
+  private captureScale=1;
   private targetBudgetBytes=CLOUD_TARGET_BUDGET_BYTES;
+  /** Desktop render-quality profile (render-quality.ts); immersive is fixed. */
+  desktopQuality:CloudStepQuality=CLOUD_QUALITY.desktop;
+  /** Desktop scene capture scale; below 1 the resolve upscales (Catmull-Rom). */
+  sceneScale=1;
   readonly params: CloudParams;
   readonly group: THREE.Object3D;
   constructor(params: CloudParams, group: THREE.Object3D) {
@@ -310,7 +328,7 @@ export class VolumetricClouds {
     this.mesh.onBeforeRender=(_r,_s,camera)=>configureView(camera);
     this.scene.add(this.mesh);
     this.resolveMaterial=new THREE.ShaderMaterial({vertexShader:vertex,fragmentShader:resolveFragment,
-      uniforms:{...this.material.uniforms,cloudColor:{value:null},cloudSize:{value:new THREE.Vector2()},opaqueOutput:{value:true}},depthTest:false,depthWrite:false});
+      uniforms:{...this.material.uniforms,cloudColor:{value:null},cloudSize:{value:new THREE.Vector2()},opaqueOutput:{value:true},sceneUpscale:{value:false},sceneSize:{value:new THREE.Vector2(1,1)}},depthTest:false,depthWrite:false});
     this.resolveMesh=new THREE.Mesh(new THREE.PlaneGeometry(2,2),this.resolveMaterial);this.resolveMesh.frustumCulled=false;
     this.resolveMesh.onBeforeRender=(_r,_s,camera)=>{
       configureView(camera);
@@ -318,6 +336,8 @@ export class VolumetricClouds {
       const u=this.resolveMaterial.uniforms,target=this.cloudTargets[i];
       u.sceneColor.value=entry.target.texture;u.sceneDepth.value=entry.target.depthTexture;u.cloudColor.value=target.texture;
       u.cloudSize.value.set(target.width,target.height);
+      u.sceneSize.value.set(entry.target.width,entry.target.height);
+      u.sceneUpscale.value=this.captureScale<1;
     };
     this.resolveScene.add(this.resolveMesh);
   }
@@ -358,7 +378,8 @@ export class VolumetricClouds {
     while(this.targets.length>views.length)this.targets.pop()!.dispose();
     while(this.cloudTargets.length>views.length)this.cloudTargets.pop()!.dispose();
     if(!views.length)return false;
-    const quality=CLOUD_QUALITY[presenting?'immersive':'desktop'];
+    const quality=presenting?CLOUD_QUALITY.immersive:this.desktopQuality;
+    const sceneScale=presenting?1:Math.min(1,Math.max(.25,this.sceneScale));this.captureScale=sceneScale;
     this.targetBudgetBytes=presenting?96*1024*1024:CLOUD_TARGET_BUDGET_BYTES;
     const size=renderer.getDrawingBufferSize(new THREE.Vector2());
     const nativePixels=views.reduce((sum,view)=>{const v=(view as THREE.PerspectiveCamera&{viewport?:THREE.Vector4}).viewport;return sum+(presenting?v!.z*v!.w:size.x*size.y);},0);
@@ -393,8 +414,10 @@ export class VolumetricClouds {
         const view=views[i] as THREE.PerspectiveCamera & {viewport?:THREE.Vector4};
         const width=Math.max(1,Math.ceil((presenting?view.viewport!.z:size.x)*this.sceneResolutionScale*quality.resolution));
         const height=Math.max(1,Math.ceil((presenting?view.viewport!.w:size.y)*this.sceneResolutionScale*quality.resolution));
-        // Preserve scene resolution within the shared target memory cap.
-        const fullWidth=Math.round(width/quality.resolution),fullHeight=Math.round(height/quality.resolution);
+        // Preserve scene resolution within the shared target memory cap. A
+        // reduced scene scale sizes the capture independently of the clouds.
+        const fullWidth=sceneScale===1?Math.round(width/quality.resolution):Math.max(1,Math.ceil(size.x*this.sceneResolutionScale*sceneScale));
+        const fullHeight=sceneScale===1?Math.round(height/quality.resolution):Math.max(1,Math.ceil(size.y*this.sceneResolutionScale*sceneScale));
         if(!this.targets[i]||this.targets[i].samples!==this.effectiveSceneSamples){
           this.targets[i]?.dispose();
           const target=new THREE.WebGLRenderTarget(fullWidth,fullHeight,{type:THREE.HalfFloatType,depthBuffer:true});
@@ -421,6 +444,6 @@ export class VolumetricClouds {
     return true;
   }
   get allocatedBytes(){return this.targets.reduce((n,t)=>n+t.width*t.height*12*(1+t.samples),0)+this.cloudTargets.reduce((n,t)=>n+t.width*t.height*8,0)+Math.ceil(this.noise.image.data!.byteLength*(1+8/7))+this.weather.image.data!.byteLength*2;}
-  diagnostics(){return {version:VOLUMETRIC_CLOUDS_VERSION,enabled:this.enabled,representation:'raymarched-volume',temporalHistory:false,steps:this.material.uniforms.steps.value,lightSteps:this.material.uniforms.lightSteps.value,sampleLimit:this.sampleLimit,requestedSceneSamples:this.sceneSamples,effectiveSceneSamples:this.effectiveSceneSamples,supportedSceneSamples:this.supportedSceneSamples,estimatedTargetBytes:this.targets.reduce((n,t)=>n+t.width*t.height*12*(1+t.samples),0)+this.cloudTargets.reduce((n,t)=>n+t.width*t.height*8,0),estimatedBytes:this.allocatedBytes,targetBudgetBytes:this.targetBudgetBytes,sceneResolutionScale:this.sceneResolutionScale,eyes:this.captures.length,targets:this.targets.map(t=>({width:t.width,height:t.height,samples:t.samples})),cloudTargets:this.cloudTargets.map(t=>({width:t.width,height:t.height})),layers:cloudLayerHeights(this.params)};}
+  diagnostics(){return {version:VOLUMETRIC_CLOUDS_VERSION,enabled:this.enabled,representation:'raymarched-volume',temporalHistory:false,steps:this.material.uniforms.steps.value,lightSteps:this.material.uniforms.lightSteps.value,sampleLimit:this.sampleLimit,requestedSceneSamples:this.sceneSamples,effectiveSceneSamples:this.effectiveSceneSamples,supportedSceneSamples:this.supportedSceneSamples,estimatedTargetBytes:this.targets.reduce((n,t)=>n+t.width*t.height*12*(1+t.samples),0)+this.cloudTargets.reduce((n,t)=>n+t.width*t.height*8,0),estimatedBytes:this.allocatedBytes,targetBudgetBytes:this.targetBudgetBytes,sceneResolutionScale:this.sceneResolutionScale,sceneScale:this.sceneScale,captureScale:this.captureScale,desktopQuality:{...this.desktopQuality},eyes:this.captures.length,targets:this.targets.map(t=>({width:t.width,height:t.height,samples:t.samples})),cloudTargets:this.cloudTargets.map(t=>({width:t.width,height:t.height})),layers:cloudLayerHeights(this.params)};}
   dispose(){if(this.disposed)return;this.disposed=true;for(const t of [...this.targets,...this.cloudTargets])t.dispose();this.weather.dispose();this.noise.dispose();this.material.dispose();this.resolveMaterial.dispose();this.mesh.geometry.dispose();this.resolveMesh.geometry.dispose();}
 }

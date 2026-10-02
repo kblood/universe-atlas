@@ -14,7 +14,7 @@
  *
  * Env: ATLAS_PERF_PORT (5195) ATLAS_PERF_OUT ATLAS_PERF_REPEATS (3)
  * ATLAS_PERF_CONDITIONS (native,cpu-proxy) ATLAS_PERF_SCENARIOS (S0,...,S6)
- * ATLAS_PERF_SKIP_BUILD ATLAS_PERF_ALLOW_DIRTY ATLAS_PERF_OWNER
+ * ATLAS_PERF_SKIP_BUILD ATLAS_PERF_ALLOW_DIRTY ATLAS_PERF_OWNER ATLAS_PERF_QUERY
  * ATLAS_PERF_GPU_CLOCK_LOCK (declared, e.g. "lgc=1100,lmc=7001")
  * ATLAS_PERF_LOCK_RETRY_MS (60000) ATLAS_PERF_SHORT=1 (shortened windows for harness development). */
 import {chromium} from 'playwright';
@@ -43,6 +43,8 @@ const config={
   viewport:[2560,1440],cpuThrottle:CPU_PROXY_RATE,short:SHORT,
   build:env.ATLAS_PERF_SKIP_BUILD!=='1',allowDirty:env.ATLAS_PERF_ALLOW_DIRTY==='1',
   owner:env.ATLAS_PERF_OWNER||'desktop-perf harness',gpuClockLock:env.ATLAS_PERF_GPU_CLOCK_LOCK||null,
+  // Extra app URL parameters for every run, e.g. 'quality=floor' (recorded in the report).
+  query:env.ATLAS_PERF_QUERY||'',
   lockRetryMs:Number(env.ATLAS_PERF_LOCK_RETRY_MS||60000),
   // cpu-proxy: the harness pins its own browser to this mask (6C/12T); 'none' disables.
   cpuProxyAffinity:env.ATLAS_PERF_CPU_AFFINITY==='none'?null:Number(env.ATLAS_PERF_CPU_AFFINITY||0xFFF),
@@ -139,7 +141,7 @@ if(!served){stopPreview();throw new Error(`vite preview did not start:\n${previe
 if(served.info.commit!==head){stopPreview();throw new Error(`preview serves ${served.info.commit}, expected ${head} (port ${config.port} taken by another server?)`);}
 
 const urlFor=(pose,{date=DATE,profile=true}={})=>`${base}?${new URLSearchParams({seed,g:galaxyId,system:systemId,body:bodyId,date:date.toString(),
-  wv:encodeVersions(CURRENT_VERSIONS),walk:pose.position.join(','),heading:pose.heading.join(','),...(profile?{profile:'1'}:{})})}`;
+  wv:encodeVersions(CURRENT_VERSIONS),walk:pose.position.join(','),heading:pose.heading.join(','),...(profile?{profile:'1'}:{}),...Object.fromEntries(new URLSearchParams(config.query))})}`;
 
 // ---- One browser run --------------------------------------------------------
 const PERF_SERIES=['frameIntervalMs','cpu/frameWorkMs','gpu/framePassSumMs','cpu/planetUpdateMs',

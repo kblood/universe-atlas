@@ -3,6 +3,9 @@ import {RenderProfile,systemTimer} from './render-profile.ts';
 import {staticQualitySettings} from './quality-settings.ts';
 import {levelForward} from './view-heading.ts';
 import {SurfaceLighting} from './surface-lighting.ts';
+import {ShadowMapCache} from './shadow-map-cache.ts';
+import {ShadowProgramWarmup} from './shadow-program-warmup.ts';
+import {RENDER_QUALITY,AdaptiveRenderQuality,renderQualityMode,type RenderQualityMode,type RenderQualityName} from './render-quality.ts';
 import {ForestAssetSource} from './forest-asset-source.ts';
 import {ForestAssetAttachment} from './forest-asset-attachment.ts';
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -470,11 +473,24 @@ const renderProfile=new RenderProfile(renderer.getContext() as WebGL2RenderingCo
 renderProfile.setEnabled(new URLSearchParams(location.search).get('profile')==='1');
 // Shadow-map CPU share of scene submission (per-system CPU attribution). The
 // wrapper is a timing no-op while profiling is disabled.
+// The map is reused while its exact inputs (light camera, casters, their
+// geometry/instances/material state and depth uniforms) are unchanged; see
+// shadow-map-cache.ts. `?shadowCache=0` or `__atlas.setShadowCache(false)`
+// restores a render every frame.
+const shadowCache=new ShadowMapCache(material=>(renderer.properties.get(material) as {uniforms?:Record<string,{value:unknown}>}).uniforms);
+shadowCache.enabled=new URLSearchParams(location.search).get('shadowCache')!=='0';
 {
-  const shadowRender=renderer.shadowMap.render.bind(renderer.shadowMap);
-  renderer.shadowMap.render=(...args:Parameters<typeof shadowRender>)=>{
-    const started=systemTimer.start();try{return shadowRender(...args);}finally{systemTimer.stop('shadow',started);}
+  const shadowMap=renderer.shadowMap,shadowRender=shadowMap.render.bind(shadowMap);
+  shadowMap.render=(...args:Parameters<typeof shadowRender>)=>{
+    const started=systemTimer.start();
+    try{
+      const [lights,target,view]=args;
+      if(shadowMap.enabled&&(shadowMap.autoUpdate||shadowMap.needsUpdate)&&lights.length&&
+        shadowCache.canSkip(lights,target,view,shadowMap.type)){shadowMap.needsUpdate=false;return;}
+      return shadowRender(...args);
+    }finally{systemTimer.stop('shadow',started);}
   };
+  renderer.domElement.addEventListener('webglcontextrestored',()=>{shadowCache.invalidate();shadowWarmup.reset();});
 }
 /** Debug GPU attribution: systems hidden for one render at a frozen pose. */
 const PROFILING_SYSTEMS=['terrain','sky','forestNear','forestMiddle','forestFar','flora','fauna','rocks','clouds','shadow'] as const;
@@ -538,6 +554,7 @@ const light = new THREE.DirectionalLight(LIGHT_BASE_COLOR, 3);
 light.position.set(-12, 5, 10);
 scene.add(light);
 scene.add(light.target);
+const shadowWarmup=new ShadowProgramWarmup(renderer,light);
 const surfaceLighting=new SurfaceLighting(light,ambientLight);
 scene.add(surfaceLighting.sky);
 const glowCanvas = document.createElement("canvas");
@@ -631,6 +648,10 @@ let surfaceMesh: THREE.Mesh<
 let surfaceInfo: Surface | null = null;
 let surfaceDetail=new URLSearchParams(location.search).get('detail')!=='0';
 let surfaceLightingEnabled=new URLSearchParams(location.search).get('lighting')!=='0';
+/** Desktop render-quality profile (render-quality.ts); explicit, never automatic. */
+let qualityMode:RenderQualityMode=renderQualityMode(new URLSearchParams(location.search).get('quality'));
+const adaptiveQuality=new AdaptiveRenderQuality();
+function effectiveQuality():RenderQualityName{return qualityMode==='auto'?adaptiveQuality.current:qualityMode;}
 // Detailed Oak/Pine families (and the far atlas baked from them) are the
 // ordinary desktop forest; `trees=0` opts out. Immersive sessions still skip
 // them (see forestAssetAttachment.update) until a Quest profile is measured.
@@ -887,12 +908,16 @@ function breadcrumbs() {
       void navigate(b.dataset.level as Level);
     };
 }
+function setRenderQuality(mode:RenderQualityMode){
+  qualityMode=mode;adaptiveQuality.reset();planetTiles?.setRenderQuality(RENDER_QUALITY[effectiveQuality()]);persist();
+}
 function persist() {
   const q = new URLSearchParams({ seed });
   if(viewMode==='observed')q.set('observe','1');
   if(futureScenario!=='constant-dark-energy')q.set('fate',futureScenario);
   if(!surfaceDetail)q.set('detail','0');
   if(!surfaceLightingEnabled)q.set('lighting','0');
+  if(qualityMode!=='high')q.set('quality',qualityMode);
   if(!detailedForestEnabled)q.set('trees','0');
   if(!horizonAssist)q.set('horizon','0');
   writeTimeToUrl(q,epoch);
@@ -2628,6 +2653,7 @@ function restartPlanetTiles() {
   // conservative step up in cost for a clear filtering improvement.
   planetTiles = new PlanetRenderer(state.body, surfaceMesh, focusRadius(), reliefScale,Math.min(8,renderer.capabilities.getMaxAnisotropy()));
   planetTiles.setSurfaceDetail(surfaceDetail);
+  planetTiles.setRenderQuality(RENDER_QUALITY[effectiveQuality()]);
 }
 const SPIN_Y_AXIS = new THREE.Vector3(0, 1, 0), SPIN_X_AXIS = new THREE.Vector3(1, 0, 0);
 /** Contract §4.4: the sun direction seen from a spinning body's surface must
@@ -2671,6 +2697,11 @@ function updatePlanetTiles(dt: number) {
   const shadowFrustum=surfaceLighting.update({planet:planetTiles.group,radiusM:state.body!.radiusM,
     eye,sun:worldSun,altitudeM:clearance.terrainClearance,atmosphere:state.body!.water>0,
     enabled:surfaceLightingEnabled&&reliefScale===1,immersive:renderer.xr.isPresenting});
+  // Descending through ~700 m switches the sun's shadow on, which changes the
+  // program of every lit material. Compile the shadowed variants of the
+  // planet renderer's own lit materials in the 700-2500 m band beforehand.
+  if(!light.castShadow&&!renderer.xr.isPresenting&&surfaceLightingEnabled&&reliefScale===1&&clearance.terrainClearance<2500)
+    shadowWarmup.warm(planetTiles.shadowWarmupObjects(),camera,scene);
   const views = renderer.xr.isPresenting ? renderer.xr.getCamera().cameras : [camera];
   const frusta = views.map(view => {
     view.updateMatrixWorld();
@@ -4099,7 +4130,7 @@ function panel() {
       if(life?.floraStage==='complex'&&life.floraAvailableKinds?.length)surfaceNav+='<button id="find-life" class="explore">Find living habitat</button>';
       const sites=surveys.get(surveyKey(state.body!));
       if(atmosphereHeightM(state.body!)>0)surfaceNav+=`<button id="horizon-assist">Atmospheric horizon assist: ${horizonAssist?'on':'off'}</button>`;
-      surfaceNav+=`<button id="surface-detail">Ground detail: ${surfaceDetail?'on':'off'}</button><button id="surface-lighting">Surface lighting: ${surfaceLightingEnabled?'detailed':'basic'}</button><button id="forest-detail">Trees: ${detailedForestEnabled?(forestAssetAttachment.diagnostics().loading?'loading…':'detailed'):'basic'}</button>${detailedForestEnabled&&forestAssetAttachment.diagnostics().error?'<p class="subtle">Detailed trees could not load. Basic trees remain available.</p><button id="forest-retry">Retry detailed trees</button>':''}<details id="surface-survey" ${surveyOpen?'open':''}><summary>Surface destinations</summary><p class="subtle">Find named sites on this world's existing terrain. Fly to a site, then choose Land and walk.</p>${sites?sites.map(s=>`<button data-surface-site="${esc(s.id)}" class="surface-site"><strong>${esc(s.name)}</strong><span>${esc(s.category)} · ${esc(s.biome)}<br>${fmt(s.elevationM,0)} m · slope ${fmt(s.slopeDeg,1)}°</span></button>`).join(''):`<button id="survey-surface" ${surveyPending.has(surveyKey(state.body!))?'disabled':''}>${surveyPending.has(surveyKey(state.body!))?'Surveying terrain…':'Survey surface'}</button>`}<p class="subtle">Ground materials show sand, soil, rock and snow. ${INLAND_RIVERS_UNAVAILABLE}</p></details>`;
+      surfaceNav+=`<button id="surface-detail">Ground detail: ${surfaceDetail?'on':'off'}</button><button id="surface-lighting">Surface lighting: ${surfaceLightingEnabled?'detailed':'basic'}</button><button id="render-quality" title="Presentation only: cloud and scene resolution">Render quality: ${qualityMode==='auto'?`Auto (${RENDER_QUALITY[effectiveQuality()].label})`:RENDER_QUALITY[qualityMode].label}</button><button id="forest-detail">Trees: ${detailedForestEnabled?(forestAssetAttachment.diagnostics().loading?'loading…':'detailed'):'basic'}</button>${detailedForestEnabled&&forestAssetAttachment.diagnostics().error?'<p class="subtle">Detailed trees could not load. Basic trees remain available.</p><button id="forest-retry">Retry detailed trees</button>':''}<details id="surface-survey" ${surveyOpen?'open':''}><summary>Surface destinations</summary><p class="subtle">Find named sites on this world's existing terrain. Fly to a site, then choose Land and walk.</p>${sites?sites.map(s=>`<button data-surface-site="${esc(s.id)}" class="surface-site"><strong>${esc(s.name)}</strong><span>${esc(s.category)} · ${esc(s.biome)}<br>${fmt(s.elevationM,0)} m · slope ${fmt(s.slopeDeg,1)}°</span></button>`).join(''):`<button id="survey-surface" ${surveyPending.has(surveyKey(state.body!))?'disabled':''}>${surveyPending.has(surveyKey(state.body!))?'Surveying terrain…':'Survey surface'}</button>`}<p class="subtle">Ground materials show sand, soil, rock and snow. ${INLAND_RIVERS_UNAVAILABLE}</p></details>`;
     }
     const nav = `<div class="mini-buttons"><button id="fly-target" ${selected ? "" : "disabled"}>Fly to selection</button><button id="fly-outward">Fly outward</button><button id="toggle-flight">${flight ? "Stop flight" : "Fly freely"}</button>${mapped ? '<button id="approach-star">Approach selected star</button>' : ""}${datedStar?'<button id="visit-dated-star">Visit dated star</button>':''}</div><p class="subtle">Flight: drag to look · WASD move · Q/E down/up · wheel adjusts speed · Shift boosts · Esc stops. Touch: hold Fly forward below.</p><div class="mini-buttons"><button id="fly-forward">Hold: fly forward</button></div>`;
     if (state.level === "galaxy" && mapped)
@@ -4200,6 +4231,7 @@ function panel() {
   bind('survey-surface',()=>void surveySurface());
   bind('surface-detail',()=>{surfaceDetail=!surfaceDetail;planetTiles?.setSurfaceDetail(surfaceDetail);persist();panel();});
   bind('surface-lighting',()=>{surfaceLightingEnabled=!surfaceLightingEnabled;persist();panel();});
+  bind('render-quality',()=>{setRenderQuality(qualityMode==='high'?'floor':qualityMode==='floor'?'auto':'high');panel();});
   bind('forest-detail',()=>{detailedForestEnabled=!detailedForestEnabled;persist();panel();});
   bind('forest-retry',()=>forestAssetAttachment.retry());
   bind('horizon-assist',()=>{horizonAssist=!horizonAssist;persist();panel();});
@@ -4762,6 +4794,10 @@ renderer.setAnimationLoop(() => {
   frameMs = now - last;
   renderProfile.beginFrame(frameMs);
   last = now;
+  if(qualityMode==='auto'&&!renderer.xr.isPresenting){
+    const before=adaptiveQuality.current;
+    if(adaptiveQuality.sample(frameMs,now)!==before){planetTiles?.setRenderQuality(RENDER_QUALITY[adaptiveQuality.current]);panel();}
+  }
   if (ready) {
     frameCount++;
     frameTimes.push(frameMs);
@@ -5052,6 +5088,11 @@ Object.defineProperty(window, "__atlas", {
     },
     setProfiling(enabled:boolean){renderProfile.setEnabled(enabled);},
     resetProfile(){renderProfile.clear();},
+    /** Desktop render-quality profile: 'high' (default), 'floor' or opt-in 'auto'. */
+    setRenderQuality(mode:RenderQualityMode){
+      if(mode!=='auto'&&!(mode in RENDER_QUALITY))throw new Error(`Unknown render quality ${mode}; expected ${[...Object.keys(RENDER_QUALITY),'auto'].join(', ')}`);
+      setRenderQuality(mode);return {mode,...RENDER_QUALITY[effectiveQuality()]};
+    },
     setCloudSceneSamples(samples:0|2|4){
       if(![0,2,4].includes(samples))throw new Error('Scene samples must be 0, 2 or 4');
       planetTiles?.setCloudSceneSamples(samples);
@@ -5107,9 +5148,12 @@ Object.defineProperty(window, "__atlas", {
           toneMapping:renderer.toneMapping,toneMappingExposure:renderer.toneMappingExposure,shadowMapEnabled:renderer.shadowMap.enabled,
           shadowMapType:renderer.shadowMap.type,shadowCasterLight:light.castShadow,anisotropy:Math.min(8,renderer.capabilities.getMaxAnisotropy()),
           maxAnisotropy:renderer.capabilities.getMaxAnisotropy(),xr:renderer.xr.isPresenting},
+        renderQuality:{mode:qualityMode,...RENDER_QUALITY[effectiveQuality()],clouds:{...RENDER_QUALITY[effectiveQuality()].clouds},adaptive:qualityMode==='auto'?adaptiveQuality.diagnostics():null},
         clouds:tiles?.clouds??null,
         forestAssets:forestAssetAttachment.diagnostics(),
         surfaceLighting:{enabled:surfaceLightingEnabled,...surfaceLighting.diagnostics()},
+        shadowCache:shadowCache.diagnostics(),
+        shadowWarmup:{...shadowWarmup.stats},
         hiddenSystems:[...hiddenProfilingSystems],
         ...staticQualitySettings(),
       };
@@ -5172,6 +5216,11 @@ Object.defineProperty(window, "__atlas", {
       };
     },
     get surfaceLighting(){return {enabled:surfaceLightingEnabled,...surfaceLighting.diagnostics()};},
+    get shadowCache(){return shadowCache.diagnostics();},
+    /** Debug-only handles for render-cost experiments (probe scripts). */
+    renderDebug(){return {renderer,scene,camera,light,planet:planetTiles};},
+    /** Debug: false re-renders the shadow map every frame (the pre-cache behaviour). */
+    setShadowCache(enabled:boolean){shadowCache.enabled=!!enabled;shadowCache.invalidate();return shadowCache.diagnostics();},
     get forestAssets(){return {...forestAssetAttachment.diagnostics(),source:forestAssetSource.diagnostics()};},
     get era(){
       const idx=eraIndexAt(epoch);

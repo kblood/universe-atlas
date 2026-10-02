@@ -21,6 +21,7 @@ import {riverFeatureAt} from './river-sample.ts';
 import {detailTexture,detailOrigin,MATERIAL_VERSION,GROUND_ATLAS_BYTES,GROUND_RESOURCE_BYTES,GROUND_PBR_TEXTURE_BYTES,acquireGroundPbrTextures,groundVertexHeader,groundVertex,groundFragmentHeader,groundColor,groundRoughnessCode,groundNormalCode} from './ground-material.ts';
 import {inlandRiversEnabled,activeRenderedRiverRegion} from './inland-rivers.ts';
 import {VolumetricClouds,CLOUD_TARGET_BUDGET_BYTES} from './volumetric-clouds.ts';
+import {RENDER_QUALITY,type RenderQuality} from './render-quality.ts';
 import {ringSystemFor, ringActiveAt, createRingMesh, type RingSystem} from './planet-rings.ts';
 import {spinStateFor} from './stellar-evolution.ts';
 import {CATALOGUE_EPOCH_NS} from './world-time.ts';
@@ -233,6 +234,7 @@ export class PlanetRenderer {
   private originalMaterial: THREE.Material | THREE.Material[];
   private atmosphere: PlanetAtmosphere | null = null;
   private clouds: VolumetricClouds | null = null;
+  private renderQuality:Readonly<RenderQuality>=RENDER_QUALITY.high;
   private ring: THREE.Mesh | null = null;
   private ringSystem: RingSystem | null = null;
   private river:RiverWater|null=null;
@@ -1896,6 +1898,25 @@ export class PlanetRenderer {
   }
   /** Diagnostic experiment for the current body; deliberately not a saved quality setting. */
   setCloudSceneSamples(samples:0|2|4){if(this.clouds)this.clouds.sceneSamples=samples;}
+  /** Lit objects owned by this renderer whose programs change when the sun
+   * starts casting (numDirLightShadows is part of Three's program key): one
+   * terrain tile, one ocean patch and the rock instances. Forest, flora and
+   * fauna are not listed here (their owners warm their own materials). */
+  shadowWarmupObjects():THREE.Object3D[]{
+    const out:THREE.Object3D[]=[];let tile=false,ocean=false;
+    for(const p of this.patches.values()){
+      if(!tile){out.push(p.mesh);tile=true;}
+      if(!ocean&&p.ocean){out.push(p.ocean);ocean=true;}
+      if(tile&&ocean)break;
+    }
+    out.push(this.rocks.group);
+    return out;
+  }
+  /** Desktop render-quality profile (render-quality.ts). Presentation only. */
+  setRenderQuality(quality:Readonly<RenderQuality>){
+    this.renderQuality=quality;
+    if(this.clouds){this.clouds.desktopQuality=quality.clouds;this.clouds.sceneScale=quality.sceneScale;}
+  }
   private release(p: Patch) { this.reflectionRevision++;this.patchVersion++;this.residentBytes=Math.max(0,this.residentBytes-p.bytes);this.group.remove(p.mesh);if(p.ocean){this.group.remove(p.ocean);p.ocean.geometry.dispose();p.ocean.material.dispose();} p.mesh.customDepthMaterial?.dispose();p.mesh.geometry.dispose(); p.map.dispose(); p.material.dispose(); }
   dispose() {
     this.disposed = true;

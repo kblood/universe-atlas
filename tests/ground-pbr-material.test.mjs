@@ -81,3 +81,20 @@ test('packaged texture inputs and RGBA8 runtime maps match their provenance mani
   assert.equal(declared.size,10,'manifest records all six originals and four runtime maps');
   assert.equal(manifest.asset.license.expression,'CC0-1.0');
 });
+
+test('zero-weight ground fetches are skipped with explicit gradients from uniform control flow',()=>{
+  // Gradients are computed once, outside every per-fragment branch.
+  const gradients=groundColor.indexOf('vec3 groundDx=dFdx(groundPosition),groundDy=dFdy(groundPosition);');
+  assert.ok(gradients>0);
+  assert.ok(gradients<groundColor.indexOf('if(groundEnabled*groundPatch>.5&&groundFade>0.0)'));
+  assert.ok(gradients<groundColor.indexOf('groundPbrMixWeight>0.0){'));
+  // No implicit-derivative fetch remains in the ground chunks.
+  assert.doesNotMatch(groundFragmentHeader+groundColor,/texture2D\(/);
+  assert.equal((groundFragmentHeader.match(/textureGrad\(/g)??[]).length,9);
+  // Soil and rock sets are fetched only where their mix weight is non-zero.
+  assert.match(groundColor,/if\(groundPbrRockMix<1\.0\)\{\s*groundSoilPbr=/);
+  assert.match(groundColor,/if\(groundPbrRockMix>0\.0\)\{\s*groundRockPbr=/);
+  // The fine distance fade is exactly zero past 6000 m, and every detail term is scaled by it.
+  assert.match(groundColor,/diffuseColor\.rgb=mix\(diffuseColor\.rgb,groundAlbedo\*\(\.82\+groundSignal\*\.32\),groundFade\);/);
+  assert.match(groundColor,/\*groundFade;\s*$/);
+});
