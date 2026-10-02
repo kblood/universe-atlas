@@ -1,5 +1,22 @@
 # Universe Atlas
 
+## Fauna variation and realism round — 2026-10-02 (local, not deployed)
+
+Creature Lab's **composer** now draws individuals of a species: seed, sex, age
+and condition, with correlated proportion, gait and coat differences. It also
+offers coat controls, Random plausible species, herds of 6, 9 or 12, and a
+planet-noon lighting option. The default lighting is still studio.
+**Planet** fauna gain lineage coats, sexual dimorphism and neonatal juveniles
+with fawn spots. Each planet now shows a median of 11 coat schemes (was 4), and
+individuals differ by 5.3–8.8% RMSE (was 3.0–4.1%).
+
+Inspect with `creature-lab.html?mode=composer` and `?mode=skin`. Measured
+before/after numbers, evidence and the unmet gates are in the
+[round report](docs/fauna-variation-realism-round-2026-10-02.md). The unmet
+gates include a coordinator-waived planet RMSE gate that needs your
+confirmation. The deployed preview below is unchanged, and old links open with
+documented visual drift.
+
 ## Modular Creature Lab preview — 2026-10-02
 
 [Open the deployed creature composer](https://dionysus.dk/webxr/IWSDK/universe-atlas/fauna-preview-20261002-01/creature-lab.html?mode=composer).
