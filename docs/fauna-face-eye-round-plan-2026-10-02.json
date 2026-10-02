@@ -1,0 +1,442 @@
+{
+ "scores": [
+  {
+   "angle": "COMPOSER-FIRST (proposal A): face type with proboscis folded in, real-animal eye types, face x horn rules shown in the existing adjustments panel, recipe v3, planet code untouched",
+   "impact": 8.5,
+   "feasibility": 6.5,
+   "risk": 5,
+   "notes": "Right target: the owner looked at the deployed Creature Lab in composer mode (docs/fauna-modular-preview-2026-10-02.md links ?mode=composer). The eye design is the best of the two: lidded ring patch, raycast placement along a per-face gaze, and a real wet-cornea highlight through per-vertex gloss. Rule tables are concrete.\n\nVERIFIED flaws:\n(1) The phase-1 shim builds from a 'legacy build view' with horns replaced. But mesh.ts:362 recomputes traits from graph.recipe, and individual.ts:87 hashes `horns`. So every horn-omitted recipe would get a new speciesKey and re-roll its individual, coat drift and skin stream. That contradicts A's own herd-stability claim.\n(2) Removing the encoded `trunk` key forces a frozen V2 key list and a derived-but-not-encoded field. That is avoidable churn.\n(3) Pre-extracting skin-core/head-mesh from the 1,342-line mesh.ts is a large no-feature refactor in the critical path.\n(4) Five packages with rig.ts, creature-lab-composer.ts and the structure test changing hands between phases."
+  },
+  {
+   "angle": "SHARED-VOCABULARY (proposal B): one pure fauna-face-1 module for composer and planet, a shared 150-triangle eye template, a painted catchlight, and the planet fix in the same round",
+   "impact": 8,
+   "feasibility": 5.5,
+   "risk": 6.5,
+   "notes": "Best catch: planet PADDED animals grow forehead horns. VERIFIED at HEAD: creature-model.ts:101 `selected = family ?? inheritedFaunaFamily(genome)`, and the horn reset sits inside `if(family!==undefined)` at :146/:159, while BASE['low-slung'].hornLength = .08 (:44). The fix is digest-safe because creature-model.ts is a SHARED_PRESENTATION_FILE. Keeping the `trunk` key in the encoding (append-only) is also the right call.\n\nWeaknesses:\n- It rewrites the planet eye under an exact 500-triangle cap (2x150 + 2x80 + 2x20), with zero slack, and a six-feature contract pinned in 4 tests. That is high risk for a surface the owner did not ask about.\n- A painted catchlight does not move when the Lab orbits, and the composer is not digest-gated, so a real specular highlight is affordable there.\n- 'trunk always normalizes to none' plus rewriting every r.trunk read is more churn than deriving trunk from the face.\n- A shared template forces the composer eye into the planet's projected-disc topology.\n- WP0 + WP1 are very large, and WP1 owns mesh.ts, rig.ts and all composer pins at once."
+  }
+ ],
+ "rationale": "Synthesis, checked against the actual repo. HEAD is now c80c8dd, not 9688bc3. The gate added a docs commit and two small commits that touched creature-lab-composer.ts (+10 lines) and fauna-composer-mesh.ts (5 lines). The working tree is clean, and every cited line below was re-read at c80c8dd.\n\nVERIFIED at c80c8dd:\n- recipe.ts:19 head enum; :28 `trunk` is a free part; :267-270 are the only two face rules; :334 wild trunk weights [3,1].\n- rig.ts:144 HEAD_SCALE is a Record over head, so adding a face value is a tsc error until it is handled. :176-178 cranium ratios; :333 headPitch; :361-373 trunk chain with a root formula fixed for every face.\n- mesh.ts:980 nostrils use pal.eye; :985 ears silently dropped for paired/ossicones; :1020 blunt disc uses pal.eye; :1035 mandible compound ellipsoids; :1040-1047 8x4 eye ellipsoid with the cos(a)*side > .75 'glint'; :1050-1083 horns, with the trunk-forehead path at :1058.\n- mesh.ts:362 traits = composerIndividualTraits(graph.recipe); individual.ts:31,87 the species key hashes head, horns and trunk; mesh.ts:384-392 skin-ind stream has 12 draws, with the iris shade at u9[11].\n- fauna-composer.ts:52 one MeshStandardMaterial (roughness .82).\n- creature-lab.ts:144 the composer camera fits the whole envelope only.\n- package.json \"test\" lists every test explicitly, so new tests must be registered there.\n\nScratch census, using my synthesized rule table (test-results/fauna-face-plan-2026-10-02/judge-rule-counts.mjs):\n- Pinned skin-2 texts: 13 of 28 would drift in phase 1 (11 horn, 2 trunk dropped, 1 becomes proboscis).\n- Legacy v1 fixture texts: 164 of 420 horn, 78 trunk dropped.\n- Wild seeds: 454 of 1000 horn, 199 trunk dropped.\n- Coherent species: 4 of 1000 horn.\n- Presets: 3 hybrids (shelled-giraffe-bird, trunked-centipede, winged-ape-rhino).\n\nDecisions:\n(1) Composer first, because that is what the owner sees. From B I take only the planet PADDED horn fix: one rule plus a mutationLog line in a shared file, no digest re-baseline. Planet eyes are deferred.\n(2) Keep the encoded `trunk` key, but derive it: trunk = (head === 'proboscis'). So rig/mesh trunk code keeps working, there is no frozen key removal, and the encoding stays append-only. Append 'proboscis' to head, and append the keys 'eyes' and 'iris' (version bumps to 3).\n(3) graph.recipe stays the chosen recipe. Mesh reads composerSkullOf(face) and composerHeadgearBuild(recipe). The species key projects only proboscis -> muzzle, so herds never re-roll except the 78 asserted dropped-trunk links. This fixes A's verified re-roll bug.\n(4) No skin-core extraction. Eye geometry is a new pure module that returns head-local patch data, and mesh.ts emits it. mesh.ts is therefore owned serially: WP1 (shims), then WP4 (eyes), then WP5 (head geometry).\n(5) Real per-vertex gloss on the composer material through one onBeforeCompile patch. That gives a view-dependent corneal highlight with one material and one draw call. The composer is outside the life-cpu digest gate.\n(6) Generators obey the rules after drawing (no new draws). Hand-made and legacy links keep their choices and get disclosures.\n\nOwner's three asks map as follows: trunk -> face type (WP1 contract, WP5 geometry); eye types (WP1 vocabulary, WP4 geometry, WP6 UI); horns that make no sense (WP1 rules, generators and disclosure; WP5 casque and ears; WP3 planet).",
+ "plan": {
+  "angle": "COMPOSER-FIRST with a derived-trunk recipe v3 and a pure face-rule module, plus one digest-safe planet horn fix. The modular composer the owner saw on the web gets three things:\n- a Face selector that includes a real Proboscis (trunk) face;\n- real-animal eye types (round, horizontal bar, vertical slit, compound, eyespot) with an iris colour and a true wet-cornea highlight;\n- a face x headgear rule table that decides what is built and discloses every adjustment in the existing 'compatibility adjustments' panel.\nPlanet badger/bear-like animals stop growing forehead horns.",
+  "thesis": "VERIFIED at HEAD c80c8dd. The composer already treats `head` as a face type (fauna-composer-recipe.ts:19). The owner's three complaints come from three verified gaps:\n\n(a) The trunk is an independent part (recipe.ts:28). Its root is the same rig position for every face (rig.ts:365), so on beaks it floats in front of the face. On muzzles it is bolted onto a full horse-length snout.\n\n(b) Eyes are untyped 8x4 near-black ellipsoids (mesh.ts:1040-1047). Their only highlight sits on the medial side, inside the skull. Nostrils and the worm mouth reuse the eye colour (mesh.ts:980, :1020).\n\n(c) No face x horn rule exists. composerConstraints (recipe.ts:252-290) has 2 face rules. 454 of 1000 wild seeds build horns on unsuitable faces. mesh.ts:985 silently deletes ears under paired horns or ossicones. On the planet, PADDED animals grow horns because the family horn reset only runs on the explicit-family path (creature-model.ts:101, :146-159).\n\nThe increment, in four steps:\n(1) A pure module, src/fauna-composer-face.ts, holds the vocabulary, rule tables, eye auto-resolution, migration and species-key projection. Recipe v3 appends head 'proboscis' and the keys eyes and iris, and makes `trunk` a derived field (trunk = face is proboscis). The generators obey the rules after drawing, with no new draws. Every horn that is not built as chosen yields one 'Horns' constraint. Legacy links migrate with a line under 'This link was adjusted'.\n(2) New eyes: a lidded concentric-ring patch with an anisotropic pupil, an iris and limbus, a lid and orbit blend. It is placed by raycasting the built skull along a per-face gaze direction, with a per-vertex gloss for a real corneal highlight. Compound domes on arthropods, eyespots on worms.\n(3) Head geometry: a real proboscis face (shortened muzzle flowing into the trunk, mouth below, flap ears, nostrils at the trunk tip), a beak casque, a seated thick crest, ears kept behind horn bases, and a flat face whose eyes are not covered by the brow.\n(4) Creature Lab: Face, Eyes and Iris selectors; per-option 'not built on this face' hints; a resolved 'Automatic (...)' label; a 'Head and face' frame in composer mode.\n\nDeterminism: no frozen stream gets a new draw. Herds stay stable except the asserted dropped-trunk links.",
+  "faceTypes": [
+   {
+    "id": "muzzle",
+    "description": "Mammal muzzle (horse, deer, bovid, giraffe, rhino, dog). The existing value.\n- Eyes: auto gives horizontal-bar on grazers (feet 'hoof' or legs 'unguligrade'), round on 'pillar' legs, a vertical slit on paw/claw/pad carnivores with bodyLength < 0.9, and round on larger ones.\n- After WP5, ears are kept, placed below and behind the horn bases, instead of being deleted (mesh.ts:985).\n- After WP4, nostrils get their own 'nose' colour (skin x .22) instead of pal.eye; WP5 makes them protrude past the end cap.\n- Iris: dark-brown or brown, from a hash of colorSeed.",
+    "allowedEyeTypes": [
+     "auto",
+     "round",
+     "horizontal",
+     "vertical-slit"
+    ],
+    "allowedHeadgear": [
+     "none",
+     "nasal (rhino keratin horn on the nose ridge; built)",
+     "paired (bovid horns; built, roots moved forward onto the frontal bone in WP5)",
+     "ossicones (giraffe; built)",
+     "crest -> NOT built: 'Not built: mammal skulls carry no bony crest. Choose Paired horns or Ossicones.'"
+    ],
+    "bodyPlans": [
+     "quadruped",
+     "biped",
+     "sprawled (wild/hand-made only)",
+     "coherent archetypes: ungulate-grazer, giraffid, cursorial-carnivore, pachyderm without trunk"
+    ]
+   },
+   {
+    "id": "proboscis",
+    "description": "NEW appended head value: the trunk face (elephant, tapir). A trunk is a nose; the mouth stays below it.\n- Recipe: trunk becomes the derived value 'trunk', and trunkLength is relabelled 'Proboscis length'.\n- WP1 (shim): composerSkullOf('proboscis') = 'muzzle', so it builds bit-identical to legacy muzzle+trunk, apart from the horn rules.\n- WP5 (real face): HEAD_SCALE 1.05, cranium height ratio .40, snout = 0.4 x the muzzle snout.\n  - The trunk root comes from composerFaceTip(), shared by rig and mesh. The first trunk ring is the open muzzle's last ring (the neck-to-head blend technique), so there is no collar.\n  - Tip ellipsoid [0.9,1,1]r0 instead of [0.9,1.12,1.12]r0, so there is no lip step.\n  - A lower lip/mouth part under the root, two nostril pits on the trunk tip, and broad lateral flap ears.\n- Eyes: small (k = .07), high and lateral (gaze 70 degrees from the midline). Auto gives round, dark brown.\n- The rig keeps the 6-bone trunk chain, so bone counts equal legacy muzzle+trunk.",
+    "allowedEyeTypes": [
+     "auto",
+     "round",
+     "horizontal",
+     "vertical-slit"
+    ],
+    "allowedHeadgear": [
+     "none",
+     "paired (saiga-like; built)",
+     "nasal -> NOT built: 'Not built: a trunk face has no nose bones to carry a horn.' (replaces the forehead relocation at recipe.ts:269 / mesh.ts:1058)",
+     "ossicones -> NOT built: 'Not built: ossicones grow only on giraffe-like muzzles.'",
+     "crest -> NOT built: 'Not built: mammal skulls carry no bony crest.'"
+    ],
+    "bodyPlans": [
+     "quadruped",
+     "coherent archetype: pachyderm (a drawn trunk on a muzzle becomes proboscis after the draw)"
+    ]
+   },
+   {
+    "id": "jaws",
+    "description": "Toothed reptile or theropod snout (crocodile, monitor lizard, theropod).\n- Eyes: auto gives a vertical slit on sprawled or limbless layouts and round on biped or quadruped. Iris gold, amber, copper or green-yellow by hash.\n- WP5 rebuilds the crest as a seated lofted fin at least 0.18 cW thick, replacing the 0.07 cW floating slab (mesh.ts:1080).",
+    "allowedEyeTypes": [
+     "auto",
+     "round",
+     "vertical-slit",
+     "horizontal"
+    ],
+    "allowedHeadgear": [
+     "none",
+     "nasal (ceratopsian or rhino-iguana; built)",
+     "paired (brow horns; built)",
+     "crest (bony crest; built)",
+     "ossicones -> built as paired: 'Built as brow horns: ossicones grow only on giraffe-like muzzles.'"
+    ],
+    "bodyPlans": [
+     "biped",
+     "sprawled",
+     "quadruped",
+     "limbless",
+     "coherent archetypes: theropod, sprawler-lizard (mandibles off many-legged bodies already become jaws, species.ts:180)"
+    ]
+   },
+   {
+    "id": "beak",
+    "description": "Bird or turtle keratin bill.\n- Eyes: auto gives round. They are large (k .16, down from .17), lateral (gaze 75 degrees) and set into the skull by the raycast placement, instead of sticking out at 0.86 cW.\n- Iris: yellow, orange, red or dark on bipeds; dark-brown or green on sprawled layouts (turtles). Juvenile iris (maturity < .75) is blended toward dark.\n- The only headgear is a keratin casque on the culmen (WP5).",
+    "allowedEyeTypes": [
+     "auto",
+     "round",
+     "horizontal",
+     "vertical-slit"
+    ],
+    "allowedHeadgear": [
+     "none",
+     "crest -> built as casque (WP5 geometry; no constraint, the UI labels the option 'Crest or casque')",
+     "nasal -> built as crest/casque: 'Built as a casque: a beak carries a casque, not a nose horn.'",
+     "paired -> NOT built: 'Not built: birds and turtles never grow horns; only a casque (Crest).'",
+     "ossicones -> NOT built (same text)"
+    ],
+    "bodyPlans": [
+     "biped",
+     "sprawled (turtle)",
+     "quadruped (wild)",
+     "coherent archetypes: bird, ratite, tortoise"
+    ]
+   },
+   {
+    "id": "flat-face",
+    "description": "Primate face.\n- Eyes: forward (gaze 15 degrees from the midline), round, dark-brown or brown iris, no white sclera.\n- WP5 raises the brow ellipsoid (centre y .22 cH to .30 cH, half-height .12 cH to .09 cH), so it no longer covers the upper eye. The eyes currently read as closed slits; compare mesh.ts:1011 with :1045. WP5 also adds a nose bump and a mouth line on the lower-face loft.\n- No headgear.",
+    "allowedEyeTypes": [
+     "auto",
+     "round",
+     "horizontal",
+     "vertical-slit"
+    ],
+    "allowedHeadgear": [
+     "none",
+     "nasal/paired/ossicones/crest -> NOT built: 'Not built: primate faces carry no horns.'"
+    ],
+    "bodyPlans": [
+     "biped",
+     "quadruped",
+     "coherent archetype: primate"
+    ]
+   },
+   {
+    "id": "blunt",
+    "description": "Worm head cap.\n- Eyes: two pigment eyespots (8-segment flush dark discs on the upper front of the cap).\n- WP4: the frontal mouth disc gets its own 'mouth' colour (skin darkened .3) instead of pal.eye.\n- WP5: the disc is seated on the cap; today it floats about 0.12 cW ahead (mesh.ts:1020).\n- No headgear.",
+    "allowedEyeTypes": [
+     "auto",
+     "eyespot"
+    ],
+    "allowedHeadgear": [
+     "none",
+     "any horn -> NOT built: 'Not built: a worm head has no skull to carry horns.'"
+    ],
+    "bodyPlans": [
+     "limbless",
+     "many-legged (wild)",
+     "coherent archetype: worm"
+    ]
+   },
+   {
+    "id": "mandibles",
+    "description": "Arthropod head capsule. Compound-eye domes with a dark pseudopupil and facet shading replace the ellipsoids at mesh.ts:1035. Antennae and mandibles are unchanged. No horns.",
+    "allowedEyeTypes": [
+     "auto",
+     "compound"
+    ],
+    "allowedHeadgear": [
+     "none",
+     "any horn -> NOT built: 'Not built: arthropod heads carry no bony horns.'"
+    ],
+    "bodyPlans": [
+     "many-legged",
+     "coherent archetype: myriapod"
+    ]
+   }
+  ],
+  "eyeTypes": [
+   {
+    "id": "auto",
+    "description": "Default for every migrated and generated recipe.\n\nresolveComposerEyes(recipe) in fauna-composer-face.ts is a pure function. The pupil type depends only on face, layout, legs, feet and bodyLength, never on colorSeed, because coat and colour must not change geometry (structure-independent.test.mjs:64-65). The iris band comes from composerHash(`face-eye-v1/${colorSeed}/${face}`) over the face's allowed bands. No stream draws, so it is shared across a herd.\n\nAuto table:\n- mandibles -> compound\n- blunt -> eyespot\n- beak -> round\n- flat-face -> round\n- proboscis -> round\n- muzzle: hoof feet or unguligrade legs -> horizontal; pillar legs -> round; otherwise bodyLength < 0.9 -> vertical-slit, else round\n- jaws: sprawled or limbless -> vertical-slit; otherwise round",
+    "geometryAndShading": "Resolves to one of the types below.\n\nIRIS vocabulary (append-only), with a starting linear-RGB table in fauna-composer-face.ts that WP4 may tune and then pin:\n- dark-brown [.035,.018,.008]\n- brown [.09,.045,.015]\n- amber [.40,.20,.03]\n- gold [.55,.38,.06]\n- yellow [.70,.55,.05]\n- orange [.70,.25,.03]\n- red [.50,.04,.02]\n- green [.18,.28,.06]\n- pale [.55,.55,.50]\n\nThe iris is multiplied by the existing eyeMul (u9[11], mesh.ts:390). Contrast floor: iris luminance >= 1.8 x the lid-rim luminance, so eyes stay visible on ink and slate coats."
+   },
+   {
+    "id": "round",
+    "description": "Circular pupil. Found in tall or active predators, diurnal predators, nearly all birds, primates, theropods and elephants (Banks et al. 2015; research-sourced, not re-verified here).",
+    "geometryAndShading": "Built by the new pure module src/fauna-composer-eye.ts as a head-local patch with 20 segments. Rings, from the centre out (radius in er):\n- centre;\n- R1 pupil edge .34;\n- R2 duplicate at 1.06 x R1 in iris-inner colour, for a crisp edge;\n- R3 iris .65;\n- R4 limbus .92, iris x .45;\n- R5 lid margin: an almond opening, half-height .72 above and .62 below, coloured coat x .35;\n- R6 outer lid at 1.2, raised .08 er;\n- R7 orbit blend at 1.55, coloured with the coat at that point (mesh glue uses coatAt).\nInner rings are clipped to .98 of the opening. The cornea dome lift is .30 er x (1 - rho^2). Pupil colour [.008,.008,.010].\n\nGloss: cornea (R1-R4) 1.0, lid margin .4, others 0.\n\nPlacement:\n- Cast a ray from the head-local anchor (the old ex, ey at z = 0) along the gaze (yaw from the midline per face, pitched up 5 degrees, mirrored per side).\n- Use the first hit on the already-built 'head' part triangles; recess the eye .2 er behind it.\n- Gaze yaw (degrees from midline): flat-face 15, carnivore muzzle 35, biped or quadruped jaws 45, grazer muzzle 65, proboscis 70, sprawled jaws 70, beak 75.\n- Eye size: er = k x cH x eyeScale x eyeRel, with k: beak .16, flat-face .13, grazer muzzle .14, other muzzle .13, jaws .13, proboscis .07.\n\nAbout 141 vertices and 260 triangles per eye."
+   },
+   {
+    "id": "horizontal",
+    "description": "Horizontal bar pupil, as in goats, sheep, horses and deer: lateral-eyed grazing prey.",
+    "geometryAndShading": "Same patch. R1/R2 use a superellipse (n = 4) with rx .55 and ry .16.\n\nThe bar axis is the head-forward direction projected onto the eye plane, blended 0.7 toward the world-horizontal projection. That counter-rolls the rest head pitch, which is -0.3 rad on most quadrupeds (rig.ts:333). Iris dark-brown or brown."
+   },
+   {
+    "id": "vertical-slit",
+    "description": "Vertical slit pupil, as in cats, foxes, crocodiles and geckos: short ambush predators.",
+    "geometryAndShading": "Same patch. R1/R2 use rx .08 and ry .46, with lens-pointed ends (half-width x |cos|^0.6). The iris fills .95 of the opening.\n\nIris amber or gold on carnivores; gold, copper or green on reptiles."
+   },
+   {
+    "id": "compound",
+    "description": "Arthropod compound eye. Only built on mandibles faces.\n\nOn a vertebrate face it is built as the auto type, with the constraint 'Eyes: built as <auto>: compound eyes belong to arthropod heads.' A vertebrate pupil chosen on mandibles is built as compound, with the constraint 'Built as compound: arthropod heads have compound eyes.'",
+    "geometryAndShading": "A dome with 12 radial segments x 5 stations, at most 120 triangles per eye, placed where mesh.ts:1035 is now.\n- Facet checker: vertex colour +/-8% between alternating rings and segments.\n- A 3-vertex dark pseudopupil at the gaze apex.\n- Gloss .35."
+   },
+   {
+    "id": "eyespot",
+    "description": "Worm pigment-cup eyespots. Only built on blunt faces.\n\nElsewhere they are built as the auto type, with a disclosure. Any iris choice on a compound or eyespot face gives 'Iris colour has no effect: compound eyes and eyespots have no iris.'",
+    "geometryAndShading": "Two flush dark discs of 8 segments (8 triangles each) on the upper front of the cap, lifted .002 H. Gloss 0."
+   }
+  ],
+  "workPackages": [
+   {
+    "id": "WP1",
+    "title": "Face contract: fauna-composer-face.ts, recipe v3 (proboscis face, derived trunk, eyes/iris keys), legacy migration, rule-obeying generators, species-key projection, horn rules applied through mesh/rig shims",
+    "ownsFiles": [
+     "src/fauna-composer-face.ts (NEW)",
+     "src/fauna-composer-recipe.ts",
+     "src/fauna-composer-individual.ts",
+     "src/fauna-composer-species.ts",
+     "src/fauna-composer-rig.ts (wave 1 only: skull shim lines; passes to WP5)",
+     "src/fauna-composer-mesh.ts (wave 1 only: skull and headgear shim lines; passes to WP4)",
+     "src/fauna-composer.ts (wave 1 only: additive headBounds(); passes to WP4)",
+     "src/creature-lab-composer.ts (wave 1 only: minimal label/GROUPS/why edits; passes to WP6)",
+     "tests/fauna-composer-face.test.mjs (NEW)",
+     "tests/fauna-composer-individual.test.mjs (wave 1; passes to WP4)",
+     "tests/fauna-composer-recipe-independent.test.mjs",
+     "tests/fauna-composer.test.mjs",
+     "tests/fauna-composer-structure-independent.test.mjs (wave 1; passes to WP5)",
+     "tests/fauna-composer-rig-independent.test.mjs (wave 1; passes to WP5)",
+     "tests/fauna-composer-gait.test.mjs (wave 1 pin block 228-245 only; passes to WP5)",
+     "tests/fauna-composer-skin-anatomy.test.mjs (wave 1; passes to WP4)",
+     "tests/fixtures/composer-skin2-links.json (repin the 13 predicted entries only)",
+     "tests/fixtures/composer-baseline-v2.json (NEW, captured at c80c8dd before any edit)"
+    ],
+    "readsFiles": [
+     "tests/fixtures/composer-v1-links.json",
+     "src/fauna-coat-vocab.ts (precedent for a pure, versioned, append-only module)",
+     "docs/fauna-variation-realism-round-plan-2026-10-02.json",
+     "test-results/fauna-face-plan-2026-10-02/judge-rule-counts.mjs",
+     "test-results/fauna-face-plan-2026-10-02/compat-rates.mjs"
+    ],
+    "changes": "STEP 0, BASELINE, before any edit, on main at c80c8dd or later. Write tests/fixtures/composer-baseline-v2.json containing:\n(a) for every v1 text in composer-v1-links.json (420 unique) and every key of composer-skin2-links.json byText: encode(decode(text)) and composerSpeciesKey(decode(text));\n(b) randomComposerRecipe(String(i)) and coherentComposerSpecies(String(i)).recipe for i < 256, encoded;\n(c) composerSpeciesKey for the 12 presets.\n\nSTEP 1, NEW src/fauna-composer-face.ts. Pure: no three, no Math.random, no Date; erasable TypeScript. Export COMPOSER_FACE_VERSION = 'fauna-composer-face-1'. Exports:\n- COMPOSER_EYE_TYPES = ['auto','round','horizontal','vertical-slit','compound','eyespot'].\n- COMPOSER_IRIS = ['auto','dark-brown','brown','amber','gold','yellow','orange','red','green','pale'], with COMPOSER_IRIS_RGB in linear RGB (values in plan.eyeTypes 'auto').\n- type ComposerSkull = 'muzzle'|'jaws'|'beak'|'flat-face'|'blunt'|'mandibles', and composerSkullOf(face) (proboscis -> 'muzzle').\n- FACE_HEADGEAR[face][horn] -> {built: 'none'|'nasal'|'paired'|'ossicones'|'crest', effect: string|null}. Use exactly the table in plan.faceTypes allowedHeadgear: muzzle+crest omit; proboscis nasal/ossicones/crest omit; jaws ossicones -> paired; beak nasal -> crest; beak paired/ossicones omit; flat-face, blunt and mandibles all omit. effect is null when built === chosen.\n- composerHeadgearBuild(recipe) -> {built, effect}.\n- FACE_EYES[face]: allowed eye types. Vertebrate faces allow round, horizontal and vertical-slit; mandibles allow compound; blunt allows eyespot.\n- FACE_EYE_PROFILE[face or sub-case]: {gazeYawDeg, k}, the numbers in plan.eyeTypes 'round'. WP4 reads these.\n- resolveComposerEyes(recipe) -> {chosen, built, auto: boolean, iris: IrisId, irisBuilt: IrisId|null, gazeYawDeg, k, effect: string|null}, following the auto table.\n- composerFaceConstraints(recipe): ComposerConstraint[]. One {part:'Horns', chosen, effect} when built !== chosen. One {part:'Eyes', ...} when an explicit eye type is not allowed. One {part:'Iris colour', ...} when iris !== 'auto' on compound or eyespot.\n- migrateLegacyFace(source: Record<string,unknown>, issues: string[]). If source.trunk === 'trunk' and head === 'muzzle': set head = 'proboscis' and push 'Trunk: now a face type; this muzzle became Face = Proboscis.' If trunk is on any other face: push `Trunk: removed. A trunk is a nose and only grows on a mammal muzzle; this ${label} face is kept. Choose Face -> Proboscis for a trunk.`\n- composerAnatomyProjection(recipe): head 'proboscis' -> 'muzzle'; everything else unchanged.\n\nSTEP 2, src/fauna-composer-recipe.ts:\n- COMPOSER_RECIPE_VERSION = 3. Append 'proboscis' to COMPOSER_CHOICES.head. Add the choices eyes: COMPOSER_EYE_TYPES and iris: COMPOSER_IRIS.\n- Keep COMPOSER_CHOICES.trunk ['none','trunk'] and the 'trunk' key in its encoded position.\n- Add `export const COMPOSER_V2_KEYS` = the current 38-key COMPOSER_RECIPE_KEYS, frozen. COMPOSER_RECIPE_KEYS = [...COMPOSER_V2_KEYS, 'eyes', 'iris'].\n- COMPOSER_SPECIES_KEYS gains eyes and iris. COMPOSER_V2_DEFAULTS stays the v2-added keys only; add COMPOSER_V3_DEFAULTS = {eyes:'auto', iris:'auto'}; base gets eyes:'auto', iris:'auto'.\n- normalizeComposerRecipe:\n  - accept version 1, 2 or 3;\n  - when source.version is 1 or 2, call migrateLegacyFace before reading the choices;\n  - after reading, always set recipe.trunk = recipe.head === 'proboscis' ? 'trunk' : 'none';\n  - for version-3 or version-less objects the source trunk is ignored silently, so a UI edit from proboscis back to muzzle with a stale trunk:'trunk' does NOT re-promote.\n- decodeComposerRecipe:\n  - accept 'v1', 'v2' and 'v3'; known keys are V1_KEYS, V2_KEYS and RECIPE_KEYS respectively;\n  - pass a version marker into normalize so migration runs for v1/v2;\n  - for v3 text whose trunk field disagrees with the face, add the issue 'Trunk follows the Face; trunk field ignored.';\n  - keep the order: normalize (migration included) THEN upgradeLegacyPreset, so a v1 trunked-centipede text matches the migrated preset.\n- composerConstraints: delete :267-270 (both trunk rules) and append ...composerFaceConstraints(recipe) where they were.\n- Split randomComposerRecipe:\n  - export drawComposerRandomV1(seed), the current body up to the object literal; draws byte-identical, plus the V3 defaults;\n  - randomComposerRecipe(seed) = post-pass(draw): muzzle+trunk -> proboscis; other trunk -> none; horns = composerHeadgearBuild(r).built; eyes/iris 'auto'; then normalize. No new rand() calls.\n- Preset trunked-centipede: head 'proboscis' (trunk derived). It keeps horns 'nasal', which is now disclosed and not built. shelled-giraffe-bird (beak + ossicones) and winged-ape-rhino (flat-face + nasal) keep their choices as disclosure demonstrations.\n\nSTEP 3, src/fauna-composer-individual.ts:31,87. composerSpeciesKey hashes composerAnatomyProjection(recipe) over the unchanged COMPOSER_ANATOMY_CHOICE_KEYS. Do NOT add eyes or iris to that list.\n\nSTEP 4, src/fauna-composer-species.ts:\n- All draws are unchanged through wingRoll (:178).\n- Replace :181 with: if (r.trunk === 'trunk') { if (r.head === 'muzzle') r.head = 'proboscis'; else r.trunk = 'none'; }\n- Keep :182, but test r.head === 'proboscis'.\n- After the last exclusion, set r.horns = composerHeadgearBuild(r).built and r.eyes = r.iris = 'auto'.\n- Line 36's choice type and the archetype tables keep 'trunk', so pachyderm still draws [['none',3],['trunk',2]] (:74).\n\nSTEP 5, digest-neutral shims:\n- rig.ts: `const skull = composerSkullOf(recipe.head)` replaces every recipe.head read (:176, :177, :178, :333, :365, :430, :760). HEAD_SCALE is typed Record<ComposerSkull, number>.\n- mesh.ts: use the skull at :601 (headFirstStation), :945, :949, and :968-:1045 inside buildHead and the eye block. Keep the s.begin('head', r.head) label (labels are not digested).\n- mesh.ts horn block (:1050-:1083): `const hg = composerHeadgearBuild(r); if (hg.built !== 'none')`, then switch on hg.built instead of r.horns. Delete the forehead path at :1058-:1063, which is unreachable now that a trunk exists only on proboscis, where nasal is omitted.\n- The ear gate at :985 stays as-is in WP1.\n\nSTEP 6, src/fauna-composer.ts: add headBounds(): THREE.Box3 to ComposerCreature. It is the rest-pose bounds of skin vertices in parts head, eyes, mouth, horn and trunk, computed once from skin.parts at build. Additive only.\n\nSTEP 7, src/creature-lab-composer.ts, minimal:\n- label head:'Face', trunkLength:'Proboscis length';\n- 'head:proboscis':'Proboscis / trunk (elephant, tapir)', 'horns:crest':'Crest or casque';\n- remove 'trunk' from the GROUPS 'Head and neck' list (:42);\n- why() :91 becomes `if (key === 'trunkLength' && r.head !== 'proboscis') return 'Only a Proboscis face has a trunk.'`.\n\nSTEP 8, tests:\n- VERSION === 3; V1 and V2 key lists frozen; 'v3*' rejections move to 'v4*' (individual.test.mjs:92, recipe-independent.test.mjs:67, fauna-composer.test.mjs:120).\n- individual.test.mjs:105 expects 'v3*'.\n- recipe-independent.test.mjs:73-74 expects parts 'Horns' (no 'Trunk').\n- structure-independent.test.mjs:41-50 per-key loop:\n  - horns test nasal, paired and ossicones on a giraffe (muzzle) base and crest on the dinosaur base;\n  - add an assertion that an omitted kind is bit-identical to 'none' for the horn part (e.g. ape + nasal);\n  - head includes 'proboscis', with parts ['head','mouth','trunk'];\n  - drop 'trunk' from the loop; eyes and iris are excluded.\n- Repin exactly the 13 predicted skin-2 entries with a per-entry note driftFromV2 = 'fauna-composer-face-1: horn not built on face' or 'trunk dropped'. Repin the 435-recipe graph digest and the affected HEAD_BONE_COUNTS entries (dropped-trunk cases lose 6 bones), each with the reason in a comment.\n- New tests/fauna-composer-face.test.mjs covers the acceptance below.\n\nSTEP 9: write the round plan as docs/fauna-face-eye-round-plan-2026-10-02.md, including the rule table and every effect string.",
+    "acceptance": [
+     "`npm run build` (tsc --noEmit + vite build) passes and the full `npm test` is green.\n- COMPOSER_RECIPE_VERSION === 3; COMPOSER_V1_KEYS and COMPOSER_V2_KEYS equal their frozen literals.\n- 'v4*', 'v999*', 'v0*', 'V3*' and 'v3.1*' are rejected as Unsupported.\n- encode/decode round-trips exactly for 12 presets, 256 wild and 256 coherent seeds. The maximum encoded length is under 700 characters.",
+     "fauna-composer-face.test.mjs, source scan: fauna-composer-face.ts contains no 'three', 'Math.random' or 'Date'.",
+     "FACE_HEADGEAR is exhaustive over 7 faces x 5 horn values. A 7x5 matrix test asserts:\n- exactly one 'Horns' constraint whenever built !== chosen, and none otherwise;\n- the exact effect strings in the plan.",
+     "resolveComposerEyes on the 12 presets is pinned:\n- giraffe and rhinoceros: horizontal (or round if pillar legs; pin the actual values);\n- ape: round, dark-brown or brown;\n- dinosaur: round, gold or amber band;\n- centipede: compound; worm: eyespot; bird: round.\nChanging colorSeed changes only the iris band, never the eye type.",
+     "Migration over all 420 unique legacy v1 texts and the 28 skin-2 texts:\n- 0 errors;\n- 16 legacy muzzle+trunk texts become proboscis;\n- exactly 78 legacy trunk-on-other-face texts get the 'Trunk: removed' issue (assert the count from judge-rule-counts.mjs);\n- chosen horns are kept verbatim;\n- the v1 trunked-centipede preset text decodes to the preset (upgradeLegacyPreset still matches).",
+     "composerSpeciesKey(decode_v3(text)) equals the baseline key for every legacy and skin-2 text except the asserted dropped-trunk set. All 12 preset keys are unchanged, including trunked-centipede through the projection.",
+     "Generators:\n- drawComposerRandomV1(String(i)) for i < 256 deep-equals the fixture's wild v1 fields (individual.test.mjs:130-140 keeps passing against it).\n- For 256 coherent seeds, every field except head, trunk, horns, eyes and iris equals composer-baseline-v2.json.\n- Over 1000 wild + 1000 coherent seeds: 0 recipes with composerHeadgearBuild(r).built !== r.horns, and 0 with trunk 'trunk' on a face other than proboscis.",
+     "Pins:\n- skin-2: only the 13 predicted entries change; the other 15 are bit-identical.\n- The skin-2 text that becomes proboscis keeps its digest unless its horn is in the omitted set.\n- Graph and bone-count repins are limited to dropped-trunk recipes.",
+     "Structure test:\n- every head value (including proboscis) and every built horn kind changes geometry;\n- an omitted horn (ape + nasal, worm + paired) is bit-identical to horns 'none' in all skin arrays."
+    ],
+    "risk": "This is the contract every other package builds on, so it merges alone and first.\n- Main risk: a silent herd re-roll. Guarded by the baseline species-key fixture captured BEFORE editing.\n- A second risk is normalize re-promoting proboscis from a stale trunk field. Guarded by allowing promotion only when version is 1 or 2, plus a UI edit-path test.\n- The shims in rig.ts and mesh.ts are deliberately minimal so that WP4 and WP5 own those files afterwards.\n- The gate may still commit to main: rebase on the latest main first and re-read every cited line (HEAD moved from 9688bc3 to c80c8dd during planning).",
+    "dependsOn": []
+   },
+   {
+    "id": "WP2",
+    "title": "Close-up review harness, BEFORE capture set and composer part-diff tool (new files only)",
+    "ownsFiles": [
+     "tests/fauna-face-closeups.browser.mjs (NEW)",
+     "tests/fauna-face-closeups.html (NEW, Vite-served review page)",
+     "tests/fauna-face-specimens.json (NEW, frozen specimen list as recipe TEXT)",
+     "tests/tools/composer-part-diff.mjs (NEW)"
+    ],
+    "readsFiles": [
+     "test-results/fauna-face-plan-2026-10-02/face-audit.mjs (scratch harness to productise)",
+     "tests/helpers/gpu-lock.mjs",
+     "tests/browser-options.mjs",
+     "src/fauna-composer.ts",
+     "src/fauna-composer-rig.ts",
+     "src/fauna-composer-mesh.ts",
+     "src/fauna-composer-recipe.ts",
+     "src/fauna-composer-species.ts"
+    ],
+    "changes": "(1) Create tests/fauna-face-specimens.json at baseline (c80c8dd). Each entry has {name, text}, where text is the v2 recipe text encoded NOW, so 'after' runs decode the same animals through WP1's migration even though the wild and coherent generators change. Entries:\n- the 12 presets;\n- the 9 wild hybrids from the audit (composer-16, -8, -43, -40, -31, -1, -5, -26, -51);\n- 4 custom overrides (ape+paired, bird+nasal, giraffe+trunk, rhinoceros+trunk);\n- 4 coherent plausibles (pachyderm, primate, ungulate-grazer, theropod, using the audit's seeds);\n- 6 eye showcases: giraffe, cat-like small carnivore (wild muzzle + paw, bodyLength < .9), crocodile-like sprawled jaws, bird, ape, centipede.\n\n(2) tests/fauna-face-closeups.html plus the .browser.mjs driver, productising face-audit.mjs:\n- the page builds each specimen with createComposerCreature and frames it from the creature's head bounds. headBounds() exists only after WP1, so fall back to computing it from buildComposerSkin(graph).parts when the method is missing;\n- per specimen, one sheet of 6 panels: front, side, 3/4, top, eye macro (camera at the left eye along its outward normal, 4 x er distance) and whole animal; plus a JSON report of part triangle counts, eye radius and constraint list;\n- CLI flags: --label <before|after|wpN>, --out (default test-results/fauna-face-eye-round-2026-10-02/<label>/), --only <name,...>, --port (default 5231, strictPort);\n- start its own Vite, run the whole capture inside withGpuLock({owner:'fauna-face-closeups-<label>'}) in batches, with each hold under 30 s, release on failure, and stop Vite at the end;\n- write a contact sheet <label>/contact.png (an ImageMagick montage is acceptable through the image-ops tooling, or a canvas-composited PNG from the page).\n\n(3) Run it once at baseline: --label before.\n\n(4) tests/tools/composer-part-diff.mjs --base <dir> --head <dir> --texts <file|builtin:skin2|builtin:specimens|builtin:graph435>:\n- imports src from two source roots, e.g. a `git worktree add` of the base ref in a sibling folder, created and removed by the caller;\n- for each recipe text, builds the graph and skin in both and reports per part (part + label) the triangle count and the position/colour/weight hash, rebased to part-local vertex ranges, plus per-bone rest hash;\n- prints a JSON summary {changedParts: {part: count}, changedBones, recipesChanged, unchangedRecipes}.\nWP4, WP5 and the coordinator use it to prove that only the predicted parts drift.",
+    "acceptance": [
+     "`node tests/fauna-face-closeups.browser.mjs --label before` produces 41 sheets plus a report JSON and contact.png under test-results/fauna-face-eye-round-2026-10-02/before/.\n- A second run gives the same file set and the same report numbers.\n- Each GPU-lock hold is 30 s or less and the port is free afterwards.",
+     "composer-part-diff with --base and --head both at c80c8dd reports 0 changed parts and 0 changed bones over builtin:skin2 and builtin:specimens.",
+     "No file outside the 4 owned files is modified. The harness is NOT added to the npm test list; it is a manual review tool like test:fauna-closeup."
+    ],
+    "risk": "- Three or more concurrent headless WebGL browsers have crashed this machine (TDR), so the GPU lock is mandatory, and this package must not run while WP6's browser test runs.\n- test-results is a junction to D:/IWSDK-review; write only inside the round folder.\n- Renders are SwiftShader, so they are not hardware-representative for the specular highlight.",
+    "dependsOn": []
+   },
+   {
+    "id": "WP3",
+    "title": "Planet fauna: only hoofed browsers grow horns (removes the forehead horns on badger/bear-like PADDED animals), disclosed in mutationLog",
+    "ownsFiles": [
+     "src/creature-model.ts",
+     "tests/fauna-planet-headgear.test.mjs (NEW)",
+     "tests/fauna-appearance-v2.test.mjs (only if its horned-species count assertion needs a recount)"
+    ],
+    "readsFiles": [
+     "test-results/fauna-face-plan-2026-10-02/planet-horn-census.mjs",
+     "test-results/fauna-face-plan-2026-10-02/planet-struct-cost.mjs",
+     "tests/life-cpu-digest.test.mjs",
+     "tests/life-scenario.mjs",
+     "src/fauna-appearance.ts (inheritedFaunaFamily :569-575)",
+     "src/fauna-runtime.ts (:291 calls with no family)",
+     "src/creature-lab.ts (:150 labelFor shows mutationLog)"
+    ],
+    "changes": "In realisticIndividualCreatureGenome (creature-model.ts:97), after the proboscidean block (:162-173) and before the final mutationLog push (:215), add:\n\nif (selected !== 'ungulate' && g.hornLength > 0) { g.hornLength = 0; g.mutationLog.push(`${selected} face: horns not grown (only hoofed browsers carry horns)`); }\n\n`selected` is already `family ?? inheritedFaunaFamily(genome)` (:101), so the rule applies on the runtime path, which passes no family (fauna-runtime.ts:291), and on the explicit-family Lab path. This adds no genome field, no new draws, and no change to founders (generateCreatureGenome) or to the 'fauna-morphology-1' validation.\n\nThe far-LOD horn in fauna-field-renderer.ts:169-171 (a LIFE_FILE) disappears automatically through g.hornLength, identically in both digest bundles. Do NOT edit any LIFE_FILE or SHARED_PRESENTATION_FILES list.\n\nNew test fauna-planet-headgear.test.mjs is a productised planet-horn-census: 40 species x 4 variants x 2 stages per archetype on the production path (family undefined). It asserts the numbers below and that every zeroed genome carries the mutationLog line.",
+    "acceptance": [
+     "Production path (family undefined):\n- low-slung -> padded adults horned 0/112 (was 101/112) and juveniles 0/112 (was 33/112);\n- browser -> ungulate adults still 144/160 horned, with unchanged mean (.215 m to 3 decimals) and max;\n- runner, long-neck and proboscidean still 0.",
+     "Every padded genome whose hornLength was zeroed has exactly one 'padded face: horns not grown' mutationLog entry.",
+     "tests/life-cpu-digest.test.mjs passes with SHARED_PRESENTATION_FILES and REFERENCE unchanged. fauna-continuity-562ff898.json is untouched and passes.",
+     "fauna-appearance-v2.test.mjs:119-133 still finds at least 10 dimorphic horned species with male/female ratio >= 1.6. If its count changes, re-assert the new exact count with a comment.",
+     "The full `npm test` and `npm run build` pass."
+    ],
+    "risk": "Low.\n- Inferred, not verified: some near-rig, contact or continuity test may pin a padded animal's appendage triangle count (56 horn triangles disappear). Run the full suite, and update only assertions whose change is exactly 'padded horns removed'.\n- The deployed web build does not change until a republish.",
+    "dependsOn": []
+   },
+   {
+    "id": "WP4",
+    "title": "Realistic eye types: pure eye-patch module, lidded ring eyes with pupil shapes and iris, compound/eyespot, own nostril/mouth colours, per-vertex gloss for a real corneal highlight",
+    "ownsFiles": [
+     "src/fauna-composer-eye.ts (NEW, pure geometry)",
+     "src/fauna-composer-mesh.ts (eye block, Skin gloss channel, nostril/blunt-disc colours, mandible compound-eye site; passes to WP5 after merge)",
+     "src/fauna-composer.ts (gloss attribute and material patch)",
+     "tests/fauna-composer-eyes.test.mjs (NEW)",
+     "tests/fauna-composer-gloss.test.mjs (NEW)",
+     "tests/fauna-composer-skin-anatomy.test.mjs",
+     "tests/fauna-composer-individual.test.mjs (skin pin block :63-89 switches to the skin-3 fixture)",
+     "tests/fixtures/composer-skin3-links.json (NEW; passes to WP5)"
+    ],
+    "readsFiles": [
+     "src/fauna-composer-face.ts",
+     "src/fauna-face.ts (planet ring-palette precedent :83-104)",
+     "test-results/fauna-face-plan-2026-10-02/eye-glint.mjs (medial-glint proof)",
+     "tests/fauna-face-closeups.browser.mjs",
+     "tests/tools/composer-part-diff.mjs"
+    ],
+    "changes": "(1) NEW src/fauna-composer-eye.ts. Pure (plain number arrays, no three), so it can be unit-tested in node. Exports:\n- raycastFirstHit(tris: Float32Array /* head-local xyz x 3 per triangle */, origin: [x,y,z], dir: [x,y,z]) -> {t, point, normal} | null;\n- buildEyePatch({type: 'round'|'horizontal'|'vertical-slit', er, centre, gaze, up, barAxis?}) -> {positions: number[], roles: Uint8Array /* pupil, iris-inner, iris, limbus, lid, outer-lid, orbit */, gloss: number[], index: number[]} in head-local coordinates, with the ring layout, pupil shaping, lid opening, clipping and cornea lift specified in plan.eyeTypes;\n- buildCompoundEye({er3: [rx,ry,rz], centre, gaze, up}) -> the same shape, as a 12x5 dome with facet roles and a pseudopupil;\n- buildEyespot({r, centre, normal}) -> an 8-triangle disc.\nNo randomness.\n\n(2) mesh.ts glue:\n- Skin gets a per-vertex `gloss` array (default 0 for every existing push), returned on ComposerSkin as `gloss: Float32Array`, plus a `patch(positionsModel, colors, gloss, index, weights)` method.\n- Replace the eye block (:1040-1047). Read resolveComposerEyes(r) (WP1). Transform the already-built 'head' part's triangles (this skin's s.parts entry) into head-local space with the inverse of the head bone rest transform. Cast from the anchor (the old ex, ey, z = 0) along the per-face gaze from FACE_EYE_PROFILE, mirrored per side and pitched up 5 degrees. Recess .2 er behind the hit. If there is no hit, use the old offset AND increment skin.eyeFallbacks (asserted 0).\n- Colours by role: pupil [.008,.008,.010]; iris = COMPOSER_IRIS_RGB[built] x eyeMul (mesh.ts:390, the existing u9[11] draw, so no new draws); iris-inner = iris x 1.1; limbus = iris x .45; lid = coatAt(p) x .35; orbit = coatAt(p).\n- Contrast floor: if lum(iris) < 1.8 x lum(lid), scale the iris up to meet it (clamped to 1).\n- Beak with maturity < .75: mix the iris toward dark-brown by (.75 - maturity) / .75.\n- Horizontal bar: barAxis = normalize(mix(headForwardProjected, worldHorizontalProjected, .7)) on the eye plane.\n- Compound: replace the ellipsoid at :1035 with buildCompoundEye at the same centre, coloured pal.eye with facet +/-8% and gloss .35. Emit it inside an 'eyes' part (s.end() / s.begin('eyes','compound eyes') around it, then resume the head part) so eye triangles are always in 'eyes'.\n- Blunt: add buildEyespot x2 on the upper cap front.\n- Nostrils (:980) use nose = scaleC(pal.skin, .22). The blunt disc (:1020) uses mouth = mixC(pal.skin, [0,0,0], .7). After this, nothing outside the 'eyes' part uses pal.eye or the iris colour.\n- Bump COMPOSER_SKIN_VERSION to 'fauna-composer-skin-3'. Keep the skin-ind stream at exactly 12 draws.\n\n(3) fauna-composer.ts:\n- geometry.setAttribute('composerGloss', new BufferAttribute(skin.gloss, 1)).\n- One onBeforeCompile on the coloured material: declare `attribute float composerGloss; varying float vGloss;` in the vertex shader, and replace the fragment roughness chunk so roughnessFactor = mix(roughness, 0.06, vGloss).\n- customProgramCacheKey = () => 'composer-gloss-1'.\n- The neutral material is untouched. Still 1 colour material and 1 draw.\n\n(4) Tests:\n- fauna-composer-eyes.test.mjs covers the acceptance below.\n- fauna-composer-gloss.test.mjs checks that the patch string is present exactly once and that gloss is 0 outside the eyes.\n- skin-anatomy: eyes still scale with eyeScale and eyeRel; neutral traits remain the identity.\n- Create composer-skin3-links.json (the same 28 texts; schema, capturedAt, driftFromV2 per entry = 'eyes rebuilt (fauna-composer-eye)' plus any WP1 reason) and point individual.test.mjs:63-89 at it.\n- Graph pins must NOT change: eyes are mesh-only.",
+    "acceptance": [
+     "Pupil aspect, from R1 vertices projected into the gaze frame:\n- horizontal: width/height >= 2.5;\n- vertical-slit: height/width >= 3;\n- round: 0.9 to 1.1.\nThe bar angle to world horizontal is <= 0.3 x |rest head pitch| + 2 degrees.",
+     "Gaze is within +/-3 degrees of FACE_EYE_PROFILE for the 12 presets and the 6 eye showcases, at maturity .3 and 1 and at extreme individuals (individualSeed 1..8, variability 1).\n- eyeFallbacks === 0 everywhere;\n- every eye centre lies within [-0.3 er, +0.05 er] of the skull surface along the gaze.",
+     "Medial-glint regression: for every vertex with gloss > .5, side*z >= side*z of its eye centre in head-local space (lateral), on all faces.",
+     "Colour:\n- iris differs from the pupil;\n- lum(iris) >= 1.8 x lum(lid) on all 14 palettes x {muzzle, beak, jaws};\n- no vertex outside the 'eyes' part has the iris RGB or pal.eye (nostrils and the blunt disc use their own colours);\n- changing `iris` changes colours only, never positions, index or weights.",
+     "Budget:\n- <= 300 triangles per lidded eye (target 260);\n- <= 120 per compound eye; 8 per eyespot;\n- COMPOSER_BUDGET holds for the 12 presets, 256 wild and 256 coherent seeds;\n- still 1 SkinnedMesh with 1 colour material.",
+     "Determinism: two builds are byte-identical, including gloss. The skin-ind stream still takes 12 draws.",
+     "composer-part-diff (base = WP1 merge commit) over builtin:skin2, builtin:specimens and builtin:graph435:\n- only parts 'eyes', the mandible head part (compound eyes moved out of it), the muzzle head part (nostril colour) and the blunt head part (disc colour and eyespots) change;\n- 0 changed bones.",
+     "Gloss check: SwiftShader 512x512 renders of giraffe, bird and centipede with gloss forced to 0 are pixel-identical to the pre-patch material.",
+     "`node tests/fauna-face-closeups.browser.mjs --label wp4` produces eye-macro and 3/4 sheets for 12 presets, 6 showcases and 7 faces. Each eye macro visibly shows pupil shape, iris, limbus, lid rim and a highlight on giraffe, ape, bird, dinosaur, ostrich (ink coat), pachyderm and centipede."
+    ],
+    "risk": "- The highlight is judged on SwiftShader only; real-GPU and headset look are unvalidated.\n- Raycasting into concave beak or brow lofts can choose a wrong surface. Casting from inside the skull and taking the first exit hit avoids it; the fallback counter keeps it observable.\n- onBeforeCompile can break on a three.js upgrade; the pixel-identity test and cache key guard it.\n- The whole-skin pins fail by design. Regenerate only through the part-diff-verified skin-3 fixture.",
+    "dependsOn": [
+     "WP1",
+     "WP2"
+    ]
+   },
+   {
+    "id": "WP5",
+    "title": "Head geometry: real proboscis face, rule-driven headgear shapes (casque, seated crest, forward horn roots), ears kept with horns, flat-face brow/nose/mouth, seated worm mouth, protruding nostrils; final review set and round doc",
+    "ownsFiles": [
+     "src/fauna-composer-face-geometry.ts (NEW, pure)",
+     "src/fauna-composer-mesh.ts (buildHead, makeHeadColours, headFirstStation, horn block, trunk block :679-700)",
+     "src/fauna-composer-rig.ts",
+     "tests/fauna-composer-head-geometry.test.mjs (NEW)",
+     "tests/fauna-composer-structure-independent.test.mjs",
+     "tests/fauna-composer-rig-independent.test.mjs",
+     "tests/fauna-composer-gait.test.mjs (graph pin block 228-245)",
+     "tests/fixtures/composer-skin3-links.json",
+     "docs/fauna-face-eye-round-2026-10-02.md (NEW)"
+    ],
+    "readsFiles": [
+     "src/fauna-composer-face.ts",
+     "src/fauna-composer-eye.ts",
+     "src/fauna-composer-species.ts (composerStaticBalance :274)",
+     "docs/fauna-deer-head-refinement-2026-10-02.md",
+     "tests/fauna-face-closeups.browser.mjs",
+     "tests/tools/composer-part-diff.mjs",
+     "test-results/fauna-face-plan-2026-10-02/shots/"
+    ],
+    "changes": "(1) NEW src/fauna-composer-face-geometry.ts (pure).\n- Move the per-face numbers here: HEAD_SCALE (rig.ts:144), the cranium ratios (:177-178), the snout factor (:179) and the headPitch rule (:333), all keyed by face, not skull. Add proboscis: HEAD_SCALE 1.05, craniumH ratio .40, snoutLength x .4.\n- Export composerFaceTip(face, dims) -> {x, y, h, w}: the head-local tip station of the built face, the values buildHead currently assigns to tipX/tipY/tipH (mesh.ts:967-1037). Both mesh.ts and rig.ts call it.\n- Bump COMPOSER_GRAPH_VERSION to 'fauna-composer-graph-3'.\n\n(2) rig.ts, for the proboscis trunk:\n- Root = toBone(hb, [tip.x - 0.02H, tip.y + 0.2 tip.h, 0]).\n- baseR = 0.9 x min(tip.w, tip.h), so the radius jump at the junction is <= 10%.\n- n = 6 bones; the segment-angle and pose code (:367, :784-790) is unchanged. resolveRestClearance is kept.\n\n(3) mesh.ts, proboscis:\n- The muzzle loft has no end cap (end-cap 0).\n- The trunk chain's first ring is the muzzle's last station, with the same centre, section, basis and colour and weights [[head,.7],[trunk0,.3]], the neck-to-head technique of mesh.ts:963.\n- Tip ellipsoid radii [0.9,1,1] x r0.\n- Two nostril pits: 6-segment dark discs on the tip cap, nose colour, gloss .3.\n- Part 'mouth': a lower-lip ellipsoid at (tip.x - .05H, tip.y - .35 tip.h, 0), radii [.12H, .08cH, .28cW], skin colour.\n- Flap ears: lateral ellipsoids, thin in the outward direction (.03H), about .35H tall and .3H long, base (0.02H, .45cH, +/-.85cW), angled back 20 degrees, coat ear colour mixed 25% skin, scaled by earScale.\n- Eyes are placed automatically by WP4's raycast (k .07).\n\n(4) Headgear by composerHeadgearBuild(r).built:\n- beak + crest -> casque: a 4-ring keratin loft along the culmen from x = .25H to .36H + .45 x len. Height profile up to max(.5cH, .25H) x hornScale x .6, half-width .15cW, colour mix(keratin, accent, .3), gloss .3, part 'horn' label 'casque'.\n- jaws + crest -> a seated fin: a 5-station loft along x from -.12H to .5H, following the existing slab outline (mesh.ts:1080), half-thickness >= .09cW, base sunk to .72cH so it intersects the skull.\n- paired: translate the first two raw points (V(0.05,0.7,0.55), V(0.0,0.95,0.85)) forward and inward so the root is at about (0.16H, 0.8cH, 0.48cW), and offset the rest of the polyline by the same delta.\n- 'none' builds nothing (WP1 already does this).\n\n(5) Ears: always build muzzle ears. When the built kind is paired or ossicones, the base moves to (-0.06H, 0.55cH, +/-0.62cW) and dir = normalize(.45ay + .85 side az - .25ax), 0.12H behind and 0.15cH below the horn base. The silent deletion at :985 is gone.\n\n(6) flat-face:\n- brow ellipsoid (:1011) moves to y .30cH with half-height .09cH;\n- add a nose ellipsoid (radii .05H, .05cH, .12cW, colour skin x .6) at the front of the lower-face loft;\n- add a mouth-line colour band (keratin x .5) on the lower-face loft's lower front.\n\n(7) Muzzle nostrils move from tipX + .02H to tipX + .035H so they stand >= .005H proud of the end cap. The blunt mouth disc centre is set to the loft end-cap apex minus .01H (seated).\n\n(8) Repin:\n- skin-3 fixture entries, each with a driftFromV2 reason;\n- the graph digest and per-preset prefixes (only proboscis recipes change bones);\n- HEAD_BONE_COUNTS stay equal.\n\n(9) FINAL REVIEW, once WP4, WP5 and WP6 are on the integration branch:\n- run `node tests/fauna-face-closeups.browser.mjs --label after`;\n- write docs/fauna-face-eye-round-2026-10-02.md, covering:\n  - before/after sheets per face;\n  - the rule table;\n  - per-preset triangle counts before and after;\n  - the drift list from composer-part-diff;\n  - confirmation of 1 colour material and 1 draw call;\n  - that old links keep the immutable fauna-preview-20261002-01 package;\n  - that nothing is validated on GPU hardware or headset.",
+    "acceptance": [
+     "Proboscis:\n- bone count = legacy muzzle+trunk (head chain + 6);\n- the trunk root is within .02H of the muzzle tip station centre;\n- radius jump at the junction <= 10% and normal angle <= 15 degrees;\n- the tip ellipsoid is no wider than the last ring;\n- a 'mouth' part exists;\n- trunk pose motion (curl/sway) still passes the existing gait and clearance tests at trunkLength 0.2 and 1.4.",
+     "Headgear:\n- for all 7 faces x 5 horns, an omitted kind is bit-identical to 'none' and a built kind differs from it;\n- the casque's vertices lie at y >= the beak's upper-mandible centre line;\n- the jaws crest's minimum thickness is >= .18cW and its base is within .02H of the skull surface;\n- paired horn roots are at x >= .12H.",
+     "Ears: muzzle + paired and muzzle + ossicones build 2 ear ellipsoids. The giraffe preset has ears.",
+     "Flat-face: no brow vertex lies inside the eye opening along the gaze ray (eyes not occluded). The ape eye macro shows an open eye.",
+     "Nostrils protrude >= .005H past the cap. The gap between the worm disc and the cap is <= .005H.",
+     "composer-part-diff (base = WP4 merge):\n- skin changes only in head-group parts (head, eyes, mouth, horn, trunk);\n- body, limbs, tail, wings and armor are bit-identical;\n- bones change only for proboscis recipes;\n- the per-preset graph prefixes of the 11 non-proboscis presets are unchanged.",
+     "Budget:\n- proboscis head group <= legacy muzzle+trunk + 600 triangles;\n- casque <= 160 and crest <= 200 triangles;\n- COMPOSER_BUDGET holds for presets, 256 wild, 256 coherent and the endpoint sweep;\n- the coherent pachyderm still passes the composerStaticBalance-based tests.",
+     "`npm test` and `npm run build` are green after integration. The 'after' contact sheet shows no horn on beak (except casque), flat-face, blunt or mandibles faces."
+    ],
+    "risk": "This is the largest geometry change.\n- The shared-ring trunk junction may invert triangles at extreme snout and trunk lengths; the endpoint sweep in structure-independent covers it.\n- Proboscis head-mass change shifts balance; rerun the gait and balance tests.\n- WP4's raycast depends on head geometry, so recheck eyeFallbacks === 0 after every head edit.\n- The pins fail by design; regenerate only after part-diff confirms the predicted scope.",
+    "dependsOn": [
+     "WP1",
+     "WP2",
+     "WP4"
+    ]
+   },
+   {
+    "id": "WP6",
+    "title": "Creature Lab: Face/Eyes/Iris controls, per-option rule hints, resolved 'Automatic (...)' labels, composer 'Head and face' frame, v3 link handling tests",
+    "ownsFiles": [
+     "src/creature-lab-composer.ts",
+     "src/creature-lab.ts",
+     "creature-lab.html",
+     "tests/fauna-composer-ui.browser.mjs",
+     "tests/fauna-composer.browser.mjs (fix any trunk-control or v2 assumptions)",
+     "tests/creature-lab-state.test.mjs"
+    ],
+    "readsFiles": [
+     "src/fauna-composer-face.ts",
+     "src/fauna-composer-recipe.ts",
+     "src/fauna-composer.ts (headBounds from WP1)",
+     "src/creature-lab-state.ts",
+     "tests/helpers/gpu-lock.mjs"
+    ],
+    "changes": "(1) creature-lab-composer.ts:\n- GROUPS 'Head and neck' (:42), in order: neckLength, head (Face), headSize, snoutLength, trunkLength (Proboscis length), eyes, iris, horns.\n- Labels:\n  - 'eyes:auto' 'Automatic'\n  - 'eyes:round' 'Round (birds, primates, large predators)'\n  - 'eyes:horizontal' 'Horizontal bar (goat, horse, deer)'\n  - 'eyes:vertical-slit' 'Vertical slit (cat, fox, crocodile)'\n  - 'eyes:compound' 'Compound (insect, centipede)'\n  - 'eyes:eyespot' 'Eyespots (worm)'\n  - iris: 'Automatic', 'Dark brown', 'Brown', 'Amber', 'Gold', 'Yellow', 'Orange', 'Red', 'Green', 'Pale'\n  - key labels eyes:'Eyes (pupil)', iris:'Iris colour', horns:'Horns and headgear'.\n\n(2) Per-option hints. When rendering the horns, eyes and iris selects, rebuild each <option>'s TEXT from FACE_HEADGEAR / FACE_EYES / resolveComposerEyes for the current face. Append one of:\n- ' — not built on this face'\n- ' — built as brow horns'\n- ' — built as a casque'\n- ' — built as <type>'\n- ' — no effect on this face'\nOption VALUES never change, and all options stay selectable (house pattern: the chosen part stays, the effect says what is built). why() (:84-97) still disables whole controls only.\n\n(3) The 'auto' option text shows the resolved value, e.g. 'Automatic (horizontal bar, dark brown)'.\n\n(4) Head and face frame:\n- add <select id=\"composer-focus\"> with 'Whole animal' / 'Head and face' next to #composer-frame in creature-lab.html (:38);\n- add headEnvelope() to the composer controller (the union of each actor's creature.headBounds() translated by its offset, or the edited side in compare mode);\n- creature-lab.ts:144 fitCamera composer branch: focus 'head' -> fitViewCamera(composer.headEnvelope(), composer.viewDirection(), .25, .12);\n- not persisted in the URL this round.\n\n(5) #composer-constraints (:376-383) and #composer-issues already render WP1's entries; no change beyond tests.\n\n(6) creature-lab-state.test.mjs: v1, v2 and v3 composer links round-trip through the Lab; a malformed v3 text is rejected, not reinterpreted.",
+    "acceptance": [
+     "fauna-composer-ui.browser.mjs, run under withGpuLock and never concurrently with WP2's or WP4's captures:\n- the Face select contains 'proboscis', and there is no Trunk control;\n- Proboscis length is disabled with 'Only a Proboscis face has a trunk.' on other faces;\n- giraffe + Face = Proboscis builds a 'trunk' part;\n- on a beak face the Paired and Ossicones options end in ' — not built on this face', and Nasal ends in ' — built as a casque';\n- flat-face + Nasal shows 'Not built: primate faces carry no horns.' under compatibility adjustments, and no 'horn' part is built;\n- a v1 beak+trunk link shows the 'Trunk: removed' line under 'This link was adjusted';\n- a v1 muzzle+trunk link shows Face = Proboscis;\n- 'Head and face' framing makes the head bounds fill >= 40% of the viewport height for ape, worm and pachyderm.",
+     "Option-hint labels match FACE_HEADGEAR and FACE_EYES exhaustively (7 faces x 5 horns, 7 faces x 6 eye types). Encoded links are byte-identical before and after toggling the hint rendering.",
+     "creature-lab-state.test.mjs passes v1, v2 and v3 round-trips and the malformed-v3 rejection. `npm run build` passes."
+    ],
+    "risk": "Low geometric risk; UI only.\n- Browser tests share the GPU lock with WP4's captures in the same wave; hold times stay short and runs are serialized.\n- Rebuilding option text must not reset the selected value or trigger a rebuild loop.",
+    "dependsOn": [
+     "WP1"
+    ]
+   }
+  ],
+  "compatibility": "RECIPE v3:\n- decode accepts 'v1', 'v2' and 'v3'; 'v4' and anything else is Unsupported. encode always writes v3.\n- Key order is append-only: COMPOSER_V1_KEYS (26, frozen), then COMPOSER_V2_KEYS (38, newly frozen), then 'eyes' and 'iris'.\n- 'trunk' stays an encoded key but is DERIVED: trunk = head === 'proboscis' ? 'trunk' : 'none'. Choices are encoded by name, so appending 'proboscis' to head is safe.\n\nLEGACY MIGRATION (v1/v2 text or version 1/2 objects only), reported under 'This link was adjusted':\n- muzzle + trunk -> proboscis. Geometry identical until WP5.\n- A trunk on any other face is dropped and the face is kept. That is 78 of 420 legacy texts, 2 of 28 pinned.\n- Incompatible horns are kept in the recipe and disclosed as 'Horns' compatibility adjustments: 164 of 420 legacy texts, 3 hybrid presets.\n\nGENERATORS:\n- Wild randomComposerRecipe and coherent species draw exactly as before. 'composer-random-v1/' is frozen via drawComposerRandomV1; 'composer-species-v1/' changes only in post-draw rewrites.\n- Then a post-pass applies the face rules: horns are rewritten to the built kind, a trunk becomes proboscis or is dropped, eyes and iris are 'auto'. So Random no longer produces horns on beaks: 454 of 1000 wild seeds change, 4 of 1000 coherent.\n\nDETERMINISM:\n- composerSpeciesKey hashes a projection (proboscis -> muzzle) over the unchanged anatomy key list. eyes and iris are excluded.\n- So 'composer-individual-v2/', coat drift and 'composer-skin-ind-v1/' are unchanged for every legacy link except the 78 dropped-trunk ones (asserted exactly).\n- Iris shade reuses the existing u9[11] draw. Auto eye and iris come from pure composerHash on colorSeed and face, and colorSeed never affects geometry.\n\nPINS:\n- WP1 repins 13 of 28 skin-2 entries plus the dropped-trunk graph and bone-count entries.\n- WP4 introduces 'fauna-composer-skin-3' with composer-skin3-links.json.\n- WP5 introduces 'fauna-composer-graph-3' and updates skin-3.\n- Every repin carries a per-entry reason and is checked by tests/tools/composer-part-diff.mjs.\n\nPLANET: only creature-model.ts changes, and it is a SHARED_PRESENTATION_FILE, so life-cpu-digest passes without a REFERENCE re-baseline. No LIFE_FILE is touched.\n\nWEB: fauna-preview-20261002-01 (9d3b84c, recipe v1) stays immutable, so old links keep working. Republishing needs explicit owner authorisation and a new slug.\n\nFILE OWNERSHIP (verified against the repo at c80c8dd), disjoint within each wave:\n- Wave 1: WP1 {face.ts, recipe, individual, species, rig shim, mesh shim, fauna-composer.ts headBounds, lab-composer minimal, composer node tests, skin-2 fixture}; WP2 {new harness and tool files only}; WP3 {creature-model.ts, new planet test}.\n- Wave 2: WP4 {eye.ts, mesh.ts, fauna-composer.ts, skin-anatomy, individual test, skin-3 fixture}; WP6 {lab-composer, creature-lab.ts, creature-lab.html, browser UI tests, lab-state test}.\n- Wave 3: WP5 {face-geometry.ts, mesh.ts, rig.ts, structure, rig and gait tests, skin-3 fixture, round doc}.\n- package.json is coordinator-only: register new node tests (fauna-composer-face, fauna-planet-headgear, fauna-composer-eyes, fauna-composer-gloss, fauna-composer-head-geometry) in the \"test\" script at each merge, as the previous round did.\n\nPROCESS:\n- Each package works in its own worktree branched from the latest main, and commits on its own task branch (standing commit-cadence memory).\n- The coordinator merges WP1 first, then WP2 and WP3, then wave 2, then wave 3.\n- Browser runs are serialized under tests/helpers/gpu-lock.mjs.",
+  "budgets": "COMPOSER_BUDGET is unchanged: 160 bones, 48,000 vertices, 80,000 triangles, 2 draw calls (desktop preview, not Quest). It is asserted for 12 presets, 256 wild seeds, 256 coherent seeds and the endpoint sweep. The current worst case, trunked-centipede at 28,168 triangles, must stay under 30,000.\n\nEyes:\n- lidded eye: <= 300 triangles each (target 260, about 141 vertices), against 176 today;\n- pair: <= 600;\n- compound: <= 120 each;\n- eyespot: 8 each.\n\nHead parts:\n- casque <= 160 triangles; jaws crest <= 200 (today 16);\n- ears kept with horns: +352 (same as normal muzzle ears);\n- proboscis head group <= legacy muzzle+trunk + 600;\n- any preset's head group <= baseline + 1,200.\n\nMaterial and memory:\n- 1 colour MeshStandardMaterial (plus the existing neutral one), one onBeforeCompile patch with cache key 'composer-gloss-1';\n- one Float32 gloss attribute, 4 B per vertex, <= 192 KB;\n- no textures.\n\nRecipe text: <= 700 characters (cap 1200). Determinism: the skin-ind stream stays at exactly 12 draws.\n\nPlanet: 0 added triangles. Padded animals lose 56 near-LOD horn triangles and 1 far-LOD part.\n\nGPU: every browser capture runs under the GPU lock, with holds <= 30 s and one headless browser at a time.",
+  "outOfScope": [
+   "Planet eye types and the planet face template (fauna-face.ts):\n- the exact 500-triangle cap and six-feature contract make it a separate round;\n- also the proboscidean nostrils hidden inside the trunk root (49 of 49 vertices) and frontal-eye projection;\n- the WP1 vocabulary is pure, so the planet can import it later.",
+   "Any LIFE_FILE change (fauna-field-renderer.ts far horns and eyes, fauna-material.ts specular) or a life-cpu-digest REFERENCE re-baseline.",
+   "Further face values: separate short-muzzle and long-muzzle, duck-bill, ceratopsian rostral beak, beak sub-shapes, bat snout. The vocabulary is append-only for later.",
+   "New headgear kinds (antlers, frills, chameleon horns, beetle cuticle horns, bosses), and per-headgear sex rules. The uniform female scale 1 - 0.6 x dimorphism at fauna-composer-individual.ts:137 stays.",
+   "Ecology recipe keys (diet, activity time). This round uses face, layout, legs, feet and bodyLength as proxies.",
+   "Eye animation (blink, gaze tracking, pupil dilation), third eyelid, visible sclera, horse umbraculum.",
+   "Extracting skin primitives from fauna-composer-mesh.ts (skin-core refactor).",
+   "Visual-audit items unrelated to face, eye or horn: the neck-to-head seam crease, faceted bird and turtle crania, the turtle beak starting inside the cranium, the ostrich beak colour matching an ink head.",
+   "Republishing the web preview, and GPU-hardware or headset sign-off (all review is SwiftShader desktop captures)."
+  ]
+ },
+ "waves": [
+  [
+   "WP1",
+   "WP2",
+   "WP3"
+  ],
+  [
+   "WP4",
+   "WP6"
+  ],
+  [
+   "WP5"
+  ]
+ ],
+ "openQuestionsForUser": [
+  "When this round is done, may it be published as a new web preview under a new slug (e.g. fauna-preview-20261002-02)? The current link stays unchanged, and nothing is republished without your explicit OK.",
+  "Two of the deliberate hybrid presets will lose their signature horn under the new rules: 'shelled-giraffe-bird' (ossicones on a beak) and 'winged-ape-rhino' (nose horn on an ape face). Should they keep those choices and show the 'not built on this face' explanation, or be redesigned so what they show is built (e.g. a casque on the bird, no horn on the ape)?"
+ ]
+}
