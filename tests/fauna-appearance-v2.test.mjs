@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { generateBiosphere } from '../src/biosphere-model.ts';
 import { generateCreatureGenome, realisticIndividualCreatureGenome, validateCreatureGenome } from '../src/creature-model.ts';
 import {
-  FAUNA_APPEARANCE_LEGACY_VERSION, FAUNA_APPEARANCE_VERSION, MORPHOLOGY_FAMILIES, createFaunaAppearance, faunaArmorShare, faunaCoatMark, faunaCoatMaxScale,
+  FAUNA_APPEARANCE_LEGACY_VERSION, FAUNA_APPEARANCE_VERSION, MORPHOLOGY_FAMILIES, createFaunaAppearance, faunaArmorShare, faunaCoatMark, faunaCoatMaxScale, faunaFawnSpotLayout,
   faunaAdultCoat, faunaFarCoatMean, faunaFarMean, faunaFarSpeciesId, faunaLineageCoat, linearHexOf, faunaSpeciesCoat, faunaSpeciesDimorphism, inheritedFaunaFamily, sampleFaunaCoat,
 } from '../src/fauna-appearance.ts';
 import { coatMeanColor, coatMinFeature, hexToLinear } from '../src/fauna-coat-fields.ts';
@@ -316,6 +316,50 @@ test('scale clamp: spots and cellular marks span at least four mesh cells', () =
     const max = faunaCoatMaxScale(g.appearance.coat, cell), scale = Math.min(g.appearance.coat.scale, max);
     assert.ok(coatMinFeature({ ...g.appearance.coat, marks: 0, scale }) * g.torsoLength >= 4 * body.cellM - 1e-9);
   }
+});
+
+test('juvenile fawn spots: whole discs of at least four mesh cells, two-cell gaps, no sub-cell library spots', t => {
+  const fawns = [];
+  for (const species of planets) for (const s of species) if (fawns.length < 8 && faunaLineageCoat(s.creature).juvenileSpots) fawns.push(s);
+  const rows = [];
+  for (const s of fawns) {
+    const g = realisticIndividualCreatureGenome(s.creature, `${s.id}/fawn`, 1, 'juvenile');
+    assert.ok(g.appearance.coat.juvenileSpots > .5, `${s.id} spot strength`);
+    const body = buildQuadrupedBody(g), cell = body.cellM / g.torsoLength, L = faunaFawnSpotLayout(cell);
+    // Geometry: radius >= 2 cells; neighbours at the largest jittered radius and
+    // closest jitter (10%) keep a two-cell gap along a row and between rows.
+    assert.ok(L.radius >= 2 * cell, `${s.id} spot radius ${L.radius / cell} cells`);
+    assert.ok(L.spacing * .8 - 2.2 * L.radius >= 2 * cell - 1e-9, `${s.id} spot gap`);
+    assert.ok(Math.hypot(L.spacing * .4, L.rowGap * .8) - 2.2 * L.radius >= 2 * cell - 1e-9, `${s.id} row gap`);
+    // Mesh: the spot layer's vertices form whole discs (connected components of
+    // torso and thigh vertices it whitens), never single vertices or slivers.
+    const plain = { ...g, appearance: { ...g.appearance, coat: { ...g.appearance.coat, juvenileSpots: 0 } } };
+    const regions = vertexRegions(body), P = body.positions, n = body.bodyVertexCount, diff = new Float64Array(n);
+    let outside = 0;
+    for (let v = 0; v < n; v++) {
+      const surface = { dorsal: body.normals[v * 3 + 1], cellM: body.cellM }, region = regions[v];
+      const a = sampleFaunaCoat(g, P[v * 3], P[v * 3 + 1], P[v * 3 + 2], body.plan.torsoY, region, surface);
+      const b = sampleFaunaCoat(plain, P[v * 3], P[v * 3 + 1], P[v * 3 + 2], body.plan.torsoY, region, surface);
+      diff[v] = Math.max(...a.map((c, k) => Math.abs(c - b[k])));
+      if (region !== 'torso' && region !== 'upper') outside = Math.max(outside, diff[v]);
+    }
+    assert.equal(outside, 0, `${s.id} spots only on the torso and thigh`);
+    const peak = Math.max(...diff), parent = Int32Array.from({ length: n }, (_, i) => i);
+    const find = i => { while (parent[i] !== i) i = parent[i] = parent[parent[i]]; return i; };
+    const marked = Array.from(diff, d => d > .15 * peak);
+    for (let i = 0; i < body.index.length; i += 3) for (const [a, b] of [[0, 1], [1, 2], [2, 0]]) {
+      const u = body.index[i + a], v = body.index[i + b];
+      if (u < n && v < n && marked[u] && marked[v]) parent[find(u)] = find(v);
+    }
+    const size = new Map();
+    for (let v = 0; v < n; v++) if (marked[v]) size.set(find(v), (size.get(find(v)) ?? 0) + 1);
+    const sizes = [...size.values()].sort((a, b) => a - b);
+    rows.push({ species: s.id.split('/').slice(-2).join('/'), cells: +(L.radius / cell).toFixed(2), spots: sizes.length, minVertices: sizes[0], medianVertices: sizes[sizes.length >> 1] });
+    assert.ok(sizes.length >= 6, `${s.id} spot count ${sizes.length}`);
+    assert.ok(sizes[0] >= 6, `${s.id} smallest spot ${sizes[0]} vertices`);
+  }
+  t.diagnostic(JSON.stringify(rows));
+  assert.equal(rows.length, 8);
 });
 
 test('evaluation is pure and deterministic, with signed lateral coordinates', () => {

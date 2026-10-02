@@ -5,7 +5,7 @@ import {
 } from './fauna-coat-vocab.ts';
 import {
   applyCoatDrift, COAT_CELLS_PER_BODY, COAT_GENOME_RANGES, coatCanonicalSamples, coatIndividualDrift, coatMinFeature, coatPatternProbe, coatRandom,
-  defaultCoatGenome, evaluateCoat, linearToSrgb,
+  defaultCoatGenome, evaluateCoat, hash3u, linearToSrgb,
   type CoatGenome, type CoatRGB, type CoatSample,
 } from './fauna-coat-fields.ts';
 
@@ -636,6 +636,66 @@ function prepare(genome: CreatureGenome, x: number, y: number, z: number, torsoY
   return cell > 0 ? clampedCoat(a.coat, cell) : a.coat;
 }
 
+/** Fawn spots sized for the near mesh. The coat library's juvenile spots
+ * (0.0085-0.0145 torso lengths) are finer than the 0.019-0.028 TL vertex
+ * cells of a juvenile body and render as single-vertex triangles and bars, so
+ * near bodies draw their own: whole spots in rows along the back and flank
+ * (and onto the thigh where a spot crosses the limb seam), laid out
+ * on the torso surface (forward x, arc length from the spine) with a radius of
+ * at least 2.1 mesh cells (over a four-cell diameter) and gaps of at least two
+ * cells. Same colour and strength as the library layer. */
+const FAWN_SPOT_CELLS = 2.1, FAWN_DEFAULT_CELL = .024, FAWN_SALT = 0x5a1f7e31, FAWN_JITTER = .1, FAWN_X0 = -.36, FAWN_X1 = .28;
+export interface FaunaFawnSpotLayout { radius: number; spacing: number; rowGap: number; rows: readonly number[] }
+/** Spot layout in torso lengths for a near body whose vertex cell is
+ * `cell` torso lengths. */
+export function faunaFawnSpotLayout(cell: number): FaunaFawnSpotLayout {
+  const c = cell > 0 ? cell : FAWN_DEFAULT_CELL, radius = Math.max(FAWN_SPOT_CELLS * c, .042);
+  // Two neighbouring spots at their largest radius (1 + FAWN_JITTER) and closest
+  // jitter still leave a two-cell gap: along a row, between offset rows and
+  // across the spine.
+  const clear = 2 * (1 + FAWN_JITTER) * radius + 2 * c, spacing = clear / (1 - 2 * FAWN_JITTER);
+  const half = .5 * spacing * (1 - 2 * FAWN_JITTER), rowGap = Math.sqrt(Math.max(clear * clear - half * half, 0)) / (1 - 2 * FAWN_JITTER);
+  const first = .5 * clear + FAWN_JITTER * rowGap;
+  return { radius, spacing, rowGap, rows: [first, first + rowGap, first + 2 * rowGap] };
+}
+let fawnSource: CoatGenome | undefined, fawnResult: CoatGenome | undefined;
+function withoutLibrarySpots(coat: CoatGenome): CoatGenome {
+  if (coat !== fawnSource) { fawnSource = coat; fawnResult = { ...coat, marks: coat.marks & ~COAT_MARK_BITS['juvenile-spots'] }; }
+  return fawnResult!;
+}
+/** Fawn-spot coverage (0..1) at a torso or thigh vertex: x forward of the
+ * torso centre, (dy, z) from the torso axis, all in torso lengths; halfH and
+ * halfW are the torso's half height and half width. The dorsal row lies along
+ * the spine in surface coordinates (arc length from the spine); the two flank
+ * rows are laid out in side projection, which stays continuous across the
+ * torso/thigh seam, so a flank spot over the hip is painted whole on both. */
+function fawnSpotMask(seed: number, x: number, dy: number, z: number, cell: number, halfH: number, halfW: number): number {
+  const L = faunaFawnSpotLayout(cell);
+  if (x < FAWN_X0 - 2 * L.radius || x > FAWN_X1 + 2 * L.radius) return 0;
+  const rLoc = Math.hypot(dy, z), arc = Math.atan2(Math.abs(z), dy) * rLoc, side = z >= 0 ? 1 : 2, e = .6 * (cell > 0 ? cell : FAWN_DEFAULT_CELL);
+  const top = halfH * Math.cos(Math.min(L.rows[0]! / Math.max(halfH, 1e-3), Math.PI / 2)), flank = Math.abs(z) >= .4 * halfW;
+  let best = 0;
+  for (let row = 0; row < 3; row++) {
+    // Row 0: arc from the spine; rows 1-2: height in side projection.
+    const v0 = row === 0 ? arc : dy, centre = row === 0 ? L.rows[0]! : top - row * L.rowGap, offset = row === 1 ? .5 : row === 2 ? .25 : 0;
+    if (row > 0 && !flank) continue;
+    if (Math.abs(v0 - centre) > L.rowGap) continue;
+    const k = Math.floor(x / L.spacing - offset);
+    for (let j = k - 1; j <= k + 1; j++) {
+      const h0 = hash3u(j, row, side, seed ^ FAWN_SALT), h1 = hash3u(j, row, side + 4, seed ^ FAWN_SALT);
+      if ((h0 & 255) / 256 > (row === 2 ? .45 : .9)) continue; // the lowest row is sparse
+      const px = (j + offset + .5 + ((h0 >>> 8 & 255) / 255 - .5) * 2 * FAWN_JITTER) * L.spacing;
+      // Whole spots only: a spot is kept or dropped by its centre, never faded.
+      if (px < FAWN_X0 || px > FAWN_X1) continue;
+      const pv = centre + ((h0 >>> 16 & 255) / 255 - .5) * 2 * FAWN_JITTER * L.rowGap;
+      const radius = L.radius * (1 + FAWN_JITTER * (h1 & 255) / 255);
+      const v = 1 - smooth(radius - e, radius + e, Math.hypot(x - px, v0 - pv));
+      if (v > best) best = v;
+    }
+  }
+  return best;
+}
+
 /** Vertex coat in linear light. Torso-normalised bind-space coordinates keep
  * the same markings on adult and juvenile bodies; z is signed, so the flanks
  * differ. No maps, GPU resources, random state or added draw calls. The
@@ -644,7 +704,22 @@ export function sampleFaunaCoat(genome: CreatureGenome, x: number, y: number, z:
   const a = genome.appearance;
   if (!a) return undefined;
   if (a.version !== FAUNA_APPEARANCE_VERSION || !a.coat) return sampleLegacyCoat(genome, x, y, z, torsoY);
-  evaluateCoat(prepare(genome, x, y, z, torsoY, region, surface), SAMPLE, OUT, 0);
+  const coat = prepare(genome, x, y, z, torsoY, region, surface);
+  if (!(coat.marks & COAT_MARK_BITS['juvenile-spots']) || !(coat.juvenileSpots > 0)) {
+    evaluateCoat(coat, SAMPLE, OUT, 0);
+    return [OUT[0]!, OUT[1]!, OUT[2]!];
+  }
+  evaluateCoat(withoutLibrarySpots(coat), SAMPLE, OUT, 0);
+  // The thigh continues the flank, so spots cut by the torso/limb region seam
+  // stay whole discs; the neck is excluded (its surface leaves the torso axis).
+  if (SAMPLE.region === 'torso' || SAMPLE.region === 'limb-upper') {
+    const TL = Math.max(genome.torsoLength, 1e-3), cell = surface?.cellM !== undefined && surface.cellM > 0 ? surface.cellM / TL : 0;
+    const k = fawnSpotMask(coat.seed, x / TL, (y - torsoY) / TL, z / TL, cell, genome.torsoHeight / 2 / TL, genome.torsoWidth / 2 / TL);
+    if (k > 0) {
+      const b = coat.colours.belly, t = .85 * coat.juvenileSpots * k;
+      OUT[0] = mix(OUT[0]!, mix(b[0]!, .6, .55), t); OUT[1] = mix(OUT[1]!, mix(b[1]!, .585, .55), t); OUT[2] = mix(OUT[2]!, mix(b[2]!, .55, .55), t);
+    }
+  }
   return [OUT[0]!, OUT[1]!, OUT[2]!];
 }
 
