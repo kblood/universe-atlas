@@ -1,5 +1,20 @@
 # Universe Atlas
 
+## Fauna generation increment — 2026-10-02
+
+The [realistic fauna work plan](docs/fauna-realism-next-2026-10-02.md) starts
+with projected facial anatomy and shaped ears on the existing connected
+planetary skin. Creature Lab's **Planet skin** mode inspects the same geometry,
+material, skeleton and dated pose used by nearby animals in the game. It includes
+adult/juvenile selection, face framing, a neutral material and skeleton overlay.
+The other lab modes retain the earlier articulated anatomy prototype. These are
+procedural animal prototypes; full visual realism and near/far continuity remain
+open work.
+
+The [realism and variation plan](docs/fauna-variation-plan-2026-10-02.md) orders
+the next work: coherent anatomy, species and individual differences, growth,
+coats and movement, with a fixed 96-specimen review corpus.
+
 ## Current direction — 2026-09-28
 
 The [desktop realism and procedural life implementation plan](docs/desktop-realism-implementation-plan-2026-09-27.md) is the current planetary graphics roadmap. Desktop quality comes first: deterministic species recipes, cached structural variants, per-instance appearance, continuous canopy, shared lighting and genome-compatible animals. Canonical canopy streaming and bounded instance uploads are implemented; richer assets and their runtime integration remain in development.

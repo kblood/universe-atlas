@@ -47,6 +47,8 @@ export function faunaBodyGeometry(data: QuadrupedBodyData): THREE.BufferGeometry
   geometry.setIndex(new THREE.BufferAttribute(data.index, 1));
   geometry.computeBoundingSphere();
   geometry.name = `Fauna body ${data.plan.genome.archetype}`;
+  geometry.userData.bodyVersion = data.plan.version;
+  geometry.userData.faceFeatures = data.faceFeatures;
   return geometry;
 }
 

@@ -1,4 +1,5 @@
 import type { CreatureGenome } from './creature-model.ts';
+import { quadrupedFaceBuildSteps, type FaunaFaceFeature, type FaunaFaceAttachment } from './fauna-face.ts';
 
 /**
  * One continuous, skinned quadruped body plan derived from an existing
@@ -18,7 +19,7 @@ import type { CreatureGenome } from './creature-model.ts';
  */
 export type Vec3 = [number, number, number];
 
-export const QUADRUPED_BODY_VERSION = 'quadruped-body-1';
+export const QUADRUPED_BODY_VERSION = 'quadruped-body-2';
 export const QUADRUPED_BONE_NAMES = [
   'root', 'pelvis', 'spine', 'chest', 'neck1', 'neck2', 'head', 'tail1', 'tail2', 'tail3',
   'rear-left-upper', 'rear-left-lower', 'rear-left-foot',
@@ -84,6 +85,7 @@ export interface QuadrupedBodyData {
   bodyVertexCount: number; bodyTriangleCount: number;
   vertexCount: number; triangleCount: number;
   cellM: number; grid: [number, number, number];
+  faceFeatures: FaunaFaceFeature[];
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -340,25 +342,38 @@ export function* quadrupedBodyBuildSteps(genome: CreatureGenome): Generator<void
   }
   const bodyVertexCount = positions.length / 3, bodyTriangleCount = indices.length / 3;
   // Appendages: rigid lathe cones rooted inside the skull, weighted to the head.
-  const appendageStart = bodyVertexCount, appendageKinds: ('ear' | 'horn')[] = [];
+  const appendageStart = bodyVertexCount, appendageKinds: ('ear' | 'inner-ear' | 'horn')[] = [];
   for (const a of plan.appendages) {
     const axis = norm(sub(a.tip, a.base)), ref: Vec3 = Math.abs(axis[1]) < .9 ? [0, 1, 0] : [1, 0, 0];
     const u = norm([axis[1] * ref[2] - axis[2] * ref[1], axis[2] * ref[0] - axis[0] * ref[2], axis[0] * ref[1] - axis[1] * ref[0]]);
     const v: Vec3 = [axis[1] * u[2] - axis[2] * u[1], axis[2] * u[0] - axis[0] * u[2], axis[0] * u[1] - axis[1] * u[0]];
-    const start = positions.length / 3, segments = 7, flat = a.kind === 'ear' ? .45 : 1;
-    for (const [t, r] of [[0, 1], [.55, a.kind === 'ear' ? .8 : .5]] as const) for (let s = 0; s < segments; s++) {
+    // A pinna widens beyond its embedded root, then tapers into a cupped,
+    // curved leaf. Horns retain their compact conical construction.
+    const ear = a.kind === 'ear';
+    const start = positions.length / 3, segments = ear ? 12 : 7, flat = ear ? .16 : 1;
+    const rings = ear ? [[0, .65], [.22, 1.65], [.52, 1.5], [.8, .8]] : [[0, 1], [.55, .5]];
+    for (const [t, r] of rings) for (let s = 0; s < segments; s++) {
       const angle = s / segments * Math.PI * 2, rr = a.radius * r;
-      positions.push(...add(lerp3(a.base, a.tip, t), add(scale(u, Math.cos(angle) * rr), scale(v, Math.sin(angle) * rr * flat))));
+      const cup = ear ? a.radius * .25 * Math.sin(Math.PI * t) * Math.cos(angle) ** 2 : 0;
+      positions.push(...add(lerp3(a.base, a.tip, t), add(scale(u, Math.cos(angle) * rr), scale(v, Math.sin(angle) * rr * flat + cup))));
+      appendageKinds[positions.length / 3 - 1 - appendageStart] = ear && Math.sin(angle) > .1 && t > 0 ? 'inner-ear' : a.kind;
     }
     positions.push(...a.tip, ...a.base);
-    const tip = start + segments * 2, base = tip + 1;
-    for (let i = start; i <= base; i++) appendageKinds[i - appendageStart] = a.kind;
+    const tip = start + segments * rings.length, base = tip + 1;
+    appendageKinds[tip - appendageStart] = a.kind; appendageKinds[base - appendageStart] = a.kind;
     for (let s = 0; s < segments; s++) {
       const n = (s + 1) % segments;
-      indices.push(start + s, start + n, start + segments + n, start + s, start + segments + n, start + segments + s);
-      indices.push(start + segments + s, start + segments + n, tip, start + n, start + s, base);
+      for (let ring = 0; ring < rings.length - 1; ring++) {
+        const r = start + ring * segments;
+        indices.push(r + s, r + n, r + segments + n, r + s, r + segments + n, r + segments + s);
+      }
+      const last = start + (rings.length - 1) * segments;
+      indices.push(last + s, last + n, tip, start + n, start + s, base);
     }
   }
+  const faceStart = positions.length / 3, faceColors: Vec3[] = [];
+  const faceAttachments: FaunaFaceAttachment[] = [];
+  const faceFeatures = yield* quadrupedFaceBuildSteps(plan, positions, indices, bodyTriangleCount, faceColors, faceAttachments);
   yield;
   const vertexCount = positions.length / 3;
   const positionArray = new Float32Array(positions), normals = new Float32Array(vertexCount * 3);
@@ -379,14 +394,23 @@ export function* quadrupedBodyBuildSteps(genome: CreatureGenome): Generator<void
   const skinIndex = new Uint8Array(vertexCount * 4), skinWeight = new Uint8Array(vertexCount * 4), colors = new Uint8Array(vertexCount * 3);
   const base = linearHex(plan.genome.color), accent = linearHex(plan.genome.accentColor), hoof: Vec3 = [.035, .03, .026], ivory: Vec3 = [.52, .46, .36];
   const boneWeight = new Float64Array(QUADRUPED_BONE_NAMES.length), distances = new Float64Array(plan.primitives.length);
-  const hw = plan.genome.headWidth;
   for (let v = 0; v < vertexCount; v++) {
     const x = positionArray[v * 3]!, y = positionArray[v * 3 + 1]!, z = positionArray[v * 3 + 2]!;
     boneWeight.fill(0);
     let color: Vec3;
-    if (v >= appendageStart) {
+    if (v >= faceStart) {
+      // Interpolate the supporting skin triangle's weights, preserving the
+      // existing neck/skull deformation instead of making a hard weight seam.
+      const attachment = faceAttachments[v - faceStart]!;
+      for (let i = 0; i < 3; i++) for (let s = 0; s < 4; s++) {
+        const source = attachment.vertices[i]! * 4 + s;
+        boneWeight[skinIndex[source]!] += skinWeight[source]! * Math.max(0, attachment.weights[i]!);
+      }
+      color = faceColors[v - faceStart]!;
+    } else if (v >= appendageStart) {
       boneWeight[BONE.head] = 1;
-      color = appendageKinds[v - appendageStart] === 'horn' ? lerp3(accent, ivory, .6) : lerp3(base, accent, .35);
+      const kind = appendageKinds[v - appendageStart];
+      color = kind === 'horn' ? lerp3(accent, ivory, .6) : kind === 'inner-ear' ? lerp3(base, [.22, .09, .07], .4) : lerp3(base, accent, .35);
     } else {
       let nearest = 0, dMin = Infinity;
       for (let p = 0; p < plan.primitives.length; p++) { const d = primitiveDistance(plan.primitives[p]!, x, y, z); distances[p] = d; if (d < dMin) { dMin = d; nearest = p; } }
@@ -402,10 +426,6 @@ export function* quadrupedBodyBuildSteps(genome: CreatureGenome): Generator<void
       if (region === 'lower') color = scale(color, .82);
       if (region === 'foot') color = lerp3(scale(color, .7), hoof, clamp((plan.legs[0]!.ankle[1] - y) / Math.max(plan.legs[0]!.ankle[1], 1e-3) * 1.6, 0, .9));
       if (region === 'armor') color = scale(accent, .85);
-      if (region === 'head') {
-        for (const eye of plan.eyes) if (Math.hypot(x - eye[0], y - eye[1], z - eye[2]) < hw * .12) color = [.012, .01, .01];
-        if (Math.hypot(x - plan.muzzleTip[0], y - plan.muzzleTip[1], z - plan.muzzleTip[2]) < hw * .22) color = lerp3(color, [.03, .025, .025], .75);
-      }
     }
     // Keep the four strongest bones, then quantize to an exact 255 sum.
     const top: number[] = [];
@@ -424,7 +444,7 @@ export function* quadrupedBodyBuildSteps(genome: CreatureGenome): Generator<void
     if (v % 4096 === 4095) yield;
   }
   const index = vertexCount > 65535 ? new Uint32Array(indices) : new Uint16Array(indices);
-  return { plan, positions: positionArray, normals, colors, skinIndex, skinWeight, index, bodyVertexCount, bodyTriangleCount, vertexCount, triangleCount: indices.length / 3, cellM: cell, grid: [nx, ny, nz] };
+  return { plan, positions: positionArray, normals, colors, skinIndex, skinWeight, index, bodyVertexCount, bodyTriangleCount, vertexCount, triangleCount: indices.length / 3, cellM: cell, grid: [nx, ny, nz], faceFeatures };
 }
 
 export function buildQuadrupedBody(genome: CreatureGenome): QuadrupedBodyData {
