@@ -14,7 +14,9 @@ test('PBR surface blending follows the existing soil and rock biome weights',()=
   assert.deepEqual(groundPbrMaterialWeights(0,0),{coverage:0,rockMix:0});
   assert.deepEqual(groundPbrMaterialWeights(-2,NaN),{coverage:0,rockMix:0});
   assert.deepEqual(groundPbrMaterialWeights(2,2),{coverage:1,rockMix:.5});
-  assert.match(groundColor,/float groundSoilRockWeight=groundW\.x\+groundW\.y\+groundW\.z/);
+  // Sand (W.x) no longer samples the soil photograph; it keeps the atlas grain.
+  assert.match(groundColor,/float groundSoilRockWeight=groundW\.y\+groundW\.z;/);
+  assert.doesNotMatch(groundColor,/groundSoilRockWeight=groundW\.x/);
   assert.match(groundColor,/float groundPbrRockMix=groundW\.z\/max\(groundSoilRockWeight/);
   assert.match(groundColor,/min\(1\.0,groundSoilRockWeight\)/);
 });
@@ -47,7 +49,10 @@ test('per-renderer terrain accounting includes the shared PBR set once as a cons
 test('PBR detail uses the current palette, surface wetness, and standard normal path',()=>{
   assert.match(groundFragmentHeader,/groundSoilColorRoughness,groundSoilNormal,groundRockColorRoughness,groundRockNormal/);
   assert.match(groundColor,/groundPbrFade=1\.0-smoothstep\(600\.0,1800\.0/);
-  assert.match(groundColor,/mix\(groundAlbedo,mix\(groundSoilPbr\.rgb,groundRockPbr\.rgb,groundPbrRockMix\),\.68\*groundPbrMixWeight\)/);
+  // Ratio detail around the photographs' own mean (planet-rocks precedent),
+  // never an absolute .68 photo override of the climate palette.
+  assert.doesNotMatch(groundColor,/mix\(groundAlbedo,mix\(groundSoilPbr\.rgb/);
+  assert.match(groundColor,/groundAlbedo\*=mix\(vec3\(1\.0\),clamp\(groundPbrColor\.rgb\/max\(mix\(groundSoilMean\.rgb,groundRockMean\.rgb,groundPbrRockMix\),vec3\(\.03\)\),vec3\(\.45\),vec3\(1\.7\)\),\.68\*groundPbrMixWeight\);/);
   assert.match(groundRoughnessCode,/groundSurfaceWetness=clamp\(/);
   assert.match(groundRoughnessCode,/mix\(groundPbrDryRoughness,0\.28,groundSurfaceWetness\)/);
   assert.match(groundNormalCode,/normal=normalize\(mix\(normal,groundPbrViewNormal/);

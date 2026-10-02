@@ -114,7 +114,7 @@ vec3 groundAxis=pow(abs(normalize(groundNormal)),vec3(4.0));groundAxis/=dot(grou
 vec4 groundW=max(groundMix,vec4(0.0));groundW/=max(.001,dot(groundW,vec4(1.0)));
 vec4 groundCoarse=vec4(.5),groundFine=vec4(.5),groundMacro=vec4(.5);
 float groundPbrMixWeight=0.0,groundPbrRoughness=.9;
-vec4 groundSoilPbr=vec4(1.0),groundRockPbr=vec4(1.0);
+vec4 groundSoilPbr=vec4(1.0),groundRockPbr=vec4(1.0),groundSoilMean=vec4(1.0),groundRockMean=vec4(1.0),groundPbrColor=vec4(1.0);
 vec3 groundPbrObjectNormal=normalize(groundNormal);
 // Screen-space gradients of the ground position, taken in uniform control flow.
 vec3 groundDx=dFdx(groundPosition),groundDy=dFdy(groundPosition);
@@ -125,7 +125,8 @@ if(groundEnabled*groundPatch>.5&&groundFade>0.0){
   groundFine=groundTri(groundPosition,groundAxis,groundDx,groundDy);
   groundMacro=groundTri(groundPosition/256.0,groundAxis,groundDx/256.0,groundDy/256.0);
 }
-float groundSoilRockWeight=groundW.x+groundW.y+groundW.z;
+// Sand keeps the atlas grain and pebbles; only soil and rock sample the photographs.
+float groundSoilRockWeight=groundW.y+groundW.z;
 float groundPbrRockMix=groundW.z/max(groundSoilRockWeight,.0001);
 float groundPbrFade=1.0-smoothstep(600.0,1800.0,length(atlasLocalM-atlasLocalEyeM));
 groundPbrMixWeight=groundPbrReady*groundPbrPatch*groundPbrFade*min(1.0,groundSoilRockWeight);
@@ -136,13 +137,15 @@ if(groundEnabled*groundPatch>.5&&groundPbrPatch>.5&&groundPbrReady>.5&&groundPbr
   vec3 soilN=groundPbrObjectNormal,rockN=groundPbrObjectNormal;
   if(groundPbrRockMix<1.0){
     groundSoilPbr=groundPbrTri(groundSoilColorRoughness,groundPbrPos,groundAxis,groundPbrDx,groundPbrDy);
+    groundSoilMean=textureLod(groundSoilColorRoughness,vec2(.5),16.0);
     soilN=groundPbrTriNormal(groundSoilNormal,groundPbrPos,groundAxis,groundNormal,groundPbrDx,groundPbrDy);
   }
   if(groundPbrRockMix>0.0){
     groundRockPbr=groundPbrTri(groundRockColorRoughness,groundPbrPos,groundAxis,groundPbrDx,groundPbrDy);
+    groundRockMean=textureLod(groundRockColorRoughness,vec2(.5),16.0);
     rockN=groundPbrTriNormal(groundRockNormal,groundPbrPos,groundAxis,groundNormal,groundPbrDx,groundPbrDy);
   }
-  vec4 groundPbrColor=mix(groundSoilPbr,groundRockPbr,groundPbrRockMix);
+  groundPbrColor=mix(groundSoilPbr,groundRockPbr,groundPbrRockMix);
   groundPbrRoughness=groundPbrColor.a;
   groundPbrObjectNormal=normalize(mix(soilN,rockN,groundPbrRockMix));
 }
@@ -150,15 +153,33 @@ float groundSignal=dot(groundW,vec4(groundFine.a,groundFine.r*.6+groundCoarse.r*
 // Metre-scale patches break up the uniform orbital tint without introducing a
 // new height field or stretching a photograph over the planet. All periods
 // divide the 4096 m anchor period so neighboring tiles agree at their seams.
-float turf=groundHabitat*groundW.y*smoothstep(.40,.61,groundMacro.r);
+// Climate reaches walking height through the macro colour itself (no new
+// attribute): a green-dominant base colour (moist, temperate) grows turf; a
+// saturated but weakly green or brown one (dry) dries to pale straw. The
+// thresholds sit between the measured olive dry-upland colour (green margin
+// about .19 in linear RGB) and the moist lowland/coast colours (.55-.71).
+float groundMaxC=max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b)),groundMinC=min(diffuseColor.r,min(diffuseColor.g,diffuseColor.b));
+float greenness=smoothstep(.12,.40,(diffuseColor.g-max(diffuseColor.r,diffuseColor.b))/max(diffuseColor.g,.001));
+float dryness=groundHabitat*groundW.y*(1.0-greenness)*smoothstep(.25,.50,(groundMaxC-groundMinC)/max(groundMaxC,.001));
+float turf=groundHabitat*groundW.y*smoothstep(.40,.61,groundMacro.r)*greenness;
 vec3 turfColor=mix(vec3(.072,.089,.031),vec3(.105,.145,.050),groundCoarse.r);
 vec3 dirtColor=diffuseColor.rgb*mix(vec3(.72,.69,.61),vec3(1.05,1.01,.88),groundMacro.a);
+// Pale straw: luminance-normalised hue (1.20,.99,.62), lifted 45% (cured grass and dry soil are bright).
+dirtColor=mix(dirtColor,dot(dirtColor,vec3(.2126,.7152,.0722))*vec3(1.74,1.44,.90),.75*dryness);
 vec3 groundAlbedo=mix(dirtColor,turfColor,turf*.72);
+// Habitable-world sand is pale quartz beach whatever the inland palette; other
+// worlds keep their own sand colour from the macro map.
+groundAlbedo=mix(groundAlbedo,vec3(.46,.38,.25)*mix(.90,1.08,groundMacro.a),groundHabitat*smoothstep(0.0,.6,groundW.x));
 float pebble=smoothstep(.63,.84,groundFine.g)*(groundW.x*.35+groundW.y*.12);
 groundAlbedo=mix(groundAlbedo,vec3(.22,.21,.18),pebble);
+// Ratio detail (the planet-rocks precedent): the photographs add only relative
+// detail around their own 1x1-mip mean, so the climate palette stays
+// authoritative instead of one brown soil photo painting every biome.
 if(groundPbrMixWeight>0.0&&groundSoilRockWeight>.001){
-  groundAlbedo=mix(groundAlbedo,mix(groundSoilPbr.rgb,groundRockPbr.rgb,groundPbrRockMix),.68*groundPbrMixWeight);
+  groundAlbedo*=mix(vec3(1.0),clamp(groundPbrColor.rgb/max(mix(groundSoilMean.rgb,groundRockMean.rgb,groundPbrRockMix),vec3(.03)),vec3(.45),vec3(1.7)),.68*groundPbrMixWeight);
 }
+// Snow reads slightly cool rather than as warm sand.
+groundAlbedo=mix(groundAlbedo,groundAlbedo*vec3(.96,.98,1.02),groundW.w);
 diffuseColor.rgb=mix(diffuseColor.rgb,groundAlbedo*(.82+groundSignal*.32),groundFade);
 // Millimetre-scale grain stays subtle at eye height; centimetre amplitudes on
 // sub-centimetre atlas features made grazing shores alternate black and gold.
