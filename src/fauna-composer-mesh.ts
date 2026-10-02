@@ -159,14 +159,21 @@ function ringPoint(r: Ring, b: RingBasis, a: number, out: THREE.Vector3, scale =
   return out;
 }
 /** Every triangle edge length a loft of `rings` would emit between consecutive rings (caps excluded). */
-function loftEdgeLengths(rings: Ring[], segments: number, include: (i: number) => boolean): number[] {
-  const out: number[] = [], pts = rings.map(r => { const b = ringBasis(r); return Array.from({length: segments}, (_, k) => ringPoint(r, b, TAU * k / segments, V())); });
-  for (let i = 0; i + 1 < rings.length; i++) {
-    if (!include(i)) continue;
-    const A = pts[i]!, B = pts[i + 1]!;
+function loftEdgeLengths(rings: Ring[], segments: number, include: (i: number) => boolean): Float64Array {
+  const pairs: number[] = [];
+  for (let i = 0; i + 1 < rings.length; i++) if (include(i)) pairs.push(i);
+  const pts = new Map<number, THREE.Vector3[]>(), ringPts = (i: number) => {
+    let p = pts.get(i);
+    if (!p) { const r = rings[i]!, b = ringBasis(r); p = Array.from({length: segments}, (_, k) => ringPoint(r, b, TAU * k / segments, V())); pts.set(i, p); }
+    return p;
+  };
+  const out = new Float64Array(pairs.length * segments * 6);
+  let o = 0;
+  for (const i of pairs) {
+    const A = ringPts(i), B = ringPts(i + 1);
     for (let k = 0; k < segments; k++) {
       const a = A[k]!, b = A[(k + 1) % segments]!, c = B[k]!, d = B[(k + 1) % segments]!;
-      out.push(a.distanceTo(b), b.distanceTo(c), c.distanceTo(a), b.distanceTo(d), d.distanceTo(c), c.distanceTo(b));
+      out[o++] = a.distanceTo(b); out[o++] = b.distanceTo(c); out[o++] = c.distanceTo(a); out[o++] = b.distanceTo(d); out[o++] = d.distanceTo(c); out[o++] = c.distanceTo(b);
     }
   }
   return out;
@@ -624,7 +631,7 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
   // ---- pattern scale clamp: keep a mean pattern cell at least four torso edges across
   // the exact triangle edges the loft will emit between torso-region rings (same superellipse, lobes and squash)
   const torsoEdges = loftEdgeLengths(axialRings, axialRadial, i => axialMetas[i]!.region === 'torso' && axialMetas[i + 1]!.region === 'torso');
-  torsoEdges.sort((a, b) => a - b);
+  torsoEdges.sort();
   const torsoEdge = torsoEdges.length ? torsoEdges[torsoEdges.length >> 1]! : 0;
   const cells = COAT_CELLS_PER_BODY[genome.pattern];
   if (cells > 0 && genome.pattern !== 'roan' && torsoEdge > 0) {
@@ -699,9 +706,13 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
     const x = tq.dot(b.v), y = tq.dot(b.u), e = r.n ?? 2, ry = y < 0 ? r.ryBelow ?? r.ry : r.ry;
     return (Math.abs(x / r.rx) ** e + Math.abs(y / ry) ** e) ** (1 / e);
   };
-  const torsoNorm = (p: THREE.Vector3) => {
+  // bounding sphere per ring pair: a point outside it cannot reach norm < ~2.5 against that pair
+  const pairBound = axialRings.slice(0, -1).map((a, i) => { const b = axialRings[i + 1]!, c = a.c.clone().add(b.c).multiplyScalar(0.5); return {c, r2: (0.5 * a.c.distanceTo(b.c) + 2.5 * Math.max(a.rx, a.ry, a.ryBelow ?? a.ry, b.rx, b.ry, b.ryBelow ?? b.ry)) ** 2}; });
+  const allPairs = pairBound.map((_, i) => i);
+  const torsoNorm = (p: THREE.Vector3, candidates: readonly number[] = allPairs) => {
     let best = Infinity;
-    for (let i = 0; i + 1 < axialRings.length; i++) {
+    for (const i of candidates) {
+      if (p.distanceToSquared(pairBound[i]!.c) > pairBound[i]!.r2) continue;
       const a = axialRings[i]!, b = axialRings[i + 1]!, da = tq.copy(p).sub(a.c).dot(axialBases[i]!.t), db = tq.copy(p).sub(b.c).dot(axialBases[i + 1]!.t);
       if (da < 0 || db > 0) continue;
       const lam = da / Math.max(1e-12, da - db);
@@ -710,7 +721,15 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
     return best;
   };
   const rp = V();
-  const ringNorm = (ring: Ring, radial: number) => { const b = ringBasis(ring); let m = 0; for (let k = 0; k < radial; k++) m = Math.max(m, torsoNorm(ringPoint(ring, b, TAU * k / radial, rp))); return m; };
+  /** Largest torso norm over a ring's vertices; stops early once it exceeds `limit` (only the comparison is used then).
+   * Only ring pairs whose bounding sphere the ring can reach are tested: the rest fail the per-point bound anyway. */
+  const ringNorm = (ring: Ring, radial: number, limit = Infinity) => {
+    const b = ringBasis(ring), reach = 1.5 * Math.max(ring.rx, ring.ry, ring.ryBelow ?? ring.ry);
+    const candidates = allPairs.filter(i => { const d = Math.sqrt(pairBound[i]!.r2) + reach; return ring.c.distanceToSquared(pairBound[i]!.c) <= d * d; });
+    let m = 0;
+    for (let k = 0; k < radial && m <= limit; k++) m = Math.max(m, torsoNorm(ringPoint(ring, b, TAU * k / radial, rp), candidates));
+    return m;
+  };
   const limbChain = (limb: ComposerLimb, segBones: ComposerBone[], kind: 'leg' | 'arm', chainName: string) => {
     const arth = kind === 'leg' && r.legs === 'arthropod';
     const radial = kind === 'arm' ? T.armRadial : arth ? T.legRadialArthropod : T.legRadial;
@@ -800,12 +819,12 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
     };
     let xRoot = x0, gRoot = 1.15;
     if (Number.isFinite(torsoNorm(S.clone().addScaledVector(dir, x0)))) {
-      const fits = (x: number, g: number) => ringNorm(ringAt(x, g), radial) <= 0.96;
+      const fits = (x: number, g: number) => ringNorm(ringAt(x, g), radial, 0.96) <= 0.96;
       let j = 0;
       while (j < 8 && !fits(xRoot, gRoot)) { j++; xRoot = x0 - j * 0.15 * rE; }
       if (!fits(xRoot, gRoot)) {
         let lo = 0.3, hi = 1.15;
-        for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (fits(xRoot, m)) lo = m; else hi = m; }
+        for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (fits(xRoot, m)) lo = m; else hi = m; }
         gRoot = lo;
       }
     }
@@ -825,14 +844,14 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
     const zC = axis(carrier, 0, 0, 1);
     for (const ring of rings) {
       const cn = torsoNorm(ring.c);
-      if (!(cn < 1) || ringNorm(ring, radial) <= 0.97) continue;
+      if (!(cn < 1) || ringNorm(ring, radial, 0.97) <= 0.97) continue;
       const lz = local(ring.c).z, inward = zC.clone().multiplyScalar(-Math.sign(lz) || 0), c0 = ring.c.clone(), rx0 = ring.rx;
-      const fit = (shift: number, sx: number) => { ring.c.copy(c0).addScaledVector(inward, shift); ring.rx = rx0 * sx; return ringNorm(ring, radial) <= 0.97; };
+      const fit = (shift: number, sx: number) => { ring.c.copy(c0).addScaledVector(inward, shift); ring.rx = rx0 * sx; return ringNorm(ring, radial, 0.97) <= 0.97; };
       // only a flank poke is corrected: when even a ring narrowed to half width at 0.8 of the way to the midline
       // still sticks out, the excess is fore-aft (a limb at the very front of the chest) and the ring stays as built
       let shift = 0.8 * Math.abs(lz), sx = 1;
-      if (fit(shift, 1)) { let lo = 0, hi = shift; for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (fit(m, 1)) hi = m; else lo = m; } shift = hi; }
-      else if (fit(shift, 0.5)) { let lo = 0.5, hi = 1; for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (fit(shift, m)) lo = m; else hi = m; } sx = lo; }
+      if (fit(shift, 1)) { let lo = 0, hi = shift; for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (fit(m, 1)) hi = m; else lo = m; } shift = hi; }
+      else if (fit(shift, 0.5)) { let lo = 0.5, hi = 1; for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (fit(shift, m)) lo = m; else hi = m; } sx = lo; }
       else { ring.c.copy(c0); ring.rx = rx0; continue; }
       // rings near the surface take part of the correction, so the leg leaves the body without a kink
       const w = cn < 0.9 ? 1 : (1 - cn) / 0.1;
