@@ -46,8 +46,8 @@ export type EyeCatalogueFace = 'muzzle' | 'jaws' | 'beak' | 'flat-face' | 'blunt
 
 // ---- trait vocabulary ---------------------------------------------------------------------------------------------
 /** camera = lidded vertebrate or cephalopod eye; compound = facet dome; ocellus = simple lens bead (spider eyes, insect
- * ocelli); eyespot = flush pigment disc; stalk = an eye on a tapered stalk (its tip is a compound bulb on mandibles
- * and a dark bead on any other face, see composerEyeStandIn). */
+ * ocelli); eyespot = flush pigment disc; stalk = an eye on a tapered stalk (until EC2 builds it, its tip stands in as an
+ * eyespot on a worm head and a compound dome on any other face, see composerEyeStandIn). */
 export const EYE_STRUCTURES = ['camera', 'compound', 'ocellus', 'eyespot', 'stalk'] as const;
 export type EyeStructure = typeof EYE_STRUCTURES[number];
 /** Shape of the pupil ring. The first 3 are the face round's exact shapes. */
@@ -198,8 +198,8 @@ export function eyeKindHasIris(kind: ComposerEyeKind): boolean {
 }
 /** The face round's kind that fauna-composer-eye-1 builds for `kind` on `face` until the catalogue geometry lands
  * (a bridge, never a restriction: the recipe keeps the kind). The face round's mesh casts an eyespot from inside a
- * worm's cap, which misses every other head, so off a blunt face an eyespot is stood in by a small round bead
- * (resolveComposerEyes sizes it) and a stalk's tip by a compound bulb; on a blunt face both are eyespots. Every other
+ * worm's cap, which misses every other head, so off a blunt face an eyespot is stood in by an iris-less round eye
+ * (resolveComposerEyes gives it the face's own camera-eye size) and a stalk's tip by a compound dome; on a blunt face both are eyespots. Every other
  * kind builds its preset's standIn. */
 export function composerEyeStandIn(kind: ComposerEyeKind, face: EyeCatalogueFace): FaceRoundEyeKind {
   if (kind === 'eyespot') return face === 'blunt' ? 'eyespot' : 'round';

@@ -60,7 +60,7 @@ test('vocabularies: faces, horns, eyes and iris match the recipe choices', () =>
     'flat-face': {gazeYawDeg: 15, k: 0.13}, 'muzzle-carnivore': {gazeYawDeg: 35, k: 0.13}, 'muzzle-grazer': {gazeYawDeg: 65, k: 0.14},
     'jaws-upright': {gazeYawDeg: 45, k: 0.13}, 'jaws-sprawled': {gazeYawDeg: 70, k: 0.13}, proboscis: {gazeYawDeg: 70, k: 0.07},
     beak: {gazeYawDeg: 75, k: 0.16}, mandibles: {gazeYawDeg: 90, k: 0}, blunt: {gazeYawDeg: 20, k: 0},
-    'mandibles-camera': {gazeYawDeg: 70, k: 0.15}, 'blunt-camera': {gazeYawDeg: 35, k: 0.14},
+    'mandibles-camera': {gazeYawDeg: 70, k: 0.21}, 'blunt-camera': {gazeYawDeg: 35, k: 0.19},
   });
 });
 

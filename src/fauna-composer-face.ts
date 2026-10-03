@@ -130,7 +130,9 @@ export const FACE_EYES: Readonly<Record<ComposerFace, readonly FaceRoundEyeKind[
  * radius factor k (er = k x craniumHeight x eyeScale x eyeRel). The mesh reads these.
  * Compound eyes and eyespots take their size from their own face geometry: k 0 means "not k-sized".
  * The face round's nine entries are frozen; 'mandibles-camera' and 'blunt-camera' (appended, eyeRules 2) size a
- * lidded camera eye chosen on an arthropod or worm head. */
+ * lidded camera eye chosen on an arthropod or worm head. They are larger than the vertebrate profiles (k 0.15/0.14 read
+ * as "a tiny dark point" on the ink centipede, GPT Luna 6 FAIL, EC1 review round 3): an arthropod or worm head is small
+ * and dark, and the camera eye there is an odd combination that must read at normal size. */
 export const FACE_EYE_PROFILE = Object.freeze({
   'flat-face': {gazeYawDeg: 15, k: 0.13},
   'muzzle-carnivore': {gazeYawDeg: 35, k: 0.13},
@@ -141,14 +143,14 @@ export const FACE_EYE_PROFILE = Object.freeze({
   beak: {gazeYawDeg: 75, k: 0.16},
   mandibles: {gazeYawDeg: 90, k: 0},
   blunt: {gazeYawDeg: 20, k: 0},
-  'mandibles-camera': {gazeYawDeg: 70, k: 0.15},
-  'blunt-camera': {gazeYawDeg: 35, k: 0.14},
+  'mandibles-camera': {gazeYawDeg: 70, k: 0.21},
+  'blunt-camera': {gazeYawDeg: 35, k: 0.19},
 } as const satisfies Record<string, {gazeYawDeg: number; k: number}>);
 export type ComposerEyeProfileId = keyof typeof FACE_EYE_PROFILE;
-/** Radius factor of the bead that stands in for an eyespot off a worm head (half a camera eye: a dark pinpoint).
- * Provisional stand-in size: GPT Luna 6 read it as "specks" on the giraffe (EC1, 2026-10-03). The eye-geometry
- * package (EC2) owns the final eyespot size when it replaces this stand-in. */
-export const COMPOSER_EYESPOT_BEAD_K = 0.065;
+/* An eyespot off a worm head is stood in by an iris-less round eye at the face's OWN camera-eye size (profile k), the
+ * size the face round built for an old link that chose Eyespots on that face. A half-size bead (k 0.065, removed) made
+ * those upgraded links' eyes "tiny dark specks ... marks on the coat" (GPT Luna 6, EC1 review 2026-10-03). The
+ * eye-geometry package (EC2) owns the real eyespot geometry and size when it replaces this stand-in. */
 
 /** Grazer proxy: hooves, tip-toe hooved legs, or pillar legs (rhino-like herbivores). */
 const grazer = (r: Pick<ComposerFaceInput, 'legs' | 'feet'>) => r.feet === 'hoof' || r.legs === 'unguligrade' || r.legs === 'pillar';
@@ -217,6 +219,9 @@ export function composerIrisBands(r: Pick<ComposerFaceInput, 'head' | 'layout'>,
     case 'jaws': return ['gold', 'amber', 'orange', 'green'];
     case 'beak': return r.layout === 'sprawled' ? ['dark-brown', 'green'] : ['yellow', 'orange', 'red', 'dark-brown'];
     case 'flat-face': return ['dark-brown', 'brown'];
+    // a face-round camera kind on an arthropod or worm head (eyeRules 2 only; the face round never built one): a bright
+    // band, because those heads are small and usually dark (dark-brown read as "a tiny dark point", EC1 review round 3)
+    case 'mandibles': case 'blunt': return ['amber', 'gold'];
     default: return ['dark-brown'];
   }
 }
@@ -283,10 +288,9 @@ export function resolveComposerEyes(r: ComposerFaceInput): ResolvedComposerEyes 
     : isFaceRoundEyeKind(irisKind) ? bands[faceHash(`face-eye-v1/${r.colorSeed}/${r.head}`) % bands.length]!
     : bands[faceHash(`face-eye-v2/${r.colorSeed}/${r.head}/${kind}`) % bands.length]!;
   const built = composerEyeStandIn(kind, r.head);
+  // an eyespot off a worm head stands in as an iris-less round eye at the face's own size (see the note above)
   const profile = FACE_EYE_PROFILE[composerEyeProfileId(r, built)];
-  // an eyespot off a worm head stands in as a small lidded bead on the face's own seat (see composerEyeStandIn)
-  const k = kind === 'eyespot' && built !== 'eyespot' ? COMPOSER_EYESPOT_BEAD_K : profile.k;
-  return {chosen, rules, kind, traits: EYE_PRESETS[kind], built, auto: chosen === 'auto', iris: r.iris, irisBuilt, gazeYawDeg: profile.gazeYawDeg, k, effect};
+  return {chosen, rules, kind, traits: EYE_PRESETS[kind], built, auto: chosen === 'auto', iris: r.iris, irisBuilt, gazeYawDeg: profile.gazeYawDeg, k: profile.k, effect};
 }
 
 /** Face compatibility entries: horns not built (or built as another kind), an eye type the face cannot have,

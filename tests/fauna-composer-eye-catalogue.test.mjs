@@ -194,7 +194,7 @@ test('recipe v4: v1-v3 links upgrade to eyeRules 2 (disclosed when the eyes chan
   const up = decode(v3);
   assert.equal(up.recipe.eyeRules, 2); assert.equal(resolveComposerEyes(up.recipe).kind, 'horizontal');
   assert.deepEqual(up.issues, [composerEyeUpgradeIssue(up.recipe)]);
-  assert.match(up.issues[0], /^Eyes: upgraded to the current eye rules: horizontal \(dark-brown\) eyes, where the earlier rules built eyespot\./);
+  assert.match(up.issues[0], /^Eyes: upgraded to the current eye rules: horizontal \(amber\) eyes, where the earlier rules built eyespot\./);
   const restored = decode(encodeComposerRecipe({...up.recipe, eyeRules: 1}));
   assert.deepEqual(restored.issues, []); assert.equal(restored.recipe.eyeRules, 1);
   assert.deepEqual(eye(restored.recipe), eye(early(up.recipe)));
@@ -205,6 +205,42 @@ test('recipe v4: v1-v3 links upgrade to eyeRules 2 (disclosed when the eyes chan
   // the object form: a version-3 object reads eyeRules 2 silently; an explicit eyeRules is bounded
   assert.equal(normalizeComposerRecipe({...composerPreset('ape'), version: 3, eyeRules: undefined}).recipe.eyeRules, 2);
   assert.deepEqual(normalizeComposerRecipe({...composerPreset('ape'), eyeRules: 9}).issues, ['eyeRules 9 limited to 2.']);
+});
+
+test('old links with an explicit OFF-FACE face-round kind: built as chosen on upgrade (geometry changes, disclosed), eyeRules 1 restores; eyespot stand-in keeps the face size', () => {
+  // EC1 review 2026-10-03: the face round built an off-face explicit kind (Compound or Eyespots on a vertebrate face, a
+  // camera kind on a worm or arthropod head) as the face's auto eye and disclosed it. Under the current rules the
+  // owner's 'odd combinations are built when chosen' applies to old links too, so these links (and only these) build
+  // different eye geometry after the upgrade. This set is absent from the legacy/skin-3 corpora, so it is pinned here.
+  const tally = {};
+  let checked = 0;
+  for (const [id, b] of Object.entries(B.presets)) {
+    const p = composerPreset(id);
+    for (const [eyes, before] of Object.entries(b.explicit)) {
+      if (eyes === 'auto') continue;
+      const v3 = encodeComposerRecipe({...p, eyes}).replace(/^v4\*/, 'v3*').replace(/\*eyeRules_2$/, '');
+      const {recipe, issues} = decode(v3), now = eye(recipe), offFace = before[4] !== null;
+      assert.deepEqual(eye(early(recipe)), before, `${id} ${eyes}: eyeRules 1 restores the face round`);
+      assert.equal(issues.some(i => i.startsWith('Eyes: upgraded')), offFace, `${id} ${eyes}: disclosed exactly when off-face`);
+      checked++;
+      if (!offFace) { assert.deepEqual(now, before, `${id} ${eyes}: an on-face explicit kind is unchanged`); continue; }
+      assert.notDeepEqual(now, before, `${id} ${eyes}`);
+      assert.equal(now[4], null, `${id} ${eyes}: built as chosen, no disclosure under the current rules`);
+      const key = `${recipe.head}/${eyes}`; tally[key] = (tally[key] ?? 0) + 1;
+      // the eyespot stand-in on a vertebrate face keeps the face round's seat and size (no 'specks'); only the pupil
+      // shape (round) and the iris (none: a pigment eyespot) differ
+      if (eyes === 'eyespot' && recipe.head !== 'mandibles') assert.deepEqual([now[0], now[1], now[2], now[3]], ['round', null, before[2], before[3]], `${id}: eyespot stand-in`);
+    }
+  }
+  assert.equal(checked, 12 * 5);
+  assert.deepEqual(tally, {'jaws/compound': 1, 'jaws/eyespot': 1, 'beak/compound': 4, 'beak/eyespot': 4, 'muzzle/compound': 2, 'muzzle/eyespot': 2,
+    'flat-face/compound': 2, 'flat-face/eyespot': 2, 'blunt/round': 1, 'blunt/horizontal': 1, 'blunt/vertical-slit': 1, 'blunt/compound': 1,
+    'mandibles/round': 1, 'mandibles/horizontal': 1, 'mandibles/vertical-slit': 1, 'mandibles/eyespot': 1, 'proboscis/compound': 1, 'proboscis/eyespot': 1});
+  // the stand-in size follows the face profile on every non-worm face
+  for (const id of ['giraffe', 'dinosaur', 'bird', 'ape', 'trunked-centipede', 'centipede']) {
+    const r = {...composerPreset(id), eyes: 'eyespot'}, e = resolveComposerEyes(r);
+    assert.equal(e.built, 'round', id); assert.ok(e.k >= 0.07, `${id}: k ${e.k}`);
+  }
 });
 
 test('odd combinations are built: every kind on every face, 0 eye fallbacks, no disclosure under the current rules', () => {

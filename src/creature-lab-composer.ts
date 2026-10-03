@@ -76,7 +76,7 @@ const VALUE:Record<string,string>={
  "pattern:auto":"Automatic (from colours)","pattern:plain":"Plain","pattern:spots":"Spots","pattern:rosettes":"Rosettes","pattern:reticulated":"Reticulated (giraffe)","pattern:stripes":"Stripes",
  "pattern:bands":"Bands","pattern:saddle":"Dark saddle","pattern:dorsal-stripe":"Dorsal stripe","pattern:dapple":"Dapple","pattern:piebald":"Piebald","pattern:roan":"Roan","pattern:brindle":"Brindle",
  "sex:auto":"Automatic (from individual)","sex:female":"Female","sex:male":"Male",
- "eyes:auto":"Automatic","eyes:round":"Round (birds, primates, large predators)","eyes:horizontal":"Horizontal bar (goat, horse, deer)","eyes:vertical-slit":"Vertical slit (cat, fox, crocodile)",
+ "eyes:auto":"Automatic","eyes:round":"Round (birds, primates, large predators)","eyes:horizontal":"Horizontal bar (goat, horse, deer)","eyes:vertical-slit":"Vertical slit (fox, viper, small lizard)",
  "eyes:compound":"Compound (insect, centipede)","eyes:eyespot":"Eyespots (worm)",
  "eyes:raptor":"Raptor (eagle, hawk)","eyes:owl":"Owl (huge, forward, facial disc)","eyes:cat":"Cat slit (cat, fox)","eyes:gecko":"Gecko (beaded slit, no lids)",
  "eyes:frog":"Frog (bulging, on top)","eyes:chameleon":"Chameleon (turret, independent)","eyes:crocodile":"Crocodile (raised, slit)","eyes:sclera":"White sclera (human-like)",

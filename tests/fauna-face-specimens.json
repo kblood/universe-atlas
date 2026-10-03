@@ -7,7 +7,7 @@
   "date": "2026-10-02",
   "fauna_src_equal_to": "c80c8dd (git diff c80c8dd..HEAD -- src/fauna* is empty)"
  },
- "count": 65,
+ "count": 71,
  "specimens": [
   {
    "name": "preset-dinosaur",
@@ -770,7 +770,7 @@
    "name": "odd-eyespot-giraffe",
    "group": "eye-odd",
    "face": "muzzle",
-   "why": "odd: eyespots on a muzzle (stood in by a small bead until EC2) [built: eyespot; stand-in round]",
+   "why": "odd: eyespots on a muzzle (stood in by an iris-less round eye at the face size until EC2) [built: eyespot; stand-in round]",
    "source": {
     "kind": "preset",
     "id": "giraffe",
@@ -858,6 +858,96 @@
     "generator": "randomComposerRecipe (composer-random-v1 + composer-wild-eyes-1)"
    },
    "text": "v4*layout_quadruped*legPairs_2*bodyLength_1.11*girth_0.84*posture_0.58*torso_flat*neckLength_0.05*head_mandibles*headSize_0.95*snoutLength_0.75*horns_none*legs_pillar*legLength_0.49*feet_spike*arms_grasping*armLength_0.49*hands_pincer*tail_none*tailLength_0*armor_dome*wings_membrane*wingSpan_1.47*trunk_none*trunkLength_1.05*palette_savanna*colorSeed_168*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0*variability_0*allometry_0*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_crocodile*iris_auto*eyeRules_2"
+  },
+  {
+   "name": "upgrade-v3-eyespot-giraffe",
+   "group": "eye-upgrade",
+   "face": "muzzle",
+   "why": "old v3 link that explicitly chose eyespot on a muzzle face (the face round built the auto eye and disclosed it); opens with the current rules, which build the chosen kind (EC1 review round 3)",
+   "source": {
+    "kind": "v3-text",
+    "encoder": "07036b0 encodeComposerRecipe",
+    "id": "giraffe",
+    "override": {
+     "eyes": "eyespot"
+    }
+   },
+   "text": "v3*layout_quadruped*legPairs_2*bodyLength_1.5*girth_0.9*posture_0.7*torso_slim*neckLength_1.5*head_muzzle*headSize_0.85*snoutLength_0.8*horns_ossicones*legs_unguligrade*legLength_1.45*feet_hoof*arms_none*armLength_0.6*hands_hand*tail_tufted*tailLength_0.6*armor_none*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_savanna*colorSeed_37*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0.3*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_eyespot*iris_auto"
+  },
+  {
+   "name": "upgrade-before-eyespot-giraffe",
+   "group": "eye-upgrade",
+   "face": "muzzle",
+   "why": "the same link under Earlier eye rules (eyeRules 1 = the face round's build, byte-identical): what the old link showed before the upgrade",
+   "source": {
+    "kind": "v3-text+eyeRules1",
+    "id": "giraffe",
+    "override": {
+     "eyes": "eyespot",
+     "eyeRules": 1
+    }
+   },
+   "text": "v4*layout_quadruped*legPairs_2*bodyLength_1.5*girth_0.9*posture_0.7*torso_slim*neckLength_1.5*head_muzzle*headSize_0.85*snoutLength_0.8*horns_ossicones*legs_unguligrade*legLength_1.45*feet_hoof*arms_none*armLength_0.6*hands_hand*tail_tufted*tailLength_0.6*armor_none*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_savanna*colorSeed_37*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0.3*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_eyespot*iris_auto*eyeRules_1"
+  },
+  {
+   "name": "upgrade-v3-compound-giraffe",
+   "group": "eye-upgrade",
+   "face": "muzzle",
+   "why": "old v3 link that explicitly chose compound on a muzzle face (the face round built the auto eye and disclosed it); opens with the current rules, which build the chosen kind (EC1 review round 3)",
+   "source": {
+    "kind": "v3-text",
+    "encoder": "07036b0 encodeComposerRecipe",
+    "id": "giraffe",
+    "override": {
+     "eyes": "compound"
+    }
+   },
+   "text": "v3*layout_quadruped*legPairs_2*bodyLength_1.5*girth_0.9*posture_0.7*torso_slim*neckLength_1.5*head_muzzle*headSize_0.85*snoutLength_0.8*horns_ossicones*legs_unguligrade*legLength_1.45*feet_hoof*arms_none*armLength_0.6*hands_hand*tail_tufted*tailLength_0.6*armor_none*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_savanna*colorSeed_37*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0.3*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_compound*iris_auto"
+  },
+  {
+   "name": "upgrade-before-compound-giraffe",
+   "group": "eye-upgrade",
+   "face": "muzzle",
+   "why": "the same link under Earlier eye rules (eyeRules 1 = the face round's build, byte-identical): what the old link showed before the upgrade",
+   "source": {
+    "kind": "v3-text+eyeRules1",
+    "id": "giraffe",
+    "override": {
+     "eyes": "compound",
+     "eyeRules": 1
+    }
+   },
+   "text": "v4*layout_quadruped*legPairs_2*bodyLength_1.5*girth_0.9*posture_0.7*torso_slim*neckLength_1.5*head_muzzle*headSize_0.85*snoutLength_0.8*horns_ossicones*legs_unguligrade*legLength_1.45*feet_hoof*arms_none*armLength_0.6*hands_hand*tail_tufted*tailLength_0.6*armor_none*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_savanna*colorSeed_37*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0.3*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_compound*iris_auto*eyeRules_1"
+  },
+  {
+   "name": "upgrade-v3-round-centipede",
+   "group": "eye-upgrade",
+   "face": "mandibles",
+   "why": "old v3 link that explicitly chose round on a mandibles face (the face round built the auto eye and disclosed it); opens with the current rules, which build the chosen kind (EC1 review round 3)",
+   "source": {
+    "kind": "v3-text",
+    "encoder": "07036b0 encodeComposerRecipe",
+    "id": "centipede",
+    "override": {
+     "eyes": "round"
+    }
+   },
+   "text": "v3*layout_many-legged*legPairs_11*bodyLength_0.55*girth_0.9*posture_0*torso_segmented*neckLength_0*head_mandibles*headSize_1*snoutLength_0.3*horns_none*legs_arthropod*legLength_0.2*feet_spike*arms_none*armLength_0.6*hands_hand*tail_none*tailLength_0*armor_bands*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_ink*colorSeed_909*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_round*iris_auto"
+  },
+  {
+   "name": "upgrade-before-round-centipede",
+   "group": "eye-upgrade",
+   "face": "mandibles",
+   "why": "the same link under Earlier eye rules (eyeRules 1 = the face round's build, byte-identical): what the old link showed before the upgrade",
+   "source": {
+    "kind": "v3-text+eyeRules1",
+    "id": "centipede",
+    "override": {
+     "eyes": "round",
+     "eyeRules": 1
+    }
+   },
+   "text": "v4*layout_many-legged*legPairs_11*bodyLength_0.55*girth_0.9*posture_0*torso_segmented*neckLength_0*head_mandibles*headSize_1*snoutLength_0.3*horns_none*legs_arthropod*legLength_0.2*feet_spike*arms_none*armLength_0.6*hands_hand*tail_none*tailLength_0*armor_bands*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_ink*colorSeed_909*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_round*iris_auto*eyeRules_1"
   }
  ],
  "eyeCatalogue": {
@@ -866,8 +956,10 @@
   "recipeVersion": 4,
   "groups": [
    "eye-catalogue",
-   "eye-odd"
+   "eye-odd",
+   "eye-upgrade"
   ],
-  "note": "Appended v4 specimens for the eye catalogue round (EC1). Groups eye-catalogue (one per new kind on a native face) and eye-odd (owner decision: odd combinations are built). These texts need recipe v4; the 41 earlier specimens are unchanged."
+  "note": "Appended v4 specimens for the eye catalogue round (EC1). Groups eye-catalogue (one per new kind on a native face) and eye-odd (owner decision: odd combinations are built). These texts need recipe v4; the 41 earlier specimens are unchanged.",
+  "upgradeNote": "Appended 2026-10-03 (EC1 review round 3): group eye-upgrade pairs an old v3 link with an explicit off-face face-round kind (upgrade-v3-*) and the same link under eyeRules 1 (upgrade-before-*), so the old-link geometry change is reviewable at normal size."
  }
 }
