@@ -4,7 +4,7 @@ import {COAT_REGIONS, type CoatRegion} from './fauna-coat-vocab.ts';
 import {COAT_CELLS_PER_BODY, applyCoatDrift, coatIndividualDrift, defaultCoatGenome, evaluateCoat, hash3u, valueNoise3, type CoatGenome} from './fauna-coat-fields.ts';
 import {composerIndividualTraits, type ComposerIndividualTraits} from './fauna-composer-individual.ts';
 import {COMPOSER_IRIS_RGB, FACE_EYE_PROFILE, composerEyeProfileId, composerEyeRulesOf, composerHeadgearBuild, composerSkullOf, resolveComposerEyes, type ComposerSkull} from './fauna-composer-face.ts';
-import {EYE_PATCH, EYE_ROLE, OCELLUS, type LiddedEyeType, buildCompoundEye, buildEyePatch, buildEyespot, buildEyespotBead, buildFacetedEye, buildOcellus, buildStalk, catalogueEyeSpec, eyeBarAxis, eyeGaze, nearestExit, normalize3, outermostExit, raycastFirstHit, type EyePatch, type RayHit, type Vec3 as EyeVec3} from './fauna-composer-eye.ts';
+import {EYE_PATCH, EYE_ROLE, OCELLUS, type LiddedEyeType, buildCompoundEye, buildEyePatch, buildEyespot, buildEyespotBead, buildFacetedEye, buildOcellus, buildStalk, catalogueEyeSpec, type CatalogueEyeSpec, eyeBarAxis, eyeGaze, nearestExit, normalize3, outermostExit, raycastFirstHit, type EyePatch, type RayHit, type Vec3 as EyeVec3} from './fauna-composer-eye.ts';
 import {isFaceRoundEyeKind} from './fauna-composer-eye-catalogue.ts';
 import {PROBOSCIS_FACE, composerFaceTip} from './fauna-composer-face-geometry.ts';
 import {composerFeatherFanSpan, composerWingChord, composerWingThickness, type ComposerBone, type ComposerGraph, type ComposerLimb, type ComposerSection, type Vec3} from './fauna-composer-rig.ts';
@@ -1529,15 +1529,22 @@ export const COMPOSER_EYE_CATALOGUE = Object.freeze({
   ocellus: [0.012, 0.012, 0.016] as RGB, ocellusRim: [0.5, 0.4, 0.32] as RGB, ocellusRimMix: 0.6,
   /** a spider bead's centre stays this many flange radii off the midline */
   ocellusClear: 1.35,
-  /** chameleon turret skin: a little paler than the coat under it */
-  turretGain: 1.2,
+  /** chameleon turret skin: a little paler than the coat under it; the aperture (pupil, iris, limbus and opening) this
+   * much wider than the preset's pinhole, ringed with a pale rim, and the cone's shoulder and aperture rim (er) set so
+   * the turret reads as a cone with a hole at normal size, not as a smooth knob */
+  turretGain: 1.2, turretOpen: 1.6, turretRim: [0.80, 0.72, 0.45] as RGB, turretRimMix: 0.55,
+  turretShape: {w: 0.72, lift: 0.5, aperture: 0.95},
+  /** a lidless (spectacle) eye: the skin up to the brille edge is the coat a little darkened, no periocular halo */
+  brilleEdge: 0.8,
   /** chameleon turret axis = look + turretNormal x the skull normal (normalised): nearly the normal */
   turretNormal: 4,
   /** camera-eye seat: when the skull under the eye (the mean normal of five exits, the site and `reach` er either way
    * along both in-plane axes) leans more than `deg` from the look, or the eye would overhang the skull (an exit
    * missing), the site moves on a grid (x head length, x craniumHeight) to the one that faces the look best, less
-   * `move` per unit of offset: a big eye at a skull corner or on a narrow head top otherwise stands out as a slab */
-  seat: {deg: 30, reach: 1.0, dx: [-0.3, 0.15] as readonly number[], dy: [-0.25, 0.25] as readonly number[], step: 0.05, move: 0.5},
+   * `move` per unit of offset: a big eye at a skull corner or on a narrow head top otherwise stands out as a slab. An
+   * lidless spectacle eye (its brille edge sits at cornea height, so no lid hides the skull falling away under a big
+   * eye) whose seat still leans more than `tiltLidless` degrees from the look turns toward the skull by the excess. */
+  seat: {deg: 30, tiltLidless: 12, reach: 1.0, dx: [-0.3, 0.15] as readonly number[], dy: [-0.25, 0.25] as readonly number[], step: 0.05, move: 0.5},
   /** eye stalks: length x craniumHeight (worm cap, any other face), males x (1 + dimorphism x stalkDimorphism) */
   stalkLength: {blunt: 0.9, other: 0.45}, stalkDimorphism: 0.6, stalkR: [0.07, 0.05] as readonly number[], stalkBulb: 0.13, stalkBead: 0.09,
 });
@@ -1563,6 +1570,20 @@ interface CatalogueEyeEnv {
   hc: ReturnType<typeof makeHeadColours>; coatAt: CoatAt; ctx: EyeContext; headTris: Float64Array; worldUp: EyeVec3;
   surfaceColour: (hit: RayHit) => RGB; toModel: (x: number, y: number, z: number) => THREE.Vector3;
   emit: (patch: EyePatch, colours: RGB[], side: number, type: string, er: number, centre: EyeVec3, gaze: EyeVec3, surface: EyeVec3 | null) => void;
+}
+/** The legibility rules for a chameleon turret (see COMPOSER_EYE_CATALOGUE.turretOpen); any other spec unchanged. */
+function turretLegible(spec: CatalogueEyeSpec): CatalogueEyeSpec {
+  if (!spec.turret) return spec;
+  const K = COMPOSER_EYE_CATALOGUE, f = K.turretOpen, p = spec.pupil;
+  return {...spec, pupil: {...p, r: p.r * f}, iris: spec.iris === null ? null : spec.iris * f, limbus: spec.limbus === null ? null : spec.limbus * f,
+    lid: {...spec.lid, w: spec.lid.w * f, above: spec.lid.above * f, below: spec.lid.below * f}, turret: {...K.turretShape}};
+}
+/** `v` turned toward `n` (both unit) until at most `maxAngle` radians from it; unchanged when already within. */
+function turnToward(v: EyeVec3, n: EyeVec3, maxAngle: number): EyeVec3 {
+  const th = Math.acos(clamp(v[0] * n[0] + v[1] * n[1] + v[2] * n[2], -1, 1));
+  if (th <= maxAngle || th > Math.PI - 1e-6) return v;
+  const a = Math.sin(maxAngle) / Math.sin(th), b = Math.sin(th - maxAngle) / Math.sin(th);
+  return normalize3([n[0] * b + v[0] * a, n[1] * b + v[1] * a, n[2] * b + v[2] * a]);
 }
 function mergeEyePatches(a: EyePatch, b: EyePatch): EyePatch {
   const off = a.positions.length / 3;
@@ -1603,11 +1624,11 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
       : role === EYE_ROLE.pseudopupil ? scaleC(facet, K.pseudopupil) : scaleC(facet, K.lattice));
 
   if (T.structure === 'camera') {
-    const spec = catalogueEyeSpec(T), er = camK * T.size * cH * sizeK;
+    const spec = turretLegible(catalogueEyeSpec(T)), er = camK * T.size * cH * sizeK;
     const built: {patch: EyePatch; side: number; centre: EyeVec3; gaze: EyeVec3; hit: RayHit | null; surf: RGB[]}[] = [];
     const Q = K.seat, local = trianglesNear(headTris, [ex, ey, 0], 0.6 * H + 2 * er).tris;
     /** how squarely the skull under the eye faces `look` (see K.seat), -Infinity when the eye would overhang */
-    const facing = (at: EyeVec3, look: EyeVec3): {hit: RayHit; score: number} | null => {
+    const facing = (at: EyeVec3, look: EyeVec3): {hit: RayHit; score: number; normal?: EyeVec3} | null => {
       const hit = nearestExit(local, at, look);
       if (!hit) return null;
       // a seat under another skull layer (a jaw or brow loft outside it) would bury the eye
@@ -1621,7 +1642,7 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
         n = addV(n, h.normal, 1);
       }
       const m = normalize3(n);
-      return {hit, score: m[0] * look[0] + m[1] * look[1] + m[2] * look[2]};
+      return {hit, score: m[0] * look[0] + m[1] * look[1] + m[2] * look[2], normal: m};
     };
     /** the seat offset (x H, x cH) per side; a symmetric pair searches once (left) and mirrors it */
     let pairOffset: [number, number] | null = null;
@@ -1649,7 +1670,11 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
       if (!hit) ctx.fallbacks++;
       // a turret rises from the skull along its normal (its aperture leans toward the look), so a forward- or
       // backward-looking turret stands up instead of lying along the snout
-      const gaze = spec.turret && hit ? normalize3(addV(look, hit.normal, K.turretNormal)) : look;
+      let gaze = spec.turret && hit ? normalize3(addV(look, hit.normal, K.turretNormal)) : look;
+      // a lidless eye on a skull that still leans more than seat.tiltLidless from the look turns toward the skull by the
+      // excess, so a big gecko eye on a curving head side sits in it instead of standing a rim's height proud on one side
+      const under = spec.spectacle ? facing(site, look) : null;
+      if (under?.normal && Number.isFinite(under.score)) gaze = turnToward(look, under.normal, Q.tiltLidless * deg);
       const centre = hit ? addV(hit.point, gaze, -EYE_PATCH.recess * er) : site;
       const near = trianglesNear(headTris, centre, CATALOGUE_PATCH_REACH * er);
       const patch = buildEyePatch({type: 'round', er, centre, gaze, barAxis: eyeBarAxis(gaze, worldUp), surface: near.tris, spec, forward: [1, 0, 0], midline: {n: [0, 0, side], min: 0.03 * cW}, look});
@@ -1683,10 +1708,13 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
           case EYE_ROLE.limbus: return limbus;
           case EYE_ROLE.sclera: return K.sclera;
           case EYE_ROLE.lid: case EYE_ROLE.nictitans: {
-            const c = scaleC(surf[k]!, lidFactor); lidSum = [lidSum[0] + c[0], lidSum[1] + c[1], lidSum[2] + c[2]]; lids++;
+            const c = spec.turret ? mixC(gainC(surf[k]!, K.turretGain), K.turretRim, K.turretRimMix) : scaleC(surf[k]!, spec.spectacle ? K.brilleEdge : lidFactor);
+            lidSum = [lidSum[0] + c[0], lidSum[1] + c[1], lidSum[2] + c[2]]; lids++;
             return role === EYE_ROLE.nictitans ? mixC(c, K.nictitans, K.nictitansMix) : c;
           }
           case EYE_ROLE['outer-lid']: {
+            // a lidless eye's skin runs plainly up to the brille (a pale halo there sawtoothed against the brille edge)
+            if (spec.spectacle) return scaleC(surf[k]!, K.brilleEdge);
             const c = scaleC(surf[k]!, C.outerLid);
             return liftTo(spec.disc ? mixC(c, K.disc, K.discMix) : c, K.periocular, Math.max(K.periocularLum, K.periocularOverSkin * luminance(surf[k]!)));
           }

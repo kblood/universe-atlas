@@ -9,13 +9,13 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {COMPOSER_PRESET_IDS, composerPreset, decodeComposerRecipe, normalizeComposerRecipe} from '../src/fauna-composer-recipe.ts';
 import {COMPOSER_BUDGET, buildComposerGraph} from '../src/fauna-composer-rig.ts';
-import {SPIDER_EYES, buildComposerSkin} from '../src/fauna-composer-mesh.ts';
+import {COMPOSER_EYE_PITCH_DEG, SPIDER_EYES, buildComposerSkin} from '../src/fauna-composer-mesh.ts';
 import {deriveComposerIndividual} from '../src/fauna-composer-individual.ts';
-import {resolveComposerEyes} from '../src/fauna-composer-face.ts';
+import {FACE_EYE_PROFILE, composerEyeProfileId, resolveComposerEyes} from '../src/fauna-composer-face.ts';
 import {CATALOGUE_EYE_KINDS, EYE_PRESETS} from '../src/fauna-composer-eye-catalogue.ts';
 import {
   CATALOGUE_EYE, EYE_PATCH, EYE_ROLE, EYESPOT_BEAD, OCELLUS, buildEyePatch, buildEyespotBead, buildFacetedEye, buildOcellus, catalogueEyeSpec,
-  cataloguePupilPoint, closestPointOnSoup, wPupilPoint,
+  cataloguePupilPoint, closestPointOnSoup, eyeGaze, wPupilPoint,
 } from '../src/fauna-composer-eye.ts';
 
 const specimens = JSON.parse(readFileSync(new URL('./fauna-face-specimens.json', import.meta.url), 'utf8')).specimens;
@@ -175,6 +175,17 @@ test('no eye crosses the midline; the owl\'s facial discs and the spider\'s fron
       let min = Infinity; for (let i = e.firstVertex; i < e.firstVertex + e.vertexCount; i++) min = Math.min(min, e.side * skin.positions[3 * i + 2]);
       assert.ok(min >= 0, `${name} ${e.type} side ${e.side}: ${(min / e.er).toFixed(2)} er across the midline`);
     }
+  }
+});
+
+test('gecko: the lidless eye turns into a skull that leans away, so its brille edge stays low and its gaze near the look', () => {
+  const {skin, graph} = byKind('gecko'), soup = skullSoup(skin), P = EYE_PRESETS.gecko.placement;
+  for (const e of skin.debug.eyes) {
+    const brille = ringOff(skin, soup, e, 5);
+    assert.ok(brille <= 0.45, `side ${e.side}: brille edge ${brille.toFixed(2)} er off the skull`);
+    const look = eyeGaze(P.yawByFace?.[graph.recipe.head] ?? P.yawDeg ?? FACE_EYE_PROFILE[composerEyeProfileId(graph.recipe, 'round')].gazeYawDeg, P.pitchDeg ?? COMPOSER_EYE_PITCH_DEG, e.side);
+    const turned = Math.acos(Math.min(1, look[0] * e.gaze[0] + look[1] * e.gaze[1] + look[2] * e.gaze[2])) * 180 / Math.PI;
+    assert.ok(turned <= 35, `side ${e.side}: turned ${turned.toFixed(1)} deg from the look`);
   }
 });
 

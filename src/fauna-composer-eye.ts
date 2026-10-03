@@ -442,8 +442,10 @@ export const CATALOGUE_EYE = Object.freeze({
    * corner (a lateral eye beside a flat face) otherwise rises to the highest skull point under its rim, a slab */
   domeRiseMax: 0.2,
   pattern: {radial: 0.12, reticulated: 0.55, faint: 0.75},
-  w: [[-0.5, 0.12], [-0.42, -0.28], [-0.2, -0.3], [0, -0.05], [0.2, -0.3], [0.42, -0.28], [0.5, 0.12]] as readonly (readonly [number, number])[],
-  wOrigin: [0, 0.05] as readonly [number, number],
+  /** the W pupil polygon (er) and the point it is sampled from: deep lobes, a raised cusp, a shallow dip on top, wide
+   * arms (the first W read as a flat dark band with a notch at normal size) */
+  w: [[-0.56, 0.2], [-0.4, -0.36], [-0.2, -0.36], [0, 0], [0.2, -0.36], [0.4, -0.36], [0.56, 0.2], [0, 0.14]] as readonly (readonly [number, number])[],
+  wOrigin: [0, 0.07] as readonly [number, number],
 });
 
 /** The trait subset catalogueEyeSpec reads (a full EyeTraits satisfies it). */
@@ -561,7 +563,13 @@ function buildCataloguePatch(o: EyePatchOptions, sp: CatalogueEyeSpec): EyePatch
     rimFallbacks += o.surface ? 1 : 0;
     return [E.recess, null, 0];
   };
-  const wrap = (p: Vec3, hit: RayHit | null, off: number, liftEr: number): Vec3 => (hit && off > C.wrapOff ? addS(hit.point, hit.normal, liftEr * er) : p);
+  // blended in over (wrapOff/2, wrapOff] so neighbouring rim vertices on either side of the threshold stay continuous
+  const wrap = (p: Vec3, hit: RayHit | null, off: number, liftEr: number): Vec3 => {
+    const w = hit ? Math.min(1, Math.max(0, (off - 0.5 * C.wrapOff) / (0.5 * C.wrapOff))) : 0;
+    if (w <= 0) return p;
+    const q = addS(hit!.point, hit!.normal, liftEr * er), k = w * w * (3 - 2 * w);
+    return [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k, p[2] + (q[2] - p[2]) * k];
+  };
   const domeLimit = sp.domeLimit ?? sp.limbus ?? E.limbus, capR2 = sp.corneaRadius * sp.corneaRadius, capBase = Math.sqrt(capR2 - domeLimit * domeLimit);
   const lift = (x: number, y: number) => { const rho = Math.min(domeLimit, Math.hypot(x, y)); return Math.sqrt(capR2 - rho * rho) - capBase; };
   const P = sp.pupil, pup = (t: number, i: number) => cataloguePupilPoint(P, t, i, N);

@@ -48,9 +48,9 @@ function expectedGaze(r, eye) {
     return eyeGaze(profile.gazeYawDeg, eye.type === 'eyespot' ? COMPOSER_EYESPOT_PITCH_DEG : COMPOSER_EYE_PITCH_DEG, eye.side);
   }
   const cam = FACE_EYE_PROFILE[composerEyeProfileId(r, 'round')];
-  // simple eyes, stalks and the chameleon's turret (its axis leans toward the skull normal) are measured in the
-  // catalogue geometry test
-  if (eye.type === 'ocellus' || eye.type === 'stalk' || t.lid === 'turret') return null;
+  // simple eyes, stalks, the chameleon's turret (its axis leans toward the skull normal) and a lidless spectacle eye (it
+  // turns toward a skull leaning away, COMPOSER_EYE_CATALOGUE.seat.tiltLidless) are measured in the catalogue geometry test
+  if (eye.type === 'ocellus' || eye.type === 'stalk' || t.lid === 'turret' || t.lid === 'spectacle') return null;
   if (t.structure === 'camera') {
     const own = P.kind === 'independent' && eye.side > 0 ? P.right : null;
     return eyeGaze(own?.yawDeg ?? P.yawByFace?.[r.head] ?? P.yawDeg ?? cam.gazeYawDeg, own?.pitchDeg ?? P.pitchDeg ?? COMPOSER_EYE_PITCH_DEG, eye.side);
