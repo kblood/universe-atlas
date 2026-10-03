@@ -1,5 +1,6 @@
 import { type Body, type V3 } from './catalog.ts';
-import { terrainSampler } from './terrain.ts';
+import { terrainSampler, type SurfaceSample } from './terrain.ts';
+import {peakCorrectionMaxLevel,TILE_CLASS_LABELS,SNOW_LABELS,LOD_LADDER_VERSION} from './lod-ladder.ts';
 import {conservativeRiverBedM} from './river-sample.ts';
 import {biomeClassifier,materialBytes} from './surface-biomes.ts';
 import {activeRenderedRiverRegion} from './inland-rivers.ts';
@@ -146,8 +147,7 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
   const childFootprint=footprintForLevel(tile.level),parentFootprint=tile.level?footprintForLevel(tile.level-1):childFootprint;
   // Null while inland rivers are withdrawn: no conservative river-bed carve.
   const riverRegion=activeRenderedRiverRegion(body);
-  const heightAt=(d:V3,footprintM:number)=>{
-    const s=sample(d);
+  const heightAt=(d:V3,footprintM:number,s:SurfaceSample=sample(d))=>{
     if(!riverRegion||footprintM<=8)return s.groundHeightM;
     // Coarse valley widening is a bed envelope, never a water lift or ground
     // mask.  The 3 km query bound matches river-sample's indexed halo. At
@@ -161,33 +161,90 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
     const radius=Math.min(2800,footprintM),bed=conservativeRiverBedM(riverRegion,d,radius,s.groundHeightM);
     return bed===null?s.groundHeightM:Math.min(s.groundHeightM,bed);
   };
-  type LatticePoint={point:V3;height:number};
+  type LatticePoint={point:V3;height:number;sample:SurfaceSample;direction:V3};
   const childPoints=new Map<string,LatticePoint>(),parentPoints=new Map<string,LatticePoint>();
-  // Every caller uses this tile's 33x33 binary-fraction lattice.  Keep two
-  // short-lived maps because parent endpoints have a different conservative
-  // footprint; this avoids recomputing indexed hydrology queries four times
-  // per parent interpolation without sharing mutable output arrays.
+  // Every caller uses this tile's 33x33 binary-fraction lattice (plus its
+  // half-cell centres for the coarse peak correction).  Two short-lived maps
+  // are needed only while a river region is active, because parent endpoints
+  // then have a different conservative footprint; without one, heightAt does
+  // not read the footprint, so both endpoints share one cache.
+  const sharedFootprints=!riverRegion||childFootprint===parentFootprint;
   const point = (u: number, v: number, footprintM=childFootprint): LatticePoint => {
     // Halo coordinates are intentionally outside [0, n]. A numeric row-major
     // key aliases e.g. (-1,1) with (n,0), which silently corrupts edge normal
-    // samples; the signed pair remains unique for this short-lived cache.
-    const x=Math.round(u*n),y=Math.round(v*n),key=`${x},${y}`,cache=footprintM===parentFootprint?parentPoints:childPoints;
+    // samples; the signed pair remains unique for this short-lived cache. The
+    // key counts half cells, so cell centres share the cache with vertices.
+    const x=Math.round(u*2*n),y=Math.round(v*2*n),key=`${x},${y}`,cache=!sharedFootprints&&footprintM===parentFootprint?parentPoints:childPoints;
     const existing=cache.get(key);if(existing)return existing;
-    const d = tileDirection(tile, u, v),height=heightAt(d,footprintM),r = 1 + height * relief / body.radiusM;
-    const result={point:d.map(value => value * r) as V3,height};cache.set(key,result);return result;
+    const d = tileDirection(tile, u, v),s=sample(d),height=heightAt(d,footprintM,s),r = 1 + height * relief / body.radiusM;
+    const result={point:d.map(value => value * r) as V3,height,sample:s,direction:d};cache.set(key,result);return result;
   };
+  // Peak-preserving coarse heights (docs/lod-ladder-contract-v1.md §3). At
+  // levels up to the last S1 level (Maithea L9) a vertex stores its point
+  // sample plus a bounded, non-negative max-preserving correction read from
+  // the four adjacent cell centres (the next finer level's own lattice
+  // points). Only + - * / min max on samples, so the rule is deterministic,
+  // order-independent and identical for a vertex seen from either tile.
+  // Ocean vertices and vertices on a cube-face edge keep their point sample
+  // (the first preserves the coastline sign exactly; the second keeps both
+  // faces bit-identical along their shared edge). Normals, classes and the
+  // colour map keep reading point samples.
+  const correctionMaxLevel=peakCorrectionMaxLevel(body.radiusM),faceCells=2**tile.level*n;
+  const onCubeEdge=(gx:number,gy:number)=>gx<=0||gy<=0||gx>=faceCells||gy>=faceCells;
+  // Raw heights on a half-cell grid (child-lattice coordinates x2, halo of
+  // two parent cells) and memoised corrected vertices: each sample is taken
+  // once and each correction evaluated once per tile, by numeric index.
+  const G=2*n+9,O=4,rawGrids=new Map<number,Float64Array>(),corrected=new Map<number,Float64Array>();
+  const rawAt=(hx:number,hy:number,footprintM:number)=>{
+    let grid=rawGrids.get(footprintM);if(!grid){grid=new Float64Array(G*G).fill(NaN);rawGrids.set(footprintM,grid);}
+    const i=(hy+O)*G+hx+O;let h=grid[i];
+    if(h!==h){h=point(hx/(2*n),hy/(2*n),footprintM).height;grid[i]=h;}
+    return h;
+  };
+  /** Height of the lattice vertex at child-lattice coordinates (x, y) for a
+   * tile of `step` child cells per cell (1: this tile, 2: its parent). */
+  const correctedHeight=(x:number,y:number,step:number,footprintM:number)=>{
+    const key=step*1e6+footprintM;let memo=corrected.get(key);
+    if(!memo){memo=new Float64Array((n+1)*(n+1)).fill(NaN);corrected.set(key,memo);}
+    const mi=y*(n+1)+x;if(memo[mi]===memo[mi])return memo[mi];
+    const at=(i:number,j:number)=>rawAt(2*i,2*j,footprintM),p=at(x,y);
+    let lift=p;
+    if(!onCubeEdge(tile.x*n+x,tile.y*n+y)&&!(body.water&&p<waterLevelM)){
+      const h=step/2;let max=p,min=p;
+      for(let k=0;k<4;k++){
+        const cx=x-(k&1?0:step),cy=y-(k&2?0:step),c=at(cx+h,cy+h);
+        max=Math.max(max,c);min=Math.min(min,c);
+        // Peak transfer: a cell-interior summit lifts that cell's highest corner.
+        const top=Math.max(at(cx,cy),at(cx+step,cy),at(cx,cy+step),at(cx+step,cy+step));
+        if(p===top&&c>top)lift=Math.max(lift,c);
+      }
+      // Slope-weighted max correction: zero in a local minimum, growing toward
+      // the local maximum, never above the highest of the five samples.
+      if(max>min)lift=Math.max(lift,p+(p-min)/(max-min)*(max-p));
+    }
+    memo[mi]=lift;return lift;
+  };
+  const vertex=(x:number,y:number,step:number,footprintM:number):{point:V3;height:number}=>{
+    const raw=point(x/n,y/n,footprintM);
+    const level=tile.level-(step===2?1:0);
+    if(level>correctionMaxLevel)return raw;
+    const height=correctedHeight(x,y,step,footprintM);if(height===raw.height)return raw;
+    const r=1+height*relief/body.radiusM;
+    return {point:raw.direction.map(value=>value*r) as V3,height};
+  };
+  const vertexPoint=(x:number,y:number,step:number,footprintM:number):V3=>vertex(x,y,step,footprintM).point;
   // Centre all three coordinates on the surface. A sea-level anchor leaves
   // kilometre-sized height offsets even in metre-sized contact patches.
   const anchor = point(.5,.5,childFootprint).point;
   // Interpolate the actual parent triangles, not its analytic sphere. New
   // children start on that mesh and morph to their sampled elevation.
   const parentPoint = (u: number, v: number): V3 => {
-    if (!tile.level) return point(u, v, parentFootprint).point;
+    if (!tile.level) return vertexPoint(Math.round(u*n),Math.round(v*n),1,parentFootprint);
     const gx = u * n / 2, gy = v * n / 2;
     const ix = Math.min(n / 2 - 1, Math.floor(gx)), iy = Math.min(n / 2 - 1, Math.floor(gy));
     const a = gx - ix, b = gy - iy;
-    const p00 = point(ix * 2 / n, iy * 2 / n,parentFootprint).point, p11 = point((ix + 1) * 2 / n, (iy + 1) * 2 / n,parentFootprint).point;
-    const p = a >= b ? point((ix + 1) * 2 / n, iy * 2 / n,parentFootprint).point : point(ix * 2 / n, (iy + 1) * 2 / n,parentFootprint).point;
+    const p00 = vertexPoint(ix * 2, iy * 2,2,parentFootprint), p11 = vertexPoint((ix + 1) * 2, (iy + 1) * 2,2,parentFootprint);
+    const p = a >= b ? vertexPoint((ix + 1) * 2, iy * 2,2,parentFootprint) : vertexPoint(ix * 2, (iy + 1) * 2,2,parentFootprint);
     return p00.map((v, i) => a >= b
       ? v * (1 - a) + p[i] * (a - b) + p11[i] * b
       : v * (1 - b) + p[i] * (b - a) + p11[i] * a) as V3;
@@ -204,7 +261,7 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
       // A cube-face coordinate step changes its tangent scale at an edge. Use
       // one level-consistent geodesic halo there, so either face asks for the
       // same four physical samples at its shared border/corners.
-      const d=tileDirection(tile,u,v),axis=Math.abs(d[1])<.9?[0,1,0] as V3:[1,0,0] as V3,tangent=unit(cross(axis,d)),bitangent=unit(cross(d,tangent)),step=2/(2**tile.level*n),at=(t:V3,sign:number)=>{const q=unit(d.map((value,i)=>value+t[i]*step*sign) as V3),height=heightAt(q,childFootprint),r=1+height*relief/body.radiusM;return q.map(value=>value*r) as V3;},west=at(tangent,-1),east=at(tangent,1),south=at(bitangent,-1),north=at(bitangent,1);
+      const d=point(u,v).direction,axis=Math.abs(d[1])<.9?[0,1,0] as V3:[1,0,0] as V3,tangent=unit(cross(axis,d)),bitangent=unit(cross(d,tangent)),step=2/(2**tile.level*n),at=(t:V3,sign:number)=>{const q=unit(d.map((value,i)=>value+t[i]*step*sign) as V3),height=heightAt(q,childFootprint),r=1+height*relief/body.radiusM;return q.map(value=>value*r) as V3;},west=at(tangent,-1),east=at(tangent,1),south=at(bitangent,-1),north=at(bitangent,1);
       normal=unit(cross(east.map((q,i)=>q-west[i]) as V3,north.map((q,i)=>q-south[i]) as V3));
     }
     if(normal[0]*centre[0]+normal[1]*centre[1]+normal[2]*centre[2]<0)normal=normal.map(q=>-q) as V3;
@@ -214,17 +271,21 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
     const palette=[[160,141,94],[72,91,52],[104,96,84],[220,229,232]];
     return palette[0].map((_,channel)=>Math.floor(weights.reduce((sum,w,i)=>sum+w*palette[i][channel],0)));
   };
+  const meta=tileMetaAccumulator(waterLevelM);
   for (let y = 0; y <= n; y++) for (let x = 0; x <= n; x++) {
-    const u = x / n, v = y / n, d = tileDirection(tile, u, v);
-    const childSample=point(u,v,childFootprint),child=childSample.point,parent=parentPoint(u,v);
+    const u = x / n, v = y / n, d = point(u,v,childFootprint).direction;
+    const childSample=vertex(x,y,1,childFootprint),child=childSample.point,parent=parentPoint(u,v);
     positions.push(...child.map((p, i) => p - anchor[i]));
     parents.push(...parent.map((p, i) => p - anchor[i]));
     const normal=childNormal(x,y);
     normals.push(...normal);
-    const s=sample(d);
+    // The lattice point's own sample (cached by point()); bit-identical to a
+    // fresh sample(d), without sampling every vertex twice.
+    const s=point(u,v,childFootprint).sample;
     surfaceRoughness.push(Math.max(0,Math.min(1,s.roughness)));
-    const base=classify(d,s.groundHeightM,normal.reduce((sum,x,j)=>sum+x*d[j],0)).weights;
+    const classified=classify(d,s.groundHeightM,normal.reduce((sum,x,j)=>sum+x*d[j],0)),base=classified.weights;
     materials.push(...materialBytes(regionalBankWeights(body,s,base)));
+    meta.vertex(x,y,childSample.height,s,classified);
     surfaceHeight.push(childSample.height*relief);
     parentHeight.push(heightOf(parent));
     uvs.push((u * textureSize + 1) / (textureSize + 2), (v * textureSize + 1) / (textureSize + 2));
@@ -233,6 +294,12 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
       indices.push(a, a + 1, a + stride + 1, a, a + stride + 1, a + stride);
     }
   }
+  // Coarse tiles already sampled their cell centres for the peak correction:
+  // they also bound the tile summit (metadata maxH/peakDir), at no extra cost.
+  if(tile.level<=correctionMaxLevel)for(let cy=0;cy<n;cy++)for(let cx=0;cx<n;cx++){
+    const c=point((cx+.5)/n,(cy+.5)/n,childFootprint);meta.centre(cx+.5,cy+.5,c.height,c.sample);
+  }
+  const metadata=meta.encode(tile.level<=correctionMaxLevel);
   const edges = [Array.from({length: stride}, (_,i) => i), Array.from({length: stride}, (_,i) => i * stride + n), Array.from({length: stride}, (_,i) => n * stride + n - i), Array.from({length: stride}, (_,i) => (n - i) * stride)];
   // A skirt only needs to cover the measured child/parent morph separation at
   // this patch boundary. The old level-only formula was 4x a fine patch span
@@ -274,12 +341,12 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
   const width = textureSize + 2, color = new Uint8Array(width * width * 4);
   for (let y = 0; y < width; y++) for (let x = 0; x < width; x++) {
     // Half-texel gutters sample the same field beyond each edge.
-    const s = sample(tileDirection(tile, (x - .5) / textureSize, (y - .5) / textureSize));
+    // One direction per texel (it was computed twice): bit-identical, cheaper.
+    const d=tileDirection(tile,(x-.5)/textureSize,(y-.5)/textureSize),s = sample(d);
     // Preserve the established dry geography palette. Only wet texels need a
     // bed colour, and use a deliberately inexpensive radial classification:
     // texture generation must not run six finite-difference terrain samples
     // per texel merely to obtain a shading normal.
-    const d=tileDirection(tile,(x-.5)/textureSize,(y-.5)/textureSize);
     const rgb=s.wet?substrateColor(regionalBankWeights(body,s,classify(d,s.groundHeightM,1).weights)):s.color.map(Math.floor);
     color.set([...rgb,255], (y * width + x) * 4);
   }
@@ -299,15 +366,95 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
   // report for the resulting tile-cache staleness consequence.
   const seaRadius=1+waterLevelM/body.radiusM;
   if(oceanPositions&&oceanParents)for(let y=0;y<=n;y++)for(let x=0;x<=n;x++){
-    const u=x/n,v=y/n,d=tileDirection(tile,u,v),sea=d.map(value=>value*seaRadius) as V3;
+    const u=x/n,v=y/n,d=point(u,v,childFootprint).direction,sea=d.map(value=>value*seaRadius) as V3;
     oceanPositions.push(...sea.map((p,i)=>p-anchor[i]));
     const rawParent=tile.level?(() => {
       const gx=u*n/2,gy=v*n/2,ix=Math.min(n/2-1,Math.floor(gx)),iy=Math.min(n/2-1,Math.floor(gy)),a=gx-ix,b=gy-iy;
-      const p00=tileDirection(tile,ix*2/n,iy*2/n),p11=tileDirection(tile,(ix+1)*2/n,(iy+1)*2/n),q=a>=b?tileDirection(tile,(ix+1)*2/n,iy*2/n):tileDirection(tile,ix*2/n,(iy+1)*2/n);
+      // Lattice directions from the point cache (every one already sampled).
+      const dir=(i:number,j:number)=>point(i*2/n,j*2/n,childFootprint).direction;
+      const p00=dir(ix,iy),p11=dir(ix+1,iy+1),q=a>=b?dir(ix+1,iy):dir(ix,iy+1);
       return p00.map((value,i)=>a>=b?value*(1-a)+q[i]*(a-b)+p11[i]*b:value*(1-b)+q[i]*(b-a)+p11[i]*a) as V3;
     })():d;
     const p=rawParent.map(value=>value*seaRadius) as V3;
     oceanParents.push(...p.map((value,i)=>value-anchor[i]));
   }
-  return { tile, anchor, positions: new Float32Array(positions), parents: new Float32Array(parents), surfaceHeight:new Float32Array(surfaceHeight), parentHeight:new Float32Array(parentHeight), normals: new Float32Array(normals), materials:new Uint8Array(materials), surfaceRoughness:new Float32Array(surfaceRoughness), uvs: new Float32Array(uvs), indices: new Uint16Array(indices), color, width, skirtDepthM, oceanPositions:oceanPositions&&new Float32Array(oceanPositions), oceanParents:oceanParents&&new Float32Array(oceanParents) };
+  return { tile, anchor, positions: new Float32Array(positions), parents: new Float32Array(parents), surfaceHeight:new Float32Array(surfaceHeight), parentHeight:new Float32Array(parentHeight), normals: new Float32Array(normals), materials:new Uint8Array(materials), surfaceRoughness:new Float32Array(surfaceRoughness), uvs: new Float32Array(uvs), indices: new Uint16Array(indices), color, width, skirtDepthM, meta:metadata, oceanPositions:oceanPositions&&new Float32Array(oceanPositions), oceanParents:oceanParents&&new Float32Array(oceanParents) };
+}
+
+/** Tile metadata layout (TILE_META_BYTES = 64, little-endian), built from the
+ * lattice samples and classifier calls buildTile already makes:
+ *   f32 @0  minH        lowest stored vertex height (m, before `relief`)
+ *   f32 @4  maxH        highest of the stored vertices and, on coarse tiles,
+ *                       the cell-centre samples inside the tile (tile summit)
+ *   f32 @8  floorMin    lowest regional floor (terrain floorM), NaN if absent
+ *   f32 @12 floorMax    highest regional floor, NaN if absent
+ *   f32 @16 windowMax   highest (point height - floorM), NaN if absent
+ *   f32 @20 snowlineM   lowest snow-labelled land vertex height, NaN if none
+ *   f32 @24 treelineM   highest forestPotential vertex height, NaN if none
+ *   f32 @28 peakU, @32 peakV   tile-local position of maxH
+ *   f32 @36 waterLevelM the sea level the tile was built at
+ *   u16 @40 lattice vertex count (1089), @42 ocean, @44 snow, @46 forest counts
+ *   u16 @48..54 counts of the four most common classes
+ *   u8  @56..59 their TILE_CLASS_LABELS ids (255 = unused)
+ *   u8  @60 metadata version (1), @61 flags (1: floor present, 2: peak-corrected
+ *   heights), @62..63 reserved (0).
+ * Float32 storage rounds monotonically, so minH <= every stored Float32 vertex
+ * height <= maxH still holds exactly. */
+export const TILE_META_BYTES=64;
+export const TILE_META_VERSION=1;
+type ClassifiedVertex={name:string;ocean:boolean;forestPotential:boolean};
+function tileMetaAccumulator(waterLevelM:number){
+  let minH=Infinity,maxH=-Infinity,peakU=NaN,peakV=NaN,floorMin=Infinity,floorMax=-Infinity,windowMax=-Infinity,floorSeen=false;
+  let snowline=Infinity,treeline=-Infinity,count=0,ocean=0,snow=0,forest=0;
+  const classCounts=new Array(TILE_CLASS_LABELS.length).fill(0);
+  const n=PATCH_SEGMENTS;
+  const floor=(height:number,s:SurfaceSample)=>{
+    const f=(s as SurfaceSample&{floorM?:number}).floorM;
+    if(typeof f!=='number'||!Number.isFinite(f))return;
+    floorSeen=true;floorMin=Math.min(floorMin,f);floorMax=Math.max(floorMax,f);windowMax=Math.max(windowMax,height-f);
+  };
+  const summit=(u:number,v:number,height:number)=>{if(height>maxH){maxH=height;peakU=u/n;peakV=v/n;}};
+  return {
+    vertex(x:number,y:number,height:number,s:SurfaceSample,c:ClassifiedVertex){
+      count++;minH=Math.min(minH,height);summit(x,y,height);
+      floor(s.groundHeightM,s);
+      if(c.ocean)ocean++;
+      const id=TILE_CLASS_LABELS.indexOf(c.name);if(id>=0)classCounts[id]++;
+      if(!c.ocean&&SNOW_LABELS.includes(c.name)){snow++;snowline=Math.min(snowline,s.groundHeightM);}
+      if(c.forestPotential){forest++;treeline=Math.max(treeline,s.groundHeightM);}
+    },
+    centre(u:number,v:number,height:number,s:SurfaceSample){summit(u,v,height);floor(s.groundHeightM,s);},
+    encode(corrected:boolean){
+      const bytes=new Uint8Array(TILE_META_BYTES),view=new DataView(bytes.buffer);
+      const f32=[minH,maxH,floorSeen?floorMin:NaN,floorSeen?floorMax:NaN,floorSeen?windowMax:NaN,
+        Number.isFinite(snowline)?snowline:NaN,Number.isFinite(treeline)?treeline:NaN,peakU,peakV,waterLevelM];
+      f32.forEach((value,i)=>view.setFloat32(i*4,value,true));
+      [count,ocean,snow,forest].forEach((value,i)=>view.setUint16(40+i*2,value,true));
+      // Top four classes by count; ties keep the lower label id (fixed order).
+      const top=classCounts.map((value,id)=>({value,id})).filter(e=>e.value>0).sort((a,b)=>b.value-a.value||a.id-b.id).slice(0,4);
+      for(let i=0;i<4;i++){view.setUint16(48+i*2,top[i]?.value??0,true);view.setUint8(56+i,top[i]?.id??255);}
+      view.setUint8(60,TILE_META_VERSION);view.setUint8(61,(floorSeen?1:0)|(corrected?2:0));
+      return bytes;
+    },
+  };
+}
+export type TileMetadata={
+  version:number;ladderVersion:string;minH:number;maxH:number;floorMin:number;floorMax:number;windowMax:number;
+  snowlineM:number;treelineM:number;peakUV:[number,number];peakDir:V3;waterLevelM:number;
+  latticeCount:number;oceanCount:number;snowCount:number;forestCount:number;
+  oceanShare:number;snowShare:number;forestShare:number;
+  classHistogram:{name:string;count:number;share:number}[];floorPresent:boolean;peakCorrected:boolean;
+};
+/** Decodes buildTile's `meta` bytes. Shares are exact count / latticeCount. */
+export function readTileMetadata(tile:Tile,meta:Uint8Array):TileMetadata{
+  if(meta.byteLength!==TILE_META_BYTES)throw new Error(`tile metadata must be ${TILE_META_BYTES} bytes`);
+  const view=new DataView(meta.buffer,meta.byteOffset,meta.byteLength),f=(i:number)=>view.getFloat32(i*4,true),u16=(o:number)=>view.getUint16(o,true);
+  const latticeCount=u16(40),oceanCount=u16(42),snowCount=u16(44),forestCount=u16(46),flags=view.getUint8(61);
+  const classHistogram:TileMetadata['classHistogram']=[];
+  for(let i=0;i<4;i++){const id=view.getUint8(56+i),c=u16(48+i*2);if(id!==255&&c>0)classHistogram.push({name:TILE_CLASS_LABELS[id],count:c,share:c/latticeCount});}
+  const peakUV:[number,number]=[f(7),f(8)];
+  return {version:view.getUint8(60),ladderVersion:LOD_LADDER_VERSION,minH:f(0),maxH:f(1),floorMin:f(2),floorMax:f(3),windowMax:f(4),
+    snowlineM:f(5),treelineM:f(6),peakUV,peakDir:tileDirection(tile,peakUV[0],peakUV[1]),waterLevelM:f(9),
+    latticeCount,oceanCount,snowCount,forestCount,oceanShare:oceanCount/latticeCount,snowShare:snowCount/latticeCount,forestShare:forestCount/latticeCount,
+    classHistogram,floorPresent:!!(flags&1),peakCorrected:!!(flags&2)};
 }
