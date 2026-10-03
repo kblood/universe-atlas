@@ -69,9 +69,19 @@ test('v1 -> v2 report: v2 presence is nested thinning plus cells newly suitable 
   const n=Math.ceil(body.radiusM*2/18),sample=terrainSampler(body),v2=biomeClassifier(body),v1=legacyClassifier(body);
   const query=forestHabitat(sample,v2,body.radiusM);
   const report={cells:0,v1Present:0,v2Present:0,kept:0,lost:0,gainedNewlySuitable:0,thinnedSameWindow:0,ecotoneCells:0,suitableCells:0};
+  // Fixture selection re-picked for terrain-1.8.0-relief (P4-RELIEF r2): the
+  // first 24 directions with v1 OR v2 forest now fall at 53.6-54.9 deg latitude,
+  // where the relief terrain is low enough for the height-only v1 classifier to
+  // place forest but v2 (climate) has none (report: cells 853, v1Present 661,
+  // v2Present 0), so the nested-thinning assertions had no subject. Selecting on
+  // v2 forestPotential (48.2-50.9 deg, all also v1 forest) keeps every assertion.
+  // OLD report (terrain-1.7.0, v1|v2 selection): cells 599, v1Present 439,
+  // v2Present 85, kept 85, lost 354, thinnedSameWindow 89, ecotone 184, suitable 229.
+  // NEW report (terrain-1.8.0-relief, v2 selection): cells 626, v1Present 472,
+  // v2Present 52, kept 52, lost 420, thinnedSameWindow 420, ecotone 303, suitable 626.
   for(let i=0,found=0;i<8192&&found<24;i++){
     const d=fib(i,8192),h=sample(d).groundHeightM;
-    if(!v1(d,h).forestPotential&&!v2(d,h).forestPotential)continue;
+    if(!v2(d,h).forestPotential)continue;
     found++;
     for(const cell of forestPatch(body.seed,patchAt(d,n)).cells){
       const a=query(cell),old=habitatV1(cell,sample,v1,body.radiusM),sameWindow=habitatV1(cell,sample,v2,body.radiusM);
