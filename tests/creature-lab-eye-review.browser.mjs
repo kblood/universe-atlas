@@ -84,9 +84,9 @@ try {
   const warm = await fetch(`${origin}/creature-lab.html`); if (!warm.ok) throw new Error(`page ${warm.status}`);
   for (const m of ['/src/creature-lab.ts', '/src/creature-lab-composer.ts', '/src/fauna-composer.ts', '/src/fauna-composer-recipe.ts']) await vite.warmupRequest(m);
   await vite.transformRequest('/src/creature-lab.ts');
-  // work units: phase 'a' = whole animal + Head and face frames, phase 'b' = Eye close-up frames + option texts + menu;
-  // each unit opens the link afresh, so a GPU hold can end between them
-  const queue = specimens.flatMap(spec => [{spec, phase: 'a'}, {spec, phase: 'b'}]);
+  // work units: phase 'a' = whole animal + Head and face frames, phase 'b' = Eye close-up frames, phase 'c' = option
+  // texts + menu; each unit opens the link afresh, so a GPU hold can end between them
+  const queue = specimens.flatMap(spec => [{spec, phase: 'a'}, {spec, phase: 'b'}, {spec, phase: 'c'}]);
   let batch = 0, lastUnit = 8000;
   while (queue.length) {
     batch++;
@@ -125,8 +125,9 @@ try {
           if (phase === 'a') {
             await shoot('body', 'three-quarter');
             for (const view of VIEWS) await shoot('head', view);
-          } else {
+          } else if (phase === 'b') {
             if (eyesFrame) for (const view of VIEWS) await shoot('eyes', view);
+          } else {
             await page.selectOption('#composer-focus', 'body'); await page.selectOption('#composer-view', 'three-quarter');
             entry.options = await page.evaluate(() => Object.fromEntries(['eyes', 'iris', 'eyeRules'].map(k => {
               const el = document.getElementById(`composer-${k}`);
