@@ -72,9 +72,31 @@ test('review specimens with arms or wings: at most 2% of the face hidden at rest
   assert.ok(checked >= 25, `${checked} specimens`);
 });
 
-test('generated animals (64 wild, 64 coherent) with arms or wings: at most 3% of the face hidden at rest, idle and walk, 8% in display', () => {
+// The three known residual specimens: wild bipeds with feathered/membrane wings whose wing still crosses part of the
+// face in the side view at display t=1.1. Measured at full vertex sampling (stride 1) at b86b0ad and independently
+// reproduced by the Astra review (2026-10-03): side 4.67 % (19), 3.43 % (38), 2.98 % (115). ACCEPTANCE CEILING 6 %:
+// this is the documented per-specimen ceiling for the known cases, deliberately tighter than the broad 8 % display
+// guard of the generated-animal regression test below (which is a coarse-sampled corpus guard, not an acceptance).
+// The metric counts sampled face vertices, not projected face pixels or eye visibility.
+const KNOWN_WINGED = [[19, 0.0467], [38, 0.0343], [115, 0.0298]];
+const KNOWN_WINGED_CEILING = 0.06;
+test('known winged wild specimens 19, 38, 115: display@1.1 side cover pinned at the measured values, under the 6% ceiling', () => {
+  for (const [seed, side] of KNOWN_WINGED) {
+    const recipe = eff(randomComposerRecipe(String(seed)));
+    assert.notEqual(recipe.wings, 'none', `seed ${seed} has wings`);
+    const o = composerHeadOcclusionOf(recipe, 'display', 1.1, {stride: 1});
+    const msg = `seed ${seed} display@1.1: front ${o.front.toFixed(4)}, side ${o.side.toFixed(4)}, 3/4 ${o.threeQuarter.toFixed(4)}`;
+    assert.ok(Math.abs(o.side - side) < 0.0005, `pinned side ${side}: ${msg}`);
+    assert.ok(o.worst <= KNOWN_WINGED_CEILING, `ceiling ${KNOWN_WINGED_CEILING}: ${msg}`);
+  }
+});
+
+test('generated animals (wild and coherent seeds 0-63, plus wild 115) with arms or wings: at most 3% of the face hidden at rest, idle and walk, 8% in display', () => {
   let checked = 0, axial = 0;
-  for (let i = 0; i < 64; i++) for (const recipe of [eff(randomComposerRecipe(String(i))), eff(randomCoherentComposerRecipe(String(i)))]) {
+  const pairs = [];
+  for (let i = 0; i < 64; i++) pairs.push([i, eff(randomComposerRecipe(String(i)))], [i, eff(randomCoherentComposerRecipe(String(i)))]);
+  pairs.push([115, eff(randomComposerRecipe('115'))]); // known winged specimen outside 0-63 (Astra review 2026-10-03)
+  for (const [i, recipe] of pairs) {
     if (recipe.arms === 'none' && recipe.wings === 'none') continue;
     if ((recipe.layout === 'limbless' || recipe.layout === 'many-legged') && recipe.arms !== 'none') axial++;
     for (const [motion, t] of [['neutral', 0], ['idle', 0.3], ['walk', 1.1], ['display', 1.1]]) {

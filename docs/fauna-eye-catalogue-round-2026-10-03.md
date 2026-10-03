@@ -73,6 +73,8 @@ Source references are in the design (`eye-catalogue-v2.md` with its JSON spec). 
 
 ### 1. Proboscis head polish (`fauna-composer-face-geometry-2`, `fauna-composer-graph-4`), commits 27aaa91, b86b0ad
 
+Authorship of b86b0ad (corrected 2026-10-04): the EC4 agent made this commit itself. Its command chain ran `git add -u` and the commit, the tool result printed `b86b0ad EC4: trunk base ...`, and a later `mklink` in the same chain failed ("Invalid switch"), so the whole chain reported exit 1. The EC4 handoff said someone else had made it; that was wrong (Astra review 2026-10-03, item 1; git timestamp and reflog agree). Lesson: keep commit commands separate from later housekeeping, so a housekeeping failure cannot hide a successful commit.
+
 GPT Luna 6's face-round reading of the trunks:
 - "Roughly 1.5–2 head lengths ... the face is small relative to the trunk";
 - "its base looks pinched and narrower than the face around it";
@@ -104,7 +106,7 @@ Luna on wild seed 40 in the face round said: "black shapes look like wings or li
 - **Rest pose.** On axial bodies the arm rest target is now out to the side and back: `AXIAL_ARM_REST` = (−0.2, −0.35, 0.75) × reach. Seed 40's face is now 0 % covered in neutral, idle, walk and display.
 - **Display pose.** Every arm is now raised up and out, `DISPLAY_ARM_RAISE` = (−0.2, 0.9, 0.5) × reach, instead of straight forward (0.35, 0.55, 0).
   - With the old display the survey of generated animals found 17 face hits, up to 46 %.
-  - With the new one, only wild bipeds with wings (seeds 19, 38, 115) keep a side-view hit, at 6 % or less.
+  - With the new one, only wild bipeds with wings (seeds 19, 38, 115) keep a side-view hit, at display t = 1.1: 4.67 %, 3.43 % and 2.98 % of the face vertices at full sampling (reproduced by the Astra review). These three are pinned in the occlusion test with a 6 % acceptance ceiling (see Tests).
 - **Occlusion metric.** `tests/helpers/composer-head-occlusion.mjs`:
   - linear blend skinning on the CPU, as the GPU does it;
   - rays from the face vertices (head, eyes, mouth) toward the three review cameras of `tests/fauna-face-closeups.html`;
@@ -145,16 +147,26 @@ Not touched: LIFE_FILES (`tests/life-cpu-digest.test.mjs` still passes), terrain
 
 ## Tests
 
-New, for the coordinator to register (EC4 does not edit `package.json`):
+New, registered in `package.json` (`npm test`) by EC4-READY on 2026-10-04:
 - `tests/fauna-composer-head-occlusion.test.mjs`, with helper `tests/helpers/composer-head-occlusion.mjs`:
   - seed 40 is at 0 % in 7 poses, and its rest hands sit behind the head root and out beside it;
   - a negative test: the graph-3 rest hands hide more than 25 % of seed 40's face;
   - the review specimens stay at or under 2 % (6 % in display);
-  - 64 wild plus 64 coherent animals stay at or under 3 % (8 % in display).
+  - **known winged specimens:** wild seeds 19, 38 and 115 at display t = 1.1, full vertex sampling, side cover pinned at 4.67 %, 3.43 % and 2.98 % (±0.05 points), each under a documented **6 % acceptance ceiling**;
+  - 64 wild plus 64 coherent animals (seeds 0–63) plus wild seed 115 stay at or under 3 % (8 % in display). The 8 % is a coarse-sampled (stride 6) regression guard over the corpus, not the acceptance ceiling; the 6 % ceiling applies to the pinned known specimens.
+  - Limits of the metric: it counts sampled face vertices hidden from the three review cameras, not projected face pixels or eye visibility, and it samples discrete motion times, not continuous animation or every camera.
 
 Extended:
 - `tests/fauna-composer-head-geometry.test.mjs`: the trunk length in head lengths, a base of at least 0.7 cW, a rest chain with every bone end above its section, a forward-turned tip, nostril and lip vertices, the seam disc inset and the budget.
 - The ec4Drift checks in `tests/fauna-composer-individual.test.mjs` and `tests/fauna-composer-skin4-links.test.mjs`.
+
+### EC4-READY verification (2026-10-04, after b86b0ad)
+
+Run once each in the EC4 worktree. The log is in `test-results/finish-round-2026-10-04/EC4-READY/affected-suite.log`.
+- `npx tsc --noEmit -p .`: exit 0 with no output and no filtering. `@dimforge/rapier3d-compat` now resolves.
+- `node --test` on 20 files: the 17 node test files that import the changed composer modules (directly or through `fauna-composer-rig`, `-species`, `fauna-composer`, `creature-lab-composer` or `creature-lab`; `creature-lab-eyes` is one of them), plus `fauna-composer-recipe-independent` and the rest of the earlier extended set (`fauna-coat-fields`, `fauna-review-environment`). Result: exit 0, 202 tests, 202 pass. This includes the gait 435-recipe graph digest.
+- `life-cpu-digest` was skipped because `git diff --quiet main -- <its 8 src files>` exits 0.
+- Not run: the composer browser suite, any capture, a fresh Luna judgment, the full `npm test` (left to the merger), and a headset check.
 
 ## Odd-combination rarity
 
@@ -216,15 +228,19 @@ All paths are under `C:/LLM/IWSDK/universe-atlas/test-results/fauna-eye-round-20
 - `luna/`: prompts and outputs.
 - `part-diff/specimens.json`, `part-diff/graph435.json`, `part-diff/skin2.json`.
 
-## Deferred
+## OPEN visual limitations (owner disposition needed; not passed)
 
-- **A dotted light line at some part seams** (the trunk junction, behind the eye, head to neck).
+These are open. The a13 trunk PASS verdicts do not close them: two broad PASS labels do not erase specific defects that Luna repeated. None was re-judged in EC4-READY (2026-10-04), which made no geometry change and re-captured nothing.
+
+- **OPEN: dotted light line at part seams** (the trunk junction, behind the eye, head to neck).
   - It is visible in the BEFORE sheets too.
   - The seam vertices are bitwise identical, with identical weights, so it is not a geometry crack.
   - Insetting the hidden junction discs did not remove it.
-  - My reading: it is renderer-level, not mesh-level; the cause is unknown.
-- **Luna's a13 reservations.** Flat facets and shading bands are still visible on the trunk, head and ears ("Flat facets are noticeable on the trunk and head"). The centipede tip looks "capped or blunt from the side" and its nostrils show only in the front view. All four trunks still passed in both runs.
-- **Luna is not stable on identical sheets.** a9 passed 4 of 4, and a re-run on byte-identical sheets failed 2. Following the EC2 rule, only a13 counts as a pass, because it passed in two dedicated runs.
-- **Wild bipeds with wings (seeds 19, 38, 115):** up to 6 % of the face is covered in the side view during the display motion only. No specimen is affected.
+  - My reading: it is renderer-level, not mesh-level. That is a hypothesis; the cause is unknown.
+- **OPEN: trunk faceting.** Flat facets and shading bands are still visible on the trunk, head and ears (a13: "Flat facets are noticeable on the trunk and head"), despite 16 radial segments.
+- **OPEN: capped centipede trunk tip.** a13: the centipede tip looks "capped or blunt from the side", and its nostrils show only in the front view.
+- **OPEN: giraffe trunk tip clipped in the review panels.** The panels crop the giraffe's trunk tip and pose, so a verdict cannot assess the whole tip. Its tip has not been judged; it needs a framing that shows the whole trunk.
+- **Luna is not stable on identical sheets.** a9 passed 4 of 4, and a re-run on byte-identical sheets failed 2. Following the EC2 rule, only a13 counts as a pass, because it passed in two dedicated runs. Future disputed specimens: fixed image hashes, model, prompt and rubric, three independent judgments decided in advance, every verdict archived, "cannot tell" stays unverified.
+- **Wild bipeds with wings (seeds 19, 38, 115):** 4.67 %, 3.43 % and 2.98 % of the face vertices are covered in the side view at display t = 1.1. They are now pinned under the 6 % ceiling in the occlusion test. No review specimen is affected. Whether a nonzero display-pose cover is acceptable at all is the owner's call.
 - **Carried from EC2:** the contested cat, owl disc, raptor, gecko, W pupil, small dark eyes on dark coats, the compound, spider and stalk legibility.
 - **Not done in EC4:** an in-headset check. The definition of done in `AGENTS.md` requires the target runtime; a new web preview needs the owner's explicit OK.
