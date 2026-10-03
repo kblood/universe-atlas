@@ -710,6 +710,15 @@ function buildCraterField(body: Body, surfaceAgeMyr: number): CraterField | null
  * bound, so "craters that have not formed yet at this surface age do not
  * appear" is an explicit statement in this code, not an implicit default.
  */
+const pinF64 = new Float64Array(1), pinI64 = new BigInt64Array(pinF64.buffer);
+/** The largest double strictly below a finite `x` (bit arithmetic only, exact). */
+export function previousDouble(x: number): number {
+  if (!Number.isFinite(x)) return x;
+  if (x === 0) return -Number.MIN_VALUE;
+  pinF64[0] = x;
+  pinI64[0] += x > 0 ? -1n : 1n;
+  return pinF64[0];
+}
 /**
  * `waterLevelM` (new, additive, default `0` - the literal every existing
  * caller already depended on, matching `includeCraters`'s own precedent):
@@ -755,6 +764,8 @@ export function terrainSampler(
   const climate = body.water ? surfaceClimate(climateForcingFor(body)) : null;
   // Climate datum: the current shoreline, or 0 m when the sea has fully gone.
   const seaDatumM = climateDatumM(waterLevelM);
+  // The pin partner for the validity observer below (only read when one is given).
+  const belowWaterM = onOceanThreshold ? previousDouble(waterLevelM) : waterLevelM;
   const climateScratch = climate ? createClimateSample() : null;
   // The grain factors come from the base core itself (its n(d,115,35) and
   // n(d,R/800,74) via the shared macroNoise helper), so they cannot drift.
@@ -777,7 +788,18 @@ export function terrainSampler(
       : sample.elevationM;
     // Optional read-only observer for exact forest cache validity. This is the
     // branch threshold before ocean sampling bypasses immutable river geometry.
-    if(body.water)onOceanThreshold?.(uncrateredHeightM);
+    // terrain-1.8.0-relief (P4-RELIEF r2): a LAND sample's output (its climate
+    // colour here, and the classifier gates and climate that share the sea
+    // datum, surface-biomes-2.1-sea-datum) depends CONTINUOUSLY on the water
+    // level, not only through this step threshold. The observer therefore also
+    // receives the pin pair (largest double below the water level, the water
+    // level), which narrows an exact `threshold < water` validity interval
+    // (lower exclusive, upper inclusive; forest-water-validity.ts) to exactly
+    // this water level. Ocean samples keep the single step threshold.
+    if(body.water&&onOceanThreshold){
+      onOceanThreshold(uncrateredHeightM);
+      if(uncrateredHeightM>=waterLevelM){onOceanThreshold(belowWaterM);onOceanThreshold(waterLevelM);}
+    }
     const ocean=!!body.water&&uncrateredHeightM<waterLevelM;
     const craterDeltaM = craters && !ocean ? craterHeightDeltaAt(craters, d) : 0;
     const elevationM = uncrateredHeightM + craterDeltaM;

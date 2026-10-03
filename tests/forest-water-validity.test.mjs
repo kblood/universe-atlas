@@ -5,16 +5,58 @@ import {ForestWaterValidity,forestWaterIntervalContains} from '../src/forest-wat
 import {createForestCensus} from '../src/forest-census.ts';
 import {forestPatch} from '../src/forest-patch.ts';
 import {forestHabitat} from '../src/forest-habitat.ts';
-import {terrainSampler} from '../src/terrain.ts';
+import {terrainSampler,previousDouble} from '../src/terrain.ts';
 import {buildCanonicalHydrology} from '../src/hydrology-registry.ts';
 import {biomeClassifier} from '../src/surface-biomes.ts';
 import {galaxies,refByAddress,system} from '../src/catalog.ts';
 import {setArchivedInlandRiversForTesting} from '../src/inland-rivers.ts';
 
 const body=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
-// surface-biomes-2-climate turned the old face:2 patch to snow (no slope-rejected
-// trees left); this face:4 patch has 35 eligible cells and 30 slope-rejected trees.
-const address={face:4,n:Math.ceil(2*body.radiusM/18),x:25214,y:46241};
+// Fixture history: surface-biomes-2-climate turned the old face:2 patch to snow;
+// the face:4 (25214, 46241) patch then had 35 eligible cells and 30 slope-rejected
+// trees. terrain-1.8.0-relief (P4-RELIEF r2) lowers that land below the 300 m
+// test water (empty census). The patch is now FOUND, not hard-coded: the first
+// direction in fib(i, 65536) order that is dry land with v2 forest at water 300
+// and a +-5 m habitat-probe slope >= 0.4, whose patch has slope-rejected trees
+// and more eligible cells than rejections. On terrain-1.8.0-relief this is
+// fib i 17234 (lat 28.30 deg, ground 2301 m): face 5 (23790, 56593), 26 eligible,
+// 4 rejected, 22 present.
+//
+// Sea datum (surface-biomes-2.1-sea-datum, terrain-1.8.0-relief): the climate,
+// the coast/forest gates and the land colour are measured from the CURRENT sea
+// level, so every land sample depends continuously on the water level, and the
+// terrain observer pins a patch with land to exactly its own water level. A
+// completed land patch is therefore reused only at an unchanged water level;
+// before the datum it was reused anywhere inside its H/G step envelope.
+const FIXTURE_WATER_M=300;
+const fib=(i,N)=>{const y=1-2*(i+.5)/N,p=i*2.399963229728653,r=Math.sqrt(1-y*y);return [Math.cos(p)*r,y,Math.sin(p)*r];};
+function patchAt(d,n){
+  const [cx,cy,cz]=d,components=[cx,-cx,cy,-cy,cz,-cz],axis=Math.max(...components),face=components.indexOf(axis);
+  const [u,v]=[[-cz/axis,cy/axis],[cz/axis,cy/axis],[cx/axis,-cz/axis],[cx/axis,cz/axis],[cx/axis,cy/axis],[-cx/axis,cy/axis]][face];
+  return {face,n,x:Math.floor(Math.min(n-1,Math.floor((u+1)*n/2))/8),y:Math.floor(Math.min(n-1,Math.floor((v+1)*n/2))/8)};
+}
+function findFixturePatch(){
+  const n=Math.ceil(2*body.radiusM/18),W=FIXTURE_WATER_M;
+  const sample=terrainSampler(body,undefined,undefined,false,W),classify=biomeClassifier(body,W),habitat=forestHabitat(sample,classify,body.radiusM,true);
+  const up=new THREE.Vector3(0,1,0),pole=new THREE.Vector3(1,0,0);
+  const slopeAt=dir=>{const d=new THREE.Vector3(...dir),right=new THREE.Vector3().crossVectors(Math.abs(d.y)>.9?pole:up,d).normalize();
+    const a=d.clone().addScaledVector(right,5/body.radiusM).normalize(),b=d.clone().addScaledVector(right,-5/body.radiusM).normalize();
+    return Math.abs(sample(a.toArray()).groundHeightM-sample(b.toArray()).groundHeightM)/10;};
+  for(let i=0,N=1<<16;i<N;i++){
+    const d=fib(i,N),s=sample(d);
+    if(s.wet||!classify(d,s.groundHeightM).forestPotential||slopeAt(d)<.4)continue;
+    const a=patchAt(d,n);let eligible=0,rejected=0;
+    for(const cell of forestPatch(body.seed,a).cells){
+      const c=sample(cell.direction),b=classify(cell.direction,c.groundHeightM);
+      if(c.wet||!b.forestPotential||!(cell.roll<.76*b.forestSuitability01))continue;
+      eligible++;if(!habitat(cell).present)rejected++;
+    }
+    if(rejected>0&&eligible>rejected)return {address:a,i,eligible,rejected};
+  }
+  throw new Error('no forest-water-validity fixture patch found');
+}
+const fixture=findFixturePatch(),address=fixture.address;
+console.log('# forest-water-validity fixture',JSON.stringify(fixture));
 function complete(census,a){let result=census.start(a);while(!result)result=census.step(8);return result;}
 
 test('interval boundaries preserve strict ocean comparisons exactly',()=>{
@@ -38,13 +80,14 @@ test('waterless bodies retain an unbounded interval',async()=>{
 });
 
 test('real patch interval records primary and every evaluated slope probe, including rejected trees',async()=>{
-  const census=await createForestCensus(body,300),actual=complete(census,address);
-  const sample=terrainSampler(body,undefined,undefined,false,300),classify=biomeClassifier(body,300),habitat=forestHabitat(sample,classify,body.radiusM,true);
-  const thresholds=[],d=new THREE.Vector3(),right=new THREE.Vector3(),a=new THREE.Vector3(),b=new THREE.Vector3();
+  const W=FIXTURE_WATER_M;
+  const census=await createForestCensus(body,W),actual=complete(census,address);
+  const classify=biomeClassifier(body,W);
+  const thresholds=[],ground=[],d=new THREE.Vector3(),right=new THREE.Vector3(),a=new THREE.Vector3(),b=new THREE.Vector3();
   const up=new THREE.Vector3(0,1,0),pole=new THREE.Vector3(1,0,0),ad=[0,0,0],bd=[0,0,0];
-  let eligible=0,rejected=0,primary=0,probes=0;
-  const terrain=terrainSampler(body,undefined,undefined,false,300,h=>thresholds.push(h));
-  const track=dir=>{const result=terrain(dir);thresholds.push(result.groundHeightM);return result;};
+  let eligible=0,rejected=0,primary=0,samples=0,landSamples=0;
+  const terrain=terrainSampler(body,undefined,undefined,false,W,h=>thresholds.push(h));
+  const track=dir=>{const result=terrain(dir);thresholds.push(result.groundHeightM);ground.push(result.groundHeightM);samples++;if(result.groundHeightM>=W)landSamples++;return result;};
   const checked=forestHabitat(track,classify,body.radiusM,true);
   for(const cell of forestPatch(body.seed,address).cells){
     const s=track(cell.direction);primary++;
@@ -52,39 +95,53 @@ test('real patch interval records primary and every evaluated slope probe, inclu
     const preSlope=!s.wet&&biome.forestPotential&&cell.roll<.76*biome.forestSuitability01;
     const result=checked(cell);
     if(!preSlope)continue;
-    eligible++;probes+=2;
+    eligible++;
     d.set(...cell.direction);right.crossVectors(Math.abs(d.y)>.9?pole:up,d).normalize();
     a.copy(d).addScaledVector(right,5/body.radiusM).normalize();b.copy(d).addScaledVector(right,-5/body.radiusM).normalize();
     a.toArray(ad);b.toArray(bd);track(ad);track(bd);
     if(!result.present)rejected++;
   }
-  const lower=Math.max(...thresholds.filter(t=>t<300),-Infinity),upper=Math.min(...thresholds.filter(t=>t>=300),Infinity);
+  const lower=Math.max(...thresholds.filter(t=>t<W),-Infinity),upper=Math.min(...thresholds.filter(t=>t>=W),Infinity);
   assert.ok(rejected>0,'the fixture contains candidates rejected after both slope probes were evaluated');
-  assert.equal(thresholds.length,4*primary+8*eligible,'one H callback and one returned G per sample; duplicate reference queries do not change the envelope');
+  assert.equal(samples,2*primary+4*eligible,'each primary is sampled twice and each eligible candidate adds two probes, twice');
+  assert.equal(thresholds.length,2*samples+2*landSamples,'one H callback and one returned G per sample, plus the sea-datum pin pair per land sample');
   assert.deepEqual(actual.waterInterval,[lower,upper]);
   assert.ok(eligible>rejected);assert.ok(actual.present>0);
-  const within=await createForestCensus(body,1000),inside=complete(within,address);
-  assert.deepEqual(inside.records,actual.records,'a water level within the exact interval preserves canonical census records');
+  // A forested patch has land samples, so its interval is pinned to exactly W.
+  assert.ok(landSamples>0);
+  assert.deepEqual(actual.waterInterval,[previousDouble(W),W],'land patch: valid at exactly its own water level');
+  assert.equal(forestWaterIntervalContains(actual.waterInterval,W),true);
   assert.equal(forestWaterIntervalContains(actual.waterInterval,lower),false);
-  assert.equal(forestWaterIntervalContains(actual.waterInterval,upper),true);
   assert.equal(forestWaterIntervalContains(actual.waterInterval,upper+1e-5),false);
+  const same=await createForestCensus(body,W),again=complete(same,address);
+  assert.deepEqual(again.records,actual.records,'the exact water level reproduces canonical census records');
+  // Why the pin is required: the step-only (H/G) envelope of this patch would
+  // still contain 1000 m, but the census at 1000 m differs (the sea datum moved
+  // the climate and the forest gate), so reusing there would return stale trees.
+  const stepOnly=[Math.max(...ground.filter(t=>t<W),-Infinity),Math.min(...ground.filter(t=>t>=W),Infinity)];
+  assert.equal(forestWaterIntervalContains(stepOnly,1000),true,'fixture: 1000 m lies inside the step-only envelope');
+  const higher=await createForestCensus(body,1000),moved=complete(higher,address);
+  assert.notDeepEqual(moved.records,actual.records,'sea datum 1000 m changes the canonical census of this patch');
 });
 
 test('family and water both gate inherited completed patches; returned interval copies are isolated',async()=>{
-  const first=await createForestCensus(body,300),original=complete(first,address),saved=original.records.slice();
+  const W=FIXTURE_WATER_M;
+  const first=await createForestCensus(body,W),original=complete(first,address),saved=original.records.slice();
   original.waterInterval[0]=Number.POSITIVE_INFINITY;original.records.fill(NaN);
-  const inRange=await createForestCensus(body,1000,undefined,undefined,first);
+  const inRange=await createForestCensus(body,W,undefined,undefined,first);
   assert.equal(inRange.diagnostics().reusedPatches,1);
   assert.deepEqual(complete(inRange,address).records,saved,'caller edits cannot mutate immutable cached records or interval metadata');
 
-  const outside=await createForestCensus(body,3000,undefined,undefined,first);
-  assert.equal(outside.diagnostics().reusedPatches,0,'outside the recorded interval forces a new complete census');
-  const outsidePatch=complete(outside,address),fresh=await createForestCensus(body,3000);
-  assert.deepEqual(outsidePatch.records,complete(fresh,address).records);
-  assert.equal(outside.diagnostics().misses,1);
+  for(const water of [1000,3000]){
+    const outside=await createForestCensus(body,water,undefined,undefined,first);
+    assert.equal(outside.diagnostics().reusedPatches,0,`water ${water}: outside the recorded interval (sea datum moved) forces a new complete census`);
+    const outsidePatch=complete(outside,address),fresh=await createForestCensus(body,water);
+    assert.deepEqual(outsidePatch.records,complete(fresh,address).records);
+    assert.equal(outside.diagnostics().misses,1);
+  }
 
   const changed={...structuredClone(body),seed:body.seed+'-different-family'};
-  const mismatch=await createForestCensus(changed,1000,undefined,undefined,first);
+  const mismatch=await createForestCensus(changed,W,undefined,undefined,first);
   assert.notEqual(mismatch.family,first.family);
   assert.equal(mismatch.diagnostics().reusedPatches,0,'body family mismatch rejects an otherwise in-range patch');
 
@@ -92,9 +149,9 @@ test('family and water both gate inherited completed patches; returned interval 
     radiusM:body.radiusM,origin:[0,0,1],east:[1,0,0],north:[0,1,0],boundsM:[-100,-100,100,100],channels:[],lakes:[],sites:[],
     stats:{samples:0,lengthM:0,maxCutM:0,maxFillM:0,buildAlgorithm:'fixture'}};
   const riverBody={...structuredClone(body),hydrology};
-  const withRiver=await createForestCensus(riverBody,300),riverPatch=complete(withRiver,address);
+  const withRiver=await createForestCensus(riverBody,W),riverPatch=complete(withRiver,address);
   const oldFamily=withRiver.family;riverBody.hydrology.boundsM[0]=-200;
-  const changedRiver=await createForestCensus(riverBody,1000,undefined,undefined,withRiver);
+  const changedRiver=await createForestCensus(riverBody,W,undefined,undefined,withRiver);
   assert.notEqual(changedRiver.family,oldFamily,'same river ID cannot hide changed hydrology geometry');
   assert.equal(changedRiver.diagnostics().reusedPatches,0);
   assert.equal(complete(changedRiver,address).present,riverPatch.present);
@@ -127,18 +184,22 @@ test('canonical river patch reuses only within its sampled H/G interval (archive
   assert.deepEqual(complete(fresh,a).records,original.records,'reused and fresh canonical river censuses agree');
 });
 
-test('two water-only census hops reuse exact immutable records through both intervals',async()=>{
-  const first=await createForestCensus(body,300),source=complete(first,address);
-  const second=await first.atWater(1000);
-  assert.equal(second.family,first.family);assert.notEqual(second.context,first.context);
-  assert.equal(second.diagnostics().reusedPatches,1);
+test('water-only census hops reuse exact immutable records only at an unchanged sea datum',async()=>{
+  // terrain-1.8.0-relief: a land patch is pinned to its own water level (see the
+  // header). Same-level hops reuse; a hop that moves the sea recomputes, and the
+  // result never depends on the path taken to reach a water level.
+  const W=FIXTURE_WATER_M;
+  const first=await createForestCensus(body,W),source=complete(first,address);
+  const second=await first.atWater(W);
+  assert.equal(second.family,first.family);assert.equal(second.diagnostics().reusedPatches,1);
   const secondPatch=complete(second,address);assert.deepEqual(secondPatch.records,source.records);
-  const [lo,hi]=secondPatch.waterInterval,water2=1000<hi?Math.min(1200,(1000+hi)/2):1000;
-  assert.ok(forestWaterIntervalContains(secondPatch.waterInterval,water2));
-  const third=await second.atWater(water2);
+  const third=await second.atWater(1000);
   assert.equal(third.family,first.family);assert.notEqual(third.context,second.context);
-  assert.equal(third.diagnostics().reusedPatches,1);
-  const thirdPatch=complete(third,address),fresh=await createForestCensus(body,water2);
-  assert.deepEqual(thirdPatch.records,source.records);
-  assert.deepEqual(thirdPatch.records,complete(fresh,address).records);
+  assert.equal(third.diagnostics().reusedPatches,0,'the sea datum moved: no stale reuse');
+  const thirdPatch=complete(third,address),fresh=await createForestCensus(body,1000);
+  assert.deepEqual(thirdPatch.records,complete(fresh,address).records,'path-independent: hop result equals a fresh census');
+  assert.notDeepEqual(thirdPatch.records,source.records);
+  const fourth=await third.atWater(1000);
+  assert.equal(fourth.diagnostics().reusedPatches,1);
+  assert.deepEqual(complete(fourth,address).records,thirdPatch.records);
 });
