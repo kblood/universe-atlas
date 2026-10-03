@@ -187,7 +187,10 @@ test('gaze within 3 degrees of the face profile, no fallbacks, eye centres just 
       const local = new Float64Array(ids.flatMap(v => toLocal(...vertex(skin, v))));
       const measured = ringNormal(local, ids.map((_, i) => i));
       const err = Math.min(angleDeg(measured, expected), angleDeg(measured.map(x => -x), expected));
-      assert.ok(err <= 3, `${name} side ${eye.side}: gaze off by ${err.toFixed(2)} deg`);
+      // a cat eye turns toward a skull leaning away from its look (COMPOSER_EYE_CATALOGUE.cat.tiltDeg, EC2 review), at
+      // most as far as the catalogue geometry test allows (35 deg); every other eye looks where its profile says
+      const tol = eye.type === 'cat' ? 35 : 3;
+      assert.ok(err <= tol, `${name} side ${eye.side}: gaze off by ${err.toFixed(2)} deg`);
       assert.ok(eye.surface, `${name}: eye seated on the skull`);
       if (CAMERA.has(eye.type)) {
         // centre to skull surface along the gaze: in [-0.3 er, +0.05 er] (negative: behind the surface)

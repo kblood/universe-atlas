@@ -1,13 +1,13 @@
 {
  "schema": "composer-skin4-links-1",
  "capturedAt": {
-  "commitBase": "a52f536",
+  "commitBase": "76bb72a",
   "date": "2026-10-03",
   "graph": "fauna-composer-graph-3",
   "skin": "fauna-composer-skin-4",
   "eye": "fauna-composer-eye-2",
   "recipe": 4,
-  "note": "Skin-4 digests (positions, index, skinIndex, skinWeight, colors) and gloss digests of the 28 migrated neutral v1 texts of composer-skin3-links.json, built under the current eye rules (eyeRules 2; owner decision 2026-10-03: old links upgrade). Eye round EC2 rebuilt every eye as the catalogue geometry (fauna-composer-eye-2), replaced the dark mouth disc of the blunt face by a closed-mouth lens (EC2 review; nostrils are unchanged) and raised the eye sizes, so every entry drifts from its skin-3 pin (driftFromSkin3, previous pin in skin3). The same texts under eyeRules 1 still build their skin-3 pin byte for byte. Bone counts are unchanged (eyes are mesh-only)."
+  "note": "Skin-4 digests (positions, index, skinIndex, skinWeight, colors) and gloss digests of the 28 migrated neutral v1 texts of composer-skin3-links.json, built under the current eye rules (eyeRules 2; owner decision 2026-10-03: old links upgrade). Eye round EC2 rebuilt every eye as the catalogue geometry (fauna-composer-eye-2), replaced the dark mouth disc of the blunt face by a closed-mouth lens (EC2 review; nostrils are unchanged) and raised the eye sizes, so every entry drifts from its skin-3 pin (driftFromSkin3, previous pin in skin3). The same texts under eyeRules 1 still build their skin-3 pin byte for byte. Explicit face-round kinds (round, horizontal, vertical-slit, compound, eyespot) are NOT byte-identical across the two rule sets either: under eyeRules 2 they too are rebuilt by the catalogue path (larger, legibility rules, periocular halo), which overrides the design statement that explicit old kinds stay byte-identical under both epochs (owner decision 1, old links upgrade; and the dark-coat fixes); only eyeRules 1 (Earlier eye rules) keeps them. Bone counts are unchanged (eyes are mesh-only)."
  },
  "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
  "byText": {
@@ -201,7 +201,7 @@
    "skin3": "a10583fecc6bca3da7d62fa51e01d82cd819583f9634562f2b50739c9e6bc569"
   },
   "v1*layout_limbless*legPairs_0*bodyLength_1.56*girth_1.23*posture_0.87*torso_segmented*neckLength_0*head_muzzle*headSize_0.83*snoutLength_1.08*horns_crest*legs_plantigrade*legLength_1.19*feet_spike*arms_none*armLength_0.4*hands_pincer*tail_tufted*tailLength_0.89*armor_none*wings_feathered*wingSpan_2.99*trunk_none*trunkLength_1.03*palette_slate*colorSeed_5521": {
-   "skin": "dc5aea98570b115fe689fdf9c14b84ece04c5bcea68df27bae13a4f819d54664",
+   "skin": "d2dd7cfe33feb78e42a6325320760b472746d6756f3dc929453be0bcb02f39b5",
    "gloss": "d032ec1d6e37d343aae0c20595a31a6b611c47daa94f3d0aed207494226e9197",
    "vertices": 5016,
    "triangles": 9884,

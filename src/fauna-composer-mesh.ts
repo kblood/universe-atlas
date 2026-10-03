@@ -1576,7 +1576,11 @@ export const COMPOSER_EYE_CATALOGUE = Object.freeze({
    * paler than the face around the dark eye (the face round's eyes vanished into dark and mid-grey faces) */
   periocular: [0.36, 0.30, 0.25] as RGB, periocularLum: 0.18, periocularOverSkin: 1.3, periocularSkinGain: 2.5, periocularOwnLum: 0.08,
   sclera: [0.72, 0.68, 0.60] as RGB, nictitans: [0.50, 0.42, 0.40] as RGB, nictitansMix: 0.6, brow: 0.85,
-  disc: [0.55, 0.50, 0.42] as RGB, discMix: 0.3,
+  /** owl facial disc: its pale band (the outer-lid ring) mixes discMix toward `disc` and is lifted to at least discLum,
+   * and its edge (the orbit ring) mixes discEdge toward it, so the whole disc is pale out to a crisp edge on the skin (EC2
+   * review: at mix 0.3 the disc read only as pale strips beside the beak, "the facial-disc ring is missing or unclear",
+   * and a dark ruff read as "heavy dark brows", GPT Luna 6) */
+  disc: [0.70, 0.64, 0.52] as RGB, discMix: 1, discLum: 0.4, discEdge: 0.6,
   /** compound eyes: facet floor (luminance, and a multiple of the head skin), lens shades (a, b), lattice and pseudopupil */
   facetMin: 0.15, facetOverSkin: 3, lens: [1.5, 1.15] as readonly number[], lattice: 0.55, pseudopupil: 0.12,
   /** compound domes are this much larger than the face round's (they vanished at normal size) */
@@ -1609,6 +1613,16 @@ export const COMPOSER_EYE_CATALOGUE = Object.freeze({
   /** a vertical-slit, wide-slit or W-pupil eye is this much larger: at the preset size the slit was unreadable on a
    * big crocodilian head, the cat's iris on a long muzzle and the cuttlefish W on a horse */
   slitSize: 1.25,
+  /** the cat kind is up to `size` larger again, but never past maxEr x craniumHeight by the boost (the preset size on a
+   * long muzzle read as "eyes too small and side-set" at normal size, GPT Luna 6, EC2 review), and it turns toward a
+   * skull leaning away from its look like a lidless eye, by the excess over tiltDeg (at the full size and the preset's
+   * yaw it stood 0.7 er proud of the skull on its muzzle side, read as "rim flaps" and "layered protrusions") */
+  cat: {size: 1.8, tiltDeg: 14, maxEr: 0.5},
+  /** the owl kind is a little smaller than its preset, so its facial disc shows around the eye (at 1.6 the eyes filled
+   * the face and the disc showed only as pale strips; "the eyes look very large and protruding", GPT Luna 6, EC2 review),
+   * sits `up` x craniumHeight higher (off the beak's base), and its two discs meet `midline` x craniumWidth off the
+   * midline (at 0.03 a blue stripe split the face, "a sharp blue wedge cuts down the forehead") */
+  owl: {size: 0.68, up: 0.12, midline: 0.005},
   /** chameleon turret axis = look + turretNormal x the skull normal (normalised): nearly the normal */
   turretNormal: 4,
   /** camera-eye seat: when the skull under the eye (the mean normal of five exits, the site and `reach` er either way
@@ -1688,12 +1702,13 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
   const cam = FACE_EYE_PROFILE[composerEyeProfileId(r, 'round')], camK = Math.max(cam.k, K.minK) * K.sizeBoost;
   const [ex, ey, ez] = eyeAnchor(skull, H, cH, cW), onMandibles = face === 'mandibles';
   const P = T.placement, own = (side: number) => (P.kind === 'independent' && side > 0 && P.right ? P.right : null);
+  const isCat = eyes.kind === 'cat', isOwl = eyes.kind === 'owl';
   const yawOf = (side: number) => own(side)?.yawDeg ?? P.yawByFace?.[face] ?? P.yawDeg ?? cam.gazeYawDeg;
   const pitchOf = (side: number) => own(side)?.pitchDeg ?? P.pitchDeg ?? COMPOSER_EYE_PITCH_DEG;
   /** the camera site, moved forward and inward for a gaze more frontal than the face's own, and up for a dorsal one */
   const siteOf = (side: number, yaw: number, pitch: number): EyeVec3 => {
     const shift = clamp((cam.gazeYawDeg - yaw) / Math.max(cam.gazeYawDeg, 1), 0, 1), up = pitch > 10 ? Math.sin(pitch * deg) : 0;
-    return [ex + 0.1 * H * shift, ey + 0.2 * cH * up, side * ez * (1 - 0.45 * shift) * (1 - 0.25 * up)];
+    return [ex + 0.1 * H * shift, ey + 0.2 * cH * up + (isOwl ? K.owl.up * cH : 0), side * ez * (1 - 0.45 * shift) * (1 - 0.25 * up)];
   };
   const skinAt = (hit: RayHit | null): RGB => hit ? surfaceColour(hit) : pal.base;
   /** compound facets: the palette eye colour, lifted toward a reddish brown until it clears the skin under the eye */
@@ -1706,7 +1721,10 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
       : role === EYE_ROLE.pseudopupil ? scaleC(facet, K.pseudopupil) : scaleC(facet, K.lattice));
 
   if (T.structure === 'camera') {
-    const spec = legibleSpec(catalogueEyeSpec(T)), er = camK * T.size * cH * sizeK * (spec.turret ? K.turretSize : ['vertical-slit', 'slit-wide', 'w'].includes(spec.pupil.kind) ? K.slitSize : 1);
+    const spec = legibleSpec(catalogueEyeSpec(T)), er0 = camK * T.size * cH * sizeK * (spec.turret ? K.turretSize : ['vertical-slit', 'slit-wide', 'w'].includes(spec.pupil.kind) ? K.slitSize : 1);
+    // the cat's boost stops at cat.maxEr x craniumHeight (a juvenile's already larger eye bulged off its head at the full
+    // boost, "oversized bulging eyes", GPT Luna 6, EC2 review); it never shrinks an eye
+    const er = er0 * (isCat ? clamp(K.cat.maxEr * cH / er0, 1, K.cat.size) : isOwl ? K.owl.size : 1);
     const built: {patch: EyePatch; side: number; centre: EyeVec3; gaze: EyeVec3; hit: RayHit | null; surf: RGB[]}[] = [];
     const Q = K.seat, local = trianglesNear(headTris, [ex, ey, 0], 0.6 * H + 2 * er).tris;
     /** how squarely the skull under the eye faces `look` (see K.seat), -Infinity when the eye would overhang */
@@ -1755,11 +1773,13 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
       let gaze = spec.turret && hit ? normalize3(addV(look, hit.normal, K.turretNormal)) : look;
       // a lidless eye on a skull that still leans more than seat.tiltLidless from the look turns toward the skull by the
       // excess, so a big gecko eye on a curving head side sits in it instead of standing a rim's height proud on one side
-      const under = spec.spectacle ? facing(site, look) : null;
-      if (under?.normal && Number.isFinite(under.score)) gaze = turnToward(look, under.normal, Q.tiltLidless * deg);
+      // so does a cat eye by its own (larger) limit: a big cat eye at the cranium's front corner otherwise stands 0.7 er
+      // proud of the skull on its muzzle side, read as "rim flaps" and "layered protrusions" (GPT Luna 6, EC2 review)
+      const under = spec.spectacle || isCat ? facing(site, look) : null;
+      if (under?.normal && Number.isFinite(under.score)) gaze = turnToward(look, under.normal, (isCat ? K.cat.tiltDeg : Q.tiltLidless) * deg);
       const centre = hit ? addV(hit.point, gaze, -EYE_PATCH.recess * er) : site;
       const near = trianglesNear(headTris, centre, CATALOGUE_PATCH_REACH * er);
-      const patch = buildEyePatch({type: 'round', er, centre, gaze, barAxis: eyeBarAxis(gaze, worldUp), surface: near.tris, spec, forward: [1, 0, 0], midline: {n: [0, 0, side], min: 0.03 * cW}, look});
+      const patch = buildEyePatch({type: 'round', er, centre, gaze, barAxis: eyeBarAxis(gaze, worldUp), surface: near.tris, spec, forward: [1, 0, 0], midline: {n: [0, 0, side], min: (spec.disc ? K.owl.midline : 0.03) * cW}, look});
       for (const h of patch.surface) if (h) h.tri = near.ids[h.tri]!;
       const surf = patch.surface.map((h, k): RGB => {
         if (h) return surfaceColour(h);
@@ -1798,6 +1818,7 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
             // a lidless eye's skin runs plainly up to the brille (a pale halo there sawtoothed against the brille edge)
             if (spec.spectacle) return scaleC(surf[k]!, K.brilleEdge);
             const c = scaleC(surf[k]!, C.outerLid);
+            if (spec.disc) return liftTo(mixC(c, K.disc, K.discMix), K.disc, K.discLum);
             // toward a paler shade of the skin itself, or the pale periocular skin on a near-black coat (a fixed tan
             // halo read as a pale socket on olive and green skins)
             const toward = mixC(K.periocular, gainC(surf[k]!, K.periocularSkinGain), clamp(luminance(surf[k]!) / K.periocularOwnLum, 0, 1));
@@ -1806,7 +1827,7 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
           case EYE_ROLE.brow: return scaleC(surf[k]!, K.brow);
           // radial stripes of paler and darker skin down the cone (the scale rows of a real turret), so it reads as a cone
           case EYE_ROLE.turret: return (k - patch.rings[6]!) % 2 ? scaleC(surf[k]!, K.turretStripe) : gainC(surf[k]!, K.turretGain);
-          case EYE_ROLE.orbit: return surf[k]!;
+          case EYE_ROLE.orbit: return spec.disc ? mixC(surf[k]!, K.disc, K.discEdge) : surf[k]!;
           default: return [0, 0, 0];
         }
       });

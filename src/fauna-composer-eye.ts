@@ -430,7 +430,11 @@ export const CATALOGUE_EYE = Object.freeze({
   outerMargin: [0.2, 0.23, 0.23] as readonly number[], orbitMargin: [0.55, 0.63, 0.63] as readonly number[],
   shelf: {lift: 0.34, drop: 0.2, orbitLift: 0.16, from: 0.25, to: 0.7},
   raised: {raise: 0.35, cornea: 1.15}, crocodile: {raise: 0.3, palpebral: 0.15},
-  disc: {w: 2.1, above: 2.0, below: 2.0, lift: 0.02},
+  /** owl facial disc: the orbit ring (the disc's dark rim, the ruff) at w/above/below, and the outer-lid ring (the
+   * disc's pale band) `outer` er beyond the lid opening, so a pale ring stands between the dark lid and the ruff (the
+   * face round's 0.2 er outer lid left only pale strips beside the beak at normal size, GPT Luna 6, EC2 review); the
+   * lid and the pale band stand at least `plate` er above the eyeball's rim, so the disc is a raised plate the eye sits in */
+  disc: {w: 1.95, above: 2.3, below: 1.85, lift: 0.06, outer: 0.45, plate: 0.04},
   turret: {lift: 0.55, aperture: 0.82, orbit: 1.25, lean: 0.25, rimGloss: 0.35},
   sclera: {gap: 0.03, opening: 0.97},
   nictitatingDeg: 40, spectacleLift: 0.02, spectacleOuterLift: 0.01,
@@ -438,6 +442,8 @@ export const CATALOGUE_EYE = Object.freeze({
    * skull point lies more than wrapOff er off its line is wrapped onto that point (lifted along its normal), so the rim
    * hugs a skull that curves away instead of standing in the air as a flap */
   wrapOff: 0.15,
+  /** see unair in buildCataloguePatch: an outer-lid vertex more than airOff er above its lift off the skull is pulled onto it */
+  airOff: 0.15,
   /** the eyeball stands at most this far (er) above the depth its pupil and inner iris need: a large eye at a skull
    * corner (a lateral eye beside a flat face) otherwise rises to the highest skull point under its rim, a slab */
   domeRiseMax: 0.2,
@@ -472,7 +478,7 @@ export function catalogueEyeSpec(t: CatalogueEyeTraits): CatalogueEyeSpec {
   const turret = t.lid === 'turret' ? {w: ls.turretW ?? 0.8, lift: ls.turretLift ?? C.turret.lift, aperture: C.turret.aperture} : null;
   return {
     pupil, iris: fill ? null : ps.iris ?? E.iris, limbus: fill ? null : ps.limbus ?? E.limbus, fill: [E.slitIrisInner, E.slitIrisFill], lid,
-    outerMargin: C.outerMargin as [number, number, number], orbitMargin: C.orbitMargin as [number, number, number],
+    outerMargin: (brow === 'disc' ? [C.disc.outer, C.disc.outer, C.disc.outer] : C.outerMargin) as [number, number, number], orbitMargin: C.orbitMargin as [number, number, number],
     rollDeg: ls.cornerUpDeg ?? 0, brow: turret ? 'turret' : brow,
     raise: t.brow === 'raised-orbit' ? C.raised.raise : t.brow === 'raised-orbit-shelf' ? C.crocodile.raise : 0,
     shelfLift: brow === 'shelf' ? C.shelf.lift : brow === 'raised-orbit-shelf' ? C.crocodile.palpebral : 0,
@@ -546,6 +552,13 @@ function buildCataloguePatch(o: EyePatchOptions, sp: CatalogueEyeSpec): EyePatch
     if (!o.midline) return [x, y];
     const n = o.midline.n, along = (a[0] * x + b[0] * y) * n[0] + (a[1] * x + b[1] * y) * n[1] + (a[2] * x + b[2] * y) * n[2], cz = dot(c0, n);
     if (along >= 0 || cz + along * er >= o.midline.min) return [x, y];
+    // an owl's facial disc slides sideways onto the midline (the two discs meet there, as on a real owl): pulled in
+    // toward the eye centre, its medial arc left a dark wedge of skull between the discs, read as "a central brow ridge"
+    // and "broken, angular patches" (GPT Luna 6, EC2 review)
+    if (sp.disc) {
+      const na = dot(a, n), nb = dot(b, n), n2 = na * na + nb * nb;
+      if (n2 > 1e-6) { const t = ((o.midline.min - cz) / er - along) / n2; return [x + t * na, y + t * nb]; }
+    }
     const k = Math.max(0, (o.midline.min - cz) / (along * er));
     return [x * k, y * k];
   };
@@ -568,6 +581,19 @@ function buildCataloguePatch(o: EyePatchOptions, sp: CatalogueEyeSpec): EyePatch
     const w = hit ? Math.min(1, Math.max(0, (off - 0.5 * C.wrapOff) / (0.5 * C.wrapOff))) : 0;
     if (w <= 0) return p;
     const q = addS(hit!.point, hit!.normal, liftEr * er), k = w * w * (3 - 2 * w);
+    return [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k, p[2] + (q[2] - p[2]) * k];
+  };
+  /** a rim vertex whose line hits the skull at a grazing angle can still stand in the air (EC2 review: a cat eye's outer
+   * lid 0.39 er off the skull, held up by the lid margin beside it, a flap): one more than airOff er above its own lift
+   * (outerLidLift, raise and shelf; not the margin's) off the closest skull point is pulled onto that point (lifted),
+   * blended in over (airOff, 2 airOff]; a no-op for a vertex that hugs the skull */
+  const unair = (p: Vec3, liftEr: number): Vec3 => {
+    if (!o.surface) return p;
+    const near = closestPointOnSoup(o.surface, p);
+    if (!near) return p;
+    const d = Math.hypot(...sub(near.point, p)) / er - liftEr, w = Math.min(1, Math.max(0, (d - C.airOff) / C.airOff));
+    if (w <= 0) return p;
+    const q = addS(near.point, near.normal, liftEr * er), k = w * w * (3 - 2 * w);
     return [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k, p[2] + (q[2] - p[2]) * k];
   };
   const domeLimit = sp.domeLimit ?? sp.limbus ?? E.limbus, capR2 = sp.corneaRadius * sp.corneaRadius, capBase = Math.sqrt(capR2 - domeLimit * domeLimit);
@@ -617,11 +643,17 @@ function buildCataloguePatch(o: EyePatchOptions, sp: CatalogueEyeSpec): EyePatch
   const lidZ: number[] = [];
   rings.push(positions.length / 3);
   for (let i = 0; i < N; i++) {
-    const t = th(i), [x, y] = mid(...opening(t, L.w, L.above, L.below)), [sz, hit] = surfaceZ(x, y);
-    const z = T ? sc + T.aperture : sp.spectacle ? Math.max(base + E.eyeLift + lift(x, y) + sp.raise, sz + C.spectacleLift) : sz + E.lidLift + sp.raise;
+    const t = th(i), [x, y] = mid(...opening(t, L.w, L.above, L.below)), [sz, hit, off] = surfaceZ(x, y);
+    // an owl's facial disc is a plate at the eyeball's rim height: the lid stands at least there, so the eye sits in
+    // the disc instead of standing out of the skull as a ball (EC2 review: "the eyes protrude strongly", GPT Luna 6)
+    const z = T ? sc + T.aperture : sp.spectacle ? Math.max(base + E.eyeLift + lift(x, y) + sp.raise, sz + C.spectacleLift)
+      : sp.disc ? Math.max(sz + E.lidLift, base + E.eyeLift + C.disc.plate) : sz + E.lidLift + sp.raise;
     lidZ.push(z);
     const nict = nictitans(t);
-    push(at(x + lx, y + ly, z), nict ? 'nictitans' : 'lid', T ? C.turret.rimGloss : sp.spectacle ? 1 : nict ? 0.7 : EYE_GLOSS.lid, hit);
+    // a lid vertex whose line misses the skull is wrapped onto it like the outer rings (EC2 review: a cat eye at the
+    // cranium's front corner left one lid vertex 0.44 er in the air, a flap); a no-op wherever the line hits
+    const p = T || sp.spectacle ? at(x + lx, y + ly, z) : wrap(at(x + lx, y + ly, z), hit, off, z - sz);
+    push(p, nict ? 'nictitans' : 'lid', T ? C.turret.rimGloss : sp.spectacle ? 1 : nict ? 0.7 : EYE_GLOSS.lid, hit);
   }
   // outer lid (shelf and palpebral bump on its upper arc; turret: the cone's shoulder; sclera layout: on the skin)
   const [ow, oa, ob] = [L.w + sp.outerMargin[0], L.above + sp.outerMargin[1], L.below + sp.outerMargin[2]];
@@ -637,7 +669,7 @@ function buildCataloguePatch(o: EyePatchOptions, sp: CatalogueEyeSpec): EyePatch
     const z = T ? sz + T.lift : lastRing ? sz + E.orbitLift : sp.spectacle ? sz + C.spectacleOuterLift
       : Math.max(sz + E.outerLidLift + sp.raise, lidZ[i]! - E.outerLidDrop) + sp.shelfLift * wShelf;
     const role: EyeRole = T ? 'turret' : lastRing ? 'orbit' : sp.shelfLift && wShelf > 0.5 ? 'brow' : 'outer-lid';
-    const p = T ? at(x, y, z) : wrap(at(x, y, z), hit, off, z - sz);
+    const p = T ? at(x, y, z) : sp.spectacle || sp.disc ? wrap(at(x, y, z), hit, off, z - sz) : unair(wrap(at(x, y, z), hit, off, z - sz), E.outerLidLift + sp.raise + sp.shelfLift * wShelf);
     outer.push(p);
     push(p, role, T ? 0.15 : 0, hit);
   }

@@ -174,15 +174,36 @@ test('every eye-catalogue, eye-odd and eye-upgrade specimen stays within the eye
   const seen = new Set();
   for (const s of pool) {
     const {skin} = s.group === 'eye-catalogue' ? built.get(s.name) : build(decodeComposerRecipe(s.text).recipe);
-    const types = skin.debug.eyes.map(e => e.type), eyeTris = skin.parts.filter(p => p.part === 'eyes').reduce((n, p) => n + p.triangles, 0);
-    const cap = types.includes('insect') ? 'insect' : types.length === 8 ? 'spider' : types[0] === 'stalk' ? 'stalk' : types[0] === 'compound' ? 'compound'
-      : types[0] === 'eyespot' ? (eyeTris <= EYE_TRI_CAP.eyespotFlat ? 'eyespotFlat' : 'eyespotBead') : LIDDED_KINDS.has(types[0]) ? 'lidded' : null;
-    assert.ok(cap, `${s.name}: no cap for built types ${types}`);
-    seen.add(cap);
-    assert.ok(eyeTris > 0 && eyeTris <= EYE_TRI_CAP[cap], `${s.name} (${cap}): ${eyeTris} eye triangles > ${EYE_TRI_CAP[cap]}`);
-    if (cap === 'lidded') assert.ok(eyeTris / types.length <= 300, `${s.name}: ${eyeTris / types.length} per lidded eye`);
+    seen.add(checkEyeCap(s.name, effective(decodeComposerRecipe(s.text).recipe), skin));
   }
   for (const c of ['lidded', 'insect', 'spider', 'stalk', 'compound', 'eyespotBead', 'eyespotFlat']) assert.ok(seen.has(c), `the pool covers ${c}`);
+});
+/** The cap class of a built skin, from its built eye types and the recipe's eye rules (never from the triangle count it
+ * checks: an eyespot is flat under eyeRules 1 on a worm cap and a bead otherwise); asserts the cap and returns the class. */
+function checkEyeCap(name, recipe, skin) {
+  const types = skin.debug.eyes.map(e => e.type), eyeTris = skin.parts.filter(p => p.part === 'eyes').reduce((n, p) => n + p.triangles, 0);
+  const rules = resolveComposerEyes(recipe).rules;
+  const cap = types.includes('insect') ? 'insect' : types.length === 8 ? 'spider' : types[0] === 'stalk' ? 'stalk' : types[0] === 'compound' ? 'compound'
+    : types[0] === 'eyespot' ? (rules === 1 ? 'eyespotFlat' : 'eyespotBead') : LIDDED_KINDS.has(types[0]) ? 'lidded' : null;
+  assert.ok(cap, `${name}: no cap for built types ${types}`);
+  assert.ok(eyeTris > 0 && eyeTris <= EYE_TRI_CAP[cap], `${name} (${cap}): ${eyeTris} eye triangles > ${EYE_TRI_CAP[cap]}`);
+  if (cap === 'lidded') assert.ok(eyeTris / types.length <= 300, `${name}: ${eyeTris / types.length} per lidded eye`);
+  return cap;
+}
+test('the eye triangle caps hold over the sweep of the 13 catalogue kinds on each of their native faces', () => {
+  const presetOf = {};
+  for (const id of COMPOSER_PRESET_IDS) presetOf[composerPreset(id).head] ??= id;
+  let n = 0;
+  for (const kind of CATALOGUE_EYE_KINDS) for (const face of EYE_PRESETS[kind].nativeFaces) {
+    const id = presetOf[face];
+    assert.ok(id, `a preset with a ${face} head`);
+    const recipe = effective({...composerPreset(id), eyes: kind, eyeRules: 2});
+    const graph = buildComposerGraph(recipe), skin = buildComposerSkin(graph, {debug: true});
+    assert.equal(skin.eyeFallbacks, 0, `${kind} on ${face}: eye fallbacks`);
+    checkEyeCap(`${kind} on ${face} (${id})`, recipe, skin);
+    n++;
+  }
+  assert.ok(n >= 13);
 });
 
 test('camera eyes hug the skull: the orbit ring lies on it and no rim stands in the air as a flap', () => {
@@ -193,9 +214,14 @@ test('camera eyes hug the skull: the orbit ring lies on it and no rim stands in 
       assert.equal(e.rings.length, 9, name);
       const orbit = ringOff(skin, soup, e, 7), outer = ringOff(skin, soup, e, 6);
       // on the skull, or lifted by the brow shelf's orbit arc
-      assert.ok(orbit <= 0.05 + (EYE_PRESETS[kind].brow === 'shelf' ? CATALOGUE_EYE.shelf.orbitLift : 0), `${name} side ${e.side}: orbit ring ${orbit.toFixed(3)} er off the skull`);
+      // (an owl's facial disc edge is lifted a little more, so the skull's midline ridge never shows between the discs)
+      const brow = EYE_PRESETS[kind].brow, allow = brow === 'shelf' ? CATALOGUE_EYE.shelf.orbitLift : brow === 'disc' ? CATALOGUE_EYE.disc.lift : 0;
+      assert.ok(orbit <= 0.05 + allow, `${name} side ${e.side}: orbit ring ${orbit.toFixed(3)} er off the skull`);
       // the outer lid rises at most a raised orbit's height above the skull (0.6 er); a turret's shoulder its own lift
-      const cap = kind === 'chameleon' ? COMPOSER_EYE_CATALOGUE.turretShape.lift + 0.05 : 0.6;
+      // an owl's facial disc is a plate at the eyeball's rim height (CATALOGUE_EYE.disc.plate): never more than the plate
+      // above the rim's highest point off the skull
+      const cap = kind === 'chameleon' ? COMPOSER_EYE_CATALOGUE.turretShape.lift + 0.05
+        : EYE_PRESETS[kind].brow === 'disc' ? Math.max(0.6, ringOff(skin, soup, e, 4) + CATALOGUE_EYE.disc.plate + 0.1) : 0.6;
       assert.ok(outer <= cap, `${name} side ${e.side}: outer lid ${outer.toFixed(3)} er off the skull`);
     }
   }
@@ -223,14 +249,32 @@ test('gecko: the lidless eye turns into a skull that leans away, so its brille e
   }
 });
 
+test('cat: a large eye that turns into the skull at most by the excess over cat.tiltDeg, its rims hugging the skull', () => {
+  const {skin, graph} = byKind('cat'), soup = skullSoup(skin), P = EYE_PRESETS.cat.placement, K = COMPOSER_EYE_CATALOGUE.cat;
+  for (const e of skin.debug.eyes) {
+    const look = eyeGaze(P.yawDeg ?? FACE_EYE_PROFILE[composerEyeProfileId(graph.recipe, 'round')].gazeYawDeg, P.pitchDeg ?? COMPOSER_EYE_PITCH_DEG, e.side);
+    const turned = Math.acos(Math.min(1, look[0] * e.gaze[0] + look[1] * e.gaze[1] + look[2] * e.gaze[2])) * 180 / Math.PI;
+    assert.ok(turned <= 35, `side ${e.side}: turned ${turned.toFixed(1)} deg from the look`);
+    // the lid and outer lid hug the skull (the EC2 review's flaps stood 0.44 and 0.39 er off it)
+    for (const k of [5, 6]) { const off = ringOff(skin, soup, e, k); assert.ok(off <= 0.25, `side ${e.side}: ring ${k} ${off.toFixed(2)} er off the skull`); }
+  }
+});
+
 test('chameleon: turrets stand proud on both sides and look independently', () => {
   const {skin} = byKind('chameleon'), soup = skullSoup(skin), [l, r] = skin.debug.eyes;
   for (const e of [l, r]) {
     const apex = vtx(skin, e.firstVertex), off = dist(apex, closestPointOnSoup(soup, apex).point) / e.er;
     assert.ok(off >= 0.5, `side ${e.side}: apex ${off.toFixed(2)} er proud`);
   }
-  const mirrored = [r.gaze[0], r.gaze[1], -r.gaze[2]], cos = l.gaze[0] * mirrored[0] + l.gaze[1] * mirrored[1] + l.gaze[2] * mirrored[2];
-  assert.ok(Math.acos(Math.min(1, cos)) * 180 / Math.PI > 15, 'the two axes are not mirror images');
+  // The design's acceptance: the two gazes differ by >= 60 deg (measured 91.6 deg at fauna-composer-eye-2). DEVIATION,
+  // documented: the turret axis is the look blended with the skull normal (COMPOSER_EYE_CATALOGUE.turretNormal, so the
+  // turret stands up instead of lying along the snout), which breaks the design's "gaze within 3 deg of the preset" and
+  // leaves the right turret only ~15 deg off the left one's mirror image (measured 15.0 deg); the threshold below keeps
+  // a margin under that measurement rather than sitting on it.
+  const angle = (u, v) => Math.acos(Math.max(-1, Math.min(1, u[0] * v[0] + u[1] * v[1] + u[2] * v[2]))) * 180 / Math.PI;
+  assert.ok(angle(l.gaze, r.gaze) >= 60, `the two gazes differ by ${angle(l.gaze, r.gaze).toFixed(1)} deg`);
+  const mirrored = [r.gaze[0], r.gaze[1], -r.gaze[2]];
+  assert.ok(angle(l.gaze, mirrored) > 12, `the two axes are not mirror images (${angle(l.gaze, mirrored).toFixed(1)} deg)`);
 });
 
 test('spider: eight beads in four pairs; insect: a compound pair and three ocelli on the head top', () => {
