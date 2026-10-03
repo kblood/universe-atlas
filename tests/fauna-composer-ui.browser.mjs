@@ -32,7 +32,13 @@ await withGpuLock({owner:'composer-independent-ui',timeoutMs:60000,staleMs:Infin
   assert((await optionTexts('head')).some(o=>o.value==='proboscis'),'Face select offers Proboscis');
   assert.equal(await page.locator('#composer-trunk').count(),0,'no Trunk control');
   assert.equal((await page.locator('label:has(#composer-head)').innerText()).split('\n')[0].trim().startsWith('Face'),true);
-  assert.match(await page.locator('label:has(#composer-eyes)').innerText(),/^Eyes \(pupil\)/);
+  assert.match(await page.locator('label:has(#composer-eyes)').innerText(),/^Eyes\b/);
+  // eye round EC3: grouped Eyes menu (Automatic + 18 kinds in 3 groups), Eye rules select, Eye close-up frame
+  const eyeMenu=await page.$$eval('#composer-eyes > option, #composer-eyes > optgroup',els=>els.map(e=>e.tagName==='OPTGROUP'?{group:e.label,kinds:[...e.children].map(o=>o.value)}:{value:e.value}));
+  assert.deepEqual(eyeMenu.map(e=>e.group??e.value),['auto','Pupil shape','Animal eyes','Arthropod and other']);assert.equal(eyeMenu.slice(1).flatMap(g=>g.kinds).length,18);
+  assert.deepEqual(await page.$$eval('#composer-eyeRules option',os=>os.map(o=>o.value)),['2','1']);assert.match(await page.locator('label:has(#composer-eyeRules)').innerText(),/^Eye rules/);
+  assert.deepEqual(await page.$$eval('#composer-focus option',os=>os.map(o=>o.value)),['body','head','eyes']);
+  evidence.push({check:'eye-menu',eyeMenu});
   assert.match(await page.locator('label:has(#composer-iris)').innerText(),/^Iris colour/);
   assert.match(await page.locator('label:has(#composer-horns)').innerText(),/^Horns and headgear/);
   await page.selectOption('#composer-preset','giraffe');s0=await settle();
@@ -46,11 +52,16 @@ await withGpuLock({owner:'composer-independent-ui',timeoutMs:60000,staleMs:Infin
   await page.selectOption('#composer-preset','bird');s0=await settle();
   for(const v of ['paired','ossicones'])assert.match(await textOf('horns',v),/ — not built on this face$/,`beak ${v}`);
   assert.match(await textOf('horns','nasal'),/ — built as a casque$/);assert.equal(await textOf('horns','crest'),'Crest or casque');
-  for(const v of ['compound','eyespot'])assert.match(await textOf('eyes',v),/ — built as round$/,`beak eye ${v}`);
+  for(const v of ['compound','eyespot','cephalopod'])assert.match(await textOf('eyes',v),/ — unusual here$/,`beak eye ${v}`);
+  assert.equal(await textOf('eyes','raptor'),'Raptor (eagle, hawk)');
+  await page.selectOption('#composer-eyeRules','1');s0=await settle();assert.equal(s0.actors[0].recipe.eyeRules,1);
+  for(const v of ['compound','eyespot'])assert.match(await textOf('eyes',v),/ — built as round$/,`beak eye ${v}, earlier rules`);
+  assert.match(await textOf('eyes','auto'),/; earlier eye rules\)$/);assert.match(new URL(await lab()).searchParams.get('recipe'),/\*eyeRules_1$/);
+  await page.selectOption('#composer-eyeRules','2');s0=await settle();assert.equal(s0.actors[0].recipe.eyeRules,2);
   // hint rendering: strip every hinted option text, re-render (edit-target change re-runs showControls), compare
-  const hintedState=async()=>({url:await lab(),values:await page.$$eval('#composer-horns,#composer-eyes,#composer-iris',els=>els.map(e=>e.value)),texts:await Promise.all(['horns','eyes','iris'].map(optionTexts)),builds:(await state()).builds});
+  const hintedState=async()=>({url:await lab(),values:await page.$$eval('#composer-horns,#composer-eyes,#composer-iris,#composer-eyeRules',els=>els.map(e=>e.value)),texts:await Promise.all(['horns','eyes','iris','eyeRules'].map(optionTexts)),builds:(await state()).builds});
   const hinted=await hintedState();
-  await page.evaluate(()=>{for(const id of ['composer-horns','composer-eyes','composer-iris'])for(const o of document.getElementById(id).options)o.textContent=o.value;});
+  await page.evaluate(()=>{for(const id of ['composer-horns','composer-eyes','composer-iris','composer-eyeRules'])for(const o of document.getElementById(id).options)o.textContent=o.value;});
   const stripped=await hintedState();assert.equal(stripped.url,hinted.url,'link byte-identical without hints');
   await page.dispatchEvent('#composer-edit-target','change');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>r())));
   const rerendered=await hintedState();
@@ -65,7 +76,9 @@ await withGpuLock({owner:'composer-independent-ui',timeoutMs:60000,staleMs:Infin
   assert.equal(await page.locator('#composer-horns').inputValue(),'nasal');await shoot('face-ape-nasal-disclosed');await page.locator('fieldset:has(#composer-horns)').screenshot({path:join(output,'panel-head-and-neck-ape-nasal.png')});await page.locator('#composer-constraints').screenshot({path:join(output,'panel-constraints-ape-nasal.png')});
   // centipede: compound eyes, iris has no effect
   await page.selectOption('#composer-preset','centipede');await settle();
-  assert.equal(await textOf('iris','auto'),'Automatic (no iris)');assert.match(await textOf('iris','red'),/ — no effect on this face$/);assert.match(await textOf('eyes','round'),/ — built as compound$/);
+  assert.equal(await textOf('iris','auto'),'Automatic (no iris)');assert.match(await textOf('iris','red'),/ — no effect \(no iris\)$/);assert.match(await textOf('eyes','round'),/ — unusual here$/);
+  assert(await page.locator('#composer-iris-built').isHidden(),'no swatch without an iris');
+  assert(await page.locator('#composer-iris').isDisabled(),'the iris select is disabled without an iris');assert.match(await page.locator('#composer-iris-why').innerText(),/^No effect: these eyes have no iris/);
   // legacy v1 trunk links through the real Lab
   const v1=JSON.parse(await readFile(new URL('./fixtures/composer-v1-links.json',import.meta.url),'utf8')).presets;
   const openLink=async text=>{const u=new URL(target.href);u.search='';u.searchParams.set('mode','composer');u.searchParams.set('recipe',text);await page.goto(u.href,{waitUntil:'networkidle'});return settle();};
@@ -92,6 +105,22 @@ await withGpuLock({owner:'composer-independent-ui',timeoutMs:60000,staleMs:Infin
     await page.locator('#viewport').screenshot({path:join(output,`head-frame-${label}-${view}.png`)});}
    await page.selectOption('#composer-view','three-quarter');assert(fill.heightFraction>body.heightFraction,`${label}: head framing is closer than whole-animal framing`);
   }
+  // Eye close-up: the VISIBLE eye (its unoccluded cornea/dome/eyespot vertices, projected) fills >= 35% of the viewport
+  // height for a single eye (>= 12% each for a forward-facing pair), inside the frame, for every view
+  const eyeFill=()=>page.evaluate(()=>{const v=window.__creatureLab.eyeView,h=window.__creatureLab.composer.eyeFrame;if(!v||!h)return null;
+   return {eyeHeightFraction:v.heightFraction,widthFraction:v.widthFraction,visible:v.visibleVertices/v.vertices,inside:v.inside,near:window.__creatureLab.camera.near,side:h.side,yawed:h.yawed,yawDeg:h.yawDeg,pairSeparation:h.pairSeparation};});
+  for(const id of ['ostrich','ape','centipede','worm']){
+   await page.selectOption('#composer-focus','body');await page.selectOption('#composer-preset',id);await settle();await page.selectOption('#composer-focus','eyes');s0=await settle();assert.equal(s0.focus,'eyes');
+   for(const view of ['three-quarter','side','front']){await page.selectOption('#composer-view',view);await settle();const f=await eyeFill();assert(f,`${id}: an eye frame`);framing.push({id,view,eyes:f});
+    assert(f.inside,`${id} ${view}: eye inside the frame`);
+    // every one of these animals has a PAIR of eyes, so a side view frames the near eye of a pair (split about the posed
+    // head's midline: a swaying worm head once put both eyespots on one side of the animal's midline, framed edge-on)
+    assert(f.pairSeparation>1,`${id} ${view}: the eyes are seen as a pair (separation ${f.pairSeparation})`);
+    if(view==='side')assert.equal(f.side,'near',`${id} side: the near eye`);assert(f.eyeHeightFraction>=(f.side==='near'?.35:.12),`${id} ${view}: the eye fills ${(f.eyeHeightFraction*100).toFixed(1)}% of the viewport height`);
+    await page.locator('#viewport').screenshot({path:join(output,`eye-frame-${id}-${view}.png`)});}
+   await page.selectOption('#composer-view','three-quarter');
+  }
+  await page.selectOption('#composer-focus','body');assert.equal((await settle()).focus,'body');assert.equal(await page.evaluate(()=>window.__creatureLab.camera.near),.05,'the body frame restores the near plane');
   assert.equal(new URL(await lab()).searchParams.has('focus'),false,'framing is not stored in the link');
   await page.selectOption('#composer-focus','body');await settle();evidence.push({check:'head-frame',framing});
   // Independent editing must retain the rest of the selected recipe.

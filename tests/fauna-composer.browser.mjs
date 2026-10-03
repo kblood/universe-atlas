@@ -34,7 +34,9 @@ async function setPart(page, key, value) {
   if (key in COMPOSER_CHOICES) { await page.selectOption(`#composer-${key}`, String(value)); await settle(page); } else await setRange(page, key, value);
 }
 async function seek(page, time) { await page.fill('#composer-time', String(time)); await page.waitForFunction(t => Math.abs(window.__creatureLab.time - t) < 1e-9, time); }
-const COAT_KEYS = ['palette', 'colorSeed', 'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade'], TYPE_SPECIMEN_NOOP = ['variability', 'dimorphism'], EYE_KEYS = ['eyes', 'iris'];
+const COAT_KEYS = ['palette', 'colorSeed', 'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade'], TYPE_SPECIMEN_NOOP = ['variability', 'dimorphism'], EYE_KEYS = ['eyes', 'iris', 'eyeRules'];
+// eyeRules (eye round): the earlier and current eye rules build the same eye for many animals until the catalogue
+// geometry lands (skin-4); like eyes and iris it is recorded here and asserted in the eye package's tests.
 const CONTROL_KEYS = COMPOSER_RECIPE_KEYS.filter(key => key !== 'trunk');
 const digestPose = c => c.actors.map(a => a.pose.positions.map(v => v.toFixed(9)).join(',')).join('|');
 // Neck and tail are lofted into the continuous body tube (skin part 'torso'), so they are checked by their bone chains.
@@ -187,7 +189,7 @@ try {
       await page.waitForFunction(() => document.getElementById('share-status').textContent.length > 0);
       const shared = await page.evaluate(() => window.__creatureLab.specimenUrl), original = await composer(page);
       report.steps.share = {url: shared};
-      check('share url has composer params', /mode=composer/.test(shared) && /recipe=v3/.test(shared) && !/bodyCondition/.test(shared), shared);
+      check('share url has composer params', /mode=composer/.test(shared) && /recipe=v4/.test(shared) && !/bodyCondition/.test(shared), shared);
       const replay = await context.newPage(); replay.on('pageerror', e => errors.push(`replay: ${e.message}`));
       await replay.goto(shared, {waitUntil: 'networkidle'}); await settle(replay);
       const restored = await composer(replay);
