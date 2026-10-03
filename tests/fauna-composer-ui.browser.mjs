@@ -32,7 +32,7 @@ await withGpuLock({owner:'composer-independent-ui',timeoutMs:60000,staleMs:Infin
   assert((await optionTexts('head')).some(o=>o.value==='proboscis'),'Face select offers Proboscis');
   assert.equal(await page.locator('#composer-trunk').count(),0,'no Trunk control');
   assert.equal((await page.locator('label:has(#composer-head)').innerText()).split('\n')[0].trim().startsWith('Face'),true);
-  assert.match(await page.locator('label:has(#composer-eyes)').innerText(),/^Eyes/);
+  assert.match(await page.locator('label:has(#composer-eyes)').innerText(),/^Eyes\b/);
   // eye round EC3: grouped Eyes menu (Automatic + 18 kinds in 3 groups), Eye rules select, Eye close-up frame
   const eyeMenu=await page.$$eval('#composer-eyes > option, #composer-eyes > optgroup',els=>els.map(e=>e.tagName==='OPTGROUP'?{group:e.label,kinds:[...e.children].map(o=>o.value)}:{value:e.value}));
   assert.deepEqual(eyeMenu.map(e=>e.group??e.value),['auto','Pupil shape','Animal eyes','Arthropod and other']);assert.equal(eyeMenu.slice(1).flatMap(g=>g.kinds).length,18);
