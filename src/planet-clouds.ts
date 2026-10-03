@@ -37,7 +37,11 @@ import { hash64, noise, type V3 } from './catalog.ts';
 import { sine, detCos, detAtan2, expNeg } from './det-math.ts';
 import * as THREE from 'three';
 
-export const PLANET_CLOUDS_VERSION = 'planet-clouds-1';
+/** planet-clouds-2 (relief round P5): cloud-top heights scale with the
+ * atmosphere's scale height (surface gravity, temperature) and sit above the
+ * DATED sea level instead of the radius datum; the deck reaches above the
+ * body's 99th-percentile land height. Coverage is unchanged. */
+export const PLANET_CLOUDS_VERSION = 'planet-clouds-2';
 
 const NS = 1_000_000_000n;
 const HOUR_NS = 3600n * NS;
@@ -58,12 +62,50 @@ export type CloudParams = {
   spinPeriodS: number;
   /** Cloud-cell turnover window override, ns. Default: `DEFAULT_WINDOW_NS`. */
   windowNs?: bigint;
+  /** Surface gravity (m/s^2, planet-geophysics surfaceGravityMS2). Absent:
+   * the reference 9.81 (scale-height ratio 1). */
+  surfaceGravityMS2?: number;
+  /** Dated sea level (m); cloud heights are measured from it. Default 0. */
+  seaLevelM?: number;
+  /** Land height (m, datum 0) the deck must clear: the body's 99th-percentile
+   * land height. Absent: no floor. */
+  landTopM?: number;
 };
+
+/** Reference top of the terrestrial deck, metres above sea level (sh = 1). */
+export const CLOUD_DECK_TOP_M = 8000;
+/** The deck top clears `landTopM` by at least this much. */
+export const CLOUD_LAND_CLEARANCE_M = 500;
+/** Scale-height ratio sh = H/H_earth = (9.81 / g) (T / 288), clamped to
+ * [0.5, 2.5]; 1 for airless bodies and gas giants (their deck is fixed). */
+export function cloudScaleHeightRatio(params: CloudParams): number {
+  if (!params.hasAtmosphere || params.gasGiant) return 1;
+  const g = params.surfaceGravityMS2;
+  if (!(typeof g === 'number' && g > 0)) return 1;
+  const sh = (9.81 / g) * (params.temperatureK / 288);
+  return sh < .5 ? .5 : sh > 2.5 ? 2.5 : sh;
+}
+/** Vertical frame of a terrestrial cloud deck: a height h of the reference
+ * (sh = 1, sea level 0) deck becomes `baseM + h * scale`. `scale` is sh,
+ * stretched when needed so that `refTopM` lands CLOUD_LAND_CLEARANCE_M above
+ * `landTopM`. Gas giants and airless bodies: {baseM: 0, scale: 1}. */
+export function cloudDeckFrame(params: CloudParams, refTopM = CLOUD_DECK_TOP_M): { baseM: number; scale: number } {
+  if (!params.hasAtmosphere || params.gasGiant) return { baseM: 0, scale: 1 };
+  const baseM = params.seaLevelM ?? 0;
+  let scale = cloudScaleHeightRatio(params);
+  const land = params.landTopM;
+  if (typeof land === 'number' && Number.isFinite(land) && refTopM > 0) {
+    const need = (land + CLOUD_LAND_CLEARANCE_M - baseM) / refTopM;
+    if (need > scale) scale = need;
+  }
+  return { baseM, scale };
+}
 
 export type CloudSample = {
   /** 0..1 fractional sky coverage at `dir`. */
   coverage: number;
-  /** Cloud-top altitude above the surface, metres (0 iff `coverage === 0`). */
+  /** Cloud-top altitude above the radius datum, metres (0 iff `coverage === 0`):
+   * the dated sea level plus the scale-height-scaled deck. */
   heightM: number;
 };
 
@@ -105,8 +147,9 @@ function moistureFactor(temperatureK: number): number {
 }
 
 function cloudTopHeightM(params: CloudParams, coverage: number): number {
-  const base = params.gasGiant ? 60000 : 8000; // m, rough cloud-top altitude
-  return base * (0.6 + 0.4 * coverage);
+  if (params.gasGiant) return 60000 * (0.6 + 0.4 * coverage); // m, rough cloud-top altitude
+  const frame = cloudDeckFrame(params);
+  return frame.baseM + CLOUD_DECK_TOP_M * frame.scale * (0.6 + 0.4 * coverage);
 }
 
 /**
@@ -195,7 +238,8 @@ export type CloudShell = {
  * (matches `PlanetAtmosphere`'s construction pattern in
  * `planet-atmosphere.ts`, unit-sphere geometry scaled by the host group). */
 export function createCloudShell(params: CloudParams, width = 256, height = 128): CloudShell {
-  const topM = params.gasGiant ? 60000 : 8000;
+  const frame = cloudDeckFrame(params);
+  const topM = params.gasGiant ? 60000 : frame.baseM + CLOUD_DECK_TOP_M * frame.scale;
   const depth = topM / Math.max(1, params.radiusM);
   const geometry = new THREE.SphereGeometry(1 + depth, 48, 24);
   const data = new Uint8Array(width * height * 4);

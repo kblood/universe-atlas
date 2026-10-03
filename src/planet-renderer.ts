@@ -24,6 +24,8 @@ import {VolumetricClouds,CLOUD_TARGET_BUDGET_BYTES} from './volumetric-clouds.ts
 import {RENDER_QUALITY,type RenderQuality} from './render-quality.ts';
 import {ringSystemFor, ringActiveAt, createRingMesh, type RingSystem} from './planet-rings.ts';
 import {spinStateFor} from './stellar-evolution.ts';
+import {planetGeophysics} from './planet-geophysics.ts';
+import {oceanHypsometry} from './ocean-volume.ts';
 import {CATALOGUE_EPOCH_NS} from './world-time.ts';
 import {prepareFlora, floraFromRecipe, toMyr, buildFloraGeometryData, floraGeometryToBufferGeometry, FLORA_KIND_NAMES, type FloraRecipe, type FloraKind, type FloraBiosphereGate, type FloraBiomeSample, type FloraStage} from './flora-field.ts';
 import {FloraFieldRenderer, FloraCandidateBuffer, packCullPlane, pickFloraLodBand, DEFAULT_FRUSTUM_PLANE_COUNT} from './flora-culling.ts';
@@ -117,6 +119,202 @@ export function deferUndrawnRefreshes(unique:Map<string,Tile>,patches:ReadonlyMa
   for(const [key,tile] of unique){const p=patches.get(key);if(p&&!p.mesh.visible)deferred.push([key,tile]);}
   for(const [key,tile] of deferred){unique.delete(key);unique.set(key,tile);}
 }
+// <render-bounds>
+// Render bounds (render-bounds-1, docs/render-bounds-v1.md). This block is
+// copied verbatim into the leaf-loop digest's reference build
+// (tests/terrain-leaf-loop-digest.test.mjs), so it only uses names that
+// revision also imports (THREE, Body, V3, Tile, tileKey, tileDirection) plus
+// its own namespace import below. It replaces the hard-coded +20 km / -16 km
+// envelope with: the body's analytic height bound, each resident tile's exact
+// drawn radial range, and for a tile not yet built its nearest resident
+// ancestor's metadata [minH, maxH] widened by a measured per-level margin.
+import * as RB_TERRAIN from './terrain.ts';
+export const RENDER_BOUNDS_VERSION='render-bounds-1';
+/** Above the largest Gerstner crest/trough (8 waves, each <= 0.33 m). */
+export const RENDER_WAVE_BOUND_M=3;
+/** Skirt depth cap (planet-tiles skirtDepthM <= 40 m + 0.25 m), rounded up. */
+export const RENDER_SKIRT_BOUND_M=41;
+/** A level-L tile's skirt bound: planet-tiles skirtDepthM is at most
+ * min(40, childFootprint) + 0.25 m, childFootprint = 4 sqrt2 R / (2^L x 32)
+ * (PATCH_SEGMENTS), + 1 cm rounding. */
+export function renderSkirtBoundM(radiusM:number,level:number){
+  return Math.min(RENDER_SKIRT_BOUND_M,Math.min(40,4*Math.SQRT2*radiusM/(2**level*32))+.26);
+}
+/** Float32 storage of anchor-relative vertices (<= 2e-9 unit radii at L1) and
+ * float32 metadata heights, rounded up: added to every candidate range. */
+export const RENDER_F32_BOUND_M=.05;
+/** An ocean surface closer than this keeps refining by its own distance: the
+ * vertex Gerstner waves (8-42 m) need a fine shell grid near the eye. Every
+ * other tile refines by its distance to the solid ground or seabed, so open
+ * deep water is coarse until something approaches the bottom (owner decision
+ * 5, lod-ladder.ts SEABED_DETAIL_POLICY). Collision never reads these tiles. */
+export const OCEAN_SURFACE_DETAIL_M=2000;
+/** [up, down] metres (at relief 1) a level-L tile's drawn geometry and its own
+ * metadata can reach above its parent's metadata maxH / below its minH,
+ * indexed by L (the last entry covers deeper levels). Measured worst case over
+ * the four fixture bodies x 2 + 4 m, rounded up: 9600 child tiles per level
+ * (test-results/relief-round-2026-10-03/P5-RENDER-BOUNDS/excess-v2/, plus
+ * the first 40-tile pass and a 304 m Selawyn L8 outlier the containment test
+ * found). 'down' includes the parent-morph endpoints and the skirt. The tail
+ * is heavy (sub-grid valleys), so this is an empirical bound:
+ * tests/render-bounds.test.mjs re-checks it on fresh tiles, and the relief
+ * round re-measures it after P4 changes the terrain. */
+export const CANDIDATE_MARGIN_M:readonly (readonly [number,number])[]=[
+  [0,0],[3120,14680],[3850,3790],[3600,1060],[3650,1450],[2100,1050],[1390,650],[1050,740],[980,620],[520,280],
+  [380,170],[180,180],[170,100],[110,70],[30,50],[13,17],[7,11],[6,7],[5,6]];
+type RbBound={minM:number;maxM:number};
+const rbTerrain=RB_TERRAIN as unknown as {bodyHeightBoundM?:(body:Body)=>RbBound;terrainWindowMaxM?:(body:Body)=>number;reliefTextureRange?:(body:Body)=>RbBound};
+const rbBodyBounds=new WeakMap<object,RbBound>();
+/** Every ground height terrainSampler(body) can return (crater-free, rivers
+ * only lower): terrain.ts's bodyHeightBoundM when present, else the analytic
+ * bound of the terrain-1.7 field: floor clamp(-16000, 18000) x sc, the 772 m
+ * detail window, landforms 1908 sc capped at a 19.5 km total. */
+export function renderHeightBoundM(body:Body):RbBound{
+  let bound=rbBodyBounds.get(body);if(bound)return bound;
+  if(rbTerrain.bodyHeightBoundM)bound=rbTerrain.bodyHeightBoundM(body);
+  else if(body.type==='Gas giant')bound={minM:0,maxM:0};
+  else{
+    const sc=Math.min(1,body.radiusM/2e6),window=rbTerrain.terrainWindowMaxM?rbTerrain.terrainWindowMaxM(body):772+1908*sc;
+    bound=body.kind==='star'?{minM:-16000*sc,maxM:18000*sc+772}:{minM:-16000*sc,maxM:Math.min(18000*sc+window,Math.max(18000*sc+772,19500))};
+  }
+  rbBodyBounds.set(body,bound);return bound;
+}
+/** Range the orbit relief texture is encoded over (terrain.ts
+ * reliefTextureRange; the legacy encoding is 0.5 + h / 60 km). */
+export function renderReliefTextureRange(body:Body):RbBound{
+  return rbTerrain.reliefTextureRange?rbTerrain.reliefTextureRange(body):{minM:-30000,maxM:30000};
+}
+/** Eye altitude (m above the unit radius) below which ground detail may run. */
+export function renderDetailAltitudeM(body:Body,relief:number){return renderHeightBoundM(body).maxM*relief+6000;}
+type RbPatch={data:{anchor:readonly number[];positions:Float32Array;parents:Float32Array;oceanPositions?:Float32Array;oceanParents?:Float32Array;meta?:Uint8Array};ocean:unknown};
+type RbResident={sphere:THREE.Sphere;maxR:number;minR:number};
+const rbResidents=new WeakMap<object,RbResident>();
+/** A resident tile's exact drawn extent: terrain and parent morph endpoints
+ * (skirts included) plus, when its ocean shell is drawn, the shell +- the
+ * wave bound. Bounding sphere (unit radii, planet space) and radial range. */
+export function residentTileBounds(p:RbPatch,radiusM:number):RbResident{
+  let bounds=rbResidents.get(p);if(bounds)return bounds;
+  const d=p.data,ax=d.anchor[0],ay=d.anchor[1],az=d.anchor[2],box=new THREE.Box3();
+  let min2=Infinity,max2=0;
+  const scan=(a:Float32Array,target:THREE.Box3)=>{
+    for(let i=0;i<a.length;i+=3){
+      const x=a[i],y=a[i+1],z=a[i+2];
+      if(x<target.min.x)target.min.x=x;if(y<target.min.y)target.min.y=y;if(z<target.min.z)target.min.z=z;
+      if(x>target.max.x)target.max.x=x;if(y>target.max.y)target.max.y=y;if(z>target.max.z)target.max.z=z;
+      const r2=(x+ax)*(x+ax)+(y+ay)*(y+ay)+(z+az)*(z+az);if(r2<min2)min2=r2;if(r2>max2)max2=r2;
+    }
+  };
+  scan(d.positions,box);scan(d.parents,box);
+  let minR=Math.sqrt(min2),maxR=Math.sqrt(max2);
+  if(p.ocean&&d.oceanPositions&&d.oceanParents){
+    const wave=RENDER_WAVE_BOUND_M/radiusM,sea=new THREE.Box3();min2=Infinity;max2=0;
+    scan(d.oceanPositions,sea);scan(d.oceanParents,sea);
+    box.union(sea.expandByScalar(wave));minR=Math.min(minR,Math.sqrt(min2)-wave);maxR=Math.max(maxR,Math.sqrt(max2)+wave);
+  }
+  const sphere=box.getBoundingSphere(new THREE.Sphere());sphere.center.x+=ax;sphere.center.y+=ay;sphere.center.z+=az;
+  bounds={sphere,maxR,minR};rbResidents.set(p,bounds);return bounds;
+}
+const rbMetaRanges=new WeakMap<object,readonly [number,number]>();
+function rbMetaRange(p:RbPatch):readonly [number,number]|null{
+  const meta=p.data.meta;if(!meta||meta.byteLength<8)return null;
+  let range=rbMetaRanges.get(meta);
+  if(!range){const view=new DataView(meta.buffer,meta.byteOffset,8);range=[view.getFloat32(0,true),view.getFloat32(4,true)];rbMetaRanges.set(meta,range);}
+  return Number.isFinite(range[0])&&Number.isFinite(range[1])?range:null;
+}
+/** cos of the largest angle between a tile's centre direction and its area
+ * (reached at a corner: the tile is a convex spherical quadrilateral). */
+export function tileCornerCos(t:Tile,center:THREE.Vector3){
+  let c=1;
+  for(const [u,v] of [[0,0],[1,0],[0,1],[1,1]]){const q=tileDirection(t,u,v);c=Math.min(c,q[0]*center.x+q[1]*center.y+q[2]*center.z);}
+  return c;
+}
+/** Smallest sphere centred on the tile axis that contains the radial shell
+ * section r in [r0, r1] over the tile's area (cosine bound `cos`). The
+ * farthest points are the corner rays at r0 or r1; max of two convex
+ * parabolas in the centre radius, so the optimum is one of three radii. */
+export function shellSphere(center:THREE.Vector3,cos:number,r0:number,r1:number,target=new THREE.Sphere()){
+  const f=(rc:number)=>Math.max(r0*r0+rc*rc-2*r0*rc*cos,r1*r1+rc*rc-2*r1*rc*cos);
+  let best=r1*cos,score=f(best);
+  for(const rc of [r0*cos,(r0+r1)/(2*Math.max(1e-12,cos))]){const s=f(rc);if(s<score){score=s;best=rc;}}
+  target.center.copy(center).multiplyScalar(best);target.radius=Math.sqrt(Math.max(0,score))*(1+1e-9)+1e-12;
+  return target;
+}
+/** Radial range [r0, r1] (unit radii) of a tile that is not resident: the
+ * nearest resident ancestor's metadata widened by the per-level margins, the
+ * skirt and (where the ocean shell may be drawn) the sea +- waves, clamped to
+ * the body bound. Without a resident ancestor: the body bound. */
+export function candidateTileRadii(t:Tile,cos:number,patches:ReadonlyMap<string,RbPatch>,body:Body,relief:number,waterLevelM:number):[number,number]{
+  const R=body.radiusM,b=renderHeightBoundM(body),scale=Math.max(1,relief);
+  // Parent morph endpoints lie inside a parent grid cell, on chords between
+  // parent vertices: at most a cell diagonal apart in angle (the cube-face
+  // to sphere map is 1-Lipschitz), so they sag below the lowest of them by
+  // at most a factor cos(theta/2) >= 1 - theta^2/8.
+  const theta=Math.SQRT2*2/2**t.level/16,sag=1-theta*theta/8;
+  const skirt=renderSkirtBoundM(R,t.level);
+  const bodyLow=(1+(b.minM*relief-skirt)/R)*sag,bodyHigh=1+b.maxM*relief/R;
+  let r0=bodyLow,r1=bodyHigh,up=0,down=0,a=t;
+  while(a.level>0){
+    const m=CANDIDATE_MARGIN_M[Math.min(a.level,CANDIDATE_MARGIN_M.length-1)];up+=m[0];down+=m[1];
+    a={face:a.face,level:a.level-1,x:Math.floor(a.x/2),y:Math.floor(a.y/2)};
+    const p=patches.get(tileKey(a)),range=p?rbMetaRange(p):null;
+    if(range){r0=Math.max(bodyLow,(1+(range[0]*relief-down*scale-skirt)/R)*sag);r1=Math.min(bodyHigh,1+(range[1]*relief+up*scale)/R);break;}
+  }
+  if(body.water){
+    // The ocean shell's parent morph endpoints sag the same way.
+    const sea=1+waterLevelM/R,wave=RENDER_WAVE_BOUND_M/R;
+    if(r0*cos<=sea+wave){r0=Math.min(r0,sea*sag-wave);r1=Math.max(r1,sea+wave);}
+  }
+  r0-=RENDER_F32_BOUND_M/R;r1+=RENDER_F32_BOUND_M/R;
+  return [r0,Math.max(r0,r1)];
+}
+/** Candidate radial range and bounding sphere of a tile that is not
+ * resident. Gerstner waves also move the shell sideways (<= the wave bound),
+ * past the tile's own cone, so a range that includes the sea grows the
+ * sphere by that bound. */
+export function candidateTileSphere(t:Tile,center:THREE.Vector3,patches:ReadonlyMap<string,RbPatch>,body:Body,relief:number,waterLevelM:number){
+  const cos=tileCornerCos(t,center),[r0,r1]=candidateTileRadii(t,cos,patches,body,relief,waterLevelM),sphere=shellSphere(center,cos,r0,r1);
+  if(body.water&&r0*cos<=1+(waterLevelM+RENDER_WAVE_BOUND_M)/body.radiusM)sphere.radius+=RENDER_WAVE_BOUND_M/body.radiusM;
+  return {r0,r1,sphere};
+}
+/** Horizon and frustum bounds of one tile. Horizon: a point at radius r is
+ * hidden behind the lowest possible ground sphere (`core`, the body minimum)
+ * beyond acos(core/eye) + acos(core/r); each tile uses its own top radius, so
+ * a distant range keeps its true height and a lowland behind it is culled. */
+export function renderTileBounds(t:Tile,center:THREE.Vector3,bound:number,resident:RbPatch|undefined,patches:ReadonlyMap<string,RbPatch>,body:Body,relief:number,waterLevelM:number,distance:number,direction:THREE.Vector3){
+  const R=body.radiusM,core=1+renderHeightBoundM(body).minM*relief/R;
+  let sphere:THREE.Sphere,peak:number;
+  if(resident){const r=residentTileBounds(resident,R);sphere=r.sphere;peak=r.maxR;}
+  else{const c=candidateTileSphere(t,center,patches,body,relief,waterLevelM);sphere=c.sphere;peak=c.r1;}
+  const eyeCos=Math.min(1,Math.max(0,core/distance)),peakCos=Math.min(1,Math.max(0,core/peak));
+  const horizonCos=eyeCos*peakCos-Math.sqrt(1-eyeCos*eyeCos)*Math.sqrt(1-peakCos*peakCos);
+  return {horizon:direction.dot(center)+bound>=horizonCos,sphere};
+}
+/** Selection distance: to the solid ground or seabed at the tile's closest
+ * point, or to its drawn ocean surface while that is within
+ * OCEAN_SURFACE_DETAIL_M. `elevation` is relief-scaled metres. */
+export function seabedAwareNear(eye:THREE.Vector3,nearest:V3,elevation:number,ocean:boolean,body:Body,waterLevelM:number){
+  const R=body.radiusM,g=1+elevation/R;
+  let near=Math.hypot(eye.x-nearest[0]*g,eye.y-nearest[1]*g,eye.z-nearest[2]*g);
+  if(ocean){const s=1+waterLevelM/R,surface=Math.hypot(eye.x-nearest[0]*s,eye.y-nearest[1]*s,eye.z-nearest[2]*s);if(surface*R<OCEAN_SURFACE_DETAIL_M&&surface<near)near=surface;}
+  return Math.max(1e-9,near);
+}
+// </render-bounds>
+/** The `p` quantile of land heights at or above `seaLevelM` (m, datum 0) on
+ * the body's equal-area hypsometry (ocean-volume.ts); NaN without land. */
+export function landPercentileM(body:Body,p:number,seaLevelM=0){
+  const h=oceanHypsometry(body).heights;let lo=0,hi=h.length;
+  while(lo<hi){const mid=(lo+hi)>>1;if(h[mid]<seaLevelM)lo=mid+1;else hi=mid;}
+  const n=h.length-lo;return n?h[lo+Math.min(n-1,Math.floor(p*(n-1)))]:NaN;
+}
+/** Landing-site rule (main.ts exploreTerrain): never above this height over
+ * the sea (80% of the body bound, so never on a summit). */
+export function landingCeilingM(body:Body){return .8*renderHeightBoundM(body).maxM;}
+/** Height over the sea that earns the full landing elevation bonus: the 90th
+ * percentile of land (fallback 40% of the body bound). */
+export function landingReferenceM(body:Body,seaLevelM:number){
+  const p90=landPercentileM(body,.9,seaLevelM);
+  return Math.max(1,Number.isFinite(p90)?p90-seaLevelM:.4*renderHeightBoundM(body).maxM);
+}
 const ROOTS: Tile[] = Array.from({length: 6}, (_,face) => ({face, level: 0, x: 0, y: 0}));
 export const TILE_CACHE_LIMIT = 256;
 export const TILE_DRAW_LIMIT = 150;
@@ -193,6 +391,15 @@ function riverRegionSphere(r: RiverRegion): THREE.Sphere {
 // single-worker throughput.
 const TILE_WORKER_COUNT = isSoftwareRenderer() ? 1 : Math.max(1, Math.min(2, (typeof navigator!=='undefined'&&navigator.hardwareConcurrency||4)-1));
 export class PlanetRenderer {
+  /** render-bounds-1 helpers for main.ts (its import of this class is its only seam). */
+  static heightBoundM(body:Body){return renderHeightBoundM(body);}
+  static reliefTextureSpanM(body:Body){const r=renderReliefTextureRange(body);return r.maxM-r.minM;}
+  static landingCeilingM(body:Body){return landingCeilingM(body);}
+  static landingReferenceM(body:Body,seaLevelM:number){return landingReferenceM(body,seaLevelM);}
+  /** Terrain clearance below which flight is terrain flight / may land directly. */
+  static lowFlightClearanceM(body:Body){return Math.max(2000,renderHeightBoundM(body).maxM);}
+  /** Radius an assisted orbit must keep: above the highest terrain + 5 km. */
+  static safeOrbitRadiusM(body:Body){return body.radiusM+Math.max(0,renderHeightBoundM(body).maxM)+5000;}
   // Desktop keeps its established terrain/contact working set plus a bounded
   // cloud target allocation. High-resolution clouds cannot consume collision
   // admission space or force the captured ground to become blurry on descent.
@@ -597,6 +804,9 @@ export class PlanetRenderer {
         temperatureK: body.temperatureK,
         radiusM: body.radiusM,
         spinPeriodS: spinStateFor(body).spinPeriodS,
+        // render-bounds-1 / planet-clouds-2: the deck scales with the scale
+        // height, follows the dated sea level (update) and clears p99 land.
+        ...(gasGiant?{}:{surfaceGravityMS2:planetGeophysics(body).surfaceGravityMS2,landTopM:landPercentileM(body,.99)}),
       },this.group);
     }
     const ringParams = {
@@ -968,7 +1178,7 @@ export class PlanetRenderer {
     const cacheLimit=contact||this.lowFlightDetail?768:TILE_CACHE_LIMIT,drawLimit=contact?450:this.lowFlightDetail?390:(immersive?102:TILE_DRAW_LIMIT);
     this.eyeHeightUniform.value=(distance-1)*this.body.radiusM;this.sunUniform.value.set(...sun);
     const skyStarted=systemTimer.start();this.atmosphere?.update(eye, new THREE.Vector3(...sun));systemTimer.stop('sky',skyStarted);
-    const cloudsStarted=systemTimer.start();this.clouds?.update(this.body.seed,this.body.id,worldNs,this.sunUniform.value);systemTimer.stop('clouds',cloudsStarted);
+    const cloudsStarted=systemTimer.start();this.clouds?.update(this.body.seed,this.body.id,worldNs,this.sunUniform.value,this.body.water?snappedWaterLevelM:0);systemTimer.stop('clouds',cloudsStarted);
     // Ring existence toggle only -- geometry/texture are baked once at
     // construction (ringSystemFor/createRingMesh are pure functions of the
     // body, not of time), so this is a cheap per-frame boolean, not a rebuild.
@@ -1035,25 +1245,18 @@ export class PlanetRenderer {
       const key=tileKey(t),cached=projectionCache.get(key);if(cached)return cached;
       const center = new THREE.Vector3(...tileDirection(t, .5, .5));
       const span = 2 / 2 ** t.level, bound = Math.min(1.8, span * 1.42);
-      // Conservative horizon test, expanded for the highest possible terrain.
-      const margin = 20000 * this.relief / this.body.radiusM;
-      const core=1-16000/this.body.radiusM;
-      const eyeCos=Math.min(1,Math.max(0,core/distance)),peakCos=Math.min(1,Math.max(0,core/(1+margin)));
-      const horizonCos=eyeCos*peakCos-Math.sqrt(1-eyeCos*eyeCos)*Math.sqrt(1-peakCos*peakCos);
-      const horizon = direction.dot(center) + bound >= horizonCos;
-      const sphere = new THREE.Sphere(center, bound + margin);
+      // Conservative horizon and frustum bounds (render-bounds-1): the tile's
+      // own drawn extent when resident, else its ancestor-metadata candidate.
       const resident=this.patches.get(key);
-      if(resident?.mesh.geometry.boundingSphere){
-        sphere.copy(resident.mesh.geometry.boundingSphere);sphere.center.add(resident.mesh.position);
-      }
+      const {horizon,sphere}=renderTileBounds(t,center,bound,resident,this.patches,this.body,this.relief,snappedWaterLevelM,distance,direction);
       const visible = horizon && (!frusta.length || retainedFrusta.some(f => f.intersectsSphere(sphere)));
       if(!changed)return {visible,score:0,contactNear:Infinity,waterPriority:false,finePriority:false};
       let distances=this.projectionDistance.get(key);
       if(!distances||distances.resident!==resident){
         const nearest = closestTileDirection(t,observer);
         const elevation=resident?patchHeightAt(resident,nearest):groundHeight*this.relief;
-        const ground=new THREE.Vector3(...nearest).multiplyScalar(1+Math.max(this.body.water?snappedWaterLevelM*this.relief:-Infinity,elevation)/this.body.radiusM);
-        const near = Math.max(1e-9, eye.distanceTo(ground));
+        // Deep water refines by distance to the seabed (render-bounds-1).
+        const near=seabedAwareNear(eye,nearest,elevation,!!resident?.ocean,this.body,snappedWaterLevelM);
         let contactNear=Infinity;
         if(contact&&contactDirection){const d=closestTileDirection(t,contact.toArray() as V3);contactNear=contactDirection.distanceTo(new THREE.Vector3(...d))*this.body.radiusM;}
         distances={resident,near,contactNear};this.projectionDistance.set(key,distances);
@@ -1138,7 +1341,10 @@ export class PlanetRenderer {
         // oscillation at L21 while the capsule waited forever for L22.
         if(contact&&((projection.contactNear<28&&parent.level<this.contactLevel)||
           (this.needsFineContact&&projection.contactNear<3&&parent.level<this.fineContactLevel)))continue;
-        const pressure=leaves.length>drawLimit-60||this.terrainPressure;
+        // A pass whose splits were byte-blocked is pressure too (render-bounds-1):
+        // a frontier at the split ceiling below the leaf-count trigger otherwise
+        // never refines again, e.g. diving from a 5 km hover to a deep seabed.
+        const pressure=leaves.length>drawLimit-60||this.terrainPressure||this.splitsBlockedByBytes>0;
         if(score>(immersive?210:160)&&!(pressure&&score<urgent/4))continue;
         if([0,1,2,3].some(e=>(deepest.get(tileKey(tileNeighbour(parent,e)))??0)>parent.level+1))continue;
         if(!this.patches.has(key))continue;
@@ -1242,11 +1448,9 @@ export class PlanetRenderer {
     this.leafLoopDirty=dirty;this.leafLoopPatchVersion=this.patchVersion;
     const sameFrame=this.leafFrameMatches(eye,frusta.length,retainedFrusta)&&!leafSetChanged&&!patchesChanged;
     const radiusM=this.body.radiusM,fullSkirt=PATCH_SEGMENTS*PATCH_SEGMENTS*6;
-    // The same conservative horizon as `projected` (per frame, not per tile).
-    const horizonMargin=20000*this.relief/radiusM,horizonCore=1-16000/radiusM;
-    const eyeCos=Math.min(1,Math.max(0,horizonCore/distance)),peakCos=Math.min(1,Math.max(0,horizonCore/(1+horizonMargin)));
-    const horizonCos=eyeCos*peakCos-Math.sqrt(1-eyeCos*eyeCos)*Math.sqrt(1-peakCos*peakCos);
-    const detailAltitude=(distance-1)*radiusM<20000*this.relief+6000;
+    // The same horizon/frustum bounds as `projected` (render-bounds-1).
+    const horizonMargin=renderHeightBoundM(this.body).maxM*this.relief/radiusM;
+    const detailAltitude=(distance-1)*radiusM<renderDetailAltitudeM(this.body,this.relief);
     if(!sameFrame){
       for(const p of this.shownPatches){p.mesh.visible=false;if(p.ocean)p.ocean.visible=false;}
       this.shownPatches.length=0;this.active.clear();
@@ -1266,8 +1470,8 @@ export class PlanetRenderer {
       if (!previous.has(record.code)) p.morph.value = record.tile.level ? 0 : 1;
       if(!this.debug.freezeMorph)p.morph.value = Math.min(1, p.morph.value + dt / .22);
       if(!sameFrame){
-        const sphere=this.leafSphere(record,p,horizonMargin);
-        const visible=direction.dot(record.center)+record.bound>=horizonCos&&(!frusta.length||retainedFrusta.some(f=>f.intersectsSphere(sphere)))&&this.rootsReady;
+        const sphere=this.leafSphere(record,p,horizonMargin),bounds=renderTileBounds(record.tile,record.center,record.bound,p,this.patches,this.body,this.relief,snappedWaterLevelM,distance,direction);
+        const visible=bounds.horizon&&(!frusta.length||retainedFrusta.some(f=>f.intersectsSphere(bounds.sphere)))&&this.rootsReady;
         p.mesh.visible=visible;
         if(visible){this.active.add(key);this.shownPatches.push(p);}
         p.localEye.value.copy(eye).sub(p.mesh.position).multiplyScalar(radiusM);
@@ -1308,7 +1512,9 @@ export class PlanetRenderer {
     // runs when a limit is actually exceeded.
     const inFlight=this.workers.length*2;
     const splitCeiling=terrainAdmission({budgetBytes:terrainBudget,residentBytes:0,pendingTiles:0,inFlight}).splitCeilingBytes;
-    const overLimit=()=>this.patches.size+this.pending.size>=cacheLimit-2||this.residentBytes+(this.pending.size+1)*PENDING_TILE_BYTES>splitCeiling||
+    // Room for one whole split (4 children), the unit selection requests;
+    // room for one tile let residency settle where every split is blocked.
+    const overLimit=()=>this.patches.size+this.pending.size>=cacheLimit-2||this.residentBytes+(this.pending.size+4)*PENDING_TILE_BYTES>splitCeiling||
       (this.terrainPressure&&this.residentBytes>=terrainBudget*TERRAIN_PRESSURE_EXIT_FRACTION);
     if(overLimit())for (const p of [...this.patches.values()].sort((a,b) => a.touched - b.touched)) {
       if (!overLimit()) break;
@@ -1829,7 +2035,7 @@ export class PlanetRenderer {
     const oceanNormalBytes=this.river?.diagnostics().resident?0:[...this.patches.values()].some(p=>p.ocean)?SHARED_WATER_NORMAL_ATLAS_BYTES:0;
     const rocks=this.rocks.diagnostics();
     const memory=rendererMemoryAccounting({residentBytes:this.residentBytes,oceanNormalBytes,rockOwnedBytes:rocks.bytes.total,cloudAllocatedBytes:this.clouds?.allocatedBytes??0,pendingTiles:this.pending.size});
-    return {projection: 'cube-sphere',localAerial,rocks,lifePackBuilds:this.lifePackBuilds, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,frontierMaxLevel:Math.max(0,...[...this.leafIndex.values()].map(t=>t.level)),contactReadiness:this.lastContactReadiness,
+    return {projection: 'cube-sphere',renderBounds:RENDER_BOUNDS_VERSION,localAerial,rocks,lifePackBuilds:this.lifePackBuilds, floraRecipeBuilds:this.floraRecipeBuilds, clouds:this.clouds?.diagnostics()||null, forest:this.forest.diagnostics(), lowFlightDetail:this.lowFlightDetail, surfaceReady:this.surfaceReady, river:this.river?.diagnostics()||null, reflection:this.lakeReflection?.diagnostics()||null, environment:this.environment?.diagnostics()||null, ready: this.rootsReady, resident: this.patches.size, pending: this.pending.size, visible: this.active.size,frontierMaxLevel:Math.max(0,...[...this.leafIndex.values()].map(t=>t.level)),contactReadiness:this.lastContactReadiness,
       // Moving-sea-level verification/observability (this task): the
       // quantized bucket `this.sample`/`this.classify` and newly-dispatched
       // tile jobs are currently using, plus how many of the currently VISIBLE

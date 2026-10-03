@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import type {RenderProfile} from './render-profile.ts';
-import { cloudCoverAt, type CloudParams } from './planet-clouds.ts';
+import { cloudCoverAt, cloudDeckFrame, type CloudParams } from './planet-clouds.ts';
 import { hash64, noise } from './catalog.ts';
 
-/** Presentation version: catalogue and cloudCoverAt identities are unchanged. */
-export const VOLUMETRIC_CLOUDS_VERSION = 'cloud-volume-2';
+/** Presentation version: catalogue and cloudCoverAt identities are unchanged.
+ * cloud-volume-3 (relief round P5): layer heights scale with the scale-height
+ * ratio, sit above the dated sea level and clear the 99th-percentile land. */
+export const VOLUMETRIC_CLOUDS_VERSION = 'cloud-volume-3';
 export const CLOUD_TARGET_BUDGET_BYTES=160*1024*1024;
 export function supportedCloudSceneSamples(colour:readonly number[],depth:readonly number[],maxSamples:number){
   return [...new Set(colour)].filter(n=>Number.isInteger(n)&&n>0&&depth.includes(n)&&n<=maxSamples).sort((a,b)=>b-a);
@@ -32,7 +34,11 @@ export function cloudTransmittance(extinctionPerM: number, distanceM: number) {
 }
 export function cloudLayerHeights(params: CloudParams) {
   const scale = params.gasGiant ? 7 : Math.min(1, Math.max(.12, params.radiusM / 2e6));
-  return { baseM: 800 * scale, lowTopM: 4200 * scale, highBaseM: 6500 * scale, topM: 8500 * scale };
+  // Terrestrial decks: radius-scaled reference layers x the scale-height
+  // ratio, measured from the dated sea level (planet-clouds cloudDeckFrame).
+  // Defaults (no gravity, sea level 0, no land floor) keep the reference.
+  const {baseM,scale:sh}=cloudDeckFrame(params,8500*scale),k=scale*sh;
+  return { baseM: baseM+800 * k, lowTopM: baseM+4200 * k, highBaseM: baseM+6500 * k, topM: baseM+8500 * k };
 }
 
 /** Tileable, integer-seeded noise. Generated code assets, no external textures. */
@@ -303,7 +309,8 @@ export class VolumetricClouds {
     this.enabled=params.hasAtmosphere&&(params.hasOcean||!!params.gasGiant);
     this.weather = new THREE.DataTexture(new Uint8Array(WEATHER_WIDTH*WEATHER_HEIGHT*4),WEATHER_WIDTH,WEATHER_HEIGHT);
     this.weather.wrapS=THREE.RepeatWrapping;this.weather.minFilter=this.weather.magFilter=THREE.LinearFilter;
-    const h=cloudLayerHeights(params);
+    this.seaLevelM=params.seaLevelM??0;
+    const h=this.layers();
     this.material=new THREE.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,
       uniforms:{sceneColor:{value:null},sceneDepth:{value:null},weather:{value:this.weather},shape:{value:this.noise},
         inverseProjection:{value:new THREE.Matrix4()},viewToPlanet:{value:new THREE.Matrix3()},
@@ -341,8 +348,14 @@ export class VolumetricClouds {
     };
     this.resolveScene.add(this.resolveMesh);
   }
-  update(seed:string,address:string,time:bigint,sun:THREE.Vector3) {
+  private seaLevelM=0;
+  /** `seaLevelM`: the dated sea level the deck sits above (default 0). */
+  update(seed:string,address:string,time:bigint,sun:THREE.Vector3,seaLevelM=this.params.seaLevelM??0) {
     this.stateSun.copy(sun).normalize();
+    if(seaLevelM!==this.seaLevelM){
+      this.seaLevelM=seaLevelM;const h=this.layers();
+      this.material.uniforms.heights.value.set(h.baseM,h.lowTopM,h.highBaseM,h.topM).multiplyScalar(.001);
+    }
     // Exact bigint reduction keeps far-future dates finite and replayable.
     // 5040 km is a common period of all shape, erosion and regional noise tiles.
     const period=504_000_000_000_000n,phase=Number((time%period+period)%period)/Number(period);
@@ -444,6 +457,8 @@ export class VolumetricClouds {
     return true;
   }
   get allocatedBytes(){return this.targets.reduce((n,t)=>n+t.width*t.height*12*(1+t.samples),0)+this.cloudTargets.reduce((n,t)=>n+t.width*t.height*8,0)+Math.ceil(this.noise.image.data!.byteLength*(1+8/7))+this.weather.image.data!.byteLength*2;}
-  diagnostics(){return {version:VOLUMETRIC_CLOUDS_VERSION,enabled:this.enabled,representation:'raymarched-volume',temporalHistory:false,steps:this.material.uniforms.steps.value,lightSteps:this.material.uniforms.lightSteps.value,sampleLimit:this.sampleLimit,requestedSceneSamples:this.sceneSamples,effectiveSceneSamples:this.effectiveSceneSamples,supportedSceneSamples:this.supportedSceneSamples,estimatedTargetBytes:this.targets.reduce((n,t)=>n+t.width*t.height*12*(1+t.samples),0)+this.cloudTargets.reduce((n,t)=>n+t.width*t.height*8,0),estimatedBytes:this.allocatedBytes,targetBudgetBytes:this.targetBudgetBytes,sceneResolutionScale:this.sceneResolutionScale,sceneScale:this.sceneScale,captureScale:this.captureScale,desktopQuality:{...this.desktopQuality},eyes:this.captures.length,targets:this.targets.map(t=>({width:t.width,height:t.height,samples:t.samples})),cloudTargets:this.cloudTargets.map(t=>({width:t.width,height:t.height})),layers:cloudLayerHeights(this.params)};}
+  diagnostics(){return {version:VOLUMETRIC_CLOUDS_VERSION,enabled:this.enabled,representation:'raymarched-volume',temporalHistory:false,steps:this.material.uniforms.steps.value,lightSteps:this.material.uniforms.lightSteps.value,sampleLimit:this.sampleLimit,requestedSceneSamples:this.sceneSamples,effectiveSceneSamples:this.effectiveSceneSamples,supportedSceneSamples:this.supportedSceneSamples,estimatedTargetBytes:this.targets.reduce((n,t)=>n+t.width*t.height*12*(1+t.samples),0)+this.cloudTargets.reduce((n,t)=>n+t.width*t.height*8,0),estimatedBytes:this.allocatedBytes,targetBudgetBytes:this.targetBudgetBytes,sceneResolutionScale:this.sceneResolutionScale,sceneScale:this.sceneScale,captureScale:this.captureScale,desktopQuality:{...this.desktopQuality},eyes:this.captures.length,targets:this.targets.map(t=>({width:t.width,height:t.height,samples:t.samples})),cloudTargets:this.cloudTargets.map(t=>({width:t.width,height:t.height})),layers:this.layers(),seaLevelM:this.seaLevelM};}
+  /** The current layer heights (m above the radius datum). */
+  layers(){return cloudLayerHeights(this.params.seaLevelM===this.seaLevelM?this.params:{...this.params,seaLevelM:this.seaLevelM});}
   dispose(){if(this.disposed)return;this.disposed=true;for(const t of [...this.targets,...this.cloudTargets])t.dispose();this.weather.dispose();this.noise.dispose();this.material.dispose();this.resolveMaterial.dispose();this.mesh.geometry.dispose();this.resolveMesh.geometry.dispose();}
 }

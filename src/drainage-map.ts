@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {hash64,type Body} from './catalog.ts';
 import {drainageBytes,type Drainage,type Catchment} from './drainage.ts';
+import {renderHeightBoundM} from './planet-renderer.ts';
 
 /** An explicitly cartographic overlay. It neither renders water surfaces nor
  * participates in collision. A dedicated disposable worker owns its one job. */
@@ -89,7 +90,8 @@ export class DrainageMap{
   update(matrix:THREE.Matrix4,altitudeM:number,relief:number){
     const fade=THREE.MathUtils.smoothstep(altitudeM,50000,120000);
     this.group.visible=this.enabled&&this.status==='ready'&&fade>0;
-    this.group.matrix.copy(matrix).scale(new THREE.Vector3().setScalar(1+(20000*relief+1500)/this.body.radiusM));
+    // Above the body's highest terrain (render-bounds-1 height bound) + 1.5 km.
+    this.group.matrix.copy(matrix).scale(new THREE.Vector3().setScalar(1+(Math.max(0,renderHeightBoundM(this.body).maxM)*relief+1500)/this.body.radiusM));
     for(const m of this.materials)m.opacity=fade*((m===this.surface?.material) ? 0.32 : 1);
   }
   diagnostics(){
