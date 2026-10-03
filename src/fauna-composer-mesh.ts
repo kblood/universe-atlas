@@ -3,8 +3,9 @@ import {composerHash, composerRandom, type ComposerRecipe} from './fauna-compose
 import {COAT_REGIONS, type CoatRegion} from './fauna-coat-vocab.ts';
 import {COAT_CELLS_PER_BODY, applyCoatDrift, coatIndividualDrift, defaultCoatGenome, evaluateCoat, hash3u, valueNoise3, type CoatGenome} from './fauna-coat-fields.ts';
 import {composerIndividualTraits, type ComposerIndividualTraits} from './fauna-composer-individual.ts';
-import {COMPOSER_IRIS_RGB, composerHeadgearBuild, composerSkullOf, resolveComposerEyes, type ComposerSkull} from './fauna-composer-face.ts';
-import {EYE_PATCH, EYE_ROLE, type LiddedEyeType, buildCompoundEye, buildEyePatch, buildEyespot, eyeBarAxis, eyeGaze, nearestExit, raycastFirstHit, type EyePatch, type RayHit, type Vec3 as EyeVec3} from './fauna-composer-eye.ts';
+import {COMPOSER_IRIS_RGB, FACE_EYE_PROFILE, composerEyeProfileId, composerEyeRulesOf, composerHeadgearBuild, composerSkullOf, resolveComposerEyes, type ComposerSkull} from './fauna-composer-face.ts';
+import {EYE_PATCH, EYE_ROLE, type LiddedEyeType, buildCompoundEye, buildEyePatch, buildEyespot, buildEyespotBead, buildFacetedEye, buildOcellus, buildStalk, catalogueEyeSpec, eyeBarAxis, eyeGaze, nearestExit, normalize3, raycastFirstHit, type EyePatch, type RayHit, type Vec3 as EyeVec3} from './fauna-composer-eye.ts';
+import {isFaceRoundEyeKind} from './fauna-composer-eye-catalogue.ts';
 import {PROBOSCIS_FACE, composerFaceTip} from './fauna-composer-face-geometry.ts';
 import {composerFeatherFanSpan, composerWingChord, composerWingThickness, type ComposerBone, type ComposerGraph, type ComposerLimb, type ComposerSection, type Vec3} from './fauna-composer-rig.ts';
 
@@ -16,7 +17,9 @@ import {composerFeatherFanSpan, composerWingChord, composerWingThickness, type C
  * shells, plates, feathers) carry full weight on their bone. Vertex colours come
  * from the shared fauna coat library (fauna-coat-1), sampled at each vertex's
  * true 3D position. Output is plain arrays so it can be inspected in tests. */
-export const COMPOSER_SKIN_VERSION = 'fauna-composer-skin-3';
+/** skin-4 (eye round EC2): the eye catalogue geometry (fauna-composer-eye-2) under the current eye rules, and the blunt
+ * mouth disc shaded as a mouth; the earlier eye rules (eyeRules 1) still build skin-3 byte for byte. */
+export const COMPOSER_SKIN_VERSION = 'fauna-composer-skin-4';
 export type ComposerSkinPart = 'torso' | 'neck' | 'tail' | 'head' | 'eyes' | 'mouth' | 'horn' | 'trunk' | 'leg' | 'foot' | 'arm' | 'hand' | 'wing' | 'armor' | 'tail-tip';
 
 /** Radial segments and rings per bone of the lofted tubes (feet and toes keep their own tessellation). */
@@ -1219,10 +1222,13 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
       const sg = h.normal[0] < 0 ? -1 : 1;
       return at(hb, h.point[0] + sg * h.normal[0] * lift, h.point[1] + sg * h.normal[1] * lift, h.point[2] + sg * h.normal[2] * lift);
     };
-    const centre = s.v(onCap(0, 0), mouthDisc, w), ringIds: number[][] = [];
+    // the current eye rules (fauna-composer-eye-2) shade the disc as a mouth, not a hole: dark flesh at the centre, the
+    // skin, then a pale lip at the rim; the earlier eye rules keep the face round's flat dark disc (byte-identical)
+    const discColour = composerEyeRulesOf(r) === 1 ? () => mouthDisc : (k: number) => mouthDiscRing(pal.skin, k);
+    const centre = s.v(onCap(0, 0), discColour(0), w), ringIds: number[][] = [];
     for (let k = 1; k <= discRings; k++) {
-      const rr = k / discRings, ids: number[] = [];
-      for (let j = 0; j < discSeg; j++) { const a = TAU * j / discSeg; ids.push(s.v(onCap(Math.sin(a) * 0.32 * cH * rr, Math.cos(a) * 0.32 * cW * rr), mouthDisc, w)); }
+      const rr = k / discRings, ids: number[] = [], col = discColour(k);
+      for (let j = 0; j < discSeg; j++) { const a = TAU * j / discSeg; ids.push(s.v(onCap(Math.sin(a) * 0.32 * cH * rr, Math.cos(a) * 0.32 * cW * rr), col, w)); }
       ringIds.push(ids);
     }
     for (let j = 0; j < discSeg; j++) s.to(centre, ringIds[0]![j]!, ringIds[0]![(j + 1) % discSeg]!, ax);
@@ -1336,6 +1342,15 @@ function headSurfaceTriangles(s: Skin, hb: ComposerBone, firstPart: number, neck
   return new Float64Array(out);
 }
 
+/** The blunt face's mouth disc under the current eye rules, by ring (0 = centre, 4 = rim): a radial gradient from dark
+ * flesh (never black) through the skin to a pale lip, so the disc reads as a mouth instead of a hole (GPT Luna 6, face
+ * round: "a large dark circular ... opening ... hole"). */
+export const MOUTH_DISC_SHADES = Object.freeze({inner: [0.10, 0.035, 0.03] as RGB, toInner: [0.62, 0.5, 0.25, 0, 0] as readonly number[], lip: [0.62, 0.52, 0.46] as RGB, toLip: [0, 0, 0, 0.45, 0.3] as readonly number[]});
+function mouthDiscRing(skin: RGB, k: number): RGB {
+  const M = MOUTH_DISC_SHADES;
+  return mixC(mixC(skin, M.inner, M.toInner[k]!), M.lip, M.toLip[k]!);
+}
+
 /** Head-local anchor of each lidded eye per skull (the pre-WP4 fixed eye sites, x and y in head units). */
 function eyeAnchor(skull: ComposerSkull, H: number, cH: number, cW: number): [number, number, number] {
   return skull === 'beak' ? [0.2 * H, 0.3 * cH, 0.86 * cW] : skull === 'flat-face' ? [0.43 * H, 0.06 * cH, 0.42 * cW] : skull === 'jaws' ? [0.24 * H, 0.52 * cH, 0.72 * cW] : [0.3 * H, 0.38 * cH, 0.8 * cW];
@@ -1383,8 +1398,17 @@ function buildEyes(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
     const first = s.patch(pos, colours, patch.gloss, patch.index, w, REGION.eye);
     ctx.eyes.push({side, type, er, centre: [...centre], gaze: [...gaze], surface: surface ? [...surface] : null, firstVertex: first, vertexCount: colours.length, rings: patch.rings.map(x => first + x), triangles: patch.index.length / 3, rimFallbacks: patch.rimFallbacks});
   };
-  s.begin('eyes', eyes.built === 'compound' ? 'compound eyes' : eyes.built === 'eyespot' ? 'eyespots' : `${eyes.built} eyes`);
+  // the earlier eye rules build the face round's kinds exactly as fauna-composer-eye-1 did (byte-identical); every other
+  // eye (the current rules, or a catalogue kind under either rules) is the catalogue geometry (fauna-composer-eye-2)
+  const legacy = eyes.rules === 1 && isFaceRoundEyeKind(eyes.kind);
+  const label = legacy ? eyes.built : eyes.kind;
+  s.begin('eyes', label === 'compound' ? 'compound eyes' : label === 'eyespot' ? 'eyespots' : `${label} eyes`);
   s.region = REGION.eye;
+  if (!legacy) {
+    buildCatalogueEyes({s, r, H, cW, cH, sn, skull, eyes, sizeK, tr, pal, hc, coatAt, ctx, headTris, worldUp, surfaceColour, toModel, emit});
+    s.end();
+    return;
+  }
   if (eyes.built === 'compound') {
     // mandibles: compound-eye domes at the old site, seated on the head capsule
     for (const side of [-1, 1]) {
@@ -1474,6 +1498,243 @@ function buildEyes(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
     }
   }
   s.end();
+}
+
+/** Catalogue-path eye numbers (fauna-composer-eye-2, eye round EC2). Design values tuned in review at normal viewing
+ * size; colours are linear RGB, luminances Rec.709. */
+export const COMPOSER_EYE_CATALOGUE = Object.freeze({
+  /** camera eyes: er = max(profile k, minK) x sizeBoost x preset size x craniumHeight x eyeScale x eyeRel. The face
+   * round's eyes read "tiny" or vanished on large dark heads (rhino k 0.07); the floor and the boost fix the size. */
+  minK: 0.105, sizeBoost: 1.12,
+  /** iris: an absolute luminance floor on top of the face round's floors (10x the pupil, 1.8x the lid rim), and a
+   * larger gain limit, so a dark-brown iris reads as brown, not as a hole */
+  irisMin: 0.075, maxIrisGain: 8,
+  /** a bare periocular ring: the outer lid blends toward this pale skin until its luminance reaches periocularLum
+   * (only coats darker than that change: the face round's eyes vanished into dark faces) */
+  periocular: [0.36, 0.30, 0.25] as RGB, periocularLum: 0.12,
+  sclera: [0.72, 0.68, 0.60] as RGB, nictitans: [0.50, 0.42, 0.40] as RGB, nictitansMix: 0.6, brow: 0.85,
+  disc: [0.55, 0.50, 0.42] as RGB, discMix: 0.3,
+  /** compound eyes: facet floor (luminance, and a multiple of the head skin), lens shades (a, b), lattice and pseudopupil */
+  facetMin: 0.06, facetOverSkin: 3, lens: [1.3, 1.05] as readonly number[], lattice: 0.3, pseudopupil: 0.12,
+  /** eyespot bead: radius on a worm cap (x craniumHeight) and on any other face (x the camera er); pigment tint (never
+   * black) and the pale rim */
+  eyespotR: 0.14, eyespotOnFace: 0.75, pigment: [0.07, 0.025, 0.018] as RGB, pigmentMix: 0.75, rim: [0.62, 0.52, 0.44] as RGB, rimMix: 0.55,
+  /** simple eyes (spider eyes, ocelli, a snail's stalk tip): near-black glossy lenses with a slightly paler socket rim */
+  ocellus: [0.012, 0.012, 0.016] as RGB, ocellusRim: [0.5, 0.4, 0.32] as RGB, ocellusRimMix: 0.35,
+  /** eye stalks: length x craniumHeight (worm cap, any other face), males x (1 + dimorphism x stalkDimorphism) */
+  stalkLength: {blunt: 0.9, other: 0.45}, stalkDimorphism: 0.6, stalkR: [0.07, 0.05] as readonly number[], stalkBulb: 0.13, stalkBead: 0.09,
+});
+/** The eight spider eyes per pair (anterior median, anterior lateral, posterior median, posterior lateral): radius
+ * (x craniumHeight), gaze yaw and pitch (degrees), lateral offset (x craniumWidth), site offsets (x head length, x
+ * craniumHeight) from the face's eye site, and the bead's tessellation. 2 x (48 + 3 x 16) = 192 triangles. */
+export const SPIDER_EYES = Object.freeze([
+  {r: 0.15, yaw: 8, pitch: 5, z: 0.18, dx: 0.08, dy: 0, segments: 12, stations: 2, rim: true},
+  {r: 0.07, yaw: 40, pitch: 5, z: 0.45, dx: 0.04, dy: -0.03, segments: 8, stations: 1, rim: false},
+  {r: 0.06, yaw: 20, pitch: 35, z: 0.25, dx: -0.02, dy: 0.12, segments: 8, stations: 1, rim: false},
+  {r: 0.07, yaw: 90, pitch: 25, z: 0.5, dx: -0.06, dy: 0.06, segments: 8, stations: 1, rim: false},
+]);
+/** Insect ocelli: site offsets (x head length, x craniumWidth) from the compound eyes' site, on the head top. */
+const INSECT_OCELLI: readonly (readonly [number, number])[] = [[0.1, 0], [-0.05, -0.3], [-0.05, 0.3]];
+/** Every catalogue ring vertex lies within this many er of its centre (facial disc 2.1 er in plane + the closest-point
+ * search 2.5 er), so the skull triangles beyond it never affect the patch. */
+const CATALOGUE_PATCH_REACH = 5.2;
+
+interface CatalogueEyeEnv {
+  s: Skin; r: ComposerRecipe; H: number; cW: number; cH: number; sn: number; skull: ComposerSkull;
+  eyes: ReturnType<typeof resolveComposerEyes>; sizeK: number; tr: SkinIndividual['traits']; pal: Palette;
+  hc: ReturnType<typeof makeHeadColours>; coatAt: CoatAt; ctx: EyeContext; headTris: Float64Array; worldUp: EyeVec3;
+  surfaceColour: (hit: RayHit) => RGB; toModel: (x: number, y: number, z: number) => THREE.Vector3;
+  emit: (patch: EyePatch, colours: RGB[], side: number, type: string, er: number, centre: EyeVec3, gaze: EyeVec3, surface: EyeVec3 | null) => void;
+}
+function mergeEyePatches(a: EyePatch, b: EyePatch): EyePatch {
+  const off = a.positions.length / 3;
+  return {positions: [...a.positions, ...b.positions], roles: Uint8Array.from([...a.roles, ...b.roles]), gloss: [...a.gloss, ...b.gloss], index: [...a.index, ...b.index.map(i => i + off)],
+    surface: [...a.surface, ...b.surface], rimFallbacks: a.rimFallbacks + b.rimFallbacks, rings: [...a.rings, ...b.rings.map(i => i + off)]};
+}
+const gainC = (c: RGB, k: number): RGB => [Math.min(1, c[0] * k), Math.min(1, c[1] * k), Math.min(1, c[2] * k)];
+/** Blends c toward `toward` just enough to reach luminance `target` (never darkens). */
+function liftTo(c: RGB, toward: RGB, target: number): RGB {
+  const l = luminance(c), lt = luminance(toward);
+  if (l >= target || lt <= l) return c;
+  return mixC(c, toward, Math.min(1, (target - l) / (lt - l)));
+}
+
+/** The eye catalogue geometry (fauna-composer-eye-2): every kind on every face, from its preset's traits. */
+function buildCatalogueEyes(e: CatalogueEyeEnv) {
+  const {r, H, cW, cH, sn, skull, eyes, sizeK, tr, pal, ctx, headTris, worldUp, surfaceColour, emit} = e;
+  const K = COMPOSER_EYE_CATALOGUE, C = COMPOSER_EYE_CONTRAST, T = eyes.traits, face = r.head, deg = Math.PI / 180;
+  // the face's camera-eye profile (an arthropod or worm head takes the appended camera profiles)
+  const cam = FACE_EYE_PROFILE[composerEyeProfileId(r, 'round')], camK = Math.max(cam.k, K.minK) * K.sizeBoost;
+  const [ex, ey, ez] = eyeAnchor(skull, H, cH, cW), onMandibles = face === 'mandibles';
+  const P = T.placement, own = (side: number) => (P.kind === 'independent' && side > 0 && P.right ? P.right : null);
+  const yawOf = (side: number) => own(side)?.yawDeg ?? P.yawByFace?.[face] ?? P.yawDeg ?? cam.gazeYawDeg;
+  const pitchOf = (side: number) => own(side)?.pitchDeg ?? P.pitchDeg ?? COMPOSER_EYE_PITCH_DEG;
+  /** the camera site, moved forward and inward for a gaze more frontal than the face's own, and up for a dorsal one */
+  const siteOf = (side: number, yaw: number, pitch: number): EyeVec3 => {
+    const shift = clamp((cam.gazeYawDeg - yaw) / Math.max(cam.gazeYawDeg, 1), 0, 1), up = pitch > 10 ? Math.sin(pitch * deg) : 0;
+    return [ex + 0.1 * H * shift, ey + 0.2 * cH * up, side * ez * (1 - 0.45 * shift) * (1 - 0.25 * up)];
+  };
+  const skinAt = (hit: RayHit | null): RGB => hit ? surfaceColour(hit) : pal.base;
+  /** compound facets: the palette eye colour, lifted toward a reddish brown until it clears the skin under the eye */
+  const facetOf = (under: RGB): RGB => {
+    const floor = Math.max(K.facetMin, K.facetOverSkin * luminance(under));
+    return liftTo(pal.eye, COMPOUND_EYE_FLOOR.tint, Math.min(floor, luminance(COMPOUND_EYE_FLOOR.tint)));
+  };
+  const facetColours = (patch: EyePatch, facet: RGB): RGB[] => [...patch.roles].map(role =>
+    role === EYE_ROLE['facet-a'] ? gainC(facet, K.lens[0]!) : role === EYE_ROLE['facet-b'] ? gainC(facet, K.lens[1]!)
+      : role === EYE_ROLE.pseudopupil ? scaleC(facet, K.pseudopupil) : scaleC(facet, K.lattice));
+
+  if (T.structure === 'camera') {
+    const spec = catalogueEyeSpec(T), er = camK * T.size * cH * sizeK;
+    const built: {patch: EyePatch; side: number; centre: EyeVec3; gaze: EyeVec3; hit: RayHit | null; surf: RGB[]}[] = [];
+    for (const side of [-1, 1]) {
+      const yaw = yawOf(side), pitch = pitchOf(side), gaze = eyeGaze(yaw, pitch, side), site = siteOf(side, yaw, pitch);
+      const hit = nearestExit(headTris, site, gaze);
+      if (!hit) ctx.fallbacks++;
+      const centre = hit ? addV(hit.point, gaze, -EYE_PATCH.recess * er) : site;
+      const near = trianglesNear(headTris, centre, CATALOGUE_PATCH_REACH * er);
+      const patch = buildEyePatch({type: 'round', er, centre, gaze, barAxis: eyeBarAxis(gaze, worldUp), surface: near.tris, spec, forward: [1, 0, 0], midline: {n: [0, 0, side], min: 0.03 * cW}});
+      for (const h of patch.surface) if (h) h.tri = near.ids[h.tri]!;
+      const surf = patch.surface.map((h, k): RGB => {
+        if (h) return surfaceColour(h);
+        const x = patch.positions[k * 3]!, p = e.toModel(x, patch.positions[k * 3 + 1]!, patch.positions[k * 3 + 2]!);
+        return e.coatAt(p, 0.5, e.hc.region(x), e.hc.along(x));
+      });
+      built.push({patch, side, centre, gaze, hit, surf});
+    }
+    const irisOf = (id: string): RGB => scaleC([...(COMPOSER_IRIS_RGB as Record<string, readonly number[]>)[id]!] as RGB, ctx.eyeMul);
+    let iris = irisOf(eyes.irisBuilt ?? 'dark-brown');
+    if (r.head === 'beak' && r.maturity < 0.75) iris = mixC(iris, irisOf('dark-brown'), (0.75 - r.maturity) / 0.75);
+    let lidLum = 0;
+    for (const {patch, surf} of built) patch.roles.forEach((role, k) => { if (role === EYE_ROLE.lid) lidLum = Math.max(lidLum, luminance(scaleC(surf[k]!, C.lid))); });
+    const want = Math.max(C.overPupil * luminance(PUPIL_RGB), C.overLid * lidLum, K.irisMin), have = luminance(iris);
+    if (have < want && have > 0) iris = gainC(iris, Math.min(K.maxIrisGain, want / have));
+    let lidFactor = C.lid;
+    if (luminance(iris) < C.overLid * lidLum) lidFactor = C.lid * luminance(iris) / (C.overLid * lidLum) * 0.999;
+    ctx.colours.iris = iris; ctx.colours.lidFactor = lidFactor;
+    const irisInner = gainC(iris, 1.1), limbus = scaleC(iris, 0.45);
+    for (const {patch, side, centre, gaze, hit, surf} of built) {
+      let lidSum: RGB = [0, 0, 0], lids = 0;
+      const shade = (k: number) => patch.shade?.[k] ?? 1;
+      const colours = [...patch.roles].map((role, k): RGB => {
+        switch (role) {
+          case EYE_ROLE.pupil: return PUPIL_RGB;
+          case EYE_ROLE['iris-inner']: return gainC(irisInner, shade(k));
+          case EYE_ROLE.iris: return gainC(iris, shade(k));
+          case EYE_ROLE.limbus: return limbus;
+          case EYE_ROLE.sclera: return K.sclera;
+          case EYE_ROLE.lid: case EYE_ROLE.nictitans: {
+            const c = scaleC(surf[k]!, lidFactor); lidSum = [lidSum[0] + c[0], lidSum[1] + c[1], lidSum[2] + c[2]]; lids++;
+            return role === EYE_ROLE.nictitans ? mixC(c, K.nictitans, K.nictitansMix) : c;
+          }
+          case EYE_ROLE['outer-lid']: {
+            const c = scaleC(surf[k]!, C.outerLid);
+            return liftTo(spec.disc ? mixC(c, K.disc, K.discMix) : c, K.periocular, K.periocularLum);
+          }
+          case EYE_ROLE.brow: return scaleC(surf[k]!, K.brow);
+          case EYE_ROLE.turret: return surf[k]!;
+          case EYE_ROLE.orbit: return surf[k]!;
+          default: return [0, 0, 0];
+        }
+      });
+      const socket = scaleC(lidSum, 1 / Math.max(1, lids));
+      patch.roles.forEach((role, k) => { if (role === EYE_ROLE.socket) colours[k] = socket; });
+      emit(patch, colours, side, eyes.kind, er, centre, gaze, hit ? hit.point : null);
+    }
+  } else if (T.structure === 'compound') {
+    // facet domes: the arthropod site on a mandibles head (the face round's), the camera site on any other face
+    const kc = camK * cH * sizeK * T.size;
+    const er3: [number, number, number] = onMandibles ? [0.07 * H * sizeK * T.size, 0.18 * cH * sizeK * T.size, 0.12 * cW * sizeK * T.size] : [1.05 * kc, 1.2 * kc, 0.75 * kc];
+    const yaw = onMandibles ? FACE_EYE_PROFILE.mandibles.gazeYawDeg : cam.gazeYawDeg;
+    let facet: RGB = pal.eye;
+    for (const side of [-1, 1]) {
+      const gaze = eyeGaze(yaw, COMPOSER_EYE_PITCH_DEG, side), site: EyeVec3 = onMandibles ? [0.45 * H, 0.35 * cH, side * 0.82 * cW] : [ex, ey, side * ez];
+      const hit = nearestExit(headTris, site, gaze);
+      if (!hit) ctx.fallbacks++;
+      const centre = hit ? addV(hit.point, gaze, -0.35 * er3[2]) : site;
+      const patch = buildFacetedEye({er3, centre, gaze, up: [0, 1, 0]});
+      facet = facetOf(skinAt(hit));
+      emit(patch, facetColours(patch, facet), side, eyes.kind, Math.max(...er3), centre, gaze, hit ? hit.point : null);
+    }
+    ctx.colours.compound = facet;
+    if (T.extras === 'ocelli') {
+      // three ocelli on the head top between the compound eyes
+      const ox = onMandibles ? 0.45 * H : ex, rr = 0.25 * er3[1], up = normalize3([0.35, 1, 0]);
+      for (const [dx, z] of INSECT_OCELLI) {
+        const site: EyeVec3 = [ox + dx! * H, 0.3 * cH, z! * cW], hit = nearestExit(headTris, site, up);
+        if (!hit) ctx.fallbacks++;
+        const n = hit ? normalize3(addV(up, hit.normal, 1)) : up, base = hit ? addV(hit.point, n, -0.25 * rr) : site;
+        const patch = buildOcellus({r: rr, height: 0.7 * rr, centre: base, normal: n, up: [1, 0, 0], segments: 8, stations: 1});
+        const lens = gainC(facet, 1.2);
+        emit(patch, [...patch.roles].map(() => lens), 0, 'ocellus', rr, base, n, hit ? hit.point : null);
+      }
+    }
+  } else if (T.structure === 'ocellus') {
+    // spider eyes: four beads per side around the face's eye site
+    const [x0, y0] = onMandibles ? [0.45 * H, 0.35 * cH] : [ex, ey];
+    for (const side of [-1, 1]) for (const S of SPIDER_EYES) {
+      const gaze = eyeGaze(S.yaw, S.pitch, side), site: EyeVec3 = [x0 + S.dx * H, y0 + S.dy * cH, side * S.z * cW], rr = S.r * cH * sizeK;
+      const hit = nearestExit(headTris, site, gaze);
+      if (!hit) ctx.fallbacks++;
+      const n = hit ? normalize3(addV(gaze, hit.normal, 1)) : gaze, base = hit ? addV(hit.point, n, -0.3 * rr) : site;
+      const patch = buildOcellus({r: rr, height: 0.75 * rr, centre: base, normal: n, up: [0, 1, 0], segments: S.segments, stations: S.stations, rim: S.rim});
+      const rim = mixC(skinAt(hit), K.ocellusRim, K.ocellusRimMix);
+      emit(patch, [...patch.roles].map(role => role === EYE_ROLE['ocellus-rim'] ? rim : K.ocellus), side, 'ocellus', rr, base, n, hit ? hit.point : null);
+    }
+  } else if (T.structure === 'eyespot') {
+    // a domed, glossy pigment bead with a pale rim: on a worm's cap where the face round put its discs, on any other
+    // face at the camera site
+    const blunt = face === 'blunt', rr = blunt ? K.eyespotR * cH * sizeK : K.eyespotOnFace * camK * cH * sizeK;
+    const pigment = mixC(pal.eye, K.pigment, K.pigmentMix), liftH = 0.002 * H;
+    for (const side of [-1, 1]) {
+      let gaze: EyeVec3, hit: RayHit | null, base: EyeVec3;
+      if (blunt) {
+        const xt = 0.6 * H + sn * 0.3, from: EyeVec3 = [xt, 0, 0];
+        gaze = eyeGaze(eyes.gazeYawDeg, COMPOSER_EYESPOT_PITCH_DEG, side); hit = raycastFirstHit(headTris, from, gaze);
+        base = hit ? hit.point : addV(from, gaze, 0.7 * cW);
+      } else {
+        gaze = eyeGaze(cam.gazeYawDeg, COMPOSER_EYE_PITCH_DEG, side);
+        const site: EyeVec3 = [ex, ey, side * ez];
+        hit = nearestExit(headTris, site, gaze); base = hit ? hit.point : site;
+      }
+      if (!hit) ctx.fallbacks++;
+      const g = gaze, onSkin = (p: EyeVec3) => nearestExit(headTris, p, g, 3 * rr);
+      const patch = buildEyespotBead({r: rr, centre: base, normal: gaze, up: [0, 1, 0], rimLift: p => { const h = onSkin(p); return h ? h.t + liftH : liftH; }});
+      const under = skinAt(hit);
+      const colours = [...patch.roles].map((role, k): RGB => {
+        if (role === EYE_ROLE.eyespot) return k === 0 ? pigment : scaleC(pigment, k <= 12 ? 1 : 0.8);
+        const p: EyeVec3 = [patch.positions[k * 3]!, patch.positions[k * 3 + 1]!, patch.positions[k * 3 + 2]!], h = onSkin(addV(p, g, -rr));
+        const skin = h ? surfaceColour(h) : under;
+        return role === EYE_ROLE['eyespot-rim'] ? mixC(skin, K.rim, K.rimMix) : role === EYE_ROLE.periocular ? skin : scaleC(pigment, 0.8);
+      });
+      emit(patch, colours, side, 'eyespot', rr, base, gaze, hit ? hit.point : null);
+    }
+  } else {
+    // eye stalks: a tapered stalk rising from the head top, tipped with a facet bulb (crab) or a dark bead (snail)
+    const blunt = face === 'blunt', dim = tr.sex === 'male' ? 1 + K.stalkDimorphism * r.dimorphism : 1;
+    const len = (blunt ? K.stalkLength.blunt : K.stalkLength.other) * cH * sizeK * dim, r0 = K.stalkR[0]! * cH * sizeK, r1 = K.stalkR[1]! * cH * sizeK;
+    for (const side of [-1, 1]) {
+      const dir = eyeGaze(P.yawDeg ?? 40, P.pitchDeg ?? 55, side);
+      const site: EyeVec3 = blunt ? [0.55 * H + 0.3 * sn, 0.35 * cH, side * 0.3 * cW] : onMandibles ? [0.4 * H, 0.45 * cH, side * 0.45 * cW] : [ex, ey + 0.25 * cH, side * 0.6 * ez];
+      const hit = nearestExit(headTris, site, dir);
+      if (!hit) ctx.fallbacks++;
+      const root = hit ? hit.point : site, under = skinAt(hit);
+      const {patch: stalk, tip} = buildStalk({base: root, dir, up: [0, 1, 0], length: len, r0, r1, segments: 6, rings: blunt ? 4 : 3});
+      let bulb: EyePatch, bulbColours: RGB[], er: number, centre: EyeVec3 = tip, gaze: EyeVec3 = dir;
+      if (blunt) {
+        er = K.stalkBead * cH * sizeK;
+        bulb = buildOcellus({r: er, height: 0.9 * er, centre: tip, normal: dir, up: [0, 1, 0], segments: 8, stations: 2});
+        bulbColours = [...bulb.roles].map(() => K.ocellus);
+      } else {
+        er = K.stalkBulb * cH * sizeK;
+        gaze = normalize3(addV(dir, [0, 0, side], 0.6)); centre = addV(tip, gaze, -0.2 * er);
+        bulb = buildFacetedEye({er3: [er, er, 0.8 * er], centre, gaze, up: [0, 1, 0], segments: 10, stations: 3});
+        bulbColours = facetColours(bulb, facetOf(under));
+      }
+      const stalkColour = scaleC(under, 0.9);
+      emit(mergeEyePatches(stalk, bulb), [...stalk.roles].map(() => stalkColour).concat(bulbColours), side, 'stalk', er, centre, gaze, hit ? hit.point : null);
+    }
+  }
 }
 /** Triangles [from, to) of the skin, as a head-local soup (9 numbers each, the head bone's rest frame). */
 function headLocalTriangles(s: Skin, hb: ComposerBone, from: number, to: number): Float64Array {

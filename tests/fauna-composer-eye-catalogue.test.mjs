@@ -254,7 +254,8 @@ test('odd combinations are built: every kind on every face, 0 eye fallbacks, no 
     if (e.built !== 'compound' && e.built !== 'eyespot') assert.ok(e.k > 0, `${body.head}/${eyes}: a lidded stand-in has a size`);
     const skin = buildComposerSkin(buildComposerGraph(r), {debug: true});
     assert.equal(skin.eyeFallbacks, 0, `${body.head}/${eyes}: seated on the head`);
-    assert.equal(skin.debug.eyes.length, 2, `${body.head}/${eyes}: a pair`);
+    // EC2 (fauna-composer-eye-2) builds the kind itself: spiders 8 eyes, insects 2 compound eyes + 3 ocelli
+    assert.equal(skin.debug.eyes.length, eyes === 'spider' ? 8 : eyes === 'insect' ? 5 : 2, `${body.head}/${eyes}: eye count`);
     builds++;
   }
   assert.equal(builds, 8 * 18);
