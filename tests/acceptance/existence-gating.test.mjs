@@ -5,7 +5,7 @@
 //   Galaxy    | before birth: not rendered            | after death (merged): redirect to mergedIntoAddress; nothing renders at the old address
 //   Star      | before birth: protostellar placeholder (data gate: not-exists) | after death: remnant render using outcome (exists)
 //   Planet    | before birth: not rendered             | after death (engulfed): not rendered; otherwise still rendered, solid/frozen-ocean
-//   Ocean     | n/a, gated by planet existence         | WaterKey ramp handles evaporation/freezing without deleting the body
+//   Ocean     | n/a, gated by planet existence         | WaterKey volume-loss keys handle evaporation without deleting the body
 //   Biosphere | not rendered before birthMyr            | not rendered after deathMyr
 //
 // The half-open interval means: state(birthNs) exists (birth is INCLUDED),
@@ -17,7 +17,7 @@ import { galaxies, refByAddress, system } from '../../src/catalog.ts';
 import { CATALOGUE_EPOCH_NS, UNIVERSE_END_NS, tenToThe, YEAR_NS } from '../../src/world-time.ts';
 import { galaxyLifecycle, galaxyStateAt } from '../../src/galaxy-history.ts';
 import { starLifecycle, starStateAt, planetLifecycle, planetStateAt, waterKeysFor } from '../../src/stellar-evolution.ts';
-import { surfaceAt, biosphereStateAt, waterLevelAt } from '../../src/world-surface.ts';
+import { surfaceAt, biosphereStateAt, waterLossAt } from '../../src/world-surface.ts';
 import { SEED, dummyAddress, buildCorpus } from './helpers.mjs';
 
 const { stars: STAR_CORPUS, planets: PLANET_CORPUS } = buildCorpus(60, 300);
@@ -124,7 +124,9 @@ test('ocean existence gate: no global sea before oceanNs, even though the planet
     assert.ok(justBefore.exists, 'sanity: the planet itself already exists at oceanNs-1');
     assert.equal(justBefore.sample.ocean, false, 'no global sea one instant before the ocean has condensed (§2.5/§2.6)');
     const keys = waterKeysFor(planetLc, starLc);
-    assert.equal(waterLevelAt(keys, planetLc.oceanNs - 1n), keys[0].levelM, 'waterLevelAt clamps to the first key before it, per its documented contract');
+    // ocean-volume-1 keys carry a lost-volume fraction (no levelM).
+    assert.equal(waterLossAt(keys, planetLc.oceanNs - 1n), keys[0].lossFraction, 'waterLossAt clamps to the first key before it, per its documented contract');
+    assert.equal(typeof keys[0].lossFraction, 'number');
     checked++;
   }
   assert.ok(checked > 5, 'corpus must include several wet, non-pre-engulfed planets to exercise this gate');

@@ -8,7 +8,7 @@
 import { hash64, rng, type Body, type SystemRef, type V3 } from './catalog.ts';
 import { YEAR_NS, CATALOGUE_EPOCH_NS, type Ns } from './world-time.ts';
 import type { BodyAddress } from './address.ts';
-import type { WaterKey } from './world-surface.ts';
+import type { WaterKey } from './world-surface.ts'; // {dateNs, lossFraction} (ocean-volume-1)
 // Was a local `// --- det helpers (to be replaced by det-math.ts) ---`
 // section (fixed-iteration expNeg/logPos/detExp/detLn/detPow copies, built
 // only from +,-,*,/,Math.floor,Math.sqrt — no Math.exp/log/pow/sin/cos/tan/
@@ -224,16 +224,81 @@ export function planetLifecycle(
   return { formationNs, coolingNs, oceanNs, engulfedNs };
 }
 
-/** Contract §2.5: water level is authored as ordered `WaterKey`s derived from
- * `PlanetLifecycle`/`StarLifecycle`, never a free-standing per-planet random
- * draw. Package C wires this into `world-surface.ts`'s `surfaceQuery`; this
- * function is the pure data source it wires in. */
+/** Ocean-volume loss profile (relief round 2026-10, ocean-volume-1). Water loss
+ * is driven by the host star's main-sequence brightening, normalised to the
+ * catalogue epoch exactly like the stellar visuals: the catalogue epoch always
+ * shows the full catalogue ocean, and the ocean is fully lost once the star is
+ * `OCEAN_LOSS_BRIGHTENING` (35%) brighter than at the epoch.
+ *   lossFraction(t) = smoothstep(0, 1, (L(t)/L(epoch) - 1) / 0.35), 0 for t <= epoch.
+ * L(t) = starStateAt(star, t).luminosityRel (the stage factor: exactly 1 on the
+ * main sequence) x mainSequenceBrightening(star, t). starStateAt carries no
+ * main-sequence brightening, so the standard solar brightening law is applied
+ * here on the star's own fractional main-sequence age x (Gough 1981,
+ * L(t)/L_now = 1/(1 + 0.4 (1 - t/t_now)) with t_now/t_MS = 0.457, i.e.
+ * L(x)/L_ZAMS = 1.4/(1.4 - 0.875 x) -- from memory, not re-verified). For
+ * the Sun that is ~35% brighter about 3 Gyr from now; the moist-greenhouse
+ * literature puts the ONSET of ocean loss at ~1-1.5 Gyr from now (from
+ * memory). It feeds only these keys: starStateAt itself is unchanged.
+ * Level (metres) is NOT decided here (this module cannot import terrain):
+ * world-surface.ts's `datedOceanState` maps the interpolated lossFraction to a
+ * level through ocean-volume.ts's `levelForLoss` on the body's own seabed. */
+export const OCEAN_LOSS_BRIGHTENING = 0.35;
+/** At most this many loss keys per planet (strictly ordered BigInt dates). */
+export const WATER_LOSS_KEY_LIMIT = 16;
+function mainSequenceBrightening(x: number): number {
+  return 1.4 / (1.4 - 0.875 * clampNum(x, 0, 1));
+}
+function smoothstep01(r: number): number {
+  const u = clampNum(r, 0, 1);
+  return u * u * (3 - 2 * u);
+}
+
+/** Contract §2.5: the dated ocean is authored as ordered `WaterKey`s
+ * ({dateNs, lossFraction}) derived from `PlanetLifecycle`/`StarLifecycle`,
+ * never a free-standing per-planet random draw. Keys run from `oceanNs` to
+ * `giantNs`: lossFraction 0 at every date up to the catalogue epoch, then the
+ * brightening profile above sampled uniformly in brightness, reaching 1 no
+ * later than `giantNs` (it reaches 1 at x <= 0.9 because the epoch always
+ * lies at x < 0.65). Between keys `waterLossAt` interpolates linearly; the
+ * profile error of that interpolation is < 0.005 in lossFraction. */
 export function waterKeysFor(planet: PlanetLifecycle, star: StarLifecycle): WaterKey[] {
   if (planet.oceanNs === null) return [];
-  return [
-    { dateNs: planet.oceanNs, levelM: 0 }, // ocean condenses at formation level
-    { dateNs: star.giantNs, levelM: -8000 }, // boils off as the star brightens pre-giant
-  ];
+  const oceanNs = planet.oceanNs;
+  // An ocean that would only condense after the host leaves the main sequence
+  // never becomes available (world-surface.ts gates on a main-sequence host);
+  // a single key keeps the list strictly ordered.
+  if (oceanNs >= star.giantNs) return [{ dateNs: oceanNs, lossFraction: 0 }];
+  const spanYears = Number((star.giantNs - star.formationNs) / YEAR_NS);
+  const xAt = (t: Ns) => Number((t - star.formationNs) / YEAR_NS) / spanYears;
+  const dateAtX = (x: number): Ns => star.formationNs + BigInt(Math.round(clampNum(x, 0, 1) * spanYears)) * YEAR_NS;
+  const luminosity = (t: Ns) => starStateAt(star, t).luminosityRel * mainSequenceBrightening(xAt(t));
+  const epochLuminosity = luminosity(CATALOGUE_EPOCH_NS);
+  const lossAt = (t: Ns) => t <= CATALOGUE_EPOCH_NS ? 0
+    : smoothstep01((luminosity(t) / epochLuminosity - 1) / OCEAN_LOSS_BRIGHTENING);
+  // Brightness ratio r in [0,1] -> fractional main-sequence age x (inverse of
+  // mainSequenceBrightening at L = L(epoch) * (1 + 0.35 r)).
+  const bEpoch = mainSequenceBrightening(xAt(CATALOGUE_EPOCH_NS));
+  const xForRatio = (r: number) => (1.4 - 1.4 / (bEpoch * (1 + OCEAN_LOSS_BRIGHTENING * r))) / 0.875;
+  const keys: WaterKey[] = [];
+  const push = (dateNs: Ns, lossFraction: number) => {
+    if (dateNs < oceanNs || dateNs > star.giantNs) return;
+    if (keys.length && dateNs <= keys[keys.length - 1].dateNs) return;
+    keys.push({ dateNs, lossFraction });
+  };
+  push(oceanNs, lossAt(oceanNs));
+  const startNs = oceanNs > CATALOGUE_EPOCH_NS ? oceanNs : CATALOGUE_EPOCH_NS;
+  const rStart = startNs === CATALOGUE_EPOCH_NS ? 0
+    : clampNum((luminosity(startNs) / epochLuminosity - 1) / OCEAN_LOSS_BRIGHTENING, 0, 1);
+  if (startNs === CATALOGUE_EPOCH_NS) push(CATALOGUE_EPOCH_NS, 0);
+  // Interior samples: oceanNs, epoch, (STEPS) brightness steps, giantNs = 16.
+  const STEPS = WATER_LOSS_KEY_LIMIT - 3;
+  if (rStart < 1) for (let i = 1; i <= STEPS; i++) {
+    const r = rStart + (1 - rStart) * i / STEPS;
+    const dateNs = i === STEPS ? dateAtX(xForRatio(1)) : dateAtX(xForRatio(r));
+    push(dateNs, i === STEPS ? 1 : lossAt(dateNs));
+  }
+  push(star.giantNs, 1);
+  return keys;
 }
 
 /** Interpretation filling a gap the contract leaves implicit: §2.2 declares
