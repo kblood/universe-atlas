@@ -59,7 +59,7 @@ import {type GroundWalker} from './ground-walker.ts';
 import { GalaxySpace } from "./galaxy-space.ts";
 import { ViewBlend } from "./view-transition.ts";
 import { systemLayout, type SystemScale } from "./system-layout.ts";
-import { ELEVATION_RANGE_M, TERRAIN_VERSION, terrainSampler, type planetSurface } from "./terrain.ts";
+import { TERRAIN_VERSION, terrainSampler, type planetSurface } from "./terrain.ts";
 import {biomeClassifier} from './surface-biomes.ts';
 import {
   galaxies,

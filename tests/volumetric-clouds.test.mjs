@@ -9,6 +9,7 @@ const vite = await createServer({ configFile: false, optimizeDeps: { noDiscovery
 const {
   CLOUD_QUALITY,
   VOLUMETRIC_CLOUDS_VERSION,
+  cloudLayerFrame,
   cloudLayerHeights,
   cloudTransmittance,
   createCloudNoise,
@@ -93,6 +94,28 @@ test('cloud-volume-3: the deck follows gravity, the dated sea level and the land
     assert.equal(clouds.diagnostics().seaLevelM, -2500);
     assert.deepEqual(clouds.diagnostics().layers, cloudLayerHeights({ ...terrestrial, surfaceGravityMS2: 9.81, temperatureK: 288, seaLevelM: -2500 }));
     assert.ok(Math.abs(clouds.material.uniforms.heights.value.x - (-1.7)) < 1e-9, 'shader heights (km) follow the sea level');
+    assert.deepEqual(clouds.diagnostics().frame, { baseM: -2500, stretch: 1 });
+    assert.deepEqual(clouds.material.uniforms.deckFrame.value.toArray(), [-2.5, 1], 'shader deck frame (km, stretch) follows the sea level');
+  } finally { clouds.dispose(); }
+});
+
+test('cloud-volume-3: a stretched deck keeps the reference column and billow size', () => {
+  const earth = { ...terrestrial, surfaceGravityMS2: 9.81, temperatureK: 288 };
+  assert.deepEqual(cloudLayerFrame(earth), { baseM: 0, stretch: 1 }, 'the reference deck is unstretched');
+  for (const params of [{ ...terrestrial, surfaceGravityMS2: 2.55, temperatureK: 288 }, { ...earth, landTopM: 16766, seaLevelM: -1200 }]) {
+    const h = cloudLayerHeights(params), f = cloudLayerFrame(params), ref = cloudLayerHeights({ ...params, surfaceGravityMS2: 9.81, temperatureK: 288, landTopM: undefined, seaLevelM: 0 });
+    assert.ok(f.stretch > 1);
+    // Every stretched layer height maps back onto the reference deck.
+    for (const k of ['baseM', 'lowTopM', 'highBaseM', 'topM']) assert.ok(Math.abs((h[k] - f.baseM) / f.stretch - ref[k]) < 1e-6, k);
+  }
+  // The raymarch samples the reference frame and divides extinction by the stretch.
+  const clouds = new VolumetricClouds({ ...terrestrial, surfaceGravityMS2: 2.55, temperatureK: 288 }, new THREE.Group());
+  try {
+    for (const material of [clouds.material, clouds.resolveMaterial]) {
+      const source = material.fragmentShader;
+      assert.ok(source.includes('(h-deckFrame.x)/deckFrame.y') && source.includes('*extinctionScale/deckFrame.y'), 'reference-frame sampling and column-preserving extinction');
+    }
+    assert.equal(clouds.material.uniforms.deckFrame.value.y, cloudLayerFrame({ ...terrestrial, surfaceGravityMS2: 2.55, temperatureK: 288 }).stretch);
   } finally { clouds.dispose(); }
 });
 

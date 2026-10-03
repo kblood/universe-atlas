@@ -5,7 +5,10 @@ import { hash64, noise } from './catalog.ts';
 
 /** Presentation version: catalogue and cloudCoverAt identities are unchanged.
  * cloud-volume-3 (relief round P5): layer heights scale with the scale-height
- * ratio, sit above the dated sea level and clear the 99th-percentile land. */
+ * ratio, sit above the dated sea level and clear the 99th-percentile land.
+ * The raymarch samples a stretched deck in the reference deck's vertical
+ * frame and divides its extinction by the stretch, so the deck keeps the
+ * reference column optical depth and billow shapes (cloudLayerFrame). */
 export const VOLUMETRIC_CLOUDS_VERSION = 'cloud-volume-3';
 export const CLOUD_TARGET_BUDGET_BYTES=160*1024*1024;
 export function supportedCloudSceneSamples(colour:readonly number[],depth:readonly number[],maxSamples:number){
@@ -39,6 +42,17 @@ export function cloudLayerHeights(params: CloudParams) {
   // Defaults (no gravity, sea level 0, no land floor) keep the reference.
   const {baseM,scale:sh}=cloudDeckFrame(params,8500*scale),k=scale*sh;
   return { baseM: baseM+800 * k, lowTopM: baseM+4200 * k, highBaseM: baseM+6500 * k, topM: baseM+8500 * k };
+}
+/** Vertical frame of the deck: a height h (m above the radius datum) in the
+ * stretched deck is the reference (sh = 1, sea level 0) deck's height
+ * (h - baseM) / stretch. The raymarch samples its shape noise there and
+ * divides extinction by `stretch`: a taller deck holds the same column of
+ * cloud, so it is not `stretch` times more opaque, and grazing views keep
+ * the reference billow sizes instead of long streaks. */
+export function cloudLayerFrame(params: CloudParams) {
+  const scale = params.gasGiant ? 7 : Math.min(1, Math.max(.12, params.radiusM / 2e6));
+  const {baseM,scale:stretch}=cloudDeckFrame(params,8500*scale);
+  return { baseM, stretch };
 }
 
 /** Tileable, integer-seeded noise. Generated code assets, no external textures. */
@@ -93,6 +107,7 @@ uniform mat4 inverseProjection;
 uniform mat3 viewToPlanet;
 uniform vec3 eyeKm, sun, windOffset, frontOffset;
 uniform vec4 heights;
+uniform vec2 deckFrame;
 uniform float radiusKm, farPlane, renderUnitsPerKm, steps, lightSteps, coverageScale, extinctionScale, pixelCone, moisture;
 uniform bool logarithmicDepth, cloudsEnabled, gasGiant;
 varying vec2 vUv;
@@ -119,7 +134,10 @@ float density(vec3 p,bool detail){
   float h=length(p)-radiusKm;
   if(h<heights.x||h>heights.w)return 0.;
   float cover=coverage(p); if(cover<.015)return 0.;
-  vec3 q=vec3(.8*p.x+.6*p.z,p.y,-.6*p.x+.8*p.z)+windOffset;
+  // The reference deck's frame (cloudLayerFrame): radial position compressed
+  // by the stretch, so billows keep their reference size in a taller deck.
+  vec3 r=p*((radiusKm+(h-deckFrame.x)/deckFrame.y)/(radiusKm+h));
+  vec3 q=vec3(.8*r.x+.6*r.z,r.y,-.6*r.x+.8*r.z)+windOffset;
   float footprint=max(max(.001,distance(p,eyeKm)*pixelCone),integrationFootprint);
   float lod=max(0.,log2(footprint/(18./48.)));
   vec4 n=textureLod(shape,q*vec3(1.,2.,1.)/18.,lod);
@@ -139,7 +157,7 @@ float density(vec3 p,bool detail){
   float highHeight=(h-heights.z)/(heights.w-heights.z);
   float high=smoothstep(0.,.12,highHeight)*(1.-smoothstep(.82,1.,highHeight));
   float wisps=smoothstep(.58,.78,textureLod(shape,q*vec3(1.,4.,.35)/24.,max(0.,log2(footprint/(24./48.)))).b)*high*cover*.12;
-  return max(0.,body+wisps)*extinctionScale;
+  return max(0.,body+wisps)*extinctionScale/deckFrame.y;
 }
 float hg(float c,float g){return (1.-g*g)/(4.*PI*pow(max(.001,1.+g*g-2.*g*c),1.5));}
 float sunTransmission(vec3 p){
@@ -310,12 +328,13 @@ export class VolumetricClouds {
     this.weather = new THREE.DataTexture(new Uint8Array(WEATHER_WIDTH*WEATHER_HEIGHT*4),WEATHER_WIDTH,WEATHER_HEIGHT);
     this.weather.wrapS=THREE.RepeatWrapping;this.weather.minFilter=this.weather.magFilter=THREE.LinearFilter;
     this.seaLevelM=params.seaLevelM??0;
-    const h=this.layers();
+    const h=this.layers(),frame=this.frame();
     this.material=new THREE.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,
       uniforms:{sceneColor:{value:null},sceneDepth:{value:null},weather:{value:this.weather},shape:{value:this.noise},
         inverseProjection:{value:new THREE.Matrix4()},viewToPlanet:{value:new THREE.Matrix3()},
         eyeKm:{value:new THREE.Vector3()},sun:{value:this.stateSun},windOffset:{value:this.wind},frontOffset:{value:new THREE.Vector3()},gasGiant:{value:!!params.gasGiant},
         heights:{value:new THREE.Vector4(h.baseM,h.lowTopM,h.highBaseM,h.topM).multiplyScalar(.001)},
+        deckFrame:{value:new THREE.Vector2(frame.baseM*.001,frame.stretch)},
         radiusKm:{value:params.radiusM*.001},farPlane:{value:1e9},renderUnitsPerKm:{value:1},
         steps:{value:64},lightSteps:{value:5},coverageScale:{value:1},extinctionScale:{value:2.2},pixelCone:{value:.002},
         moisture:{value:params.hasAtmosphere&&(params.hasOcean||params.gasGiant)?(params.gasGiant?1:Math.exp(-(((params.temperatureK-280)/70)**2))):0},
@@ -353,8 +372,9 @@ export class VolumetricClouds {
   update(seed:string,address:string,time:bigint,sun:THREE.Vector3,seaLevelM=this.params.seaLevelM??0) {
     this.stateSun.copy(sun).normalize();
     if(seaLevelM!==this.seaLevelM){
-      this.seaLevelM=seaLevelM;const h=this.layers();
+      this.seaLevelM=seaLevelM;const h=this.layers(),frame=this.frame();
       this.material.uniforms.heights.value.set(h.baseM,h.lowTopM,h.highBaseM,h.topM).multiplyScalar(.001);
+      this.material.uniforms.deckFrame.value.set(frame.baseM*.001,frame.stretch);
     }
     // Exact bigint reduction keeps far-future dates finite and replayable.
     // 5040 km is a common period of all shape, erosion and regional noise tiles.
@@ -457,8 +477,10 @@ export class VolumetricClouds {
     return true;
   }
   get allocatedBytes(){return this.targets.reduce((n,t)=>n+t.width*t.height*12*(1+t.samples),0)+this.cloudTargets.reduce((n,t)=>n+t.width*t.height*8,0)+Math.ceil(this.noise.image.data!.byteLength*(1+8/7))+this.weather.image.data!.byteLength*2;}
-  diagnostics(){return {version:VOLUMETRIC_CLOUDS_VERSION,enabled:this.enabled,representation:'raymarched-volume',temporalHistory:false,steps:this.material.uniforms.steps.value,lightSteps:this.material.uniforms.lightSteps.value,sampleLimit:this.sampleLimit,requestedSceneSamples:this.sceneSamples,effectiveSceneSamples:this.effectiveSceneSamples,supportedSceneSamples:this.supportedSceneSamples,estimatedTargetBytes:this.targets.reduce((n,t)=>n+t.width*t.height*12*(1+t.samples),0)+this.cloudTargets.reduce((n,t)=>n+t.width*t.height*8,0),estimatedBytes:this.allocatedBytes,targetBudgetBytes:this.targetBudgetBytes,sceneResolutionScale:this.sceneResolutionScale,sceneScale:this.sceneScale,captureScale:this.captureScale,desktopQuality:{...this.desktopQuality},eyes:this.captures.length,targets:this.targets.map(t=>({width:t.width,height:t.height,samples:t.samples})),cloudTargets:this.cloudTargets.map(t=>({width:t.width,height:t.height})),layers:this.layers(),seaLevelM:this.seaLevelM};}
+  diagnostics(){return {version:VOLUMETRIC_CLOUDS_VERSION,enabled:this.enabled,representation:'raymarched-volume',temporalHistory:false,steps:this.material.uniforms.steps.value,lightSteps:this.material.uniforms.lightSteps.value,sampleLimit:this.sampleLimit,requestedSceneSamples:this.sceneSamples,effectiveSceneSamples:this.effectiveSceneSamples,supportedSceneSamples:this.supportedSceneSamples,estimatedTargetBytes:this.targets.reduce((n,t)=>n+t.width*t.height*12*(1+t.samples),0)+this.cloudTargets.reduce((n,t)=>n+t.width*t.height*8,0),estimatedBytes:this.allocatedBytes,targetBudgetBytes:this.targetBudgetBytes,sceneResolutionScale:this.sceneResolutionScale,sceneScale:this.sceneScale,captureScale:this.captureScale,desktopQuality:{...this.desktopQuality},eyes:this.captures.length,targets:this.targets.map(t=>({width:t.width,height:t.height,samples:t.samples})),cloudTargets:this.cloudTargets.map(t=>({width:t.width,height:t.height})),layers:this.layers(),frame:this.frame(),seaLevelM:this.seaLevelM};}
   /** The current layer heights (m above the radius datum). */
   layers(){return cloudLayerHeights(this.params.seaLevelM===this.seaLevelM?this.params:{...this.params,seaLevelM:this.seaLevelM});}
+  /** The current vertical frame (cloudLayerFrame). */
+  frame(){return cloudLayerFrame(this.params.seaLevelM===this.seaLevelM?this.params:{...this.params,seaLevelM:this.seaLevelM});}
   dispose(){if(this.disposed)return;this.disposed=true;for(const t of [...this.targets,...this.cloudTargets])t.dispose();this.weather.dispose();this.noise.dispose();this.material.dispose();this.resolveMaterial.dispose();this.mesh.geometry.dispose();this.resolveMesh.geometry.dispose();}
 }
