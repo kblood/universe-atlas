@@ -401,7 +401,7 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
   if(key==="marks")return `<div id="${id}" class="composer-marks" role="group" aria-label="${esc(FIELD.marks)}"><span>${esc(FIELD.marks)}</span>${COAT_MARK_NAMES.map(name=>`<label class="check"><input id="composer-mark-${name}" type="checkbox" data-mark="${name}"> ${esc(MARK_LABEL[name])}</label>`).join("")}${whyEl}</div>`;
   if(key==="eyes")return `<label>${esc(FIELD[key])} <select id="${id}">${eyeSelectOptions()}</select>${whyEl}</label>`;
   if(key==="eyeRules")return `<label>${esc(FIELD[key])} <select id="${id}">${(["2","1"] as const).map(v=>`<option value="${v}">${esc(COMPOSER_EYE_RULES_LABEL[v])}</option>`).join("")}</select>${whyEl}</label>`;
-  if(key==="iris")return `<label><span>${esc(FIELD[key])} <span id="composer-iris-built" class="composer-swatch-wrap" hidden><span id="composer-iris-swatch" class="composer-swatch" title="The iris colour this animal is built with (unlit)"></span> built</span></span><select id="${id}">${(COMPOSER_CHOICES[key] as readonly string[]).map(v=>`<option value="${v}">${esc(VALUE[`${key}:${v}`]??v)}</option>`).join("")}</select>${whyEl}</label>`;
+  if(key==="iris")return `<label><span>${esc(FIELD[key])} <span id="composer-iris-built" class="composer-swatch-wrap" hidden title="The iris colour this animal's eyes are built with (unlit)">— this animal: <span id="composer-iris-swatch" class="composer-swatch"></span> <span id="composer-iris-name"></span></span></span><select id="${id}">${(COMPOSER_CHOICES[key] as readonly string[]).map(v=>`<option value="${v}">${esc(VALUE[`${key}:${v}`]??v)}</option>`).join("")}</select>${whyEl}</label>`;
   if(isChoice(key))return `<label>${esc(FIELD[key])} <select id="${id}">${(COMPOSER_CHOICES[key] as readonly string[]).map(v=>`<option value="${v}">${esc(VALUE[`${key}:${v}`]??v)}</option>`).join("")}</select>${whyEl}</label>`;
   const [min,max,step]=COMPOSER_RANGES[key as ComposerNumberKey];
   return `<label class="composer-range">${esc(FIELD[key])} <output id="${id}-value"></output><input id="${id}" type="range" min="${min}" max="${max}" step="${step}" aria-label="${esc(FIELD[key])}">${whyEl}</label>`;
@@ -453,7 +453,7 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
    el.value=String(r[key]);el.disabled=!!reason;el.title=reason;
    if(!isSelect(key))$(`composer-${key}-value`).textContent=formatValue(key,r[key] as number);
   }
-  const colour=composerIrisSwatch(r);$("composer-iris-built").hidden=!colour;$("composer-iris-swatch").style.background=colour??"";
+  const colour=composerIrisSwatch(r);$("composer-iris-built").hidden=!colour;$("composer-iris-swatch").style.background=colour??"";$("composer-iris-name").textContent=colour?irisShort(resolveComposerEyes(r).irisBuilt):"";
   target.closest("label")!.hidden=!compareBox.checked;
   herdSelect.disabled=compareBox.checked;herdSelect.title=compareBox.checked?"Comparison shows one animal per recipe.":"";
   $("composer-herd-why").hidden=!compareBox.checked;
