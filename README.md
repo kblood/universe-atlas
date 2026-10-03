@@ -6,7 +6,7 @@ Creature Lab's **composer** now builds the face it shows. The trunk is a face
 type: **Proboscis** grows a jointed trunk out of the muzzle, and the separate
 Trunk control is gone. Eyes have **types** (round, horizontal and vertical-slit
 pupils, compound eyes on mandibles, eyespots on worm-like heads) with an iris,
-a shaped pupil, a lid and a wet highlight, so they read on dark coats too.
+a shaped pupil, a lid and a wet highlight.
 Headgear now follows the face: beaks grow a casque instead of horns, primate
 and blunt faces carry none, and horns root on the brow beside the ears. Planet
 **padded** animals no longer grow forehead horns.
@@ -19,6 +19,18 @@ The redesign is reversible, see the
 [round report](docs/fauna-face-eye-round-2026-10-02.md). Before/after
 close-ups are in
 `test-results/fauna-face-round-2026-10-02/final/contact-sheet-faces*.png`.
+
+**Visual review is not passed.** GPT Luna 6 judged the final sheets on commit
+9c647ac (`final/luna/`). It passed the planet padded heads. It failed the
+preset, wild-seed and eye-type sheets. Eyes are faint or unreadable on dark
+coats (ostrich, rhinoceros, giraffe). Compound eyes on mandible heads read as a
+plain brown lump. The worm and blunt eye macros are pure black. Folded
+membrane wings cover the face of wild seed 40 and cross each other there. A
+follow-up check on single images confirmed the redesigned presets: the
+shelled-giraffe-bird has a casque, and the winged-ape-rhino has no nose horn.
+Full `npm test` gave 1156 pass and 2 fail. Both failures are CPU timing caps
+in `fauna-appearance-v2`, and they also fail on the earlier gate commit
+78602e3 on this machine today. The file passes in isolation.
 These are desktop renders. Nothing here is validated on GPU hardware or in a
 headset, and the deployed preview below is unchanged.
 
