@@ -1,6 +1,7 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import * as THREE from 'three';
-import {G,type Body,type V3} from './catalog.ts';
+import {type Body,type V3} from './catalog.ts';
+import {planetGeophysics} from './planet-geophysics.ts';
 import {surfaceQuery} from './world-surface.ts';
 import type {ContactPatch} from './terrain-contact.ts';
 let initialization:Promise<void>|null=null;
@@ -91,7 +92,8 @@ export class GroundWalker {
       // Test the requested step before physics so ordinary movement cannot
       // enter an inland channel. `wet` includes rivers/lakes as well as ocean.
       if(!this.sample(this.position.clone().addScaledVector(move,STEP).normalize().toArray() as V3,this.date).walkable)move.set(0,0,0);
-      const gravity=Math.max(.05,Math.min(40,G*this.body.massKg/this.position.lengthSq()));
+      // Surface physics from planet-geophysics-1 (catalogue massKg stays the orbital mass): g_surface*(R/r)^2.
+      const gravity=Math.max(.05,Math.min(40,planetGeophysics(this.body).surfaceGravityMS2*this.body.radiusM*this.body.radiusM/this.position.lengthSq()));
       if(this.jumpRequested&&this.grounded){this.vertical=Math.sqrt(2*gravity*1.1);this.grounded=false;}this.jumpRequested=false;
       this.vertical-=gravity*STEP;
       this.controller.setUp(up);
