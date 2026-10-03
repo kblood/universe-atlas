@@ -71,7 +71,7 @@ Source references are in the design (`eye-catalogue-v2.md` with its JSON spec). 
 
 ## EC4: what changed
 
-### 1. Proboscis head polish (`fauna-composer-face-geometry-2`, `fauna-composer-graph-4`), commit 27aaa91
+### 1. Proboscis head polish (`fauna-composer-face-geometry-2`, `fauna-composer-graph-4`), commits 27aaa91, b86b0ad
 
 GPT Luna 6's face-round reading of the trunks:
 - "Roughly 1.5–2 head lengths ... the face is small relative to the trunk";
@@ -174,7 +174,7 @@ Evidence root: `C:/LLM/IWSDK/universe-atlas/test-results/fauna-eye-round-2026-10
 | a3, a5, a7 | `a3/`, `a5/`, `a7/` | rhinoceros and pachyderm PASS; centipede and giraffe FAIL | giraffe (a5): "several head lengths", and the patterned neck was read as the trunk |
 | a4 | `a4/` | FAIL ×4 | stepped bands, "flat dark disc ears", an abrupt join |
 | **a9 trunk** (`luna/a9-trunk.txt`, prompt `q-trunk-v2.txt`) | `a9/` | **PASS ×4** | reservations: faceting and "stepped bands" are still visible; the centipede and giraffe nostrils: "cannot tell" at this size |
-| after (`luna/after-trunk.txt`), sheets byte-identical to a9 | `after/` (stale for trunks) | rhinoceros, pachyderm PASS; centipede, giraffe FAIL | "the narrow, visibly joined base and plain tip make it read more like an attached tube" -- the a9 PASS did not reproduce |
+| a9 re-run (`luna/after-trunk.txt`), sheets byte-identical to a9 | first `after/` render (replaced since) | rhinoceros, pachyderm PASS; centipede, giraffe FAIL | "the narrow, visibly joined base and plain tip make it read more like an attached tube" -- the a9 PASS did not reproduce |
 | a12 r1 / r2 | `a12/` (base 0.8 × 0.89, pale lip removed) | r1: 1 PASS 3 FAIL; r2: 4 FAIL | "narrow, tube-like base does not read as a natural continuation of the muzzle" |
 | **a13 r1 / r2** (`luna/a13-trunk-r1.txt`, `-r2.txt`) | `a13/` (base 0.92 × 1.02, taper power 1.25) | **PASS ×4 in both runs** | "the trunk reads as a nose growing from the face"; reservations: faceting, centipede tip "capped or blunt from the side" |
 | **a10 seed 40** (`luna/a10-seed40.txt`) | `before/` vs `a10/` wild-composer-40 | before **FAIL**, after **PASS** | before: "several broad black wing or limb shapes cross in front of the eyes and upper face"; after: "In the front panel, the broad side projections sit behind the head ... In the three-quarter panel, no limb visibly crosses the face." "PASS — no wing or limb visibly covers the face." |
@@ -211,7 +211,8 @@ The a9 prompt adds one fact: on the giraffe, the patterned diagonal shape is the
 All paths are under `C:/LLM/IWSDK/universe-atlas/test-results/fauna-eye-round-2026-10-03/EC4/`:
 - `before/`: BEFORE close-up sheets at d403279. Trunks, seed 40, blunt and worm specimens, and `contact.png`.
 - `a3/` … `a10/`: iteration sheets.
-- `a13/`: the final trunk sheets (current HEAD). `after/`: AFTER sheets rendered before a13; their trunk sheets are stale, the seed-40, blunt and worm sheets are current (a13 changed only proboscis). Trunks, seed 40, blunt and worm specimens, and the preset rhinoceros as a non-proboscis control.
+- `a13/`: the final trunk iteration.
+- `after/`: final AFTER sheets rendered at b86b0ad (11 specimens: the 4 trunks, seed 40, blunt and worm specimens, and the preset rhinoceros as a non-proboscis control). The trunk sheets are byte-identical to `a13/` and the seed-40, blunt and worm sheets to `a10/`, so Luna's a13 and a10 verdicts apply to them directly.
 - `luna/`: prompts and outputs.
 - `part-diff/specimens.json`, `part-diff/graph435.json`, `part-diff/skin2.json`.
 
@@ -222,7 +223,8 @@ All paths are under `C:/LLM/IWSDK/universe-atlas/test-results/fauna-eye-round-20
   - The seam vertices are bitwise identical, with identical weights, so it is not a geometry crack.
   - Insetting the hidden junction discs did not remove it.
   - My reading: it is renderer-level, not mesh-level; the cause is unknown.
-- **Luna's a9 reservations.** Faceting and "stepped bands" are still visible on the trunk at close range, and the centipede and giraffe nostrils cannot be told apart at normal size.
+- **Luna's a13 reservations.** Flat facets and shading bands are still visible on the trunk, head and ears ("Flat facets are noticeable on the trunk and head"). The centipede tip looks "capped or blunt from the side" and its nostrils show only in the front view. All four trunks still passed in both runs.
+- **Luna is not stable on identical sheets.** a9 passed 4 of 4, and a re-run on byte-identical sheets failed 2. Following the EC2 rule, only a13 counts as a pass, because it passed in two dedicated runs.
 - **Wild bipeds with wings (seeds 19, 38, 115):** up to 6 % of the face is covered in the side view during the display motion only. No specimen is affected.
 - **Carried from EC2:** the contested cat, owl disc, raptor, gecko, W pupil, small dark eyes on dark coats, the compound, spider and stalk legibility.
 - **Not done in EC4:** an in-headset check. The definition of done in `AGENTS.md` requires the target runtime; a new web preview needs the owner's explicit OK.
