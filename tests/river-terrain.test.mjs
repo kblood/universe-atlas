@@ -45,12 +45,24 @@ const tileTriangleHeight=(data,d,radius,positions=data.positions)=>{
 };
 
 test('hydrology leaves the baseline sampler unchanged outside its regional influence',()=>{
-  const base=baseTerrainSampler(baseBody),relief=planetLandforms(baseBody);
-  const old=d=>{const s=base(d);return {...s,elevationM:s.elevationM+relief(d,s.elevationM)};};
+  // terrain-1.8.0-relief (P4-RELIEF r2): terrainSampler is the R-CAL-1 relief
+  // field, so it no longer equals baseTerrainSampler + planetLandforms (that
+  // composition, built on the bit-identical baseTerrainSampler pinned by
+  // BASE_ELEVATION_SHA256, is the archived drainage input river construction
+  // reads). The baseline is therefore checked in two parts: (1) the archived
+  // baseTerrainSampler is untouched by an attached hydrology region, and (2)
+  // outside the region's influence the relief terrainSampler of the body with
+  // hydrology deep-equals the one without it, with the plain no-water field set.
+  const base=baseTerrainSampler(baseBody),baseWithRiver=baseTerrainSampler(body),relief=planetLandforms(baseBody);
   const plain=terrainSampler(baseBody),river=terrainSampler(body);
   for(const d of [[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]){
-    assert.deepEqual(plain(d),{...old(d),rockHeightM:old(d).elevationM,waterLevelM:old(d).ocean?0:null,visibleHeightM:old(d).ocean?0:old(d).elevationM,groundHeightM:old(d).elevationM,waterHeightM:old(d).ocean?0:null,waterDepthM:old(d).ocean?Math.max(0,-old(d).elevationM):0,wet:old(d).ocean,waterKind:null,bank:0,channelId:null,flow:[0,0],influence:0});
-    assert.deepEqual(river(d),plain(d));
+    assert.deepEqual(baseWithRiver(d),base(d),'archived base field ignores hydrology');
+    // The archived composition is still well-formed (finite) where drainage reads it.
+    assert.ok(Number.isFinite(base(d).elevationM+relief(d,base(d).elevationM)));
+    const p=plain(d),h=p.elevationM;
+    assert.deepEqual(p,{elevationM:h,ocean:p.ocean,color:p.color,roughness:p.roughness,rockHeightM:h,waterLevelM:p.ocean?0:null,visibleHeightM:p.ocean?0:h,groundHeightM:h,waterHeightM:p.ocean?0:null,waterDepthM:p.ocean?Math.max(0,-h):0,wet:p.ocean,waterKind:null,bank:0,channelId:null,flow:[0,0],influence:0});
+    assert.equal(p.ocean,false,'water 0 body: never ocean');
+    assert.deepEqual(river(d),p);
   }
 });
 
@@ -106,6 +118,19 @@ test('inland water keeps a carved rock field and a separate visible water surfac
 });
 
 test('river shore bed and dry bank meet continuously without a submerged walking trench',()=>{
+  // terrain-1.8.0-relief (P4-RELIEF r2): this 10 km synthetic body has
+  // tectonicRelief 0.0051, so the relief terrain under the channel sits at
+  // about 2 m (the archived base + landforms put it near 600 m). The shared
+  // fixture's 15 m water at x=0 would then stand ABOVE the dry ground, a
+  // flooded-plain scenario this shore test was never about. The shore fixture
+  // therefore lowers every water level by 100 m (water -85 m at x=0, a bank
+  // rising ~87 m to the ground) and keeps every assertion and tolerance.
+  const SHORE_OFFSET_M=-100;
+  const shoreRegion={...region,id:'test/drainage-1/river-region-1/shore',
+    channels:region.channels.map(c=>({...c,points:c.points.map(p=>({...p,waterM:p.waterM+SHORE_OFFSET_M}))})),
+    lakes:region.lakes.map(l=>({...l,waterM:l.waterM+SHORE_OFFSET_M}))};
+  const body={...baseBody,hydrology:shoreRegion};
+  assert.ok(terrainSampler(baseBody)(direction(0,50.001)).elevationM>region.channels[0].points[0].waterM/2+SHORE_OFFSET_M+50,'shore fixture: ground well above the lowered water');
   const wet=terrainSampler(body)(direction(0,49.999)),dry=terrainSampler(body)(direction(0,50.001));
   assert.equal(wet.wet,true);assert.equal(dry.wet,false);
   assert.ok(wet.waterLevelM!==null&&wet.rockHeightM<=wet.waterLevelM);
