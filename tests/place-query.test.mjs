@@ -9,7 +9,7 @@ import {starLifecycle, planetLifecycle} from '../src/stellar-evolution.ts';
 import {surfaceAt, surfaceQuery, datedOceanState} from '../src/world-surface.ts';
 import {fibonacciDirection} from '../src/ocean-volume.ts';
 import {geophysicsFromParams, pressureAtDepthPa, planetGeophysics} from '../src/planet-geophysics.ts';
-import {terrainSampler} from '../src/terrain.ts';
+import {terrainSampler, terrainFloorSampler} from '../src/terrain.ts';
 import {placeAt, depthAndPressureAt, PLACE_QUERY_VERSION, PLACE_VERSIONS} from '../src/place-query.ts';
 
 const SEED = 'LETHRA-001';
@@ -22,6 +22,18 @@ const WORLDS = [['G001/C2128,0,1/0',1],['G001/C2142,3,4/0',0],['G001/C2143,4,3/0
   return {sys, body, starLc, planetLc: planetLifecycle(SEED, ADDR, body, starLc)};
 });
 const DIRS = Array.from({length: 600}, (_, i) => fibonacciDirection(i, 600));
+
+test('floorM/windowM come from the R0 floor sampler on the same rock field (window = ground - floor)', () => {
+  for (const {sys, body} of WORLDS) {
+    const floor = terrainFloorSampler(body);
+    for (const d of DIRS.slice(0, 200)) {
+      const p = placeAt({sys, body, t: CATALOGUE_EPOCH_NS}, d), f = floor(d);
+      assert.ok(Object.is(f.groundHeightM, p.groundHeightM), `${body.name}: floor sampler ground equals placeAt ground`);
+      assert.ok(Object.is(p.floorM, f.floorM) && Number.isFinite(p.floorM));
+      assert.ok(Object.is(p.windowM, p.groundHeightM - p.floorM));
+    }
+  }
+});
 
 test('version and version block', () => {
   assert.equal(PLACE_QUERY_VERSION, 'place-query-1');

@@ -60,8 +60,8 @@ Provenance: **physical** = a physical law applied to model inputs;
 | `level` | - | - | the requested ladder rung, echoed |
 | `resolution` | - | - | `'full'` in place-query-1 |
 | `groundHeightM` | m | model | solid ground (rock, regolith or seabed) above the 0 m datum; bit-identical to `surfaceAt(...).sample.groundHeightM` |
-| `floorM` | m | model | regional floor of the terrain (R0 split, P1); `null` until the terrain exposes it |
-| `windowM` | m | model | `groundHeightM - floorM`, the bounded local window; `null` with `floorM` |
+| `floorM` | m | model | regional floor of the terrain (R0 split, P1 `terrainFloorSampler`, same rock field as `groundHeightM`) |
+| `windowM` | m | model | `groundHeightM - floorM`, the bounded local window |
 | `seaLevelM` | m | model | dated global sea level (ocean-volume-1, 25 m snapped, the level the renderer draws); `null` when no global ocean exists at `t` |
 | `oceanLossFraction` | 0..1 | heuristic | fraction of the catalogue-epoch ocean VOLUME lost by `t` (0 = full ocean) |
 | `ocean` | bool | model | under the dated global ocean; equals `surfaceAt(...).sample.ocean` |

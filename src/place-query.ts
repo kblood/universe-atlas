@@ -22,7 +22,7 @@
  * S0/S1 answer from the same coarse reduction the renderer draws. */
 import {AU, type Body, type StarSystem, type V3} from './catalog.ts';
 import type {Ns} from './world-time.ts';
-import {TERRAIN_VERSION} from './terrain.ts';
+import {TERRAIN_VERSION, terrainFloorSampler} from './terrain.ts';
 import {
   starLifecycle, planetLifecycle, waterKeysFor, planetStateAt,
   type PlanetLifecycle, type StarLifecycle, type ParentPlanetContext,
@@ -72,9 +72,9 @@ export type PlaceSample = {
   resolution: 'full';
   /** Solid ground (rock/regolith/seabed) height above the 0 m datum. */
   groundHeightM: number;
-  /** Regional floor and local window (terrain R0 split); null until the terrain exposes it. */
-  floorM: number | null;
-  windowM: number | null;
+  /** Regional floor and local window (terrain R0 split, terrainFloorSampler); windowM = groundHeightM - floorM. */
+  floorM: number;
+  windowM: number;
   /** Dated global sea level (m); null when no global ocean exists at t. */
   seaLevelM: number | null;
   /** Fraction of the catalogue-epoch ocean volume lost by t (0 = full ocean). */
@@ -142,6 +142,7 @@ type DatedPlace = {
   lossFraction: number;
   geo: PlanetGeophysics;
   classify: ReturnType<typeof biomeClassifier>;
+  floor: ReturnType<typeof terrainFloorSampler>;
 };
 /** One dated resolution per (body, t); a pure function of both, so reuse never changes an answer. */
 const datedCache = new WeakMap<Body, {t: Ns; sys: StarSystem; seed: string; dated: DatedPlace}>();
@@ -160,6 +161,9 @@ function datedPlace(ctx: PlaceContext): DatedPlace {
     lossFraction, geo: planetGeophysics(body),
     // The classifier's ocean flag must use the same dated sea level as the surface.
     classify: biomeClassifier(body, ocean.globalOceanAvailable ? ocean.waterLevelM : -1_000_000),
+    // R0 (P1) floor/window split: the same default-argument rock field as
+    // surfaceQuery's terrainSampler(body), so its groundHeightM is identical.
+    floor: terrainFloorSampler(body),
   };
   datedCache.set(body, {t, sys, seed: body.seed, dated});
   return dated;
@@ -202,15 +206,15 @@ export function placeAt(ctx: PlaceContext, direction: V3, level: PlaceLevel = 'S
   const geo = dated.geo, ground = s.groundHeightM;
   const ocean = s.ocean;
   const waterDepthM = ocean && dated.seaLevelM !== null ? Math.max(0, dated.seaLevelM - ground) : 0;
-  const floor = (s as {floorM?: number}).floorM;
+  const floor = dated.floor(direction).floorM;
   const upDot = options.measureSlope ? measuredUpDot(dated.sample, direction, body.radiusM) : options.upDot ?? 1;
   const b = dated.classify(direction, ground, upDot);
   return {
     version: PLACE_QUERY_VERSION, exists: true, stage: dated.stage === 'molten' ? 'molten' : 'solid',
     level, resolution: 'full',
     groundHeightM: ground,
-    floorM: floor === undefined ? null : floor,
-    windowM: floor === undefined ? null : ground - floor,
+    floorM: floor,
+    windowM: ground - floor,
     seaLevelM: dated.seaLevelM,
     oceanLossFraction: dated.lossFraction,
     ocean, waterDepthM,
