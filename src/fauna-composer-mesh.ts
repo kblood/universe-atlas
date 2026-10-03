@@ -5,6 +5,7 @@ import {COAT_CELLS_PER_BODY, applyCoatDrift, coatIndividualDrift, defaultCoatGen
 import {composerIndividualTraits, type ComposerIndividualTraits} from './fauna-composer-individual.ts';
 import {COMPOSER_IRIS_RGB, composerHeadgearBuild, composerSkullOf, resolveComposerEyes, type ComposerSkull} from './fauna-composer-face.ts';
 import {EYE_PATCH, EYE_ROLE, type LiddedEyeType, buildCompoundEye, buildEyePatch, buildEyespot, eyeBarAxis, eyeGaze, nearestExit, raycastFirstHit, type EyePatch, type RayHit, type Vec3 as EyeVec3} from './fauna-composer-eye.ts';
+import {PROBOSCIS_FACE, composerFaceTip} from './fauna-composer-face-geometry.ts';
 import {composerFeatherFanSpan, composerWingChord, composerWingThickness, type ComposerBone, type ComposerGraph, type ComposerLimb, type ComposerSection, type Vec3} from './fauna-composer-rig.ts';
 
 /** Procedural, experimental skin for a composer graph. Every visible part is
@@ -274,6 +275,27 @@ function loft(s: Skin, rings: Ring[], segments: number, capStart = 0.6, capEnd =
     const a = ids[i]![k]!, b = ids[i]![(k + 1) % segments]!, c = ids[i + 1]![k]!, d = ids[i + 1]![(k + 1) % segments]!;
     s.t(a, b, c); s.t(b, d, c);
   }
+}
+/** A band between two rings with different vertex counts (bind space; both rings emitted with their own colours and
+ * weights), triangulated by walking both rings in angle order. Faces outward from the rings' centres. */
+function zipRings(s: Skin, a: Ring, na: number, b: Ring, nb: number) {
+  const emit = (r: Ring, n: number) => { const bs = ringBasis(r), p = V(), ids: number[] = []; for (let k = 0; k < n; k++) { const ang = TAU * k / n; ringPoint(r, bs, ang, p); ids.push(s.v(p, r.color(ang, p), r.w, r.region)); } return ids; };
+  const A = emit(a, na), B = emit(b, nb), mid = a.c.clone().add(b.c).multiplyScalar(0.5);
+  const out = (i: number, j: number, k: number) => s.pos(i).add(s.pos(j)).add(s.pos(k)).multiplyScalar(1 / 3).sub(mid);
+  let i = 0, j = 0;
+  while (i < na || j < nb) {
+    const ai = A[i % na]!, bj = B[j % nb]!;
+    if (j >= nb || (i < na && (i + 1) / na <= (j + 1) / nb)) { const an = A[(i + 1) % na]!; s.to(ai, an, bj, out(ai, an, bj)); i++; }
+    else { const bn = B[(j + 1) % nb]!; s.to(ai, bn, bj, out(ai, bn, bj)); j++; }
+  }
+}
+/** Closes a ring with a flat disc facing `dir` x its tangent (the same vertices a loft emits for it, plus the centre). */
+function capFlat(s: Skin, r: Ring, segments: number, dir: 1 | -1) {
+  const b = ringBasis(r), p = V(), ids: number[] = [], mid = V();
+  for (let k = 0; k < segments; k++) { const a = TAU * k / segments; ringPoint(r, b, a, p); ids.push(s.v(p, r.color(a, p), r.w, r.region)); mid.add(p); }
+  mid.multiplyScalar(1 / segments);
+  const centre = s.v(mid, r.color(-Math.PI / 2, mid), r.w, r.region), out = b.t.clone().multiplyScalar(dir);
+  for (let k = 0; k < segments; k++) s.to(centre, ids[k]!, ids[(k + 1) % segments]!, out);
 }
 function fan(s: Skin, apex: number, ring: number[], start: boolean) {
   for (let k = 0; k < ring.length; k++) { const a = ring[k]!, b = ring[(k + 1) % ring.length]!; if (start) s.t(b, a, apex); else s.t(a, b, apex); }
@@ -708,24 +730,62 @@ export function buildComposerSkin(graph: ComposerGraph, options: ComposerSkinOpt
 
   // ---- head (rigid on the head bone except the first station, which shares the last blend ring's weights)
   const eyeCtx: EyeContext = {eyeMul, speciesBodyLength: composerSpeciesBodyLength(r, traits), fallbacks: 0, eyes: [], colours: {eye: [...pal.eye] as RGB, iris: null, lidFactor: 0.35}};
-  buildHead(s, graph, hb, pal, at, axis, headCtx, station0, blendRings[blendRings.length - 1]!.w, individual, coatAt, eyeCtx);
-  // ---- trunk
+  const trunkJoin = buildHead(s, graph, hb, pal, at, axis, headCtx, station0, blendRings[blendRings.length - 1]!.w, individual, coatAt, eyeCtx);
+  // ---- trunk: the proboscis face's nose. Its first ring IS the muzzle's last station (same centre, section, basis,
+  // colour and weights, duplicated like the neck-to-head seam), then the section and ring orientation ease from that
+  // station into the trunk bones' own over TRUNK_JOIN_BLEND x the station radius, so the muzzle flows into the trunk
+  // instead of a thin tube stepping out of a capped snout.
   if (trunk.length) {
     s.begin('trunk', 'trunk');
-    s.region = REGION.head;
+    s.region = REGION.muzzle;
     const segs = trunk.map(i => ({bone: bones[i]!, reversed: false}));
     const tr = buildChain(segs, {ringsFor: () => 4, startWeights: [[head, 0.7], [trunk[0]!, 0.3]], dress: (ring, meta) => {
-      meta.region = 'head'; meta.along = 1; ring.region = REGION.head;
+      meta.region = 'muzzle'; meta.along = 1; ring.region = REGION.muzzle;
       const bandK = 0.18 * Math.pow(Math.sin(Math.PI * 4 * meta.f), 8);
-      ring.color = (a, p) => mixC(coatAt(p, ringDorsal(a, ring.rx, ring.ry, ring.ryBelow), 'head', 1, meta.fp), pal.accent, bandK);
+      ring.color = (a, p) => mixC(coatAt(p, ringDorsal(a, ring.rx, ring.ry, ring.ryBelow), 'muzzle', 1, meta.fp), pal.accent, bandK);
     }});
+    let rings = tr.rings;
     setFootprints(tr.rings, tr.metas, 12);
-    loft(s, tr.rings, 12, 0.2, 0.35);
-    report('trunk', tr.rings, tr.metas);
-    // a rounded, slightly swollen tip with a darker nostril rim instead of a flat plate
-    const tip = bones[trunk[trunk.length - 1]!]!, r0 = tip.end.h;
-    ellipsoid(s, at(tip, tip.length - r0 * 0.15, 0, 0), [axis(tip, 1, 0, 0), axis(tip, 0, 1, 0), axis(tip, 0, 0, 1)], [r0 * 0.9, r0 * 1.12, r0 * 1.12], one(tip.index),
-      (a, f, p) => mixC(coatAt(p, Math.sin(a), 'head', 1), pal.keratin, 0.45 * smooth(0.65, 0.9, f)), 12, 6);
+    if (trunkJoin) {
+      rings = [trunkJoin, ...tr.rings.slice(1)];
+      const reach = TRUNK_JOIN_BLEND * Math.max(trunkJoin.rx, trunkJoin.ry);
+      let arc = 0;
+      for (let i = 1; i < rings.length; i++) {
+        arc += rings[i]!.c.distanceTo(rings[i - 1]!.c);
+        const k = 1 - smooth(0, reach, arc), rg = rings[i]!;
+        if (k <= 0) break;
+        rg.t = rg.t.clone().normalize().lerp(trunkJoin.t.clone().normalize(), k).normalize();
+        rg.u = rg.u.clone().lerp(trunkJoin.u, k).normalize();
+        const below = rg.ryBelow ?? rg.ry;
+        rg.rx = mix(rg.rx, trunkJoin.rx, k); rg.ry = mix(rg.ry, trunkJoin.ry, k); rg.ryBelow = mix(below, trunkJoin.ryBelow ?? trunkJoin.ry, k);
+      }
+      // the join ring carries the head's radial count, which the trunk keeps for its first TRUNK_ZIP_LENGTH join radii;
+      // one zipper band then steps it down to the trunk's 12 segments, away from the junction (a zipper's chord sag
+      // tilts its surface, most where rings lie close, as on a short trunk)
+      const minArc = TRUNK_ZIP_LENGTH * Math.max(trunkJoin.rx, trunkJoin.ry);
+      let z = 0;
+      for (let arc = 0; z < rings.length - 3 && arc < minArc; z++) arc += rings[z + 1]!.c.distanceTo(rings[z]!.c);
+      capFlat(s, trunkJoin, axialRadial, -1);
+      if (z > 0) loft(s, rings.slice(0, z + 1), axialRadial, 0, 0);
+      zipRings(s, rings[z]!, axialRadial, rings[z + 1]!, 12);
+      loft(s, rings.slice(z + 1), 12, 0, 0.35);
+    } else loft(s, rings, 12, 0.2, 0.35);
+    report('trunk', rings, tr.metas);
+    // a rounded tip no wider than the last ring, with two nostril pits on its front
+    const tip = bones[trunk[trunk.length - 1]!]!, r0 = tip.end.h, tx = axis(tip, 1, 0, 0), ty = axis(tip, 0, 1, 0), tz = axis(tip, 0, 0, 1);
+    const tipC = at(tip, tip.length - r0 * 0.15, 0, 0);
+    ellipsoid(s, tipC, [tx, ty, tz], [r0 * 0.9, r0, r0], one(tip.index),
+      (a, f, p) => mixC(coatAt(p, Math.sin(a), 'muzzle', 1), pal.keratin, 0.45 * smooth(0.65, 0.9, f)), 12, 6);
+    const pit = scaleC(pal.skin, 0.22);
+    for (const side of [-1, 1]) {
+      // a 6-segment disc on the tip's front surface (lifted 2% of r0), closed behind by a flat back
+      const z = side * 0.32 * r0, rr = 0.13 * r0, c = tipC.clone().addScaledVector(tx, 0.9 * r0 * Math.sqrt(1 - (z / r0) ** 2)).addScaledVector(tz, z);
+      const n = tx.clone().multiplyScalar(Math.sqrt(1 - (z / r0) ** 2) / 0.9).addScaledVector(tz, z / r0 ** 2 * r0).normalize();
+      const e1 = ty.clone(), e2 = V().crossVectors(n, e1).normalize(), ids: number[] = [], wt = one(tip.index);
+      for (let k = 0; k < 6; k++) { const a = TAU * k / 6; ids.push(s.v(c.clone().addScaledVector(e1, Math.cos(a) * rr * 1.25).addScaledVector(e2, Math.sin(a) * rr), pit, wt)); }
+      const front = s.v(c.clone().addScaledVector(n, 0.02 * r0), pit, wt), back = s.v(c.clone().addScaledVector(n, -0.03 * r0), pit, wt);
+      for (let k = 0; k < 6; k++) { s.to(front, ids[k]!, ids[(k + 1) % 6]!, n); s.to(back, ids[k]!, ids[(k + 1) % 6]!, n.clone().negate()); }
+    }
     s.end();
   }
 
@@ -1016,10 +1076,13 @@ function makeHeadColours(r: ComposerRecipe, d: ComposerGraph['dims'], coatAt: Co
   return {region, along, col, radial};
 }
 
-function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette, at: At, axis: Axis, hc: ReturnType<typeof makeHeadColours>, st0: HeadStation, firstWeights: W, ind: SkinIndividual, coatAt: CoatAt, eyeCtx: EyeContext) {
+/** Builds the head, eyes and headgear. Returns the proboscis face's last muzzle station (bind space), which the trunk
+ * loft starts from (same centre, section, basis, colour and weights), or null for every other face. */
+function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette, at: At, axis: Axis, hc: ReturnType<typeof makeHeadColours>, st0: HeadStation, firstWeights: W, ind: SkinIndividual, coatAt: CoatAt, eyeCtx: EyeContext): Ring | null {
   const r = graph.recipe, d = graph.dims, H = d.headLength, cW = d.craniumWidth, cH = d.craniumHeight, sn = d.snoutLength, tr = ind.traits;
-  // the built skull (proboscis builds the muzzle skull until WP5) and the headgear the face actually carries
+  // the legacy skull the eyes are anchored on (proboscis: the muzzle's eye site) and the headgear the face carries
   const skull = composerSkullOf(r.head), hg = composerHeadgearBuild(r);
+  let trunkJoin: Ring | null = null;
   const ax = axis(hb, 1, 0, 0), ay = axis(hb, 0, 1, 0), az = axis(hb, 0, 0, 1), w = [[hb.index, 1]] as W;
   const seg = hc.radial;
   const station = (x: number, sw: number, sh: number, yc: number, color?: (a: number, p: THREE.Vector3) => RGB): Ring => ({c: at(hb, x, yc), t: ax, u: ay, rx: sw, ry: sh, w, color: color ?? hc.col(x, sw, sh), region: REGION[hc.region(x)]});
@@ -1031,7 +1094,41 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
   s.begin('head', r.head);
   s.region = REGION.head;
   let tipX = 0.4 * H + sn, tipY = -0.2 * cH, tipH = 0.5 * cH;
-  if (skull === 'muzzle' || skull === 'jaws') {
+  const es = tr.earScale;
+  if (r.head === 'proboscis') {
+    // elephant/tapir face (fauna-composer-face-geometry-1): a high-domed cranium and a short, deep muzzle that ends in a
+    // round section and hands over into the trunk without a cap; its last stations pitch down toward the trunk
+    const tip = composerFaceTip('proboscis', {headLength: H, craniumWidth: cW, craniumHeight: cH, snoutLength: sn});
+    const trunk0 = graph.chains.trunk[0], len = tip.x - 0.4 * H;
+    const joinW: W = trunk0 !== undefined ? [[hb.index, 0.7], [trunk0, 0.3]] : w;
+    const rings = [first(), station(0.36 * H, 0.92 * cW, 0.9 * cH, -0.04 * cH)];
+    // square stations (see PROBOSCIS_FACE) whose centre and section ease (quartic) into the tip section: the last
+    // muzzle segment runs parallel to the head axis, which is the trunk's first bone, so the two meet tangent-continuous
+    const n = 4;
+    for (let i = 1; i <= n; i++) {
+      const f = i / n, e = 1 - (1 - f) ** 4, ring = station(0.4 * H + len * f, mix(0.84 * cW, tip.w, e), mix(0.86 * cH, tip.h, e), mix(-0.06 * cH, tip.y, e));
+      if (i === n) ring.w = joinW;
+      rings.push(ring);
+    }
+    loft(s, rings, seg, 0.2, trunk0 !== undefined ? 0 : 0.45);
+    // the open end is closed by a flat disc hidden inside the joined muzzle and trunk (each part stays a closed surface)
+    if (trunk0 !== undefined) { trunkJoin = rings[rings.length - 1]!; capFlat(s, trunkJoin, seg, 1); }
+    tipX = tip.x; tipY = tip.y; tipH = tip.h;
+    // flap ears: thin, broad and set low on the side of the cranium, standing clear of the neck with their rear edge
+    // flaring 30 degrees outward (an elephant's ear hangs beside, not inside, its thick neck)
+    s.begin('head', `${r.head} ears`);
+    s.region = REGION.ear;
+    for (const side of [-1, 1]) {
+      const back = 30 * Math.PI / 180, e1 = ax.clone().multiplyScalar(Math.cos(back)).addScaledVector(az, -side * Math.sin(back)).normalize();
+      const out = az.clone().multiplyScalar(side * Math.cos(back)).addScaledVector(ax, Math.sin(back)).normalize();
+      const centre = at(hb, 0.02 * H, 0.4 * cH, side * 0.9 * cW).addScaledVector(e1, -0.15 * H * es).addScaledVector(ay, -0.12 * H * es).addScaledVector(out, 0.06 * H * es);
+      ellipsoid(s, centre, [e1, ay, out], [0.21 * H * es, 0.25 * H * es, 0.015 * H * es], w, (_a, f, p) => mixC(coatAt(p, 0.4, 'ear', f), pal.skin, 0.25), 14, 4);
+    }
+    // the lower lip under the trunk base (its own 'mouth' part)
+    s.begin('mouth', 'lower lip');
+    s.region = REGION.muzzle;
+    ellipsoid(s, at(hb, tip.x - 0.05 * H, tip.y - tip.h + 0.02 * cH, 0), [ax, ay, az], [0.12 * H, 0.08 * cH, 0.28 * cW], w, () => mixC(pal.skin, [0, 0, 0], 0.45), 8, 4);
+  } else if (skull === 'muzzle' || skull === 'jaws') {
     const jaws = skull === 'jaws', flatten = jaws ? 0.82 : 1;
     const rings = [first(), station(0.36 * H, 0.92 * cW, 0.88 * cH * flatten, -0.06 * cH)];
     const n = 4;
@@ -1040,20 +1137,34 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
       const mouth = (a: number, p: THREE.Vector3): RGB => { const c = base(a, p); const line = Math.abs(Math.sin(a) + (jaws ? 0.25 : 0.35)) < (jaws ? 0.07 : 0.05) && Math.abs(Math.cos(a)) > 0.5; return line ? pal.keratin : jaws ? c : f > 0.75 ? mixC(c, pal.skin, 0.6) : c; };
       rings.push(station(x, sw, sh, mix(-0.08, jaws ? -0.12 : -0.24, f) * cH, mouth));
     }
+    const capFrom = s.ni / 3;
     loft(s, rings, seg, 0.2, jaws ? 0.55 : 0.45);
     tipY = (jaws ? -0.12 : -0.24) * cH; tipH = (jaws ? 0.36 : 0.52) * cH;
     s.region = REGION.muzzle;
-    if (!jaws) for (const side of [-1, 1]) ellipsoid(s, at(hb, tipX + 0.02 * H, tipY + 0.15 * cH, side * 0.18 * cW), [ax, ay, az], [0.03 * H, 0.06 * cH, 0.06 * cW], w, () => nose, 6, 3);
+    // nostrils seated on the rounded muzzle cap: each stands NOSTRIL_PROUD x H proud of the cap surface found along
+    // the head axis (they used to sit 0.02 H ahead of the tip station, i.e. buried inside the cap)
+    if (!jaws) {
+      const cap = headLocalTriangles(s, hb, capFrom, s.ni / 3);
+      s.begin('head', `${r.head} nostrils`);
+      s.region = REGION.muzzle;
+      for (const side of [-1, 1]) {
+        const ny = tipY + 0.15 * cH, nz = side * 0.18 * cW, hit = raycastFirstHit(cap, [tipX, ny, nz], [1, 0, 0]);
+        const nx = (hit ? hit.point[0] : tipX + 0.035 * H) - 0.03 * H + NOSTRIL_PROUD * H;
+        ellipsoid(s, at(hb, nx, ny, nz), [ax, ay, az], [0.03 * H, 0.06 * cH, 0.06 * cW], w, () => nose, 6, 3);
+      }
+    }
     if (jaws) for (const side of [-1, 1]) for (let k = 0; k < 6; k++) {
       const f = 0.15 + 0.13 * k, x = 0.4 * H + sn * f, sw = mix(0.8, 0.5, f) * cW * 0.93, y = mix(-0.08, -0.12, f) * cH - mix(0.82, 0.36, f) * cH * 0.25;
       tube(s, [at(hb, x, y, side * sw), at(hb, x + 0.01 * H, y - 0.07 * cH, side * sw * 0.97)], [0.028 * cH, 0.004 * cH], [w, w], () => [0.92, 0.9, 0.82], 5, 0.2, 0.1);
     }
-    if (!jaws && hg.built !== 'ossicones' && hg.built !== 'paired') {
+    if (!jaws) {
+      // ears are always built; with horns or ossicones they move lower, back and outward, clear of the horn roots
+      const horned = hg.built === 'ossicones' || hg.built === 'paired';
       s.begin('head', `${r.head} ears`);
       s.region = REGION.ear;
-      const es = tr.earScale;
       for (const side of [-1, 1]) {
-        const base = at(hb, 0.04 * H, 0.75 * cH, side * 0.55 * cW), dir = ay.clone().multiplyScalar(0.8).addScaledVector(az, side * 0.6).addScaledVector(ax, -0.25).normalize();
+        const base = horned ? at(hb, -0.06 * H, 0.55 * cH, side * 0.62 * cW) : at(hb, 0.04 * H, 0.75 * cH, side * 0.55 * cW);
+        const dir = horned ? ay.clone().multiplyScalar(0.45).addScaledVector(az, side * 0.85).addScaledVector(ax, -0.25).normalize() : ay.clone().multiplyScalar(0.8).addScaledVector(az, side * 0.6).addScaledVector(ax, -0.25).normalize();
         ellipsoid(s, base.clone().addScaledVector(dir, 0.16 * H * es), [dir, ax.clone().negate(), az], [0.18 * H * es, 0.03 * H * es, 0.09 * H * es], w, (_a, f, p) => mixC(coatAt(p, 0.4, 'ear', f), pal.skin, 0.25), 8, 4);
       }
     }
@@ -1073,10 +1184,20 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
     const skinBelow = (base: (a: number, p: THREE.Vector3) => RGB) => (a: number, p: THREE.Vector3) => Math.sin(a) < 0.2 ? pal.skin : base(a, p);
     loft(s, [first(), station(0.4 * H, 0.86 * cW, 0.86 * cH, -0.02 * cH, skinBelow(hc.col(0.4 * H, 0.86 * cW, 0.86 * cH))), station(0.48 * H, 0.55 * cW, 0.5 * cH, -0.1 * cH, () => pal.skin)], seg, 0.2, 0.45);
     const len = Math.max(0.05 * H, sn * 0.6);
-    loft(s, [station(0.36 * H, 0.55 * cW, 0.45 * cH, -0.4 * cH, () => pal.skin), station(0.36 * H + len, 0.42 * cW, 0.34 * cH, -0.42 * cH, () => pal.skin)].map(rg => ({...rg, region: REGION.muzzle})), 14, 0.3, 0.6);
-    ellipsoid(s, at(hb, 0.4 * H, 0.22 * cH, 0), [ax, ay, az], [0.08 * H, 0.12 * cH, 0.9 * cW], w, () => mixC(pal.base, pal.keratin, 0.3), 12, 4);
+    // lower face: bare skin with a darker mouth line across its lower front (the cap rings carry it over the front)
+    const lowerFace = (a: number): RGB => Math.abs(Math.sin(a) + 0.38) < 0.07 ? scaleC(pal.keratin, 0.5) : pal.skin;
+    const faceFrom = s.ni / 3;
+    loft(s, [station(0.36 * H, 0.55 * cW, 0.45 * cH, -0.4 * cH, lowerFace), station(0.36 * H + len, 0.42 * cW, 0.34 * cH, -0.42 * cH, lowerFace)].map(rg => ({...rg, region: REGION.muzzle})), 14, 0.3, 0.6);
+    // a broad, low nose seated on the upper front of the lower face
+    const faceTris = headLocalTriangles(s, hb, faceFrom, s.ni / 3), noseHit = raycastFirstHit(faceTris, [0.36 * H, -0.2 * cH, 0], [1, 0, 0]);
+    s.region = REGION.muzzle;
+    ellipsoid(s, at(hb, (noseHit ? noseHit.point[0] : 0.36 * H + len) - 0.02 * H, -0.2 * cH, 0), [ax, ay, az], [0.05 * H, 0.05 * cH, 0.12 * cW], w, () => scaleC(pal.skin, 0.6), 10, 3);
+    s.region = REGION.head;
+    // the brow ridge sits above the eyes (it used to reach down over the upper lid)
+    s.begin('head', `${r.head} brow`);
+    ellipsoid(s, at(hb, 0.42 * H, 0.32 * cH, 0), [ax, ay, az], [0.08 * H, 0.09 * cH, 0.9 * cW], w, () => mixC(pal.base, pal.keratin, 0.3), 12, 4);
+    s.begin('head', `${r.head} ears`);
     s.region = REGION.ear;
-    const es = tr.earScale;
     for (const side of [-1, 1]) ellipsoid(s, at(hb, 0.12 * H, 0, side * 0.96 * cW), [ax, ay, az], [0.08 * H * es, 0.2 * cH * es, 0.05 * cW * es], w, () => pal.skin, 8, 4);
     tipX = 0.36 * H + len; tipY = -0.42 * cH; tipH = 0.34 * cH;
   } else if (skull === 'blunt') {
@@ -1085,10 +1206,30 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
     loft(s, [first(), station(xt, 0.75 * cW, 0.75 * cH, 0, (a, p) => mixC(base(a, p), pal.skin, 0.5))], seg, 0.2, 0.75);
     // the frontal mouth disc (bare skin, not an eye), seated on the cap's front: it used to float 0.72 cW ahead of the
     // cap station, beyond the rounded cap end; now its centre sits 0.01 H inside the cap surface found along the axis
-    const capHit = raycastFirstHit(headLocalTriangles(s, hb, capFrom, s.ni / 3), [xt, 0, 0], [1, 0, 0]);
-    const discX = capHit ? capHit.point[0] - 0.01 * H : xt + 0.72 * cW;
+    // the disc is a thin shell draped over the cap: every vertex is cast from inside the cap along the head axis and
+    // lifted MOUTH_DISC_LIFT x H along the surface normal there, so no part of it stands clear of the cap
+    const capTris = headLocalTriangles(s, hb, capFrom, s.ni / 3);
+    s.begin('mouth', 'mouth disc');
     s.region = REGION.muzzle;
-    ellipsoid(s, at(hb, discX, 0, 0), [ax, ay, az], [0.03 * H, 0.32 * cH, 0.32 * cW], w, () => mouthDisc, 10, 3);
+    // dense enough (20 x 4) that a chord between disc vertices sags < 0.002 H below the convex cap
+    const discRings = 4, discSeg = 20, lift = MOUTH_DISC_LIFT * H;
+    const onCap = (y: number, z: number) => {
+      const h = raycastFirstHit(capTris, [xt, y, z], [1, 0, 0]);
+      if (!h) return at(hb, xt + 0.72 * cW + lift, y, z);
+      const sg = h.normal[0] < 0 ? -1 : 1;
+      return at(hb, h.point[0] + sg * h.normal[0] * lift, h.point[1] + sg * h.normal[1] * lift, h.point[2] + sg * h.normal[2] * lift);
+    };
+    const centre = s.v(onCap(0, 0), mouthDisc, w), ringIds: number[][] = [];
+    for (let k = 1; k <= discRings; k++) {
+      const rr = k / discRings, ids: number[] = [];
+      for (let j = 0; j < discSeg; j++) { const a = TAU * j / discSeg; ids.push(s.v(onCap(Math.sin(a) * 0.32 * cH * rr, Math.cos(a) * 0.32 * cW * rr), mouthDisc, w)); }
+      ringIds.push(ids);
+    }
+    for (let j = 0; j < discSeg; j++) s.to(centre, ringIds[0]![j]!, ringIds[0]![(j + 1) % discSeg]!, ax);
+    for (let k = 0; k + 1 < discRings; k++) for (let j = 0; j < discSeg; j++) {
+      const a = ringIds[k]![j]!, b = ringIds[k]![(j + 1) % discSeg]!, c = ringIds[k + 1]![j]!, e = ringIds[k + 1]![(j + 1) % discSeg]!;
+      s.to(a, c, b, ax); s.to(b, c, e, ax);
+    }
     tipX = 0.6 * H + sn * 0.3 + 0.7 * cW; tipY = 0; tipH = 0.5 * cH;
   } else {
     // mandibles: arthropod head capsule with antennae and pincer mouthparts
@@ -1109,7 +1250,14 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
   // horns: length x hornScale, curl rotated by hornCurl, left/right x (1 +- hornAsym). Only the headgear the face
   // carries is built (FACE_HEADGEAR); an omitted kind builds exactly what 'none' builds.
   if (hg.built !== 'none') {
-    s.begin('horn', hg.built);
+    const casque = hg.built === 'crest' && r.head === 'beak';
+    // the head surface the casque and crest seat on (raycast down onto it, head-local), before any headgear exists
+    const surface = hg.built === 'crest' ? headSurfaceTriangles(s, hb, firstPart, casque ? 'blend' : 'all') : null;
+    // the first surface below a point well above the skull; for the crest a hit outside 0.3..1.2 cH (e.g. the back
+    // behind a short neck) is not the skull and keeps the fallback height (the casque also rides the low culmen)
+    const lowest = casque ? -0.5 * cH : 0.3 * cH;
+    const topAt = (x: number, fallback: number) => { const h = surface && raycastFirstHit(surface, [x, 2 * cH, 0], [0, -1, 0]); return h && h.point[1] >= lowest && h.point[1] <= 1.2 * cH ? h.point[1] : fallback; };
+    s.begin('horn', casque ? 'casque' : hg.built);
     s.region = REGION.horn;
     const hs = tr.hornScale, curl = tr.hornCurl, asym = tr.hornAsym, thick = 0.5 + 0.5 * hs;
     const hornCol = (i: number, n: number, p: THREE.Vector3) => mixC(coatAt(p, 1, 'horn', i / n), pal.keratin, 0.35 + 0.65 * i / n);
@@ -1125,7 +1273,8 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
       tube(s, [at(hb, x1, y1 - 0.1 * cH, 0), at(hb, x1 + 0.02 * H * k2, y1 + 0.12 * H * k2, 0), at(hb, x1 - 0.02 * H * k2, y1 + 0.22 * H * k2, 0)], [0.09 * H, 0.06 * H, 0.008 * H].map(x => x * (0.5 + 0.5 * k2)), [w, w, w], (i, _a, p) => hornCol(i, 2, p), 8, 0.2, 0.15);
     } else if (hg.built === 'paired') {
       for (const side of [-1, 1]) {
-        const k = hs * (1 + side * asym), raw = [V(0.05, 0.7, 0.55), V(0.0, 0.95, 0.85), V(-0.12, 1.25, 1.15), V(-0.15, 1.75, 1.2), V(-0.05, 2.1, 1.0)].map(p => at(hb, p.x * H, p.y * cH, side * p.z * cW));
+        // the root sits forward on the brow (0.16 H, 0.8 cH, 0.48 cW) instead of behind the cranium; the whole horn shifts
+        const k = hs * (1 + side * asym), raw = [V(0.05, 0.7, 0.55), V(0.0, 0.95, 0.85), V(-0.12, 1.25, 1.15), V(-0.15, 1.75, 1.2), V(-0.05, 2.1, 1.0)].map(p => at(hb, (p.x + PAIRED_ROOT_SHIFT[0]) * H, (p.y + PAIRED_ROOT_SHIFT[1]) * cH, side * (p.z + PAIRED_ROOT_SHIFT[2]) * cW));
         const pts = curled(grow(raw, k), raw[0]!, az, -curl * side);
         tube(s, pts, [0.1 * H, 0.08 * H, 0.06 * H, 0.035 * H, 0.006 * H].map(x => x * (0.5 + 0.5 * k)), pts.map(() => w), (i, _a, p) => hornCol(i, 4, p), 9, 0.2, 0.15);
       }
@@ -1136,12 +1285,55 @@ function buildHead(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
         tube(s, [base, top!], [0.055 * H, 0.045 * H].map(x => x * (0.5 + 0.5 * k)), [w, w], (_i, a, p) => mixC(coatAt(p, Math.sin(a), 'head', 0.2), pal.accent, 0.3), 9, 0.2, 0.2);
         ellipsoid(s, top!, [ax, ay, az], [0.06 * H, 0.06 * H, 0.06 * H].map(x => x * (0.5 + 0.5 * k)) as [number, number, number], w, () => pal.keratin, 8, 4);
       }
+    } else if (casque) {
+      // hornbill/cassowary casque: a keratin helmet riding the culmen from the forehead onto the base of the bill
+      // (low and long: a helmet over the bill, not a blade standing on it)
+      const len = Math.max(sn, 0.15 * H), x0 = 0.26 * H, x1 = 0.36 * H + 0.6 * len, hMax = Math.max(0.5 * cH, 0.25 * H) * hs * 0.32, sink = 0.04 * cH;
+      const col = mixC(pal.horn, pal.accent, 0.25), profile = [0.45, 1, 0.8, 0.3], width = [0.24, 0.3, 0.26, 0.14], rings: Ring[] = [];
+      profile.forEach((k, i) => {
+        const x = mix(x0, x1, i / 3), bottom = topAt(x, 0.5 * cH) - sink, ry = (hMax * k + sink) / 2;
+        rings.push({c: at(hb, x, bottom + ry, 0), t: ax, u: ay, rx: width[i]! * cW, ry, w, color: () => col, region: REGION.horn});
+      });
+      loft(s, rings, 8, 0.3, 0.3);
     } else if (hg.built === 'crest') {
-      const crestH = Math.max(0.5 * cH, 0.25 * H) * hs;
-      slab(s, at(hb, 0, 0.82 * cH, 0), ax, ay, [[-0.12 * H, 0], [0.05 * H, crestH * 0.9], [0.22 * H, crestH], [0.42 * H, crestH * 0.45], [0.5 * H, 0]], 0.07 * cW, w, (x, y) => mixC(pal.accent, pal.plate, y / crestH * 0.6 + x * 0));
+      // jaws crest: a fin with real thickness, seated on the skull along its outline (it used to float as a thin slab)
+      const crestH = Math.max(0.5 * cH, 0.25 * H) * hs, outline: [number, number][] = [[-0.12, 0.15], [0.05, 0.9], [0.22, 1], [0.42, 0.45], [0.5, 0.15]];
+      const rings: Ring[] = outline.map(([fx, k]) => {
+        const x = fx * H, base = topAt(x, 0.72 * cH) - CREST_SINK * H, ry = (crestH * k + CREST_SINK * H) / 2;
+        return {c: at(hb, x, base + ry, 0), t: ax, u: ay, rx: CREST_HALF_THICKNESS * cW, ry, w, color: (a: number) => mixC(pal.accent, pal.plate, 0.6 * clamp(0.5 + 0.5 * Math.sin(a), 0, 1) * k), region: REGION.horn};
+      });
+      loft(s, rings, 8, 0.3, 0.3);
     }
     s.end();
   }
+  return trunkJoin;
+}
+/** The trunk's section and orientation ease from the muzzle's last station over this many station radii. */
+export const TRUNK_JOIN_BLEND = 1.2;
+/** The trunk keeps the muzzle's radial count for this many join radii before it zips down to 12 segments. */
+export const TRUNK_ZIP_LENGTH = 0.5;
+/** Muzzle nostrils stand this far (x H) proud of the muzzle cap; the worm's mouth disc lies this far (x H) off its cap. */
+export const NOSTRIL_PROUD = 0.012;
+export const MOUTH_DISC_LIFT = 0.0035;
+/** Paired horns: root shift from the pre-face-geometry root (0.05 H, 0.7 cH, 0.55 cW) to (0.16 H, 0.8 cH, 0.48 cW). */
+const PAIRED_ROOT_SHIFT = [0.11, 0.1, -0.07] as const;
+/** Jaws crest fin: half thickness (x cW) and how far its base sinks into the skull (x H). */
+export const CREST_HALF_THICKNESS = 0.09;
+const CREST_SINK = 0.01;
+/** The built head surface in head-local space: the head parts from `firstPart` on (ears excluded) plus the torso
+ * triangles with a vertex weighted to the head bone (neck 'blend', the neck-to-head blend) or all of them ('all'). */
+function headSurfaceTriangles(s: Skin, hb: ComposerBone, firstPart: number, neck: 'blend' | 'all'): Float64Array {
+  const q = new THREE.Quaternion(...hb.restQuaternion).invert(), P0 = V(...hb.restPosition), tmp = V(), out: number[] = [];
+  const headWeighted = (v: number) => { for (let k = 0; k < 4; k++) if (s.si[v * 4 + k] === hb.index && s.sw[v * 4 + k]! > 0) return true; return false; };
+  s.parts.forEach((part, i) => {
+    const own = i >= firstPart;
+    if (own ? part.part !== 'head' || part.label.endsWith('ears') : part.part !== 'torso') return;
+    for (let t = part.firstTriangle * 3; t < (part.firstTriangle + part.triangles) * 3; t += 3) {
+      if (!own && neck === 'blend' && !headWeighted(s.ix[t]!) && !headWeighted(s.ix[t + 1]!) && !headWeighted(s.ix[t + 2]!)) continue;
+      for (let k = 0; k < 3; k++) { const v = s.ix[t + k]!; tmp.set(s.p[v * 3]!, s.p[v * 3 + 1]!, s.p[v * 3 + 2]!).sub(P0).applyQuaternion(q); out.push(tmp.x, tmp.y, tmp.z); }
+    }
+  });
+  return new Float64Array(out);
 }
 
 /** Head-local anchor of each lidded eye per skull (the pre-WP4 fixed eye sites, x and y in head units). */
