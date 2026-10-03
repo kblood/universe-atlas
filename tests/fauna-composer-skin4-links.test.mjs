@@ -27,13 +27,21 @@ test('skin-4 fixture: the 28 skin-3 texts, captured at fauna-composer-skin-4 / e
   assert.deepEqual([skin4.capturedAt.skin, skin4.capturedAt.eye], ['fauna-composer-skin-4', 'fauna-composer-eye-2']);
   assert.deepEqual([COMPOSER_SKIN_VERSION, COMPOSER_EYE_VERSION], [skin4.capturedAt.skin, skin4.capturedAt.eye]);
   assert.deepEqual(Object.keys(skin4.byText).sort(), Object.keys(skin3.byText).sort());
+  let ec4 = 0;
   for (const [text, pin] of Object.entries(skin4.byText)) {
     assert.equal(pin.skin3, skin3.byText[text].skin, `${text}: the skin-3 pin it replaces`);
     assert.equal(pin.driftFromSkin3, DRIFT, text);
     assert.notEqual(pin.skin, pin.skin3, `${text}: a repin must differ from the pin it replaces`);
     // eyes are mesh-only: the bone count is skin-3's
     assert.equal(pin.bones, skin3.byText[text].bones, text);
+    // eye round EC4 (head polish) repinned in place, recording the replaced pins and the reason
+    if (pin.ec4Drift) {
+      ec4++;
+      assert.notEqual(pin.skinPreEC4, pin.skin, `${text}: an EC4 repin must differ from the pin it replaces`);
+      assert.ok(pin.skin3PreEC4 && skin3.byText[text].ec4Drift, `${text}: its skin-3 twin was repinned for EC4 too`);
+    }
   }
+  assert.equal(ec4, skin4.repinnedAtEC4.changed);
 });
 
 test('skin-4: migrated neutral v1 texts upgrade to the current eye rules and build their pin byte for byte', () => {

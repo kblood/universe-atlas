@@ -8,7 +8,7 @@ import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {COMPOSER_PRESET_IDS, composerPreset, decodeComposerRecipe, normalizeComposerRecipe, randomComposerRecipe} from '../src/fauna-composer-recipe.ts';
 import {COMPOSER_BUDGET, COMPOSER_GRAPH_VERSION, COMPOSER_TRUNK_TIP_CLEARANCE, buildComposerGraph, poseComposer} from '../src/fauna-composer-rig.ts';
-import {CREST_HALF_THICKNESS, buildComposerSkin} from '../src/fauna-composer-mesh.ts';
+import {CREST_HALF_THICKNESS, HIDDEN_DISC_INSET, TRUNK_TIP, buildComposerSkin} from '../src/fauna-composer-mesh.ts';
 import {composerIndividualTraits, deriveComposerIndividual} from '../src/fauna-composer-individual.ts';
 import {coherentComposerSpecies, randomCoherentComposerRecipe} from '../src/fauna-composer-species.ts';
 import {COMPOSER_FACES, COMPOSER_HORNS, composerHeadgearBuild} from '../src/fauna-composer-face.ts';
@@ -55,8 +55,8 @@ for (const [id, recipe] of Object.entries(PROBOSCIS)) {
 }
 
 test('face geometry module: versions, legacy numbers unchanged, proboscis its own face', () => {
-  assert.equal(COMPOSER_FACE_GEOMETRY_VERSION, 'fauna-composer-face-geometry-1');
-  assert.equal(COMPOSER_GRAPH_VERSION, 'fauna-composer-graph-3');
+  assert.equal(COMPOSER_FACE_GEOMETRY_VERSION, 'fauna-composer-face-geometry-2');
+  assert.equal(COMPOSER_GRAPH_VERSION, 'fauna-composer-graph-4');
   assert.deepEqual(Object.keys(COMPOSER_FACE_GEOMETRY).sort(), [...COMPOSER_FACES].sort());
   // the graph-2 numbers of the six legacy faces
   const legacy = {muzzle: [1, 0.34, 0.9], jaws: [1.15, 0.34, 0.95], beak: [0.9, 0.34, 0.9], 'flat-face': [0.9, 0.42, 0.9], blunt: [0.6, 0.5, 0.9], mandibles: [0.7, 0.3, 1.4]};
@@ -88,12 +88,21 @@ test('proboscis: trunk grows from the muzzle tip station, round and smooth, with
     // the skin seam: trunk vertices that coincide with the muzzle's last station, centred on the root
     const headVerts = verticesOf(skin, partsOf(skin, 'head', 'proboscis')), trunkVerts = verticesOf(skin, partsOf(skin, 'trunk'));
     const headKeys = new Map(headVerts.map(v => [key(vertex(skin, v)), v]));
-    // shared vertices: the junction ring plus the centre of the two hidden closing discs (dropped: it is not surface)
+    // shared vertices: the junction ring plus the two hidden closing discs (their centre, and since skin EC4 their rims,
+    // inset by HIDDEN_DISC_INSET so they no longer depth-fight the surface along the seam); the discs are dropped: they are
+    // not surface. A disc vertex is one on a triangle that touches the disc centre (the shared vertex nearest the mean).
     const shared = trunkVerts.filter(v => headKeys.has(key(vertex(skin, v))));
     const mean = shared.reduce((a, v) => a.map((x, k) => x + vertex(skin, v)[k] / shared.length), [0, 0, 0]);
-    const radial = shared.map(v => len(sub(vertex(skin, v), mean))), typical = [...radial].sort((x, y) => x - y)[radial.length >> 1];
-    const seam = shared.filter((v, i) => radial[i] > 0.5 * typical);
-    assert.ok(seam.length >= 12 && shared.length - seam.length <= 1, `${id}: ${seam.length} seam vertices`);
+    const centreKey = key(vertex(skin, shared.reduce((a, v) => len(sub(vertex(skin, v), mean)) < len(sub(vertex(skin, a), mean)) ? v : a)));
+    const discKeys = new Set([centreKey]);
+    for (const p of [...partsOf(skin, 'head', 'proboscis'), ...partsOf(skin, 'trunk')]) for (let i = p.firstTriangle * 3; i < (p.firstTriangle + p.triangles) * 3; i += 3) {
+      const ks = [0, 1, 2].map(k => key(vertex(skin, skin.index[i + k])));
+      if (ks.includes(centreKey)) for (const k of ks) discKeys.add(k);
+    }
+    const seam = shared.filter(v => !discKeys.has(key(vertex(skin, v))));
+    const typical = [...seam.map(v => len(sub(vertex(skin, v), mean)))].sort((x, y) => x - y)[seam.length >> 1];
+    assert.ok(seam.length >= 12 && shared.length - seam.length <= 1 + 2 * seam.length, `${id}: ${seam.length} seam vertices`);
+    for (const v of shared) if (discKeys.has(key(vertex(skin, v))) && key(vertex(skin, v)) !== centreKey) assert.ok(len(sub(vertex(skin, v), mean)) <= HIDDEN_DISC_INSET * typical * 1.02, `${id}: hidden disc rim inset`);
     const seamKeys = new Set(seam.map(v => key(vertex(skin, v))));
     const centre = seam.reduce((a, v) => a.map((x, k) => x + vertex(skin, v)[k] / seam.length), [0, 0, 0]);
     assert.ok(len(sub(centre, t0.restPosition)) <= 0.02 * H, `${id}: seam centre ${len(sub(centre, t0.restPosition)) / H} H from the root`);
@@ -105,7 +114,7 @@ test('proboscis: trunk grows from the muzzle tip station, round and smooth, with
       assert.ok(Math.max(a, b) / Math.min(a, b) <= 1.1, `${id}: radius step ${(Math.max(a, b) / Math.min(a, b)).toFixed(3)} at ring ${i}`);
     }
     // surface normals across the seam: muzzle side vs trunk side, per seam vertex, at most 15 degrees apart
-    const onDisc = ps => ps.every(q => seamKeys.has(key(q)) || len(sub(q, centre)) < 0.5 * typical);
+    const onDisc = ps => ps.some(q => discKeys.has(key(q)) && !seamKeys.has(key(q)));
     const normalsAt = parts => {
       const acc = new Map();
       for (const p of parts) for (let i = p.firstTriangle * 3; i < (p.firstTriangle + p.triangles) * 3; i += 3) {
@@ -120,13 +129,13 @@ test('proboscis: trunk grows from the muzzle tip station, round and smooth, with
     let worst = 0;
     for (const [k, n] of before) if (after.has(k)) worst = Math.max(worst, angleDeg(n, after.get(k)));
     assert.ok(before.size >= 12 && before.size === seamKeys.size && worst <= 15, `${id}: seam normal angle ${worst.toFixed(1)} degrees over ${before.size} vertices`);
-    // the tip is no wider than the last trunk ring
+    // the tip is no wider than its lip flare (TRUNK_TIP.flare, skin EC4) x the last trunk ring
     const tb = graph.bones[graph.chains.trunk[5]], tf = frame(tb), r0 = tb.end.h, from = tb.length - 0.15 * r0;
     const lastRings = rings.filter(x => x.bone === tb.index && tf.toLocal(x.centre)[0] >= from - 1e-9);
     const bound = Math.max(meanR(rings[rings.length - 1]), ...lastRings.map(x => Math.max(x.rx, x.ry, x.ryBelow)));
     let widest = 0;
-    for (const v of trunkVerts) { const l = tf.toLocal(vertex(skin, v)); if (l[0] >= from && Math.hypot(l[0] - tb.length, l[1], l[2]) <= 4 * r0) widest = Math.max(widest, Math.hypot(l[1], l[2])); } // near the tip (a curled trunk passes the cut plane elsewhere)
-    assert.ok(widest <= bound * (1 + 1e-4), `${id}: tip ${widest} vs last ring ${bound}`);
+    for (const v of trunkVerts) { const l = tf.toLocal(vertex(skin, v)), own = skin.skinIndex[v * 4] === tb.index && skin.skinWeight[v * 4] === 1; if (l[0] >= from && own && Math.hypot(l[0] - tb.length, l[1], l[2]) <= 4 * r0) widest = Math.max(widest, Math.hypot(l[1], l[2])); } // near the tip, on the last bone alone (a curled trunk passes the cut plane elsewhere, and a short trunk's broad base rings lie within 4 end radii)
+    assert.ok(widest <= TRUNK_TIP.flare * bound * (1 + 1e-4), `${id}: tip ${widest} vs last ring ${bound}`);
     // no twisted band along the trunk: every trunk bone keeps the head's lateral axis (the trunk curls in the head's
     // sagittal plane), also past vertical, where an UP-referenced frame flipped half a turn and folded the skin band
     // between the two joints into an annulus facing the axis (graph-2's 'plug' near the tip)
@@ -286,10 +295,12 @@ test('nostrils stand >= 0.005 H proud of the muzzle cap; the worm mouth disc lie
   }
 });
 
-test('budgets: proboscis head group <= legacy + 600, trunked centipede < 30000, COMPOSER_BUDGET over presets, 256 wild, 256 coherent', () => {
+// EC4 (head polish) raised the proboscis allowance 600 -> 800 triangles: a 16-segment trunk (was 12), its nostril tip
+// (bulb lip, two nostrils, finger) and the lofted ear sheets; still a small fraction of COMPOSER_BUDGET.maxTriangles
+test('budgets: proboscis head group <= legacy + 800, trunked centipede < 30000, COMPOSER_BUDGET over presets, 256 wild, 256 coherent', () => {
   for (const [id, recipe] of Object.entries(PROBOSCIS)) {
     const {skin} = build(recipe), n = headGroup(skin);
-    assert.ok(n <= LEGACY_HEAD_GROUP[id] + 600, `${id}: head group ${n} vs legacy ${LEGACY_HEAD_GROUP[id]}`);
+    assert.ok(n <= LEGACY_HEAD_GROUP[id] + 800, `${id}: head group ${n} vs legacy ${LEGACY_HEAD_GROUP[id]}`);
   }
   assert.ok(build(composerPreset('trunked-centipede')).skin.triangleCount < 30000);
   const check = (id, recipe) => {

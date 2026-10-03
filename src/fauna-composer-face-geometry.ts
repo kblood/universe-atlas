@@ -1,5 +1,9 @@
 /**
- * Per-face head geometry numbers for the modular creature composer (fauna-composer-face-geometry-1).
+ * Per-face head geometry numbers for the modular creature composer (fauna-composer-face-geometry-2).
+ *
+ * fauna-composer-face-geometry-2 (eye round EC4, head polish) changes only the proboscis: a thicker muzzle tip (the trunk
+ * base), a shorter trunk (PROBOSCIS_TRUNK_LENGTH), a hanging rest shape that tapers fast near the face and curls its tip
+ * forward (a J) instead of lying on the ground (composerTrunkRestAngles). The six other faces are unchanged.
  *
  * Pure: no rendering-library import, no randomness, no clock; erasable TypeScript only. The rig
  * (fauna-composer-rig.ts) and the skin (fauna-composer-mesh.ts) both read these, so a face's skull
@@ -11,7 +15,7 @@
  */
 import type {ComposerFace} from './fauna-composer-face.ts';
 
-export const COMPOSER_FACE_GEOMETRY_VERSION = 'fauna-composer-face-geometry-1';
+export const COMPOSER_FACE_GEOMETRY_VERSION = 'fauna-composer-face-geometry-2';
 
 export interface ComposerFaceGeometry {
   /** Head length factor (head bone length = headSize x headScale x body scale). */
@@ -62,14 +66,57 @@ export function composerFaceTip(face: ComposerFace, d: ComposerFaceDims): Compos
 }
 
 /** The proboscis face's muzzle: section at the tip (fractions of cH and cW), chosen so the tip section is round
- * (0.5 cH vs 0.55 x 0.9 cH = 0.495 cH) and the trunk's first ring can be that section itself; the muzzle is at least
+ * (0.72 cH vs 0.8 x 0.9 cH = 0.72 cH) and the trunk's first ring can be that section itself; the muzzle is at least
  * minMuzzle x H long (snoutLength 0 would collapse its stations). The muzzle is short against its section, so its
  * stations stay square to the head axis (a pitched station would fold its underside onto the one before) and the
- * trunk's first bone leaves along the head axis: the trunk bends down along its own length (PROBOSCIS_TRUNK_BEND). */
-export const PROBOSCIS_FACE = Object.freeze({tipY: -0.2, tipH: 0.5, tipW: 0.55, minMuzzle: 0.08});
-/** Trunk bone i of 6 pitches PROBOSCIS_TRUNK_BEND x (i / 5)^1.2 radians below the head axis (the last one 1.5 rad, as in
- * graph-2, whose first bone started 0.45 rad down and kinked away from the face). */
-export const PROBOSCIS_TRUNK_BEND = 1.5;
+ * trunk's first bone leaves along the head axis: the trunk bends down along its own length.
+ * face-geometry-2 (EC4): tipH 0.5 -> 0.72 and tipW 0.55 -> 0.8. GPT Luna 6 read the face-round trunk as "a tube attached
+ * to the front of the head ... its base looks pinched and narrower than the face around it"; the base is now 1.45 x as
+ * wide and the muzzle barely narrows on its way into it (0.84 cW -> 0.8 cW instead of -> 0.55 cW). */
+export const PROBOSCIS_FACE = Object.freeze({tipY: -0.2, tipH: 0.72, tipW: 0.8, minMuzzle: 0.08});
 /** The trunk's base radius against the face tip: min(tip.w, tip.h), the tip section itself (round within 1%), so the
  * bone sections take over without a step and only the trunk's own taper slopes its surface at the junction. */
 export const PROBOSCIS_TRUNK_BASE = 1;
+/** Trunk length per unit recipe trunkLength, in head lengths (graph-3: 2.1). Luna: "roughly 1.5-2 head lengths ...
+ * the face is small relative to the trunk"; the default trunkLength 0.8 now builds 1.16 head lengths, 1.0 builds 1.45. */
+export const PROBOSCIS_TRUNK_LENGTH = 1.45;
+/** Trunk taper: radius at fraction u of its length = tip + (base - tip) x (1 - u)^power. A thick base that narrows
+ * quickly, then a long slender hand, instead of graph-3's linear cone (base 1, tip 0.38). */
+export const PROBOSCIS_TRUNK_TAPER = Object.freeze({tip: 0.3, power: 1.6});
+export function composerTrunkRadius(baseR: number, u: number): number {
+  const T = PROBOSCIS_TRUNK_TAPER;
+  return baseR * (T.tip + (1 - T.tip) * Math.pow(1 - Math.min(1, Math.max(0, u)), T.power));
+}
+/** The trunk's rest shape (radians of world pitch per bone, in the head's sagittal plane; 0 = horizontal, negative =
+ * down). The trunk droops from the face toward `hang` (an elephant's trunk hangs from its face): bone i at fraction
+ * (i + lead) / (n - 1 + lead) of the way, eased by `ease`, so bone 0 already turns down (the skin's join blend keeps the
+ * surface tangent-continuous with the muzzle, which runs along the head axis) and its last bone flicks forward by `flick`. A trunk too long for the face's
+ * height above the ground curls forward and up from bone `from` on (a J, as an elephant rests a long trunk): bone
+ * from + k turns `curl` x (k + 1) further, never past `maxPitch`. The rig picks the latest `from` and then the smallest
+ * curl (up to curlMax per bone) that keep the trunk off the ground (composerTrunkRestShape); graph-3 instead lifted the
+ * lowest bone off the ground at a kink (resolveRestClearance, kept as a last resort). */
+export const PROBOSCIS_TRUNK_SHAPE = Object.freeze({hang: -1.45, ease: 0.5, lead: 0.4, flick: 0.55, curlMax: 0.9, maxPitch: 1.1});
+export function composerTrunkRestAngles(n: number, headPitch: number, from = n, curl = 0): number[] {
+  const S = PROBOSCIS_TRUNK_SHAPE, out: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const u = n > 1 ? Math.min(1, (i + S.lead) / (n - 1 + S.lead)) : 0;
+    let a = headPitch + (S.hang - headPitch) * Math.pow(u, S.ease) + (i === n - 1 && n > 1 ? S.flick : 0);
+    if (i >= from) a = Math.min(Math.max(a, S.maxPitch), a + curl * (i - from + 1));
+    out.push(a);
+  }
+  return out;
+}
+/** Picks the rest shape: no curl when `clear` (a test of a candidate angle list) passes already, else the latest curl
+ * start and the smallest curl there that pass (bisection, deterministic), else the fullest curl (and the rig's
+ * clearance fallback lifts the rest). */
+export function composerTrunkRestShape(n: number, headPitch: number, clear: (angles: number[]) => boolean): number[] {
+  if (clear(composerTrunkRestAngles(n, headPitch))) return composerTrunkRestAngles(n, headPitch);
+  const cm: number = PROBOSCIS_TRUNK_SHAPE.curlMax;
+  for (let from = n - 1; from >= 1; from--) {
+    if (!clear(composerTrunkRestAngles(n, headPitch, from, cm))) continue;
+    let lo = 0, hi = cm;
+    for (let k = 0; k < 24; k++) { const mid = (lo + hi) / 2; if (clear(composerTrunkRestAngles(n, headPitch, from, mid))) hi = mid; else lo = mid; }
+    return composerTrunkRestAngles(n, headPitch, from, hi);
+  }
+  return composerTrunkRestAngles(n, headPitch, 1, cm);
+}

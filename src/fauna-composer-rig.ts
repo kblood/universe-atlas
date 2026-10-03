@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {composerConstraints, composerWingSpanLimit, normalizeComposerRecipe, type ComposerConstraint, type ComposerRecipe} from './fauna-composer-recipe.ts';
 import {composerIndividualTraits, type ComposerIndividualTraits} from './fauna-composer-individual.ts';
-import {COMPOSER_FACE_GEOMETRY, PROBOSCIS_TRUNK_BASE, PROBOSCIS_TRUNK_BEND, composerFaceTip, composerHeadPitch} from './fauna-composer-face-geometry.ts';
+import {COMPOSER_FACE_GEOMETRY, PROBOSCIS_TRUNK_BASE, PROBOSCIS_TRUNK_LENGTH, composerFaceTip, composerHeadPitch, composerTrunkRadius, composerTrunkRestShape} from './fauna-composer-face-geometry.ts';
 
 /** Variable articulated body-plan graph for the modular composer. It is
  * deliberately separate from the fixed 22-bone quadruped rig: limbless,
@@ -9,7 +9,7 @@ import {COMPOSER_FACE_GEOMETRY, PROBOSCIS_TRUNK_BASE, PROBOSCIS_TRUNK_BEND, comp
  * Every bone has an explicit parent, rest length and bind frame (local +X
  * along the bone, +Y dorsal). Creature space: metres, +X forward, +Y up,
  * +Z to the animal's right, ground at y = 0. */
-export const COMPOSER_GRAPH_VERSION = 'fauna-composer-graph-3';
+export const COMPOSER_GRAPH_VERSION = 'fauna-composer-graph-4';
 /** Desktop preview budget. Not a Quest qualification. */
 export const COMPOSER_BUDGET = Object.freeze({maxBones: 160, maxVertices: 48000, maxTriangles: 80000, drawCallsPerCreature: 2});
 export const COMPOSER_MOTIONS = ['neutral', 'idle', 'walk', 'display'] as const;
@@ -359,23 +359,38 @@ export function buildComposerGraph(input: ComposerRecipe): ComposerGraph {
   if (layout === 'limbless') resolveRestClearance(b, [...neck, head]);
 
   // ---- trunk: a proboscis face's nose, growing from the face tip (composerFaceTip, shared with the skin), whose
-  // section it continues: the skin's first trunk ring is the muzzle's last station
+  // section it continues: the skin's first trunk ring is the muzzle's last station. graph-4 (EC4): shorter
+  // (PROBOSCIS_TRUNK_LENGTH), a fast taper from a thicker base (composerTrunkRadius), and a hanging rest shape whose
+  // distal bones curl forward just enough to clear the ground (composerTrunkRestAngles) instead of lying on it
   const trunk: number[] = [];
-  const trunkLength = recipe.trunk === 'trunk' ? recipe.trunkLength * 2.1 * headLength : 0;
+  const trunkLength = recipe.trunk === 'trunk' ? recipe.trunkLength * PROBOSCIS_TRUNK_LENGTH * headLength : 0;
   if (trunkLength > 0) {
     const hb = b.bones[head]!, n = 6, tl = trunkLength / n;
     const tip = composerFaceTip(face, {headLength, craniumWidth: craniumW, craniumHeight: craniumH, snoutLength});
-    const baseR = PROBOSCIS_TRUNK_BASE * Math.min(tip.w, tip.h), tipR = baseR * 0.38;
-    let pos = toBone(hb, [tip.x, tip.y, 0]);
+    const baseR = PROBOSCIS_TRUNK_BASE * Math.min(tip.w, tip.h), root = toBone(hb, [tip.x, tip.y, 0]);
+    const radius = (i: number) => composerTrunkRadius(baseR, i / n);
+    // the bone ends (and the rounded tip) for a curl; clear when every end stands above the deepest section touching
+    // it, with resolveRestClearance's 5% margin
+    const clear = (angles: number[]) => {
+      const pos = root.clone();
+      for (let i = 0; i < n; i++) {
+        pos.addScaledVector(V(Math.cos(angles[i]!), Math.sin(angles[i]!), 0), tl);
+        const floor = Math.max(radius(i), radius(i + 1), i + 1 < n ? radius(i + 1) : COMPOSER_TRUNK_TIP_CLEARANCE * radius(n)) * 1.05;
+        if (pos.y < floor) return false;
+      }
+      return true;
+    };
+    const angles = composerTrunkRestShape(n, headPitch, clear);
+    let pos = root;
     for (let i = 0; i < n; i++) {
-      const angle = -PROBOSCIS_TRUNK_BEND * Math.pow(i / (n - 1), 1.2) + headPitch; // leaves the face along the head axis
       // the frame keeps its lateral axis +Z as the trunk curls past vertical (an UP reference flips it there, which
       // twisted the skin band at that joint half a turn: the 'plug' near the tip of graph-2 trunks)
-      const dir = V(Math.cos(angle), Math.sin(angle), 0);
-      const r0 = mix(baseR, tipR, i / n), r1 = mix(baseR, tipR, (i + 1) / n);
+      const dir = V(Math.cos(angles[i]!), Math.sin(angles[i]!), 0);
+      const r0 = radius(i), r1 = radius(i + 1);
       trunk.push(addBone(b, {name: `trunk_${i}`, parent: i ? trunk[i - 1]! : head, part: 'trunk', length: tl, position: pos.clone(), quaternion: composerFrame(dir, V(-dir.y, dir.x, 0)), start: sec(r0, r0), end: sec(r1, r1)}));
-      pos.addScaledVector(dir, tl);
+      pos = pos.clone().addScaledVector(dir, tl);
     }
+    // a last resort only: the curl above already clears the ground unless the face tip itself is too low
     resolveRestClearance(b, trunk);
   }
 
