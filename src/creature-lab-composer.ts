@@ -253,8 +253,9 @@ export interface ComposerEyeFrame{
  /** Radius of one visible eye (the near eye when the eyes are lateral), from its own box centre. */
  eyeRadius:number;vertices:number;side:"near"|"both";
  /** Camera direction (unit, from the target toward the camera). The view's own direction, except the front view of
-  * lateral eyes, which is turned EYE_FRAME_FRONT_YAW_DEG toward the near eye ('yawed'). */
- direction:THREE.Vector3;yawed:boolean;
+  * lateral eyes and any single-eye view more than EYE_FRAME_MAX_OBLIQUE_DEG off that eye's gaze, which are turned
+  * about the vertical toward the eye's gaze ('yawed', by yawDeg degrees: positive turns from the snout toward the side). */
+ direction:THREE.Vector3;yawed:boolean;yawDeg:number;
  /** Half extents of the framed vertices along the camera's right, up and view axes. */
  half:{right:number;up:number;depth:number};
  /** Fraction of the viewport height (up) and width (right) the framed vertices are fitted to. */
@@ -268,13 +269,17 @@ export interface ComposerEyeFrame{
  * at most EYE_FRAME_FORWARD_YAW_DEG off the snout axis; a forward pair is framed together in the front and
  * three-quarter views. (Measured on the review specimens: primates 4.7-7.4 radii at 15 degrees, worms 3.3, a cat
  * 12.3 at 35, beaks 7.7-11 at 75.) */
-export const EYE_FRAME_FILL_NEAR={up:.55,right:.62},EYE_FRAME_FILL_BOTH={up:.8,right:.85},EYE_FRAME_PAIR=10,EYE_FRAME_FORWARD_YAW_DEG=40,EYE_FRAME_FRONT_YAW_DEG=35;
+export const EYE_FRAME_FILL_NEAR={up:.55,right:.62},EYE_FRAME_FILL_BOTH={up:.8,right:.85},EYE_FRAME_PAIR=10,EYE_FRAME_FORWARD_YAW_DEG=40,EYE_FRAME_FRONT_YAW_DEG=35,EYE_FRAME_MAX_OBLIQUE_DEG=45;
 /** Pure framing of the VISIBLE eye (world-space vertices: cornea, compound dome or eyespot; not the lids, orbit ring or
  * socket) for a view direction; `midZ` is the animal's midline (bodies face +X).
  * - side and three-quarter views: the eye nearer the camera, except a forward-facing pair in the three-quarter view
  *   (framed together, so the far eye is never half-cut at the frame edge);
  * - front view: a forward-facing pair together; lateral eyes (ostrich, horse, centipede) are edge-on from the front,
- *   so the near (+z) eye is shown from a front-quarter view, the front direction turned EYE_FRAME_FRONT_YAW_DEG toward it;
+ *   so the near (+z) eye is shown from a front-quarter view;
+ * - a single eye is never seen more than EYE_FRAME_MAX_OBLIQUE_DEG (horizontally) off its gaze when the gaze is known:
+ *   the view turns toward it (the side view of a primate's forward eye becomes a side-quarter view, the front view of an
+ *   ostrich's side eye a front-quarter view); without a known gaze the front view of lateral eyes turns
+ *   EYE_FRAME_FRONT_YAW_DEG toward the near eye;
  * - a single midline eye is framed whole.
  * `gazeYawDeg` is the face's eye gaze off the snout axis (resolveComposerEyes().gazeYawDeg); omitted, only the
  * pair's spacing decides whether it faces forward. */
@@ -288,17 +293,25 @@ export function composerEyeFrameOf(points:THREE.Vector3[],midZ:number,direction:
  const eyeRadius=lateral?radiusOf(near).r:radiusOf(points).r;
  const pairSeparation=lateral?Math.abs(radiusOf(near).c.z-radiusOf(far).c.z)/eyeRadius:0;
  const forwardPair=lateral&&pairSeparation<EYE_FRAME_PAIR&&(gazeYawDeg===undefined||gazeYawDeg<=EYE_FRAME_FORWARD_YAW_DEG),sideOn=Math.abs(direction.z)>.3;
- let framed=points,side:"near"|"both"="both",yawed=false;
+ let framed=points,side:"near"|"both"="both",yawDeg=0;
  const dir=direction.clone().normalize();
- if(lateral&&!forwardPair&&!sideOn){framed=near;side="near";yawed=true;dir.applyAxisAngle(new THREE.Vector3(0,1,0),-sgn*THREE.MathUtils.degToRad(EYE_FRAME_FRONT_YAW_DEG));}
+ if(lateral&&!forwardPair&&!sideOn){framed=near;side="near";yawDeg=EYE_FRAME_FRONT_YAW_DEG;}
  else if(lateral&&sideOn&&!(forwardPair&&Math.abs(direction.z)<.9)){framed=near;side="near";}
+ if(side==="near"&&gazeYawDeg!==undefined){
+  // azimuth of the view toward the near side, 0 = from the snout, 90 = from the side
+  const az=THREE.MathUtils.radToDeg(Math.atan2(sgn*dir.z,dir.x)),off=az-gazeYawDeg;
+  yawDeg=Math.abs(off)>EYE_FRAME_MAX_OBLIQUE_DEG?gazeYawDeg+Math.sign(off)*EYE_FRAME_MAX_OBLIQUE_DEG-az:0;
+ }
+ // turning by yawDeg about +Y moves the view toward the near side (+z for sgn 1)
+ if(yawDeg)dir.applyAxisAngle(new THREE.Vector3(0,1,0),-sgn*THREE.MathUtils.degToRad(yawDeg));
+ const yawed=yawDeg!==0;
  const right=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),dir).normalize(),up=new THREE.Vector3().crossVectors(dir,right).normalize();
  const box=new THREE.Box3().setFromPoints(framed),c0=box.getCenter(new THREE.Vector3()),d=new THREE.Vector3();
  const lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];
  for(const p of framed){d.subVectors(p,c0);const k=[d.dot(right),d.dot(up),d.dot(dir)];for(let i=0;i<3;i++){lo[i]=Math.min(lo[i]!,k[i]!);hi[i]=Math.max(hi[i]!,k[i]!);}}
  const mid=(i:number)=>(lo[i]!+hi[i]!)/2,halfOf=(i:number)=>Math.max(1e-5,(hi[i]!-lo[i]!)/2);
  const centre=c0.clone().addScaledVector(right,mid(0)).addScaledVector(up,mid(1)).addScaledVector(dir,mid(2));
- return {box,centre,eyeRadius:side==="near"?radiusOf(framed).r:eyeRadius,vertices:framed.length,side,direction:dir,yawed,
+ return {box,centre,eyeRadius:side==="near"?radiusOf(framed).r:eyeRadius,vertices:framed.length,side,direction:dir,yawed,yawDeg,
   half:{right:halfOf(0),up:halfOf(1),depth:halfOf(2)},fill:side==="near"?{...EYE_FRAME_FILL_NEAR}:{...EYE_FRAME_FILL_BOTH},pairSeparation};
 }
 const EYE_REGION=COAT_REGIONS.indexOf("eye");
@@ -669,7 +682,7 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
    // the eye frame only in the eye close-up (it skins every visible-eye vertex)
    const box=envelope(),head=headEnvelope(),t=totals(),eye=focus()==="eyes"?eyeFrame():null;
    return {version:"creature-lab-composer-5",error,focus:focus(),builds,hintRenders,headEnvelope:head.isEmpty()?null:{min:v3(head.min),max:v3(head.max)},
-    eyeFrame:eye?{min:v3(eye.box.min),max:v3(eye.box.max),centre:v3(eye.centre),eyeRadius:eye.eyeRadius,vertices:eye.vertices,side:eye.side,direction:v3(eye.direction),yawed:eye.yawed,half:{...eye.half},fill:{...eye.fill},pairSeparation:eye.pairSeparation}:null,issues:[...issues],playing,motion:motion(),time:host.getTime(),view:viewSelect.value,compare:compareBox.checked,editTarget:editing(),seed:seedInput.value,
+    eyeFrame:eye?{min:v3(eye.box.min),max:v3(eye.box.max),centre:v3(eye.centre),eyeRadius:eye.eyeRadius,vertices:eye.vertices,side:eye.side,direction:v3(eye.direction),yawed:eye.yawed,yawDeg:eye.yawDeg,half:{...eye.half},fill:{...eye.fill},pairSeparation:eye.pairSeparation}:null,issues:[...issues],playing,motion:motion(),time:host.getTime(),view:viewSelect.value,compare:compareBox.checked,editTarget:editing(),seed:seedInput.value,
     herd:herd(),building,herdBuilt:actors.length,generator,species:speciesLabel(recipes.first),
     herdStats:{animals:actors.length,vertices:t.vertices,triangles:t.triangles,buildMs:t.buildMs,maxBuildMs:t.maxBuildMs,wallMs:buildFinished?buildFinished-buildStarted:null},
     envelope:box.isEmpty()?null:{min:v3(box.min),max:v3(box.max)},

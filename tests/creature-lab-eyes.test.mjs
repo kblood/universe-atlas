@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {
   COMPOSER_EYE_GROUP_LABEL, COMPOSER_EYE_MENU, COMPOSER_EYE_RULES_LABEL, COMPOSER_EYE_SHORT, COMPOSER_HINTED_KEYS, COMPOSER_OPTION_HINTS as H,
-  EYE_FRAME_FILL_BOTH, EYE_FRAME_FILL_NEAR, EYE_FRAME_FRONT_YAW_DEG, composerEyeFrameOf, composerVisibleEyeIndices, composerFieldLabel, composerHintedValues, composerIrisChoices, composerIrisSwatch, composerOptionText,
+  EYE_FRAME_FILL_BOTH, EYE_FRAME_FILL_NEAR, EYE_FRAME_FRONT_YAW_DEG, EYE_FRAME_MAX_OBLIQUE_DEG, composerEyeFrameOf, composerVisibleEyeIndices, composerFieldLabel, composerHintedValues, composerIrisChoices, composerIrisSwatch, composerOptionText,
 } from '../src/creature-lab-composer.ts';
 import {COMPOSER_EYE_KINDS, EYE_PRESETS, composerEyeNative} from '../src/fauna-composer-eye-catalogue.ts';
 import {COMPOSER_EYE_TYPES, COMPOSER_FACES, COMPOSER_IRIS, COMPOSER_IRIS_RGB, resolveComposerEyes} from '../src/fauna-composer-face.ts';
@@ -176,8 +176,22 @@ test('eye close-up framing: lateral eyes give the near eye (front view: a front-
   // the same spacing on a face that looks sideways (a beak, gaze 75 degrees) is a lateral pair; a forward gaze keeps it a pair
   assert.equal(composerEyeFrameOf(forward, 0, new THREE.Vector3(1, .15, 0).normalize(), 75).yawed, true);
   assert.equal(composerEyeFrameOf(forward, 0, new THREE.Vector3(1, .15, 0).normalize(), 15).side, 'both');
-  // wide-set eyes are lateral even with a forward gaze (a cat's muzzle: the pair would be tiny at the frame sides)
-  assert.equal(composerEyeFrameOf(eyes, 0, new THREE.Vector3(1, .15, 0).normalize(), 35).yawed, true);
+  // a known gaze caps the obliquity at EYE_FRAME_MAX_OBLIQUE_DEG: a beak eye (75 degrees) seen from the front turns to
+  // a 30-degree front-quarter view; a primate's forward eye (15 degrees) seen from the side turns to a 60-degree view;
+  // a view within the cap is kept
+  const az = d => THREE.MathUtils.radToDeg(Math.atan2(d.z, d.x));
+  const beakFront = composerEyeFrameOf(eyes, 0, new THREE.Vector3(1, .15, 0).normalize(), 75);
+  assert.equal(beakFront.side, 'near'); assert.ok(Math.abs(az(beakFront.direction) - (75 - EYE_FRAME_MAX_OBLIQUE_DEG)) < 1e-6 && Math.abs(beakFront.yawDeg - 30) < 1e-6, `${az(beakFront.direction)}`);
+  const apeSide = composerEyeFrameOf(forward, 0, new THREE.Vector3(0, .12, 1).normalize(), 15);
+  assert.equal(apeSide.side, 'near'); assert.equal(apeSide.yawed, true); assert.ok(Math.abs(az(apeSide.direction) - 60) < 1e-6, `${az(apeSide.direction)}`);
+  const fromMinusZ = composerEyeFrameOf(forward, 0, new THREE.Vector3(0, .12, -1).normalize(), 15);
+  assert.ok(fromMinusZ.centre.z < 0 && Math.abs(az(fromMinusZ.direction) + 60) < 1e-6, 'mirrored on the -z side');
+  const within = composerEyeFrameOf(eyes, 0, new THREE.Vector3(0, .12, 1).normalize(), 75);
+  assert.equal(within.yawed, false); assert.equal(within.yawDeg, 0);
+  // wide-set eyes are lateral even with a forward gaze (a cat's muzzle: the pair would be tiny at the frame sides): the
+  // front view frames the near eye alone, straight on, since its 35-degree gaze is within the obliquity cap
+  const catFront = composerEyeFrameOf(eyes, 0, new THREE.Vector3(1, .15, 0).normalize(), 35);
+  assert.equal(catFront.side, 'near'); assert.equal(catFront.yawDeg, 0);
   // an animal off the origin (herd/compare offset): sides are taken about its own midline
   const shifted = eyes.map(p => p.clone().add(new THREE.Vector3(0, 0, 3)));
   assert.ok(Math.abs(composerEyeFrameOf(shifted, 3, new THREE.Vector3(0, 0, 1)).centre.z - 3.11) < 1e-3);
