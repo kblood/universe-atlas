@@ -153,7 +153,7 @@ test('proboscis EC4: a shorter trunk that hangs clear of the ground (J curl, no 
   // base looks pinched and narrower than the face", "The tip looks blunt and capped", rhinoceros "especially thin and
   // droops far forward"
   assert.equal(PROBOSCIS_TRUNK_LENGTH, 1.45);
-  assert.deepEqual([PROBOSCIS_FACE.tipH, PROBOSCIS_FACE.tipW], [0.72, 0.8]);
+  assert.deepEqual([PROBOSCIS_FACE.tipH, PROBOSCIS_FACE.tipW], [0.92, 1.02]);
   for (const [id, recipe] of proboscisCases.filter(([id]) => !id.includes('@snout'))) {
     const {graph, skin} = build(recipe), {H, cW} = dims(graph), trunk = graph.chains.trunk.map(i => graph.bones[i]);
     const length = trunk.reduce((a, b) => a + b.length, 0);
@@ -173,18 +173,20 @@ test('proboscis EC4: a shorter trunk that hangs clear of the ground (J curl, no 
     const tipDir = new THREE.Vector3(1, 0, 0).applyQuaternion(new THREE.Quaternion(...trunk[trunk.length - 1].restQuaternion));
     const headDir = new THREE.Vector3(1, 0, 0).applyQuaternion(new THREE.Quaternion(...graph.bones[graph.chains.head].restQuaternion));
     assert.ok(tipDir.x * Math.sign(headDir.x || 1) > 0, `${id}: tip points back`);
-    // a nostril end: dark nostril vertices on the end face, and the pale lip rim, all within 1.6 end radii of the bone end
+    // a nostril end: dark nostril vertices on the end face, within 1.6 end radii of the bone end; no pale lip ring (Luna
+    // read one as "a small, plain-looking cap"): the swelling end keeps the trunk's own coat (lipMix 0)
     const tb = trunk[trunk.length - 1], tf = frame(tb), r0 = tb.end.h;
-    let dark = 0, lip = 0;
+    assert.equal(TRUNK_TIP.lipMix, 0);
+    let dark = 0;
     const lum = v => 0.3 * skin.colors[v * 3] + 0.59 * skin.colors[v * 3 + 1] + 0.11 * skin.colors[v * 3 + 2];
-    const ringLum = lum(verticesOf(skin, partsOf(skin, 'trunk')).find(v => Math.abs(tf.toLocal(vertex(skin, v))[0] - tb.length) < 1e-6 * H + 1e-9) ?? 0);
+    const ringLums = verticesOf(skin, partsOf(skin, 'trunk')).filter(v => Math.abs(tf.toLocal(vertex(skin, v))[0] - tb.length) < 1e-6 * H + 1e-9).map(lum);
+    const ringLum = Math.min(...ringLums);
     for (const v of verticesOf(skin, partsOf(skin, 'trunk'))) {
       const l = tf.toLocal(vertex(skin, v));
       if (l[0] <= tb.length + 1e-9 || Math.hypot(l[0] - tb.length, l[1], l[2]) > 1.6 * r0) continue;
       if (lum(v) < 0.5 * ringLum) dark++;
-      else if (lum(v) > ringLum * 1.05) lip++;
     }
-    assert.ok(dark >= 2 * 10 && lip >= 16, `${id}: ${dark} nostril and ${lip} lip vertices`);
+    assert.ok(dark >= 2 * 10, `${id}: ${dark} nostril vertices`);
   }
 });
 

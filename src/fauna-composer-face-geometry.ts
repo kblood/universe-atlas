@@ -66,14 +66,15 @@ export function composerFaceTip(face: ComposerFace, d: ComposerFaceDims): Compos
 }
 
 /** The proboscis face's muzzle: section at the tip (fractions of cH and cW), chosen so the tip section is round
- * (0.72 cH vs 0.8 x 0.9 cH = 0.72 cH) and the trunk's first ring can be that section itself; the muzzle is at least
+ * (0.8 cH vs 0.89 x 0.9 cH = 0.801 cH) and the trunk's first ring can be that section itself; the muzzle is at least
  * minMuzzle x H long (snoutLength 0 would collapse its stations). The muzzle is short against its section, so its
  * stations stay square to the head axis (a pitched station would fold its underside onto the one before) and the
  * trunk's first bone leaves along the head axis: the trunk bends down along its own length.
- * face-geometry-2 (EC4): tipH 0.5 -> 0.72 and tipW 0.55 -> 0.8. GPT Luna 6 read the face-round trunk as "a tube attached
- * to the front of the head ... its base looks pinched and narrower than the face around it"; the base is now 1.45 x as
- * wide and the muzzle barely narrows on its way into it (0.84 cW -> 0.8 cW instead of -> 0.55 cW). */
-export const PROBOSCIS_FACE = Object.freeze({tipY: -0.2, tipH: 0.72, tipW: 0.8, minMuzzle: 0.08});
+ * face-geometry-2 (EC4): tipH 0.5 -> 0.8 and tipW 0.55 -> 0.89. GPT Luna 6 read the face-round trunk as "a tube attached
+ * to the front of the head ... its base looks pinched and narrower than the face around it", and at 0.72 / 0.8 still
+ * "the base is narrow relative to the face" (2 of 4 trunks, luna/after-trunk.txt); the base is now 1.6 x as wide and the
+ * muzzle does not narrow on its way into it. */
+export const PROBOSCIS_FACE = Object.freeze({tipY: -0.2, tipH: 0.92, tipW: 1.02, minMuzzle: 0.08});
 /** The trunk's base radius against the face tip: min(tip.w, tip.h), the tip section itself (round within 1%), so the
  * bone sections take over without a step and only the trunk's own taper slopes its surface at the junction. */
 export const PROBOSCIS_TRUNK_BASE = 1;
@@ -82,7 +83,7 @@ export const PROBOSCIS_TRUNK_BASE = 1;
 export const PROBOSCIS_TRUNK_LENGTH = 1.45;
 /** Trunk taper: radius at fraction u of its length = tip + (base - tip) x (1 - u)^power. A thick base that narrows
  * quickly, then a long slender hand, instead of graph-3's linear cone (base 1, tip 0.38). */
-export const PROBOSCIS_TRUNK_TAPER = Object.freeze({tip: 0.3, power: 1.6});
+export const PROBOSCIS_TRUNK_TAPER = Object.freeze({tip: 0.3, power: 1.25});
 export function composerTrunkRadius(baseR: number, u: number): number {
   const T = PROBOSCIS_TRUNK_TAPER;
   return baseR * (T.tip + (1 - T.tip) * Math.pow(1 - Math.min(1, Math.max(0, u)), T.power));

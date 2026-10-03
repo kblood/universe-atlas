@@ -122,10 +122,10 @@
       "faceDrift": "fauna-composer-face-1: horn not built on face"
     },
     "v1*layout_many-legged*legPairs_7*bodyLength_1.4*girth_1.3*posture_0*torso_segmented*neckLength_0.3*head_muzzle*headSize_1*snoutLength_0.4*horns_nasal*legs_pillar*legLength_0.24*feet_pad*arms_none*armLength_0.6*hands_hand*tail_tufted*tailLength_0.2*armor_bands*wings_none*wingSpan_2*trunk_trunk*trunkLength_1*palette_slate*colorSeed_3141": {
-      "skin": "bb32a7c5a39e93cc6d1db31901cd35ca4de202618a2f392073e9c8ef215d9966",
-      "gloss": "f7cb94108bacac8db6f39eadc593a02f53458bb543e49186dfdf1a7298f7d19b",
-      "vertices": 14552,
-      "triangles": 28440,
+      "skin": "a98d37fb711bab58cadab411f191328801056a545bcf71bd783120e5416238e2",
+      "gloss": "c08e955f88c9aa5e33c35d3e4841653d42ac8f22ece48a3e52fc619f5d82c1f5",
+      "vertices": 14536,
+      "triangles": 28408,
       "bones": 63,
       "driftFromSkin2": "fauna-composer-eye-1: eyes rebuilt",
       "skin2": "bdfe8ddf3636d0b631095fd22bbf9dbea181cbc8757344d4d666d3c437eb14f1",

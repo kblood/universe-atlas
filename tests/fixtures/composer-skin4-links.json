@@ -102,13 +102,13 @@
    "skin3": "541dfe8bceed4329c2b4325ddc9a641e40c4b9d2b48c2560dabfc9fc46101956"
   },
   "v1*layout_many-legged*legPairs_7*bodyLength_1.4*girth_1.3*posture_0*torso_segmented*neckLength_0.3*head_muzzle*headSize_1*snoutLength_0.4*horns_nasal*legs_pillar*legLength_0.24*feet_pad*arms_none*armLength_0.6*hands_hand*tail_tufted*tailLength_0.2*armor_bands*wings_none*wingSpan_2*trunk_trunk*trunkLength_1*palette_slate*colorSeed_3141": {
-   "skin": "269d4d1a7b0a6da56c6e394840bfc8f5d3aa81b4904d5b3d00103e027054b10c",
-   "gloss": "f7cb94108bacac8db6f39eadc593a02f53458bb543e49186dfdf1a7298f7d19b",
-   "vertices": 14552,
-   "triangles": 28440,
+   "skin": "4d01dd21b26c92b2c74daea533a2d13a4f5e3bf9e60874fdd49b1bdfec30b64b",
+   "gloss": "c08e955f88c9aa5e33c35d3e4841653d42ac8f22ece48a3e52fc619f5d82c1f5",
+   "vertices": 14536,
+   "triangles": 28408,
    "bones": 63,
    "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
-   "skin3": "bb32a7c5a39e93cc6d1db31901cd35ca4de202618a2f392073e9c8ef215d9966",
+   "skin3": "a98d37fb711bab58cadab411f191328801056a545bcf71bd783120e5416238e2",
    "skinPreEC4": "a9c2987217a22e6fef0d70ae747bb42ea08c2d0e7a9e3b790a05e1223e496850",
    "glossPreEC4": "67b3af0915adf1eb4df6d9e05be9ea4b98078e047cb0f7950062f05ec0786ecb",
    "verticesPreEC4": 14270,

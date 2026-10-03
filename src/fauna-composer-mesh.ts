@@ -1365,15 +1365,17 @@ function proboscisEar(s: Skin, root: THREE.Vector3, back: THREE.Vector3, up: THR
  * that face, and a dorsal finger (an elephant's prehensile lip; `finger` = [forward, up, half length, half height,
  * half width]). Everything stays within COMPOSER_TRUNK_TIP_CLEARANCE end radii of the bone end, which the rig keeps
  * above the ground. GPT Luna 6 on the face-round tip: "The tip looks blunt and capped. A nostril or lip detail is too
- * small to make out." */
-export const TRUNK_TIP = Object.freeze({bulb: [[0.1, 1.07], [0.22, 1.16], [0.36, 1.15], [0.47, 1.0]] as readonly (readonly number[])[], flare: 1.16, faceAt: 0.52, face: 0.8, nostril: 0.2, nostrilTall: 1.35, nostrilZ: 0.36, nostrilY: 0.02,
-  finger: [0.36, 0.84, 0.34, 0.26, 0.3] as readonly number[], lipTone: [0.66, 0.52, 0.48] as readonly number[], lipMix: 0.4});
+ * small to make out." A pale pink lip (lipMix 0.4) then read as "a small, plain-looking cap" (luna/after-trunk.txt): the lip is
+ * now the plain coat, the end swells gently (a steep flare caught the light as a pale ring), the end face is darkened by
+ * `faceDark` and the nostrils are larger. */
+export const TRUNK_TIP = Object.freeze({bulb: [[0.16, 1.05], [0.32, 1.1], [0.44, 1.06]] as readonly (readonly number[])[], flare: 1.1, faceAt: 0.54, face: 0.86, nostril: 0.25, nostrilTall: 1.35, nostrilZ: 0.4, nostrilY: 0.02,
+  finger: [0.38, 0.8, 0.36, 0.26, 0.3] as readonly number[], lipTone: [0.66, 0.52, 0.48] as readonly number[], lipMix: 0, faceDark: 0.35});
 function buildTrunkTip(s: Skin, last: Ring, tip: ComposerBone, pal: Palette, at: At, axis: Axis, coat: (p: THREE.Vector3, dorsal: number) => RGB) {
   const K = TRUNK_TIP, r = Math.max(last.rx, last.ry), tx = axis(tip, 1, 0, 0), ty = axis(tip, 0, 1, 0), tz = axis(tip, 0, 0, 1), w: W = [[tip.index, 1]];
   const c0 = at(tip, tip.length);
   // the lip and finger: the trunk's own coat, mottled toward a pale pink (an elephant's trunk end is bare, paler skin)
   const rim = (a: number, p: THREE.Vector3) => mixC(coat(p, Math.sin(a)), K.lipTone as RGB, K.lipMix);
-  const faceCol = mixC(mixC(pal.skin, [0.62, 0.48, 0.45], 0.3), [0, 0, 0], 0.15);
+  const faceCol = mixC(mixC(pal.skin, [0.62, 0.48, 0.45], 0.3), [0, 0, 0], K.faceDark);
   const ring = (dx: number, k: number, color: (a: number, p: THREE.Vector3) => RGB): Ring => ({c: c0.clone().addScaledVector(tx, dx * r), t: tx, u: ty, rx: k * r, ry: k * r, w, color});
   // the trunk loft's last ring (same centre, basis and radius, re-emitted with its own colours), the flared lip rim, its
   // rolled edge and the end face, closed by a flat disc
