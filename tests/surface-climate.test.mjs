@@ -14,6 +14,7 @@ import {
   effectiveObliquityRad,insolationTables,climateForcingFromParams,climateForcingFor,clearClimateForcingCache,
   climateForcingCacheSize,surfaceClimate,createClimateSample,decodeClimateCode,isothermHeightM,
 } from '../src/surface-climate.ts';
+import {planetGeophysics} from '../src/planet-geophysics.ts';
 
 const D=Math.PI/180;
 const g0=galaxies('LETHRA-001')[0];
@@ -132,18 +133,38 @@ test('per-planet lapse rate from surface gravity (owner amendment 1)',()=>{
   assert.equal(lapseRateForGravity(1000),CLIMATE_CALIBRATION.LAPSE_MAX_K_PER_M);
   const rocky=allBodies.filter(b=>b.kind==='planet'&&b.type!=='Gas giant');
   assert.ok(rocky.length>500);
+  // surface-climate-1.1-geo-g (owner decision 3): the lapse gravity is the surface
+  // physics gravity planetGeophysics(b).surfaceGravityMS2, provenance 'geophysics',
+  // never the catalogue orbital mass G*M/R^2 (owner decision 4: they may disagree).
+  let differsFromCatalogue=0;
   for(const b of rocky.slice(0,120)){
-    const g=surfaceGravityMS2(b),f=climateForcingFor(b);
+    const g=planetGeophysics(b).surfaceGravityMS2,f=climateForcingFor(b);
     assert.equal(f.surfaceGravityMS2,g);assert.equal(f.lapseKPerM,lapseRateForGravity(g));
+    assert.equal(f.provenance.surfaceGravityMS2,'geophysics');
     assert.equal(f.provenance.lapseKPerM,'derived-heuristic');
+    if(g!==surfaceGravityMS2(b))differsFromCatalogue++;
   }
-  const lapse=rocky.map(b=>({r:b.radiusM,l:lapseRateForGravity(surfaceGravityMS2(b))})).sort((a,b)=>a.r-b.r);
+  assert.ok(differsFromCatalogue>100,`geophysics g must actually replace catalogue g (${differsFromCatalogue}/120 differ)`);
+  // Range and ordering are derived from geophysics g, not radius: planet-geophysics-1
+  // has a per-kind density, so g (and the lapse) is no longer monotone in radius.
+  // Re-derived 2026-10-03 over 7622 rocky planets. OLD (catalogue g, surface-climate-1):
+  // g 2.68..12.08 m/s^2, lapse 1.78..8.00 K/km, never clamped, monotone in radius.
+  // NEW (geophysics g): g 2.103..21.33 m/s^2, lapse 1.393 K/km .. the 9.8 K/km clamp,
+  // reached by 1001 planets (13.1%).
+  const lapse=rocky.map(b=>{const g=planetGeophysics(b).surfaceGravityMS2;return {g,l:lapseRateForGravity(g)};}).sort((a,b)=>a.g-b.g);
   const min=lapse[0].l,max=lapse[lapse.length-1].l;
-  // Fixed 4800 kg/m^3 bulk density => g proportional to radius => a real spread, never clamped.
-  assert.ok(min>.0015&&min<.0025&&max>.007&&max<.0085,`lapse range ${min}..${max}`);
-  for(let i=1;i<lapse.length;i++)assert.ok(lapse[i].l>=lapse[i-1].l);
+  assert.ok(min>.0013&&min<.0015,`lapse min ${min} (measured 0.001393)`);
+  assert.equal(max,CLIMATE_CALIBRATION.LAPSE_MAX_K_PER_M,`lapse max ${max}: the high-g tail reaches the dry-adiabat clamp`);
+  const clamped=lapse.filter(x=>x.l===CLIMATE_CALIBRATION.LAPSE_MAX_K_PER_M).length/lapse.length;
+  assert.ok(clamped>.11&&clamped<.15,`share at the 9.8 K/km clamp ${clamped} (measured 0.131)`);
+  assert.ok(lapse.every(x=>x.l>CLIMATE_CALIBRATION.LAPSE_MIN_K_PER_M),'no rocky planet reaches the 1 K/km floor');
+  for(let i=1;i<lapse.length;i++)assert.ok(lapse[i].l>=lapse[i-1].l,'lapse is non-decreasing in geophysics g');
+  // Maithea: OLD catalogue g 6.9713 m/s^2 -> lapse 4.6188 K/km (old band 4..5 K/km);
+  // NEW geophysics g 6.8242 m/s^2 -> lapse 4.5214 K/km. The new band excludes the old value.
   const m=climateForcingFor(maithea);
-  assert.ok(m.lapseKPerM>.004&&m.lapseKPerM<.005,`Maithea lapse ${m.lapseKPerM}`);
+  assert.equal(m.surfaceGravityMS2,planetGeophysics(maithea).surfaceGravityMS2);
+  assert.ok(m.lapseKPerM>.0044&&m.lapseKPerM<.0046,`Maithea lapse ${m.lapseKPerM} (measured 0.0045214)`);
+  assert.ok(!(lapseRateForGravity(surfaceGravityMS2(maithea))<.0046),'the old catalogue-g lapse (0.0046188) lies outside the new band');
   // Override is for calibration studies only and is tagged as such.
   assert.equal(climateForcingFor(maithea,{lapseKPerM:.0065}).provenance.lapseKPerM,'override');
 });

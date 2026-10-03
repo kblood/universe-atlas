@@ -38,14 +38,20 @@ export const CLIMATE_VERSION='surface-climate-1.1-geo-g';
  *
  * Owner amendment 1 (2026-10-02): there is NO single global lapse rate. The plan's
  * LAPSE_K_PER_M is replaced by a per-planet value from surface gravity,
- *   Gamma = LAPSE_MOIST_FACTOR * g / CP_J_PER_KG_K,   g = G*massKg/radiusM^2,
+ *   Gamma = LAPSE_MOIST_FACTOR * g / CP_J_PER_KG_K,
  * i.e. the dry adiabatic lapse rate g/cp scaled by a constant moist factor chosen
  * so that Earth (g = 9.81 m/s^2) gets 0.6652*9.81/1004 = 6.4996 K/km, the ICAO
  * standard-atmosphere 6.5 K/km. The result is clamped to
  * [LAPSE_MIN_K_PER_M, LAPSE_MAX_K_PER_M] (1 .. 9.8 K/km; 9.8 K/km is Earth's dry
- * adiabat) to keep non-catalogue inputs sane. Catalogue rocky planets have a
- * fixed bulk density of 4800 kg/m^3 (catalog.ts), so today g is proportional to
- * radius: 2.7 .. 12.1 m/s^2, Gamma 1.8 .. 8.0 K/km, never clamped.
+ * adiabat).
+ *
+ * Gravity source. surface-climate-1 used g = G*massKg/radiusM^2 from the
+ * catalogue (fixed 4800 kg/m^3, so g was proportional to radius: 2.7 .. 12.1
+ * m/s^2, Gamma 1.8 .. 8.0 K/km, never clamped). Since surface-climate-1.1-geo-g
+ * g = planetGeophysics(body).surfaceGravityMS2 (planet-geophysics-1: per-kind
+ * density, so g is no longer monotone in radius). Over the 7622 rocky planets
+ * of the first 2000 G001 systems: 2.10 .. 21.3 m/s^2, Gamma 1.39 K/km .. the
+ * 9.8 K/km clamp, which 1001 of them (13.1%) reach.
  *
  * OBLIQUITY_QUANTUM_RAD (2^-30 rad, about 1e-9 rad) snaps the folded obliquity to
  * a power-of-two grid so tilt t and its retrograde twin pi-t produce bit-identical
