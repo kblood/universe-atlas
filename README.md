@@ -1,5 +1,22 @@
 # Universe Atlas
 
+## Biome/climate increment 1 — 2026-10-03 (local, not deployed)
+
+Snow, dry belts, treelines and forest now come from **one annual climate
+field**, so the orbit colour, the ground classification and the trees agree.
+Temperature follows insolation, which depends on the drawn axial tilt, so
+high-tilt worlds have warm poles. Each planet cools with height at a lapse
+rate set by its own surface gravity. Snow share therefore varies by planet:
+median 61% of land, from 0% on light Raiva to 90% on heavy Lethuris. Maithea
+went from 35% to 69% snow.
+
+Forest thins continuously toward the treeline and dry edges. The
+climate-weighted tree species mix (C2) is held for a follow-up. Old bookmarks
+show the one-time "predates the current model" notice. Gates, the per-planet
+snow-share distribution, before/after verdicts, the fauna habitat interface
+and the deferred items are in the
+[increment handoff](docs/biome-climate-increment-1-2026-10.md).
+
 ## Fauna variation and realism round — 2026-10-02 (local, not deployed)
 
 Creature Lab's **composer** now draws individuals of a species: seed, sex, age
