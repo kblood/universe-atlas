@@ -109,14 +109,14 @@ test('BASE: baseTerrainSampler elevation and ocean are bit-identical to the pre-
   assert.equal(sha,BASE_ELEVATION_SHA256);
 });
 
-test('elevation, groundHeight and ocean are bit-identical to terrain-1.6.0 (pre-colour-v2 capture)',()=>{
+test('RELIEF: terrainSampler elevation, groundHeight and ocean are bit-identical to the terrain-1.8.0-relief pin (re-pinned deliberately by P4-RELIEF, old 4f6021aa)',()=>{
   const {sha,ids}=elevationIdentityDigest();
   assert.deepEqual(ids,['G001/C2128,0,1/0/planet/1','G001/C2128,0,7/0/planet/0','G001/C2128,0,7/0/planet/1',
     'G001/C2128,0,7/0/planet/2','G001/C2128,0,7/0/planet/3','G001/C2128,0,7/0/planet/4']);
   assert.equal(sha,ELEVATION_IDENTITY_SHA256);
 });
 
-test('ocean, sea-ice, Ice, Volcanic, barren, gas-giant and base-sampler colours are bit-identical to terrain-1.6.0',()=>{
+test('kept palette: ocean, sea-ice, Ice, Volcanic, barren, gas-giant and base-sampler colours are bit-identical to the terrain-1.8.0-relief pin (ocean colours follow the relief depth; old 06d335ce)',()=>{
   const {sha,ids,oceanSamples}=keptPaletteColourDigest();
   assert.equal(ids.length,16);
   assert.ok(oceanSamples>4000,`ocean samples ${oceanSamples}`);

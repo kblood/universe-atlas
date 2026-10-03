@@ -247,6 +247,14 @@ function dryFloorScale(tau: number): number {
  * water worlds max = (HC + tau (HUP + HHI + KB 2800) + fine max) x sc + window,
  * min = -(HS + HAB + HTR) x sc - the largest seabed detail; dry worlds use the
  * clamp(-16000, 18000) x sc x KD floor + window. Stars use the legacy field.
+ *
+ * CRATER-FREE: impact craters (`terrainSampler(..., includeCraters=true)`,
+ * `planetSurface(..., applyCraters=true)`) add a bowl of up to `depthM` below
+ * and a rim of 0.18 x depthM above the local ground on dry/airless land, and
+ * are NOT in this bound. No runtime path enables craters today (tiles, the
+ * renderer, the orbit worker and the contact/walk queries all use the default
+ * false); a caller that enables them must widen `minM`/`maxM` by the crater
+ * field's depth and rim, e.g. for render bounds or culling (P5).
  */
 export function bodyHeightBoundM(body: Body): {minM: number; maxM: number} {
   if (body.type === 'Gas giant') return {minM: 0, maxM: 0};
