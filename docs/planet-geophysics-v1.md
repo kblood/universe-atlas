@@ -149,7 +149,7 @@ The four judged water worlds:
 
 ## R0: the terrain floor/window split (same package)
 
-`terrainSampler` now returns three extra fields on every `SurfaceSample`. The change is additive: elevation, ocean and colour output are unchanged, and `ELEVATION_IDENTITY_SHA256` and `KEPT_PALETTE_COLOUR_SHA256` hold.
+`terrainFloorSampler(body, ...)` takes the same arguments as `terrainSampler` and returns the same samples plus three extra `SurfaceSample` fields. The plain `terrainSampler` keeps its historical field set (tests/river-terrain.test.mjs deep-compares that shape), so the change is additive: elevation, ocean and colour output are unchanged, and `ELEVATION_IDENTITY_SHA256` and `KEPT_PALETTE_COLOUR_SHA256` hold.
 
 - **`floorM`:** the smooth regional floor. It is the base field after the [-16, 18] km clamp and the min(1, R/2e6) scale.
 - **`windowM`:** the local window, equal to the uncratered height minus `floorM`. It is the hills/gullies/rocks layer plus the landforms.

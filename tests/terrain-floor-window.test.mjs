@@ -1,6 +1,7 @@
 // R0 (relief round 2026-10-03, package P1-GEO-FLOOR): the floor/window split
-// that terrain-1.7.0 already has implicitly is now exposed on terrainSampler's
-// SurfaceSample as floorM / windowM / continentalM, purely additively.
+// that terrain-1.7.0 already has implicitly is exposed, purely additively, by
+// terrainFloorSampler (terrainSampler + SurfaceSample.floorM / windowM /
+// continentalM); the plain terrainSampler keeps its historical field set.
 //  - No numeric change: tests/terrain-elevation-identity.test.mjs (run
 //    untouched) keeps ELEVATION_IDENTITY_SHA256 4f6021aa... and
 //    KEPT_PALETTE_COLOUR_SHA256 06d335ce...; this file re-checks the window
@@ -11,7 +12,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {galaxies,sector,system} from '../src/catalog.ts';
-import {baseTerrainSampler,terrainSampler,terrainWindowMaxM,TERRAIN_DETAIL_WINDOW_M,TERRAIN_LANDFORM_WINDOW_M} from '../src/terrain.ts';
+import {baseTerrainSampler,terrainFloorSampler,terrainSampler,terrainWindowMaxM,TERRAIN_DETAIL_WINDOW_M,TERRAIN_LANDFORM_WINDOW_M} from '../src/terrain.ts';
 import {fib,goldenTerrainBodies,waterWorlds} from './terrain-climate-fixtures.mjs';
 
 const N=20000;
@@ -45,7 +46,7 @@ test('invariant 0 <= h - floorM <= terrainWindowMaxM(body) over 6 bodies x 20000
   assert.equal(bodies.length,6);
   const report=[];let violations=0;
   for(const body of bodies){
-    const s=terrainSampler(body),bound=terrainWindowMaxM(body);
+    const s=terrainFloorSampler(body),bound=terrainWindowMaxM(body);
     let max=0,min=Infinity,bad=0;
     for(let i=0;i<N;i++){
       const x=s(fib(i,N));
@@ -69,7 +70,7 @@ test('invariant 0 <= h - floorM <= terrainWindowMaxM(body) over 6 bodies x 20000
 
 test('continentalM >= 0 exactly where the sea-level-0 sampler reports land, on the four water worlds',()=>{
   for(const body of waterWorlds()){
-    const s=terrainSampler(body);let mismatch=0,land=0;
+    const s=terrainFloorSampler(body);let mismatch=0,land=0;
     for(let i=0;i<N;i++){
       const x=s(fib(i,N));
       if((x.continentalM>=0)!==!x.ocean)mismatch++;
@@ -84,7 +85,7 @@ test('floorM is the clamped base field: water-world seabed and gas giants equal 
   const bodies=[...waterWorlds(),...goldenTerrainBodies().slice(0,5)];
   const gas=goldenAll().find(b=>b.type==='Gas giant');
   for(const body of bodies){
-    const s=terrainSampler(body),n=4096;
+    const s=terrainFloorSampler(body),n=4096;
     for(let i=0;i<n;i++){
       const x=s(fib(i,n));
       assert.ok(x.floorM<=x.groundHeightM);
@@ -93,8 +94,22 @@ test('floorM is the clamped base field: water-world seabed and gas giants equal 
       assert.ok(Math.abs(x.floorM)<=18000);
     }
   }
-  const s=terrainSampler(gas);
+  const s=terrainFloorSampler(gas);
   for(let i=0;i<64;i++){const x=s(fib(i,64));assert.equal(x.floorM,0);assert.equal(x.windowM,0);assert.equal(x.continentalM,0);}
+});
+
+test('terrainFloorSampler = terrainSampler plus exactly floorM/windowM/continentalM; plain shapes unchanged',()=>{
+  const KEYS=['bank','channelId','color','elevationM','flow','groundHeightM','influence','ocean','rockHeightM','roughness','visibleHeightM','waterDepthM','waterHeightM','waterKind','waterLevelM','wet'];
+  for(const body of [...waterWorlds(),...goldenTerrainBodies().slice(0,3)]){
+    const plain=terrainSampler(body),floor=terrainFloorSampler(body);
+    for(let i=0;i<512;i++){
+      const d=fib(i,512),p=plain(d),f=floor(d);
+      assert.deepEqual(Object.keys(p).sort(),KEYS);
+      const {floorM,windowM,continentalM,...rest}=f;
+      assert.ok(Number.isFinite(floorM)&&Number.isFinite(windowM)&&Number.isFinite(continentalM));
+      assert.deepEqual(rest,p);
+    }
+  }
 });
 
 test('baseTerrainSampler keeps its historical four-field shape',()=>{

@@ -133,7 +133,8 @@ export type SurfaceSample = {
   rockHeightM:number; waterLevelM:number|null; visibleHeightM:number;
   wet:boolean; waterKind:'river'|'lake'|null; bank:number; channelId:string|null;
   flow:[number,number]; influence:number;
-  /** R0 (relief round, additive): the smooth regional FLOOR, i.e. the base
+  /** R0 (relief round, additive; set only by terrainFloorSampler, never by
+   * the plain terrainSampler): the smooth regional FLOOR, i.e. the base
    * field after the [-16,18] km clamp and radius scale, before the metre-based
    * hills/gullies/rocks and landforms. */
   floorM?:number;
@@ -527,6 +528,7 @@ export function terrainSampler(
   includeCraters: boolean = false,
   waterLevelM: number = 0,
   onOceanThreshold?: (heightM:number)=>void,
+  exposeFloor: boolean = false,
 ) {
   const core = baseTerrainCore(body, waterLevelM);
   const landforms=planetLandforms(body);
@@ -604,10 +606,14 @@ export function terrainSampler(
       channelId: null as string|null,
       flow: [0, 0] as [number, number],
       influence: 0,
-      floorM: sample.floorM,
-      windowM: uncrateredHeightM - sample.floorM,
-      continentalM: sample.continentalM,
     };
+    // R0 (opt-in, terrainFloorSampler): the default sample keeps its
+    // historical field set exactly (tests deep-compare it).
+    if (exposeFloor) {
+      baseline.floorM = sample.floorM;
+      baseline.windowM = uncrateredHeightM - sample.floorM;
+      baseline.continentalM = sample.continentalM;
+    }
     if (ocean || !candidates.length) return baseline;
     // This versioned physical surface drives tiles and collision. River
     // construction still uses baseTerrainSampler + sampleLegacyRiverRegion,
@@ -623,7 +629,7 @@ export function terrainSampler(
       // material selection is carried in bank/waterKind for nearby terrain.
       const color = wet ? [24, 105, 132] : regionalBankColor(body,d,landform,surfaceColor,river);
       const waterHeightM=waterLevelM;
-      return {
+      const regional: SurfaceSample = {
         elevationM: rockHeightM,
         ocean,
         color,
@@ -640,13 +646,33 @@ export function terrainSampler(
         channelId: river.channelId,
         flow: river.flow,
         influence: river.influence,
-        floorM: sample.floorM,
-        windowM: uncrateredHeightM - sample.floorM,
-        continentalM: sample.continentalM,
       };
+      if (exposeFloor) {
+        regional.floorM = sample.floorM;
+        regional.windowM = uncrateredHeightM - sample.floorM;
+        regional.continentalM = sample.continentalM;
+      }
+      return regional;
     }
     return baseline;
   };
+}
+
+/**
+ * R0 (relief round 2026-10-03, additive): `terrainSampler` with the terrain
+ * floor/window split exposed on every sample - `floorM`, `windowM` and
+ * `continentalM` (see SurfaceSample). Same arguments and the same values for
+ * every other field; the plain `terrainSampler` keeps its historical field
+ * set so existing shape-comparing callers and tests are untouched.
+ */
+export function terrainFloorSampler(
+  body: Body,
+  regions: RiverRegion[] = activeRiverRegions(body),
+  surfaceAgeMyr: number = DEFAULT_SURFACE_AGE_MYR,
+  includeCraters: boolean = false,
+  waterLevelM: number = 0,
+) {
+  return terrainSampler(body, regions, surfaceAgeMyr, includeCraters, waterLevelM, undefined, true) as (d: V3) => SurfaceSample & {floorM: number; windowM: number; continentalM: number};
 }
 
 // Fixed, bounded resolution for the coarse crater-delta grid `planetSurface`
