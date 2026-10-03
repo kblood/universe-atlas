@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {
   COMPOSER_EYE_GROUP_LABEL, COMPOSER_EYE_MENU, COMPOSER_EYE_RULES_LABEL, COMPOSER_EYE_SHORT, COMPOSER_HINTED_KEYS, COMPOSER_OPTION_HINTS as H,
-  EYE_FRAME_FILL_BOTH, EYE_FRAME_FILL_NEAR, EYE_FRAME_FRONT_YAW_DEG, EYE_FRAME_MAX_OBLIQUE_DEG, EYE_FRAME_PAIR, composerEyeFrameOf, composerEyeMidlineZ, composerVisibleEyeIndices, composerFieldLabel, composerHintedValues, composerIrisChoices, composerIrisSwatch, composerOptionText,
+  EYE_FRAME_FILL_BOTH, EYE_FRAME_FILL_NEAR, EYE_FRAME_FORWARD_YAW_DEG, EYE_FRAME_FRONT_YAW_DEG, EYE_FRAME_MAX_OBLIQUE_DEG, EYE_FRAME_PAIR, composerEyeFrameOf, composerEyeMidlineZ, composerVisibleEyeIndices, composerFieldLabel, composerHintedValues, composerIrisChoices, composerIrisSwatch, composerOptionText,
 } from '../src/creature-lab-composer.ts';
 import {COMPOSER_EYE_KINDS, EYE_PRESETS, composerEyeNative} from '../src/fauna-composer-eye-catalogue.ts';
 import {COMPOSER_EYE_TYPES, COMPOSER_FACES, COMPOSER_IRIS, COMPOSER_IRIS_RGB, resolveComposerEyes} from '../src/fauna-composer-face.ts';
@@ -176,6 +176,14 @@ test('eye close-up framing: lateral eyes give the near eye (front view: a front-
   // the same spacing on a face that looks sideways (a beak, gaze 75 degrees) is a lateral pair; a forward gaze keeps it a pair
   assert.equal(composerEyeFrameOf(forward, 0, new THREE.Vector3(1, .15, 0).normalize(), 75).yawed, true);
   assert.equal(composerEyeFrameOf(forward, 0, new THREE.Vector3(1, .15, 0).normalize(), 15).side, 'both');
+  // a close pair looking 35 degrees out (a cat, the sclera-eyed worm with EC2's eyes: 5.5-6.1 radii) is framed one eye
+  // at a time, straight on from the front (within the cap); the forward limit is EYE_FRAME_FORWARD_YAW_DEG
+  assert.ok(EYE_FRAME_FORWARD_YAW_DEG < 35 && EYE_FRAME_FORWARD_YAW_DEG >= 20);
+  for (const d of [new THREE.Vector3(1, .15, 0), new THREE.Vector3(.6, .3, .74)]) {
+    const f = composerEyeFrameOf(forward, 0, d.normalize(), 35);
+    assert.equal(f.side, 'near'); assert.equal(f.yawDeg, 0); assert.ok(f.centre.z > 0);
+  }
+  assert.ok(EYE_FRAME_FILL_BOTH.up <= .75 && EYE_FRAME_FILL_BOTH.right <= .75, 'a framed pair keeps a margin for its lids');
   // a known gaze caps the obliquity at EYE_FRAME_MAX_OBLIQUE_DEG: a beak eye (75 degrees) seen from the front turns to
   // a 30-degree front-quarter view; a primate's forward eye (15 degrees) seen from the side turns to a 60-degree view;
   // a view within the cap is kept

@@ -280,9 +280,11 @@ export function composerEyeMidlineZ(points:readonly THREE.Vector3[],restZ:ArrayL
  * its width, whichever binds first); a framed pair spans EYE_FRAME_FILL_BOTH. A pair is forward-facing (primate, worm,
  * kitten) when its centres are closer than EYE_FRAME_PAIR visible-eye radii and, when the face's gaze is known, it looks
  * at most EYE_FRAME_FORWARD_YAW_DEG off the snout axis; a forward pair is framed together in the front and
- * three-quarter views. (Measured on the review specimens: primates 4.7-7.4 radii at 15 degrees, worms 3.3, a cat
- * 12.3 at 35, beaks 7.7-11 at 75.) */
-export const EYE_FRAME_FILL_NEAR={up:.55,right:.62},EYE_FRAME_FILL_BOTH={up:.8,right:.85},EYE_FRAME_PAIR=10,EYE_FRAME_FORWARD_YAW_DEG=40,EYE_FRAME_FRONT_YAW_DEG=35,EYE_FRAME_MAX_OBLIQUE_DEG=45;
+ * three-quarter views. (Measured on the review specimens: primates 2.4-7.4 radii at 15 degrees, worms 3.3-3.7 at 20;
+ * with the EC2 eye geometry cats and a sclera-eyed worm are 5.5-6.1 radii apart at 35 degrees, which are framed one eye
+ * at a time: framed as a pair their eyes sat small at the frame edges, Luna FAIL x2 on odd-sclera-worm.) A framed pair
+ * keeps a margin (EYE_FRAME_FILL_BOTH) for the lids and socket around the visible eye surface it is fitted on. */
+export const EYE_FRAME_FILL_NEAR={up:.55,right:.62},EYE_FRAME_FILL_BOTH={up:.7,right:.72},EYE_FRAME_PAIR=10,EYE_FRAME_FORWARD_YAW_DEG=25,EYE_FRAME_FRONT_YAW_DEG=35,EYE_FRAME_MAX_OBLIQUE_DEG=45;
 /** Pure framing of the VISIBLE eye (world-space vertices: cornea, compound dome or eyespot; not the lids, orbit ring or
  * socket) for a view direction; `midZ` is the world z of the head's midline at the eyes in the pose the points come
  * from (composerEyeMidlineZ; NOT the animal's offset, which a swaying head leaves), bodies face +X.
