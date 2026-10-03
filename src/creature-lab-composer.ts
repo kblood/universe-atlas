@@ -6,7 +6,9 @@ import {coherentComposerSpecies, type ComposerArchetype} from "./fauna-composer-
 import {COAT_MARK_BITS, COAT_MARK_NAMES, resolveCoatPattern, type CoatMarkName} from "./fauna-coat-vocab.ts";
 import {COMPOSER_MOTIONS, type ComposerMotion} from "./fauna-composer-rig.ts";
 import {createComposerCreature, type ComposerCreature} from "./fauna-composer.ts";
-import {FACE_HEADGEAR, resolveComposerEyes, type ComposerEyeKind, type BuiltIrisId, type ComposerHorn} from "./fauna-composer-face.ts";
+import {FACE_HEADGEAR, COMPOSER_IRIS_RGB, composerIrisBands, composerIrisKind, resolveComposerEyes, type ComposerEyeKind, type BuiltIrisId, type ComposerHorn} from "./fauna-composer-face.ts";
+import {COMPOSER_EYE_KINDS, EYE_PRESETS, composerEyeNative, type EyeGroup} from "./fauna-composer-eye-catalogue.ts";
+import {COAT_REGIONS} from "./fauna-coat-vocab.ts";
 import {COMPOSER_HERD_SIZES, type ComposerHerdSize, type CreatureLabState} from "./creature-lab-state.ts";
 
 /** Creature Lab panel and actors for the experimental modular composer. The Lab
@@ -40,7 +42,7 @@ const $=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 const esc=(s:string)=>s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]!));
 const GROUPS:{title:string;keys:Key[];extra?:string}[]=[
  {title:"Body",keys:["layout","legPairs","bodyLength","girth","posture","torso","armor"]},
- {title:"Head and neck",keys:["neckLength","head","headSize","snoutLength","trunkLength","eyes","iris","horns","eyeRules"]},
+ {title:"Head and neck",keys:["neckLength","head","headSize","snoutLength","trunkLength","eyes","eyeRules","iris","horns"]},
  {title:"Legs and arms",keys:["legs","legLength","feet","arms","armLength","hands"]},
  {title:"Wings and tail",keys:["wings","wingSpan","tail","tailLength"]},
  {title:"Colour",keys:["palette","colorSeed"]},
@@ -58,7 +60,7 @@ const FIELD:Record<Key,string>={layout:"Body layout",legPairs:"Walking leg pairs
  pattern:"Coat pattern",marks:"Markings",patternScale:"Pattern scale",patternContrast:"Pattern contrast",countershade:"Pale belly (countershading)",
  dimorphism:"Male/female difference",variability:"Individual variation",allometry:"Size scaling (allometry)",
  individualSeed:"Individual (0 = type specimen)",sex:"Sex",maturity:"Age (young to adult)",condition:"Body condition (lean to heavy)",
- eyes:"Eyes (pupil)",iris:"Iris colour",eyeRules:"Eye rules (1 = earlier, 2 = current)"};
+ eyes:"Eyes",iris:"Iris colour",eyeRules:"Eye rules"};
 const MARK_LABEL:Record<CoatMarkName,string>={socks:"Socks (pale lower legs)",mask:"Face mask","blaze":"Blaze (pale face stripe)","tail-tip":"Tail tip","tail-rings":"Tail rings","ear-tips":"Ear tips","rump-patch":"Rump patch","juvenile-spots":"Juvenile spots"};
 const VALUE:Record<string,string>={
  "layout:limbless":"Limbless (worm, snake)","layout:biped":"Two legs (bird, ape, dinosaur)","layout:quadruped":"Four upright legs (mammal)","layout:sprawled":"Four sprawling legs (turtle, lizard)","layout:many-legged":"Many legs (centipede)",
@@ -89,38 +91,76 @@ export const COMPOSER_EYE_SHORT:Readonly<Record<ComposerEyeKind,string>>={round:
  raptor:"raptor",owl:"owl",cat:"cat slit",gecko:"gecko",frog:"frog",chameleon:"chameleon turret",crocodile:"crocodile",sclera:"white sclera",nocturnal:"nocturnal",
  cephalopod:"W pupil",insect:"insect compound",spider:"eight simple eyes",stalk:"eye stalks"};
 const EYE_SHORT=COMPOSER_EYE_SHORT;
+/** The panel's label for a control (the eye-upgrade notice names the 'Eye rules' control and its 'Earlier' choice). */
+export function composerFieldLabel(key:Key):string{return FIELD[key];}
 const irisShort=(id:BuiltIrisId|null)=>id?id.replace("-"," "):"no iris";
 /** Selects whose option text is rebuilt for the current face (values never change). */
-export const COMPOSER_HINTED_KEYS=["horns","eyes","iris"] as const;
+export const COMPOSER_HINTED_KEYS=["horns","eyes","iris","eyeRules"] as const;
 export type ComposerHintedKey=typeof COMPOSER_HINTED_KEYS[number];
-export const COMPOSER_OPTION_HINTS={notBuilt:" — not built on this face",brow:" — built as brow horns",casque:" — built as a casque",noEffect:" — no effect on this face"} as const;
-/** Suffix appended to one option of the Horns, Eyes or Iris select for the recipe's face: what choosing it would
- * build (FACE_HEADGEAR, resolveComposerEyes). Empty when the option is built as named: under the current eye rules
- * every eye kind is built on every face, so only Earlier eye rules (eyeRules 1) disclose eyes. */
+/** Option values of a hinted select, in recipe order (the eye-rules select lists "2" then "1"). */
+export function composerHintedValues(key:ComposerHintedKey):readonly string[]{return key==="eyeRules"?["2","1"]:COMPOSER_CHOICES[key] as readonly string[];}
+/** Option-text suffixes. `unusualFace` and `unusualIris` are rarity hints, never restrictions: every eye kind and iris
+ * colour is built on every face (owner decision 2026-10-03, odd combinations are allowed). */
+export const COMPOSER_OPTION_HINTS={notBuilt:" — not built on this face",brow:" — built as brow horns",casque:" — built as a casque",noEffect:" — no effect on these eyes",
+ unusualFace:" — unusual on this face",unusualIris:" — uncommon for these eyes",earlier:" (earlier eye rules)"} as const;
+/** The Eyes select's groups (the eye catalogue's `group` trait), in menu order. 'Automatic' comes first, ungrouped. */
+export const COMPOSER_EYE_GROUP_LABEL:Readonly<Record<EyeGroup,string>>={pupil:"Pupil shape",animal:"Animal eyes",arthropod:"Arthropod and other"};
+const ARTHROPOD_ORDER:readonly ComposerEyeKind[]=["compound","insect","spider","stalk","eyespot"];
+export const COMPOSER_EYE_MENU:readonly {group:EyeGroup;label:string;kinds:readonly ComposerEyeKind[]}[]=(["pupil","animal","arthropod"] as const).map(group=>({group,label:COMPOSER_EYE_GROUP_LABEL[group],
+ kinds:COMPOSER_EYE_KINDS.filter(k=>EYE_PRESETS[k].group===group).sort((a,b)=>group==="arthropod"?ARTHROPOD_ORDER.indexOf(a)-ARTHROPOD_ORDER.indexOf(b):0)}));
+/** Eye-rules select: value -> option text ("Earlier eye rules" keeps the face round's automatic eyes selectable). */
+export const COMPOSER_EYE_RULES_LABEL:Readonly<Record<"1"|"2",string>>={"2":"Current eye rules","1":"Earlier eye rules (face round)"};
+/** The iris colours 'auto' would pick from for the eyes this recipe builds (empty: the eyes have no iris). */
+export function composerIrisChoices(r:ComposerRecipe):readonly BuiltIrisId[]{const e=resolveComposerEyes(r);return composerIrisBands(r,composerIrisKind(r,e.kind));}
+/** Suffix appended to one option of the Horns, Eyes, Iris or Eye rules select for the recipe: what choosing it would
+ * build (FACE_HEADGEAR, resolveComposerEyes), or how unusual it is here. Eyes: every kind is built on every face under
+ * the current rules; a kind real animals do not carry on this face says so, and only Earlier eye rules can build a
+ * face-round kind as another kind. Iris: a colour outside the automatic colours of these eyes says so. */
 export function composerOptionHint(r:ComposerRecipe,key:ComposerHintedKey,value:string):string{
+ const H=COMPOSER_OPTION_HINTS;
  if(key==="horns"){
   const cell=FACE_HEADGEAR[r.head]?.[value as ComposerHorn];if(!cell||cell.built===value)return "";
-  return cell.built==="none"?COMPOSER_OPTION_HINTS.notBuilt:cell.built==="paired"?COMPOSER_OPTION_HINTS.brow:cell.built==="crest"?COMPOSER_OPTION_HINTS.casque:` — built as ${VALUE[`horns:${cell.built}`]?.toLowerCase()??cell.built}`;
+  return cell.built==="none"?H.notBuilt:cell.built==="paired"?H.brow:cell.built==="crest"?H.casque:` — built as ${VALUE[`horns:${cell.built}`]?.toLowerCase()??cell.built}`;
+ }
+ if(key==="eyeRules"){
+  if(value!=="1")return "";
+  const before=resolveComposerEyes({...r,eyeRules:1}),now=resolveComposerEyes({...r,eyeRules:2});
+  return before.kind===now.kind&&before.irisBuilt===now.irisBuilt?" — same eyes here":` — builds ${EYE_SHORT[before.kind]} (${irisShort(before.irisBuilt)}) here`;
  }
  if(value==="auto")return "";
- if(key==="eyes"){const e=resolveComposerEyes({...r,eyes:value as ComposerRecipe["eyes"]});return e.kind===value?"":` — built as ${EYE_SHORT[e.kind]}`;}
- return resolveComposerEyes(r).irisBuilt===null?COMPOSER_OPTION_HINTS.noEffect:"";
+ if(key==="eyes"){
+  const kind=value as ComposerEyeKind,e=resolveComposerEyes({...r,eyes:kind});
+  if(e.kind!==kind)return ` — built as ${EYE_SHORT[e.kind]}${H.earlier}`;
+  return composerEyeNative(kind,r.head)?"":H.unusualFace;
+ }
+ const bands=composerIrisChoices(r);
+ return !bands.length?H.noEffect:bands.includes(value as BuiltIrisId)?"":H.unusualIris;
 }
-/** Full option text: the label, with 'Automatic' showing what it resolves to, plus the face hint. */
+/** Full option text: the label, with 'Automatic' showing what it resolves to, plus the hint. */
 export function composerOptionText(r:ComposerRecipe,key:ComposerHintedKey,value:string,hints=true):string{
- const label=VALUE[`${key}:${value}`]??value;
+ const label=key==="eyeRules"?COMPOSER_EYE_RULES_LABEL[value as "1"|"2"]??value:VALUE[`${key}:${value}`]??value;
  if(!hints)return label;
- if(value==="auto"&&key==="eyes"){const e=resolveComposerEyes({...r,eyes:"auto"});return `${label} (${EYE_SHORT[e.kind]}, ${irisShort(e.irisBuilt)})`;}
+ if(value==="auto"&&key==="eyes"){const e=resolveComposerEyes({...r,eyes:"auto"});return `${label} (${EYE_SHORT[e.kind]}, ${irisShort(e.irisBuilt)}${e.rules===1?"; earlier eye rules":""})`;}
  if(value==="auto"&&key==="iris")return `${label} (${irisShort(resolveComposerEyes({...r,iris:"auto"}).irisBuilt)})`;
  return label+composerOptionHint(r,key,value);
 }
+/** CSS colour of the built iris (its linear RGB from COMPOSER_IRIS_RGB, unlit, sRGB-encoded); null without an iris. */
+export function composerIrisSwatch(r:ComposerRecipe):string|null{
+ const id=resolveComposerEyes(r).irisBuilt;if(!id)return null;
+ const enc=(c:number)=>Math.round(255*Math.min(1,Math.max(0,c<=.0031308?12.92*c:1.055*c**(1/2.4)-.055))).toString(16).padStart(2,"0");
+ return `#${COMPOSER_IRIS_RGB[id].map(enc).join("")}`;
+}
+/** Eyes select markup: Automatic, then one optgroup per catalogue group (labels are filled by renderOptionText). */
+function eyeSelectOptions(){return `<option value="auto">${esc(VALUE["eyes:auto"]!)}</option>`+COMPOSER_EYE_MENU.map(g=>`<optgroup label="${esc(g.label)}">${g.kinds.map(k=>`<option value="${k}">${esc(VALUE[`eyes:${k}`]??k)}</option>`).join("")}</optgroup>`).join("");}
 const ARCHETYPE_LABEL:Record<ComposerArchetype,string>={"ungulate-grazer":"grazing hoofed animal",giraffid:"giraffid",pachyderm:"pachyderm","cursorial-carnivore":"running carnivore",theropod:"theropod",ratite:"ratite",
  bird:"ground bird","sprawler-lizard":"lizard",tortoise:"tortoise",primate:"primate",myriapod:"myriapod",worm:"worm"};
 const HERD_LABEL:Record<ComposerHerdSize,string>={1:"1 animal",6:"Herd of 6",9:"Herd of 9",12:"Herd of 12"};
 const MOTION_LABEL:Record<ComposerMotion,string>={neutral:"Rest pose (unanimated)",idle:"Standing",walk:"Walking",display:"Display (wings, arms, trunk)"};
 const isChoice=(key:Key):key is ComposerChoiceKey=>key in COMPOSER_CHOICES;
+/** Controls drawn as a select: the choice keys, plus the eye-rules epoch (a number key with two named values). */
+const isSelect=(key:Key)=>isChoice(key)||key==="eyeRules";
 const ratioKeys=new Set<Key>(["neckLength","snoutLength","legLength","armLength","tailLength","wingSpan","trunkLength"]);
-function formatValue(key:Key,value:number){return key==="bodyLength"?`${value.toFixed(2)} m`:key==="eyeRules"?(value===1?"1 (earlier)":"2 (current)"):key==="legPairs"||key==="colorSeed"||key==="marks"||key==="individualSeed"?String(value):key==="maturity"?`${value.toFixed(2)}${value<.75?" (juvenile)":value<1?" (subadult)":" (adult)"}`:ratioKeys.has(key)?`${value.toFixed(2)} × body`:value.toFixed(2);}
+function formatValue(key:Key,value:number){return key==="bodyLength"?`${value.toFixed(2)} m`:key==="legPairs"||key==="colorSeed"||key==="marks"||key==="individualSeed"?String(value):key==="maturity"?`${value.toFixed(2)}${value<.75?" (juvenile)":value<1?" (subadult)":" (adult)"}`:ratioKeys.has(key)?`${value.toFixed(2)} × body`:value.toFixed(2);}
 /** Why a control has no effect on the current recipe (the control is disabled); empty when it applies. */
 function why(r:ComposerRecipe,key:Key):string{
  const limbless=r.layout==="limbless";
@@ -139,7 +179,8 @@ function why(r:ComposerRecipe,key:Key):string{
 function note(r:ComposerRecipe,key:Key,herd:number):string{
  if(key==="marks"&&(r.marks&COAT_MARK_BITS["juvenile-spots"])&&r.maturity>=.75)return "Juvenile spots show only on young animals (Age below 0.75); in a herd the young carry them.";
  if(key==="iris"&&resolveComposerEyes(r).irisBuilt===null)return "Compound eyes, simple eyes, eye stalks and eyespots have no iris; the colour is kept but not built.";
- if(key==="eyeRules"&&r.eyeRules===1)return "Earlier eye rules: Automatic picks the first eye set's kinds, and Compound or Eyespots are built only on arthropod or worm heads. Old links open with the current rules.";
+ if(key==="eyeRules"&&r.eyeRules===1)return "Earlier eye rules (the face round's): Automatic picks that round's eye kinds, and Round, Horizontal bar, Vertical slit, Compound or Eyespots are built only on the faces it allowed. The newer kinds are built as chosen. Old links open with the current rules.";
+ if(key==="eyes"&&r.eyes!=="auto"&&resolveComposerEyes(r).kind===r.eyes&&!composerEyeNative(r.eyes,r.head))return "Unusual combination: no real animal with this face has this eye kind. It is built as chosen.";
  if((key==="variability"||key==="dimorphism")&&r.individualSeed===0&&herd===1)return "The type specimen (individual 0) shows the species average; choose Next individual or a herd to see this.";
  if(herd>1&&(key==="individualSeed"||key==="sex"||key==="maturity"))return key==="individualSeed"?`The herd shows individuals ${herdSeed(r.individualSeed,0)}–${herdSeed(r.individualSeed,herd-1)}.`:key==="sex"?"In a herd each animal's sex comes from its individual.":"Every fourth animal in a herd is young (age 0.3–0.5).";
  return "";
@@ -203,6 +244,32 @@ function makeHerdTrack(actors:Actor[]):HerdTrack{
  return {lines,update,dispose(){lines.removeFromParent();geometry.dispose();material.dispose();}};
 }
 
+export type ComposerFocus="body"|"head"|"eyes";
+export interface ComposerEyeFrame{box:THREE.Box3;centre:THREE.Vector3;eyeRadius:number;vertices:number;side:"near"|"both"}
+/** Pure framing of eye vertices (world space) for a view direction; `midZ` is the animal's midline (bodies face +X). */
+export function composerEyeFrameOf(points:THREE.Vector3[],midZ:number,direction:THREE.Vector3):ComposerEyeFrame|null{
+ if(!points.length)return null;
+ const radiusOf=(ps:THREE.Vector3[])=>{const c=new THREE.Box3().setFromPoints(ps).getCenter(new THREE.Vector3());let r=0;for(const p of ps)r=Math.max(r,p.distanceTo(c));return {c,r:Math.max(r,1e-4)};};
+ const sgn=direction.z<0?-1:1,near=points.filter(p=>(p.z-midZ)*sgn>0),far=points.filter(p=>(p.z-midZ)*sgn<=0);
+ // one eye per side when the eyes are lateral: the near side's eyes sit off the midline by more than half their size
+ // (a single midline eye straddles it: then the whole set is framed)
+ const lateral=near.length>0&&far.length>0&&(()=>{const {c,r}=radiusOf(near);return Math.abs(c.z-midZ)>.5*r;})();
+ const eyeRadius=lateral?radiusOf(near).r:radiusOf(points).r;
+ if(Math.abs(direction.z)>.3&&lateral){const {c,r}=radiusOf(near),h=2.4*r;return {box:new THREE.Box3(c.clone().subScalar(h),c.clone().addScalar(h)),centre:c,eyeRadius:r,vertices:near.length,side:"near"};}
+ const box=new THREE.Box3().setFromPoints(points).expandByScalar(1.4*eyeRadius);
+ return {box,centre:box.getCenter(new THREE.Vector3()),eyeRadius,vertices:points.length,side:"both"};
+}
+const EYE_REGION=COAT_REGIONS.indexOf("eye");
+const eyeIndexCache=new WeakMap<ComposerCreature,number[]>();
+/** Vertices of the eyes: the 'eyes' part plus any eye-region vertex (as the face close-up harness collects them). */
+function eyeVertexIndices(c:ComposerCreature){
+ let ids=eyeIndexCache.get(c);if(ids)return ids;
+ const set=new Set<number>(),skin=c.skin;
+ for(const p of skin.parts)if(p.part==="eyes")for(let t=p.firstTriangle*3;t<(p.firstTriangle+p.triangles)*3;t++)set.add(skin.index[t]!);
+ for(let i=0;i<skin.vertexCount;i++)if(skin.regions[i]===EYE_REGION)set.add(i);
+ ids=[...set].sort((a,b)=>a-b);eyeIndexCache.set(c,ids);return ids;
+}
+
 export interface ComposerLab{
  readonly playing:boolean;readonly error:string|null;
  /** True while a herd is still being built (one animal per frame). */
@@ -217,8 +284,12 @@ export interface ComposerLab{
  /** Rest-pose head bounds (creature.headBounds()) of the shown animals, translated by their offsets: the edited
   * side in compare mode, the first animal of a herd, otherwise the one animal. */
  headEnvelope():THREE.Box3;
- /** Camera framing chosen in the panel ('body' whole animal, 'head' head and face). Not stored in links. */
- focus():"body"|"head";
+ /** Camera framing chosen in the panel ('body' whole animal, 'head' head and face, 'eyes' eye close-up). Not stored in links. */
+ focus():ComposerFocus;
+ /** Eye close-up review frame of the shown animal (the edited side in compare mode, the first animal of a herd) at its
+  * CURRENT pose, world space: the eye nearer the camera for side and three-quarter views, both eyes for the front view.
+  * The box is the eye and its lids/brow ring (about 2.4 eye radii around its centre). Null without eye vertices. */
+ eyeFrame():ComposerEyeFrame|null;
  viewDirection():THREE.Vector3;
  state():Pick<CreatureLabState,"recipe"|"compareRecipe"|"composerSeed"|"motion"|"compare"|"view"|"herd">;
  text():{title:string;description:string;captionTitle:string;captionCopy:string;detail:string};
@@ -261,6 +332,9 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
  $("composer-parts").innerHTML=GROUPS.map(g=>`<fieldset class="composer-group"><legend>${esc(g.title)}</legend>${g.keys.map(key=>{
   const id=`composer-${key}`,whyEl=`<small id="${id}-why" class="composer-why" hidden></small>`;
   if(key==="marks")return `<div id="${id}" class="composer-marks" role="group" aria-label="${esc(FIELD.marks)}"><span>${esc(FIELD.marks)}</span>${COAT_MARK_NAMES.map(name=>`<label class="check"><input id="composer-mark-${name}" type="checkbox" data-mark="${name}"> ${esc(MARK_LABEL[name])}</label>`).join("")}${whyEl}</div>`;
+  if(key==="eyes")return `<label>${esc(FIELD[key])} <select id="${id}">${eyeSelectOptions()}</select>${whyEl}</label>`;
+  if(key==="eyeRules")return `<label>${esc(FIELD[key])} <select id="${id}">${(["2","1"] as const).map(v=>`<option value="${v}">${esc(COMPOSER_EYE_RULES_LABEL[v])}</option>`).join("")}</select>${whyEl}</label>`;
+  if(key==="iris")return `<label><span>${esc(FIELD[key])} <span id="composer-iris-swatch" class="composer-swatch" title="Built iris colour (unlit)" hidden></span></span><select id="${id}">${(COMPOSER_CHOICES[key] as readonly string[]).map(v=>`<option value="${v}">${esc(VALUE[`${key}:${v}`]??v)}</option>`).join("")}</select>${whyEl}</label>`;
   if(isChoice(key))return `<label>${esc(FIELD[key])} <select id="${id}">${(COMPOSER_CHOICES[key] as readonly string[]).map(v=>`<option value="${v}">${esc(VALUE[`${key}:${v}`]??v)}</option>`).join("")}</select>${whyEl}</label>`;
   const [min,max,step]=COMPOSER_RANGES[key as ComposerNumberKey];
   return `<label class="composer-range">${esc(FIELD[key])} <output id="${id}-value"></output><input id="${id}" type="range" min="${min}" max="${max}" step="${step}" aria-label="${esc(FIELD[key])}">${whyEl}</label>`;
@@ -310,8 +384,9 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
    const el=field(key);
    if(el instanceof HTMLSelectElement&&(COMPOSER_HINTED_KEYS as readonly string[]).includes(key))renderOptionText(el,r,key as ComposerHintedKey);
    el.value=String(r[key]);el.disabled=!!reason;el.title=reason;
-   if(!isChoice(key))$(`composer-${key}-value`).textContent=formatValue(key,r[key] as number);
+   if(!isSelect(key))$(`composer-${key}-value`).textContent=formatValue(key,r[key] as number);
   }
+  const swatch=$("composer-iris-swatch"),colour=composerIrisSwatch(r);swatch.hidden=!colour;swatch.style.background=colour??"";
   target.closest("label")!.hidden=!compareBox.checked;
   herdSelect.disabled=compareBox.checked;herdSelect.title=compareBox.checked?"Comparison shows one animal per recipe.":"";
   $("composer-herd-why").hidden=!compareBox.checked;
@@ -328,7 +403,7 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
  for(const key of CONTROL_KEYS){
   if(key==="marks")continue;
   const el=field(key);
-  if(!isChoice(key))el.addEventListener("input",()=>{$(`composer-${key}-value`).textContent=formatValue(key,Number(el.value));});
+  if(!isSelect(key))el.addEventListener("input",()=>{$(`composer-${key}-value`).textContent=formatValue(key,Number(el.value));});
   el.addEventListener("change",()=>{const side=editing();edit(side,{...recipes[side],[key]:isChoice(key)?el.value:Number(el.value)});});
  }
  for(const m of markBoxes)m.el.addEventListener("change",()=>{const side=editing(),bit=COAT_MARK_BITS[m.name];edit(side,{...recipes[side],marks:m.el.checked?recipes[side].marks|bit:recipes[side].marks&~bit});});
@@ -455,7 +530,13 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
   const shown=compareBox.checked?actors.filter(a=>a.side===editing()):actors.slice(0,1);
   const box=new THREE.Box3();for(const a of shown)box.union(a.creature.headBounds().translate(a.offset));return box;
  }
- const focus=():"body"|"head"=>focusSelect.value==="head"?"head":"body";
+ const focus=():ComposerFocus=>focusSelect.value==="head"?"head":focusSelect.value==="eyes"?"eyes":"body";
+ function eyeFrame():ComposerEyeFrame|null{
+  const a=compareBox.checked?actors.find(x=>x.side===editing()):actors[0];if(!a)return null;
+  const ids=eyeVertexIndices(a.creature);if(!ids.length)return null;
+  const mesh=a.creature.mesh;a.creature.group.updateMatrixWorld(true);
+  return composerEyeFrameOf(ids.map(i=>mesh.localToWorld(mesh.getVertexPosition(i,new THREE.Vector3()))),a.offset.z,viewDirection(viewSelect.value as View));
+ }
  const v3=(v:THREE.Vector3)=>v.toArray();
  const totals=()=>actors.reduce((t,a)=>{const d=a.creature.details();return {vertices:t.vertices+d.vertices,triangles:t.triangles+d.triangles,buildMs:t.buildMs+d.buildMs,maxBuildMs:Math.max(t.maxBuildMs,d.buildMs)};},{vertices:0,triangles:0,buildMs:0,maxBuildMs:0});
  const thousands=(n:number)=>n.toLocaleString("en-GB");
@@ -463,7 +544,7 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
   get playing(){return playing;},get error(){return error;},get building(){return building;},
   setPlaying,
   setActive(active){$("composer-controls").hidden=!active;if(active)showControls();},
-  build,disposeActors,update,syncTime,envelope,headEnvelope,focus,
+  build,disposeActors,update,syncTime,envelope,headEnvelope,focus,eyeFrame,
   viewDirection:()=>viewDirection(viewSelect.value as View),
   state:()=>({recipe:encodeComposerRecipe(recipes.first),compareRecipe:compareBox.checked?encodeComposerRecipe(recipes.second):"",composerSeed:seedValue(),motion:motion(),compare:compareBox.checked,view:viewSelect.value as View,herd:herd()}),
   text(){
@@ -495,8 +576,9 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
   },
   shadowCasters:()=>actors.filter(a=>a.creature.mesh.castShadow&&a.creature.group.visible).length,
   details(){
-   const box=envelope(),head=headEnvelope(),t=totals();
-   return {version:"creature-lab-composer-3",error,focus:focus(),builds,hintRenders,headEnvelope:head.isEmpty()?null:{min:v3(head.min),max:v3(head.max)},issues:[...issues],playing,motion:motion(),time:host.getTime(),view:viewSelect.value,compare:compareBox.checked,editTarget:editing(),seed:seedInput.value,
+   const box=envelope(),head=headEnvelope(),t=totals(),eye=eyeFrame();
+   return {version:"creature-lab-composer-4",error,focus:focus(),builds,hintRenders,headEnvelope:head.isEmpty()?null:{min:v3(head.min),max:v3(head.max)},
+    eyeFrame:eye?{min:v3(eye.box.min),max:v3(eye.box.max),centre:v3(eye.centre),eyeRadius:eye.eyeRadius,vertices:eye.vertices,side:eye.side}:null,issues:[...issues],playing,motion:motion(),time:host.getTime(),view:viewSelect.value,compare:compareBox.checked,editTarget:editing(),seed:seedInput.value,
     herd:herd(),building,herdBuilt:actors.length,generator,species:speciesLabel(recipes.first),
     herdStats:{animals:actors.length,vertices:t.vertices,triangles:t.triangles,buildMs:t.buildMs,maxBuildMs:t.maxBuildMs,wallMs:buildFinished?buildFinished-buildStarted:null},
     envelope:box.isEmpty()?null:{min:v3(box.min),max:v3(box.max)},

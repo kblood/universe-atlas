@@ -1,0 +1,171 @@
+// Creature Lab eye controls (eye round EC3, 2026-10-03): the grouped Eyes menu, the Eye rules select, iris colours and
+// swatch, the eye close-up framing, and how old and new links reach these controls. Pure (no browser); the panel itself
+// is exercised by tests/fauna-composer-ui.browser.mjs.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import {
+  COMPOSER_EYE_GROUP_LABEL, COMPOSER_EYE_MENU, COMPOSER_EYE_RULES_LABEL, COMPOSER_EYE_SHORT, COMPOSER_HINTED_KEYS, COMPOSER_OPTION_HINTS as H,
+  composerEyeFrameOf, composerFieldLabel, composerHintedValues, composerIrisChoices, composerIrisSwatch, composerOptionText,
+} from '../src/creature-lab-composer.ts';
+import {COMPOSER_EYE_KINDS, EYE_PRESETS, composerEyeNative} from '../src/fauna-composer-eye-catalogue.ts';
+import {COMPOSER_EYE_TYPES, COMPOSER_FACES, COMPOSER_IRIS, COMPOSER_IRIS_RGB, resolveComposerEyes} from '../src/fauna-composer-face.ts';
+import {
+  COMPOSER_PRESET_IDS, composerEyeUpgradeIssue, composerPreset, decodeComposerRecipe, encodeComposerRecipe, normalizeComposerRecipe, randomComposerRecipe,
+} from '../src/fauna-composer-recipe.ts';
+import {creatureLabUrl, parseCreatureLabState} from '../src/creature-lab-state.ts';
+
+const decode = text => { const d = decodeComposerRecipe(text); assert.equal(d.error, null, text); return d; };
+const asV3 = text => text.replace(/^v4\*/, 'v3*').replace(/\*eyeRules_\d+$/, '');
+
+test('Eyes menu: Automatic first, then all 18 kinds exactly once in three named groups following the catalogue', () => {
+  assert.equal(COMPOSER_EYE_KINDS.length, 18);
+  assert.deepEqual(COMPOSER_EYE_MENU.map(g => g.label), ['Pupil shape', 'Animal eyes', 'Arthropod and other']);
+  const listed = COMPOSER_EYE_MENU.flatMap(g => g.kinds);
+  assert.equal(listed.length, 18); assert.deepEqual([...listed].sort(), [...COMPOSER_EYE_KINDS].sort());
+  for (const g of COMPOSER_EYE_MENU) {
+    assert.equal(COMPOSER_EYE_GROUP_LABEL[g.group], g.label);
+    for (const k of g.kinds) assert.equal(EYE_PRESETS[k].group, g.group, `${k} is listed in its catalogue group`);
+  }
+  assert.deepEqual(COMPOSER_EYE_MENU[0].kinds, ['round', 'horizontal', 'vertical-slit'], 'the pupil shapes keep the face round order');
+  assert.deepEqual(COMPOSER_EYE_MENU[2].kinds, ['compound', 'insect', 'spider', 'stalk', 'eyespot']);
+  // the select's values are the recipe values (Automatic + 18) - grouping changes no link
+  assert.deepEqual(['auto', ...listed].sort(), [...COMPOSER_EYE_TYPES].sort());
+  assert.deepEqual(composerHintedValues('eyes'), COMPOSER_EYE_TYPES);
+  for (const k of COMPOSER_EYE_KINDS) {
+    const label = composerOptionText(composerPreset('giraffe'), 'eyes', k, false);
+    assert.ok(label.length > 3 && label !== k, `${k} has a written label (${label})`);
+    assert.ok(COMPOSER_EYE_SHORT[k], `${k} has a short name for Automatic`);
+  }
+});
+
+test('rarity labels: on every preset face the kinds native to that face read plainly, the others "unusual on this face", and all are built', () => {
+  for (const id of COMPOSER_PRESET_IDS) {
+    const r = composerPreset(id);
+    let plain = 0, odd = 0;
+    for (const k of COMPOSER_EYE_KINDS) {
+      const text = composerOptionText(r, 'eyes', k);
+      assert.equal(resolveComposerEyes({...r, eyes: k}).kind, k, `${id}/${k}: built as chosen under the current rules`);
+      if (composerEyeNative(k, r.head)) { assert.ok(!text.includes(' — '), `${id}/${k}: ${text}`); plain++; }
+      else { assert.ok(text.endsWith(H.unusualFace), `${id}/${k}: ${text}`); odd++; }
+    }
+    assert.ok(plain >= 2 && odd >= 3, `${id}: ${plain} plain, ${odd} unusual`);
+    // Automatic always shows what it resolves to and is never labelled unusual
+    const auto = composerOptionText(r, 'eyes', 'auto'), e = resolveComposerEyes(r);
+    assert.ok(auto.startsWith(`Automatic (${COMPOSER_EYE_SHORT[e.kind]}, `) && !auto.includes(' — '), `${id}: ${auto}`);
+  }
+});
+
+test('Automatic (...) follows the face and the eye rules; the resolved label is what is built', () => {
+  for (let seed = 1; seed <= 300; seed++) {
+    const r = randomComposerRecipe(seed);
+    for (const eyeRules of [2, 1]) {
+      const x = {...r, eyes: 'auto', eyeRules}, e = resolveComposerEyes(x), text = composerOptionText(x, 'eyes', 'auto');
+      assert.equal(text, `Automatic (${COMPOSER_EYE_SHORT[e.kind]}, ${e.irisBuilt ? e.irisBuilt.replace('-', ' ') : 'no iris'}${eyeRules === 1 ? '; earlier eye rules' : ''})`);
+      // choosing the kind Automatic names builds the same eyes (current rules)
+      if (eyeRules === 2) assert.equal(resolveComposerEyes({...x, eyes: e.kind}).kind, e.kind);
+    }
+  }
+});
+
+test('Eye rules select: Current then Earlier; the upgrade notice names this control; choosing Earlier restores an upgraded link', () => {
+  assert.deepEqual(composerHintedValues('eyeRules'), ['2', '1']);
+  assert.ok(COMPOSER_HINTED_KEYS.includes('eyeRules'));
+  assert.equal(composerFieldLabel('eyeRules'), 'Eye rules');
+  assert.match(COMPOSER_EYE_RULES_LABEL['1'], /^Earlier eye rules/); assert.match(COMPOSER_EYE_RULES_LABEL['2'], /^Current eye rules/);
+  const worm = {...composerPreset('worm'), eyes: 'horizontal'};
+  const up = decode(asV3(encodeComposerRecipe(worm)));
+  assert.equal(up.recipe.eyeRules, 2);
+  const notice = composerEyeUpgradeIssue(up.recipe);
+  assert.ok(notice.includes(`${composerFieldLabel('eyeRules')} -> Earlier`), `the notice points at the control: ${notice}`);
+  // the Earlier option says what it would build here; the Current option never carries a hint
+  assert.equal(composerOptionText(up.recipe, 'eyeRules', '1'), `${COMPOSER_EYE_RULES_LABEL['1']} — builds eyespots (no iris) here`);
+  assert.equal(composerOptionText(up.recipe, 'eyeRules', '2'), COMPOSER_EYE_RULES_LABEL['2']);
+  assert.equal(composerOptionText(composerPreset('giraffe'), 'eyeRules', '1'), `${COMPOSER_EYE_RULES_LABEL['1']} — same eyes here`);
+  // the panel's change handler writes Number(select.value): the result is a v4 link with eyeRules 1 that keeps the old eyes
+  const earlier = normalizeComposerRecipe({...up.recipe, eyeRules: Number('1')}).recipe, text = encodeComposerRecipe(earlier);
+  assert.match(text, /\*eyeRules_1$/);
+  const back = decode(text);
+  assert.deepEqual(back.issues, []); assert.equal(resolveComposerEyes(back.recipe).built, 'eyespot');
+});
+
+test('links: the eye choice, iris and eye rules survive a Lab URL round trip; old links open on the current rules', () => {
+  const cases = [
+    {...composerPreset('ape'), eyes: 'cephalopod', iris: 'copper'},
+    {...composerPreset('ostrich'), eyes: 'owl', iris: 'grey-green', eyeRules: 1},
+    {...composerPreset('centipede'), eyes: 'spider'},
+    {...composerPreset('worm'), eyes: 'stalk', iris: 'blue'},
+  ];
+  for (const r of cases) {
+    const text = encodeComposerRecipe(r);
+    const url = new URL(creatureLabUrl('http://x/creature-lab.html', {...parseCreatureLabState(new URLSearchParams()), mode: 'composer', recipe: text}));
+    const state = parseCreatureLabState(url.searchParams);
+    assert.equal(state.recipe, text);
+    const d = decode(state.recipe);
+    assert.equal(d.recipe.eyes, r.eyes); assert.equal(d.recipe.iris, r.iris); assert.equal(d.recipe.eyeRules, r.eyeRules ?? 2);
+    assert.deepEqual(d.issues, []);
+  }
+  // a v3 link never opens on the earlier rules silently
+  for (const id of COMPOSER_PRESET_IDS) assert.equal(decode(asV3(encodeComposerRecipe(composerPreset(id)))).recipe.eyeRules, 2, id);
+});
+
+test('iris: Automatic names the colour built; colours outside these eyes\' automatic colours read "uncommon"; eyes without an iris say so', () => {
+  const cat = {...composerPreset('giraffe'), head: 'muzzle', eyes: 'cat'};
+  const bands = composerIrisChoices(cat);
+  assert.ok(bands.length >= 2);
+  for (const iris of COMPOSER_IRIS) {
+    if (iris === 'auto') continue;
+    const text = composerOptionText(cat, 'iris', iris);
+    assert.equal(text.endsWith(H.unusualIris), !bands.includes(iris), `${iris}: ${text}`);
+  }
+  const compound = composerPreset('centipede');
+  assert.deepEqual(composerIrisChoices(compound), []);
+  assert.equal(composerOptionText(compound, 'iris', 'blue'), 'Blue — no effect on these eyes');
+  assert.equal(composerIrisSwatch(compound), null);
+});
+
+test('iris swatch: the built iris colour as sRGB hex, the same colour the mesh is given', () => {
+  const toSrgb = c => Math.round(255 * Math.min(1, c <= .0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - .055));
+  for (const iris of COMPOSER_IRIS) {
+    if (iris === 'auto') continue;
+    const r = {...composerPreset('ape'), iris}, e = resolveComposerEyes(r), hex = composerIrisSwatch(r);
+    assert.equal(e.irisBuilt, iris);
+    assert.match(hex, /^#[0-9a-f]{6}$/);
+    assert.deepEqual([1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)), COMPOSER_IRIS_RGB[iris].map(toSrgb), iris);
+  }
+  const auto = composerPreset('ape');
+  assert.equal(composerIrisSwatch(auto), composerIrisSwatch({...auto, iris: resolveComposerEyes(auto).irisBuilt}));
+  // different colours, different swatches (the 12 colours are distinguishable at a glance)
+  const all = COMPOSER_IRIS.filter(i => i !== 'auto').map(iris => composerIrisSwatch({...auto, iris}));
+  assert.equal(new Set(all).size, all.length);
+});
+
+test('eye close-up framing: side views frame the near eye only, the front view frames both; a midline eye is framed whole', () => {
+  // two eyes of radius 0.02 at z = +-0.05 around a head at x = 1, y = 1.2 (bodies face +X)
+  const sphere = (cx, cy, cz, r) => { const ps = []; for (let i = 0; i < 64; i++) { const t = i / 64 * Math.PI * 2, p = (i % 8) / 8 * Math.PI - Math.PI / 2; ps.push(new THREE.Vector3(cx + r * Math.cos(p) * Math.cos(t), cy + r * Math.sin(p), cz + r * Math.cos(p) * Math.sin(t))); } ps.push(new THREE.Vector3(cx, cy + r, cz), new THREE.Vector3(cx, cy - r, cz)); return ps; };
+  const eyes = [...sphere(1, 1.2, .05, .02), ...sphere(1, 1.2, -.05, .02)];
+  const side = composerEyeFrameOf(eyes, 0, new THREE.Vector3(0, 0, 1));
+  assert.equal(side.side, 'near'); assert.ok(Math.abs(side.centre.z - .05) < 1e-3 && Math.abs(side.eyeRadius - .02) < 2e-3);
+  assert.ok(side.box.containsPoint(new THREE.Vector3(1, 1.2, .05)) && !side.box.containsPoint(new THREE.Vector3(1, 1.2, -.05)), 'only the near eye');
+  const q = composerEyeFrameOf(eyes, 0, new THREE.Vector3(.6, .3, .74).normalize());
+  assert.equal(q.side, 'near'); assert.ok(q.centre.z > 0);
+  const fromLeft = composerEyeFrameOf(eyes, 0, new THREE.Vector3(0, 0, -1));
+  assert.ok(fromLeft.centre.z < 0, 'a camera on the -z side frames the -z eye');
+  const front = composerEyeFrameOf(eyes, 0, new THREE.Vector3(1, 0, 0));
+  assert.equal(front.side, 'both');
+  for (const z of [.05, -.05]) assert.ok(front.box.containsPoint(new THREE.Vector3(1, 1.2, z)));
+  assert.ok(front.box.getSize(new THREE.Vector3()).z < .3, 'tight around the pair');
+  // an animal off the origin (herd/compare offset): sides are taken about its own midline
+  const shifted = eyes.map(p => p.clone().add(new THREE.Vector3(0, 0, 3)));
+  assert.ok(Math.abs(composerEyeFrameOf(shifted, 3, new THREE.Vector3(0, 0, 1)).centre.z - 3.05) < 1e-3);
+  // a single frontal eye (straddles the midline) and no eyes
+  assert.equal(composerEyeFrameOf(sphere(1, 1, 0, .03), 0, new THREE.Vector3(0, 0, 1)).side, 'both', 'a midline eye is framed whole');
+  assert.equal(composerEyeFrameOf([], 0, new THREE.Vector3(0, 0, 1)), null);
+});
+
+test('rarity hints never forbid: every face x kind is selectable and builds the chosen kind under the current rules', () => {
+  for (const head of COMPOSER_FACES) for (const eyes of COMPOSER_EYE_KINDS) {
+    const r = normalizeComposerRecipe({...composerPreset('giraffe'), head, eyes}).recipe;
+    assert.equal(r.eyes, eyes); assert.equal(resolveComposerEyes(r).kind, eyes, `${head}/${eyes}`);
+  }
+});

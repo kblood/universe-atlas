@@ -253,17 +253,19 @@ test('Lab controls: every recipe key except the derived trunk has a control; Hea
   const {COMPOSER_RECIPE_KEYS} = await import('../src/fauna-composer-recipe.ts');
   assert.deepEqual([...COMPOSER_CONTROL_KEYS].sort(), COMPOSER_RECIPE_KEYS.filter(k => k !== 'trunk').sort());
   const i = COMPOSER_CONTROL_KEYS.indexOf('neckLength');
-  assert.deepEqual(COMPOSER_CONTROL_KEYS.slice(i, i + 8), ['neckLength', 'head', 'headSize', 'snoutLength', 'trunkLength', 'eyes', 'iris', 'horns']);
+  // eye round EC3: the Eye rules select sits right under Eyes (the upgrade notice points at it)
+  assert.deepEqual(COMPOSER_CONTROL_KEYS.slice(i, i + 9), ['neckLength', 'head', 'headSize', 'snoutLength', 'trunkLength', 'eyes', 'eyeRules', 'iris', 'horns']);
 });
 
-test('option hints match FACE_HEADGEAR and the eye rules exhaustively (7 faces x 5 horns, 7 faces x 19 eye choices x 2 eye rules)', async () => {
-  const {composerOptionText, composerOptionHint, COMPOSER_OPTION_HINTS: H, COMPOSER_EYE_SHORT} = await import('../src/creature-lab-composer.ts');
-  const {COMPOSER_FACES, COMPOSER_HORNS, COMPOSER_EYE_TYPES, COMPOSER_IRIS, FACE_HEADGEAR, FACE_EYES, resolveComposerEyes} = await import('../src/fauna-composer-face.ts');
+test('option hints match FACE_HEADGEAR, the eye rules and the eye catalogue exhaustively (7 faces x 5 horns, 7 faces x 19 eye choices x 2 eye rules, iris bands)', async () => {
+  const {composerOptionText, composerOptionHint, composerIrisChoices, COMPOSER_OPTION_HINTS: H, COMPOSER_EYE_SHORT} = await import('../src/creature-lab-composer.ts');
+  const {COMPOSER_FACES, COMPOSER_HORNS, COMPOSER_EYE_TYPES, COMPOSER_IRIS, FACE_HEADGEAR, FACE_EYES, resolveComposerEyes, composerIrisBands, composerIrisKind} = await import('../src/fauna-composer-face.ts');
+  const {composerEyeNative} = await import('../src/fauna-composer-eye-catalogue.ts');
   assert.equal(COMPOSER_FACES.length, 7); assert.equal(COMPOSER_HORNS.length, 5); assert.equal(COMPOSER_EYE_TYPES.length, 19);
   const base = composerPreset('giraffe'), eyeName = {round: 'round', horizontal: 'horizontal bar', 'vertical-slit': 'vertical slit', compound: 'compound', eyespot: 'eyespots'};
   assert.deepEqual(Object.keys(COMPOSER_EYE_SHORT), COMPOSER_EYE_TYPES.slice(1));
   for (const [k, v] of Object.entries(eyeName)) assert.equal(COMPOSER_EYE_SHORT[k], v, 'the face round names are kept');
-  let hornCells = 0, disclosed = 0, unbuilt = 0, eyeCells = 0;
+  let hornCells = 0, disclosed = 0, unbuilt = 0, eyeCells = 0, unusual = 0, earlierBuilt = 0, irisUnusual = 0;
   for (const head of COMPOSER_FACES) {
     for (const horns of COMPOSER_HORNS) {
       hornCells++;
@@ -280,24 +282,47 @@ test('option hints match FACE_HEADGEAR and the eye rules exhaustively (7 faces x
     for (const eyeRules of [2, 1]) for (const eyes of COMPOSER_EYE_TYPES) {
       eyeCells++;
       const r = {...base, head, eyeRules}, text = composerOptionText(r, 'eyes', eyes);
-      if (eyes === 'auto') { const e = resolveComposerEyes({...r, eyes: 'auto'}); assert.equal(text, `Automatic (${COMPOSER_EYE_SHORT[e.kind]}, ${e.irisBuilt ? e.irisBuilt.replace('-', ' ') : 'no iris'})`); continue; }
-      const hint = composerOptionHint(r, 'eyes', eyes);
-      // the current rules build every kind on every face; the earlier rules disclose a face-round kind the face could not have
-      const allowed = eyeRules === 2 || !(eyes in eyeName) || FACE_EYES[head].includes(eyes);
-      if (allowed) { assert.equal(hint, '', `${head}/${eyes}/${eyeRules}`); assert.equal(resolveComposerEyes({...r, eyes}).kind, eyes); }
-      else {
-        const built = head === 'mandibles' ? 'compound' : head === 'blunt' ? 'eyespot' : resolveComposerEyes({...r, eyes: 'auto'}).kind;
-        assert.equal(hint, ` — built as ${eyeName[built]}`, `${head}/${eyes}`); assert.equal(resolveComposerEyes({...r, eyes}).built, built);
+      if (eyes === 'auto') {
+        const e = resolveComposerEyes({...r, eyes: 'auto'});
+        assert.equal(text, `Automatic (${COMPOSER_EYE_SHORT[e.kind]}, ${e.irisBuilt ? e.irisBuilt.replace('-', ' ') : 'no iris'}${eyeRules === 1 ? '; earlier eye rules' : ''})`);
+        continue;
       }
-      assert.ok(text.endsWith(hint));
+      const hint = composerOptionHint(r, 'eyes', eyes);
+      // the current rules build every kind on every face (a rarity hint only); the earlier rules build a face-round kind
+      // the face could not have as that face's automatic kind
+      const allowed = eyeRules === 2 || !(eyes in eyeName) || FACE_EYES[head].includes(eyes);
+      if (allowed) {
+        assert.equal(resolveComposerEyes({...r, eyes}).kind, eyes);
+        assert.equal(hint, composerEyeNative(eyes, head) ? '' : H.unusualFace, `${head}/${eyes}/${eyeRules}`);
+        if (hint) unusual++;
+      } else {
+        const built = head === 'mandibles' ? 'compound' : head === 'blunt' ? 'eyespot' : resolveComposerEyes({...r, eyes: 'auto'}).kind;
+        assert.equal(hint, ` — built as ${eyeName[built]}${H.earlier}`, `${head}/${eyes}`); assert.equal(resolveComposerEyes({...r, eyes}).built, built);
+        earlierBuilt++;
+      }
+      assert.equal(composerOptionText(r, 'eyes', eyes, false) + hint, text, 'the hint is a pure suffix');
+      // the hint depends on the face and the rules, never on the currently chosen eye kind
+      assert.equal(composerOptionText({...r, eyes: 'owl'}, 'eyes', eyes), text);
     }
-    // iris: no effect exactly on faces whose eyes have no iris
+    // iris: no effect exactly on eyes without an iris; otherwise a colour outside the automatic colours is 'uncommon'
+    for (const eyes of COMPOSER_EYE_TYPES) {
+      const r = {...base, head, eyes}, e = resolveComposerEyes(r), bands = composerIrisBands(r, composerIrisKind(r, e.kind));
+      assert.deepEqual(composerIrisChoices(r), bands);
+      assert.equal(e.irisBuilt === null, bands.length === 0, `${head}/${eyes}: no iris <=> no bands`);
+      for (const iris of COMPOSER_IRIS) {
+        const hint = composerOptionHint({...r, iris}, 'iris', iris);
+        assert.equal(hint, iris === 'auto' ? '' : !bands.length ? H.noEffect : bands.includes(iris) ? '' : H.unusualIris, `${head}/${eyes}/${iris}`);
+        if (hint === H.unusualIris) irisUnusual++;
+      }
+      if (e.irisBuilt) assert.ok(bands.includes(resolveComposerEyes({...r, iris: 'auto'}).irisBuilt), `${head}/${eyes}: the automatic iris is one of the bands`);
+    }
     const noIris = resolveComposerEyes({...base, head}).irisBuilt === null;
     assert.equal(noIris, head === 'mandibles' || head === 'blunt');
-    for (const iris of COMPOSER_IRIS) assert.equal(composerOptionHint({...base, head}, 'iris', iris), iris !== 'auto' && noIris ? H.noEffect : '', `${head}/${iris}`);
   }
   assert.equal(hornCells, 35); assert.equal(eyeCells, 7 * 19 * 2);
   assert.equal(disclosed, 20, 'round doc: 20 of 35 cells are disclosed'); assert.equal(unbuilt, 18, 'and 18 of those build nothing');
+  assert.ok(unusual > 7 * 6 && unusual < 7 * 18 * 2, `rarity hints mark some, not all, kinds (${unusual})`);
+  assert.ok(earlierBuilt > 0 && irisUnusual > 0, `${earlierBuilt} ${irisUnusual}`);
   // plan acceptance spot checks
   const beak = {...base, head: 'beak'};
   assert.ok(composerOptionText(beak, 'horns', 'paired').endsWith(' — not built on this face'));
@@ -308,17 +333,21 @@ test('option hints match FACE_HEADGEAR and the eye rules exhaustively (7 faces x
   assert.ok(composerOptionText({...base, head: 'muzzle', feet: 'hoof'}, 'eyes', 'auto').startsWith('Automatic (horizontal bar, '));
   assert.equal(composerOptionText(composerPreset('centipede'), 'eyes', 'auto'), 'Automatic (compound, no iris)');
   assert.ok(composerOptionText({...base, head: 'muzzle', feet: 'paw', legs: 'digitigrade', bodyLength: 0.6}, 'eyes', 'auto').startsWith('Automatic (cat slit, '));
-  assert.ok(composerOptionText({...base, head: 'muzzle', feet: 'paw', legs: 'digitigrade', bodyLength: 0.6, eyeRules: 1}, 'eyes', 'auto').startsWith('Automatic (vertical slit, '));
+  assert.match(composerOptionText({...base, head: 'muzzle', feet: 'paw', legs: 'digitigrade', bodyLength: 0.6, eyeRules: 1}, 'eyes', 'auto'), /^Automatic \(vertical slit, .*; earlier eye rules\)$/);
   assert.equal(composerOptionText({...base, head: 'mandibles'}, 'iris', 'auto'), 'Automatic (no iris)');
-  assert.equal(composerOptionText({...base, head: 'mandibles'}, 'iris', 'red'), 'Red — no effect on this face');
+  assert.equal(composerOptionText({...base, head: 'mandibles'}, 'iris', 'red'), 'Red — no effect on these eyes');
+  // EC3 rarity labels: a cuttlefish pupil on a horse is unusual but built; Compound on a beak is built as compound under
+  // the current rules (unusual) and as round under the earlier rules
+  assert.equal(composerOptionText({...base, head: 'muzzle'}, 'eyes', 'cephalopod'), 'W pupil (cuttlefish) — unusual on this face');
+  assert.equal(composerOptionText(beak, 'eyes', 'compound'), 'Compound (insect, centipede) — unusual on this face');
+  assert.equal(composerOptionText({...beak, eyeRules: 1}, 'eyes', 'compound'), 'Compound (insect, centipede) — built as round (earlier eye rules)');
 });
 
 test('option hint rendering never changes the encoded link', async () => {
-  const {composerOptionText, COMPOSER_HINTED_KEYS} = await import('../src/creature-lab-composer.ts');
-  const {COMPOSER_CHOICES} = await import('../src/fauna-composer-recipe.ts');
+  const {composerOptionText, composerHintedValues, COMPOSER_HINTED_KEYS} = await import('../src/creature-lab-composer.ts');
   for (const id of ['giraffe', 'bird', 'ape', 'worm', 'centipede', 'trunked-centipede', 'shelled-giraffe-bird']) {
     const r = composerPreset(id), before = encodeComposerRecipe(r), frozen = JSON.stringify(r);
-    for (const hints of [true, false, true]) for (const key of COMPOSER_HINTED_KEYS) for (const v of COMPOSER_CHOICES[key]) composerOptionText(r, key, v, hints);
+    for (const hints of [true, false, true]) for (const key of COMPOSER_HINTED_KEYS) for (const v of composerHintedValues(key)) composerOptionText(r, key, v, hints);
     assert.equal(JSON.stringify(r), frozen, `${id}: the recipe is not mutated`); assert.equal(encodeComposerRecipe(r), before, `${id}: link byte-identical`);
   }
 });
