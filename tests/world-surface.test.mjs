@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {galaxies, sector, system, refByAddress} from '../src/catalog.ts';
 import {CATALOGUE_EPOCH_NS, UNIVERSE_END_NS, YEAR_NS} from '../src/world-time.ts';
 import {starLifecycle, starStateAt, planetLifecycle, waterKeysFor} from '../src/stellar-evolution.ts';
-import {surfaceAt, planetAgeMyr, waterLevelAt, biosphereStateAt, SURFACE_VERSION, BIOSPHERE_QUERY_VERSION} from '../src/world-surface.ts';
+import {surfaceAt, planetAgeMyr, waterLossAt, biosphereStateAt, SURFACE_VERSION, BIOSPHERE_QUERY_VERSION} from '../src/world-surface.ts';
 import {generateBiosphere, biosphereAt, profileFromPhysicalProperties, MIN_DATE_MYR, MAX_DATE_MYR} from '../src/biosphere-model.ts';
 import {canonicalJSON} from './canonical-json.mjs';
 
@@ -137,7 +137,8 @@ test('existence gating: no ground/water before formation, nothing after engulfme
       const justBeforeOcean = at(planetLc.oceanNs - 1n);
       assert.equal(justBeforeOcean.sample.ocean, false, 'no global sea before the planet has actually condensed one');
       const atOcean = at(planetLc.oceanNs);
-      assert.equal(waterKeysFor(planetLc, starLc).length, 2);
+      const keyCount = waterKeysFor(planetLc, starLc).length;
+      assert.ok(keyCount >= 1 && keyCount <= 16, `1..16 ocean-volume loss keys (got ${keyCount})`);
       void atOcean;
     }
 
@@ -172,26 +173,37 @@ test('existence gating: a star before formation is not-exists; a remnant after d
   }
 });
 
-test('water level keys are monotone-consistent with §2.5: level 0 at oceanNs, ramps to -8000 by giantNs, holds after', () => {
-  for (const {planet, star, bodyAddress} of PLANET_CORPUS.filter(p => p.planet.water > 0).slice(0, 60)) {
+// Surface 8 (ocean-volume-1) deliberately REMOVES the old metre-ramp
+// assertions (keys.length 2, levelM 0 at oceanNs, -8000 m at giantNs, a
+// linear mid-ramp level): the lifecycle now authors a lost VOLUME fraction
+// and the level comes from the body's own seabed (tests/ocean-volume.test.mjs).
+test('water loss keys (ocean-volume-1): 0 up to the catalogue epoch, monotone, 1 no later than giantNs, holds after', () => {
+  let checked = 0;
+  for (const {planet, star} of PLANET_CORPUS.filter(p => p.planet.water > 0).slice(0, 60)) {
     const starLc = starLifecycle(SEED, dummyAddress, star);
     const planetLc = planetLifecycle(SEED, dummyAddress, planet, starLc);
     if (planetLc.engulfedNs !== null && planetLc.engulfedNs <= planetLc.oceanNs) continue; // engulfed before ever forming an ocean
     const keys = waterKeysFor(planetLc, starLc);
-    assert.equal(keys.length, 2);
-    assert.equal(keys[0].levelM, 0); assert.equal(keys[1].levelM, -8000);
-    assert.ok(keys[0].dateNs < keys[1].dateNs);
-    const atOcean = waterLevelAt(keys, planetLc.oceanNs);
-    const mid = (planetLc.oceanNs + starLc.giantNs) / 2n;
-    const atMid = waterLevelAt(keys, mid);
-    const atGiant = waterLevelAt(keys, starLc.giantNs);
-    const atAfter = waterLevelAt(keys, starLc.giantNs + 1_000_000_000n);
-    assert.equal(atOcean, 0);
-    assert.ok(atMid <= 0 && atMid >= -8000, 'ramp stays within its authored bounds');
-    assert.ok(atMid < atOcean || mid === planetLc.oceanNs, 'level does not rise back toward 0 partway through the boil-off ramp');
-    assert.equal(atGiant, -8000);
-    assert.equal(atAfter, -8000, 'level holds at the last key past giantNs, it does not extrapolate further');
+    assert.ok(keys.length >= 1 && keys.length <= 16, `1..16 keys, got ${keys.length}`);
+    assert.equal(keys[0].dateNs, planetLc.oceanNs, 'first key at ocean condensation');
+    for (let i = 1; i < keys.length; i++) {
+      assert.ok(keys[i].dateNs > keys[i - 1].dateNs, 'keys strictly ordered');
+      assert.ok(keys[i].lossFraction >= keys[i - 1].lossFraction, 'loss never decreases (no refilling)');
+    }
+    for (const k of keys) assert.ok(k.lossFraction >= 0 && k.lossFraction <= 1);
+    if (planetLc.oceanNs >= starLc.giantNs) continue; // never available: host already left the main sequence
+    assert.ok(keys[keys.length - 1].dateNs <= starLc.giantNs, 'no key past giantNs');
+    assert.equal(waterLossAt(keys, starLc.giantNs), 1, 'all ocean volume lost by giantNs');
+    assert.equal(waterLossAt(keys, starLc.giantNs + 1_000_000_000n), 1, 'holds at the last key, no extrapolation');
+    if (planetLc.oceanNs <= CATALOGUE_EPOCH_NS) {
+      assert.equal(waterLossAt(keys, planetLc.oceanNs), 0);
+      assert.equal(waterLossAt(keys, CATALOGUE_EPOCH_NS), 0, 'catalogue epoch shows the full ocean');
+      const before = planetLc.oceanNs + (CATALOGUE_EPOCH_NS - planetLc.oceanNs) / 2n;
+      assert.equal(waterLossAt(keys, before), 0, 'no loss before the catalogue epoch');
+    }
+    checked++;
   }
+  assert.ok(checked > 20, `exercised ${checked} wet planets`);
 });
 
 test('moon engulfment gates on the parent planet\'s stellar distance, not the moon\'s own tiny local orbit (a Package A gap this package corrects, now fixed inside stellar-evolution.ts\'s planetLifecycle itself rather than patched around here)', () => {

@@ -178,8 +178,9 @@ test('waterKeysFor: empty for dry planets, strictly ordered and gated by planet 
   const wetStarLc = starLifecycle(SEED, dummyAddress, wet.star);
   const wetPlanetLc = planetLifecycle(SEED, dummyAddress, wet.planet, wetStarLc);
   const keys = waterKeysFor(wetPlanetLc, wetStarLc);
-  assert.equal(keys.length, 2);
-  assert.ok(keys[0].dateNs < keys[1].dateNs, 'water keys must be strictly ordered (world-surface.ts requires this)');
+  // ocean-volume-1 (relief round P2): up to 16 lost-volume keys, not the old 2-key metre ramp.
+  assert.ok(keys.length >= 2 && keys.length <= 16, `2..16 water keys, got ${keys.length}`);
+  for (let i = 1; i < keys.length; i++) assert.ok(keys[i - 1].dateNs < keys[i].dateNs, 'water keys must be strictly ordered (world-surface.ts requires this)');
   assert.equal(keys[0].dateNs, wetPlanetLc.oceanNs);
 });
 

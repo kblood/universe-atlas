@@ -1,6 +1,7 @@
 import {type Body, type V3, AU} from './catalog.ts';
 import {terrainSampler, TERRAIN_VERSION,REGIONAL_LANDFORM_VERSION} from './terrain.ts';
 import {RIVER_SURFACE_VERSION} from './river-types.ts';
+import {levelForLoss} from './ocean-volume.ts';
 import {RIVER_PHYSICAL_SURFACE_VERSION} from './river-physical-field.ts';
 import {activeRenderedRiverRegion} from './inland-rivers.ts';
 import {YEAR_NS, type Ns} from './world-time.ts';
@@ -15,10 +16,30 @@ import {
 } from './biosphere-model.ts';
 // The dated ocean flag is shared by the surface query and renderer. Surface 7
 // withdraws inland rivers and their regional lakes (inland-rivers.ts): the
-// only water a query reports is the dated global ocean.
-export const SURFACE_VERSION='atlas-surface-7-no-inland-rivers';
-export type WaterKey = {dateNs:bigint; levelM:number};
-export function waterLevelAt(keys: readonly WaterKey[], date:bigint): number {
+// only water a query reports is the dated global ocean. Surface 8 (relief
+// round 2026-10) replaces the linear 0 -> -8000 m metre ramp with the ocean
+// VOLUME model: the lifecycle authors a lost volume fraction over time
+// (stellar-evolution.ts waterKeysFor) and ocean-volume.ts turns it into a
+// level on the body's own seabed. The catalogue epoch shows the full ocean.
+export const SURFACE_VERSION='atlas-surface-8-ocean-volume';
+/** A dated ocean key from the lifecycle: the fraction of the catalogue-epoch
+ * ocean VOLUME lost by `dateNs` (0 = full ocean, 1 = all lost). */
+export type WaterKey = {dateNs:bigint; lossFraction:number};
+/** A literal sea-level key (metres) for `surfaceQuery` callers that pin a level. */
+export type WaterLevelKey = {dateNs:bigint; levelM:number};
+/** Interpolated lost-volume fraction at `date`: clamps to the first key before
+ * it and to the last key after it, linear between keys. */
+export function waterLossAt(keys: readonly WaterKey[], date:bigint): number {
+  if (!keys.length) return 0;
+  for(let i=1;i<keys.length;i++) if(keys[i].dateNs<=keys[i-1].dateNs) throw new Error('Water keys must be strictly ordered');
+  if(date<=keys[0].dateNs) return keys[0].lossFraction;
+  for(let i=1;i<keys.length;i++) if(date<keys[i].dateNs) {
+    const a=keys[i-1],b=keys[i];
+    return a.lossFraction+(b.lossFraction-a.lossFraction)*Number(date-a.dateNs)/Number(b.dateNs-a.dateNs);
+  }
+  return keys[keys.length-1].lossFraction;
+}
+export function waterLevelAt(keys: readonly WaterLevelKey[], date:bigint): number {
   if (!keys.length) return 0;
   for(let i=1;i<keys.length;i++) if(keys[i].dateNs<=keys[i-1].dateNs) throw new Error('Water keys must be strictly ordered');
   if(date<=keys[0].dateNs) return keys[0].levelM;
@@ -30,7 +51,7 @@ export function waterLevelAt(keys: readonly WaterKey[], date:bigint): number {
 }
 /** The baseline water parameter is immutable geology input. Changing the water
  * surface never changes this rock field. Future geology sits behind this query. */
-export function surfaceQuery(body:Body, keys:readonly WaterKey[]=[], options:{globalOceanAvailable?:boolean}={}) {
+export function surfaceQuery(body:Body, keys:readonly WaterLevelKey[]=[], options:{globalOceanAvailable?:boolean}={}) {
   const rock=terrainSampler(body);
   return (direction:V3,date=0n)=>{
     const sample=rock(direction), levelM=waterLevelAt(keys,date);
@@ -91,11 +112,19 @@ export function planetEnvironmentAt(body:Body,planet:PlanetLifecycle,star:StarLi
     oceanAvailable,waterAvailable,biosphereSuitable,
     fidelity:'procedural scenario' as const};
 }
+/** Snap a level to the shared 25 m bucket (planet-renderer.ts
+ * WATER_LEVEL_BUCKET_M), normalising -0 to 0 so a full ocean is exactly 0. */
+function snapWaterLevel(levelM:number):number {
+  const snapped=Math.round(levelM/25)*25;
+  return snapped===0?0:snapped;
+}
 export function datedOceanState(body:Body, planet:PlanetLifecycle, star:StarLifecycle, t:Ns) {
   const environment=planetEnvironmentAt(body,planet,star,t);
   const globalOceanAvailable=environment.oceanAvailable;
-  const waterLevelM=globalOceanAvailable
-    ? Math.round(waterLevelAt(waterKeysFor(planet,star),t)/25)*25 : 0;
+  const lossFraction=globalOceanAvailable?waterLossAt(waterKeysFor(planet,star),t):0;
+  const waterLevelM=globalOceanAvailable?snapWaterLevel(levelForLoss(body,lossFraction)):0;
+  // Return shape unchanged (main.ts's star branch builds the same three fields);
+  // the loss fraction itself is exposed by place-query.ts.
   return {globalOceanAvailable,waterLevelM,renderWaterLevelM:globalOceanAvailable?waterLevelM:-1_000_000};
 }
 
