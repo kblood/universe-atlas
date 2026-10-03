@@ -315,6 +315,11 @@ Captures are under `test-results/relief-round-2026-10-03/P4-RELIEF/views/`. The 
   (`verdict-1..5-*.txt`).
 - **Orbit relief bump.** In the orbit views, the bump is exaggerated about 3.4x until P5 decodes
   `reliefMinM/reliefMaxM`. Merge P5 right after P4 and re-judge the orbit views once P5 is in.
+- **Round 2 recapture** (`r2/views`, `r2/luna`, build 61c4135, same poses). Orbit frames match round 1 within
+  RMSE 0.008% (heights unchanged by r2); ground frames differ by streaming state (tree population at capture
+  time), not terrain. Luna's verdicts are unchanged in substance: "AFTER partly meets the target" for both the
+  Maithea set and the other worlds. It names the Lethuris orbit maze ("an intricate branching white network"),
+  flattened AFTER horizons on Maithea, Raiva and Selawyn, and less visible snow on the Maithea high range.
 
 ## 11. Height bound and craters
 
