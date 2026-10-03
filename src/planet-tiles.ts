@@ -219,8 +219,12 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
         if(p===top&&c>top)lift=Math.max(lift,c);
       }
       // Slope-weighted max correction: zero in a local minimum, growing toward
-      // the local maximum, never above the highest of the five samples.
-      if(max>min)lift=Math.max(lift,p+(p-min)/(max-min)*(max-p));
+      // the local maximum, never above the highest of the five samples. A
+      // vertex whose footprint reaches the sea (any centre below sea level)
+      // keeps its point sample, so the interpolated coastline stays where the
+      // point-sampled lattice puts it.
+      if(body.water&&min<waterLevelM)lift=p;
+      else if(max>min)lift=Math.max(lift,p+(p-min)/(max-min)*(max-p));
     }
     memo[mi]=lift;return lift;
   };

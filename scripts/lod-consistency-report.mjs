@@ -12,6 +12,7 @@
 import {pathToFileURL,fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 import {writeFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
 
 export const PLAN_LOD_SHIPPED={
   build:{L4_L12:[22.3,24.4],L14_L18:[9.2,10.1],bytesCoarse:180820,bytesFine:130644},
@@ -42,6 +43,34 @@ export async function loadCheckout(root){
 export function crossDirections(ts,k){const dirs=[];for(let i=0;dirs.length<k&&i<4000;i++){const d=fib(i*53%4000,4000);if(ts(d).groundHeightM>-300)dirs.push(d);}return dirs;}
 /** Plan edge-tile selection: land directions on a snowline (snow .2-.95) or with forest potential. */
 export function edgeDirections(ts,cls,k){const dirs=[];for(let i=0;i<4000;i+=7){const d=fib(i,4000);const s=ts(d);if(s.groundHeightM>0){const c=cls(d,s.groundHeightM,1);if((c.snowFraction>.2&&c.snowFraction<.95)||c.forestPotential)dirs.push(d);}if(dirs.length>=k)break;}return dirs;}
+
+/** 12 stratified edge directions (3 each): snowline (land, snow fraction .3-.9), treeline (forest
+ * potential with treeline01 < .7), coast (|ground| < 150 m) and range (land at or above the land p90 of
+ * the 4000-direction Fibonacci set). Deterministic: scans fib(i*97 % 4000) in order. */
+export function stratifiedEdgeDirections(ts,cls,perClass=3){
+  const all=[];for(let i=0;i<4000;i++){const d=fib(i*97%4000,4000),s=ts(d);all.push({d,h:s.groundHeightM});}
+  const land=all.filter(e=>e.h>0).map(e=>e.h).sort((a,b)=>a-b),p90=land[Math.floor(.9*(land.length-1))];
+  const picks={snowline:[],treeline:[],coast:[],range:[]};
+  for(const e of all){
+    const c=e.h>0?cls(e.d,e.h,1):null;
+    const kind=c&&c.snowFraction>.3&&c.snowFraction<.9?'snowline':c&&c.forestPotential&&c.treeline01<.7?'treeline':Math.abs(e.h)<150?'coast':e.h>=p90?'range':null;
+    if(kind&&picks[kind].length<perClass)picks[kind].push(e.d);
+    if(Object.values(picks).every(v=>v.length>=perClass))break;
+  }
+  return picks;
+}
+
+/** SHA-256 over every buffer buildTile returns (incl. meta) for `entries` = [[bodyName, direction,
+ * levels[]], ...], built in `order` ('forward' | 'reverse') and hashed in canonical order. */
+export function tileDigest(m,entries,order='forward'){
+  const bodies=Object.fromEntries(m.waterWorlds().map(b=>[b.name,b])),list=[];
+  for(const [name,d,levels] of entries)for(const L of levels)list.push([name,m.directionTile(d,L)]);
+  const built=new Map();for(const [name,t] of order==='reverse'?[...list].reverse():list)built.set(name+m.tileKey(t),m.buildTile(bodies[name],t));
+  const h=createHash('sha256');
+  for(const [name,t] of list){const r=built.get(name+m.tileKey(t));h.update(name+m.tileKey(t)+JSON.stringify([r.anchor,r.width,r.skirtDepthM]));
+    for(const v of [r.positions,r.parents,r.surfaceHeight,r.parentHeight,r.normals,r.materials,r.surfaceRoughness,r.uvs,r.indices,r.color,r.meta,r.oceanPositions,r.oceanParents])if(v)h.update(Buffer.from(v.buffer,v.byteOffset,v.byteLength));}
+  return h.digest('hex');
+}
 
 /** Bilinear interpolation of a (m+1)^2 row-major grid at tile-local (u, v). */
 function bilinear(g,m,u,v,f){const gx=Math.min(m-1e-9,u*m),gy=Math.min(m-1e-9,v*m),ix=Math.floor(gx),iy=Math.floor(gy),a=gx-ix,b=gy-iy,s=m+1;
