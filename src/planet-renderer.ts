@@ -140,9 +140,10 @@ export const RENDER_SKIRT_BOUND_M=41;
 export function renderSkirtBoundM(radiusM:number,level:number){
   return Math.min(RENDER_SKIRT_BOUND_M,Math.min(40,4*Math.SQRT2*radiusM/(2**level*32))+.26);
 }
-/** Float32 storage of anchor-relative vertices (<= 2e-9 unit radii at L1) and
- * float32 metadata heights, rounded up: added to every candidate range. */
-export const RENDER_F32_BOUND_M=.05;
+/** Float32 storage, added to every candidate range: anchor-relative vertex
+ * offsets reach ~2 tile spans (unit radii), each component rounded by
+ * 2^-24 of that; metadata heights (< 2^15 m) by < 2^-9 m. Rounded up. */
+export function renderF32BoundM(radiusM:number,level:number){return radiusM*(4/2**level)*2**-23+.01;}
 /** An ocean surface closer than this keeps refining by its own distance: the
  * vertex Gerstner waves (8-42 m) need a fine shell grid near the eye. Every
  * other tile refines by its distance to the solid ground or seabed, so open
@@ -264,7 +265,7 @@ export function candidateTileRadii(t:Tile,cos:number,patches:ReadonlyMap<string,
     const sea=1+waterLevelM/R,wave=RENDER_WAVE_BOUND_M/R;
     if(r0*cos<=sea+wave){r0=Math.min(r0,sea*sag-wave);r1=Math.max(r1,sea+wave);}
   }
-  r0-=RENDER_F32_BOUND_M/R;r1+=RENDER_F32_BOUND_M/R;
+  const f32=renderF32BoundM(R,t.level)/R;r0-=f32;r1+=f32;
   return [r0,Math.max(r0,r1)];
 }
 /** Candidate radial range and bounding sphere of a tile that is not
