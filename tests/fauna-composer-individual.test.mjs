@@ -2,13 +2,15 @@
 // The v1 fixture was captured at commit 1ec5072 (before v2) and is the compatibility oracle.
 // Recipe v3 (fauna-composer-face-1) migrates v1/v2 trunks into the face: muzzle + trunk becomes 'proboscis',
 // a trunk on any other face is removed; both are reported as issues.
+// Recipe v4 (eye catalogue EC1, fauna-composer-face-2) appends one key, eyeRules; v1-v3 text reads eyeRules 2 (the
+// current eye rules) and says so with an 'Eyes: upgraded ...' issue when that changes the eyes it built.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {
   COMPOSER_PRESET_IDS, COMPOSER_RANGES, COMPOSER_RECIPE_KEYS, COMPOSER_RECIPE_VERSION, COMPOSER_SPECIES_KEYS, COMPOSER_V1_KEYS, COMPOSER_V2_DEFAULTS, COMPOSER_V2_KEYS, COMPOSER_V3_DEFAULTS,
-  composerConstraints, composerLegacyPresetId, composerPreset, composerRecipesEqual, composerSpeciesEqual, decodeComposerRecipe, drawComposerRandomV1, encodeComposerRecipe, normalizeComposerRecipe, randomComposerRecipe,
+  COMPOSER_V3_KEYS, COMPOSER_V4_DEFAULTS, composerWildEyes, composerConstraints, composerLegacyPresetId, composerPreset, composerRecipesEqual, composerSpeciesEqual, decodeComposerRecipe, drawComposerRandomV1, encodeComposerRecipe, normalizeComposerRecipe, randomComposerRecipe,
 } from '../src/fauna-composer-recipe.ts';
 import {composerHeadgearBuild} from '../src/fauna-composer-face.ts';
 import {COMPOSER_BUDGET, buildComposerGraph} from '../src/fauna-composer-rig.ts';
@@ -25,7 +27,8 @@ const v1Values = recipe => fixture.keys.map(key => recipe[key]);
 // a (migrated) v1 text's preset: the redesigned hybrids still match their legacy v1 values
 const presetOf = recipe => composerLegacyPresetId(recipe);
 const v2Only = COMPOSER_RECIPE_KEYS.filter(key => !COMPOSER_V1_KEYS.includes(key));
-const LATER_DEFAULTS = {...COMPOSER_V2_DEFAULTS, ...COMPOSER_V3_DEFAULTS};
+const LATER_DEFAULTS = {...COMPOSER_V2_DEFAULTS, ...COMPOSER_V3_DEFAULTS, ...COMPOSER_V4_DEFAULTS};
+const EYE_UPGRADE = /^Eyes: upgraded to the current eye rules: [a-z-]+( \([a-z-]+\))? eyes, where the earlier rules built [a-z-]+( \([a-z-]+\))?\. Eye rules -> Earlier restores them\.$/;
 /** The 26 v1 values a v1 text has after the v3 face migration. */
 const migratedV1 = values => { const r = Object.fromEntries(fixture.keys.map((k, i) => [k, values[i]])); if (r.trunk === 'trunk') { if (r.head === 'muzzle') r.head = 'proboscis'; else r.trunk = 'none'; } return fixture.keys.map(k => r[k]); };
 const MIGRATION_ISSUE = /^Trunk: (now a face type; this muzzle became Face = Proboscis\.|removed\. A trunk is a nose and only grows on a mammal muzzle; this [a-z-]+ face is kept\. Choose Face -> Proboscis for a trunk\.)$/;
@@ -34,27 +37,32 @@ const cv = xs => { const m = mean(xs); return Math.sqrt(xs.reduce((a, x) => a + 
 const pearson = (a, b) => { const ma = mean(a), mb = mean(b); let ab = 0, aa = 0, bb = 0; for (let i = 0; i < a.length; i++) { ab += (a[i] - ma) * (b[i] - mb); aa += (a[i] - ma) ** 2; bb += (b[i] - mb) ** 2; } return ab / Math.sqrt(aa * bb); };
 const withoutAllometry = traits => { const {allometry, ...rest} = traits; return rest; };
 
-test('fixture: the key list is the frozen v1 order and v2, then v3 keys are appended', () => {
+test('fixture: the key list is the frozen v1 order and v2, then v3 keys, then the v4 key are appended', () => {
   assert.deepEqual([...COMPOSER_V1_KEYS], fixture.keys);
   assert.deepEqual(COMPOSER_RECIPE_KEYS.slice(0, 26), fixture.keys);
   assert.deepEqual([...COMPOSER_V2_KEYS], [...fixture.keys, 'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade', 'dimorphism', 'variability', 'allometry', 'individualSeed', 'sex', 'maturity', 'condition']);
   assert.ok(Object.isFrozen(COMPOSER_V2_KEYS));
-  assert.deepEqual([...COMPOSER_RECIPE_KEYS], [...COMPOSER_V2_KEYS, 'eyes', 'iris']);
-  assert.equal(COMPOSER_RECIPE_VERSION, 3);
+  assert.deepEqual([...COMPOSER_V3_KEYS], [...COMPOSER_V2_KEYS, 'eyes', 'iris']);
+  assert.ok(Object.isFrozen(COMPOSER_V3_KEYS));
+  assert.deepEqual([...COMPOSER_RECIPE_KEYS], [...COMPOSER_V3_KEYS, 'eyeRules']);
+  assert.equal(COMPOSER_RECIPE_VERSION, 4);
   assert.deepEqual(COAT_PALETTE_IDS.slice(0, 6), [...LEGACY_PALETTE_IDS]);
   assert.equal(allEntries.length, 12 + 128 + 27 + 256);
 });
 
-test('every v1 fixture text decodes with no error, only face-migration issues, and keeps all 26 v1 values (face-migrated)', () => {
-  let presets = 0, others = 0, migrated = 0;
+test('every v1 fixture text decodes with no error, only face-migration and eye-upgrade issues, and keeps all 26 v1 values (face-migrated)', () => {
+  let presets = 0, others = 0, migrated = 0, upgraded = 0;
   for (const entry of allEntries) {
-    const {recipe, issues, error} = decodeComposerRecipe(entry.text);
+    const {recipe, issues: all, error} = decodeComposerRecipe(entry.text);
     assert.equal(error, null, entry.text);
+    const issues = all.filter(issue => !EYE_UPGRADE.test(issue));
+    upgraded += all.length - issues.length;
+    assert.ok(all.length - issues.length <= 1 && (all.length === issues.length || EYE_UPGRADE.test(all.at(-1))), `${entry.text}: one eye-upgrade issue, last`);
     for (const issue of issues) assert.match(issue, MIGRATION_ISSUE, entry.text);
     assert.equal(issues.length, entry.values[fixture.keys.indexOf('trunk')] === 'trunk' ? 1 : 0, entry.text);
     migrated += issues.length;
     assert.deepEqual(v1Values(recipe), migratedV1(entry.values), entry.text);
-    assert.equal(recipe.version, 3);
+    assert.equal(recipe.version, 4); assert.equal(recipe.eyeRules, 2, `${entry.text}: an old link upgrades to the current eye rules`);
     const id = presetOf(recipe);
     if (id) {
       // a v1 preset link names the preset: it adopts the preset's later species values and keeps its own v1 choices
@@ -79,7 +87,7 @@ test('every v1 fixture text decodes with no error, only face-migration issues, a
     }
   }
   assert.ok(presets >= 12 && others > 300, `presets ${presets}, others ${others}`);
-  assert.ok(migrated > 0);
+  assert.ok(migrated > 0); assert.ok(upgraded > 0, 'some old links build different eyes under the current rules, and say so');
 });
 
 // The v1 head-skin digests (captured at 1ec5072) are frozen history: skin-2
@@ -132,8 +140,8 @@ test('legacy recipes: migrated neutral v1 texts build the pinned skin-3 digest b
   finally { c.dispose(); }
 });
 
-test('versions: v1, v2 and v3 decode, every other version is rejected', () => {
-  for (const text of ['v4*layout_biped', 'v999*layout_biped', 'v0*layout_biped', 'v3.1*layout_biped', 'V3*layout_biped', 'v2.1*layout_biped', 'V2*layout_biped']) {
+test('versions: v1, v2, v3 and v4 decode, every other version is rejected', () => {
+  for (const text of ['v5*layout_biped', 'v999*layout_biped', 'v4.1*layout_biped', 'V4*layout_biped', 'v0*layout_biped', 'v3.1*layout_biped', 'V3*layout_biped', 'v2.1*layout_biped', 'V2*layout_biped']) {
     const result = decodeComposerRecipe(text);
     assert.equal(result.recipe, null, text);
     assert.match(result.error, /Unsupported/, text);
@@ -141,6 +149,11 @@ test('versions: v1, v2 and v3 decode, every other version is rejected', () => {
   assert.equal(decodeComposerRecipe('v1*layout_biped').error, null);
   assert.equal(decodeComposerRecipe('v2*layout_biped').error, null);
   assert.equal(decodeComposerRecipe('v3*layout_biped').error, null);
+  assert.equal(decodeComposerRecipe('v4*layout_biped').error, null);
+  // a v3 text does not know the v4 key: an old link cannot pin itself to the earlier eye rules
+  const v3 = decodeComposerRecipe('v3*layout_biped*eyeRules_1');
+  assert.equal(v3.recipe.eyeRules, 2); assert.match(v3.issues[0], /unknown recipe field "eyeRules"/);
+  assert.equal(decodeComposerRecipe('v4*layout_biped*eyeRules_1').recipe.eyeRules, 1);
   // a v2 text does not know the v3 keys
   const v2 = decodeComposerRecipe('v2*layout_biped*eyes_round');
   assert.equal(v2.recipe.eyes, 'auto');
@@ -152,10 +165,10 @@ test('versions: v1, v2 and v3 decode, every other version is rejected', () => {
   assert.equal(v1.issues.length, 1);
   assert.match(v1.issues[0], /unknown recipe field "maturity"/);
   assert.equal(decodeComposerRecipe('v2*layout_biped*maturity_0.3').recipe.maturity, 0.3);
-  assert.ok(encodeComposerRecipe(composerPreset('giraffe')).startsWith('v3*'));
+  assert.ok(encodeComposerRecipe(composerPreset('giraffe')).startsWith('v4*'));
 });
 
-test('v3 round trips: presets, 256 coherent species, 128 wild hybrids and range extremes (max length reported)', () => {
+test('v4 round trips: presets, 256 coherent species, 128 wild hybrids and range extremes (max length reported)', () => {
   const corpus = [...COMPOSER_PRESET_IDS.map(composerPreset)];
   for (let i = 0; i < 256; i++) corpus.push({...randomCoherentComposerRecipe(String(i)), individualSeed: i * 37 % 10000, sex: ['auto', 'female', 'male'][i % 3], maturity: 0.2 + (i % 81) / 100, condition: ((i % 41) - 20) / 20});
   for (let i = 0; i < 128; i++) corpus.push({...randomComposerRecipe(String(i)), pattern: 'brindle', marks: i * 2 % 256});
@@ -174,7 +187,7 @@ test('v3 round trips: presets, 256 coherent species, 128 wild hybrids and range 
     if (text.length > maxLength) { maxLength = text.length; longest = text; }
   }
   assert.ok(maxLength < 700, `max encoded length ${maxLength}: ${longest}`);
-  console.log(`# max v3 encoded length ${maxLength} (limit 700; COMPOSER_RECIPE_MAX_TEXT 1200)`);
+  console.log(`# max v4 encoded length ${maxLength} (limit 700; COMPOSER_RECIPE_MAX_TEXT 1200)`);
 });
 
 test('wild stream: drawComposerRandomV1(String(i)) keeps the HEAD v1 fields for i = 0..255; randomComposerRecipe only applies the face rules', () => {
@@ -184,10 +197,11 @@ test('wild stream: drawComposerRandomV1(String(i)) keeps the HEAD v1 fields for 
     assert.deepEqual(v1Values(draw), entry.values, entry.seed);
     for (const key of v2Only) assert.equal(draw[key], LATER_DEFAULTS[key]);
     assert.ok(LEGACY_PALETTE_IDS.includes(recipe.palette));
-    // the post-pass: trunk -> face, horns -> the built kind, eyes/iris auto; nothing else moves
+    // the post-pass: trunk -> face, horns -> the built kind, iris auto, eyes auto or the rare hashed kind; nothing else moves
     const expected = {...draw};
     if (expected.trunk === 'trunk') { if (expected.head === 'muzzle') expected.head = 'proboscis'; else expected.trunk = 'none'; }
     expected.horns = composerHeadgearBuild(expected).built;
+    expected.eyes = composerWildEyes(entry.seed, expected);
     assert.deepEqual(recipe, expected, entry.seed);
   }
 });
