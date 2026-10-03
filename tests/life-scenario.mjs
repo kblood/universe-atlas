@@ -25,8 +25,8 @@ import {nextTurn} from './terrain-renderer-fixture.mjs';
 
 const root=fileURLToPath(new URL('..',import.meta.url));
 /** Every file whose behaviour the life optimisation may change. */
-export const LIFE_FILES=['src/planet-renderer.ts','src/fauna-field-renderer.ts','src/fauna-near-rig.ts','src/fauna-runtime.ts','src/fauna-ground.ts',
-  'src/fauna-locomotion.ts','src/fauna-body-plan.ts','src/fauna-material.ts','src/flora-field.ts','src/flora-culling.ts','src/life-shadow-priority.ts'];
+import {LIFE_FILES} from './helpers/life-files.mjs';
+export {LIFE_FILES} from './helpers/life-files.mjs';
 
 export function gitSource(revision,path){
   try{return execFileSync('git',['show',`${revision}:${path}`],{cwd:root,encoding:'utf8',maxBuffer:16<<20,stdio:['ignore','pipe','ignore']});}

@@ -151,19 +151,4 @@ test('determinism: Math.* nudged by 1 ulp leaves hypsometry and levels bit-ident
   assert.deepEqual(nudged, base);
 });
 
-test('cost: hypsometry build and levelForLoss (strict budgets with OCEAN_PERF_STRICT=1)', () => {
-  const strict = process.env.OCEAN_PERF_STRICT === '1';
-  const builds = [];
-  for (let round = 0; round < 3; round++) for (const {body} of WORLDS) {
-    clearOceanHypsometryCache();
-    const t0 = performance.now(); oceanHypsometry(body); builds.push(performance.now() - t0);
-  }
-  const warm = builds.slice(WORLDS.length).sort((a, b) => a - b), median = warm[warm.length >> 1];
-  const body = WORLDS[0].body; oceanHypsometry(body);
-  const N = 20000, t0 = performance.now(); let s = 0;
-  for (let i = 0; i < N; i++) s += levelForLoss(body, (i % 997) / 997);
-  const perLevelUs = (performance.now() - t0) / N * 1000;
-  console.log(`ocean-volume cost: build median ${median.toFixed(2)} ms (first call in this test ${builds[0].toFixed(2)} ms), levelForLoss ${perLevelUs.toFixed(2)} us`, s < 0);
-  assert.ok(median <= (strict ? 5 : 50), `build ${median} ms`);
-  assert.ok(perLevelUs <= (strict ? 20 : 200), `levelForLoss ${perLevelUs} us`);
-});
+// Timing gate moved to perf/ocean-volume.perf.test.mjs.

@@ -114,6 +114,6 @@ test('the resumable build is deterministic and bounded per step', () => {
   const direct = buildQuadrupedBody(genome);
   assert.ok(yields > 20, 'work is divided into many resumable steps');
   for (const key of ['positions', 'normals', 'colors', 'skinIndex', 'skinWeight', 'index']) assert.deepEqual(result[key], direct[key], `${key} is reproducible`);
-  assert.ok(longest < 250, `longest step ${longest.toFixed(1)} ms`);
+  // Timing assertion moved to perf/fauna-body-plan.perf.test.mjs.
   assert.throws(() => createQuadrupedPlan({ ...genome, legLength: Number.NaN }), /legLength/);
 });
