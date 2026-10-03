@@ -133,7 +133,30 @@ export type SurfaceSample = {
   rockHeightM:number; waterLevelM:number|null; visibleHeightM:number;
   wet:boolean; waterKind:'river'|'lake'|null; bank:number; channelId:string|null;
   flow:[number,number]; influence:number;
+  /** R0 (relief round, additive): the smooth regional FLOOR, i.e. the base
+   * field after the [-16,18] km clamp and radius scale, before the metre-based
+   * hills/gullies/rocks and landforms. */
+  floorM?:number;
+  /** R0: the bounded local WINDOW above the floor, uncrateredHeight - floorM
+   * (hills/gullies/rocks + landforms; pre-crater, pre-river), always within
+   * [0, terrainWindowMaxM(body)]. */
+  windowM?:number;
+  /** R0: the continental coordinate A*scale before the clamp (water worlds:
+   * (coast-sea)*47000*scale, whose sign is the sea-level-0 coastline). */
+  continentalM?:number;
 };
+/** Max of hills*620 + gullies*130 + rocks*22 (baseTerrainCore; metre-based). */
+export const TERRAIN_DETAIL_WINDOW_M = 620 + 130 + 22;
+/** Max of the planetLandforms unit sum 1650 + 230 + 28 before the radius scale. */
+export const TERRAIN_LANDFORM_WINDOW_M = 1650 + 230 + 28;
+/** R0: largest possible WINDOW (m) above the floor for this body, by
+ * construction: hills/gullies/rocks 772 m (metre-based, NOT radius-scaled)
+ * plus landforms 1908 m x min(1, R/2e6). For R >= 2e6 m this is the audit's
+ * 2680 m. 0 for stars and gas giants (flat field). */
+export function terrainWindowMaxM(body: Pick<Body,'kind'|'type'|'radiusM'>): number {
+  if (body.kind === 'star' || body.type === 'Gas giant') return 0;
+  return TERRAIN_DETAIL_WINDOW_M + TERRAIN_LANDFORM_WINDOW_M * Math.min(1, body.radiusM / 2e6);
+}
 const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 const mix = (a: number[], b: number[], t: number) =>
   a.map((v, i) => v + (b[i] - v) * clamp(t));
@@ -300,6 +323,8 @@ function baseTerrainCore(body: Body, waterLevelM: number) {
         roughness: 1,
         grain: 1,
         localGrain: 1,
+        floorM: 0,
+        continentalM: 0,
       };
     }
     const coast =
@@ -316,6 +341,11 @@ function baseTerrainCore(body: Body, waterLevelM: number) {
       : (macro - 0.46) * 44000 + ridges * 1800 + fine;
     elevationM =
       clamp(elevationM, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
+    // R0 (additive): the regional floor is exactly the clamped, scaled value
+    // above; the continental coordinate repeats the first term of that sum on
+    // its own (it does not feed elevationM).
+    const floorM = elevationM;
+    const continentalM = (body.water ? (coast - sea) * 47000 : (macro - 0.46) * 44000) * Math.min(1, body.radiusM / 2e6);
     // Metre-based wavelengths, shared by collision, orbit previews and tiles.
     // Positive land detail fades to zero at sea level, preserving every coast.
     const landDetail = body.water ? clamp(elevationM / 700) : 1;
@@ -357,6 +387,8 @@ function baseTerrainCore(body: Body, waterLevelM: number) {
       roughness: ocean ? WET_SURFACE_ROUGHNESS : DRY_SURFACE_ROUGHNESS,
       grain,
       localGrain,
+      floorM,
+      continentalM,
     };
   };
   return { sample, legacyWaterLandColour };
@@ -569,6 +601,9 @@ export function terrainSampler(
       channelId: null as string|null,
       flow: [0, 0] as [number, number],
       influence: 0,
+      floorM: sample.floorM,
+      windowM: uncrateredHeightM - sample.floorM,
+      continentalM: sample.continentalM,
     };
     if (ocean || !candidates.length) return baseline;
     // This versioned physical surface drives tiles and collision. River
@@ -602,6 +637,9 @@ export function terrainSampler(
         channelId: river.channelId,
         flow: river.flow,
         influence: river.influence,
+        floorM: sample.floorM,
+        windowM: uncrateredHeightM - sample.floorM,
+        continentalM: sample.continentalM,
       };
     }
     return baseline;
