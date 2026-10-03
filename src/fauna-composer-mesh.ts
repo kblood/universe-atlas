@@ -4,7 +4,7 @@ import {COAT_REGIONS, type CoatRegion} from './fauna-coat-vocab.ts';
 import {COAT_CELLS_PER_BODY, applyCoatDrift, coatIndividualDrift, defaultCoatGenome, evaluateCoat, hash3u, valueNoise3, type CoatGenome} from './fauna-coat-fields.ts';
 import {composerIndividualTraits, type ComposerIndividualTraits} from './fauna-composer-individual.ts';
 import {COMPOSER_IRIS_RGB, FACE_EYE_PROFILE, composerEyeProfileId, composerEyeRulesOf, composerHeadgearBuild, composerSkullOf, resolveComposerEyes, type ComposerSkull} from './fauna-composer-face.ts';
-import {EYE_PATCH, EYE_ROLE, type LiddedEyeType, buildCompoundEye, buildEyePatch, buildEyespot, buildEyespotBead, buildFacetedEye, buildOcellus, buildStalk, catalogueEyeSpec, eyeBarAxis, eyeGaze, nearestExit, normalize3, outermostExit, raycastFirstHit, type EyePatch, type RayHit, type Vec3 as EyeVec3} from './fauna-composer-eye.ts';
+import {EYE_PATCH, EYE_ROLE, OCELLUS, type LiddedEyeType, buildCompoundEye, buildEyePatch, buildEyespot, buildEyespotBead, buildFacetedEye, buildOcellus, buildStalk, catalogueEyeSpec, eyeBarAxis, eyeGaze, nearestExit, normalize3, outermostExit, raycastFirstHit, type EyePatch, type RayHit, type Vec3 as EyeVec3} from './fauna-composer-eye.ts';
 import {isFaceRoundEyeKind} from './fauna-composer-eye-catalogue.ts';
 import {PROBOSCIS_FACE, composerFaceTip} from './fauna-composer-face-geometry.ts';
 import {composerFeatherFanSpan, composerWingChord, composerWingThickness, type ComposerBone, type ComposerGraph, type ComposerLimb, type ComposerSection, type Vec3} from './fauna-composer-rig.ts';
@@ -1506,13 +1506,14 @@ function buildEyes(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
 export const COMPOSER_EYE_CATALOGUE = Object.freeze({
   /** camera eyes: er = max(profile k, minK) x sizeBoost x preset size x craniumHeight x eyeScale x eyeRel. The face
    * round's eyes read "tiny" or vanished on large dark heads (proboscis k 0.07); the floor and the boost fix the size. */
-  minK: 0.125, sizeBoost: 1.12,
+  minK: 0.14, sizeBoost: 1.12,
   /** iris: an absolute luminance floor on top of the face round's floors (10x the pupil, 1.8x the lid rim), and a
    * larger gain limit, so a dark-brown iris reads as brown, not as a hole */
-  irisMin: 0.075, maxIrisGain: 8,
-  /** a bare periocular ring: the outer lid blends toward this pale skin until its luminance reaches periocularLum
-   * (only coats darker than that change: the face round's eyes vanished into dark faces) */
-  periocular: [0.36, 0.30, 0.25] as RGB, periocularLum: 0.12,
+  irisMin: 0.1, maxIrisGain: 8,
+  /** a bare periocular ring: the outer lid blends toward this pale skin until its luminance reaches periocularLum or
+   * periocularOverSkin x the skin under it, whichever is higher (never past the ring colour itself): a halo a little
+   * paler than the face around the dark eye (the face round's eyes vanished into dark and mid-grey faces) */
+  periocular: [0.36, 0.30, 0.25] as RGB, periocularLum: 0.18, periocularOverSkin: 1.3,
   sclera: [0.72, 0.68, 0.60] as RGB, nictitans: [0.50, 0.42, 0.40] as RGB, nictitansMix: 0.6, brow: 0.85,
   disc: [0.55, 0.50, 0.42] as RGB, discMix: 0.3,
   /** compound eyes: facet floor (luminance, and a multiple of the head skin), lens shades (a, b), lattice and pseudopupil */
@@ -1526,6 +1527,8 @@ export const COMPOSER_EYE_CATALOGUE = Object.freeze({
   eyespotYawDeg: 24, eyespotPitchDeg: 42,
   /** simple eyes (spider eyes, ocelli, a snail's stalk tip): near-black glossy lenses with a slightly paler socket rim */
   ocellus: [0.012, 0.012, 0.016] as RGB, ocellusRim: [0.5, 0.4, 0.32] as RGB, ocellusRimMix: 0.6,
+  /** a spider bead's centre stays this many flange radii off the midline */
+  ocellusClear: 1.35,
   /** chameleon turret skin: a little paler than the coat under it */
   turretGain: 1.2,
   /** chameleon turret axis = look + turretNormal x the skull normal (normalised): nearly the normal */
@@ -1685,7 +1688,7 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
           }
           case EYE_ROLE['outer-lid']: {
             const c = scaleC(surf[k]!, C.outerLid);
-            return liftTo(spec.disc ? mixC(c, K.disc, K.discMix) : c, K.periocular, K.periocularLum);
+            return liftTo(spec.disc ? mixC(c, K.disc, K.discMix) : c, K.periocular, Math.max(K.periocularLum, K.periocularOverSkin * luminance(surf[k]!)));
           }
           case EYE_ROLE.brow: return scaleC(surf[k]!, K.brow);
           case EYE_ROLE.turret: return gainC(surf[k]!, K.turretGain);
@@ -1729,7 +1732,8 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
     // spider eyes: four beads per side around the face's eye site
     const [x0, y0] = onMandibles ? [0.45 * H, 0.35 * cH] : [ex, ey];
     for (const side of [-1, 1]) for (const S of SPIDER_EYES) {
-      const gaze = eyeGaze(S.yaw, S.pitch, side), site: EyeVec3 = [x0 + S.dx * H, y0 + S.dy * cH, side * S.z * cW], rr = S.r * cH * sizeK;
+      // the lateral offset never lets a bead's rim flange reach the midline (the front pair overlapped on narrow heads)
+      const rr = S.r * cH * sizeK, gaze = eyeGaze(S.yaw, S.pitch, side), site: EyeVec3 = [x0 + S.dx * H, y0 + S.dy * cH, side * Math.max(S.z * cW, K.ocellusClear * OCELLUS.flange * rr)];
       const hit = nearestExit(headTris, site, gaze);
       if (!hit) ctx.fallbacks++;
       // seated just under the skin so the pale rim station stays outside it
