@@ -34,7 +34,9 @@ async function setPart(page, key, value) {
   if (key in COMPOSER_CHOICES) { await page.selectOption(`#composer-${key}`, String(value)); await settle(page); } else await setRange(page, key, value);
 }
 async function seek(page, time) { await page.fill('#composer-time', String(time)); await page.waitForFunction(t => Math.abs(window.__creatureLab.time - t) < 1e-9, time); }
-const COAT_KEYS = ['palette', 'colorSeed', 'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade'], TYPE_SPECIMEN_NOOP = ['variability', 'dimorphism'], EYE_KEYS = ['eyes', 'iris'];
+const COAT_KEYS = ['palette', 'colorSeed', 'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade'], TYPE_SPECIMEN_NOOP = ['variability', 'dimorphism'], EYE_KEYS = ['eyes', 'iris', 'eyeRules'];
+// eyeRules (eye round): the earlier and current eye rules build the same eye for many animals until the catalogue
+// geometry lands (skin-4); like eyes and iris it is recorded here and asserted in the eye package's tests.
 const CONTROL_KEYS = COMPOSER_RECIPE_KEYS.filter(key => key !== 'trunk');
 const digestPose = c => c.actors.map(a => a.pose.positions.map(v => v.toFixed(9)).join(',')).join('|');
 // Neck and tail are lofted into the continuous body tube (skin part 'torso'), so they are checked by their bone chains.
