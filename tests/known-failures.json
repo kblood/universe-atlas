@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-04",
+  "source": "test-results/baseline/known-failures-baseline.json",
+  "failures": [
+    {
+      "title": "pinned current package versions include the released rivers-off surface contract",
+      "file": "tests/acceptance/version-compat.test.mjs",
+      "reason": "Commit 2a52cc7 (P2 ocean-volume-1, already on main) bumped SURFACE_VERSION in src/world-surface.ts to atlas-surface-8-ocean-volume; tests/ocean-volume.test.mjs and tests/place-query.test.mjs already pin 8, but this pin was not updated. Fix is a test-pin update (plus confirming the bump is intended), not a code change.",
+      "owner": "relief-round P2 follow-up / merger",
+      "classification": "real (stale version pin, not load)"
+    },
+    {
+      "title": "model versions record the withdrawal and old bookmarks explain it",
+      "file": "tests/inland-rivers-disabled.test.mjs",
+      "reason": "Same cause as above: surface version bumped by 2a52cc7, pin at line 234 not updated.",
+      "owner": "relief-round P2 follow-up / merger",
+      "classification": "real (stale version pin, not load)"
+    }
+  ],
+  "perf": [
+    {
+      "title": "far-LOD mean cost: 512 new realistic genomes of warm species stay within about 15 ms",
+      "file": "tests/perf/fauna-appearance-v2.perf.test.mjs",
+      "reason": "Under the full parallel run bursts were 61.6-131 ms (cold 316.9 ms); alone the same file passes with bursts 10.8-17.2 ms (best 10.8 ms, cap 30 ms).",
+      "owner": "merger / performance review",
+      "classification": "load-sensitive timing"
+    },
+    {
+      "title": "96 corpus bodies: coat CPU and step timing caps",
+      "file": "tests/perf/fauna-appearance-v2.perf.test.mjs",
+      "reason": "Full run: maxCoatMs 72.94, meanCoatMs 32.57, longestStepMs 159.8; alone: maxCoatMs 15.93, meanCoatMs 7.68, longestStepMs 17.2. Non-timing checks (maxFarNearChannelError 0.0325, minYields 47, maxTriangles 18068) identical in both runs.",
+      "owner": "merger / performance review",
+      "classification": "load-sensitive timing"
+    }
+  ],
+  "todo_not_failure": [
+    {
+      "title": "rocky corpus (460): Spearman(g, R) < 0.95",
+      "file": "tests/planet-geophysics.test.mjs",
+      "note": "Marked TODO (counted in todo=1, not in fail). Measured 0.990; documented as NOT MET by the specified model and left to the owner/P4. Listed so nobody mistakes the red X in the log for a new failure. It remains OPEN, not passed.",
+      "status": "OPEN"
+    }
+  ]
+}

@@ -526,7 +526,8 @@ test('hung configure, selection, and request each restart once then disable far 
   }
 });
 
-test('valid partial patch progress refreshes the request watchdog timestamp',()=>{
+test('valid partial patch progress refreshes the request watchdog timestamp',t=>{
+  t.mock.method(performance,'now',()=>20000);
   const h=begin(64),a=address(0,h.n),b=address(1,h.n);
   try{
     const request=selectAndRequest(h,[a,b]),old=performance.now()-10001;

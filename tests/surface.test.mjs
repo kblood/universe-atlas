@@ -119,7 +119,7 @@ test('planetSurface gates craters off by default (the system-surfaces multi-body
   // is generous (the fixed body above measures under 50ms in isolation) but
   // catches the shape of that regression (an unbounded per-call cost that
   // does not scale down with a small width/segments request) recurring.
-  assert.ok(performance.now()-t0<3000,'default planetSurface(...) must stay well inside a multi-body job budget');
+  // Timing assertion moved to perf/surface.perf.test.mjs.
   const sample=terrainSampler(moon,undefined,DEFAULT_SURFACE_AGE_MYR,false);
   for(let y=0;y<=8;y++)for(let x=0;x<=16;x++){
     const u=x/16,v=y/8,theta=u*Math.PI*2,phi=v*Math.PI;
