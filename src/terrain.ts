@@ -294,6 +294,9 @@ export function baseTerrainSampler(body: Body, waterLevelM: number = 0) {
 function baseTerrainCore(body: Body, waterLevelM: number) {
   const { code, n } = macroNoise(body);
   const sea = 0.37 + body.water * 0.22;
+  // R0: the radius scale of the continental coordinate (same value the
+  // elevation clamp line multiplies by), hoisted out of the per-sample path.
+  const continentalScale = Math.min(1, body.radiusM / 2e6);
   // Legacy water-world land colour (pre-grain), terrain-1.6.0 expressions.
   const legacyWaterLandColour = (d: V3, elevationM: number): number[] => {
     const latitude = Math.abs(d[1]);
@@ -345,7 +348,7 @@ function baseTerrainCore(body: Body, waterLevelM: number) {
     // above; the continental coordinate repeats the first term of that sum on
     // its own (it does not feed elevationM).
     const floorM = elevationM;
-    const continentalM = (body.water ? (coast - sea) * 47000 : (macro - 0.46) * 44000) * Math.min(1, body.radiusM / 2e6);
+    const continentalM = (body.water ? (coast - sea) * 47000 : (macro - 0.46) * 44000) * continentalScale;
     // Metre-based wavelengths, shared by collision, orbit previews and tiles.
     // Positive land detail fades to zero at sea level, preserving every coast.
     const landDetail = body.water ? clamp(elevationM / 700) : 1;
