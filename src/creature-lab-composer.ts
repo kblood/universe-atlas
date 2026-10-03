@@ -6,7 +6,7 @@ import {coherentComposerSpecies, type ComposerArchetype} from "./fauna-composer-
 import {COAT_MARK_BITS, COAT_MARK_NAMES, resolveCoatPattern, type CoatMarkName} from "./fauna-coat-vocab.ts";
 import {COMPOSER_MOTIONS, type ComposerMotion} from "./fauna-composer-rig.ts";
 import {createComposerCreature, type ComposerCreature} from "./fauna-composer.ts";
-import {FACE_HEADGEAR, resolveComposerEyes, type BuiltEyeType, type BuiltIrisId, type ComposerHorn} from "./fauna-composer-face.ts";
+import {FACE_HEADGEAR, resolveComposerEyes, type ComposerEyeKind, type BuiltIrisId, type ComposerHorn} from "./fauna-composer-face.ts";
 import {COMPOSER_HERD_SIZES, type ComposerHerdSize, type CreatureLabState} from "./creature-lab-state.ts";
 
 /** Creature Lab panel and actors for the experimental modular composer. The Lab
@@ -40,7 +40,7 @@ const $=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 const esc=(s:string)=>s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]!));
 const GROUPS:{title:string;keys:Key[];extra?:string}[]=[
  {title:"Body",keys:["layout","legPairs","bodyLength","girth","posture","torso","armor"]},
- {title:"Head and neck",keys:["neckLength","head","headSize","snoutLength","trunkLength","eyes","iris","horns"]},
+ {title:"Head and neck",keys:["neckLength","head","headSize","snoutLength","trunkLength","eyes","iris","horns","eyeRules"]},
  {title:"Legs and arms",keys:["legs","legLength","feet","arms","armLength","hands"]},
  {title:"Wings and tail",keys:["wings","wingSpan","tail","tailLength"]},
  {title:"Colour",keys:["palette","colorSeed"]},
@@ -58,7 +58,7 @@ const FIELD:Record<Key,string>={layout:"Body layout",legPairs:"Walking leg pairs
  pattern:"Coat pattern",marks:"Markings",patternScale:"Pattern scale",patternContrast:"Pattern contrast",countershade:"Pale belly (countershading)",
  dimorphism:"Male/female difference",variability:"Individual variation",allometry:"Size scaling (allometry)",
  individualSeed:"Individual (0 = type specimen)",sex:"Sex",maturity:"Age (young to adult)",condition:"Body condition (lean to heavy)",
- eyes:"Eyes (pupil)",iris:"Iris colour"};
+ eyes:"Eyes (pupil)",iris:"Iris colour",eyeRules:"Eye rules (1 = earlier, 2 = current)"};
 const MARK_LABEL:Record<CoatMarkName,string>={socks:"Socks (pale lower legs)",mask:"Face mask","blaze":"Blaze (pale face stripe)","tail-tip":"Tail tip","tail-rings":"Tail rings","ear-tips":"Ear tips","rump-patch":"Rump patch","juvenile-spots":"Juvenile spots"};
 const VALUE:Record<string,string>={
  "layout:limbless":"Limbless (worm, snake)","layout:biped":"Two legs (bird, ape, dinosaur)","layout:quadruped":"Four upright legs (mammal)","layout:sprawled":"Four sprawling legs (turtle, lizard)","layout:many-legged":"Many legs (centipede)",
@@ -78,31 +78,39 @@ const VALUE:Record<string,string>={
  "sex:auto":"Automatic (from individual)","sex:female":"Female","sex:male":"Male",
  "eyes:auto":"Automatic","eyes:round":"Round (birds, primates, large predators)","eyes:horizontal":"Horizontal bar (goat, horse, deer)","eyes:vertical-slit":"Vertical slit (cat, fox, crocodile)",
  "eyes:compound":"Compound (insect, centipede)","eyes:eyespot":"Eyespots (worm)",
- "iris:auto":"Automatic","iris:dark-brown":"Dark brown","iris:brown":"Brown","iris:amber":"Amber","iris:gold":"Gold","iris:yellow":"Yellow","iris:orange":"Orange","iris:red":"Red","iris:green":"Green","iris:pale":"Pale",
+ "eyes:raptor":"Raptor (eagle, hawk)","eyes:owl":"Owl (huge, forward, facial disc)","eyes:cat":"Cat slit (cat, fox)","eyes:gecko":"Gecko (beaded slit, no lids)",
+ "eyes:frog":"Frog (bulging, on top)","eyes:chameleon":"Chameleon (turret, independent)","eyes:crocodile":"Crocodile (raised, slit)","eyes:sclera":"White sclera (human-like)",
+ "eyes:nocturnal":"Nocturnal (huge pupil, eyeshine)","eyes:cephalopod":"W pupil (cuttlefish)","eyes:insect":"Insect (compound and simple eyes)","eyes:spider":"Spider (eight simple eyes)",
+ "eyes:stalk":"Eye stalks (snail, crab)",
+ "iris:auto":"Automatic","iris:dark-brown":"Dark brown","iris:brown":"Brown","iris:amber":"Amber","iris:gold":"Gold","iris:yellow":"Yellow","iris:orange":"Orange","iris:red":"Red","iris:green":"Green","iris:pale":"Pale","iris:blue":"Blue","iris:copper":"Copper","iris:grey-green":"Grey-green",
 };
 /** Short eye and iris names used inside option hints and 'Automatic (...)' labels. */
-const EYE_SHORT:Record<BuiltEyeType,string>={round:"round",horizontal:"horizontal bar","vertical-slit":"vertical slit",compound:"compound",eyespot:"eyespots"};
+export const COMPOSER_EYE_SHORT:Readonly<Record<ComposerEyeKind,string>>={round:"round",horizontal:"horizontal bar","vertical-slit":"vertical slit",compound:"compound",eyespot:"eyespots",
+ raptor:"raptor",owl:"owl",cat:"cat slit",gecko:"gecko",frog:"frog",chameleon:"chameleon turret",crocodile:"crocodile",sclera:"white sclera",nocturnal:"nocturnal",
+ cephalopod:"W pupil",insect:"insect compound",spider:"eight simple eyes",stalk:"eye stalks"};
+const EYE_SHORT=COMPOSER_EYE_SHORT;
 const irisShort=(id:BuiltIrisId|null)=>id?id.replace("-"," "):"no iris";
 /** Selects whose option text is rebuilt for the current face (values never change). */
 export const COMPOSER_HINTED_KEYS=["horns","eyes","iris"] as const;
 export type ComposerHintedKey=typeof COMPOSER_HINTED_KEYS[number];
 export const COMPOSER_OPTION_HINTS={notBuilt:" — not built on this face",brow:" — built as brow horns",casque:" — built as a casque",noEffect:" — no effect on this face"} as const;
 /** Suffix appended to one option of the Horns, Eyes or Iris select for the recipe's face: what choosing it would
- * build (FACE_HEADGEAR, FACE_EYES via resolveComposerEyes). Empty when the option is built as named. */
+ * build (FACE_HEADGEAR, resolveComposerEyes). Empty when the option is built as named: under the current eye rules
+ * every eye kind is built on every face, so only Earlier eye rules (eyeRules 1) disclose eyes. */
 export function composerOptionHint(r:ComposerRecipe,key:ComposerHintedKey,value:string):string{
  if(key==="horns"){
   const cell=FACE_HEADGEAR[r.head]?.[value as ComposerHorn];if(!cell||cell.built===value)return "";
   return cell.built==="none"?COMPOSER_OPTION_HINTS.notBuilt:cell.built==="paired"?COMPOSER_OPTION_HINTS.brow:cell.built==="crest"?COMPOSER_OPTION_HINTS.casque:` — built as ${VALUE[`horns:${cell.built}`]?.toLowerCase()??cell.built}`;
  }
  if(value==="auto")return "";
- if(key==="eyes"){const e=resolveComposerEyes({...r,eyes:value as ComposerRecipe["eyes"]});return e.built===value?"":` — built as ${EYE_SHORT[e.built]}`;}
+ if(key==="eyes"){const e=resolveComposerEyes({...r,eyes:value as ComposerRecipe["eyes"]});return e.kind===value?"":` — built as ${EYE_SHORT[e.kind]}`;}
  return resolveComposerEyes(r).irisBuilt===null?COMPOSER_OPTION_HINTS.noEffect:"";
 }
 /** Full option text: the label, with 'Automatic' showing what it resolves to, plus the face hint. */
 export function composerOptionText(r:ComposerRecipe,key:ComposerHintedKey,value:string,hints=true):string{
  const label=VALUE[`${key}:${value}`]??value;
  if(!hints)return label;
- if(value==="auto"&&key==="eyes"){const e=resolveComposerEyes({...r,eyes:"auto"});return `${label} (${EYE_SHORT[e.built]}, ${irisShort(e.irisBuilt)})`;}
+ if(value==="auto"&&key==="eyes"){const e=resolveComposerEyes({...r,eyes:"auto"});return `${label} (${EYE_SHORT[e.kind]}, ${irisShort(e.irisBuilt)})`;}
  if(value==="auto"&&key==="iris")return `${label} (${irisShort(resolveComposerEyes({...r,iris:"auto"}).irisBuilt)})`;
  return label+composerOptionHint(r,key,value);
 }
@@ -112,7 +120,7 @@ const HERD_LABEL:Record<ComposerHerdSize,string>={1:"1 animal",6:"Herd of 6",9:"
 const MOTION_LABEL:Record<ComposerMotion,string>={neutral:"Rest pose (unanimated)",idle:"Standing",walk:"Walking",display:"Display (wings, arms, trunk)"};
 const isChoice=(key:Key):key is ComposerChoiceKey=>key in COMPOSER_CHOICES;
 const ratioKeys=new Set<Key>(["neckLength","snoutLength","legLength","armLength","tailLength","wingSpan","trunkLength"]);
-function formatValue(key:Key,value:number){return key==="bodyLength"?`${value.toFixed(2)} m`:key==="legPairs"||key==="colorSeed"||key==="marks"||key==="individualSeed"?String(value):key==="maturity"?`${value.toFixed(2)}${value<.75?" (juvenile)":value<1?" (subadult)":" (adult)"}`:ratioKeys.has(key)?`${value.toFixed(2)} × body`:value.toFixed(2);}
+function formatValue(key:Key,value:number){return key==="bodyLength"?`${value.toFixed(2)} m`:key==="eyeRules"?(value===1?"1 (earlier)":"2 (current)"):key==="legPairs"||key==="colorSeed"||key==="marks"||key==="individualSeed"?String(value):key==="maturity"?`${value.toFixed(2)}${value<.75?" (juvenile)":value<1?" (subadult)":" (adult)"}`:ratioKeys.has(key)?`${value.toFixed(2)} × body`:value.toFixed(2);}
 /** Why a control has no effect on the current recipe (the control is disabled); empty when it applies. */
 function why(r:ComposerRecipe,key:Key):string{
  const limbless=r.layout==="limbless";
@@ -130,7 +138,8 @@ function why(r:ComposerRecipe,key:Key):string{
 /** Information that does not disable the control. */
 function note(r:ComposerRecipe,key:Key,herd:number):string{
  if(key==="marks"&&(r.marks&COAT_MARK_BITS["juvenile-spots"])&&r.maturity>=.75)return "Juvenile spots show only on young animals (Age below 0.75); in a herd the young carry them.";
- if(key==="iris"&&resolveComposerEyes(r).irisBuilt===null)return "Compound eyes and eyespots have no iris; the colour is kept but not built.";
+ if(key==="iris"&&resolveComposerEyes(r).irisBuilt===null)return "Compound eyes, simple eyes, eye stalks and eyespots have no iris; the colour is kept but not built.";
+ if(key==="eyeRules"&&r.eyeRules===1)return "Earlier eye rules: Automatic picks the first eye set's kinds, and Compound or Eyespots are built only on arthropod or worm heads. Old links open with the current rules.";
  if((key==="variability"||key==="dimorphism")&&r.individualSeed===0&&herd===1)return "The type specimen (individual 0) shows the species average; choose Next individual or a herd to see this.";
  if(herd>1&&(key==="individualSeed"||key==="sex"||key==="maturity"))return key==="individualSeed"?`The herd shows individuals ${herdSeed(r.individualSeed,0)}–${herdSeed(r.individualSeed,herd-1)}.`:key==="sex"?"In a herd each animal's sex comes from its individual.":"Every fourth animal in a herd is young (age 0.3–0.5).";
  return "";

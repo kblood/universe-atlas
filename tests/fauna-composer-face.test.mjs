@@ -1,6 +1,8 @@
-// Face contract (fauna-composer-face-1, recipe v3; face round WP1).
-// The oracle for "nothing else moved" is tests/fixtures/composer-baseline-v2.json, captured from the
-// unmodified v2 composer at a9e3654 before any face-round edit (never regenerate it).
+// Face contract (fauna-composer-face-1, recipe v3; face round WP1), as amended by the eye catalogue (EC1:
+// fauna-composer-face-2, recipe v4, eyeRules). The oracle for "nothing else moved" is tests/fixtures/composer-baseline-v2.json,
+// captured from the unmodified v2 composer at a9e3654 before any face-round edit (never regenerate it). The face round's
+// eye rules stay testable as eyeRules 1; tests/fauna-composer-eye-catalogue.test.mjs pins both epochs against
+// tests/fixtures/composer-baseline-v3.json.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -21,24 +23,29 @@ const v1Links = JSON.parse(readFileSync(new URL('./fixtures/composer-v1-links.js
 const source = readFileSync(new URL('../src/fauna-composer-face.ts', import.meta.url), 'utf8');
 /** The raw key -> value strings of an encoded recipe text. */
 const fields = text => Object.fromEntries(text.split('*').slice(1).map(pair => { const i = pair.indexOf('_'); return [pair.slice(0, i), pair.slice(i + 1)]; }));
+const UPGRADED = /^Eyes: upgraded to the current eye rules: /;
+const notEyeUpgrade = issues => issues.filter(i => !UPGRADED.test(i));
 const faceOnly = r => composerConstraints(r).filter(c => ['Horns', 'Eyes', 'Iris colour'].includes(c.part));
 const REDESIGNED = ['shelled-giraffe-bird', 'trunked-centipede', 'winged-ape-rhino'];
 const REMOVED = /^Trunk: removed\. A trunk is a nose and only grows on a mammal muzzle; this ([a-z-]+) face is kept\. Choose Face -> Proboscis for a trunk\.$/;
 const PROMOTED = 'Trunk: now a face type; this muzzle became Face = Proboscis.';
 
 test('source scan: the face module is pure (no rendering library, no Math.random, no Date) and versioned', () => {
-  assert.equal(COMPOSER_FACE_VERSION, 'fauna-composer-face-1');
+  assert.equal(COMPOSER_FACE_VERSION, 'fauna-composer-face-2');
   for (const banned of ['three', 'Math.random', 'Date']) assert.ok(!source.includes(banned), `fauna-composer-face.ts contains '${banned}'`);
-  assert.ok(!/^\s*import\s/m.test(source.replace(/^import type .*$/gm, '')), 'no runtime imports');
+  // its only runtime import is the pure, import-free eye catalogue
+  const imports = [...source.replace(/^import type .*$/gm, '').matchAll(/^\s*import\s[\s\S]*?from\s+'([^']+)'/gm)].map(m => m[1]);
+  assert.deepEqual(imports, ['./fauna-composer-eye-catalogue.ts']);
 });
 
 test('vocabularies: faces, horns, eyes and iris match the recipe choices', () => {
   assert.deepEqual([...COMPOSER_CHOICES.head], [...COMPOSER_FACES]);
   assert.equal(COMPOSER_FACES.at(-1), 'proboscis');
   assert.deepEqual([...COMPOSER_CHOICES.horns], [...COMPOSER_HORNS]);
-  assert.deepEqual([...COMPOSER_CHOICES.eyes], ['auto', 'round', 'horizontal', 'vertical-slit', 'compound', 'eyespot']);
+  assert.deepEqual([...COMPOSER_CHOICES.eyes], ['auto', 'round', 'horizontal', 'vertical-slit', 'compound', 'eyespot',
+    'raptor', 'owl', 'cat', 'gecko', 'frog', 'chameleon', 'crocodile', 'sclera', 'nocturnal', 'cephalopod', 'insect', 'spider', 'stalk']);
   assert.deepEqual([...COMPOSER_EYE_TYPES], [...COMPOSER_CHOICES.eyes]);
-  assert.deepEqual([...COMPOSER_CHOICES.iris], ['auto', 'dark-brown', 'brown', 'amber', 'gold', 'yellow', 'orange', 'red', 'green', 'pale']);
+  assert.deepEqual([...COMPOSER_CHOICES.iris], ['auto', 'dark-brown', 'brown', 'amber', 'gold', 'yellow', 'orange', 'red', 'green', 'pale', 'blue', 'copper', 'grey-green']);
   assert.deepEqual([...COMPOSER_IRIS], [...COMPOSER_CHOICES.iris]);
   assert.deepEqual(Object.keys(COMPOSER_IRIS_RGB), COMPOSER_IRIS.slice(1));
   for (const rgb of Object.values(COMPOSER_IRIS_RGB)) for (const c of rgb) assert.ok(c >= 0 && c <= 1);
@@ -53,6 +60,7 @@ test('vocabularies: faces, horns, eyes and iris match the recipe choices', () =>
     'flat-face': {gazeYawDeg: 15, k: 0.13}, 'muzzle-carnivore': {gazeYawDeg: 35, k: 0.13}, 'muzzle-grazer': {gazeYawDeg: 65, k: 0.14},
     'jaws-upright': {gazeYawDeg: 45, k: 0.13}, 'jaws-sprawled': {gazeYawDeg: 70, k: 0.13}, proboscis: {gazeYawDeg: 70, k: 0.07},
     beak: {gazeYawDeg: 75, k: 0.16}, mandibles: {gazeYawDeg: 90, k: 0}, blunt: {gazeYawDeg: 20, k: 0},
+    'mandibles-camera': {gazeYawDeg: 70, k: 0.15}, 'blunt-camera': {gazeYawDeg: 35, k: 0.14},
   });
 });
 
@@ -120,16 +128,25 @@ test('resolveComposerEyes on the 12 presets is pinned; colorSeed changes only th
     }
     assert.equal(seen.size, Math.max(1, bands.length), `${id}: every iris band is reachable through colorSeed`);
   }
-  // explicit choices: an eye the face cannot have is disclosed and built as the auto type; an iris on an eye without one too
+  // explicit choices under the Earlier eye rules (eyeRules 1): an eye the face cannot have is disclosed and built as the
+  // auto type; an iris on an eye without one too (the face round's strings, verbatim)
   const giraffe = composerPreset('giraffe'), centipede = composerPreset('centipede'), worm = composerPreset('worm');
+  const early = r => ({...r, eyeRules: 1});
   assert.deepEqual(resolveComposerEyes({...giraffe, eyes: 'vertical-slit', iris: 'green'}).built, 'vertical-slit');
   assert.equal(resolveComposerEyes({...giraffe, iris: 'green'}).irisBuilt, 'green');
-  assert.deepEqual(faceOnly({...giraffe, eyes: 'compound'}), [{part: 'Eyes', chosen: 'compound', effect: 'Built as horizontal: compound eyes belong to arthropod heads.'}]);
-  assert.deepEqual(faceOnly({...giraffe, eyes: 'eyespot'}), [{part: 'Eyes', chosen: 'eyespot', effect: 'Built as horizontal: eyespots belong to worm heads.'}]);
-  assert.deepEqual(faceOnly({...centipede, eyes: 'round', iris: 'red'}), [
+  assert.deepEqual(faceOnly(early({...giraffe, eyes: 'compound'})), [{part: 'Eyes', chosen: 'compound', effect: 'Built as horizontal: compound eyes belong to arthropod heads.'}]);
+  assert.deepEqual(faceOnly(early({...giraffe, eyes: 'eyespot'})), [{part: 'Eyes', chosen: 'eyespot', effect: 'Built as horizontal: eyespots belong to worm heads.'}]);
+  assert.deepEqual(faceOnly(early({...centipede, eyes: 'round', iris: 'red'})), [
     {part: 'Eyes', chosen: 'round', effect: 'Built as compound: arthropod heads have compound eyes.'},
     {part: 'Iris colour', chosen: 'red', effect: 'Iris colour has no effect: compound eyes and eyespots have no iris.'}]);
-  assert.deepEqual(faceOnly({...worm, eyes: 'horizontal'}), [{part: 'Eyes', chosen: 'horizontal', effect: 'Built as eyespot: a worm head has only pigment eyespots.'}]);
+  assert.deepEqual(faceOnly(early({...worm, eyes: 'horizontal'})), [{part: 'Eyes', chosen: 'horizontal', effect: 'Built as eyespot: a worm head has only pigment eyespots.'}]);
+  // the current rules (eyeRules 2) build every explicit kind on every face: no Eyes entry; an iris on an eye without one
+  // is still disclosed
+  for (const [r, eyes] of [[giraffe, 'compound'], [giraffe, 'eyespot'], [centipede, 'round'], [worm, 'horizontal']]) {
+    const e = resolveComposerEyes({...r, eyes});
+    assert.equal(e.kind, eyes); assert.equal(e.effect, null); assert.deepEqual(faceOnly({...r, eyes}), []);
+  }
+  assert.deepEqual(faceOnly({...giraffe, eyes: 'compound', iris: 'red'}), [{part: 'Iris colour', chosen: 'red', effect: 'Iris colour has no effect: compound eyes, simple eyes, eye stalks and eyespots have no iris.'}]);
   // eyes and iris are species keys, but never anatomy: the species key (herd identity) ignores them
   assert.equal(composerSpeciesKey({...giraffe, eyes: 'round', iris: 'pale'}), composerSpeciesKey(giraffe));
 });
@@ -144,7 +161,7 @@ test('migration over the 420 legacy and 28 skin-2 texts: 0 errors, 16 proboscis,
   const count = texts => {
     const out = {errors: 0, proboscis: 0, removed: 0};
     for (const text of texts) {
-      const {recipe, issues, error} = decodeComposerRecipe(text), raw = fields(text);
+      const {recipe, issues: all, error} = decodeComposerRecipe(text), raw = fields(text), issues = all && notEyeUpgrade(all);
       if (error) { out.errors++; continue; }
       assert.equal(recipe.horns, raw.horns, `${text}: chosen horns kept verbatim`);
       const head = raw.head ?? 'muzzle';
@@ -158,7 +175,7 @@ test('migration over the 420 legacy and 28 skin-2 texts: 0 errors, 16 proboscis,
   assert.deepEqual(count(skin2), {errors: 0, proboscis: 1, removed: 2});
   // the v1 trunked-centipede preset link still names its preset (matched on its legacy v1 values) and keeps its legacy horn, disclosed
   const v1 = v1Links.presets.find(p => p.id === 'trunked-centipede').text, decoded = decodeComposerRecipe(v1);
-  assert.equal(decoded.error, null); assert.deepEqual(decoded.issues, [PROMOTED]);
+  assert.equal(decoded.error, null); assert.deepEqual(notEyeUpgrade(decoded.issues), [PROMOTED]);
   assert.equal(composerLegacyPresetId(decoded.recipe), 'trunked-centipede');
   assert.deepEqual(decoded.recipe, {...composerPreset('trunked-centipede'), horns: 'nasal'});
   assert.deepEqual(composerConstraints(decoded.recipe), [{part: 'Horns', chosen: 'nasal', effect: 'Not built: a trunk face has no nose bones to carry a horn.'}]);
@@ -207,7 +224,7 @@ test('species keys equal the v2 baseline except the asserted dropped-trunk set a
   assert.equal(composerSpeciesKey({...composerPreset('winged-ape-rhino'), horns: 'nasal'}), baseline.presets['winged-ape-rhino'].speciesKey);
 });
 
-test('generators: frozen draws equal the baseline; only head, trunk, horns, eyes and iris move; 1000 + 1000 seeds obey the face rules', () => {
+test('generators: frozen draws equal the baseline; only head, trunk, horns, eyes, iris and eyeRules move; 1000 + 1000 seeds obey the face rules', () => {
   assert.equal(baseline.wild.length, 256); assert.equal(baseline.coherent.length, 256);
   const MOVABLE = new Set(['head', 'trunk', 'horns', 'eyes', 'iris']);
   for (let i = 0; i < 256; i++) {
@@ -224,7 +241,8 @@ test('generators: frozen draws equal the baseline; only head, trunk, horns, eyes
     if (composerHeadgearBuild(r).built !== r.horns) violations++;
     if (r.trunk === 'trunk' && r.head !== 'proboscis') violations++;
     if (r.trunk !== 'trunk' && r.head === 'proboscis') violations++;
-    if (r.eyes !== 'auto' || r.iris !== 'auto') violations++;
+    // eyes: 'auto' or an explicit catalogue kind (wild rarity pass, coherent eye flavour); always the current rules
+    if (!COMPOSER_EYE_TYPES.includes(r.eyes) || r.iris !== 'auto' || r.eyeRules !== 2) violations++;
     if (composerConstraints(r).some(c => c.part === 'Horns' || c.part === 'Eyes' || c.part === 'Iris colour')) violations++;
   }
   assert.equal(violations, 0);

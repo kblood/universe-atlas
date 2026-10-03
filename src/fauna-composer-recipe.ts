@@ -1,5 +1,6 @@
 import {COAT_PALETTE_IDS, COAT_PATTERNS, LEGACY_PALETTE_IDS, type CoatPaletteId, type CoatPattern} from './fauna-coat-vocab.ts';
-import {COMPOSER_EYE_TYPES, COMPOSER_IRIS, composerFaceConstraints, composerHeadgearBuild, migrateLegacyFace} from './fauna-composer-face.ts';
+import {COMPOSER_EYE_RULES_CURRENT, COMPOSER_EYE_TYPES, COMPOSER_IRIS, composerAutoEyeType, composerFaceConstraints, composerHeadgearBuild, migrateLegacyFace, resolveComposerEyes} from './fauna-composer-face.ts';
+import {COMPOSER_EYE_KINDS} from './fauna-composer-eye-catalogue.ts';
 
 /** Versioned, bounded recipe for the experimental modular creature composer.
  * Every part is chosen independently. The recipe never names an asset path:
@@ -14,8 +15,13 @@ import {COMPOSER_EYE_TYPES, COMPOSER_IRIS, composerFaceConstraints, composerHead
  * Version 3 (fauna-composer-face-1) appends 'proboscis' to the face (head) choices and the
  * keys eyes and iris. The `trunk` key stays in its encoded position but is DERIVED: a trunk
  * exists exactly on a proboscis face. v1/v2 text and objects are migrated (migrateLegacyFace):
- * muzzle + trunk becomes proboscis, a trunk on any other face is removed. */
-export const COMPOSER_RECIPE_VERSION = 3;
+ * muzzle + trunk becomes proboscis, a trunk on any other face is removed.
+ *
+ * Version 4 (fauna-composer-face-2, eye catalogue EC1) appends 13 eye kinds and 3 iris colours (values, encoded by name)
+ * and ONE key, eyeRules: the eye-rules epoch (2 = current, 1 = the face round's "Earlier eye rules"). Owner decision
+ * 2026-10-03: every v1-v3 link UPGRADES to the current rules (it reads eyeRules 2); decodeComposerRecipe lists an
+ * 'Eyes: upgraded ...' issue when that changes the eyes it built, and eyeRules 1 restores them. */
+export const COMPOSER_RECIPE_VERSION = 4;
 export const COMPOSER_RECIPE_MAX_TEXT = 1200;
 
 export const COMPOSER_LAYOUTS = ['limbless', 'biped', 'quadruped', 'sprawled', 'many-legged'] as const;
@@ -78,8 +84,15 @@ export const COMPOSER_RANGES = {
   maturity: [0.2, 1, 0.01],
   /** Body condition: -1 lean .. +1 heavy. */
   condition: [-1, 1, 0.05],
+  /** v4: eye-rules epoch (1 = the face round's rules, 2 = current). Appended last; never drawn by a generator. */
+  eyeRules: [1, 2, 1],
 } as const;
 export type ComposerNumberKey = keyof typeof COMPOSER_RANGES;
+/** The numeric keys of recipe v3, in COMPOSER_RANGES order (frozen): the coherent generator draws one latent per key
+ * in exactly this order, so a key appended to COMPOSER_RANGES must never enter that loop. */
+export const COMPOSER_V3_RANGE_KEYS = Object.freeze(['legPairs', 'bodyLength', 'girth', 'posture', 'neckLength', 'headSize', 'snoutLength', 'legLength', 'armLength', 'tailLength',
+  'wingSpan', 'trunkLength', 'colorSeed', 'marks', 'patternScale', 'patternContrast', 'countershade', 'dimorphism', 'variability', 'allometry', 'individualSeed', 'maturity',
+  'condition'] as const);
 
 export interface ComposerRecipe {
   version: typeof COMPOSER_RECIPE_VERSION;
@@ -130,6 +143,9 @@ export interface ComposerRecipe {
   // ---- v3 face (species)
   eyes: Choices['eyes'][number];
   iris: Choices['iris'][number];
+  // ---- v4 (species)
+  /** Eye-rules epoch: 2 current, 1 the face round's (fauna-composer-face-1). */
+  eyeRules: number;
 }
 /** The 26 version-1 keys, in their v1 encoding order. */
 export const COMPOSER_V1_KEYS = ['layout', 'legPairs', 'bodyLength', 'girth', 'posture', 'torso', 'neckLength', 'head', 'headSize', 'snoutLength', 'horns',
@@ -137,12 +153,15 @@ export const COMPOSER_V1_KEYS = ['layout', 'legPairs', 'bodyLength', 'girth', 'p
 /** The 38 version-2 keys, in their v2 encoding order (frozen). */
 export const COMPOSER_V2_KEYS = Object.freeze([...COMPOSER_V1_KEYS,
   'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade', 'dimorphism', 'variability', 'allometry', 'individualSeed', 'sex', 'maturity', 'condition'] as const);
-/** Encoding order: v2 keys, then the v3 keys appended (append-only). */
-export const COMPOSER_RECIPE_KEYS = [...COMPOSER_V2_KEYS, 'eyes', 'iris'] as const;
+/** The 40 version-3 keys, in their v3 encoding order (frozen). */
+export const COMPOSER_V3_KEYS = Object.freeze([...COMPOSER_V2_KEYS, 'eyes', 'iris'] as const);
+/** Encoding order: v3 keys, then the v4 key appended (append-only). */
+export const COMPOSER_RECIPE_KEYS = [...COMPOSER_V3_KEYS, 'eyeRules'] as const;
 export type ComposerRecipeKey = typeof COMPOSER_RECIPE_KEYS[number];
-/** What makes the species: anatomy, coat, variation strengths and eyes. Equal species keys = same species. */
+/** What makes the species: anatomy, coat, variation strengths and eyes (with their rules epoch). Equal species keys =
+ * same species. composerSpeciesKey (the herd hash) still reads the anatomy only. */
 export const COMPOSER_SPECIES_KEYS = [...COMPOSER_V1_KEYS,
-  'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade', 'dimorphism', 'variability', 'allometry', 'eyes', 'iris'] as const;
+  'pattern', 'marks', 'patternScale', 'patternContrast', 'countershade', 'dimorphism', 'variability', 'allometry', 'eyes', 'iris', 'eyeRules'] as const;
 /** What makes one animal of that species. */
 export const COMPOSER_INDIVIDUAL_KEYS = ['individualSeed', 'sex', 'maturity', 'condition'] as const;
 
@@ -151,19 +170,23 @@ export const COMPOSER_INDIVIDUAL_KEYS = ['individualSeed', 'sex', 'maturity', 'c
 export interface ComposerConstraint { part: string; chosen: string; effect: string }
 
 const base: ComposerRecipe = {
-  version: 3, layout: 'quadruped', legPairs: 2, bodyLength: 1, girth: 1, posture: 0.2, torso: 'slim', neckLength: 0.4, head: 'muzzle', headSize: 1, snoutLength: 0.6,
+  version: 4, layout: 'quadruped', legPairs: 2, bodyLength: 1, girth: 1, posture: 0.2, torso: 'slim', neckLength: 0.4, head: 'muzzle', headSize: 1, snoutLength: 0.6,
   horns: 'none', legs: 'digitigrade', legLength: 0.8, feet: 'paw', arms: 'none', armLength: 0.6, hands: 'hand', tail: 'tufted', tailLength: 0.6,
   armor: 'none', wings: 'none', wingSpan: 2, trunk: 'none', trunkLength: 0.8, palette: 'earth', colorSeed: 1,
   pattern: 'auto', marks: 0, patternScale: 1, patternContrast: 1, countershade: 0.8, dimorphism: 0, variability: 0, allometry: 0,
-  individualSeed: 0, sex: 'auto', maturity: 1, condition: 0, eyes: 'auto', iris: 'auto',
+  individualSeed: 0, sex: 'auto', maturity: 1, condition: 0, eyes: 'auto', iris: 'auto', eyeRules: COMPOSER_EYE_RULES_CURRENT,
 };
 type V2Key = Exclude<typeof COMPOSER_V2_KEYS[number], typeof COMPOSER_V1_KEYS[number]>;
-type V3Key = Exclude<ComposerRecipeKey, typeof COMPOSER_V2_KEYS[number]>;
+type V3Key = Exclude<typeof COMPOSER_V3_KEYS[number], typeof COMPOSER_V2_KEYS[number]>;
+type V4Key = Exclude<ComposerRecipeKey, typeof COMPOSER_V3_KEYS[number]>;
 /** Neutral values of the keys version 2 added; a v1 recipe gets exactly these. */
 export const COMPOSER_V2_DEFAULTS: Readonly<Pick<ComposerRecipe, V2Key>> = Object.freeze(Object.fromEntries(
   COMPOSER_V2_KEYS.filter(k => !(COMPOSER_V1_KEYS as readonly string[]).includes(k)).map(k => [k, base[k]])) as Pick<ComposerRecipe, V2Key>);
 /** Neutral values of the keys version 3 added; a v1 or v2 recipe gets exactly these. */
 export const COMPOSER_V3_DEFAULTS: Readonly<Pick<ComposerRecipe, V3Key>> = Object.freeze({eyes: 'auto', iris: 'auto'});
+/** Value of the key version 4 added for any recipe that lacks it, v1-v3 links included (owner decision: old links
+ * upgrade to the current eye rules). */
+export const COMPOSER_V4_DEFAULTS: Readonly<Pick<ComposerRecipe, V4Key>> = Object.freeze({eyeRules: COMPOSER_EYE_RULES_CURRENT});
 const preset = (p: Partial<ComposerRecipe>): Readonly<ComposerRecipe> => Object.freeze({ ...base, ...p });
 
 /** Every preset is a variable species (variability 1, allometry 1). Its individual keys stay neutral,
@@ -247,8 +270,8 @@ export function composerLegPairRange(layout: ComposerLayout): [number, number] {
 }
 
 /** Bounds every field. Out-of-range or unknown values are replaced and listed in `issues`.
- * Version 1, 2 and 3 objects are accepted (keys an older version lacks take their neutral defaults); the output is
- * always version 3. A version 1 or 2 object is migrated first (migrateLegacyFace: muzzle + trunk becomes the
+ * Version 1, 2, 3 and 4 objects are accepted (keys an older version lacks take their neutral defaults; eyeRules the
+ * current epoch); the output is always version 4. A version 1 or 2 object is migrated first (migrateLegacyFace: muzzle + trunk becomes the
  * proboscis face, a trunk on another face is removed, each with an issue). Then the trunk is always derived from the
  * face; for version 3 or version-less objects a stale `trunk` field is ignored silently, so editing a proboscis back to
  * a muzzle never re-promotes it. */
@@ -257,7 +280,7 @@ export function normalizeComposerRecipe(input: unknown): { recipe: ComposerRecip
   const record = !!input && typeof input === 'object' && !Array.isArray(input);
   let source = (record ? input : {}) as Record<string, unknown>;
   if (!record) issues.push('Recipe was not a plain object; defaults used.');
-  if (record && 'version' in source && source.version !== 1 && source.version !== 2 && source.version !== COMPOSER_RECIPE_VERSION) issues.push(`Recipe version ${String(source.version).slice(0, 12)} is not supported; fields were read as version ${COMPOSER_RECIPE_VERSION}.`);
+  if (record && 'version' in source && source.version !== 1 && source.version !== 2 && source.version !== 3 && source.version !== COMPOSER_RECIPE_VERSION) issues.push(`Recipe version ${String(source.version).slice(0, 12)} is not supported; fields were read as version ${COMPOSER_RECIPE_VERSION}.`);
   if (record && (source.version === 1 || source.version === 2)) { source = {...source}; migrateLegacyFace(source, issues); }
   const recipe = { ...base } as ComposerRecipe;
   const r = recipe as unknown as Record<string, unknown>;
@@ -357,7 +380,7 @@ export function drawComposerRandomV1(seed: string): ComposerRecipe {
   const [lo, hi] = composerLegPairRange(layout);
   const legs = layout === 'many-legged' ? pick(COMPOSER_CHOICES.legs, [1, 0.5, 0.4, 0.3, 2.5]) : pick(COMPOSER_CHOICES.legs, [1, 1, 1.2, 1, 0.4]);
   const r: ComposerRecipe = {
-    ...COMPOSER_V2_DEFAULTS, ...COMPOSER_V3_DEFAULTS, version: COMPOSER_RECIPE_VERSION, layout, legPairs: lo + Math.floor(rand() * (hi - lo + 1)),
+    ...COMPOSER_V2_DEFAULTS, ...COMPOSER_V3_DEFAULTS, ...COMPOSER_V4_DEFAULTS, version: COMPOSER_RECIPE_VERSION, layout, legPairs: lo + Math.floor(rand() * (hi - lo + 1)),
     bodyLength: layout === 'limbless' || layout === 'many-legged' ? range('bodyLength', 0.4, 2) : range('bodyLength', 0.3, 2.4),
     girth: range('girth', 0.75, 1.4), posture: range('posture'),
     torso: layout === 'limbless' ? pick(['annulated', 'slim', 'segmented'] as const) : layout === 'many-legged' ? pick(['segmented', 'annulated', 'flat'] as const) : pick(['slim', 'barrel', 'deep-chest', 'flat'] as const),
@@ -373,22 +396,35 @@ export function drawComposerRandomV1(seed: string): ComposerRecipe {
   if (r.tail === 'none') r.tailLength = 0;
   return r;
 }
+/** Wild specimens that get an unusual eye kind, per mille (owner decision 2026-10-03: rarely, about 5-10 %). */
+export const COMPOSER_WILD_UNUSUAL_EYES_PER_MILLE = 75;
+/** The wild generator's eye choice: a pure hash post-pass on its own stream name ('composer-wild-eyes-1/<seed>'), no
+ * draw from the frozen 'composer-random-v1/' stream. About 7.5 % of seeds get an explicit kind drawn uniformly from
+ * the 17 catalogue kinds other than the one 'auto' builds on that body (so it always shows); the rest stay 'auto'. */
+export function composerWildEyes(seed: string, r: Pick<ComposerRecipe, 'head' | 'layout' | 'legPairs' | 'legs' | 'feet' | 'bodyLength'>): ComposerRecipe['eyes'] {
+  const name = `composer-wild-eyes-1/${String(seed).slice(0, 160)}`;
+  if (composerHash(name) % 1000 >= COMPOSER_WILD_UNUSUAL_EYES_PER_MILLE) return 'auto';
+  const auto = composerAutoEyeType(r, COMPOSER_EYE_RULES_CURRENT), pool = COMPOSER_EYE_KINDS.filter(k => k !== auto);
+  return pool[composerHash(`${name}/kind`) % pool.length]!;
+}
 /** Seeded structural combination ("wild"): each part is drawn independently, so the
  * result mixes anatomy from different presets rather than choosing one. The draw is
  * drawComposerRandomV1 (frozen); a post-pass then obeys the face rules without any new
  * draw: a trunk on a muzzle becomes the proboscis face, a trunk on another face is
- * dropped, the horns become the kind the face builds, and eyes and iris are 'auto'.
- * For plausible animals use randomCoherentComposerRecipe (fauna-composer-species.ts). */
+ * dropped, the horns become the kind the face builds, the iris is 'auto', and the eyes
+ * are 'auto' except for a rare unusual kind (composerWildEyes, a pure hash), under the
+ * current eye rules. For plausible animals use randomCoherentComposerRecipe (fauna-composer-species.ts). */
 export function randomComposerRecipe(seed: string): ComposerRecipe {
   const r = drawComposerRandomV1(seed);
   if (r.trunk === 'trunk') { if (r.head === 'muzzle') r.head = 'proboscis'; else r.trunk = 'none'; }
   r.horns = composerHeadgearBuild(r).built;
-  r.eyes = 'auto'; r.iris = 'auto';
+  r.eyeRules = COMPOSER_EYE_RULES_CURRENT;
+  r.eyes = composerWildEyes(seed, r); r.iris = 'auto';
   return normalizeComposerRecipe(r).recipe;
 }
 
 const NUMBER_KEYS = new Set<string>(Object.keys(COMPOSER_RANGES));
-/** Compact, URL-safe text: `v3*layout_biped*bodyLength_1.6*...` (form-encoding leaves `*`, `_`, `.`, `-` intact). Always writes version 3. */
+/** Compact, URL-safe text: `v4*layout_biped*bodyLength_1.6*...` (form-encoding leaves `*`, `_`, `.`, `-` intact). Always writes version 4. */
 export function encodeComposerRecipe(recipe: ComposerRecipe): string {
   const { recipe: r } = normalizeComposerRecipe(recipe);
   return [`v${COMPOSER_RECIPE_VERSION}`, ...COMPOSER_RECIPE_KEYS.map(key => `${key}_${String(r[key])}`)].join('*');
@@ -399,15 +435,17 @@ export function encodeComposerRecipe(recipe: ComposerRecipe): string {
  * issue for the keys it lacks: they take neutral defaults, except that a v1 text whose 26
  * fields equal a preset's adopts that preset's later species values (so an old preset link
  * still names the preset). v1 and v2 text is face-migrated (migrateLegacyFace), and the
- * migration is reported in `issues`. In v3 text the trunk follows the face. */
+ * migration is reported in `issues`. In v3 and v4 text the trunk follows the face. 'v3*' text reads the 40 v3 fields.
+ * v1-v3 text takes the current eye rules (eyeRules 2); when that changes the eyes the link built (kind or iris), an
+ * 'Eyes: upgraded ...' issue says what it built before (eyeRules 1 restores it). 'v5*' and anything else is an error. */
 export function decodeComposerRecipe(text: string): { recipe: ComposerRecipe | null; issues: string[]; error: string | null } {
   if (typeof text !== 'string' || !text.trim()) return { recipe: null, issues: [], error: 'Empty composer recipe.' };
   if (text.length > COMPOSER_RECIPE_MAX_TEXT) return { recipe: null, issues: [], error: `Composer recipe is longer than ${COMPOSER_RECIPE_MAX_TEXT} characters.` };
   const [version, ...pairs] = text.split('*');
-  const textVersion = version === 'v1' ? 1 : version === 'v2' ? 2 : version === `v${COMPOSER_RECIPE_VERSION}` ? COMPOSER_RECIPE_VERSION : 0;
+  const textVersion = version === 'v1' ? 1 : version === 'v2' ? 2 : version === 'v3' ? 3 : version === `v${COMPOSER_RECIPE_VERSION}` ? COMPOSER_RECIPE_VERSION : 0;
   if (!textVersion) return { recipe: null, issues: [], error: `Unsupported composer recipe version "${String(version).slice(0, 12)}".` };
   const legacy = textVersion === 1;
-  const known: readonly string[] = textVersion === 1 ? COMPOSER_V1_KEYS : textVersion === 2 ? COMPOSER_V2_KEYS : COMPOSER_RECIPE_KEYS;
+  const known: readonly string[] = textVersion === 1 ? COMPOSER_V1_KEYS : textVersion === 2 ? COMPOSER_V2_KEYS : textVersion === 3 ? COMPOSER_V3_KEYS : COMPOSER_RECIPE_KEYS;
   const source: Record<string, unknown> = {}, issues: string[] = [];
   for (const pair of pairs) {
     const split = pair.indexOf('_'), key = split > 0 ? pair.slice(0, split) : pair, value = split > 0 ? pair.slice(split + 1) : '';
@@ -417,11 +455,20 @@ export function decodeComposerRecipe(text: string): { recipe: ComposerRecipe | n
   }
   // the version marker makes normalize migrate v1/v2 text (it is not a recipe field of the text)
   const normalized = normalizeComposerRecipe({...source, version: textVersion});
-  if (textVersion === COMPOSER_RECIPE_VERSION && 'trunk' in source && source.trunk !== normalized.recipe.trunk)
+  if (textVersion >= 3 && 'trunk' in source && source.trunk !== normalized.recipe.trunk)
     issues.push('Trunk follows the Face; trunk field ignored.');
   // normalize (migration included) THEN the preset match, so a v1 trunked-centipede text matches the migrated preset
   if (legacy) upgradeLegacyPreset(normalized.recipe);
-  return { recipe: normalized.recipe, issues: [...issues, ...normalized.issues], error: null };
+  const upgrade = textVersion < 4 ? composerEyeUpgradeIssue(normalized.recipe) : null;
+  return { recipe: normalized.recipe, issues: [...issues, ...normalized.issues, ...(upgrade ? [upgrade] : [])], error: null };
+}
+/** The disclosure for an old (v1-v3) link whose eyes the current rules build differently from the face round's
+ * rules (kind or iris), else null. The recipe keeps eyeRules 2; setting eyeRules 1 restores the earlier eyes. */
+export function composerEyeUpgradeIssue(recipe: ComposerRecipe): string | null {
+  const now = resolveComposerEyes({...recipe, eyeRules: 2}), before = resolveComposerEyes({...recipe, eyeRules: 1});
+  if (now.kind === before.kind && now.irisBuilt === before.irisBuilt) return null;
+  const says = (e: typeof now) => `${e.kind}${e.irisBuilt ? ` (${e.irisBuilt})` : ''}`;
+  return `Eyes: upgraded to the current eye rules: ${says(now)} eyes, where the earlier rules built ${says(before)}. Eye rules -> Earlier restores them.`;
 }
 /** v1 preset links keep their preset identity: copy that preset's later species values (the v1 fields already
  * match, or are the legacy choices a redesigned preset used to have, which the link keeps). */

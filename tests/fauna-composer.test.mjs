@@ -118,7 +118,7 @@ test('recipe text and lab URLs round-trip every field; legacy URLs are unchanged
   assert.match(creatureLabComposerInputError('?mode=composer&motion=fly'), /unknown motion/);
   assert.equal(creatureLabComposerInputError('?mode=skin&recipe=a&recipe=b'), null);
   assert.match(decodeComposerRecipe(parseCreatureLabState(`?mode=composer&recipe=v1*${'x'.repeat(3000)}`).recipe).error, /longer than/);
-  assert.match(decodeComposerRecipe('v4*layout_biped').error, /Unsupported/);
+  assert.match(decodeComposerRecipe('v5*layout_biped').error, /Unsupported/);
   assert.match(decodeComposerRecipe('v999*layout_biped').error, /Unsupported/);
 });
 

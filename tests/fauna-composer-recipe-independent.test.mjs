@@ -66,7 +66,7 @@ test('full explicit recipes round-trip through actual URL form encoding without 
 });
 
 test('decoder rejects unsupported versions and oversized text; bounded partial/duplicate input is explicit',()=>{
- for(const text of['','   ',null,17,'v0','v4*head_beak','v4*layout_biped','V3*layout_biped','v3.1*layout_biped','v999*layout_biped','x'.repeat(COMPOSER_RECIPE_MAX_TEXT+1)]){const result=decodeComposerRecipe(text);assert.equal(result.recipe,null);assert.ok(result.error);}
+ for(const text of['','   ',null,17,'v0','v5*head_beak','v5*layout_biped','V3*layout_biped','V4*layout_biped','v4.1*layout_biped','v3.1*layout_biped','v999*layout_biped','x'.repeat(COMPOSER_RECIPE_MAX_TEXT+1)]){const result=decodeComposerRecipe(text);assert.equal(result.recipe,null);assert.ok(result.error);}
  const duplicate=decodeComposerRecipe('v1*head_beak*head_jaws*layout_biped*legPairs_12*bodyLength_999');assert.equal(duplicate.error,null);bounded(duplicate.recipe);assert.equal(duplicate.recipe.head,'beak');assert.equal(duplicate.recipe.legPairs,1);assert.equal(duplicate.recipe.bodyLength,6);assert.ok(duplicate.issues.some(issue=>/Repeated/.test(issue)));assert.ok(duplicate.issues.some(issue=>/limited/.test(issue)));
  const unknown=decodeComposerRecipe('v1*glb_https://example.test/private.glb*source_../../private*__proto___polluted*head_https://example.test/evil');bounded(unknown.recipe);assert.ok(unknown.issues.length>=4);assert.equal(Object.hasOwn(unknown.recipe,'source'),false);assert.equal(Object.hasOwn(unknown.recipe,'glb'),false);assert.equal(Object.hasOwn(unknown.recipe,'__proto__'),false);assert.equal({}.polluted,undefined);assert.ok(!encodeComposerRecipe(unknown.recipe).includes('https:'));
 });
@@ -81,6 +81,6 @@ test('compatibility explanations retain selected modules instead of rewriting re
 });
 
 test('versioned recipe equality does not equate an unsupported future recipe with v1',()=>{
- const recipe=composerPreset('turtle');assert.equal(composerRecipesEqual(recipe,{...recipe,version:4}),false,'Version changes can change interpretation even with identical field text');
+ const recipe=composerPreset('turtle');assert.equal(composerRecipesEqual(recipe,{...recipe,version:5}),false,'Version changes can change interpretation even with identical field text');
  for(const key of COMPOSER_RECIPE_KEYS){const changed={...recipe};changed[key]=typeof recipe[key]==='number'?recipe[key]+1:'different';assert.equal(composerRecipesEqual(recipe,changed),false,key);}
 });

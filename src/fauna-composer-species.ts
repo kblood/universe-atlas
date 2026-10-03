@@ -13,13 +13,18 @@
  *
  * fauna-composer-face-1 changes only the post-draw rewrites: a drawn trunk on a muzzle
  * becomes the proboscis face (a trunk anywhere else is dropped), the horns become the kind
- * the face builds, and eyes and iris are 'auto'. No draw is added or moved. */
+ * the face builds, and eyes and iris are 'auto'. No draw is added or moved.
+ *
+ * fauna-composer-face-2 (eye catalogue EC1) adds one more post-draw rewrite: the eye flavour. Some archetypes get an
+ * explicit eye kind (raptor or owl birds, gecko, chameleon or frog lizards, nocturnal primates, stalk-eyed worms) from
+ * a pure hash of the attempt's stream name ('composer-species-eyes-1/<stream>'), never a rand() draw, and every
+ * species carries eyeRules 2. The stream is byte-identical; species keys (herds) ignore eyes. */
 import * as THREE from 'three';
-import {COMPOSER_PRESET_IDS, COMPOSER_RANGES, COMPOSER_V2_DEFAULTS, COMPOSER_V3_DEFAULTS, COMPOSER_RECIPE_VERSION, composerPreset, composerRandom, composerSpeciesEqual, normalizeComposerRecipe,
+import {COMPOSER_PRESET_IDS, COMPOSER_RANGES, COMPOSER_V2_DEFAULTS, COMPOSER_V3_DEFAULTS, COMPOSER_V3_RANGE_KEYS, COMPOSER_V4_DEFAULTS, COMPOSER_RECIPE_VERSION, composerHash, composerPreset, composerRandom, composerSpeciesEqual, normalizeComposerRecipe,
   type ComposerLayout, type ComposerNumberKey, type ComposerRecipe} from './fauna-composer-recipe.ts';
 import {buildComposerGraph, type ComposerGraph} from './fauna-composer-rig.ts';
 import {COAT_MARK_BITS, type CoatPaletteId, type CoatPattern, type CoatMarkName} from './fauna-coat-vocab.ts';
-import {composerHeadgearBuild} from './fauna-composer-face.ts';
+import {COMPOSER_EYE_RULES_CURRENT, composerHeadgearBuild, type ComposerEyeType} from './fauna-composer-face.ts';
 
 export const COMPOSER_SPECIES_GENERATOR_VERSION = 'composer-species-v1';
 export const COMPOSER_ARCHETYPES = ['ungulate-grazer', 'giraffid', 'pachyderm', 'cursorial-carnivore', 'theropod', 'ratite', 'bird', 'sprawler-lizard', 'tortoise', 'primate', 'myriapod', 'worm'] as const;
@@ -134,6 +139,28 @@ export const COMPOSER_ARCHETYPE_PRIORS: Readonly<Record<ComposerArchetype, Prior
     coat: {scale: [0.8, 1.3], contrast: [0.3, 0.8], countershade: [0.2, 0.6]}, dimorphism: [0, 0]},
 };
 
+/** Eye flavour per archetype (eye catalogue v2): weighted explicit kinds, 'auto' = the anatomy rules. Archetypes not
+ * listed always take 'auto'. The sprawler-lizard table applies to a jaws face only; its frog weight is 1 only with a
+ * short snout (snoutLength < .6). */
+export const COMPOSER_SPECIES_EYE_FLAVOUR: Readonly<Partial<Record<ComposerArchetype, Weighted<ComposerEyeType>>>> = Object.freeze({
+  bird: [['auto', 5], ['raptor', 3], ['owl', 2]],
+  theropod: [['auto', 3], ['raptor', 1]],
+  'sprawler-lizard': [['auto', 4], ['gecko', 2], ['chameleon', 1], ['frog', 1]],
+  primate: [['auto', 4], ['nocturnal', 1]],
+  worm: [['auto', 3], ['stalk', 1]],
+});
+/** The coherent eye flavour of one attempt's draw: a pure hash of the attempt's stream name over the archetype's
+ * weighted table. No rand() draw, so the 'composer-species-v1/' stream is untouched. */
+export function composerSpeciesEyeFlavour(stream: string, archetype: ComposerArchetype, r: Pick<ComposerRecipe, 'head' | 'snoutLength'>): ComposerEyeType {
+  let table = COMPOSER_SPECIES_EYE_FLAVOUR[archetype];
+  if (!table || (archetype === 'sprawler-lizard' && r.head !== 'jaws')) return 'auto';
+  if (archetype === 'sprawler-lizard' && !(r.snoutLength < 0.6)) table = table.filter(([kind]) => kind !== 'frog');
+  const total = table.reduce((a, [, w]) => a + w, 0);
+  let x = (composerHash(`composer-species-eyes-1/${stream}`) / 4294967296) * total;
+  for (const [kind, w] of table) { if (x < w) return kind; x -= w; }
+  return table[table.length - 1]![0];
+}
+
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const roundStep = (value: number, step: number) => step >= 1 ? Math.round(value) : Math.round(value / step) * step;
 const fix = (value: number) => Number(value.toFixed(4));
@@ -147,10 +174,10 @@ function drawSpecies(stream: string, archetype: ComposerArchetype | undefined): 
   const kind = pickW(COMPOSER_ARCHETYPES.map(a => [a, COMPOSER_ARCHETYPE_PRIORS[a].weight] as const));
   const a = archetype ?? kind, p = COMPOSER_ARCHETYPE_PRIORS[a];
   const latent = {size: z(), limb: z(), neck: z(), robust: z()};
-  const r: ComposerRecipe = {...composerPreset('giraffe'), ...COMPOSER_V2_DEFAULTS, ...COMPOSER_V3_DEFAULTS, version: COMPOSER_RECIPE_VERSION, layout: p.layout};
+  const r: ComposerRecipe = {...composerPreset('giraffe'), ...COMPOSER_V2_DEFAULTS, ...COMPOSER_V3_DEFAULTS, ...COMPOSER_V4_DEFAULTS, version: COMPOSER_RECIPE_VERSION, layout: p.layout};
   const out = r as unknown as Record<string, unknown>;
-  // numeric fields in COMPOSER_RANGES order, one own latent each
-  for (const key of Object.keys(COMPOSER_RANGES) as ComposerNumberKey[]) {
+  // numeric fields in the frozen v3 COMPOSER_RANGES order, one own latent each (eyeRules, appended in v4, is never drawn)
+  for (const key of COMPOSER_V3_RANGE_KEYS as readonly ComposerNumberKey[]) {
     const own = z(), span = p.num[key];
     if (!span) continue;
     const loads = LOADS[key] ?? {};
@@ -197,9 +224,11 @@ function drawSpecies(stream: string, archetype: ComposerArchetype | undefined): 
   if (r.layout === 'biped' && r.posture > 0.6 && r.tail !== 'none') r.tailLength = Math.min(r.tailLength, 1);
   if (r.wings !== 'none') r.wingSpan = Math.min(r.wingSpan, a === 'ratite' ? 1.4 : 3.6);
   if (r.wings === 'none') r.wingSpan = numberIn('wingSpan', 1 + wingRoll);
-  // face rules: only headgear the face builds; eyes and iris resolve automatically
+  // face rules: only headgear the face builds; the iris resolves automatically, the eyes too unless the archetype's
+  // eye flavour (a pure hash, no draw) names a kind
   r.horns = composerHeadgearBuild(r).built;
-  r.eyes = 'auto'; r.iris = 'auto';
+  r.eyeRules = COMPOSER_EYE_RULES_CURRENT;
+  r.eyes = composerSpeciesEyeFlavour(stream, a, r); r.iris = 'auto';
   r.variability = 1; r.allometry = 1; r.individualSeed = 0; r.sex = 'auto'; r.maturity = 1; r.condition = 0;
   return {recipe: normalizeComposerRecipe(r).recipe, archetype: a};
 }
