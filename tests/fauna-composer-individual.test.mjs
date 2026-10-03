@@ -99,9 +99,12 @@ test('every v1 fixture text decodes with no error, only face-migration and eye-u
 // skin-2 pin with driftFromSkin2 = 'fauna-composer-eye-1: eyes rebuilt'; the 13 that
 // the face rules repinned keep that reason as faceDrift. Bone counts must still equal
 // v1 (no new bones), except that a trunk dropped by the face rules removes 6 bones.
+// Eye round EC2 (fauna-composer-eye-2, skin-4) rebuilt the eyes under the current eye rules; the face round's build is
+// kept as the earlier eye rules (eyeRules 1), so the skin-3 pins are now checked with eyeRules 1: they must still hold
+// byte for byte. The current-rules build of the same texts is pinned in composer-skin4-links.json.
 const skin2 = JSON.parse(readFileSync(new URL('./fixtures/composer-skin2-links.json', import.meta.url), 'utf8'));
 const skin3 = JSON.parse(readFileSync(new URL('./fixtures/composer-skin3-links.json', import.meta.url), 'utf8'));
-test('legacy recipes: migrated neutral v1 texts build the pinned skin-3 digest byte for byte, with v1 bone counts', () => {
+test('legacy recipes: migrated neutral v1 texts with the earlier eye rules build the pinned skin-3 digest byte for byte, with v1 bone counts', () => {
   let checked = 0, faceRepinned = 0;
   assert.deepEqual(Object.keys(skin3.byText).sort(), Object.keys(fixture.headSkinDigests.byText).sort());
   assert.equal(skin3.capturedAt.skin, 'fauna-composer-skin-3');
@@ -123,7 +126,7 @@ test('legacy recipes: migrated neutral v1 texts build the pinned skin-3 digest b
       assert.equal(pinned.faceDrift, dropped ? 'fauna-composer-face-1: trunk dropped' : 'fauna-composer-face-1: horn not built on face', text);
       assert.ok(dropped || hornChanged, `${text}: repin without a face-rule cause`);
     }
-    const derived = deriveComposerIndividual(neutral);
+    const derived = deriveComposerIndividual({...neutral, eyeRules: 1});
     assert.equal(derived.traits.neutral, true, text);
     const graph = buildComposerGraph(derived.recipe), skin = buildComposerSkin(graph);
     assert.equal(digest(skin.positions, skin.index, skin.skinIndex, skin.skinWeight, skin.colors), pinned.skin, text);
@@ -135,7 +138,7 @@ test('legacy recipes: migrated neutral v1 texts build the pinned skin-3 digest b
   assert.equal(checked, 28);
   assert.equal(faceRepinned, 13);
   // and through the public creature factory
-  const text = fixture.fixtureSeeds[3].text, c = createComposerCreature(decodeComposerRecipe(text).recipe);
+  const text = fixture.fixtureSeeds[3].text, c = createComposerCreature({...decodeComposerRecipe(text).recipe, eyeRules: 1});
   try { assert.equal(digest(c.skin.positions, c.skin.index, c.skin.skinIndex, c.skin.skinWeight, c.skin.colors), skin3.byText[text].skin); assert.deepEqual(c.individual.deltas, []); }
   finally { c.dispose(); }
 });

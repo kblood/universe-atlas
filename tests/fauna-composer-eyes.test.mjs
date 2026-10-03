@@ -1,6 +1,10 @@
-// Composer eyes (fauna-composer-eye-1, face round WP4): lidded ring eyes with shaped pupils, iris, limbus and lids,
-// arthropod compound eyes and worm eyespots, seated on the built skull along each face's gaze. Measured on the actual
-// skin buffers (positions, colours, gloss, parts) plus the skin's debug eye records; the pure module is checked on its own.
+// Composer eyes (fauna-composer-eye-1, face round WP4; fauna-composer-eye-2, eye round EC2): lidded ring eyes with
+// shaped pupils, iris, limbus and lids, arthropod compound eyes and worm eyespots, seated on the built skull along each
+// face's gaze. Measured on the actual skin buffers (positions, colours, gloss, parts) plus the skin's debug eye records;
+// the pure module is checked on its own. Under the current eye rules (eyeRules 2) every eye is the catalogue geometry
+// (fauna-composer-eye-2, debug type = the eye kind); under the earlier rules the face round's kinds keep the
+// fauna-composer-eye-1 build (debug type = the built stand-in). The catalogue kinds' own traits are measured in
+// tests/fauna-composer-eye-catalogue-geometry.test.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -8,11 +12,12 @@ import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {COMPOSER_CHOICES, COMPOSER_PRESET_IDS, composerPreset, decodeComposerRecipe, normalizeComposerRecipe, randomComposerRecipe} from '../src/fauna-composer-recipe.ts';
 import {COMPOSER_BUDGET, buildComposerGraph} from '../src/fauna-composer-rig.ts';
-import {COMPOSER_EYE_CONTRAST, COMPOSER_EYE_PITCH_DEG, COMPOSER_EYESPOT_PITCH_DEG, buildComposerSkin, composerSpeciesBodyLength} from '../src/fauna-composer-mesh.ts';
+import {COMPOSER_EYE_CATALOGUE, COMPOSER_EYE_CONTRAST, COMPOSER_EYE_PITCH_DEG, COMPOSER_EYESPOT_PITCH_DEG, buildComposerSkin, composerSpeciesBodyLength} from '../src/fauna-composer-mesh.ts';
 import {createComposerCreature} from '../src/fauna-composer.ts';
 import {composerIndividualTraits, deriveComposerIndividual} from '../src/fauna-composer-individual.ts';
 import {randomCoherentComposerRecipe} from '../src/fauna-composer-species.ts';
 import {COMPOSER_IRIS_RGB, FACE_EYE_PROFILE, composerEyeProfileId, resolveComposerEyes} from '../src/fauna-composer-face.ts';
+import {EYE_PRESETS, FACE_ROUND_EYE_KINDS} from '../src/fauna-composer-eye-catalogue.ts';
 import {COAT_PALETTE_IDS} from '../src/fauna-coat-vocab.ts';
 import {
   EYE_PATCH, EYE_ROLE, buildCompoundEye, buildEyePatch, buildEyespot, eyeGaze, nearestExit, outermostExit, raycastFirstHit, ringNormal,
@@ -28,6 +33,32 @@ const specimens = JSON.parse(readFileSync(new URL('./fauna-face-specimens.json',
 const showcases = specimens.filter(s => s.group === 'eye').map(s => [s.name, decodeComposerRecipe(s.text).recipe]);
 const presets = COMPOSER_PRESET_IDS.map(id => [id, composerPreset(id)]);
 const LIDDED = new Set(['round', 'horizontal', 'vertical-slit']);
+/** Debug types of camera (lidded) eyes: the face round's three and every catalogue camera kind. */
+const CAMERA = new Set(Object.values(EYE_PRESETS).filter(t => t.structure === 'camera').map(t => t.kind));
+/** The debug type the skin records for a recipe's eyes: the stand-in under the earlier rules, else the kind. */
+const builtType = e => (e.rules === 1 && FACE_ROUND_EYE_KINDS.includes(e.kind) ? e.built : e.kind);
+/** Eyes per kind: spiders 8, insects 2 compound + 3 ocelli, everything else a pair. */
+const eyeCount = kind => (kind === 'spider' ? 8 : kind === 'insect' ? 5 : 2);
+/** The gaze a skin's eye must have, from its kind's preset and the face's profiles (fauna-composer-eye-2); null for
+ * simple eyes and stalks (measured in the catalogue geometry test). */
+function expectedGaze(r, eye) {
+  const e = resolveComposerEyes(r), t = e.traits, P = t.placement;
+  if (e.rules === 1 && FACE_ROUND_EYE_KINDS.includes(e.kind)) {
+    const profile = FACE_EYE_PROFILE[composerEyeProfileId(r)];
+    return eyeGaze(profile.gazeYawDeg, eye.type === 'eyespot' ? COMPOSER_EYESPOT_PITCH_DEG : COMPOSER_EYE_PITCH_DEG, eye.side);
+  }
+  const cam = FACE_EYE_PROFILE[composerEyeProfileId(r, 'round')];
+  // simple eyes, stalks, the chameleon's turret (its axis leans toward the skull normal) and a lidless spectacle eye (it
+  // turns toward a skull leaning away, COMPOSER_EYE_CATALOGUE.seat.tiltLidless) are measured in the catalogue geometry test
+  if (eye.type === 'ocellus' || eye.type === 'stalk' || t.lid === 'turret' || t.lid === 'spectacle') return null;
+  if (t.structure === 'camera') {
+    const own = P.kind === 'independent' && eye.side > 0 ? P.right : null;
+    return eyeGaze(own?.yawDeg ?? P.yawByFace?.[r.head] ?? P.yawDeg ?? cam.gazeYawDeg, own?.pitchDeg ?? P.pitchDeg ?? COMPOSER_EYE_PITCH_DEG, eye.side);
+  }
+  if (t.structure === 'compound') return eyeGaze(r.head === 'mandibles' ? FACE_EYE_PROFILE.mandibles.gazeYawDeg : cam.gazeYawDeg, COMPOSER_EYE_PITCH_DEG, eye.side);
+  if (t.structure === 'eyespot') return r.head === 'blunt' ? eyeGaze(COMPOSER_EYE_CATALOGUE.eyespotYawDeg, COMPOSER_EYE_CATALOGUE.eyespotPitchDeg, eye.side) : eyeGaze(cam.gazeYawDeg, COMPOSER_EYE_PITCH_DEG, eye.side);
+  return null;
+}
 const RING = {centre: 0, pupil: 1, irisInner: 2, iris: 3, limbus: 4, lid: 5, outerLid: 6, orbit: 7, socket: 8};
 
 /** Head-local frame of the built head bone (x forward, y up, z lateral). */
@@ -136,28 +167,32 @@ test('gaze within 3 degrees of the face profile, no fallbacks, eye centres just 
   for (const [name, recipe] of coverage()) {
     const {graph, skin} = build(recipe), {toLocal} = headFrame(graph), r = graph.recipe;
     assert.equal(skin.eyeFallbacks, 0, `${name}: eye fallbacks`);
-    const profile = FACE_EYE_PROFILE[composerEyeProfileId(r)], tris = headTris(graph, skin);
-    assert.equal(skin.debug.eyes.length, 2, name);
+    const tris = headTris(graph, skin), resolved = resolveComposerEyes(r);
+    assert.equal(skin.debug.eyes.length, eyeCount(resolved.kind), name);
     for (const eye of skin.debug.eyes) {
-      const pitch = eye.type === 'eyespot' ? COMPOSER_EYESPOT_PITCH_DEG : COMPOSER_EYE_PITCH_DEG;
-      const expected = eyeGaze(profile.gazeYawDeg, pitch, eye.side);
+      const expected = expectedGaze(r, eye);
+      if (!expected) continue;
       if (eye.type === 'eyespot') {
-        // an eyespot is flush pigment that follows the cap, so its disc normal is the cap's: its gaze is the direction
-        // it was placed along, and its centre must sit on the cap (within 1% of the head length)
+        // an eyespot follows the cap, so its gaze is the direction it was placed along, and its centre must sit on the
+        // cap (within 1% of the head length; eye-1: the disc's first vertex, eye-2: the bead's base centre)
         assert.ok(angleDeg(eye.gaze, expected) <= 3, `${name}: eyespot direction`);
-        const c = toLocal(...vertex(skin, eye.firstVertex)), hit = nearestExit(tris, c, eye.gaze);
+        const c = resolved.rules === 1 ? toLocal(...vertex(skin, eye.firstVertex)) : eye.centre, hit = nearestExit(tris, c, eye.gaze);
         assert.ok(hit && Math.abs(hit.t) <= 0.01 * graph.dims.headLength, `${name}: eyespot off the cap by ${hit?.t}`);
         eyes++;
         continue;
       }
-      // measured gaze: the Newell normal of the first ring (pupil edge; compound: first station)
-      const ids = ringIds(eye, 1, eye.type === 'compound' ? 12 : 20);
+      // measured gaze: the Newell normal of the first ring (pupil edge; compound: first station, 12 segments in eye-1,
+      // 14 in eye-2)
+      const ids = ringIds(eye, 1, eye.type === 'compound' || eye.type === 'insect' ? (eye.triangles === 120 ? 12 : 14) : 20);
       const local = new Float64Array(ids.flatMap(v => toLocal(...vertex(skin, v))));
       const measured = ringNormal(local, ids.map((_, i) => i));
       const err = Math.min(angleDeg(measured, expected), angleDeg(measured.map(x => -x), expected));
-      assert.ok(err <= 3, `${name} side ${eye.side}: gaze off by ${err.toFixed(2)} deg`);
+      // a cat eye turns toward a skull leaning away from its look (COMPOSER_EYE_CATALOGUE.cat.tiltDeg, EC2 review), at
+      // most as far as the catalogue geometry test allows (35 deg); every other eye looks where its profile says
+      const tol = eye.type === 'cat' ? 35 : 3;
+      assert.ok(err <= tol, `${name} side ${eye.side}: gaze off by ${err.toFixed(2)} deg`);
       assert.ok(eye.surface, `${name}: eye seated on the skull`);
-      if (LIDDED.has(eye.type)) {
+      if (CAMERA.has(eye.type)) {
         // centre to skull surface along the gaze: in [-0.3 er, +0.05 er] (negative: behind the surface)
         const hit = nearestExit(tris, eye.centre, eye.gaze);
         assert.ok(hit, `${name}: skull surface along the gaze`);
@@ -177,16 +212,17 @@ test('cornea gloss sits on the outward, lateral side of every eye (no medial gli
   // centroid is lateral of the eye centre.
   for (const [name, recipe] of [...presets, ...showcases, ...Array.from({length: 24}, (_, i) => [`wild-${i}`, randomComposerRecipe(`eye-glint-${i}`)])]) {
     const {graph, skin} = build(recipe), {toLocal} = headFrame(graph);
-    for (const eye of skin.debug.eyes) {
+    // an eye-2 eyespot bead is pigment draped on the cap (its rim follows the cap behind the tangent point): no cornea
+    for (const eye of skin.debug.eyes.filter(e => e.type !== 'eyespot' || e.triangles === 8)) {
       let sum = 0, cz = 0;
       for (let v = eye.firstVertex; v < eye.firstVertex + eye.vertexCount; v++) {
         const g = skin.gloss[v];
         if (g <= 0.5) continue;
         const p = toLocal(...vertex(skin, v)), d = p.map((x, k) => x - eye.centre[k]);
-        assert.ok(d[0] * eye.gaze[0] + d[1] * eye.gaze[1] + d[2] * eye.gaze[2] >= 0, `${name}: glossy vertex behind its eye centre`);
+        assert.ok(d[0] * eye.gaze[0] + d[1] * eye.gaze[1] + d[2] * eye.gaze[2] >= -1e-6, `${name}: glossy vertex behind its eye centre (float32 positions: 1 micron)`);
         sum += g; cz += g * p[2];
       }
-      if (LIDDED.has(eye.type)) assert.ok(sum > 0 && eye.side * (cz / sum) > eye.side * eye.centre[2], `${name}: gloss centroid medial of the eye`);
+      if (CAMERA.has(eye.type)) assert.ok(sum > 0 && eye.side * (cz / sum) > eye.side * eye.centre[2], `${name}: gloss centroid medial of the eye`);
     }
   }
 });
@@ -239,9 +275,11 @@ test('budget: per-eye triangles, the creature budget on presets, 256 wild and 25
     assert.equal(skin.eyeFallbacks, 0, `${name}: eye fallbacks`);
     for (const e of skin.debug.eyes) {
       kinds.add(e.type);
-      const limit = LIDDED.has(e.type) ? 300 : e.type === 'compound' ? 120 : 8;
+      // eye-1: lidded 280, compound 120, eyespot 8; eye-2: lidded 280, faceted compound 252, eyespot bead 96, simple
+      // eyes 16-72 (a rim flange adds 2 x segments), a stalk with its bulb <= 160
+      const limit = CAMERA.has(e.type) ? 300 : e.type === 'compound' || e.type === 'insect' ? 252 : e.type === 'eyespot' ? 96 : e.type === 'ocellus' ? 72 : 160;
       assert.ok(e.triangles <= limit, `${name}: ${e.type} eye ${e.triangles} triangles`);
-      if (e.type === 'eyespot') assert.equal(e.triangles, 8);
+      if (e.type === 'eyespot') assert.equal(e.triangles, 96, 'the eyespot bead');
     }
     const eyeTris = eyesPart(skin).reduce((n, p) => n + p.triangles, 0);
     assert.equal(eyeTris, skin.debug.eyes.reduce((n, e) => n + e.triangles, 0), `${name}: every eye triangle is in the eyes part`);
@@ -270,7 +308,7 @@ test('determinism: two builds are byte-identical including gloss; the skin indiv
 
 test('auto eye type is a species trait: an individual never changes pupil with its size, sex or age', () => {
   for (const [name, recipe] of [...presets, ...showcases, ['kitten', {...showcases.find(([n]) => n === 'eye-cat')[1]}]]) {
-    const species = normalizeComposerRecipe(recipe).recipe, want = resolveComposerEyes(species).built;
+    const species = normalizeComposerRecipe(recipe).recipe, want = builtType(resolveComposerEyes(species));
     for (const maturity of [0.3, 0.6, 1]) for (let seed = 0; seed <= 6; seed++) for (const sex of ['auto', 'male', 'female']) {
       const r = {...species, maturity, individualSeed: seed, variability: 1, sex, dimorphism: 1};
       const eff = effective(r), traits = composerIndividualTraits(eff);
