@@ -1505,8 +1505,8 @@ function buildEyes(s: Skin, graph: ComposerGraph, hb: ComposerBone, pal: Palette
  * size; colours are linear RGB, luminances Rec.709. */
 export const COMPOSER_EYE_CATALOGUE = Object.freeze({
   /** camera eyes: er = max(profile k, minK) x sizeBoost x preset size x craniumHeight x eyeScale x eyeRel. The face
-   * round's eyes read "tiny" or vanished on large dark heads (rhino k 0.07); the floor and the boost fix the size. */
-  minK: 0.105, sizeBoost: 1.12,
+   * round's eyes read "tiny" or vanished on large dark heads (proboscis k 0.07); the floor and the boost fix the size. */
+  minK: 0.125, sizeBoost: 1.12,
   /** iris: an absolute luminance floor on top of the face round's floors (10x the pupil, 1.8x the lid rim), and a
    * larger gain limit, so a dark-brown iris reads as brown, not as a hole */
   irisMin: 0.075, maxIrisGain: 8,
