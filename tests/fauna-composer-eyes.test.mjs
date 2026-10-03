@@ -12,7 +12,7 @@ import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {COMPOSER_CHOICES, COMPOSER_PRESET_IDS, composerPreset, decodeComposerRecipe, normalizeComposerRecipe, randomComposerRecipe} from '../src/fauna-composer-recipe.ts';
 import {COMPOSER_BUDGET, buildComposerGraph} from '../src/fauna-composer-rig.ts';
-import {COMPOSER_EYE_CONTRAST, COMPOSER_EYE_PITCH_DEG, COMPOSER_EYESPOT_PITCH_DEG, buildComposerSkin, composerSpeciesBodyLength} from '../src/fauna-composer-mesh.ts';
+import {COMPOSER_EYE_CATALOGUE, COMPOSER_EYE_CONTRAST, COMPOSER_EYE_PITCH_DEG, COMPOSER_EYESPOT_PITCH_DEG, buildComposerSkin, composerSpeciesBodyLength} from '../src/fauna-composer-mesh.ts';
 import {createComposerCreature} from '../src/fauna-composer.ts';
 import {composerIndividualTraits, deriveComposerIndividual} from '../src/fauna-composer-individual.ts';
 import {randomCoherentComposerRecipe} from '../src/fauna-composer-species.ts';
@@ -48,13 +48,15 @@ function expectedGaze(r, eye) {
     return eyeGaze(profile.gazeYawDeg, eye.type === 'eyespot' ? COMPOSER_EYESPOT_PITCH_DEG : COMPOSER_EYE_PITCH_DEG, eye.side);
   }
   const cam = FACE_EYE_PROFILE[composerEyeProfileId(r, 'round')];
-  if (eye.type === 'ocellus' || eye.type === 'stalk') return null;
+  // simple eyes, stalks and the chameleon's turret (its axis leans toward the skull normal) are measured in the
+  // catalogue geometry test
+  if (eye.type === 'ocellus' || eye.type === 'stalk' || t.lid === 'turret') return null;
   if (t.structure === 'camera') {
     const own = P.kind === 'independent' && eye.side > 0 ? P.right : null;
     return eyeGaze(own?.yawDeg ?? P.yawByFace?.[r.head] ?? P.yawDeg ?? cam.gazeYawDeg, own?.pitchDeg ?? P.pitchDeg ?? COMPOSER_EYE_PITCH_DEG, eye.side);
   }
   if (t.structure === 'compound') return eyeGaze(r.head === 'mandibles' ? FACE_EYE_PROFILE.mandibles.gazeYawDeg : cam.gazeYawDeg, COMPOSER_EYE_PITCH_DEG, eye.side);
-  if (t.structure === 'eyespot') return r.head === 'blunt' ? eyeGaze(FACE_EYE_PROFILE.blunt.gazeYawDeg, COMPOSER_EYESPOT_PITCH_DEG, eye.side) : eyeGaze(cam.gazeYawDeg, COMPOSER_EYE_PITCH_DEG, eye.side);
+  if (t.structure === 'eyespot') return r.head === 'blunt' ? eyeGaze(COMPOSER_EYE_CATALOGUE.eyespotYawDeg, COMPOSER_EYE_CATALOGUE.eyespotPitchDeg, eye.side) : eyeGaze(cam.gazeYawDeg, COMPOSER_EYE_PITCH_DEG, eye.side);
   return null;
 }
 const RING = {centre: 0, pupil: 1, irisInner: 2, iris: 3, limbus: 4, lid: 5, outerLid: 6, orbit: 7, socket: 8};
@@ -271,8 +273,8 @@ test('budget: per-eye triangles, the creature budget on presets, 256 wild and 25
     for (const e of skin.debug.eyes) {
       kinds.add(e.type);
       // eye-1: lidded 280, compound 120, eyespot 8; eye-2: lidded 280, faceted compound 252, eyespot bead 96, simple
-      // eyes 16-48, a stalk with its bulb <= 160
-      const limit = CAMERA.has(e.type) ? 300 : e.type === 'compound' || e.type === 'insect' ? 252 : e.type === 'eyespot' ? 96 : e.type === 'ocellus' ? 48 : 160;
+      // eyes 16-72 (a rim flange adds 2 x segments), a stalk with its bulb <= 160
+      const limit = CAMERA.has(e.type) ? 300 : e.type === 'compound' || e.type === 'insect' ? 252 : e.type === 'eyespot' ? 96 : e.type === 'ocellus' ? 72 : 160;
       assert.ok(e.triangles <= limit, `${name}: ${e.type} eye ${e.triangles} triangles`);
       if (e.type === 'eyespot') assert.equal(e.triangles, 96, 'the eyespot bead');
     }

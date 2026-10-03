@@ -233,6 +233,9 @@ export interface EyePatchOptions {
   /** catalogue path: rim vertices never cross this plane (unit normal n, minimum offset along it, metres), so two
    * frontal eyes' rims and facial discs never overlap at the midline */
   midline?: {n: Vec3; min: number};
+  /** catalogue turret: where the eye looks (unit, head-local) when the patch is built along the skull normal; the
+   * aperture leans that way by CATALOGUE_EYE.turret.lean x its in-plane part */
+  look?: Vec3;
 }
 /** A lidded vertebrate eye. 141 front vertices (centre + 7 rings of 20) + a 21-vertex closing cone; 280 triangles. */
 export function buildEyePatch(o: EyePatchOptions): EyePatch {
@@ -428,9 +431,16 @@ export const CATALOGUE_EYE = Object.freeze({
   shelf: {lift: 0.34, drop: 0.2, orbitLift: 0.16, from: 0.25, to: 0.7},
   raised: {raise: 0.35, cornea: 1.15}, crocodile: {raise: 0.3, palpebral: 0.15},
   disc: {w: 2.1, above: 2.0, below: 2.0, lift: 0.02},
-  turret: {lift: 0.55, aperture: 0.82, orbit: 1.5},
+  turret: {lift: 0.55, aperture: 0.82, orbit: 1.5, lean: 0.4},
   sclera: {gap: 0.03, opening: 0.97},
   nictitatingDeg: 40, spectacleLift: 0.02, spectacleOuterLift: 0.01,
+  /** an outer-lid or orbit vertex whose line along the gaze misses the skull (beyond its silhouette) and whose closest
+   * skull point lies more than wrapOff er off its line is wrapped onto that point (lifted along its normal), so the rim
+   * hugs a skull that curves away instead of standing in the air as a flap */
+  wrapOff: 0.15,
+  /** the eyeball stands at most this far (er) above the depth its pupil and inner iris need: a large eye at a skull
+   * corner (a lateral eye beside a flat face) otherwise rises to the highest skull point under its rim, a slab */
+  domeRiseMax: 0.2,
   pattern: {radial: 0.12, reticulated: 0.55, faint: 0.75},
   w: [[-0.5, 0.12], [-0.42, -0.28], [-0.2, -0.3], [0, -0.05], [0.2, -0.3], [0.42, -0.28], [0.5, 0.12]] as readonly (readonly [number, number])[],
   wOrigin: [0, 0.05] as readonly [number, number],
@@ -537,16 +547,21 @@ function buildCataloguePatch(o: EyePatchOptions, sp: CatalogueEyeSpec): EyePatch
     const k = Math.max(0, (o.midline.min - cz) / (along * er));
     return [x * k, y * k];
   };
-  const surfaceZ = (x: number, y: number): [number, RayHit | null] => {
+  /** skull depth under an in-plane point: [z (er), hit, how far (er) the hit lies off the point's line] */
+  const surfaceZ = (x: number, y: number): [number, RayHit | null, number] => {
     if (o.surface) {
       const p = at(x, y, E.recess), hit = outermostExit(o.surface, p, g, E.rimSearch * er);
-      if (hit) return [E.recess + hit.t / er, hit];
+      if (hit) return [E.recess + hit.t / er, hit, 0];
       const near = closestPointOnSoup(o.surface, p);
-      if (near && Math.hypot(...sub(near.point, p)) <= E.closestSearch * er) { const t = dot(sub(near.point, p), g); return [E.recess + t / er, {...near, t}]; }
+      if (near && Math.hypot(...sub(near.point, p)) <= E.closestSearch * er) {
+        const d = sub(near.point, p), t = dot(d, g);
+        return [E.recess + t / er, {...near, t}, Math.hypot(...addS(d, g, -t)) / er];
+      }
     }
     rimFallbacks += o.surface ? 1 : 0;
-    return [E.recess, null];
+    return [E.recess, null, 0];
   };
+  const wrap = (p: Vec3, hit: RayHit | null, off: number, liftEr: number): Vec3 => (hit && off > C.wrapOff ? addS(hit.point, hit.normal, liftEr * er) : p);
   const domeLimit = sp.domeLimit ?? sp.limbus ?? E.limbus, capR2 = sp.corneaRadius * sp.corneaRadius, capBase = Math.sqrt(capR2 - domeLimit * domeLimit);
   const lift = (x: number, y: number) => { const rho = Math.min(domeLimit, Math.hypot(x, y)); return Math.sqrt(capR2 - rho * rho) - capBase; };
   const P = sp.pupil, pup = (t: number, i: number) => cataloguePupilPoint(P, t, i, N);
@@ -574,12 +589,20 @@ function buildCataloguePatch(o: EyePatchOptions, sp: CatalogueEyeSpec): EyePatch
   ];
   const T = sp.turret, sc = T ? surfaceZ(0, 0)[0] : 0;
   const dome: {x: number; y: number; role: EyeRole; hit: RayHit | null; i: number}[] = [];
-  let base = -Infinity;
-  const seat = (x: number, y: number, role: EyeRole, i: number) => { const [sz, hit] = surfaceZ(x, y); if (role !== 'limbus' && role !== 'sclera') base = Math.max(base, sz - lift(x, y)); dome.push({x, y, role, hit, i}); };
+  let base = -Infinity, baseInner = -Infinity;
+  const seat = (x: number, y: number, role: EyeRole, i: number) => {
+    const [sz, hit] = surfaceZ(x, y);
+    if (role !== 'limbus' && role !== 'sclera') base = Math.max(base, sz - lift(x, y));
+    if (role === 'pupil' || role === 'iris-inner') baseInner = Math.max(baseInner, sz - lift(x, y));
+    dome.push({x, y, role, hit, i});
+  };
   seat(0, 0, 'pupil', 0);
   for (const [role, shape, k] of inner) for (let i = 0; i < N; i++) { const [x, y0] = shape(th(i), i), y = k === null ? y0 : clipY(x, y0, k); seat(x, y, role, i); }
+  base = Math.min(base, baseInner + C.domeRiseMax);
   const domeZ = (x: number, y: number) => T ? sc + T.aperture - 0.05 + lift(x, y) : base + E.eyeLift + lift(x, y) + sp.raise;
-  dome.forEach(({x, y, role, hit, i}, n) => { if (n % N === 1 || n === 0) rings.push(positions.length / 3); push(at(x, y, domeZ(x, y)), role, EYE_GLOSS.cornea, hit, pattern(role, i)); });
+  // a turret's aperture (dome and rim) leans toward the look
+  const [lx, ly] = T && o.look ? [dot(o.look, a) * C.turret.lean, dot(o.look, b) * C.turret.lean] : [0, 0];
+  dome.forEach(({x, y, role, hit, i}, n) => { if (n % N === 1 || n === 0) rings.push(positions.length / 3); push(at(x + lx, y + ly, domeZ(x, y)), role, EYE_GLOSS.cornea, hit, pattern(role, i)); });
   // lid ring (the opening's rim; turret: the aperture rim; spectacle: the brille's edge at cornea height)
   const tf = Math.atan2(dot(fwd, b), dot(fwd, a)), nictDeg = C.nictitatingDeg * Math.PI / 180;
   const nictitans = (t: number) => sp.nictitating === 'front' ? Math.abs(Math.atan2(Math.sin(t - tf), Math.cos(t - tf))) <= nictDeg : sp.nictitating === 'lower' && Math.sin(t) < -0.2;
@@ -590,7 +613,7 @@ function buildCataloguePatch(o: EyePatchOptions, sp: CatalogueEyeSpec): EyePatch
     const z = T ? sc + T.aperture : sp.spectacle ? Math.max(base + E.eyeLift + lift(x, y) + sp.raise, sz + C.spectacleLift) : sz + E.lidLift + sp.raise;
     lidZ.push(z);
     const nict = nictitans(t);
-    push(at(x, y, z), nict ? 'nictitans' : 'lid', T ? 0.9 : sp.spectacle ? 1 : nict ? 0.7 : EYE_GLOSS.lid, hit);
+    push(at(x + lx, y + ly, z), nict ? 'nictitans' : 'lid', T ? 0.9 : sp.spectacle ? 1 : nict ? 0.7 : EYE_GLOSS.lid, hit);
   }
   // outer lid (shelf and palpebral bump on its upper arc; turret: the cone's shoulder; sclera layout: on the skin)
   const [ow, oa, ob] = [L.w + sp.outerMargin[0], L.above + sp.outerMargin[1], L.below + sp.outerMargin[2]];
@@ -602,11 +625,11 @@ function buildCataloguePatch(o: EyePatchOptions, sp: CatalogueEyeSpec): EyePatch
     let [x, y] = T ? [T.w * Math.cos(t), T.w * Math.sin(t)] as [number, number] : opening(t, ow, oa, ob);
     if (sp.shelfDrop) y -= sp.shelfDrop * wShelf;
     [x, y] = mid(x, y);
-    const [sz, hit] = surfaceZ(x, y);
+    const [sz, hit, off] = surfaceZ(x, y);
     const z = T ? sz + T.lift : lastRing ? sz + E.orbitLift : sp.spectacle ? sz + C.spectacleOuterLift
       : Math.max(sz + E.outerLidLift + sp.raise, lidZ[i]! - E.outerLidDrop) + sp.shelfLift * wShelf;
     const role: EyeRole = T ? 'turret' : lastRing ? 'orbit' : sp.shelfLift && wShelf > 0.5 ? 'brow' : 'outer-lid';
-    const p = at(x, y, z);
+    const p = T ? at(x, y, z) : wrap(at(x, y, z), hit, off, z - sz);
     outer.push(p);
     push(p, role, T ? 0.15 : 0, hit);
   }
@@ -618,7 +641,7 @@ function buildCataloguePatch(o: EyePatchOptions, sp: CatalogueEyeSpec): EyePatch
       const t = th(i), wShelf = smooth01(C.shelf.from, C.shelf.to, Math.sin(t)), D = sp.disc;
       const [x, y] = mid(...(T ? [C.turret.orbit * Math.cos(t), C.turret.orbit * Math.sin(t)] as [number, number]
         : D ? opening(t, D.w, D.above, D.below) : opening(t, L.w + sp.orbitMargin[0], L.above + sp.orbitMargin[1], L.below + sp.orbitMargin[2])));
-      const [sz, hit] = surfaceZ(x, y), p = at(x, y, sz + (D ? C.disc.lift : E.orbitLift) + sp.shelfOrbitLift * wShelf);
+      const [sz, hit, off] = surfaceZ(x, y), lift = (D ? C.disc.lift : E.orbitLift) + sp.shelfOrbitLift * wShelf, p = wrap(at(x, y, sz + lift), hit, off, lift);
       closing.push(p);
       push(p, 'orbit', 0, hit);
     }
@@ -646,7 +669,7 @@ export interface FacetedEyeOptions {
 export const FACETED_EYE = Object.freeze({segments: 14, stations: 5, lens: 0.07, gloss: {lens: 0.85, edge: 0.3, pupil: 0.6}});
 /** A compound eye that reads as faceted: a half-ellipsoid lattice (dark 'facet-edge' vertices) whose every cell carries
  * its own raised lens centre ('facet-a'/'facet-b', glossy), so the dome breaks the light into many small highlights.
- * The apex fan is the dark pseudopupil; a base fan closes it. segments x (4 x stations - 2) triangles (14 x 5: 252). */
+ * The apex vertex is the dark pseudopupil (a small spot fading into the lattice); a base fan closes it. segments x (4 x stations - 2) triangles (14 x 5: 252). */
 export function buildFacetedEye(o: FacetedEyeOptions): EyePatch {
   const S = o.segments ?? FACETED_EYE.segments, M = o.stations ?? FACETED_EYE.stations, G = FACETED_EYE.gloss, g = normalize3(o.gaze);
   const a = normalize3(cross(o.up, g)), b = cross(g, a), [ra, rb, rg] = o.er3, c0 = o.centre;
@@ -658,8 +681,8 @@ export function buildFacetedEye(o: FacetedEyeOptions): EyePatch {
   };
   const phiOf = (j: number) => (j / M) * Math.PI / 2, tOf = (k: number) => 2 * Math.PI * k / S;
   rings.push(push(pt(0, 0), 'pseudopupil', G.pupil));
-  // lattice rings 1..M (ring 1 bounds the pseudopupil; ring M is the base rim)
-  for (let j = 1; j <= M; j++) { rings.push(positions.length / 3); for (let k = 0; k < S; k++) push(pt(phiOf(j), tOf(k)), j === 1 ? 'pseudopupil' : 'facet-edge', G.edge); }
+  // lattice rings 1..M (ring M is the base rim)
+  for (let j = 1; j <= M; j++) { rings.push(positions.length / 3); for (let k = 0; k < S; k++) push(pt(phiOf(j), tOf(k)), 'facet-edge', G.edge); }
   const ringV = (j: number, k: number) => 1 + (j - 1) * S + ((k % S) + S) % S;
   // lens centres of the cells between rings j and j + 1
   rings.push(positions.length / 3);
@@ -682,11 +705,13 @@ export interface OcellusOptions {
   /** base centre, outward normal and an up hint, head-local */
   centre: Vec3; normal: Vec3; up: Vec3;
   segments: number; stations: number;
-  /** colour the lowest station as a rim ('ocellus-rim') */
+  /** a pale rim: the lowest station and a flange ring around the dome ('ocellus-rim') */
   rim?: boolean;
 }
+/** Simple-eye numbers: the rim flange's radius (x r). */
+export const OCELLUS = Object.freeze({flange: 1.4});
 /** A simple eye: a glossy dome of `segments` x `stations` plus an apex and a closing base fan; 2 x segments x stations
- * triangles (6 x 1: 12, 8 x 1: 16, 12 x 2: 48). */
+ * triangles (6 x 1: 12, 8 x 1: 16, 12 x 2: 48), plus 2 x segments with a rim flange. */
 export function buildOcellus(o: OcellusOptions): EyePatch {
   const S = o.segments, M = o.stations, n = normalize3(o.normal);
   let a = cross(o.up, n); if (Math.hypot(...a) < 1e-6) a = cross([1, 0, 0], n);
@@ -701,11 +726,16 @@ export function buildOcellus(o: OcellusOptions): EyePatch {
     const phi = (j / M) * Math.PI / 2, rr = o.r * Math.sin(phi), h = o.height * Math.cos(phi);
     for (let k = 0; k < S; k++) { const t = 2 * Math.PI * k / S; push(at(rr * Math.cos(t), rr * Math.sin(t), h), o.rim && j === M ? 'ocellus-rim' : 'ocellus', 1); }
   }
+  if (o.rim) {
+    rings.push(positions.length / 3);
+    for (let k = 0; k < S; k++) { const t = 2 * Math.PI * k / S; push(at(OCELLUS.flange * o.r * Math.cos(t), OCELLUS.flange * o.r * Math.sin(t), 0), 'ocellus-rim', 0.3); }
+  }
+  const M1 = o.rim ? M + 1 : M;
   const base = push(at(0, 0, -0.3 * o.height), 'socket', 0);
   rings.push(base);
   for (let k = 0; k < S; k++) index.push(0, 1 + k, 1 + (k + 1) % S);
-  for (let j = 1; j < M; j++) { const A = 1 + (j - 1) * S, B = 1 + j * S; for (let k = 0; k < S; k++) { const l = (k + 1) % S; index.push(A + k, B + k, B + l, A + k, B + l, A + l); } }
-  const last = 1 + (M - 1) * S;
+  for (let j = 1; j < M1; j++) { const A = 1 + (j - 1) * S, B = 1 + j * S; for (let k = 0; k < S; k++) { const l = (k + 1) % S; index.push(A + k, B + k, B + l, A + k, B + l, A + l); } }
+  const last = 1 + (M1 - 1) * S;
   for (let k = 0; k < S; k++) index.push(base, last + (k + 1) % S, last + k);
   return {positions, roles: Uint8Array.from(roles), gloss, index, surface: roles.map(() => null), rimFallbacks: 0, rings};
 }
@@ -718,7 +748,7 @@ export interface EyespotBeadOptions {
   rimLift?: (p: Vec3) => number;
 }
 /** Eyespot bead numbers: segments; ring radii (x r) pigment, pigment edge, rim, skin blend; dome heights (x r). */
-export const EYESPOT_BEAD = Object.freeze({segments: 12, rings: [0.5, 0.82, 1.0, 1.35] as readonly number[], heights: [0.32, 0.24, 0.1, 0.04, 0] as readonly number[], socketDepth: 0.6});
+export const EYESPOT_BEAD = Object.freeze({segments: 12, rings: [0.5, 0.82, 1.0, 1.35] as readonly number[], heights: [0.5, 0.4, 0.18, 0.06, 0] as readonly number[], socketDepth: 0.6});
 /** A worm's pigment eyespot that reads at normal size: a low glossy dome of tinted pigment (apex + 2 rings), a pale rim
  * ring and a ring blending into the skin, closed behind by a cone. 12 x 8 = 96 triangles. */
 export function buildEyespotBead(o: EyespotBeadOptions): EyePatch {
