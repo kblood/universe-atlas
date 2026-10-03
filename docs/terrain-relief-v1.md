@@ -320,6 +320,7 @@ Captures are under `test-results/relief-round-2026-10-03/P4-RELIEF/views/`. The 
   time), not terrain. Luna's verdicts are unchanged in substance: "AFTER partly meets the target" for both the
   Maithea set and the other worlds. It names the Lethuris orbit maze ("an intricate branching white network"),
   flattened AFTER horizons on Maithea, Raiva and Selawyn, and less visible snow on the Maithea high range.
+  Round 3 (section 13) investigates the last two: neither is fixed, both are explicit deferrals for the owner.
 
 ## 11. Height bound and craters
 
@@ -345,3 +346,100 @@ in section 8, which is flagged for owner acceptance.
 | version-compat biome-climate | version pins | re-pinned, old values in the messages |
 | lod-consistency Lethuris | ceiling 6.9 vs 6.99 | section 8 |
 
+
+## 13. Round 3: weak range snow and flattened horizons (open, for the owner)
+
+Owner decision 1 accepts the Maithea snow band only "as long as ranges have snow". Three independent Luna runs
+read the round-2 AFTER `range` frame as weak snow ("Range has snow: weak"). Round 3 looked for the cause. Neither
+defect is fixed in this package. Both are deferred explicitly below, and the owner should decide before merge.
+Evidence is under `test-results/relief-round-2026-10-03/P4-RELIEF/r3/`: the capture script
+`capture-p4-r3.browser.mjs`, `views/`, `views-snowexp/`, `luna/`, and `slope-snow.txt`.
+
+**The data says the range is snow.**
+- The r2 range pick: 3989 m, latitude 49 deg, classified 'Alpine / polar snow', snowFraction 1.000.
+- Its tile colour is (213,224,222), 98.7% of the SNOW constant (216,228,226).
+- In a 4 km disc around it, 100% of land has snowFraction > 0.8. In a 10 km disc, 90.7% does, with mean tile
+  colour (209,221,218).
+- Over land above 3 km at latitude 40-60 deg, 87.6% is snow, and 95.9% above 3.5 km (the reviewer's probe, re-run in round 3).
+- The terrain colour and the classifier therefore agree. Nothing in the P4 colour path turns this range grey.
+
+**What the render does with it** (pixel means of a 300x60 terrain crop at the same screen spot):
+
+| Frame | Mean RGB |
+|---|---|
+| r1 BEFORE `range` | (138,150,152) |
+| r2 AFTER `range` | (142,154,157) |
+| r3 AFTER `rangeLit` | (202,205,201) |
+| r3 BEFORE `rangeLit` | (205,207,201) |
+| sky behind the r3 frames | about (173,192,212) |
+
+BEFORE and AFTER render this snow identically, within 4 levels. P4 did not darken it. Three causes stack up:
+1. **Pose (P4's capture, now corrected).** The r2 `range` pose looked 31 deg off the sun azimuth under a 27 deg
+   sun. It therefore saw the shaded lee faces at 140-160. The r3 `rangeLit` pose is on the sun side of the same
+   range: the highest point within 10 km is 5253 m, the eye is 14 km away with the sun behind it, and it renders
+   at about 202.
+2. **Presentation (renderer, not P4-owned).** ACES filmic tone mapping at exposure 1.2, plus haze, puts sunlit
+   snow at about 200-213. That is barely brighter than the horizon sky, so the snow reads pale grey.
+   - Inside 1.5-6 km, the ground-detail shader (`src/ground-material.ts`) applies the soil multiplier
+     `mix(.72,.69,.61 .. 1.05,1.01,.88)` and the `x(.82 + signal*.32)` factor to snow too. Snow gets only a
+     `(.96,.98,1.02)` cool tint, which leaves a beige cast in the foreground.
+   - Ground-material, tone mapping and exposure are owned by no package in this round.
+3. **No snow/rock contrast (terrain colour, deferred).** Snow follows the climate's snowFraction and ignores
+   slope. In a 12 km disc around the 5253 m top, every slope bin is 100% snow. The steepest sample is 40.1 deg at
+   a 200 m baseline, and only 119 of 3000 samples are steeper than 30 deg. The high ground is a broad glaciated
+   plateau, with no exposed rock ribs that would make it read as a snow-capped range. That is physically
+   plausible: on Earth, a 4-5 km plateau at 49 deg would also be ice-covered.
+
+**Experiment (not committed).** A scratch build raised SNOW to (242,247,250), close to fresh-snow albedo, and
+nothing else (`r3/dist-snowexp`, `views-snowexp/`). The source was restored immediately afterwards. The sunlit
+crop rose only from 202 to 213, because ACES compresses it. Luna (`luna/verdict-r3-2.txt`, exit 0): "Brighter
+albedo helps: slightly", with every frame still "partly". In its words: "the broad slopes are pale gray with a
+slight beige cast, and their soft, low-contrast shading makes them look smooth and dusty rather than distinctly
+snowy. I can't clearly see rock outcrops". The albedo constant is therefore not the lever, and this package
+keeps SNOW unchanged, with no output change in round 3.
+
+**Re-judge with sun-aware poses** (`luna/verdict-r3-1.txt`, exit 0). Images: r2 AFTER `range`, r3 AFTER
+`rangeLit`, and r3 AFTER/BEFORE `horizonRange`. The last pose looks from snow-free lowland at 450 m, 45 km from a
+4174 m snow-classified range, with the sun behind the camera. Luna's verdict:
+- "Range snow (Image 2): partly", for the sunlit range;
+- "Distant range (Image 3): weak";
+- "Lowland (Image 3): snow-free";
+- "Horizon (Image 3): plausible";
+- AFTER is better than BEFORE for "ranges have snow, lowland/valleys do not", because in BEFORE "the lowland
+  does not read as snow-free".
+
+Luna is not self-consistent on the r2 frame. It gave "under roughly 5% white" in the reviewer's run and
+"20-30% ... snow in shadow" in this run.
+
+**The r2 'flattened horizon' is an arbitrary plateau, not a picked range.** The r2 `horizon` pose targets the
+first sun-lit stratified range direction. That point is 4623 m at latitude -9.5 deg, classified 'Dry upland'.
+- Heights: a median of 3775 m in a 15 km disc and 3449 m in a 45 km disc, with a range of 413-4980 m.
+- Snow: 0.0% in both discs, which is correct for the tropical snowline.
+- The eye sits 2.5 km above about 3.5 km of ground, so it looks across and down a high dry plateau. A "pale,
+  fairly uniform plain" is what that terrain is. A picked snowy range from lowland (`horizonRange`) reads
+  "plausible".
+
+**A renderer observation, for P5 or the coordinator.** The r3 `rangeHighSun` pose shows a featureless smooth
+surface with the sea beyond, at 46/53 draws, in BOTH BEFORE and AFTER. Its site is a 4387 m snow peak at latitude
+-41 deg with a 60 deg sun. The data line from the eye to the peak runs from meadow at 3681 m to snow at 4387 m, so
+the frame does not show the terrain the sampler describes. That frame is excluded from judgement. The same pose in
+both trees means the cause is not P4.
+
+**Deferred, for the owner** (decision 1's condition is not met visually):
+- D1, range snow reads weak. The cause is presentation (tone mapping, exposure, and the ground-detail soil
+  multiplier on snow), plus slope-blind snow colour. Proposed follow-ups, each with its own version bump:
+  - a snow branch in `ground-material.ts` that skips the soil multiplier where `groundW.w` dominates;
+  - a slope or exposure term in the terrain snow colour, which would also need a matching classifier rule so
+    that colour and classification keep agreeing;
+  - a tone-mapping or exposure review of sunlit snow against the sky.
+  The data meets decision 1: the ranges are snow-classified, lowland is snow-free, and beaches exist.
+- D2, horizons flattened. The r2 frame is a tropical dry plateau, explained by the data above. A picked snowy
+  range from lowland reads "plausible" to Luna. Raiva, Selawyn and Lethuris horizon poses use the same arbitrary
+  first-range rule and were not re-posed in round 3.
+
+Round 3 test runs, at head dab16ac, with no source change in round 3 (log `r3/npm-test-head-dab16ac.log`):
+- `npm test`: 1221 tests, 1211 pass, 5 fail. Four are the same failures main has.
+- The fifth is `fauna-coat-fields` 'performance sanity': it measured a median of 8.06 us under suite load,
+  against its 2 us check. It passes in isolation (20/20). No fauna file differs from main.
+- `tsc --noEmit` exits 0.
+- life-cpu-digest, planet-forest-frame-digest, terrain-relief-hypsometry and terrain-elevation-identity: 14/14.
