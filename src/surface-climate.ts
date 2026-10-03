@@ -12,7 +12,13 @@
  * table and owner amendments: docs/surface-climate-v1.md.
  *
  * Import rules (enforced by tests/surface-climate.test.mjs): only catalog.ts,
- * stellar-evolution.ts and det-math.ts, so rock modules may import this later.
+ * stellar-evolution.ts, det-math.ts and planet-geophysics.ts (itself catalog.ts
+ * only), so rock modules may import this later.
+ *
+ * surface-climate-1.1-geo-g (relief round 2026-10-03, P4-RELIEF E, owner
+ * decision 3): the gravity that sets a catalogue body's lapse rate is
+ * planetGeophysics(body).surfaceGravityMS2 (provenance 'geophysics') instead of
+ * G*massKg/R^2. CLIMATE_CALIBRATION is unchanged (its sha is unchanged).
  *
  * Determinism: the per-body tables are built only from + - * /, sqrt, min, max,
  * floor, abs and the det-math sine/detAcos (docs/time-and-coordinates-contract.md
@@ -22,8 +28,9 @@
 import {G,hash64,noise,type Body,type V3} from './catalog.ts';
 import {spinStateFor} from './stellar-evolution.ts';
 import {detAcos,sine} from './det-math.ts';
+import {planetGeophysics} from './planet-geophysics.ts';
 
-export const CLIMATE_VERSION='surface-climate-1';
+export const CLIMATE_VERSION='surface-climate-1.1-geo-g';
 
 /**
  * Heuristic-v1 constants. A test pins sha256(JSON.stringify(CLIMATE_CALIBRATION)),
@@ -31,14 +38,20 @@ export const CLIMATE_VERSION='surface-climate-1';
  *
  * Owner amendment 1 (2026-10-02): there is NO single global lapse rate. The plan's
  * LAPSE_K_PER_M is replaced by a per-planet value from surface gravity,
- *   Gamma = LAPSE_MOIST_FACTOR * g / CP_J_PER_KG_K,   g = G*massKg/radiusM^2,
+ *   Gamma = LAPSE_MOIST_FACTOR * g / CP_J_PER_KG_K,
  * i.e. the dry adiabatic lapse rate g/cp scaled by a constant moist factor chosen
  * so that Earth (g = 9.81 m/s^2) gets 0.6652*9.81/1004 = 6.4996 K/km, the ICAO
  * standard-atmosphere 6.5 K/km. The result is clamped to
  * [LAPSE_MIN_K_PER_M, LAPSE_MAX_K_PER_M] (1 .. 9.8 K/km; 9.8 K/km is Earth's dry
- * adiabat) to keep non-catalogue inputs sane. Catalogue rocky planets have a
- * fixed bulk density of 4800 kg/m^3 (catalog.ts), so today g is proportional to
- * radius: 2.7 .. 12.1 m/s^2, Gamma 1.8 .. 8.0 K/km, never clamped.
+ * adiabat).
+ *
+ * Gravity source. surface-climate-1 used g = G*massKg/radiusM^2 from the
+ * catalogue (fixed 4800 kg/m^3, so g was proportional to radius: 2.7 .. 12.1
+ * m/s^2, Gamma 1.8 .. 8.0 K/km, never clamped). Since surface-climate-1.1-geo-g
+ * g = planetGeophysics(body).surfaceGravityMS2 (planet-geophysics-1: per-kind
+ * density, so g is no longer monotone in radius). Over the 7622 rocky planets
+ * of the first 2000 G001 systems: 2.10 .. 21.3 m/s^2, Gamma 1.39 K/km .. the
+ * 9.8 K/km clamp, which 1001 of them (13.1%) reach.
  *
  * OBLIQUITY_QUANTUM_RAD (2^-30 rad, about 1e-9 rad) snaps the folded obliquity to
  * a power-of-two grid so tilt t and its retrograde twin pi-t produce bit-identical
@@ -63,7 +76,7 @@ export const TABLE_ROWS=64, ORBIT_SAMPLES=256;
 
 export type ClimateProvenance=Readonly<{
   anchorTempK:'catalogue'|'override'; obliquityRad:'catalogue'|'override';
-  surfaceGravityMS2:'catalogue-derived'|'override'; lapseKPerM:'derived-heuristic'|'override';
+  surfaceGravityMS2:'catalogue-derived'|'geophysics'|'override'; lapseKPerM:'derived-heuristic'|'override';
   table:'derived-heuristic';
 }>;
 export type ClimateForcing=Readonly<{
@@ -239,17 +252,19 @@ export function climateForcingFor(body:Body,opts?:{anchorTempK?:number;lapseKPer
   // Every body field the forcing reads is in the key (water/type feed frozen and
   // habitat, mass/radius feed gravity), so a derived body that shares a seed and
   // temperature with a catalogue body never reads that body's forcing.
-  const key=[body.seed,anchorTempK,body.water,body.type,body.massKg,body.radiusM].join('|')+(opts?.lapseKPerM===undefined?'':'|lapse='+opts.lapseKPerM);
+  const key=[body.seed,body.kind,anchorTempK,body.water,body.type,body.massKg,body.radiusM].join('|')+(opts?.lapseKPerM===undefined?'':'|lapse='+opts.lapseKPerM);
   const hit=forcingCache.get(key);
   if(hit)return hit;
-  const g=surfaceGravityMS2(body);
+  // surface-climate-1.1-geo-g: surface physics gravity (planet-geophysics-1),
+  // never the catalogue orbital mass (owner decisions 3 and 4).
+  const g=planetGeophysics(body).surfaceGravityMS2;
   const forcing=climateForcingFromParams({
     anchorTempK,obliquityRad:spinStateFor(body).axialTiltRad,water:body.water,
     frozen:body.type==='Ice world',habitat:temperateHabitat(body),
     moistureSeed:Number(hash64(body.seed+'/macro-v1')&0xffffffffn),
     surfaceGravityMS2:g,lapseKPerM:opts?.lapseKPerM,
     provenance:{anchorTempK:opts?.anchorTempK===undefined?'catalogue':'override',obliquityRad:'catalogue',
-      surfaceGravityMS2:'catalogue-derived',lapseKPerM:opts?.lapseKPerM===undefined?'derived-heuristic':'override'},
+      surfaceGravityMS2:'geophysics',lapseKPerM:opts?.lapseKPerM===undefined?'derived-heuristic':'override'},
   });
   if(forcingCache.size>=FORCING_CACHE_CAP){const oldest=forcingCache.keys().next().value;if(oldest!==undefined)forcingCache.delete(oldest);}
   forcingCache.set(key,forcing);

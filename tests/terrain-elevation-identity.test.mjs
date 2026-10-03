@@ -17,8 +17,38 @@ import {galaxies,sector,system} from '../src/catalog.ts';
 import {baseTerrainSampler,terrainSampler} from '../src/terrain.ts';
 import {fib,maithea,goldenTerrainBodies,waterWorlds} from './terrain-climate-fixtures.mjs';
 
-export const ELEVATION_IDENTITY_SHA256='4f6021aafa19091ee059b94a6119867d953881d17fe624da758f1764bd7e89f8';
-export const KEPT_PALETTE_COLOUR_SHA256='06d335ce6a1fbf309a65f5b195098a8a0e1324979de27fdb448b173f73ff84ac';
+/** BASE (relief round P4 step 0, recorded on the unmodified tree 2c47cc9 before
+ * any relief edit): baseTerrainSampler(body)(d).elevationM (Float64 LE) plus the
+ * ocean byte, 4096 Fibonacci directions on the same 6 identity bodies. This is
+ * the archived drainage/river input field; it is NEVER re-pinned. A change here
+ * means the baseline rock the canonical drainage was built on moved. */
+export const BASE_ELEVATION_SHA256='322f0eb2bcf8414b74da6fe63fcfb3017c5496e69187c9134f3049d0ca7fb5f7';
+export function baseElevationDigest(n=4096){
+  const bodies=[maithea(),...goldenTerrainBodies().slice(0,5)];
+  const hash=createHash('sha256');
+  const f=new Float64Array(1),bytes=new Uint8Array(f.buffer),flag=new Uint8Array(1);
+  const ids=[];
+  for(const body of bodies){
+    ids.push(body.id);hash.update(body.id);
+    const base=baseTerrainSampler(body);
+    for(let i=0;i<n;i++){const b=base(fib(i,n));f[0]=b.elevationM;hash.update(bytes);flag[0]=b.ocean?1:0;hash.update(flag);}
+  }
+  return {sha:hash.digest('hex'),ids};
+}
+
+/** RELIEF: the terrainSampler surface (re-pinned deliberately, never silently).
+ * terrain-1.8.0-relief (P4-RELIEF, docs/terrain-relief-v1.md) re-pins both:
+ *   ELEVATION_IDENTITY 4f6021aafa19091ee059b94a6119867d953881d17fe624da758f1764bd7e89f8
+ *                   -> 27036fc2a5924d3c54f5dec62b92e5be78c69ebe035b85767801d7f15e4e179e
+ *     (R-CAL-1 floor shaping, seabed, dry-world scaling; BASE above is unchanged;
+ *     ocean flags at sea 0 unchanged: 0 coastline flips, tests/terrain-relief-hypsometry)
+ *   KEPT_PALETTE 06d335ce6a1fbf309a65f5b195098a8a0e1324979de27fdb448b173f73ff84ac
+ *             -> 5cf3db02c9f62fc79d85ac46c028353a97e3acdc76c6f3a748601f4d928f3bba
+ *     (ONLY the water-world ocean colours move: they shade by depth and the seabed
+ *     is deeper; all 10 non-water bodies and the base-sampler colours are
+ *     bit-identical, measured diff 0 of 2048 each). */
+export const ELEVATION_IDENTITY_SHA256='27036fc2a5924d3c54f5dec62b92e5be78c69ebe035b85767801d7f15e4e179e';
+export const KEPT_PALETTE_COLOUR_SHA256='5cf3db02c9f62fc79d85ac46c028353a97e3acdc76c6f3a748601f4d928f3bba';
 
 export function elevationIdentityDigest(n=4096){
   const bodies=[maithea(),...goldenTerrainBodies().slice(0,5)];
@@ -73,14 +103,20 @@ export function keptPaletteColourDigest(n=2048){
   return {sha:hash.digest('hex'),ids,oceanSamples};
 }
 
-test('elevation, groundHeight and ocean are bit-identical to terrain-1.6.0 (pre-colour-v2 capture)',()=>{
+test('BASE: baseTerrainSampler elevation and ocean are bit-identical to the pre-relief tree (never re-pinned)',()=>{
+  const {sha,ids}=baseElevationDigest();
+  assert.equal(ids.length,6);
+  assert.equal(sha,BASE_ELEVATION_SHA256);
+});
+
+test('RELIEF: terrainSampler elevation, groundHeight and ocean are bit-identical to the terrain-1.8.0-relief pin (re-pinned deliberately by P4-RELIEF, old 4f6021aa)',()=>{
   const {sha,ids}=elevationIdentityDigest();
   assert.deepEqual(ids,['G001/C2128,0,1/0/planet/1','G001/C2128,0,7/0/planet/0','G001/C2128,0,7/0/planet/1',
     'G001/C2128,0,7/0/planet/2','G001/C2128,0,7/0/planet/3','G001/C2128,0,7/0/planet/4']);
   assert.equal(sha,ELEVATION_IDENTITY_SHA256);
 });
 
-test('ocean, sea-ice, Ice, Volcanic, barren, gas-giant and base-sampler colours are bit-identical to terrain-1.6.0',()=>{
+test('kept palette: ocean, sea-ice, Ice, Volcanic, barren, gas-giant and base-sampler colours are bit-identical to the terrain-1.8.0-relief pin (ocean colours follow the relief depth; old 06d335ce)',()=>{
   const {sha,ids,oceanSamples}=keptPaletteColourDigest();
   assert.equal(ids.length,16);
   assert.ok(oceanSamples>4000,`ocean samples ${oceanSamples}`);
