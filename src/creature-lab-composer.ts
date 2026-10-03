@@ -173,12 +173,12 @@ function why(r:ComposerRecipe,key:Key):string{
  if(key==="trunkLength"&&r.head!=="proboscis")return "Only a Proboscis face has a trunk.";
  if(key==="sex"&&r.dimorphism===0)return "This species has no sex differences (Male/female difference is 0).";
  if((key==="patternScale"||key==="patternContrast")&&resolveCoatPattern(r.pattern,r.palette)==="plain")return "A plain coat has no pattern to scale or sharpen.";
+ if(key==="iris"&&resolveComposerEyes(r).irisBuilt===null)return "These eyes have no iris (compound eyes, simple eyes, eye stalks and eyespots); the colour is kept for other eyes.";
  return "";
 }
 /** Information that does not disable the control. */
 function note(r:ComposerRecipe,key:Key,herd:number):string{
  if(key==="marks"&&(r.marks&COAT_MARK_BITS["juvenile-spots"])&&r.maturity>=.75)return "Juvenile spots show only on young animals (Age below 0.75); in a herd the young carry them.";
- if(key==="iris"&&resolveComposerEyes(r).irisBuilt===null)return "Compound eyes, simple eyes, eye stalks and eyespots have no iris; the colour is kept but not built.";
  if(key==="eyeRules"&&r.eyeRules===1)return "Earlier eye rules: eyes are built as before the eye catalogue (Automatic, and the first five kinds only on the faces they suited); newer kinds are built as chosen. Shared links keep this setting.";
  if(key==="eyes"&&r.eyes!=="auto"&&resolveComposerEyes(r).kind===r.eyes&&!composerEyeNative(r.eyes,r.head))return "Unusual combination: no real animal with this face has this eye kind. It is built as chosen.";
  if((key==="variability"||key==="dimorphism")&&r.individualSeed===0&&herd===1)return "The type specimen (individual 0) shows the species average; choose Next individual or a herd to see this.";
@@ -245,11 +245,40 @@ function makeHerdTrack(actors:Actor[]):HerdTrack{
 }
 
 export type ComposerFocus="body"|"head"|"eyes";
-export interface ComposerEyeFrame{box:THREE.Box3;centre:THREE.Vector3;eyeRadius:number;vertices:number;side:"near"|"both"}
-/** Pure framing of eye vertices (world space) for a view direction; `midZ` is the animal's midline (bodies face +X). */
-/** Eye close-up margins in eye radii (the radius includes the lids): the near eye fills most of the frame height. */
-export const EYE_FRAME_NEAR=1.45,EYE_FRAME_BOTH=.6,EYE_FRAME_PAIR=4.5;
-export function composerEyeFrameOf(points:THREE.Vector3[],midZ:number,direction:THREE.Vector3):ComposerEyeFrame|null{
+export interface ComposerEyeFrame{
+ /** World box of the framed visible-eye vertices. */
+ box:THREE.Box3;
+ /** Camera target: the middle of the framed vertices across the view (world). */
+ centre:THREE.Vector3;
+ /** Radius of one visible eye (the near eye when the eyes are lateral), from its own box centre. */
+ eyeRadius:number;vertices:number;side:"near"|"both";
+ /** Camera direction (unit, from the target toward the camera). The view's own direction, except the front view of
+  * lateral eyes, which is turned EYE_FRAME_FRONT_YAW_DEG toward the near eye ('yawed'). */
+ direction:THREE.Vector3;yawed:boolean;
+ /** Half extents of the framed vertices along the camera's right, up and view axes. */
+ half:{right:number;up:number;depth:number};
+ /** Fraction of the viewport height (up) and width (right) the framed vertices are fitted to. */
+ fill:{up:number;right:number};
+ /** Centre distance of a lateral pair in eye radii (0 when the eyes are not a lateral pair). */
+ pairSeparation:number;
+}
+/** Eye close-up fit, as fractions of the viewport: one eye fills EYE_FRAME_FILL_NEAR of the viewport height (or 0.6 of
+ * its width, whichever binds first); a framed pair spans EYE_FRAME_FILL_BOTH. A pair is forward-facing (primate, worm,
+ * kitten) when its centres are closer than EYE_FRAME_PAIR visible-eye radii and, when the face's gaze is known, it looks
+ * at most EYE_FRAME_FORWARD_YAW_DEG off the snout axis; a forward pair is framed together in the front and
+ * three-quarter views. (Measured on the review specimens: primates 4.7-7.4 radii at 15 degrees, worms 3.3, a cat
+ * 12.3 at 35, beaks 7.7-11 at 75.) */
+export const EYE_FRAME_FILL_NEAR={up:.55,right:.62},EYE_FRAME_FILL_BOTH={up:.8,right:.85},EYE_FRAME_PAIR=10,EYE_FRAME_FORWARD_YAW_DEG=40,EYE_FRAME_FRONT_YAW_DEG=35;
+/** Pure framing of the VISIBLE eye (world-space vertices: cornea, compound dome or eyespot; not the lids, orbit ring or
+ * socket) for a view direction; `midZ` is the animal's midline (bodies face +X).
+ * - side and three-quarter views: the eye nearer the camera, except a forward-facing pair in the three-quarter view
+ *   (framed together, so the far eye is never half-cut at the frame edge);
+ * - front view: a forward-facing pair together; lateral eyes (ostrich, horse, centipede) are edge-on from the front,
+ *   so the near (+z) eye is shown from a front-quarter view, the front direction turned EYE_FRAME_FRONT_YAW_DEG toward it;
+ * - a single midline eye is framed whole.
+ * `gazeYawDeg` is the face's eye gaze off the snout axis (resolveComposerEyes().gazeYawDeg); omitted, only the
+ * pair's spacing decides whether it faces forward. */
+export function composerEyeFrameOf(points:THREE.Vector3[],midZ:number,direction:THREE.Vector3,gazeYawDeg?:number):ComposerEyeFrame|null{
  if(!points.length)return null;
  const radiusOf=(ps:THREE.Vector3[])=>{const c=new THREE.Box3().setFromPoints(ps).getCenter(new THREE.Vector3());let r=0;for(const p of ps)r=Math.max(r,p.distanceTo(c));return {c,r:Math.max(r,1e-4)};};
  const sgn=direction.z<0?-1:1,near=points.filter(p=>(p.z-midZ)*sgn>0),far=points.filter(p=>(p.z-midZ)*sgn<=0);
@@ -257,23 +286,37 @@ export function composerEyeFrameOf(points:THREE.Vector3[],midZ:number,direction:
  // (a single midline eye straddles it: then the whole set is framed)
  const lateral=near.length>0&&far.length>0&&(()=>{const {c,r}=radiusOf(near);return Math.abs(c.z-midZ)>.5*r;})();
  const eyeRadius=lateral?radiusOf(near).r:radiusOf(points).r;
- // forward-facing eyes (a primate's or an owl's: the pair closer than EYE_FRAME_PAIR eye radii) are framed together in
- // the three-quarter view, where a near-eye frame would cut the far eye at the edge; lateral eyes (ostrich, horse) hide
- // the far eye behind the head, so the near eye alone is framed
- const forwardPair=lateral&&Math.abs(radiusOf(near).c.z-radiusOf(far).c.z)<EYE_FRAME_PAIR*eyeRadius;
- if(Math.abs(direction.z)>.3&&lateral&&!(forwardPair&&Math.abs(direction.z)<.9)){const {c,r}=radiusOf(near),h=EYE_FRAME_NEAR*r;return {box:new THREE.Box3(c.clone().subScalar(h),c.clone().addScalar(h)),centre:c,eyeRadius:r,vertices:near.length,side:"near"};}
- const box=new THREE.Box3().setFromPoints(points).expandByScalar(EYE_FRAME_BOTH*eyeRadius);
- return {box,centre:box.getCenter(new THREE.Vector3()),eyeRadius,vertices:points.length,side:"both"};
+ const pairSeparation=lateral?Math.abs(radiusOf(near).c.z-radiusOf(far).c.z)/eyeRadius:0;
+ const forwardPair=lateral&&pairSeparation<EYE_FRAME_PAIR&&(gazeYawDeg===undefined||gazeYawDeg<=EYE_FRAME_FORWARD_YAW_DEG),sideOn=Math.abs(direction.z)>.3;
+ let framed=points,side:"near"|"both"="both",yawed=false;
+ const dir=direction.clone().normalize();
+ if(lateral&&!forwardPair&&!sideOn){framed=near;side="near";yawed=true;dir.applyAxisAngle(new THREE.Vector3(0,1,0),-sgn*THREE.MathUtils.degToRad(EYE_FRAME_FRONT_YAW_DEG));}
+ else if(lateral&&sideOn&&!(forwardPair&&Math.abs(direction.z)<.9)){framed=near;side="near";}
+ const right=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),dir).normalize(),up=new THREE.Vector3().crossVectors(dir,right).normalize();
+ const box=new THREE.Box3().setFromPoints(framed),c0=box.getCenter(new THREE.Vector3()),d=new THREE.Vector3();
+ const lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];
+ for(const p of framed){d.subVectors(p,c0);const k=[d.dot(right),d.dot(up),d.dot(dir)];for(let i=0;i<3;i++){lo[i]=Math.min(lo[i]!,k[i]!);hi[i]=Math.max(hi[i]!,k[i]!);}}
+ const mid=(i:number)=>(lo[i]!+hi[i]!)/2,halfOf=(i:number)=>Math.max(1e-5,(hi[i]!-lo[i]!)/2);
+ const centre=c0.clone().addScaledVector(right,mid(0)).addScaledVector(up,mid(1)).addScaledVector(dir,mid(2));
+ return {box,centre,eyeRadius:side==="near"?radiusOf(framed).r:eyeRadius,vertices:framed.length,side,direction:dir,yawed,
+  half:{right:halfOf(0),up:halfOf(1),depth:halfOf(2)},fill:side==="near"?{...EYE_FRAME_FILL_NEAR}:{...EYE_FRAME_FILL_BOTH},pairSeparation};
 }
 const EYE_REGION=COAT_REGIONS.indexOf("eye");
 const eyeIndexCache=new WeakMap<ComposerCreature,number[]>();
-/** Vertices of the eyes: the 'eyes' part plus any eye-region vertex (as the face close-up harness collects them). */
+/** Vertices of the VISIBLE eye surface, which the eye close-up frames: the glossiest vertices of the 'eyes' part (the
+ * cornea dome of a lidded eye, gloss 1, without its lid rim 0.4 or the matte outer lid, orbit ring and socket; a compound
+ * eye's facets, 0.35), all of the 'eyes' part when it is matte (eyespots), else the eye coat region. */
+export function composerVisibleEyeIndices(skin:Pick<ComposerCreature["skin"],"parts"|"index"|"gloss"|"regions"|"vertexCount">):number[]{
+ const part=new Set<number>();
+ for(const p of skin.parts)if(p.part==="eyes")for(let t=p.firstTriangle*3;t<(p.firstTriangle+p.triangles)*3;t++)part.add(skin.index[t]!);
+ let max=0;for(const i of part)max=Math.max(max,skin.gloss[i]!);
+ let ids=max>0?[...part].filter(i=>skin.gloss[i]!>=.5*max):[...part];
+ if(!ids.length)for(let i=0;i<skin.vertexCount;i++)if(skin.regions[i]===EYE_REGION)ids.push(i);
+ return ids.sort((a,b)=>a-b);
+}
 function eyeVertexIndices(c:ComposerCreature){
  let ids=eyeIndexCache.get(c);if(ids)return ids;
- const set=new Set<number>(),skin=c.skin;
- for(const p of skin.parts)if(p.part==="eyes")for(let t=p.firstTriangle*3;t<(p.firstTriangle+p.triangles)*3;t++)set.add(skin.index[t]!);
- for(let i=0;i<skin.vertexCount;i++)if(skin.regions[i]===EYE_REGION)set.add(i);
- ids=[...set].sort((a,b)=>a-b);eyeIndexCache.set(c,ids);return ids;
+ ids=composerVisibleEyeIndices(c.skin);eyeIndexCache.set(c,ids);return ids;
 }
 
 export interface ComposerLab{
@@ -293,9 +336,14 @@ export interface ComposerLab{
  /** Camera framing chosen in the panel ('body' whole animal, 'head' head and face, 'eyes' eye close-up). Not stored in links. */
  focus():ComposerFocus;
  /** Eye close-up review frame of the shown animal (the edited side in compare mode, the first animal of a herd) at its
-  * CURRENT pose, world space: the eye nearer the camera for side and three-quarter views, both eyes for the front view.
-  * The box is the eye and its lids/brow ring (EYE_FRAME_NEAR eye radii around its centre). Null without eye vertices. */
+  * CURRENT pose, world space, fitted on the visible eye surface (composerVisibleEyeIndices; see composerEyeFrameOf for
+  * which eye and which direction each view uses). Null without eye vertices. */
  eyeFrame():ComposerEyeFrame|null;
+ /** How big the framed visible eye is on screen for `camera`: the projected height and width of its UNOCCLUDED vertices
+  * (a ray from the camera reaches them before any other triangle of the posed animal) as fractions of the viewport
+  * height and width, the share of vertices that are unoccluded, and whether all of them are inside the view.
+  * Review/diagnostic use (casts one ray per vertex). Null without an eye frame. */
+ eyeView(camera:THREE.PerspectiveCamera):{heightFraction:number;widthFraction:number;visibleVertices:number;vertices:number;inside:boolean}|null;
  viewDirection():THREE.Vector3;
  state():Pick<CreatureLabState,"recipe"|"compareRecipe"|"composerSeed"|"motion"|"compare"|"view"|"herd">;
  text():{title:string;description:string;captionTitle:string;captionCopy:string;detail:string};
@@ -537,11 +585,47 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
   const box=new THREE.Box3();for(const a of shown)box.union(a.creature.headBounds().translate(a.offset));return box;
  }
  const focus=():ComposerFocus=>focusSelect.value==="head"?"head":focusSelect.value==="eyes"?"eyes":"body";
- function eyeFrame():ComposerEyeFrame|null{
-  const a=compareBox.checked?actors.find(x=>x.side===editing()):actors[0];if(!a)return null;
-  const ids=eyeVertexIndices(a.creature);if(!ids.length)return null;
+ const shownActor=()=>compareBox.checked?actors.find(x=>x.side===editing()):actors[0];
+ // posed visible-eye vertices, reused between calls (the frame is refit every frame while the eye close-up follows)
+ let eyePool:THREE.Vector3[]=[];
+ function eyePoints(a:Actor){
+  const ids=eyeVertexIndices(a.creature);if(!ids.length)return [];
   const mesh=a.creature.mesh;a.creature.group.updateMatrixWorld(true);
-  return composerEyeFrameOf(ids.map(i=>mesh.localToWorld(mesh.getVertexPosition(i,new THREE.Vector3()))),a.offset.z,viewDirection(viewSelect.value as View));
+  while(eyePool.length<ids.length)eyePool.push(new THREE.Vector3());
+  return ids.map((i,k)=>mesh.localToWorld(mesh.getVertexPosition(i,eyePool[k]!)));
+ }
+ function eyeFrame():ComposerEyeFrame|null{
+  const a=shownActor();if(!a)return null;
+  const points=eyePoints(a);if(!points.length)return null;
+  return composerEyeFrameOf(points,a.offset.z,viewDirection(viewSelect.value as View),resolveComposerEyes(a.recipe).gazeYawDeg);
+ }
+ function eyeView(camera:THREE.PerspectiveCamera){
+  const a=shownActor(),frame=eyeFrame();if(!a||!frame)return null;
+  // the framed vertices again (the frame keeps only the count): near side or all, as composerEyeFrameOf chose
+  const all=eyePoints(a).map(p=>p.clone()),sgn=viewDirection(viewSelect.value as View).z<0?-1:1;
+  const framed=frame.side==="near"?all.filter(p=>(p.z-a.offset.z)*sgn>0):all;
+  camera.updateMatrixWorld();
+  // the posed animal as a static triangle soup (only triangles in front of the eye and inside the view can occlude it)
+  const mesh=a.creature.mesh,skin=a.creature.skin,cam=camera.getWorldPosition(new THREE.Vector3()),far=cam.distanceTo(frame.centre)+4*frame.eyeRadius;
+  const posed=new Float32Array(skin.vertexCount*3),v=new THREE.Vector3();
+  for(let i=0;i<skin.vertexCount;i++){mesh.localToWorld(mesh.getVertexPosition(i,v));posed[i*3]=v.x;posed[i*3+1]=v.y;posed[i*3+2]=v.z;}
+  const keep:number[]=[],P=(i:number)=>v.set(posed[i*3]!,posed[i*3+1]!,posed[i*3+2]!);
+  for(let t=0;t<skin.index.length;t+=3){let inView=false,close=false;
+   for(let k=0;k<3;k++){const p=P(skin.index[t+k]!);if(p.distanceTo(cam)<far)close=true;const n=p.clone().project(camera);if(Math.abs(n.x)<1.1&&Math.abs(n.y)<1.1&&n.z<1)inView=true;}
+   if(inView&&close)keep.push(t);}
+  const ray=new THREE.Ray(),hit=new THREE.Vector3(),eps=.02*frame.eyeRadius;
+  const corner=(i:number)=>new THREE.Vector3(posed[i*3]!,posed[i*3+1]!,posed[i*3+2]!);
+  const tris=keep.map(t=>[corner(skin.index[t]!),corner(skin.index[t+1]!),corner(skin.index[t+2]!)] as const);
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity,visible=0,inside=true;
+  for(const p of framed){
+   const n=p.clone().project(camera);if(Math.abs(n.x)>1.001||Math.abs(n.y)>1.001)inside=false;
+   const dist=cam.distanceTo(p);ray.set(cam,p.clone().sub(cam).normalize());
+   let blocked=false;
+   for(const [A,B,C] of tris){if(ray.intersectTriangle(A,B,C,false,hit)&&cam.distanceTo(hit)<dist-eps){blocked=true;break;}}
+   if(blocked)continue;
+   visible++;x0=Math.min(x0,n.x);x1=Math.max(x1,n.x);y0=Math.min(y0,n.y);y1=Math.max(y1,n.y);
+  }
+  return {heightFraction:visible?(y1-y0)/2:0,widthFraction:visible?(x1-x0)/2:0,visibleVertices:visible,vertices:framed.length,inside};
  }
  const v3=(v:THREE.Vector3)=>v.toArray();
  const totals=()=>actors.reduce((t,a)=>{const d=a.creature.details();return {vertices:t.vertices+d.vertices,triangles:t.triangles+d.triangles,buildMs:t.buildMs+d.buildMs,maxBuildMs:Math.max(t.maxBuildMs,d.buildMs)};},{vertices:0,triangles:0,buildMs:0,maxBuildMs:0});
@@ -550,7 +634,7 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
   get playing(){return playing;},get error(){return error;},get building(){return building;},
   setPlaying,
   setActive(active){$("composer-controls").hidden=!active;if(active)showControls();},
-  build,disposeActors,update,syncTime,envelope,headEnvelope,focus,eyeFrame,
+  build,disposeActors,update,syncTime,envelope,headEnvelope,focus,eyeFrame,eyeView,
   viewDirection:()=>viewDirection(viewSelect.value as View),
   state:()=>({recipe:encodeComposerRecipe(recipes.first),compareRecipe:compareBox.checked?encodeComposerRecipe(recipes.second):"",composerSeed:seedValue(),motion:motion(),compare:compareBox.checked,view:viewSelect.value as View,herd:herd()}),
   text(){
@@ -582,9 +666,10 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
   },
   shadowCasters:()=>actors.filter(a=>a.creature.mesh.castShadow&&a.creature.group.visible).length,
   details(){
-   const box=envelope(),head=headEnvelope(),t=totals(),eye=eyeFrame();
-   return {version:"creature-lab-composer-4",error,focus:focus(),builds,hintRenders,headEnvelope:head.isEmpty()?null:{min:v3(head.min),max:v3(head.max)},
-    eyeFrame:eye?{min:v3(eye.box.min),max:v3(eye.box.max),centre:v3(eye.centre),eyeRadius:eye.eyeRadius,vertices:eye.vertices,side:eye.side}:null,issues:[...issues],playing,motion:motion(),time:host.getTime(),view:viewSelect.value,compare:compareBox.checked,editTarget:editing(),seed:seedInput.value,
+   // the eye frame only in the eye close-up (it skins every visible-eye vertex)
+   const box=envelope(),head=headEnvelope(),t=totals(),eye=focus()==="eyes"?eyeFrame():null;
+   return {version:"creature-lab-composer-5",error,focus:focus(),builds,hintRenders,headEnvelope:head.isEmpty()?null:{min:v3(head.min),max:v3(head.max)},
+    eyeFrame:eye?{min:v3(eye.box.min),max:v3(eye.box.max),centre:v3(eye.centre),eyeRadius:eye.eyeRadius,vertices:eye.vertices,side:eye.side,direction:v3(eye.direction),yawed:eye.yawed,half:{...eye.half},fill:{...eye.fill},pairSeparation:eye.pairSeparation}:null,issues:[...issues],playing,motion:motion(),time:host.getTime(),view:viewSelect.value,compare:compareBox.checked,editTarget:editing(),seed:seedInput.value,
     herd:herd(),building,herdBuilt:actors.length,generator,species:speciesLabel(recipes.first),
     herdStats:{animals:actors.length,vertices:t.vertices,triangles:t.triangles,buildMs:t.buildMs,maxBuildMs:t.maxBuildMs,wallMs:buildFinished?buildFinished-buildStarted:null},
     envelope:box.isEmpty()?null:{min:v3(box.min),max:v3(box.max)},

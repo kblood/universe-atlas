@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {
   COMPOSER_EYE_GROUP_LABEL, COMPOSER_EYE_MENU, COMPOSER_EYE_RULES_LABEL, COMPOSER_EYE_SHORT, COMPOSER_HINTED_KEYS, COMPOSER_OPTION_HINTS as H,
-  composerEyeFrameOf, composerFieldLabel, composerHintedValues, composerIrisChoices, composerIrisSwatch, composerOptionText,
+  EYE_FRAME_FILL_BOTH, EYE_FRAME_FILL_NEAR, EYE_FRAME_FRONT_YAW_DEG, composerEyeFrameOf, composerVisibleEyeIndices, composerFieldLabel, composerHintedValues, composerIrisChoices, composerIrisSwatch, composerOptionText,
 } from '../src/creature-lab-composer.ts';
 import {COMPOSER_EYE_KINDS, EYE_PRESETS, composerEyeNative} from '../src/fauna-composer-eye-catalogue.ts';
 import {COMPOSER_EYE_TYPES, COMPOSER_FACES, COMPOSER_IRIS, COMPOSER_IRIS_RGB, resolveComposerEyes} from '../src/fauna-composer-face.ts';
@@ -14,6 +14,7 @@ import {
   COMPOSER_PRESET_IDS, composerEyeUpgradeIssue, composerPreset, decodeComposerRecipe, encodeComposerRecipe, normalizeComposerRecipe, randomComposerRecipe,
 } from '../src/fauna-composer-recipe.ts';
 import {creatureLabUrl, parseCreatureLabState} from '../src/creature-lab-state.ts';
+import {createComposerCreature} from '../src/fauna-composer.ts';
 
 const decode = text => { const d = decodeComposerRecipe(text); assert.equal(d.error, null, text); return d; };
 const asV3 = text => text.replace(/^v4\*/, 'v3*').replace(/\*eyeRules_\d+$/, '');
@@ -140,32 +141,66 @@ test('iris swatch: the built iris colour as sRGB hex, the same colour the mesh i
   assert.equal(new Set(all).size, all.length);
 });
 
-test('eye close-up framing: side views frame the near eye only, the front view frames both; a midline eye is framed whole', () => {
-  // two eyes of radius 0.02 at z = +-0.05 around a head at x = 1, y = 1.2 (bodies face +X)
+test('eye close-up framing: lateral eyes give the near eye (front view: a front-quarter view of it), forward pairs are framed together, a midline eye whole', () => {
+  // two visible eyes of radius 0.02 at z = +-0.11 (11 radii apart: lateral) around a head at x = 1, y = 1.2 (bodies face +X)
   const sphere = (cx, cy, cz, r) => { const ps = []; for (let i = 0; i < 64; i++) { const t = i / 64 * Math.PI * 2, p = (i % 8) / 8 * Math.PI - Math.PI / 2; ps.push(new THREE.Vector3(cx + r * Math.cos(p) * Math.cos(t), cy + r * Math.sin(p), cz + r * Math.cos(p) * Math.sin(t))); } ps.push(new THREE.Vector3(cx, cy + r, cz), new THREE.Vector3(cx, cy - r, cz)); return ps; };
-  const eyes = [...sphere(1, 1.2, .05, .02), ...sphere(1, 1.2, -.05, .02)];
-  const side = composerEyeFrameOf(eyes, 0, new THREE.Vector3(0, 0, 1));
-  assert.equal(side.side, 'near'); assert.ok(Math.abs(side.centre.z - .05) < 1e-3 && Math.abs(side.eyeRadius - .02) < 2e-3);
-  assert.ok(side.box.containsPoint(new THREE.Vector3(1, 1.2, .05)) && !side.box.containsPoint(new THREE.Vector3(1, 1.2, -.05)), 'only the near eye');
+  const eyes = [...sphere(1, 1.2, .11, .02), ...sphere(1, 1.2, -.11, .02)];
+  const sideDir = new THREE.Vector3(0, 0, 1), side = composerEyeFrameOf(eyes, 0, sideDir);
+  assert.equal(side.side, 'near'); assert.equal(side.yawed, false);
+  assert.ok(Math.abs(side.centre.z - .11) < 1e-3 && Math.abs(side.eyeRadius - .02) < 2e-3);
+  assert.ok(Math.abs(side.pairSeparation - 11) < .2, `pair separation ${side.pairSeparation}`);
+  assert.ok(side.box.containsPoint(new THREE.Vector3(1, 1.2, .11)) && !side.box.containsPoint(new THREE.Vector3(1, 1.2, -.11)), 'only the near eye');
+  assert.ok(side.direction.equals(sideDir), 'side view keeps its direction');
+  // the fit extents are the eye's own (radius .02 across and up), and the near eye is fitted to EYE_FRAME_FILL_NEAR
+  assert.ok(Math.abs(side.half.up - .02) < 2e-3 && Math.abs(side.half.right - .02) < 2e-3, JSON.stringify(side.half));
+  assert.deepEqual(side.fill, EYE_FRAME_FILL_NEAR);
   const q = composerEyeFrameOf(eyes, 0, new THREE.Vector3(.6, .3, .74).normalize());
   assert.equal(q.side, 'near'); assert.ok(q.centre.z > 0);
   const fromLeft = composerEyeFrameOf(eyes, 0, new THREE.Vector3(0, 0, -1));
   assert.ok(fromLeft.centre.z < 0, 'a camera on the -z side frames the -z eye');
-  const front = composerEyeFrameOf(eyes, 0, new THREE.Vector3(1, 0, 0));
-  assert.equal(front.side, 'both');
-  for (const z of [.05, -.05]) assert.ok(front.box.containsPoint(new THREE.Vector3(1, 1.2, z)));
-  assert.ok(front.box.getSize(new THREE.Vector3()).z < .3, 'tight around the pair');
-  // forward-facing eyes (pair closer than 4.5 eye radii): the three-quarter view frames the pair (no half-cut far eye),
-  // the side view still the near eye
-  const forward = [...sphere(1, 1.2, .03, .02), ...sphere(1, 1.2, -.03, .02)];
-  assert.equal(composerEyeFrameOf(forward, 0, new THREE.Vector3(.6, .3, .74).normalize()).side, 'both');
+  // front view of lateral eyes: no edge-on pair at the frame sides; the +z eye from a front-quarter direction
+  const front = composerEyeFrameOf(eyes, 0, new THREE.Vector3(1, .15, 0).normalize());
+  assert.equal(front.side, 'near'); assert.equal(front.yawed, true); assert.ok(front.centre.z > 0);
+  const yaw = THREE.MathUtils.radToDeg(Math.atan2(front.direction.z, front.direction.x));
+  assert.ok(Math.abs(yaw - EYE_FRAME_FRONT_YAW_DEG) < 1e-6, `front-quarter yaw ${yaw}`);
+  assert.ok(Math.abs(front.direction.length() - 1) < 1e-9 && Math.abs(front.direction.y - new THREE.Vector3(1, .15, 0).normalize().y) < 1e-9, 'elevation kept');
+  // forward-facing eyes (pair closer than EYE_FRAME_PAIR eye radii): the front and three-quarter views frame the pair
+  // (no half-cut far eye), the side view still the near eye
+  const forward = [...sphere(1, 1.2, .06, .02), ...sphere(1, 1.2, -.06, .02)];
+  for (const d of [new THREE.Vector3(.6, .3, .74), new THREE.Vector3(1, .15, 0)]) {
+    const f = composerEyeFrameOf(forward, 0, d.normalize());
+    assert.equal(f.side, 'both'); assert.equal(f.yawed, false); assert.deepEqual(f.fill, EYE_FRAME_FILL_BOTH);
+    for (const z of [.06, -.06]) assert.ok(f.box.containsPoint(new THREE.Vector3(1, 1.2, z)));
+  }
   assert.equal(composerEyeFrameOf(forward, 0, new THREE.Vector3(0, 0, 1)).side, 'near');
+  // the same spacing on a face that looks sideways (a beak, gaze 75 degrees) is a lateral pair; a forward gaze keeps it a pair
+  assert.equal(composerEyeFrameOf(forward, 0, new THREE.Vector3(1, .15, 0).normalize(), 75).yawed, true);
+  assert.equal(composerEyeFrameOf(forward, 0, new THREE.Vector3(1, .15, 0).normalize(), 15).side, 'both');
+  // wide-set eyes are lateral even with a forward gaze (a cat's muzzle: the pair would be tiny at the frame sides)
+  assert.equal(composerEyeFrameOf(eyes, 0, new THREE.Vector3(1, .15, 0).normalize(), 35).yawed, true);
   // an animal off the origin (herd/compare offset): sides are taken about its own midline
   const shifted = eyes.map(p => p.clone().add(new THREE.Vector3(0, 0, 3)));
-  assert.ok(Math.abs(composerEyeFrameOf(shifted, 3, new THREE.Vector3(0, 0, 1)).centre.z - 3.05) < 1e-3);
+  assert.ok(Math.abs(composerEyeFrameOf(shifted, 3, new THREE.Vector3(0, 0, 1)).centre.z - 3.11) < 1e-3);
   // a single frontal eye (straddles the midline) and no eyes
   assert.equal(composerEyeFrameOf(sphere(1, 1, 0, .03), 0, new THREE.Vector3(0, 0, 1)).side, 'both', 'a midline eye is framed whole');
   assert.equal(composerEyeFrameOf([], 0, new THREE.Vector3(0, 0, 1)), null);
+});
+
+test('the eye close-up frames the visible eye: the cornea of a lidded eye (not its lids, orbit ring or socket), a compound dome, an eyespot', () => {
+  for (const id of ['ape', 'ostrich', 'centipede', 'worm']) {
+    const c = createComposerCreature(composerPreset(id));
+    try {
+      const skin = c.skin, ids = composerVisibleEyeIndices(skin), part = new Set();
+      for (const p of skin.parts) if (p.part === 'eyes') for (let t = p.firstTriangle * 3; t < (p.firstTriangle + p.triangles) * 3; t++) part.add(skin.index[t]);
+      assert.ok(ids.length > 0 && ids.every(i => part.has(i)), `${id}: visible eye vertices come from the eyes part`);
+      const max = Math.max(...[...part].map(i => skin.gloss[i]));
+      if (max > 0) assert.ok(ids.every(i => skin.gloss[i] >= .5 * max), `${id}: only the glossy eye surface`);
+      if (id === 'ape' || id === 'ostrich') assert.ok(ids.length <= part.size / 2, `${id}: the cornea is at most half of the eye part (${ids.length}/${part.size})`);
+      // the visible eye is much smaller than the whole eye part with its lids and orbit ring
+      const box = ps => { const b = new THREE.Box3(); for (const i of ps) b.expandByPoint(new THREE.Vector3(skin.positions[i * 3], skin.positions[i * 3 + 1], skin.positions[i * 3 + 2])); return b.getSize(new THREE.Vector3()).y; };
+      if (id === 'ape' || id === 'ostrich') assert.ok(box(ids) < .8 * box(part), `${id}: cornea height ${box(ids)} vs eye part ${box(part)}`);
+    } finally { c.dispose(); }
+  }
 });
 
 test('rarity hints never forbid: every face x kind is selectable and builds the chosen kind under the current rules', () => {

@@ -78,6 +78,7 @@ await withGpuLock({owner:'composer-independent-ui',timeoutMs:60000,staleMs:Infin
   await page.selectOption('#composer-preset','centipede');await settle();
   assert.equal(await textOf('iris','auto'),'Automatic (no iris)');assert.match(await textOf('iris','red'),/ — no effect \(no iris\)$/);assert.match(await textOf('eyes','round'),/ — unusual here$/);
   assert(await page.locator('#composer-iris-built').isHidden(),'no swatch without an iris');
+  assert(await page.locator('#composer-iris').isDisabled(),'the iris select is disabled without an iris');assert.match(await page.locator('#composer-iris-why').innerText(),/^These eyes have no iris/);
   // legacy v1 trunk links through the real Lab
   const v1=JSON.parse(await readFile(new URL('./fixtures/composer-v1-links.json',import.meta.url),'utf8')).presets;
   const openLink=async text=>{const u=new URL(target.href);u.search='';u.searchParams.set('mode','composer');u.searchParams.set('recipe',text);await page.goto(u.href,{waitUntil:'networkidle'});return settle();};
@@ -104,15 +105,14 @@ await withGpuLock({owner:'composer-independent-ui',timeoutMs:60000,staleMs:Infin
     await page.locator('#viewport').screenshot({path:join(output,`head-frame-${label}-${view}.png`)});}
    await page.selectOption('#composer-view','three-quarter');assert(fill.heightFraction>body.heightFraction,`${label}: head framing is closer than whole-animal framing`);
   }
-  // Eye close-up: the framed eye fills >= 30% of the viewport height, inside the frame, for every view
-  const eyeFill=()=>page.evaluate(()=>{const c=window.__creatureLab.camera,h=window.__creatureLab.composer.eyeFrame,V=c.matrixWorldInverse,P=c.projectionMatrix;if(!h)return null;
-   const mul=(m,v)=>[0,1,2,3].map(r=>m[r]*v[0]+m[4+r]*v[1]+m[8+r]*v[2]+m[12+r]*v[3]);let y0=Infinity,y1=-Infinity,x0=Infinity,x1=-Infinity;const C=[h.centre[0],h.centre[1],h.centre[2]],R=h.eyeRadius;
-   for(const dx of [-R,R])for(const dy of [-R,R])for(const dz of [-R,R]){const p=mul(P,mul(V,[C[0]+dx,C[1]+dy,C[2]+dz,1]));y0=Math.min(y0,p[1]/p[3]);y1=Math.max(y1,p[1]/p[3]);x0=Math.min(x0,p[0]/p[3]);x1=Math.max(x1,p[0]/p[3]);}
-   return {eyeHeightFraction:(y1-y0)/2,inside:y0>=-1.001&&y1<=1.001&&x0>=-1.001&&x1<=1.001,near:c.near,side:h.side};});
+  // Eye close-up: the VISIBLE eye (its unoccluded cornea/dome/eyespot vertices, projected) fills >= 35% of the viewport
+  // height for a single eye (>= 12% each for a forward-facing pair), inside the frame, for every view
+  const eyeFill=()=>page.evaluate(()=>{const v=window.__creatureLab.eyeView,h=window.__creatureLab.composer.eyeFrame;if(!v||!h)return null;
+   return {eyeHeightFraction:v.heightFraction,widthFraction:v.widthFraction,visible:v.visibleVertices/v.vertices,inside:v.inside,near:window.__creatureLab.camera.near,side:h.side,yawed:h.yawed};});
   for(const id of ['ostrich','ape','centipede','worm']){
    await page.selectOption('#composer-focus','body');await page.selectOption('#composer-preset',id);await settle();await page.selectOption('#composer-focus','eyes');s0=await settle();assert.equal(s0.focus,'eyes');
    for(const view of ['three-quarter','side','front']){await page.selectOption('#composer-view',view);await settle();const f=await eyeFill();assert(f,`${id}: an eye frame`);framing.push({id,view,eyes:f});
-    assert(f.inside,`${id} ${view}: eye inside the frame`);assert(f.eyeHeightFraction>=(f.side==='near'?.3:.08),`${id} ${view}: the eye fills ${(f.eyeHeightFraction*100).toFixed(1)}% of the viewport height`);
+    assert(f.inside,`${id} ${view}: eye inside the frame`);assert(f.eyeHeightFraction>=(f.side==='near'?.35:.12),`${id} ${view}: the eye fills ${(f.eyeHeightFraction*100).toFixed(1)}% of the viewport height`);
     await page.locator('#viewport').screenshot({path:join(output,`eye-frame-${id}-${view}.png`)});}
    await page.selectOption('#composer-view','three-quarter');
   }

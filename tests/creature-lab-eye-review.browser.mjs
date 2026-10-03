@@ -6,7 +6,9 @@
 // frozen recipe text, as a shared link would carry it) and screenshots the Lab viewport the way the owner sees it:
 //   <name>-body.png          Frame = Whole animal, three-quarter view (normal viewing size)
 //   <name>-head-<view>.png   Frame = Head and face (front, side, three-quarter)
-//   <name>-eyes-<view>.png   Frame = Eye close-up (front, side, three-quarter), only when the Lab offers that frame
+//   <name>-eyes-<view>.png   Frame = Eye close-up (front, side, three-quarter), only when the Lab offers that frame; the
+//                            'front' close-up of lateral eyes is the Lab's front-quarter view of the near eye
+//                            (report.json eyeFrames[view].frame.yawed); eyeFrames[view].view is the projected visible-eye fill
 //   <name>.png               the above tiled with labels (ImageMagick montage)
 //   menu-<name>.png          the Head and neck panel with the Eyes and Iris lists expanded (option text as shown)
 //   report.json              per specimen: the Eyes/Iris option texts, the selected values, the frames captured
@@ -118,7 +120,7 @@ try {
             await page.selectOption('#composer-view', view); await page.selectOption('#composer-focus', focus); await settle();
             const file = `${spec.name}-${focus === 'body' ? 'body' : `${focus}-${view}`}.png`;
             await page.locator('#viewport').screenshot({path: join(out, file)}); shots.push(file);
-            if (focus === 'eyes') entry.eyeFrames[view] = await page.evaluate(() => ({frame: window.__creatureLab.composer.eyeFrame, camera: window.__creatureLab.camera}));
+            if (focus === 'eyes') entry.eyeFrames[view] = await page.evaluate(() => ({frame: window.__creatureLab.composer.eyeFrame, view: window.__creatureLab.eyeView, camera: window.__creatureLab.camera}));
           };
           if (phase === 'a') {
             await shoot('body', 'three-quarter');
