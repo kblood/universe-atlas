@@ -108,11 +108,15 @@ await withGpuLock({owner:'composer-independent-ui',timeoutMs:60000,staleMs:Infin
   // Eye close-up: the VISIBLE eye (its unoccluded cornea/dome/eyespot vertices, projected) fills >= 35% of the viewport
   // height for a single eye (>= 12% each for a forward-facing pair), inside the frame, for every view
   const eyeFill=()=>page.evaluate(()=>{const v=window.__creatureLab.eyeView,h=window.__creatureLab.composer.eyeFrame;if(!v||!h)return null;
-   return {eyeHeightFraction:v.heightFraction,widthFraction:v.widthFraction,visible:v.visibleVertices/v.vertices,inside:v.inside,near:window.__creatureLab.camera.near,side:h.side,yawed:h.yawed};});
+   return {eyeHeightFraction:v.heightFraction,widthFraction:v.widthFraction,visible:v.visibleVertices/v.vertices,inside:v.inside,near:window.__creatureLab.camera.near,side:h.side,yawed:h.yawed,yawDeg:h.yawDeg,pairSeparation:h.pairSeparation};});
   for(const id of ['ostrich','ape','centipede','worm']){
    await page.selectOption('#composer-focus','body');await page.selectOption('#composer-preset',id);await settle();await page.selectOption('#composer-focus','eyes');s0=await settle();assert.equal(s0.focus,'eyes');
    for(const view of ['three-quarter','side','front']){await page.selectOption('#composer-view',view);await settle();const f=await eyeFill();assert(f,`${id}: an eye frame`);framing.push({id,view,eyes:f});
-    assert(f.inside,`${id} ${view}: eye inside the frame`);assert(f.eyeHeightFraction>=(f.side==='near'?.35:.12),`${id} ${view}: the eye fills ${(f.eyeHeightFraction*100).toFixed(1)}% of the viewport height`);
+    assert(f.inside,`${id} ${view}: eye inside the frame`);
+    // every one of these animals has a PAIR of eyes, so a side view frames the near eye of a pair (split about the posed
+    // head's midline: a swaying worm head once put both eyespots on one side of the animal's midline, framed edge-on)
+    assert(f.pairSeparation>1,`${id} ${view}: the eyes are seen as a pair (separation ${f.pairSeparation})`);
+    if(view==='side')assert.equal(f.side,'near',`${id} side: the near eye`);assert(f.eyeHeightFraction>=(f.side==='near'?.35:.12),`${id} ${view}: the eye fills ${(f.eyeHeightFraction*100).toFixed(1)}% of the viewport height`);
     await page.locator('#viewport').screenshot({path:join(output,`eye-frame-${id}-${view}.png`)});}
    await page.selectOption('#composer-view','three-quarter');
   }

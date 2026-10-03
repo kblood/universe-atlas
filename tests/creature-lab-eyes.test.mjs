@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {
   COMPOSER_EYE_GROUP_LABEL, COMPOSER_EYE_MENU, COMPOSER_EYE_RULES_LABEL, COMPOSER_EYE_SHORT, COMPOSER_HINTED_KEYS, COMPOSER_OPTION_HINTS as H,
-  EYE_FRAME_FILL_BOTH, EYE_FRAME_FILL_NEAR, EYE_FRAME_FRONT_YAW_DEG, EYE_FRAME_MAX_OBLIQUE_DEG, composerEyeFrameOf, composerVisibleEyeIndices, composerFieldLabel, composerHintedValues, composerIrisChoices, composerIrisSwatch, composerOptionText,
+  EYE_FRAME_FILL_BOTH, EYE_FRAME_FILL_NEAR, EYE_FRAME_FRONT_YAW_DEG, EYE_FRAME_MAX_OBLIQUE_DEG, EYE_FRAME_PAIR, composerEyeFrameOf, composerEyeMidlineZ, composerVisibleEyeIndices, composerFieldLabel, composerHintedValues, composerIrisChoices, composerIrisSwatch, composerOptionText,
 } from '../src/creature-lab-composer.ts';
 import {COMPOSER_EYE_KINDS, EYE_PRESETS, composerEyeNative} from '../src/fauna-composer-eye-catalogue.ts';
 import {COMPOSER_EYE_TYPES, COMPOSER_FACES, COMPOSER_IRIS, COMPOSER_IRIS_RGB, resolveComposerEyes} from '../src/fauna-composer-face.ts';
@@ -198,6 +198,56 @@ test('eye close-up framing: lateral eyes give the near eye (front view: a front-
   // a single frontal eye (straddles the midline) and no eyes
   assert.equal(composerEyeFrameOf(sphere(1, 1, 0, .03), 0, new THREE.Vector3(0, 0, 1)).side, 'both', 'a midline eye is framed whole');
   assert.equal(composerEyeFrameOf([], 0, new THREE.Vector3(0, 0, 1)), null);
+});
+
+test('eye close-up framing splits near/far about the posed HEAD midline: a head swayed off the animal midline still gives the near eye, capped', () => {
+  const sphere = (cx, cy, cz, r) => { const ps = []; for (let i = 0; i < 64; i++) { const t = i / 64 * Math.PI * 2, p = (i % 8) / 8 * Math.PI - Math.PI / 2; ps.push(new THREE.Vector3(cx + r * Math.cos(p) * Math.cos(t), cy + r * Math.sin(p), cz + r * Math.cos(p) * Math.sin(t))); } ps.push(new THREE.Vector3(cx, cy + r, cz), new THREE.Vector3(cx, cy - r, cz)); return ps; };
+  // a worm-like forward pair (eyespots r 0.003 at rest z +-0.01, under EYE_FRAME_PAIR radii apart), head swayed 0.047 m to +z and yawed
+  // 7 degrees: at the animal's midline (z 0) both eyes lie on the +z side
+  const restPlus = sphere(.63, .077, .01, .003), restMinus = sphere(.63, .077, -.01, .003), rest = [...restPlus, ...restMinus];
+  const sway = new THREE.Matrix4().makeTranslation(0, 0, .047).multiply(new THREE.Matrix4().makeRotationY(THREE.MathUtils.degToRad(-7)));
+  const pivot = new THREE.Vector3(.63, .077, 0), posed = rest.map(p => p.clone().sub(pivot).applyMatrix4(sway).add(pivot));
+  const restZ = rest.map(p => p.z);
+  assert.ok(posed.every(p => p.z > 0), 'the swayed eyes are all on the +z side of the animal midline');
+  const midZ = composerEyeMidlineZ(posed, restZ);
+  assert.ok(Math.abs(midZ - .047) < 2e-3, `head midline ${midZ}`);
+  const gaze = 20, sideDir = new THREE.Vector3(0, .12, 1).normalize(), az = d => THREE.MathUtils.radToDeg(Math.atan2(d.z, d.x));
+  // the bug this guards: the animal's midline puts both eyes on one side, no pair, no near eye, no obliquity cap
+  const wrong = composerEyeFrameOf(posed, 0, sideDir, gaze);
+  assert.equal(wrong.side, 'both'); assert.equal(wrong.pairSeparation, 0);
+  const side = composerEyeFrameOf(posed, midZ, sideDir, gaze);
+  assert.equal(side.side, 'near'); assert.equal(side.midZ, midZ);
+  assert.ok(side.pairSeparation > 2 && side.pairSeparation < EYE_FRAME_PAIR, `pair separation ${side.pairSeparation}`);
+  assert.ok(side.centre.z > midZ, 'the near (+z) eye');
+  assert.equal(side.yawed, true); assert.ok(Math.abs(az(side.direction) - (gaze + EYE_FRAME_MAX_OBLIQUE_DEG)) < 1e-6, `capped view azimuth ${az(side.direction)}`);
+  // the other side: a camera on -z frames the -z eye of the swayed head
+  const other = composerEyeFrameOf(posed, midZ, new THREE.Vector3(0, .12, -1).normalize(), gaze);
+  assert.equal(other.side, 'near'); assert.ok(other.centre.z < midZ);
+  // a forward pair in the three-quarter and front views is still framed together
+  for (const d of [new THREE.Vector3(.6, .3, .74), new THREE.Vector3(1, .15, 0)]) assert.equal(composerEyeFrameOf(posed, midZ, d.normalize(), gaze).side, 'both');
+  // unchanged for an unswayed head (midline = the animal's) and for a single midline eye (its own centre)
+  assert.ok(Math.abs(composerEyeMidlineZ(rest, restZ)) < 1e-9);
+  const cyclops = sphere(1, 1, 0, .03).map(p => p.clone().add(new THREE.Vector3(0, 0, .05)));
+  assert.ok(Math.abs(composerEyeMidlineZ(cyclops, sphere(1, 1, 0, .03).map(p => p.z)) - .05) < 1e-3);
+  assert.equal(composerEyeFrameOf(cyclops, composerEyeMidlineZ(cyclops, sphere(1, 1, 0, .03).map(p => p.z)), new THREE.Vector3(0, 0, 1)).side, 'both');
+  assert.equal(composerEyeMidlineZ([], []), 0);
+});
+
+test('the real posed worm (idle, time 0, as the Lab shows it): side view frames the near eyespot with the obliquity cap', () => {
+  const r = composerPreset('worm'), c = createComposerCreature(r);
+  try {
+    c.update('idle', 0); c.group.updateMatrixWorld(true);
+    const ids = composerVisibleEyeIndices(c.skin), restZ = ids.map(i => c.skin.positions[i * 3 + 2]);
+    const posed = ids.map(i => c.mesh.localToWorld(c.mesh.getVertexPosition(i, new THREE.Vector3())));
+    const gaze = resolveComposerEyes(r).gazeYawDeg, midZ = composerEyeMidlineZ(posed, restZ);
+    for (const [view, d] of [['side', new THREE.Vector3(0, .12, 1)], ['side-left', new THREE.Vector3(0, .12, -1)]]) {
+      const f = composerEyeFrameOf(posed, midZ, d.normalize(), gaze);
+      assert.equal(f.side, 'near', `${view}: near eyespot (midline ${midZ.toFixed(4)})`);
+      assert.ok(f.pairSeparation > 1, `${view}: a pair (${f.pairSeparation})`);
+      const off = Math.abs(Math.abs(THREE.MathUtils.radToDeg(Math.atan2(f.direction.z, f.direction.x))) - gaze);
+      assert.ok(off <= EYE_FRAME_MAX_OBLIQUE_DEG + 1e-6, `${view}: ${off.toFixed(1)} degrees off the gaze`);
+    }
+  } finally { c.dispose(); }
 });
 
 test('the eye close-up frames the visible eye: the cornea of a lidded eye (not its lids, orbit ring or socket), a compound dome, an eyespot', () => {

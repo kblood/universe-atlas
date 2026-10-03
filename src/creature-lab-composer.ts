@@ -262,6 +262,19 @@ export interface ComposerEyeFrame{
  fill:{up:number;right:number};
  /** Centre distance of a lateral pair in eye radii (0 when the eyes are not a lateral pair). */
  pairSeparation:number;
+ /** The world z about which the eyes were split into the near and far side (the midZ argument). */
+ midZ:number;
+}
+/** World z of the HEAD's midline at the eyes in the current pose, for composerEyeFrameOf. A posed head sways off the
+ * animal's own midline (a worm's head at idle sits about 0.05 m to one side, with both eyespots on the +z side of the
+ * animal's midline), so the near/far split is taken about the head itself: the middle of the posed centroids of the eye
+ * vertices that lie on the +z and on the -z side AT REST (creature space; bodies are built mirror-symmetric about z = 0).
+ * A one-sided set (no vertex on one side at rest) gives the centroid of all points. `restZ[k]` belongs to `points[k]`. */
+export function composerEyeMidlineZ(points:readonly THREE.Vector3[],restZ:ArrayLike<number>):number{
+ let sp=0,np=0,sm=0,nm=0,sa=0;
+ for(let k=0;k<points.length;k++){const z=points[k]!.z,r=restZ[k]!;sa+=z;if(r>0){sp+=z;np++;}else if(r<0){sm+=z;nm++;}}
+ if(!points.length)return 0;
+ return np&&nm?(sp/np+sm/nm)/2:sa/points.length;
 }
 /** Eye close-up fit, as fractions of the viewport: one eye fills EYE_FRAME_FILL_NEAR of the viewport height (or 0.6 of
  * its width, whichever binds first); a framed pair spans EYE_FRAME_FILL_BOTH. A pair is forward-facing (primate, worm,
@@ -271,7 +284,8 @@ export interface ComposerEyeFrame{
  * 12.3 at 35, beaks 7.7-11 at 75.) */
 export const EYE_FRAME_FILL_NEAR={up:.55,right:.62},EYE_FRAME_FILL_BOTH={up:.8,right:.85},EYE_FRAME_PAIR=10,EYE_FRAME_FORWARD_YAW_DEG=40,EYE_FRAME_FRONT_YAW_DEG=35,EYE_FRAME_MAX_OBLIQUE_DEG=45;
 /** Pure framing of the VISIBLE eye (world-space vertices: cornea, compound dome or eyespot; not the lids, orbit ring or
- * socket) for a view direction; `midZ` is the animal's midline (bodies face +X).
+ * socket) for a view direction; `midZ` is the world z of the head's midline at the eyes in the pose the points come
+ * from (composerEyeMidlineZ; NOT the animal's offset, which a swaying head leaves), bodies face +X.
  * - side and three-quarter views: the eye nearer the camera, except a forward-facing pair in the three-quarter view
  *   (framed together, so the far eye is never half-cut at the frame edge);
  * - front view: a forward-facing pair together; lateral eyes (ostrich, horse, centipede) are edge-on from the front,
@@ -312,7 +326,7 @@ export function composerEyeFrameOf(points:THREE.Vector3[],midZ:number,direction:
  const mid=(i:number)=>(lo[i]!+hi[i]!)/2,halfOf=(i:number)=>Math.max(1e-5,(hi[i]!-lo[i]!)/2);
  const centre=c0.clone().addScaledVector(right,mid(0)).addScaledVector(up,mid(1)).addScaledVector(dir,mid(2));
  return {box,centre,eyeRadius:side==="near"?radiusOf(framed).r:eyeRadius,vertices:framed.length,side,direction:dir,yawed,yawDeg,
-  half:{right:halfOf(0),up:halfOf(1),depth:halfOf(2)},fill:side==="near"?{...EYE_FRAME_FILL_NEAR}:{...EYE_FRAME_FILL_BOTH},pairSeparation};
+  half:{right:halfOf(0),up:halfOf(1),depth:halfOf(2)},fill:side==="near"?{...EYE_FRAME_FILL_NEAR}:{...EYE_FRAME_FILL_BOTH},pairSeparation,midZ};
 }
 const EYE_REGION=COAT_REGIONS.indexOf("eye");
 const eyeIndexCache=new WeakMap<ComposerCreature,number[]>();
@@ -610,13 +624,15 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
  function eyeFrame():ComposerEyeFrame|null{
   const a=shownActor();if(!a)return null;
   const points=eyePoints(a);if(!points.length)return null;
-  return composerEyeFrameOf(points,a.offset.z,viewDirection(viewSelect.value as View),resolveComposerEyes(a.recipe).gazeYawDeg);
+  // near/far about the posed HEAD's midline (a swaying head leaves the animal's offset midline)
+  const pos=a.creature.skin.positions,midZ=composerEyeMidlineZ(points,eyeVertexIndices(a.creature).map(i=>pos[i*3+2]!));
+  return composerEyeFrameOf(points,midZ,viewDirection(viewSelect.value as View),resolveComposerEyes(a.recipe).gazeYawDeg);
  }
  function eyeView(camera:THREE.PerspectiveCamera){
   const a=shownActor(),frame=eyeFrame();if(!a||!frame)return null;
   // the framed vertices again (the frame keeps only the count): near side or all, as composerEyeFrameOf chose
   const all=eyePoints(a).map(p=>p.clone()),sgn=viewDirection(viewSelect.value as View).z<0?-1:1;
-  const framed=frame.side==="near"?all.filter(p=>(p.z-a.offset.z)*sgn>0):all;
+  const framed=frame.side==="near"?all.filter(p=>(p.z-frame.midZ)*sgn>0):all;
   camera.updateMatrixWorld();
   // the posed animal as a static triangle soup (only triangles in front of the eye and inside the view can occlude it)
   const mesh=a.creature.mesh,skin=a.creature.skin,cam=camera.getWorldPosition(new THREE.Vector3()),far=cam.distanceTo(frame.centre)+4*frame.eyeRadius;
@@ -681,8 +697,8 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
   details(){
    // the eye frame only in the eye close-up (it skins every visible-eye vertex)
    const box=envelope(),head=headEnvelope(),t=totals(),eye=focus()==="eyes"?eyeFrame():null;
-   return {version:"creature-lab-composer-5",error,focus:focus(),builds,hintRenders,headEnvelope:head.isEmpty()?null:{min:v3(head.min),max:v3(head.max)},
-    eyeFrame:eye?{min:v3(eye.box.min),max:v3(eye.box.max),centre:v3(eye.centre),eyeRadius:eye.eyeRadius,vertices:eye.vertices,side:eye.side,direction:v3(eye.direction),yawed:eye.yawed,yawDeg:eye.yawDeg,half:{...eye.half},fill:{...eye.fill},pairSeparation:eye.pairSeparation}:null,issues:[...issues],playing,motion:motion(),time:host.getTime(),view:viewSelect.value,compare:compareBox.checked,editTarget:editing(),seed:seedInput.value,
+   return {version:"creature-lab-composer-6",error,focus:focus(),builds,hintRenders,headEnvelope:head.isEmpty()?null:{min:v3(head.min),max:v3(head.max)},
+    eyeFrame:eye?{min:v3(eye.box.min),max:v3(eye.box.max),centre:v3(eye.centre),eyeRadius:eye.eyeRadius,vertices:eye.vertices,side:eye.side,direction:v3(eye.direction),yawed:eye.yawed,yawDeg:eye.yawDeg,half:{...eye.half},fill:{...eye.fill},pairSeparation:eye.pairSeparation,midZ:eye.midZ}:null,issues:[...issues],playing,motion:motion(),time:host.getTime(),view:viewSelect.value,compare:compareBox.checked,editTarget:editing(),seed:seedInput.value,
     herd:herd(),building,herdBuilt:actors.length,generator,species:speciesLabel(recipes.first),
     herdStats:{animals:actors.length,vertices:t.vertices,triangles:t.triangles,buildMs:t.buildMs,maxBuildMs:t.maxBuildMs,wallMs:buildFinished?buildFinished-buildStarted:null},
     envelope:box.isEmpty()?null:{min:v3(box.min),max:v3(box.max)},
