@@ -96,7 +96,16 @@ test('a drowned ocean world hosts no rocks while the gate stays open',()=>{
 });
 
 test('origin rebasing preserves absolute rock positions',()=>{
-  const r=rig(moon),target=[.6,-.3,.74];
+  // Fixture re-picked for terrain-1.8.0-relief (P4-RELIEF r2); the threshold is
+  // unchanged. The before/after overlap of a ~344 m move is set by the LOD
+  // ranges and sits near 30% everywhere, so the old target [.6,-.3,.74] passed
+  // by 3 rocks on terrain-1.7.0 (311 of 1025, 0.303) and missed by 3 on the
+  // relief field (304 of 1022, 0.297). Measured over 8 targets (main -> relief):
+  // [.6,-.3,.74] .303->.297, [.3,.8,.52] .328->.325, [-.5,.2,.84] .337->.340,
+  // [.7,.7,-.1] .303->.300, [-.2,-.9,.3] .312->.313, [.1,.3,-.95] .316->.316,
+  // [.8,-.5,-.3] .325->.321, [-.6,.6,.5] .232->.228. This target has the largest
+  // margin on both terrains (336/1039 -> 341/1053).
+  const r=rig(moon),target=[-.5,.2,.84];
   const absolute=()=>{const out=[];r.rocks.group.updateMatrixWorld(true);
     for(const mesh of r.rocks.group.children)for(let i=0;i<mesh.count;i++){
       const m=new THREE.Matrix4().fromArray(mesh.instanceMatrix.array,i*16);
