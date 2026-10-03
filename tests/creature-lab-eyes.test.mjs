@@ -266,7 +266,9 @@ test('the framing gaze is the gaze the eyes are built with: every camera eye of 
   for (const sp of specs) {
     const c = createComposerCreature(decode(sp.text).recipe);
     try {
-      const r = c.individual.effectiveRecipe, e = resolveComposerEyes(r), g = composerBuiltEyeGaze(r, c.skin.version);
+      // cat and spectacle eyes turn into the skull (EC2 4e030bb): their gaze is measured from the built skin; every
+      // other kind is the pure mirror (the skin is passed as the Lab passes it, and only those kinds read it)
+      const r = c.individual.effectiveRecipe, e = resolveComposerEyes(r), g = composerBuiltEyeGaze(r, c.skin.version, c.skin);
       assert.ok(Number.isFinite(g.plus) && Number.isFinite(g.minus), sp.name);
       // the turret (chameleon) aims its cornea through a cone; its facing is not a dome's
       if (e.traits.structure !== 'camera' || e.traits.placement.kind === 'independent') { if (e.traits.placement.kind !== 'independent') assert.equal(g.plus, g.minus, sp.name); continue; }

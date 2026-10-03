@@ -281,22 +281,42 @@ export interface ComposerEyeGaze{plus:number;minus:number}
  * - compound eyes along the mandibles profile on a mandibles head, else the face's camera-eye profile;
  * - eye stalks along the kind's yaw (40 when unset); spider eyes along the kind's yaw (its main front bead);
  * - eyespots: a worm head's own (the face profile), any other face's camera-eye profile.
+ * Exception: a cat or spectacle (lidless) camera eye is turned into the skull under it by the excess over a tilt limit
+ * (EC2 4e030bb; the cat by up to ~24 degrees on a long muzzle), which depends on the skull's shape. When `builtSkin` is
+ * given, those eyes' gaze is MEASURED from the built cornea (composerMeasuredEyeGaze) instead of mirrored.
  * tests/creature-lab-eyes.test.mjs checks camera eyes against the built cornea's facing on every eye specimen. The
  * skin does not report its eyes' gaze; once it does, this mirror should read it instead. */
-export function composerBuiltEyeGaze(r:ComposerRecipe,skinVersion:string):ComposerEyeGaze{
+export function composerBuiltEyeGaze(r:ComposerRecipe,skinVersion:string,builtSkin?:ComposerEyeSkin):ComposerEyeGaze{
  const e=resolveComposerEyes(r),skin=Number(/skin-(\d+)$/.exec(skinVersion)?.[1]??0),both=(y:number)=>({plus:y,minus:y});
  if(skin<4||(e.rules===1&&isFaceRoundEyeKind(e.kind)))return both(e.gazeYawDeg);
  const T=e.traits,P=T.placement,cam=FACE_EYE_PROFILE[composerEyeProfileId(r,"round")].gazeYawDeg;
  switch(T.structure){
   case "camera":{
    const yaw=(side:number)=>(P.kind==="independent"&&side>0&&P.right?P.right.yawDeg:null)??P.yawByFace?.[r.head as EyeCatalogueFace]??P.yawDeg??cam;
-   return {plus:yaw(1),minus:yaw(-1)};
+   const m=builtSkin&&P.kind!=="independent"&&(e.kind==="cat"||T.lid==="spectacle")?composerMeasuredEyeGaze(builtSkin):null;
+   return {plus:m?.plus??yaw(1),minus:m?.minus??yaw(-1)};
   }
   case "compound":return both(r.head==="mandibles"?FACE_EYE_PROFILE.mandibles.gazeYawDeg:cam);
   case "stalk":return both(P.yawDeg??40);
   case "ocellus":return both(P.yawDeg??e.gazeYawDeg);
   default:return both(r.head==="blunt"?e.gazeYawDeg:cam);
  }
+}
+type ComposerEyeSkin=Pick<ComposerCreature["skin"],"parts"|"index"|"positions"|"gloss"|"regions"|"vertexCount">;
+/** The facing (degrees off the snout axis, toward each eye's own side) of the built visible eye surface on the +z and the
+ * -z side, at rest: the area-weighted normal of the visible eye triangles (composerVisibleEyeIndices) whose centroid is
+ * on that side; null for a side without one. */
+export function composerMeasuredEyeGaze(skin:ComposerEyeSkin):{plus:number|null;minus:number|null}{
+ const ids=new Set(composerVisibleEyeIndices(skin)),P=skin.positions,n={plus:[0,0,0],minus:[0,0,0]},seen={plus:false,minus:false};
+ for(const p of skin.parts)if(p.part==="eyes")for(let t=p.firstTriangle;t<p.firstTriangle+p.triangles;t++){
+  const a=skin.index[t*3]!,b=skin.index[t*3+1]!,c=skin.index[t*3+2]!;
+  if(!ids.has(a)||!ids.has(b)||!ids.has(c))continue;
+  const ux=P[b*3]!-P[a*3]!,uy=P[b*3+1]!-P[a*3+1]!,uz=P[b*3+2]!-P[a*3+2]!,vx=P[c*3]!-P[a*3]!,vy=P[c*3+1]!-P[a*3+1]!,vz=P[c*3+2]!-P[a*3+2]!;
+  const k=P[a*3+2]!+P[b*3+2]!+P[c*3+2]!>0?"plus":"minus",s=n[k];
+  s[0]+=uy*vz-uz*vy;s[1]+=uz*vx-ux*vz;s[2]+=ux*vy-uy*vx;seen[k]=true;
+ }
+ const deg=(v:number[],side:number)=>THREE.MathUtils.radToDeg(Math.atan2(side*v[2]!,v[0]!));
+ return {plus:seen.plus?deg(n.plus,1):null,minus:seen.minus?deg(n.minus,-1):null};
 }
 export function composerEyeMidlineZ(points:readonly THREE.Vector3[],restZ:ArrayLike<number>):number{
  let sp=0,np=0,sm=0,nm=0,sa=0;
@@ -378,7 +398,7 @@ export function composerVisibleEyeIndices(skin:Pick<ComposerCreature["skin"],"pa
 const eyeGazeCache=new WeakMap<ComposerCreature,ComposerEyeGaze>();
 /** The built gaze of a creature's eyes (from the recipe it was built with, after its individual differences). */
 function eyeGazeOf(c:ComposerCreature){
- let g=eyeGazeCache.get(c);if(!g){g=composerBuiltEyeGaze(c.individual.effectiveRecipe,c.skin.version);eyeGazeCache.set(c,g);}return g;
+ let g=eyeGazeCache.get(c);if(!g){g=composerBuiltEyeGaze(c.individual.effectiveRecipe,c.skin.version,c.skin);eyeGazeCache.set(c,g);}return g;
 }
 function eyeVertexIndices(c:ComposerCreature){
  let ids=eyeIndexCache.get(c);if(ids)return ids;
