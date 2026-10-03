@@ -133,7 +133,31 @@ export type SurfaceSample = {
   rockHeightM:number; waterLevelM:number|null; visibleHeightM:number;
   wet:boolean; waterKind:'river'|'lake'|null; bank:number; channelId:string|null;
   flow:[number,number]; influence:number;
+  /** R0 (relief round, additive; set only by terrainFloorSampler, never by
+   * the plain terrainSampler): the smooth regional FLOOR, i.e. the base
+   * field after the [-16,18] km clamp and radius scale, before the metre-based
+   * hills/gullies/rocks and landforms. */
+  floorM?:number;
+  /** R0: the bounded local WINDOW above the floor, uncrateredHeight - floorM
+   * (hills/gullies/rocks + landforms; pre-crater, pre-river), always within
+   * [0, terrainWindowMaxM(body)]. */
+  windowM?:number;
+  /** R0: the continental coordinate A*scale before the clamp (water worlds:
+   * (coast-sea)*47000*scale, whose sign is the sea-level-0 coastline). */
+  continentalM?:number;
 };
+/** Max of hills*620 + gullies*130 + rocks*22 (baseTerrainCore; metre-based). */
+export const TERRAIN_DETAIL_WINDOW_M = 620 + 130 + 22;
+/** Max of the planetLandforms unit sum 1650 + 230 + 28 before the radius scale. */
+export const TERRAIN_LANDFORM_WINDOW_M = 1650 + 230 + 28;
+/** R0: largest possible WINDOW (m) above the floor for this body, by
+ * construction: hills/gullies/rocks 772 m (metre-based, NOT radius-scaled)
+ * plus landforms 1908 m x min(1, R/2e6). For R >= 2e6 m this is the audit's
+ * 2680 m. 0 for stars and gas giants (flat field). */
+export function terrainWindowMaxM(body: Pick<Body,'kind'|'type'|'radiusM'>): number {
+  if (body.kind === 'star' || body.type === 'Gas giant') return 0;
+  return TERRAIN_DETAIL_WINDOW_M + TERRAIN_LANDFORM_WINDOW_M * Math.min(1, body.radiusM / 2e6);
+}
 const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 const mix = (a: number[], b: number[], t: number) =>
   a.map((v, i) => v + (b[i] - v) * clamp(t));
@@ -268,9 +292,18 @@ export function baseTerrainSampler(body: Body, waterLevelM: number = 0) {
  * returned value is computed by the same expressions, in the same order, as
  * terrain-1.6.0's baseTerrainSampler (pinned by
  * tests/terrain-elevation-identity.test.mjs). */
-function baseTerrainCore(body: Body, waterLevelM: number) {
+type CoreSample = {
+  elevationM: number; ocean: boolean; color: number[] | null; roughness: number;
+  grain: number; localGrain: number;
+  /** R0, only when the core is built with exposeFloor. */
+  floorM?: number; continentalM?: number;
+};
+function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false) {
   const { code, n } = macroNoise(body);
   const sea = 0.37 + body.water * 0.22;
+  // R0: the radius scale of the continental coordinate (same value the
+  // elevation clamp line multiplies by), hoisted out of the per-sample path.
+  const continentalScale = Math.min(1, body.radiusM / 2e6);
   // Legacy water-world land colour (pre-grain), terrain-1.6.0 expressions.
   const legacyWaterLandColour = (d: V3, elevationM: number): number[] => {
     const latitude = Math.abs(d[1]);
@@ -287,13 +320,13 @@ function baseTerrainCore(body: Body, waterLevelM: number) {
       color = mix([185, 175, 128], color, elevationM / 120);
     return mix(color, [216, 228, 226], snow);
   };
-  const sample = (d: V3, deferWaterLand: boolean) => {
+  const sample = (d: V3, deferWaterLand: boolean): CoreSample => {
     const macro = macroHeightCode(code, d);
     if (body.type === "Gas giant") {
       const turbulence = n(d, 9, 24),
         bands = 0.5 + 0.5 * Math.sin(d[1] * 75 + turbulence * 8);
       const fine = n(d, 80, 22);
-      return {
+      const gas: CoreSample = {
         elevationM: 0,
         ocean: false,
         color: mix([135, 98, 68], [225, 197, 153], bands * 0.8 + fine * 0.2) as number[] | null,
@@ -301,6 +334,8 @@ function baseTerrainCore(body: Body, waterLevelM: number) {
         grain: 1,
         localGrain: 1,
       };
+      if (exposeFloor) { gas.floorM = 0; gas.continentalM = 0; }
+      return gas;
     }
     const coast =
       macro + (n(d, 42, 5) - 0.5) * 0.012 + (n(d, 90, 6) - 0.5) * 0.003;
@@ -316,6 +351,9 @@ function baseTerrainCore(body: Body, waterLevelM: number) {
       : (macro - 0.46) * 44000 + ridges * 1800 + fine;
     elevationM =
       clamp(elevationM, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
+    // R0 (additive): the regional floor is exactly the clamped, scaled value
+    // above (the continental coordinate is derived below, opt-in only).
+    const floorM = elevationM;
     // Metre-based wavelengths, shared by collision, orbit previews and tiles.
     // Positive land detail fades to zero at sea level, preserving every coast.
     const landDetail = body.water ? clamp(elevationM / 700) : 1;
@@ -350,7 +388,7 @@ function baseTerrainCore(body: Body, waterLevelM: number) {
     }
     const grain = 0.91 + n(d, 115, 35) * 0.18;
     const localGrain = ocean ? 1 : .88 + n(d, body.radiusM / 800, 74) * .24;
-    return {
+    const out: CoreSample = {
       elevationM,
       ocean,
       color: color ? color.map((v) => clamp(v * grain * localGrain, 0, 255)) : null,
@@ -358,6 +396,13 @@ function baseTerrainCore(body: Body, waterLevelM: number) {
       grain,
       localGrain,
     };
+    if (exposeFloor) {
+      // R0: the continental coordinate repeats the first term of the
+      // elevation sum on its own (it never feeds elevationM).
+      out.floorM = floorM;
+      out.continentalM = (body.water ? (coast - sea) * 47000 : (macro - 0.46) * 44000) * continentalScale;
+    }
+    return out;
   };
   return { sample, legacyWaterLandColour };
 }
@@ -492,8 +537,9 @@ export function terrainSampler(
   includeCraters: boolean = false,
   waterLevelM: number = 0,
   onOceanThreshold?: (heightM:number)=>void,
+  exposeFloor: boolean = false,
 ) {
-  const core = baseTerrainCore(body, waterLevelM);
+  const core = baseTerrainCore(body, waterLevelM, exposeFloor);
   const landforms=planetLandforms(body);
   const candidates = regions.length > 1 ? [...regions].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0) : regions;
   // `includeCraters=false` skips building a CraterField at all (not merely
@@ -570,6 +616,13 @@ export function terrainSampler(
       flow: [0, 0] as [number, number],
       influence: 0,
     };
+    // R0 (opt-in, terrainFloorSampler): the default sample keeps its
+    // historical field set exactly (tests deep-compare it).
+    if (exposeFloor) {
+      baseline.floorM = sample.floorM!;
+      baseline.windowM = uncrateredHeightM - sample.floorM!;
+      baseline.continentalM = sample.continentalM!;
+    }
     if (ocean || !candidates.length) return baseline;
     // This versioned physical surface drives tiles and collision. River
     // construction still uses baseTerrainSampler + sampleLegacyRiverRegion,
@@ -585,7 +638,7 @@ export function terrainSampler(
       // material selection is carried in bank/waterKind for nearby terrain.
       const color = wet ? [24, 105, 132] : regionalBankColor(body,d,landform,surfaceColor,river);
       const waterHeightM=waterLevelM;
-      return {
+      const regional: SurfaceSample = {
         elevationM: rockHeightM,
         ocean,
         color,
@@ -603,9 +656,32 @@ export function terrainSampler(
         flow: river.flow,
         influence: river.influence,
       };
+      if (exposeFloor) {
+        regional.floorM = sample.floorM!;
+        regional.windowM = uncrateredHeightM - sample.floorM!;
+        regional.continentalM = sample.continentalM!;
+      }
+      return regional;
     }
     return baseline;
   };
+}
+
+/**
+ * R0 (relief round 2026-10-03, additive): `terrainSampler` with the terrain
+ * floor/window split exposed on every sample - `floorM`, `windowM` and
+ * `continentalM` (see SurfaceSample). Same arguments and the same values for
+ * every other field; the plain `terrainSampler` keeps its historical field
+ * set so existing shape-comparing callers and tests are untouched.
+ */
+export function terrainFloorSampler(
+  body: Body,
+  regions: RiverRegion[] = activeRiverRegions(body),
+  surfaceAgeMyr: number = DEFAULT_SURFACE_AGE_MYR,
+  includeCraters: boolean = false,
+  waterLevelM: number = 0,
+) {
+  return terrainSampler(body, regions, surfaceAgeMyr, includeCraters, waterLevelM, undefined, true) as (d: V3) => SurfaceSample & {floorM: number; windowM: number; continentalM: number};
 }
 
 // Fixed, bounded resolution for the coarse crater-delta grid `planetSurface`
