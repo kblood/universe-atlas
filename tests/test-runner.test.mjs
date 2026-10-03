@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync} from 'node:fs';
+import {mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSync} from 'node:fs';
 import {join, resolve, relative} from 'node:path';
 import {spawn} from 'node:child_process';
 import {classify} from './helpers/test-runner.mjs';
 test('reporter records title + file, excludes TODO, and completes with the raw failed status', async () => {
   mkdirSync('test-results', {recursive: true});
-  const root = mkdtempSync(resolve('test-results', 'atlas-reporter-'));
+  // realpath: on the main checkout test-results is a junction to another drive, and
+  // node's reporter reports the resolved file path, so the known-row path must match it.
+  const root = realpathSync(mkdtempSync(resolve('test-results', 'atlas-reporter-')));
   try {
     const a = join(root, 'a.mjs'), b = join(root, 'b.mjs'), report = join(root, 'result.json');
     writeFileSync(a, "import test from 'node:test'; test('same title',()=>{throw Error('known')}); test('OPEN',{todo:true},()=>{throw Error('todo')});");
