@@ -14,7 +14,7 @@ import {
 } from '../src/fauna-composer-eye-catalogue.ts';
 import {
   COMPOSER_EYE_TYPES, COMPOSER_FACES, COMPOSER_FACE_VERSION, COMPOSER_IRIS, COMPOSER_IRIS_RGB, FACE_EYE_PROFILE, composerAutoEyeType, composerFaceConstraints,
-  composerIrisBands, resolveComposerEyes,
+  composerIrisBands, composerIrisKind, resolveComposerEyes,
 } from '../src/fauna-composer-face.ts';
 import {
   COMPOSER_PRESET_IDS, COMPOSER_RANGES, COMPOSER_RECIPE_VERSION, COMPOSER_V2_KEYS, COMPOSER_V3_RANGE_KEYS, COMPOSER_WILD_UNUSUAL_EYES_PER_MILLE, composerEyeUpgradeIssue,
@@ -105,7 +105,10 @@ test('eyeRules 2 (current): 0 of 12 presets change; every legacy change is one o
     assert.equal(issues.some(i => i.startsWith('Eyes: upgraded')), changed, `${text}: the upgrade is disclosed exactly when it changes the eyes`);
     if (!changed) { assert.deepEqual(eye(recipe), b.eye, text); continue; }
     const key = `${src} ${b.eye[0]}->${e.kind}`; changes[key] = (changes[key] ?? 0) + 1;
-    if (e.kind === 'insect' || e.kind === 'spider') { assert.equal(recipe.head, 'mandibles'); assert.deepEqual(eye(recipe), b.eye, `${text}: the stand-in is still the compound dome`); }
+    // an upgrade refines the kind only: the iris colour, gaze and size stay the face round's (EC1 review: the rehashed
+    // cat amber / crocodile grey-green read worse at normal size)
+    assert.deepEqual(eye(recipe), b.eye, `${text}: an upgrade keeps the face round's iris, gaze and size`);
+    if (e.kind === 'insect' || e.kind === 'spider') assert.equal(recipe.head, 'mandibles');
     if (e.kind === 'cat') assert.ok(recipe.head === 'muzzle' && recipe.bodyLength < 0.9, text);
     if (e.kind === 'crocodile') assert.ok(recipe.head === 'jaws' && recipe.layout === 'sprawled' && recipe.bodyLength >= 1, text);
   }
@@ -116,7 +119,7 @@ test('eyeRules 2 (current): 0 of 12 presets change; every legacy change is one o
 
 test('colorSeed never changes the kind, traits, stand-in, gaze or size; it only picks the iris band', () => {
   for (const id of COMPOSER_PRESET_IDS) for (const eyes of COMPOSER_EYE_TYPES) for (const eyeRules of [1, 2]) {
-    const r = {...composerPreset(id), eyes, eyeRules}, ref = resolveComposerEyes(r), bands = composerIrisBands(r, ref.kind), seen = new Set();
+    const r = {...composerPreset(id), eyes, eyeRules}, ref = resolveComposerEyes(r), bands = composerIrisBands(r, composerIrisKind(r, ref.kind)), seen = new Set();
     for (let colorSeed = 0; colorSeed < 48; colorSeed++) {
       const e = resolveComposerEyes({...r, colorSeed});
       assert.deepEqual([e.kind, e.traits, e.built, e.gazeYawDeg, e.k], [ref.kind, ref.traits, ref.built, ref.gazeYawDeg, ref.k], `${id} ${eyes} ${eyeRules} ${colorSeed}`);

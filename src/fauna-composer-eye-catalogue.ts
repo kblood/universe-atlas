@@ -111,8 +111,9 @@ export interface EyeTraits {
   eyeshine: EyeShine;
   /** Per-face eyeshine overrides (nocturnal: silver-white on a muzzle, none on a flat face). */
   eyeshineByFace?: Partial<Record<EyeCatalogueFace, EyeShine>>;
-  /** Iris colours 'auto' picks from for this kind. null: the face round's per-face bands (composerIrisBands); an empty
-   * list: the eye has no iris. */
+  /** Iris colours an 'auto' iris picks from when this kind is chosen explicitly. null: the face round's per-face bands
+   * (composerIrisBands); an empty list: the eye has no iris. An automatic eye keeps the face round's bands and hash
+   * (composerIrisKind in fauna-composer-face.ts), so an upgraded link never changes iris colour. */
   irisBands: readonly EyeIrisId[] | null;
   /** Where real animals carry this kind; a hint only, never a build restriction. */
   nativeFaces: readonly EyeCatalogueFace[];

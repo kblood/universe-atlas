@@ -145,7 +145,9 @@ export const FACE_EYE_PROFILE = Object.freeze({
   'blunt-camera': {gazeYawDeg: 35, k: 0.14},
 } as const satisfies Record<string, {gazeYawDeg: number; k: number}>);
 export type ComposerEyeProfileId = keyof typeof FACE_EYE_PROFILE;
-/** Radius factor of the bead that stands in for an eyespot off a worm head (half a camera eye: a dark pinpoint). */
+/** Radius factor of the bead that stands in for an eyespot off a worm head (half a camera eye: a dark pinpoint).
+ * Provisional stand-in size: GPT Luna 6 read it as "specks" on the giraffe (EC1, 2026-10-03). The eye-geometry
+ * package (EC2) owns the final eyespot size when it replaces this stand-in. */
 export const COMPOSER_EYESPOT_BEAD_K = 0.065;
 
 /** Grazer proxy: hooves, tip-toe hooved legs, or pillar legs (rhino-like herbivores). */
@@ -219,6 +221,18 @@ export function composerIrisBands(r: Pick<ComposerFaceInput, 'head' | 'layout'>,
   }
 }
 
+/** The kind whose iris bands and hash an 'auto' iris uses. An automatic catalogue camera eye is always the eyeRules-2
+ * refinement of the face round's automatic kind (cat for vertical-slit on a small carnivore muzzle, crocodile for
+ * vertical-slit on large sprawled jaws), so it keeps the face round's bands and hash (face-eye-v1): an upgraded link's
+ * iris colour never changes. Rehashing over the preset bands moved 8 legacy links to a darker band (cat gold -> amber,
+ * crocodile amber -> grey-green), which GPT Luna 6 judged less readable at normal size (EC1 review, 2026-10-03). An
+ * explicitly chosen kind uses its preset's own bands. */
+export function composerIrisKind(r: AutoInput & Pick<ComposerFaceInput, 'eyes'>, kind: ComposerEyeKind): ComposerEyeKind {
+  if (r.eyes !== 'auto' || isFaceRoundEyeKind(kind) || !eyeKindHasIris(kind)) return kind;
+  const earlier = autoEyeRules1(r);
+  return eyeKindHasIris(earlier) ? earlier : kind;
+}
+
 /** Same algorithm as composerHash (fauna-composer-recipe.ts); duplicated to keep this module free of the recipe module. */
 export function faceHash(text: string): number {
   let h = 2166136261 >>> 0;
@@ -263,10 +277,10 @@ export function resolveComposerEyes(r: ComposerFaceInput): ResolvedComposerEyes 
     else if (r.head === 'blunt') effect = 'Built as eyespot: a worm head has only pigment eyespots.';
     else effect = `Built as ${auto}: ${chosen === 'compound' ? NO_COMPOUND : NO_EYESPOT}`;
   }
-  const bands = composerIrisBands(r, kind);
+  const irisKind = composerIrisKind(r, kind), bands = composerIrisBands(r, irisKind);
   let irisBuilt: BuiltIrisId | null = null;
   if (bands.length) irisBuilt = r.iris !== 'auto' ? r.iris
-    : isFaceRoundEyeKind(kind) ? bands[faceHash(`face-eye-v1/${r.colorSeed}/${r.head}`) % bands.length]!
+    : isFaceRoundEyeKind(irisKind) ? bands[faceHash(`face-eye-v1/${r.colorSeed}/${r.head}`) % bands.length]!
     : bands[faceHash(`face-eye-v2/${r.colorSeed}/${r.head}/${kind}`) % bands.length]!;
   const built = composerEyeStandIn(kind, r.head);
   const profile = FACE_EYE_PROFILE[composerEyeProfileId(r, built)];
