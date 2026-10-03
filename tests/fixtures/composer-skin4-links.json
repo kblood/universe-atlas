@@ -1,13 +1,13 @@
 {
  "schema": "composer-skin4-links-1",
  "capturedAt": {
-  "commitBase": "52ee97f",
+  "commitBase": "a52f536",
   "date": "2026-10-03",
   "graph": "fauna-composer-graph-3",
   "skin": "fauna-composer-skin-4",
   "eye": "fauna-composer-eye-2",
   "recipe": 4,
-  "note": "Skin-4 digests (positions, index, skinIndex, skinWeight, colors) and gloss digests of the 28 migrated neutral v1 texts of composer-skin3-links.json, built under the current eye rules (eyeRules 2; owner decision 2026-10-03: old links upgrade). Eye round EC2 rebuilt every eye as the catalogue geometry (fauna-composer-eye-2), recoloured the nostrils and the blunt mouth disc and raised the eye sizes, so every entry drifts from its skin-3 pin (driftFromSkin3, previous pin in skin3). The same texts under eyeRules 1 still build their skin-3 pin byte for byte. Bone counts are unchanged (eyes are mesh-only)."
+  "note": "Skin-4 digests (positions, index, skinIndex, skinWeight, colors) and gloss digests of the 28 migrated neutral v1 texts of composer-skin3-links.json, built under the current eye rules (eyeRules 2; owner decision 2026-10-03: old links upgrade). Eye round EC2 rebuilt every eye as the catalogue geometry (fauna-composer-eye-2), replaced the dark mouth disc of the blunt face by a closed-mouth lens (EC2 review; nostrils are unchanged) and raised the eye sizes, so every entry drifts from its skin-3 pin (driftFromSkin3, previous pin in skin3). The same texts under eyeRules 1 still build their skin-3 pin byte for byte. Bone counts are unchanged (eyes are mesh-only)."
  },
  "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
  "byText": {
@@ -75,19 +75,19 @@
    "skin3": "dd5952bdeb36525b1f45c458e87e11141a804ed47748a48cd8019ec0ed8c3c25"
   },
   "v1*layout_limbless*legPairs_0*bodyLength_1.1*girth_1*posture_0*torso_annulated*neckLength_0*head_blunt*headSize_1*snoutLength_0.2*horns_none*legs_pillar*legLength_0.8*feet_pad*arms_none*armLength_0.6*hands_hand*tail_none*tailLength_0*armor_none*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_earth*colorSeed_401": {
-   "skin": "eb2549a1d94fcbf224594c58850e35b28b6ebc85f82aa4bbea3ede6ce7ed9de4",
-   "gloss": "c59ffa7a373f170de48f1f7c47f4b9d3662a3a186de73512c5f4ca4672575608",
-   "vertices": 3377,
-   "triangles": 6668,
+   "skin": "b1ed44ecdaf24e004b03a9a18444c46aac62114874f634d5c79ca7367a658060",
+   "gloss": "e51ac9fd190ad96956db949c24f27e9228564ee89b3b9e8190d5ea11639bfe08",
+   "vertices": 3353,
+   "triangles": 6616,
    "bones": 15,
    "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
    "skin3": "199b7b767c604991bdd2a63f8af84114fea85b63f69939efef6e103a1d8f6174"
   },
   "v1*layout_many-legged*legPairs_11*bodyLength_0.55*girth_0.9*posture_0*torso_segmented*neckLength_0*head_mandibles*headSize_1*snoutLength_0.3*horns_none*legs_arthropod*legLength_0.2*feet_spike*arms_none*armLength_0.6*hands_hand*tail_none*tailLength_0*armor_bands*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_ink*colorSeed_909": {
-   "skin": "25309b9f2a2d05eff025785234d33f817619eecddff821eb5808dd80c499527d",
-   "gloss": "8edc91304595030842a461d20c58476271aa371d779276c901ff5cd4a91cea8c",
-   "vertices": 9076,
-   "triangles": 17900,
+   "skin": "2b0a2110b914c1df219d9927eb87c64afdc63462161c34bda8c4a892c0e0b8c5",
+   "gloss": "d391d25e204a96ab0c16221d77cb77831bf8f94510a9d288a34744cab5f5eaf2",
+   "vertices": 8944,
+   "triangles": 17636,
    "bones": 79,
    "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
    "skin3": "879cbda95eb66d905807a688bc011d8fbc3c5b42ab210e79cdfd62da90805c5d"
@@ -129,19 +129,19 @@
    "skin3": "e718d853159589727ef3c6c84bffc8033ade5b939cd7d2090f1427c689589385"
   },
   "v1*layout_biped*legPairs_1*bodyLength_1.83*girth_0.85*posture_0.33*torso_deep-chest*neckLength_0.21*head_mandibles*headSize_1.21*snoutLength_0.89*horns_none*legs_unguligrade*legLength_0.41*feet_hoof*arms_grasping*armLength_0.59*hands_pincer*tail_tufted*tailLength_1.31*armor_dome*wings_membrane*wingSpan_2.61*trunk_none*trunkLength_0.41*palette_earth*colorSeed_4293": {
-   "skin": "8888669f23e9f6277f59da1cf79140c2699bd928bc0e29a933da3ea586e6213c",
-   "gloss": "c5027328456245793536150c83f18592b8ad8400597dbd177c1286e669485406",
-   "vertices": 7378,
-   "triangles": 14608,
+   "skin": "ac3d2d0bde971b3459780eb3c641b69231d4afc59c7f8610dfadd06e03523bc8",
+   "gloss": "ba5574100c6604015e25296946303d19535e2fea2f72bcd9547e4b3c2d68b6f5",
+   "vertices": 7240,
+   "triangles": 14332,
    "bones": 34,
    "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
    "skin3": "a6c7776780290ccad911bff098683cf91a4329b90c55fa716c1752127a778dc3"
   },
   "v1*layout_quadruped*legPairs_2*bodyLength_0.84*girth_0.77*posture_0.43*torso_slim*neckLength_0.3*head_blunt*headSize_0.94*snoutLength_0.87*horns_paired*legs_plantigrade*legLength_0.47*feet_pad*arms_none*armLength_0.86*hands_hand*tail_tufted*tailLength_0.8*armor_none*wings_none*wingSpan_2.33*trunk_none*trunkLength_0.67*palette_slate*colorSeed_7350": {
-   "skin": "1087ad0f595d0fe438cecdfa5e8d065e1131738ebe4e5934f20e2507da9dd287",
-   "gloss": "250871d30af1d60fffec492a3db1314278abce7ecd367c97541cfdc221cf5af7",
-   "vertices": 6129,
-   "triangles": 12088,
+   "skin": "82d5b843221af5d24e5341c25dcd13d8b64cccb32d5c339772c29866cc040dbe",
+   "gloss": "b89b92b1826e8b71ec2cef0c48984740cb2b679849d7fac46f9671890318e1de",
+   "vertices": 6105,
+   "triangles": 12036,
    "bones": 24,
    "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
    "skin3": "ce82030ba9d3c7f4da9c58c80c8a32ed7ab5f21cf5fa20dc5ed22418afd8ee11"
@@ -183,10 +183,10 @@
    "skin3": "89fc37865d760381401d05fbe1295ed7027036c8419551a709c335a0e9071fb0"
   },
   "v1*layout_limbless*legPairs_0*bodyLength_0.69*girth_0.82*posture_0.66*torso_annulated*neckLength_0*head_blunt*headSize_0.75*snoutLength_0.59*horns_none*legs_unguligrade*legLength_0.53*feet_hand*arms_none*armLength_0.77*hands_pincer*tail_club*tailLength_0.91*armor_bands*wings_none*wingSpan_2.41*trunk_none*trunkLength_1*palette_savanna*colorSeed_3601": {
-   "skin": "5ffff0fd9a60c1582b9344a30a195ee923b62c5757b2fd721de80f62d68d3b5a",
-   "gloss": "9f56098207be03b3da70359b25abacf29171f928b9a191958fe88b5910915921",
-   "vertices": 5561,
-   "triangles": 10976,
+   "skin": "2e6acaad7861a8efb3a48ed477a046ade093b6adbda045a0eaaa3e984bcdfd86",
+   "gloss": "790efef59eef1f64a667a5190161ffecca7f4e8a7339c76b3c09cfda00d70f21",
+   "vertices": 5537,
+   "triangles": 10924,
    "bones": 22,
    "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
    "skin3": "a3f409318336985dc6c09d4a53703d876807cc244077b1c04f2e9bf69f0f694b"
@@ -210,19 +210,19 @@
    "skin3": "8bef25aba3f2662ae34a3414b15162e534f172d930a9031879533972d6a494f7"
   },
   "v1*layout_quadruped*legPairs_2*bodyLength_2.38*girth_1.22*posture_0.49*torso_slim*neckLength_0.32*head_blunt*headSize_1.21*snoutLength_0.21*horns_ossicones*legs_arthropod*legLength_0.5*feet_spike*arms_none*armLength_0.51*hands_hand*tail_club*tailLength_0.94*armor_plates*wings_none*wingSpan_1.12*trunk_none*trunkLength_1.05*palette_earth*colorSeed_9819": {
-   "skin": "7a52d6455f5065693f499ebef752fceb8292170f10492fca1ee18558623f9555",
-   "gloss": "da151ade4d95e6ad146dd01760dccc31ed51bfa289ce40512860eb3c1b9380be",
-   "vertices": 5121,
-   "triangles": 10060,
+   "skin": "1cd2085951d341403e6a6eca81e3ae18596db07f5a009745f89c618f79c25c94",
+   "gloss": "98641642c54f47ad56524775d4636914eb1fbeea4b0cdd945fa34e4543b02438",
+   "vertices": 5097,
+   "triangles": 10008,
    "bones": 26,
    "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
    "skin3": "08c5f7f56cdea6ad6f8f89b5dadb814d43171c33a2514c6e0b8e139956afdcea"
   },
   "v1*layout_biped*legPairs_1*bodyLength_0.31*girth_0.84*posture_0.78*torso_deep-chest*neckLength_0.41*head_blunt*headSize_1.07*snoutLength_0.14*horns_none*legs_pillar*legLength_0.54*feet_claw*arms_grasping*armLength_0.64*hands_hand*tail_feather-fan*tailLength_0.49*armor_none*wings_feathered*wingSpan_1.64*trunk_trunk*trunkLength_0.43*palette_reptile*colorSeed_6480": {
-   "skin": "e23265d2ca3cc25cc0444a481fdf0f944559142f1d5b6737fca5a8da69099a9b",
-   "gloss": "f29d61083fc14fc9c18d053c8fb5481cd93370069a4b362eea0666223faf3bdd",
-   "vertices": 6569,
-   "triangles": 12856,
+   "skin": "0ca2271afbf84d9b7000701ddd8fa50a4d1eb5ea731bb84b788ab9210d883149",
+   "gloss": "315ea16f3d46b19b631b8d7c826c3037ec303d07f73d7d61254a284d48d569f5",
+   "vertices": 6545,
+   "triangles": 12804,
    "bones": 29,
    "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
    "skin3": "30ad288d8fd6584914e0390c43734bb9a6717ae6bfa703f7acf314161bfd983a"
@@ -246,10 +246,10 @@
    "skin3": "d5bac2f2322d26b78b91ef4ac07d0b88904691dd36ce1750704746015965ed8e"
   },
   "v1*layout_sprawled*legPairs_2*bodyLength_0.8*girth_1.35*posture_0.75*torso_slim*neckLength_0.13*head_mandibles*headSize_0.87*snoutLength_0.6*horns_crest*legs_arthropod*legLength_0.51*feet_spike*arms_none*armLength_0.49*hands_pincer*tail_feather-fan*tailLength_1.36*armor_bands*wings_feathered*wingSpan_1.98*trunk_none*trunkLength_1.19*palette_slate*colorSeed_1258": {
-   "skin": "5135d16f95264e3a0ca74d932f818f030f1921a40fb6d21aca8e7699708ebcf3",
-   "gloss": "66f2a54f9e83f038e1c7807f534e7fc31a29e443f4bdbb9f2faf329342519307",
-   "vertices": 4876,
-   "triangles": 9576,
+   "skin": "2b58e7c512f15379b7c36621c55536d2c77354ed6764305c6fa199b044054fc3",
+   "gloss": "7ad7f0b1b409f2fc9ab1996056ae0ef4e83ccd7a0cd6b5da4cd130ab8346f766",
+   "vertices": 4738,
+   "triangles": 9300,
    "bones": 26,
    "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
    "skin3": "d0102b2736adc2de2065f36cae10f87ed95c550ff94848853dde8927a41076be"

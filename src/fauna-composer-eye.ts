@@ -673,11 +673,16 @@ export interface FacetedEyeOptions {
   centre: Vec3; gaze: Vec3; up: Vec3;
   segments?: number; stations?: number;
 }
-/** Compound-eye numbers: lattice segments x stations, the lens bulge (fraction of the dome radius) and gloss. */
-export const FACETED_EYE = Object.freeze({segments: 14, stations: 5, lens: 0.07, gloss: {lens: 0.85, edge: 0.3, pupil: 0.6}});
+/** Compound-eye numbers: lattice segments x stations, the lens bulge (fraction of the dome radius) and gloss.
+ * 12 x 3 = 120 triangles per dome: the design cap (eye-catalogue-v2 budgets: insect set <= 280 = 2 x 120 + 3 x 12 = 276;
+ * the face round's compound pair 240). EC2's first passes used 14 x 5 = 252 without disclosure; the EC2 review cut it
+ * back. Legibility does not justify the larger lattice: across GPT Luna 6 runs on the same eight specimens the 120 dome
+ * (r28: 2 of 4 compound sheets PASS) did no worse than the 252 one (r32, r33: 1 of 5), and a flat-faceted 120 variant
+ * did worse (r30: 0 of 4). What fails at normal size on centipede heads is the eye's SIZE (deferred), not the lattice. */
+export const FACETED_EYE = Object.freeze({segments: 12, stations: 3, lens: 0.07, gloss: {lens: 0.85, edge: 0.3, pupil: 0.6}});
 /** A compound eye that reads as faceted: a half-ellipsoid lattice (dark 'facet-edge' vertices) whose every cell carries
  * its own raised lens centre ('facet-a'/'facet-b', glossy), so the dome breaks the light into many small highlights.
- * The apex vertex is the dark pseudopupil (a small spot fading into the lattice); a base fan closes it. segments x (4 x stations - 2) triangles (14 x 5: 252). */
+ * The apex vertex is the dark pseudopupil (a small spot fading into the lattice); a base fan closes it. segments x (4 x stations - 2) triangles (12 x 3: 120; 8 x 2: 48). */
 export function buildFacetedEye(o: FacetedEyeOptions): EyePatch {
   const S = o.segments ?? FACETED_EYE.segments, M = o.stations ?? FACETED_EYE.stations, G = FACETED_EYE.gloss, g = normalize3(o.gaze);
   const a = normalize3(cross(o.up, g)), b = cross(g, a), [ra, rb, rg] = o.er3, c0 = o.centre;
@@ -713,13 +718,16 @@ export interface OcellusOptions {
   /** base centre, outward normal and an up hint, head-local */
   centre: Vec3; normal: Vec3; up: Vec3;
   segments: number; stations: number;
-  /** a pale rim: the lowest station and a flange ring around the dome ('ocellus-rim') */
+  /** a pale rim ('ocellus-rim'): without `flange`, the lowest station (no extra triangles) */
   rim?: boolean;
+  /** with `rim`, the pale rim is instead a flange ring around a fully dark dome, on the skin (2 x segments more
+   * triangles): a dark bead in a pale ring */
+  flange?: boolean;
 }
 /** Simple-eye numbers: the rim flange's radius (x r). */
 export const OCELLUS = Object.freeze({flange: 1.4});
 /** A simple eye: a glossy dome of `segments` x `stations` plus an apex and a closing base fan; 2 x segments x stations
- * triangles (6 x 1: 12, 8 x 1: 16, 12 x 2: 48), plus 2 x segments with a rim flange. */
+ * triangles (5 x 1: 10, 6 x 1: 12, 8 x 1: 16, 12 x 2: 48), plus 2 x segments with a rim flange. */
 export function buildOcellus(o: OcellusOptions): EyePatch {
   const S = o.segments, M = o.stations, n = normalize3(o.normal);
   let a = cross(o.up, n); if (Math.hypot(...a) < 1e-6) a = cross([1, 0, 0], n);
@@ -732,13 +740,13 @@ export function buildOcellus(o: OcellusOptions): EyePatch {
   for (let j = 1; j <= M; j++) {
     rings.push(positions.length / 3);
     const phi = (j / M) * Math.PI / 2, rr = o.r * Math.sin(phi), h = o.height * Math.cos(phi);
-    for (let k = 0; k < S; k++) { const t = 2 * Math.PI * k / S; push(at(rr * Math.cos(t), rr * Math.sin(t), h), o.rim && j === M ? 'ocellus-rim' : 'ocellus', 1); }
+    for (let k = 0; k < S; k++) { const t = 2 * Math.PI * k / S; push(at(rr * Math.cos(t), rr * Math.sin(t), h), o.rim && !o.flange && j === M ? 'ocellus-rim' : 'ocellus', 1); }
   }
-  if (o.rim) {
+  if (o.rim && o.flange) {
     rings.push(positions.length / 3);
     for (let k = 0; k < S; k++) { const t = 2 * Math.PI * k / S; push(at(OCELLUS.flange * o.r * Math.cos(t), OCELLUS.flange * o.r * Math.sin(t), 0), 'ocellus-rim', 0.3); }
   }
-  const M1 = o.rim ? M + 1 : M;
+  const M1 = o.rim && o.flange ? M + 1 : M;
   const base = push(at(0, 0, -0.3 * o.height), 'socket', 0);
   rings.push(base);
   for (let k = 0; k < S; k++) index.push(0, 1 + k, 1 + (k + 1) % S);
@@ -756,7 +764,11 @@ export interface EyespotBeadOptions {
   rimLift?: (p: Vec3) => number;
 }
 /** Eyespot bead numbers: segments; ring radii (x r) pigment, pigment edge, rim, skin blend; dome heights (x r). */
-export const EYESPOT_BEAD = Object.freeze({segments: 12, rings: [0.5, 0.82, 1.0, 1.35] as readonly number[], heights: [0.5, 0.4, 0.18, 0.06, 0] as readonly number[], socketDepth: 0.6});
+/** (fauna-composer-eye-2, EC2 review and r21: the 0.5 r dome read as "dark raised buttons, not subtle pigment"; now a
+ * near-flush 0.04 r film with a faint sheen, and the skin-coloured rim and blend rings hug the pigment (0.95 and 1.05 r,
+ * were 1.0 and 1.35 r): the bead's flat-draped normals never quite match the cap's smooth ones, so a wide skin ring
+ * showed as a grey halo around a button.) */
+export const EYESPOT_BEAD = Object.freeze({segments: 12, rings: [0.7, 0.9, 1.0, 1.1] as readonly number[], heights: [0.04, 0.035, 0.02, 0.008, 0] as readonly number[], socketDepth: 0.6});
 /** A worm's pigment eyespot that reads at normal size: a low glossy dome of tinted pigment (apex + 2 rings), a pale rim
  * ring and a ring blending into the skin, closed behind by a cone. 12 x 8 = 96 triangles. */
 export function buildEyespotBead(o: EyespotBeadOptions): EyePatch {
@@ -768,8 +780,8 @@ export function buildEyespotBead(o: EyespotBeadOptions): EyePatch {
   const push = (p: Vec3, role: EyeRole, gl: number) => { positions.push(p[0], p[1], p[2]); roles.push(EYE_ROLE[role]); gloss.push(gl); return positions.length / 3 - 1; };
   const at = (x: number, y: number, z: number): Vec3 => [c0[0] + a[0] * x + bb[0] * y + n[0] * z, c0[1] + a[1] * x + bb[1] * y + n[1] * z, c0[2] + a[2] * x + bb[2] * y + n[2] * z];
   const lifted = (p: Vec3) => { const l = o.rimLift ? o.rimLift(p) : 0; return addS(p, n, l); };
-  rings.push(push(lifted(at(0, 0, B.heights[0]! * o.r)), 'eyespot', 1));
-  const roleOf = ['eyespot', 'eyespot', 'eyespot-rim', 'periocular'] as const, glossOf = [1, 1, 0.5, 0];
+  rings.push(push(lifted(at(0, 0, B.heights[0]! * o.r)), 'eyespot', 0));
+  const roleOf = ['eyespot', 'eyespot', 'eyespot-rim', 'periocular'] as const, glossOf = [0, 0, 0, 0];
   const last: Vec3[] = [];
   B.rings.forEach((k, j) => {
     rings.push(positions.length / 3);

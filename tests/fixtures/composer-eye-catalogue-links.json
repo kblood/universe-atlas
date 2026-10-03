@@ -1,7 +1,7 @@
 {
  "schema": "composer-eye-catalogue-links-1",
  "capturedAt": {
-  "commitBase": "52ee97f",
+  "commitBase": "a52f536",
   "date": "2026-10-03",
   "graph": "fauna-composer-graph-3",
   "skin": "fauna-composer-skin-4",
@@ -136,10 +136,10 @@
    "text": "v4*layout_many-legged*legPairs_11*bodyLength_0.55*girth_0.9*posture_0*torso_segmented*neckLength_0*head_mandibles*headSize_1*snoutLength_0.3*horns_none*legs_arthropod*legLength_0.2*feet_spike*arms_none*armLength_0.6*hands_hand*tail_none*tailLength_0*armor_bands*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_ink*colorSeed_909*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_insect*iris_auto*eyeRules_2",
    "kind": "insect",
    "eyeRules": 2,
-   "skin": "2a3599154acca0e62af33cd24288b3a1c21c7f2014a8ec9c9e5940307139a448",
-   "gloss": "d275d98ee7d6feb551a2b552fd5e253821ac87ea18bc0f36e54f71f081f8609e",
-   "vertices": 9106,
-   "triangles": 17948,
+   "skin": "f54ed3a08c8ad5c3f2a8f57a90b30631ef9e6ebade6bbffd77f9c0305b058b6a",
+   "gloss": "8e611b5fe13be39e014edc3d4b41051a3f9e0e23f49be9f93a7ce80740139937",
+   "vertices": 8968,
+   "triangles": 17672,
    "bones": 79
   },
   {
@@ -148,10 +148,10 @@
    "text": "v4*layout_many-legged*legPairs_4*bodyLength_0.55*girth_0.9*posture_0*torso_segmented*neckLength_0*head_mandibles*headSize_1*snoutLength_0.3*horns_none*legs_arthropod*legLength_0.2*feet_spike*arms_none*armLength_0.6*hands_hand*tail_none*tailLength_0*armor_bands*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_ink*colorSeed_909*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_auto*iris_auto*eyeRules_2",
    "kind": "spider",
    "eyeRules": 2,
-   "skin": "3da962af1efadd0f1961f047d2369cab9c5a3286dae14f378e7b849b842190c4",
-   "gloss": "1b0f1a146b9debae66bc589558789d8f7e238391e681488143bd62e2ff1a7e10",
-   "vertices": 4026,
-   "triangles": 7916,
+   "skin": "341842dad19d5d2eb2247e1dbb6fcdec3c353d21ce087f4d2de1fd25b5b52e16",
+   "gloss": "199d71c17895abadb2c9960724b1f272dce7b6db8e08bf9bf5799a608eff5d80",
+   "vertices": 3910,
+   "triangles": 7684,
    "bones": 30
   },
   {
@@ -160,10 +160,10 @@
    "text": "v4*layout_limbless*legPairs_0*bodyLength_1.1*girth_1*posture_0*torso_annulated*neckLength_0*head_blunt*headSize_1*snoutLength_0.2*horns_none*legs_pillar*legLength_0.8*feet_pad*arms_none*armLength_0.6*hands_hand*tail_none*tailLength_0*armor_none*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_earth*colorSeed_401*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_stalk*iris_auto*eyeRules_2",
    "kind": "stalk",
    "eyeRules": 2,
-   "skin": "ea5ca5a92d599b792e68231b56f3e46fa4c8181be62b2424fcb231ac2bd51f96",
-   "gloss": "e29a03219393b0c339fd34bca99ecb6fc05542e81d9c91884bdb21b76f6d2fdf",
-   "vertices": 3341,
-   "triangles": 6636,
+   "skin": "465e17ee973fd7cc3b3f9627fab2825354fcb5501a19e2f5818adec27f72d65b",
+   "gloss": "b81fcb0174b8ca5af91aa9f7770fb4f89359630f6d38c4997982b1dc65d52a83",
+   "vertices": 3317,
+   "triangles": 6584,
    "bones": 15
   },
   {
@@ -208,10 +208,10 @@
    "text": "v4*layout_limbless*legPairs_0*bodyLength_1.1*girth_1*posture_0*torso_annulated*neckLength_0*head_blunt*headSize_1*snoutLength_0.2*horns_none*legs_pillar*legLength_0.8*feet_pad*arms_none*armLength_0.6*hands_hand*tail_none*tailLength_0*armor_none*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_earth*colorSeed_401*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_sclera*iris_auto*eyeRules_2",
    "kind": "sclera",
    "eyeRules": 2,
-   "skin": "4981934f113aac07f9eeee79eee1ebac4c82d427c083b3de2b2880cc030077a1",
-   "gloss": "34eac58a0e9d514ef37df8b97b5e521f9328eba3d8ede4b91001af568cba3b45",
-   "vertices": 3577,
-   "triangles": 7036,
+   "skin": "ed9c3cd54124c082bc537cee06b3858a9bb4f0a06e1cc2f9ba36655250ef2fda",
+   "gloss": "6b2184019415afcd2f381cce5c3996a79717b18e366a89ded6bcd0dd7fe663ee",
+   "vertices": 3553,
+   "triangles": 6984,
    "bones": 15
   },
   {
@@ -220,8 +220,8 @@
    "text": "v4*layout_quadruped*legPairs_2*bodyLength_1.5*girth_0.9*posture_0.7*torso_slim*neckLength_1.5*head_muzzle*headSize_0.85*snoutLength_0.8*horns_ossicones*legs_unguligrade*legLength_1.45*feet_hoof*arms_none*armLength_0.6*hands_hand*tail_tufted*tailLength_0.6*armor_none*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_savanna*colorSeed_37*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0.3*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_eyespot*iris_auto*eyeRules_2",
    "kind": "eyespot",
    "eyeRules": 2,
-   "skin": "799e4d74e8952f6a04b36a53c7e4d9c3c9e07a3a247525f8a0698f8c3b1902c0",
-   "gloss": "c771e9ebbc044b39227122663710933b11e10c91f128b46dcf53fc59496256f3",
+   "skin": "3f36910fc815b4f90883a7106bacc4e29f88e3b183ef89bf4e025362512ee764",
+   "gloss": "e3fa2dad5a26279a5021b83e67d6a3970ff6d26fa5144039c03c6817964785f5",
    "vertices": 7616,
    "triangles": 15100,
    "bones": 32
@@ -232,10 +232,10 @@
    "text": "v4*layout_biped*legPairs_1*bodyLength_1.6*girth_1.05*posture_0.12*torso_deep-chest*neckLength_0.45*head_jaws*headSize_1.35*snoutLength_1*horns_crest*legs_digitigrade*legLength_1.05*feet_claw*arms_small*armLength_0.38*hands_claw*tail_reptile*tailLength_1.6*armor_none*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_reptile*colorSeed_17*pattern_auto*marks_16*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_stalk*iris_auto*eyeRules_2",
    "kind": "stalk",
    "eyeRules": 2,
-   "skin": "2ad9d94c628683734e16a97f1fe3fb49f876e00c468de19c39219153a9426d40",
-   "gloss": "dd46572151dc7bc36f6d41aa2551bde4b15f9413d42d491b95b7be0ed7be041a",
-   "vertices": 7966,
-   "triangles": 15744,
+   "skin": "6fcb4359b304fd76a7ad551cfc7d0b5609cf394e56f38768669287b8c5f0e728",
+   "gloss": "6f88b5f95cca50561d13c6cb418896f08debe25d3d81349ab3d25db692d0ab3c",
+   "vertices": 7902,
+   "triangles": 15616,
    "bones": 31
   },
   {
@@ -244,10 +244,10 @@
    "text": "v4*layout_biped*legPairs_1*bodyLength_0.22*girth_1.2*posture_0.45*torso_barrel*neckLength_0.45*head_beak*headSize_1.2*snoutLength_0.55*horns_none*legs_digitigrade*legLength_0.85*feet_claw*arms_none*armLength_0.6*hands_hand*tail_feather-fan*tailLength_0.9*armor_none*wings_feathered*wingSpan_3.2*trunk_none*trunkLength_0.8*palette_plumage*colorSeed_5*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0.6*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_insect*iris_auto*eyeRules_2",
    "kind": "insect",
    "eyeRules": 2,
-   "skin": "43f386998690cbcb2126ff07bf2ef249e1513eee19d20174294f70958a6d6f99",
-   "gloss": "7afa3f067c9eb179975bfa0b898302e08302a476484b3c37888080a195d378e4",
-   "vertices": 6034,
-   "triangles": 11892,
+   "skin": "1d759b279c4c6cd5d0885daa2ff9eaa52b74b4d3335330755c1060a5d99109d3",
+   "gloss": "763cd582be48f9760f9107fe572ce6a742feeceb5b0ece2e14aa694025c17bf1",
+   "vertices": 5896,
+   "triangles": 11616,
    "bones": 24
   },
   {
@@ -304,8 +304,8 @@
    "text": "v3*layout_quadruped*legPairs_2*bodyLength_1.5*girth_0.9*posture_0.7*torso_slim*neckLength_1.5*head_muzzle*headSize_0.85*snoutLength_0.8*horns_ossicones*legs_unguligrade*legLength_1.45*feet_hoof*arms_none*armLength_0.6*hands_hand*tail_tufted*tailLength_0.6*armor_none*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_savanna*colorSeed_37*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0.3*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_eyespot*iris_auto",
    "kind": "eyespot",
    "eyeRules": 2,
-   "skin": "799e4d74e8952f6a04b36a53c7e4d9c3c9e07a3a247525f8a0698f8c3b1902c0",
-   "gloss": "c771e9ebbc044b39227122663710933b11e10c91f128b46dcf53fc59496256f3",
+   "skin": "3f36910fc815b4f90883a7106bacc4e29f88e3b183ef89bf4e025362512ee764",
+   "gloss": "e3fa2dad5a26279a5021b83e67d6a3970ff6d26fa5144039c03c6817964785f5",
    "vertices": 7616,
    "triangles": 15100,
    "bones": 32
@@ -328,10 +328,10 @@
    "text": "v3*layout_quadruped*legPairs_2*bodyLength_1.5*girth_0.9*posture_0.7*torso_slim*neckLength_1.5*head_muzzle*headSize_0.85*snoutLength_0.8*horns_ossicones*legs_unguligrade*legLength_1.45*feet_hoof*arms_none*armLength_0.6*hands_hand*tail_tufted*tailLength_0.6*armor_none*wings_none*wingSpan_2*trunk_none*trunkLength_0.8*palette_savanna*colorSeed_37*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0.3*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_compound*iris_auto",
    "kind": "compound",
    "eyeRules": 2,
-   "skin": "23aebff98b1370f195128623416f24921f9c1572bd58f667fd270bbe47f589f6",
-   "gloss": "e3f1a2cbca1af6c2ae5d540cc816bf47a21db8c4b5525084a08778a02fd052c1",
-   "vertices": 7748,
-   "triangles": 15412,
+   "skin": "dcd3f3190adf75683f9f92dc9e5f1ca9a30e01186ec72b6ef0221cceb3b732f4",
+   "gloss": "24cf6ce45d257ff5a54cf99fe4c8ab2602ce12744097468dca281556b2cfb2c4",
+   "vertices": 7616,
+   "triangles": 15148,
    "bones": 32
   },
   {

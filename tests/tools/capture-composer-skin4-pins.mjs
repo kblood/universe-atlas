@@ -40,7 +40,7 @@ for (const text of Object.keys(skin3.byText)) {
   byText[text] = {...p, driftFromSkin3: p.skin === prev.skin ? null : DRIFT, skin3: prev.skin};
 }
 writeFileSync(url('fixtures/composer-skin4-links.json'), JSON.stringify({
-  schema: 'composer-skin4-links-1', capturedAt: {...capturedAt, note: 'Skin-4 digests (positions, index, skinIndex, skinWeight, colors) and gloss digests of the 28 migrated neutral v1 texts of composer-skin3-links.json, built under the current eye rules (eyeRules 2; owner decision 2026-10-03: old links upgrade). Eye round EC2 rebuilt every eye as the catalogue geometry (fauna-composer-eye-2), recoloured the nostrils and the blunt mouth disc and raised the eye sizes, so every entry drifts from its skin-3 pin (driftFromSkin3, previous pin in skin3). The same texts under eyeRules 1 still build their skin-3 pin byte for byte. Bone counts are unchanged (eyes are mesh-only).'},
+  schema: 'composer-skin4-links-1', capturedAt: {...capturedAt, note: 'Skin-4 digests (positions, index, skinIndex, skinWeight, colors) and gloss digests of the 28 migrated neutral v1 texts of composer-skin3-links.json, built under the current eye rules (eyeRules 2; owner decision 2026-10-03: old links upgrade). Eye round EC2 rebuilt every eye as the catalogue geometry (fauna-composer-eye-2), replaced the dark mouth disc of the blunt face by a closed-mouth lens (EC2 review; nostrils are unchanged) and raised the eye sizes, so every entry drifts from its skin-3 pin (driftFromSkin3, previous pin in skin3). The same texts under eyeRules 1 still build their skin-3 pin byte for byte. Bone counts are unchanged (eyes are mesh-only).'},
   driftFromSkin3: DRIFT, byText,
 }, null, 1) + '\n');
 

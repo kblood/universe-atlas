@@ -113,24 +113,32 @@ test('sclera: a white ring visible well beyond the iris on both sides', () => {
 });
 
 test('faceted, simple and eyespot beads: closed, with the roles that make them read', () => {
-  const closed = p => {
+  const closed = (p, byPosition = false) => {
+    const key = i => byPosition ? [0, 1, 2].map(k => Math.round(p.positions[3 * i + k] * 1e9) || 0).join(',') : String(i);
     const edges = new Map();
     for (let t = 0; t < p.index.length; t += 3) for (let k = 0; k < 3; k++) {
-      const a = p.index[t + k], b = p.index[t + (k + 1) % 3], key = a < b ? `${a},${b}` : `${b},${a}`;
-      edges.set(key, (edges.get(key) ?? 0) + 1);
+      const a = key(p.index[t + k]), b = key(p.index[t + (k + 1) % 3]), e = a < b ? `${a}|${b}` : `${b}|${a}`;
+      edges.set(e, (edges.get(e) ?? 0) + 1);
     }
     return [...edges.values()].every(n => n === 2);
   };
+  // the compound dome: a 12 x 3 lattice with raised lens centres, 120 triangles (the design cap, FACETED_EYE)
   const facet = buildFacetedEye({er3: [1, 1, 0.7], centre: [0, 0, 0], gaze: [0, 0, 1], up: [0, 1, 0]});
-  assert.equal(facet.index.length / 3, 252); assert.ok(closed(facet));
+  assert.equal(facet.index.length / 3, 120); assert.ok(closed(facet));
   assert.equal(facet.roles[0], EYE_ROLE.pseudopupil);
   assert.equal([...facet.roles].filter(r => r === EYE_ROLE.pseudopupil).length, 1, 'only the apex is the pseudopupil');
-  assert.ok([...facet.roles].filter(r => r === EYE_ROLE['facet-edge']).length >= 60);
+  assert.ok([...facet.roles].filter(r => r === EYE_ROLE['facet-edge']).length >= 36);
+  assert.ok([...facet.roles].filter(r => r === EYE_ROLE['facet-a'] || r === EYE_ROLE['facet-b']).length >= 24, 'a lens in every cell');
   const rimmed = buildOcellus({r: 1, height: 0.75, centre: [0, 0, 0], normal: [0, 0, 1], up: [0, 1, 0], segments: 12, stations: 2, rim: true});
-  assert.equal(rimmed.index.length / 3, 72); assert.ok(closed(rimmed));
-  const flange = ring(rimmed, 3);
-  assert.ok(flange.every(v => v[3] === EYE_ROLE['ocellus-rim'] && Math.abs(Math.hypot(v[0], v[1]) - OCELLUS.flange) < 1e-9));
-  assert.equal(buildOcellus({r: 1, height: 0.75, centre: [0, 0, 0], normal: [0, 0, 1], up: [0, 1, 0], segments: 8, stations: 2, rim: true}).index.length / 3, 48);
+  assert.equal(rimmed.index.length / 3, 48); assert.ok(closed(rimmed));
+  assert.ok(ring(rimmed, 2).every(v => v[3] === EYE_ROLE['ocellus-rim']), 'the lowest station is the pale rim');
+  assert.ok(ring(rimmed, 1).every(v => v[3] === EYE_ROLE.ocellus));
+  // with a flange: a fully dark dome inside a pale ring on the skin (the spider beads: 10 x 1 = 40, 5 x 1 = 20)
+  const flanged = buildOcellus({r: 1, height: 0.75, centre: [0, 0, 0], normal: [0, 0, 1], up: [0, 1, 0], segments: 10, stations: 1, rim: true, flange: true});
+  assert.equal(flanged.index.length / 3, 40); assert.ok(closed(flanged));
+  assert.ok(ring(flanged, 1).every(v => v[3] === EYE_ROLE.ocellus), 'the dome stays dark');
+  assert.ok(ring(flanged, 2).every(v => v[3] === EYE_ROLE['ocellus-rim'] && Math.abs(Math.hypot(v[0], v[1]) - OCELLUS.flange) < 1e-9));
+  assert.equal(buildOcellus({r: 1, height: 0.75, centre: [0, 0, 0], normal: [0, 0, 1], up: [0, 1, 0], segments: 5, stations: 1, rim: true, flange: true}).index.length / 3, 20);
   const bead = buildEyespotBead({r: 1, centre: [0, 0, 0], normal: [0, 0, 1], up: [0, 1, 0]});
   assert.equal(bead.index.length / 3, 96);
   // a raised dome: the apex stands at heights[0] and the dome falls monotonically to the skin
@@ -146,11 +154,35 @@ test('catalogue specimens: every kind builds its eye count, seats every eye, and
     assert.deepEqual(eyes.map(e => e.type), expectedTypes(kind), name);
     assert.equal(skin.eyeFallbacks, 0, name);
     assert.ok(eyes.every(e => e.rimFallbacks === 0 && e.surface), name);
-    const eyeTris = skin.parts.filter(p => p.part === 'eyes').reduce((s, p) => s + p.triangles, 0);
-    assert.ok(eyeTris > 0 && eyeTris <= 600, `${name}: ${eyeTris} eye triangles`);
     assert.ok(skin.triangleCount <= COMPOSER_BUDGET.maxTriangles && skin.vertexCount <= COMPOSER_BUDGET.maxVertices, name);
   }
   assert.equal(SPIDER_EYES.length, 4);
+});
+
+/** Eye triangles per creature (the whole set), per BUILT kind: the design caps of eye-catalogue-v2.json budgets.perType
+ * (lidded presets 280 per eye / 600 per pair, insect <= 280, spider <= 200, stalk <= 160 per pair), and the face
+ * round's own counts for its kinds (compound 240 per pair, the flat eyespot 16 per pair, lidded 560). ONE deliberate
+ * change, recorded here, in the source (EYESPOT_BEAD) and in the EC2 report: the current rules' eyespot BEAD is 96 per
+ * eye (192 per pair), not the face round's 8-triangle flat disc, because the flat disc read as black holes at normal
+ * size (GPT Luna 6, face round and EC2 r15/r16); the bead is a low pigment film with a skin rim and blend ring
+ * (12 segments x 4 rings + a closing cone). */
+const EYE_TRI_CAP = {lidded: 600, insect: 280, spider: 200, stalk: 160, compound: 240, eyespotBead: 192, eyespotFlat: 16};
+const LIDDED_KINDS = new Set(['round', 'horizontal', 'vertical-slit', 'raptor', 'owl', 'cat', 'gecko', 'frog', 'chameleon', 'crocodile', 'sclera', 'nocturnal', 'cephalopod']);
+test('every eye-catalogue, eye-odd and eye-upgrade specimen stays within the eye triangle cap of its kind', () => {
+  const pool = specimens.filter(s => ['eye-catalogue', 'eye-odd', 'eye-upgrade'].includes(s.group));
+  assert.ok(pool.length >= 30);
+  const seen = new Set();
+  for (const s of pool) {
+    const {skin} = s.group === 'eye-catalogue' ? built.get(s.name) : build(decodeComposerRecipe(s.text).recipe);
+    const types = skin.debug.eyes.map(e => e.type), eyeTris = skin.parts.filter(p => p.part === 'eyes').reduce((n, p) => n + p.triangles, 0);
+    const cap = types.includes('insect') ? 'insect' : types.length === 8 ? 'spider' : types[0] === 'stalk' ? 'stalk' : types[0] === 'compound' ? 'compound'
+      : types[0] === 'eyespot' ? (eyeTris <= EYE_TRI_CAP.eyespotFlat ? 'eyespotFlat' : 'eyespotBead') : LIDDED_KINDS.has(types[0]) ? 'lidded' : null;
+    assert.ok(cap, `${s.name}: no cap for built types ${types}`);
+    seen.add(cap);
+    assert.ok(eyeTris > 0 && eyeTris <= EYE_TRI_CAP[cap], `${s.name} (${cap}): ${eyeTris} eye triangles > ${EYE_TRI_CAP[cap]}`);
+    if (cap === 'lidded') assert.ok(eyeTris / types.length <= 300, `${s.name}: ${eyeTris / types.length} per lidded eye`);
+  }
+  for (const c of ['lidded', 'insect', 'spider', 'stalk', 'compound', 'eyespotBead', 'eyespotFlat']) assert.ok(seen.has(c), `the pool covers ${c}`);
 });
 
 test('camera eyes hug the skull: the orbit ring lies on it and no rim stands in the air as a flap', () => {
