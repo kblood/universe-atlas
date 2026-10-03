@@ -59,7 +59,7 @@ import {type GroundWalker} from './ground-walker.ts';
 import { GalaxySpace } from "./galaxy-space.ts";
 import { ViewBlend } from "./view-transition.ts";
 import { systemLayout, type SystemScale } from "./system-layout.ts";
-import { ELEVATION_RANGE_M, TERRAIN_VERSION, terrainSampler, type planetSurface } from "./terrain.ts";
+import { TERRAIN_VERSION, terrainSampler, type planetSurface } from "./terrain.ts";
 import {biomeClassifier} from './surface-biomes.ts';
 import {
   galaxies,
@@ -2470,7 +2470,7 @@ function updateFlightHud() {
     const latitude = Math.asin(THREE.MathUtils.clamp(relative[1] / Math.hypot(...relative), -1, 1)) * 180 / Math.PI;
     hud.textContent += ` · altitude ${fmt(info.altitude / 1000, 1)} km · clearance ${fmt(info.terrainClearance / 1000, 1)} km · latitude ${fmt(latitude, 1)}°${orbitAssist?.clearanceM ? ' · terrain following' : orbitAssist ? ' · orbit assist' : ''}`;
     if(flight && body.kind!=='star' && body.type!=='Gas giant') {
-      const low=info.terrainClearance<20000, label=walker?'06 / ON FOOT':landing?'06 / LANDING':low?'05 / TERRAIN FLIGHT':'05 / PLANETARY ORBIT';
+      const low=info.terrainClearance<PlanetRenderer.lowFlightClearanceM(body), label=walker?'06 / ON FOOT':landing?'06 / LANDING':low?'05 / TERRAIN FLIGHT':'05 / PLANETARY ORBIT';
       if($('view-kicker').textContent!==label){$('view-kicker').textContent=label;$('view-description').textContent=low?'Flying over this world. Drag to look, use WASD to steer, and the wheel to adjust speed.':'Your planet, moons and star system remain connected. Fly toward a destination or choose a terrain site.';}
     }
   }
@@ -2501,17 +2501,20 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false) {
   if(lifeEntry.kind!=='star')sun.set(...spinCompensatedSunDirection(sun.toArray() as V3,spinFor(body),lifeEntry.lc.formationNs,epoch));
   if(!sample([0,1,0],epoch)){announce('This world has no surface at this date.');return;}
   const biome=preferLife?biomeClassifier(body,snappedWaterLevelFor(body)):null;
+  // render-bounds-1: heights are judged over the dated sea, against the body's
+  // own bound (never a summit) and its p90 land (the full elevation bonus).
+  const landSea=body.water?snappedWaterLevelFor(body):0,landCeiling=PlanetRenderer.landingCeilingM(body),landRef=PlanetRenderer.landingReferenceM(body,landSea);
   let destination=eye.clone(), best=-Infinity;
   if(preferred)destination.copy(preferred);
   else for(let i=0;i<(preferLife?1024:384);i++) {
     const count=preferLife?1024:384,y=1-2*(i+.5)/count, phi=i*2.399963229728653, r=Math.sqrt(1-y*y);
     const d=new THREE.Vector3(Math.cos(phi)*r,y,Math.sin(phi)*r), s=sample(d.toArray() as V3,epoch);
-    if(!s || !s.walkable || s.elevationM>10000)continue;
+    if(!s || !s.walkable || s.groundHeightM-landSea>landCeiling)continue;
     const habitat=biome?.(d.toArray() as V3,s.groundHeightM,1);
     if(preferLife&&(!habitat||habitat.weights[1]<.35||habitat.moisture<.2||d.dot(sun)<.25))continue;
     const score=preferLife
       ? habitat!.weights[1]*3+habitat!.moisture+(habitat!.forestPotential?.5:0)+d.dot(eye)*.3+Math.max(-.5,d.dot(sun))*.2
-      : d.dot(eye)*2+Math.max(-.5,d.dot(sun))*.7+Math.min(1,s.elevationM/3500)*.12;
+      : d.dot(eye)*2+Math.max(-.5,d.dot(sun))*.7+Math.min(1,(s.groundHeightM-landSea)/landRef)*.12;
     if(score>best){best=score;destination=d;}
   }
   if(preferLife&&best===-Infinity){announce('No suitable living habitat was found on this world at this date.');return;}
@@ -2571,7 +2574,7 @@ async function prepareLanding(savedPoint?:V3,contact=false,savedHeading?:THREE.Q
 function landOnWorld(){
   if(!state.body)return;
   const info=surfaceClearance(state.body,vec(localPose()).sub(vec(bodyPosition(state.body,state.sys!,epoch))).toArray() as V3,snappedWaterLevelFor(state.body));
-  if(info.terrainClearance<20000)void prepareLanding();
+  if(info.terrainClearance<PlanetRenderer.lowFlightClearanceM(state.body))void prepareLanding();
   else {exploreTerrain();landAfterCruise=true;}
 }
 function takeoffWalk(){
@@ -2629,8 +2632,8 @@ function holdPlanetOrbit() {
   planetLook = null;
   const center = vec(bodyPosition(state.body, state.sys!, epoch));
   const relative = vec(localPose()).sub(center);
-  // Keep the entire assisted circle above the generator's maximum elevation.
-  const safeRadius = state.body.radiusM + 20000 * Math.min(1, state.body.radiusM / 2e6) + 5000;
+  // Keep the entire assisted circle above the body's height bound (render-bounds-1).
+  const safeRadius = PlanetRenderer.safeOrbitRadiusM(state.body);
   if (relative.length() < safeRadius) {
     announce('Climb above the highest terrain before holding orbit.');
     return;
@@ -2939,8 +2942,10 @@ function applyRelief(
   pos.needsUpdate = true;
   mesh.geometry.computeVertexNormals();
   mesh.geometry.computeBoundingSphere();
+  // The relief texture is encoded over the body's own range (terrain.ts
+  // reliefTextureRange; legacy 60 km): decode it over that span.
   mesh.material.bumpScale =
-    ((radius * ELEVATION_RANGE_M) / body.radiusM) * multiplier;
+    ((radius * PlanetRenderer.reliefTextureSpanM(body)) / body.radiusM) * multiplier;
   if (mesh === surfaceMesh)
     controls.minDistance = mesh.geometry.boundingSphere!.radius * 1.025;
 }

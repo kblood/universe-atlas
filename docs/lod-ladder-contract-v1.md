@@ -154,9 +154,43 @@ This replaces the planned rule that seabed under more than 400 m of water stops 
     floor gets S4. There is no cap based on water thickness.
 - **Collision, physics and place queries ignore this policy.** They always sample full detail on demand at
   every depth.
-- **Renderer obligation (P5, `planet-renderer.ts`, not changed here).** The split rule's `near` distance must
-  measure to the seabed (`seabedDistanceM(eyeHeight, seabedHeight, horizontal)`), not to the water surface.
-  Today it uses max(waterLevel, elevation), so seabed tiles are judged by their distance to the sea surface.
+- **Renderer obligation (P5, `planet-renderer.ts`, render-bounds-1).** The split rule's `near` distance
+  measures to the solid ground or seabed at the tile's closest point (`seabedAwareNear`), not to the water
+  surface. Before render-bounds-1 it used max(waterLevel, elevation), so seabed tiles were judged by their
+  distance to the sea surface.
+
+### 7.1 Documented rendering exception: the 2 km ocean-surface band (owner decision 2026-10-04)
+
+The rule above says seabed detail is never chosen by distance to the water surface. The renderer has one
+accepted exception, `OCEAN_SURFACE_DETAIL_M = 2000` in `planet-renderer.ts`:
+
+- **What it does.** For a tile that draws an ocean surface, `seabedAwareNear` uses the smaller of the
+  distance to the ground/seabed and the distance to the drawn sea surface, but only while the sea surface is
+  closer than 2 km. Beyond 2 km, only the ground/seabed distance counts.
+- **Why.** The ocean shell shares the terrain tile's grid, and the vertex Gerstner waves (8-42 m) need a fine
+  grid near the eye. Without the band, a boat over a 4 km-deep floor would get a coarse sea surface right
+  under it.
+- **What it does not change.**
+  - The seabed is always real and solid at its true depth.
+  - Collision, physics and place queries still sample full detail on demand.
+  - Seabed detail is still chosen by the distance to the seabed. The band can only add detail to tiles near
+    the sea surface. It never coarsens a seabed the viewer is approaching.
+- **Side effect inside the band (accepted).** Seabed tiles under the band refine with the waves. The seabed
+  under a viewer at the surface is therefore finer than distance-to-seabed alone would give.
+- **Streaming.** `renderSeabedDive()` uses the same 2 km band: over a seabed and below sea + 2 km.
+  - Inside it, byte-blocked splits count as merge pressure, and eviction keeps room for a full 4-child split.
+  - Everywhere else, the streaming frontier of render-bounds-1 stays tile-for-tile the same as before. That
+    covers orbit, the 2.5 km horizon pose, 20 km flight and 150 m ground over land. Evidence:
+    `test-results/relief-round-2026-10-03/P5-RENDER-BOUNDS/attribution/` and
+    `test-results/finish-round-2026-10-04/P5-FRONTIER/`.
+- **Tests.** `tests/render-bounds.test.mjs` pins the band's on/off cases. The open-ocean descent in
+  `tests/render-bounds-evidence.test.mjs` shows that above the band, deep water is coarser than under the
+  legacy surface-distance rule. Inside the band, both rules refine equally, by design.
+- **Wording.** This note is the policy statement of the exception. The `SEABED_DETAIL_POLICY` comment in
+  `src/lod-ladder.ts` still says "never by distance to the water surface". Read it as "except inside this
+  band". The code comment is left to the lod-ladder owner.
+- **Still open, not covered by this exception.** Reduced seabed detail away from the band and the strict
+  post-relief LOD class/colour targets remain open owner items. This note does not waive them.
 
 ## 8. How place-query uses the contract
 
