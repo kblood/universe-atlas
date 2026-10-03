@@ -12,7 +12,7 @@ import {CREST_HALF_THICKNESS, HIDDEN_DISC_INSET, TRUNK_TIP, buildComposerSkin} f
 import {composerIndividualTraits, deriveComposerIndividual} from '../src/fauna-composer-individual.ts';
 import {coherentComposerSpecies, randomCoherentComposerRecipe} from '../src/fauna-composer-species.ts';
 import {COMPOSER_FACES, COMPOSER_HORNS, composerHeadgearBuild} from '../src/fauna-composer-face.ts';
-import {COMPOSER_FACE_GEOMETRY, COMPOSER_FACE_GEOMETRY_VERSION, composerFaceTip, composerHeadPitch} from '../src/fauna-composer-face-geometry.ts';
+import {COMPOSER_FACE_GEOMETRY, COMPOSER_FACE_GEOMETRY_VERSION, PROBOSCIS_FACE, PROBOSCIS_TRUNK_LENGTH, composerFaceTip, composerHeadPitch} from '../src/fauna-composer-face-geometry.ts';
 import {outermostExit, raycastFirstHit, raycastLine} from '../src/fauna-composer-eye.ts';
 
 const effective = input => deriveComposerIndividual(normalizeComposerRecipe(input).recipe).recipe;
@@ -145,6 +145,46 @@ test('proboscis: trunk grows from the muzzle tip station, round and smooth, with
     // a mouth part
     assert.ok(partsOf(skin, 'mouth').some(p => p.triangles > 0), `${id}: lower lip`);
     // the hidden discs keep each part closed: the head's proboscis part and the trunk both enclose positive volume
+  }
+});
+
+test('proboscis EC4: a shorter trunk that hangs clear of the ground (J curl, no clearance lift), thick base, nostril tip', () => {
+  // GPT Luna 6 on the face-round trunks: "Roughly 1.5-2 head lengths ... the face is small relative to the trunk", "its
+  // base looks pinched and narrower than the face", "The tip looks blunt and capped", rhinoceros "especially thin and
+  // droops far forward"
+  assert.equal(PROBOSCIS_TRUNK_LENGTH, 1.45);
+  assert.deepEqual([PROBOSCIS_FACE.tipH, PROBOSCIS_FACE.tipW], [0.72, 0.8]);
+  for (const [id, recipe] of proboscisCases.filter(([id]) => !id.includes('@snout'))) {
+    const {graph, skin} = build(recipe), {H, cW} = dims(graph), trunk = graph.chains.trunk.map(i => graph.bones[i]);
+    const length = trunk.reduce((a, b) => a + b.length, 0);
+    assert.ok(Math.abs(length / H - PROBOSCIS_TRUNK_LENGTH * graph.recipe.trunkLength) < 1e-9, `${id}: ${length / H} head lengths`);
+    if (!id.includes('@')) assert.ok(length / H >= 1.1 && length / H <= 1.65, `${id}: ${(length / H).toFixed(2)} head lengths`);
+    // the trunk base is the round muzzle tip: at least 0.7 of the cranium half-width (face round: 0.55 x 0.9 = 0.5)
+    assert.ok(trunk[0].start.h >= 0.7 * cW, `${id}: base ${trunk[0].start.h / cW} cW`);
+    // the rest shape is composerTrunkRestShape's chain, untouched by the clearance fallback: bone i + 1 starts where bone
+    // i ends, along bone i's own +X, and every bone end stands above its section
+    for (let i = 0; i < trunk.length; i++) {
+      const b = trunk[i], dir = new THREE.Vector3(1, 0, 0).applyQuaternion(new THREE.Quaternion(...b.restQuaternion));
+      const end = new THREE.Vector3(...b.restPosition).addScaledVector(dir, b.length);
+      if (i + 1 < trunk.length) assert.ok(end.distanceTo(new THREE.Vector3(...trunk[i + 1].restPosition)) < 1e-9 * H + 1e-12, `${id}: ${b.name} chain`);
+      assert.ok(end.y >= b.end.h * (i + 1 < trunk.length ? 1 : COMPOSER_TRUNK_TIP_CLEARANCE), `${id}: ${b.name} end ${end.y} vs section ${b.end.h}`);
+    }
+    // the tip turns forward (the flick, and the J of a trunk too long for the face height)
+    const tipDir = new THREE.Vector3(1, 0, 0).applyQuaternion(new THREE.Quaternion(...trunk[trunk.length - 1].restQuaternion));
+    const headDir = new THREE.Vector3(1, 0, 0).applyQuaternion(new THREE.Quaternion(...graph.bones[graph.chains.head].restQuaternion));
+    assert.ok(tipDir.x * Math.sign(headDir.x || 1) > 0, `${id}: tip points back`);
+    // a nostril end: dark nostril vertices on the end face, and the pale lip rim, all within 1.6 end radii of the bone end
+    const tb = trunk[trunk.length - 1], tf = frame(tb), r0 = tb.end.h;
+    let dark = 0, lip = 0;
+    const lum = v => 0.3 * skin.colors[v * 3] + 0.59 * skin.colors[v * 3 + 1] + 0.11 * skin.colors[v * 3 + 2];
+    const ringLum = lum(verticesOf(skin, partsOf(skin, 'trunk')).find(v => Math.abs(tf.toLocal(vertex(skin, v))[0] - tb.length) < 1e-6 * H + 1e-9) ?? 0);
+    for (const v of verticesOf(skin, partsOf(skin, 'trunk'))) {
+      const l = tf.toLocal(vertex(skin, v));
+      if (l[0] <= tb.length + 1e-9 || Math.hypot(l[0] - tb.length, l[1], l[2]) > 1.6 * r0) continue;
+      if (lum(v) < 0.5 * ringLum) dark++;
+      else if (lum(v) > ringLum * 1.05) lip++;
+    }
+    assert.ok(dark >= 2 * 10 && lip >= 16, `${id}: ${dark} nostril and ${lip} lip vertices`);
   }
 });
 
