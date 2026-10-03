@@ -6,8 +6,8 @@ import {coherentComposerSpecies, type ComposerArchetype} from "./fauna-composer-
 import {COAT_MARK_BITS, COAT_MARK_NAMES, resolveCoatPattern, type CoatMarkName} from "./fauna-coat-vocab.ts";
 import {COMPOSER_MOTIONS, type ComposerMotion} from "./fauna-composer-rig.ts";
 import {createComposerCreature, type ComposerCreature} from "./fauna-composer.ts";
-import {FACE_HEADGEAR, COMPOSER_IRIS_RGB, composerIrisBands, composerIrisKind, resolveComposerEyes, type ComposerEyeKind, type BuiltIrisId, type ComposerHorn} from "./fauna-composer-face.ts";
-import {COMPOSER_EYE_KINDS, EYE_PRESETS, composerEyeNative, type EyeGroup} from "./fauna-composer-eye-catalogue.ts";
+import {FACE_EYE_PROFILE, FACE_HEADGEAR, COMPOSER_IRIS_RGB, composerEyeProfileId, composerIrisBands, composerIrisKind, resolveComposerEyes, type ComposerEyeKind, type BuiltIrisId, type ComposerHorn} from "./fauna-composer-face.ts";
+import {COMPOSER_EYE_KINDS, EYE_PRESETS, composerEyeNative, isFaceRoundEyeKind, type EyeCatalogueFace, type EyeGroup} from "./fauna-composer-eye-catalogue.ts";
 import {COAT_REGIONS} from "./fauna-coat-vocab.ts";
 import {COMPOSER_HERD_SIZES, type ComposerHerdSize, type CreatureLabState} from "./creature-lab-state.ts";
 
@@ -270,6 +270,34 @@ export interface ComposerEyeFrame{
  * animal's midline), so the near/far split is taken about the head itself: the middle of the posed centroids of the eye
  * vertices that lie on the +z and on the -z side AT REST (creature space; bodies are built mirror-symmetric about z = 0).
  * A one-sided set (no vertex on one side at rest) gives the centroid of all points. `restZ[k]` belongs to `points[k]`. */
+/** Gaze yaw (degrees off the snout axis, toward the eye's own side) of the +z and the -z eye. */
+export interface ComposerEyeGaze{plus:number;minus:number}
+/** The gaze the eyes are BUILT with, for the eye close-up. The face round's geometry (skin-3, and the earlier eye rules
+ * for its kinds) looks along the stand-in's face profile, resolveComposerEyes().gazeYawDeg. The eye catalogue geometry
+ * (skin-4 and later, eye round EC2) aims each structure its own way (buildCatalogueEyes in fauna-composer-mesh.ts):
+ * - camera eyes along the kind's placement: the right (+z) eye's own yaw for independent eyes, else the per-face yaw,
+ *   else the kind's yaw, else the face's camera-eye profile (an owl's eyes look 12 degrees off the snout on a beak
+ *   whose profile says 75);
+ * - compound eyes along the mandibles profile on a mandibles head, else the face's camera-eye profile;
+ * - eye stalks along the kind's yaw (40 when unset); spider eyes along the kind's yaw (its main front bead);
+ * - eyespots: a worm head's own (the face profile), any other face's camera-eye profile.
+ * tests/creature-lab-eyes.test.mjs checks camera eyes against the built cornea's facing on every eye specimen. The
+ * skin does not report its eyes' gaze; once it does, this mirror should read it instead. */
+export function composerBuiltEyeGaze(r:ComposerRecipe,skinVersion:string):ComposerEyeGaze{
+ const e=resolveComposerEyes(r),skin=Number(/skin-(\d+)$/.exec(skinVersion)?.[1]??0),both=(y:number)=>({plus:y,minus:y});
+ if(skin<4||(e.rules===1&&isFaceRoundEyeKind(e.kind)))return both(e.gazeYawDeg);
+ const T=e.traits,P=T.placement,cam=FACE_EYE_PROFILE[composerEyeProfileId(r,"round")].gazeYawDeg;
+ switch(T.structure){
+  case "camera":{
+   const yaw=(side:number)=>(P.kind==="independent"&&side>0&&P.right?P.right.yawDeg:null)??P.yawByFace?.[r.head as EyeCatalogueFace]??P.yawDeg??cam;
+   return {plus:yaw(1),minus:yaw(-1)};
+  }
+  case "compound":return both(r.head==="mandibles"?FACE_EYE_PROFILE.mandibles.gazeYawDeg:cam);
+  case "stalk":return both(P.yawDeg??40);
+  case "ocellus":return both(P.yawDeg??e.gazeYawDeg);
+  default:return both(r.head==="blunt"?e.gazeYawDeg:cam);
+ }
+}
 export function composerEyeMidlineZ(points:readonly THREE.Vector3[],restZ:ArrayLike<number>):number{
  let sp=0,np=0,sm=0,nm=0,sa=0;
  for(let k=0;k<points.length;k++){const z=points[k]!.z,r=restZ[k]!;sa+=z;if(r>0){sp+=z;np++;}else if(r<0){sm+=z;nm++;}}
@@ -282,9 +310,10 @@ export function composerEyeMidlineZ(points:readonly THREE.Vector3[],restZ:ArrayL
  * at most EYE_FRAME_FORWARD_YAW_DEG off the snout axis; a forward pair is framed together in the front and
  * three-quarter views. (Measured on the review specimens: primates 2.4-7.4 radii at 15 degrees, worms 3.3-3.7 at 20;
  * with the EC2 eye geometry cats and a sclera-eyed worm are 5.5-6.1 radii apart at 35 degrees, which are framed one eye
- * at a time: framed as a pair their eyes sat small at the frame edges, Luna FAIL x2 on odd-sclera-worm.) A framed pair
- * keeps a margin (EYE_FRAME_FILL_BOTH) for the lids and socket around the visible eye surface it is fitted on. */
-export const EYE_FRAME_FILL_NEAR={up:.55,right:.62},EYE_FRAME_FILL_BOTH={up:.7,right:.72},EYE_FRAME_PAIR=10,EYE_FRAME_FORWARD_YAW_DEG=25,EYE_FRAME_FRONT_YAW_DEG=35,EYE_FRAME_MAX_OBLIQUE_DEG=45;
+ * at a time: framed as a pair their eyes sat small at the frame edges, Luna FAIL x2 on odd-sclera-worm.)
+ * A single eye is seen at most EYE_FRAME_MAX_OBLIQUE_DEG off its gaze: at 45 degrees Luna read the side close-ups of
+ * the ape, cat, owl and worm as 'steeply oblique, nearly edge-on' (after13, 2 of 2 runs on the EC2 eye geometry). */
+export const EYE_FRAME_FILL_NEAR={up:.55,right:.62},EYE_FRAME_FILL_BOTH={up:.8,right:.85},EYE_FRAME_PAIR=10,EYE_FRAME_FORWARD_YAW_DEG=25,EYE_FRAME_FRONT_YAW_DEG=35,EYE_FRAME_MAX_OBLIQUE_DEG=30;
 /** Pure framing of the VISIBLE eye (world-space vertices: cornea, compound dome or eyespot; not the lids, orbit ring or
  * socket) for a view direction; `midZ` is the world z of the head's midline at the eyes in the pose the points come
  * from (composerEyeMidlineZ; NOT the animal's offset, which a swaying head leaves), bodies face +X.
@@ -297,12 +326,15 @@ export const EYE_FRAME_FILL_NEAR={up:.55,right:.62},EYE_FRAME_FILL_BOTH={up:.7,r
  *   ostrich's side eye a front-quarter view); without a known gaze the front view of lateral eyes turns
  *   EYE_FRAME_FRONT_YAW_DEG toward the near eye;
  * - a single midline eye is framed whole.
- * `gazeYawDeg` is the face's eye gaze off the snout axis (resolveComposerEyes().gazeYawDeg); omitted, only the
- * pair's spacing decides whether it faces forward. */
-export function composerEyeFrameOf(points:THREE.Vector3[],midZ:number,direction:THREE.Vector3,gazeYawDeg?:number):ComposerEyeFrame|null{
+ * `gaze` is the eyes' gaze yaw off the snout axis, toward their own side: one number for both, or per side
+ * (composerBuiltEyeGaze: a chameleon's turret eyes differ); omitted, only the pair's spacing decides whether it faces
+ * forward and no obliquity cap applies. */
+export function composerEyeFrameOf(points:THREE.Vector3[],midZ:number,direction:THREE.Vector3,gaze?:number|ComposerEyeGaze):ComposerEyeFrame|null{
  if(!points.length)return null;
  const radiusOf=(ps:THREE.Vector3[])=>{const c=new THREE.Box3().setFromPoints(ps).getCenter(new THREE.Vector3());let r=0;for(const p of ps)r=Math.max(r,p.distanceTo(c));return {c,r:Math.max(r,1e-4)};};
  const sgn=direction.z<0?-1:1,near=points.filter(p=>(p.z-midZ)*sgn>0),far=points.filter(p=>(p.z-midZ)*sgn<=0);
+ // the near eye's own gaze, and the pair's (mean of the two sides) for the forward-pair test
+ const g=typeof gaze==="number"?{plus:gaze,minus:gaze}:gaze,gazeYawDeg=g?(g.plus+g.minus)/2:undefined,nearGaze=g?(sgn>0?g.plus:g.minus):undefined;
  // one eye per side when the eyes are lateral: the near side's eyes sit off the midline by more than half their size
  // (a single midline eye straddles it: then the whole set is framed)
  const lateral=near.length>0&&far.length>0&&(()=>{const {c,r}=radiusOf(near);return Math.abs(c.z-midZ)>.5*r;})();
@@ -313,10 +345,10 @@ export function composerEyeFrameOf(points:THREE.Vector3[],midZ:number,direction:
  const dir=direction.clone().normalize();
  if(lateral&&!forwardPair&&!sideOn){framed=near;side="near";yawDeg=EYE_FRAME_FRONT_YAW_DEG;}
  else if(lateral&&sideOn&&!(forwardPair&&Math.abs(direction.z)<.9)){framed=near;side="near";}
- if(side==="near"&&gazeYawDeg!==undefined){
+ if(side==="near"&&nearGaze!==undefined){
   // azimuth of the view toward the near side, 0 = from the snout, 90 = from the side
-  const az=THREE.MathUtils.radToDeg(Math.atan2(sgn*dir.z,dir.x)),off=az-gazeYawDeg;
-  yawDeg=Math.abs(off)>EYE_FRAME_MAX_OBLIQUE_DEG?gazeYawDeg+Math.sign(off)*EYE_FRAME_MAX_OBLIQUE_DEG-az:0;
+  const az=THREE.MathUtils.radToDeg(Math.atan2(sgn*dir.z,dir.x)),off=az-nearGaze;
+  yawDeg=Math.abs(off)>EYE_FRAME_MAX_OBLIQUE_DEG?nearGaze+Math.sign(off)*EYE_FRAME_MAX_OBLIQUE_DEG-az:0;
  }
  // turning by yawDeg about +Y moves the view toward the near side (+z for sgn 1)
  if(yawDeg)dir.applyAxisAngle(new THREE.Vector3(0,1,0),-sgn*THREE.MathUtils.degToRad(yawDeg));
@@ -342,6 +374,11 @@ export function composerVisibleEyeIndices(skin:Pick<ComposerCreature["skin"],"pa
  let ids=max>0?[...part].filter(i=>skin.gloss[i]!>=.5*max):[...part];
  if(!ids.length)for(let i=0;i<skin.vertexCount;i++)if(skin.regions[i]===EYE_REGION)ids.push(i);
  return ids.sort((a,b)=>a-b);
+}
+const eyeGazeCache=new WeakMap<ComposerCreature,ComposerEyeGaze>();
+/** The built gaze of a creature's eyes (from the recipe it was built with, after its individual differences). */
+function eyeGazeOf(c:ComposerCreature){
+ let g=eyeGazeCache.get(c);if(!g){g=composerBuiltEyeGaze(c.individual.effectiveRecipe,c.skin.version);eyeGazeCache.set(c,g);}return g;
 }
 function eyeVertexIndices(c:ComposerCreature){
  let ids=eyeIndexCache.get(c);if(ids)return ids;
@@ -628,7 +665,7 @@ export function createComposerLab(host:ComposerLabHost):ComposerLab{
   const points=eyePoints(a);if(!points.length)return null;
   // near/far about the posed HEAD's midline (a swaying head leaves the animal's offset midline)
   const pos=a.creature.skin.positions,midZ=composerEyeMidlineZ(points,eyeVertexIndices(a.creature).map(i=>pos[i*3+2]!));
-  return composerEyeFrameOf(points,midZ,viewDirection(viewSelect.value as View),resolveComposerEyes(a.recipe).gazeYawDeg);
+  return composerEyeFrameOf(points,midZ,viewDirection(viewSelect.value as View),eyeGazeOf(a.creature));
  }
  function eyeView(camera:THREE.PerspectiveCamera){
   const a=shownActor(),frame=eyeFrame();if(!a||!frame)return null;

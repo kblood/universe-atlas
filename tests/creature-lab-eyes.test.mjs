@@ -4,9 +4,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {readFileSync} from 'node:fs';
 import {
   COMPOSER_EYE_GROUP_LABEL, COMPOSER_EYE_MENU, COMPOSER_EYE_RULES_LABEL, COMPOSER_EYE_SHORT, COMPOSER_HINTED_KEYS, COMPOSER_OPTION_HINTS as H,
-  EYE_FRAME_FILL_BOTH, EYE_FRAME_FILL_NEAR, EYE_FRAME_FORWARD_YAW_DEG, EYE_FRAME_FRONT_YAW_DEG, EYE_FRAME_MAX_OBLIQUE_DEG, EYE_FRAME_PAIR, composerEyeFrameOf, composerEyeMidlineZ, composerVisibleEyeIndices, composerFieldLabel, composerHintedValues, composerIrisChoices, composerIrisSwatch, composerOptionText,
+  EYE_FRAME_FILL_BOTH, EYE_FRAME_FILL_NEAR, EYE_FRAME_FORWARD_YAW_DEG, EYE_FRAME_FRONT_YAW_DEG, EYE_FRAME_MAX_OBLIQUE_DEG, EYE_FRAME_PAIR, composerBuiltEyeGaze, composerEyeFrameOf, composerEyeMidlineZ, composerVisibleEyeIndices, composerFieldLabel, composerHintedValues, composerIrisChoices, composerIrisSwatch, composerOptionText,
 } from '../src/creature-lab-composer.ts';
 import {COMPOSER_EYE_KINDS, EYE_PRESETS, composerEyeNative} from '../src/fauna-composer-eye-catalogue.ts';
 import {COMPOSER_EYE_TYPES, COMPOSER_FACES, COMPOSER_IRIS, COMPOSER_IRIS_RGB, resolveComposerEyes} from '../src/fauna-composer-face.ts';
@@ -177,29 +178,30 @@ test('eye close-up framing: lateral eyes give the near eye (front view: a front-
   assert.equal(composerEyeFrameOf(forward, 0, new THREE.Vector3(1, .15, 0).normalize(), 75).yawed, true);
   assert.equal(composerEyeFrameOf(forward, 0, new THREE.Vector3(1, .15, 0).normalize(), 15).side, 'both');
   // a close pair looking 35 degrees out (a cat, the sclera-eyed worm with EC2's eyes: 5.5-6.1 radii) is framed one eye
-  // at a time, straight on from the front (within the cap); the forward limit is EYE_FRAME_FORWARD_YAW_DEG
+  // at a time; the forward limit is EYE_FRAME_FORWARD_YAW_DEG
   assert.ok(EYE_FRAME_FORWARD_YAW_DEG < 35 && EYE_FRAME_FORWARD_YAW_DEG >= 20);
   for (const d of [new THREE.Vector3(1, .15, 0), new THREE.Vector3(.6, .3, .74)]) {
     const f = composerEyeFrameOf(forward, 0, d.normalize(), 35);
-    assert.equal(f.side, 'near'); assert.equal(f.yawDeg, 0); assert.ok(f.centre.z > 0);
+    assert.equal(f.side, 'near'); assert.ok(f.centre.z > 0);
+    // seen at most EYE_FRAME_MAX_OBLIQUE_DEG off its 35-degree gaze
+    assert.ok(Math.abs(Math.abs(THREE.MathUtils.radToDeg(Math.atan2(f.direction.z, f.direction.x))) - 35) <= EYE_FRAME_MAX_OBLIQUE_DEG + 1e-6);
   }
-  assert.ok(EYE_FRAME_FILL_BOTH.up <= .75 && EYE_FRAME_FILL_BOTH.right <= .75, 'a framed pair keeps a margin for its lids');
   // a known gaze caps the obliquity at EYE_FRAME_MAX_OBLIQUE_DEG: a beak eye (75 degrees) seen from the front turns to
-  // a 30-degree front-quarter view; a primate's forward eye (15 degrees) seen from the side turns to a 60-degree view;
+  // a (75 - cap)-degree front-quarter view; a primate's forward eye (15 degrees) seen from the side turns to a (15 + cap)-degree view;
   // a view within the cap is kept
   const az = d => THREE.MathUtils.radToDeg(Math.atan2(d.z, d.x));
   const beakFront = composerEyeFrameOf(eyes, 0, new THREE.Vector3(1, .15, 0).normalize(), 75);
-  assert.equal(beakFront.side, 'near'); assert.ok(Math.abs(az(beakFront.direction) - (75 - EYE_FRAME_MAX_OBLIQUE_DEG)) < 1e-6 && Math.abs(beakFront.yawDeg - 30) < 1e-6, `${az(beakFront.direction)}`);
+  assert.equal(beakFront.side, 'near'); assert.ok(Math.abs(az(beakFront.direction) - (75 - EYE_FRAME_MAX_OBLIQUE_DEG)) < 1e-6 && Math.abs(beakFront.yawDeg - (75 - EYE_FRAME_MAX_OBLIQUE_DEG)) < 1e-6, `${az(beakFront.direction)}`);
   const apeSide = composerEyeFrameOf(forward, 0, new THREE.Vector3(0, .12, 1).normalize(), 15);
-  assert.equal(apeSide.side, 'near'); assert.equal(apeSide.yawed, true); assert.ok(Math.abs(az(apeSide.direction) - 60) < 1e-6, `${az(apeSide.direction)}`);
+  assert.equal(apeSide.side, 'near'); assert.equal(apeSide.yawed, true); assert.ok(Math.abs(az(apeSide.direction) - (15 + EYE_FRAME_MAX_OBLIQUE_DEG)) < 1e-6, `${az(apeSide.direction)}`);
   const fromMinusZ = composerEyeFrameOf(forward, 0, new THREE.Vector3(0, .12, -1).normalize(), 15);
-  assert.ok(fromMinusZ.centre.z < 0 && Math.abs(az(fromMinusZ.direction) + 60) < 1e-6, 'mirrored on the -z side');
+  assert.ok(fromMinusZ.centre.z < 0 && Math.abs(az(fromMinusZ.direction) + (15 + EYE_FRAME_MAX_OBLIQUE_DEG)) < 1e-6, 'mirrored on the -z side');
   const within = composerEyeFrameOf(eyes, 0, new THREE.Vector3(0, .12, 1).normalize(), 75);
   assert.equal(within.yawed, false); assert.equal(within.yawDeg, 0);
   // wide-set eyes are lateral even with a forward gaze (a cat's muzzle: the pair would be tiny at the frame sides): the
-  // front view frames the near eye alone, straight on, since its 35-degree gaze is within the obliquity cap
+  // front view frames the near eye alone, turned only as far as the obliquity cap needs (35-degree gaze)
   const catFront = composerEyeFrameOf(eyes, 0, new THREE.Vector3(1, .15, 0).normalize(), 35);
-  assert.equal(catFront.side, 'near'); assert.equal(catFront.yawDeg, 0);
+  assert.equal(catFront.side, 'near'); assert.equal(catFront.yawDeg, Math.max(0, 35 - EYE_FRAME_MAX_OBLIQUE_DEG));
   // an animal off the origin (herd/compare offset): sides are taken about its own midline
   const shifted = eyes.map(p => p.clone().add(new THREE.Vector3(0, 0, 3)));
   assert.ok(Math.abs(composerEyeFrameOf(shifted, 3, new THREE.Vector3(0, 0, 1)).centre.z - 3.11) < 1e-3);
@@ -256,6 +258,40 @@ test('the real posed worm (idle, time 0, as the Lab shows it): side view frames 
       assert.ok(off <= EYE_FRAME_MAX_OBLIQUE_DEG + 1e-6, `${view}: ${off.toFixed(1)} degrees off the gaze`);
     }
   } finally { c.dispose(); }
+});
+
+test('the framing gaze is the gaze the eyes are built with: every camera eye of the eye specimens faces where composerBuiltEyeGaze says', () => {
+  const specs = JSON.parse(readFileSync(new URL('./fauna-face-specimens.json', import.meta.url), 'utf8')).specimens.filter(s => /^(preset|eye|eye-catalogue|eye-odd|eye-upgrade)$/.test(s.group));
+  let checked = 0;
+  for (const sp of specs) {
+    const c = createComposerCreature(decode(sp.text).recipe);
+    try {
+      const r = c.individual.effectiveRecipe, e = resolveComposerEyes(r), g = composerBuiltEyeGaze(r, c.skin.version);
+      assert.ok(Number.isFinite(g.plus) && Number.isFinite(g.minus), sp.name);
+      // the turret (chameleon) aims its cornea through a cone; its facing is not a dome's
+      if (e.traits.structure !== 'camera' || e.traits.placement.kind === 'independent') { if (e.traits.placement.kind !== 'independent') assert.equal(g.plus, g.minus, sp.name); continue; }
+      const ids = new Set(composerVisibleEyeIndices(c.skin)), pos = c.skin.positions, V = i => new THREE.Vector3(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+      const n = {1: new THREE.Vector3(), [-1]: new THREE.Vector3()};
+      for (const p of c.skin.parts) if (p.part === 'eyes') for (let t = p.firstTriangle; t < p.firstTriangle + p.triangles; t++) {
+        const k = [0, 1, 2].map(j => c.skin.index[t * 3 + j]);
+        if (!k.every(i => ids.has(i))) continue;
+        const [A, B, D] = k.map(V);
+        n[A.z + B.z + D.z > 0 ? 1 : -1].add(new THREE.Vector3().crossVectors(B.clone().sub(A), D.clone().sub(A)));
+      }
+      for (const side of [1, -1]) {
+        const facing = THREE.MathUtils.radToDeg(Math.atan2(side * n[side].z, n[side].x)), built = side > 0 ? g.plus : g.minus;
+        assert.ok(Math.abs(facing - built) <= 8, `${sp.name} (${e.kind}, ${c.skin.version}) ${side > 0 ? '+z' : '-z'} eye: cornea faces ${facing.toFixed(1)}, framing gaze ${built}`);
+      }
+      checked++;
+    } finally { c.dispose(); }
+  }
+  assert.ok(checked >= 30, `camera-eye specimens checked: ${checked}`);
+  // per-side gaze (independent eyes): each side's own gaze caps its own view
+  const sphere = (cx, cy, cz, r) => { const ps = []; for (let i = 0; i < 64; i++) { const t = i / 64 * Math.PI * 2, p = (i % 8) / 8 * Math.PI - Math.PI / 2; ps.push(new THREE.Vector3(cx + r * Math.cos(p) * Math.cos(t), cy + r * Math.sin(p), cz + r * Math.cos(p) * Math.sin(t))); } return ps; };
+  const eyes = [...sphere(1, 1, .11, .02), ...sphere(1, 1, -.11, .02)], az = d => THREE.MathUtils.radToDeg(Math.atan2(d.z, d.x)), gaze = {plus: 110, minus: 35};
+  const fromPlus = composerEyeFrameOf(eyes, 0, new THREE.Vector3(0, .12, 1).normalize(), gaze), fromMinus = composerEyeFrameOf(eyes, 0, new THREE.Vector3(0, .12, -1).normalize(), gaze);
+  assert.equal(fromPlus.yawed, false, 'the +z eye looks 110 degrees out: the side view is within the cap');
+  assert.ok(Math.abs(-az(fromMinus.direction) - (35 + EYE_FRAME_MAX_OBLIQUE_DEG)) < 1e-6, `the -z eye (35 degrees) is turned to: ${-az(fromMinus.direction)}`);
 });
 
 test('the eye close-up frames the visible eye: the cornea of a lidded eye (not its lids, orbit ring or socket), a compound dome, an eyespot', () => {
