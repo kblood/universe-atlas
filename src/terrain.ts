@@ -10,7 +10,9 @@ import {regionalLandformHeight,REGIONAL_LANDFORM_VERSION} from './regional-landf
 import type {RiverRegion} from './river-types.ts';
 import {activeRiverRegions} from './inland-rivers.ts';
 import {craterField, craterAgeGate, craterHeightDeltaAt, type CraterField, type CraterParams} from './planet-craters.ts';
-import {planetLandforms} from './planet-landforms.ts';
+import {planetLandforms,LANDFORM_SHAPE_VERSION} from './planet-landforms.ts';
+import {planetGeophysics} from './planet-geophysics.ts';
+import {climateDatumM} from './surface-biomes.ts';
 import {DRY_SURFACE_ROUGHNESS,WET_SURFACE_ROUGHNESS} from './surface-roughness.ts';
 import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_CALIBRATION,CLIMATE_VERSION,type ClimateSample} from './surface-climate.ts';
 
@@ -92,10 +94,26 @@ import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_CALIBRATION
 // `baseTerrainSampler` (drainage/river inputs) keeps its legacy output exactly.
 // Ocean, sea-ice, Ice-world, Volcanic, barren and gas-giant colours are
 // unchanged. Only the terrain and combined golden digests move.
-export const TERRAIN_VERSION = "terrain-1.7.0-climate-colour";
+// 1.8.0-relief (relief round 2026-10-03, package P4-RELIEF, docs/terrain-relief-v1.md):
+// `terrainSampler` (orbit texture, tiles, collision, classifier inputs) runs
+// the R-CAL-1 relief mode of the core: the continental coordinate is reshaped
+// (land floor, seabed with detail at every depth, dry-world scaling) with the
+// per-planet tectonicRelief (planet-geophysics-1), the local window keeps its
+// geography and scales with an upland factor of the new floor, and colour/
+// coast gates are measured from the CURRENT sea level. The sea-level-0
+// coastline is exactly invariant. `baseTerrainSampler` stays bit-identical
+// (BASE_ELEVATION_SHA256, the archived drainage/river field); a future river
+// revival must rebuild drainage on the relief field with a DRAINAGE_VERSION
+// bump. The orbit relief texture is encoded over reliefTextureRange(body).
+export const TERRAIN_VERSION = "terrain-1.8.0-relief";
+export {LANDFORM_SHAPE_VERSION};
 /** The climate model whose fields the water-world land colour reads. */
 export const TERRAIN_CLIMATE_VERSION = CLIMATE_VERSION;
 export {REGIONAL_LANDFORM_VERSION};
+/** @deprecated terrain-1.8.0: the orbit relief texture is encoded over the
+ * per-body `reliefTextureRange(body)` (returned by planetSurface as
+ * reliefMinM/reliefMaxM). Kept only until the renderer decode (main.ts, P5)
+ * reads the per-body range. */
 export const ELEVATION_RANGE_M = 60000;
 /**
  * Fallback surface age (Myr) for a `terrainSampler` caller that has not yet
@@ -154,13 +172,111 @@ export const TERRAIN_LANDFORM_WINDOW_M = 1650 + 230 + 28;
  * construction: hills/gullies/rocks 772 m (metre-based, NOT radius-scaled)
  * plus landforms 1908 m x min(1, R/2e6). For R >= 2e6 m this is the audit's
  * 2680 m. 0 for stars and gas giants (flat field). */
-export function terrainWindowMaxM(body: Pick<Body,'kind'|'type'|'radiusM'>): number {
+export function terrainUnitWindowMaxM(body: Pick<Body,'kind'|'type'|'radiusM'>): number {
   if (body.kind === 'star' || body.type === 'Gas giant') return 0;
   return TERRAIN_DETAIL_WINDOW_M + TERRAIN_LANDFORM_WINDOW_M * Math.min(1, body.radiusM / 2e6);
 }
+/**
+ * terrain-1.8.0-relief: largest possible WINDOW (m) above `floorM`. The relief
+ * window is tectonicRelief x (D x upland + L x upland) <= tau x the unit window
+ * (772 + 1908 x min(1, R/2e6)), so this is `tau * terrainUnitWindowMaxM(body)`.
+ * tau comes from planetGeophysics(body) when the body carries its seed; a
+ * shape-only object (no seed) gets relief scale 1, i.e. the unit window (the
+ * R0 value). Stars keep the legacy (unit) window; gas giants 0.
+ */
+export function terrainWindowMaxM(body: Pick<Body,'kind'|'type'|'radiusM'> & Partial<Pick<Body,'seed'|'temperatureK'|'water'>>): number {
+  const unit = terrainUnitWindowMaxM(body);
+  if (unit === 0 || body.kind === 'star' || typeof body.seed !== 'string') return unit;
+  return tectonicReliefOf(body as Body) * unit;
+}
+
+/**
+ * R-CAL-1 (relief round 2026-10-03, plan floorShapingSpec). Every value feeds a
+ * height, so tests/terrain-relief-hypsometry.test.mjs pins
+ * sha256(JSON.stringify(RELIEF_CALIBRATION)); changing one is a TERRAIN_VERSION
+ * bump. Names follow the plan: HC land compression, HUP/HHI upland and high
+ * plateau steps over B1..B2 / B3..B4 of the raw continental metres, KB the
+ * ridge-belt gain (belt mask BT0..BT1 on ridges^5), HM0..HM1 the upland factor
+ * of the new floor and WLOW the plains share of the detail window; HS shelf
+ * compression, HAB abyssal step (A1..A2), HTR trench step (A3..A4); SEABED_*
+ * the seabed detail (amplitude SHELF on the shelf rising to DEEP over RAMP of
+ * depth, wavelengths in metres); KD_* the dry-world floor scale clamp(KD_PER_TAU
+ * x tau, KD_MIN, KD_MAX).
+ */
+export const RELIEF_CALIBRATION = Object.freeze({
+  name: 'R-CAL-1',
+  HC: 220, HUP: 500, B1: 4000, B2: 11000, HHI: 1000, B3: 10000, B4: 16000,
+  KB: 1.3, BT0: 0.35, BT1: 0.8,
+  HM0: 250, HM1: 2500, WLOW: 0.25,
+  HS: 180, HAB: 3900, A1: 500, A2: 3200, HTR: 7000, A3: 8500, A4: 15000,
+  SEABED_DETAIL_SHELF_M: 40, SEABED_DETAIL_DEEP_M: 250, SEABED_DETAIL_RAMP_M: 1500,
+  SEABED_HILL_WAVELENGTH_M: 4000, SEABED_GULLY_WAVELENGTH_M: 900,
+  KD_PER_TAU: 0.3, KD_MIN: 0.2, KD_MAX: 0.8,
+});
+const RC = RELIEF_CALIBRATION;
+/** Largest |fine| term of the core ((n-0.5)*380 + (n-0.5)*95 with n in [0,1]). */
+const FINE_MAX_M = 0.5 * 380 + 0.5 * 95;
+/** The seabed detail shape (see seabedDetail) lies in [SEABED_SHAPE_MIN, SEABED_SHAPE_MAX]. */
+const SEABED_SHAPE_MIN = -0.35 * 2.0 - 0.5 * 1.4;
+const SEABED_SHAPE_MAX = 0.65 * 2.0 + 0.5 * 1.4;
+/** Arithmetic smoothstep (no platform transcendental). */
+const ss = (lo: number, hi: number, v: number) => {
+  const t = (v - lo) / (hi - lo);
+  const c = t < 0 ? 0 : t > 1 ? 1 : t;
+  return c * c * (3 - 2 * c);
+};
+
+/** The relief scale tau of a body (planet-geophysics-1 tectonicRelief). */
+export function tectonicReliefOf(body: Body): number {
+  return planetGeophysics(body).tectonicRelief;
+}
+/** Whether terrainSampler runs this body in relief mode (every non-star; gas giants stay flat). */
+function reliefModeFor(body: Pick<Body,'kind'|'type'>): boolean {
+  return body.kind !== 'star' && body.type !== 'Gas giant';
+}
+/** Dry-world floor scale KD = clamp(0.3 tau, 0.2, 0.8). */
+function dryFloorScale(tau: number): number {
+  const k = RC.KD_PER_TAU * tau;
+  return k < RC.KD_MIN ? RC.KD_MIN : k > RC.KD_MAX ? RC.KD_MAX : k;
+}
+
+/**
+ * Analytic bounds (m) of every height `terrainSampler(body)` can return
+ * (crater-free, no river regions): `minM <= groundHeightM <= maxM` for every
+ * direction and every sea level. Built from the R-CAL-1 constants only:
+ * water worlds max = (HC + tau (HUP + HHI + KB 2800) + fine max) x sc + window,
+ * min = -(HS + HAB + HTR) x sc - the largest seabed detail; dry worlds use the
+ * clamp(-16000, 18000) x sc x KD floor + window. Stars use the legacy field.
+ */
+export function bodyHeightBoundM(body: Body): {minM: number; maxM: number} {
+  if (body.type === 'Gas giant') return {minM: 0, maxM: 0};
+  const sc = Math.min(1, body.radiusM / 2e6);
+  // Stars keep the legacy field: clamped floor plus the 772 m detail layer (no landforms).
+  if (!reliefModeFor(body)) return {minM: -16000 * sc, maxM: 18000 * sc + TERRAIN_DETAIL_WINDOW_M};
+  const tau = tectonicReliefOf(body);
+  const window = tau * terrainUnitWindowMaxM(body);
+  if (body.water) {
+    const landMax = Math.min(18000, RC.HC + tau * (RC.HUP + RC.HHI + RC.KB * 2800) + FINE_MAX_M) * sc;
+    const seabedMin = -Math.min(16000, RC.HS + RC.HAB + RC.HTR) * sc - RC.SEABED_DETAIL_DEEP_M * Math.max(-SEABED_SHAPE_MIN, SEABED_SHAPE_MAX);
+    return {minM: seabedMin, maxM: landMax + window};
+  }
+  const kd = dryFloorScale(tau);
+  return {minM: -16000 * sc * kd, maxM: 18000 * sc * kd + window};
+}
+/** The range the orbit relief texture (planetSurface().relief) is encoded over:
+ * byte = clamp((visibleHeightM - minM) / (maxM - minM)) * 255. */
+export function reliefTextureRange(body: Body): {minM: number; maxM: number} {
+  const b = bodyHeightBoundM(body);
+  return b.maxM > b.minM ? b : {minM: -1, maxM: 1};
+}
 const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
-const mix = (a: number[], b: number[], t: number) =>
-  a.map((v, i) => v + (b[i] - v) * clamp(t));
+/** RGB lerp: per channel v + (b - v) * clamp(t), the same expression (and so
+ * the same bits) as the former a.map form, without the closure (terrain-1.8.0
+ * perf: the relief seabed detail's cost is paid back here and in the bake). */
+const mix = (a: number[], b: number[], t: number) => {
+  const c = clamp(t);
+  return [a[0] + (b[0] - a[0]) * c, a[1] + (b[1] - a[1]) * c, a[2] + (b[2] - a[2]) * c];
+};
 
 /** The macro-continent seed and its seeded direction-noise helper. One
  * definition shared by `baseTerrainSampler` and `terrainSampler`'s climate
@@ -297,10 +413,39 @@ type CoreSample = {
   grain: number; localGrain: number;
   /** R0, only when the core is built with exposeFloor. */
   floorM?: number; continentalM?: number;
+  /** Relief diagnostics (exposeFloor only): the floor WITHOUT the seabed detail
+   * (equal to floorM on land and on dry worlds). */
+  smoothFloorM?: number;
+  /** Relief mode: the factor terrainSampler applies to planetLandforms (tau x
+   * upland on water worlds, tau on dry worlds, 0 on the seabed; 1 legacy). */
+  landformScale: number;
+  /** The height planetLandforms' water-world land gate reads: the RAW
+   * (terrain-1.7 base) height, so the landform geography is unchanged. */
+  landformGateM: number;
 };
-function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false) {
+function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false, relief: boolean = false) {
   const { code, n } = macroNoise(body);
   const sea = 0.37 + body.water * 0.22;
+  // terrain-1.8.0 relief mode (terrainSampler only; baseTerrainSampler never).
+  const reliefOn = relief && reliefModeFor(body);
+  const tau = reliefOn ? tectonicReliefOf(body) : 1;
+  const kd = dryFloorScale(tau);
+  const seabedHillF = body.radiusM / RC.SEABED_HILL_WAVELENGTH_M;
+  const seabedGullyF = body.radiusM / RC.SEABED_GULLY_WAVELENGTH_M;
+  /** Seabed detail (abyssal hills, gullies, fine) at every depth, metres,
+   * bounded to |S| <= depth/2 so the seabed never reaches sea level 0. Part of
+   * the same deterministic field at every depth; there is no depth cut-off.
+   * Two octaves (4 km ridged hills, 900 m gullies): a third 200 m octave cost
+   * +9-14% per terrainSampler sample against the plan's +8% budget while adding
+   * ~1% of the detail variance, so it was dropped (docs/terrain-relief-v1.md). */
+  const seabedDetail = (d: V3, floorM: number): number => {
+    const depth = -floorM;
+    const amp = RC.SEABED_DETAIL_SHELF_M + (RC.SEABED_DETAIL_DEEP_M - RC.SEABED_DETAIL_SHELF_M) * ss(0, RC.SEABED_DETAIL_RAMP_M, depth);
+    const hb = 1 - Math.abs(n(d, seabedHillF, 75) * 2 - 1);
+    const shape = (hb * hb - 0.35) * 2.0 + (n(d, seabedGullyF, 76) - 0.5) * 1.4;
+    const S = amp * shape, half = depth * 0.5;
+    return S > half ? half : S < -half ? -half : S;
+  };
   // R0: the radius scale of the continental coordinate (same value the
   // elevation clamp line multiplies by), hoisted out of the per-sample path.
   const continentalScale = Math.min(1, body.radiusM / 2e6);
@@ -333,8 +478,10 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
         roughness: 1,
         grain: 1,
         localGrain: 1,
+        landformScale: 1,
+        landformGateM: 0,
       };
-      if (exposeFloor) { gas.floorM = 0; gas.continentalM = 0; }
+      if (exposeFloor) { gas.floorM = 0; gas.continentalM = 0; gas.smoothFloorM = 0; }
       return gas;
     }
     const coast =
@@ -346,14 +493,14 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
     const ridges = ridgesBase * ridgesBase * ridgesBase * ridgesBase * ridgesBase;
     const fine = (n(d, 80, 8) - 0.5) * 380 + (n(d, 155, 9) - 0.5) * 95;
     const landFactor = clamp((coast - sea) * 12);
-    let elevationM = body.water
+    const legacyElevationSum = body.water
       ? (coast - sea) * 47000 + ridges * 2800 * landFactor + fine * landFactor
       : (macro - 0.46) * 44000 + ridges * 1800 + fine;
-    elevationM =
-      clamp(elevationM, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
+    let elevationM =
+      clamp(legacyElevationSum, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
     // R0 (additive): the regional floor is exactly the clamped, scaled value
     // above (the continental coordinate is derived below, opt-in only).
-    const floorM = elevationM;
+    let floorM = elevationM;
     // Metre-based wavelengths, shared by collision, orbit previews and tiles.
     // Positive land detail fades to zero at sea level, preserving every coast.
     const landDetail = body.water ? clamp(elevationM / 700) : 1;
@@ -365,6 +512,48 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
       const gullies = n(d, body.radiusM / 1400, 72);
       const rocks = n(d, body.radiusM / 260, 73);
       elevationM += (hills * 620 + gullies * 130 + rocks * 22) * landDetail;
+    }
+    // The terrain-1.7 base height: the legacy return value, and in relief
+    // mode the height the landform land gate reads (geography unchanged).
+    const rawBaseM = elevationM;
+    let landformScale = 1;
+    let smoothFloorOutM = floorM;
+    if (reliefOn) {
+      // R-CAL-1 (plan floorShapingSpec). Only + - * / and arithmetic
+      // smoothstep: every term feeds a height and the ocean flag.
+      const detailM = rawBaseM - floorM; // D = (hills/gullies/rocks) x landDetail, >= 0
+      if (body.water) {
+        const a0 = (coast - sea) * 47000;
+        if (a0 >= 0) {
+          // Land: every term is >= 0 except the fine term, which is bounded
+          // below by half the compressed coordinate, so F >= 0 wherever
+          // a0 >= 0: the sea-level-0 coastline is invariant by construction.
+          const comp = a0 / (1 + a0 / RC.HC);
+          let fineT = fine * landFactor;
+          if (fineT < -0.5 * comp) fineT = -0.5 * comp;
+          const F = comp + tau * (RC.HUP * ss(RC.B1, RC.B2, a0) + RC.HHI * ss(RC.B3, RC.B4, a0))
+            + tau * RC.KB * 2800 * ridges * ss(RC.BT0, RC.BT1, ridges) * landFactor + fineT;
+          floorM = clamp(F, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
+          const upland = ss(RC.HM0, RC.HM1, floorM);
+          elevationM = floorM + tau * detailM * (RC.WLOW + (1 - RC.WLOW) * upland);
+          landformScale = tau * upland;
+          smoothFloorOutM = floorM;
+        } else {
+          const m0 = -a0;
+          const F = -(m0 / (1 + m0 / RC.HS) + RC.HAB * ss(RC.A1, RC.A2, m0) + RC.HTR * ss(RC.A3, RC.A4, m0));
+          const smoothFloorM = clamp(F, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
+          // The seabed has no window: its detail is part of the floor.
+          floorM = smoothFloorM + seabedDetail(d, smoothFloorM);
+          smoothFloorOutM = smoothFloorM;
+          elevationM = floorM;
+          landformScale = 0;
+        }
+      } else {
+        floorM = floorM * kd;
+        smoothFloorOutM = floorM;
+        elevationM = floorM + tau * detailM;
+        landformScale = tau;
+      }
     }
     const ocean = !!body.water && elevationM < waterLevelM;
     const latitude = Math.abs(d[1]);
@@ -391,15 +580,18 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
     const out: CoreSample = {
       elevationM,
       ocean,
-      color: color ? color.map((v) => clamp(v * grain * localGrain, 0, 255)) : null,
+      color: color ? [clamp(color[0] * grain * localGrain, 0, 255), clamp(color[1] * grain * localGrain, 0, 255), clamp(color[2] * grain * localGrain, 0, 255)] : null,
       roughness: ocean ? WET_SURFACE_ROUGHNESS : DRY_SURFACE_ROUGHNESS,
       grain,
       localGrain,
+      landformScale,
+      landformGateM: rawBaseM,
     };
     if (exposeFloor) {
       // R0: the continental coordinate repeats the first term of the
       // elevation sum on its own (it never feeds elevationM).
       out.floorM = floorM;
+      out.smoothFloorM = smoothFloorOutM;
       out.continentalM = (body.water ? (coast - sea) * 47000 : (macro - 0.46) * 44000) * continentalScale;
     }
     return out;
@@ -539,8 +731,10 @@ export function terrainSampler(
   onOceanThreshold?: (heightM:number)=>void,
   exposeFloor: boolean = false,
 ) {
-  const core = baseTerrainCore(body, waterLevelM, exposeFloor);
+  const core = baseTerrainCore(body, waterLevelM, exposeFloor, true);
   const landforms=planetLandforms(body);
+  // The landform ceiling (terrain-1.8.0): the body's analytic height bound.
+  const landformCeilingM = reliefModeFor(body) ? bodyHeightBoundM(body).maxM : undefined;
   const candidates = regions.length > 1 ? [...regions].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0) : regions;
   // `includeCraters=false` skips building a CraterField at all (not merely
   // "zero craters" via surfaceAgeMyr<=0): planet-craters.ts's per-voxel
@@ -559,6 +753,8 @@ export function terrainSampler(
   // climate call) and the identical seeded grain helper `baseTerrainSampler`
   // uses, so colour = waterWorldLandColour(climate, h) x grain x localGrain.
   const climate = body.water ? surfaceClimate(climateForcingFor(body)) : null;
+  // Climate datum: the current shoreline, or 0 m when the sea has fully gone.
+  const seaDatumM = climateDatumM(waterLevelM);
   const climateScratch = climate ? createClimateSample() : null;
   // The grain factors come from the base core itself (its n(d,115,35) and
   // n(d,R/800,74) via the shared macroNoise helper), so they cannot drift.
@@ -576,7 +772,9 @@ export function terrainSampler(
     // function's own doc comment): only the exposed dry/rocky elevation
     // gains a crater delta, and `ocean` itself keeps deciding land/sea from
     // the PRE-crater elevation, so this cannot flip the coastline.
-    const uncrateredHeightM = sample.elevationM + landforms(d,sample.elevationM);
+    const uncrateredHeightM = sample.landformScale > 0
+      ? sample.elevationM + sample.landformScale * landforms(d, sample.elevationM, sample.landformGateM, landformCeilingM)
+      : sample.elevationM;
     // Optional read-only observer for exact forest cache validity. This is the
     // branch threshold before ocean sampling bypasses immutable river geometry.
     if(body.water)onOceanThreshold?.(uncrateredHeightM);
@@ -584,12 +782,13 @@ export function terrainSampler(
     const craterDeltaM = craters && !ocean ? craterHeightDeltaAt(craters, d) : 0;
     const elevationM = uncrateredHeightM + craterDeltaM;
     // Water-world land: climate colour at the post-landform, pre-crater height
-    // (the same height family the classifier gets via groundHeightM, minus
-    // the crater delta, which never feeds colour). Every other palette keeps
-    // the base sampler's colour unchanged.
+    // ABOVE THE CURRENT SEA LEVEL (terrain-1.8.0 sea datum: the lapse and the
+    // coast/fell gates are measured from the dated shoreline; at sea level 0
+    // the datum is unchanged). Every other palette keeps the base colour.
     let surfaceColor: number[];
     if (climate && !ocean) {
-      const c = waterWorldLandColour(climate(d, uncrateredHeightM, climateScratch!), uncrateredHeightM);
+      const aboveSeaM = uncrateredHeightM - waterLevelM;
+      const c = waterWorldLandColour(climate(d, uncrateredHeightM - seaDatumM, climateScratch!), aboveSeaM);
       // The base reports localGrain=1 where IT saw ocean; the land colour
       // always takes the land local grain, as baseTerrainSampler's land does.
       const localGrain = sample.ocean ? .88 + grainNoise(d, localGrainF, 74) * .24 : sample.localGrain;
@@ -682,6 +881,23 @@ export function terrainFloorSampler(
   waterLevelM: number = 0,
 ) {
   return terrainSampler(body, regions, surfaceAgeMyr, includeCraters, waterLevelM, undefined, true) as (d: V3) => SurfaceSample & {floorM: number; windowM: number; continentalM: number};
+}
+
+/**
+ * Diagnostic layer view of the relief field (tests, reports; not a hot path):
+ * per direction the terrainSampler ground height (crater-free, sea level 0)
+ * with the relief core's floorM (seabed detail included), smoothFloorM (seabed
+ * detail excluded), continentalM, the raw terrain-1.7 base height and the
+ * landform scale.
+ */
+export function reliefLayersSampler(body: Body) {
+  const core = baseTerrainCore(body, 0, true, true);
+  const surface = terrainSampler(body);
+  return (d: V3) => {
+    const c = core.sample(d, true), s = surface(d);
+    return {groundHeightM: s.groundHeightM, ocean: s.ocean, floorM: c.floorM!, smoothFloorM: c.smoothFloorM!,
+      continentalM: c.continentalM!, rawBaseM: c.landformGateM, landformScale: c.landformScale};
+  };
 }
 
 // Fixed, bounded resolution for the coarse crater-delta grid `planetSurface`
@@ -828,6 +1044,11 @@ export function planetSurface(body: Body, width = 1024, segments = 192, surfaceA
     const craterDeltaM = craterGrid && !s.ocean && s.influence <= 0 ? bilinearGrid(craterGrid, CRATER_GRID_COLS, CRATER_GRID_ROWS, u, v) : 0;
     return s.visibleHeightM + craterDeltaM;
   };
+  // terrain-1.8.0: relief bytes span the body's own height range (about 68 m
+  // per step on Maithea instead of 235 m over the old fixed 60 km). The decode
+  // must use the returned reliefMinM/reliefMaxM (ELEVATION_RANGE_M is deprecated).
+  const reliefRange = reliefTextureRange(body);
+  const reliefMinM = reliefRange.minM, reliefSpanM = reliefRange.maxM - reliefRange.minM;
   const data = new Uint8Array(width * height * 4),
     relief = new Uint8Array(width * height * 4),
     roughness = new Uint8Array(width * height * 4);
@@ -845,13 +1066,16 @@ export function planetSurface(body: Body, width = 1024, segments = 192, surfaceA
       ];
       const s = denseSample(d),
         i = (y * width + x) * 4;
-      data.set([...s.color, 255], i);
+      // Direct Uint8Array stores apply the same ToUint8 conversion as the
+      // former .set([...]) calls (byte-identical), without per-pixel arrays.
+      const c = s.color;
+      data[i] = c[0]; data[i + 1] = c[1]; data[i + 2] = c[2]; data[i + 3] = 255;
       // Visible ocean is a constant-radius sea surface. Seafloor remains in the sampler.
       const visible = craterAdjustedVisible(s, u, v);
-      const h = clamp(0.5 + visible / ELEVATION_RANGE_M) * 255;
-      relief.set([h, h, h, 255], i);
+      const h = clamp((visible - reliefMinM) / reliefSpanM) * 255;
+      relief[i] = h; relief[i + 1] = h; relief[i + 2] = h; relief[i + 3] = 255;
       const r = s.roughness * 255;
-      roughness.set([r, r, r, 255], i);
+      roughness[i] = r; roughness[i + 1] = r; roughness[i + 2] = r; roughness[i + 3] = 255;
       const weight = Math.sin(phi);
       totalWeight += weight;
       if (!s.ocean) landPixels += weight;
@@ -880,5 +1104,8 @@ export function planetSurface(body: Body, width = 1024, segments = 192, surfaceA
     segments,
     version: TERRAIN_VERSION,
     landFraction: landPixels / totalWeight,
+    /** The relief texture encoding: byte/255 * (reliefMaxM - reliefMinM) + reliefMinM. */
+    reliefMinM: reliefRange.minM,
+    reliefMaxM: reliefRange.maxM,
   };
 }

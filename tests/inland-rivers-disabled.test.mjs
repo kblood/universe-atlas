@@ -230,7 +230,9 @@ test('renderer: stale river attachments add no river water/reflection and dry-gr
 });
 
 test('model versions record the withdrawal and old bookmarks explain it',()=>{
-  assert.equal(TERRAIN_VERSION,'terrain-1.7.0-climate-colour');
+  // Re-pinned for terrain-1.8.0-relief (P4-RELIEF, docs/terrain-relief-v1.md):
+  // version string only; the withdrawal itself is unchanged.
+  assert.equal(TERRAIN_VERSION,'terrain-1.8.0-relief');
   assert.equal(SURFACE_VERSION,'atlas-surface-7-no-inland-rivers');
   assert.equal(CURRENT_VERSIONS.terrain,TERRAIN_VERSION);
   assert.equal(CURRENT_VERSIONS.surface,SURFACE_VERSION);

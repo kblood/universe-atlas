@@ -32,7 +32,9 @@ const fib=(i,n)=>{const y=1-2*(i+.5)/n,p=i*2.399963229728653,r=Math.sqrt(1-y*y);
 const unit=v=>{const m=Math.hypot(...v);return v.map(x=>x/m);};
 
 test('calibration constants are pinned; any change forces a CLIMATE_VERSION bump',()=>{
-  assert.equal(CLIMATE_VERSION,'surface-climate-1');
+  // surface-climate-1.1-geo-g (P4-RELIEF E): the lapse gravity source moved to
+  // planet-geophysics; CLIMATE_CALIBRATION and its sha are unchanged.
+  assert.equal(CLIMATE_VERSION,'surface-climate-1.1-geo-g');
   assert.ok(Object.isFrozen(CLIMATE_CALIBRATION));
   const sha=createHash('sha256').update(JSON.stringify(CLIMATE_CALIBRATION)).digest('hex');
   assert.equal(sha,'7d18c56d825d5a5e9c77403dd029214c6caeeeba60e4eafe462592907d1634c1',`calibration JSON changed (sha ${sha}); bump CLIMATE_VERSION and re-pin`);
@@ -43,7 +45,8 @@ test('module boundaries: allowed imports only, no platform transcendentals, no l
   const climate=readFileSync(new URL('../src/surface-climate.ts',import.meta.url),'utf8');
   const habitat=readFileSync(new URL('../src/habitat-suitability.ts',import.meta.url),'utf8');
   const imports=src=>[...src.matchAll(/^import\s+(type\s+)?[^;]*?from\s+'([^']+)'/gm)].map(m=>(m[1]?'type ':'')+m[2]);
-  assert.deepEqual(imports(climate).sort(),['./catalog.ts','./det-math.ts','./stellar-evolution.ts']);
+  // planet-geophysics.ts (itself catalog.ts-only) is allowed since surface-climate-1.1-geo-g.
+  assert.deepEqual(imports(climate).sort(),['./catalog.ts','./det-math.ts','./planet-geophysics.ts','./stellar-evolution.ts']);
   assert.deepEqual(imports(habitat),['type ./biosphere-model.ts']);
   for(const [name,src] of [['surface-climate.ts',climate],['habitat-suitability.ts',habitat]]){
     const code=strip(src);

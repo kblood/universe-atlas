@@ -36,9 +36,19 @@ export function baseElevationDigest(n=4096){
   return {sha:hash.digest('hex'),ids};
 }
 
-/** RELIEF: the terrainSampler surface (re-pinned deliberately, never silently). */
-export const ELEVATION_IDENTITY_SHA256='4f6021aafa19091ee059b94a6119867d953881d17fe624da758f1764bd7e89f8';
-export const KEPT_PALETTE_COLOUR_SHA256='06d335ce6a1fbf309a65f5b195098a8a0e1324979de27fdb448b173f73ff84ac';
+/** RELIEF: the terrainSampler surface (re-pinned deliberately, never silently).
+ * terrain-1.8.0-relief (P4-RELIEF, docs/terrain-relief-v1.md) re-pins both:
+ *   ELEVATION_IDENTITY 4f6021aafa19091ee059b94a6119867d953881d17fe624da758f1764bd7e89f8
+ *                   -> 27036fc2a5924d3c54f5dec62b92e5be78c69ebe035b85767801d7f15e4e179e
+ *     (R-CAL-1 floor shaping, seabed, dry-world scaling; BASE above is unchanged;
+ *     ocean flags at sea 0 unchanged: 0 coastline flips, tests/terrain-relief-hypsometry)
+ *   KEPT_PALETTE 06d335ce6a1fbf309a65f5b195098a8a0e1324979de27fdb448b173f73ff84ac
+ *             -> 5cf3db02c9f62fc79d85ac46c028353a97e3acdc76c6f3a748601f4d928f3bba
+ *     (ONLY the water-world ocean colours move: they shade by depth and the seabed
+ *     is deeper; all 10 non-water bodies and the base-sampler colours are
+ *     bit-identical, measured diff 0 of 2048 each). */
+export const ELEVATION_IDENTITY_SHA256='27036fc2a5924d3c54f5dec62b92e5be78c69ebe035b85767801d7f15e4e179e';
+export const KEPT_PALETTE_COLOUR_SHA256='5cf3db02c9f62fc79d85ac46c028353a97e3acdc76c6f3a748601f4d928f3bba';
 
 export function elevationIdentityDigest(n=4096){
   const bodies=[maithea(),...goldenTerrainBodies().slice(0,5)];

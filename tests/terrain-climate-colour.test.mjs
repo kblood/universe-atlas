@@ -6,7 +6,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {hash64,noise} from '../src/catalog.ts';
-import {terrainSampler,baseTerrainSampler,waterWorldLandColour,TERRAIN_VERSION,TERRAIN_CLIMATE_VERSION} from '../src/terrain.ts';
+import {terrainSampler,baseTerrainSampler,waterWorldLandColour,bodyHeightBoundM,TERRAIN_VERSION,TERRAIN_CLIMATE_VERSION} from '../src/terrain.ts';
 import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_VERSION,CLIMATE_CALIBRATION} from '../src/surface-climate.ts';
 import {biomeClassifier} from '../src/surface-biomes.ts';
 import {fib,waterWorlds,goldenTerrainBodies} from './terrain-climate-fixtures.mjs';
@@ -22,9 +22,10 @@ function grainOf(body){
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 
 test('versions: terrain colour v2 names the climate model it reads',()=>{
-  assert.equal(TERRAIN_VERSION,'terrain-1.7.0-climate-colour');
+  // Re-pinned for P4-RELIEF (terrain-1.8.0-relief, surface-climate-1.1-geo-g).
+  assert.equal(TERRAIN_VERSION,'terrain-1.8.0-relief');
   assert.equal(TERRAIN_CLIMATE_VERSION,CLIMATE_VERSION);
-  assert.equal(CLIMATE_VERSION,'surface-climate-1');
+  assert.equal(CLIMATE_VERSION,'surface-climate-1.1-geo-g');
 });
 
 test('water-world land colour === waterWorldLandColour(climate at post-landform height) x grain, 20k land directions x 4 worlds',()=>{
@@ -96,6 +97,24 @@ test('climate zones read as distinct colours on Maithea (forest green, alpine me
     else if(o.treeline01===0&&o.warmestMonthK>CLIMATE_CALIBRATION.T_TREE_WARMEST_K-CLIMATE_CALIBRATION.TREE_RAMP_K&&o.aridity01<.2)zones.meadow.push(c);
     else if(o.warmestMonthK<CLIMATE_CALIBRATION.T_TREE_WARMEST_K-2*CLIMATE_CALIBRATION.TREE_RAMP_K&&s.groundHeightM>800)zones.fell.push(c);
     else if(o.treeline01>=1&&o.aridity01>=1)zones.dry.push(c);
+  }
+  // terrain-1.8.0-relief: Maithea's relief summits (max ~5.9 km) no longer reach
+  // the snow-free cold band the fell colour paints (it sat at ~6.5 km on the
+  // terrain-1.7 field); measured 0 fell samples at 60k, 240k and 600k terrain
+  // directions. The fell colour is therefore also exercised on climate columns:
+  // land directions x heights 800 m .. bodyHeightBoundM(Maithea).maxM every
+  // 250 m (heights the relief field can reach). Thresholds are unchanged.
+  if(zones.fell.length<=20){
+    const maxM=bodyHeightBoundM(body).maxM;
+    for(let i=0;i<4096;i++){
+      const d=fib(i,4096),s=sample(d);if(s.ocean)continue;
+      for(let h=800;h<=maxM;h+=250){
+        climate(d,h,o);
+        if(o.snowFraction>0||o.forestSuitability01>.8)continue;
+        if(o.treeline01===0&&o.warmestMonthK>CLIMATE_CALIBRATION.T_TREE_WARMEST_K-CLIMATE_CALIBRATION.TREE_RAMP_K&&o.aridity01<.2)continue;
+        if(o.warmestMonthK<CLIMATE_CALIBRATION.T_TREE_WARMEST_K-2*CLIMATE_CALIBRATION.TREE_RAMP_K)zones.fell.push(waterWorldLandColour(o,h));
+      }
+    }
   }
   const mean=a=>[0,1,2].map(k=>a.reduce((s,c)=>s+c[k],0)/a.length);
   const m=Object.fromEntries(Object.entries(zones).map(([k,v])=>{assert.ok(v.length>20,`${k} zone has ${v.length} samples`);return [k,mean(v)];}));
