@@ -1,5 +1,27 @@
 # Universe Atlas
 
+## Fauna face and eye round — 2026-10-03 (local, not deployed)
+
+Creature Lab's **composer** now builds the face it shows. The trunk is a face
+type: **Proboscis** grows a jointed trunk out of the muzzle, and the separate
+Trunk control is gone. Eyes have **types** (round, horizontal and vertical-slit
+pupils, compound eyes on mandibles, eyespots on worm-like heads) with an iris,
+a shaped pupil, a lid and a wet highlight, so they read on dark coats too.
+Headgear now follows the face: beaks grow a casque instead of horns, primate
+and blunt faces carry none, and horns root on the brow beside the ears. Planet
+**padded** animals no longer grow forehead horns.
+
+Old links still open. A choice the face cannot build shows a "Not built: …"
+note instead of being dropped silently. Three hybrid presets were redesigned
+so that what they show is built: shelled-giraffe-bird has a casque,
+winged-ape-rhino has no nose horn, and trunked-centipede has a proboscis face.
+The redesign is reversible, see the
+[round report](docs/fauna-face-eye-round-2026-10-02.md). Before/after
+close-ups are in
+`test-results/fauna-face-round-2026-10-02/final/contact-sheet-faces*.png`.
+These are desktop renders. Nothing here is validated on GPU hardware or in a
+headset, and the deployed preview below is unchanged.
+
 ## Biome/climate increment 1 — 2026-10-03 (local, not deployed)
 
 Snow, dry belts, treelines and forest now come from **one annual climate
