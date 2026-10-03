@@ -120,7 +120,7 @@ export function deferUndrawnRefreshes(unique:Map<string,Tile>,patches:ReadonlyMa
   for(const [key,tile] of deferred){unique.delete(key);unique.set(key,tile);}
 }
 // <render-bounds>
-// Render bounds (render-bounds-1, docs/render-bounds-v1.md). This block is
+// Render bounds (render-bounds-1; contract in tests/render-bounds.test.mjs). This block is
 // copied verbatim into the leaf-loop digest's reference build
 // (tests/terrain-leaf-loop-digest.test.mjs), so it only uses names that
 // revision also imports (THREE, Body, V3, Tile, tileKey, tileDirection) plus
