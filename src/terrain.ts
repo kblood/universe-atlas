@@ -292,7 +292,13 @@ export function baseTerrainSampler(body: Body, waterLevelM: number = 0) {
  * returned value is computed by the same expressions, in the same order, as
  * terrain-1.6.0's baseTerrainSampler (pinned by
  * tests/terrain-elevation-identity.test.mjs). */
-function baseTerrainCore(body: Body, waterLevelM: number) {
+type CoreSample = {
+  elevationM: number; ocean: boolean; color: number[] | null; roughness: number;
+  grain: number; localGrain: number;
+  /** R0, only when the core is built with exposeFloor. */
+  floorM?: number; continentalM?: number;
+};
+function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false) {
   const { code, n } = macroNoise(body);
   const sea = 0.37 + body.water * 0.22;
   // R0: the radius scale of the continental coordinate (same value the
@@ -314,22 +320,22 @@ function baseTerrainCore(body: Body, waterLevelM: number) {
       color = mix([185, 175, 128], color, elevationM / 120);
     return mix(color, [216, 228, 226], snow);
   };
-  const sample = (d: V3, deferWaterLand: boolean) => {
+  const sample = (d: V3, deferWaterLand: boolean): CoreSample => {
     const macro = macroHeightCode(code, d);
     if (body.type === "Gas giant") {
       const turbulence = n(d, 9, 24),
         bands = 0.5 + 0.5 * Math.sin(d[1] * 75 + turbulence * 8);
       const fine = n(d, 80, 22);
-      return {
+      const gas: CoreSample = {
         elevationM: 0,
         ocean: false,
         color: mix([135, 98, 68], [225, 197, 153], bands * 0.8 + fine * 0.2) as number[] | null,
         roughness: 1,
         grain: 1,
         localGrain: 1,
-        floorM: 0,
-        continentalM: 0,
       };
+      if (exposeFloor) { gas.floorM = 0; gas.continentalM = 0; }
+      return gas;
     }
     const coast =
       macro + (n(d, 42, 5) - 0.5) * 0.012 + (n(d, 90, 6) - 0.5) * 0.003;
@@ -346,10 +352,8 @@ function baseTerrainCore(body: Body, waterLevelM: number) {
     elevationM =
       clamp(elevationM, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
     // R0 (additive): the regional floor is exactly the clamped, scaled value
-    // above; the continental coordinate repeats the first term of that sum on
-    // its own (it does not feed elevationM).
+    // above (the continental coordinate is derived below, opt-in only).
     const floorM = elevationM;
-    const continentalM = (body.water ? (coast - sea) * 47000 : (macro - 0.46) * 44000) * continentalScale;
     // Metre-based wavelengths, shared by collision, orbit previews and tiles.
     // Positive land detail fades to zero at sea level, preserving every coast.
     const landDetail = body.water ? clamp(elevationM / 700) : 1;
@@ -384,16 +388,21 @@ function baseTerrainCore(body: Body, waterLevelM: number) {
     }
     const grain = 0.91 + n(d, 115, 35) * 0.18;
     const localGrain = ocean ? 1 : .88 + n(d, body.radiusM / 800, 74) * .24;
-    return {
+    const out: CoreSample = {
       elevationM,
       ocean,
       color: color ? color.map((v) => clamp(v * grain * localGrain, 0, 255)) : null,
       roughness: ocean ? WET_SURFACE_ROUGHNESS : DRY_SURFACE_ROUGHNESS,
       grain,
       localGrain,
-      floorM,
-      continentalM,
     };
+    if (exposeFloor) {
+      // R0: the continental coordinate repeats the first term of the
+      // elevation sum on its own (it never feeds elevationM).
+      out.floorM = floorM;
+      out.continentalM = (body.water ? (coast - sea) * 47000 : (macro - 0.46) * 44000) * continentalScale;
+    }
+    return out;
   };
   return { sample, legacyWaterLandColour };
 }
@@ -530,7 +539,7 @@ export function terrainSampler(
   onOceanThreshold?: (heightM:number)=>void,
   exposeFloor: boolean = false,
 ) {
-  const core = baseTerrainCore(body, waterLevelM);
+  const core = baseTerrainCore(body, waterLevelM, exposeFloor);
   const landforms=planetLandforms(body);
   const candidates = regions.length > 1 ? [...regions].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0) : regions;
   // `includeCraters=false` skips building a CraterField at all (not merely
@@ -610,9 +619,9 @@ export function terrainSampler(
     // R0 (opt-in, terrainFloorSampler): the default sample keeps its
     // historical field set exactly (tests deep-compare it).
     if (exposeFloor) {
-      baseline.floorM = sample.floorM;
-      baseline.windowM = uncrateredHeightM - sample.floorM;
-      baseline.continentalM = sample.continentalM;
+      baseline.floorM = sample.floorM!;
+      baseline.windowM = uncrateredHeightM - sample.floorM!;
+      baseline.continentalM = sample.continentalM!;
     }
     if (ocean || !candidates.length) return baseline;
     // This versioned physical surface drives tiles and collision. River
@@ -648,9 +657,9 @@ export function terrainSampler(
         influence: river.influence,
       };
       if (exposeFloor) {
-        regional.floorM = sample.floorM;
-        regional.windowM = uncrateredHeightM - sample.floorM;
-        regional.continentalM = sample.continentalM;
+        regional.floorM = sample.floorM!;
+        regional.windowM = uncrateredHeightM - sample.floorM!;
+        regional.continentalM = sample.continentalM!;
       }
       return regional;
     }
