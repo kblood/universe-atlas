@@ -173,7 +173,7 @@ function why(r:ComposerRecipe,key:Key):string{
  if(key==="trunkLength"&&r.head!=="proboscis")return "Only a Proboscis face has a trunk.";
  if(key==="sex"&&r.dimorphism===0)return "This species has no sex differences (Male/female difference is 0).";
  if((key==="patternScale"||key==="patternContrast")&&resolveCoatPattern(r.pattern,r.palette)==="plain")return "A plain coat has no pattern to scale or sharpen.";
- if(key==="iris"&&resolveComposerEyes(r).irisBuilt===null)return "These eyes have no iris (compound eyes, simple eyes, eye stalks and eyespots); the colour is kept for other eyes.";
+ if(key==="iris"&&resolveComposerEyes(r).irisBuilt===null)return "No effect: these eyes have no iris (compound eyes, simple eyes, eye stalks, eyespots). The colour stays in the recipe and is used if you choose eyes with an iris.";
  return "";
 }
 /** Information that does not disable the control. */

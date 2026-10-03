@@ -78,7 +78,7 @@ await withGpuLock({owner:'composer-independent-ui',timeoutMs:60000,staleMs:Infin
   await page.selectOption('#composer-preset','centipede');await settle();
   assert.equal(await textOf('iris','auto'),'Automatic (no iris)');assert.match(await textOf('iris','red'),/ — no effect \(no iris\)$/);assert.match(await textOf('eyes','round'),/ — unusual here$/);
   assert(await page.locator('#composer-iris-built').isHidden(),'no swatch without an iris');
-  assert(await page.locator('#composer-iris').isDisabled(),'the iris select is disabled without an iris');assert.match(await page.locator('#composer-iris-why').innerText(),/^These eyes have no iris/);
+  assert(await page.locator('#composer-iris').isDisabled(),'the iris select is disabled without an iris');assert.match(await page.locator('#composer-iris-why').innerText(),/^No effect: these eyes have no iris/);
   // legacy v1 trunk links through the real Lab
   const v1=JSON.parse(await readFile(new URL('./fixtures/composer-v1-links.json',import.meta.url),'utf8')).presets;
   const openLink=async text=>{const u=new URL(target.href);u.search='';u.searchParams.set('mode','composer');u.searchParams.set('recipe',text);await page.goto(u.href,{waitUntil:'networkidle'});return settle();};
