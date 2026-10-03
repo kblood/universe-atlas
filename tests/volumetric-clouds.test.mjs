@@ -8,8 +8,6 @@ import * as THREE from 'three';
 const vite = await createServer({ configFile: false, optimizeDeps: { noDiscovery: true }, server: { middlewareMode: true }, appType: 'custom' });
 const {
   CLOUD_QUALITY,
-  VOLUMETRIC_CLOUDS_VERSION,
-  cloudLayerFrame,
   cloudLayerHeights,
   cloudTransmittance,
   createCloudNoise,
@@ -72,51 +70,6 @@ test('cloud layer heights remain ordered and scale sensibly across body classes'
   assert.ok(small.topM < earthLike.topM, 'small worlds use a proportionally thinner deck');
   const giant = cloudLayerHeights({ ...terrestrial, gasGiant: true });
   assert.ok(giant.topM > earthLike.topM);
-});
-
-test('cloud-volume-3: the deck follows gravity, the dated sea level and the land floor', () => {
-  assert.equal(VOLUMETRIC_CLOUDS_VERSION, 'cloud-volume-3');
-  const earth = cloudLayerHeights({ ...terrestrial, surfaceGravityMS2: 9.81, temperatureK: 288 });
-  assert.deepEqual(earth, { baseM: 800, lowTopM: 4200, highBaseM: 6500, topM: 8500 }, 'Earth gravity at 288 K is the reference deck');
-  const light = cloudLayerHeights({ ...terrestrial, surfaceGravityMS2: 3, temperatureK: 288 });
-  const heavy = cloudLayerHeights({ ...terrestrial, surfaceGravityMS2: 18, temperatureK: 288 });
-  assert.ok(light.topM > earth.topM && earth.topM > heavy.topM, 'deck height scales with the scale height');
-  assert.ok(Math.abs(cloudLayerHeights({ ...terrestrial, surfaceGravityMS2: 0.1, temperatureK: 288 }).topM / 8500 - 2.5) < 1e-12, 'scale height capped at 2.5x');
-  const sunk = cloudLayerHeights({ ...terrestrial, seaLevelM: -4000 });
-  assert.equal(sunk.baseM, cloudLayerHeights(terrestrial).baseM - 4000, 'the deck rides the dated sea level');
-  const peaks = cloudLayerHeights({ ...terrestrial, surfaceGravityMS2: 9.81, temperatureK: 288, landTopM: 16766 });
-  assert.ok(peaks.topM >= 16766 + 500 - 1e-9 && Math.abs(peaks.baseM / peaks.topM - 800 / 8500) < 1e-12, 'the whole deck is stretched above p99 land');
-  for (const h of [light, heavy, sunk, peaks]) assert.ok(h.baseM < h.lowTopM && h.lowTopM < h.highBaseM && h.highBaseM < h.topM);
-  const clouds = new VolumetricClouds({ ...terrestrial, surfaceGravityMS2: 9.81, temperatureK: 288 }, new THREE.Group());
-  try {
-    const sun = new THREE.Vector3(1, 0, 0);
-    clouds.update('s', 'a', 0n, sun, -2500);
-    assert.equal(clouds.diagnostics().seaLevelM, -2500);
-    assert.deepEqual(clouds.diagnostics().layers, cloudLayerHeights({ ...terrestrial, surfaceGravityMS2: 9.81, temperatureK: 288, seaLevelM: -2500 }));
-    assert.ok(Math.abs(clouds.material.uniforms.heights.value.x - (-1.7)) < 1e-9, 'shader heights (km) follow the sea level');
-    assert.deepEqual(clouds.diagnostics().frame, { baseM: -2500, stretch: 1 });
-    assert.deepEqual(clouds.material.uniforms.deckFrame.value.toArray(), [-2.5, 1], 'shader deck frame (km, stretch) follows the sea level');
-  } finally { clouds.dispose(); }
-});
-
-test('cloud-volume-3: a stretched deck keeps the reference column and billow size', () => {
-  const earth = { ...terrestrial, surfaceGravityMS2: 9.81, temperatureK: 288 };
-  assert.deepEqual(cloudLayerFrame(earth), { baseM: 0, stretch: 1 }, 'the reference deck is unstretched');
-  for (const params of [{ ...terrestrial, surfaceGravityMS2: 2.55, temperatureK: 288 }, { ...earth, landTopM: 16766, seaLevelM: -1200 }]) {
-    const h = cloudLayerHeights(params), f = cloudLayerFrame(params), ref = cloudLayerHeights({ ...params, surfaceGravityMS2: 9.81, temperatureK: 288, landTopM: undefined, seaLevelM: 0 });
-    assert.ok(f.stretch > 1);
-    // Every stretched layer height maps back onto the reference deck.
-    for (const k of ['baseM', 'lowTopM', 'highBaseM', 'topM']) assert.ok(Math.abs((h[k] - f.baseM) / f.stretch - ref[k]) < 1e-6, k);
-  }
-  // The raymarch samples the reference frame and divides extinction by the stretch.
-  const clouds = new VolumetricClouds({ ...terrestrial, surfaceGravityMS2: 2.55, temperatureK: 288 }, new THREE.Group());
-  try {
-    for (const material of [clouds.material, clouds.resolveMaterial]) {
-      const source = material.fragmentShader;
-      assert.ok(source.includes('(h-deckFrame.x)/deckFrame.y') && source.includes('*extinctionScale/deckFrame.y'), 'reference-frame sampling and column-preserving extinction');
-    }
-    assert.equal(clouds.material.uniforms.deckFrame.value.y, cloudLayerFrame({ ...terrestrial, surfaceGravityMS2: 2.55, temperatureK: 288 }).stretch);
-  } finally { clouds.dispose(); }
 });
 
 test('seeded 3D cloud shape texture is deterministic and has resolved spatial variation', () => {

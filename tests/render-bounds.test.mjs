@@ -1,6 +1,7 @@
 // render-bounds-1 (relief round 2026-10, P5-RENDER-BOUNDS): conservative but
 // tight tile bounds, the per-tile horizon, the seabed-distance detail policy,
-// landing/cloud heights from the body's own height bound.
+// landing heights from the body's own height bound. (The cloud-deck part of
+// plan (E) is deferred until P4 lowers relief: see the P5 report.)
 //
 // Sample sizes are environment-tunable so the evidence run can use the plan's
 // full counts (RENDER_BOUNDS_TILES=2000 RENDER_BOUNDS_RATIO_TILES=200
@@ -9,18 +10,14 @@ import {test,before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {rendererModule,createRenderer,nextTurn} from './terrain-renderer-fixture.mjs';
-import {galaxies,refByAddress,system,sector} from '../src/catalog.ts';
+import {galaxies,refByAddress,system} from '../src/catalog.ts';
 import {buildTile,readTileMetadata,directionTile,tileDirection,tileKey} from '../src/planet-tiles.ts';
 import {peakCorrectionMaxLevel} from '../src/lod-ladder.ts';
-import {createServer} from 'vite';
-import * as NODE_THREE from 'three';
 import {terrainSampler} from '../src/terrain.ts';
 import {oceanHypsometry,fibonacciDirection} from '../src/ocean-volume.ts';
 import {oceanPatchCullProof} from '../src/ocean-patch-culling.ts';
-import {planetGeophysics} from '../src/planet-geophysics.ts';
 import {placeAt} from '../src/place-query.ts';
 import {CATALOGUE_EPOCH_NS} from '../src/world-time.ts';
-import {cloudScaleHeightRatio,createCloudShell,CLOUD_LAND_CLEARANCE_M} from '../src/planet-clouds.ts';
 
 const TILES=Number(process.env.RENDER_BOUNDS_TILES||120),RATIO_TILES=Number(process.env.RENDER_BOUNDS_RATIO_TILES||40),POSES=Number(process.env.RENDER_BOUNDS_POSES||125);
 const g0=galaxies('LETHRA-001')[0];
@@ -202,48 +199,6 @@ test('landing finds a site on all four worlds and never above the summit ceiling
     out[name]={ceilingM:ceiling,referenceM:ref,p99M:p99,siteHeightsM:picks};
   }
   report.landing=out;
-});
-
-test('cloud decks scale with gravity, follow the dated sea level and clear p99 land on the corpus',async()=>{
-  // Through Vite's TS transform, like tests/volumetric-clouds.test.mjs.
-  const vite=await createServer({configFile:false,optimizeDeps:{noDiscovery:true},server:{middlewareMode:true},appType:'custom'});
-  let cloudLayerHeights,VolumetricClouds;
-  try{({cloudLayerHeights,VolumetricClouds}=await vite.ssrLoadModule('/src/volumetric-clouds.ts'));}finally{await vite.close();}
-  const corpus=[];
-  for(let sx=0;corpus.length<160&&sx<400;sx++)for(const ref of sector(g0,[sx,0,0]).refs){
-    for(const b of system(ref).planets)if(b.water>0&&b.type!=='Gas giant')corpus.push(b);
-    if(corpus.length>=160)break;
-  }
-  for(const w of WORLDS)corpus.push(w.body);
-  let worst=Infinity,minSh=Infinity,maxSh=0;
-  for(const body of corpus){
-    const params={hasAtmosphere:true,hasOcean:true,gasGiant:false,temperatureK:body.temperatureK,radiusM:body.radiusM,spinPeriodS:86400,
-      surfaceGravityMS2:planetGeophysics(body).surfaceGravityMS2,landTopM:RB.landPercentileM(body,.99)};
-    const p99=params.landTopM;if(!Number.isFinite(p99))continue;
-    for(const seaLevelM of [0,-4500]){
-      const h=cloudLayerHeights({...params,seaLevelM}),shell=createCloudShell({...params,seaLevelM},8,4);
-      const shellTop=(shell.mesh.geometry.parameters.radius-1)*body.radiusM;shell.dispose();
-      assert.ok(h.baseM<h.lowTopM&&h.lowTopM<h.highBaseM&&h.highBaseM<h.topM);
-      assert.ok(h.topM>=p99+CLOUD_LAND_CLEARANCE_M-1e-6&&shellTop>=p99+CLOUD_LAND_CLEARANCE_M-1e-3,`${body.id}: deck ${h.topM}/${shellTop} vs p99 land ${p99}`);
-      assert.ok(h.baseM>=seaLevelM,'the deck starts above the dated sea');
-      worst=Math.min(worst,h.topM-p99);
-    }
-    const sh=cloudScaleHeightRatio(params);minSh=Math.min(minSh,sh);maxSh=Math.max(maxSh,sh);
-  }
-  // Low gravity raises the deck; airless bodies and gas giants keep sh = 1.
-  const base={hasAtmosphere:true,hasOcean:true,temperatureK:288,radiusM:6e6,spinPeriodS:86400};
-  assert.ok(cloudLayerHeights({...base,surfaceGravityMS2:3}).topM>cloudLayerHeights({...base,surfaceGravityMS2:9.81}).topM);
-  assert.equal(cloudScaleHeightRatio({...base,hasAtmosphere:false,surfaceGravityMS2:3}),1);
-  assert.equal(cloudScaleHeightRatio({...base,gasGiant:true,surfaceGravityMS2:3}),1);
-  assert.deepEqual(cloudLayerHeights(base),{baseM:800,lowTopM:4200,highBaseM:6500,topM:8500},'defaults keep the reference deck');
-  // The renderer moves the deck with the dated sea level each frame.
-  const clouds=new VolumetricClouds({...base,surfaceGravityMS2:9.81},new NODE_THREE.Group());
-  try{
-    clouds.update('s','a',0n,new NODE_THREE.Vector3(1,0,0),-4500);
-    assert.equal(clouds.diagnostics().layers.baseM,-4500+800);
-    assert.ok(Math.abs(clouds.material.uniforms.heights.value.x-(-3.7))<1e-9);
-  }finally{clouds.dispose();}
-  report.clouds={bodies:corpus.length,minTopOverP99M:worst,shRange:[minSh,maxSh]};
 });
 
 test('seabed at -6 km: placeAt and contact-level tiles return the full-detail seabed bit-identical to terrainSampler',()=>{

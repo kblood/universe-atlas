@@ -24,7 +24,6 @@ import {VolumetricClouds,CLOUD_TARGET_BUDGET_BYTES} from './volumetric-clouds.ts
 import {RENDER_QUALITY,type RenderQuality} from './render-quality.ts';
 import {ringSystemFor, ringActiveAt, createRingMesh, type RingSystem} from './planet-rings.ts';
 import {spinStateFor} from './stellar-evolution.ts';
-import {planetGeophysics} from './planet-geophysics.ts';
 import {oceanHypsometry} from './ocean-volume.ts';
 import {CATALOGUE_EPOCH_NS} from './world-time.ts';
 import {prepareFlora, floraFromRecipe, toMyr, buildFloraGeometryData, floraGeometryToBufferGeometry, FLORA_KIND_NAMES, type FloraRecipe, type FloraKind, type FloraBiosphereGate, type FloraBiomeSample, type FloraStage} from './flora-field.ts';
@@ -816,9 +815,6 @@ export class PlanetRenderer {
         temperatureK: body.temperatureK,
         radiusM: body.radiusM,
         spinPeriodS: spinStateFor(body).spinPeriodS,
-        // render-bounds-1 / planet-clouds-2: the deck scales with the scale
-        // height, follows the dated sea level (update) and clears p99 land.
-        ...(gasGiant?{}:{surfaceGravityMS2:planetGeophysics(body).surfaceGravityMS2,landTopM:landPercentileM(body,.99)}),
       },this.group);
     }
     const ringParams = {
@@ -1193,7 +1189,7 @@ export class PlanetRenderer {
     const cacheLimit=contact||this.lowFlightDetail?768:TILE_CACHE_LIMIT,drawLimit=contact?450:this.lowFlightDetail?390:(immersive?102:TILE_DRAW_LIMIT);
     this.eyeHeightUniform.value=(distance-1)*this.body.radiusM;this.sunUniform.value.set(...sun);
     const skyStarted=systemTimer.start();this.atmosphere?.update(eye, new THREE.Vector3(...sun));systemTimer.stop('sky',skyStarted);
-    const cloudsStarted=systemTimer.start();this.clouds?.update(this.body.seed,this.body.id,worldNs,this.sunUniform.value,this.body.water?snappedWaterLevelM:0);systemTimer.stop('clouds',cloudsStarted);
+    const cloudsStarted=systemTimer.start();this.clouds?.update(this.body.seed,this.body.id,worldNs,this.sunUniform.value);systemTimer.stop('clouds',cloudsStarted);
     // Ring existence toggle only -- geometry/texture are baked once at
     // construction (ringSystemFor/createRingMesh are pure functions of the
     // body, not of time), so this is a cheap per-frame boolean, not a rebuild.
