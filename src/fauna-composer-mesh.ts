@@ -1545,8 +1545,8 @@ export const COMPOSER_EYE_CATALOGUE = Object.freeze({
   barMin: 0.62, barMax: 0.17, barSquare: 5,
   /** a vertical slit pupil is at least slitMin (er) half-wide: the 0.08 hairline vanished at normal size */
   slitMin: 0.12,
-  /** a vertical-slit or wide-slit eye is this much larger: at the preset size the slit was unreadable on a big
-   * crocodilian head and the cat's iris on a long muzzle */
+  /** a vertical-slit, wide-slit or W-pupil eye is this much larger: at the preset size the slit was unreadable on a
+   * big crocodilian head, the cat's iris on a long muzzle and the cuttlefish W on a horse */
   slitSize: 1.25,
   /** chameleon turret axis = look + turretNormal x the skull normal (normalised): nearly the normal */
   turretNormal: 4,
@@ -1641,7 +1641,7 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
       : role === EYE_ROLE.pseudopupil ? scaleC(facet, K.pseudopupil) : scaleC(facet, K.lattice));
 
   if (T.structure === 'camera') {
-    const spec = legibleSpec(catalogueEyeSpec(T)), er = camK * T.size * cH * sizeK * (spec.turret ? K.turretSize : spec.pupil.kind === 'vertical-slit' || spec.pupil.kind === 'slit-wide' ? K.slitSize : 1);
+    const spec = legibleSpec(catalogueEyeSpec(T)), er = camK * T.size * cH * sizeK * (spec.turret ? K.turretSize : ['vertical-slit', 'slit-wide', 'w'].includes(spec.pupil.kind) ? K.slitSize : 1);
     const built: {patch: EyePatch; side: number; centre: EyeVec3; gaze: EyeVec3; hit: RayHit | null; surf: RGB[]}[] = [];
     const Q = K.seat, local = trianglesNear(headTris, [ex, ey, 0], 0.6 * H + 2 * er).tris;
     /** how squarely the skull under the eye faces `look` (see K.seat), -Infinity when the eye would overhang */
