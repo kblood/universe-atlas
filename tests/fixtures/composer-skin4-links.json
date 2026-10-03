@@ -162,13 +162,19 @@
    "skin3": "c791047796766c1348818c6cf297280e4d55a58e53eafb4d958ab7896bcde346"
   },
   "v1*layout_many-legged*legPairs_3*bodyLength_0.7*girth_1.24*posture_0.66*torso_segmented*neckLength_0.2*head_jaws*headSize_1.31*snoutLength_0.17*horns_nasal*legs_pillar*legLength_0.3*feet_paw*arms_grasping*armLength_1.08*hands_pincer*tail_feather-fan*tailLength_1.08*armor_none*wings_none*wingSpan_1.07*trunk_none*trunkLength_0.89*palette_ink*colorSeed_530": {
-   "skin": "783ff0f4761650961c5e043d8b82e36c36542b60fe37c47bb18046cf926cfa55",
-   "gloss": "282172c4c759300d94e95ebe6b293e8b782a4e3f3c4a2c46c58163afb43d9b90",
-   "vertices": 9960,
-   "triangles": 19460,
+   "skin": "e213c299b9056833159ef2d7d4bb848be78df211ad7dfa686074bdddc3472e57",
+   "gloss": "36e00963cb67b8e04209f62b294af32d5d1423ed7e0b0b632b26bf01f91bd137",
+   "vertices": 9820,
+   "triangles": 19180,
    "bones": 34,
    "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
-   "skin3": "576faf00b4768668cc4d39af394ba97130db674b52c86acb7b0a55760ddf95a6"
+   "skin3": "3d099889f456096725edd975736d888facfba655b5f79d31b5b4c216232a46a2",
+   "skinPreEC4": "783ff0f4761650961c5e043d8b82e36c36542b60fe37c47bb18046cf926cfa55",
+   "glossPreEC4": "282172c4c759300d94e95ebe6b293e8b782a4e3f3c4a2c46c58163afb43d9b90",
+   "verticesPreEC4": 9960,
+   "trianglesPreEC4": 19460,
+   "skin3PreEC4": "576faf00b4768668cc4d39af394ba97130db674b52c86acb7b0a55760ddf95a6",
+   "ec4Drift": "EC4 (graph-4): arms of a limbless or many-legged body rest beside and behind the head instead of in front of the face"
   },
   "v1*layout_biped*legPairs_1*bodyLength_0.32*girth_0.92*posture_0.8*torso_flat*neckLength_0.11*head_muzzle*headSize_1.02*snoutLength_0.31*horns_ossicones*legs_unguligrade*legLength_1.6*feet_pad*arms_none*armLength_0.41*hands_pincer*tail_reptile*tailLength_0.71*armor_plates*wings_none*wingSpan_2.67*trunk_none*trunkLength_0.57*palette_plumage*colorSeed_3620": {
    "skin": "67c46b9e6c79b3d5740bddd27d9d1cf635edde60764a08165bf938a92946626c",
@@ -277,10 +283,11 @@
   "graph": "fauna-composer-graph-4",
   "skin": "fauna-composer-skin-4",
   "faceGeometry": "fauna-composer-face-geometry-2",
-  "changed": 1,
+  "changed": 2,
   "of": 28,
   "reasons": {
-   "EC4 (graph-4, face-geometry-2): proboscis head polish: thicker trunk base, shorter hanging trunk with a J curl clear of the ground, fast taper, 16-segment trunk, nostril tip, lofted flap ears": 1
+   "EC4 (graph-4, face-geometry-2): proboscis head polish: thicker trunk base, shorter hanging trunk with a J curl clear of the ground, fast taper, 16-segment trunk, nostril tip, lofted flap ears": 1,
+   "EC4 (graph-4): arms of a limbless or many-legged body rest beside and behind the head instead of in front of the face": 1
   },
   "note": "Eye round EC4 (head polish) repin in place: graph-4 / face-geometry-2 rebuilt the proboscis trunk and ears and moved the rest arms of limbless and many-legged bodies off the face. These are not eye rules, so they apply under both eye-rule epochs. Every drifted entry keeps its earlier history, records the replaced pin (skinPreEC4, glossPreEC4, verticesPreEC4, trianglesPreEC4) and says why (ec4Drift). Bone counts are unchanged. The skin version string stays fauna-composer-skin-4 (unreleased in this round); the graph and face-geometry versions carry the change."
  }

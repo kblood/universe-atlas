@@ -718,10 +718,18 @@ function solveLeg(limb: ComposerLimb, socket: THREE.Vector3, contact: THREE.Vect
   // points: socket, knee, (hock), ankle; frames for each segment + foot (origin = ankle)
   return {points: points.slice(0, s.length + 1), frames, reachError, extension: socket.distanceTo(hock) / (s[0]! + s[1]!)};
 }
+/** Rest hand target of an axial body's arms, in arm reaches from the shoulder: [forward, up, outward] (graph-4). */
+export const AXIAL_ARM_REST = Object.freeze([-0.2, -0.35, 0.75]);
+/** Display arm raise from the rest target, in arm reaches: [forward, up, outward] (graph-3: [0.35, 0.55, 0]). */
+export const DISPLAY_ARM_RAISE = Object.freeze([-0.2, 0.9, 0.5]);
 function armRestTarget(recipe: ComposerRecipe, limb: ComposerLimb, shoulder: THREE.Vector3): THREE.Vector3 {
   const reach = limb.segments[0]! + limb.segments[1]!;
   let t: THREE.Vector3;
   if (recipe.layout === 'biped' && recipe.arms === 'grasping') t = shoulder.clone().add(V(0.12 * reach, -0.86 * reach, limb.side * 0.12 * reach));
+  // graph-4 (EC4): the arms of a long axial body (limbless, many-legged) sit on its front segment right behind a small
+  // head, so reaching forward put forearms and hands in front of the face (GPT Luna 6 on wild seed 40: "black shapes
+  // look like wings or limbs passing in front of and around the head"); they rest out to the side and back instead
+  else if (recipe.layout === 'limbless' || recipe.layout === 'many-legged') t = shoulder.clone().add(V(AXIAL_ARM_REST[0] * reach, AXIAL_ARM_REST[1] * reach, limb.side * AXIAL_ARM_REST[2] * reach));
   else t = shoulder.clone().add(V(0.5 * reach, -0.42 * reach, limb.side * 0.1 * reach));
   const floor = limb.segments[2]! + limb.segments[3]! + 0.02 * reach;
   if (t.y < floor) t.y = floor;
@@ -915,7 +923,9 @@ export function poseComposer(graph: ComposerGraph, motion: ComposerMotion, time:
       if (swing > 0) target.x += swing * 0.22 * reach * Math.cos(TAU * (cycle + limb.phase));
     }
     if (idle) { curl = 0.35 + 0.25 * Math.sin(TAU * t / 2.8 + limb.side); }
-    if (display) { target.add(V(0.35 * reach, 0.55 * reach + 0.1 * reach * Math.sin(TAU * t / 1.7 + limb.side), 0)); curl = 0.9 + 0.5 * Math.sin(TAU * t / 1.3); wrist = -0.3; }
+    // display raises the arms forward and up; graph-4 (EC4) spreads them sideways so the raised hands frame the face
+    // instead of passing in front of it
+    if (display) { target.add(V(DISPLAY_ARM_RAISE[0] * reach, DISPLAY_ARM_RAISE[1] * reach + 0.1 * reach * Math.sin(TAU * t / 1.7 + limb.side), limb.side * DISPLAY_ARM_RAISE[2] * reach)); curl = 0.9 + 0.5 * Math.sin(TAU * t / 1.3); wrist = -0.3; }
     const floor = limb.segments[2]! + limb.segments[3]! + 0.02 * reach;
     if (target.y < floor) target.y = floor;
     const grip = recipe.hands === 'pincer' ? Math.max(0, curl) * 0.6 : curl;

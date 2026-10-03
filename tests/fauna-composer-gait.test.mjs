@@ -246,9 +246,11 @@ test('neutral identity: neutral recipes build the graph-1 rest skeleton bit for 
   // Exactly 17 of the 435 rest digests changed and all 17 are proboscis faces (own head proportions; the trunk grows from
   // the muzzle tip station along the head axis, its bone frames keep +Z lateral past vertical), compared recipe by recipe against 179485c; the other 418 are bit-identical.
   // Eye round EC4 repin (graph-4, fauna-composer-face-geometry-2, base d403279): was 5bac90d9db270f0b9191b80e5038c1df9403c3fe17989f855ba45c79fe55d4a9.
-  // Exactly 17 of the 435 rest digests changed and all 17 are proboscis faces (shorter trunk, fast taper from a thicker
-  // base, hanging rest shape with a J curl clear of the ground), compared recipe by recipe against d403279; the other 418 are bit-identical.
-  assert.equal(createHash('sha256').update(per.join('')).digest('hex'), '177c8e4e2508fea9d8e527b994454292ef872bc83f4144957f122411a8dd879f');
+  // Exactly 44 of the 435 rest digests changed, compared recipe by recipe against d403279; the other 391 are bit-identical:
+  // 17 proboscis faces (shorter trunk, fast taper from a thicker base, hanging rest shape with a J curl clear of the
+  // ground) and 30 limbless or many-legged bodies with arms (the arms rest beside and behind the head, AXIAL_ARM_REST),
+  // 3 recipes being both.
+  assert.equal(createHash('sha256').update(per.join('')).digest('hex'), '4d213b4c16522c1b468733b496f00bf00cceafcb86820b5c2219d420a8dc1421');
   const presets = {dinosaur: '5ca42245ef7eb62a', turtle: '71aec60226a20f4e', giraffe: 'f0f50d9d7a17e692', bird: '077f406187aae8b6', ostrich: '1739d106b47409a7', rhinoceros: '5ba09676464c8b12',
     ape: '285e7a12f65178dc', worm: '480f8d770ed23553', centipede: 'f4cba80e3fac0914', 'shelled-giraffe-bird': '4570c2077e2a062d', 'trunked-centipede': '2f966be2032497a2', 'winged-ape-rhino': 'f83279ddbffb2dd6'};
   Object.keys(COMPOSER_PRESETS).forEach((id, i) => assert.equal(per[i].slice(0, 16), presets[id], id));

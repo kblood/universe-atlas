@@ -130,12 +130,15 @@ test('legacy recipes: migrated neutral v1 texts with the earlier eye rules build
     }
     const derived = deriveComposerIndividual({...neutral, eyeRules: 1});
     assert.equal(derived.traits.neutral, true, text);
-    // eye round EC4 (head polish; not an eye rule, so under both epochs) repinned the proboscis entries in place
+    // eye round EC4 (head polish; not an eye rule, so under both epochs) repinned in place the proboscis entries and
+    // those whose arms sit on a long axial body
     if (pinned.ec4Drift) {
       ec4Repinned++;
       assert.notEqual(pinned.skinPreEC4, pinned.skin, `${text}: an EC4 repin must differ from the pin it replaces`);
-      assert.equal(derived.recipe.head, 'proboscis', `${text}: an EC4 repin without an EC4 cause`);
-      assert.ok(pinned.ec4Drift.startsWith('EC4 (graph-4, face-geometry-2): proboscis head polish'), text);
+      const r = derived.recipe, axialArms = (r.layout === 'limbless' || r.layout === 'many-legged') && r.arms !== 'none';
+      assert.ok(r.head === 'proboscis' || axialArms, `${text}: an EC4 repin without an EC4 cause`);
+      assert.equal(pinned.ec4Drift.includes('proboscis head polish'), r.head === 'proboscis', text);
+      assert.equal(pinned.ec4Drift.includes('arms of a limbless or many-legged body'), axialArms, text);
     }
     const graph = buildComposerGraph(derived.recipe), skin = buildComposerSkin(graph);
     assert.equal(digest(skin.positions, skin.index, skin.skinIndex, skin.skinWeight, skin.colors), pinned.skin, text);
