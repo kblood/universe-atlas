@@ -76,8 +76,8 @@
    "text": "v4*layout_sprawled*legPairs_2*bodyLength_1*girth_0.97*posture_0.7*torso_flat*neckLength_0.3*head_jaws*headSize_1.12*snoutLength_1*horns_none*legs_plantigrade*legLength_0.53*feet_hand*arms_none*armLength_0.6*hands_hand*tail_reptile*tailLength_1.34*armor_none*wings_none*wingSpan_1.15*trunk_none*trunkLength_0.8*palette_olive*colorSeed_6159*pattern_bands*marks_0*patternScale_1.5*patternContrast_1*countershade_0.65*dimorphism_0.15*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_chameleon*iris_auto*eyeRules_2",
    "kind": "chameleon",
    "eyeRules": 2,
-   "skin": "bf1dd610dc29f9d9af7ef2ad8a1667ad6398ff9e44e8435eef3f9fe45ebc1b43",
-   "gloss": "802df2d2937e812e6c74621f8807e59cc685b97fc98b66e1e39e6101d3a3e8a8",
+   "skin": "e7cb796931439f2c7d7b4399a992c133a591fea7be2be77f2e94f93c02c9f074",
+   "gloss": "40478c105f86e25272a814432d75829cef5103e9f28685b071e74750986d4234",
    "vertices": 8764,
    "triangles": 17208,
    "bones": 26

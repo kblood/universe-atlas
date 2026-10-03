@@ -1532,8 +1532,8 @@ export const COMPOSER_EYE_CATALOGUE = Object.freeze({
   /** chameleon turret skin: a little paler than the coat under it; the aperture (pupil, iris, limbus and opening) this
    * much wider than the preset's pinhole, ringed with a pale rim, and the cone's shoulder and aperture rim (er) set so
    * the turret reads as a cone with a hole at normal size, not as a smooth knob */
-  turretGain: 1.2, turretOpen: 1.6, turretRim: [0.80, 0.72, 0.45] as RGB, turretRimMix: 0.55,
-  turretShape: {w: 0.72, lift: 0.5, aperture: 0.95},
+  turretGain: 1.2, turretOpen: 2, turretRim: [0.80, 0.72, 0.45] as RGB, turretRimMix: 0.5,
+  turretShape: {w: 0.78, lift: 0.62, aperture: 1.3}, turretSize: 1.3, turretStripe: 0.6,
   /** a lidless (spectacle) eye: the skin up to the brille edge is the coat a little darkened, no periocular halo */
   brilleEdge: 0.8,
   /** chameleon turret axis = look + turretNormal x the skull normal (normalised): nearly the normal */
@@ -1624,7 +1624,7 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
       : role === EYE_ROLE.pseudopupil ? scaleC(facet, K.pseudopupil) : scaleC(facet, K.lattice));
 
   if (T.structure === 'camera') {
-    const spec = turretLegible(catalogueEyeSpec(T)), er = camK * T.size * cH * sizeK;
+    const spec = turretLegible(catalogueEyeSpec(T)), er = camK * T.size * cH * sizeK * (spec.turret ? K.turretSize : 1);
     const built: {patch: EyePatch; side: number; centre: EyeVec3; gaze: EyeVec3; hit: RayHit | null; surf: RGB[]}[] = [];
     const Q = K.seat, local = trianglesNear(headTris, [ex, ey, 0], 0.6 * H + 2 * er).tris;
     /** how squarely the skull under the eye faces `look` (see K.seat), -Infinity when the eye would overhang */
@@ -1719,7 +1719,8 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
             return liftTo(spec.disc ? mixC(c, K.disc, K.discMix) : c, K.periocular, Math.max(K.periocularLum, K.periocularOverSkin * luminance(surf[k]!)));
           }
           case EYE_ROLE.brow: return scaleC(surf[k]!, K.brow);
-          case EYE_ROLE.turret: return gainC(surf[k]!, K.turretGain);
+          // radial stripes of paler and darker skin down the cone (the scale rows of a real turret), so it reads as a cone
+          case EYE_ROLE.turret: return (k - patch.rings[6]!) % 2 ? scaleC(surf[k]!, K.turretStripe) : gainC(surf[k]!, K.turretGain);
           case EYE_ROLE.orbit: return surf[k]!;
           default: return [0, 0, 0];
         }

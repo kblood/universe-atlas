@@ -431,7 +431,7 @@ export const CATALOGUE_EYE = Object.freeze({
   shelf: {lift: 0.34, drop: 0.2, orbitLift: 0.16, from: 0.25, to: 0.7},
   raised: {raise: 0.35, cornea: 1.15}, crocodile: {raise: 0.3, palpebral: 0.15},
   disc: {w: 2.1, above: 2.0, below: 2.0, lift: 0.02},
-  turret: {lift: 0.55, aperture: 0.82, orbit: 1.5, lean: 0.4},
+  turret: {lift: 0.55, aperture: 0.82, orbit: 1.25, lean: 0.25, rimGloss: 0.35},
   sclera: {gap: 0.03, opening: 0.97},
   nictitatingDeg: 40, spectacleLift: 0.02, spectacleOuterLift: 0.01,
   /** an outer-lid or orbit vertex whose line along the gaze misses the skull (beyond its silhouette) and whose closest
@@ -621,7 +621,7 @@ function buildCataloguePatch(o: EyePatchOptions, sp: CatalogueEyeSpec): EyePatch
     const z = T ? sc + T.aperture : sp.spectacle ? Math.max(base + E.eyeLift + lift(x, y) + sp.raise, sz + C.spectacleLift) : sz + E.lidLift + sp.raise;
     lidZ.push(z);
     const nict = nictitans(t);
-    push(at(x + lx, y + ly, z), nict ? 'nictitans' : 'lid', T ? 0.9 : sp.spectacle ? 1 : nict ? 0.7 : EYE_GLOSS.lid, hit);
+    push(at(x + lx, y + ly, z), nict ? 'nictitans' : 'lid', T ? C.turret.rimGloss : sp.spectacle ? 1 : nict ? 0.7 : EYE_GLOSS.lid, hit);
   }
   // outer lid (shelf and palpebral bump on its upper arc; turret: the cone's shoulder; sclera layout: on the skin)
   const [ow, oa, ob] = [L.w + sp.outerMargin[0], L.above + sp.outerMargin[1], L.below + sp.outerMargin[2]];

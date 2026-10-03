@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {COMPOSER_PRESET_IDS, composerPreset, decodeComposerRecipe, normalizeComposerRecipe} from '../src/fauna-composer-recipe.ts';
 import {COMPOSER_BUDGET, buildComposerGraph} from '../src/fauna-composer-rig.ts';
-import {COMPOSER_EYE_PITCH_DEG, SPIDER_EYES, buildComposerSkin} from '../src/fauna-composer-mesh.ts';
+import {COMPOSER_EYE_CATALOGUE, COMPOSER_EYE_PITCH_DEG, SPIDER_EYES, buildComposerSkin} from '../src/fauna-composer-mesh.ts';
 import {deriveComposerIndividual} from '../src/fauna-composer-individual.ts';
 import {FACE_EYE_PROFILE, composerEyeProfileId, resolveComposerEyes} from '../src/fauna-composer-face.ts';
 import {CATALOGUE_EYE_KINDS, EYE_PRESETS} from '../src/fauna-composer-eye-catalogue.ts';
@@ -98,7 +98,8 @@ test('chameleon: a turret whose apex stands at least 0.5 er proud and whose aper
   assert.ok(turret.every(v => v[3] === EYE_ROLE.turret) && mean(turret.map(v => v[2])) >= CATALOGUE_EYE.turret.lift - 0.01);
   const cx = p => mean(ring(p, 5).map(v => v[0]));
   assert.ok(Math.abs(cx(straight)) < 1e-9);
-  assert.ok(cx(leaning) > 0.15, `aperture lean ${cx(leaning)}`);
+  // the look's in-plane part is 0.6: the aperture moves CATALOGUE_EYE.turret.lean x 0.6 toward it
+  assert.ok(Math.abs(cx(leaning) - 0.6 * CATALOGUE_EYE.turret.lean) < 1e-9 && cx(leaning) > 0.1, `aperture lean ${cx(leaning)}`);
   // the turret wall and the orbit stay on the skull axis: only the aperture leans
   assert.ok(Math.abs(mean(ring(leaning, 6).map(v => v[0]))) < 1e-9);
 });
@@ -161,8 +162,9 @@ test('camera eyes hug the skull: the orbit ring lies on it and no rim stands in 
       const orbit = ringOff(skin, soup, e, 7), outer = ringOff(skin, soup, e, 6);
       // on the skull, or lifted by the brow shelf's orbit arc
       assert.ok(orbit <= 0.05 + (EYE_PRESETS[kind].brow === 'shelf' ? CATALOGUE_EYE.shelf.orbitLift : 0), `${name} side ${e.side}: orbit ring ${orbit.toFixed(3)} er off the skull`);
-      // the outer lid rises at most a raised orbit or a turret wall above the skull (0.6 er)
-      assert.ok(outer <= 0.6, `${name} side ${e.side}: outer lid ${outer.toFixed(3)} er off the skull`);
+      // the outer lid rises at most a raised orbit's height above the skull (0.6 er); a turret's shoulder its own lift
+      const cap = kind === 'chameleon' ? COMPOSER_EYE_CATALOGUE.turretShape.lift + 0.05 : 0.6;
+      assert.ok(outer <= cap, `${name} side ${e.side}: outer lid ${outer.toFixed(3)} er off the skull`);
     }
   }
 });
