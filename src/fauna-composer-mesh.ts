@@ -1517,12 +1517,16 @@ export const COMPOSER_EYE_CATALOGUE = Object.freeze({
   sclera: [0.72, 0.68, 0.60] as RGB, nictitans: [0.50, 0.42, 0.40] as RGB, nictitansMix: 0.6, brow: 0.85,
   disc: [0.55, 0.50, 0.42] as RGB, discMix: 0.3,
   /** compound eyes: facet floor (luminance, and a multiple of the head skin), lens shades (a, b), lattice and pseudopupil */
-  facetMin: 0.09, facetOverSkin: 3, lens: [1.5, 1.15] as readonly number[], lattice: 0.55, pseudopupil: 0.12,
+  facetMin: 0.15, facetOverSkin: 3, lens: [1.5, 1.15] as readonly number[], lattice: 0.55, pseudopupil: 0.12,
   /** compound domes are this much larger than the face round's (they vanished at normal size) */
   compoundScale: 1.45,
+  /** compound eyes on a mandibles head are larger again: there they read as small bumps */
+  mandibleScale: 1.3,
+  /** how deep (x the dome's depth radius) a compound dome's centre sits under the skin along its gaze */
+  compoundSink: 0.5,
   /** eyespot bead: radius on a worm cap (x craniumHeight) and on any other face (x the camera er); pigment tint (never
    * black), the rim (the skin under it, brightened) and the cap's own eyespot gaze */
-  eyespotR: 0.10, eyespotOnFace: 0.75, pigment: [0.16, 0.05, 0.03] as RGB, pigmentMix: 0.75, rimGain: 1.3,
+  eyespotR: 0.10, eyespotOnFace: 0.75, pigment: [0.40, 0.11, 0.04] as RGB, pigmentMix: 0.85, rimGain: 1.3,
   /** a worm cap's eyespots sit higher and wider than the face round's discs, clear of the mouth disc */
   eyespotYawDeg: 24, eyespotPitchDeg: 42,
   /** simple eyes (spider eyes, ocelli, a snail's stalk tip): near-black glossy lenses with a slightly paler socket rim */
@@ -1747,7 +1751,7 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
     }
   } else if (T.structure === 'compound') {
     // facet domes: the arthropod site on a mandibles head (the face round's), the camera site on any other face
-    const kc = camK * cH * sizeK * T.size, ks = K.compoundScale * sizeK * T.size;
+    const kc = camK * cH * sizeK * T.size, ks = K.compoundScale * sizeK * T.size * K.mandibleScale;
     const er3: [number, number, number] = onMandibles ? [0.07 * H * ks, 0.18 * cH * ks, 0.12 * cW * ks] : [1.05 * kc * K.compoundScale, 1.2 * kc * K.compoundScale, 0.75 * kc * K.compoundScale];
     const yaw = onMandibles ? FACE_EYE_PROFILE.mandibles.gazeYawDeg : cam.gazeYawDeg;
     let facet: RGB = pal.eye;
@@ -1755,7 +1759,8 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
       const gaze = eyeGaze(yaw, COMPOSER_EYE_PITCH_DEG, side), site: EyeVec3 = onMandibles ? [0.45 * H, 0.35 * cH, side * 0.82 * cW] : [ex, ey, side * ez];
       const hit = nearestExit(headTris, site, gaze);
       if (!hit) ctx.fallbacks++;
-      const centre = hit ? addV(hit.point, gaze, -0.35 * er3[2]) : site;
+      // sunk deeper into the skull (sunk 0.35 of its depth, the dome stood off a round head like a flap)
+      const centre = hit ? addV(hit.point, gaze, -K.compoundSink * er3[2]) : site;
       const patch = buildFacetedEye({er3, centre, gaze, up: [0, 1, 0]});
       facet = facetOf(skinAt(hit));
       emit(patch, facetColours(patch, facet), side, eyes.kind, Math.max(...er3), centre, gaze, hit ? hit.point : null);
