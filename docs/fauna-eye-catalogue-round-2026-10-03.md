@@ -80,9 +80,9 @@ GPT Luna 6's face-round reading of the trunks:
 - on the rhinoceros: "especially thin and droops far forward".
 
 What changed:
-- **Base matches the muzzle.** The muzzle tip section went from 0.5 cH × 0.55 cW to 0.72 cH × 0.8 cW (`PROBOSCIS_FACE`). The trunk's first ring is that section (`PROBOSCIS_TRUNK_BASE` 1), so there is no step.
+- **Base matches the muzzle.** The muzzle tip section went from 0.5 cH × 0.55 cW to 0.92 cH × 1.02 cW (`PROBOSCIS_FACE`; 0.72 × 0.8 at a9, still "narrow" to Luna on later runs). The trunk's first ring is that section (`PROBOSCIS_TRUNK_BASE` 1), so there is no step.
 - **Shorter.** `PROBOSCIS_TRUNK_LENGTH` is 1.45 head lengths per unit `trunkLength` (graph-3: 2.1). The default 0.8 builds 1.16 head lengths and the review specimens build 1.1–1.6.
-- **Fast taper.** `composerTrunkRadius` is tip 0.3 + 0.7 × (1 − u)^1.6, replacing the linear cone. The result is a thick base and a slender hand.
+- **Fast taper.** `composerTrunkRadius` is tip 0.3 + 0.7 × (1 − u)^1.25, replacing the linear cone. The result is a thick base and a slender hand.
 - **Hangs, then curls.** `composerTrunkRestAngles` / `composerTrunkRestShape`:
   - the trunk droops from the face toward a hang angle and flicks its last bone forward;
   - a trunk too long for the face height curls into a J: the latest start bone, then the smallest curl found by deterministic bisection, that keeps every bone end above its own section;
@@ -92,7 +92,7 @@ What changed:
   - Shallow wrinkle bands (`TRUNK_WRINKLE`).
   - A join blend that eases orientation, section and centre line from the muzzle axis, so the seam normal stays continuous.
   - Hidden junction discs inset to 0.96 (`HIDDEN_DISC_INSET`).
-  - A nostril tip (`buildTrunkTip`): a bulb, a pale lip rim, two dark nostrils and a dorsal finger.
+  - A nostril tip (`buildTrunkTip`): a gentle swelling in the coat colour (a pale pink lip read as "a small, plain-looking cap"), a darkened end face, two dark nostrils and a dorsal finger.
 - **Ears.** The proboscis ear is a lofted flap (`proboscisEar`) with a thick root, a hanging lower lobe and an outward bow. It replaces the flat dark disc that Luna read as "flat dark disc ears".
 - **Budget.** The head group may exceed the WP4 legacy count by up to 800 triangles. The documented allowance is in `tests/fauna-composer-head-geometry.test.mjs`.
 
@@ -174,6 +174,9 @@ Evidence root: `C:/LLM/IWSDK/universe-atlas/test-results/fauna-eye-round-2026-10
 | a3, a5, a7 | `a3/`, `a5/`, `a7/` | rhinoceros and pachyderm PASS; centipede and giraffe FAIL | giraffe (a5): "several head lengths", and the patterned neck was read as the trunk |
 | a4 | `a4/` | FAIL ×4 | stepped bands, "flat dark disc ears", an abrupt join |
 | **a9 trunk** (`luna/a9-trunk.txt`, prompt `q-trunk-v2.txt`) | `a9/` | **PASS ×4** | reservations: faceting and "stepped bands" are still visible; the centipede and giraffe nostrils: "cannot tell" at this size |
+| after (`luna/after-trunk.txt`), sheets byte-identical to a9 | `after/` (stale for trunks) | rhinoceros, pachyderm PASS; centipede, giraffe FAIL | "the narrow, visibly joined base and plain tip make it read more like an attached tube" -- the a9 PASS did not reproduce |
+| a12 r1 / r2 | `a12/` (base 0.8 × 0.89, pale lip removed) | r1: 1 PASS 3 FAIL; r2: 4 FAIL | "narrow, tube-like base does not read as a natural continuation of the muzzle" |
+| **a13 r1 / r2** (`luna/a13-trunk-r1.txt`, `-r2.txt`) | `a13/` (base 0.92 × 1.02, taper power 1.25) | **PASS ×4 in both runs** | "the trunk reads as a nose growing from the face"; reservations: faceting, centipede tip "capped or blunt from the side" |
 | **a10 seed 40** (`luna/a10-seed40.txt`) | `before/` vs `a10/` wild-composer-40 | before **FAIL**, after **PASS** | before: "several broad black wing or limb shapes cross in front of the eyes and upper face"; after: "In the front panel, the broad side projections sit behind the head ... In the three-quarter panel, no limb visibly crosses the face." "PASS — no wing or limb visibly covers the face." |
 | **a10 blunt** (`luna/a10-blunt.txt`) | `a10/` wild-5-blunt-paired, wild-26-blunt-trunk, preset-worm, odd-sclera-worm | **PASS ×4** | e.g. "It reads as a closed mouth: a narrow line with a lighter lip edge." |
 
@@ -208,7 +211,7 @@ The a9 prompt adds one fact: on the giraffe, the patterned diagonal shape is the
 All paths are under `C:/LLM/IWSDK/universe-atlas/test-results/fauna-eye-round-2026-10-03/EC4/`:
 - `before/`: BEFORE close-up sheets at d403279. Trunks, seed 40, blunt and worm specimens, and `contact.png`.
 - `a3/` … `a10/`: iteration sheets.
-- `after/`: final AFTER sheets at the EC4 HEAD. Trunks, seed 40, blunt and worm specimens, and the preset rhinoceros as a non-proboscis control.
+- `a13/`: the final trunk sheets (current HEAD). `after/`: AFTER sheets rendered before a13; their trunk sheets are stale, the seed-40, blunt and worm sheets are current (a13 changed only proboscis). Trunks, seed 40, blunt and worm specimens, and the preset rhinoceros as a non-proboscis control.
 - `luna/`: prompts and outputs.
 - `part-diff/specimens.json`, `part-diff/graph435.json`, `part-diff/skin2.json`.
 
