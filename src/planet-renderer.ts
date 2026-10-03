@@ -275,6 +275,8 @@ export function candidateTileRadii(t:Tile,cos:number,patches:ReadonlyMap<string,
 export function candidateTileSphere(t:Tile,center:THREE.Vector3,patches:ReadonlyMap<string,RbPatch>,body:Body,relief:number,waterLevelM:number){
   const cos=tileCornerCos(t,center),[r0,r1]=candidateTileRadii(t,cos,patches,body,relief,waterLevelM),sphere=shellSphere(center,cos,r0,r1);
   if(body.water&&r0*cos<=1+(waterLevelM+RENDER_WAVE_BOUND_M)/body.radiusM)sphere.radius+=RENDER_WAVE_BOUND_M/body.radiusM;
+  // Float32 storage also moves points sideways, off the radial shell.
+  sphere.radius+=renderF32BoundM(body.radiusM,t.level)/body.radiusM;
   return {r0,r1,sphere};
 }
 /** Horizon and frustum bounds of one tile. Horizon: a point at radius r is
@@ -298,6 +300,15 @@ export function seabedAwareNear(eye:THREE.Vector3,nearest:V3,elevation:number,oc
   let near=Math.hypot(eye.x-nearest[0]*g,eye.y-nearest[1]*g,eye.z-nearest[2]*g);
   if(ocean){const s=1+waterLevelM/R,surface=Math.hypot(eye.x-nearest[0]*s,eye.y-nearest[1]*s,eye.z-nearest[2]*s);if(surface*R<OCEAN_SURFACE_DETAIL_M&&surface<near)near=surface;}
   return Math.max(1e-9,near);
+}
+/** A seabed dive: the eye is over solid ground below the dated sea and lower
+ * than OCEAN_SURFACE_DETAIL_M above that sea (submerged included). Only
+ * there does seabed-distance selection need byte-blocked refinement (a
+ * byte-blocked split pass counts as merge pressure; eviction keeps room for a
+ * whole 4-child split); every other pose keeps the established streaming
+ * frontier tile for tile. `eyeAltitudeM` is above the radius datum. */
+export function renderSeabedDive(body:Body,eyeAltitudeM:number,eyeGroundM:number,waterLevelM:number){
+  return !!body.water&&eyeGroundM<waterLevelM&&eyeAltitudeM<waterLevelM+OCEAN_SURFACE_DETAIL_M;
 }
 // </render-bounds>
 /** The `p` quantile of land heights at or above `seaLevelM` (m, datum 0) on
@@ -1170,8 +1181,11 @@ export class PlanetRenderer {
     const contact=this.contactFocus?new THREE.Vector3(...this.contactFocus).divideScalar(this.body.radiusM):null;
     const contactDirection=contact?.clone().normalize();
     const groundDirection=eye.clone().normalize().toArray() as V3;
-    const groundHeight=this.sample(groundDirection).visibleHeightM;
+    const eyeSurface=this.sample(groundDirection),groundHeight=eyeSurface.visibleHeightM;
     const altitudeM=(distance-1)*this.body.radiusM-groundHeight;
+    // Byte-blocked refinement (render-bounds-1) runs only on a seabed dive:
+    // everywhere else the streaming frontier is the established one.
+    const seabedDive=renderSeabedDive(this.body,(distance-1)*this.body.radiusM,eyeSurface.groundHeightM,snappedWaterLevelM);
     this.lowFlightDetail=!immersive&&altitudeM<PLANET_DETAIL.flightDetailAltitudeM;
     // 390 active walking leaves plus their protected ancestors fit beneath the
     // terrain reserve while leaving admission headroom for newly requested
@@ -1342,10 +1356,10 @@ export class PlanetRenderer {
         // oscillation at L21 while the capsule waited forever for L22.
         if(contact&&((projection.contactNear<28&&parent.level<this.contactLevel)||
           (this.needsFineContact&&projection.contactNear<3&&parent.level<this.fineContactLevel)))continue;
-        // A pass whose splits were byte-blocked is pressure too (render-bounds-1):
-        // a frontier at the split ceiling below the leaf-count trigger otherwise
-        // never refines again, e.g. diving from a 5 km hover to a deep seabed.
-        const pressure=leaves.length>drawLimit-60||this.terrainPressure||this.splitsBlockedByBytes>0;
+        // On a seabed dive a pass whose splits were byte-blocked is pressure
+        // too (render-bounds-1): a frontier at the split ceiling below the
+        // leaf-count trigger otherwise never refines toward the seabed.
+        const pressure=leaves.length>drawLimit-60||this.terrainPressure||(seabedDive&&this.splitsBlockedByBytes>0);
         if(score>(immersive?210:160)&&!(pressure&&score<urgent/4))continue;
         if([0,1,2,3].some(e=>(deepest.get(tileKey(tileNeighbour(parent,e)))??0)>parent.level+1))continue;
         if(!this.patches.has(key))continue;
@@ -1513,9 +1527,10 @@ export class PlanetRenderer {
     // runs when a limit is actually exceeded.
     const inFlight=this.workers.length*2;
     const splitCeiling=terrainAdmission({budgetBytes:terrainBudget,residentBytes:0,pendingTiles:0,inFlight}).splitCeilingBytes;
-    // Room for one whole split (4 children), the unit selection requests;
-    // room for one tile let residency settle where every split is blocked.
-    const overLimit=()=>this.patches.size+this.pending.size>=cacheLimit-2||this.residentBytes+(this.pending.size+4)*PENDING_TILE_BYTES>splitCeiling||
+    // Seabed dive (render-bounds-1): room for one whole split (4 children),
+    // the unit selection requests; room for one tile let residency settle
+    // where every split toward the seabed is blocked.
+    const overLimit=()=>this.patches.size+this.pending.size>=cacheLimit-2||this.residentBytes+(this.pending.size+(seabedDive?4:1))*PENDING_TILE_BYTES>splitCeiling||
       (this.terrainPressure&&this.residentBytes>=terrainBudget*TERRAIN_PRESSURE_EXIT_FRACTION);
     if(overLimit())for (const p of [...this.patches.values()].sort((a,b) => a.touched - b.touched)) {
       if (!overLimit()) break;

@@ -31,7 +31,9 @@ let M,RB,THREE;
 before(async()=>{M=await rendererModule({prefix:'atlas-render-bounds-'});RB=M.module.rendererExports;THREE=M.module.THREE;});
 after(async()=>{await M?.cleanup();if(process.env.RENDER_BOUNDS_REPORT)console.log('RENDER_BOUNDS_REPORT '+JSON.stringify(report));});
 
-let seed=0x2545f491;const rnd=()=>{seed^=seed<<13;seed>>>=0;seed^=seed>>>17;seed^=seed<<5;seed>>>=0;return seed/4294967296;};
+// RENDER_BOUNDS_SEED: an out-of-sample stream (the margins were measured on
+// the default one).
+let seed=Number(process.env.RENDER_BOUNDS_SEED||0x2545f491);const rnd=()=>{seed^=seed<<13;seed>>>=0;seed^=seed>>>17;seed^=seed<<5;seed>>>=0;return seed/4294967296;};
 const randDir=()=>{const z=rnd()*2-1,a=rnd()*2*Math.PI,q=Math.sqrt(1-z*z);return [q*Math.cos(a),q*Math.sin(a),z];};
 const parentOf=t=>({face:t.face,level:t.level-1,x:Math.floor(t.x/2),y:Math.floor(t.y/2)});
 const percentile=(v,p)=>{const s=[...v].sort((a,b)=>a-b);return s[Math.min(s.length-1,Math.floor(p*(s.length-1)+.5))];};
@@ -259,6 +261,22 @@ test('seabed at -6 km: placeAt and contact-level tiles return the full-detail se
   const L=Math.max(peakCorrectionMaxLevel(body.radiusM)+1,18),t=directionTile(dir,L),d=tile(body,t,0);
   for(let y=0;y<=32;y+=4)for(let x=0;x<=32;x+=4)assert.equal(d.surfaceHeight[y*33+x],Math.fround(ts(tileDirection(t,x/32,y/32)).groundHeightM));
   report.seabed={groundHeightM:expected,contactLevel:L};
+});
+
+test('byte-blocked refinement is confined to a seabed dive',()=>{
+  const {body}=WORLDS[0],sea=-250,band=RB.OCEAN_SURFACE_DETAIL_M;
+  // Over a deep seabed: submerged, at the surface and inside the surface band.
+  for(const eye of [-13000,-1,sea,sea+band-1])assert.equal(RB.renderSeabedDive(body,eye,-13500,sea),true,`eye ${eye}`);
+  // Above the band over water, anywhere over land, and on a dry body: never.
+  assert.equal(RB.renderSeabedDive(body,sea+band,-13500,sea),false);
+  assert.equal(RB.renderSeabedDive(body,sea+5,sea+1,sea),false,'coast/land under the eye');
+  assert.equal(RB.renderSeabedDive({...body,water:0},-1,-13500,sea),false);
+  // The standard view poses (orbit, 2.5 km horizon, 20 km flight, 150 m
+  // ground) never meet it, so their streaming frontier is the established
+  // one: test-results/relief-round-2026-10-03/P5-RENDER-BOUNDS/attribution/.
+  const own=readFileSync(new URL('../src/planet-renderer.ts',import.meta.url),'utf8');
+  assert.equal(own.split('||(seabedDive&&this.splitsBlockedByBytes>0)').length,2,'merge pressure gated');
+  assert.equal(own.split('(this.pending.size+(seabedDive?4:1))*PENDING_TILE_BYTES').length,2,'split reserve gated');
 });
 
 test('open-ocean descent: seabed-distance selection draws fewer tiles than surface distance, and refines at the bottom',async()=>{

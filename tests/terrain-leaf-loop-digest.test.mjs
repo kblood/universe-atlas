@@ -35,8 +35,9 @@ function withRequestOrder(source){
 // cached loop. The worktree's own `// <render-bounds>` block is inserted into
 // the reference and its four bound sites call it, so the comparison still
 // isolates the cache. The byte-blocked refinement fix (P5, found by the deep
-// seabed descent) is applied to both the same way. Every anchor must match
-// exactly once.
+// seabed descent) runs only on a seabed dive (renderSeabedDive), which no
+// pose here is, so it needs no swap: the reference keeps its own streaming
+// lines. Every anchor must match exactly once.
 function withRenderBounds(source){
   const current=readFileSync(new URL('../src/planet-renderer.ts',import.meta.url),'utf8').replace(/\r\n/g,'\n');
   const block=current.match(/\/\/ <render-bounds>\n[\s\S]*?\n\/\/ <\/render-bounds>\n/);
@@ -62,10 +63,6 @@ function withRenderBounds(source){
 `,`      const near=seabedAwareNear(eye,nearest,elevation,!!resident?.ocean,this.body,snappedWaterLevelM);
 `],
     ['(distance-1)*this.body.radiusM<20000*this.relief+6000&&','(distance-1)*this.body.radiusM<renderDetailAltitudeM(this.body,this.relief)&&'],
-    // Byte-blocked refinement: a byte-blocked pass is merge pressure, and
-    // eviction keeps room for one whole split (4 children), not one tile.
-    ['const pressure=leaves.length>drawLimit-60||this.terrainPressure;','const pressure=leaves.length>drawLimit-60||this.terrainPressure||this.splitsBlockedByBytes>0;'],
-    ['this.residentBytes+(this.pending.size+1)*PENDING_TILE_BYTES>splitCeiling','this.residentBytes+(this.pending.size+4)*PENDING_TILE_BYTES>splitCeiling'],
   ];
   for(const [from,to] of swaps){
     assert.equal(source.split(from).length,2,`reference render-bounds anchor: ${from.slice(0,60)}`);
