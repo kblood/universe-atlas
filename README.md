@@ -1,5 +1,54 @@
 # Universe Atlas
 
+## Finish round, step 1: test infrastructure merged — 2026-10-04 (local, not deployed)
+
+**Merged:** `work/test-infra`. Astra (gpt-6-astra) built it and Opus reviewed it.
+Policy is in [docs/test-policy.md](docs/test-policy.md). It adds:
+
+- a machine-wide test slot, so only one full suite runs at a time;
+- `npm run test:pkg`, `test:affected` (import-graph selection), `test:full`
+  (reports only failures not listed in `tests/known-failures.json`),
+  `test:perf` (CPU timing caps moved out of `npm test`, run under a quiet-CPU
+  gate), `test:smoke` and `test:life-guard`.
+
+No `src/` code changed. One post-merge fix:
+`tests/test-runner.test.mjs` failed on this checkout, because `test-results`
+here is a junction to another drive. The test now resolves its temp directory's
+real path.
+
+**Checks on main 911a160 (clean tree):**
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` | exit 0 |
+| `npm run test:full` | raw node exit 1; 1257 tests, 1250 pass, 2 fail, 4 skipped, 1 todo; NEW 0 |
+| Golden `node tests/golden/node-run.mjs` vs `golden.json` | identical |
+
+The 2 failures are the known stale SURFACE_VERSION pins in `version-compat`
+and `inland-rivers-disabled`. Evidence is in
+`test-results/finish-round-2026-10-04/coordinator-step1/`.
+
+**Not merged:** `eye-round/EC4`. Astra's readiness review returned
+**fix-required** with two blockers:
+
+1. Its tsc, composer browser suite and full suite results are not tied to an
+   identified tree.
+2. The proboscis triangle allowance was raised from +600 to +800, and the owner
+   has not accepted that change.
+
+The relief branches P4 and P5 are not part of this step.
+
+**OPEN, not passed:**
+
+- the stale version pins;
+- the rocky-corpus Spearman todo;
+- `test:perf` strict variants (not run);
+- EC4's open visual items: seam line, trunk faceting, centipede tip, giraffe
+  framing and winged-seed display cover;
+- the cross-engine golden browser run, which was not run (only the Node digest
+  was compared);
+- headset checks.
+
 ## Fauna face and eye round — 2026-10-03 (local, not deployed)
 
 Creature Lab's **composer** now builds the face it shows. The trunk is a face
