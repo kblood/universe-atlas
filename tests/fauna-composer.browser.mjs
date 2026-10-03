@@ -187,7 +187,7 @@ try {
       await page.waitForFunction(() => document.getElementById('share-status').textContent.length > 0);
       const shared = await page.evaluate(() => window.__creatureLab.specimenUrl), original = await composer(page);
       report.steps.share = {url: shared};
-      check('share url has composer params', /mode=composer/.test(shared) && /recipe=v3/.test(shared) && !/bodyCondition/.test(shared), shared);
+      check('share url has composer params', /mode=composer/.test(shared) && /recipe=v4/.test(shared) && !/bodyCondition/.test(shared), shared);
       const replay = await context.newPage(); replay.on('pageerror', e => errors.push(`replay: ${e.message}`));
       await replay.goto(shared, {waitUntil: 'networkidle'}); await settle(replay);
       const restored = await composer(replay);

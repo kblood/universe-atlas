@@ -297,7 +297,7 @@ test('option hints match FACE_HEADGEAR, the eye rules and the eye catalogue exha
         if (hint) unusual++;
       } else {
         const built = head === 'mandibles' ? 'compound' : head === 'blunt' ? 'eyespot' : resolveComposerEyes({...r, eyes: 'auto'}).kind;
-        assert.equal(hint, ` — built as ${eyeName[built]}${H.earlier}`, `${head}/${eyes}`); assert.equal(resolveComposerEyes({...r, eyes}).built, built);
+        assert.equal(hint, ` — built as ${eyeName[built]}`, `${head}/${eyes}`); assert.equal(resolveComposerEyes({...r, eyes}).built, built);
         earlierBuilt++;
       }
       assert.equal(composerOptionText(r, 'eyes', eyes, false) + hint, text, 'the hint is a pure suffix');
@@ -335,12 +335,12 @@ test('option hints match FACE_HEADGEAR, the eye rules and the eye catalogue exha
   assert.ok(composerOptionText({...base, head: 'muzzle', feet: 'paw', legs: 'digitigrade', bodyLength: 0.6}, 'eyes', 'auto').startsWith('Automatic (cat slit, '));
   assert.match(composerOptionText({...base, head: 'muzzle', feet: 'paw', legs: 'digitigrade', bodyLength: 0.6, eyeRules: 1}, 'eyes', 'auto'), /^Automatic \(vertical slit, .*; earlier eye rules\)$/);
   assert.equal(composerOptionText({...base, head: 'mandibles'}, 'iris', 'auto'), 'Automatic (no iris)');
-  assert.equal(composerOptionText({...base, head: 'mandibles'}, 'iris', 'red'), 'Red — no effect on these eyes');
+  assert.equal(composerOptionText({...base, head: 'mandibles'}, 'iris', 'red'), 'Red — no effect (no iris)');
   // EC3 rarity labels: a cuttlefish pupil on a horse is unusual but built; Compound on a beak is built as compound under
   // the current rules (unusual) and as round under the earlier rules
-  assert.equal(composerOptionText({...base, head: 'muzzle'}, 'eyes', 'cephalopod'), 'W pupil (cuttlefish) — unusual on this face');
-  assert.equal(composerOptionText(beak, 'eyes', 'compound'), 'Compound (insect, centipede) — unusual on this face');
-  assert.equal(composerOptionText({...beak, eyeRules: 1}, 'eyes', 'compound'), 'Compound (insect, centipede) — built as round (earlier eye rules)');
+  assert.equal(composerOptionText({...base, head: 'muzzle'}, 'eyes', 'cephalopod'), 'W pupil (cuttlefish) — unusual here');
+  assert.equal(composerOptionText(beak, 'eyes', 'compound'), 'Compound (insect, centipede) — unusual here');
+  assert.equal(composerOptionText({...beak, eyeRules: 1}, 'eyes', 'compound'), 'Compound (insect, centipede) — built as round');
 });
 
 test('option hint rendering never changes the encoded link', async () => {

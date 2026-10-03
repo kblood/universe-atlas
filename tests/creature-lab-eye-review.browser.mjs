@@ -82,8 +82,10 @@ try {
   const warm = await fetch(`${origin}/creature-lab.html`); if (!warm.ok) throw new Error(`page ${warm.status}`);
   for (const m of ['/src/creature-lab.ts', '/src/creature-lab-composer.ts', '/src/fauna-composer.ts', '/src/fauna-composer-recipe.ts']) await vite.warmupRequest(m);
   await vite.transformRequest('/src/creature-lab.ts');
-  const queue = [...specimens];
-  let batch = 0, lastPerSpecimen = 6000;
+  // work units: phase 'a' = whole animal + Head and face frames, phase 'b' = Eye close-up frames + option texts + menu;
+  // each unit opens the link afresh, so a GPU hold can end between them
+  const queue = specimens.flatMap(spec => [{spec, phase: 'a'}, {spec, phase: 'b'}]);
+  let batch = 0, lastUnit = 8000;
   while (queue.length) {
     batch++;
     await withGpuLock({owner: `creature-lab-eye-review-${opt.label}`, retryMs: 15000, timeoutMs: 45 * 60 * 1000}, async () => {
@@ -97,8 +99,8 @@ try {
           await page.waitForFunction(() => { const c = window.__creatureLab?.composer; return window.__creatureLab?.ready && c && (c.error || (c.actors.length && !c.building)); }, null, {timeout: 20000});
           await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
         };
-        while (queue.length && (done.length === 0 || Date.now() - t0 + lastPerSpecimen * 1.4 < HOLD_BUDGET_MS)) {
-          const spec = queue.shift(), s0 = Date.now();
+        while (queue.length && (done.length === 0 || Date.now() - t0 + lastUnit * 1.3 < HOLD_BUDGET_MS)) {
+          const {spec, phase} = queue.shift(), s0 = Date.now();
           const u = new URL(`${origin}/creature-lab.html`);
           for (const [k, v] of Object.entries({mode: 'composer', recipe: spec.text, motion: 'idle', time: '0', light: 'planet-noon', view: 'three-quarter'})) u.searchParams.set(k, v);
           await page.goto(u.href, {waitUntil: 'load'});
@@ -108,35 +110,42 @@ try {
           if (lab.error) throw new Error(`${spec.name}: ${lab.error}`);
           const focusValues = await page.$$eval('#composer-focus option', os => os.map(o => o.value));
           const eyesFrame = focusValues.includes('eyes');
-          const shots = [];
+          const entry = results.get(spec.name) ?? {name: spec.name, group: spec.group, eyesFrame, shots: [], eyeFrames: {},
+            recipe: {head: lab.actors[0].recipe.head, eyes: lab.actors[0].recipe.eyes, iris: lab.actors[0].recipe.iris, eyeRules: lab.actors[0].recipe.eyeRules}};
+          results.set(spec.name, entry);
+          const shots = entry.shots;
           const shoot = async (focus, view) => {
             await page.selectOption('#composer-view', view); await page.selectOption('#composer-focus', focus); await settle();
             const file = `${spec.name}-${focus === 'body' ? 'body' : `${focus}-${view}`}.png`;
             await page.locator('#viewport').screenshot({path: join(out, file)}); shots.push(file);
+            if (focus === 'eyes') entry.eyeFrames[view] = await page.evaluate(() => ({frame: window.__creatureLab.composer.eyeFrame, camera: window.__creatureLab.camera}));
           };
-          await shoot('body', 'three-quarter');
-          for (const view of VIEWS) await shoot('head', view);
-          if (eyesFrame) for (const view of VIEWS) await shoot('eyes', view);
-          await page.selectOption('#composer-focus', 'body'); await page.selectOption('#composer-view', 'three-quarter');
-          const options = await page.evaluate(() => Object.fromEntries(['eyes', 'iris', 'eyeRules'].map(k => {
-            const el = document.getElementById(`composer-${k}`);
-            if (!el) return [k, null];
-            return [k, {tag: el.tagName.toLowerCase(), value: el.value, options: el.tagName === 'SELECT' ? [...el.options].map(o => ({value: o.value, text: o.textContent, group: o.parentElement?.tagName === 'OPTGROUP' ? o.parentElement.label : null})) : null}];
-          })));
-          if (MENU_SPECIMENS.includes(spec.name)) {
-            // expand the Eyes and Iris lists in place (a native dropdown is not in a screenshot); restored afterwards
-            await page.evaluate(() => { for (const id of ['composer-eyes', 'composer-iris']) { const el = document.getElementById(id); el.size = el.options.length + el.querySelectorAll('optgroup').length; el.style.height = 'auto'; } });
-            const fieldset = page.locator('fieldset:has(#composer-eyes)');
-            await fieldset.scrollIntoViewIfNeeded();
-            await fieldset.screenshot({path: join(out, `menu-${spec.name}.png`)}); shots.push(`menu-${spec.name}.png`);
-            await page.evaluate(() => { for (const id of ['composer-eyes', 'composer-iris']) { const el = document.getElementById(id); el.size = 0; el.style.height = ''; } });
+          if (phase === 'a') {
+            await shoot('body', 'three-quarter');
+            for (const view of VIEWS) await shoot('head', view);
+          } else {
+            if (eyesFrame) for (const view of VIEWS) await shoot('eyes', view);
+            await page.selectOption('#composer-focus', 'body'); await page.selectOption('#composer-view', 'three-quarter');
+            entry.options = await page.evaluate(() => Object.fromEntries(['eyes', 'iris', 'eyeRules'].map(k => {
+              const el = document.getElementById(`composer-${k}`);
+              if (!el) return [k, null];
+              return [k, {tag: el.tagName.toLowerCase(), value: el.value, options: el.tagName === 'SELECT' ? [...el.options].map(o => ({value: o.value, text: o.textContent, group: o.parentElement?.tagName === 'OPTGROUP' ? o.parentElement.label : null})) : null}];
+            })));
+            if (MENU_SPECIMENS.includes(spec.name)) {
+              // expand the Eyes and Iris lists in place (a native dropdown is not in a screenshot); restored afterwards
+              await page.evaluate(() => { for (const id of ['composer-eyes', 'composer-iris']) { const el = document.getElementById(id); el.size = el.options.length + el.querySelectorAll('optgroup').length; el.style.height = 'auto'; } });
+              await page.setViewportSize({width: 1440, height: 2000}); // the expanded lists are taller than the review viewport
+              const fieldset = page.locator('fieldset:has(#composer-eyes)');
+              await fieldset.scrollIntoViewIfNeeded();
+              await fieldset.screenshot({path: join(out, `menu-${spec.name}.png`)}); shots.push(`menu-${spec.name}.png`);
+              await page.evaluate(() => { for (const id of ['composer-eyes', 'composer-iris']) { const el = document.getElementById(id); el.size = 0; el.style.height = ''; } });
+              await page.setViewportSize({width: 1440, height: 1000});
+            }
+            entry.constraints = await page.locator('#composer-constraints').innerText();
+            entry.issues = await page.locator('#composer-issues').isVisible() ? await page.locator('#composer-issues').innerText() : '';
           }
-          const constraints = await page.locator('#composer-constraints').innerText();
-          const issues = await page.locator('#composer-issues').isVisible() ? await page.locator('#composer-issues').innerText() : '';
-          results.set(spec.name, {name: spec.name, group: spec.group, eyesFrame, shots, options, constraints, issues,
-            recipe: {head: lab.actors[0].recipe.head, eyes: lab.actors[0].recipe.eyes, iris: lab.actors[0].recipe.iris, eyeRules: lab.actors[0].recipe.eyeRules}});
-          done.push(spec.name); lastPerSpecimen = Date.now() - s0; run.perSpecimenMs[spec.name] = lastPerSpecimen;
-          console.log(`[eye-review] ${spec.name} ${lastPerSpecimen} ms (${shots.length} shots${eyesFrame ? '' : ', no eye frame'})`);
+          done.push(`${spec.name}/${phase}`); lastUnit = Date.now() - s0; run.perSpecimenMs[`${spec.name}/${phase}`] = lastUnit;
+          console.log(`[eye-review] ${spec.name}/${phase} ${lastUnit} ms (${shots.length} shots${eyesFrame ? '' : ', no eye frame'})`);
         }
       } finally {
         await browser.close();

@@ -39,7 +39,7 @@ test('Eyes menu: Automatic first, then all 18 kinds exactly once in three named 
   }
 });
 
-test('rarity labels: on every preset face the kinds native to that face read plainly, the others "unusual on this face", and all are built', () => {
+test('rarity labels: on every preset face the kinds native to that face read plainly, the others "unusual here", and all are built', () => {
   for (const id of COMPOSER_PRESET_IDS) {
     const r = composerPreset(id);
     let plain = 0, odd = 0;
@@ -120,7 +120,7 @@ test('iris: Automatic names the colour built; colours outside these eyes\' autom
   }
   const compound = composerPreset('centipede');
   assert.deepEqual(composerIrisChoices(compound), []);
-  assert.equal(composerOptionText(compound, 'iris', 'blue'), 'Blue — no effect on these eyes');
+  assert.equal(composerOptionText(compound, 'iris', 'blue'), 'Blue — no effect (no iris)');
   assert.equal(composerIrisSwatch(compound), null);
 });
 
@@ -155,6 +155,11 @@ test('eye close-up framing: side views frame the near eye only, the front view f
   assert.equal(front.side, 'both');
   for (const z of [.05, -.05]) assert.ok(front.box.containsPoint(new THREE.Vector3(1, 1.2, z)));
   assert.ok(front.box.getSize(new THREE.Vector3()).z < .3, 'tight around the pair');
+  // forward-facing eyes (pair closer than 4.5 eye radii): the three-quarter view frames the pair (no half-cut far eye),
+  // the side view still the near eye
+  const forward = [...sphere(1, 1.2, .03, .02), ...sphere(1, 1.2, -.03, .02)];
+  assert.equal(composerEyeFrameOf(forward, 0, new THREE.Vector3(.6, .3, .74).normalize()).side, 'both');
+  assert.equal(composerEyeFrameOf(forward, 0, new THREE.Vector3(0, 0, 1)).side, 'near');
   // an animal off the origin (herd/compare offset): sides are taken about its own midline
   const shifted = eyes.map(p => p.clone().add(new THREE.Vector3(0, 0, 3)));
   assert.ok(Math.abs(composerEyeFrameOf(shifted, 3, new THREE.Vector3(0, 0, 1)).centre.z - 3.05) < 1e-3);
