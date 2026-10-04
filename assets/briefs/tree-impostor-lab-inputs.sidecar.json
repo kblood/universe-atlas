@@ -8,7 +8,7 @@
   "parentRepository": {
     "path": "C:/LLM/IWSDK",
     "ignoredDirectory": "Assets/_assetctl/",
-    "note": "Cloning universe-atlas alone does not provide these files. Regenerate with tools/assetctl at the revision recorded in the family brief, or obtain them as a separately authorised artifact transfer."
+    "note": "Cloning universe-atlas alone does not provide these files. Regenerate with tools/assetctl, or obtain them as a separately authorised artifact transfer. NOTE: neither family brief pins the parent IWSDK or assetctl revision (the EZ-Tree commit pins upstream only); record the toolchain revision (git -C C:/LLM/IWSDK rev-parse HEAD plus the assetctl version) at upload time. Not yet verified: that a fresh clone can regenerate these files."
   },
   "inputs": [
     {
