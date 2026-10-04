@@ -373,7 +373,7 @@ test('relief model versions are pinned and part of the model manifest; build ver
   assert.equal(LOD_LADDER_VERSION, 'lod-ladder-1', 'new (P3)');
   assert.equal(PLACE_QUERY_VERSION, 'place-query-1', 'new (P2)');
   assert.equal(TERRAIN_VERSION, 'terrain-1.8.0-relief', 'was terrain-1.7.0-climate-colour (P4)');
-  assert.equal(BUILD_VERSION, 'atlas-client-2026-10-relief-1', 'was atlas-client-2026-10-biome-climate-1');
+  assert.equal(BUILD_VERSION, 'atlas-client-2026-10-round2-1', 'was atlas-client-2026-10-relief-1 (round 2: landing-site-1, ocean-present)');
   const parts = MODEL_MANIFEST_ID.split('|');
   for (const v of [GEOPHYSICS_VERSION, LANDFORM_SHAPE_VERSION, OCEAN_VOLUME_VERSION, LOD_LADDER_VERSION, PLACE_QUERY_VERSION])
     assert.ok(parts.includes(v), `${v} missing from MODEL_MANIFEST_ID`);

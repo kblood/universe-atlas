@@ -71,8 +71,12 @@ export const MODEL_MANIFEST_ID = [
  * 2026-09-28: river/drainage navigation and rendering withdrawn.
  * 2026-10: climate-driven snow, forest window and labels (biome-climate-1).
  * 2026-10 relief round: recalibrated relief, ocean volume, render bounds, LOD
- * ladder and harness sites (relief-1; docs/relief-round-2026-10-03.md). */
-export const BUILD_VERSION = 'atlas-client-2026-10-relief-1';
+ * ladder and harness sites (relief-1; docs/relief-round-2026-10-03.md).
+ * 2026-10-04 round 2: landing picks a dry non-summit site or cancels with a
+ * message, a flooded ground bookmark hovers, and the ocean draws skirts, wave
+ * fade and an underwater medium (round2-1; landing-site-1, ocean-underwater-1,
+ * ocean-wave-fade-1). */
+export const BUILD_VERSION = 'atlas-client-2026-10-round2-1';
 
 // ---------------------------------------------------------------------------
 // §3.2 playback tiers.

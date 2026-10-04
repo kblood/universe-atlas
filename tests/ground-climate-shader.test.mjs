@@ -96,7 +96,7 @@ test('snow is tinted slightly cool and the pebble/sand atlas terms are kept',()=
 
 test('renderer habitat uniform uses the shared climate gate and the bumped cache key',()=>{
   assert.match(renderer,/shader\.uniforms\.groundHabitat=\{value:temperateHabitat\(this\.body\)\?1:0\};/);
-  assert.match(renderer,/material\.customProgramCacheKey = \(\) => 'planet-patch-ground-bed-v11\/'\+LOCAL_AERIAL_VERSION\+'\/ground-pbr-v2-climate';/);
+  assert.match(renderer,/material\.customProgramCacheKey = \(\) => 'planet-patch-ground-bed-v12\/'\+LOCAL_AERIAL_VERSION\+'\/ground-pbr-v2-climate';/);
   assert.doesNotMatch(renderer,/planet-patch-ground-bed-v10/);
   // The previous inline gate, value for value.
   const legacy=b=>b.water>0&&b.temperatureK>=250&&b.temperatureK<=325&&b.type!=='Ice world'&&b.type!=='Volcanic world'?1:0;

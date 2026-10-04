@@ -1119,7 +1119,7 @@ export class PlanetRenderer {
         }
         #include <opaque_fragment>`);
     };
-    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v11/'+LOCAL_AERIAL_VERSION+'/ground-pbr-v2-climate';
+    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v12/'+LOCAL_AERIAL_VERSION+'/ground-pbr-v2-climate';
     const mesh = new THREE.Mesh(geometry, material);
     mesh.receiveShadow=true;mesh.castShadow=true;material.shadowSide=THREE.DoubleSide;
     mesh.customDepthMaterial=terrainDepthMaterial(morph,edge,d.width-2);
