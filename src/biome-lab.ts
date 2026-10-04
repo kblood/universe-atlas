@@ -71,11 +71,14 @@ function bladeClump(recipe: ElementRecipe, count: number, reed = false) {
 // instance footprint is divided by; `heightFactor` scales the instance height
 // (a cushion is wider than tall).
 const ECO_FORMS: Record<string, { base: number; heightFactor: number }> = {
-  "spire": { base: .13, heightFactor: 1 }, "umbrella": { base: .5, heightFactor: 1 }, "buttress": { base: .38, heightFactor: 1 },
+  "spire": { base: .26, heightFactor: 1 }, "umbrella": { base: .25, heightFactor: 1 }, "buttress": { base: .38, heightFactor: 1 },
   "columnar": { base: .25, heightFactor: 1 }, "dwarf-shrub": { base: .45, heightFactor: 1 }, "cushion-dome": { base: .5, heightFactor: .35 },
   "fan-palm": { base: .5, heightFactor: 1 }, "thorn": { base: .45, heightFactor: 1 },
   "tussock": { base: 1, heightFactor: 1 }, "tall-tuft": { base: 1, heightFactor: 1 }, "flower-herb": { base: 1, heightFactor: 1 }, "mat": { base: 1, heightFactor: 1 },
 };
+// Eco parts mix ribbons (no uv) with three primitives (uv); drop uv so
+// mergeGeometries accepts every part instead of falling back to part 0.
+function ecoCombined(parts: Parameters<typeof combined>[0]) { for (const part of parts) part.geometry.deleteAttribute("uv"); return combined(parts); }
 const yaw = (angle: number) => new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), angle);
 function tuftClump(colors: string[], count: number, height: number, lean: number, spread: number, heads?: string[]) {
   const parts: { geometry: THREE.BufferGeometry; position: THREE.Vector3; rotation?: THREE.Quaternion; color: string }[] = [];
@@ -85,20 +88,21 @@ function tuftClump(colors: string[], count: number, height: number, lean: number
     parts.push({ geometry: pointedRibbon(h, .016 + (i % 3) * .006, lean * (.6 + (i % 5) * .12)), position: new THREE.Vector3(x, 0, z), rotation: yaw(angle), color: colors[i % colors.length]! });
     if (heads && i % 3 === 0) parts.push({ geometry: new THREE.IcosahedronGeometry(.045, 0), position: new THREE.Vector3(x, h * .97, z + lean * .5), color: heads[(i / 3) % heads.length | 0]! });
   }
-  return combined(parts);
+  return ecoCombined(parts);
 }
+function buttressFin() { const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, -.006), new THREE.Vector3(0, 0, .2), new THREE.Vector3(0, .2, 0), new THREE.Vector3(0, 0, .006)]); g.setIndex([0, 1, 2, 3, 2, 1]); g.computeVertexNormals(); return g; }
 function ecoFormGeometry(recipe: ElementRecipe): THREE.BufferGeometry | null {
   const c = recipe.color, V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
   switch (recipe.form) {
-    case "spire": return combined([
+    case "spire": return ecoCombined([
       { geometry: new THREE.CylinderGeometry(.03, .045, .3, 6), position: V(0, .15, 0), color: "#4f3c28" },
       { geometry: new THREE.ConeGeometry(.13, .38, 7), position: V(0, .38, 0), color: c },
       { geometry: new THREE.ConeGeometry(.105, .34, 7), position: V(0, .58, 0), color: c },
       { geometry: new THREE.ConeGeometry(.08, .3, 7), position: V(0, .76, 0), color: c },
       { geometry: new THREE.ConeGeometry(.05, .22, 6), position: V(0, .92, 0), color: c },
     ]);
-    case "umbrella": return combined([
-      { geometry: new THREE.CylinderGeometry(.025, .045, .58, 6), position: V(0, .29, 0), color: "#5a4632" },
+    case "umbrella": return ecoCombined([
+      { geometry: new THREE.CylinderGeometry(.018, .03, .58, 6), position: V(0, .29, 0), color: "#5a4632" },
       { geometry: new THREE.CylinderGeometry(.015, .022, .26, 5), position: V(.07, .64, 0), rotation: new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), -.6), color: "#5a4632" },
       { geometry: new THREE.CylinderGeometry(.015, .022, .26, 5), position: V(-.06, .63, .03), rotation: new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), .55), color: "#5a4632" },
       { geometry: new THREE.CylinderGeometry(.5, .4, .09, 12), position: V(0, .76, 0), color: c },
@@ -107,14 +111,14 @@ function ecoFormGeometry(recipe: ElementRecipe): THREE.BufferGeometry | null {
     case "buttress": {
       const parts: { geometry: THREE.BufferGeometry; position: THREE.Vector3; rotation?: THREE.Quaternion; scale?: THREE.Vector3; color: string }[] = [
         { geometry: new THREE.CylinderGeometry(.045, .07, .8, 8), position: V(0, .4, 0), color: "#6e5d47" },
-        { geometry: new THREE.IcosahedronGeometry(.3, 1), position: V(0, .86, 0), scale: V(1.25, .55, 1.25), color: c },
+        { geometry: new THREE.IcosahedronGeometry(.34, 1), position: V(0, .88, 0), scale: V(1.35, .42, 1.35), color: c },
         { geometry: new THREE.IcosahedronGeometry(.2, 1), position: V(.2, .8, .1), color: "#3a6a30" },
         { geometry: new THREE.IcosahedronGeometry(.19, 1), position: V(-.18, .83, -.12), color: "#28502a" },
       ];
-      for (let i = 0; i < 5; i++) parts.push({ geometry: new THREE.BoxGeometry(.018, .2, .17), position: V(Math.cos(i * 1.2566) * .08, .1, Math.sin(i * 1.2566) * .08), rotation: yaw(-i * 1.2566), color: "#6e5d47" });
-      return combined(parts);
+      for (let i = 0; i < 5; i++) { const a = i * 1.2566 + .3; parts.push({ geometry: buttressFin(), position: V(Math.cos(a) * .03, 0, Math.sin(a) * .03), rotation: yaw(Math.PI / 2 - a), color: "#6e5d47" }); }
+      return ecoCombined(parts);
     }
-    case "columnar": return combined([
+    case "columnar": return ecoCombined([
       { geometry: new THREE.CylinderGeometry(.07, .08, .9, 9), position: V(0, .45, 0), color: c },
       { geometry: new THREE.SphereGeometry(.07, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2), position: V(0, .9, 0), color: c },
       { geometry: new THREE.CylinderGeometry(.04, .04, .16, 7), position: V(.11, .4, 0), rotation: new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), Math.PI / 2), color: c },
@@ -122,14 +126,14 @@ function ecoFormGeometry(recipe: ElementRecipe): THREE.BufferGeometry | null {
       { geometry: new THREE.CylinderGeometry(.04, .04, .14, 7), position: V(-.1, .3, 0), rotation: new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), Math.PI / 2), color: c },
       { geometry: new THREE.CylinderGeometry(.038, .04, .24, 7), position: V(-.18, .4, 0), color: c },
     ]);
-    case "dwarf-shrub": return combined([0, 1, 2, 3, 4, 5].map(i => ({ geometry: new THREE.IcosahedronGeometry(.17 + (i % 3) * .03, 0), position: V(Math.cos(i * 2.1) * .24 * (i % 2 ? 1 : .55), .14 + (i % 3) * .07, Math.sin(i * 2.1) * .24 * (i % 2 ? 1 : .55)), color: i % 2 ? c : "#6f6a3c" })));
-    case "cushion-dome": return combined([{ geometry: new THREE.SphereGeometry(.5, 12, 5, 0, Math.PI * 2, 0, Math.PI / 2), color: c }]);
+    case "dwarf-shrub": return ecoCombined([0, 1, 2, 3, 4, 5].map(i => ({ geometry: new THREE.IcosahedronGeometry(.17 + (i % 3) * .03, 0), position: V(Math.cos(i * 2.1) * .24 * (i % 2 ? 1 : .55), .14 + (i % 3) * .07, Math.sin(i * 2.1) * .24 * (i % 2 ? 1 : .55)), color: i % 2 ? c : "#6f6a3c" })));
+    case "cushion-dome": return ecoCombined([{ geometry: new THREE.SphereGeometry(.5, 12, 5, 0, Math.PI * 2, 0, Math.PI / 2), color: c }]);
     case "fan-palm": {
       const parts: { geometry: THREE.BufferGeometry; position: THREE.Vector3; rotation?: THREE.Quaternion; color: string }[] = [{ geometry: new THREE.CylinderGeometry(.025, .035, .35, 6), position: V(0, .17, 0), color: "#5b4a33" }];
       for (let i = 0; i < 9; i++) parts.push({ geometry: pointedRibbon(.55, .085, .2), position: V(0, .33, 0), rotation: yaw(i * .698).multiply(new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), .95 + (i % 3) * .15)), color: i % 2 ? c : "#4f8a3c" });
-      return combined(parts);
+      return ecoCombined(parts);
     }
-    case "thorn": return combined([
+    case "thorn": return ecoCombined([
       { geometry: new THREE.CylinderGeometry(.018, .03, .3, 5), position: V(0, .15, 0), color: "#5a4a34" },
       { geometry: new THREE.IcosahedronGeometry(.45, 0), position: V(0, .4, 0), scale: V(1, .38, 1), color: c },
       { geometry: new THREE.IcosahedronGeometry(.25, 0), position: V(.2, .3, .1), scale: V(1, .45, 1), color: "#6b6338" },
@@ -137,18 +141,14 @@ function ecoFormGeometry(recipe: ElementRecipe): THREE.BufferGeometry | null {
     case "tussock": return tuftClump([c, "#c0ae74", c, "#86794a"], 44, .62, .26, .9);
     case "tall-tuft": return tuftClump([c, "#dcc274", "#b39648"], 40, .95, .2, .75, ["#e6d08a"]);
     case "flower-herb": return tuftClump([c, "#6a8a3e"], 18, .5, .1, .7, ["#efd84a", "#d96fb4", "#f3f1ea", "#8f7ee2"]);
-    case "mat": return combined([
-      { geometry: new THREE.IcosahedronGeometry(.5, 1), scale: V(1, .25, 1), color: c },
-      { geometry: new THREE.IcosahedronGeometry(.2, 1), position: V(.25, .05, .1), scale: V(1, .35, 1), color: "#b8b892" },
-      { geometry: new THREE.IcosahedronGeometry(.18, 1), position: V(-.22, .04, -.18), scale: V(1, .35, 1), color: "#94a060" },
-    ]);
-    case "lichen-rock": return combined([
+    case "mat": return ecoCombined([0, 1, 2, 3, 4, 5, 6].map(i => ({ geometry: new THREE.IcosahedronGeometry(.17 + (i % 3) * .04, 0), position: V(Math.cos(i * 2.6) * .36 * ((i * 5) % 7) / 6, 0, Math.sin(i * 2.6) * .36 * ((i * 5) % 7) / 6), scale: V(1, .45 + (i % 2) * .25, 1), color: ["#5f6a3e", "#8e8f6e", "#6f7a46", "#a3a283"][i % 4]! })));
+    case "lichen-rock": return ecoCombined([
       { geometry: new THREE.DodecahedronGeometry(.55, 0).scale(1, .7, .9).translate(0, .38, 0), color: c },
       { geometry: new THREE.IcosahedronGeometry(.16, 1), position: V(.1, .72, .05), scale: V(1, .22, 1), color: "#c8c17a" },
       { geometry: new THREE.IcosahedronGeometry(.13, 1), position: V(-.16, .68, -.1), scale: V(1, .22, 1), color: "#d4d0ae" },
       { geometry: new THREE.IcosahedronGeometry(.11, 1), position: V(-.02, .7, .2), scale: V(1, .22, 1), color: "#a4ad7e" },
     ]);
-    case "mound": return combined([
+    case "mound": return ecoCombined([
       { geometry: new THREE.ConeGeometry(.32, 1, 9), position: V(0, .5, 0), color: c },
       { geometry: new THREE.IcosahedronGeometry(.36, 1), position: V(0, .12, 0), scale: V(1, .45, 1), color: c },
       { geometry: new THREE.ConeGeometry(.12, .45, 7), position: V(.18, .3, .06), color: "#8a5838" },
