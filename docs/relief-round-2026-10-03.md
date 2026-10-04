@@ -1,7 +1,7 @@
 # Relief round 2026-10-03 (terrain-1.8.0-relief, ocean-volume-1, render-bounds-1, place-query-1)
 
-Status: integrated on branch `relief-round/INT` (finish round 2026-10-04). Not merged to `main`, not
-deployed. This document is the round summary: what changed, the rules it follows, the version keys,
+Status: merged to `main` as `36dd833` (finish round 2026-10-04), not deployed. The post-merge checks
+and the final Luna sheet are in the README and `test-results/relief-round-2026-10-03/final/`. This document is the round summary: what changed, the rules it follows, the version keys,
 every deliberate re-pin, what is still OPEN, and how a game reads the world. The detail lives in the
 package documents:
 
