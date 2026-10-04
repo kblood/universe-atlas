@@ -51,20 +51,30 @@ const update = args.has("--update");
 if (update && fixtureOption) throw new Error("--update rewrites golden.json; do not combine it with --fixture");
 // Writing Node's result over the fixture it is compared with would make Node
 // match by construction: refuse it (use --update for an intentional re-pin).
-if (writeNode && path.resolve(writeNode) === GOLDEN_FIXTURE) throw new Error("--write-node must not name the comparison fixture");
-if (writeNode && !fixtureOption && path.resolve(writeNode) === path.join(HERE, "golden.json")) throw new Error("--write-node must not name golden.json; use --update");
+// Paths are compared case-folded on Windows (case-insensitive filesystem), and
+// main() reads the fixture BEFORE any output is written, so even an alias this
+// check misses (a junction or hard link) cannot replace the baseline first.
+const samePath = (a, b) => (process.platform === "win32" ? path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase() : path.resolve(a) === path.resolve(b));
+if (writeNode && (samePath(writeNode, GOLDEN_FIXTURE) || samePath(writeNode, path.join(HERE, "golden.json")))) {
+  throw new Error("--write-node must not name the comparison fixture or golden.json; use --update for a re-pin");
+}
 
 /** Digest keys an engine is KNOWN to disagree on: open determinism findings,
- * each with its measured cause. A listed key's mismatch is printed and lands
- * in the report as KNOWN-MISMATCH, but does not fail the gate; a listed key
- * that now matches is reported so the entry can be removed. Every key not
- * listed here must match on every engine. Keep this list short and specific:
+ * each with the engine's own MEASURED digest and the cause. A listed key is
+ * KNOWN-MISMATCH (printed, reported, not failing) only while the engine still
+ * produces exactly that measured digest; any other value on that engine fails
+ * the gate, so the exemption cannot absorb a new change. A listed key that now
+ * matches Node is reported so the entry can be removed. Every key not listed
+ * here must match on every engine. Re-measure the pinned digest whenever the
+ * faunaKnownUnstable fixture digest is re-pinned (a composer version bump). Keep this list short and specific:
  * generator.ts pins known-unstable specimens in their own key
  * (faunaKnownUnstable) so the main key keeps guarding everything else. */
 const KNOWN_ENGINE_MISMATCHES = {
   webkit: {
-    faunaKnownUnstable:
-      "WebKit 26.5 (2026-10-04): GOLDEN-FAUNA-2's midline insect ocellus is seated differently (8 vertices, up to 0.42 mm); see generator.ts FAUNA_KNOWN_UNSTABLE",
+    faunaKnownUnstable: {
+      digest: "7b81264f3db57e86c92eeb083476a94d1229c21a6879200d3b6257746b4c890f",
+      cause: "WebKit 26.5 (2026-10-04): GOLDEN-FAUNA-2's midline insect ocellus is seated differently (8 vertices, up to 0.42 mm); see generator.ts FAUNA_KNOWN_UNSTABLE",
+    },
   },
 };
 
@@ -121,11 +131,14 @@ function diffDigests(label, a, b, known = {}, knownSeen = null) {
   const mismatches = [];
   const left = a ?? {}, right = b ?? {};
   for (const key of [...new Set([...Object.keys(left), ...Object.keys(right)])]) {
-    if (key in known && key in left && key in right) {
-      if (left[key] !== right[key]) {
-        console.warn(`${label} KNOWN MISMATCH (open finding, not failing): ${key}: ${left[key]} != ${right[key]} - ${known[key]}`);
-        knownSeen?.add(key);
-      }
+    // `left` is the engine's digest set: the exemption holds only for the measured engine digest.
+    if (key in known && key in left && key in right && left[key] !== right[key] && left[key] === known[key].digest) {
+      console.warn(`${label} KNOWN MISMATCH (open finding, not failing): ${key}: ${left[key]} != ${right[key]} - ${known[key].cause}`);
+      knownSeen?.add(key);
+      continue;
+    }
+    if (key in known && key in left && key in right && left[key] !== right[key]) {
+      mismatches.push(`${key}: ${left[key]} != ${right[key]} (and != the measured known-mismatch digest ${known[key].digest}: a NEW change on this engine)`);
       continue;
     }
     if (!(key in left)) mismatches.push(`${key}: missing on the left`);
@@ -143,6 +156,8 @@ async function main() {
   const nodeMs = Date.now() - nodeStarted;
   console.log(JSON.stringify(nodeResult, null, 2));
   console.log(`Node computed the golden set in ${nodeMs} ms`);
+  // Read the comparison fixture before writing anything (see the --write-node guard).
+  const fixtureBefore = update ? null : JSON.parse(await readFile(GOLDEN_FIXTURE, "utf8"));
   if (writeNode) {
     await writeFile(path.resolve(writeNode), JSON.stringify(nodeResult, null, 2) + "\n");
     console.log(`Wrote Node's result to ${path.resolve(writeNode)}`);
@@ -154,7 +169,7 @@ async function main() {
     await writeFile(GOLDEN_FIXTURE, JSON.stringify(nodeResult, null, 2) + "\n");
     console.log(`Wrote ${GOLDEN_FIXTURE}`);
   } else {
-    fixture = JSON.parse(await readFile(GOLDEN_FIXTURE, "utf8"));
+    fixture = fixtureBefore;
     const nodeVsFixture = diffDigests(`Node vs fixture ${GOLDEN_FIXTURE}`, nodeResult.digests, fixture.digests);
     if (nodeVsFixture) {
       console.error(nodeVsFixture);
@@ -201,9 +216,10 @@ async function main() {
           process.exitCode = 1;
         }
         const vsFixture = diffDigests(`${name} vs fixture ${path.basename(GOLDEN_FIXTURE)}`, result.digests, fixture.digests, known, knownSeen);
-        result.knownMismatches = Object.fromEntries(Object.keys(known).map((k) => [k, knownSeen.has(k) ? "KNOWN-MISMATCH" : "NOW-MATCHES"]));
+        const knownStatus = (k) => (knownSeen.has(k) ? "KNOWN-MISMATCH" : result.digests?.[k] === nodeResult.digests[k] ? "NOW-MATCHES" : "CHANGED (gate failure)");
+        result.knownMismatches = Object.fromEntries(Object.keys(known).map((k) => [k, knownStatus(k)]));
         for (const k of Object.keys(known)) {
-          if (!knownSeen.has(k)) console.log(`${name}: known mismatch ${k} no longer reproduces - remove it from KNOWN_ENGINE_MISMATCHES`);
+          if (knownStatus(k) === "NOW-MATCHES") console.log(`${name}: known mismatch ${k} no longer reproduces - remove it from KNOWN_ENGINE_MISMATCHES`);
         }
         if (vsNode) {
           console.error(vsNode);

@@ -216,9 +216,14 @@ function installPerturbation(names, relative, M = Math) {
       case "cos": case "cosh": return x === 0;
       case "exp": case "expm1": return x === 0 || x === -Infinity;
       case "tanh": return x === 0 || x === Infinity || x === -Infinity;
-      // atan2(y, x): +-0 only for y = +-0 with x = +0 or x > 0 (x = -0 or x < 0 gives an approximated pi).
-      case "atan2": return x === 0 && (y > 0 || Object.is(y, 0));
-      case "pow": return y === 0 || (x === 0 && y > 0) || ((x === Infinity || x === -Infinity) && y < 0);
+      // atan2(y, x): +-0 for y = +-0 with x = +0 or x > 0 (x = -0 or x < 0 gives an
+      // approximated pi), and for finite y with x = +Infinity.
+      case "atan2": return (x === 0 && (y > 0 || Object.is(y, 0))) || (Number.isFinite(x) && y === Infinity);
+      case "pow": {
+        const ax = Math.abs(x);
+        return y === 0 || (x === 0 && y > 0) || (ax === Infinity && y < 0) ||
+          (ax < 1 && y === Infinity) || (ax > 1 && y === -Infinity);
+      }
       case "hypot": return a.every((v) => v === 0);
       default: return false;
     }
@@ -302,9 +307,10 @@ test("perturbation exact-case table follows ECMA-262 21.3.2 (spec-exact results 
     ["pow", [2, 0]], ["pow", [0, 2]], ["pow", [-0, 3]], ["pow", [-0, 2]], ["pow", [Infinity, -1]], ["pow", [-Infinity, -3]],
     ["cos", [0]], ["exp", [0]], ["exp", [-Infinity]], ["expm1", [-Infinity]], ["tanh", [Infinity]], ["tanh", [-Infinity]],
     ["sin", [-0]], ["asin", [0]], ["hypot", [0, -0]], ["cbrt", [0]],
+    ["atan2", [1, Infinity]], ["atan2", [-1, Infinity]], ["pow", [0.5, Infinity]], ["pow", [-0.5, Infinity]], ["pow", [2, -Infinity]], ["pow", [-3, -Infinity]],
   ];
   for (const [n, a] of kept) assert.ok(Object.is(M[n](...a), Math[n](...a)), `${n}(${a.map(String)}) is spec-exact and must not be nudged`);
-  const nudgedCases = [["atan2", [1, 0]], ["atan2", [0, -1]], ["atan2", [0.5, 0.25]], ["pow", [2, 0.5]], ["pow", [3, 3.5]], ["log2", [3]], ["log10", [7]], ["sin", [1]], ["hypot", [3, 4]]];
+  const nudgedCases = [["atan2", [1, 0]], ["atan2", [0, -1]], ["atan2", [1, -Infinity]], ["atan2", [Infinity, 1]], ["atan2", [0.5, 0.25]], ["pow", [2, 0.5]], ["pow", [3, 3.5]], ["log2", [3]], ["log10", [7]], ["sin", [1]], ["hypot", [3, 4]]];
   for (const [n, a] of nudgedCases) assert.ok(!Object.is(M[n](...a), Math[n](...a)), `${n}(${a.map(String)}) is implementation-approximated and must be nudged`);
 });
 
