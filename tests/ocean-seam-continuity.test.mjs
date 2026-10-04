@@ -21,8 +21,11 @@ import {rendererModule,maithea,createRenderer,nextTurn} from './terrain-renderer
 import {terrainSampler} from '../src/terrain.ts';
 import {tileDirection,tileNeighbour,tileKey,unit} from '../src/planet-tiles.ts';
 import {DETAIL_PERIOD_M} from '../src/ground-material.ts';
+import {loweredSeaLevels} from './helpers/harness-water.mjs';
 
-const WATER_M=-4475;
+// Relief round P6: was -4475 m (the old metre ramp's lowered sea); now the
+// higher bucket of the 60%-volume-lost harness sea on the relief seabed.
+const WATER_M=loweredSeaLevels(maithea()).highM;
 
 /** The vertex shader's wave sum for one patch at one body-frame unit-radius
  * point, read from that patch's uniforms with float32 uniform values. */

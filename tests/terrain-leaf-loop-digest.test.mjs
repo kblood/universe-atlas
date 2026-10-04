@@ -29,10 +29,52 @@ function withRequestOrder(source){
   return source.replace(unique,unique+'    deferUndrawnRefreshes(unique,this.patches);\n').replace(roots,fn[0]+roots);
 }
 
+// render-bounds-1 (P5-RENDER-BOUNDS) changes WHICH tiles are culled and
+// refined (body height bound, per-tile drawn extent, ancestor-metadata
+// candidates, seabed-distance selection), again a policy and not part of the
+// cached loop. The worktree's own `// <render-bounds>` block is inserted into
+// the reference and its four bound sites call it, so the comparison still
+// isolates the cache. The byte-blocked refinement fix (P5, found by the deep
+// seabed descent) runs only on a seabed dive (renderSeabedDive), which no
+// pose here is, so it needs no swap: the reference keeps its own streaming
+// lines. Every anchor must match exactly once.
+function withRenderBounds(source){
+  const current=readFileSync(new URL('../src/planet-renderer.ts',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+  const block=current.match(/\/\/ <render-bounds>\n[\s\S]*?\n\/\/ <\/render-bounds>\n/);
+  assert.ok(block,'render-bounds block found in the worktree renderer');
+  const swaps=[
+    ['const ROOTS: Tile[] = Array.from',block[0]+'const ROOTS: Tile[] = Array.from'],
+    [`      // Conservative horizon test, expanded for the highest possible terrain.
+      const margin = 20000 * this.relief / this.body.radiusM;
+      const core=1-16000/this.body.radiusM;
+      const eyeCos=Math.min(1,Math.max(0,core/distance)),peakCos=Math.min(1,Math.max(0,core/(1+margin)));
+      const horizonCos=eyeCos*peakCos-Math.sqrt(1-eyeCos*eyeCos)*Math.sqrt(1-peakCos*peakCos);
+      const horizon = direction.dot(center) + bound >= horizonCos;
+      const sphere = new THREE.Sphere(center, bound + margin);
+      const resident=this.patches.get(key);
+      if(resident?.mesh.geometry.boundingSphere){
+        sphere.copy(resident.mesh.geometry.boundingSphere);sphere.center.add(resident.mesh.position);
+      }
+`,`      const resident=this.patches.get(key);
+      const {horizon,sphere}=renderTileBounds(t,center,bound,resident,this.patches,this.body,this.relief,snappedWaterLevelM,distance,direction);
+`],
+    [`      const ground=new THREE.Vector3(...nearest).multiplyScalar(1+Math.max(this.body.water?snappedWaterLevelM*this.relief:-Infinity,elevation)/this.body.radiusM);
+      const near = Math.max(1e-9, eye.distanceTo(ground));
+`,`      const near=seabedAwareNear(eye,nearest,elevation,!!resident?.ocean,this.body,snappedWaterLevelM);
+`],
+    ['(distance-1)*this.body.radiusM<20000*this.relief+6000&&','(distance-1)*this.body.radiusM<renderDetailAltitudeM(this.body,this.relief)&&'],
+  ];
+  for(const [from,to] of swaps){
+    assert.equal(source.split(from).length,2,`reference render-bounds anchor: ${from.slice(0,60)}`);
+    source=source.replace(from,()=>to);
+  }
+  return source;
+}
+
 test('cached terrain leaf loop is output-identical to the reference loop for a fixed pose sequence',async t=>{
   const raw=gitRendererSource(REFERENCE);
   if(raw===null){t.skip(`git object ${REFERENCE} unavailable`);return;}
-  const source=withRequestOrder(raw);
+  const source=withRenderBounds(withRequestOrder(raw));
   const body=maithea(),poses=digestPoses();
   const reference=await rendererModule({prefix:'atlas-leaf-ref-',rendererSource:source});
   const current=await rendererModule({prefix:'atlas-leaf-cur-'});

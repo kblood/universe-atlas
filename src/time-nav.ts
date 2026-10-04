@@ -35,6 +35,11 @@ import { INLAND_RIVERS_UNAVAILABLE, INLAND_RIVERS_UNAVAILABLE_NOTICE } from './i
 import { BIOME_VERSION, SURVEY_VERSION } from './surface-biomes.ts';
 import { CLIMATE_VERSION } from './surface-climate.ts';
 import { HABITAT_SUITABILITY_VERSION } from './habitat-suitability.ts';
+import { GEOPHYSICS_VERSION } from './planet-geophysics.ts';
+import { LANDFORM_SHAPE_VERSION } from './planet-landforms.ts';
+import { OCEAN_VOLUME_VERSION } from './ocean-volume.ts';
+import { LOD_LADDER_VERSION } from './lod-ladder.ts';
+import { PLACE_QUERY_VERSION } from './place-query.ts';
 
 /** The build's current WorldVersions bundle (contract §1.3) — threaded
  * through every save/bookmark/URL per requirement 6. */
@@ -57,11 +62,17 @@ export const MODEL_MANIFEST_ID = [
   // 2026-10 biome-climate increment: the classifier, its climate field, the
   // habitat evaluation and the survey change what a bookmark lands on.
   BIOME_VERSION,CLIMATE_VERSION,HABITAT_SUITABILITY_VERSION,SURVEY_VERSION,
+  // 2026-10 relief round: geophysics (gravity/tau), the landform shaping, the
+  // ocean-volume sea level, the LOD ladder contract and the place query change
+  // what a bookmark lands on or what a game reads there.
+  GEOPHYSICS_VERSION,LANDFORM_SHAPE_VERSION,OCEAN_VOLUME_VERSION,LOD_LADDER_VERSION,PLACE_QUERY_VERSION,
 ].join('|');
 /** Consumer changes can affect a bookmark without changing generator data.
  * 2026-09-28: river/drainage navigation and rendering withdrawn.
- * 2026-10: climate-driven snow, forest window and labels (biome-climate-1). */
-export const BUILD_VERSION = 'atlas-client-2026-10-biome-climate-1';
+ * 2026-10: climate-driven snow, forest window and labels (biome-climate-1).
+ * 2026-10 relief round: recalibrated relief, ocean volume, render bounds, LOD
+ * ladder and harness sites (relief-1; docs/relief-round-2026-10-03.md). */
+export const BUILD_VERSION = 'atlas-client-2026-10-relief-1';
 
 // ---------------------------------------------------------------------------
 // §3.2 playback tiers.
@@ -290,11 +301,30 @@ export function compatibilityNoticeFromUrl(params:URLSearchParams):string|null {
   if(!params.has('river'))return model;
   return model?`${INLAND_RIVERS_UNAVAILABLE_NOTICE} ${model}`:INLAND_RIVERS_UNAVAILABLE_NOTICE;
 }
-/** True for a terrain version older than terrain-1.6.0 (or one this build cannot parse). */
-function terrainPredatesRiverWithdrawal(version:string):boolean {
+/** True for a terrain version older than terrain-<major>.<minor>.0 (or one this build cannot parse). */
+function terrainPredates(version:string,major:number,minor:number):boolean {
   const m=/^terrain-(\d+)\.(\d+)\./.exec(version);
-  return !m||Number(m[1])<1||(Number(m[1])===1&&Number(m[2])<6);
+  return !m||Number(m[1])<major||(Number(m[1])===major&&Number(m[2])<minor);
 }
+/** True for a terrain version older than terrain-1.6.0 (or one this build cannot parse). */
+function terrainPredatesRiverWithdrawal(version:string):boolean {return terrainPredates(version,1,6);}
+/** True for a surface version older than atlas-surface-7 (the river withdrawal),
+ * or one this build cannot parse. atlas-surface-8 (ocean volume) and later
+ * never showed rivers either. */
+function surfacePredatesRiverWithdrawal(version:string):boolean {
+  const m=/^atlas-surface-(\d+)-/.exec(version);
+  return !m||Number(m[1])<7;
+}
+/** One-time relief notice for a bookmark from before terrain-1.8.0 (relief
+ * round 2026-10-03). The address, catalogue and date are unchanged, so the
+ * bookmark still opens the same place and date; a restored ground bookmark is
+ * placed above the NEW ground height (main.ts prepareLanding re-samples the
+ * terrain along the saved direction). A ground bookmark whose site is now
+ * under the sea is NOT kept: prepareLanding falls back to exploreTerrain(),
+ * which searches for a different walkable site near the current view and
+ * lands there (pre-existing behaviour; OPEN owner item in
+ * docs/relief-round-2026-10-03.md). */
+export const RELIEF_RECALIBRATED_NOTICE='Terrain relief was recalibrated (terrain-1.8.0): mountains, sea depths and snow cover changed. This place is the same location; its height and surroundings may differ. Oceans now shrink by volume as the star brightens.';
 function modelCompatibilityNotice(params:URLSearchParams,explainRivers:boolean):string|null {
   const oldBundle=params.get('wv');
   if(!oldBundle)return null;
@@ -305,8 +335,12 @@ function modelCompatibilityNotice(params:URLSearchParams,explainRivers:boolean):
   // terrain-1.6.0/atlas-surface-7 withdrew inland rivers and their lakes. Only a
   // bookmark from before that withdrawal gets the river sentence; a later terrain
   // bump (e.g. terrain-1.6.0 -> 1.7.0 climate colour) never showed rivers.
-  const riverNote=explainRivers&&(differences.includes('surface')||(differences.includes('terrain')&&terrainPredatesRiverWithdrawal(decoded.terrain)))?` ${INLAND_RIVERS_UNAVAILABLE}`:'';
-  if(differences.length)return `This bookmark uses older ${differences.join(', ')} model versions.${riverNote} Its world may look different.`;
+  // atlas-surface-8 (ocean volume) is a later surface bump: a surface-7
+  // bookmark already had no rivers, so only a pre-surface-7 one (or a pre-1.6.0
+  // terrain) gets the river sentence.
+  const riverNote=explainRivers&&((differences.includes('surface')&&surfacePredatesRiverWithdrawal(decoded.surface))||(differences.includes('terrain')&&terrainPredatesRiverWithdrawal(decoded.terrain)))?` ${INLAND_RIVERS_UNAVAILABLE}`:'';
+  const reliefNote=differences.includes('terrain')&&terrainPredates(decoded.terrain,1,8)?` ${RELIEF_RECALIBRATED_NOTICE}`:'';
+  if(differences.length)return `This bookmark uses older ${differences.join(', ')} model versions.${riverNote}${reliefNote} Its world may look different.`;
   if(params.get('mv')!==MODEL_MANIFEST_ID)return 'This bookmark predates the current combined model. Planet and life details may differ.';
   if(params.get('bv')!==BUILD_VERSION)return 'This bookmark was viewed with a different Atlas build. Presentation may differ.';
   return null;
