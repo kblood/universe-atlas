@@ -181,3 +181,78 @@ test('coverage fixtures have distinct canopy and grass-patch footprints without 
   const inner=generateBiomePatch(interior);
   assert.equal(inner.groundCoverEstimate,sampledGroundCover(interior,wide.placements),'ground coverage is shrub/grass footprints only');
 });
+
+// ---- ECO-CLASS-1 lab biomes (BIOME2-ECO) -------------------------------
+import {BIOME_ECO_LINKS} from '../src/biome-ecology.ts';
+import {ecoRole} from '../src/eco-assemblages.ts';
+
+const NEW_BIOMES=['tundra','alpine-meadow','boreal-taiga','savanna','rainforest','hot-desert','ice-margin'];
+/** Problems with the lab <-> planet link: a class 0-11 without a lab biome, a
+ * biome without a link, or a lab fauna entry without a planet role. */
+function ecoLinkProblems(definitions,links){
+  const problems=[];
+  for(const b of definitions){
+    const link=links[b.id];
+    if(!link){problems.push(`${b.id}: no eco link`);continue;}
+    if(link.faunaRoleIds.length!==b.fauna.length)problems.push(`${b.id}: ${b.fauna.length} fauna but ${link.faunaRoleIds.length} role ids`);
+    for(const id of link.faunaRoleIds)if(!ecoRole(id))problems.push(`${b.id}: unknown planet role ${id}`);
+  }
+  for(let c=0;c<=11;c++)if(!definitions.some(b=>links[b.id]?.ecoClasses.includes(c)))problems.push(`class ${c}: no lab biome`);
+  return problems;
+}
+
+test('every eco class 0-11 has a lab biome and every lab fauna entry has a planet role',()=>{
+  assert.deepEqual(ecoLinkProblems(BIOME_DEFINITIONS,BIOME_ECO_LINKS),[]);
+  assert.deepEqual(Object.keys(BIOME_ECO_LINKS).sort(),BIOME_DEFINITIONS.map(b=>b.id).sort());
+  for(const id of NEW_BIOMES)assert.ok(BIOME_DEFINITIONS.some(b=>b.id===id),id);
+  assert.deepEqual(BIOME_DEFINITIONS.slice(0,9).map(b=>b.id),['woodland','conifer','grassland','dry-scrub','wetland','coast','alpine','volcanic','regolith'],'original biomes keep their order');
+});
+
+test('negative: a missing lab biome for a class, or a lab fauna role without a planet role, is reported',()=>{
+  const withoutTundra=BIOME_DEFINITIONS.filter(b=>b.id!=='tundra');
+  assert.deepEqual(ecoLinkProblems(withoutTundra,BIOME_ECO_LINKS),['class 1: no lab biome']);
+  const badRole={...BIOME_ECO_LINKS,savanna:{...BIOME_ECO_LINKS.savanna,faunaRoleIds:['savanna.giraffe-long-neck','savanna.unicorn-runner','savanna.zebra-browser','savanna.elephant-low-slung']}};
+  assert.deepEqual(ecoLinkProblems(BIOME_DEFINITIONS,badRole),['savanna: unknown planet role savanna.unicorn-runner']);
+});
+
+test('new lab biomes have their defining structure',()=>{
+  const common={seed:'eco-lab-structure',sizeM:128,originX:-64,originZ:-64};
+  const p=Object.fromEntries(NEW_BIOMES.map(biome=>[biome,generateBiomePatch({...common,biome})]));
+  const woodland=generateBiomePatch({...common,biome:'woodland'});
+  for(const id of ['tundra','alpine-meadow','ice-margin'])assert.equal(p[id].counts.tree,0,`${id} is treeless`);
+  for(const id of NEW_BIOMES)assert.ok(p[id].placements.some(x=>living.has(x.kind)),`${id} has living elements`);
+  assert.ok(p['boreal-taiga'].canopyCoverEstimate>woodland.canopyCoverEstimate,'taiga is denser than the woodland');
+  assert.ok(p.rainforest.canopyCoverEstimate>woodland.canopyCoverEstimate,'rainforest canopy exceeds the woodland');
+  assert.ok(p.savanna.canopyCoverEstimate>0&&p.savanna.canopyCoverEstimate<.06,'savanna has scattered trees only');
+  assert.ok(p.savanna.groundCoverEstimate>.6,'savanna is a grass sea');
+  assert.ok(p['hot-desert'].groundCoverEstimate<.06,'hot desert is mostly bare');
+  assert.ok(p['ice-margin'].counts.rock>p['ice-margin'].counts.grass+p['ice-margin'].counts.shrub,'ice margin is mostly bare stone');
+  const treeIds=patch=>new Set(patch.placements.filter(x=>x.kind==='tree').map(x=>x.recipeId));
+  assert.deepEqual([...treeIds(p.savanna)],['acacia-umbrella']);
+  assert.deepEqual([...treeIds(p['hot-desert'])],['columnar-succulent']);
+  assert.ok(treeIds(p['boreal-taiga']).has('taiga-spruce'));
+  assert.deepEqual([...treeIds(p.rainforest)],['buttress-broadleaf']);
+});
+
+test('new recipes stay inside the competition halo and footprint bound',()=>{
+  const fresh=ELEMENT_RECIPES.slice(19);
+  assert.equal(fresh.length,15);
+  for(const r of fresh){
+    assert.ok(r.minSizeM>0&&r.maxSizeM>=r.minSizeM,r.id);
+    // footprintM (tree .25, shrub .34, rock .38, grass max(.16,.28) x size) must stay <= 4 m.
+    const f=r.kind==='tree'?.25:r.kind==='shrub'?.34:r.kind==='rock'?.38:.28;
+    assert.ok(r.maxSizeM*f<=4,`${r.id} footprint ${r.maxSizeM*f}`);
+  }
+});
+
+test('new biomes keep global addressing: overlap independent of extent and order',()=>{
+  for(const biome of ['rainforest','savanna']){
+    const common={seed:'eco-overlap',biome,blendBiome:biome==='rainforest'?'savanna':'hot-desert'};
+    const large=generateBiomePatch({...common,originX:-96,originZ:-96,sizeM:192});
+    for(const q of [{originX:-8,originZ:-24,sizeM:32},{originX:0,originZ:0,sizeM:32}]){
+      const small=generateBiomePatch({...common,...q});
+      const within=large.placements.filter(x=>x.x>=q.originX&&x.x<q.originX+q.sizeM&&x.z>=q.originZ&&x.z<q.originZ+q.sizeM).map(placementKey);
+      assert.deepEqual(small.placements.map(placementKey),within,`${biome} ${JSON.stringify(q)}`);
+    }
+  }
+});

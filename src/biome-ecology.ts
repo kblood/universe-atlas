@@ -5,8 +5,11 @@
  * renderer or planet dependency: a future planet integration supplies its own
  * climate and cell-ownership rules.
  */
+import type {EcoRoleId} from './eco-assemblages.ts';
 export type BiomeId = 'woodland' | 'conifer' | 'grassland' | 'dry-scrub' |
-  'wetland' | 'coast' | 'alpine' | 'volcanic' | 'regolith';
+  'wetland' | 'coast' | 'alpine' | 'volcanic' | 'regolith' |
+  // Appended for ECO-CLASS-1 (BIOME2-ECO): one lab biome per eco class that had none.
+  'tundra' | 'alpine-meadow' | 'boreal-taiga' | 'savanna' | 'rainforest' | 'hot-desert' | 'ice-margin';
 export type ElementKind = 'tree' | 'shrub' | 'grass' | 'rock';
 export type ElementRecipe = {
   id: string; name: string; kind: ElementKind; form: string;
@@ -16,6 +19,9 @@ export type BiomeDefinition = {
   id: BiomeId; name: string; description: string; groundColor: string;
   elements: {recipeId: string; densityPerHa: number}[];
   fauna: {name: string; role: string; status: 'planned'}[];
+  /** Optional ground patches painted by the lab only (snow gravel, ponds, red
+   * soil, dune ripples). Never read by generateBiomePatch, so never in a digest. */
+  groundAccent?: {color: string; cover: number; scaleM: number};
 };
 export type BiomePatchConfig = {
   seed: string; biome: BiomeId; blendBiome?: BiomeId;
@@ -64,6 +70,23 @@ export const ELEMENT_RECIPES: readonly ElementRecipe[] = Object.freeze(([
   {id: 'slab-rock', name: 'Layered slab', kind: 'rock', form: 'slab', color: '#6e6b61', minSizeM: 0.6, maxSizeM: 3.4},
   {id: 'volcanic-rock', name: 'Volcanic clinker', kind: 'rock', form: 'angular', color: '#383534', minSizeM: 0.3, maxSizeM: 2.6},
   {id: 'regolith-rock', name: 'Regolith fragment', kind: 'rock', form: 'angular', color: '#8d8476', minSizeM: 0.2, maxSizeM: 1.8},
+  // Appended for ECO-CLASS-1 (BIOME2-ECO). Tree heights stay <= 16 m so every
+  // footprint is within MAX_FOOTPRINT_M (4 m) and the 16 m competition halo.
+  {id: 'dwarf-birch', name: 'Dwarf birch', kind: 'shrub', form: 'dwarf-shrub', color: '#8a5634', minSizeM: 0.25, maxSizeM: 0.7},
+  {id: 'dwarf-willow', name: 'Dwarf willow', kind: 'shrub', form: 'dwarf-shrub', color: '#7c8c4c', minSizeM: 0.2, maxSizeM: 0.55},
+  {id: 'sedge-tussock', name: 'Sedge tussock', kind: 'grass', form: 'tussock', color: '#9a8c54', minSizeM: 0.25, maxSizeM: 0.6},
+  {id: 'lichen-rock', name: 'Lichen-crusted rock', kind: 'rock', form: 'lichen-rock', color: '#8c8a7e', minSizeM: 0.3, maxSizeM: 1.6},
+  {id: 'cushion-plant', name: 'Cushion plant', kind: 'shrub', form: 'cushion-dome', color: '#6c8c42', minSizeM: 0.15, maxSizeM: 0.45},
+  {id: 'acacia-umbrella', name: 'Umbrella acacia', kind: 'tree', form: 'umbrella', color: '#6b7c38', minSizeM: 5, maxSizeM: 11},
+  {id: 'tall-grass', name: 'Tall savanna grass', kind: 'grass', form: 'tall-tuft', color: '#c8aa56', minSizeM: 0.7, maxSizeM: 1.6},
+  {id: 'buttress-broadleaf', name: 'Buttress broadleaf', kind: 'tree', form: 'buttress', color: '#2d5a28', minSizeM: 11, maxSizeM: 16},
+  {id: 'columnar-succulent', name: 'Columnar succulent', kind: 'tree', form: 'columnar', color: '#5b7a44', minSizeM: 2.5, maxSizeM: 7},
+  {id: 'ephemeral-herb', name: 'Flowering herb', kind: 'grass', form: 'flower-herb', color: '#7c9846', minSizeM: 0.15, maxSizeM: 0.45},
+  {id: 'moss-mat', name: 'Moss and lichen mat', kind: 'grass', form: 'mat', color: '#7b8850', minSizeM: 0.06, maxSizeM: 0.18},
+  {id: 'taiga-spruce', name: 'Taiga spruce', kind: 'tree', form: 'spire', color: '#1e3e2d', minSizeM: 8, maxSizeM: 16},
+  {id: 'termite-mound', name: 'Termite mound', kind: 'rock', form: 'mound', color: '#9a6340', minSizeM: 1.0, maxSizeM: 2.6},
+  {id: 'understory-palm', name: 'Understory palm', kind: 'shrub', form: 'fan-palm', color: '#3c7832', minSizeM: 1.2, maxSizeM: 3.2},
+  {id: 'thorn-scrub', name: 'Thorn scrub', kind: 'shrub', form: 'thorn', color: '#77703f', minSizeM: 0.5, maxSizeM: 1.6},
 ] as ElementRecipe[]).map(recipe => Object.freeze(recipe)));
 
 export const BIOME_DEFINITIONS: readonly BiomeDefinition[] = Object.freeze(([
@@ -76,6 +99,15 @@ export const BIOME_DEFINITIONS: readonly BiomeDefinition[] = Object.freeze(([
   {id: 'alpine', name: 'Alpine slope', description: 'Low hardy plants among slabs and angular exposed rock.', groundColor: '#70785b', elements: [{recipeId: 'alpine-grass', densityPerHa: 135}, {recipeId: 'alpine-shrub', densityPerHa: 65}, {recipeId: 'slab-rock', densityPerHa: 65}, {recipeId: 'angular-rock', densityPerHa: 35}], fauna: [{name: 'Highland grazer', role: 'grazer', status: 'planned'}, {name: 'Cliff scavenger', role: 'predator', status: 'planned'}]},
   {id: 'volcanic', name: 'Volcanic field', description: 'Sterile clinker and fractured lava representation.', groundColor: '#403b39', elements: [{recipeId: 'volcanic-rock', densityPerHa: 150}, {recipeId: 'slab-rock', densityPerHa: 50}, {recipeId: 'angular-rock', densityPerHa: 38}], fauna: []},
   {id: 'regolith', name: 'Regolith plain', description: 'Sterile mineral fragments without living elements.', groundColor: '#81796f', elements: [{recipeId: 'regolith-rock', densityPerHa: 120}, {recipeId: 'angular-rock', densityPerHa: 30}], fauna: []},
+  // Appended for ECO-CLASS-1 (BIOME2-ECO). Fauna stay 'planned'; their planet
+  // role ids are in BIOME_ECO_LINKS below.
+  {id: 'tundra', name: 'Arctic tundra', description: 'Treeless sedge tussocks, dwarf birch and willow, moss mats, lichen stones and meltwater ponds.', groundColor: '#6c674a', groundAccent: {color: '#3b4a4e', cover: 0.09, scaleM: 11}, elements: [{recipeId: 'sedge-tussock', densityPerHa: 300}, {recipeId: 'moss-mat', densityPerHa: 220}, {recipeId: 'dwarf-birch', densityPerHa: 130}, {recipeId: 'dwarf-willow', densityPerHa: 90}, {recipeId: 'lichen-rock', densityPerHa: 35}], fauna: [{name: 'Reindeer-like herd', role: 'migratory grazer', status: 'planned'}, {name: 'Musk-ox-like browser', role: 'heavy-coat browser', status: 'planned'}, {name: 'Arctic-fox-like runner', role: 'small predator', status: 'planned'}, {name: 'Wolf-like hunter', role: 'pack predator', status: 'planned'}]},
+  {id: 'alpine-meadow', name: 'Alpine meadow', description: 'Short flowering turf and cushion plants among scree and slabs above the treeline.', groundColor: '#5c7c3a', groundAccent: {color: '#85857a', cover: 0.12, scaleM: 7}, elements: [{recipeId: 'alpine-grass', densityPerHa: 230}, {recipeId: 'ephemeral-herb', densityPerHa: 210}, {recipeId: 'cushion-plant', densityPerHa: 70}, {recipeId: 'slab-rock', densityPerHa: 40}, {recipeId: 'angular-rock', densityPerHa: 30}], fauna: [{name: 'Ibex-like climber', role: 'cliff grazer', status: 'planned'}, {name: 'Chamois-like runner', role: 'agile grazer', status: 'planned'}, {name: 'Snow-leopard-like stalker', role: 'ambush predator', status: 'planned'}]},
+  {id: 'boreal-taiga', name: 'Boreal taiga', description: 'Dense narrow spruce spires over moss, pale lichen carpet and dwarf shrubs, with a few birches.', groundColor: '#33422e', groundAccent: {color: '#a3a88a', cover: 0.16, scaleM: 6}, elements: [{recipeId: 'taiga-spruce', densityPerHa: 160}, {recipeId: 'birch', densityPerHa: 14}, {recipeId: 'dwarf-birch', densityPerHa: 70}, {recipeId: 'moss-mat', densityPerHa: 220}, {recipeId: 'lichen-rock', densityPerHa: 15}], fauna: [{name: 'Moose-like browser', role: 'wetland browser', status: 'planned'}, {name: 'Lynx-like hunter', role: 'stalking predator', status: 'planned'}, {name: 'Bear-like forager', role: 'omnivore', status: 'planned'}]},
+  {id: 'savanna', name: 'Savanna', description: 'Tall golden grass with scattered flat-topped umbrella trees, thorn scrub and termite mounds.', groundColor: '#a4884a', groundAccent: {color: '#8d653c', cover: 0.12, scaleM: 9}, elements: [{recipeId: 'tall-grass', densityPerHa: 420}, {recipeId: 'acacia-umbrella', densityPerHa: 7}, {recipeId: 'thorn-scrub', densityPerHa: 18}, {recipeId: 'termite-mound', densityPerHa: 4}, {recipeId: 'rounded-rock', densityPerHa: 6}], fauna: [{name: 'Giraffe-like browser', role: 'high browser', status: 'planned'}, {name: 'Antelope-like runner', role: 'fast grazer', status: 'planned'}, {name: 'Zebra-like grazer', role: 'bulk grazer', status: 'planned'}, {name: 'Elephant-like giant', role: 'ecosystem engineer', status: 'planned'}]},
+  {id: 'rainforest', name: 'Tropical rainforest', description: 'Closed canopy of tall buttressed broadleaf trees over understory palms and herbs on red, leaf-littered soil.', groundColor: '#3a3220', groundAccent: {color: '#5c3b24', cover: 0.2, scaleM: 5}, elements: [{recipeId: 'buttress-broadleaf', densityPerHa: 120}, {recipeId: 'understory-palm', densityPerHa: 140}, {recipeId: 'ephemeral-herb', densityPerHa: 60}, {recipeId: 'rounded-rock', densityPerHa: 6}], fauna: [{name: 'Duiker-like browser', role: 'forest-floor browser', status: 'planned'}, {name: 'Forest-cat-like hunter', role: 'ambush predator', status: 'planned'}, {name: 'Forest-elephant-like giant', role: 'seed disperser', status: 'planned'}]},
+  {id: 'hot-desert', name: 'Hot desert', description: 'Rippled sand with sparse columnar succulents, thorn scrub, dry sage and bare stone.', groundColor: '#cfac72', groundAccent: {color: '#e2c690', cover: 0.3, scaleM: 4}, elements: [{recipeId: 'columnar-succulent', densityPerHa: 9}, {recipeId: 'thorn-scrub', densityPerHa: 25}, {recipeId: 'sage', densityPerHa: 20}, {recipeId: 'ephemeral-herb', densityPerHa: 15}, {recipeId: 'angular-rock', densityPerHa: 30}, {recipeId: 'rounded-rock', densityPerHa: 15}], fauna: [{name: 'Camel-like browser', role: 'drought browser', status: 'planned'}, {name: 'Oryx-like runner', role: 'desert grazer', status: 'planned'}, {name: 'Fennec-like runner', role: 'nocturnal insect eater', status: 'planned'}]},
+  {id: 'ice-margin', name: 'Ice margin', description: 'Snow and ice with exposed gravel, lichen-crusted boulders and scattered moss and cushion plants.', groundColor: '#dde3e6', groundAccent: {color: '#8b8d88', cover: 0.35, scaleM: 8}, elements: [{recipeId: 'lichen-rock', densityPerHa: 70}, {recipeId: 'angular-rock', densityPerHa: 55}, {recipeId: 'moss-mat', densityPerHa: 50}, {recipeId: 'cushion-plant', densityPerHa: 12}], fauna: [{name: 'Musk-ox-like browser', role: 'margin grazer', status: 'planned'}, {name: 'Ice-bear-like hunter', role: 'apex predator', status: 'planned'}]},
 ] as BiomeDefinition[]).map(biome => Object.freeze({...biome, elements: Object.freeze(biome.elements.map(element => Object.freeze(element))), fauna: Object.freeze(biome.fauna.map(member => Object.freeze(member)))}))) as unknown as readonly BiomeDefinition[];
 
 const DEFAULT_SIZE_M = 128;
@@ -286,3 +318,29 @@ function estimateCoverage(config: NormalizedConfig, placements: BiomePlacement[]
   }
   return {canopy: samples ? canopyCovered / samples : 0, ground: samples ? groundCovered / samples : 0};
 }
+
+/**
+ * ECO-CLASS-1 links (BIOME2-ECO, append-only): which eco classes each lab
+ * biome illustrates, and the planet role (src/eco-assemblages.ts ECO_ROLE_IDS)
+ * of each lab fauna entry, index for index. Classes 12/13 are lifeless.
+ * tests/biome-ecology.test.mjs fails if a class 0-11 has no lab biome or a lab
+ * fauna role has no planet role.
+ */
+export const BIOME_ECO_LINKS: Readonly<Record<BiomeId, Readonly<{ecoClasses: readonly number[]; faunaRoleIds: readonly EcoRoleId[]}>>> = Object.freeze({
+  woodland: Object.freeze({ecoClasses: Object.freeze([4, 6]), faunaRoleIds: Object.freeze(['temperate-forest.deer-browser', 'temperate-forest.boar-low-slung'] as EcoRoleId[])}),
+  conifer: Object.freeze({ecoClasses: Object.freeze([4]), faunaRoleIds: Object.freeze(['boreal.moose-browser', 'boreal.lynx-runner'] as EcoRoleId[])}),
+  grassland: Object.freeze({ecoClasses: Object.freeze([5]), faunaRoleIds: Object.freeze(['steppe.bison-browser', 'steppe.badger-low-slung'] as EcoRoleId[])}),
+  'dry-scrub': Object.freeze({ecoClasses: Object.freeze([10]), faunaRoleIds: Object.freeze(['cold-desert.saiga-browser', 'cold-desert.corsac-runner'] as EcoRoleId[])}),
+  wetland: Object.freeze({ecoClasses: Object.freeze([4, 6]), faunaRoleIds: Object.freeze(['humid-subtropical.marsh-tapir-low-slung', 'humid-subtropical.coyote-runner'] as EcoRoleId[])}),
+  coast: Object.freeze({ecoClasses: Object.freeze([11]), faunaRoleIds: Object.freeze(['coast.shore-scavenger-runner', 'coast.dune-burrower-low-slung'] as EcoRoleId[])}),
+  alpine: Object.freeze({ecoClasses: Object.freeze([2]), faunaRoleIds: Object.freeze(['alpine.ibex-browser', 'alpine.snow-leopard-low-slung'] as EcoRoleId[])}),
+  volcanic: Object.freeze({ecoClasses: Object.freeze([12, 13]), faunaRoleIds: Object.freeze([] as EcoRoleId[])}),
+  regolith: Object.freeze({ecoClasses: Object.freeze([13]), faunaRoleIds: Object.freeze([] as EcoRoleId[])}),
+  tundra: Object.freeze({ecoClasses: Object.freeze([1]), faunaRoleIds: Object.freeze(['tundra.reindeer-browser', 'tundra.musk-ox-browser', 'tundra.arctic-fox-runner', 'tundra.wolf-low-slung'] as EcoRoleId[])}),
+  'alpine-meadow': Object.freeze({ecoClasses: Object.freeze([2]), faunaRoleIds: Object.freeze(['alpine.ibex-browser', 'alpine.chamois-runner', 'alpine.snow-leopard-low-slung'] as EcoRoleId[])}),
+  'boreal-taiga': Object.freeze({ecoClasses: Object.freeze([3]), faunaRoleIds: Object.freeze(['boreal.moose-browser', 'boreal.lynx-runner', 'boreal.bear-low-slung'] as EcoRoleId[])}),
+  savanna: Object.freeze({ecoClasses: Object.freeze([8]), faunaRoleIds: Object.freeze(['savanna.giraffe-long-neck', 'savanna.antelope-runner', 'savanna.zebra-browser', 'savanna.elephant-low-slung'] as EcoRoleId[])}),
+  rainforest: Object.freeze({ecoClasses: Object.freeze([7]), faunaRoleIds: Object.freeze(['tropical-wet.duiker-browser', 'tropical-wet.forest-cat-runner', 'tropical-wet.forest-elephant-low-slung'] as EcoRoleId[])}),
+  'hot-desert': Object.freeze({ecoClasses: Object.freeze([9]), faunaRoleIds: Object.freeze(['hot-desert.camel-browser', 'hot-desert.oryx-runner', 'hot-desert.fennec-runner'] as EcoRoleId[])}),
+  'ice-margin': Object.freeze({ecoClasses: Object.freeze([0]), faunaRoleIds: Object.freeze(['nival.musk-ox-browser', 'nival.ice-bear-low-slung'] as EcoRoleId[])}),
+});
