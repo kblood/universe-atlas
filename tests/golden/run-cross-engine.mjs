@@ -339,8 +339,9 @@ async function main() {
     console.error(`--strict: known mismatch(es) are not equality: ${knownTolerated.join(", ")}`);
     process.exitCode = 1;
   }
-  const allEnginesRan = ["chromium", "firefox", "webkit"].every((n) => report[n] && !report[n].error);
-  const fourEngineEqual = !process.exitCode && allEnginesRan && knownTolerated.length === 0;
+  // Four-engine equality is Node vs each browser on every digest and count, with
+  // nothing tolerated; it is independent of whether the fixture is current.
+  const fourEngineEqual = ["chromium", "firefox", "webkit"].every((n) => report[n] && !report[n].error && report[n].vsNode === "MATCH");
   const gate = process.exitCode ? "FAIL" : knownTolerated.length ? "PASS-WITH-KNOWN-MISMATCH" : "PASS";
 
   if (reportPath) {
