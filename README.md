@@ -1,5 +1,33 @@
 # Universe Atlas
 
+## Test result classes and GitHub pack — 2026-10-04 (local, not deployed)
+
+**Owner decision:** Luna's appearance verdicts are their own result class,
+VISUAL-ADVISORY. They are recorded but never fail a gate by themselves. HARD
+checks (tests, tsc, digests, goldens) and CONTRACT checks (pinned LOD /
+lod-consistency targets, which only the owner may change) still block a
+merge. Visual work goes ELEMENT-FIRST: each element gets a deterministic
+metric test and a render check on its own, and then a hand-off gets at most
+ONE assembled Luna sheet. Rules: `docs/test-policy.md`.
+
+- `scripts/luna-vote.mjs` asks Luna N >= 3 times per image. It reports
+  PASS / FAIL / UNSTABLE with the vote counts. For every result that is not a
+  PASS it asks for a diagnosis: the reason, which element failed, what was
+  expected and how sure Luna is. It sums these up (the most common element,
+  plus flags for disagreement or an ambiguous question). `--controls`
+  checks a question against good and bad control images and marks it
+  CALIBRATED / UNCALIBRATED / INSENSITIVE. It exits 0 for every advisory
+  result and 2 only if Luna is unavailable. `luna-eyes.mjs` is unchanged.
+- `tests/luna-vote.test.mjs` (registered) tests the vote logic with a fake
+  judge.
+- **Not done:** no `tests/visual-controls/*.json` manifest exists yet. No
+  question is calibrated, so no Luna FAIL can be cited yet. luna-vote has not
+  been run against real Luna.
+- **GitHub pack merged** (`docs/github/`, `.github/` templates,
+  `scripts/github/post-issues.mjs`; nothing was posted to GitHub). Astra
+  re-reviewed the 14 earlier fixes: 13 fixed, 1 partly fixed. The rest of
+  that fix and a YAML error in `bug.yml` were fixed before the merge.
+
 ## Round 2 merged — 2026-10-04 (local, not deployed)
 
 **Merged into `main` (10 of 11 round-2 branches, `--no-ff`):** OWNER-DECISIONS,
