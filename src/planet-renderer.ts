@@ -9,7 +9,7 @@ import {terrainSampler, DEFAULT_SURFACE_AGE_MYR} from './terrain.ts';
 import { PlanetAtmosphere } from './planet-atmosphere.ts';
 import {RiverWater} from './river-water.ts';
 import {LakeReflection} from './lake-reflection.ts';
-import {createOceanWaterMaterial,setOceanWaterPatchFrame,oceanSkirtBuffers,oceanSkirtDepthM,oceanSkirtSagM,oceanPatchSpacingM,OCEAN_UNDERWATER_GLSL,OCEAN_CAUSTICS_GLSL,OCEAN_UNDERWATER_VERSION,type OceanWaterMaterial,type OceanWaterPatchFrame} from './ocean-water-material.ts';
+import {createOceanWaterMaterial,setOceanWaterPatchFrame,oceanSkirtBuffers,oceanSkirtDepthM,oceanPatchSpacingM,OCEAN_UNDERWATER_GLSL,OCEAN_CAUSTICS_GLSL,type OceanWaterMaterial,type OceanWaterPatchFrame} from './ocean-water-material.ts';
 import {generateOceanWaveField,hashSeedString,oceanPhaseSeconds,oceanWaveMinSpacingPerM} from './ocean-gerstner.ts';
 import {oceanPatchCullProof} from './ocean-patch-culling.ts';
 import {SHARED_WATER_NORMAL_ATLAS_BYTES} from './water-normal-atlas.ts';
@@ -136,6 +136,12 @@ export const RENDER_SKIRT_BOUND_M=41;
 /** A level-L tile's skirt bound: planet-tiles skirtDepthM is at most
  * min(40, childFootprint) + 0.25 m, childFootprint = 4 sqrt2 R / (2^L x 32)
  * (PATCH_SEGMENTS), + 1 cm rounding. */
+/** OCEAN-PRESENT ocean skirt chord-sag part (m) of a level-L shell: the same
+ * value as ocean-water-material oceanSkirtSagM(level, R, 32), written out here
+ * so this block stays self-contained (it is spliced into reference revisions). */
+export function renderOceanSkirtSagM(radiusM:number,level:number){
+  const s=2*radiusM/(2**level*32);return Math.min(40,2*s*s/radiusM);
+}
 export function renderSkirtBoundM(radiusM:number,level:number){
   return Math.min(RENDER_SKIRT_BOUND_M,Math.min(40,4*Math.SQRT2*radiusM/(2**level*32))+.26);
 }
@@ -218,7 +224,7 @@ export function residentTileBounds(p:RbPatch,radiusM:number):RbResident{
     scan(d.oceanPositions,sea);scan(d.oceanParents,sea);
     // OCEAN-PRESENT skirts hang the wave part (inside the wave bound) plus the
     // coarser-neighbour chord sag below the shell's edge vertices.
-    const skirt=(d.tile?oceanSkirtSagM(d.tile.level,radiusM,PATCH_SEGMENTS):40)/radiusM;
+    const skirt=(d.tile?renderOceanSkirtSagM(radiusM,d.tile.level):40)/radiusM;
     box.union(sea.expandByScalar(wave+skirt));minR=Math.min(minR,Math.sqrt(min2)-wave-skirt);maxR=Math.max(maxR,Math.sqrt(max2)+wave);
   }
   const sphere=box.getBoundingSphere(new THREE.Sphere());sphere.center.x+=ax;sphere.center.y+=ay;sphere.center.z+=az;
@@ -273,7 +279,7 @@ export function candidateTileRadii(t:Tile,cos:number,patches:ReadonlyMap<string,
     // The ocean shell's parent morph endpoints sag the same way.
     const sea=1+waterLevelM/R,wave=RENDER_WAVE_BOUND_M/R;
     // ... and its skirts (OCEAN-PRESENT) hang the coarser-neighbour chord sag deeper.
-    if(r0*cos<=sea+wave){r0=Math.min(r0,sea*sag-wave-oceanSkirtSagM(t.level,R,PATCH_SEGMENTS)/R);r1=Math.max(r1,sea+wave);}
+    if(r0*cos<=sea+wave){r0=Math.min(r0,sea*sag-wave-renderOceanSkirtSagM(R,t.level)/R);r1=Math.max(r1,sea+wave);}
   }
   const f32=renderF32BoundM(R,t.level)/R;r0-=f32;r1+=f32;
   return [r0,Math.max(r0,r1)];
@@ -1112,7 +1118,7 @@ export class PlanetRenderer {
         }
         #include <opaque_fragment>`);
     };
-    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v11/'+LOCAL_AERIAL_VERSION+'/ground-pbr-v2-climate/'+OCEAN_UNDERWATER_VERSION;
+    material.customProgramCacheKey = () => 'planet-patch-ground-bed-v11/'+LOCAL_AERIAL_VERSION+'/ground-pbr-v2-climate';
     const mesh = new THREE.Mesh(geometry, material);
     mesh.receiveShadow=true;mesh.castShadow=true;material.shadowSide=THREE.DoubleSide;
     mesh.customDepthMaterial=terrainDepthMaterial(morph,edge,d.width-2);

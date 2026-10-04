@@ -20,7 +20,7 @@ import assert from 'node:assert/strict';
 import {rendererModule,maithea,createRenderer,nextTurn} from './terrain-renderer-fixture.mjs';
 import {terrainSampler} from '../src/terrain.ts';
 import {tileDirection,tileNeighbour,tileKey,unit,PATCH_SEGMENTS} from '../src/planet-tiles.ts';
-import {oceanSkirtDepthM} from '../src/ocean-water-material.ts';
+import {oceanSkirtDepthM,oceanSkirtSagM} from '../src/ocean-water-material.ts';
 import {DETAIL_PERIOD_M} from '../src/ground-material.ts';
 import {loweredSeaLevels} from './helpers/harness-water.mjs';
 
@@ -79,6 +79,8 @@ test('ocean waves are continuous across drawn patch edges and per-patch ocean un
   const {module,cleanup}=await rendererModule({prefix:'atlas-ocean-seam-'});
   const body=maithea(),fx=createRenderer(module,body),renderer=fx.renderer,R=body.radiusM;
   const seaDir=findOpenSea(body),seaRadius=1+WATER_M/R;
+  // The render-bounds block's self-contained skirt sag equals the shell's.
+  for(let level=0;level<=22;level++)assert.ok(Math.abs(module.rendererExports.renderOceanSkirtSagM(R,level)-oceanSkirtSagM(level,R,PATCH_SEGMENTS))<1e-9,`skirt sag bound, level ${level}`);
   // 40 m above the sea: contact-scale leaves at the eye, 2:1 rings outward.
   let eye=seaDir.map(v=>v*(1+(WATER_M+40)/R)),worldNs=435084631200000032044300000n;
   const sun=unit([seaDir[0]+.3,seaDir[1]+.6,seaDir[2]]);
