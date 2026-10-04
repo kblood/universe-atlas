@@ -20,6 +20,7 @@ import {oceanHypsometry,fibonacciDirection,levelForLoss} from '../../src/ocean-v
 import {oceanPatchCullProof} from '../../src/ocean-patch-culling.ts';
 import {placeAt} from '../../src/place-query.ts';
 import {CATALOGUE_EPOCH_NS} from '../../src/world-time.ts';
+import {pickLandingSite,landingCandidate,LANDING_SUMMIT_PERCENTILE} from '../../src/landing-site.ts';
 
 const RENDERER_SOURCE=new URL('../../src/planet-renderer.ts',import.meta.url);
 const g0=galaxies('LETHRA-001')[0];
@@ -227,19 +228,27 @@ export function renderBoundsSuite({tiles,ratioTiles,poses,poolLevels,poolRepeats
 
   // Integration 2026-10-04 (relief-round/INT): on the P4 relief terrain the
   // kept ceiling (0.8 x body bound, 4.1-5.3 km over the sea) lies ABOVE p99
-  // land (2.5-4.2 km) on all four worlds, so it no longer excludes summits at
-  // the datum sea either; the first case to fail was Selawyn (pick 3496 m,
-  // p99 3246 m). The owner kept the formula; "never on a summit" stays OPEN.
-  test(`landing at the datum sea never picks a summit (${landingEyes} eyes, all four worlds)`,
-    {todo:'OPEN (owner): P4 terrain, sea 0, 256 eyes: picks at or above p99 land are counted in report.landingDatumSea (see test-results/finish-round-2026-10-04/INT). The kept 0.8 x bound ceiling is above p99 land on every fixture world after P4. Needs a percentile-based ceiling or an owner waiver.'},()=>{
+  // land (2.5-4.2 km) on all four worlds, so it alone does not exclude
+  // summits (ceiling-only picks at or above p99: Maithea 2, Selawyn 6, Raiva 6,
+  // Lethuris 2 of 256). The owner kept the formula; landing-site-1 adds the
+  // summit cap (strictly below p99 land at the dated sea) and this case runs
+  // the main.ts rule itself (src/landing-site.ts pickLandingSite).
+  test(`landing at the datum sea never picks a summit (${landingEyes} eyes, all four worlds)`,()=>{
     const out=report.landingDatumSea={};
     for(const {name,body} of WORLDS){
-      const ts=terrainSampler(body),sea=0,ceiling=RB.landingCeilingM(body),ref=RB.landingReferenceM(body,sea),p99=RB.landPercentileM(body,.99,sea);
-      let summits=0;
-      for(let e=0;e<landingEyes;e++){const site=landingPick(d=>ts(d).groundHeightM,fibonacciDirection(e,landingEyes),sea,ceiling,ref);if(site!==null&&site>=p99)summits++;}
-      out[name]={ceilingM:ceiling,p99M:p99,summits};
+      const ts=terrainSampler(body),sea=0,ceiling=RB.landingCeilingM(body),ref=RB.landingReferenceM(body,sea),p99=RB.landPercentileM(body,LANDING_SUMMIT_PERCENTILE,sea);
+      const heights=Array.from({length:384},(_,i)=>ts(landingCandidate(i,384)).groundHeightM);
+      let summits=0,found=0;
+      for(let e=0;e<landingEyes;e++){
+        const site=pickLandingSite({height:(d,i)=>heights[i]>=sea?heights[i]:null,eye:fibonacciDirection(e,landingEyes),seaLevelM:sea,ceilingM:ceiling,summitM:p99,referenceM:ref});
+        if(site){found++;if(site.heightM>=p99||site.heightM-sea>ceiling)summits++;}
+      }
+      out[name]={ceilingM:ceiling,p99M:p99,found,summits};
     }
-    for(const [name,{summits,p99M}] of Object.entries(out))assert.equal(summits,0,`${name}: ${summits}/${landingEyes} landing picks at or above p99 land ${p99M} m`);
+    for(const [name,{summits,found,p99M}] of Object.entries(out)){
+      assert.equal(found,landingEyes,`${name}: a landing site from every eye`);
+      assert.equal(summits,0,`${name}: ${summits}/${landingEyes} landing picks at or above p99 land ${p99M} m`);
+    }
   });
 
   // Astra review 2026-10-03: 80% of the analytic body bound does not by itself
@@ -262,16 +271,24 @@ export function renderBoundsSuite({tiles,ratioTiles,poses,poolLevels,poolRepeats
     }
     report.landingDatedSea=out;
   });
-  test(`landing on low relief (field and dated sea x0.3) never picks a summit (${lowEyes} eyes)`,
-    {todo:'OPEN (owner): pre-P4 terrain x0.3, 256 eyes, picks at or above p99 land (sea 0 / dated sea): Maithea 3 / 1, Selawyn 4 / 5, Raiva 2 / 2, Lethuris 5 / 3 (exploratory scan of all four worlds, 2026-10-04). Re-measured on P4 terrain x0.3 at the dated sea (relief-round/INT): Maithea 2, Lethuris 2. The kept ceiling (0.8 x body bound) excludes nothing on low relief, so the rule picks by proximity. Needs a percentile-based ceiling or an owner waiver.'},()=>{
+  // Low relief (landing-site-1): the kept ceiling excludes nothing here, so
+  // before the summit cap the rule picked by proximity (P4 terrain x0.3 at the
+  // dated sea: Maithea 2, Lethuris 2 of 256 at or above p99). The main.ts rule
+  // takes the summit height of the field it lands on: here the p99 of the
+  // scaled field at the scaled dated sea.
+  test(`landing on low relief (field and dated sea x0.3) never picks a summit (${lowEyes} eyes)`,()=>{
     const out=report.landingLowRelief={};
     for(const {name,body} of WORLDS.filter(w=>w.name==='Maithea'||w.name==='Lethuris')){
       const ts=terrainSampler(body),scale=.3,sea=Math.round(levelForLoss(body,.6)/25)*25*scale,ceiling=RB.landingCeilingM(body);
       const land=Array.from({length:4096},(_,i)=>ts(fibonacciDirection(i,4096)).groundHeightM*scale).filter(h=>h>=sea).sort((a,b)=>a-b);
       const p99=land[Math.floor(.99*(land.length-1))],ref=Math.max(1,land[Math.floor(.9*(land.length-1))]-sea);
       assert.ok(land.at(-1)-sea<ceiling,`${name}: low relief lies wholly below the ceiling`);
+      const heights=Array.from({length:384},(_,i)=>ts(landingCandidate(i,384)).groundHeightM*scale);
       let summits=0;
-      for(let e=0;e<lowEyes;e++){const site=landingPick(d=>ts(d).groundHeightM*scale,fibonacciDirection(e,lowEyes),sea,ceiling,ref);if(site>=p99)summits++;}
+      for(let e=0;e<lowEyes;e++){
+        const site=pickLandingSite({height:(d,i)=>heights[i]>=sea?heights[i]:null,eye:fibonacciDirection(e,lowEyes),seaLevelM:sea,ceilingM:ceiling,summitM:p99,referenceM:ref});
+        assert.ok(site,`${name}: a low-relief landing site from eye ${e}`);if(site.heightM>=p99)summits++;
+      }
       out[name]={seaM:sea,ceilingM:ceiling,landMaxAboveSeaM:Math.round(land.at(-1)-sea),p99M:p99,summits};
     }
     // Every body is measured (and reported) before the verdict.
