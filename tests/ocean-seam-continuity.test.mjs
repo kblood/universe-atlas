@@ -20,7 +20,7 @@ import assert from 'node:assert/strict';
 import {rendererModule,maithea,createRenderer,nextTurn} from './terrain-renderer-fixture.mjs';
 import {terrainSampler} from '../src/terrain.ts';
 import {tileDirection,tileNeighbour,tileKey,unit,PATCH_SEGMENTS} from '../src/planet-tiles.ts';
-import {oceanSkirtDepthM,oceanSkirtSagM} from '../src/ocean-water-material.ts';
+import {oceanSkirtBuffers,oceanSkirtDepthM,oceanSkirtSagM} from '../src/ocean-water-material.ts';
 import {DETAIL_PERIOD_M} from '../src/ground-material.ts';
 import {loweredSeaLevels} from './helpers/harness-water.mjs';
 
@@ -48,10 +48,14 @@ const smoothstep=(e0,e1,x)=>{const t=Math.min(1,Math.max(0,(x-e0)/(e1-e0)));retu
  * point, read from that patch's uniforms with float32 uniform values,
  * including the per-wave distance fade. */
 function patchWave(ocean,point,edges=[]){
-  const u=ocean.material.uniforms,R=Math.fround(u.oceanRadiusM.value),origin=u.oceanPhaseOriginM.value,anchor=ocean.position;
+  const anchor=ocean.position;
+  return localWave(ocean,[Math.fround(point[0]-anchor.x),0,Math.fround(point[2]-anchor.z)],patchSpacing(ocean,point,edges));
+}
+/** The wave sum at an anchor-relative unit-radius position for a given grid spacing. */
+function localWave(ocean,local,spacing){
+  const u=ocean.material.uniforms,R=Math.fround(u.oceanRadiusM.value),origin=u.oceanPhaseOriginM.value;
   const phaseOffsets=u.oceanWavePhase?.value??u.oceanWaveNumber.value.map(()=>0);
-  const x=Math.fround(point[0]-anchor.x)*R+Math.fround(origin.x),z=Math.fround(point[2]-anchor.z)*R+Math.fround(origin.z),t=Math.fround(u.oceanTime.value);
-  const spacing=patchSpacing(ocean,point,edges);
+  const x=local[0]*R+Math.fround(origin.x),z=local[2]*R+Math.fround(origin.z),t=Math.fround(u.oceanTime.value);
   let height=0,sx=0,sz=0;
   u.oceanWaveNumber.value.forEach((k0,i)=>{
     const k=Math.fround(k0),d=u.oceanWaveDir.value[i],lambda=2*Math.PI/k,a=Math.fround(u.oceanWaveAmplitudeM.value[i])*(1-smoothstep(lambda*.25,lambda*.5,spacing));
@@ -59,6 +63,112 @@ function patchWave(ocean,point,edges=[]){
     height+=Math.sin(phase)*a;const c=k*a*Math.cos(phase);sx+=c*d.x;sz+=c*d.y;
   });
   return {height,sx,sz};
+}
+
+/** The ocean vertex shader in float64 over a shell's real buffers: grid uv ->
+ * edge lock and edge spacing, parent morph, wave-fade spacing, Gerstner height
+ * (zero on vertices at or past OCEAN_BASE_VERTICES, the skirt copies), radial
+ * displacement along normalize(oceanNormalAnchor+transformed). Returns
+ * body-frame unit-radius positions (anchor + transformed) for every vertex.
+ * `morph`, `positions` and `parents` override the patch's own (negative
+ * controls and the morph sweep). */
+function shadeOcean(ocean,{morph,positions,parents}={}){
+  const g=ocean.geometry,u=ocean.material.uniforms,R=u.oceanRadiusM.value;
+  const pos=positions??g.getAttribute('position').array,par=parents??g.getAttribute('parentPosition').array,uv=g.getAttribute('uv').array;
+  const baseVertices=Number(/#define OCEAN_BASE_VERTICES (\d+)/.exec(ocean.material.vertexShader)[1]);
+  const texels=u.patchTexels.value,lockE=u.patchEdges.value,spaceE=u.oceanEdgeSpacingM.value,ws=u.oceanWaveSpacing.value,eye=u.oceanEyeM.value,na=u.oceanNormalAnchor.value,anchor=ocean.position,m=morph??u.patchMorph.value;
+  const lo=v=>v<1e-5?1:0,hi=v=>v>=.99999?1:0,out=new Float64Array(pos.length);
+  for(let i=0;i<pos.length/3;i++){
+    const gx=(uv[i*2]*(texels+2)-1)/texels,gy=(uv[i*2+1]*(texels+2)-1)/texels;
+    const lock=Math.max(lo(gx)*lockE.x,hi(gx)*lockE.y,lo(gy)*lockE.z,hi(gy)*lockE.w),edgeSpacing=Math.max(lo(gx)*spaceE.x,hi(gx)*spaceE.y,lo(gy)*spaceE.z,hi(gy)*spaceE.w);
+    const w=m*(1-lock),tr=[0,1,2].map(k=>par[i*3+k]+(pos[i*3+k]-par[i*3+k])*w);
+    const b=[na.x+tr[0],na.y+tr[1],na.z+tr[2]],bl=Math.hypot(...b);
+    let h=0;
+    if(i<baseVertices)h=localWave(ocean,tr,Math.max(Math.hypot(eye.x-tr[0]*R,eye.y-tr[1]*R,eye.z-tr[2]*R)*ws.x,ws.y,u.oceanPatchSpacingM.value,edgeSpacing)).height;
+    for(let k=0;k<3;k++)out[i*3+k]=anchor.getComponent(k)+tr[k]+b[k]/bl*h/R;
+  }
+  return {v:out,baseVertices};
+}
+
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const edgeUV=(e,s)=>[[0,s],[1,s],[s,0],[s,1]][e];
+/** Drawn neighbour across edge e at this leaf's level or coarser (null if none). */
+function coarserOrSameNeighbour(drawn,a,e){
+  let n=tileNeighbour(a.tile,e),b=null;
+  while(n.level>=0){b=drawn.get(tileKey(n));if(b||n.level===0)break;n={face:n.face,level:n.level-1,x:Math.floor(n.x/2),y:Math.floor(n.y/2)};}
+  return b&&b!==a?b:null;
+}
+/**
+ * Crack coverage measured on the drawn, indexed geometry. `shells` maps a
+ * patch key to {v (shadeOcean positions), baseVertices, index, count (the
+ * draw range)}. For every edge between drawn ocean leaves (same level, or a
+ * coarser neighbour), both shells are projected into the edge's wall: the
+ * great-circle plane through the planet centre that contains the edge (tile
+ * edges are great circles; skirt copies and wave displacement are radial, so
+ * both lie in it), with s = arc length (m) and r = height (m). A vertex is in
+ * the wall when it is within `tol` of the plane.
+ *  - Each side's surface boundary is the set of its base-triangle edges (all
+ *    indices below baseVertices) whose two vertices are in the wall.
+ *  - Skirt triangles are all drawn triangles touching a skirt copy with all
+ *    three vertices in the wall and a projected area above 1e-6 m^2, so a
+ *    missing or degenerate triangle covers nothing.
+ * At samples strictly inside each boundary segment of the finer side, a gap
+ * (|r_fine - r_coarse| > tol) must be spanned by the union of both sides'
+ * skirt intervals at that s, from the higher boundary down to the lower.
+ * tol = 1 mm (well under a pixel: 1 px is ~4.7 cm at the 40 m eye height
+ * here) + 2^-23 x the two tiles' extents (m): the float32 rounding of the
+ * anchor-relative vertex positions on each side, which is all that separates
+ * this float64 replay from the GPU.
+ */
+function skirtCoverage(drawn,shells,{R,seaRadius,S}){
+  const st={edges:0,coarser:0,coarser41:0,samples:0,open:0,slivers:0,surfaceMissing:0,maxGap:0,minMargin:Infinity,maxTol:0,worst:null};
+  const extentM=tile=>2/2**tile.level*R;
+  for(const a of drawn.values())for(let e=0;e<4;e++){
+    const b=coarserOrSameNeighbour(drawn,a,e);if(!b)continue;
+    const tol=1e-3+2**-23*(extentM(a.tile)+extentM(b.tile));st.maxTol=Math.max(st.maxTol,tol);
+    const E0=tileDirection(a.tile,...edgeUV(e,0)),E1=tileDirection(a.tile,...edgeUV(e,1)),N=unit(cross(E0,E1)),X=unit(E0),Y=cross(N,X);
+    const sEnd=Math.atan2(dot(E1,Y),dot(E1,X))*R,margin=extentM(a.tile)/S;
+    const wall=side=>{
+      const {v,baseVertices,index,count}=shells.get(side.key),boundary=[],skirt=[];
+      const P=i=>{const p=[v[i*3],v[i*3+1],v[i*3+2]];return {on:Math.abs(dot(p,N))*R<=tol,s:Math.atan2(dot(p,Y),dot(p,X))*R,r:(Math.hypot(...p)-seaRadius)*R};};
+      for(let t=0;t+2<count;t+=3){
+        const ids=[index[t],index[t+1],index[t+2]],q=ids.map(P);
+        if(q.every(x=>x.s<-margin)||q.every(x=>x.s>sEnd+margin))continue;
+        if(ids.every(i=>i<baseVertices)){for(const [i,j] of [[0,1],[1,2],[2,0]])if(q[i].on&&q[j].on&&q[i].s!==q[j].s)boundary.push(q[i].s<q[j].s?[q[i],q[j]]:[q[j],q[i]]);}
+        else if(q.every(x=>x.on)&&Math.abs((q[1].s-q[0].s)*(q[2].r-q[0].r)-(q[2].s-q[0].s)*(q[1].r-q[0].r))/2>1e-6)skirt.push(q);
+      }
+      return {boundary,skirt};
+    };
+    const A=wall(a),B=wall(b);
+    st.edges++;if(b.tile.level<a.tile.level){st.coarser++;if(a.tile.level-b.tile.level>1)st.coarser41++;}
+    const at=(segments,s)=>{for(const [p,q] of segments)if(s>=p.s&&s<=q.s)return p.r+(q.r-p.r)*(s-p.s)/(q.s-p.s);return null;};
+    const fineSegments=A.boundary.filter(([p,q])=>q.s>0&&p.s<sEnd);
+    if(!fineSegments.length){st.surfaceMissing++;continue;}
+    for(const [p,q] of fineSegments)for(const f of [1e-3,.25,.5,.75,1-1e-3]){
+      const s=p.s+(q.s-p.s)*f;if(s<=0||s>=sEnd)continue;
+      const rf=at(A.boundary,s),rc=at(B.boundary,s);
+      if(rf===null||rc===null){st.surfaceMissing++;continue;}
+      st.samples++;
+      const gap=Math.abs(rf-rc);st.maxGap=Math.max(st.maxGap,gap);
+      if(gap<=tol)continue;
+      st.open++;
+      const top=Math.max(rf,rc),low=Math.min(rf,rc),spans=[];
+      for(const tri of [...A.skirt,...B.skirt]){
+        const hits=[];
+        for(const [i,j] of [[0,1],[1,2],[2,0]]){const u=tri[i],w=tri[j];if(u.s!==w.s&&s>=Math.min(u.s,w.s)&&s<=Math.max(u.s,w.s))hits.push(u.r+(w.r-u.r)*(s-u.s)/(w.s-u.s));}
+        if(hits.length>=2)spans.push([Math.min(...hits),Math.max(...hits)]);
+      }
+      // Merge the skirt spans downward from the higher boundary: `reach` is
+      // the lowest height joined to the top without a break wider than tol.
+      spans.sort((x,y)=>y[1]-x[1]);
+      let reach=top;
+      for(const [l,h] of spans){if(h<reach-tol)break;reach=Math.min(reach,l);}
+      const marginM=low-reach;st.minMargin=Math.min(st.minMargin,marginM);
+      if(marginM<-tol){st.slivers++;st.worst??={a:a.key,b:b.key,levels:[a.tile.level,b.tile.level],s,fine:rf,coarse:rc,skirtReach:reach,tol};}
+    }
+  }
+  return st;
 }
 
 function findOpenSea(body){
@@ -185,68 +295,68 @@ test('ocean waves are continuous across drawn patch edges and per-patch ocean un
     assert.equal(fade.violations,0,`no wave is displaced on a grid that cannot sample it (worst ${fade.worst} m, ${JSON.stringify(fade.worstAt)})`);
 
     // 1c. Ocean skirts (OCEAN-PRESENT): every drawn shell carries skirt copies
-    // in the terrain skirt layout, hanging oceanSkirtDepthM below the sea, and
-    // at every 2:1 edge (both sides) the skirt is drawn. A sliver is an edge
-    // point where the two surfaces separate (> 1 mm) and the higher side's
-    // skirt does not reach below the lower side's surface.
+    // in the terrain skirt layout, oceanSkirtDepthM below its edge vertices,
+    // and both sides of every coarser-neighbour edge draw them. Coverage is
+    // then measured on the drawn, indexed geometry: skirtCoverage over the
+    // shadeOcean replay of the vertex shader (parent morph, edge locks, wave
+    // fade, undisplaced copies), with negative controls that prove the measure
+    // sees missing, degenerate and too-shallow skirts.
     const edgesOf=n=>[Array.from({length:n+1},(_,i)=>i),Array.from({length:n+1},(_,i)=>i*(n+1)+n),Array.from({length:n+1},(_,i)=>n*(n+1)+n-i),Array.from({length:n+1},(_,i)=>(n-i)*(n+1))];
-    const skirtStats={patches:0,skirtVertexError:0,skirtDrawn:0};
+    const drawsSkirt=p=>p.ocean.geometry.drawRange.count>=p.ocean.geometry.index.count;
+    const skirtStats={patches:0,skirtDrawn:0,copyErrorUlps:0};
     for(const p of drawn.values()){
       const g=p.ocean.geometry,pos=g.getAttribute('position').array,depth=oceanSkirtDepthM(p.ocean.material.waves,p.tile.level,R,S),anchor=p.ocean.position.toArray();
       assert.equal(pos.length/3,base+4*stride,`${p.key}: base grid plus 4 x ${stride} skirt vertices`);
       assert.equal(g.index.count,S*S*6+4*S*6,`${p.key}: terrain index buffer with skirt triangles`);
+      // Each copy component is its edge vertex moved depth/R toward the centre
+      // and stored once as float32: at most half an ulp of the stored value.
       edgesOf(S).forEach((edge,e)=>edge.forEach((a,k)=>{
         const b=base+e*stride+k,v=[0,1,2].map(i=>pos[a*3+i]+anchor[i]),l=Math.hypot(...v);
-        const err=Math.hypot(...[0,1,2].map(i=>(pos[b*3+i]-(pos[a*3+i]-v[i]/l*depth/R))*R));
-        skirtStats.skirtVertexError=Math.max(skirtStats.skirtVertexError,err);
+        for(let i=0;i<3;i++){
+          const expected=pos[a*3+i]-v[i]/l*(depth/R),ulp=2**(Math.floor(Math.log2(Math.max(Math.abs(expected),2**-126)))-23);
+          skirtStats.copyErrorUlps=Math.max(skirtStats.copyErrorUlps,Math.abs(pos[b*3+i]-expected)/ulp);
+        }
       }));
-      // Every skirt triangle joins two edge vertices to their own skirt copies.
-      const idx=g.index.array;
-      for(let i=S*S*6;i<idx.length;i++)assert.ok(idx[i]<pos.length/3,`${p.key}: skirt index in range`);
-      skirtStats.patches++;if(g.drawRange.count>=g.index.count)skirtStats.skirtDrawn++;
+      skirtStats.patches++;if(drawsSkirt(p))skirtStats.skirtDrawn++;
     }
-    const slivers={edges21:0,edges41:0,odd:0,openWithoutSkirt:0,maxGap:0,slivers:0,worst:null,sameLevelOpen:0};
-    const drawsSkirt=p=>p.ocean.geometry.drawRange.count>=p.ocean.geometry.index.count;
-    for(const a of drawn.values()){
-      for(let e=0;e<4;e++){
-        let n=tileNeighbour(a.tile,e),b=null;
-        while(n.level>=0){b=drawn.get(tileKey(n));if(b||n.level===0)break;n={face:n.face,level:n.level-1,x:Math.floor(n.x/2),y:Math.floor(n.y/2)};}
-        if(!b||b===a)continue;
-        const P=k=>tileDirection(a.tile,...edgeUV(e,k/S)).map(v=>v*seaRadius);
-        if(b.tile.level===a.tile.level){
-          for(let k=0;k<=S;k++){const pt=P(k),gap=Math.abs(patchWave(a.ocean,pt,[e]).height-patchWave(b.ocean,pt,facing(b,a)).height);if(gap>1e-3&&!drawsSkirt(a)&&!drawsSkirt(b))slivers.sameLevelOpen++;}
-          continue;
-        }
-        // Coarser neighbour (2:1, or 4:1 where the frontier has one): the
-        // fine side's edge vertices (chord midpoints where locked to a parent
-        // neighbour) against the coarse side's straight segments, radial
-        // heights in metres above the sea including the waves.
-        const diff=a.tile.level-b.tile.level,step=2**diff;if(step>S)continue;
-        slivers.edges21++;if(diff>1)slivers.edges41++;
-        assert.ok(drawsSkirt(a)&&drawsSkirt(b),`${step}:1 edge ${a.key} | ${b.key}: both sides draw their skirt`);
-        const depth=oceanSkirtDepthM(b.ocean.material.waves,b.tile.level,R,S),depthFine=oceanSkirtDepthM(a.ocean.material.waves,a.tile.level,R,S),locked=a.edge.value.getComponent(e)===1,fb=facing(b,a);
-        const lift=(p,h)=>(Math.hypot(...p)-seaRadius)*R+h;
-        for(let k=1;k<S;k++){
-          if(k%step===0)continue;
-          const F=locked&&k%2?P(k-1).map((v,i)=>(v+P(k+1)[i])/2):P(k);
-          const j=Math.floor(k/step)*step,f=(k-j)/step,C0=P(j),C1=P(j+step),C=C0.map((v,i)=>v+(C1[i]-v)*f);
-          const fine=lift(F,patchWave(a.ocean,F,[e]).height),coarse=lift(C,patchWave(b.ocean,C0,fb).height*(1-f)+patchWave(b.ocean,C1,fb).height*f),gap=Math.abs(fine-coarse);
-          slivers.odd++;slivers.maxGap=Math.max(slivers.maxGap,gap);
-          if(gap<=1e-3)continue;
-          slivers.openWithoutSkirt++;
-          // The higher side's skirt runs from its edge down to depth below the sea.
-          const higherIsFine=fine>coarse,bottom=higherIsFine?lift(F,0)-depthFine:lift(C,0)-depth,covered=drawsSkirt(higherIsFine?a:b)&&bottom<Math.min(fine,coarse)-1e-3;
-          if(!covered){slivers.slivers++;slivers.worst??={a:a.key,b:b.key,k,fine,coarse,bottom,depth};}
-        }
-      }
+    t.diagnostic(`ocean skirts: ${skirtStats.patches} drawn shells, ${skirtStats.skirtDrawn} drawing skirts, max skirt-copy error ${skirtStats.copyErrorUlps.toFixed(3)} float32 ulp`);
+    assert.ok(skirtStats.copyErrorUlps<=.5+1e-6,`skirt copies sit oceanSkirtDepthM below their edge vertices to float32 rounding (${skirtStats.copyErrorUlps} ulp)`);
+    for(const a of drawn.values())for(let e=0;e<4;e++){
+      const b=coarserOrSameNeighbour(drawn,a,e);
+      if(b&&b.tile.level<a.tile.level)assert.ok(drawsSkirt(a)&&drawsSkirt(b),`${2**(a.tile.level-b.tile.level)}:1 edge ${a.key} | ${b.key}: both sides draw their skirt`);
     }
-    t.diagnostic(`ocean skirts: ${skirtStats.patches} drawn shells, ${skirtStats.skirtDrawn} drawing skirts, skirt vertex error ${skirtStats.skirtVertexError.toFixed(3)} x float32 tolerance`);
-    t.diagnostic(`coarser-neighbour edges ${slivers.edges21} (${slivers.edges41} at 4:1 or more): ${slivers.odd} fine edge vertices, ${slivers.openWithoutSkirt} open > 1 mm without skirts (max gap ${slivers.maxGap.toFixed(3)} m), slivers with skirts ${slivers.slivers}; same-level open edges without skirts ${slivers.sameLevelOpen}`);
-    assert.ok(skirtStats.skirtVertexError<1,'skirt copies sit oceanSkirtDepthM below their edge vertices');
-    assert.ok(slivers.edges21>10,'fixture has 2:1 ocean edges');
-    assert.ok(slivers.openWithoutSkirt>0,'fixture has wave gaps that would be slivers without skirts');
-    assert.equal(slivers.slivers,0,`0 slivers at 2:1 edges (${JSON.stringify(slivers.worst)})`);
-    assert.equal(slivers.sameLevelOpen,0,'same-level edges without skirts never open');
+    const geo={R,seaRadius,S},skirtStart=S*S*6;
+    const shellsOf=(options=()=>({}))=>new Map([...drawn.values()].map(p=>{
+      const g=p.ocean.geometry,o=options(p),index=o.index??g.index.array;
+      return [p.key,{...shadeOcean(p.ocean,o),index,count:Math.min(o.count??g.drawRange.count,index.length)}];
+    }));
+    const fmtCover=c=>`${c.edges} edges (${c.coarser} coarser, ${c.coarser41} at 4:1 or more), ${c.samples} samples, ${c.open} open > tol (max gap ${c.maxGap.toFixed(3)} m, tol <= ${(c.maxTol*1e3).toFixed(2)} mm), ${c.slivers} uncovered, min skirt margin ${c.minMargin.toFixed(3)} m, surface samples missing ${c.surfaceMissing}`;
+    const cover=skirtCoverage(drawn,shellsOf(),geo);
+    t.diagnostic(`skirt coverage, drawn geometry as settled: ${fmtCover(cover)}`);
+    assert.ok(cover.coarser>10,'fixture has coarser-neighbour ocean edges');
+    assert.ok(cover.open>0,'fixture has wave gaps the skirts must cover');
+    assert.equal(cover.surfaceMissing,0,'every sample finds both surface boundaries in the edge wall');
+    assert.equal(cover.slivers,0,`0 uncovered gaps on the drawn geometry (${JSON.stringify(cover.worst)})`);
+    // Parent interpolation: every shell part-way and fully at its parent
+    // positions (the renderer draws all skirts while any patch morphs).
+    for(const morph of [0,.5]){
+      const c=skirtCoverage(drawn,shellsOf(()=>({morph,count:Infinity})),geo);
+      t.diagnostic(`skirt coverage, morph ${morph}: ${fmtCover(c)}`);
+      assert.equal(c.surfaceMissing,0,`morph ${morph}: both surface boundaries found`);
+      assert.equal(c.slivers,0,`morph ${morph}: 0 uncovered gaps (${JSON.stringify(c.worst)})`);
+    }
+    // Negative controls: the same measure must report uncovered gaps.
+    const controls={
+      'skirts not drawn':()=>({count:skirtStart}),
+      'every other skirt triangle missing':p=>{const idx=p.ocean.geometry.index.array,out=Array.from(idx.subarray(0,skirtStart));for(let i=skirtStart;i<idx.length;i+=6)out.push(idx[i],idx[i+1],idx[i+2]);return {index:out,count:Infinity};},
+      'degenerate skirt triangles':p=>{const idx=Array.from(p.ocean.geometry.index.array);for(let i=skirtStart;i<idx.length;i+=3)idx[i+1]=idx[i+2]=idx[i];return {index:idx,count:Infinity};},
+      'skirt without the chord sag':p=>{const d=p.data,s=oceanSkirtBuffers(d.oceanPositions,d.oceanParents,d.anchor,S,oceanSkirtDepthM(p.ocean.material.waves),R);return {positions:s.positions,parents:s.parents};},
+    };
+    for(const [name,options] of Object.entries(controls)){
+      const c=skirtCoverage(drawn,shellsOf(options),geo);
+      t.diagnostic(`negative control '${name}': ${fmtCover(c)}`);
+      assert.ok(c.slivers>0,`negative control '${name}' is detected (${c.slivers} uncovered samples)`);
+    }
 
     // 2. Per-frame ocean uniforms are fresh on moving, still and seek frames.
     oceanUniformsFresh('settled');

@@ -140,7 +140,7 @@ export const RENDER_SKIRT_BOUND_M=41;
  * value as ocean-water-material oceanSkirtSagM(level, R, 32), written out here
  * so this block stays self-contained (it is spliced into reference revisions). */
 export function renderOceanSkirtSagM(radiusM:number,level:number){
-  const s=2*radiusM/(2**level*32);return 2*s*s/radiusM;
+  const s=2*radiusM/(2**level*32);return 8*s*s/radiusM;
 }
 export function renderSkirtBoundM(radiusM:number,level:number){
   return Math.min(RENDER_SKIRT_BOUND_M,Math.min(40,4*Math.SQRT2*radiusM/(2**level*32))+.26);

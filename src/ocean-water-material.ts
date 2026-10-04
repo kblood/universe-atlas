@@ -143,13 +143,18 @@ vec3 atlasApplyCaustics(vec3 radiance,vec3 groundPositionM,float surfaceDepthM,f
 export function oceanPatchSpacingM(level:number,radiusM:number,segments=32){return 2/2**level*radiusM/segments;}
 /** Geometric part of a level-L patch's skirt: the sag below the sphere of a
  * neighbour's straight edge segment when that neighbour is up to two levels
- * coarser (a 4:1 frontier edge; the edge lock only removes the 2:1 part).
- * R(1-cos(theta/2)) <= R theta^2/8 with theta <= 4 s / R. Not capped (unlike
- * the 40 m terrain skirts): a capped skirt left far-horizon gaps at coarse 4:1
- * edges (after2/after3 horizon frames); the skirt sits below the opaque sea, so
- * its depth costs nothing visible from above. */
+ * coarser than this patch's PARENT (a 4:1 frontier edge while both sides still
+ * morph: a patch at patchMorph 0 draws its parent's grid, so a level-L shell
+ * beside a morphing level L-2 one shows level L-1 against L-3 chords; the
+ * edge lock only removes the settled 2:1 part).
+ * R(1-cos(theta/2)) <= R theta^2/8 with theta <= 8 s / R. (The 2 s^2/R bound,
+ * theta <= 4 s/R, left gaps of up to 5 m at morph 0 on the drawn geometry; see
+ * ocean-seam-continuity's skirt coverage.) Not capped (unlike the 40 m terrain
+ * skirts): a capped skirt left far-horizon gaps at coarse 4:1 edges
+ * (after2/after3 horizon frames); the skirt sits below the opaque sea, so its
+ * depth costs nothing visible from above. */
 export function oceanSkirtSagM(level:number,radiusM:number,segments=32){
-  const s=oceanPatchSpacingM(level,radiusM,segments);return 2*s*s/radiusM;
+  const s=oceanPatchSpacingM(level,radiusM,segments);return 8*s*s/radiusM;
 }
 /** Skirt depth below the undisplaced sea: deeper than the lowest possible
  * trough (the wave part stays inside render-bounds' RENDER_WAVE_BOUND_M, 3 m,
