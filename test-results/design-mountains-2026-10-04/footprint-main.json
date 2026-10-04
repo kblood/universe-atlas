@@ -1,0 +1,66 @@
+{
+ "root": "C:\\LLM\\IWSDK\\universe-atlas-wt\\design-mountains",
+ "k": 4,
+ "worlds": {
+  "Maithea": {
+   "L6": {
+    "point": {
+     "rgbP50": 2.95,
+     "rgbP99": 26.26,
+     "snow": 1.25,
+     "forest": 0.42
+    },
+    "footprint": {
+     "rgbP50": 2.66,
+     "rgbP99": 21.98,
+     "snow": 1.08,
+     "forest": 0.11
+    }
+   },
+   "L8": {
+    "point": {
+     "rgbP50": 0.27,
+     "rgbP99": 3.55,
+     "snow": 0.31,
+     "forest": 0.01
+    },
+    "footprint": {
+     "rgbP50": 0.32,
+     "rgbP99": 3.89,
+     "snow": 0.32,
+     "forest": 0.04
+    }
+   }
+  },
+  "Lethuris": {
+   "L6": {
+    "point": {
+     "rgbP50": 5.54,
+     "rgbP99": 39.17,
+     "snow": 2.12,
+     "forest": 1.76
+    },
+    "footprint": {
+     "rgbP50": 3.91,
+     "rgbP99": 25.07,
+     "snow": 1.36,
+     "forest": 0.52
+    }
+   },
+   "L8": {
+    "point": {
+     "rgbP50": 1.05,
+     "rgbP99": 11.05,
+     "snow": 0.96,
+     "forest": 2.17
+    },
+    "footprint": {
+     "rgbP50": 1.15,
+     "rgbP99": 11.56,
+     "snow": 0.86,
+     "forest": 0.89
+    }
+   }
+  }
+ }
+}
