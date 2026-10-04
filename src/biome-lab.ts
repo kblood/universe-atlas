@@ -102,7 +102,7 @@ function ecoFormGeometry(recipe: ElementRecipe): THREE.BufferGeometry | null {
       { geometry: new THREE.ConeGeometry(.05, .22, 6), position: V(0, .92, 0), color: c },
     ]);
     case "umbrella": return ecoCombined([
-      { geometry: new THREE.CylinderGeometry(.018, .03, .58, 6), position: V(0, .29, 0), color: "#5a4632" },
+      { geometry: new THREE.CylinderGeometry(.026, .04, .58, 6), position: V(0, .29, 0), color: "#5a4632" },
       { geometry: new THREE.CylinderGeometry(.015, .022, .26, 5), position: V(.07, .64, 0), rotation: new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), -.6), color: "#5a4632" },
       { geometry: new THREE.CylinderGeometry(.015, .022, .26, 5), position: V(-.06, .63, .03), rotation: new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), .55), color: "#5a4632" },
       { geometry: new THREE.CylinderGeometry(.5, .4, .09, 12), position: V(0, .76, 0), color: c },
