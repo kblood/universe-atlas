@@ -12,9 +12,14 @@ const profile=tau=>({kind:'relief',tau,hc:R.HC,hup:R.HUP,b1:R.B1,b2:R.B2,hhi:R.H
 const direction=(x,y)=>{const lat=-Math.PI/2+(y+.5)*step,lon=-Math.PI+(x+.5)*step;return [Math.cos(lat)*Math.cos(lon),Math.sin(lat),Math.cos(lat)*Math.sin(lon)];};
 const mask=(fn)=>{const ocean=new Uint8Array(N),heightM=new Float64Array(N);for(let y=0;y<NY;y++)for(let x=0;x<NX;x++){const h=fn(x,y);ocean[y*NX+x]=h<0?1:0;heightM[y*NX+x]=Math.max(0,h);}return {ocean,heightM};};
 const sample=(g,x,y)=>sampleClimateGrid(g,direction(x,y),createClimateGridSample());
-const continent=mask(x=>x>=50&&x<=77?(x>=62&&x<=65?3000:0):-1);
+// Meridional continent at columns 50..77 (about 6300 km wide at 43.6 deg) with a
+// 2-cell 3000 m ridge at 63..64; `flat` is the same continent without the ridge.
+const continent=mask(x=>x>=50&&x<=77?(x>=63&&x<=64?3000:0):-1);
+const flat=mask(x=>x>=50&&x<=77?0:-1);
 const west=buildClimateGridFromMask(params,continent);
 const east=buildClimateGridFromMask({...params,hadleyEdgeDeg:60},continent);
+const westFlat=buildClimateGridFromMask(params,flat);
+const eastFlat=buildClimateGridFromMask({...params,hadleyEdgeDeg:60},flat);
 
 test('aquaplanet and dry world: exact constants at all vertices and 1000 samples',()=>{
  for(const dry of [false,true]){const g=buildClimateGridFromMask({...params,water:dry?0:.6},mask(()=>-1));assert.equal(g.version,CLIMATE_GRID_VERSION);
@@ -22,17 +27,28 @@ test('aquaplanet and dry world: exact constants at all vertices and 1000 samples
  for(let i=0;i<1000;i++){const s=sampleClimateGrid(g,fib(i,1000),createClimateGridSample());assert.equal(s.precipMul,1);assert.equal(s.oceanness01,dry?0:1);}}
  const g=buildClimateGrid({...params,water:0});assert.ok(g.oceanness.every(v=>v===0));assert.ok(g.precipMul.every(v=>v===1));
 });
-test('westerly continentality and ridge shadow; trades reverse which side is dry',()=>{
- // Row 47 is 43.59 degrees north: west winds at edge=30, trades at edge=60.
- // Compare flat cells two columns from either ridge edge, away from its wet ascent.
- const y=47,wLeft=sample(west,60,y).precipMul,wRight=sample(west,67,y).precipMul;
- const eLeft=sample(east,60,y).precipMul,eRight=sample(east,67,y).precipMul;
- assert.ok(wRight<=.6*wLeft,`${wLeft} -> ${wRight}`);assert.ok(eLeft<=.6*eRight,`${eRight} -> ${eLeft}`);
- // The symmetric continent/ridge has reflected precipitation within cube interpolation error.
- assert.ok(Math.abs(wLeft-eRight)<.03);assert.ok(Math.abs(wRight-eLeft)<.03);
- const dx=step*params.radiusM/1000*Math.cos(-Math.PI/2+(y+.5)*step);
+test('ridge shadow beyond a flat-ground control; trades reverse which side is dry; flat continentality',()=>{
+ // Rows 47/16 are 43.59 degrees N/S: west winds at edge=30, trades at edge=60.
+ // Samples are the flat cells one column outside either ridge edge (61 and 66).
+ // They are close enough together that continental drying alone stays ABOVE
+ // 0.6x (flat control), so only the ridge can push the lee side below it.
+ for(const y of [47,16]){
+  const wLeft=sample(west,61,y).precipMul,wRight=sample(west,66,y).precipMul;
+  const eLeft=sample(east,61,y).precipMul,eRight=sample(east,66,y).precipMul;
+  assert.ok(wRight<=.6*wLeft,`west ${y}: ${wLeft} -> ${wRight}`);assert.ok(eLeft<=.6*eRight,`east ${y}: ${eRight} -> ${eLeft}`);
+  const fwLeft=sample(westFlat,61,y).precipMul,fwRight=sample(westFlat,66,y).precipMul;
+  const feLeft=sample(eastFlat,61,y).precipMul,feRight=sample(eastFlat,66,y).precipMul;
+  assert.ok(fwRight>.6*fwLeft,`flat west ${y} must not reach the threshold: ${fwLeft} -> ${fwRight}`);
+  assert.ok(feLeft>.6*feRight,`flat east ${y} must not reach the threshold: ${feRight} -> ${feLeft}`);
+  // The ridge itself removes at least 30% of the lee rain the flat continent keeps.
+  assert.ok(wRight<=.7*fwRight,`ridge lee ${wRight} vs flat lee ${fwRight}`);assert.ok(eLeft<=.7*feLeft,`ridge lee ${eLeft} vs flat lee ${feLeft}`);
+  // The symmetric continent/ridge has reflected precipitation within cube interpolation error.
+  assert.ok(Math.abs(wLeft-eRight)<.03);assert.ok(Math.abs(wRight-eLeft)<.03);
+ }
+ // Continentality on the flat control, so the ridge cannot contribute.
+ const y=47,dx=step*params.radiusM/1000*Math.cos(-Math.PI/2+(y+.5)*step);
  const coast=51,inland=coast+2000/dx;
- assert.ok(sample(west,inland,y).precipMul<=.6*sample(west,coast,y).precipMul);
+ assert.ok(sample(westFlat,inland,y).precipMul<=.6*sample(westFlat,coast,y).precipMul);
 });
 function checkSeams(g,n=10000){const a=createClimateGridSample(),b=createClimateGridSample();for(let i=0;i<n;i++){
  const axis=i%3,s=i%2?1:-1,t=i%4<2?1:-1,q=i%7===0?(i%2?1:-1):2*((i*7919%10001)/10000)-1;
@@ -82,10 +98,16 @@ test('real catalogue world with relief profile: bounded finite fields and deep o
  const g=buildClimateGrid(p);assert.ok(g.precipMul.every(v=>Number.isFinite(v)&&v>=.15&&v<=1.6));assert.ok(g.oceanness.every(v=>Number.isFinite(v)&&v>=0&&v<=1));
  let checked=0;for(let y=4;y<60;y+=4)for(let x=0;x<128;x+=4){const d=direction(x,y);if(macroHeightCode(p.moistureSeed,d)<.37+.22*p.water-.1){assert.ok(sample(g,x,y).oceanness01>.9);checked++;}}assert.ok(checked>10);
 });
-test('no-ocean rows have zero maritime influence and floor rain; polar ITCZ reverses midlatitude winds',()=>{
+test('no-ocean rows have zero maritime influence and floor rain; ITCZ crossing the Hadley edge reverses winds in both hemispheres',()=>{
  const g=buildClimateGridFromMask(params,mask(()=>0));assert.ok(g.oceanness.every(v=>v===0));assert.ok(g.precipMul.every(v=>Math.abs(v-.15)<1e-7));
- const polar=buildClimateGridFromMask({...params,itczSinLat:1,hadleyEdgeDeg:60},continent);
- assert.ok(sample(polar,60,47).precipMul<=.6*sample(polar,67,47).precipMul);
+ // Hadley edge held at 30 deg. Rows 47/16 sit at 43.59 deg N/S. ITCZ at 0 or 10 deg
+ // leaves them 43.6/33.6 deg away (westerlies, east side dry); at 20 deg they are
+ // 23.6 deg away (inside the trades, west side dry). Only the ITCZ moves.
+ const itcz=deg=>buildClimateGridFromMask({...params,itczSinLat:Math.sin(deg*Math.PI/180)},continent);
+ for(const [deg,trades] of [[0,false],[10,false],[20,true]]){const grid=itcz(deg);
+  for(const y of [47,16]){const left=sample(grid,61,y).precipMul,right=sample(grid,66,y).precipMul;
+   if(trades)assert.ok(left<=.6*right,`ITCZ ${deg} row ${y}: trades should dry the west, ${right} -> ${left}`);
+   else assert.ok(right<=.6*left,`ITCZ ${deg} row ${y}: westerlies should dry the east, ${left} -> ${right}`);}}
 });
 test('source determinism and import boundaries; sampler contains no allocations or hashing',()=>{
  const src=readFileSync(new URL('../src/climate-grid.ts',import.meta.url),'utf8');const code=src.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/[^\n]*/g,'');

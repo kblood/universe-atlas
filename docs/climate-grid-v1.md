@@ -51,17 +51,19 @@ Calibration (chosen to pass the acceptance below, not fitted to any world): L = 
 |---|---|---|
 | Aquaplanet gives precipMul 1 and oceanness 1 everywhere | pass | test 1, all vertices plus 1000 samples, exact equality (all-ocean mask; catalogue water is never 1) |
 | Water 0 gives oceanness 0 | pass | test 1 |
-| Leeward of a 3 km ridge <= 0.6x windward | pass | test 2, synthetic continent, row at 43.6 deg |
-| 2000 km inland downwind <= 0.6x the coast | pass | test 2 |
-| Wind-zone reversal mirrors the shadow | pass | test 2 (`hadleyEdgeDeg` 30 vs 60), plus the polar-ITCZ case in test 7 |
+| Leeward of a 3 km ridge <= 0.6x windward | pass | test 2: a synthetic continent with a 2-cell 3000 m ridge, rows at 43.6 deg N and S, samples one flat cell outside each ridge edge. Ridge lee/windward is 0.398. A **flat-ground control** at the same positions gives 0.636 and is asserted to stay above 0.6, so continental drying alone cannot pass. The ridge lee must also be <= 0.7x the flat lee (measured 0.638). Mutation check: with the ridge replaced by flat ground, the test fails |
+| 2000 km inland downwind <= 0.6x the coast | pass | test 2, on the flat control so the ridge cannot help |
+| Wind-zone reversal mirrors the shadow | pass | test 2 (`hadleyEdgeDeg` 30 vs 60, both hemispheres). Test 7 holds the Hadley edge at 30 and moves only the ITCZ: 0 and 10 deg stay westerly (east dry), 20 deg crosses the edge into the trades (west dry), in both hemispheres. Mutation check: with the ITCZ ignored by the wind rule, the test fails |
 | Face-edge seams <= 1e-3 | pass | test 3, 10,000 edge and corner pairs; a corrupted face fails the same check |
 | Builds bit-identical | pass | test 4, byte compare; a different seed differs |
 | No raw `Math.*` transcendentals; imports catalog.ts and det-math.ts only | pass | test 9 |
 | Grid <= 64 KB | pass | 52,272 B (test 4) |
 | Build mean <= 2 ms | pass, contended host | 1.966 ms mean over 24 distinct catalogue bodies |
-| Build cold <= 5 ms | **NOT MET** (contended host) | median 8.27 ms over 7 fresh processes; runner probe 8.0-15.3 ms with the noise already JIT-warm. Breakdown and quiet-host re-measurement in "Open" |
+| Build cold <= 5 ms | **OPEN / fail** (contended host) | median 8.27 ms over 7 fresh processes. This excludes a further 5.86 ms of module import plus geometry init, paid once per process. Runner probe: 8.0-15.3 ms with the noise already JIT-warm. Breakdown in "Open". Needs a quiet-host measurement (task 20) and the re-baselined acceptance (task 2) before any verdict |
 | Sample <= 30 ns, zero allocation | pass, contended host | 10.7 ns/call over 2e6 calls; GC-bracketed heap delta -488 B |
-| `npm test` and golden unchanged | pass for the selected set | nothing imports the module; `test:affected` 36/36, life-guard: LIFE_FILES untouched. The full suite and golden are merger-only and were not run |
+| `npm test` and golden unchanged | **deferred** | The full suite (`npm test` / `test:full`) and golden are merger-only and were not run |
+| Affected tests (separate evidence, not the row above) | pass for the selected set | nothing imports the module; `test:affected -- --base main` passes 36/36 (fix round, 2026-10-04), and life-guard reports LIFE_FILES untouched |
+| Re-baselined targets from task 2 (BIOME2-REPLAN) | **open-owner** | task 2 has not landed. This table is the original P2 acceptance; see "Open" |
 
 Bench script: `test-results/round2-2026-10-04/biome2-grid/bench-climate-grid.mjs` (results in `bench-results.json` beside it).
 
