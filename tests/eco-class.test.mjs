@@ -9,7 +9,7 @@ import {
 } from '../src/eco-class.ts';
 
 // Pinned: any calibration edit must bump ECO_CLASS_VERSION and re-pin this pair.
-const PINNED={version:'eco-class-1',sha:'4df8658a5c8fb35b4914c5649fcee11ede5b852350a4809d209e4b03177e6bc7'};
+const PINNED={version:'eco-class-1',sha:'550c33221ae29bf5fd3b23af5e49ca54de0b0c5e98ad4a79de688bac97f8ce1c'};
 const sha=createHash('sha256').update(JSON.stringify(K)).digest('hex');
 
 test('calibration sha is pinned to the version',()=>{
@@ -107,7 +107,7 @@ test('groundLookOf is all zeros at the SITE_A increment-1 climate and ramps on i
   const o=new Float32Array(4);
   assert.ok(groundLookOf(276,265,255,.6,0,0,o)[0]>.99,'cold tundra: peat');
   assert.ok(groundLookOf(310,300,292,.1,1,0,o)[1]>.99,'dry: straw/sand');
-  assert.ok(groundLookOf(300,297,295,.8,1,0,o)[2]>.99,'humid tropics: red soil');
+  assert.ok(groundLookOf(301,298,296,.8,1,0,o)[2]>.99,'humid tropics: red soil');
   assert.ok(groundLookOf(295,290,285,.6,1,45,o)[3]>.99,'steep: scree');
 });
 

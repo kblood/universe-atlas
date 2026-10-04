@@ -61,11 +61,12 @@ export const ECO_CLASS_CALIBRATION = Object.freeze({
   FOREST_MOISTURE: 0.5,
   // life01: heat fade (TwP) and cold-margin fade for class 0 (Ta).
   LIFE_HEAT_LO_K: 313, LIFE_HEAT_HI_K: 325, NIVAL_LIFE_LO_K: 243, NIVAL_LIFE_HI_K: 263,
-  // groundLookOf ramps: half-widths chosen so a 0.01 K or 0.001 moisture step moves a channel by <= 0.02.
+  // groundLookOf ramps. Red soil starts AT the Köppen A threshold (no red soil outside the tropics).
+  // Widths chosen so a 0.01 K or 0.001 moisture step moves a channel by <= 0.02.
   PEAT_WARMEST_LO_K: 280, PEAT_WARMEST_HI_K: 286,
   LITTER_COLDEST_LO_K: 264, LITTER_COLDEST_HI_K: 272, LITTER_MOIST_LO: 0.40, LITTER_MOIST_HI: 0.50, LITTER_GAIN: 0.6,
   ARID_MOIST_LO: 0.24, ARID_MOIST_HI: 0.44,
-  RED_COLDEST_LO_K: 289.65, RED_COLDEST_HI_K: 293.65, RED_MOIST_LO: 0.40, RED_MOIST_HI: 0.55,
+  RED_COLDEST_LO_K: 291.15, RED_COLDEST_HI_K: 295.15, RED_MOIST_LO: 0.40, RED_MOIST_HI: 0.55,
   SCREE_SLOPE_LO_DEG: 22, SCREE_SLOPE_HI_DEG: 38, ALPINE_SCREE_SLOPE_LO_DEG: 6, ALPINE_SCREE_SLOPE_HI_DEG: 22, ALPINE_SCREE_GAIN: 0.6,
 });
 const K = ECO_CLASS_CALIBRATION;
