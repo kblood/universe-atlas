@@ -206,10 +206,10 @@ export function renderBoundsSuite({tiles,ratioTiles,poses,poolLevels,poolRepeats
         const site=landingPick(d=>ts(d).groundHeightM,fibonacciDirection(e*61,512),sea,ceiling,ref);
         assert.ok(site!==null,`${name}: a landing site from eye ${e}`);
         assert.ok(site-sea<=ceiling,`${name}: site ${site} m is above the landing ceiling ${ceiling}`);
-        picks.push(Math.round(site));
+        picks.push(site);
       }
       // Whether a pick is a summit (>= p99 land) is the OPEN item below, not asserted here.
-      out[name]={ceilingM:ceiling,referenceM:ref,p99M:p99,siteHeightsM:picks,atOrAboveP99:picks.filter(h=>h>=p99).length};
+      out[name]={ceilingM:ceiling,referenceM:ref,p99M:p99,siteHeightsM:picks.map(Math.round),atOrAboveP99:picks.filter(h=>h>=p99).length};
     }
     report.landing=out;
   });
