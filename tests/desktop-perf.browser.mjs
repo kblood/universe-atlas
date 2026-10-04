@@ -16,6 +16,7 @@
  * ATLAS_PERF_CONDITIONS (native,cpu-proxy) ATLAS_PERF_SCENARIOS (S0,...,S6)
  * ATLAS_PERF_SKIP_BUILD ATLAS_PERF_ALLOW_DIRTY ATLAS_PERF_OWNER ATLAS_PERF_QUERY
  * ATLAS_PERF_GPU_CLOCK_LOCK (declared, e.g. "lgc=1100,lmc=7001")
+ * ATLAS_PERF_S4_FAULT (wrong-date or wrong-bucket; unset for normal assertions)
  * ATLAS_PERF_LOCK_RETRY_MS (60000) ATLAS_PERF_SHORT=1 (shortened windows for harness development). */
 import {chromium} from 'playwright';
 import * as THREE from 'three';
@@ -47,6 +48,7 @@ const config={
   owner:env.ATLAS_PERF_OWNER||'desktop-perf harness',gpuClockLock:env.ATLAS_PERF_GPU_CLOCK_LOCK||null,
   // Extra app URL parameters for every run, e.g. 'quality=floor' (recorded in the report).
   query:env.ATLAS_PERF_QUERY||'',
+  s4Fault:env.ATLAS_PERF_S4_FAULT??null,
   lockRetryMs:Number(env.ATLAS_PERF_LOCK_RETRY_MS||60000),
   // cpu-proxy: the harness pins its own browser to this mask (6C/12T); 'none' disables.
   cpuProxyAffinity:env.ATLAS_PERF_CPU_AFFINITY==='none'?null:Number(env.ATLAS_PERF_CPU_AFFINITY||0xFFF),
@@ -56,6 +58,7 @@ const S4_WINDOW_MS=30000;
 const CHROME_FLAGS=['--use-angle=d3d11','--enable-gpu','--disable-gpu-vsync','--disable-frame-rate-limit','--force-device-scale-factor=1',
   '--disable-renderer-backgrounding','--disable-background-timer-throttling','--disable-backgrounding-occluded-windows','--enable-precise-memory-info'];
 for(const c of config.conditions)if(!['native','cpu-proxy'].includes(c))throw new Error(`Unknown condition ${c}`);
+if(config.s4Fault!==null&&!['wrong-date','wrong-bucket'].includes(config.s4Fault))throw new Error(`Unknown S4 fault ${config.s4Fault}`);
 
 // ---- Fixed content (plan "Measurement protocol") --------------------------
 const seed=HARNESS_SEED,galaxyId='G001',systemId=HARNESS_SYSTEM_ID,bodyId=HARNESS_BODY_ID;
@@ -110,6 +113,7 @@ const stamp=new Date().toISOString().replace(/[:.]/g,'-');
 const out=env.ATLAS_PERF_OUT||`test-results/desktop-perf/${head.slice(0,7)}-${stamp}`;
 await mkdir(out,{recursive:true});
 const log=(...args)=>console.error(`[perf ${new Date().toISOString().slice(11,19)}]`,...args);
+if(config.s4Fault)log(`!!! S4 FAULT ACTIVE: ${config.s4Fault}; this run must fail !!!`);
 if(dirtyTree&&!config.allowDirty)throw new Error('Working tree is dirty; commit first (or ATLAS_PERF_ALLOW_DIRTY=1 for harness development, labelled in the report).');
 function npm(args){
   return new Promise((resolve,reject)=>{
@@ -205,7 +209,7 @@ async function browserRun(condition,repeat){
     if(condition==='cpu-proxy'&&config.cpuProxyAffinity)run.affinitySet=await setBrowserAffinity(launchedAt-2000,config.cpuProxyAffinity);
     run.browserAffinity=await browserAffinities(launchedAt-2000);
     const ev=(fn,arg)=>page.evaluate(fn,arg);
-    const waitFor=(fn,arg,timeout=180000)=>page.waitForFunction(fn,arg,{timeout,polling:100});
+    const waitFor=(fn,arg,timeout=180000,polling=100)=>page.waitForFunction(fn,arg,{timeout,polling});
     const sleep=ms=>page.waitForTimeout(ms);
     const settle=async(label,timeout=90000,{walking=false}={})=>{
       const t0=Date.now();
@@ -309,24 +313,49 @@ async function browserRun(condition,repeat){
       const spikes=c=>{const v=c.backlogSeries.map(s=>s.forestSelectionApplyMs);const changes=[];for(let i=1;i<v.length;i++)if(v[i]!==v[i-1])changes.push(v[i]);return {applies:changes.length,maxMs:changes.length?Math.max(...changes):null};};
       run.scenarios.S3={flight:{settle:st,capture:flight,selectionApply:spikes(flight)},walk:{settle:st2,capture:walk,selectionApply:spikes(walk)}};
     }
-    // S4 date seek A->B->A: inland hover and shore hover.
+    // S4 date seek A->B->A: inland hover and shore hover; assert browser date and water bucket.
     if(config.scenarios.includes('S4')){
+      const waitSeek=async(date,level,started)=>{
+        try{
+          await waitFor(({date,level})=>{const a=window.__atlas,t=a?.terrain?.tiles;
+            return a?.date?.offsetNs===date&&t?.waterLevelM===level&&t?.waterBucket===level/25;
+          },{date:date.toString(),level},S4_WINDOW_MS,500);
+          return Date.now()-started;
+        }catch(error){if(error?.name!=='TimeoutError')throw error;}
+        return null;
+      };
+      const checkSeek=async(label,date,level,matchedMs)=>{
+        const expectedDateNs=date.toString(),expectedWaterLevelM=level;
+        const observed=await ev(({date,level})=>{const a=window.__atlas,t=a?.terrain?.tiles;
+          return {observedDateNs:a?.date?.offsetNs??null,observedWaterLevelM:t?.waterLevelM??null,observedWaterBucket:t?.waterBucket??null,
+            dateOk:a?.date?.offsetNs===date,bucketOk:t?.waterLevelM===level&&t?.waterBucket===level/25};
+        },{date:expectedDateNs,level});
+        if(!observed.dateOk){run.errors.push(`S4 ${label}: browser date ${observed.observedDateNs} != expected ${expectedDateNs}`);run.failed=true;}
+        if(!observed.bucketOk){run.errors.push(`S4 ${label}: water level ${observed.observedWaterLevelM} m (bucket ${observed.observedWaterBucket}) != expected ${level} m (bucket ${level/25})`);run.failed=true;}
+        return {expectedDateNs,...observed,expectedWaterLevelM,matchedMs};
+      };
       const seekSeries=async(poseName)=>{
-        await setPose(POSES[poseName]);await ev(d=>window.__atlas.seek(d),DATE_A.toString());const st=await settle(`S4 ${poseName}`);await sleep(1000);
+        await setPose(POSES[poseName]);const initialStarted=Date.now();await ev(d=>window.__atlas.seek(d),DATE_A.toString());
+        const initial=await checkSeek(`${poseName} initial A`,DATE_A,LEVEL_A,await waitSeek(DATE_A,LEVEL_A,initialStarted));
+        const st=await settle(`S4 ${poseName}`);await sleep(1000);
         const steps=[];
-        for(const [label,date] of [['A→B',DATE_B],['B→A',DATE_A]]){
-          let clearedMs=null;const started=Date.now();
+        for(const [label,date,level] of [['A→B',DATE_B,LEVEL_B],['B→A',DATE_A,LEVEL_A]]){
+          let clearedMs=null,seekMatched=false;const started=Date.now();
           await ev(()=>{window.__atlas.setProfileHistory(36000);window.__atlas.setProfiling(true);window.__atlas.resetProfile();});
-          await ev(d=>window.__atlas.seek(d),date.toString());
+          const fault=label==='A→B'?config.s4Fault:null;
+          await ev(d=>window.__atlas.seek(d),(fault==='wrong-date'?date+YEAR_LIVING_NS:date).toString());
+          const expectedLevel=fault==='wrong-bucket'?LEVEL_A:level;
+          const matched=waitSeek(date,expectedLevel,started).then(ms=>{seekMatched=ms!==null;return ms;});
           // Up to 30 s; stops 2 s after the refresh has drained (plan bound: 3 s).
-          const c=await capture(`S4 ${poseName} ${label}`,S4_WINDOW_MS,{sampleMs:100,onSample:async s=>{
-            const b=s.backlog;if(clearedMs===null&&b&&b.staleWaterPatches===0&&b.terrainPending===0&&s.t>200)clearedMs=Date.now()-started;
-            return clearedMs!==null&&Date.now()-started>clearedMs+2000;}});
-          steps.push({label,date:date.toString(),windowMs:S4_WINDOW_MS,staleClearedMs:clearedMs,
+          const [matchedMs,c]=await Promise.all([matched,capture(`S4 ${poseName} ${label}`,S4_WINDOW_MS,{sampleMs:100,onSample:async s=>{
+            const b=s.backlog;if(seekMatched&&clearedMs===null&&b&&b.staleWaterPatches===0&&b.terrainPending===0&&s.t>200)clearedMs=Date.now()-started;
+            return clearedMs!==null&&Date.now()-started>clearedMs+2000;}})]);
+          const check=await checkSeek(`${poseName} ${label}`,date,expectedLevel,matchedMs);
+          steps.push({label,date:date.toString(),windowMs:S4_WINDOW_MS,staleClearedMs:clearedMs,...check,
             staleMax:Math.max(0,...c.backlogSeries.map(x=>x.staleWaterPatches??0)),staleAtEnd:c.backlogSeries.at(-1)?.staleWaterPatches??null,peakReservedCombinedBytes:c.peakReservedCombinedBytes,budgetBytes:c.budgetBytes,
             withinBudget:c.budgetBytes!==null&&c.peakReservedCombinedBytes<=c.budgetBytes,capture:c});
         }
-        return {pose:poseName,settle:st,steps};
+        return {pose:poseName,settle:st,initial,steps};
       };
       run.scenarios.S4={inland:await seekSeries('hover160'),...(POSES.shoreHover?{shore:await seekSeries('shoreHover')}:{})};
       await ev(d=>window.__atlas.seek(d),DATE.toString());
