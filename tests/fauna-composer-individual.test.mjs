@@ -102,10 +102,12 @@ test('every v1 fixture text decodes with no error, only face-migration and eye-u
 // Eye round EC2 (fauna-composer-eye-2, skin-4) rebuilt the eyes under the current eye rules; the face round's build is
 // kept as the earlier eye rules (eyeRules 1), so the skin-3 pins are now checked with eyeRules 1: they must still hold
 // byte for byte. The current-rules build of the same texts is pinned in composer-skin4-links.json.
+// Eye round EC4 (head polish, graph-4 / face-geometry-2) repinned the drifted entries in place (ec4Drift, skinPreEC4):
+// trunk and arm fixes are not eye rules, so they apply under eyeRules 1 too.
 const skin2 = JSON.parse(readFileSync(new URL('./fixtures/composer-skin2-links.json', import.meta.url), 'utf8'));
 const skin3 = JSON.parse(readFileSync(new URL('./fixtures/composer-skin3-links.json', import.meta.url), 'utf8'));
 test('legacy recipes: migrated neutral v1 texts with the earlier eye rules build the pinned skin-3 digest byte for byte, with v1 bone counts', () => {
-  let checked = 0, faceRepinned = 0;
+  let checked = 0, faceRepinned = 0, ec4Repinned = 0;
   assert.deepEqual(Object.keys(skin3.byText).sort(), Object.keys(fixture.headSkinDigests.byText).sort());
   assert.equal(skin3.capturedAt.skin, 'fauna-composer-skin-3');
   for (const [text, v1] of Object.entries(fixture.headSkinDigests.byText)) {
@@ -128,6 +130,16 @@ test('legacy recipes: migrated neutral v1 texts with the earlier eye rules build
     }
     const derived = deriveComposerIndividual({...neutral, eyeRules: 1});
     assert.equal(derived.traits.neutral, true, text);
+    // eye round EC4 (head polish; not an eye rule, so under both epochs) repinned in place the proboscis entries and
+    // those whose arms sit on a long axial body
+    if (pinned.ec4Drift) {
+      ec4Repinned++;
+      assert.notEqual(pinned.skinPreEC4, pinned.skin, `${text}: an EC4 repin must differ from the pin it replaces`);
+      const r = derived.recipe, axialArms = (r.layout === 'limbless' || r.layout === 'many-legged') && r.arms !== 'none';
+      assert.ok(r.head === 'proboscis' || axialArms, `${text}: an EC4 repin without an EC4 cause`);
+      assert.equal(pinned.ec4Drift.includes('proboscis head polish'), r.head === 'proboscis', text);
+      assert.equal(pinned.ec4Drift.includes('arms of a limbless or many-legged body'), axialArms, text);
+    }
     const graph = buildComposerGraph(derived.recipe), skin = buildComposerSkin(graph);
     assert.equal(digest(skin.positions, skin.index, skin.skinIndex, skin.skinWeight, skin.colors), pinned.skin, text);
     assert.equal(digest(skin.gloss), pinned.gloss, `${text}: gloss`);
@@ -137,6 +149,7 @@ test('legacy recipes: migrated neutral v1 texts with the earlier eye rules build
   }
   assert.equal(checked, 28);
   assert.equal(faceRepinned, 13);
+  assert.equal(ec4Repinned, skin3.repinnedAtEC4.changed);
   // and through the public creature factory
   const text = fixture.fixtureSeeds[3].text, c = createComposerCreature({...decodeComposerRecipe(text).recipe, eyeRules: 1});
   try { assert.equal(digest(c.skin.positions, c.skin.index, c.skin.skinIndex, c.skin.skinWeight, c.skin.colors), skin3.byText[text].skin); assert.deepEqual(c.individual.deltas, []); }
