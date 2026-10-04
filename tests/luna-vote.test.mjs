@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseVerdict, tally, parseDiagnosis, aggregateDiagnoses, voteImage, runControls, applyCalibration,
-  validateManifest, LunaUnavailable } from '../scripts/luna-vote.mjs';
+  validateManifest, calibrationFor, LunaUnavailable } from '../scripts/luna-vote.mjs';
 
 /** Scripted judge: per image a queue of vote answers; diagnosis prompts get the image's diagnosis queue. */
 function fakeJudge(script) {
@@ -107,11 +107,26 @@ test('a known-bad control that is not failed marks the question INSENSITIVE', as
   assert.equal(noBad.questions[0].status, 'UNCALIBRATED');
 });
 
+test('Astra blockers: no verdict from prose, no element from substrings, calibration bound to the prompt', () => {
+  assert.equal(parseVerdict('Cannot judge; the requested format is VERDICT: PASS or VERDICT: FAIL'), 'UNCLEAR');
+  assert.equal(parseVerdict('ok\n**VERDICT:** FAIL.'), 'FAIL');
+  const d = parseDiagnosis('REASON: r\nELEMENT: haze/clouds, not snow line\nEXPECTED: e\nCONFIDENCE: low\nAMBIGUITY: none');
+  assert.equal(d.element, 'ambiguous: haze/clouds, not snow line');
+  assert.ok(aggregateDiagnoses([d]).flags.includes('unparsed or ambiguous ELEMENT line'));
+  assert.ok(aggregateDiagnoses([]).flags.includes('diagnosis unavailable'));
+  const cal = { questions: [{ id: 'q-snow', prompt: 'Snowy peaks?', status: 'CALIBRATED' }] };
+  assert.equal(calibrationFor(cal, 'q-snow', ' Snowy peaks? ').status, 'CALIBRATED');
+  assert.deepEqual(calibrationFor(cal, 'q-snow', 'Is there haze?'), { status: 'UNCALIBRATED', why: 'prompt differs from the calibrated prompt' });
+  assert.equal(calibrationFor(cal, 'q-other', 'Snowy peaks?').status, 'UNCALIBRATED');
+  assert.ok(validateManifest({ id: 'x', asks: 2.5, questions: [{ id: 'q', prompt: 'p' }], controls: [{ image: 'a', expect: 'PASS' }] })
+    .some((e) => e.startsWith('asks must be')));
+});
+
 test('parseDiagnosis tolerates bold labels and unknown elements', () => {
   const d = parseDiagnosis('**REASON:** flat\n**ELEMENT:** silhouette/slope/ridge\nEXPECTED: x\nCONFIDENCE: Medium-ish\nAMBIGUITY: None.');
   assert.equal(d.element, 'silhouette/slope/ridge');
   assert.equal(d.confidence, 'medium');
   assert.equal(d.ambiguity, '');
   assert.equal(parseDiagnosis('nothing useful').element, 'unknown');
-  assert.ok(aggregateDiagnoses([parseDiagnosis('nothing')]).flags.includes('unparsed ELEMENT line'));
+  assert.ok(aggregateDiagnoses([parseDiagnosis('nothing')]).flags.includes('unparsed or ambiguous ELEMENT line'));
 });

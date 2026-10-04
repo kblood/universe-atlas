@@ -54,8 +54,13 @@ VISUAL-ADVISORY rules:
   controls are diagnosed too, so a judge that is right for the wrong element
   shows up (`elementMatch` when a bad control names its `element`). Then
   `luna-vote --calibration <result.json> --question <id> ...` stamps each
-  result with `calibration` and `citable`. Without it the result is
-  `NOT-CHECKED` and not citable.
+  result with `calibration` and `citable`. Calibration is bound to the exact
+  prompt text that was calibrated: a different prompt under the same id is
+  UNCALIBRATED. Without it the result is `NOT-CHECKED` and not citable.
+- **Parsing never guesses.** Only a standalone `VERDICT: PASS|FAIL` line counts
+  (otherwise the ask is `unclear`). An ELEMENT answer must be an exact element
+  name or `other: <name>`; anything else is kept as `ambiguous: ...` and
+  flagged, never routed. A diagnosis outage is flagged `diagnosis unavailable`.
 - **Manifest format** (`tests/visual-controls/<feature>.json`, image paths
   relative to the manifest; only generated review renders, never private
   assets):

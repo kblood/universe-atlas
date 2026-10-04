@@ -37,9 +37,9 @@ export function diagnosisPrompt(question, elements) {
     'AMBIGUITY: none | <what in the question was ambiguous>';
 }
 
-/** Last "VERDICT: PASS|FAIL" line wins; anything else is UNCLEAR. */
+/** Only a standalone "VERDICT: PASS|FAIL" line counts (the last one); anything else is UNCLEAR. */
 export function parseVerdict(text) {
-  const all = [...String(text).matchAll(/VERDICT:\s*\**\s*(PASS|FAIL)\b/gi)];
+  const all = [...String(text).matchAll(/^[ \t>*_-]*VERDICT[*_]*:[ \t*_]*(PASS|FAIL)[ \t*_.]*$/gim)];
   return all.length ? all[all.length - 1][1].toUpperCase() : 'UNCLEAR';
 }
 
@@ -53,7 +53,10 @@ export function tally(verdicts) {
 export function parseDiagnosis(text, elements = DEFAULT_ELEMENTS) {
   const field = (k) => (String(text).match(new RegExp(`^\\s*\\**${k}\\**:\\**\\s*(.+)$`, 'im')) || [])[1]?.trim() || '';
   const raw = field('ELEMENT'), lower = raw.toLowerCase();
-  const element = elements.find((e) => lower === e.toLowerCase()) || elements.find((e) => lower.includes(e.toLowerCase())) || (raw ? raw : 'unknown');
+  const norm = lower.replace(/^[\s*_"'`]+|[\s*_"'`.]+$/g, '');
+  // Exact element name or an explicit "other: <name>"; never guess from a substring.
+  const element = !raw ? 'unknown' : elements.find((e) => norm === e.toLowerCase())
+    || (/^other\s*:/.test(norm) ? norm : `ambiguous: ${raw}`);
   const confidence = (field('CONFIDENCE').toLowerCase().match(/low|medium|high/) || ['unknown'])[0];
   const ambiguity = field('AMBIGUITY');
   return { reason: field('REASON'), element, expected: field('EXPECTED'), confidence,
@@ -70,7 +73,8 @@ export function aggregateDiagnoses(diagnoses) {
   if (ranked.length > 1 && ranked[0][1] === ranked[1][1]) flags.push('no single most common element');
   const ambiguous = diagnoses.filter((d) => d.ambiguity).length;
   if (ambiguous) flags.push(`question possibly ambiguous (${ambiguous} of ${diagnoses.length} answers)`);
-  if (diagnoses.some((d) => d.element === 'unknown')) flags.push('unparsed ELEMENT line');
+  if (diagnoses.some((d) => d.element === 'unknown' || d.element.startsWith('ambiguous: '))) flags.push('unparsed or ambiguous ELEMENT line');
+  if (!diagnoses.length) flags.push('diagnosis unavailable');
   return { mostCommonElement: ranked.length ? ranked[0][0] : null, elementCounts: counts, flags, answers: diagnoses.length };
 }
 
@@ -107,6 +111,14 @@ export function applyCalibration(result, calibrationStatus) {
   return { ...result, calibration, citable };
 }
 
+/** Calibration status for a question id, bound to the exact prompt that was calibrated. */
+export function calibrationFor(calibrationResult, questionId, prompt) {
+  const cal = calibrationResult?.questions?.find((q) => q.id === questionId);
+  if (!cal) return { status: 'UNCALIBRATED', why: `question ${questionId} not in calibration result` };
+  if (typeof cal.prompt !== 'string' || cal.prompt.trim() !== String(prompt).trim()) return { status: 'UNCALIBRATED', why: 'prompt differs from the calibrated prompt' };
+  return { status: cal.status, why: cal.why || '' };
+}
+
 /** Controls: a good image must PASS, a bad one must FAIL, for every question. */
 export async function runControls({ judge, manifest, baseDir = '.' }) {
   const elements = manifest.elements?.length ? manifest.elements : DEFAULT_ELEMENTS;
@@ -116,7 +128,7 @@ export async function runControls({ judge, manifest, baseDir = '.' }) {
     const rows = [];
     for (const c of manifest.controls) {
       const r = await voteImage({ judge, question: q.prompt, image: resolve(baseDir, c.image), asks: manifest.asks || MIN_ASKS, elements });
-      rows.push({ control: c.image, expect: c.expect, status: r.status, pass: r.pass, fail: r.fail, unclear: r.unclear,
+      rows.push({ control: c.image, expect: c.expect, status: r.status, pass: r.pass, fail: r.fail, unclear: r.unclear, errors: r.errors,
         ...(r.diagnosis ? { diagnosis: r.diagnosis, diagnoses: r.diagnoses } : {}),
         ...(c.element && r.diagnosis ? { expectedElement: c.element, elementMatch: r.diagnosis.mostCommonElement === c.element } : {}) });
     }
@@ -126,7 +138,7 @@ export async function runControls({ judge, manifest, baseDir = '.' }) {
     if (!goods.length || !bads.length) { status = 'UNCALIBRATED'; why = 'needs at least one good and one bad control'; }
     else if (failedGood.length) { status = 'UNCALIBRATED'; why = `known-good control not passed: ${failedGood.join(', ')}`; }
     else if (passedBad.length) { status = 'INSENSITIVE'; why = `known-bad control not failed: ${passedBad.join(', ')}`; }
-    questions.push({ id: q.id, status, why, rows });
+    questions.push({ id: q.id, prompt: q.prompt, status, why, rows });
   }
   return { feature: manifest.id, questions };
 }
@@ -134,6 +146,7 @@ export async function runControls({ judge, manifest, baseDir = '.' }) {
 export function validateManifest(m, baseDir) {
   const errs = [];
   if (!m || typeof m.id !== 'string') errs.push('id (string) required');
+  if (m?.asks !== undefined && !(Number.isInteger(m.asks) && m.asks >= MIN_ASKS)) errs.push(`asks must be an integer >= ${MIN_ASKS}`);
   if (!Array.isArray(m?.questions) || !m.questions.length) errs.push('questions[] required');
   else for (const q of m.questions) if (!q.id || !q.prompt) errs.push('each question needs id and prompt');
   if (!Array.isArray(m?.controls) || !m.controls.length) errs.push('controls[] required');
@@ -188,18 +201,18 @@ async function main(argv) {
   } else {
     if (!prompt || !images.length) usage('need --prompt/--prompt-file and at least one image, or --controls');
     for (const f of images) if (!existsSync(f)) usage(`missing image: ${f}`);
-    let calStatus = '';
+    let cal = null;
     if (calibration) {
       if (!question) usage('--calibration needs --question <id>');
-      const cal = JSON.parse(readFileSync(calibration, 'utf8')).questions?.find((q) => q.id === question);
-      calStatus = cal ? cal.status : 'UNCALIBRATED';
+      cal = calibrationFor(JSON.parse(readFileSync(calibration, 'utf8')), question, prompt);
     }
     const results = [];
     for (const image of images) {
       const r = await voteImage({ judge: lunaJudge, question: prompt, image, asks, elements, diagnoseAsks });
-      results.push(applyCalibration(r, calStatus || undefined));
+      results.push(applyCalibration(r, cal?.status));
     }
-    out = { class: 'VISUAL-ADVISORY', kind: 'vote', question: question || null, prompt, results };
+    out = { class: 'VISUAL-ADVISORY', kind: 'vote', question: question || null, prompt, ...(cal ? { calibrationWhy: cal.why } : {}), results };
+    if (cal?.why) console.log(`calibration ${cal.status}: ${cal.why}`);
     for (const r of results) console.log(line(r));
   }
   if (json) writeFileSync(json, JSON.stringify(out, null, 2) + '\n');
