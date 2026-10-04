@@ -31,9 +31,12 @@ function grainOf(body) {
   return d => [0.91 + n(d, 115, 35) * 0.18, .88 + n(d, body.radiusM / 800, 74) * .24];
 }
 
-test('versions: the agreement is between surface-biomes-2-climate and surface-climate-1', () => {
-  assert.equal(BIOME_VERSION, 'surface-biomes-2-climate');
-  assert.equal(CLIMATE_VERSION, 'surface-climate-1');
+// Re-pinned for P4-RELIEF: surface-biomes-2.1-sea-datum (gates and climate datum
+// relative to the current sea level) and surface-climate-1.1-geo-g (lapse gravity
+// from planet-geophysics). The agreement assertions below are unchanged.
+test('versions: the agreement is between surface-biomes-2.1-sea-datum and surface-climate-1.1-geo-g', () => {
+  assert.equal(BIOME_VERSION, 'surface-biomes-2.1-sea-datum');
+  assert.equal(CLIMATE_VERSION, 'surface-climate-1.1-geo-g');
 });
 
 test('orbit/tile colour and ground classifier agree on 20k land directions x 4 water worlds', () => {

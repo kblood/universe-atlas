@@ -154,9 +154,128 @@ This replaces the planned rule that seabed under more than 400 m of water stops 
     floor gets S4. There is no cap based on water thickness.
 - **Collision, physics and place queries ignore this policy.** They always sample full detail on demand at
   every depth.
-- **Renderer obligation (P5, `planet-renderer.ts`, not changed here).** The split rule's `near` distance must
-  measure to the seabed (`seabedDistanceM(eyeHeight, seabedHeight, horizontal)`), not to the water surface.
-  Today it uses max(waterLevel, elevation), so seabed tiles are judged by their distance to the sea surface.
+- **Renderer obligation (P5, `planet-renderer.ts`, render-bounds-1).** The split rule's `near` distance
+  measures to the solid ground or seabed at the tile's closest point (`seabedAwareNear`), not to the water
+  surface. Before render-bounds-1 it used max(waterLevel, elevation), so seabed tiles were judged by their
+  distance to the sea surface.
+
+### 7.1 Documented rendering exception: the 2 km ocean-surface band (owner decision 2026-10-04)
+
+The rule above says seabed detail is never chosen by distance to the water surface. The renderer has one
+accepted exception, `OCEAN_SURFACE_DETAIL_M = 2000` in `planet-renderer.ts`:
+
+- **What it does.** For a tile that draws an ocean surface, `seabedAwareNear` uses the smaller of the
+  distance to the ground/seabed and the distance to the drawn sea surface, but only while the sea surface is
+  closer than 2 km. Beyond 2 km, only the ground/seabed distance counts.
+- **Why.** The ocean shell shares the terrain tile's grid, and the vertex Gerstner waves (8-42 m) need a fine
+  grid near the eye. Without the band, a boat over a 4 km-deep floor would get a coarse sea surface right
+  under it.
+- **What it does not change.**
+  - The seabed is always real and solid at its true depth.
+  - Collision, physics and place queries still sample full detail on demand.
+  - Seabed detail is still chosen by the distance to the seabed. The band can only add detail to tiles near
+    the sea surface. It never coarsens a seabed the viewer is approaching.
+- **Side effect inside the band (accepted).** Seabed tiles under the band refine with the waves. The seabed
+  under a viewer at the surface is therefore finer than distance-to-seabed alone would give.
+- **Streaming.** `renderSeabedDive()` uses the same 2 km band: over a seabed and below sea + 2 km.
+  - Inside it, byte-blocked splits count as merge pressure, and eviction keeps room for a full 4-child split.
+  - Everywhere else, these two streaming modifications are switched off, so the streaming GATING is the
+    same as before. That is a statement about the gate, not a claim that every resulting frontier is the
+    same tile for tile. What was actually compared:
+    - Node attribution (`test-results/relief-round-2026-10-03/P5-RENDER-BOUNDS/attribution/attrib-gated.json`):
+      the gated build and its base gave identical visible/leaf counts at 20 poses on 4 bodies, except Selawyn
+      ground (147 vs 146).
+    - Browser probes (`test-results/finish-round-2026-10-04/P5-FRONTIER/`): same-build before/after pairs had
+      identical leaf and visible sets for the Selawyn and Lethuris flight scenarios. A pre-existing
+      merge-scheduler stall (OPEN) makes frontiers path- and timing-dependent; in the Node convergence check
+      (`node-convergence.json`) Selawyn base/head reached 80/81 visible with five leaf keys unique to each.
+    - The candidate culling itself (tighter per-tile bounds than the legacy +20/-16 km envelope) changes
+      frontiers by design wherever bounds matter; the open-ocean descent shows different frontiers above the
+      band (10 km: 66 vs 72 visible, max level 8 vs 9).
+- **Tests.** `tests/render-bounds.test.mjs` pins the band's on/off cases. The open-ocean descent in
+  `tests/render-bounds-evidence.test.mjs` shows that above the band, deep water is coarser than under the
+  legacy surface-distance rule. Inside the band, both rules refine equally, by design.
+- **Wording.** This note is the policy statement of the exception. The `SEABED_DETAIL_POLICY` comment in
+  `src/lod-ladder.ts` still says "never by distance to the water surface". Read it as "except inside this
+  band". The code comment is left to the lod-ladder owner.
+- **Still open, not covered by this exception.** Reduced seabed detail away from the band and the strict
+  post-relief LOD class/colour targets remain open owner items. This note does not waive them.
+
+### 7.2 Integration with the P4 relief terrain (finish round 2026-10-04, branch relief-round/INT)
+
+render-bounds-1 (P5) and terrain-1.8.0-relief (P4) ship together: P4 changes the per-body orbit texture
+encoding (`reliefTextureRange`) and P5 holds the matching decoder (`PlanetRenderer.reliefTextureSpanM`).
+Evidence is under `test-results/finish-round-2026-10-04/INT/`.
+
+- **Candidate margins re-measured on P4 terrain.** `CANDIDATE_MARGIN_M` was re-measured with 2400 child tiles
+  per level on each of the four fixture worlds (`excess-p4/`). The raw maxima all fit inside the old margins.
+  The x2+4 m rule exceeded them at L2 down, L6 up, L15 up and L16 up, so each entry is now
+  max(old, P4 x2+4). Margins were only widened, never narrowed.
+- **The all-world assertions now run by default** (`tests/helpers/render-bounds-suite.mjs`, fast mode in
+  `npm test`, full counts in `npm run test:render-bounds-evidence`). What is ENFORCED and what was MEASURED
+  are different things (corrected after Astra's INT review):
+  - Enforced thresholds: containment 0 violations; candidate/tight sphere ratio p50 <= 1.5 at L10 and <= 2 at
+    L14 and L18 on all four worlds (suite line `percentile(ratios,.5)<=(L===10?1.5:2)`); 0 false culls against
+    brute force; Maithea horizon peak radius within 10% of the analytic value.
+  - Measured in the fast run: ratio p50 0.86-1.01. Measured in the full evidence run
+    (`render-bounds-evidence.tap`): ratio p50 0.90-1.12 (Raiva L18 1.117 is the maximum), p90 up to 1.28;
+    containment 0 of 8000 (plus 0 on seeds 13579 and 24680); horizon cull used 434.8 km vs analytic 399.7 km.
+    These values are evidence, not thresholds.
+- **Landing ceiling (formula kept, OPEN owner item).** `landingCeilingM = 0.8 x bound.maxM` is kept, as decided.
+  On P4 terrain it is 3.2-5.3 km (Maithea 5303, Selawyn 4141, Raiva 3219, Lethuris 5188 m), which is ABOVE p99
+  land (Maithea 4214, Selawyn 3246, Raiva 2506, Lethuris 4058 m) on every fixture world, so it no longer keeps
+  the landing pick off summits. Measured over 256 eyes at the datum sea (sea 0), picks at or above p99 land:
+  Maithea 2, Selawyn 6, Raiva 6, Lethuris 2. At the dated (60%-volume-lost, -2425 m) sea only Maithea and
+  Lethuris are covered (suite: `landing at a dated (lowered) sea`), with 0 summits on both; Selawyn and Raiva
+  were not measured at a dated sea. The required no-summit test exists as a `todo` test (`landing at the datum
+  sea never picks a summit`) and does NOT pass. It is not labelled passed.
+- **HUD flip and direct-landing boundary: fixed 19.5 km (owner decision).** INT had tied
+  `PlanetRenderer.lowFlightClearanceM` to the relief bound, which moved the HUD TERRAIN FLIGHT flip and the
+  direct-landing route to 4.0-6.6 km after P4 (Astra INT blocker 1). P6 (c465f6a) makes it the constant
+  `LOW_FLIGHT_CLEARANCE_M = 19500` again, used by both the HUD label and the "Land" routing in `main.ts`
+  (below it: landing preparation; above it: a terrain cruise first). Pinned in the render-bounds suite.
+- **Integration handoff runs were NOT green (corrected after Astra's INT review).** `handoff-tests.exit.txt`
+  exit=1 (TAP 104 tests: 101 pass, 1 fail, 2 todo; the failure is `tests/inland-rivers-disabled.test.mjs:236`)
+  and `handoff-tests-p4files.exit.txt` exit=1 (TAP 86 tests: 85 pass, 1 fail; the failure is
+  `tests/acceptance/version-compat.test.mjs:79`). Both were stale pins expecting
+  `atlas-surface-7-no-inland-rivers` while production returns `atlas-surface-8-ocean-volume` (bumped by P2 on
+  main; listed in `tests/known-failures.json`). They are pre-existing, not relief regressions, and their exit
+  codes are not the landing todos. Owner: P6, which re-pinned both and removed them from the known-failures
+  list (c465f6a; `test-results/finish-round-2026-10-04/P6-HARNESS-REPIN/`).
+- **Clouds above p99 land: DEFERRED, removed from this increment's acceptance.** P4 lowered relief so that only
+  3 of 161 corpus water bodies have p99 land above the reference deck top (by at most 371 m). Two attempts
+  were made and both failed Luna 9/9 on raiva-flight, selawyn-flight and selawyn-horizon (3 asks each, all
+  TERRAIN PASS, all CLOUD FAIL):
+  1. the P5 cloud hunks (79b8845 + e1b4d73: scale-height stretch, dated-sea riding, p99 floor, reference-frame
+     sampling): tall streaky curtains;
+  2. the p99 floor alone (deck stretched only where p99 + 500 m exceeds the reference top): judged "worse",
+     with the same streaks and columns as base.
+  The cloud files are back to planet-clouds-1 / cloud-volume-2 exactly. Luna's attempt-2 complaints (streaks,
+  columns, horizon curtains) are present in the BASE image too, so the cloud look itself is an open item for
+  the cloud owner, independent of the p99 rule. Evidence: `clouds/`.
+- **Integration sheets** (`sheets/`, Luna, 3 asks per world). Maithea, Selawyn (heavy, 18.6 g, tilt 90 deg),
+  Raiva (light, 2.6 g) and Lethuris (high tilt, 109 deg). Each world has four sun-aware poses: orbit, horizon,
+  ground, and seabed approach (200 m above a 3-4 km-deep floor).
+  - Across all 48 answers Luna named no holes, cracks, missing or floating tiles, or seams. That is the visual
+    side of the 0-false-cull result.
+  - Majority verdicts:
+    - orbit PASS on Maithea and Selawyn, FAIL on Raiva and Lethuris (mottled, blotchy colour patches);
+    - horizon FAIL on 3 of 4 worlds (subdued relief, the OPEN P4 horizon item); Selawyn PASS 2/3;
+    - ground PASS on Selawyn (3/3), FAIL on Maithea, Raiva (1/3) and Lethuris (1/3) (smooth, low detail);
+    - seabed FAIL on every world. The seabed is solid and continuous, but it is smooth and does not read as
+      underwater.
+  - These are absolute judgements with no before image: the poses come from the P4 terrain and do not exist on
+    main. They are presentation items, recorded OPEN for their owners and not labelled passed. Underwater
+    presentation (water tint or fog on the seabed approach) has no owner in this round.
+- **Desktop perf, before (main 7aaa48f) vs after (INT 50b3bd4): CONTENDED, NOT acceptance evidence.** Blender
+  (PID 11524) held the GPU and Opera was open, and the harness itself labels both runs CONTENDED. Each build
+  ran once (native, 1 repeat), and S4 was skipped. S4's deterministic shore-site search throws "no
+  deterministic shore site" on main as well, so it is a harness item.
+  - Frame-interval p95 (ms), before -> after: S1 ground paused 10.49 -> 8.83, S1 realtime 11.19 -> 11.40,
+    S1 100 m 9.84 -> 9.88, S2 turning 16.57 -> 21.24, S3 flight 16.58 -> 18.19, S3 walk 12.85 -> 13.41,
+    S5 out 17.34 -> 20.07, S5 back 19.13 -> 22.10, S6 descent 10.09 -> 11.23.
+  - Draw calls p50 are within +-17 in every tabulated scenario (S3 has no draw-call row in the table). The S2/S5 increases need a quiet-host, multi-repeat run
+    before anyone reads them as a regression or as noise. Evidence: `perf/compare.txt`.
 
 ## 8. How place-query uses the contract
 

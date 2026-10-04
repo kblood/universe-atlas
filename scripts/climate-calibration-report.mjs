@@ -17,6 +17,7 @@ const {terrainSampler}=await import(SRC+'terrain.ts');
 const {legacyClassifier:biomeClassifier}=await import(new URL('tests/helpers/surface-biomes-1-legacy.mjs',ROOT).href);
 const {spinStateFor}=await import(SRC+'stellar-evolution.ts');
 const SC=await import(SRC+'surface-climate.ts');
+const {SITE_A,SITE_A_LEGACY}=await import(new URL('tests/harness-sites.mjs',ROOT).href);
 const outArg=process.argv[2];
 const OUT=outArg?pathToFileURL(resolve(outArg)+'/'):new URL('test-results/climate-calibration/',ROOT);
 mkdirSync(OUT,{recursive:true});
@@ -73,8 +74,8 @@ const mSample=terrainSampler(maithea),mClassify=biomeClassifier(maithea),mClimat
 const sites=Object.entries(SITES).map(([name,s])=>{const b=mClassify(s.d,s.elev);return {name,d:s.d,h:s.elev,legacyBiome:b.name,legacyForest:b.forestPotential};});
 { // forest-census fixture search (tests/forest-census.test.mjs livingPatch): first forestPotential direction
   for(let i=0;i<1024;i++){const d=fib(i,1024);const h=mSample(d).groundHeightM;if(mClassify(d,h).forestPotential){sites.push({name:'forestCensusFixture',d,h,legacyBiome:mClassify(d,h).name,legacyForest:true});break;}}
-  const a=[4068880.8,-1511750.9,2855601.0],m=Math.hypot(...a),d=a.map(v=>v/m),h=mSample(d).groundHeightM;
-  sites.push({name:'lifeSITE_A',d,h,legacyBiome:mClassify(d,h).name,legacyForest:mClassify(d,h).forestPotential});
+  // The shared harness living site (tests/harness-sites.mjs; moved in the relief round P6) and its pre-relief position.
+  for(const [name,d] of [['lifeSITE_A',[...SITE_A]],['lifeSITE_A_legacy',[...SITE_A_LEGACY]]]){const h=mSample(d).groundHeightM;sites.push({name,d,h,legacyBiome:mClassify(d,h).name,legacyForest:mClassify(d,h).forestPotential});}
 }
 report.sites=sites.map(s=>{mClimate(s.d,s.h,o);return {name:s.name,latDeg:+(Math.asin(Math.abs(s.d[1]))*D).toFixed(1),heightM:Math.round(s.h),legacyBiome:s.legacyBiome,legacyForest:s.legacyForest,
   annualMeanTempK:+o.annualMeanTempK.toFixed(1),seasonalHalfRangeK:+o.seasonalHalfRangeK.toFixed(1),warmestMonthK:+o.warmestMonthK.toFixed(1),snowFraction:+o.snowFraction.toFixed(2),

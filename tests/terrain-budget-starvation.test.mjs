@@ -8,11 +8,16 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {rendererModule,maithea,createRenderer,nextTurn} from './terrain-renderer-fixture.mjs';
 import {terrainSampler} from '../src/terrain.ts';
+import {loweredSeaLevels} from './helpers/harness-water.mjs';
+
+// Relief round P6: the settle/seek levels were -4500/-4475 m (the old metre
+// ramp); now the 60%-volume-lost harness sea and one bucket higher.
+const {lowM:LOW,highM:HIGH}=loweredSeaLevels(maithea());
 
 test('saturated terrain budget: a stationary sea-level change refreshes every visible patch within budget, also after the budget shrinks',async t=>{
   const {module,cleanup}=await rendererModule({prefix:'atlas-terrain-budget-'});
   const body=maithea(),fx=createRenderer(module,body),renderer=fx.renderer,P=module.PENDING_TILE_BYTES;
-  const ground=terrainSampler(body,undefined,undefined,undefined,-4500)([1,0,0]).visibleHeightM;
+  const ground=terrainSampler(body,undefined,undefined,undefined,LOW)([1,0,0]).visibleHeightM;
   // 2 km above ground: low-flight detail (drawLimit 390), no frustum, so the
   // whole horizon-visible frontier competes for the byte budget.
   const eye=[1+(ground+2000)/body.radiusM,0,0],sun=[1,0,0];
@@ -23,9 +28,9 @@ test('saturated terrain budget: a stationary sea-level change refreshes every vi
     if(budgetOverride===null)assert.ok(d.reservedCombinedBytes<=d.budgetBytes,`${label}: combined reservation ${d.reservedCombinedBytes} exceeds ${d.budgetBytes}`);
   };
   try{
-    // 1. Settle at -4500 m until nothing is pending for 60 consecutive frames.
+    // 1. Settle at the low sea until nothing is pending for 60 consecutive frames.
     let d,quiet=0,blockedSplits=0;
-    for(let i=0;i<3000&&quiet<60;i++){d=await frame(-4500);blockedSplits=Math.max(blockedSplits,d.splitsBlockedByBytes);quiet=d.pending===0&&i>30?quiet+1:0;withinBudget(d,`settle ${i}`);}
+    for(let i=0;i<3000&&quiet<60;i++){d=await frame(LOW);blockedSplits=Math.max(blockedSplits,d.splitsBlockedByBytes);quiet=d.pending===0&&i>30?quiet+1:0;withinBudget(d,`settle ${i}`);}
     assert.equal(quiet,60,'initial frontier settles');
     assert.equal(d.staleWaterPatches,0);
     assert.ok(d.lowFlightDetail&&d.visible>200,`fixture is a large low-flight frontier (visible ${d.visible})`);
@@ -48,8 +53,8 @@ test('saturated terrain budget: a stationary sea-level change refreshes every vi
       }
       return {frames,stalePeak,blocked,final:d.staleWaterPatches};
     };
-    const first=await seek(-4475,'seek -4475');
-    t.diagnostic(`seek -4475 (stationary): ${JSON.stringify(first)}, blockedAdmissionsTotal ${d.blockedAdmissionsTotal}`);
+    const first=await seek(HIGH,`seek ${HIGH}`);
+    t.diagnostic(`seek ${HIGH} (stationary): ${JSON.stringify(first)}, blockedAdmissionsTotal ${d.blockedAdmissionsTotal}`);
     assert.ok(first.stalePeak>200,`seek makes the frontier stale (${first.stalePeak})`);
     assert.equal(first.final,0,`stale patches resolve (${JSON.stringify(first)})`);
     assert.equal(first.blocked,0,'no same-key refresh is byte-blocked at the split ceiling');
@@ -64,7 +69,7 @@ test('saturated terrain budget: a stationary sea-level change refreshes every vi
     Object.defineProperty(renderer,'terrainBudgetBytes',{configurable:true,get:()=>budgetOverride});
     let recovered=-1,entered=false,exitResident=null,quietFrames=0,wasPressure=false;
     for(let i=0;i<2400;i++){
-      d=await frame(-4475);entered||=d.terrainPressure;
+      d=await frame(HIGH);entered||=d.terrainPressure;
       if(wasPressure&&!d.terrainPressure)exitResident??=d.terrainResidentBytes;
       wasPressure=d.terrainPressure;
       if(exitResident!==null)withinBudget(d,`post-pressure ${i}`);
@@ -76,13 +81,13 @@ test('saturated terrain budget: a stationary sea-level change refreshes every vi
     assert.ok(exitResident<budgetOverride*.9,`pressure exits below the 0.90 fraction (${exitResident/budgetOverride})`);
     assert.ok(d.terrainResidentBytes<=d.terrainSplitCeilingBytes,'refinement regrows only to the split ceiling');
     t.diagnostic(`shrink to ${budgetOverride}: pressure entries ${d.terrainPressureEntries}, exit resident ${(exitResident/budgetOverride).toFixed(4)} of budget, recovered at frame ${recovered}, resident ${d.terrainResidentBytes} (${(d.terrainResidentBytes/budgetOverride).toFixed(4)})`);
-    const second=await seek(-4450,'seek -4450 after shrink');
-    t.diagnostic(`seek -4450 after shrink: ${JSON.stringify(second)}`);
+    const second=await seek(HIGH+25,`seek ${HIGH+25} after shrink`);
+    t.diagnostic(`seek ${HIGH+25} after shrink: ${JSON.stringify(second)}`);
     assert.equal(second.final,0,`stale patches resolve under the shrunk budget (${JSON.stringify(second)})`);
     // Hysteresis: a stationary view settles; it does not cycle 0.90 <-> 0.94.
     let settled=null,changes=0,pressureFrames=0;
     for(let i=0;i<240;i++){
-      d=await frame(-4450);withinBudget(d,`post-shrink hold ${i}`);
+      d=await frame(HIGH+25);withinBudget(d,`post-shrink hold ${i}`);
       pressureFrames+=d.terrainPressure?1:0;
       const ids=JSON.stringify(d.debug.activeTileIds);
       if(i>=120){if(settled!==null&&ids!==settled)changes++;settled=ids;}

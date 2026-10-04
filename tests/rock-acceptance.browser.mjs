@@ -6,10 +6,12 @@
  *   close-up of a canonical boulder, work while walking, and a dry date seek
  *   (+1 year and back) that must leave the census and drawn set unchanged.
  * - living: Maithea (planet/1) living habitat from "Find life": the same
- *   wide/close/work checks, then an exact-date replay across a date whose
- *   snapped sea level differs by one 25 m bucket (rocks are re-resolved;
- *   inland content is identical; the replayed date is identical).
+ *   wide/close/work checks, then an exact-date replay across two water dates
+ *   (whole years after the catalogue date; relief round P6) whose snapped sea
+ *   levels differ by one 25 m bucket (rocks are re-resolved; inland content is
+ *   identical; the replayed date is identical).
  * - shore: a deterministic coastal site on Maithea (tests/rock-shore-site.mjs)
+ *   on the lowered (60%-volume-lost) dated sea, opened at the low water date and
  *   viewed from observation hover. At the low sea level rocks exist in the band
  *   that the higher sea level floods; after the seek they are absent; the
  *   exact-date replay restores the identical census and drawn set.
@@ -29,12 +31,14 @@ import { parseAddress } from '../src/address.ts';
 import { starLifecycle, planetLifecycle } from '../src/stellar-evolution.ts';
 import { planetSnapshotAt } from '../src/world-surface.ts';
 import { findShoreSite } from './rock-shore-site.mjs';
+import { HARNESS_SEED, HARNESS_SYSTEM_ID, HARNESS_DATE, SITE_A_M } from './harness-sites.mjs';
+import { datedLoweredSea } from './helpers/harness-water.mjs';
 
 const base = process.env.ATLAS_URL || 'http://127.0.0.1:5193/';
 const out = process.env.ATLAS_RESULTS || 'test-results/opus55-rocks';
 const scenarios = (process.env.ROCK_SCENARIOS || 'barren,living,shore').split(',');
-const seed = 'LETHRA-001', systemId = 'G001/C2128,0,1/0';
-const DATE = 435084631200000032044300000n;
+const seed = HARNESS_SEED, systemId = HARNESS_SYSTEM_ID;
+const DATE = HARNESS_DATE;
 const YEAR_NS = 31_557_600_000_000_000n;
 const sys = system(refByAddress(galaxies(seed)[0], systemId));
 const living = sys.planets[1], barren = sys.moons.find(m => m.id === `${systemId}/planet/1/moon/0`);
@@ -43,20 +47,26 @@ const bodyAddress = value => ({ ...systemAddress, slot: value.id.slice(sys.ref.i
 const starLife = starLifecycle(seed, bodyAddress(star), star);
 const livingLife = planetLifecycle(seed, bodyAddress(living), living, starLife);
 const snappedLevel = dateNs => Math.round(planetSnapshotAt(seed, living.id, living, livingLife, starLife, dateNs, CURRENT_VERSIONS).ocean.renderWaterLevelM / 25) * 25;
-// Maithea's dated ocean falls 8,000 m across [oceanNs, giantNs]; one 25 m bucket earlier.
-// The comparison date is a whole number of Maithea years before the catalogue
-// date (same orbital phase, so the same sun direction and lighting) that lands
-// in the -4475 m bucket.
-const rampSpan = starLife.giantNs - livingLife.oceanNs;
-const bucketMid = livingLife.oceanNs + (4475n * rampSpan) / 8000n;
+// Relief round P6 (surface-8 ocean volume): the dated sea is exactly 0 at the
+// catalogue date and only falls after it, so the old pair (catalogue date at
+// -4500 m, whole years before it at -4475 m on the linear metre ramp) no
+// longer lowers the sea. The water dates are now whole Maithea years AFTER the
+// catalogue date (same orbital phase, so the same sun direction and lighting)
+// whose dated seas are the 60%-volume-lost harness level and one 25 m bucket
+// higher (tests/helpers/harness-water.mjs; Maithea -2425 / -2400 m). Barren and
+// living surveys stay at the catalogue date.
 const YEAR_LIVING_NS = BigInt(Math.max(1, Math.round(2 * Math.PI / Math.sqrt(living.orbit.mu / living.orbit.a ** 3) * 1e9)));
-const DATE_HIGH = DATE - ((DATE - bucketMid) / YEAR_LIVING_NS) * YEAR_LIVING_NS;
+const SEA = datedLoweredSea(living, snappedLevel, DATE, YEAR_LIVING_NS, starLife.giantNs);
+assert.ok(SEA, 'a dated lowered sea exists before the giant phase');
+const DATE_LOW = SEA.dateLowNs, DATE_HIGH = SEA.dateHighNs;
 const sunFrom = t => { const s = bodyPosition(star, sys, t), b = bodyPosition(living, sys, t), d = s.map((v, i) => v - b[i]), l = Math.hypot(...d); return d.map(v => v / l); };
-const sunAngle = Math.acos(Math.min(1, sunFrom(DATE).reduce((a, v, i) => a + v * sunFrom(DATE_HIGH)[i], 0)));
-assert.ok(sunAngle < 1e-6, `comparison date has the catalogue date's sun direction (${sunAngle} rad)`);
-const LEVEL_LOW = snappedLevel(DATE), LEVEL_HIGH = snappedLevel(DATE_HIGH);
-assert.equal(LEVEL_LOW, -4500, 'catalogue-date sea level');
-assert.equal(LEVEL_HIGH, -4475, 'comparison-date sea level is one bucket higher');
+const sunAngleOf = t => Math.acos(Math.min(1, sunFrom(DATE).reduce((a, v, i) => a + v * sunFrom(t)[i], 0)));
+const sunAngle = Math.max(sunAngleOf(DATE_LOW), sunAngleOf(DATE_HIGH));
+assert.ok(sunAngle < 1e-6, `water dates have the catalogue date's sun direction (${sunAngle} rad)`);
+const LEVEL_LOW = snappedLevel(DATE_LOW), LEVEL_HIGH = snappedLevel(DATE_HIGH);
+assert.equal(snappedLevel(DATE), 0, 'catalogue-date sea level is the full ocean');
+assert.equal(LEVEL_LOW, SEA.lowM, 'low water date is at the 60%-volume-lost harness sea');
+assert.equal(LEVEL_HIGH, LEVEL_LOW + 25, 'high water date is one bucket higher');
 
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch({ headless: true, args: browserArgs });
@@ -68,7 +78,7 @@ page.on('console', message => {
 });
 if (typeof page.routeWebSocket === 'function') await page.routeWebSocket('**/*', socket => socket.close());
 const waitFor = (fn, arg, timeout = 180000) => page.waitForFunction(fn, arg, { timeout });
-const report = { ok: false, base, date: DATE.toString(), dateHigh: DATE_HIGH.toString(), levels: { low: LEVEL_LOW, high: LEVEL_HIGH },
+const report = { ok: false, base, date: DATE.toString(), dateLow: DATE_LOW.toString(), dateHigh: DATE_HIGH.toString(), levels: { low: LEVEL_LOW, high: LEVEL_HIGH, lossFraction: SEA.lossFraction },
   livingYearNs: YEAR_LIVING_NS.toString(), comparisonSunAngleRad: sunAngle,
   hardware: !!process.env.ATLAS_HARDWARE, contention: process.env.ROCK_CONTENTION || 'shared GPU: other headless browsers were running; timings are contended',
   errors, scenarios: {} };
@@ -294,13 +304,13 @@ try {
   }
   if (scenarios.includes('living')) {
     const r = await surveyBody('living', living, '#find-life');
-    const { result } = await replay('living', [DATE, DATE_HIGH], [LEVEL_LOW, LEVEL_HIGH]);
+    const { result } = await replay('living', [DATE_LOW, DATE_HIGH], [LEVEL_LOW, LEVEL_HIGH]);
     r.dateSeek = result;
     await save();
   }
   if (scenarios.includes('shore')) {
     // Search from the living close-view site (body-relative), or its recorded value.
-    const start = report.scenarios.living?.close?.pose?.position ?? [4068880.8, -1511750.9, 2855601.0];
+    const start = report.scenarios.living?.close?.pose?.position ?? [...SITE_A_M];
     const site = findShoreSite(living, start, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH });
     assert.ok(site, 'a deterministic coastal site exists');
     const r = { body: living.id, site };
@@ -308,7 +318,7 @@ try {
     const up = new THREE.Vector3(...site.observer), eye = up.clone().multiplyScalar(living.radiusM + site.observerGroundHeightM + 1.6);
     const toward = new THREE.Vector3(...site.facing).multiplyScalar(living.radiusM + LEVEL_LOW);
     const heading = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(eye, toward, up));
-    await openBody(living, { walk: eye.toArray().join(','), heading: heading.toArray().join(',') });
+    await openBody(living, { date: DATE_LOW, walk: eye.toArray().join(','), heading: heading.toArray().join(',') });
     await waitFor(() => window.__atlas.travel.walking?.grounded);
     await page.evaluate(() => window.__atlas.setExplorationPaused(true));
     await settleRocks();
@@ -320,7 +330,7 @@ try {
       const seaward = toward.clone().sub(wEye).projectOnPlane(wUp).normalize(), along = new THREE.Vector3().crossVectors(wUp, seaward);
       const look = wEye.clone().addScaledVector(along.multiplyScalar(Math.cos(Math.PI / 6)), 100).addScaledVector(seaward, -100 * Math.sin(Math.PI / 6));
       const wHeading = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(wEye, look, wUp));
-      await openBody(living, { walk: wEye.toArray().join(','), heading: wHeading.toArray().join(',') });
+      await openBody(living, { date: DATE_LOW, walk: wEye.toArray().join(','), heading: wHeading.toArray().join(',') });
       await waitFor(() => window.__atlas.travel.walking?.grounded);
       await page.evaluate(() => window.__atlas.setExplorationPaused(true));
       await settleRocks();
@@ -331,22 +341,22 @@ try {
       r.waterline = { pose: await pose(), capture: await capture('shore-waterline'), probe: brief(p),
         within3mOfWater: p.raw.filter(q => q.aboveWaterM < 3).length,
         lowest: [...p.raw].sort((x, y) => x.aboveWaterM - y.aboveWaterM).slice(0, 5).map(q => ({ id: q.id.split('|').slice(-3).join('|'), tier: q.tier, aboveWaterM: q.aboveWaterM, distanceM: q.distanceM, ocean: q.ocean, wet: q.wet })) };
-      await openBody(living, { walk: eye.toArray().join(','), heading: heading.toArray().join(',') });
+      await openBody(living, { date: DATE_LOW, walk: eye.toArray().join(','), heading: heading.toArray().join(',') });
       await waitFor(() => window.__atlas.travel.walking?.grounded);
       await page.evaluate(() => window.__atlas.setExplorationPaused(true));
       await settleRocks();
     }
     // Hover 160 m above the site (same-date seek), looking down the slope to the sea.
-    await seekAndSettle(DATE, LEVEL_LOW);
+    await seekAndSettle(DATE_LOW, LEVEL_LOW);
     await pitch(120);
     await page.waitForTimeout(800);
     await settleRocks();
-    const { result, a2 } = await replay('shore', [DATE, DATE_HIGH], [LEVEL_LOW, LEVEL_HIGH]);
+    const { result, a2 } = await replay('shore', [DATE_LOW, DATE_HIGH], [LEVEL_LOW, LEVEL_HIGH]);
     // Drawn rocks standing in the band the higher sea floods, re-probed per date.
     const inBand = rs => rs.filter(q => q.groundHeightM < LEVEL_HIGH + .3);
     await seekAndSettle(DATE_HIGH, LEVEL_HIGH);
     const pb = await probe();
-    await seekAndSettle(DATE, LEVEL_LOW);
+    await seekAndSettle(DATE_LOW, LEVEL_LOW);
     const pa = await probe();
     result.bandRocks = { note: `drawn rocks with ground below ${LEVEL_HIGH + .3} m (flooded at the higher sea level)`,
       atA: inBand(pa.raw).length, atB: inBand(pb.raw).length, minAboveWaterA: pa.minAboveWaterM, minAboveWaterB: pb.minAboveWaterM,

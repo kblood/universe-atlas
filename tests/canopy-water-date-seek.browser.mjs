@@ -7,6 +7,7 @@ import { parseAddress } from '../src/address.ts';
 import { CURRENT_VERSIONS, encodeVersions } from '../src/time-nav.ts';
 import { starLifecycle, planetLifecycle } from '../src/stellar-evolution.ts';
 import { planetSnapshotAt } from '../src/world-surface.ts';
+import { datedLoweredSea } from './helpers/harness-water.mjs';
 
 const seed = 'LETHRA-001';
 const bodyId = 'G001/C2128,0,1/0/planet/1';
@@ -21,16 +22,24 @@ const starLife = starLifecycle(seed, bodyAddress(star), star);
 const planetLife = planetLifecycle(seed, bodyAddress(body), body, starLife);
 assert.ok(planetLife.oceanNs !== null && planetLife.engulfedNs !== null);
 
-// Two nearby dates on Maithea's dated ocean ramp. Both retain a solid body,
-// but their snapped global sea levels differ by exactly one 25 m bucket.
-const rampSpan = starLife.giantNs - planetLife.oceanNs;
-const dates = [-4500, -4475].map(levelM => {
-  const dateNs = planetLife.oceanNs + (BigInt(-levelM) * rampSpan) / 8000n;
+// Two nearby dates on Maithea's dated ocean. Both retain a solid body, but
+// their snapped global sea levels differ by exactly one 25 m bucket. Relief
+// round P6: the old pair came from the linear metre ramp (-4500 / -4475 m);
+// under surface-8 the dated sea is 0 at the catalogue epoch and falls by
+// VOLUME afterwards, so the pair is now the first whole Maithea years after
+// the catalogue date at the 60%-volume-lost harness sea and one bucket higher
+// (tests/helpers/harness-water.mjs; -2425 / -2400 m on the relief seabed).
+const CATALOGUE_DATE = 435084631200000032044300000n;
+const YEAR_LIVING_NS = BigInt(Math.max(1, Math.round(2 * Math.PI / Math.sqrt(body.orbit.mu / body.orbit.a ** 3) * 1e9)));
+const snapped = dateNs => Math.round(planetSnapshotAt(seed, body.id, body, planetLife, starLife, dateNs, CURRENT_VERSIONS).ocean.renderWaterLevelM / 25) * 25;
+const SEA = datedLoweredSea(body, snapped, CATALOGUE_DATE, YEAR_LIVING_NS, starLife.giantNs);
+assert.ok(SEA, 'a dated lowered sea exists before the giant phase');
+const dates = [[SEA.lowM, SEA.dateLowNs], [SEA.highM, SEA.dateHighNs]].map(([levelM, dateNs]) => {
   const snapshot = planetSnapshotAt(seed, body.id, body, planetLife, starLife, dateNs, CURRENT_VERSIONS);
   const waterLevelM = Math.round(snapshot.ocean.renderWaterLevelM / 25) * 25;
   return { levelM, dateNs, waterLevelM, stage: snapshot.state.stage, oceanAvailable: snapshot.ocean.globalOceanAvailable };
 });
-assert.deepEqual(dates.map(d => d.waterLevelM), [-4500, -4475]);
+assert.deepEqual(dates.map(d => d.waterLevelM), [SEA.lowM, SEA.highM]);
 assert.ok(dates.every(d => d.stage === 'solid' && d.oceanAvailable));
 
 const base = process.env.ATLAS_URL || 'http://127.0.0.1:5201/';
@@ -104,8 +113,8 @@ try {
   assert.equal(baseline.terrain.waterLevelM, dates[0].waterLevelM);
   assert.equal(baseline.terrain.forest.waterBucket, dates[0].waterLevelM);
   assert.equal(baseline.lifeGate?.faunaStage === undefined, false, 'life gate exists for the settled body date');
-  await page.screenshot({ path: `${out}/water-minus-4500m.png` });
-  report.phases.push({ label: 'baseline-minus-4500m', state: baseline });
+  await page.screenshot({ path: `${out}/water-low-${-SEA.lowM}m.png` });
+  report.phases.push({ label: `baseline-low-${-SEA.lowM}m`, state: baseline });
 
   const identity = baseline.terrain.forest.fullCanopy.family;
   const initialGeneration = baseline.terrain.forest.fullCanopy.generation;

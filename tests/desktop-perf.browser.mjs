@@ -32,6 +32,8 @@ import {starLifecycle,planetLifecycle} from '../src/stellar-evolution.ts';
 import {planetSnapshotAt} from '../src/world-surface.ts';
 import {terrainSampler} from '../src/terrain.ts';
 import {findShoreSite} from './rock-shore-site.mjs';
+import {HARNESS_SEED,HARNESS_SYSTEM_ID,HARNESS_BODY_ID,HARNESS_DATE,SITE_A as HARNESS_SITE_A,SITE_A_M} from './harness-sites.mjs';
+import {datedLoweredSea} from './helpers/harness-water.mjs';
 
 const env=process.env;
 const SHORT=env.ATLAS_PERF_SHORT==='1';
@@ -56,25 +58,33 @@ const CHROME_FLAGS=['--use-angle=d3d11','--enable-gpu','--disable-gpu-vsync','--
 for(const c of config.conditions)if(!['native','cpu-proxy'].includes(c))throw new Error(`Unknown condition ${c}`);
 
 // ---- Fixed content (plan "Measurement protocol") --------------------------
-const seed='LETHRA-001',galaxyId='G001',systemId='G001/C2128,0,1/0',bodyId=`${systemId}/planet/1`;
-const DATE=435084631200000032044300000n;
+const seed=HARNESS_SEED,galaxyId='G001',systemId=HARNESS_SYSTEM_ID,bodyId=HARNESS_BODY_ID;
+const DATE=HARNESS_DATE;
 const sys=system(refByAddress(galaxies(seed)[0],systemId));
 const living=sys.planets[1];if(living.id!==bodyId)throw new Error(`unexpected body ${living.id}`);
 const star=sys.stars[0],systemAddress=parseAddress(sys.ref.id);
 const bodyAddress=value=>({...systemAddress,slot:value.id.slice(sys.ref.id.length+1)});
 const starLife=starLifecycle(seed,bodyAddress(star),star),livingLife=planetLifecycle(seed,bodyAddress(living),living,starLife);
 const snappedLevel=dateNs=>Math.round(planetSnapshotAt(seed,living.id,living,livingLife,starLife,dateNs,CURRENT_VERSIONS).ocean.renderWaterLevelM/25)*25;
-// Shore B date: whole Maithea years before DATE in the next 25 m bucket (rock acceptance).
-const rampSpan=starLife.giantNs-livingLife.oceanNs,bucketMid=livingLife.oceanNs+(4475n*rampSpan)/8000n;
+// S4 seek dates (relief round P6). The dated sea is exactly 0 at the catalogue
+// date and only falls after it (surface-8 ocean volume), so the old
+// "whole years before DATE in the -4475 m bucket" date no longer moved the sea.
+// A and B are now whole Maithea years AFTER DATE (same sun direction) whose
+// dated seas are the 60%-volume-lost harness level and one bucket higher
+// (tests/helpers/harness-water.mjs; Maithea -2425 / -2400 m).
 const YEAR_LIVING_NS=BigInt(Math.max(1,Math.round(2*Math.PI/Math.sqrt(living.orbit.mu/living.orbit.a**3)*1e9)));
-const DATE_B=DATE-((DATE-bucketMid)/YEAR_LIVING_NS)*YEAR_LIVING_NS;
-const LEVEL_A=snappedLevel(DATE),LEVEL_B=snappedLevel(DATE_B);
-const sampleA=terrainSampler(living,undefined,undefined,undefined,LEVEL_A);
+const S4_SEA=datedLoweredSea(living,snappedLevel,DATE,YEAR_LIVING_NS,starLife.giantNs);
+if(!S4_SEA)throw new Error('no dated lowered sea for S4');
+const DATE_A=S4_SEA.dateLowNs,DATE_B=S4_SEA.dateHighNs;
+const LEVEL_A=snappedLevel(DATE_A),LEVEL_B=snappedLevel(DATE_B);
+if(LEVEL_A!==S4_SEA.lowM||LEVEL_B!==S4_SEA.highM)throw new Error(`S4 dated seas ${LEVEL_A}/${LEVEL_B} are not ${S4_SEA.lowM}/${S4_SEA.highM}`);
+const LEVEL_DATE=snappedLevel(DATE);
+const sampleDate=terrainSampler(living,undefined,undefined,undefined,LEVEL_DATE),sampleA=terrainSampler(living,undefined,undefined,undefined,LEVEL_A);
 
 /** Pose helpers in body-relative metres. `bearing` rotates about local up. */
-function surfacePose(direction,{clearanceM,pitchDeg=-6,bearingDeg=0}){
+function surfacePose(direction,{clearanceM,pitchDeg=-6,bearingDeg=0,sampler=sampleDate}){
   const up=new THREE.Vector3(...direction).normalize();
-  const ground=sampleA(up.toArray()).visibleHeightM;
+  const ground=sampler(up.toArray()).visibleHeightM;
   const ref=Math.abs(up.y)>.92?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0);
   const east=new THREE.Vector3().crossVectors(ref,up).normalize();
   const forward=east.applyAxisAngle(up,bearingDeg*Math.PI/180).normalize();
@@ -83,8 +93,8 @@ function surfacePose(direction,{clearanceM,pitchDeg=-6,bearingDeg=0}){
   const heading=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(eye,look,up));
   return {position:eye.toArray(),heading:heading.toArray(),groundHeightM:ground,clearanceM,pitchDeg,bearingDeg};
 }
-// Living inland site: the rock-acceptance "Find life" close-view site.
-const SITE_A=new THREE.Vector3(4068880.8,-1511750.9,2855601.0).normalize().toArray();
+// Living inland site: the shared harness SITE_A (tests/harness-sites.mjs).
+const SITE_A=[...HARNESS_SITE_A];
 const POSES={
   groundEye:surfacePose(SITE_A,{clearanceM:1.7}),
   low100:surfacePose(SITE_A,{clearanceM:100,pitchDeg:-15}),
@@ -115,15 +125,15 @@ if(buildInfo.dirty&&!config.allowDirty)throw new Error('dist was built from a di
 // ---- Shore site (deterministic; cached) ----------------------------------
 const shoreCache='test-results/desktop-perf/shore-site.json';
 let shore=null;
-if(existsSync(shoreCache)){const c=JSON.parse(await readFile(shoreCache,'utf8'));if(c.key===`${seed}|${bodyId}|${LEVEL_A}|${LEVEL_B}`)shore=c.site;}
+if(existsSync(shoreCache)){const c=JSON.parse(await readFile(shoreCache,'utf8'));if(c.key===`${seed}|${bodyId}|${LEVEL_A}|${LEVEL_B}|${SITE_A_M.join(",")}`)shore=c.site;}
 if(!shore&&config.scenarios.includes('S4')){
   log('searching deterministic shore site (rock-shore-site.mjs)…');
-  shore=findShoreSite(living,[4068880.8,-1511750.9,2855601.0],{lowLevelM:LEVEL_A,highLevelM:LEVEL_B});
+  shore=findShoreSite(living,[...SITE_A_M],{lowLevelM:LEVEL_A,highLevelM:LEVEL_B});
   if(!shore)throw new Error('no deterministic shore site');
   await mkdir('test-results/desktop-perf',{recursive:true});
-  await writeFile(shoreCache,JSON.stringify({key:`${seed}|${bodyId}|${LEVEL_A}|${LEVEL_B}`,site:shore},null,2));
+  await writeFile(shoreCache,JSON.stringify({key:`${seed}|${bodyId}|${LEVEL_A}|${LEVEL_B}|${SITE_A_M.join(",")}`,site:shore},null,2));
 }
-if(shore)POSES.shoreHover=surfacePose(shore.observer,{clearanceM:160,pitchDeg:-20});
+if(shore)POSES.shoreHover=surfacePose(shore.observer,{clearanceM:160,pitchDeg:-20,sampler:sampleA});
 
 // ---- Preview server --------------------------------------------------------
 const base=`http://127.0.0.1:${config.port}/`;
@@ -302,9 +312,9 @@ async function browserRun(condition,repeat){
     // S4 date seek A->B->A: inland hover and shore hover.
     if(config.scenarios.includes('S4')){
       const seekSeries=async(poseName)=>{
-        await setPose(POSES[poseName]);await ev(d=>window.__atlas.seek(d),DATE.toString());const st=await settle(`S4 ${poseName}`);await sleep(1000);
+        await setPose(POSES[poseName]);await ev(d=>window.__atlas.seek(d),DATE_A.toString());const st=await settle(`S4 ${poseName}`);await sleep(1000);
         const steps=[];
-        for(const [label,date] of [['A→B',DATE_B],['B→A',DATE]]){
+        for(const [label,date] of [['A→B',DATE_B],['B→A',DATE_A]]){
           let clearedMs=null;const started=Date.now();
           await ev(()=>{window.__atlas.setProfileHistory(36000);window.__atlas.setProfiling(true);window.__atlas.resetProfile();});
           await ev(d=>window.__atlas.seek(d),date.toString());
@@ -362,7 +372,7 @@ async function browserRun(condition,repeat){
 // ---- Main -------------------------------------------------------------------
 const report={ok:false,config,base,out,build:{...buildInfo,head,treeDirty:dirtyTree,served:served.info,headers:{coop:served.coop,coep:served.coep}},
   host:{cpu:cpuInfo(),affinity:await processAffinity(),throttleNote:'cpu-proxy uses CDP Emulation.setCPUThrottlingRate'},
-  content:{seed,bodyId,date:DATE.toString(),dateB:DATE_B.toString(),levels:{A:LEVEL_A,B:LEVEL_B},poses:POSES,shore},runs:[]};
+  content:{seed,bodyId,date:DATE.toString(),dateA:DATE_A.toString(),dateB:DATE_B.toString(),levels:{date:LEVEL_DATE,A:LEVEL_A,B:LEVEL_B,lossFraction:S4_SEA.lossFraction},poses:POSES,shore},runs:[]};
 const save=()=>writeFile(`${out}/report.json`,JSON.stringify(report,null,2));
 try{
   for(let repeat=1;repeat<=config.repeats;repeat++){

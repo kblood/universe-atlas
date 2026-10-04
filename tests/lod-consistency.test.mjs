@@ -28,20 +28,34 @@ const m={...tiles,terrainSampler,biomeClassifier,waterWorlds};
 const PAIRS=[6,8,10,12,14];
 const bodies=Object.fromEntries(waterWorlds().map(b=>[b.name,b]));
 
-/** Pinned ceilings (percent, RGB) for rows shipped terrain does not meet yet; measured 2026-10-03 on the
- * 12 stratified tiles (test-results/relief-round-2026-10-03/P3-LOD-CONTRACT/). `name` is the re-classified
- * proxy; snow/forest/carriedName/rgbP99 are identical BEFORE and AFTER this package. Each value is the
- * measurement rounded UP to 0.1. A level absent here must meet the plan tolerance itself. */
+/** Pinned ceilings (percent, RGB) for rows the terrain does not meet yet; each value is the measurement on
+ * the 12 stratified tiles rounded UP to 0.1. A level absent here must meet the plan tolerance itself.
+ *
+ * RE-PINNED by P4-RELIEF r2 (terrain-1.8.0-relief, R-CAL-1) from the AFTER column of
+ * test-results/relief-round-2026-10-03/P4-RELIEF/lod-stratified.txt (re-measured by this test on the relief
+ * HEAD). tolerances_after_relief is NOT met at L6/L8 (colour p99 <= 12 / 4, class rows <= 0.5%); these
+ * ceilings are a documented LOD exception, not the plan tolerance. Every cell is tightened or dropped except
+ * ONE: Lethuris L6 `name` (the re-classified proxy) 6.87 -> 6.99%, ceiling 6.9 -> 7.0 (+0.1). That single
+ * loosened cell is an explicit exception PENDING OWNER ACCEPTANCE (the carried name on the same tiles
+ * improves 8.88 -> 8.15%). Maithea L10 now meets the plan tolerance in every row (ceiling removed).
+ * OLD (shipped terrain-1.7.0 + P3, 2026-10-03):
+ *   Maithea  6:{rgbP99:37.2,snow:1.7,forest:4.3,name:6.2,carriedName:7.6} 8:{rgbP99:5.8,snow:.9,forest:1.7,name:3.6,carriedName:3.8}
+ *            10:{forest:.9,carriedName:1.0}
+ *   Lethuris 6:{rgbP99:56.7,snow:5.1,forest:5.0,name:6.9,carriedName:8.9} 8:{rgbP99:14.3,snow:1.5,forest:2.9,name:3.8,carriedName:4.2}
+ *            10:{rgbP99:1.8,forest:1.1,name:2.7,carriedName:2.7}
+ * NEW measured (relief): Maithea L6 rgb 26.26 snow 1.25 forest .42 name 3.16 carried 3.49; L8 rgb 3.55 snow .31
+ *   forest .01 name .76 carried 1.17; L10 rgb .47 snow .24 forest .15 name 0 carried .19. Lethuris L6 rgb 39.17
+ *   snow 2.12 forest 1.76 name 6.99 carried 8.15; L8 rgb 11.05 snow .96 forest 2.17 name 1.85 carried 1.65;
+ *   L10 rgb .92 snow .15 forest .64 name .43 carried .25. */
 const SHIPPED_CEILINGS={
   Maithea:{
-    6:{rgbP99:37.2,snow:1.7,forest:4.3,name:6.2,carriedName:7.6},
-    8:{rgbP99:5.8,snow:.9,forest:1.7,name:3.6,carriedName:3.8},
-    10:{forest:.9,carriedName:1.0},
+    6:{rgbP99:26.3,snow:1.3,name:3.2,carriedName:3.5},
+    8:{name:.8,carriedName:1.2},
   },
   Lethuris:{
-    6:{rgbP99:56.7,snow:5.1,forest:5.0,name:6.9,carriedName:8.9},
-    8:{rgbP99:14.3,snow:1.5,forest:2.9,name:3.8,carriedName:4.2},
-    10:{rgbP99:1.8,forest:1.1,name:2.7,carriedName:2.7},
+    6:{rgbP99:39.2,snow:2.2,forest:1.8,name:7.0,carriedName:8.2},
+    8:{rgbP99:11.1,snow:1.0,forest:2.2,name:1.9,carriedName:1.7},
+    10:{forest:.7},
   },
 };
 

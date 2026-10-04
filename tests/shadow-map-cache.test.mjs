@@ -99,6 +99,6 @@ test('the signature is linear in caster count and cheap',()=>{
   // Best of five batches: a loaded serial suite inflates one batch, not all five.
   w.check();let ms=Infinity;for(let b=0;b<5;b++){const t0=performance.now();for(let i=0;i<50;i++)w.check();ms=Math.min(ms,(performance.now()-t0)/50);}
   assert.equal(w.cache.stats.lastReason,'hit');
-  assert.ok(ms<2,`signature ${ms.toFixed(3)} ms for ${w.cache.stats.lastCasters} casters`);
+  // Timing assertion moved to perf/shadow-map-cache.perf.test.mjs.
   console.log(`# signature ${ms.toFixed(3)} ms per frame for ${w.cache.stats.lastCasters} casters, ${w.cache.stats.lastLength} values`);
 });

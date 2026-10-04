@@ -9,6 +9,7 @@ import {surfaceNormal} from '../src/planet-tiles.ts';
 import {surfaceQuery} from '../src/world-surface.ts';
 import {starLifecycle,planetLifecycle,spinStateFor,dayNightAt} from '../src/stellar-evolution.ts';
 import {parseAddress} from '../src/address.ts';
+import {SURVEY_VERSION} from '../src/surface-survey.ts';
 const base=process.env.ATLAS_URL||'http://127.0.0.1:5186/',out=process.env.ATLAS_RESULTS||'test-results/surface';
 /** Resolves a landing point on `addr.body` that is BOTH walkable (dry,
  * unsubmerged, low slope — the same `!ocean && walkable && slope` definition
@@ -144,7 +145,7 @@ try{
   const downloadPromise=page.waitForEvent('download');await page.locator('#export').click();
   const download=await downloadPromise;await download.saveAs(out+'/survey-export.json');
   const exported=JSON.parse(await readFile(out+'/survey-export.json','utf8'));
-  assert.equal(exported.surfaceSurvey.version,'surface-survey-1');assert.deepEqual(exported.surfaceSurvey.sites,sites);
+  assert.equal(exported.surfaceSurvey.version,SURVEY_VERSION,'export carries the live survey version (was a stale surface-survey-1 literal; relief round P6)');assert.deepEqual(exported.surfaceSurvey.sites,sites);
   console.log(JSON.stringify({sites,groundPixels,orbitPixels,siteMissM,errors}));
   await writeFile(out+'/report.json',JSON.stringify({ok:true,base,before,after,terrain,orbitTerrain,groundPixels,orbitPixels,siteMissM,landed,sites,errors},null,2));
   assert.deepEqual(errors,[]);

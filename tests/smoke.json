@@ -1,0 +1,395 @@
+{
+  "generatedAt": "2026-10-03T23:16:46.499Z",
+  "source": "test-results/baseline/full-npm-test-main.log",
+  "measurement": "sum of matched baseline test durations per file, seconds (parallel-load cost estimate)",
+  "files": [
+    {
+      "file": "tests/ocean-patch-culling.test.mjs",
+      "seconds": 0.001933
+    },
+    {
+      "file": "tests/flora-cache-ownership.test.mjs",
+      "seconds": 0.002102
+    },
+    {
+      "file": "tests/life-packing.test.mjs",
+      "seconds": 0.003966
+    },
+    {
+      "file": "tests/view-heading.test.mjs",
+      "seconds": 0.004402
+    },
+    {
+      "file": "tests/tree-diffuse-transfer.test.mjs",
+      "seconds": 0.005422
+    },
+    {
+      "file": "tests/forest-coverage.test.mjs",
+      "seconds": 0.00547
+    },
+    {
+      "file": "tests/tree-impostor-filter.test.mjs",
+      "seconds": 0.005771
+    },
+    {
+      "file": "tests/fauna-review-lighting.test.mjs",
+      "seconds": 0.005813
+    },
+    {
+      "file": "tests/tree-impostor-capture.test.mjs",
+      "seconds": 0.009073
+    },
+    {
+      "file": "tests/fauna-template-neck-preservation.test.mjs",
+      "seconds": 0.009481
+    },
+    {
+      "file": "tests/local-aerial-perspective.test.mjs",
+      "seconds": 0.015942
+    },
+    {
+      "file": "tests/tree-forest-coverage.test.mjs",
+      "seconds": 0.016116
+    },
+    {
+      "file": "tests/shadow-program-warmup.test.mjs",
+      "seconds": 0.016429
+    },
+    {
+      "file": "tests/life-shadow-priority.test.mjs",
+      "seconds": 0.017112
+    },
+    {
+      "file": "tests/forest-resource-accounting.test.mjs",
+      "seconds": 0.017618
+    },
+    {
+      "file": "tests/river-surface-bank.test.mjs",
+      "seconds": 0.017849
+    },
+    {
+      "file": "tests/flora-recipe.test.mjs",
+      "seconds": 0.023139
+    },
+    {
+      "file": "tests/tree-leaf-transmission.test.mjs",
+      "seconds": 0.023958
+    },
+    {
+      "file": "tests/forest-presentation.test.mjs",
+      "seconds": 0.02443
+    },
+    {
+      "file": "tests/forest-ordered-work.test.mjs",
+      "seconds": 0.027123
+    },
+    {
+      "file": "tests/fauna-review-environment.test.mjs",
+      "seconds": 0.028719
+    },
+    {
+      "file": "tests/forest-asset-attachment.test.mjs",
+      "seconds": 0.029294
+    },
+    {
+      "file": "tests/tree-foliage-mips.test.mjs",
+      "seconds": 0.040765
+    },
+    {
+      "file": "tests/world.test.mjs",
+      "seconds": 0.042864
+    },
+    {
+      "file": "tests/ground-climate-shader.test.mjs",
+      "seconds": 0.043919
+    },
+    {
+      "file": "tests/population-continuity.test.mjs",
+      "seconds": 0.048622
+    },
+    {
+      "file": "tests/river-physical-field.test.mjs",
+      "seconds": 0.053421
+    },
+    {
+      "file": "tests/tree-shape.test.mjs",
+      "seconds": 0.056489
+    },
+    {
+      "file": "tests/instance-update-ranges.test.mjs",
+      "seconds": 0.057211
+    },
+    {
+      "file": "tests/forest-slot-allocator.test.mjs",
+      "seconds": 0.057934
+    },
+    {
+      "file": "tests/creature-model.test.mjs",
+      "seconds": 0.058609
+    },
+    {
+      "file": "tests/forest-impostor-family.test.mjs",
+      "seconds": 0.07732
+    },
+    {
+      "file": "tests/surface-lighting.test.mjs",
+      "seconds": 0.078195
+    },
+    {
+      "file": "tests/compact-instance-slots.test.mjs",
+      "seconds": 0.082905
+    },
+    {
+      "file": "tests/river-surface-conform.test.mjs",
+      "seconds": 0.089537
+    },
+    {
+      "file": "tests/tree-impostor-reference-shader.test.mjs",
+      "seconds": 0.096366
+    },
+    {
+      "file": "tests/forest-patch-broadphase.test.mjs",
+      "seconds": 0.099358
+    },
+    {
+      "file": "tests/planet-canopy-invalidation.test.mjs",
+      "seconds": 0.102716
+    },
+    {
+      "file": "tests/fauna-continuity.test.mjs",
+      "seconds": 0.104316
+    },
+    {
+      "file": "tests/fauna-template-phenotype.test.mjs",
+      "seconds": 0.105723
+    },
+    {
+      "file": "tests/sky-atmosphere.test.mjs",
+      "seconds": 0.108368
+    },
+    {
+      "file": "tests/tree-species-recipe.test.mjs",
+      "seconds": 0.108639
+    },
+    {
+      "file": "tests/biosphere-model.test.mjs",
+      "seconds": 0.115055
+    },
+    {
+      "file": "tests/flora-culling.test.mjs",
+      "seconds": 0.124296
+    },
+    {
+      "file": "tests/planet-rings.test.mjs",
+      "seconds": 0.13443
+    },
+    {
+      "file": "tests/fauna-template-browse.test.mjs",
+      "seconds": 0.138546
+    },
+    {
+      "file": "tests/ocean-gerstner.test.mjs",
+      "seconds": 0.147647
+    },
+    {
+      "file": "tests/forest-impostor.test.mjs",
+      "seconds": 0.154002
+    },
+    {
+      "file": "tests/planet-detail.test.mjs",
+      "seconds": 0.161265
+    },
+    {
+      "file": "tests/fauna-template-motion.test.mjs",
+      "seconds": 0.165968
+    },
+    {
+      "file": "tests/fauna-template.test.mjs",
+      "seconds": 0.174665
+    },
+    {
+      "file": "tests/address.test.mjs",
+      "seconds": 0.181981
+    },
+    {
+      "file": "tests/tree-captured-filtering.test.mjs",
+      "seconds": 0.185094
+    },
+    {
+      "file": "tests/creature-rig.test.mjs",
+      "seconds": 0.197017
+    },
+    {
+      "file": "tests/fauna-template-shoulder-preservation.test.mjs",
+      "seconds": 0.21285
+    },
+    {
+      "file": "tests/tree-handoff-debug.test.mjs",
+      "seconds": 0.215547
+    },
+    {
+      "file": "tests/forest-census.test.mjs",
+      "seconds": 0.233354
+    },
+    {
+      "file": "tests/time-integration.test.mjs",
+      "seconds": 0.241663
+    },
+    {
+      "file": "tests/planet-clouds.test.mjs",
+      "seconds": 0.301774
+    },
+    {
+      "file": "tests/fauna-activity-exact.test.mjs",
+      "seconds": 0.302187
+    },
+    {
+      "file": "tests/render-quality.test.mjs",
+      "seconds": 0.320876
+    },
+    {
+      "file": "tests/rock-geometry.test.mjs",
+      "seconds": 0.325857
+    },
+    {
+      "file": "tests/forest-habitat.test.mjs",
+      "seconds": 0.348644
+    },
+    {
+      "file": "tests/ground-wet-roughness.test.mjs",
+      "seconds": 0.392991
+    },
+    {
+      "file": "tests/shadow-map-cache.test.mjs",
+      "seconds": 0.399415
+    },
+    {
+      "file": "tests/ocean-volume.test.mjs",
+      "seconds": 0.407744
+    },
+    {
+      "file": "tests/fauna-runtime.test.mjs",
+      "seconds": 0.414849
+    },
+    {
+      "file": "tests/creature-lab-state.test.mjs",
+      "seconds": 0.440189
+    },
+    {
+      "file": "tests/planet-canopy.test.mjs",
+      "seconds": 0.471729
+    },
+    {
+      "file": "tests/fauna-planet-headgear.test.mjs",
+      "seconds": 0.504396
+    },
+    {
+      "file": "tests/render-profile.test.mjs",
+      "seconds": 0.528245
+    },
+    {
+      "file": "tests/fauna-composer-recipe-independent.test.mjs",
+      "seconds": 0.576722
+    },
+    {
+      "file": "tests/flora-understory-geometry.test.mjs",
+      "seconds": 0.637039
+    },
+    {
+      "file": "tests/tree-foliage-sidecar.test.mjs",
+      "seconds": 0.675735
+    },
+    {
+      "file": "tests/forest-asset-source.test.mjs",
+      "seconds": 0.688557
+    },
+    {
+      "file": "tests/planet-forest-tree-assets.test.mjs",
+      "seconds": 0.791102
+    },
+    {
+      "file": "tests/ground-pbr-material.test.mjs",
+      "seconds": 0.811985
+    },
+    {
+      "file": "tests/tree-impostor-views.test.mjs",
+      "seconds": 0.851969
+    },
+    {
+      "file": "tests/planet-forest-worklist.test.mjs",
+      "seconds": 0.873079
+    },
+    {
+      "file": "tests/stellar-evolution.test.mjs",
+      "seconds": 0.881016
+    },
+    {
+      "file": "tests/acceptance/climate-seek-independence.test.mjs",
+      "seconds": 0.903529
+    },
+    {
+      "file": "tests/place-query.test.mjs",
+      "seconds": 0.924638
+    },
+    {
+      "file": "tests/forest-patch.test.mjs",
+      "seconds": 0.933062
+    },
+    {
+      "file": "tests/volumetric-clouds.test.mjs",
+      "seconds": 0.980952
+    },
+    {
+      "file": "tests/fauna-locomotion.test.mjs",
+      "seconds": 1.029305
+    },
+    {
+      "file": "tests/creature-contact.test.mjs",
+      "seconds": 1.117316
+    },
+    {
+      "file": "tests/tree-canopy-bounds.test.mjs",
+      "seconds": 1.217959
+    },
+    {
+      "file": "tests/sun-frame.test.mjs",
+      "seconds": 1.487138
+    },
+    {
+      "file": "tests/flora-field.test.mjs",
+      "seconds": 1.579093
+    },
+    {
+      "file": "tests/forest-retention.test.mjs",
+      "seconds": 1.596043
+    },
+    {
+      "file": "tests/habitat-suitability.test.mjs",
+      "seconds": 1.599035
+    },
+    {
+      "file": "tests/river-water.test.mjs",
+      "seconds": 1.613477
+    },
+    {
+      "file": "tests/gpu-lock.test.mjs",
+      "seconds": 1.717961
+    },
+    {
+      "file": "tests/drainage.test.mjs",
+      "seconds": 1.812799
+    },
+    {
+      "file": "tests/fauna-variation.test.mjs",
+      "seconds": 1.872978
+    },
+    {
+      "file": "tests/tree-canopy-profile.test.mjs",
+      "seconds": 1.8949
+    },
+    {
+      "file": "tests/acceptance/visit-order-independence.test.mjs",
+      "seconds": 1.984836
+    }
+  ]
+}

@@ -166,15 +166,4 @@ test('docs/place-query-v1.md documents every field with unit and provenance, and
   for (const word of ['physical', 'heuristic', 'Pa', 'm/s']) assert.ok(doc.includes(word), word);
 });
 
-test('cost: placeAt at full level (strict budget 3 us with OCEAN_PERF_STRICT=1)', () => {
-  const {sys, body} = WORLDS[0], ctx = {sys, body, t: CATALOGUE_EPOCH_NS};
-  const N = 40000, dirs = Array.from({length: N}, (_, i) => fibonacciDirection(i, N));
-  let x = 0, us = Infinity;
-  for (let round = 0; round < 3; round++) {
-    const t0 = performance.now();
-    for (let i = 0; i < N; i++) x += placeAt(ctx, dirs[i]).groundHeightM;
-    us = Math.min(us, (performance.now() - t0) / N * 1000);
-  }
-  console.log(`placeAt ${us.toFixed(2)} us (best of 3 x ${N})`, x !== 0);
-  assert.ok(us <= (process.env.OCEAN_PERF_STRICT === '1' ? 3 : 30), `placeAt ${us} us`);
-});
+// Timing gate moved to perf/place-query.perf.test.mjs.

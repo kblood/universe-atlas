@@ -21,6 +21,7 @@ import {terrainSampler} from '../src/terrain.ts';
 import {planetSnapshotAt} from '../src/world-surface.ts';
 import {starLifecycle,planetLifecycle} from '../src/stellar-evolution.ts';
 import {parseAddress} from '../src/address.ts';
+import {HARNESS_SEED,HARNESS_SYSTEM_ID,HARNESS_BODY_ID,HARNESS_DATE,SITE_A as HARNESS_SITE_A} from '../tests/harness-sites.mjs';
 
 const args=Object.fromEntries(process.argv.slice(2).reduce((out,a,i,all)=>{if(a.startsWith('--'))out.push([a.slice(2),all[i+1]&&!all[i+1].startsWith('--')?all[i+1]:'1']);return out;},[]));
 const port=Number(args.port||5207),dist=args.dist||'dist',windowMs=Number(args.window||3000);
@@ -29,8 +30,8 @@ const variants=JSON.parse(args.variants||'[["base",""]]');
 const extraQuery=new URLSearchParams(args.query||'');
 const log=(...a)=>console.error(`[probe ${new Date().toISOString().slice(11,19)}]`,...a);
 
-const seed='LETHRA-001',galaxyId='G001',systemId='G001/C2128,0,1/0',bodyId=`${systemId}/planet/1`;
-const DATE=435084631200000032044300000n;
+const seed=HARNESS_SEED,galaxyId='G001',systemId=HARNESS_SYSTEM_ID,bodyId=HARNESS_BODY_ID;
+const DATE=HARNESS_DATE;
 const sys=system(refByAddress(galaxies(seed)[0],systemId));
 const living=sys.planets[1];
 const star=sys.stars[0],systemAddress=parseAddress(sys.ref.id);
@@ -49,7 +50,8 @@ function surfacePose(direction,{clearanceM,pitchDeg=-6,bearingDeg=0}){
   const heading=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(eye,look,up));
   return {position:eye.toArray(),heading:heading.toArray(),clearanceM};
 }
-const SITE_A=new THREE.Vector3(4068880.8,-1511750.9,2855601.0).normalize().toArray();
+// The shared harness living site (tests/harness-sites.mjs, relief round P6).
+const SITE_A=[...HARNESS_SITE_A];
 const POSES={groundEye:surfacePose(SITE_A,{clearanceM:1.7}),low100:surfacePose(SITE_A,{clearanceM:100,pitchDeg:-15}),
   flight120:surfacePose(SITE_A,{clearanceM:120,pitchDeg:-10}),hover160:surfacePose(SITE_A,{clearanceM:160,pitchDeg:-20}),
   high15km:surfacePose(SITE_A,{clearanceM:15000,pitchDeg:-35}),alt1500:surfacePose(SITE_A,{clearanceM:1500,pitchDeg:-20}),alt450:surfacePose(SITE_A,{clearanceM:450,pitchDeg:-20}),groundEyeEast:surfacePose(SITE_A,{clearanceM:1.7,bearingDeg:90})};

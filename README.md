@@ -1,5 +1,134 @@
 # Universe Atlas
 
+## Relief round merged — 2026-10-04 (local, not deployed)
+
+**Merged:** `relief-round/INT` (merge `36dd833`). It brings terrain-1.8.0-relief,
+ocean-volume-1, render-bounds-1, place-query-1 and the P6 harness re-pin. The
+round summary is [docs/relief-round-2026-10-03.md](docs/relief-round-2026-10-03.md).
+Before merging, two cheap documentation blockers from Astra's P6 review were
+fixed on the branch (`327fcd0`):
+
+- the full old and new re-pin values are now in `docs/terrain-relief-v1.md`;
+- the 2 km ocean band is described correctly. It is measured by the eye's
+  distance to the drawn sea surface, not by water depth.
+
+Mountains are lower, seas are shallower, and the seabed is real, solid ground
+at its true depth. A game can ask any place for its ground height, water depth,
+pressure, biome, climate and gravity on a given date (`src/place-query.ts`).
+The HUD flip and direct-landing boundary stay at a fixed 19.5 km.
+
+**Checks on main `36dd833` (clean tree, every browser log stamped with that commit):**
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` | exit 0 |
+| `npm run test:full` | raw node exit 0; 1286 tests, 1279 pass, 0 fail, 4 skipped, 3 todo; NEW 0, known 0, stale 0 |
+| terrain-leaf-loop and life-cpu digests, climate agreement, LOD contract (lod-consistency, render-bounds) | pass inside the full run |
+| `npm run build` | exit 0 |
+| Golden cross-engine (Node, Chromium, Firefox, WebKit vs `golden.json`) | PASS, all four MATCH |
+| Maithea land p50 / p90 / p99 / max | 426 / 2690 / 4358 / 5910 m; snow 19.6% (owner band 15-40%) |
+| Corpus snow share (132 habitable water planets) | median 11%, 16 planets above 90%, 65 below 10% |
+
+The 3 todos are OPEN, not passed: the rocky-corpus Spearman test and the two
+landing no-summit tests. Evidence is in
+`test-results/relief-round-2026-10-03/final/`.
+
+**Visual review is not passed.** GPT Luna 6 judged the standard sheet: orbit,
+equatorial lowland, mid-latitude forest, mountain, beach, polar and seabed
+approach. It covered Maithea and the heavy (Lethuris), light (Raiva) and
+Selawyn worlds, and passed 6 of 28 frames. Its FAILs, quoted:
+
+- **Seabed (every world):** "the seabed reads like dry ground".
+- **Mountain (every world; 8 frames, 3 independent asks each, all FAIL):**
+  "the expected range is obscured, and the terrain barely reads as
+  mountainous". Clouds hide the range in the normal frame. With the cloud
+  layer hidden it shows "only a subdued ridge".
+- **Sand and plains (Maithea, Raiva, Lethuris):** "scattered black marks on
+  the sand look broken".
+- **Polar:** "does not clearly read as snowy". On Selawyn, "the green, densely
+  vegetated terrain does not read as a polar view".
+- **Lowlands:** "flat and featureless"; Raiva's forest has "grid-like spacing".
+- **Orbit (Maithea, Selawyn):** "heavily patchy".
+
+All of this is recorded as OPEN in `final/luna/summary.md`.
+
+**OPEN for the owner (none of these is passed):**
+
+- the Lethuris L6 LOD exception (6.9 -> 7.0%);
+- reduced seabed detail;
+- strict post-relief LOD class/colour targets;
+- weak range snow;
+- horizon presentation on the other worlds;
+- landing no-summit;
+- a flooded ground bookmark lands at a different site;
+- the cloud deck;
+- the Luna FAILs above.
+
+**Not run:**
+
+- the P6 browser harnesses whose fixtures moved (rock-acceptance,
+  canopy-water-date-seek, desktop-perf, render-probe, surface.mjs);
+- `test:perf`;
+- the walking and VR suites;
+- quiet-host performance;
+- headset checks.
+
+The sheet's browser batches took about 90 s each, not the 30 s the policy
+asks for.
+
+Removed after the merge: the merged worktrees and branches
+`relief-round/INT`, `P4-RELIEF` and `P5-RENDER-BOUNDS`. `eye-round/EC4` is
+still held (see below).
+
+## Finish round, step 1: test infrastructure merged — 2026-10-04 (local, not deployed)
+
+**Merged:** `work/test-infra`. Astra (gpt-6-astra) built it and Opus reviewed it.
+Policy is in [docs/test-policy.md](docs/test-policy.md). It adds:
+
+- a machine-wide test slot, so only one full suite runs at a time;
+- `npm run test:pkg`, `test:affected` (import-graph selection), `test:full`
+  (reports only failures not listed in `tests/known-failures.json`),
+  `test:perf` (CPU timing caps moved out of `npm test`, run under a quiet-CPU
+  gate), `test:smoke` and `test:life-guard`.
+
+No `src/` code changed. One post-merge fix:
+`tests/test-runner.test.mjs` failed on this checkout, because `test-results`
+here is a junction to another drive. The test now resolves its temp directory's
+real path.
+
+**Checks on main 911a160 (clean tree):**
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` | exit 0 |
+| `npm run test:full` | raw node exit 1; 1257 tests, 1250 pass, 2 fail, 4 skipped, 1 todo; NEW 0 |
+| Golden `node tests/golden/node-run.mjs` vs `golden.json` | identical |
+
+The 2 failures are the known stale SURFACE_VERSION pins in `version-compat`
+and `inland-rivers-disabled`. Evidence is in
+`test-results/finish-round-2026-10-04/coordinator-step1/`.
+
+**Not merged:** `eye-round/EC4`. Astra's readiness review returned
+**fix-required** with two blockers:
+
+1. Its tsc, composer browser suite and full suite results are not tied to an
+   identified tree.
+2. The proboscis triangle allowance was raised from +600 to +800, and the owner
+   has not accepted that change.
+
+The relief branches P4 and P5 are not part of this step.
+
+**OPEN, not passed:**
+
+- the stale version pins;
+- the rocky-corpus Spearman todo;
+- `test:perf` strict variants (not run);
+- EC4's open visual items: seam line, trunk faceting, centipede tip, giraffe
+  framing and winged-seed display cover;
+- the cross-engine golden browser run, which was not run (only the Node digest
+  was compared);
+- headset checks.
+
 ## Fauna face and eye round — 2026-10-03 (local, not deployed)
 
 Creature Lab's **composer** now builds the face it shows. The trunk is a face

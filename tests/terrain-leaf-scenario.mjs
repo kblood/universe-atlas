@@ -3,8 +3,9 @@
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {createRenderer,nextTurn} from './terrain-renderer-fixture.mjs';
+import {createRenderer,nextTurn,maithea} from './terrain-renderer-fixture.mjs';
 import {terrainSampler} from '../src/terrain.ts';
+import {loweredSeaLevels} from './helpers/harness-water.mjs';
 
 const root=fileURLToPath(new URL('..',import.meta.url));
 /** A historical planet-renderer.ts from git, or null when the object is not
@@ -18,22 +19,27 @@ const add=(a,b,s=1)=>[a[0]+b[0]*s,a[1]+b[1]*s,a[2]+b[2]*s];
 const norm=a=>{const l=Math.hypot(...a);return [a[0]/l,a[1]/l,a[2]/l];};
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 
+/** The lowered sea the scenarios run at (relief round P6: was the literal
+ * -4500 / -4475 m of the old metre ramp; now 60% of Maithea's ocean volume
+ * lost on the relief seabed, -2425 / -2400 m; tests/helpers/harness-water.mjs). */
+export const SEA=loweredSeaLevels(maithea());
+
 /** Poses: `{direction, altitudeM, yawDeg, pitchDeg, water}` per frame. */
 export function digestPoses(){
-  const poses=[],d0=norm([1,.02,.01]);let direction=d0,altitudeM=8000,yawDeg=0,water=-4500;
+  const poses=[],d0=norm([1,.02,.01]);let direction=d0,altitudeM=8000,yawDeg=0,water=SEA.lowM;
   const push=(n,step=()=>{})=>{for(let i=0;i<n;i++){step(i);poses.push({direction,altitudeM,yawDeg,pitchDeg:-30,water});}};
   push(420);                                        // settle
   push(90,()=>{yawDeg+=1;});                        // turn 90 degrees
   push(120,()=>{direction=moveAlong(direction,yawDeg,60);}); // fast flight
   push(60,()=>{altitudeM-=5000/60;});               // descend into low flight
   push(80);                                         // hold
-  push(1,()=>{water=-4475;});push(220);             // stationary sea-level seek
+  push(1,()=>{water=SEA.highM;});push(220);             // stationary sea-level seek
   push(30,()=>{yawDeg-=1.5;});push(40);             // turn back, hold
   return poses;
 }
 export function benchPoses(){
   const poses=[],direction=norm([1,0,0]);let yawDeg=0;
-  const push=(n,phase,step=()=>{})=>{for(let i=0;i<n;i++){step(i);poses.push({direction,altitudeM:2000,yawDeg,pitchDeg:-25,water:-4500,phase});}};
+  const push=(n,phase,step=()=>{})=>{for(let i=0;i<n;i++){step(i);poses.push({direction,altitudeM:2000,yawDeg,pitchDeg:-25,water:SEA.lowM,phase});}};
   push(900,'settle');
   push(400,'stationary');
   push(300,'turning',()=>{yawDeg+=.25;});
@@ -54,13 +60,13 @@ function moveAlong(direction,yawDeg,metres){return norm(add(direction,heading(di
  * performance.now so selection time budgets can never break early. */
 export async function runScenario(module,body,poses,{deterministicClock=true,detailFrames=new Set(),onFrame}={}){
   const {THREE}=module,fx=createRenderer(module,body),renderer=fx.renderer;
-  const sample=terrainSampler(body,undefined,undefined,undefined,-4500);
+  const sample=terrainSampler(body,undefined,undefined,undefined,SEA.lowM);
   const camera=new THREE.PerspectiveCamera(65,16/9,1e-8,4);
   const savedNow=performance.now;
   const digests=[],details=new Map(),timings=[];
   try{
     for(let i=0;i<poses.length;i++){
-      const pose=poses[i],ground=Math.max(-4500,sample(pose.direction).visibleHeightM);
+      const pose=poses[i],ground=Math.max(SEA.lowM,sample(pose.direction).visibleHeightM);
       const eye=pose.direction.map(v=>v*(1+(ground+pose.altitudeM)/body.radiusM));
       const {up}=tangentFrame(pose.direction),forward=heading(pose.direction,pose.yawDeg),p=pose.pitchDeg*Math.PI/180;
       const look=add(forward.map(v=>v*Math.cos(p)),up,Math.sin(p));
