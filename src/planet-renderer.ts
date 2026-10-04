@@ -9,8 +9,8 @@ import {terrainSampler, DEFAULT_SURFACE_AGE_MYR} from './terrain.ts';
 import { PlanetAtmosphere } from './planet-atmosphere.ts';
 import {RiverWater} from './river-water.ts';
 import {LakeReflection} from './lake-reflection.ts';
-import {createOceanWaterMaterial,setOceanWaterPatchFrame,type OceanWaterMaterial,type OceanWaterPatchFrame} from './ocean-water-material.ts';
-import {hashSeedString,oceanPhaseSeconds} from './ocean-gerstner.ts';
+import {createOceanWaterMaterial,setOceanWaterPatchFrame,oceanSkirtBuffers,oceanSkirtDepthM,oceanPatchSpacingM,OCEAN_UNDERWATER_GLSL,OCEAN_CAUSTICS_GLSL,type OceanWaterMaterial,type OceanWaterPatchFrame} from './ocean-water-material.ts';
+import {generateOceanWaveField,hashSeedString,oceanPhaseSeconds,oceanWaveMinSpacingPerM} from './ocean-gerstner.ts';
 import {oceanPatchCullProof} from './ocean-patch-culling.ts';
 import {SHARED_WATER_NORMAL_ATLAS_BYTES} from './water-normal-atlas.ts';
 import {RiverEnvironment} from './river-environment.ts';
@@ -136,6 +136,12 @@ export const RENDER_SKIRT_BOUND_M=41;
 /** A level-L tile's skirt bound: planet-tiles skirtDepthM is at most
  * min(40, childFootprint) + 0.25 m, childFootprint = 4 sqrt2 R / (2^L x 32)
  * (PATCH_SEGMENTS), + 1 cm rounding. */
+/** OCEAN-PRESENT ocean skirt chord-sag part (m) of a level-L shell: the same
+ * value as ocean-water-material oceanSkirtSagM(level, R, 32), written out here
+ * so this block stays self-contained (it is spliced into reference revisions). */
+export function renderOceanSkirtSagM(radiusM:number,level:number){
+  const s=2*radiusM/(2**level*32);return 8*s*s/radiusM;
+}
 export function renderSkirtBoundM(radiusM:number,level:number){
   return Math.min(RENDER_SKIRT_BOUND_M,Math.min(40,4*Math.SQRT2*radiusM/(2**level*32))+.26);
 }
@@ -193,7 +199,7 @@ export function renderReliefTextureRange(body:Body):RbBound{
 }
 /** Eye altitude (m above the unit radius) below which ground detail may run. */
 export function renderDetailAltitudeM(body:Body,relief:number){return renderHeightBoundM(body).maxM*relief+6000;}
-type RbPatch={data:{anchor:readonly number[];positions:Float32Array;parents:Float32Array;oceanPositions?:Float32Array;oceanParents?:Float32Array;meta?:Uint8Array};ocean:unknown};
+type RbPatch={data:{tile?:{level:number};anchor:readonly number[];positions:Float32Array;parents:Float32Array;oceanPositions?:Float32Array;oceanParents?:Float32Array;meta?:Uint8Array};ocean:unknown};
 type RbResident={sphere:THREE.Sphere;maxR:number;minR:number};
 const rbResidents=new WeakMap<object,RbResident>();
 /** A resident tile's exact drawn extent: terrain and parent morph endpoints
@@ -216,7 +222,10 @@ export function residentTileBounds(p:RbPatch,radiusM:number):RbResident{
   if(p.ocean&&d.oceanPositions&&d.oceanParents){
     const wave=RENDER_WAVE_BOUND_M/radiusM,sea=new THREE.Box3();min2=Infinity;max2=0;
     scan(d.oceanPositions,sea);scan(d.oceanParents,sea);
-    box.union(sea.expandByScalar(wave));minR=Math.min(minR,Math.sqrt(min2)-wave);maxR=Math.max(maxR,Math.sqrt(max2)+wave);
+    // OCEAN-PRESENT skirts hang the wave part (inside the wave bound) plus the
+    // coarser-neighbour chord sag below the shell's edge vertices.
+    const skirt=(d.tile?renderOceanSkirtSagM(radiusM,d.tile.level):40)/radiusM;
+    box.union(sea.expandByScalar(wave+skirt));minR=Math.min(minR,Math.sqrt(min2)-wave-skirt);maxR=Math.max(maxR,Math.sqrt(max2)+wave);
   }
   const sphere=box.getBoundingSphere(new THREE.Sphere());sphere.center.x+=ax;sphere.center.y+=ay;sphere.center.z+=az;
   bounds={sphere,maxR,minR};rbResidents.set(p,bounds);return bounds;
@@ -269,7 +278,8 @@ export function candidateTileRadii(t:Tile,cos:number,patches:ReadonlyMap<string,
   if(body.water){
     // The ocean shell's parent morph endpoints sag the same way.
     const sea=1+waterLevelM/R,wave=RENDER_WAVE_BOUND_M/R;
-    if(r0*cos<=sea+wave){r0=Math.min(r0,sea*sag-wave);r1=Math.max(r1,sea+wave);}
+    // ... and its skirts (OCEAN-PRESENT) hang the coarser-neighbour chord sag deeper.
+    if(r0*cos<=sea+wave){r0=Math.min(r0,sea*sag-wave-renderOceanSkirtSagM(R,t.level)/R);r1=Math.max(r1,sea+wave);}
   }
   const f32=renderF32BoundM(R,t.level)/R;r0-=f32;r1+=f32;
   return [r0,Math.max(r0,r1)];
@@ -484,6 +494,13 @@ export class PlanetRenderer {
   private surfaceReady=false;
   private eyeHeightUniform = {value:0};
   private localAirUniform={value:0};
+  // OCEAN-PRESENT: shared by every ocean patch / terrain patch of the body.
+  // Wave distance fade (x spacing per metre, y floor m), underwater state
+  // (x submerged, y eye depth m, z sea level m) and the wave clock.
+  private readonly oceanWaveSpacing={value:new THREE.Vector2(0,0)};
+  private readonly underwaterUniform={value:new THREE.Vector4(0,0,0,0)};
+  private readonly waterTimeUniform={value:0};
+  private oceanSubmerged=false;
   private debug:ShoreDebug={};
   setShoreDebug(options:ShoreDebug){Object.assign(this.debug,options);if(options.freezeSelection===false)this.selectionEye.setScalar(Infinity);}
   private sunUniform = {value:new THREE.Vector3(1,0,0)};
@@ -1082,13 +1099,24 @@ export class PlanetRenderer {
       shader.fragmentShader='uniform vec3 atlasLocalEyeM,atlasSun;uniform float atlasRadius,atlasAir,atlasRelief,atlasEyeHeightM;varying vec3 atlasSurface,atlasLocalM;varying float atlasHeightM;\n'+shader.fragmentShader;
       shader.fragmentShader=groundFragmentHeader+shader.fragmentShader;
       shader.fragmentShader=localAerialGLSL+shader.fragmentShader;
+      // Underwater hunk (OCEAN-PRESENT): a submerged eye sees the seabed
+      // through water -- absorption by the light's depth, in-scatter by the
+      // path, caustics on shallow floors. A dry eye is unchanged (atlasWater.x=0).
+      shader.uniforms.atlasWater=this.underwaterUniform;shader.uniforms.atlasWaterTime=this.waterTimeUniform;
+      shader.fragmentShader='uniform vec4 atlasWater;uniform float atlasWaterTime;\n'+OCEAN_UNDERWATER_GLSL+OCEAN_CAUSTICS_GLSL+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
         ${groundColor}`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n'+groundRoughnessCode);
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\n'+groundNormalCode);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>', `
-        outgoingLight=atlasApplyLocalAir(outgoingLight,length(atlasLocalEyeM-atlasLocalM),
+        // A submerged eye sees the ground through water only (no air path).
+        if(atlasWater.x<.5)outgoingLight=atlasApplyLocalAir(outgoingLight,length(atlasLocalEyeM-atlasLocalM),
           atlasEyeHeightM,atlasHeightM,dot(normalize(atlasSurface),atlasSun),atlasAir);
+        else{
+          float atlasPathM=length(atlasLocalEyeM-atlasLocalM),atlasSunCos=dot(normalize(atlasSurface),atlasSun),atlasBedDepthM=atlasWater.z-atlasHeightM;
+          outgoingLight=atlasApplyCaustics(outgoingLight,groundPosition,atlasBedDepthM,atlasPathM,dot(normalize(groundNormal),normalize(atlasSurface)),atlasSunCos,atlasWaterTime,atlasWater);
+          outgoingLight=atlasApplyUnderwater(outgoingLight,atlasPathM,atlasBedDepthM,atlasSunCos,atlasWater);
+        }
         #include <opaque_fragment>`);
     };
     material.customProgramCacheKey = () => 'planet-patch-ground-bed-v11/'+LOCAL_AERIAL_VERSION+'/ground-pbr-v2-climate';
@@ -1101,19 +1129,33 @@ export class PlanetRenderer {
     // Retained off-camera shadow casters are culled separately by each camera.
     mesh.frustumCulled = true;
     this.group.add(mesh);
-    let ocean:Patch['ocean']=null;
+    let ocean:Patch['ocean']=null,oceanSkirtBytes=0;
     if(d.oceanPositions&&d.oceanParents&&!oceanPatchCullProof({positions:d.positions,parents:d.parents,oceanPositions:d.oceanPositions,oceanParents:d.oceanParents,baseVertices:(PATCH_SEGMENTS+1)**2,anchorDir:d.anchor,radiusM:this.body.radiusM}).canCull){
+      // OCEAN-PRESENT: the shell carries skirt copies in the terrain skirt
+      // layout, so the terrain index buffer's skirt triangles close wave
+      // mismatches at 2:1 and morphing edges (drawn only there, see the
+      // restitch block in update). The skirt hangs oceanSkirtDepthM below the
+      // sea: the wave part inside RENDER_WAVE_BOUND_M, the coarser-neighbour
+      // chord sag (oceanSkirtSagM) added to the render bounds.
+      const waveSeed=hashSeedString(this.body.seed+'/'+this.body.id);
+      const skirted=oceanSkirtBuffers(d.oceanPositions,d.oceanParents,d.anchor,PATCH_SEGMENTS,oceanSkirtDepthM(generateOceanWaveField(waveSeed),d.tile.level,this.body.radiusM,PATCH_SEGMENTS),this.body.radiusM);
+      oceanSkirtBytes=skirted.positions.byteLength+skirted.parents.byteLength-d.oceanPositions.byteLength-d.oceanParents.byteLength;
+      // The tile data keeps the identical base grid as views of the drawn
+      // buffers (one copy in memory; residentTileBounds reads the same values).
+      d.oceanPositions=skirted.positions.subarray(0,skirted.baseVertices*3);d.oceanParents=skirted.parents.subarray(0,skirted.baseVertices*3);
       const waterGeometry=new THREE.BufferGeometry();
-      waterGeometry.setAttribute('position',new THREE.BufferAttribute(d.oceanPositions,3));
-      waterGeometry.setAttribute('parentPosition',new THREE.BufferAttribute(d.oceanParents,3));
+      waterGeometry.setAttribute('position',new THREE.BufferAttribute(skirted.positions,3));
+      waterGeometry.setAttribute('parentPosition',new THREE.BufferAttribute(skirted.parents,3));
       waterGeometry.setAttribute('uv',geometry.getAttribute('uv'));
       waterGeometry.setIndex(geometry.index);waterGeometry.setDrawRange(0,PATCH_SEGMENTS*PATCH_SEGMENTS*6);
       const normalAnchorDir=new THREE.Vector3(...d.anchor).normalize().toArray() as V3;
-      const waterMaterial=createOceanWaterMaterial({radiusM:this.body.radiusM,normalAnchorDir,phaseOriginM:detailOrigin(d.anchor,this.body.radiusM),waveOriginM:d.anchor.map(v=>v*this.body.radiusM) as V3,patchMorph:morph,patchEdges:edge,patchTexels:{value:d.width-2},waveSeed:hashSeedString(this.body.seed+'/'+this.body.id)});
+      const waterMaterial=createOceanWaterMaterial({radiusM:this.body.radiusM,normalAnchorDir,phaseOriginM:detailOrigin(d.anchor,this.body.radiusM),waveOriginM:d.anchor.map(v=>v*this.body.radiusM) as V3,patchMorph:morph,patchEdges:edge,patchTexels:{value:d.width-2},waveSeed,
+        waveSpacing:this.oceanWaveSpacing,underwater:this.underwaterUniform,baseVertices:skirted.baseVertices,patchSpacingM:oceanPatchSpacingM(d.tile.level,this.body.radiusM,PATCH_SEGMENTS)});
+      waterMaterial.setSubmerged(this.oceanSubmerged);
       ocean=new THREE.Mesh(waterGeometry,waterMaterial);ocean.position.copy(mesh.position);ocean.visible=false;ocean.frustumCulled=false;
       this.group.add(ocean);
     }
-    const bufferBytes=d.positions.byteLength+d.parents.byteLength+d.normals.byteLength+d.materials.byteLength+d.surfaceRoughness.byteLength+d.uvs.byteLength+d.indices.byteLength+d.surfaceHeight.byteLength+d.parentHeight.byteLength+(d.oceanPositions?.byteLength||0)+(d.oceanParents?.byteLength||0);
+    const bufferBytes=d.positions.byteLength+d.parents.byteLength+d.normals.byteLength+d.materials.byteLength+d.surfaceRoughness.byteLength+d.uvs.byteLength+d.indices.byteLength+d.surfaceHeight.byteLength+d.parentHeight.byteLength+(d.oceanPositions?.byteLength||0)+(d.oceanParents?.byteLength||0)+oceanSkirtBytes;
     const bytes=bufferBytes*2+Math.ceil(d.color.byteLength*(1+4/3));
     this.patchVersion++;
     this.patches.set(key, {key,tile: d.tile, mesh, ocean,localEye,map, material, morph, detail,pbrDetail,edge,data:d,bytes,touched: this.frame,waterBucket});
@@ -1224,6 +1266,18 @@ export class PlanetRenderer {
     // (ocean-water-material.ts's setFrame/setDebug, river-water.ts's
     // setDebug/update), so external freeze behaviour is unchanged.
     const oceanPhaseS=oceanPhaseSeconds(worldNs);
+    // Underwater state (OCEAN-PRESENT, ocean-underwater-1): the eye is below
+    // the drawn (snapped) sea over a seabed that is below it too. Render-only.
+    {
+      const eyeRadialM=(distance-1)*this.body.radiusM;
+      const submerged=!!this.body.water&&eyeRadialM<snappedWaterLevelM&&eyeSurface.groundHeightM<snappedWaterLevelM;
+      this.underwaterUniform.value.set(submerged?1:0,submerged?snappedWaterLevelM-eyeRadialM:0,snappedWaterLevelM,0);
+      if(!this.debug.freezeWater)this.waterTimeUniform.value=oceanPhaseS;
+      if(submerged!==this.oceanSubmerged){
+        this.oceanSubmerged=submerged;
+        for(const p of this.patches.values())p.ocean?.material.setSubmerged(submerged);
+      }
+    }
     const environmentStarted=systemTimer.start();
     this.river?.update(observer,sun,oceanPhaseS,this.relief);
     if(this.environment){this.environment.group.visible=this.relief===1;if(this.relief===1)this.environment.update(observer,dt,sun);}
@@ -1252,6 +1306,14 @@ export class PlanetRenderer {
     else { this.hideLife(); this.lifeMs=0; }
     const direction = eye.clone().normalize();
     const pixels = height / (2 * Math.tan(fov * Math.PI / 360));
+    // Ocean wave distance fade (OCEAN-PRESENT, ocean-wave-fade-1), smooth
+    // term: a leaf the split rule keeps satisfies span*pixels/near <= the
+    // split score below, so its vertex spacing is about
+    // splitScore/(pixels*PATCH_SEGMENTS) per metre of distance. Never below
+    // the value that ends the longest wave by OCEAN_SURFACE_DETAIL_M. Budget
+    // pressure can keep leaves coarser; each patch's own spacing bound
+    // (patchSpacingM) covers that exactly.
+    this.oceanWaveSpacing.value.set(Math.max((immersive?360:260)/(Math.max(1,pixels)*PATCH_SEGMENTS),oceanWaveMinSpacingPerM(OCEAN_SURFACE_DETAIL_M)),0);
     if(this.waterRegion){const near=Math.max(1e-9,eye.distanceTo(this.waterRegion.center)-this.waterRegion.radius);this.waterRegionActive=this.waterRegion.radius*pixels/near>=8;}else this.waterRegionActive=false;
     const projectionCache=new Map<string,{visible:boolean;score:number;contactNear:number;waterPriority:boolean;finePriority:boolean}>();
     const retainedFrusta=shadowFrustum?[...frusta,shadowFrustum]:frusta;
@@ -1486,6 +1548,7 @@ export class PlanetRenderer {
     const current=this.leafRecordByCode,previous=this.previousLeafByCode;
     const settled=(code:number)=>{if(!previous.has(code))return false;const record=current.get(code);return !!record&&this.patches.get(record.key)?.morph.value===1;};
     const ocean=this.oceanFrameScratch;ocean.sunDirection=this.sunUniform.value;ocean.oceanPhaseS=oceanPhaseS;
+    const oceanLeafKeys=restitch&&this.body.water?new Set(this.leafRecords.map(r=>r.key)):null;
     let morphing=0;
     for (const record of this.leafRecords) {
       const key=record.key,p=this.patches.get(key);
@@ -1520,6 +1583,24 @@ export class PlanetRenderer {
         for(let e=0;stitched&&e<4;e++)stitched=settled(n[e])||(parents[e]>=0&&settled(parents[e]))||
           (settled(kids[e*4])&&settled(kids[e*4+1])&&settled(kids[e*4+2])&&settled(kids[e*4+3]));
         p.mesh.geometry.setDrawRange(0,stitched?fullSkirt:p.data.indices.length);
+        // Ocean skirts (OCEAN-PRESENT): edge locks close the undisplaced
+        // shell, but a wave crest on a fine edge's mid vertex is not on the
+        // coarse edge's straight segment, so 2:1 edges (either side) and
+        // morphing/unsettled edges draw the skirt; settled same-level edges
+        // share identical vertices and need none.
+        if(p.ocean){
+          let oceanStitched=p.morph.value===1;
+          for(let e=0;oceanStitched&&e<4;e++)oceanStitched=settled(n[e]);
+          p.ocean.geometry.setDrawRange(0,oceanStitched?fullSkirt:p.data.indices.length);
+          // Wave-fade edge spacing: the coarser of this patch and the leaf
+          // across each edge (a finer neighbour applies ours on its side).
+          const own=oceanPatchSpacingM(record.tile.level,radiusM,PATCH_SEGMENTS),edgeSpacing=p.ocean.material.uniforms.oceanEdgeSpacingM!.value as THREE.Vector4;
+          for(let e=0;e<4;e++){
+            let t=tileNeighbour(record.tile,e),found=-1;
+            while(true){if(oceanLeafKeys!.has(tileKey(t))){found=t.level;break;}if(t.level===0)break;t={face:t.face,level:t.level-1,x:Math.floor(t.x/2),y:Math.floor(t.y/2)};}
+            edgeSpacing.setComponent(e,found>=0&&found<record.tile.level?oceanPatchSpacingM(found,radiusM,PATCH_SEGMENTS):own);
+          }
+        }
       }
       if(p.morph.value<1)morphing++;
       // Contact hand-off is enabled only after fine coverage has finished morphing.
@@ -2130,6 +2211,11 @@ export class PlanetRenderer {
     return drawn;
   }
   renderCloudScene(renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera,profile?:RenderProfile){
+    // OCEAN-PRESENT: the cloud composite ignores the water, so a submerged eye
+    // saw the cloud deck drawn over the sea's underside (the dark bands in the
+    // after3 seabed frames; gone with clouds hidden). Below the sea the caller
+    // renders the plain scene.
+    if(this.oceanSubmerged)return false;
     return this.clouds?.render(renderer,scene,camera,profile)??false;
   }
   /** Diagnostic experiment for the current body; deliberately not a saved quality setting. */
