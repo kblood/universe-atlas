@@ -101,6 +101,8 @@ test('export: recipe text and recipe object export the same bytes; options are v
   assert.throws(() => exportCreatureGlb(SPECIMENS.bird, {clips: ['walk', 'walk']}), /listed twice/);
   assert.throws(() => exportCreatureGlb(SPECIMENS.bird, {gloss: 'shiny'}), /gloss/);
   assert.throws(() => exportCreatureGlb('v9*layout_biped'), /Unsupported composer recipe version/);
+  for (const fps of [0.01, 0, NaN, 241]) assert.throws(() => exportCreatureGlb(SPECIMENS.bird, {fps, clips: []}), /fps/, String(fps));
+  assert.throws(() => exportCreatureGlb(SPECIMENS.bird, {clips: [{motion: 'walk', fps: 0.5}]}), /fps/);
   const dropped = readComposerGlb(exportCreatureGlb(SPECIMENS.bird, {gloss: 'drop', clips: []}).glb).json;
   assert.ok(!(COMPOSER_GLOSS_ATTRIBUTE in dropped.meshes[0].primitives[0].attributes));
   assert.equal(dropped.animations, undefined);
@@ -119,6 +121,12 @@ test('export: clip windows are measured, walk loops on whole gait periods, a sta
   assert.equal(baked.times[0], 0); assert.equal(baked.times[walk.keys - 1], Math.fround(walk.duration));
   // quaternion keys stay in one hemisphere
   for (const q of baked.rotation) for (let k = 4; k < q.length; k += 4) assert.ok(q[k] * q[k - 4] + q[k + 1] * q[k - 3] + q[k + 2] * q[k - 2] + q[k + 3] * q[k - 1] >= 0);
+  // a crawl's travelling wave recurs between gait periods and between 1/fps grid points: the refined search closes it
+  // (Astra review: a slim-torso worm took 2.937 s with a 12.7 mm / 6.4 deg seam; its track period is ~3.0346 s)
+  const slim = buildComposerGraph(deriveComposerIndividual({...SPECIMENS.worm, torso: 'slim'}).recipe);
+  const crawl = composerClipWindow(slim, 'walk');
+  assert.ok(crawl.seamless, `slim worm crawl closes (${crawl.duration} s, seam ${crawl.seamPosition} m, ${crawl.seamAngle} rad)`);
+  assert.ok(Math.abs(crawl.duration - 3.0346) < 0.01, `slim worm crawl window ${crawl.duration} s`);
   // the report carries every clip's seam honestly
   for (const c of exported('bird').report.clips) assert.equal(c.seamless, c.seamPosition <= 5e-4 && c.seamAngle <= 0.25 * Math.PI / 180 && c.seamScale <= 1e-3, c.motion);
 });
@@ -143,32 +151,44 @@ test('export: clips played by three\'s GLTFLoader + AnimationMixer skin the mesh
         const spec = report.clips.find(c => c.motion === clip.name);
         assert.ok(Math.abs(clip.duration - spec.duration) < 1e-5, `${name} ${clip.name} duration`);
         mixer.stopAllAction();
-        const action = mixer.clipAction(clip); action.play();
-        let worstKey = 0, worstMid = 0, worstBone = 0;
-        const step = Math.max(1, Math.floor((spec.keys - 1) / 6));
-        for (let k = 0; k < spec.keys; k += step) for (const mid of [0, 0.5]) {
+        // LoopOnce + clamp: the last key is played as the last key (LoopRepeat would wrap t = duration to t = 0)
+        const action = mixer.clipAction(clip); action.setLoop(THREE.LoopOnce, 1); action.clampWhenFinished = true; action.reset().play();
+        const at = t => { action.reset(); action.time = t; mixer.update(0); gltf.scene.updateMatrixWorld(true); };
+        // 1) every stored key: joint translation, rotation and scale under the skeleton root equal poseComposer
+        let worstBone = 0, keysChecked = 0;
+        for (let k = 0; k < spec.keys; k++) {
+          const t = spec.duration * k / (spec.keys - 1 || 1);
+          at(t);
+          const pose = poseComposer(graph, clip.name, t);
+          skinned.skeleton.bones.forEach((bone, i) => {
+            for (let c = 0; c < 3; c++) worstBone = Math.max(worstBone, Math.abs(bone.position.getComponent(c) - pose.positions[i * 3 + c]));
+            const q = bone.quaternion, dot = Math.abs(q.x * pose.quaternions[i * 4] + q.y * pose.quaternions[i * 4 + 1] + q.z * pose.quaternions[i * 4 + 2] + q.w * pose.quaternions[i * 4 + 3]);
+            worstBone = Math.max(worstBone, 1 - dot);
+            const radial = pose.radialScale[i], chord = pose.chordScale[i];
+            worstBone = Math.max(worstBone, Math.abs(bone.scale.x - 1), Math.abs(bone.scale.y - radial), Math.abs(bone.scale.z - radial * chord));
+          });
+          keysChecked++;
+        }
+        assert.equal(keysChecked, spec.keys);
+        // 2) skinning: at ~8 key times including the last, and halfway between keys, every 7th vertex against the runtime
+        let worstKey = 0, worstMid = 0, vertexSamples = 0;
+        const step = Math.max(1, Math.floor((spec.keys - 1) / 7)), sampleKeys = new Set([spec.keys - 1]);
+        for (let k = 0; k < spec.keys; k += step) sampleKeys.add(k);
+        for (const k of [...sampleKeys].sort((x, y) => x - y)) for (const mid of [0, 0.5]) {
           if (mid && k >= spec.keys - 1) continue;
-          const t = spec.duration * (k + mid) / (spec.keys - 1);
-          action.time = t; mixer.update(0); gltf.scene.updateMatrixWorld(true);
+          const t = spec.duration * (k + mid) / (spec.keys - 1 || 1);
+          at(t);
           runtime.update(clip.name, t); runtime.group.updateMatrixWorld(true);
-          if (!mid) {
-            // joint local transforms under the skeleton root equal poseComposer (float32)
-            const pose = poseComposer(graph, clip.name, t);
-            skinned.skeleton.bones.forEach((bone, i) => {
-              for (let c = 0; c < 3; c++) worstBone = Math.max(worstBone, Math.abs(bone.position.getComponent(c) - pose.positions[i * 3 + c]));
-              const q = bone.quaternion, dot = Math.abs(q.x * pose.quaternions[i * 4] + q.y * pose.quaternions[i * 4 + 1] + q.z * pose.quaternions[i * 4 + 2] + q.w * pose.quaternions[i * 4 + 3]);
-              worstBone = Math.max(worstBone, 1 - dot);
-            });
-          }
           let worst = 0;
           for (let v = 0; v < skinned.geometry.attributes.position.count; v += 7) {
             skinned.getVertexPosition(v, a).applyMatrix4(skinned.matrixWorld);
             runtime.mesh.getVertexPosition(v, b).applyMatrix4(fwd);
-            worst = Math.max(worst, a.distanceTo(b));
+            worst = Math.max(worst, a.distanceTo(b)); vertexSamples++;
           }
           if (mid) worstMid = Math.max(worstMid, worst); else worstKey = Math.max(worstKey, worst);
         }
-        lines.push(`${name} ${clip.name}: keys ${spec.keys}, vertex error at keys ${worstKey.toExponential(1)} m, between keys ${worstMid.toExponential(1)} m`);
+        assert.ok(vertexSamples > 0);
+        lines.push(`${name} ${clip.name}: ${spec.keys} keys all checked (joint TRS ${worstBone.toExponential(1)}), vertex error at ${sampleKeys.size} keys ${worstKey.toExponential(1)} m, between keys ${worstMid.toExponential(1)} m`);
         assert.ok(worstBone < 2e-6, `${name} ${clip.name}: joint TRS differs from poseComposer by ${worstBone}`);
         assert.ok(worstKey < 2e-6, `${name} ${clip.name}: skinned vertices at key times differ from the runtime by ${worstKey} m`);
         // linear interpolation between 30 fps keys: a sanity bound only (bird walk: ~3 mm)
@@ -232,5 +252,8 @@ test('export CLI: sidecar and brief carry provenance; an existing file is never 
   assert.throws(() => parseArgs(['--preset', 'all']), /--out/);
   assert.throws(() => parseArgs(['--out', 'x']), /nothing selected/);
   assert.throws(() => parseArgs(['--out', 'x', '--preset', 'unicorn']), /unknown preset/);
+  assert.throws(() => parseArgs(['--out', 'x', '--preset', 'ape', '--motions', ',']), /at least one motion/);
+  assert.throws(() => parseArgs(['--out', 'x', '--preset', 'ape', '--fps', 'NaN']), /--fps/);
+  assert.throws(() => buildCreatureFiles({kind: 'preset', preset: 'ape'}, {motions: []}), /no motions/);
   assert.equal(parseArgs(['--out', 'x', '--count', '3', '--seed-prefix', 'p']).selections.map(s => s.seed).join(), 'p-0,p-1,p-2');
 });

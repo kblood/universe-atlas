@@ -64,8 +64,12 @@ export function parseArgs(argv) {
     else if (flag === '--count') { count = Number(value()); if (!Number.isInteger(count) || count < 1 || count > 500) throw new Error('--count must be an integer 1..500'); }
     else if (flag === '--seed-prefix') prefix = value();
     else if (flag === '--recipe') out.selections.push({kind: 'recipe', recipe: value()});
-    else if (flag === '--motions') { out.motions = value().split(',').map(s => s.trim()).filter(Boolean); for (const m of out.motions) if (!COMPOSER_MOTIONS.includes(m)) throw new Error(`unknown motion ${m}`); }
-    else if (flag === '--fps') out.fps = Number(value());
+    else if (flag === '--motions') {
+      out.motions = value().split(',').map(s => s.trim()).filter(Boolean);
+      if (!out.motions.length) throw new Error('--motions needs at least one motion (the brief promises embedded clips)');
+      for (const m of out.motions) if (!COMPOSER_MOTIONS.includes(m)) throw new Error(`unknown motion ${m}`);
+    }
+    else if (flag === '--fps') { out.fps = Number(value()); if (!(Number.isFinite(out.fps) && out.fps >= 1 && out.fps <= 240)) throw new Error('--fps must be a number in [1, 240]'); }
     else if (flag === '--gloss') out.gloss = value();
     else if (flag === '--forward') out.forward = value();
     else throw new Error(`unknown argument ${flag}`);
@@ -110,6 +114,7 @@ function provenance(report, key, source) {
 export function buildCreatureFiles(sel, options = {}, sourceHash = generatorSourceHash()) {
   const {recipe, label, source} = resolveSelection(sel);
   const exportOptions = {};
+  if (options.motions && !options.motions.length) throw new Error('no motions selected (the brief promises embedded clips)');
   if (options.motions) exportOptions.clips = options.motions;
   if (options.fps !== undefined) exportOptions.fps = options.fps;
   if (options.gloss !== undefined) exportOptions.gloss = options.gloss;

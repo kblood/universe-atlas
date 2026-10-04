@@ -39,10 +39,11 @@ export const COMPOSER_EXPORT_DEFAULT_FPS = 30;
 export const COMPOSER_GLOSS_ATTRIBUTE = '_COMPOSER_GLOSS';
 export type ComposerGlossMode = 'attribute' | 'drop';
 export type ComposerExportForward = '+Z' | '+X';
-/** Default clip windows (seconds). Walk is searched over whole gait periods up to `maxSeconds`; idle and display over a
- * 1/fps grid between `minSeconds` and `maxSeconds` for the smallest seam (their sinusoids are incommensurate, so the
- * seam is usually small but not zero; the report says so). A static motion bakes two identical keys one second apart. */
-export const COMPOSER_EXPORT_CLIP_WINDOW = Object.freeze({minSeconds: 4, maxSeconds: 12});
+/** Default clip windows (seconds). Walk first tries whole gait periods up to `maxSeconds`; when none closes (a crawl's
+ * travelling wave) it searches the seam from `walkMinSeconds`. Idle and display search between `minSeconds` and
+ * `maxSeconds` (their sinusoids are incommensurate, so the seam is usually small but not zero; the report says so).
+ * The shortest seamless window wins, else the smallest seam. A static motion bakes two identical keys one second apart. */
+export const COMPOSER_EXPORT_CLIP_WINDOW = Object.freeze({minSeconds: 4, maxSeconds: 12, walkMinSeconds: 0.5});
 /** A clip loops seamlessly when the pose at its end equals the pose at t=0 within these (metres, radians). */
 export const COMPOSER_EXPORT_SEAM_TOLERANCE = Object.freeze({position: 5e-4, angle: 0.25 * Math.PI / 180, scale: 1e-3});
 
@@ -123,9 +124,14 @@ const seamScore = (d: PoseDistance) =>
   Math.max(d.position / COMPOSER_EXPORT_SEAM_TOLERANCE.position, d.angle / COMPOSER_EXPORT_SEAM_TOLERANCE.angle, d.scale / COMPOSER_EXPORT_SEAM_TOLERANCE.scale);
 const isSeamless = (d: PoseDistance) => seamScore(d) <= 1;
 
-/** The clip window for a motion: deterministic, chosen by measuring poseComposer (never by reading its constants). */
+function assertFps(fps: number): void {
+  if (!(Number.isFinite(fps) && fps >= 1 && fps <= 240)) throw new Error(`composer export: fps ${fps} outside [1, 240]`);
+}
+
+/** The clip window for a motion: deterministic, chosen by measuring poseComposer (only the legged gait period is read
+ * from the graph, and even that candidate is accepted only when its measured seam closes). */
 export function composerClipWindow(graph: ComposerGraph, motion: ComposerMotion, fps = COMPOSER_EXPORT_DEFAULT_FPS, duration?: number): ComposerClipWindow {
-  if (!(fps > 0 && fps <= 240)) throw new Error(`composer export: fps ${fps} outside (0, 240]`);
+  assertFps(fps);
   const start = poseComposer(graph, motion, 0);
   const scored = new Map<ComposerClipWindow, number>();
   const window = (d: number, method: ComposerClipWindow['method']): ComposerClipWindow => {
@@ -141,20 +147,40 @@ export function composerClipWindow(graph: ComposerGraph, motion: ComposerMotion,
   const same = (a: ComposerPose, b: ComposerPose) => (['positions', 'quaternions', 'radialScale', 'chordScale'] as const).every(k => a[k].every((v, i) => v === b[k][i]));
   if ([0.37, 1.13, 2.71].every(t => same(start, poseComposer(graph, motion, t))))
     return {duration: 1, keys: 2, seamPosition: 0, seamAngle: 0, seamScale: 0, seamless: true, method: 'static'};
-  const {minSeconds, maxSeconds} = COMPOSER_EXPORT_CLIP_WINDOW;
-  let best: ComposerClipWindow | null = null, bestScore = Infinity;
-  const consider = (d: number, method: ComposerClipWindow['method']) => {
-    const w = window(d, method), s = scored.get(w)!;
-    if (s < bestScore - 1e-12) { best = w; bestScore = s; }
-    return w.seamless;
-  };
+  const {minSeconds, maxSeconds, walkMinSeconds} = COMPOSER_EXPORT_CLIP_WINDOW;
+  const tried: ComposerClipWindow[] = [];
   if (motion === 'walk') {
+    // legged gaits recur after one gait period; take the shortest whole number of periods that closes
     const period = graph.locomotion.period;
-    for (let k = 1; k * period <= Math.max(maxSeconds, period); k++) if (consider(k * period, 'gait-periods')) break;
-  } else {
-    for (let k = Math.ceil(minSeconds * fps); k <= Math.floor(maxSeconds * fps); k++) consider(k / fps, 'seam-search');
+    for (let k = 1; k * period <= Math.max(maxSeconds, period); k++) {
+      const w = window(k * period, 'gait-periods'); tried.push(w);
+      if (w.seamless) return w;
+    }
   }
-  return best!;
+  // Otherwise (a crawl's travelling wave, idle and display sinusoids) search the measured seam: a 1/fps grid, then two
+  // finer passes around the three best grid minima, so a recurrence between grid points is still found.
+  const lo = motion === 'walk' ? walkMinSeconds : minSeconds, step = 1 / fps;
+  const grid: ComposerClipWindow[] = [];
+  for (let k = Math.ceil(lo * fps); k <= Math.floor(maxSeconds * fps); k++) grid.push(window(k / fps, 'seam-search'));
+  const minima = grid.filter((w, i) => scored.get(w)! <= scored.get(grid[i - 1] ?? w)! && scored.get(w)! <= scored.get(grid[i + 1] ?? w)!)
+    .sort((a, b) => scored.get(a)! - scored.get(b)! || a.duration - b.duration).slice(0, 3);
+  tried.push(...grid);
+  for (const seed of minima) {
+    let centre = seed, half = step;
+    for (let pass = 0; pass < 2; pass++) {
+      for (let j = -20; j <= 20; j++) {
+        const d = centre.duration + half * j / 20;
+        if (d <= 0 || d > maxSeconds) continue;
+        const w = window(d, 'seam-search'); tried.push(w);
+        if (scored.get(w)! < scored.get(centre)!) centre = w;
+      }
+      half /= 20;
+    }
+  }
+  const seamless = tried.filter(w => w.seamless).sort((a, b) => a.duration - b.duration);
+  if (seamless.length) return seamless[0]!;
+  const best = [...tried].sort((a, b) => scored.get(a)! - scored.get(b)! || a.duration - b.duration)[0];
+  return best ?? window(maxSeconds, 'seam-search');
 }
 
 /** Samples poseComposer at `window.keys` evenly spaced times over [0, duration] (both ends included). Per bone:
@@ -324,7 +350,11 @@ export function exportCreatureGlb(input: ComposerRecipe | string, options: Compo
   if (gloss !== 'attribute' && gloss !== 'drop') throw new Error(`composer export: unknown gloss mode ${String(gloss)}`);
   if (!Object.hasOwn(FORWARD_ROOT, forward)) throw new Error(`composer export: unknown forward axis ${String(forward)}`);
   const requests: ComposerClipRequest[] = (options.clips ?? COMPOSER_MOTIONS).map(c => typeof c === 'string' ? {motion: c} : {...c});
-  for (const r of requests) if (!(COMPOSER_MOTIONS as readonly string[]).includes(r.motion)) throw new Error(`composer export: unknown motion ${String(r.motion)}`);
+  assertFps(fps);
+  for (const r of requests) {
+    if (!(COMPOSER_MOTIONS as readonly string[]).includes(r.motion)) throw new Error(`composer export: unknown motion ${String(r.motion)}`);
+    if (r.fps !== undefined) assertFps(r.fps);
+  }
   if (new Set(requests.map(r => r.motion)).size !== requests.length) throw new Error('composer export: a motion is listed twice');
 
   const creature = createComposerCreature(recipe);
