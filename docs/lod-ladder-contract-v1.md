@@ -230,6 +230,29 @@ Evidence is under `test-results/finish-round-2026-10-04/INT/`.
   The cloud files are back to planet-clouds-1 / cloud-volume-2 exactly. Luna's attempt-2 complaints (streaks,
   columns, horizon curtains) are present in the BASE image too, so the cloud look itself is an open item for
   the cloud owner, independent of the p99 rule. Evidence: `clouds/`.
+- **Integration sheets** (`sheets/`, Luna, 3 asks per world). Maithea, Selawyn (heavy, 18.6 g, tilt 90 deg),
+  Raiva (light, 2.6 g) and Lethuris (high tilt, 109 deg). Each world has four sun-aware poses: orbit, horizon,
+  ground, and seabed approach (200 m above a 3-4 km-deep floor).
+  - Across all 48 answers Luna named no holes, cracks, missing or floating tiles, or seams. That is the visual
+    side of the 0-false-cull result.
+  - Majority verdicts:
+    - orbit PASS on Maithea and Selawyn, FAIL on Raiva and Lethuris (mottled, blotchy colour patches);
+    - horizon FAIL on 3 of 4 worlds (subdued relief, the OPEN P4 horizon item); Selawyn PASS 2/3;
+    - ground PASS on Selawyn (3/3), FAIL on Maithea, Raiva (1/3) and Lethuris (1/3) (smooth, low detail);
+    - seabed FAIL on every world. The seabed is solid and continuous, but it is smooth and does not read as
+      underwater.
+  - These are absolute judgements with no before image: the poses come from the P4 terrain and do not exist on
+    main. They are presentation items, recorded OPEN for their owners and not labelled passed. Underwater
+    presentation (water tint or fog on the seabed approach) has no owner in this round.
+- **Desktop perf, before (main 7aaa48f) vs after (INT 50b3bd4): CONTENDED, NOT acceptance evidence.** Blender
+  (PID 11524) held the GPU and Opera was open, and the harness itself labels both runs CONTENDED. Each build
+  ran once (native, 1 repeat), and S4 was skipped. S4's deterministic shore-site search throws "no
+  deterministic shore site" on main as well, so it is a harness item.
+  - Frame-interval p95 (ms), before -> after: S1 ground paused 10.49 -> 8.83, S1 realtime 11.19 -> 11.40,
+    S1 100 m 9.84 -> 9.88, S2 turning 16.57 -> 21.24, S3 flight 16.58 -> 18.19, S3 walk 12.85 -> 13.41,
+    S5 out 17.34 -> 20.07, S5 back 19.13 -> 22.10, S6 descent 10.09 -> 11.23.
+  - Draw calls p50 are within +-17 in every tabulated scenario (S3 has no draw-call row in the table). The S2/S5 increases need a quiet-host, multi-repeat run
+    before anyone reads them as a regression or as noise. Evidence: `perf/compare.txt`.
 
 ## 8. How place-query uses the contract
 
