@@ -161,14 +161,14 @@ export function maxOceanWaveAmplitudeM(waves: GerstnerWave[]): number {
  * advances with time, so sampling at any t -- including "backwards", or after
  * an arbitrarily large jump -- is exact and order-independent.
  */
-export function sampleOceanDisplacement(waves: GerstnerWave[], xM: number, zM: number, tSeconds: number): OceanDisplacement {
+export function sampleOceanDisplacement(waves: GerstnerWave[], xM: number, zM: number, tSeconds: number, spacingM = 0): OceanDisplacement {
   let height = 0, dHdx = 0, dHdz = 0;
   for (const w of waves) {
     const k = (Math.PI * 2) / w.wavelengthM;
     const phase = k * (w.dirX * xM + w.dirZ * zM) + tSeconds * w.speedMps;
-    const s = Math.sin(phase), c = Math.cos(phase);
-    height += s * w.amplitudeM;
-    const dPhase = k * w.amplitudeM * c;
+    const s = Math.sin(phase), c = Math.cos(phase), a = w.amplitudeM * oceanWaveFade(w.wavelengthM, spacingM);
+    height += s * a;
+    const dPhase = k * a * c;
     dHdx += dPhase * w.dirX;
     dHdz += dPhase * w.dirZ;
   }
@@ -177,14 +177,56 @@ export function sampleOceanDisplacement(waves: GerstnerWave[], xM: number, zM: n
 
 /** Convenience height-only sample (no slope), mirroring nms's
  * sampleGerstnerHeight for callers that only need the scalar. */
-export function sampleOceanHeight(waves: GerstnerWave[], xM: number, zM: number, tSeconds: number): number {
+export function sampleOceanHeight(waves: GerstnerWave[], xM: number, zM: number, tSeconds: number, spacingM = 0): number {
   let height = 0;
   for (const w of waves) {
     const k = (Math.PI * 2) / w.wavelengthM;
     const phase = k * (w.dirX * xM + w.dirZ * zM) + tSeconds * w.speedMps;
-    height += Math.sin(phase) * w.amplitudeM;
+    height += Math.sin(phase) * w.amplitudeM * oceanWaveFade(w.wavelengthM, spacingM);
   }
   return height;
+}
+
+/** Wavelength range generateOceanWaveField draws from (8 + [0, 34) m). */
+export const OCEAN_WAVE_WAVELENGTH_RANGE_M = [8, 42] as const;
+/** Version of the wave distance fade (OCEAN-PRESENT, 2026-10-04). */
+export const OCEAN_WAVE_FADE_VERSION = 'ocean-wave-fade-1';
+
+/**
+ * Anti-aliasing fade of one Gerstner wave on a vertex grid of `spacingM`.
+ * A wave is fully kept while the grid has at least four vertices per
+ * wavelength and gone at the Nyquist limit (two per wavelength), where vertex
+ * displacement can only alias into a false, larger pattern. Pure smoothstep,
+ * mirrored exactly by the GLSL below (float32 wave number -> wavelength).
+ */
+export function oceanWaveFade(wavelengthM: number, spacingM: number): number {
+  const e0 = wavelengthM * 0.25, e1 = wavelengthM * 0.5;
+  const t = Math.min(1, Math.max(0, (spacingM - e0) / (e1 - e0)));
+  return 1 - t * t * (3 - 2 * t);
+}
+
+/**
+ * Conservative ocean-grid vertex spacing at `distanceM` from the eye. The
+ * terrain/ocean quadtree keeps a leaf only while span*pixels/near <= the split
+ * score, so a leaf's vertex spacing is at most `spacingPerM * near` with
+ * spacingPerM = splitScore / (pixels * PATCH_SEGMENTS); `floorM` is the
+ * spacing at the deepest level the current mode may select (the grid is never
+ * finer). The distance is a continuous function of world position, so every
+ * patch, of any level, fades the same world point identically (no seam).
+ */
+export function oceanWaveSpacingM(distanceM: number, spacingPerM: number, floorM = 0): number {
+  return Math.max(Math.max(0, distanceM) * spacingPerM, floorM);
+}
+
+/**
+ * Smallest spacing-per-metre the renderer may pass: it makes the longest
+ * wave reach its Nyquist limit no farther than `fadeEndM` from the eye. The
+ * renderer passes OCEAN_SURFACE_DETAIL_M, the distance inside which ocean
+ * tiles are guaranteed to refine by their own surface distance (beyond it
+ * they refine by the seabed and may be coarser than the estimate above).
+ */
+export function oceanWaveMinSpacingPerM(fadeEndM: number): number {
+  return OCEAN_WAVE_WAVELENGTH_RANGE_M[1] * 0.5 / fadeEndM;
 }
 
 /**
@@ -200,13 +242,18 @@ uniform float oceanWaveAmplitudeM[OCEAN_WAVE_COUNT];
 uniform float oceanWaveNumber[OCEAN_WAVE_COUNT];
 uniform float oceanWaveSpeed[OCEAN_WAVE_COUNT];
 uniform float oceanWavePhase[OCEAN_WAVE_COUNT];
+// Vertex grid spacing (m) at the sampled point, set by the caller before
+// oceanGerstner (oceanWaveSpacingM's GLSL twin); 0 keeps every wave.
+float oceanGerstnerSpacingM=0.0;
 void oceanGerstner(in vec2 posM,in float t,out float heightM,out vec2 slope){
   heightM=0.0;slope=vec2(0.0);
   for(int i=0;i<OCEAN_WAVE_COUNT;i++){
     float k=oceanWaveNumber[i];
     float phase=k*dot(oceanWaveDir[i],posM)+oceanWavePhase[i]+t*oceanWaveSpeed[i];
-    heightM+=sin(phase)*oceanWaveAmplitudeM[i];
-    slope+=(k*oceanWaveAmplitudeM[i]*cos(phase))*oceanWaveDir[i];
+    float lambda=6.283185307179586/k;
+    float amplitude=oceanWaveAmplitudeM[i]*(1.0-smoothstep(lambda*.25,lambda*.5,oceanGerstnerSpacingM));
+    heightM+=sin(phase)*amplitude;
+    slope+=(k*amplitude*cos(phase))*oceanWaveDir[i];
   }
 }`;
 }

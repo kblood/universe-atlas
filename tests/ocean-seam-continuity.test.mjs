@@ -19,7 +19,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {rendererModule,maithea,createRenderer,nextTurn} from './terrain-renderer-fixture.mjs';
 import {terrainSampler} from '../src/terrain.ts';
-import {tileDirection,tileNeighbour,tileKey,unit} from '../src/planet-tiles.ts';
+import {tileDirection,tileNeighbour,tileKey,unit,PATCH_SEGMENTS} from '../src/planet-tiles.ts';
+import {oceanSkirtDepthM} from '../src/ocean-water-material.ts';
 import {DETAIL_PERIOD_M} from '../src/ground-material.ts';
 import {loweredSeaLevels} from './helpers/harness-water.mjs';
 
@@ -27,15 +28,33 @@ import {loweredSeaLevels} from './helpers/harness-water.mjs';
 // higher bucket of the 60%-volume-lost harness sea on the relief seabed.
 const WATER_M=loweredSeaLevels(maithea()).highM;
 
+/** The vertex shader's grid-spacing estimate (ocean-wave-fade-1) at one
+ * body-frame unit-radius point: eye distance times the shared per-metre
+ * spacing, floored. */
+function patchSpacing(ocean,point,edges=[]){
+  const u=ocean.material.uniforms,R=Math.fround(u.oceanRadiusM.value),anchor=ocean.position,eye=u.oceanEyeM.value,s=u.oceanWaveSpacing?.value??{x:0,y:0};
+  const l=[0,1,2].map(i=>Math.fround(point[i]-anchor.getComponent(i))*R);
+  return Math.max(Math.hypot(eye.x-l[0],eye.y-l[1],eye.z-l[2])*s.x,s.y,u.oceanPatchSpacingM?.value??0,...edges.map(e=>u.oceanEdgeSpacingM?.value.getComponent(e)??0));
+}
+/** Edge index (as a list) of patch b that faces patch a (a at b's level or finer). */
+function facing(b,a){
+  let anc=a.tile;while(anc.level>b.tile.level)anc={face:anc.face,level:anc.level-1,x:Math.floor(anc.x/2),y:Math.floor(anc.y/2)};
+  const k=tileKey(anc);for(let e=0;e<4;e++)if(tileKey(tileNeighbour(b.tile,e))===k)return [e];
+  return [];
+}
+const smoothstep=(e0,e1,x)=>{const t=Math.min(1,Math.max(0,(x-e0)/(e1-e0)));return t*t*(3-2*t);};
+
 /** The vertex shader's wave sum for one patch at one body-frame unit-radius
- * point, read from that patch's uniforms with float32 uniform values. */
-function patchWave(ocean,point){
+ * point, read from that patch's uniforms with float32 uniform values,
+ * including the per-wave distance fade. */
+function patchWave(ocean,point,edges=[]){
   const u=ocean.material.uniforms,R=Math.fround(u.oceanRadiusM.value),origin=u.oceanPhaseOriginM.value,anchor=ocean.position;
   const phaseOffsets=u.oceanWavePhase?.value??u.oceanWaveNumber.value.map(()=>0);
   const x=Math.fround(point[0]-anchor.x)*R+Math.fround(origin.x),z=Math.fround(point[2]-anchor.z)*R+Math.fround(origin.z),t=Math.fround(u.oceanTime.value);
+  const spacing=patchSpacing(ocean,point,edges);
   let height=0,sx=0,sz=0;
   u.oceanWaveNumber.value.forEach((k0,i)=>{
-    const k=Math.fround(k0),d=u.oceanWaveDir.value[i],a=Math.fround(u.oceanWaveAmplitudeM.value[i]);
+    const k=Math.fround(k0),d=u.oceanWaveDir.value[i],lambda=2*Math.PI/k,a=Math.fround(u.oceanWaveAmplitudeM.value[i])*(1-smoothstep(lambda*.25,lambda*.5,spacing));
     const phase=k*(Math.fround(d.x)*x+Math.fround(d.y)*z)+Math.fround(phaseOffsets[i])+t*Math.fround(u.oceanWaveSpeed.value[i]);
     height+=Math.sin(phase)*a;const c=k*a*Math.cos(phase);sx+=c*d.x;sz+=c*d.y;
   });
@@ -109,7 +128,7 @@ test('ocean waves are continuous across drawn patch edges and per-patch ocean un
         if(cell(a)!==cell(b))st.crossCell++;
         for(let s=1;s<16;s++){
           const point=tileDirection(a.tile,...edgeUV(e,s/16)).map(v=>v*seaRadius);
-          const wa=patchWave(a.ocean,point),wb=patchWave(b.ocean,point);
+          const wa=patchWave(a.ocean,point,[e]),wb=patchWave(b.ocean,point,facing(b,a));
           const dh=Math.abs(wa.height-wb.height),ds=Math.hypot(wa.sx-wb.sx,wa.sz-wb.sz);
           if(dh>st.height){st.height=dh;st.worst={a:a.key,b:b.key,cellA:cell(a),cellB:cell(b),dh,ds};}
           st.slope=Math.max(st.slope,ds);
@@ -131,6 +150,101 @@ test('ocean waves are continuous across drawn patch edges and per-patch ocean un
     const shader=drawn.values().next().value.ocean.material.vertexShader;
     assert.match(shader,/vec2 wavePosM=transformed\.xz\*oceanRadiusM\+oceanPhaseOriginM\.xz;/);
     assert.match(shader,/float phase=k\*dot\(oceanWaveDir\[i\],posM\)\+oceanWavePhase\[i\]\+t\*oceanWaveSpeed\[i\];/);
+    // ... and its fade/spacing expressions (OCEAN-PRESENT).
+    assert.match(shader,/oceanGerstnerSpacingM=max\(max\(length\(oceanEyeM-transformed\*oceanRadiusM\)\*oceanWaveSpacing\.x,oceanWaveSpacing\.y\),max\(oceanPatchSpacingM,edgeSpacingM\)\);/);
+    assert.match(shader,/uniform vec4 oceanEdgeSpacingM;/);
+    assert.match(shader,/float amplitude=oceanWaveAmplitudeM\[i\]\*\(1\.0-smoothstep\(lambda\*\.25,lambda\*\.5,oceanGerstnerSpacingM\)\);/);
+    assert.match(shader,/if\(gl_VertexID>=OCEAN_BASE_VERTICES\)\{waveHeightM=0\.0;waveSlope=vec2\(0\.0\);\}/);
+
+    // 1b. Wave amplitude fade (OCEAN-PRESENT): on every drawn patch, every
+    // wave the local vertex grid cannot sample (wavelength < 2 x the local
+    // vertex spacing, the Nyquist limit) has zero displacement amplitude.
+    const S=PATCH_SEGMENTS,stride=S+1,base=stride*stride;
+    const fade={pairs:0,unresolvable:0,violations:0,worst:0,worstAt:null,keptNear:0};
+    for(const p of drawn.values()){
+      const pos=p.ocean.geometry.getAttribute('position').array,u=p.ocean.material.uniforms,anchor=p.ocean.position.toArray();
+      const at=i=>[pos[i*3]+anchor[0],pos[i*3+1]+anchor[1],pos[i*3+2]+anchor[2]];
+      const len=(i,j)=>Math.hypot(pos[i*3]-pos[j*3],pos[i*3+1]-pos[j*3+1],pos[i*3+2]-pos[j*3+2])*R;
+      for(let y=0;y<=S;y++)for(let x=0;x<=S;x++){
+        const i=y*stride+x;let spacing=0;
+        if(x<S)spacing=Math.max(spacing,len(i,i+1));if(x>0)spacing=Math.max(spacing,len(i,i-1));
+        if(y<S)spacing=Math.max(spacing,len(i,i+stride));if(y>0)spacing=Math.max(spacing,len(i,i-stride));
+        const rows=[x===0?0:-1,x===S?1:-1,y===0?2:-1,y===S?3:-1].filter(e=>e>=0),est=patchSpacing(p.ocean,at(i),rows);
+        u.oceanWaveNumber.value.forEach((k,w)=>{
+          const lambda=2*Math.PI/Math.fround(k),amp=Math.fround(u.oceanWaveAmplitudeM.value[w])*(1-smoothstep(lambda*.25,lambda*.5,est));
+          fade.pairs++;
+          if(lambda<2*spacing){fade.unresolvable++;if(amp>1e-6){fade.violations++;if(amp>fade.worst){fade.worst=amp;fade.worstAt={key:p.key,level:p.tile.level,lambda,spacing,est};}}}
+          else if(amp>0)fade.keptNear++;
+        });
+      }
+    }
+    t.diagnostic(`wave fade: ${fade.pairs} vertex-wave pairs, ${fade.unresolvable} beyond the Nyquist limit, ${fade.violations} of those still displaced (worst ${fade.worst} m ${JSON.stringify(fade.worstAt)}), ${fade.keptNear} resolvable pairs keep amplitude`);
+    assert.ok(fade.unresolvable>1000&&fade.keptNear>1000,'fixture has both resolvable and unresolvable waves');
+    assert.equal(fade.violations,0,`no wave is displaced on a grid that cannot sample it (worst ${fade.worst} m, ${JSON.stringify(fade.worstAt)})`);
+
+    // 1c. Ocean skirts (OCEAN-PRESENT): every drawn shell carries skirt copies
+    // in the terrain skirt layout, hanging oceanSkirtDepthM below the sea, and
+    // at every 2:1 edge (both sides) the skirt is drawn. A sliver is an edge
+    // point where the two surfaces separate (> 1 mm) and the higher side's
+    // skirt does not reach below the lower side's surface.
+    const edgesOf=n=>[Array.from({length:n+1},(_,i)=>i),Array.from({length:n+1},(_,i)=>i*(n+1)+n),Array.from({length:n+1},(_,i)=>n*(n+1)+n-i),Array.from({length:n+1},(_,i)=>(n-i)*(n+1))];
+    const skirtStats={patches:0,skirtVertexError:0,skirtDrawn:0};
+    for(const p of drawn.values()){
+      const g=p.ocean.geometry,pos=g.getAttribute('position').array,depth=oceanSkirtDepthM(p.ocean.material.waves,p.tile.level,R,S),anchor=p.ocean.position.toArray();
+      assert.equal(pos.length/3,base+4*stride,`${p.key}: base grid plus 4 x ${stride} skirt vertices`);
+      assert.equal(g.index.count,S*S*6+4*S*6,`${p.key}: terrain index buffer with skirt triangles`);
+      edgesOf(S).forEach((edge,e)=>edge.forEach((a,k)=>{
+        const b=base+e*stride+k,v=[0,1,2].map(i=>pos[a*3+i]+anchor[i]),l=Math.hypot(...v);
+        const err=Math.hypot(...[0,1,2].map(i=>(pos[b*3+i]-(pos[a*3+i]-v[i]/l*depth/R))*R));
+        skirtStats.skirtVertexError=Math.max(skirtStats.skirtVertexError,err);
+      }));
+      // Every skirt triangle joins two edge vertices to their own skirt copies.
+      const idx=g.index.array;
+      for(let i=S*S*6;i<idx.length;i++)assert.ok(idx[i]<pos.length/3,`${p.key}: skirt index in range`);
+      skirtStats.patches++;if(g.drawRange.count>=g.index.count)skirtStats.skirtDrawn++;
+    }
+    const slivers={edges21:0,edges41:0,odd:0,openWithoutSkirt:0,maxGap:0,slivers:0,worst:null,sameLevelOpen:0};
+    const drawsSkirt=p=>p.ocean.geometry.drawRange.count>=p.ocean.geometry.index.count;
+    for(const a of drawn.values()){
+      for(let e=0;e<4;e++){
+        let n=tileNeighbour(a.tile,e),b=null;
+        while(n.level>=0){b=drawn.get(tileKey(n));if(b||n.level===0)break;n={face:n.face,level:n.level-1,x:Math.floor(n.x/2),y:Math.floor(n.y/2)};}
+        if(!b||b===a)continue;
+        const P=k=>tileDirection(a.tile,...edgeUV(e,k/S)).map(v=>v*seaRadius);
+        if(b.tile.level===a.tile.level){
+          for(let k=0;k<=S;k++){const pt=P(k),gap=Math.abs(patchWave(a.ocean,pt,[e]).height-patchWave(b.ocean,pt,facing(b,a)).height);if(gap>1e-3&&!drawsSkirt(a)&&!drawsSkirt(b))slivers.sameLevelOpen++;}
+          continue;
+        }
+        // Coarser neighbour (2:1, or 4:1 where the frontier has one): the
+        // fine side's edge vertices (chord midpoints where locked to a parent
+        // neighbour) against the coarse side's straight segments, radial
+        // heights in metres above the sea including the waves.
+        const diff=a.tile.level-b.tile.level,step=2**diff;if(step>S)continue;
+        slivers.edges21++;if(diff>1)slivers.edges41++;
+        assert.ok(drawsSkirt(a)&&drawsSkirt(b),`${step}:1 edge ${a.key} | ${b.key}: both sides draw their skirt`);
+        const depth=oceanSkirtDepthM(b.ocean.material.waves,b.tile.level,R,S),depthFine=oceanSkirtDepthM(a.ocean.material.waves,a.tile.level,R,S),locked=a.edge.value.getComponent(e)===1,fb=facing(b,a);
+        const lift=(p,h)=>(Math.hypot(...p)-seaRadius)*R+h;
+        for(let k=1;k<S;k++){
+          if(k%step===0)continue;
+          const F=locked&&k%2?P(k-1).map((v,i)=>(v+P(k+1)[i])/2):P(k);
+          const j=Math.floor(k/step)*step,f=(k-j)/step,C0=P(j),C1=P(j+step),C=C0.map((v,i)=>v+(C1[i]-v)*f);
+          const fine=lift(F,patchWave(a.ocean,F,[e]).height),coarse=lift(C,patchWave(b.ocean,C0,fb).height*(1-f)+patchWave(b.ocean,C1,fb).height*f),gap=Math.abs(fine-coarse);
+          slivers.odd++;slivers.maxGap=Math.max(slivers.maxGap,gap);
+          if(gap<=1e-3)continue;
+          slivers.openWithoutSkirt++;
+          // The higher side's skirt runs from its edge down to depth below the sea.
+          const higherIsFine=fine>coarse,bottom=higherIsFine?lift(F,0)-depthFine:lift(C,0)-depth,covered=drawsSkirt(higherIsFine?a:b)&&bottom<Math.min(fine,coarse)-1e-3;
+          if(!covered){slivers.slivers++;slivers.worst??={a:a.key,b:b.key,k,fine,coarse,bottom,depth};}
+        }
+      }
+    }
+    t.diagnostic(`ocean skirts: ${skirtStats.patches} drawn shells, ${skirtStats.skirtDrawn} drawing skirts, skirt vertex error ${skirtStats.skirtVertexError.toFixed(3)} x float32 tolerance`);
+    t.diagnostic(`coarser-neighbour edges ${slivers.edges21} (${slivers.edges41} at 4:1 or more): ${slivers.odd} fine edge vertices, ${slivers.openWithoutSkirt} open > 1 mm without skirts (max gap ${slivers.maxGap.toFixed(3)} m), slivers with skirts ${slivers.slivers}; same-level open edges without skirts ${slivers.sameLevelOpen}`);
+    assert.ok(skirtStats.skirtVertexError<1,'skirt copies sit oceanSkirtDepthM below their edge vertices');
+    assert.ok(slivers.edges21>10,'fixture has 2:1 ocean edges');
+    assert.ok(slivers.openWithoutSkirt>0,'fixture has wave gaps that would be slivers without skirts');
+    assert.equal(slivers.slivers,0,`0 slivers at 2:1 edges (${JSON.stringify(slivers.worst)})`);
+    assert.equal(slivers.sameLevelOpen,0,'same-level edges without skirts never open');
 
     // 2. Per-frame ocean uniforms are fresh on moving, still and seek frames.
     oceanUniformsFresh('settled');
@@ -167,4 +281,51 @@ test('wave phase offsets map a 4096 m-wrapped origin back onto the one world wav
   assert.deepEqual(shifted.uniforms.oceanWavePhase.value,oceanWavePhaseOffsets(waves,4096*1200,-4096*7));
   assert.ok(shifted.uniforms.oceanWavePhase.value.some(v=>v>1e-3),'a whole-period shift is not a no-op for the Gerstner waves');
   plain.dispose();shifted.dispose();
+});
+
+test('wave amplitude fade: kept on a fine grid, gone at the Nyquist limit, gone past OCEAN_SURFACE_DETAIL_M (OCEAN-PRESENT)',async()=>{
+  const {oceanWaveFade,oceanWaveSpacingM,oceanWaveMinSpacingPerM,sampleOceanDisplacement,generateOceanWaveField,hashSeedString,OCEAN_WAVE_WAVELENGTH_RANGE_M}=await import('../src/ocean-gerstner.ts');
+  for(const lambda of [8,13.5,27,42]){
+    assert.equal(oceanWaveFade(lambda,0),1);assert.equal(oceanWaveFade(lambda,lambda/4),1,'four vertices per wavelength keep the wave');
+    assert.equal(oceanWaveFade(lambda,lambda/2),0,'two vertices per wavelength (Nyquist) remove it');
+    let previous=1;for(let s=0;s<=lambda;s+=lambda/97){const f=oceanWaveFade(lambda,s);assert.ok(f<=previous+1e-15&&f>=0&&f<=1);previous=f;}
+  }
+  // The renderer's per-metre spacing is never below the value that ends the
+  // longest wave by 2000 m (OCEAN_SURFACE_DETAIL_M; asserted textually in the renderer).
+  const perM=oceanWaveMinSpacingPerM(2000);
+  assert.equal(oceanWaveFade(OCEAN_WAVE_WAVELENGTH_RANGE_M[1],oceanWaveSpacingM(2000,perM)),0);
+  assert.ok(oceanWaveFade(OCEAN_WAVE_WAVELENGTH_RANGE_M[1],oceanWaveSpacingM(900,perM))>0,'the longest wave survives well inside 2000 m');
+  assert.equal(oceanWaveSpacingM(10,perM,4),4,'the floor holds near the eye');
+  // The displacement sample fades the same way; spacing 0 is the unfaded field.
+  const waves=generateOceanWaveField(hashSeedString('LETHRA-001/fade'));
+  assert.deepEqual(sampleOceanDisplacement(waves,3,4,5),sampleOceanDisplacement(waves,3,4,5,0));
+  assert.deepEqual(sampleOceanDisplacement(waves,3,4,5,30),{heightM:0,dHdx:0,dHdz:0});
+  const renderer=await (await import('node:fs/promises')).readFile(new URL('../src/planet-renderer.ts',import.meta.url),'utf8');
+  assert.match(renderer,/oceanWaveMinSpacingPerM\(OCEAN_SURFACE_DETAIL_M\)/);
+  assert.match(renderer,/export const OCEAN_SURFACE_DETAIL_M=2000;/,'OCEAN_SURFACE_DETAIL_M is unchanged');
+});
+
+test('underwater medium: identity for a dry eye, water colour with distance, red lost first, darker deeper (OCEAN-PRESENT)',async()=>{
+  const {underwaterReference,OCEAN_UNDERWATER,OCEAN_UNDERWATER_GLSL,OCEAN_CAUSTICS_GLSL,oceanSkirtBuffers,oceanSkirtEdges}=await import('../src/ocean-water-material.ts');
+  const bed=[.4,.35,.25];
+  assert.deepEqual(underwaterReference(bed,500,3000,.8,[0,0,0,0]),bed,'dry eye: unchanged');
+  const near=underwaterReference(bed,5,10,.8,[1,5,0,0]),far=underwaterReference(bed,20000,10,.8,[1,5,0,0]);
+  assert.ok(near[0]<bed[0]&&near[2]/near[0]>bed[2]/bed[0],'even a near shallow floor turns blue (red absorbed first)');
+  const water=[0,1,2].map(i=>(OCEAN_UNDERWATER.deep[i]+(OCEAN_UNDERWATER.shallow[i]-OCEAN_UNDERWATER.deep[i])*Math.exp(-7.5/OCEAN_UNDERWATER.lightDepthM)));
+  far.forEach((v,i)=>assert.ok(Math.abs(v-water[i])<2e-3,'a long path converges on the water colour'));
+  const shallowBed=underwaterReference(bed,800,30,.8,[1,30,0,0]),deepBed=underwaterReference(bed,800,3500,.8,[1,3000,0,0]);
+  assert.ok(deepBed.every((v,i)=>v<shallowBed[i]),'the deep floor is darker than a shallow one');
+  assert.ok(deepBed[2]>deepBed[0]*3,'the deep floor reads blue, not black or grey');
+  const night=underwaterReference(bed,20000,10,-.6,[1,5,0,0]);assert.ok(night.every((v,i)=>v<far[i]),'night water is darker');
+  for(const c of [...OCEAN_UNDERWATER.shallow,...OCEAN_UNDERWATER.deep,...OCEAN_UNDERWATER.absorbPerM,...OCEAN_UNDERWATER.pathExtinction])assert.ok(OCEAN_UNDERWATER_GLSL.includes(c.toFixed(4)),`GLSL embeds ${c}`);
+  // Caustic wave vectors are whole cycles per 4096 m, speeds whole quanta of the 86400 s wrap.
+  for(const m of OCEAN_CAUSTICS_GLSL.matchAll(/vec3\((-?\d+)\.0,(-?\d+)\.0,(-?\d+)\.0\)/g))[1,2,3].forEach(i=>assert.ok(Number.isInteger(Number(m[i]))));
+  for(const m of OCEAN_CAUSTICS_GLSL.matchAll(/t\*(\d+\.\d+)/g)){const n=Number(m[1])/(2*Math.PI/86400);assert.ok(Math.abs(n-Math.round(n))<1e-4,`caustic speed ${m[1]} is whole wrap quanta`);}
+  // Skirt layout: copies follow planet-tiles' edge order.
+  const n=4,stride=n+1,pos=new Float32Array(stride*stride*3),par=new Float32Array(stride*stride*3);
+  for(let y=0;y<=n;y++)for(let x=0;x<=n;x++){const i=y*stride+x;pos.set([x*1e-4,y*1e-4,0],i*3);par.set([x*1e-4,y*1e-4,1e-7],i*3);}
+  const s=oceanSkirtBuffers(pos,par,[0,0,1],n,3,6e6);
+  assert.equal(s.baseVertices,25);assert.equal(s.skirtVertices,20);assert.deepEqual(oceanSkirtEdges(n)[2],[24,23,22,21,20]);
+  oceanSkirtEdges(n).forEach((edge,e)=>edge.forEach((a,k)=>{const b=25+e*stride+k,v=[pos[a*3],pos[a*3+1],pos[a*3+2]+1],l=Math.hypot(...v);
+    for(let i=0;i<3;i++)assert.ok(Math.abs(s.positions[b*3+i]-(pos[a*3+i]-v[i]/l*3/6e6))<1e-9);}));
 });
