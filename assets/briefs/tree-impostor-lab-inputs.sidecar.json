@@ -1,0 +1,54 @@
+{
+  "schema": "universe-atlas/external-input-sidecar/v1",
+  "id": "tree-impostor-lab-inputs",
+  "purpose": "Declare the GLB pairs that tree-impostor-lab.ts (and tests/tree-asset-lighting.browser.mjs) accept but that are NOT in this repository, so a fresh clone knows where they come from and how to verify them.",
+  "status": "documentation-only; written 2026-10-04 by migration-prep (backlog task 21); no asset was moved, copied or regenerated",
+  "loadedBy": ["src/tree-impostor-lab.ts", "tests/tree-asset-lighting.browser.mjs"],
+  "why-external": "The lab takes the GLB pair from a file picker plus a capture directory whose manifest pins input hashes (manifest.input.files). The parent IWSDK repository keeps them under Assets/_assetctl/, which is ignored by the parent allowlist .gitignore.",
+  "parentRepository": {
+    "path": "C:/LLM/IWSDK",
+    "ignoredDirectory": "Assets/_assetctl/",
+    "note": "Cloning universe-atlas alone does not provide these files. Regenerate with tools/assetctl at the revision recorded in the family brief, or obtain them as a separately authorised artifact transfer."
+  },
+  "inputs": [
+    {
+      "family": "atlas-branching-v1",
+      "files": [
+        {"name": "atlas-branching-v1.glb", "lod": 0, "sha256": "1c026c79938233ddff24ae236214a853695fca1e41a463392b414a30f9d982df", "bytes": 3146244},
+        {"name": "atlas-branching-v1.lod1.glb", "lod": 1, "sha256": "6d071f129ff4dae730b3ad08b6b012bdab4d8f35070170776ea4adb27a865b25", "bytes": 2596632}
+      ],
+      "canonicalLocation": "Assets/_assetctl/atlas-tree-v7-color-a/",
+      "sourceType": "original",
+      "brief": "assets/briefs/temperate-branching-tree-v1.json",
+      "shippedInRepo": false,
+      "license": {"expression": "NOASSERTION", "decision": "OPEN: owner decision backlog task 1 (project licence)", "notes": "Original Atlas authoring; also the material-template parent of the EZ-Tree oak."}
+    },
+    {
+      "family": "atlas-ez-oak",
+      "files": [
+        {"name": "atlas-ez-oak.glb", "lod": 0, "sha256": "4a18a1873cc4484d4d2bc4aecf872eb0ac6f02be33b85c4efd0baf3aaf9c0068", "bytes": 3969868, "sameBytesAs": "public/assets/forest/desktop-v1/branching/oak-lod0.glb"},
+        {"name": "atlas-ez-oak.lod1.glb", "lod": 1, "sha256": "cd6a2f08a2b3546e7219062674f7ea7c087457c315452323dc26e578fab61fa9", "bytes": 2603256, "sameBytesAs": "public/assets/forest/desktop-v1/branching/oak-lod1.glb"}
+      ],
+      "canonicalLocation": "Assets/_assetctl/atlas-ez-family-f/",
+      "sourceType": "derived",
+      "brief": "assets/briefs/atlas-ez-tree-family-v1.json",
+      "shippedInRepo": true,
+      "upstream": {"url": "https://github.com/dgreenheck/ez-tree", "pinnedCommit": "dcf309bd86bd521083d9c70f01f2de45fdc7c457", "license": "MIT", "noticeInRepo": "public/assets/forest/desktop-v1/licenses/ez-tree-MIT-LICENSE.txt"},
+      "license": {"expression": "NOASSERTION", "decision": "OPEN: owner decision backlog task 1; upstream geometry MIT, Atlas textures original", "notes": "Hash-identical to the shipped public/ pair, whose sidecars also say NOASSERTION."}
+    },
+    {
+      "family": "atlas-ez-conifer",
+      "files": [
+        {"name": "atlas-ez-conifer.glb", "lod": 0, "sha256": "58ead3644a84f91d0d30658c827be0c04d6ab0b5a42f468397cd2474a1c06e3d", "bytes": 4764524, "sameBytesAs": "public/assets/forest/desktop-v1/spire/conifer-lod0.glb"},
+        {"name": "atlas-ez-conifer.lod1.glb", "lod": 1, "sha256": "126cc179069cdeadf37bfa9fefa47b5be853040046be812a6e282e648f8d884b", "bytes": 3304920, "sameBytesAs": "public/assets/forest/desktop-v1/spire/conifer-lod1.glb"}
+      ],
+      "canonicalLocation": "Assets/_assetctl/atlas-ez-conifer-family-13977-16m-v1e/",
+      "sourceType": "derived",
+      "brief": "assets/briefs/atlas-ez-tree-family-v1.json",
+      "shippedInRepo": true,
+      "upstream": {"url": "https://github.com/dgreenheck/ez-tree", "pinnedCommit": "dcf309bd86bd521083d9c70f01f2de45fdc7c457", "license": "MIT", "noticeInRepo": "public/assets/forest/desktop-v1/licenses/ez-tree-MIT-LICENSE.txt"},
+      "license": {"expression": "NOASSERTION", "decision": "OPEN: owner decision backlog task 1", "notes": "Hash-identical to the shipped public/ pair."}
+    }
+  ],
+  "verify": "sha256sum <file> must equal the sha256 above; the lab itself also rejects a pair whose hashes differ from the capture manifest."
+}
