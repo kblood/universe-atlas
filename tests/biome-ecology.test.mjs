@@ -141,6 +141,29 @@ test('coverage is overlap-aware bounded data and malformed requests are rejected
   ])assert.throws(()=>generateBiomePatch(invalid));
 });
 
+// Pinned on biome-ecology-2 BEFORE the eco-class biomes were appended
+// (BIOME2-ECO, 2026-10-04): the 9 original biomes and the lab's ecotone must
+// keep these exact digests, placement counts and coverage estimates.
+const PINNED_BIOMES={
+  woodland:['56318e604ac8475b',500,0.096435546875,0.175537109375],
+  conifer:['9f410fcecac0ca42',310,0.1337890625,0.09375],
+  grassland:['0f56bf81596587e3',536,0,0.297119140625],
+  'dry-scrub':['9b56c32556ea74f9',558,0,0.155029296875],
+  wetland:['28dcf8795dce3794',650,0.022216796875,0.710693359375],
+  coast:['69d3319f32a41613',543,0,0.208984375],
+  alpine:['e50908a0cee78d22',483,0,0.127197265625],
+  volcanic:['d2e247d694bfe7ce',375,0,0],
+  regolith:['ec9ff840ea5232f2',248,0,0],
+};
+test('the 9 original biome digests are unchanged (append-only rule)',()=>{
+  for(const [biome,[digest,count,canopy,ground]] of Object.entries(PINNED_BIOMES)){
+    const p=generateBiomePatch({seed:'LETHRA-BIOME-01',biome,sizeM:128,originX:-64,originZ:-64});
+    assert.deepEqual([p.digest,p.placements.length,p.canopyCoverEstimate,p.groundCoverEstimate],[digest,count,canopy,ground],biome);
+  }
+  const e=generateBiomePatch({seed:'browser-seed-ecotone',biome:'woodland',blendBiome:'dry-scrub',sizeM:128,originX:-64,originZ:-64});
+  assert.deepEqual([e.digest,e.placements.length,e.canopyCoverEstimate,e.groundCoverEstimate],['6f7835626051be9c',514,0.057373046875,0.1630859375],'ecotone');
+});
+
 test('coverage fixtures have distinct canopy and grass-patch footprints without crown-as-ground inflation',()=>{
   const config={seed:'coverage-fixture',sizeM:256,originX:-128,originZ:-128};
   const woodland=generateBiomePatch({...config,biome:'woodland'});
