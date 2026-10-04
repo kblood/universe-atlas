@@ -96,7 +96,7 @@ What changed:
   - Hidden junction discs inset to 0.96 (`HIDDEN_DISC_INSET`).
   - A nostril tip (`buildTrunkTip`): a gentle swelling in the coat colour (a pale pink lip read as "a small, plain-looking cap"), a darkened end face, two dark nostrils and a dorsal finger.
 - **Ears.** The proboscis ear is a lofted flap (`proboscisEar`) with a thick root, a hanging lower lobe and an outward bow. It replaces the flat dark disc that Luna read as "flat dark disc ears".
-- **Budget.** The head group may exceed the WP4 legacy count by up to 800 triangles. The documented allowance is in `tests/fauna-composer-head-geometry.test.mjs`.
+- **Budget.** The head group may exceed the WP4 legacy count by up to 800 triangles. The documented allowance is in `tests/fauna-composer-head-geometry.test.mjs`. The plan's target was +600; the change to +800 is owner-accepted (see "Owner-accepted changes" below).
 
 ### 2. Arms and wings off the face (`fauna-composer-graph-4`), commit c6067d8
 
@@ -227,6 +227,10 @@ All paths are under `C:/LLM/IWSDK/universe-atlas/test-results/fauna-eye-round-20
 - `after/`: final AFTER sheets rendered at b86b0ad (11 specimens: the 4 trunks, seed 40, blunt and worm specimens, and the preset rhinoceros as a non-proboscis control). The trunk sheets are byte-identical to `a13/` and the seed-40, blunt and worm sheets to `a10/`, so Luna's a13 and a10 verdicts apply to them directly.
 - `luna/`: prompts and outputs.
 - `part-diff/specimens.json`, `part-diff/graph435.json`, `part-diff/skin2.json`.
+
+## Owner-accepted changes
+
+- **2026-10-04: proboscis head triangle allowance raised from +600 to +800** over the WP4 legacy count (`tests/fauna-composer-head-geometry.test.mjs`). Accepted by the owner in the message "Få merget til at ske" (2026-10-04), which also asked for EC4 to be merged. Reason: the proboscis head is more detailed after EC4 (lofted trunk, nostril tip, lofted ears). This is the only owner acceptance recorded for EC4. It does not close any item in the list below.
 
 ## OPEN visual limitations (owner disposition needed; not passed)
 
