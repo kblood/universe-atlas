@@ -319,8 +319,11 @@ function surfacePredatesRiverWithdrawal(version:string):boolean {
  * round 2026-10-03). The address, catalogue and date are unchanged, so the
  * bookmark still opens the same place and date; a restored ground bookmark is
  * placed above the NEW ground height (main.ts prepareLanding re-samples the
- * terrain along the saved direction), and one that is now under the sea opens
- * in flight above it instead of landing. */
+ * terrain along the saved direction). A ground bookmark whose site is now
+ * under the sea is NOT kept: prepareLanding falls back to exploreTerrain(),
+ * which searches for a different walkable site near the current view and
+ * lands there (pre-existing behaviour; OPEN owner item in
+ * docs/relief-round-2026-10-03.md). */
 export const RELIEF_RECALIBRATED_NOTICE='Terrain relief was recalibrated (terrain-1.8.0): mountains, sea depths and snow cover changed. This place is the same location; its height and surroundings may differ. Oceans now shrink by volume as the star brightens.';
 function modelCompatibilityNotice(params:URLSearchParams,explainRivers:boolean):string|null {
   const oldBundle=params.get('wv');

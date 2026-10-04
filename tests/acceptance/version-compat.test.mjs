@@ -404,9 +404,13 @@ test('ground bookmarks re-snap to the new ground height: main.ts restores ?walk=
   // bookmark must use only the saved DIRECTION and land at the current
   // terrain height (never inside or far above the new ground). Pinned on the
   // source: prepareLanding normalises the saved point and re-samples the
-  // surface; a now-flooded site is not walkable and falls back to flight.
+  // surface. A now-flooded site is NOT preserved: it is not walkable, so
+  // prepareLanding falls back to the generic terrain search, which picks a
+  // different walkable site and lands there (OPEN owner item, recorded in
+  // docs/relief-round-2026-10-03.md). This pin only records that fallback; it
+  // does not verify any flooded-bookmark outcome.
   const source = (await readFile(new URL('../../src/main.ts', import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
   assert.ok(source.includes("const d=relative.normalize(),s=surfaceSample(body,d.toArray() as V3);"), 'saved point reduced to a direction and re-sampled');
   assert.ok(source.includes('const point=d.multiplyScalar(body.radiusM+s.rockHeightM+.92).toArray() as V3;'), 'landing point is the CURRENT ground height');
-  assert.ok(source.includes('if(!s.walkable){exploreTerrain();landAfterCruise=true;return;}'), 'a now-flooded bookmark opens in flight, not underwater');
+  assert.ok(source.includes('if(!s.walkable){exploreTerrain();landAfterCruise=true;return;}'), 'a now-flooded bookmark falls back to the terrain search (lands elsewhere; OPEN)');
 });

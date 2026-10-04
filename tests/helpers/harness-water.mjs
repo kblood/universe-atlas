@@ -37,11 +37,16 @@ export function firstDateAtOrBelow(levelAt,targetM,fromNs,yearNs,untilNs){
 }
 
 /** Two dates (whole orbital years after `fromNs`) whose dated sea levels are
- * exactly `loweredSeaLevels(body)` low and high. */
+ * exactly `loweredSeaLevels(body)` low and high. Returns null if either date
+ * is missing or if a single year step skips a bucket (the first year at or
+ * below the target is then already below it), so no caller can get an
+ * inexact pair. */
 export function datedLoweredSea(body,levelAt,fromNs,yearNs,untilNs,lossFraction=HARNESS_OCEAN_LOSS){
   const {lowM,highM}=loweredSeaLevels(body,lossFraction);
   const dateHighNs=firstDateAtOrBelow(levelAt,highM,fromNs,yearNs,untilNs);
   const dateLowNs=firstDateAtOrBelow(levelAt,lowM,fromNs,yearNs,untilNs);
   if(dateHighNs===null||dateLowNs===null)return null;
-  return {lossFraction,lowM,highM,dateLowNs,dateHighNs,levelLowM:levelAt(dateLowNs),levelHighM:levelAt(dateHighNs)};
+  const levelLowM=levelAt(dateLowNs),levelHighM=levelAt(dateHighNs);
+  if(levelLowM!==lowM||levelHighM!==highM)return null;
+  return {lossFraction,lowM,highM,dateLowNs,dateHighNs,levelLowM,levelHighM};
 }

@@ -35,7 +35,10 @@ test('the pre-relief site is recorded as failing the rule (why SITE_A moved)',()
 test('the deterministic search reproduces the SITE_A literal (0.1 m rounding)',()=>{
   const found=searchSite(world);
   assert.ok(found,'a passing site exists within the search disc');
-  const literal=SITE_A_M.map(v=>v/world.body.radiusM);
-  const apartM=world.body.radiusM*Math.hypot(...found.direction.map((v,i)=>v*Math.hypot(...literal)-literal[i]));
-  assert.ok(apartM<1,`search found index ${found.index} at ${found.direction}, ${apartM.toFixed(3)} m from the literal`);
+  // The literal is the found direction scaled to the literal's own length and
+  // rounded to 0.1 m per axis, so each axis is within 0.05 m.
+  const length=Math.hypot(...SITE_A_M),scaled=found.direction.map(v=>v*length);
+  assert.deepEqual(scaled.map(v=>Math.round(v*10)/10),SITE_A_M,`search found index ${found.index} at ${scaled}`);
+  const apartM=Math.hypot(...scaled.map((v,i)=>v-SITE_A_M[i]));
+  assert.ok(apartM<=Math.sqrt(3)*.05,`${apartM.toFixed(4)} m from the literal`);
 });
