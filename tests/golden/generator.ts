@@ -620,8 +620,11 @@ const FAUNA_RANDOM_SEEDS = ["GOLDEN-FAUNA-1", "GOLDEN-FAUNA-2", "GOLDEN-FAUNA-3"
 export const FAUNA_KNOWN_UNSTABLE: Readonly<Record<string, string>> = Object.freeze({
   "GOLDEN-FAUNA-2": "WebKit 26.5 vs Node/Chromium/Firefox: skin positions differ only in the 8 vertices of the midline insect " +
     "ocellus (z = 0, vertices 3270-3277, up to 0.42 mm; colours, weights and gloss identical). That ocellus is seated by " +
-    "nearestExit() on a ray lying in the head's mirror plane (fauna-composer-mesh.ts insect-ocelli block), so a last-bit " +
-    "trig difference can pick the other mirrored triangle (cause inferred, not traced). Measured 2026-10-04.",
+    "nearestExit() on a ray lying in the head's mirror plane (fauna-composer-mesh.ts insect-ocelli block). Traced " +
+    "2026-10-04: raycastLine returns two exit hits with the SAME t on the seam triangles 993/994 (normal z -0.073 / " +
+    "+0.078); Chromium lists 993 first, WebKit 994 (the site differs by 1 ULP upstream), so the tie-break flips the " +
+    "lens normal. Fix belongs to the composer owner; a trialled patch (evidence golden-ext/composer-patch-trial) " +
+    "makes all four engines equal. Measured 2026-10-04.",
 });
 function faunaLines(f: Fmt, which: "stable" | "unstable"): string[] {
   const lines = [`version|${COMPOSER_RECIPE_VERSION}|${COMPOSER_GRAPH_VERSION}|${COMPOSER_SKIN_VERSION}|q=${f.q}`];

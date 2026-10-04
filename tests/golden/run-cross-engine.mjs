@@ -25,7 +25,7 @@
 import { chromium, firefox, webkit } from "playwright";
 import { spawn, spawnSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
-import { realpathSync, statSync } from "node:fs";
+import { lstatSync, realpathSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { computeGolden } from "./generator.ts";
@@ -67,17 +67,30 @@ if (update && fixtureOption) throw new Error("--update rewrites golden.json; do 
 // just compared as strings: realpath follows symlinks and junctions (of the
 // file or of its nearest existing parent directory), Windows paths are
 // case-folded after that (case-insensitive filesystem), and an existing file is
-// also compared by device+inode, which catches hard links. main() additionally
-// reads the fixture BEFORE any output is written.
+// also compared by device+inode, which catches hard links. Spellings the
+// resolver cannot see through are refused outright: on Windows an NTFS stream
+// suffix or device path (any ':' after the drive letter, e.g. `x.json::$DATA`)
+// and a component ending in '.' or ' ' (Win32 strips those, so `golden.json.`
+// IS golden.json); anywhere, a dangling symlink/junction. The check runs at
+// start-up AND again immediately before every write (an earlier output may
+// have created the file a later one aliases). main() additionally reads the
+// fixture BEFORE any output is written.
 function canonicalPath(p) {
+  const abs = path.resolve(p);
+  if (process.platform === "win32") {
+    if (abs.replace(/^[A-Za-z]:/, "").includes(":")) throw new Error(`${p}: stream or device syntax (':' after the drive) is not supported for an output`);
+    if (abs.split(/[\\/]/).slice(1).some((c) => /[. ]$/.test(c))) throw new Error(`${p}: a path component ending in '.' or ' ' is not supported for an output (Win32 strips it)`);
+  }
   // realpath the nearest existing ancestor, then re-append the not-yet-existing tail
-  let dir = path.resolve(p), resolved = dir;
+  let dir = abs, resolved = abs;
   const tail = [];
   for (;;) {
     try {
       resolved = path.join(realpathSync.native(dir), ...tail);
       break;
     } catch {
+      // an entry that exists but does not resolve is a dangling link: its target is unknowable here
+      if (lstatSync(dir, { throwIfNoEntry: false })) throw new Error(`${p}: ${dir} is a dangling symlink or junction`);
       const parent = path.dirname(dir);
       if (parent === dir) break;
       tail.unshift(path.basename(dir));
@@ -109,10 +122,17 @@ function outputViolations() {
   if (reportPath) outputs.push(["--report", reportPath]);
   const problems = [];
   for (const [flag, out] of outputs) {
+    try {
+      canonicalPath(out);
+    } catch (err) {
+      problems.push(`${flag} ${err.message}`);
+      continue;
+    }
     for (const [what, file] of protectedFiles) {
       if (sameFile(out, file)) problems.push(`${flag} ${out} is ${what} (${file}); use --update for a re-pin`);
     }
   }
+  if (problems.length) return problems;
   for (let i = 0; i < outputs.length; i++) {
     for (let j = i + 1; j < outputs.length; j++) {
       if (sameFile(outputs[i][1], outputs[j][1])) problems.push(`${outputs[i][0]} and ${outputs[j][0]} name the same file (${outputs[i][1]})`);
@@ -120,10 +140,11 @@ function outputViolations() {
   }
   return problems;
 }
-{
+function assertOutputsSafe(stage) {
   const problems = outputViolations();
-  if (problems.length) throw new Error(`refusing to run, output destination(s) alias a protected file or each other:\n  ${problems.join("\n  ")}`);
+  if (problems.length) throw new Error(`refusing to ${stage}, output destination(s) alias a protected file or each other:\n  ${problems.join("\n  ")}`);
 }
+assertOutputsSafe("run");
 if (checkArgsOnly) {
   console.log(`--check-args: OK. fixture=${GOLDEN_FIXTURE} write-node=${writeNode ?? "-"} report=${reportPath ?? "-"} update=${update} strict=${strict}`);
   process.exit(0);
@@ -138,7 +159,17 @@ if (checkArgsOnly) {
  * here must match on every engine. Re-measure the pinned digest whenever the
  * faunaKnownUnstable fixture digest is re-pinned (a composer version bump). Keep this list short and specific:
  * generator.ts pins known-unstable specimens in their own key
- * (faunaKnownUnstable) so the main key keeps guarding everything else. */
+ * (faunaKnownUnstable) so the main key keeps guarding everything else.
+ * A tolerated entry is NOT equality: the gate reports PASS-WITH-KNOWN-MISMATCH
+ * and fourEngineEqual=false, and --strict fails on it.
+ * Root cause of the webkit entry (measured 2026-10-04): the midline ocellus site
+ * (z = 0) lies on the head's mirror seam, where raycastLine returns two exit
+ * hits with the same t (seam triangles with normal z -0.073 / +0.078). Chromium
+ * orders one first, WebKit the other (the site differs by 1 ULP upstream), so
+ * nearestExit's tie-break flips the lens normal. The fix belongs in
+ * src/fauna-composer-mesh.ts (outside this task); a trialled patch makes all
+ * four engines equal. Remove this entry when that lands (the run then reports
+ * NOW-MATCHES) and fold GOLDEN-FAUNA-2 back into the fauna key. */
 const KNOWN_ENGINE_MISMATCHES = {
   webkit: {
     faunaKnownUnstable: {
@@ -219,6 +250,25 @@ function diffDigests(label, a, b, known = {}, knownSeen = null) {
   return null;
 }
 
+/** Pure classification of one engine's result against Node and the fixture.
+ * The Node and fixture comparisons keep SEPARATE tolerated-key sets, so a stale
+ * fixture cannot mislabel the Node comparison (or the reverse). A tolerated
+ * known mismatch is never reported as MATCH: it is MATCH-EXCEPT-KNOWN. */
+export function classifyEngine(name, result, nodeResult, fixtureDigests, known, fixtureLabel = "fixture") {
+  const knownVsNode = new Set(), knownVsFixture = new Set();
+  const vsNode = diffDigests(`${name} vs Node`, result.digests, nodeResult.digests, known, knownVsNode);
+  const countsVsNode = diffDigests(`${name} counts vs Node`, result.counts, nodeResult.counts);
+  const vsFixture = diffDigests(`${name} vs fixture ${fixtureLabel}`, result.digests, fixtureDigests, known, knownVsFixture);
+  const knownStatus = (k) => (knownVsNode.has(k) ? "KNOWN-MISMATCH" : result.digests?.[k] === nodeResult.digests?.[k] ? "NOW-MATCHES" : "CHANGED (gate failure)");
+  return {
+    vsNode: vsNode || countsVsNode ? "MISMATCH" : knownVsNode.size ? "MATCH-EXCEPT-KNOWN" : "MATCH",
+    vsFixture: vsFixture ? "MISMATCH" : knownVsFixture.size ? "MATCH-EXCEPT-KNOWN" : "MATCH",
+    failures: [countsVsNode, vsNode, vsFixture].filter(Boolean),
+    tolerated: [...[...knownVsNode].map((k) => `${name}:${k} (vs Node)`), ...[...knownVsFixture].map((k) => `${name}:${k} (vs fixture)`)],
+    knownMismatches: Object.fromEntries(Object.keys(known).map((k) => [k, knownStatus(k)])),
+  };
+}
+
 async function main() {
   console.log("Computing Node reference digests...");
   const nodeStarted = Date.now();
@@ -229,6 +279,7 @@ async function main() {
   // Read the comparison fixture before writing anything (see the --write-node guard).
   const fixtureBefore = update ? null : JSON.parse(await readFile(GOLDEN_FIXTURE, "utf8"));
   if (writeNode) {
+    assertOutputsSafe("write --write-node");
     await writeFile(path.resolve(writeNode), JSON.stringify(nodeResult, null, 2) + "\n");
     console.log(`Wrote Node's result to ${path.resolve(writeNode)}`);
   }
@@ -280,35 +331,21 @@ async function main() {
         console.log(`${name} (${result.engineVersion}) computed the golden set in ${result.elapsedMs} ms (launch included)`);
         console.log(`${name} counts:`, JSON.stringify(result.counts));
         console.log(`${name} digests:`, JSON.stringify(result.digests));
-        const known = KNOWN_ENGINE_MISMATCHES[name] ?? {}, knownSeen = new Set();
-        const vsNode = diffDigests(`${name} vs Node`, result.digests, nodeResult.digests, known, knownSeen);
-        const countsVsNode = diffDigests(`${name} counts vs Node`, result.counts, nodeResult.counts);
-        if (countsVsNode) {
-          console.error(countsVsNode);
+        const c = classifyEngine(name, result, nodeResult, fixture.digests, KNOWN_ENGINE_MISMATCHES[name] ?? {}, path.basename(GOLDEN_FIXTURE));
+        result.knownMismatches = c.knownMismatches;
+        for (const [k, status] of Object.entries(c.knownMismatches)) {
+          if (status === "NOW-MATCHES") console.log(`${name}: known mismatch ${k} no longer reproduces - remove it from KNOWN_ENGINE_MISMATCHES`);
+        }
+        for (const text of c.failures) {
+          console.error(text);
           process.exitCode = 1;
         }
-        const vsFixture = diffDigests(`${name} vs fixture ${path.basename(GOLDEN_FIXTURE)}`, result.digests, fixture.digests, known, knownSeen);
-        const knownStatus = (k) => (knownSeen.has(k) ? "KNOWN-MISMATCH" : result.digests?.[k] === nodeResult.digests[k] ? "NOW-MATCHES" : "CHANGED (gate failure)");
-        result.knownMismatches = Object.fromEntries(Object.keys(known).map((k) => [k, knownStatus(k)]));
-        for (const k of Object.keys(known)) {
-          if (knownStatus(k) === "NOW-MATCHES") console.log(`${name}: known mismatch ${k} no longer reproduces - remove it from KNOWN_ENGINE_MISMATCHES`);
-        }
-        if (vsNode) {
-          console.error(vsNode);
-          process.exitCode = 1;
-        }
-        if (vsFixture) {
-          console.error(vsFixture);
-          process.exitCode = 1;
-        }
-        // A tolerated known mismatch is NOT equality: it is reported as such everywhere.
-        const exceptKnown = knownSeen.size ? "MATCH-EXCEPT-KNOWN" : "MATCH";
-        result.vsNode = vsNode || countsVsNode ? "MISMATCH" : exceptKnown;
-        result.vsFixture = vsFixture ? "MISMATCH" : exceptKnown;
-        for (const k of knownSeen) knownTolerated.push(`${name}:${k}`);
-        if (!vsNode && !countsVsNode && !vsFixture) {
-          if (knownSeen.size) {
-            console.log(`${name}: NOT EQUAL - matches Node and ${path.basename(GOLDEN_FIXTURE)} on every key EXCEPT known open finding(s): ${[...knownSeen].join(", ")}`);
+        result.vsNode = c.vsNode;
+        result.vsFixture = c.vsFixture;
+        knownTolerated.push(...c.tolerated);
+        if (!c.failures.length) {
+          if (c.tolerated.length) {
+            console.log(`${name}: NOT EQUAL - vsNode ${c.vsNode}, vsFixture ${c.vsFixture}; tolerated known open finding(s): ${c.tolerated.join(", ")}`);
           } else {
             console.log(`${name}: MATCH (Node and ${path.basename(GOLDEN_FIXTURE)})`);
           }
@@ -346,6 +383,8 @@ async function main() {
 
   if (reportPath) {
     const nodeVsFixture = update ? null : diffDigests("Node vs fixture", nodeResult.digests, fixture.digests);
+    // re-check: --write-node (or anything else) may have created a file this path now aliases
+    assertOutputsSafe("write --report");
     await writeFile(path.resolve(reportPath), JSON.stringify({
       fixture: GOLDEN_FIXTURE,
       strict,
@@ -367,7 +406,11 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exitCode = 1;
-});
+// Always runs, except when a test imports classifyEngine and has set this flag
+// first (an argv-path comparison could silently skip the gate and exit 0).
+if (!globalThis.__GOLDEN_RUNNER_IMPORT_ONLY__) {
+  main().catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  });
+}
