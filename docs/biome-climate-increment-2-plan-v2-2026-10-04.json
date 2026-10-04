@@ -5,7 +5,7 @@
  "measuredOn": {
   "commit": "b7d1df3 (main = d751a09 plus the creature-boundary test only; git diff d751a09 b7d1df3 touches package.json, tests/creature-core-boundary.test.mjs and a fixture, no src/ file)",
   "script": "C:/LLM/IWSDK/universe-atlas/test-results/round2-2026-10-04/BIOME2-REPLAN/remeasure.mjs (parts ela, worlds, site, corpus, corpus132, grid, gates, bench). Outputs remeasure-<part>.json beside it; exit codes in exits.txt (all 0). test-results/ is git-ignored, so the script lives in the main checkout's evidence folder, not in git.",
-  "prototype": "'Prototype M1' = the v1 plan's P1 M1 formulas (PDD snow PDD_CRIT 250 / PDD_RAMP 100, warm-column lapse, warmest-month ceiling, heat cap, PET effective moisture with the UNCALIBRATED starting ITCZ band a=(0.9,0.6,0.55,0.4), w=(10,12,9,12)) evaluated in plain JS inside the script. It is evidence for expected values, not shipped code. The eco-class numbers apply the v1 P3 rule order to the shipped and the prototype climate, with slope 0 (upDot = 1).",
+  "prototype": "'Prototype M1' = the v1 plan's P1 M1 formulas (PDD snow PDD_CRIT 250 / PDD_RAMP 100, warm-column lapse, warmest-month ceiling, heat cap, PET effective moisture with the UNCALIBRATED starting ITCZ band a=(0.9,0.6,0.55,0.4), w=(10,12,9,12)) evaluated in plain JS inside the script as an ANALYTIC APPROXIMATION: it uses Math.acos directly instead of the prescribed 513-entry H(v) table, and does not compute the growing-season G(v) or aridity outputs (Astra review-1 checked that H-table interpolation keeps all four worlds' rounded snow and forest headlines; det-math equivalence is not checked). It is evidence for expected values, not shipped code. The eco-class numbers apply the v1 P3 rule order to the shipped and the prototype climate, with slope 0 (upDot = 1). datumTw in the probe is the warmest month AT the climate datum from the same model (datum annual temperature plus the same half-range, then the ceiling); review-1 must-fix 1 changed it from the lapse reconstruction TwP + lapse*fac*h, which gives identical numbers wherever the ceiling does not bind, and the rerun reproduced every eco table.",
   "machine": "Shared/contended (other round-2 agents running). Timing numbers are labelled contended; every other number is deterministic."
  },
  "backlogMapping": {
@@ -23,55 +23,249 @@
   "R3 Selawyn: v1 quoted warmest month 376 K and 37% snow. Now: snow 0%, effective obliquity 89.8 deg (ITCZ at the pole), max Tw 388.8 K -> prototype 345.3 K, Tw > 316 K on 91.4% of land, forestSuitability01 > 0.5 on 48.7% of land -> 2.4% (heat cap, shipped moisture) / 3.7% (heat cap, PET moisture). The 'sterile hot' class covers 50.7% (shipped climate) / 43.0% (prototype) of land.",
   "R4 Raiva: snow 0%; Tw > 316 K on 62.4% of land; max Tw 354.7 -> 338.6 K; forest > 0.5 47.8% -> 10.0% / 5.9%.",
   "R5 Heat, not snow, is now the dominant M1 effect on the corpus. Corpus of 721 life-eligible rocky planets (W0-CLIMATE definition: temperateHabitat bodies in the first 2000 systems of LETHRA-001 G001 from sector x=266, 8000 directions each, land >= 1%): 448 of 721 have > 5% of land with Tw > 316 K. Forest > 0.5 median 42.4% -> 12.0% under the heat cap. Snow median 6.5% -> 3.3%.",
-  "R6 310 of 721 corpus planets (and 50 of the 132-planet set) have effective obliquity > 54 deg, where the ITCZ sits at the poles. The v1 'high-tilt synthetic world' check is therefore not an edge case: it becomes a corpus-level acceptance (P1 step 6).",
+  "R6 311 of 721 corpus planets have the ITCZ (argmax of the annual-mean insolation table, itczLatDeg in the probe) at a pole; 310 of them have effective obliquity > 54 deg, and G001/C2134,7,5/0/planet/1 (obliquity 53.899 deg) is polar too, so acceptance selects by the ITCZ, never by obliquity. 50 of the 132-planet set have obliquity > 54 deg. The v1 'high-tilt synthetic world' check is therefore not an edge case: it becomes a corpus-level acceptance (P1 step 6).",
   "R7 Snow threshold ambiguity in v1. The v1 snow tables and ELA anchors used PDD < 250 (= snowFraction > 0, onset), while the classifier and every test count snow as snowFraction > 0.6 ('Alpine / polar snow'), which under the v1 ramp is PDD < 190. v2 reports both and defines every acceptance on the label (snowFraction > 0.6).",
-  "R8 Earth ELA under prototype M1, label definition: equator 4608, 45 deg 3003, 60 deg 1505, 70 deg 719, 78 deg 426 m (onset: 4561 / 2899 / 1399 / 611 / 317). All inside the v1 bands. Without the warm-column correction the equator is 4258 m (< 4450), so step 2 stays mandatory. The shipped rule gives label 5674 / 2726 / 810 / 0 / 0 and onset 5120 / 2172 / 256 / 0 / 0 m.",
-  "R9 SITE_A moved in the relief round (tests/harness-sites.mjs, SITE_A_M [4075043.7, -1510938.2, 2845723.8]; v1 used the legacy site). New site: ground 280.2 m, latitude 16.9 deg, inside the fixed dry belt (dryBelt01 = 1) but effectiveMoisture 0.750, forestPotential true. Eco class 6 (humid subtropical) under both the shipped and the prototype climate (Ta 294.91 K, Tw 299.22 K, Tc 290.60 K). Tc is only 0.55 K below the tropical-wet threshold 291.15 K: a 12.7% cut of the seasonal half-range moves it to class 7. M2 continentality will very likely do that (the maritime factor is 0.792 today; at 0.6 Tc = 291.65 K). The v1 STOP condition will therefore fire at M2 unless the owner decides first: new open question Q2.",
+  "R8 Earth ELA under prototype M1, label definition: equator 4608, 45 deg 3003, 60 deg 1505, 70 deg 719, 78 deg 426 m (onset: 4561 / 2899 / 1399 / 611 / 317). All inside the v1 bands. Without the warm-column correction the equator is 4302 m on the label (4258 m onset), both < 4450, so step 2 stays mandatory. The shipped rule gives label 5674 / 2726 / 810 / 0 / 0 and onset 5120 / 2172 / 256 / 0 / 0 m.",
+  "R9 SITE_A moved in the relief round (tests/harness-sites.mjs, SITE_A_M [4075043.7, -1510938.2, 2845723.8]; v1 used the legacy site). New site: ground 280.2 m, latitude 16.9 deg, inside the fixed dry belt (dryBelt01 = 1) but effectiveMoisture 0.750, forestPotential true. Eco class 6 (humid subtropical) under both the shipped and the prototype climate (Ta 294.91 K, Tw 299.22 K, Tc 290.60 K). Tc is only 0.55 K below the tropical-wet threshold 291.15 K: a 12.7% cut of the seasonal half-range moves it to class 7. M2 continentality will very likely do that (the maritime factor is 0.792 today; at 0.6 Tc = 291.65 K). That 0.55 K / 12.7% figure holds for the shipped moisture. Under the prototype the site's effective moisture is 0.532 (uncalibrated PET), below both class 7's 0.62 threshold (so a Tc crossing would give class 8, savanna, also outside {4,5,6}) and SITE_RULE.minMoisture 0.6 (tests/harness-sites.mjs:33): with uncalibrated moisture SITE_A already fails SITE_RULE after M1. Whether it still fails after calibration is not known. The v1 STOP condition will very likely fire at M1 or M2 unless the owner decides first: new open question Q2.",
   "R10 The v1 eco-identity gate (a 60 km ring of 64 points around SITE_A) is unusable on relief terrain: 15 of 64 points are ocean, and the SHIPPED climate already puts 18 ring points in class 7 and 6 in class 11 (prototype: 19 in class 8). v2 uses the SITE_RULE rings instead (0.5 / 1 / 2 km x 32, tests/harness-sites.mjs). At 2 km all 32 points are land and in {4, 6} under both climates.",
-  "R11 The v1 herd target ('Maithea mean land herd weight 0.27 -> >= 0.40') is already met on relief terrain: mean land weights[1] is 0.787 and mean herd habitability weights[1]*(0.4+0.6*moisture) is 0.548. Per eco class on Maithea, only class 0 nival (mean 0.017; 88% of its points below 0.02) and class 11 coast (0.205) are near-empty; tundra 0.553, hot desert 0.547, cold desert 0.537, alpine 0.658. Same pattern on Lethuris and Selawyn. P6's eco path therefore matters mainly for nival/ice-margin and coast; the target is replaced by a per-class presence gate.",
+  "R11 The v1 herd target ('Maithea mean land herd weight 0.27 -> >= 0.40') is already met on relief terrain: mean land weights[1] is 0.787 and mean herd habitability weights[1]*(0.4+0.6*moisture) is 0.548. Per eco class on Maithea the HABITABILITY term (the probe does not run herd placement or species eligibility, so this is the presence ceiling, not measured presence) is near zero only in class 0 nival (mean 0.017; 88% of its points below 0.02) and low in class 11 coast (0.205); tundra 0.553, hot desert 0.547, cold desert 0.537, alpine 0.658. Same pattern on Lethuris and Selawyn. P6's eco path therefore matters most for nival/ice-margin and coast; the target is replaced by a per-class presence gate measured on actual herd placement.",
   "R12 P2's geophysics half shipped in the relief round (src/planet-geophysics.ts, planet-geophysics-1, docs/planet-geophysics-v1.md). It is wired: lapse-rate gravity (surface-climate-1.1-geo-g) and the relief scale tau. The relief preview and the absolute-height-gate prerequisites are done (surface-biomes-2.1-sea-datum: sand, 'Coastal sand', forest strip and climate datum are all measured from the current sea level). P2 is reduced to the climate grid.",
-  "R13 The v1 grid land-height proxy max(0, (macro - sea) * 47000) no longer describes the land. Land p50 / p90 / p99 on Maithea: proxy 4670 / 10388 / 14408 m vs ground 427 / 2691 / 4361 m; Spearman rank correlation with the ground height 0.614 (Lethuris 0.548). The relief floor without detail (reliefLayersSampler smoothFloorM) correlates 0.984 (Lethuris 0.975). The rain-shadow rise must come from a relief-consistent height. surface-climate.ts cannot import terrain.ts (terrain.ts already imports the climate and classifier modules: cycle), so the grid takes an injected land-height function (P2) and M2 chooses the provider (P1 step 8). The macro ocean mask (macro < sea) disagrees with the real ocean flag on 0.4% of directions on Maithea and Lethuris; accepted at grid scale.",
+  "R13 The v1 grid land-height proxy max(0, (macro - sea) * 47000) no longer describes the land. Land p50 / p90 / p99 on Maithea (grid-part sample): proxy 4670 / 10388 / 14408 m vs ground 426 / 2691 / 4361 m; Spearman rank correlation with the ground height 0.614 (Lethuris 0.548). The relief floor without detail (reliefLayersSampler smoothFloorM) correlates 0.984 (Lethuris 0.975). The rain-shadow rise must come from a relief-consistent height. surface-climate.ts cannot import terrain.ts (terrain.ts already imports the climate and classifier modules: cycle), so the grid takes an injected land-height function (P2) and M2 chooses the provider (P1 step 8). The macro ocean mask (macro < sea) disagrees with the real ocean flag on 0.4% of directions on Maithea and Lethuris; accepted at grid scale.",
   "R14 The uncalibrated PET prototype makes land wetter, not drier: Maithea effM median 0.484 -> 0.599, hot-desert class 4.9% -> 0.4%. This confirms v1 risk (a): the zonal band must be calibrated before anything is pinned. Acceptance stays on the Earth reference targets.",
   "R15 Budgets. Contended best-of-N on main: surfaceClimate 141 ns, biomeClassifier 253 ns, climateForcingFor cold 1.77 ms (v1 quoted 95 / 135 ns at b0f3882). Absolute nanosecond gates are not reproducible on this shared host, so v2 states gates as an interleaved A/B ratio against main in one process, and keeps the absolute values as quiet-host targets for task 20.",
   "R16 New coupling v1 did not know: tests/terrain-relief-hypsometry.test.mjs pins owner decision 1 (Maithea snow 15-40%, snow on >= 20% of land above 3 km at |lat| < 60, <= 5% snow on land below 1.5 km, corpus132 median <= 20%, <= 20 planets above 90%, bin medians falling with anchor temperature). P1 does not own it and must pass it unmodified. Prototype M1: 20.3%, 36.3%, 3.1%, median 4.9%, 10 planets, bins [68.9, 28.8, 11.4, 2.2, 0] -> passes. PDD also raises range snow from 28.7% to 36.3% (data side of OPEN item D1 'weak range snow').",
   "R17 Other classifier readers P1 must run (not own): lod-consistency (strict post-relief class/colour targets are an OPEN owner item; ceilings must not be loosened), place-query, planet-rocks, planet-rocks-draw, rock-field, tile-metadata, surface.test, version-compat. A moved pin goes to the coordinator with old/new values.",
   "R18 Version keys moved since v1: TERRAIN_VERSION is 'terrain-1.8.0-relief', CLIMATE_VERSION 'surface-climate-1.1-geo-g', BIOME_VERSION 'surface-biomes-2.1-sea-datum', SURVEY_VERSION 'surface-survey-2.1-relief'. v1's 'terrain-1.8.0-climate-2' collides with the shipped 1.8.0. Task 11 also moves TERRAIN_VERSION. The coordinator assigns the final names (proposal in versioning).",
-  "R19 Eco-class rule fix: v1's coast rule used heightM < 120 and datumTw used the raw height. Both must use the height above the current sea level / climate datum (surface-biomes-2.1 convention).",
+  "R19 Eco-class rule fix: v1's coast rule used heightM < 120 and its datumTw used the raw height. The coast rule must use the height above the current sea level, and datumTw is defined as the warmest month at the climate datum, evaluated by climate v2 itself (the same warm-column lapse and ceiling), not reconstructed as TwP + lapse*height (surface-biomes-2.1 datum convention).",
+  "R21 Heat versus forest classes (found while re-measuring): the v1 P3 rule order has no heat rule, so land with Tw' >= 316 K, where the P1 heat cap sets forest suitability to 0, can still be classed boreal / temperate forest / humid subtropical / tropical wet. Prototype share of land in those four classes with Tw' >= 316 K: Selawyn 27.5%, Raiva 42.3%, Lethuris 19.3%, Maithea 0%. Classes and trees would disagree. P3 must decide this (see P3 changes).",
   "R20 Line references re-checked on main (see ownershipCheck). planet-renderer.ts and planet-tiles.ts lines moved; MATERIAL_VERSION still seeds the detail atlas (ground-material.ts:60)."
  ],
  "measuredBaseline": {
   "earthElaM": {
    "definition": "lowest height (m) with the stated snow test true, Earth reference (288 K, 23.44 deg, water 0.7, g 9.81, lapse 6.4996 K/km)",
    "rows": [
-    {"lat": 0, "shippedLabel": 5674, "shippedOnset": 5120, "pdd250NoWarmColumn": 4258, "protoOnset": 4561, "protoLabel": 4608, "target": ">= 4450"},
-    {"lat": 15, "shippedLabel": 5324, "shippedOnset": 4770, "pdd250NoWarmColumn": 4344, "protoOnset": 4597, "protoLabel": 4676},
-    {"lat": 30, "shippedLabel": 4307, "shippedOnset": 3753, "pdd250NoWarmColumn": 3978, "protoOnset": 4068, "protoLabel": 4165},
-    {"lat": 45, "shippedLabel": 2726, "shippedOnset": 2172, "pdd250NoWarmColumn": 2984, "protoOnset": 2899, "protoLabel": 3003, "target": "2700-3100"},
-    {"lat": 60, "shippedLabel": 810, "shippedOnset": 256, "pdd250NoWarmColumn": 1528, "protoOnset": 1399, "protoLabel": 1505, "target": "1200-1700"},
-    {"lat": 70, "shippedLabel": 0, "shippedOnset": 0, "pdd250NoWarmColumn": 673, "protoOnset": 611, "protoLabel": 719, "target": "550-1000"},
-    {"lat": 78, "shippedLabel": 0, "shippedOnset": 0, "pdd250NoWarmColumn": 349, "protoOnset": 317, "protoLabel": 426, "target": "250-650"}
+    {
+     "lat": 0,
+     "pdd190NoWarmColumnLabel": 4302,
+     "shippedLabel": 5674,
+     "shippedOnset": 5120,
+     "pdd250NoWarmColumn": 4258,
+     "protoOnset": 4561,
+     "protoLabel": 4608,
+     "target": ">= 4450"
+    },
+    {
+     "lat": 15,
+     "pdd190NoWarmColumnLabel": 4419,
+     "shippedLabel": 5324,
+     "shippedOnset": 4770,
+     "pdd250NoWarmColumn": 4344,
+     "protoOnset": 4597,
+     "protoLabel": 4676
+    },
+    {
+     "lat": 30,
+     "pdd190NoWarmColumnLabel": 4073,
+     "shippedLabel": 4307,
+     "shippedOnset": 3753,
+     "pdd250NoWarmColumn": 3978,
+     "protoOnset": 4068,
+     "protoLabel": 4165
+    },
+    {
+     "lat": 45,
+     "pdd190NoWarmColumnLabel": 3091,
+     "shippedLabel": 2726,
+     "shippedOnset": 2172,
+     "pdd250NoWarmColumn": 2984,
+     "protoOnset": 2899,
+     "protoLabel": 3003,
+     "target": "2700-3100"
+    },
+    {
+     "lat": 60,
+     "pdd190NoWarmColumnLabel": 1643,
+     "shippedLabel": 810,
+     "shippedOnset": 256,
+     "pdd250NoWarmColumn": 1528,
+     "protoOnset": 1399,
+     "protoLabel": 1505,
+     "target": "1200-1700"
+    },
+    {
+     "lat": 70,
+     "pdd190NoWarmColumnLabel": 791,
+     "shippedLabel": 0,
+     "shippedOnset": 0,
+     "pdd250NoWarmColumn": 673,
+     "protoOnset": 611,
+     "protoLabel": 719,
+     "target": "550-1000"
+    },
+    {
+     "lat": 78,
+     "pdd190NoWarmColumnLabel": 468,
+     "shippedLabel": 0,
+     "shippedOnset": 0,
+     "pdd250NoWarmColumn": 349,
+     "protoOnset": 317,
+     "protoLabel": 426,
+     "target": "250-650"
+    }
    ]
   },
   "worlds60k": {
    "columns": "shipped -> prototype M1",
-   "Maithea": {"T": 284, "gGeo": 6.82, "tau": 0.789, "lapseKPerKm": 4.52, "oblDeg": 13.5, "landPct": 55.0, "landH": "p10 206 / p50 427 / p90 2694 / p99 4331 / max 5760 m", "snowLabelPct": "19.5 -> 20.2", "snowOnsetPct": "23.9 -> 21.0", "tundraPct": "12.4 -> 11.5", "twGt316Pct": "0 -> 0", "twMaxK": "300.8 -> 300.8", "forestPotentialPct": 38.0, "forestSuit05Pct": "29.4 -> 29.6 (heat cap, shipped effM) / 37.5 (heat cap, PET effM uncalibrated)", "effM_p10_p50_p90": "0.260/0.484/0.715 -> 0.379/0.599/0.823 (uncalibrated)", "meanLandWeights1": 0.787, "meanLandHerdHabitability": 0.548},
-   "Selawyn": {"T": 320, "gGeo": 18.56, "tau": 0.603, "lapseKPerKm": 9.8, "oblDeg": 89.8, "landPct": 39.3, "landH": "p10 183 / p50 345 / p90 1802 / p99 3312 / max 4535 m", "snowLabelPct": "0 -> 0", "twGt316Pct": "91.4 -> 92.8", "twMaxK": "388.8 -> 345.3", "forestPotentialPct": 53.1, "forestSuit05Pct": "48.7 -> 2.4 / 3.7", "meanLandHerdHabitability": 0.684},
-   "Raiva": {"T": 300, "gGeo": 2.55, "tau": 0.456, "lapseKPerKm": 1.69, "oblDeg": 61.4, "landPct": 52.3, "landH": "p10 184 / p50 341 / p90 1491 / p99 2468 / max 3262 m", "snowLabelPct": "0 -> 0", "twGt316Pct": "62.4 -> 62.4", "twMaxK": "354.7 -> 338.6", "forestPotentialPct": 53.2, "forestSuit05Pct": "47.8 -> 10.0 / 5.9", "meanLandHerdHabitability": 0.679},
-   "Lethuris": {"T": 275, "gGeo": 17.66, "tau": 0.771, "lapseKPerKm": 9.8, "oblDeg": 70.8, "landPct": 37.7, "landH": "p10 193 / p50 351 / p90 2376 / p99 4085 / max 5272 m", "snowLabelPct": "20.0 -> 10.6", "snowOnsetPct": "42.9 -> 11.8", "tundraPct": "13.6 -> 16.7", "twGt316Pct": "22.4 -> 22.2", "twMaxK": "334.7 -> 330.8", "forestPotentialPct": 37.9, "forestSuit05Pct": "32.6 -> 19.4 / 31.2", "meanLandHerdHabitability": 0.518}
+   "Maithea": {
+    "T": 284,
+    "gGeo": 6.82,
+    "tau": 0.789,
+    "lapseKPerKm": 4.52,
+    "oblDeg": 13.5,
+    "landPct": 55,
+    "landH": "p10 206 / p50 427 / p90 2694 / p99 4331 / max 5760 m",
+    "snowLabelPct": "19.5 -> 20.2",
+    "snowOnsetPct": "23.9 -> 21.0",
+    "tundraPct": "12.4 -> 11.5",
+    "twGt316Pct": "0 -> 0",
+    "twMaxK": "300.8 -> 300.8",
+    "forestPotentialPct": 38,
+    "forestSuit05Pct": "29.4 -> 29.6 (heat cap, shipped effM) / 37.5 (heat cap, PET effM uncalibrated)",
+    "effM_p10_p50_p90": "0.260/0.484/0.715 -> 0.379/0.599/0.823 (uncalibrated)",
+    "meanLandWeights1": 0.787,
+    "meanLandHerdHabitability": 0.548
+   },
+   "Selawyn": {
+    "T": 320,
+    "gGeo": 18.56,
+    "tau": 0.603,
+    "lapseKPerKm": 9.8,
+    "oblDeg": 89.8,
+    "landPct": 39.3,
+    "landH": "p10 183 / p50 345 / p90 1802 / p99 3312 / max 4535 m",
+    "snowLabelPct": "0 -> 0",
+    "twGt316Pct": "91.4 -> 92.8",
+    "twMaxK": "388.8 -> 345.3",
+    "forestPotentialPct": 53.1,
+    "forestSuit05Pct": "48.7 -> 2.4 / 3.7",
+    "protoForestClassWithTwPGe316Pct": 27.5,
+    "meanLandHerdHabitability": 0.684
+   },
+   "Raiva": {
+    "T": 300,
+    "gGeo": 2.55,
+    "tau": 0.456,
+    "lapseKPerKm": 1.69,
+    "oblDeg": 61.4,
+    "landPct": 52.3,
+    "landH": "p10 184 / p50 341 / p90 1491 / p99 2468 / max 3262 m",
+    "snowLabelPct": "0 -> 0",
+    "twGt316Pct": "62.4 -> 62.4",
+    "twMaxK": "354.7 -> 338.6",
+    "forestPotentialPct": 53.2,
+    "forestSuit05Pct": "47.8 -> 10.0 / 5.9",
+    "protoForestClassWithTwPGe316Pct": 42.3,
+    "meanLandHerdHabitability": 0.679
+   },
+   "Lethuris": {
+    "T": 275,
+    "gGeo": 17.66,
+    "tau": 0.771,
+    "lapseKPerKm": 9.8,
+    "oblDeg": 70.8,
+    "landPct": 37.7,
+    "landH": "p10 193 / p50 351 / p90 2376 / p99 4085 / max 5272 m",
+    "snowLabelPct": "20.0 -> 10.6",
+    "snowOnsetPct": "42.9 -> 11.8",
+    "tundraPct": "13.6 -> 16.7",
+    "twGt316Pct": "22.4 -> 22.2",
+    "twMaxK": "334.7 -> 330.8",
+    "forestPotentialPct": 37.9,
+    "forestSuit05Pct": "32.6 -> 19.4 / 31.2",
+    "protoForestClassWithTwPGe316Pct": 19.3,
+    "meanLandHerdHabitability": 0.518
+   }
   },
   "ecoClassSharePct": {
    "note": "v1 P3 rule order applied to the shipped climate (before) and prototype M1 (after, uncalibrated moisture). This is the 'before' table P3 must reproduce from the live classifier.",
-   "Maithea": {"shipped": "nival 19.5, tundra 4.4, alpine 8.0, boreal 5.8, temperate forest 9.5, steppe 18.8, humid subtropical 4.6, tropical wet 5.6, savanna 12.9, hot desert 4.9, cold desert 5.3, coast 0.7", "proto": "nival 20.2, tundra 4.6, alpine 6.9, boreal 10.0, temperate forest 11.7, steppe 20.7, humid subtropical 2.3, tropical wet 4.0, savanna 17.5, hot desert 0.4, cold desert 1.1, coast 0.6"},
-   "Selawyn": {"shipped": "boreal 3.1, temperate forest 15.8, steppe 11.1, tropical wet 3.4, savanna 7.7, hot desert 7.0, cold desert 0.8, coast 0.5, sterile hot 50.7", "proto": "boreal 3.0, temperate forest 17.7, steppe 10.6, tropical wet 12.4, savanna 12.7, hot desert 0.1, coast 0.6, sterile hot 43.0"},
-   "Raiva": {"shipped": "boreal 7.3, temperate forest 22.7, steppe 23.4, humid subtropical 0.2, hot desert 12.1, coast 0.7, sterile hot 33.6", "proto": "boreal 9.6, temperate forest 52.9, steppe 18.7, humid subtropical 0.1, hot desert 0.2, coast 0.8, sterile hot 17.7"},
-   "Lethuris": {"shipped": "nival 20.0, tundra 7.9, alpine 5.6, boreal 42.4, steppe 13.8, cold desert 9.7, coast 0.5", "proto": "nival 10.6, tundra 7.6, alpine 9.1, boreal 67.8, steppe 4.5, cold desert 0.3"}
+   "Maithea": {
+    "shipped": "nival 19.5, tundra 4.4, alpine 8.0, boreal 5.8, temperate forest 9.5, steppe 18.8, humid subtropical 4.6, tropical wet 5.6, savanna 12.9, hot desert 4.9, cold desert 5.3, coast 0.7",
+    "proto": "nival 20.2, tundra 4.6, alpine 6.9, boreal 10.0, temperate forest 11.7, steppe 20.7, humid subtropical 2.3, tropical wet 4.0, savanna 17.5, hot desert 0.4, cold desert 1.1, coast 0.6"
+   },
+   "Selawyn": {
+    "shipped": "boreal 3.1, temperate forest 15.8, steppe 11.1, tropical wet 3.4, savanna 7.7, hot desert 7.0, cold desert 0.8, coast 0.5, sterile hot 50.7",
+    "proto": "boreal 3.0, temperate forest 17.7, steppe 10.6, tropical wet 12.4, savanna 12.7, hot desert 0.1, coast 0.6, sterile hot 43.0"
+   },
+   "Raiva": {
+    "shipped": "boreal 7.3, temperate forest 22.7, steppe 23.4, humid subtropical 0.2, hot desert 12.1, coast 0.7, sterile hot 33.6",
+    "proto": "boreal 9.6, temperate forest 52.9, steppe 18.7, humid subtropical 0.1, hot desert 0.2, coast 0.8, sterile hot 17.7"
+   },
+   "Lethuris": {
+    "shipped": "nival 20.0, tundra 7.9, alpine 5.6, boreal 42.4, steppe 13.8, cold desert 9.7, coast 0.5",
+    "proto": "nival 10.6, tundra 7.6, alpine 9.1, boreal 67.8, steppe 4.5, cold desert 0.3"
+   }
   },
-  "corpus721": {"n": 721, "samplesPerBody": 8000, "snowLabel_p10_p25_p50_p75_p90": "shipped 0/0/6.5/47.9/92.9 -> proto 0/0/3.3/33.9/67.6", "planetsAbove90PctSnow": "11.7% -> 7.2%", "twGt316_p50_p90": "27.1 / 93.3", "planetsWithTwGt316Over5Pct": 448, "forest05_p50_p90": "42.4/53.5 -> 12.0/30.1 (heat cap)", "tundraProto_p50_p90": "2.1 / 19.6", "medLandH_p50": 435, "effectiveObliquityOver54": 310},
-  "corpus132": {"n": 132, "samplesPerBody": 3000, "snowLabel_p50_p90": "shipped 10.3/91.7 -> proto 4.9/73.8", "above90": "15 -> 10 planets (2500-direction test count may differ by one or two)", "binMedians_250_265_275_285_295": "shipped 88.2/46.5/22.1/8.9/0.2 -> proto 68.9/28.8/11.4/2.2/0", "effectiveObliquityOver54": 50},
-  "reliefHypsometryGatesUnderProto": {"maitheaSnow": "19.6 -> 20.3 (gate 15-40)", "rangeSnowAbove3kmLt60": "28.7 -> 36.3 (gate >= 20)", "lowSnowBelow1500Lt60": "3.3 -> 3.1 (gate <= 5)", "corpus132Median": "<= 20 passes (4.9)", "corpus132Above90": "10 (gate <= 20)", "binsMonotone": true},
-  "siteA": {"site": "SITE_A_M [4075043.7, -1510938.2, 2845723.8]", "groundM": 280.2, "latDeg": 16.91, "label": "Temperate ground", "forestPotential": true, "shipped": "Ta 294.91 / Tw 299.22 / Tc 290.60 K, effM 0.750, dryBelt01 1.0, eco class 6", "proto": "Ta 294.96 / TwP 299.27 / Tc 290.65 K, effM 0.532 (uncalibrated), eco class 6", "tropicalWetMarginK": 0.55, "halfRangeCutThatFlipsToClass7Pct": 12.7, "TcIfMaritimeFactor": {"0.792 (today)": 290.6, "0.6": 291.65, "0.5": 292.19, "0.4": 292.74}, "ring2kmx32": "32/32 land, classes {4: 5, 6: 27} shipped, {4: 12, 6: 20} proto", "ring60kmx64_v1Gate": "49/64 land; shipped {4: 20, 6: 5, 7: 18, 11: 6}; proto {4: 21, 6: 3, 8: 19, 11: 6}"},
-  "gridProxy": {"Maithea": "ocean-mask mismatch 0.4%; Spearman with ground: v1 proxy 0.614, smoothFloorM 0.984", "Lethuris": "mismatch 0.4%; v1 proxy 0.548, smoothFloorM 0.975"},
-  "timingContended": {"surfaceClimateNs": 141.1, "biomeClassifierNs": 252.5, "climateForcingForColdMs": 1.768}
+  "corpus721": {
+   "n": 721,
+   "samplesPerBody": 8000,
+   "snowLabel_p10_p25_p50_p75_p90": "shipped 0/0/6.5/47.9/92.9 -> proto 0/0/3.3/33.9/67.6",
+   "planetsAbove90PctSnow": "11.7% -> 7.2%",
+   "twGt316_p50_p90": "27.1 / 93.3",
+   "planetsWithTwGt316Over5Pct": 448,
+   "forest05_p50_p90": "42.4/53.5 -> 12.0/30.1 (heat cap)",
+   "tundraProto_p50_p90": "2.1 / 19.6",
+   "medLandH_p50": 435,
+   "effectiveObliquityOver54": 310,
+   "polarItcz": 311,
+   "polarBandCheck": "311 polar-ITCZ planets; 213 have >= 50 land samples both within 10 deg of the ITCZ and 18-35 deg from it; land-mean effM near >= sub-band: shipped 120/213 (the fixed dry belt fails 93), prototype (uncalibrated) 213/213"
+  },
+  "corpus132": {
+   "n": 132,
+   "samplesPerBody": 3000,
+   "snowLabel_p50_p90": "shipped 10.3/91.7 -> proto 4.9/73.8",
+   "above90": "15 -> 10 planets (2500-direction test count may differ by one or two)",
+   "binMedians_250_265_275_285_295": "shipped 88.2/46.5/22.1/8.9/0.2 -> proto 68.9/28.8/11.4/2.2/0",
+   "effectiveObliquityOver54": 50
+  },
+  "reliefHypsometryGatesUnderProto": {
+   "maitheaSnow": "19.6 -> 20.3 (gate 15-40)",
+   "rangeSnowAbove3kmLt60": "28.7 -> 36.3 (gate >= 20)",
+   "lowSnowBelow1500Lt60": "3.3 -> 3.1 (gate <= 5)",
+   "corpus132Median": "<= 20 passes (4.9)",
+   "corpus132Above90": "10 (gate <= 20)",
+   "binsMonotone": true
+  },
+  "siteA": {
+   "site": "SITE_A_M [4075043.7, -1510938.2, 2845723.8]",
+   "groundM": 280.2,
+   "latDeg": 16.91,
+   "label": "Temperate ground",
+   "forestPotential": true,
+   "shipped": "Ta 294.91 / Tw 299.22 / Tc 290.60 K, effM 0.750, dryBelt01 1.0, eco class 6",
+   "proto": "Ta 294.96 / TwP 299.27 / Tc 290.65 K, effM 0.532 (uncalibrated), eco class 6",
+   "tropicalWetMarginK": 0.55,
+   "halfRangeCutThatFlipsToClass7Pct": 12.7,
+   "TcIfMaritimeFactor": {
+    "0.792 (today)": 290.6,
+    "0.6": 291.65,
+    "0.5": 292.19,
+    "0.4": 292.74
+   },
+   "ring500mx32": "32/32 land, {6: 32} shipped and proto",
+   "ring1kmx32": "32/32 land, {6: 32} shipped, {4: 6, 6: 26} proto",
+   "ring2kmx32": "32/32 land, classes {4: 5, 6: 27} shipped, {4: 12, 6: 20} proto",
+   "siteRuleMoisture": "SITE_RULE.minMoisture 0.6: shipped effM 0.749-0.751 on all rings passes; prototype 0.531-0.533 FAILS (uncalibrated)",
+   "ring60kmx64_v1Gate": "49/64 land; shipped {4: 20, 6: 5, 7: 18, 11: 6}; proto {4: 21, 6: 3, 8: 19, 11: 6}"
+  },
+  "gridProxy": {
+   "Maithea": "ocean-mask mismatch 0.4%; Spearman with ground: v1 proxy 0.614, smoothFloorM 0.984",
+   "Lethuris": "mismatch 0.4%; v1 proxy 0.548, smoothFloorM 0.975"
+  },
+  "timingContended": {
+   "surfaceClimateNs": 141.1,
+   "biomeClassifierNs": 252.5,
+   "climateForcingForColdMs": 1.768
+  }
  },
  "workPackages": [
   {
@@ -92,7 +286,9 @@
     "tests/forest-water-validity.test.mjs",
     "tests/forest-habitat.test.mjs (only if the heat cap moves a pinned value; passes to P5)",
     "tests/terrain-climate-colour.test.mjs (only if climate-driven colour moves a pinned value; passes to P4)",
-    "docs/surface-climate-v2.md (new)"
+    "docs/surface-climate-v2.md (new)",
+    "src/climate-grid.ts and tests/climate-grid.test.mjs: M2 only, transferred from P2 after P2 has merged (P2 is round A, P1 M2 is round B, so there is no overlap)",
+    "CONDITIONAL on Q2 answer (a) only: tests/harness-sites.mjs, tests/helpers/harness-site-search.mjs, tests/harness-sites.test.mjs (re-run the deterministic search with the added rule; REFERENCE e6a0b39 unchanged). Under Q2 (b) these stay with the coordinator, who changes LEGACY_BEHAVIOUR_CLASSES in P3's eco-class.ts as a follow-up."
    ],
    "doesNotOwn": [
     "src/terrain.ts: TERRAIN_VERSION is bumped by the coordinator at merge (backlog round B ownership check). v1 gave P1 the version line; that is withdrawn.",
@@ -100,22 +296,25 @@
     "lod-consistency, place-query, planet-rocks, planet-rocks-draw, rock-field, tile-metadata, surface.test, version-compat: run them; moved pins go to the coordinator with old/new values; strict LOD targets stay OPEN and no ceiling is loosened.",
     "src/surface-biomes.ts:106 (acos slope) changes only in task 24, after P1 has merged."
    ],
-   "changes": "As v1 P1 steps 1-9, with these corrections.\nM1 (no dependencies):\n1) PDD kernel exactly as v1 (tabulated H(v) and G(v), detAcos only at module init). snowFraction = clamp01((PDD_CRIT - pdd0)/PDD_RAMP), PDD_CRIT 250, PDD_RAMP 100. State in the doc that the label 'Alpine / polar snow' (snowFraction > 0.6) is PDD < 190 and that ELA tests use the label.\n2) Warm-column lapse as v1 (mandatory: without it the Earth equator ELA is 4258 m).\n3) Warmest-month ceiling as v1.\n4) Heat cap as v1. Expected (prototype): Selawyn forest > 0.5 48.7% -> 2-4%, Raiva 47.8% -> 6-10%, corpus median 42% -> 12%. Owner-visible: Q6.\n5) PET effective moisture as v1, CALIBRATED: the uncalibrated band makes land wetter (Maithea effM median 0.484 -> 0.599, hot desert 4.9% -> 0.4%).\n6) ITCZ zonal band as v1. 310 of the 721 corpus planets have the ITCZ at a pole (effective obliquity > 54 deg), including Selawyn (89.8), Lethuris (70.8) and Raiva (61.4), so the polar-ITCZ branch is a main path, tested on the corpus (acceptance 2).\n7) Versions/doc as v1 except: CLIMATE_VERSION 'surface-climate-1.1-geo-g' -> 'surface-climate-2'; do NOT touch terrain.ts (the coordinator bumps TERRAIN_VERSION); TREE_HABITAT_VERSION 'tree-habitat-2-climate' -> 'tree-habitat-3-heat'.\nM2 (after P2 has merged):\n8) Wire the grid. buildClimateGrid needs a relief-consistent land-height function (R13). surface-climate.ts must not import terrain.ts (cycle). Choose ONE and document it: (a) climate-grid.ts reimplements the macro relief floor of terrain-1.8.0-relief (compressed continental term + tau plateau steps + ridge belt, no hills/gullies/rocks) from catalog.ts noise and the R-CAL-1 constants copied with a parity test: Spearman >= 0.95 against reliefLayersSampler(body).smoothFloorM on Maithea and Lethuris and a sha check that the copied constants equal terrain.ts RELIEF_CALIBRATION; or (b) the forcing takes an injected provider set by a module that may import terrain.ts, with the cache key unchanged and a seek-independence test. (a) is recommended (no new import edge). forcingForBody's parity check (surface-biomes.ts:45) compares g, which already depends on radius through planet-geophysics; add radiusM explicitly anyway, because the grid reads it. SITE_A guard as v1 but on the SITE_RULE rings, and see Q2: SITE_A is 0.55 K from class 7, so a maritime factor below about 0.69 flips it.\nM3 (after P3 has merged): classifier v3 fields as v1. BIOME_VERSION 'surface-biomes-2.1-sea-datum' -> 'surface-biomes-3-eco'; SURVEY_VERSION 'surface-survey-2.1-relief' -> 'surface-survey-3'. Height inputs to eco-class.ts are heights above the current sea level / climate datum (R19).",
+   "changes": "As v1 P1 steps 1-9, with these corrections.\nM1 (no dependencies):\n1) PDD kernel exactly as v1 (tabulated H(v) and G(v), detAcos only at module init). snowFraction = clamp01((PDD_CRIT - pdd0)/PDD_RAMP), PDD_CRIT 250, PDD_RAMP 100. State in the doc that the label 'Alpine / polar snow' (snowFraction > 0.6) is PDD < 190 and that ELA tests use the label.\n2) Warm-column lapse as v1 (mandatory: without it the Earth equator ELA is 4302 m label / 4258 m onset).\n3) Warmest-month ceiling as v1.\n4) Heat cap as v1. Expected (prototype): Selawyn forest > 0.5 48.7% -> 2-4%, Raiva 47.8% -> 6-10%, corpus median 42% -> 12%. Owner-visible: Q6.\n5) PET effective moisture as v1, CALIBRATED: the uncalibrated band makes land wetter (Maithea effM median 0.484 -> 0.599, hot desert 4.9% -> 0.4%).\n6) ITCZ zonal band as v1. 311 of the 721 corpus planets have the ITCZ at a pole, including Selawyn (89.8), Lethuris (70.8) and Raiva (61.4), so the polar-ITCZ branch is a main path, tested on the corpus (acceptance 2).\n7) Versions/doc as v1 except: CLIMATE_VERSION 'surface-climate-1.1-geo-g' -> 'surface-climate-2'; do NOT touch terrain.ts (the coordinator bumps TERRAIN_VERSION); TREE_HABITAT_VERSION 'tree-habitat-2-climate' -> 'tree-habitat-3-heat'.\nM2 (after P2 has merged):\n8) Wire the grid. buildClimateGrid needs a relief-consistent land-height function (R13). surface-climate.ts must not import terrain.ts (cycle). Choose ONE and document it: (a) climate-grid.ts (owned by P2 in round A; ownership passes to P1 for M2 after P2 has merged, see ownsFiles) reimplements the macro relief floor of terrain-1.8.0-relief (compressed continental term + tau plateau steps + ridge belt, no hills/gullies/rocks) from catalog.ts noise and the R-CAL-1 constants copied with a parity test against reliefLayersSampler(body).smoothFloorM on Maithea and Lethuris over 10k land directions: max |difference| <= 1 m (it is a copy of the same field, so the bound is tight; rank correlation alone would allow a wrong height scale) and a sha check that the copied constants equal terrain.ts RELIEF_CALIBRATION; or (b) the forcing takes an injected provider set by a module that may import terrain.ts, with the cache key unchanged and a seek-independence test. (a) is recommended (no new import edge). forcingForBody's parity check (surface-biomes.ts:45) compares g, which already depends on radius through planet-geophysics; add radiusM explicitly anyway, because the grid reads it. SITE_A guard as v1 but with the COMPLETE SITE_RULE (moisture >= 0.6, height, forestPotential, rings) and the legacy class set, checked after M1 and after M2; see Q2: SITE_A is 0.55 K from the class-7 Tc threshold (a maritime factor below about 0.69 crosses it, giving class 7 or 8 depending on moisture), and the uncalibrated M1 moisture 0.532 already fails minMoisture 0.6.\nM3 (after P3 has merged): classifier v3 fields as v1. BIOME_VERSION 'surface-biomes-2.1-sea-datum' -> 'surface-biomes-3-eco'; SURVEY_VERSION 'surface-survey-2.1-relief' -> 'surface-survey-3'. Height inputs to eco-class.ts are heights above the current sea level / climate datum (R19).",
    "acceptance": [
     "Earth reference (tests/climate-earth-reference.test.mjs, 288 K, 23.44 deg, water 0.7, g 9.81), ELA = lowest height with snowFraction > 0.6: 45 deg 2700-3100 m, 60 deg 1200-1700 m, 70 deg 550-1000 m, 78 deg 250-650 m, equator >= 4450 m (prototype: 3003, 1505, 719, 426, 4608). A negative test running the shipped annual-mean rule fails the 60 deg band (it gives 810 m label / 256 m onset). Zonal moisture targets as v1 step 6. After M2, continentality targets as v1 step 8.",
-    "Polar ITCZ: on a synthetic 70 deg world the wettest zonal band is poleward and the driest band moves with it; on the 721 corpus, for every planet with effective obliquity > 54 deg (ITCZ at a pole) the land-mean effM within 10 deg of the ITCZ is >= the land-mean effM 18-35 deg from the ITCZ (report counts; a planet that fails is listed, not hidden).",
+    "Polar ITCZ: on a synthetic 70 deg world the wettest zonal band is poleward and the driest band moves with it. On the 721 corpus, select planets by the ITCZ itself (itczLatDeg > 45; 311 today), not by obliquity. For every selected planet with >= 50 land samples (8000 directions) both within 10 deg of the ITCZ and 18-35 deg from it (213 today), the land-mean effM near the ITCZ must be >= that of the 18-35 deg band; ANY failure blocks the package (listed by id). Planets with an empty or thin band are counted and listed, not judged. Negative test: the shipped fixed dry belt fails 93 of 213. Prototype (uncalibrated): 213/213.",
     "Heat: Selawyn max Tw' <= 350 K (prototype 345.3). No land with Tw' >= 316 K has forestSuitability01 > 0. Land with forestSuitability01 > 0.5: Selawyn <= 10% (prototype 2.4-3.7), Raiva <= 15% (prototype 5.9-10.0); Maithea and Lethuris reported (prototype Maithea 29.6-37.5, Lethuris 19.4-31.2).",
     "Land snow (label, 60k Fibonacci directions, after M1 and again after M2): Maithea 15-40% by owner decision 1, expected 17-24% (prototype 20.2); Selawyn 0%; Raiva 0%; Lethuris expected 8-14% (prototype 10.6). 721 corpus median expected 2-6% (prototype 3.3, shipped 6.5), share above 90% <= 11.7% (prototype 7.2). Misses are reported with numbers, never tuned away.",
     "tests/terrain-relief-hypsometry.test.mjs passes UNMODIFIED (prototype: Maithea 20.3%, range snow 36.3%, low snow 3.1%, corpus132 median 4.9%, 10 above 90%, bins monotone).",
     "Determinism as v1 (source grep, import boundary extended to climate-grid.ts, climate-seek-independence, cold/warm cache bit-identity, forcingForBody variants including radius-only, continuity <= 1e-3).",
-    "Budgets as an interleaved A/B in one process against main on the same machine (contended host): surfaceClimate <= 1.55x main, biomeClassifier <= 1.25x main, climateForcingFor cold including the grid <= 5 ms. Report the absolute values labelled 'contended'; the quiet-host absolute targets (surfaceClimate <= 150 ns, classifier <= 165 ns) are checked by task 20. Zero per-sample allocation, no hash64 per sample.",
+    "Budgets as an interleaved A/B in one process against the package's base commit on main (recorded in the evidence) on the same machine (contended host): surfaceClimate <= 1.55x main, biomeClassifier <= 1.25x main, climateForcingFor cold including the grid <= 5 ms. Report the absolute values labelled 'contended'; the quiet-host absolute targets (surfaceClimate <= 150 ns, classifier <= 165 ns) are checked by task 20. Zero per-sample allocation, no hash64 per sample.",
     "The classifier `moisture` field is bit-identical over 50k samples; the weights formula is unchanged (asserted).",
     "terrain-elevation-identity, life-cpu-digest (stat floors maxDrawn >= 300, maxFlora >= 500), terrain-leaf-loop-digest and planet-forest-frame-digest pass unmodified at M1, M2 and M3.",
-    "SITE_A: the centre and all SITE_RULE ring samples (0.5/1/2 km x 32) stay forestPotential per SITE_RULE and in LEGACY_BEHAVIOUR_CLASSES, or the package STOPs and reports (Q2). Never retune physics to fit the site.",
+    "SITE_A after M1 and again after M2: the centre and all SITE_RULE ring samples (0.5/1/2 km x 32) satisfy the COMPLETE SITE_RULE (tests/harness-sites.mjs: moisture >= 0.6, height, forestPotential, rings) and lie in LEGACY_BEHAVIOUR_CLASSES, or the package STOPs and reports (Q2). Today: shipped passes (effM 0.75, classes {4,6}); prototype M1 with uncalibrated moisture fails minMoisture (0.532). Never retune physics to fit the site.",
     "Evidence: before/after tables in the package evidence folder (snow label and onset, tundra, Tw' > 316 share, forest share, effM quantiles, zonal curves for Earth and the 4 worlds, SITE_A ring report), produced by a saved script."
    ],
    "risk": "Highest risk, critical path. (a) Zonal band calibration (the uncalibrated prototype wets the subtropics). (b) SITE_A is 0.55 K from class 7: M2 will probably trigger the STOP (Q2). (c) Heat cap removes most forest on hot and high-tilt worlds: owner-visible (Q6). (d) Grid height provider choice (R13). (e) Budgets are only checkable as ratios on the shared host.",
-   "dependsOn": ["P2-GRID (M2 only)", "P3-ECO (M3 only)"]
+   "dependsOn": [
+    "P2-GRID (M2 only)",
+    "P3-ECO (M3 only)"
+   ]
   },
   {
    "id": "P2-GRID",
@@ -126,7 +325,7 @@
     "tests/climate-grid.test.mjs (new)",
     "docs/climate-grid-v1.md (new) or an appended grid section in docs/planet-geophysics-v1.md"
    ],
-   "changes": "As v1 P2 (A), with two corrections. (1) buildClimateGrid takes `landHeightM(d)` as an injected function (build time only), instead of the v1 proxy max(0, (macro - sea)*47000), which ranks land height with Spearman 0.61 on relief terrain (R13). The ocean mask stays macroHeightCode(moistureSeed, d) < 0.37 + 0.22*water (mismatch 0.4%; terrain.ts:436 confirmed). (2) Imports stay catalog.ts and det-math.ts only. Not wired; no digest moves. (B) and (C) of v1 (geophysics, relief preview) are done and dropped.",
+   "changes": "As v1 P2 (A), with two corrections. (1) buildClimateGrid takes `landHeightM(d)` as an injected function (build time only), instead of the v1 proxy max(0, (macro - sea)*47000), which ranks land height with Spearman 0.61 on relief terrain (R13). The ocean mask stays macroHeightCode(moistureSeed, d) < 0.37 + 0.22*water (mismatch 0.4%; terrain.ts:436 confirmed). (2) Imports stay catalog.ts and det-math.ts only. Not wired; no digest moves. (B) and (C) of v1 (geophysics, relief preview) are done and dropped. After merge, climate-grid.ts and its test pass to P1 for M2.",
    "acceptance": [
     "As v1 P2 grid acceptance: aquaplanet precipMul == 1 and oceanness 1; water 0 gives oceanness 0; on a synthetic continent with an injected height function, leeward precipMul behind a 3 km ridge band <= 0.6x windward and inland 2000 km downwind <= 0.6x coast; reversing wind zones mirrors the shadow.",
     "Seams <= 1e-3 over 10k face-edge pairs; two builds bit-identical; source grep and import boundary pass.",
@@ -152,7 +351,7 @@
     "tests/biome-ecology.test.mjs",
     "docs/eco-class-v1.md (new)"
    ],
-   "changes": "As v1 P3, with: (1) the coast rule reads height above the current sea level (aboveSea < 120 and sandW > 0.5), and datumTw = TwP + lapse*max(0, height above the climate datum) (R19); (2) eco-identity-site.test uses the SITE_RULE rings from tests/harness-sites.mjs (0.5/1/2 km x 32), not the v1 60 km ring (R10); (3) LEGACY_BEHAVIOUR_CLASSES stays {4,5,6} until the owner answers Q2; the test reports the Tc margin of SITE_A to the class-7 threshold (today 0.55 K); (4) the 'before' class-share table must reproduce measuredBaseline.ecoClassSharePct.shipped from the live classifier within 0.5 points.",
+   "changes": "As v1 P3, with: (1) the coast rule reads height above the current sea level (aboveSea < 120 and sandW > 0.5), and datumTw is the warmest month at the climate datum as computed by the climate module (R19; until P1 M3 provides it, eco-class.ts takes it as an input and the test feeds the shipped datum value); (2) eco-identity-site.test uses the SITE_RULE rings from tests/harness-sites.mjs (0.5/1/2 km x 32), not the v1 60 km ring (R10); (3) LEGACY_BEHAVIOUR_CLASSES stays {4,5,6} until the owner answers Q2; the test reports the Tc margin of SITE_A to the class-7 threshold (today 0.55 K); (4) the 'before' class-share table must reproduce measuredBaseline.ecoClassSharePct.shipped from the live classifier within 0.5 points; (5) heat versus forest classes (R21): decide and document whether land with Tw' >= 316 K that is not sterile-hot goes to savanna / hot desert by moisture (recommended: a heat rule before the forest classes, so classes and trees agree) or keeps its forest class with zero trees. Prototype share affected: Selawyn 27.5%, Raiva 42.3%, Lethuris 19.3% of land.",
    "acceptance": [
     "As v1 P3 acceptance, with the SITE_RULE rings in place of the 60 km ring.",
     "groundLookOf returns all zeros for SITE_A's live shipped climate (Ta 294.91, Tw 299.22, Tc 290.60, effM 0.750).",
@@ -175,13 +374,16 @@
     "tests/ground-pbr-material.test.mjs",
     "tests/acceptance/climate-agreement.test.mjs"
    ],
-   "changes": "As v1 P4, with corrected anchors: the classifier is called per vertex at planet-tiles.ts:290 and skirt copies are built at :327-334; MATERIAL_VERSION must still not be bumped (ground-material.ts:60 seeds detailPixels). Change only the trailing 'ground-pbr-v2-climate' part of the cache key to 'ground-pbr-v3-eco'. Range snow (OPEN D1): PDD raises the data-side snow on land above 3 km at |lat| < 60 from 28.7% to about 36%; the render must make it read as snow (Luna). Capture set: the 16 sites resolved from the merged climate on relief terrain (v1's site list was resolved on the pre-relief field and must be re-resolved).",
+   "changes": "As v1 P4, with corrected anchors: the classifier is called per vertex at planet-tiles.ts:290 and skirt copies are built at :327-334, with the per-vertex material bytes copied at :337 (groundLook must be copied beside it); MATERIAL_VERSION must still not be bumped (ground-material.ts:60 seeds detailPixels). Change only the trailing 'ground-pbr-v2-climate' part of the cache key to 'ground-pbr-v3-eco'. Range snow (OPEN D1): PDD raises the data-side snow on land above 3 km at |lat| < 60 from 28.7% to about 36%; the render must make it read as snow (Luna). Capture set: the 16 sites resolved from the merged climate on relief terrain (v1's site list was resolved on the pre-relief field and must be re-resolved).",
    "acceptance": [
     "As v1 P4 acceptance (groundLook 0 reproduces today's fragment path; texture bytes unchanged GROUND_PBR_TEXTURE_BYTES 5,592,406 / GROUND_ATLAS_BYTES 611,670; exactly 4 B per vertex; buildTile <= +3% as interleaved A/B; Luna blind ID >= 11 of 16 and 5 distinct looks; range snow reads as snow; at most two palette iterations, then escalate).",
     "lod-consistency ceilings are not loosened (strict targets are OPEN, owner)."
    ],
    "risk": "Subjective; GPU cost unmeasured on a quiet host. planet-renderer.ts shared by hunk with P6: merge P4 first.",
-   "dependsOn": ["P1-CLIMATE", "P3-ECO"]
+   "dependsOn": [
+    "P1-CLIMATE",
+    "P3-ECO"
+   ]
   },
   {
    "id": "P5-FOREST",
@@ -200,10 +402,13 @@
    ],
    "changes": "As v1 P5. The held branch biome-round/W2-C-FOREST-C2-held still exists on main's repo. Expect far less forest on hot and high-tilt worlds after P1 (heat cap): report bindable spire/branching counts per planet with sample counts; Selawyn may have too few forest cells for the 2.0x ratio, in which case report n and do not claim the ratio there.",
    "acceptance": [
-    "As v1 P5 acceptance; the spire-share ratio is reported per planet with n, and a planet with fewer than 200 forest cells is reported as 'insufficient sample', not pass/fail."
+    "As v1 P5 acceptance; the spire-share ratio is reported per planet with n, and a planet with fewer than 200 cells in EITHER comparison group (spire-bindable and branching-bindable) is reported as 'insufficient sample' with both counts. Insufficient-sample planets do not block completion, but Maithea and Lethuris must have a sufficient sample and pass; this exemption is a disclosed weakening of v1's per-world gate, made because the heat cap empties hot worlds."
    ],
    "risk": "Only 5 bindable trees; the heat cap shrinks the forest sample on hot worlds.",
-   "dependsOn": ["P1-CLIMATE", "P3-ECO"]
+   "dependsOn": [
+    "P1-CLIMATE",
+    "P3-ECO"
+   ]
   },
   {
    "id": "P6-LIFE",
@@ -217,15 +422,19 @@
     "src/fauna-ecotype.ts (new)",
     "tests/fauna-runtime.test.mjs (append), tests/flora-field.test.mjs (append), tests/fauna-eco-placement.test.mjs (new), tests/flora-eco-understory.test.mjs (new), tests/acceptance/fauna-every-biome.test.mjs (new), tests/life-legacy-identity.test.mjs (new)"
    ],
-   "changes": "As v1 P6, re-scoped by R11: on relief terrain herds already reach tundra (mean habitability 0.553), alpine (0.658), deserts (0.537-0.547), savanna and boreal through weights[1]. The near-empty classes are 0 nival/ice margin (0.017) and 11 coast (0.205). The eco path's max(hLegacy, hEco) therefore changes presence mainly there; species pick and ecotype phenotypes (Bergmann/Allen/Gloger on existing genome fields) apply in every non-legacy class.",
+   "changes": "As v1 P6, re-scoped by R11: on relief terrain the habitability term is already high in tundra (mean 0.553), alpine (0.658), deserts (0.537-0.547), savanna and boreal. It is near zero only in class 0 nival/ice margin (0.017) and low in class 11 coast (0.205). Actual presence was not measured by the replan. The eco path's max(hLegacy, hEco) therefore changes presence mainly there; species pick and ecotype phenotypes (Bergmann/Allen/Gloger on existing genome fields) apply in every non-legacy class.",
    "acceptance": [
     "life-cpu-digest passes with NO edit to the test, LIFE_FILES, SHARED_PRESENTATION_FILES or REFERENCE e6a0b39; stat floors hold.",
     "life-legacy-identity as v1 (byte-for-byte vs e6a0b39 for samples without the new fields and for classes in LEGACY_BEHAVIOUR_CLASSES).",
-    "Replaces the v1 'Maithea mean land herd weight >= 0.40' gate (already 0.548 today): on Maithea, Selawyn, Raiva and Lethuris (60k directions) every eco class covering >= 0.5% of land has herd presence > 0 and >= 1 eligible species, INCLUDING class 0 within the vitality band (Ta 243-263 K) and class 11. A negative test that forces the weights[1]-only gate fails on class 0.",
+    "Replaces the v1 'Maithea mean land herd weight >= 0.40' gate (mean land weights[1] is already 0.787 today; mean habitability 0.548): on Maithea, Selawyn, Raiva and Lethuris (60k directions), in every eco class 0-11 (class 12 sterile hot is excluded: its life01 is 0 by design) covering >= 0.5% of land, ACTUAL herd placement (faunaHerdAt, not the habitability term) gives presence > 0 and >= 1 eligible species, including class 0 within the vitality band (Ta 243-263 K) and class 11. Before/after presence per class is measured by the package's own saved script (the replan probe measured habitability only). Negative test: a controlled fixture sample with weights[1] = 0 and positive vitality (class 0, Ta 255 K) has presence 0 under the legacy-only gate and > 0 under the eco path.",
     "Ecotype and flora acceptance as v1; Luna (3 asks) on tundra, ice-margin, hot-desert, savanna and boreal sites; exit 2 = NOT DONE."
    ],
    "risk": "LIFE_FILES; mitigated by the class-gated verbatim legacy branch and the e6a0b39 identity test. The gate is only as safe as Q2's answer.",
-   "dependsOn": ["P1-CLIMATE", "P3-ECO", "P4-VISUAL (merge order only)"]
+   "dependsOn": [
+    "P1-CLIMATE",
+    "P3-ECO",
+    "P4-VISUAL (merge order only)"
+   ]
   }
  ],
  "ownershipCheck": {
@@ -238,7 +447,7 @@
    "fauna-runtime.ts": "faunaHerdAt :226, presence :240-244",
    "flora-field.ts": "prepareFlora :248",
    "planet-renderer.ts": "groundWeights setAttribute :1036; ground cache key :1094; bufferBytes :1116; fauna {...classified} :1673; drawFlora scratch :1738-1741",
-   "planet-tiles.ts": "classifier per vertex :290; skirts :327-334",
+   "planet-tiles.ts": "classifier per vertex :290; skirts :327-334; skirt material copy :337",
    "ground-material.ts": "MATERIAL_VERSION seeds detailPixels :60",
    "terrain.ts": "TERRAIN_VERSION :108; waterWorldLandColour :323; sea = 0.37 + water*0.22 :436; relief land floor :534-548"
   },
@@ -250,12 +459,12 @@
   ]
  },
  "versioning": "New: ECO_CLASS_VERSION 'eco-class-1' (P3), CLIMATE_GRID_VERSION 'climate-grid-1' (P2), GROUND_LOOK_VERSION 'ground-look-1' (P4), LIFE_PLACEMENT_VERSION 'life-placement-1-eco' (P6). Bumped: CLIMATE_VERSION 'surface-climate-1.1-geo-g' -> 'surface-climate-2' (P1, CLIMATE_CALIBRATION sha re-pinned in tests/surface-climate.test.mjs:40); BIOME_VERSION 'surface-biomes-2.1-sea-datum' -> 'surface-biomes-3-eco' (P1 M3); SURVEY_VERSION 'surface-survey-2.1-relief' -> 'surface-survey-3' (P1 M3); TREE_HABITAT_VERSION 'tree-habitat-2-climate' -> 'tree-habitat-3-heat' (P1); HABITAT_SUITABILITY_VERSION -> 'habitat-suitability-2' (P5); FOREST_CENSUS_VERSION -> 'forest-census-4-climate' (P5); ground cache key suffix 'ground-pbr-v2-climate' -> 'ground-pbr-v3-eco' (P4). TERRAIN_VERSION (coordinator only; task 11 also moves it): proposed 'terrain-1.9.0-climate-2' at P1 merge and 'terrain-1.9.1-eco-colour' at P4 merge, or one combined name if task 11 merges in the same window. MATERIAL_VERSION is NOT bumped. Unchanged and asserted: catalogue 'atlas-2.0.0', baseTerrainCore/ELEVATION_IDENTITY, GEOPHYSICS_VERSION 'planet-geophysics-1', DRAINAGE 'drainage-2', BIOSPHERE 'biosphere-lab-3', BIOME_ECOLOGY 'biome-ecology-2', REFERENCE e6a0b39, LIFE_FILES, SHARED_PRESENTATION_FILES. Coordinator-owned: src/time-nav.ts BUILD_VERSION and MODEL_MANIFEST_ID (gains ECO_CLASS, CLIMATE_GRID, GROUND_LOOK, LIFE_PLACEMENT), version-compat, package.json test registration, golden.json (terrain + combined move at P1 and P4; four-engine match), README.",
- "expectedOutcomes": "Measured basis: measuredBaseline (prototype M1 where stated; the zonal band is uncalibrated, so moisture-driven numbers will move after calibration and after M2).\n\nSnow: Earth ELAs land inside the Earth bands. Maithea stays about 20% snow (owner band 15-40%) with more snow on the ranges (28.7% -> about 36% of land above 3 km at |lat| < 60). Lethuris falls from 20% to about 11%. Selawyn and Raiva stay snow-free. Corpus median 6.5% -> about 3%.\n\nHeat: hot and high-tilt worlds lose most of their forest. Selawyn's warmest month falls from 389 K to about 345 K but stays above 316 K on about 92% of its land, so most of it becomes hot desert or sterile-hot ground. Corpus forest > 0.5 median 42% -> about 12%.\n\nBiomes: Maithea already spans every class 0-11 on the shipped climate (nival 19.5, steppe 18.8, savanna 12.9, temperate forest 9.5, alpine 8.0, boreal 5.8, tropical wet 5.6, cold desert 5.3, hot desert 4.9, humid subtropical 4.6, tundra 4.4, coast 0.7%). The increment's job there is to make them distinguishable (P4) and correctly placed (calibrated moisture, continentality), not to create them.\n\nLife: herds already reach every Maithea class except the nival margin and the coast. P6 adds the ice-margin and coast herds and the ecotype phenotypes.\n\nHarness: SITE_A is class 6 today and will probably become class 7 at M2 (Q2).",
+ "expectedOutcomes": "Measured basis: measuredBaseline (prototype M1 where stated; the zonal band is uncalibrated, so moisture-driven numbers will move after calibration and after M2).\n\nSnow: Earth ELAs land inside the Earth bands. Maithea stays about 20% snow (owner band 15-40%) with more snow on the ranges (28.7% -> about 36% of land above 3 km at |lat| < 60). Lethuris falls from 20% to about 11%. Selawyn and Raiva stay snow-free. Corpus median 6.5% -> about 3%.\n\nHeat: hot and high-tilt worlds lose most of their forest. Selawyn's warmest month falls from 389 K to about 345 K but stays above 316 K on about 92% of its land, so the heat cap removes good forest from nearly all of it (48.7% -> about 3%). That is forest suppression, not class assignment: under the v1 rule order only 43.1% of Selawyn's land is classed hot desert or sterile hot, and 27.5% keeps a forest class with Tw' >= 316 K (R21, P3 decides). Corpus forest > 0.5 median 42% -> about 12%.\n\nBiomes: Maithea already spans every class 0-11 on the shipped climate (nival 19.5, steppe 18.8, savanna 12.9, temperate forest 9.5, alpine 8.0, boreal 5.8, tropical wet 5.6, cold desert 5.3, hot desert 4.9, humid subtropical 4.6, tundra 4.4, coast 0.7%). The increment's job there is to make them distinguishable (P4) and correctly placed (calibrated moisture, continentality), not to create them.\n\nLife: the habitability term is already high in every Maithea class except the nival margin and the coast (actual presence not measured). P6 adds the ice-margin and coast herds and the ecotype phenotypes.\n\nHarness: SITE_A is class 6 today; it will probably leave the legacy set or fail SITE_RULE moisture at M1 or M2 (Q2).",
  "openQuestionsForUser": [
   "Q1 RETIRED. 'Maithea gets whiter (76%)' no longer applies: relief already lowered Maithea's snow to 19.6% and the owner set the 15-40% band (decision 1, 2026-10-03). Prototype M1 keeps it at about 20%.",
-  "Q2 NEW. The life/forest harness site SITE_A is humid subtropical (class 6) but only 0.55 K (coldest month) from tropical wet (class 7). Adding continentality (M2) will very likely push it into class 7, which is outside the legacy-behaviour set {4,5,6} the life identity relies on. Options: (a) move the harness site with the existing deterministic search, adding 'centre and rings in {4,5,6} with >= 1 K margin' to SITE_RULE, and keep REFERENCE e6a0b39; (b) add class 7 to the legacy-behaviour set, so tropical-wet cells keep increment-1 life behaviour everywhere; (c) bend the climate to keep the site (rejected: physics is never retuned for a test). Recommended: (a). State: OPEN.",
+  "Q2 NEW. The life/forest harness site SITE_A is humid subtropical (class 6) but its coldest month is only 0.55 K below the tropical threshold. Adding continentality (M2) will very likely cross it; the site then becomes tropical wet (class 7) if moisture stays >= 0.62, or savanna (class 8) if moisture falls, as the uncalibrated PET does (0.532). Both are outside the legacy-behaviour set {4,5,6} the life identity relies on. Separately, the uncalibrated M1 moisture already breaks SITE_RULE.minMoisture 0.6; calibration may or may not restore it. Options: (a) move the harness site with the existing deterministic search after M1 and again after M2, adding 'centre and rings in {4,5,6} with >= 1 K Tc margin' to SITE_RULE, and keep REFERENCE e6a0b39; (b) add classes 7 and 8 to the legacy-behaviour set, so those cells keep increment-1 life behaviour everywhere (does not fix the moisture rule); (c) bend the climate to keep the site (rejected: physics is never retuned for a test). Recommended: (a). State: OPEN.",
   "Q3 PARTLY DECIDED. Surface physics already uses per-planet geophysics gravity (owner decisions 3 and 4, relief round). Still open: whether catalogue masses should ever follow (moves moons, orbits and bookmarks). Recommended: no, not in this increment. State: OPEN.",
-  "Q4 UNCHANGED, MORE URGENT. Day lengths are a placeholder (3 h to 200 d), so wind-belt width is fixed at 30 deg from the ITCZ. 310 of 721 corpus planets have the ITCZ at a pole, so this placeholder shapes almost half the corpus. Recommended: keep 30 deg this increment; redraw spin later as its own versioned change. State: OPEN.",
+  "Q4 UNCHANGED, MORE URGENT. Day lengths are a placeholder (3 h to 200 d), so wind-belt width is fixed at 30 deg from the ITCZ. 311 of 721 corpus planets have the ITCZ at a pole, so this placeholder shapes almost half the corpus. Recommended: keep 30 deg this increment; redraw spin later as its own versioned change. State: OPEN.",
   "Q5 UNCHANGED. Dry planets with air (hasAir is queryable since planet-geophysics-1 but does not feed the biosphere) still have no life. Recommended: a later version-bumped step. State: OPEN.",
   "Q6 NEW, owner-visible consequence. The heat cap removes most forest from hot and high-tilt worlds: Selawyn 48.7% -> about 3% of land with good forest, Raiva 47.8% -> about 6-10%, corpus median 42% -> about 12%. Lethuris snow falls 20% -> about 11%. Ship as physics and say so plainly? Recommended: yes. State: OPEN."
  ],
@@ -265,5 +474,21 @@
   "Visual appearance: this task makes no visual change, so no capture or Luna verdict was made.",
   "Slope effects on eco classes (the probe uses upDot = 1).",
   "The 16-site P4 capture list on relief terrain (P4 re-resolves it)."
+ ],
+ "reviewLog": [
+  {
+   "review": "Astra gpt-6-astra read-only review-1, 2026-10-04",
+   "verdict": "fix-required",
+   "saved": "C:/LLM/IWSDK/universe-atlas/test-results/round2-2026-10-04/BIOME2-REPLAN/astra/review-1-answer.md",
+   "closed": [
+    "MF1 datumTw convention: defined as the warmest month at the climate datum from climate v2 itself (R19, P3 changes (1)); probe changed to match; rerun reproduced every eco table (identical wherever the ceiling does not bind).",
+    "MF2 SITE_A: consequence rewritten as class 7 OR 8 (moisture-dependent); the uncalibrated M1 moisture 0.532 already fails SITE_RULE.minMoisture 0.6 (R9, Q2); P1 acceptance now requires the complete SITE_RULE after M1 and after M2; probe extended to the 0.5/1/2 km rings.",
+    "MF3 polar ITCZ: counted directly (311, not 310; G001/C2134,7,5/0/planet/1 at 53.899 deg is polar); acceptance selects by ITCZ, defines a >= 50-sample band rule, makes any failure blocking; measured shipped 120/213 (negative test) and prototype 213/213.",
+    "MF4 ownership: climate-grid.ts and its test transfer from P2 to P1 for M2 after P2 merges; harness-site files are conditionally owned by P1 only under Q2 answer (a).",
+    "MF5 fauna gate: scope restored to classes 0-11 (class 12 excluded); gate measured on actual faunaHerdAt presence by the package script; controlled weights[1] = 0 fixture for the negative test; 0.787 (weights) vs 0.548 (habitability) separated; absence claims softened to habitability.",
+    "MF6 numbers: R13 uses 426 m (grid sample); R8 and P1 step 2 quote 4302 m label / 4258 m onset (probe now outputs pdd190NoWarmColLabel); expectedOutcomes separate forest suppression from class assignment (43.1% hot desert + sterile on Selawyn; 27.5% forest class with Tw >= 316 K, new R21 and P3 item (5)).",
+    "SF1 prototype described as an analytic approximation. SF2 P5 exemption defined (both groups counted, non-blocking, Maithea and Lethuris must pass). SF3 parity bound in metres (max 1 m) and A/B reference = the package base commit. SF4 all three rings probed; skirt material copy anchor planet-tiles.ts:337 added."
+   ]
+  }
  ]
 }
