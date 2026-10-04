@@ -144,10 +144,12 @@ export function oceanPatchSpacingM(level:number,radiusM:number,segments=32){retu
 /** Geometric part of a level-L patch's skirt: the sag below the sphere of a
  * neighbour's straight edge segment when that neighbour is up to two levels
  * coarser (a 4:1 frontier edge; the edge lock only removes the 2:1 part).
- * R(1-cos(theta/2)) <= R theta^2/8 with theta <= 4 s / R, capped at 40 m like
- * the terrain skirts (planet-tiles skirtDepthM). */
+ * R(1-cos(theta/2)) <= R theta^2/8 with theta <= 4 s / R. Not capped (unlike
+ * the 40 m terrain skirts): a capped skirt left far-horizon gaps at coarse 4:1
+ * edges (after2/after3 horizon frames); the skirt sits below the opaque sea, so
+ * its depth costs nothing visible from above. */
 export function oceanSkirtSagM(level:number,radiusM:number,segments=32){
-  const s=oceanPatchSpacingM(level,radiusM,segments);return Math.min(40,2*s*s/radiusM);
+  const s=oceanPatchSpacingM(level,radiusM,segments);return 2*s*s/radiusM;
 }
 /** Skirt depth below the undisplaced sea: deeper than the lowest possible
  * trough (the wave part stays inside render-bounds' RENDER_WAVE_BOUND_M, 3 m,
