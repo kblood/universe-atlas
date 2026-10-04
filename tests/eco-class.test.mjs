@@ -136,7 +136,8 @@ test('source is arithmetic only: no Math transcendental, hash or string compare'
     assert.doesNotMatch(src,banned);
 });
 
-test('ecoClassOf + life01Of + groundLookOf cost <= 25 ns per call, no allocation',()=>{
+/** Best-of-5 ns per (ecoClassOf + life01Of + groundLookOf) sample and heap growth. */
+function measureEcoCost(){
   const out=new Float32Array(4);
   const N=400000;let sink=0;
   // Inputs precomputed so the timed loop is the three calls, not the harness.
@@ -150,9 +151,24 @@ test('ecoClassOf + life01Of + groundLookOf cost <= 25 ns per call, no allocation
   for(let r=0;r<5;r++){const t0=process.hrtime.bigint();sink+=run();ns=Math.min(ns,Number(process.hrtime.bigint()-t0)/N);}
   const heapGrowth=process.memoryUsage().heapUsed-heap0;
   assert.ok(Number.isFinite(sink));
-  const strict=process.env.ECO_PERF_STRICT==='1';
-  // Best of 5. Relaxed default on a contended host; ECO_PERF_STRICT=1 applies the plan's 25 ns on a quiet host.
-  assert.ok(ns<=(strict?25:100),`${ns.toFixed(1)} ns per call`);
+  return {ns,heapGrowth,N};
+}
+
+// Regression guard only: a 100 ns ceiling that holds on a contended host. It is
+// NOT the plan's 25 ns acceptance criterion, which stays OPEN (quiet-host
+// measurement) and is the separate test below.
+test('eco-class cost regression guard: <= 100 ns per sample (relaxed, not the 25 ns criterion), no allocation',()=>{
+  const {ns,heapGrowth,N}=measureEcoCost();
+  assert.ok(ns<=100,`${ns.toFixed(1)} ns per call`);
   assert.ok(heapGrowth<4<<20,`heap grew ${heapGrowth} bytes over ${N} calls`);
   console.log(`# eco-class cost ${ns.toFixed(1)} ns/call (contended unless quiet host), heap delta ${heapGrowth} B`);
+});
+
+// Acceptance criterion (OPEN owner item): <= 25 ns on a quiet host. Skipped
+// unless ECO_PERF_STRICT=1, so a contended run never reports it as passed.
+const STRICT=process.env.ECO_PERF_STRICT==='1';
+test('eco-class cost acceptance: <= 25 ns per sample on a quiet host',
+  {skip:STRICT?false:'OPEN: quiet-host measurement pending; run with ECO_PERF_STRICT=1 on a quiet host'},()=>{
+  const {ns}=measureEcoCost();
+  assert.ok(ns<=25,`${ns.toFixed(1)} ns per call`);
 });
