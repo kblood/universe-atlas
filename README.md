@@ -1,5 +1,43 @@
 # Universe Atlas
 
+## Eye round EC4 merged — 2026-10-04 (local, not deployed)
+
+**Merged:** `eye-round/EC4` (merge `f3994e5`). The proboscis head is polished:
+the trunk base is as wide as the face, the taper is gentler, the tip is a plain
+swelling with nostrils, and the ears are lofted flaps
+(`fauna-composer-face-geometry-2`). Arms and wings are kept off the face
+(`fauna-composer-graph-4`). The round doc is
+[docs/fauna-eye-catalogue-round-2026-10-03.md](docs/fauna-eye-catalogue-round-2026-10-03.md).
+
+Astra had held EC4 (fix-required) for two reasons: no test run tied to an
+identified tree, and the triangle allowance. Both were closed and Astra's
+re-review answered **"VERDICT: approve"** with no blockers.
+
+- **Owner-accepted (2026-10-04):** the proboscis head may exceed the legacy
+  triangle count by 800 instead of the planned 600, because the head is more
+  detailed after EC4. No other EC4 item was accepted.
+- **Still OPEN, not passed:** a dotted light line at part seams, trunk
+  faceting, the capped centipede trunk tip, the giraffe trunk tip clipped in
+  the review panels, small wing cover on winged wild bipeds (seeds 19/38/115,
+  pinned under 6 %), and the headset check.
+
+**Checks:**
+
+| Check | Result |
+|---|---|
+| Branch `0ebc88e`, clean tree: `tsc --noEmit` | exit 0, no output |
+| Branch: creature-core boundary test | exit 0, 3/3 (export snapshot regenerated for EC4's new composer exports) |
+| Branch: `npm run test:affected -- --base main` (whole suite) | exit 0; 1296 tests, 0 fail |
+| Branch: `tests/fauna-composer.browser.mjs` | exit 0; ok, 0 failures, 31 screenshots; software renderer (SwiftShader) |
+| Main `f3994e5`: `tsc --noEmit` | exit 0 |
+| Main `f3994e5`: `npm run test:full` | raw node exit 0; 1296 tests, 1289 pass, 0 fail, 4 skipped, 3 todo; NEW 0, known 0, stale 0 |
+
+The 3 todos are the same OPEN items as in the relief round below. Not run at
+merge: `npm run build`, `test:perf`, golden, other browser ladders, a new
+capture or Luna judgment (no geometry changed after the EC4 AFTER sheets), and
+the headset. Receipt: `test-results/eye-round-2026-10-03/EC4-receipt.md`;
+main checks: `test-results/finish-round-2026-10-04/EC4-merge/`.
+
 ## Relief round merged — 2026-10-04 (local, not deployed)
 
 **Merged:** `relief-round/INT` (merge `36dd833`). It brings terrain-1.8.0-relief,
