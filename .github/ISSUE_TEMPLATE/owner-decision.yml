@@ -1,0 +1,34 @@
+name: Owner decision
+description: A question only the owner can answer. Stays OPEN until the owner answers in writing.
+title: "[decision] "
+labels: ["type:owner-decision", "needs:owner"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Agents may draft this and recommend a default; they never close it or label it passed/accepted.
+        A recommended default authorises implementation ONLY where the blocked task explicitly
+        permits a provisional default (for example T04, behind a named constant). Otherwise the
+        blocked work waits for the owner's answer.
+  - type: textarea
+    id: question
+    attributes: {label: Question, description: "One decision per issue."}
+    validations: {required: true}
+  - type: textarea
+    id: evidence
+    attributes: {label: Evidence, description: "Links to docs, renders, numbers, commits."}
+    validations: {required: true}
+  - type: textarea
+    id: options
+    attributes: {label: Options and consequences, value: "1. \n2. "}
+    validations: {required: true}
+  - type: input
+    id: default
+    attributes: {label: Recommended default}
+    validations: {required: true}
+  - type: input
+    id: blocks
+    attributes: {label: Blocks, description: "Task ids (e.g. T04, T11)"}
+  - type: input
+    id: answer
+    attributes: {label: Owner answer and date, description: "Filled by the owner only.", placeholder: OPEN}

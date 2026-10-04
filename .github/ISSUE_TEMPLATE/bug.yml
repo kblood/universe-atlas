@@ -1,0 +1,33 @@
+name: Bug
+description: Observed behaviour that contradicts a test, a contract or an accepted render.
+title: "[bug] "
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: observed
+    attributes: {label: Observed, description: "What happened. Attach the render, log line or failing assertion."}
+    validations: {required: true}
+  - type: textarea
+    id: expected
+    attributes: {label: Expected, description: "Cite the test, doc section or golden key that defines correct."}
+    validations: {required: true}
+  - type: input
+    id: commit
+    attributes: {label: Commit, description: "git rev-parse HEAD of a clean checkout where it reproduces"}
+    validations: {required: true}
+  - type: textarea
+    id: repro
+    attributes: {label: Reproduction, description: "Exact commands and their exit codes. Address/date/bookmark for visual bugs.", render: shell}
+    validations: {required: true}
+  - type: dropdown
+    id: area
+    attributes: {label: Area, options: [climate, terrain, ocean, fauna, forest, rendering, platform, determinism, tests, creature-kit, docs, migration]}
+  - type: dropdown
+    id: determinism
+    attributes: {label: Determinism impact, options: ["none", "digest/golden moves", "cross-engine mismatch", "bookmark/address changes", "unknown"]}
+  - type: dropdown
+    id: known
+    attributes: {label: "In tests/known-failures.json?", options: ["no", "yes", "not a test failure"]}
+  - type: textarea
+    id: luna
+    attributes: {label: Visual evidence, description: "Luna question(s) asked and verdicts, or 'visual check NOT done'."}
