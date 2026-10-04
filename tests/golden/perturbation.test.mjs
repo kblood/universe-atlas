@@ -146,3 +146,180 @@ test("the perturbation harness itself actually changes platform transcendental o
   );
   assert.notEqual(after, before, "sanity: the monkey-patch must actually perturb Math.* output");
 });
+
+// ---------------------------------------------------------------------------
+// Platform sections (GOLDEN-EXT, 2026-10-04): the same 1-ULP nudge over the
+// golden generator's platform sections (geophysics, climate, biomes, ocean
+// volume, place-query, forest census, rocks, fauna composer).
+//
+// Each run happens in a FRESH worker thread, so module-level constants and the
+// module caches (ocean hypsometry, climate forcing, dated place) are rebuilt
+// under the perturbation instead of being reused from an unperturbed run. The
+// perturbation is installed before generator.ts (and so every src module) is
+// imported.
+//
+// Two flip counts per section, both reported:
+//  - golden: records whose PINNED form (tests/golden/generator.ts "golden"
+//    serialisation, 12 significant digits / float32 bits) changed. A flip here
+//    means the cross-engine digest itself depends on platform libm bits.
+//  - exact: records whose shortest round-trip form changed: a raw platform
+//    transcendental reaches the output, even if the pinned form absorbs it.
+// Sections listed in the findings tables below are recorded determinism
+// findings (reported, not hidden); any OTHER section that flips fails.
+//
+// Differences from the catalogue test above, all deliberate:
+//  - More functions are nudged (PLATFORM_PERTURBED_NAMES adds hypot, asin, the
+//    log/exp variants and the hyperbolics), since platform code uses them.
+//  - Results ECMA-262 (21.3.2) fixes exactly are not nudged: acos/acosh/log/
+//    log2/log10(1) = +0, cos/cosh/exp(0) = 1, sin/tan/atan/asin/cbrt/...(+-0) =
+//    +-0, atan2(+-0, x >= +0) = +-0, pow(x, +-0) = 1, pow(+-0, y > 0) = +-0,
+//    pow(+-Infinity, y < 0) = +-0, exp(-Infinity) = +0, expm1(-Infinity) = -1,
+//    tanh(+-Infinity) = +-1, hypot(all zero) = +0. Every engine must return
+//    them bit-exactly, so nudging them would report false findings (placeAt's
+//    default upDot = 1 gives slope acos(1) = 0). Approximated results such as
+//    atan2(1, 0) = pi/2 ARE nudged. The table has its own test below.
+//  - The `**` operator cannot be monkey-patched; it is not covered.
+// ---------------------------------------------------------------------------
+import { Worker } from "node:worker_threads";
+import { pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const GENERATOR_URL = pathToFileURL(path.join(path.dirname(fileURLToPath(import.meta.url)), "generator.ts")).href;
+const PLATFORM_SECTIONS = ["geophysics", "climate", "biomes", "oceanVolume", "placeQuery", "census", "rocks", "fauna", "faunaKnownUnstable"];
+const PLATFORM_PERTURBED_NAMES = [...PERTURBED_NAMES, "asin", "hypot", "log2", "log10", "log1p", "expm1", "sinh", "cosh", "tanh", "asinh", "acosh", "atanh"];
+
+/** Recorded determinism findings: section -> why a raw platform transcendental
+ * reaches it. GOLDEN: the pinned digest itself moved under a 1-ULP nudge.
+ * EXACT: only the full-precision form moved (the pinned form absorbed it). */
+const GOLDEN_FLIP_FINDINGS = {};
+// Measured 2026-10-04 (GOLDEN-EXT) on main b7d1df3. None of these moves a
+// pinned record (golden flips 0), but each is a raw libm path into platform
+// output, so a different engine may disagree in the last bits:
+const EXACT_FLIP_FINDINGS = {
+  biomes: "surface-biomes.ts:106 slope = Math.acos(upDot) (backlog task 24 DET-TRANSCENDENTAL); every record carries slopeDeg",
+  placeQuery: "the measureSlope records only: the measured upDot reaches the same surface-biomes.ts:106 Math.acos slope",
+  census: "planet-tiles.ts cubeDirection normalises with Math.hypot: population-cell directions move by 1 ULP, ground heights by ~1e-10 m",
+  rocks: "rock-field.ts Math.hypot normalisations (faceDirection, tangentBasis, up) and slopeGap Math.tan(Math.acos(upDot))",
+  fauna: "fauna-composer-rig.ts / fauna-composer-mesh.ts build poses and rings with three.js and raw Math trig",
+  faunaKnownUnstable: "same composer paths as fauna; this key holds the specimen WebKit already disagrees on (generator.ts FAUNA_KNOWN_UNSTABLE)",
+};
+
+/** Runs inside the worker (serialised with Function.prototype.toString). */
+function installPerturbation(names, relative, M = Math) {
+  // ECMA-262 21.3.2: arguments whose result the spec fixes exactly.
+  const exactCase = (name, a) => {
+    const [x, y] = a;
+    switch (name) {
+      case "acos": case "acosh": case "log": case "log2": case "log10": return x === 1;
+      case "asin": case "atan": case "sin": case "tan": case "cbrt": case "sinh": case "asinh": case "atanh": case "log1p":
+      case "cos": case "cosh": return x === 0;
+      case "exp": case "expm1": return x === 0 || x === -Infinity;
+      case "tanh": return x === 0 || x === Infinity || x === -Infinity;
+      // atan2(y, x): +-0 for y = +-0 with x = +0 or x > 0 (x = -0 or x < 0 gives an
+      // approximated pi), and for finite y with x = +Infinity.
+      case "atan2": return (x === 0 && (y > 0 || Object.is(y, 0))) || (Number.isFinite(x) && y === Infinity);
+      case "pow": {
+        const ax = Math.abs(x);
+        return y === 0 || (x === 0 && y > 0) || (ax === Infinity && y < 0) ||
+          (ax < 1 && y === Infinity) || (ax > 1 && y === -Infinity);
+      }
+      case "hypot": return a.every((v) => v === 0);
+      default: return false;
+    }
+  };
+  let parity = 0, nudged = 0;
+  for (const name of names) {
+    const original = M[name];
+    M[name] = (...a) => {
+      const r = original(...a);
+      if (!Number.isFinite(r) || exactCase(name, a)) return r;
+      parity++; nudged++;
+      const sign = parity % 2 === 0 ? 1 : -1;
+      return r === 0 ? sign * Number.MIN_VALUE : r + sign * Math.abs(r) * relative;
+    };
+  }
+  return () => nudged;
+}
+
+const WORKER_SOURCE = `
+const { parentPort, workerData } = require("node:worker_threads");
+${installPerturbation.toString()}
+(async () => {
+  try {
+    const nudged = workerData.relative ? installPerturbation(workerData.names, workerData.relative) : () => 0;
+    const { platformSectionLines } = await import(workerData.generator);
+    const golden = await platformSectionLines("golden");
+    const exact = workerData.exact ? await platformSectionLines("exact") : null;
+    parentPort.postMessage({ golden, exact, nudged: nudged() });
+  } catch (error) {
+    parentPort.postMessage({ error: String((error && error.stack) || error) });
+  }
+})();
+`;
+
+function platformRun({ relative = 0, exact = true } = {}) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(WORKER_SOURCE, {
+      eval: true,
+      workerData: { generator: GENERATOR_URL, names: PLATFORM_PERTURBED_NAMES, relative, exact },
+    });
+    worker.once("message", (m) => (m.error ? reject(new Error(m.error)) : resolve(m)));
+    worker.once("error", reject);
+    worker.once("exit", (code) => code !== 0 && reject(new Error(`perturbation worker exited ${code}`)));
+  });
+}
+
+function flips(a, b) {
+  let n = Math.abs(a.length - b.length);
+  for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) n++;
+  return n;
+}
+
+test("platform sections: 1-ULP perturbation flip counts (fresh worker per run; findings reported, unlisted flips fail)", async (t) => {
+  const [base, perturbed] = await Promise.all([platformRun(), platformRun({ relative: Number.EPSILON })]);
+  assert.ok(perturbed.nudged > 1000, `sanity: the perturbation reached platform code (${perturbed.nudged} nudged calls)`);
+  const report = PLATFORM_SECTIONS.map((name) => ({
+    section: name,
+    records: base.golden[name].length,
+    goldenFlips: flips(base.golden[name], perturbed.golden[name]),
+    exactFlips: flips(base.exact[name], perturbed.exact[name]),
+  }));
+  t.diagnostic(`nudged platform transcendental calls: ${perturbed.nudged}`);
+  for (const r of report) t.diagnostic(`${r.section}: ${r.records} records, golden flips ${r.goldenFlips}, exact flips ${r.exactFlips}`);
+  console.log(JSON.stringify({ perturbationReport: report, nudged: perturbed.nudged, names: PLATFORM_PERTURBED_NAMES }));
+  for (const r of report) {
+    assert.ok(r.records > 1, `${r.section}: section is non-trivial`);
+    if (r.goldenFlips && !(r.section in GOLDEN_FLIP_FINDINGS))
+      assert.fail(`${r.section}: ${r.goldenFlips} PINNED records changed under a 1-ULP Math.* nudge - the cross-engine digest depends on platform libm bits (record it in GOLDEN_FLIP_FINDINGS with the cause, or route the decision through det-math.ts)`);
+    if (r.exactFlips && !(r.section in EXACT_FLIP_FINDINGS))
+      assert.fail(`${r.section}: ${r.exactFlips} records changed at full precision under a 1-ULP Math.* nudge - a raw platform transcendental now reaches this section (record it in EXACT_FLIP_FINDINGS with the cause)`);
+    if (!r.goldenFlips && r.section in GOLDEN_FLIP_FINDINGS) t.diagnostic(`${r.section}: GOLDEN finding no longer reproduces - remove it from GOLDEN_FLIP_FINDINGS`);
+    if (!r.exactFlips && r.section in EXACT_FLIP_FINDINGS) t.diagnostic(`${r.section}: EXACT finding no longer reproduces - remove it from EXACT_FLIP_FINDINGS`);
+  }
+});
+
+test("perturbation exact-case table follows ECMA-262 21.3.2 (spec-exact results kept, approximated ones nudged)", () => {
+  const M = Object.fromEntries(PLATFORM_PERTURBED_NAMES.map((n) => [n, Math[n]]));
+  installPerturbation(PLATFORM_PERTURBED_NAMES, Number.EPSILON, M);
+  const kept = [
+    ["atan2", [0, 1]], ["atan2", [-0, 1]], ["atan2", [0, 0]], ["log", [1]], ["log2", [1]], ["log10", [1]], ["acos", [1]], ["acosh", [1]],
+    ["pow", [2, 0]], ["pow", [0, 2]], ["pow", [-0, 3]], ["pow", [-0, 2]], ["pow", [Infinity, -1]], ["pow", [-Infinity, -3]],
+    ["cos", [0]], ["exp", [0]], ["exp", [-Infinity]], ["expm1", [-Infinity]], ["tanh", [Infinity]], ["tanh", [-Infinity]],
+    ["sin", [-0]], ["asin", [0]], ["hypot", [0, -0]], ["cbrt", [0]],
+    ["atan2", [1, Infinity]], ["atan2", [-1, Infinity]], ["pow", [0.5, Infinity]], ["pow", [-0.5, Infinity]], ["pow", [2, -Infinity]], ["pow", [-3, -Infinity]],
+  ];
+  for (const [n, a] of kept) assert.ok(Object.is(M[n](...a), Math[n](...a)), `${n}(${a.map(String)}) is spec-exact and must not be nudged`);
+  const nudgedCases = [["atan2", [1, 0]], ["atan2", [0, -1]], ["atan2", [1, -Infinity]], ["atan2", [Infinity, 1]], ["atan2", [0.5, 0.25]], ["pow", [2, 0.5]], ["pow", [3, 3.5]], ["log2", [3]], ["log10", [7]], ["sin", [1]], ["hypot", [3, 4]]];
+  for (const [n, a] of nudgedCases) assert.ok(!Object.is(M[n](...a), Math[n](...a)), `${n}(${a.map(String)}) is implementation-approximated and must be nudged`);
+});
+
+test("platform sections: a coarse nudge flips the raw-Math sections (negative control for the worker harness)", async () => {
+  // 2^-20 relative: far above 1 ULP. Biome slope (Math.acos) and the composer
+  // rig (THREE trig) read raw Math, so their PINNED records must move; if they
+  // do not, the worker installation is not reaching module code.
+  const [base, coarse] = await Promise.all([platformRun({ exact: false }), platformRun({ relative: 2 ** -20, exact: false })]);
+  for (const name of ["biomes", "fauna"]) {
+    assert.ok(flips(base.golden[name], coarse.golden[name]) > 0, `${name}: a 2^-20 nudge must change pinned records`);
+  }
+});
