@@ -173,8 +173,14 @@ if (checkArgsOnly) {
 const KNOWN_ENGINE_MISMATCHES = {
   webkit: {
     faunaKnownUnstable: {
-      digest: "7b81264f3db57e86c92eeb083476a94d1229c21a6879200d3b6257746b4c890f",
-      cause: "WebKit 26.5 (2026-10-04): GOLDEN-FAUNA-2's midline insect ocellus is seated differently (8 vertices, up to 0.42 mm); see generator.ts FAUNA_KNOWN_UNSTABLE",
+      // Re-measured by the merger after EC4 (composer graph-4 / face-geometry-2)
+      // reached main: the old WebKit digest 7b81264f... moved with the composer
+      // version line. A per-record probe (WebKit vs Node, 2026-10-04) found only
+      // GOLDEN-FAUNA-2|skin-arrays differing, and only in its positions hash
+      // (colours, weights, indices, gloss identical): consistent with the
+      // traced ocellus cause. The vertex-level trace was not repeated.
+      digest: "ed5d56a238409d09929558b2ae7f1e19f097629cd58ac2ff8b08f1b7deabd971",
+      cause: "WebKit 26.5 (2026-10-04, re-measured after EC4): GOLDEN-FAUNA-2's midline insect ocellus is seated differently (skin positions only); see generator.ts FAUNA_KNOWN_UNSTABLE",
     },
   },
 };

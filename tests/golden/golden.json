@@ -9,7 +9,16 @@
     "hierarchyGroupAnchors": 11775,
     "bodiesChecked": 4450,
     "terrainSamples": 60,
-    "historyRecords": 60
+    "historyRecords": 60,
+    "geophysicsRecords": 86,
+    "climateRecords": 17713,
+    "biomesRecords": 6913,
+    "oceanVolumeRecords": 34,
+    "placeQueryRecords": 471,
+    "censusRecords": 29,
+    "rocksRecords": 578,
+    "faunaRecords": 625,
+    "faunaKnownUnstableRecords": 31
   },
   "digests": {
     "galaxies": "cc5da8f9b5764b2886411fa287c41e23b6205e48452ddd9de60c39891b0e5d3a",
@@ -18,6 +27,16 @@
     "terrain": "b3818c33be40ca9947dc68e26d19ef0f6fbd4fde4e6b22c2eedeb511879578e2",
     "history": "ce80d05406d5cf5f4a50e129834b8289413494aac589a73b893ba6aff10632a8",
     "combined": "ec37f25ccbedbdf16cbd18c4bae9dc33c24cab6e8fed1163d39d6ee5369fed92",
-    "hierarchy": "734abf8fb980397531f1fb3a714c68f0816b3cdd6be299a3be29782a9852661e"
-  }
+    "hierarchy": "734abf8fb980397531f1fb3a714c68f0816b3cdd6be299a3be29782a9852661e",
+    "geophysics": "a530f7d104878f7fa67a728531adc29b7053ac39d93eb7615d3334c3c0da82b8",
+    "climate": "bb53744d319da0192f8dccc544c03ffb16c615d99f89c597a8ce94e19b069939",
+    "biomes": "3df597b033ef5d7c4356167518570b3a1acdf3df1a51e5179661040f1e7402b2",
+    "oceanVolume": "9d7f71f7982afe02df4afabf19d7fadd5d499fa36f7f1dc02525207f75315e06",
+    "placeQuery": "0ee0946d8ec2abc780589f4ba34e2e7fe9273e28664e508d0ea3650ba70da831",
+    "census": "c681362d7289dcee12c9dec76fcbe756615c58503faa79d923de085029992892",
+    "rocks": "c20350a714eaa1d12bb37a308141369f94c564af4a661d3e068fa2d71eaa17a6",
+    "fauna": "6bf5d08562a0d45bcf03d5867f506b3edc7a943a37a94a5873f7ca0bd6973546",
+    "faunaKnownUnstable": "ad34e48eade6aa25fd5ba145a490a8284a42d1c4bb9cba32a054d9b2afdbb6bb"
+  },
+  "platformSeed": "LETHRA-001"
 }

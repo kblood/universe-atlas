@@ -237,3 +237,42 @@ Luna is a local vision model. Its verdicts are advisory and do not decide pass o
   3. desktop-perf S4 browser-side date/bucket checks: deferred, OPEN item 13.
   4. The search-reproduction tolerance (1 m) was weaker than its "0.1 m rounding" title. It now compares
      the rounded coordinates and allows at most sqrt(3) x 0.05 m.
+
+## 9. Round 2 golden re-pin (merger, 2026-10-04)
+
+`tests/golden/golden.json` was re-pinned once with `node tests/golden/run-cross-engine.mjs --update`
+after the last output-changing round-2 merge (GOLDEN-EXT on top of EC4; RELIEF-PRESENT was NOT
+merged, so terrain output is unchanged). Every existing key is byte-identical; only the GOLDEN-EXT
+platform sections, their record counts and `platformSeed` were added.
+
+| Key | Old | New |
+|---|---|---|
+| galaxies, sectors, systems, terrain, history, combined, hierarchy | unchanged | unchanged (`terrain` b3818c33..., `combined` ec37f25c...) |
+| geophysics | (none) | a530f7d104878f7fa67a728531adc29b7053ac39d93eb7615d3334c3c0da82b8 |
+| climate | (none) | bb53744d319da0192f8dccc544c03ffb16c615d99f89c597a8ce94e19b069939 |
+| biomes | (none) | 3df597b033ef5d7c4356167518570b3a1acdf3df1a51e5179661040f1e7402b2 |
+| oceanVolume | (none) | 9d7f71f7982afe02df4afabf19d7fadd5d499fa36f7f1dc02525207f75315e06 |
+| placeQuery | (none) | 0ee0946d8ec2abc780589f4ba34e2e7fe9273e28664e508d0ea3650ba70da831 |
+| census | (none) | c681362d7289dcee12c9dec76fcbe756615c58503faa79d923de085029992892 |
+| rocks | (none) | c20350a714eaa1d12bb37a308141369f94c564af4a661d3e068fa2d71eaa17a6 |
+| fauna | (none) | 6bf5d08562a0d45bcf03d5867f506b3edc7a943a37a94a5873f7ca0bd6973546 |
+| faunaKnownUnstable | (none) | ad34e48eade6aa25fd5ba145a490a8284a42d1c4bb9cba32a054d9b2afdbb6bb |
+| platformSeed | (none) | LETHRA-001 |
+
+The fauna digests differ from the GOLDEN-EXT branch report (ff64a938 / 266d018c) because EC4
+changed the composer graph and face geometry on main before this re-pin.
+
+Cross-engine result after the re-pin: Chromium 149 and Firefox 151 MATCH Node and the fixture on all
+keys. WebKit 26.5 differs only on `faunaKnownUnstable` (GOLDEN-FAUNA-2, skin positions only), the
+traced midline-ocellus seam tie. Its known-mismatch digest was re-measured after EC4. The gate result
+is **PASS-WITH-KNOWN-MISMATCH: the four engines are NOT all equal.** Four-engine equality stays OPEN
+until the composer owner lands the ocellus fix
+(`test-results/round2-2026-10-04/golden-ext/composer-patch-trial/`).
+
+A new perturbation finding also appeared when GOLDEN-EXT met EC4: the pinned
+`trunked-centipede|skin-arrays` record moves under a 1-ULP Math.* nudge. All three browsers still
+match Node on the `fauna` key, so no real engine disagrees today. The cause is not traced; it is
+recorded in `GOLDEN_FLIP_FINDINGS` and stays OPEN.
+
+Evidence: `test-results/round2-2026-10-04/merge/golden/` (`golden-before.json`, `run.log`, `run-2.log`,
+`cross-engine-report-2.json`).
