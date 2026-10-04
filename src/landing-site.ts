@@ -71,8 +71,15 @@ export type LandingPickInput = {
   count?: number;
 };
 
+/** Shown when pickLandingSite finds no eligible site (every candidate wet,
+ * above the ceiling or at a summit). exploreTerrain then starts NO journey
+ * and returns false, so no caller arms landAfterCruise: the landing request
+ * ends here instead of flying toward an unchecked direction. */
+export const NO_LANDING_SITE_MESSAGE = 'No dry ground below the summits was found on this world at this date. Landing cancelled.';
+
 /** The plain terrain-site pick (exploreTerrain without preferLife): near the
- * eye, sunward, with a small elevation bonus, never on a summit. */
+ * eye, sunward, with a small elevation bonus, never on a summit. Null when no
+ * candidate is eligible; the caller must stop, never fall back to the eye. */
 export function pickLandingSite(o: LandingPickInput): {direction: V3; heightM: number; index: number} | null {
   const count = o.count ?? 384;
   let best = -Infinity, out: {direction: V3; heightM: number; index: number} | null = null;

@@ -22,7 +22,7 @@ import {
 } from "./travel.ts";
 import { displayLuminosity, starPointDiameter, STAR_FRAGMENT } from './star-appearance.ts';
 import { PlanetRenderer, landPercentileM } from './planet-renderer.ts';
-import {landingHeightAllowed,landingCandidate,pickLandingSite,resolveGroundBookmark,LANDING_SUMMIT_PERCENTILE} from './landing-site.ts';
+import {landingHeightAllowed,landingCandidate,pickLandingSite,resolveGroundBookmark,LANDING_SUMMIT_PERCENTILE,NO_LANDING_SITE_MESSAGE} from './landing-site.ts';
 import { NavigationMarkers } from './navigation-markers.ts';
 import { freeLook, orbitStep, atmosphereHeightM, alignPlanetaryDown, planetaryRenderUnit, LOCAL_RENDER_EXIT_M, LOCAL_ORIGIN_RADIUS_M } from './planet-flight.ts';
 import {parseDate,dateRecord,dateYears,yearsToDate,advanceDate,CATALOGUE_EPOCH_NS,UNIVERSE_END_NS,YEAR_NS,type Ns} from './world-time.ts';
@@ -2490,9 +2490,11 @@ function approachPlanet(altitude: number) {
   approachAltitude = altitude;
   autopilot = {kind: 'body', id: state.body.id};
 }
-function exploreTerrain(preferred?:THREE.Vector3,preferLife=false) {
+/** Starts a surface journey; true only when one was started, so a caller may
+ * arm landAfterCruise. False = no site (announced), nothing to land on. */
+function exploreTerrain(preferred?:THREE.Vector3,preferLife=false):boolean {
   const body=state.body;
-  if(!body || body.kind==='star' || body.type==='Gas giant' || renderer.xr.isPresenting) return;
+  if(!body || body.kind==='star' || body.type==='Gas giant' || renderer.xr.isPresenting) return false;
   clearWalking();
   if(!flight) toggleFlight();
   autopilot=null; orbitAssist=null; planetLook=null; startCruiseAfterLook=false;
@@ -2500,7 +2502,7 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false) {
   const sample=surfaceFor(body), sun=vec(bodyPosition(state.sys!.stars[0],state.sys!,epoch)).sub(center).normalize();
   const lifeEntry=lifecycleFor(state.sys!,body);
   if(lifeEntry.kind!=='star')sun.set(...spinCompensatedSunDirection(sun.toArray() as V3,spinFor(body),lifeEntry.lc.formationNs,epoch));
-  if(!sample([0,1,0],epoch)){announce('This world has no surface at this date.');return;}
+  if(!sample([0,1,0],epoch)){announce('This world has no surface at this date.');return false;}
   const biome=preferLife?biomeClassifier(body,snappedWaterLevelFor(body)):null;
   // render-bounds-1 + landing-site-1: heights are judged over the dated sea,
   // against the body's own bound (80%, the kept ceiling), strictly below the
@@ -2512,7 +2514,10 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false) {
   if(preferred)destination.copy(preferred);
   else if(!preferLife){
     const site=pickLandingSite({height:d=>{const s=sample(d,epoch);return s&&s.walkable?s.groundHeightM:null;},eye:eye.toArray() as V3,sun:sun.toArray() as V3,seaLevelM:landSea,ceilingM:landCeiling,summitM:landSummit,referenceM:landRef});
-    if(site)destination=new THREE.Vector3(...site.direction);
+    // landing-site-1: no eligible site (all wet / summit-capped) ends the
+    // request here: no journey toward the unchecked eye direction.
+    if(!site){announce(NO_LANDING_SITE_MESSAGE);panel();return false;}
+    destination=new THREE.Vector3(...site.direction);
   }
   else for(let i=0;i<1024;i++) {
     const d=new THREE.Vector3(...landingCandidate(i,1024)), s=sample(d.toArray() as V3,epoch);
@@ -2522,11 +2527,12 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false) {
     const score=habitat.weights[1]*3+habitat.moisture+(habitat.forestPotential?.5:0)+d.dot(eye)*.3+Math.max(-.5,d.dot(sun))*.2;
     if(score>best){best=score;destination=d;}
   }
-  if(preferLife&&best===-Infinity){announce('No suitable living habitat was found on this world at this date.');return;}
+  if(preferLife&&best===-Infinity){announce('No suitable living habitat was found on this world at this date.');return false;}
   const up=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion).projectOnPlane(eye);
   if(up.lengthSq()<.0001)up.set(1,0,0).applyQuaternion(camera.quaternion).projectOnPlane(eye);
   surfaceJourney={bodyId:body.id,direction:destination,up:up.normalize()};
   announce(preferLife?'Approaching a living habitat. Vegetation and wildlife stream during low flight.':'Approaching a terrain site, then flying 600 m above the ground. Movement keys release assistance.');
+  return true;
 }
 function startTerrainCruise() {
   const body=state.body!;
@@ -2575,7 +2581,7 @@ async function prepareLanding(savedPoint?:V3,contact=false,savedHeading?:THREE.Q
       announce('This ground bookmark is now under water at this date. Hovering above the water at the saved place.');panel();return;
     }
   }
-  if(!s.walkable){exploreTerrain();landAfterCruise=true;return;}
+  if(!s.walkable){if(exploreTerrain())landAfterCruise=true;return;}
   const point=d.multiplyScalar(body.radiusM+s.rockHeightM+.92).toArray() as V3;
   if(savedPoint){
     // A restored surface address starts above that ground, not at the orbit
@@ -2593,7 +2599,7 @@ function landOnWorld(){
   if(!state.body)return;
   const info=surfaceClearance(state.body,vec(localPose()).sub(vec(bodyPosition(state.body,state.sys!,epoch))).toArray() as V3,snappedWaterLevelFor(state.body));
   if(info.terrainClearance<PlanetRenderer.lowFlightClearanceM(state.body))void prepareLanding();
-  else {exploreTerrain();landAfterCruise=true;}
+  else if(exploreTerrain())landAfterCruise=true;
 }
 function takeoffWalk(){
   if(!state.body)return;

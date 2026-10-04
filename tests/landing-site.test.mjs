@@ -18,7 +18,7 @@ import {surfaceQuery} from '../src/world-surface.ts';
 import {
   LANDING_SITE_VERSION,LANDING_SUMMIT_PERCENTILE,FLOODED_GROUND_BOOKMARK,FLOODED_BOOKMARK_HOVER_M,
   SHORE_SEARCH_STEP_M,SHORE_SEARCH_MAX_M,SHORE_RING_DIRECTIONS,
-  landingHeightAllowed,landingCandidate,pickLandingSite,resolveGroundBookmark,
+  landingHeightAllowed,landingCandidate,pickLandingSite,resolveGroundBookmark,NO_LANDING_SITE_MESSAGE,
 } from '../src/landing-site.ts';
 
 const g0=galaxies('LETHRA-001')[0];
@@ -150,5 +150,40 @@ test('main.ts wires the landing rules: summit-capped site pick and the flooded-b
   assert.ok(src.includes('if(!s.walkable&&savedPoint){'),'a restored bookmark is resolved before the terrain-search fallback');
   assert.ok(src.includes('const flooded=resolveGroundBookmark(d.toArray() as V3,'));
   // The terrain search remains only for a non-bookmark landing over water.
-  assert.equal(src.split('if(!s.walkable){exploreTerrain();landAfterCruise=true;return;}').length,2);
+  assert.equal(src.split('if(!s.walkable){if(exploreTerrain())landAfterCruise=true;return;}').length,2);
+});
+
+// No eligible site: pickLandingSite returns null (all wet, or all at a summit),
+// and main.ts then starts no journey and arms no landAfterCruise.
+const NO_SITE={eye:[0,1,0],seaLevelM:0,ceilingM:5000,summitM:3000,referenceM:1000,count:COUNT};
+test('no eligible site: all-wet candidates give null',()=>{
+  let asked=0;
+  assert.equal(pickLandingSite({...NO_SITE,height:()=>{asked++;return null;}}),null,'every candidate unwalkable (flooded)');
+  assert.equal(asked,COUNT,'every candidate was examined');
+  assert.equal(pickLandingSite({...NO_SITE,seaLevelM:100,height:()=>99}),null,'every candidate below a raised dated sea');
+  assert.notEqual(pickLandingSite({...NO_SITE,height:(d,i)=>i===7?10:null}),null,'control: one dry candidate is found');
+});
+test('no eligible site: every candidate rejected by the summit cap gives null; the ceiling alone would have landed',()=>{
+  const height=(d,i)=>3000+i%500; // dry, under the 5000 m ceiling, all at/above the 3000 m summit
+  assert.equal(pickLandingSite({...NO_SITE,height}),null);
+  const control=pickLandingSite({...NO_SITE,summitM:Infinity,height});
+  assert.notEqual(control,null,'control: without the summit cap a summit is picked');
+  assert.ok(control.heightM>=3000);
+});
+test('main.ts: a null site ends the landing request (message, no journey, no landAfterCruise)',()=>{
+  const src=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+  assert.ok(NO_LANDING_SITE_MESSAGE.length>0);
+  const start=src.indexOf('function exploreTerrain('),end=src.indexOf('function startTerrainCruise(');
+  assert.ok(start>0&&end>start);
+  const body=src.slice(start,end);
+  assert.ok(body.startsWith('function exploreTerrain(preferred?:THREE.Vector3,preferLife=false):boolean {'));
+  const nullBranch=body.indexOf('if(!site){announce(NO_LANDING_SITE_MESSAGE);panel();return false;}'),journey=body.indexOf('surfaceJourney={');
+  assert.ok(nullBranch>0&&journey>nullBranch,'the null branch returns before any surfaceJourney is created');
+  assert.ok(!/if\(site\)destination=/.test(body),'no fallback to the eye direction on a null site');
+  assert.ok(!/\breturn;/.test(body),'every exit of exploreTerrain returns a boolean');
+  assert.ok(body.trimEnd().endsWith('return true;\n}'),'true only after a journey started');
+  // Every caller that arms landAfterCruise does so only when a journey started.
+  assert.equal((src.match(/landAfterCruise=true/g)||[]).length,2);
+  assert.equal((src.match(/if\(exploreTerrain\(\)\)landAfterCruise=true;/g)||[]).length,2);
+  assert.ok(!/exploreTerrain\([^)]*\);\s*landAfterCruise=true/.test(src),'no unconditional exploreTerrain();landAfterCruise=true');
 });

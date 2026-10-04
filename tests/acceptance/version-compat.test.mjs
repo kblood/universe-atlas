@@ -414,6 +414,6 @@ test('ground bookmarks re-snap to the new ground height: main.ts restores ?walk=
   const source = (await readFile(new URL('../../src/main.ts', import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
   assert.ok(source.includes("const d=relative.normalize(),s=surfaceSample(body,d.toArray() as V3);"), 'saved point reduced to a direction and re-sampled');
   assert.ok(source.includes('const point=d.multiplyScalar(body.radiusM+s.rockHeightM+.92).toArray() as V3;'), 'landing point is the CURRENT ground height');
-  const resolver = source.indexOf('if(!s.walkable&&savedPoint){'), fallback = source.indexOf('if(!s.walkable){exploreTerrain();landAfterCruise=true;return;}');
+  const resolver = source.indexOf('if(!s.walkable&&savedPoint){'), fallback = source.indexOf('if(!s.walkable){if(exploreTerrain())landAfterCruise=true;return;}');
   assert.ok(resolver > 0 && fallback > resolver, 'a now-flooded restored bookmark is resolved (landing-site.ts) before the terrain-search fallback');
 });
