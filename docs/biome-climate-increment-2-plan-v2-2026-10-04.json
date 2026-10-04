@@ -4,7 +4,7 @@
  "status": "re-baselined plan, not started. Supersedes the scratchpad plan biome2-plan.json (measured on b0f3882, before relief). Nothing in src/ changes in this task.",
  "measuredOn": {
   "commit": "b7d1df3 (main = d751a09 plus the creature-boundary test only; git diff d751a09 b7d1df3 touches package.json, tests/creature-core-boundary.test.mjs and a fixture, no src/ file)",
-  "script": "C:/LLM/IWSDK/universe-atlas/test-results/round2-2026-10-04/BIOME2-REPLAN/remeasure.mjs (parts ela, worlds, site, corpus, corpus132, grid, gates, bench). Outputs remeasure-<part>.json beside it; exit codes in exits.txt (all 0). test-results/ is git-ignored, so the script lives in the main checkout's evidence folder, not in git.",
+  "script": "C:/LLM/IWSDK/universe-atlas/test-results/round2-2026-10-04/BIOME2-REPLAN/remeasure.mjs (parts ela, worlds, site, corpus, corpus132, grid, gates, bench). Outputs remeasure-<part>.json beside it; exit codes in exits.txt (all 0). test-results/ is git-ignored, so the script lives in the main checkout's evidence folder, not in git. sha256 at hand-off: 70822d9ff098c471af88eccfbc4914dfecde6cf7ca52e2cfbadf30f78b1f5590.",
   "prototype": "'Prototype M1' = the v1 plan's P1 M1 formulas (PDD snow PDD_CRIT 250 / PDD_RAMP 100, warm-column lapse, warmest-month ceiling, heat cap, PET effective moisture with the UNCALIBRATED starting ITCZ band a=(0.9,0.6,0.55,0.4), w=(10,12,9,12)) evaluated in plain JS inside the script as an ANALYTIC APPROXIMATION: it uses Math.acos directly instead of the prescribed 513-entry H(v) table, and does not compute the growing-season G(v) or aridity outputs (Astra review-1 checked that H-table interpolation keeps all four worlds' rounded snow and forest headlines; det-math equivalence is not checked). It is evidence for expected values, not shipped code. The eco-class numbers apply the v1 P3 rule order to the shipped and the prototype climate, with slope 0 (upDot = 1). datumTw in the probe is the warmest month AT the climate datum from the same model (datum annual temperature plus the same half-range, then the ceiling); review-1 must-fix 1 changed it from the lapse reconstruction TwP + lapse*fac*h, which gives identical numbers wherever the ceiling does not bind, and the rerun reproduced every eco table.",
   "machine": "Shared/contended (other round-2 agents running). Timing numbers are labelled contended; every other number is deterministic."
  },
@@ -37,7 +37,7 @@
   "R17 Other classifier readers P1 must run (not own): lod-consistency (strict post-relief class/colour targets are an OPEN owner item; ceilings must not be loosened), place-query, planet-rocks, planet-rocks-draw, rock-field, tile-metadata, surface.test, version-compat. A moved pin goes to the coordinator with old/new values.",
   "R18 Version keys moved since v1: TERRAIN_VERSION is 'terrain-1.8.0-relief', CLIMATE_VERSION 'surface-climate-1.1-geo-g', BIOME_VERSION 'surface-biomes-2.1-sea-datum', SURVEY_VERSION 'surface-survey-2.1-relief'. v1's 'terrain-1.8.0-climate-2' collides with the shipped 1.8.0. Task 11 also moves TERRAIN_VERSION. The coordinator assigns the final names (proposal in versioning).",
   "R19 Eco-class rule fix: v1's coast rule used heightM < 120 and its datumTw used the raw height. The coast rule must use the height above the current sea level, and datumTw is defined as the warmest month at the climate datum, evaluated by climate v2 itself (the same warm-column lapse and ceiling), not reconstructed as TwP + lapse*height (surface-biomes-2.1 datum convention).",
-  "R21 Heat versus forest classes (found while re-measuring): the v1 P3 rule order has no heat rule, so land with Tw' >= 316 K, where the P1 heat cap sets forest suitability to 0, can still be classed boreal / temperate forest / humid subtropical / tropical wet. Prototype share of land in those four classes with Tw' >= 316 K: Selawyn 27.5%, Raiva 42.3%, Lethuris 19.3%, Maithea 0%. Classes and trees would disagree. P3 must decide this (see P3 changes).",
+  "R21 Heat versus forest classes (found while re-measuring): the v1 P3 rule order has no heat rule, so land with Tw' >= 316 K, where the P1 heat cap sets forest suitability to 0, can still be classed boreal / temperate forest / humid subtropical / tropical wet. Share of land in those four classes with Tw' >= 316 K: shipped climate Selawyn 17.7%, Raiva 12.3%, Lethuris 13.9%, Maithea 0%; prototype M1 Selawyn 27.5%, Raiva 42.3%, Lethuris 19.3%, Maithea 0%. Classes and trees would disagree. P3 must decide this (see P3 changes).",
   "R20 Line references re-checked on main (see ownershipCheck). planet-renderer.ts and planet-tiles.ts lines moved; MATERIAL_VERSION still seeds the detail atlas (ground-material.ts:60)."
  ],
  "measuredBaseline": {
@@ -149,7 +149,8 @@
     "forestPotentialPct": 53.1,
     "forestSuit05Pct": "48.7 -> 2.4 / 3.7",
     "protoForestClassWithTwPGe316Pct": 27.5,
-    "meanLandHerdHabitability": 0.684
+    "meanLandHerdHabitability": 0.684,
+    "shippedForestClassWithTwGe316Pct": 17.7
    },
    "Raiva": {
     "T": 300,
@@ -165,7 +166,8 @@
     "forestPotentialPct": 53.2,
     "forestSuit05Pct": "47.8 -> 10.0 / 5.9",
     "protoForestClassWithTwPGe316Pct": 42.3,
-    "meanLandHerdHabitability": 0.679
+    "meanLandHerdHabitability": 0.679,
+    "shippedForestClassWithTwGe316Pct": 12.3
    },
    "Lethuris": {
     "T": 275,
@@ -183,7 +185,8 @@
     "forestPotentialPct": 37.9,
     "forestSuit05Pct": "32.6 -> 19.4 / 31.2",
     "protoForestClassWithTwPGe316Pct": 19.3,
-    "meanLandHerdHabitability": 0.518
+    "meanLandHerdHabitability": 0.518,
+    "shippedForestClassWithTwGe316Pct": 13.9
    }
   },
   "ecoClassSharePct": {
@@ -307,7 +310,7 @@
     "Budgets as an interleaved A/B in one process against the package's base commit on main (recorded in the evidence) on the same machine (contended host): surfaceClimate <= 1.55x main, biomeClassifier <= 1.25x main, climateForcingFor cold including the grid <= 5 ms. Report the absolute values labelled 'contended'; the quiet-host absolute targets (surfaceClimate <= 150 ns, classifier <= 165 ns) are checked by task 20. Zero per-sample allocation, no hash64 per sample.",
     "The classifier `moisture` field is bit-identical over 50k samples; the weights formula is unchanged (asserted).",
     "terrain-elevation-identity, life-cpu-digest (stat floors maxDrawn >= 300, maxFlora >= 500), terrain-leaf-loop-digest and planet-forest-frame-digest pass unmodified at M1, M2 and M3.",
-    "SITE_A after M1 and again after M2: the centre and all SITE_RULE ring samples (0.5/1/2 km x 32) satisfy the COMPLETE SITE_RULE (tests/harness-sites.mjs: moisture >= 0.6, height, forestPotential, rings) and lie in LEGACY_BEHAVIOUR_CLASSES, or the package STOPs and reports (Q2). Today: shipped passes (effM 0.75, classes {4,6}); prototype M1 with uncalibrated moisture fails minMoisture (0.532). Never retune physics to fit the site.",
+    "SITE_A after M1 and again after M2: the centre and all SITE_RULE ring samples (0.5/1/2 km x 32) pass the COMPLETE SITE_RULE exactly as tests/helpers/harness-site-search.mjs:41-50 evaluates it (centre forestPotential, centre aboveSea and centre effectiveMoisture >= minMoisture 0.6; ring forestPotential share >= minRingForestShare; minimum ring aboveSea), and, as a deliberate strengthening beyond SITE_RULE, the centre and every ring sample lie in LEGACY_BEHAVIOUR_CLASSES, or the package STOPs and reports (Q2). Today: shipped passes (effM 0.75, classes {4,6}); prototype M1 with uncalibrated moisture fails minMoisture (0.532). Never retune physics to fit the site.",
     "Evidence: before/after tables in the package evidence folder (snow label and onset, tundra, Tw' > 316 share, forest share, effM quantiles, zonal curves for Earth and the 4 worlds, SITE_A ring report), produced by a saved script."
    ],
    "risk": "Highest risk, critical path. (a) Zonal band calibration (the uncalibrated prototype wets the subtropics). (b) SITE_A is 0.55 K from class 7: M2 will probably trigger the STOP (Q2). (c) Heat cap removes most forest on hot and high-tilt worlds: owner-visible (Q6). (d) Grid height provider choice (R13). (e) Budgets are only checkable as ratios on the shared host.",
@@ -351,7 +354,7 @@
     "tests/biome-ecology.test.mjs",
     "docs/eco-class-v1.md (new)"
    ],
-   "changes": "As v1 P3, with: (1) the coast rule reads height above the current sea level (aboveSea < 120 and sandW > 0.5), and datumTw is the warmest month at the climate datum as computed by the climate module (R19; until P1 M3 provides it, eco-class.ts takes it as an input and the test feeds the shipped datum value); (2) eco-identity-site.test uses the SITE_RULE rings from tests/harness-sites.mjs (0.5/1/2 km x 32), not the v1 60 km ring (R10); (3) LEGACY_BEHAVIOUR_CLASSES stays {4,5,6} until the owner answers Q2; the test reports the Tc margin of SITE_A to the class-7 threshold (today 0.55 K); (4) the 'before' class-share table must reproduce measuredBaseline.ecoClassSharePct.shipped from the live classifier within 0.5 points; (5) heat versus forest classes (R21): decide and document whether land with Tw' >= 316 K that is not sterile-hot goes to savanna / hot desert by moisture (recommended: a heat rule before the forest classes, so classes and trees agree) or keeps its forest class with zero trees. Prototype share affected: Selawyn 27.5%, Raiva 42.3%, Lethuris 19.3% of land.",
+   "changes": "As v1 P3, with: (1) the coast rule reads height above the current sea level (aboveSea < 120 and sandW > 0.5), and datumTw is the warmest month at the climate datum as computed by the climate module (R19; until P1 M3 provides it, eco-class.ts takes it as an input and the test feeds the shipped datum value); (2) eco-identity-site.test uses the SITE_RULE rings from tests/harness-sites.mjs (0.5/1/2 km x 32), not the v1 60 km ring (R10); (3) LEGACY_BEHAVIOUR_CLASSES stays {4,5,6} until the owner answers Q2; the test reports the Tc margin of SITE_A to the class-7 threshold (today 0.55 K); (4) the 'before' table: a REFERENCE implementation of the v1 rule order (no heat rule, kept in the test file, not shipped) applied to the live shipped climate must reproduce measuredBaseline.ecoClassSharePct.shipped within 0.5 points; this checks the inputs and the sampling, not the new rule; (5) heat versus forest classes (R21): decide and document whether land with Tw' >= 316 K that is not sterile-hot goes to savanna / hot desert by moisture (recommended: a heat rule before the forest classes, so classes and trees agree) or keeps its forest class with zero trees. The shipped eco-class.ts implements the chosen rule; its own expected shares are the reference shares with the affected land moved (shipped climate: Selawyn 17.7%, Raiva 12.3%, Lethuris 13.9%, Maithea 0% of land), pinned separately, with boundary tests at Tw' = 316 K -/+ 1e-6 for each of the four forest classes.",
    "acceptance": [
     "As v1 P3 acceptance, with the SITE_RULE rings in place of the 60 km ring.",
     "groundLookOf returns all zeros for SITE_A's live shipped climate (Ta 294.91, Tw 299.22, Tc 290.60, effM 0.750).",
@@ -402,7 +405,7 @@
    ],
    "changes": "As v1 P5. The held branch biome-round/W2-C-FOREST-C2-held still exists on main's repo. Expect far less forest on hot and high-tilt worlds after P1 (heat cap): report bindable spire/branching counts per planet with sample counts; Selawyn may have too few forest cells for the 2.0x ratio, in which case report n and do not claim the ratio there.",
    "acceptance": [
-    "As v1 P5 acceptance; the spire-share ratio is reported per planet with n, and a planet with fewer than 200 cells in EITHER comparison group (spire-bindable and branching-bindable) is reported as 'insufficient sample' with both counts. Insufficient-sample planets do not block completion, but Maithea and Lethuris must have a sufficient sample and pass; this exemption is a disclosed weakening of v1's per-world gate, made because the heat cap empties hot worlds."
+    "As v1 P5 acceptance; the spire-share ratio is reported per planet with n, with the cohorts defined as in v1 and the backlog (task 14): cohort COLD = forested cells (forestSuitability01 > 0) in eco class 3 boreal or in the treeline band (treeline01 < 1); cohort WARM = forested cells in eco class 6 humid subtropical or 7 tropical wet (tropical and subtropical); the ratio is spire share in COLD / spire share in WARM. A planet with fewer than 200 cells in EITHER cohort is reported as 'insufficient sample' with both counts. Insufficient-sample planets do not block completion, but of v1's zoning planets (Maithea, Raiva, Selawyn) Maithea must have a sufficient sample in both cohorts and pass; Raiva and Selawyn may be insufficient after the heat cap (prototype forest > 0.5: 5.9-10.0% and 2.4-3.7% of land); this exemption is a disclosed weakening of v1's per-world gate, made because the heat cap empties hot worlds."
    ],
    "risk": "Only 5 bindable trees; the heat cap shrinks the forest sample on hot worlds.",
    "dependsOn": [
@@ -488,6 +491,17 @@
     "MF5 fauna gate: scope restored to classes 0-11 (class 12 excluded); gate measured on actual faunaHerdAt presence by the package script; controlled weights[1] = 0 fixture for the negative test; 0.787 (weights) vs 0.548 (habitability) separated; absence claims softened to habitability.",
     "MF6 numbers: R13 uses 426 m (grid sample); R8 and P1 step 2 quote 4302 m label / 4258 m onset (probe now outputs pdd190NoWarmColLabel); expectedOutcomes separate forest suppression from class assignment (43.1% hot desert + sterile on Selawyn; 27.5% forest class with Tw >= 316 K, new R21 and P3 item (5)).",
     "SF1 prototype described as an analytic approximation. SF2 P5 exemption defined (both groups counted, non-blocking, Maithea and Lethuris must pass). SF3 parity bound in metres (max 1 m) and A/B reference = the package base commit. SF4 all three rings probed; skirt material copy anchor planet-tiles.ts:337 added."
+   ]
+  },
+  {
+   "review": "Astra gpt-6-astra read-only review-2, 2026-10-04",
+   "verdict": "fix-required",
+   "saved": "C:/LLM/IWSDK/universe-atlas/test-results/round2-2026-10-04/BIOME2-REPLAN/astra/review-2-answer.md",
+   "note": "Confirmed review-1 MF1-MF6 closed and re-ran ela, worlds, site and corpus with matching results.",
+   "closed": [
+    "MF1 P3 baseline vs heat rule: the 0.5-point gate now applies to a reference v1-rule implementation kept in the test; the shipped rule gets its own pinned shares and 316 K boundary tests. Shipped hot forest-class shares measured by the probe (worlds rerun): Selawyn 17.7, Raiva 12.3, Lethuris 13.9, Maithea 0 (matches Astra).",
+    "MF2 P5 cohorts: COLD = boreal (3) or treeline band, WARM = humid subtropical (6) or tropical wet (7), per v1 and backlog task 14; 200-cell minimum per cohort; Maithea must pass.",
+    "SF1 SITE_RULE gate now cites the evaluator (harness-site-search.mjs:41-50) and labels the per-sample legacy-class requirement as a deliberate strengthening."
    ]
   }
  ]
