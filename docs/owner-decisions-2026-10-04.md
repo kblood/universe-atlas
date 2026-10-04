@@ -22,7 +22,7 @@ This is one list of every question that is waiting on the owner. It was assemble
 | A8 | Cloud deck above p99 land | task 11 | do it in task 11, cloud top above p99 land |
 | A9 | Shadow `normalBiasM` .30 | none | confirm .30 |
 | A10 | WP6 RMSE waiver (`613e292`) | none | confirm the waiver |
-| A11 | EC4 proboscis triangle allowance +600 to +800 | EC4 merge (branch held) | not recommended without the owner; see item |
+| A11 | EC4 proboscis triangle allowance +600 to +800 | DECIDED 2026-10-04 (moved to section B) | n/a |
 | A12 | Geophysics g versus catalogue `massKg` | task 9 and later climate | keep option (a) now; reconcile masses only when orbits must match |
 | A13 | Project licence | tasks 21 and creature extraction | private and unlicensed for now, `NOASSERTION` stays |
 | A14 | Upload and GitHub/Pi migration authorisation | task 21 | not authorised until the owner says so |
@@ -134,7 +134,7 @@ This is one list of every question that is waiting on the owner. It was assemble
 - **Recommended default:** confirm the waiver, as the source recommends. Widening the spreads would fit the metric rather than fix it.
 
 #### A11. EC4 proboscis triangle allowance +600 to +800
-- **State:** OPEN, HELD for the owner. Branch `eye-round/EC4` and its worktree are not to be touched.
+- **State:** DECIDED by the owner on 2026-10-04 (after this sheet was written): +800 accepted as a dated exception, and EC4 was merged (`f3994e5`). See section B. The text below is kept as it was when the item was open.
 - **Question:** The plan allowed the proboscis head group at most legacy +600 triangles. The branch's test relaxes that to +800, as an acceptance change rather than a digest repin. Luna passed all four trunks in 2 of 2 runs at a13, but its verdicts varied between runs earlier (a9 passed once, then failed on identical pixels).
 - **Evidence:** `test-results/finish-round-2026-10-04/EC4-astra-readiness/astra-answer.md`; `test-results/eye-round-2026-10-03/EC4-handoff.md`; `docs/fauna-face-eye-round-2026-10-02.md:149`.
 - **Options:**
@@ -206,6 +206,7 @@ These are listed so that nobody reopens them by accident. "Date" is the date the
 | Maithea snow band (decision 1) | 15-40% is accepted, only "as long as ranges have snow" (A4 is the unmet condition). | 2026-10-03 (terrain-relief document date; the answer's own date is not recorded) | `docs/terrain-relief-v1.md` section 4 and section 13 |
 | Gravity for surface physics only (decisions 3 and 4) | Lapse-rate gravity comes from `planetGeophysics(body).surfaceGravityMS2`; catalogue `massKg` stays the orbital mass. | 2026-10-03 (same source) | `docs/planet-geophysics-v1.md`; `docs/terrain-relief-v1.md` |
 | One committed repo for Atlas | All work on `main`, worktrees removed after merge. | 2026-10-02 | agent memory "Universe Atlas" entry; see A18 question 6 |
+| EC4 proboscis triangle allowance (was A11) | The proboscis head may exceed the legacy triangle count by 800 instead of 600. No other EC4 item was accepted. | 2026-10-04 | `README.md` EC4 entry; `docs/fauna-eye-catalogue-round-2026-10-03.md` |
 | Dated sea | The sea is exactly 0 at the catalogue epoch and falls afterwards by lost volume (ocean-volume-1). | 2026-10-03 | `docs/relief-round-2026-10-03.md` section 1 |
 
 ## C. Open items that are not owner questions
@@ -218,7 +219,8 @@ None of these is passed. Each is a missing measurement or an unfinished check.
 | Headset validation | NOT RUN. The walking and VR suites and all headset checks have not been run. | README "Not run"; task 20 |
 | Luna presentation FAILs | OPEN. 6 of 28 frames passed on the final relief sheet. Mountain, seabed, polar, lowland, sand and orbit frames failed. | `README.md` top entry; `test-results/relief-round-2026-10-03/final/luna/summary.md` |
 | Fell-colour test uses synthetic columns | OPEN | `docs/terrain-relief-v1.md` section 6 item 5 |
-| desktop-perf S4 date and water bucket assertion | Deferred, should-fix | `docs/relief-round-2026-10-03.md` section 4 item 13 |
+| desktop-perf S4 date and water bucket assertion | Implemented in round 2 (HARNESS-RERUN, merged 2026-10-04); negative cases shown. The S4 stale-patch clear time (4.8-6.4 s against 3 s) is contended data, not acceptance | `test-results/round2-2026-10-04/harness-rerun/` |
+| Canopy rebuild on every 25 m sea-bucket change | OPEN performance item (found by HARNESS-RERUN): since relief, land patches pin their water validity to the exact sea level, so canopy is never reused across buckets | `test-results/round2-2026-10-04/harness-rerun/` |
 | Rocky-corpus Spearman test | `todo`, not passing | `README.md` top entry |
 
 ## D. How this sheet was checked

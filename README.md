@@ -1,5 +1,88 @@
 # Universe Atlas
 
+## Round 2 merged — 2026-10-04 (local, not deployed)
+
+**Merged into `main` (10 of 11 round-2 branches, `--no-ff`):** OWNER-DECISIONS,
+MIGRATION-PREP, BIOME2-REPLAN, BIOME2-GRID, CREATURE-EXPORT, GOLDEN-EXT,
+LANDING-FIXES, HARNESS-RERUN, BIOME2-ECO and OCEAN-PRESENT.
+
+**Not merged: RELIEF-PRESENT** (`round2/relief-present`, worktree kept). Its
+terrain change breaks 12 pinned LOD-consistency checks (Maithea L6 RGB p99
+33.33 against 26.3, Lethuris 54.18 against 39.2, Maithea L6 peak retention
+80.18 % against 85 %, plus 9 more). Fixing them needs either the OPEN owner
+decision on strict post-relief LOD targets or a different relief design. Its
+mountain acceptance still fails, and it moves SITE_A off its site rule. The
+SITE_A replacement it found (index 624) is kept on the branch as a patch.
+
+What the merged work adds:
+
+- **Landing:** the app picks a dry site below the 99th-percentile land
+  height. If none exists, it cancels with a message and no longer flies toward
+  an unchecked place. A flooded ground bookmark hovers 40 m above the water.
+  The two former landing "todo" tests now test this cap and pass. The
+  owner decisions on the cap and the hover (A6, A7) are **still OPEN**: the
+  code uses the recommended defaults.
+- **Ocean:** skirts close the gaps between ocean tiles, proven on the drawn
+  geometry (a real gap of up to 5 m at 4:1 edges was found and fixed). Waves
+  fade with distance, and there is an underwater medium. Luna's "reads as
+  underwater" check **still FAILS (3 of 12)**, and its cause is unresolved.
+- **Biomes:** 7 new eco-class lab biomes (tundra, alpine meadow, boreal
+  taiga, savanna, rainforest, hot desert, ice margin), with plant shapes that
+  match their queryable footprint. There is also a climate grid with rain
+  shadows (not yet used by the planet) and a re-baselined biome plan v2.
+- **Creatures:** composer creatures export from Node to GLB with a
+  provenance sidecar (`scripts/export-creature.mjs`).
+- **Golden:** 9 new platform sections are pinned. The runner guards its
+  output files and reports a tolerated mismatch honestly.
+- **Docs and gates:** an owner-decision sheet, migration prep, and an asset
+  provenance gate (9 NOASSERTION assets on a dated allowlist).
+
+**Merger changes on `main`:**
+
+- `BUILD_VERSION` went from `atlas-client-2026-10-relief-1` to
+  `atlas-client-2026-10-round2-1`, and the terrain shader cache key from
+  `planet-patch-ground-bed-v11` to `v12`. `MODEL_MANIFEST_ID`,
+  `TERRAIN_VERSION` and the terrain golden are unchanged.
+- 9 test files were registered. `tests/biome-lab.mjs` now expects the 16
+  presets.
+- The leaf-loop digest reference now counts the ocean skirt bytes.
+- `golden.json` was re-pinned once. Every old key is unchanged and the 9
+  section digests were added; the values are in
+  [docs/relief-round-2026-10-03.md](docs/relief-round-2026-10-03.md) section 9.
+
+**New findings, OPEN:**
+
+- **Four engines are not all equal.** WebKit 26.5 differs on
+  `faunaKnownUnstable`: a midline insect eye sits on the head's mirror seam,
+  and two ray hits tie exactly there. The gate result is
+  PASS-WITH-KNOWN-MISMATCH, not PASS. The fix belongs in
+  `src/fauna-composer-mesh.ts`, and a trial patch exists.
+- **The trunked-centipede skin record moves under a 1-ULP nudge.** This
+  appeared after EC4 met the new perturbation test. All three browsers still
+  match Node, but the cause is not traced.
+- **Canopy rebuilds on every 25 m sea-level step.** It has done so since
+  relief.
+- **The climate grid's cold build** takes 8.27 ms against a 5 ms target.
+- **The 25 ns eco-class cost target** still needs a quiet host and is
+  skipped, not passed.
+- **The SITE_A 60 km ring check** remains a todo.
+
+**Checks on main (merge commits, clean tree):**
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` | exit 0, no output |
+| `npm run test:full` (at `e4b7afd`) | raw node exit 0; 1366 tests, 1359 pass, 0 fail, 5 skipped, 2 todo; NEW 0, known 0, stale 0 |
+| `tests/golden/node-run.mjs` | exit 0; digests equal `golden.json` |
+| Cross-engine golden (`--port 5292`) | exit 0, **PASS-WITH-KNOWN-MISMATCH**: Chromium 149 and Firefox 151 MATCH, WebKit 26.5 differs only on `faunaKnownUnstable` |
+| `tests/biome-lab.mjs` (hardware, GPU lock) | exit 0; 16 presets, 0 geometry failures, 0 page errors |
+| `npm run build` | exit 0 (chunk-size warning only) |
+
+The 2 todos are the rocky-corpus Spearman check and the SITE_A 60 km ring;
+both are OPEN. Not run at merge: `test:perf`, golden `--strict`, other browser
+ladders, new captures or Luna verdicts, quiet-host performance and the
+headset. Evidence: `test-results/round2-2026-10-04/merge/`.
+
 ## Eye round EC4 merged — 2026-10-04 (local, not deployed)
 
 **Merged:** `eye-round/EC4` (merge `f3994e5`). The proboscis head is polished:

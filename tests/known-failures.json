@@ -24,6 +24,12 @@
       "file": "tests/planet-geophysics.test.mjs",
       "note": "Marked TODO (counted in todo=1, not in fail). Measured 0.990; documented as NOT MET by the specified model and left to the owner/P4. Listed so nobody mistakes the red X in the log for a new failure. It remains OPEN, not passed.",
       "status": "OPEN"
+    },
+    {
+      "title": "SITE_A 60 km ring of 64 points is all legacy-behaviour classes",
+      "file": "tests/eco-identity-site.test.mjs",
+      "note": "Marked TODO by BIOME2-ECO (merged 2026-10-04). Measured {6:25, 7:18, 11:6, ocean:15}: the post-relief ring crosses the coast and the tropical boundary. BIOME2-REPLAN replaces it with the site rule's 0.5/1/2 km rings. It remains OPEN, not passed.",
+      "status": "OPEN"
     }
   ],
   "resolved": [
