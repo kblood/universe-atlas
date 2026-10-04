@@ -179,10 +179,19 @@ accepted exception, `OCEAN_SURFACE_DETAIL_M = 2000` in `planet-renderer.ts`:
   under a viewer at the surface is therefore finer than distance-to-seabed alone would give.
 - **Streaming.** `renderSeabedDive()` uses the same 2 km band: over a seabed and below sea + 2 km.
   - Inside it, byte-blocked splits count as merge pressure, and eviction keeps room for a full 4-child split.
-  - Everywhere else, the streaming frontier of render-bounds-1 stays tile-for-tile the same as before. That
-    covers orbit, the 2.5 km horizon pose, 20 km flight and 150 m ground over land. Evidence:
-    `test-results/relief-round-2026-10-03/P5-RENDER-BOUNDS/attribution/` and
-    `test-results/finish-round-2026-10-04/P5-FRONTIER/`.
+  - Everywhere else, these two streaming modifications are switched off, so the streaming GATING is the
+    same as before. That is a statement about the gate, not a claim that every resulting frontier is the
+    same tile for tile. What was actually compared:
+    - Node attribution (`test-results/relief-round-2026-10-03/P5-RENDER-BOUNDS/attribution/attrib-gated.json`):
+      the gated build and its base gave identical visible/leaf counts at 20 poses on 4 bodies, except Selawyn
+      ground (147 vs 146).
+    - Browser probes (`test-results/finish-round-2026-10-04/P5-FRONTIER/`): same-build before/after pairs had
+      identical leaf and visible sets for the Selawyn and Lethuris flight scenarios. A pre-existing
+      merge-scheduler stall (OPEN) makes frontiers path- and timing-dependent; in the Node convergence check
+      (`node-convergence.json`) Selawyn base/head reached 80/81 visible with five leaf keys unique to each.
+    - The candidate culling itself (tighter per-tile bounds than the legacy +20/-16 km envelope) changes
+      frontiers by design wherever bounds matter; the open-ocean descent shows different frontiers above the
+      band (10 km: 66 vs 72 visible, max level 8 vs 9).
 - **Tests.** `tests/render-bounds.test.mjs` pins the band's on/off cases. The open-ocean descent in
   `tests/render-bounds-evidence.test.mjs` shows that above the band, deep water is coarser than under the
   legacy surface-distance rule. Inside the band, both rules refine equally, by design.
@@ -191,6 +200,36 @@ accepted exception, `OCEAN_SURFACE_DETAIL_M = 2000` in `planet-renderer.ts`:
   band". The code comment is left to the lod-ladder owner.
 - **Still open, not covered by this exception.** Reduced seabed detail away from the band and the strict
   post-relief LOD class/colour targets remain open owner items. This note does not waive them.
+
+### 7.2 Integration with the P4 relief terrain (finish round 2026-10-04, branch relief-round/INT)
+
+render-bounds-1 (P5) and terrain-1.8.0-relief (P4) ship together: P4 changes the per-body orbit texture
+encoding (`reliefTextureRange`) and P5 holds the matching decoder (`PlanetRenderer.reliefTextureSpanM`).
+Evidence is under `test-results/finish-round-2026-10-04/INT/`.
+
+- **Candidate margins re-measured on P4 terrain.** `CANDIDATE_MARGIN_M` was re-measured with 2400 child tiles
+  per level on each of the four fixture worlds (`excess-p4/`). The raw maxima all fit inside the old margins.
+  The x2+4 m rule exceeded them at L2 down, L6 up, L15 up and L16 up, so each entry is now
+  max(old, P4 x2+4). Margins were only widened, never narrowed.
+- **The all-world assertions now run by default** (`tests/helpers/render-bounds-suite.mjs`, fast mode):
+  containment 0 violations, candidate/tight ratio p50 0.86-1.01 at L10/L14/L18 on all four worlds, 0 false
+  culls, horizon cull used 434.8 km vs analytic 399.7 km.
+- **Landing ceiling (formula kept, OPEN owner item).** `landingCeilingM = 0.8 x bound.maxM` is kept, as decided.
+  On P4 terrain it is 4.1-5.3 km over the sea, which is ABOVE p99 land (2.5-4.2 km) on every fixture world, so it
+  no longer keeps the landing pick off summits. Measured over 256 eyes at the datum sea, picks at or above p99
+  land: Maithea 2, Selawyn 6, Raiva 6, Lethuris 2 (0 at the dated sea). The required no-summit test exists as a
+  `todo` test (`landing at the datum sea never picks a summit`) and does NOT pass. It is not labelled passed.
+- **Clouds above p99 land: DEFERRED, removed from this increment's acceptance.** P4 lowered relief so that only
+  3 of 161 corpus water bodies have p99 land above the reference deck top (by at most 371 m). Two attempts
+  were made and both failed Luna 9/9 on raiva-flight, selawyn-flight and selawyn-horizon (3 asks each, all
+  TERRAIN PASS, all CLOUD FAIL):
+  1. the P5 cloud hunks (79b8845 + e1b4d73: scale-height stretch, dated-sea riding, p99 floor, reference-frame
+     sampling): tall streaky curtains;
+  2. the p99 floor alone (deck stretched only where p99 + 500 m exceeds the reference top): judged "worse",
+     with the same streaks and columns as base.
+  The cloud files are back to planet-clouds-1 / cloud-volume-2 exactly. Luna's attempt-2 complaints (streaks,
+  columns, horizon curtains) are present in the BASE image too, so the cloud look itself is an open item for
+  the cloud owner, independent of the p99 rule. Evidence: `clouds/`.
 
 ## 8. How place-query uses the contract
 

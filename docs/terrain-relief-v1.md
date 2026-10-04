@@ -443,3 +443,29 @@ Round 3 test runs, at head dab16ac, with no source change in round 3 (log `r3/np
   against its 2 us check. It passes in isolation (20/20). No fauna file differs from main.
 - `tsc --noEmit` exits 0.
 - life-cpu-digest, planet-forest-frame-digest, terrain-relief-hypsometry and terrain-elevation-identity: 14/14.
+
+## 14. Open items for the owner at integration (finish round 2026-10-04, branch relief-round/INT)
+
+P4 was merged together with P5 (render-bounds-1) on `relief-round/INT`. These items are OPEN. None of them is
+labelled passed, and each needs an owner decision:
+
+1. **Lethuris L6 `name` ceiling 6.9 -> 7.0%** (section 8). The one loosened LOD-consistency cell. The measured
+   value is 6.99%.
+2. **Strict post-relief LOD class/colour targets are unmet** (section 8). The cells tighten, but the strict
+   targets are not reached.
+3. **Weak range snow** (section 13, D1). The data says snow; the render reads pale grey.
+4. **Horizon presentation on the other worlds** (section 13, D2). Raiva, Selawyn and Lethuris horizon poses were
+   never re-posed with a sun-aware, picked-range rule in P4.
+5. **The fell-colour test uses synthetic columns** (section 6, item 5). Relief summits no longer reach the fell
+   band, so the test feeds synthetic columns instead of terrain samples.
+
+**Cheap improvement round (task step 6): not attempted, by rule.** The round was allowed only if range snow or
+horizon presentation turned out to be a parameter or ordering issue inside P4-owned files (`terrain.ts`,
+`planet-landforms.ts`, `surface-biomes.ts`, the surface-climate lapse). Round 3's measurements rule that out:
+- The P4 colour path already gives the range 98.7% of the SNOW constant; a brighter SNOW constant moved the lit
+  crop only 202 -> 213 under ACES and Luna called it "slightly" better. The remaining levers are the
+  ground-detail soil multiplier in `ground-material.ts`, tone mapping/exposure (renderer, not P4-owned), and a
+  slope term in snow colour, which needs a matching classifier rule (a model change, not a parameter).
+- The flattened r2 horizon is the capture's pose rule (a tropical dry plateau), not a terrain parameter.
+So no P4 file was changed in this round. Integration sheets with sun-aware poses on four worlds are under
+`test-results/finish-round-2026-10-04/INT/sheets/`.

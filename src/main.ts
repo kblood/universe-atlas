@@ -2502,7 +2502,8 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false) {
   if(!sample([0,1,0],epoch)){announce('This world has no surface at this date.');return;}
   const biome=preferLife?biomeClassifier(body,snappedWaterLevelFor(body)):null;
   // render-bounds-1: heights are judged over the dated sea, against the body's
-  // own bound (never a summit) and its p90 land (the full elevation bonus).
+  // own bound (80%; this does not exclude summits, OPEN owner item) and its
+  // p90 land (the full elevation bonus).
   const landSea=body.water?snappedWaterLevelFor(body):0,landCeiling=PlanetRenderer.landingCeilingM(body),landRef=PlanetRenderer.landingReferenceM(body,landSea);
   let destination=eye.clone(), best=-Infinity;
   if(preferred)destination.copy(preferred);

@@ -157,11 +157,18 @@ export const OCEAN_SURFACE_DETAIL_M=2000;
  * the first 40-tile pass and a 304 m Selawyn L8 outlier the containment test
  * found). 'down' includes the parent-morph endpoints and the skirt. The tail
  * is heavy (sub-grid valleys), so this is an empirical bound:
- * tests/render-bounds.test.mjs re-checks it on fresh tiles, and the relief
- * round re-measures it after P4 changes the terrain. */
+ * tests/render-bounds.test.mjs re-checks it on fresh tiles.
+ * Re-measured on the P4 relief terrain (terrain-1.8.0-relief, integration
+ * branch relief-round/INT, 2026-10-04): the same protocol, 9600 child tiles
+ * per level (test-results/finish-round-2026-10-04/INT/excess-p4/). Each entry
+ * is the larger of the pre-P4 value and the P4 x2 + 4 m value (the fixture
+ * is four water worlds; stars keep the legacy field and no dry world was
+ * measured, so nothing is tightened): raised at L2 down (4320),
+ * L6 up (1510), L15 up (14), L16 up (8); every other level keeps its pre-P4
+ * value, which the P4 measurement does not exceed. */
 export const CANDIDATE_MARGIN_M:readonly (readonly [number,number])[]=[
-  [0,0],[3120,14680],[3850,3790],[3600,1060],[3650,1450],[2100,1050],[1390,650],[1050,740],[980,620],[520,280],
-  [380,170],[180,180],[170,100],[110,70],[30,50],[13,17],[7,11],[6,7],[5,6]];
+  [0,0],[3120,14680],[3850,4320],[3600,1060],[3650,1450],[2100,1050],[1510,650],[1050,740],[980,620],[520,280],
+  [380,170],[180,180],[170,100],[110,70],[30,50],[14,17],[8,11],[6,7],[5,6]];
 type RbBound={minM:number;maxM:number};
 const rbTerrain=RB_TERRAIN as unknown as {bodyHeightBoundM?:(body:Body)=>RbBound;terrainWindowMaxM?:(body:Body)=>number;reliefTextureRange?:(body:Body)=>RbBound};
 const rbBodyBounds=new WeakMap<object,RbBound>();
@@ -305,7 +312,8 @@ export function seabedAwareNear(eye:THREE.Vector3,nearest:V3,elevation:number,oc
  * there does seabed-distance selection need byte-blocked refinement (a
  * byte-blocked split pass counts as merge pressure; eviction keeps room for a
  * whole 4-child split); every other pose keeps the established streaming
- * frontier tile for tile. `eyeAltitudeM` is above the radius datum. */
+ * gating (not necessarily an identical frontier: docs/lod-ladder-contract-v1.md
+ * section 7.1). `eyeAltitudeM` is above the radius datum. */
 export function renderSeabedDive(body:Body,eyeAltitudeM:number,eyeGroundM:number,waterLevelM:number){
   return !!body.water&&eyeGroundM<waterLevelM&&eyeAltitudeM<waterLevelM+OCEAN_SURFACE_DETAIL_M;
 }
@@ -318,7 +326,9 @@ export function landPercentileM(body:Body,p:number,seaLevelM=0){
   const n=h.length-lo;return n?h[lo+Math.min(n-1,Math.floor(p*(n-1)))]:NaN;
 }
 /** Landing-site rule (main.ts exploreTerrain): never above this height over
- * the sea (80% of the body bound, so never on a summit). */
+ * the sea (80% of the body bound). This does NOT exclude summits: on the P4
+ * relief terrain it lies above p99 land on every fixture world (OPEN owner
+ * item, tests/helpers/render-bounds-suite.mjs landing todo tests). */
 export function landingCeilingM(body:Body){return .8*renderHeightBoundM(body).maxM;}
 /** Height over the sea that earns the full landing elevation bonus: the 90th
  * percentile of land (fallback 40% of the body bound). */

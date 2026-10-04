@@ -196,7 +196,7 @@ export function renderBoundsSuite({tiles,ratioTiles,poses,poolLevels,poolRepeats
     report.falseCulls=out;
   });
 
-  test('landing finds a site on all four worlds and never above the summit ceiling',()=>{
+  test('landing finds a site on all four worlds and never above the landing ceiling',()=>{
     const out={};
     for(const {name,body} of WORLDS){
       const ts=terrainSampler(body),sea=0,ceiling=RB.landingCeilingM(body),ref=RB.landingReferenceM(body,sea),p99=RB.landPercentileM(body,.99,sea);
@@ -205,12 +205,30 @@ export function renderBoundsSuite({tiles,ratioTiles,poses,poolLevels,poolRepeats
       for(let e=0;e<8;e++){
         const site=landingPick(d=>ts(d).groundHeightM,fibonacciDirection(e*61,512),sea,ceiling,ref);
         assert.ok(site!==null,`${name}: a landing site from eye ${e}`);
-        assert.ok(site-sea<=ceiling&&site<p99,`${name}: site ${site} m is not a summit (ceiling ${ceiling}, p99 ${p99})`);
+        assert.ok(site-sea<=ceiling,`${name}: site ${site} m is above the landing ceiling ${ceiling}`);
         picks.push(Math.round(site));
       }
-      out[name]={ceilingM:ceiling,referenceM:ref,p99M:p99,siteHeightsM:picks};
+      // Whether a pick is a summit (>= p99 land) is the OPEN item below, not asserted here.
+      out[name]={ceilingM:ceiling,referenceM:ref,p99M:p99,siteHeightsM:picks,atOrAboveP99:picks.filter(h=>h>=p99).length};
     }
     report.landing=out;
+  });
+
+  // Integration 2026-10-04 (relief-round/INT): on the P4 relief terrain the
+  // kept ceiling (0.8 x body bound, 4.1-5.3 km over the sea) lies ABOVE p99
+  // land (2.5-4.2 km) on all four worlds, so it no longer excludes summits at
+  // the datum sea either; the first case to fail was Selawyn (pick 3496 m,
+  // p99 3246 m). The owner kept the formula; "never on a summit" stays OPEN.
+  test(`landing at the datum sea never picks a summit (${landingEyes} eyes, all four worlds)`,
+    {todo:'OPEN (owner): P4 terrain, sea 0, 256 eyes: picks at or above p99 land are counted in report.landingDatumSea (see test-results/finish-round-2026-10-04/INT). The kept 0.8 x bound ceiling is above p99 land on every fixture world after P4. Needs a percentile-based ceiling or an owner waiver.'},()=>{
+    const out=report.landingDatumSea={};
+    for(const {name,body} of WORLDS){
+      const ts=terrainSampler(body),sea=0,ceiling=RB.landingCeilingM(body),ref=RB.landingReferenceM(body,sea),p99=RB.landPercentileM(body,.99,sea);
+      let summits=0;
+      for(let e=0;e<landingEyes;e++){const site=landingPick(d=>ts(d).groundHeightM,fibonacciDirection(e,landingEyes),sea,ceiling,ref);if(site!==null&&site>=p99)summits++;}
+      out[name]={ceilingM:ceiling,p99M:p99,summits};
+    }
+    for(const [name,{summits,p99M}] of Object.entries(out))assert.equal(summits,0,`${name}: ${summits}/${landingEyes} landing picks at or above p99 land ${p99M} m`);
   });
 
   // Astra review 2026-10-03: 80% of the analytic body bound does not by itself
@@ -234,7 +252,7 @@ export function renderBoundsSuite({tiles,ratioTiles,poses,poolLevels,poolRepeats
     report.landingDatedSea=out;
   });
   test(`landing on low relief (field and dated sea x0.3) never picks a summit (${lowEyes} eyes)`,
-    {todo:'OPEN (owner): pre-P4 terrain x0.3, 256 eyes, picks at or above p99 land (sea 0 / dated sea): Maithea 3 / 1, Selawyn 4 / 5, Raiva 2 / 2, Lethuris 5 / 3 (exploratory scan of all four worlds, 2026-10-04). The kept ceiling (0.8 x body bound) excludes nothing on low relief, so the rule picks by proximity. Needs a percentile-based ceiling or an owner waiver; re-measure on P4 terrain.'},()=>{
+    {todo:'OPEN (owner): pre-P4 terrain x0.3, 256 eyes, picks at or above p99 land (sea 0 / dated sea): Maithea 3 / 1, Selawyn 4 / 5, Raiva 2 / 2, Lethuris 5 / 3 (exploratory scan of all four worlds, 2026-10-04). Re-measured on P4 terrain x0.3 at the dated sea (relief-round/INT): Maithea 2, Lethuris 2. The kept ceiling (0.8 x body bound) excludes nothing on low relief, so the rule picks by proximity. Needs a percentile-based ceiling or an owner waiver.'},()=>{
     const out=report.landingLowRelief={};
     for(const {name,body} of WORLDS.filter(w=>w.name==='Maithea'||w.name==='Lethuris')){
       const ts=terrainSampler(body),scale=.3,sea=Math.round(levelForLoss(body,.6)/25)*25*scale,ceiling=RB.landingCeilingM(body);
