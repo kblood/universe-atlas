@@ -78,15 +78,21 @@ function bindsHash(value,hash){
   if(typeof value.sha256==='string'&&value.sha256.toLowerCase()===hash)return true;
   return Object.values(value).some(v=>bindsHash(v,hash));
 }
-// Licence declarations anywhere in a sidecar: license:{expression}, license:"<string>", flat
-// licenseExpression. A value that is not a string is reported as '' (invalid).
+// Licence declarations anywhere in a sidecar. The only well-formed shapes are license:"<string>",
+// license:{expression:"<string>",...} and a flat licenseExpression:"<string>". An ABSENT key declares
+// nothing; a PRESENT key of any other shape (null, a number, a boolean, an array, {}, {expression:{}})
+// is a malformed declaration and is reported as '' (invalid), so another licence elsewhere in the same
+// or another bound sidecar (for example upstream.license) cannot mask it.
 function licenseExpressions(value,out=[]){
   if(Array.isArray(value)){for(const v of value)licenseExpressions(v,out);}
   else if(value&&typeof value==='object'){
-    const l=value.license;
-    if(typeof l==='string')out.push(l);
-    else if(l&&typeof l==='object'&&'expression' in l)out.push(typeof l.expression==='string'?l.expression:'');
-    if('licenseExpression' in value)out.push(typeof value.licenseExpression==='string'?value.licenseExpression:'');
+    if(Object.hasOwn(value,'license')){
+      const l=value.license;
+      if(typeof l==='string')out.push(l);
+      else if(l&&typeof l==='object'&&!Array.isArray(l)&&typeof l.expression==='string')out.push(l.expression);
+      else out.push('');
+    }
+    if(Object.hasOwn(value,'licenseExpression'))out.push(typeof value.licenseExpression==='string'?value.licenseExpression:'');
     for(const v of Object.values(value))licenseExpressions(v,out);
   }
   return out;
@@ -196,6 +202,27 @@ test('negative: a hash in prose or as a key does not bind; a malformed licence v
   put(root,'public/w/x.glb',weird);put(root,'public/w/m.json',JSON.stringify({sha256:sha256Of(weird),license:{expression:{}}}));
   assert.deepEqual(Object.fromEntries(scan(root).violations.map(v=>[v.path,v.rules.join(',')])),
     {'public/p/x.glb':'no-sidecar','public/k/x.glb':'no-sidecar','public/w/x.glb':'noassertion'});
+}));
+
+test('negative: a present but malformed licence fails even when upstream.license (or another bound sidecar) is MIT',()=>fixture(root=>{
+  // Astra blocker 2026-10-04: license:null / 42 / {} were silently ignored and an unrelated upstream MIT passed.
+  const shapes={nul:null,num:42,obj:{},nested:{expression:{}},arr:['MIT'],bool:true,flatnull:'FLAT'};
+  for(const [name,lic] of Object.entries(shapes)){
+    const bytes=Buffer.from('malformed-'+name);
+    const record=lic==='FLAT'?{sha256:sha256Of(bytes),licenseExpression:null}:{sha256:sha256Of(bytes),license:lic};
+    put(root,`public/${name}/x.glb`,bytes);put(root,`public/${name}/m.json`,JSON.stringify({...record,upstream:{license:'MIT'}}));
+  }
+  // a malformed record in one bound sidecar is not masked by a well-formed MIT sidecar beside it
+  const pair=Buffer.from('pair');
+  put(root,'public/pair/x.glb',pair);put(root,'public/pair/x.glb.asset.json',sidecarFor(pair,'MIT'));
+  put(root,'public/pair/family.json',JSON.stringify({files:[{sha256:sha256Of(pair),license:{}}]}));
+  // controls: an absent licence key beside a good one stays neutral; both well-formed shapes pass
+  const absent=Buffer.from('absent'),str=Buffer.from('str-ok');
+  put(root,'public/absent/x.glb',absent);put(root,'public/absent/m.json',JSON.stringify({sha256:sha256Of(absent),upstream:{license:'MIT'}}));
+  put(root,'public/strok/x.glb',str);put(root,'public/strok/m.json',JSON.stringify({sha256:sha256Of(str),license:'CC0-1.0'}));
+  const got=Object.fromEntries(scan(root).violations.map(v=>[v.path,v.rules.join(',')]));
+  const want=Object.fromEntries([...Object.keys(shapes),'pair'].map(n=>[`public/${n}/x.glb`,'noassertion']));
+  assert.deepEqual(got,want);
 }));
 
 test('negative: any bound NOASSERTION fails, even beside a licensed sidecar or an unrelated MIT',()=>fixture(root=>{

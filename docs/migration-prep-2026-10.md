@@ -128,8 +128,12 @@ Astra review (section 8):
   in a `.json` beside it (for the ground runtime textures, one directory up). A hash in prose or as a key
   does not bind; a missing binding is `no-sidecar`.
 * **Licence.** The bound sidecars must declare at least one licence expression and none may be
-  `NOASSERTION`, `NONE`, empty or malformed (a non-string `expression` is invalid). A bound record that
-  declares no licence (a retained-revision record) is neutral only if another bound sidecar declares a good one.
+  `NOASSERTION`, `NONE`, empty or malformed. The only well-formed shapes are `license: "<expr>"`,
+  `license: {expression: "<expr>", ...}` and a flat `licenseExpression: "<expr>"`. An absent `license` key
+  declares nothing, but a present key of any other shape (`null`, a number, a boolean, an array, `{}`,
+  `{expression: {}}`, `licenseExpression: null`) is a malformed declaration and fails, even when another
+  licence such as `upstream.license: "MIT"` or a separate well-formed bound sidecar is present. A bound record
+  that declares no licence (a retained-revision record) is neutral only if another bound sidecar declares a good one.
   Residual limit: licence is read per sidecar file, not per asset record inside a multi-asset manifest.
 * **Coverage.** Any extension that is neither an asset format nor `.json/.txt/.md` is a violation
   (`unclassified-extension`), as is a symbolic link; a missing scan root throws.
@@ -141,7 +145,8 @@ Astra review (section 8):
 * **Clock.** The production gate always uses the real date; only the synthetic tests inject one.
 
 Negative tests on synthetic trees prove every rule fires (no sidecar, `NOASSERTION`, absent licence, hash drift,
-prose and key hashes, malformed licence, a bound `NOASSERTION` beside a licensed sidecar or an unrelated MIT,
+prose and key hashes, malformed licence (seven present-but-malformed shapes beside an `upstream.license` MIT,
+and a malformed record beside a well-formed MIT sidecar), a bound `NOASSERTION` beside a licensed sidecar or an unrelated MIT,
 unclassified extension, symbolic link (skipped silently where the OS refuses to create one), missing root,
 ancestor-sidecar scope, and each allowlist failure including replaced bytes and a lost sidecar). The real scan
 finds exactly the nine allowlisted assets and nothing else. While strengthening it, the tests caught two defects
@@ -224,6 +229,7 @@ sizes. Its findings and what was done:
 | Astra finding | Action |
 |---|---|
 | Hash binding and licence checks bypassable (hash in prose, masked NOASSERTION, malformed `expression`) | Fixed: structured `sha256` binding, any bound NOASSERTION or malformed licence fails; tests added. Residual per-sidecar (not per-record) licence reading is documented. |
+| Fix-round blocker: `license: null`, `42` and `{}` were silently ignored, so an unrelated `upstream.license: "MIT"` passed | Fixed: an absent `license` key is told apart from a present malformed one; any present key that is not a string or an object with a string `expression` (and any non-string `licenseExpression`) fails. A regression test covers null, number, `{}`, `{expression:{}}`, array, boolean, `licenseExpression: null`, and a malformed record beside a well-formed MIT sidecar; controls show an absent key stays neutral. The test was confirmed to fail on 6 of the 8 malformed cases against the previous scanner. |
 | Allowlist hid replaced bytes and lost sidecars | Fixed: entries pin sha256 and waive only licence rules; a lost sidecar or changed bytes fails. |
 | Gate not registered and not in the selection graph | Documented for the merger (section 3); registration is the merger's, not edited here. |
 | Coverage gaps (GIF/AVIF/KTX/DDS/TGA/TIFF/SVG, symlinks, swallowed walk errors, ground runtime textures) | Fixed: unclassified extensions and symlinks fail, a missing root throws, ground runtime textures are scanned. |
