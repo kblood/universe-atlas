@@ -186,9 +186,14 @@
         "COMPOSER_FACE_GEOMETRY_VERSION",
         "PROBOSCIS_FACE",
         "PROBOSCIS_TRUNK_BASE",
-        "PROBOSCIS_TRUNK_BEND",
+        "PROBOSCIS_TRUNK_LENGTH",
+        "PROBOSCIS_TRUNK_SHAPE",
+        "PROBOSCIS_TRUNK_TAPER",
         "composerFaceTip",
-        "composerHeadPitch"
+        "composerHeadPitch",
+        "composerTrunkRadius",
+        "composerTrunkRestAngles",
+        "composerTrunkRestShape"
       ],
       "types": [
         "ComposerFaceDims",
@@ -267,11 +272,16 @@
         "COMPOSER_SKIN_VERSION",
         "COMPOUND_EYE_FLOOR",
         "CREST_HALF_THICKNESS",
+        "HIDDEN_DISC_INSET",
         "MOUTH_DISC_LIFT",
         "MOUTH_SLIT",
         "NOSTRIL_PROUD",
+        "PROBOSCIS_EAR",
         "SPIDER_EYES",
         "TRUNK_JOIN_BLEND",
+        "TRUNK_RADIAL",
+        "TRUNK_TIP",
+        "TRUNK_WRINKLE",
         "TRUNK_ZIP_LENGTH",
         "buildComposerSkin",
         "composerSpeciesBodyLength"
@@ -336,11 +346,13 @@
     },
     "fauna-composer-rig.ts": {
       "values": [
+        "AXIAL_ARM_REST",
         "COMPOSER_BUDGET",
         "COMPOSER_GRAPH_VERSION",
         "COMPOSER_MAX_STANCE_EXTENSION",
         "COMPOSER_MOTIONS",
         "COMPOSER_TRUNK_TIP_CLEARANCE",
+        "DISPLAY_ARM_RAISE",
         "buildComposerGraph",
         "composerFeatherFanSpan",
         "composerFrame",
