@@ -173,3 +173,22 @@ best of 5:
 
 The test enforces 25 ns only when `ECO_PERF_STRICT=1`, and allows 100 ns
 otherwise. A measurement on a quiet host is still OPEN.
+
+## 8. Visual check (Luna blind ID)
+
+Luna (gpt-6-luna) was shown two blind contact sheets, oblique and ground views,
+with the letters shuffled for each iteration. It was asked 3 times per
+iteration, and every ask exited 0.
+
+| Iteration | Correct | Weakest pair | Confidence for the weakest pair |
+|---|---|---|---|
+| Design 1 | 7/7 in each of 3 asks | tundra vs alpine meadow | 55-72 % |
+| Design 2 | 7/7 in each of 3 asks | tundra vs alpine meadow | 48-74 % |
+
+All other biomes scored 65-98 %.
+
+The cue Luna still asks for is relief: mountains for the alpine meadow, and
+snow patches for the tundra. A flat 128 m lab plot cannot show either. The
+verdicts and raw answers are in
+`test-results/round2-2026-10-04/biome2-eco/luna-verdicts.json` and
+`blind-*/luna-run*.txt`.
