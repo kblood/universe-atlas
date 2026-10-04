@@ -70,7 +70,9 @@ export const OCEAN_UNDERWATER={
   // Iteration 2 (after the after1 sheet: a 2.4-3.7 km deep floor 600 m below
   // the eye vanished into the scatter colour): game-readable clarity, the
   // floor 600 m down and 2.5 km ahead stays visible through blue water.
-  visibilityM:2600,
+  // Iteration 3 (Luna on after2: Q1 5/12 YES, "seabed lost in the water
+  // colour"): clearer still, and terrain skips the air haze when submerged.
+  visibilityM:4000,
   /** Per-channel path extinction relative to visibilityM (red is lost first). */
   pathExtinction:[2.2,1,.75] as const,
   /** Daylight reaching depth d sees an effective depth S*(1-exp(-d/S)). */
@@ -303,10 +305,15 @@ void main(){
     // Seen from below (ocean-underwater-1, eye submerged): Snell's window --
     // the sky inside ~48.6 deg of the zenith, total internal reflection of
     // the darker water outside it.
-    float cosBelow=clamp(dot(view,-n),0.0,1.0);
+    // Iteration 3: the wave normal flattens with distance (the window edge
+    // otherwise aliases into jagged dark bands across the far underside) and
+    // the window edge softens with it.
+    float farFlat=smoothstep(150.0,900.0,length(oceanEyeM-oceanLocalM));
+    vec3 below=normalize(mix(n,normalize(oceanNormalV),farFlat));
+    float cosBelow=clamp(dot(view,-below),0.0,1.0);
     float sinAir=sqrt(max(0.0,1.0-cosBelow*cosBelow))*1.333;
     vec3 above=mix(vec3(.020,.035,.065),vec3(.40,.60,.76),day);
-    waterColor=mix(atlasWaterColour(max(atlasWater.y,0.0),day)*.7,above,1.0-smoothstep(.90,1.0,sinAir));
+    waterColor=mix(atlasWaterColour(max(atlasWater.y,0.0),day)*.7,above,1.0-smoothstep(.90-.25*farFlat,1.0,sinAir));
   }
   waterColor=atlasApplyUnderwater(waterColor,length(oceanEyeM-oceanLocalM),0.0,dot(base,sun),atlasWater);
   gl_FragColor=vec4(max(waterColor,vec3(.009,.015,.022)),1.0);

@@ -1109,9 +1109,10 @@ export class PlanetRenderer {
       shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n'+groundRoughnessCode);
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\n'+groundNormalCode);
       shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>', `
-        outgoingLight=atlasApplyLocalAir(outgoingLight,length(atlasLocalEyeM-atlasLocalM),
+        // A submerged eye sees the ground through water only (no air path).
+        if(atlasWater.x<.5)outgoingLight=atlasApplyLocalAir(outgoingLight,length(atlasLocalEyeM-atlasLocalM),
           atlasEyeHeightM,atlasHeightM,dot(normalize(atlasSurface),atlasSun),atlasAir);
-        if(atlasWater.x>.5){
+        else{
           float atlasPathM=length(atlasLocalEyeM-atlasLocalM),atlasSunCos=dot(normalize(atlasSurface),atlasSun),atlasBedDepthM=atlasWater.z-atlasHeightM;
           outgoingLight=atlasApplyCaustics(outgoingLight,groundPosition,atlasBedDepthM,atlasPathM,dot(normalize(groundNormal),normalize(atlasSurface)),atlasSunCos,atlasWaterTime,atlasWater);
           outgoingLight=atlasApplyUnderwater(outgoingLight,atlasPathM,atlasBedDepthM,atlasSunCos,atlasWater);
