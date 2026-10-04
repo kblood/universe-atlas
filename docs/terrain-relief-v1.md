@@ -285,6 +285,11 @@ The machine was shared with other agents, and raw rounds vary by up to 40%. See
     forest 2.2, name 1.9, carriedName 1.7}`; L10 `{forest 0.7}`.
   - Every cell tightens or is dropped except Lethuris L6 `name` 6.9 -> 7.0, the one loosened cell, which is
     **pending owner acceptance**.
+  - The OLD map (shipped terrain-1.7.0 + P3, 2026-10-03), copied from `tests/lod-consistency.test.mjs`:
+    - Maithea: L6 `{rgbP99 37.2, snow 1.7, forest 4.3, name 6.2, carriedName 7.6}`; L8 `{rgbP99 5.8, snow 0.9,
+      forest 1.7, name 3.6, carriedName 3.8}`; L10 `{forest 0.9, carriedName 1.0}`.
+    - Lethuris: L6 `{rgbP99 56.7, snow 5.1, forest 5.0, name 6.9, carriedName 8.9}`; L8 `{rgbP99 14.3, snow 1.5,
+      forest 2.9, name 3.8, carriedName 4.2}`; L10 `{rgbP99 1.8, forest 1.1, name 2.7, carriedName 2.7}`.
 
 ## 9. Known visual issue (not fixed here)
 
@@ -340,9 +345,9 @@ in section 8, which is flagged for owner acceptance.
 | terrain-floor-window :63-68 | descriptive asserts assumed the unit window | tau-aware (bound = tau x unit; same 1500/2680 fraction) |
 | river-terrain :47 | compared against base + landforms | archived base ignores hydrology; relief sampler with hydrology equals plain outside influence |
 | river-terrain trench | 10 km synthetic body (tau 0.0051) sits at ~2 m, under the 15 m water | shore fixture lowers every water level by 100 m; assertions unchanged |
-| planet-rocks rebasing | the 30% overlap threshold sits at the LOD-range geometry (main passed by 3 rocks) | target re-picked from 8 measured on both terrains (largest margin) |
+| planet-rocks rebasing | the 30% overlap threshold sits at the LOD-range geometry (main passed by 3 rocks) | target re-picked from 8 measured on both terrains (largest margin): `[.6,-.3,.74]` (overlap .303 -> .297) -> `[-.5,.2,.84]` (.337 -> .340); `tests/planet-rocks.test.mjs:99` |
 | forest-habitat v1->v2 | the first 24 v1-or-v2 directions had no v2 forest | selection on v2 forestPotential |
-| forest-water-validity x3 | a real cache-validity bug (section 6 item 9) plus a fixture under the new water | observer pin; fixture found by a deterministic search; tests assert the pinned semantics |
+| forest-water-validity x3 | a real cache-validity bug (section 6 item 9) plus a fixture under the new water | observer pin; fixture found by a deterministic search: face 4 (25214, 46241) -> face 5 (23790, 56593), fib i 17234 of 65536, lat 28.30 deg, ground 2301 m, 26 eligible / 4 rejected / 22 present; tests assert the pinned semantics (`tests/forest-water-validity.test.mjs:15`) |
 | version-compat biome-climate | version pins | re-pinned, old values in the messages |
 | lod-consistency Lethuris | ceiling 6.9 vs 6.99 | section 8 |
 

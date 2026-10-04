@@ -36,9 +36,15 @@ package documents:
    land: solid, collidable and queryable at any depth (up to 16 km), with no cut-off. Seabed detail is
    driven by distance to the seabed (`SEABED_DETAIL_POLICY seabed-by-distance-1`), not by water
    thickness. Collision, physics and place queries always sample full detail.
-3. **One documented exception: `OCEAN_SURFACE_DETAIL_M = 2000`** (owner decision). From the sea surface,
-   the seabed below 2 km of water is drawn as far terrain, and full detail returns as a diver approaches.
-   This is reduced seabed *rendering* detail, not missing ground, and it is listed as OPEN (section 4).
+3. **One documented rendering exception: `OCEAN_SURFACE_DETAIL_M = 2000`** (owner decision; full text in
+   `docs/lod-ladder-contract-v1.md` section 7.1). It is a band measured by the **distance from the eye to the
+   drawn sea surface**, not a water-depth rule. For a tile that draws an ocean surface, `seabedAwareNear`
+   (`src/planet-renderer.ts`) takes the smaller of the distance to the ground/seabed and the distance to the
+   sea surface, but only while the sea surface is closer than 2 km; beyond that only the ground/seabed
+   distance counts. Inside the band this can only ADD refinement (so the vertex waves get a fine grid); it
+   never coarsens a seabed the viewer is approaching. `renderSeabedDive()` uses the same 2 km band for its
+   streaming modifications. Whether the seabed seen from far above still gets enough detail is a separate
+   owner question, kept OPEN as "reduced seabed detail" (section 4, item 2).
 4. **The harness site rule (`SITE_RULE` in `tests/harness-sites.mjs`).** The centre must be
    forestPotential, at least 250 m above the dated sea, with effectiveMoisture of at least 0.6.
    ForestPotential must hold on at least 80% of 96 ring samples (radii 0.5, 1 and 2 km, 32 each), and
@@ -112,7 +118,7 @@ commits.
 | # | Item | State | Where |
 |---|---|---|---|
 | 1 | LOD-consistency exception: Lethuris L6 `name` ceiling loosened 6.9 -> 7.0% (measured 6.99%) | OPEN, owner | terrain-relief-v1 section 8 |
-| 2 | Reduced seabed rendering detail below 2 km of water (`OCEAN_SURFACE_DETAIL_M = 2000`) | accepted exception, OPEN | lod-ladder-contract |
+| 2 | The 2 km ocean-surface band (`OCEAN_SURFACE_DETAIL_M = 2000`, eye-to-sea-surface distance) is an accepted rendering exception; "reduced seabed detail" (whether seabed seen from well above the band is detailed enough) is a separate owner question | exception accepted; reduced seabed detail OPEN, owner | lod-ladder-contract 7.1 |
 | 3 | Strict post-relief LOD class/colour targets not reached | OPEN | terrain-relief-v1 section 8 |
 | 4 | Weak range snow: the data says snow, the render reads pale grey | OPEN | terrain-relief-v1 section 13 |
 | 5 | Horizon presentation on Raiva, Selawyn and Lethuris (flattened, never re-posed sun-aware) | OPEN | terrain-relief-v1 section 13 |
