@@ -14,6 +14,11 @@ export type ElementKind = 'tree' | 'shrub' | 'grass' | 'rock';
 export type ElementRecipe = {
   id: string; name: string; kind: ElementKind; form: string;
   color: string; minSizeM: number; maxSizeM: number;
+  /** Visible crown/patch radius as a multiple of the kind default in
+   * recipeFootprintM (default 1). Coverage and the lab's rendered radius only;
+   * competition (footprintM) and therefore placements and digests ignore it.
+   * Set where an authored form is wider or narrower than its kind (BIOME2-ECO). */
+  visibleRadiusScale?: number;
 };
 export type BiomeDefinition = {
   id: BiomeId; name: string; description: string; groundColor: string;
@@ -72,21 +77,24 @@ export const ELEMENT_RECIPES: readonly ElementRecipe[] = Object.freeze(([
   {id: 'regolith-rock', name: 'Regolith fragment', kind: 'rock', form: 'angular', color: '#8d8476', minSizeM: 0.2, maxSizeM: 1.8},
   // Appended for ECO-CLASS-1 (BIOME2-ECO). Tree heights stay <= 16 m so every
   // footprint is within MAX_FOOTPRINT_M (4 m) and the 16 m competition halo.
+  // visibleRadiusScale = the authored form's crown/patch radius over the kind
+  // default, so the lab's rendered radius equals recipeFootprintM
+  // (tests/eco-lab-forms.test.mjs).
   {id: 'dwarf-birch', name: 'Dwarf birch', kind: 'shrub', form: 'dwarf-shrub', color: '#9a4426', minSizeM: 0.25, maxSizeM: 0.7},
   {id: 'dwarf-willow', name: 'Dwarf willow', kind: 'shrub', form: 'dwarf-shrub', color: '#7c8c4c', minSizeM: 0.2, maxSizeM: 0.55},
-  {id: 'sedge-tussock', name: 'Sedge tussock', kind: 'grass', form: 'tussock', color: '#83864c', minSizeM: 0.25, maxSizeM: 0.6},
+  {id: 'sedge-tussock', name: 'Sedge tussock', kind: 'grass', form: 'tussock', color: '#83864c', minSizeM: 0.25, maxSizeM: 0.6, visibleRadiusScale: 0.94},
   {id: 'lichen-rock', name: 'Lichen-crusted rock', kind: 'rock', form: 'lichen-rock', color: '#8c8a7e', minSizeM: 0.3, maxSizeM: 1.6},
   {id: 'cushion-plant', name: 'Cushion plant', kind: 'shrub', form: 'cushion-dome', color: '#6c8c42', minSizeM: 0.15, maxSizeM: 0.45},
-  {id: 'acacia-umbrella', name: 'Umbrella acacia', kind: 'tree', form: 'umbrella', color: '#6b7c38', minSizeM: 5, maxSizeM: 11},
-  {id: 'tall-grass', name: 'Tall savanna grass', kind: 'grass', form: 'tall-tuft', color: '#c8aa56', minSizeM: 0.7, maxSizeM: 1.6},
-  {id: 'buttress-broadleaf', name: 'Buttress broadleaf', kind: 'tree', form: 'buttress', color: '#2d5a28', minSizeM: 11, maxSizeM: 16},
+  {id: 'acacia-umbrella', name: 'Umbrella acacia', kind: 'tree', form: 'umbrella', color: '#6b7c38', minSizeM: 5, maxSizeM: 11, visibleRadiusScale: 2},
+  {id: 'tall-grass', name: 'Tall savanna grass', kind: 'grass', form: 'tall-tuft', color: '#c8aa56', minSizeM: 0.7, maxSizeM: 1.6, visibleRadiusScale: 0.88},
+  {id: 'buttress-broadleaf', name: 'Buttress broadleaf', kind: 'tree', form: 'buttress', color: '#2d5a28', minSizeM: 11, maxSizeM: 16, visibleRadiusScale: 1.2},
   {id: 'columnar-succulent', name: 'Columnar succulent', kind: 'tree', form: 'columnar', color: '#5b7a44', minSizeM: 2.5, maxSizeM: 7},
-  {id: 'ephemeral-herb', name: 'Flowering herb', kind: 'grass', form: 'flower-herb', color: '#7c9846', minSizeM: 0.15, maxSizeM: 0.45},
-  {id: 'moss-mat', name: 'Moss and lichen mat', kind: 'grass', form: 'mat', color: '#7b8850', minSizeM: 0.06, maxSizeM: 0.18},
-  {id: 'taiga-spruce', name: 'Taiga spruce', kind: 'tree', form: 'spire', color: '#1e3e2d', minSizeM: 8, maxSizeM: 16},
+  {id: 'ephemeral-herb', name: 'Flowering herb', kind: 'grass', form: 'flower-herb', color: '#7c9846', minSizeM: 0.15, maxSizeM: 0.45, visibleRadiusScale: 0.69},
+  {id: 'moss-mat', name: 'Moss and lichen mat', kind: 'grass', form: 'mat', color: '#7b8850', minSizeM: 0.06, maxSizeM: 0.18, visibleRadiusScale: 0.56},
+  {id: 'taiga-spruce', name: 'Taiga spruce', kind: 'tree', form: 'spire', color: '#1e3e2d', minSizeM: 8, maxSizeM: 16, visibleRadiusScale: 0.5},
   {id: 'termite-mound', name: 'Termite mound', kind: 'rock', form: 'mound', color: '#9a6340', minSizeM: 1.0, maxSizeM: 2.6},
-  {id: 'understory-palm', name: 'Understory palm', kind: 'shrub', form: 'fan-palm', color: '#3c7832', minSizeM: 1.2, maxSizeM: 3.2},
-  {id: 'thorn-scrub', name: 'Thorn scrub', kind: 'shrub', form: 'thorn', color: '#77703f', minSizeM: 0.5, maxSizeM: 1.6},
+  {id: 'understory-palm', name: 'Understory palm', kind: 'shrub', form: 'fan-palm', color: '#3c7832', minSizeM: 1.2, maxSizeM: 3.2, visibleRadiusScale: 1.17},
+  {id: 'thorn-scrub', name: 'Thorn scrub', kind: 'shrub', form: 'thorn', color: '#77703f', minSizeM: 0.5, maxSizeM: 1.6, visibleRadiusScale: 1.05},
 ] as ElementRecipe[]).map(recipe => Object.freeze(recipe)));
 
 export const BIOME_DEFINITIONS: readonly BiomeDefinition[] = Object.freeze(([
@@ -196,8 +204,9 @@ function footprintM(recipe: ElementRecipe, sizeM: number): number {
 /** Projected radius used by the coverage sample grid and the lab's visible
  * recipe footprint. Grass is a clump/patch of blades, not one organism. */
 export function recipeFootprintM(recipe: ElementRecipe, sizeM: number): number {
-  if (recipe.kind === 'grass') return Math.max(1.75, sizeM * 3.2);
-  return footprintM(recipe, sizeM);
+  const scale = recipe.visibleRadiusScale ?? 1;
+  if (recipe.kind === 'grass') return Math.max(1.75, sizeM * 3.2) * scale;
+  return footprintM(recipe, sizeM) * scale;
 }
 function densityMap(definition: BiomeDefinition): Map<string, number> { return new Map(definition.elements.map(element => [element.recipeId, element.densityPerHa])); }
 function candidateKey(seed: string, recipeId: string, cellX: number, cellZ: number, slot: number): string { return `${BIOME_ECOLOGY_VERSION}/${seed}/${recipeId}/${cellX}/${cellZ}/${slot}`; }
