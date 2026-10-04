@@ -42,7 +42,9 @@ try {
   await page.screenshot({path:path.join(out,'01-initial-overhead.png'),fullPage:true});
 
   const presets=await page.locator('#primary-biome option').evaluateAll(options=>options.map(option=>option.value));
-  const expected=['woodland','conifer','grassland','dry-scrub','wetland','coast','alpine','volcanic','regolith'];
+  const expected=['woodland','conifer','grassland','dry-scrub','wetland','coast','alpine','volcanic','regolith',
+    // ECO-CLASS-1 (BIOME2-ECO, 2026-10-04): one lab biome per eco class that had none.
+    'tundra','alpine-meadow','boreal-taiga','savanna','rainforest','hot-desert','ice-margin'];
   assert.deepEqual([...presets].sort(),expected.sort(),'every specified habitat has a selectable lab preset');
   const presetResults=[];
   for(const preset of presets){
