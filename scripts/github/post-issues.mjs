@@ -92,7 +92,7 @@ export function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (BOOL_FLAGS.has(a)) flags.add(a);
-    else if (VALUE_FLAGS.has(a)) { const v = argv[++i]; if (v === undefined || v.startsWith('--')) throw new Error(`${a} needs a value`); opts[a] = v; }
+    else if (VALUE_FLAGS.has(a)) { const v = argv[++i]; if (v === undefined || v.startsWith('--') || !v.trim()) throw new Error(`${a} needs a value`); if (a in opts) throw new Error(`${a} given twice`); opts[a] = v; }
     else throw new Error(`unknown argument ${a}`);
   }
   return {flags, opts};

@@ -52,7 +52,7 @@ or by hand after import.
 | `needs:` | owner | depends on an owner answer (soft or hard) |
 
 `scripts/github/post-issues.mjs --labels` prints the `gh label create`
-commands for exactly the labels the drafts use.
+commands for the labels the drafts use plus those the issue forms apply.
 
 ## Issue draft format (`docs/github/ISSUES/<id>-<KEY>.md`)
 

@@ -27,7 +27,7 @@ body:
     attributes: {label: Determinism impact, options: ["none", "digest/golden moves", "cross-engine mismatch", "bookmark/address changes", "unknown"]}
   - type: dropdown
     id: known
-    attributes: {label: In tests/known-failures.json?, options: ["no", "yes", "not a test failure"]}
+    attributes: {label: "In tests/known-failures.json?", options: ["no", "yes", "not a test failure"]}
   - type: textarea
     id: luna
     attributes: {label: Visual evidence, description: "Luna question(s) asked and verdicts, or 'visual check NOT done'."}
