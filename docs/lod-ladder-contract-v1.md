@@ -211,14 +211,37 @@ Evidence is under `test-results/finish-round-2026-10-04/INT/`.
   per level on each of the four fixture worlds (`excess-p4/`). The raw maxima all fit inside the old margins.
   The x2+4 m rule exceeded them at L2 down, L6 up, L15 up and L16 up, so each entry is now
   max(old, P4 x2+4). Margins were only widened, never narrowed.
-- **The all-world assertions now run by default** (`tests/helpers/render-bounds-suite.mjs`, fast mode):
-  containment 0 violations, candidate/tight ratio p50 0.86-1.01 at L10/L14/L18 on all four worlds, 0 false
-  culls, horizon cull used 434.8 km vs analytic 399.7 km.
+- **The all-world assertions now run by default** (`tests/helpers/render-bounds-suite.mjs`, fast mode in
+  `npm test`, full counts in `npm run test:render-bounds-evidence`). What is ENFORCED and what was MEASURED
+  are different things (corrected after Astra's INT review):
+  - Enforced thresholds: containment 0 violations; candidate/tight sphere ratio p50 <= 1.5 at L10 and <= 2 at
+    L14 and L18 on all four worlds (suite line `percentile(ratios,.5)<=(L===10?1.5:2)`); 0 false culls against
+    brute force; Maithea horizon peak radius within 10% of the analytic value.
+  - Measured in the fast run: ratio p50 0.86-1.01. Measured in the full evidence run
+    (`render-bounds-evidence.tap`): ratio p50 0.90-1.12 (Raiva L18 1.117 is the maximum), p90 up to 1.28;
+    containment 0 of 8000 (plus 0 on seeds 13579 and 24680); horizon cull used 434.8 km vs analytic 399.7 km.
+    These values are evidence, not thresholds.
 - **Landing ceiling (formula kept, OPEN owner item).** `landingCeilingM = 0.8 x bound.maxM` is kept, as decided.
-  On P4 terrain it is 4.1-5.3 km over the sea, which is ABOVE p99 land (2.5-4.2 km) on every fixture world, so it
-  no longer keeps the landing pick off summits. Measured over 256 eyes at the datum sea, picks at or above p99
-  land: Maithea 2, Selawyn 6, Raiva 6, Lethuris 2 (0 at the dated sea). The required no-summit test exists as a
-  `todo` test (`landing at the datum sea never picks a summit`) and does NOT pass. It is not labelled passed.
+  On P4 terrain it is 3.2-5.3 km (Maithea 5303, Selawyn 4141, Raiva 3219, Lethuris 5188 m), which is ABOVE p99
+  land (Maithea 4214, Selawyn 3246, Raiva 2506, Lethuris 4058 m) on every fixture world, so it no longer keeps
+  the landing pick off summits. Measured over 256 eyes at the datum sea (sea 0), picks at or above p99 land:
+  Maithea 2, Selawyn 6, Raiva 6, Lethuris 2. At the dated (60%-volume-lost, -2425 m) sea only Maithea and
+  Lethuris are covered (suite: `landing at a dated (lowered) sea`), with 0 summits on both; Selawyn and Raiva
+  were not measured at a dated sea. The required no-summit test exists as a `todo` test (`landing at the datum
+  sea never picks a summit`) and does NOT pass. It is not labelled passed.
+- **HUD flip and direct-landing boundary: fixed 19.5 km (owner decision).** INT had tied
+  `PlanetRenderer.lowFlightClearanceM` to the relief bound, which moved the HUD TERRAIN FLIGHT flip and the
+  direct-landing route to 4.0-6.6 km after P4 (Astra INT blocker 1). P6 (c465f6a) makes it the constant
+  `LOW_FLIGHT_CLEARANCE_M = 19500` again, used by both the HUD label and the "Land" routing in `main.ts`
+  (below it: landing preparation; above it: a terrain cruise first). Pinned in the render-bounds suite.
+- **Integration handoff runs were NOT green (corrected after Astra's INT review).** `handoff-tests.exit.txt`
+  exit=1 (TAP 104 tests: 101 pass, 1 fail, 2 todo; the failure is `tests/inland-rivers-disabled.test.mjs:236`)
+  and `handoff-tests-p4files.exit.txt` exit=1 (TAP 86 tests: 85 pass, 1 fail; the failure is
+  `tests/acceptance/version-compat.test.mjs:79`). Both were stale pins expecting
+  `atlas-surface-7-no-inland-rivers` while production returns `atlas-surface-8-ocean-volume` (bumped by P2 on
+  main; listed in `tests/known-failures.json`). They are pre-existing, not relief regressions, and their exit
+  codes are not the landing todos. Owner: P6, which re-pinned both and removed them from the known-failures
+  list (c465f6a; `test-results/finish-round-2026-10-04/P6-HARNESS-REPIN/`).
 - **Clouds above p99 land: DEFERRED, removed from this increment's acceptance.** P4 lowered relief so that only
   3 of 161 corpus water bodies have p99 land above the reference deck top (by at most 371 m). Two attempts
   were made and both failed Luna 9/9 on raiva-flight, selawyn-flight and selawyn-horizon (3 asks each, all
