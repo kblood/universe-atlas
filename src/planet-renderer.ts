@@ -2211,6 +2211,11 @@ export class PlanetRenderer {
     return drawn;
   }
   renderCloudScene(renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera,profile?:RenderProfile){
+    // OCEAN-PRESENT: the cloud composite ignores the water, so a submerged eye
+    // saw the cloud deck drawn over the sea's underside (the dark bands in the
+    // after3 seabed frames; gone with clouds hidden). Below the sea the caller
+    // renders the plain scene.
+    if(this.oceanSubmerged)return false;
     return this.clouds?.render(renderer,scene,camera,profile)??false;
   }
   /** Diagnostic experiment for the current body; deliberately not a saved quality setting. */

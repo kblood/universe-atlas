@@ -305,6 +305,8 @@ test('wave amplitude fade: kept on a fine grid, gone at the Nyquist limit, gone 
   const renderer=await (await import('node:fs/promises')).readFile(new URL('../src/planet-renderer.ts',import.meta.url),'utf8');
   assert.match(renderer,/oceanWaveMinSpacingPerM\(OCEAN_SURFACE_DETAIL_M\)/);
   assert.match(renderer,/export const OCEAN_SURFACE_DETAIL_M=2000;/,'OCEAN_SURFACE_DETAIL_M is unchanged');
+  // A submerged eye gets no cloud composite over the sea's underside.
+  assert.match(renderer,/renderCloudScene\([^)]*\)\{[\s\S]{0,400}?if\(this\.oceanSubmerged\)return false;\s*return this\.clouds\?\.render/);
 });
 
 test('underwater medium: identity for a dry eye, water colour with distance, red lost first, darker deeper (OCEAN-PRESENT)',async()=>{
