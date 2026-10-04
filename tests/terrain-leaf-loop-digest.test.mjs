@@ -71,10 +71,21 @@ function withRenderBounds(source){
   return source;
 }
 
+// OCEAN-PRESENT (ocean-water-material oceanSkirtBuffers) gives every drawn
+// ocean shell skirt copies in the terrain skirt layout: 4 x (PATCH_SEGMENTS+1)
+// extra vertices in both the position and parentPosition buffers. That is a
+// resource-accounting change, not part of the cached loop, so the reference
+// counts the same bytes for each ocean mesh it creates. Anchor must match once.
+function withOceanSkirtBytes(source){
+  const from='+(d.oceanPositions?.byteLength||0)+(d.oceanParents?.byteLength||0);';
+  assert.equal(source.split(from).length,2,'reference ocean byte-accounting anchor');
+  return source.replace(from,()=>'+(d.oceanPositions?.byteLength||0)+(d.oceanParents?.byteLength||0)+(ocean?2*4*(PATCH_SEGMENTS+1)*3*4:0);');
+}
+
 test('cached terrain leaf loop is output-identical to the reference loop for a fixed pose sequence',async t=>{
   const raw=gitRendererSource(REFERENCE);
   if(raw===null){t.skip(`git object ${REFERENCE} unavailable`);return;}
-  const source=withRenderBounds(withRequestOrder(raw));
+  const source=withOceanSkirtBytes(withRenderBounds(withRequestOrder(raw)));
   const body=maithea(),poses=digestPoses();
   const reference=await rendererModule({prefix:'atlas-leaf-ref-',rendererSource:source});
   const current=await rendererModule({prefix:'atlas-leaf-cur-'});
