@@ -14,11 +14,18 @@
 //   --write-node <path>  write Node's result (the proposed fixture) to <path>
 //   --report <path>      write every engine's counts, digests and timing as JSON
 //   --port <n>           preview port (default 5192)
+//   --strict             fail on a KNOWN_ENGINE_MISMATCHES entry too (require four-engine equality)
+//   --check-args         validate the options (output-alias guard) and exit without computing
+// Outputs (--write-node, --report) may not alias golden.json, the --fixture or
+// each other (symlinks, junctions, Windows case and hard links included).
+// Gate result: PASS (all four engines equal), PASS-WITH-KNOWN-MISMATCH (exit 0,
+// but NOT four-engine equal: a recorded open finding was tolerated), or FAIL.
 // Each engine runs inside the machine-wide browser lock (tests/helpers/gpu-lock.mjs),
 // one engine per hold.
 import { chromium, firefox, webkit } from "playwright";
 import { spawn, spawnSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
+import { realpathSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { computeGolden } from "./generator.ts";
@@ -48,15 +55,78 @@ const PAGE_TIMEOUT_MS = 180000;
 
 const skipBuild = args.has("--no-build");
 const update = args.has("--update");
+const strict = args.has("--strict");
+const checkArgsOnly = args.has("--check-args");
 if (update && fixtureOption) throw new Error("--update rewrites golden.json; do not combine it with --fixture");
-// Writing Node's result over the fixture it is compared with would make Node
-// match by construction: refuse it (use --update for an intentional re-pin).
-// Paths are compared case-folded on Windows (case-insensitive filesystem), and
-// main() reads the fixture BEFORE any output is written, so even an alias this
-// check misses (a junction or hard link) cannot replace the baseline first.
-const samePath = (a, b) => (process.platform === "win32" ? path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase() : path.resolve(a) === path.resolve(b));
-if (writeNode && (samePath(writeNode, GOLDEN_FIXTURE) || samePath(writeNode, path.join(HERE, "golden.json")))) {
-  throw new Error("--write-node must not name the comparison fixture or golden.json; use --update for a re-pin");
+
+// Output-destination guard. Writing Node's result (or a report) over the
+// fixture it is compared with would make Node match by construction, or
+// replace the committed fixture with report-shaped JSON: refuse every output
+// (--write-node, --report) that aliases golden.json, the --fixture, or another
+// output (use --update for an intentional re-pin). Aliases are resolved, not
+// just compared as strings: realpath follows symlinks and junctions (of the
+// file or of its nearest existing parent directory), Windows paths are
+// case-folded after that (case-insensitive filesystem), and an existing file is
+// also compared by device+inode, which catches hard links. main() additionally
+// reads the fixture BEFORE any output is written.
+function canonicalPath(p) {
+  // realpath the nearest existing ancestor, then re-append the not-yet-existing tail
+  let dir = path.resolve(p), resolved = dir;
+  const tail = [];
+  for (;;) {
+    try {
+      resolved = path.join(realpathSync.native(dir), ...tail);
+      break;
+    } catch {
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      tail.unshift(path.basename(dir));
+      dir = parent;
+    }
+  }
+  return process.platform === "win32" ? resolved.toLowerCase() : resolved;
+}
+function fileIdentity(p) {
+  try {
+    const s = statSync(p, { bigint: true });
+    return s.isFile() ? `${s.dev}:${s.ino}` : null;
+  } catch {
+    return null;
+  }
+}
+function sameFile(a, b) {
+  if (canonicalPath(a) === canonicalPath(b)) return true;
+  const ia = fileIdentity(a), ib = fileIdentity(b);
+  return ia !== null && ia === ib;
+}
+const COMMITTED_FIXTURE = path.join(HERE, "golden.json");
+/** Pure check of the output destinations; returns the list of violations (empty = OK). */
+function outputViolations() {
+  const protectedFiles = [["golden.json", COMMITTED_FIXTURE]];
+  if (!sameFile(GOLDEN_FIXTURE, COMMITTED_FIXTURE)) protectedFiles.push(["the --fixture", GOLDEN_FIXTURE]);
+  const outputs = [];
+  if (writeNode) outputs.push(["--write-node", writeNode]);
+  if (reportPath) outputs.push(["--report", reportPath]);
+  const problems = [];
+  for (const [flag, out] of outputs) {
+    for (const [what, file] of protectedFiles) {
+      if (sameFile(out, file)) problems.push(`${flag} ${out} is ${what} (${file}); use --update for a re-pin`);
+    }
+  }
+  for (let i = 0; i < outputs.length; i++) {
+    for (let j = i + 1; j < outputs.length; j++) {
+      if (sameFile(outputs[i][1], outputs[j][1])) problems.push(`${outputs[i][0]} and ${outputs[j][0]} name the same file (${outputs[i][1]})`);
+    }
+  }
+  return problems;
+}
+{
+  const problems = outputViolations();
+  if (problems.length) throw new Error(`refusing to run, output destination(s) alias a protected file or each other:\n  ${problems.join("\n  ")}`);
+}
+if (checkArgsOnly) {
+  console.log(`--check-args: OK. fixture=${GOLDEN_FIXTURE} write-node=${writeNode ?? "-"} report=${reportPath ?? "-"} update=${update} strict=${strict}`);
+  process.exit(0);
 }
 
 /** Digest keys an engine is KNOWN to disagree on: open determinism findings,
@@ -192,6 +262,8 @@ async function main() {
   }
 
   const report = {};
+  /** "<engine>:<key>" pairs that differed from Node but were tolerated as KNOWN_ENGINE_MISMATCHES. */
+  const knownTolerated = [];
   try {
     await waitForServer(URL);
     for (const [name, browserType] of [
@@ -229,10 +301,17 @@ async function main() {
           console.error(vsFixture);
           process.exitCode = 1;
         }
-        result.vsNode = vsNode || countsVsNode ? "MISMATCH" : "MATCH";
-        result.vsFixture = vsFixture ? "MISMATCH" : "MATCH";
+        // A tolerated known mismatch is NOT equality: it is reported as such everywhere.
+        const exceptKnown = knownSeen.size ? "MATCH-EXCEPT-KNOWN" : "MATCH";
+        result.vsNode = vsNode || countsVsNode ? "MISMATCH" : exceptKnown;
+        result.vsFixture = vsFixture ? "MISMATCH" : exceptKnown;
+        for (const k of knownSeen) knownTolerated.push(`${name}:${k}`);
         if (!vsNode && !countsVsNode && !vsFixture) {
-          console.log(`${name}: MATCH (Node and ${path.basename(GOLDEN_FIXTURE)})${knownSeen.size ? ` except known open finding(s): ${[...knownSeen].join(", ")}` : ""}`);
+          if (knownSeen.size) {
+            console.log(`${name}: NOT EQUAL - matches Node and ${path.basename(GOLDEN_FIXTURE)} on every key EXCEPT known open finding(s): ${[...knownSeen].join(", ")}`);
+          } else {
+            console.log(`${name}: MATCH (Node and ${path.basename(GOLDEN_FIXTURE)})`);
+          }
         }
       } catch (err) {
         console.error(`${name}: FAILED TO RUN:`, err);
@@ -255,21 +334,35 @@ async function main() {
     }
   }
 
+  // Strict mode: a tolerated known mismatch fails the gate (four-engine equality required).
+  if (strict && knownTolerated.length) {
+    console.error(`--strict: known mismatch(es) are not equality: ${knownTolerated.join(", ")}`);
+    process.exitCode = 1;
+  }
+  const allEnginesRan = ["chromium", "firefox", "webkit"].every((n) => report[n] && !report[n].error);
+  const fourEngineEqual = !process.exitCode && allEnginesRan && knownTolerated.length === 0;
+  const gate = process.exitCode ? "FAIL" : knownTolerated.length ? "PASS-WITH-KNOWN-MISMATCH" : "PASS";
+
   if (reportPath) {
     const nodeVsFixture = update ? null : diffDigests("Node vs fixture", nodeResult.digests, fixture.digests);
     await writeFile(path.resolve(reportPath), JSON.stringify({
       fixture: GOLDEN_FIXTURE,
+      strict,
       node: { ...nodeResult, elapsedMs: nodeMs, nodeVersion: process.version, vsFixture: nodeVsFixture ? "MISMATCH" : "MATCH" },
       engines: report,
-      gate: process.exitCode ? "FAIL" : "PASS",
+      knownMismatchesTolerated: knownTolerated,
+      fourEngineEqual,
+      gate,
     }, null, 2) + "\n");
     console.log(`Wrote report to ${path.resolve(reportPath)}`);
   }
 
-  if (process.exitCode) {
+  if (gate === "FAIL") {
     console.error("\nGOLDEN CROSS-ENGINE GATE: FAIL");
+  } else if (gate === "PASS-WITH-KNOWN-MISMATCH") {
+    console.log(`\nGOLDEN CROSS-ENGINE GATE: PASS WITH KNOWN MISMATCH - the four engines are NOT all equal (${knownTolerated.join(", ")}); run with --strict to require equality`);
   } else {
-    console.log("\nGOLDEN CROSS-ENGINE GATE: PASS");
+    console.log("\nGOLDEN CROSS-ENGINE GATE: PASS (all four engines equal)");
   }
 }
 
