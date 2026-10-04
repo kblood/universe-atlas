@@ -67,15 +67,18 @@ export const OCEAN_UNDERWATER_VERSION='ocean-underwater-1';
  * a kilometres-deep floor stays readable as dim blue water, not black. */
 export const OCEAN_UNDERWATER={
   /** In-scatter visibility: path length at which the green channel keeps 1/e. */
-  visibilityM:1400,
+  // Iteration 2 (after the after1 sheet: a 2.4-3.7 km deep floor 600 m below
+  // the eye vanished into the scatter colour): game-readable clarity, the
+  // floor 600 m down and 2.5 km ahead stays visible through blue water.
+  visibilityM:2600,
   /** Per-channel path extinction relative to visibilityM (red is lost first). */
   pathExtinction:[2.2,1,.75] as const,
   /** Daylight reaching depth d sees an effective depth S*(1-exp(-d/S)). */
-  absorbScaleM:150,
+  absorbScaleM:60,
   absorbPerM:[.045,.016,.009] as const,
   /** Water colour near the lit surface and in the deep, and its depth scale. */
   shallow:[.030,.170,.210] as const,
-  deep:[.006,.030,.050] as const,
+  deep:[.012,.050,.080] as const,
   lightDepthM:250,
   /** Fraction of the water colour kept at night. */
   nightFloor:.25,
