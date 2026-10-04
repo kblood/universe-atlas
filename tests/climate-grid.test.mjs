@@ -47,12 +47,26 @@ test('build bytes are repeatable and depend on macro seed; grid memory <=64 KiB'
  for(const key of ['precipMul','oceanness']){assert.deepEqual(new Uint8Array(a[key].buffer),new Uint8Array(b[key].buffer));assert.notDeepEqual(new Uint8Array(a[key].buffer),new Uint8Array(c[key].buffer));}
  assert.ok(a.precipMul.byteLength+a.oceanness.byteLength<=64*1024);checkSeams(a);
 });
-test('chamfer distances within 15% of brute-force spherical distances on isolated wrapped ocean',()=>{
- const m=mask((x,y)=>((x<3||x>125)&&y>=27&&y<=36)?-1:0);m.distanceKm=new Float64Array(N);buildClimateGridFromMask(params,m);
+test('raster distances within 15% of brute force, including adversarial oceans',t=>{
+ const cases=[
+  ['wrapped patch',(x,y)=>((x<3||x>125)&&y>=27&&y<=36)],
+  ['long thin meridian',(x,y)=>x===63&&y>=3&&y<=60],
+  ['wrap seam only',(x,y)=>x===127&&y>=27&&y<=36],
+  ['single south polar cell',(x,y)=>x===17&&y===0],
+  ['single north polar cell',(x,y)=>x===109&&y===63],
+  ['single equatorial cell',(x,y)=>x===64&&y===32],
+  ['long thin equatorial ocean',(x,y)=>y===32&&x>=12&&x<=115],
+ ];
+ let worst=0;
+ for(const [name,fn] of cases){
+ const m=mask((x,y)=>fn(x,y)?-1:0);m.distanceKm=new Float64Array(N);buildClimateGridFromMask(params,m);
  const ocean=[];for(let k=0;k<N;k++)if(m.ocean[k])ocean.push(direction(k%NX,Math.floor(k/NX)));
- let worst=0;for(let n=0;n<200;n++){const k=n*3571%N;if(m.ocean[k])continue;const d=direction(k%NX,Math.floor(k/NX));let exact=Infinity;
+ let caseWorst=0;for(let k=0;k<N;k++){if(m.ocean[k])continue;const d=direction(k%NX,Math.floor(k/NX));let exact=Infinity;
  for(const o of ocean)exact=Math.min(exact,Math.acos(Math.max(-1,Math.min(1,d[0]*o[0]+d[1]*o[1]+d[2]*o[2])))*params.radiusM/1000);
- const error=Math.abs(m.distanceKm[k]/exact-1);worst=Math.max(worst,error);assert.ok(error<=.15,`${k}: ${error}`);}
+ const error=Math.abs(m.distanceKm[k]/exact-1);caseWorst=Math.max(caseWorst,error);assert.ok(error<=.15,`${name} ${k}: ${error}`);}
+ worst=Math.max(worst,caseWorst);t.diagnostic(`${name}: worst relative error ${caseWorst}`);
+ }
+ t.diagnostic(`Overall worst relative error: ${worst}`);
 });
 test('land proxy matches terrain floor, is monotone and handles legacy units and radius clamp',()=>{
  const ss=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};

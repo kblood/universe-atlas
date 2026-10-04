@@ -33,28 +33,45 @@ export function landProxyHeightM(a0: number, radiusM: number, profile: LandProfi
 
 // Immutable geometry shared by builds, independent of all planet parameters.
 const rowY = new Float64Array(NY), rowCos = new Float64Array(NY);
-const rowDiag = new Float64Array(NY - 1);
+
 const lonX = new Float64Array(NX), lonZ = new Float64Array(NX);
 for (let y = 0; y < NY; y++) {
   rowY[y] = sine(-PI / 2 + (y + 0.5) * STEP);
   rowCos[y] = Math.sqrt(1 - rowY[y] * rowY[y]);
 }
-for (let y = 0; y < NY - 1; y++) {
-  const c = (rowCos[y] + rowCos[y + 1]) / 2;
-  rowDiag[y] = Math.sqrt(1 + c * c);
-}
 for (let x = 0; x < NX; x++) {
   const lon = -PI + (x + 0.5) * STEP;
   lonX[x] = detCos(lon); lonZ[x] = sine(lon);
 }
-const cubeX = new Float64Array(6 * FACE), cubeY = new Float64Array(6 * FACE);
-for (let f = 0; f < 6; f++) for (let j = 0; j < SIDE; j++) for (let i = 0; i < SIDE; i++) {
-  const u = i / 16 - 1, v = j / 16 - 1, s = f % 2 === 0 ? 1 : -1;
-  const x = f < 2 ? s : u, y = f < 2 ? u : f < 4 ? s : v, z = f < 4 ? v : s;
-  const k = f * FACE + j * SIDE + i;
-  cubeX[k] = (detAtan2(z, x) + PI) / STEP - 0.5;
-  cubeY[k] = (detAtan2(y, Math.sqrt(x * x + z * z)) + PI / 2) / STEP - 0.5;
+const cellX = new Float64Array(N), cellY = new Float64Array(N), cellZ = new Float64Array(N);
+for (let y = 0; y < NY; y++) for (let x = 0; x < NX; x++) {
+  const k = y * NX + x;
+  cellX[k] = rowCos[y] * lonX[x]; cellY[k] = rowY[y]; cellZ[k] = rowCos[y] * lonZ[x];
 }
+const cubeX = new Float64Array(6 * FACE), cubeY = new Float64Array(6 * FACE);
+function initCubeGeometry(): void {
+  const longitudeCache = new Float64Array(33 * 33), latitudeCache = new Float64Array(33 * 513);
+  longitudeCache.fill(NaN); latitudeCache.fill(NaN);
+  for (let f = 0; f < 6; f++) for (let j = 0; j < SIDE; j++) for (let i = 0; i < SIDE; i++) {
+    const u = i / 16 - 1, v = j / 16 - 1, s = f % 2 === 0 ? 1 : -1;
+    const x = f < 2 ? s : u, y = f < 2 ? u : f < 4 ? s : v, z = f < 4 ? v : s;
+    const k = f * FACE + j * SIDE + i;
+    const lonKey = (z * 16 + 16) * 33 + x * 16 + 16;
+    const latKey = (y * 16 + 16) * 513 + (x * x + z * z) * 256;
+    let xx = longitudeCache[lonKey], yy = latitudeCache[latKey];
+    if (xx !== xx) {
+      xx = (detAtan2(z, x) + PI) / STEP - 0.5;
+      longitudeCache[lonKey] = xx;
+    }
+    if (yy !== yy) {
+      yy = (detAtan2(y, Math.sqrt(x * x + z * z)) + PI / 2) / STEP - 0.5;
+      latitudeCache[latKey] = yy;
+    }
+    cubeX[k] = xx; cubeY[k] = yy;
+  }
+
+}
+initCubeGeometry();
 
 /** Test-only source: row-major south-to-north cell centres, longitude -pi..pi.
  * Heights are already scaled metres. Optional distanceKm receives diagnostics;
@@ -75,50 +92,30 @@ function build(p: ClimateGridParams, mask?: ClimateGridTestMask): ClimateGrid {
   if (p.water <= 0) { mask?.distanceKm?.fill(Infinity); return g; }
   const ocean = mask?.ocean ?? new Uint8Array(N), height = mask?.heightM ?? new Float64Array(N);
   let count = 0;
-  const d: [number, number, number] = [0, 0, 0], sea = 0.37 + 0.22 * p.water;
-  for (let y = 0; y < NY; y++) for (let x = 0; x < NX; x++) {
-    const k = y * NX + x;
-    if (!mask) {
-      d[0] = rowCos[y] * lonX[x]; d[1] = rowY[y]; d[2] = rowCos[y] * lonZ[x];
-      const m = macroHeightCode(p.moistureSeed, d);
-      ocean[k] = m < sea ? 1 : 0;
-      height[k] = ocean[k] ? 0 : landProxyHeightM((m - sea) * 47000, p.radiusM, p.land ?? LEGACY);
-    }
-    if (ocean[k]) count++;
+  if (mask) {
+    for (let k = 0; k < N; k++) if (ocean[k]) count++;
+  } else {
+    const d: [number, number, number] = [0, 0, 0];
+    for (let y = 0; y < NY; y++) count += buildMacroRow(p, y, ocean, height, d);
   }
   if (count === N) { g.oceanness.fill(1); mask?.distanceKm?.fill(0); return g; }
   const dist = new Float64Array(N), wet = new Float64Array(N), rain = new Float64Array(N);
   for (let k = 0; k < N; k++) dist[k] = ocean[k] ? 0 : Infinity;
   const dy = STEP * p.radiusM / 1000;
-  // Eight-neighbour chamfer on the spherical cell metric. Relax to a fixed
-  // point, including wrapped longitude and the opposite cell across each pole.
-  // This removes arbitrary seam/start-column dependence even for tiny oceans.
-  if (count) {
-    let changed = true;
-    while (changed) {
-      changed = false;
-      for (let pass = 0; pass < 2; pass++) for (let n = 0; n < N; n++) {
-        const k = pass ? N - 1 - n : n, y = Math.floor(k / NX), x = k % NX;
-        let best = dist[k];
-        const dx = dy * rowCos[y];
-        best = Math.min(best, dist[y * NX + ((x + 127) % NX)] + dx, dist[y * NX + ((x + 1) % NX)] + dx);
-        for (let sign = -1; sign <= 1; sign += 2) {
-          const yy = y + sign;
-          if (yy < 0 || yy >= NY) best = Math.min(best, dist[y * NX + ((x + 64) % NX)] + dy);
-          else {
-            const diag = dy * rowDiag[Math.min(y, yy)];
-            best = Math.min(best, dist[yy * NX + x] + dy,
-              dist[yy * NX + ((x + 127) % NX)] + diag, dist[yy * NX + ((x + 1) % NX)] + diag);
-          }
-        }
-        if (best < dist[k]) { dist[k] = best; changed = true; }
-      }
-    }
-  }
+  // Two fixed forward/backward raster pairs propagate nearest ocean
+  // sources, including longitude wrap and the antipodal polar neighbour.
+  // Compare chord distances, then convert the selected source to arc length.
+  // Unlike accumulated chamfer lengths, this remains accurate near the poles.
+  if (count) distanceSweeps(dist, ocean, p.radiusM / 1000);
   if (mask?.distanceKm) mask.distanceKm.set(dist);
   for (let k = 0; k < N; k++) wet[k] = ocean[k] ? 1 : count ? detExp(-dist[k] / 1500) : 0;
   const itcz = detAtan2(p.itczSinLat, Math.sqrt(1 - p.itczSinLat * p.itczSinLat));
-  for (let y = 0; y < NY; y++) {
+  for (let y = 0; y < NY; y++) windRow(p, y, itcz, dy, ocean, height, rain);
+  resample(rain, g.precipMul); resample(wet, g.oceanness);
+  return g;
+}
+
+function windRow(p: ClimateGridParams, y: number, itcz: number, dy: number, ocean: Uint8Array, height: Float64Array, rain: Float64Array): void {
     const latitude = Math.abs(-PI / 2 + (y + 0.5) * STEP);
     // Absolute ITCZ latitude denotes mirrored northern/southern convergence.
     const deltaDeg = Math.abs(latitude - itcz) * 180 / PI;
@@ -144,15 +141,67 @@ function build(p: ClimateGridParams, mask?: ClimateGridTestMask): ClimateGrid {
         rain[k] = Math.max(0.15, Math.min(1.5999999046325684, ref > 0 ? amount / ref : 0));
       }
     }
+}
+
+function buildMacroRow(p: ClimateGridParams, y: number, ocean: Uint8Array, height: Float64Array, d: [number, number, number]): number {
+  const sea = 0.37 + 0.22 * p.water;
+  let count = 0;
+  for (let x = 0; x < NX; x++) {
+    const k = y * NX + x;
+    d[0] = cellX[k]; d[1] = cellY[k]; d[2] = cellZ[k];
+    const m = macroHeightCode(p.moistureSeed, d);
+    ocean[k] = m < sea ? 1 : 0;
+    height[k] = ocean[k] ? 0 : landProxyHeightM((m - sea) * 47000, p.radiusM, p.land ?? LEGACY);
+    count += ocean[k];
   }
-  resample(rain, g.precipMul); resample(wet, g.oceanness);
-  return g;
+  return count;
+}
+
+function distanceSweeps(dist: Float64Array, ocean: Uint8Array, radiusKm: number): void {
+  const nearest = new Int32Array(N);
+  for (let k = 0; k < N; k++) nearest[k] = ocean[k] ? k : -1;
+  for (let pair = 0; pair < 2; pair++) for (let pass = 0; pass < 2; pass++) {
+    for (let row = 0; row < NY; row++) {
+      const y = pass ? NY - 1 - row : row, offset = y * NX;
+      for (let col = 0; col < NX; col++) {
+        const x = pass ? NX - 1 - col : col, k = offset + x;
+        if (ocean[k]) continue;
+        const left = (x + 127) & 127, right = (x + 1) & 127;
+        relaxSource(k, offset + (pass ? right : left), nearest, dist);
+        if (!pass && y > 0) {
+          relaxSource(k, offset - NX + x, nearest, dist);
+          relaxSource(k, offset - NX + left, nearest, dist);
+          relaxSource(k, offset - NX + right, nearest, dist);
+        }
+        if (pass && y < NY - 1) {
+          relaxSource(k, offset + NX + x, nearest, dist);
+          relaxSource(k, offset + NX + left, nearest, dist);
+          relaxSource(k, offset + NX + right, nearest, dist);
+        }
+        if (y === 0 || y === NY - 1) relaxSource(k, offset + ((x + 64) & 127), nearest, dist);
+      }
+    }
+  }
+  for (let k = 0; k < N; k++) {
+    const chord = Math.min(4, dist[k]);
+    dist[k] = 2 * detAtan2(Math.sqrt(chord), Math.sqrt(4 - chord)) * radiusKm;
+  }
+}
+function relaxSource(k: number, neighbour: number, nearest: Int32Array, dist: Float64Array): void {
+  const source = nearest[neighbour];
+  if (source < 0 || source === nearest[k]) return;
+  const dx = cellX[k] - cellX[source], dy = cellY[k] - cellY[source], dz = cellZ[k] - cellZ[source];
+  const squared = dx * dx + dy * dy + dz * dz;
+  if (squared < dist[k]) { dist[k] = squared; nearest[k] = source; }
 }
 
 function resample(src: Float64Array, dst: Float32Array): void {
   let south = 0, north = 0;
   for (let x = 0; x < NX; x++) { south += src[x] / NX; north += src[(NY - 1) * NX + x] / NX; }
-  for (let k = 0; k < dst.length; k++) {
+  for (let start = 0; start < dst.length; start += SIDE) resampleRow(src, dst, start, south, north);
+}
+function resampleRow(src: Float64Array, dst: Float32Array, start: number, south: number, north: number): void {
+  for (let k = start; k < start + SIDE; k++) {
     const xx = cubeX[k], yy = cubeY[k], xf = Math.floor(xx), a = xx - xf;
     const x0 = (xf + NX) % NX, x1 = (x0 + 1) % NX;
     const y0 = Math.max(0, Math.min(NY - 1, Math.floor(yy))), y1 = Math.min(NY - 1, y0 + 1);
