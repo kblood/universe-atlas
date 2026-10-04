@@ -404,13 +404,16 @@ test('ground bookmarks re-snap to the new ground height: main.ts restores ?walk=
   // bookmark must use only the saved DIRECTION and land at the current
   // terrain height (never inside or far above the new ground). Pinned on the
   // source: prepareLanding normalises the saved point and re-samples the
-  // surface. A now-flooded site is NOT preserved: it is not walkable, so
-  // prepareLanding falls back to the generic terrain search, which picks a
-  // different walkable site and lands there (OPEN owner item, recorded in
-  // docs/relief-round-2026-10-03.md). This pin only records that fallback; it
-  // does not verify any flooded-bookmark outcome.
+  // surface. A now-flooded site (landing-site-1, round 2 LANDING-FIXES) is
+  // resolved by src/landing-site.ts resolveGroundBookmark under
+  // FLOODED_GROUND_BOOKMARK (default: keep the saved place, hover above the
+  // water; OPEN owner item in docs/relief-round-2026-10-03.md). The resolver's
+  // outcome is tested in tests/landing-site.test.mjs; this pin only records
+  // that a restored bookmark reaches it before the terrain-search fallback,
+  // which is kept for a non-bookmark landing over water.
   const source = (await readFile(new URL('../../src/main.ts', import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
   assert.ok(source.includes("const d=relative.normalize(),s=surfaceSample(body,d.toArray() as V3);"), 'saved point reduced to a direction and re-sampled');
   assert.ok(source.includes('const point=d.multiplyScalar(body.radiusM+s.rockHeightM+.92).toArray() as V3;'), 'landing point is the CURRENT ground height');
-  assert.ok(source.includes('if(!s.walkable){exploreTerrain();landAfterCruise=true;return;}'), 'a now-flooded bookmark falls back to the terrain search (lands elsewhere; OPEN)');
+  const resolver = source.indexOf('if(!s.walkable&&savedPoint){'), fallback = source.indexOf('if(!s.walkable){exploreTerrain();landAfterCruise=true;return;}');
+  assert.ok(resolver > 0 && fallback > resolver, 'a now-flooded restored bookmark is resolved (landing-site.ts) before the terrain-search fallback');
 });

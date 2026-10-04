@@ -21,7 +21,8 @@ import {
   GALAXY_ENTRY_RADII, GALAXY_EXIT_RADII, SYSTEM_PREPARE_LY,
 } from "./travel.ts";
 import { displayLuminosity, starPointDiameter, STAR_FRAGMENT } from './star-appearance.ts';
-import { PlanetRenderer } from './planet-renderer.ts';
+import { PlanetRenderer, landPercentileM } from './planet-renderer.ts';
+import {landingHeightAllowed,landingCandidate,pickLandingSite,resolveGroundBookmark,LANDING_SUMMIT_PERCENTILE} from './landing-site.ts';
 import { NavigationMarkers } from './navigation-markers.ts';
 import { freeLook, orbitStep, atmosphereHeightM, alignPlanetaryDown, planetaryRenderUnit, LOCAL_RENDER_EXIT_M, LOCAL_ORIGIN_RADIUS_M } from './planet-flight.ts';
 import {parseDate,dateRecord,dateYears,yearsToDate,advanceDate,CATALOGUE_EPOCH_NS,UNIVERSE_END_NS,YEAR_NS,type Ns} from './world-time.ts';
@@ -2501,21 +2502,24 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false) {
   if(lifeEntry.kind!=='star')sun.set(...spinCompensatedSunDirection(sun.toArray() as V3,spinFor(body),lifeEntry.lc.formationNs,epoch));
   if(!sample([0,1,0],epoch)){announce('This world has no surface at this date.');return;}
   const biome=preferLife?biomeClassifier(body,snappedWaterLevelFor(body)):null;
-  // render-bounds-1: heights are judged over the dated sea, against the body's
-  // own bound (80%; this does not exclude summits, OPEN owner item) and its
-  // p90 land (the full elevation bonus).
+  // render-bounds-1 + landing-site-1: heights are judged over the dated sea,
+  // against the body's own bound (80%, the kept ceiling), strictly below the
+  // p99 land summit height (landing-site.ts: never on a summit) and with its
+  // p90 land as the full elevation bonus.
   const landSea=body.water?snappedWaterLevelFor(body):0,landCeiling=PlanetRenderer.landingCeilingM(body),landRef=PlanetRenderer.landingReferenceM(body,landSea);
+  const landSummit=landPercentileM(body,LANDING_SUMMIT_PERCENTILE,landSea);
   let destination=eye.clone(), best=-Infinity;
   if(preferred)destination.copy(preferred);
-  else for(let i=0;i<(preferLife?1024:384);i++) {
-    const count=preferLife?1024:384,y=1-2*(i+.5)/count, phi=i*2.399963229728653, r=Math.sqrt(1-y*y);
-    const d=new THREE.Vector3(Math.cos(phi)*r,y,Math.sin(phi)*r), s=sample(d.toArray() as V3,epoch);
-    if(!s || !s.walkable || s.groundHeightM-landSea>landCeiling)continue;
+  else if(!preferLife){
+    const site=pickLandingSite({height:d=>{const s=sample(d,epoch);return s&&s.walkable?s.groundHeightM:null;},eye:eye.toArray() as V3,sun:sun.toArray() as V3,seaLevelM:landSea,ceilingM:landCeiling,summitM:landSummit,referenceM:landRef});
+    if(site)destination=new THREE.Vector3(...site.direction);
+  }
+  else for(let i=0;i<1024;i++) {
+    const d=new THREE.Vector3(...landingCandidate(i,1024)), s=sample(d.toArray() as V3,epoch);
+    if(!s || !s.walkable || !landingHeightAllowed(s.groundHeightM,landSea,landCeiling,landSummit))continue;
     const habitat=biome?.(d.toArray() as V3,s.groundHeightM,1);
-    if(preferLife&&(!habitat||habitat.weights[1]<.35||habitat.moisture<.2||d.dot(sun)<.25))continue;
-    const score=preferLife
-      ? habitat!.weights[1]*3+habitat!.moisture+(habitat!.forestPotential?.5:0)+d.dot(eye)*.3+Math.max(-.5,d.dot(sun))*.2
-      : d.dot(eye)*2+Math.max(-.5,d.dot(sun))*.7+Math.min(1,(s.groundHeightM-landSea)/landRef)*.12;
+    if(!habitat||habitat.weights[1]<.35||habitat.moisture<.2||d.dot(sun)<.25)continue;
+    const score=habitat.weights[1]*3+habitat.moisture+(habitat.forestPotential?.5:0)+d.dot(eye)*.3+Math.max(-.5,d.dot(sun))*.2;
     if(score>best){best=score;destination=d;}
   }
   if(preferLife&&best===-Infinity){announce('No suitable living habitat was found on this world at this date.');return;}
@@ -2558,6 +2562,19 @@ async function prepareLanding(savedPoint?:V3,contact=false,savedHeading?:THREE.Q
   const relative=savedPoint?vec(savedPoint):vec(localPose()).sub(vec(bodyPosition(body,state.sys!,epoch)));
   const d=relative.normalize(),s=surfaceSample(body,d.toArray() as V3);
   if(!s){announce('This world has no surface at this date — landing is not possible.');panel();return;}
+  if(!s.walkable&&savedPoint){
+    // landing-site-1: a restored ground bookmark whose site is now under water
+    // resolves by FLOODED_GROUND_BOOKMARK (OPEN owner item; default: keep the
+    // saved place and hover above the water). Never the terrain search from
+    // the orbit camera, which landed somewhere unrelated.
+    const flooded=resolveGroundBookmark(d.toArray() as V3,q=>{const t=surfaceSample(body,q);return {walkable:!!t?.walkable,visibleHeightM:t?.visibleHeightM??s.visibleHeightM};},body.radiusM);
+    if(flooded.kind==='shore'){void prepareLanding(vec(flooded.direction).multiplyScalar(body.radiusM).toArray() as V3,contact,savedHeading);return;}
+    if(flooded.kind==='hover'){
+      rebaseSystem(vec(flooded.direction).multiplyScalar(body.radiusM+flooded.eyeHeightM).add(vec(bodyPosition(body,state.sys!,epoch))));camera.position.set(0,0,0);
+      if(savedHeading)camera.quaternion.copy(savedHeading);
+      announce('This ground bookmark is now under water at this date. Hovering above the water at the saved place.');panel();return;
+    }
+  }
   if(!s.walkable){exploreTerrain();landAfterCruise=true;return;}
   const point=d.multiplyScalar(body.radiusM+s.rockHeightM+.92).toArray() as V3;
   if(savedPoint){
