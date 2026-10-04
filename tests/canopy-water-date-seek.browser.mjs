@@ -129,7 +129,14 @@ try {
     assert.equal(state.lifeGate?.faunaStage === undefined, false);
     assert.equal(state.terrain.forest.fullCanopy.family, identity, 'canonical tree family is stable across dated water updates');
     assert.ok(state.terrain.forest.fullCanopy.generation > initialGeneration, 'water changes reconfigure the worker context');
-    assert.ok(state.terrain.forest.fullCanopy.reusedPatches > 0, 'same-family canopy patches whose validity interval spans the new water bucket are reused');
+    // Relief round (terrain-1.8.0-relief, P4-RELIEF r2): a land sample's climate
+    // and classifier gates depend continuously on the sea datum, so terrain.ts
+    // pins every land-touching forest patch's water-validity interval to the
+    // exact water level. Cross-bucket reuse is therefore no longer expected
+    // (before relief this asserted reusedPatches > 0). The count is recorded,
+    // not asserted; the rebuilt canopy is still checked against the census below.
+    report.reuse ??= { contract: 'terrain-1.8.0-relief pins land-patch water validity to the exact level (src/terrain.ts terrainSampler observer); cross-bucket reuse not expected', reusedPatches: [] };
+    report.reuse.reusedPatches.push(state.terrain.forest.fullCanopy.reusedPatches);
     assert.deepEqual(state.travel.relativePositionM.map((v, i) => v - baselineRelative[i]).map(Math.abs).map(v => Math.round(v * 1000) / 1000), [0, 0, 0], 'date seek preserves the observer pose relative to the body');
     assert.equal(state.terrain.staleWaterPatches, 0);
     assert.equal(state.terrain.pending, 0);
