@@ -159,7 +159,7 @@ const dive = depthAndPressureAt(ctx, direction, 1200); // any depth down to the 
 
 All evidence is under `C:/LLM/IWSDK/universe-atlas/test-results/finish-round-2026-10-04/`.
 
-**P6-HARNESS-REPIN/** (this package, branch `relief-round/INT`, commits c465f6a, be2618c, beb1f68):
+**P6-HARNESS-REPIN/** (this package, branch `relief-round/INT`, commits c465f6a, be2618c, beb1f68, c5527ac):
 
 | Check | Result | File |
 |---|---|---|
