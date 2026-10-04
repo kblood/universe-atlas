@@ -317,8 +317,8 @@ export async function computeGolden(seed = GOLDEN_SEED): Promise<GoldenResult> {
 //
 // Two serialisations share one code path:
 //  - "golden": the pinned form. Discrete data (ids, names, enums, flags,
-//    counts, integer arrays) is exact. Doubles are either 12 significant
-//    digits (the portable toExponential form of the sections above), or, for
+//    counts, integer arrays) is exact. Doubles are either toExponential(12)
+//    (13 significant digits, the portable form of the sections above), or, for
 //    the sections listed in PLATFORM_QUANTUM_M, rounded to an ABSOLUTE grid
 //    (round(x / q), q in metres / unit-vector units). Those sections derive
 //    positions from directions on a planet-radius sphere or from long chains
@@ -328,8 +328,8 @@ export async function computeGolden(seed = GOLDEN_SEED): Promise<GoldenResult> {
 //    (significant-digit) form pins that noise; the absolute grid pins the
 //    geometry to the stated tolerance instead. Typed arrays are folded through
 //    a 64-bit integer hash so megabyte meshes stay cheap.
-//  - "exact": every double as its shortest round-trip String(x) and every
-//    Float32Array as its bit pattern. Used only by perturbation.test.mjs to
+//  - "exact": every double as its shortest round-trip String(x) (with -0
+//    kept distinct) and every Float32Array as its bit pattern. Used only by perturbation.test.mjs to
 //    see whether a raw platform transcendental reaches the output at all.
 // ---------------------------------------------------------------------------
 
@@ -342,18 +342,20 @@ export const PLATFORM_WORLDS: readonly (readonly [string, number])[] = [
   ["G001/C2143,4,3/0", 1],
   ["G001/C2142,6,1/1", 1],
 ];
-export const PLATFORM_SECTIONS = ["geophysics", "climate", "biomes", "oceanVolume", "placeQuery", "census", "rocks", "fauna"] as const;
+export const PLATFORM_SECTIONS = ["geophysics", "climate", "biomes", "oceanVolume", "placeQuery", "census", "rocks", "fauna", "faunaKnownUnstable"] as const;
 export type PlatformSection = typeof PLATFORM_SECTIONS[number];
 export type PlatformDigests = Record<PlatformSection, string>;
 export type PlatformCounts = Record<`${PlatformSection}Records`, number>;
 export type SerialMode = "golden" | "exact";
 /** Absolute pin tolerance per section (see the header). Sections not listed
- * use 12 significant digits. 1e-6: a micrometre, or 1e-6 of a unit vector /
- * colour channel / radian. */
+ * use toExponential(12) (13 significant digits). 1e-6: a micrometre for
+ * lengths in metres; for unit directions it is an ANGULAR tolerance (1e-6 rad,
+ * about 6 m on a 6000 km planet), and 1e-6 of a colour channel or radian. */
 export const PLATFORM_QUANTUM_M: Readonly<Partial<Record<PlatformSection, number>>> = Object.freeze({
   census: 1e-6,
   rocks: 1e-6,
   fauna: 1e-6,
+  faunaKnownUnstable: 1e-6,
 });
 /** How one section serialises doubles: exact, absolute grid q, or 12 digits (q = 0). */
 export type Fmt = { readonly exact: boolean; readonly q: number };
@@ -381,7 +383,7 @@ const quantize = (x: number, q: number) => Math.round(x / q);
 
 function numText(x: number, f: Fmt): string {
   if (!Number.isFinite(x)) return String(x);
-  if (f.exact) return String(x);
+  if (f.exact) return Object.is(x, -0) ? "-0" : String(x);
   return f.q ? String(quantize(x, f.q)) : x.toExponential(12);
 }
 
@@ -404,7 +406,14 @@ export function canon(value: unknown, f: Fmt): string {
         // Quantised words: the integer split into two exact 32-bit halves.
         const words = new Uint32Array(value.length * 2);
         for (let i = 0; i < value.length; i++) {
-          const n = quantize(value[i]!, f.q), hi = Math.floor(n / 4294967296);
+          const v = value[i]!;
+          if (!Number.isFinite(v)) {
+            // NaN / +Inf / -Inf: a marker pair no finite quantised value can produce
+            // (hi word 0x7ff00000 would need |x / q| >= 2^62).
+            words[2 * i] = Number.isNaN(v) ? 1 : v > 0 ? 2 : 3; words[2 * i + 1] = 0x7ff00000;
+            continue;
+          }
+          const n = quantize(v, f.q), hi = Math.floor(n / 4294967296);
           words[2 * i] = n - hi * 4294967296; words[2 * i + 1] = hi;
         }
         return `f32q[${value.length}]:${wordHash(words)}`;
@@ -421,7 +430,7 @@ export function canon(value: unknown, f: Fmt): string {
   if (Array.isArray(value)) return "[" + value.map((v) => canon(v, f)).join(",") + "]";
   const proto = Object.getPrototypeOf(value);
   if (proto !== Object.prototype && proto !== null) throw new Error(`golden canon: unsupported object ${proto?.constructor?.name}`);
-  return "{" + Object.keys(value).sort().map((k) => `${k}:${canon((value as Record<string, unknown>)[k], f)}`).join(",") + "}";
+  return "{" + Object.keys(value).sort().map((k) => `${JSON.stringify(k)}:${canon((value as Record<string, unknown>)[k], f)}`).join(",") + "}";
 }
 
 type PlatformWorld = { sys: StarSystem; body: Body };
@@ -514,6 +523,10 @@ const PLACE_DATES: readonly bigint[] = [
   CATALOGUE_EPOCH_NS - 9_000_000_000n * YEAR_NS,
 ];
 function placeLines(worlds: PlatformWorld[], f: Fmt): string[] {
+  // The first moon of the harness systems joins the four planets: a moon's
+  // dated place reads its parent planet's lifecycle.
+  const moonSys = worlds.find((w) => w.sys.moons.length)?.sys;
+  if (moonSys) worlds = [...worlds, { sys: moonSys, body: moonSys.moons[0]! }];
   const lines = [`version|${PLACE_QUERY_VERSION}|q=${f.q}`];
   const dirs = directions(22);
   for (const { sys, body } of worlds) {
@@ -561,10 +574,14 @@ async function censusLines(body: Body, f: Fmt): Promise<string[]> {
   for (const water of [0, -50]) {
     const census = await createForestCensus(body, water);
     lines.push([body.id, water, "context", census.context, census.n].join("|"));
+    let present = 0;
     for (const a of censusAddresses(body, census.n)) {
       const p = completePatch(census, a);
+      present += p.present;
       lines.push([body.id, water, canon(p, f)].join("|"));
     }
+    // Coverage guard: a sample of empty patches would pin nothing about trees.
+    if (present <= 0) throw new Error(`golden census sample on ${body.id} (water ${water}) holds no trees`);
   }
   return lines;
 }
@@ -588,18 +605,30 @@ function rockLines(worlds: PlatformWorld[], f: Fmt): string[] {
         }
       }
     }
+    // Coverage guard: an empty rock sample would pin nothing about rocks.
+    if (!all.length) throw new Error(`golden rock sample on ${body.id} holds no rocks`);
     lines.push([body.id, "census", canon(rockCensusDigest(all), f)].join("|"));
   }
   return lines;
 }
 
 const FAUNA_RANDOM_SEEDS = ["GOLDEN-FAUNA-1", "GOLDEN-FAUNA-2", "GOLDEN-FAUNA-3", "GOLDEN-FAUNA-4"];
-function faunaLines(f: Fmt): string[] {
+/** Specimens with a MEASURED cross-engine mismatch, pinned in their own key
+ * (faunaKnownUnstable) so the `fauna` key keeps protecting every other
+ * specimen on every engine. Each entry is an OPEN determinism finding; the
+ * cross-engine runner lists the same key in KNOWN_ENGINE_MISMATCHES. */
+export const FAUNA_KNOWN_UNSTABLE: Readonly<Record<string, string>> = Object.freeze({
+  "GOLDEN-FAUNA-2": "WebKit 26.5 vs Node/Chromium/Firefox: skin positions differ only in the 8 vertices of the midline insect " +
+    "ocellus (z = 0, vertices 3270-3277, up to 0.42 mm; colours, weights and gloss identical). That ocellus is seated by " +
+    "nearestExit() on a ray lying in the head's mirror plane (fauna-composer-mesh.ts insect-ocelli block), so a last-bit " +
+    "trig difference can pick the other mirrored triangle (cause inferred, not traced). Measured 2026-10-04.",
+});
+function faunaLines(f: Fmt, which: "stable" | "unstable"): string[] {
   const lines = [`version|${COMPOSER_RECIPE_VERSION}|${COMPOSER_GRAPH_VERSION}|${COMPOSER_SKIN_VERSION}|q=${f.q}`];
   const recipes: [string, ComposerRecipe][] = [
     ...COMPOSER_PRESET_IDS.map((id) => [id, composerPreset(id)] as [string, ComposerRecipe]),
     ...FAUNA_RANDOM_SEEDS.map((s) => [s, randomComposerRecipe(s)] as [string, ComposerRecipe]),
-  ];
+  ].filter(([name]) => (name in FAUNA_KNOWN_UNSTABLE) === (which === "unstable"));
   for (const [name, input] of recipes) {
     const { recipe, issues } = normalizeComposerRecipe(input);
     lines.push([name, "recipe", encodeComposerRecipe(recipe), canon(issues, f), canon(composerConstraints(recipe), f)].join("|"));
@@ -633,16 +662,18 @@ export async function platformSectionLines(mode: SerialMode = "golden"): Promise
   // Every solid planet and moon of the four harness systems: wet, dry, frozen,
   // light and heavy bodies, plus moons (no air, no ocean).
   const solids = [...new Map(systems.flatMap((s) => [...s.planets, ...s.moons]).filter(solidBody).map((b) => [b.id, b])).values()];
-  const wet = solids.filter((b) => b.water > 0);
+  // Wet bodies plus two dry ones (the no-basin branch: fullVolume 0, level 0).
+  const oceanBodies = [...solids.filter((b) => b.water > 0), ...solids.filter((b) => !(b.water > 0)).slice(0, 2)];
   const f = (section: PlatformSection) => fmtFor(mode, section);
   return {
     geophysics: geophysicsLines(systems, f("geophysics")),
     climate: climateLines(solids, f("climate")),
     biomes: biomeLines(solids, f("biomes")),
-    oceanVolume: oceanLines(wet, f("oceanVolume")),
+    oceanVolume: oceanLines(oceanBodies, f("oceanVolume")),
     placeQuery: placeLines(worlds, f("placeQuery")),
     census: await censusLines(worlds[0]!.body, f("census")),
     rocks: rockLines(worlds, f("rocks")),
-    fauna: faunaLines(f("fauna")),
+    fauna: faunaLines(f("fauna"), "stable"),
+    faunaKnownUnstable: faunaLines(f("faunaKnownUnstable"), "unstable"),
   };
 }

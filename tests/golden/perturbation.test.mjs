@@ -170,10 +170,14 @@ test("the perturbation harness itself actually changes platform transcendental o
 // Differences from the catalogue test above, all deliberate:
 //  - More functions are nudged (PLATFORM_PERTURBED_NAMES adds hypot, asin, the
 //    log/exp variants and the hyperbolics), since platform code uses them.
-//  - Results ECMA-262 fixes exactly (acos(1) = +0, cos(0) = exp(0) = 1,
-//    pow(x, 0) = 1, sin/tan/atan/asin/cbrt(+-0) = +-0, ...) are not nudged:
-//    every engine must return them bit-exactly, so nudging them would report
-//    false findings (placeAt's default upDot = 1 gives slope acos(1) = 0).
+//  - Results ECMA-262 (21.3.2) fixes exactly are not nudged: acos/acosh/log/
+//    log2/log10(1) = +0, cos/cosh/exp(0) = 1, sin/tan/atan/asin/cbrt/...(+-0) =
+//    +-0, atan2(+-0, x >= +0) = +-0, pow(x, +-0) = 1, pow(+-0, y > 0) = +-0,
+//    pow(+-Infinity, y < 0) = +-0, exp(-Infinity) = +0, expm1(-Infinity) = -1,
+//    tanh(+-Infinity) = +-1, hypot(all zero) = +0. Every engine must return
+//    them bit-exactly, so nudging them would report false findings (placeAt's
+//    default upDot = 1 gives slope acos(1) = 0). Approximated results such as
+//    atan2(1, 0) = pi/2 ARE nudged. The table has its own test below.
 //  - The `**` operator cannot be monkey-patched; it is not covered.
 // ---------------------------------------------------------------------------
 import { Worker } from "node:worker_threads";
@@ -182,7 +186,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const GENERATOR_URL = pathToFileURL(path.join(path.dirname(fileURLToPath(import.meta.url)), "generator.ts")).href;
-const PLATFORM_SECTIONS = ["geophysics", "climate", "biomes", "oceanVolume", "placeQuery", "census", "rocks", "fauna"];
+const PLATFORM_SECTIONS = ["geophysics", "climate", "biomes", "oceanVolume", "placeQuery", "census", "rocks", "fauna", "faunaKnownUnstable"];
 const PLATFORM_PERTURBED_NAMES = [...PERTURBED_NAMES, "asin", "hypot", "log2", "log10", "log1p", "expm1", "sinh", "cosh", "tanh", "asinh", "acosh", "atanh"];
 
 /** Recorded determinism findings: section -> why a raw platform transcendental
@@ -198,26 +202,31 @@ const EXACT_FLIP_FINDINGS = {
   census: "planet-tiles.ts cubeDirection normalises with Math.hypot: population-cell directions move by 1 ULP, ground heights by ~1e-10 m",
   rocks: "rock-field.ts Math.hypot normalisations (faceDirection, tangentBasis, up) and slopeGap Math.tan(Math.acos(upDot))",
   fauna: "fauna-composer-rig.ts / fauna-composer-mesh.ts build poses and rings with three.js and raw Math trig",
+  faunaKnownUnstable: "same composer paths as fauna; this key holds the specimen WebKit already disagrees on (generator.ts FAUNA_KNOWN_UNSTABLE)",
 };
 
 /** Runs inside the worker (serialised with Function.prototype.toString). */
-function installPerturbation(names, relative) {
+function installPerturbation(names, relative, M = Math) {
+  // ECMA-262 21.3.2: arguments whose result the spec fixes exactly.
   const exactCase = (name, a) => {
     const [x, y] = a;
     switch (name) {
-      case "acos": case "acosh": case "log": return x === 1;
-      case "asin": case "atan": case "sin": case "tan": case "cbrt": case "sinh": case "tanh": case "asinh": case "atanh": case "expm1": case "log1p":
-      case "cos": case "cosh": case "exp": return x === 0;
-      case "atan2": return x === 0 ? false : y === 0 && x > 0;
-      case "pow": return y === 0;
+      case "acos": case "acosh": case "log": case "log2": case "log10": return x === 1;
+      case "asin": case "atan": case "sin": case "tan": case "cbrt": case "sinh": case "asinh": case "atanh": case "log1p":
+      case "cos": case "cosh": return x === 0;
+      case "exp": case "expm1": return x === 0 || x === -Infinity;
+      case "tanh": return x === 0 || x === Infinity || x === -Infinity;
+      // atan2(y, x): +-0 only for y = +-0 with x = +0 or x > 0 (x = -0 or x < 0 gives an approximated pi).
+      case "atan2": return x === 0 && (y > 0 || Object.is(y, 0));
+      case "pow": return y === 0 || (x === 0 && y > 0) || ((x === Infinity || x === -Infinity) && y < 0);
       case "hypot": return a.every((v) => v === 0);
       default: return false;
     }
   };
   let parity = 0, nudged = 0;
   for (const name of names) {
-    const original = Math[name];
-    Math[name] = (...a) => {
+    const original = M[name];
+    M[name] = (...a) => {
       const r = original(...a);
       if (!Number.isFinite(r) || exactCase(name, a)) return r;
       parity++; nudged++;
@@ -283,6 +292,20 @@ test("platform sections: 1-ULP perturbation flip counts (fresh worker per run; f
     if (!r.goldenFlips && r.section in GOLDEN_FLIP_FINDINGS) t.diagnostic(`${r.section}: GOLDEN finding no longer reproduces - remove it from GOLDEN_FLIP_FINDINGS`);
     if (!r.exactFlips && r.section in EXACT_FLIP_FINDINGS) t.diagnostic(`${r.section}: EXACT finding no longer reproduces - remove it from EXACT_FLIP_FINDINGS`);
   }
+});
+
+test("perturbation exact-case table follows ECMA-262 21.3.2 (spec-exact results kept, approximated ones nudged)", () => {
+  const M = Object.fromEntries(PLATFORM_PERTURBED_NAMES.map((n) => [n, Math[n]]));
+  installPerturbation(PLATFORM_PERTURBED_NAMES, Number.EPSILON, M);
+  const kept = [
+    ["atan2", [0, 1]], ["atan2", [-0, 1]], ["atan2", [0, 0]], ["log", [1]], ["log2", [1]], ["log10", [1]], ["acos", [1]], ["acosh", [1]],
+    ["pow", [2, 0]], ["pow", [0, 2]], ["pow", [-0, 3]], ["pow", [-0, 2]], ["pow", [Infinity, -1]], ["pow", [-Infinity, -3]],
+    ["cos", [0]], ["exp", [0]], ["exp", [-Infinity]], ["expm1", [-Infinity]], ["tanh", [Infinity]], ["tanh", [-Infinity]],
+    ["sin", [-0]], ["asin", [0]], ["hypot", [0, -0]], ["cbrt", [0]],
+  ];
+  for (const [n, a] of kept) assert.ok(Object.is(M[n](...a), Math[n](...a)), `${n}(${a.map(String)}) is spec-exact and must not be nudged`);
+  const nudgedCases = [["atan2", [1, 0]], ["atan2", [0, -1]], ["atan2", [0.5, 0.25]], ["pow", [2, 0.5]], ["pow", [3, 3.5]], ["log2", [3]], ["log10", [7]], ["sin", [1]], ["hypot", [3, 4]]];
+  for (const [n, a] of nudgedCases) assert.ok(!Object.is(M[n](...a), Math[n](...a)), `${n}(${a.map(String)}) is implementation-approximated and must be nudged`);
 });
 
 test("platform sections: a coarse nudge flips the raw-Math sections (negative control for the worker harness)", async () => {
