@@ -230,10 +230,12 @@ test('renderer: stale river attachments add no river water/reflection and dry-gr
 });
 
 test('model versions record the withdrawal and old bookmarks explain it',()=>{
-  // Re-pinned for terrain-1.8.0-relief (P4-RELIEF, docs/terrain-relief-v1.md):
-  // version string only; the withdrawal itself is unchanged.
+  // Re-pinned for terrain-1.8.0-relief (P4-RELIEF, docs/terrain-relief-v1.md)
+  // and atlas-surface-8-ocean-volume (P2-OCEAN-QUERY; re-pinned here by P6,
+  // was atlas-surface-7-no-inland-rivers): version strings only; the river
+  // withdrawal itself is unchanged and surface-8 keeps it.
   assert.equal(TERRAIN_VERSION,'terrain-1.8.0-relief');
-  assert.equal(SURFACE_VERSION,'atlas-surface-7-no-inland-rivers');
+  assert.equal(SURFACE_VERSION,'atlas-surface-8-ocean-volume');
   assert.equal(CURRENT_VERSIONS.terrain,TERRAIN_VERSION);
   assert.equal(CURRENT_VERSIONS.surface,SURFACE_VERSION);
   const current=new URLSearchParams({seed:SEED});writeTimeToUrl(current,CATALOGUE_EPOCH_NS);
@@ -252,6 +254,13 @@ test('model versions record the withdrawal and old bookmarks explain it',()=>{
   const postNotice=compatibilityNoticeFromUrl(postWithdrawal);
   assert.match(postNotice,/older terrain model versions/);
   assert.ok(!postNotice.includes(INLAND_RIVERS_UNAVAILABLE),'a terrain-1.6.0 bookmark never showed rivers');
+  // A surface-7 bookmark (rivers already withdrawn) differs only by the
+  // surface-8 ocean-volume bump: no river sentence (relief round P6).
+  const surface7=new URLSearchParams(current);
+  surface7.set('wv',encodeVersions({...CURRENT_VERSIONS,terrain:'terrain-1.7.0-climate-colour',surface:'atlas-surface-7-no-inland-rivers'}));
+  const surface7Notice=compatibilityNoticeFromUrl(surface7);
+  assert.match(surface7Notice,/older surface, terrain model versions/);
+  assert.ok(!surface7Notice.includes(INLAND_RIVERS_UNAVAILABLE),'a surface-7 bookmark never showed rivers');
 });
 
 test('legacy ?river= URLs get a concise unavailable notice and open the ordinary body view',()=>{

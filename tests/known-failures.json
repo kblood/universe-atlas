@@ -1,22 +1,7 @@
 {
   "date": "2026-10-04",
   "source": "test-results/baseline/known-failures-baseline.json",
-  "failures": [
-    {
-      "title": "pinned current package versions include the released rivers-off surface contract",
-      "file": "tests/acceptance/version-compat.test.mjs",
-      "reason": "Commit 2a52cc7 (P2 ocean-volume-1, already on main) bumped SURFACE_VERSION in src/world-surface.ts to atlas-surface-8-ocean-volume; tests/ocean-volume.test.mjs and tests/place-query.test.mjs already pin 8, but this pin was not updated. Fix is a test-pin update (plus confirming the bump is intended), not a code change.",
-      "owner": "relief-round P2 follow-up / merger",
-      "classification": "real (stale version pin, not load)"
-    },
-    {
-      "title": "model versions record the withdrawal and old bookmarks explain it",
-      "file": "tests/inland-rivers-disabled.test.mjs",
-      "reason": "Same cause as above: surface version bumped by 2a52cc7, pin at line 234 not updated.",
-      "owner": "relief-round P2 follow-up / merger",
-      "classification": "real (stale version pin, not load)"
-    }
-  ],
+  "failures": [],
   "perf": [
     {
       "title": "far-LOD mean cost: 512 new realistic genomes of warm species stay within about 15 ms",
@@ -39,6 +24,24 @@
       "file": "tests/planet-geophysics.test.mjs",
       "note": "Marked TODO (counted in todo=1, not in fail). Measured 0.990; documented as NOT MET by the specified model and left to the owner/P4. Listed so nobody mistakes the red X in the log for a new failure. It remains OPEN, not passed.",
       "status": "OPEN"
+    }
+  ],
+  "resolved": [
+    {
+      "title": "pinned current package versions include the released rivers-off surface contract",
+      "file": "tests/acceptance/version-compat.test.mjs",
+      "reason": "Commit 2a52cc7 (P2 ocean-volume-1, already on main) bumped SURFACE_VERSION in src/world-surface.ts to atlas-surface-8-ocean-volume; tests/ocean-volume.test.mjs and tests/place-query.test.mjs already pin 8, but this pin was not updated. Fix is a test-pin update (plus confirming the bump is intended), not a code change.",
+      "owner": "relief-round P2 follow-up / merger",
+      "classification": "real (stale version pin, not load)",
+      "resolvedBy": "relief-round P6-HARNESS-REPIN (2026-10-04): pin updated to atlas-surface-8-ocean-volume; time-nav river note now only for pre-surface-7 bookmarks"
+    },
+    {
+      "title": "model versions record the withdrawal and old bookmarks explain it",
+      "file": "tests/inland-rivers-disabled.test.mjs",
+      "reason": "Same cause as above: surface version bumped by 2a52cc7, pin at line 234 not updated.",
+      "owner": "relief-round P2 follow-up / merger",
+      "classification": "real (stale version pin, not load)",
+      "resolvedBy": "relief-round P6-HARNESS-REPIN (2026-10-04): pin updated to atlas-surface-8-ocean-volume; time-nav river note now only for pre-surface-7 bookmarks"
     }
   ]
 }

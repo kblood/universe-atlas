@@ -22,6 +22,7 @@ import {planetSnapshotAt,planetAgeMyr,biosphereHistoryFor} from '../src/world-su
 import {CURRENT_VERSIONS} from '../src/time-nav.ts';
 import {terrainSampler} from '../src/terrain.ts';
 import {nextTurn} from './terrain-renderer-fixture.mjs';
+import {HARNESS_SEED,HARNESS_SYSTEM_ID,HARNESS_DATE,SITE_A as HARNESS_SITE_A} from './harness-sites.mjs';
 
 const root=fileURLToPath(new URL('..',import.meta.url));
 /** Every file whose behaviour the life optimisation may change. */
@@ -64,15 +65,16 @@ export async function lifeRendererModule({prefix='atlas-life-',revision=null,pat
 }
 
 // ---- Fixed content: the harness's living inland site and date -----------
-export const seed='LETHRA-001';
-const systemId='G001/C2128,0,1/0';
-export const DATE=435084631200000032044300000n;
+// One shared definition (tests/harness-sites.mjs, relief round P6).
+export const seed=HARNESS_SEED;
+const systemId=HARNESS_SYSTEM_ID;
+export const DATE=HARNESS_DATE;
 const sys=system(refByAddress(galaxies(seed)[0],systemId));
 export const body=sys.planets[1];
 const star=sys.stars[0],systemAddress=parseAddress(sys.ref.id);
 const bodyAddress=value=>({...systemAddress,slot:value.id.slice(sys.ref.id.length+1)});
 const starLc=starLifecycle(seed,bodyAddress(star),star),planetLc=planetLifecycle(seed,bodyAddress(body),body,starLc);
-export const SITE_A=(()=>{const v=[4068880.8,-1511750.9,2855601.0],l=Math.hypot(...v);return v.map(x=>x/l);})();
+export const SITE_A=[...HARNESS_SITE_A];
 const snapshotAt=t=>planetSnapshotAt(seed,body.id,body,planetLc,starLc,t,CURRENT_VERSIONS);
 export const waterLevelAt=t=>snapshotAt(t).ocean.renderWaterLevelM;
 

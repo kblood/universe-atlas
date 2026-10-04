@@ -11,11 +11,12 @@ import {join,resolve,dirname,basename} from 'node:path';
 import {pathToFileURL,fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {build} from 'esbuild';
+import {HARNESS_DATE,SITE_A as HARNESS_SITE_A} from './harness-sites.mjs';
 
 const root=fileURLToPath(new URL('..',import.meta.url));
-export const FOREST_DATE=435084631200000032044300000n;
-/** Harness SITE_A (rock-acceptance "Find life" close-view site). */
-export const SITE_A=(()=>{const v=[4068880.8,-1511750.9,2855601.0],l=Math.hypot(...v);return v.map(x=>x/l);})();
+export const FOREST_DATE=HARNESS_DATE;
+/** Harness SITE_A: the shared living inland site (tests/harness-sites.mjs). */
+export const SITE_A=[...HARNESS_SITE_A];
 
 export function gitSource(revision,path){
   try{return execFileSync('git',['show',`${revision}:${path}`],{cwd:root,encoding:'utf8',maxBuffer:16<<20,stdio:['ignore','pipe','ignore']});}

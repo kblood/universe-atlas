@@ -196,6 +196,17 @@ export function renderBoundsSuite({tiles,ratioTiles,poses,poolLevels,poolRepeats
     report.falseCulls=out;
   });
 
+  // Owner decision (relief round 2026-10-03): the HUD TERRAIN FLIGHT flip and
+  // the direct-landing route stay at a fixed 19.5 km, independent of the
+  // recalibrated relief bound (3-7 km after terrain-1.8.0). Astra INT review.
+  test('HUD terrain-flight / direct-landing clearance is a fixed 19.5 km on all four worlds, not the relief bound',()=>{
+    for(const {name,body} of WORLDS){
+      assert.equal(M.module.PlanetRenderer.lowFlightClearanceM(body),19500,name);
+      assert.equal(RB.LOW_FLIGHT_CLEARANCE_M,19500);
+      assert.ok(RB.renderHeightBoundM(body).maxM<19500,`${name}: bound ${RB.renderHeightBoundM(body).maxM} is below the fixed flip, so tying them would move the HUD`);
+    }
+  });
+
   test('landing finds a site on all four worlds and never above the landing ceiling',()=>{
     const out={};
     for(const {name,body} of WORLDS){

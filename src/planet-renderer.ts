@@ -411,14 +411,21 @@ function riverRegionSphere(r: RiverRegion): THREE.Sphere {
 // isSoftwareRenderer above for why software rendering keeps the original
 // single-worker throughput.
 const TILE_WORKER_COUNT = isSoftwareRenderer() ? 1 : Math.max(1, Math.min(2, (typeof navigator!=='undefined'&&navigator.hardwareConcurrency||4)-1));
+/** HUD terrain-flight / direct-landing clearance (see lowFlightClearanceM). */
+export const LOW_FLIGHT_CLEARANCE_M=19500;
 export class PlanetRenderer {
   /** render-bounds-1 helpers for main.ts (its import of this class is its only seam). */
   static heightBoundM(body:Body){return renderHeightBoundM(body);}
   static reliefTextureSpanM(body:Body){const r=renderReliefTextureRange(body);return r.maxM-r.minM;}
   static landingCeilingM(body:Body){return landingCeilingM(body);}
   static landingReferenceM(body:Body,seaLevelM:number){return landingReferenceM(body,seaLevelM);}
-  /** Terrain clearance below which flight is terrain flight / may land directly. */
-  static lowFlightClearanceM(body:Body){return Math.max(2000,renderHeightBoundM(body).maxM);}
+  /** Terrain clearance below which the HUD reads TERRAIN FLIGHT and "Land" goes
+   * straight to the landing preparation (above it: a terrain cruise first). A
+   * fixed 19.5 km, deliberately independent of the recalibrated relief bound
+   * (owner decision, relief round 2026-10-03): before terrain-1.8.0 the bound
+   * was capped at 19.5 km so this matched it; after P4 the bound is 3-7 km and
+   * tying the flip to it moved the HUD transition (Astra INT review). */
+  static lowFlightClearanceM(_body:Body){return LOW_FLIGHT_CLEARANCE_M;}
   /** Radius an assisted orbit must keep: above the highest terrain + 5 km. */
   static safeOrbitRadiusM(body:Body){return body.radiusM+Math.max(0,renderHeightBoundM(body).maxM)+5000;}
   // Desktop keeps its established terrain/contact working set plus a bounded

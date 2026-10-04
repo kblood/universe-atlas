@@ -25,7 +25,7 @@ import { BIOSPHERE_VERSION } from '../../src/biosphere-model.ts';
 import { TERRAIN_VERSION } from '../../src/terrain.ts';
 import { ADDRESS_VERSION, parseAddress, formatAddress, resolveGalaxy, resolveWorldPosition } from '../../src/address.ts';
 import { GALAXY_HISTORY_VERSION } from '../../src/galaxy-history.ts';
-import { CURRENT_VERSIONS, encodeVersions, decodeVersions, resolveTimeFromUrl, writeTimeToUrl } from '../../src/time-nav.ts';
+import { CURRENT_VERSIONS, encodeVersions, decodeVersions, resolveTimeFromUrl, writeTimeToUrl, compatibilityNoticeFromUrl, MODEL_MANIFEST_ID, BUILD_VERSION, RELIEF_RECALIBRATED_NOTICE } from '../../src/time-nav.ts';
 import { sha256, SEED } from './helpers.mjs';
 
 // ---------------------------------------------------------------------------
@@ -76,7 +76,7 @@ test('pinned current package versions include the released rivers-off surface co
   assert.equal(TIME_VERSION, 'atlas-time-2', 'was atlas-time-1: origin moved from catalogue epoch to Big Bang');
   assert.equal(HISTORY_VERSION, 'atlas-history-3-remnant-cooling', 'current authoritative lifecycle algorithm includes remnant cooling');
   assert.equal(BIOSPHERE_VERSION, 'biosphere-lab-3', 'was biosphere-lab-2: reseeded by body address + rekeyed to planet age');
-  assert.equal(SURFACE_VERSION, 'atlas-surface-7-no-inland-rivers', 'current surface sampler and rivers-off contract');
+  assert.equal(SURFACE_VERSION, 'atlas-surface-8-ocean-volume', 'was atlas-surface-7-no-inland-rivers: the dated sea is an ocean-volume level on the body seabed (relief round, P2; re-pinned by P6); rivers stay off');
   assert.equal(CATALOG_VERSION, 'atlas-2.0.0', 'was atlas-1.0.0: address space gains cluster/group hierarchy levels');
   assert.equal(ADDRESS_VERSION, 'atlas-address-1', 'new module');
   assert.equal(COSMOLOGY_VERSION, 'atlas-cosmology-2-radiation', 'current background includes the radiation-era model');
@@ -351,4 +351,62 @@ test('biome-climate model versions are pinned and part of the model manifest', a
   assert.equal(SURVEY_REEXPORT, SURVEY_VERSION);
   const parts = MODEL_MANIFEST_ID.split('|');
   for (const v of [BIOME_VERSION, CLIMATE_VERSION, HABITAT_SUITABILITY_VERSION, SURVEY_VERSION]) assert.ok(parts.includes(v), `${v} missing from MODEL_MANIFEST_ID`);
+});
+
+// ---------------------------------------------------------------------------
+// 2026-10 relief round (P6-HARNESS-REPIN): the relief model versions are
+// folded into MODEL_MANIFEST_ID, BUILD_VERSION moves, and a bookmark from
+// before terrain-1.8.0 gets the one-time relief notice. Its address,
+// catalogue and date are unchanged (golden systems digest unchanged), so it
+// still opens the same place and date.
+// ---------------------------------------------------------------------------
+test('relief model versions are pinned and part of the model manifest; build version moved', async () => {
+  const { GEOPHYSICS_VERSION } = await import('../../src/planet-geophysics.ts');
+  const { LANDFORM_SHAPE_VERSION, LANDFORM_VERSION } = await import('../../src/planet-landforms.ts');
+  const { OCEAN_VOLUME_VERSION } = await import('../../src/ocean-volume.ts');
+  const { LOD_LADDER_VERSION } = await import('../../src/lod-ladder.ts');
+  const { PLACE_QUERY_VERSION } = await import('../../src/place-query.ts');
+  assert.equal(GEOPHYSICS_VERSION, 'planet-geophysics-1', 'new (P1)');
+  assert.equal(LANDFORM_SHAPE_VERSION, 'planet-landforms-shape-2', 'new (P4): the landform shaping; the landform seed version is unchanged');
+  assert.equal(LANDFORM_VERSION, 'planet-landforms-1', 'unchanged: it seeds the landform noise');
+  assert.equal(OCEAN_VOLUME_VERSION, 'ocean-volume-1', 'new (P2)');
+  assert.equal(LOD_LADDER_VERSION, 'lod-ladder-1', 'new (P3)');
+  assert.equal(PLACE_QUERY_VERSION, 'place-query-1', 'new (P2)');
+  assert.equal(TERRAIN_VERSION, 'terrain-1.8.0-relief', 'was terrain-1.7.0-climate-colour (P4)');
+  assert.equal(BUILD_VERSION, 'atlas-client-2026-10-relief-1', 'was atlas-client-2026-10-biome-climate-1');
+  const parts = MODEL_MANIFEST_ID.split('|');
+  for (const v of [GEOPHYSICS_VERSION, LANDFORM_SHAPE_VERSION, OCEAN_VOLUME_VERSION, LOD_LADDER_VERSION, PLACE_QUERY_VERSION])
+    assert.ok(parts.includes(v), `${v} missing from MODEL_MANIFEST_ID`);
+});
+
+test('a terrain-1.7.0 bookmark loads with the relief notice; a current (1.8.0) bookmark loads without it', () => {
+  const current = new URLSearchParams({ seed: SEED });
+  writeTimeToUrl(current, CATALOGUE_EPOCH_NS);
+  assert.equal(compatibilityNoticeFromUrl(current), null, 'a 1.8.0 bookmark needs no notice');
+  const old = new URLSearchParams(current);
+  old.set('wv', encodeVersions({ ...CURRENT_VERSIONS, terrain: 'terrain-1.7.0-climate-colour', surface: 'atlas-surface-7-no-inland-rivers' }));
+  old.set('mv', 'pre-relief-manifest');
+  old.set('bv', 'atlas-client-2026-10-biome-climate-1');
+  const notice = compatibilityNoticeFromUrl(old);
+  assert.ok(notice.includes(RELIEF_RECALIBRATED_NOTICE), `relief notice present: ${notice}`);
+  assert.match(notice, /older surface, terrain model versions/);
+  assert.match(RELIEF_RECALIBRATED_NOTICE, /terrain-1\.8\.0/);
+  assert.equal(resolveTimeFromUrl(old), resolveTimeFromUrl(current), 'same date');
+  // A 1.8.0 bookmark from before the manifest/build bump gets only the lighter notices.
+  const manifestOnly = new URLSearchParams(current);
+  manifestOnly.set('mv', 'pre-relief-manifest');
+  const manifestNotice = compatibilityNoticeFromUrl(manifestOnly);
+  assert.ok(manifestNotice && !manifestNotice.includes(RELIEF_RECALIBRATED_NOTICE), 'no relief notice for a 1.8.0 terrain');
+});
+
+test('ground bookmarks re-snap to the new ground height: main.ts restores ?walk= by direction only', async () => {
+  // The relief recalibration moved every ground height. A restored ?walk=
+  // bookmark must use only the saved DIRECTION and land at the current
+  // terrain height (never inside or far above the new ground). Pinned on the
+  // source: prepareLanding normalises the saved point and re-samples the
+  // surface; a now-flooded site is not walkable and falls back to flight.
+  const source = (await readFile(new URL('../../src/main.ts', import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
+  assert.ok(source.includes("const d=relative.normalize(),s=surfaceSample(body,d.toArray() as V3);"), 'saved point reduced to a direction and re-sampled');
+  assert.ok(source.includes('const point=d.multiplyScalar(body.radiusM+s.rockHeightM+.92).toArray() as V3;'), 'landing point is the CURRENT ground height');
+  assert.ok(source.includes('if(!s.walkable){exploreTerrain();landAfterCruise=true;return;}'), 'a now-flooded bookmark opens in flight, not underwater');
 });
