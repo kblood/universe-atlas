@@ -1,6 +1,6 @@
 <!-- One task per PR. Title: "[T??] KEY: summary". Fill every section; write "not run" rather than delete a line. -->
 
-Closes #<issue> (task `T??`)
+Refs #<issue> (task `T??`) <!-- use "Closes" only when ALL acceptance, including visual/device items, is met -->
 
 **Branch / base:** `work/<id>-<slug>` from `<base sha>`; head `<sha>`
 **Owner agent / session / machine:** 
@@ -31,5 +31,5 @@ Closes #<issue> (task `T??`)
 - none / links to `type:owner-decision` issues (still OPEN; nothing labelled passed)
 
 ## Review
-- [ ] Astra review verdict (ready / fix-required) and blocker fixes linked
+- [ ] Assigned reviewer's verdict (ready / fix-required; Astra by default) and blocker fixes linked
 - [ ] Claims in this PR checked against the diff

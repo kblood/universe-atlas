@@ -6,8 +6,10 @@ body:
   - type: markdown
     attributes:
       value: |
-        Agents may draft this and recommend a default; they never close it, label it passed/accepted,
-        or implement anything but the recommended default behind a named constant while it is open.
+        Agents may draft this and recommend a default; they never close it or label it passed/accepted.
+        A recommended default authorises implementation ONLY where the blocked task explicitly
+        permits a provisional default (for example T04, behind a named constant). Otherwise the
+        blocked work waits for the owner's answer.
   - type: textarea
     id: question
     attributes: {label: Question, description: "One decision per issue."}

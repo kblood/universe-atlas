@@ -14,14 +14,18 @@ size: M-L
 resource: none
 depends_on:
   - "T08"
-soft_depends_on:
-  - "T01"
-external_depends: []
+soft_depends_on: []
+merge_after:
+  - "T13"
+merge_note: "If the crater-grid site is in src/terrain.ts it is a separate hunk from T13 (colour section); merge after T13"
+external_depends:
+  - "owner versioning decision (via T01) before any change that moves catalogue addresses"
 base_commit: TBD  # coordinator fills `git rev-parse main` at claim
 branch: TBD  # work/<id>-<slug>, one writer
 status_at_draft: backlog
 owned_files:
-  - "src/catalog.ts, src/surface-biomes.ts (:106 slope line), src/planet-population.ts, terrain crater grid, src/surface-cell.ts comparator"
+  - "src/catalog.ts, src/surface-biomes.ts (:106 slope line), src/planet-population.ts, src/surface-cell.ts (sort comparator)"
+  - "terrain crater grid: exact file/hunk named at claim (src/planet-craters.ts, or the planetSurface crater hunk of src/terrain.ts)"
   - "src/det-math.ts"
   - "tests/acceptance/version-compat.test.mjs"
 acceptance:

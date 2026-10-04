@@ -12,7 +12,7 @@ coordinator is the board.
 | --- | --- | --- | --- |
 | Coordinator | owner or a designated Opus session | moves issues to Ready, assigns owners, checks file ownership per round, keeps the board | write task code |
 | Implementer | Opus (code/design), Astra (gpt-6-astra, where the issue says so), Sonnet (docs) | one task, one branch, one worktree | touch files outside the issue's owned files |
-| Reviewer | Astra (gpt-6-astra), read-only by default | evidence review, adversarial probes, claim-vs-diff audit | re-run suites reported green on the same commit without a stated reason |
+| Reviewer | the issue's assigned reviewer: Astra (gpt-6-astra) by default, Opus where the issue says so; read-only | evidence review, adversarial probes, claim-vs-diff audit | re-run suites reported green on the same commit without a stated reason |
 | Visual judge | Luna (gpt-6-luna) via `node scripts/luna-eyes.mjs` | blind ID, PASS/FAIL per frame, 3 asks per disputed frame | judge from a single ask |
 | Research / docs | Sonnet; Astra for read-only web research | docs, mechanical changes, source-flagged research | edit `src/` |
 | Merger | one session holding the merge lock | merges, the merge test tier, repins, version bumps, README, `known-failures.json` | merge two tasks without the full gate after the last one |
@@ -29,9 +29,11 @@ version constants and README belong to the merger, never to a task.
 
 ## Life of a task
 
-1. **Ready.** The coordinator checks: hard dependencies merged, owner-blocked
-   parts have a recommended default, owned files disjoint from every other
-   task In progress, resource named. Then it assigns `owner_agent`.
+1. **Ready.** The coordinator checks: hard dependencies merged; owner-blocked
+   parts either answered or explicitly allowed a provisional default by the
+   issue (T04 is; T11 and T24's address-moving changes are not); owned files
+   disjoint from every other task In progress; resource named. Then it assigns
+   `owner_agent`.
 2. **Claim.** The owner writes in the issue (or the draft's front matter):
    base commit (`git rev-parse main`), branch, session, machine. One claim per
    task; a stale claim leads to contact or explicit reassignment, never to a
@@ -46,7 +48,7 @@ version constants and README belong to the merger, never to a task.
    tested step.
 6. **Hand-off.** Run the hand-off tier once, write the hand-off file, open the
    PR (or hand the file to the coordinator before GitHub), move to Review.
-7. **Review by Astra.** Read-only:
+7. **Review** by the assigned reviewer (Astra by default). Astra, read-only:
    `codex exec -m gpt-6-astra -s read-only --skip-git-repo-check --ephemeral -C <worktree> -o <answer.md> - < prompt.txt`.
    The verdict is `ready` or `fix-required` with numbered blockers. Fixer
    rounds: add a failing test per blocker first, fix only the blockers,
@@ -54,8 +56,9 @@ version constants and README belong to the merger, never to a task.
    the previous blockers and the new diff.
 8. **Merge.** The merger takes the merge lock, merges sequentially (shared
    contracts first, dependants rebased and re-checked against that commit),
-   runs the merge tier once after the last merge, applies repins and version
-   bumps, releases the lock.
+   applies merger-owned changes (registration, repins, version bumps, README),
+   then runs the merge tier once on that final tree, records the commit and
+   results, and releases the lock.
 9. **Done** only when acceptance is met. A merge alone does not satisfy
    visual, asset or device acceptance; those stay open on the issue.
 10. **Retire** the branch and worktree after merge (`git worktree remove`,
@@ -86,6 +89,15 @@ agent-minutes were verification; reviewers re-running suites caught nothing).
 
 Other tools: `npm run test:pkg -- <files>`, `npm run test:smoke`. Round start:
 the coordinator captures one shared BEFORE set from `main` under one lock hold.
+
+## GPU queue per round (backlog order; one browser job at a time)
+
+- A: T03 -> T06 -> T04 (one check) -> T08 (browser lock, no WebGL)
+- B: T07 (before renders) -> T11 -> T12 -> T17; T20 last, alone, quiet host
+- C: T13 -> T14 -> T15 -> T18
+
+Exception, 2026-10-04: the running round 2 mixes A and B (T11, T12 run
+alongside T03, T04, T06, T08); its coordinator sets that round's queue.
 
 ## Hand-off file
 

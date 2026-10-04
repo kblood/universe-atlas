@@ -5,7 +5,7 @@ title: "[T16] PLACE-QUERY-2: platform query surface and \"build a game on Atlas\
 repo: universe-atlas
 labels: ["type:task", "area:platform", "agent:opus", "resource:none", "size:M", "round:B"]
 owner_agent: opus
-co_owner: "sonnet (docs)"
+co_owner: "sonnet (docs, reviewed by Opus)"
 reviewer: astra
 visual_judge: none
 priority: P2

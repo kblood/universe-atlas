@@ -16,6 +16,7 @@ depends_on:
   - "T09"
   - "T06"
 soft_depends_on: []
+merge_note: "Merge before T15 (planet-renderer.ts hunks) and before T24 if T24 touches src/terrain.ts"
 external_depends: []
 base_commit: TBD  # coordinator fills `git rev-parse main` at claim
 branch: TBD  # work/<id>-<slug>, one writer

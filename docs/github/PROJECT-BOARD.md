@@ -11,7 +11,7 @@ PRs from `universe-atlas` and the Atlas-related issues in `IWSDK`
 | Backlog | issue drafted with owned files and acceptance | coordinator marks Ready |
 | Ready | hard deps merged; owned files disjoint from every In progress task; resource and owner agent set | owner claims: base commit, branch, session recorded |
 | In progress | one writer, one worktree | hand-off tier run, PR/hand-off file posted |
-| Review | Astra reviewing; Luna verdicts attached where required | Astra `ready` and the merger has merged |
+| Review | assigned reviewer (Astra by default) reviewing; Luna verdicts attached where required | reviewer `ready` and the merger has merged |
 | Done | merged **and** acceptance met (visual/asset/device items included) | - |
 | Blocked | waiting on an owner decision, external branch or another round; reason and blocker link required | blocker resolved -> back to Ready or In progress |
 
@@ -61,8 +61,9 @@ then a one-paragraph "why". Keys: `id` (T01-T25 = backlog rank, P01-P03 =
 parked), `key`, `title` (must start `[id] `), `repo`, `labels`, `owner_agent`,
 optional `co_owner`, `reviewer`, `visual_judge`, `priority`, `backlog_rank`,
 `round`, `size`, `resource`, optional `resource_note`, `depends_on` (hard),
-`soft_depends_on` (an answer or default suffices), optional `staged_depends`
-and `merge_after`, `external_depends`, `base_commit` (TBD until claim),
+`soft_depends_on` (work may start; a provisional default is allowed only
+where the issue says so), optional `staged_depends`, `merge_after` and
+`merge_note`, `external_depends`, `base_commit` (TBD until claim),
 `branch`, `status_at_draft`, `owned_files`, `acceptance`, `source`.
 Values are JSON-quoted strings or plain words; lists are `  - "item"`.
 

@@ -22,7 +22,7 @@ owned_files:
   - "docs/biome-climate-increment-2-plan-v2-2026-10-04.json (new)"
   - "test-results/finish-round-2026-10-04/BIOME2-REPLAN/ (scripts, numbers)"
 acceptance:
-  - "Every expectedOutcome/acceptance number re-measured on the base commit by a saved script (ELA, land snow per world, corpus, SITE_A class+height, Tw' > 316 K share, forest share)"
+  - "Every expectedOutcome/acceptance number re-measured on d751a09 as specified (or the round-2 base b7d1df3, which adds only the creature-boundary test; state which) by a saved script (ELA, land snow per world, corpus, SITE_A class+height, Tw' > 316 K share, forest share)"
   - "P2 reduced to the climate grid"
   - "Per-package file ownership re-checked against main"
   - "Astra verdict saved; must-fix items closed or answered"

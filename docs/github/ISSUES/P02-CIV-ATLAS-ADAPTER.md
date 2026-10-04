@@ -5,6 +5,7 @@ title: "[P02] CIV-ATLAS-ADAPTER: one-way read-only Atlas interface for Civilizat
 repo: civilization-lab
 labels: ["type:task", "area:platform", "agent:opus", "resource:none", "size:M", "round:parked"]
 owner_agent: opus
+co_owner: "astra"
 reviewer: astra
 visual_judge: none
 priority: P4

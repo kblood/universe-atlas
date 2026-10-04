@@ -27,6 +27,7 @@ owned_files:
   - "docs/surface-climate-v2.md"
   - "TERRAIN_VERSION bump: coordinator at merge"
 acceptance:
+  - "Numerical targets below are subject to the reviewed T02 re-baseline"
   - "Earth ELA bands: 45° 2.7-3.1 km, 60° 1.2-1.7 km, equator >= 4.45 km; negative v1 test fails"
   - "No forest where Tw' >= 316 K"
   - "surfaceClimate <= 150 ns, zero allocation"

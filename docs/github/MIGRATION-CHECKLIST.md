@@ -82,9 +82,9 @@ If protected branches or rulesets are available for the chosen visibility:
 
 - `main`: no direct pushes, PR required, linear history or merge commits
   (owner choice), one approving review, no force-push, no deletion.
-- Required checks only once a CI job exists that is green on `main` (today
-  full `npm test` is not green by design: known failures and load-sensitive
-  perf caps). Start with `tsc` plus `npm run test:smoke`.
+- Required checks only once a CI job exists and has been verified green on
+  the migration commit. Candidate starting set: `tsc` plus
+  `npm run test:smoke`; CPU-timing caps stay out (they live in `test:perf`).
 - Activate `CODEOWNERS` only with real GitHub handles (draft in
   `docs/github/CODEOWNERS.draft`).
 

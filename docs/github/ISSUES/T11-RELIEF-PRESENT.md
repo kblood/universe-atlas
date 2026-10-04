@@ -12,11 +12,12 @@ backlog_rank: 11
 round: B
 size: L
 resource: gpu
-depends_on: []
-soft_depends_on:
+depends_on:
   - "T01"
+soft_depends_on:
   - "T07"
-external_depends: []
+external_depends:
+  - "owner answers on D1, D2 and the cloud deck (recorded via T01); no provisional default"
 base_commit: TBD  # coordinator fills `git rev-parse main` at claim
 branch: TBD  # work/<id>-<slug>, one writer
 status_at_draft: "in flight on round2/relief-present (base b7d1df3), 2026-10-04"

@@ -14,7 +14,7 @@ body:
     validations: {required: true}
   - type: dropdown
     id: repo
-    attributes: {label: Repository, options: [universe-atlas, IWSDK (tools/assetctl, schemas), civilization-lab, other]}
+    attributes: {label: Repository, options: [universe-atlas, "IWSDK (tools/assetctl, schemas)", civilization-lab, other]}
     validations: {required: true}
   - type: dropdown
     id: owner
