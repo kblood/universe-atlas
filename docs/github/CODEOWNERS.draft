@@ -1,0 +1,19 @@
+# DRAFT - not active. Copy to .github/CODEOWNERS only after the owner picks
+# the GitHub account(s) (MIGRATION-CHECKLIST.md section 1) and the plan tier
+# supports required code-owner review on this repo's visibility.
+#
+# With one shared GitHub account for all agents, CODEOWNERS can only request
+# the owner's review; per-agent ownership lives in each issue's owned_files.
+# Replace @OWNER with a real handle. Later lines take precedence.
+
+*                               @OWNER
+
+# Merger-owned (version constants, registration, golden, known failures)
+/package.json                   @OWNER
+/tests/golden/golden.json       @OWNER
+/tests/known-failures.json      @OWNER
+/README.md                      @OWNER
+
+# Coordination and process
+/.github/                       @OWNER
+/docs/github/                   @OWNER

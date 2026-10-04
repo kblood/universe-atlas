@@ -1,0 +1,32 @@
+name: Owner decision
+description: A question only the owner can answer. Stays OPEN until the owner answers in writing.
+title: "[decision] "
+labels: ["type:owner-decision", "needs:owner"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Agents may draft this and recommend a default; they never close it, label it passed/accepted,
+        or implement anything but the recommended default behind a named constant while it is open.
+  - type: textarea
+    id: question
+    attributes: {label: Question, description: "One decision per issue."}
+    validations: {required: true}
+  - type: textarea
+    id: evidence
+    attributes: {label: Evidence, description: "Links to docs, renders, numbers, commits."}
+    validations: {required: true}
+  - type: textarea
+    id: options
+    attributes: {label: Options and consequences, value: "1. \n2. "}
+    validations: {required: true}
+  - type: input
+    id: default
+    attributes: {label: Recommended default}
+    validations: {required: true}
+  - type: input
+    id: blocks
+    attributes: {label: Blocks, description: "Task ids (e.g. T04, T11)"}
+  - type: input
+    id: answer
+    attributes: {label: Owner answer and date, description: "Filled by the owner only.", placeholder: OPEN}

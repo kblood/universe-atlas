@@ -1,0 +1,58 @@
+name: Task
+description: One unit of work with one owner, disjoint owned files and checkable acceptance.
+title: "[T??] KEY: outcome"
+labels: ["type:task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One owner per task, one writer per branch/worktree, no file shared with another task in the same round.
+        See docs/github/WORKFLOW.md. Drafts in docs/github/ISSUES/ use the same fields.
+  - type: textarea
+    id: outcome
+    attributes: {label: Outcome and why, description: "One or two sentences. Link the source document."}
+    validations: {required: true}
+  - type: dropdown
+    id: repo
+    attributes: {label: Repository, options: [universe-atlas, IWSDK (tools/assetctl, schemas), civilization-lab, other]}
+    validations: {required: true}
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Owner agent
+      options: ["opus (code/design)", "astra (gpt-6-astra: review/implementation/research)", "luna (gpt-6-luna: visual judgement)", "sonnet (docs/web research)", "owner (human)"]
+    validations: {required: true}
+  - type: dropdown
+    id: reviewer
+    attributes: {label: Reviewer, options: [astra, opus, owner, none]}
+    validations: {required: true}
+  - type: dropdown
+    id: visual
+    attributes: {label: Visual judge, options: [none, luna]}
+  - type: textarea
+    id: files
+    attributes: {label: Owned files, description: "Exact paths; name the hunk when a file is shared by hunk. Merger-owned: package.json registration, golden re-pins, version constants, README."}
+    validations: {required: true}
+  - type: input
+    id: base
+    attributes: {label: Base commit, description: "Filled at claim: git rev-parse main", placeholder: TBD}
+  - type: textarea
+    id: deps
+    attributes: {label: Dependencies, description: "Hard (T05), soft (T01 owner answer), merge-after, external (held branch, other round)."}
+  - type: textarea
+    id: acceptance
+    attributes: {label: Acceptance, description: "Checkboxes. Measurable. Say what must FAIL in a negative test.", value: "- [ ] "}
+    validations: {required: true}
+  - type: dropdown
+    id: resource
+    attributes:
+      label: Resource
+      options: ["none", "gpu (C:/LLM/IWSDK/.gpu-browser-lock)", "browser-lock (no WebGL, lock anyway)", "quiet-host (nothing else running)"]
+    validations: {required: true}
+  - type: dropdown
+    id: size
+    attributes: {label: Size, options: ["S (< half a day)", "S-M", "M (one round)", "M-L", "L (several rounds)"]}
+    validations: {required: true}
+  - type: input
+    id: round
+    attributes: {label: Round, placeholder: "A / B / C / queued / parked"}
