@@ -130,8 +130,37 @@ factor ≤ 4 m`, the `MAX_FOOTPRINT_M` competition halo; a test checks this.
 - understory palm;
 - thorn scrub.
 
-The lab renders the new forms through an exact-name dispatch (`ECO_FORMS`), so
-the 9 original biomes keep their geometry.
+The lab renders the new forms through an exact-name dispatch in
+`src/eco-lab-forms.ts`, so the 9 original biomes keep their geometry.
+
+**Footprint contract.** Each new vegetation form is normalised to unit height
+and unit crown radius. The lab scales its width by `recipeFootprintM`, so the
+rendered crown radius equals the queryable footprint that coverage uses. When an
+authored form is wider or narrower than its kind's default, the recipe stores
+that ratio as data in `visibleRadiusScale`:
+
+| Recipe | `visibleRadiusScale` |
+|---|---|
+| umbrella acacia | 2 |
+| buttress broadleaf | 1.2 |
+| understory palm | 1.17 |
+| thorn scrub | 1.05 |
+| sedge tussock | 0.94 |
+| tall grass | 0.88 |
+| flowering herb | 0.69 |
+| moss mat | 0.56 |
+| taiga spruce | 0.5 |
+
+Coverage and the lab read this field. Competition (`footprintM`) ignores it, so
+placements and digests are unchanged. `tests/eco-lab-forms.test.mjs` fails if
+any of these forms renders more than 1 % away from its footprint, and includes
+a negative test on the raw geometry from before the fix: acacia at 2x and
+spruce at 0.5x. The lab also reports a mismatch as a geometry-validation
+failure.
+
+With honest crowns, taiga canopy is 0.058 against 0.098 for woodland. The
+structure test now checks taiga's stem count (118 against 96) rather than
+claiming a denser canopy than woodland.
 
 Ground accents (`groundAccent`) are painted only by the lab and never enter a
 digest. They cover meltwater ponds, scree, red soil, dune ripples and snow
@@ -171,8 +200,15 @@ best of 5:
 | `groundLookOf` | 6.0 ns |
 | combined, harness included | 26.2 ns |
 
-The test enforces 25 ns only when `ECO_PERF_STRICT=1`, and allows 100 ns
-otherwise. A measurement on a quiet host is still OPEN.
+There are two separate tests:
+
+- **Regression guard.** It allows up to 100 ns and runs on every host. Its
+  title says that it is not the 25 ns criterion.
+- **Acceptance test.** It requires 25 ns or less and is reported as
+  **skipped** (OPEN) unless `ECO_PERF_STRICT=1` is set on a quiet host.
+
+A relaxed run therefore never reports the 25 ns criterion as passed. The
+quiet-host measurement is still OPEN.
 
 ## 8. Visual check (Luna blind ID)
 
@@ -184,8 +220,19 @@ iteration, and every ask exited 0.
 |---|---|---|---|
 | Design 1 | 7/7 in each of 3 asks | tundra vs alpine meadow | 55-72 % |
 | Design 2 | 7/7 in each of 3 asks | tundra vs alpine meadow | 48-74 % |
+| Footprint fix (after-4) | 7/7 in each of 3 asks | tundra vs alpine meadow | 55-69 % |
 
-All other biomes scored 65-98 %.
+All other biomes scored 65-99 %.
+
+**Footprint fix (after-4).** The placements are identical to design 2, and the
+pixel RMSE against it is 0.1-4.0 %. Luna was asked about tree crowns directly:
+
+- The taiga spires and savanna umbrella crowns fit their biomes (3/3 asks).
+- The rainforest buttress crowns look too wide and heavy for their thin trunks
+  (3/3 asks).
+
+The rainforest crown is the authored look, kept by `visibleRadiusScale 1.2`.
+This round did not change it, and it remains an open design note.
 
 The cue Luna still asks for is relief: mountains for the alpine meadow, and
 snow patches for the tundra. A flat 128 m lab plot cannot show either. The
