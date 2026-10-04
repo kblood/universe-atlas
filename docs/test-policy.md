@@ -10,6 +10,93 @@ without a new change, failure, or stated reason to distrust it.
 | Hand-off | `npx tsc --noEmit`; `npm run test:affected -- --base main` for all direct/transitive importers; `npm run test:life-guard -- --base main` and the relevant area contract/digest if touched; one relevant AFTER capture set. |
 | Merge | Coordinator alone: `npm run test:full`, `npm run test:perf`, relevant digests, `npm run test:golden`, `npm run test:browser` and the applicable VR/browser gates, one at a time. Rewrite known failures after reviewing the merged result. |
 
+## Result classes (owner decision 2026-10-04)
+
+Every check reports into exactly one class. A report names the class next to
+each result.
+
+| Class | What | Effect on merge | Who may change it |
+| --- | --- | --- | --- |
+| HARD | Deterministic tests, `npx tsc --noEmit`, digests, goldens | NEW failure blocks the merge | Implementer fixes the cause; only the merger rewrites `known-failures.json` / repins goldens, with the reason |
+| CONTRACT | Pinned numeric targets: LOD / lod-consistency thresholds, acceptance budgets, site rules | Blocks the merge | Only the owner changes a pin. A task that cannot meet a pin stops and files an owner decision; it never edits the pin |
+| VISUAL-ADVISORY | Luna (gpt-6-luna) appearance verdicts | **Never blocks a gate by itself** | Recorded and routed; not a test failure |
+
+VISUAL-ADVISORY rules:
+
+- **Vote, never a single ask.** `node scripts/luna-vote.mjs` asks each image
+  N >= 3 times and reports `PASS` / `FAIL` / `UNSTABLE` with the counts
+  (`pass/fail/unclear of N`). PASS or FAIL needs a strict majority of the
+  answered asks; anything else is UNSTABLE. Exit 0 for every advisory result.
+  Exit 2 means Luna was unavailable (fewer than 3 answered asks): write
+  "visual check NOT done", never a verdict. `scripts/luna-eyes.mjs` stays the
+  single-ask primitive underneath and is unchanged.
+- **Diagnosis on every FAIL/UNSTABLE.** After the vote, `luna-vote` asks once
+  more per non-passing image (`--diagnose-asks N` for more): the single most
+  important reason, the ELEMENT it belongs to (from `--elements` or the
+  manifest; default silhouette/slope/ridge, snow line, haze/clouds, camera
+  pose, texture/colour, seabed detail, shoreline), the expected look, the
+  confidence (low/medium/high), and what was ambiguous if the image should
+  pass. The `--json` output keeps every answer (`reason`, `element`,
+  `expected`, `confidence`, `ambiguity`) and an aggregate: most common
+  element, per-element counts and flags (element disagreement, no single
+  most common element, question possibly ambiguous, unparsed answer). The
+  coordinator routes a failure to the owner task of its most common element;
+  ambiguity or disagreement flags mean "reword the question" before anyone
+  touches code.
+- **Calibrate the judge.** A question may be cited as a failure only when it
+  is CALIBRATED: run it against positive and negative control images first.
+  `node scripts/luna-vote.mjs --controls tests/visual-controls/<feature>.json
+  --json <result.json>` reports per question:
+  `CALIBRATED` (every good control PASS, every bad control FAIL),
+  `UNCALIBRATED` (a known-good control was not passed, or the manifest lacks a
+  good or a bad control: its FAILs **cannot be cited**), or `INSENSITIVE` (a
+  known-bad control was not failed: its PASSes cannot be cited). Failed
+  controls are diagnosed too, so a judge that is right for the wrong element
+  shows up (`elementMatch` when a bad control names its `element`). Then
+  `luna-vote --calibration <result.json> --question <id> ...` stamps each
+  result with `calibration` and `citable`. Without it the result is
+  `NOT-CHECKED` and not citable.
+- **Manifest format** (`tests/visual-controls/<feature>.json`, image paths
+  relative to the manifest; only generated review renders, never private
+  assets):
+
+  ```json
+  {
+    "id": "relief-snow",
+    "elements": ["silhouette/slope/ridge", "snow line", "haze/clouds", "camera pose"],
+    "asks": 3,
+    "questions": [{"id": "q-snowline", "prompt": "Do the high peaks carry a snow line?"}],
+    "controls": [
+      {"image": "relief-snow/good-alps.png", "expect": "PASS"},
+      {"image": "relief-snow/bad-bare.png", "expect": "FAIL", "element": "snow line"}
+    ]
+  }
+  ```
+
+- The vote logic is pinned by `tests/luna-vote.test.mjs` with a fake judge;
+  no registered test calls Luna.
+
+## Element-first rule
+
+Every visual feature is split into named ELEMENTS (for relief: silhouette/
+slope/ridge, snow line, haze/clouds, camera pose, texture/colour; for ocean:
+seabed detail, shoreline, ...) before it is assembled.
+
+1. Each element gets a **deterministic metric test** (HARD or CONTRACT class)
+   on its own pure module or data: slope histogram, snow altitude, haze
+   density at a distance, camera pose numbers.
+2. Each element gets a **single-element render check**: a render or lab view
+   that isolates that element; Luna questions, if any, are per element and
+   calibrated.
+3. Only after all elements pass on their own is **one assembled sheet** made.
+   At most ONE assembled Luna sheet per hand-off, voted once (N >= 3 asks).
+   A failing assembled sheet is diagnosed and routed back to the element it
+   names; it does not trigger more assembled sheets.
+
+Agents do not stack tests: do not re-run a reported check without a change,
+and do not add assembled visual checks to compensate for a missing element
+test.
+
 `npm run test:smoke` is an optional broad, fast check; it does not replace the
 affected selection or the merge gate. `npm run test:smoke:generate` regenerates
 `tests/smoke.json` from the supplied baseline. Its per-file seconds are sums of

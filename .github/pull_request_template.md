@@ -16,8 +16,15 @@ Refs #<issue> (task `T??`) <!-- use "Closes" only when ALL acceptance, including
 ## Tests NOT run (and why)
 - golden / perf / browser / walking / VR / headset: 
 
-## Visual evidence
-- Luna: question(s), image set, verdict per frame (2 of 3 majority), or **"visual check NOT done"** (exit 2 = Luna unavailable)
+## Result classes
+- HARD (tests, tsc, digests, goldens) NEW failures: none / list
+- CONTRACT (pinned LOD / lod-consistency, other pins) misses: none / list + owner-decision issue (pins are owner-only)
+
+## Visual evidence (VISUAL-ADVISORY: recorded, never blocks the merge by itself)
+- Elements and their deterministic metric tests + single-element render checks:
+- ONE assembled sheet: `node scripts/luna-vote.mjs --json <out> ...` -> per image PASS / FAIL / UNSTABLE with counts (`pass/fail/unclear of N`, N >= 3), or **"visual check NOT done"** (exit 2 = Luna unavailable)
+- Diagnosis for each FAIL/UNSTABLE: most common element, reason, expected, confidence, flags (disagreement / ambiguous question)
+- Calibration per question (`--controls tests/visual-controls/<feature>.json`): CALIBRATED / UNCALIBRATED / INSENSITIVE / NOT-CHECKED; an UNCALIBRATED FAIL is not cited as a failure
 - Captures: path under `test-results/...` (`--only` set, full hand-off set)
 
 ## Merger items (the merger applies these, not this PR)
