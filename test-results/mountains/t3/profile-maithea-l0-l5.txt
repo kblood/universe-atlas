@@ -1,0 +1,60 @@
+# node --cpu-prof profile-arm.mjs main|on Maithea (L0-L5 bench tiles x4, one arm per process), self time by function
+## main (22.76 ms/tile)
+total ms 6685
+   1494  22.3% noise catalog.ts:969
+    923  13.8% buildTile planet-tiles.ts:130
+    486   7.3% sample terrain.ts:501
+    431   6.4% n terrain.ts:316
+    388   5.8% (anon) surface-climate.ts:288
+    356   5.3% point planet-tiles.ts:172
+    306   4.6% (garbage collector) :0
+    290   4.3% unit planet-tiles.ts:40
+    287   4.3% detAtan2 det-math.ts:144
+    268   4.0% (anon) terrain.ts:821
+    221   3.3% tileDirection planet-tiles.ts:55
+    204   3.1% macroHeightCode catalog.ts:993
+    116   1.7% ridge planet-landforms.ts:29
+     77   1.2% T.buildTile.mountains prof.mjs:12
+     77   1.1% correctedHeight planet-tiles.ts:206
+     69   1.0% (anon) surface-biomes.ts:102
+     63   0.9% waterWorldLandColour terrain.ts:344
+     62   0.9% mix terrain.ts:305
+     48   0.7% childNormal planet-tiles.ts:258
+     47   0.7% seabedDetail terrain.ts:474
+     36   0.5% vertex planet-tiles.ts:231
+     33   0.5% parentPoint planet-tiles.ts:245
+     33   0.5% (anon) planet-tiles.ts:375
+     29   0.4% clamp terrain.ts:301
+     29   0.4% materialBytes surface-biomes.ts:121
+## on (28.73 ms/tile)
+total ms 8416
+   1433  17.0% noise catalog.ts:969
+    979  11.6% buildTile planet-tiles.ts:130
+    925  11.0% sample terrain.ts:515
+    594   7.1% n terrain.ts:319
+    441   5.2% (anon) surface-climate.ts:288
+    430   5.1% (garbage collector) :0
+    411   4.9% point planet-tiles.ts:183
+    399   4.7% macroHeightCode catalog.ts:993
+    377   4.5% (anon) terrain.ts:864
+    303   3.6% detAtan2 det-math.ts:144
+    297   3.5% unit planet-tiles.ts:40
+    255   3.0% tileDirection planet-tiles.ts:55
+    159   1.9% ridge planet-landforms.ts:29
+    125   1.5% bandTag mountain-layout.ts:576
+    114   1.4% (anon) surface-biomes.ts:102
+     77   0.9% childNormal planet-tiles.ts:273
+     74   0.9% waterWorldLandColour terrain.ts:347
+     68   0.8% correctedHeight planet-tiles.ts:220
+     66   0.8% seabedDetail terrain.ts:488
+     63   0.7% build prof.mjs:12
+     55   0.7% vertex planet-tiles.ts:245
+     46   0.5% rawAt planet-tiles.ts:211
+     44   0.5% mix terrain.ts:308
+     44   0.5% withinFlagged mountain-layout.ts:634
+     39   0.5% transverse mountain-layout.ts:132
+     29   0.3% hash64 catalog.ts:82
+     27   0.3% compileSourceTextModule utils:355
+     27   0.3% (anon) planet-tiles.ts:390
+     26   0.3% massifBeltSample mountain-assembly.ts:38
+     24   0.3% substrateColor planet-tiles.ts:289

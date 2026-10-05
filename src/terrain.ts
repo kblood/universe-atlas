@@ -459,6 +459,17 @@ type CoreSample = {
    * (terrain-1.7 base) height, so the landform geography is unchanged. */
   landformGateM: number;
 };
+// The memoised layout identity includes the body seed and geography. Hash strip-0 seeds once per
+// layout rather than once per tile sampler; weak keys do not extend a layout's lifetime.
+const mountainSeedMemo = new WeakMap<ReturnType<typeof orogenLayout>, Uint32Array>();
+function mountainSeeds(body: Body, layout: ReturnType<typeof orogenLayout>): Uint32Array {
+  let seeds = mountainSeedMemo.get(layout);
+  if (!seeds) {
+    seeds = Uint32Array.from(layout.belts, (_b, i) => Number(hash64(`${body.seed}/mountain-carving/${i}`) & 0xffffffffn));
+    mountainSeedMemo.set(layout, seeds);
+  }
+  return seeds;
+}
 function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false, relief: boolean = false,
   mountains: {carve: boolean} | null = null) {
   const { code, n } = macroNoise(body);
@@ -473,7 +484,7 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
   const orogen = mountains && reliefOn && body.water ? orogenLayout(body) : null;
   const orogenScratch: OrogenSample = {belt: 0, axis: [0, 0, 0], axisDistanceM: 0, halfWidthM: 0, beltIndex: -1, alongM: 0};
   const beltCarvingSeeds = orogen
-    ? Uint32Array.from(orogen.belts, (_b, i) => Number(hash64(`${body.seed}/mountain-carving/${i}`) & 0xffffffffn))
+    ? mountainSeeds(body, orogen)
     : new Uint32Array(0);
   const carve = mountains ? mountains.carve : true;
   const kd = dryFloorScale(tau);

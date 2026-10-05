@@ -47,10 +47,11 @@ export function unit(v: V3): V3 {
  * 1-Lipschitz normalization bound; changing projection requires reviewing
  * forest-selection-cache.ts and its seam/corner equivalence fixtures. */
 export function cubeDirection(face: number, u: number, v: number): V3 {
-  return unit(([
-    [1, v, -u], [-1, v, u], [u, 1, -v],
-    [u, -1, v], [u, v, 1], [-u, v, -1],
-  ][face]) as V3);
+  // Select only the requested face; the table allocated all six vectors for every terrain texel.
+  const p: V3 = (face===0?[1,v,-u]:face===1?[-1,v,u]:face===2?[u,1,-v]:
+    face===3?[u,-1,v]:face===4?[u,v,1]:face===5?[-u,v,-1]:undefined) as V3;
+  const length = Math.hypot(...p);
+  return [p[0]/length, p[1]/length, p[2]/length];
 }
 export function tileDirection(t: Tile, u: number, v: number): V3 {
   const n = 2 ** t.level;
@@ -170,26 +171,31 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
     return bed===null?s.groundHeightM:Math.min(s.groundHeightM,bed);
   };
   type LatticePoint={point:V3;height:number;sample:SurfaceSample;direction:V3};
-  const childPoints=new Map<string,LatticePoint>(),parentPoints=new Map<string,LatticePoint>();
+  const pointCache=()=>({grid:new Array<LatticePoint|undefined>((2*n+9)*(2*n+9)),overflow:new Map<string,LatticePoint>()});
   // Every caller uses this tile's 33x33 binary-fraction lattice (plus its
-  // half-cell centres for the coarse peak correction).  Two short-lived maps
+  // half-cell centres for the coarse peak correction). Two short-lived caches
   // are needed only while a river region is active, because parent endpoints
   // then have a different conservative footprint; without one, heightAt does
   // not read the footprint, so both endpoints share one cache.
   const sharedFootprints=!riverRegion||childFootprint===parentFootprint;
+  const childPoints=pointCache(),parentPoints=sharedFootprints?childPoints:pointCache();
   // At the carving switch level the parent path has its own sampler, so it also has its own cache (a cache
   // keyed without the level would hand the parent the child's carved samples).
-  const parentLevelPoints=new Map<string,LatticePoint>();
+  const parentLevelPoints=splitParent?pointCache():childPoints;
   const point = (u: number, v: number, footprintM=childFootprint, parentPath=false): LatticePoint => {
-    // Halo coordinates are intentionally outside [0, n]. A numeric row-major
-    // key aliases e.g. (-1,1) with (n,0), which silently corrupts edge normal
-    // samples; the signed pair remains unique for this short-lived cache. The
-    // key counts half cells, so cell centres share the cache with vertices.
+    // Halo coordinates are intentionally outside [0, n]. The numeric row-major
+    // key includes the full halo, avoiding aliases such as (-1,1) with (n,0).
+    // It counts half cells, so cell centres share the cache with vertices.
     const ownSampler=parentPath&&splitParent;
-    const x=Math.round(u*2*n),y=Math.round(v*2*n),key=`${x},${y}`,cache=ownSampler?parentLevelPoints:!sharedFootprints&&footprintM===parentFootprint?parentPoints:childPoints;
-    const existing=cache.get(key);if(existing)return existing;
+    const x=Math.round(u*2*n),y=Math.round(v*2*n);
+    // Include the signed halo in the row stride; keep a disjoint fallback for any caller outside it.
+    const index=x>=-4&&x<=2*n+4&&y>=-4&&y<=2*n+4?(y+4)*(2*n+9)+x+4:-1;
+    const cache=ownSampler?parentLevelPoints:!sharedFootprints&&footprintM===parentFootprint?parentPoints:childPoints;
+    const existing=index>=0?cache.grid[index]:cache.overflow.get(`${x},${y}`);if(existing)return existing;
     const d = tileDirection(tile, u, v),s=(ownSampler?parentSample:sample)(d),height=heightAt(d,footprintM,s),r = 1 + height * relief / body.radiusM;
-    const result={point:d.map(value => value * r) as V3,height,sample:s,direction:d};cache.set(key,result);return result;
+    const result={point:d.map(value => value * r) as V3,height,sample:s,direction:d};
+    if(index>=0)cache.grid[index]=result;else cache.overflow.set(`${x},${y}`,result);
+    return result;
   };
   // Peak-preserving coarse heights (docs/lod-ladder-contract-v1.md §3). At
   // levels up to the last S1 level (Maithea L9) a vertex stores its point
@@ -208,9 +214,7 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
   // once and each correction evaluated once per tile, by numeric index.
   // The parent path (step 2) is the only caller with parentPath; it gets its own grid only at the switch level.
   const G=2*n+9,O=4,rawGrids=new Map<number,Float64Array>(),parentLevelGrids=new Map<number,Float64Array>(),corrected=new Map<number,Float64Array>();
-  const rawAt=(hx:number,hy:number,footprintM:number,parentPath=false)=>{
-    const grids=parentPath&&splitParent?parentLevelGrids:rawGrids;
-    let grid=grids.get(footprintM);if(!grid){grid=new Float64Array(G*G).fill(NaN);grids.set(footprintM,grid);}
+  const rawAt=(hx:number,hy:number,footprintM:number,parentPath:boolean,grid:Float64Array)=>{
     const i=(hy+O)*G+hx+O;let h=grid[i];
     if(h!==h){h=point(hx/(2*n),hy/(2*n),footprintM,parentPath).height;grid[i]=h;}
     return h;
@@ -221,7 +225,10 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
     const key=step*1e6+footprintM;let memo=corrected.get(key);
     if(!memo){memo=new Float64Array((n+1)*(n+1)).fill(NaN);corrected.set(key,memo);}
     const mi=y*(n+1)+x;if(memo[mi]===memo[mi])return memo[mi];
-    const at=(i:number,j:number)=>rawAt(2*i,2*j,footprintM,step===2),p=at(x,y);
+    // Every tap of this correction uses the same sampler/footprint grid. Resolve it once.
+    const grids=step===2&&splitParent?parentLevelGrids:rawGrids;
+    let grid=grids.get(footprintM);if(!grid){grid=new Float64Array(G*G).fill(NaN);grids.set(footprintM,grid);}
+    const at=(i:number,j:number)=>rawAt(2*i,2*j,footprintM,step===2,grid),p=at(x,y);
     let lift=p;
     if(!onCubeEdge(tile.x*n+x,tile.y*n+y)&&!(body.water&&p<waterLevelM)){
       const h=step/2;let max=p,min=p;
@@ -366,8 +373,10 @@ export function buildTile(body: Body, tile: Tile, relief = 1, waterLevelM: numbe
     // bed colour, and use a deliberately inexpensive radial classification:
     // texture generation must not run six finite-difference terrain samples
     // per texel merely to obtain a shading normal.
-    const rgb=s.wet?substrateColor(regionalBankWeights(body,s,classify(d,s.groundHeightM,1).weights)):s.color.map(Math.floor);
-    color.set([...rgb,255], (y * width + x) * 4);
+    const rgb=s.wet?substrateColor(regionalBankWeights(body,s,classify(d,s.groundHeightM,1).weights)):s.color;
+    // Same floor and Uint8 conversion, without allocating mapped RGB and spread RGBA arrays per texel.
+    const ci = (y * width + x) * 4;
+    color[ci] = Math.floor(rgb[0]); color[ci+1] = Math.floor(rgb[1]); color[ci+2] = Math.floor(rgb[2]); color[ci+3] = 255;
   }
   // The base grid is a shared ocean topology. It deliberately has no skirts;
   // root can cull it from conservative tile bounds without changing coverage.

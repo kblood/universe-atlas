@@ -14,6 +14,7 @@
 // one whose parent-boundary edge is a cube-face edge (the neighbour lies on another face).
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import * as tiles from '../src/planet-tiles.ts';
 import {terrainSampler, mountainCarvingState, TERRAIN_MOUNTAINS_WIRED, TERRAIN_VERSION} from '../src/terrain.ts';
 import {LOD_LADDER_VERSION, CARVING_REDUCTION, CARVING_MAX_EDGE_M, carvingFromLevel, carvingAtLevel, tileEdgeM} from '../src/lod-ladder.ts';
@@ -27,6 +28,45 @@ import {
 const bodies = Object.fromEntries(waterWorlds().map(b => [b.name, b]));
 const MORPH_M = .05; // tests/lod-consistency.test.mjs 'morph: a child starts exactly on its corrected parent'
 const CUT = {Maithea: 6, Selawyn: 7, Raiva: 5, Lethuris: 7};
+
+// Captured BEFORE the value-preserving cost optimisation, from ea0c802's mountains-on
+// path. Hash all tile fields/buffers, with binary doubles (including signed zero).
+const COST_IDENTITY = {
+  Maithea: ['05a0aea70e33e2b0c36594f69041d4dbb86bfbd57db25280569ab91a894384af', '2e3759c5235bb8fb179ff6a6dd7d8c62cf7c4445785165977f3f5e091ae44194'],
+  Selawyn: ['565f77b3c215ccc08d22bff6dcadd8988775f63515329e3ed6e98ba1638c321d', '59cac04c2bdc58b6e5cf3a616995e4fe7d0faf9cfb2962fb4f861fbe24e5f558'],
+  Raiva: ['fc27a747f83127b7ec7ad5c9d8b5d8cc3684906b1232f74f41c88494aa0a474e', 'd1b2089dec6817c5bfa4104305b43f46699f46e7fb55b46fdd8661c401d42d55'],
+  Lethuris: ['2640201199c1f4523b0b8a10a7d148104cc37526298e16f1d4412e468b530557', '26e7faa3c55e995b2b6d0b3c8defa35a1d8aa3e80fddf4488b60b0d5b05a89d9'],
+};
+const COST_SAMPLER_IDENTITY = {
+  Maithea: ['df801672c445213af1e0822a9ab3d678f52a34b416565f5db2099b270f1fe3a6', 'a49cc5e166d1686748f7516556d5bd4fd53d0bcef1792c93b45b4daeabf42a79'],
+  Selawyn: ['b335c740d0dd0b80eef5374af73edda3256a91eb052416a3718ad8e2fc5d9f2a', 'efba81af653849461b56d8314e3fa39280ab32c0543c1da71ffd36fe8780ba54'],
+  Raiva: ['35996b0d9fe42f5f5ef89cd6697135746eab82b66d7e4436c2537de53b58df48', '3c9b85ba194eaa8c6edfa426446b1840d7510c1c0274438eec18cd240fa6f573'],
+  Lethuris: ['f5218c6fb2d262129d3dd4465851d5fc761b17751042a5c5c9f148b498faa42b', '72ca784c16ba4b497b099e1861b9d89d26f627d318dc6023f25e31b6ad01f610'],
+};
+function costIdentityDigest(value) {
+  const h = createHash('sha256');
+  function add(v) {
+    if (ArrayBuffer.isView(v)) { h.update(v.constructor.name); h.update(new Uint8Array(v.buffer, v.byteOffset, v.byteLength)); }
+    else if (typeof v === 'number') { const b = Buffer.alloc(8); b.writeDoubleLE(v); h.update(b); }
+    else if (v && typeof v === 'object') { for (const k of Object.keys(v).sort()) { h.update(k); add(v[k]); } }
+    else h.update(String(v));
+  }
+  add(value); return h.digest('hex');
+}
+for (const [name, body] of Object.entries(bodies)) test(`${name}: cost optimisation preserves every coarse/switch tile buffer`, () => {
+  const d = axisSites(body, {count: 3})[0].d, cut = CUT[name];
+  for (const [i, L] of [cut - 1, cut].entries()) {
+    assert.equal(costIdentityDigest(buildOn(body, tiles.directionTile(d, L))), COST_IDENTITY[name][i]);
+  }
+});
+for (const [name, body] of Object.entries(bodies)) test(`${name}: cost optimisation preserves full sampler outputs at truth and L0..22`, () => {
+  const dirs = [...axisSites(body, {count: 3}).map(s => s.d), ...Array.from({length: 256}, (_, i) => fib(i, 256))];
+  for (const lodLevel of [undefined, ...Array.from({length: 23}, (_, i) => i)]) {
+    const sample = terrainSampler(body, undefined, undefined, undefined, 0, undefined, true, {mountains: true, lodLevel});
+    const carved = lodLevel === undefined || lodLevel >= CUT[name];
+    assert.equal(costIdentityDigest(dirs.map(d => sample(d))), COST_SAMPLER_IDENTITY[name][+carved], `L${lodLevel}`);
+  }
+});
 
 test('lod-ladder-2: carving starts at the first level with edge <= 128 km; constants pinned to their sources', () => {
   assert.equal(LOD_LADDER_VERSION, 'lod-ladder-2');
