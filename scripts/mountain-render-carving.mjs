@@ -16,7 +16,8 @@ export function rampSampler(carving=ridgeValleyCarvingM){return d=>{
 };}
 
 const candidateC=process.argv[process.argv.indexOf('--candidate')+1]==='C';
-const OUT=new URL(candidateC?'../test-results/mountains/M3-r4/':'../test-results/mountains/M3/',import.meta.url);
+const candidateE=process.argv[process.argv.indexOf('--candidate')+1]==='E';
+const OUT=new URL(candidateE?'../test-results/mountains/M3-r5/E/':candidateC?'../test-results/mountains/M3-r4/':'../test-results/mountains/M3/',import.meta.url);
 const save=(name,data)=>writeFileSync(new URL(name,OUT),JSON.stringify(data,null,2)+'\n');
 const digest=r=>createHash('sha256').update(Buffer.from(r.h.buffer)).digest('hex');
 const sourceSha=()=>createHash('sha256').update(readFileSync(new URL('../src/mountain-carving.ts',import.meta.url))).digest('hex');
@@ -225,7 +226,7 @@ async function calibrateC(){
   const result={seed:SEED_BASE,halfWidthM:30000,blockId:0,quantile:.9,core:'e0 > 0.35',K:Math.sqrt(lo*hi),iterations};
   save('calibration.json',result);console.log(JSON.stringify(result));
 }
-function longStripC(fn){
+function longStripC(fn,name='C'){
   // Reuse the square hillshade helper in overlapping square panels, crop their
   // interior columns so panel edges use genuine neighbours (no shading seams).
   const step=125,n=483,width=1537,height=481,rgb=Buffer.alloc(width*height*3);
@@ -238,7 +239,7 @@ function longStripC(fn){
     const shaded=hillshade(rasterFromArray(h,n,step),5000),cols=Math.min(n-2,width-start);
     for(let j=0;j<height;j++)shaded.copy(rgb,(j*width+start)*3,((j+1)*n+1)*3,((j+1)*n+1+cols)*3);
   }
-  writePng(new URL('C-strip-192km-hillshade.png',OUT),width,height,rgb);
+  writePng(new URL(name+'-strip-192km-hillshade.png',OUT),width,height,rgb);
 }
 async function acceptanceC(){
   const m=await loadC(),fn=m.carvingCM;
@@ -286,9 +287,79 @@ async function benchmarkC(){
   save('benchmark.json',result);console.log('BENCH C '+JSON.stringify(result));
 }
 
+export async function loadE(replacements={},instrument=false){
+  const {stripTypeScriptTypes}=await import('node:module');
+  let source=readFileSync(new URL('../src/mountain-carving.ts',import.meta.url),'utf8');
+  const at=source.indexOf('export const CARVING_E_VERSION');
+  let tail=source.slice(at);
+  // Rejected crest-cap variants live only in this private diagnostic loader.
+  if(replacements.CAP_WANDER){
+    tail=tail.replace('SPUR:800,','SPUR:800,CAP_WANDER:0,').replace('SPUR?:N};','SPUR?:N,CAP_WANDER?:N};');
+    tail=tail.replace('h[k]=Math.min(h[k],eb[k],ee[k]);', 'const y=-w+Math.floor(k/stride)*dy,shift=o.CAP_WANDER?o.CAP_WANDER*cNoise(ex[k]/24000,0,111,seed):0,cap=shift?3000*Math.max(0,1-(Math.abs(y-shift)+Math.abs(shift))/w):ee[k];h[k]=Math.min(h[k],eb[k],ee[k],cap);');
+    if(!replacements.LEGACY_CAP)tail=tail.replace('let best=3000*Math.max(0,1-Math.abs(y)/a.w);','let best=3000*Math.max(0,1-Math.abs(y)/a.w);if(EE.CAP_WANDER){const shift=EE.CAP_WANDER*cNoise(x/24000,0,111,a.seed);best=Math.min(best,3000*Math.max(0,1-(Math.abs(y-shift)+Math.abs(shift))/a.w));}');
+  }
+
+  for(const [key,value] of Object.entries(replacements))tail=tail.replace(new RegExp('\\b'+key+':[0-9.]+'),key+':'+value);
+  source=source.slice(0,at)+tail;
+  if(instrument){source=source.replace('function eBuild(seed:','function eBuildRaw(seed:');
+    source+='\nexport const buildStats={count:0,ms:0}; function eBuild(seed:N,w:N,id:N,o:EO=EE){const t=performance.now();const b=eBuildRaw(seed,w,id,o);buildStats.count++;buildStats.ms+=performance.now()-t;return b;}';}
+  return import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source+'\nexport {eBuild,eCache,eRawCache,eGet,eRaw,eEdge,eBoundaryAt,eEdges,ex,ee,ea,ep,eb,ed,er,eo,es,eg,ei,el,eh,ek};')).toString('base64'));
+}
+export function eMemory(m){
+ const c=m.MOUNTAIN_CARVING_E, scratch=['ex','ee','ea','ep','eb','ed','er','eo','es','eg','ei','el','ek'].reduce((s,k)=>s+m[k].byteLength,0)+m.eh.ids.byteLength+m.eh.pos.byteLength;
+ const blocks=(c.CACHE+c.RAW_CACHE)*(c.ROWS+1)*(c.COLS+3)*8;
+ return {class:'INFO',scratchBytes:scratch,blockCapacityBytes:blocks,totalTypedArrayBytes:scratch+blocks,note:'Conservative: shared boundary arrays counted twice. Object headers excluded. C memo excluded; A2 remains dispatcher.'};
+}
+async function acceptanceE(){
+ const m=await loadE(),fn=m.carvingEM;
+ const pooled=candidateMetrics(fn,'E'),perSeed=[];
+ for(let i=0;i<SITES.length;i++){const result=candidateMetrics(fn,'E-seed'+i,{sites:[SITES[i]],renders:false});perSeed.push({seed:SEED_BASE+i,...result});console.log('E seed',SEED_BASE+i,JSON.stringify(result.rows));}
+ const safety=coast(fn),proxy=retention(rampSampler(fn));longStripC(fn,'E');
+ const capped=[];for(let i=0;i<8;i++){
+  const b=m.eGet(SEED_BASE+i,30000,Math.floor(i*1e6/15000)),{ROWS,COLS}=m.MOUNTAIN_CARVING_E;let count=0;
+  for(let j=1;j<ROWS;j++)for(let k=j*(COLS+1);k<(j+1)*(COLS+1);k++)if(b.h[k]>=3000*Math.max(0,1-Math.abs(-30000+60000*j/ROWS)/30000))count++;
+  capped.push(count/(ROWS-1)/(COLS+1));
+ }
+ const pass=pooled.rows.every(r=>r.pass)&&!safety.violations&&!safety.zeroOutsideViolations&&!safety.positiveCarving;
+ save('report.json',{class:'CONTRACT',version:m.CARVING_E_VERSION,constants:m.MOUNTAIN_CARVING_E,sourceSha256:sourceSha(),pooled,perSeed,coast:safety,retention:{class:'INFO',note:'Point-sampled proxy; no production peak correction.',...proxy},memory:eMemory(m),cappedShare:capped,pass});console.table(pooled.rows.map(({id,actual,pass})=>({id,actual,pass})));if(!pass)process.exitCode=1;
+}
+export {candidateMetrics,coast,retention,longStripC};
+async function benchmarkE(){
+  const m=await loadE({},true),args=[],source=sourceSha();
+  for(const {d} of SITES){const map=localMap(d,frame(d),R);
+    for(let j=0;j<385;j++)for(let i=0;i<385;i++)args.push(rampArgs(map((i-192)*125,(j-192)*125)));
+  }
+  let checksum=0;
+  const run=()=>{
+    const before={...m.buildStats},t=performance.now();for(const a of args)checksum+=m.carvingEM(...a);
+    return {nsPerSample:(performance.now()-t)*1e6/args.length,builds:m.buildStats.count-before.count,buildMs:m.buildStats.ms-before.ms};
+  };
+  m.eCache.fill(undefined);m.eRawCache.fill(undefined);const cold=run(),warm=run(),build=[];
+  for(let id=0;id<7;id++){const t=performance.now();m.eBuild(SEED_BASE,30000,id);build.push(performance.now()-t);}
+  // Fully resident warm cost in the same site/raster order. Preload each site's
+  // working set outside timing; the direct-mapped cache cannot hold all 8 sites.
+  let residentMs=0,residentBuilds=0;
+  for(let site=0;site<8;site++){
+    const a=args.slice(site*385*385,(site+1)*385*385);
+    for(const v of a)m.carvingEM(...v);
+    const before=m.buildStats.count,t=performance.now();for(const v of a)checksum+=m.carvingEM(...v);residentMs+=performance.now()-t;residentBuilds+=m.buildStats.count-before;
+  }
+  const {terrainSampler}=await import('../src/terrain.ts');
+  const {maithea,fib}=await import('../tests/terrain-climate-fixtures.mjs');
+  const ts=terrainSampler(maithea()),dirs=Array.from({length:args.length},(_,i)=>fib(i,args.length));
+  for(let i=0;i<10000;i++)checksum+=ts(dirs[i]).groundHeightM;
+  const terrainStart=performance.now();for(const d of dirs)checksum+=ts(d).groundHeightM;
+  const terrainNs=(performance.now()-terrainStart)*1e6/args.length;
+  if(source!==sourceSha())throw new Error('Source changed during benchmark');
+  const residentNs=residentMs*1e6/args.length;
+  const result={class:'INFO',sourceSha256:source,samples:args.length,nsPerSample:{emptyCache:cold.nsPerSample,secondPass:warm.nsPerSample,residentWarm:residentNs,terrain:terrainNs},cold,secondPass:warm,residentBuilds,blockBuildMs:{median:q(build,.5),samples:build},weightedRatioAt10Pct:{cold:.1*cold.nsPerSample/terrainNs,warm:.1*residentNs/terrainNs},budget:.08,cacheHeightBytes:(m.MOUNTAIN_CARVING_E.CACHE+m.MOUNTAIN_CARVING_E.RAW_CACHE)*(m.MOUNTAIN_CARVING_E.ROWS+1)*(m.MOUNTAIN_CARVING_E.COLS+3)*8,checksum,note:'Cold and second pass include all builds and collisions. Resident warm preloads each site outside timing. Single measured pass per workload, not a five-round median. Build timing uses a private source-loaded wrapper; production arithmetic is unchanged. CPU quiet lock not acquired.'};
+  result.memory=eMemory(m);save('benchmark.json',result);console.log('BENCH E '+JSON.stringify(result));
+}
+
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   mkdirSync(OUT,{recursive:true});
-  if(candidateC){if(process.argv.includes('--calibrate'))await calibrateC();else if(process.argv.includes('--bench'))await benchmarkC();else await acceptanceC();}
+  if(candidateE){if(process.argv.includes('--bench'))await benchmarkE();else await acceptanceE();}
+  else if(candidateC){if(process.argv.includes('--calibrate'))await calibrateC();else if(process.argv.includes('--bench'))await benchmarkC();else await acceptanceC();}
   else if(process.argv.includes('--controls'))await controls();
   else if(process.argv.includes('--verify-controls'))verifyControls();
   else if(process.argv.includes('--bench'))await benchmark();

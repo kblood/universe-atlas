@@ -1,4 +1,3 @@
-// M3: finite belt-local metres, halfWidthM > 0, uint32 seed. Unwired.
 export const MOUNTAIN_CARVING_VERSION = 'mountain-carving-1';
 export const MOUNTAIN_CARVING = Object.freeze({
   METHOD: 'A', JITTER: 0.45, WALL_SLOPE: 0.65, WALL_GAIN: 2.2,
@@ -15,39 +14,35 @@ export const CARVING_BANDS = Object.freeze([
   Object.freeze({level:4,wavelengthM:1000}),
 ]);
 const C=MOUNTAIN_CARVING;
-function hash(x: number,y: number,level: number,seed: number): number {
+function hash(x:N,y:N,level:N,seed:N):N {
   let h=Math.imul(x,0x9e3779b1)^Math.imul(y,0x85ebca77)^Math.imul(level,0xc2b2ae3d)^seed^(y<0?0x68bc21eb:0x02e5be93);
   h=Math.imul(h^(h>>>16),0x85ebca6b);h=Math.imul(h^(h>>>13),0xc2b2ae35);
   return ((h^(h>>>16))>>>0)/4294967295;
 }
-function pointX(x: number,y: number,level: number,s: number,seed: number): number {
+function pointX(x:N,y:N,level:N,s:N,seed:N):N {
   return s*(x+0.5+C.JITTER*(2*hash(x,y,level,seed)-1));
 }
-function pointY(x: number,y: number,level: number,s: number,w: number,seed: number): number {
+function pointY(x:N,y:N,level:N,s:N,w:N,seed:N):N {
   return Math.max(-w,Math.min(w,s*(y+0.5+C.JITTER*(2*hash(x,y,level,seed^0xb5297a4d)-1))));
 }
-function floorAt(y: number,w: number,level: number): number {
+function floorAt(y:N,w:N,level:N):N {
   return Math.abs(y)>=w?0:C.FLOOR_BASE+C.FLOOR_RISE*(1-Math.abs(y)/w)+C.HEAD_RISE*level;
 }
-// Two 5x5 banks: x,y,z,receiverX,receiverY,receiverZ per segment.
-// Every bank entry is overwritten before the next level reads it. No cross-call cache.
 const scratch = new Float64Array(2*25*6);
 
-function wallProfile(d: number): number {
+function wallProfile(d:N):N {
   return d*(C.WALL_LINEAR_SHARE+(1-C.WALL_LINEAR_SHARE)*d/(d+C.WALL_CURVE_M));
 }
-function gullyProfile(phase: number): number {
+function gullyProfile(phase:N):N {
   const u=phase-Math.floor(phase),v=u*(1-u);
   return 16*v*v;
 }
-// For wall height w(d), amp_k = weight_k * cap*w/(cap+w).
-// Sum |amp'_k profile_k| <= (DETAIL_2KM+DETAIL_1KM)*w' < w'.
-function wallDetail(w: number,arc: number,jitter2: number,jitter1: number): number {
+function wallDetail(w:N,arc:N,jitter2:N,jitter1:N):N {
   const amplitude=C.DETAIL_CAP_M*w/(C.DETAIL_CAP_M+w);
   return -amplitude*(C.DETAIL_2KM*gullyProfile((arc+jitter2)/CARVING_BANDS[3].wavelengthM)
     +C.DETAIL_1KM*gullyProfile((arc+jitter1)/CARVING_BANDS[4].wavelengthM));
 }
-export function carvingAM(alongM: number,acrossM: number,halfWidthM: number,envelopeM: number,belt: number,seed: number): number {
+export function carvingAM(alongM:N,acrossM:N,halfWidthM:N,envelopeM:N,belt:N,seed:N):N {
   if(belt===0||envelopeM<=0)return 0;
   let height=1e100,wall=C.WALL_SLOPE,previousX=0,previousY=0,previousBank=0;
   let activeWall=0,activeArc=0,activeX=0,activeY=0,activeLevel=0;
@@ -63,7 +58,6 @@ export function carvingAM(alongM: number,acrossM: number,halfWidthM: number,enve
       if(Math.abs(y)<halfWidthM){
         if(level===0){
           const direction=iy<0?-1:1,r=hash(ix,iy,17,seed);
-          // 92% straight-outward cell, 4% each diagonal. Jitter supplies sinuosity.
           const dx=r<C.TRUNK_DIAGONAL_SHARE/2?-1:r>1-C.TRUNK_DIAGONAL_SHARE/2?1:0;
           ex=pointX(ix+dx,iy+direction,0,s,seed);
           ey=pointY(ix+dx,iy+direction,0,s,halfWidthM,seed);
@@ -83,7 +77,6 @@ export function carvingAM(alongM: number,acrossM: number,halfWidthM: number,enve
           z=Math.max(z,ez+C.FLOOR_EPSILON);
         }
       }
-      // Final level is never read as a parent, so does not need scratch writes.
       if(level<2){
         const k=bank+((oy+2)*5+ox+2)*6;
         scratch[k]=x;scratch[k+1]=y;scratch[k+2]=z;
@@ -101,17 +94,13 @@ export function carvingAM(alongM: number,acrossM: number,halfWidthM: number,enve
     }
     previousX=cx;previousY=cy;previousBank=bank;wall*=C.WALL_GAIN;
   }
-  // Only the active coarse cone gets fine detail. Arc is constant on each normal ray.
   const arc=activeArc+16000*hash(activeX,activeY,activeLevel+23,seed);
   const detail=wallDetail(activeWall,arc,
     2000*hash(activeX,activeY,activeLevel+31,seed),1000*hash(activeX,activeY,activeLevel+37,seed));
   return Math.max(0,Math.min(envelopeM,height+detail))-envelopeM;
 }
 
-// Compact anisotropic gully kernels, with a carried analytic kernel gradient.
-// Orientation is held fixed during each octave's derivative evaluation (erosion
-// filter convention); this is not the total derivative through orientation feedback.
-export function carvingBM(alongM: number,acrossM: number,halfWidthM: number,envelopeM: number,belt: number,seed: number): number {
+export function carvingBM(alongM:N,acrossM:N,halfWidthM:N,envelopeM:N,belt:N,seed:N):N {
   if(belt===0||envelopeM<=0)return 0;
   const envelopeY=(acrossM<0?1:-1)*envelopeM/Math.max(1,halfWidthM-Math.abs(acrossM));
   let gx=0,gy=envelopeY,cut=0,cutX=0,cutY=0,amp=C.B_GAIN;
@@ -139,13 +128,10 @@ export function carvingBM(alongM: number,acrossM: number,halfWidthM: number,enve
   }
   return -envelopeM*(cut/(1+cut));
 }
-export function ridgeValleyCarvingM(alongM: number,acrossM: number,halfWidthM: number,envelopeM: number,belt: number,seed: number): number {
+export function ridgeValleyCarvingM(alongM:N,acrossM:N,halfWidthM:N,envelopeM:N,belt:N,seed:N):N {
   return carvingAM(alongM,acrossM,halfWidthM,envelopeM,belt,seed);
 }
 
-// C changes the original no-stored-state architecture: a bounded, direct-mapped
-// memo stores complete canonical blocks. Exact keys and rebuild-on-collision
-// make its contents observationally irrelevant. No tile or LOD enters a key.
 export const CARVING_C_VERSION = 'mountain-carving-c-1';
 export const MOUNTAIN_CARVING_C = Object.freeze({
   ROWS: 480, COLS: 120, CACHE: 32, TILT: 1.3, NOISE_AMP: 400,
@@ -154,49 +140,45 @@ export const MOUNTAIN_CARVING_C = Object.freeze({
   EPSILON: 0.000001, REFERENCE_M: 3000,
 });
 const CC=MOUNTAIN_CARVING_C;
-type CBlock = {seed:number,w:number,id:number,h:Float64Array,left:Float64Array,right:Float64Array};
+type CBlock = {seed:N,w:N,id:N,h:Float64Array,left:Float64Array,right:Float64Array};
 const cCache: (CBlock|undefined)[] = new Array(CC.CACHE);
-function cHash(x:number,y:number,o:number,seed:number):number {
+function cHash(x:N,y:N,o:N,seed:N):N {
   let h=Math.imul(x,0x9e3779b1)^Math.imul(y,0x85ebca77)^Math.imul(o,0xc2b2ae3d)^Math.imul(seed,0x27d4eb2d);
   h=Math.imul(h^(h>>>16),0x85ebca6b);h=Math.imul(h^(h>>>13),0xc2b2ae35);
   return ((h^(h>>>16))>>>0)/4294967295;
 }
-function cNoise(x:number,y:number,o:number,seed:number):number {
+function cNoise(x:N,y:N,o:N,seed:N):N {
   const i=Math.floor(x),j=Math.floor(y),fx=x-i,fy=y-j;
   const u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy);
   const a=cHash(i,j,o,seed),b=cHash(i+1,j,o,seed),c=cHash(i,j+1,o,seed),d=cHash(i+1,j+1,o,seed);
   return 2*((a+(b-a)*u)*(1-v)+(c+(d-c)*u)*v)-1;
 }
-function cBoundary(id:number,y:number,w:number,seed:number):number {
+function cBoundary(id:N,y:N,w:N,seed:N):N {
   const t=y/(w/5),j=Math.floor(t),f=t-j,u=f*f*(3-2*f);
   const a=2*cHash(id,0,101,seed)-1;
   const b=2*cHash(id,j,102,seed)-1,c=2*cHash(id,j+1,102,seed)-1;
   return w/2*(id+0.10*a+0.08*(b+(c-b)*u));
 }
-// Actual mesh boundary is linear between canonical curve samples, including
-// during ownership lookup. Equality belongs to the block on the right.
-function cBoundaryAt(id:number,row:number,t:number,w:number,seed:number):number {
+function cBoundaryAt(id:N,row:N,t:N,w:N,seed:N):N {
   const a=cBoundary(id,-w+2*w*row/CC.ROWS,w,seed);
   return a+(cBoundary(id,-w+2*w*(row+1)/CC.ROWS,w,seed)-a)*t;
 }
-function cAreaExponent(a:number):number {return Math.sqrt(Math.sqrt(Math.sqrt(a*a*a)));}
-function cEnvelope(y:number,w:number):number {return CC.REFERENCE_M*Math.max(0,1-Math.abs(y)/w);}
-function cSlope(e:number):number {return CC.SC*Math.min(1,e/CC.FOOT);}
-function cDiagonal(id:number,row:number,col:number,seed:number):boolean {
+function cAreaExponent(a:N):N {return Math.sqrt(Math.sqrt(Math.sqrt(a*a*a)));}
+function cEnvelope(y:N,w:N):N {return CC.REFERENCE_M*Math.max(0,1-Math.abs(y)/w);}
+function cSlope(e:N):N {return CC.SC*Math.min(1,e/CC.FOOT);}
+function cDiagonal(id:N,row:N,col:N,seed:N):boolean {
   return cHash(id*CC.COLS+col,row,103,seed)<0.5;
 }
-// Indexed binary heap: one entry per vertex, deterministic value/index ties.
-// The caller only decreases keys of entries already present.
 class CHeap {
   ids:Int32Array; pos:Int32Array; key:Float64Array; size=0;
-  constructor(n:number,key:Float64Array){this.ids=new Int32Array(n);this.pos=new Int32Array(n).fill(-1);this.key=key;}
-  less(a:number,b:number):boolean {return this.key[a]<this.key[b]||(this.key[a]===this.key[b]&&a<b);}
-  push(c:number):void {
+  constructor(n:N,key:Float64Array){this.ids=new Int32Array(n);this.pos=new Int32Array(n).fill(-1);this.key=key;}
+  less(a:N,b:N):boolean {return this.key[a]<this.key[b]||(this.key[a]===this.key[b]&&a<b);}
+  push(c:N):void {
     let k=this.pos[c];if(k<0)k=this.size++;
     while(k>0){const p=(k-1)>>1,a=this.ids[p];if(!this.less(c,a))break;this.ids[k]=a;this.pos[a]=k;k=p;}
     this.ids[k]=c;this.pos[c]=k;
   }
-  pop():number {
+  pop():N {
     const c=this.ids[0],a=this.ids[--this.size];this.pos[c]=-1;
     if(this.size){let k=0;for(;;){let b=2*k+1;if(b>=this.size)break;
       if(b+1<this.size&&this.less(this.ids[b+1],this.ids[b]))b++;
@@ -205,7 +187,7 @@ class CHeap {
     }this.ids[k]=a;this.pos[a]=k;}return c;
   }
 }
-function cMesh(seed:number,w:number,id:number) {
+function cMesh(seed:N,w:N,id:N) {
   const stride=CC.COLS+1,n=(CC.ROWS+1)*stride,dy=2*w/CC.ROWS;
   const x=new Float64Array(n),e=new Float64Array(n),fixed=new Uint8Array(n);
   const left=new Float64Array(CC.ROWS+1),right=new Float64Array(CC.ROWS+1);
@@ -217,11 +199,11 @@ function cMesh(seed:number,w:number,id:number) {
       e[k]=cEnvelope(y,w);fixed[k]=i===0||i===CC.COLS||j===0||j===CC.ROWS?1:0;
     }
   }
-  const edge=(a:number,b:number)=>{
+  const edge=(a:N,b:N)=>{
     const dx=x[b]-x[a],yy=(Math.floor(b/stride)-Math.floor(a/stride))*dy,len=Math.sqrt(dx*dx+yy*yy);
     let k=a*8+degree[a]++;nb[k]=b;length[k]=len;k=b*8+degree[b]++;nb[k]=a;length[k]=len;
   };
-  const triangle=(a:number,b:number,c:number)=>{
+  const triangle=(a:N,b:N,c:N)=>{
     const abY=(Math.floor(b/stride)-Math.floor(a/stride))*dy,acY=(Math.floor(c/stride)-Math.floor(a/stride))*dy;
     const share=Math.abs((x[b]-x[a])*acY-(x[c]-x[a])*abY)/6;
     area[a]+=share;area[b]+=share;area[c]+=share;
@@ -235,24 +217,20 @@ function cMesh(seed:number,w:number,id:number) {
   }
   return {stride,n,dy,x,e,fixed,left,right,degree,nb,length,area};
 }
-// Prescribed shared trunk, not a globally self-consistent discharge solution.
-// HACK_C gives 175.07 km2 at l=30 km. Midpoint integration goes margin to
-// head, using actual polyline segment lengths and guarded Hack head distance.
-function cTrunk(boundary:number,w:number,seed:number):Float64Array {
-  const h=new Float64Array(CC.ROWS+1),dy=2*w/CC.ROWS;
-  for(const sign of [-1,1])for(let k=1;k<=CC.ROWS/2;k++){
-    const row=sign<0?k:CC.ROWS-k,prev=row+sign;
-    const y=-w+2*w*row/CC.ROWS,yp=-w+2*w*prev/CC.ROWS;
+function cTrunk(boundary:N,w:N,seed:N,rows:N=CC.ROWS):Float64Array {
+  const h=new Float64Array(rows+1),dy=2*w/rows;
+  for(const sign of [-1,1])for(let k=1;k<=rows/2;k++){
+    const row=sign<0?k:rows-k,prev=row+sign;
+    const y=-w+2*w*row/rows,yp=-w+2*w*prev/rows;
     const mid=(y+yp)/2,l=Math.max(CC.HEAD_GUARD_M,Math.abs(mid));
     const area=CC.HACK_C*l*Math.sqrt(l)*Math.sqrt(Math.sqrt(l));
     const dx=cBoundary(boundary,y,w,seed)-cBoundary(boundary,yp,w,seed);
     const v=h[prev]+Math.sqrt(dx*dx+dy*dy)*Math.min(cSlope(cEnvelope(mid,w)),CC.K/cAreaExponent(area));
-    // Both flanks reach the head; the lower head retains a descending edge.
-    h[row]=row===CC.ROWS/2&&sign===1?Math.min(h[row],v,cEnvelope(y,w)):Math.min(v,cEnvelope(y,w));
+    h[row]=row===rows/2&&sign===1?Math.min(h[row],v,cEnvelope(y,w)):Math.min(v,cEnvelope(y,w));
   }
   return h;
 }
-function cBuild(seed:number,w:number,id:number) {
+function cBuild(seed:N,w:N,id:N) {
   const mesh=cMesh(seed,w,id),{n,stride,dy,x,e,fixed,left,right,degree,nb,length,area}=mesh;
   const filled=new Float64Array(n),seen=new Uint8Array(n),order=new Int32Array(n);
   const receiver=new Int32Array(n).fill(-1),distance=new Float64Array(n),acc=area.slice();
@@ -289,21 +267,15 @@ function cBuild(seed:number,w:number,id:number) {
   }}
   const uncapped=new Float64Array(n);
   for(let k=0;k<n;k++){uncapped[k]=Math.min(h[k],best[k]);h[k]=Math.min(uncapped[k],e[k]);}
-  // Each positive interior vertex has a lower edge before clipping: its
-  // receiver or its Dijkstra predecessor. The ramp also has a lower edge.
-  // Taking their minimum preserves this property. Linear triangles introduce
-  // no strict interior minima. This certifies construction-mesh drainage on
-  // the reference ramp, NOT D8 resampling or arbitrary supplied envelopes.
-  // Rich build data is private and temporary; only compact block data is cached.
   return {seed,w,id,h,left,right,mesh,receiver,acc,uncapped};
 }
-function cGet(seed:number,w:number,id:number):CBlock {
+function cGet(seed:N,w:N,id:N):CBlock {
   const slot=(Math.imul(id,0x9e3779b1)^seed)>>>0,at=slot%CC.CACHE,b=cCache[at];
   if(b&&b.seed===seed&&b.w===w&&b.id===id)return b;
   const built=cBuild(seed,w,id),block={seed,w,id,h:built.h,left:built.left,right:built.right};
   cCache[at]=block;return block;
 }
-function cInterpolate(b:CBlock,x:number,row:number,t:number):number {
+function cInterpolate(b:CBlock,x:N,row:N,t:N,CC:{ROWS:N,COLS:N}=MOUNTAIN_CARVING_C,chooseDiagonal=cDiagonal):N {
   const l=b.left[row]+(b.left[row+1]-b.left[row])*t,r=b.right[row]+(b.right[row+1]-b.right[row])*t;
   const col=Math.max(0,Math.min(CC.COLS-1,Math.floor((x-l)/(r-l)*CC.COLS)));
   const x0=b.left[row]+(b.right[row]-b.left[row])*col/CC.COLS;
@@ -311,7 +283,7 @@ function cInterpolate(b:CBlock,x:number,row:number,t:number):number {
   const x2=b.left[row+1]+(b.right[row+1]-b.left[row+1])*col/CC.COLS;
   const x3=b.left[row+1]+(b.right[row+1]-b.left[row+1])*(col+1)/CC.COLS;
   const a=row*(CC.COLS+1)+col,c=a+CC.COLS+1,h=b.h;
-  if(cDiagonal(b.id,row,col,b.seed)){
+  if(chooseDiagonal(b.id,row,col,b.seed)){
     const diagonal=x0+(x3-x0)*t;
     if(x>=diagonal){const u=(x-diagonal)/(x1-x0);return (1-t-u)*h[a]+u*h[a+1]+t*h[c+1];}
     const u=(diagonal-x)/(x3-x2);return (1-t)*h[a]+u*h[c]+(t-u)*h[c+1];
@@ -320,7 +292,7 @@ function cInterpolate(b:CBlock,x:number,row:number,t:number):number {
   if(x<=diagonal){const u=(diagonal-x)/(x1-x0);return u*h[a]+(1-t-u)*h[a+1]+t*h[c];}
   const u=(x-diagonal)/(x3-x2);return (1-t)*h[a+1]+(t-u)*h[c]+u*h[c+1];
 }
-export function carvingCM(alongM:number,acrossM:number,halfWidthM:number,envelopeM:number,belt:number,seed:number):number {
+export function carvingCM(alongM:N,acrossM:N,halfWidthM:N,envelopeM:N,belt:N,seed:N):N {
   if(belt===0||envelopeM<=0||Math.abs(acrossM)>=halfWidthM)return 0;
   const v=(acrossM+halfWidthM)/(2*halfWidthM)*CC.ROWS,row=Math.min(CC.ROWS-1,Math.floor(v)),t=v-row;
   let id=Math.floor(alongM/(halfWidthM/2));
@@ -329,4 +301,95 @@ export function carvingCM(alongM:number,acrossM:number,halfWidthM:number,envelop
   const href=cInterpolate(cGet(seed,halfWidthM,id),alongM,row,t);
   const retained=Math.max(0,Math.min(1,href/cEnvelope(acrossM,halfWidthM)));
   return retained===1?0:-envelopeM*(1-retained);
+}
+
+type N=number;
+export const CARVING_E_VERSION='mountain-carving-e-1';
+export const MOUNTAIN_CARVING_E=Object.freeze({ROWS:240,COLS:60,CACHE:32,RAW_CACHE:64,TILT:1.3,NOISE_AMP:400,SC:1.1,FOOT:1500,AC:300000,M:0.375,K:37.552365026127084,BOUNDARY:2,WANDER:2500,SPUR:800,EPSILON:0.000001,REFERENCE_M:3000});
+const EE:EO & {CACHE:N,RAW_CACHE:N,BOUNDARY:N}=MOUNTAIN_CARVING_E;
+type EO={ROWS:N,COLS:N,TILT:N,NOISE_AMP:N,SC:N,FOOT:N,AC:N,K:N,EPSILON:N,BOUNDARY?:N,WANDER?:N,SPUR?:N};
+const en=481*121,ex=new Float64Array(en),ee=new Float64Array(en),ea=new Float64Array(en),ep=new Float64Array(en),eb=new Float64Array(en),ed=new Float64Array(en),er=new Int32Array(en),eo=new Int32Array(en),es=new Uint8Array(en),eg=new Uint8Array(en),ei=new Int32Array(8),el=new Float64Array(8),eh=new CHeap(en,ep);
+const ek=new Float64Array(en);let ez=0,eu=false;
+function ePush(c:N,v:N):void {
+let k=eu?eh.pos[c]:-1;if(k<0)k=ez++;
+while(k>0){const p=(k-1)>>2,a=eh.ids[p],b=ek[p];if(v>b||(v===b&&c>=a))break;eh.ids[k]=a;ek[k]=b;if(eu)eh.pos[a]=k;k=p;}eh.ids[k]=c;ek[k]=v;if(eu)eh.pos[c]=k;
+}
+function ePop():N {
+const c=eh.ids[0],a=eh.ids[--ez],v=ek[ez];if(eu)eh.pos[c]=-1;
+if(ez){let k=0;for(;;){let b=4*k+1;if(b>=ez)break;for(let j=b+1;j<ez&&j<=4*k+4;j++)if(ek[j]<ek[b]||(ek[j]===ek[b]&&eh.ids[j]<eh.ids[b]))b=j;
+if(ek[b]>v||(ek[b]===v&&eh.ids[b]>=a))break;eh.ids[k]=eh.ids[b];ek[k]=ek[b];if(eu)eh.pos[eh.ids[k]]=k;k=b;}eh.ids[k]=a;ek[k]=v;if(eu)eh.pos[a]=k;}return c;
+}
+const eCache:(CBlock|undefined)[]=new Array(EE.CACHE),eRawCache:(CBlock|undefined)[]=new Array(EE.RAW_CACHE);
+function eDiagonal(id:N,j:N,i:N,seed:N):boolean{return cHash(id*EE.COLS+i,j,103,seed)<0.5;}
+function eBoundary(id:N,y:N,w:N,seed:N):N {
+const t=y/(w/5),j=Math.floor(t),f=t-j,u=f*f*(3-2*f),a=2*cHash(id,0,101,seed)-1,b=2*cHash(id,j,102,seed)-1,c=2*cHash(id,j+1,102,seed)-1;
+return w/2*(id+0.30*a+0.15*(b+(c-b)*u));
+}
+function eBoundaryAt(id:N,row:N,t:N,w:N,seed:N):N {
+const f=EE.BOUNDARY===0?cBoundary:eBoundary,a=f(id,-w+2*w*row/EE.ROWS,w,seed);return a+(f(id,-w+2*w*(row+1)/EE.ROWS,w,seed)-a)*t;
+}
+function eEdges(k:N,stride:N,rows:N,cols:N,dy:N):N {
+const i=k%stride,up=k>=stride,down=k<rows*stride;let n=0;
+if(i)ei[n++]=k-1;if(i<cols)ei[n++]=k+1;if(up)ei[n++]=k-stride;if(down)ei[n++]=k+stride;
+if(i&&up&&eg[k-stride-1])ei[n++]=k-stride-1;
+if(i<cols&&up&&!eg[k-stride])ei[n++]=k-stride+1;
+if(i&&down&&!eg[k-1])ei[n++]=k+stride-1;
+if(i<cols&&down&&eg[k])ei[n++]=k+stride+1;
+for(let a=0;a<n;a++){const r=ei[a],dx=ex[r]-ex[k],y=r===k-1||r===k+1?0:dy;el[a]=Math.sqrt(dx*dx+y*y);}return n;
+}
+function eTriangle(a:N,b:N,c:N,stride:N,dy:N):void {
+const abY=(Math.floor(b/stride)-Math.floor(a/stride))*dy,acY=(Math.floor(c/stride)-Math.floor(a/stride))*dy,v=Math.abs((ex[b]-ex[a])*acY-(ex[c]-ex[a])*abY)/6;ea[a]+=v;ea[b]+=v;ea[c]+=v;
+}
+function eBuild(seed:N,w:N,id:N,o:EO=EE) {
+const rows=o.ROWS,cols=o.COLS,stride=cols+1,n=(rows+1)*stride,dy=2*w/rows,wall=(o.BOUNDARY??0)>0;
+const left=new Float64Array(rows+1),right=new Float64Array(rows+1),h=new Float64Array(n),boundary=wall?eBoundary:cBoundary;
+ea.fill(0,0,n);es.fill(0,0,n);er.fill(-1,0,n);eb.fill(0,0,n);ez=0;eu=false;eh.pos.fill(-1);
+for(let j=0;j<=rows;j++){
+const y=-w+2*w*j/rows;left[j]=boundary(id,y,w,seed);right[j]=boundary(id+1,y,w,seed);
+for(let i=0;i<=cols;i++){const k=j*stride+i;ex[k]=i===cols?right[j]:left[j]+(right[j]-left[j])*i/cols;ee[k]=3000*Math.max(0,1-Math.abs(y)/w);eg[k]=cHash(id*cols+i,j,103,seed)<0.5?1:0;
+}}
+for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const a=j*stride+i,b=a+1,c=a+stride,d=c+1;if(eg[a]){eTriangle(a,b,d,stride,dy);eTriangle(a,d,c,stride,dy);}else{eTriangle(a,b,c,stride,dy);eTriangle(b,d,c,stride,dy);}}
+for(let j=0;j<=rows;j++){const y=-w+j*dy;let amp=1,lam=8000;
+for(let o=1;o<=6;o++){const yy=y/lam,jj=Math.floor(yy),fy=yy-jj,v=fy*fy*(3-2*fy);let last=Infinity,a=0,b=0,c=0,d=0;
+for(let i=0;i<=cols;i++){const k=j*stride+i,xx=ex[k]/lam,ii=Math.floor(xx),fx=xx-ii,u=fx*fx*(3-2*fx);if(ii!==last){a=cHash(ii,jj,o,seed);b=cHash(ii+1,jj,o,seed);c=cHash(ii,jj+1,o,seed);d=cHash(ii+1,jj+1,o,seed);last=ii;}eb[k]+=amp*(2*((a+(b-a)*u)*(1-v)+(c+(d-c)*u)*v)-1);}amp*=0.6;lam/=2;}}
+let norm=0,amp=1;for(let a=1;a<=6;a++){norm+=amp;amp*=0.6;}
+for(let k=0;k<n;k++){
+const j=Math.floor(k/stride),i=k%stride,y=-w+j*dy,noise=eb[k];
+const wander=o.WANDER?o.WANDER*cNoise(ex[k]/24000,0,111,seed):0;
+ep[k]=ee[k]===0?0:o.TILT*(wander?3000*Math.max(0,1-Math.abs(y-wander)/w):ee[k])+o.NOISE_AMP*noise/norm;
+if(o.BOUNDARY===2){const d=Math.min(i,cols-i)/cols;ep[k]+=(o.SPUR??0)*Math.max(0,1-d*5)*ee[k]/3000;}
+if(j===0||j===rows||i===0||i===cols){es[k]=1;if(!wall||i>0&&i<cols)ePush(k,ep[k]);}
+}
+let count=0;
+while(ez){const c=ePop();eo[count++]=c;const len=eEdges(c,stride,rows,cols,dy);for(let a=0;a<len;a++){const k=ei[a];if(es[k])continue;es[k]=1;ep[k]=Math.max(ep[k],ep[c]+o.EPSILON);ePush(k,ep[k]);}}
+for(let k=0;k<n;k++){const j=Math.floor(k/stride),i=k%stride;if(!j||j===rows||!i||i===cols)continue;
+let best=0;const len=eEdges(k,stride,rows,cols,dy);for(let a=0;a<len;a++){const r=ei[a];if(wall&&(r%stride===0||r%stride===cols))continue;const v=(ep[k]-ep[r])/el[a];if(v>best||(v===best&&v>0&&r<er[k])){best=v;er[k]=r;ed[k]=el[a];}}}
+for(let j=count-1;j>=0;j--){const k=eo[j],r=er[k];if(r>=0)ea[r]+=ea[k];}
+const lh=wall?left:cTrunk(id,w,seed,rows),rh=wall?right:cTrunk(id+1,w,seed,rows);
+h.fill(Infinity);
+for(let j=0;j<count;j++){const k=eo[j],row=Math.floor(k/stride),col=k%stride;h[k]=er[k]<0?(wall?0:col===0?lh[row]:col===cols?rh[row]:0):h[er[k]]+ed[k]*Math.min(o.SC*Math.min(1,ee[k]/o.FOOT),o.K/cAreaExponent(ea[k]));}
+eu=true;eb.fill(Infinity,0,n);
+for(let k=0;k<n;k++){const i=k%stride,j=Math.floor(k/stride),fixed=!i||i===cols||!j||j===rows;if((!wall||i>0&&i<cols)&&(fixed||ea[k]>=o.AC)){eb[k]=h[k];ePush(k,eb[k]);}}
+while(ez){const c=ePop(),len=eEdges(c,stride,rows,cols,dy);for(let a=0;a<len;a++){const k=ei[a],i=k%stride,j=Math.floor(k/stride);if(!i||i===cols||!j||j===rows)continue;const v=eb[c]+o.SC*Math.min(1,ee[k]/o.FOOT)*el[a];if(v<eb[k]){eb[k]=v;ePush(k,v);}}}
+let capped=0;for(let k=0;k<n;k++){if(ee[k]>0&&Math.min(h[k],eb[k])>=ee[k])capped++;h[k]=Math.min(h[k],eb[k],ee[k]);}
+return {seed,w,id,h,left,right,capped};
+}
+function eRaw(seed:N,w:N,id:N):CBlock {
+const at=((Math.imul(id,0x9e3779b1)^seed)>>>0)%EE.RAW_CACHE,b=eRawCache[at];if(b&&b.seed===seed&&b.w===w&&b.id===id)return b;const v=eBuild(seed,w,id);eRawCache[at]=v;return v;
+}
+function eEdge(a:CBlock,b:CBlock,row:N):N {
+const y=-a.w+2*a.w*row/EE.ROWS,x=a.right[row];let best=3000*Math.max(0,1-Math.abs(y)/a.w);
+for(let side=0;side<2;side++){const v=side===0?a:b,col=side===0?EE.COLS-1:1;for(let j=Math.max(0,row-1);j<=Math.min(EE.ROWS,row+1);j++){
+if(j!==row&&((side===0?j<row:j>row)!==eDiagonal(v.id,j<row?j:row,side===0?EE.COLS-1:0,v.seed)))continue;
+const dx=v.left[j]+(v.right[j]-v.left[j])*col/EE.COLS-x,dy=(j-row)*2*a.w/EE.ROWS;
+best=Math.min(best,v.h[j*(EE.COLS+1)+col]+EE.SC*Math.min(1,3000*Math.max(0,1-Math.abs(y)/a.w)/EE.FOOT)*Math.sqrt(dx*dx+dy*dy));}}return best;
+}
+function eGet(seed:N,w:N,id:N):CBlock {
+const at=((Math.imul(id,0x9e3779b1)^seed)>>>0)%EE.CACHE,b=eCache[at];if(b&&b.seed===seed&&b.w===w&&b.id===id)return b;
+const a=eRaw(seed,w,id);if(EE.BOUNDARY===0){eCache[at]=a;return a;}
+const l=eRaw(seed,w,id-1),r=eRaw(seed,w,id+1),out={seed,w,id,h:a.h.slice(),left:a.left,right:a.right};for(let j=0;j<=EE.ROWS;j++){out.h[j*(EE.COLS+1)]=eEdge(l,a,j);out.h[j*(EE.COLS+1)+EE.COLS]=eEdge(a,r,j);}eCache[at]=out;return out;
+}
+export function carvingEM(x:N,y:N,w:N,envelope:N,belt:N,seed:N):N {
+if(belt===0||envelope<=0||Math.abs(y)>=w)return 0;const v=(y+w)/(2*w)*EE.ROWS,row=Math.min(EE.ROWS-1,Math.floor(v)),t=v-row;let id=Math.floor(x/(w/2));const b=eCache[((Math.imul(id,0x9e3779b1)^seed)>>>0)%EE.CACHE],hit=b&&b.seed===seed&&b.w===w&&b.id===id;const l=hit?b.left[row]+(b.left[row+1]-b.left[row])*t:eBoundaryAt(id,row,t,w,seed);if(x<l)id--;else if(x>=(hit?b.right[row]+(b.right[row+1]-b.right[row])*t:eBoundaryAt(id+1,row,t,w,seed)))id++;
+const h=cInterpolate(eGet(seed,w,id),x,row,t,EE,eDiagonal),retained=Math.max(0,Math.min(1,h/(3000*Math.max(0,1-Math.abs(y)/w))));return retained===1?0:-envelope*(1-retained);
 }

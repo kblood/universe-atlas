@@ -249,3 +249,91 @@ test('C: production mesh drainage, conservation, shared vertices and seam contin
     assert.ok(h>=Math.min(...corners)-1e-8&&h<=Math.max(...corners)+1e-8);
   }
 });
+
+// E fixtures use stdin for their child; existing C fixtures are untouched.
+function eSource(small=false,fastC=false){
+  let s=cSource;
+  if(small)s=s.replace('ROWS:240,COLS:60,CACHE:32,RAW_CACHE:64','ROWS:48,COLS:12,CACHE:2,RAW_CACHE:4');
+  if(fastC){
+    if(small)s=s.replace('ROWS: 480, COLS: 120, CACHE: 32','ROWS: 48, COLS: 12, CACHE: 2');
+    s=s.replace('const built=cBuild(seed,w,id),block=','const built=eBuild(seed,w,id,CC),block=');
+  }
+  return stripTypeScriptTypes(s+'\nexport {eBuild,eCache,eRawCache,eGet,eRaw,eEdge,eBoundaryAt,eDiagonal,cCache,cGet,ex,ee,ea,ep,eb,ed,er,eo,es,eg,ei,el,eh,ek};');
+}
+const eLoad=async(small=false,fastC=false)=>import('data:text/javascript;base64,'+Buffer.from(eSource(small,fastC)).toString('base64'));
+const eClear=m=>{m.eCache.fill(undefined);m.eRawCache.fill(undefined);};
+function eDigest(m,reverse=false){return cDigest({carvingCM:m.carvingEM},reverse);}
+
+test('HARD E: fast builder reproduces both frozen C digests',async()=>{
+  for(const small of [true,false]){
+    const m=await eLoad(small,true);m.cCache.fill(undefined);
+    assert.equal(cDigest(m),small?'e40c2a40fa6437176b8e58517ec811be1759ddba346afc06eb14f4a2ec5ddf06':'cc97b80ffec00b6f028bbddee57b4c0c196cb0cba575ed2722f4bb7cf3f85416');
+  }
+});
+
+test('HARD E: frozen constants, coast exclusions, bounds and exact memo keys',async()=>{
+  const m=await eLoad(true),fn=m.carvingEM;eClear(m);
+  assert.equal(m.CARVING_E_VERSION,'mountain-carving-e-1');assert.ok(Object.isFrozen(m.MOUNTAIN_CARVING_E));
+  assert.deepEqual((await eLoad()).MOUNTAIN_CARVING_E,{ROWS:240,COLS:60,CACHE:32,RAW_CACHE:64,TILT:1.3,NOISE_AMP:400,SC:1.1,FOOT:1500,AC:300000,M:.375,K:37.552365026127084,BOUNDARY:2,WANDER:2500,SPUR:800,EPSILON:.000001,REFERENCE_M:3000});
+  for(const args of [[0,0,30000,3000,0,1],[0,0,30000,0,1,1],[0,0,30000,-1,1,1],[0,30000,30000,3000,1,1],[0,-31000,30000,3000,1,1]])assert.ok(Object.is(fn(...args),0));
+  assert.ok(m.eCache.every(x=>x===undefined));assert.ok(m.eRawCache.every(x=>x===undefined));
+  for(const w of [30,30000,30000.00000001,3e6])for(const seed of [730201,730202]){
+    const args=[w*.2,w*.27,w,777,1,seed],v=fn(...args);fn(w*.2,w*.27,w+1e-8,777,1,seed^1);assert.equal(fn(...args),v);
+    for(const e of [1e-9,777,1e8]){const v=fn(args[0],args[1],w,e,1,seed);assert.ok(v>=-e&&v<=0);}
+  }
+  const a=m.eGet(730201,30000,0),b=m.eGet(730201,30000.00000001,0);assert.notEqual(a,b);assert.deepEqual(m.eGet(730201,30000,0).h,a.h);
+  raster(d=>{const a=rampArgs(d),v=fn(...a);assert.ok(a[3]+v>=0&&v<=0);if(!a[4])assert.ok(Object.is(v,0));return {groundHeightM:a[3]+v,ocean:false};},SITES[0].d,R,65,1500);
+});
+
+test('HARD E: small and production cold/warm/reverse/evicted/child digests',async()=>{
+  for(const small of [true,false]){
+    const m=await eLoad(small);eClear(m);const sha=eDigest(m);
+    assert.equal(eDigest(m),sha);assert.equal(eDigest(m,true),sha);eClear(m);assert.equal(eDigest(m,true),sha);
+    m.eGet(730201,30000,32);m.eGet(730201,30000,64);assert.equal(eDigest(m),sha);
+    const child=spawnSync(process.execPath,['--input-type=module'],{encoding:'utf8',input:`
+      import {createHash} from 'node:crypto';
+      const m=await import('data:text/javascript;base64,${Buffer.from(eSource(small)).toString('base64')}');
+      ${cDigest.toString()} ${eDigest.toString()} process.stdout.write(eDigest(m));`});
+    assert.equal(child.status,0,child.stderr);assert.equal(child.stdout,sha);
+    console.log('E_'+(small?'SMALL':'PRODUCTION')+'_DIGEST '+sha);
+    assert.equal(sha,small?'a3525677192ee90c0cbd2596c3f2386ff517eb418aced2fabe4748825812706d':'0d30ef01047e9d07e4d69bd1de4897db329aebdd5619e55c692f1007569b1419');
+  }
+});
+
+test('HARD E: positive construction vertices drain, raised-vertex control and exact shared seams',async()=>{
+  const m=await eLoad(),{ROWS,COLS}=m.MOUNTAIN_CARVING_E,stride=COLS+1;
+  const blocks=[-1,0,1,2].map(id=>m.eGet(730201,30000,id));
+  function neighbours(b,k){const j=Math.floor(k/stride),i=k%stride,a=[];
+    if(i)a.push(k-1);if(i<COLS)a.push(k+1);if(j)a.push(k-stride);if(j<ROWS)a.push(k+stride);
+    if(i&&j&&m.eDiagonal(b.id,j-1,i-1,b.seed))a.push(k-stride-1);
+    if(i<COLS&&j&&!m.eDiagonal(b.id,j-1,i,b.seed))a.push(k-stride+1);
+    if(i&&j<ROWS&&!m.eDiagonal(b.id,j,i-1,b.seed))a.push(k+stride-1);
+    if(i<COLS&&j<ROWS&&m.eDiagonal(b.id,j,i,b.seed))a.push(k+stride+1);return a;
+  }
+  function sinks(bi,override){const b=blocks[bi],h=override??b.h,out=[];
+    for(let k=0;k<h.length;k++)if(h[k]>0){let lower=neighbours(b,k).some(r=>h[r]<h[k]);const col=k%stride,row=Math.floor(k/stride);
+      if(col===0||col===COLS){const other=blocks[bi+(col===0?-1:1)],at=row*stride+(col===0?COLS:0);lower ||= neighbours(other,at).some(r=>other.h[r]<h[k]);}
+      if(!lower)out.push(k);
+    }return out;
+  }
+  for(const bi of [1,2])assert.deepEqual(sinks(bi),[]);
+  let caught=false;const b=blocks[1];
+  for(let k=0;k<b.h.length&&!caught;k++)if(k%stride>0&&k%stride<COLS&&b.h[k]>0){const lower=neighbours(b,k).filter(r=>b.h[r]<b.h[k]);if(lower.length===1){const bad=b.h.slice();bad[lower[0]]=1e6;caught=sinks(1,bad).includes(k);}}
+  assert.ok(caught,'raised-vertex negative control');
+  for(let j=0;j<=ROWS;j++){assert.equal(b.right[j],blocks[2].left[j]);assert.equal(b.h[j*stride+COLS],blocks[2].h[j*stride]);}
+  for(const j of [3,Math.floor(ROWS/3),ROWS/2,ROWS-3])for(const t of [0,.37,.99]){
+    const x=m.eBoundaryAt(1,j,t,30000,730201),y=-30000+(j+t)*60000/ROWS,e=3000*(1-Math.abs(y)/30000);
+    const diff=[.1,.001,.00001].map(d=>Math.abs(m.carvingEM(x-d,y,30000,e,1,730201)-m.carvingEM(x+d,y,30000,e,1,730201)));
+    assert.ok(diff[1]<diff[0]*.011+1e-9);assert.ok(diff[2]<diff[1]*.011+1e-9);assert.ok(diff[2]<.01);
+  }
+});
+
+
+test('HARD E: all persistent typed-array payload stays below 16 MB',async()=>{
+  const {eMemory}=await import('../scripts/mountain-render-carving.mjs');
+  const measured=eMemory(await eLoad());
+  assert.equal(measured.scratchBytes,4306970);
+  assert.equal(measured.blockCapacityBytes,11660544);
+  assert.equal(measured.totalTypedArrayBytes,15967514);
+  assert.ok(measured.totalTypedArrayBytes<=16000000);
+});
