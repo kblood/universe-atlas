@@ -109,6 +109,30 @@ function value(b: OrogenBelt,d: V3,R: number) {
   return (1-OROGEN_LAYOUT.coreCrown*fraction*fraction)*(1-ss(OROGEN_LAYOUT.coreFraction*b.halfWidthM,b.halfWidthM,Math.abs(distance)))*(1-ss(.75,1,Math.abs(v)));
 }
 
+// True only when every point of b's displaced centreline arc is at chord >= rho from d, so value(b, d)
+// is 0 or its |distance| >= R rho (distance >= R x chord to the foot point). Cheap: one offset() call.
+// With d = x T + z C + y P (T, C, P the belt's tangent, centre and pole) and an arc point p(u) at base
+// angle 2 atan(u), pole height y(u) = offset(u)/R and base radius r(u) >= a = sqrt(1-H^2):
+// |d-p| >= |y - y(u)|, and |d-p| >= r(u) |sin t| for the base-angle difference t (>= a for t beyond
+// 90 degrees). Suppose chord < rho, s = rho/a < .5. Then t < asin(s) <= T = s/sqrt(1-s^2), so
+// sin t >= m t with m = 1 - T^2/6; |u - u_d| <= P t (|du/dtheta| <= P = (1+uLimit^2)/2 on the arc,
+// u_d = the sample's own arc parameter); |y(u) - y(u_d)| <= S |u - u_d| (S bounds |offset'/R|). With
+// Y = |y - y(u_d)| and k = S P: chord^2 >= max(0, Y - k t)^2 + (a m t)^2 >= Y^2 (a m)^2 / (k^2 + (a m)^2),
+// the minimum over t >= 0. So Y a m >= rho sqrt(k^2 + (a m)^2) (with a relative margin) contradicts
+// chord < rho. Off the support (z < supportZ, |v| >= 1) value is 0.
+function beyondChord(b: OrogenBelt,d: V3,R: number,rho: number) {
+  const z=dot(d,b.centre);
+  if(z<OROGEN_LAYOUT.supportZ)return true;
+  const x=dot(d,b.tangent),r=Math.sqrt(x*x+z*z),u=x/(r+z);
+  if(Math.abs(u/b.uLimit)>=1)return true;
+  const S=2*Math.abs(b.bendM)/(b.uLimit*R)+6*b.amplitudeM/(b.wavelength*R),H=(Math.abs(b.bendM)+b.amplitudeM)/R;
+  const a=Math.sqrt(1-H*H),s=rho/a;
+  if(!(s<.5))return false;
+  const T2=s*s/(1-s*s),am=a*(1-T2/6),k=S*(1+b.uLimit*b.uLimit)/2;
+  const Y=Math.abs(dot(d,b.pole)-offset(b,u)/R);
+  return Y*am>=(rho*(1+1e-9)+1e-12)*Math.sqrt(k*k+am*am);
+}
+
 // Base great-circle nodes at the same exact u. The conservative balls include
 // the displaced centreline, support width and the intervening base arc.
 function nodes(b: OrogenBelt): V3[] {
@@ -119,6 +143,150 @@ function nodes(b: OrogenBelt): V3[] {
     points.push([b.centre[0]*z+b.tangent[0]*x,b.centre[1]*z+b.tangent[1]*x,b.centre[2]*z+b.tangent[2]*x]);
   }
   return points;
+}
+
+// Massif-band rejection grid (mountains cost plan T1, docs/mountains-opus-decisions-2026-10-05.md Q2;
+// docs/mountain-layout-v1.md "Band rejection grid"). VALUE-PRESERVING: it only decides whether
+// sampleWithinWithA0 runs the full sampleWithA0 path, never what that path returns.
+//
+// Cube map: a unit direction d lies on the face of its largest |component| (ties go to x, then y);
+// face 2k (+axis k) or 2k+1 (-axis k), local (s,t) = (d[A[k]],d[B[k]])/|d[k]| in [-1,1], cell
+// (floor((s+1)N/2), floor((t+1)N/2)). Gnomonic coordinates: great circles are straight lines and an
+// angular step is at most the planar step / sqrt(1+r^2) at planar radius r.
+//
+// Stamping is conservative. A sample with |axisDistanceM| < rho (the band) lies within rho/R + 3e-13 rad
+// of the foot point p(u*), u* in [-uLimit,uLimit] (axisDistanceM is R x chord x (1+c^2/24+3c^4/640), at most
+// the true arc). p(u*) lies within half a node interval of arc length from a node: with S >= |offset'(u)/R|
+// (construction bound), H >= |offset/R| and a = sqrt(1-H^2), |p'(u)| <= 2 + S + S H/a = V. Every node cap
+// of radius Pn = rho/R + V du/2 (+ margin) is stamped onto every cell whose bounding cap (centre c, radius
+// rc = planar half-diagonal / sqrt(1 + rmin^2)) it meets: c.n >= 1 - (Pn+rc)^2/2 (<= cos(Pn+rc)). The
+// candidate cells per face come from the exact s- and t-extent of the cap of radius Pn + sqrt2/N, with
+// sin replaced by its upper bound: the tangent planes d_a = s d_F with |n_a - s n_F| = q sqrt(1+s^2).
+// A face whose axis component n_F <= q is skipped: for q < .25 such a cap cannot reach the face (every
+// face point has d_F >= 1/sqrt(3), and cos(.9553 + q) > q).
+const BAND_AXES_A=[1,0,0],BAND_AXES_B=[2,2,1];
+export const OROGEN_BAND_GRID = Object.freeze({
+  // Cells per face edge: the smallest power of two in [minFaceCells, maxFaceCells] whose face-centre
+  // cell (2/N rad) is at most bandCells^-1 of the band radius rho/R (chosen by measurement).
+  minFaceCells: 256, maxFaceCells: 2048, bandCells: 4,
+  // Centreline node spacing, at most nodeSpacing/N rad of arc (adds half that to every node cap).
+  nodeSpacing: 3,
+  marginRad: 1e-9,
+  // Division-free prefilter: a voxelCells^3 bitset over [-1,1]^3 (buildBandVoxels).
+  voxelCells: 128,
+});
+export interface OrogenBandGrid {
+  readonly faceCells: number; readonly bits: Uint32Array; readonly all: boolean; readonly nodes: number;
+  // Per 32-cell word: 0 no belt, k+1 every flagged cell of the word was stamped by belt k only, 255 several.
+  readonly wordBelt: Uint8Array;
+  // Summary at N/8 cells per face edge: a coarse cell is set when any of its 8x8 cells is flagged, so most
+  // directions are rejected from this small (cache-resident) map alone.
+  readonly coarse: Uint32Array;
+  // Voxel prefilter (voxelCells^3 bits): a voxel is set when a band direction may lie in it.
+  readonly voxels: Uint32Array;
+}
+// Voxel prefilter (conservative, division-free lookup): a voxelCells^3 bitset over [-1,1]^3, voxel
+// (floor((d_k+1) K/2)) per axis. Every band direction d lies within chord <= angle <= P = rho + V du/2
+// (+ margin) of a node p (the cube-map argument, with this stamping's own node spacing), and every point of
+// a voxel lies within its half-diagonal h = sqrt3/K of the voxel centre c, so |c - p| <= P + h for every
+// voxel that holds a band direction; the voxels in each node's box are tested exactly that way.
+function buildBandVoxels(belts: readonly OrogenBelt[],R: number,maxDistM: number,minHalfWidthM: number,all: boolean) {
+  const K=OROGEN_BAND_GRID.voxelCells,voxels=new Uint32Array((K*K*K+31)>>>5),h=1.7320508075688772/K,margin=OROGEN_BAND_GRID.marginRad;
+  if(all){voxels.fill(0xffffffff);return voxels;}
+  for(const b of belts){
+    if(!(b.halfWidthM>=minHalfWidthM))continue;
+    const rho=Math.min(maxDistM,b.halfWidthM)/R;
+    const S=2*Math.abs(b.bendM)/(b.uLimit*R)+6*b.amplitudeM/(b.wavelength*R),H=(Math.abs(b.bendM)+b.amplitudeM)/R;
+    const V=2+S+S*H/Math.sqrt(1-H*H),M=Math.floor(2*K*b.uLimit*V)+1,du=2*b.uLimit/M;
+    const reach=(rho*(1+margin)+V*du/2+margin+h)*(1+1e-9)+1e-12,r2=reach*reach;
+    for(let k=0;k<=M;k++){
+      const p=centreline(b,(2*k/M-1)*b.uLimit,R);
+      const x0=Math.max(0,Math.floor((p[0]-reach+1)*K/2)),x1=Math.min(K-1,Math.floor((p[0]+reach+1)*K/2));
+      const y0=Math.max(0,Math.floor((p[1]-reach+1)*K/2)),y1=Math.min(K-1,Math.floor((p[1]+reach+1)*K/2));
+      const z0=Math.max(0,Math.floor((p[2]-reach+1)*K/2)),z1=Math.min(K-1,Math.floor((p[2]+reach+1)*K/2));
+      for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)for(let z=z0;z<=z1;z++){
+        const cx=(2*x+1)/K-1-p[0],cy=(2*y+1)/K-1-p[1],cz=(2*z+1)/K-1-p[2];
+        if(cx*cx+cy*cy+cz*cz<=r2){const v=(x*K+y)*K+z;voxels[v>>>5]|=1<<(v&31);}
+      }
+    }
+  }
+  return voxels;
+}
+// Count of flagged cells of a grid (measurement only).
+export function bandGridFlaggedCells(g: OrogenBandGrid) {
+  if(g.all)return 6*g.faceCells*g.faceCells;
+  let count=0;
+  for(let w=0;w<g.bits.length;w++){let v=g.bits[w];v=v-((v>>>1)&0x55555555);v=(v&0x33333333)+((v>>>2)&0x33333333);count+=(Math.imul((v+(v>>>4))&0x0f0f0f0f,0x01010101)>>>24);}
+  return count;
+}
+function bandFaceCells(R: number,maxDistM: number) {
+  let n=OROGEN_BAND_GRID.minFaceCells;
+  while(n<OROGEN_BAND_GRID.maxFaceCells && 2/n>maxDistM/R/OROGEN_BAND_GRID.bandCells)n*=2;
+  return n;
+}
+function buildBandGrid(belts: readonly OrogenBelt[],R: number,maxDistM: number,minHalfWidthM: number,N: number): OrogenBandGrid {
+  const bits=new Uint32Array((6*N*N+31)>>>5),wordBelt=new Uint8Array(bits.length),half=N/2,cellR=1.4142135623730951/N,margin=OROGEN_BAND_GRID.marginRad;
+  let nodeCount=0,all=false;
+  for(let index=0;index<belts.length;index++){
+    const b=belts[index],tag=belts.length<255?index+1:255;
+    if(!(b.halfWidthM>=minHalfWidthM))continue;
+    const rho=Math.min(maxDistM,b.halfWidthM)/R;
+    const S=2*Math.abs(b.bendM)/(b.uLimit*R)+6*b.amplitudeM/(b.wavelength*R),H=(Math.abs(b.bendM)+b.amplitudeM)/R;
+    const V=2+S+S*H/Math.sqrt(1-H*H);
+    const K=Math.floor(2*N*b.uLimit*V/OROGEN_BAND_GRID.nodeSpacing)+1,du=2*b.uLimit/K;
+    const Pn=rho*(1+margin)+V*du/2+margin,Pb=Pn+cellR;
+    if(!(Pb<.25)){all=true;break;}
+    for(let k=0;k<=K;k++){
+      const p=centreline(b,(2*k/K-1)*b.uLimit,R);nodeCount++;
+      for(let axis=0;axis<3;axis++)for(let side=0;side<2;side++){
+        const nF=side?-p[axis]:p[axis];
+        if(nF<=Pb)continue;
+        const face=2*axis+side,na=p[BAND_AXES_A[axis]],nb=p[BAND_AXES_B[axis]],A=nF*nF-Pb*Pb;
+        const rs=Pb*Math.sqrt(nF*nF+na*na-Pb*Pb),rt=Pb*Math.sqrt(nF*nF+nb*nb-Pb*Pb);
+        const iLo=Math.max(0,Math.floor(((na*nF-rs)/A+1)*half-1e-6)),iHi=Math.min(N-1,Math.floor(((na*nF+rs)/A+1)*half+1e-6));
+        const jLo=Math.max(0,Math.floor(((nb*nF-rt)/A+1)*half-1e-6)),jHi=Math.min(N-1,Math.floor(((nb*nF+rt)/A+1)*half+1e-6));
+        // Row j (cell centres on the great circle t = tc): flag the cells whose centre c has
+        // c.n >= cX = 1 - X^2/2, X = Pn + the row's largest rc. On this face (n_F > q) only the near
+        // cap satisfies the squared form (alpha + na s)^2 >= cX^2 (1 + s^2 + tc^2), alpha = nF + nb tc,
+        // whose s-solutions lie between the roots of A s^2 - 2 alpha na s - (alpha^2 - cX^2 (1+tc^2)) = 0,
+        // A = cX^2 - na^2 > 0 (|na| <= sqrt(1 - q^2) < cX since X <= q).
+        for(let j=jLo;j<=jHi;j++){
+          const tc=(j+.5)/half-1,mt=Math.abs(tc)-1/N,x=Pn+cellR/Math.sqrt(1+(mt>0?mt*mt:0)),cX=1-x*x/2;
+          const alpha=nF+nb*tc,Aq=cX*cX-na*na,disc=alpha*alpha*na*na+Aq*(alpha*alpha-cX*cX*(1+tc*tc));
+          if(!(Aq>0))throw new Error('band grid: degenerate row');
+          if(disc<0)continue;
+          const root=Math.sqrt(disc),s1=(alpha*na-root)/Aq,s2=(alpha*na+root)/Aq;
+          const lo=Math.max(iLo,Math.floor((s1+1)*half-.5-1e-6)+1),hi=Math.min(iHi,Math.floor((s2+1)*half-.5+1e-6));
+          if(lo>hi)continue;
+          // Word-masked run fill (N is a multiple of 32, so rows start on a word).
+          const first=(face*N+j)*N+lo,last=first+hi-lo,wa=first>>>5,wb=last>>>5,head=-1<<(first&31),tail=-1>>>(31-(last&31));
+          if(wa===wb)bits[wa]|=head&tail;
+          else{bits[wa]|=head;for(let w=wa+1;w<wb;w++)bits[w]=-1;bits[wb]|=tail;}
+          for(let w=wa;w<=wb;w++)wordBelt[w]=wordBelt[w]===0||wordBelt[w]===tag?tag:255;
+        }
+      }
+    }
+  }
+  // A degenerate (very small) body flags every cell: the full path, still bit-identical.
+  const Nc=N>>>3,coarse=new Uint32Array((6*Nc*Nc+31)>>>5);
+  if(all){bits.fill(0xffffffff);wordBelt.fill(255);coarse.fill(0xffffffff);}
+  else for(let w=0;w<bits.length;w++){
+    const v=bits[w];if(v===0)continue;
+    // Word w covers cells (w*32 .. w*32+31) of one row (N >= 256): face row j, columns i0 .. i0+31.
+    const cell=w<<5,i0=cell%N,fj=(cell-i0)/N,face=Math.floor(fj/N),j=fj-face*N;
+    for(let q=0;q<4;q++)if((v>>>(q*8))&0xff){const c=(face*Nc+(j>>>3))*Nc+((i0>>>3)+q);coarse[c>>>5]|=1<<(c&31);}
+  }
+  return Object.freeze({faceCells:N,bits,all,nodes:nodeCount,wordBelt,coarse,voxels:buildBandVoxels(belts,R,maxDistM,minHalfWidthM,all)});
+}
+// Index of the cell holding direction d (0 .. 6N^2-1); arithmetic only.
+function bandCellIndex(d: V3,N: number) {
+  const ax=Math.abs(d[0]),ay=Math.abs(d[1]),az=Math.abs(d[2]),half=N/2;
+  let face,m,s,t;
+  if(ax>=ay && ax>=az){face=d[0]>0?0:1;m=ax;s=d[1];t=d[2];}
+  else if(ay>=az){face=d[1]>0?2:3;m=ay;s=d[0];t=d[2];}
+  else{face=d[2]>0?4:5;m=az;s=d[0];t=d[1];}
+  const i=Math.max(0,Math.min(N-1,Math.floor((s/m+1)*half))),j=Math.max(0,Math.min(N-1,Math.floor((t/m+1)*half)));
+  return (face*N+j)*N+i;
 }
 
 /* Build once; sample accepts unit directions. landProbe optionally replaces the
@@ -212,11 +380,11 @@ export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
     for(const v of [b.centre,b.tangent,b.pole])Object.freeze(v);
     belts.push(Object.freeze(b));axes.push(points);maxHalfWidthM=Math.max(maxHalfWidthM,W);
   }
-  const sampleWithA0=(d: V3,alt: number,out: OrogenSample=empty()): OrogenSample=>{
+  const reset=(out: OrogenSample)=>{
     out.belt=0;out.axis[0]=0;out.axis[1]=0;out.axis[2]=0;out.axisDistanceM=0;out.halfWidthM=0;out.beltIndex=-1;out.alongM=0;
-    if(alt<=0)return out;
-    let best=0,index=-1,distance=0,gradient: V3=lastGradient,foot=0;
-    for(let i=0;i<belts.length;i++){const v=value(belts[i],d,R);if(v>best){best=v;index=i;distance=lastDistance;gradient=lastGradient;foot=lastU;}}
+  };
+  // The winning belt's fields, written into a reset `out`.
+  const finish=(d: V3,alt: number,out: OrogenSample,best: number,index: number,distance: number,gradient: V3,foot: number)=>{
     if(index<0)return out;
     const b=belts[index];
     out.belt=best*ss(0,OROGEN_LAYOUT.coastGateM,alt);
@@ -225,7 +393,89 @@ export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
     const axis=unit(cross(gradient,d));
     out.axis[0]=axis[0];out.axis[1]=axis[1];out.axis[2]=axis[2];return out;
   };
-  return Object.freeze({belts:Object.freeze(belts),maxHalfWidthM,sampleWithA0,sample:(d: V3,out?: OrogenSample)=>sampleWithA0(d,a0(d),out)});
+  const sampleWithA0=(d: V3,alt: number,out: OrogenSample=empty()): OrogenSample=>{
+    reset(out);
+    if(alt<=0)return out;
+    let best=0,index=-1,distance=0,gradient: V3=lastGradient,foot=0;
+    for(let i=0;i<belts.length;i++){const v=value(belts[i],d,R);if(v>best){best=v;index=i;distance=lastDistance;gradient=lastGradient;foot=lastU;}}
+    return finish(d,alt,out,best,index,distance,gradient,foot);
+  };
+  // The band grid for (maxDistM, minHalfWidthM), built on first use and kept with the layout.
+  const grids=new Map<string,OrogenBandGrid>();
+  const bandGrid=(maxDistM: number,minHalfWidthM: number,faceCells?: number): OrogenBandGrid=>{
+    if(faceCells!==undefined)return buildBandGrid(belts,R,maxDistM,minHalfWidthM,faceCells);
+    const key=maxDistM+'/'+minHalfWidthM;
+    let g=grids.get(key);
+    if(!g){g=buildBandGrid(belts,R,maxDistM,minHalfWidthM,bandFaceCells(R,maxDistM));grids.set(key,g);}
+    return g;
+  };
+  // The grid of the last (maxDistM, minHalfWidthM), unpacked for the per-sample path.
+  let gMax=-1,gMin=-1,gN=0,gHalf=0,gNc=0,gAll=false,gBits: Uint32Array=new Uint32Array(0),gTags: Uint8Array=new Uint8Array(0),gCoarse: Uint32Array=new Uint32Array(0),gVox: Uint32Array=new Uint32Array(0);
+  const selectGrid=(maxDistM: number,minHalfWidthM: number)=>{
+    const g=bandGrid(maxDistM,minHalfWidthM);
+    gMax=maxDistM;gMin=minHalfWidthM;gN=g.faceCells;gHalf=gN/2;gNc=gN>>>3;gAll=g.all;gBits=g.bits;gTags=g.wordBelt;gCoarse=g.coarse;gVox=g.voxels;
+  };
+  const VK=OROGEN_BAND_GRID.voxelCells,VH=VK/2;
+  // The word tag of d's cell in the selected grid (0 = unflagged): voxel prefilter, then bandCellIndex
+  // inlined with the coarse map first.
+  const bandTag=(d: V3)=>{
+    const v=(Math.max(0,Math.min(VK-1,Math.floor((d[0]+1)*VH)))*VK+Math.max(0,Math.min(VK-1,Math.floor((d[1]+1)*VH))))*VK+Math.max(0,Math.min(VK-1,Math.floor((d[2]+1)*VH)));
+    if(!(gVox[v>>>5]&(1<<(v&31))))return 0;
+    const ax=Math.abs(d[0]),ay=Math.abs(d[1]),az=Math.abs(d[2]),N=gN,half=gHalf;
+    let face,m,s,t;
+    if(ax>=ay && ax>=az){face=d[0]>0?0:1;m=ax;s=d[1];t=d[2];}
+    else if(ay>=az){face=d[1]>0?2:3;m=ay;s=d[0];t=d[2];}
+    else{face=d[2]>0?4:5;m=az;s=d[0];t=d[1];}
+    const i=Math.max(0,Math.min(N-1,Math.floor((s/m+1)*half))),j=Math.max(0,Math.min(N-1,Math.floor((t/m+1)*half)));
+    const c=(face*gNc+(j>>>3))*gNc+(i>>>3);
+    if(!(gCoarse[c>>>5]&(1<<(c&31))))return 0;
+    const idx=(face*N+j)*N+i,word=idx>>>5;
+    return gBits[word]&(1<<(idx&31)) ? gTags[word] : 0;
+  };
+  // sampleWithA0 restricted to a band: its result when that result has belt !== 0, halfWidthM >=
+  // minHalfWidthM and |axisDistanceM| < maxDistM, else the empty sample. Bit-identical to filtering
+  // sampleWithA0 (tests/mountain-layout-grid.test.mjs). The grid only decides how much of sampleWithA0
+  // must run: an unset voxel, coarse cell or cell is in no belt's band (empty); a cell whose word was
+  // stamped by one belt c only is in no other belt's band, so when d is not in c's own band (beyondChord,
+  // then value) the filtered result is empty whichever belt wins; otherwise the winner is picked exactly
+  // as sampleWithA0 picks it (same order, strict >, c's value reused). maxDistM and minHalfWidthM must be
+  // finite and >= 0; d a unit direction.
+  // Kept small (the per-sample rejection) so callers can inline it; flagged cells go to withinFlagged.
+  const sampleWithinWithA0=(d: V3,alt: number,maxDistM: number,out: OrogenSample=empty(),minHalfWidthM=0): OrogenSample=>{
+    reset(out);
+    if(alt<=0)return out;
+    if(maxDistM!==gMax || minHalfWidthM!==gMin)selectGrid(maxDistM,minHalfWidthM);
+    const tag=gAll?255:bandTag(d);
+    return tag===0 ? out : withinFlagged(d,alt,maxDistM,out,minHalfWidthM,tag);
+  };
+  const withinFlagged=(d: V3,alt: number,maxDistM: number,out: OrogenSample,minHalfWidthM: number,tag: number): OrogenSample=>{
+    let best=0,index=-1,distance=0,gradient: V3=lastGradient,foot=0;
+    if(tag!==255){
+      const c=tag-1,b=belts[c];
+      // Belts below the width gate were never stamped, so c passes it; d outside c's band leaves the
+      // filtered result empty whichever belt wins.
+      if(beyondChord(b,d,R,Math.min(maxDistM,b.halfWidthM)/R))return out;
+      const v=value(b,d,R);
+      if(!(v>0) || !(b.halfWidthM>=minHalfWidthM) || !(Math.abs(lastDistance)<maxDistM))return out;
+      const dc=lastDistance,gc=lastGradient,uc=lastU;
+      for(let i=0;i<belts.length;i++){
+        if(i===c){if(v>best){best=v;index=i;distance=dc;gradient=gc;foot=uc;}continue;}
+        const w=value(belts[i],d,R);if(w>best){best=w;index=i;distance=lastDistance;gradient=lastGradient;foot=lastU;}
+      }
+    }else{
+      for(let i=0;i<belts.length;i++){const v=value(belts[i],d,R);if(v>best){best=v;index=i;distance=lastDistance;gradient=lastGradient;foot=lastU;}}
+    }
+    finish(d,alt,out,best,index,distance,gradient,foot);
+    if(out.belt!==0 && out.halfWidthM>=minHalfWidthM && Math.abs(out.axisDistanceM)<maxDistM)return out;
+    reset(out);return out;
+  };
+  // Test/measurement access: whether d's cell is flagged in the (maxDistM, minHalfWidthM) grid.
+  const bandCellFlagged=(d: V3,maxDistM: number,minHalfWidthM=0): boolean=>{
+    const g=bandGrid(maxDistM,minHalfWidthM),idx=g.all?0:bandCellIndex(d,g.faceCells);
+    return g.all || (g.bits[idx>>>5]&(1<<(idx&31)))!==0;
+  };
+  return Object.freeze({belts:Object.freeze(belts),maxHalfWidthM,sampleWithA0,sample:(d: V3,out?: OrogenSample)=>sampleWithA0(d,a0(d),out),
+    sampleWithinWithA0,bandGrid,bandCellFlagged,bandCellIndex});
 }
 
 const cache=new Map<string,ReturnType<typeof buildOrogenLayout>>();

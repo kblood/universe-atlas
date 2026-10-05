@@ -118,6 +118,8 @@ function digest(l,reverse=false){
 }
 test('HARD: forward, reverse and child-process sample digests agree',()=>{
   const forward=digest(layout);console.log('DIGEST '+forward);assert.equal(digest(layout,true),forward);
+  // Literal pin (orogen-layout-1 with alongM; the band grid of 2026-10-05 must not move it).
+  assert.equal(forward,'0aa3d59b9ed979c85da729386c3531e732bb3f94dbf3b1961db2292be60ec7b2');
   const child=spawnSync(process.execPath,['--input-type=module','-e',`
     import {createHash} from 'node:crypto';
     import {orogenLayout} from './src/mountain-layout.ts';

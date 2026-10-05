@@ -115,6 +115,56 @@ Final coordinator-run validation (worktree mountains/m1, after review round 2):
 Review round 2 changes: the a0 identity pin and the cost measurement moved from the unit file to the integration script; the corpus became 4 worlds + 60 bodies; `value()` now runs the pole-band rejection before the along-coordinate square root and `sampleWithA0` reuses the winning belt's projection instead of projecting twice. These are output-neutral: the 4096-sample digest is unchanged.
 
 Forward, reverse and child-process 4096-sample SHA-256 digests agree:
-`1828a9e5b23444ba181699ad51370ee61ddf370274e6a539da7ec9d88a25cfca`.
+`1828a9e5b23444ba181699ad51370ee61ddf370274e6a539da7ec9d88a25cfca` (before `alongM` was added to the
+sample; the current digest, pinned literally in tests/mountain-layout.test.mjs since T1, is
+`0aa3d59b9ed979c85da729386c3531e732bb3f94dbf3b1961db2292be60ec7b2`).
 
 Cost (INFO, wall clock, not CPU-quiet; single observations): standalone Maithea, 100000 Fibonacci directions, caller-owned output, 10000 warm-up samples, sampling includes a0 (about 116 ns of it): about **0.82-0.94 us/sample** after round 2, build 9-23 ms. The script's end-of-run observation was 1388 ns (after 93 s of other work). Earlier history: A 807 ns, B 842 ns, C 1004 ns per sample (projection +19% over B). MTN-6's +8% sampler budget is not met by this element alone; candidates are a tighter residual bound before projection and the caller-supplied a0 path.
+
+## Band rejection grid
+
+Mountains cost plan T1 (docs/mountains-opus-decisions-2026-10-05.md Q2). `sampleWithinWithA0(d, a0, maxDistM, out, minHalfWidthM)`
+returns `sampleWithA0` filtered to a band: its result when `belt !== 0`, `halfWidthM >= minHalfWidthM` and
+`|axisDistanceM| < maxDistM`, else the empty sample. `sample` and `sampleWithA0` are unchanged; the version stays
+`orogen-layout-1` and the 4096-sample digest is unchanged. The assembly calls it through `massifBeltSample`
+(src/mountain-assembly.ts) with the massif band (48 km, minimum half width 32 km); outside that band the ridge term
+is `main` exactly, so filtering is value-neutral.
+
+It is value-preserving: the grid only decides how much of `sampleWithA0` runs. Per (maxDistM, minHalfWidthM) the
+layout lazily builds, once:
+
+- a cube map (N = 256-2048 cells per face edge, N chosen so a face-centre cell is at most 1/4 of the band radius),
+  stamped conservatively from node caps along each eligible belt's base arc (node spacing, curvature and gnomonic
+  distortion bounds in the comment above `BAND_AXES_A`); each 32-cell word carries a tag (none, one belt, several);
+- a coarse N/8 summary of the fine map, and
+- a division-free 128^3 voxel prefilter over [-1,1]^3, stamped with the same node caps plus the voxel half-diagonal.
+
+Lookup: voxel bit, then coarse bit, then fine bit. An unset bit returns the empty sample. A word stamped by one
+belt only first runs `beyondChord` (a rigorous lower bound on the chord to that belt's arc) and then that belt's
+`value`; only a sample in that belt's own band runs the remaining belts (same order, strict `>`, value reused).
+A word stamped by several belts runs the full `sampleWithA0`.
+
+Measured (tests/mountain-layout-grid.test.mjs, HARD; scripts/mountain-layout-grid.mjs, INFO):
+
+| | Maithea | Selawyn | Raiva | Lethuris |
+|---|---|---|---|---|
+| N per face edge | 1024 | 2048 | 512 | 2048 |
+| identity mismatches (102,500 + edge offsets) | 0 | 0 | 0 | 0 |
+| band directions in unflagged cells | 0 | 0 | 0 | 0 |
+| flagged area (land + ocean) / massif area | 1.486 | 1.446 | 1.332 | 1.368 |
+| flagged land / massif area | 1.372 | 1.302 | 1.247 | 1.261 |
+| cold grid build (fresh process) | 26 ms | 30 ms | 13 ms | 31 ms |
+
+The 60-body corpus (20,000 directions per body plus 24 edge offsets per belt) has 0 mismatches and 0 unflagged
+band directions; band-edge pairs (refined on the displaced centreline to 10 mm-50 m either side of 48 km) straddle the edge for 1480/1480, 1280/1280, 120/160, 1640/1640 pairs. Node spacing 3/N (2/N gives area ratios 1.41/1.39/1.29/1.33 but cold builds of 56-60 ms). The worst cold build is Auraese (66 belts, N = 2048): 48.7 ms in the 64-body run, 46-49 ms over 7 fresh processes,
+one observation 51.9 ms; about 24 ms once warm (the rest is first-call JIT).
+
+**Outside-massif cost target (+3% against main) is NOT met.** CPU-quiet lock, one process pinned per run
+(`start /high /affinity 0x10`), wired terrain sampler on Fibonacci directions outside every massif:
+
+- 15 fresh processes per world, median against main: grid +3.8% / +3.8% / +5.4% / +4.6%; the same harness
+  without the band call: 0.0% / -0.1% / +1.0% / +1.5% (process noise ±3-5%).
+- Same-process on/off A/B (5 runs per world): +4.4-5.1% / +3.0-4.2% / +3.6-4.9% / +3.2-3.8%, about 14-23 ns per sample.
+- Breakdown (A/B variants): the call, out reset and `a0 <= 0` check alone cost about +1.7%; any table lookup on
+  land samples adds about +2-3% irrespective of the scheme (octahedral map, branchy or branch-free cube face,
+  voxels); the flagged path adds about 0.4%. Without the grid the same call costs +83-137%.

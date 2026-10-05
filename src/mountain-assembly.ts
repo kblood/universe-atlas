@@ -23,6 +23,21 @@ export const MOUNTAIN_ASSEMBLY = Object.freeze({
 // The orogen sample fields the composition reads (mountain-layout.ts OrogenSample).
 export interface BeltSample { belt: number; axisDistanceM: number; halfWidthM: number; beltIndex: number; alongM?: number }
 
+// The layout entry the call site uses (mountain-layout.ts buildOrogenLayout().sampleWithinWithA0).
+export interface OrogenBandLayout<S extends BeltSample> {
+  sampleWithinWithA0(d: readonly [number, number, number], alt: number, maxDistM: number, out?: S, minHalfWidthM?: number): S;
+}
+// The M1 sample for mountainRidgeTermM (cost plan T1): the layout sample restricted to the massif band,
+// |axisDistanceM| < MAX_HALF_WIDTH_M on belts of half-width >= MIN_HALF_WIDTH_M, else belt 0. Outside that
+// band mountainRidgeTermM returns main's term unchanged (massifEnvelopeM = 0 and massifBlendWeight = 0, so
+// composeRidgeTermM returns mainTermM), so this changes no value; it lets the layout's rejection grid skip
+// the foot-point solve everywhere outside massifs (tests/mountain-layout-grid.test.mjs).
+export function massifBeltSample<S extends BeltSample>(
+  layout: OrogenBandLayout<S>, d: readonly [number, number, number], a0: number, out: S,
+): S {
+  return layout.sampleWithinWithA0(d, a0, MASSIF_ENVELOPE.MAX_HALF_WIDTH_M, out, MASSIF_ENVELOPE.MIN_HALF_WIDTH_M);
+}
+
 // Carving strip k of an across-axis coordinate and the coordinate inside it: strips of width
 // 2 CARVING_HALF_WIDTH_M centred on the axis (k = 0) and on +-2w, +-4w, ...; local in [-w, w).
 export function carvingStrip(acrossM: number): {strip: number; localM: number} {
