@@ -78,6 +78,48 @@ function depressions(r){const {h,n,step}=r;const {filled}=priorityFlood(r);
   for(let y=1;y<n-1;y++)for(let x=1;x<n-1;x++){const k=y*n+x;if(h[k]<=0)continue;land++;if(filled[k]-h[k]>10)deep++;
     let lo=true;for(let dy=-1;dy<=1&&lo;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;if(h[(y+dy)*n+x+dx]<=h[k]){lo=false;break;}}pits+=lo;}
   return {fill10Share:land?deep/land:0,pitsPer1000km2:1000*pits/((n*step/1000)**2)};}
+/** M3 pit row as calibrated 2026-10-05 (owner decision (a)): resampling-tolerant pits. A strict
+ * 8-neighbour land pit (same rule as depressions()) counts only if its closed depression, the
+ * 8-connected set of cells with priority-flood fill depth > 0 that contains it, covers at least
+ * minAreaM2 (default 0.25 km2, the channel-initiation area of carvingStructure). Resampling a
+ * drained construction surface off its grid leaves 1-4 cell dams; noise relief leaves large basins.
+ * Returns the gated density and, as INFO, the all-pit density of depressions(). */
+function depressionPits(r,minAreaM2=250000){const {h,n,step}=r,N=n*n,{filled}=priorityFlood(r);
+  const comp=new Int32Array(N).fill(-1),compArea=[];const stack=new Int32Array(N);
+  for(let k=0;k<N;k++){if(comp[k]>=0||!(filled[k]-h[k]>1e-9))continue;const id=compArea.length;let a=0,sp=0;stack[sp++]=k;comp[k]=id;
+    while(sp){const c=stack[--sp];a++;const x=c%n,y=(c-x)/n;
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=n||yy>=n)continue;const j=yy*n+xx;if(comp[j]<0&&filled[j]-h[j]>1e-9){comp[j]=id;stack[sp++]=j;}}}
+    compArea.push(a);}
+  let pits=0,gated=0;const cellM2=step*step;
+  for(let y=1;y<n-1;y++)for(let x=1;x<n-1;x++){const k=y*n+x;if(h[k]<=0)continue;
+    let lo=true;for(let dy=-1;dy<=1&&lo;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;if(h[(y+dy)*n+x+dx]<=h[k]){lo=false;break;}}
+    if(!lo)continue;pits++;if(comp[k]>=0&&compArea[comp[k]]*cellM2>=minAreaM2)gated++;}
+  const area=(n*step/1000)**2;
+  return {pitsPer1000km2:1000*gated/area,allPitsPer1000km2:1000*pits/area,minAreaM2};}
+
+// ---------- M3 axis coherence (calibrated 2026-10-05, owner decision (a)) ----------
+/** Axis-signed structure-tensor coherence S=(Jaa-Jcc)/(Jaa+Jcc), a = raster x = the belt axis.
+ * The regional raster's pixels are sub x sub footprint means (anti-aliased), each across-row's
+ * along-axis mean is subtracted (removes any envelope that depends on the across coordinate only,
+ * including its crest and margin kinks), and 2*win-cell windows are centred every win cells on cells
+ * whose POINT height is above the land p50 (the same cells as coherence()). Transverse valleys give
+ * S > 0, isotropic relief S ~ 0, parallel combs S -> 1. Returns the per-window values. */
+function axisCoherence(ts,d,R,{n=193,stepM=2000,sub=4,win=10,axis=null}={}){const f=frame(d),m0=localMap(d,f,R),o=(n-1)/2*stepM;
+  // axis: optional unit [ux,uy] of the belt axis in frame(d) coordinates (null = raster x).
+  const map=axis?(u,v)=>m0(u*axis[0]-v*axis[1],u*axis[1]+v*axis[0]):m0;
+  const pt=new Float64Array(n*n),g=new Float64Array(n*n);
+  for(let j=0;j<n;j++)for(let i=0;i<n;i++){pt[j*n+i]=ts(map(i*stepM-o,j*stepM-o)).groundHeightM;let s=0;
+    for(let b=0;b<sub;b++)for(let a=0;a<sub;a++)s+=ts(map(i*stepM-o+((a+.5)/sub-.5)*stepM,j*stepM-o+((b+.5)/sub-.5)*stepM)).groundHeightM;
+    g[j*n+i]=s/sub;g[j*n+i]/=sub;}
+  for(let j=0;j<n;j++){let m=0;for(let i=0;i<n;i++)m+=g[j*n+i];m/=n;for(let i=0;i<n;i++)g[j*n+i]-=m;}
+  const land=[];for(const v of pt)if(v>0)land.push(v);const p50=q(land,.5);
+  const gx=new Float64Array(n*n),gy=new Float64Array(n*n);
+  for(let j=1;j<n-1;j++)for(let i=1;i<n-1;i++){gx[j*n+i]=g[j*n+i+1]-g[j*n+i-1];gy[j*n+i]=g[(j+1)*n+i]-g[(j-1)*n+i];}
+  const out=[];
+  for(let j=win;j<n-win;j+=win)for(let i=win;i<n-win;i+=win){if(!(pt[j*n+i]>p50))continue;let a=0,b=0;
+    for(let y=j-win;y<j+win;y++)for(let x=i-win;x<i+win;x++){const u=gx[y*n+x],v=gy[y*n+x];a+=u*u;b+=v*v;}
+    const tr=a+b;if(tr<=0)continue;out.push((a-b)/tr);}
+  return out;}
 
 // ---------- E7 spectrum ----------
 function fftPow(re){const N=re.length,im=new Float64Array(N);
@@ -171,12 +213,14 @@ function betaFromOctaves(specBands){
   const lo=[2,3,4,5].map(b=>Math.log2(Math.sqrt(specBands[b])));let sl=0;{const xs=[0,1,2,3],mx=1.5,my=lo.reduce((a,c)=>a+c,0)/4;let nn=0,dd=0;for(let i=0;i<4;i++){nn+=(xs[i]-mx)*(lo[i]-my);dd+=(xs[i]-mx)**2;}sl=nn/dd;}
   return 1+2*sl;
 }
-/** sites are {d: unitDirection}; opts optionally overrides n/stepM, regionalN/regionalStepM,
+/** sites are {d: unitDirection, axis?: [ux,uy] belt axis in frame(d) coordinates (default raster x)};
+ * opts.axisSub (default 4) sets the axis-coherence footprint, opts.axisCoherence=false skips it (the
+ * row then fails closed). opts optionally overrides n/stepM, regionalN/regionalStepM,
  * angles, or supplies onRaster(local, regional, siteIndex). Defaults reproduce the prototype.
  * Percentiles pool pixels; spectra average power; drainage takes per-site medians. */
 function measureSites(ts,sites,R,opts={}){
   // Per site rasters
-  const agg={slope125:[],slope1k:[],rel4:[],rel8:[],rel16:[],flank:[],sharp:[],crestShare:[],peaks300:0,peaks1000:0,promMax:[],areaKm2:0,coh:[],cohCrest:[],land48:[],fill10:[],pits:[]};
+  const agg={slope125:[],slope1k:[],rel4:[],rel8:[],rel16:[],flank:[],sharp:[],crestShare:[],peaks300:0,peaks1000:0,promMax:[],areaKm2:0,coh:[],cohCrest:[],land48:[],fill10:[],pits:[],pits025:[],axisCoh:[]};
   const specBands=new Float64Array(10);let specTotal=0;
   for(let si=0;si<sites.length;si++){const d=sites[si].d;
     const r=raster(ts,d,R,opts.n??385,opts.stepM??125);agg.land48.push(r.landShare);
@@ -184,8 +228,9 @@ function measureSites(ts,sites,R,opts={}){
     add(agg.rel4,windowRelief(r,4));add(agg.rel8,windowRelief(r,8));add(agg.rel16,windowRelief(r,16));
     const c=crests(r);add(agg.flank,c.flank);add(agg.sharp,c.sharp);agg.crestShare.push(c.crestShare);
     const pk=prominence(r);agg.peaks300+=pk.filter(p=>p.prom>=300).length;agg.peaks1000+=pk.filter(p=>p.prom>=1000).length;agg.promMax.push(Math.max(0,...pk.map(p=>p.prom)));
-    agg.areaKm2+=(r.n*r.step/1000)**2;const dp=depressions(r);agg.fill10.push(dp.fill10Share);agg.pits.push(dp.pitsPer1000km2);
+    agg.areaKm2+=(r.n*r.step/1000)**2;const dp=depressions(r);agg.fill10.push(dp.fill10Share);agg.pits.push(dp.pitsPer1000km2);agg.pits025.push(depressionPits(r).pitsPer1000km2);
     const reg=raster(ts,d,R,opts.regionalN??193,opts.regionalStepM??2000);add(agg.coh,coherence(reg,10));
+    if(opts.axisCoherence!==false)add(agg.axisCoh,axisCoherence(ts,d,R,{n:opts.regionalN??193,stepM:opts.regionalStepM??2000,sub:opts.axisSub??4,axis:sites[si].axis??null}));
     const sp=spectrum(ts,d,R,opts.angles??4);for(let b=0;b<10;b++)specBands[b]+=sp.bands[b]/sites.length;specTotal+=sp.total/sites.length;
     opts.onRaster?.(r,reg,si);}
   const octaves={};for(let b=0;b<10;b++)octaves[`${125*2**b}-${250*2**b}m`]=r0(Math.sqrt(specBands[b]));
@@ -199,17 +244,19 @@ function measureSites(ts,sites,R,opts={}){
   const beta=betaFromOctaves(specBands);
   const pct=(a,t)=>r1(100*a.filter(v=>v>t).length/a.length);
   return {
-    E1_layout:{coherence40kmWindowP50:r3(q(agg.coh,.5)),coherence40kmWindowP90:r3(q(agg.coh,.9))},
+    // coherence40kmWindowP50 is INFO since 2026-10-05; the M3 row is axisCoherence40kmP50 (NaN when opted out).
+    E1_layout:{coherence40kmWindowP50:r3(q(agg.coh,.5)),coherence40kmWindowP90:r3(q(agg.coh,.9)),axisCoherence40kmP50:r3(q(agg.axisCoh,.5))},
     E3_crests:{crestShareP50:r3(q(agg.crestShare,.5)),flank500mP50:r1(q(agg.flank,.5)),flank500mP90:r1(q(agg.flank,.9)),sharpness250v1kP50:r3(q(agg.sharp,.5))},
     E4_summits:{peaksProm300Per1000km2:r1(1000*agg.peaks300/agg.areaKm2),peaksProm1000Per1000km2:r1(1000*agg.peaks1000/agg.areaKm2),maxProminenceP50:r0(q(agg.promMax,.5)),maxProminenceMax:r0(Math.max(...agg.promMax))},
     E5_slopes:{slope125P50:r1(q(agg.slope125,.5)),slope125P90:r1(q(agg.slope125,.9)),slope125Over30:pct(agg.slope125,30),slope125Over40:pct(agg.slope125,40),slope1kP50:r1(q(agg.slope1k,.5)),slope1kP90:r1(q(agg.slope1k,.9))},
     E6_valleys:{relief4kmP50:r0(q(agg.rel4,.5)),relief8kmP50:r0(q(agg.rel8,.5)),relief8kmP90:r0(q(agg.rel8,.9)),relief16kmP50:r0(q(agg.rel16,.5))},
-    E3b_drainage:{fill10ShareP50:r3(q(agg.fill10,.5)),pitsPer1000km2P50:r1(q(agg.pits,.5))},
+    // pitsPer1000km2P50 (all strict pits) is INFO since 2026-10-05; the M3 row is pits025Per1000km2P50.
+    E3b_drainage:{fill10ShareP50:r3(q(agg.fill10,.5)),pitsPer1000km2P50:r1(q(agg.pits,.5)),pits025Per1000km2P50:r1(q(agg.pits025,.5))},
     E7_spectrum:{beta500mTo8km:Math.round(beta*100)/100,rmsTotalM:r0(Math.sqrt(specTotal)),octaveRmsM:octaves,aboveNyquist},
     landShare48km:r3(q(agg.land48,.5))};
 }
 
-export { frame, localMap, raster, slopes, windowRelief, crests, prominence, depressions, coherence, bandPowers, spectrum, betaFromOctaves, belowWavelength, hillshade, writePng, syntheticSampler, measureSites, q, r0, r1, r3, r4, deg };
+export { frame, localMap, raster, slopes, windowRelief, crests, prominence, depressions, depressionPits, coherence, axisCoherence, bandPowers, spectrum, betaFromOctaves, belowWavelength, hillshade, writePng, syntheticSampler, measureSites, q, r0, r1, r3, r4, deg };
 
 /** Copy a square synthetic height array. Nonnegative heights are land. */
 export function rasterFromArray(h,n,stepM){
@@ -280,8 +327,14 @@ export const MOUNTAIN_THRESHOLDS=Object.freeze([
   {id:'relief8kmP50',op:'>=',value:1500,rationale:'Metres at a 3 km envelope: alpine 1767; main Maithea 1466',calibrated:true},
   {id:'beta500mTo8km',op:'between',value:Object.freeze([2.0,2.6]),rationale:'Alpine 2.14; d3 2.78-2.99; main 3.36-3.49; Earth about 2 (literature)',calibrated:true},
   {id:'fill10ShareP50',op:'<=',value:0.05,rationale:'calibrated 2026-10-05 (MTN-4): eroded control P=0, un-eroded control N=0.30197901683152795; main 5-23%; d3 23-32%; noise 31%',calibrated:true},
-  {id:'pitsPer1000km2P50',op:'<=',value:50,rationale:'calibrated 2026-10-05 (MTN-4): eroded control P=0, un-eroded control N=2137.7230561646147; main 147-453; d3 570-700; noise 2108',calibrated:true},
-  {id:'coherence40kmWindowP50',op:'>=',value:0.35,rationale:'With axis input: isotropic d3 0.12-0.15; noise 0.135; main 0.24-0.30',calibrated:true},
+  {id:'pits025Per1000km2P50',op:'<=',value:50,rationale:'calibrated 2026-10-05 (owner decision (a), docs/mountain-m3-calibration-v1.md): pits whose closed depression covers >= 0.25 km2. Eroded positives: steady-state stream power 0-38.4, resampled eroded control 22.5. Negatives: alpine 1023.7, noise carving 369.6, un-eroded control 829. main 79-300; d3 363-399',calibrated:true},
+  {id:'axisCoherence40kmP50',op:'between',value:Object.freeze([0.14,0.64]),rationale:'calibrated 2026-10-05 (owner decision (a), docs/mountain-m3-calibration-v1.md): eroded steady-state positives 0.255-0.464; isotropic negatives alpine 0.014, noise carving 0.022, dome 0.032; straight mirrored fans A0 0.823, parallel comb B0 0.968; bounds = midpoints',calibrated:true},
+].map(Object.freeze));
+/** Rows 7 and 8 as they stood before owner decision (a) of 2026-10-05, kept for the record. Their
+ * metrics are still reported by measureSites as INFO; judgeM3 does not judge them. */
+export const MOUNTAIN_THRESHOLDS_SUPERSEDED=Object.freeze([
+  {id:'pitsPer1000km2P50',op:'<=',value:50,rationale:'calibrated 2026-10-05 (MTN-4): eroded control P=0, un-eroded control N=2137.7230561646147; main 147-453; d3 570-700; noise 2108',calibrated:true,supersededBy:'pits025Per1000km2P50'},
+  {id:'coherence40kmWindowP50',op:'>=',value:0.35,rationale:'With axis input: isotropic d3 0.12-0.15; noise 0.135; main 0.24-0.30',calibrated:true,supersededBy:'axisCoherence40kmP50'},
 ].map(Object.freeze));
 
 /** Accept measureSites output or flat threshold-id keys. Missing/nonfinite values

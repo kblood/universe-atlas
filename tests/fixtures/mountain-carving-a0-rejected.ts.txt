@@ -1,0 +1,77 @@
+// M3: finite belt-local metres, halfWidthM > 0, envelopeM >= 0, uint32 seed.
+import {sine, detCos} from './det-math.ts';
+
+export const MOUNTAIN_CARVING_VERSION = 'mountain-carving-1';
+export const MOUNTAIN_CARVING = Object.freeze({
+  METHOD: 'A', JITTER: 0.28, WALL_SLOPE: 0.45, WALL_GAIN: 1.65, CHANNEL_HALF_WIDTH_M: 125,
+  JUNCTION_BASE: 1.04, JUNCTION_STEP: 0.04, FLOOR_BASE: 0.035,
+  FLOOR_RISE: 0.085, HEAD_RISE: 0.14, B_GAIN: 0.65, B_DECAY: 0.75,
+  B_DAMP: 0.02, B_WARP: 0.04, TWO_PI: 6.283185307179586,
+});
+export const CARVING_BANDS = Object.freeze([
+  Object.freeze({level:0,wavelengthM:16000}),
+  Object.freeze({level:1,wavelengthM:8000}),
+  Object.freeze({level:2,wavelengthM:4000}),
+  Object.freeze({level:3,wavelengthM:2000}),
+  Object.freeze({level:4,wavelengthM:1000}),
+]);
+const C=MOUNTAIN_CARVING;
+function hash(cell: number, level: number, seed: number): number {
+  let h=Math.imul(cell,0x9e3779b1)^Math.imul(level,0x85ebca77)^seed;
+  h=Math.imul(h^(h>>>16),0x85ebca6b);h=Math.imul(h^(h>>>13),0xc2b2ae35);
+  return ((h^(h>>>16))>>>0)/4294967295;
+}
+function headX(level: number,cell: number,seed: number): number {
+  const s=CARVING_BANDS[level].wavelengthM;
+  return s*(cell+0.5+C.JITTER*(2*hash(cell,level,seed)-1));
+}
+function junction(level: number,w: number): number {
+  return level===0?w:w*(C.JUNCTION_BASE-C.JUNCTION_STEP*level);
+}
+// A child ends on its parent's segment. Recursion is bounded by five levels.
+function channelX(level: number,cell: number,y: number,w: number,seed: number): number {
+  const x=headX(level,cell,seed);if(level===0)return x;
+  const end=junction(level,w),t=Math.min(1,y/end);
+  return x+(channelX(level-1,Math.floor(cell/2),end,w,seed)-x)*t;
+}
+function floorAt(level: number,y: number,w: number): number {
+  if(level===0)return C.FLOOR_BASE+C.FLOOR_RISE*(1-y/w);
+  const end=junction(level,w),t=Math.min(1,y/end),head=C.FLOOR_BASE+C.FLOOR_RISE+C.HEAD_RISE*level;
+  return head+(floorAt(level-1,end,w)-head)*t;
+}
+export function carvingAM(alongM: number,acrossM: number,halfWidthM: number,envelopeM: number,belt: number,seed: number): number {
+  if(belt===0||envelopeM<=0)return 0;
+  const y=Math.abs(acrossM),root=Math.floor(alongM/CARVING_BANDS[0].wavelengthM);
+  let height=envelopeM,wall=C.WALL_SLOPE,children=1;
+  for(let level=0;level<CARVING_BANDS.length;level++){
+    const end=junction(level,halfWidthM);
+    for(let c=(root-1)*children;c<(root+2)*children;c++){
+      const x0=headX(level,c,seed),x1=channelX(level,c,end,halfWidthM,seed),dx=x1-x0;
+      const t=Math.max(0,Math.min(1,((alongM-x0)*dx+y*end)/(dx*dx+end*end)));
+      const px=alongM-x0-t*dx,py=y-t*end,dist=Math.sqrt(px*px+py*py);
+      const zeta=floorAt(level,t*end,halfWidthM);
+      height=Math.min(height,envelopeM*zeta+wall*Math.max(0,dist-C.CHANNEL_HALF_WIDTH_M));
+    }
+    wall*=C.WALL_GAIN;children*=2;
+  }
+  return Math.max(0,height)-envelopeM;
+}
+
+// Slope-aligned octave phase: the previous accumulated analytic along derivative
+// rotates the next gully normal. Damp detail where the coarse gradient is weak.
+export function carvingBM(alongM: number,acrossM: number,halfWidthM: number,envelopeM: number,belt: number,seed: number): number {
+  if(belt===0||envelopeM<=0)return 0;
+  const y=Math.abs(acrossM),gy=envelopeM/Math.max(1,halfWidthM-y);
+  let gx=0,cut=0,amp=C.B_GAIN;
+  for(let level=0;level<CARVING_BANDS.length;level++){
+    const s=CARVING_BANDS[level].wavelengthM,frequency=C.TWO_PI/s;
+    const slope=Math.sqrt(gx*gx+gy*gy),damp=slope/(slope+C.B_DAMP);
+    const phase=frequency*(alongM+C.B_WARP*y*gx/(slope+C.B_DAMP))+C.TWO_PI*hash(0,level,seed);
+    const v=0.5+0.5*detCos(phase),a=amp*damp;
+    cut+=a*v;gx+=envelopeM*a*0.5*frequency*sine(phase);amp*=C.B_DECAY;
+  }
+  return -envelopeM*Math.min(1,Math.max(0,cut));
+}
+export function ridgeValleyCarvingM(alongM: number,acrossM: number,halfWidthM: number,envelopeM: number,belt: number,seed: number): number {
+  return carvingAM(alongM,acrossM,halfWidthM,envelopeM,belt,seed);
+}

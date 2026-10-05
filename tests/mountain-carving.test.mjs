@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {stripTypeScriptTypes} from 'node:module';
 import {carvingAM,carvingBM,ridgeValleyCarvingM,MOUNTAIN_CARVING as C,MOUNTAIN_CARVING_VERSION,CARVING_BANDS} from '../src/mountain-carving.ts';
-import {raster,rasterFromArray,carvingStructure,measureSites,judgeM3,depressions,MOUNTAIN_THRESHOLDS} from './helpers/mountain-metrics.mjs';
+import {raster,rasterFromArray,carvingStructure,measureSites,judgeM3,depressions,depressionPits,MOUNTAIN_THRESHOLDS} from './helpers/mountain-metrics.mjs';
 import {buildErodedControl,ERODED_CONTROL,ERODED_CONTROL_VERSION} from './helpers/mountain-eroded-control.mjs';
 import {R,SITES,rampArgs,rampSampler} from '../scripts/mountain-render-carving.mjs';
 
@@ -62,10 +62,11 @@ test('HARD: frozen versioned constants and level bands',()=>{
   assert.deepEqual(ERODED_CONTROL,{radiusM:5194907,n:1025,stepM:125,cropN:385,steps:3,kDt:.8,m:.5,nExponent:1,diffusion:0});
 });
 test('HARD: reduced 129-square ramp metric pin for the winner',()=>{
-  const metrics=measureSites(rampSampler(),SITES.slice(0,1),R,{n:129});
+  // Rows 7/8 recalibrated 2026-10-05 (owner decision (a)); the other six values are unchanged.
+  const metrics=measureSites(rampSampler(),SITES.slice(0,1),R,{n:129,axisSub:2});
   const actual=Object.fromEntries(judgeM3(metrics).map(r=>[r.id,r.actual]));
   console.log('METRIC_PIN '+JSON.stringify(actual));
-  assert.deepEqual(actual,{"slope125Over30":44.5,"slope125P50":27.4,"flank500mP50":22.1,"relief8kmP50":2739,"beta500mTo8km":2.04,"fill10ShareP50":0.003,"pitsPer1000km2P50":11.5,"coherence40kmWindowP50":0.174});
+  assert.deepEqual(actual,{"slope125Over30":44.5,"slope125P50":27.4,"flank500mP50":22.1,"relief8kmP50":2739,"beta500mTo8km":2.04,"fill10ShareP50":0.003,"pits025Per1000km2P50":3.8,"axisCoherence40kmP50":0.297});
   for(let i=0;i<100;i++){const a=[i*173,-i*91,30000,2500,1,730201];assert.equal(ridgeValleyCarvingM(...a),carvingAM(...a));}
 });
 test('HARD: fixed dependency patches have no seams on the synthetic ramp',()=>{
@@ -117,8 +118,8 @@ test('HARD: dense active-wall derivative bound, with an over-carving negative co
 test('HARD: drainage teeth and eroded builder determinism on a small fixture',()=>{
   const {original,eroded}=buildErodedControl(0,129),again=buildErodedControl(0,129);
   assert.deepEqual(eroded.h,again.eroded.h);assert.deepEqual(original.h,again.original.h);
-  const P=depressions(eroded),N=depressions(original);
-  for(const [metric,row] of [['fill10Share','fill10ShareP50'],['pitsPer1000km2','pitsPer1000km2P50']]){
+  const P={...depressions(eroded),pits025:depressionPits(eroded).pitsPer1000km2},N={...depressions(original),pits025:depressionPits(original).pitsPer1000km2};
+  for(const [metric,row] of [['fill10Share','fill10ShareP50'],['pits025','pits025Per1000km2P50']]){
     const bound=MOUNTAIN_THRESHOLDS.find(r=>r.id===row).value;
     assert.ok(P[metric]<=bound);assert.ok(N[metric]>bound);
   }
