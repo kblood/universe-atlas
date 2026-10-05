@@ -96,8 +96,8 @@ function check(body, dirs, max, min, label) {
   return positives;
 }
 
-test('HARD: version and API unchanged by the grid (output-neutral, orogen-layout-1)', () => {
-  assert.equal(OROGEN_LAYOUT_VERSION, 'orogen-layout-1');
+test('HARD: version and API unchanged by the grid (output-neutral; orogen-layout-2 since cost plan T2)', () => {
+  assert.equal(OROGEN_LAYOUT_VERSION, 'orogen-layout-2');
   const l = orogenLayout(worlds[0]);
   assert.equal(typeof l.sample, 'function'); assert.equal(typeof l.sampleWithA0, 'function');
   assert.equal(typeof l.sampleWithinWithA0, 'function');

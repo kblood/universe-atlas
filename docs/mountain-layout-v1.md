@@ -4,7 +4,7 @@ Unwired element; this revision changes only the five M1 draft files and regenera
 
 ## Geometry and API
 
-Exports are `OROGEN_LAYOUT_VERSION = 'orogen-layout-1'`, frozen `OROGEN_LAYOUT`, `continentalA0`, `buildOrogenLayout` and `orogenLayout`. Geography inputs are seed, radius and a0; optional `landProbe` replaces construction directions. The memoised wrapper also reads water, type and kind. Stars and gas giants have empty layouts. Only catalogue and deterministic-math functions are imported by the implementation. The a0 identity pin (`continentalA0(d)*min(1,R/2e6)` bit-equal to terrain's `reliefLayersSampler(body)(d).continentalM`, 2000 directions per terrestrial body) runs in the integration script, so the unit file imports no terrain (section 2.6); measured mismatches: 0 on all 54 terrestrial bodies.
+Exports are `OROGEN_LAYOUT_VERSION = 'orogen-layout-1'` (`'orogen-layout-2'` since cost plan T2: the foot-point solve only, see "In-massif foot-point solve"), frozen `OROGEN_LAYOUT`, `continentalA0`, `buildOrogenLayout` and `orogenLayout`. Geography inputs are seed, radius and a0; optional `landProbe` replaces construction directions. The memoised wrapper also reads water, type and kind. Stars and gas giants have empty layouts. Only catalogue and deterministic-math functions are imported by the implementation. The a0 identity pin (`continentalA0(d)*min(1,R/2e6)` bit-equal to terrain's `reliefLayersSampler(body)(d).continentalM`, 2000 directions per terrestrial body) runs in the integration script, so the unit file imports no terrain (section 2.6); measured mismatches: 0 on all 54 terrestrial bodies.
 
 Construction uses 4096 Fibonacci probes, at most 4096 candidates, and a 10% probe-land target. The first 768 attempts seek up to three majors. Margins use 800–3000 raw metres; interiors require at least 800 m. Major half width W is .045R capped at 220 km, with a 30 km floor also capped by .045R on small worlds. Major angular half length is .72–.90; minor half length .10–.30 and half width .014R times .85–1.15. There are 25 land-continuity nodes, now on the exact displaced centreline, requiring 92% land for majors and 70% for minors.
 
@@ -45,7 +45,7 @@ The coordinator's gate compares `abs(axisDistanceM)` with dense-search great-cir
 
 Slope in this table is `d(offset/R)/dtheta`, including the bow, evaluated at the reference nearest point. A/B worst samples are direction `[-.15277741809323167,-.96303,.2218834820818481]`, belt 33 / 32, W=62761.69119019 m. C's worst sample is belt 0, W=220000 m, reported magnitude 219794.781674451 m and reference distance 219794.781675330 m. Changing accepted belts changes the positive-sample population; each stage uses the same coprime permutation and first-2000-positive rule, not necessarily identical points.
 
-C uses five Gauss–Newton steps from the sample's own u, minimizing squared chord distance to the exact centreline, with a fixed central derivative at u+/-1e-5. A square-root arithmetic clamp keeps projection on the finite arc; no data-dependent exit or transcendental operation is used. Minimizing chord distance also minimizes great-circle distance. Distance is signed using the sample's displaced-side coordinate and recovered as `R*chord*(1+chord²/24+3*chord⁴/640)`. For supported W/R<=.045, the omitted term is <3e-13 radians. The axis is the projected nearest-centreline tangent at the sample. These measured errors describe this reference regression, not a universal floating-point accuracy guarantee.
+C (orogen-layout-1; orogen-layout-2 replaced the steps, see "In-massif foot-point solve") uses five Gauss–Newton steps from the sample's own u, minimizing squared chord distance to the exact centreline, with a fixed central derivative at u+/-1e-5. A square-root arithmetic clamp keeps projection on the finite arc; no data-dependent exit or transcendental operation is used. Minimizing chord distance also minimizes great-circle distance. Distance is signed using the sample's displaced-side coordinate and recovered as `R*chord*(1+chord²/24+3*chord⁴/640)`. For supported W/R<=.045, the omitted term is <3e-13 radians. The axis is the projected nearest-centreline tangent at the sample. These measured errors describe this reference regression, not a universal floating-point accuracy guarantee.
 
 The reference searches 4000 intervals per belt, refines the nearest interval with 36 ternary iterations and converts chord to great-circle distance with asin. Samples come from a coprime permutation of 100000 Fibonacci directions. Distance accuracy on other worlds was not measured. Curvature was measured on Maithea and Lethuris.
 
@@ -170,3 +170,113 @@ tightens to about 1,530 ns on Maithea and Raiva). CPU-quiet lock, one process pi
 - Breakdown (A/B variants): the call, out reset and `a0 <= 0` check alone cost about +1.7%; any table lookup on
   land samples adds about +2-3% irrespective of the scheme (octahedral map, branchy or branch-free cube face,
   voxels); the flagged path adds about 0.4%. Without the grid the same call costs +83-137%.
+
+## In-massif foot-point solve (orogen-layout-2)
+
+Mountains cost plan T2 (docs/mountains-opus-decisions-2026-10-05.md, T2 row and "Addendum 2026-10-05 (2)").
+`OROGEN_LAYOUT_VERSION` is now `orogen-layout-2`. The belts are unchanged. Construction keeps its
+orogen-layout-1 random stream (`OROGEN_LAYOUT_CONSTRUCTION_SEED`) and its land-coverage predicate: `coveredV1` is
+orogen-layout-1's `value > 0`, verbatim. Without it, a probe near a belt edge could flip under the new solve and
+change when construction stops (found in review). A HARD test pins the belt-set SHA-256 of the four water worlds,
+the 60 corpus bodies (2384 belts) and the synthetic cap. The literals were computed on main 66453b2
+(orogen-layout-1). Only the projection moved: by under 0.1 um in
+distance and under 0.1 m along the belt.
+
+**Solve.** Gauss-Newton on the squared chord, as before, but with the exact derivative instead of a central
+difference, iterated in belt-frame coordinates (the derivation is in the comment above `transverse`), from the
+sample's own u, clamped to the finite arc, a fixed `FOOT_POINT_STEPS = 4` steps, no data-dependent exit. The
+final chord is evaluated in world coordinates, as orogen-layout-1 did: belt centres are unit only to
+`|C| - 1 >= -2.9e-11` (164,328 belts of 4173 catalogue bodies), and a frame-coordinate chord moved the 1% gate's
+worst sample by 7e-6 m. The card's per-grid-cell seed `u0` was not needed: the sample's own u is free and four
+exact steps converge (table). The distance series, the sign rule and the axis (the projected tangent) are
+orogen-layout-1's.
+
+**Value-preserving rewrites** (the orogen-layout-1 digest `0aa3d59b...` stayed unchanged through them):
+
+- `offsetNoise(x, s)` is catalog `noise(x, 37, 19, s)` bit for bit: with integer y and z the y/z smoothstep
+  weights are exactly 0 and 1, so the trilinear blend is the two x-corner hashes, and the y, z and seed `imul`
+  terms fold into one XOR constant. The last (seed, cell) corner pair is cached. Pinned against `noise` on
+  16,000+ interleaved points (negative x, cell boundaries, -0, extreme seeds).
+- Scalar paths (no per-call arrays) in `value`, `finish`, `centreline`.
+
+**Exact rejections.** Each returns 0 only where `value` would return 0. They are tested against
+`sampleWithA0Unpruned`, which runs the solve for every belt past orogen-layout-1's own rejections: Object.is on
+every field, 4 worlds x (10,000 Fibonacci + 4 x 17² rasters over 1.5 W per belt), coast gate open.
+`sampleWithinWithA0` is checked against the band-filtered reference at (48 km, 32 km), (48 km, 0) and
+(16 km, 0), and both solo and non-solo words are decided during the check.
+
+- Per belt, a cap `z < max(supportZ, sqrt(1-Y²)(1-U²)/(1+U²) - 1e-9)`, with Y the tube radius.
+- `beyondChord`'s bound at rho = W/R before the solve (`farFromArc`). If every displaced-arc point is at
+  chord >= W/R, the projected |distance| >= R x chord >= W (the distance series is >= the chord), so value is 0.
+  Its absolute margin moved from 1e-12 to 1e-9 to cover the centre-length error above (at most 6e-11 in chord).
+  This also makes T1's band test slightly more conservative; the grid identity tests are unchanged and pass.
+- Per 32-cell grid word, a lazily computed "solo" flag: no other belt can be positive anywhere on the word
+  (cap and pole-slab bounds of the word's cells, with a rigorous cell radius). `withinFlagged` then skips
+  the other-belt loop. The single-belt path shares `beyondChord`'s frame values with the solve.
+
+**Agreement with orogen-layout-1** (`node scripts/mountain-layout-foot.mjs <orogen-layout-1 checkout> 2,3,4,5`).
+The run uses 20,000 Fibonacci directions plus 8 in-belt 129² rasters spanning 2 W per world (153,128
+samples, 124,136-132,542 positive), with the coast gate from `continentalA0`. Belt/index mismatches are 0
+on every world at every step count. Maxima over the four worlds:
+
+| steps | \|d distance\| | \|d alongM\| | \|d axis\| | \|d belt\| |
+|---|---:|---:|---:|---:|
+| 2 | 4.4e-3 m | 32 m | 1.0e-5 | 1.2e-7 |
+| 3 | 4.9e-6 m | 1.06 m | 2.3e-6 | 1.6e-10 |
+| **4 (chosen)** | **7.8e-8 m** | **0.097 m** | **2.3e-6** | **1.4e-12** |
+| 5 | 7.8e-8 m | 0.097 m | 2.3e-6 | 1.4e-12 |
+
+Steps 4 and 5 agree with each other, so the remaining along difference is orogen-layout-1's own: its five
+central-difference steps stop up to 0.1 m short along the belt. Against a dense ternary search for the foot
+point (305 off-axis Maithea samples, HARD test < 0.1 m), alongM is within 0.024 m with 4 steps. With 3 steps
+it is 0.64 m, which is why 4 was chosen; the fourth step costs about 17-19 ns/sample at layout level.
+The coordinator's 1% distance gate (2000 positive Maithea samples against the dense displaced-centreline
+search) is unchanged at **8.79e-7 m** maximum error (4.0e-10 % of W), on the same worst sample as orogen-layout-1.
+
+**Digest ledger.** tests/mountain-layout.test.mjs hashes 4096 Maithea `sample` values; the forward, reverse and
+child-process digests agree.
+
+| version | digest |
+|---|---|
+| orogen-layout-1 (with alongM, T1) | `0aa3d59b9ed979c85da729386c3531e732bb3f94dbf3b1961db2292be60ec7b2` |
+| orogen-layout-2 (T2) | `dd8e6306c35553aad026290caa0f5dc12204a5aa66b16a155b1e2a44b4b53501` |
+
+No other pin moves. The band-grid identity and conservativeness tests and the terrain mountains-assembly
+identity counts pass unchanged.
+
+**Cost** (mountains cost plan rows; CPU-quiet test slot; one process per run pinned with `start /high /affinity 0x10`;
+`scripts/mountain-assembly-cost.mjs` on the T1 wiring of terrain.ts with M1+M2+M3, i.e. T1's band grid included):
+
+- **Layout level.** `node scripts/mountain-layout-foot.mjs`, in-massif `sampleWithinWithA0` at the massif band,
+  orogen-layout-1 vs orogen-layout-2 in one process: Maithea 2513 -> 304 ns, Selawyn 2464 -> 308 ns, Raiva 2543 ->
+  322 ns, Lethuris 2609 -> 325 ns.
+- **(C1) weighted warm resident overhead, medians of 15 fresh processes per world.** In the table, "region" is
+  main / branch warm in-massif ns, and "outside" is main / branch ns.
+
+| | Maithea | Selawyn | Raiva | Lethuris |
+|---|---:|---:|---:|---:|
+| massif land share | 2.27% | 1.11% | 1.72% | 1.16% |
+| region | 548 / 1170 | 581 / 1150 | 587 / 1161 | 517 / 1147 |
+| outside | 480 / 500 (+3.5%) | 442 / 452 (+2.0%) | 462 / 480 (+4.1%) | 442 / 451 (+3.5%) |
+| **weighted (median of runs)** | **+6.58%** | **+3.44%** | **+6.23%** | **+5.13%** |
+| weighted, from component medians | +6.99% | +3.65% | +5.94% | +3.66% |
+| range over the 15 runs | +1.7 .. +15.2% | +1.8 .. +14.7% | +0.9 .. +9.2% | -4.0 .. +10.0% |
+
+  Against the targets: the in-massif warm branch is 1170 ns on Maithea and 1161 ns on Raiva (<= 1,530; card
+  <= 1,700). (C1) <= +8% holds on all four worlds by the median. The margin is thin on Maithea, where the outside
+  branch (T1's band lookup, about +3.5%) is most of the total. A 9-process batch of the same warm code (it
+  differed only in construction coverage) gave a Maithea median of +7.68%. Pooled over all 24 processes, Maithea's
+  median is +7.10%, and 10 of 24 single runs exceed +8%. Single processes swing by +/-5 points, mostly in the
+  outside branch.
+- In one process, the fourth Gauss-Newton step costs 11-23 ns per in-massif terrain sample (Maithea, Raiva).
+- **Cold (INFO, unchanged in kind).** The region is 3.8-4.0 us cold (22-24 M3 block builds). Sparse 1000 cold is
+  2.2-4.1 ms per sample, still dominated by M3 block solves (decision (c), T3).
+- **Grid** (`scripts/mountain-layout-grid.mjs`). Cold builds are unchanged: 25 / 30 / 14 / 30 ms, and at most
+  46.1 ms over 64 bodies (Auraese; <= 50 ms). The ungridded band call now costs +34-66% instead of +83-137%.
+
+**Acceptance re-run** (worktree, orogen-layout-2):
+
+- `node scripts/mountain-render.mjs layout`: 64 bodies, 0 failing (all four plan gates); strict coherence p50
+  min .932; distance gate 8.79e-7 m max; exit 0, 36 s.
+- `tests/terrain-mountains-assembly.test.mjs`: 8/8, on the unwired tree and on the T1-wired tree. The identity
+  counts and digests are unchanged. M4 R1 on the whole Raiva core is **8.594** per 1000 km² (>= 8; 275 summits).
