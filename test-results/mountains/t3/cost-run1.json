@@ -1,0 +1,166 @@
+{
+ "M1+M2+M3/Maithea": {
+  "wired": "M1+M2+M3",
+  "world": "Maithea",
+  "terrainVersion": "terrain-1.8.1-grain",
+  "main": "terrain-1.8.1-grain",
+  "node": "v24.7.0",
+  "inMassifLandShare": 0.02275,
+  "regionSamples": 1185800,
+  "sites": 8,
+  "mainRegionNs": 535.4278124472941,
+  "branchWarmRegionNs": 1198.5839095968954,
+  "warmRounds": [
+   1197.605582728959,
+   1214.1871310507663,
+   1198.5839095968954,
+   1200.6987687637036,
+   1197.5213358070519
+  ],
+  "inMassifWarmOverhead": 1.2385536980578133,
+  "branchColdRegionNs": 4270.117726429414,
+  "coldBlockBuilds": 22,
+  "coldRegionMs": 5063.520800000001,
+  "coldInMassifOverhead": 6.975151135522591,
+  "outsideSamples": 19545,
+  "mainOutsideNs": 480.84420567931227,
+  "branchOutsideNs": 565.500127909961,
+  "outsideOverhead": 0.1760568625570753,
+  "weightedResidentOverhead": 0.2029032262159185,
+  "sparse1000": {
+   "mainNs": 1266.700000000128,
+   "branchColdNs": 4351143.8,
+   "blockBuilds": 27,
+   "ratio": 3435.02313096989
+  },
+  "l0": {
+   "mainL0Ms": 220.4449999999997,
+   "branchL0Ms": 214.27000000000044,
+   "carvingBlockBuilds": 0
+  },
+  "sink": 16051901560.01302
+ },
+ "M1+M2+M3/Selawyn": {
+  "wired": "M1+M2+M3",
+  "world": "Selawyn",
+  "terrainVersion": "terrain-1.8.1-grain",
+  "main": "terrain-1.8.1-grain",
+  "node": "v24.7.0",
+  "inMassifLandShare": 0.0111,
+  "regionSamples": 1185800,
+  "sites": 8,
+  "mainRegionNs": 778.6348456738065,
+  "branchWarmRegionNs": 1467.5809580030357,
+  "warmRounds": [
+   1490.971327373925,
+   1418.294990723561,
+   1467.5809580030357,
+   1421.1113172541743,
+   1468.7785461291946
+  ],
+  "inMassifWarmOverhead": 0.8848128441169836,
+  "branchColdRegionNs": 4454.576319784112,
+  "coldBlockBuilds": 22,
+  "coldRegionMs": 5282.256,
+  "coldInMassifOverhead": 4.721008178010912,
+  "outsideSamples": 19778,
+  "mainOutsideNs": 771.1800991000716,
+  "branchOutsideNs": 597.5680048538684,
+  "outsideOverhead": -0.22512522619398478,
+  "weightedResidentOverhead": -0.2126871517752622,
+  "sparse1000": {
+   "mainNs": 1309.3999999996413,
+   "branchColdNs": 2206644.8,
+   "blockBuilds": 15,
+   "ratio": 1685.2335420808038
+  },
+  "l0": {
+   "mainL0Ms": 216.64199999999983,
+   "branchL0Ms": 220.46700000000055,
+   "carvingBlockBuilds": 0
+  },
+  "sink": 19531165726.151367
+ },
+ "M1+M2+M3/Raiva": {
+  "wired": "M1+M2+M3",
+  "world": "Raiva",
+  "terrainVersion": "terrain-1.8.1-grain",
+  "main": "terrain-1.8.1-grain",
+  "node": "v24.7.0",
+  "inMassifLandShare": 0.0172,
+  "regionSamples": 1185800,
+  "sites": 8,
+  "mainRegionNs": 813.6806375442733,
+  "branchWarmRegionNs": 1515.5139146567722,
+  "warmRounds": [
+   1559.7542587282846,
+   1515.5139146567722,
+   1498.2365491651217,
+   1583.6329903862365,
+   1480.3237476808915
+  ],
+  "inMassifWarmOverhead": 0.8625414502066375,
+  "branchColdRegionNs": 4543.308905380334,
+  "coldBlockBuilds": 22,
+  "coldRegionMs": 5387.463,
+  "coldInMassifOverhead": 4.583651245643814,
+  "outsideSamples": 19656,
+  "mainOutsideNs": 808.7606837607267,
+  "branchOutsideNs": 741.4173789173798,
+  "outsideOverhead": -0.08326728313523035,
+  "weightedResidentOverhead": -0.0669021222818249,
+  "sparse1000": {
+   "mainNs": 1121.7000000001462,
+   "branchColdNs": 2009414.7000000002,
+   "blockBuilds": 14,
+   "ratio": 1791.4011767850034
+  },
+  "l0": {
+   "mainL0Ms": 212.96169999999984,
+   "branchL0Ms": 215.80419999999867,
+   "carvingBlockBuilds": 0
+  },
+  "sink": 14549251311.107986
+ },
+ "M1+M2+M3/Lethuris": {
+  "wired": "M1+M2+M3",
+  "world": "Lethuris",
+  "terrainVersion": "terrain-1.8.1-grain",
+  "main": "terrain-1.8.1-grain",
+  "node": "v24.7.0",
+  "inMassifLandShare": 0.0116,
+  "regionSamples": 1185800,
+  "sites": 8,
+  "mainRegionNs": 656.7606679035249,
+  "branchWarmRegionNs": 1400.204418957664,
+  "warmRounds": [
+   1376.4584246921913,
+   1421.6695058188573,
+   1456.7416090403112,
+   1394.4435823916353,
+   1400.204418957664
+  ],
+  "inMassifWarmOverhead": 1.1319858015056217,
+  "branchColdRegionNs": 5247.487012987013,
+  "coldBlockBuilds": 24,
+  "coldRegionMs": 6222.4776999999995,
+  "coldInMassifOverhead": 6.989953219546096,
+  "outsideSamples": 19768,
+  "mainOutsideNs": 469.62262241995796,
+  "branchOutsideNs": 451.4164305948128,
+  "outsideOverhead": -0.038767706145263925,
+  "weightedResidentOverhead": -0.019862617866330035,
+  "sparse1000": {
+   "mainNs": 1007.3999999999614,
+   "branchColdNs": 2048569.5,
+   "blockBuilds": 13,
+   "ratio": 2033.5214413342053
+  },
+  "l0": {
+   "mainL0Ms": 203.47430000000168,
+   "branchL0Ms": 221.63490000000093,
+   "carvingBlockBuilds": 0
+  },
+  "sink": 11193986057.277143
+ }
+}

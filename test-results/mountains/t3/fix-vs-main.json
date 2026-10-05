@@ -1,0 +1,238 @@
+{
+ "Maithea": {
+  "world": "Maithea",
+  "cut": 6,
+  "tiles": 12,
+  "rounds": 5,
+  "coarseBlockSolvesInclWarm": 10,
+  "rows": [
+   {
+    "level": 0,
+    "mainMeanMs": 26.28737499999998,
+    "branchMeanMs": 25.87447666666662,
+    "growth": -0.015707096404009913,
+    "mainP50Ms": 23.41280000000006,
+    "branchP50Ms": 23.596599999999853
+   },
+   {
+    "level": 1,
+    "mainMeanMs": 27.509164999999893,
+    "branchMeanMs": 29.357105000000015,
+    "growth": 0.06717543044291352,
+    "mainP50Ms": 26.13919999999962,
+    "branchP50Ms": 28.1233000000002
+   },
+   {
+    "level": 2,
+    "mainMeanMs": 26.97919500000001,
+    "branchMeanMs": 27.687491666666666,
+    "growth": 0.02625343961028692,
+    "mainP50Ms": 27.107899999999063,
+    "branchP50Ms": 26.986899999999878
+   },
+   {
+    "level": 3,
+    "mainMeanMs": 28.959849999999914,
+    "branchMeanMs": 29.04667000000021,
+    "growth": 0.002997943704829087,
+    "mainP50Ms": 28.881900000000314,
+    "branchP50Ms": 29.295799999999872
+   },
+   {
+    "level": 4,
+    "mainMeanMs": 28.069816666666703,
+    "branchMeanMs": 28.651640000000043,
+    "growth": 0.020727721176186487,
+    "mainP50Ms": 27.88470000000234,
+    "branchP50Ms": 26.50380000000041
+   },
+   {
+    "level": 5,
+    "mainMeanMs": 28.669113333333673,
+    "branchMeanMs": 29.582001666666898,
+    "growth": 0.03184222416365445,
+    "mainP50Ms": 28.44640000000072,
+    "branchP50Ms": 30.057300000000396
+   }
+  ]
+ },
+ "Raiva": {
+  "world": "Raiva",
+  "cut": 5,
+  "tiles": 12,
+  "rounds": 5,
+  "coarseBlockSolvesInclWarm": 0,
+  "rows": [
+   {
+    "level": 0,
+    "mainMeanMs": 22.751379999999994,
+    "branchMeanMs": 21.716311666666638,
+    "growth": -0.045494749476003515,
+    "mainP50Ms": 21.98570000000018,
+    "branchP50Ms": 20.664999999999964
+   },
+   {
+    "level": 1,
+    "mainMeanMs": 25.543500000000087,
+    "branchMeanMs": 26.10470166666675,
+    "growth": 0.0219704295287122,
+    "mainP50Ms": 23.332000000000335,
+    "branchP50Ms": 23.980399999999918
+   },
+   {
+    "level": 2,
+    "mainMeanMs": 22.275826666666656,
+    "branchMeanMs": 22.319031666666568,
+    "growth": 0.0019395464261069417,
+    "mainP50Ms": 21.733900000000176,
+    "branchP50Ms": 21.641099999998914
+   },
+   {
+    "level": 3,
+    "mainMeanMs": 22.99129500000005,
+    "branchMeanMs": 21.93503499999997,
+    "growth": -0.04594173577434757,
+    "mainP50Ms": 23.07010000000082,
+    "branchP50Ms": 21.937700000000405
+   },
+   {
+    "level": 4,
+    "mainMeanMs": 24.020880000000094,
+    "branchMeanMs": 23.520101666666747,
+    "growth": -0.0208476264538745,
+    "mainP50Ms": 23.476399999999558,
+    "branchP50Ms": 22.784299999999348
+   }
+  ]
+ },
+ "Selawyn": {
+  "world": "Selawyn",
+  "cut": 7,
+  "tiles": 12,
+  "rounds": 5,
+  "coarseBlockSolvesInclWarm": 0,
+  "rows": [
+   {
+    "level": 0,
+    "mainMeanMs": 23.71058333333332,
+    "branchMeanMs": 23.16396333333333,
+    "growth": -0.023053840233088208,
+    "mainP50Ms": 22.653800000000047,
+    "branchP50Ms": 21.864400000000046
+   },
+   {
+    "level": 1,
+    "mainMeanMs": 27.828008333333347,
+    "branchMeanMs": 28.158246666666702,
+    "growth": 0.011867120685664867,
+    "mainP50Ms": 27.125599999999395,
+    "branchP50Ms": 27.603399999999965
+   },
+   {
+    "level": 2,
+    "mainMeanMs": 27.160401666666562,
+    "branchMeanMs": 26.72842999999992,
+    "growth": -0.015904465330378037,
+    "mainP50Ms": 27.086099999999533,
+    "branchP50Ms": 26.506000000000313
+   },
+   {
+    "level": 3,
+    "mainMeanMs": 26.538991666666426,
+    "branchMeanMs": 27.93488499999991,
+    "growth": 0.052597828540967395,
+    "mainP50Ms": 25.195999999999913,
+    "branchP50Ms": 27.197799999999916
+   },
+   {
+    "level": 4,
+    "mainMeanMs": 26.905495000000005,
+    "branchMeanMs": 27.054393333333305,
+    "growth": 0.005534123543659009,
+    "mainP50Ms": 26.611500000000888,
+    "branchP50Ms": 25.822299999999814
+   },
+   {
+    "level": 5,
+    "mainMeanMs": 26.171591666666487,
+    "branchMeanMs": 26.801554999999855,
+    "growth": 0.02407050138015565,
+    "mainP50Ms": 25.60750000000189,
+    "branchP50Ms": 26.199499999998807
+   },
+   {
+    "level": 6,
+    "mainMeanMs": 26.927939999999822,
+    "branchMeanMs": 26.760889999999986,
+    "growth": -0.006203593739433355,
+    "mainP50Ms": 26.793799999999464,
+    "branchP50Ms": 25.6691000000028
+   }
+  ]
+ },
+ "Lethuris": {
+  "world": "Lethuris",
+  "cut": 7,
+  "tiles": 12,
+  "rounds": 5,
+  "coarseBlockSolvesInclWarm": 0,
+  "rows": [
+   {
+    "level": 0,
+    "mainMeanMs": 22.94623166666666,
+    "branchMeanMs": 21.818221666666677,
+    "growth": -0.0491588342864423,
+    "mainP50Ms": 22.215100000000007,
+    "branchP50Ms": 21.143799999999942
+   },
+   {
+    "level": 1,
+    "mainMeanMs": 27.403570000000006,
+    "branchMeanMs": 29.48453833333336,
+    "growth": 0.07593785529890296,
+    "mainP50Ms": 27.346999999999753,
+    "branchP50Ms": 27.91870000000017
+   },
+   {
+    "level": 2,
+    "mainMeanMs": 26.115710000000202,
+    "branchMeanMs": 27.787898333333306,
+    "growth": 0.064029977868995,
+    "mainP50Ms": 24.440200000000914,
+    "branchP50Ms": 27.9337000000005
+   },
+   {
+    "level": 3,
+    "mainMeanMs": 26.433550000000043,
+    "branchMeanMs": 28.331728333333437,
+    "growth": 0.07180943661874362,
+    "mainP50Ms": 25.923800000000483,
+    "branchP50Ms": 27.680099999999584
+   },
+   {
+    "level": 4,
+    "mainMeanMs": 25.98978166666684,
+    "branchMeanMs": 28.234855,
+    "growth": 0.08638292395555514,
+    "mainP50Ms": 24.52020000000084,
+    "branchP50Ms": 26.795899999999165
+   },
+   {
+    "level": 5,
+    "mainMeanMs": 26.35568,
+    "branchMeanMs": 27.698849999999947,
+    "growth": 0.05096320793088793,
+    "mainP50Ms": 25.29490000000078,
+    "branchP50Ms": 26.72950000000128
+   },
+   {
+    "level": 6,
+    "mainMeanMs": 23.022288333333076,
+    "branchMeanMs": 22.863831666666556,
+    "growth": -0.006882750505608826,
+    "mainP50Ms": 22.380300000000716,
+    "branchP50Ms": 21.900900000000547
+   }
+  ]
+ }
+}

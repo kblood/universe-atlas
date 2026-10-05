@@ -14,7 +14,10 @@
 import {massifEnvelopeM, composeRidgeTermM, MASSIF_ENVELOPE} from './mountain-envelope.ts';
 import {ridgeValleyCarvingM} from './mountain-carving.ts';
 
-export const MOUNTAIN_ASSEMBLY_VERSION = 'mountain-assembly-1';
+// mountain-assembly-2 (mountains cost plan T3): mountainRidgeTermM takes `carve`; with carve = false (tile
+// levels coarser than lod-ladder.ts carvingFromLevel) it returns the uncarved composition. The truth (carve =
+// true, the default) is unchanged. Was mountain-assembly-1.
+export const MOUNTAIN_ASSEMBLY_VERSION = 'mountain-assembly-2';
 export const MOUNTAIN_ASSEMBLY = Object.freeze({
   // Fixed M3 carving half-width (m): one strip spans 2x this across the belt axis.
   CARVING_HALF_WIDTH_M: 48000,
@@ -58,12 +61,16 @@ export function carvingSeed(beltSeed: number, strip: number): number {
 // strip that contains the sample. U + C = U x retained >= 0, so the term is >= 0 and the sea-level-0
 // coastline guarantee of the relief floor (F >= 0 where a0 >= 0) still holds. Outside the massif (and on a
 // width-gated belt) it returns `mainTermM` itself.
+//
+// `carve = false` is the declared coarse-level reduction (lod-ladder-2, T3): the term without C, i.e. (1 - w) x
+// main + U. C <= 0, so it is >= the carved term (an upper envelope), and no M3 block is ever solved for it.
 export function mountainRidgeTermM(
   mainTermM: number, o: BeltSample, a0: number, landFactor: number, tau: number, beltSeeds: ArrayLike<number>,
+  carve = true,
 ): number {
   const U = massifEnvelopeM(o.belt, o.axisDistanceM, o.halfWidthM, a0, landFactor, tau, 'water');
   const composed = composeRidgeTermM(mainTermM, o.belt, o.axisDistanceM, o.halfWidthM, U);
-  if (!(U > 0)) return composed;
+  if (!carve || !(U > 0)) return composed;
   const {strip, localM} = carvingStrip(o.axisDistanceM);
   return composed + ridgeValleyCarvingM(o.alongM ?? 0, localM, MOUNTAIN_ASSEMBLY.CARVING_HALF_WIDTH_M, U, o.belt,
     carvingSeed(beltSeeds[o.beltIndex], strip));

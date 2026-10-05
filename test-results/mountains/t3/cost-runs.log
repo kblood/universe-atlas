@@ -1,0 +1,33 @@
+M1+M2+M3 Maithea: massif land share 2.27%; region main 535 ns, warm 1199 ns (123.9%), cold 4270 ns (22 builds, 5.1 s); outside main 481 vs 566 ns (17.6%); WEIGHTED RESIDENT 20.29%; sparse 1000 cold 4.35 ms/sample vs main 1267 ns (27 builds); L0 x6 main 220 ms branch 214 ms (0 builds)
+cost Maithea run 1 exit 0
+M1+M2+M3 Selawyn: massif land share 1.11%; region main 779 ns, warm 1468 ns (88.5%), cold 4455 ns (22 builds, 5.3 s); outside main 771 vs 598 ns (-22.5%); WEIGHTED RESIDENT -21.27%; sparse 1000 cold 2.21 ms/sample vs main 1309 ns (15 builds); L0 x6 main 217 ms branch 220 ms (0 builds)
+cost Selawyn run 1 exit 0
+M1+M2+M3 Raiva: massif land share 1.72%; region main 814 ns, warm 1516 ns (86.3%), cold 4543 ns (22 builds, 5.4 s); outside main 809 vs 741 ns (-8.3%); WEIGHTED RESIDENT -6.69%; sparse 1000 cold 2.01 ms/sample vs main 1122 ns (14 builds); L0 x6 main 213 ms branch 216 ms (0 builds)
+cost Raiva run 1 exit 0
+M1+M2+M3 Lethuris: massif land share 1.16%; region main 657 ns, warm 1400 ns (113.2%), cold 5247 ns (24 builds, 6.2 s); outside main 470 vs 451 ns (-3.9%); WEIGHTED RESIDENT -1.99%; sparse 1000 cold 2.05 ms/sample vs main 1007 ns (13 builds); L0 x6 main 203 ms branch 222 ms (0 builds)
+cost Lethuris run 1 exit 0
+M1+M2+M3 Maithea: massif land share 2.27%; region main 733 ns, warm 1487 ns (102.9%), cold 4648 ns (22 builds, 5.5 s); outside main 836 vs 647 ns (-22.6%); WEIGHTED RESIDENT -20.08%; sparse 1000 cold 4.08 ms/sample vs main 1459 ns (27 builds); L0 x6 main 219 ms branch 232 ms (0 builds)
+cost Maithea run 2 exit 0
+M1+M2+M3 Selawyn: massif land share 1.11%; region main 798 ns, warm 1446 ns (81.2%), cold 4518 ns (22 builds, 5.4 s); outside main 509 vs 499 ns (-2.0%); WEIGHTED RESIDENT -0.52%; sparse 1000 cold 2.21 ms/sample vs main 1668 ns (15 builds); L0 x6 main 214 ms branch 222 ms (0 builds)
+cost Selawyn run 2 exit 0
+M1+M2+M3 Raiva: massif land share 1.72%; region main 604 ns, warm 1179 ns (95.1%), cold 4275 ns (22 builds, 5.1 s); outside main 477 vs 486 ns (1.9%); WEIGHTED RESIDENT 3.92%; sparse 1000 cold 2.03 ms/sample vs main 1414 ns (14 builds); L0 x6 main 185 ms branch 194 ms (0 builds)
+cost Raiva run 2 exit 0
+M1+M2+M3 Lethuris: massif land share 1.16%; region main 518 ns, warm 1155 ns (123.0%), cold 3989 ns (24 builds, 4.7 s); outside main 473 vs 451 ns (-4.7%); WEIGHTED RESIDENT -3.11%; sparse 1000 cold 1.88 ms/sample vs main 840 ns (13 builds); L0 x6 main 180 ms branch 182 ms (0 builds)
+cost Lethuris run 2 exit 0
+M1+M2+M3 Maithea: massif land share 2.27%; region main 541 ns, warm 1188 ns (119.8%), cold 3812 ns (22 builds, 4.5 s); outside main 487 vs 533 ns (9.5%); WEIGHTED RESIDENT 12.28%; sparse 1000 cold 3.90 ms/sample vs main 994 ns (27 builds); L0 x6 main 188 ms branch 209 ms (0 builds)
+cost Maithea run 3 exit 0
+M1+M2+M3 Selawyn: massif land share 1.11%; region main 589 ns, warm 1195 ns (102.9%), cold 3820 ns (22 builds, 4.5 s); outside main 494 vs 481 ns (-2.6%); WEIGHTED RESIDENT -1.19%; sparse 1000 cold 2.21 ms/sample vs main 1004 ns (15 builds); L0 x6 main 195 ms branch 207 ms (0 builds)
+cost Selawyn run 3 exit 0
+M1+M2+M3 Raiva: massif land share 1.72%; region main 610 ns, warm 1198 ns (96.3%), cold 3808 ns (22 builds, 4.5 s); outside main 528 vs 543 ns (2.8%); WEIGHTED RESIDENT 4.62%; sparse 1000 cold 2.01 ms/sample vs main 1129 ns (14 builds); L0 x6 main 190 ms branch 222 ms (0 builds)
+cost Raiva run 3 exit 0
+M1+M2+M3 Lethuris: massif land share 1.16%; region main 685 ns, warm 1514 ns (121.1%), cold 4756 ns (24 builds, 5.6 s); outside main 455 vs 454 ns (-0.3%); WEIGHTED RESIDENT 1.81%; sparse 1000 cold 1.93 ms/sample vs main 1060 ns (13 builds); L0 x6 main 216 ms branch 211 ms (0 builds)
+cost Lethuris run 3 exit 0
+Maithea blockSolves 0 max growth 0.2407
+levelmean Maithea exit 0
+Selawyn blockSolves 0 max growth 0.2823
+levelmean Selawyn exit 0
+Raiva blockSolves 0 max growth 0.2671
+levelmean Raiva exit 0
+Lethuris blockSolves 0 max growth 0.2640
+levelmean Lethuris exit 0
+ALLDONE

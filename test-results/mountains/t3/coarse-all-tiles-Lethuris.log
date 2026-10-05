@@ -1,0 +1,8 @@
+Lethuris {"level":0,"tiles":6,"massifTiles":5,"blockSolves":0,"ms":437.6637}
+Lethuris {"level":1,"tiles":24,"massifTiles":16,"blockSolves":0,"ms":1154.3537999999999}
+Lethuris {"level":2,"tiles":96,"massifTiles":49,"blockSolves":0,"ms":4161.9252}
+Lethuris {"level":3,"tiles":384,"massifTiles":129,"blockSolves":0,"ms":16086.318200000002}
+Lethuris {"level":4,"tiles":1536,"massifTiles":271,"blockSolves":0,"ms":60805.56160000001}
+Lethuris {"level":5,"tiles":6144,"massifTiles":535,"blockSolves":0,"ms":222905.933}
+Lethuris {"level":6,"tiles":24576,"massifTiles":1180,"blockSolves":0,"ms":822964.0435000001}
+{"world":"Lethuris","totalTiles":32766,"totalBlockSolves":0}

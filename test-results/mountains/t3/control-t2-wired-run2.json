@@ -1,0 +1,76 @@
+{
+ "M1+M2+M3/Maithea": {
+  "wired": "M1+M2+M3",
+  "world": "Maithea",
+  "terrainVersion": "terrain-1.8.1-grain",
+  "main": "terrain-1.8.1-grain",
+  "node": "v24.7.0",
+  "inMassifLandShare": 0.02275,
+  "regionSamples": 1185800,
+  "sites": 8,
+  "mainRegionNs": 556.7037443076395,
+  "branchWarmRegionNs": 1166.7502108281328,
+  "warmRounds": [
+   1162.4181986844328,
+   1181.2765221791196,
+   1166.7502108281328,
+   1184.1630123123634,
+   1164.1364479676176
+  ],
+  "inMassifWarmOverhead": 1.0958188673208857,
+  "branchColdRegionNs": 3943.46930342385,
+  "coldBlockBuilds": 22,
+  "coldRegionMs": 4676.1822,
+  "coldInMassifOverhead": 6.083604778567204,
+  "outsideSamples": 19545,
+  "mainOutsideNs": 482.3177283193761,
+  "branchOutsideNs": 503.47403427972966,
+  "outsideOverhead": 0.04386383646745107,
+  "weightedResidentOverhead": 0.07139017042235252,
+  "sparse1000": {
+   "mainNs": 1153.3999999992375,
+   "branchColdNs": 3963680.0999999996,
+   "blockBuilds": 27,
+   "ratio": 3436.518207042327
+  },
+  "l0": null,
+  "sink": 16051924046.468334
+ },
+ "M1+M2+M3/Raiva": {
+  "wired": "M1+M2+M3",
+  "world": "Raiva",
+  "terrainVersion": "terrain-1.8.1-grain",
+  "main": "terrain-1.8.1-grain",
+  "node": "v24.7.0",
+  "inMassifLandShare": 0.0172,
+  "regionSamples": 1185800,
+  "sites": 8,
+  "mainRegionNs": 639.3117726429417,
+  "branchWarmRegionNs": 1429.3961038961022,
+  "warmRounds": [
+   1195.3965255523703,
+   1186.6048237476816,
+   1466.3349637375618,
+   1447.884381851914,
+   1429.3961038961022
+  ],
+  "inMassifWarmOverhead": 1.235835730017795,
+  "branchColdRegionNs": 3843.928993084837,
+  "coldBlockBuilds": 22,
+  "coldRegionMs": 4558.1463,
+  "coldInMassifOverhead": 5.012604737738323,
+  "outsideSamples": 19656,
+  "mainOutsideNs": 749.1300366300911,
+  "branchOutsideNs": 626.04802604801,
+  "outsideOverhead": -0.16429992733405396,
+  "weightedResidentOverhead": -0.14369597780826482,
+  "sparse1000": {
+   "mainNs": 1195.5000000002656,
+   "branchColdNs": 2038422.1,
+   "blockBuilds": 14,
+   "ratio": 1705.0791300707212
+  },
+  "l0": null,
+  "sink": 14549248182.774979
+ }
+}

@@ -1,0 +1,52 @@
+{
+ "world": "Maithea",
+ "cut": 6,
+ "levels": [
+  {
+   "level": 0,
+   "tiles": 6,
+   "massifTiles": 6,
+   "blockSolves": 0,
+   "ms": 401.12260000000003
+  },
+  {
+   "level": 1,
+   "tiles": 24,
+   "massifTiles": 17,
+   "blockSolves": 0,
+   "ms": 1199.4236999999998
+  },
+  {
+   "level": 2,
+   "tiles": 96,
+   "massifTiles": 63,
+   "blockSolves": 0,
+   "ms": 4380.034500000001
+  },
+  {
+   "level": 3,
+   "tiles": 384,
+   "massifTiles": 143,
+   "blockSolves": 0,
+   "ms": 17741.822500000002
+  },
+  {
+   "level": 4,
+   "tiles": 1536,
+   "massifTiles": 291,
+   "blockSolves": 0,
+   "ms": 71334.0428
+  },
+  {
+   "level": 5,
+   "tiles": 6144,
+   "massifTiles": 637,
+   "blockSolves": 0,
+   "ms": 236370.24300000002
+  }
+ ],
+ "totalTiles": 8190,
+ "totalBlockSolves": 0,
+ "wallMs": 331432.4708,
+ "sink": -7529989.026776731
+}

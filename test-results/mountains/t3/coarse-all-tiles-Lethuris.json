@@ -1,0 +1,59 @@
+{
+ "world": "Lethuris",
+ "cut": 7,
+ "levels": [
+  {
+   "level": 0,
+   "tiles": 6,
+   "massifTiles": 5,
+   "blockSolves": 0,
+   "ms": 437.6637
+  },
+  {
+   "level": 1,
+   "tiles": 24,
+   "massifTiles": 16,
+   "blockSolves": 0,
+   "ms": 1154.3537999999999
+  },
+  {
+   "level": 2,
+   "tiles": 96,
+   "massifTiles": 49,
+   "blockSolves": 0,
+   "ms": 4161.9252
+  },
+  {
+   "level": 3,
+   "tiles": 384,
+   "massifTiles": 129,
+   "blockSolves": 0,
+   "ms": 16086.318200000002
+  },
+  {
+   "level": 4,
+   "tiles": 1536,
+   "massifTiles": 271,
+   "blockSolves": 0,
+   "ms": 60805.56160000001
+  },
+  {
+   "level": 5,
+   "tiles": 6144,
+   "massifTiles": 535,
+   "blockSolves": 0,
+   "ms": 222905.933
+  },
+  {
+   "level": 6,
+   "tiles": 24576,
+   "massifTiles": 1180,
+   "blockSolves": 0,
+   "ms": 822964.0435000001
+  }
+ ],
+ "totalTiles": 32766,
+ "totalBlockSolves": 0,
+ "wallMs": 1128523.0366,
+ "sink": -70826305.86706913
+}

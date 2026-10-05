@@ -15,6 +15,9 @@ import {planetGeophysics} from './planet-geophysics.ts';
 import {climateDatumM} from './surface-biomes.ts';
 import {DRY_SURFACE_ROUGHNESS,WET_SURFACE_ROUGHNESS} from './surface-roughness.ts';
 import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_CALIBRATION,CLIMATE_VERSION,type ClimateSample} from './surface-climate.ts';
+import {orogenLayout,type OrogenSample} from './mountain-layout.ts';
+import {mountainRidgeTermM,massifBeltSample} from './mountain-assembly.ts';
+import {carvingAtLevel} from './lod-ladder.ts';
 
 // Bumped from terrain-1.3.0: `terrainSampler` gained the ABILITY to sum
 // procedural impact craters (planet-craters.ts) into `elevationM` for any
@@ -456,12 +459,34 @@ type CoreSample = {
    * (terrain-1.7 base) height, so the landform geography is unchanged. */
   landformGateM: number;
 };
-function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false, relief: boolean = false) {
+// The memoised layout identity includes the body seed and geography. Hash strip-0 seeds once per
+// layout rather than once per tile sampler; weak keys do not extend a layout's lifetime.
+const mountainSeedMemo = new WeakMap<ReturnType<typeof orogenLayout>, Uint32Array>();
+function mountainSeeds(body: Body, layout: ReturnType<typeof orogenLayout>): Uint32Array {
+  let seeds = mountainSeedMemo.get(layout);
+  if (!seeds) {
+    seeds = Uint32Array.from(layout.belts, (_b, i) => Number(hash64(`${body.seed}/mountain-carving/${i}`) & 0xffffffffn));
+    mountainSeedMemo.set(layout, seeds);
+  }
+  return seeds;
+}
+function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false, relief: boolean = false,
+  mountains: {carve: boolean} | null = null) {
   const { code, n } = macroNoise(body);
   const sea = 0.37 + body.water * 0.22;
   // terrain-1.8.0 relief mode (terrainSampler only; baseTerrainSampler never).
   const reliefOn = relief && reliefModeFor(body);
   const tau = reliefOn ? tectonicReliefOf(body) : 1;
+  // Mountains assembly (STAGED, off unless the sampler opts in; see TERRAIN_MOUNTAINS_WIRED): the M1 orogen
+  // layout of a relief water world (memoised by mountain-layout.ts), one scratch sample per core, one 32-bit
+  // M3 carving seed per belt (strip 0; mountain-assembly.ts derives the other strips), and whether this
+  // sampler's level evaluates the M3 carving (lod-ladder-2 carvingFromLevel; the truth always does).
+  const orogen = mountains && reliefOn && body.water ? orogenLayout(body) : null;
+  const orogenScratch: OrogenSample = {belt: 0, axis: [0, 0, 0], axisDistanceM: 0, halfWidthM: 0, beltIndex: -1, alongM: 0};
+  const beltCarvingSeeds = orogen
+    ? mountainSeeds(body, orogen)
+    : new Uint32Array(0);
+  const carve = mountains ? mountains.carve : true;
   const kd = dryFloorScale(tau);
   const seabedHillF = body.radiusM / RC.SEABED_HILL_WAVELENGTH_M;
   const seabedGullyF = body.radiusM / RC.SEABED_GULLY_WAVELENGTH_M;
@@ -565,8 +590,14 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
           const comp = a0 / (1 + a0 / RC.HC);
           let fineT = fine * landFactor;
           if (fineT < -0.5 * comp) fineT = -0.5 * comp;
+          let ridgeTermM = tau * RC.KB * 2800 * ridges * ss(RC.BT0, RC.BT1, ridges) * landFactor;
+          if (orogen) {
+            const o = massifBeltSample(orogen, d, a0, orogenScratch);
+            if (o.belt !== 0)
+              ridgeTermM = mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve);
+          }
           const F = comp + tau * (RC.HUP * ss(RC.B1, RC.B2, a0) + RC.HHI * ss(RC.B3, RC.B4, a0))
-            + tau * RC.KB * 2800 * ridges * ss(RC.BT0, RC.BT1, ridges) * landFactor + fineT;
+            + ridgeTermM + fineT;
           floorM = clamp(F, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
           const upland = ss(RC.HM0, RC.HM1, floorM);
           elevationM = floorM + tau * detailM * (RC.WLOW + (1 - RC.WLOW) * upland);
@@ -769,6 +800,27 @@ export function previousDouble(x: number): number {
  * the pre-existing `0` behaviour untouched; only this package's own
  * `planet-tiles.ts` threads a real value through.
  */
+/**
+ * Mountains assembly wiring (MTN-6; docs/mountains-opus-decisions-2026-10-05.md). STAGED: false on main until
+ * the assembled check (cost plan T6) wires it, moves TERRAIN_VERSION and re-pins the goldens in one step. While
+ * false, a sampler evaluates the M1+M2+M3 belts only when it opts in with `{mountains: true}` (evidence and
+ * the T3 tests), and `lodLevel` changes nothing: the default field is bit-identical to terrain-1.8.1-grain.
+ */
+export const TERRAIN_MOUNTAINS_WIRED = false;
+/**
+ * `lodLevel`: the tile level this sampler serves (lod-ladder-2, cost plan T3). Below
+ * `carvingFromLevel(radiusM)` the M3 carving is the declared reduction +0 (an upper envelope); omitted, the
+ * sampler is the truth (full carving), as collision, physics and place queries require (contract section 8).
+ * `mountains`: whether the M1+M2+M3 belts are evaluated (default TERRAIN_MOUNTAINS_WIRED).
+ */
+export type TerrainSamplerOptions = {lodLevel?: number; mountains?: boolean};
+/** The mountain carving state a sampler with `options` evaluates on `body`: null when no mountain belt is
+ * evaluated (not wired, or not a relief water world: the level then changes nothing), else whether the M3
+ * carving is on. Two samplers with equal states return identical fields; tile caches key on it. */
+export function mountainCarvingState(body: Body, options: TerrainSamplerOptions = {}): boolean | null {
+  if (!(options.mountains ?? TERRAIN_MOUNTAINS_WIRED) || !reliefModeFor(body) || !body.water) return null;
+  return carvingAtLevel(body.radiusM, options.lodLevel);
+}
 export function terrainSampler(
   body: Body,
   regions: RiverRegion[] = activeRiverRegions(body),
@@ -777,8 +829,10 @@ export function terrainSampler(
   waterLevelM: number = 0,
   onOceanThreshold?: (heightM:number)=>void,
   exposeFloor: boolean = false,
+  options: TerrainSamplerOptions = {},
 ) {
-  const core = baseTerrainCore(body, waterLevelM, exposeFloor, true);
+  const carving = mountainCarvingState(body, options);
+  const core = baseTerrainCore(body, waterLevelM, exposeFloor, true, carving === null ? null : {carve: carving});
   const landforms=planetLandforms(body);
   // The landform ceiling (terrain-1.8.0): the body's analytic height bound.
   const landformCeilingM = reliefModeFor(body) ? bodyHeightBoundM(body).maxM : undefined;

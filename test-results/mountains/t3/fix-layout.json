@@ -1,0 +1,108 @@
+{
+ "Maithea": {
+  "world": "Maithea",
+  "cut": 6,
+  "tiles": 12,
+  "rounds": 5,
+  "coarseBlockSolvesInclWarm": 10,
+  "rows": [
+   {
+    "level": 0,
+    "mainMeanMs": 21.249268333333337,
+    "branchMeanMs": 26.718194999999994,
+    "growth": 0.25737011650832486,
+    "mainP50Ms": 19.95010000000002,
+    "branchP50Ms": 23.745699999999488
+   },
+   {
+    "level": 1,
+    "mainMeanMs": 23.620346666666745,
+    "branchMeanMs": 29.2954183333333,
+    "growth": 0.24026199728369213,
+    "mainP50Ms": 23.462900000000445,
+    "branchP50Ms": 29.150299999999334
+   },
+   {
+    "level": 2,
+    "mainMeanMs": 21.700510000000016,
+    "branchMeanMs": 26.68151000000001,
+    "growth": 0.2295337759342979,
+    "mainP50Ms": 21.60939999999937,
+    "branchP50Ms": 25.656600000000253
+   },
+   {
+    "level": 3,
+    "mainMeanMs": 21.449945000000024,
+    "branchMeanMs": 27.365546666666674,
+    "growth": 0.2757863326300669,
+    "mainP50Ms": 19.822000000000116,
+    "branchP50Ms": 26.04240000000027
+   },
+   {
+    "level": 4,
+    "mainMeanMs": 22.497129999999956,
+    "branchMeanMs": 28.09364999999992,
+    "growth": 0.24876595370164867,
+    "mainP50Ms": 21.894099999999526,
+    "branchP50Ms": 27.268299999999726
+   },
+   {
+    "level": 5,
+    "mainMeanMs": 22.038913333333646,
+    "branchMeanMs": 28.127529999999812,
+    "growth": 0.276266645935632,
+    "mainP50Ms": 22.549000000002707,
+    "branchP50Ms": 26.946399999997084
+   }
+  ]
+ },
+ "Raiva": {
+  "world": "Raiva",
+  "cut": 5,
+  "tiles": 12,
+  "rounds": 5,
+  "coarseBlockSolvesInclWarm": 0,
+  "rows": [
+   {
+    "level": 0,
+    "mainMeanMs": 18.546928333333337,
+    "branchMeanMs": 22.277839999999983,
+    "growth": 0.20116062345274122,
+    "mainP50Ms": 17.553899999999885,
+    "branchP50Ms": 21.126600000000053
+   },
+   {
+    "level": 1,
+    "mainMeanMs": 22.531258333333405,
+    "branchMeanMs": 26.21658666666671,
+    "growth": 0.16356513599070155,
+    "mainP50Ms": 21.997699999999895,
+    "branchP50Ms": 25.403299999999945
+   },
+   {
+    "level": 2,
+    "mainMeanMs": 21.88438166666674,
+    "branchMeanMs": 27.466551666666753,
+    "growth": 0.2550755184690692,
+    "mainP50Ms": 21.97240000000056,
+    "branchP50Ms": 26.386100000001534
+   },
+   {
+    "level": 3,
+    "mainMeanMs": 21.945544999999978,
+    "branchMeanMs": 28.01311000000005,
+    "growth": 0.27648276677567485,
+    "mainP50Ms": 22.076499999999214,
+    "branchP50Ms": 26.947700000000623
+   },
+   {
+    "level": 4,
+    "mainMeanMs": 22.7992299999999,
+    "branchMeanMs": 28.51172666666674,
+    "growth": 0.2505565611938152,
+    "mainP50Ms": 21.837499999999636,
+    "branchP50Ms": 28.426499999999578
+   }
+  ]
+ }
+}
