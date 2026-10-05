@@ -1,0 +1,238 @@
+{
+ "Maithea": {
+  "world": "Maithea",
+  "cut": 6,
+  "rounds": 5,
+  "blockSolves": 0,
+  "levels": [
+   {
+    "level": 0,
+    "tiles": 6,
+    "builds": 30,
+    "mainMeanMs": 23.29234666666666,
+    "branchMeanMs": 26.817766666666646,
+    "growth": 0.1513552949581145
+   },
+   {
+    "level": 1,
+    "tiles": 10,
+    "builds": 50,
+    "mainMeanMs": 26.14323599999994,
+    "branchMeanMs": 29.46647,
+    "growth": 0.12711639829132348
+   },
+   {
+    "level": 2,
+    "tiles": 12,
+    "builds": 60,
+    "mainMeanMs": 27.965348333333363,
+    "branchMeanMs": 32.42639666666672,
+    "growth": 0.15952057096374506
+   },
+   {
+    "level": 3,
+    "tiles": 16,
+    "builds": 80,
+    "mainMeanMs": 27.748987500000066,
+    "branchMeanMs": 31.794862500000043,
+    "growth": 0.14580261712251552
+   },
+   {
+    "level": 4,
+    "tiles": 16,
+    "builds": 80,
+    "mainMeanMs": 27.911962500000026,
+    "branchMeanMs": 34.08497999999986,
+    "growth": 0.22116028208334781
+   },
+   {
+    "level": 5,
+    "tiles": 16,
+    "builds": 80,
+    "mainMeanMs": 28.090579999999864,
+    "branchMeanMs": 34.85245249999984,
+    "growth": 0.24071672781409315
+   }
+  ],
+  "sink": -452339.5663034916
+ },
+ "Selawyn": {
+  "world": "Selawyn",
+  "cut": 7,
+  "rounds": 5,
+  "blockSolves": 0,
+  "levels": [
+   {
+    "level": 0,
+    "tiles": 6,
+    "builds": 30,
+    "mainMeanMs": 22.640950000000007,
+    "branchMeanMs": 24.65471000000001,
+    "growth": 0.08894326430648891
+   },
+   {
+    "level": 1,
+    "tiles": 10,
+    "builds": 50,
+    "mainMeanMs": 26.030487999999924,
+    "branchMeanMs": 29.86743000000003,
+    "growth": 0.1474018466346123
+   },
+   {
+    "level": 2,
+    "tiles": 15,
+    "builds": 75,
+    "mainMeanMs": 28.03443600000005,
+    "branchMeanMs": 31.721809333333283,
+    "growth": 0.13153014147790332
+   },
+   {
+    "level": 3,
+    "tiles": 16,
+    "builds": 80,
+    "mainMeanMs": 28.19356124999988,
+    "branchMeanMs": 32.77309499999997,
+    "growth": 0.16243190100718863
+   },
+   {
+    "level": 4,
+    "tiles": 16,
+    "builds": 80,
+    "mainMeanMs": 27.619807500000025,
+    "branchMeanMs": 33.06214000000009,
+    "growth": 0.19704454855451337
+   },
+   {
+    "level": 5,
+    "tiles": 16,
+    "builds": 80,
+    "mainMeanMs": 28.59458249999984,
+    "branchMeanMs": 34.50995000000012,
+    "growth": 0.20687021746165768
+   },
+   {
+    "level": 6,
+    "tiles": 16,
+    "builds": 80,
+    "mainMeanMs": 27.707926250000174,
+    "branchMeanMs": 35.53081499999994,
+    "growth": 0.2823339675230916
+   }
+  ],
+  "sink": -462457.684173584
+ },
+ "Raiva": {
+  "world": "Raiva",
+  "cut": 5,
+  "rounds": 5,
+  "blockSolves": 0,
+  "levels": [
+   {
+    "level": 0,
+    "tiles": 6,
+    "builds": 30,
+    "mainMeanMs": 23.13202333333335,
+    "branchMeanMs": 26.18619333333331,
+    "growth": 0.13203211651610647
+   },
+   {
+    "level": 1,
+    "tiles": 11,
+    "builds": 55,
+    "mainMeanMs": 25.667038181818267,
+    "branchMeanMs": 29.985938181818174,
+    "growth": 0.16826639557731604
+   },
+   {
+    "level": 2,
+    "tiles": 14,
+    "builds": 70,
+    "mainMeanMs": 27.373581428571455,
+    "branchMeanMs": 33.12368142857131,
+    "growth": 0.21006020037984974
+   },
+   {
+    "level": 3,
+    "tiles": 14,
+    "builds": 70,
+    "mainMeanMs": 28.332811428571507,
+    "branchMeanMs": 33.328768571428505,
+    "growth": 0.17633114720902543
+   },
+   {
+    "level": 4,
+    "tiles": 16,
+    "builds": 80,
+    "mainMeanMs": 27.49183875000017,
+    "branchMeanMs": 34.83474125,
+    "growth": 0.26709390254952603
+   }
+  ],
+  "sink": -415814.4666442871
+ },
+ "Lethuris": {
+  "world": "Lethuris",
+  "cut": 7,
+  "rounds": 5,
+  "blockSolves": 0,
+  "levels": [
+   {
+    "level": 0,
+    "tiles": 6,
+    "builds": 30,
+    "mainMeanMs": 21.881930000000036,
+    "branchMeanMs": 25.099013333333335,
+    "growth": 0.14702009070193056
+   },
+   {
+    "level": 1,
+    "tiles": 12,
+    "builds": 60,
+    "mainMeanMs": 24.711719999999968,
+    "branchMeanMs": 29.558286666666657,
+    "growth": 0.1961242142055144
+   },
+   {
+    "level": 2,
+    "tiles": 15,
+    "builds": 75,
+    "mainMeanMs": 26.686952000000115,
+    "branchMeanMs": 31.339090666666575,
+    "growth": 0.17432259280364581
+   },
+   {
+    "level": 3,
+    "tiles": 16,
+    "builds": 80,
+    "mainMeanMs": 27.591313749999948,
+    "branchMeanMs": 31.5834962500001,
+    "growth": 0.1446898301462778
+   },
+   {
+    "level": 4,
+    "tiles": 16,
+    "builds": 80,
+    "mainMeanMs": 27.538239999999973,
+    "branchMeanMs": 32.59397000000024,
+    "growth": 0.18358943781448178
+   },
+   {
+    "level": 5,
+    "tiles": 16,
+    "builds": 80,
+    "mainMeanMs": 25.518879999999807,
+    "branchMeanMs": 30.589313749999974,
+    "growth": 0.19869342815986446
+   },
+   {
+    "level": 6,
+    "tiles": 16,
+    "builds": 80,
+    "mainMeanMs": 23.041928750000125,
+    "branchMeanMs": 29.12416124999995,
+    "growth": 0.2639636883696115
+   }
+  ],
+  "sink": -1339051.1954956055
+ }
+}

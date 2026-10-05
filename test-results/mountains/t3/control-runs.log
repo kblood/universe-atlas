@@ -1,0 +1,25 @@
+M1+M2+M3 Maithea: massif land share 2.27%; region main 547 ns, warm 1270 ns (132.1%), cold 3964 ns (22 builds, 4.7 s); outside main 476 vs 528 ns (10.8%); WEIGHTED RESIDENT 13.98%; sparse 1000 cold 3.92 ms/sample vs main 1248 ns (27 builds)
+control t2-wired Maithea run 1 exit 0
+M1+M2+M3 Maithea: massif land share 2.27%; region main 557 ns, warm 1216 ns (118.1%), cold 3897 ns (22 builds, 4.6 s); outside main 509 vs 510 ns (0.2%); WEIGHTED RESIDENT 3.17%; sparse 1000 cold 4.01 ms/sample vs main 1154 ns (27 builds)
+control t3-wired Maithea run 1 exit 0
+M1+M2+M3 Raiva: massif land share 1.72%; region main 670 ns, warm 1219 ns (82.0%), cold 3972 ns (22 builds, 4.7 s); outside main 499 vs 488 ns (-2.1%); WEIGHTED RESIDENT -0.21%; sparse 1000 cold 2.06 ms/sample vs main 1226 ns (14 builds)
+control t2-wired Raiva run 1 exit 0
+M1+M2+M3 Raiva: massif land share 1.72%; region main 661 ns, warm 1312 ns (98.4%), cold 4006 ns (22 builds, 4.8 s); outside main 486 vs 509 ns (4.8%); WEIGHTED RESIDENT 7.00%; sparse 1000 cold 2.04 ms/sample vs main 1150 ns (14 builds)
+control t3-wired Raiva run 1 exit 0
+M1+M2+M3 Maithea: massif land share 2.27%; region main 557 ns, warm 1167 ns (109.6%), cold 3943 ns (22 builds, 4.7 s); outside main 482 vs 503 ns (4.4%); WEIGHTED RESIDENT 7.14%; sparse 1000 cold 3.96 ms/sample vs main 1153 ns (27 builds)
+control t2-wired Maithea run 2 exit 0
+M1+M2+M3 Maithea: massif land share 2.27%; region main 573 ns, warm 1216 ns (112.3%), cold 3861 ns (22 builds, 4.6 s); outside main 486 vs 514 ns (5.7%); WEIGHTED RESIDENT 8.54%; sparse 1000 cold 4.12 ms/sample vs main 1606 ns (27 builds)
+control t3-wired Maithea run 2 exit 0
+M1+M2+M3 Raiva: massif land share 1.72%; region main 639 ns, warm 1429 ns (123.6%), cold 3844 ns (22 builds, 4.6 s); outside main 749 vs 626 ns (-16.4%); WEIGHTED RESIDENT -14.37%; sparse 1000 cold 2.04 ms/sample vs main 1196 ns (14 builds)
+control t2-wired Raiva run 2 exit 0
+M1+M2+M3 Raiva: massif land share 1.72%; region main 619 ns, warm 1220 ns (97.0%), cold 4843 ns (22 builds, 5.7 s); outside main 738 vs 841 ns (14.1%); WEIGHTED RESIDENT 15.26%; sparse 1000 cold 2.08 ms/sample vs main 1021 ns (14 builds)
+control t3-wired Raiva run 2 exit 0
+M1+M2+M3 Maithea: massif land share 2.27%; region main 735 ns, warm 1472 ns (100.4%), cold 4466 ns (22 builds, 5.3 s); outside main 504 vs 503 ns (-0.1%); WEIGHTED RESIDENT 3.17%; sparse 1000 cold 4.90 ms/sample vs main 1406 ns (27 builds)
+control t2-wired Maithea run 3 exit 0
+M1+M2+M3 Maithea: massif land share 2.27%; region main 540 ns, warm 1222 ns (126.3%), cold 4215 ns (22 builds, 5.0 s); outside main 473 vs 533 ns (12.6%); WEIGHTED RESIDENT 15.56%; sparse 1000 cold 4.35 ms/sample vs main 1505 ns (27 builds)
+control t3-wired Maithea run 3 exit 0
+M1+M2+M3 Raiva: massif land share 1.72%; region main 595 ns, warm 1169 ns (96.3%), cold 3788 ns (22 builds, 4.5 s); outside main 467 vs 489 ns (4.8%); WEIGHTED RESIDENT 6.84%; sparse 1000 cold 2.01 ms/sample vs main 1008 ns (14 builds)
+control t2-wired Raiva run 3 exit 0
+M1+M2+M3 Raiva: massif land share 1.72%; region main 602 ns, warm 1254 ns (108.5%), cold 3926 ns (22 builds, 4.7 s); outside main 513 vs 486 ns (-5.4%); WEIGHTED RESIDENT -3.06%; sparse 1000 cold 2.03 ms/sample vs main 1020 ns (14 builds)
+control t3-wired Raiva run 3 exit 0
+CONTROLDONE

@@ -1,0 +1,8 @@
+Selawyn {"level":0,"tiles":6,"massifTiles":2,"blockSolves":0,"ms":464.1855}
+Selawyn {"level":1,"tiles":24,"massifTiles":13,"blockSolves":0,"ms":1155.4097000000002}
+Selawyn {"level":2,"tiles":96,"massifTiles":43,"blockSolves":0,"ms":4290.3945}
+Selawyn {"level":3,"tiles":384,"massifTiles":107,"blockSolves":0,"ms":16924.2616}
+Selawyn {"level":4,"tiles":1536,"massifTiles":227,"blockSolves":0,"ms":68208.6086}
+Selawyn {"level":5,"tiles":6144,"massifTiles":485,"blockSolves":0,"ms":226936.4022}
+Selawyn {"level":6,"tiles":24576,"massifTiles":1070,"blockSolves":0,"ms":830350.9810000001}
+{"world":"Selawyn","totalTiles":32766,"totalBlockSolves":0}

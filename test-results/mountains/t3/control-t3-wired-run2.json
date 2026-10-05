@@ -1,0 +1,76 @@
+{
+ "M1+M2+M3/Maithea": {
+  "wired": "M1+M2+M3",
+  "world": "Maithea",
+  "terrainVersion": "terrain-1.8.1-grain",
+  "main": "terrain-1.8.1-grain",
+  "node": "v24.7.0",
+  "inMassifLandShare": 0.02275,
+  "regionSamples": 1185800,
+  "sites": 8,
+  "mainRegionNs": 573.0524540394647,
+  "branchWarmRegionNs": 1216.386490133244,
+  "warmRounds": [
+   1251.7918704671947,
+   1216.386490133244,
+   1186.2243211334132,
+   1177.6073536852764,
+   1216.8703828638916
+  ],
+  "inMassifWarmOverhead": 1.1226442388631224,
+  "branchColdRegionNs": 3861.0302749198854,
+  "coldBlockBuilds": 22,
+  "coldRegionMs": 4578.418,
+  "coldInMassifOverhead": 5.7376559470313095,
+  "outsideSamples": 19545,
+  "mainOutsideNs": 486.26758761841523,
+  "branchOutsideNs": 513.9473010999931,
+  "outsideOverhead": 0.056922801737916195,
+  "weightedResidentOverhead": 0.0853794924637874,
+  "sparse1000": {
+   "mainNs": 1606.0999999999694,
+   "branchColdNs": 4119065.5000000005,
+   "blockBuilds": 27,
+   "ratio": 2564.6382541560793
+  },
+  "l0": null,
+  "sink": 16051924046.468334
+ },
+ "M1+M2+M3/Raiva": {
+  "wired": "M1+M2+M3",
+  "world": "Raiva",
+  "terrainVersion": "terrain-1.8.1-grain",
+  "main": "terrain-1.8.1-grain",
+  "node": "v24.7.0",
+  "inMassifLandShare": 0.0172,
+  "regionSamples": 1185800,
+  "sites": 8,
+  "mainRegionNs": 619.3635520323851,
+  "branchWarmRegionNs": 1220.00320458762,
+  "warmRounds": [
+   1311.645555742958,
+   1214.6569404621357,
+   1206.16427728116,
+   1220.00320458762,
+   1400.5359251138495
+  ],
+  "inMassifWarmOverhead": 0.9697691292687318,
+  "branchColdRegionNs": 4842.635941980097,
+  "coldBlockBuilds": 22,
+  "coldRegionMs": 5742.4117,
+  "coldInMassifOverhead": 6.818729284423387,
+  "outsideSamples": 19656,
+  "mainOutsideNs": 737.6831501830936,
+  "branchOutsideNs": 841.4122914123975,
+  "outsideOverhead": 0.14061476286066488,
+  "weightedResidentOverhead": 0.1526218978651004,
+  "sparse1000": {
+   "mainNs": 1021.0000000001855,
+   "branchColdNs": 2083388.1000000003,
+   "blockBuilds": 14,
+   "ratio": 2040.536826640178
+  },
+  "l0": null,
+  "sink": 14549248182.774979
+ }
+}

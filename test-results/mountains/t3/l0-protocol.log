@@ -1,0 +1,25 @@
+{"world":"Maithea","order":"main-first","mainL0Ms":214.27009999999427,"branchL0Ms":214.722299999994,"ratio":1.0021104204459685,"blockSolves":0,"sink":-118933742.84657322}
+l0 run 1  exit 0
+{"world":"Maithea","order":"branch-first","mainL0Ms":198.4478999999992,"branchL0Ms":214.47200000000885,"ratio":1.080747138165784,"blockSolves":0,"sink":-118933742.84657322}
+l0 run 1 --swap exit 0
+{"world":"Maithea","order":"main-first","mainL0Ms":250.95660000000498,"branchL0Ms":237.2511999999988,"ratio":0.945387369768295,"blockSolves":0,"sink":-118933742.84657322}
+l0 run 2  exit 0
+{"world":"Maithea","order":"branch-first","mainL0Ms":201.98769999999786,"branchL0Ms":214.27629999999772,"ratio":1.0608383579792235,"blockSolves":0,"sink":-118933742.84657322}
+l0 run 2 --swap exit 0
+{"world":"Maithea","order":"main-first","mainL0Ms":217.78550000002724,"branchL0Ms":209.84679999999935,"ratio":0.9635480782695501,"blockSolves":0,"sink":-118933742.84657322}
+l0 run 3  exit 0
+{"world":"Maithea","order":"branch-first","mainL0Ms":206.72809999997844,"branchL0Ms":216.72160000001895,"ratio":1.0483412753275514,"blockSolves":0,"sink":-118933742.84657322}
+l0 run 3 --swap exit 0
+{"world":"Maithea","order":"main-first","mainL0Ms":199.87609999999404,"branchL0Ms":207.2045999999973,"ratio":1.0366652141001524,"blockSolves":0,"sink":-118933742.84657322}
+l0 run 4  exit 0
+{"world":"Maithea","order":"branch-first","mainL0Ms":199.63240000000224,"branchL0Ms":214.03760000001057,"ratio":1.0721586275574915,"blockSolves":0,"sink":-118933742.84657322}
+l0 run 4 --swap exit 0
+{"world":"Maithea","order":"main-first","mainL0Ms":251.5748999999778,"branchL0Ms":239.33749999999418,"ratio":0.9513568324980565,"blockSolves":0,"sink":-118933742.84657322}
+l0 run 5  exit 0
+{"world":"Maithea","order":"branch-first","mainL0Ms":198.52349999998114,"branchL0Ms":215.3255000000063,"ratio":1.08463481653319,"blockSolves":0,"sink":-118933742.84657322}
+l0 run 5 --swap exit 0
+{"world":"Maithea","order":"main-first","mainL0Ms":197.3808999999892,"branchL0Ms":207.51149999999325,"ratio":1.0513251282165832,"blockSolves":0,"sink":-118933742.84657322}
+l0 run 6  exit 0
+{"world":"Maithea","order":"branch-first","mainL0Ms":198.22200000000885,"branchL0Ms":216.6805999999924,"ratio":1.0931208443057923,"blockSolves":0,"sink":-118933742.84657322}
+l0 run 6 --swap exit 0
+L0DONE

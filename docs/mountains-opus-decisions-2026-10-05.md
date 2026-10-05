@@ -396,3 +396,34 @@ outside overheads, the in-massif warm branch Bin that keeps (C1) at +8% is, by t
 **Ledger.** No threshold, pin, version or golden moves. One planning target (T1 (4), +3%) is waived;
 one planning target (T2 (2)) is tightened from 1,700 to 1,530 ns. The 96/96 cells and 17/17 pins are
 not cited here as mountain evidence (addendum item 2).
+
+## T3 implementation record 2026-10-06 (not a decision; stated per addendum item 4)
+
+Written by the T3 implementer (Claude Opus 5.5 with Astra review), not by the decision maker. Evidence:
+`docs/mountains-t3-coarse-carving-2026-10-06.md`. Branch `mountains/t3-coarse`, **not merged**.
+
+**Scope changes in T3 against the task table:**
+
+- **Staged wiring.** The table put T3 on the wired branch. T3 instead carries the wiring hunk in
+  `src/terrain.ts` behind `TERRAIN_MOUNTAINS_WIRED = false` plus a per-sampler `{mountains: true}` opt-in,
+  so that it could merge into main with `TERRAIN_VERSION` and every golden unchanged. T6 wires by flipping
+  the constant.
+- **Truth-identity baseline.** Target (3) said "digest equal to `92afaa3`". After T2 (`orogen-layout-2`)
+  that cannot hold for any T3, so the truth was compared bit for bit with main `914d86f` + the `92afaa3`
+  wiring hunk (0 mismatches on 4 x 15,120 directions). The difference from `92afaa3` itself (max 7.0 mm) is
+  reported as INFO.
+- **Switch-level parent sampler** (addendum item 1) is in `src/planet-tiles.ts`, which is more than "level
+  pass-through only".
+
+**Targets:** (1) 0 block solves at L0..cut-1, MET (75,768 tiles). (3) MET against the baseline above.
+(4) upper envelope, MET. Addendum item 1 seam test, MET on 8 cases (one cross-face case per world).
+(2) Maithea 6 x L0: branch/main median 1.051, max 1.093 (12 runs), within +10% of main; the absolute
+211 ms is exceeded in 9 of 12 runs because main measured 197-252 ms today. **(2) per-level build mean
+<= main +10% (contract §6): NOT MET, +8.0% to +26.6%** under the contract's benchmark protocol on all four
+worlds. Diagnosis: the residual is M1 + M2 per-sample cost on tile lattices (T1's rejection on every land
+sample, M1/M2 inside belts), not T3 code (A/A control within +-3.6%).
+
+**OPEN for the decision maker:** whether T3 may merge staged with target (2)'s per-level part open, and
+what removes the M1 + M2 residual at coarse levels (for example a per-block or batch M1 rejection, Astra's
+idea (b) in addendum (2)), or whether the per-level budget question goes to Kasper together with (C1).
+Nothing was loosened.

@@ -1,0 +1,7 @@
+Maithea {"level":0,"tiles":6,"massifTiles":6,"blockSolves":0,"ms":401.12260000000003}
+Maithea {"level":1,"tiles":24,"massifTiles":17,"blockSolves":0,"ms":1199.4236999999998}
+Maithea {"level":2,"tiles":96,"massifTiles":63,"blockSolves":0,"ms":4380.034500000001}
+Maithea {"level":3,"tiles":384,"massifTiles":143,"blockSolves":0,"ms":17741.822500000002}
+Maithea {"level":4,"tiles":1536,"massifTiles":291,"blockSolves":0,"ms":71334.0428}
+Maithea {"level":5,"tiles":6144,"massifTiles":637,"blockSolves":0,"ms":236370.24300000002}
+{"world":"Maithea","totalTiles":8190,"totalBlockSolves":0}

@@ -1,0 +1,6 @@
+Raiva {"level":0,"tiles":6,"massifTiles":6,"blockSolves":0,"ms":365.6817}
+Raiva {"level":1,"tiles":24,"massifTiles":11,"blockSolves":0,"ms":1188.8667}
+Raiva {"level":2,"tiles":96,"massifTiles":24,"blockSolves":0,"ms":4283.178900000001}
+Raiva {"level":3,"tiles":384,"massifTiles":50,"blockSolves":0,"ms":17232.4919}
+Raiva {"level":4,"tiles":1536,"massifTiles":110,"blockSolves":0,"ms":71271.6844}
+{"world":"Raiva","totalTiles":2046,"totalBlockSolves":0}
