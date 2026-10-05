@@ -159,7 +159,9 @@ The 60-body corpus (20,000 directions per body plus 24 edge offsets per belt) ha
 band directions; band-edge pairs (refined on the displaced centreline to 10 mm-50 m either side of 48 km) straddle the edge for 1480/1480, 1280/1280, 120/160, 1640/1640 pairs. Node spacing 3/N (2/N gives area ratios 1.41/1.39/1.29/1.33 but cold builds of 56-60 ms). The worst cold build is Auraese (66 belts, N = 2048): 48.7 ms in the 64-body run, 46-49 ms over 7 fresh processes,
 one observation 51.9 ms; about 24 ms once warm (the rest is first-call JIT).
 
-**Outside-massif cost target (+3% against main) is NOT met.** CPU-quiet lock, one process pinned per run
+**Outside-massif cost target (+3% against main) is NOT met; waived** (docs/mountains-opus-decisions-2026-10-05.md,
+"Addendum 2026-10-05 (2)": the binding row is the +8% weighted warm budget after T2, whose in-massif target
+tightens to about 1,530 ns on Maithea and Raiva). CPU-quiet lock, one process pinned per run
 (`start /high /affinity 0x10`), wired terrain sampler on Fibonacci directions outside every massif:
 
 - 15 fresh processes per world, median against main: grid +3.8% / +3.8% / +5.4% / +4.6%; the same harness

@@ -343,3 +343,56 @@ These are recorded here so they are not lost. The T2-T6/M5 workflow does not do 
   <= +8%). It is not a parallel study now. It changes terrain values if interpolated, so it needs a
   version move, and it does not remove M3's cold solves (T3 does). The Q2 escalation to Kasper still
   applies if (C1) fails.
+
+## Addendum 2026-10-05 (2): T1 accepted at +3.8 to +5.4% outside massifs
+
+**Decided by Opus 5.5 on Kasper's instruction 2026-10-05; he may overrule.**
+
+**Decision.** T1 (`mountains/t1-grid`, `d783b70`) merges with its outside-massif cost at **+3.8% /
++3.8% / +5.4% / +4.6%** (Maithea / Selawyn / Raiva / Lethuris; median of 15 fresh processes against
+main, CPU-quiet lock, `docs/mountain-layout-v1.md` "Band rejection grid"). Target (4) of T1 (+3%) is
+recorded as **NOT MET and waived**. Every other T1 target passed: 0 identity mismatches, 0 unflagged
+band directions, flagged/massif area 1.33-1.49 (<= 1.5), cold build <= 48.7 ms (<= 50), the 4096-sample
+M1 digest unchanged and `orogen-layout-1` unchanged.
+
+**Reasons:**
+
+- The +3% was a planning number in the Q2 projection, not a pin or a contract budget. The binding
+  constraint is (C1): weighted warm resident overhead <= +8% on all four worlds, judged after T2 with
+  `scripts/mountain-assembly-cost.mjs`. That budget is **not** loosened.
+- The measured breakdown shows +3% is out of reach for any per-sample scheme: the call, output reset
+  and `a0 <= 0` check alone cost about +1.7%, and any table lookup on land samples adds +2-3%
+  whichever layout was tried (octahedral, cube face branchy and branch-free, voxels). The harness
+  without the band call reads 0.0 / -0.1 / +1.0 / +1.5%, so process noise is of the same order as
+  the remaining gap.
+- Without the grid the same call costs +83-137%; T1 removes about 96% of the outside-massif cost.
+- T1 is output-neutral (no version move), so accepting it closes no option: a cheaper rejection can
+  replace it later without touching any pin.
+
+**Consequence for T2 (binding; it supersedes T2 target (2) in the task table).** With the measured T1
+outside overheads, the in-massif warm branch Bin that keeps (C1) at +8% is, by the Q2 formula
+`(s Bin + (1-s) Bout) / (s Min + (1-s) Mout) - 1 <= .08` with the M1+M2+M3 values of
+`docs/mountains-assembly-2026-10-05.md` §5 (arithmetic, not a measurement):
+
+| World | s | Min / Mout (ns) | T1 outside | Bin limit at +3% outside | **Bin limit at T1's measured outside** |
+|---|---:|---|---:|---:|---:|
+| Maithea | 2.27% | 557 / 517 | +3.8% | 1,714 ns | **~1,537 ns** |
+| Selawyn | 1.11% | 602 / 457 | +3.8% | | **~2,360 ns** |
+| Raiva | 1.72% | 602 / 604 | +5.4% | 2,376 ns | **~1,547 ns** |
+| Lethuris | 1.16% | 541 / 444 | +4.6% | | **~1,871 ns** |
+
+- T2's in-massif target becomes **<= 1,530 ns on Maithea and Raiva** (was 1,700 ns on Maithea), i.e.
+  about -55% against 3,441 / 3,409 ns now. Raiva is now as binding as Maithea.
+- (C1) itself is the acceptance row; the table only says where T2 must aim. The outside branch is
+  re-measured by the cost script on the T2 branch, not taken from this table.
+- If T2's foot-point work cannot reach this, T2 may in addition take Astra's idea (b), **amortised
+  rejection per tile or batch** (one grid decision per tile or sample block instead of per sample),
+  to win back the outside cost. It must be value-preserving and keep T1's identity and conservativeness
+  tests. It is optional, used only if needed.
+- The Q2 escalation is unchanged: if (C1) fails after T2, the budget question goes to Kasper with the
+  numbers, stated as "weighted warm resident overhead X% on world W against +8%", and nothing is
+  loosened by the coordinator.
+
+**Ledger.** No threshold, pin, version or golden moves. One planning target (T1 (4), +3%) is waived;
+one planning target (T2 (2)) is tightened from 1,700 to 1,530 ns. The 96/96 cells and 17/17 pins are
+not cited here as mountain evidence (addendum item 2).

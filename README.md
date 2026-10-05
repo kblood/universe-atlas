@@ -41,6 +41,10 @@ Evidence: `docs/mountains-assembly-2026-10-05.md` and
   change, then the assembled check and the merge with the single planned
   golden re-pin. The +8% warm budget and the +10% per-level build budget stay.
   If +8% still fails after T1+T2, the question goes to Kasper with the numbers.
+  **T1 merged** (output-neutral, unwired terrain unchanged): outside-massif
+  cost +3.8 / +3.8 / +5.4 / +4.6% against the +3% planning target, waived in
+  the decisions doc addendum (2); T2's in-massif target tightens to about
+  1,530 ns on Maithea and Raiva.
 - **Accepted for this assembly:** the 48 km massif cap (Q3, a recorded
   deviation from (g)) and the frozen Maithea retention edge selection (Q5).
 - **Luna** (VISUAL-ADVISORY, UNCALIBRATED, not counted): the last sheet was
