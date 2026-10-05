@@ -5,8 +5,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
-import {noise} from '../src/catalog.ts';
-import {buildOrogenLayout,orogenLayout,continentalA0} from '../src/mountain-layout.ts';
+import {noise,galaxies,sector,system} from '../src/catalog.ts';
+import {buildOrogenLayout,orogenLayout,continentalA0,offsetNoise,FOOT_POINT_STEPS,OROGEN_LAYOUT_VERSION} from '../src/mountain-layout.ts';
 import {fib,maithea,waterWorlds} from './terrain-climate-fixtures.mjs';
 import {layoutMap,layoutCoherence,strictCoherence,layoutDistanceAccuracy,layoutCurvature,coastSafety,judgeLayout} from './helpers/mountain-layout-metrics.mjs';
 
@@ -118,8 +118,9 @@ function digest(l,reverse=false){
 }
 test('HARD: forward, reverse and child-process sample digests agree',()=>{
   const forward=digest(layout);console.log('DIGEST '+forward);assert.equal(digest(layout,true),forward);
-  // Literal pin (orogen-layout-1 with alongM; the band grid of 2026-10-05 must not move it).
-  assert.equal(forward,'0aa3d59b9ed979c85da729386c3531e732bb3f94dbf3b1961db2292be60ec7b2');
+  // Literal pin (orogen-layout-2: cost plan T2's foot-point solve; ledger in docs/mountain-layout-v1.md,
+  // was 0aa3d59b9ed979c85da729386c3531e732bb3f94dbf3b1961db2292be60ec7b2 for orogen-layout-1 with alongM).
+  assert.equal(forward,'dd8e6306c35553aad026290caa0f5dc12204a5aa66b16a155b1e2a44b4b53501');
   const child=spawnSync(process.execPath,['--input-type=module','-e',`
     import {createHash} from 'node:crypto';
     import {orogenLayout} from './src/mountain-layout.ts';
@@ -192,4 +193,87 @@ test('HARD: alongM (assembly addition) is the base-circle arc R x 2 atan(u) of t
   }
   assert.ok(checked>500,`${checked} centreline samples`);
   for(let i=0;i<4096;i++){const s=layout.sample(fib(i,4096));if(s.belt===0)assert.equal(s.alongM,0);}
+});
+
+// Cost plan T2 (orogen-layout-2, docs/mountain-layout-v1.md "In-massif foot-point solve").
+test('HARD: offsetNoise is catalog noise(x, 37, 19, seed) bit for bit, cache interleaved across cells and seeds',()=>{
+  assert.equal(OROGEN_LAYOUT_VERSION,'orogen-layout-2');assert.equal(FOOT_POINT_STEPS,4);
+  const seeds=[0,1,-1,0x7fffffff,-0x80000000,...layout.belts.map(b=>b.noiseSeed)];
+  const xs=[0,1,-1,13,12.999999999999998,13.000000000000002,-0,.5,-.5,-2.75,1e6+.25,-1e6-.25];
+  for(let i=0;i<4000;i++)xs.push((i*0.6180339887498949%1-.5)*80+(i%7===0?Math.floor(i/7):0));
+  let checked=0;
+  for(let pass=0;pass<2;pass++)for(let i=0;i<xs.length;i++){
+    // Interleave: alternate seeds and jump cells, so a stale single-entry cache would show.
+    const s=seeds[(i*(pass?3:1))%seeds.length],x=xs[pass?xs.length-1-i:i];
+    assert.ok(Object.is(offsetNoise(x,s),noise(x,37,19,s)),`${x} ${s}`);
+    assert.ok(Object.is(offsetNoise(x+.25,s),noise(x+.25,37,19,s)));checked+=2;
+  }
+  assert.ok(checked>16000);
+});
+test('HARD: the T2 rejections are exact: sampleWithA0 and sampleWithinWithA0 == (filtered) sampleWithA0Unpruned on 4 worlds (Fibonacci, belt rasters, coast gate open)',()=>{
+  const FIELDS=['belt','axisDistanceM','halfWidthM','beltIndex','alongM'];
+  const same=(a,b)=>FIELDS.every(f=>Object.is(a[f],b[f]))&&[0,1,2].every(j=>Object.is(a.axis[j],b.axis[j]));
+  const soloDecisions=[0,0];
+  for(const w of waterWorlds()){
+    const l=orogenLayout(w),wR=w.radiusM,dirs=Array.from({length:10000},(_,i)=>fib(i,10000));
+    // 17 x 17 rasters spanning 1.5 W around 4 axis points per belt (the other belts' slabs and caps included).
+    for(const b of l.belts)for(let k=0;k<4;k++){
+      const u=((k+.5)/4*2-1)*b.uLimit,y=b.bendM*(u/b.uLimit)*(u/b.uLimit)/wR,den=1+u*u;
+      const p=[0,1,2].map(j=>b.centre[j]*(1-u*u)/den+b.tangent[j]*2*u/den+b.pole[j]*y);
+      for(let q=0;q<17*17;q++){const a=(q%17-8)/8*1.5*b.halfWidthM/wR,c=(Math.floor(q/17)-8)/8*1.5*b.halfWidthM/wR;
+        const v=p.map((x,j)=>x+a*b.pole[j]+c*b.tangent[j]),n=Math.hypot(...v);dirs.push(v.map(x=>x/n));}
+    }
+    let positive=0;
+    for(const d of dirs){
+      const a=l.sampleWithA0(d,1e9),b=l.sampleWithA0Unpruned(d,1e9);
+      assert.ok(same(a,b),`${w.name} ${JSON.stringify(d)}: ${JSON.stringify(a)} vs ${JSON.stringify(b)}`);
+      if(a.belt>0)positive++;
+    }
+    assert.ok(positive>dirs.length/4,`${w.name}: ${positive} positive of ${dirs.length}`);
+    // The band path (grid, single-belt path, solo words) against the unpruned reference filtered to the band,
+    // at the massif band and with no width gate (minor belts stamped too, so neighbouring belts share words).
+    for(const [max,min] of [[48000,32000],[48000,0],[16000,0]]){
+      const out={belt:0,axis:[0,0,0],axisDistanceM:0,halfWidthM:0,beltIndex:-1,alongM:0};
+      for(const d of dirs){
+        const ref=l.sampleWithA0Unpruned(d,1e9);
+        const want=ref.belt!==0&&ref.halfWidthM>=min&&Math.abs(ref.axisDistanceM)<max?ref:{belt:0,axis:[0,0,0],axisDistanceM:0,halfWidthM:0,beltIndex:-1,alongM:0};
+        assert.ok(same(l.sampleWithinWithA0(d,1e9,max,out,min),want),`${w.name} band ${max}/${min} ${JSON.stringify(d)}`);
+      }
+      const stats=l.soloWordStats(max,min);
+      soloDecisions[0]+=stats.soloWords.length;soloDecisions[1]+=stats.otherWords.length;
+    }
+  }
+  // Both branches of the solo-word decision were taken (and checked above).
+  assert.ok(soloDecisions[0]>0&&soloDecisions[1]>0,`solo / not solo words ${soloDecisions}`);
+});
+test('HARD: alongM off the axis is R x 2 atan(u*) of the dense-search foot point (< .1 m; 3 steps would give .64 m)',()=>{
+  let checked=0,max=0;
+  for(let i=0;i<20000&&checked<400;i+=3){
+    const d=fib(i,20000),s=layout.sampleWithA0(d,1e9);if(s.belt===0||Math.abs(s.axisDistanceM)<.2*s.halfWidthM)continue;
+    const b=layout.belts[s.beltIndex];
+    const chord=v=>{const y=offset(b,v)/R,r=Math.sqrt(1-y*y),den=1+v*v;
+      return b.centre.reduce((sum,c,j)=>sum+(c*r*(1-v*v)/den+b.tangent[j]*r*2*v/den+b.pole[j]*y-d[j])**2,0);};
+    const u0=s.alongM/R,uf=Math.tan(u0/2);let lo=Math.max(-b.uLimit,uf-.002),hi=Math.min(b.uLimit,uf+.002);
+    for(let k=0;k<80;k++){const a=lo+(hi-lo)/3,c=hi-(hi-lo)/3;if(chord(a)<chord(c))hi=c;else lo=a;}
+    const ref=R*2*Math.atan((lo+hi)/2);max=Math.max(max,Math.abs(s.alongM-ref));checked++;
+  }
+  console.log(`ALONG ${checked} off-axis samples, max |alongM - dense| ${max} m`);
+  assert.ok(checked>=200);assert.ok(max<.1,`${max} m`);
+});
+test('HARD: orogen-layout-2 keeps orogen-layout-1\'s belts: 4 worlds, 60 corpus bodies and the synthetic cap (literals from main 66453b2)',()=>{
+  // Construction covers land with coveredV1 (orogen-layout-1's value > 0, verbatim), so the belt sets cannot
+  // depend on the T2 solve; these literals were computed on main 66453b2 (orogen-layout-1) before T2.
+  const sha=x=>createHash('sha256').update(JSON.stringify(x)).digest('hex'),worlds=waterWorlds();
+  assert.deepEqual(worlds.map(w=>sha(orogenLayout(w).belts)),['3c7572c7029a5051e3bbf6026af23310ca34ec94c99799b2c13f53c91c623b59',
+    '09537891c945ed78be2cdc5c662796f591fc2baa0672e9853de1013821c03a2d','02bc1c1f8d627327c5ec7611882182edb858eee6c19a0a66975319fb3cd61985',
+    '2a397da31cfbf30bb3f97623db2c8219481a9630dd9b57e4f7983f270a26547e']);
+  const refs=[];
+  for(const g of galaxies('LETHRA-GOLDEN-001').slice(0,3))for(const c of [[266,0,0],[0,0,0],[-2,-1,-2],[12,-4,7]])refs.push(...sector(g,c).refs);
+  const all=refs.slice(0,220).map(system).flatMap(s=>[...s.planets,...s.moons]),pick=[];
+  for(const type of [...new Set(all.map(b=>b.type))])pick.push(...all.filter(b=>b.type===type).slice(0,10));
+  const corpus=pick.filter(b=>!worlds.some(w=>w.id===b.id)).slice(0,60),belts=corpus.map(b=>orogenLayout(b).belts);
+  assert.equal(corpus.length,60);assert.equal(belts.reduce((n,b)=>n+b.length,0),2384);
+  assert.equal(sha(belts),'858d24b481e33553043ad770d69e705ee13990a8e5660e1b60aa40b26b2fc968');
+  const cap=buildOrogenLayout({seed:'synthetic-cap',radiusM:2e6,a0:d=>2e6*(d[0]-.94)});
+  assert.equal(sha(cap.belts),'5813f0369bf0bdba4753e6ff91b4cdff5683bd6a84d8d2dc95b52a22dcb2f987');
 });

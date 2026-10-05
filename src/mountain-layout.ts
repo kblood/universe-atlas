@@ -1,7 +1,12 @@
 import {hash64, macroHeightCode, noise, rng, type V3} from './catalog.ts';
 import {sine, detCos} from './det-math.ts';
 
-export const OROGEN_LAYOUT_VERSION = 'orogen-layout-1';
+// orogen-layout-2 (mountains cost plan T2, 2026-10-05): the foot-point solve uses the exact derivative and
+// FOOT_POINT_STEPS fixed steps instead of five central-difference steps; distances agree with -1 to 1e-7 m,
+// alongM to 0.1 m (docs/mountain-layout-v1.md "In-massif foot-point solve"). The belts are unchanged:
+// construction keeps its orogen-layout-1 random stream (OROGEN_LAYOUT_CONSTRUCTION_SEED) and land-coverage predicate (coveredV1).
+export const OROGEN_LAYOUT_VERSION = 'orogen-layout-2';
+export const OROGEN_LAYOUT_CONSTRUCTION_SEED = 'orogen-layout-1';
 export const OROGEN_LAYOUT = Object.freeze({
   targetShare: .10, probeCount: 4096, candidates: 4096,
   coastGateM: 100, coreFraction: .65, axisSteps: 24,
@@ -56,57 +61,174 @@ export function continentalA0(body: World): Coordinate {
   } : d=>(macroHeightCode(code,d)-.46)*44000;
 }
 
+// noise(x, 37, 19, s) of catalog.ts, bit for bit (cost plan T2, docs/mountains-opus-decisions-2026-10-05.md
+// Q2; docs/mountain-layout-v1.md "In-massif foot-point solve"). With integer y = 37 and z = 19 the y and z
+// smoothstep weights are exactly 0 and 1, so every corner term with dy = 1 or dz = 1 is +0 (a finite
+// non-negative hash times +0) and adding +0 changes nothing: the eight-corner sum is exactly
+// h(ix) (1 - a) + h(ix + 1) a, the two x-corner hashes in noise's own order. ihash XORs the four
+// imul terms, so the y, z and seed terms fold into one 32-bit constant k (XOR is associative). The two
+// corner hashes are kept for the last (seed, cell): every Gauss-Newton evaluation of one projection
+// stays on one belt and nearly always in one noise cell. Pinned against noise() in
+// tests/mountain-layout.test.mjs.
+const OFFSET_NOISE_Y=37,OFFSET_NOISE_Z=19;
+function cornerHash(x: number,k: number) {
+  let h=Math.imul(x,0x9e3779b1)^k;
+  h=Math.imul(h^(h>>>16),0x85ebca6b);
+  h=Math.imul(h^(h>>>13),0xc2b2ae35);
+  h^=h>>>16;
+  return (h>>>0)/4294967295;
+}
+let noiseSeedCached=NaN,noiseCellCached=NaN,noiseH0=0,noiseH1=0;
+export function offsetNoise(x: number,s: number) {
+  const ix=Math.floor(x);
+  let a=x-ix;
+  a=a*a*(3-2*a);
+  if(ix!==noiseCellCached || s!==noiseSeedCached){
+    const k=Math.imul(OFFSET_NOISE_Y,0x85ebca77)^Math.imul(OFFSET_NOISE_Z,0xc2b2ae3d)^Math.imul(s,0x27d4eb2f);
+    noiseH0=cornerHash(ix,k);noiseH1=cornerHash(ix+1,k);noiseCellCached=ix;noiseSeedCached=s;
+  }
+  return noiseH0*(1-a)+noiseH1*a;
+}
 // One cubic value-noise octave. du/dtheta=(1+u*u)/2, so construction
 // multiplies the minimum wavelength by (1+uLimit*uLimit): even at the
 // endpoints its local base-arc wavelength is at least 16 half widths.
 function offset(b: OrogenBelt,u: number) {
   const v=u/b.uLimit;
-  return b.bendM*v*v+b.amplitudeM*(2*noise(u*2/b.wavelength+13,37,19,b.noiseSeed)-1);
+  return b.bendM*v*v+b.amplitudeM*(2*offsetNoise(u*2/b.wavelength+13,b.noiseSeed)-1);
 }
 // Exact half-angle along coordinate, unchanged by transverse displacement.
 // This point has pole.d = offset/R and x/(sqrt(x*x+z*z)+z) = u.
 function centreline(b: OrogenBelt,u: number,R: number): V3 {
-  const y=offset(b,u)/R,r=Math.sqrt(1-y*y),den=1+u*u,x=r*2*u/den,z=r*(1-u*u)/den;
-  return [x*b.tangent[0]+z*b.centre[0]+y*b.pole[0],x*b.tangent[1]+z*b.centre[1]+y*b.pole[1],x*b.tangent[2]+z*b.centre[2]+y*b.pole[2]];
+  centrelineAt(b,u,R);
+  return [clX,clY,clZ];
 }
-function transverse(b: OrogenBelt,d: V3,R: number,u: number,z: number) {
-  const h=OROGEN_LAYOUT.axisDifferenceStep;
-  const sign=dot(d,b.pole)*R-offset(b,u)<0?-1:1;
-  // Fixed five Gauss-Newton steps minimize squared chord distance, which
-  // has the same minimizer as great-circle distance. Start at the sample u.
-  for(let i=0;i<5;i++){
-    const p=centreline(b,u,R),plus=centreline(b,u+h,R),minus=centreline(b,u-h,R);
-    let numerator=0,denominator=0;
-    for(let j=0;j<3;j++){const v=(plus[j]-minus[j])/(2*h);numerator+=(d[j]-p[j])*v;denominator+=v*v;}
-    const next=u+numerator/denominator;
-    // Arithmetic-only clamp to the finite arc; sqrt(v*v) = abs(v).
-    const low=(next-b.uLimit+Math.sqrt((next+b.uLimit)*(next+b.uLimit)))/2;
-    u=(low+b.uLimit-Math.sqrt((low-b.uLimit)*(low-b.uLimit)))/2;
+// centreline() without the array: the point in (clX, clY, clZ), the same expressions.
+let clX=0,clY=0,clZ=0;
+function centrelineAt(b: OrogenBelt,u: number,R: number) {
+  const y=offset(b,u)/R,r=Math.sqrt(1-y*y),den=1+u*u,x=r*2*u/den,z=r*(1-u*u)/den,T=b.tangent,C=b.centre,P=b.pole;
+  clX=x*T[0]+z*C[0]+y*P[0];clY=x*T[1]+z*C[1]+y*P[1];clZ=x*T[2]+z*C[2]+y*P[2];
+}
+// Fixed Gauss-Newton step count of the foot-point solve (orogen-layout-2, cost plan T2; chosen by
+// measurement, docs/mountain-layout-v1.md "In-massif foot-point solve").
+export const FOOT_POINT_STEPS=4;
+let footSteps=FOOT_POINT_STEPS;
+// Measurement only (scripts/mountain-layout-foot.mjs): run the solve with another step count.
+export function setFootPointStepsForMeasurement(n: number) {footSteps=n;}
+// The projection of d onto b's displaced centreline (orogen-layout-2, cost plan T2): the signed distance,
+// gradient = cross(d, tangent) and the foot u in the trDistance/trG*/trU scalars (no allocation).
+// In the belt frame d = x T + z C + py P, and the centreline point at u is p = (r c, r s, y) with
+// y = o(u)/R, r = sqrt(1 - y^2), c = 2u/(1+u^2), s = (1-u^2)/(1+u^2): orogen-layout-1's exact half-angle
+// point, with o = offset(b, u) = bendM (u/U)^2 + A (2 noise(X) - 1), X = 2u/lambda + 13.
+// Exact derivative: noise(X) = h0 (1 - m) + h1 m with a = X - floor(X) and m = a^2 (3 - 2a) (offsetNoise),
+// so d noise/du = (h1 - h0) 6a(1 - a) 2/lambda (continuous: m' vanishes at both cell ends), and
+// o' = 2 bendM u/U^2 + 24 A (h1 - h0) a(1 - a)/lambda. With w = 2/(1+u^2) (dc/du = w s, ds/du = -w c),
+// y' = o'/R and r' = -y y'/r: p' = (r' c + r w s, r' s - r w c, y'), so for the residual e = d - p
+//   e.p' = r' (q - r) + r w t + (py - y) y',  |p'|^2 = r'^2 + r^2 w^2 + y'^2,
+// with q = x c + z s and t = x s - z c. FOOT_POINT_STEPS Gauss-Newton steps u += e.p'/|p'|^2 (minimising
+// the squared chord, the same minimiser as the great-circle distance) from the sample's own u, each
+// clamped to the finite arc; no data-dependent exit. sign is the side of the displaced centreline at the
+// sample's u (orogen-layout-1's rule).
+let trDistance=0,trG0=0,trG1=0,trG2=0,trU=0;
+function transverse(b: OrogenBelt,d: V3,R: number,u: number,x: number,z: number,py: number,sign: number) {
+  const U=b.uLimit,iU=1/U,iR=1/R,k2=2/b.wavelength,bend=b.bendM,amp=b.amplitudeM,seed=b.noiseSeed;
+  let y=0,yp=0,r=1,rp=0,w=2,c=0,s=1;
+  for(let i=0;i<=footSteps;i++){
+    const v=u*iU,X=u*k2+13,n=offsetNoise(X,seed),a=X-Math.floor(X);
+    y=(bend*v*v+amp*(2*n-1))*iR;yp=(2*bend*v*iU+12*amp*(noiseH1-noiseH0)*a*(1-a)*k2)*iR;
+    r=Math.sqrt(1-y*y);rp=-y*yp/r;w=2/(1+u*u);c=u*w;s=(1-u*u)*w*.5;
+    if(i===footSteps)break;
+    const rw=r*w,q=x*c+z*s,t=x*s-z*c;
+    u=Math.max(-U,Math.min(U,u+(rp*(q-r)+rw*t+(py-y)*yp)/(rp*rp+rw*rw+yp*yp)));
   }
-  const p=centreline(b,u,R),plus=centreline(b,u+h,R),minus=centreline(b,u-h,R);
-  const tangent: V3=[plus[0]-minus[0],plus[1]-minus[1],plus[2]-minus[2]];
-  let chord2=0;for(let j=0;j<3;j++)chord2+=(d[j]-p[j])*(d[j]-p[j]);
+  // The chord in world coordinates, as orogen-layout-1 measured it: the belt centres are unit only to
+  // about 3e-11 (|C|^2 - 1 down to -5.5e-11), so the frame residual (x - r c, z - r s, py - y) would be
+  // off by up to R x 3e-11 (measured 7e-6 m at the 1% gate's worst sample); the steps above only pick u.
+  const T=b.tangent,C=b.centre,P=b.pole,pT=r*c,pC=r*s,d0=d[0],d1=d[1],d2=d[2];
+  const e0=d0-(pT*T[0]+pC*C[0]+y*P[0]),e1=d1-(pT*T[1]+pC*C[1]+y*P[1]),e2=d2-(pT*T[2]+pC*C[2]+y*P[2]),chord2=e0*e0+e1*e1+e2*e2;
   // 2 asin(chord/2), through fifth order. For supported W/R <= .045,
   // omitted angular term < 3e-13 radians (< 0.000003 metres here).
-  const distance=sign*R*Math.sqrt(chord2)*(1+chord2/24+3*chord2*chord2/640);
-  return {distance,gradient:cross(d,tangent),u};
+  trDistance=sign*R*Math.sqrt(chord2)*(1+chord2/24+3*chord2*chord2/640);
+  // tangent = p' in world coordinates; gradient = cross(d, tangent).
+  const kT=rp*c+r*w*s,kC=rp*s-r*w*c;
+  const t0=kT*T[0]+kC*C[0]+yp*P[0],t1=kT*T[1]+kC*C[1]+yp*P[1],t2=kT*T[2]+kC*C[2]+yp*P[2];
+  trG0=d1*t2-d2*t1;trG1=d2*t0-d0*t2;trG2=d0*t1-d1*t0;trU=u;
+}
+// beyondChord's bound (below) from the sample's pole coordinate py and its centreline offset
+// off = offset(b, u) at its own u: true only when every point of b's displaced arc is at chord >= rho.
+function farFromArc(b: OrogenBelt,py: number,off: number,R: number,rho: number) {
+  const S=2*Math.abs(b.bendM)/(b.uLimit*R)+6*b.amplitudeM/(b.wavelength*R),H=(Math.abs(b.bendM)+b.amplitudeM)/R;
+  const a=Math.sqrt(1-H*H),s=rho/a;
+  if(!(s<.5))return false;
+  const T2=s*s/(1-s*s),am=a*(1-T2/6),k=S*(1+b.uLimit*b.uLimit)/2;
+  const Y=Math.abs(py-off/R);
+  // Margins: relative 1e-9 for rounding; absolute 1e-9 (was 1e-12) because the belt centres are unit only
+  // to |C| - 1 >= -2.9e-11 (164,328 belts of 4173 catalogue bodies), which moves the frame coordinates'
+  // chord off the world-space chord by up to 2(1 - |C|) < 6e-11.
+  return Y*am>=(rho*(1+1e-9)+1e-9)*Math.sqrt(k*k+am*am);
 }
 // The last positive value()'s projection, reused by sampleWithA0 for the
 // winning belt (footprints never overlap, so it is normally the only one).
-let lastDistance=0,lastGradient: V3=[0,0,0],lastU=0;
+let lastDistance=0,lastG0=0,lastG1=0,lastG2=0,lastU=0;
 function value(b: OrogenBelt,d: V3,R: number) {
   const z=dot(d,b.centre);
   if(z<OROGEN_LAYOUT.supportZ)return 0;
   // Cheapest conservative rejections first (pure: the order of these zero
   // exits does not change any value).
-  if(Math.abs(dot(d,b.pole)*R)>=b.halfWidthM*b.gradientMax+Math.abs(b.bendM)+b.amplitudeM)return 0;
-  const x=dot(d,b.tangent),r=Math.sqrt(x*x+z*z),u=x/(r+z),v=u/b.uLimit;
-  if(Math.abs(v)>=1)return 0;
-  const {distance,gradient,u:foot}=transverse(b,d,R,u,z);
+  const py=dot(d,b.pole);
+  if(Math.abs(py*R)>=b.halfWidthM*b.gradientMax+Math.abs(b.bendM)+b.amplitudeM)return 0;
+  const x=dot(d,b.tangent),r=Math.sqrt(x*x+z*z),u=x/(r+z);
+  if(Math.abs(u/b.uLimit)>=1)return 0;
+  const off=offset(b,u);
+  // Every arc point at chord >= W/R: the projected |distance| >= R x chord >= W (the foot is on the arc),
+  // so value would return 0 below anyway. An exact rejection (cost plan T2): it spares the solve on the
+  // wide pole slabs of other belts.
+  if(farFromArc(b,py,off,R,b.halfWidthM/R))return 0;
+  return valueInFrame(b,d,R,x,z,py,u,off);
+}
+// value() past its rejections, from the sample's frame coordinates (x, z, py), u and off = offset(b, u).
+function valueInFrame(b: OrogenBelt,d: V3,R: number,x: number,z: number,py: number,u: number,off: number) {
+  transverse(b,d,R,u,x,z,py,py*R-off<0?-1:1);
+  const distance=trDistance;
   if(Math.abs(distance)>=b.halfWidthM)return 0;
-  lastDistance=distance;lastGradient=gradient;lastU=foot;
+  lastDistance=distance;lastG0=trG0;lastG1=trG1;lastG2=trG2;lastU=trU;
   const fraction=distance/b.halfWidthM;
-  return (1-OROGEN_LAYOUT.coreCrown*fraction*fraction)*(1-ss(OROGEN_LAYOUT.coreFraction*b.halfWidthM,b.halfWidthM,Math.abs(distance)))*(1-ss(.75,1,Math.abs(v)));
+  return (1-OROGEN_LAYOUT.coreCrown*fraction*fraction)*(1-ss(OROGEN_LAYOUT.coreFraction*b.halfWidthM,b.halfWidthM,Math.abs(distance)))*(1-ss(.75,1,Math.abs(u/b.uLimit)));
+}
+// orogen-layout-1's value(b, d) > 0 (five central-difference Gauss-Newton steps, the arithmetic clamp),
+// kept verbatim for construction only: land coverage decides when construction stops, so the belts must
+// not depend on the cost plan T2 solve (a probe within ~1e-7 m of a belt edge could otherwise flip).
+function coveredV1(b: OrogenBelt,d: V3,R: number) {
+  const z=dot(d,b.centre);
+  if(z<OROGEN_LAYOUT.supportZ)return false;
+  if(Math.abs(dot(d,b.pole)*R)>=b.halfWidthM*b.gradientMax+Math.abs(b.bendM)+b.amplitudeM)return false;
+  const x=dot(d,b.tangent),r=Math.sqrt(x*x+z*z),v=x/(r+z)/b.uLimit;
+  if(Math.abs(v)>=1)return false;
+  let u=x/(r+z);
+  const h=OROGEN_LAYOUT.axisDifferenceStep,sign=dot(d,b.pole)*R-offset(b,u)<0?-1:1;
+  for(let i=0;i<5;i++){
+    const p=centreline(b,u,R),plus=centreline(b,u+h,R),minus=centreline(b,u-h,R);
+    let numerator=0,denominator=0;
+    for(let j=0;j<3;j++){const t=(plus[j]-minus[j])/(2*h);numerator+=(d[j]-p[j])*t;denominator+=t*t;}
+    const next=u+numerator/denominator;
+    const low=(next-b.uLimit+Math.sqrt((next+b.uLimit)*(next+b.uLimit)))/2;
+    u=(low+b.uLimit-Math.sqrt((low-b.uLimit)*(low-b.uLimit)))/2;
+  }
+  const p=centreline(b,u,R);
+  let chord2=0;for(let j=0;j<3;j++)chord2+=(d[j]-p[j])*(d[j]-p[j]);
+  const distance=sign*R*Math.sqrt(chord2)*(1+chord2/24+3*chord2*chord2/640);
+  if(Math.abs(distance)>=b.halfWidthM)return false;
+  const fraction=distance/b.halfWidthM;
+  return (1-OROGEN_LAYOUT.coreCrown*fraction*fraction)*(1-ss(OROGEN_LAYOUT.coreFraction*b.halfWidthM,b.halfWidthM,Math.abs(distance)))*(1-ss(.75,1,Math.abs(v)))>0;
+}
+// A conservative cap per belt (cost plan T2): value(b, d) > 0 needs |u| < uLimit, i.e. base angle
+// |theta| < L = 2 atan(uLimit) with cos L = (1 - U^2)/(1 + U^2), and |pole.d| < Y (the retained tube of
+// value's second rejection, over R). With d = x T + z C + y P (|d| = 1), z = sqrt(1 - y^2) cos(theta) >
+// sqrt(1 - Y^2) cos L. So dot(d, centre) below that (less a 1e-9 rounding margin, and never below
+// supportZ) means value(b, d) = 0: skipping value there changes nothing. Majors gain little; the short
+// minor belts (L <= .3) reject about ten times more directions than z < supportZ does.
+function capZ(b: OrogenBelt,R: number) {
+  const Y=(b.halfWidthM*b.gradientMax+Math.abs(b.bendM)+b.amplitudeM)/R,U2=b.uLimit*b.uLimit;
+  return Math.max(OROGEN_LAYOUT.supportZ,Math.sqrt(Math.max(0,1-Y*Y))*(1-U2)/(1+U2)-1e-9);
 }
 
 // True only when every point of b's displaced centreline arc is at chord >= rho from d, so value(b, d)
@@ -125,12 +247,7 @@ function beyondChord(b: OrogenBelt,d: V3,R: number,rho: number) {
   if(z<OROGEN_LAYOUT.supportZ)return true;
   const x=dot(d,b.tangent),r=Math.sqrt(x*x+z*z),u=x/(r+z);
   if(Math.abs(u/b.uLimit)>=1)return true;
-  const S=2*Math.abs(b.bendM)/(b.uLimit*R)+6*b.amplitudeM/(b.wavelength*R),H=(Math.abs(b.bendM)+b.amplitudeM)/R;
-  const a=Math.sqrt(1-H*H),s=rho/a;
-  if(!(s<.5))return false;
-  const T2=s*s/(1-s*s),am=a*(1-T2/6),k=S*(1+b.uLimit*b.uLimit)/2;
-  const Y=Math.abs(dot(d,b.pole)-offset(b,u)/R);
-  return Y*am>=(rho*(1+1e-9)+1e-12)*Math.sqrt(k*k+am*am);
+  return farFromArc(b,dot(d,b.pole),offset(b,u),R,rho);
 }
 
 // Base great-circle nodes at the same exact u. The conservative balls include
@@ -294,7 +411,7 @@ function bandCellIndex(d: V3,N: number) {
 export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
   seed: string; radiusM: number; a0: Coordinate; landProbe?: readonly V3[];
 }) {
-  const random=rng(seed+'/'+OROGEN_LAYOUT_VERSION),belts: OrogenBelt[]=[],axes: V3[][]=[];
+  const random=rng(seed+'/'+OROGEN_LAYOUT_CONSTRUCTION_SEED),belts: OrogenBelt[]=[],axes: V3[][]=[];
   const probe: V3[]=landProbe ? [...landProbe] : [];
   if(!landProbe)for(let i=0;i<OROGEN_LAYOUT.probeCount;i++){
     const y=1-2*(i+.5)/OROGEN_LAYOUT.probeCount,r=Math.sqrt(1-y*y),p=i*2.399963229728653;
@@ -376,29 +493,58 @@ export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
     if(landNodes<points.length*(major?.92:.7))continue;
     if(!(b.curvatureWidthBound<=.2))throw new Error('Curvature exceeds 0.2/W');
     if(major)majorCount++;
-    for(let j=0;j<land.length;j++)if(!covered[j] && value(b,land[j],R)>0){covered[j]=1;count++;}
+    for(let j=0;j<land.length;j++)if(!covered[j] && coveredV1(b,land[j],R)){covered[j]=1;count++;}
     for(const v of [b.centre,b.tangent,b.pole])Object.freeze(v);
     belts.push(Object.freeze(b));axes.push(points);maxHalfWidthM=Math.max(maxHalfWidthM,W);
   }
+  const capZs=Float64Array.from(belts,b=>capZ(b,R));
+  // value's pole-slab half-width over R per belt (value(b, d) = 0 where |pole.d| R >= tube).
+  const slabs=Float64Array.from(belts,b=>(b.halfWidthM*b.gradientMax+Math.abs(b.bendM)+b.amplitudeM)/R);
+  const beltCount=belts.length;
+  // value(belts[i], d) behind the cap test (capZ): 0 exactly where value is 0, else value itself.
+  const capped=(i: number,d: V3)=>{
+    const C=belts[i].centre;
+    return d[0]*C[0]+d[1]*C[1]+d[2]*C[2]<capZs[i] ? 0 : value(belts[i],d,R);
+  };
   const reset=(out: OrogenSample)=>{
     out.belt=0;out.axis[0]=0;out.axis[1]=0;out.axis[2]=0;out.axisDistanceM=0;out.halfWidthM=0;out.beltIndex=-1;out.alongM=0;
   };
   // The winning belt's fields, written into a reset `out`.
-  const finish=(d: V3,alt: number,out: OrogenSample,best: number,index: number,distance: number,gradient: V3,foot: number)=>{
+  const finish=(d: V3,alt: number,out: OrogenSample,best: number,index: number,distance: number,g0: number,g1: number,g2: number,foot: number)=>{
     if(index<0)return out;
     const b=belts[index];
     out.belt=best*ss(0,OROGEN_LAYOUT.coastGateM,alt);
     if(out.belt===0)return out;
     out.beltIndex=index;out.halfWidthM=b.halfWidthM;out.axisDistanceM=distance;out.alongM=R*thetaOf(foot);
-    const axis=unit(cross(gradient,d));
-    out.axis[0]=axis[0];out.axis[1]=axis[1];out.axis[2]=axis[2];return out;
+    // unit(cross(gradient, d)), without the arrays (same expressions).
+    const a0=g1*d[2]-g2*d[1],a1=g2*d[0]-g0*d[2],a2=g0*d[1]-g1*d[0],l=Math.sqrt(a0*a0+a1*a1+a2*a2);
+    if(l){out.axis[0]=a0/l;out.axis[1]=a1/l;out.axis[2]=a2/l;}
+    return out;
   };
   const sampleWithA0=(d: V3,alt: number,out: OrogenSample=empty()): OrogenSample=>{
     reset(out);
     if(alt<=0)return out;
-    let best=0,index=-1,distance=0,gradient: V3=lastGradient,foot=0;
-    for(let i=0;i<belts.length;i++){const v=value(belts[i],d,R);if(v>best){best=v;index=i;distance=lastDistance;gradient=lastGradient;foot=lastU;}}
-    return finish(d,alt,out,best,index,distance,gradient,foot);
+    let best=0,index=-1,distance=0,g0=0,g1=0,g2=0,foot=0;
+    for(let i=0;i<beltCount;i++){const v=capped(i,d);if(v>best){best=v;index=i;distance=lastDistance;g0=lastG0;g1=lastG1;g2=lastG2;foot=lastU;}}
+    return finish(d,alt,out,best,index,distance,g0,g1,g2,foot);
+  };
+  // Test/measurement access: sampleWithA0 without the cost plan T2 rejections (capZ, farFromArc, solo
+  // words): every belt past value's own orogen-layout-1 rejections runs the solve. Must equal sampleWithA0.
+  const sampleWithA0Unpruned=(d: V3,alt: number,out: OrogenSample=empty()): OrogenSample=>{
+    reset(out);
+    if(alt<=0)return out;
+    let best=0,index=-1,distance=0,g0=0,g1=0,g2=0,foot=0;
+    for(let i=0;i<beltCount;i++){
+      const b=belts[i],z=dot(d,b.centre);
+      if(z<OROGEN_LAYOUT.supportZ)continue;
+      const py=dot(d,b.pole);
+      if(Math.abs(py*R)>=b.halfWidthM*b.gradientMax+Math.abs(b.bendM)+b.amplitudeM)continue;
+      const x=dot(d,b.tangent),r=Math.sqrt(x*x+z*z),u=x/(r+z);
+      if(Math.abs(u/b.uLimit)>=1)continue;
+      const v=valueInFrame(b,d,R,x,z,py,u,offset(b,u));
+      if(v>best){best=v;index=i;distance=lastDistance;g0=lastG0;g1=lastG1;g2=lastG2;foot=lastU;}
+    }
+    return finish(d,alt,out,best,index,distance,g0,g1,g2,foot);
   };
   // The band grid for (maxDistM, minHalfWidthM), built on first use and kept with the layout.
   const grids=new Map<string,OrogenBandGrid>();
@@ -414,6 +560,15 @@ export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
   const selectGrid=(maxDistM: number,minHalfWidthM: number)=>{
     const g=bandGrid(maxDistM,minHalfWidthM);
     gMax=maxDistM;gMin=minHalfWidthM;gN=g.faceCells;gHalf=gN/2;gNc=gN>>>3;gAll=g.all;gBits=g.bits;gTags=g.wordBelt;gCoarse=g.coarse;gVox=g.voxels;
+    let solo=solos.get(g);if(!solo){solo=new Uint8Array(g.bits.length);solos.set(g,solo);}
+    gSolo=solo;
+  };
+  const solos=new Map<OrogenBandGrid,Uint8Array>();
+  // Measurement/test access: the solo decisions taken so far in the (maxDistM, minHalfWidthM) grid.
+  const soloWordStats=(maxDistM: number,minHalfWidthM=0)=>{
+    const g=bandGrid(maxDistM,minHalfWidthM),solo=solos.get(g)??new Uint8Array(0),soloWords: number[]=[],otherWords: number[]=[];
+    for(let w=0;w<solo.length;w++){if(solo[w]===1)soloWords.push(w);else if(solo[w]===2)otherWords.push(w);}
+    return {faceCells:g.faceCells,soloWords,otherWords,capZ:capZs,slab:slabs};
   };
   const VK=OROGEN_BAND_GRID.voxelCells,VH=VK/2;
   // The word tag of d's cell in the selected grid (0 = unflagged): voxel prefilter, then bandCellIndex
@@ -430,7 +585,35 @@ export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
     const c=(face*gNc+(j>>>3))*gNc+(i>>>3);
     if(!(gCoarse[c>>>5]&(1<<(c&31))))return 0;
     const idx=(face*N+j)*N+i,word=idx>>>5;
+    tagWord=word;
     return gBits[word]&(1<<(idx&31)) ? gTags[word] : 0;
+  };
+  // Solo words (cost plan T2, value-preserving): word w of the selected grid is solo when every belt
+  // other than its tag belt c has value 0 on every direction of the word's 32 cells, so the other-belt
+  // loop of withinFlagged cannot change the winner and is skipped. Decided lazily on the first sample of
+  // a word (a pure function of the geometry; gSolo 0 = not yet decided, 1 = solo, 2 = not solo).
+  // The word is the gnomonic rectangle s in [s0, s0 + 64/N], t in [t0, t0 + 2/N] on its face; with
+  // a = the planar centre (|a| >= 1) and b any planar point of the rectangle, |b - a| <= hd (the planar
+  // half-diagonal), so sin(angle(a, b)) <= |a x (b - a)|/(|a| |b|) <= hd and the chord between the
+  // directions is at most angle <= hd/sqrt(1 - hd^2) = rw (the two directions are less than 90 degrees
+  // apart: same face, nearby s and t). Every direction p of the word then has p.n <= pc.n + rw for any
+  // unit n (pc = a/|a|). Belt i is zero on the word when pc.C_i + rw < capZ_i (capZ) or
+  // |pc.P_i| - rw >= slab_i (value's pole-slab rejection), each with a 1e-9 margin.
+  let tagWord=0,gSolo: Uint8Array=new Uint8Array(0);
+  const soloWord=(word: number,c: number)=>{
+    const N=gN,cell=word<<5,i0=cell%N,fj=(cell-i0)/N,face=Math.floor(fj/N),j=fj-face*N,k=face>>>1;
+    const sc=(i0+16)*2/N-1,tc=(j+.5)*2/N-1,hd=Math.sqrt(32*32+1)/N;
+    if(!(hd<.5)){gSolo[word]=2;return false;}
+    const rw=hd/Math.sqrt(1-hd*hd)*(1+1e-9)+1e-9,l=Math.sqrt(1+sc*sc+tc*tc),v: V3=[0,0,0];
+    v[k]=(face&1?-1:1)/l;v[BAND_AXES_A[k]]=sc/l;v[BAND_AXES_B[k]]=tc/l;
+    for(let i=0;i<beltCount;i++){
+      if(i===c)continue;
+      const C=belts[i].centre,P=belts[i].pole;
+      if(v[0]*C[0]+v[1]*C[1]+v[2]*C[2]+rw<capZs[i])continue;
+      if(Math.abs(v[0]*P[0]+v[1]*P[1]+v[2]*P[2])-rw>=slabs[i]*(1+1e-9)+1e-12)continue;
+      gSolo[word]=2;return false;
+    }
+    gSolo[word]=1;return true;
   };
   // sampleWithA0 restricted to a band: its result when that result has belt !== 0, halfWidthM >=
   // minHalfWidthM and |axisDistanceM| < maxDistM, else the empty sample. Bit-identical to filtering
@@ -449,23 +632,34 @@ export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
     return tag===0 ? out : withinFlagged(d,alt,maxDistM,out,minHalfWidthM,tag);
   };
   const withinFlagged=(d: V3,alt: number,maxDistM: number,out: OrogenSample,minHalfWidthM: number,tag: number): OrogenSample=>{
-    let best=0,index=-1,distance=0,gradient: V3=lastGradient,foot=0;
+    let best=0,index=-1,distance=0,g0=0,g1=0,g2=0,foot=0;
     if(tag!==255){
       const c=tag-1,b=belts[c];
       // Belts below the width gate were never stamped, so c passes it; d outside c's band leaves the
       // filtered result empty whichever belt wins.
-      if(beyondChord(b,d,R,Math.min(maxDistM,b.halfWidthM)/R))return out;
-      const v=value(b,d,R);
+      // beyondChord(b, d, R, min(maxDistM, W)/R) and then value(b, d, R), sharing the frame coordinates
+      // and offset(b, u) (cost plan T2). value's own farFromArc at W is left out: when it holds, the
+      // projected |distance| >= W and value returns 0 from the solve anyway.
+      const C=b.centre,T=b.tangent,P=b.pole,z=d[0]*C[0]+d[1]*C[1]+d[2]*C[2];
+      if(z<OROGEN_LAYOUT.supportZ)return out;
+      const x=d[0]*T[0]+d[1]*T[1]+d[2]*T[2],r=Math.sqrt(x*x+z*z),u=x/(r+z);
+      if(Math.abs(u/b.uLimit)>=1)return out;
+      const py=d[0]*P[0]+d[1]*P[1]+d[2]*P[2],off=offset(b,u);
+      if(farFromArc(b,py,off,R,Math.min(maxDistM,b.halfWidthM)/R))return out;
+      if(Math.abs(py*R)>=b.halfWidthM*b.gradientMax+Math.abs(b.bendM)+b.amplitudeM)return out;
+      const v=valueInFrame(b,d,R,x,z,py,u,off);
       if(!(v>0) || !(b.halfWidthM>=minHalfWidthM) || !(Math.abs(lastDistance)<maxDistM))return out;
-      const dc=lastDistance,gc=lastGradient,uc=lastU;
-      for(let i=0;i<belts.length;i++){
-        if(i===c){if(v>best){best=v;index=i;distance=dc;gradient=gc;foot=uc;}continue;}
-        const w=value(belts[i],d,R);if(w>best){best=w;index=i;distance=lastDistance;gradient=lastGradient;foot=lastU;}
+      const dc=lastDistance,gc0=lastG0,gc1=lastG1,gc2=lastG2,uc=lastU,s=gSolo[tagWord];
+      // A solo word: every other belt is 0 here, so the loop below would pick c (v > 0) and nothing else.
+      if(s===1 || (s===0 && soloWord(tagWord,c))){best=v;index=c;distance=dc;g0=gc0;g1=gc1;g2=gc2;foot=uc;}
+      else for(let i=0;i<beltCount;i++){
+        if(i===c){if(v>best){best=v;index=i;distance=dc;g0=gc0;g1=gc1;g2=gc2;foot=uc;}continue;}
+        const w=capped(i,d);if(w>best){best=w;index=i;distance=lastDistance;g0=lastG0;g1=lastG1;g2=lastG2;foot=lastU;}
       }
     }else{
-      for(let i=0;i<belts.length;i++){const v=value(belts[i],d,R);if(v>best){best=v;index=i;distance=lastDistance;gradient=lastGradient;foot=lastU;}}
+      for(let i=0;i<beltCount;i++){const v=capped(i,d);if(v>best){best=v;index=i;distance=lastDistance;g0=lastG0;g1=lastG1;g2=lastG2;foot=lastU;}}
     }
-    finish(d,alt,out,best,index,distance,gradient,foot);
+    finish(d,alt,out,best,index,distance,g0,g1,g2,foot);
     if(out.belt!==0 && out.halfWidthM>=minHalfWidthM && Math.abs(out.axisDistanceM)<maxDistM)return out;
     reset(out);return out;
   };
@@ -475,7 +669,7 @@ export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
     return g.all || (g.bits[idx>>>5]&(1<<(idx&31)))!==0;
   };
   return Object.freeze({belts:Object.freeze(belts),maxHalfWidthM,sampleWithA0,sample:(d: V3,out?: OrogenSample)=>sampleWithA0(d,a0(d),out),
-    sampleWithinWithA0,bandGrid,bandCellFlagged,bandCellIndex});
+    sampleWithinWithA0,bandGrid,bandCellFlagged,bandCellIndex,sampleWithA0Unpruned,soloWordStats});
 }
 
 const cache=new Map<string,ReturnType<typeof buildOrogenLayout>>();
