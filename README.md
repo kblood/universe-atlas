@@ -13,42 +13,48 @@ uncalibrated): less mottle, ground reads flatter. Details:
 
 ## Mountains: element round and the assembled check — 2026-10-05 (local, not deployed)
 
-**The mountains are not fixed yet.** The terrain on main is byte-identical to
-`b8d38d3`, and the mountain sheet still fails 0/24 (Luna, advisory).
-Details: `docs/mountains-assembled-check-2026-10-05.md`.
+**The mountains are not wired into the terrain yet.** Status after the Opus
+decisions of 2026-10-05 (`docs/mountains-opus-decisions-2026-10-05.md`,
+decided by Opus 5.5 on Kasper's instruction; he can overrule any of it).
+Evidence: `docs/mountains-assembly-2026-10-05.md` and
+`docs/mountains-assembled-check-2026-10-05.md`.
 
-- **Merged, but not used by the terrain yet:** MTN-0 harness, M1 orogen layout
-  (`src/mountain-layout.ts`) and M2 massif envelope (`src/mountain-envelope.ts`).
-  Each has its own HARD test. No `src/` file imports M1 or M2.
-- **BLOCKED, left on branches, nothing loosened:**
-  - M0 (`mountains/m0`): Maithea L6 RGB ratio is 0.922 against <= 0.9.
-  - M3 (`mountains/m3`): coherence is 0.133 against >= 0.35. The eroded
-    control itself fails 4 of the M3 shape rows.
-  - M4 and M5 were not started, because they depend on M3 and the assembly.
-  - MTN-6 (wiring into `terrain.ts`) was not started. No version moved and
-    nothing was re-pinned.
-- **Assembled check on main `cffc5ff`:**
-  - Outside-belt identity: 0 differences on 4 x 4096 directions. The built
-    assets are SHA-identical to `b8d38d3`.
-  - LOD: all 17 `SHIPPED_CEILINGS` pins pass, with headroom of only
-    0.009-0.075. All 12 checks that RELIEF-PRESENT broke pass.
-  - SITE_A rule: pass at 280.2 m, no move.
-  - `test:full`: exit 0, 1400 pass, 0 fail, 0 NEW.
-  - Golden: Node and two of three browser engines match. WebKit differs only
-    on the known `faunaKnownUnstable` finding.
-  - Build: exit 0.
-- **Luna (VISUAL-ADVISORY, UNCALIBRATED, not counted):**
-  - 12 CPU calibration controls were created. Luna passed only 3 of 6
-    positives (5 needed). It failed all 6 negatives, including the hard
-    negative. The app path is not calibrated.
-  - Sheet: 0 PASS in 48 asks. The most common diagnosis is "massif
-    height/silhouette" (M2, not wired), then haze/clouds.
+- **Merged and unwired** (each has its own HARD test; `terrain.ts` does not
+  use them on main): M1 orogen layout (`src/mountain-layout.ts`), M2 massif
+  envelope (`massif-envelope-2`) and M3 carving, candidate F
+  (`mountain-carving-2`).
+- **M4 passes** on the fixture and, measured whole-core (Q4), on the real
+  parameters of all four worlds: R1 = 41.0 / 22.8 / 8.6 / 39.4 against >= 8.
+- **M0 (MTN-1) is CLOSED, NOT MET** (Q1). Metric 2 stays as written and is
+  recorded as failed (best estimator in budget: Maithea L6->7 0.924 of point
+  against <= 0.9). No comparator changed, no M0 code merged, and
+  `LOD_LADDER_VERSION` did not move for it. Step G serves M0's purpose. MTN-6
+  no longer waits for M0. M0 reopens as a class/coast-edge element only if a
+  massif-tile LOD cell exceeds its `SHIPPED_CEILINGS` row (or the §5 strict
+  target), or if Kasper decides A3.
+- **MTN-6 step A is PARTIAL.** With M1+M2+M3 wired (branch
+  `mountains/assembly-2`), all terrain rows pass, but the wiring is not merged
+  because of cost: warm +108-156%, cold 6 x L0 335-461 s.
+- **Cost plan:** T1-T6 of the decisions doc (Q2): an M1 rejection grid, a
+  cheaper M1 foot-point solve, a declared M3 coarse-level reduction
+  (`lod-ladder-2`), a sparse-consumer audit, a conditional M3 block-geometry
+  change, then the assembled check and the merge with the single planned
+  golden re-pin. The +8% warm budget and the +10% per-level build budget stay.
+  If +8% still fails after T1+T2, the question goes to Kasper with the numbers.
+- **Accepted for this assembly:** the 48 km massif cap (Q3, a recorded
+  deviation from (g)) and the frozen Maithea retention edge selection (Q5).
+- **Luna** (VISUAL-ADVISORY, UNCALIBRATED, not counted): the last sheet was
+  0 PASS in 48 asks, on unwired terrain. The sheet for the wired state runs at
+  T6 on a local Vite server under the GPU lock. Kasper's preview ban covers
+  deployed previews only.
 - **OPEN for the owner:**
-  - the M0 threshold and A3;
-  - the M3 coherence and shape rows;
-  - Q3 and Q4;
+  - A3 (strict colour/class targets);
+  - Q3 (retention reference) and Q4 (old ridges outside belts; default keep);
   - the MTN-7 label sign-off and the real-DEM download;
   - A6/A7;
+  - the M3 straight main divide (crest-wander exists, not adopted);
+  - parallel ranges across wide belts (needs class pins to move);
+  - the budget escalation in Q2, only if it triggers;
   - the SITE_A 60 km ring TODO and the rocky Spearman TODO.
 
 ## Test result classes and GitHub pack — 2026-10-04 (local, not deployed)
