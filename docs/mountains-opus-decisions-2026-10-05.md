@@ -244,3 +244,102 @@ frozen tiles touches a 48 km massif. So the frozen set is complemented by the ma
 - T2 re-pins one element digest with old/new values.
 
 The version moves this plan will cause are listed per task in the table above.
+
+## Addendum 2026-10-05: Astra review of open problems
+
+**Decided by Opus 5.5 on Kasper's instruction 2026-10-05; he may overrule.** The items below are
+**binding instructions for the remaining tasks** (T2-T6 and M5). Where they conflict with the task
+table above, this addendum wins.
+
+Source: a read-only Astra (Codex `gpt-6-astra`) review of main `1dbf2c2`. Astra can be wrong. Every
+statement below was checked against the files on main `1dbf2c2` before it was written; the check is
+named in each item.
+
+### 1. T3 bug: the parent mesh must use the parent's level rule
+
+**Defect, verified.** `buildTile` (`src/planet-tiles.ts`, line 131) creates one sampler,
+`terrainSampler(body, ...)`. `parentPoint` (lines 245-254) reconstructs the parent triangles through
+`vertexPoint`, which uses that same sampler. If T3 only passes `tile.level` into that one sampler, a
+child tile at the cut level L(cut) builds its parent mesh with the child's carving. The parent
+mesh then differs from the real L(cut-1) tile, which is uncarved, and the morph starts from a surface
+that was never displayed.
+
+**Binding for T3:**
+
+- Build parent and child with the **same carving state per level pair**: child vertices sample at
+  level L, parent vertices (`parentPoint` and its `vertexPoint` calls) sample at level L-1 under the
+  L-1 rule. Use two samplers, or one sampler with a per-call level, with **separate cache identities**
+  per level. A shared cache keyed without the level is a bug.
+- Add to `tests/lod-carving-reduction.test.mjs` an **edge/seam test across the switch level** on
+  massif tiles of every world (L(cut-1) -> L(cut)):
+  1. the child's parent-mesh endpoints equal the vertices of the actually built L(cut-1) tile
+     (exact, or within the contract's existing tolerance; no new tolerance);
+  2. shared edge vertices between a neighbouring L(cut-1) tile and L(cut) tile agree under the
+     contract's existing seam rule;
+  3. a mutation control: the same test with the parent sampled at the child's level must fail.
+- Report the mean-height step at the cut on massif tiles as INFO. If it is visible, the agreed
+  mitigation is a cheap coarse mean-carve term, not a change of rule.
+
+### 2. The mountain tile set must contain real mountain tiles
+
+**Verified.** `docs/mountains-assembly-2026-10-05.md` line 180: "No frozen pin tile touches a 48 km
+massif". So the "17/17 pins, 96/96 cells" results say nothing about mountain LOD.
+
+**Binding for T6:**
+
+- The Q6 massif tile set must be shown to be mountain terrain: for every tile, record its M1 axis
+  distance and at least one sample with `|axisDistanceM| < MAX_HALF_WIDTH_M`. A tile that fails this
+  is replaced by the selection rule, never kept. Include flank and belt-end tiles, not only axis
+  tiles.
+- Its cross-level, colour, class and retention cells are **report-only** limits for now. No ceiling
+  is set from them and no merge is blocked by them.
+- Whether those limits should **block** (A3) is **OPEN for Kasper**. It is flagged in
+  `docs/owner-decisions-2026-10-04.md` under A3.
+- **The 96/96 cells result (and the 17/17 pins) must not be cited as mountain evidence** in any
+  report, README line or merge message. Cite it only as "no regression outside the massifs".
+
+### 3. Overfitting caveat and a calibration doc correction
+
+**Verified.** F's parameter search (`docs/mountain-carving-f-v1.md`, lines 111-127) selected
+settings against the same 8 seeds (730201-730208) and the same thresholds that F reports as passing
+(line 75). The R1 measurements in `docs/mountain-summits-v1.md` and in the assembly doc use the same
+seeds. Those results are training evidence, not held-out evidence.
+
+**Binding for T6:** evaluate the M3 rows and R1 on **8 fresh seeds that were never used before**,
+for example 730301-730308 (a `git grep` on `1dbf2c2` finds no use of them as seeds). Fix the seeds
+before measuring, say so in the report, and report the old seeds and the fresh seeds as separate
+columns. Do not tune anything on the fresh seeds. If a row fails on the fresh seeds only, report it
+as a failure; do not re-pick seeds.
+
+**Correction, verified and fixed in this commit.** `docs/mountain-m3-calibration-v1.md` line 105
+said that six resampled steady-state positive controls exceed fill 0.05. The table on lines 64-75
+shows **8 of 12** (0.057, 0.059, 0.057, 0.059, 0.058, 0.058, 0.058, 0.051). The text now says
+eight. The fill row stays INFO and unchanged.
+
+### 4. Decision-record completeness: scope changes not stated before
+
+The ledger above says "Nothing is loosened". That is true for thresholds, but these decisions also
+**narrowed scope**, and the ledger must say so:
+
+- **M0 no longer blocks** MTN-6 (Q1). MTN-1 is closed NOT MET instead of being a prerequisite.
+- **Massifs are capped at a 48 km half-width** (Q3). Wide belts read as one 96 km range inside a
+  soft upland; this deviates from the wording of decision (g).
+- **Two summit counts became report-only** (Q4): the 48 km axis raster and the flank raster are
+  INFO; only the whole-core R1 binds.
+
+### 5. Follow-up tasks (not for this chain)
+
+These are recorded here so they are not lost. The T2-T6/M5 workflow does not do them.
+
+- **Harden `tests/known-failures.json`.** Verified: `classify` in `tests/helpers/test-runner.mjs`
+  (lines 13-16) accepts any entry in `failures` by `title` and `file` only. A CONTRACT failure can
+  therefore be allowlisted exactly like a timing flake. Add a required class field, and reject a
+  CONTRACT-class entry that has no decision-record reference.
+- **Keep branch `mountains/m0c`** (`f62be0e`, not merged into main) until the M0-v3 evidence it
+  tracks (`test-results/mountains/M0-v3/`, 0 files on main) is copied into the repo docs or
+  recorded by hash on main. The worktree-cleanup rule must not delete it before then.
+- **Baked coarse macrofield** (a regenerable, seed-and-version cache of broad belt/uplift structure)
+  is kept as the **fallback** if T2 misses its targets (in-massif branch <= 1,700 ns, weighted warm
+  <= +8%). It is not a parallel study now. It changes terrain values if interpolated, so it needs a
+  version move, and it does not remove M3's cold solves (T3 does). The Q2 escalation to Kasper still
+  applies if (C1) fails.
