@@ -18,7 +18,9 @@
  * transcendental in anything that decides a tile height, an ocean flag or a
  * class. `Math.PI` is a constant, not a call.
  */
-export const LOD_LADDER_VERSION = 'lod-ladder-1';
+// lod-ladder-2 (mountains cost plan T3, docs/mountains-opus-decisions-2026-10-05.md Q2): adds the declared
+// M3 carving reduction (`carvingFromLevel`); every section-5 tolerance is unchanged. Was lod-ladder-1 (P3).
+export const LOD_LADDER_VERSION = 'lod-ladder-2';
 
 export type LadderId = 'S0' | 'S1' | 'S2' | 'S3' | 'S4';
 export const LADDER_IDS: readonly LadderId[] = Object.freeze(['S0', 'S1', 'S2', 'S3', 'S4'] as LadderId[]);
@@ -134,6 +136,32 @@ export function levelForPose(radiusM: number, altitudeM: number, distanceM: numb
  * (Maithea: L9, as the plan names it). Finer levels store the point sample. */
 export function peakCorrectionMaxLevel(radiusM: number): number {
   return firstLevelAtOrBelowEdge(radiusM, LADDER_EDGE_BOUNDS_M.s2) - 1;
+}
+
+/**
+ * M3 carving reduction (lod-ladder-2; contract section 3, "Mountain carving"). The M3 ridge-valley carving
+ * (mountain-carving.ts) has its longest declared wavelength at 16 km (CARVING_BANDS[0]). A tile lattice of
+ * LATTICE_SEGMENTS cells per edge samples it at 2 x edge / LATTICE_SEGMENTS (the lattice Nyquist), so a level
+ * can hold the carving only if that is at most half the 16 km band, i.e. edge <= 16 km / 2 x 32 / 2 = 128 km.
+ * Coarser levels sample the UNCARVED composition: carving is <= 0, so the reduction is an upper envelope
+ * (heights only raised), as section 3 requires of every coarse height. The truth (no level) keeps the carving.
+ * Maithea: carving from L6 (127.5 km); Selawyn L7 (104.9 km); Raiva L5 (98.3 km); Lethuris L7 (110.4 km).
+ */
+export const CARVING_REDUCTION = Object.freeze({
+  /** CARVING_BANDS[0].wavelengthM of mountain-carving.ts (pinned equal by tests/lod-carving-reduction). */
+  longestWavelengthM: 16_000,
+  /** PATCH_SEGMENTS of planet-tiles.ts (pinned equal by the same test; no import, see the header). */
+  latticeSegments: 32,
+});
+/** Largest tile edge (m) that can hold the carving: 2 x edge / segments <= wavelength / 2. */
+export const CARVING_MAX_EDGE_M = CARVING_REDUCTION.longestWavelengthM / 2 * CARVING_REDUCTION.latticeSegments / 2;
+/** First tile level that evaluates the M3 carving on a body of radius `radiusM` (integer loop, no log2). */
+export function carvingFromLevel(radiusM: number): number {
+  return firstLevelAtOrBelowEdge(radiusM, CARVING_MAX_EDGE_M);
+}
+/** Whether a sampler for `lodLevel` evaluates the carving: always for the truth (no level). */
+export function carvingAtLevel(radiusM: number, lodLevel?: number): boolean {
+  return lodLevel === undefined || lodLevel >= carvingFromLevel(radiusM);
 }
 
 /**

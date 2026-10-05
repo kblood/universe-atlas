@@ -61,8 +61,8 @@ const SHIPPED_CEILINGS={
   },
 };
 
-test('ladder lod-ladder-1: rung ranges, pose mapping and the seabed distance policy',()=>{
-  assert.equal(LOD_LADDER_VERSION,'lod-ladder-1');
+test('ladder lod-ladder-2: rung ranges, pose mapping and the seabed distance policy',()=>{
+  assert.equal(LOD_LADDER_VERSION,'lod-ladder-2','was lod-ladder-1 (P3); lod-ladder-2 adds the declared M3 carving reduction (mountains cost plan T3), every tolerance unchanged');
   const R=bodies.Maithea.radiusM,rungs=ladderFor(R);
   assert.deepEqual(rungs.map(r=>[r.id,...r.levels]),[['S0',0,4],['S1',5,9],['S2',10,14],['S3',15,contactLevelFor(R)],['S4',contactLevelFor(R)+1,fineContactLevelFor(R)]]);
   assert.equal(contactLevelFor(R),18);assert.equal(fineContactLevelFor(R),22);
