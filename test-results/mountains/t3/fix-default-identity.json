@@ -1,0 +1,170 @@
+{
+  "Maithea": {
+    "samplerComparisons": 12432,
+    "tileDigests": [
+      {
+        "level": 0,
+        "digest": "1981c960dfc9bfe27c75d2afe18ffad20ce85af7b1aca26ab62d0f2d3c25e3fb"
+      },
+      {
+        "level": 1,
+        "digest": "9adcfc5fac2da4f6d1f1060274d0a92b515b22289aca1fd5860fe39028ef2550"
+      },
+      {
+        "level": 2,
+        "digest": "b826d3501cd6f398ff211c3603bae2220a77b8b2c432d09a013d5176806a80e7"
+      },
+      {
+        "level": 3,
+        "digest": "96c4044f9880b9c0114891dfa9407209d760769dbecfa55fe2e6eea479ac1893"
+      },
+      {
+        "level": 4,
+        "digest": "829787e1fb38180b685372e98a33de9c0200956f4a64202ce991edce73937466"
+      },
+      {
+        "level": 5,
+        "digest": "3ebd8eb883f6955cc49ca28e8016ef05e79e76dbb1c1074c1df16c5e6ce33ccd"
+      },
+      {
+        "level": 6,
+        "digest": "923d345729a3b970a821922f62c5eaba8caebb7e2e2bfd729f50e7c140c25331"
+      },
+      {
+        "level": 7,
+        "digest": "c0f1101bec049c0028fdf1d30296ffb6d6ac55af23284b27d2969fb82fb66a56"
+      },
+      {
+        "level": 8,
+        "digest": "c2b93dbf2c7667b9c0a4cfc020b788ceafbe50f30eb7951caa2ac30c59b9c2e1"
+      }
+    ]
+  },
+  "Selawyn": {
+    "samplerComparisons": 12432,
+    "tileDigests": [
+      {
+        "level": 0,
+        "digest": "b5f59bed628442e9de8c45621a10ff89948b28ed313bd3b851ebe693e7765493"
+      },
+      {
+        "level": 1,
+        "digest": "33072923168a35661f0560ff9fe2f4ba2f37d90db95cbc38a98486d38b8407ee"
+      },
+      {
+        "level": 2,
+        "digest": "9302576e7407b75b7879417f04d50f785f41a577f8e6c284183ea2d2ce16c87b"
+      },
+      {
+        "level": 3,
+        "digest": "d490a80abe133205bdfafba53dec621ac502cc46e6d16236c3542acab33e4f95"
+      },
+      {
+        "level": 4,
+        "digest": "7343e02aa10afdebcdadd61205a8ac720253fb9a8f4d7c5fab850b75e68d6375"
+      },
+      {
+        "level": 5,
+        "digest": "e6430ed76e0b5388f9ae019fe3b61aea770a1720143763eb44e9080684714f77"
+      },
+      {
+        "level": 6,
+        "digest": "4e634bf3e0440867a264b951b4bceaf7fec3deb82f89ba23432898a625ac9138"
+      },
+      {
+        "level": 7,
+        "digest": "952ac51fbb85901648f8ae83fa4260c743bc947156294e46e15100ca35f3f3cc"
+      },
+      {
+        "level": 8,
+        "digest": "62ca83ae1971264be729359c8f69355351e9e3a28921ede51a3c4e07bf6ee437"
+      },
+      {
+        "level": 9,
+        "digest": "3ebd1921aba0eb045eb67a863980c9fde09b4cee54393266c26e05761920efd4"
+      }
+    ]
+  },
+  "Raiva": {
+    "samplerComparisons": 12432,
+    "tileDigests": [
+      {
+        "level": 0,
+        "digest": "eb30eba85d4a07fe6574fecbf7add4e65784d728a2ac0bc19dab7257401f3495"
+      },
+      {
+        "level": 1,
+        "digest": "7d85497215871bdcc03db5b9ab8f5da7396c6b7205dc05240ee3a7fff2724e27"
+      },
+      {
+        "level": 2,
+        "digest": "a8728464302beb4c401be28573fcd9bea93048439e8702bd0499fc5096e27390"
+      },
+      {
+        "level": 3,
+        "digest": "9958bda7f3cfbf49d7db10cae5701467d96fadfd627dd9d20efc80eb9bca0344"
+      },
+      {
+        "level": 4,
+        "digest": "d50b94d758351b1e50f9e9c5d2ff227d9f524a900b8c33ac07b48bbd74805002"
+      },
+      {
+        "level": 5,
+        "digest": "92da3601a77f734260925d8eafbf8b092113ffa802434d860f7dd257a7dfd957"
+      },
+      {
+        "level": 6,
+        "digest": "500ac7a24b6019829ff9b2eceb8806d5f3202cde313bef98ca4e17843e89cde8"
+      },
+      {
+        "level": 7,
+        "digest": "7952c3e60b1c5ef96709128f5e965d07a8f49582427fe5ba414a9f36636188ff"
+      }
+    ]
+  },
+  "Lethuris": {
+    "samplerComparisons": 12432,
+    "tileDigests": [
+      {
+        "level": 0,
+        "digest": "5f77e3c78bb2c1ad3a1569ee28cf2e7d5df18d79e9b9210b83f09fc1a90a7643"
+      },
+      {
+        "level": 1,
+        "digest": "30628cfdd20f41bafdbe6d069f4f8017f4bf910652ddeca24eac66d1f4bb13df"
+      },
+      {
+        "level": 2,
+        "digest": "a98a813aa7d27f5c68dc115c198c4d111fcbb30c71bbba79019373a0a9e8bfb3"
+      },
+      {
+        "level": 3,
+        "digest": "0d0747687dc5bc50d886cdd55dca7ef4e21b2756afb636d6d6d5f709d98e3607"
+      },
+      {
+        "level": 4,
+        "digest": "037a62cdbc803388d39a961842c6e6cc2233a0eeba68f47ca8ec99bf90590c31"
+      },
+      {
+        "level": 5,
+        "digest": "cc00ae5fd0125654a0358333e400b0083bca07f094f65120665bede4e29b61f0"
+      },
+      {
+        "level": 6,
+        "digest": "1ee71442a89cb36130427a8b141e82580c1522aedcf037be66f180974a8cb49b"
+      },
+      {
+        "level": 7,
+        "digest": "3e6fa135450f4f0d9b5aafaa07ef486c5f18fc7e4dd0366cc3e63be4abb69471"
+      },
+      {
+        "level": 8,
+        "digest": "291ae1133093dd5c065fb284f2fb2ac89ff781749a249a24652f46bd471d169a"
+      },
+      {
+        "level": 9,
+        "digest": "697094a4b0e5eeeb2600219df6f164a3807ea7e2a5fc235e9090583e6a265ce3"
+      }
+    ]
+  }
+}

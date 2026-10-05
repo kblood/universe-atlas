@@ -426,4 +426,52 @@ sample, M1/M2 inside belts), not T3 code (A/A control within +-3.6%).
 **OPEN for the decision maker:** whether T3 may merge staged with target (2)'s per-level part open, and
 what removes the M1 + M2 residual at coarse levels (for example a per-block or batch M1 rejection, Astra's
 idea (b) in addendum (2)), or whether the per-level budget question goes to Kasper together with (C1).
-Nothing was loosened.
+Nothing was loosened. *(Answered by addendum (3) below.)*
+
+## Addendum 2026-10-06 (3): T3 cost — bounded attempt, then merge staged with the mountains' coarse cost OPEN
+
+**Decided by Opus 5.5 on Kasper's instruction 2026-10-06; he may overrule.** Evidence:
+`docs/mountains-t3-coarse-carving-2026-10-06.md` sections 4 and 7, `test-results/mountains/t3/`.
+
+**Question decided.** T3 (`mountains/t3-coarse`) met every target except contract §6's per-level build mean at
+L0..cut-1 (+8.0..+26.6% against +10%, all four worlds). Choice: (a) merge staged with that target open, or (b) first
+try a value-preserving reduction. **Decision: (b) then (a), in sequence, bounded to one Astra implement round and one
+fix round.** The +10% (§6) and the +8% warm budget (C1) are not touched.
+
+**What (b) produced (official, CPU-quiet slot, unchanged contract protocol, fresh process per world):**
+
+- Diagnosis: the T1 per-sample rejection is only ~1.5% of the tile time, so a per-block batch M1 rejection (Astra
+  idea (b)) cannot by itself recover 10+ points. Most of the excess is V8 compiling the terrain core worse when it
+  only ever runs the mountain path (with a mountains-off arm in the same module the on/main growth fell to
+  -8..+10%, outputs identical).
+- Round 1 (`49c8bc3`, kept): value-preserving tile-builder and sampler-construction speedups. Against shipped main
+  `914d86f`: **max growth +5.5% (Maithea L0), +2.2% (Selawyn), -1.0% (Raiva), -0.1% (Lethuris)**. Bit identity:
+  pre-change tile and sampler SHA-256 guards unchanged, truth 4 x 15,120 directions 0 mismatches.
+- But the mountains' own coarse-level cost is unchanged: mountains on vs this branch's own builder with the
+  mountains off, same protocol: **+16.8..+32.6% per level on all four worlds** (Maithea +19.5..+31.9, Selawyn
+  +19.7..+32.6, Raiva +20.0..+26.5, Lethuris +16.8..+27.2).
+- Fix round (discarded): eleven core restructurings; best unofficial residual still +26.5..+30.7% max per world and
+  a worse against-main margin (+8.6%). No reliable win, so no source change kept.
+
+**Decision on the merge.** T3 merges **staged** (`TERRAIN_MOUNTAINS_WIRED = false`, output-neutral, `TERRAIN_VERSION`
+and every golden unchanged; `LOD_LADDER_VERSION` -> `lod-ladder-2` and `MOUNTAIN_ASSEMBLY_VERSION` ->
+`mountain-assembly-2` with the ledger in the T3 doc). Reasons:
+
+- The §6 row as written, "build mean <= shipped +10%", holds against the shipped main `914d86f` (max +5.5%). I do not
+  claim more than that: it holds **because** the builder speedups pay for the mountains.
+- Staged, T3 changes no shipped value, closes no option, and removes the cold coarse cost (335-461 s -> ~210 ms for
+  Maithea 6 x L0, 0 block solves on 75,768 coarse tiles). Holding it back gains nothing.
+- **Carried OPEN into T6's gate, explicitly:** after this merge "shipped" includes the speedups, so the T6 wiring
+  will be judged against the faster builder and will see the +17..+33% mountains residual. T6 does not pass §6 by
+  pointing at this addendum. Either the residual is removed at T6 (the open V8 codegen problem: core `sample`
+  1,535 ms on vs 641 ms off with relief split out, cause unresolved), or Kasper answers the question below.
+
+**Question for Kasper (the only one here):** "Contract §6 says per-level build mean <= shipped +10%: at T6, is the
+mountains wiring judged against main as it then is (with T3's value-preserving builder speedups; the mountains are
++17..+33% per coarse level against it) or against the pre-mountains build `914d86f` (wired is at most +5.5%
+against it)?" Until he answers, the coordinator uses the stricter reading (main as it then is).
+
+**Ledger.** No threshold, pin, tolerance, budget or golden changes. Version moves are T3's own (`lod-ladder-2`,
+`mountain-assembly-2`). Scope stated per addendum item 4: T3's merge criterion (2) per-level part is recorded as met
+only against `914d86f`, with the mountains' own coarse cost open. The 96/96 cells and 17/17 pins are not cited as
+mountain evidence.

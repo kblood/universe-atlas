@@ -1,6 +1,9 @@
 # Mountains cost plan T3: coarse-level carving rule (`lod-ladder-2`) — evidence, 2026-10-06
 
-Status: **BLOCKED on one target, not merged.** Branch `mountains/t3-coarse` (worktree
+Status: **merged staged (output-neutral) per the decisions addendum of 2026-10-06 (3)**, after the bounded cost
+attempt of section 7. Contract §6 against shipped main `914d86f` is now met (max +5.5%); the mountains' own cost at
+coarse levels (+17..+33% against this branch's builder) is carried **OPEN** into T6's gate. Sections 1-6 below are
+the original evidence (when T3 was blocked); section 7 is the follow-up. Branch `mountains/t3-coarse` (worktree
 `universe-atlas-wt/t3-coarse`), on top of main `914d86f` (T1 and T2 merged).
 
 Task: T3 of `docs/mountains-opus-decisions-2026-10-05.md` (Q2 "Rule", task table row T3, binding addendum
@@ -226,3 +229,46 @@ is a cheap coarse mean-carve term, not a change of the rule.
 `coarse-all-tiles.mjs` and `coarse-all-tiles-<world>.{json,log}`, `l0-protocol.{mjs,json}`,
 `contract-build-bench.{mjs,json}`, `level-build-mean.{mjs,json}`, `switch-cells.{mjs,json,log}`,
 `cost-run{1,2,3}.json` and `control-*.json` (cost script rows), `l0-cold.mjs`, `l0-breakdown.mjs`.
+
+## 7. Follow-up 2026-10-06: bounded cost attempt (decisions addendum (3), option (b))
+
+One Astra implement round and one fix round, both value-preserving. Official numbers are the coordinator's
+(CPU-quiet test slot, `contract-build-bench.mjs` unchanged, 5 rounds, fresh process per world).
+
+**Diagnosis first (coordinator).** A CPU profile of the L0..L5 bench tiles (`profile-maithea-l0-l5.txt`, main 22.76
+vs mountains-on 28.73 ms/tile) shows the T1 band rejection itself is small (`bandTag` ~1.5% of the time). The
+excess is spread over the terrain core (`sample` +439 ms, `macroHeightCode` +195 ms, `n` +163 ms, GC +124 ms,
+sampler wrapper +109 ms, M1 direct ~+234 ms of +1.73 s). With an extra mountains-off arm in the same module
+instance (`tile-bench-arms.mjs main,off,on`) the on/main growth fell to -8..+10% with identical tile output
+(SHA-256 checked), so most of the residual is how V8 compiles the core when it only sees the mountain path, not
+arithmetic. A per-tile/per-block batch M1 rejection (idea (b)) therefore cannot recover the 10+ points on its own.
+
+**Round 1 (committed `49c8bc3`).** Per-layout memo of the belt carving seeds (no `hash64` per sampler); in
+`buildTile`: dense halo-aware lattice caches instead of string-keyed Maps, one raw-grid lookup per peak correction,
+`cubeDirection` without the six-vector table, direct colour-texel stores. Guards captured before the change and kept:
+L(cut-1) and L(cut) tile SHA-256 per world and full sampler outputs at truth and L0..22
+(`tests/lod-carving-reduction.test.mjs`, `opt-identity-{before,after}.json` byte-identical; truth 4 x 15,120
+directions 0 mismatches). tsc exit 0; 10 element test files 91/91.
+
+| Contract §6, growth per level L0..cut-1 | Against shipped main `914d86f` (`official-after-contract.json`) | Mountains on vs this branch's own staged builder, off (`official-residual-vs-staged.json`) |
+|---|---|---|
+| Maithea | +5.5 / +1.3 / +2.3 / -3.4 / +0.0 / +1.6 % | +19.5 / +26.7 / +24.6 / +26.7 / +31.9 / +30.1 % |
+| Selawyn | -3.6 / +2.2 / -0.5 / -3.9 / +1.6 / -1.3 / +0.8 % | +19.7 / +30.3 / +22.0 / +32.6 / +31.1 / +21.9 / +22.7 % |
+| Raiva | -3.5 / -2.8 / -1.3 / -6.2 / -1.0 % | +20.0 / +26.5 / +21.4 / +24.6 / +24.0 % |
+| Lethuris | -0.1 / -0.9 / -6.2 / -4.9 / -5.8 / -5.1 / -7.1 % | +16.8 / +25.8 / +21.1 / +24.4 / +25.8 / +27.2 / +20.1 % |
+
+So the §6 row as written ("build mean <= shipped +10%", shipped = main `914d86f`) is **met, max +5.5%**. It is met
+because the builder speedups, which also apply with the mountains off, pay for the mountains. The mountains' own cost
+at coarse levels is not reduced: +17..+33% against the same builder.
+
+**Fix round (not kept).** Target: the residual <= +10%. Astra moved the relief composition into its own closure and
+tried ten other variants (mountain helper, base-height extraction, merged rejection/solve, coarse-only evaluator,
+isolated noise kernels, numeric field init, noise-closure reuse, explicit core context, reusable core results).
+Unofficial result of the best variant: residual max +26.5..+30.7% per world, against-main up to +8.6% (Lethuris L4),
+i.e. no reliable gain and a worse against-main margin. V8 traces: in an on-only process V8 inlines
+`massifBeltSample` into the core; with relief split out the core `sample` self time is still 1,535 ms on vs 641 ms
+off, cause unresolved. The source change was **discarded**; its report and logs are kept (`fix-report.md`,
+`fix-*.json`, `fix-*.log`; the multi-MB V8 traces and `.cpuprofile` files are not committed).
+
+**Carried OPEN into T6** (decisions addendum (3)): when the wiring is judged at T6, "shipped" will be main with
+these builder speedups, and the mountains residual above (+17..+33%) is what that gate will see.
