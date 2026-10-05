@@ -16,7 +16,9 @@ import {climateDatumM} from './surface-biomes.ts';
 import {DRY_SURFACE_ROUGHNESS,WET_SURFACE_ROUGHNESS} from './surface-roughness.ts';
 import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_CALIBRATION,CLIMATE_VERSION,type ClimateSample} from './surface-climate.ts';
 import {orogenLayout,OROGEN_LAYOUT_VERSION,type OrogenSample} from './mountain-layout.ts';
-import {composeRidgeTermM,massifEnvelopeM,MASSIF_ENVELOPE_VERSION} from './mountain-envelope.ts';
+import {MASSIF_ENVELOPE_VERSION} from './mountain-envelope.ts';
+import {MOUNTAIN_CARVING_VERSION} from './mountain-carving.ts';
+import {mountainRidgeTermM,MOUNTAIN_ASSEMBLY_VERSION} from './mountain-assembly.ts';
 
 // Bumped from terrain-1.3.0: `terrainSampler` gained the ABILITY to sum
 // procedural impact craters (planet-craters.ts) into `elevationM` for any
@@ -114,7 +116,19 @@ import {composeRidgeTermM,massifEnvelopeM,MASSIF_ENVELOPE_VERSION} from './mount
 // Heights, the ocean flag, classes, dry worlds, ocean colours,
 // baseTerrainSampler and the legacy grain are unchanged; no mountain belt is
 // wired (that is the later terrain-1.9.0 assembly).
-export const TERRAIN_VERSION = "terrain-1.8.1-grain";
+// 1.9.0-mountains (mountains assembly step A, 2026-10-05, owner decisions (e)-(g);
+// docs/mountains-assembly-2026-10-05.md): on relief water worlds the ridge term
+// of the relief floor inside the M1 orogen belts (mountain-layout.ts) is the M2
+// massif envelope (massif-envelope-2: fixed 48 km massif cap, edge fade) carved
+// by M3 (mountain-carving-2) on a FIXED 48 km carving half-width
+// (mountain-assembly.ts). Outside every massif the field (heights, ocean flag,
+// colour) is bit-identical to 1.8.1 (tests/terrain-mountains-assembly.test.mjs);
+// the ridge term stays >= 0, so the sea-level-0 coastline is unchanged.
+export const TERRAIN_VERSION = "terrain-1.9.0-mountains";
+export const TERRAIN_MOUNTAIN_COMPONENTS = Object.freeze({
+  layout: OROGEN_LAYOUT_VERSION, envelope: MASSIF_ENVELOPE_VERSION,
+  carving: MOUNTAIN_CARVING_VERSION, assembly: MOUNTAIN_ASSEMBLY_VERSION,
+});
 /**
  * terrain-1.8.1: the 800 m local colour grain of water-world LAND colour (the
  * climate colour path of terrainSampler): localGrain = BASE + n(d, R/CELL_M, 74) x
@@ -487,7 +501,11 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
   // terrain-1.9.0: the M1 orogen layout of a relief water world (built once per
   // body and memoised by mountain-layout.ts), and one scratch sample per core.
   const orogen = reliefOn && body.water ? orogenLayout(body) : null;
-  const orogenScratch: OrogenSample = {belt: 0, axis: [0, 0, 0], axisDistanceM: 0, halfWidthM: 0, beltIndex: -1};
+  const orogenScratch: OrogenSample = {belt: 0, axis: [0, 0, 0], axisDistanceM: 0, halfWidthM: 0, beltIndex: -1, alongM: 0};
+  // One 32-bit M3 carving seed per belt (strip 0; mountain-assembly.ts derives the other strips).
+  const beltCarvingSeeds = orogen
+    ? Uint32Array.from(orogen.belts, (_b, i) => Number(hash64(`${body.seed}/mountain-carving/${i}`) & 0xffffffffn))
+    : new Uint32Array(0);
   // Legacy water-world land colour (pre-grain), terrain-1.6.0 expressions.
   const legacyWaterLandColour = (d: V3, elevationM: number): number[] => {
     const latitude = Math.abs(d[1]);
@@ -575,8 +593,7 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
           if (orogen) {
             const o = orogen.sampleWithA0(d, a0, orogenScratch);
             if (o.belt !== 0)
-              ridgeTermM = composeRidgeTermM(ridgeTermM, o.belt, o.axisDistanceM, o.halfWidthM,
-                massifEnvelopeM(o.belt, o.axisDistanceM, o.halfWidthM, a0, landFactor, tau, 'water'));
+              ridgeTermM = mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds);
           }
           const F = comp + tau * (RC.HUP * ss(RC.B1, RC.B2, a0) + RC.HHI * ss(RC.B3, RC.B4, a0))
             + ridgeTermM + fineT;

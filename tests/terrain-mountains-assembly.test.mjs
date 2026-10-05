@@ -7,8 +7,15 @@
 // literals here, never recomputed from the branch.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {terrainSampler} from '../src/terrain.ts';
-import {identityDigest, outsideBelt, outsideMassif} from './helpers/mountain-assembly-identity.mjs';
+import {readFileSync} from 'node:fs';
+import {terrainSampler, tectonicReliefOf, bodyHeightBoundM, TERRAIN_VERSION, TERRAIN_MOUNTAIN_COMPONENTS} from '../src/terrain.ts';
+import {orogenLayout} from '../src/mountain-layout.ts';
+import {maxEnvelopeM, massifHalfWidthM, MASSIF_ENVELOPE} from '../src/mountain-envelope.ts';
+import {mountainRidgeTermM, carvingStrip, carvingSeed, MOUNTAIN_ASSEMBLY, MASSIF_IS_ONE_STRIP} from '../src/mountain-assembly.ts';
+import {identityDigest, outsideBelt, outsideMassif, everywhere} from './helpers/mountain-assembly-identity.mjs';
+import {measureSummits, beltAt} from './helpers/mountain-summits.mjs';
+import {rasterFromArray} from './helpers/mountain-metrics.mjs';
+import {waterWorlds, fib} from './terrain-climate-fixtures.mjs';
 
 const MAIN_DIGESTS = {
   outsideBelt: {heights: 'a7000ad60afb60709e7b7621ea8f573a003a712170f016467ea930a4e7e63d7b',
@@ -26,3 +33,80 @@ for (const [label, select] of [['outsideBelt', outsideBelt], ['outsideMassif', o
     assert.equal(h.sha, pin.heights);
     assert.equal(c.sha, pin.colour);
   });
+
+// The sea-level-0 coastline is unchanged everywhere (inside belts too): the ridge term stays >= 0 where a0 >= 0.
+const MAIN_OCEAN_DIGEST = '48f643c59f6b2a55671c348d431e8242700a2e4eb5d63791ee1ff42db5b1c22d';
+test('HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main', () => {
+  const r = identityDigest(terrainSampler, {select: everywhere, oceanOnly: true});
+  assert.equal(r.sha, MAIN_OCEAN_DIGEST);
+});
+
+test('HARD: versions, fixed carving width, strip rule and per-strip seeds', () => {
+  assert.equal(TERRAIN_VERSION, 'terrain-1.9.0-mountains');
+  assert.deepEqual({...TERRAIN_MOUNTAIN_COMPONENTS}, {layout: 'orogen-layout-1', envelope: 'massif-envelope-2', carving: 'mountain-carving-2', assembly: 'mountain-assembly-1'});
+  assert.ok(Object.isFrozen(MOUNTAIN_ASSEMBLY));assert.deepEqual({...MOUNTAIN_ASSEMBLY}, {CARVING_HALF_WIDTH_M: 48000});
+  assert.equal(MASSIF_IS_ONE_STRIP, true);
+  const w = MOUNTAIN_ASSEMBLY.CARVING_HALF_WIDTH_M;
+  for (const [across, strip] of [[0, 0], [w - 1, 0], [-w, 0], [w, 1], [3 * w - 1, 1], [-w - 1, -1], [-3 * w, -1], [5 * w, 3]]) {
+    const c = carvingStrip(across);assert.equal(c.strip, strip, `${across}`);
+    assert.ok(c.localM >= -w && c.localM < w);assert.equal(c.localM + c.strip * 2 * w, across);
+  }
+  assert.equal(carvingSeed(12345, 0), 12345);
+  const seeds = new Set([-3, -2, -1, 0, 1, 2, 3].map(k => carvingSeed(12345, k)));assert.equal(seeds.size, 7);
+  for (const k of [-3, 1, 7]) {const v = carvingSeed(0xdeadbeef, k);assert.ok(Number.isInteger(v) && v >= 0 && v < 2 ** 32);}
+});
+
+test('HARD: the assembled ridge term: >= 0, <= max(main, analytic envelope), main outside the massif', () => {
+  const seeds = [730201];
+  for (const tau of [.456, .789]) for (const wBelt of [32000, 71600, 220000]) for (const main of [0, 900, 3000])
+    for (let i = -70; i <= 70; i++) {
+      const y = i * 1000, x = 37 * i * 1000, o = {belt: beltAt(y, wBelt), axisDistanceM: y, halfWidthM: wBelt, beltIndex: 0, alongM: x};
+      const h = mountainRidgeTermM(main, o, 1000, 1, tau, seeds);
+      assert.ok(h >= 0 && h <= Math.max(main, maxEnvelopeM(tau, 'water')) * (1 + 4 * Number.EPSILON), `${tau} ${wBelt} ${main} ${y}: ${h}`);
+      if (Math.abs(y) >= massifHalfWidthM(wBelt) || o.belt === 0) assert.ok(Object.is(h, main));
+    }
+  // a0 <= 0 (sea floor side): no envelope, no carving; the term is main's composed with weight w (never > main).
+  const o = {belt: 1, axisDistanceM: 0, halfWidthM: 71600, beltIndex: 0, alongM: 0};
+  assert.equal(mountainRidgeTermM(0, o, -1, 1, .789, seeds), 0);
+});
+
+test('HARD: mountain-assembly.ts is arithmetic only and imports only M2 and M3', () => {
+  const src = readFileSync(new URL('../src/mountain-assembly.ts', import.meta.url), 'utf8').replace(/\/\/.*$/gm, '');
+  assert.deepEqual([...src.matchAll(/from\s*['"]([^'"]+)['"]/g)].map(m => m[1]), ['./mountain-envelope.ts', './mountain-carving.ts']);
+  assert.deepEqual([...new Set([...src.matchAll(/Math\.(\w+)/g)].map(m => m[1]))].sort(), ['floor', 'imul']);
+  const forbidden = /\*\*|\bMath\s*\[|\b(?:Number|BigInt|parseFloat|parseInt|Date|performance)\b/;
+  assert.doesNotMatch(src, forbidden);
+  // Negative controls: the audit sees each forbidden form.
+  for (const bad of ['const z = x ** 2;', 'Math["sin"](x)', 'Number(x)', 'BigInt(1)']) assert.match(bad, forbidden);
+});
+
+test('HARD: the assembled field stays under bodyHeightBoundM on in-massif land (20000 directions per world)', () => {
+  for (const body of waterWorlds()) {
+    const ts = terrainSampler(body), lay = orogenLayout(body), bound = bodyHeightBoundM(body).maxM;let inside = 0;
+    for (let i = 0; i < 20000; i++) {
+      const d = fib(i, 20000), o = lay.sample(d);
+      if (outsideMassif(o)) continue;inside++;
+      const h = ts(d).groundHeightM;assert.ok(Number.isFinite(h) && h <= bound, `${body.name} ${i}: ${h} > ${bound}`);
+    }
+    assert.ok(inside > 100, `${body.name}: ${inside} in-massif directions`);
+  }
+});
+
+// M4 R1 (>= 8 summits of prominence >= 300 m per 1000 km2 of belt core) on the worst real world: Raiva has the
+// lowest tau (.456) of the four. The full four-world measurement (axis, flank, whole core, R2, R3) is
+// scripts/mountain-assembly-summits.mjs (docs/mountains-assembly-2026-10-05.md); this pins the binding case.
+test('CONTRACT: M4 R1 on the whole belt core at the real Raiva tau and belt width (8 seeds, 64 km rasters)', () => {
+  const raiva = waterWorlds().find(b => b.name === 'Raiva'), tau = tectonicReliefOf(raiva), lay = orogenLayout(raiva);
+  let w = 0;for (let i = 0; i < 20000; i++) {const b = lay.sample(fib(i, 20000));if (b.belt >= .5 && b.halfWidthM >= 32000) {w = b.halfWidthM;break;}}
+  assert.ok(w > 0);
+  let count = 0, area = 0;const n = 513, c = 256, step = 125;
+  for (let site = 0; site < 8; site++) {
+    const h = new Float64Array(n * n), seeds = [730201 + site];
+    for (let p = 0; p < h.length; p++) {const x = site * 1e6 + (p % n - c) * step, y = (Math.floor(p / n) - c) * step;
+      h[p] = mountainRidgeTermM(0, {belt: beltAt(y, w), axisDistanceM: y, halfWidthM: w, beltIndex: 0, alongM: x}, 1000, 1, tau, seeds);}
+    const m = measureSummits({...rasterFromArray(h, n, step), w: massifHalfWidthM(w), tau, y0: 0});
+    count += m.count;area += m.areaKm2;assert.equal(m.boundViolations, 0);
+  }
+  const density = count * 1000 / area;console.log(`RAIVA R1 ${JSON.stringify({tau, w, count, area, density})}`);
+  assert.ok(density >= 8, `R1 ${density.toFixed(2)} >= 8`);
+});

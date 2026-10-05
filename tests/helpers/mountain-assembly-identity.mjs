@@ -13,7 +13,8 @@ export const outsideMassif=o=>outsideBelt(o)||Math.abs(o.axisDistanceM)>=massifH
 
 /** SHA-256 over (elevationM, groundHeightM, ocean[, colour]) of every direction of an n-direction Fibonacci set
  * per water world that `select` accepts, in world then index order. */
-export function identityDigest(terrainSampler,{n=4096,select=outsideBelt,colour=false}={}){
+export const everywhere=()=>true;
+export function identityDigest(terrainSampler,{n=4096,select=outsideBelt,colour=false,oceanOnly=false}={}){
   const hash=createHash('sha256'),f=new Float64Array(colour?5:2),bytes=new Uint8Array(f.buffer),flag=new Uint8Array(1),counts={};
   for(const body of waterWorlds()){
     hash.update(body.id);
@@ -22,7 +23,7 @@ export function identityDigest(terrainSampler,{n=4096,select=outsideBelt,colour=
       const d=fib(i,n);if(!select(lay.sample(d)))continue;
       const s=ts(d);f[0]=s.elevationM;f[1]=s.groundHeightM;
       if(colour){f[2]=s.color[0];f[3]=s.color[1];f[4]=s.color[2];}
-      hash.update(bytes);flag[0]=s.ocean?1:0;hash.update(flag);k++;
+      if(!oceanOnly)hash.update(bytes);flag[0]=s.ocean?1:0;hash.update(flag);k++;
     }
     counts[body.name]=k;
   }
