@@ -138,7 +138,7 @@ async function run(){
   let checksum=0;for(let i=0;i<10000;i++)checksum+=massifEnvelopeM(.75,i%32000,32000,1000,1,.8,'water');
   const t=performance.now();for(let i=0;i<100000;i++)checksum+=massifEnvelopeM(.75,i%32000,32000,1000,1,.8,'water');
   const cost={class:'INFO',calls:100000,warmup:10000,nsPerCall:(performance.now()-t)*1e6/100000,checksum,cpuQuiet:false};
-  const report={version:MASSIF_ENVELOPE_VERSION,constants:C,class:'CONTRACT',hypsometryDirections:20000,coastDirectionsPerWorld:102500,classes:{unit:'HARD',hypsometryMaithea:'CONTRACT',hypsometryOther:'INFO',ratio:'CONTRACT',identity:'CONTRACT',coast:'CONTRACT',bound:'CONTRACT',realSpectrum:'INFO',renders:'VISUAL-ADVISORY',cost:'INFO'},rows,renders,cost,wallMs:performance.now()-start,failures:rows.filter(r=>r.failures.length).map(r=>({name:r.name,failures:r.failures}))};
+  const report={version:MASSIF_ENVELOPE_VERSION,constants:C,class:'CONTRACT',hypsometryDirections:20000,coastDirectionsPerWorld:122500,classes:{unit:'HARD',hypsometryMaithea:'CONTRACT',hypsometryOther:'INFO',ratio:'CONTRACT',identity:'CONTRACT',coast:'CONTRACT',bound:'CONTRACT',realSpectrum:'INFO',renders:'VISUAL-ADVISORY',cost:'INFO'},rows,renders,cost,wallMs:performance.now()-start,failures:rows.filter(r=>r.failures.length).map(r=>({name:r.name,failures:r.failures}))};
   writeFileSync(`${dir}/report.json`,JSON.stringify(report,null,2)+'\n');console.log(`CONTRACT ${report.failures.length?'FAIL':'PASS'}; ${report.wallMs/1000}s; ${dir}/report.json`);process.exitCode=report.failures.length?1:0;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await run();
