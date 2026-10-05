@@ -6,6 +6,23 @@ prototype scripts. Owner decision 2026-10-04: mountains get their own design ins
 `round2/relief-present` change; Luna verdicts are advisory and do not block alone; testing is
 element-first.
 
+Owner decisions 2026-10-05 (explicit, recorded verbatim):
+
+> (a) the M3 coherence row and the M3 pit row may be CALIBRATED against an eroded positive control
+> (coherence measured detrended/band-passed or otherwise corrected so a physically eroded range
+> passes while isotropic noise and straight mirrored fans (the rejected A0) fail; pit row made
+> resampling-tolerant because the planet sampler never lands on a construction grid). Document
+> old/new rows with numbers, negative controls proving the new rows still have teeth. All other rows
+> and all 17 LOD pins/goldens stay unchanged.
+>
+> (b) M0: the 800 m multiplicative colour grain in terrain.ts (~line 587) is moved/changed inside the
+> assembly step MTN-6 (which owns terrain.ts) with TERRAIN_VERSION bump and a deliberate golden re-pin
+> (old/new digests documented); M0 is then re-run against the new terrain without any threshold
+> change. No other loosening is authorised.
+
+Decision (a) is applied in section 2.3 and `docs/mountain-m3-calibration-v1.md`. Decision (b) belongs
+to MTN-6 and MTN-1 and is not applied by the M3 element.
+
 Prototype scripts (pure Node, no browser, no GPU, not registered in `npm test`):
 
 - `scripts/mountain-metrics.mjs` measures the mountain elements on the 4 standard worlds. Its
@@ -396,14 +413,21 @@ PNG writer. Every element test imports it; no element test reimplements a metric
 | crest flank angle at 500 m, p50 | >= 12 deg | control 14.7; d3 9.6; main 6.5; dome 0.4 |
 | relief within 8 km, p50 | >= 1500 m at 3 km envelope | control 1767; main Maithea 1466 |
 | beta, 0.5-8 km | 2.0-2.6 | control 2.14; d3 2.78-2.99; main 3.36-3.49; Earth about 2 (literature) |
-| land with fill > 10 m (closed depressions) | <= 5% | main 5-23%, d3 23-32%, noise control 31% (UNCALIBRATED upper bound, see below) |
-| pits per 1000 km² | <= 50 | main 147-453, d3 570-700, noise control 2108 (UNCALIBRATED, see below) |
-| gradient coherence, 40 km window, with the axis input | >= 0.35 | isotropic d3 0.12-0.15 and control 0.135; main 0.24-0.30 |
+| land with fill > 10 m (closed depressions) | <= 5% | main 5-23%, d3 23-32%, noise control 31%; calibrated by MTN-4: eroded control 0, un-eroded 0.302 (see below) |
+| pits per 1000 km² whose closed depression is >= 0.25 km² (`pits025Per1000km2P50`, calibrated 2026-10-05) | <= 50 | eroded positives 0-38.4 (steady-state stream power), 22.5 (resampled eroded control); negatives alpine 1023.7, noise carving 369.6, un-eroded 829; main 79-300, d3 363-399 |
+| axis coherence of the detrended 2 km footprint raster, 40 km window (`axisCoherence40kmP50`, calibrated 2026-10-05) | 0.14-0.64 | eroded positives 0.255-0.464; isotropic 0.014-0.032; straight mirrored fans (A0) 0.823; comb 0.968 |
 
-- The two drainage thresholds are UNCALIBRATED. No eroded positive control exists yet. MTN-4 must
-  build one first: the alpine control after a priority-flood fill and a simple stream-power incision
-  pass, offline and test-only. It then sets the bounds from its numbers. Until then, the bounds rank
-  candidates but do not accept them.
+- **Calibration of the last two rows (owner decision (a), 2026-10-05).** The rows above replace
+  `pits per 1000 km² <= 50` (all strict pits) and `gradient coherence >= 0.35`, which physically
+  eroded controls failed (resampled eroded control 1287 pits; steady-state ramps coherence
+  0.085-0.114). Definitions, controls, the pre-registered midpoint rule and all numbers:
+  `docs/mountain-m3-calibration-v1.md`. The other six rows are unchanged.
+
+- (Superseded 2026-10-05.) The two drainage thresholds were UNCALIBRATED until MTN-4 built the
+  eroded positive control (the alpine control after a priority-flood fill and a stream-power incision
+  pass, `tests/helpers/mountain-eroded-control.mjs`). The fill row was then calibrated from it
+  (eroded 0, un-eroded 0.302, bound 0.05 kept) and the pit row was recalibrated under owner decision
+  (a) as above.
 - **Coast-safety bound:** for every sample, `envelope + carving >= 0`, checked over the synthetic
   ramp including its zero-envelope margin (exact, 0 violations). This keeps the relief branch's
   `F >= 0` coastline guarantee when M3 is wired in.
@@ -411,6 +435,15 @@ PNG writer. Every element test imports it; no element test reimplements a metric
   raster) from Node.
 - **Must not depend on:** the real M1 or M2 fields, climate, colour, LOD, the app renderer, or
   Luna.
+- **Status (MTN-4, 2026-10-05): candidate F accepted on the rows, unwired.** Rounds A2/B/C/D/E were
+  blocked by a block rhythm. F is a seam-free haloed drainage solve (24 km halo per 16 km block,
+  LRU memo), which supersedes the "pointwise, no stored state" wording above under owner decision
+  (c) of 2026-10-05 (cost judged on the warm-cache resident cost per region, budget 8%; cold
+  first-touch reported, non-blocking). All eight rows pass pooled and on all 8 seeds (relief8 per
+  seed 1519-1616 m); coast safety exact; resident cost 1.03% weighted, cold 71.7%. The straight
+  main divide stays within a few hundred metres of the axis and reads as a straight line at
+  192 km (Luna, UNCALIBRATED, names it on the strips; open for the owner). Numbers, method and visual
+  review: `docs/mountain-carving-f-v1.md`.
 
 ### 2.4 M4: summits and prominence (no own code; a check on M2 + M3)
 

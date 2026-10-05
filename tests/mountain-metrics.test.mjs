@@ -2,37 +2,38 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   frame,localMap,raster,rasterFromArray,slopes,windowRelief,crests,prominence,
-  depressions,coherence,bandPowers,spectrum,betaFromOctaves,belowWavelength,
-  hillshade,flowAccumulationD8,syntheticSampler,measureSites,MOUNTAIN_THRESHOLDS,judgeM3,
+  depressions,depressionPits,coherence,axisCoherence,bandPowers,spectrum,betaFromOctaves,belowWavelength,
+  hillshade,flowAccumulationD8,syntheticSampler,measureSites,MOUNTAIN_THRESHOLDS,MOUNTAIN_THRESHOLDS_SUPERSEDED,judgeM3,
 } from './helpers/mountain-metrics.mjs';
 
 // HARD: fixed-direction subset, R=5194907 m, local 129² at 125 m (16 km),
 // regional 193² at 2 km and four full 128 km spectral transects. No terrain imports.
 // Full four-site doc controls: alpine/dome slope p50 27.4/5.3, pits 2108/0,
 // beta 2.14/3.92. Full equality is checked separately by the CLI comparison.
-const R=5194907,sites=[{d:[1,0,0]}],opts={n:129};
+// The axis-coherence footprint is 2x2 here (the row uses 4x4) to keep the HARD subset fast.
+const R=5194907,sites=[{d:[1,0,0]}],opts={n:129,axisSub:2};
 const controls=Object.fromEntries(['alpine','dome'].map(kind=>
   [kind,measureSites(syntheticSampler(R,kind),sites,R,opts)]));
 const pins={
   alpine:{slope125Over30:41.8,slope125P50:27.2,flank500mP50:16,relief8kmP50:1451,
-    beta500mTo8km:1.96,fill10ShareP50:0.221,pitsPer1000km2P50:1899.9,coherence40kmWindowP50:0.135},
+    beta500mTo8km:1.96,fill10ShareP50:0.221,pits025Per1000km2P50:757.6,axisCoherence40kmP50:0.011},
   dome:{slope125Over30:0,slope125P50:2.6,flank500mP50:0.3,relief8kmP50:390,
-    beta500mTo8km:4.11,fill10ShareP50:0,pitsPer1000km2P50:7.7,coherence40kmWindowP50:0.412},
+    beta500mTo8km:4.11,fill10ShareP50:0,pits025Per1000km2P50:0,axisCoherence40kmP50:0.032},
 };
 for(const kind of ['alpine','dome'])test(`HARD: ${kind} measured subset reproduces exact pins`,()=>{
   assert.deepEqual(Object.fromEntries(judgeM3(controls[kind]).map(r=>[r.id,r.actual])),pins[kind]);
 });
 const failures={slope125Over30:'dome',slope125P50:'dome',flank500mP50:'dome',
   relief8kmP50:'dome',beta500mTo8km:'dome',fill10ShareP50:'alpine',
-  pitsPer1000km2P50:'alpine',coherence40kmWindowP50:'alpine'};
+  pits025Per1000km2P50:'alpine',axisCoherence40kmP50:'alpine'};
 for(const [id,kind] of Object.entries(failures))test(`CONTRACT: ${kind} fails ${id}`,()=>{
   assert.equal(judgeM3(controls[kind]).find(r=>r.id===id).pass,false);
 });
 test('HARD: negative controls cover every M3 row; dome passes drainage',()=>{
   assert.deepEqual(Object.keys(failures).sort(),MOUNTAIN_THRESHOLDS.map(r=>r.id).sort());
-  for(const id of ['fill10ShareP50','pitsPer1000km2P50']){
+  for(const id of ['fill10ShareP50','pits025Per1000km2P50']){
     const row=judgeM3(controls.dome).find(r=>r.id===id);
-    assert.equal(row.pass,true);assert.equal(row.calibrated,false);
+    assert.equal(row.pass,true);assert.equal(row.calibrated,true);
   }
   assert.ok(judgeM3({}).every(r=>!r.pass));
   for(const row of MOUNTAIN_THRESHOLDS){
@@ -105,4 +106,39 @@ test('HARD: aggregate and raster metrics are deterministic and do not mutate inp
   assert.deepEqual(r.h,copy);
   const sampler=syntheticSampler(R,'dome');
   assert.deepEqual(spectrum(sampler,sites[0].d,R,1),spectrum(sampler,sites[0].d,R,1));
+});
+// Owner decision (a), 2026-10-05: rows 7 and 8 calibrated against eroded positive controls
+// (docs/mountain-m3-calibration-v1.md). The superseded rows stay on record and as INFO metrics.
+test('CONTRACT: calibrated rows 7/8 replace the superseded rows; the other six are unchanged',()=>{
+  assert.deepEqual(MOUNTAIN_THRESHOLDS.map(r=>r.id),['slope125Over30','slope125P50','flank500mP50',
+    'relief8kmP50','beta500mTo8km','fill10ShareP50','pits025Per1000km2P50','axisCoherence40kmP50']);
+  assert.deepEqual(MOUNTAIN_THRESHOLDS.map(r=>r.value).slice(0,6),[25,20,12,1500,[2.0,2.6],0.05]);
+  assert.equal(MOUNTAIN_THRESHOLDS[6].op,'<=');assert.equal(MOUNTAIN_THRESHOLDS[6].value,50);
+  assert.equal(MOUNTAIN_THRESHOLDS[7].op,'between');assert.deepEqual(MOUNTAIN_THRESHOLDS[7].value,[0.14,0.64]);
+  assert.deepEqual(MOUNTAIN_THRESHOLDS_SUPERSEDED.map(r=>[r.id,r.op,r.value]),
+    [['pitsPer1000km2P50','<=',50],['coherence40kmWindowP50','>=',0.35]]);
+  // The superseded metrics are still reported (INFO), bit-identical to their pre-calibration pins.
+  const info=k=>[controls[k].E3b_drainage.pitsPer1000km2P50,controls[k].E1_layout.coherence40kmWindowP50];
+  assert.deepEqual(info('alpine'),[1899.9,0.135]);assert.deepEqual(info('dome'),[7.7,0.412]);
+});
+test('HARD: depression-area pit gate counts a one-cell pit only when its basin reaches 0.25 km2',()=>{
+  const h=new Float64Array(81).fill(50);h[40]=10;
+  const fine=rasterFromArray(h,9,125),coarse=rasterFromArray(h,9,1000);
+  assert.deepEqual(depressionPits(fine),{pitsPer1000km2:0,allPitsPer1000km2:1000/(9*.125)**2,minAreaM2:250000});
+  assert.deepEqual(depressionPits(coarse),{pitsPer1000km2:1000/81,allPitsPer1000km2:1000/81,minAreaM2:250000});
+  // A 5x5 basin (25 cells = 0.39 km2 at 125 m) around the pit counts.
+  const b=new Float64Array(81).fill(50);for(let y=2;y<7;y++)for(let x=2;x<7;x++)b[y*9+x]=20+Math.abs(x-4)+Math.abs(y-4);
+  assert.equal(depressionPits(rasterFromArray(b,9,125)).pitsPer1000km2,1000/(9*.125)**2);
+  assert.equal(depressionPits(rasterFromArray(b,9,125),400000).pitsPer1000km2,0);
+});
+test('CONTRACT: axis coherence has teeth on both sides (isotropic low, parallel comb high)',()=>{
+  // Valleys across the axis, constant along-strike: a comb (the parallel-groove failure).
+  const comb=d=>({groundHeightM:2000+800*Math.cos(2*Math.PI*R*d[2]/16000),ocean:false});
+  const S=axisCoherence(comb,sites[0].d,R,{n:65,sub:2}),p50=[...S].sort((a,b)=>a-b)[Math.floor((S.length-1)/2)];
+  assert.ok(p50>0.9,`comb ${p50}`);
+  assert.equal(judgeM3({axisCoherence40kmP50:p50}).find(r=>r.id==='axisCoherence40kmP50').pass,false);
+  // Rotating the stated axis by 90 degrees turns the same comb into strike-parallel relief: S < 0.
+  const T=axisCoherence(comb,sites[0].d,R,{n:65,sub:2,axis:[0,1]});
+  assert.ok(T.length>0&&T.every(v=>v<-0.8),`rotated ${T}`);
+  assert.equal(judgeM3(controls.alpine).find(r=>r.id==='axisCoherence40kmP50').pass,false);
 });
