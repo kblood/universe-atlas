@@ -1,5 +1,45 @@
 # Universe Atlas
 
+## Mountains: element round and the assembled check — 2026-10-05 (local, not deployed)
+
+**The mountains are not fixed yet.** The terrain on main is byte-identical to
+`b8d38d3`, and the mountain sheet still fails 0/24 (Luna, advisory).
+Details: `docs/mountains-assembled-check-2026-10-05.md`.
+
+- **Merged, but not used by the terrain yet:** MTN-0 harness, M1 orogen layout
+  (`src/mountain-layout.ts`) and M2 massif envelope (`src/mountain-envelope.ts`).
+  Each has its own HARD test. No `src/` file imports M1 or M2.
+- **BLOCKED, left on branches, nothing loosened:**
+  - M0 (`mountains/m0`): Maithea L6 RGB ratio is 0.922 against <= 0.9.
+  - M3 (`mountains/m3`): coherence is 0.133 against >= 0.35. The eroded
+    control itself fails 4 of the M3 shape rows.
+  - M4 and M5 were not started, because they depend on M3 and the assembly.
+  - MTN-6 (wiring into `terrain.ts`) was not started. No version moved and
+    nothing was re-pinned.
+- **Assembled check on main `cffc5ff`:**
+  - Outside-belt identity: 0 differences on 4 x 4096 directions. The built
+    assets are SHA-identical to `b8d38d3`.
+  - LOD: all 17 `SHIPPED_CEILINGS` pins pass, with headroom of only
+    0.009-0.075. All 12 checks that RELIEF-PRESENT broke pass.
+  - SITE_A rule: pass at 280.2 m, no move.
+  - `test:full`: exit 0, 1400 pass, 0 fail, 0 NEW.
+  - Golden: Node and two of three browser engines match. WebKit differs only
+    on the known `faunaKnownUnstable` finding.
+  - Build: exit 0.
+- **Luna (VISUAL-ADVISORY, UNCALIBRATED, not counted):**
+  - 12 CPU calibration controls were created. Luna passed only 3 of 6
+    positives (5 needed). It failed all 6 negatives, including the hard
+    negative. The app path is not calibrated.
+  - Sheet: 0 PASS in 48 asks. The most common diagnosis is "massif
+    height/silhouette" (M2, not wired), then haze/clouds.
+- **OPEN for the owner:**
+  - the M0 threshold and A3;
+  - the M3 coherence and shape rows;
+  - Q3 and Q4;
+  - the MTN-7 label sign-off and the real-DEM download;
+  - A6/A7;
+  - the SITE_A 60 km ring TODO and the rocky Spearman TODO.
+
 ## Test result classes and GitHub pack — 2026-10-04 (local, not deployed)
 
 **Owner decision:** Luna's appearance verdicts are their own result class,
