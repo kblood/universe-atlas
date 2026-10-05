@@ -38,11 +38,11 @@ const unit = (a: V3): V3 => {const l=Math.sqrt(dot(a,a));return l ? [a[0]/l,a[1]
 const ss = (lo: number, hi: number, v: number) => {const t=Math.max(0,Math.min(1,(v-lo)/(hi-lo)));return t*t*(3-2*t);};
 const empty = (): OrogenSample => ({belt:0,axis:[0,0,0],axisDistanceM:0,halfWidthM:0,beltIndex:-1,alongM:0});
 // theta = 2 atan(u) for |u| <= tan(.45) (the longest major half-length), by one half-angle
-// reduction t = u/(1+sqrt(1+u*u)) <= .12 and the odd series to t^11 (truncation < 1e-11
-// rad, under 0.1 mm at R = 6000 km): arithmetic only, monotone in u.
+// reduction t = u/(1+sqrt(1+u*u)) <= .229 and the odd atan series to t^19 (first omitted term
+// 4 t^21/21 < 1e-14 rad, far under 1 mm at R = 6000 km): arithmetic only, monotone in u.
 function thetaOf(u: number) {
   const t=u/(1+Math.sqrt(1+u*u)),t2=t*t;
-  return 4*t*(1-t2*(1/3-t2*(1/5-t2*(1/7-t2*(1/9-t2/11)))));
+  return 4*t*(1-t2*(1/3-t2*(1/5-t2*(1/7-t2*(1/9-t2*(1/11-t2*(1/13-t2*(1/15-t2*(1/17-t2/19)))))))));
 }
 
 // Same evaluation order as R-CAL-1, before the radius scale and compression.

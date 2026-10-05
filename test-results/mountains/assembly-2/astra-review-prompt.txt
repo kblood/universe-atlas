@@ -1,0 +1,44 @@
+You are reviewing (READ-ONLY, do not edit any file, do not run git commands that write) the mountains assembly
+step A in the universe-atlas worktree at the current directory, branch mountains/assembly-2.
+
+Commits on the branch over main 39e2448:
+- 2744237 stage 1: M1 layout + M2 massif-envelope-2 wired into src/terrain.ts, LOD tile selection frozen.
+- 92afaa3 stage 2 (WIRED evidence): M3 fixed-width carving via src/mountain-assembly.ts, terrain-1.9.0-mountains.
+- Working tree (uncommitted, what is proposed for merge): src/terrain.ts and the version tests restored to main
+  (assembly NOT wired) because sparse sampling costs one ~140 ms M3 block solve per in-massif sample (6 Maithea
+  L0 tiles took 335 s with 2314 block solves). The elements, the frozen selection and the tests stay.
+See `git diff main` (working tree) and `git show 92afaa3 -- src/terrain.ts` for the wired form.
+
+Owner decisions (2026-10-05) this implements: (e) freeze the stratified LOD tile selection so re-picking cannot
+move pins, AND change the M2 envelope so belts do not move the class boundary in snowline/treeline tiles; no pin
+loosened or re-pinned. (f) convex blend lowering heights at belt edges accepted ("uplift inside belts with
+fade-out at the edge"). (g) give M3 a FIXED carving width tiled across wide belts so Selawyn's 220 km belt and
+low-tau belts reach M4 R1 (>= 8 peaks/1000 km2), measured on the real parameters of all four worlds.
+
+Review, with file:line evidence, and report findings ranked by severity:
+1. src/mountain-envelope.ts (massif-envelope-2): MAX_HALF_WIDTH_M 48 km cap, EDGE_FADE_START .65 composition
+   weight, composeRidgeTermM(main, belt, axisDistanceM, halfWidthM, envelope). Is main's term returned bit-exactly
+   outside the massif? Is the composition convex/bounded and >= 0? Any discontinuity at the massif edge or at
+   belt -> 0? Does it honour (e) and (f)? Is shrinking the massif to a fixed 48 km a faithful reading of (e)+(g),
+   or a deviation the owner must be told about (the belt itself stays up to 220 km wide; the outer belt keeps
+   main's ridge term)?
+2. src/mountain-layout.ts alongM addition (thetaOf series): correctness, monotonicity, that no existing output
+   changed (OROGEN_LAYOUT_VERSION kept 'orogen-layout-1').
+3. src/mountain-assembly.ts: strip rule, per-strip seeds, coast safety (U + C >= 0), the a0 <= 0 path.
+   Is a single 48 km strip (MASSIF_IS_ONE_STRIP) an honest implementation of "fixed carving width tiled across
+   wide belts"?
+4. tests/lod-consistency.test.mjs + tests/helpers/lod-frozen-selection.mjs: are the frozen directions exactly
+   main's picks (the fixture header says how they were recorded)? Is freezing the Maithea retention edge
+   selection (edgeDirections(ts,cls,32)) too an overreach beyond (e)? Is any SHIPPED_CEILINGS value changed?
+5. tests/terrain-mountains-assembly.test.mjs, tests/helpers/mountain-assembly-identity.mjs: are the identity
+   pins meaningful (computed on main first) and the negative controls real? Is the Raiva CONTRACT R1 test the
+   right binding case, and is "whole core" (one 513 x 125 m raster spanning |y| <= 32 km) a faithful R1
+   measurement compared with the earlier 48 km axis / .4w flank rasters (Raiva flank-centred raster: 7.12)?
+6. scripts/mountain-assembly-summits.mjs and scripts/mountain-assembly-cost.mjs: method errors.
+7. The decision not to merge the wiring: is the cold-cost evidence convincing, and is there an obvious
+   value-preserving way to make sparse sampling affordable that I missed?
+
+Do NOT run long scripts (anything sampling terrain with the assembly wired is very slow). You may run:
+  node --test tests/mountain-envelope.test.mjs tests/mountain-layout.test.mjs tests/terrain-mountains-assembly.test.mjs
+Answer in plain text: findings (severity, file:line, issue, suggested fix), then a one-line verdict
+(MERGE-OK / MERGE-AFTER-FIXES / DO-NOT-MERGE) for the unwired working-tree state.

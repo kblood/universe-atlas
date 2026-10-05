@@ -1,0 +1,1106 @@
+[
+ {
+  "world": "Maithea",
+  "kind": "snowline",
+  "i": 0,
+  "L": 6,
+  "beltCover": 1,
+  "maxBelt": 1,
+  "dhMax": 4379.2,
+  "main": {
+   "land": 800,
+   "name": 31,
+   "carried": 32,
+   "forest": 27,
+   "snow": 7
+  },
+  "branch": {
+   "land": 800,
+   "name": 29,
+   "carried": 39,
+   "forest": 43,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "snowline",
+  "i": 0,
+  "L": 8,
+  "beltCover": 1,
+  "maxBelt": 0.982,
+  "dhMax": 2873.5,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 32,
+   "carried": 42,
+   "forest": 16,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "snowline",
+  "i": 1,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "snowline",
+  "i": 1,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 4
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 4
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "snowline",
+  "i": 2,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 51,
+   "carried": 60,
+   "forest": 0,
+   "snow": 20
+  },
+  "branch": {
+   "land": 800,
+   "name": 51,
+   "carried": 60,
+   "forest": 0,
+   "snow": 20
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "snowline",
+  "i": 2,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 17,
+   "carried": 35,
+   "forest": 0,
+   "snow": 9
+  },
+  "branch": {
+   "land": 800,
+   "name": 17,
+   "carried": 35,
+   "forest": 0,
+   "snow": 9
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "treeline",
+  "i": 0,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 46,
+   "carried": 42,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 46,
+   "carried": 42,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "treeline",
+  "i": 0,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "treeline",
+  "i": 1,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "treeline",
+  "i": 1,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "treeline",
+  "i": 2,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 4,
+   "carried": 7,
+   "forest": 2,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 4,
+   "carried": 7,
+   "forest": 2,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "treeline",
+  "i": 2,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 11,
+   "carried": 18,
+   "forest": 1,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 11,
+   "carried": 18,
+   "forest": 1,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "coast",
+  "i": 0,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 126,
+   "name": 0,
+   "carried": 2,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 126,
+   "name": 0,
+   "carried": 2,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "coast",
+  "i": 0,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "coast",
+  "i": 1,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "coast",
+  "i": 1,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "coast",
+  "i": 2,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 522,
+   "name": 9,
+   "carried": 10,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 522,
+   "name": 9,
+   "carried": 10,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "coast",
+  "i": 2,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "range",
+  "i": 0,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "range",
+  "i": 0,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "range",
+  "i": 1,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 94,
+   "carried": 94,
+   "forest": 0,
+   "snow": 67
+  },
+  "branch": {
+   "land": 800,
+   "name": 94,
+   "carried": 94,
+   "forest": 0,
+   "snow": 67
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "range",
+  "i": 1,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 27,
+   "carried": 31,
+   "forest": 0,
+   "snow": 9
+  },
+  "branch": {
+   "land": 800,
+   "name": 27,
+   "carried": 31,
+   "forest": 0,
+   "snow": 9
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "range",
+  "i": 2,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 13,
+   "carried": 27,
+   "forest": 4,
+   "snow": 4
+  },
+  "branch": {
+   "land": 800,
+   "name": 13,
+   "carried": 27,
+   "forest": 4,
+   "snow": 4
+  }
+ },
+ {
+  "world": "Maithea",
+  "kind": "range",
+  "i": 2,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "snowline",
+  "i": 0,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 30,
+   "carried": 29,
+   "forest": 0,
+   "snow": 36
+  },
+  "branch": {
+   "land": 800,
+   "name": 30,
+   "carried": 29,
+   "forest": 0,
+   "snow": 36
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "snowline",
+  "i": 0,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 17,
+   "carried": 20,
+   "forest": 0,
+   "snow": 27
+  },
+  "branch": {
+   "land": 800,
+   "name": 17,
+   "carried": 20,
+   "forest": 0,
+   "snow": 27
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "snowline",
+  "i": 1,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 86,
+   "carried": 106,
+   "forest": 5,
+   "snow": 73
+  },
+  "branch": {
+   "land": 800,
+   "name": 86,
+   "carried": 106,
+   "forest": 5,
+   "snow": 73
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "snowline",
+  "i": 1,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 5
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 5
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "snowline",
+  "i": 2,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 16,
+   "forest": 0,
+   "snow": 18
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 16,
+   "forest": 0,
+   "snow": 18
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "snowline",
+  "i": 2,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 28
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 28
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "treeline",
+  "i": 0,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 20,
+   "carried": 22,
+   "forest": 79,
+   "snow": 9
+  },
+  "branch": {
+   "land": 800,
+   "name": 20,
+   "carried": 22,
+   "forest": 79,
+   "snow": 9
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "treeline",
+  "i": 0,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 143,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 143,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "treeline",
+  "i": 1,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 1,
+   "forest": 1,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 1,
+   "forest": 1,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "treeline",
+  "i": 1,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 13,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 13,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "treeline",
+  "i": 2,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 278,
+   "carried": 312,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 278,
+   "carried": 312,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "treeline",
+  "i": 2,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 101,
+   "carried": 85,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 101,
+   "carried": 85,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "coast",
+  "i": 0,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 31,
+   "name": 0,
+   "carried": 1,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 31,
+   "name": 0,
+   "carried": 1,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "coast",
+  "i": 0,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "coast",
+  "i": 1,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 253,
+   "name": 15,
+   "carried": 22,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 253,
+   "name": 15,
+   "carried": 22,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "coast",
+  "i": 1,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "coast",
+  "i": 2,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "coast",
+  "i": 2,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 0,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "range",
+  "i": 0,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 16,
+   "carried": 15,
+   "forest": 14,
+   "snow": 4
+  },
+  "branch": {
+   "land": 800,
+   "name": 16,
+   "carried": 15,
+   "forest": 14,
+   "snow": 4
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "range",
+  "i": 0,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "range",
+  "i": 1,
+  "L": 6,
+  "beltCover": 0.121,
+  "maxBelt": 0.027,
+  "dhMax": 4,
+  "main": {
+   "land": 800,
+   "name": 30,
+   "carried": 37,
+   "forest": 0,
+   "snow": 12
+  },
+  "branch": {
+   "land": 800,
+   "name": 30,
+   "carried": 37,
+   "forest": 0,
+   "snow": 12
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "range",
+  "i": 1,
+  "L": 8,
+  "beltCover": 0.01,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 15,
+   "carried": 14,
+   "forest": 0,
+   "snow": 9
+  },
+  "branch": {
+   "land": 800,
+   "name": 15,
+   "carried": 14,
+   "forest": 0,
+   "snow": 9
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "range",
+  "i": 2,
+  "L": 6,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 48,
+   "carried": 49,
+   "forest": 33,
+   "snow": 7
+  },
+  "branch": {
+   "land": 800,
+   "name": 48,
+   "carried": 49,
+   "forest": 33,
+   "snow": 7
+  }
+ },
+ {
+  "world": "Lethuris",
+  "kind": "range",
+  "i": 2,
+  "L": 8,
+  "beltCover": 0,
+  "maxBelt": 0,
+  "dhMax": 0,
+  "main": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  },
+  "branch": {
+   "land": 800,
+   "name": 0,
+   "carried": 0,
+   "forest": 0,
+   "snow": 0
+  }
+ }
+]

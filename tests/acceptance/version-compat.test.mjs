@@ -372,7 +372,7 @@ test('relief model versions are pinned and part of the model manifest; build ver
   assert.equal(OCEAN_VOLUME_VERSION, 'ocean-volume-1', 'new (P2)');
   assert.equal(LOD_LADDER_VERSION, 'lod-ladder-1', 'new (P3)');
   assert.equal(PLACE_QUERY_VERSION, 'place-query-1', 'new (P2)');
-  assert.equal(TERRAIN_VERSION, 'terrain-1.9.0-mountains', 'was terrain-1.8.1-grain (mountains assembly step A: M1+M2+M3 belts wired)');
+  assert.equal(TERRAIN_VERSION, 'terrain-1.8.1-grain', 'was terrain-1.8.0-relief (mountains step G: reduced 800 m land colour grain)');
   assert.equal(BUILD_VERSION, 'atlas-client-2026-10-round2-1', 'was atlas-client-2026-10-relief-1 (round 2: landing-site-1, ocean-present)');
   const parts = MODEL_MANIFEST_ID.split('|');
   for (const v of [GEOPHYSICS_VERSION, LANDFORM_SHAPE_VERSION, OCEAN_VOLUME_VERSION, LOD_LADDER_VERSION, PLACE_QUERY_VERSION])

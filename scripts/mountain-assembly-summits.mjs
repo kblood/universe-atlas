@@ -7,7 +7,7 @@
 //   and at y = .4 x the massif half-width. Core = |y| <= .65 x massif half-width; R2 in-belt = M1 belt >= .5
 //   inside the massif (beltAt with the massif half-width, the stricter of the two).
 //   Whole core (the R1 row): one 513 x 125 m raster per seed spanning the full core band at the axis.
-// Part 2 (INFO, the assembled field): groundHeightM of terrainSampler on up to 8 real belt sites per world
+// Part 2 (INFO, the assembled field; meaningful only on a checkout with the assembly wired, e.g. commit 92afaa3): groundHeightM of terrainSampler on up to 8 real belt sites per world
 //   (land, belt >= .5, on the axis, >= 300 km apart), 48 km @125 m rasters in the belt's own frame; the same
 //   rasters on main (mainRoot, read-only) for comparison. Prominence >= 300 m; core = |axisDistance| <= .65 x
 //   massif half-width.

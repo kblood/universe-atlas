@@ -1,5 +1,10 @@
 // Mountains assembly (MTN-6, step A, docs/mountains-assembly-2026-10-05.md): M1 orogen layout + M2 massif
-// envelope (massif-envelope-2) + M3 fixed-width carving wired into the relief floor's ridge term.
+// envelope (massif-envelope-2) + M3 fixed-width carving, composed by src/mountain-assembly.ts.
+//
+// NOT WIRED into terrain.ts on main: wired (branch commit 92afaa3) every rule below passed, but sparse
+// sampling costs one ~140 ms M3 block solve per in-massif sample (the 6 Maithea L0 tiles: 335 s), so the wiring
+// waits for an owner decision on cold cost. The identity pins below are main's field and stay the
+// acceptance rule for that wiring: outside every massif (and the ocean flag everywhere) bit-identical.
 //
 // HARD identity: the field outside every massif is bit-identical to main before the assembly. The digests were
 // computed FIRST on unmodified main 39e2448 (terrain-1.8.1-grain) with this file's own selection rule
@@ -8,10 +13,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {terrainSampler, tectonicReliefOf, bodyHeightBoundM, TERRAIN_VERSION, TERRAIN_MOUNTAIN_COMPONENTS} from '../src/terrain.ts';
+import {terrainSampler, tectonicReliefOf} from '../src/terrain.ts';
 import {orogenLayout} from '../src/mountain-layout.ts';
-import {maxEnvelopeM, massifHalfWidthM, MASSIF_ENVELOPE} from '../src/mountain-envelope.ts';
-import {mountainRidgeTermM, carvingStrip, carvingSeed, MOUNTAIN_ASSEMBLY, MASSIF_IS_ONE_STRIP} from '../src/mountain-assembly.ts';
+import {maxEnvelopeM, massifHalfWidthM, massifEnvelopeM, composeRidgeTermM, MASSIF_ENVELOPE_VERSION} from '../src/mountain-envelope.ts';
+import {mountainRidgeTermM, carvingStrip, carvingSeed, MOUNTAIN_ASSEMBLY, MOUNTAIN_ASSEMBLY_VERSION, MASSIF_IS_ONE_STRIP} from '../src/mountain-assembly.ts';
+import {MOUNTAIN_CARVING_VERSION} from '../src/mountain-carving.ts';
 import {identityDigest, outsideBelt, outsideMassif, everywhere} from './helpers/mountain-assembly-identity.mjs';
 import {measureSummits, beltAt} from './helpers/mountain-summits.mjs';
 import {rasterFromArray} from './helpers/mountain-metrics.mjs';
@@ -34,6 +40,17 @@ for (const [label, select] of [['outsideBelt', outsideBelt], ['outsideMassif', o
     assert.equal(c.sha, pin.colour);
   });
 
+test('HARD: negative controls: the identity digest rejects one changed height, colour or ocean flag', () => {
+  const pin = MAIN_DIGESTS.outsideBelt;let k = 0;
+  const mutate = how => body => {const ts = terrainSampler(body);return d => {const s = ts(d);
+    if (body.name === 'Raiva' && k++ === 1234) {const m = {...s, color: [...s.color]};how(m);return m;}return s;};};
+  for (const [name, how, colour] of [['height', m => {m.groundHeightM += 1e-6;}, false], ['colour', m => {m.color[1] += 1e-9;}, true],
+    ['ocean', m => {m.ocean = !m.ocean;}, false]]) {
+    k = 0;const r = identityDigest(mutate(how), {select: outsideBelt, colour});
+    assert.notEqual(r.sha, colour ? pin.colour : pin.heights, name);
+  }
+});
+
 // The sea-level-0 coastline is unchanged everywhere (inside belts too): the ridge term stays >= 0 where a0 >= 0.
 const MAIN_OCEAN_DIGEST = '48f643c59f6b2a55671c348d431e8242700a2e4eb5d63791ee1ff42db5b1c22d';
 test('HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main', () => {
@@ -42,8 +59,7 @@ test('HARD: the ocean flag of every direction (4096 per water world, belts inclu
 });
 
 test('HARD: versions, fixed carving width, strip rule and per-strip seeds', () => {
-  assert.equal(TERRAIN_VERSION, 'terrain-1.9.0-mountains');
-  assert.deepEqual({...TERRAIN_MOUNTAIN_COMPONENTS}, {layout: 'orogen-layout-1', envelope: 'massif-envelope-2', carving: 'mountain-carving-2', assembly: 'mountain-assembly-1'});
+  assert.deepEqual([MASSIF_ENVELOPE_VERSION, MOUNTAIN_CARVING_VERSION, MOUNTAIN_ASSEMBLY_VERSION], ['massif-envelope-2', 'mountain-carving-2', 'mountain-assembly-1']);
   assert.ok(Object.isFrozen(MOUNTAIN_ASSEMBLY));assert.deepEqual({...MOUNTAIN_ASSEMBLY}, {CARVING_HALF_WIDTH_M: 48000});
   assert.equal(MASSIF_IS_ONE_STRIP, true);
   const w = MOUNTAIN_ASSEMBLY.CARVING_HALF_WIDTH_M;
@@ -60,7 +76,8 @@ test('HARD: the assembled ridge term: >= 0, <= max(main, analytic envelope), mai
   const seeds = [730201];
   for (const tau of [.456, .789]) for (const wBelt of [32000, 71600, 220000]) for (const main of [0, 900, 3000])
     for (let i = -70; i <= 70; i++) {
-      const y = i * 1000, x = 37 * i * 1000, o = {belt: beltAt(y, wBelt), axisDistanceM: y, halfWidthM: wBelt, beltIndex: 0, alongM: x};
+      // alongM stays inside two M3 blocks (block solves are ~140 ms each; a spread-out x would solve one per sample).
+      const y = i * 1000, x = 50 * i, o = {belt: beltAt(y, wBelt), axisDistanceM: y, halfWidthM: wBelt, beltIndex: 0, alongM: x};
       const h = mountainRidgeTermM(main, o, 1000, 1, tau, seeds);
       assert.ok(h >= 0 && h <= Math.max(main, maxEnvelopeM(tau, 'water')) * (1 + 4 * Number.EPSILON), `${tau} ${wBelt} ${main} ${y}: ${h}`);
       if (Math.abs(y) >= massifHalfWidthM(wBelt) || o.belt === 0) assert.ok(Object.is(h, main));
@@ -80,21 +97,11 @@ test('HARD: mountain-assembly.ts is arithmetic only and imports only M2 and M3',
   for (const bad of ['const z = x ** 2;', 'Math["sin"](x)', 'Number(x)', 'BigInt(1)']) assert.match(bad, forbidden);
 });
 
-test('HARD: the assembled field stays under bodyHeightBoundM on in-massif land (20000 directions per world)', () => {
-  for (const body of waterWorlds()) {
-    const ts = terrainSampler(body), lay = orogenLayout(body), bound = bodyHeightBoundM(body).maxM;let inside = 0;
-    for (let i = 0; i < 20000; i++) {
-      const d = fib(i, 20000), o = lay.sample(d);
-      if (outsideMassif(o)) continue;inside++;
-      const h = ts(d).groundHeightM;assert.ok(Number.isFinite(h) && h <= bound, `${body.name} ${i}: ${h} > ${bound}`);
-    }
-    assert.ok(inside > 100, `${body.name}: ${inside} in-massif directions`);
-  }
-});
-
 // M4 R1 (>= 8 summits of prominence >= 300 m per 1000 km2 of belt core) on the worst real world: Raiva has the
 // lowest tau (.456) of the four. The full four-world measurement (axis, flank, whole core, R2, R3) is
 // scripts/mountain-assembly-summits.mjs (docs/mountains-assembly-2026-10-05.md); this pins the binding case.
+// The whole-core method (one raster spanning the full core band) is proposed here and awaits owner acceptance;
+// the 48 km axis/flank rasters of docs/mountain-summits-v1.md are reported beside it (Raiva flank-centred: 7.12).
 test('CONTRACT: M4 R1 on the whole belt core at the real Raiva tau and belt width (8 seeds, 64 km rasters)', () => {
   const raiva = waterWorlds().find(b => b.name === 'Raiva'), tau = tectonicReliefOf(raiva), lay = orogenLayout(raiva);
   let w = 0;for (let i = 0; i < 20000; i++) {const b = lay.sample(fib(i, 20000));if (b.belt >= .5 && b.halfWidthM >= 32000) {w = b.halfWidthM;break;}}
@@ -109,4 +116,10 @@ test('CONTRACT: M4 R1 on the whole belt core at the real Raiva tau and belt widt
   }
   const density = count * 1000 / area;console.log(`RAIVA R1 ${JSON.stringify({tau, w, count, area, density})}`);
   assert.ok(density >= 8, `R1 ${density.toFixed(2)} >= 8`);
+  // Negative control: the bare envelope (carving disabled) on the same rasters fails R1 (a smooth dome).
+  const h = new Float64Array(n * n);
+  for (let p = 0; p < h.length; p++) {const y = (Math.floor(p / n) - c) * step, belt = beltAt(y, w), U = massifEnvelopeM(belt, y, w, 1000, 1, tau, 'water');
+    h[p] = composeRidgeTermM(0, belt, y, w, U);}
+  const bare = measureSummits({...rasterFromArray(h, n, step), w: massifHalfWidthM(w), tau, y0: 0});
+  assert.ok(bare.density < 8, `bare envelope R1 ${bare.density}`);
 });

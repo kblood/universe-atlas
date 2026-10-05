@@ -54,7 +54,7 @@ export function envelopeWorld(body){
       const elevationM=floorM+tau*detailM*(RC.WLOW+(1-RC.WLOW)*upland),landformScale=tau*upland;
       return {floorM,groundHeightM:landformScale>0?elevationM+landformScale*landforms(d,elevationM,rawBaseM,bound):elevationM};
     }
-    return {belt,alt,landFactor,U:u,main:ground(mainTerm),compose:(gain=C.GAIN)=>ground(composeRidgeTermM(mainTerm,belt.belt,belt.halfWidthM,u*(gain/C.GAIN)))};
+    return {belt,alt,landFactor,U:u,main:ground(mainTerm),compose:(gain=C.GAIN)=>ground(composeRidgeTermM(mainTerm,belt.belt,belt.axisDistanceM,belt.halfWidthM,u*(gain/C.GAIN)))};
   };
   // U-only renders do not evaluate terrain, detail, landforms or colour.
   const envelope=d=>{const coast=macroHeightCode(code,d)+(n(d,42,5)-.5)*.012+(n(d,90,6)-.5)*.003;

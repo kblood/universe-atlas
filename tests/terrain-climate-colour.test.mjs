@@ -27,7 +27,7 @@ const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 test('versions: terrain colour v2 names the climate model it reads',()=>{
   // Re-pinned for P4-RELIEF (terrain-1.8.0-relief, surface-climate-1.1-geo-g),
   // then for mountains step G (terrain-1.8.1-grain: reduced 800 m land grain).
-  assert.equal(TERRAIN_VERSION,'terrain-1.9.0-mountains');
+  assert.equal(TERRAIN_VERSION,'terrain-1.8.1-grain');
   assert.equal(TERRAIN_CLIMATE_VERSION,CLIMATE_VERSION);
   assert.equal(CLIMATE_VERSION,'surface-climate-1.1-geo-g');
 });
