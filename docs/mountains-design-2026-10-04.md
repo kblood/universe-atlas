@@ -435,6 +435,15 @@ PNG writer. Every element test imports it; no element test reimplements a metric
   raster) from Node.
 - **Must not depend on:** the real M1 or M2 fields, climate, colour, LOD, the app renderer, or
   Luna.
+- **Status (MTN-4, 2026-10-05): candidate F accepted on the rows, unwired.** Rounds A2/B/C/D/E were
+  blocked by a block rhythm. F is a seam-free haloed drainage solve (24 km halo per 16 km block,
+  LRU memo), which supersedes the "pointwise, no stored state" wording above under owner decision
+  (c) of 2026-10-05 (cost judged on the warm-cache resident cost per region, budget 8%; cold
+  first-touch reported, non-blocking). All eight rows pass pooled and on all 8 seeds (relief8 per
+  seed 1519-1616 m); coast safety exact; resident cost 1.03% weighted, cold 71.7%. The straight
+  main divide stays within a few hundred metres of the axis and reads as a straight line at
+  192 km (Luna, UNCALIBRATED, names it on the strips; open for the owner). Numbers, method and visual
+  review: `docs/mountain-carving-f-v1.md`.
 
 ### 2.4 M4: summits and prominence (no own code; a check on M2 + M3)
 

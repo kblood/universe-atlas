@@ -8,7 +8,7 @@ import {spawn} from 'node:child_process';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {measureSites,judgeM3,depressionPits,depressions,q,MOUNTAIN_THRESHOLDS,MOUNTAIN_THRESHOLDS_SUPERSEDED,syntheticSampler} from '../tests/helpers/mountain-metrics.mjs';
-import {RAMP,steadyStateStrip,stripSampler,noiseCarveSampler,loadRejectedA0,rampCarvingSampler,resampledErodedControl,RESAMPLE_OFFSETS,CALIBRATION_CONTROLS_VERSION} from '../tests/helpers/mountain-calibration-controls.mjs';
+import {RAMP,steadyStateStrip,stripSampler,noiseCarveSampler,loadRejectedA0,loadRejectedR5,rampCarvingSampler,resampledErodedControl,RESAMPLE_OFFSETS,CALIBRATION_CONTROLS_VERSION} from '../tests/helpers/mountain-calibration-controls.mjs';
 const arg=(k,d)=>{const i=process.argv.indexOf('--'+k);return i>0?process.argv[i+1]:d;};
 const SITES=Array.from({length:8},(_,k)=>({d:[Math.cos(k*1e6/RAMP.R),0,Math.sin(k*1e6/RAMP.R)]}));
 const OFF=[37,53];
@@ -38,9 +38,9 @@ export const FIELDS={
   'B0':{cls:'Nstraight',make:async()=>rampCarvingSampler((await loadRejectedA0()).carvingBM)},
   'uneroded-resampled':{cls:'Npit',pitNeg:true,raster:'original'},
   'envelope-only':{cls:'I',make:async()=>rampCarvingSampler(()=>0)},
-  'A2':{cls:'I',make:async()=>rampCarvingSampler((await import('../src/mountain-carving.ts')).carvingAM)},
-  'B':{cls:'I',make:async()=>rampCarvingSampler((await import('../src/mountain-carving.ts')).carvingBM)},
-  'C':{cls:'I',make:async()=>rampCarvingSampler((await import('../src/mountain-carving.ts')).carvingCM)},
+  'A2':{cls:'I',make:async()=>rampCarvingSampler((await loadRejectedR5()).carvingAM)},
+  'B':{cls:'I',make:async()=>rampCarvingSampler((await loadRejectedR5()).carvingBM)},
+  'C':{cls:'I',make:async()=>rampCarvingSampler((await loadRejectedR5()).carvingCM)},
 };
 
 async function measureField(name){const f=FIELDS[name];if(!f)throw new Error('unknown field '+name);const t=performance.now();

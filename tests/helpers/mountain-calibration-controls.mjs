@@ -67,6 +67,11 @@ export async function loadRejectedA0(){
   src=src.replace("'./det-math.ts'","'"+new URL('../../src/det-math.ts',import.meta.url).href+"'");
   return import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(src)).toString('base64'));
 }
+/** The rejected round-1..5 M3 candidates A2, B, C and E (replaced in src/ by F), frozen. */
+export async function loadRejectedR5(transform=s=>s){
+  const src=transform(readFileSync(new URL('../fixtures/mountain-carving-r5-rejected.ts.txt',import.meta.url),'utf8'));
+  return import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(src)).toString('base64'));
+}
 /** Ramp sampler for a carving function with the section 2.3 argument order. */
 export function rampCarvingSampler(fn,seedBase=730201){
   return d=>{const across=R*Math.asin(d[1]),along=R*Math.atan2(d[2],d[0]),e=rampEnvelope(d);

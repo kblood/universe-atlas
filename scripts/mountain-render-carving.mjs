@@ -3,7 +3,13 @@ import {pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 import {raster,carvingStructure,rasterFromArray,slopes,crests,windowRelief,prominence,depressions,bandPowers,betaFromOctaves,q,flowAccumulationD8,hillshade,writePng,measureSites,syntheticSampler,judgeM3,frame,localMap} from '../tests/helpers/mountain-metrics.mjs';
 import {ERODED_CONTROL,ERODED_CONTROL_VERSION,CONTROL_SITES,buildErodedControl,centralCrop} from '../tests/helpers/mountain-eroded-control.mjs';
-import {carvingAM,carvingBM,ridgeValleyCarvingM,MOUNTAIN_CARVING,MOUNTAIN_CARVING_VERSION} from '../src/mountain-carving.ts';
+import {ridgeValleyCarvingM} from '../src/mountain-carving.ts';
+import {loadRejectedR5} from '../tests/helpers/mountain-calibration-controls.mjs';
+// Rounds 1-5 (A2, B, C, E) are frozen in a fixture since F replaced them in src/ (mountain-carving-2).
+// The legacy modes below reproduce that evidence; F's own driver is scripts/mountain-carving-f.mjs.
+const LEGACY_SOURCE=new URL('../tests/fixtures/mountain-carving-r5-rejected.ts.txt',import.meta.url);
+const legacy=await loadRejectedR5(),{carvingAM,carvingBM}=legacy;
+const MOUNTAIN_CARVING=legacy.MOUNTAIN_CARVING,MOUNTAIN_CARVING_VERSION=legacy.MOUNTAIN_CARVING_VERSION;
 
 export const R=5194907,SEED_BASE=730201;
 export const SITES=Object.freeze(Array.from({length:8},(_,k)=>({d:[Math.cos(k*1e6/R),0,Math.sin(k*1e6/R)]})));
@@ -20,7 +26,7 @@ const candidateE=process.argv[process.argv.indexOf('--candidate')+1]==='E';
 const OUT=new URL(candidateE?'../test-results/mountains/M3-r5/E/':candidateC?'../test-results/mountains/M3-r4/':'../test-results/mountains/M3/',import.meta.url);
 const save=(name,data)=>writeFileSync(new URL(name,OUT),JSON.stringify(data,null,2)+'\n');
 const digest=r=>createHash('sha256').update(Buffer.from(r.h.buffer)).digest('hex');
-const sourceSha=()=>createHash('sha256').update(readFileSync(new URL('../src/mountain-carving.ts',import.meta.url))).digest('hex');
+const sourceSha=()=>createHash('sha256').update(readFileSync(LEGACY_SOURCE)).digest('hex');
 function render(name,r){
   writePng(new URL(name+'-hillshade.png',OUT),r.n,r.n,hillshade(r,5000));
   const f=flowAccumulationD8(r),rgb=Buffer.alloc(r.n*r.n*3);
@@ -191,7 +197,7 @@ async function acceptance(){
 }
 async function sweep(){
   const {stripTypeScriptTypes}=await import('node:module');
-  const source=readFileSync(new URL('../src/mountain-carving.ts',import.meta.url),'utf8'),results=[];
+  const source=readFileSync(LEGACY_SOURCE,'utf8'),results=[];
   const variants=[.1,.2,.3].flatMap(HEAD_RISE=>[1.4,2.2,3].map(WALL_GAIN=>({HEAD_RISE,WALL_GAIN})));
   for(const constants of variants){
     let sourceText=source;for(const [k,v] of Object.entries(constants))sourceText=sourceText.replace(new RegExp(k+': [0-9.]+'),k+': '+v);
@@ -207,7 +213,7 @@ async function sweep(){
 
 async function loadC(replacements={},instrument=false){
   const {stripTypeScriptTypes}=await import('node:module');
-  let source=readFileSync(new URL('../src/mountain-carving.ts',import.meta.url),'utf8');
+  let source=readFileSync(LEGACY_SOURCE,'utf8');
   for(const [key,value] of Object.entries(replacements))source=source.replace(new RegExp('\\b'+key+': [0-9.]+'),key+': '+value);
   if(instrument){
     source=source.replace('function cBuild(seed:','function cBuildRaw(seed:');
@@ -289,7 +295,7 @@ async function benchmarkC(){
 
 export async function loadE(replacements={},instrument=false){
   const {stripTypeScriptTypes}=await import('node:module');
-  let source=readFileSync(new URL('../src/mountain-carving.ts',import.meta.url),'utf8');
+  let source=readFileSync(LEGACY_SOURCE,'utf8');
   const at=source.indexOf('export const CARVING_E_VERSION');
   let tail=source.slice(at);
   // Rejected crest-cap variants live only in this private diagnostic loader.

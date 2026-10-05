@@ -7,7 +7,7 @@ import {stripTypeScriptTypes} from 'node:module';
 import {measureSites,judgeM3,q,hillshade,writePng,localMap,frame,raster} from '../tests/helpers/mountain-metrics.mjs';
 import {rampSampler,rampArgs,SITES,R} from './mountain-render-carving.mjs';
 const [ROWS,COLS,out]=process.argv.slice(2);
-const src=readFileSync(new URL('../src/mountain-carving.ts',import.meta.url),'utf8');
+const src=readFileSync(new URL('../tests/fixtures/mountain-carving-r5-rejected.ts.txt',import.meta.url),'utf8');
 const load=K=>{let s=src.replace('ROWS: 480, COLS: 120',`ROWS: ${ROWS}, COLS: ${COLS}`).replace(/\bK: [0-9.]+/,'K: '+K);
   return import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(s+'\nexport {cBuild,cCache};')).toString('base64'));};
 let lo=.001,hi=1e6;
