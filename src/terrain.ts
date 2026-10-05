@@ -105,7 +105,28 @@ import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_CALIBRATION
 // (BASE_ELEVATION_SHA256, the archived drainage/river field); a future river
 // revival must rebuild drainage on the relief field with a DRAINAGE_VERSION
 // bump. The orbit relief texture is encoded over reliefTextureRange(body).
-export const TERRAIN_VERSION = "terrain-1.8.0-relief";
+// 1.8.1-grain (mountains step G, 2026-10-05, owner decision (b);
+// docs/mountains-grain-step-g-2026-10-05.md): the 800 m local colour grain of
+// the water-world LAND (climate) colour is reduced from +-12% to +-4.8%
+// (TERRAIN_LOCAL_GRAIN) so it no longer dominates the coarse LOD colour error.
+// Heights, the ocean flag, classes, dry worlds, ocean colours,
+// baseTerrainSampler and the legacy grain are unchanged; no mountain belt is
+// wired (that is the later terrain-1.9.0 assembly).
+export const TERRAIN_VERSION = "terrain-1.8.1-grain";
+/**
+ * terrain-1.8.1: the 800 m local colour grain of water-world LAND colour (the
+ * climate colour path of terrainSampler): localGrain = BASE + n(d, R/CELL_M, 74) x
+ * AMPLITUDE, mean 1 (n has mean .5). terrain-1.8.0 used .88 + n x .24 (+-12%);
+ * that grain sits at the colour Nyquist of the coarse levels and was about half
+ * of the L6/L8 cross-level RGB p99 (lod-consistency gate: Maithea L6 26.26 ->
+ * 13.22 with no grain). AMPLITUDE = k x .24 with k = .4, the largest of the
+ * measured sweep (k = 0, .25, .4, .5, .75, 1) at which the grain's quadrature
+ * share stays at or below the grain-free error on every pinned RGB row (Maithea
+ * L6, Lethuris L6 and L8); BASE = 1 - AMPLITUDE/2. The cell size is unchanged,
+ * so the fine-level pattern keeps its scale. Every other palette keeps the
+ * legacy .88/.24 grain.
+ */
+export const TERRAIN_LOCAL_GRAIN = Object.freeze({CELL_M: 800, BASE: .952, AMPLITUDE: .096});
 export {LANDFORM_SHAPE_VERSION};
 /** The climate model whose fields the water-world land colour reads. */
 export const TERRAIN_CLIMATE_VERSION = CLIMATE_VERSION;
@@ -419,6 +440,10 @@ export function baseTerrainSampler(body: Body, waterLevelM: number = 0) {
 type CoreSample = {
   elevationM: number; ocean: boolean; color: number[] | null; roughness: number;
   grain: number; localGrain: number;
+  /** The raw 800 m grain noise n(d, R/800, 74) behind `localGrain` (0 where the
+   * core saw ocean, which has no local grain); terrain-1.8.1's climate colour
+   * reapplies it with TERRAIN_LOCAL_GRAIN without a second noise call. */
+  localGrainNoise: number;
   /** R0, only when the core is built with exposeFloor. */
   floorM?: number; continentalM?: number;
   /** Relief diagnostics (exposeFloor only): the floor WITHOUT the seabed detail
@@ -486,6 +511,7 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
         roughness: 1,
         grain: 1,
         localGrain: 1,
+        localGrainNoise: 0,
         landformScale: 1,
         landformGateM: 0,
       };
@@ -584,7 +610,10 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
       color = mix([55, 51, 49], [168, 154, 135], macro);
     }
     const grain = 0.91 + n(d, 115, 35) * 0.18;
-    const localGrain = ocean ? 1 : .88 + n(d, body.radiusM / 800, 74) * .24;
+    // The legacy grain (.88 + n x .24; same expression and bits as before); the
+    // noise value is kept for terrain-1.8.1's water-land colour (TERRAIN_LOCAL_GRAIN).
+    const localGrainNoise = ocean ? 0 : n(d, body.radiusM / 800, 74);
+    const localGrain = ocean ? 1 : .88 + localGrainNoise * .24;
     const out: CoreSample = {
       elevationM,
       ocean,
@@ -592,6 +621,7 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
       roughness: ocean ? WET_SURFACE_ROUGHNESS : DRY_SURFACE_ROUGHNESS,
       grain,
       localGrain,
+      localGrainNoise,
       landformScale,
       landformGateM: rawBaseM,
     };
@@ -777,7 +807,10 @@ export function terrainSampler(
   const climateScratch = climate ? createClimateSample() : null;
   // The grain factors come from the base core itself (its n(d,115,35) and
   // n(d,R/800,74) via the shared macroNoise helper), so they cannot drift.
-  const localGrainF = body.radiusM / 800;
+  // terrain-1.8.1: the water-land colour takes the reduced TERRAIN_LOCAL_GRAIN on
+  // the same 800 m noise (the base core's own value where it saw land).
+  const localGrainF = body.radiusM / TERRAIN_LOCAL_GRAIN.CELL_M;
+  const LG_BASE = TERRAIN_LOCAL_GRAIN.BASE, LG_AMP = TERRAIN_LOCAL_GRAIN.AMPLITUDE;
   const { n: grainNoise } = macroNoise(body);
   const applyGrain = (c: number[], grain: number, localGrain: number) => {
     // In place on a fresh array; the same clamp(v * grain * localGrain)
@@ -820,8 +853,9 @@ export function terrainSampler(
       const aboveSeaM = uncrateredHeightM - waterLevelM;
       const c = waterWorldLandColour(climate(d, uncrateredHeightM - seaDatumM, climateScratch!), aboveSeaM);
       // The base reports localGrain=1 where IT saw ocean; the land colour
-      // always takes the land local grain, as baseTerrainSampler's land does.
-      const localGrain = sample.ocean ? .88 + grainNoise(d, localGrainF, 74) * .24 : sample.localGrain;
+      // always takes the land local grain on the same 800 m noise (terrain-1.8.1:
+      // the reduced TERRAIN_LOCAL_GRAIN; baseTerrainSampler keeps .88/.24).
+      const localGrain = LG_BASE + (sample.ocean ? grainNoise(d, localGrainF, 74) : sample.localGrainNoise) * LG_AMP;
       surfaceColor = applyGrain(c, sample.grain, localGrain);
     } else if (sample.color) surfaceColor = sample.color;
     else surfaceColor = applyGrain(core.legacyWaterLandColour(d, sample.elevationM), sample.grain, sample.localGrain);

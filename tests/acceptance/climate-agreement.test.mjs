@@ -28,7 +28,9 @@ const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 function grainOf(body) {
   const code = Number(hash64(body.seed + '/macro-v1') & 0xffffffffn);
   const n = (d, f, seed) => noise(d[0] * f + 13, d[1] * f + 37, d[2] * f + 19, code + seed);
-  return d => [0.91 + n(d, 115, 35) * 0.18, .88 + n(d, body.radiusM / 800, 74) * .24];
+  // terrain-1.8.1-grain (mountains step G, owner decision (b)): the 800 m local grain
+  // of water-world land colour is .952 + n x .096 (was .88 + n x .24).
+  return d => [0.91 + n(d, 115, 35) * 0.18, .952 + n(d, body.radiusM / 800, 74) * .096];
 }
 
 // Re-pinned for P4-RELIEF: surface-biomes-2.1-sea-datum (gates and climate datum
