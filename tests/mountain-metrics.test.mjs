@@ -32,7 +32,7 @@ test('HARD: negative controls cover every M3 row; dome passes drainage',()=>{
   assert.deepEqual(Object.keys(failures).sort(),MOUNTAIN_THRESHOLDS.map(r=>r.id).sort());
   for(const id of ['fill10ShareP50','pitsPer1000km2P50']){
     const row=judgeM3(controls.dome).find(r=>r.id===id);
-    assert.equal(row.pass,true);assert.equal(row.calibrated,false);
+    assert.equal(row.pass,true);assert.equal(row.calibrated,true);
   }
   assert.ok(judgeM3({}).every(r=>!r.pass));
   for(const row of MOUNTAIN_THRESHOLDS){
