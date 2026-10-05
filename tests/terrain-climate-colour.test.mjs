@@ -12,18 +12,22 @@ import {biomeClassifier} from '../src/surface-biomes.ts';
 import {fib,waterWorlds,goldenTerrainBodies} from './terrain-climate-fixtures.mjs';
 
 const N=20000;
-/** Independent copy of the base sampler's grain (seed derivation written out here
- * on purpose, so a drifted shared helper is caught rather than reused). */
+/** Independent copy of the water-land colour grain (seed derivation and constants
+ * written out here on purpose, so a drifted shared helper is caught rather than
+ * reused). terrain-1.8.1-grain (mountains step G, owner decision (b)): the 800 m
+ * local grain of water-world LAND colour is .952 + n x .096 (was .88 + n x .24,
+ * which every other palette still uses); the 115 grain is unchanged. */
 function grainOf(body){
   const code=Number(hash64(body.seed+'/macro-v1')&0xffffffffn);
   const n=(d,f,seed)=>noise(d[0]*f+13,d[1]*f+37,d[2]*f+19,code+seed);
-  return d=>[0.91+n(d,115,35)*0.18,.88+n(d,body.radiusM/800,74)*.24];
+  return d=>[0.91+n(d,115,35)*0.18,.952+n(d,body.radiusM/800,74)*.096];
 }
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 
 test('versions: terrain colour v2 names the climate model it reads',()=>{
-  // Re-pinned for P4-RELIEF (terrain-1.8.0-relief, surface-climate-1.1-geo-g).
-  assert.equal(TERRAIN_VERSION,'terrain-1.8.0-relief');
+  // Re-pinned for P4-RELIEF (terrain-1.8.0-relief, surface-climate-1.1-geo-g),
+  // then for mountains step G (terrain-1.8.1-grain: reduced 800 m land grain).
+  assert.equal(TERRAIN_VERSION,'terrain-1.8.1-grain');
   assert.equal(TERRAIN_CLIMATE_VERSION,CLIMATE_VERSION);
   assert.equal(CLIMATE_VERSION,'surface-climate-1.1-geo-g');
 });

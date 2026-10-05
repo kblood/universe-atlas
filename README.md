@@ -1,5 +1,16 @@
 # Universe Atlas
 
+## Mountains step G: the 800 m colour grain — 2026-10-05 (local, not deployed)
+
+`terrain-1.8.1-grain` (owner decision (b)). The 800 m local colour grain of
+water-world land drops from +-12% to +-4.8% (`TERRAIN_LOCAL_GRAIN`, same cell
+and noise). Heights, ocean and classes are bit-identical; no mountain belt is
+wired. LOD: 96/96 cells and 17/17 pins pass; Maithea L6 RGB p99 26.26 -> 15.18,
+Lethuris L6 39.17 -> 20.54, L8 11.05 -> 5.24. Golden re-pinned once (terrain,
+combined; placeQuery and census by the version string). Luna (advisory,
+uncalibrated): less mottle, ground reads flatter. Details:
+`docs/mountains-grain-step-g-2026-10-05.md`.
+
 ## Mountains: element round and the assembled check — 2026-10-05 (local, not deployed)
 
 **The mountains are not fixed yet.** The terrain on main is byte-identical to

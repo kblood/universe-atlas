@@ -23,6 +23,25 @@ Owner decisions 2026-10-05 (explicit, recorded verbatim):
 Decision (a) is applied in section 2.3 and `docs/mountain-m3-calibration-v1.md`. Decision (b) belongs
 to MTN-6 and MTN-1 and is not applied by the M3 element.
 
+Further owner decisions 2026-10-05 (explicit, recorded verbatim as the coordinator relayed them):
+
+> (a) M3 coherence/pit rows calibrated (merged). (b) the 800 m colour grain is changed in its own
+> small step with TERRAIN_VERSION bump + deliberate golden re-pin + update of the two colour tests
+> that hard-code the old .88/.24 grain (old/new digests documented). (c) M3 cost judged on warm
+> resident cost. (d) assembly in two steps. (e) NEW: the 8 failing LOD class pins when belts are
+> wired are handled by FREEZING the stratified tile selection (so tile re-picking cannot move the
+> pins; document how) AND CHANGING the M2 envelope so belts do not move the class boundary in
+> snowline/treeline tiles (Maithea L8 name/carriedName); NO pin is loosened or repinned. (f) NEW:
+> the convex blend lowering heights at belt edges (up to 3 km, 23-45 directions per world) is
+> accepted ('uplift inside belts with fade-out at the edge'). (g) M3's relief scales with belt width
+> (lattice 2w/480): give M3 a FIXED carving width tiled across wide belts so Selawyn's 220 km belt
+> and low-tau belts reach M4 R1 (>=8 peaks/1000 km2), measured on the real parameters of all four
+> worlds.
+
+Decision (b) is applied as its own step, **step G** (`terrain-1.8.1-grain`), before any belt is
+wired: `docs/mountains-grain-step-g-2026-10-05.md`. Decisions (d)-(g) belong to the assembly steps
+that follow it.
+
 Prototype scripts (pure Node, no browser, no GPU, not registered in `npm test`):
 
 - `scripts/mountain-metrics.mjs` measures the mountain elements on the 4 standard worlds. Its
