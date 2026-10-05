@@ -243,6 +243,34 @@ export function flowAccumulationD8(r){
   return {filled,receiver,accumulation,n,step};
 }
 
+/** INFO only. Channel heads/confluences include the raster border; density uses
+ * the same n*step area convention as depressions(). Optional paired deltas are
+ * raw carving and its reflected-chart sample, not detrended or normalized. */
+export function carvingStructure(r,carving=null,mirror=null,core=null){
+  const {receiver,accumulation}=flowAccumulationD8(r),donors=new Uint8Array(r.h.length);
+  const thresholdCells=250000/(r.step*r.step),areaKm2=(r.n*r.step/1000)**2;
+  for(let c=0;c<receiver.length;c++)if(accumulation[c]>=thresholdCells&&receiver[c]>=0)donors[receiver[c]]++;
+  let heads=0,confluences=0;
+  for(let j=0;j<r.n;j++)for(let i=0;i<r.n;i++){
+    const c=j*r.n+i;if(accumulation[c]<thresholdCells)continue;
+    heads+=donors[c]===0;confluences+=donors[c]>=2;
+  }
+  let correlation=null,coreSamples=0,uncarved=0;
+  if(carving&&mirror){
+    let sx=0,sy=0;for(let i=0;i<carving.length;i++){sx+=carving[i];sy+=mirror[i];}
+    sx/=carving.length;sy/=carving.length;
+    let xx=0,yy=0,xy=0;
+    for(let i=0;i<carving.length;i++){
+      const x=carving[i]-sx,y=mirror[i]-sy;xx+=x*x;yy+=y*y;xy+=x*y;
+      if(core?.[i]){coreSamples++;uncarved+=carving[i]===0;}
+    }
+    if(xx>0&&yy>0)correlation=xy/Math.sqrt(xx*yy);
+  }
+  return {thresholdCells,areaKm2,heads,confluences,headsPer1000km2:1000*heads/areaKm2,
+    confluencesPer1000km2:1000*confluences/areaKm2,mirrorCorrelation:correlation,
+    coreSamples,uncarved,uncarvedSharePct:coreSamples?100*uncarved/coreSamples:null};
+}
+
 /** Section 2.3: fixed 3 km / 60 km ramp, belt core, eight seeds.
  * slope125Over30 is percent; fill10ShareP50 is a fraction. */
 export const MOUNTAIN_THRESHOLDS=Object.freeze([
@@ -251,8 +279,8 @@ export const MOUNTAIN_THRESHOLDS=Object.freeze([
   {id:'flank500mP50',op:'>=',value:12,rationale:'Degrees: alpine 14.7; d3 9.6; main 6.5; dome 0.4',calibrated:true},
   {id:'relief8kmP50',op:'>=',value:1500,rationale:'Metres at a 3 km envelope: alpine 1767; main Maithea 1466',calibrated:true},
   {id:'beta500mTo8km',op:'between',value:Object.freeze([2.0,2.6]),rationale:'Alpine 2.14; d3 2.78-2.99; main 3.36-3.49; Earth about 2 (literature)',calibrated:true},
-  {id:'fill10ShareP50',op:'<=',value:0.05,rationale:'UNCALIBRATED: main 5-23%; d3 23-32%; noise 31%',calibrated:false},
-  {id:'pitsPer1000km2P50',op:'<=',value:50,rationale:'UNCALIBRATED: main 147-453; d3 570-700; noise 2108',calibrated:false},
+  {id:'fill10ShareP50',op:'<=',value:0.05,rationale:'calibrated 2026-10-05 (MTN-4): eroded control P=0, un-eroded control N=0.30197901683152795; main 5-23%; d3 23-32%; noise 31%',calibrated:true},
+  {id:'pitsPer1000km2P50',op:'<=',value:50,rationale:'calibrated 2026-10-05 (MTN-4): eroded control P=0, un-eroded control N=2137.7230561646147; main 147-453; d3 570-700; noise 2108',calibrated:true},
   {id:'coherence40kmWindowP50',op:'>=',value:0.35,rationale:'With axis input: isotropic d3 0.12-0.15; noise 0.135; main 0.24-0.30',calibrated:true},
 ].map(Object.freeze));
 
