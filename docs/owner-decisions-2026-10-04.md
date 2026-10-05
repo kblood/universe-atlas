@@ -65,6 +65,7 @@ This is one list of every question that is waiting on the owner. It was assemble
   3. Retire it and declare the ceiling map the contract.
 - **Recommended default:** option 1.
 - **Cost of waiting:** none.
+- **Added 2026-10-05 (mountains), still OPEN:** should the class/colour/retention limits measured on the new *massif tile set* (mountain tiles, MTN-6 T6) **block** the mountain merge? Until Kasper answers they are report-only. See `docs/mountains-opus-decisions-2026-10-05.md`, Q6 item 2 and the 2026-10-05 Astra addendum item 2.
 
 #### A4. Weak range snow (D1)
 - **State:** OPEN. The data says snow (98.7% of the SNOW constant on the sampled range); the render reads pale grey. The Maithea 15-40% snow band was accepted only "as long as ranges have snow", so that condition is not met visually.

@@ -102,7 +102,7 @@ Honesty notes:
   - Band-pass variants were contaminated by the envelope kink.
   - Unsigned detrended coherence gave the dome 0.399.
   - A 2x2 footprint read 0.37-0.40 for the positives.
-- Fill row (unchanged, INFO only): resampled steady-state positives sit at 0.023-0.059, and six of them exceed 0.05. The row was not touched. Candidates must pass it as before.
+- Fill row (unchanged, INFO only): resampled steady-state positives sit at 0.023-0.059, and eight of the 12 exceed 0.05 (corrected 2026-10-05 from "six"; see the addendum to `docs/mountains-opus-decisions-2026-10-05.md`). The row was not touched. Candidates must pass it as before.
 
 Reference worlds under the new rows (`scripts/mountain-metrics.mjs`, 8 highest sites per world):
 
