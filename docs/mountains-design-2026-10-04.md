@@ -463,6 +463,15 @@ PNG writer. Every element test imports it; no element test reimplements a metric
 - **Single-element render:** the M2 + M3 hillshade with peak markers sized by prominence.
 - **Must not depend on:** climate, LOD, landing code. The interaction with landing no-summit (A6) is
   checked only in the assembled step.
+- **Status (MTN-5, 2026-10-05): rows pass on the pre-registered fixture, unwired, no own code.**
+  Fixture: straight synthetic belt, w = 32 km, A = 3 km (tau 3000/3640), 8 seeds. R1 39.1 per
+  1000 km² of belt core (per seed 32.4-43.4), R2 100/100, R3 max 3000 m with 0 violations; the
+  dome, bare-envelope, off-belt-shift and +1% amplitude negatives fail their rows. R2 now requires
+  100 summits (fails closed otherwise). Open for MTN-6 / the owner (INFO, measured): with real
+  parameters R1 fails on Selawyn's 220 km belt (0.05) and is marginal on Raiva (7.9 axis, 2.6 at
+  0.4w), because M3's lattice scales with the belt width; the fixture density (39) is above every
+  physically eroded control (1.7-10.1) and above the UNCALIBRATED 25 ceiling, which stays ungated.
+  `docs/mountain-summits-v1.md`.
 
 ### 2.5 M5: steep-rock fine detail (wavelengths under 1 km; optional, later)
 
