@@ -173,3 +173,21 @@ test('HARD: dense Maithea/Lethuris spatial curvature times W stays below .2',()=
     for(const b of l.belts){assert.ok(b.wavelength*world.radiusM/(1+b.uLimit*b.uLimit)>=16*b.halfWidthM-1e-8);assert.ok(b.amplitudeM<=.6*b.halfWidthM);}
   }
 });
+
+test('HARD: alongM (assembly addition) is the base-circle arc R x 2 atan(u) of the foot point, 0 off-belt',()=>{
+  // Along each belt's displaced centreline, consecutive samples 0.002 in u apart: alongM differences match
+  // R x 2 (atan(u1) - atan(u0)) (Math.atan here is the reference, never the production path) to 1 cm (the foot-point solve).
+  let checked=0;
+  for(const [i,b] of layout.belts.entries()){
+    let last=null;
+    for(let k=-90;k<=90;k++){
+      const u=k/100*b.uLimit,v=u/b.uLimit,y=(b.bendM*v*v+b.amplitudeM*(2*noise(u*2/b.wavelength+13,37,19,b.noiseSeed)-1))/R,r=Math.sqrt(1-y*y),den=1+u*u;
+      const d=[0,1,2].map(j=>b.centre[j]*r*(1-u*u)/den+b.tangent[j]*r*2*u/den+b.pole[j]*y);
+      const s=layout.sample(d);if(s.beltIndex!==i)continue;
+      const ref=R*2*Math.atan(u);assert.ok(Math.abs(s.alongM-ref)<.01,`${i} ${k}: ${s.alongM} vs ${ref}`);
+      if(last!==null)assert.ok(s.alongM>last);last=s.alongM;checked++;
+    }
+  }
+  assert.ok(checked>500,`${checked} centreline samples`);
+  for(let i=0;i<4096;i++){const s=layout.sample(fib(i,4096));if(s.belt===0)assert.equal(s.alongM,0);}
+});

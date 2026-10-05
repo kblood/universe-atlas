@@ -17,6 +17,11 @@ type World = {seed: string; radiusM: number; water: number; type: string; kind?:
 type Coordinate = (d: V3) => number;
 export interface OrogenSample {
   belt: number; axis: V3; axisDistanceM: number; halfWidthM: number; beltIndex: number;
+  // Signed along-axis arc coordinate (m) of the foot point on the belt's base great
+  // circle, R x theta with u = tan(theta/2) (0 at the belt centre). Added for the
+  // mountains assembly (M3 carving coordinates); 0 where belt is 0. It does not
+  // change any other output.
+  alongM?: number;
 }
 export interface OrogenBelt {
   readonly centre: V3; readonly tangent: V3; readonly pole: V3;
@@ -31,7 +36,14 @@ const dot = (a: V3, b: V3) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
 const cross = (a: V3, b: V3): V3 => [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const unit = (a: V3): V3 => {const l=Math.sqrt(dot(a,a));return l ? [a[0]/l,a[1]/l,a[2]/l] : [0,0,0];};
 const ss = (lo: number, hi: number, v: number) => {const t=Math.max(0,Math.min(1,(v-lo)/(hi-lo)));return t*t*(3-2*t);};
-const empty = (): OrogenSample => ({belt:0,axis:[0,0,0],axisDistanceM:0,halfWidthM:0,beltIndex:-1});
+const empty = (): OrogenSample => ({belt:0,axis:[0,0,0],axisDistanceM:0,halfWidthM:0,beltIndex:-1,alongM:0});
+// theta = 2 atan(u) for |u| <= tan(.45) (the longest major half-length), by one half-angle
+// reduction t = u/(1+sqrt(1+u*u)) <= .229 and the odd atan series to t^19 (first omitted term
+// 4 t^21/21 < 1e-14 rad, far under 1 mm at R = 6000 km): arithmetic only, monotone in u.
+function thetaOf(u: number) {
+  const t=u/(1+Math.sqrt(1+u*u)),t2=t*t;
+  return 4*t*(1-t2*(1/3-t2*(1/5-t2*(1/7-t2*(1/9-t2*(1/11-t2*(1/13-t2*(1/15-t2*(1/17-t2/19)))))))));
+}
 
 // Same evaluation order as R-CAL-1, before the radius scale and compression.
 export function continentalA0(body: World): Coordinate {
@@ -77,11 +89,11 @@ function transverse(b: OrogenBelt,d: V3,R: number,u: number,z: number) {
   // 2 asin(chord/2), through fifth order. For supported W/R <= .045,
   // omitted angular term < 3e-13 radians (< 0.000003 metres here).
   const distance=sign*R*Math.sqrt(chord2)*(1+chord2/24+3*chord2*chord2/640);
-  return {distance,gradient:cross(d,tangent)};
+  return {distance,gradient:cross(d,tangent),u};
 }
 // The last positive value()'s projection, reused by sampleWithA0 for the
 // winning belt (footprints never overlap, so it is normally the only one).
-let lastDistance=0,lastGradient: V3=[0,0,0];
+let lastDistance=0,lastGradient: V3=[0,0,0],lastU=0;
 function value(b: OrogenBelt,d: V3,R: number) {
   const z=dot(d,b.centre);
   if(z<OROGEN_LAYOUT.supportZ)return 0;
@@ -90,9 +102,9 @@ function value(b: OrogenBelt,d: V3,R: number) {
   if(Math.abs(dot(d,b.pole)*R)>=b.halfWidthM*b.gradientMax+Math.abs(b.bendM)+b.amplitudeM)return 0;
   const x=dot(d,b.tangent),r=Math.sqrt(x*x+z*z),u=x/(r+z),v=u/b.uLimit;
   if(Math.abs(v)>=1)return 0;
-  const {distance,gradient}=transverse(b,d,R,u,z);
+  const {distance,gradient,u:foot}=transverse(b,d,R,u,z);
   if(Math.abs(distance)>=b.halfWidthM)return 0;
-  lastDistance=distance;lastGradient=gradient;
+  lastDistance=distance;lastGradient=gradient;lastU=foot;
   const fraction=distance/b.halfWidthM;
   return (1-OROGEN_LAYOUT.coreCrown*fraction*fraction)*(1-ss(OROGEN_LAYOUT.coreFraction*b.halfWidthM,b.halfWidthM,Math.abs(distance)))*(1-ss(.75,1,Math.abs(v)));
 }
@@ -201,15 +213,15 @@ export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
     belts.push(Object.freeze(b));axes.push(points);maxHalfWidthM=Math.max(maxHalfWidthM,W);
   }
   const sampleWithA0=(d: V3,alt: number,out: OrogenSample=empty()): OrogenSample=>{
-    out.belt=0;out.axis[0]=0;out.axis[1]=0;out.axis[2]=0;out.axisDistanceM=0;out.halfWidthM=0;out.beltIndex=-1;
+    out.belt=0;out.axis[0]=0;out.axis[1]=0;out.axis[2]=0;out.axisDistanceM=0;out.halfWidthM=0;out.beltIndex=-1;out.alongM=0;
     if(alt<=0)return out;
-    let best=0,index=-1,distance=0,gradient: V3=lastGradient;
-    for(let i=0;i<belts.length;i++){const v=value(belts[i],d,R);if(v>best){best=v;index=i;distance=lastDistance;gradient=lastGradient;}}
+    let best=0,index=-1,distance=0,gradient: V3=lastGradient,foot=0;
+    for(let i=0;i<belts.length;i++){const v=value(belts[i],d,R);if(v>best){best=v;index=i;distance=lastDistance;gradient=lastGradient;foot=lastU;}}
     if(index<0)return out;
     const b=belts[index];
     out.belt=best*ss(0,OROGEN_LAYOUT.coastGateM,alt);
     if(out.belt===0)return out;
-    out.beltIndex=index;out.halfWidthM=b.halfWidthM;out.axisDistanceM=distance;
+    out.beltIndex=index;out.halfWidthM=b.halfWidthM;out.axisDistanceM=distance;out.alongM=R*thetaOf(foot);
     const axis=unit(cross(gradient,d));
     out.axis[0]=axis[0];out.axis[1]=axis[1];out.axis[2]=axis[2];return out;
   };

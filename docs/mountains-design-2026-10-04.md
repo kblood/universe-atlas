@@ -751,6 +751,14 @@ File ownership is disjoint across cards. `terrain.ts` is touched only by MTN-6 (
   them.
 
 ### MTN-6. MOUNTAINS-ASSEMBLY — wire M1-M3 into the relief floor
+
+- **Status (step A, 2026-10-05): PARTIAL, wiring not merged** (`docs/mountains-assembly-2026-10-05.md`).
+  Wired on branch `mountains/assembly-2` (`2744237` M1+M2, `92afaa3` M1+M2+M3, `terrain-1.9.0-mountains`):
+  17/17 pins and 96/96 LOD cells on the frozen selection, identity outside belts/massifs and the ocean flag
+  everywhere bit-equal to main, whole-core M4 R1 41.0/22.8/8.6/39.4 (Maithea/Selawyn/Raiva/Lethuris).
+  Blocked on cost: warm resident +108-156% against +8% (M1 dominates), cold sparse 2-4.3 ms/sample (M3
+  block solves; Maithea L0 x6 335-461 s). Merged: frozen LOD selection, massif-envelope-2 (48 km massif
+  cap), M1 `alongM`, unwired `mountain-assembly.ts`, identity pins, scripts.
 - **Owner:** Opus implements; Astra reviews read-only; Luna is advisory.
 - **Files owned:**
   - `src/terrain.ts` (the relief-branch ridge-term hunk of `baseTerrainCore`, the version constants,
