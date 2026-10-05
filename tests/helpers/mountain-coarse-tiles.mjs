@@ -5,7 +5,7 @@
 import {terrainSampler} from '../../src/terrain.ts';
 import * as tiles from '../../src/planet-tiles.ts';
 import {peakCorrectionMaxLevel, carvingFromLevel} from '../../src/lod-ladder.ts';
-import {orogenLayout} from '../../src/mountain-layout.ts';
+import {orogenLayout, continentalA0} from '../../src/mountain-layout.ts';
 import {MASSIF_ENVELOPE} from '../../src/mountain-envelope.ts';
 import {fib} from '../terrain-climate-fixtures.mjs';
 
@@ -15,14 +15,14 @@ export const mountainSampler = (body, lodLevel) =>
   terrainSampler(body, undefined, undefined, undefined, 0, undefined, false, lodLevel === undefined ? ON : {...ON, lodLevel});
 export const buildOn = (body, tile) => tiles.buildTile(body, tile, 1, 0, ON);
 
-/** Axis sites: Fibonacci directions on a massif belt axis (|axis distance| <= 3 km, belt >= .5, massif-width belt),
- * at least `minSepM` apart, in Fibonacci order (M1 only; the land test reads main's uncarved continental sign). */
+/** Axis sites: Fibonacci directions on a massif belt axis (|axis distance| <= 3 km, belt >= .5, massif-width belt,
+ * continental coordinate a0 > 0), at least `minSepM` apart, in Fibonacci order. M1 inputs only, never heights. */
 export function axisSites(body, {count = 8, minSepM = 300_000, total = 20_000} = {}) {
-  const layout = orogenLayout(body), base = terrainSampler(body), sites = [], R = body.radiusM;
+  const layout = orogenLayout(body), a0 = continentalA0(body), sites = [], R = body.radiusM;
   for (let i = 0; i < total && sites.length < count; i++) {
     const d = fib(i, total), o = layout.sample(d);
     if (o.belt < .5 || o.halfWidthM < MASSIF_ENVELOPE.MIN_HALF_WIDTH_M || Math.abs(o.axisDistanceM) > 3000) continue;
-    if (base(d).groundHeightM <= 0) continue;
+    if (!(a0(d) > 0)) continue;
     if (sites.some(s => Math.acos(Math.min(1, s.d[0] * d[0] + s.d[1] * d[1] + s.d[2] * d[2])) * R < minSepM)) continue;
     sites.push({d, axisDistanceM: o.axisDistanceM, beltIndex: o.beltIndex});
   }
@@ -47,20 +47,30 @@ export const edgeNodes = (e, n = tiles.PATCH_SEGMENTS) => Array.from({length: n 
  * (the carved and uncarved point samples differ by > 1 m on a co-located edge node), its parent P and P's
  * neighbour N across that edge, both at L(cut - 1). Deterministic: axis sites in Fibonacci order, edges in order.
  */
-export function switchSeamCase(body, {maxSites = 24} = {}) {
+export function switchSeamCase(body, {maxSites = 24, crossFace = false} = {}) {
   const cut = carvingFromLevel(body.radiusM), truth = mountainSampler(body), coarse = mountainSampler(body, cut - 1), n = tiles.PATCH_SEGMENTS;
+  const carvedEdge = (C, e) => {let best = 0;
+    for (const [x, y] of edgeNodes(e, n)) {const d = tiles.tileDirection(C, x / n, y / n);best = Math.max(best, coarse(d).groundHeightM - truth(d).groundHeightM);}
+    return best;};
+  const result = (C, e, best, site) => {const P = {face: C.face, level: cut - 1, x: C.x >> 1, y: C.y >> 1};
+    return {cut, C, P, N: tiles.tileNeighbour(P, e), edge: e, site, edgeCarvingM: best};};
+  if (crossFace) {
+    // Child tiles on a cube-face edge (the parent-boundary edge IS the face edge), in face/edge/position order; the
+    // M1 massif pre-filter on the edge nodes keeps the carved samples (block solves) to massif edges only.
+    const N = 2 ** cut;
+    for (let face = 0; face < 6; face++) for (let e = 0; e < 4; e++) for (let k = 0; k < N; k++) {
+      const C = {face, level: cut, x: [0, N - 1, k, k][e], y: [k, k, 0, N - 1][e]};
+      if (!edgeNodes(e, n).some(([x, y]) => inMassif(body, tiles.tileDirection(C, x / n, y / n)))) continue;
+      const best = carvedEdge(C, e);
+      if (best > 1) return result(C, e, best, null);
+    }
+    return null;
+  }
   for (const site of axisSites(body, {count: maxSites, minSepM: 150_000})) {
     const C = tiles.directionTile(site.d, cut);
     for (const e of parentBoundaryEdges(C)) {
-      let best = 0;
-      for (const [x, y] of edgeNodes(e, n)) {
-        const d = tiles.tileDirection(C, x / n, y / n);
-        best = Math.max(best, coarse(d).groundHeightM - truth(d).groundHeightM);
-      }
-      if (best > 1) {
-        const P = {face: C.face, level: cut - 1, x: C.x >> 1, y: C.y >> 1};
-        return {cut, C, P, N: tiles.tileNeighbour(P, e), edge: e, site, edgeCarvingM: best};
-      }
+      const best = carvedEdge(C, e);
+      if (best > 1) return result(C, e, best, site);
     }
   }
   return null;

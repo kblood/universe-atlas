@@ -10,7 +10,8 @@
 // level. Checked on a massif tile of every world: (1) the child's parent mesh starts on the actually built
 // L(cut-1) tile (the existing 0.05 m morph rule of tests/lod-consistency.test.mjs), (2) the child's parent-boundary
 // edge agrees with the neighbouring L(cut-1) tile under the same rule, and (3) a mutation control: a parent sampled
-// at the child's level (carved) fails both comparisons.
+// at the child's level (carved) fails both comparisons. Each world has one case inside a cube face (axis site) and
+// one whose parent-boundary edge is a cube-face edge (the neighbour lies on another face).
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as tiles from '../src/planet-tiles.ts';
@@ -97,10 +98,12 @@ for (const [name, body] of Object.entries(bodies)) test(`${name}: below the cut 
   for (const L of [cut, cut + 3]) {const s = mountainSampler(body, L);for (const d of dirs.slice(0, 81)) assert.deepEqual(s(d), truth(d), `L${L}`);}
 });
 
-for (const [name, body] of Object.entries(bodies)) test(`${name}: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving`, t => {
-  const sc = switchSeamCase(body);
+for (const [name, body] of Object.entries(bodies)) for (const crossFace of [false, true]) test(`${name}: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (${crossFace ? 'cube-face edge' : 'axis site'})`, t => {
+  const sc = switchSeamCase(body, {crossFace});
   assert.ok(sc, 'a massif tile at the switch level with carving on its parent-boundary edge');
   const {cut, C, P, N, edge} = sc, n = tiles.PATCH_SEGMENTS;
+  assert.equal(N.level, cut - 1);
+  if (crossFace) assert.notEqual(N.face, P.face, 'the neighbour lies across a cube-face edge');
   assert.equal(cut, CUT[name]);
   const b0 = carvingBuildStats.count, p = buildOn(body, P), nb = buildOn(body, N);
   assert.equal(carvingBuildStats.count - b0, 0, 'building the two L(cut-1) tiles solves no block');
@@ -135,5 +138,5 @@ for (const [name, body] of Object.entries(bodies)) test(`${name}: switch level L
   // INFO (addendum item 1): the mean height step at the cut on this massif tile (child carved - parent uncarved).
   let step = 0, cnt = 0, minStep = Infinity;
   for (let i = 0; i < (n + 1) * (n + 1); i++) {const s = c.surfaceHeight[i] - c.parentHeight[i];step += s;cnt++;minStep = Math.min(minStep, s);}
-  t.diagnostic(`INFO ${name} C=${tiles.tileKey(C)} N=${tiles.tileKey(N)} edge ${edge}: morph start ${worst.toFixed(4)} m, seam ${seam.toFixed(4)} m; mutant ${mutantWorst.toFixed(1)} / ${mutantSeam.toFixed(1)} m; mean step at the cut ${(step / cnt).toFixed(1)} m (min ${minStep.toFixed(1)} m)`);
+  t.diagnostic(`INFO ${name}${crossFace ? ' (cube-face edge)' : ''} C=${tiles.tileKey(C)} N=${tiles.tileKey(N)} edge ${edge}: morph start ${worst.toFixed(4)} m, seam ${seam.toFixed(4)} m; mutant ${mutantWorst.toFixed(1)} / ${mutantSeam.toFixed(1)} m; mean step at the cut ${(step / cnt).toFixed(1)} m (min ${minStep.toFixed(1)} m)`);
 });

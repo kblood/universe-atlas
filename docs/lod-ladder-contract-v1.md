@@ -1,6 +1,7 @@
-# LOD ladder and consistency contract, v1 (`lod-ladder-1`)
+# LOD ladder and consistency contract, v1 (`lod-ladder-2`)
 
-Status: P3-LOD-CONTRACT, relief round 2026-10-03. Code: `src/lod-ladder.ts` (data and arithmetic only),
+Status: P3-LOD-CONTRACT, relief round 2026-10-03 (`lod-ladder-1`); amended 2026-10-05 by mountains cost plan T3
+(`lod-ladder-2`: the M3 carving reduction in section 3; nothing else changed). Code: `src/lod-ladder.ts` (data and arithmetic only),
 `src/planet-tiles.ts` (peak-preserving coarse heights, tile metadata). Tests: `tests/lod-consistency.test.mjs`,
 `tests/tile-metadata.test.mjs`. Report: `scripts/lod-consistency-report.mjs`.
 
@@ -80,6 +81,43 @@ The plan's literal rule, h = mean + 0.5(max - mean) over the vertex and four sub
 rejected. At Maithea L6 it kept 81.6% of the peak area, but the median summit loss got worse (312 m against
 205 m shipped) because the mean pulls summits down. See
 `test-results/relief-round-2026-10-03/P3-LOD-CONTRACT/reduction-variants-L6-L8.txt`.
+
+**Mountain carving (amendment, `lod-ladder-2`, mountains cost plan T3).** Decided in
+`docs/mountains-opus-decisions-2026-10-05.md` (Q2 "Rule" and the binding addendum item 1; decided by Opus 5.5 on
+Kasper's instruction, he may overrule). Code: `carvingFromLevel` / `carvingAtLevel` in `src/lod-ladder.ts`,
+`mountainRidgeTermM(..., carve)` in `src/mountain-assembly.ts`, the `lodLevel` sampler option in `src/terrain.ts`,
+the level pass-through in `src/planet-tiles.ts`. Test: `tests/lod-carving-reduction.test.mjs`.
+
+- The M3 ridge-valley carving declares 16 km as its longest wavelength (`CARVING_BANDS`). A tile lattice of 32
+  cells samples it at 2 x edge / 32. A level can hold the carving only if that is at most 8 km (half the band),
+  i.e. edge <= 128 km (`CARVING_MAX_EDGE_M`).
+- At coarser levels the tile's sampler evaluates the carving as exactly +0, for its vertices, its peak-correction
+  cell centres, its normals, metadata and colour texels. Carving = -envelope x (1 - retained) <= 0, so the
+  coarse surface is an upper envelope of the carved truth: heights are only raised, as for the peak correction
+  above. The ocean flag does not change (the ridge term stays >= 0 either way). No M3 block is solved at these
+  levels.
+- Carving starts at (arithmetic from the edge formula):
+
+  | Body | First carved level | Edge there | Uncarved levels |
+  |---|---|---|---|
+  | Maithea | L6 | 127.5 km | L0-5 |
+  | Selawyn | L7 | 104.9 km | L0-6 |
+  | Raiva | L5 | 98.3 km | L0-4 |
+  | Lethuris | L7 | 110.4 km | L0-6 |
+
+- The truth (a sampler without a level) is unchanged and fully carved. Collision, physics and place queries keep
+  using it (section 8). From the first carved level on, a level's sampler is the truth bit for bit.
+- **Parent and child keep their own level's carving.** A tile at level L samples at L; its parent mesh (`parents`,
+  `parentHeight`, the morph start) is the L-1 lattice under the L-1 rule. At the switch level L = cut the child is
+  carved and its parent mesh is not, exactly like the L(cut-1) tile that was displayed before the split, so the
+  morph starts on a surface that was shown. The parent path then has its own sampler and its own caches; at every
+  other level parent and child share one sampler (same state), as before.
+- The switch is a visible change of state by design: the carving appears during the L(cut-1) -> L(cut) morph. Its
+  mean height step on massif tiles is reported as INFO (below); the agreed mitigation, if it is visible, is a cheap
+  coarse mean-carve term, not a change of this rule.
+- Staging: the mountains are not wired on main until cost plan T6 (`TERRAIN_MOUNTAINS_WIRED = false`). Until then
+  the rule is active only for samplers and tiles built with `{mountains: true}`; the default field is unchanged.
+- Every section-5 tolerance is unchanged. The version moved to `lod-ladder-2` for the new declared reduction.
 
 **Colour and class shares:** coverage-weighted mean of the finer level. A class is carried as a class: the
 bilinear-weighted majority of the four corner labels. It is never re-derived from a coarse height.
