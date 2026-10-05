@@ -1,0 +1,543 @@
+{
+ "root": "C:\\LLM\\IWSDK\\universe-atlas-wt\\design-mountains",
+ "terrainVersion": "terrain-1.8.0-relief",
+ "sites": 8,
+ "worlds": {
+  "Maithea": {
+   "radiusM": 5194907,
+   "envelope": {
+    "landShare": 0.551,
+    "p50": 426,
+    "p90": 2690,
+    "p99": 4358,
+    "max": 5910,
+    "boundMaxM": 6628,
+    "reliefRatioP99": 0.657,
+    "tau": 0.789,
+    "above3km": 8.3
+   },
+   "sites": [
+    {
+     "h": 5910,
+     "lat": -42.9
+    },
+    {
+     "h": 5459,
+     "lat": -38.7
+    },
+    {
+     "h": 5240,
+     "lat": 10.5
+    },
+    {
+     "h": 5236,
+     "lat": 18.1
+    },
+    {
+     "h": 5104,
+     "lat": 61.8
+    },
+    {
+     "h": 5102,
+     "lat": 46.5
+    },
+    {
+     "h": 5084,
+     "lat": -11
+    },
+    {
+     "h": 5076,
+     "lat": 1.7
+    }
+   ],
+   "E1_layout": {
+    "coherence40kmWindowP50": 0.298,
+    "coherence40kmWindowP90": 0.631
+   },
+   "E3_crests": {
+    "crestShareP50": 0.309,
+    "flank500mP50": 6.5,
+    "flank500mP90": 15.2,
+    "sharpness250v1kP50": 0.793
+   },
+   "E4_summits": {
+    "peaksProm300Per1000km2": 1.2,
+    "peaksProm1000Per1000km2": 0,
+    "maxProminenceP50": 630,
+    "maxProminenceMax": 993
+   },
+   "E5_slopes": {
+    "slope125P50": 11.3,
+    "slope125P90": 22.5,
+    "slope125Over30": 2.2,
+    "slope125Over40": 0.1,
+    "slope1kP50": 8.7,
+    "slope1kP90": 17.6
+   },
+   "E6_valleys": {
+    "relief4kmP50": 792,
+    "relief8kmP50": 1466,
+    "relief8kmP90": 2122,
+    "relief16kmP50": 2179
+   },
+   "E3b_drainage": {
+    "fill10ShareP50": 0.142,
+    "pitsPer1000km2P50": 378.2
+   },
+   "E7_spectrum": {
+    "beta500mTo8km": 3.36,
+    "rmsTotalM": 1067,
+    "octaveRmsM": {
+     "125-250m": 1,
+     "250-500m": 3,
+     "500-1000m": 6,
+     "1000-2000m": 16,
+     "2000-4000m": 36,
+     "4000-8000m": 75,
+     "8000-16000m": 153,
+     "16000-32000m": 210,
+     "32000-64000m": 342,
+     "64000-128000m": 601
+    },
+    "aboveNyquist": {
+     "L6": {
+      "nyquistWavelengthM": 7969,
+      "rmsAboveM": 85,
+      "shareOfVariance": 0.006,
+      "colourNyquistWavelengthM": 1992,
+      "colourRmsAboveM": 17,
+      "colourShareOfVariance": 0.0003
+     },
+     "L8": {
+      "nyquistWavelengthM": 1992,
+      "rmsAboveM": 17,
+      "shareOfVariance": 0,
+      "colourNyquistWavelengthM": 498,
+      "colourRmsAboveM": 3,
+      "colourShareOfVariance": 0
+     },
+     "L10": {
+      "nyquistWavelengthM": 498,
+      "rmsAboveM": 3,
+      "shareOfVariance": 0,
+      "colourNyquistWavelengthM": 125,
+      "colourRmsAboveM": 0,
+      "colourShareOfVariance": 0
+     },
+     "L12": {
+      "nyquistWavelengthM": 125,
+      "rmsAboveM": 0,
+      "shareOfVariance": 0,
+      "colourNyquistWavelengthM": 31,
+      "colourRmsAboveM": 0,
+      "colourShareOfVariance": 0
+     }
+    }
+   },
+   "landShare48km": 1,
+   "seconds": 2.5
+  },
+  "Selawyn": {
+   "radiusM": 8552056,
+   "envelope": {
+    "landShare": 0.392,
+    "p50": 345,
+    "p90": 1794,
+    "p99": 3292,
+    "max": 4364,
+    "boundMaxM": 5176,
+    "reliefRatioP99": 0.636,
+    "tau": 0.603,
+    "above3km": 2.2
+   },
+   "sites": [
+    {
+     "h": 4364,
+     "lat": 8.2
+    },
+    {
+     "h": 4147,
+     "lat": -66.4
+    },
+    {
+     "h": 4122,
+     "lat": 0.3
+    },
+    {
+     "h": 3955,
+     "lat": -16.2
+    },
+    {
+     "h": 3923,
+     "lat": -0.4
+    },
+    {
+     "h": 3906,
+     "lat": -10.6
+    },
+    {
+     "h": 3900,
+     "lat": 21.9
+    },
+    {
+     "h": 3890,
+     "lat": -2.2
+    }
+   ],
+   "E1_layout": {
+    "coherence40kmWindowP50": 0.239,
+    "coherence40kmWindowP90": 0.53
+   },
+   "E3_crests": {
+    "crestShareP50": 0.335,
+    "flank500mP50": 4.9,
+    "flank500mP90": 11.4,
+    "sharpness250v1kP50": 0.758
+   },
+   "E4_summits": {
+    "peaksProm300Per1000km2": 0.5,
+    "peaksProm1000Per1000km2": 0,
+    "maxProminenceP50": 315,
+    "maxProminenceMax": 508
+   },
+   "E5_slopes": {
+    "slope125P50": 8.4,
+    "slope125P90": 17,
+    "slope125Over30": 0.2,
+    "slope125Over40": 0,
+    "slope1kP50": 6.2,
+    "slope1kP90": 12.9
+   },
+   "E6_valleys": {
+    "relief4kmP50": 558,
+    "relief8kmP50": 1000,
+    "relief8kmP90": 1434,
+    "relief16kmP50": 1369
+   },
+   "E3b_drainage": {
+    "fill10ShareP50": 0.228,
+    "pitsPer1000km2P50": 452.9
+   },
+   "E7_spectrum": {
+    "beta500mTo8km": 3.37,
+    "rmsTotalM": 699,
+    "octaveRmsM": {
+     "125-250m": 1,
+     "250-500m": 3,
+     "500-1000m": 5,
+     "1000-2000m": 12,
+     "2000-4000m": 28,
+     "4000-8000m": 58,
+     "8000-16000m": 104,
+     "16000-32000m": 149,
+     "32000-64000m": 186,
+     "64000-128000m": 380
+    },
+    "aboveNyquist": {
+     "L6": {
+      "nyquistWavelengthM": 13119,
+      "rmsAboveM": 110,
+      "shareOfVariance": 0.025,
+      "colourNyquistWavelengthM": 3280,
+      "colourRmsAboveM": 27,
+      "colourShareOfVariance": 0.0015
+     },
+     "L8": {
+      "nyquistWavelengthM": 3280,
+      "rmsAboveM": 27,
+      "shareOfVariance": 0.001,
+      "colourNyquistWavelengthM": 820,
+      "colourRmsAboveM": 5,
+      "colourShareOfVariance": 0.0001
+     },
+     "L10": {
+      "nyquistWavelengthM": 820,
+      "rmsAboveM": 5,
+      "shareOfVariance": 0,
+      "colourNyquistWavelengthM": 205,
+      "colourRmsAboveM": 1,
+      "colourShareOfVariance": 0
+     },
+     "L12": {
+      "nyquistWavelengthM": 205,
+      "rmsAboveM": 1,
+      "shareOfVariance": 0,
+      "colourNyquistWavelengthM": 51,
+      "colourRmsAboveM": 0,
+      "colourShareOfVariance": 0
+     }
+    }
+   },
+   "landShare48km": 1,
+   "seconds": 3
+  },
+  "Raiva": {
+   "radiusM": 2002004,
+   "envelope": {
+    "landShare": 0.523,
+    "p50": 339,
+    "p90": 1489,
+    "p99": 2475,
+    "max": 3194,
+    "boundMaxM": 4024,
+    "reliefRatioP99": 0.615,
+    "tau": 0.456,
+    "above3km": 0
+   },
+   "sites": [
+    {
+     "h": 3194,
+     "lat": -46
+    },
+    {
+     "h": 3102,
+     "lat": -31.7
+    },
+    {
+     "h": 3074,
+     "lat": -75.2
+    },
+    {
+     "h": 3015,
+     "lat": 1.8
+    },
+    {
+     "h": 3004,
+     "lat": -22.9
+    },
+    {
+     "h": 2979,
+     "lat": -8.2
+    },
+    {
+     "h": 2961,
+     "lat": 49.3
+    },
+    {
+     "h": 2914,
+     "lat": -42.8
+    }
+   ],
+   "E1_layout": {
+    "coherence40kmWindowP50": 0.679,
+    "coherence40kmWindowP90": 0.912
+   },
+   "E3_crests": {
+    "crestShareP50": 0.192,
+    "flank500mP50": 2.8,
+    "flank500mP90": 7.2,
+    "sharpness250v1kP50": 0.639
+   },
+   "E4_summits": {
+    "peaksProm300Per1000km2": 0.3,
+    "peaksProm1000Per1000km2": 0,
+    "maxProminenceP50": 231,
+    "maxProminenceMax": 620
+   },
+   "E5_slopes": {
+    "slope125P50": 4.7,
+    "slope125P90": 15.3,
+    "slope125Over30": 0.2,
+    "slope125Over40": 0,
+    "slope1kP50": 4.5,
+    "slope1kP90": 14.1
+   },
+   "E6_valleys": {
+    "relief4kmP50": 421,
+    "relief8kmP50": 867,
+    "relief8kmP90": 1941,
+    "relief16kmP50": 1688
+   },
+   "E3b_drainage": {
+    "fill10ShareP50": 0.052,
+    "pitsPer1000km2P50": 147.2
+   },
+   "E7_spectrum": {
+    "beta500mTo8km": 3.49,
+    "rmsTotalM": 822,
+    "octaveRmsM": {
+     "125-250m": 1,
+     "250-500m": 1,
+     "500-1000m": 3,
+     "1000-2000m": 6,
+     "2000-4000m": 15,
+     "4000-8000m": 35,
+     "8000-16000m": 90,
+     "16000-32000m": 252,
+     "32000-64000m": 420,
+     "64000-128000m": 468
+    },
+    "aboveNyquist": {
+     "L6": {
+      "nyquistWavelengthM": 3071,
+      "rmsAboveM": 14,
+      "shareOfVariance": 0,
+      "colourNyquistWavelengthM": 768,
+      "colourRmsAboveM": 3,
+      "colourShareOfVariance": 0
+     },
+     "L8": {
+      "nyquistWavelengthM": 768,
+      "rmsAboveM": 3,
+      "shareOfVariance": 0,
+      "colourNyquistWavelengthM": 192,
+      "colourRmsAboveM": 0,
+      "colourShareOfVariance": 0
+     },
+     "L10": {
+      "nyquistWavelengthM": 192,
+      "rmsAboveM": 0,
+      "shareOfVariance": 0,
+      "colourNyquistWavelengthM": 48,
+      "colourRmsAboveM": 0,
+      "colourShareOfVariance": 0
+     },
+     "L12": {
+      "nyquistWavelengthM": 48,
+      "rmsAboveM": 0,
+      "shareOfVariance": 0,
+      "colourNyquistWavelengthM": 12,
+      "colourRmsAboveM": 0,
+      "colourShareOfVariance": 0
+     }
+    }
+   },
+   "landShare48km": 1,
+   "seconds": 3
+  },
+  "Lethuris": {
+   "radiusM": 8997494,
+   "envelope": {
+    "landShare": 0.378,
+    "p50": 351,
+    "p90": 2410,
+    "p99": 4060,
+    "max": 5010,
+    "boundMaxM": 6485,
+    "reliefRatioP99": 0.626,
+    "tau": 0.771,
+    "above3km": 6.9
+   },
+   "sites": [
+    {
+     "h": 5010,
+     "lat": 50.2
+    },
+    {
+     "h": 4829,
+     "lat": 14.1
+    },
+    {
+     "h": 4736,
+     "lat": 53
+    },
+    {
+     "h": 4717,
+     "lat": 57.3
+    },
+    {
+     "h": 4684,
+     "lat": -52.6
+    },
+    {
+     "h": 4656,
+     "lat": -6.7
+    },
+    {
+     "h": 4655,
+     "lat": -48.1
+    },
+    {
+     "h": 4644,
+     "lat": -46
+    }
+   ],
+   "E1_layout": {
+    "coherence40kmWindowP50": 0.262,
+    "coherence40kmWindowP90": 0.685
+   },
+   "E3_crests": {
+    "crestShareP50": 0.322,
+    "flank500mP50": 6.3,
+    "flank500mP90": 15,
+    "sharpness250v1kP50": 0.8
+   },
+   "E4_summits": {
+    "peaksProm300Per1000km2": 1.2,
+    "peaksProm1000Per1000km2": 0,
+    "maxProminenceP50": 505,
+    "maxProminenceMax": 684
+   },
+   "E5_slopes": {
+    "slope125P50": 10.8,
+    "slope125P90": 21.7,
+    "slope125Over30": 1.8,
+    "slope125Over40": 0.1,
+    "slope1kP50": 8.4,
+    "slope1kP90": 17.1
+   },
+   "E6_valleys": {
+    "relief4kmP50": 763,
+    "relief8kmP50": 1410,
+    "relief8kmP90": 2049,
+    "relief16kmP50": 2042
+   },
+   "E3b_drainage": {
+    "fill10ShareP50": 0.127,
+    "pitsPer1000km2P50": 319.1
+   },
+   "E7_spectrum": {
+    "beta500mTo8km": 3.41,
+    "rmsTotalM": 1055,
+    "octaveRmsM": {
+     "125-250m": 1,
+     "250-500m": 3,
+     "500-1000m": 6,
+     "1000-2000m": 16,
+     "2000-4000m": 35,
+     "4000-8000m": 78,
+     "8000-16000m": 142,
+     "16000-32000m": 192,
+     "32000-64000m": 291,
+     "64000-128000m": 596
+    },
+    "aboveNyquist": {
+     "L6": {
+      "nyquistWavelengthM": 13802,
+      "rmsAboveM": 154,
+      "shareOfVariance": 0.021,
+      "colourNyquistWavelengthM": 3450,
+      "colourRmsAboveM": 36,
+      "colourShareOfVariance": 0.0011
+     },
+     "L8": {
+      "nyquistWavelengthM": 3450,
+      "rmsAboveM": 36,
+      "shareOfVariance": 0.001,
+      "colourNyquistWavelengthM": 863,
+      "colourRmsAboveM": 7,
+      "colourShareOfVariance": 0
+     },
+     "L10": {
+      "nyquistWavelengthM": 863,
+      "rmsAboveM": 7,
+      "shareOfVariance": 0,
+      "colourNyquistWavelengthM": 216,
+      "colourRmsAboveM": 1,
+      "colourShareOfVariance": 0
+     },
+     "L12": {
+      "nyquistWavelengthM": 216,
+      "rmsAboveM": 1,
+      "shareOfVariance": 0,
+      "colourNyquistWavelengthM": 54,
+      "colourRmsAboveM": 0,
+      "colourShareOfVariance": 0
+     }
+    }
+   },
+   "landShare48km": 1,
+   "seconds": 3
+  }
+ }
+}

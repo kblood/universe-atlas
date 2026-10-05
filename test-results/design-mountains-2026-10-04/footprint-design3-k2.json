@@ -1,0 +1,66 @@
+{
+ "root": "C:\\LLM\\IWSDK\\universe-atlas-wt\\r2-relief-present",
+ "k": 2,
+ "worlds": {
+  "Maithea": {
+   "L6": {
+    "point": {
+     "rgbP50": 3.38,
+     "rgbP99": 33.33,
+     "snow": 1.01,
+     "forest": 1.04
+    },
+    "footprint": {
+     "rgbP50": 3.08,
+     "rgbP99": 26.82,
+     "snow": 0.75,
+     "forest": 0.51
+    }
+   },
+   "L8": {
+    "point": {
+     "rgbP50": 0.31,
+     "rgbP99": 4.34,
+     "snow": 0.53,
+     "forest": 0
+    },
+    "footprint": {
+     "rgbP50": 0.34,
+     "rgbP99": 4.71,
+     "snow": 0.43,
+     "forest": 0
+    }
+   }
+  },
+  "Lethuris": {
+   "L6": {
+    "point": {
+     "rgbP50": 6.84,
+     "rgbP99": 54.18,
+     "snow": 2.95,
+     "forest": 5.89
+    },
+    "footprint": {
+     "rgbP50": 5.11,
+     "rgbP99": 40.59,
+     "snow": 2.17,
+     "forest": 3.34
+    }
+   },
+   "L8": {
+    "point": {
+     "rgbP50": 1.26,
+     "rgbP99": 11.79,
+     "snow": 0.91,
+     "forest": 1.91
+    },
+    "footprint": {
+     "rgbP50": 1.37,
+     "rgbP99": 11.92,
+     "snow": 0.94,
+     "forest": 1.09
+    }
+   }
+  }
+ }
+}

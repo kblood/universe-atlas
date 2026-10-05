@@ -1,0 +1,4 @@
+Maithea 6 {"point":{"rgbP50":3.38,"rgbP99":33.33,"snow":1.01,"forest":1.04},"footprint":{"rgbP50":3.04,"rgbP99":25.99,"snow":0.89,"forest":0.55}}
+Maithea 8 {"point":{"rgbP50":0.31,"rgbP99":4.34,"snow":0.53,"forest":0},"footprint":{"rgbP50":0.35,"rgbP99":4.81,"snow":0.42,"forest":0}}
+Lethuris 6 {"point":{"rgbP50":6.84,"rgbP99":54.18,"snow":2.95,"forest":5.89},"footprint":{"rgbP50":4.9,"rgbP99":40.09,"snow":2.08,"forest":2.56}}
+Lethuris 8 {"point":{"rgbP50":1.26,"rgbP99":11.79,"snow":0.91,"forest":1.91},"footprint":{"rgbP50":1.4,"rgbP99":12,"snow":0.94,"forest":0.98}}
