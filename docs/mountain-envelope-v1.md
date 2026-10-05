@@ -1,7 +1,8 @@
 # Massif envelope v1 (M2 / MTN-3)
 
-Status: implemented, unwired; `massif-envelope-1`. No terrain, landform, layout, golden,
-package registration or production version changed. M2 moves nothing (§4.1 of the mountains plan).
+Status: implemented, unwired; `massif-envelope-1`. No terrain, landform, layout, golden or
+production version changed; the only package.json change is the coordinator's registration of
+`tests/mountain-envelope.test.mjs` in `npm test`. M2 moves nothing (§4.1 of the mountains plan).
 The coordinator registers the test and MTN-6 owns assembly. The four owner files are
 `src/mountain-envelope.ts`, `tests/mountain-envelope.test.mjs`,
 `scripts/mountain-render-envelope.mjs`, and this document.
@@ -108,21 +109,21 @@ check: 306262 comparisons per world. A mismatch aborts with a report. Continenta
 also matches reliefLayersSampler on 2000 directions per world.
 
 All outside-belt and bound comparisons cover that same full measured population.
-Coastline uses 102500 directions per world, against baseTerrainSampler at sea level 0.
+Coastline uses the same direction sets as M1: 20000 + 102500 Fibonacci directions per world (122500), against baseTerrainSampler at sea level 0.
 Quantiles use the shared q helper, sorted index floor(p*(n-1)), matching the owner test.
-Land is ground>=0; the metric 3 belt population is belt>0 on an active belt (halfWidthM >= 32 km); width-gated belts count as outside belts for the identity check.
+Land is ground>=0. The metric 3 CONTRACT population is land with belt>0 (as the plan says, "inside belts"), including width-gated belts; the active-belt-only ratio (halfWidthM >= 32 km) is reported as a supplementary INFO value. Width-gated belts count as outside belts for the bit-identity check, because composeRidgeTermM returns main's term there.
 Hypsometry is CONTRACT only on Maithea, INFO on the other three worlds. Relief ratio,
 identity, bound containment and coast are CONTRACT on all four.
 
 The exploratory sweep and the final integration both measured GAIN .6/.8/1.
 Every gain meets all Maithea hypsometry bands. At .6 every ratio is below .6;
-at .8 Maithea, Selawyn and Lethuris fall below their main all-land ratio (Raiva .628 >= .612
+at .8 Maithea, Selawyn and Lethuris fall below their main all-land ratio (Raiva .623 >= .612
 passes). GAIN=1 passes both metrics on every world; it is the only sampled gain that passes on
 all four, and it is the largest gain the convex-blend bound allows (no bodyHeightBoundM change).
-Margin at GAIN 1: belt ratio exceeds main by .051-.116 and stays .17-.22 below the .9 cap. No plateau parameter or band relaxation was needed.
+Margin at GAIN 1: belt ratio exceeds main by .051-.091 and stays .17-.22 below the .9 cap. No plateau parameter or band relaxation was needed.
 The 102500-direction baseline ratios differ slightly from the plan's 20000-direction
 0.615..0.657 summary: measured range is 0.612274..0.654722. Acceptance compares the
-actual identical 102500-direction populations, not the rounded historical summary.
+same 102500-direction set (main over all land, candidate over belt land), not the rounded historical summary.
 
 ## Renders and limits
 
@@ -150,7 +151,9 @@ No commit was attempted. The script cost observation is INFO only.
 - `npx tsc --noEmit`: exit 0. The subsequent source edit changed comments only.
 - `node scripts/mountain-render-envelope.mjs`: Astra run exit 0, 6.51 s. Coordinator re-runs after
   the site-rule and gated-composition fixes: exit 0, 7.12 s, all CONTRACTs pass (tables below are
-  from the final re-run; only Raiva's rows changed).
+  from the final re-run). Astra review round 1 (FIX-BLOCKERS-FIRST) asked for the full belt>0
+  population for metric 3 and for the 20000-direction coast set as well; both are applied (Raiva
+  ratio .703 on 5344 belt samples; active-only .728 on 3205).
 
 The following tables and complete precision record are transcribed from that final run.
 
@@ -166,22 +169,22 @@ Hypsometry: metres and percentages, main → composed; Maithea CONTRACT, others 
 | Raiva | 184.576 → 185.375 | 339.489 → 348.225 | 1489.362 → 1616.538 | 2474.912 → 2509.533 | 3193.524 → 3312.685 | 0.000 → 0.000 | 69.241 → 67.282 |
 | Lethuris | 195.727 → 199.091 | 350.882 → 372.597 | 2410.060 → 2647.391 | 4059.555 → 4155.612 | 5010.147 → 5010.147 | 1.205 → 1.510 | 64.831 → 61.189 |
 
-CONTRACT: ratios and containment on the 102500-direction set. Identity and outside-belt counts cover all 306262 measured directions per world.
+CONTRACT: ratios and containment on the 102500-direction set; coast flips on 20000 + 102500 = 122500 directions per world. Identity and outside-belt counts cover all 306262 measured directions per world.
 
 | World | Belt n | Main ratio | Belt ratio | Composed max m | Bound m | Coast flips | Identity / a0 mismatches | Outside diffs / count | Bound violations |
 |---|---:|---:|---:|---:|---:|---:|---|---|---:|
 | Maithea | 5768 | 0.655 | 0.719 | 5781.072 | 6628.142 | 0 | 0 / 0 | 0 / 235811 | 0 |
 | Selawyn | 3835 | 0.640 | 0.705 | 4555.745 | 5175.954 | 0 | 0 / 0 | 0 / 193730 | 0 |
-| Raiva | 3205 | 0.612 | 0.728 | 3370.728 | 4023.619 | 0 | 0 / 0 | 0 / 234324 | 0 |
+| Raiva | 5344 | 0.612 | 0.703 | 3370.728 | 4023.619 | 0 | 0 / 0 | 0 / 234324 | 0 |
 | Lethuris | 3750 | 0.631 | 0.682 | 5544.804 | 6485.172 | 0 | 0 / 0 | 0 / 199484 | 0 |
 
 Gain sweep: Maithea hypsometry (CONTRACT) and every-world belt ratio (CONTRACT). Full precision and other-world sweep hypsometry are in the record below.
 
 | GAIN | Maithea p10 / p50 / p90 / p99 / max m | >4 km / <500 m % | Maithea ratio | Selawyn ratio | Raiva ratio | Lethuris ratio |
 |---|---|---|---:|---:|---:|---:|
-| 0.6 | 208.462 / 460.384 / 2701.799 / 4332.175 / 5909.958 | 2.089 / 52.824 | 0.572 | 0.537 | 0.538 | 0.534 |
-| 0.8 | 208.723 / 461.866 / 2848.983 / 4346.197 / 5909.958 | 2.243 / 52.624 | 0.639 | 0.622 | 0.628 | 0.608 |
-| 1 | 208.915 / 463.658 / 2991.496 / 4462.419 / 5909.958 | 2.888 / 52.561 | 0.719 | 0.705 | 0.728 | 0.682 |
+| 0.6 | 208.462 / 460.384 / 2701.799 / 4332.175 / 5909.958 | 2.089 / 52.824 | 0.572 | 0.537 | 0.577 | 0.534 |
+| 0.8 | 208.723 / 461.866 / 2848.983 / 4346.197 / 5909.958 | 2.243 / 52.624 | 0.639 | 0.622 | 0.623 | 0.608 |
+| 1 | 208.915 / 463.658 / 2991.496 / 4462.419 / 5909.958 | 2.888 / 52.561 | 0.719 | 0.705 | 0.703 | 0.682 |
 
 ## Width-excluded belts (INFO)
 

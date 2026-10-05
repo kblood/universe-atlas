@@ -89,7 +89,7 @@ async function run(){
   for(const body of waterWorlds()){
     console.log(`Measuring ${body.name}`);
     const world=envelopeWorld(body),ts=terrainSampler(body),base=baseTerrainSampler(body),layers=reliefLayersSampler(body);
-    const row={name:body.name,id:body.id,tau:world.tau,boundM:world.bound,identityMismatches:0,identityDirections:0,a0Mismatches:0,outsideBeltDiffs:0,outsideBeltDirections:0,coastFlips:0,boundViolations:0,failures:[]};
+    const row={name:body.name,id:body.id,tau:world.tau,boundM:world.bound,identityMismatches:0,identityDirections:0,a0Mismatches:0,outsideBeltDiffs:0,outsideBeltDirections:0,coastFlips:0,coastDirections:0,boundViolations:0,failures:[]};
     function checked(d){const s=world.sample(d),main=ts(d).groundHeightM;row.identityDirections++;if(!Object.is(s.main.groundHeightM,main)){
       row.identityMismatches++;writeFileSync(`${dir}/report.json`,JSON.stringify({class:'CONTRACT',aborted:'replica identity',row,d,replica:s.main.groundHeightM,main},null,2));throw new Error(`${body.name} replica identity mismatch`);
     }
@@ -102,18 +102,19 @@ async function run(){
     if(row.a0Mismatches){writeFileSync(`${dir}/report.json`,JSON.stringify({class:'CONTRACT',aborted:'a0 identity',row},null,2));throw new Error('a0 identity mismatch');}
     const mainHyp=[],gainHyp=gains.map(()=>[]);
     for(let i=0;i<20000;i++){const d=fib(i,20000),s=checked(d);if(s.main.groundHeightM>=0)mainHyp.push(s.main.groundHeightM);
+      row.coastFlips+=(s.compose().groundHeightM<0)!==base(d).ocean;row.coastDirections++;
       gains.forEach((g,j)=>{const h=s.compose(g).groundHeightM;if(h>=0)gainHyp[j].push(h);});}
     row.main=hypsometry(mainHyp);row.gainSweep=gains.map((gain,j)=>({gain,hypsometry:hypsometry(gainHyp[j])}));
-    const mainLand=[],beltLand=gains.map(()=>[]),allMax=gains.map(()=>-Infinity);
+    const mainLand=[],beltLand=gains.map(()=>[]),activeLand=gains.map(()=>[]),allMax=gains.map(()=>-Infinity);
     for(let i=0;i<102500;i++){
       const d=fib(i,102500),s=checked(d),h=s.compose().groundHeightM;
       if(s.main.groundHeightM>=0)mainLand.push(s.main.groundHeightM);
-      row.coastFlips+=(h<0)!==base(d).ocean;
-      gains.forEach((g,j)=>{const hg=g===C.GAIN?h:s.compose(g).groundHeightM;if(hg>=0){allMax[j]=Math.max(allMax[j],hg);if(s.belt.belt>0&&s.belt.halfWidthM>=C.MIN_HALF_WIDTH_M)beltLand[j].push(hg);}});
+      row.coastFlips+=(h<0)!==base(d).ocean;row.coastDirections++;
+      gains.forEach((g,j)=>{const hg=g===C.GAIN?h:s.compose(g).groundHeightM;if(hg>=0){allMax[j]=Math.max(allMax[j],hg);if(s.belt.belt>0){beltLand[j].push(hg);if(s.belt.halfWidthM>=C.MIN_HALF_WIDTH_M)activeLand[j].push(hg);}}});
     }
     row.mainRatio=q(mainLand,.99)/world.bound;
-    row.gainSweep.forEach((r,j)=>{r.beltSamples=beltLand[j].length;r.beltP99M=q(beltLand[j],.99);r.beltRatio=r.beltP99M/world.bound;r.composedMaxM=allMax[j];r.metric2Failures=body.name==='Maithea'?hypFailures(r.hypsometry,world.tau):[];r.metric3Pass=r.beltRatio>=.6&&r.beltRatio<=.9&&r.beltRatio>=row.mainRatio;});
-    const chosen=row.gainSweep.find(r=>r.gain===C.GAIN);row.composed=chosen.hypsometry;row.beltRatio=chosen.beltRatio;row.beltSamples=chosen.beltSamples;row.composedMaxM=chosen.composedMaxM;
+    row.gainSweep.forEach((r,j)=>{r.beltSamples=beltLand[j].length;r.beltP99M=q(beltLand[j],.99);r.beltRatio=r.beltP99M/world.bound;r.activeBeltSamples=activeLand[j].length;r.activeBeltRatio=q(activeLand[j],.99)/world.bound;r.composedMaxM=allMax[j];r.metric2Failures=body.name==='Maithea'?hypFailures(r.hypsometry,world.tau):[];r.metric3Pass=r.beltRatio>=.6&&r.beltRatio<=.9&&r.beltRatio>=row.mainRatio;});
+    const chosen=row.gainSweep.find(r=>r.gain===C.GAIN);row.composed=chosen.hypsometry;row.beltRatio=chosen.beltRatio;row.beltSamples=chosen.beltSamples;row.activeBeltRatio=chosen.activeBeltRatio;row.activeBeltSamples=chosen.activeBeltSamples;row.composedMaxM=chosen.composedMaxM;
     if(chosen.metric2Failures.length)row.failures.push('metric 2: '+chosen.metric2Failures.join(', '));
     if(!chosen.metric3Pass)row.failures.push('metric 3: belt p99 ratio');
     row.excludedBelts=world.layout.belts.map((b,index)=>({index,rank:b.rank,halfWidthM:b.halfWidthM})).filter(b=>b.halfWidthM<C.MIN_HALF_WIDTH_M);
