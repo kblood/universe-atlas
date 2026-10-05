@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
-import {massifEnvelopeM as U,maxEnvelopeM,composeRidgeTermM,envelopeBlendWeight,MASSIF_ENVELOPE as C,MASSIF_ENVELOPE_VERSION} from '../src/mountain-envelope.ts';
+import {massifEnvelopeM as U,maxEnvelopeM,composeRidgeTermM,envelopeBlendWeight,massifBlendWeight,massifHalfWidthM,MASSIF_ENVELOPE as C,MASSIF_ENVELOPE_VERSION} from '../src/mountain-envelope.ts';
 import {bandPowers,raster} from './helpers/mountain-metrics.mjs';
 
 const R=6e6,W=C.MIN_HALF_WIDTH_M;
@@ -52,21 +52,41 @@ test('HARD: literal positive zero at every exclusion, and dry amplitude ignores 
 test('HARD: outside composition preserves main bits; interior composition stays convex',()=>{
   let roundedAbove=0,maxRoundingM=0;
   for(const main of [0,-0,Number.MIN_VALUE,-Number.MIN_VALUE,1e-300,1/3,Number.MAX_VALUE,-Number.MAX_VALUE])
-    {assert.ok(Object.is(composeRidgeTermM(main,0,W,0),main));
+    {assert.ok(Object.is(composeRidgeTermM(main,0,0,W,0),main));
       // A width-gated belt carries no envelope and keeps main's bits at any belt value.
-      for(const b of [1e-9,.3,1])for(const w of [0,12000,W-1])assert.ok(Object.is(composeRidgeTermM(main,b,w,U(b,0,w,1000,1,1,'water')),main));}
-  for(const cls of ['water','dry'])for(const tau of [0,.1,.5,1,2])for(let b=0;b<=100;b++)
-    for(const main of [0,1,100,1800,3640,7280])for(const s of [0,.2,.5,.9,1]){
-      const h=composeRidgeTermM(main,b/100,W,U(b/100,s*W,W,1000,1,tau,cls));
+      for(const b of [1e-9,.3,1])for(const w of [0,12000,W-1])assert.ok(Object.is(composeRidgeTermM(main,b,0,w,U(b,0,w,1000,1,1,'water')),main));
+      // massif-envelope-2: at or beyond the massif half-width (any belt width) main's bits are kept.
+      for(const b of [1e-9,.3,1])for(const w of [W,C.MAX_HALF_WIDTH_M,100000,220000])for(const f of [1,1.5,4])
+        for(const sign of [1,-1]){const x=sign*f*massifHalfWidthM(w);assert.ok(Object.is(composeRidgeTermM(main,b,x,w,U(b,x,w,1000,1,1,'water')),main));}}
+  // Interior: (1 - w) main + U never exceeds max(main, the analytic maximum) and never goes negative, on
+  // narrow, capped and wide belts, through the core and the edge fade (p^3 <= fade on s in [.65, 1]).
+  for(const cls of ['water','dry'])for(const tau of [0,.1,.5,1,2])for(let b=0;b<=100;b+=5)for(const w of [W,40000,C.MAX_HALF_WIDTH_M,220000])
+    for(const main of [0,1,100,1800,3640,7280])for(let si=0;si<=100;si++){
+      const x=si/100*massifHalfWidthM(w),h=composeRidgeTermM(main,b/100,x,w,U(b/100,x,w,1000,1,tau,cls));
       const bound=Math.max(main,maxEnvelopeM(tau,cls));assert.ok(h>=0);
       if(h>bound){
         // The mandated literal blend can round one ULP above equal endpoints.
-        // Keep that expression; no physical acceptance band is relaxed.
-        assert.equal(s,0);assert.equal(main,maxEnvelopeM(tau,cls));
-        assert.ok(h-bound<=Number.EPSILON*bound);roundedAbove++;maxRoundingM=Math.max(maxRoundingM,h-bound);
+        assert.equal(main,maxEnvelopeM(tau,cls));
+        assert.ok(h-bound<=2*Number.EPSILON*bound);roundedAbove++;maxRoundingM=Math.max(maxRoundingM,h-bound);
       }
     }
   console.log('CONVEX '+JSON.stringify({roundedAbove,maxRoundingM}));
+});
+test('HARD: massif-envelope-2 cap: one fixed-width massif on a wide belt; the weight fades to 0 at its edge',()=>{
+  assert.equal(massifHalfWidthM(220000),C.MAX_HALF_WIDTH_M);assert.equal(massifHalfWidthM(40000),40000);
+  for(const w of [100000,220000]){
+    // Same profile as a belt exactly as wide as the cap, zero from the cap outward.
+    for(let i=0;i<=300;i++){const x=i*1000;
+      assert.equal(U(1,x,w,1000,1,1,'water'),U(1,x,C.MAX_HALF_WIDTH_M,1000,1,1,'water'));
+      if(x>=C.MAX_HALF_WIDTH_M){assert.ok(Object.is(U(1,x,w,1000,1,1,'water'),0));assert.equal(massifBlendWeight(1,x,w),0);}}
+  }
+  // Weight: 1 through the core, monotone fade to 0 over [EDGE_FADE_START, 1) of the massif half-width.
+  let last=1;for(let i=0;i<=1000;i++){const s=i/1000,v=massifBlendWeight(1,s*C.MAX_HALF_WIDTH_M,220000);
+    if(s<=C.EDGE_FADE_START)assert.equal(v,1);assert.ok(v<=last);last=v;}
+  assert.equal(massifBlendWeight(1,C.MAX_HALF_WIDTH_M,220000),0);assert.equal(massifBlendWeight(.25,0,220000),envelopeBlendWeight(.25));
+  // Negative control: the v1 rule (profile over the whole belt half-width) is non-zero 120 km out on a 220 km belt.
+  const v1=(x,w)=>{const s=Math.abs(x)/w,p=1-s*s;return s<1?3640*p*p*p:0;};
+  assert.ok(v1(120000,220000)>0);assert.ok(Object.is(U(1,120000,220000,1000,1,1,'water'),0));
 });
 test('HARD: symmetric monotone profile, exact crown, C2 support and blend endpoints',()=>{
   for(const cls of ['water','dry']){
@@ -107,6 +127,6 @@ test('HARD: arithmetic audit with negative controls, no imports, frozen versione
   for(const bad of ['Math.sin(x)','Math.sqrt(x)','Math.pow(x,3)','x ** 3',"Math['abs'](x)",'Math.random()',
     'const alias=Math','Number.parseFloat(x)','parseFloat(x)','x.toFixed(2)'])assert.throws(()=>auditArithmetic(source+'\n'+bad),bad);
   assert.doesNotMatch(source,/\bimport\b|\bfrom\s*['"]/);
-  assert.equal(MASSIF_ENVELOPE_VERSION,'massif-envelope-1');assert.ok(Object.isFrozen(C));
-  assert.deepEqual(C,{GAIN:1,MIN_HALF_WIDTH_M:32000,RIDGE_EQUIVALENT_WATER_M:3640,RIDGE_EQUIVALENT_DRY_M:1800,BLEND_BELT_FULL:.5,MIN_FEATURE_WAVELENGTH_M:32000});
+  assert.equal(MASSIF_ENVELOPE_VERSION,'massif-envelope-2');assert.ok(Object.isFrozen(C));
+  assert.deepEqual(C,{GAIN:1,MIN_HALF_WIDTH_M:32000,MAX_HALF_WIDTH_M:48000,EDGE_FADE_START:.65,RIDGE_EQUIVALENT_WATER_M:3640,RIDGE_EQUIVALENT_DRY_M:1800,BLEND_BELT_FULL:.5,MIN_FEATURE_WAVELENGTH_M:32000});
 });

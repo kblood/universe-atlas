@@ -1,8 +1,17 @@
 // M2: pre-radius-scale metres; finite inputs, belt/landFactor in [0,1], tau >= 0.
-export const MASSIF_ENVELOPE_VERSION = 'massif-envelope-1';
+//
+// massif-envelope-2 (mountains assembly, owner decision (e) of 2026-10-05; docs/mountains-assembly-2026-10-05.md):
+// the massif is a band of FIXED maximum half-width MAX_HALF_WIDTH_M along the belt axis. On a belt wider than
+// that, the outer belt keeps main's ridge term exactly (composeRidgeTermM returns it), so a wide M1 belt no
+// longer moves the class boundary of the terrain far from its axis; inside the massif the old ridge term fades
+// out over the outer EDGE_FADE_START..1 of the massif half-width (decision (f): uplift inside, fade-out at the
+// edge). massif-envelope-1 spread one (1 - s^2)^3 profile over the whole belt half-width (up to 220 km).
+export const MASSIF_ENVELOPE_VERSION = 'massif-envelope-2';
 export const MASSIF_ENVELOPE = Object.freeze({
   GAIN: 1,
   MIN_HALF_WIDTH_M: 32000,
+  MAX_HALF_WIDTH_M: 48000,
+  EDGE_FADE_START: 0.65,
   RIDGE_EQUIVALENT_WATER_M: 3640,
   RIDGE_EQUIVALENT_DRY_M: 1800,
   BLEND_BELT_FULL: 0.5,
@@ -13,6 +22,22 @@ type EnvelopeClass = 'water' | 'dry';
 export function envelopeBlendWeight(belt: number): number {
   const t = Math.max(0, Math.min(1, belt / MASSIF_ENVELOPE.BLEND_BELT_FULL));
   return t * t * (3 - 2 * t);
+}
+
+// The massif half-width on a belt of half-width `halfWidthM`: the belt's own up to MAX_HALF_WIDTH_M.
+export function massifHalfWidthM(halfWidthM: number): number {
+  return Math.min(halfWidthM, MASSIF_ENVELOPE.MAX_HALF_WIDTH_M);
+}
+
+// Weight of the massif in the ridge-term composition: the belt blend weight times the massif edge fade
+// (1 inside EDGE_FADE_START of the massif half-width, smoothstep to 0 at its edge). 0 outside the massif
+// and on width-gated belts.
+export function massifBlendWeight(belt: number, axisDistanceM: number, halfWidthM: number): number {
+  if (belt === 0 || halfWidthM < MASSIF_ENVELOPE.MIN_HALF_WIDTH_M) return 0;
+  const s = Math.abs(axisDistanceM) / massifHalfWidthM(halfWidthM);
+  if (s >= 1) return 0;
+  const t = Math.max(0, Math.min(1, (s - MASSIF_ENVELOPE.EDGE_FADE_START) / (1 - MASSIF_ENVELOPE.EDGE_FADE_START)));
+  return envelopeBlendWeight(belt) * (1 - t * t * (3 - 2 * t));
 }
 
 export function maxEnvelopeM(tau: number, cls: EnvelopeClass): number {
@@ -26,18 +51,17 @@ export function massifEnvelopeM(
   landFactor: number, tau: number, cls: EnvelopeClass,
 ): number {
   if (a0 <= 0 || belt === 0 || halfWidthM < MASSIF_ENVELOPE.MIN_HALF_WIDTH_M) return 0;
-  const s = Math.abs(axisDistanceM) / halfWidthM;
+  const s = Math.abs(axisDistanceM) / massifHalfWidthM(halfWidthM);
   if (s >= 1) return 0;
   const p = 1 - s * s;
   return maxEnvelopeM(tau, cls) * (p * p * p) * landFactor * envelopeBlendWeight(belt);
 }
 
-// Proposed MTN-6 assembly only; the exact-zero branch preserves even signed zero.
-// A belt below the width gate carries no envelope, so it is treated as outside
-// belts too: main's term is returned unchanged (the old ridges are not faded out
-// with nothing to replace them).
-export function composeRidgeTermM(mainTermM: number, belt: number, halfWidthM: number, envelopeM: number): number {
-  return belt === 0 || halfWidthM < MASSIF_ENVELOPE.MIN_HALF_WIDTH_M
-    ? mainTermM
-    : (1 - envelopeBlendWeight(belt)) * mainTermM + envelopeM;
+// The MTN-6 composition; the exact-zero branch preserves even signed zero. Outside the massif (belt 0, a
+// width-gated belt, or |axisDistance| >= the massif half-width) main's term is returned unchanged; inside,
+// main's term fades out by massifBlendWeight and the envelope (plus, at assembly, the M3 carving of it) is
+// added: (1 - w) main + envelope.
+export function composeRidgeTermM(mainTermM: number, belt: number, axisDistanceM: number, halfWidthM: number, envelopeM: number): number {
+  const w = massifBlendWeight(belt, axisDistanceM, halfWidthM);
+  return w === 0 && envelopeM === 0 ? mainTermM : (1 - w) * mainTermM + envelopeM;
 }

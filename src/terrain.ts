@@ -15,6 +15,8 @@ import {planetGeophysics} from './planet-geophysics.ts';
 import {climateDatumM} from './surface-biomes.ts';
 import {DRY_SURFACE_ROUGHNESS,WET_SURFACE_ROUGHNESS} from './surface-roughness.ts';
 import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_CALIBRATION,CLIMATE_VERSION,type ClimateSample} from './surface-climate.ts';
+import {orogenLayout,OROGEN_LAYOUT_VERSION,type OrogenSample} from './mountain-layout.ts';
+import {composeRidgeTermM,massifEnvelopeM,MASSIF_ENVELOPE_VERSION} from './mountain-envelope.ts';
 
 // Bumped from terrain-1.3.0: `terrainSampler` gained the ABILITY to sum
 // procedural impact craters (planet-craters.ts) into `elevationM` for any
@@ -482,6 +484,10 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
   // R0: the radius scale of the continental coordinate (same value the
   // elevation clamp line multiplies by), hoisted out of the per-sample path.
   const continentalScale = Math.min(1, body.radiusM / 2e6);
+  // terrain-1.9.0: the M1 orogen layout of a relief water world (built once per
+  // body and memoised by mountain-layout.ts), and one scratch sample per core.
+  const orogen = reliefOn && body.water ? orogenLayout(body) : null;
+  const orogenScratch: OrogenSample = {belt: 0, axis: [0, 0, 0], axisDistanceM: 0, halfWidthM: 0, beltIndex: -1};
   // Legacy water-world land colour (pre-grain), terrain-1.6.0 expressions.
   const legacyWaterLandColour = (d: V3, elevationM: number): number[] => {
     const latitude = Math.abs(d[1]);
@@ -565,8 +571,15 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
           const comp = a0 / (1 + a0 / RC.HC);
           let fineT = fine * landFactor;
           if (fineT < -0.5 * comp) fineT = -0.5 * comp;
+          let ridgeTermM = tau * RC.KB * 2800 * ridges * ss(RC.BT0, RC.BT1, ridges) * landFactor;
+          if (orogen) {
+            const o = orogen.sampleWithA0(d, a0, orogenScratch);
+            if (o.belt !== 0)
+              ridgeTermM = composeRidgeTermM(ridgeTermM, o.belt, o.axisDistanceM, o.halfWidthM,
+                massifEnvelopeM(o.belt, o.axisDistanceM, o.halfWidthM, a0, landFactor, tau, 'water'));
+          }
           const F = comp + tau * (RC.HUP * ss(RC.B1, RC.B2, a0) + RC.HHI * ss(RC.B3, RC.B4, a0))
-            + tau * RC.KB * 2800 * ridges * ss(RC.BT0, RC.BT1, ridges) * landFactor + fineT;
+            + ridgeTermM + fineT;
           floorM = clamp(F, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
           const upland = ss(RC.HM0, RC.HM1, floorM);
           elevationM = floorM + tau * detailM * (RC.WLOW + (1 - RC.WLOW) * upland);

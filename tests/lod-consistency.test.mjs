@@ -21,8 +21,10 @@ import {
   LOD_LADDER_VERSION, LOD_TOLERANCES, SEABED_DETAIL_POLICY, ladderFor, ladderIdForLevel, levelForPose,
   peakCorrectionMaxLevel, seabedDistanceM, seabedLadderId, tileEdgeM, contactLevelFor, fineContactLevelFor,
 } from '../src/lod-ladder.ts';
-import {crossPair, newCrossAcc, summariseCross, retentionTile, newRetentionAcc, summariseRetention, edgeDirections,
-  stratifiedEdgeDirections,tileDigest} from '../scripts/lod-consistency-report.mjs';
+import {crossPair, newCrossAcc, summariseCross, retentionTile, newRetentionAcc, summariseRetention, tileDigest} from '../scripts/lod-consistency-report.mjs';
+// Owner decision (e) 2026-10-05: the tile selection is FROZEN (the directions main 39e2448 picked), so a terrain
+// change can no longer re-pick tiles and move a pin; see the fixture header for how it was recorded.
+import {FROZEN_STRATIFIED, FROZEN_MAITHEA_RETENTION_EDGES, FROZEN_SELECTION_SOURCE} from './helpers/lod-frozen-selection.mjs';
 
 const m={...tiles,terrainSampler,biomeClassifier,waterWorlds};
 const PAIRS=[6,8,10,12,14];
@@ -87,7 +89,8 @@ test('ladder lod-ladder-1: rung ranges, pose mapping and the seabed distance pol
 });
 
 for(const name of ['Maithea','Lethuris'])test(`${name}: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15`,()=>{
-  const body=bodies[name],ts=terrainSampler(body),cls=biomeClassifier(body),picks=stratifiedEdgeDirections(ts,cls);
+  const body=bodies[name],ts=terrainSampler(body),cls=biomeClassifier(body),picks=FROZEN_STRATIFIED[name];
+  assert.deepEqual(FROZEN_SELECTION_SOURCE,{commit:'39e2448',terrainVersion:'terrain-1.8.1-grain'});
   for(const [kind,dirs] of Object.entries(picks))assert.equal(dirs.length,3,`${name}: three ${kind} tiles`);
   const dirs=Object.values(picks).flat(),tol=LOD_TOLERANCES;
   for(const L of PAIRS){
@@ -105,9 +108,9 @@ for(const name of ['Maithea','Lethuris'])test(`${name}: 12 stratified edge tiles
 });
 
 test('Maithea coarse retention: peak area kept, summit loss, snow and forest (plan edge-tile selection)',()=>{
-  // The plan's own edge selection (snowline .2-.95 or forest potential). K=32: at K=16 the L6 peak-area
+  // The plan's own edge selection (snowline .2-.95 or forest potential), frozen as picked on main 39e2448. K=32: at K=16 the L6 peak-area
   // figure is 84.99%, a statistical tie with the 85% target, so the larger sample decides (85.16%).
-  const body=bodies.Maithea,ts=terrainSampler(body),cls=biomeClassifier(body),dirs=edgeDirections(ts,cls,32),keeps=LOD_TOLERANCES.coarseKeeps;
+  const body=bodies.Maithea,ts=terrainSampler(body),cls=biomeClassifier(body),dirs=FROZEN_MAITHEA_RETENTION_EDGES,keeps=LOD_TOLERANCES.coarseKeeps;
   const at=L=>{const a=newRetentionAcc();for(const d of dirs)retentionTile(m,body,ts,cls,d,L,a);return summariseRetention(a);};
   const l6=at(6),l8=at(8);
   assert.ok(l6.peakKept>=100*keeps.peakAreaL6,`L6 peak area kept ${l6.peakKept.toFixed(2)}% >= 85% (shipped 70.9%)`);
@@ -121,7 +124,7 @@ test('Maithea coarse retention: peak area kept, summit loss, snow and forest (pl
 test('coarse heights are a declared reduction: point sample plus a bounded non-negative correction',()=>{
   for(const name of ['Maithea','Lethuris']){
     const body=bodies[name],ts=terrainSampler(body),n=tiles.PATCH_SEGMENTS,maxL=peakCorrectionMaxLevel(body.radiusM);
-    const range=stratifiedEdgeDirections(ts,biomeClassifier(body)).range[0];
+    const range=FROZEN_STRATIFIED[name].range[0];
     for(const L of [4,maxL,maxL+1]){
       const tile=tiles.directionTile(range,L),data=tiles.buildTile(body,tile);
       let raised=0;
@@ -143,7 +146,7 @@ test('coarse heights are a declared reduction: point sample plus a bounded non-n
 
 test('morph: a child starts exactly on its corrected parent at every co-located node',()=>{
   const body=bodies.Maithea,n=tiles.PATCH_SEGMENTS,maxL=peakCorrectionMaxLevel(body.radiusM),ts=terrainSampler(body);
-  const range=stratifiedEdgeDirections(ts,biomeClassifier(body)).range[0];
+  const range=FROZEN_STRATIFIED.Maithea.range[0];
   for(const L of [7,maxL,maxL+1]){
     const child=tiles.directionTile(range,L),parent={face:child.face,level:L-1,x:child.x>>1,y:child.y>>1};
     const c=tiles.buildTile(body,child),p=tiles.buildTile(body,parent),ox=(child.x&1)*n/2,oy=(child.y&1)*n/2;
