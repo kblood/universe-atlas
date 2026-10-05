@@ -134,3 +134,117 @@ test('HARD: structure helper counts known plane channels and raw correlation',()
   assert.equal(actual.headsPer1000km2,3200);assert.equal(actual.mirrorCorrelation,-1);
   assert.equal(actual.uncarvedSharePct,4);assert.equal(actual.coreSamples,25);
 });
+
+// Only the new C fixtures reduce the lattice. Existing A2/B tests above are
+// unchanged. Two full-size neighbouring blocks additionally validate the mesh.
+const cSource=readFileSync(new URL('../src/mountain-carving.ts',import.meta.url),'utf8');
+function cModuleSource(small){return stripTypeScriptTypes((small?cSource.replace('ROWS: 480, COLS: 120, CACHE: 32','ROWS: 48, COLS: 12, CACHE: 2'):cSource)+
+  '\nexport {cBuild,cCache,cGet,cBoundaryAt,cInterpolate};');}
+const cSmall=await import('data:text/javascript;base64,'+Buffer.from(cModuleSource(true)).toString('base64'));
+function cDigest(m,reverse=false){
+  const values=new Float64Array(128);
+  for(let j=0;j<values.length;j++){
+    const i=reverse?values.length-1-j:j,x=2000+(i%16)*550,y=-29000+Math.floor(i/16)*8000,e=3000*(1-Math.abs(y)/30000);
+    values[i]=m.carvingCM(x,y,30000,e,1,730201);
+  }
+  return createHash('sha256').update(Buffer.from(values.buffer)).digest('hex');
+}
+test('C: exclusions, bounds, frozen constants and exact cache keys',()=>{
+  const m=cSmall,fn=m.carvingCM;
+  assert.ok(Object.isFrozen(m.MOUNTAIN_CARVING_C));assert.equal(m.CARVING_C_VERSION,'mountain-carving-c-1');
+  m.cCache.fill(undefined);
+  for(const a of [[0,0,30000,3000,0,1],[0,0,30000,0,1,1],[0,0,30000,-10,1,1],[0,30000,30000,3000,1,1],[0,-31000,30000,3000,1,1]])assert.ok(Object.is(fn(...a),0));
+  assert.ok(m.cCache.every(v=>v===undefined));
+  for(const w of [30,30000,30000.00000001,3e6])for(const seed of [730201,730202]){
+    const a=[w*.2,w*.27,w,777,1,seed];m.cCache.fill(undefined);const cold=fn(...a);
+    fn(w*.2,w*.27,w+1e-8,777,1,seed^1);assert.equal(fn(...a),cold);
+    for(const e of [1e-9,777,1e8]){const d=fn(a[0],a[1],w,e,1,seed);assert.ok(d>=-e&&d<=0);}
+  }
+  const first=m.cGet(730201,30000,0),near=m.cGet(730201,30000.00000001,0);
+  assert.notEqual(first,near);assert.equal(near.w,30000.00000001);
+  assert.deepEqual(m.cGet(730201,30000,0).h,first.h);
+  const other=m.cGet(730203,30000,0); // Same direct-mapped slot, different seed.
+  assert.equal(other.seed,730203);assert.notDeepEqual(other.h,first.h);
+  assert.deepEqual(m.cGet(730201,30000,0).h,first.h);
+});
+test('C: forward/reverse/cold/warm/evicted/child digest',()=>{
+  cSmall.cCache.fill(undefined);const sha=cDigest(cSmall);
+  assert.equal(cDigest(cSmall),sha);assert.equal(cDigest(cSmall,true),sha);
+  cSmall.cCache.fill(undefined);assert.equal(cDigest(cSmall,true),sha);
+  for(let id=4;id<8;id++)cSmall.cGet(730201,30000,id);
+  assert.equal(cDigest(cSmall),sha);
+  const child=spawnSync(process.execPath,['--input-type=module','-e',`
+    import {createHash} from 'node:crypto';
+    const m=await import('data:text/javascript;base64,${Buffer.from(cModuleSource(true)).toString('base64')}');
+    ${cDigest.toString()}
+    process.stdout.write(cDigest(m));
+  `],{encoding:'utf8'});
+  assert.equal(child.status,0,child.stderr);assert.equal(child.stdout,sha);
+  assert.equal(sha,'e40c2a40fa6437176b8e58517ec811be1759ddba346afc06eb14f4a2ec5ddf06');
+  console.log('C_DIGEST '+sha);
+});
+function undrained(b,h=b.h){
+  const {fixed,degree,nb}=b.mesh,out=[];
+  for(let k=0;k<h.length;k++)if(!fixed[k]&&h[k]>0){
+    let lower=false;for(let a=k*8;a<k*8+degree[k];a++)if(h[nb[a]]<h[k])lower=true;
+    if(!lower)out.push(k);
+  }
+  return out;
+}
+test('C: production mesh drainage, conservation, shared vertices and seam continuity',async()=>{
+  const m=await import('data:text/javascript;base64,'+Buffer.from(cModuleSource(false)).toString('base64'));
+  const a=m.cBuild(730201,30000,0),b=m.cBuild(730201,30000,1),{ROWS,COLS}=m.MOUNTAIN_CARVING_C;
+  const sha=cDigest(m);assert.equal(cDigest(m,true),sha);
+  assert.equal(sha,'cc97b80ffec00b6f028bbddee57b4c0c196cb0cba575ed2722f4bb7cf3f85416');
+  m.cCache.fill(undefined);assert.equal(cDigest(m,true),sha);
+  m.cGet(730201,30000,32);assert.equal(cDigest(m),sha);
+  const child=spawnSync(process.execPath,['--input-type=module','-e',`
+    import {createHash} from 'node:crypto';
+    import * as m from './src/mountain-carving.ts';
+    ${cDigest.toString()}
+    process.stdout.write(cDigest(m));
+  `],{cwd:new URL('..',import.meta.url),encoding:'utf8'});
+  assert.equal(child.status,0,child.stderr);assert.equal(child.stdout,sha);
+  assert.deepEqual(m.MOUNTAIN_CARVING_C,{ROWS:480,COLS:120,CACHE:32,TILT:1.3,NOISE_AMP:400,
+    SC:.9,FOOT:1500,AC:300000,M:.375,K:37.552365026127084,HACK_C:2.56,HEAD_GUARD_M:125,
+    REROUTE:0,EPSILON:.000001,REFERENCE_M:3000});
+  console.log('C_PRODUCTION_DIGEST '+sha);
+  for(const block of [a,b]){
+    assert.deepEqual(undrained(block),[]);
+    let initial=0,outflow=0;const {mesh,receiver,acc,h}=block;
+    for(let k=0;k<h.length;k++){
+      initial+=mesh.area[k];assert.ok(mesh.area[k]>0);assert.ok(mesh.degree[k]<=8);
+      if(receiver[k]<0)outflow+=acc[k];else{
+        assert.ok(Array.from(mesh.nb.subarray(k*8,k*8+mesh.degree[k])).includes(receiver[k]));
+        assert.ok(acc[receiver[k]]>acc[k]);
+      }
+    }
+    assert.ok(Math.abs(initial-outflow)/initial<1e-12);
+    // Raise the sole lower neighbour of an interior vertex: the resulting
+    // local sink must be found, demonstrating that the drainage check has teeth.
+    let caught=false;
+    for(let k=0;k<h.length&&!caught;k++)if(!mesh.fixed[k]&&h[k]>0){
+      const lower=Array.from(mesh.nb.subarray(k*8,k*8+mesh.degree[k])).filter(r=>h[r]<h[k]);
+      if(lower.length===1){const bad=h.slice();bad[lower[0]]=1e6;caught=undrained(block,bad).includes(k);}
+    }
+    assert.ok(caught,'raised-vertex negative control');
+  }
+  for(let row=0;row<=ROWS;row++){
+    assert.equal(a.right[row],b.left[row]);assert.equal(a.h[row*(COLS+1)+COLS],b.h[row*(COLS+1)]);
+  }
+  for(const row of [3,119,239,240,317,477])for(const t of [0,.37,.99]){
+    const x=m.cBoundaryAt(1,row,t,30000,730201),y=-30000+(row+t)*125,e=3000*(1-Math.abs(y)/30000);
+    const differences=[1,.01,.0001].map(eps=>Math.abs(m.carvingCM(x-eps,y,30000,e,1,730201)-m.carvingCM(x+eps,y,30000,e,1,730201)));
+    assert.ok(differences[1]<differences[0]*.011+1e-10);assert.ok(differences[2]<differences[1]*.011+1e-10);
+    assert.ok(differences[2]<.001);
+  }
+  // Query interpolation reproduces every tested vertex and stays within the
+  // four quad corner heights even when the quad is skewed.
+  for(let row=0;row<ROWS;row+=19)for(let col=0;col<COLS;col+=7){
+    const x=a.left[row]+(a.right[row]-a.left[row])*col/COLS,k=row*(COLS+1)+col;
+    assert.ok(Math.abs(m.cInterpolate(a,x,row,0)-a.h[k])<1e-8);
+    const t=.43,l=a.left[row]*(1-t)+a.left[row+1]*t,r=a.right[row]*(1-t)+a.right[row+1]*t;
+    const h=m.cInterpolate(a,l+(r-l)*(col+.61)/COLS,row,t),corners=[a.h[k],a.h[k+1],a.h[k+COLS+1],a.h[k+COLS+2]];
+    assert.ok(h>=Math.min(...corners)-1e-8&&h<=Math.max(...corners)+1e-8);
+  }
+});

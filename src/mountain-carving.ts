@@ -142,3 +142,191 @@ export function carvingBM(alongM: number,acrossM: number,halfWidthM: number,enve
 export function ridgeValleyCarvingM(alongM: number,acrossM: number,halfWidthM: number,envelopeM: number,belt: number,seed: number): number {
   return carvingAM(alongM,acrossM,halfWidthM,envelopeM,belt,seed);
 }
+
+// C changes the original no-stored-state architecture: a bounded, direct-mapped
+// memo stores complete canonical blocks. Exact keys and rebuild-on-collision
+// make its contents observationally irrelevant. No tile or LOD enters a key.
+export const CARVING_C_VERSION = 'mountain-carving-c-1';
+export const MOUNTAIN_CARVING_C = Object.freeze({
+  ROWS: 480, COLS: 120, CACHE: 32, TILT: 1.3, NOISE_AMP: 400,
+  SC: 0.9, FOOT: 1500, AC: 300000, M: 0.375, K: 37.552365026127084,
+  HACK_C: 2.56, HEAD_GUARD_M: 125, REROUTE: 0,
+  EPSILON: 0.000001, REFERENCE_M: 3000,
+});
+const CC=MOUNTAIN_CARVING_C;
+type CBlock = {seed:number,w:number,id:number,h:Float64Array,left:Float64Array,right:Float64Array};
+const cCache: (CBlock|undefined)[] = new Array(CC.CACHE);
+function cHash(x:number,y:number,o:number,seed:number):number {
+  let h=Math.imul(x,0x9e3779b1)^Math.imul(y,0x85ebca77)^Math.imul(o,0xc2b2ae3d)^Math.imul(seed,0x27d4eb2d);
+  h=Math.imul(h^(h>>>16),0x85ebca6b);h=Math.imul(h^(h>>>13),0xc2b2ae35);
+  return ((h^(h>>>16))>>>0)/4294967295;
+}
+function cNoise(x:number,y:number,o:number,seed:number):number {
+  const i=Math.floor(x),j=Math.floor(y),fx=x-i,fy=y-j;
+  const u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy);
+  const a=cHash(i,j,o,seed),b=cHash(i+1,j,o,seed),c=cHash(i,j+1,o,seed),d=cHash(i+1,j+1,o,seed);
+  return 2*((a+(b-a)*u)*(1-v)+(c+(d-c)*u)*v)-1;
+}
+function cBoundary(id:number,y:number,w:number,seed:number):number {
+  const t=y/(w/5),j=Math.floor(t),f=t-j,u=f*f*(3-2*f);
+  const a=2*cHash(id,0,101,seed)-1;
+  const b=2*cHash(id,j,102,seed)-1,c=2*cHash(id,j+1,102,seed)-1;
+  return w/2*(id+0.10*a+0.08*(b+(c-b)*u));
+}
+// Actual mesh boundary is linear between canonical curve samples, including
+// during ownership lookup. Equality belongs to the block on the right.
+function cBoundaryAt(id:number,row:number,t:number,w:number,seed:number):number {
+  const a=cBoundary(id,-w+2*w*row/CC.ROWS,w,seed);
+  return a+(cBoundary(id,-w+2*w*(row+1)/CC.ROWS,w,seed)-a)*t;
+}
+function cAreaExponent(a:number):number {return Math.sqrt(Math.sqrt(Math.sqrt(a*a*a)));}
+function cEnvelope(y:number,w:number):number {return CC.REFERENCE_M*Math.max(0,1-Math.abs(y)/w);}
+function cSlope(e:number):number {return CC.SC*Math.min(1,e/CC.FOOT);}
+function cDiagonal(id:number,row:number,col:number,seed:number):boolean {
+  return cHash(id*CC.COLS+col,row,103,seed)<0.5;
+}
+// Indexed binary heap: one entry per vertex, deterministic value/index ties.
+// The caller only decreases keys of entries already present.
+class CHeap {
+  ids:Int32Array; pos:Int32Array; key:Float64Array; size=0;
+  constructor(n:number,key:Float64Array){this.ids=new Int32Array(n);this.pos=new Int32Array(n).fill(-1);this.key=key;}
+  less(a:number,b:number):boolean {return this.key[a]<this.key[b]||(this.key[a]===this.key[b]&&a<b);}
+  push(c:number):void {
+    let k=this.pos[c];if(k<0)k=this.size++;
+    while(k>0){const p=(k-1)>>1,a=this.ids[p];if(!this.less(c,a))break;this.ids[k]=a;this.pos[a]=k;k=p;}
+    this.ids[k]=c;this.pos[c]=k;
+  }
+  pop():number {
+    const c=this.ids[0],a=this.ids[--this.size];this.pos[c]=-1;
+    if(this.size){let k=0;for(;;){let b=2*k+1;if(b>=this.size)break;
+      if(b+1<this.size&&this.less(this.ids[b+1],this.ids[b]))b++;
+      if(!this.less(this.ids[b],a))break;
+      this.ids[k]=this.ids[b];this.pos[this.ids[k]]=k;k=b;
+    }this.ids[k]=a;this.pos[a]=k;}return c;
+  }
+}
+function cMesh(seed:number,w:number,id:number) {
+  const stride=CC.COLS+1,n=(CC.ROWS+1)*stride,dy=2*w/CC.ROWS;
+  const x=new Float64Array(n),e=new Float64Array(n),fixed=new Uint8Array(n);
+  const left=new Float64Array(CC.ROWS+1),right=new Float64Array(CC.ROWS+1);
+  const degree=new Uint8Array(n),nb=new Int32Array(n*8).fill(-1),length=new Float64Array(n*8),area=new Float64Array(n);
+  for(let j=0;j<=CC.ROWS;j++){
+    const y=-w+2*w*j/CC.ROWS;left[j]=cBoundary(id,y,w,seed);right[j]=cBoundary(id+1,y,w,seed);
+    for(let i=0;i<=CC.COLS;i++){const k=j*stride+i;
+      x[k]=i===CC.COLS?right[j]:left[j]+(right[j]-left[j])*i/CC.COLS;
+      e[k]=cEnvelope(y,w);fixed[k]=i===0||i===CC.COLS||j===0||j===CC.ROWS?1:0;
+    }
+  }
+  const edge=(a:number,b:number)=>{
+    const dx=x[b]-x[a],yy=(Math.floor(b/stride)-Math.floor(a/stride))*dy,len=Math.sqrt(dx*dx+yy*yy);
+    let k=a*8+degree[a]++;nb[k]=b;length[k]=len;k=b*8+degree[b]++;nb[k]=a;length[k]=len;
+  };
+  const triangle=(a:number,b:number,c:number)=>{
+    const abY=(Math.floor(b/stride)-Math.floor(a/stride))*dy,acY=(Math.floor(c/stride)-Math.floor(a/stride))*dy;
+    const share=Math.abs((x[b]-x[a])*acY-(x[c]-x[a])*abY)/6;
+    area[a]+=share;area[b]+=share;area[c]+=share;
+  };
+  for(let j=0;j<=CC.ROWS;j++)for(let i=0;i<=CC.COLS;i++){
+    const a=j*stride+i;if(i<CC.COLS)edge(a,a+1);if(j<CC.ROWS)edge(a,a+stride);
+    if(i<CC.COLS&&j<CC.ROWS){const b=a+1,c=a+stride,d=c+1;
+      if(cDiagonal(id,j,i,seed)){edge(a,d);triangle(a,b,d);triangle(a,d,c);}
+      else{edge(b,c);triangle(a,b,c);triangle(b,d,c);}
+    }
+  }
+  return {stride,n,dy,x,e,fixed,left,right,degree,nb,length,area};
+}
+// Prescribed shared trunk, not a globally self-consistent discharge solution.
+// HACK_C gives 175.07 km2 at l=30 km. Midpoint integration goes margin to
+// head, using actual polyline segment lengths and guarded Hack head distance.
+function cTrunk(boundary:number,w:number,seed:number):Float64Array {
+  const h=new Float64Array(CC.ROWS+1),dy=2*w/CC.ROWS;
+  for(const sign of [-1,1])for(let k=1;k<=CC.ROWS/2;k++){
+    const row=sign<0?k:CC.ROWS-k,prev=row+sign;
+    const y=-w+2*w*row/CC.ROWS,yp=-w+2*w*prev/CC.ROWS;
+    const mid=(y+yp)/2,l=Math.max(CC.HEAD_GUARD_M,Math.abs(mid));
+    const area=CC.HACK_C*l*Math.sqrt(l)*Math.sqrt(Math.sqrt(l));
+    const dx=cBoundary(boundary,y,w,seed)-cBoundary(boundary,yp,w,seed);
+    const v=h[prev]+Math.sqrt(dx*dx+dy*dy)*Math.min(cSlope(cEnvelope(mid,w)),CC.K/cAreaExponent(area));
+    // Both flanks reach the head; the lower head retains a descending edge.
+    h[row]=row===CC.ROWS/2&&sign===1?Math.min(h[row],v,cEnvelope(y,w)):Math.min(v,cEnvelope(y,w));
+  }
+  return h;
+}
+function cBuild(seed:number,w:number,id:number) {
+  const mesh=cMesh(seed,w,id),{n,stride,dy,x,e,fixed,left,right,degree,nb,length,area}=mesh;
+  const filled=new Float64Array(n),seen=new Uint8Array(n),order=new Int32Array(n);
+  const receiver=new Int32Array(n).fill(-1),distance=new Float64Array(n),acc=area.slice();
+  const heap=new CHeap(n,filled);
+  for(let k=0;k<n;k++){
+    const y=-w+Math.floor(k/stride)*dy;let noise=0,amp=1,norm=0,lam=8000;
+    for(let o=1;o<=6;o++){noise+=amp*cNoise(x[k]/lam,y/lam,o,seed);norm+=amp;amp*=0.6;lam/=2;}
+    filled[k]=e[k]===0?0:CC.TILT*e[k]+CC.NOISE_AMP*noise/norm;
+    if(fixed[k]){seen[k]=1;heap.push(k);}
+  }
+  let count=0;
+  while(heap.size){const c=heap.pop();order[count++]=c;
+    for(let a=c*8;a<c*8+degree[c];a++){const k=nb[a];if(seen[k])continue;
+      seen[k]=1;filled[k]=Math.max(filled[k],filled[c]+CC.EPSILON);heap.push(k);
+    }
+  }
+  for(let k=0;k<n;k++)if(!fixed[k]){
+    let best=0;for(let a=k*8;a<k*8+degree[k];a++){
+      const r=nb[a],s=(filled[k]-filled[r])/length[a];
+      if(s>best||(s===best&&s>0&&r<receiver[k])){best=s;receiver[k]=r;distance[k]=length[a];}
+    }
+  }
+  for(let j=n-1;j>=0;j--){const c=order[j],r=receiver[c];if(r>=0)acc[r]+=acc[c];}
+  const h=new Float64Array(n),lh=cTrunk(id,w,seed),rh=cTrunk(id+1,w,seed);
+  for(let j=0;j<n;j++){const k=order[j],row=Math.floor(k/stride),col=k%stride;
+    h[k]=fixed[k]?(col===0?lh[row]:col===CC.COLS?rh[row]:0):
+      h[receiver[k]]+distance[k]*Math.min(cSlope(e[k]),CC.K/cAreaExponent(acc[k]));
+  }
+  const best=new Float64Array(n).fill(Infinity),dh=new CHeap(n,best);
+  for(let k=0;k<n;k++)if(fixed[k]||acc[k]>=CC.AC){best[k]=h[k];dh.push(k);}
+  while(dh.size){const c=dh.pop();for(let a=c*8;a<c*8+degree[c];a++){
+    const k=nb[a];if(fixed[k])continue;const v=best[c]+cSlope(e[k])*length[a];
+    if(v<best[k]){best[k]=v;dh.push(k);}
+  }}
+  const uncapped=new Float64Array(n);
+  for(let k=0;k<n;k++){uncapped[k]=Math.min(h[k],best[k]);h[k]=Math.min(uncapped[k],e[k]);}
+  // Each positive interior vertex has a lower edge before clipping: its
+  // receiver or its Dijkstra predecessor. The ramp also has a lower edge.
+  // Taking their minimum preserves this property. Linear triangles introduce
+  // no strict interior minima. This certifies construction-mesh drainage on
+  // the reference ramp, NOT D8 resampling or arbitrary supplied envelopes.
+  // Rich build data is private and temporary; only compact block data is cached.
+  return {seed,w,id,h,left,right,mesh,receiver,acc,uncapped};
+}
+function cGet(seed:number,w:number,id:number):CBlock {
+  const slot=(Math.imul(id,0x9e3779b1)^seed)>>>0,at=slot%CC.CACHE,b=cCache[at];
+  if(b&&b.seed===seed&&b.w===w&&b.id===id)return b;
+  const built=cBuild(seed,w,id),block={seed,w,id,h:built.h,left:built.left,right:built.right};
+  cCache[at]=block;return block;
+}
+function cInterpolate(b:CBlock,x:number,row:number,t:number):number {
+  const l=b.left[row]+(b.left[row+1]-b.left[row])*t,r=b.right[row]+(b.right[row+1]-b.right[row])*t;
+  const col=Math.max(0,Math.min(CC.COLS-1,Math.floor((x-l)/(r-l)*CC.COLS)));
+  const x0=b.left[row]+(b.right[row]-b.left[row])*col/CC.COLS;
+  const x1=b.left[row]+(b.right[row]-b.left[row])*(col+1)/CC.COLS;
+  const x2=b.left[row+1]+(b.right[row+1]-b.left[row+1])*col/CC.COLS;
+  const x3=b.left[row+1]+(b.right[row+1]-b.left[row+1])*(col+1)/CC.COLS;
+  const a=row*(CC.COLS+1)+col,c=a+CC.COLS+1,h=b.h;
+  if(cDiagonal(b.id,row,col,b.seed)){
+    const diagonal=x0+(x3-x0)*t;
+    if(x>=diagonal){const u=(x-diagonal)/(x1-x0);return (1-t-u)*h[a]+u*h[a+1]+t*h[c+1];}
+    const u=(diagonal-x)/(x3-x2);return (1-t)*h[a]+u*h[c]+(t-u)*h[c+1];
+  }
+  const diagonal=x1+(x2-x1)*t;
+  if(x<=diagonal){const u=(diagonal-x)/(x1-x0);return u*h[a]+(1-t-u)*h[a+1]+t*h[c];}
+  const u=(x-diagonal)/(x3-x2);return (1-t)*h[a+1]+(t-u)*h[c]+u*h[c+1];
+}
+export function carvingCM(alongM:number,acrossM:number,halfWidthM:number,envelopeM:number,belt:number,seed:number):number {
+  if(belt===0||envelopeM<=0||Math.abs(acrossM)>=halfWidthM)return 0;
+  const v=(acrossM+halfWidthM)/(2*halfWidthM)*CC.ROWS,row=Math.min(CC.ROWS-1,Math.floor(v)),t=v-row;
+  let id=Math.floor(alongM/(halfWidthM/2));
+  if(alongM<cBoundaryAt(id,row,t,halfWidthM,seed))id--;
+  else if(alongM>=cBoundaryAt(id+1,row,t,halfWidthM,seed))id++;
+  const href=cInterpolate(cGet(seed,halfWidthM,id),alongM,row,t);
+  const retained=Math.max(0,Math.min(1,href/cEnvelope(acrossM,halfWidthM)));
+  return retained===1?0:-envelopeM*(1-retained);
+}

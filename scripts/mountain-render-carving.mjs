@@ -15,7 +15,8 @@ export function rampSampler(carving=ridgeValleyCarvingM){return d=>{
   const args=rampArgs(d),h=args[3]+carving(...args);return {groundHeightM:h,ocean:h<0};
 };}
 
-const OUT=new URL('../test-results/mountains/M3/',import.meta.url);
+const candidateC=process.argv[process.argv.indexOf('--candidate')+1]==='C';
+const OUT=new URL(candidateC?'../test-results/mountains/M3-r4/':'../test-results/mountains/M3/',import.meta.url);
 const save=(name,data)=>writeFileSync(new URL(name,OUT),JSON.stringify(data,null,2)+'\n');
 const digest=r=>createHash('sha256').update(Buffer.from(r.h.buffer)).digest('hex');
 const sourceSha=()=>createHash('sha256').update(readFileSync(new URL('../src/mountain-carving.ts',import.meta.url))).digest('hex');
@@ -71,10 +72,10 @@ function verifyControls(){
   save('control-repeat.json',{pass:sites.every(s=>s.pass),sites});if(!sites.every(s=>s.pass))process.exitCode=1;
 }
 
-function candidateMetrics(fn,name,{n=385,siteCount=8,renders=true}={}){
+function candidateMetrics(fn,name,{n=385,siteCount=8,renders=true,sites=SITES.slice(0,siteCount)}={}){
   const core=[],structure=[];
-  const metrics=measureSites(rampSampler(fn),SITES.slice(0,siteCount),R,{n,onRaster:(r,reg,si)=>{
-    const map=localMap(SITES[si].d,frame(SITES[si].d),R),s=slopes(r,1),o=(r.n-1)*r.step/2;
+  const metrics=measureSites(rampSampler(fn),sites,R,{n,onRaster:(r,reg,si)=>{
+    const map=localMap(sites[si].d,frame(sites[si].d),R),s=slopes(r,1),o=(r.n-1)*r.step/2;
     for(let k=0;k<s.length;k++){
       const i=1+k%(r.n-2),j=1+Math.floor(k/(r.n-2));
       if(Math.abs(R*Math.asin(map(i*r.step-o,j*r.step-o)[1]))<=19500)core.push(s[k]);
@@ -203,9 +204,92 @@ async function sweep(){
 }
 
 
+async function loadC(replacements={},instrument=false){
+  const {stripTypeScriptTypes}=await import('node:module');
+  let source=readFileSync(new URL('../src/mountain-carving.ts',import.meta.url),'utf8');
+  for(const [key,value] of Object.entries(replacements))source=source.replace(new RegExp('\\b'+key+': [0-9.]+'),key+': '+value);
+  if(instrument){
+    source=source.replace('function cBuild(seed:','function cBuildRaw(seed:');
+    source+='\nexport const buildStats={count:0,ms:0}; function cBuild(seed:number,w:number,id:number){const t=performance.now();const b=cBuildRaw(seed,w,id);buildStats.count++;buildStats.ms+=performance.now()-t;return b;}';
+  }
+  return import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source+'\nexport {cBuild,cCache,cGet};')).toString('base64'));
+}
+async function calibrateC(){
+  let lo=.001,hi=1e6;const iterations=[];
+  for(let i=0;i<22;i++){
+    const K=Math.sqrt(lo*hi),m=await loadC({K}),b=m.cBuild(SEED_BASE,30000,0),values=[];
+    for(let k=0;k<b.h.length;k++)if(b.mesh.e[k]>1050)values.push(b.uncapped[k]/b.mesh.e[k]);
+    const p90=q(values,.9);iterations.push({K,p90});console.log('CALIBRATE',K,p90);
+    if(p90>1)hi=K;else lo=K;
+  }
+  const result={seed:SEED_BASE,halfWidthM:30000,blockId:0,quantile:.9,core:'e0 > 0.35',K:Math.sqrt(lo*hi),iterations};
+  save('calibration.json',result);console.log(JSON.stringify(result));
+}
+function longStripC(fn){
+  // Reuse the square hillshade helper in overlapping square panels, crop their
+  // interior columns so panel edges use genuine neighbours (no shading seams).
+  const step=125,n=483,width=1537,height=481,rgb=Buffer.alloc(width*height*3);
+  for(let start=0;start<width;start+=n-2){
+    const h=new Float64Array(n*n);
+    for(let j=0;j<n;j++)for(let i=0;i<n;i++){
+      const x=(start+i-1)*step-96000,y=(j-241)*step,e=3000*Math.max(0,1-Math.abs(y)/30000);
+      h[j*n+i]=e+fn(x,y,30000,e,1,SEED_BASE);
+    }
+    const shaded=hillshade(rasterFromArray(h,n,step),5000),cols=Math.min(n-2,width-start);
+    for(let j=0;j<height;j++)shaded.copy(rgb,(j*width+start)*3,((j+1)*n+1)*3,((j+1)*n+1+cols)*3);
+  }
+  writePng(new URL('C-strip-192km-hillshade.png',OUT),width,height,rgb);
+}
+async function acceptanceC(){
+  const m=await loadC(),fn=m.carvingCM;
+  console.log('C pooled measurement');const pooled=candidateMetrics(fn,'C'),perSeed=[];
+  for(let i=0;i<SITES.length;i++){
+    const result=candidateMetrics(fn,'C-seed'+i,{sites:[SITES[i]],renders:false});
+    perSeed.push({seed:SEED_BASE+i,site:i,...result});console.log('C seed',SEED_BASE+i,JSON.stringify(result.rows));
+  }
+  console.log('C coast and retention');const safety=coast(fn),proxy=retention(rampSampler(fn));
+  longStripC(fn);
+  const pass=pooled.rows.every(r=>r.pass)&&perSeed.every(s=>s.rows.every(r=>r.pass))&&!safety.violations&&!safety.zeroOutsideViolations&&!safety.positiveCarving;
+  const result={version:m.CARVING_C_VERSION,constants:m.MOUNTAIN_CARVING_C,sourceSha256:sourceSha(),pooled,perSeed,coast:safety,retention:{class:'INFO',note:'Point-sampled proxy omits production peak correction.',...proxy},pass};
+  save('report.json',result);console.table(pooled.rows.map(({id,actual,pass})=>({id,actual,pass})));
+  if(!pass)process.exitCode=1;
+}
+async function benchmarkC(){
+  const m=await loadC({},true),args=[],source=sourceSha();
+  for(const {d} of SITES){const map=localMap(d,frame(d),R);
+    for(let j=0;j<385;j++)for(let i=0;i<385;i++)args.push(rampArgs(map((i-192)*125,(j-192)*125)));
+  }
+  let checksum=0;
+  const run=()=>{
+    const before={...m.buildStats},t=performance.now();for(const a of args)checksum+=m.carvingCM(...a);
+    return {nsPerSample:(performance.now()-t)*1e6/args.length,builds:m.buildStats.count-before.count,buildMs:m.buildStats.ms-before.ms};
+  };
+  m.cCache.fill(undefined);const cold=run(),warm=run(),build=[];
+  for(let id=0;id<7;id++){const t=performance.now();m.cBuild(SEED_BASE,30000,id);build.push(performance.now()-t);}
+  // Fully resident warm cost in the same site/raster order. Preload each site's
+  // working set outside timing; the direct-mapped cache cannot hold all 8 sites.
+  let residentMs=0,residentBuilds=0;
+  for(let site=0;site<8;site++){
+    const a=args.slice(site*385*385,(site+1)*385*385);
+    for(const v of a)m.carvingCM(...v);
+    const before=m.buildStats.count,t=performance.now();for(const v of a)checksum+=m.carvingCM(...v);residentMs+=performance.now()-t;residentBuilds+=m.buildStats.count-before;
+  }
+  const {terrainSampler}=await import('../src/terrain.ts');
+  const {maithea,fib}=await import('../tests/terrain-climate-fixtures.mjs');
+  const ts=terrainSampler(maithea()),dirs=Array.from({length:args.length},(_,i)=>fib(i,args.length));
+  for(let i=0;i<10000;i++)checksum+=ts(dirs[i]).groundHeightM;
+  const terrainStart=performance.now();for(const d of dirs)checksum+=ts(d).groundHeightM;
+  const terrainNs=(performance.now()-terrainStart)*1e6/args.length;
+  if(source!==sourceSha())throw new Error('Source changed during benchmark');
+  const residentNs=residentMs*1e6/args.length;
+  const result={class:'INFO',sourceSha256:source,samples:args.length,nsPerSample:{emptyCache:cold.nsPerSample,secondPass:warm.nsPerSample,residentWarm:residentNs,terrain:terrainNs},cold,secondPass:warm,residentBuilds,blockBuildMs:{median:q(build,.5),samples:build},weightedRatioAt10Pct:{cold:.1*cold.nsPerSample/terrainNs,warm:.1*residentNs/terrainNs},budget:.08,cacheHeightBytes:m.MOUNTAIN_CARVING_C.CACHE*(m.MOUNTAIN_CARVING_C.ROWS+1)*(m.MOUNTAIN_CARVING_C.COLS+3)*8,checksum,note:'Cold and second pass include all builds and collisions. Resident warm preloads each site outside timing. Single measured pass per workload, not a five-round median. Build timing uses a private source-loaded wrapper; production arithmetic is unchanged. CPU quiet lock not acquired.'};
+  save('benchmark.json',result);console.log('BENCH C '+JSON.stringify(result));
+}
+
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   mkdirSync(OUT,{recursive:true});
-  if(process.argv.includes('--controls'))await controls();
+  if(candidateC){if(process.argv.includes('--calibrate'))await calibrateC();else if(process.argv.includes('--bench'))await benchmarkC();else await acceptanceC();}
+  else if(process.argv.includes('--controls'))await controls();
   else if(process.argv.includes('--verify-controls'))verifyControls();
   else if(process.argv.includes('--bench'))await benchmark();
   else if(process.argv.includes('--sweep'))await sweep();
