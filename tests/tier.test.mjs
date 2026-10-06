@@ -84,3 +84,27 @@ test('HARD: summary: latest attempt per file wins; NEW HARD/CONTRACT failures an
     assert.equal(s.green, false);assert.deepEqual(s.newFailures.map(f => f.test), ['CONTRACT: z']);assert.equal(s.subsetResults, 1);
   } finally { rmSync(dir, {recursive: true, force: true}); }
 });
+
+// Peak RSS per step (plan I3: steps.jsonl maxRSS column, KiB): measured by an exit hook preloaded into the step process.
+import {runStep, readMaxRSS} from './helpers/tier-runner.mjs';
+import {mkdirSync} from 'node:fs';
+test('HARD: runStep records the step process peak RSS (maxRSS, KiB); a killed step records null; summary keeps the peak', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'tier-rss-'));
+  try {
+    mkdirSync(join(dir, 'files'));
+    const big = join(dir, 'big.test.mjs'), hang = join(dir, 'hang.test.mjs');
+    writeFileSync(big, "import test from 'node:test'; test('HARD: 96 MiB', () => { globalThis.keep = Buffer.alloc(96 << 20, 1); });\n");
+    writeFileSync(hang, "import test from 'node:test'; test('HARD: hang', () => new Promise(() => setInterval(() => {}, 1000)));\n");
+    const ok = await runStep({step: 'big', file: big, args: []}, {dir, tier: 'smoke', attempt: 1, aware: false, index: 0}).done;
+    assert.equal(ok.code, 0, ok.err);
+    assert.ok(ok.maxRSS >= 96 * 1024 && ok.maxRSS < 4 << 20, `maxRSS ${ok.maxRSS} KiB`);
+    const job = runStep({step: 'hang', file: hang, args: []}, {dir, tier: 'smoke', attempt: 1, aware: false, index: 1});
+    setTimeout(() => job.child.kill(), 300);
+    const killed = await job.done;
+    assert.notEqual(killed.code, 0); assert.equal(killed.maxRSS, null, 'no exit hook ran: unknown, never 0');
+    assert.equal(readMaxRSS(join(dir, 'missing.rss')), null);
+    writeFileSync(join(dir, 'run.json'), JSON.stringify({runId: 'r', tier: 'smoke', treeKey: 'k', steps: ['big', 'hang']}));
+    writeFileSync(join(dir, 'steps.jsonl'), [{step: 'big', status: 'pass', exit: 0, ms: 1, maxRSS: ok.maxRSS, attempt: 1}, {step: 'hang', status: 'fail', exit: 1, ms: 1, maxRSS: null, attempt: 1}].map(r => JSON.stringify(r)).join('\n') + '\n');
+    assert.equal(summarize(dir).peakStepRSSMiB, +(ok.maxRSS / 1024).toFixed(1));
+  } finally { rmSync(dir, {recursive: true, force: true}); }
+});

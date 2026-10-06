@@ -121,7 +121,9 @@ coverage `subset`: a maximum or pin can fail early there, it is never certified.
   `--no-bail`, `--only <file>`, `--jobs N`.
 - Output: `test-results/tiers/<treeKey12>-<tier>-<start>/` with `run.json`,
   `results.jsonl` (one fsynced line per finished test; survives a kill),
-  `steps.jsonl`, `summary.json` and per-step spec logs.
+  `steps.jsonl` (per step: status, exit, ms and `maxRSS`, the step process's
+  peak RSS in KiB, null when it was killed), `summary.json` (with
+  `peakStepRSSMiB`) and per-step spec logs.
 - Neither tier replaces the affected selection, test:full or the merge gate.
 - Frozen sample sets: `tests/tier-sets.json`, regenerated only with
   `npm run tier-sets:generate -- --reason "<why>"` (M1 + level-0 field only,
@@ -175,6 +177,20 @@ age. A verifiably dead local PID permits logged rename-then-remove takeover.
 Concurrent reapers serialize inside the dead directory. If a reaper itself
 dies mid-takeover, stop and inspect its guard rather than guessing ownership.
 
+Shared/exclusive slot (2026-10-07, design and switch-on conditions:
+`docs/shared-test-slot-2026-10-07.md`). Behind `ATLAS_SLOT_SHARED`; unset or `0`
+(the default) keeps every run exclusive exactly as above. With `1`, correctness
+runs take CPU **tokens** out of 28 instead of the whole machine (`test:pkg` 4,
+`test:affected` 8, `test:fast` 8, `test:smoke`/`test:work` 16, each with the same
+explicit `--test-concurrency` / `--jobs`) as holder files in
+`<slot>.shared/<token>.json`; the existing mkdir directory stays the exclusive
+gate (test:perf, test:full until I3 ran on its shards, cost-fair, every old
+caller and the CLI without `--shared K`). An exclusive caller takes the gate
+first, so no new shared holder enters, then waits for the admitted ones to
+drain. A child of a holder inherits `ATLAS_TEST_SLOT_TOKEN` and runs through
+without a second level (never nest). Do not set the flag while any live
+worktree still has the old `test-slot.mjs` (it does not drain shared holders).
+
 Perf holds the same slot through CPU quietness and `node --test
 --test-concurrency=1 tests/perf/*.perf.test.mjs` (the runner expands the files).
 It polls Windows Win32_Processor LoadPercentage through PowerShell and requires
@@ -202,7 +218,17 @@ are supported. Every selected test prints its dependency chain or path reason.
 Changed/new test files are selected even before registration and flagged
 UNREGISTERED. Perf files stay out of normal selections.
 
-Package.json or tsconfig changes select the whole registered suite. Paths with
+A tsconfig change selects the whole registered suite. A package.json change is
+diffed semantically against the merge base (I5, `packageJsonChange` in
+`tests/helpers/test-selection.mjs`): when nothing but `scripts.test` changed,
+both sides are a single `node --test` argument list (no test path anywhere
+outside the contiguous list after `node --test [--flags]`), the text before and
+after that list is identical and its path set is a superset of the base set,
+there is no forced full run and the newly registered paths are selected;
+anything else (another key, a removed path, a path moved out of the list such as
+behind `&&`, a changed prefix such as an added `--test-concurrency`, an
+unsupported script even when unchanged, unparsable or missing JSON) selects the
+full suite. Paths with
 no registered consumer (including unimported helpers and Vite configuration)
 are reported for manual review. This conservative static scan can over-select;
 computed imports or constructed paths require manual review. Directory source
@@ -258,6 +284,29 @@ workflows. One AFTER set at hand-off; golden/browser gates only at merge.
 This infrastructure task does not launch browsers or touch the shared GPU lock.
 Capture command example (capture script acquires the GPU lock):
 `node tests/fauna-face-closeups.browser.mjs --label after --only <specimen-name>`.
+
+## Lock order (binding, 2026-10-07)
+
+Locks are taken in one order only: **merge (`.main-merge-lock`) -> test slot ->
+GPU lock**. Never GPU -> slot, and never take any lock while holding or waiting
+for the GPU lock. Release in reverse order. A process that holds the slot may
+take the GPU lock (golden, today's GATE-5 capture); a process that holds or
+waits for the GPU lock must not ask for the slot, because a slot holder that then
+waits for the GPU deadlocks against it (the 38-min nested-slot deadlock is the
+precedent).
+
+Enforced in code:
+
+- `tests/helpers/gpu-lock.mjs` publishes "waiting" and "held" in-process and,
+  while held, `ATLAS_GPU_LOCK_HELD` for children. `acquireTestSlot` throws
+  `lock order violation` in either state before it touches the slot (an
+  inherited slot of an ancestor, which never waits, is still allowed).
+- `acquireGpuLock({capture: true})` throws while the caller holds the test slot
+  (in-process or `ATLAS_TEST_SLOT_TOKEN` inherited). Capture paths adopt it with
+  I8 (build, preview server and pose work before the GPU lock, no CPU slot
+  around the GPU wait); until then no caller passes it and nothing changes.
+
+Tests: `tests/test-slot.test.mjs`, `tests/gpu-lock.test.mjs` (sandbox dirs only).
 
 ## Timing audit
 

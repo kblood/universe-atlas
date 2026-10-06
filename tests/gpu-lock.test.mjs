@@ -40,6 +40,43 @@ test('release never removes a lock that is no longer ours', async()=>{
   await rm(GPU_LOCK_DIR,{recursive:true,force:true});
 });
 
+// Lock order merge -> slot -> GPU (docs/test-policy.md "Lock order"; plan part 2): never GPU -> slot. Sandbox slot dir only.
+const {acquireTestSlot}=await import('./helpers/test-slot.mjs');
+const slotDir=join(root,'slot');
+test('lock order: holding or waiting for the GPU lock refuses the test slot; release clears the published state', async()=>{
+  const saved=process.env.ATLAS_GPU_LOCK_HELD;delete process.env.ATLAS_GPU_LOCK_HELD;
+  try{
+    const gpu=await acquireGpuLock({owner:'luna capture',log:quiet,listBrowsers:async()=>[]});
+    assert.match(process.env.ATLAS_GPU_LOCK_HELD,/^luna capture pid=/,'children of a GPU holder inherit the state');
+    await assert.rejects(acquireTestSlot({dir:slotDir,owner:'npm test'}),/lock order violation: "npm test" .*GPU lock is held/);
+    assert.equal(existsSync(slotDir),false,'the slot was never touched');
+    await gpu.release();
+    assert.equal(process.env.ATLAS_GPU_LOCK_HELD,undefined,'release clears it');
+    // A foreign process holds the GPU lock: this process only WAITS (nothing held, nothing in the env) and is still refused.
+    await mkdir(GPU_LOCK_DIR);await writeFile(join(GPU_LOCK_DIR,'owner.txt'),'other agent\n');
+    const blocked=acquireGpuLock({owner:'waiter',retryMs:10,timeoutMs:5000,log:quiet,listBrowsers:async()=>[]});
+    assert.equal(process.env.ATLAS_GPU_LOCK_HELD,undefined);
+    await assert.rejects(acquireTestSlot({dir:slotDir,owner:'while waiting'}),/"while waiting" .*this process is waiting for the GPU lock/);
+    await rm(GPU_LOCK_DIR,{recursive:true,force:true});
+    await (await blocked).release();
+    const slot=await acquireTestSlot({dir:slotDir,owner:'after'});slot.release();
+  }finally{if(saved===undefined)delete process.env.ATLAS_GPU_LOCK_HELD;else process.env.ATLAS_GPU_LOCK_HELD=saved;}
+});
+test('lock order: a capture path (capture: true) is refused while it holds the test slot; slot -> GPU stays allowed otherwise', async()=>{
+  const savedToken=process.env.ATLAS_TEST_SLOT_TOKEN;delete process.env.ATLAS_TEST_SLOT_TOKEN;
+  try{
+    const slot=await acquireTestSlot({dir:slotDir,owner:'gate'});
+    await assert.rejects(acquireGpuLock({owner:'capture',capture:true,log:quiet,listBrowsers:async()=>[]}),/capture path "capture" .*holding the test slot \(this process\)/);
+    const golden=await acquireGpuLock({owner:'golden (slot -> GPU)',log:quiet,listBrowsers:async()=>[]});await golden.release();
+    slot.release();
+    process.env.ATLAS_TEST_SLOT_TOKEN='00000000-0000-4000-8000-000000000000';
+    await assert.rejects(acquireGpuLock({owner:'capture',capture:true,log:quiet,listBrowsers:async()=>[]}),/ATLAS_TEST_SLOT_TOKEN inherited/);
+    delete process.env.ATLAS_TEST_SLOT_TOKEN;
+    const ok=await acquireGpuLock({owner:'capture',capture:true,log:quiet,listBrowsers:async()=>[]});await ok.release();
+    assert.equal(existsSync(GPU_LOCK_DIR),false);
+  }finally{if(savedToken===undefined)delete process.env.ATLAS_TEST_SLOT_TOKEN;else process.env.ATLAS_TEST_SLOT_TOKEN=savedToken;}
+});
+
 // Preview-server port selection for the browser runners (tests/helpers/free-port.mjs; docs/test-fixes-2026-10-07.md).
 // A tiny child HTTP server stands in for `vite preview --strictPort`: it exits 1 on EADDRINUSE and answers its stamp.
 const {portFree,ephemeralPort,parsePortOption,startOnFreePort,stopServer}=await import('./helpers/free-port.mjs');

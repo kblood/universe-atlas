@@ -6,9 +6,12 @@
 // test-results/tiers/<treeKey12>-<tier>-<start>/:
 //   run.json       {runId, tier, treeKey, commit, dirty, node, tierSets, steps, argv, started, forced, bail, wallS}
 //   results.jsonl  one fsynced line per finished top-level test (tier-reporter.mjs), tagged with its step
-//   steps.jsonl    one line per finished step {step, file, status, exit, ms, attempt, aware}
+//   steps.jsonl    one line per finished step {step, file, status, exit, ms, maxRSS, attempt, aware}; maxRSS = the step
+//                  process's peak resident set in KiB (process.resourceUsage().maxRSS at exit), null if it never exited
+//                  normally (killed by --bail or a signal)
 //   summary.json   rewritten at the end of every attempt (a --resume is a new attempt)
 //   files/<n>-<attempt>.spec.txt  spec output of each step (filtered excerpt printed for a failing step)
+//   files/<n>-<attempt>.rss       the step's maxRSS in KiB, written by an exit hook preloaded into the step process
 // Shards (tiers.json {file, shards: [regex, ...]}): one step per anchored title pattern (--test-name-pattern) plus a
 // `#rest` step that skips the union (--test-skip-pattern), so every test of the file runs exactly once; a title reported
 // twice in one attempt is flagged. Use shards only on files without subtests.
@@ -20,7 +23,7 @@ import {createHash} from 'node:crypto';
 import {spawn, execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 import {cpus, setPriority, constants as osConstants} from 'node:os';
-import {withTestSlot} from './test-slot.mjs';
+import {withTestSlot, slotEnv, slotClass, SLOT_CAPACITY} from './test-slot.mjs';
 import {registeredTests} from './test-selection.mjs';
 import {appendLine} from './tier-reporter.mjs';
 import {validateKnown} from './known-failures.mjs';
@@ -72,7 +75,9 @@ export function summarize(dir) {
     subsetResults: rows.filter(r => r.coverage === 'subset').length,
     newFailures: fresh.map(r => ({file: r.file, test: r.test, class: r.class, diag: r.diag})), knownFailures: knownFails.map(r => ({file: r.file, test: r.test})),
     badSteps: badSteps.map(s => ({step: s.step, status: s.status, exit: s.exit})), missing, duplicates,
-    wallS: run.wallS, perStepS: Object.fromEntries([...lastStep].map(([f, s]) => [f, +(s.ms / 1000).toFixed(1)]))};
+    wallS: run.wallS, perStepS: Object.fromEntries([...lastStep].map(([f, s]) => [f, +(s.ms / 1000).toFixed(1)])),
+    // Largest single-step peak RSS of the latest attempts (MiB; null when no step recorded one).
+    peakStepRSSMiB: [...lastStep.values()].reduce((m, s) => Number.isFinite(s.maxRSS) && s.maxRSS / 1024 > (m ?? 0) ? +(s.maxRSS / 1024).toFixed(1) : m, null)};
 }
 
 const runDirs = (tier, prefix = '') => existsSync(ROOT) ? readdirSync(ROOT).filter(d => d.startsWith(prefix) && d.includes(`-${tier}-`)).sort((a, b) => a.slice(13).localeCompare(b.slice(13))).reverse() : [];
@@ -89,19 +94,25 @@ function previousSeconds(tier) {
   return {};
 }
 
-function runStep(s, {dir, tier, attempt, aware, index}) {
-  const spec = join(dir, 'files', `${index}-${attempt}.spec.txt`);
-  const args = ['--test', '--test-isolation=none', ...s.args, `--test-reporter=${pathToFileURL(resolve('tests/helpers/tier-reporter.mjs')).href}`, '--test-reporter-destination=stdout',
+// Preloaded into every step process: writes its peak RSS (KiB) at exit (I3: measure RSS before raising shared holders).
+const RSS_PROBE = `data:text/javascript,${encodeURIComponent("import{writeFileSync}from'node:fs';process.on('exit',()=>{try{writeFileSync(process.env.ATLAS_TIER_RSS_FILE,String(process.resourceUsage().maxRSS))}catch{}})")}`;
+/** maxRSS (KiB) written by RSS_PROBE, or null. */
+export function readMaxRSS(file) {
+  try {const v = Number(readFileSync(file, 'utf8'));return Number.isSafeInteger(v) && v > 0 ? v : null;} catch {return null;}
+}
+export function runStep(s, {dir, tier, attempt, aware, index}) {
+  const spec = join(dir, 'files', `${index}-${attempt}.spec.txt`), rss = join(dir, 'files', `${index}-${attempt}.rss`);
+  const args = [`--import=${RSS_PROBE}`, '--test', '--test-isolation=none', ...s.args, `--test-reporter=${pathToFileURL(resolve('tests/helpers/tier-reporter.mjs')).href}`, '--test-reporter-destination=stdout',
     '--test-reporter=spec', `--test-reporter-destination=${spec}`, s.file];
-  const env = {...process.env, ATLAS_TEST_TIER: tier, ATLAS_TIER_RESULTS: resolve(dir, 'results.jsonl'), ATLAS_TIER_AWARE: aware ? '1' : '0',
-    ATLAS_TIER_ATTEMPT: String(attempt), ATLAS_TIER_STEP: s.step};
+  const env = slotEnv({...process.env, ATLAS_TEST_TIER: tier, ATLAS_TIER_RESULTS: resolve(dir, 'results.jsonl'), ATLAS_TIER_AWARE: aware ? '1' : '0',
+    ATLAS_TIER_ATTEMPT: String(attempt), ATLAS_TIER_STEP: s.step, ATLAS_TIER_RSS_FILE: resolve(rss)});
   delete env.ATLAS_TEST_FULL;delete env.NODE_TEST_CONTEXT;
   const child = spawn(process.execPath, args, {env, stdio: ['ignore', 'pipe', 'pipe']});
   // Critical-path steps keep normal priority; the rest yield the CPU to them (scheduling only, never what a test checks).
   if (!s.critical) try {setPriority(child.pid, osConstants.priority.PRIORITY_BELOW_NORMAL);} catch {}
   let err = '';child.stderr.on('data', b => {err += b;});child.stdout.on('data', () => {});
   const t0 = performance.now();
-  const done = new Promise(r => child.on('close', (code, signal) => r({code: code ?? (signal ? 143 : 1), signal, ms: performance.now() - t0, err, spec})));
+  const done = new Promise(r => child.on('close', (code, signal) => r({code: code ?? (signal ? 143 : 1), signal, ms: performance.now() - t0, err, spec, maxRSS: readMaxRSS(rss)})));
   return {child, done};
 }
 
@@ -154,9 +165,13 @@ export async function runTier(tier, argv) {
   for (const s of steps) s.critical = !(s.step in prevS) || prevS[s.step] >= longest / 2;
   const critical = steps.filter(s => s.critical && s.step in prevS);
   if (critical.length) console.log(`critical path (normal priority, others below normal): ${critical.map(s => `${s.step} ~${prevS[s.step]} s`).join(', ')}`);
+  // Slot class (tests/helpers/test-slot.mjs RUN_CLASSES): with ATLAS_SLOT_SHARED=1 the tier is shared and its tokens are the
+  // explicit job count (--jobs, default 16); with the flag off it is exclusive with cores - 1 jobs, as before.
+  const cls = slotClass(tier), limit = Math.max(1, Number(value('--jobs')) || (cls.mode === 'shared' ? cls.tokens : cpus().length - 1));
+  if (cls.mode === 'shared' && limit > SLOT_CAPACITY) throw new Error(`--jobs ${limit} exceeds the ${SLOT_CAPACITY} shared slot tokens`);
   const t0 = performance.now();
-  const code = await withTestSlot({owner: `test:${tier} (${steps.length} steps)`}, async () => {
-    const limit = Math.max(1, Number(value('--jobs')) || cpus().length - 1), queue = steps.map((s, i) => [s, i]).sort((a, b) => est(b[0]) - est(a[0])), live = new Map();let bailed = null, seen = 0;
+  const code = await withTestSlot({owner: `test:${tier} (${steps.length} steps)`, ...cls, ...(cls.mode === 'shared' ? {tokens: limit} : {})}, async () => {
+    const queue = steps.map((s, i) => [s, i]).sort((a, b) => est(b[0]) - est(a[0])), live = new Map();let bailed = null, seen = 0;
     const newBad = row => row.status === 'fail' && !row.known && (row.class === 'HARD' || row.class === 'CONTRACT') && row.attempt === attempt;
     const poll = () => {
       const rows = readLines(results);
@@ -173,8 +188,8 @@ export async function runTier(tier, argv) {
         const r = await job.done;live.delete(s.step);
         if (bail) poll();
         const status = r.code === 0 ? 'pass' : bailed && r.signal ? 'killed' : 'fail';
-        appendLine(stepsLog, {step: s.step, file: s.file, status, exit: r.code, ms: Math.round(r.ms), attempt, aware: aware[s.file], t: new Date().toISOString()});
-        console.log(`${status.padEnd(6)} ${(r.ms / 1000).toFixed(1).padStart(6)} s  ${s.step}${aware[s.file] ? '' : '  (default depth)'}`);
+        appendLine(stepsLog, {step: s.step, file: s.file, status, exit: r.code, ms: Math.round(r.ms), maxRSS: r.maxRSS, attempt, aware: aware[s.file], t: new Date().toISOString()});
+        console.log(`${status.padEnd(6)} ${(r.ms / 1000).toFixed(1).padStart(6)} s ${(r.maxRSS ? `${Math.round(r.maxRSS / 1024)}` : '?').padStart(5)} MiB  ${s.step}${aware[s.file] ? '' : '  (default depth)'}`);
         if (status === 'fail') {
           if (existsSync(r.spec)) process.stdout.write(readFileSync(r.spec, 'utf8').split('\n').filter(l => /✖|Error|expected|actual/.test(l)).slice(0, 30).join('\n') + '\n');
           if (r.err.trim()) process.stderr.write(r.err.split('\n').filter(l => !/ExperimentalWarning|--trace-warnings/.test(l)).slice(0, 20).join('\n') + '\n');
@@ -189,7 +204,7 @@ export async function runTier(tier, argv) {
   const run = JSON.parse(readFileSync(join(dir, 'run.json'), 'utf8'));run.wallS = +((run.wallS ?? 0) + wallS).toFixed(1);run[`attempt${attempt}WallS`] = +wallS.toFixed(1);
   writeFileSync(join(dir, 'run.json'), JSON.stringify(run, null, 2) + '\n');
   const summary = summarize(dir);writeFileSync(join(dir, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
-  console.log(`\n${tier}: ${summary.green ? 'GREEN' : 'RED'}; ${summary.tests} tests (pass ${summary.pass}, fail ${summary.fail}, skip ${summary.skip}, todo ${summary.todo}; ${summary.subsetResults} subset-coverage results); ${summary.stepsDone}/${summary.steps} steps; wall ${wallS.toFixed(1)} s`);
+  console.log(`\n${tier}: ${summary.green ? 'GREEN' : 'RED'}; ${summary.tests} tests (pass ${summary.pass}, fail ${summary.fail}, skip ${summary.skip}, todo ${summary.todo}; ${summary.subsetResults} subset-coverage results); ${summary.stepsDone}/${summary.steps} steps; wall ${wallS.toFixed(1)} s; peak step RSS ${summary.peakStepRSSMiB ?? '?'} MiB`);
   for (const f of summary.newFailures) console.log(`  NEW ${f.class}: ${f.file} :: ${f.test}${f.diag[0] ? `\n      ${f.diag[0].split('\n')[0]}` : ''}`);
   for (const s of summary.badSteps) console.log(`  step ${s.status} (exit ${s.exit}): ${s.step}`);
   for (const t of summary.duplicates) console.log(`  DUPLICATE (overlapping shards): ${t}`);
