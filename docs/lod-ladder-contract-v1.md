@@ -146,6 +146,94 @@ bilinear-weighted majority of the four corner labels. It is never re-derived fro
 
 **Ocean flag:** the exact sign of (height - sea level). It is identical on every vertex two levels share.
 
+### 3.1 Coarse frame and edge match (owner principle 2026-10-06; new element test, `tests/lod-coarse-frame.test.mjs`)
+
+Owner principle (Kasper, 2026-10-06): the coarse levels carry the large-scale structure; a finer tile gets some
+room but lies within the coarse frame, and tile-to-tile edges match, especially at the mountains. This section
+documents a NEW test and its measured numbers. No existing pin or tolerance in this contract was changed.
+
+The test runs with the staged mountains on (`{mountains: true}`), on the four real water worlds, on tiles that touch
+a massif: two massif axis sites per world, tiles chosen by the T1 band grid (`bandCellFlagged`) plus the belt query.
+Per world: 39 / 45 / 29 / 44 frame tiles (Maithea / Selawyn / Raiva / Lethuris), each with > 0 massif samples on a
+65x65 net, plus 6 edge-only neighbours. Each world runs in its own worker thread; the file takes about 12 s.
+
+**(1) Frame.** At the 289 shared lattice vertices of each parent/child pair L -> L+1 (L = 0 .. the last
+peak-corrected level): `parent - ROOM <= child <= parent + EPS_UP`, with EPS_UP = 0.05 m (the existing morph rule).
+ROOM is measured per world and pair (parent - child, all frame pairs of that level). The pin is the measured max
++ 25%, rounded up to 50 m. That is a margin over the measurement, not a fit to hide failures:
+
+| Pair | Maithea p50 / p99 / max -> ROOM | Selawyn | Raiva | Lethuris |
+|---|---|---|---|---|
+| L0->1 | 0 / 2601 / 3882 -> 4900 | 0 / 1553 / 2860 -> 3600 | 0 / 1259 / 1870 -> 2350 | 0 / 2793 / 3816 -> 4800 |
+| L1->2 | 0 / 1579 / 3322 -> 4200 | 0 / 2030 / 2689 -> 3400 | 0 / 1256 / 1670 -> 2100 | 0 / 2604 / 3953 -> 4950 |
+| L2->3 | 0 / 1214 / 3926 -> 4950 | 1 / 1491 / 2724 -> 3450 | 0 / 1470 / 2119 -> 2650 | 0 / 1697 / 3627 -> 4550 |
+| L3->4 | 0 / 494 / 2565 -> 3250 | 10 / 462 / 1304 -> 1650 | 4 / 200 / 1384 -> 1750 | 0 / 420 / 1720 -> 2200 |
+| L4->5 | 2 / 285 / 783 -> 1000 | 9 / 404 / 662 -> 850 | **97 / 551 / 632 -> 800** | 3 / 504 / 1080 -> 1350 |
+| L5->6 | **35 / 844 / 1216 -> 1550** | 6 / 263 / 399 -> 500 | 2 / 143 / 201 -> 300 | 7 / 351 / 728 -> 950 |
+| L6->7 | 13 / 240 / 563 -> 750 | **463 / 1387 / 1575 -> 2000** | 0 / 152 / 209 -> 300 | **161 / 1364 / 1869 -> 2350** |
+| L7->8 | 0 / 284 / 369 -> 500 | 0 / 383 / 708 -> 900 | 2 / 44 / 61 -> 100 | 2 / 329 / 533 -> 700 |
+| L8->9 | 0 / 147 / 207 -> 300 | 5 / 207 / 305 -> 400 | 20 / 56 / 63 -> 100 | 0 / 305 / 749 -> 950 |
+| L9->10 | 50 / 121 / 137 -> 200 | 11 / 99 / 187 -> 250 | - | 12 / 149 / 205 -> 300 |
+| L10->11 | - | 54 / 131 / 175 -> 250 | - | 53 / 150 / 194 -> 250 |
+
+Bold marks the carving switch pair L(cut-1) -> L(cut). The room is in metres and is large at S0-S2. A child there is
+the point-sampled field plus its own peak correction, and the parent's 32-segment lattice cannot carry the relief
+between its vertices.
+
+- Upper side, point-sample child levels (child level > last corrected level): **holds exactly** (max 0.000 m).
+  HARD.
+- Upper side, peak-corrected child levels: **NOT MET (OPEN finding)**. The child rises above the parent by up to
+  3894 m (Maithea L1->2). At the switch pair the excess is 75-158 m. At every corrected pair 6-40% of the shared points
+  exceed 0.05 m.
+  - Cause: each level's peak correction reads its own finer cell centres. A child can therefore find a higher peak
+    than its parent's correction saw, so the stored coarse surface is not an upper envelope of the stored finer
+    surface.
+  - Kept as a node:test `todo` with the per-pair counts. It is counted in todo, not fail, and it remains OPEN, not
+    passed.
+  - A HARD companion check holds the excess within the section 5 height tolerance (`heightP99M` and `heightMaxM` at the parent tile edge; a loose bound, it only rules out a gross excess).
+  - Fixing it means changing the correction rule (e.g. a child correction capped by the parent surface), which is
+    an owner decision.
+
+**(2) Edge match.** For each world, 28-44 same-level edge pairs, matched by direction:
+- siblings at the uncarved levels and at L(cut+1);
+- a non-sibling neighbour across a parent boundary at L(cut);
+- the 12 cube edges at L0;
+- a cube-face edge on a massif at L(cut-1) and L(cut) (3-17 massif nodes on the shared edge).
+
+Results:
+- Stored surface heights and morph-start (parent mesh) heights at every edge vertex are `Object.is`-identical from
+  both builds: 0 mismatches. No morph state opens a height gap.
+- Rendered positions (Float32, anchor-relative) at t = 0 and t = 1 agree within the Float32 rounding bound
+  R * 2^-24 * (|rel_A| + |rel_B|). Measured worst gaps:
+  - 0.11-0.53 m at the L0 cube edges (bound 0.22-0.99 m);
+  - 0.04-0.26 m at the coarse siblings;
+  - 0.006-0.010 m at the cube-face pairs at L(cut-1)/L(cut);
+  - 0.002-0.005 m at the carved neighbours.
+- INFO: at L0 the skirt is 0.25 m, so the Float32 gap exceeds the skirt on 5-12 of the 12 cube edges on three of
+  the worlds. Elsewhere the skirt is 40.25 m. This is pre-existing encoding behaviour, not a height mismatch.
+
+**(3) Coarse-only continuity.**
+- A net over all six faces: 2 directions x 4 lines x 16384 intervals per face, extended 2% onto the neighbouring
+  faces. It is sampled with the L(cut-1) sampler only, and the M3 block-solve counter stays at **0** (the carved
+  frame builds solve 21-26).
+- Refinement: every interval with a belt edge, a massif edge, a belt switch, or a height flag (slope > 4x the
+  neighbouring intervals) is refined to 1024 sub-intervals. Per world: 333-1882 refined intervals, 104-120 belt
+  edges, 43-111 massif edges.
+- Bound: |dh| <= 4 x distance (slope 4). Steepest measured slope is 0.70-1.03 on the net and 0.62-0.79 refined.
+  0 violations.
+
+**Negative controls (must fail; all do).**
+- 2x carve: the switch child is carved with 2x depth and leaves the frame on every world. 1-27 shared points fall
+  below parent - ROOM per site, and 7 of the 8 sites are caught.
+  - This is a point-level model. No source hook doubles the carving, so the child's stored height is lowered once
+    more by its own point-sample carving depth, and the peak correction is not re-run.
+- 1 m edge offset: tile A's middle edge vertex is raised 1 m (stored height and rendered position, radially) and
+  re-measured through the same edge-pair path. It is caught on every edge pair from L(cut-1) on: 8-12 per world.
+- 10 m belt step: a 10 m step on every belt in the coarse field is caught in the interval of every belt edge
+  crossed: 7-14 of 7-14.
+
+Non-finite heights, gaps and samples count as violations in every check.
+
 ## 4. Tile metadata (64 bytes, `meta`, version 1)
 
 `buildTile` returns `meta: Uint8Array(64)`. It is computed from the lattice samples and classifier calls the
