@@ -1,0 +1,28 @@
+{
+  "constants": {
+    "SLOPE_ZERO_TAN": 0.17632698070846498,
+    "SLOPE_FULL_TAN": 0.5773502691896257,
+    "SLOPE_STEP_M": 125,
+    "MAX_DEPTH_M": 55,
+    "CAP_FRACTION": 0.5,
+    "GULLY_CELL_M": 250,
+    "GULLY_HALF_LENGTH_M": 200,
+    "GULLY_HALF_WIDTH_M": 65,
+    "GULLY_JITTER": 0.15,
+    "KAPPA": 0.6,
+    "PROFILE_MAX_SLOPE": 1.539600717839002,
+    "STRATA_PERIOD_M": 280,
+    "BENCH_RISE": 0.5,
+    "BENCH_FALL": 0.08,
+    "STRATA_WEIGHT": 0.985,
+    "RIB_WEIGHT": 0.015,
+    "JITTER_M": 30,
+    "SEED_SALT": 1757159915
+  },
+  "digest": "c1cd74f8f82d1b2fb8699337b4736a50bf2770515590eb987045dc4e55b34577",
+  "gate": [
+    730901,
+    730908
+  ],
+  "selection": "tuning pool and seed 730201 site 1 smoke only; frozen before gate"
+}

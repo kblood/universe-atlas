@@ -1,0 +1,13 @@
+M5_COST {"rock":{"medianNs":50.1151,"rounds":[49.2169,50.1395,50.4826,50.1151,49.4551,50.2012,49.6463]},"addon":{"medianNs":129.1566,"rounds":[177.5515,133.8932,128.7942,129.1566,128.8466,128.9226,130.0816]},"sink":-207381909.53876308}
+M5_ROWS {"hard":{},"tuning":{},"gate":{}}
+(node:40920) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ ROW COST: warm synthetic add-on <= 214 ns (opt-in benchmark) (1775.7668ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1851.0263

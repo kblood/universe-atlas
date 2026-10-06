@@ -1,0 +1,22 @@
+{
+  "constants": {
+    "SLOPE_ZERO_TAN": 0.17632698070846498,
+    "SLOPE_FULL_TAN": 0.5773502691896257,
+    "SLOPE_STEP_M": 125,
+    "MAX_DEPTH_M": 120,
+    "CAP_FRACTION": 0.5,
+    "GULLY_CELL_M": 250,
+    "GULLY_HALF_LENGTH_M": 275,
+    "GULLY_HALF_WIDTH_M": 65,
+    "A_MIN": 0.5,
+    "KAPPA": 0.32,
+    "PROFILE_MAX_SLOPE": 1.539600717839002,
+    "STRATA_PERIOD_M": 160,
+    "STRATA_WEIGHT": 0.04,
+    "RIB_WEIGHT": 0.96,
+    "JITTER_M": 30,
+    "SEED_SALT": 1757159915
+  },
+  "digest": "92954e7d0ecbc44639a66aa5fe64ac97eee64c4761e9641feec90c2d2a4e551f",
+  "frozenBeforeGate": true
+}

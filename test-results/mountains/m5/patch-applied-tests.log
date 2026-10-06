@@ -1,0 +1,417 @@
+✔ WorldVersions has exactly the nine §1.3-declared keys, every value a non-empty string (1.1846ms)
+✔ WorldVersions bundle round-trips through JSON (the persisted save/bookmark/URL form) byte-for-byte (0.1567ms)
+✔ pinned current package versions include the released rivers-off surface contract (0.1997ms)
+✔ FINDING (not this suite's fault, reported for visibility): §6.2 explicitly requires TERRAIN_VERSION stay fixed at "terrain-1.2.0" ("deliberate: ... its version shouldn't either"); the live value has since moved (0.087ms)
+✔ legacy galaxies digest for seed "LETHRA-001" is pinned and must not move (3.1253ms)
+✔ legacy galaxies digest is consistent between galaxiesInGroup and the back-compat galaxies() alias (2.0131ms)
+✔ legacy galaxies digest matches the independently-tracked tests/fixtures/legacy-galaxies.json fixture (15.4339ms)
+✔ legacy address strings (no U/K/H prefix) parse to clusterCell=groupCell=(0,0,0) and resolve to the exact legacy galaxy (7.9242ms)
+✔ a bookmark (address string + date string) round-trips to byte-identical resolved content (6.078ms)
+✔ yearsToDate/dateYears/dateRecord/parseDate round-trip a bookmark date exactly, including fractional years and huge (but in-cap) magnitudes (0.72ms)
+✔ yearsToDate: floor and ceiling are a matched pair — before the Big Bang and past UNIVERSE_END_NS both throw, "0" and UNIVERSE_END_NS itself both succeed (0.6268ms)
+✔ FIXED (was a FINDING): UNIVERSE_END_NS (10^100 yr, the contract's own declared navigable ceiling, §2.1) now round-trips exactly through yearsToDate, with no silent Number precision loss (0.337ms)
+✔ GALAXY_HISTORY_VERSION is pinned to its exact contractual value — a change here must be a deliberate, reviewed bump, not silently absorbed (0.0586ms)
+✔ GALAXY_HISTORY_VERSION has a dedicated WorldVersions.galaxyHistory slot (§1.3 gap closed) (0.0805ms)
+✔ an old (8-field, pre-galaxyHistory) wv bundle decodes as current, not legacy (0.1168ms)
+✔ an old (8-field) bookmark URL with an absolute atlas-time-2 date resolves to that exact t — no double-offset (0.1727ms)
+✔ a freshly written (9-field) bookmark URL still round-trips exactly through the new encoding (0.0866ms)
+✔ a genuinely pre-4D-contract URL (no wv at all) still falls back to the CATALOGUE_EPOCH_NS-relative offset interpretation (0.0683ms)
+✔ biome-climate model versions are pinned and part of the model manifest (11.4326ms)
+✔ relief model versions are pinned and part of the model manifest; build version moved (1.6769ms)
+✔ a terrain-1.7.0 bookmark loads with the relief notice; a current (1.8.0) bookmark loads without it (1.1376ms)
+✔ ground bookmarks re-snap to the new ground height: main.ts restores ?walk= by direction only (8.3352ms)
+✔ Maithea: cost optimisation preserves every coarse/switch tile buffer (1950.6302ms)
+✔ Selawyn: cost optimisation preserves every coarse/switch tile buffer (1648.7595ms)
+✔ Raiva: cost optimisation preserves every coarse/switch tile buffer (2017.6589ms)
+✔ Lethuris: cost optimisation preserves every coarse/switch tile buffer (2001.9261ms)
+✖ Maithea: cost optimisation preserves full sampler outputs at truth and L0..22 (1456.3205ms)
+✖ Selawyn: cost optimisation preserves full sampler outputs at truth and L0..22 (1145.6677ms)
+✖ Raiva: cost optimisation preserves full sampler outputs at truth and L0..22 (1489.8385ms)
+✖ Lethuris: cost optimisation preserves full sampler outputs at truth and L0..22 (730.8206ms)
+✔ lod-ladder-2: carving starts at the first level with edge <= 128 km; constants pinned to their sources (0.486ms)
+✔ staged wiring: off by default, the level changes nothing without mountains, carving state per option (3.4394ms)
+✔ mountainRidgeTermM: carve = false is the composition without C, an upper envelope of the carved term (495.391ms)
+✖ Maithea: below the cut no block solve and an upper envelope; from the cut the truth (4401.9573ms)
+✖ Selawyn: below the cut no block solve and an upper envelope; from the cut the truth (4268.5406ms)
+✖ Raiva: below the cut no block solve and an upper envelope; from the cut the truth (4110.856ms)
+✖ Lethuris: below the cut no block solve and an upper envelope; from the cut the truth (4071.6085ms)
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2697.2883ms)
+ℹ INFO Maithea C=2/6/33/54 N=2/5/17/27 edge 1: morph start 0.0062 m, seam 0.0061 m; mutant 883.9 / 132.9 m; mean step at the cut -175.9 m (min -1018.7 m)
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (2546.4645ms)
+ℹ INFO Maithea (cube-face edge) C=0/6/0/6 N=4/5/31/3 edge 0: morph start 0.0041 m, seam 0.0038 m; mutant 135.7 / 3.3 m; mean step at the cut -13.4 m (min -203.3 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2746.1814ms)
+ℹ INFO Selawyn C=0/7/112/107 N=0/6/55/53 edge 0: morph start 0.0055 m, seam 0.0032 m; mutant 1584.0 / 1298.1 m; mean step at the cut -502.6 m (min -1574.7 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1933.0166ms)
+ℹ INFO Selawyn (cube-face edge) C=0/7/127/53 N=5/6/0/26 edge 1: morph start 0.0058 m, seam 0.0050 m; mutant 1344.5 / 82.1 m; mean step at the cut -100.2 m (min -1264.9 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2914.065ms)
+ℹ INFO Raiva C=1/5/19/25 N=1/4/9/13 edge 3: morph start 0.0062 m, seam 0.0052 m; mutant 471.1 / 247.4 m; mean step at the cut -99.4 m (min -539.6 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (2486.4335ms)
+ℹ INFO Raiva (cube-face edge) C=0/5/0/5 N=4/4/15/2 edge 0: morph start 0.0058 m, seam 0.0052 m; mutant 1013.8 / 14.5 m; mean step at the cut -245.5 m (min -1086.7 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2974.3036ms)
+ℹ INFO Lethuris C=2/7/28/73 N=2/6/13/36 edge 0: morph start 0.0065 m, seam 0.0057 m; mutant 1787.3 / 511.9 m; mean step at the cut -473.2 m (min -1939.6 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1979.7521ms)
+ℹ INFO Lethuris (cube-face edge) C=0/7/0/105 N=4/6/63/52 edge 0: morph start 0.0052 m, seam 0.0029 m; mutant 1917.0 / 18.4 m; mean step at the cut -384.1 m (min -1917.0 m)
+GRID Maithea: N=1024, 2358 in-band of 102500, edge 2743 in-band of 8880, 1480/1480 pairs straddle 48 km
+GRID Selawyn: N=2048, 1196 in-band of 102500, edge 2314 in-band of 7680, 1280/1280 pairs straddle 48 km
+GRID Raiva: N=512, 1755 in-band of 102500, edge 306 in-band of 960, 120/160 pairs straddle 48 km
+GRID Lethuris: N=2048, 1257 in-band of 102500, edge 3067 in-band of 9840, 1640/1640 pairs straddle 48 km
+GRID AREA Maithea: N=1024 cells 216545 nodes 7156; massif 2.300%, geometric band 2.469%, flagged 3.420% (land 3.157%); land ratio 1.372, geometric ratio 1.385
+GRID AREA Maithea: flagged / massif 1.486
+GRID AREA Selawyn: N=2048 cells 398112 nodes 12689; massif 1.167%, geometric band 1.291%, flagged 1.687% (land 1.519%); land ratio 1.302, geometric ratio 1.307
+GRID AREA Selawyn: flagged / massif 1.446
+GRID AREA Raiva: N=512 cells 39459 nodes 1108; massif 1.712%, geometric band 1.816%, flagged 2.280% (land 2.136%); land ratio 1.247, geometric ratio 1.256
+GRID AREA Raiva: flagged / massif 1.332
+GRID AREA Lethuris: N=2048 cells 432521 nodes 13369; massif 1.226%, geometric band 1.318%, flagged 1.678% (land 1.546%); land ratio 1.261, geometric ratio 1.273
+GRID AREA Lethuris: flagged / massif 1.368
+✔ HARD: version and API unchanged by the grid (output-neutral; orogen-layout-2 since cost plan T2) (63.6271ms)
+✔ HARD: 4 water worlds x 102,500 Fibonacci + band-edge offsets: sampleWithinWithA0 == filtered sampleWithA0, 0 unflagged band directions (1818.6679ms)
+✔ HARD: negative control: a grid stamped for a narrower band leaves band directions unflagged (the check has teeth) (133.9328ms)
+✔ HARD: coarse summary covers every flagged cell, and the word tags agree with the bits, at N = 256..2048 (172.2387ms)
+✔ HARD: other band parameters (16 km / no width gate, 48 km / no width gate) on two worlds (288.4283ms)
+✔ HARD: 60 corpus bodies x 20,000 directions + band-edge offsets: identical and conservative (7515.3229ms)
+✔ HARD: flagged area <= 1.5 x massif (band) area per world (701.3765ms)
+✔ HARD: outside the band mountainRidgeTermM returns main's term unchanged, so massifBeltSample is value-neutral at the call site (93.8142ms)
+✔ wired: orbit bake, ocean hypsometry and surface survey solve 0 M3 blocks on all four worlds (negative control solves) (4026.432ms)
+✔ the wiring hook targets the real constant (a rename cannot leave the child silently unwired) (0.687ms)
+✔ the sparse-global callers pass level 0 (S0) and the dense/truth callers pass no level (0.8557ms)
+✔ window bound constant: 772 m detail + 1908 m landforms x min(1, R/2e6); 2680 m from R = 2000 km up; 0 on gas giants (0.6747ms)
+✔ invariant 0 <= h - floorM <= terrainWindowMaxM(body) over 6 bodies x 20000 directions (0 violations) (1606.2189ms)
+✔ continentalM >= 0 exactly where the sea-level-0 sampler reports land, on the four water worlds (68.1616ms)
+✔ floorM is the clamped base field: water-world seabed and gas giants equal elevationM; floor never exceeds ground (2653.3034ms)
+✔ terrainFloorSampler = terrainSampler plus exactly floorM/windowM/continentalM; plain shapes unchanged (1322.2008ms)
+✔ baseTerrainSampler keeps its historical four-field shape (4.8248ms)
+RAIVA R1 {"tau":0.4560255015129207,"w":90090.17114178278,"count":275,"area":31998.375,"density":8.59418642352932}
+✔ HARD: outsideBelt directions (4096 per water world) are bit-identical to main: heights, ocean and colour (455.1266ms)
+✔ HARD: outsideMassif directions (4096 per water world) are bit-identical to main: heights, ocean and colour (95.0291ms)
+✔ HARD: negative controls: the identity digest rejects one changed height, colour or ocean flag (185.7861ms)
+✔ HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (59.2161ms)
+✔ HARD: versions, fixed carving width, strip rule and per-strip seeds (0.8906ms)
+✔ HARD: the assembled ridge term: >= 0, <= max(main, analytic envelope), main outside the massif (449.8564ms)
+✖ HARD: mountain-assembly.ts is arithmetic only and imports only M2 and M3 (4.0458ms)
+✔ CONTRACT: M4 R1 on the whole belt core at the real Raiva tau and belt width (8 seeds, 64 km rasters) (6594.9063ms)
+✔ tile metadata: 64 bytes, versioned, deterministic, carried by every tile (708.9546ms)
+✔ tile metadata: height bounds, summit, snowline/treeline, ocean/snow/forest counts and class histogram match the lattice exactly (1810.375ms)
+ℹ tests 72
+ℹ suites 0
+ℹ pass 63
+ℹ fail 9
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 50368.1002
+
+✖ failing tests:
+
+test at tests\lod-carving-reduction.test.mjs:62:52
+✖ Maithea: cost optimisation preserves full sampler outputs at truth and L0..22 (1456.3205ms)
+  AssertionError [ERR_ASSERTION]: Lundefined
+  + actual - expected
+  
+  + '9fd0dcf1206bdc59198f723c734f8f335aa3c292bdd768a617231ad95fd49ef2'
+  - 'a49cc5e166d1686748f7516556d5bd4fd53d0bcef1792c93b45b4daeabf42a79'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/m5-patchcheck/tests/lod-carving-reduction.test.mjs:67:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '9fd0dcf1206bdc59198f723c734f8f335aa3c292bdd768a617231ad95fd49ef2',
+    expected: 'a49cc5e166d1686748f7516556d5bd4fd53d0bcef1792c93b45b4daeabf42a79',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:62:52
+✖ Selawyn: cost optimisation preserves full sampler outputs at truth and L0..22 (1145.6677ms)
+  AssertionError [ERR_ASSERTION]: Lundefined
+  + actual - expected
+  
+  + 'f0d4b21fa701a3c5e035db57a857612ba3681a6ae144796dc6b8dbaa90f7cd90'
+  - 'efba81af653849461b56d8314e3fa39280ab32c0543c1da71ffd36fe8780ba54'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/m5-patchcheck/tests/lod-carving-reduction.test.mjs:67:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'f0d4b21fa701a3c5e035db57a857612ba3681a6ae144796dc6b8dbaa90f7cd90',
+    expected: 'efba81af653849461b56d8314e3fa39280ab32c0543c1da71ffd36fe8780ba54',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:62:52
+✖ Raiva: cost optimisation preserves full sampler outputs at truth and L0..22 (1489.8385ms)
+  AssertionError [ERR_ASSERTION]: Lundefined
+  + actual - expected
+  
+  + 'ae4c6a536a76e6028f1bc33639ab48cc6e7b3083ebed22d0d5c0354fdec5b90f'
+  - '3c9b85ba194eaa8c6edfa426446b1840d7510c1c0274438eec18cd240fa6f573'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/m5-patchcheck/tests/lod-carving-reduction.test.mjs:67:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'ae4c6a536a76e6028f1bc33639ab48cc6e7b3083ebed22d0d5c0354fdec5b90f',
+    expected: '3c9b85ba194eaa8c6edfa426446b1840d7510c1c0274438eec18cd240fa6f573',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:62:52
+✖ Lethuris: cost optimisation preserves full sampler outputs at truth and L0..22 (730.8206ms)
+  AssertionError [ERR_ASSERTION]: Lundefined
+  + actual - expected
+  
+  + '2783f3726fe610b761431f1eabcd0d7e6d39285607e3e6e5795489a18752f1d1'
+  - '72ca784c16ba4b497b099e1861b9d89d26f627d318dc6023f25e31b6ad01f610'
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/m5-patchcheck/tests/lod-carving-reduction.test.mjs:67:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '2783f3726fe610b761431f1eabcd0d7e6d39285607e3e6e5795489a18752f1d1',
+    expected: '72ca784c16ba4b497b099e1861b9d89d26f627d318dc6023f25e31b6ad01f610',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:111:52
+✖ Maithea: below the cut no block solve and an upper envelope; from the cut the truth (4401.9573ms)
+  AssertionError [ERR_ASSERTION]: L6
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      bank: 0,
+      channelId: null,
+      color: [
+        226.85605954194435,
+  ...
+      ],
+  +   elevationM: 1321.651819863821,
+  -   elevationM: 1294.8871342766154,
+      flow: [
+        0,
+        0
+      ],
+  +   groundHeightM: 1321.651819863821,
+  -   groundHeightM: 1294.8871342766154,
+      influence: 0,
+      ocean: false,
+  +   rockHeightM: 1321.651819863821,
+  -   rockHeightM: 1294.8871342766154,
+      roughness: 0.9,
+  +   visibleHeightM: 1321.651819863821,
+  -   visibleHeightM: 1294.8871342766154,
+      waterDepthM: 0,
+      waterHeightM: null,
+      waterKind: null,
+      waterLevelM: null,
+      wet: false
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/m5-patchcheck/tests/lod-carving-reduction.test.mjs:138:113)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { elevationM: 1321.651819863821, ocean: false, color: [ 226.85605954194435, 239.45917396094126, 237.35865489110844 ], roughness: 0.9, rockHeightM: 1321.651819863821, waterLevelM: null, visibleHeightM: 1321.651819863821, groundHeightM: 1321.651819863821, waterHeightM: null, waterDepthM: 0, wet: false, waterKind: null, bank: 0, channelId: null, flow: [ 0, 0 ], influence: 0 },
+    expected: { elevationM: 1294.8871342766154, ocean: false, color: [ 226.85605954194435, 239.45917396094126, 237.35865489110844 ], roughness: 0.9, rockHeightM: 1294.8871342766154, waterLevelM: null, visibleHeightM: 1294.8871342766154, groundHeightM: 1294.8871342766154, waterHeightM: null, waterDepthM: 0, wet: false, waterKind: null, bank: 0, channelId: null, flow: [ 0, 0 ], influence: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:111:52
+✖ Selawyn: below the cut no block solve and an upper envelope; from the cut the truth (4268.5406ms)
+  AssertionError [ERR_ASSERTION]: L7
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      bank: 0,
+      channelId: null,
+      color: [
+        59.18184938593872,
+  ...
+      ],
+  +   elevationM: 1310.3595906441217,
+  -   elevationM: 1274.201261712487,
+      flow: [
+        0,
+        0
+      ],
+  +   groundHeightM: 1310.3595906441217,
+  -   groundHeightM: 1274.201261712487,
+      influence: 0,
+      ocean: false,
+  +   rockHeightM: 1310.3595906441217,
+  -   rockHeightM: 1274.201261712487,
+      roughness: 0.9,
+  +   visibleHeightM: 1310.3595906441217,
+  -   visibleHeightM: 1274.201261712487,
+      waterDepthM: 0,
+      waterHeightM: null,
+      waterKind: null,
+      waterLevelM: null,
+      wet: false
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/m5-patchcheck/tests/lod-carving-reduction.test.mjs:138:113)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { elevationM: 1310.3595906441217, ocean: false, color: [ 59.18184938593872, 98.95832673765322, 54.842598933036214 ], roughness: 0.9, rockHeightM: 1310.3595906441217, waterLevelM: null, visibleHeightM: 1310.3595906441217, groundHeightM: 1310.3595906441217, waterHeightM: null, waterDepthM: 0, wet: false, waterKind: null, bank: 0, channelId: null, flow: [ 0, 0 ], influence: 0 },
+    expected: { elevationM: 1274.201261712487, ocean: false, color: [ 59.18184938593872, 98.95832673765322, 54.842598933036214 ], roughness: 0.9, rockHeightM: 1274.201261712487, waterLevelM: null, visibleHeightM: 1274.201261712487, groundHeightM: 1274.201261712487, waterHeightM: null, waterDepthM: 0, wet: false, waterKind: null, bank: 0, channelId: null, flow: [ 0, 0 ], influence: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:111:52
+✖ Raiva: below the cut no block solve and an upper envelope; from the cut the truth (4110.856ms)
+  AssertionError [ERR_ASSERTION]: L5
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      bank: 0,
+      channelId: null,
+      color: [
+        37.5152458754003,
+  ...
+      ],
+  +   elevationM: 734.4099755223274,
+  -   elevationM: 734.3070512647347,
+      flow: [
+        0,
+        0
+      ],
+  +   groundHeightM: 734.4099755223274,
+  -   groundHeightM: 734.3070512647347,
+      influence: 0,
+      ocean: false,
+  +   rockHeightM: 734.4099755223274,
+  -   rockHeightM: 734.3070512647347,
+      roughness: 0.9,
+  +   visibleHeightM: 734.4099755223274,
+  -   visibleHeightM: 734.3070512647347,
+      waterDepthM: 0,
+      waterHeightM: null,
+      waterKind: null,
+      waterLevelM: null,
+      wet: false
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/m5-patchcheck/tests/lod-carving-reduction.test.mjs:138:113)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { elevationM: 734.4099755223274, ocean: false, color: [ 37.5152458754003, 81.51399730446478, 44.04824383787107 ], roughness: 0.9, rockHeightM: 734.4099755223274, waterLevelM: null, visibleHeightM: 734.4099755223274, groundHeightM: 734.4099755223274, waterHeightM: null, waterDepthM: 0, wet: false, waterKind: null, bank: 0, channelId: null, flow: [ 0, 0 ], influence: 0 },
+    expected: { elevationM: 734.3070512647347, ocean: false, color: [ 37.5152458754003, 81.51399730446478, 44.04824383787107 ], roughness: 0.9, rockHeightM: 734.3070512647347, waterLevelM: null, visibleHeightM: 734.3070512647347, groundHeightM: 734.3070512647347, waterHeightM: null, waterDepthM: 0, wet: false, waterKind: null, bank: 0, channelId: null, flow: [ 0, 0 ], influence: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lod-carving-reduction.test.mjs:111:52
+✖ Lethuris: below the cut no block solve and an upper envelope; from the cut the truth (4071.6085ms)
+  AssertionError [ERR_ASSERTION]: L7
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      bank: 0,
+      channelId: null,
+      color: [
+        37.85959348582131,
+  ...
+      ],
+  +   elevationM: 1070.9876259956636,
+  -   elevationM: 1060.1989849507327,
+      flow: [
+        0,
+        0
+      ],
+  +   groundHeightM: 1070.9876259956636,
+  -   groundHeightM: 1060.1989849507327,
+      influence: 0,
+      ocean: false,
+  +   rockHeightM: 1070.9876259956636,
+  -   rockHeightM: 1060.1989849507327,
+      roughness: 0.9,
+  +   visibleHeightM: 1070.9876259956636,
+  -   visibleHeightM: 1060.1989849507327,
+      waterDepthM: 0,
+      waterHeightM: null,
+      waterKind: null,
+      waterLevelM: null,
+      wet: false
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/m5-patchcheck/tests/lod-carving-reduction.test.mjs:138:113)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { elevationM: 1070.9876259956636, ocean: false, color: [ 37.85959348582131, 82.26220378779378, 44.45255699522555 ], roughness: 0.9, rockHeightM: 1070.9876259956636, waterLevelM: null, visibleHeightM: 1070.9876259956636, groundHeightM: 1070.9876259956636, waterHeightM: null, waterDepthM: 0, wet: false, waterKind: null, bank: 0, channelId: null, flow: [ 0, 0 ], influence: 0 },
+    expected: { elevationM: 1060.1989849507327, ocean: false, color: [ 37.85959348582131, 82.26220378779378, 44.45255699522555 ], roughness: 0.9, rockHeightM: 1060.1989849507327, waterLevelM: null, visibleHeightM: 1060.1989849507327, groundHeightM: 1060.1989849507327, waterHeightM: null, waterDepthM: 0, wet: false, waterKind: null, bank: 0, channelId: null, flow: [ 0, 0 ], influence: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\terrain-mountains-assembly.test.mjs:90:1
+✖ HARD: mountain-assembly.ts is arithmetic only and imports only M2 and M3 (4.0458ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      './mountain-envelope.ts',
+      './mountain-carving.ts',
+  +   './mountain-rock-detail.ts'
+    ]
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/m5-patchcheck/tests/terrain-mountains-assembly.test.mjs:92:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ './mountain-envelope.ts', './mountain-carving.ts', './mountain-rock-detail.ts' ],
+    expected: [ './mountain-envelope.ts', './mountain-carving.ts' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

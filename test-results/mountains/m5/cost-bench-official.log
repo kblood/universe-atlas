@@ -1,0 +1,19 @@
+round -3: alone=42.19 combined=190.79 ns
+round -2: alone=42.59 combined=188.06 ns
+round -1: alone=42.32 combined=188.71 ns
+round 0: alone=42.62 combined=188.46 ns
+round 1: alone=42.27 combined=187.64 ns
+round 2: alone=42.35 combined=188.18 ns
+round 3: alone=42.28 combined=188.58 ns
+round 4: alone=42.44 combined=188.36 ns
+round 5: alone=43.30 combined=188.99 ns
+round 6: alone=43.19 combined=192.62 ns
+round 7: alone=43.16 combined=192.67 ns
+round 8: alone=42.80 combined=195.23 ns
+round 9: alone=44.17 combined=196.94 ns
+round 10: alone=44.10 combined=194.97 ns
+round 11: alone=44.27 combined=198.10 ns
+round 12: alone=46.11 combined=198.81 ns
+round 13: alone=45.05 combined=197.90 ns
+round 14: alone=44.82 combined=199.84 ns
+M5_REAL_COST {"count":1000000,"rounds":15,"aloneNs":[42.6235,42.266,42.3522,42.2791,42.4356,43.2972,43.1932,43.162,42.8049,44.1709,44.1024,44.273,46.1076,45.0534,44.8224],"combinedNs":[188.4617,187.6394,188.1816,188.5799,188.3646,188.9917,192.6178,192.6707,195.2277,196.9396,194.9733,198.0957,198.8125,197.9014,199.837],"aloneMedianNs":43.1932,"combinedMedianNs":192.6707,"addonMedianNs":149.5087,"warmBuilds":2,"extraBuilds":0,"budgetNs":214,"sink":-27294847335.23788,"addonBudgetPass":true}

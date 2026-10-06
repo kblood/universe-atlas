@@ -1,0 +1,6 @@
+FAIL 0/3/0 (pass/fail/unclear of 3) calibration NOT-CHECKED (not citable) -> element: seams/grid artefacts  C:\LLM\IWSDK\universe-atlas-wt\m5-rock\test-results\mountains\m5\m3-with.png
+FAIL 0/3/0 (pass/fail/unclear of 3) calibration NOT-CHECKED (not citable) -> element: seams/grid artefacts  C:\LLM\IWSDK\universe-atlas-wt\m5-rock\test-results\mountains\m5\m3-without.png
+FAIL 0/3/0 (pass/fail/unclear of 3) calibration NOT-CHECKED (not citable) -> element: seams/grid artefacts  C:\LLM\IWSDK\universe-atlas-wt\m5-rock\test-results\mountains\m5\with.png
+FAIL 0/3/0 (pass/fail/unclear of 3) calibration NOT-CHECKED (not citable) -> element: seams/grid artefacts  C:\LLM\IWSDK\universe-atlas-wt\m5-rock\test-results\mountains\m5\without.png
+VISUAL-ADVISORY: recorded only; never blocks a gate by itself.
+luna exit 0
