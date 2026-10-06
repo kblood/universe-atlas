@@ -1,0 +1,103 @@
+{
+ "tests/forest-census.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 1,
+  "s": 0
+ },
+ "tests/planet-detail.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 2,
+  "s": 1
+ },
+ "tests/ocean-gerstner.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 5,
+  "s": 1
+ },
+ "tests/planet.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 6,
+  "s": 2
+ },
+ "tests/world-surface.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 1,
+  "s": 3
+ },
+ "tests/world.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 1,
+  "s": 0
+ },
+ "tests/forest-habitat.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 26,
+  "s": 5
+ },
+ "tests/acceptance/visit-order-independence.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 0,
+  "s": 1
+ },
+ "tests/acceptance/climate-seek-independence.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 4,
+  "s": 1
+ },
+ "tests/acceptance/existence-gating.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 3,
+  "s": 3
+ },
+ "tests/forest-water-validity.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 215,
+  "s": 43
+ },
+ "tests/terrain-elevation-identity.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 516,
+  "s": 106
+ },
+ "tests/tile-metadata.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 289,
+  "s": 51
+ },
+ "tests/place-query.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 159,
+  "s": 33
+ },
+ "tests/terrain-floor-window.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 2834,
+  "s": 544
+ },
+ "tests/acceptance/climate-agreement.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 3151,
+  "s": 615
+ },
+ "tests/landing-site.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 32,
+  "s": 6
+ },
+ "tests/terrain-mountains-assembly.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 312,
+  "s": 70
+ },
+ "tests/render-bounds.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 814,
+  "s": 149
+ },
+ "tests/terrain-climate-colour.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 4672,
+  "s": 906
+ },
+ "tests/terrain-relief-hypsometry.test.mjs": null
+}

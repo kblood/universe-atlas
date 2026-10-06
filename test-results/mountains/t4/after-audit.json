@@ -1,0 +1,189 @@
+{
+ "orbit/Maithea": {
+  "caller": "orbit",
+  "world": "Maithea",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 420.0935,
+  "blockSolves": 0,
+  "landFraction": 0.5498735250075766
+ },
+ "orbit/Selawyn": {
+  "caller": "orbit",
+  "world": "Selawyn",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 389.7994,
+  "blockSolves": 0,
+  "landFraction": 0.39267491767055024
+ },
+ "orbit/Raiva": {
+  "caller": "orbit",
+  "world": "Raiva",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 410.36170000000004,
+  "blockSolves": 0,
+  "landFraction": 0.5228499172527253
+ },
+ "orbit/Lethuris": {
+  "caller": "orbit",
+  "world": "Lethuris",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 403.5213,
+  "blockSolves": 0,
+  "landFraction": 0.377307353705168
+ },
+ "ocean/Maithea": {
+  "caller": "ocean",
+  "world": "Maithea",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 68.5059,
+  "blockSolves": 0,
+  "minHeightM": -10280.347942069195,
+  "belowZero": 1856
+ },
+ "ocean/Selawyn": {
+  "caller": "ocean",
+  "world": "Selawyn",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 71.3699,
+  "blockSolves": 0,
+  "minHeightM": -11260.45367053962,
+  "belowZero": 2487
+ },
+ "ocean/Raiva": {
+  "caller": "ocean",
+  "world": "Raiva",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 49.988,
+  "blockSolves": 0,
+  "minHeightM": -11257.182035750435,
+  "belowZero": 1949
+ },
+ "ocean/Lethuris": {
+  "caller": "ocean",
+  "world": "Lethuris",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 82.36959999999999,
+  "blockSolves": 0,
+  "minHeightM": -11304.525792415972,
+  "belowZero": 2547
+ },
+ "survey/Maithea": {
+  "caller": "survey",
+  "world": "Maithea",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 68.4539,
+  "blockSolves": 0,
+  "sites": 5
+ },
+ "survey/Selawyn": {
+  "caller": "survey",
+  "world": "Selawyn",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 77.60629999999999,
+  "blockSolves": 0,
+  "sites": 4
+ },
+ "survey/Raiva": {
+  "caller": "survey",
+  "world": "Raiva",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 64.0553,
+  "blockSolves": 0,
+  "sites": 4
+ },
+ "survey/Lethuris": {
+  "caller": "survey",
+  "world": "Lethuris",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 83.53089999999999,
+  "blockSolves": 0,
+  "sites": 5
+ },
+ "place/Maithea": {
+  "caller": "place",
+  "world": "Maithea",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "warmMs": 226.63420000000002,
+  "warmBlockSolves": 1,
+  "queries": 24,
+  "ms": 0.838799999999992,
+  "blockSolves": 0,
+  "massifFirstTouch": {
+   "ms": 151.74330000000003,
+   "blockSolves": 1
+  },
+  "massifRepeat": {
+   "ms": 0.09549999999995862,
+   "blockSolves": 0
+  }
+ },
+ "place/Selawyn": {
+  "caller": "place",
+  "world": "Selawyn",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "warmMs": 77.64419999999998,
+  "warmBlockSolves": 0,
+  "queries": 24,
+  "ms": 143.6033,
+  "blockSolves": 1,
+  "massifFirstTouch": {
+   "ms": 147.04790000000003,
+   "blockSolves": 1
+  },
+  "massifRepeat": {
+   "ms": 0.09960000000000946,
+   "blockSolves": 0
+  }
+ },
+ "place/Raiva": {
+  "caller": "place",
+  "world": "Raiva",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "warmMs": 56.99889999999999,
+  "warmBlockSolves": 0,
+  "queries": 24,
+  "ms": 148.95989999999998,
+  "blockSolves": 1,
+  "massifFirstTouch": {
+   "ms": 154.62849999999997,
+   "blockSolves": 1
+  },
+  "massifRepeat": {
+   "ms": 0.12229999999999563,
+   "blockSolves": 0
+  }
+ },
+ "place/Lethuris": {
+  "caller": "place",
+  "world": "Lethuris",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "warmMs": 80.81070000000001,
+  "warmBlockSolves": 0,
+  "queries": 24,
+  "ms": 0.897199999999998,
+  "blockSolves": 0,
+  "massifFirstTouch": {
+   "ms": 142.53269999999998,
+   "blockSolves": 1
+  },
+  "massifRepeat": {
+   "ms": 0.05059999999997444,
+   "blockSolves": 0
+  }
+ },
+ "golden-terrain/all": {
+  "caller": "golden-terrain",
+  "world": "all",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 6882.3171999999995,
+  "blockSolves": 17,
+  "terrainDigest": null
+ },
+ "golden-platform/all": {
+  "caller": "golden-platform",
+  "world": "all",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2",
+  "ms": 3752.263,
+  "blockSolves": 17
+ }
+}

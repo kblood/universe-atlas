@@ -1,0 +1,15 @@
+You are reviewing an uncommitted change in this git worktree (branch mountains/t4-sparse, base main 85d1e44). Read-only review: do not modify files.
+
+Task under review: "T4" of docs/mountains-opus-decisions-2026-10-05.md (task table row T4: sparse-consumer audit of terrainSampler callers; targets (1) 0 M3 block solves for orbit bake, ocean volume, survey, golden capture unless documented with a count, (2) orbit bake <= main +5%, (3) default npm test files whose wall time more than doubles listed with cause; file ownership "the listed caller files, level argument only"). Also read docs/lod-ladder-contract-v1.md section 3 (lod-ladder-2 carving reduction) and section 8 (place/collision/physics stay on truth).
+
+Run `git status` and `git diff` to see the change. New files: tests/sparse-consumer-levels.test.mjs, tests/helpers/wire-mountains.mjs, tests/helpers/wire-mountains-hook.mjs, tests/helpers/sparse-consumers-wired.mjs, docs/mountains-t4-sparse-consumers-2026-10-06.md (section 5 still has a placeholder that will be filled with suite timing data), test-results/mountains/t4/* evidence scripts and JSON.
+
+Please check, concretely, and cite file:line:
+1. Correctness: are the three level-0 calls (planetSurface in src/terrain.ts, oceanHypsometry in src/ocean-volume.ts, surfaceSurvey in src/surface-survey.ts) output-neutral while TERRAIN_MOUNTAINS_WIRED=false (argument defaults identical to the previous calls)? Any argument-position mistake?
+2. Is the classification in the doc (section 1) right? Is any caller misclassified — in particular, is any other sparse-global caller still on the truth sampler (search all of src/ for terrainSampler / surfaceQuery / placeAt / oceanHypsometry users, and workers)? Does anything consume survey elevations or hypsometry land percentiles in a way where the upper envelope is a problem?
+3. The claim that the hypsometry below 0 m is identical between truth and level 0 (carving only acts on land). Check it against src/mountain-assembly.ts / src/terrain.ts code, not just the evidence JSON.
+4. The test: is it robust (not vacuous, not flaky, reasonable runtime)? Is the load hook safe (only affects the child process, matches the URL correctly on Windows paths, no leak into other tests)?
+5. Does the doc overclaim anything? Is the decision to report target (2) as not met (carried open into T6, core codegen cost, outside T4 ownership) honest given the evidence in section 4?
+6. Anything that violates the rules: no loosening of contract pins/budgets, no golden re-pin, no version moves.
+
+Answer with a findings list ranked by severity (BLOCKER / SHOULD-FIX / NIT), each with file:line and a concrete fix, then a one-line verdict (merge / merge after fixes / do not merge).

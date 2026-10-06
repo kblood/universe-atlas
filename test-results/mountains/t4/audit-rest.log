@@ -1,0 +1,61 @@
+{"caller":"ocean","world":"Maithea","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired","ms":15047.113800000001,"blockSolves":99,"minHeightM":-10280.347942069195,"belowZero":1856}
+before ocean Maithea exit=0
+{"caller":"ocean","world":"Selawyn","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired","ms":9003.3958,"blockSolves":57,"minHeightM":-11260.45367053962,"belowZero":2487}
+before ocean Selawyn exit=0
+{"caller":"ocean","world":"Raiva","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired","ms":13962.722,"blockSolves":71,"minHeightM":-11257.182035750435,"belowZero":1949}
+before ocean Raiva exit=0
+{"caller":"ocean","world":"Lethuris","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired","ms":12474.367999999999,"blockSolves":57,"minHeightM":-11304.525792415972,"belowZero":2547}
+before ocean Lethuris exit=0
+{"caller":"survey","world":"Maithea","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired","ms":6499.8166,"blockSolves":36,"sites":5}
+before survey Maithea exit=0
+{"caller":"survey","world":"Selawyn","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired","ms":2693.6947,"blockSolves":17,"sites":4}
+before survey Selawyn exit=0
+{"caller":"survey","world":"Raiva","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired","ms":4211.8977,"blockSolves":25,"sites":4}
+before survey Raiva exit=0
+{"caller":"survey","world":"Lethuris","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired","ms":2694.0193999999997,"blockSolves":17,"sites":5}
+before survey Lethuris exit=0
+{"caller":"place","world":"Maithea","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired","warmMs":19482.4737,"warmBlockSolves":100,"queries":24,"ms":0.955999999998312,"blockSolves":0,"massifFirstTouch":{"ms":174.45510000000286,"blockSolves":1},"massifRepeat":{"ms":0.062399999998888234,"blockSolves":0}}
+before place Maithea exit=0
+{"caller":"place","world":"Selawyn","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired","warmMs":9506.249699999998,"warmBlockSolves":57,"queries":24,"ms":170.96360000000095,"blockSolves":1,"massifFirstTouch":{"ms":185.10760000000118,"blockSolves":1},"massifRepeat":{"ms":0.05580000000009022,"blockSolves":0}}
+before place Selawyn exit=0
+{"caller":"place","world":"Raiva","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired","warmMs":11636.3028,"warmBlockSolves":71,"queries":24,"ms":172.5015000000003,"blockSolves":1,"massifFirstTouch":{"ms":159.92399999999907,"blockSolves":1},"massifRepeat":{"ms":0.03659999999945285,"blockSolves":0}}
+before place Raiva exit=0
+{"caller":"place","world":"Lethuris","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired","warmMs":9078.6064,"warmBlockSolves":57,"queries":24,"ms":1.2852999999995518,"blockSolves":0,"massifFirstTouch":{"ms":156.72609999999986,"blockSolves":1},"massifRepeat":{"ms":0.06660000000010768,"blockSolves":0}}
+before place Lethuris exit=0
+{"caller":"orbit","world":"Maithea","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":420.0935,"blockSolves":0,"landFraction":0.5498735250075766}
+after orbit Maithea exit=0
+{"caller":"orbit","world":"Selawyn","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":389.7994,"blockSolves":0,"landFraction":0.39267491767055024}
+after orbit Selawyn exit=0
+{"caller":"orbit","world":"Raiva","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":410.36170000000004,"blockSolves":0,"landFraction":0.5228499172527253}
+after orbit Raiva exit=0
+{"caller":"orbit","world":"Lethuris","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":403.5213,"blockSolves":0,"landFraction":0.377307353705168}
+after orbit Lethuris exit=0
+{"caller":"ocean","world":"Maithea","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":68.5059,"blockSolves":0,"minHeightM":-10280.347942069195,"belowZero":1856}
+after ocean Maithea exit=0
+{"caller":"ocean","world":"Selawyn","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":71.3699,"blockSolves":0,"minHeightM":-11260.45367053962,"belowZero":2487}
+after ocean Selawyn exit=0
+{"caller":"ocean","world":"Raiva","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":49.988,"blockSolves":0,"minHeightM":-11257.182035750435,"belowZero":1949}
+after ocean Raiva exit=0
+{"caller":"ocean","world":"Lethuris","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":82.36959999999999,"blockSolves":0,"minHeightM":-11304.525792415972,"belowZero":2547}
+after ocean Lethuris exit=0
+{"caller":"survey","world":"Maithea","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":68.4539,"blockSolves":0,"sites":5}
+after survey Maithea exit=0
+{"caller":"survey","world":"Selawyn","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":77.60629999999999,"blockSolves":0,"sites":4}
+after survey Selawyn exit=0
+{"caller":"survey","world":"Raiva","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":64.0553,"blockSolves":0,"sites":4}
+after survey Raiva exit=0
+{"caller":"survey","world":"Lethuris","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":83.53089999999999,"blockSolves":0,"sites":5}
+after survey Lethuris exit=0
+{"caller":"place","world":"Maithea","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","warmMs":226.63420000000002,"warmBlockSolves":1,"queries":24,"ms":0.838799999999992,"blockSolves":0,"massifFirstTouch":{"ms":151.74330000000003,"blockSolves":1},"massifRepeat":{"ms":0.09549999999995862,"blockSolves":0}}
+after place Maithea exit=0
+{"caller":"place","world":"Selawyn","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","warmMs":77.64419999999998,"warmBlockSolves":0,"queries":24,"ms":143.6033,"blockSolves":1,"massifFirstTouch":{"ms":147.04790000000003,"blockSolves":1},"massifRepeat":{"ms":0.09960000000000946,"blockSolves":0}}
+after place Selawyn exit=0
+{"caller":"place","world":"Raiva","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","warmMs":56.99889999999999,"warmBlockSolves":0,"queries":24,"ms":148.95989999999998,"blockSolves":1,"massifFirstTouch":{"ms":154.62849999999997,"blockSolves":1},"massifRepeat":{"ms":0.12229999999999563,"blockSolves":0}}
+after place Raiva exit=0
+{"caller":"place","world":"Lethuris","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","warmMs":80.81070000000001,"warmBlockSolves":0,"queries":24,"ms":0.897199999999998,"blockSolves":0,"massifFirstTouch":{"ms":142.53269999999998,"blockSolves":1},"massifRepeat":{"ms":0.05059999999997444,"blockSolves":0}}
+after place Lethuris exit=0
+{"caller":"golden-terrain","world":"all","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":6882.3171999999995,"blockSolves":17,"terrainDigest":null}
+after golden-terrain exit=0
+{"caller":"golden-platform","world":"all","wiredRoot":"C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired2","ms":3752.263,"blockSolves":17}
+after golden-platform exit=0
+DONE

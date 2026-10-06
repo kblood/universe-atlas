@@ -1134,7 +1134,11 @@ export function planetSurface(body: Body, width = 1024, segments = 192, surfaceA
   // (only cross-LOD/seam consistency, preserved as above); planet-tiles.ts's
   // own close-range tile mesh (unrelated to this function) still calls the
   // full exact `terrainSampler` per vertex.
-  const denseSample = terrainSampler(body, undefined, surfaceAgeMyr, false);
+  // Sparse-global consumer (mountains cost plan T4): the orbit bake is the S0 representation (a ~32 km texel at the
+  // equator cannot hold the 16 km M3 band), so it samples at level 0, the declared lod-ladder-2 reduction (carving +0,
+  // an upper envelope; docs/lod-ladder-contract-v1.md section 3). It solves no M3 block. While the mountains are not
+  // wired the level changes nothing.
+  const denseSample = terrainSampler(body, undefined, surfaceAgeMyr, false, 0, undefined, false, {lodLevel: 0});
   const craters = applyCraters ? buildCraterField(body, surfaceAgeMyr) : null;
   const craterGrid = craters
     ? (() => {
