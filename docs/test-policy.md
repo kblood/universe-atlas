@@ -151,7 +151,7 @@ three samples below 25%. If CIM is denied, it explicitly reports that and uses
 one-second `node:os` CPU-time deltas instead. Missing measurements never count
 as quiet. `ATLAS_TEST_CPU_MAX` and `ATLAS_TEST_CPU_WAIT_MS` configure the threshold
 and maximum wait (defaults 25%, 180000 ms). Timeout fails without running perf.
-Existing `FAUNA_PERF_STRICT`, `SEASON_PERF_STRICT` and `OCEAN_PERF_STRICT` budgets
+Existing `FAUNA_PERF_STRICT`, `SEASON_PERF_STRICT`, `OCEAN_PERF_STRICT` and `ECO_PERF_STRICT` budgets
 are preserved, with their original relaxed defaults. Example strict run:
 
 ```powershell
@@ -233,6 +233,8 @@ traceable. Every assertion remains either in its original file or in perf.
 | tests/gpu-lock.test.mjs:25 | Keep | Clock sets a stale-owner fixture; no CPU performance assertion. |
 | tests/helpers/test-slot.mjs and tests/test-slot.test.mjs | Keep lock protocol timing | Wait/timeout/heartbeat establish mutual exclusion, not application speed. |
 | tests/planet-canopy.test.mjs:150 | Keep | Injected clock crosses a deterministic work-slice deadline. |
+| tests/planet-canopy.test.mjs (whole file, 2026-10-07) | Injected host clock | `PlanetCanopy.clock` (default `performance.now`) is replaced by a manual clock in every test, so slices, 10 s watchdogs and retry back-offs never read wall time; `performance.now` is no longer mocked or read. Evidence: docs/test-fixes-2026-10-07.md. |
+| tests/eco-class.test.mjs:157–174 (2026-10-07) | Split | 100 ns guard and the OPEN 25 ns criterion (`ECO_PERF_STRICT`) move unchanged to perf/eco-class.perf.test.mjs; the no-allocation heap check (same 5 x 400000 window, < 4 MiB) stays registered without a clock. |
 | tests/forest-retention.test.mjs:215 | Keep | Worker message has injected selectionMs/packMs, no speed assertion. |
 | tests/render-profile.test.mjs:35–103 | Keep | Synthetic timings, history counts, aggregation and nonnegative diagnostics. |
 | tests/sky-atmosphere.test.mjs:69,99 | Keep | Build-time diagnostics are finite/nonnegative; no upper bound. |
