@@ -76,10 +76,14 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve('tests/helpers/test-
     for (const s of selected) console.log(`${s.unregistered ? 'UNREGISTERED ' : ''}${s.file}: ${s.reason}`);
     console.log(`Outside graph (review manually):\n${outside.join('\n')}\n${changed.length} changed; ${selected.length} selected`);
     code = args.includes('--dry-run') ? 0 : await runTests(selected.map(s => s.file));
-  } else if (mode === 'smoke') {
+  } else if (mode === 'fast') {
+    // Formerly `test:smoke` (renamed 2026-10-07; `test:smoke` is now the tier-0 terrain smoke, mode 'tier').
     const all = registeredTests(), files = JSON.parse(readFileSync('tests/smoke.json')).files.map(f => f.file);
-    if (files.some(f => !all.includes(f) || f.includes('/perf/') || f.includes('digest'))) throw new Error('stale smoke list; regenerate');
-    const start = performance.now(); code = await runTests(files); console.log(`smoke: ${files.length} files; wall ${( (performance.now() - start) / 1000).toFixed(3)} s; raw node exit code ${code}`);
+    if (files.some(f => !all.includes(f) || f.includes('/perf/') || f.includes('digest'))) throw new Error('stale fast list (tests/smoke.json); regenerate with npm run test:fast:generate');
+    const start = performance.now(); code = await runTests(files); console.log(`fast: ${files.length} files; wall ${( (performance.now() - start) / 1000).toFixed(3)} s; raw node exit code ${code}`);
+  } else if (mode === 'tier') {
+    const {runTier} = await import('./tier-runner.mjs');
+    code = await runTier(args[0], args.slice(1));
   } else if (mode === 'perf') code = await withTestSlot({owner: 'test:perf CPU quiet gate'}, async () => {
     await quietCPU(); return runTests(readdirSync('tests/perf').filter(f => f.endsWith('.perf.test.mjs')).map(f => `tests/perf/${f}`), {slot: false, args: ['--test-concurrency=1']});
   });

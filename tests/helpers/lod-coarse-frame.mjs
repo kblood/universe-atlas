@@ -113,7 +113,7 @@ function edgePair(body, kind, A, e, a, b, inMassif) {
 }
 
 /** Face-edge tile at `level` with >= 3 massif nodes (belt query) on its cube-face edge, in face/edge/position order. */
-function crossFaceTile(body, level) {
+export function crossFaceTile(body, level) {
   const lay = orogenLayout(body), N = 2 ** level, o = {belt: 0, axis: [0, 0, 0], axisDistanceM: 0, halfWidthM: 0, beltIndex: -1, alongM: 0};
   for (let face = 0; face < 6; face++) for (let e = 0; e < 4; e++) for (let k = 0; k < N; k++) {
     const C = {face, level, x: [0, N - 1, k, k][e], y: [k, k, 0, N - 1][e]};

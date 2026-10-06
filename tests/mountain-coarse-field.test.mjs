@@ -5,6 +5,7 @@ import {hash64,noise,macroHeightCode} from '../src/catalog.ts';
 import {buildOrogenLayout,continentalA0,constructionA0} from '../src/mountain-layout.ts';
 import {coarseMarginH,MASSIF_COARSE_MARGIN,massifCoarseRidgeTermM,coarseBeltValue,massifEnvelopeM,composeRidgeTermM,envelopeBlendWeight} from '../src/mountain-envelope.ts';
 import {waterWorlds,fib,orogenLayout,sampler,exactSampler,directions,lookup,statistics,measureError,nodeDirection,referenceDistance,positiveBelts,referenceLayout,oldMaxSampler,mutantSampler,boundaryChecks,unskippedTerrain,voxelSkip} from './helpers/mountain-coarse-field.mjs';
+import {pick,samples,tierBodies,tierNote} from './helpers/tier.mjs';
 const worlds=waterWorlds(),ss=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 const arrays=['blockTable','masks','offsets','candidates','distances','scalars'];
 // Unused nodes are zero-filled. Only corners of active cells belong to the field.
@@ -23,14 +24,25 @@ test('private continental kernels are Object.is identical: 20,000 directions x f
       assert.ok(Object.is(a0(d),expected));assert.ok(Object.is(c0(d),expected));}
   }
 });
-test('HARD: the truth core\'s inline voxel prefilter changes no value (Object.is, every field, four worlds)',()=>{
+// Tier (docs/test-tiers-2026-10-07.md): default/gate run every direction below. smoke/work keep every Fibonacci
+// direction the prefilter SKIPS (cheap: no block solve), cap the ones it CALLS (each a fresh M3 block solve) and the
+// rasters, and add the frozen tier-set directions. Same assertions; a subset pass is "not yet failed".
+const PREFILTER=pick({smoke:{called:8,rasters:1},work:{called:64,rasters:4},default:null});
+test('HARD: the truth core\'s inline voxel prefilter changes no value (Object.is, every field, four worlds)',t=>{
   // Production against production with only the prefilter bypassed; 6,000 Fibonacci directions plus four 41x41
   // axis rasters per world (the rasters sit on massif axes, so both branches of the prefilter run).
   let skipped=0,called=0;
-  for(const body of worlds){
+  for(const body of tierBodies(worlds)){
     const fast=sampler(body,{mountains:true}),slow=unskippedTerrain.terrainSampler(body,[],undefined,false,0,undefined,true,{mountains:true});
     const g=orogenLayout(body).bandGrid(48000,32000),K=128,H=K/2;
-    for(const d of directions(body,6000)){
+    let list=directions(body,6000);
+    if(PREFILTER){
+      const inGrid=d=>{const v=(Math.max(0,Math.min(K-1,Math.floor((d[0]+1)*H)))*K+Math.max(0,Math.min(K-1,Math.floor((d[1]+1)*H))))*K+Math.max(0,Math.min(K-1,Math.floor((d[2]+1)*H)));return g.all||(g.voxels[v>>>5]&(1<<(v&31)));};
+      const fibs=list.slice(0,6000),called=fibs.filter(inGrid).slice(0,PREFILTER.called);
+      list=[...fibs.filter(d=>!inGrid(d)),...called,...list.slice(6000,6000+41*41*PREFILTER.rasters),...samples(body.name).map(e=>e.d)];
+      t.diagnostic(tierNote(`${body.name}: ${list.length} directions (${called.length} called Fibonacci, ${PREFILTER.rasters} raster(s), tier set)`));
+    }
+    for(const d of list){
       sameFields(fast(d),slow(d));
       const v=(Math.max(0,Math.min(K-1,Math.floor((d[0]+1)*H)))*K+Math.max(0,Math.min(K-1,Math.floor((d[1]+1)*H))))*K+Math.max(0,Math.min(K-1,Math.floor((d[2]+1)*H)));
       if(g.all||(g.voxels[v>>>5]&(1<<(v&31))))called++;else skipped++;
