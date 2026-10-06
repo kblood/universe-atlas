@@ -57,6 +57,20 @@ for(const body of worlds){
     assert.equal(a.coarseBandField(48000,32000),af);assert.equal(b.coarseBandField(48000,32000),bf);
     assert.equal(af.faceCells,a.bandGrid(48000,32000).faceCells/2);assert.ok(af.bytes<=8*1024*1024);
     for(const k of arrays)assert.deepEqual(Buffer.from(af[k].buffer),Buffer.from(bf[k].buffer),k);
+    // One read corner per block/candidate against the independent eager node expression.
+    const N=af.faceCells,B=N/8;
+    let checked=0;
+    for(let q=0;q<af.blockTable.length;q++){
+      const block=af.blockTable[q]-1;if(block<0)continue;
+      let n=0;while(n<81&&!nodeIsRead(af,block,n%9,Math.floor(n/9)))n++;
+      assert.ok(n<81);
+      const d=nodeDirection(Math.floor(q/(B*B)),q%B*8+n%9,Math.floor(q/B)%B*8+Math.floor(n/9),N);
+      for(let c=af.offsets[block];c<af.offsets[block+1];c++){
+        const belt=a.belts[af.candidates[c]],expected=Math.fround(referenceDistance(belt,d,body.radiusM)/Math.min(belt.halfWidthM,48000));
+        assert.ok(Object.is(af.distances[c*81+n],expected));checked++;
+      }
+    }
+    assert.ok(checked>0);
   });
   test(`${body.name}: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity`,t=>{
     const f=orogenLayout(body).coarseBandField(48000,32000),N=f.faceCells,B=N/8,layout=orogenLayout(body),seen=new Map(),coarse=sampler(body,{mountains:true,lodLevel:0});let matched=0,nodeChecks=0;

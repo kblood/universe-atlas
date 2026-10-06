@@ -464,6 +464,38 @@ function lowBitIndex(bits: number) {
   if(v&0xf0){n+=4;v>>>=4;}if(v&0xc){n+=2;v>>>=2;}if(v&2)n++;
   return n;
 }
+// Builder-only distance projection: identical transverse arithmetic, without unused gradients.
+// One closure per belt keeps its noise cell and constants local across adjacent nodes.
+function coarseDistanceEvaluator(b: OrogenBelt,R: number,H: number) {
+  const T=b.tangent,C=b.centre,P=b.pole;
+      const t0=T[0],t1=T[1],t2=T[2],c0=C[0],c1=C[1],c2=C[2],p0=P[0],p1=P[1],p2=P[2];
+      const U=b.uLimit,iU=1/U,iR=1/R,wavelength=b.wavelength,k2=2/wavelength,bend=b.bendM,amp=b.amplitudeM;
+      const hashKey=Math.imul(OFFSET_NOISE_Y,0x85ebca77)^Math.imul(OFFSET_NOISE_Z,0xc2b2ae3d)^Math.imul(b.noiseSeed,0x27d4eb2f);
+      let cell=NaN,h0=0,h1=0;
+  return (d0: number,d1: number,d2: number): number=>{
+        const x=d0*t0+d1*t1+d2*t2,z=d0*c0+d1*c1+d2*c2,py=d0*p0+d1*p1+d2*p2;
+        let u=x/(Math.sqrt(x*x+z*z)+z);
+        // offset() uses division, whereas transverse() uses precomputed reciprocals.
+        // They cannot share the first offset without changing rounding.
+        const ov=u/U,ox=u*2/wavelength+13,oi=Math.floor(ox);let oa=ox-oi;oa=oa*oa*(3-2*oa);
+        if(oi!==cell){h0=cornerHash(oi,hashKey);h1=cornerHash(oi+1,hashKey);cell=oi;}
+        const off=bend*ov*ov+amp*(2*(h0*(1-oa)+h1*oa)-1),sign=py*R-off<0?-1:1;
+        let y=0,yp=0,r=1,rp=0,w=2,cc=0,ss=1;
+        for(let step=0;step<=footSteps;step++){
+          const v=u*iU,X=u*k2+13,ix=Math.floor(X),aa=X-ix,m=aa*aa*(3-2*aa);
+          if(ix!==cell){h0=cornerHash(ix,hashKey);h1=cornerHash(ix+1,hashKey);cell=ix;}
+          const n=h0*(1-m)+h1*m;
+          y=(bend*v*v+amp*(2*n-1))*iR;yp=(2*bend*v*iU+12*amp*(h1-h0)*aa*(1-aa)*k2)*iR;
+          r=Math.sqrt(1-y*y);rp=-y*yp/r;w=2/(1+u*u);cc=u*w;ss=(1-u*u)*w*.5;
+          if(step===footSteps)break;
+          const rw=r*w,q=x*cc+z*ss,t=x*ss-z*cc;
+          u=Math.max(-U,Math.min(U,u+(rp*(q-r)+rw*t+(py-y)*yp)/(rp*rp+rw*rw+yp*yp)));
+        }
+        const pT=r*cc,pC=r*ss;
+        const e0=d0-(pT*t0+pC*c0+y*p0),e1=d1-(pT*t1+pC*c1+y*p1),e2=d2-(pT*t2+pC*c2+y*p2),chord2=e0*e0+e1*e1+e2*e2;
+        return (sign*R*Math.sqrt(chord2)*(1+chord2/24+3*chord2*chord2/640))/H;
+  };
+}
 function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBandGrid,maxDistM: number,minHalfWidthM: number): CoarseBandField {
   const N=g.faceCells/2,B=N/8,table=new Int32Array(6*B*B),flags=new Uint32Array(12*B*B),base=new Uint32Array(12*B*B),d: V3=[0,0,0];
   const mark=(face: number,i: number,j: number)=>{
@@ -475,24 +507,36 @@ function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBa
     flags[block*2+(bit>>>5)]|=1<<(bit&31);
   };
   // Union each covered 2x2 T1 cell, then dilate by one field cell (also over face edges).
-  for(let w=0;w<g.bits.length;w++){
-    let bits=g.bits[w];
-    while(bits){const bit=lowBitIndex(bits),c=w*32+bit,face=Math.floor(c/(g.faceCells*g.faceCells));
-      const j=(Math.floor(c/g.faceCells)%g.faceCells)>>>1,i=(c%g.faceCells)>>>1;
+  const wordsPerRow=g.faceCells/32;
+  for(let face=0;face<6;face++)for(let j=0;j<N;j++)for(let word=0;word<wordsPerRow;word++){
+    const at=(face*g.faceCells+2*j)*wordsPerRow+word;
+    const covered=g.bits[at]|g.bits[at+wordsPerRow];
+    let bits=(covered|(covered>>>1))&0x55555555;
+    while(bits){
+      const i=word*16+(lowBitIndex(bits)>>>1);
       const q=(face*B+(j>>>3))*B+(i>>>3),v=(j&7)*8+(i&7);base[2*q+(v>>>5)]|=1<<(v&31);
       bits&=bits-1;
     }
   }
-  for(let q=0;q<table.length;q++)for(let h=0;h<2;h++){
-    let bits=base[2*q+h];
-    while(bits){const bit=lowBitIndex(bits)+32*h,face=Math.floor(q/(B*B)),i=q%B*8+(bit&7),j=Math.floor(q/B)%B*8+(bit>>>3);
-      if(i>0&&j>0&&i<N-1&&j<N-1){
-        // Interior cell: the 3x3 neighbourhood stays on this face (the same cells mark() would set).
-        for(let y=j-1;y<=j+1;y++)for(let x=i-1;x<=i+1;x++){
-          const block=(face*B+(y>>>3))*B+(x>>>3),bit=(y&7)*8+(x&7);flags[block*2+(bit>>>5)]|=1<<(bit&31);
+  for(let q=0;q<table.length;q++){
+    if(!(base[2*q]||base[2*q+1]))continue;
+    const face=Math.floor(q/(B*B)),i0=q%B*8,j0=Math.floor(q/B)%B*8;
+    for(let row=0;row<8;row++){
+      const bits=(base[2*q+(row>>>2)]>>>((row&3)*8))&255;
+      if(!bits)continue;
+      const expanded=bits|(bits<<1)|(bits>>>1),j=j0+row;
+      for(let dy=-1;dy<=1;dy++){
+        const y=j+dy;
+        if(y>=0&&y<N){
+          const at=(face*B+(y>>>3))*B+(i0>>>3),shift=(y&3)*8,h=(y&7)>>>2;
+          flags[2*at+h]|=(expanded&255)<<shift;
+          if(bits&1){if(i0>0)flags[2*(at-1)+h]|=128<<shift;else mark(face,-1,y);}
+          if(bits&128){if(i0+8<N)flags[2*(at+1)+h]|=1<<shift;else mark(face,N,y);}
+        }else{
+          // Preserve the canonical cube-face mapping, including corner tie breaking.
+          for(let i=0;i<8;i++)if(bits&(1<<i))for(let dx=-1;dx<=1;dx++)mark(face,i0+i+dx,y);
         }
-      } else for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)mark(face,i+dx,j+dy);
-      bits&=bits-1;
+      }
     }
   }
   const masks: number[]=[],offsets=[0],candidates: number[]=[],scalars=new Float64Array(belts.length*9);
@@ -532,6 +576,7 @@ function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBa
     if(count>1)multiBeltCells+=cells;
     offsets.push(candidates.length);
   }
+  const evaluators=belts.map(b=>coarseDistanceEvaluator(b,R,Math.min(b.halfWidthM,maxDistM)));
   const values=new Float32Array(candidates.length*81);
   // Per block, the 9 node rows (bit i = node i) that active cells read.
   const rowsOf=new Uint16Array((offsets.length-1)*9);
@@ -549,7 +594,7 @@ function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBa
     const left=i0>0?table[q-1]-1:-1,below=j0>0?table[q-B]-1:-1;
     for(let c=offsets[block];c<offsets[block+1];c++){
       const k=candidates[c],b=belts[k],C=b.centre,P=b.pole;
-      const H=Math.min(b.halfWidthM,maxDistM);
+      const evaluate=evaluators[k];
       let cl=-1,cb=-1;
       if(left>=0)for(let e=offsets[left];e<offsets[left+1];e++)if(candidates[e]===k)cl=e;
       if(below>=0)for(let e=offsets[below];e<offsets[below+1];e++)if(candidates[e]===k)cb=e;
@@ -557,10 +602,11 @@ function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBa
         if(!(rowsOf[nodeRows+j]&(1<<i)))continue;
         if(i===0&&cl>=0&&(rowsOf[left*9+j]&256)){values[c*81+j*9]=values[cl*81+j*9+8];continue;}
         if(j===0&&cb>=0&&(rowsOf[below*9+8]&(1<<i))){values[c*81+i]=values[cb*81+72+i];continue;}
-        coarseDirection(face,i0+i,j0+j,N,d);
-        const x=dot(d,b.tangent),z=dot(d,C),py=dot(d,P),u=x/(Math.sqrt(x*x+z*z)+z);
-        transverse(b,d,R,u,x,z,py,py*R-offset(b,u)<0?-1:1);
-        values[c*81+j*9+i]=trDistance/H;
+        // Keep world-axis normalization and dot-product operation order exactly.
+        const a=2*(i0+i)/N-1,bb=2*(j0+j)/N-1,axis=face>>>1,side=face&1?-1:1;
+        let d0=axis===0?side:a,d1=axis===0?a:axis===1?side:bb,d2=axis===2?side:bb;
+        const length=Math.sqrt(d0*d0+d1*d1+d2*d2);d0/=length;d1/=length;d2/=length;
+        values[c*81+j*9+i]=evaluate(d0,d1,d2);
       }
     }
   }

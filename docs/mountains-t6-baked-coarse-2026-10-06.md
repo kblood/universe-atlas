@@ -219,3 +219,70 @@ Conclusions:
    meet it without changing values, but it adds a branch to the coarse hot path, which would need re-measuring.
 3. **Accuracy follow-up:** a delta that depends on |u/U| would cut the about 750 m p99 overestimate. The error is
    concentrated at belt endpoints. This changes values and needs a version move.
+
+## 8. Round 2 (2026-10-06): field build fixed; C1 and one orbit world still missed
+
+The task was to finish route A in one Astra implement round plus one fix round, value-preserving, and to merge
+STAGED only if C1, contract §6, the orbit bake and the field build were all met. **They are not all met, so the
+branch is not merged.** The branch first took main `cc0032f` (M5 staged) in merge commit `6079ea9`.
+
+### What was tried
+
+- **Implement round (Astra): lazy per-block field.** Blocks were built on first read, behind a built-flag branch
+  in the coarse hot path. The cold build fell to 14 / 18 / 5 / 20 ms, but the node work moved into timed tile
+  builds. Unofficial contract runs (2 per world) reached +10.6..+12.0% on three worlds, so lazy was dropped.
+- **Fix round (Astra): a faster builder, kept eager by the coordinator.** The changes are:
+  - grouped active-cell extraction and row-wise bit dilation, keeping the canonical face-edge mapping;
+  - per-belt distance evaluators with hoisted constants, the node direction inlined, and the division and
+    operation order of `offset`/`transverse` preserved;
+  - the left/below neighbour copy kept.
+
+  Astra kept a lazy variant, because eager missed its own 40 ms target. The coordinator chose Astra's eager
+  snapshot (`r2/fix-eager-layout.txt`) instead: it keeps the coarse hot path free of the branch and keeps the
+  contract met. The lazy result is kept as `r2/fix-lazy-final.patch`.
+- **C1 diagnosis (coordinator, unofficial, slotted, n = 6 per arm).** In the C1 harness, the branch's plain sampler
+  (A/A, no mountain work) is already +0.2..+18% slower outside massifs than main's. The amount depends on the
+  catalog-kernel JIT state.
+
+  | Variant | C1 effect | Contract | Kept |
+  |---|---|---|---|
+  | Catalog kernels for the layout construction | Fixes C1 (outside −1..+4%) | +21..+36% | No |
+  | Terrain-private kernel copies | Worse C1 | | No |
+  | Private kernels for the per-sample layout sample | Worse C1 | | No |
+  | Truth dispatch (voxel unset → plain core) | Mixed | | No |
+  | Early voxel test | Did not help | | No |
+
+  No value-preserving variant met C1 without breaking contract §6.
+
+### Values
+
+Values are unchanged, all exit 0 (`r2/eager-checks.log`):
+
+- `fix-identity` digests are byte-equal to `r2/before.json` (173,120 sampler outputs and 8 tiles);
+- all 503,165 read nodes are `Object.is`-identical, and the 311,209 unread nodes are 0;
+- 101,792 truth samples are identical;
+- `tsc` passes;
+- 82/82 tests pass;
+- `git diff --check` is clean.
+
+No version or pin moved.
+
+### Official protocols
+
+All runs used the CPU-quiet test slot, against main `cc0032f`, with every process exit 0 (128 of 128). The
+evidence is in `r2/official-eager/`.
+
+| Budget | Maithea | Selawyn | Raiva | Lethuris | Verdict |
+|---|---:|---:|---:|---:|---|
+| Field build cold, ≤ 50 ms (median of 15) | 28.05 | 41.96 | 9.54 | 42.31 | **MET** |
+| Contract §6, max mean growth per level, ≤ +10% | +6.0 | +6.7 | +3.6 | +6.4 | **MET** |
+| Orbit bake, median growth, ≤ +5% (7 rounds) | +3.9 | +1.3 | +1.3 | **+8.4** | missed on Lethuris |
+| C1 weighted warm, ≤ +8% (median of 15) | **9.86** | **12.10** | 6.26 | 7.69 | missed on 2 worlds |
+| C1 outside massifs | +7.1 | +10.8 | +4.2 | +5.9 | |
+
+Notes on the misses:
+
+- **Orbit, Lethuris.** Paired median +7.3%, mean +6.6%. The orbit rounds run only the memoised coarse path, which
+  is the same code as in the run in section 5 that was met (+2.3%). Section 5 also records that path's spread as
+  −3.6..+9.4% across repeated runs. The miss is reported and was not re-run.
+- **C1.** The per-run spread is −3.4..+26.8%.
