@@ -1,0 +1,15 @@
+file:///C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs:123
+if(!served){preview.kill();throw new Error(`preview on ${port} does not serve ${dist}:\n${previewLog}`);}
+                                 ^
+
+Error: preview on 5294 does not serve C:/LLM/IWSDK/universe-atlas-wt/t6-refmain/dist:
+[31merror when starting preview server:
+Error: Port 5294 is already in use
+    at Server.onError$1 (file:///C:/LLM/IWSDK/universe-atlas/node_modules/vite/dist/node/chunks/config.js:15006:28)
+    at Server.emit (node:events:508:28)
+    at emitErrorNT (node:net:1976:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)[39m
+
+    at file:///C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs:123:34
+
+Node.js v24.7.0

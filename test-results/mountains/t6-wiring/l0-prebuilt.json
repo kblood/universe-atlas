@@ -1,0 +1,56 @@
+[
+ {
+  "world": "Maithea",
+  "order": "main-first",
+  "mainL0Ms": 159.44249999997555,
+  "branchL0Ms": 160.3816999999981,
+  "ratio": 1.005890524797483,
+  "blockSolves": 0,
+  "sink": -158400416.31218904
+ },
+ {
+  "world": "Maithea",
+  "order": "branch-first",
+  "mainL0Ms": 156.0808000000252,
+  "branchL0Ms": 162.0614999999816,
+  "ratio": 1.0383179737671477,
+  "blockSolves": 0,
+  "sink": -158400416.31218904
+ },
+ {
+  "world": "Maithea",
+  "order": "main-first",
+  "mainL0Ms": 156.79570000001695,
+  "branchL0Ms": 157.12150000000838,
+  "ratio": 1.0020778631046094,
+  "blockSolves": 0,
+  "sink": -158400416.31218904
+ },
+ {
+  "world": "Maithea",
+  "order": "branch-first",
+  "mainL0Ms": 149.72500000000582,
+  "branchL0Ms": 164.2609999999986,
+  "ratio": 1.0970846552011502,
+  "blockSolves": 0,
+  "sink": -158400416.31218904
+ },
+ {
+  "world": "Maithea",
+  "order": "main-first",
+  "mainL0Ms": 161.04120000000694,
+  "branchL0Ms": 166.76929999998538,
+  "ratio": 1.0355691586996258,
+  "blockSolves": 0,
+  "sink": -158400416.31218904
+ },
+ {
+  "world": "Maithea",
+  "order": "branch-first",
+  "mainL0Ms": 156.89939999999478,
+  "branchL0Ms": 171.90479999998934,
+  "ratio": 1.095637077005999,
+  "blockSolves": 0,
+  "sink": -158400416.31218904
+ }
+]

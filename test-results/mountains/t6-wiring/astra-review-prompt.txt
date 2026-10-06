@@ -1,0 +1,51 @@
+You are reviewing a change in the repository at the current directory (C:/LLM/IWSDK/universe-atlas-wt/t6, branch
+mountains/t6-wiring). This is a READ-ONLY, STATIC review: do not run npm, node, tests, browsers or any build, and do not
+edit files. A CPU timing benchmark is running on this machine; any process you start disturbs it. Use only file reads,
+`git diff`, `git show`, `git log` and text search.
+
+The change under review is `git diff 9dcb1cf..HEAD` (main is 9dcb1cf). It is "mountains cost plan T6": it wires the
+mountains (M1 layout, M2 massif envelope, M3 carving, M4, the merged baked coarse field, and M5 rock detail) into
+src/terrain.ts as the default (TERRAIN_VERSION terrain-1.9.0-mountains, TERRAIN_MOUNTAINS_WIRED = true,
+LOD_LADDER_VERSION lod-ladder-3, MOUNTAIN_ASSEMBLY_VERSION mountain-assembly-3).
+
+Authoritative documents (read the relevant parts first):
+- docs/mountains-opus-decisions-2026-10-05.md: the T6 row of the ordered task list (Q2), Q6 item 2, addendum item 2
+  ("The mountain tile set must contain real mountain tiles") and item 3 (fresh seeds), addendum (4) decisions 2 and 3
+  (landing cutoff at level 0; statistic-style tests move to level 0 or to test:full), addendum (6) Q-B (U1/U2).
+- docs/lod-ladder-contract-v1.md section 3 (the M5 amendment) and section 3.1 (U1/U2 text and tables).
+- docs/mountains-t6-wiring-2026-10-06.md: the T6 record, including the list of decision-3 moves.
+
+Rules the change must respect (a violation is a MUST finding):
+1. No ROOM pin, SHIPPED_CEILINGS value, LOD tolerance, budget or test threshold is loosened. New pins (UP_ROOM) must
+   come from measurement (max x 1.25 rounded up to 50 m) and come with a negative control that fails.
+2. Decision 3: a statistic-style test may read the level-0 sampler instead of the truth only if it tests a global
+   statistic; a test whose purpose is the carved truth must stay on the truth, either in the default suite or moved to
+   test:full via fullOnly() (tests/helpers/statistic-level.mjs). Nothing is deleted. Check every changed test file:
+   is any assertion now weaker than before for the same purpose? Is any truth check silently lost?
+3. Landing (decision 2): landing candidate heights and the summit cutoff are both read at level 0; the landed and
+   walked ground remains the truth. Check src/world-surface.ts and src/main.ts.
+4. The two terrain cores (baseTerrainCore and mountainTerrainCore) must stay textually identical outside their two
+   permitted hunks (a HARD source test checks this; see tests/helpers/mountain-coarse-field.mjs and the test that uses
+   it). Check that the test still checks what it claims after its needle changed.
+5. The planet-canopy flake fix must not rely on wall-clock timing in the test (tests/planet-canopy.test.mjs and
+   src/planet-canopy.ts sliceMs).
+6. Identity outside the belts: tests/terrain-elevation-identity.test.mjs uses a reach of 1.3 H at level 0 and 1 H on
+   the truth; check that the reasoning (coarse margin MASSIF_COARSE_MARGIN.END_H = 0.2) makes 1.3 H conservative, and
+   that the truth checks still run (in test:full).
+7. tests/lod-carving-reduction.test.mjs: the per-level state classes (no mountains / below cut / carved no rock / rock)
+   and their pinned digests; check the upper-envelope assertions between the cut and ROCK-1 and the bit-identity from
+   ROCK on.
+8. tests/lod-coarse-frame.test.mjs: the U1 and U2 tests and their negative controls; does U1 really use the child's
+   POINT sample (before its own peak correction) at the child's level sampler, at all shared vertices, on every pair?
+9. tests/mountain-tile-set.test.mjs and tests/helpers/mountain-tile-set.mjs: the selection reads only M1 (never
+   heights), every tile has a sample within the massif half-width, flank and belt-end tiles are included.
+10. tests/sparse-consumer-levels.test.mjs, tests/tile-metadata.test.mjs, tests/place-query.test.mjs,
+    tests/forest-water-validity.test.mjs, tests/helpers/render-bounds-suite.mjs: the level arguments are right.
+
+Report format (Markdown):
+- First line: overall verdict, one of "MERGE", "MERGE AFTER MUST FIXES", "DO NOT MERGE".
+- Then a numbered list of findings, each with severity MUST / SHOULD / NIT, file:line, what is wrong, a concrete
+  failure scenario, and the smallest fix. Only report findings you verified by reading the code; say "PLAUSIBLE" if
+  not fully verified.
+- Then a short list of things you checked and found correct.
+Keep it under 900 words.

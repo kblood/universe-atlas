@@ -1,0 +1,82 @@
+{
+ "tests/planet-detail.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 2,
+  "s": 1
+ },
+ "tests/ocean-gerstner.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 5,
+  "s": 1
+ },
+ "tests/planet.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 6,
+  "s": 2
+ },
+ "tests/world-surface.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 1,
+  "s": 4
+ },
+ "tests/acceptance/visit-order-independence.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 0,
+  "s": 2
+ },
+ "tests/forest-habitat.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 26,
+  "s": 6
+ },
+ "tests/acceptance/climate-seek-independence.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 4,
+  "s": 2
+ },
+ "tests/acceptance/existence-gating.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 3,
+  "s": 4
+ },
+ "tests/mountain-tile-set.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 0,
+  "s": 3
+ },
+ "tests/golden/perturbation.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 0,
+  "s": 17
+ },
+ "tests/terrain-floor-window.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 45,
+  "s": 14
+ },
+ "tests/place-query.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 59,
+  "s": 12
+ },
+ "tests/landing-site.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 10,
+  "s": 3
+ },
+ "tests/terrain-relief-hypsometry.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 0,
+  "s": 16
+ },
+ "tests/render-bounds.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 55,
+  "s": 18
+ },
+ "tests/terrain-budget-starvation.test.mjs": {
+  "tag": "exit",
+  "blockSolves": 0,
+  "s": 58
+ }
+}

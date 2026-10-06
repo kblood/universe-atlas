@@ -1,0 +1,272 @@
+{
+  "class": "VISUAL-ADVISORY",
+  "kind": "vote",
+  "question": null,
+  "prompt": "The attached image is a rendered view of terrain. Ignore any user-interface panels, buttons, labels or text drawn over the image; judge only the landscape.\n\nQuestion: does this view show a mountain range? A mountain range here means high ground with steep faces and distinct peaks or sharp ridges, separated by valleys that drain away from the crests. It does not mean flat ground, gentle rolling hills or smooth swells, and it does not mean rough random noise with no organisation into ridges and valleys.\n\nAnswer with: a 1-5 confidence that it is a mountain range (5 = clearly a range), and the features you can actually see, naming each of these as present or absent: peaks, steep faces, valleys, snow line.",
+  "results": [
+    {
+      "image": "C:\\LLM\\IWSDK\\universe-atlas-wt\\t6\\test-results\\mountains\\t6-wiring\\luna-sheet\\refmain\\lethuris-mountainV3-noclouds-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The horizon shows only a low, smooth, gently undulating silhouette.",
+          "element": "massif height/silhouette",
+          "expected": "A prominent high massif rising well above the surrounding terrain, with a clearly jagged skyline.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\LLM\\IWSDK\\universe-atlas-wt\\t6\\test-results\\mountains\\t6-wiring\\luna-sheet\\refmain\\lethuris-mountainV3-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The terrain is obscured by heavy haze, so no organized mountain forms are visible.",
+          "element": "haze/clouds",
+          "expected": "Clearer air revealing high ground with distinct peaks or ridges and valleys.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "haze/clouds",
+        "elementCounts": {
+          "haze/clouds": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\LLM\\IWSDK\\universe-atlas-wt\\t6\\test-results\\mountains\\t6-wiring\\luna-sheet\\refmain\\maithea-mountainV3-noclouds-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The horizon is a smooth, gently undulating line with no distinct mountain peaks.",
+          "element": "massif height/silhouette",
+          "expected": "A much taller, jagged skyline with clearly separated peaks or sharp ridges.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\LLM\\IWSDK\\universe-atlas-wt\\t6\\test-results\\mountains\\t6-wiring\\luna-sheet\\refmain\\maithea-mountainV3-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The terrain appears flat to gently rolling, with no distinct mountain forms.",
+          "element": "massif height/silhouette",
+          "expected": "A high, unmistakable skyline with steep slopes and distinct peaks or sharp ridges.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\LLM\\IWSDK\\universe-atlas-wt\\t6\\test-results\\mountains\\t6-wiring\\luna-sheet\\refmain\\raiva-mountainV3-noclouds-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The horizon is a low, nearly continuous swell with no distinct high peaks.",
+          "element": "massif height/silhouette",
+          "expected": "A taller, more dramatic skyline with clearly separated peaks or sharp ridges.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\LLM\\IWSDK\\universe-atlas-wt\\t6\\test-results\\mountains\\t6-wiring\\luna-sheet\\refmain\\raiva-mountainV3-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The visible land is a low, mostly smooth horizon with no distinct mountain forms.",
+          "element": "massif height/silhouette",
+          "expected": "A clearly elevated skyline with several pronounced peaks or sharp ridges rising above the surrounding terrain.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\LLM\\IWSDK\\universe-atlas-wt\\t6\\test-results\\mountains\\t6-wiring\\luna-sheet\\refmain\\selawyn-mountainV3-noclouds-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The horizon is nearly flat and shows only low, smooth rolling terrain.",
+          "element": "massif height/silhouette",
+          "expected": "A much taller, jagged skyline with distinct high peaks or sharp ridges.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\LLM\\IWSDK\\universe-atlas-wt\\t6\\test-results\\mountains\\t6-wiring\\luna-sheet\\refmain\\selawyn-mountainV3-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 2,
+      "unclear": 1,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "UNCLEAR",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The terrain is a broad, nearly level surface with only soft, low undulations; no organized mountain forms are visible.",
+          "element": "massif height/silhouette",
+          "expected": "A skyline with substantial high ground, steep slopes, and distinct peaks or sharp ridges rising above the surrounding terrain.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    }
+  ]
+}

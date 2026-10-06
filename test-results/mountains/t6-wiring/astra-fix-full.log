@@ -1,0 +1,21 @@
+# Maithea: land 32982, snow-labelled 6470, forestPotential 12493, partial snow 2297
+# Selawyn: land 23571, snow-labelled 0, forestPotential 12525, partial snow 0
+# Raiva: land 31372, snow-labelled 0, forestPotential 16715, partial snow 0
+# Lethuris: land 22641, snow-labelled 4666, forestPotential 8558, partial snow 6037
+✔ colour and classifier agree on the carved truth, 20k land directions x 4 water worlds (test:full) (587879.4262ms)
+✔ water-world land colour identity on the carved truth, 20k land directions x 4 worlds (test:full) (695757.2643ms)
+✔ snow colour/classifier identity on the carved truth (test:full) (22950.8389ms)
+✔ invariant on the truth: 0 <= h - floorM <= terrainWindowMaxM(body) over the 6 bodies x 20000 directions (test:full) (214761.4289ms)
+✔ continentalM >= 0 exactly where the carved truth reports land (test:full) (216106.7944ms)
+✔ floorM is the clamped base field on the carved truth (test:full) (81530.2049ms)
+✔ coastline invariance on the carved truth (test:full) (284769.6377ms)
+✔ window invariant on the carved truth (test:full) (432509.338ms)
+✔ bodyHeightBoundM contains every carved-truth sample (60 bodies x 20000) (test:full) (989745.9291ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1707227.364

@@ -5,7 +5,10 @@ decisions 2 and 3, addendum (6) Q-B). Branch `mountains/t6-wiring` (worktree `un
 `9dcb1cf` (route A baked coarse field merged staged). Evidence (git-ignored, on disk):
 `test-results/mountains/t6-wiring/`.
 
-@@SUMMARY@@
+**Status at wrap-up (2026-10-06 evening, shutdown): wired (`8bed2e3`), Astra MUSTs fixed (`42be27e`), golden
+re-pinned once (`40bddd7`). NOT gated, NOT merged.** The fair cost protocol on the wired build (section 7.1) was
+killed on purpose before it finished, and the final gate (section 12) was not run. Main stays staged
+(`TERRAIN_MOUNTAINS_WIRED = false`). Handoff: `docs/mountains-handoff-2026-10-06.md` on main.
 
 ## 1. The wiring (one step)
 
@@ -104,7 +107,7 @@ These say "no regression outside the massifs" only. No frozen tile touches a 48 
 - **17 SHIPPED_CEILINGS pins: 17/17; 96 LOD cells: 96/96** (`lod-cells-wired.json`). Against main the 90
   cross-level cells are identical; only the 6 retention cells move (L6 peakKept 89.56 → 89.75, L8 97.52 → 97.55,
   L6 summit p50 3.9 → 10.2 m, max 293 → 281 m, snow 99.29 → 99.05, forest 99.11 → 98.88).
-- Outside-belt identity, level 0 (default test) and truth (test:full): see section 3; SITE_A: @@SITEA@@.
+- Outside-belt identity, level 0 (default test) and truth (test:full): see section 3; SITE_A: `tests/harness-sites.test.mjs` (the robustness rule with margin), `eco-identity-site` and `eco-class` exit 0 wired (suite survey, section 8).
 
 ## 6. Mountain evidence
 
@@ -195,7 +198,55 @@ no-rock level minus the rock term, never above it (0 positive rock terms), rock 
 
 ## 7. Cost
 
-@@COST@@
+### 7.1 C1 and the orbit bake (fair protocol, addendum (6) Q-A)
+
+**NOT RUN to completion.** The addendum (6) Q-A protocol was started on the wired build at 15:35 and killed on
+purpose at about 18:04 for a machine shutdown, at repetition i=19 (`fair/exits.log`; the last c1 AA Lethuris run
+exited 127 because of the kill). Raw per-run lines exist (`fair/c1.jsonl` 151 lines, `fair/orbit.jsonl` 152 lines,
+`fair/c1.log`) but they were **not analysed**: no C1 or orbit margin, no CI, no verdict for T6. Single-run lines show
+large "in-massif" growth (the 4.9 % region share; e.g. AB +129 % .. +181 % "in") while the weighted number stays
+small, which is exactly what the protocol's statistics must settle; do not quote single-run numbers. Rerun the
+protocol from scratch (the handoff doc has the command).
+
+### 7.2 Contract §6 per-level build (C2 part 2): MET
+
+`test-results/mountains/t3/contract-build-bench.mjs` (the contract's benchmark protocol, unchanged), main `9dcb1cf`
+against the wired branch, 5 rounds, one fresh process per world under the test slot (`contract-bench.log`, 4/4
+exit 0). Budget ≤ +10% per level at L0..cut−1:
+
+| World | Growth per level, L0 .. L(cut−1) (%) | Max |
+|---|---|---:|
+| Maithea | 4.0 / 4.4 / 3.7 / 8.8 / 6.2 / 3.5 | **+8.8** |
+| Selawyn | 6.4 / −1.2 / 2.6 / 7.3 / 0.4 / 5.8 / 0.9 | **+7.3** |
+| Raiva | 3.1 / 0.8 / 1.2 / 3.2 / 0.4 | **+3.2** |
+| Lethuris | 3.5 / 6.7 / 5.2 / 2.5 / 2.4 / 6.8 / 1.9 | **+6.8** |
+
+### 7.3 Maithea 6 × L0 cold (C2 part 1): absolute median met, relative to today's main NOT MET; cause measured
+
+`test-results/mountains/t3/l0-protocol.mjs` unchanged, 12 fresh processes alternating `--swap`, 0 block solves
+(`l0-protocol.json`): main 158-178 ms, branch 197.5-225.7 ms (median 209.7 ms; 5 of 12 runs above 211 ms), branch /
+main 1.14-1.41 (median 1.28). Main is faster today than at T3 (198-252 ms), so the relative +10% is not met.
+
+Diagnosis (`l0-protocol-prebuilt.mjs`, 6 runs, the same protocol plus one warm-up pass of both arms' level-0
+samplers before the timed builds): branch 157-172 ms, branch / main **1.002-1.097**. The difference is the
+one-time route A coarse field build (memoised per body, separately budgeted at ≤ 50 ms cold and met at merge:
+Maithea ≈ 36-42 ms), which the cold protocol places inside the first L0 tile. The per-tile L0 cost is within +10%.
+**Coordinator call (Opus 5.5 on Kasper's instruction; he may overrule):** not a merge blocker, because the field
+build has its own met budget and the route A merge accepted it; recorded OPEN in section 13. No budget moved.
+
+### 7.4 C3 cold carved tiles (frozen massif tile set): MET
+
+12 frozen tiles per world, one fresh process per world and level (`c3-tile-set.json`, 20/20 exit 0); no tile above
+2 s, so T5 is not triggered:
+
+| World | Max ms per level (max block solves per tile) |
+|---|---|
+| Maithea | L6 1378, L7 806, L8 485, L10 328, L12 318 (9) |
+| Selawyn | L7 1182, L8 640, L9 529, L11 356, L13 323 (8) |
+| Raiva | L5 1211, L6 755, L7 475, L9 338, L11 338 (8) |
+| Lethuris | L7 1192, L8 628, L9 477, L11 340, L13 191 (8) |
+
+The field build itself (≤ 50 ms) was not re-measured: `orogen-layout-4` is the merged code, unchanged by T6.
 
 ## 8. Default `npm test` run time
 
@@ -228,20 +279,77 @@ The largest file, `mountain-coarse-field`, is 106.9 → 113.4 s. `lod-carving-re
 
 ## 9. Golden (one re-pin)
 
-@@GOLDEN@@
+`node tests/golden/run-cross-engine.mjs --update --port 5297` under the test slot and the GPU lock, once
+(`golden-update2.log`, exit 0; a first attempt on port 5293 rewrote `golden.json` from Node and then failed to
+start its preview because another local service holds 5293, so the browser check of the same Node result ran on
+5297). Old → new (`golden-old.json` is main's fixture):
+
+| Section | Old | New |
+|---|---|---|
+| biomes | `3df597b0…` | `5bbf5a1c…` |
+| oceanVolume | `9d7f71f7…` | `3d3ef47f…` |
+| placeQuery | `675746e6…` | `a5d9e5cc…` |
+| census | `02ede0a8…` | `d63ad497…` |
+| rocks | `c20350a7…` | `f0697d68…` |
+
+All other sections are unchanged, `terrain` and `combined` included (the 60 golden terrain samples miss every
+massif). placeQuery and census carry `TERRAIN_VERSION`. Cross-engine: chromium and firefox MATCH; webkit
+MATCH-EXCEPT-KNOWN (the pre-existing `faunaKnownUnstable` finding of 2026-10-04, unrelated).
 
 ## 10. Luna (VISUAL-ADVISORY, UNCALIBRATED)
 
-@@LUNA@@
+Standard sheet view `mountainV3` (highest lit land, eye 400 m over ground 8 km away on its sun side), four worlds,
+with and without clouds, served by local `vite preview` (ports 5295 / 5298, `--strictPort`) under the GPU lock;
+main `9dcb1cf` (`t6-refmain`, mountains staged off) and the T6 build. Question and element list as the assembly
+round (`prompt-mountain-cal.txt`), 3 asks per image, diagnosis on every FAIL (`luna/t6.json`, `luna/refmain.json`).
+**UNCALIBRATED, not citable; never blocks a gate.**
+
+- T6: **0 PASS of 8 images (0 / 24 / 0 asks)**; main: 0 PASS of 8 (0 / 23 / 1). The diagnosed element is
+  "massif height/silhouette" on 11 of 16 images; reasons read "broad, smooth swells", "no distinct peaks".
+- The sheet does not target a massif: the pose rule picks the highest lit land of the checkout's own field. The
+  Maithea pick is the same point with the same height (5,083 m) on both arms, so it lies outside the massifs; the
+  other three picks moved by 50-240 m of height. A massif-targeted view (an axis tile of the frozen set) is not part
+  of the standard sheet and was not captured: OPEN, section 13.
 
 ## 11. Astra review
 
-@@ASTRA@@
+`codex exec -m gpt-6-astra -s read-only` static review of `9dcb1cf..8bed2e3` with ten rule checks
+(`astra-review-prompt.txt`, answer `astra-review.md`): **MERGE AFTER MUST FIXES**, three MUSTs.
+
+1. **Colour identity and colour/classifier agreement moved to level 0 without a truth copy** (they are pointwise,
+   not statistics). Fixed in `42be27e`: each runs on level 0 by default and on the carved truth in test:full.
+2. **Pointwise invariants lost truth coverage** (height bound, coastline, window, continental sign, floor = base).
+   Fixed in `42be27e` the same way; assertions unchanged. Pre-check with `ATLAS_TEST_FULL=1`: the 9 truth copies
+   pass (`astra-fix-full.log`, exit 0; 28 min wall for these copies, which test:full now carries).
+3. **Golden re-pin missing at review time.** Done in `40bddd7` (section 9).
+
+Checked and found correct by Astra: no ROOM, ceiling, tolerance or budget loosened; all 37 UP_ROOM pins equal max ×
+1.25 rounded up to 50 m with working negative controls; U1 uses the child level's point sample at all 289 shared
+vertices; landing candidates and cutoff at level 0, landed ground on the truth; the two-core source identity still
+covers everything outside the two hunks; the canopy hook uses no wall clock; the 1.3 H level-0 identity reach is
+conservative (1 + 0.2 + 0.1); carving-class digests and envelopes; tile-set selection reads M1 only; consumer level
+arguments.
 
 ## 12. Gates run and not run
 
-@@GATES@@
+Run on the branch: `npx tsc --noEmit` (`tsc.log`), every default test file as its own process (section 8, 209/209
+exit 0 wired), the 9 truth copies with `ATLAS_TEST_FULL=1` (`astra-fix-full.log`), the golden update and
+cross-engine check once (section 9), the cost cells of sections 7.2-7.4, Luna (section 10). A coarse finishing
+check at wrap-up is recorded in the handoff doc.
+
+NOT run (the final gate): the fair cost protocol to completion (7.1), `npm run test:full` once on `40bddd7`,
+`npm run test:golden` after the re-pin as a separate gate, `npm run build`, the Luna comparison against 0/24 and
+0/48 as the gate prescribes, the merge to main.
 
 ## 13. Open for Kasper
 
-@@OPEN@@
+1. Fair cost protocol C1/orbit on the wired build: not finished (7.1).
+2. Raiva M4 R1 on fresh seeds 7.72 / 7.66 < 8 (6.3); coordinator call "not a blocker", overrulable.
+3. Maithea 6 × L0 cold relative to today's main 1.28 median; cause = one-time coarse field build (7.3);
+   coordinator call "not a blocker", overrulable.
+4. Massif tile set colour/class beyond the plan tolerance on Maithea/Lethuris; retention keeps would fail in 5
+   places (6.1): A3 (the tile set's status) and Q3 (retention reference) are Kasper's; the M0 reopen trigger
+   condition is met (not acted on).
+5. Q-B upper side: U1 exact, U2 by UP_ROOM pins; a hard cap option would take `lod-ladder-4` (section 2).
+6. A massif-targeted Luna view (6.1 / 10).
+7. Default `npm test` +20% wall time (section 8); the 28 min truth copies now in test:full (section 11).

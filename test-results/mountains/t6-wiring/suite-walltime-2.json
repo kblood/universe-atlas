@@ -1,0 +1,186 @@
+{
+ "jobs": 4,
+ "timeoutMin": 6,
+ "files": 25,
+ "offTotalMs": 0,
+ "wiredTotalMs": 648424,
+ "doubled": [],
+ "failing": [],
+ "rows": [
+  {
+   "file": "tests/terrain-climate-colour.test.mjs",
+   "wiredMs": 1924,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/acceptance/climate-agreement.test.mjs",
+   "wiredMs": 1030,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/terrain-floor-window.test.mjs",
+   "wiredMs": 14428,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/terrain-relief-hypsometry.test.mjs",
+   "wiredMs": 220212,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/render-bounds.test.mjs",
+   "wiredMs": 18706,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/terrain-elevation-identity.test.mjs",
+   "wiredMs": 7040,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/terrain-budget-starvation.test.mjs",
+   "wiredMs": 67632,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/terrain-mountains-assembly.test.mjs",
+   "wiredMs": 7625,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/tile-metadata.test.mjs",
+   "wiredMs": 3147,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/forest-water-validity.test.mjs",
+   "wiredMs": 931,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/place-query.test.mjs",
+   "wiredMs": 31086,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/lod-carving-reduction.test.mjs",
+   "wiredMs": 39273,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/lod-coarse-frame.test.mjs",
+   "wiredMs": 14562,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/sparse-consumer-levels.test.mjs",
+   "wiredMs": 3394,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/river-terrain.test.mjs",
+   "wiredMs": 11029,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/inland-rivers-disabled.test.mjs",
+   "wiredMs": 13479,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/acceptance/version-compat.test.mjs",
+   "wiredMs": 228,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/mountain-coarse-field.test.mjs",
+   "wiredMs": 138573,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/planet-canopy.test.mjs",
+   "wiredMs": 235,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/landing-site.test.mjs",
+   "wiredMs": 2586,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/forest-habitat.test.mjs",
+   "wiredMs": 5091,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/acceptance/existence-gating.test.mjs",
+   "wiredMs": 3429,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/world-surface.test.mjs",
+   "wiredMs": 3917,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/golden/perturbation.test.mjs",
+   "wiredMs": 15906,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  },
+  {
+   "file": "tests/lod-consistency.test.mjs",
+   "wiredMs": 22961,
+   "ratio": null,
+   "wiredExit": 0,
+   "killed": false
+  }
+ ]
+}

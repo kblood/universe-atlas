@@ -1,0 +1,23 @@
+bench Maithea exit=0
+bench Selawyn exit=0
+bench Raiva exit=0
+bench Lethuris exit=0
+l0 1  exit=0
+l0 2 --swap exit=0
+l0 3  exit=0
+l0 4 --swap exit=0
+l0 5  exit=0
+l0 6 --swap exit=0
+l0 7  exit=0
+l0 8 --swap exit=0
+l0 9  exit=0
+l0 10 --swap exit=0
+l0 11  exit=0
+l0 12 --swap exit=0
+done
+l0pre 1  exit=0
+l0pre 2 --swap exit=0
+l0pre 3  exit=0
+l0pre 4 --swap exit=0
+l0pre 5  exit=0
+l0pre 6 --swap exit=0
