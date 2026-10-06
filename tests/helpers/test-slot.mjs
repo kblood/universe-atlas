@@ -111,16 +111,20 @@ export async function sharedHolders(dir, {capacity = SLOT_CAPACITY} = {}) {
   }
   return live;
 }
-// A child of a holder (ATLAS_TEST_SLOT_TOKEN matches a live holder of `dir`) runs through without a second level.
-function inheritedSlot(dir, mode) {
+// A child of a holder (ATLAS_TEST_SLOT_TOKEN matches a holder of `dir` whose pid is ALIVE on this host) runs through
+// without a second level. A dead or foreign holder is no ancestor: acquire normally (the dead one gets reaped).
+// A nested shared request may not ask for more tokens than its shared parent holds.
+function inheritedSlot(dir, mode, tokens) {
   const token = process.env.ATLAS_TEST_SLOT_TOKEN;
   if (!token || !UUID.test(token)) return null;
-  let parent = null;
-  try { if (JSON.parse(readFileSync(`${dir}/owner.txt`, 'utf8')).token === token) parent = 'exclusive'; } catch {}
-  if (!parent) try { if (JSON.parse(readFileSync(`${sharedDir(dir)}/${token}.json`, 'utf8')).token === token) parent = 'shared'; } catch {}
-  if (!parent) return null; // stale or foreign token: acquire normally
+  const read = path => { try { const h = JSON.parse(readFileSync(path, 'utf8')); return h?.token === token ? h : null; } catch { return null; } };
+  let parent = 'exclusive', holder = read(`${dir}/owner.txt`);
+  if (!holder) { parent = 'shared'; holder = read(`${sharedDir(dir)}/${token}.json`); }
+  if (!holder || holder.host !== hostname() || !Number.isSafeInteger(holder.pid) || holder.pid <= 0 || dead(holder.pid)) return null;
   if (parent === 'shared' && mode === 'exclusive') throw new Error('never nest: an exclusive test slot was requested inside a SHARED holder (ATLAS_TEST_SLOT_TOKEN); take the exclusive slot at the top level instead');
-  return {release() {}, owner: `(inherited ${parent} slot)`, token, mode: parent, nested: true};
+  const budget = parent === 'shared' ? holder.tokens : SLOT_CAPACITY;
+  if (mode === 'shared' && !(tokens <= budget)) throw new Error(`never nest: a nested shared request of ${tokens} tokens exceed the ${budget} of the shared parent (ATLAS_TEST_SLOT_TOKEN); ask for at most ${budget}`);
+  return {release() {}, owner: `(inherited ${parent} slot)`, token, mode: parent, tokens: budget, nested: true};
 }
 function hold({kind, token, text, file, cleanup, heartbeatMs}) {
   let released = false;
@@ -148,7 +152,7 @@ export async function acquireTestSlot({owner = 'node tests', dir = TEST_SLOT_DIR
   if (mode !== 'exclusive' && mode !== 'shared') throw new Error(`test slot mode must be exclusive|shared, got ${mode}`);
   if (mode === 'shared' && !(Number.isSafeInteger(tokens) && tokens >= 1 && tokens <= capacity)) throw new Error(`a shared test slot needs explicit tokens in 1..${capacity}, got ${tokens}`);
   const shared = sharedSlotEnabled();
-  if (shared) { const nested = inheritedSlot(dir, mode); if (nested) return nested; }
+  if (shared) { const nested = inheritedSlot(dir, mode, tokens); if (nested) return nested; }
   assertSlotLockOrder(owner);
   if (shared && mode === 'shared') return acquireShared({owner, dir, retryMs, timeoutMs, heartbeatMs, tokens, capacity});
   return acquireExclusive({owner, dir, retryMs, timeoutMs, heartbeatMs, capacity});
@@ -184,34 +188,58 @@ async function acquireExclusive({owner, dir, retryMs, timeoutMs, heartbeatMs, ca
     }
   }
 }
+/** Test-only interleaving points of the shared admission (tests/test-slot.test.mjs). Both null in production. */
+export const slotTestHooks = {beforePublish: null, afterPublish: null};
+// Deletes our own holder file; Windows can refuse a delete transiently (EPERM/EBUSY), so retry before giving up loudly.
+async function removeOwn(path) {
+  for (let i = 0; ; i++) {
+    try { await rm(path, {force: true}); return; } catch (e) {
+      if (i >= 20) { console.error(`could not remove own shared test-slot holder ${path}: ${e.code ?? e.message}; it is reaped once this pid exits`); return; }
+      await sleep(25);
+    }
+  }
+}
 async function acquireShared({owner, dir, retryMs, timeoutMs, heartbeatMs, tokens, capacity}) {
-  const started = Date.now(), sd = sharedDir(dir), token = randomUUID(), file = `${sd}/${token}.json`;
+  const started = Date.now(), sd = sharedDir(dir), token = randomUUID(), file = `${sd}/${token}.json`, tmp = `${sd}/.${token}.tmp`;
   const text = JSON.stringify({name: owner, pid: process.pid, host: hostname(), time: new Date().toISOString(), token, class: 'shared', tokens});
-  for (let attempt = 0;; attempt++) {
-    let why;
+  let why = 'not tried';
+  for (let attempt = 0; ; attempt++) {
+    // Every retry, including a failed takeover of a dead exclusive owner, passes the deadline check and sleeps.
+    if (attempt) {
+      const left = timeoutMs - (Date.now() - started);
+      if (left <= 0) throw new Error(`test slot (shared, ${tokens} tokens) still unavailable: ${why}`);
+      if (attempt % 30 === 1) console.error(`waiting for shared test slot (${tokens} tokens): ${why} - retry in ${retryMs / 1000} s`);
+      // Jitter breaks lock-step retries of two callers that both backed off.
+      await sleep(Math.min(retryMs * (0.5 + Math.random()), left));
+    }
     if (existsSync(dir)) {
       const s = await inspectExclusive(dir);
-      if (s.state === 'retry') continue;
-      why = s.state === 'wait' ? 'exclusive owner being reaped' : `exclusive held by ${s.text.trim()} (${s.age})`;
-    } else {
-      // Publish first, then look (Dekker): whichever of two callers looks last sees the other, so the admitted token
-      // total never exceeds capacity and an exclusive caller that mkdir'd before our re-check always wins.
+      why = s.state === 'held' ? `exclusive held by ${s.text.trim()} (${s.age})` : s.state === 'wait' ? 'exclusive owner being reaped' : 'takeover of a dead exclusive owner attempted';
+      continue;
+    }
+    await slotTestHooks.beforePublish?.();
+    // Publish first, then look (Dekker): whichever of two callers looks last sees the other, so the admitted token total
+    // never exceeds capacity, and an exclusive caller that took the gate before our re-check always wins.
+    let admitted = null;
+    try {
       await mkdir(sd, {recursive: true});
-      await writeFile(`${sd}/.${token}.tmp`, text); await rename(`${sd}/.${token}.tmp`, file);
+      await writeFile(tmp, text); await rename(tmp, file);
+      await slotTestHooks.afterPublish?.();
       if (existsSync(dir)) why = 'an exclusive caller arrived (writer priority)';
       else {
         const live = await sharedHolders(dir, {capacity}), used = live.reduce((a, h) => a + h.tokens, 0);
-        if (live.some(h => h.file === `${token}.json`) && used <= capacity) return hold({kind: 'shared', token, text, file, heartbeatMs, cleanup: () => rmSync(file, {force: true})});
-        why = `${used - tokens}/${capacity} tokens in use by ${live.filter(h => h.token !== token).map(h => h.text).join('; ')}`;
+        if (live.some(h => h.file === `${token}.json`) && used <= capacity) admitted = hold({kind: 'shared', token, text, file, heartbeatMs, cleanup: () => rmSync(file, {force: true})});
+        else why = `${used - tokens}/${capacity} tokens in use by ${live.filter(h => h.token !== token).map(h => h.text).join('; ')}`;
       }
-      await rm(file, {force: true});
+    } finally {
+      // Until hold() owns the file, every exit path (back-off or a throw) removes our reservation.
+      if (!admitted) { await removeOwn(file); await removeOwn(tmp); }
     }
-    if (Date.now() - started >= timeoutMs) throw new Error(`test slot (shared, ${tokens} tokens) still unavailable: ${why}`);
-    if (attempt % 30 === 0) console.error(`waiting for shared test slot (${tokens} tokens): ${why} - retry in ${retryMs / 1000} s`);
-    // Jitter breaks lock-step retries of two callers that both backed off.
-    await sleep(Math.min(retryMs * (0.5 + Math.random()), timeoutMs - (Date.now() - started)));
+    if (admitted) return admitted;
   }
 }
+/** Holds the slot for `work(lock)` and releases it on success or failure. Since 2026-10-07 `work` receives the lock
+ * (it used to be called with no argument); callbacks that ignore their arguments are unaffected. */
 export async function withTestSlot(options, work) {
   const lock = await acquireTestSlot(options);
   try { return await work(lock); } finally { lock.release(); }
@@ -231,25 +259,38 @@ export function runCommand(command, args, options = {}) {
     });
   });
 }
-/** Shared `node --test` children get an explicit --test-concurrency (inserted after --test); a larger one is refused. */
+/** True for a node executable: `node`, `node.exe`, any path whose basename is node[.exe], or this process's execPath. */
+export function isNodeCommand(command) {
+  return /^node(\.exe)?$/i.test(String(command).split(/[\/]/).pop()) || command === process.execPath;
+}
+/** Shared `node --test` children get an explicit --test-concurrency (inserted after --test). Node uses the LAST
+ * occurrence, so that one must be in 1..tokens; an occurrence without a value is refused. */
 export function boundTestConcurrency(args, tokens) {
   const at = args.indexOf('--test');
   if (at < 0) return args;
-  const given = args.find(a => /^--test-concurrency(=|$)/.test(a));
-  if (!given) return [...args.slice(0, at + 1), `--test-concurrency=${tokens}`, ...args.slice(at + 1)];
-  const k = Number(given.includes('=') ? given.split('=')[1] : args[args.indexOf(given) + 1]);
-  if (!(k >= 1 && k <= tokens)) throw new Error(`--test-concurrency ${k} exceeds the ${tokens} shared tokens`);
+  const values = [];
+  args.forEach((a, i) => {
+    if (a === '--test-concurrency') values.push(args[i + 1] === undefined || args[i + 1].startsWith('--') ? undefined : args[i + 1]);
+    else if (a.startsWith('--test-concurrency=')) values.push(a.slice('--test-concurrency='.length) || undefined);
+  });
+  if (!values.length) return [...args.slice(0, at + 1), `--test-concurrency=${tokens}`, ...args.slice(at + 1)];
+  if (values.includes(undefined)) throw new Error('--test-concurrency needs a value');
+  const k = Number(values.at(-1));
+  if (!(Number.isSafeInteger(k) && k >= 1 && k <= tokens)) throw new Error(`--test-concurrency ${values.at(-1)} exceeds the ${tokens} shared tokens (node uses the last occurrence)`);
   return args;
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2), divider = args.indexOf('--'), own = args.slice(0, Math.max(0, divider));
-  const option = name => { const i = own.indexOf(name); return i < 0 ? undefined : own[i + 1]; };
   if (divider < 0 || !args[divider + 1]) throw new Error('usage: test-slot.mjs [--timeout-ms N] [--shared K] -- command args...');
+  // An option given without its value fails here, before acquiring (the old parser read the `--` as NaN and refused).
+  const option = name => { const i = own.indexOf(name); if (i < 0) return undefined; if (i + 1 >= own.length) throw new Error(`${name} needs a value`); return own[i + 1]; };
   // --shared K takes effect only with ATLAS_SLOT_SHARED=1; without it every CLI call is exclusive, exactly as before.
   const k = option('--shared') === undefined ? null : Number(option('--shared'));
-  const shared = k !== null && sharedSlotEnabled();
-  const command = args[divider + 1] === 'node' ? process.execPath : args[divider + 1];
-  const childArgs = shared && args[divider + 1] === 'node' ? boundTestConcurrency(args.slice(divider + 2), k) : args.slice(divider + 2);
-  process.exitCode = await withTestSlot({owner: args.slice(divider + 1).join(' ').slice(0, 160), timeoutMs: option('--timeout-ms') === undefined ? Infinity : Number(option('--timeout-ms')),
-    ...(shared ? {mode: 'shared', tokens: k} : {})}, () => runCommand(command, childArgs));
+  const timeoutMs = option('--timeout-ms') === undefined ? Infinity : Number(option('--timeout-ms'));
+  const shared = k !== null && sharedSlotEnabled(), given = args[divider + 1];
+  if (shared && !isNodeCommand(given)) throw new Error(`--shared needs a node command (its --test-concurrency is bounded); got ${given}`);
+  const command = /^node(\.exe)?$/i.test(given) ? process.execPath : given;
+  const childArgs = shared ? boundTestConcurrency(args.slice(divider + 2), k) : args.slice(divider + 2);
+  process.exitCode = await withTestSlot({owner: args.slice(divider + 1).join(' ').slice(0, 160), timeoutMs, ...(shared ? {mode: 'shared', tokens: k} : {})},
+    () => runCommand(command, childArgs));
 }

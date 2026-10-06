@@ -162,3 +162,97 @@ test('CLI: --shared K is a shared hold only with ATLAS_SLOT_SHARED=1; the child 
     assert.equal(existsSync(dir), false); assert.deepEqual(holderFiles(dir), []);
   }
 });
+
+// Review fixes (Astra review of 2250d1e..70b68fe; docs/shared-test-slot-2026-10-07.md "Review fixes"). Each test failed
+// before its fix. New exports are read through the module namespace so a missing one fails only its own test.
+const slotMod = await import('./helpers/test-slot.mjs');
+const runCli = (args, env) => new Promise(resolve => {
+  const child = spawn(process.execPath, ['tests/helpers/test-slot.mjs', ...args], {env, stdio: 'pipe'});
+  let out = ''; child.stdout.on('data', b => { out += b; }); child.stderr.on('data', b => { out += b; });
+  const kill = setTimeout(() => child.kill(), 10000);
+  child.on('close', code => { clearTimeout(kill); resolve({code, out}); });
+});
+const cliEnv = (dir, flag = '1') => { const env = {...process.env, ATLAS_TEST_SLOT_DIR: dir, ATLAS_SLOT_SHARED: flag}; delete env.ATLAS_TEST_SLOT_TOKEN; return env; };
+const deadPid = async () => { const c = spawn(process.execPath, ['-e', '']); await new Promise(r => c.on('close', r)); return c.pid; };
+test('review 1: an inherited token is a pass-through only while its holder pid is alive on this host', () => shared(async () => {
+  const pid = await deadPid(), dir = join(root, 'orphan'), token = randomUUID(), parentFile = join(sharedDir(dir), `${token}.json`);
+  await withEnv({ATLAS_TEST_SLOT_TOKEN: token}, async () => {
+    mkdirSync(dir); writeFileSync(join(dir, 'owner.txt'), JSON.stringify({name: 'dead exclusive parent', pid, host: hostname(), token}));
+    const a = await acquireTestSlot({dir, retryMs: 10, timeoutMs: 2000});
+    assert.equal(a.nested, undefined, 'a real acquisition (the dead parent is reaped)');
+    assert.equal(JSON.parse(readFileSync(join(dir, 'owner.txt'), 'utf8')).pid, process.pid); a.release();
+    mkdirSync(sharedDir(dir), {recursive: true});
+    writeFileSync(parentFile, JSON.stringify({name: 'dead shared parent', pid, host: hostname(), token, class: 'shared', tokens: 4}));
+    const b = await acquireTestSlot({dir, mode: 'shared', tokens: 2, retryMs: 10, timeoutMs: 2000});
+    assert.equal(b.nested, undefined); assert.equal(existsSync(parentFile), false, 'dead parent reaped'); b.release();
+    writeFileSync(parentFile, JSON.stringify({name: 'foreign parent', pid: process.pid, host: 'foreign-host', token, class: 'shared', tokens: 4}));
+    const c = await acquireTestSlot({dir, mode: 'shared', tokens: 2, retryMs: 10, timeoutMs: 2000});
+    assert.equal(c.nested, undefined, 'a holder on another host is never an ancestor of this process'); c.release(); rmSync(parentFile);
+  });
+}));
+test('review 2: a nested shared request may not exceed the tokens of its shared parent', () => shared(async () => {
+  const dir = join(root, 'budget'), s = await acquireTestSlot({dir, mode: 'shared', tokens: 4});
+  await withEnv({ATLAS_TEST_SLOT_TOKEN: s.token}, async () => {
+    await assert.rejects(acquireTestSlot({dir, mode: 'shared', tokens: 8, timeoutMs: 0}), /8 tokens exceed the 4 of the shared parent/);
+    await assert.rejects(acquireTestSlot({dir, mode: 'shared', tokens: SLOT_CAPACITY, timeoutMs: 0}), /exceed the 4 of the shared parent/);
+    const n = await acquireTestSlot({dir, mode: 'shared', tokens: 4, timeoutMs: 0}); assert.ok(n.nested); n.release();
+  });
+  s.release();
+}));
+test('review 5: the LAST --test-concurrency is the bound one; node.exe and absolute node paths are bounded; other commands refused', async () => {
+  assert.throws(() => boundTestConcurrency(['--test', '--test-concurrency=1', '--test-concurrency=28', 'a'], 4), /28 exceeds the 4 shared tokens/);
+  assert.throws(() => boundTestConcurrency(['--test', '--test-concurrency=2', '--test-concurrency', '9', 'a'], 4), /9 exceeds/);
+  assert.deepEqual(boundTestConcurrency(['--test', '--test-concurrency=28', '--test-concurrency=2', 'a'], 4), ['--test', '--test-concurrency=28', '--test-concurrency=2', 'a'], 'node uses the last value');
+  assert.throws(() => boundTestConcurrency(['--test', '--test-concurrency'], 4), /exceeds|needs a value/);
+  const dir = join(root, 'cli-node-exe');
+  const r = await runCli(['--shared', '4', '--', process.execPath, '--test', '--test-concurrency=28', 'no-such.test.mjs'], cliEnv(dir));
+  assert.notEqual(r.code, 0); assert.match(r.out, /28 exceeds the 4 shared tokens/, 'absolute node.exe path is bounded');
+  const g = await runCli(['--shared', '4', '--', 'git', '--version'], cliEnv(dir));
+  assert.notEqual(g.code, 0); assert.match(g.out, /--shared needs a node command/);
+  assert.equal(existsSync(dir), false); assert.deepEqual(holderFiles(dir), []);
+});
+test('review 9: --timeout-ms or --shared without a value fails before acquiring (flag off and on), never waits forever', async () => {
+  for (const [flag, opt] of [['0', '--timeout-ms'], ['1', '--timeout-ms'], ['1', '--shared']]) {
+    const dir = join(root, `cli-missing-${flag}`), r = await runCli([opt, '--', 'node', '-e', 'process.exit(0)'], cliEnv(dir, flag));
+    assert.notEqual(r.code, 0, `${opt} flag ${flag}: ${r.out}`); assert.match(r.out, /needs a value|invalid test slot timeout/);
+    assert.equal(existsSync(dir), false);
+  }
+});
+test('review 7: a shared caller honours its deadline and backs off while a dead exclusive owner cannot be renamed away', () => shared(async () => {
+  const pid = await deadPid(), dir = join(root, 'stuck'); mkdirSync(dir);
+  writeFileSync(join(dir, 'owner.txt'), JSON.stringify({name: 'dead, dir pinned', pid, host: hostname()}));
+  // A process whose cwd is the slot dir pins it: on Windows the takeover rename fails (EBUSY) on every attempt.
+  const pin = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 20000)'], {cwd: dir});
+  try {
+    await tick(300);
+    const started = Date.now();
+    const outcome = await Promise.race([acquireTestSlot({dir, mode: 'shared', tokens: 1, retryMs: 20, timeoutMs: 300}).then(l => { l.release(); return 'acquired'; }, e => e.message),
+      tick(4000).then(() => 'still looping after 4 s')]);
+    if (process.platform === 'win32') assert.match(outcome, /still unavailable/, outcome);
+    else assert.ok(outcome === 'acquired' || /still unavailable/.test(outcome), outcome);
+    assert.ok(Date.now() - started < 2000, `returned after ${Date.now() - started} ms`);
+  } finally { pin.kill(); await new Promise(r => pin.on('close', r)); rmSync(dir, {recursive: true, force: true}); }
+}));
+test('review 6: a holder file published before admission is removed when anything throws before the hold', () => shared(async () => {
+  const hooks = slotMod.slotTestHooks; assert.ok(hooks, 'slotTestHooks exported');
+  const dir = join(root, 'leak');
+  hooks.afterPublish = () => { throw new Error('injected EPERM after publish'); };
+  try { await assert.rejects(acquireTestSlot({dir, mode: 'shared', tokens: 4}), /injected EPERM/); } finally { hooks.afterPublish = null; }
+  assert.deepEqual(holderFiles(dir), [], 'no leaked reservation');
+  const l = await acquireTestSlot({dir, timeoutMs: 200}); l.release();
+}));
+test('review 10: forced interleaving - shared caller saw no gate, then an exclusive caller takes it and drains empty: the shared one never enters alongside', () => shared(async () => {
+  const hooks = slotMod.slotTestHooks; assert.ok(hooks, 'slotTestHooks exported');
+  const dir = join(root, 'interleave'); let exclusive = null, sharedIn = false, overlap = false;
+  // The shared caller has checked the exclusive dir (absent) and pauses just before publishing; the exclusive caller now
+  // takes the gate and finishes an EMPTY drain. Only the post-publication re-check keeps the shared caller out.
+  hooks.beforePublish = async () => { hooks.beforePublish = null; exclusive = await acquireTestSlot({dir, retryMs: 10}); };
+  try {
+    const s = acquireTestSlot({dir, mode: 'shared', tokens: 4, retryMs: 10}).then(l => { sharedIn = true; overlap = !!exclusive && !exclusive.done; return l; });
+    for (let i = 0; i < 200 && !exclusive; i++) await tick(5);
+    assert.ok(exclusive, 'exclusive acquired with an empty drain'); await tick(80);
+    assert.equal(sharedIn, false, 'the shared caller backed off: it must not run alongside the exclusive holder');
+    exclusive.done = true; exclusive.release(); (await s).release();
+    assert.equal(overlap, false); assert.equal(sharedIn, true, 'it enters once the exclusive holder is gone');
+  } finally { hooks.beforePublish = null; }
+}));

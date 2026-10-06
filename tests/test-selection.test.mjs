@@ -64,3 +64,11 @@ test('I5: a changed wrapper prefix, a removed path, other text or any other key 
   assert.match(selectTests(['package.json'], registered, graph, {pkg: packageJsonChange(BASE, '{')}).selected[0].reason, /full suite: package\.json changed \(package\.json missing or unparsable/);
   assert.equal(selectTests(['package.json', 'tsconfig.json'], registered, graph, {pkg: packageJsonChange(BASE, BASE)}).selected.length, 2, 'tsconfig still forces full');
 });
+test('review 4/8: only paths in the node --test argument list count; moving one out of it, or an unsupported script, forces full', () => {
+  const S = `${PREFIX} tests/a.test.mjs tests/b.test.mjs && echo done`;
+  assert.equal(packageJsonChange(pkgText(S), pkgText(`${PREFIX} tests/a.test.mjs && echo tests/b.test.mjs done`)).full, true, 'b moved out of node --test');
+  assert.equal(packageJsonChange(pkgText(S), pkgText(`${PREFIX} tests/a.test.mjs tests/b.test.mjs tests/c.test.mjs && echo done`)).full, false, 'append before an unchanged suffix');
+  assert.equal(packageJsonChange(pkgText('node x.mjs tests/a.test.mjs'), pkgText('node x.mjs tests/a.test.mjs tests/c.test.mjs')).full, true, 'paths not given to node --test');
+  assert.equal(packageJsonChange(pkgText('vitest'), JSON.stringify(JSON.parse(pkgText('vitest')))).full, true, 'unchanged but unsupported (no paths)');
+  assert.equal(packageJsonChange(BASE, JSON.stringify(JSON.parse(BASE))).full, false, 'unchanged supported script, formatting only');
+});

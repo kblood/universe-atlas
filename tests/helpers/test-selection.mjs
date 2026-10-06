@@ -9,10 +9,26 @@ export function registeredTests(root = process.cwd()) {
   return testPaths(JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')).scripts.test);
 }
 const canonical = v => Array.isArray(v) ? v.map(canonical) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map(k => [k, canonical(v[k])])) : v;
-/** Semantic package.json diff for test:affected (plan I5). `full: false` only when nothing but `scripts.test` changed, its
- * test-path token set is a superset of the base set, and the text around the paths (the wrapper prefix before the first
- * path, anything between or after them) is identical; anything else, including unparsable JSON or a missing side, selects
- * the full suite. `added` = newly registered paths. */
+const LIST_PATH = /^(["']?)(tests\/[^\s"']+\.test\.mjs)\1$/, ANY_PATH = /tests\/[^\s"']*\.test\.mjs/;
+/** Splits `scripts.test` into the `node --test` argument list and the text around it: `head` runs through the single
+ * `<node> --test` and the `--flags` right after it, `paths` is the contiguous run of test paths that follows, `tail` is
+ * everything after. null (unsupported, fail closed) without exactly one `node --test`, with an empty list, or when a test
+ * path appears anywhere outside the list (e.g. after `&&`, where node --test never sees it). */
+export function testArgumentList(script) {
+  const tokens = script.trim().split(/\s+/), at = tokens.indexOf('--test');
+  if (at < 1 || tokens.indexOf('--test', at + 1) >= 0 || !/^node(\.exe)?$/i.test(tokens[at - 1].split(/[\/]/).pop())) return null;
+  let i = at + 1;
+  while (i < tokens.length && tokens[i].startsWith('--') && !LIST_PATH.test(tokens[i])) i++;
+  const first = i;
+  while (i < tokens.length && LIST_PATH.test(tokens[i])) i++;
+  const head = tokens.slice(0, first).join(' '), paths = tokens.slice(first, i).map(t => t.match(LIST_PATH)[2]), tail = tokens.slice(i).join(' ');
+  if (!paths.length || ANY_PATH.test(head) || ANY_PATH.test(tail)) return null;
+  return {head, paths, tail};
+}
+/** Semantic package.json diff for test:affected (plan I5). `full: false` only when nothing but `scripts.test` changed, both
+ * sides are a supported single `node --test` argument list (testArgumentList), the text before and after that list is
+ * identical, and the head's path set is a superset of the base's. Anything else, including an unchanged but unsupported
+ * script, unparsable JSON or a missing side, selects the full suite. `added` = newly registered paths. */
 export function packageJsonChange(baseText, headText) {
   let base, head;
   if (typeof baseText !== 'string' || typeof headText !== 'string') return {full: true, reason: 'package.json missing on one side'};
@@ -21,16 +37,14 @@ export function packageJsonChange(baseText, headText) {
   if (strip(base) !== strip(head)) return {full: true, reason: 'package.json changed outside scripts.test'};
   const bt = base?.scripts?.test, ht = head?.scripts?.test;
   if (typeof bt !== 'string' || typeof ht !== 'string') return {full: true, reason: 'scripts.test missing on one side'};
+  const b = testArgumentList(bt), h = testArgumentList(ht);
+  if (!b || !h) return {full: true, reason: `scripts.test is not a single node --test argument list on the ${!b ? 'base' : 'head'} side (no test paths, or a test path outside its test paths list): unsupported`};
   if (bt === ht) return {full: false, added: [], reason: 'scripts.test unchanged'};
-  const bp = testPaths(bt), hp = testPaths(ht);
-  if (!bp.length || !hp.length) return {full: true, reason: 'scripts.test has no test paths on one side'};
-  const prefix = t => t.slice(0, t.search(/(?:^|\s|["'])tests\/[^\s"']+\.test\.mjs(?=$|\s|["'])/));
-  if (prefix(bt) !== prefix(ht)) return {full: true, reason: 'scripts.test wrapper prefix changed'};
-  const skeleton = t => t.replace(TEST_PATH, (m, path) => m.slice(0, m.length - path.length)).replace(/\s+/g, ' ').trim();
-  if (skeleton(bt) !== skeleton(ht)) return {full: true, reason: 'scripts.test changed outside its test paths'};
-  const have = new Set(hp), removed = [...new Set(bp)].filter(p => !have.has(p));
+  if (b.head !== h.head) return {full: true, reason: 'scripts.test wrapper prefix changed'};
+  if (b.tail !== h.tail) return {full: true, reason: 'scripts.test changed outside its test paths'};
+  const have = new Set(h.paths), removed = [...new Set(b.paths)].filter(p => !have.has(p));
   if (removed.length) return {full: true, reason: `scripts.test removed ${removed.join(', ')}`};
-  const had = new Set(bp), added = [...new Set(hp)].filter(p => !had.has(p));
+  const had = new Set(b.paths), added = [...new Set(h.paths)].filter(p => !had.has(p));
   return {full: false, added, reason: added.length ? `scripts.test appended ${added.length} path(s)` : 'scripts.test reordered only'};
 }
 /** package.json text at `ref` (null when absent there). */

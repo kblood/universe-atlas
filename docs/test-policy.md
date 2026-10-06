@@ -221,11 +221,14 @@ UNREGISTERED. Perf files stay out of normal selections.
 A tsconfig change selects the whole registered suite. A package.json change is
 diffed semantically against the merge base (I5, `packageJsonChange` in
 `tests/helpers/test-selection.mjs`): when nothing but `scripts.test` changed,
-its test-path set is a superset of the base set and the text around the paths
-(wrapper prefix, anything between or after them) is identical, there is no
-forced full run and the newly registered paths are selected; anything else
-(another key, a removed path, a changed prefix such as an added
-`--test-concurrency`, unparsable or missing JSON) selects the full suite. Paths with
+both sides are a single `node --test` argument list (no test path anywhere
+outside the contiguous list after `node --test [--flags]`), the text before and
+after that list is identical and its path set is a superset of the base set,
+there is no forced full run and the newly registered paths are selected;
+anything else (another key, a removed path, a path moved out of the list such as
+behind `&&`, a changed prefix such as an added `--test-concurrency`, an
+unsupported script even when unchanged, unparsable or missing JSON) selects the
+full suite. Paths with
 no registered consumer (including unimported helpers and Vite configuration)
 are reported for manual review. This conservative static scan can over-select;
 computed imports or constructed paths require manual review. Directory source

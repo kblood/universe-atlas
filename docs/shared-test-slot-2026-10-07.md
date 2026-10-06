@@ -10,10 +10,13 @@ below has passed.**
 
 - Verdict: implemented and unit-tested in sandbox dirs; flag off by default.
 - Checks run: `node --test tests/test-slot.test.mjs tests/gpu-lock.test.mjs tests/test-selection.test.mjs tests/test-runner.test.mjs tests/tier.test.mjs`
-  = 37 tests, 37 pass, 0 fail, about 3.3 s wall. `npx tsc --noEmit` = exit 0.
-  `tests/test-slot.test.mjs` alone was run 6 times in a row, 12/12 each time.
-- Mutation check: with the capacity test in `acquireShared` removed, the two
-  capacity tests fail (2 of 12), so they have teeth.
+  = 45 tests, 45 pass, 0 fail, about 8.3 s wall (after the review fixes; 37/37
+  at 70b68fe). `npx tsc --noEmit` = exit 0. `tests/test-slot.test.mjs` alone was
+  run 6 times in a row after the fixes, 19/19 each time.
+- Review fixes: see "Review fixes" below. The 8 new tests all failed on 70b68fe.
+- Mutation checks: with the capacity test in `acquireShared` removed, the two
+  capacity tests fail; with the post-publication exclusive re-check removed,
+  the forced-interleaving test (review 10) fails. Both have teeth.
 - NOT run: `npm test`, `test:full`, `test:perf`, smoke/work tiers, browsers,
   golden, and anything that touches the live slot `C:/LLM/IWSDK/.atlas-test-slot`
   or the GPU lock. Every slot and GPU test uses a sandbox `ATLAS_TEST_SLOT_DIR`,
@@ -67,21 +70,29 @@ and `tests/helpers/tier-runner.mjs` (run classes).
 
   In shared runs the `node --test` child gets `--test-concurrency=k`, inserted
   after `--test`. A caller that passes a larger value is refused
-  (`boundTestConcurrency`).
+  (`boundTestConcurrency`). Node uses the **last** `--test-concurrency`, so that
+  is the one checked; an occurrence without a value is refused.
 - **Never nest.** A holder exports its token to its children as
   `ATLAS_TEST_SLOT_TOKEN`. Today the token is injected by `runCommand` and the
   tier-runner's step env (`slotEnv`); the holder process's own env is never
   changed, so two acquisitions in one process never pass through each other.
-  With the flag on, a process whose token matches a live holder of the same slot
-  dir runs through without a second level (`nested: true`, release is a no-op).
-  An exclusive request inside a shared holder is refused (`never nest`): take
-  the exclusive slot at the top level. A stale or foreign token is ignored and
-  the slot is acquired normally. With the flag off the token is ignored, so a
+  With the flag on, a process whose token matches a holder of the same slot dir
+  **whose pid is alive on this host** runs through without a second level
+  (`nested: true`, release is a no-op). A token whose holder is dead, on another
+  host, or gone is ignored and the slot is acquired normally (the dead holder
+  gets reaped). An exclusive request inside a shared holder is refused (`never
+  nest`): take the exclusive slot at the top level. A nested shared request may
+  ask for at most the tokens of its shared parent (at most the capacity inside an
+  exclusive parent); a larger one is refused. With the flag off the token is ignored, so a
   nested acquisition waits exactly as before.
 - **CLI:** `node tests/helpers/test-slot.mjs [--timeout-ms N] [--shared K] -- cmd ...`.
   `--shared K` is only a shared hold when `ATLAS_SLOT_SHARED=1`. Options are now
   parsed only before `--`, so a child's own `--timeout-ms` is no longer read as
-  the slot's.
+  the slot's. An option without its value (`--timeout-ms -- node ...`) fails
+  before acquiring, as the old parser's NaN check did; it never becomes an
+  infinite wait. With the flag on, `--shared` requires a node command (`node`,
+  `node.exe`, or any path whose basename is one of those), whose
+  `--test-concurrency` is then bounded; any other command is refused.
 
 ### What changes with the flag OFF (default)
 
@@ -96,6 +107,11 @@ the flag off:
    otherwise wait for the slot.
 4. Tier steps get an RSS preload (below).
 5. `test:affected` uses the semantic package.json diff (I5).
+6. `withTestSlot(options, work)` now calls `work(lock)`; before, it called
+   `work()`. A callback that ignores its arguments is unaffected; one that
+   inspects `arguments.length` sees 1 instead of 0. No in-repo caller does.
+7. CLI: options are read only before `--`, and an option without its value
+   fails (see CLI above).
 
 ## Lock order (part 2 correction, binding)
 
@@ -121,22 +137,30 @@ side `changedFiles` diffs against) with the working-tree `package.json`.
 
 - **No forced full run** only when all of these hold:
   - nothing but `scripts.test` changed (key order and formatting are ignored);
-  - its test-path token set is a superset of the base set;
-  - the text around the paths is identical: the prefix before the first path,
-    and anything between or after the paths.
+  - both sides parse as one `node --test` argument list (`testArgumentList`):
+    exactly one `<node> --test`, the `--flags` right after it, then a
+    contiguous run of test paths, with **no test path anywhere else** in the
+    script (a path behind `&&` or `;` is not run by node --test). Unsupported
+    scripts fail closed, even when unchanged;
+  - the text before the list (wrapper prefix and flags) and after it is
+    identical;
+  - the path set of the head side is a superset of the base set.
 
   The newly registered paths are then selected ("newly registered in
   package.json scripts.test") and package.json is not listed for manual review.
 - **Full suite** for anything else: another key, a removed path, a changed
   prefix (for example adding `--shared 16` / `--test-concurrency=16`), a flag
-  inserted between paths, a suffix, no paths, or unparsable or missing JSON on
-  either side.
+  inserted between paths, a suffix, a path moved out of the list (for example
+  `&& echo tests/b.test.mjs`), no paths (also when unchanged, e.g. `vitest`), or
+  unparsable or missing JSON on either side.
 - `selectTests(..., {pkg})` without a verdict keeps the old fail-closed
   behaviour (a package.json change selects the full suite). A tsconfig change
   still forces the full suite.
 - Unit tests cover both shapes (`tests/test-selection.test.mjs`, "I5: ...").
   Checked against the real 211-path script: append gives no full run with the
-  path added; a changed prefix gives full; removing one path gives full.
+  path added; a changed prefix gives full; removing one path gives full; moving
+  one behind `&&` gives full; the unchanged script parses to the same 211 paths
+  as `registeredTests`.
 
 ## I3 column: peak RSS per tier step
 
@@ -198,6 +222,40 @@ admitted finish normally, and the next exclusive caller drains them.
   its `timeoutMs`). They are never broken.
 - Liveness is pid-based, as before: a reused pid makes a dead holder look live
   until that pid exits.
+- **Pending slot wait vs GPU (Astra 3, open, follow-up I8).** The lock-order
+  assert runs when `acquireTestSlot` starts. A process that is already waiting
+  for the slot and then, from another async path, takes the GPU lock can
+  deadlock against a slot holder that waits for the GPU. Slot waiting is not
+  published to `gpu-lock.mjs`, so `acquireGpuLock` cannot refuse it. Today no
+  runner starts both concurrently in one process; I8 should publish pending slot
+  waits and make `acquireGpuLock` refuse while one is outstanding.
+- **Nested holders are not tracked.** A pass-through child is protected only
+  while its parent holder is alive: if the parent dies while the child keeps
+  running, the parent is reaped and the child runs without a slot. The token
+  cap is per request: two concurrent nested siblings of a 4-token parent may
+  each run 4. Both need a descendant registry (follow-up with the ticket queue).
+- The interleaving tests use an in-process hook (`slotTestHooks`, null in
+  production). The cross-process stress run in the I3 section is still not
+  done, and filesystem-error injection covers only the post-publication throw.
+
+## Review fixes (Astra review of 2250d1e..70b68fe)
+
+Each fix has a test named `review N: ...` (N = Astra's finding number) in
+`tests/test-slot.test.mjs` or `tests/test-selection.test.mjs`. All 8 new tests
+failed on 70b68fe and pass now.
+
+| Astra | Fix | Test |
+|---|---|---|
+| 1 | `inheritedSlot` requires the holder pid alive on this host before `nested: true` | review 1 (dead exclusive parent, dead shared parent, foreign-host parent) |
+| 2 | nested shared request capped at the tokens of the shared parent | review 2 (8 and 28 refused under 4; 4 passes) |
+| 5 | the last `--test-concurrency` is checked; the CLI recognises node.exe and absolute node paths, and refuses other commands under `--shared` | review 5 |
+| 4, 8 | structural `node --test` argument-list parse; a path outside it, or an unchanged pathless script, gives full | review 4/8 |
+| 9 | a CLI option without its value fails before acquiring | review 9 (flag off and on) |
+| 7 | every shared retry, including a failed takeover, checks the deadline and sleeps | review 7 (dead owner dir pinned by a child cwd: EBUSY rename) |
+| 6 | publish-to-admission in try/finally; own holder and `.tmp` removed (transient Windows errors retried) on any throw or back-off | review 6 (throw injected after publish) |
+| 10 | forced interleaving via `slotTestHooks.beforePublish`: the exclusive caller takes the gate and drains empty between the shared caller's check and its publish | review 10; **mutation**: removing the post-publication `existsSync(dir)` re-check fails it (1 of 19) |
+| 11 | `work(lock)` documented in the flag-off list (item 6) | doc only |
+| 3 | documented in Known limits (open, I8) | none |
 
 ## needs: lines for the merger
 
