@@ -1,0 +1,18 @@
+You are an independent, sceptical reviewer. You are READ-ONLY: do not modify, create or delete any file, run no tests, no builds, no browsers, no network. You may read files and run read-only commands (ls, cat, rg, git log/show/diff). A separate workflow is editing other worktrees concurrently; ignore C:/LLM/IWSDK/universe-atlas-wt entirely.
+
+OUTPUT FORMAT (mandatory). For EACH item give:
+- Finding
+- Evidence (file paths, line refs, concrete numbers you counted)
+- Severity: high / medium / low
+- Recommended action (concrete, smallest useful step)
+- Could NOT verify (what you did not or could not check)
+End with a section "VERDICT:" containing one line per question, each starting with "VERDICT (x):" and a one-sentence judgement. Be blunt; disagree with the documents where warranted. Do not pad.
+
+REVIEW 1 — the mountains problem in universe-atlas as a whole.
+Read: docs/mountains-design-2026-10-04.md, docs/mountains-opus-decisions-2026-10-05.md (on main working tree; also check branch decisions/mountains with git show if it exists), docs/mountain-carving-f-v1.md, docs/mountains-grain-step-g-2026-10-05.md, docs/mountains-assembly-2026-10-05.md, docs/mountains-assembled-check-2026-10-05.md, the summaries under test-results/mountains/ (M1, M2, M3, M3-r4, M3-r5, M4, assembly, assembly-2, luna-calibration, step-g), docs/test-policy.md. Look at the relevant source code as needed.
+
+Questions:
+(a) Is the element decomposition and the pin/threshold strategy sound, or are we over-fitting to our own metrics (synthetic straight belt, calibrated coherence/pit rows, eroded control built by us)? What would a sceptic say about the R1/M4 summit density of 39 per 1000 km2 versus real mountain ranges (give real-world reference figures you know and how certain you are)?
+(b) Is the cost plan (T1 rejection grid, T2 cheaper foot-point solve, T3 skip carving at coarse levels, T4 sparse-sampler audit) the right one, or is there a structurally cheaper design — e.g. a baked per-body belt/uplift field at a fixed resolution with deterministic regeneration from seed, with tiles regenerable from seed+position as the owner's LOD ladder requires? Weigh determinism, seams across LOD levels, memory, and cost.
+(c) Luna calibration: the visual judge failed known-good eroded controls as "repeated pattern". Is the visual-advisory design adequate? What else would you use (non-LLM perceptual metrics such as spectral slope, hypsometric integral, drainage/flow-accumulation statistics, Geomorphon class distributions, SSIM-type tile-repetition detectors; human-labelled pairs)?
+(d) The three biggest risks left before the owner sees mountains in the headset.

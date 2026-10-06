@@ -1,0 +1,18 @@
+You are an independent, sceptical reviewer. You are READ-ONLY: do not modify, create or delete any file, run no tests, no builds, no browsers, no network. You may read files and run read-only commands (ls, cat, rg, git log/show/diff). A separate workflow is editing other worktrees concurrently; ignore C:/LLM/IWSDK/universe-atlas-wt entirely.
+
+OUTPUT FORMAT (mandatory). For EACH item give:
+- Finding
+- Evidence (file paths, line refs, concrete numbers you counted)
+- Severity: high / medium / low
+- Recommended action (concrete, smallest useful step)
+- Could NOT verify (what you did not or could not check)
+End with a section "VERDICT:" containing one line per question, each starting with "VERDICT (x):" and a one-sentence judgement. Be blunt; disagree with the documents where warranted. Do not pad.
+
+REVIEW 3 — plausibility and honesty of the Civilization Lab after M4.
+Read: README.md, docs/spec.md, docs/m4-implementation.md, docs/m4-plausibility.md, docs/transition-table-v1.md (sections for tech, colony and launch), src/tech.mjs, and whatever else you need (src/fixed.mjs, src/rng.mjs, src/hazard.mjs, src/polities.mjs, docs/research-2026-10-04.md, docs/research/, docs/evidence/, package.json engines).
+
+Questions:
+(1) Which remaining defects make histories implausible — specifically: far-future static economy, repeated launches to failed targets, collapse cycling — and any others you find. Quantify from the plausibility report or code where possible.
+(2) Are any "authored scenario values" presented as research (i.e. numbers that look evidence-based but are invented)? List each with location and how it is labelled.
+(3) Determinism risks: cross-engine (V8 vs SpiderMonkey/JSC), Node 22 vs 24, use of Math.* transcendental functions (Math.exp/log/pow/sin are NOT guaranteed bit-identical across engines), float accumulation order, object key ordering, Array.sort stability, locale/Intl, Date. Cite every risky call site you find.
+(4) What is the MINIMUM M5 that makes the stone-age-to-space arc credible before any integration with Universe Atlas?
