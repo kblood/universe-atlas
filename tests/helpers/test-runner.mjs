@@ -4,24 +4,25 @@ import {cpus} from 'node:os';
 import {execFileSync} from 'node:child_process';
 import {withTestSlot, runCommand} from './test-slot.mjs';
 import {registeredTests, changedFiles, baseRef, importGraph, selectTests} from './test-selection.mjs';
+import {classify, validateKnown} from './known-failures.mjs';
+export {classify, validateKnown};
 
 export async function runTests(files, {slot = files.length > 40, args = [], env = process.env} = {}) {
   if (!files.length) { console.log('No tests selected.'); return 0; }
   const work = () => runCommand(process.execPath, ['--test', ...args, ...files], {env});
   return slot ? withTestSlot({owner: `tests: ${files.length} files`}, work) : work();
 }
-export function classify(failures, known) {
-  const matches = (a, b) => a.title === b.title && a.file === b.file;
-  return {matched: failures.filter(f => known.some(k => matches(f, k))), fresh: failures.filter(f => !known.some(k => matches(f, k))), stale: known.filter(k => !failures.some(f => matches(f, k)))};
-}
 async function full() {
+  // Fail closed before the ~28 min suite: an allowlist that could wave a CONTRACT failure through is rejected.
+  const knownDoc = JSON.parse(readFileSync('tests/known-failures.json')), invalid = validateKnown(knownDoc);
+  if (invalid.length) { console.error(`Rejected: tests/known-failures.json is invalid (nothing was run):\n  ${invalid.join('\n  ')}`); return 1; }
   mkdirSync('test-results', {recursive: true});
   const dir = mkdtempSync(resolve('test-results', 'atlas-test-report-')), report = join(dir, 'report.json');
   try {
     const raw = await runTests(registeredTests(), {slot: true, args: ['--test-reporter=spec', '--test-reporter-destination=stdout', '--test-reporter=./tests/helpers/failure-reporter.mjs', `--test-reporter-destination=${join(dir, 'reporter.txt')}`], env: {...process.env, ATLAS_TEST_REPORT: report, ATLAS_TEST_FULL: '1'}});
     console.log(`raw node exit code: ${raw}`);
     if (!existsSync(report)) { console.error('NEW failure: reporter did not finish'); return raw || 1; }
-    const result = JSON.parse(readFileSync(report)), known = JSON.parse(readFileSync('tests/known-failures.json')).failures;
+    const result = JSON.parse(readFileSync(report)), known = knownDoc.failures;
     const {matched, fresh, stale} = classify(result.failures, known);
     for (const [label, rows] of [['KNOWN failures matched', matched], ['NEW failures', fresh], ['Known entries that did NOT fail (stale)', stale]]) console.log(`${label}: ${rows.length}\n${rows.map(r => `  ${r.file}: ${r.title}`).join('\n')}`);
     const accounted = result.summary && result.summary.counts.cancelled === 0 && result.summary.counts.failed === result.failures.length;

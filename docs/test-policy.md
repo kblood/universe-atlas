@@ -201,6 +201,22 @@ passed. The merger reviews each new failure, fixes causes, removes stale entries
 and rewrites `tests/known-failures.json` with title, file, reason, owner and
 classification. Implementers do not bless new failures to make a run green.
 
+Allowlist rules (2026-10-07, `tests/helpers/known-failures.mjs`, enforced by `npm run
+test:full` before anything runs; an invalid file rejects the run without taking the
+slot):
+
+- every `failures` entry has `title`, `file`, `reason`, `owner` and `class`, where
+  `class` is `HARD` or `CONTRACT` (VISUAL-ADVISORY never fails a test; timing lives
+  in `tests/perf` and is never allowlisted, so `file` must be a non-perf
+  `tests/**/*.test.mjs`); `classification` stays as free text;
+- a test whose title declares its class (`HARD: ...`, `CONTRACT: ...`) must be
+  listed under that class;
+- a `CONTRACT` entry must carry `decision`: a `docs/*.md` path (optional `#anchor`)
+  of the owner decision that accepts the failure, and that file must name the test
+  title verbatim. Without it the allowlist is invalid;
+- a `CONTRACT`-titled failure is matched only by a `CONTRACT` entry with a decision,
+  even if validation were bypassed; duplicates are invalid.
+
 ## Browser/GPU queue
 
 Use `tests/helpers/gpu-lock.mjs`: one browser machine-wide, shared by all
