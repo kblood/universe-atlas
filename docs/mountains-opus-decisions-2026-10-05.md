@@ -536,3 +536,68 @@ finding, not a re-pin.
 = new = main as it is at T6 (stricter reading kept), so there is no old/new baseline entry. T6 wiring is blocked
 pending Kasper. `test:full` was not run (its one remaining use stays reserved for T6's final gate). The planet-canopy
 2 ms wall-time flake fix stays T6 gate work.
+
+## Addendum 2026-10-06 (5): cost route A (baked coarse field) meets contract §6 and the orbit bake, misses C1; not merged
+
+**Decided by Opus 5.5 on Kasper's instruction 2026-10-06; he may overrule.** The evidence is
+`docs/mountains-t6-baked-coarse-2026-10-06.md` and `test-results/mountains/t6-baked/`. The work is on branch
+`mountains/baked-coarse`, which is committed but not merged. The versions on the branch are `orogen-layout-3` and
+`massif-envelope-3`.
+
+**What route A did.** It addresses the cost that blocked T6 in addendum (4).
+
+- Coarse levels no longer run the M1 foot-point solve.
+- A per-body field gives an upper bound of the uncarved composition. The field is deterministic, sparse, and baked
+  once at half the T1 resolution, with a measured margin of 0.16 H.
+- There were 0 bound violations on 4 × 56,724 samples, and 0 ocean differences.
+- Outside massifs the coarse floor equals the exact floor. The p99 overestimate near belts is about 750 m.
+- Fine levels and the truth keep the exact M1/M2/M3 path.
+
+Official results against main `9971c3f` (CPU-quiet slot):
+
+| Budget | Result | Before route A |
+|---|---|---|
+| Contract §6, per level ≤ +10% | **MET**, max +8.9% (Selawyn L4) | +17..+33% |
+| Orbit bake median ≤ +5% | **MET**, +4.3 / +2.8 / +0.3 / +2.3% | +21..+31% |
+| C1 weighted resident ≤ +8% | **NOT MET**, 8.40 / 9.38 / 10.43 / 8.76% | main-wired control: 7.17 / 2.53 / 3.95 / 5.34% |
+| Field build ≤ 50 ms cold | **NOT MET** on Selawyn (57.8 ms) and Lethuris (61.5 ms) | n/a |
+
+**Decision 1: not merged; T6 stays blocked.** The outcome rule says merge only when the budgets are met. C1 misses
+on every world by +0.4..+2.4 points. I do not waive C1:
+
+- the miss is small, but it is consistent across four worlds;
+- the truth path is what collision, physics and place queries run;
+- waiving it would loosen a budget by judgement.
+
+The field-build miss (+16% and +23% over target) is a route-A target from this round's brief. It is also not waived.
+`TERRAIN_MOUNTAINS_WIRED` stays false on main. Nothing from the branch's source goes to main. This addendum and the
+evidence doc are the only things that land.
+
+**Decision 2: the branch stays as the base for the next attempt.** It is not discarded, because:
+
+- it removes the original block (contract §6 and the orbit bake, 2-3x over budget before);
+- its coordinator edits are value-preserving and documented;
+- the cause of the remaining C1 gap is narrowed to V8 code quality in the truth core. With the inline T1 voxel
+  prefilter, the branch does less work per outside sample than main-wired, but that path still costs +1..+6 points
+  more.
+
+Its worktree and branch are kept. The scratch bench copies are removed.
+
+**Decision 3: route B is not started.** A worker isolate for coarse tiles answers the coarse cost, which route A has
+already met. It does not touch the truth-path C1 or the field build.
+
+**Question for Kasper (one line):** "Route A brings the coarse tile and orbit costs within budget, but the truth
+sampler's C1 overhead is 8.4-10.4% against an 8% budget (exact mountains on main without route A: 2.5-7.2%), and
+the field build is 58/62 ms on two worlds against 50 ms. Accept these two misses and merge route A, or keep the
+mountains unwired while the remaining V8 effect and a lazy per-block build are tried?"
+
+**Ledger.**
+
+- No threshold, pin, tolerance, budget or golden changes on main.
+- On the branch only:
+  - `OROGEN_LAYOUT_VERSION` orogen-layout-2 → orogen-layout-3;
+  - `MASSIF_ENVELOPE_VERSION` massif-envelope-2 → massif-envelope-3;
+  - `COST_IDENTITY[0]`, `COST_SAMPLER_IDENTITY[0]` and `COST_IDENTITY[1]` re-pinned on four worlds. Old and new
+    values are in the evidence doc §4 and in `digest-ledger.json`. `[1]` moves in `parents`/`parentHeight` only.
+- Contract §3 is amended on the branch only.
+- `test:full` was not run; its one use stays reserved for the T6 gate.
