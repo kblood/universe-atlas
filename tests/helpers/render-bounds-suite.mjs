@@ -16,6 +16,10 @@ import {galaxies,refByAddress,system} from '../../src/catalog.ts';
 import {buildTile,readTileMetadata,directionTile,tileDirection,tileKey} from '../../src/planet-tiles.ts';
 import {peakCorrectionMaxLevel} from '../../src/lod-ladder.ts';
 import {terrainSampler} from '../../src/terrain.ts';
+// T6 decisions 2 and 3: global site selection and the landing candidate heights read the level-0 field (main.ts
+// exploreTerrain lands on level-0 candidates, landing-site decision 2); tile builds, containment, false-cull poses and
+// the seabed placement keep the truth / each tile's own level.
+import {statisticSampler} from './statistic-level.mjs';
 import {oceanHypsometry,fibonacciDirection,levelForLoss} from '../../src/ocean-volume.ts';
 import {oceanPatchCullProof} from '../../src/ocean-patch-culling.ts';
 import {placeAt} from '../../src/place-query.ts';
@@ -56,7 +60,7 @@ export function renderBoundsSuite({tiles,ratioTiles,poses,poolLevels,poolRepeats
     if(p.ocean)for(const arr of [d.oceanPositions,d.oceanParents])for(let i=0;i<arr.length;i+=3)yield [arr[i]+a[0],arr[i+1]+a[1],arr[i+2]+a[2],1];
   }
   function sitesFor(body){
-    const ts=terrainSampler(body),dirs=Array.from({length:4096},(_,i)=>fibonacciDirection(i,4096)),h=dirs.map(d=>ts(d).groundHeightM);
+    const ts=terrainSampler(body),pick=statisticSampler(body),dirs=Array.from({length:4096},(_,i)=>fibonacciDirection(i,4096)),h=dirs.map(d=>pick(d).groundHeightM);
     let summit=0,deep=0,coast=0,land=0;
     for(let i=0;i<dirs.length;i++){if(h[i]>h[summit])summit=i;if(h[i]<h[deep])deep=i;if(Math.abs(h[i])<Math.abs(h[coast]))coast=i;if(h[i]>2000&&h[i]<6000&&!land)land=i;}
     return {ts,summit:dirs[summit],deep:dirs[deep],coast:dirs[coast],land:dirs[land||summit],random:randDir()};
@@ -211,7 +215,7 @@ export function renderBoundsSuite({tiles,ratioTiles,poses,poolLevels,poolRepeats
   test('landing finds a site on all four worlds and never above the landing ceiling',()=>{
     const out={};
     for(const {name,body} of WORLDS){
-      const ts=terrainSampler(body),sea=0,ceiling=RB.landingCeilingM(body),ref=RB.landingReferenceM(body,sea),p99=RB.landPercentileM(body,.99,sea);
+      const ts=statisticSampler(body),sea=0,ceiling=RB.landingCeilingM(body),ref=RB.landingReferenceM(body,sea),p99=RB.landPercentileM(body,.99,sea);
       assert.ok(ceiling<RB.renderHeightBoundM(body).maxM&&ref>0);
       const picks=[];
       for(let e=0;e<8;e++){
@@ -236,7 +240,7 @@ export function renderBoundsSuite({tiles,ratioTiles,poses,poolLevels,poolRepeats
   test(`landing at the datum sea never picks a summit (${landingEyes} eyes, all four worlds)`,()=>{
     const out=report.landingDatumSea={};
     for(const {name,body} of WORLDS){
-      const ts=terrainSampler(body),sea=0,ceiling=RB.landingCeilingM(body),ref=RB.landingReferenceM(body,sea),p99=RB.landPercentileM(body,LANDING_SUMMIT_PERCENTILE,sea);
+      const ts=statisticSampler(body),sea=0,ceiling=RB.landingCeilingM(body),ref=RB.landingReferenceM(body,sea),p99=RB.landPercentileM(body,LANDING_SUMMIT_PERCENTILE,sea);
       const heights=Array.from({length:384},(_,i)=>ts(landingCandidate(i,384)).groundHeightM);
       let summits=0,found=0;
       for(let e=0;e<landingEyes;e++){
@@ -262,7 +266,7 @@ export function renderBoundsSuite({tiles,ratioTiles,poses,poolLevels,poolRepeats
   test(`landing at a dated (lowered) sea never picks a summit (${lowEyes} eyes, Maithea and Lethuris)`,()=>{
     const out={};
     for(const {name,body} of WORLDS.filter(w=>w.name==='Maithea'||w.name==='Lethuris')){
-      const ts=terrainSampler(body),sea=Math.round(levelForLoss(body,.6)/25)*25,ceiling=RB.landingCeilingM(body),ref=RB.landingReferenceM(body,sea),p99=RB.landPercentileM(body,.99,sea);
+      const ts=statisticSampler(body),sea=Math.round(levelForLoss(body,.6)/25)*25,ceiling=RB.landingCeilingM(body),ref=RB.landingReferenceM(body,sea),p99=RB.landPercentileM(body,.99,sea);
       assert.ok(sea<-1000,`${name}: the dated sea is lowered (${sea} m)`);
       let summits=0;const heights=[];
       for(let e=0;e<lowEyes;e++){const site=landingPick(d=>ts(d).groundHeightM,fibonacciDirection(e,lowEyes),sea,ceiling,ref);assert.ok(site!==null);heights.push(site);if(site>=p99||site-sea>ceiling)summits++;}
@@ -279,7 +283,7 @@ export function renderBoundsSuite({tiles,ratioTiles,poses,poolLevels,poolRepeats
   test(`landing on low relief (field and dated sea x0.3) never picks a summit (${lowEyes} eyes)`,()=>{
     const out=report.landingLowRelief={};
     for(const {name,body} of WORLDS.filter(w=>w.name==='Maithea'||w.name==='Lethuris')){
-      const ts=terrainSampler(body),scale=.3,sea=Math.round(levelForLoss(body,.6)/25)*25*scale,ceiling=RB.landingCeilingM(body);
+      const ts=statisticSampler(body),scale=.3,sea=Math.round(levelForLoss(body,.6)/25)*25*scale,ceiling=RB.landingCeilingM(body);
       const land=Array.from({length:4096},(_,i)=>ts(fibonacciDirection(i,4096)).groundHeightM*scale).filter(h=>h>=sea).sort((a,b)=>a-b);
       const p99=land[Math.floor(.99*(land.length-1))],ref=Math.max(1,land[Math.floor(.9*(land.length-1))]-sea);
       assert.ok(land.at(-1)-sea<ceiling,`${name}: low relief lies wholly below the ceiling`);

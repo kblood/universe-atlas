@@ -17,6 +17,10 @@ import assert from 'node:assert/strict';
 import {galaxies,sector,system} from '../src/catalog.ts';
 import {baseTerrainSampler,terrainFloorSampler,terrainSampler,terrainWindowMaxM,terrainUnitWindowMaxM,tectonicReliefOf,TERRAIN_DETAIL_WINDOW_M,TERRAIN_LANDFORM_WINDOW_M} from '../src/terrain.ts';
 import {fib,goldenTerrainBodies,waterWorlds} from './terrain-climate-fixtures.mjs';
+// T6 decision 3: the 20k-direction window/continent statistics read the level-0 field (no carving, no rock);
+// the floor sampler there is terrainSampler(..., exposeFloor = true, {lodLevel: 0}), what terrainFloorSampler wraps.
+import {statisticSampler,fullOnly} from './helpers/statistic-level.mjs';
+const floorAt0=body=>statisticSampler(body,{exposeFloor:true});
 
 const N=20000;
 function goldenAll(){
@@ -44,12 +48,10 @@ test('window bound constant: 772 m detail + 1908 m landforms x min(1, R/2e6); 26
   assert.equal(terrainWindowMaxM({kind:'star',type:'G',radiusM:7e8}),0);
 });
 
-test('invariant 0 <= h - floorM <= terrainWindowMaxM(body) over 6 bodies x 20000 directions (0 violations)',()=>{
-  const bodies=windowBodies();
-  assert.equal(bodies.length,6);
+function windowScan(bodies,make){
   const report=[];let violations=0;
   for(const body of bodies){
-    const s=terrainFloorSampler(body),bound=terrainWindowMaxM(body);
+    const s=make(body),bound=terrainWindowMaxM(body);
     let max=0,min=Infinity,bad=0;
     for(let i=0;i<N;i++){
       const x=s(fib(i,N));
@@ -62,6 +64,13 @@ test('invariant 0 <= h - floorM <= terrainWindowMaxM(body) over 6 bodies x 20000
     violations+=bad;
     report.push({id:body.id,type:body.type,radiusM:Math.round(body.radiusM),bound,min,max:Math.round(max)});
   }
+  return {report,violations};
+}
+
+test('invariant 0 <= h - floorM <= terrainWindowMaxM(body) over 6 bodies x 20000 directions (0 violations)',()=>{
+  const bodies=windowBodies();
+  assert.equal(bodies.length,6);
+  const {report,violations}=windowScan(bodies,floorAt0);
   assert.equal(violations,0,JSON.stringify(report));
   // terrain-1.8.0-relief (P4-RELIEF r2): the window is tau-scaled,
   // terrainWindowMaxM(body) = tau x terrainUnitWindowMaxM(body), tau =
@@ -86,9 +95,16 @@ test('invariant 0 <= h - floorM <= terrainWindowMaxM(body) over 6 bodies x 20000
   assert.ok(report.slice(0,5).every(r=>r.max>(1500/2680)*r.bound&&r.max<=r.bound),JSON.stringify(report));
 });
 
+// T6 decision 3: the same invariant on the full-detail TRUTH (M3 carving and M5 rock inside the massifs), where the
+// carving lowers the ground; it solves M3 blocks at every massif direction (minutes), so it runs in test:full only.
+test('invariant on the truth: 0 <= h - floorM <= terrainWindowMaxM(body) over the 6 bodies x 20000 directions (test:full)',fullOnly('truth window scan solves M3 blocks'),()=>{
+  const {report,violations}=windowScan(windowBodies(),body=>terrainFloorSampler(body));
+  assert.equal(violations,0,JSON.stringify(report));
+});
+
 test('continentalM >= 0 exactly where the sea-level-0 sampler reports land, on the four water worlds',()=>{
   for(const body of waterWorlds()){
-    const s=terrainFloorSampler(body);let mismatch=0,land=0;
+    const s=floorAt0(body);let mismatch=0,land=0;
     for(let i=0;i<N;i++){
       const x=s(fib(i,N));
       if((x.continentalM>=0)!==!x.ocean)mismatch++;
@@ -103,7 +119,7 @@ test('floorM is the clamped base field: water-world seabed and gas giants equal 
   const bodies=[...waterWorlds(),...goldenTerrainBodies().slice(0,5)];
   const gas=goldenAll().find(b=>b.type==='Gas giant');
   for(const body of bodies){
-    const s=terrainFloorSampler(body),n=4096;
+    const s=floorAt0(body),n=4096;
     for(let i=0;i<n;i++){
       const x=s(fib(i,n));
       assert.ok(x.floorM<=x.groundHeightM);

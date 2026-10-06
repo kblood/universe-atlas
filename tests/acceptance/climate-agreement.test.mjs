@@ -20,6 +20,8 @@ import { terrainSampler, planetSurface, waterWorldLandColour } from '../../src/t
 import { biomeClassifier, BIOME_VERSION } from '../../src/surface-biomes.ts';
 import { climateForcingFor, createClimateSample, surfaceClimate, CLIMATE_VERSION } from '../../src/surface-climate.ts';
 import { fib, waterWorlds } from '../terrain-climate-fixtures.mjs';
+// T6 decision 3: the global agreement statistic reads the level-0 field; the orbit bake IS the level-0 field (T4).
+import { statisticSampler } from '../helpers/statistic-level.mjs';
 
 const N = 20000;
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
@@ -46,7 +48,7 @@ test('orbit/tile colour and ground classifier agree on 20k land directions x 4 w
   assert.equal(worlds.length, 4);
   for (const body of worlds) {
     assert.ok(body.water > 0 && body.type !== 'Ice world', `${body.name} is a liquid-water world`);
-    const sample = terrainSampler(body), classify = biomeClassifier(body);
+    const sample = statisticSampler(body), classify = biomeClassifier(body);
     const climate = surfaceClimate(climateForcingFor(body)), o = createClimateSample(), grain = grainOf(body);
     let land = 0, snowLabel = 0, forest = 0, partialSnow = 0;
     // The WHOLE sphere (uniform Fibonacci set), never a prefix: a prefix of the
@@ -85,7 +87,9 @@ test('orbit/tile colour and ground classifier agree on 20k land directions x 4 w
 test('the orbit bake stores terrainSampler colour per pixel (orbit view = sampler = classifier)', () => {
   for (const body of waterWorlds()) {
     const W = 256, H = W / 2, surface = planetSurface(body, W, 16);
-    const sample = terrainSampler(body, undefined, undefined, false), classify = biomeClassifier(body);
+    // The bake samples level 0 (mountains cost plan T4, sparse-global caller), so the per-pixel identity is with the
+    // level-0 sampler (before T6 the two were the same field).
+    const sample = statisticSampler(body), classify = biomeClassifier(body);
     const climate = surfaceClimate(climateForcingFor(body)), o = createClimateSample();
     let land = 0, white = 0;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {

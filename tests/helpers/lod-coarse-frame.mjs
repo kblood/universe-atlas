@@ -51,6 +51,13 @@ export function frameViolations(pair, roomM, epsUpM) {
   }
   return {below, above};
 }
+/** (U1) Carving frame (decisions addendum 6, Q-B): shared points whose CHILD POINT SAMPLE (the child level's sampler at
+ * the shared direction) lies more than epsUpM above the parent's STORED height. Non-finite counts as a violation. */
+export function carvingFrameViolations(pair, epsUpM) {
+  let above = 0;
+  for (let i = 0; i < pair.parent.length; i++) if (!(pair.childPoint[i] - pair.parent[i] <= epsUpM)) above++;
+  return above;
+}
 /** EDGE: matched edge vertices whose stored surface or morph-start heights differ (not Object.is), and rendered vertex
  * gaps (morph t = 0 and t = 1) above the Float32 rounding bound of the two anchor-relative buffers. */
 export function edgeViolations(e) {
@@ -184,6 +191,8 @@ export function measureWorld(name) {
   // (1) FRAME: parent L -> child L + 1 at the shared (co-located) lattice vertices, L = 0 .. corrMax.
   const frame = [], siblings = [];
   for (let L = 0; L <= corrMax; L++) {
+    // (U1) The child level's own sampler: its point samples at the shared directions (no peak correction).
+    const childSampler = mountainSampler(body, L + 1);
     const pairs = [], seen = new Set();
     for (const s of sites) {
       const P = tiles.directionTile(s.d, L);if (seen.has(tiles.tileKey(P))) continue;seen.add(tiles.tileKey(P));
@@ -192,12 +201,13 @@ export function measureWorld(name) {
         // Uncarved child levels: every child of the parent that touches a massif; carved: the site's own child.
         const isSite = C.x === site.x && C.y === site.y;
         if (L + 1 >= cut ? !isSite : massifCount(C) === 0 && !isSite) continue;
-        select(C);const c = build(C), ox = (C.x & 1) * n / 2, oy = (C.y & 1) * n / 2, parent = [], child = [], dirs = [];
+        select(C);const c = build(C), ox = (C.x & 1) * n / 2, oy = (C.y & 1) * n / 2, parent = [], child = [], childPoint = [], dirs = [];
         for (let y = 0; y <= n; y += 2) for (let x = 0; x <= n; x += 2) {
           parent.push(p.surfaceHeight[(oy + y / 2) * stride + ox + x / 2]);child.push(c.surfaceHeight[y * stride + x]);
-          if (L + 1 === cut) dirs.push(tiles.tileDirection(C, x / n, y / n));
+          const d = tiles.tileDirection(C, x / n, y / n);childPoint.push(childSampler(d).groundHeightM);
+          if (L + 1 === cut) dirs.push(d);
         }
-        const pair = {P: tiles.tileKey(P), C: tiles.tileKey(C), parent, child};
+        const pair = {P: tiles.tileKey(P), C: tiles.tileKey(C), parent, child, childPoint};
         // Control input at the switch: the child's own carving depth at each shared point (uncarved - carved point sample).
         if (L + 1 === cut) {const up = mountainSampler(body, cut - 1), tr = mountainSampler(body);pair.carveDepth = dirs.map(d => up(d).groundHeightM - tr(d).groundHeightM);}
         pairs.push(pair);kids.push(C);

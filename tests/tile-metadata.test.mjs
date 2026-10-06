@@ -20,7 +20,9 @@ const windowMaxM=body=>typeof terrain.terrainWindowMaxM==='function'?terrain.ter
 function fixtures(){
   const out=[];
   for(const name of ['Maithea','Lethuris','Raiva','Selawyn']){
-    const body=bodies[name],ts=terrain.terrainSampler(body),picks=stratifiedEdgeDirections(ts,biomeClassifier(body),1),maxL=peakCorrectionMaxLevel(body.radiusM);
+    // T6 decision 3: the fixture SELECTION (4000 global directions, a statistic) reads the level-0 field; the checks
+    // below read each tile's own level. On the truth this selection cost ~37 s with the mountains wired.
+    const body=bodies[name],ts=terrain.terrainSampler(body,undefined,undefined,undefined,0,undefined,false,{lodLevel:0}),picks=stratifiedEdgeDirections(ts,biomeClassifier(body),1),maxL=peakCorrectionMaxLevel(body.radiusM);
     const dirs=[picks.coast[0],picks.range[0],picks.snowline[0]??picks.treeline[0]].filter(Boolean);
     for(const d of dirs)for(const L of [2,6,maxL,maxL+1,14,18])out.push({body,tile:directionTile(d,L),waterLevelM:0});
     out.push({body,tile:directionTile(picks.coast[0],8),waterLevelM:-120});
@@ -32,7 +34,9 @@ const FIXTURES=fixtures();
 /** Recomputes what the metadata must say from scratch: one terrain sample and one classifier call per
  * lattice vertex, with the stored (Float32) vertex normal as the slope input. */
 function recompute(body,tile,data,waterLevelM){
-  const ts=terrain.terrainSampler(body,undefined,undefined,undefined,waterLevelM),cls=biomeClassifier(body,waterLevelM);
+  // T6 (mountains wired, lod-ladder-3): a tile samples its own level's field (carving/rock per level), so the
+  // independent recomputation reads the same level's sampler; the truth differs below the rock level by design.
+  const ts=terrain.terrainSampler(body,undefined,undefined,undefined,waterLevelM,undefined,false,{lodLevel:tile.level}),cls=biomeClassifier(body,waterLevelM);
   let ocean=0,snow=0,forest=0,snowline=Infinity,treeline=-Infinity,floorMin=Infinity,floorMax=-Infinity,windowMax=-Infinity,floorSeen=false;
   const counts=new Map();
   for(let y=0;y<=n;y++)for(let x=0;x<=n;x++){
@@ -72,7 +76,7 @@ test('tile metadata: height bounds, summit, snowline/treeline, ocean/snow/forest
     assert.ok(m.maxH>=hi,`${where}: maxH bounds every stored vertex`);
     if(m.peakCorrected){corrected++;
       // Coarse tiles also see their cell centres: maxH is the summit of vertices and centres together.
-      const [u,v]=m.peakUV,c=terrain.terrainSampler(body,undefined,undefined,undefined,waterLevelM)(tileDirection(tile,u,v)).groundHeightM;
+      const [u,v]=m.peakUV,c=terrain.terrainSampler(body,undefined,undefined,undefined,waterLevelM,undefined,false,{lodLevel:tile.level})(tileDirection(tile,u,v)).groundHeightM;
       assert.ok(m.maxH===hi||m.maxH===Math.fround(c),`${where}: maxH is a vertex or a sampled cell centre`);
     }else assert.equal(m.maxH,hi,`${where}: point-sampled tile summit is its highest vertex`);
     const [pu,pv]=m.peakUV;assert.deepEqual(m.peakDir,tileDirection(tile,pu,pv));

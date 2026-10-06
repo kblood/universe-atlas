@@ -17,6 +17,10 @@ import {biomeClassifier} from '../src/surface-biomes.ts';
 import {temperateHabitat} from '../src/surface-climate.ts';
 import {planetGeophysics} from '../src/planet-geophysics.ts';
 import {fib,maithea,goldenTerrainBodies,waterWorlds} from './terrain-climate-fixtures.mjs';
+// T6 decision 3: the global relief statistics (hypsometry, coastline, corpus snow, window, height bound) read the
+// level-0 field (no M3 carving, no M5 rock: an upper envelope of the truth inside the massifs, identical outside).
+// The truth's Maithea hypsometry is reported in docs/mountains-t6-wiring-2026-10-06.md. Bands unchanged.
+import {statisticSampler} from './helpers/statistic-level.mjs';
 
 const SNOW='Alpine / polar snow';
 const quantile=(a,q)=>{const s=Float64Array.from(a).sort();return s[Math.floor(q*(s.length-1))];};
@@ -36,7 +40,7 @@ function spearman(a,b){
 }
 
 test('versions and the frozen R-CAL-1 calibration (any change is a TERRAIN_VERSION bump)',()=>{
-  assert.equal(TERRAIN_VERSION,'terrain-1.8.1-grain');
+  assert.equal(TERRAIN_VERSION,'terrain-1.9.0-mountains'); // was terrain-1.8.1-grain (T6: mountains wired)
   assert.equal(LANDFORM_SHAPE_VERSION,'planet-landforms-shape-2');
   assert.ok(Object.isFrozen(RELIEF_CALIBRATION));
   assert.equal(RELIEF_CALIBRATION.name,'R-CAL-1');
@@ -47,7 +51,7 @@ test('versions and the frozen R-CAL-1 calibration (any change is a TERRAIN_VERSI
 test('coastline invariance: the sea-level-0 ocean flag equals the unchanged base field, 6 identity bodies x 20000 directions',()=>{
   const N=20000;let flips=0,ocean=0;
   for(const body of identityBodies()){
-    const base=baseTerrainSampler(body),relief=terrainSampler(body);
+    const base=baseTerrainSampler(body),relief=statisticSampler(body);
     for(let i=0;i<N;i++){const d=fib(i,N),o=relief(d).ocean;flips+=o!==base(d).ocean;ocean+=o;}
   }
   assert.ok(ocean>10000,`ocean samples ${ocean}`);
@@ -55,7 +59,7 @@ test('coastline invariance: the sea-level-0 ocean flag equals the unchanged base
 });
 
 test('Maithea land hypsometry, snow, beaches and lowland (20000 directions, sea level 0)',()=>{
-  const body=maithea(),tau=tectonicReliefOf(body),ts=terrainSampler(body),cls=biomeClassifier(body),N=20000;
+  const body=maithea(),tau=tectonicReliefOf(body),ts=statisticSampler(body),cls=biomeClassifier(body),N=20000;
   assert.ok(tau>.7&&tau<.9,`derived tau ${tau}`);
   const land=[];let snow=0,sand=0,lowland=0,rangeHi=0,rangeHiSnow=0,low=0,lowSnow=0;
   for(let i=0;i<N;i++){
@@ -89,7 +93,7 @@ test('Maithea land hypsometry, snow, beaches and lowland (20000 directions, sea 
 test('seabed on the four water worlds: depth, trenches, shelf, detail at every depth, never reaching sea level',()=>{
   const N=16384;
   for(const body of waterWorlds()){
-    const L=reliefLayersSampler(body),bands=[[0,200],[200,2000],[2000,6000],[6000,Infinity]].map(([lo,hi])=>({lo,hi,v:[]}));
+    const L=reliefLayersSampler(body,{lodLevel:0}),bands=[[0,200],[200,2000],[2000,6000],[6000,Infinity]].map(([lo,hi])=>({lo,hi,v:[]}));
     const depths=[];let shelf=0,reachesSea=0;
     for(let i=0;i<N;i++){
       const x=L(fib(i,N));if(!x.ocean)continue;
@@ -115,7 +119,7 @@ test('dry worlds: the p1..p99 span follows tau (Spearman > 0.6); Earth-g low-vig
   for(const g of galaxies('LETHRA-GOLDEN-001').slice(0,3))for(const r of sector(g,[0,0,0]).refs.slice(0,60))
     for(const p of system(r).planets)if(p.type!=='Gas giant'&&!(p.water>0))dry.push(p);
   const rows=dry.slice(0,60).map(b=>{
-    const ts=terrainSampler(b),geo=planetGeophysics(b),h=[];
+    const ts=statisticSampler(b),geo=planetGeophysics(b),h=[];
     for(let i=0;i<2500;i++)h.push(ts(fib(i,2500)).groundHeightM);
     return {tau:geo.tectonicRelief,g:geo.surfaceGravityMS2,vigour:geo.tectonicVigour01,span:quantile(h,.99)-quantile(h,.01)};
   });
@@ -135,7 +139,7 @@ test('corpus of 132 habitable water planets: snow share median <= 20%, at most 2
   assert.equal(rows.length,132);
   const N=2500,out=[];
   for(const b of rows){
-    const ts=terrainSampler(b),c=biomeClassifier(b);let n=0,sn=0;
+    const ts=statisticSampler(b),c=biomeClassifier(b);let n=0,sn=0;
     for(let i=0;i<N;i++){const d=fib(i,N),s=ts(d);if(s.ocean)continue;n++;sn+=c(d,s.groundHeightM,1).name===SNOW;}
     if(n>50)out.push({T:b.temperatureK,snow:sn/n});
   }
@@ -150,7 +154,7 @@ test('corpus of 132 habitable water planets: snow share median <= 20%, at most 2
 test('window invariant 0 <= h - floorM <= terrainWindowMaxM(body) (tau-aware) on the identity bodies and the four water worlds',()=>{
   const N=20000,bodies=[...identityBodies(),...waterWorlds().slice(1)];
   for(const body of bodies){
-    const s=terrainFloorSampler(body),bound=terrainWindowMaxM(body);
+    const s=statisticSampler(body,{exposeFloor:true}),bound=terrainWindowMaxM(body);
     assert.ok(Math.abs(bound-tectonicReliefOf(body)*terrainUnitWindowMaxM(body))<1e-9);
     let bad=0,max=0;
     for(let i=0;i<N;i++){const x=s(fib(i,N)),w=x.groundHeightM-x.floorM;if(x.windowM!==w||!(w>=0&&w<=bound))bad++;if(w>max)max=w;}
@@ -166,7 +170,7 @@ test('bodyHeightBoundM contains every sample: 60 catalogue bodies x 20000 direct
   assert.equal(bodies.length,60);
   const N=20000;let outside=0;
   for(const body of bodies){
-    const ts=terrainSampler(body),{minM,maxM}=bodyHeightBoundM(body),range=reliefTextureRange(body);
+    const ts=statisticSampler(body),{minM,maxM}=bodyHeightBoundM(body),range=reliefTextureRange(body);
     assert.ok(minM<=maxM);
     if(maxM>minM)assert.deepEqual(range,{minM,maxM});
     for(let i=0;i<N;i++){const h=ts(fib(i,N)).groundHeightM;if(!(h>=minM&&h<=maxM))outside++;}

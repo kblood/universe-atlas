@@ -5,11 +5,15 @@
 // band grid and the belt query; tests/helpers/lod-coarse-frame.mjs). Each world is measured in its own worker thread.
 //
 // (1) FRAME at the shared (co-located) lattice vertices of every parent/child pair L -> L+1, L = 0 .. the last
-//     peak-corrected level: parent - ROOM <= child <= parent + EPS_UP. ROOM is measured per world and pair (FRAME_ROOM_M
-//     below: measured max + 25%, rounded up to 50 m). EPS_UP is the existing 0.05 m morph rule. The upper side is NOT MET
-//     at peak-corrected child levels (a todo with the measured numbers: each level's peak correction reads its own finer
-//     cell centres, so a child can rise above its parent); it holds exactly where the child stores point samples, and the
-//     section 5 height tolerance holds everywhere.
+//     peak-corrected level: child >= parent - ROOM (ROOM measured per world and pair, FRAME_ROOM_M below: measured max
+//     + 25%, rounded up to 50 m). Upper side (decisions addendum 6, Q-B, implemented at T6): "carving frame exact; peak
+//     correction excepted, bounded by UP_ROOM".
+//     (U1) every pair: the child's POINT sample (its level's sampler at the shared direction) <= parent stored + EPS_UP;
+//     (U2) peak-corrected child levels: child stored - parent stored <= UP_ROOM (UP_ROOM_M below, measured once on the
+//          T6 wired tree, same method as ROOM); the strict EPS_UP rule on STORED heights is NOT claimed there (each
+//          level's peak correction reads its own finer cell centres, so a stored child can rise above its parent);
+//     point-sampled child levels: child stored <= parent + EPS_UP (unchanged); section 5 tolerance everywhere (unchanged).
+//     EPS_UP is the existing 0.05 m morph rule.
 // (2) EDGE MATCH: same-level neighbours sharing an edge (siblings, a non-sibling pair across a parent boundary, the 12
 //     cube edges at L0, and cube-face edges on a massif at L(cut-1) and L(cut)): stored and morph-start edge heights
 //     Object.is-identical from both builds (so no morph state opens a gap), and the rendered edge vertices (Float32,
@@ -17,13 +21,14 @@
 // (3) COARSE-ONLY continuity: a net over all six faces sampled with the coarse system only (the L(cut-1) sampler,
 //     0 M3 block solves by counter): no jump between neighbouring samples above SLOPE_BOUND x their distance, also after
 //     refining every belt edge, massif edge, belt switch and height-flagged interval to REFINE sub-intervals.
-// Negative controls (must fail): a child carved with 2x depth (frame), one edge vertex offset by 1 m (edge match), a
-// 10 m step on every belt (continuity).
+// Negative controls (must fail): a child carved with 2x depth (frame), one parent vertex 1 m below the child's point
+// sample (U1), one corrected child vertex raised to parent + UP_ROOM + 1 m (U2), one edge vertex offset by 1 m (edge
+// match), a 10 m step on every belt (continuity).
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {Worker} from 'node:worker_threads';
 import {LOD_TOLERANCES, carvingFromLevel, peakCorrectionMaxLevel} from '../src/lod-ladder.ts';
-import {frameViolations, edgeViolations, stats, CONTROL, SLOPE_BOUND, REFINE, NET, FRAME_SITES} from './helpers/lod-coarse-frame.mjs';
+import {frameViolations, carvingFrameViolations, edgeViolations, stats, CONTROL, SLOPE_BOUND, REFINE, NET, FRAME_SITES} from './helpers/lod-coarse-frame.mjs';
 import {waterWorlds} from './terrain-climate-fixtures.mjs';
 
 const WORLDS = ['Maithea', 'Selawyn', 'Raiva', 'Lethuris'];
@@ -36,6 +41,16 @@ const FRAME_ROOM_M = {
   Selawyn: [3600, 3400, 3450, 1650, 850, 500, 2000, 900, 400, 250, 250],
   Raiva: [2350, 2100, 2650, 1750, 800, 300, 300, 100, 100],
   Lethuris: [4800, 4950, 4550, 2200, 1350, 950, 2350, 700, 950, 300, 250],
+};
+
+/** (U2) UP_ROOM per world and corrected pair L -> L+1, L = 0 .. corrMax - 1 (decisions addendum 6, Q-B): measured max of
+ * (child stored - parent stored) on the T6 wired tree + 25%, rounded up to 50 m. Measured values (p50 / p99 / max):
+ * section 3.1 of docs/lod-ladder-contract-v1.md; raw: test-results/mountains/t6-wiring/frame-wired.json. */
+const UP_ROOM_M = {
+  Maithea: [4050, 4900, 3650, 2200, 1150, 150, 550, 600, 300],
+  Selawyn: [2850, 3450, 2850, 1500, 850, 400, 100, 500, 350, 150],
+  Raiva: [2300, 2350, 2100, 1850, 200, 350, 150, 100],
+  Lethuris: [4900, 4350, 4450, 1300, 1050, 1050, 150, 1150, 400, 250],
 };
 
 let measured;
@@ -86,13 +101,37 @@ test('HARD: FRAME upper side at peak-corrected child levels: child - parent with
   }
 });
 
-test('FRAME upper side at peak-corrected child levels: child <= parent + 0.05 m (NOT MET, OPEN finding: section 3.1)', {todo: 'measured child - parent up to ~3.9 km at S0/S1 pairs; the peak correction of each level reads its own cell centres'}, async () => {
-  const bad = [];
-  for (const r of await measure()) for (const f of r.frame) if (f.childCorrected) {
-    const v = f.pairs.reduce((k, p) => k + frameViolations(p, Infinity, EPS_UP_M).above, 0);
-    if (v) bad.push(`${r.world} L${f.L}->${f.L + 1}: ${v} of ${f.pairs.length * 289}`);
+test('HARD: (U1) carving frame exact: child point sample <= parent stored + 0.05 m at every shared point, every pair L0 -> L(corrMax+1)', async t => {
+  let pairs = 0;
+  for (const r of await measure()) for (const f of r.frame) {
+    const s = stats(f.pairs.flatMap(p => p.childPoint.map((v, i) => v - p.parent[i])));
+    t.diagnostic(`${r.world} L${f.L}->${f.L + 1}${f.switch ? ' (switch)' : ''}: child point - parent stored ${fmt(s)}`);
+    for (const p of f.pairs) {pairs++;assert.equal(p.childPoint.length, 289);assert.equal(carvingFrameViolations(p, EPS_UP_M), 0, `${r.world} ${p.P} -> ${p.C}`);}
   }
-  assert.deepEqual(bad, []);
+  assert.ok(pairs >= 4 * 9, 'pairs at every level of every world');
+});
+
+test('HARD: (U1) negative control: one parent vertex 1 m below the child point sample fails, on every world and level', async () => {
+  for (const r of await measure()) for (const f of r.frame) {
+    const p = f.pairs[0], i = 144, mutant = {...p, parent: p.parent.map((v, k) => k === i ? p.childPoint[i] - CONTROL.edgeOffsetM : v)};
+    assert.equal(carvingFrameViolations(mutant, EPS_UP_M), 1, `${r.world} L${f.L}: the lowered parent vertex is caught`);
+  }
+});
+
+test('HARD: (U2) peak-correction excess: child stored - parent stored <= UP_ROOM at every corrected pair (UP_ROOM measured on the T6 wired tree)', async t => {
+  for (const r of await measure()) {
+    const corrected = r.frame.filter(f => f.childCorrected);
+    assert.equal(UP_ROOM_M[r.world].length, corrected.length, `${r.world}: an UP_ROOM pin for every corrected pair L0 -> L${r.corrMax}`);
+    for (const [k, f] of corrected.entries()) {
+      const room = UP_ROOM_M[r.world][k], s = stats(f.pairs.flatMap(p => p.child.map((v, i) => v - p.parent[i])));
+      t.diagnostic(`${r.world} L${f.L}->${f.L + 1}: child - parent stored ${fmt(s)}; UP_ROOM ${room} m`);
+      assert.equal(f.L, k);assert.ok(room > 0);
+      for (const p of f.pairs) assert.equal(frameViolations(p, Infinity, room).above, 0, `${r.world} ${p.P} -> ${p.C}: child above parent + ${room} m`);
+      // Negative control: one child vertex raised to parent + UP_ROOM + 1 m is caught.
+      const p = f.pairs[0], mutant = {...p, child: p.child.map((v, i) => i === 144 ? p.parent[i] + room + CONTROL.edgeOffsetM : v)};
+      assert.ok(frameViolations(mutant, Infinity, room).above >= 1, `${r.world} L${f.L}: raised child vertex caught`);
+    }
+  }
 });
 
 // Point-level model of a 2x carve: there is no source hook for a doubled carving depth, so the child's stored height is

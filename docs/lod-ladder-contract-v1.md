@@ -1,7 +1,9 @@
-# LOD ladder and consistency contract, v1 (`lod-ladder-2`)
+# LOD ladder and consistency contract, v1 (`lod-ladder-3`)
 
 Status: P3-LOD-CONTRACT, relief round 2026-10-03 (`lod-ladder-1`); amended 2026-10-05 by mountains cost plan T3
-(`lod-ladder-2`: the M3 carving reduction in section 3; nothing else changed). Code: `src/lod-ladder.ts` (data and arithmetic only),
+(`lod-ladder-2`: the M3 carving reduction in section 3; nothing else changed); amended 2026-10-06 by mountains
+cost plan T6 (`lod-ladder-3`: the M5 rock-detail reduction in section 3, the mountains wired, and the section 3.1
+upper-side rule U1/U2; no tolerance, budget or ROOM pin changed). Code: `src/lod-ladder.ts` (data and arithmetic only),
 `src/planet-tiles.ts` (peak-preserving coarse heights, tile metadata). Tests: `tests/lod-consistency.test.mjs`,
 `tests/tile-metadata.test.mjs`. Report: `scripts/lod-consistency-report.mjs`.
 
@@ -115,8 +117,10 @@ the level pass-through in `src/planet-tiles.ts`. Test: `tests/lod-carving-reduct
 - The switch is a visible change of state by design: the carving appears during the L(cut-1) -> L(cut) morph. Its
   mean height step on massif tiles is reported as INFO (below); the agreed mitigation, if it is visible, is a cheap
   coarse mean-carve term, not a change of this rule.
-- Staging: the mountains are not wired on main until cost plan T6 (`TERRAIN_MOUNTAINS_WIRED = false`). Until then
-  the rule is active only for samplers and tiles built with `{mountains: true}`; the default field is unchanged.
+- Staging (history): the mountains were not wired on main until cost plan T6 (`TERRAIN_MOUNTAINS_WIRED = false`);
+  until then the rule was active only for samplers and tiles built with `{mountains: true}`. Since T6
+  (`terrain-1.9.0-mountains`, `TERRAIN_MOUNTAINS_WIRED = true`) it is the default; `{mountains: false}` gives the
+  pre-mountains field.
 - Every section-5 tolerance is unchanged. The version moved to `lod-ladder-2` for the new declared reduction.
 
 **Baked coarse band field (amendment, branch `mountains/baked-coarse`, cost route A).** This amendment is recorded
@@ -155,6 +159,28 @@ becomes active with the mountains at T6 wiring.
   `-3`; the along-axis margin moved them to `-4`). `LOD_LADDER_VERSION`
   is unchanged: the declared reduction is still "upper envelope of the carved truth below the cut".
 
+**M5 rock detail (amendment, `lod-ladder-3`, mountains cost plan T6).** Code: `rockDetailFromLevel` /
+`rockDetailAtLevel` in `src/lod-ladder.ts`, `mountainRidgeTermM(..., carve, rock)` in `src/mountain-assembly.ts`
+(`mountain-assembly-3`), `rockDetailM` in `src/mountain-rock-detail.ts`. Test: `tests/lod-carving-reduction.test.mjs`.
+
+- M5 declares 1000 m as its longest wavelength (`ROCK_DETAIL_REDUCTION`, 32 segments), so a level holds it only if
+  its edge is at most 8000 m (`ROCK_DETAIL_MAX_EDGE_M`). Coarser carved levels evaluate the rock term as exactly 0.
+- The rock term is <= 0 (it only removes rock from the carved surface), so a carved level without it is an upper
+  envelope of the truth, as for the carving cut. The ocean flag does not change.
+- Rock detail starts at (arithmetic from the edge formula); it is the first point-sampled level on every world, so
+  no peak-corrected level ever carries it:
+
+  | Body | Carving cut | First rock level | Edge there | Last peak-corrected level |
+  |---|---|---|---|---|
+  | Maithea | L6 | L10 | 7.97 km | L9 |
+  | Selawyn | L7 | L11 | 6.56 km | L10 |
+  | Raiva | L5 | L9 | 6.14 km | L8 |
+  | Lethuris | L7 | L11 | 6.90 km | L10 |
+
+- The four sampler states are: `{mountains: false}` (no mountains), below the cut (baked coarse field, no M3, no
+  M5), cut .. rock-1 (M3 carved, no M5), and from the rock level on (M3 + M5, bit-identical to the truth).
+- Every section-5 tolerance is unchanged.
+
 **Colour and class shares:** coverage-weighted mean of the finer level. A class is carried as a class: the
 bilinear-weighted majority of the four corner labels. It is never re-derived from a coarse height.
 
@@ -166,7 +192,7 @@ Owner principle (Kasper, 2026-10-06): the coarse levels carry the large-scale st
 room but lies within the coarse frame, and tile-to-tile edges match, especially at the mountains. This section
 documents a NEW test and its measured numbers. No existing pin or tolerance in this contract was changed.
 
-The test runs with the staged mountains on (`{mountains: true}`), on the four real water worlds, on tiles that touch
+The test runs with the mountains on (`{mountains: true}`, the default since T6), on the four real water worlds, on tiles that touch
 a massif: two massif axis sites per world, tiles chosen by the T1 band grid (`bandCellFlagged`) plus the belt query.
 Per world: 39 / 45 / 29 / 44 frame tiles (Maithea / Selawyn / Raiva / Lethuris), each with > 0 massif samples on a
 65x65 net, plus 6 edge-only neighbours. Each world runs in its own worker thread; the file takes about 12 s.
@@ -194,19 +220,42 @@ Bold marks the carving switch pair L(cut-1) -> L(cut). The room is in metres and
 the point-sampled field plus its own peak correction, and the parent's 32-segment lattice cannot carry the relief
 between its vertices.
 
-- Upper side, point-sample child levels (child level > last corrected level): **holds exactly** (max 0.000 m).
-  HARD.
-- Upper side, peak-corrected child levels: **NOT MET (OPEN finding)**. The child rises above the parent by up to
-  3894 m (Maithea L1->2). At the switch pair the excess is 75-158 m. At every corrected pair 6-40% of the shared points
-  exceed 0.05 m.
-  - Cause: each level's peak correction reads its own finer cell centres. A child can therefore find a higher peak
-    than its parent's correction saw, so the stored coarse surface is not an upper envelope of the stored finer
-    surface.
-  - Kept as a node:test `todo` with the per-pair counts. It is counted in todo, not fail, and it remains OPEN, not
-    passed.
-  - A HARD companion check holds the excess within the section 5 height tolerance (`heightP99M` and `heightMaxM` at the parent tile edge; a loose bound, it only rules out a gross excess).
-  - Fixing it means changing the correction rule (e.g. a child correction capped by the parent surface), which is
-    an owner decision.
+**Upper side (Q-B, decisions addendum 6, decided by Opus 5.5 on Kasper's instruction, he may overrule; implemented
+at T6, no version move): carving frame exact; peak correction excepted, bounded by UP_ROOM.**
+
+- **(U1) Carving frame exact, HARD, every pair.** The child's POINT sample (its field at the child level, before its
+  own peak correction) at each of the 289 shared vertices is <= the parent's stored height + EPS_UP (0.05 m). This is
+  the frame the carving, the baked coarse field and the rock term must respect: each is an upper envelope of the next
+  finer level. Measured with the mountains wired (T6): max 0.000 m on every pair of every world. Negative control:
+  the parent's stored height at one vertex set to the child point - 1 m is caught as exactly 1 violation.
+- **(U2) Peak-correction excess, HARD, peak-corrected child levels.** The child's STORED height may exceed the parent
+  by its own peak correction (each level's correction reads its own finer cell centres, so a child can find a higher
+  peak than its parent's correction saw). That excess is pinned per world and pair as UP_ROOM = measured max x 1.25,
+  rounded up to 50 m (the ROOM rule); point-sample child levels are covered by (U1) and have no UP_ROOM. Negative
+  control: a child raised to parent + UP_ROOM + 1 m at one vertex is caught.
+- This replaces the OPEN `todo` that stood here (child above parent by up to 3894 m, counted in todo). The excess is
+  now a declared, bounded exception of the peak correction, not of the carving; the correction rule is unchanged.
+
+Measured child - parent at the shared vertices, wired (T6, `test-results/mountains/t6-wiring/frame-wired.json`),
+p50 / p99 / max -> UP_ROOM pin (m); bold marks the carving switch pair:
+
+| Pair | Maithea | Selawyn | Raiva | Lethuris |
+|---|---|---|---|---|
+| L0->1 | 0 / 1796 / 3218 -> 4050 | 0 / 1382 / 2254 -> 2850 | 0 / 991 / 1808 -> 2300 | 0 / 2619 / 3899 -> 4900 |
+| L1->2 | 0 / 855 / 3894 -> 4900 | 0 / 761 / 2721 -> 3450 | 0 / 841 / 1843 -> 2350 | 0 / 1316 / 3451 -> 4350 |
+| L2->3 | 0 / 715 / 2918 -> 3650 | -1 / 620 / 2261 -> 2850 | 0 / 593 / 1645 -> 2100 | 0 / 843 / 3559 -> 4450 |
+| L3->4 | 0 / 459 / 1749 -> 2200 | -10 / 357 / 1166 -> 1500 | -4 / 157 / 1466 -> 1850 | 0 / 504 / 1001 -> 1300 |
+| L4->5 | -2 / 130 / 896 -> 1150 | -9 / 253 / 648 -> 850 | **-100 / 16 / 158 -> 200** | -3 / 204 / 801 -> 1050 |
+| L5->6 | **-36 / 65 / 85 -> 150** | -6 / 122 / 299 -> 400 | -1 / 99 / 241 -> 350 | -7 / 172 / 826 -> 1050 |
+| L6->7 | -12 / 161 / 435 -> 550 | **-468 / 8 / 73 -> 100** | 0 / 82 / 120 -> 150 | **-164 / 54 / 90 -> 150** |
+| L7->8 | 0 / 181 / 476 -> 600 | 0 / 243 / 375 -> 500 | -2 / 37 / 58 -> 100 | -2 / 272 / 895 -> 1150 |
+| L8->9 | 0 / 110 / 206 -> 300 | -5 / 185 / 263 -> 350 | (point child: U1 only) | 0 / 271 / 313 -> 400 |
+| L9->10 | (point child: U1 only) | -11 / 91 / 112 -> 150 | - | -12 / 103 / 195 -> 250 |
+| L10->11 | - | (point child: U1 only) | - | (point child: U1 only) |
+
+The lower side (ROOM, table above) was re-measured wired: every pair holds its unchanged pin. Measured max / ROOM at
+the switch pairs: Maithea L5->6 1222 / 1550, Selawyn L6->7 1584 / 2000, Raiva L4->5 634 / 800, Lethuris L6->7
+1877 / 2350. Tightest pair: Lethuris L10->11 246 / 250. No ROOM pin was loosened.
 
 **(2) Edge match.** For each world, 28-44 same-level edge pairs, matched by direction:
 - siblings at the uncarved levels and at L(cut+1);

@@ -20,7 +20,18 @@
  */
 // lod-ladder-2 (mountains cost plan T3, docs/mountains-opus-decisions-2026-10-05.md Q2): adds the declared
 // M3 carving reduction (`carvingFromLevel`); every section-5 tolerance is unchanged. Was lod-ladder-1 (P3).
-export const LOD_LADDER_VERSION = 'lod-ladder-2';
+export const LOD_LADDER_VERSION = 'lod-ladder-3';
+import {ROCK_DETAIL_REDUCTION, ROCK_DETAIL_MAX_EDGE_M, ROCK_DETAIL_BANDS} from './mountain-rock-detail.ts';
+export {ROCK_DETAIL_REDUCTION};
+// A module-load pin prevents a declaration/reduction mismatch, without duplicating constants.
+if (ROCK_DETAIL_REDUCTION.longestWavelengthM !== Math.max(...ROCK_DETAIL_BANDS.map(b => b.wavelengthM)))
+  throw new Error('M5 band/reduction mismatch');
+export function rockDetailFromLevel(radiusM: number): number {
+  return firstLevelAtOrBelowEdge(radiusM, ROCK_DETAIL_MAX_EDGE_M);
+}
+export function rockDetailAtLevel(radiusM: number, lodLevel?: number): boolean {
+  return lodLevel === undefined || lodLevel >= rockDetailFromLevel(radiusM);
+}
 
 export type LadderId = 'S0' | 'S1' | 'S2' | 'S3' | 'S4';
 export const LADDER_IDS: readonly LadderId[] = Object.freeze(['S0', 'S1', 'S2', 'S3', 'S4'] as LadderId[]);

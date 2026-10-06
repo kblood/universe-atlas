@@ -9,14 +9,15 @@ import {orogenLayout} from '../../src/mountain-layout.ts';
 // Test-only full-layout uncarved reference: change only the composition's carve argument
 // and bypass the T1 accelerator. Production has no reference/mutation sampler flag.
 const terrainSource=readFileSync(new URL('../../src/terrain.ts',import.meta.url),'utf8');
-const needle='mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve)';
+// T6 (M5 wired): the call carries the rock flag too; the uncarved reference turns both off (no carving, no rock).
+const needle='mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve, rock)';
 const beltCall='massifBeltSample(orogen, [d[0], d[1], d[2]], a0, orogenScratch)';
 // The truth core's inline T1 voxel prefilter (skips massifBeltSample where it returns the empty sample).
 export const voxelSkip='massifAll || (massifVoxels[v >>> 5] & (1 << (v & 31)))';
 for(const hook of [needle,beltCall,voxelSkip])if(!terrainSource.includes(hook))throw new Error(`exact reference hook lost: ${hook}`);
 const localImports=s=>s.replace(/from (['"])(\.\/[^'"]+)\1/g,(_,q,path)=>`from ${q}${new URL('../../src/'+path.slice(2),import.meta.url).href}${q}`);
 const load=s=>import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(localImports(s))).toString('base64'));
-const source=terrainSource.replace(needle, 'mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, false)')
+const source=terrainSource.replace(needle, 'mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, false, false)')
   .replace(beltCall, 'orogen.sampleWithA0([d[0], d[1], d[2]], a0, orogenScratch)').replace(voxelSkip,'true');
 export const exactTerrain=await load(source);
 // Production with only the voxel prefilter bypassed (every land sample calls massifBeltSample).

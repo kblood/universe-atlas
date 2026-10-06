@@ -101,6 +101,11 @@ export class PlanetCanopy {
     }
     this.currentPatchEpoch++;this.dirtyCurrentPatchKeys.clear();
   }
+  /** Wall-clock budget (ms) of each bounded work slice in prepare() (selection decode, reuse, evictions,
+   * installs, presentation retag, rebase, request scan). Production keeps 2 ms. Tests that verify the
+   * deterministic operation quotas set it to Infinity (a non-timing hook), so machine load cannot cut a
+   * slice short; the deadline itself is tested with an injected clock. */
+  sliceMs=2;
   constructor(body:Body,capacity=229376){
     this.body=body;this.allocator=new ForestSlotAllocator(capacity);this.renderer=new ForestImpostors(capacity);
     this.bodyPositions=new Float64Array(capacity*3);this.heights=new Float64Array(capacity);this.canonicalHeights=new Float32Array(capacity);
@@ -213,7 +218,7 @@ export class PlanetCanopy {
   private applySelectionSlice(started:number){
     const apply=this.selectionApply,selection=this.selection;if(!apply||!selection)return;
     const sliceStart=performance.now();let steps=0;
-    while(steps++<512&&performance.now()-started<2){
+    while(steps++<512&&performance.now()-started<this.sliceMs){
       if(apply.phase==='addresses'){
         if(apply.offset<apply.packed.length){
           const i=apply.offset,a=apply.packed,address={face:a[i],n:a[i+1],x:a[i+2],y:a[i+3]};validateForestPatchAddress(address);
@@ -303,18 +308,18 @@ export class PlanetCanopy {
     try{this.applySelectionSlice(started);}catch{if(this.worker)this.failWorker(this.worker);}
     // Retag only after the worker confirms the immutable body/version family.
     // Bound metadata work too; no tree transform/ownership writes are needed.
-    while(this.reuse&&work<512&&performance.now()-started<2){
+    while(this.reuse&&work<512&&performance.now()-started<this.sliceMs){
       const next=this.reuse.next();if(next.done){this.reuse=null;break;}work++;
       const patch=next.value;
       if(patch.water!==water&&patch.family===this.family&&forestWaterIntervalContains(patch.waterInterval,water)){
         patch.water=water;this.reusedPatches++;this.invalidateCurrentPatchAnswers(patchKey(patch.address));
       }
     }
-    while(this.evictions.length&&work<512&&performance.now()-started<2){
+    while(this.evictions.length&&work<512&&performance.now()-started<this.sliceMs){
       const key=this.evictions[this.evictions.length-1],count=this.installed.get(key)?.ids.length??0;if(count>512-work)break;
       this.evictions.pop();if(!this.desired.has(key))work+=Math.max(1,this.remove(key));
     }
-    while(this.pending.length&&work<512&&performance.now()-started<2){
+    while(this.pending.length&&work<512&&performance.now()-started<this.sliceMs){
       const patch=this.pending[0],cost=Math.max(1,patch.present+(this.installed.get(patchKey(patch.address))?.ids.length??0));if(cost>512-work)break;
       this.pending.shift();this.install(patch);work+=cost;
     }
@@ -322,7 +327,7 @@ export class PlanetCanopy {
     // Nearby handoffs are updated on demand below. Other retained trees use a
     // bounded slice, so a dated catalogue/library change cannot block a frame.
     const presentationStarted=performance.now();let presentationCount=0;
-    while(this.presentationRetag&&presentationCount++<2048&&performance.now()-presentationStarted<2){
+    while(this.presentationRetag&&presentationCount++<2048&&performance.now()-presentationStarted<this.sliceMs){
       const next=this.presentationRetag.next();if(next.done){
         if(this.presentationPassVersion!==this.presentationVersion){this.presentationRetag=this.slots.entries();this.presentationPassVersion=this.presentationVersion;}
         else this.presentationRetag=null;
@@ -336,7 +341,7 @@ export class PlanetCanopy {
     }
     if(this.rebase){
       const r=this.rebase,started=performance.now();let count=0;
-      while(r.cursor<this.renderer.mesh.geometry.instanceCount&&count++<2048&&performance.now()-started<2){
+      while(r.cursor<this.renderer.mesh.geometry.instanceCount&&count++<2048&&performance.now()-started<this.sliceMs){
         const index=r.cursor++,height=this.renderer.positions.getW(index);
         if(height>0)r.positions.set([this.bodyPositions[index*3]-r.origin.x,this.bodyPositions[index*3+1]-r.origin.y,this.bodyPositions[index*3+2]-r.origin.z,height],index*4);
       }
@@ -347,7 +352,7 @@ export class PlanetCanopy {
       const now=performance.now(),addresses:ForestPatchAddress[]=[];
       if(now>=this.retryWakeAt){this.requestCursor=0;this.retryWakeAt=Infinity;}
       let inspected=0;
-      while(this.requestCursor<this.order.length&&addresses.length<64&&inspected++<512&&performance.now()-started<2){
+      while(this.requestCursor<this.order.length&&addresses.length<64&&inspected++<512&&performance.now()-started<this.sliceMs){
         const key=this.order[this.requestCursor++],installed=this.installed.get(key);if(installed?.water===water&&installed.family===this.family)continue;
         const after=this.retries.get(key)?.after??0;if(after>now){this.retryWakeAt=Math.min(this.retryWakeAt,after);continue;}
         addresses.push(this.desired.get(key)!);

@@ -1,6 +1,7 @@
 // Mountains cost plan T4 (docs/mountains-opus-decisions-2026-10-05.md, task table row T4): the sparse-global
 // terrainSampler consumers sample the S0 reduction (lod-ladder-2 level 0) and solve no M3 block when the mountains are
-// wired. The mountains are staged on main (TERRAIN_MOUNTAINS_WIRED = false), so the wired run is a child process that
+// wired. Since T6 the mountains are wired (TERRAIN_MOUNTAINS_WIRED = true; the hook below is then a no-op). Before T6
+// they were staged on main (TERRAIN_MOUNTAINS_WIRED = false), so the wired run is a child process that
 // loads src/terrain.ts with the constant flipped (tests/helpers/wire-mountains-hook.mjs); the callers themselves run
 // unmodified, with their application arguments. Evidence: docs/mountains-t4-sparse-consumers-2026-10-06.md.
 import {test} from 'node:test';
@@ -55,5 +56,14 @@ test('the sparse-global callers pass level 0 (S0) and the dense/truth callers pa
   assert.match(src('ocean-volume.ts'), level0, 'ocean hypsometry');
   assert.match(src('surface-survey.ts'), level0, 'surface survey');
   // Contract section 8: collision, physics and place queries keep the truth (no level).
-  for (const p of ['world-surface.ts', 'place-query.ts', 'travel.ts']) assert.doesNotMatch(src(p), /lodLevel/, `${p} keeps the truth sampler`);
+  for (const p of ['place-query.ts', 'travel.ts']) assert.doesNotMatch(src(p), /lodLevel/, `${p} keeps the truth sampler`);
+  // world-surface.ts keeps the truth by default; T6 decision 2 (addendum 4) adds ONE opt-in level-0 view, the landing
+  // candidate heights (planetSnapshotAt().landingSurface). Every other query (walk, collision, physics) passes no level.
+  const ws = src('world-surface.ts');
+  assert.match(ws, /options\.lodLevel===undefined\?terrainSampler\(body\)\s*:/, 'world-surface.ts: the default query is the truth sampler');
+  // Every call of the lifecycle sampler: the definition and the calls without a level, plus exactly one level-0 call.
+  const calls = [...ws.matchAll(/lifecycleDatedSurfaceSampler\([^)]*\)/g)].map(m => m[0]).filter(c => !c.includes(':'));
+  assert.deepEqual(calls.filter(c => !/^lifecycleDatedSurfaceSampler\(body,planet,(host)?[sS]tar,t\)$/.test(c)),
+    ['lifecycleDatedSurfaceSampler(body,planet,star,t,0)'], 'world-surface.ts: exactly one level-0 caller (landingSurface)');
+  assert.match(ws, /landingSurface:\(direction[^)]*\)=>\(landing\?\?=lifecycleDatedSurfaceSampler\(body,planet,star,t,0\)\)/, 'the level-0 view is the landing surface');
 });
