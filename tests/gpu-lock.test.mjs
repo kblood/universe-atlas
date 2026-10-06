@@ -39,3 +39,60 @@ test('release never removes a lock that is no longer ours', async()=>{
   assert.equal(existsSync(GPU_LOCK_DIR),true);
   await rm(GPU_LOCK_DIR,{recursive:true,force:true});
 });
+
+// Preview-server port selection for the browser runners (tests/helpers/free-port.mjs; docs/test-fixes-2026-10-07.md).
+// A tiny child HTTP server stands in for `vite preview --strictPort`: it exits 1 on EADDRINUSE and answers its stamp.
+const {portFree,ephemeralPort,parsePortOption,startOnFreePort,stopServer}=await import('./helpers/free-port.mjs');
+const {spawn}=await import('node:child_process');
+const {createServer}=await import('node:http');
+const STRICT_SERVER="const h=require('http');const [p,stamp]=process.argv.slice(1);const s=h.createServer((q,r)=>r.end(stamp));s.on('error',()=>process.exit(1));s.listen(+p,'127.0.0.1');";
+const strictServer=(port,stamp)=>spawn(process.execPath,['-e',STRICT_SERVER,String(port),stamp],{stdio:'ignore'});
+const foreign=stamp=>new Promise(res=>{const s=createServer((q,r)=>r.end(stamp));s.listen(0,'127.0.0.1',()=>res(s));});
+const ours=stamp=>async res=>(await res.text())===stamp;
+
+test('free-port: an ephemeral port is bindable; a held port is reported busy; --port parsing', async()=>{
+  const p=await ephemeralPort();assert.ok(p>0&&p<65536);assert.equal(await portFree(p),true);
+  const held=await foreign('x');assert.equal(await portFree(held.address().port),false);held.close();
+  assert.equal(parsePortOption(undefined),null);assert.equal(parsePortOption('auto'),null);assert.equal(parsePortOption('5297'),5297);
+  for(const bad of ['0','70000','5.5','x'])assert.throws(()=>parsePortOption(bad),/invalid --port/);
+});
+
+test('free-port: a busy explicit port fails fast and starts nothing', async()=>{
+  const held=await foreign('other service'),port=held.address().port;let spawned=0;
+  try{
+    await assert.rejects(startOnFreePort({port,url:p=>`http://127.0.0.1:${p}/`,spawnServer:()=>{spawned++;},owns:ours('me')}),/in use; pass another --port/);
+    assert.equal(spawned,0,'no server was started for a busy explicit port');
+  }finally{held.close();}
+});
+
+test('free-port: a child that exits (strict bind lost to a race) is detected at once and retried on a new port', async()=>{
+  // Attempt 1's child exits like `vite preview --strictPort` on EADDRINUSE; attempt 2's child serves.
+  let spawned=0;const reasons=[];
+  const started=await startOnFreePort({url:p=>`http://127.0.0.1:${p}/`,owns:ours('me'),timeoutMs:60000,log:l=>reasons.push(l),
+    spawnServer:p=>++spawned===1?spawn(process.execPath,['-e','process.exit(1)'],{stdio:'ignore'}):strictServer(p,'me')});
+  try{
+    assert.equal(started.attempts,2);assert.equal(spawned,2);
+    assert.equal(await (await fetch(`http://127.0.0.1:${started.port}/`)).text(),'me','the returned server is ours');
+    assert.equal(reasons.length,1);assert.match(reasons[0],/server exited [(]code 1/,'the exit is seen, not waited out by the poll');
+  }finally{stopServer(started.child);}
+});
+
+test('free-port: an answer from a server this runner did not start is never accepted', async()=>{
+  // Attempt 1 polls a URL where a foreign server answers 200 while our child is alive elsewhere: rejected by `owns`
+  // at the first answer (no timeout involved; the 60 s limits only bound a broken run).
+  const other=await foreign('other service'),otherUrl=`http://127.0.0.1:${other.address().port}/`;
+  let spawned=0;const reasons=[];
+  try{
+    const started=await startOnFreePort({owns:ours('me'),timeoutMs:60000,log:l=>reasons.push(l),
+      url:p=>spawned===1?otherUrl:`http://127.0.0.1:${p}/`,spawnServer:p=>{spawned++;return strictServer(p,'me');}});
+    try{
+      assert.equal(started.attempts,2);
+      assert.match(reasons[0],/not the one this runner started/);
+      assert.equal(await (await fetch(`http://127.0.0.1:${started.port}/`)).text(),'me');
+    }finally{stopServer(started.child);}
+    // An explicit port is never swapped: one attempt, then a clear error.
+    let n=0;
+    await assert.rejects(startOnFreePort({port:await ephemeralPort(),owns:ours('me'),timeoutMs:60000,url:()=>otherUrl,spawnServer:p=>{n++;return strictServer(p,'me');}}),/not the one this runner started/);
+    assert.equal(n,1);
+  }finally{other.close();}
+});
