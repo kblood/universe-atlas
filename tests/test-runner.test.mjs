@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSync, existsSync} from 'node:fs';
+import {mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSync, existsSync, readdirSync} from 'node:fs';
+import {pathToFileURL} from 'node:url';
 import {join, resolve, relative} from 'node:path';
 import {spawn} from 'node:child_process';
 import {classify} from './helpers/test-runner.mjs';
@@ -90,5 +91,33 @@ test('known-failures: test:full rejects an invalid allowlist before running or t
     assert.match(out, /the title declares CONTRACT but the entry says HARD/);
     assert.equal(existsSync(slotDir), false, 'the test slot was never taken');
     assert.equal(existsSync(join(root, 'test-results')), false, 'no report directory was created');
+  } finally {rmSync(root, {recursive: true, force: true});}
+});
+
+// Shared slot wiring (plan I2): runTests takes its run class's slot class; flag off = exclusive exactly as before.
+// Child process with a sandbox ATLAS_TEST_SLOT_DIR (TEST_SLOT_DIR is read at import); never the live slot.
+test('runTests: test:pkg is a shared 4-token holder with ATLAS_SLOT_SHARED=1 and exclusive without it; children carry the token', async () => {
+  mkdirSync('test-results', {recursive: true});
+  const root = realpathSync(mkdtempSync(resolve('test-results', 'atlas-runner-slot-')));
+  try {
+    const probe = join(root, 'probe.test.mjs'), slotDir = join(root, 'slot');
+    writeFileSync(probe, "import test from 'node:test'; import fs from 'node:fs'; test('probe', () => { const t = process.env.ATLAS_TEST_SLOT_TOKEN, d = process.env.ATLAS_TEST_SLOT_DIR, f = `${d}.shared/${t}.json`;"
+      + " fs.writeFileSync(process.env.PROBE_OUT, JSON.stringify({token: t, holder: fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null, exclusive: fs.existsSync(`${d}/owner.txt`) ? JSON.parse(fs.readFileSync(`${d}/owner.txt`, 'utf8')) : null})); });\n");
+    const runner = pathToFileURL(resolve('tests/helpers/test-runner.mjs')).href;
+    for (const flag of ['1', '0']) {
+      const out = join(root, `probe-${flag}.json`), env = {...process.env, ATLAS_TEST_SLOT_DIR: slotDir, ATLAS_SLOT_SHARED: flag, PROBE_OUT: out};
+      delete env.NODE_TEST_CONTEXT; delete env.ATLAS_TEST_SLOT_TOKEN;
+      const child = spawn(process.execPath, ['--input-type=module', '-e', `const {runTests} = await import(${JSON.stringify(runner)}); process.exitCode = await runTests([${JSON.stringify(probe)}], {runClass: 'pkg'});`], {env, stdio: 'pipe'});
+      let log = ''; child.stdout.on('data', b => {log += b;}); child.stderr.on('data', b => {log += b;});
+      assert.equal(await new Promise((done, reject) => {child.on('error', reject); child.on('close', done);}), 0, log);
+      const seen = JSON.parse(readFileSync(out, 'utf8'));
+      if (flag === '1') {
+        assert.equal(seen.exclusive, null); assert.equal(seen.holder.token, seen.token);
+        assert.deepEqual([seen.holder.class, seen.holder.tokens], ['shared', 4]); assert.match(seen.holder.name, /pkg, shared 4 tokens/);
+      } else {
+        assert.equal(seen.holder, null); assert.equal(seen.exclusive.token, seen.token, 'exclusive owner.txt token reaches the test process');
+      }
+      assert.equal(existsSync(slotDir), false); assert.equal(existsSync(`${slotDir}.shared`) && readdirSync(`${slotDir}.shared`).some(n => n.endsWith('.json')), false);
+    }
   } finally {rmSync(root, {recursive: true, force: true});}
 });

@@ -3,7 +3,11 @@
  * process holds the lock. Acquire immediately before launching a browser or GPU
  * process and release as soon as that run ends, including on failure. Never
  * break a live lock: only a lock whose owner.txt is older than GPU_LOCK_STALE_MS
- * (20 min) while no chrome/headless browser runs is taken over, and logged. */
+ * (20 min) while no chrome/headless browser runs is taken over, and logged.
+ * Lock order (docs/test-policy.md "Lock order"): merge -> slot -> GPU, never GPU -> slot. While this process waits for
+ * or holds the GPU lock it publishes that in-process (globalThis symbol) and, while held, in ATLAS_GPU_LOCK_HELD for its
+ * children; tests/helpers/test-slot.mjs refuses to take the slot in either state. A capture path passes `capture: true`
+ * and is refused while it holds the test slot (I8: captures do their GPU work outside the CPU slot). */
 import {mkdir,writeFile,readFile,rm,rename,stat} from 'node:fs/promises';
 import {readFileSync,rmSync} from 'node:fs';
 import {hostname,platform} from 'node:os';
@@ -13,6 +17,17 @@ const run=promisify(execFile);
 
 export const GPU_LOCK_DIR=process.env.ATLAS_GPU_LOCK_DIR||'C:/LLM/IWSDK/.gpu-browser-lock';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const STATE=globalThis[Symbol.for('atlas.gpu-lock.state')]??={waiting:0,held:0,owners:[]};
+const INHERITED_HELD=process.env.ATLAS_GPU_LOCK_HELD;
+function publish(){
+  const v=STATE.owners.at(-1)??INHERITED_HELD;
+  if(v===undefined)delete process.env.ATLAS_GPU_LOCK_HELD;else process.env.ATLAS_GPU_LOCK_HELD=v;
+}
+/** Refuses a capture path that holds the test slot (in this process or inherited through ATLAS_TEST_SLOT_TOKEN). */
+export function assertCaptureOutsideSlot(owner){
+  const held=globalThis[Symbol.for('atlas.test-slot.held')]?.length>0;
+  if(held||process.env.ATLAS_TEST_SLOT_TOKEN)throw new Error(`lock order: capture path "${owner}" asks for the GPU lock while holding the test slot (${held?'this process':'ATLAS_TEST_SLOT_TOKEN inherited'}); captures take the GPU lock outside the CPU slot (docs/test-policy.md "Lock order")`);
+}
 
 async function lockOwner(){
   try{return (await readFile(`${GPU_LOCK_DIR}/owner.txt`,'utf8')).trim();}catch{return '(no owner.txt)';}
@@ -53,8 +68,13 @@ async function tryBreakStale(staleMs,log,listBrowsers){
 
 /** Resolves to `{release, owner, waitedMs, attempts}` once held. Retries every
  * `retryMs` (default 60 s) until `timeoutMs` (default: wait indefinitely). */
-export async function acquireGpuLock({owner,retryMs=60000,timeoutMs=Infinity,staleMs=GPU_LOCK_STALE_MS,listBrowsers=runningBrowsers,heartbeatMs=60000,log=console.error}={}){
+export async function acquireGpuLock({owner,retryMs=60000,timeoutMs=Infinity,staleMs=GPU_LOCK_STALE_MS,listBrowsers=runningBrowsers,heartbeatMs=60000,log=console.error,capture=false}={}){
   if(!owner)throw new Error('acquireGpuLock needs an owner name');
+  if(capture)assertCaptureOutsideSlot(owner);
+  STATE.waiting++;
+  try{return await acquire({owner,retryMs,timeoutMs,staleMs,listBrowsers,heartbeatMs,log});}finally{STATE.waiting--;}
+}
+async function acquire({owner,retryMs,timeoutMs,staleMs,listBrowsers,heartbeatMs,log}){
   const started=Date.now();let attempts=0;
   for(;;){
     attempts++;
@@ -73,13 +93,15 @@ export async function acquireGpuLock({owner,retryMs=60000,timeoutMs=Infinity,sta
     let released=false;
     const ours=()=>{try{return readFileSync(`${GPU_LOCK_DIR}/owner.txt`,'utf8').trim()===text;}catch{return false;}};
     // Best-effort cleanup if the process exits or is interrupted while holding it.
-    const onExit=()=>{if(!released&&ours()){released=true;rmSync(GPU_LOCK_DIR,{recursive:true,force:true});}};
+    STATE.held++;STATE.owners.push(text);publish();
+    const unpublish=()=>{STATE.held--;const i=STATE.owners.lastIndexOf(text);if(i>=0)STATE.owners.splice(i,1);publish();};
+    const onExit=()=>{if(!released&&ours()){released=true;unpublish();rmSync(GPU_LOCK_DIR,{recursive:true,force:true});}};
     const onSignal=()=>{onExit();process.exit(130);};
     process.on('exit',onExit);process.on('SIGINT',onSignal);process.on('SIGTERM',onSignal);
     // Heartbeat: keep owner.txt fresh while held so a long run is never judged stale.
     const heartbeat=setInterval(()=>{if(!released&&ours())writeFile(`${GPU_LOCK_DIR}/owner.txt`,text+'\n').catch(()=>{});},heartbeatMs);heartbeat.unref?.();
     const release=async()=>{
-      if(released)return;released=true;clearInterval(heartbeat);
+      if(released)return;released=true;clearInterval(heartbeat);unpublish();
       process.off('exit',onExit);process.off('SIGINT',onSignal);process.off('SIGTERM',onSignal);
       if(ours())await rm(GPU_LOCK_DIR,{recursive:true,force:true});
       else log(`[gpu-lock] not releasing: owner is now ${await lockOwner()}`);

@@ -2,18 +2,23 @@ import {readFileSync, mkdtempSync, rmSync, readdirSync, existsSync, mkdirSync} f
 import {join, resolve} from 'node:path';
 import {cpus} from 'node:os';
 import {execFileSync} from 'node:child_process';
-import {withTestSlot, runCommand} from './test-slot.mjs';
-import {registeredTests, changedFiles, baseRef, importGraph, selectTests} from './test-selection.mjs';
+import {withTestSlot, runCommand, slotClass, boundTestConcurrency} from './test-slot.mjs';
+import {registeredTests, changedFiles, baseRef, importGraph, selectTests, packageJsonChangeSince} from './test-selection.mjs';
 import {classify, validateKnown} from './known-failures.mjs';
 export {classify, validateKnown};
 
 // Every CPU-heavy run takes the test slot (audit F8, docs/handoff-2026-10-06/test-time-audit.md): test:pkg, test:affected
 // and test:fast used to run without it at <= 40 files and could overlap a timing run. One slot level only: a caller that
 // already holds the slot passes {slot: false} (test:perf does).
-export async function runTests(files, {slot = true, args = [], env = process.env} = {}) {
+// `runClass` (tests/helpers/test-slot.mjs RUN_CLASSES) picks the slot class. With ATLAS_SLOT_SHARED=1 a shared class takes
+// its tokens and passes the same number as an explicit --test-concurrency; with the flag off every run is exclusive and the
+// node arguments are exactly as before.
+export async function runTests(files, {slot = true, args = [], env = process.env, runClass} = {}) {
   if (!files.length) { console.log('No tests selected.'); return 0; }
-  const work = () => runCommand(process.execPath, ['--test', ...args, ...files], {env});
-  return slot ? withTestSlot({owner: `tests: ${files.length} files`}, work) : work();
+  const cls = slot && runClass ? slotClass(runClass) : {mode: 'exclusive'};
+  const nodeArgs = cls.mode === 'shared' ? boundTestConcurrency(['--test', ...args], cls.tokens) : ['--test', ...args];
+  const work = () => runCommand(process.execPath, [...nodeArgs, ...files], {env});
+  return slot ? withTestSlot({owner: `tests: ${files.length} files${cls.mode === 'shared' ? ` (${runClass}, shared ${cls.tokens} tokens)` : ''}`, ...cls}, work) : work();
 }
 async function full() {
   // Fail closed before the ~28 min suite: an allowlist that could wave a CONTRACT failure through is rejected.
@@ -22,7 +27,7 @@ async function full() {
   mkdirSync('test-results', {recursive: true});
   const dir = mkdtempSync(resolve('test-results', 'atlas-test-report-')), report = join(dir, 'report.json');
   try {
-    const raw = await runTests(registeredTests(), {slot: true, args: ['--test-reporter=spec', '--test-reporter-destination=stdout', '--test-reporter=./tests/helpers/failure-reporter.mjs', `--test-reporter-destination=${join(dir, 'reporter.txt')}`], env: {...process.env, ATLAS_TEST_REPORT: report, ATLAS_TEST_FULL: '1'}});
+    const raw = await runTests(registeredTests(), {slot: true, runClass: 'full', args: ['--test-reporter=spec', '--test-reporter-destination=stdout', '--test-reporter=./tests/helpers/failure-reporter.mjs', `--test-reporter-destination=${join(dir, 'reporter.txt')}`], env: {...process.env, ATLAS_TEST_REPORT: report, ATLAS_TEST_FULL: '1'}});
     console.log(`raw node exit code: ${raw}`);
     if (!existsSync(report)) { console.error('NEW failure: reporter did not finish'); return raw || 1; }
     const result = JSON.parse(readFileSync(report)), known = knownDoc.failures;
@@ -71,24 +76,26 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve('tests/helpers/test-
   if (mode === 'full') code = await full();
   else if (mode === 'pkg') {
     if (!args.length || args.some(f => !/\.test\.mjs$/.test(f) || !existsSync(f))) throw new Error('test:pkg requires existing .test.mjs paths');
-    code = await runTests(args);
+    code = await runTests(args, {runClass: 'pkg'});
   } else if (mode === 'affected') {
     if (baseIndex >= 0 && !args[baseIndex + 1]) throw new Error('--base needs a ref');
     const base = baseRef(baseIndex < 0 ? undefined : args[baseIndex + 1]), changed = changedFiles(base);
-    const {selected, outside} = selectTests(changed, registeredTests(), importGraph());
+    const pkg = changed.includes('package.json') ? packageJsonChangeSince(base) : undefined;
+    if (pkg) console.log(`package.json: ${pkg.full ? 'FULL suite' : 'no forced full run'} (${pkg.reason})`);
+    const {selected, outside} = selectTests(changed, registeredTests(), importGraph(), {pkg});
     console.log(`Changed vs ${base}:\n${changed.join('\n')}`);
     for (const s of selected) console.log(`${s.unregistered ? 'UNREGISTERED ' : ''}${s.file}: ${s.reason}`);
     console.log(`Outside graph (review manually):\n${outside.join('\n')}\n${changed.length} changed; ${selected.length} selected`);
-    code = args.includes('--dry-run') ? 0 : await runTests(selected.map(s => s.file));
+    code = args.includes('--dry-run') ? 0 : await runTests(selected.map(s => s.file), {runClass: 'affected'});
   } else if (mode === 'fast') {
     // Formerly `test:smoke` (renamed 2026-10-07; `test:smoke` is now the tier-0 terrain smoke, mode 'tier').
     const all = registeredTests(), files = JSON.parse(readFileSync('tests/smoke.json')).files.map(f => f.file);
     if (files.some(f => !all.includes(f) || f.includes('/perf/') || f.includes('digest'))) throw new Error('stale fast list (tests/smoke.json); regenerate with npm run test:fast:generate');
-    const start = performance.now(); code = await runTests(files); console.log(`fast: ${files.length} files; wall ${( (performance.now() - start) / 1000).toFixed(3)} s; raw node exit code ${code}`);
+    const start = performance.now(); code = await runTests(files, {runClass: 'fast'}); console.log(`fast: ${files.length} files; wall ${( (performance.now() - start) / 1000).toFixed(3)} s; raw node exit code ${code}`);
   } else if (mode === 'tier') {
     const {runTier} = await import('./tier-runner.mjs');
     code = await runTier(args[0], args.slice(1));
-  } else if (mode === 'perf') code = await withTestSlot({owner: 'test:perf CPU quiet gate'}, async () => {
+  } else if (mode === 'perf') code = await withTestSlot({owner: 'test:perf CPU quiet gate', ...slotClass('perf')}, async () => {
     await quietCPU(); return runTests(readdirSync('tests/perf').filter(f => f.endsWith('.perf.test.mjs')).map(f => `tests/perf/${f}`), {slot: false, args: ['--test-concurrency=1']});
   });
   else throw new Error(`unknown test mode ${mode}`);
