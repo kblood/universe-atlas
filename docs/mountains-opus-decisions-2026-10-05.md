@@ -601,3 +601,198 @@ mountains unwired while the remaining V8 effect and a lazy per-block build are t
     values are in the evidence doc §4 and in `digest-ledger.json`. `[1]` moves in `parents`/`parentHeight` only.
 - Contract §3 is amended on the branch only.
 - `test:full` was not run; its one use stays reserved for the T6 gate.
+
+## Addendum 2026-10-06 (6): fair cost protocol — route A meets C1 and the orbit bake; merge BLOCKED by the coarse-frame pins; frame upper side decided
+
+**Decided by Opus 5.5 on Kasper's instruction 2026-10-06; he may overrule any of it.** Evidence:
+`test-results/mountains/qa-protocol/` (git-ignored, on disk): `protocol-prereg.txt`, `c1.jsonl`, `orbit.jsonl`,
+`analysis.txt`, `exits.log` (480 of 480 processes exit 0), `frame-*.tap`, `frame-stats-merged.jsonl`, `oldaa/`. The
+harness is committed as `scripts/cost-fair/`.
+
+### Q-A. Measurement protocol for C1 and the orbit bake
+
+**Question.** On `mountains/baked-coarse` `a1165e0` (route A, round 2) the field build, contract §6 and identity are
+MET. The official runs missed the orbit bake on Lethuris (+8.4% against +5%) and C1 on Maithea (9.86%) and Selawyn
+(12.10%) against +8%. The same coarse path had read +2.3% on Lethuris earlier, and the documented run-to-run spread is
+−3.6..+9.4% (orbit) and −3.4..+26.8% (C1 per run). The budget numbers are not in question; the measurement protocol
+is.
+
+**Decision 1: the protocol.** C1 and the orbit bake are judged from now on by this protocol. It was written down in
+`protocol-prereg.txt` before the first counted run. Every run counts, and none was repeated or dropped.
+
+- **Arms.** ref = main `37baddf` (src identical to `cc0032f`). cand = `a1165e0` with `TERRAIN_MOUNTAINS_WIRED`
+  flipped to true in a scratch copy, never committed. A/A = ref against a second identical main copy in the cand
+  position. Each arm is its own `git archive` copy, so each has its own module instances.
+- **Runs.** 30 fresh processes per world for each of four kinds: C1 A/B, C1 A/A, orbit A/B and orbit A/A, 480 in all.
+  - Each process runs both arms of its kind under ONE test-slot level.
+  - Iterations interleave the kinds and the worlds.
+  - Which arm is imported, warmed and run first alternates between processes, 15 each way.
+  - The order of the A/B and A/A runs alternates per iteration.
+- **C1** (`scripts/cost-fair/c1-ab.mjs`). Same points and weighting as `scripts/mountain-assembly-cost.mjs`. The
+  points are precomputed once per world in a separate process from main (`c1-points.mjs`), so no measured arm's
+  module is touched by point selection.
+  - Shares s: 2.275 / 1.110 / 1.720 / 1.160%, the same as the documented values.
+  - Per arm: one cold region pass and one outside pass as warm-up, then 5 region and 5 outside rounds, the arm order
+    alternating per round.
+  - Statistic: weighted = (s·Bin + (1−s)·Bout) / (s·Ain + (1−s)·Aout) − 1, from the medians of the rounds.
+  - The cand arm solved its blocks cold (22-24) and had 0 rebuilds while warm (asserted).
+- **Orbit** (`scripts/cost-fair/orbit-ab.mjs`, the T4 orbit bench unchanged). 7 rounds per process; growth =
+  median(cand) / median(ref) − 1 by role, whichever root sits in position A. 0 block solves. The A/A digests are
+  identical.
+- **Judging rule.** Per world, take the median over the 30 processes with a distribution-free 95% CI (order
+  statistics 10 and 21). The A/A bias counts as **demonstrated only if the A/A CI excludes 0**; then judged =
+  median(A/B) − median(A/A). Otherwise judged = median(A/B), and the absolute budgets stand.
+
+**Results** (A/B and A/A medians in %, 95% CI in brackets):
+
+| World | C1 A/B | C1 A/A | C1 judged (≤ 8) | Orbit A/B | Orbit A/A | Orbit judged (≤ 5) |
+|---|---|---|---:|---|---|---:|
+| Maithea | 5.50 [3.58, 6.27] | 0.12 [−1.76, 1.16] | **5.50** MET | 3.33 [2.71, 3.99] | −0.01 [−1.46, 1.49] | **3.33** MET |
+| Selawyn | 1.75 [−0.36, 6.07] | −0.38 [−1.31, 2.64] | **1.75** MET | 3.95 [3.42, 5.51] | 0.06 [−0.75, 2.66] | **3.95** MET |
+| Raiva | 3.74 [2.31, 5.09] | −0.80 [−2.79, 1.11] | **3.74** MET | 3.27 [2.13, 4.23] | 0.53 [−1.12, 1.23] | **3.27** MET |
+| Lethuris | 4.43 [3.65, 5.42] | −1.05 [−1.69, −0.40] (demonstrated) | **5.48** MET | 2.49 [1.22, 4.35] | 1.55 [0.14, 2.18] (demonstrated) | **0.94** MET |
+
+INFO:
+
+- **C1 outside massifs**, A/B: +3.0 / +0.4 / +2.0 / +2.9%. A/A: 0.1 / −0.4 / −0.8 / −1.1%.
+- **In-massif warm**, A/B: +97..+126% on 1.1-2.3% of the sphere.
+- **Per-run ranges.** C1 A/B −16.6..+17.2%, C1 A/A −9.5..+9.2%. Orbit A/B −9.0..+10.5%, orbit A/A −6.5..+9.4%. A
+  single run or a 15-run median cannot resolve 1-3 points.
+- **The two demonstrated A/A biases** (Lethuris, C1 −1.05% and orbit +1.55%) are 2 of 8 A/A tests at 95%. They may be
+  chance. The verdict does not depend on them: the uncorrected medians also meet both budgets on every world
+  (Lethuris C1 4.43%, orbit 2.49%).
+- **Diagnostic only, not part of the judgement.** The old C1 harness was run A/A, a main copy against main, 6 processes
+  per world (`oldaa/`). Medians: −2.2 / −9.2 / +2.0 / −0.6%. Single runs: −20.5..+8.7%.
+  - The old harness has world-dependent offsets of several points even with identical code.
+  - Why it read the branch at 9.9-12.1% is **not proven**. Candidates:
+    - it selected its points through the measured wired arm's own layout module, which an A/A run of it cannot show;
+    - it imported and ran the arms in a fixed order;
+    - it took only 15 runs.
+
+**Decision 2: verdict.** Under the fair protocol, C1 and the orbit bake are **MET on all four worlds**, with or
+without the A/A correction. The round-2 official misses (C1 9.86 / 12.10%, orbit Lethuris +8.4%) stay on record in
+evidence doc §8, and they are superseded as the judging measurement by this protocol. Together with the field build,
+contract §6 and identity (already MET), every budget of route A is met. The budgets themselves did not move.
+
+**Decision 3: the merge is BLOCKED, by a finding that is not about cost.** The outcome rule said to merge `a1165e0`
+staged if C1 and the orbit bake meet their budgets. I did not merge, because the merge would break a HARD test on
+main.
+
+- The trial merge (`git merge-tree main a1165e0`) conflicts only in the `package.json` test list. In a scratch export
+  of it, main's `tests/lod-coarse-frame.test.mjs` (contract §3.1, added after `a1165e0` was cut) **fails its HARD
+  lower side at the carving switch pair on all four worlds**.
+- That test runs the staged `{mountains: true}` path, which route A changes (`orogen-layout-3`).
+- Every other pair stays within its ROOM. The closest is Maithea L4→5: 999 m against 1000 m.
+
+| Switch pair, parent − child (m) | main `37baddf` p50 / p99 / max | trial merge p50 / p99 / max | ROOM pin |
+|---|---|---|---:|
+| Maithea L5→6 | 35 / 844 / 1,216 | 84 / 1,619 / **2,874** | 1,550 |
+| Selawyn L6→7 | 463 / 1,387 / 1,575 | 920 / 1,872 / **2,172** | 2,000 |
+| Raiva L4→5 | 97 / 551 / 632 | 269 / 1,315 / **1,767** | 800 |
+| Lethuris L6→7 | 161 / 1,364 / 1,869 | 519 / 2,332 / **2,610** | 2,350 |
+
+- **Cause.** The coarse field is an upper bound with a fixed margin of 0.16 H. Its documented overestimate is a p99 of
+  about 750 m and a maximum of 1.4-2.3 km near belt ends. Under the T3 rule the switch parent is coarse, so it now
+  sits further above its carved child. The carving appears during the morph, so this is a larger visible pop at
+  exactly the place the owner's frame principle names ("especially at the mountains").
+- **Why I do not re-pin.** ROOM is defined as "measured max + 25% … a margin over the measurement, not a fit to hide
+  failures". Re-measuring it on route A would raise the switch pins 1.4-2.8x (to about 3,600 / 2,750 / 2,250 /
+  3,300 m). That would loosen a pin set for Kasper's principle, by my judgement. I hold this to the same rule as C1 in addendum (5).
+- **Result.** `TERRAIN_MOUNTAINS_WIRED` stays false on main, and no route-A source lands. The branch and worktree are
+  kept as the base.
+
+**Question for Kasper (the only one here):** "Route A now meets every cost budget under a fair A/B protocol (C1 at most
+5.5%, orbit at most 4.0%), but its coarse field raises the carving-switch parent: parent − child grows from a maximum
+of 632-1,869 m to 1,767-2,874 m, above the §3.1 ROOM pins (800-2,350 m) on all four worlds. Do you accept re-pinning
+those four switch ROOM values to the route-A measurement and merging, or should route A stay unmerged until a tighter,
+value-changing field margin (|u/U|-dependent, evidence doc §7 item 3) brings the switch back inside today's ROOM?"
+
+**Lifting the block without his answer (recorded, not started).** The margin follow-up of evidence doc §7 item 3:
+
+- what it is: a delta that depends on |u/U| and stays conservative (0 bound violations), with a version move;
+- the gates it must pass:
+  - the frame test with today's ROOM unchanged;
+  - this protocol for C1 and the orbit bake;
+  - contract §6 and the field build.
+
+### Q-B. Frame upper side at peak-corrected levels
+
+**Question.** `tests/lod-coarse-frame.test.mjs` keeps "child ≤ parent + 0.05 m at peak-corrected child levels" as a
+`todo`.
+
+- Measured on main `37baddf` (`frame-main.tap`): child − parent maxima of
+  - 3,218 / 3,894 / 2,918 / 1,749 m at Maithea L0→1..L3→4 (S0);
+  - 892 / 85 / 435 / 476 / 206 m at Maithea L4→5..L8→9;
+  - 75-158 m at the switch pairs.
+- At every corrected pair, 6-40% of the shared points exceed 0.05 m. The pairs with point-sampled children hold
+  exactly (0.000 m).
+- Three options: lift the coarse parent to cover the child's peaks, bound (cap) the child's correction, or document
+  the upper rule as holding for the carving frame only, with the peaks excepted.
+
+**Decision: the third option, with the exception measured and pinned rather than left open.** The principle "the
+coarse levels carry the frame" is kept wherever the reductions make it exact. The peak correction is excepted,
+bounded by numbers and stated.
+
+**1. Lifting the parent is not cheap (arithmetic, not a measurement).**
+
+- To hold pairwise, a parent vertex would have to include its child's *corrected* value at that point. That value
+  reads the child's 4 cell centres, and it must in turn cover its own child.
+- So the lift recurses down to the last corrected level: 4·(corrMax − L) extra samples per vertex.
+- Today a vertex costs about 1 + 1024/1089 ≈ 1.94 samples. That gives:
+  - about 3.1x the samples at L = corrMax − 1, the cheapest case;
+  - about 19.5x at Maithea L0 (36 extra).
+- Contract §6 allows +10%. Rejected as not cheap.
+
+**2. Capping the child is rejected on its effect, not its cost.**
+
+- The cap would be h_child = max(p, min(lift, parent)) at shared vertices. It would cut the child's summit back to the
+  coarse value exactly at the coarse vertex points, at every corrected level.
+- That leaves a pit at each coarse vertex on a summit, persisting through S1. That contradicts "ranges with true
+  summits" (§2, S1).
+- The cap also lowers stored heights at 6-40% of shared points. That puts the §5 peak-area keeps at risk (L6 ≥ 85%,
+  L8 ≥ 95%) and the summit-loss tolerance.
+
+**3. What the upper rule becomes (implemented at T6 only, in `tests/lod-coarse-frame.test.mjs` and contract
+§3.1).**
+
+- **(U1) Carving frame, exact, HARD, every pair L0 → corrMax + 1:** child *point sample* ≤ parent *stored* + 0.05 m
+  at every shared vertex.
+  - This holds by construction: the parent stores h ≥ its point sample p.
+  - At uncarved levels both levels sample the same field.
+  - At the switch the parent is the uncarved (and, with route A, field-bounded) upper envelope of the carved child.
+  - At carved levels both are the truth.
+  - It is the part of the frame that the reductions (carving, route A field, peak correction) guarantee, so it is
+    pinned exactly.
+  - The child point samples are taken with the child's level sampler at the 289 shared directions, about 289 samples
+    per pair.
+  - New negative control: lowering one parent vertex by 1 m below the child's point sample must fail.
+- **(U2) Peak-correction excess, HARD, measured:** child stored − parent stored ≤ UP_ROOM(world, pair) at every
+  corrected pair.
+  - UP_ROOM uses the same method as ROOM: measured max + 25%, rounded up to 50 m.
+  - It is measured once on the T6 wired tree and listed in §3.1 with p50/p99/max per pair.
+  - It replaces the `todo`. The strict 0.05 m upper rule is **not** claimed at corrected levels, and §3.1 says so in
+    those words: "carving frame exact; peak correction excepted, bounded by UP_ROOM".
+  - The existing §5 companion check stays.
+- The pair rule for point-sampled child levels (max 0.000 m) stays HARD and unchanged.
+
+**4. Versions.** Q-B moves **no version**.
+
+- No reduction rule changes, so `LOD_LADDER_VERSION` stays `lod-ladder-2`. The §3.1 text and the frame test change
+  at T6, together with T6's planned moves (`TERRAIN_VERSION` → `terrain-1.9.0-mountains` and the single golden re-pin).
+- If Kasper overrules toward the cap, the cap is a new reduction rule and takes `lod-ladder-3`, with the §5 keeps,
+  summit loss and the frame re-measured. A reopened M0 would then become `lod-ladder-4`.
+- UP_ROOM is a new pin, not a loosened one. The strict upper rule was never met or pinned at corrected levels. Until
+  now the only HARD check was the §5 tolerance (`heightP99M`/`heightMaxM`), which is far looser.
+
+### Ledger
+
+- **No threshold, tolerance, budget, golden or version changes.** No ROOM pin moves.
+- **Protocol change, recorded here.** C1 and the orbit bake are judged by `scripts/cost-fair/` (decision 1 above).
+  - Old: C1 was the median of 15 fresh processes of `scripts/mountain-assembly-cost.mjs`, with the candidate checkout
+    selecting the points and a fixed arm order. The orbit bake was one process per world of 7 alternating rounds.
+    Neither had an A/A control.
+  - New: as decision 1, with the A/A correction applied only when it is demonstrated in the same run.
+  - Budgets unchanged: C1 +8%, orbit +5%. The contract §6 build bench protocol is unchanged.
+- Route A is not merged. Main is unchanged except for this addendum and `scripts/cost-fair/`.
+- `test:full` was not run; its one use stays reserved for the T6 gate. No Luna vote (no visual question was decided
+  here; NOT RUN). No Astra round (no implementation in this step).
