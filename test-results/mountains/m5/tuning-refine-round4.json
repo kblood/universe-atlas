@@ -1,0 +1,758 @@
+[
+  {
+    "params": {
+      "STRATA_PERIOD_M": 200,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.005,
+      "STRATA_WEIGHT": 0.995,
+      "MAX_DEPTH_M": 40,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.2422934015038116,
+    "R3": 2.4823087513756716,
+    "R4": 0.0010448085243590312,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.26723218409068,
+      "p90": 44.41756735964628,
+      "fill10ShareP50": 0.0011075511253510542,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 483.9319470699433,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 200,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.015,
+      "STRATA_WEIGHT": 0.985,
+      "MAX_DEPTH_M": 40,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.22437430323438,
+    "R3": 2.4920045429959807,
+    "R4": 0.001112081632041721,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.267271657014945,
+      "p90": 44.415182426491036,
+      "fill10ShareP50": 0.0010284403306831218,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 481.4629065236681,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 200,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.03,
+      "STRATA_WEIGHT": 0.97,
+      "MAX_DEPTH_M": 40,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.1977586905771664,
+    "R3": 2.506695849540173,
+    "R4": 0.00134114009184309,
+    "R6": 0.06889657823913879,
+    "coarse": {
+      "p50": 38.263961435344804,
+      "p90": 44.41343624957235,
+      "fill10ShareP50": 0.0009888849333491555,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 483.9319470699433,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 200,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.005,
+      "STRATA_WEIGHT": 0.995,
+      "MAX_DEPTH_M": 45,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.471578644869173,
+    "R3": 2.367805823577102,
+    "R4": 0.0010448085243590327,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.28587212076688,
+      "p90": 44.460150771682166,
+      "fill10ShareP50": 0.0011866619200189867,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 481.4629065236681,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 200,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.015,
+      "STRATA_WEIGHT": 0.985,
+      "MAX_DEPTH_M": 45,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.450998319600067,
+    "R3": 2.3777150079157527,
+    "R4": 0.001112081632041723,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.282786977913474,
+      "p90": 44.454892708228925,
+      "fill10ShareP50": 0.0011866619200189867,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 483.9319470699433,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 200,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.03,
+      "STRATA_WEIGHT": 0.97,
+      "MAX_DEPTH_M": 45,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.4204166782621392,
+    "R3": 2.3927365801423752,
+    "R4": 0.001341140091843086,
+    "R6": 0.20865820838139176,
+    "coarse": {
+      "p50": 38.2827342827519,
+      "p90": 44.446018408461356,
+      "fill10ShareP50": 0.0011866619200189867,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 491.33906870876893,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 200,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.005,
+      "STRATA_WEIGHT": 0.995,
+      "MAX_DEPTH_M": 48,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.6111020060069303,
+    "R3": 2.304082026730386,
+    "R4": 0.0010448085243590299,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.29778376614669,
+      "p90": 44.4856849807014,
+      "fill10ShareP50": 0.0013053281120208853,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 491.33906870876893,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 200,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.015,
+      "STRATA_WEIGHT": 0.985,
+      "MAX_DEPTH_M": 48,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.588936680725365,
+    "R3": 2.314093208071829,
+    "R4": 0.001112081632041722,
+    "R6": 0.0019684736639753943,
+    "coarse": {
+      "p50": 38.29596393271847,
+      "p90": 44.48194911830488,
+      "fill10ShareP50": 0.0013448835093548515,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 491.33906870876893,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 200,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.03,
+      "STRATA_WEIGHT": 0.97,
+      "MAX_DEPTH_M": 48,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.5559928888752896,
+    "R3": 2.3292727653575382,
+    "R4": 0.0013411400918430865,
+    "R6": 0.33857747020376777,
+    "coarse": {
+      "p50": 38.29265220632371,
+      "p90": 44.47576037304459,
+      "fill10ShareP50": 0.001265772714686919,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 493.8081092550442,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 220,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.005,
+      "STRATA_WEIGHT": 0.995,
+      "MAX_DEPTH_M": 40,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.4434686320657906,
+    "R3": 2.764855799619049,
+    "R4": 0.00033463044997099724,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.60090356022597,
+      "p90": 44.17040632425091,
+      "fill10ShareP50": 0.0008306633440132907,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 478.99386597739283,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 220,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.015,
+      "STRATA_WEIGHT": 0.985,
+      "MAX_DEPTH_M": 40,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.4231753993674787,
+    "R3": 2.77538133670969,
+    "R4": 0.00038498097951176704,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.594850605557,
+      "p90": 44.17213419560621,
+      "fill10ShareP50": 0.0007911079466793244,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 486.4009876162185,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 220,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.03,
+      "STRATA_WEIGHT": 0.97,
+      "MAX_DEPTH_M": 40,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.3929796006580943,
+    "R3": 2.791322035428818,
+    "R4": 0.0005885141304829301,
+    "R6": 0.013779315647827759,
+    "coarse": {
+      "p50": 38.58569680895696,
+      "p90": 44.17232771164618,
+      "fill10ShareP50": 0.0007911079466793244,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 486.4009876162185,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 220,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.005,
+      "STRATA_WEIGHT": 0.995,
+      "MAX_DEPTH_M": 45,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.701216869028495,
+    "R3": 2.6401397806239713,
+    "R4": 0.000334630449970998,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.68381354865552,
+      "p90": 44.14773371073389,
+      "fill10ShareP50": 0.0009097741386812231,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 481.4629065236681,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 220,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.015,
+      "STRATA_WEIGHT": 0.985,
+      "MAX_DEPTH_M": 45,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.677988352487642,
+    "R3": 2.650917703093325,
+    "R4": 0.0003849809795117709,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.67477133890385,
+      "p90": 44.15058941258027,
+      "fill10ShareP50": 0.0009097741386812231,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 488.8700281624937,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 220,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.03,
+      "STRATA_WEIGHT": 0.97,
+      "MAX_DEPTH_M": 45,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.643412049219376,
+    "R3": 2.6672560292690335,
+    "R4": 0.0005885141304829355,
+    "R6": 0.11613994617454824,
+    "coarse": {
+      "p50": 38.66400572560949,
+      "p90": 44.15367584391417,
+      "fill10ShareP50": 0.0008702187413472569,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 486.4009876162185,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 220,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.005,
+      "STRATA_WEIGHT": 0.995,
+      "MAX_DEPTH_M": 48,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.857707326519511,
+    "R3": 2.570695511191189,
+    "R4": 0.000334630449970994,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.74074953967617,
+      "p90": 44.135857878133734,
+      "fill10ShareP50": 0.001067995728017088,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 483.9319470699433,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 220,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.015,
+      "STRATA_WEIGHT": 0.985,
+      "MAX_DEPTH_M": 48,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.8327299922263696,
+    "R3": 2.5815779665923646,
+    "R4": 0.00038498097951177236,
+    "R6": 0.0019684736639753943,
+    "coarse": {
+      "p50": 38.73057390060357,
+      "p90": 44.13729667403013,
+      "fill10ShareP50": 0.0011075511253510542,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 491.33906870876893,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 220,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.03,
+      "STRATA_WEIGHT": 0.97,
+      "MAX_DEPTH_M": 48,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.795543885010866,
+    "R3": 2.59808165071206,
+    "R4": 0.0005885141304829338,
+    "R6": 0.18700499807766244,
+    "coarse": {
+      "p50": 38.71656897727695,
+      "p90": 44.14063571833554,
+      "fill10ShareP50": 0.001067995728017088,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 491.33906870876893,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 240,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.005,
+      "STRATA_WEIGHT": 0.995,
+      "MAX_DEPTH_M": 40,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.5642668904793493,
+    "R3": 2.7367096486966807,
+    "R4": 0.000177479106709677,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.581483940723004,
+      "p90": 44.37298531167799,
+      "fill10ShareP50": 0.0009888849333491555,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 476.5248254311176,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 240,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.015,
+      "STRATA_WEIGHT": 0.985,
+      "MAX_DEPTH_M": 40,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.5425744417925933,
+    "R3": 2.745460753169451,
+    "R4": 0.00024770297247058104,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.574147189241906,
+      "p90": 44.371608813251314,
+      "fill10ShareP50": 0.0009097741386812231,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 474.0557848848424,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 240,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.03,
+      "STRATA_WEIGHT": 0.97,
+      "MAX_DEPTH_M": 40,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.510269580735047,
+    "R3": 2.7586814243195175,
+    "R4": 0.0004814539693180053,
+    "R6": 0.013779315647827759,
+    "coarse": {
+      "p50": 38.5621547435923,
+      "p90": 44.36968342165404,
+      "fill10ShareP50": 0.0007911079466793244,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 481.4629065236681,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 240,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.005,
+      "STRATA_WEIGHT": 0.995,
+      "MAX_DEPTH_M": 45,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.8391286458228477,
+    "R3": 2.6319754888803724,
+    "R4": 0.00017747910670967742,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.66090392901232,
+      "p90": 44.39885009836809,
+      "fill10ShareP50": 0.0011471065226850204,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 481.4629065236681,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 240,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.015,
+      "STRATA_WEIGHT": 0.985,
+      "MAX_DEPTH_M": 45,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.814339026430728,
+    "R3": 2.641140805428,
+    "R4": 0.0002477029724705813,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.65256710672615,
+      "p90": 44.39779113016921,
+      "fill10ShareP50": 0.0011075511253510542,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 474.0557848848424,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 240,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.03,
+      "STRATA_WEIGHT": 0.97,
+      "MAX_DEPTH_M": 45,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.7774091266290197,
+    "R3": 2.655001552276763,
+    "R4": 0.0004814539693180025,
+    "R6": 0.09842368319876971,
+    "coarse": {
+      "p50": 38.64070179841438,
+      "p90": 44.39291143228183,
+      "fill10ShareP50": 0.0010284403306831218,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 481.4629065236681,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 240,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.005,
+      "STRATA_WEIGHT": 0.995,
+      "MAX_DEPTH_M": 48,
+      "KAPPA": 0.6
+    },
+    "R1e": 3.00581441409284,
+    "R3": 2.572666671165059,
+    "R4": 0.00017747910670967506,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.72172397321363,
+      "p90": 44.41347313689743,
+      "fill10ShareP50": 0.0013053281120208853,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 478.99386597739283,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 240,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.015,
+      "STRATA_WEIGHT": 0.985,
+      "MAX_DEPTH_M": 48,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.9791791079659693,
+    "R3": 2.5820310240501545,
+    "R4": 0.0002477029724705819,
+    "R6": 0,
+    "coarse": {
+      "p50": 38.71203796760053,
+      "p90": 44.41060687996388,
+      "fill10ShareP50": 0.0013053281120208853,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 478.99386597739283,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  },
+  {
+    "params": {
+      "STRATA_PERIOD_M": 240,
+      "BENCH_RISE": 0.4,
+      "BENCH_FALL": 0.08,
+      "RIB_WEIGHT": 0.03,
+      "STRATA_WEIGHT": 0.97,
+      "MAX_DEPTH_M": 48,
+      "KAPPA": 0.6
+    },
+    "R1e": 2.939493134123109,
+    "R3": 2.5962000526447206,
+    "R4": 0.0004814539693180038,
+    "R6": 0.1633833141099577,
+    "coarse": {
+      "p50": 38.69819627410996,
+      "p90": 44.40661341586437,
+      "fill10ShareP50": 0.0011471065226850204,
+      "pits025Per1000km2P50": 0,
+      "allPitsINFO": 486.4009876162185,
+      "base": {
+        "flatShare": 0.17738995409127734,
+        "steepShare": 0.7710591798155936,
+        "fill10ShareP50": 0,
+        "pits025Per1000km2P50": 0
+      }
+    }
+  }
+]

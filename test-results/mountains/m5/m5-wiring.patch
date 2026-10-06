@@ -1,0 +1,215 @@
+M5 proposed T6 wiring against main 9971c3f. NOT APPLIED on main or this worktree.
+Requires the separately staged round-4 bench-led mountain-rock-detail.ts module.
+Six-argument API: centre and fixed +125 m carved heights; benches plus secondary gullies.
+T6 (wiring the mountains at all) remains BLOCKED on the mountain path's own tile/orbit cost (decisions addendum (4));
+M5's add-on is within its budget (official, CPU-quiet slot: 149.5 ns per in-massif sample vs 214 ns).
+Coordinator check (2026-10-06): applies to 9971c3f with git apply; npx tsc --noEmit exit 0; with it, 9 of 72 tests in
+lod-carving-reduction, terrain-mountains-assembly, mountain-layout-grid, sparse-consumer-levels, tile-metadata,
+terrain-floor-window and acceptance/version-compat fail, all expected T6 work (patch-applied-tests.log):
+ - lod-carving-reduction 'cost optimisation preserves full sampler outputs at truth and L0..22' x4 worlds: opted-in
+   output digests change (rock at the truth and at levels >= rockDetailFromLevel): re-pin at T6;
+ - lod-carving-reduction 'below the cut ... from the cut the truth' x4 worlds: 'from the carving cut equals the truth'
+   must become 'from the rock level equals the truth; between the carving cut and the rock level an upper envelope';
+ - terrain-mountains-assembly 'arithmetic only and imports only M2 and M3': the import allowlist gains
+   ./mountain-rock-detail.ts.
+TERRAIN_MOUNTAINS_WIRED stays false; TERRAIN_VERSION and all terrain goldens stay unchanged.
+Opted-in truth changes: MOUNTAIN_ASSEMBLY_VERSION -> mountain-assembly-3;
+LOD_LADDER_VERSION -> lod-ladder-3. Default mountainRidgeTermM rock=false is bit-identical.
+Primitive mountainCarvingState adds 'rock', preserving tile-cache and switch-parent distinctions.
+Version-string pins updated ONLY in this patch:
+ tests/lod-carving-reduction.test.mjs (both versions; truth state now 'rock')
+ tests/terrain-mountains-assembly.test.mjs (assembly version)
+ tests/lod-consistency.test.mjs (ladder version)
+ tests/acceptance/version-compat.test.mjs (ladder version)
+Existing opted-in truth identity evidence must be re-measured by T6; no golden is repinned here.
+
+diff --git a/src/lod-ladder.ts b/src/lod-ladder.ts
+--- a/src/lod-ladder.ts
++++ b/src/lod-ladder.ts
+@@ -20,7 +20,18 @@
+  */
+ // lod-ladder-2 (mountains cost plan T3, docs/mountains-opus-decisions-2026-10-05.md Q2): adds the declared
+ // M3 carving reduction (`carvingFromLevel`); every section-5 tolerance is unchanged. Was lod-ladder-1 (P3).
+-export const LOD_LADDER_VERSION = 'lod-ladder-2';
++export const LOD_LADDER_VERSION = 'lod-ladder-3';
++import {ROCK_DETAIL_REDUCTION, ROCK_DETAIL_MAX_EDGE_M, ROCK_DETAIL_BANDS} from './mountain-rock-detail.ts';
++export {ROCK_DETAIL_REDUCTION};
++// A module-load pin prevents a declaration/reduction mismatch, without duplicating constants.
++if (ROCK_DETAIL_REDUCTION.longestWavelengthM !== Math.max(...ROCK_DETAIL_BANDS.map(b => b.wavelengthM)))
++  throw new Error('M5 band/reduction mismatch');
++export function rockDetailFromLevel(radiusM: number): number {
++  return firstLevelAtOrBelowEdge(radiusM, ROCK_DETAIL_MAX_EDGE_M);
++}
++export function rockDetailAtLevel(radiusM: number, lodLevel?: number): boolean {
++  return lodLevel === undefined || lodLevel >= rockDetailFromLevel(radiusM);
++}
+ 
+ export type LadderId = 'S0' | 'S1' | 'S2' | 'S3' | 'S4';
+ export const LADDER_IDS: readonly LadderId[] = Object.freeze(['S0', 'S1', 'S2', 'S3', 'S4'] as LadderId[]);
+diff --git a/src/mountain-assembly.ts b/src/mountain-assembly.ts
+--- a/src/mountain-assembly.ts
++++ b/src/mountain-assembly.ts
+@@ -13,11 +13,12 @@
+ // Arithmetic only (+ - * /, Math.floor/min/max/abs/imul): every value feeds a height and the ocean flag.
+ import {massifEnvelopeM, composeRidgeTermM, MASSIF_ENVELOPE} from './mountain-envelope.ts';
+ import {ridgeValleyCarvingM} from './mountain-carving.ts';
++import {MOUNTAIN_ROCK_DETAIL, rockDetailM, rockDetailSeed} from './mountain-rock-detail.ts';
+ 
+ // mountain-assembly-2 (mountains cost plan T3): mountainRidgeTermM takes `carve`; with carve = false (tile
+ // levels coarser than lod-ladder.ts carvingFromLevel) it returns the uncarved composition. The truth (carve =
+ // true, the default) is unchanged. Was mountain-assembly-1.
+-export const MOUNTAIN_ASSEMBLY_VERSION = 'mountain-assembly-2';
++export const MOUNTAIN_ASSEMBLY_VERSION = 'mountain-assembly-3';
+ export const MOUNTAIN_ASSEMBLY = Object.freeze({
+   // Fixed M3 carving half-width (m): one strip spans 2x this across the belt axis.
+   CARVING_HALF_WIDTH_M: 48000,
+@@ -66,14 +67,22 @@
+ // main + U. C <= 0, so it is >= the carved term (an upper envelope), and no M3 block is ever solved for it.
+ export function mountainRidgeTermM(
+   mainTermM: number, o: BeltSample, a0: number, landFactor: number, tau: number, beltSeeds: ArrayLike<number>,
+-  carve = true,
++  carve = true, rock = false,
+ ): number {
+   const U = massifEnvelopeM(o.belt, o.axisDistanceM, o.halfWidthM, a0, landFactor, tau, 'water');
+   const composed = composeRidgeTermM(mainTermM, o.belt, o.axisDistanceM, o.halfWidthM, U);
+   if (!carve || !(U > 0)) return composed;
+   const {strip, localM} = carvingStrip(o.axisDistanceM);
+-  return composed + ridgeValleyCarvingM(o.alongM ?? 0, localM, MOUNTAIN_ASSEMBLY.CARVING_HALF_WIDTH_M, U, o.belt,
+-    carvingSeed(beltSeeds[o.beltIndex], strip));
++  const alongM = o.alongM ?? 0, w = MOUNTAIN_ASSEMBLY.CARVING_HALF_WIDTH_M;
++  const stripSeed = carvingSeed(beltSeeds[o.beltIndex], strip);
++  const C = ridgeValleyCarvingM(alongM, localM, w, U, o.belt, stripSeed);
++  if (!rock) return composed + C; // Same operation order as mountain-assembly-2.
++  // Envelope U and strip seed held at the sample; offsets use the same local
++  // coordinate system and fixed metric step, never tile lattice spacing.
++  const S = MOUNTAIN_ROCK_DETAIL.SLOPE_STEP_M;
++  const Cx = ridgeValleyCarvingM(alongM + S, localM, w, U, o.belt, stripSeed);
++  const Cy = ridgeValleyCarvingM(alongM, localM + S, w, U, o.belt, stripSeed);
++  return composed + C + rockDetailM(alongM, localM, U + C, U + Cx, U + Cy, rockDetailSeed(stripSeed));
+ }
+ 
+ // The massif cap and the carving width agree (decision (e) and (g)): a massif is one carving strip.
+diff --git a/src/terrain.ts b/src/terrain.ts
+--- a/src/terrain.ts
++++ b/src/terrain.ts
+@@ -17,7 +17,7 @@
+ import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_CALIBRATION,CLIMATE_VERSION,type ClimateSample} from './surface-climate.ts';
+ import {orogenLayout,type OrogenSample} from './mountain-layout.ts';
+ import {mountainRidgeTermM,massifBeltSample} from './mountain-assembly.ts';
+-import {carvingAtLevel} from './lod-ladder.ts';
++import {carvingAtLevel, rockDetailAtLevel} from './lod-ladder.ts';
+ 
+ // Bumped from terrain-1.3.0: `terrainSampler` gained the ABILITY to sum
+ // procedural impact craters (planet-craters.ts) into `elevationM` for any
+@@ -471,7 +471,7 @@
+   return seeds;
+ }
+ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false, relief: boolean = false,
+-  mountains: {carve: boolean} | null = null) {
++  mountains: {carve: boolean; rock: boolean} | null = null) {
+   const { code, n } = macroNoise(body);
+   const sea = 0.37 + body.water * 0.22;
+   // terrain-1.8.0 relief mode (terrainSampler only; baseTerrainSampler never).
+@@ -487,6 +487,7 @@
+     ? mountainSeeds(body, orogen)
+     : new Uint32Array(0);
+   const carve = mountains ? mountains.carve : true;
++  const rock = mountains ? mountains.rock : false;
+   const kd = dryFloorScale(tau);
+   const seabedHillF = body.radiusM / RC.SEABED_HILL_WAVELENGTH_M;
+   const seabedGullyF = body.radiusM / RC.SEABED_GULLY_WAVELENGTH_M;
+@@ -594,7 +595,7 @@
+           if (orogen) {
+             const o = massifBeltSample(orogen, d, a0, orogenScratch);
+             if (o.belt !== 0)
+-              ridgeTermM = mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve);
++              ridgeTermM = mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve, rock);
+           }
+           const F = comp + tau * (RC.HUP * ss(RC.B1, RC.B2, a0) + RC.HHI * ss(RC.B3, RC.B4, a0))
+             + ridgeTermM + fineT;
+@@ -816,10 +817,14 @@
+ export type TerrainSamplerOptions = {lodLevel?: number; mountains?: boolean};
+ /** The mountain carving state a sampler with `options` evaluates on `body`: null when no mountain belt is
+  * evaluated (not wired, or not a relief water world: the level then changes nothing), else whether the M3
+- * carving is on. Two samplers with equal states return identical fields; tile caches key on it. */
+-export function mountainCarvingState(body: Body, options: TerrainSamplerOptions = {}): boolean | null {
++ * carving is on (true), both carving and rock are on ('rock'), or neither is on (false).
++ * Two samplers with equal states return identical fields; tile caches key on it. */
++export function mountainCarvingState(body: Body, options: TerrainSamplerOptions = {}): boolean | 'rock' | null {
+   if (!(options.mountains ?? TERRAIN_MOUNTAINS_WIRED) || !reliefModeFor(body) || !body.water) return null;
+-  return carvingAtLevel(body.radiusM, options.lodLevel);
++  if (!carvingAtLevel(body.radiusM, options.lodLevel)) return false;
++  // Primitive cache state: strict equality also catches the M5 switch level
++  // in planet-tiles' existing split-parent path, without editing that module.
++  return rockDetailAtLevel(body.radiusM, options.lodLevel) ? 'rock' : true;
+ }
+ export function terrainSampler(
+   body: Body,
+@@ -832,7 +837,7 @@
+   options: TerrainSamplerOptions = {},
+ ) {
+   const carving = mountainCarvingState(body, options);
+-  const core = baseTerrainCore(body, waterLevelM, exposeFloor, true, carving === null ? null : {carve: carving});
++  const core = baseTerrainCore(body, waterLevelM, exposeFloor, true, carving === null ? null : {carve: carving !== false, rock: carving === 'rock'});
+   const landforms=planetLandforms(body);
+   // The landform ceiling (terrain-1.8.0): the body's analytic height bound.
+   const landformCeilingM = reliefModeFor(body) ? bodyHeightBoundM(body).maxM : undefined;
+diff --git a/tests/lod-carving-reduction.test.mjs b/tests/lod-carving-reduction.test.mjs
+--- a/tests/lod-carving-reduction.test.mjs
++++ b/tests/lod-carving-reduction.test.mjs
+@@ -69,8 +69,8 @@
+ });
+ 
+ test('lod-ladder-2: carving starts at the first level with edge <= 128 km; constants pinned to their sources', () => {
+-  assert.equal(LOD_LADDER_VERSION, 'lod-ladder-2');
+-  assert.equal(MOUNTAIN_ASSEMBLY_VERSION, 'mountain-assembly-2');
++  assert.equal(LOD_LADDER_VERSION, 'lod-ladder-3');
++  assert.equal(MOUNTAIN_ASSEMBLY_VERSION, 'mountain-assembly-3');
+   assert.equal(CARVING_REDUCTION.longestWavelengthM, Math.max(...CARVING_BANDS.map(b => b.wavelengthM)));
+   assert.equal(CARVING_REDUCTION.latticeSegments, tiles.PATCH_SEGMENTS);
+   assert.equal(CARVING_MAX_EDGE_M, 128_000);
+@@ -90,7 +90,7 @@
+   assert.equal(TERRAIN_VERSION, 'terrain-1.8.1-grain');
+   const body = bodies.Maithea, cut = CUT.Maithea;
+   assert.equal(mountainCarvingState(body), null);assert.equal(mountainCarvingState(body, {lodLevel: 0}), null);
+-  assert.equal(mountainCarvingState(body, ON), true);
++  assert.equal(mountainCarvingState(body, ON), 'rock');
+   assert.equal(mountainCarvingState(body, {...ON, lodLevel: cut - 1}), false);assert.equal(mountainCarvingState(body, {...ON, lodLevel: cut}), true);
+   const site = axisSites(body, {count: 1})[0].d, base = terrainSampler(body), coarse = terrainSampler(body, undefined, undefined, undefined, 0, undefined, false, {lodLevel: 0});
+   for (const d of [site, ...Array.from({length: 64}, (_, i) => fib(i, 64))]) assert.deepEqual(coarse(d), base(d));
+diff --git a/tests/terrain-mountains-assembly.test.mjs b/tests/terrain-mountains-assembly.test.mjs
+--- a/tests/terrain-mountains-assembly.test.mjs
++++ b/tests/terrain-mountains-assembly.test.mjs
+@@ -59,7 +59,7 @@
+ });
+ 
+ test('HARD: versions, fixed carving width, strip rule and per-strip seeds', () => {
+-  assert.deepEqual([MASSIF_ENVELOPE_VERSION, MOUNTAIN_CARVING_VERSION, MOUNTAIN_ASSEMBLY_VERSION], ['massif-envelope-2', 'mountain-carving-2', 'mountain-assembly-2'], 'mountain-assembly-1 -> -2: cost plan T3 coarse-level carve flag; the truth term is unchanged');
++  assert.deepEqual([MASSIF_ENVELOPE_VERSION, MOUNTAIN_CARVING_VERSION, MOUNTAIN_ASSEMBLY_VERSION], ['massif-envelope-2', 'mountain-carving-2', 'mountain-assembly-3'], 'mountain-assembly-1 -> -2: cost plan T3 coarse-level carve flag; the truth term is unchanged');
+   assert.ok(Object.isFrozen(MOUNTAIN_ASSEMBLY));assert.deepEqual({...MOUNTAIN_ASSEMBLY}, {CARVING_HALF_WIDTH_M: 48000});
+   assert.equal(MASSIF_IS_ONE_STRIP, true);
+   const w = MOUNTAIN_ASSEMBLY.CARVING_HALF_WIDTH_M;
+diff --git a/tests/lod-consistency.test.mjs b/tests/lod-consistency.test.mjs
+--- a/tests/lod-consistency.test.mjs
++++ b/tests/lod-consistency.test.mjs
+@@ -62,7 +62,7 @@
+ };
+ 
+ test('ladder lod-ladder-2: rung ranges, pose mapping and the seabed distance policy',()=>{
+-  assert.equal(LOD_LADDER_VERSION,'lod-ladder-2','was lod-ladder-1 (P3); lod-ladder-2 adds the declared M3 carving reduction (mountains cost plan T3), every tolerance unchanged');
++  assert.equal(LOD_LADDER_VERSION,'lod-ladder-3','was lod-ladder-1 (P3); lod-ladder-2 adds the declared M3 carving reduction (mountains cost plan T3), every tolerance unchanged');
+   const R=bodies.Maithea.radiusM,rungs=ladderFor(R);
+   assert.deepEqual(rungs.map(r=>[r.id,...r.levels]),[['S0',0,4],['S1',5,9],['S2',10,14],['S3',15,contactLevelFor(R)],['S4',contactLevelFor(R)+1,fineContactLevelFor(R)]]);
+   assert.equal(contactLevelFor(R),18);assert.equal(fineContactLevelFor(R),22);
+diff --git a/tests/acceptance/version-compat.test.mjs b/tests/acceptance/version-compat.test.mjs
+--- a/tests/acceptance/version-compat.test.mjs
++++ b/tests/acceptance/version-compat.test.mjs
+@@ -370,7 +370,7 @@
+   assert.equal(LANDFORM_SHAPE_VERSION, 'planet-landforms-shape-2', 'new (P4): the landform shaping; the landform seed version is unchanged');
+   assert.equal(LANDFORM_VERSION, 'planet-landforms-1', 'unchanged: it seeds the landform noise');
+   assert.equal(OCEAN_VOLUME_VERSION, 'ocean-volume-1', 'new (P2)');
+-  assert.equal(LOD_LADDER_VERSION, 'lod-ladder-2', 'was lod-ladder-1, new in P3 (mountains cost plan T3: declared M3 carving reduction; tolerances unchanged)');
++  assert.equal(LOD_LADDER_VERSION, 'lod-ladder-3', 'was lod-ladder-1, new in P3 (mountains cost plan T3: declared M3 carving reduction; tolerances unchanged)');
+   assert.equal(PLACE_QUERY_VERSION, 'place-query-1', 'new (P2)');
+   assert.equal(TERRAIN_VERSION, 'terrain-1.8.1-grain', 'was terrain-1.8.0-relief (mountains step G: reduced 800 m land colour grain)');
+   assert.equal(BUILD_VERSION, 'atlas-client-2026-10-round2-1', 'was atlas-client-2026-10-relief-1 (round 2: landing-site-1, ocean-present)');

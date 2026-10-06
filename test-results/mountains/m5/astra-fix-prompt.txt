@@ -1,0 +1,92 @@
+You are Astra, fix round 2 of the staged M5 element in C:/LLM/IWSDK/universe-atlas-wt/m5-rock (branch
+mountains/m5-rock). You cannot write .git; do NOT run git commands that write. No downloads, network, browser or GPU. Do
+not run `npm run test:full` or the whole `npm test`.
+
+Read first: test-results/mountains/m5/astra-implement-prompt.txt (round 1 brief; everything there still holds unless
+changed below), test-results/mountains/m5/report.md (your round 1 report), and your round 1 files:
+src/mountain-rock-detail.ts, tests/mountain-rock-detail.test.mjs, test-results/mountains/m5/*.mjs.
+
+## Coordinator measurements and decisions since round 1 (decided by the coordinator, Opus, overrulable by the owner)
+
+1. REAL COST FAILS. `node tests/helpers/test-slot.mjs -- node test-results/mountains/m5/cost-bench.mjs`, exit 0:
+   ridgeValleyCarvingM alone 45.0 ns, alone + the T6 add-on 371.6 ns, add-on median 326.7 ns against the 214 ns
+   budget. The two offset M3 lookups cost about 2 x 45 = 90 ns, so rockDetailM + carvedSlopeTan must come down to
+   roughly <= 100 ns warm on that bench (aim for <= 90 to keep margin). Round 1 runs 5 gradient-noise evaluations
+   (4 rib octaves + a separate jitter noise) with a 3-multiply hash per corner. Fix by design, then re-tune on the
+   TUNING seeds only:
+   - at most 2 rib octaves (cells 250 m and 125 m are the natural pair for the declared 125 m - 1 km bands; this also
+     removes the sub-125 m energy of the 62.5 m and 31.25 m cells, a round-1 concern);
+   - no separate jitter noise: derive the strata phase jitter from a value already computed (e.g. the coarse rib
+     octave's signed gradient-noise value g0 times JITTER_M);
+   - a cheaper but still well-mixed integer hash is fine (keep it Math.imul based, keep the audit);
+   - early exits stay first (weight 0 returns before any noise).
+   Run cost-bench.mjs yourself (it is CPU only) to check; the coordinator re-runs the official one.
+2. R1 AS PRE-REGISTERED (on the composed surface) IS DOMINATED BY THE FIXTURE, NOT BY M5. Without rock the fixture's
+   own 125-500 m band-pass RMS is 16.4 m on flat pixels and 14.2 m on steep ones (the analytic profile's floor edges and
+   crests; the background is only 1.1 m there). Reaching ratio 2 on that surface would need rock RMS beyond the 200 m
+   depth bound. Decision: keep the surface R1 exactly as defined, demoted to INFO (always computed and reported, never
+   asserted), and add the GATE row R1d: the same band-pass, windows and input-slope classes, applied to the DETAIL
+   FIELD d = composed - base (= background + rock; the plan's own wording: "the detail window gets a slope weight").
+   R1d threshold: RMS(bp(d) | steep) / RMS(bp(d) | flat) >= 2. Negative controls that must FAIL R1d: no rock, and the
+   weight-forced-to-1 variant. Report the surface R1 for every pool alongside.
+3. R3 NEGATIVE CONTROL. The equal-gains variant gave beta 2.16/2.14, so it is not a negative control; report it as
+   INFO ("the row cannot tell gain .5 from gain 1"). The low-side negative control becomes the per-31.25 m-cell white
+   speckle variant (same amplitude, the HARD 7 speckle edit), which must give beta_fine < 2.0. The no-rock control
+   stays (must fall outside [2.0, 2.6]). With-rock beta was 2.05 / 2.02, at the edge of the band: tune (TUNING seeds
+   only) for a centre near 2.2-2.3.
+4. R5 NEGATIVE CONTROL. The reversed-strata variant did not fail. Use the weight-forced-to-1 variant (rock cut into
+   the flat valley floors, the realistic failure mode) as the R5 negative; report whether it fails. If it does not,
+   report that plainly; keep reversed-strata as INFO.
+5. HARD 7 (b): the 2*L*h interpolation tolerance (4750 m) is vacuous. Remove that assertion. Keep exact shared-vertex
+   identity across the 200 m / 100 m lattices (and the level-dependent-slope negative must still break it), keep the
+   Lipschitz straddle with its analytic L_MAX (recompute the bound for the new octaves; state the derivation) and the
+   speckle negative. Report the fine-midpoint deviation from the coarse interpolation as INFO for the module and for
+   the speckle variant.
+6. FIXTURE BACKGROUND. The background measured 1.14 / 1.16 m RMS at 250-500 m against the specified ~2 m. Rescale its
+   amplitude constant so it measures 2.0 +- 0.2 m (measure with the harness `bandPowers` on fixture transects, state
+   the number in a comment). Change nothing else in the base fixture.
+7. SEEDS. Round-1 held-out 730601..730608 has been seen while the constants were still open, so it is BURNT: it is
+   reported (rows-all-pools evidence) but no longer gates. New pre-registered GATE pool: 730701..730708 (grepped:
+   unused in src/tests/scripts/docs). TUNING stays 730501..730508 and is the only pool you may tune on. Do not run any
+   row on 730701..730708 until your constants are final; then run once and report whatever comes out. If a row fails
+   on the gate pool, report it; do not retune, do not re-pick seeds.
+8. THE TEST FILE MUST RUN UNDER 2 s (plan 2.6: "Each element test runs in under 2 s"; MTN-0: "under 2 s per test
+   file"), measured by node --test's `duration_ms` for the file; round 1 took 20.8 s. So:
+   - the registered test evaluates ROWS ONLY ON THE GATE POOL (730701..730708); tuning and burnt pools move to an
+     evidence script `test-results/mountains/m5/rows-all-pools.mjs` that runs the identical row functions on all three
+     pools (and the gate pool again, to cross-check) and writes `rows-all-pools.json`;
+   - pre-registered sizes for the gate (use exactly these): R1/R1d: one 257 x 257 window at 31.25 m (8 km) per seed,
+     centred at y0 = +9000 for odd seeds and -9000 for even seeds; R2/R5: one 161 x 161 raster at 125 m (20 km) per
+     seed centred on the axis; R3: 2 transects of 1024 x 31.25 m per seed at y = -6000 and +6000; R4: 4 transects of
+     1024 x 31.25 m (seed 730701..730704 only); HARD 2: 64 x 64 per seed for the 8 gate seeds plus the 8 tuning seeds;
+     HARD 7: 6,000 straddle pairs per pool (tuning + gate), shared edges on 3 lines;
+   - compute base and background once per raster and reuse them for with/without/variants (the fixture may expose a
+     "layers" function returning base, background and slope arrays);
+   - controls may run on the first 4 gate seeds if needed for time; say which.
+   If the file still exceeds 2 s, report the measured duration and the per-test split; do not cut a HARD test.
+9. TRACKED HELPERS. test-results/ is gitignored; a registered test must not import from it. Move the fixture and the
+   digest helper to `tests/helpers/mountain-rock-detail-fixture.mjs` and `tests/helpers/mountain-rock-detail-digest.mjs`
+   (new files, owned by this task; you may create them) and import those from the test and from every evidence script.
+   Delete test-results/mountains/m5/fixture.mjs and digest.mjs afterwards. The fixture must not import any M1-M4
+   module (it stays element-only).
+10. INTEGRATION SCRIPT (integration-m3.mjs): update it to the new rows (surface R1 INFO + R1d) and the moved helpers,
+    and make the eight M3 rows block print per-site progress. Check it with `node --check`; also run a smoke with
+    `M5_INTEGRATION_SMOKE=1` that measures one seed and one site only (add that switch) and report its exit code. The
+    coordinator runs the full integration.
+11. PATCH: regenerate test-results/mountains/m5/m5-wiring.patch only if the module API names change (they should not);
+    keep `git apply --check` against main 9971c3f passing (scratch copy outside this worktree's tracked files).
+12. Version string stays 'mountain-rock-detail-1' (the module has never been merged). Re-pin ROCK_DETAIL_DIGEST after
+    the final constants.
+
+## Report
+
+Overwrite test-results/mountains/m5/report.md and end with the same report as your final message:
+1. Final constants with one line each on why; what changed from round 1.
+2. Gate-pool HARD and ROW results with numbers; every negative control's value and whether it failed as required;
+   INFO rows (surface R1, equal-gains R3, reversed-strata R5, midpoint deviations). Tuning and burnt pools from
+   rows-all-pools.json in a separate table.
+3. Cost-bench numbers you measured (unofficial).
+4. Exact commands and exit codes (`node --test tests/mountain-rock-detail.test.mjs` with duration_ms,
+   `npx --no-install tsc --noEmit`, `node test-results/mountains/m5/rows-all-pools.mjs`, cost-bench, the integration
+   smoke, render.mjs, `git apply --check`).
+5. What you did not run, and what you are unsure of. Do not call anything passed that you did not run.

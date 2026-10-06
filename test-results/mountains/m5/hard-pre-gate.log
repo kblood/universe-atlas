@@ -1,0 +1,18 @@
+M5_ROWS {"hard":{"exclusions":945,"weightPoints":10001,"digest":"c1cd74f8f82d1b2fb8699337b4736a50bf2770515590eb987045dc4e55b34577","auditNegatives":20,"constants":{"bound":0.40082069217483673,"benchBound":0.3869642857142857,"heightCapBound":0.9008206921748367,"supportRadius":210.2974084481309},"continuity":{"pairs":6000,"wraps":2208,"thresholds":432,"L_MAX":11.343070110525412,"max":0.02674306281555161,"edge":{"mismatch":0,"max":15.57446348174949},"speckleEdge":{"mismatch":0,"max":45.79216744083578},"speckleMax":54.586055194862666,"levelMismatch":4,"tuningEdge":{"mismatch":0,"max":17.38167792963418},"gate":{"pairs":6000,"max":0.02630980068757438,"speckleMax":54.76825805957621,"edge":{"mismatch":0,"max":15.57446348174949}}}},"tuning":{"bounds":{"count":32768,"violations":0,"steep":16835,"negative":13976,"negativeShare":0.8301752301752302}},"gate":{"bounds":{"count":32768,"violations":0,"steep":16839,"negative":13971,"negativeShare":0.8296810974523428}}}
+(node:56448) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ HARD 1: literal +0 exclusions and finite outputs (0.8615ms)
+✔ HARD 2: bounds, upper envelope and non-vacuity on 65536 fixture samples (19.2451ms)
+✔ HARD 3: smoothstep endpoints, monotonicity and continuity (0.7574ms)
+✔ HARD 4: pinned forward, reverse and child determinism (69.1405ms)
+✔ HARD 5: arithmetic audit and negative controls (2.6482ms)
+✔ HARD 6: frozen constants, bands and monotone strata budget (0.6006ms)
+✔ HARD 7: continuity, shared edges, speckle and level-dependent negatives (30.5735ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 203.1154
