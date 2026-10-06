@@ -475,3 +475,64 @@ against it)?" Until he answers, the coordinator uses the stricter reading (main 
 `mountain-assembly-2`). Scope stated per addendum item 4: T3's merge criterion (2) per-level part is recorded as met
 only against `914d86f`, with the mountains' own coarse cost open. The 96/96 cells and 17/17 pins are not cited as
 mountain evidence.
+
+## Addendum 2026-10-06 (4): T6 wiring BLOCKED on cost; landing cutoff and statistic tests decided
+
+**Decided by Opus 5.5 on Kasper's instruction 2026-10-06; he may overrule.** Evidence:
+`docs/mountains-t6-split-core-2026-10-06.md`, `test-results/mountains/t6-split/`.
+
+**The engineering attempt (failed, with numbers).** Addendum (3) left one open cost: wired, the coarse tile build is
++17..+33% per level against main (contract §6: +10%) and the orbit bake +19..+27% (`orbitBakeGrowth` .05). The
+structural fix not tried before was built and measured: two core functions chosen at construction, the plain core
+textually 914d86f's and the mountain core separate, with per-sample dispatch on the T1 grid. It is bit-identical to
+main (SHA-256 ledgers equal, staged and wired), and it changes nothing measurable. Official, same protocols, fresh
+process per world, CPU-quiet slot, against main `33b049a`:
+
+- contract build mean per level, wired: Maithea +23.2..+33.2%, Selawyn +17.9..+25.7%, Raiva +20.0..+26.3%,
+  Lethuris +21.0..+29.1% (every level L0..cut-1 of every world misses +10%);
+- orbit bake, wired, median: +20.7% / +28.7% / +31.3% / +27.6%.
+
+The coordinator's diagnostic prototypes (private noise kernels in the layout and the mountain core, private helpers,
+distinct output shape) stay at +20..+25% on Maithea. The cost appears when the mountain core runs on its 3-10% of
+samples. The genuine mountain work is about +2..+5% of tile time; the rest is V8 code quality in the plain core.
+The cause is not identified. The Astra fix round was not spent, because its candidates were already measured to
+miss. The split is not merged (patch kept); it costs the same and adds a second copy of the core to keep in sync.
+
+**Decision 1: baseline reading.** The stricter reading stays: contract §6 and `orbitBakeGrowth` are judged against
+**main as it is at T6**, not against the pre-mountains `914d86f`. Reasons: §6 says "shipped", and since T3 the
+shipped build includes the speedups; judging against `914d86f` would spend the T3 builder speedups on the mountains
+without anyone deciding to, which is a budget loosening by redefinition. The miss (+18..+33%, 2-3x the allowance)
+is not a level I can justify waiving with a ledger entry. Under the lenient reading the tile build was at most +5.5%
+against `914d86f` when T3 measured it (not re-measured here); no number exists for the orbit bake against
+`914d86f`. **Consequence: T6 wiring is BLOCKED.** `TERRAIN_MOUNTAINS_WIRED` stays false on main; nothing else T6 does
+(the golden re-pin, `test:full`) runs until the block is lifted.
+
+**Question for Kasper (one line):** "Wired mountains cost +18..+33% per coarse tile level and +21..+31% per orbit
+bake against today's main (allowance +10% / +5%, no fix found after 17 attempts); do you accept that cost, judge it
+against the pre-mountains build `914d86f` instead (tile build at most +5.5% there), or keep the mountains unwired
+until a fix is found?"
+
+Ways to lift the block without his answer (not decided, recorded for whoever picks it up): a real fix to the V8
+effect; tiles that touch the massif band built in a separate worker isolate, so the plain worker never compiles the
+mountain path (needs a protocol note for the single-process benches); or the baked coarse macrofield of addendum item
+5 (moves values, needs a version move).
+
+**Decision 2: landing summit cutoff (T4 section 2a). Option (a).** When the mountains are wired, landing
+eligibility is judged in the same representation as the cutoff: level-0 candidate heights against the level-0 p99
+of `landPercentileM`. Reason: it is self-consistent (a rank inside one field), costs no block solves, and the
+evidence does not argue against it (0-2 flips per world, all from comparing truth heights with a level-0 cutoff).
+The landed and walked ground stays the truth. Option (b) costs 57-99 blocks (9-19 s) per world; option (c) keeps
+the inconsistency. The main-thread stall of the truth landing searches (5-20 blocks, 0.8-3.8 s) stays OPEN for T6.
+It lands with T6, not before, because nothing changes while the mountains are staged.
+
+**Decision 3: statistic-style tests at T6.** At the wiring, the statistic-style tests (climate colour and
+agreement, floor window, relief hypsometry, render bounds) move to **level 0**, where they test a global statistic
+rather than the carving. A test whose purpose is the carved truth itself moves to `test:full` instead and stays
+there, not deleted. Each move is listed in the T6 record with the file, the old and new sampler, and the reason.
+The CONTRACT pins they check are not loosened by the move; if a level-0 statistic fails a pin, that is a T6
+finding, not a re-pin.
+
+**Ledger.** No threshold, pin, tolerance, budget, golden or version change. The baseline is **not** redefined: old
+= new = main as it is at T6 (stricter reading kept), so there is no old/new baseline entry. T6 wiring is blocked
+pending Kasper. `test:full` was not run (its one remaining use stays reserved for T6's final gate). The planet-canopy
+2 ms wall-time flake fix stays T6 gate work.

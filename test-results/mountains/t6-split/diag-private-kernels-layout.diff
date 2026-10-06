@@ -1,0 +1,59 @@
+--- split-core/src/mountain-layout.ts	2026-10-06 03:51:52.819352500 +0200
++++ _diag/src/mountain-layout.ts	2026-10-06 04:21:22.941009200 +0200
+@@ -51,14 +51,35 @@
+ }
+ 
+ // Same evaluation order as R-CAL-1, before the radius scale and compression.
++
++// DIAG private kernels (copies of catalog.ts ihash/noise/macroHeightCode, bit for bit)
++function lIhash(x: number, y: number, z: number, s: number) {
++  let h = Math.imul(x, 0x9e3779b1) ^ Math.imul(y, 0x85ebca77) ^ Math.imul(z, 0xc2b2ae3d) ^ Math.imul(s, 0x27d4eb2f);
++  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
++  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
++  h ^= h >>> 16;
++  return (h >>> 0) / 4294967295;
++}
++function lNoise(x: number, y: number, z: number, s: number) {
++  const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);
++  let a = x - ix, b = y - iy, c = z - iz;
++  a = a * a * (3 - 2 * a); b = b * b * (3 - 2 * b); c = c * c * (3 - 2 * c);
++  let value = 0;
++  for (let dx = 0; dx < 2; dx++) for (let dy = 0; dy < 2; dy++) for (let dz = 0; dz < 2; dz++)
++    value += lIhash(ix + dx, iy + dy, iz + dz, s) * (dx ? a : 1 - a) * (dy ? b : 1 - b) * (dz ? c : 1 - c);
++  return value;
++}
++function lMacro(s: number, d: V3) {
++  return 0.68 * lNoise(d[0] * 2.6 + 11, d[1] * 2.6 + 31, d[2] * 2.6 + 17, s) + 0.23 * lNoise(d[0] * 5.2, d[1] * 5.2, d[2] * 5.2, s + 1) + 0.09 * lNoise(d[0] * 10.4, d[1] * 10.4, d[2] * 10.4, s + 2);
++}
+ export function continentalA0(body: World): Coordinate {
+   const code=Number(hash64(body.seed+'/macro-v1') & 0xffffffffn),sea=.37+body.water*.22;
+-  const n=(d: V3,f: number,s: number)=>noise(d[0]*f+13,d[1]*f+37,d[2]*f+19,code+s);
++  const n=(d: V3,f: number,s: number)=>lNoise(d[0]*f+13,d[1]*f+37,d[2]*f+19,code+s);
+   return body.water ? d=>{
+-    const macro=macroHeightCode(code,d);
++    const macro=lMacro(code,d);
+     const coast=macro+(n(d,42,5)-.5)*.012+(n(d,90,6)-.5)*.003;
+     return (coast-sea)*47000;
+-  } : d=>(macroHeightCode(code,d)-.46)*44000;
++  } : d=>(lMacro(code,d)-.46)*44000;
+ }
+ 
+ // noise(x, 37, 19, s) of catalog.ts, bit for bit (cost plan T2, docs/mountains-opus-decisions-2026-10-05.md
+@@ -417,7 +438,8 @@
+     const y=1-2*(i+.5)/OROGEN_LAYOUT.probeCount,r=Math.sqrt(1-y*y),p=i*2.399963229728653;
+     probe.push([detCos(p)*r,y,sine(p)*r]);
+   }
+-  const land=probe.filter(d=>a0(d)>0),covered=new Uint8Array(land.length);
++  const land=probe.filter(d=>a0(d)>0),covered=new Uint8Array(land.length);
++  if(process.env.STOP==='land')return null as any;
+   let count=0,maxHalfWidthM=0,majorCount=0;
+   for(let k=0;k<OROGEN_LAYOUT.candidates && count<land.length*OROGEN_LAYOUT.targetShare;k++){
+     const y=2*random()-1,r=Math.sqrt(1-y*y),az=random()*6.283185307179586;
+@@ -497,6 +519,7 @@
+     for(const v of [b.centre,b.tangent,b.pole])Object.freeze(v);
+     belts.push(Object.freeze(b));axes.push(points);maxHalfWidthM=Math.max(maxHalfWidthM,W);
+   }
++  if(process.env.STOP==='belts')return null as any;
+   const capZs=Float64Array.from(belts,b=>capZ(b,R));
+   // value's pole-slab half-width over R per belt (value(b, d) = 0 where |pole.d| R >= tube).
+   const slabs=Float64Array.from(belts,b=>(b.halfWidthM*b.gradientMax+Math.abs(b.bendM)+b.amplitudeM)/R);

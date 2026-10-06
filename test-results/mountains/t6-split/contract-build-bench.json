@@ -1,0 +1,238 @@
+{
+ "Maithea": {
+  "world": "Maithea",
+  "cut": 6,
+  "tiles": 12,
+  "rounds": 5,
+  "coarseBlockSolvesInclWarm": 10,
+  "rows": [
+   {
+    "level": 0,
+    "mainMeanMs": 20.148445000000017,
+    "branchMeanMs": 24.825575000000025,
+    "growth": 0.23213354678239462,
+    "mainP50Ms": 18.54410000000007,
+    "branchP50Ms": 22.521499999999833
+   },
+   {
+    "level": 1,
+    "mainMeanMs": 18.28040833333333,
+    "branchMeanMs": 22.911966666666785,
+    "growth": 0.2533618641815598,
+    "mainP50Ms": 17.854299999999967,
+    "branchP50Ms": 22.318500000000313
+   },
+   {
+    "level": 2,
+    "mainMeanMs": 18.99887333333348,
+    "branchMeanMs": 23.60471999999997,
+    "growth": 0.24242735797314574,
+    "mainP50Ms": 17.83550000000014,
+    "branchP50Ms": 22.318900000000212
+   },
+   {
+    "level": 3,
+    "mainMeanMs": 18.070943333333403,
+    "branchMeanMs": 23.051534999999998,
+    "growth": 0.2756132635023798,
+    "mainP50Ms": 17.688500000000204,
+    "branchP50Ms": 22.61290000000008
+   },
+   {
+    "level": 4,
+    "mainMeanMs": 18.84081833333327,
+    "branchMeanMs": 25.09542999999979,
+    "growth": 0.3319713377630116,
+    "mainP50Ms": 18.079200000000128,
+    "branchP50Ms": 23.435999999999694
+   },
+   {
+    "level": 5,
+    "mainMeanMs": 18.51396833333341,
+    "branchMeanMs": 23.588946666666622,
+    "growth": 0.27411618308733887,
+    "mainP50Ms": 18.1796000000013,
+    "branchP50Ms": 22.63169999999991
+   }
+  ]
+ },
+ "Selawyn": {
+  "world": "Selawyn",
+  "cut": 7,
+  "tiles": 12,
+  "rounds": 5,
+  "coarseBlockSolvesInclWarm": 0,
+  "rows": [
+   {
+    "level": 0,
+    "mainMeanMs": 18.555231666666668,
+    "branchMeanMs": 22.03927666666666,
+    "growth": 0.1877661816671825,
+    "mainP50Ms": 17.673099999999977,
+    "branchP50Ms": 20.703300000000127
+   },
+   {
+    "level": 1,
+    "mainMeanMs": 19.044364999999985,
+    "branchMeanMs": 22.455633333333335,
+    "growth": 0.17912218828684257,
+    "mainP50Ms": 18.181000000000495,
+    "branchP50Ms": 21.86259999999993
+   },
+   {
+    "level": 2,
+    "mainMeanMs": 18.585958333333323,
+    "branchMeanMs": 22.426330000000053,
+    "growth": 0.20662758399598613,
+    "mainP50Ms": 17.874300000000403,
+    "branchP50Ms": 21.529599999999846
+   },
+   {
+    "level": 3,
+    "mainMeanMs": 18.27723166666662,
+    "branchMeanMs": 22.832386666666554,
+    "growth": 0.24922565315553058,
+    "mainP50Ms": 17.678200000000288,
+    "branchP50Ms": 22.280500000000757
+   },
+   {
+    "level": 4,
+    "mainMeanMs": 17.735971666666742,
+    "branchMeanMs": 22.1539316666666,
+    "growth": 0.24909602265000452,
+    "mainP50Ms": 17.44290000000001,
+    "branchP50Ms": 21.572299999999814
+   },
+   {
+    "level": 5,
+    "mainMeanMs": 17.755814999999803,
+    "branchMeanMs": 21.86411166666685,
+    "growth": 0.2313775327500931,
+    "mainP50Ms": 17.37199999999939,
+    "branchP50Ms": 21.528400000001056
+   },
+   {
+    "level": 6,
+    "mainMeanMs": 17.84558500000003,
+    "branchMeanMs": 22.43756666666662,
+    "growth": 0.25731751952466575,
+    "mainP50Ms": 17.580299999999625,
+    "branchP50Ms": 21.425600000002305
+   }
+  ]
+ },
+ "Raiva": {
+  "world": "Raiva",
+  "cut": 5,
+  "tiles": 12,
+  "rounds": 5,
+  "coarseBlockSolvesInclWarm": 0,
+  "rows": [
+   {
+    "level": 0,
+    "mainMeanMs": 18.605903333333323,
+    "branchMeanMs": 22.45002166666665,
+    "growth": 0.20660745487408905,
+    "mainP50Ms": 17.660599999999988,
+    "branchP50Ms": 21.320200000000114
+   },
+   {
+    "level": 1,
+    "mainMeanMs": 18.452550000000034,
+    "branchMeanMs": 22.69613166666668,
+    "growth": 0.22997264154095975,
+    "mainP50Ms": 17.85109999999986,
+    "branchP50Ms": 22.29359999999997
+   },
+   {
+    "level": 2,
+    "mainMeanMs": 18.1528233333333,
+    "branchMeanMs": 22.930509999999988,
+    "growth": 0.2631924841076163,
+    "mainP50Ms": 17.757700000000114,
+    "branchP50Ms": 21.766700000000128
+   },
+   {
+    "level": 3,
+    "mainMeanMs": 18.667223333333276,
+    "branchMeanMs": 22.550518333333336,
+    "growth": 0.2080274570383387,
+    "mainP50Ms": 18.064399999999296,
+    "branchP50Ms": 21.990600000000086
+   },
+   {
+    "level": 4,
+    "mainMeanMs": 18.55391000000012,
+    "branchMeanMs": 22.268243333333277,
+    "growth": 0.200191406195952,
+    "mainP50Ms": 18.188200000000506,
+    "branchP50Ms": 21.577500000001237
+   }
+  ]
+ },
+ "Lethuris": {
+  "world": "Lethuris",
+  "cut": 7,
+  "tiles": 12,
+  "rounds": 5,
+  "coarseBlockSolvesInclWarm": 0,
+  "rows": [
+   {
+    "level": 0,
+    "mainMeanMs": 18.38947333333334,
+    "branchMeanMs": 22.250776666666663,
+    "growth": 0.20997356821166835,
+    "mainP50Ms": 17.65610000000015,
+    "branchP50Ms": 21.09979999999996
+   },
+   {
+    "level": 1,
+    "mainMeanMs": 20.486828333333385,
+    "branchMeanMs": 25.749544999999944,
+    "growth": 0.25688293868816103,
+    "mainP50Ms": 18.451000000000022,
+    "branchP50Ms": 22.687700000000405
+   },
+   {
+    "level": 2,
+    "mainMeanMs": 23.636243333333294,
+    "branchMeanMs": 29.524710000000006,
+    "growth": 0.24912870389866204,
+    "mainP50Ms": 24.840900000000147,
+    "branchP50Ms": 31.64599999999973
+   },
+   {
+    "level": 3,
+    "mainMeanMs": 18.22957666666665,
+    "branchMeanMs": 22.910911666666713,
+    "growth": 0.25679888708332066,
+    "mainP50Ms": 17.785100000000966,
+    "branchP50Ms": 21.798099999999977
+   },
+   {
+    "level": 4,
+    "mainMeanMs": 23.829586666666636,
+    "branchMeanMs": 30.765088333333217,
+    "growth": 0.29104582314757965,
+    "mainP50Ms": 25.12460000000101,
+    "branchP50Ms": 31.759500000000116
+   },
+   {
+    "level": 5,
+    "mainMeanMs": 19.499994999999885,
+    "branchMeanMs": 23.593338333333396,
+    "growth": 0.20991509655943674,
+    "mainP50Ms": 17.75920000000042,
+    "branchP50Ms": 21.8778999999995
+   },
+   {
+    "level": 6,
+    "mainMeanMs": 22.257924999999947,
+    "branchMeanMs": 27.027899999999864,
+    "growth": 0.21430456792355668,
+    "mainP50Ms": 23.689000000002125,
+    "branchP50Ms": 26.896300000000338
+   }
+  ]
+ }
+}
