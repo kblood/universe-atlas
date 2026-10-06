@@ -60,7 +60,7 @@ test('c hangs', () => new Promise(() => setInterval(() => {}, 1000)));
 `);
     const reporter = new URL('./helpers/tier-reporter.mjs', import.meta.url).href;
     spawnSync(process.execPath, ['--test', '--test-isolation=none', `--test-reporter=${reporter}`, '--test-reporter-destination=stdout', file],
-      {env: {...process.env, NODE_TEST_CONTEXT: undefined, ATLAS_TIER_RESULTS: out, ATLAS_TEST_TIER: 'smoke', ATLAS_TIER_AWARE: '1'}, encoding: 'utf8', timeout: 2500, killSignal: 'SIGKILL'});
+      {env: {...process.env, NODE_TEST_CONTEXT: undefined, ATLAS_TIER_RESULTS: out, ATLAS_TEST_TIER: 'smoke', ATLAS_TEST_FULL: '', ATLAS_TIER_AWARE: '1'}, encoding: 'utf8', timeout: 2500, killSignal: 'SIGKILL'});
     const lines = readFileSync(out, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l));
     assert.equal(lines.length, 2, 'both finished tests, not the one in flight');
     assert.deepEqual([lines[0].test, lines[0].class, lines[0].status, lines[0].coverage, lines[0].diag], ['HARD: a', 'HARD', 'pass', 'subset', ['INFO a']]);
