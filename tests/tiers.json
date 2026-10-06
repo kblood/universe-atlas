@@ -1,0 +1,191 @@
+{
+ "$comment": [
+  "Tier lists for tests/helpers/tier-runner.mjs (docs/test-tiers-2026-10-07.md). Every file must be registered in npm test.",
+  "{file, shards}: one step per anchored title regex (--test-name-pattern) plus a #rest step (--test-skip-pattern of the union); every test runs exactly once (duplicates are flagged). Shards change scheduling only, never what a test checks.",
+  "smoke and work list the same files (terrain only, MVP); the tier changes N and the sample set inside tier-aware files."
+ ],
+ "smoke": [
+  {
+   "file": "tests/mountain-coarse-field.test.mjs",
+   "shards": [
+    "^Maithea: ",
+    "^Selawyn: ",
+    "^Raiva: ",
+    "^Lethuris: "
+   ]
+  },
+  "tests/lod-coarse-frame.test.mjs",
+  "tests/terrain-mountains-assembly.test.mjs",
+  {
+   "file": "tests/lod-carving-reduction.test.mjs",
+   "shards": [
+    "^Maithea: ",
+    "^Selawyn: ",
+    "^Raiva: ",
+    "^Lethuris: "
+   ]
+  },
+  {
+   "file": "tests/lod-consistency.test.mjs",
+   "shards": [
+    "^Maithea: ",
+    "^Lethuris: ",
+    "^Maithea coarse retention"
+   ]
+  },
+  {
+   "file": "tests/mountain-layout.test.mjs",
+   "shards": [
+    "^HARD: the T2 rejections",
+    "^HARD: orogen-layout-2 keeps"
+   ]
+  },
+  {
+   "file": "tests/mountain-layout-grid.test.mjs",
+   "shards": [
+    "^HARD: 60 corpus bodies"
+   ]
+  },
+  "tests/mountain-envelope.test.mjs",
+  "tests/mountain-carving.test.mjs",
+  "tests/mountain-carving-memo.test.mjs",
+  "tests/mountain-carving-pin.test.mjs",
+  "tests/mountain-rock-detail.test.mjs",
+  "tests/mountain-summits.test.mjs",
+  "tests/mountain-metrics.test.mjs",
+  {
+   "file": "tests/mountain-tile-set.test.mjs",
+   "shards": [
+    "^HARD: the M1-only rule"
+   ]
+  },
+  "tests/sparse-consumer-levels.test.mjs",
+  "tests/terrain-budget-starvation.test.mjs",
+  "tests/terrain-leaf-loop-digest.test.mjs",
+  {
+   "file": "tests/terrain-elevation-identity.test.mjs",
+   "shards": [
+    "^kept palette",
+    "^T6 identity"
+   ]
+  },
+  "tests/terrain-climate-colour.test.mjs",
+  {
+   "file": "tests/terrain-floor-window.test.mjs",
+   "shards": [
+    "^terrainFloorSampler = ",
+    "^floorM is the clamped"
+   ]
+  },
+  {
+   "file": "tests/terrain-relief-hypsometry.test.mjs",
+   "shards": [
+    "^corpus of 132",
+    "^coastline invariance"
+   ]
+  },
+  "tests/terrain-water-refresh.test.mjs",
+  {
+   "file": "tests/river-terrain.test.mjs",
+   "shards": [
+    "^wet/dry rock-height",
+    "^Maithea coarse child"
+   ]
+  },
+  "tests/tree-lod-coverage.test.mjs",
+  "tests/tier.test.mjs",
+  "tests/tier-sets.test.mjs"
+ ],
+ "work": [
+  {
+   "file": "tests/mountain-coarse-field.test.mjs",
+   "shards": [
+    "^Maithea: ",
+    "^Selawyn: ",
+    "^Raiva: ",
+    "^Lethuris: "
+   ]
+  },
+  "tests/lod-coarse-frame.test.mjs",
+  "tests/terrain-mountains-assembly.test.mjs",
+  {
+   "file": "tests/lod-carving-reduction.test.mjs",
+   "shards": [
+    "^Maithea: ",
+    "^Selawyn: ",
+    "^Raiva: ",
+    "^Lethuris: "
+   ]
+  },
+  {
+   "file": "tests/lod-consistency.test.mjs",
+   "shards": [
+    "^Maithea: ",
+    "^Lethuris: ",
+    "^Maithea coarse retention"
+   ]
+  },
+  {
+   "file": "tests/mountain-layout.test.mjs",
+   "shards": [
+    "^HARD: the T2 rejections",
+    "^HARD: orogen-layout-2 keeps"
+   ]
+  },
+  {
+   "file": "tests/mountain-layout-grid.test.mjs",
+   "shards": [
+    "^HARD: 60 corpus bodies"
+   ]
+  },
+  "tests/mountain-envelope.test.mjs",
+  "tests/mountain-carving.test.mjs",
+  "tests/mountain-carving-memo.test.mjs",
+  "tests/mountain-carving-pin.test.mjs",
+  "tests/mountain-rock-detail.test.mjs",
+  "tests/mountain-summits.test.mjs",
+  "tests/mountain-metrics.test.mjs",
+  {
+   "file": "tests/mountain-tile-set.test.mjs",
+   "shards": [
+    "^HARD: the M1-only rule"
+   ]
+  },
+  "tests/sparse-consumer-levels.test.mjs",
+  "tests/terrain-budget-starvation.test.mjs",
+  "tests/terrain-leaf-loop-digest.test.mjs",
+  {
+   "file": "tests/terrain-elevation-identity.test.mjs",
+   "shards": [
+    "^kept palette",
+    "^T6 identity"
+   ]
+  },
+  "tests/terrain-climate-colour.test.mjs",
+  {
+   "file": "tests/terrain-floor-window.test.mjs",
+   "shards": [
+    "^terrainFloorSampler = ",
+    "^floorM is the clamped"
+   ]
+  },
+  {
+   "file": "tests/terrain-relief-hypsometry.test.mjs",
+   "shards": [
+    "^corpus of 132",
+    "^coastline invariance"
+   ]
+  },
+  "tests/terrain-water-refresh.test.mjs",
+  {
+   "file": "tests/river-terrain.test.mjs",
+   "shards": [
+    "^wet/dry rock-height",
+    "^Maithea coarse child"
+   ]
+  },
+  "tests/tree-lod-coverage.test.mjs",
+  "tests/tier.test.mjs",
+  "tests/tier-sets.test.mjs"
+ ]
+}

@@ -303,7 +303,8 @@ Policy is in [docs/test-policy.md](docs/test-policy.md). It adds:
 - `npm run test:pkg`, `test:affected` (import-graph selection), `test:full`
   (reports only failures not listed in `tests/known-failures.json`),
   `test:perf` (CPU timing caps moved out of `npm test`, run under a quiet-CPU
-  gate), `test:smoke` and `test:life-guard`.
+  gate), `test:fast` (formerly `test:smoke`), the tiered terrain runs
+  `test:smoke` / `test:work` (docs/test-tiers-2026-10-07.md) and `test:life-guard`.
 
 No `src/` code changed. One post-merge fix:
 `tests/test-runner.test.mjs` failed on this checkout, because `test-results`

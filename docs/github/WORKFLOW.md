@@ -105,7 +105,7 @@ agent-minutes were verification; reviewers re-running suites caught nothing).
 | Hand-off | implementer, once | tsc; `npm run test:affected -- --base <base>` (prints which tests and why) or every test importing a changed module; the digest covering touched files (skip life-cpu-digest when `git diff --quiet main -- <LIFE_FILES>`, see `npm run test:life-guard`); one full AFTER capture plus at most ONE assembled Luna sheet voted with `luna-vote` (advisory); `npm run test:full` once, reporting only NEW failures against `tests/known-failures.json` |
 | Merge | merger, once per merge batch | tsc, `npm run test:full`, digests, `npm run test:golden`; rewrites `tests/known-failures.json`; `npm run test:perf` once under the CPU-quiet gate |
 
-Other tools: `npm run test:pkg -- <files>`, `npm run test:smoke`. Round start:
+Other tools: `npm run test:pkg -- <files>`, `npm run test:fast` (formerly `test:smoke`), and the tiered terrain runs `npm run test:smoke` (fail-fast, ~90 s) then `npm run test:work` (docs/test-tiers-2026-10-07.md). Round start:
 the coordinator captures one shared BEFORE set from `main` under one lock hold.
 
 ## GPU queue per round (backlog order; one browser job at a time)

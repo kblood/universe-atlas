@@ -7,7 +7,10 @@ import {registeredTests, changedFiles, baseRef, importGraph, selectTests} from '
 import {classify, validateKnown} from './known-failures.mjs';
 export {classify, validateKnown};
 
-export async function runTests(files, {slot = files.length > 40, args = [], env = process.env} = {}) {
+// Every CPU-heavy run takes the test slot (audit F8, docs/handoff-2026-10-06/test-time-audit.md): test:pkg, test:affected
+// and test:fast used to run without it at <= 40 files and could overlap a timing run. One slot level only: a caller that
+// already holds the slot passes {slot: false} (test:perf does).
+export async function runTests(files, {slot = true, args = [], env = process.env} = {}) {
   if (!files.length) { console.log('No tests selected.'); return 0; }
   const work = () => runCommand(process.execPath, ['--test', ...args, ...files], {env});
   return slot ? withTestSlot({owner: `tests: ${files.length} files`}, work) : work();
@@ -68,7 +71,7 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve('tests/helpers/test-
   if (mode === 'full') code = await full();
   else if (mode === 'pkg') {
     if (!args.length || args.some(f => !/\.test\.mjs$/.test(f) || !existsSync(f))) throw new Error('test:pkg requires existing .test.mjs paths');
-    const all = registeredTests(); code = await runTests(args, {slot: args.length > 40 || all.every(f => args.includes(f))});
+    code = await runTests(args);
   } else if (mode === 'affected') {
     if (baseIndex >= 0 && !args[baseIndex + 1]) throw new Error('--base needs a ref');
     const base = baseRef(baseIndex < 0 ? undefined : args[baseIndex + 1]), changed = changedFiles(base);
@@ -77,10 +80,14 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve('tests/helpers/test-
     for (const s of selected) console.log(`${s.unregistered ? 'UNREGISTERED ' : ''}${s.file}: ${s.reason}`);
     console.log(`Outside graph (review manually):\n${outside.join('\n')}\n${changed.length} changed; ${selected.length} selected`);
     code = args.includes('--dry-run') ? 0 : await runTests(selected.map(s => s.file));
-  } else if (mode === 'smoke') {
+  } else if (mode === 'fast') {
+    // Formerly `test:smoke` (renamed 2026-10-07; `test:smoke` is now the tier-0 terrain smoke, mode 'tier').
     const all = registeredTests(), files = JSON.parse(readFileSync('tests/smoke.json')).files.map(f => f.file);
-    if (files.some(f => !all.includes(f) || f.includes('/perf/') || f.includes('digest'))) throw new Error('stale smoke list; regenerate');
-    const start = performance.now(); code = await runTests(files); console.log(`smoke: ${files.length} files; wall ${( (performance.now() - start) / 1000).toFixed(3)} s; raw node exit code ${code}`);
+    if (files.some(f => !all.includes(f) || f.includes('/perf/') || f.includes('digest'))) throw new Error('stale fast list (tests/smoke.json); regenerate with npm run test:fast:generate');
+    const start = performance.now(); code = await runTests(files); console.log(`fast: ${files.length} files; wall ${( (performance.now() - start) / 1000).toFixed(3)} s; raw node exit code ${code}`);
+  } else if (mode === 'tier') {
+    const {runTier} = await import('./tier-runner.mjs');
+    code = await runTier(args[0], args.slice(1));
   } else if (mode === 'perf') code = await withTestSlot({owner: 'test:perf CPU quiet gate'}, async () => {
     await quietCPU(); return runTests(readdirSync('tests/perf').filter(f => f.endsWith('.perf.test.mjs')).map(f => `tests/perf/${f}`), {slot: false, args: ['--test-concurrency=1']});
   });

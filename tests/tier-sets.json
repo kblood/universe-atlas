@@ -1,0 +1,506 @@
+{
+ "version": "tier-sets-1",
+ "sha256": "90bb43c065f3928bf91a3396a825cca48b92bf81c15021c693bd7c1f0e2f4bce",
+ "inputs": {
+  "OROGEN_LAYOUT_VERSION": "orogen-layout-4",
+  "MASSIF_ENVELOPE_VERSION": "massif-envelope-4",
+  "LOD_LADDER_VERSION": "lod-ladder-3",
+  "TERRAIN_VERSION": "terrain-1.9.0-mountains"
+ },
+ "smoke": {
+  "Maithea": [
+   {
+    "kind": "axis",
+    "d": [
+     0.5095476692588011,
+     0.85675,
+     -0.07962794894334123
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Maithea[0]"
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.04249625528938326,
+     0.81675,
+     -0.5754246308478458
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Maithea[1]"
+   },
+   {
+    "kind": "flank",
+    "d": [
+     0.5053302572987797,
+     0.8589777195269438,
+     -0.0824536743549977
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Maithea[8]"
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     0.6049422447887903,
+     0.7011110510959336,
+     -0.37747605818257435
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Maithea[10]"
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     0.47952879820688965,
+     0.877355312023787,
+     -0.017314391525537653
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Maithea[11]"
+   },
+   {
+    "kind": "face-edge",
+    "d": [
+     0.626368234149017,
+     -0.4893501829289196,
+     0.6067942268318602
+    ],
+    "level": 5,
+    "tile": "0/5/0/3",
+    "edge": 0,
+    "massifEdgeNodes": 9
+   },
+   {
+    "kind": "face-edge",
+    "d": [
+     0.6255897275100203,
+     -0.47896713512485933,
+     0.6158148880176763
+    ],
+    "level": 6,
+    "tile": "0/6/0/7",
+    "edge": 0,
+    "massifEdgeNodes": 17
+   },
+   {
+    "kind": "switch",
+    "d": [
+     0.5095476692588011,
+     0.85675,
+     -0.07962794894334123
+    ],
+    "level": 6,
+    "tile": "2/6/51/34",
+    "parent": "2/5/25/17"
+   },
+   {
+    "kind": "rock",
+    "d": [
+     0.5095476692588011,
+     0.85675,
+     -0.07962794894334123
+    ],
+    "level": 10,
+    "tile": "2/10/816/559",
+    "parent": "2/9/408/279"
+   },
+   {
+    "kind": "coast",
+    "d": [
+     -0.014425226867879025,
+     0.75725,
+     0.6529658109961121
+    ],
+    "source": "FROZEN_STRATIFIED.Maithea.coast[0]"
+   },
+   {
+    "kind": "ocean",
+    "d": [
+     0.1455624805126969,
+     0.987060546875,
+     -0.06725355804577676
+    ],
+    "source": "fib(26, 4096): level-0 ocean"
+   },
+   {
+    "kind": "outside",
+    "d": [
+     0.022095738171765716,
+     0.999755859375,
+     0
+    ],
+    "source": "fib(0, 4096): level-0 land outside every belt"
+   }
+  ],
+  "Selawyn": [
+   {
+    "kind": "axis",
+    "d": [
+     0.7002753949296782,
+     0.47924999999999995,
+     -0.5290877136695609
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Selawyn[0]"
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.8260581139331783,
+     0.27085000000000004,
+     -0.4942350350846855
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Selawyn[1]"
+   },
+   {
+    "kind": "flank",
+    "d": [
+     0.6979701517155658,
+     0.481484712671741,
+     -0.5301038943240854
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Selawyn[8]"
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     0.8096010590898883,
+     0.16396454448196415,
+     -0.5636148980228903
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Selawyn[10]"
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     0.7114391073662504,
+     0.5116537931016841,
+     -0.4817310375246458
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Selawyn[11]"
+   },
+   {
+    "kind": "face-edge",
+    "d": [
+     0.7091004665366707,
+     -0.09971725310671932,
+     -0.6980207717470351
+    ],
+    "level": 6,
+    "tile": "0/6/63/27",
+    "edge": 1,
+    "massifEdgeNodes": 10
+   },
+   {
+    "kind": "face-edge",
+    "d": [
+     0.7059658516237302,
+     -0.10479180610039744,
+     -0.7004504934079198
+    ],
+    "level": 7,
+    "tile": "0/7/127/54",
+    "edge": 1,
+    "massifEdgeNodes": 17
+   },
+   {
+    "kind": "switch",
+    "d": [
+     0.7002753949296782,
+     0.47924999999999995,
+     -0.5290877136695609
+    ],
+    "level": 7,
+    "tile": "0/7/112/107",
+    "parent": "0/6/56/53"
+   },
+   {
+    "kind": "rock",
+    "d": [
+     0.7002753949296782,
+     0.47924999999999995,
+     -0.5290877136695609
+    ],
+    "level": 11,
+    "tile": "0/11/1797/1724",
+    "parent": "0/10/898/862"
+   },
+   {
+    "kind": "coast",
+    "d": [
+     0.050087080506852504,
+     0.080322265625,
+     0.9955097277330679
+    ],
+    "source": "fib(1883, 4096): level-0 land < 25 m, ocean 2 km east"
+   },
+   {
+    "kind": "ocean",
+    "d": [
+     0.022095738171765716,
+     0.999755859375,
+     0
+    ],
+    "source": "fib(0, 4096): level-0 ocean"
+   },
+   {
+    "kind": "outside",
+    "d": [
+     -0.020666823104001853,
+     0.996826171875,
+     0.0768795518185483
+    ],
+    "source": "fib(6, 4096): level-0 land outside every belt"
+   }
+  ],
+  "Raiva": [
+   {
+    "kind": "axis",
+    "d": [
+     -0.8512019854246333,
+     0.49795,
+     0.16583418679259807
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Raiva[0]"
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.8907638864414498,
+     0.37255000000000005,
+     0.2602809945265383
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Raiva[1]"
+   },
+   {
+    "kind": "flank",
+    "d": [
+     -0.8568986905555777,
+     0.4919174544941317,
+     0.15408391248975492
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Raiva[8]"
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     -0.8065818372804591,
+     0.5816060693036251,
+     0.10564146874436223
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Raiva[10]"
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     -0.7702814747318573,
+     -0.1180445775142857,
+     0.6266832751912156
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Raiva[11]"
+   },
+   {
+    "kind": "face-edge",
+    "d": [
+     0.6521113167513779,
+     -0.4483265302665723,
+     0.6113543594544169
+    ],
+    "level": 4,
+    "tile": "0/4/0/2",
+    "edge": 0,
+    "massifEdgeNodes": 3
+   },
+   {
+    "kind": "face-edge",
+    "d": [
+     0.6496876032857247,
+     -0.4263574896562568,
+     0.6293848656830457
+    ],
+    "level": 5,
+    "tile": "0/5/0/5",
+    "edge": 0,
+    "massifEdgeNodes": 5
+   },
+   {
+    "kind": "switch",
+    "d": [
+     -0.8512019854246333,
+     0.49795,
+     0.16583418679259807
+    ],
+    "level": 5,
+    "tile": "1/5/19/25",
+    "parent": "1/4/9/12"
+   },
+   {
+    "kind": "rock",
+    "d": [
+     -0.8512019854246333,
+     0.49795,
+     0.16583418679259807
+    ],
+    "level": 9,
+    "tile": "1/9/305/405",
+    "parent": "1/8/152/202"
+   },
+   {
+    "kind": "coast",
+    "d": [
+     0.11780017146971943,
+     0.968017578125,
+     -0.22150640632431878
+    ],
+    "source": "fib(65, 4096): level-0 land < 25 m, ocean 2 km east"
+   },
+   {
+    "kind": "ocean",
+    "d": [
+     0.022095738171765716,
+     0.999755859375,
+     0
+    ],
+    "source": "fib(0, 4096): level-0 ocean"
+   },
+   {
+    "kind": "outside",
+    "d": [
+     0.18215347636553716,
+     0.983154296875,
+     -0.015091043177131796
+    ],
+    "source": "fib(34, 4096): level-0 land outside every belt"
+   }
+  ],
+  "Lethuris": [
+   {
+    "kind": "axis",
+    "d": [
+     -0.4812694074877431,
+     0.8665499999999999,
+     -0.13217736158812066
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Lethuris[0]"
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.5277832272834928,
+     0.84155,
+     0.11505851771260092
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Lethuris[1]"
+   },
+   {
+    "kind": "flank",
+    "d": [
+     -0.483957362424004,
+     0.8649483282182956,
+     -0.13285202620952605
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Lethuris[8]"
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     0.6351770061959668,
+     0.7523093114309994,
+     0.17487387093029144
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Lethuris[10]"
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     -0.5456759453786767,
+     0.5088753281835414,
+     0.6657955114005958
+    ],
+    "source": "FROZEN_MASSIF_TILE_SET.Lethuris[11]"
+   },
+   {
+    "kind": "face-edge",
+    "d": [
+     0.6427698785759324,
+     0.43186101216820455,
+     0.6327265992231834
+    ],
+    "level": 6,
+    "tile": "0/6/0/53",
+    "edge": 0,
+    "massifEdgeNodes": 15
+   },
+   {
+    "kind": "face-edge",
+    "d": [
+     0.6421063531262946,
+     0.42639875012293,
+     0.6370898972424954
+    ],
+    "level": 7,
+    "tile": "0/7/0/106",
+    "edge": 0,
+    "massifEdgeNodes": 17
+   },
+   {
+    "kind": "switch",
+    "d": [
+     -0.4812694074877431,
+     0.8665499999999999,
+     -0.13217736158812066
+    ],
+    "level": 7,
+    "tile": "2/7/28/73",
+    "parent": "2/6/14/36"
+   },
+   {
+    "kind": "rock",
+    "d": [
+     -0.4812694074877431,
+     0.8665499999999999,
+     -0.13217736158812066
+    ],
+    "level": 11,
+    "tile": "2/11/455/1180",
+    "parent": "2/10/227/590"
+   },
+   {
+    "kind": "coast",
+    "d": [
+     0.2929017896706291,
+     0.95125,
+     0.09660216927037671
+    ],
+    "source": "FROZEN_STRATIFIED.Lethuris.coast[0]"
+   },
+   {
+    "kind": "ocean",
+    "d": [
+     0.022095738171765716,
+     0.999755859375,
+     0
+    ],
+    "source": "fib(0, 4096): level-0 ocean"
+   },
+   {
+    "kind": "outside",
+    "d": [
+     -0.0889287032716492,
+     0.995361328125,
+     0.036708475964810264
+    ],
+    "source": "fib(9, 4096): level-0 land outside every belt"
+   }
+  ]
+ },
+ "history": [
+  {
+   "date": "2026-10-06",
+   "commit": "9438a74",
+   "sha256": "90bb43c065f3928bf91a3396a825cca48b92bf81c15021c693bd7c1f0e2f4bce",
+   "inputs": {
+    "OROGEN_LAYOUT_VERSION": "orogen-layout-4",
+    "MASSIF_ENVELOPE_VERSION": "massif-envelope-4",
+    "LOD_LADDER_VERSION": "lod-ladder-3",
+    "TERRAIN_VERSION": "terrain-1.9.0-mountains"
+   },
+   "reason": "initial smoke set (tier-sets-1)"
+  }
+ ]
+}

@@ -102,16 +102,47 @@ Agents do not stack tests: do not re-run a reported check without a change,
 and do not add assembled visual checks to compensate for a missing element
 test.
 
-`npm run test:smoke` is an optional broad, fast check; it does not replace the
-affected selection or the merge gate. `npm run test:smoke:generate` regenerates
+## Tiers: test:smoke, test:work (2026-10-07)
+
+`ATLAS_TEST_TIER=smoke|work|default|gate` selects the sample COUNT and SET of a
+tier-aware test (one that imports `tests/helpers/tier.mjs`), never a pin, a
+threshold or a test title. Unset is `default`: plain `npm test` is unchanged.
+`ATLAS_TEST_FULL=1` (test:full) implies `gate`. A result at smoke/work carries
+coverage `subset`: a maximum or pin can fail early there, it is never certified.
+
+- `npm run test:smoke`: tier 0, the terrain/mountain list in `tests/tiers.json`
+  (every terrain test file once; tier-aware files at their smoke sample sets,
+  the rest at default depth). Target well under 2 min (measured ~90 s).
+  Fail-fast: the first NEW HARD/CONTRACT failure kills the run.
+- `npm run test:work`: the same list at the work tier. Refused (exit 3) unless
+  a green smoke run exists for the same tree (`treeKey` = HEAD + diff +
+  untracked files); `--force` overrides and is recorded.
+- Options: `--resume <run dir>` (same tree only; reruns the non-green steps),
+  `--no-bail`, `--only <file>`, `--jobs N`.
+- Output: `test-results/tiers/<treeKey12>-<tier>-<start>/` with `run.json`,
+  `results.jsonl` (one fsynced line per finished test; survives a kill),
+  `steps.jsonl`, `summary.json` and per-step spec logs.
+- Neither tier replaces the affected selection, test:full or the merge gate.
+- Frozen sample sets: `tests/tier-sets.json`, regenerated only with
+  `npm run tier-sets:generate -- --reason "<why>"` (M1 + level-0 field only,
+  0 M3 block solves; `tests/tier-sets.test.mjs` fails when it is stale).
+
+Details, timings and what is left: `docs/test-tiers-2026-10-07.md`.
+
+## Fast check: test:fast (formerly test:smoke)
+
+`npm run test:fast` (renamed from `test:smoke` on 2026-10-07) is an optional
+broad, fast check; it does not replace the affected selection or the merge
+gate. `npm run test:fast:generate` regenerates
 `tests/smoke.json` from the supplied baseline. Its per-file seconds are sums of
 observed test durations under parallel load, not isolated file wall times.
 Unknown/unmapped titles, digests, perf files and files at or above 2 seconds
-are excluded; the fastest up to 101 are retained. Actual smoke wall time is
-printed on every run, including failures.
+are excluded; the fastest up to 101 are retained. Actual fast-check wall time is
+printed on every run, including failures. Since 2026-10-07 `test:pkg`,
+`test:affected` and `test:fast` always take the test slot (audit F8).
 
 Measured on this machine for this change: 97 files, 613 passing tests,
-5.595 seconds around `npm run test:smoke` (5.303 seconds inside the runner).
+5.595 seconds around `npm run test:smoke` (now `test:fast`; 5.303 seconds inside the runner).
 Evidence: `test-results/test-infra/smoke.log`.
 
 ## Slot and exit codes

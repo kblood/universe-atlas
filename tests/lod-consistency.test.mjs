@@ -25,9 +25,13 @@ import {crossPair, newCrossAcc, summariseCross, retentionTile, newRetentionAcc, 
 // Owner decision (e) 2026-10-05: the tile selection is FROZEN (the directions main 39e2448 picked), so a terrain
 // change can no longer re-pick tiles and move a pin; see the fixture header for how it was recorded.
 import {FROZEN_STRATIFIED, FROZEN_MAITHEA_RETENTION_EDGES, FROZEN_SELECTION_SOURCE} from './helpers/lod-frozen-selection.mjs';
+import {pick, tierNote} from './helpers/tier.mjs';
 
 const m={...tiles,terrainSampler,biomeClassifier,waterWorlds};
 const PAIRS=[6,8,10,12,14];
+// Tier (docs/test-tiers-2026-10-07.md): every pair is asserted on its own over all 12 tiles, so a subset of PAIRS keeps each
+// check exact (the per-pair p99 and disagreement percentages are not subsampled). default = PAIRS.
+const TIER_PAIRS=pick({smoke:[6,14],work:[6,10,14],default:PAIRS});
 const bodies=Object.fromEntries(waterWorlds().map(b=>[b.name,b]));
 
 /** Pinned ceilings (percent, RGB) for rows the terrain does not meet yet; each value is the measurement on
@@ -88,12 +92,13 @@ test('ladder lod-ladder-2: rung ranges, pose mapping and the seabed distance pol
   assert.equal(seabedLadderId(R,-15_999,-16_000,.5),'S4','a diver at the bottom gets full detail, whatever the water above');
 });
 
-for(const name of ['Maithea','Lethuris'])test(`${name}: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15`,()=>{
+for(const name of ['Maithea','Lethuris'])test(`${name}: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15`,t=>{
+  if(TIER_PAIRS!==PAIRS)t.diagnostic(tierNote(`pairs ${TIER_PAIRS.map(L=>`L${L}->${L+1}`).join(', ')}`));
   const body=bodies[name],ts=terrainSampler(body),cls=biomeClassifier(body),picks=FROZEN_STRATIFIED[name];
   assert.deepEqual(FROZEN_SELECTION_SOURCE,{commit:'39e2448',terrainVersion:'terrain-1.8.1-grain'});
   for(const [kind,dirs] of Object.entries(picks))assert.equal(dirs.length,3,`${name}: three ${kind} tiles`);
   const dirs=Object.values(picks).flat(),tol=LOD_TOLERANCES;
-  for(const L of PAIRS){
+  for(const L of TIER_PAIRS){
     const acc=newCrossAcc(true);for(const d of dirs)crossPair(m,body,ts,cls,d,L,acc);
     const s=summariseCross(acc),edge=tileEdgeM(body.radiusM,L),cap=SHIPPED_CEILINGS[name][L]||{},where=`${name} L${L}->${L+1}`;
     const limit=(key,planValue)=>Math.max(planValue,cap[key]??planValue);
