@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSync} from 'node:fs';
+import {mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSync, existsSync} from 'node:fs';
 import {join, resolve, relative} from 'node:path';
 import {spawn} from 'node:child_process';
 import {classify} from './helpers/test-runner.mjs';
@@ -25,4 +25,70 @@ test('reporter records title + file, excludes TODO, and completes with the raw f
     const checked = classify(result.failures, known);
     assert.equal(checked.matched.length, 1); assert.equal(checked.fresh.length, 1); assert.equal(checked.stale.length, 0);
   } finally {rmSync(root,{recursive:true,force:true});}
+});
+
+// Known-failures hardening (tests/helpers/known-failures.mjs, docs/test-fixes-2026-10-07.md): an allowlist keyed by
+// title + file must not be able to wave a CONTRACT failure through like a flake.
+import {validateKnown, titleClass} from './helpers/known-failures.mjs';
+const DECISION = 'docs/owner-decision-x.md';
+const docs = {[DECISION]: 'Owner decision: accept "CONTRACT: R1 >= 8 on Raiva" failing until M3 v4.\n'};
+const readDoc = p => docs[p] ?? null;
+const entry = o => ({title: 'HARD: x', file: 'tests/a.test.mjs', reason: 'r', owner: 'merger', class: 'HARD', ...o});
+const contract = o => entry({title: 'CONTRACT: R1 >= 8 on Raiva', class: 'CONTRACT', decision: DECISION, ...o});
+test('known-failures: valid HARD and CONTRACT entries pass validation', () => {
+  assert.deepEqual(validateKnown({failures: []}, {readDoc}), []);
+  assert.deepEqual(validateKnown({failures: [entry(), contract(), entry({title: 'untitled class', class: 'HARD'})]}, {readDoc}), []);
+  assert.deepEqual(validateKnown({failures: [contract({decision: `${DECISION}#section`})]}, {readDoc}), [], 'an anchor is allowed');
+  assert.equal(titleClass('CONTRACT: a'), 'CONTRACT'); assert.equal(titleClass('HARD (U2): b'), 'HARD'); assert.equal(titleClass('plain'), null);
+});
+test('known-failures: every unsafe entry is rejected (negative controls)', () => {
+  const bad = {
+    'no class': entry({class: undefined}),
+    'unknown class': entry({class: 'PERF'}),
+    'no reason': entry({reason: ''}),
+    'no owner': entry({owner: undefined}),
+    'perf file': entry({file: 'tests/perf/x.perf.test.mjs'}),
+    'non-test file': entry({file: 'src/x.ts'}),
+    'CONTRACT title listed as HARD': contract({class: 'HARD', decision: undefined}),
+    'HARD title listed as CONTRACT': entry({class: 'CONTRACT', decision: DECISION}),
+    'CONTRACT without decision': contract({decision: undefined}),
+    'CONTRACT with empty decision': contract({decision: ' '}),
+    'decision outside docs/': contract({decision: 'tests/known-failures.md'}),
+    'decision path escaping docs/': contract({decision: 'docs/../README.md'}),
+    'missing decision record': contract({decision: 'docs/nope.md'}),
+    'decision record not naming the title': contract({title: 'CONTRACT: another pin', decision: DECISION}),
+    'non-object': null,
+  };
+  for (const [name, e] of Object.entries(bad)) assert.ok(validateKnown({failures: [e]}, {readDoc}).length > 0, name);
+  assert.ok(validateKnown({failures: [entry(), entry()]}, {readDoc}).some(p => /duplicate/.test(p)), 'duplicate');
+  assert.ok(validateKnown({}).length > 0, 'failures must be an array');
+  // The real decision reader: only existing files under docs/.
+  assert.ok(validateKnown({failures: [contract({decision: 'docs/does-not-exist-2026.md'})]}).some(p => /does not exist/.test(p)));
+});
+test('known-failures: classify never matches a CONTRACT-titled failure through a bare title + file entry', () => {
+  const failure = {title: 'CONTRACT: R1 >= 8 on Raiva', file: 'tests/a.test.mjs'};
+  const bare = {title: failure.title, file: failure.file};
+  assert.deepEqual(classify([failure], [bare]).fresh, [failure], 'bypassing validation still does not allow it');
+  assert.deepEqual(classify([failure], [contract()]).matched, [failure], 'a CONTRACT entry with a decision does');
+  const hard = {title: 'HARD: x', file: 'tests/a.test.mjs'};
+  assert.deepEqual(classify([hard], [entry()]).matched, [hard]);
+  assert.deepEqual(classify([hard], [entry({file: 'tests/b.test.mjs'})]).fresh, [hard], 'same title, other file is NEW');
+});
+test('known-failures: test:full rejects an invalid allowlist before running or taking the slot', async () => {
+  mkdirSync('test-results', {recursive: true});
+  const root = realpathSync(mkdtempSync(resolve('test-results', 'atlas-known-')));
+  try {
+    mkdirSync(join(root, 'tests', 'helpers'), {recursive: true});
+    for (const f of ['test-runner.mjs', 'known-failures.mjs', 'test-slot.mjs', 'test-selection.mjs']) writeFileSync(join(root, 'tests', 'helpers', f), readFileSync(join('tests', 'helpers', f)));
+    writeFileSync(join(root, 'tests', 'known-failures.json'), JSON.stringify({failures: [{title: 'CONTRACT: R1 >= 8 on Raiva', file: 'tests/a.test.mjs', reason: 'flaky?', owner: 'x', class: 'HARD'}]}));
+    const slotDir = join(root, 'slot'), env = {...process.env, ATLAS_TEST_SLOT_DIR: slotDir}; delete env.NODE_TEST_CONTEXT;
+    const child = spawn(process.execPath, ['tests/helpers/test-runner.mjs', 'full'], {cwd: root, env, stdio: 'pipe'});
+    let out = ''; child.stdout.on('data', b => {out += b;}); child.stderr.on('data', b => {out += b;});
+    const code = await new Promise((done, reject) => {child.on('error', reject); child.on('close', done);});
+    assert.equal(code, 1, out);
+    assert.match(out, /Rejected: tests\/known-failures\.json is invalid \(nothing was run\)/);
+    assert.match(out, /the title declares CONTRACT but the entry says HARD/);
+    assert.equal(existsSync(slotDir), false, 'the test slot was never taken');
+    assert.equal(existsSync(join(root, 'test-results')), false, 'no report directory was created');
+  } finally {rmSync(root, {recursive: true, force: true});}
 });

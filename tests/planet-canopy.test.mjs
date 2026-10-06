@@ -35,16 +35,19 @@ function patch(a,{present=1,candidates=64,testedCells=64,context=contextA,record
 }
 function begin(capacity=256,canopyBody=body){
   const previousWorker=globalThis.Worker;MockWorker.instances=[];globalThis.Worker=MockWorker;
-  // Non-timing hook: only the deterministic operation quotas bound each slice, so suite load cannot cut a
-  // 2 ms wall-clock slice short (the former full-suite flake). The deadline test below restores 2 ms.
-  const host=new PlanetCanopy(canopyBody,capacity);host.sliceMs=Infinity;host.prepare(eye,ground,100,0,true,false,nearOrigin);
+  // Injected manual clock (non-timing hook): every time read of the host (2 ms work slices, 10 s watchdogs, retry
+  // back-offs) sees clock.t, which moves only when a test sets it. So suite load can neither cut a slice short (the
+  // former full-suite flake) nor fire a watchdog; only the deterministic operation quotas bound each slice. The
+  // production slice budget stays 2 ms; the deadline test below drives its own advancing clock.
+  const clock={t:1e6},host=new PlanetCanopy(canopyBody,capacity);host.clock=()=>clock.t;
+  host.prepare(eye,ground,100,0,true,false,nearOrigin);
   const worker=MockWorker.instances[0],configure=worker.sent.find(m=>m.type==='configure');
   assert.ok(worker&&configure,'prepare starts and configures a census worker');
   const generation=configure.generation,n=configure.body?Math.ceil(2*configure.body.radiusM/18):Math.ceil(2*body.radiusM/18);
   worker.emit({type:'ready',generation,context:contextA,family:familyA,n});
   host.prepare(eye,ground,100,0,true,false,nearOrigin);
   const select=worker.sent.findLast(m=>m.type==='select');assert.ok(select,'ready host requests a patch selection');
-  return {host,worker,generation,n,select,context:contextA,restore(){host.dispose();globalThis.Worker=previousWorker;}};
+  return {host,clock,worker,generation,n,select,context:contextA,restore(){host.dispose();globalThis.Worker=previousWorker;}};
 }
 function selectAndRequest(h,addresses){
   h.worker.emit({type:'selection',generation:h.generation,requestId:h.select.requestId,context:h.context,
@@ -108,11 +111,10 @@ test('presentation replacement validates before adoption and rapid dates preserv
   }finally{h.restore();}
 });
 
-test('selection requests and queued census results stay bounded and installs are frame budgeted',t=>{
+test('selection requests and queued census results stay bounded and installs are frame budgeted',()=>{
   // This test verifies deterministic operation quotas, not real machine speed.
-  // With a fixed monotonic clock each call exercises the full 512-step ceiling;
+  // With the fixed injected clock of begin() each call exercises the full 512-step ceiling;
   // the separate production implementation still stops when its 2 ms slice expires.
-  t.mock.method(performance,'now',()=>0);
   const h=begin(4096),addresses=Array.from({length:70},(_,i)=>address(i,h.n));
   try{
     const request=selectAndRequest(h,addresses);
@@ -138,14 +140,14 @@ test('selection requests and queued census results stay bounded and installs are
   }finally{h.restore();}
 });
 
-test('selection application stops at the injected monotonic two millisecond deadline',t=>{
+test('selection application stops at the injected monotonic two millisecond deadline',()=>{
   const h=begin(64),n=h.n;
   try{
-    h.host.sliceMs=2;assert.equal(new PlanetCanopy(body,4).sliceMs,2,'production slice budget is 2 ms');
+    assert.equal(h.host.sliceMs,2);assert.equal(new PlanetCanopy(body,4).sliceMs,2,'production slice budget is 2 ms');
     const addresses=Array.from({length:1300},(_,i)=>[0,n,i,1000]);
     h.host.selection={id:999,center:[...ground],started:0};
     h.host.selectionApply={packed:Float64Array.from(addresses.flat()),offset:0,desired:new Map(),order:[],phase:'addresses',iterator:null,evictions:[],workMs:0,workerMs:0};
-    let now=0;t.mock.method(performance,'now',()=>{now+=.01;return now;});
+    let now=0;h.host.clock=()=>{now+=.01;return now;};
     h.host.applySelectionSlice(0);
     const offset=h.host.selectionApply.offset;
     assert.ok(offset>0&&offset<addresses.length*4,`deadline preserves a partial scan (${offset/4} of ${addresses.length})`);
@@ -188,7 +190,7 @@ test('large selection decoding is sliced and atomically swaps the old patch wind
     h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
     assert.equal(h.host.diagnostics().selectionApplyPending,true,'first bounded slice leaves application in progress');
     assert.deepEqual(h.host.order,[oldKey],'new window is not visible until its complete packed selection validates');
-    h.host.selection.started=performance.now()-11000;
+    h.host.selection.started=h.clock.t-11000;
     h.host.prepare(eye,[0,1,0],100,0,true,false,nearOrigin);
     assert.equal(h.worker.terminated,false,'budgeted local decoding is not mistaken for a hung worker response');
     assert.equal(h.host.timeouts,0);
@@ -438,7 +440,7 @@ test('a lagging interval reply is validated against its configured water snapsho
     h.host.prepare(eye,ground,100,5,true,false,nearOrigin);
     const configure=h.worker.sent.findLast(m=>m.type==='configure');
     h.worker.emit({type:'ready',generation:configure.generation,context:contextB,family:familyA,n:h.n});
-    h.host.water=20;h.host.request={id:444,keys:new Set([key]),progressAt:performance.now()};
+    h.host.water=20;h.host.request={id:444,keys:new Set([key]),progressAt:h.clock.t};
     h.host.receive({type:'patches',generation:configure.generation,requestId:444,context:contextB,
       patches:[patch(a,{context:contextB,waterInterval:[-1,10]})],done:true});
     assert.equal(h.host.pending.length,1,'the interval contains configured water 5 even though the target has advanced to 20');
@@ -502,9 +504,9 @@ test('hung configure, selection, and request each restart once then disable far 
     try{
       let handoffId='missing/0/0/0',height=12;
       if(phase==='configure'){
-        h.host.ready=false;h.host.selection=null;h.host.configuredAt=performance.now()-10001;
+        h.host.ready=false;h.host.selection=null;h.host.configuredAt=h.clock.t-10001;
       }else if(phase==='selection'){
-        h.host.selection.started=performance.now()-10001;
+        h.host.selection.started=h.clock.t-10001;
       }else{
         const request=selectAndRequest(h,[a,b]);
         h.worker.emit({type:'patches',generation:h.generation,requestId:request.requestId,context:h.context,
@@ -512,13 +514,13 @@ test('hung configure, selection, and request each restart once then disable far 
         h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
         const id=`${a.face}/${a.n}/${a.x*8}/${a.y*8}`;handoffId=id;
         height=h.host.heights[h.host.slots.get(id)];assert.equal(h.host.currentPatch(keyA),true);
-        h.host.request.progressAt=performance.now()-10001;
+        h.host.request.progressAt=h.clock.t-10001;
       }
       h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
       assert.equal(MockWorker.instances.length,2,`${phase}: first timeout restarts the worker once`);
       assert.equal(h.host.workerRestarts,1);assert.equal(h.host.terminalFailure,false);
       const restarted=MockWorker.instances.at(-1);assert.ok(restarted.sent.some(m=>m.type==='configure'));
-      h.host.configuredAt=performance.now()-10001;
+      h.host.configuredAt=h.clock.t-10001;
       h.host.prepare(eye,ground,100,0,true,false,nearOrigin);
       assert.equal(MockWorker.instances.length,2,`${phase}: second timeout is terminal, without another restart`);
       assert.equal(h.host.timeouts,2);assert.equal(h.host.diagnostics().terminalFailure,true);
@@ -529,14 +531,14 @@ test('hung configure, selection, and request each restart once then disable far 
   }
 });
 
-test('valid partial patch progress refreshes the request watchdog timestamp',t=>{
-  t.mock.method(performance,'now',()=>20000);
+test('valid partial patch progress refreshes the request watchdog timestamp',()=>{
   const h=begin(64),a=address(0,h.n),b=address(1,h.n);
   try{
-    const request=selectAndRequest(h,[a,b]),old=performance.now()-10001;
-    h.host.request.progressAt=old;
+    const request=selectAndRequest(h,[a,b]),old=h.clock.t-10001;
+    h.host.request.progressAt=old;h.clock.t+=250;
     h.worker.emit({type:'patches',generation:h.generation,requestId:request.requestId,context:h.context,patches:[patch(a)],done:false});
-    assert.ok(h.host.request.progressAt>old);assert.ok(performance.now()-h.host.request.progressAt<1000);
+    assert.ok(h.host.request.progressAt>old);assert.ok(h.clock.t-h.host.request.progressAt<1000);
+    assert.equal(h.host.request.progressAt,h.clock.t,'progress is stamped with the host clock at receipt');
     assert.equal(h.host.request.keys.size,1,'the response made valid partial progress');
   }finally{h.restore();}
 });

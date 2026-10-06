@@ -13,7 +13,9 @@
 //   --fixture <path>     compare against this fixture instead of golden.json
 //   --write-node <path>  write Node's result (the proposed fixture) to <path>
 //   --report <path>      write every engine's counts, digests and timing as JSON
-//   --port <n>           preview port (default 5192)
+//   --port <n>           preview port. Default: a free ephemeral port picked by the OS (retried on a bind race);
+//                        an explicit port that is busy fails fast, before anything is computed or written.
+//                        With --no-build the server is yours: --port names it (default 5192).
 //   --strict             fail on a KNOWN_ENGINE_MISMATCHES entry too (require four-engine equality)
 //   --check-args         validate the options (output-alias guard) and exit without computing
 // Outputs (--write-node, --report) may not alias golden.json, the --fixture or
@@ -23,13 +25,14 @@
 // Each engine runs inside the machine-wide browser lock (tests/helpers/gpu-lock.mjs),
 // one engine per hold.
 import { chromium, firefox, webkit } from "playwright";
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import { lstatSync, realpathSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { computeGolden } from "./generator.ts";
 import { withGpuLock } from "../helpers/gpu-lock.mjs";
+import { LOOPBACK, parsePortOption, portFree, startOnFreePort, stopServer } from "../helpers/free-port.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..", "..");
@@ -42,10 +45,11 @@ function option(name) {
   if (!value || value.startsWith("--")) throw new Error(`${name} needs a value`);
   return value;
 }
-const PORT = Number(option("--port") ?? 5192);
-if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) throw new Error(`invalid --port ${PORT}`);
-const HOST = "127.0.0.1";
-const URL = `http://${HOST}:${PORT}/golden.html`;
+const REQUESTED_PORT = parsePortOption(option("--port"));
+const HOST = LOOPBACK;
+const goldenUrl = (port) => `http://${HOST}:${port}/golden.html`;
+/** Set once the preview answers (main); every engine loads this URL. */
+let URL = null;
 const fixtureOption = option("--fixture");
 const GOLDEN_FIXTURE = fixtureOption ? path.resolve(fixtureOption) : path.join(HERE, "golden.json");
 const writeNode = option("--write-node");
@@ -146,7 +150,7 @@ function assertOutputsSafe(stage) {
 }
 assertOutputsSafe("run");
 if (checkArgsOnly) {
-  console.log(`--check-args: OK. fixture=${GOLDEN_FIXTURE} write-node=${writeNode ?? "-"} report=${reportPath ?? "-"} update=${update} strict=${strict}`);
+  console.log(`--check-args: OK. port=${REQUESTED_PORT ?? (skipBuild ? 5192 : "auto")} fixture=${GOLDEN_FIXTURE} write-node=${writeNode ?? "-"} report=${reportPath ?? "-"} update=${update} strict=${strict}`);
   process.exit(0);
 }
 
@@ -276,6 +280,45 @@ export function classifyEngine(name, result, nodeResult, fixtureDigests, known, 
 }
 
 async function main() {
+  // The preview server comes FIRST (2026-10-07, docs/test-fixes-2026-10-07.md): a busy or unusable port now fails
+  // before Node computes anything and before --update / --write-node write a file. The engines only run after.
+  let previewProc = null;
+  if (skipBuild) {
+    URL = goldenUrl(REQUESTED_PORT ?? 5192);
+    await waitForServer(URL);
+  } else {
+    if (REQUESTED_PORT != null && !(await portFree(REQUESTED_PORT, HOST))) {
+      throw new Error(`--port ${REQUESTED_PORT} is in use on ${HOST}; pass another --port or omit it to use a free ephemeral port (nothing was computed or written)`);
+    }
+    console.log("Building golden harness (vite build)...");
+    await run("npx", ["vite", "build", "--config", "tests/golden/vite.golden.config.ts"]);
+    const builtPage = await readFile(path.join(HERE, "dist", "golden.html"), "utf8");
+    const started = await startOnFreePort({
+      port: REQUESTED_PORT,
+      host: HOST,
+      url: goldenUrl,
+      // Our server serves exactly the page this run just built; any other server on the port is rejected.
+      owns: async (res) => (await res.text()) === builtPage,
+      // No shell: the child IS the vite process, so its exit (EADDRINUSE under --strictPort) is seen at once.
+      spawnServer: (port) => spawn(
+        process.execPath,
+        [path.join(ROOT, "node_modules", "vite", "bin", "vite.js"), "preview", "--config", "tests/golden/vite.golden.config.ts", "--host", HOST, "--port", String(port), "--strictPort"],
+        { cwd: ROOT, stdio: "inherit" },
+      ),
+      log: (line) => console.warn(`golden preview: ${line}`),
+    });
+    previewProc = started.child;
+    URL = goldenUrl(started.port);
+    console.log(`vite preview serves this build on ${HOST}:${started.port} (attempt ${started.attempts}${REQUESTED_PORT == null ? ", ephemeral port" : ""})`);
+  }
+  try {
+    await runWithServer();
+  } finally {
+    stopServer(previewProc);
+  }
+}
+
+async function runWithServer() {
   console.log("Computing Node reference digests...");
   const nodeStarted = Date.now();
   const nodeResult = await computeGolden();
@@ -306,23 +349,10 @@ async function main() {
     }
   }
 
-  let previewProc = null;
-  if (!skipBuild) {
-    console.log("Building golden harness (vite build)...");
-    await run("npx", ["vite", "build", "--config", "tests/golden/vite.golden.config.ts"]);
-    console.log(`Starting vite preview on ${HOST}:${PORT}...`);
-    previewProc = spawn(
-      "npx",
-      ["vite", "preview", "--config", "tests/golden/vite.golden.config.ts", "--host", HOST, "--port", String(PORT), "--strictPort"],
-      { cwd: ROOT, stdio: "inherit", shell: true },
-    );
-  }
-
   const report = {};
   /** "<engine>:<key>" pairs that differed from Node but were tolerated as KNOWN_ENGINE_MISMATCHES. */
   const knownTolerated = [];
-  try {
-    await waitForServer(URL);
+  {
     for (const [name, browserType] of [
       ["chromium", chromium],
       ["firefox", firefox],
@@ -360,19 +390,6 @@ async function main() {
         console.error(`${name}: FAILED TO RUN:`, err);
         report[name] = { error: String((err && err.stack) || err) };
         process.exitCode = 1;
-      }
-    }
-  } finally {
-    if (previewProc) {
-      // On Windows, spawn(..., { shell: true }) makes previewProc the cmd.exe
-      // shell wrapper, not the actual "npx vite preview" node process it
-      // launches - a plain previewProc.kill() only kills the shell and
-      // leaves the real server listening on PORT. Kill the whole process
-      // tree via taskkill; fall back to a plain kill on non-Windows.
-      if (process.platform === "win32" && previewProc.pid) {
-        spawnSync("taskkill", ["/PID", String(previewProc.pid), "/T", "/F"], { stdio: "ignore" });
-      } else {
-        previewProc.kill();
       }
     }
   }

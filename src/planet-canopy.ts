@@ -106,6 +106,10 @@ export class PlanetCanopy {
    * deterministic operation quotas set it to Infinity (a non-timing hook), so machine load cannot cut a
    * slice short; the deadline itself is tested with an injected clock. */
   sliceMs=2;
+  /** Monotonic millisecond clock behind every time read of this host: the work-slice deadlines, the 10 s worker
+   * watchdogs and the retry back-offs. Production keeps performance.now(). Tests inject a manual clock (a
+   * non-timing hook) so no assertion depends on how fast the machine runs or how loaded it is. */
+  clock:()=>number=()=>performance.now();
   constructor(body:Body,capacity=229376){
     this.body=body;this.allocator=new ForestSlotAllocator(capacity);this.renderer=new ForestImpostors(capacity);
     this.bodyPositions=new Float64Array(capacity*3);this.heights=new Float64Array(capacity);this.canonicalHeights=new Float32Array(capacity);
@@ -154,7 +158,7 @@ export class PlanetCanopy {
     const sameBody=this.configuredRivers===this.body.canonicalRivers&&this.configuredHydrology===this.body.hydrology;
     const family=!forceBody&&sameBody?this.family:null;
     this.configuredWater=this.water;this.configuredRivers=this.body.canonicalRivers;this.configuredHydrology=this.body.hydrology;
-    this.generation++;this.configuredAt=performance.now();this.ready=false;this.context='';this.request=null;this.selection=null;this.selectionApply=null;this.pending=[];this.retries.clear();this.reuse=null;this.reusedPatches=0;this.invalidateCurrentPatchAnswers();
+    this.generation++;this.configuredAt=this.clock();this.ready=false;this.context='';this.request=null;this.selection=null;this.selectionApply=null;this.pending=[];this.retries.clear();this.reuse=null;this.reusedPatches=0;this.invalidateCurrentPatchAnswers();
     // Patch addresses depend on position, not water. Keep the existing window.
     if(!this.order.length)this.center.set(Infinity,Infinity,Infinity);
     this.requestCursor=0;this.retryWakeAt=Infinity;this.selectionRetryAt=0;
@@ -176,10 +180,10 @@ export class PlanetCanopy {
     }
     if(data.type==='error'){
       if(data.phase==='configure'){if(this.worker)this.failWorker(this.worker);return;}
-      if(data.phase==='selection'&&data.requestId===this.selection?.id){this.selection=null;this.selectionApply=null;this.selectionRetryAt=performance.now()+2000;this.failures++;return;}
+      if(data.phase==='selection'&&data.requestId===this.selection?.id){this.selection=null;this.selectionApply=null;this.selectionRetryAt=this.clock()+2000;this.failures++;return;}
       if(this.request&&data.requestId===this.request.id){
         // Completed replies have already left this set and remain installable.
-        for(const key of this.request.keys){const attempts=(this.retries.get(key)?.attempts??0)+1,after=attempts>=3?Infinity:performance.now()+1000*2**attempts;
+        for(const key of this.request.keys){const attempts=(this.retries.get(key)?.attempts??0)+1,after=attempts>=3?Infinity:this.clock()+1000*2**attempts;
           this.retries.set(key,{attempts,after});this.retryWakeAt=Math.min(this.retryWakeAt,after);}
         this.request=null;this.failures++;
       }
@@ -190,10 +194,10 @@ export class PlanetCanopy {
       const selection=this.selection;if(!selection||data.requestId!==selection.id)return;
       if(!(data.packed instanceof Float64Array)||data.packed.length%4||data.packed.length>32768*4||!Number.isFinite(data.selectionMs)||data.selectionMs<0)throw new Error('Invalid census selection');
       if(!this.selectionApply)this.selectionApply={packed:data.packed,offset:0,desired:new Map(),order:[],phase:'addresses',iterator:null,evictions:[],workMs:0,workerMs:data.selectionMs};
-      selection.started=performance.now();return;
+      selection.started=this.clock();return;
     }
     const request=this.request;if(data.type!=='patches'||!request||data.requestId!==request.id)return;
-    request.progressAt=performance.now();
+    request.progressAt=this.clock();
     if(!Array.isArray(data.patches)||data.patches.length>8||this.pending.length+data.patches.length>64)throw new Error('Census queue limit');
     for(const p of data.patches as ForestCensusPatch[]){
       validateForestPatchAddress(p.address);const key=patchKey(p.address);
@@ -217,8 +221,8 @@ export class PlanetCanopy {
   }
   private applySelectionSlice(started:number){
     const apply=this.selectionApply,selection=this.selection;if(!apply||!selection)return;
-    const sliceStart=performance.now();let steps=0;
-    while(steps++<512&&performance.now()-started<this.sliceMs){
+    const sliceStart=this.clock();let steps=0;
+    while(steps++<512&&this.clock()-started<this.sliceMs){
       if(apply.phase==='addresses'){
         if(apply.offset<apply.packed.length){
           const i=apply.offset,a=apply.packed,address={face:a[i],n:a[i+1],x:a[i+2],y:a[i+3]};validateForestPatchAddress(address);
@@ -236,8 +240,8 @@ export class PlanetCanopy {
       this.desired=apply.desired;this.order=apply.order;this.evictions=apply.evictions;this.requestCursor=0;
       this.center.set(...selection.center);this.selectionMs=apply.workerMs;this.selection=null;this.selectionApply=null;break;
     }
-    this.selectionApplySliceMs=performance.now()-sliceStart;apply.workMs+=this.selectionApplySliceMs;
-    this.selectionApplyMs=apply.workMs;selection.started=performance.now();
+    this.selectionApplySliceMs=this.clock()-sliceStart;apply.workMs+=this.selectionApplySliceMs;
+    this.selectionApplyMs=apply.workMs;selection.started=this.clock();
   }
   private remove(key:string){
     const patch=this.installed.get(key);if(!patch)return 0;
@@ -259,7 +263,7 @@ export class PlanetCanopy {
     if(!range&&this.installed.has(key)){
       this.remove(key);range=this.allocator.allocate(patch.present);
     }
-    if(!range){const after=performance.now()+1000;this.capacityMisses++;this.retries.set(key,{attempts:1,after});this.retryWakeAt=Math.min(this.retryWakeAt,after);return;}
+    if(!range){const after=this.clock()+1000;this.capacityMisses++;this.retries.set(key,{attempts:1,after});this.retryWakeAt=Math.min(this.retryWakeAt,after);return;}
     this.remove(key);const ids:string[]=[];this.slotVersion++;this.installVersion++;
     for(let i=0;i<patch.present;i++){
       const r=patch.records.subarray(i*FOREST_CENSUS_STRIDE,(i+1)*FOREST_CENSUS_STRIDE),index=range.start+i,offset=r[0],a=patch.address;
@@ -277,7 +281,7 @@ export class PlanetCanopy {
   prepare(eye:THREE.Vector3,ground:V3,altitudeM:number,water:number,enabled:boolean,immersive:boolean,nearOrigin:THREE.Vector3){
     if(!Number.isFinite(water))throw new Error('Canopy water level must be finite');
     this.frameCurrentPatches.clear();this.patchLookupCacheHits=0;this.patchLookupCacheMisses=0;
-    const now=performance.now();
+    const now=this.clock();
     if(this.worker&&(!this.ready&&now-this.configuredAt>10000||this.request&&now-this.request.progressAt>10000||this.selection&&!this.selectionApply&&now-this.selection.started>10000)){
       this.timeouts++;this.failWorker(this.worker);
     }
@@ -300,34 +304,34 @@ export class PlanetCanopy {
     if(this.worker&&this.ready&&(water!==this.configuredWater||bodyChanged)){try{this.configure();}catch{this.failWorker(this.worker);}}
     if(bodyChanged&&this.family!==null){this.family=null;this.invalidateCurrentPatchAnswers();}
     if(!this.worker&&this.failures===0)this.start();
-    if(this.ready&&this.worker&&!this.selection&&performance.now()>=this.selectionRetryAt&&this.direction.set(...ground).distanceTo(this.center)*this.body.radiusM>150){
-      this.selection={id:++this.serial,center:[...ground],started:performance.now()};
+    if(this.ready&&this.worker&&!this.selection&&this.clock()>=this.selectionRetryAt&&this.direction.set(...ground).distanceTo(this.center)*this.body.radiusM>150){
+      this.selection={id:++this.serial,center:[...ground],started:this.clock()};
       try{this.worker.postMessage({type:'select',generation:this.generation,requestId:this.selection.id,center:ground,rangeM:4500});}catch{this.failWorker(this.worker);}
     }
-    const started=performance.now();let work=0;this.selectionApplySliceMs=0;
+    const started=this.clock();let work=0;this.selectionApplySliceMs=0;
     try{this.applySelectionSlice(started);}catch{if(this.worker)this.failWorker(this.worker);}
     // Retag only after the worker confirms the immutable body/version family.
     // Bound metadata work too; no tree transform/ownership writes are needed.
-    while(this.reuse&&work<512&&performance.now()-started<this.sliceMs){
+    while(this.reuse&&work<512&&this.clock()-started<this.sliceMs){
       const next=this.reuse.next();if(next.done){this.reuse=null;break;}work++;
       const patch=next.value;
       if(patch.water!==water&&patch.family===this.family&&forestWaterIntervalContains(patch.waterInterval,water)){
         patch.water=water;this.reusedPatches++;this.invalidateCurrentPatchAnswers(patchKey(patch.address));
       }
     }
-    while(this.evictions.length&&work<512&&performance.now()-started<this.sliceMs){
+    while(this.evictions.length&&work<512&&this.clock()-started<this.sliceMs){
       const key=this.evictions[this.evictions.length-1],count=this.installed.get(key)?.ids.length??0;if(count>512-work)break;
       this.evictions.pop();if(!this.desired.has(key))work+=Math.max(1,this.remove(key));
     }
-    while(this.pending.length&&work<512&&performance.now()-started<this.sliceMs){
+    while(this.pending.length&&work<512&&this.clock()-started<this.sliceMs){
       const patch=this.pending[0],cost=Math.max(1,patch.present+(this.installed.get(patchKey(patch.address))?.ids.length??0));if(cost>512-work)break;
       this.pending.shift();this.install(patch);work+=cost;
     }
-    this.installMs=performance.now()-started;
+    this.installMs=this.clock()-started;
     // Nearby handoffs are updated on demand below. Other retained trees use a
     // bounded slice, so a dated catalogue/library change cannot block a frame.
-    const presentationStarted=performance.now();let presentationCount=0;
-    while(this.presentationRetag&&presentationCount++<2048&&performance.now()-presentationStarted<this.sliceMs){
+    const presentationStarted=this.clock();let presentationCount=0;
+    while(this.presentationRetag&&presentationCount++<2048&&this.clock()-presentationStarted<this.sliceMs){
       const next=this.presentationRetag.next();if(next.done){
         if(this.presentationPassVersion!==this.presentationVersion){this.presentationRetag=this.slots.entries();this.presentationPassVersion=this.presentationVersion;}
         else this.presentationRetag=null;
@@ -335,13 +339,13 @@ export class PlanetCanopy {
       }
       this.tagPresentation(next.value[0],next.value[1]);
     }
-    this.presentationSliceMs=performance.now()-presentationStarted;
+    this.presentationSliceMs=this.clock()-presentationStarted;
     if(!this.rebase&&this.position.copy(eye).multiplyScalar(this.body.radiusM).distanceTo(this.origin)>8000){
       this.rebase={origin:this.position.clone(),positions:new Float32Array(this.renderer.positions.array.length),cursor:0};
     }
     if(this.rebase){
-      const r=this.rebase,started=performance.now();let count=0;
-      while(r.cursor<this.renderer.mesh.geometry.instanceCount&&count++<2048&&performance.now()-started<this.sliceMs){
+      const r=this.rebase,started=this.clock();let count=0;
+      while(r.cursor<this.renderer.mesh.geometry.instanceCount&&count++<2048&&this.clock()-started<this.sliceMs){
         const index=r.cursor++,height=this.renderer.positions.getW(index);
         if(height>0)r.positions.set([this.bodyPositions[index*3]-r.origin.x,this.bodyPositions[index*3+1]-r.origin.y,this.bodyPositions[index*3+2]-r.origin.z,height],index*4);
       }
@@ -349,15 +353,15 @@ export class PlanetCanopy {
     }
     this.group.position.copy(this.origin).multiplyScalar(1/this.body.radiusM).sub(nearOrigin);
     if(this.ready&&this.worker&&!this.request&&!this.pending.length&&!this.selection&&!this.reuse){
-      const now=performance.now(),addresses:ForestPatchAddress[]=[];
+      const now=this.clock(),addresses:ForestPatchAddress[]=[];
       if(now>=this.retryWakeAt){this.requestCursor=0;this.retryWakeAt=Infinity;}
       let inspected=0;
-      while(this.requestCursor<this.order.length&&addresses.length<64&&inspected++<512&&performance.now()-started<this.sliceMs){
+      while(this.requestCursor<this.order.length&&addresses.length<64&&inspected++<512&&this.clock()-started<this.sliceMs){
         const key=this.order[this.requestCursor++],installed=this.installed.get(key);if(installed?.water===water&&installed.family===this.family)continue;
         const after=this.retries.get(key)?.after??0;if(after>now){this.retryWakeAt=Math.min(this.retryWakeAt,after);continue;}
         addresses.push(this.desired.get(key)!);
       }
-      if(addresses.length){this.request={id:++this.serial,keys:new Set(addresses.map(patchKey)),progressAt:performance.now()};
+      if(addresses.length){this.request={id:++this.serial,keys:new Set(addresses.map(patchKey)),progressAt:this.clock()};
         try{this.worker.postMessage({type:'patches',generation:this.generation,requestId:this.request.id,addresses});}catch{this.failWorker(this.worker);}}
     }
     return this.group.visible;

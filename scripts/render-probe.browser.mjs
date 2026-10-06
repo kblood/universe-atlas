@@ -4,17 +4,19 @@
  * list of in-page variants (JS evaluated before each window), optionally with a
  * CDP CPU profile summary and a canvas screenshot per variant.
  *
- *   node scripts/render-probe.browser.mjs --dist test-results/rs-dist/x --port 5207 \
+ *   node scripts/render-probe.browser.mjs --dist test-results/rs-dist/x [--port <n>] \
  *     --poses low100,groundEye --variants '[["base",""],["noShadowCache","__atlas.setShadowCache(false)"]]' \
  *     [--query 'quality=floor'] [--window 3000] [--cpuprofile] [--shots out/dir] [--out report.json]
  *
- * Poses match tests/desktop-perf.browser.mjs (same site, clearances, pitch). */
+ * Poses match tests/desktop-perf.browser.mjs (same site, clearances, pitch).
+ * --port: omitted = a free ephemeral port (retried on a bind race); an explicit busy port fails fast before the GPU
+ * lock is taken (tests/helpers/free-port.mjs, docs/test-fixes-2026-10-07.md). */
 import {chromium} from 'playwright';
 import * as THREE from 'three';
-import {spawn} from 'node:child_process';
-import {mkdir,writeFile,readFile} from 'node:fs/promises';
+import {mkdir,writeFile} from 'node:fs/promises';
 import {dirname} from 'node:path';
 import {acquireGpuLock} from '../tests/helpers/gpu-lock.mjs';
+import {parsePortOption,startDistPreview,stopServer} from '../tests/helpers/free-port.mjs';
 import {encodeVersions,CURRENT_VERSIONS} from '../src/time-nav.ts';
 import {galaxies,refByAddress,system} from '../src/catalog.ts';
 import {terrainSampler} from '../src/terrain.ts';
@@ -24,7 +26,7 @@ import {parseAddress} from '../src/address.ts';
 import {HARNESS_SEED,HARNESS_SYSTEM_ID,HARNESS_BODY_ID,HARNESS_DATE,SITE_A as HARNESS_SITE_A} from '../tests/harness-sites.mjs';
 
 const args=Object.fromEntries(process.argv.slice(2).reduce((out,a,i,all)=>{if(a.startsWith('--'))out.push([a.slice(2),all[i+1]&&!all[i+1].startsWith('--')?all[i+1]:'1']);return out;},[]));
-const port=Number(args.port||5207),dist=args.dist||'dist',windowMs=Number(args.window||3000);
+const requestedPort=parsePortOption(args.port),dist=args.dist||'dist',windowMs=Number(args.window||3000);
 const poseNames=(args.poses||'low100,groundEye').split(',');
 const variants=JSON.parse(args.variants||'[["base",""]]');
 const extraQuery=new URLSearchParams(args.query||'');
@@ -56,17 +58,11 @@ const POSES={groundEye:surfacePose(SITE_A,{clearanceM:1.7}),low100:surfacePose(S
   flight120:surfacePose(SITE_A,{clearanceM:120,pitchDeg:-10}),hover160:surfacePose(SITE_A,{clearanceM:160,pitchDeg:-20}),
   high15km:surfacePose(SITE_A,{clearanceM:15000,pitchDeg:-35}),alt1500:surfacePose(SITE_A,{clearanceM:1500,pitchDeg:-20}),alt450:surfacePose(SITE_A,{clearanceM:450,pitchDeg:-20}),groundEyeEast:surfacePose(SITE_A,{clearanceM:1.7,bearingDeg:90})};
 
-const base=`http://127.0.0.1:${port}/`;
-const preview=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port',String(port),'--strictPort','--outDir',dist],{stdio:['ignore','pipe','pipe']});
-let previewLog='';preview.stdout.on('data',d=>previewLog+=d);preview.stderr.on('data',d=>previewLog+=d);
-process.on('exit',()=>{try{preview.kill();}catch{}});
-const expected=JSON.parse(await readFile(`${dist}/build-info.json`,'utf8'));
-let served=null;
-for(let i=0;i<60&&!served;i++){
-  try{const r=await fetch(base+'build-info.json');const info=await r.json();if(info.builtAt===expected.builtAt)served=info;else throw new Error('other server');}
-  catch{await new Promise(r=>setTimeout(r,500));}
-}
-if(!served){preview.kill();throw new Error(`preview on ${port} does not serve ${dist}:\n${previewLog}`);}
+// Free port + strict bind + exit detection + build-info ownership (the served builtAt must be this dist's).
+const server=await startDistPreview({dist,port:requestedPort,log:line=>log('preview:',line)});
+const preview=server.child,port=server.port,base=server.base,served=server.build;
+process.on('exit',()=>stopServer(preview));
+log(`preview serves ${dist} on port ${port} (attempt ${server.attempts})`);
 // --nowalk opens the body view (arrival from space) instead of a walking pose.
 const urlFor=pose=>`${base}?${new URLSearchParams({seed,g:galaxyId,system:systemId,body:bodyId,date:DATE.toString(),
   wv:encodeVersions(CURRENT_VERSIONS),...(args.nowalk?{}:{walk:pose.position.join(','),heading:pose.heading.join(',')}),profile:'1',...Object.fromEntries(extraQuery)})}`;
