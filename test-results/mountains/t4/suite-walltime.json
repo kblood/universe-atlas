@@ -1,0 +1,1826 @@
+{
+ "jobs": 4,
+ "files": 205,
+ "offTotalMs": 665528,
+ "wiredTotalMs": 5858692,
+ "doubled": [
+  {
+   "file": "tests/forest-census.test.mjs",
+   "offMs": 261,
+   "wiredMs": 572,
+   "ratio": 2.19,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-water-validity.test.mjs",
+   "offMs": 778,
+   "wiredMs": 44252,
+   "ratio": 56.88,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-habitat.test.mjs",
+   "offMs": 255,
+   "wiredMs": 4889,
+   "ratio": 19.17,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet-detail.test.mjs",
+   "offMs": 182,
+   "wiredMs": 585,
+   "ratio": 3.21,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/ocean-gerstner.test.mjs",
+   "offMs": 263,
+   "wiredMs": 1208,
+   "ratio": 4.59,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/world-surface.test.mjs",
+   "offMs": 926,
+   "wiredMs": 3858,
+   "ratio": 4.17,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet.test.mjs",
+   "offMs": 774,
+   "wiredMs": 1914,
+   "ratio": 2.47,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/world.test.mjs",
+   "offMs": 200,
+   "wiredMs": 481,
+   "ratio": 2.4,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/acceptance/visit-order-independence.test.mjs",
+   "offMs": 649,
+   "wiredMs": 1500,
+   "ratio": 2.31,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/acceptance/existence-gating.test.mjs",
+   "offMs": 465,
+   "wiredMs": 4332,
+   "ratio": 9.32,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/acceptance/climate-seek-independence.test.mjs",
+   "offMs": 489,
+   "wiredMs": 1576,
+   "ratio": 3.22,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/terrain-elevation-identity.test.mjs",
+   "offMs": 4866,
+   "wiredMs": 101905,
+   "ratio": 20.94,
+   "offExit": 0,
+   "wiredExit": 1,
+   "wiredErr": ""
+  },
+  {
+   "file": "tests/terrain-climate-colour.test.mjs",
+   "offMs": 1443,
+   "wiredMs": 1071439,
+   "ratio": 742.51,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/acceptance/climate-agreement.test.mjs",
+   "offMs": 666,
+   "wiredMs": 628915,
+   "ratio": 944.32,
+   "offExit": 0,
+   "wiredExit": 1,
+   "wiredErr": ""
+  },
+  {
+   "file": "tests/terrain-floor-window.test.mjs",
+   "offMs": 5193,
+   "wiredMs": 655605,
+   "ratio": 126.25,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tile-metadata.test.mjs",
+   "offMs": 1928,
+   "wiredMs": 58726,
+   "ratio": 30.46,
+   "offExit": 0,
+   "wiredExit": 1,
+   "wiredErr": ""
+  },
+  {
+   "file": "tests/place-query.test.mjs",
+   "offMs": 423,
+   "wiredMs": 31624,
+   "ratio": 74.76,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/terrain-relief-hypsometry.test.mjs",
+   "offMs": 6431,
+   "wiredMs": 2400097,
+   "ratio": 373.21,
+   "offExit": 0,
+   "wiredExit": null
+  },
+  {
+   "file": "tests/render-bounds.test.mjs",
+   "offMs": 5061,
+   "wiredMs": 174280,
+   "ratio": 34.44,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/landing-site.test.mjs",
+   "offMs": 558,
+   "wiredMs": 7046,
+   "ratio": 12.63,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/terrain-mountains-assembly.test.mjs",
+   "offMs": 6358,
+   "wiredMs": 58994,
+   "ratio": 9.28,
+   "offExit": 0,
+   "wiredExit": 0
+  }
+ ],
+ "rows": [
+  {
+   "file": "tests/fauna-template-shoulder-preservation.test.mjs",
+   "offMs": 87,
+   "wiredMs": 115,
+   "ratio": 1.32,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-template-neck-preservation.test.mjs",
+   "offMs": 72,
+   "wiredMs": 100,
+   "ratio": 1.39,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-review-lighting.test.mjs",
+   "offMs": 92,
+   "wiredMs": 117,
+   "ratio": 1.27,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-template.test.mjs",
+   "offMs": 146,
+   "wiredMs": 166,
+   "ratio": 1.14,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-template-motion.test.mjs",
+   "offMs": 169,
+   "wiredMs": 188,
+   "ratio": 1.11,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-template-browse.test.mjs",
+   "offMs": 163,
+   "wiredMs": 179,
+   "ratio": 1.1,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-variation.test.mjs",
+   "offMs": 261,
+   "wiredMs": 277,
+   "ratio": 1.06,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-anatomy.test.mjs",
+   "offMs": 1360,
+   "wiredMs": 1419,
+   "ratio": 1.04,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-corpus.test.mjs",
+   "offMs": 7426,
+   "wiredMs": 8080,
+   "ratio": 1.09,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-structural-appendages.test.mjs",
+   "offMs": 1346,
+   "wiredMs": 1357,
+   "ratio": 1.01,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/creature-lab-state.test.mjs",
+   "offMs": 340,
+   "wiredMs": 373,
+   "ratio": 1.1,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer.test.mjs",
+   "offMs": 1962,
+   "wiredMs": 2069,
+   "ratio": 1.05,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-recipe-independent.test.mjs",
+   "offMs": 174,
+   "wiredMs": 219,
+   "ratio": 1.26,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-rig-independent.test.mjs",
+   "offMs": 6688,
+   "wiredMs": 6996,
+   "ratio": 1.05,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-structure-independent.test.mjs",
+   "offMs": 10271,
+   "wiredMs": 11861,
+   "ratio": 1.15,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-face.test.mjs",
+   "offMs": 1882,
+   "wiredMs": 2063,
+   "ratio": 1.1,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/ground-wet-roughness.test.mjs",
+   "offMs": 287,
+   "wiredMs": 319,
+   "ratio": 1.11,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-diffuse-transfer.test.mjs",
+   "offMs": 422,
+   "wiredMs": 449,
+   "ratio": 1.06,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-captured-transfer.test.mjs",
+   "offMs": 904,
+   "wiredMs": 927,
+   "ratio": 1.03,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet-canopy-invalidation.test.mjs",
+   "offMs": 959,
+   "wiredMs": 1052,
+   "ratio": 1.1,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-captured-filtering.test.mjs",
+   "offMs": 181,
+   "wiredMs": 208,
+   "ratio": 1.15,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-canopy-bounds.test.mjs",
+   "offMs": 345,
+   "wiredMs": 354,
+   "ratio": 1.03,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-presentation.test.mjs",
+   "offMs": 91,
+   "wiredMs": 127,
+   "ratio": 1.4,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-canopy-profile.test.mjs",
+   "offMs": 289,
+   "wiredMs": 370,
+   "ratio": 1.28,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-impostor-family.test.mjs",
+   "offMs": 173,
+   "wiredMs": 225,
+   "ratio": 1.3,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-asset-package.test.mjs",
+   "offMs": 301,
+   "wiredMs": 361,
+   "ratio": 1.2,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-asset-attachment.test.mjs",
+   "offMs": 82,
+   "wiredMs": 124,
+   "ratio": 1.51,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-asset-source.test.mjs",
+   "offMs": 129,
+   "wiredMs": 158,
+   "ratio": 1.22,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-foliage-sidecar.test.mjs",
+   "offMs": 161,
+   "wiredMs": 200,
+   "ratio": 1.24,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/compact-instance-slots.test.mjs",
+   "offMs": 107,
+   "wiredMs": 144,
+   "ratio": 1.35,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet-forest-tree-assets.test.mjs",
+   "offMs": 1045,
+   "wiredMs": 1117,
+   "ratio": 1.07,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-patch-broadphase.test.mjs",
+   "offMs": 198,
+   "wiredMs": 239,
+   "ratio": 1.21,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-ordered-work.test.mjs",
+   "offMs": 83,
+   "wiredMs": 119,
+   "ratio": 1.43,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet-forest-worklist.test.mjs",
+   "offMs": 989,
+   "wiredMs": 1038,
+   "ratio": 1.05,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/life-packing.test.mjs",
+   "offMs": 1528,
+   "wiredMs": 1572,
+   "ratio": 1.03,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/life-shadow-priority.test.mjs",
+   "offMs": 115,
+   "wiredMs": 142,
+   "ratio": 1.23,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/surface-lighting.test.mjs",
+   "offMs": 141,
+   "wiredMs": 172,
+   "ratio": 1.22,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-foliage-mips.test.mjs",
+   "offMs": 142,
+   "wiredMs": 150,
+   "ratio": 1.06,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/instance-update-ranges.test.mjs",
+   "offMs": 420,
+   "wiredMs": 474,
+   "ratio": 1.13,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-leaf-transmission.test.mjs",
+   "offMs": 119,
+   "wiredMs": 147,
+   "ratio": 1.24,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-impostor-reference-shader.test.mjs",
+   "offMs": 102,
+   "wiredMs": 147,
+   "ratio": 1.44,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-impostor-capture.test.mjs",
+   "offMs": 162,
+   "wiredMs": 188,
+   "ratio": 1.16,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-impostor-filter.test.mjs",
+   "offMs": 109,
+   "wiredMs": 135,
+   "ratio": 1.24,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-impostor-views.test.mjs",
+   "offMs": 162,
+   "wiredMs": 180,
+   "ratio": 1.11,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-shape.test.mjs",
+   "offMs": 116,
+   "wiredMs": 149,
+   "ratio": 1.28,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-patch-selection.test.mjs",
+   "offMs": 8183,
+   "wiredMs": 9476,
+   "ratio": 1.16,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-impostor.test.mjs",
+   "offMs": 151,
+   "wiredMs": 196,
+   "ratio": 1.3,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-census.test.mjs",
+   "offMs": 261,
+   "wiredMs": 572,
+   "ratio": 2.19,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-water-validity.test.mjs",
+   "offMs": 778,
+   "wiredMs": 44252,
+   "ratio": 56.88,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-slot-allocator.test.mjs",
+   "offMs": 113,
+   "wiredMs": 132,
+   "ratio": 1.17,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-coverage.test.mjs",
+   "offMs": 90,
+   "wiredMs": 110,
+   "ratio": 1.22,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet-canopy.test.mjs",
+   "offMs": 291,
+   "wiredMs": 292,
+   "ratio": 1,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-selection-transfer.test.mjs",
+   "offMs": 2775,
+   "wiredMs": 2726,
+   "ratio": 0.98,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-selection-cache.test.mjs",
+   "offMs": 1681,
+   "wiredMs": 1525,
+   "ratio": 0.91,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-habitat.test.mjs",
+   "offMs": 255,
+   "wiredMs": 4889,
+   "ratio": 19.17,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-patch.test.mjs",
+   "offMs": 243,
+   "wiredMs": 252,
+   "ratio": 1.04,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-species-recipe.test.mjs",
+   "offMs": 124,
+   "wiredMs": 153,
+   "ratio": 1.23,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-asset.test.mjs",
+   "offMs": 167,
+   "wiredMs": 147,
+   "ratio": 0.88,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/flora-cache-ownership.test.mjs",
+   "offMs": 56,
+   "wiredMs": 73,
+   "ratio": 1.3,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/flora-recipe.test.mjs",
+   "offMs": 124,
+   "wiredMs": 158,
+   "ratio": 1.27,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/local-aerial-perspective.test.mjs",
+   "offMs": 443,
+   "wiredMs": 476,
+   "ratio": 1.07,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-retention.test.mjs",
+   "offMs": 969,
+   "wiredMs": 933,
+   "ratio": 0.96,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/render-profile.test.mjs",
+   "offMs": 1253,
+   "wiredMs": 416,
+   "ratio": 0.33,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/population-continuity.test.mjs",
+   "offMs": 87,
+   "wiredMs": 103,
+   "ratio": 1.18,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/volumetric-clouds.test.mjs",
+   "offMs": 785,
+   "wiredMs": 776,
+   "ratio": 0.99,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet-detail.test.mjs",
+   "offMs": 182,
+   "wiredMs": 585,
+   "ratio": 3.21,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/flora-understory-geometry.test.mjs",
+   "offMs": 234,
+   "wiredMs": 242,
+   "ratio": 1.03,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/flora-field.test.mjs",
+   "offMs": 268,
+   "wiredMs": 295,
+   "ratio": 1.1,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/flora-culling.test.mjs",
+   "offMs": 152,
+   "wiredMs": 164,
+   "ratio": 1.08,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-runtime.test.mjs",
+   "offMs": 214,
+   "wiredMs": 238,
+   "ratio": 1.11,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-near-rig.test.mjs",
+   "offMs": 1525,
+   "wiredMs": 1501,
+   "ratio": 0.98,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-continuity.test.mjs",
+   "offMs": 190,
+   "wiredMs": 194,
+   "ratio": 1.02,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-locomotion.test.mjs",
+   "offMs": 381,
+   "wiredMs": 427,
+   "ratio": 1.12,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-body-plan.test.mjs",
+   "offMs": 1113,
+   "wiredMs": 1096,
+   "ratio": 0.98,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/ocean-gerstner.test.mjs",
+   "offMs": 263,
+   "wiredMs": 1208,
+   "ratio": 4.59,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/sky-atmosphere.test.mjs",
+   "offMs": 181,
+   "wiredMs": 163,
+   "ratio": 0.9,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet-clouds.test.mjs",
+   "offMs": 181,
+   "wiredMs": 161,
+   "ratio": 0.89,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet-craters.test.mjs",
+   "offMs": 10357,
+   "wiredMs": 10008,
+   "ratio": 0.97,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet-rings.test.mjs",
+   "offMs": 143,
+   "wiredMs": 149,
+   "ratio": 1.04,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/river-determinism.test.mjs",
+   "offMs": 2629,
+   "wiredMs": 2548,
+   "ratio": 0.97,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/address.test.mjs",
+   "offMs": 130,
+   "wiredMs": 172,
+   "ratio": 1.32,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/galaxy-hierarchy.test.mjs",
+   "offMs": 14474,
+   "wiredMs": 13488,
+   "ratio": 0.93,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/world-surface.test.mjs",
+   "offMs": 926,
+   "wiredMs": 3858,
+   "ratio": 4.17,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/cosmology.test.mjs",
+   "offMs": 97,
+   "wiredMs": 104,
+   "ratio": 1.07,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/galaxy-history.test.mjs",
+   "offMs": 214,
+   "wiredMs": 218,
+   "ratio": 1.02,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/stellar-evolution.test.mjs",
+   "offMs": 326,
+   "wiredMs": 319,
+   "ratio": 0.98,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/world-time.test.mjs",
+   "offMs": 118,
+   "wiredMs": 140,
+   "ratio": 1.19,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/catalog.test.mjs",
+   "offMs": 5244,
+   "wiredMs": 9336,
+   "ratio": 1.78,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet.test.mjs",
+   "offMs": 774,
+   "wiredMs": 1914,
+   "ratio": 2.47,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/world.test.mjs",
+   "offMs": 200,
+   "wiredMs": 481,
+   "ratio": 2.4,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/ground.test.mjs",
+   "offMs": 1082,
+   "wiredMs": 1045,
+   "ratio": 0.97,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/surface.test.mjs",
+   "offMs": 6263,
+   "wiredMs": 7095,
+   "ratio": 1.13,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/drainage.test.mjs",
+   "offMs": 388,
+   "wiredMs": 563,
+   "ratio": 1.45,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/river.test.mjs",
+   "offMs": 1151,
+   "wiredMs": 1195,
+   "ratio": 1.04,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/river-terrain.test.mjs",
+   "offMs": 10579,
+   "wiredMs": 12642,
+   "ratio": 1.2,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/river-water.test.mjs",
+   "offMs": 321,
+   "wiredMs": 369,
+   "ratio": 1.15,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/ocean-patch-culling.test.mjs",
+   "offMs": 99,
+   "wiredMs": 108,
+   "ratio": 1.09,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/river-environment.test.mjs",
+   "offMs": 1743,
+   "wiredMs": 1919,
+   "ratio": 1.1,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/river-surface.test.mjs",
+   "offMs": 846,
+   "wiredMs": 783,
+   "ratio": 0.93,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/river-surface-conform.test.mjs",
+   "offMs": 105,
+   "wiredMs": 123,
+   "ratio": 1.17,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/river-surface-bank.test.mjs",
+   "offMs": 105,
+   "wiredMs": 104,
+   "ratio": 0.99,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/river-physical-field.test.mjs",
+   "offMs": 148,
+   "wiredMs": 185,
+   "ratio": 1.25,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/biome-ecology.test.mjs",
+   "offMs": 1050,
+   "wiredMs": 930,
+   "ratio": 0.89,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/biosphere-model.test.mjs",
+   "offMs": 174,
+   "wiredMs": 200,
+   "ratio": 1.15,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/biosphere-geometry.test.mjs",
+   "offMs": 955,
+   "wiredMs": 838,
+   "ratio": 0.88,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/creature-model.test.mjs",
+   "offMs": 160,
+   "wiredMs": 193,
+   "ratio": 1.21,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/creature-rig.test.mjs",
+   "offMs": 162,
+   "wiredMs": 187,
+   "ratio": 1.15,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/creature-contact.test.mjs",
+   "offMs": 324,
+   "wiredMs": 338,
+   "ratio": 1.04,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/golden/perturbation.test.mjs",
+   "offMs": 8873,
+   "wiredMs": 8976,
+   "ratio": 1.01,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/acceptance/t-seek-independence.test.mjs",
+   "offMs": 2494,
+   "wiredMs": 3128,
+   "ratio": 1.25,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/acceptance/visit-order-independence.test.mjs",
+   "offMs": 649,
+   "wiredMs": 1500,
+   "ratio": 2.31,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/acceptance/existence-gating.test.mjs",
+   "offMs": 465,
+   "wiredMs": 4332,
+   "ratio": 9.32,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/acceptance/version-compat.test.mjs",
+   "offMs": 225,
+   "wiredMs": 327,
+   "ratio": 1.45,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/time-nav.test.mjs",
+   "offMs": 210,
+   "wiredMs": 294,
+   "ratio": 1.4,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/time-integration.test.mjs",
+   "offMs": 255,
+   "wiredMs": 318,
+   "ratio": 1.25,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/terrain-water-refresh.test.mjs",
+   "offMs": 11184,
+   "wiredMs": 11910,
+   "ratio": 1.06,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/terrain-budget-starvation.test.mjs",
+   "offMs": 35251,
+   "wiredMs": 33152,
+   "ratio": 0.94,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/terrain-leaf-loop-digest.test.mjs",
+   "offMs": 27401,
+   "wiredMs": 28347,
+   "ratio": 1.03,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-structural-variant.test.mjs",
+   "offMs": 530,
+   "wiredMs": 514,
+   "ratio": 0.97,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/ground-pbr-material.test.mjs",
+   "offMs": 153,
+   "wiredMs": 180,
+   "ratio": 1.18,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-lod-coverage.test.mjs",
+   "offMs": 1065,
+   "wiredMs": 1166,
+   "ratio": 1.09,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-far-atlas.test.mjs",
+   "offMs": 1451,
+   "wiredMs": 1474,
+   "ratio": 1.02,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-resource-accounting.test.mjs",
+   "offMs": 115,
+   "wiredMs": 152,
+   "ratio": 1.32,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/inland-rivers-disabled.test.mjs",
+   "offMs": 13350,
+   "wiredMs": 13729,
+   "ratio": 1.03,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/rock-field.test.mjs",
+   "offMs": 752,
+   "wiredMs": 867,
+   "ratio": 1.15,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/rock-geometry.test.mjs",
+   "offMs": 202,
+   "wiredMs": 212,
+   "ratio": 1.05,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet-rocks.test.mjs",
+   "offMs": 765,
+   "wiredMs": 866,
+   "ratio": 1.13,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet-rocks-draw.test.mjs",
+   "offMs": 4602,
+   "wiredMs": 4789,
+   "ratio": 1.04,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-allometry.test.mjs",
+   "offMs": 1978,
+   "wiredMs": 1871,
+   "ratio": 0.95,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/view-heading.test.mjs",
+   "offMs": 124,
+   "wiredMs": 128,
+   "ratio": 1.03,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/gpu-lock.test.mjs",
+   "offMs": 247,
+   "wiredMs": 279,
+   "ratio": 1.13,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/ocean-seam-continuity.test.mjs",
+   "offMs": 25747,
+   "wiredMs": 24880,
+   "ratio": 0.97,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-foliage-cutoff.test.mjs",
+   "offMs": 811,
+   "wiredMs": 874,
+   "ratio": 1.08,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-handoff-debug.test.mjs",
+   "offMs": 978,
+   "wiredMs": 1083,
+   "ratio": 1.11,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/forest-foliage-lobe.test.mjs",
+   "offMs": 767,
+   "wiredMs": 834,
+   "ratio": 1.09,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-forest-coverage.test.mjs",
+   "offMs": 140,
+   "wiredMs": 135,
+   "ratio": 0.96,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/tree-impostor-rendering.test.mjs",
+   "offMs": 324,
+   "wiredMs": 348,
+   "ratio": 1.07,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/life-cpu-digest.test.mjs",
+   "offMs": 33199,
+   "wiredMs": 33060,
+   "ratio": 1,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-activity-exact.test.mjs",
+   "offMs": 193,
+   "wiredMs": 195,
+   "ratio": 1.01,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet-forest-frame-digest.test.mjs",
+   "offMs": 23871,
+   "wiredMs": 25608,
+   "ratio": 1.07,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/shadow-map-cache.test.mjs",
+   "offMs": 504,
+   "wiredMs": 727,
+   "ratio": 1.44,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/shadow-program-warmup.test.mjs",
+   "offMs": 454,
+   "wiredMs": 608,
+   "ratio": 1.34,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/render-quality.test.mjs",
+   "offMs": 733,
+   "wiredMs": 775,
+   "ratio": 1.06,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-coat-fields.test.mjs",
+   "offMs": 709,
+   "wiredMs": 663,
+   "ratio": 0.94,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-individual.test.mjs",
+   "offMs": 12738,
+   "wiredMs": 12657,
+   "ratio": 0.99,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-appearance-v2.test.mjs",
+   "offMs": 24379,
+   "wiredMs": 23707,
+   "ratio": 0.97,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-skin-anatomy.test.mjs",
+   "offMs": 3738,
+   "wiredMs": 3767,
+   "ratio": 1.01,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-coat.test.mjs",
+   "offMs": 2191,
+   "wiredMs": 2160,
+   "ratio": 0.99,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-gait.test.mjs",
+   "offMs": 7241,
+   "wiredMs": 7045,
+   "ratio": 0.97,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-review-environment.test.mjs",
+   "offMs": 130,
+   "wiredMs": 142,
+   "ratio": 1.09,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/surface-climate.test.mjs",
+   "offMs": 1861,
+   "wiredMs": 1851,
+   "ratio": 0.99,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/habitat-suitability.test.mjs",
+   "offMs": 451,
+   "wiredMs": 467,
+   "ratio": 1.04,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/season.test.mjs",
+   "offMs": 1668,
+   "wiredMs": 1744,
+   "ratio": 1.05,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/sun-frame.test.mjs",
+   "offMs": 251,
+   "wiredMs": 322,
+   "ratio": 1.28,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-face.test.mjs",
+   "offMs": 8652,
+   "wiredMs": 7365,
+   "ratio": 0.85,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-planet-headgear.test.mjs",
+   "offMs": 753,
+   "wiredMs": 766,
+   "ratio": 1.02,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/surface-biomes-climate.test.mjs",
+   "offMs": 614,
+   "wiredMs": 665,
+   "ratio": 1.08,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/acceptance/climate-seek-independence.test.mjs",
+   "offMs": 489,
+   "wiredMs": 1576,
+   "ratio": 3.22,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/terrain-elevation-identity.test.mjs",
+   "offMs": 4866,
+   "wiredMs": 101905,
+   "ratio": 20.94,
+   "offExit": 0,
+   "wiredExit": 1,
+   "wiredErr": ""
+  },
+  {
+   "file": "tests/terrain-climate-colour.test.mjs",
+   "offMs": 1443,
+   "wiredMs": 1071439,
+   "ratio": 742.51,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/ground-climate-shader.test.mjs",
+   "offMs": 152,
+   "wiredMs": 135,
+   "ratio": 0.89,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-eyes.test.mjs",
+   "offMs": 49906,
+   "wiredMs": 39065,
+   "ratio": 0.78,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-gloss.test.mjs",
+   "offMs": 1646,
+   "wiredMs": 1390,
+   "ratio": 0.84,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/acceptance/climate-agreement.test.mjs",
+   "offMs": 666,
+   "wiredMs": 628915,
+   "ratio": 944.32,
+   "offExit": 0,
+   "wiredExit": 1,
+   "wiredErr": ""
+  },
+  {
+   "file": "tests/fauna-template-phenotype.test.mjs",
+   "offMs": 150,
+   "wiredMs": 152,
+   "ratio": 1.01,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-head-geometry.test.mjs",
+   "offMs": 22832,
+   "wiredMs": 17895,
+   "ratio": 0.78,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-eye-catalogue.test.mjs",
+   "offMs": 24530,
+   "wiredMs": 16045,
+   "ratio": 0.65,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/planet-geophysics.test.mjs",
+   "offMs": 1617,
+   "wiredMs": 1236,
+   "ratio": 0.76,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/terrain-floor-window.test.mjs",
+   "offMs": 5193,
+   "wiredMs": 655605,
+   "ratio": 126.25,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/lod-consistency.test.mjs",
+   "offMs": 15606,
+   "wiredMs": 25045,
+   "ratio": 1.6,
+   "offExit": 0,
+   "wiredExit": 1,
+   "wiredErr": ""
+  },
+  {
+   "file": "tests/lod-carving-reduction.test.mjs",
+   "offMs": 44136,
+   "wiredMs": 38578,
+   "ratio": 0.87,
+   "offExit": 0,
+   "wiredExit": 1,
+   "wiredErr": ""
+  },
+  {
+   "file": "tests/tile-metadata.test.mjs",
+   "offMs": 1928,
+   "wiredMs": 58726,
+   "ratio": 30.46,
+   "offExit": 0,
+   "wiredExit": 1,
+   "wiredErr": ""
+  },
+  {
+   "file": "tests/ocean-volume.test.mjs",
+   "offMs": 309,
+   "wiredMs": 476,
+   "ratio": 1.54,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/place-query.test.mjs",
+   "offMs": 423,
+   "wiredMs": 31624,
+   "ratio": 74.76,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-eye-catalogue-geometry.test.mjs",
+   "offMs": 9036,
+   "wiredMs": 6715,
+   "ratio": 0.74,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-skin4-links.test.mjs",
+   "offMs": 2174,
+   "wiredMs": 1479,
+   "ratio": 0.68,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/creature-lab-eyes.test.mjs",
+   "offMs": 1835,
+   "wiredMs": 1436,
+   "ratio": 0.78,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/test-slot.test.mjs",
+   "offMs": 358,
+   "wiredMs": 352,
+   "ratio": 0.98,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/test-selection.test.mjs",
+   "offMs": 53,
+   "wiredMs": 76,
+   "ratio": 1.43,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/life-guard.test.mjs",
+   "offMs": 119,
+   "wiredMs": 117,
+   "ratio": 0.98,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/test-runner.test.mjs",
+   "offMs": 164,
+   "wiredMs": 157,
+   "ratio": 0.96,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/terrain-relief-hypsometry.test.mjs",
+   "offMs": 6431,
+   "wiredMs": 2400097,
+   "ratio": 373.21,
+   "offExit": 0,
+   "wiredExit": null
+  },
+  {
+   "file": "tests/render-bounds.test.mjs",
+   "offMs": 5061,
+   "wiredMs": 174280,
+   "ratio": 34.44,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/harness-sites.test.mjs",
+   "offMs": 245,
+   "wiredMs": 281,
+   "ratio": 1.15,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/creature-core-boundary.test.mjs",
+   "offMs": 639,
+   "wiredMs": 568,
+   "ratio": 0.89,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-head-occlusion.test.mjs",
+   "offMs": 22609,
+   "wiredMs": 18041,
+   "ratio": 0.8,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/asset-provenance.test.mjs",
+   "offMs": 195,
+   "wiredMs": 142,
+   "ratio": 0.73,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/climate-grid.test.mjs",
+   "offMs": 333,
+   "wiredMs": 244,
+   "ratio": 0.73,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/fauna-composer-export.test.mjs",
+   "offMs": 2144,
+   "wiredMs": 1643,
+   "ratio": 0.77,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/landing-site.test.mjs",
+   "offMs": 558,
+   "wiredMs": 7046,
+   "ratio": 12.63,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/eco-class.test.mjs",
+   "offMs": 305,
+   "wiredMs": 284,
+   "ratio": 0.93,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/eco-assemblages.test.mjs",
+   "offMs": 145,
+   "wiredMs": 126,
+   "ratio": 0.87,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/eco-identity-site.test.mjs",
+   "offMs": 200,
+   "wiredMs": 238,
+   "ratio": 1.19,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/eco-lab-forms.test.mjs",
+   "offMs": 180,
+   "wiredMs": 151,
+   "ratio": 0.84,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/luna-vote.test.mjs",
+   "offMs": 65,
+   "wiredMs": 72,
+   "ratio": 1.11,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/mountain-metrics.test.mjs",
+   "offMs": 1919,
+   "wiredMs": 1869,
+   "ratio": 0.97,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/mountain-layout.test.mjs",
+   "offMs": 6569,
+   "wiredMs": 5374,
+   "ratio": 0.82,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/mountain-layout-grid.test.mjs",
+   "offMs": 11349,
+   "wiredMs": 9275,
+   "ratio": 0.82,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/mountain-envelope.test.mjs",
+   "offMs": 257,
+   "wiredMs": 241,
+   "ratio": 0.94,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/mountain-carving.test.mjs",
+   "offMs": 2375,
+   "wiredMs": 2191,
+   "ratio": 0.92,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/mountain-summits.test.mjs",
+   "offMs": 1622,
+   "wiredMs": 1510,
+   "ratio": 0.93,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/mountain-carving-memo.test.mjs",
+   "offMs": 6029,
+   "wiredMs": 5761,
+   "ratio": 0.96,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/mountain-carving-pin.test.mjs",
+   "offMs": 4460,
+   "wiredMs": 4109,
+   "ratio": 0.92,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/terrain-mountains-assembly.test.mjs",
+   "offMs": 6358,
+   "wiredMs": 58994,
+   "ratio": 9.28,
+   "offExit": 0,
+   "wiredExit": 0
+  },
+  {
+   "file": "tests/sparse-consumer-levels.test.mjs",
+   "offMs": 3110,
+   "wiredMs": 3008,
+   "ratio": 0.97,
+   "offExit": 0,
+   "wiredExit": 0
+  }
+ ]
+}

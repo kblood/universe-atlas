@@ -1,0 +1,150 @@
+{
+ "orbit/Maithea": {
+  "caller": "orbit",
+  "world": "Maithea",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired",
+  "ms": 642529.4179,
+  "blockSolves": 4075,
+  "landFraction": 0.5498735250075766
+ },
+ "ocean/Maithea": {
+  "caller": "ocean",
+  "world": "Maithea",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired",
+  "ms": 15047.113800000001,
+  "blockSolves": 99,
+  "minHeightM": -10280.347942069195,
+  "belowZero": 1856
+ },
+ "ocean/Selawyn": {
+  "caller": "ocean",
+  "world": "Selawyn",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired",
+  "ms": 9003.3958,
+  "blockSolves": 57,
+  "minHeightM": -11260.45367053962,
+  "belowZero": 2487
+ },
+ "ocean/Raiva": {
+  "caller": "ocean",
+  "world": "Raiva",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired",
+  "ms": 13962.722,
+  "blockSolves": 71,
+  "minHeightM": -11257.182035750435,
+  "belowZero": 1949
+ },
+ "ocean/Lethuris": {
+  "caller": "ocean",
+  "world": "Lethuris",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired",
+  "ms": 12474.367999999999,
+  "blockSolves": 57,
+  "minHeightM": -11304.525792415972,
+  "belowZero": 2547
+ },
+ "survey/Maithea": {
+  "caller": "survey",
+  "world": "Maithea",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired",
+  "ms": 6499.8166,
+  "blockSolves": 36,
+  "sites": 5
+ },
+ "survey/Selawyn": {
+  "caller": "survey",
+  "world": "Selawyn",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired",
+  "ms": 2693.6947,
+  "blockSolves": 17,
+  "sites": 4
+ },
+ "survey/Raiva": {
+  "caller": "survey",
+  "world": "Raiva",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired",
+  "ms": 4211.8977,
+  "blockSolves": 25,
+  "sites": 4
+ },
+ "survey/Lethuris": {
+  "caller": "survey",
+  "world": "Lethuris",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired",
+  "ms": 2694.0193999999997,
+  "blockSolves": 17,
+  "sites": 5
+ },
+ "place/Maithea": {
+  "caller": "place",
+  "world": "Maithea",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired",
+  "warmMs": 19482.4737,
+  "warmBlockSolves": 100,
+  "queries": 24,
+  "ms": 0.955999999998312,
+  "blockSolves": 0,
+  "massifFirstTouch": {
+   "ms": 174.45510000000286,
+   "blockSolves": 1
+  },
+  "massifRepeat": {
+   "ms": 0.062399999998888234,
+   "blockSolves": 0
+  }
+ },
+ "place/Selawyn": {
+  "caller": "place",
+  "world": "Selawyn",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired",
+  "warmMs": 9506.249699999998,
+  "warmBlockSolves": 57,
+  "queries": 24,
+  "ms": 170.96360000000095,
+  "blockSolves": 1,
+  "massifFirstTouch": {
+   "ms": 185.10760000000118,
+   "blockSolves": 1
+  },
+  "massifRepeat": {
+   "ms": 0.05580000000009022,
+   "blockSolves": 0
+  }
+ },
+ "place/Raiva": {
+  "caller": "place",
+  "world": "Raiva",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired",
+  "warmMs": 11636.3028,
+  "warmBlockSolves": 71,
+  "queries": 24,
+  "ms": 172.5015000000003,
+  "blockSolves": 1,
+  "massifFirstTouch": {
+   "ms": 159.92399999999907,
+   "blockSolves": 1
+  },
+  "massifRepeat": {
+   "ms": 0.03659999999945285,
+   "blockSolves": 0
+  }
+ },
+ "place/Lethuris": {
+  "caller": "place",
+  "world": "Lethuris",
+  "wiredRoot": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/t4/wired",
+  "warmMs": 9078.6064,
+  "warmBlockSolves": 57,
+  "queries": 24,
+  "ms": 1.2852999999995518,
+  "blockSolves": 0,
+  "massifFirstTouch": {
+   "ms": 156.72609999999986,
+   "blockSolves": 1
+  },
+  "massifRepeat": {
+   "ms": 0.06660000000010768,
+   "blockSolves": 0
+  }
+ }
+}

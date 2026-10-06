@@ -10,7 +10,11 @@ export type SurfaceSite={id:string;name:string;direction:V3;elevationM:number;bi
  * A reconnaissance list, not a claim to have sampled every beach or mountain. */
 export function surfaceSurvey(body:Body):SurfaceSite[]{
   if(body.kind==='star'||body.type==='Gas giant')return [];
-  const sample=terrainSampler(body),classify=biomeClassifier(body),chosen=new Map<string,{site:SurfaceSite;score:number}>();
+  // Sparse-global (mountains cost plan T4): 1536 candidates over the whole sphere, picked from the orbit view, so the
+  // survey samples the S0 representation, lod-ladder-2 level 0 (M3 carving +0, an upper envelope; no M3 block solved).
+  // In a carved massif a site's elevation and slope are therefore the uncarved values; landing and walking use the
+  // full-detail truth. While the mountains are not wired the level changes nothing (no survey value moves).
+  const sample=terrainSampler(body,undefined,undefined,undefined,0,undefined,false,{lodLevel:0}),classify=biomeClassifier(body),chosen=new Map<string,{site:SurfaceSite;score:number}>();
   for(let i=0;i<1536;i++){
     const y=1-2*(i+.5)/1536,phi=i*2.399963229728653,r=Math.sqrt(1-y*y),d:V3=[Math.cos(phi)*r,y,Math.sin(phi)*r];
     const s=sample(d);if(s.ocean)continue;

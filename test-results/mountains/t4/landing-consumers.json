@@ -1,0 +1,86 @@
+{
+ "Maithea": {
+  "world": "Maithea",
+  "landing384": {
+   "blockSolves": 9,
+   "ms": 1539,
+   "eligibilityFlips": 0
+  },
+  "habitat1024": {
+   "blockSolves": 20,
+   "ms": 3834,
+   "eligibilityFlips": 2
+  },
+  "summitP99": {
+   "truthM": 4213.875485254486,
+   "level0M": 4272.427088884355
+  },
+  "p90": {
+   "truthM": 2857.820653032984,
+   "level0M": 2909.5675941189425
+  }
+ },
+ "Selawyn": {
+  "world": "Selawyn",
+  "landing384": {
+   "blockSolves": 5,
+   "ms": 875,
+   "eligibilityFlips": 0
+  },
+  "habitat1024": {
+   "blockSolves": 15,
+   "ms": 2640,
+   "eligibilityFlips": 0
+  },
+  "summitP99": {
+   "truthM": 3242.050972950838,
+   "level0M": 3242.050972950838
+  },
+  "p90": {
+   "truthM": 1812.7570077418861,
+   "level0M": 1886.186550083848
+  }
+ },
+ "Raiva": {
+  "world": "Raiva",
+  "landing384": {
+   "blockSolves": 5,
+   "ms": 799,
+   "eligibilityFlips": 1
+  },
+  "habitat1024": {
+   "blockSolves": 18,
+   "ms": 3065,
+   "eligibilityFlips": 0
+  },
+  "summitP99": {
+   "truthM": 2492.85652983479,
+   "level0M": 2525.420777477215
+  },
+  "p90": {
+   "truthM": 1560.8014544351845,
+   "level0M": 1585.9766080503368
+  }
+ },
+ "Lethuris": {
+  "world": "Lethuris",
+  "landing384": {
+   "blockSolves": 7,
+   "ms": 1185,
+   "eligibilityFlips": 0
+  },
+  "habitat1024": {
+   "blockSolves": 16,
+   "ms": 3388,
+   "eligibilityFlips": 1
+  },
+  "summitP99": {
+   "truthM": 4006.3478078805833,
+   "level0M": 4066.9503282612814
+  },
+  "p90": {
+   "truthM": 2428.5157130836055,
+   "level0M": 2446.420135633405
+  }
+ }
+}

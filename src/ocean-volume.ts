@@ -82,7 +82,13 @@ export function oceanHypsometry(body: Body): OceanHypsometry {
   const n = HYPSOMETRY_SAMPLES, heights = new Float64Array(n);
   const solid = body.kind !== 'star' && body.type !== 'Gas giant';
   if (solid) {
-    const sample = terrainSampler(body);
+    // Sparse-global (mountains cost plan T4): 4096 directions ~290 km apart cannot hold the 16 km M3 carving band, so
+    // the hypsometry samples lod-ladder-2 level 0, the S0 reduction (carving +0, an upper envelope; no M3 block is
+    // solved). The carving acts only on land (a0 >= 0, where every height is >= 0 at sea level 0), so the heights below
+    // 0, and with them V(L) for every L <= 0, fullVolume, levelForLoss and lossForLevel, equal the truth's exactly; only
+    // land heights inside massifs (landPercentileM) are the upper envelope. While the mountains are not wired the level
+    // changes nothing.
+    const sample = terrainSampler(body, undefined, undefined, undefined, 0, undefined, false, {lodLevel: 0});
     for (let i = 0; i < n; i++) heights[i] = sample(fibonacciDirection(i, n)).groundHeightM;
   }
   heights.sort();

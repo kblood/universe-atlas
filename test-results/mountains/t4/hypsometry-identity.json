@@ -1,0 +1,62 @@
+[
+ {
+  "world": "Maithea",
+  "samples": 4096,
+  "truthSolves": 99,
+  "truthMs": 19437,
+  "levelSolves": 0,
+  "belowDiffer": 0,
+  "signFlip": 0,
+  "landDiffer": 99,
+  "maxLandDeltaM": 1282.3260191229163,
+  "fullVolumeEqual": true,
+  "belowZeroEqual": true,
+  "minEqual": true,
+  "levelsEqual": true
+ },
+ {
+  "world": "Selawyn",
+  "samples": 4096,
+  "truthSolves": 57,
+  "truthMs": 11310,
+  "levelSolves": 0,
+  "belowDiffer": 0,
+  "signFlip": 0,
+  "landDiffer": 57,
+  "maxLandDeltaM": 990.569265983801,
+  "fullVolumeEqual": true,
+  "belowZeroEqual": true,
+  "minEqual": true,
+  "levelsEqual": true
+ },
+ {
+  "world": "Raiva",
+  "samples": 4096,
+  "truthSolves": 71,
+  "truthMs": 13658,
+  "levelSolves": 0,
+  "belowDiffer": 0,
+  "signFlip": 0,
+  "landDiffer": 71,
+  "maxLandDeltaM": 949.7140941187777,
+  "fullVolumeEqual": true,
+  "belowZeroEqual": true,
+  "minEqual": true,
+  "levelsEqual": true
+ },
+ {
+  "world": "Lethuris",
+  "samples": 4096,
+  "truthSolves": 57,
+  "truthMs": 11564,
+  "levelSolves": 0,
+  "belowDiffer": 0,
+  "signFlip": 0,
+  "landDiffer": 57,
+  "maxLandDeltaM": 1135.2144217789078,
+  "fullVolumeEqual": true,
+  "belowZeroEqual": true,
+  "minEqual": true,
+  "levelsEqual": true
+ }
+]
