@@ -1,0 +1,14 @@
+{
+  "total": 238155,
+  "active": 32550,
+  "near": 20721,
+  "composition": 20349,
+  "candidates": 32550,
+  "nearCandidates": 20721,
+  "compositions": 20349,
+  "fractions": {
+    "active": 0.13667569440070543,
+    "near": 0.08700636140328777,
+    "composition": 0.08544435346727972
+  }
+}

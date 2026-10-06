@@ -1,0 +1,1 @@
+M1+M2+M3 Raiva: massif land share 1.72%; region main 658 ns, warm 1219 ns (85.1%), cold 3914 ns (22 builds, 4.6 s); outside main 471 vs 546 ns (15.9%); WEIGHTED RESIDENT 17.55%; sparse 1000 cold 2.02 ms/sample vs main 996 ns (14 builds)

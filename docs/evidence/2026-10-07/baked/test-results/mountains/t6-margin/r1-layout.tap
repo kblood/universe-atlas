@@ -1,0 +1,28 @@
+DIGEST dd8e6306c35553aad026290caa0f5dc12204a5aa66b16a155b1e2a44b4b53501
+DISTANCE {"count":2000,"centrelineSteps":4000,"maxErrorM":8.792267180979252e-7,"maxErrorWidth":3.996485082263296e-12,"p99ErrorWidth":3.5074084404517304e-12,"toleranceWidth":0.01,"pass":true,"worst":{"direction":[-0.8767337195899597,0.25299000000000005,0.40906484184534114],"beltIndex":0,"axisDistanceM":219794.7816744512,"actualM":219794.78167533042,"halfWidthM":220000,"distanceWidth":0.9990671894333201,"slope":0.02765879805404938}}
+CURVATURE Maithea {"max":0.047823456257596944,"boundMax":0.09212779763135807,"limit":0.2,"steps":4096,"worst":{"beltIndex":0,"u":0.3955079372831563}}
+CURVATURE Lethuris {"max":0.04782335742067525,"boundMax":0.08158014450852297,"limit":0.2,"steps":4096,"worst":{"beltIndex":22,"u":0.000027067598482168446}}
+ALONG 305 off-axis samples, max |alongM - dense| 0.02412321261363104 m
+✔ HARD: real hierarchy exercises elongation and curved-axis derivative (40.4284ms)
+✔ HARD: metric teeth: straight band passes, disks fail aspect, isotropic mask fails coherence (33.7532ms)
+✔ HARD: synthetic spherical-cap continent satisfies all M1 thresholds (24.9214ms)
+✔ HARD: coast, caller coordinate, bounds and tangent frame (13.3496ms)
+✔ HARD: gas giants and stars are zero, including sampleWithA0 (0.7744ms)
+✔ HARD: forward, reverse and child-process sample digests agree (130.1222ms)
+✔ HARD: arithmetic-only layout and no terrain/climate/colour/LOD import (3.5527ms)
+✔ HARD: strict coherence counts all positive centres including zero tensors (2.3543ms)
+✔ HARD: 2000 positive Maithea distances agree with dense displaced-centreline search (127.7969ms)
+✔ HARD: dense Maithea/Lethuris spatial curvature times W stays below .2 (107.2399ms)
+✔ HARD: alongM (assembly addition) is the base-circle arc R x 2 atan(u) of the foot point, 0 off-belt (13.2465ms)
+✔ HARD: offsetNoise is catalog noise(x, 37, 19, seed) bit for bit, cache interleaved across cells and seeds (2.5755ms)
+✔ HARD: the T2 rejections are exact: sampleWithA0 and sampleWithinWithA0 == (filtered) sampleWithA0Unpruned on 4 worlds (Fibonacci, belt rasters, coast gate open) (1986.4934ms)
+✔ HARD: alongM off the axis is R x 2 atan(u*) of the dense-search foot point (< .1 m; 3 steps would give .64 m) (9.2378ms)
+✔ HARD: orogen-layout-2 keeps orogen-layout-1's belts: 4 worlds, 60 corpus bodies and the synthetic cap (literals from main 66453b2) (1865.4771ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4500.1969

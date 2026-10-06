@@ -1,0 +1,39 @@
+{
+ "M1+M2+M3/Raiva": {
+  "wired": "M1+M2+M3",
+  "world": "Raiva",
+  "terrainVersion": "terrain-1.8.1-grain",
+  "main": "terrain-1.8.1-grain",
+  "node": "v24.7.0",
+  "inMassifLandShare": 0.0172,
+  "regionSamples": 1185800,
+  "sites": 8,
+  "mainRegionNs": 635.4515938606834,
+  "branchWarmRegionNs": 1208.9155000843307,
+  "warmRounds": [
+   1213.2039973014005,
+   1201.855034575814,
+   1203.423680215888,
+   1289.4822904368364,
+   1208.9155000843307
+  ],
+  "inMassifWarmOverhead": 0.9024509683571174,
+  "branchColdRegionNs": 3839.4424860853433,
+  "coldBlockBuilds": 22,
+  "coldRegionMs": 4552.8243,
+  "coldInMassifOverhead": 5.042069172820588,
+  "outsideSamples": 19656,
+  "mainOutsideNs": 484.92063492055524,
+  "branchOutsideNs": 537.2761497760571,
+  "outsideOverhead": 0.10796718284442419,
+  "weightedResidentOverhead": 0.1257791808198181,
+  "sparse1000": {
+   "mainNs": 1215.400000000045,
+   "branchColdNs": 2002636.9,
+   "blockBuilds": 14,
+   "ratio": 1647.718364324441
+  },
+  "l0": null,
+  "sink": 14549248182.774979
+ }
+}

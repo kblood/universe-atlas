@@ -1,0 +1,1 @@
+M1+M2+M3 Lethuris: massif land share 1.16%; region main 534 ns, warm 1247 ns (133.5%), cold 4549 ns (24 builds, 5.4 s); outside main 463 vs 497 ns (7.4%); WEIGHTED RESIDENT 9.08%; sparse 1000 cold 2.07 ms/sample vs main 1024 ns (13 builds)

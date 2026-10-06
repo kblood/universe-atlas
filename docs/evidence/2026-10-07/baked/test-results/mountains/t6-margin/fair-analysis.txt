@@ -1,0 +1,13 @@
+Maithea weighted: A/B median 4.55% [2.27, 5.54] (n=30); A/A median 0.03% [-1.09, 2.63] (n=30); A/A bias not demonstrated; judged 4.55% vs 8.00% -> MET
+Maithea orbit: A/B median 2.92% [1.73, 3.62] (n=30); A/A median 0.11% [-0.24, 0.70] (n=30); A/A bias not demonstrated; judged 2.92% vs 5.00% -> MET
+Maithea INFO: C1 outside A/B 1.86% A/A 0.02%; in-massif A/B 113.45% A/A -0.39%; C1 range A/B -3.10..15.75% A/A -5.17..8.41%; orbit range A/B -3.12..5.14% A/A -2.16..7.76%; C1 by first arm A/B ref 5.11 cand 2.62, A/A ref 2.63 cand -0.29; orbit by first A/B ref 1.59 cand 3.19, A/A ref 0.12 cand -0.10
+Selawyn weighted: A/B median 1.60% [-1.69, 5.22] (n=30); A/A median -0.90% [-2.51, 0.37] (n=30); A/A bias not demonstrated; judged 1.60% vs 8.00% -> MET
+Selawyn orbit: A/B median 3.01% [1.50, 3.53] (n=30); A/A median -0.99% [-3.34, 0.60] (n=30); A/A bias not demonstrated; judged 3.01% vs 5.00% -> MET
+Selawyn INFO: C1 outside A/B 0.37% A/A -0.91%; in-massif A/B 99.21% A/A 0.31%; C1 range A/B -6.83..15.21% A/A -18.89..17.22%; orbit range A/B -3.47..9.61% A/A -7.52..4.36%; C1 by first arm A/B ref -0.85 cand 5.22, A/A ref -1.69 cand -0.17; orbit by first A/B ref 1.51 cand 3.27, A/A ref 0.62 cand -3.37
+Raiva weighted: A/B median 3.87% [2.44, 4.86] (n=30); A/A median 0.54% [0.05, 1.98] (n=30); A/A bias DEMONSTRATED; judged 3.32% vs 8.00% -> MET
+Raiva orbit: A/B median 2.78% [1.84, 3.72] (n=30); A/A median 0.25% [-1.01, 1.98] (n=30); A/A bias not demonstrated; judged 2.78% vs 5.00% -> MET
+Raiva INFO: C1 outside A/B 2.01% A/A 0.51%; in-massif A/B 97.40% A/A 0.83%; C1 range A/B -1.41..42.60% A/A -7.68..4.41%; orbit range A/B -1.58..9.73% A/A -3.85..4.80%; C1 by first arm A/B ref 2.82 cand 3.96, A/A ref 0.26 cand 0.76; orbit by first A/B ref 2.74 cand 3.13, A/A ref 0.00 cand 0.34
+Lethuris weighted: A/B median 5.14% [3.86, 6.77] (n=30); A/A median 0.02% [-0.76, 1.03] (n=30); A/A bias not demonstrated; judged 5.14% vs 8.00% -> MET
+Lethuris orbit: A/B median 4.20% [2.86, 4.98] (n=30); A/A median 0.05% [-1.84, 1.17] (n=30); A/A bias not demonstrated; judged 4.20% vs 5.00% -> MET
+Lethuris INFO: C1 outside A/B 3.62% A/A 0.04%; in-massif A/B 125.23% A/A 0.06%; C1 range A/B -1.01..13.94% A/A -12.22..9.00%; orbit range A/B -2.77..7.56% A/A -6.99..5.18%; C1 by first arm A/B ref 4.67 cand 5.32, A/A ref -0.65 cand 0.90; orbit by first A/B ref 4.19 cand 4.51, A/A ref 1.65 cand -2.68
+ALL MET: true  (CI ranks for n=30: 10,21)

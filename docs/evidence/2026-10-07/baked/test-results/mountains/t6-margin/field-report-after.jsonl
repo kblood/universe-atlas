@@ -1,0 +1,12 @@
+{"world":"Maithea","ms":26.160200000000003,"N":512,"bytes":822144,"activeCells":74826,"multiBeltCells":176,"delta":0.2,"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.02577347672099628,"p50":0,"p99":9.265159716504513,"max":32.319805529174346}
+(node:57328) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Selawyn","ms":41.456500000000005,"N":1024,"bytes":1624130,"activeCells":133763,"multiBeltCells":33,"delta":0.2,"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.0074170890519863475,"p50":0,"p99":7.531337030924988,"max":27.03517195712402}
+(node:19844) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Raiva","ms":9.250900000000001,"N":256,"bytes":145206,"activeCells":13112,"multiBeltCells":0,"delta":0.2,"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.0012683949216088508,"p50":0,"p99":5.694192387082694,"max":28.663664537670684}
+(node:60172) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:56368) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+{"world":"Lethuris","ms":41.974099999999964,"N":1024,"bytes":1726504,"activeCells":145451,"multiBeltCells":98,"delta":0.2,"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.011451772768033525,"p50":0,"p99":9.369666756751712,"max":63.21540662403686}
+(Use `node --trace-warnings ...` to show where the warning was created)

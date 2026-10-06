@@ -1,0 +1,9 @@
+Maithea   point    L5->6 20.922 L6->7 11.323
+Maithea   L6ls     L5->6 28.576 L6->7 8.746
+Maithea   L56ls    L5->6 24.035 L6->7 8.746
+Maithea   L5ls     L5->6 16.213 L6->7 11.323
+Lethuris  point    L5->6 27.238 L6->7 17.152
+Lethuris  L6ls     L5->6 33.715 L6->7 13.387
+Lethuris  L56ls    L5->6 29.713 L6->7 13.387
+Lethuris  L5ls     L5->6 21.057 L6->7 17.152
+exit 0

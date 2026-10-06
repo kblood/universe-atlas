@@ -1,0 +1,348 @@
+diff --git a/src/mountain-layout.ts b/src/mountain-layout.ts
+index 7974226..4eccd0a 100644
+--- a/src/mountain-layout.ts
++++ b/src/mountain-layout.ts
+@@ -51,14 +51,33 @@ function thetaOf(u: number) {
+ }
+ 
+ // Same evaluation order as R-CAL-1, before the radius scale and compression.
++function lIhash(x: number, y: number, z: number, s: number) {
++  let h = Math.imul(x, 0x9e3779b1) ^ Math.imul(y, 0x85ebca77) ^ Math.imul(z, 0xc2b2ae3d) ^ Math.imul(s, 0x27d4eb2f);
++  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
++  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
++  h ^= h >>> 16;
++  return (h >>> 0) / 4294967295;
++}
++function lNoise(x: number, y: number, z: number, s: number) {
++  const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);
++  let a = x - ix, b = y - iy, c = z - iz;
++  a = a * a * (3 - 2 * a); b = b * b * (3 - 2 * b); c = c * c * (3 - 2 * c);
++  let value = 0;
++  for (let dx = 0; dx < 2; dx++) for (let dy = 0; dy < 2; dy++) for (let dz = 0; dz < 2; dz++)
++    value += lIhash(ix + dx, iy + dy, iz + dz, s) * (dx ? a : 1 - a) * (dy ? b : 1 - b) * (dz ? c : 1 - c);
++  return value;
++}
++function lMacro(s: number, d: V3) {
++  return 0.68 * lNoise(d[0] * 2.6 + 11, d[1] * 2.6 + 31, d[2] * 2.6 + 17, s) + 0.23 * lNoise(d[0] * 5.2, d[1] * 5.2, d[2] * 5.2, s + 1) + 0.09 * lNoise(d[0] * 10.4, d[1] * 10.4, d[2] * 10.4, s + 2);
++}
+ export function continentalA0(body: World): Coordinate {
+   const code=Number(hash64(body.seed+'/macro-v1') & 0xffffffffn),sea=.37+body.water*.22;
+-  const n=(d: V3,f: number,s: number)=>noise(d[0]*f+13,d[1]*f+37,d[2]*f+19,code+s);
++  const n=(d: V3,f: number,s: number)=>lNoise(d[0]*f+13,d[1]*f+37,d[2]*f+19,code+s);
+   return body.water ? d=>{
+-    const macro=macroHeightCode(code,d);
++    const macro=lMacro(code,d);
+     const coast=macro+(n(d,42,5)-.5)*.012+(n(d,90,6)-.5)*.003;
+     return (coast-sea)*47000;
+-  } : d=>(macroHeightCode(code,d)-.46)*44000;
++  } : d=>(lMacro(code,d)-.46)*44000;
+ }
+ 
+ // noise(x, 37, 19, s) of catalog.ts, bit for bit (cost plan T2, docs/mountains-opus-decisions-2026-10-05.md
+@@ -668,8 +687,24 @@ export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
+     const g=bandGrid(maxDistM,minHalfWidthM),idx=g.all?0:bandCellIndex(d,g.faceCells);
+     return g.all || (g.bits[idx>>>5]&(1<<(idx&31)))!==0;
+   };
++  // PROTOTYPE baked coarse field: node grid (N+1)^2 per face, channels v (belt value, coast gate 1) and s.
++  const coarseFields=new Map<number,{N:number;flags:Uint32Array;v:Float32Array;s:Float32Array;ms:number}>();
++  const coarseField=(N: number,maxDistM: number,minHalfWidthM: number)=>{
++    let f=coarseFields.get(N);if(f)return f;
++    const t0=performance.now(),M=N+1,v=new Float32Array(6*M*M),s=new Float32Array(6*M*M).fill(1),flags=new Uint32Array((6*N*N+31)>>>5),o=empty(),dn: V3=[0,0,0];
++    for(let face=0;face<6;face++){const k=face>>>1,sg=face&1?-1:1;
++      for(let j=0;j<=N;j++)for(let i=0;i<=N;i++){
++        const sc=2*i/N-1,tc=2*j/N-1,l=Math.sqrt(1+sc*sc+tc*tc);dn[k]=sg/l;dn[BAND_AXES_A[k]]=sc/l;dn[BAND_AXES_B[k]]=tc/l;
++        sampleWithinWithA0(dn,1e9,maxDistM,o,minHalfWidthM);
++        if(o.belt!==0){const idx=face*M*M+j*M+i;v[idx]=o.belt;s[idx]=Math.min(1,Math.abs(o.axisDistanceM)/Math.min(o.halfWidthM,maxDistM));}
++      }
++      for(let j=0;j<N;j++)for(let i=0;i<N;i++){const b=face*M*M+j*M+i;
++        if(v[b]>0||v[b+1]>0||v[b+M]>0||v[b+M+1]>0){const c=(face*N+j)*N+i;flags[c>>>5]|=1<<(c&31);}}
++    }
++    f={N,flags,v,s,ms:performance.now()-t0};coarseFields.set(N,f);return f;
++  };
+   return Object.freeze({belts:Object.freeze(belts),maxHalfWidthM,sampleWithA0,sample:(d: V3,out?: OrogenSample)=>sampleWithA0(d,a0(d),out),
+-    sampleWithinWithA0,bandGrid,bandCellFlagged,bandCellIndex,sampleWithA0Unpruned,soloWordStats});
++    sampleWithinWithA0,bandGrid,bandCellFlagged,bandCellIndex,sampleWithA0Unpruned,soloWordStats,coarseField});
+ }
+ 
+ const cache=new Map<string,ReturnType<typeof buildOrogenLayout>>();
+diff --git a/src/terrain.ts b/src/terrain.ts
+index 061ed83..12fde04 100644
+--- a/src/terrain.ts
++++ b/src/terrain.ts
+@@ -487,6 +487,11 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
+     ? mountainSeeds(body, orogen)
+     : new Uint32Array(0);
+   const carve = mountains ? mountains.carve : true;
++  // PROTOTYPE: coarse levels read the baked field.
++  const CF = orogen && !carve && !process.env.CFOFF ? orogen.coarseField(+(process.env.CFN || 512), 48000, 32000) : null;
++  const cfN = CF ? CF.N : 0, cfM = cfN + 1, cfHalf = cfN / 2, cfFlags = CF ? CF.flags : new Uint32Array(0), cfV = CF ? CF.v : new Float32Array(0), cfS = CF ? CF.s : new Float32Array(0);
++  const CFX = +(process.env.CFX || 0);
++  const cfOut = {belt: 0, axisDistanceM: 0, halfWidthM: 48000, beltIndex: 0, alongM: 0};
+   const kd = dryFloorScale(tau);
+   const seabedHillF = body.radiusM / RC.SEABED_HILL_WAVELENGTH_M;
+   const seabedGullyF = body.radiusM / RC.SEABED_GULLY_WAVELENGTH_M;
+@@ -591,7 +596,23 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
+           let fineT = fine * landFactor;
+           if (fineT < -0.5 * comp) fineT = -0.5 * comp;
+           let ridgeTermM = tau * RC.KB * 2800 * ridges * ss(RC.BT0, RC.BT1, ridges) * landFactor;
+-          if (orogen) {
++          if (CF) {
++            const ax = Math.abs(d[0]), ay = Math.abs(d[1]), az = Math.abs(d[2]);
++            let face, m, s, t;
++            if (ax >= ay && ax >= az) { face = d[0] > 0 ? 0 : 1; m = ax; s = d[1]; t = d[2]; }
++            else if (ay >= az) { face = d[1] > 0 ? 2 : 3; m = ay; s = d[0]; t = d[2]; }
++            else { face = d[2] > 0 ? 4 : 5; m = az; s = d[0]; t = d[1]; }
++            const fx = (s / m + 1) * cfHalf, fy = (t / m + 1) * cfHalf;
++            const i = Math.max(0, Math.min(cfN - 1, Math.floor(fx))), j = Math.max(0, Math.min(cfN - 1, Math.floor(fy)));
++            const c = (face * cfN + j) * cfN + i;
++            if (CFX !== 1 && (cfFlags[c >>> 5] & (1 << (c & 31)))) {
++              const wx = fx - i, wy = fy - j, b = face * cfM * cfM + j * cfM + i;
++              const v = (cfV[b] * (1 - wx) + cfV[b + 1] * wx) * (1 - wy) + (cfV[b + cfM] * (1 - wx) + cfV[b + cfM + 1] * wx) * wy;
++              const sv = (cfS[b] * (1 - wx) + cfS[b + 1] * wx) * (1 - wy) + (cfS[b + cfM] * (1 - wx) + cfS[b + cfM + 1] * wx) * wy;
++              cfOut.belt = v * ss(0, 100, a0); cfOut.axisDistanceM = sv * 48000;
++              if (CFX === 2) ridgeTermM += 0 * cfOut.belt; else if (CFX === 3) ridgeTermM = (1 - v * .5) * ridgeTermM + sv * landFactor * 100; else if (cfOut.belt !== 0) ridgeTermM = mountainRidgeTermM(ridgeTermM, cfOut, a0, landFactor, tau, beltCarvingSeeds, false);
++            }
++          } else if (orogen) {
+             const o = massifBeltSample(orogen, d, a0, orogenScratch);
+             if (o.belt !== 0)
+               ridgeTermM = mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve);
+@@ -668,6 +689,230 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
+   return { sample, legacyWaterLandColour };
+ }
+ 
++function exactTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false, relief: boolean = false,
++  mountains: {carve: boolean} | null = null) {
++  const { code, n } = macroNoise(body);
++  const sea = 0.37 + body.water * 0.22;
++  // terrain-1.8.0 relief mode (terrainSampler only; baseTerrainSampler never).
++  const reliefOn = relief && reliefModeFor(body);
++  const tau = reliefOn ? tectonicReliefOf(body) : 1;
++  // Mountains assembly (STAGED, off unless the sampler opts in; see TERRAIN_MOUNTAINS_WIRED): the M1 orogen
++  // layout of a relief water world (memoised by mountain-layout.ts), one scratch sample per core, one 32-bit
++  // M3 carving seed per belt (strip 0; mountain-assembly.ts derives the other strips), and whether this
++  // sampler's level evaluates the M3 carving (lod-ladder-2 carvingFromLevel; the truth always does).
++  const orogen = mountains && reliefOn && body.water ? orogenLayout(body) : null;
++  const orogenScratch: OrogenSample = {belt: 0, axis: [0, 0, 0], axisDistanceM: 0, halfWidthM: 0, beltIndex: -1, alongM: 0};
++  const beltCarvingSeeds = orogen
++    ? mountainSeeds(body, orogen)
++    : new Uint32Array(0);
++  const carve = mountains ? mountains.carve : true;
++  const EXM = +(process.env.EXM || 0);
++  const dScr: V3 = [0.5, 0.5, 0.5];
++  // PROTOTYPE: coarse levels read the baked field.
++  const CF = orogen && !carve && !process.env.CFOFF ? orogen.coarseField(+(process.env.CFN || 512), 48000, 32000) : null;
++  const cfN = CF ? CF.N : 0, cfM = cfN + 1, cfHalf = cfN / 2, cfFlags = CF ? CF.flags : new Uint32Array(0), cfV = CF ? CF.v : new Float32Array(0), cfS = CF ? CF.s : new Float32Array(0);
++  const CFX = +(process.env.CFX || 0);
++  const cfOut = {belt: 0, axisDistanceM: 0, halfWidthM: 48000, beltIndex: 0, alongM: 0};
++  const kd = dryFloorScale(tau);
++  const seabedHillF = body.radiusM / RC.SEABED_HILL_WAVELENGTH_M;
++  const seabedGullyF = body.radiusM / RC.SEABED_GULLY_WAVELENGTH_M;
++  /** Seabed detail (abyssal hills, gullies, fine) at every depth, metres,
++   * bounded to |S| <= depth/2 so the seabed never reaches sea level 0. Part of
++   * the same deterministic field at every depth; there is no depth cut-off.
++   * Two octaves (4 km ridged hills, 900 m gullies): a third 200 m octave cost
++   * +9-14% per terrainSampler sample against the plan's +8% budget while adding
++   * ~1% of the detail variance, so it was dropped (docs/terrain-relief-v1.md). */
++  const seabedDetail = (d: V3, floorM: number): number => {
++    const depth = -floorM;
++    const amp = RC.SEABED_DETAIL_SHELF_M + (RC.SEABED_DETAIL_DEEP_M - RC.SEABED_DETAIL_SHELF_M) * ss(0, RC.SEABED_DETAIL_RAMP_M, depth);
++    const hb = 1 - Math.abs(n(d, seabedHillF, 75) * 2 - 1);
++    const shape = (hb * hb - 0.35) * 2.0 + (n(d, seabedGullyF, 76) - 0.5) * 1.4;
++    const S = amp * shape, half = depth * 0.5;
++    return S > half ? half : S < -half ? -half : S;
++  };
++  // R0: the radius scale of the continental coordinate (same value the
++  // elevation clamp line multiplies by), hoisted out of the per-sample path.
++  const continentalScale = Math.min(1, body.radiusM / 2e6);
++  // Legacy water-world land colour (pre-grain), terrain-1.6.0 expressions.
++  const legacyWaterLandColour = (d: V3, elevationM: number): number[] => {
++    const latitude = Math.abs(d[1]);
++    const snow = clamp(
++      (latitude - 0.79) * 7 + Math.max(0, elevationM - 2600) / 3300,
++    );
++    const moisture = n(d, 5, 30);
++    const aridity = clamp(
++      (0.5 - moisture) * 4 + (latitude > 0.18 && latitude < 0.52 ? 0.17 : 0),
++    );
++    let color = mix([40, 89, 48], [173, 145, 89], aridity);
++    color = mix(color, [134, 124, 107], clamp((elevationM - 1500) / 4300));
++    if (elevationM < 120)
++      color = mix([185, 175, 128], color, elevationM / 120);
++    return mix(color, [216, 228, 226], snow);
++  };
++  const sample = (d: V3, deferWaterLand: boolean): CoreSample => {
++    const macro = macroHeightCode(code, d);
++    if (body.type === "Gas giant") {
++      const turbulence = n(d, 9, 24),
++        bands = 0.5 + 0.5 * Math.sin(d[1] * 75 + turbulence * 8);
++      const fine = n(d, 80, 22);
++      const gas: CoreSample = {
++        elevationM: 0,
++        ocean: false,
++        color: mix([135, 98, 68], [225, 197, 153], bands * 0.8 + fine * 0.2) as number[] | null,
++        roughness: 1,
++        grain: 1,
++        localGrain: 1,
++        localGrainNoise: 0,
++        landformScale: 1,
++        landformGateM: 0,
++      };
++      if (exposeFloor) { gas.floorM = 0; gas.continentalM = 0; gas.smoothFloorM = 0; }
++      return gas;
++    }
++    const coast =
++      macro + (n(d, 42, 5) - 0.5) * 0.012 + (n(d, 90, 6) - 0.5) * 0.003;
++    // Explicit multiplication instead of `**` (Math.pow): elevationM feeds
++    // the ocean/land decision below, and `**` is not guaranteed bit-identical
++    // across engines (measured ~49.6% of x**5 results differ).
++    const ridgesBase = 1 - Math.abs(n(d, 30, 7) * 2 - 1);
++    const ridges = ridgesBase * ridgesBase * ridgesBase * ridgesBase * ridgesBase;
++    const fine = (n(d, 80, 8) - 0.5) * 380 + (n(d, 155, 9) - 0.5) * 95;
++    const landFactor = clamp((coast - sea) * 12);
++    const legacyElevationSum = body.water
++      ? (coast - sea) * 47000 + ridges * 2800 * landFactor + fine * landFactor
++      : (macro - 0.46) * 44000 + ridges * 1800 + fine;
++    let elevationM =
++      clamp(legacyElevationSum, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
++    // R0 (additive): the regional floor is exactly the clamped, scaled value
++    // above (the continental coordinate is derived below, opt-in only).
++    let floorM = elevationM;
++    // Metre-based wavelengths, shared by collision, orbit previews and tiles.
++    // Positive land detail fades to zero at sea level, preserving every coast.
++    const landDetail = body.water ? clamp(elevationM / 700) : 1;
++    if (landDetail > 0) {
++      // Explicit multiplication instead of `**` (Math.pow); see the ridges
++      // comment above.
++      const hillsBase = 1 - Math.abs(n(d, body.radiusM / 6500, 71) * 2 - 1);
++      const hills = hillsBase * hillsBase * hillsBase;
++      const gullies = n(d, body.radiusM / 1400, 72);
++      const rocks = n(d, body.radiusM / 260, 73);
++      elevationM += (hills * 620 + gullies * 130 + rocks * 22) * landDetail;
++    }
++    // The terrain-1.7 base height: the legacy return value, and in relief
++    // mode the height the landform land gate reads (geography unchanged).
++    const rawBaseM = elevationM;
++    let landformScale = 1;
++    let smoothFloorOutM = floorM;
++    if (reliefOn) {
++      // R-CAL-1 (plan floorShapingSpec). Only + - * / and arithmetic
++      // smoothstep: every term feeds a height and the ocean flag.
++      const detailM = rawBaseM - floorM; // D = (hills/gullies/rocks) x landDetail, >= 0
++      if (body.water) {
++        const a0 = (coast - sea) * 47000;
++        if (a0 >= 0) {
++          // Land: every term is >= 0 except the fine term, which is bounded
++          // below by half the compressed coordinate, so F >= 0 wherever
++          // a0 >= 0: the sea-level-0 coastline is invariant by construction.
++          const comp = a0 / (1 + a0 / RC.HC);
++          let fineT = fine * landFactor;
++          if (fineT < -0.5 * comp) fineT = -0.5 * comp;
++          let ridgeTermM = tau * RC.KB * 2800 * ridges * ss(RC.BT0, RC.BT1, ridges) * landFactor;
++          if (CF) {
++            const ax = Math.abs(d[0]), ay = Math.abs(d[1]), az = Math.abs(d[2]);
++            let face, m, s, t;
++            if (ax >= ay && ax >= az) { face = d[0] > 0 ? 0 : 1; m = ax; s = d[1]; t = d[2]; }
++            else if (ay >= az) { face = d[1] > 0 ? 2 : 3; m = ay; s = d[0]; t = d[2]; }
++            else { face = d[2] > 0 ? 4 : 5; m = az; s = d[0]; t = d[1]; }
++            const fx = (s / m + 1) * cfHalf, fy = (t / m + 1) * cfHalf;
++            const i = Math.max(0, Math.min(cfN - 1, Math.floor(fx))), j = Math.max(0, Math.min(cfN - 1, Math.floor(fy)));
++            const c = (face * cfN + j) * cfN + i;
++            if (CFX !== 1 && (cfFlags[c >>> 5] & (1 << (c & 31)))) {
++              const wx = fx - i, wy = fy - j, b = face * cfM * cfM + j * cfM + i;
++              const v = (cfV[b] * (1 - wx) + cfV[b + 1] * wx) * (1 - wy) + (cfV[b + cfM] * (1 - wx) + cfV[b + cfM + 1] * wx) * wy;
++              const sv = (cfS[b] * (1 - wx) + cfS[b + 1] * wx) * (1 - wy) + (cfS[b + cfM] * (1 - wx) + cfS[b + cfM + 1] * wx) * wy;
++              cfOut.belt = v * ss(0, 100, a0); cfOut.axisDistanceM = sv * 48000;
++              if (CFX === 2) ridgeTermM += 0 * cfOut.belt; else if (CFX === 3) ridgeTermM = (1 - v * .5) * ridgeTermM + sv * landFactor * 100; else if (cfOut.belt !== 0) ridgeTermM = mountainRidgeTermM(ridgeTermM, cfOut, a0, landFactor, tau, beltCarvingSeeds, false);
++            }
++          } else if (orogen) {
++            if (EXM === 2) { orogenScratch.belt = .9; orogenScratch.axisDistanceM = 1000; orogenScratch.halfWidthM = 48000; orogenScratch.beltIndex = 0; ridgeTermM = mountainRidgeTermM(ridgeTermM, orogenScratch, a0, landFactor, tau, beltCarvingSeeds, false); }
++            else {
++            const o = EXM === 3 ? orogen.sampleWithinWithA0(d, 1e9, 48000, orogenScratch, 32000) : EXM === 4 ? massifBeltSample(orogen, [d[0], d[1], d[2]], a0, orogenScratch) : EXM === 6 ? (dScr[0] = d[0], dScr[1] = d[1], dScr[2] = d[2], massifBeltSample(orogen, dScr, a0, orogenScratch)) : EXM === 5 ? massifBeltSample(orogen, d, 1e9, orogenScratch) : massifBeltSample(orogen, d, a0, orogenScratch);
++            if (EXM !== 1 && EXM !== 3 && EXM !== 5 && o.belt !== 0)
++              ridgeTermM = mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve);
++            }
++          }
++          const F = comp + tau * (RC.HUP * ss(RC.B1, RC.B2, a0) + RC.HHI * ss(RC.B3, RC.B4, a0))
++            + ridgeTermM + fineT;
++          floorM = clamp(F, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
++          const upland = ss(RC.HM0, RC.HM1, floorM);
++          elevationM = floorM + tau * detailM * (RC.WLOW + (1 - RC.WLOW) * upland);
++          landformScale = tau * upland;
++          smoothFloorOutM = floorM;
++        } else {
++          const m0 = -a0;
++          const F = -(m0 / (1 + m0 / RC.HS) + RC.HAB * ss(RC.A1, RC.A2, m0) + RC.HTR * ss(RC.A3, RC.A4, m0));
++          const smoothFloorM = clamp(F, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
++          // The seabed has no window: its detail is part of the floor.
++          floorM = smoothFloorM + seabedDetail(d, smoothFloorM);
++          smoothFloorOutM = smoothFloorM;
++          elevationM = floorM;
++          landformScale = 0;
++        }
++      } else {
++        floorM = floorM * kd;
++        smoothFloorOutM = floorM;
++        elevationM = floorM + tau * detailM;
++        landformScale = tau;
++      }
++    }
++    const ocean = !!body.water && elevationM < waterLevelM;
++    const latitude = Math.abs(d[1]);
++    let color: number[] | null;
++    if (ocean) {
++      color = mix(
++        [26, 114, 139],
++        [5, 25, 58],
++        Math.sqrt(clamp(-elevationM / 5500)),
++      );
++      if (latitude > 0.94)
++        color = mix(color, [202, 225, 234], clamp((latitude - 0.94) * 25));
++    } else if (body.water) {
++      color = deferWaterLand ? null : legacyWaterLandColour(d, elevationM);
++    } else if (body.type === "Ice world") {
++      color = mix([119, 156, 178], [218, 232, 239], macro * 0.8 + ridges * 0.2);
++    } else if (body.type === "Volcanic world") {
++      color = mix([49, 42, 42], [131, 85, 62], macro);
++    } else {
++      color = mix([55, 51, 49], [168, 154, 135], macro);
++    }
++    const grain = 0.91 + n(d, 115, 35) * 0.18;
++    // The legacy grain (.88 + n x .24; same expression and bits as before); the
++    // noise value is kept for terrain-1.8.1's water-land colour (TERRAIN_LOCAL_GRAIN).
++    const localGrainNoise = ocean ? 0 : n(d, body.radiusM / 800, 74);
++    const localGrain = ocean ? 1 : .88 + localGrainNoise * .24;
++    const out: CoreSample = {
++      elevationM,
++      ocean,
++      color: color ? [clamp(color[0] * grain * localGrain, 0, 255), clamp(color[1] * grain * localGrain, 0, 255), clamp(color[2] * grain * localGrain, 0, 255)] : null,
++      roughness: ocean ? WET_SURFACE_ROUGHNESS : DRY_SURFACE_ROUGHNESS,
++      grain,
++      localGrain,
++      localGrainNoise,
++      landformScale,
++      landformGateM: rawBaseM,
++    };
++    if (exposeFloor) {
++      // R0: the continental coordinate repeats the first term of the
++      // elevation sum on its own (it never feeds elevationM).
++      out.floorM = floorM;
++      out.smoothFloorM = smoothFloorOutM;
++      out.continentalM = (body.water ? (coast - sea) * 47000 : (macro - 0.46) * 44000) * continentalScale;
++    }
++    return out;
++  };
++  return { sample, legacyWaterLandColour };
++}
++
+ /**
+  * Builds this body's (seed, id)-keyed crater field once, gated to exactly its
+  * own `surfaceAgeMyr` upper bound, or `null` for a body that cannot carry
+@@ -832,7 +1077,7 @@ export function terrainSampler(
+   options: TerrainSamplerOptions = {},
+ ) {
+   const carving = mountainCarvingState(body, options);
+-  const core = baseTerrainCore(body, waterLevelM, exposeFloor, true, carving === null ? null : {carve: carving});
++  const core = (carving === true || (carving === false && process.env.CFOFF)) && !process.env.ONECORE ? exactTerrainCore(body, waterLevelM, exposeFloor, true, {carve: carving}) : baseTerrainCore(body, waterLevelM, exposeFloor, true, carving === null ? null : {carve: carving});
+   const landforms=planetLandforms(body);
+   // The landform ceiling (terrain-1.8.0): the body's analytic height bound.
+   const landformCeilingM = reliefModeFor(body) ? bodyHeightBoundM(body).maxM : undefined;

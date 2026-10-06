@@ -1,0 +1,322 @@
+✔ Maithea: cost optimisation preserves every coarse/switch tile buffer (1530.7685ms)
+✔ Selawyn: cost optimisation preserves every coarse/switch tile buffer (1299.8334ms)
+✔ Raiva: cost optimisation preserves every coarse/switch tile buffer (1818.0845ms)
+✔ Lethuris: cost optimisation preserves every coarse/switch tile buffer (2156.6026ms)
+✔ Maithea: cost optimisation preserves full sampler outputs at truth and L0..22 (1341.8102ms)
+✔ Selawyn: cost optimisation preserves full sampler outputs at truth and L0..22 (1052.1003ms)
+✔ Raiva: cost optimisation preserves full sampler outputs at truth and L0..22 (1453.6334ms)
+✔ Lethuris: cost optimisation preserves full sampler outputs at truth and L0..22 (757.2227ms)
+✔ lod-ladder-2: carving starts at the first level with edge <= 128 km; constants pinned to their sources (0.4066ms)
+✔ staged wiring: off by default, the level changes nothing without mountains, carving state per option (2.8664ms)
+✔ mountainRidgeTermM: carve = false is the composition without C, an upper envelope of the carved term (460.2697ms)
+✔ Maithea: below the cut no block solve and an upper envelope; from the cut the truth (4124.9571ms)
+✔ Selawyn: below the cut no block solve and an upper envelope; from the cut the truth (4210.9752ms)
+✔ Raiva: below the cut no block solve and an upper envelope; from the cut the truth (4218.1966ms)
+✔ Lethuris: below the cut no block solve and an upper envelope; from the cut the truth (4207.742ms)
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2820.1559ms)
+ℹ INFO Maithea C=2/6/33/54 N=2/5/17/27 edge 1: morph start 0.0067 m, seam 0.0065 m; mutant 1583.6 / 475.5 m; mean step at the cut -372.3 m (min -1628.8 m)
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (2320.4881ms)
+ℹ INFO Maithea (cube-face edge) C=0/6/0/6 N=4/5/31/3 edge 0: morph start 0.0042 m, seam 0.0038 m; mutant 327.2 / 92.2 m; mean step at the cut -48.0 m (min -367.4 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2559.1165ms)
+ℹ INFO Selawyn C=0/7/112/107 N=0/6/55/53 edge 0: morph start 0.0060 m, seam 0.0037 m; mutant 1911.0 / 1428.5 m; mean step at the cut -905.9 m (min -2212.4 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (2006.9865ms)
+ℹ INFO Selawyn (cube-face edge) C=0/7/127/53 N=5/6/0/26 edge 1: morph start 0.0058 m, seam 0.0052 m; mutant 2726.4 / 1923.7 m; mean step at the cut -488.5 m (min -2869.9 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2891.3123ms)
+ℹ INFO Raiva C=1/5/19/25 N=1/4/9/13 edge 3: morph start 0.0052 m, seam 0.0052 m; mutant 771.6 / 505.4 m; mean step at the cut -208.4 m (min -782.6 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (2411.1994ms)
+ℹ INFO Raiva (cube-face edge) C=0/5/0/5 N=4/4/15/2 edge 0: morph start 0.0047 m, seam 0.0049 m; mutant 2071.0 / 228.4 m; mean step at the cut -640.7 m (min -2109.0 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2838.6028ms)
+ℹ INFO Lethuris C=2/7/28/73 N=2/6/13/36 edge 0: morph start 0.0058 m, seam 0.0056 m; mutant 2414.7 / 1767.7 m; mean step at the cut -963.0 m (min -2702.8 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1924.7134ms)
+ℹ INFO Lethuris (cube-face edge) C=0/7/0/105 N=4/6/63/52 edge 0: morph start 0.0035 m, seam 0.0029 m; mutant 2296.7 / 575.1 m; mean step at the cut -828.1 m (min -2499.1 m)
+(node:2596) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ private continental kernels are Object.is identical: 20,000 directions x four worlds (73.8491ms)
+✔ HARD: the truth core's inline voxel prefilter changes no value (Object.is, every field, four worlds) (88711.3295ms)
+✔ g² lemma on dense grid, and conservative composition with exact distances / zero margin (393.728ms)
+✔ Maithea: sparse field bytes deterministic across independent builds and sample orders (165.702ms)
+✔ Maithea: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (574.9668ms)
+ℹ INFO Maithea dense interpolation {"max":0.07681444290891326,"count":1266229,"worst":{"belt":21,"face":2,"i":272,"j":244,"u":0.9995966299808274,"exact":-0.0036011524139341056,"sd":-0.08041559532284737}}
+✔ Maithea: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (850.9556ms)
+ℹ INFO Maithea coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.02577347672099628,"p50":0,"p99":755.8003512331802,"max":2346.9077047788815}
+ℹ INFO zero-margin floor violations 3465
+✔ Maithea: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (33.4792ms)
+✔ Selawyn: sparse field bytes deterministic across independent builds and sample orders (246.9412ms)
+✔ Selawyn: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (1093.8252ms)
+ℹ INFO Selawyn dense interpolation {"max":0.06030445661613702,"count":2452374,"worst":{"belt":21,"face":4,"i":497,"j":527,"u":-0.9997647757615518,"exact":-0.07227775990745068,"sd":-0.1325822165235877}}
+✔ Selawyn: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (1366.6332ms)
+ℹ INFO Selawyn coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.0074170890519863475,"p50":0,"p99":768.9661833193425,"max":1835.9634213027116}
+ℹ INFO zero-margin floor violations 2864
+✔ Selawyn: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (37.4541ms)
+✔ Raiva: sparse field bytes deterministic across independent builds and sample orders (51.1039ms)
+✔ Raiva: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (170.7658ms)
+ℹ INFO Raiva dense interpolation {"max":0.03459423768171824,"count":244181,"worst":{"belt":0,"face":3,"i":159,"j":105,"u":0.9991003178766489,"exact":0.09876932216039144,"sd":0.13336355984210968}}
+✔ Raiva: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (837.021ms)
+ℹ INFO Raiva coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.0012683949216088508,"p50":0,"p99":443.11310166671706,"max":1354.7088138869476}
+ℹ INFO zero-margin floor violations 3272
+✔ Raiva: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (39.2201ms)
+✔ Lethuris: sparse field bytes deterministic across independent builds and sample orders (284.9241ms)
+✔ Lethuris: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (1664.0357ms)
+ℹ INFO Lethuris dense interpolation {"max":0.05669792365650725,"count":2628977,"worst":{"belt":31,"face":3,"i":668,"j":424,"u":0.9994752181708975,"exact":0.09406038004537035,"sd":0.1507583037018776}}
+✔ Lethuris: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (908.8689ms)
+ℹ INFO Lethuris coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.011451772768033525,"p50":0,"p99":739.9070997250874,"max":2086.321977227656}
+ℹ INFO zero-margin floor violations 3586
+✔ Lethuris: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (24.6263ms)
+✔ HARD: baseTerrainCore and mountainTerrainCore are identical outside the setup and ridge-term hunks (0.7959ms)
+BAND {"sweep":[{"halfWidthM":32000,"share":0.02059755339136694},{"halfWidthM":33000,"share":0.018673327008370835},{"halfWidthM":34000,"share":0.017962050902429538},{"halfWidthM":35000,"share":0.01783730401558141},{"halfWidthM":36000,"share":0.01783038996134826},{"halfWidthM":37000,"share":0.01767578456470943},{"halfWidthM":38000,"share":0.017258459206269817},{"halfWidthM":39000,"share":0.016553943886622013},{"halfWidthM":40000,"share":0.015587532026333159},{"halfWidthM":41000,"share":0.014410256314252806},{"halfWidthM":42000,"share":0.013085324618626099},{"halfWidthM":43000,"share":0.011680597094867651},{"halfWidthM":44000,"share":0.010264570491351833},{"halfWidthM":45000,"share":0.008904382777806284},{"halfWidthM":46000,"share":0.007664610465907796},{"halfWidthM":47000,"share":0.006605066916921468},{"halfWidthM":48000,"share":0.005774627812444001},{"halfWidthM":49000,"share":0.005774627812444001},{"halfWidthM":50000,"share":0.005774627812444001},{"halfWidthM":51000,"share":0.005774627812444001},{"halfWidthM":52000,"share":0.005774627812444001},{"halfWidthM":53000,"share":0.005774627812444001},{"halfWidthM":54000,"share":0.005774627812444001},{"halfWidthM":55000,"share":0.005774627812444001},{"halfWidthM":56000,"share":0.005774627812444001},{"halfWidthM":57000,"share":0.005774627812444001},{"halfWidthM":58000,"share":0.005774627812444001},{"halfWidthM":59000,"share":0.005774627812444001},{"halfWidthM":60000,"share":0.005774627812444001},{"halfWidthM":61000,"share":0.005774627812444001},{"halfWidthM":62000,"share":0.005774627812444001},{"halfWidthM":63000,"share":0.005774627812444001},{"halfWidthM":64000,"share":0.005774627812444001},{"halfWidthM":65000,"share":0.005774627812444001},{"halfWidthM":66000,"share":0.005774627812444001},{"halfWidthM":67000,"share":0.005774627812444001},{"halfWidthM":68000,"share":0.005774627812444001},{"halfWidthM":69000,"share":0.005774627812444001},{"halfWidthM":70000,"share":0.005774627812444001},{"halfWidthM":71000,"share":0.005774627812444001},{"halfWidthM":72000,"share":0.005774627812444001},{"halfWidthM":73000,"share":0.005774627812444001},{"halfWidthM":74000,"share":0.005774627812444001},{"halfWidthM":75000,"share":0.005774627812444001},{"halfWidthM":76000,"share":0.005774627812444001},{"halfWidthM":77000,"share":0.005774627812444001},{"halfWidthM":78000,"share":0.005774627812444001},{"halfWidthM":79000,"share":0.005774627812444001},{"halfWidthM":80000,"share":0.005774627812444001},{"halfWidthM":100000,"share":0.005774627812444001},{"halfWidthM":150000,"share":0.005774627812444001},{"halfWidthM":220000,"share":0.005774627812444001}],"oblique":0.008574179959937327,"narrow":0.48929726106718174,"box":0.22728543864871603}
+BOUND {"gridSamples":614922,"rasterSamples":37249,"violations":0}
+CONVEX {"roundedAbove":0,"maxRoundingM":0}
+DIGEST 945cabad88648e1f06206f8b0ea682dc22ebc78e93b726d8ce7cd4570d6b63f4
+✔ HARD: dense width sweep and oblique compact transect; narrow and box controls fail (67.9176ms)
+✔ HARD: analytic maximum on dense parameter grid and great-circle raster (28.337ms)
+✔ HARD: literal positive zero at every exclusion, and dry amplitude ignores tau (1.28ms)
+✔ HARD: outside composition preserves main bits; interior composition stays convex (36.0278ms)
+✔ HARD: massif-envelope-2 cap: one fixed-width massif on a wide belt; the weight fades to 0 at its edge (1.1789ms)
+✔ HARD: symmetric monotone profile, exact crown, C2 support and blend endpoints (0.9139ms)
+✔ HARD: forward/reverse/child SHA256 agrees (127.1147ms)
+✔ HARD: arithmetic audit with negative controls, no imports, frozen versioned constants (5.0826ms)
+GRID Maithea: N=1024, 2358 in-band of 102500, edge 2743 in-band of 8880, 1480/1480 pairs straddle 48 km
+GRID Selawyn: N=2048, 1196 in-band of 102500, edge 2314 in-band of 7680, 1280/1280 pairs straddle 48 km
+GRID Raiva: N=512, 1755 in-band of 102500, edge 306 in-band of 960, 120/160 pairs straddle 48 km
+GRID Lethuris: N=2048, 1257 in-band of 102500, edge 3067 in-band of 9840, 1640/1640 pairs straddle 48 km
+GRID AREA Maithea: N=1024 cells 216545 nodes 7156; massif 2.300%, geometric band 2.469%, flagged 3.420% (land 3.157%); land ratio 1.372, geometric ratio 1.385
+GRID AREA Maithea: flagged / massif 1.486
+GRID AREA Selawyn: N=2048 cells 398112 nodes 12689; massif 1.167%, geometric band 1.291%, flagged 1.687% (land 1.519%); land ratio 1.302, geometric ratio 1.307
+GRID AREA Selawyn: flagged / massif 1.446
+GRID AREA Raiva: N=512 cells 39459 nodes 1108; massif 1.712%, geometric band 1.816%, flagged 2.280% (land 2.136%); land ratio 1.247, geometric ratio 1.256
+GRID AREA Raiva: flagged / massif 1.332
+GRID AREA Lethuris: N=2048 cells 432521 nodes 13369; massif 1.226%, geometric band 1.318%, flagged 1.678% (land 1.546%); land ratio 1.261, geometric ratio 1.273
+GRID AREA Lethuris: flagged / massif 1.368
+✔ HARD: version and API unchanged by the grid (output-neutral; orogen-layout-2 since cost plan T2) (39.319ms)
+✔ HARD: 4 water worlds x 102,500 Fibonacci + band-edge offsets: sampleWithinWithA0 == filtered sampleWithA0, 0 unflagged band directions (1234.6077ms)
+✔ HARD: negative control: a grid stamped for a narrower band leaves band directions unflagged (the check has teeth) (106.7227ms)
+✔ HARD: coarse summary covers every flagged cell, and the word tags agree with the bits, at N = 256..2048 (130.8079ms)
+✔ HARD: other band parameters (16 km / no width gate, 48 km / no width gate) on two worlds (174.9084ms)
+✔ HARD: 60 corpus bodies x 20,000 directions + band-edge offsets: identical and conservative (7567.597ms)
+✔ HARD: flagged area <= 1.5 x massif (band) area per world (675.3594ms)
+✔ HARD: outside the band mountainRidgeTermM returns main's term unchanged, so massifBeltSample is value-neutral at the call site (61.7904ms)
+DIGEST dd8e6306c35553aad026290caa0f5dc12204a5aa66b16a155b1e2a44b4b53501
+DISTANCE {"count":2000,"centrelineSteps":4000,"maxErrorM":8.792267180979252e-7,"maxErrorWidth":3.996485082263296e-12,"p99ErrorWidth":3.5074084404517304e-12,"toleranceWidth":0.01,"pass":true,"worst":{"direction":[-0.8767337195899597,0.25299000000000005,0.40906484184534114],"beltIndex":0,"axisDistanceM":219794.7816744512,"actualM":219794.78167533042,"halfWidthM":220000,"distanceWidth":0.9990671894333201,"slope":0.02765879805404938}}
+CURVATURE Maithea {"max":0.047823456257596944,"boundMax":0.09212779763135807,"limit":0.2,"steps":4096,"worst":{"beltIndex":0,"u":0.3955079372831563}}
+CURVATURE Lethuris {"max":0.04782335742067525,"boundMax":0.08158014450852297,"limit":0.2,"steps":4096,"worst":{"beltIndex":22,"u":0.000027067598482168446}}
+ALONG 305 off-axis samples, max |alongM - dense| 0.02412321261363104 m
+✔ HARD: real hierarchy exercises elongation and curved-axis derivative (79.5082ms)
+✔ HARD: metric teeth: straight band passes, disks fail aspect, isotropic mask fails coherence (67.4074ms)
+✔ HARD: synthetic spherical-cap continent satisfies all M1 thresholds (41.9603ms)
+✔ HARD: coast, caller coordinate, bounds and tangent frame (20.4126ms)
+✔ HARD: gas giants and stars are zero, including sampleWithA0 (0.8784ms)
+✔ HARD: forward, reverse and child-process sample digests agree (218.596ms)
+✖ HARD: arithmetic-only layout and no terrain/climate/colour/LOD import (2.0514ms)
+✔ HARD: strict coherence counts all positive centres including zero tensors (3.8581ms)
+✔ HARD: 2000 positive Maithea distances agree with dense displaced-centreline search (204.8351ms)
+✔ HARD: dense Maithea/Lethuris spatial curvature times W stays below .2 (134.4263ms)
+✔ HARD: alongM (assembly addition) is the base-circle arc R x 2 atan(u) of the foot point, 0 off-belt (14.5395ms)
+✔ HARD: offsetNoise is catalog noise(x, 37, 19, seed) bit for bit, cache interleaved across cells and seeds (3.0388ms)
+✔ HARD: the T2 rejections are exact: sampleWithA0 and sampleWithinWithA0 == (filtered) sampleWithA0Unpruned on 4 worlds (Fibonacci, belt rasters, coast gate open) (2400.1556ms)
+✔ HARD: alongM off the axis is R x 2 atan(u*) of the dense-search foot point (< .1 m; 3 steps would give .64 m) (16.6773ms)
+✔ HARD: orogen-layout-2 keeps orogen-layout-1's belts: 4 worlds, 60 corpus bodies and the synthetic cap (literals from main 66453b2) (2938.7595ms)
+RAIVA R1 {"tau":0.4560255015129207,"w":90090.17114178278,"count":275,"area":31998.375,"density":8.59418642352932}
+✔ HARD: outsideBelt directions (4096 per water world) are bit-identical to main: heights, ocean and colour (358.8756ms)
+✔ HARD: outsideMassif directions (4096 per water world) are bit-identical to main: heights, ocean and colour (64.2073ms)
+✔ HARD: negative controls: the identity digest rejects one changed height, colour or ocean flag (100.4481ms)
+✔ HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (30.7892ms)
+✔ HARD: versions, fixed carving width, strip rule and per-strip seeds (0.6226ms)
+✔ HARD: the assembled ridge term: >= 0, <= max(main, analytic envelope), main outside the massif (353.7239ms)
+✔ HARD: mountain-assembly.ts is arithmetic only and imports only M2 and M3 (1.1139ms)
+✔ CONTRACT: M4 R1 on the whole belt core at the real Raiva tau and belt width (8 seeds, 64 km rasters) (6223.3953ms)
+ℹ tests 82
+ℹ suites 0
+ℹ pass 81
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 97870.5407
+
+✖ failing tests:
+
+test at tests\mountain-layout.test.mjs:144:1
+✖ HARD: arithmetic-only layout and no terrain/climate/colour/LOD import (2.0514ms)
+  AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /\bMath\s*\[|\*\*/. Input:
+  
+  "import {hash64, macroHeightCode, noise, rng, type V3} from './catalog.ts';\r\n" +
+    "import {sine, detCos} from './det-math.ts';\r\n" +
+    '\r\n' +
+    '// orogen-layout-3 adds a lazy baked coarse band field; all existing outputs are unchanged.\r\n' +
+    '// orogen-layout-2 (mountains cost plan T2, 2026-10-05): the foot-point solve uses the exact derivative and\r\n' +
+    '// FOOT_POINT_STEPS fixed steps instead of five central-difference steps; distances agree with -1 to 1e-7 m,\r\n' +
+    '// alongM to 0.1 m (docs/mountain-layout-v1.md "In-massif foot-point solve"). The belts are unchanged:\r\n' +
+    '// construction keeps its orogen-layout-1 random stream (OROGEN_LAYOUT_CONSTRUCTION_SEED) and land-coverage predicate (coveredV1).\r\n' +
+    "export const OROGEN_LAYOUT_VERSION = 'orogen-layout-3';\r\n" +
+    "export const OROGEN_LAYOUT_CONSTRUCTION_SEED = 'orogen-layout-1';\r\n" +
+    'export const OROGEN_LAYOUT = Object.freeze({\r\n' +
+    '  targetShare: .10, probeCount: 4096, candidates: 4096,\r\n' +
+    '  coastGateM: 100, coreFraction: .65, axisSteps: 24,\r\n' +
+    '  majorCount: 3, majorAttempts: 768,\r\n' +
+    '  majorWidthRadius: .045, majorMinWidthM: 30000, majorMaxWidthM: 220000,\r\n' +
+    '  minorWidthRadius: .014, minHalfLength: .10, maxHalfLength: .30,\r\n' +
+    '  majorMinHalfLength: .72, majorMaxHalfLength: .90,\r\n' +
+    '  interiorBowFraction: .12, marginBowFraction: .15,\r\n' +
+    '  minWavelength: .12, maxWavelength: .20, axisDifferenceStep: .00001,\r\n' +
+    '  supportZ: .5, coreCrown: .1,\r\n' +
+    '});\r\n' +
+    'type World = {seed: string; radiusM: number; water: number; type: string; kind?: string};\r\n' +
+    'type Coordinate = (d: V3) => number;\r\n' +
+    'export interface OrogenSample {\r\n' +
+    '  belt: number; axis: V3; axisDistanceM: number; halfWidthM: number; beltIndex: number;\r\n' +
+    "  // Signed along-axis arc coordinate (m) of the foot point on the belt's base great\r\n" +
+    '  // circle, R x theta with u = tan(theta/2) (0 at the belt centre). Added for the\r\n' +
+    '  // mountains assembly (M3 carving coordinates); 0 where belt is 0. It does not\r\n' +
+    '  // change any other output.\r\n' +
+    '  alongM?: number;\r\n' +
+    '}\r\n' +
+    'export interface OrogenBelt {\r\n' +
+    '  readonly centre: V3; readonly tangent: V3; readonly pole: V3;\r\n' +
+    '  readonly halfWidthM: number; readonly uLimit: number; readonly bendM: number;\r\n' +
+    "  readonly placement: 'margin' | 'interior';\r\n" +
+    "  readonly rank: 'major' | 'minor';\r\n" +
+    '  readonly noiseSeed: number; readonly wavelength: number; readonly amplitudeM: number;\r\n' +
+    '  readonly gradientMax: number;\r\n' +
+    '  readonly curvatureWidthBound: number;\r\n' +
+    '}\r\n' +
+    'const dot = (a: V3, b: V3) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];\r\n' +
+    'const cross = (a: V3, b: V3): V3 => [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];\r\n' +
+    'const unit = (a: V3): V3 => {const l=Math.sqrt(dot(a,a));return l ? [a[0]/l,a[1]/l,a[2]/l] : [0,0,0];};\r\n' +
+    'const ss = (lo: number, hi: number, v: number) => {const t=Math.max(0,Math.min(1,(v-lo)/(hi-lo)));return t*t*(3-2*t);};\r\n' +
+    'const empty = (): OrogenSample => ({belt:0,axis:[0,0,0],axisDistanceM:0,halfWidthM:0,beltIndex:-1,alongM:0});\r\n' +
+    '// theta = 2 atan(u) for |u| <= tan(.45) (the longest major half-length), by one half-angle\r\n' +
+    '// reduction t = u/(1+sqrt(1+u*u)) <= .229 and the odd atan series to t^19 (first omitted term\r\n' +
+    '// 4 t^21/21 < 1e-14 rad, far under 1 mm at R = 6000 km): arithmetic only, monotone in u.\r\n' +
+    'function thetaOf(u: number) {\r\n' +
+    '  const t=u/(1+Math.sqrt(1+u*u)),t2=t*t;\r\n' +
+    '  return 4*t*(1-t2*(1/3-t2*(1/5-t2*(1/7-t2*(1/9-t2*(1/11-t2*(1/13-t2*(1/15-t2*(1/17-t2/19)))))))));\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '// Same evaluation order as R-CAL-1, before the radius scale and compression.\r\n' +
+    'function lIhash(x: number, y: number, z: number, s: number) {\r\n' +
+    '  let h = Math.imul(x, 0x9e3779b1) ^ Math.imul(y, 0x85ebca77) ^ Math.imul(z, 0xc2b2ae3d) ^ Math.imul(s, 0x27d4eb2f);\r\n' +
+    '  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);\r\n' +
+    '  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);\r\n' +
+    '  h ^= h >>> 16;\r\n' +
+    '  return (h >>> 0) / 4294967295;\r\n' +
+    '}\r\n' +
+    'function lNoise(x: number, y: number, z: number, s: number) {\r\n' +
+    '  const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);\r\n' +
+    '  let a = x - ix, b = y - iy, c = z - iz;\r\n' +
+    '  a = a * a * (3 - 2 * a); b = b * b * (3 - 2 * b); c = c * c * (3 - 2 * c);\r\n' +
+    '  let value = 0;\r\n' +
+    '  for (let dx = 0; dx < 2; dx++) for (let dy = 0; dy < 2; dy++) for (let dz = 0; dz < 2; dz++)\r\n' +
+    '    value += lIhash(ix + dx, iy + dy, iz + dz, s) * (dx ? a : 1 - a) * (dy ? b : 1 - b) * (dz ? c : 1 - c);\r\n' +
+    '  return value;\r\n' +
+    '}\r\n' +
+    'function lMacro(s: number, d: V3) {\r\n' +
+    '  return 0.68 * lNoise(d[0] * 2.6 + 11, d[1] * 2.6 + 31, d[2] * 2.6 + 17, s) + 0.23 * lNoise(d[0] * 5.2, d[1] * 5.2, d[2] * 5.2, s + 1) + 0.09 * lNoise(d[0] * 10.4, d[1] * 10.4, d[2] * 10.4, s + 2);\r\n' +
+    '}\r\n' +
+    'function macroCode(body: World) {\r\n' +
+    "  return Number(hash64(body.seed+'/macro-v1') & 0xffffffffn);\r\n" +
+    '}\r\n' +
+    'export function continentalA0(body: World): Coordinate {\r\n' +
+    '  const code=macroCode(body),sea=.37+body.water*.22;\r\n' +
+    '  const n=(d: V3,f: number,s: number)=>noise(d[0]*f+13,d[1]*f+37,d[2]*f+19,code+s);\r\n' +
+    '  return body.water ? d=>{\r\n' +
+    '    const macro=macroHeightCode(code,d);\r\n' +
+    '    const coast=macro+(n(d,42,5)-.5)*.012+(n(d,90,6)-.5)*.003;\r\n' +
+    '    return (coast-sea)*47000;\r\n' +
+    '  } : d=>(macroHeightCode(code,d)-.46)*44000;\r\n' +
+    '}\r\n' +
+    "// The layout CONSTRUCTION's a0 (orogenLayout): continentalA0 bit for bit on private kernel copies, so the one-time\r\n" +
+    "// construction never feeds type feedback into catalog.ts's per-sample kernels, while the per-sample `sample` keeps\r\n" +
+    '// continentalA0 on the shared kernels (docs/mountains-t6-baked-coarse-2026-10-06.md, cost bisection).\r\n' +
+    'export function constructionA0(body: World): Coordinate {\r\n' +
+    '  const code=macroCode(body),sea=.37+body.water*.22;\r\n' +
+    '  const n=(d: V3,f: number,s: number)=>lNoise(d[0]*f+13,d[1]*f+37,d[2]*f+19,code+s);\r\n' +
+    '  return body.water ? d=>{\r\n' +
+    '    const macro=lMacro(code,d);\r\n' +
+    '    const coast=macro+(n(d,42,5)-.5)*.012+(n(d,90,6)-.5)*.003;\r\n' +
+    '    return (coast-sea)*47000;\r\n' +
+    '  } : d=>(lMacro(code,d)-.46)*44000;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '// noise(x, 37, 19, s) of catalog.ts, bit for bit (cost plan T2, docs/mountains-opus-decisions-2026-10-05.md\r\n' +
+    '// Q2; docs/mountain-layout-v1.md "In-massif foot-point solve"). With integer y = 37 and z = 19 the y and z\r\n' +
+    '// smoothstep weights are exactly 0 and 1, so every corner term with dy = 1 or dz = 1 is +0 (a finite\r\n' +
+    '// non-negative hash times +0) and adding +0 changes nothing: the eight-corner sum is exactly\r\n' +
+    "// h(ix) (1 - a) + h(ix + 1) a, the two x-corner hashes in noise's own order. ihash XORs the four\r\n" +
+    '// imul terms, so the y, z and seed terms fold into one 32-bit constant k (XOR is associative). The two\r\n' +
+    '// corner hashes are kept for the last (seed, cell): every Gauss-Newton evaluation of one projection\r\n' +
+    '// stays on one belt and nearly always in one noise cell. Pinned against noise() in\r\n' +
+    '// tests/mountain-layout.test.mjs.\r\n' +
+    'const OFFSET_NOISE_Y=37,OFFSET_NOISE_Z=19;\r\n' +
+    'function cornerHash(x: number,k: number) {\r\n' +
+    '  let h=Math.imul(x,0x9e3779b1)^k;\r\n' +
+    '  h=Math.imul(h^(h>>>16),0x85ebca6b);\r\n' +
+    '  h=Math.imul(h^(h>>>13),0xc2b2ae35);\r\n' +
+    '  h^=h>>>16;\r\n' +
+    '  return (h>>>0)/4294967295;\r\n' +
+    '}\r\n' +
+    'let noiseSeedCached=NaN,noiseCellCached=NaN,noiseH0=0,noiseH1=0;\r\n' +
+    'export function offsetNoise(x: number,s: number) {\r\n' +
+    '  const ix=Math.floor(x);\r\n' +
+    '  let a=x-ix;\r\n' +
+    '  a=a*a*(3-2*a);\r\n' +
+    '  if(ix!==noiseCellCached || s!==noiseSeedCached){\r\n' +
+    '    const k=Math.imul(OFFSET_NOISE_Y,0x85ebca77)^Math.imul(OFFSET_NOISE_Z,0xc2b2ae3d)^Math.imul(s,0x27d4eb2f);\r\n' +
+    '    noiseH0=cornerHash(ix,k);noiseH1=cornerHash(ix+1,k);noiseCellCached=ix;noiseSeedCached=s;\r\n' +
+    '  }\r\n' +
+    '  return noiseH0*(1-a)+noiseH1*a;\r\n' +
+    '}\r\n' +
+    '// One cubic value-noise octave. du/dtheta=(1+u*u)/2, so construction\r\n' +
+    '// multiplies the minimum wavelength by (1+uLimit*uLimit): even at the\r\n' +
+    '// endpoints its local base-arc wavelength is at least 16 half widths.\r\n' +
+    'function offset(b: OrogenBelt,u: number) {\r\n' +
+    '  const v=u/b.uLimit;\r\n' +
+    '  return b.bendM*v*v+b.amplitudeM*(2*offsetNoise(u*2/b.wavelength+13,b.noiseSeed)-1);\r\n' +
+    '}\r\n' +
+    '// Exact half-angle along coordinate, unchanged by transverse displacement.\r\n' +
+    '// This point has pole.d = offset/R and x/(sqrt(x*x+z*z)+z) = u.\r\n' +
+    'function centreline(b: OrogenBelt,u: number,R: number): V3 {\r\n' +
+    '  centrelineAt(b,u,R);\r\n' +
+    '  return [clX,clY,clZ];\r\n' +
+    '}\r\n' +
+    '// centreline() without the array: the point in (clX, clY, clZ), the same expressions.\r\n' +
+    'let clX=0,clY=0,clZ=0;\r\n' +
+    'function centrelineAt(b: OrogenBelt,u: number,R: number) {\r\n' +
+    '  const y=offset(b,u)/R,r=Math.sqrt(1-y*y),den=1+u*u,x=r*2*u/den,z=r*(1-u*u)/den,T=b.tangent,C=b.centre,P=b.pole;\r\n' +
+    '  clX=x*T[0]+z*C[0]+y*P[0];clY=x*T[1]+z*C[1]+y*P[1];clZ=x*T[2]+z*C[2]+y*P[2];\r\n' +
+    '}\r\n' +
+    '// Fixed Gauss-Newton step count of the foot-point solve (orogen-layout-2, cost plan T2; chosen by\r\n' +
+    '// measurement, docs/mountain-layout-v1.md "In-massif foot-point solve").\r\n' +
+    'export const FOOT_POINT_STEPS=4;\r\n' +
+    'let footSteps=FOOT_POINT_STEPS;\r\n' +
+    '// Measurement only (scripts/mountain-layout-foot.mjs): run the solve with another step count.\r\n' +
+    'export function setFootPointStepsForMeasurement(n: number) {footSteps=n;}\r\n' +
+    "// The projection of d onto b's displaced centreline (orogen-layout-2, cost plan T2): the signed distance,\r\n" +
+    '// gradient = cross(d, tangent) and the foot u in the trDistance/trG*/trU scalars (no allocation).\r\n' +
+    '// In the belt frame d = x T + z C + py P, and the centreline point at u is p = (r c, r s, y) with\r\n' +
+    "// y = o(u)/R, r = sqrt(1 - y^2), c = 2u/(1+u^2), s = (1-u^2)/(1+u^2): orogen-layout-1's exact half-angle\r\n" +
+    '// point, with o = offset(b, u) = bendM (u/U)^2 + A (2 noise(X) - 1), X = 2u/lambda + 13.\r\n' +
+    '// Exact derivative: noise(X) = h0 (1 - m) + h1 m with a = X - floor(X) and m = a^2 (3 - 2a) (offsetNoise),\r\n' +
+    "// so d noise/du = (h1 - h0) 6a(1 - a) 2/lambda (continuous: m' vanishes at both cell ends), and\r\n" +
+    "// o' = 2 bendM u/U^2 + 24 A (h1 - h0) a(1 - a)/lambda. With w = 2/(1+u^2) (dc/du = w s, ds/du = -w c),\r\n" +
+    "// y' = o'/R and r' = -y y'/r: p' = (r' c + r w s, r' s - r w c, y'), so for the residual e = d - p\r\n" +
+    "//   e.p' = r' (q - r) + r w t + (py - y) y',  |p'|^2 = r'^2 + r^2 w^2 + y'^2,\r\n" +
+    "// with q = x c + z s and t = x s - z c. FOOT_POINT_STEPS Gauss-Newton steps u += e.p'/|p'|^2 (minimising\r\n" +
+    "// the squared chord, the same minimiser as the great-circle distance) from the sample's own u, each\r\n" +
+    '// clamped to the finite arc; no data-dependent exit. sign is the side of the displaced centreline at the\r\n' +
+    "// sample's u (orogen-l"... 44476 more characters
+  
+      at auditArithmetic (file:///C:/LLM/IWSDK/universe-atlas-wt/baked/tests/mountain-layout.test.mjs:136:10)
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/baked/tests/mountain-layout.test.mjs:146:3)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'import {hash64, macroHeightCode, noise, rng, type V3} from \'./catalog.ts\';\r\nimport {sine, detCos} from \'./det-math.ts\';\r\n\r\n// orogen-layout-3 adds a lazy baked coarse band field; all existing outputs are unchanged.\r\n// orogen-layout-2 (mountains cost plan T2, 2026-10-05): the foot-point solve uses the exact derivative and\r\n// FOOT_POINT_STEPS fixed steps instead of five central-difference steps; distances agree with -1 to 1e-7 m,\r\n// alongM to 0.1 m (docs/mountain-layout-v1.md "In-massif foot-point solve"). The belts are unchanged:\r\n// construction keeps its orogen-layout-1 random stream (OROGEN_LAYOUT_CONSTRUCTION_SEED) and land-coverage predicate (coveredV1).\r\nexport const OROGEN_LAYOUT_VERSION = \'orogen-layout-3\';\r\nexport const OROGEN_LAYOUT_CONSTRUCTION_SEED = \'orogen-layout-1\';\r\nexport const OROGEN_LAYOUT = Object.freeze({\r\n  targetShare: .10, probeCount: 4096, candidates: 4096,\r\n  coastGateM: 100, coreFraction: .65, axisSteps: 24,\r\n  majorCount: 3, majorAttempts: 768,\r\n  majorWidthRadius: .045, majorMinWidthM: 30000, majorMaxWidthM: 220000,\r\n  minorWidthRadius: .014, minHalfLength: .10, maxHalfLength: .30,\r\n  majorMinHalfLength: .72, majorMaxHalfLength: .90,\r\n  interiorBowFraction: .12, marginBowFraction: .15,\r\n  minWavelength: .12, maxWavelength: .20, axisDifferenceStep: .00001,\r\n  supportZ: .5, coreCrown: .1,\r\n});\r\ntype World = {seed: string; radiusM: number; water: number; type: string; kind?: string};\r\ntype Coordinate = (d: V3) => number;\r\nexport interface OrogenSample {\r\n  belt: number; axis: V3; axisDistanceM: number; halfWidthM: number; beltIndex: number;\r\n  // Signed along-axis arc coordinate (m) of the foot point on the belt\'s base great\r\n  // circle, R x theta with u = tan(theta/2) (0 at the belt centre). Added for the\r\n  // mountains assembly (M3 carving coordinates); 0 where belt is 0. It does not\r\n  // change any other output.\r\n  alongM?: number;\r\n}\r\nexport interface OrogenBelt {\r\n  readonly centre: V3; readonly tangent: V3; readonly pole: V3;\r\n  readonly halfWidthM: number; readonly uLimit: number; readonly bendM: number;\r\n  readonly placement: \'margin\' | \'interior\';\r\n  readonly rank: \'major\' | \'minor\';\r\n  readonly noiseSeed: number; readonly wavelength: number; readonly amplitudeM: number;\r\n  readonly gradientMax: number;\r\n  readonly curvatureWidthBound: number;\r\n}\r\nconst dot = (a: V3, b: V3) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];\r\nconst cross = (a: V3, b: V3): V3 => [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];\r\nconst unit = (a: V3): V3 => {const l=Math.sqrt(dot(a,a));return l ? [a[0]/l,a[1]/l,a[2]/l] : [0,0,0];};\r\nconst ss = (lo: number, hi: number, v: number) => {const t=Math.max(0,Math.min(1,(v-lo)/(hi-lo)));return t*t*(3-2*t);};\r\nconst empty = (): OrogenSample => ({belt:0,axis:[0,0,0],axisDistanceM:0,halfWidthM:0,beltIndex:-1,alongM:0});\r\n// theta = 2 atan(u) for |u| <= tan(.45) (the longest major half-length), by one half-angle\r\n// reduction t = u/(1+sqrt(1+u*u)) <= .229 and the odd atan series to t^19 (first omitted term\r\n// 4 t^21/21 < 1e-14 rad, far under 1 mm at R = 6000 km): arithmetic only, monotone in u.\r\nfunction thetaOf(u: number) {\r\n  const t=u/(1+Math.sqrt(1+u*u)),t2=t*t;\r\n  return 4*t*(1-t2*(1/3-t2*(1/5-t2*(1/7-t2*(1/9-t2*(1/11-t2*(1/13-t2*(1/15-t2*(1/17-t2/19)))))))));\r\n}\r\n\r\n// Same evaluation order as R-CAL-1, before the radius scale and compression.\r\nfunction lIhash(x: number, y: number, z: number, s: number) {\r\n  let h = Math.imul(x, 0x9e3779b1) ^ Math.imul(y, 0x85ebca77) ^ Math.imul(z, 0xc2b2ae3d) ^ Math.imul(s, 0x27d4eb2f);\r\n  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);\r\n  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);\r\n  h ^= h >>> 16;\r\n  return (h >>> 0) / 4294967295;\r\n}\r\nfunction lNoise(x: number, y: number, z: number, s: number) {\r\n  const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);\r\n  let a = x - ix, b = y - iy, c = z - iz;\r\n  a = a * a * (3 - 2 * a); b = b * b * (3 - 2 * b); c = c * c * (3 - 2 * c);\r\n  let value = 0;\r\n  for (let dx = 0; dx < 2; dx++) for (let dy = 0; dy < 2; dy++) for (let dz = 0; dz < 2; dz++)\r\n    value += lIhash(ix + dx, iy + dy, iz + dz, s) * (dx ? a : 1 - a) * (dy ? b : 1 - b) * (dz ? c : 1 - c);\r\n  return value;\r\n}\r\nfunction lMacro(s: number, d: V3) {\r\n  return 0.68 * lNoise(d[0] * 2.6 + 11, d[1] * 2.6 + 31, d[2] * 2.6 + 17, s) + 0.23 * lNoise(d[0] * 5.2, d[1] * 5.2, d[2] * 5.2, s + 1) + 0.09 * lNoise(d[0] * 10.4, d[1] * 10.4, d[2] * 10.4, s + 2);\r\n}\r\nfunction macroCode(body: World) {\r\n  return Number(hash64(body.seed+\'/macro-v1\') & 0xffffffffn);\r\n}\r\nexport function continentalA0(body: World): Coordinate {\r\n  const code=macroCode(body),sea=.37+body.water*.22;\r\n  const n=(d: V3,f: number,s: number)=>noise(d[0]*f+13,d[1]*f+37,d[2]*f+19,code+s);\r\n  return body.water ? d=>{\r\n    const macro=macroHeightCode(code,d);\r\n    const coast=macro+(n(d,42,5)-.5)*.012+(n(d,90,6)-.5)*.003;\r\n    return (coast-sea)*47000;\r\n  } : d=>(macroHeightCode(code,d)-.46)*44000;\r\n}\r\n// The layout CONSTRUCTION\'s a0 (orogenLayout): continentalA0 bit for bit on private kernel copies, so the one-time\r\n// construction never feeds type feedback into catalog.ts\'s per-sample kernels, while the per-sample `sample` keeps\r\n// continentalA0 on the shared kernels (docs/mountains-t6-baked-coarse-2026-10-06.md, cost bisection).\r\nexport function constructionA0(body: World): Coordinate {\r\n  const code=macroCode(body),sea=.37+body.water*.22;\r\n  const n=(d: V3,f: number,s: number)=>lNoise(d[0]*f+13,d[1]*f+37,d[2]*f+19,code+s);\r\n  return body.water ? d=>{\r\n    const macro=lMacro(code,d);\r\n    const coast=macro+(n(d,42,5)-.5)*.012+(n(d,90,6)-.5)*.003;\r\n    return (coast-sea)*47000;\r\n  } : d=>(lMacro(code,d)-.46)*44000;\r\n}\r\n\r\n// noise(x, 37, 19, s) of catalog.ts, bit for bit (cost plan T2, docs/mountains-opus-decisions-2026-10-05.md\r\n// Q2; docs/mountain-layout-v1.md "In-massif foot-point solve"). With integer y = 37 and z = 19 the y and z\r\n// smoothstep weights are exactly 0 and 1, so every corner term with dy = 1 or dz = 1 is +0 (a finite\r\n// non-negative hash times +0) and adding +0 changes nothing: the eight-corner sum is exactly\r\n// h(ix) (1 - a) + h(ix + 1) a, the two x-corner hashes in noise\'s own order. ihash XORs the four\r\n// imul terms, so the y, z and seed terms fold into one 32-bit constant k (XOR is associative). The two\r\n// corner hashes are kept for the last (seed, cell): every Gauss-Newton evaluation of one projection\r\n// stays on one belt and nearly always in one noise cell. Pinned against noise() in\r\n// tests/mountain-layout.test.mjs.\r\nconst OFFSET_NOISE_Y=37,OFFSET_NOISE_Z=19;\r\nfunction cornerHash(x: number,k: number) {\r\n  let h=Math.imul(x,0x9e3779b1)^k;\r\n  h=Math.imul(h^(h>>>16),0x85ebca6b);\r\n  h=Math.imul(h^(h>>>13),0xc2b2ae35);\r\n  h^=h>>>16;\r\n  return (h>>>0)/4294967295;\r\n}\r\nlet noiseSeedCached=NaN,noiseCellCached=NaN,noiseH0=0,noiseH1=0;\r\nexport function offsetNoise(x: number,s: number) {\r\n  const ix=Math.floor(x);\r\n  let a=x-ix;\r\n  a=a*a*(3-2*a);\r\n  if(ix!==noiseCellCached || s!==noiseSeedCached){\r\n    const k=Math.imul(OFFSET_NOISE_Y,0x85ebca77)^Math.imul(OFFSET_NOISE_Z,0xc2b2ae3d)^Math.imul(s,0x27d4eb2f);\r\n    noiseH0=cornerHash(ix,k);noiseH1=cornerHash(ix+1,k);noiseCellCached=ix;noiseSeedCached=s;\r\n  }\r\n  return noiseH0*(1-a)+noiseH1*a;\r\n}\r\n// One cubic value-noise octave. du/dtheta=(1+u*u)/2, so construction\r\n// multiplies the minimum wavelength by (1+uLimit*uLimit): even at the\r\n// endpoints its local base-arc wavelength is at least 16 half widths.\r\nfunction offset(b: OrogenBelt,u: number) {\r\n  const v=u/b.uLimit;\r\n  return b.bendM*v*v+b.amplitudeM*(2*offsetNoise(u*2/b.wavelength+13,b.noiseSeed)-1);\r\n}\r\n// Exact half-angle along coordinate, unchanged by transverse displacement.\r\n// This point has pole.d = offset/R and x/(sqrt(x*x+z*z)+z) = u.\r\nfunction centreline(b: OrogenBelt,u: number,R: number): V3 {\r\n  centrelineAt(b,u,R);\r\n  return [clX,clY,clZ];\r\n}\r\n// centreline() without the array: the point in (clX, clY, clZ), the same expressions.\r\nlet clX=0,clY=0,clZ=0;\r\nfunction centrelineAt(b: OrogenBelt,u: number,R: number) {\r\n  const y=offset(b,u)/R,r=Math.sqrt(1-y*y),den=1+u*u,x=r*2*u/den,z=r*(1-u*u)/den,T=b.tangent,C=b.centre,P=b.pole;\r\n  clX=x*T[0]+z*C[0]+y*P[0];clY=x*T[1]+z*C[1]+y*P[1];clZ=x*T[2]+z*C[2]+y*P[2];\r\n}\r\n// Fixed Gauss-Newton step count of the foot-point solve (orogen-layout-2, cost plan T2; chosen by\r\n// measurement, docs/mountain-layout-v1.md "In-massif foot-point solve").\r\nexport const FOOT_POINT_STEPS=4;\r\nlet footSteps=FOOT_POINT_STEPS;\r\n// Measurement only (scripts/mountain-layout-foot.mjs): run the solve with another step count.\r\nexport function setFootPointStepsForMeasurement(n: number) {footSteps=n;}\r\n// The projection of d onto b\'s displaced centreline (orogen-layout-2, cost plan T2): the signed distance,\r\n// gradient = cross(d, tangent) and the foot u in the trDistance/trG*/trU scalars (no allocation).\r\n// In the belt frame d = x T + z C + py P, and the centreline point at u is p = (r c, r s, y) with\r\n// y = o(u)/R, r = sqrt(1 - y^2), c = 2u/(1+u^2), s = (1-u^2)/(1+u^2): orogen-layout-1\'s exact half-angle\r\n// point, with o = offset(b, u) = bendM (u/U)^2 + A (2 noise(X) - 1), X = 2u/lambda + 13.\r\n// Exact derivative: noise(X) = h0 (1 - m) + h1 m with a = X - floor(X) and m = a^2 (3 - 2a) (offsetNoise),\r\n// so d noise/du = (h1 - h0) 6a(1 - a) 2/lambda (continuous: m\' vanishes at both cell ends), and\r\n// o\' = 2 bendM u/U^2 + 24 A (h1 - h0) a(1 - a)/lambda. With w = 2/(1+u^2) (dc/du = w s, ds/du = -w c),\r\n// y\' = o\'/R and r\' = -y y\'/r: p\' = (r\' c + r w s, r\' s - r w c, y\'), so for the residual e = d - p\r\n//   e.p\' = r\' (q - r) + r w t + (py - y) y\',  |p\'|^2 = r\'^2 + r^2 w^2 + y\'^2,\r\n// with q = x c + z s and t = x s - z c. FOOT_POINT_STEPS Gauss-Newton steps u += e.p\'/|p\'|^2 (minimising\r\n// the squared chord, the same minimiser as the great-circle distance) from the sample\'s own u, each\r\n// clamped to the finite arc; no data-dependent exit. sign is the side of the displaced centreline at the\r\n// sample\'s u (orogen-l'... 44476 more characters,
+    expected: /\bMath\s*\[|\*\*/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }

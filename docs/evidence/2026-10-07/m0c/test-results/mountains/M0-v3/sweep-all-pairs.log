@@ -1,0 +1,41 @@
+Maithea point vs buildTile byte mismatches 0 of 1014000
+Maithea   point          20.922 / 11.323 / 4.832 / 1.963 1.0s
+Maithea   corner_L67     12.948 / 11.860 / 7.728 / 1.963 1.6s
+Maithea   corner_L678    12.948 / 11.860 / 5.996 / 3.070 2.0s
+Maithea   corner_L5to9   20.128 / 11.860 / 5.996 / 2.550 2.6s
+Maithea   corner_L6      12.948 / 16.396 / 4.832 / 1.963 1.4s
+Maithea   corner_L56     20.128 / 16.396 / 4.832 / 1.963 2.4s
+Maithea   corner_L567    20.128 / 11.860 / 7.728 / 1.963 2.8s
+Maithea   box2_L67       17.804 / 10.462 / 5.438 / 1.963 2.8s
+Maithea   box2_L5to9     18.097 / 10.462 / 4.920 / 2.001 4.3s
+Maithea   box4_L678      17.402 / 10.492 / 4.976 / 2.208 11.1s
+Maithea   box8_L67       17.307 / 10.478 / 5.669 / 1.963 33.2s
+Maithea   box8_L678      17.307 / 10.478 / 4.983 / 2.230 47.0s
+Maithea   box8_L5to9     17.918 / 10.478 / 4.983 / 2.020 77.7s
+Maithea   tent3_L678     11.037 / 12.653 / 6.986 / 4.055 3.9s
+Maithea   bspl_L678      9.611 / 13.769 / 7.775 / 4.960 5.9s
+Maithea   box2_L6        17.804 / 12.030 / 4.832 / 1.963 2.2s
+Maithea   box8_L6        17.307 / 12.436 / 4.832 / 1.963 16.6s
+Lethuris point vs buildTile byte mismatches 0 of 1014000
+Lethuris  point          27.238 / 17.152 / 9.481 / 4.033 1.4s
+Lethuris  corner_L67     16.034 / 13.421 / 12.870 / 4.033 2.5s
+Lethuris  corner_L678    16.034 / 13.421 / 8.998 / 6.790 2.8s
+Lethuris  corner_L5to9   20.356 / 13.421 / 8.998 / 5.307 3.7s
+Lethuris  corner_L6      16.034 / 20.797 / 9.481 / 4.033 1.8s
+Lethuris  corner_L56     20.356 / 20.797 / 9.481 / 4.033 2.5s
+Lethuris  corner_L567    20.356 / 13.421 / 12.870 / 4.033 2.9s
+Lethuris  box2_L67       21.303 / 13.333 / 9.959 / 4.033 2.9s
+Lethuris  box2_L5to9     19.169 / 13.333 / 8.757 / 4.273 5.3s
+Lethuris  box4_L678      20.588 / 13.073 / 8.663 / 4.877 10.0s
+Lethuris  box8_L67       20.431 / 13.054 / 10.250 / 4.033 25.7s
+Lethuris  box8_L678      20.431 / 13.054 / 8.656 / 4.910 32.9s
+Lethuris  box8_L5to9     18.142 / 13.054 / 8.656 / 4.371 69.3s
+Lethuris  tent3_L678     14.756 / 13.669 / 9.189 / 8.447 4.3s
+Lethuris  bspl_L678      13.107 / 13.891 / 9.633 / 9.739 6.2s
+Lethuris  box2_L6        21.303 / 16.374 / 9.481 / 4.033 2.1s
+Lethuris  box8_L6        20.431 / 16.783 / 9.481 / 4.033 16.3s
+
+real	6m52.809s
+user	0m0.015s
+sys	0m0.046s
+exit 0

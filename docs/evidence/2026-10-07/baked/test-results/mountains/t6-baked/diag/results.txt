@@ -1,0 +1,43 @@
+Coordinator diagnosis 2026-10-06 (unofficial; Maithea unless stated; ms/tile = median of rounds 2..6 of 7, 12 land
+tiles x L0-L5 per round, one process per arm; arm.mjs / arms.sh under tests/helpers/test-slot.mjs from the second
+block on). Prototype source: ../prototype-coordinator.diff (env-switched arms, not for merging). main = ref-main 9971c3f.
+
+A. First prototype (bake N=512 nodes per face edge, v/s channels, exact M2 on the interpolated sample; layout kernels shared)
+  contract-build-bench (official script, 3 rounds): Maithea +18.3..+24.4%, Lethuris +18..+37%  -> no better than exact.
+  armr: main 17.6-18.1 | on (baked) ~22 | on exact (CFOFF) ~22 | baked, flags forced empty (CFX=1) ~22
+  arm.mjs off (plain tiles, no mountains):  pre=none 18.4 | pre=layout (orogenLayout built) 20.8 | pre=bake 21.6
+  => building the M1 layout pollutes the plain path (T6 diag bullet 2); the lookup itself is not the cost.
+
+B. + private noise/macro kernels in continentalA0 (t6-split diag-private-kernels-layout.diff, bit for bit)
+  off pre=layout 18.1 | off pre=bake 18.5 | on (baked) 17.9-19.0 | main 18.3-18.7 | on exact at coarse (CFOFF) 22.4
+  Lethuris: on (baked) 17.2 vs main 17.6
+  contract-build-bench (3 rounds): Lethuris max +8.5% (L0), L1..L6 -1.6..+3.2%; Maithea STILL +18.3..+23.5%
+  => Maithea's warm build is an L6 tile = the exact carved path in the same process.
+
+C. Which exact-path piece pollutes plain/baked tiles (test slot)
+  on pre=warm6 (one exact L6 tile first) 21.5 | pre=truth (2000 carved axis samples) 22.5 | pre=exactUncarved 29.3
+  pre=bakedAxis (same 2000 points, baked sampler) 19.5 ~ pre=none 19.4 -> data is not the cause, the M1 code is
+  pre=m3 (200 direct M3 calls) 18.3 -> M3 is not the cause
+  off pre=exactUncarved 21.4-22 vs off pre=none 18.0 -> the plain core (other function literal) is slowed too
+  V8 flags (off, none vs exactUncarved): --no-turbo-inlining 35.6/37.5; cumulative inline budget 8000 19.9/25.6;
+  --no-maglev 18.4/20.4 -> not an inlining-budget effect alone.
+  exact-core bisect (off pre=exactUncarved): M1 call without using it (EXM=1) 21.2 | M2 on a fake sample, no M1
+  (EXM=2) 18.2 | M1 with alt 1e9 (EXM=3) 21.4 | M1 with alt 1e9 via massifBeltSample (EXM=5) 21.4 |
+  M1 on a FRESH COPY of d (EXM=4) 18.7 | M1 on a core-owned scratch copy of d (EXM=6) 18.3
+  => passing the caller's direction array into the M1 code is what slows every later plain sample; a copy is not.
+
+D. Combination (separate exact-core function literal + scratch copy of d + private kernels + baked coarse)
+  main 17.5-18.6 | on pre=warm6 EXM=6 18.2 | on pre=warm6 EXM=4 18.6 | on pre=truth EXM=4 18.9
+  on, exact at coarse with copy (CFOFF EXM=4) 20.1 (+12%) -> the bake is still needed at coarse levels
+  ONE core literal (baked + exact branches in one function) with copy: 21.2 -> the separate literal is needed
+
+E. Bake sizing (flagged.mjs, T1 band grid 48 km / 32 km gate): corner nodes of flagged cells, sampleWithinWithA0 alt 1e9
+  Maithea  grid 1024 (10.1 km)  216,545 cells  233,458 nodes  86 ms  368 ns/node
+  Selawyn  grid 2048 ( 8.4 km)  398,112 cells  425,667 nodes 158 ms
+  Raiva    grid  512 ( 7.8 km)   39,459 cells   42,235 nodes  23 ms
+  Lethuris grid 2048 ( 8.8 km)  432,521 cells  462,566 nodes 169 ms
+  -> at half the band-grid resolution (~16-20 km) about a quarter: 6-42 ms.
+
+F. Accuracy of the first prototype (|dist| channel, N=512, 200,000 Fibonacci directions, baked vs exact uncarved at L(cut-1))
+  Maithea p99 248 m max -553 m; Selawyn p99 506 max -884; Raiva p99 17 max -50; Lethuris p99 564 max -1238; 0 ocean flips.
+  (The |dist| kink at the axis is the main error; a signed-distance channel removes it.)

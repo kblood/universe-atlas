@@ -1,0 +1,138 @@
+{
+ "baked-wired-vs-main/Maithea": {
+  "world": "Maithea",
+  "label": "baked-wired-vs-main",
+  "rootA": "C:/LLM/IWSDK/universe-atlas-wt/ref-main",
+  "rootB": "C:/LLM/IWSDK/universe-atlas-wt/_wired-baked",
+  "rounds": 7,
+  "coldAms": 281.48040000000003,
+  "coldBms": 400.2483,
+  "aMs": [
+   333.044,
+   319.8412999999998,
+   316.174,
+   344.3914,
+   320.53300000000036,
+   353.1977999999999,
+   328.0509000000002
+  ],
+  "bMs": [
+   349.32370000000014,
+   330.75790000000006,
+   344.78470000000016,
+   334.56989999999996,
+   342.0448000000001,
+   338.1046000000006,
+   374.85859999999957
+  ],
+  "meanGrowth": 0.04285176727830886,
+  "medianGrowth": 0.0426577095200773,
+  "pairedMedianGrowth": 0.048881529167317694,
+  "blockSolves": 0,
+  "digestA": "ed5a0e05a3164e61b8e30872637feba22390e703d70962f3b02d2759be22edb4",
+  "digestB": "1c1b11a7ba54f9f909f7f39e39cce8f876cd91b91c9ef3fc80bbd5a6999843a3",
+  "identical": false
+ },
+ "baked-wired-vs-main/Selawyn": {
+  "world": "Selawyn",
+  "label": "baked-wired-vs-main",
+  "rootA": "C:/LLM/IWSDK/universe-atlas-wt/ref-main",
+  "rootB": "C:/LLM/IWSDK/universe-atlas-wt/_wired-baked",
+  "rounds": 7,
+  "coldAms": 267.9471,
+  "coldBms": 381.52430000000004,
+  "aMs": [
+   300.1449000000001,
+   308.3079,
+   301.5653,
+   320.1030999999998,
+   308.2817,
+   305.5617999999995,
+   303.2534999999998
+  ],
+  "bMs": [
+   320.8524,
+   297.5394000000001,
+   302.2878999999998,
+   298.1763000000001,
+   337.4037000000003,
+   314.1180000000004,
+   336.3234000000002
+  ],
+  "meanGrowth": 0.027702308037441892,
+  "medianGrowth": 0.028001536841322894,
+  "pairedMedianGrowth": 0.028001536841322894,
+  "blockSolves": 0,
+  "digestA": "5779bacbbf273205568320a3997d232336ae73aabb06e23871b454d69302901c",
+  "digestB": "015e467aa2752b1636fc9978fa5638cace876556392897d2ba648e9136613991",
+  "identical": false
+ },
+ "baked-wired-vs-main/Raiva": {
+  "world": "Raiva",
+  "label": "baked-wired-vs-main",
+  "rootA": "C:/LLM/IWSDK/universe-atlas-wt/ref-main",
+  "rootB": "C:/LLM/IWSDK/universe-atlas-wt/_wired-baked",
+  "rounds": 7,
+  "coldAms": 283.91060000000004,
+  "coldBms": 343.18409999999994,
+  "aMs": [
+   330.0612,
+   315.3869999999997,
+   312.5497999999998,
+   352.0324999999998,
+   316.6541000000002,
+   352.5043999999998,
+   328.8257999999996
+  ],
+  "bMs": [
+   340.80809999999997,
+   329.95949999999993,
+   341.4612000000002,
+   323.2325000000001,
+   329.80139999999983,
+   328.4085,
+   408.28720000000067
+  ],
+  "meanGrowth": 0.04070320519608517,
+  "medianGrowth": 0.003447722167787104,
+  "pairedMedianGrowth": 0.04151943713976736,
+  "blockSolves": 0,
+  "digestA": "ff45e31b6e117af12379b801251917e3cb1533459539756538d79d450a1671cd",
+  "digestB": "a4bf6601f6e56e248816dd8eae1038f0e6e121f74297190203e1fe445b997ae8",
+  "identical": false
+ },
+ "baked-wired-vs-main/Lethuris": {
+  "world": "Lethuris",
+  "label": "baked-wired-vs-main",
+  "rootA": "C:/LLM/IWSDK/universe-atlas-wt/ref-main",
+  "rootB": "C:/LLM/IWSDK/universe-atlas-wt/_wired-baked",
+  "rounds": 7,
+  "coldAms": 259.79019999999997,
+  "coldBms": 401.3157,
+  "aMs": [
+   289.41779999999994,
+   297.56449999999995,
+   279.95690000000013,
+   310.97299999999996,
+   297.23239999999987,
+   297.96060000000034,
+   293.64469999999983
+  ],
+  "bMs": [
+   304.0855999999999,
+   297.1662000000001,
+   306.4506000000001,
+   303.38499999999976,
+   328.39480000000003,
+   295.2184999999995,
+   335.6880000000001
+  ],
+  "meanGrowth": 0.05014578687048665,
+  "medianGrowth": 0.023056705796541843,
+  "pairedMedianGrowth": 0.0506803658931827,
+  "blockSolves": 0,
+  "digestA": "6644f5664f854e048cfebb60a087ee221a50f120134790f87140f8a2f0cf14fc",
+  "digestB": "eefb87940713bd72527b8a2d7db5688fbfee41aabf95443298cb2ff768e6e299",
+  "identical": false
+ }
+}

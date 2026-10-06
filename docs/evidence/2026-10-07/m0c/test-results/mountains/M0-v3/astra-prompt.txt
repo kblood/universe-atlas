@@ -1,0 +1,19 @@
+You are reviewing element M0 (MTN-1, footprint-mean coarse colour) of the Universe Atlas mountains plan, round 3, READ-ONLY. Do not modify any tracked file. You may write scratch scripts ONLY under test-results/mountains/M0-v3/astra/ in this worktree. Do not run git commands, browsers, GPU work or downloads. Do not run npm test suites.
+
+Context to read first:
+- docs/mountains-design-2026-10-04.md section 2.0 (M0 metrics; metric 2 = L6 RGB p99 <= 0.9 x point on Maithea AND Lethuris through buildTile; metric 4 = build mean <= +10% per level), and the owner decisions at the top (decision (b): the 800 m colour grain was changed in its own step G, terrain-1.8.1-grain, now on main; M0 is re-run against the new terrain WITHOUT any threshold change).
+- docs/mountains-grain-step-g-2026-10-05.md (what step G changed).
+- docs/lod-ladder-contract-v1.md sections 9.1 and 9.2 (rounds 1-2 of M0, both blocked, and the coordinator rule: L5->6, L7->8, L8->9 must not get worse).
+- test-results/mountains/M0-v2/harness/exp.mjs (estimator harness; its localGrain now reads TERRAIN_LOCAL_GRAIN from the point checkout), harness/sweep-all-pairs.mjs (new this round).
+- Round-3 evidence: test-results/mountains/M0-v3/*.log (sweep-all-pairs.log, corner-L7.log = through-buildTile report of the retained corner K=2 L<=7 draft, attribution.log, grain-only-filters.log, ls-l5-pair.log).
+
+The harness ROOT (point checkout) is C:/LLM/IWSDK/universe-atlas (main, terrain-1.8.1-grain). This worktree holds the retained draft code (corner K=2, L<=7) in src/planet-tiles.ts and src/lod-ladder.ts.
+
+Coordinator's claim: on the step G terrain M0 is still BLOCKED. Point baselines (Maithea / Lethuris, pairs L5->6 / L6->7 / L7->8 / L8->9): 20.922/11.323/4.832/1.963 and 27.238/17.152/9.481/4.033. Required L6->7: Maithea <= 10.190, Lethuris <= 15.437. The draft (corner K=2, L<=7) through buildTile gives Maithea 11.860 (ratio 1.047, worse than point) and Lethuris 13.421 (0.782); even the near-exact footprint mean (box K=8 at L6-L8) gives Maithea 10.478 (0.925). Only the least-squares reduction at L6 passes L6->7 (8.746 / 13.387) but it worsens L5->6 (20.922 -> 28.576) and costs ~4x colour samples. The grain change alone moved the through-buildTile point values from 19.378/34.916 (old terrain) to 11.323/17.152 (ratios 0.584/0.491) and improved every pair, but metric 2 compares a reduction to the point value on the same field, so the coordinator does NOT mark M0 satisfied-by-grain.
+
+Your tasks:
+1. Fidelity: spot-check that the harness point textures still equal buildTile colour bytes on the new terrain (a few tiles L5-L9, both worlds) and that corner_L67 in the harness reproduces the through-buildTile corner-L7 values (11.860 / 13.421 at L6, 7.728 / 12.870 at L7). Recompute at least the point and box8_L678 rows yourself.
+2. Refutation attempt: try to find ANY estimator affordable within +10% L6 build time (roughly: at most ~10-20% more colour samples than one per texel, or a cheap grain-only re-weighting) that meets L6->7 <= 0.9 x point on BOTH worlds without making L5->6, L7->8 or L8->9 worse on either world. Report the numbers of what you tried.
+3. Judge the satisfied-by-grain question strictly against the literal text of metric 2 and decision (b).
+
+Answer with a verdict line first: BLOCK-CONFIRMED, BLOCK-REFUTED (with the passing estimator and all numbers), or FINDINGS (fidelity errors). Then numbers. Keep it under 80 lines.

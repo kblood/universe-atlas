@@ -1,0 +1,106 @@
+You are Astra, implementing ONE bounded, value-changing step in the worktree C:/LLM/IWSDK/universe-atlas-wt/baked
+(branch mountains/baked-coarse, HEAD 27abfe3 = route A a1165e0 + main 0c80da4 merged in). You cannot write .git: do NOT
+commit, do NOT run git commands that write. The coordinator (Claude) reviews your diff, runs the gates and commits.
+
+READ FIRST
+- docs/mountains-t6-baked-coarse-2026-10-06.md (route A: the baked coarse band field), sections 2, 3, 7 item 3.
+- docs/mountains-opus-decisions-2026-10-05.md addendum (6), decision 3 (the merge is blocked by the coarse-frame pins).
+- docs/lod-ladder-contract-v1.md section 3 "Baked coarse band field" and section 3.1 (ROOM pins).
+- src/terrain.ts lines ~474-615 (baseTerrainCore: inline field lookup and the candidate loop),
+  src/mountain-envelope.ts (massifCoarseRidgeTermM), src/mountain-layout.ts buildCoarseBandField (~lines 499-617),
+  tests/mountain-coarse-field.test.mjs, tests/helpers/mountain-coarse-field.mjs, tests/lod-carving-reduction.test.mjs.
+
+THE PROBLEM (measured by the coordinator; evidence in test-results/mountains/t6-margin/)
+tests/lod-coarse-frame.test.mjs (main's HARD coarse-frame test) fails at the carving switch pair on all four worlds,
+because the coarse field overestimates the exact uncarved floor by p99 443-769 m, max 1.4-2.3 km (56,724 samples per
+world, statistics() in the helper). The ROOM pins MUST NOT move. Two causes, both measured:
+ (a) The flat margin delta = 0.16 H. The real bilinear signed-distance interpolation error is tiny except at belt ends:
+     err-by-u-fine.jsonl / err-by-u-end32.jsonl (taps 8x8 and 32x32 per active cell, |u/U| < 1, |exact| <= 1.25):
+       |u/U| < 0.9: max 0.00066 / 0.00023 / 0.00037 / 0.00028 H (Maithea/Selawyn/Raiva/Lethuris)
+       error stays <= 0.0005 H up to |u/U| = 0.955, then rises: e.g. Maithea 0.0033 @0.970, 0.0121 @0.980, 0.0451 @0.990,
+       0.0847 H in [0.9975, 1) (32x32 taps; 8x8 taps gave 0.0803, 4x4 taps 0.0768 -> the end kink converges slowly).
+     The u-fade (1 - smooth(.75,1,|u/U|)) makes the end region nearly irrelevant to heights.
+ (b) The candidate loop starts with best = main ("Include the zero-belt term"). Inside a massif, where the edge fade
+     removes main's ridge term and the envelope is small (s ~ 0.65-0.75), the exact composition (1-w)main + U is FAR
+     below main (example Maithea: main 2830 m, exact term 506 m), so max(main, term) returns main: +2.3 km.
+     Removing main from the max is valid because belt footprints never overlap (construction rejects a belt unless its
+     gradient-inflated tube is separated from every earlier belt's tube; mountain-layout.ts ~line 678-695):
+       - at most one belt has value > 0 at any direction; exact = that belt's composition if its |axis distance| < H
+         and it passes the width gate, else main;
+       - a candidate whose true value is 0 has |u/U| >= 1 (then vHi = 0 and the term returns mainTermM) or true s >= 1
+         (then hi >= 1, the edge fade is 0, w = 0 and the term = main + U >= main), or it is skipped (lo >= 1);
+       - a non-skipped candidate j (lo_j < 1) lies within (1 + delta) H <= 1.2 W_j of its own axis or endpoint, i.e.
+         inside its own tube; so at any point where another candidate k has s_k < 1 (inside k's tube), every other
+         candidate is skipped and cannot pull the max up to main;
+       - when no candidate contributes (all skipped), the result is main (unchanged, Object.is).
+     So: coarse = max over NON-SKIPPED candidates of their terms, or main if none. It stays continuous: at lo -> 1 a
+     term tends to main (p -> 0, w -> 0).
+ Prototype (source mutation, coordinator; proto-stats2.jsonl): with BOTH changes, delta(uf) = 0.002 + 0.158 *
+ clamp((|uf| - 0.94)/0.05) and best starting at -Infinity: 0 violations, 0 ocean differences on 4 x 56,724, coarse -
+ exact uncarved floor p90 1.5-2.7 m, p99 5.7-9.4 m, max 21.8 / 21.8 / 23.4 / 51.5 m. Either change alone leaves the
+ max at 1.3-2.3 km.
+
+WHAT TO IMPLEMENT (value-changing; coarse levels only; the truth and levels >= the carving cut must not move)
+1. src/mountain-envelope.ts: a frozen exported constant MASSIF_COARSE_MARGIN = {INTERIOR_H: 0.002, END_H: 0.2,
+   RAMP_FROM: 0.94, RAMP_TO: 0.99} and an exported pure function coarseMarginH(uFraction) =
+   INTERIOR_H + (END_H - INTERIOR_H) * clamp((|uFraction| - RAMP_FROM) / (RAMP_TO - RAMP_FROM), 0, 1).
+   END_H is 0.2 (not 0.16) so that it is >= 2x the densest measured end error (0.0847 H); the ramp keeps >= 2x the
+   measured error in every 0.0025-wide |u/U| bin (check this in your test, see 4). Keep massifCoarseRidgeTermM's explicit
+   `delta` parameter (the zero-margin mutant uses it). Document the rule and the measurement in the comment.
+   MASSIF_ENVELOPE_VERSION 'massif-envelope-3' -> 'massif-envelope-4' (comment: what changed).
+2. src/terrain.ts, baseTerrainCore candidate loop ONLY (inside the ridge-term hunk; mountainTerrainCore and the truth
+   path must not change textually outside that hunk; the core-sync test must keep passing):
+   - compute uf = u / bs[k+6] once; pass coarseMarginH(uf) as delta and uf as uFraction;
+   - the skip test keeps using bs[k+8], which must now equal MASSIF_COARSE_MARGIN.END_H (the largest margin);
+   - best starts at -Infinity (or use a flag); ridgeTermM = best if any candidate was not skipped, else main.
+     Write the separation argument in a short comment. Keep the hot path lean: no allocation, no closures, no new
+     arrays; contract section 6 (coarse tile build cost <= +10% vs main) is a budget.
+3. src/mountain-layout.ts: the per-belt scalar [8] = END_H (0.2) instead of .16 (import the constant if no import cycle
+   arises, else a literal plus a test that asserts equality). Update the "Measured bound" comment with the new numbers
+   (above) and the fact that the margin is now |u/U|-dependent in the composition; the scalar is the skip margin.
+   OROGEN_LAYOUT_VERSION 'orogen-layout-3' -> 'orogen-layout-4'. No other layout value may change (node values, block
+   lists, masks, offsets must be bit-identical; only scalars[8] changes).
+4. Tests (lean; extend existing files, do not add a new test file unless needed; register any new file in package.json
+   "test" after tests/mountain-coarse-field.test.mjs):
+   - tests/helpers/mountain-coarse-field.mjs: update the zero-margin mutation hook to the new call text (the mutant must
+     still pass delta 0); extend measureError to report, per tap, error / coarseMarginH(uf) and its max (ratio), plus
+     the max error for |uf| < RAMP_FROM; add a second mutant sampler (or measureError option) using INTERIOR_H
+     everywhere (no end ramp) as a negative control.
+   - tests/mountain-coarse-field.test.mjs:
+     * enclosure: max error/coarseMarginH(uf) <= 0.5 on every world (the ">= 2x measured" rule, steps as today or
+       denser if affordable; report it as a diagnostic). Negative control: with INTERIOR_H everywhere the same ratio
+       must exceed 0.5 (must fail).
+     * the g^2-lemma / conservative composition unit test: keep; add uf values near the ramp.
+     * statistics test: keep violations 0, oceanDifferences 0, inactiveDifferences 0; ADD a tightness pin: p99 <= 50 m and
+       max <= 100 m (measured max 51.5 m + 25%, rounded up to 50 m) with a comment giving the measured numbers.
+     * premise test: at most ONE belt has value > 0 at every direction of directions(body) (all belts, including narrow
+       ones). value() is module-private: follow the helper's existing pattern (referenceDistance is appended to a copy of
+       the layout source); e.g. append `export function positiveBelts(d){...}` that counts belts with value(b,d,R) > 0
+       for the body's layout (build the layout through the copied module's buildOrogenLayout with the same inputs as
+       orogenLayout(body), and assert its belts equal the production belts).
+     * a direct check that removing main from the max matters: some sample inside a massif returns a coarse ridge floor
+       below the old max(main, term) value (e.g. assert the new floor < the floor of a mutant with best = main on at
+       least one direction), so the rule is exercised.
+   - Version pins in tests/mountain-layout.test.mjs, tests/mountain-layout-grid.test.mjs, tests/mountain-envelope.test.mjs,
+     tests/terrain-mountains-assembly.test.mjs ('was -3').
+   - tests/lod-carving-reduction.test.mjs: COST_IDENTITY[0], COST_SAMPLER_IDENTITY[0] and COST_IDENTITY[1] (switch
+     tile: only parents/parentHeight may move) will move. Re-pin them with a copy of
+     test-results/mountains/t6-baked/repin-coarse.mjs placed in test-results/mountains/t6-margin/ (extend it to re-pin
+     COST_IDENTITY[1] too and to write test-results/mountains/t6-margin/digest-ledger.json with old -> new).
+     COST_SAMPLER_IDENTITY[1] must NOT move (it is the >= cut sampler). Any other pin moving is a bug: stop and report.
+5. Do NOT touch: the ROOM pins and every other pin/tolerance/budget in tests/lod-coarse-frame.test.mjs or elsewhere;
+   TERRAIN_MOUNTAINS_WIRED (stays false); TERRAIN_VERSION; LOD_LADDER_VERSION; the truth core; the field resolution,
+   dilation, node evaluation and build code (field build time is a budget: <= 50 ms cold); docs (the coordinator
+   writes them).
+
+CHECKS YOU RUN (each command under ONE test-slot level, never nested; the slot serialises CPU work):
+  node tests/helpers/test-slot.mjs -- npx tsc --noEmit -p .        (or the repo's tsc invocation; see package.json)
+  node tests/helpers/test-slot.mjs -- node --test tests/mountain-coarse-field.test.mjs tests/mountain-envelope.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/terrain-mountains-assembly.test.mjs tests/lod-carving-reduction.test.mjs
+  node tests/helpers/test-slot.mjs -- node --test tests/lod-coarse-frame.test.mjs      (must pass with the existing ROOM pins)
+  node tests/helpers/test-slot.mjs -- node test-results/mountains/t6-baked/field-report.mjs   (field build ms, delta)
+Do NOT run npm test, test:full, test:affected or any deployed preview. No downloads, no network.
+
+ANSWER (your final message): files changed with a one-line why each; the exact new constants; every check command with
+its real exit code and the key numbers (frame switch-pair parent - child p50/p99/max per world vs ROOM 1550/2000/800/2350,
+the closest non-switch pair to its ROOM, statistics p99/max/violations/ocean per world, enclosure ratio per world,
+negative-control results, field build ms); the digest ledger old -> new; anything you could not do or that surprised you.

@@ -1,0 +1,108 @@
+You are Astra, doing ONE bounded implement round to finish cost route A in the TypeScript repo at
+C:/LLM/IWSDK/universe-atlas-wt/baked (branch mountains/baked-coarse, HEAD 6079ea9 = route A 8ffda6a merged with main
+cc0032f). You cannot write .git; read-only git (`git diff`, `git show`, `git log`) is fine. The coordinator reviews your
+diff, runs the OFFICIAL benchmarks under the CPU-quiet slot and commits. No downloads, no network, no browser, no GPU.
+Do NOT run `npm run test:full` or `npm test`. Do NOT run tests/helpers/test-slot.mjs (you cannot write its lock dir);
+unofficial timings without the slot are fine, but keep them short and never run two timing processes at once.
+
+## Read first
+- docs/mountains-t6-baked-coarse-2026-10-06.md (route A evidence, all of it) and the last addendum (5) of
+  docs/mountains-opus-decisions-2026-10-05.md.
+- test-results/mountains/t6-baked/fix-handoff.md (last round's report: field-build profile).
+- src/terrain.ts: `baseTerrainCore` (plain + coarse field lookup), `mountainTerrainCore` (truth, L >= cut),
+  `terrainSampler`, `mountainCarvingState`. src/mountain-layout.ts: `buildCoarseBandField`, `coarseDirection`,
+  `transverse`, `offsetNoise`, the band grid. src/mountain-envelope.ts `massifCoarseRidgeTermM`.
+- tests/mountain-coarse-field.test.mjs and tests/helpers/mountain-coarse-field.mjs.
+- scripts/mountain-assembly-cost.mjs (what C1 measures) and test-results/mountains/t6-baked/r2/c1-staged.mjs (the same
+  script, but the truth sampler is opted in with {mountains:true}, so it runs on this staged checkout; unofficial).
+
+## The two remaining misses (official protocols, CPU-quiet slot, vs main)
+1. C1 = weighted warm resident overhead of the TRUTH sampler (terrainSampler(body) wired, lodLevel undefined -> full
+   carving -> mountainTerrainCore) against main's plain sampler; median of 15 fresh processes; budget <= +8.0% on
+   every world. Branch: 8.40 / 9.38 / 10.43 / 8.76 % (Maithea/Selawyn/Raiva/Lethuris). The in-massif share s is only
+   1.1-2.3 %, so the OUTSIDE-massif overhead dominates: branch outside +5.4 / +7.9 / +8.5 / +7.0 %, but main with the
+   flag flipped (exact mountains, NO route A; massifBeltSample called on every land sample, T1 rejection inside it)
+   is only +4.2 / +1.2 / +2.0 / +3.6 % outside (weighted 7.17 / 2.53 / 3.95 / 5.34 %). Per outside sample the
+   branch does LESS work than that control (inline T1 voxel prefilter), so the gap is V8 code quality in the truth
+   path. The previous profiles show only inlining differences (e.g. detAcos/detAtan2 in the climate colour not
+   inlined). Target: outside overhead at or below the control's, i.e. weighted <= ~6 % with margin on every world.
+2. Field build cold (fresh process, layout and T1 grid excluded, `layout.coarseBandField(48000,32000)`): 35.6 /
+   57.8 / 13.7 / 61.5 ms; budget <= 50 ms per body. Officially it will be the median of 15 fresh processes. Profile:
+   ~183k/199k node projections (Selawyn/Lethuris) at ~250 ns each (~47-51 ms node phase) + ~18 ms other; a second
+   build in the same process is still 44-47 ms (not JIT warm-up). Target: <= 40 ms on every world (margin).
+
+Already MET and must stay met (do not regress): contract section 6 (coarse tile build mean per level <= main +10 %,
+current max +8.9 %), orbit bake median <= +5 % (current +0.3..+4.3 %). Both run only the coarse path
+(baseTerrainCore with the field). Any branch you add to the coarse per-sample path costs margin there.
+
+## Ideas (VALUE-PRESERVING first; you choose, measure, keep what helps)
+A. Lazy per-block field build. Construction keeps only the cheap part (active set, dilation, block table, masks,
+   candidate lists, offsets, scalars, the distances buffer allocated zeroed). A block's nodes are evaluated on first
+   read of that block (a per-block built flag checked only AFTER the active-cell mask test, so samples outside active
+   cells pay nothing new). Every node value must be Object.is-identical to the eager build regardless of the order
+   in which blocks are materialised: compute each block's nodes independently (the left/below copy in the eager
+   builder is an optimisation only; the node direction is the same integer node, so recomputation is bit-identical -
+   verify). Expose a way to materialise all blocks (for tests and for reporting the total) without exporting any
+   direction-taking lookup. No direction array of the caller may be passed into a layout function on the coarse path
+   (the block index / integers are fine; the builder uses its own scratch direction).
+B. Cheaper node evaluation (also helps the lazy path): avoid per-node work that is constant per block/candidate,
+   SoA/typed arrays, hoisting belt constants, skipping nodes that no active cell reads (already done), a monomorphic
+   tight loop. A stored node value must be produced by the same arithmetic (Object.is equal).
+C. C1 / truth path. Make the truth sampler's outside-massif path as cheap as main-wired's or cheaper:
+   - decide the T1 voxel prefilter at the earliest point of the truth sample (before the big land expression; few
+     live values), keep the hot truth core textually minimal, move the in-massif work (fresh copy of d,
+     massifBeltSample, mountainRidgeTermM) into a separate top-level function that is called only when the voxel bit
+     is set;
+   - or dispatch per sample in the truth sampler: voxel bit unset -> the plain core literal (baseTerrainCore with
+     mountains null, the exact main code; outside the voxels its result equals mountainTerrainCore's - there is an
+     existing Object.is test for the prefilter, extend it), voxel bit set -> mountainTerrainCore. Note the official C1
+     process only ever runs the truth sampler (plus main's own module); in production the plain literal is shared
+     with the coarse samplers.
+   - anything else you can show helps (check with --trace-turbo-inlining / --trace-deopt on the c1-staged script if
+     useful). Do NOT reintroduce: a core-owned scratch copy of d (measured +20 %), passing the caller's d into
+     massifBeltSample, catalog kernels in the layout construction.
+D. Only if A-C cannot reach the targets: a value change (e.g. an |u/U|-dependent delta that cuts the ~750 m p99
+   overestimate at belt endpoints) is allowed, but it needs OROGEN_LAYOUT_VERSION / MASSIF_ENVELOPE_VERSION moves, a
+   re-pin with an old -> new ledger, and the conservativeness tests (incl. the zero-margin mutant) still passing.
+   Ask yourself first whether it actually helps cost; say so explicitly if you use it.
+
+## Must keep
+TERRAIN_MOUNTAINS_WIRED = false. Separate truth core literal. Private construction kernels (constructionA0). Truth
+core: fresh copy [d[0],d[1],d[2]] for massifBeltSample. Versions unchanged unless you take D. The core-sync source test
+(update its hunk definition only if you restructure, and keep it meaningful). No pin edits for value-preserving work.
+
+## Identity (value-preserving work)
+The coordinator captured the current state: test-results/mountains/t6-baked/r2/before.json (made by
+`node test-results/mountains/t6-baked/fix-identity.mjs r2/before.json`) and source copies r2/before-layout.txt,
+r2/before-terrain.txt, r2/before-envelope.txt. After your changes run
+`node test-results/mountains/t6-baked/fix-identity.mjs r2/after.json` and byte-compare with r2/before.json. Also prove
+every node read by an active cell is Object.is-identical to the before-builder (adapt
+test-results/mountains/t6-baked/fix-node-identity.mjs to load r2/before-layout.txt; force-materialise all blocks if
+lazy) and that two different materialisation orders give identical arrays. Add the lazy-order / identity checks that
+are cheap enough as tests in tests/mountain-coarse-field.test.mjs; add a test that the truth sampler (if you
+dispatch or restructure) is Object.is-identical, every field, to the before-truth on the existing direction sets.
+
+## Unofficial measurement you should do (no slot; short; one process at a time)
+- Field build: one fresh process per world, cold construction ms (and, if lazy, the ms to materialise all blocks in
+  the same process afterwards); 3 processes per world are enough. Write the script to
+  test-results/mountains/t6-baked/r2/field-bench.mjs taking `<world-index>` and printing one JSON line
+  {world, coldMs, materialiseAllMs|null, bytes, activeCells} so the coordinator can run it 15x per world.
+- C1 staged: `node test-results/mountains/t6-baked/r2/c1-staged.mjs <World> test-results/mountains/t6-baked/r2/astra/cost.json C:/LLM/IWSDK/universe-atlas-wt/ref-main --same-version`
+  (one fresh process per run, ~20 s; log lines contain "outside main X vs Y ns (Z%)" and "WEIGHTED RESIDENT").
+  The coordinator's baseline of this staged protocol on the unchanged branch, 5 runs per world under the slot, is in
+  test-results/mountains/t6-baked/r2/c1-staged-before/ (summarise with
+  `node test-results/mountains/t6-baked/diag/c1-summary.mjs <dir>`). Unslotted runs are noisier; compare medians of
+  at least 5 runs per world on Maithea and Raiva at least, and interleave before/after variants if you compare.
+- Coarse path guard: an interleaved in-process A/B of the coarse tile build is optional; at least report whether the
+  coarse per-sample path gained any instruction (it is official-benched by the coordinator).
+
+## Checks (exact commands, exit codes, counts)
+- `npx tsc --noEmit`
+- `node --test tests/mountain-coarse-field.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-envelope.test.mjs tests/terrain-mountains-assembly.test.mjs tests/lod-carving-reduction.test.mjs`
+- r2/after.json == r2/before.json (byte compare, print it) and the node-identity script.
+- `git diff --check`
+
+## Answer (write to the -o file; also save it as test-results/mountains/t6-baked/r2/astra-implement-handoff.md)
+Short and factual: what changed (per file), which ideas you kept and which you measured and dropped (with numbers),
+field-build ms per world (cold, materialise-all), unofficial C1 medians per world (n, outside %, weighted %), the
+identity comparison, every check with its exit code, and what you did not do. No commit.

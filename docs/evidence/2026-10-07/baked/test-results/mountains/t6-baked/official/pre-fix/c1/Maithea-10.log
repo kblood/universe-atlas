@@ -1,0 +1,1 @@
+M1+M2+M3 Maithea: massif land share 2.27%; region main 557 ns, warm 1157 ns (107.7%), cold 3704 ns (22 builds, 4.4 s); outside main 486 vs 624 ns (28.4%); WEIGHTED RESIDENT 30.41%; sparse 1000 cold 3.88 ms/sample vs main 1598 ns (27 builds)

@@ -1,0 +1,2398 @@
+OpenAI Codex v0.160.0
+--------
+workdir: C:\LLM\IWSDK\universe-atlas-wt\baked
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a11059-9242-7851-8649-09d2c54d2220
+--------
+user
+You are Astra, doing the ONE bounded fix round of route A round 2 in C:/LLM/IWSDK/universe-atlas-wt/baked (branch
+mountains/baked-coarse, HEAD 6079ea9; the uncommitted diff is your implement round: lazy per-block field). Same rules as
+test-results/mountains/t6-baked/r2/astra-implement-prompt.txt (read it again): no .git writes, no test-slot helper, no
+npm test / test:full, no network/downloads/browser/GPU, value-preserving only, no commit.
+
+## What the coordinator measured after your implement round (slotted, unofficial)
+- Lazy materialisation moves the node work into TIMED tile builds. The contract bench's warm build is one L6 tile; on
+  Selawyn/Lethuris (cut 7) the eager field used to be built inside that untimed warm build, now ~50-70 ms of block
+  builds land in the timed L0..L6 rounds. Contract bench, lazy branch, 2 fresh processes per world, max growth per
+  level: Maithea +6.9 / +12.0 %, Selawyn +10.6 / +10.9 %, Raiva +5.7 / +8.1 %, Lethuris +10.7 / +8.6 % (budget +10 %;
+  the eager branch was officially max +8.9 %). Your recomputation of shared nodes also made the total work larger
+  (materialise-all 64 / 70 ms vs eager 58 / 62 ms on Selawyn/Lethuris).
+- C1 is NOT for this round. The coordinator found that the C1 harness itself makes this branch's PLAIN sampler (no
+  mountain work at all) +2..+18 % slower outside than main's (A/A), depending on catalog-kernel JIT state; five
+  value-preserving truth/kernels variants were measured and none helps without breaking the contract bench. Do not
+  touch the truth path, terrainSampler, the kernels or constructionA0 in this round.
+
+## Goal: the field build itself must be fast enough EAGERLY
+Target: eager `layout.coarseBandField(48000,32000)` cold, fresh process, layout and T1 grid excluded, <= 40 ms on every
+world (official limit 50 ms; it will be the median of 15 fresh processes). Current eager: 35.6 / 57.8 / 13.7 / 61.5 ms
+(Maithea/Selawyn/Raiva/Lethuris); profile ~183k/199k projections at ~250 ns each (~47-51 ms) + ~18 ms other.
+
+1. Profile first (phases: active set + dilation; candidate selection; node phase; Float32 storage; whatever else),
+   report ms per phase per world, cold and second build.
+2. Make the node phase cheaper with BIT-IDENTICAL stored values: e.g. inline the node direction (coarseDirection) and
+   hoist per-block / per-row constants; hoist per-candidate belt fields (tangent, centre, pole components, uLimit,
+   wavelength, bendM, amplitudeM, noiseSeed, H, 1/H only if the stored value stays Object.is-identical - note
+   x/H and x*(1/H) differ, so keep the division) into locals or a SoA Float64Array; keep the left/below neighbour COPY
+   (it removes ~35-40 % of the projections); avoid the per-node `offset(b,u)` call overhead and repeated
+   offsetNoise cache misses where the same arithmetic can be reused (e.g. offset(b,u) at the start equals the
+   transverse loop's first offset at the same u - only reuse if the expression and operands are bit-identical);
+   make the hot loop monomorphic (one belt shape, typed arrays). transverse() itself must keep its arithmetic and
+   operation order; a specialised copy of it for the builder is fine if bit-identical (prove with the node-identity
+   check, 503,165 read nodes Object.is).
+3. Make the "other" phase cheaper (dilation via mark()/coarseDirection/bandCellIndex on face edges, candidate loop
+   over all belts per block, arrays built with push then Uint32Array.from, etc.), same outputs.
+4. Then choose: EAGER (preferred; remove the lazy path and its hot-path branch from baseTerrainCore, keep the
+   structure tests) if eager cold <= 40 ms on all four worlds in your measurement; otherwise keep lazy, but copy a
+   shared node from an already-built same-face neighbour (bit-identical, so order-independence holds) and report
+   both numbers. Say which you chose and why.
+
+## Identity and checks (as before)
+- r2/after.json must still byte-equal r2/before.json (`node test-results/mountains/t6-baked/fix-identity.mjs r2/after.json`).
+- `node test-results/mountains/t6-baked/fix-node-identity.mjs` (all read nodes Object.is vs r2/before-layout.txt).
+- `node test-results/mountains/t6-baked/r2/truth-identity.mjs`
+- `npx tsc --noEmit`
+- `node --test tests/mountain-coarse-field.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-envelope.test.mjs tests/terrain-mountains-assembly.test.mjs tests/lod-carving-reduction.test.mjs`
+- `git diff --check`
+- Update test-results/mountains/t6-baked/r2/field-bench.mjs if the API changes (keep its one-JSON-line output:
+  {world, coldMs, materialiseAllMs|null, bytes, activeCells}); run it 3 fresh processes per world, one at a time.
+
+## Answer (-o file, and also save as test-results/mountains/t6-baked/r2/astra-fix-handoff.md)
+Short and factual: phase profile before/after per world, what changed per file, eager or lazy and why, field-bench
+medians per world, identity results, every check with exit code, what you did not do. No commit.
+
+codex
+I’ll reread the round rules, profile the field build, then optimize and run the required identity and structure checks. I’ll leave the truth path and kernels untouched.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-Content test-results/mountains/t6-baked/r2/astra-implement-prompt.txt; Get-ChildItem -Path . -Filter AGENTS.md; git status --short' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 46ms:
+You are Astra, doing ONE bounded implement round to finish cost route A in the TypeScript repo at
+C:/LLM/IWSDK/universe-atlas-wt/baked (branch mountains/baked-coarse, HEAD 6079ea9 = route A 8ffda6a merged with main
+cc0032f). You cannot write .git; read-only git (`git diff`, `git show`, `git log`) is fine. The coordinator reviews your
+diff, runs the OFFICIAL benchmarks under the CPU-quiet slot and commits. No downloads, no network, no browser, no GPU.
+Do NOT run `npm run test:full` or `npm test`. Do NOT run tests/helpers/test-slot.mjs (you cannot write its lock dir);
+unofficial timings without the slot are fine, but keep them short and never run two timing processes at once.
+
+## Read first
+- docs/mountains-t6-baked-coarse-2026-10-06.md (route A evidence, all of it) and the last addendum (5) of
+  docs/mountains-opus-decisions-2026-10-05.md.
+- test-results/mountains/t6-baked/fix-handoff.md (last round's report: field-build profile).
+- src/terrain.ts: `baseTerrainCore` (plain + coarse field lookup), `mountainTerrainCore` (truth, L >= cut),
+  `terrainSampler`, `mountainCarvingState`. src/mountain-layout.ts: `buildCoarseBandField`, `coarseDirection`,
+  `transverse`, `offsetNoise`, the band grid. src/mountain-envelope.ts `massifCoarseRidgeTermM`.
+- tests/mountain-coarse-field.test.mjs and tests/helpers/mountain-coarse-field.mjs.
+- scripts/mountain-assembly-cost.mjs (what C1 measures) and test-results/mountains/t6-baked/r2/c1-staged.mjs (the same
+  script, but the truth sampler is opted in with {mountains:true}, so it runs on this staged checkout; unofficial).
+
+## The two remaining misses (official protocols, CPU-quiet slot, vs main)
+1. C1 = weighted warm resident overhead of the TRUTH sampler (terrainSampler(body) wired, lodLevel undefined -> full
+   carving -> mountainTerrainCore) against main's plain sampler; median of 15 fresh processes; budget <= +8.0% on
+   every world. Branch: 8.40 / 9.38 / 10.43 / 8.76 % (Maithea/Selawyn/Raiva/Lethuris). The in-massif share s is only
+   1.1-2.3 %, so the OUTSIDE-massif overhead dominates: branch outside +5.4 / +7.9 / +8.5 / +7.0 %, but main with the
+   flag flipped (exact mountains, NO route A; massifBeltSample called on every land sample, T1 rejection inside it)
+   is only +4.2 / +1.2 / +2.0 / +3.6 % outside (weighted 7.17 / 2.53 / 3.95 / 5.34 %). Per outside sample the
+   branch does LESS work than that control (inline T1 voxel prefilter), so the gap is V8 code quality in the truth
+   path. The previous profiles show only inlining differences (e.g. detAcos/detAtan2 in the climate colour not
+   inlined). Target: outside overhead at or below the control's, i.e. weighted <= ~6 % with margin on every world.
+2. Field build cold (fresh process, layout and T1 grid excluded, `layout.coarseBandField(48000,32000)`): 35.6 /
+   57.8 / 13.7 / 61.5 ms; budget <= 50 ms per body. Officially it will be the median of 15 fresh processes. Profile:
+   ~183k/199k node projections (Selawyn/Lethuris) at ~250 ns each (~47-51 ms node phase) + ~18 ms other; a second
+   build in the same process is still 44-47 ms (not JIT warm-up). Target: <= 40 ms on every world (margin).
+
+Already MET and must stay met (do not regress): contract section 6 (coarse tile build mean per level <= main +10 %,
+current max +8.9 %), orbit bake median <= +5 % (current +0.3..+4.3 %). Both run only the coarse path
+(baseTerrainCore with the field). Any branch you add to the coarse per-sample path costs margin there.
+
+## Ideas (VALUE-PRESERVING first; you choose, measure, keep what helps)
+A. Lazy per-block field build. Construction keeps only the cheap part (active set, dilation, block table, masks,
+   candidate lists, offsets, scalars, the distances buffer allocated zeroed). A block's nodes are evaluated on first
+   read of that block (a per-block built flag checked only AFTER the active-cell mask test, so samples outside active
+   cells pay nothing new). Every node value must be Object.is-identical to the eager build regardless of the order
+   in which blocks are materialised: compute each block's nodes independently (the left/below copy in the eager
+   builder is an optimisation only; the node direction is the same integer node, so recomputation is bit-identical -
+   verify). Expose a way to materialise all blocks (for tests and for reporting the total) without exporting any
+   direction-taking lookup. No direction array of the caller may be passed into a layout function on the coarse path
+   (the block index / integers are fine; the builder uses its own scratch direction).
+B. Cheaper node evaluation (also helps the lazy path): avoid per-node work that is constant per block/candidate,
+   SoA/typed arrays, hoisting belt constants, skipping nodes that no active cell reads (already done), a monomorphic
+   tight loop. A stored node value must be produced by the same arithmetic (Object.is equal).
+C. C1 / truth path. Make the truth sampler's outside-massif path as cheap as main-wired's or cheaper:
+   - decide the T1 voxel prefilter at the earliest point of the truth sample (before the big land expression; few
+     live values), keep the hot truth core textually minimal, move the in-massif work (fresh copy of d,
+     massifBeltSample, mountainRidgeTermM) into a separate top-level function that is called only when the voxel bit
+     is set;
+   - or dispatch per sample in the truth sampler: voxel bit unset -> the plain core literal (baseTerrainCore with
+     mountains null, the exact main code; outside the voxels its result equals mountainTerrainCore's - there is an
+     existing Object.is test for the prefilter, extend it), voxel bit set -> mountainTerrainCore. Note the official C1
+     process only ever runs the truth sampler (plus main's own module); in production the plain literal is shared
+     with the coarse samplers.
+   - anything else you can show helps (check with --trace-turbo-inlining / --trace-deopt on the c1-staged script if
+     useful). Do NOT reintroduce: a core-owned scratch copy of d (measured +20 %), passing the caller's d into
+     massifBeltSample, catalog kernels in the layout construction.
+D. Only if A-C cannot reach the targets: a value change (e.g. an |u/U|-dependent delta that cuts the ~750 m p99
+   overestimate at belt endpoints) is allowed, but it needs OROGEN_LAYOUT_VERSION / MASSIF_ENVELOPE_VERSION moves, a
+   re-pin with an old -> new ledger, and the conservativeness tests (incl. the zero-margin mutant) still passing.
+   Ask yourself first whether it actually helps cost; say so explicitly if you use it.
+
+## Must keep
+TERRAIN_MOUNTAINS_WIRED = false. Separate truth core literal. Private construction kernels (constructionA0). Truth
+core: fresh copy [d[0],d[1],d[2]] for massifBeltSample. Versions unchanged unless you take D. The core-sync source test
+(update its hunk definition only if you restructure, and keep it meaningful). No pin edits for value-preserving work.
+
+## Identity (value-preserving work)
+The coordinator captured the current state: test-results/mountains/t6-baked/r2/before.json (made by
+`node test-results/mountains/t6-baked/fix-identity.mjs r2/before.json`) and source copies r2/before-layout.txt,
+r2/before-terrain.txt, r2/before-envelope.txt. After your changes run
+`node test-results/mountains/t6-baked/fix-identity.mjs r2/after.json` and byte-compare with r2/before.json. Also prove
+every node read by an active cell is Object.is-identical to the before-builder (adapt
+test-results/mountains/t6-baked/fix-node-identity.mjs to load r2/before-layout.txt; force-materialise all blocks if
+lazy) and that two different materialisation orders give identical arrays. Add the lazy-order / identity checks that
+are cheap enough as tests in tests/mountain-coarse-field.test.mjs; add a test that the truth sampler (if you
+dispatch or restructure) is Object.is-identical, every field, to the before-truth on the existing direction sets.
+
+## Unofficial measurement you should do (no slot; short; one process at a time)
+- Field build: one fresh process per world, cold construction ms (and, if lazy, the ms to materialise all blocks in
+  the same process afterwards); 3 processes per world are enough. Write the script to
+  test-results/mountains/t6-baked/r2/field-bench.mjs taking `<world-index>` and printing one JSON line
+  {world, coldMs, materialiseAllMs|null, bytes, activeCells} so the coordinator can run it 15x per world.
+- C1 staged: `node test-results/mountains/t6-baked/r2/c1-staged.mjs <World> test-results/mountains/t6-baked/r2/astra/cost.json C:/LLM/IWSDK/universe-atlas-wt/ref-main --same-version`
+  (one fresh process per run, ~20 s; log lines contain "outside main X vs Y ns (Z%)" and "WEIGHTED RESIDENT").
+  The coordinator's baseline of this staged protocol on the unchanged branch, 5 runs per world under the slot, is in
+  test-results/mountains/t6-baked/r2/c1-staged-before/ (summarise with
+  `node test-results/mountains/t6-baked/diag/c1-summary.mjs <dir>`). Unslotted runs are noisier; compare medians of
+  at least 5 runs per world on Maithea and Raiva at least, and interleave before/after variants if you compare.
+- Coarse path guard: an interleaved in-process A/B of the coarse tile build is optional; at least report whether the
+  coarse per-sample path gained any instruction (it is official-benched by the coordinator).
+
+## Checks (exact commands, exit codes, counts)
+- `npx tsc --noEmit`
+- `node --test tests/mountain-coarse-field.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-envelope.test.mjs tests/terrain-mountains-assembly.test.mjs tests/lod-carving-reduction.test.mjs`
+- r2/after.json == r2/before.json (byte compare, print it) and the node-identity script.
+- `git diff --check`
+
+## Answer (write to the -o file; also save it as test-results/mountains/t6-baked/r2/astra-implement-handoff.md)
+Short and factual: what changed (per file), which ideas you kept and which you measured and dropped (with numbers),
+field-build ms per world (cold, materialise-all), unofficial C1 medians per world (n, outside %, weighted %), the
+identity comparison, every check with its exit code, and what you did not do. No commit.
+ M src/mountain-layout.ts
+ M src/terrain.ts
+ M tests/helpers/mountain-coarse-field.mjs
+ M tests/mountain-coarse-field.test.mjs
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-Content docs/mountains-t6-baked-coarse-2026-10-06.md; Get-Content docs/mountains-opus-decisions-2026-10-05.md | Select-Object -Last 100; Get-Content test-results/mountains/t6-baked/fix-handoff.md; Get-Content test-results/mountains/t6-baked/r2/field-bench.mjs; Get-Content test-results/mountains/t6-baked/fix-node-identity.mjs' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 68ms:
+# Mountains T6 cost route A: baked coarse band field, 2026-10-06
+
+Evidence for decisions addendum (5) in `docs/mountains-opus-decisions-2026-10-05.md`. Written by the coordinator
+(Claude Opus 5.5, acting on Kasper's instruction). Astra (Codex `gpt-6-astra`) did the implement round and the one
+fix round. After that the coordinator made value-preserving edits only.
+
+The work is on branch `mountains/baked-coarse`, cut from main `9971c3f`. **The branch is not merged.** Two budgets
+are missed:
+
+- the C1 sampler budget, by +0.4 to +2.4 points;
+- the field build target, on two of four worlds.
+
+Contract §6 and the orbit bake are met. All evidence is under `test-results/mountains/t6-baked/`. That folder is
+git-ignored and stays on disk.
+
+## 1. Problem and route
+
+Addendum (4) blocked the wiring step. Wired, the coarse tile build cost +17..+33% per level against main (the
+contract allows +10%), and the orbit bake cost +21..+31% (the budget is +5%). The cause was V8 code quality. The
+plain core ran slowly in any process that had also run the exact mountain path (M1 foot-point solve, M2
+composition, M3 carving).
+
+Route A replaces the exact M1/M2 work at coarse levels with a lookup in a baked, per-body field. The fine levels
+(L >= the carving cut) and the truth sampler keep the exact M1/M2/M3 path.
+
+## 2. What was built
+
+- **Field** (`src/mountain-layout.ts`, `coarseBandField(maxDistM, minHalfWidthM)`, memoised on the layout,
+  `orogen-layout-3`):
+  - Grid:
+    - Nodes lie on the cube-face grid at half the T1 band-grid resolution (Nf = 512 / 1024 / 256 / 1024).
+    - The field is stored in sparse 8x8-cell blocks. Each block holds a 9x9 Float32 array per candidate belt.
+  - Active cells:
+    - A cell is active when it covers a T1-flagged cell. The active set is then dilated by one field cell, across
+      face edges too.
+    - Only the corners of active cells are evaluated. Unread nodes are 0.
+  - Node values:
+    - Each node stores the signed foot-point distance divided by H = min(halfWidthM, 48 km).
+    - The distance comes from the same `transverse` projection as M1, including its sign rule.
+    - Node directions are canonical on face edges, so both faces store bit-identical values there (tested).
+  - Per-belt scalars:
+    - tangent, centre, uLimit, halfWidthM, and the margin delta = 0.16 H.
+    - The margin is measured, not derived. The worst bilinear error was 0.0768 H, at belt endpoints with
+      |u/U| ≈ 1. The margin is more than twice that, Float32 storage included.
+- **Coarse composition** (`src/mountain-envelope.ts`, `massifCoarseRidgeTermM`, `massif-envelope-3`):
+  - The composition is an upper bound on the exact uncarved ridge term (1−w)·main + U.
+  - For each candidate it takes w_lo = g²·blend(v_lo)·fade(s_hi) and U_hi = E·p(s_lo)³·lf·blend(v_hi).
+  - The bound is valid because of the lemma blend(vg) ≥ g²·blend(v).
+  - A candidate is skipped when |sd| − delta ≥ 1. The result is the maximum over the candidates and main.
+- **Terrain** (`src/terrain.ts`):
+  - `baseTerrainCore` serves plain samplers and coarse samplers (state false). For coarse samplers it reads the
+    field with an inline lookup. No direction array is passed to a layout function.
+  - `mountainTerrainCore` is a separate function literal. It serves the truth and L >= cut.
+  - A source test keeps the two cores textually identical outside the setup hunk and the ridge-term hunk.
+  - `TERRAIN_MOUNTAINS_WIRED` stays false.
+- **Continuity rule.** The dilation ring makes every boundary node of the active region lie at least one field
+  cell outside the band. There the composition returns main exactly.
+  - Test: every active-boundary tap equals the inactive neighbour, `Object.is` on every returned field.
+  - Seams: face-edge nodes are compared Object.is from both faces. Switch tiles keep the T3 parent rule, so the
+    parent of an L(cut) tile is coarse.
+- **Tests:** `tests/mountain-coarse-field.test.mjs` (20 tests) and its helper `tests/helpers/mountain-coarse-field.mjs`.
+  They cover:
+  - the g² lemma;
+  - conservativeness against the exact reference, plus a zero-margin mutant that must fail;
+  - determinism across build orders;
+  - signed-distance enclosure and face edges;
+  - more than 50,000 directions plus axis rasters per world: upper bound, inactive identity, ocean flags;
+  - plain/mountain core identity outside massifs;
+  - the core-sync source test;
+  - the private-kernel identity;
+  - the voxel-prefilter identity (see section 5).
+
+## 3. Accuracy (coarse minus exact uncarved floor, 56,724 samples per world)
+
+| World | Field build, cold, slotted | Bytes | Active cells | Violations | Ocean diff | p99 | max |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Maithea | 35.6 ms | 822,144 | 74,826 | 0 | 0 | 756 m | 2,347 m |
+| Selawyn | **57.8 ms** | 1,624,130 | 133,763 | 0 | 0 | 769 m | 1,836 m |
+| Raiva | 13.7 ms | 145,206 | 13,112 | 0 | 0 | 443 m | 1,355 m |
+| Lethuris | **61.5 ms** | 1,726,504 | 145,451 | 0 | 0 | 740 m | 2,086 m |
+
+The p50 is 0 m: outside massifs the coarse floor equals the exact floor.
+
+The coarse surface is an upper envelope of the uncarved surface, and therefore of the carved truth. The p99
+overestimate of about 750 m sits near belt endpoints, where the margin is widest relative to the real error.
+
+The field build target is **≤ 50 ms per body cold**. It is missed on Selawyn and Lethuris (`final-field-report.jsonl`).
+
+Profile of the build:
+
+- About 40 ms is the node phase: 183k / 199k node projections at about 250 ns each.
+- A second build in the same process takes 44-47 ms (`diag/field-warm.log`). JIT warm-up is therefore not the main
+  cost.
+- The resolution was not lowered. No value was changed to meet the target.
+
+## 4. Identity and pins
+
+- **Staged** (flag false), against main `9971c3f`, SHA-256 ledger. What moved:
+  - the `{mountains: true}` samplers at L0 and L(cut−1);
+  - mountain tiles at L0, L3, L(cut−1) and L(cut). L(cut) moved in `parents`/`parentHeight` only.
+
+  Unchanged: default, truth, ≥ cut, off, crater, base and cut+2 samplers and tiles (27 identical entries per world).
+- **Wired** (flag true, scratch copy only). What also moved: the default-L0 samplers, default tiles at L ≤ cut, the
+  orbit bake and the hypsometry.
+
+  Unchanged: the survey and the truth.
+- **Re-pins**, old → new, ledger in `digest-ledger.json`, all in `tests/lod-carving-reduction.test.mjs`:
+  - `COST_IDENTITY[0]`:
+    - Maithea `05a0aea7…84af` → `08521843…44e0`
+    - Selawyn `565f77b3…321d` → `b787565e…8954`
+    - Raiva `fc27a747…474e` → `498662db…f570`
+    - Lethuris `26402011…0557` → `4f79a66f…80b7`
+  - `COST_SAMPLER_IDENTITY[0]`:
+    - Maithea `df801672…a3a6` → `0c2e6161…d454`
+    - Selawyn `b335c740…2f9a` → `c25d73c6…d5ec`
+    - Raiva `35996b0d…df48` → `733c1c25…8778`
+    - Lethuris `f5218c6f…a42b` → `3fa308f5…c492`
+  - `COST_IDENTITY[1]` (switch tile; only `parents`/`parentHeight` moved, which is the T3 parent rule):
+    - Maithea `2e3759c5…4194` → `3e812d1d…cfdb`
+    - Selawyn `59cac04c…f558` → `528260f7…7ecf`
+    - Raiva `d1b2089d…2d55` → `92f44e5f…4c5c`
+    - Lethuris `26e7faa3…89d9` → `2c689122…0986`
+  - `COST_SAMPLER_IDENTITY[1]` is unchanged.
+- **Versions:** `OROGEN_LAYOUT_VERSION` orogen-layout-2 → orogen-layout-3 and `MASSIF_ENVELOPE_VERSION`
+  massif-envelope-2 → massif-envelope-3. The pins in four test files moved with them. `LOD_LADDER_VERSION` and
+  `TERRAIN_VERSION` are unchanged. No golden re-pin: that happens once, at T6 wiring.
+- **Coordinator edits are value-preserving.** `fix-identity.mjs` digests (173,120 sampler outputs and 8 tiles)
+  are byte-equal before and after every edit. `fix-node-identity.mjs` shows every read node `Object.is`-identical
+  (503,165 nodes).
+
+## 5. Cost (official protocols, CPU-quiet test slot, against main `9971c3f`, fresh process per world)
+
+The final state is the branch as committed. Each round of the protocol was re-run whenever the code changed.
+
+**Contract §6** (`contract-build-bench`, 5 rounds, mean growth per level, budget ≤ +10%): **MET.**
+
+| World | L0 | L1 | L2 | L3 | L4 | L5 | L6 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Maithea | +6.4 | +1.7 | +3.8 | +2.6 | +3.3 | +7.2 | |
+| Selawyn | +0.9 | +3.9 | +0.5 | +1.1 | +8.9 | +5.4 | +5.5 |
+| Raiva | +4.8 | +2.2 | +1.8 | +0.6 | +2.3 | | |
+| Lethuris | +5.6 | +2.6 | +7.5 | +7.4 | +6.0 | +3.4 | −0.4 |
+
+Before route A, the same table showed +17..+33% at every level.
+
+**Orbit bake** (wired, 7 rounds, median growth, budget ≤ +5%): **MET**, 0 block solves.
+
+| World | Median | Mean | Paired |
+|---|---:|---:|---:|
+| Maithea | +4.3 | +4.3 | +4.9 |
+| Selawyn | +2.8 | +2.8 | +2.8 |
+| Raiva | +0.3 | +4.1 | +4.2 |
+| Lethuris | +2.3 | +5.0 | +5.1 |
+
+Before route A: +21..+31%.
+
+Noise note: the orbit bake executes only the coarse path, which is identical in all three code states measured.
+Its medians ranged from −3.6% to +9.4% across repeated official-protocol runs of that identical path. One earlier
+run (Maithea +5.8%, Selawyn +7.8%) would have missed. That run is reported in `fix1-freshcopy/` and was not
+discarded.
+
+**C1** (`scripts/mountain-assembly-cost.mjs --same-version`, 15 fresh processes per world, median weighted
+resident overhead, budget ≤ +8%): **NOT MET.**
+
+| World | Branch weighted | Branch outside | Main-wired control weighted | Main-wired control outside |
+|---|---:|---:|---:|---:|
+| Maithea | **8.40%** | +5.4% | 7.17% | +4.2% |
+| Selawyn | **9.38%** | +7.9% | 2.53% | +1.2% |
+| Raiva | **10.43%** | +8.5% | 3.95% | +2.0% |
+| Lethuris | **8.76%** | +7.0% | 5.34% (n=5) | +3.6% |
+
+The main-wired control is main `9971c3f` with only the flag flipped. It measures what the exact mountains cost
+the truth path without route A. The per-run spread is wide: the branch runs range from −7.6% to +36.4%.
+
+### C1 bisection (Maithea, coordinator, unofficial runs of 3-5 under the slot unless noted)
+
+The truth sampler outside massifs became slower than main-wired. The hunks were bisected on top of main-wired.
+The value columns are outside overhead / weighted overhead.
+
+| Variant | Outside / weighted | Notes |
+|---|---|---|
+| Branch as after the fix round (official, 15 runs) | +21.8% / 24.1% | Private kernels everywhere, core-owned scratch copy of d |
+| Main terrain + branch layout, private kernels only (V2a) | +20% / 22% | |
+| Main terrain + branch layout, catalog kernels (V2b) | +3% / 6% | |
+| Main terrain + scratch copy (Z2) | +11..21% | |
+| Branch terrain without the copy, catalog kernels (Z3) | +3..8% | Contract +17..+25%: fails |
+| Private construction kernels + scratch copy (X2) | +20..26% | Contract met |
+| Private construction kernels + **fresh copy** `[d[0], d[1], d[2]]` (W3) | +4.5..7% | Contract met (one noisy Lethuris L0) |
+| W3 official, 15 runs | +9.9% / 12.9% | |
+| W3 + **inline T1 voxel prefilter** (final, official) | +5.4% / 8.4% | |
+
+Conclusions:
+
+- Two coordinator changes help C1 and keep contract and orbit met:
+  1. The layout construction uses `constructionA0`, which runs on private kernel copies. The per-sample `sample`
+     uses `continentalA0` on the catalog kernels again. Both are bit-identical, tested.
+  2. The truth core copies d fresh instead of using a scratch array. It also reads the T1 voxel prefilter inline,
+     so it skips `massifBeltSample` where that call returns the empty sample. A test compares this against the
+     same core with the prefilter bypassed (Object.is on every field, four worlds), and a negative control (a
+     shifted voxel index) fails it.
+- The remaining gap to main-wired is +1..+6 points outside massifs. That is a V8 code-quality effect in the truth
+  core. It is not more work: with the prefilter, the branch runs fewer operations per outside sample than
+  main-wired.
+- The profiles (`diag/prof-*.log`, `diag/prof2-*.log`) show only differences in inlining decisions, for example
+  `detAcos` and `detAtan2` in the climate colour not being inlined.
+
+## 6. Not done
+
+- Route B (worker isolate) was not attempted. Route A met the coarse budgets it was meant to fix. The remaining
+  misses are the truth-path C1 overhead and the field build, and an isolate for coarse tiles would not change C1.
+- `test:full` was not run. Its one remaining use stays reserved for the T6 gate.
+- No Luna vote and no full `npm test`.
+
+## 7. Open items for the owner
+
+1. **C1:** +0.4..+2.4 points over +8% on all four worlds. The main-wired control is 2.5..7.2%, so the branch adds
+   about +1.2..+6.9 points in V8 effects.
+2. **Field build:** Selawyn 57.8 ms and Lethuris 61.5 ms cold, against a 50 ms target. A lazy per-block build would
+   meet it without changing values, but it adds a branch to the coarse hot path, which would need re-measuring.
+3. **Accuracy follow-up:** a delta that depends on |u/U| would cut the about 750 m p99 overestimate. The error is
+   concentrated at belt endpoints. This changes values and needs a version move.
+without anyone deciding to, which is a budget loosening by redefinition. The miss (+18..+33%, 2-3x the allowance)
+is not a level I can justify waiving with a ledger entry. Under the lenient reading the tile build was at most +5.5%
+against `914d86f` when T3 measured it (not re-measured here); no number exists for the orbit bake against
+`914d86f`. **Consequence: T6 wiring is BLOCKED.** `TERRAIN_MOUNTAINS_WIRED` stays false on main; nothing else T6 does
+(the golden re-pin, `test:full`) runs until the block is lifted.
+
+**Question for Kasper (one line):** "Wired mountains cost +18..+33% per coarse tile level and +21..+31% per orbit
+bake against today's main (allowance +10% / +5%, no fix found after 17 attempts); do you accept that cost, judge it
+against the pre-mountains build `914d86f` instead (tile build at most +5.5% there), or keep the mountains unwired
+until a fix is found?"
+
+Ways to lift the block without his answer (not decided, recorded for whoever picks it up): a real fix to the V8
+effect; tiles that touch the massif band built in a separate worker isolate, so the plain worker never compiles the
+mountain path (needs a protocol note for the single-process benches); or the baked coarse macrofield of addendum item
+5 (moves values, needs a version move).
+
+**Decision 2: landing summit cutoff (T4 section 2a). Option (a).** When the mountains are wired, landing
+eligibility is judged in the same representation as the cutoff: level-0 candidate heights against the level-0 p99
+of `landPercentileM`. Reason: it is self-consistent (a rank inside one field), costs no block solves, and the
+evidence does not argue against it (0-2 flips per world, all from comparing truth heights with a level-0 cutoff).
+The landed and walked ground stays the truth. Option (b) costs 57-99 blocks (9-19 s) per world; option (c) keeps
+the inconsistency. The main-thread stall of the truth landing searches (5-20 blocks, 0.8-3.8 s) stays OPEN for T6.
+It lands with T6, not before, because nothing changes while the mountains are staged.
+
+**Decision 3: statistic-style tests at T6.** At the wiring, the statistic-style tests (climate colour and
+agreement, floor window, relief hypsometry, render bounds) move to **level 0**, where they test a global statistic
+rather than the carving. A test whose purpose is the carved truth itself moves to `test:full` instead and stays
+there, not deleted. Each move is listed in the T6 record with the file, the old and new sampler, and the reason.
+The CONTRACT pins they check are not loosened by the move; if a level-0 statistic fails a pin, that is a T6
+finding, not a re-pin.
+
+**Ledger.** No threshold, pin, tolerance, budget, golden or version change. The baseline is **not** redefined: old
+= new = main as it is at T6 (stricter reading kept), so there is no old/new baseline entry. T6 wiring is blocked
+pending Kasper. `test:full` was not run (its one remaining use stays reserved for T6's final gate). The planet-canopy
+2 ms wall-time flake fix stays T6 gate work.
+
+## Addendum 2026-10-06 (5): cost route A (baked coarse field) meets contract §6 and the orbit bake, misses C1; not merged
+
+**Decided by Opus 5.5 on Kasper's instruction 2026-10-06; he may overrule.** The evidence is
+`docs/mountains-t6-baked-coarse-2026-10-06.md` and `test-results/mountains/t6-baked/`. The work is on branch
+`mountains/baked-coarse`, which is committed but not merged. The versions on the branch are `orogen-layout-3` and
+`massif-envelope-3`.
+
+**What route A did.** It addresses the cost that blocked T6 in addendum (4).
+
+- Coarse levels no longer run the M1 foot-point solve.
+- A per-body field gives an upper bound of the uncarved composition. The field is deterministic, sparse, and baked
+  once at half the T1 resolution, with a measured margin of 0.16 H.
+- There were 0 bound violations on 4 × 56,724 samples, and 0 ocean differences.
+- Outside massifs the coarse floor equals the exact floor. The p99 overestimate near belts is about 750 m.
+- Fine levels and the truth keep the exact M1/M2/M3 path.
+
+Official results against main `9971c3f` (CPU-quiet slot):
+
+| Budget | Result | Before route A |
+|---|---|---|
+| Contract §6, per level ≤ +10% | **MET**, max +8.9% (Selawyn L4) | +17..+33% |
+| Orbit bake median ≤ +5% | **MET**, +4.3 / +2.8 / +0.3 / +2.3% | +21..+31% |
+| C1 weighted resident ≤ +8% | **NOT MET**, 8.40 / 9.38 / 10.43 / 8.76% | main-wired control: 7.17 / 2.53 / 3.95 / 5.34% |
+| Field build ≤ 50 ms cold | **NOT MET** on Selawyn (57.8 ms) and Lethuris (61.5 ms) | n/a |
+
+**Decision 1: not merged; T6 stays blocked.** The outcome rule says merge only when the budgets are met. C1 misses
+on every world by +0.4..+2.4 points. I do not waive C1:
+
+- the miss is small, but it is consistent across four worlds;
+- the truth path is what collision, physics and place queries run;
+- waiving it would loosen a budget by judgement.
+
+The field-build miss (+16% and +23% over target) is a route-A target from this round's brief. It is also not waived.
+`TERRAIN_MOUNTAINS_WIRED` stays false on main. Nothing from the branch's source goes to main. This addendum and the
+evidence doc are the only things that land.
+
+**Decision 2: the branch stays as the base for the next attempt.** It is not discarded, because:
+
+- it removes the original block (contract §6 and the orbit bake, 2-3x over budget before);
+- its coordinator edits are value-preserving and documented;
+- the cause of the remaining C1 gap is narrowed to V8 code quality in the truth core. With the inline T1 voxel
+  prefilter, the branch does less work per outside sample than main-wired, but that path still costs +1..+6 points
+  more.
+
+Its worktree and branch are kept. The scratch bench copies are removed.
+
+**Decision 3: route B is not started.** A worker isolate for coarse tiles answers the coarse cost, which route A has
+already met. It does not touch the truth-path C1 or the field build.
+
+**Question for Kasper (one line):** "Route A brings the coarse tile and orbit costs within budget, but the truth
+sampler's C1 overhead is 8.4-10.4% against an 8% budget (exact mountains on main without route A: 2.5-7.2%), and
+the field build is 58/62 ms on two worlds against 50 ms. Accept these two misses and merge route A, or keep the
+mountains unwired while the remaining V8 effect and a lazy per-block build are tried?"
+
+**Ledger.**
+
+- No threshold, pin, tolerance, budget or golden changes on main.
+- On the branch only:
+  - `OROGEN_LAYOUT_VERSION` orogen-layout-2 → orogen-layout-3;
+  - `MASSIF_ENVELOPE_VERSION` massif-envelope-2 → massif-envelope-3;
+  - `COST_IDENTITY[0]`, `COST_SAMPLER_IDENTITY[0]` and `COST_IDENTITY[1]` re-pinned on four worlds. Old and new
+    values are in the evidence doc §4 and in `digest-ledger.json`. `[1]` moves in `parents`/`parentHeight` only.
+- Contract §3 is amended on the branch only.
+- `test:full` was not run; its one use stays reserved for the T6 gate.
+# Bounded fix round
+
+Value-preserving fix complete; G2 remains over budget on Selawyn and Lethuris. No official acceptance benchmark was run.
+
+Changes relative to the implement-round working tree:
+- terrain.ts: skip candidates before arc-parameter calculation when abs(sd)-delta >= 1.
+- mountain-envelope.ts: return main when lo >= 1 or vHi === 0, retaining all evaluated arithmetic expressions and order.
+- mountain-layout.ts: evaluate only corners of active cells, using a reusable nine-row bit mask; leave unread nodes zero. Candidate lists, resolution, stored layout, scalar stride, and all read node expressions are unchanged.
+- mountain-coarse-field.test.mjs: face-edge comparisons now compare only nodes read by active cells. Additional one-off validation compares every read node against the captured original builder.
+
+## G1 (unofficial, no slot)
+
+Maithea, the contract's 12 land directions and L5 tile builds, including all core sample calls: 238,155 samples. Active cell: 32,550 (13.6676%); at least one candidate with abs(sd)-delta < 1: 20,721 (8.7006%); at least one composition with w !== 0 or U !== 0: 20,349 (8.5444%). All encountered cells had one candidate. Counts come from an instrumented copy of the before source, independently of timing.
+
+Interleaved main / before / after in one process, rotating arm order, one L6 warm build per arm, seven rounds with first two excluded, 60 measured tiles per arm:
+
+| Arm | Mean ms/tile | p50 ms/tile |
+|---|---:|---:|
+| main 9971c3f | 19.886695 | 19.3839 |
+| before | 21.241548 | 19.9637 |
+| after | 20.566798 | 19.6539 |
+
+Mean growth versus main: +6.81% before, +3.42% after. After is 3.18% faster than before. These unofficial timings do not establish the coordinator's official gate.
+
+## G2
+
+Fresh-process profiling excludes layout and T1. Node phase includes traversal, direction normalization, projection setup, transverse, and storage; ns/node is amortized phase time, not an isolated transverse microbenchmark.
+
+| World | Projections before -> after | Node phase ms before -> after | ns/node before -> after | Other ms before -> after |
+|---|---:|---:|---:|---:|
+| Maithea | 172854 -> 103365 | 44.73 -> 28.41 | 258.7 -> 274.8 | 11.81 -> 11.63 |
+| Selawyn | 294435 -> 182972 | 70.34 -> 47.46 | 238.9 -> 259.4 | 17.98 -> 18.61 |
+| Raiva | 28269 -> 17879 | 10.05 -> 8.50 | 355.4 -> 475.7 | 4.72 -> 4.35 |
+| Lethuris | 318816 -> 198949 | 76.29 -> 51.00 | 239.3 -> 256.4 | 18.15 -> 18.78 |
+
+Uninstrumented `field-report.mjs`, one fresh process per world:
+
+| World | Build ms | Bytes | <=50 ms |
+|---|---:|---:|---|
+| Maithea | 38.8963 | 822144 | pass |
+| Selawyn | 66.1417 | 1624130 | fail |
+| Raiva | 12.9085 | 145206 | pass |
+| Lethuris | 70.0713 | 1726504 | fail |
+
+No claim that 50 ms is impossible; this bounded optimization has not achieved it. No candidate-specific pruning was added: all candidates' active-cell corners retain the original values, including contributions of conservative interpolated envelopes outside exact belt support.
+
+## Identity and checks
+
+`fix-before.json == fix-after.json: true` (byte comparison, exit 0). Each world: 4,096 Fibonacci directions plus four 41x41 axis rasters, L0 and cut-1, floor off/on (43,280 sampler outputs/world), plus one cut-1 and one cut tile. Totals: 173,120 sampler outputs and eight complete tile digests. Every read field node is also Object.is identical to the original: 503,165 nodes across four worlds; 311,209 unread nodes are zero.
+
+- `npx tsc --noEmit`: exit 0, no diagnostics.
+- `node --test tests/mountain-coarse-field.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-envelope.test.mjs tests/terrain-mountains-assembly.test.mjs`: exit 0, 57 passed, 0 failed/skipped.
+- `node test-results/mountains/t6-baked/fix-identity.mjs fix-before.json`: exit 0, captured before production edits.
+- `node test-results/mountains/t6-baked/fix-identity.mjs fix-after.json`: exit 0.
+- `node -e "const fs=require('fs');const p='test-results/mountains/t6-baked/';const equal=fs.readFileSync(p+'fix-before.json').equals(fs.readFileSync(p+'fix-after.json'));console.log('fix-before.json == fix-after.json:',equal);if(!equal)process.exit(1)"`: exit 0, true.
+- `node test-results/mountains/t6-baked/field-report.mjs`: exit 0, four worlds; 56,724 upper-envelope samples/world, zero violations/ocean differences/inactive differences.
+- `node test-results/mountains/t6-baked/fix-node-identity.mjs`: exit 0, all read nodes identical.
+- `node test-results/mountains/t6-baked/fix-profile.mjs before` and `after`: both exit 0.
+- `node test-results/mountains/t6-baked/fix-cost.mjs fractions` and `timing`: both exit 0.
+- `git diff --check`: exit 0.
+
+No pins or versions edited this round. Separate mountain core, scratch direction copy, private kernels, inline coarse lookup, no caller direction passed to layout on the coarse path, and TERRAIN_MOUNTAINS_WIRED=false retained. No .git writes, network, downloads, browser, GPU, full suite, test-slot helper, or official benchmarks. No commit.
+import {performance} from 'node:perf_hooks';
+import {waterWorlds} from '../../../../tests/terrain-climate-fixtures.mjs';
+import {orogenLayout} from '../../../../src/mountain-layout.ts';
+const body=waterWorlds()[Number(process.argv[2])];
+if(!body)throw new Error('expected world index 0..3');
+const layout=orogenLayout(body);layout.bandGrid(48000,32000);
+const t=performance.now(),field=layout.coarseBandField(48000,32000),coldMs=performance.now()-t;
+const m=performance.now();field.materialiseAll?.();
+console.log(JSON.stringify({world:body.name,coldMs,materialiseAllMs:field.materialiseAll?performance.now()-m:null,bytes:field.bytes,activeCells:field.activeCells}));
+import {readFileSync} from 'node:fs';
+import {stripTypeScriptTypes} from 'node:module';
+import assert from 'node:assert/strict';
+import {waterWorlds} from '../../../tests/terrain-climate-fixtures.mjs';
+import {orogenLayout} from '../../../src/mountain-layout.ts';
+const s=readFileSync(new URL('./r2/before-layout.txt',import.meta.url),'utf8').replace(/from (['"])(\.\/[^'"]+)\1/g,(_,q,p)=>`from ${q}${new URL('../../../src/'+p.slice(2),import.meta.url).href}${q}`);
+const before=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(s)).toString('base64'));
+for(const body of waterWorlds()){
+ const a=before.orogenLayout(body).coarseBandField(48000,32000),b=orogenLayout(body).coarseBandField(48000,32000);
+ b.materialiseAll();
+ for(const key of ['blockTable','masks','offsets','candidates','scalars'])assert.deepEqual(a[key],b[key]);
+ let read=0,unused=0;
+ for(let block=0;block<b.offsets.length-1;block++){
+  const used=new Set();
+  for(let j=0;j<8;j++)for(let i=0;i<8;i++){
+   const bit=j*8+i;if(!(b.masks[block*2+(bit>>>5)]&(1<<(bit&31))))continue;
+   for(const offset of [0,1,9,10])used.add(j*9+i+offset);
+  }
+  for(let c=b.offsets[block];c<b.offsets[block+1];c++)for(let n=0;n<81;n++){
+   if(used.has(n)){assert.ok(Object.is(a.distances[c*81+n],b.distances[c*81+n]));read++;}
+   else {assert.equal(b.distances[c*81+n],0);unused++;}
+  }
+ }
+ console.log(JSON.stringify({world:body.name,readNodesIdentical:read,unusedNodesZero:unused}));
+}
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "rg -n 'buildCoarseBandField|coarseDirection|transverse|offsetNoise|function offset|materialise|materialize' src/mountain-layout.ts src/terrain.ts tests/mountain-coarse-field.test.mjs; Get-Content tests/helpers/mountain-coarse-field.mjs; rg --files -g AGENTS.md -g '*profile*' test-results/mountains" in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 63ms:
+src/terrain.ts:600:              if(!field.built[block])field.materialiseBlock(block);
+tests/mountain-coarse-field.test.mjs:61:    af.materialiseAll();
+tests/mountain-coarse-field.test.mjs:62:    for(let block=bf.built.length-1;block>=0;block--)bf.materialiseBlock(block);
+tests/mountain-coarse-field.test.mjs:64:    bf.materialiseAll(); // Idempotent, including after reverse construction.
+tests/mountain-coarse-field.test.mjs:83:    f.materialiseAll();
+src/mountain-layout.ts:117:export function offsetNoise(x: number,s: number) {
+src/mountain-layout.ts:130:function offset(b: OrogenBelt,u: number) {
+src/mountain-layout.ts:132:  return b.bendM*v*v+b.amplitudeM*(2*offsetNoise(u*2/b.wavelength+13,b.noiseSeed)-1);
+src/mountain-layout.ts:134:// Exact half-angle along coordinate, unchanged by transverse displacement.
+src/mountain-layout.ts:157:// Exact derivative: noise(X) = h0 (1 - m) + h1 m with a = X - floor(X) and m = a^2 (3 - 2a) (offsetNoise),
+src/mountain-layout.ts:167:function transverse(b: OrogenBelt,d: V3,R: number,u: number,x: number,z: number,py: number,sign: number) {
+src/mountain-layout.ts:171:    const v=u*iU,X=u*k2+13,n=offsetNoise(X,seed),a=X-Math.floor(X);
+src/mountain-layout.ts:225:  transverse(b,d,R,u,x,z,py,py*R-off<0?-1:1);
+src/mountain-layout.ts:454:  materialiseBlock(block: number): void;
+src/mountain-layout.ts:455:  materialiseAll(): void;
+src/mountain-layout.ts:457:function coarseDirection(face: number,i: number,j: number,N: number,d: V3) {
+src/mountain-layout.ts:471:function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBandGrid,maxDistM: number,minHalfWidthM: number): CoarseBandField {
+src/mountain-layout.ts:475:      coarseDirection(face,i+.5,j+.5,N,d);
+src/mountain-layout.ts:524:    coarseDirection(face,i0+4,j0+4,N,d);
+src/mountain-layout.ts:546:  const materialiseBlock=(block: number): void=>{
+src/mountain-layout.ts:558:        coarseDirection(face,i0+i,j0+j,N,d);
+src/mountain-layout.ts:560:        transverse(b,d,R,u,x,z,py,py*R-offset(b,u)<0?-1:1);
+src/mountain-layout.ts:566:  const materialiseAll=(): void=>{for(let block=0;block<blockCount;block++)materialiseBlock(block);};
+src/mountain-layout.ts:568:    candidates:fieldCandidates,distances:values,scalars,activeCells,multiBeltCells,built,materialiseBlock,materialiseAll};
+src/mountain-layout.ts:839:    if(!field){field=buildCoarseBandField(belts,R,bandGrid(maxDistM,minHalfWidthM),maxDistM,minHalfWidthM);coarseFields.set(key,field);}
+import {readFileSync} from 'node:fs';
+import {stripTypeScriptTypes} from 'node:module';
+import {terrainSampler} from '../../src/terrain.ts';
+import {waterWorlds,fib} from '../terrain-climate-fixtures.mjs';
+import {axisSites} from './mountain-coarse-tiles.mjs';
+import {orogenLayout} from '../../src/mountain-layout.ts';
+
+// Test-only full-layout uncarved reference: change only the composition's carve argument
+// and bypass the T1 accelerator. Production has no reference/mutation sampler flag.
+const terrainSource=readFileSync(new URL('../../src/terrain.ts',import.meta.url),'utf8');
+const needle='mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve)';
+const beltCall='massifBeltSample(orogen, [d[0], d[1], d[2]], a0, orogenScratch)';
+// The truth core's inline T1 voxel prefilter (skips massifBeltSample where it returns the empty sample).
+export const voxelSkip='massifAll || (massifVoxels[v >>> 5] & (1 << (v & 31)))';
+for(const hook of [needle,beltCall,voxelSkip])if(!terrainSource.includes(hook))throw new Error(`exact reference hook lost: ${hook}`);
+const localImports=s=>s.replace(/from (['"])(\.\/[^'"]+)\1/g,(_,q,path)=>`from ${q}${new URL('../../src/'+path.slice(2),import.meta.url).href}${q}`);
+const load=s=>import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(localImports(s))).toString('base64'));
+const source=terrainSource.replace(needle, 'mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, false)')
+  .replace(beltCall, 'orogen.sampleWithA0([d[0], d[1], d[2]], a0, orogenScratch)').replace(voxelSkip,'true');
+export const exactTerrain=await load(source);
+// Production with only the voxel prefilter bypassed (every land sample calls massifBeltSample).
+export const unskippedTerrain=await load(terrainSource.replace(voxelSkip,'true'));
+export const sampler=(body,options,exposeFloor=true)=>terrainSampler(body,[],undefined,false,0,undefined,exposeFloor,options);
+export const exactSampler=body=>exactTerrain.terrainSampler(body,[],undefined,false,0,undefined,true,{mountains:true});
+export {waterWorlds,fib,orogenLayout};
+export function directions(body,total=50000){
+  const dirs=Array.from({length:total},(_,i)=>fib(i,total));
+  const sites=axisSites(body,{count:4});
+  if(sites.length!==4)throw new Error(body.name+': missing four sites');
+  for(const {d} of sites){
+    const a=[d[1],-d[0],0],l=Math.hypot(...a),t=a.map(x=>x/l),v=[d[1]*t[2]-d[2]*t[1],d[2]*t[0]-d[0]*t[2],d[0]*t[1]-d[1]*t[0]];
+    for(let y=-20;y<=20;y++)for(let x=-20;x<=20;x++){
+      const p=d.map((q,k)=>q+1500*(x*t[k]+y*v[k])/body.radiusM),n=Math.hypot(...p);dirs.push(p.map(q=>q/n));
+    }
+  }
+  return dirs;
+}
+export function lookup(field,d,absolute=false){
+  const N=field.faceCells,B=N/8,ax=d.map(Math.abs);let k=ax[0]>=ax[1]&&ax[0]>=ax[2]?0:ax[1]>=ax[2]?1:2;
+  const face=k*2+(d[k]>0?0:1),fx=(d[[1,0,0][k]]/ax[k]+1)*N/2,fy=(d[[2,2,1][k]]/ax[k]+1)*N/2;
+  const i=Math.max(0,Math.min(N-1,Math.floor(fx))),j=Math.max(0,Math.min(N-1,Math.floor(fy))),block=field.blockTable[(face*B+(j>>>3))*B+(i>>>3)]-1,bit=(j&7)*8+(i&7);
+  if(block<0||!(field.masks[2*block+(bit>>>5)]&(1<<(bit&31))))return [];
+  field.materialiseBlock(block);
+  const wx=fx-i,wy=fy-j,out=[];
+  for(let c=field.offsets[block];c<field.offsets[block+1];c++){
+    const p=c*81+(j&7)*9+(i&7),a=[0,1,9,10].map(n=>absolute?Math.abs(field.distances[p+n]):field.distances[p+n]);
+    out.push({belt:field.candidates[c],sd:(a[0]*(1-wx)+a[1]*wx)*(1-wy)+(a[2]*(1-wx)+a[3]*wx)*wy});
+  }
+  return out;
+}
+export function statistics(body){
+  const coarse=sampler(body,{mountains:true,lodLevel:0}),exact=exactSampler(body),field=orogenLayout(body).coarseBandField(48000,32000);
+  const differences=[];let violations=0,oceanDifferences=0,inactiveDifferences=0,maxError=0;
+  for(const d of directions(body)){
+    const c=coarse(d),e=exact(d);differences.push(c.floorM-e.floorM);
+    if(c.floorM<e.floorM)violations++;
+    if(c.ocean!==e.ocean)oceanDifferences++;
+    const at=lookup(field,d);
+    if(!at.length&&JSON.stringify(c)!==JSON.stringify(e))inactiveDifferences++;
+    const o=orogenLayout(body).sampleWithA0(d,1e9);
+    if(o.belt>0&&o.halfWidthM>=32000&&Math.abs(o.axisDistanceM)<48000){
+      const hit=at.find(x=>x.belt===o.beltIndex);
+      if(hit)maxError=Math.max(maxError,Math.abs(hit.sd-o.axisDistanceM/Math.min(o.halfWidthM,48000)));
+    }
+  }
+  differences.sort((a,b)=>a-b);
+  return {count:differences.length,violations,oceanDifferences,inactiveDifferences,maxError,p50:differences[Math.floor(differences.length*.5)],p99:differences[Math.floor(differences.length*.99)],max:differences.at(-1)};
+}
+// Direct internal projection, exposed only in this test module copy.
+let layoutSource=readFileSync(new URL('../../src/mountain-layout.ts',import.meta.url),'utf8');
+layoutSource+=`\nexport function referenceDistance(b,d,R){const x=dot(d,b.tangent),z=dot(d,b.centre),py=dot(d,b.pole),u=x/(Math.sqrt(x*x+z*z)+z);transverse(b,d,R,u,x,z,py,py*R-offset(b,u)<0?-1:1);return trDistance;}\n`;
+layoutSource=layoutSource.replace(/from (['"])(\.\/[^'"]+)\1/g,(_,q,path)=>`from ${q}${new URL('../../src/'+path.slice(2),import.meta.url).href}${q}`);
+export const {referenceDistance}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(layoutSource)).toString('base64'));
+export function nodeDirection(face,i,j,N){const d=[0,0,0],k=face>>>1;d[k]=face&1?-1:1;d[[1,0,0][k]]=2*i/N-1;d[[2,2,1][k]]=2*j/N-1;const l=Math.sqrt(d[0]*d[0]+d[1]*d[1]+d[2]*d[2]);return d.map(v=>v/l);}
+export function measureError(body,steps=4){
+  const layout=orogenLayout(body),f=layout.coarseBandField(48000,32000),N=f.faceCells,B=N/8;
+  f.materialiseAll();
+  let max=0,count=0,worst=null,boundary=Infinity;
+  for(let q=0;q<f.blockTable.length;q++){
+    const block=f.blockTable[q]-1;if(block<0)continue;
+    const face=Math.floor(q/(B*B)),i0=q%B*8,j0=Math.floor(q/B)%B*8;
+    for(let j=0;j<8;j++)for(let i=0;i<8;i++){
+      const bit=j*8+i;if(!(f.masks[block*2+(bit>>>5)]&(1<<(bit&31))))continue;
+      for(let c=f.offsets[block];c<f.offsets[block+1];c++){
+        const b=layout.belts[f.candidates[c]],p=c*81+j*9+i,H=Math.min(b.halfWidthM,48000);
+        for(let y=0;y<=steps;y++)for(let x=0;x<=steps;x++){
+          const wx=x/steps,wy=y/steps,d=nodeDirection(face,i0+i+wx,j0+j+wy,N),z=d.reduce((a,v,k)=>a+v*b.centre[k],0),xx=d.reduce((a,v,k)=>a+v*b.tangent[k],0),u=xx/(Math.sqrt(xx*xx+z*z)+z);
+          if(Math.abs(u/b.uLimit)>=1)continue;
+          const exact=referenceDistance(b,d,body.radiusM)/H;if(Math.abs(exact)>1.25)continue;
+          const a=f.distances,sd=(a[p]*(1-wx)+a[p+1]*wx)*(1-wy)+(a[p+9]*(1-wx)+a[p+10]*wx)*wy,error=Math.abs(sd-exact);count++;
+          if(error>max){max=error;worst={belt:f.candidates[c],face,i:i0+i,j:j0+j,u:u/b.uLimit,exact,sd};}
+        }
+      }
+    }
+  }
+  return {max,count,worst};
+}
+// Zero-margin mutation: exactly the production field/lookup, changing only the composition's delta argument.
+let mutantSource=readFileSync(new URL('../../src/terrain.ts',import.meta.url),'utf8');
+const deltaCall='massifCoarseRidgeTermM(main,sd,bs[k+8]';
+if(!mutantSource.includes(deltaCall))throw new Error('mutation hook lost delta argument');
+mutantSource=mutantSource.replace(deltaCall,'massifCoarseRidgeTermM(main,sd,0')
+ .replace(/from (['"])(\.\/[^'"]+)\1/g,(_,q,path)=>`from ${q}${new URL('../../src/'+path.slice(2),import.meta.url).href}${q}`);
+const mutantTerrain=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(mutantSource)).toString('base64'));
+export const mutantSampler=body=>mutantTerrain.terrainSampler(body,[],undefined,false,0,undefined,true,{mountains:true,lodLevel:0});
+export function boundaryChecks(body,check){
+ const field=orogenLayout(body).coarseBandField(48000,32000),N=field.faceCells,B=N/8,coarse=sampler(body,{mountains:true,lodLevel:0}),plain=sampler(body,{mountains:false});let count=0;
+ for(let q=0;q<field.blockTable.length;q++){
+  const block=field.blockTable[q]-1;if(block<0)continue;const face=Math.floor(q/(B*B)),i0=q%B*8,j0=Math.floor(q/B)%B*8;
+  for(let j=0;j<8;j++)for(let i=0;i<8;i++){
+   const bit=j*8+i;if(!(field.masks[2*block+(bit>>>5)]&(1<<(bit&31))))continue;
+   for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]]){
+    if(lookup(field,nodeDirection(face,i0+i+.5+dx,j0+j+.5+dy,N)).length)continue;
+    for(const step of [0,.25,.5,.75,1]){
+     const x=i0+i+(dx?(.5+.5*dx):step),y=j0+j+(dy?(.5+.5*dy):step),d=nodeDirection(face,x,y,N);check(coarse(d),plain(d));count++;
+    }
+   }
+  }
+ }
+ return count;
+}
+test-results/mountains\t6-baked\fix-profile.mjs
+test-results/mountains\t6-baked\fix-profile-before.jsonl
+test-results/mountains\t6-baked\fix-profile-after.jsonl
+test-results/mountains\t6-baked\diag\c1-profile.mjs
+test-results/mountains\t3\profile-selftime.mjs
+test-results/mountains\t3\profile-maithea-l0-l5.txt
+test-results/mountains\t3\profile-arm.mjs
+test-results/mountains\t3\fix-profile-summary.mjs
+test-results/mountains\t3\fix-noise-profile.txt
+test-results/mountains\t3\fix-noise-profile.json
+test-results/mountains\t3\fix-final-profile.txt
+test-results/mountains\t3\fix-final-profile.json
+test-results/mountains\t4\orbit-steady-profile.mjs
+test-results/mountains\t4\orbit-profile.mjs
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-Content src/mountain-layout.ts | Select-Object -Skip 105 -First 100; Get-Content src/mountain-layout.ts | Select-Object -Skip 435 -First 140; Get-Content test-results/mountains/t6-baked/fix-profile.mjs; Get-Content test-results/mountains/t6-baked/r2/before-layout.txt | Select-Object -Skip 525 -First 65; Get-Content tests/mountain-coarse-field.test.mjs | Select-Object -First 100' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 62ms:
+// stays on one belt and nearly always in one noise cell. Pinned against noise() in
+// tests/mountain-layout.test.mjs.
+const OFFSET_NOISE_Y=37,OFFSET_NOISE_Z=19;
+function cornerHash(x: number,k: number) {
+  let h=Math.imul(x,0x9e3779b1)^k;
+  h=Math.imul(h^(h>>>16),0x85ebca6b);
+  h=Math.imul(h^(h>>>13),0xc2b2ae35);
+  h^=h>>>16;
+  return (h>>>0)/4294967295;
+}
+let noiseSeedCached=NaN,noiseCellCached=NaN,noiseH0=0,noiseH1=0;
+export function offsetNoise(x: number,s: number) {
+  const ix=Math.floor(x);
+  let a=x-ix;
+  a=a*a*(3-2*a);
+  if(ix!==noiseCellCached || s!==noiseSeedCached){
+    const k=Math.imul(OFFSET_NOISE_Y,0x85ebca77)^Math.imul(OFFSET_NOISE_Z,0xc2b2ae3d)^Math.imul(s,0x27d4eb2f);
+    noiseH0=cornerHash(ix,k);noiseH1=cornerHash(ix+1,k);noiseCellCached=ix;noiseSeedCached=s;
+  }
+  return noiseH0*(1-a)+noiseH1*a;
+}
+// One cubic value-noise octave. du/dtheta=(1+u*u)/2, so construction
+// multiplies the minimum wavelength by (1+uLimit*uLimit): even at the
+// endpoints its local base-arc wavelength is at least 16 half widths.
+function offset(b: OrogenBelt,u: number) {
+  const v=u/b.uLimit;
+  return b.bendM*v*v+b.amplitudeM*(2*offsetNoise(u*2/b.wavelength+13,b.noiseSeed)-1);
+}
+// Exact half-angle along coordinate, unchanged by transverse displacement.
+// This point has pole.d = offset/R and x/(sqrt(x*x+z*z)+z) = u.
+function centreline(b: OrogenBelt,u: number,R: number): V3 {
+  centrelineAt(b,u,R);
+  return [clX,clY,clZ];
+}
+// centreline() without the array: the point in (clX, clY, clZ), the same expressions.
+let clX=0,clY=0,clZ=0;
+function centrelineAt(b: OrogenBelt,u: number,R: number) {
+  const y=offset(b,u)/R,r=Math.sqrt(1-y*y),den=1+u*u,x=r*2*u/den,z=r*(1-u*u)/den,T=b.tangent,C=b.centre,P=b.pole;
+  clX=x*T[0]+z*C[0]+y*P[0];clY=x*T[1]+z*C[1]+y*P[1];clZ=x*T[2]+z*C[2]+y*P[2];
+}
+// Fixed Gauss-Newton step count of the foot-point solve (orogen-layout-2, cost plan T2; chosen by
+// measurement, docs/mountain-layout-v1.md "In-massif foot-point solve").
+export const FOOT_POINT_STEPS=4;
+let footSteps=FOOT_POINT_STEPS;
+// Measurement only (scripts/mountain-layout-foot.mjs): run the solve with another step count.
+export function setFootPointStepsForMeasurement(n: number) {footSteps=n;}
+// The projection of d onto b's displaced centreline (orogen-layout-2, cost plan T2): the signed distance,
+// gradient = cross(d, tangent) and the foot u in the trDistance/trG*/trU scalars (no allocation).
+// In the belt frame d = x T + z C + py P, and the centreline point at u is p = (r c, r s, y) with
+// y = o(u)/R, r = sqrt(1 - y^2), c = 2u/(1+u^2), s = (1-u^2)/(1+u^2): orogen-layout-1's exact half-angle
+// point, with o = offset(b, u) = bendM (u/U)^2 + A (2 noise(X) - 1), X = 2u/lambda + 13.
+// Exact derivative: noise(X) = h0 (1 - m) + h1 m with a = X - floor(X) and m = a^2 (3 - 2a) (offsetNoise),
+// so d noise/du = (h1 - h0) 6a(1 - a) 2/lambda (continuous: m' vanishes at both cell ends), and
+// o' = 2 bendM u/U^2 + 24 A (h1 - h0) a(1 - a)/lambda. With w = 2/(1+u^2) (dc/du = w s, ds/du = -w c),
+// y' = o'/R and r' = -y y'/r: p' = (r' c + r w s, r' s - r w c, y'), so for the residual e = d - p
+//   e.p' = r' (q - r) + r w t + (py - y) y',  |p'|^2 = r'^2 + r^2 w^2 + y'^2,
+// with q = x c + z s and t = x s - z c. FOOT_POINT_STEPS Gauss-Newton steps u += e.p'/|p'|^2 (minimising
+// the squared chord, the same minimiser as the great-circle distance) from the sample's own u, each
+// clamped to the finite arc; no data-dependent exit. sign is the side of the displaced centreline at the
+// sample's u (orogen-layout-1's rule).
+let trDistance=0,trG0=0,trG1=0,trG2=0,trU=0;
+function transverse(b: OrogenBelt,d: V3,R: number,u: number,x: number,z: number,py: number,sign: number) {
+  const U=b.uLimit,iU=1/U,iR=1/R,k2=2/b.wavelength,bend=b.bendM,amp=b.amplitudeM,seed=b.noiseSeed;
+  let y=0,yp=0,r=1,rp=0,w=2,c=0,s=1;
+  for(let i=0;i<=footSteps;i++){
+    const v=u*iU,X=u*k2+13,n=offsetNoise(X,seed),a=X-Math.floor(X);
+    y=(bend*v*v+amp*(2*n-1))*iR;yp=(2*bend*v*iU+12*amp*(noiseH1-noiseH0)*a*(1-a)*k2)*iR;
+    r=Math.sqrt(1-y*y);rp=-y*yp/r;w=2/(1+u*u);c=u*w;s=(1-u*u)*w*.5;
+    if(i===footSteps)break;
+    const rw=r*w,q=x*c+z*s,t=x*s-z*c;
+    u=Math.max(-U,Math.min(U,u+(rp*(q-r)+rw*t+(py-y)*yp)/(rp*rp+rw*rw+yp*yp)));
+  }
+  // The chord in world coordinates, as orogen-layout-1 measured it: the belt centres are unit only to
+  // about 3e-11 (|C|^2 - 1 down to -5.5e-11), so the frame residual (x - r c, z - r s, py - y) would be
+  // off by up to R x 3e-11 (measured 7e-6 m at the 1% gate's worst sample); the steps above only pick u.
+  const T=b.tangent,C=b.centre,P=b.pole,pT=r*c,pC=r*s,d0=d[0],d1=d[1],d2=d[2];
+  const e0=d0-(pT*T[0]+pC*C[0]+y*P[0]),e1=d1-(pT*T[1]+pC*C[1]+y*P[1]),e2=d2-(pT*T[2]+pC*C[2]+y*P[2]),chord2=e0*e0+e1*e1+e2*e2;
+  // 2 asin(chord/2), through fifth order. For supported W/R <= .045,
+  // omitted angular term < 3e-13 radians (< 0.000003 metres here).
+  trDistance=sign*R*Math.sqrt(chord2)*(1+chord2/24+3*chord2*chord2/640);
+  // tangent = p' in world coordinates; gradient = cross(d, tangent).
+  const kT=rp*c+r*w*s,kC=rp*s-r*w*c;
+  const t0=kT*T[0]+kC*C[0]+yp*P[0],t1=kT*T[1]+kC*C[1]+yp*P[1],t2=kT*T[2]+kC*C[2]+yp*P[2];
+  trG0=d1*t2-d2*t1;trG1=d2*t0-d0*t2;trG2=d0*t1-d1*t0;trU=u;
+}
+// beyondChord's bound (below) from the sample's pole coordinate py and its centreline offset
+// off = offset(b, u) at its own u: true only when every point of b's displaced arc is at chord >= rho.
+function farFromArc(b: OrogenBelt,py: number,off: number,R: number,rho: number) {
+  const S=2*Math.abs(b.bendM)/(b.uLimit*R)+6*b.amplitudeM/(b.wavelength*R),H=(Math.abs(b.bendM)+b.amplitudeM)/R;
+  const a=Math.sqrt(1-H*H),s=rho/a;
+  if(!(s<.5))return false;
+  const T2=s*s/(1-s*s),am=a*(1-T2/6),k=S*(1+b.uLimit*b.uLimit)/2;
+  const Y=Math.abs(py-off/R);
+  // Margins: relative 1e-9 for rounding; absolute 1e-9 (was 1e-12) because the belt centres are unit only
+  // to |C| - 1 >= -2.9e-11 (164,328 belts of 4173 catalogue bodies), which moves the frame coordinates'
+  // chord off the world-space chord by up to 2(1 - |C|) < 6e-11.
+  return Y*am>=(rho*(1+1e-9)+1e-9)*Math.sqrt(k*k+am*am);
+}
+// The last positive value()'s projection, reused by sampleWithA0 for the
+// winning belt (footprints never overlap, so it is normally the only one).
+  let face,m,s,t;
+  if(ax>=ay && ax>=az){face=d[0]>0?0:1;m=ax;s=d[1];t=d[2];}
+  else if(ay>=az){face=d[1]>0?2:3;m=ay;s=d[0];t=d[2];}
+  else{face=d[2]>0?4:5;m=az;s=d[0];t=d[1];}
+  const i=Math.max(0,Math.min(N-1,Math.floor((s/m+1)*half))),j=Math.max(0,Math.min(N-1,Math.floor((t/m+1)*half)));
+  return (face*N+j)*N+i;
+}
+
+/* Sparse 8x8 cell blocks. Each candidate has 9x9 signed-distance nodes; shared nodes are
+ * evaluated identically, including across cube faces. No direction-taking lookup is exported. */
+export interface CoarseBandField {
+  readonly faceCells: number; readonly blockTable: Int32Array; readonly masks: Uint32Array;
+  readonly offsets: Uint32Array; readonly candidates: Uint16Array; readonly distances: Float32Array;
+  /* Per belt: tangent xyz, centre xyz, uLimit, halfWidthM, delta (units of H). */
+  readonly scalars: Float64Array;
+  readonly bytes: number; readonly activeCells: number; readonly multiBeltCells: number;
+  /* Check only after the active-cell mask. Materialisers accept block integers, never caller directions. */
+  readonly built: Uint8Array;
+  materialiseBlock(block: number): void;
+  materialiseAll(): void;
+}
+function coarseDirection(face: number,i: number,j: number,N: number,d: V3) {
+  const k=face>>>1;
+  d[k]=face&1?-1:1;d[BAND_AXES_A[k]]=2*i/N-1;d[BAND_AXES_B[k]]=2*j/N-1;
+  // World-axis summation order is canonical on edges/corners, independent of the owning face.
+  const l=Math.sqrt(d[0]*d[0]+d[1]*d[1]+d[2]*d[2]);
+  d[0]/=l;d[1]/=l;d[2]/=l;
+}
+// Index of the least significant set bit, integer arithmetic only.
+function lowBitIndex(bits: number) {
+  let v=bits&-bits,n=0;
+  if(v&0xffff0000){n+=16;v>>>=16;}if(v&0xff00){n+=8;v>>>=8;}
+  if(v&0xf0){n+=4;v>>>=4;}if(v&0xc){n+=2;v>>>=2;}if(v&2)n++;
+  return n;
+}
+function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBandGrid,maxDistM: number,minHalfWidthM: number): CoarseBandField {
+  const N=g.faceCells/2,B=N/8,table=new Int32Array(6*B*B),flags=new Uint32Array(12*B*B),base=new Uint32Array(12*B*B),d: V3=[0,0,0];
+  const mark=(face: number,i: number,j: number)=>{
+    if(i<0||j<0||i>=N||j>=N){
+      coarseDirection(face,i+.5,j+.5,N,d);
+      const c=bandCellIndex(d,N);face=Math.floor(c/(N*N));j=Math.floor(c/N)%N;i=c%N;
+    }
+    const block=(face*B+(j>>>3))*B+(i>>>3),bit=(j&7)*8+(i&7);
+    flags[block*2+(bit>>>5)]|=1<<(bit&31);
+  };
+  // Union each covered 2x2 T1 cell, then dilate by one field cell (also over face edges).
+  for(let w=0;w<g.bits.length;w++){
+    let bits=g.bits[w];
+    while(bits){const bit=lowBitIndex(bits),c=w*32+bit,face=Math.floor(c/(g.faceCells*g.faceCells));
+      const j=(Math.floor(c/g.faceCells)%g.faceCells)>>>1,i=(c%g.faceCells)>>>1;
+      const q=(face*B+(j>>>3))*B+(i>>>3),v=(j&7)*8+(i&7);base[2*q+(v>>>5)]|=1<<(v&31);
+      bits&=bits-1;
+    }
+  }
+  for(let q=0;q<table.length;q++)for(let h=0;h<2;h++){
+    let bits=base[2*q+h];
+    while(bits){const bit=lowBitIndex(bits)+32*h,face=Math.floor(q/(B*B)),i=q%B*8+(bit&7),j=Math.floor(q/B)%B*8+(bit>>>3);
+      if(i>0&&j>0&&i<N-1&&j<N-1){
+        // Interior cell: the 3x3 neighbourhood stays on this face (the same cells mark() would set).
+        for(let y=j-1;y<=j+1;y++)for(let x=i-1;x<=i+1;x++){
+          const block=(face*B+(y>>>3))*B+(x>>>3),bit=(y&7)*8+(x&7);flags[block*2+(bit>>>5)]|=1<<(bit&31);
+        }
+      } else for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)mark(face,i+dx,j+dy);
+      bits&=bits-1;
+    }
+  }
+  const masks: number[]=[],offsets=[0],candidates: number[]=[],scalars=new Float64Array(belts.length*9);
+  // Measured bound, not an analytic curvature claim: 5x5 taps in EVERY active cell,
+  // all four worlds, |distance| <= 1.25H and |u/uLimit| < 1. Worst signed interpolation
+  // errors: .076814443 / .060304457 / .034594238 / .056697924 H (M/S/R/L).
+  // .16 exceeds twice the worst, including Float32 storage. Endpoint-clamped projections
+  // dominate; a smooth infinite-curve curvature bound alone would miss those cells.
+  // Reproduce with test-results/mountains/t6-baked/interpolation-error.mjs.
+  for(let k=0;k<belts.length;k++){
+    const b=belts[k];scalars.set([...b.tangent,...b.centre,b.uLimit,b.halfWidthM,.16],k*9);
+  }
+  // Per-belt block-test constants, hoisted (the same expressions as before, evaluated once per belt).
+  const eligible=new Uint8Array(belts.length),capOf=new Float64Array(belts.length),slabOf=new Float64Array(belts.length);
+  for(let k=0;k<belts.length;k++){
+    const b=belts[k];eligible[k]=b.halfWidthM<minHalfWidthM?0:1;capOf[k]=capZ(b,R);
+    slabOf[k]=(b.halfWidthM*b.gradientMax+Math.abs(b.bendM)+b.amplitudeM)/R;
+  }
+  let activeCells=0,multiBeltCells=0;
+  for(let q=0;q<table.length;q++){
+    if(!(flags[2*q]||flags[2*q+1]))continue;
+    table[q]=offsets.length;
+    masks.push(flags[2*q],flags[2*q+1]);
+    const face=Math.floor(q/(B*B)),j0=(Math.floor(q/B)%B)*8,i0=(q%B)*8;
+    coarseDirection(face,i0+4,j0+4,N,d);
+    const cx=d[0],cy=d[1],cz=d[2],rho=8*1.4142135623730951/N+1e-9;
+    let count=0,cells=0;
+    for(let h=0;h<2;h++){let v=flags[2*q+h];while(v){cells++;v&=v-1;}}
+    activeCells+=cells;
+    for(let k=0;k<belts.length;k++){
+      if(!eligible[k])continue;
+      const b=belts[k],C=b.centre,P=b.pole;
+      if(cx*C[0]+cy*C[1]+cz*C[2]+rho<capOf[k])continue;
+      if(Math.abs(cx*P[0]+cy*P[1]+cz*P[2])-rho>slabOf[k])continue;
+      candidates.push(k);count++;
+    }
+    if(count>1)multiBeltCells+=cells;
+    offsets.push(candidates.length);
+  }
+  const fieldMasks=Uint32Array.from(masks),fieldOffsets=Uint32Array.from(offsets),fieldCandidates=Uint16Array.from(candidates);
+  const values=new Float32Array(candidates.length*81);
+  const blockCount=offsets.length-1,built=new Uint8Array(blockCount),blockPositions=new Uint32Array(blockCount);
+  for(let q=0;q<table.length;q++)if(table[q])blockPositions[table[q]-1]=q;
+  // Each block owns its corners. Recompute shared nodes with the same integer coordinates;
+  // no neighbour's materialisation order or scratch direction can affect a stored value.
+  const nodeRows=new Uint16Array(9);
+  const materialiseBlock=(block: number): void=>{
+    if(built[block])return;
+    const q=blockPositions[block],face=Math.floor(q/(B*B)),j0=(Math.floor(q/B)%B)*8,i0=(q%B)*8;
+    nodeRows.fill(0);
+    for(let j=0;j<8;j++){
+      const row=(fieldMasks[2*block+(j>>>2)]>>>((j&3)*8))&255,corners=row|(row<<1);
+      nodeRows[j]|=corners;nodeRows[j+1]|=corners;
+    }
+    for(let c=fieldOffsets[block];c<fieldOffsets[block+1];c++){
+      const b=belts[fieldCandidates[c]],C=b.centre,P=b.pole,H=Math.min(b.halfWidthM,maxDistM);
+      for(let j=0;j<=8;j++)for(let i=0;i<=8;i++){
+        if(!(nodeRows[j]&(1<<i)))continue;
+        coarseDirection(face,i0+i,j0+j,N,d);
+        const x=dot(d,b.tangent),z=dot(d,C),py=dot(d,P),u=x/(Math.sqrt(x*x+z*z)+z);
+        transverse(b,d,R,u,x,z,py,py*R-offset(b,u)<0?-1:1);
+        values[c*81+j*9+i]=trDistance/H;
+      }
+    }
+    built[block]=1;
+  };
+  const materialiseAll=(): void=>{for(let block=0;block<blockCount;block++)materialiseBlock(block);};
+  const field={faceCells:N,blockTable:table,masks:fieldMasks,offsets:fieldOffsets,
+    candidates:fieldCandidates,distances:values,scalars,activeCells,multiBeltCells,built,materialiseBlock,materialiseAll};
+  const bytes=table.byteLength+field.masks.byteLength+field.offsets.byteLength+field.candidates.byteLength+field.distances.byteLength+scalars.byteLength+built.byteLength+blockPositions.byteLength+nodeRows.byteLength;
+  return Object.freeze({...field,bytes});
+}
+
+/* Build once; sample accepts unit directions. landProbe optionally replaces the
+ * fixed equal-area construction probe (directions, not preclassified heights). */
+export function buildOrogenLayout({seed,radiusM:R,a0,landProbe,sampleA0=a0}: {
+import {readFileSync} from 'node:fs';
+import {stripTypeScriptTypes} from 'node:module';
+import {execFileSync} from 'node:child_process';
+import {waterWorlds} from '../../../tests/terrain-climate-fixtures.mjs';
+if(!process.argv[3]){for(let i=0;i<4;i++)process.stdout.write(execFileSync(process.execPath,[import.meta.filename,process.argv[2],String(i)],{encoding:'utf8'}));}
+else {
+ let s=readFileSync(new URL(process.argv[2]==='before'?'./fix-before-layout.txt':'../../../src/mountain-layout.ts',import.meta.url),'utf8');
+ s=s.replace('const values=new Float32Array(candidates.length*81);','const nodeStart=performance.now();let nodeCount=0;const values=new Float32Array(candidates.length*81);')
+ .replace('transverse(b,d,R,u,x,z,py,py*R-offset(b,u)<0?-1:1);','nodeCount++;transverse(b,d,R,u,x,z,py,py*R-offset(b,u)<0?-1:1);')
+ .replace('const field={faceCells:N,','globalThis.fieldProfile={nodeCount,nodeMs:performance.now()-nodeStart};const field={faceCells:N,')
+ .replace(/from (['"])(\.\/[^'"]+)\1/g,(_,q,p)=>`from ${q}${new URL('../../../src/'+p.slice(2),import.meta.url).href}${q}`);
+ const {orogenLayout}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(s)).toString('base64'));
+ const body=waterWorlds()[+process.argv[3]],l=orogenLayout(body);l.bandGrid(48000,32000);
+ const start=performance.now(),f=l.coarseBandField(48000,32000),ms=performance.now()-start,p=globalThis.fieldProfile;
+ console.log(JSON.stringify({world:body.name,ms,...p,nsPerNode:p.nodeMs*1e6/p.nodeCount,otherMs:ms-p.nodeMs,allocatedNodes:f.distances.length}));
+}
+      if(!eligible[k])continue;
+      const b=belts[k],C=b.centre,P=b.pole;
+      if(cx*C[0]+cy*C[1]+cz*C[2]+rho<capOf[k])continue;
+      if(Math.abs(cx*P[0]+cy*P[1]+cz*P[2])-rho>slabOf[k])continue;
+      candidates.push(k);count++;
+    }
+    if(count>1)multiBeltCells+=cells;
+    offsets.push(candidates.length);
+  }
+  const values=new Float32Array(candidates.length*81);
+  // Per block, the 9 node rows (bit i = node i) that active cells read.
+  const rowsOf=new Uint16Array((offsets.length-1)*9);
+  for(let q=0;q<table.length;q++){
+    const block=table[q]-1;if(block<0)continue;
+    const face=Math.floor(q/(B*B)),j0=(Math.floor(q/B)%B)*8,i0=(q%B)*8,nodeRows=block*9;
+    // Only corners of active cells can be read. Preserve every candidate at those
+    // corners; a neighbouring cell's rejection cannot discard a shared node.
+    for(let j=0;j<8;j++){
+      const row=(masks[2*block+(j>>>2)]>>>((j&3)*8))&255,corners=row|(row<<1);
+      rowsOf[nodeRows+j]|=corners;rowsOf[nodeRows+j+1]|=corners;
+    }
+    // Same-face neighbours already built (left: q-1, below: q-B) share this block's column 0 / row 0 nodes:
+    // the node direction is the same integer node (i0 + 0 = (i0 - 8) + 8), so its value is copied, not recomputed.
+    const left=i0>0?table[q-1]-1:-1,below=j0>0?table[q-B]-1:-1;
+    for(let c=offsets[block];c<offsets[block+1];c++){
+      const k=candidates[c],b=belts[k],C=b.centre,P=b.pole;
+      const H=Math.min(b.halfWidthM,maxDistM);
+      let cl=-1,cb=-1;
+      if(left>=0)for(let e=offsets[left];e<offsets[left+1];e++)if(candidates[e]===k)cl=e;
+      if(below>=0)for(let e=offsets[below];e<offsets[below+1];e++)if(candidates[e]===k)cb=e;
+      for(let j=0;j<=8;j++)for(let i=0;i<=8;i++){
+        if(!(rowsOf[nodeRows+j]&(1<<i)))continue;
+        if(i===0&&cl>=0&&(rowsOf[left*9+j]&256)){values[c*81+j*9]=values[cl*81+j*9+8];continue;}
+        if(j===0&&cb>=0&&(rowsOf[below*9+8]&(1<<i))){values[c*81+i]=values[cb*81+72+i];continue;}
+        coarseDirection(face,i0+i,j0+j,N,d);
+        const x=dot(d,b.tangent),z=dot(d,C),py=dot(d,P),u=x/(Math.sqrt(x*x+z*z)+z);
+        transverse(b,d,R,u,x,z,py,py*R-offset(b,u)<0?-1:1);
+        values[c*81+j*9+i]=trDistance/H;
+      }
+    }
+  }
+  const field={faceCells:N,blockTable:table,masks:Uint32Array.from(masks),offsets:Uint32Array.from(offsets),
+    candidates:Uint16Array.from(candidates),distances:values,scalars,activeCells,multiBeltCells};
+  const bytes=table.byteLength+field.masks.byteLength+field.offsets.byteLength+field.candidates.byteLength+field.distances.byteLength+scalars.byteLength;
+  return Object.freeze({...field,bytes});
+}
+
+/* Build once; sample accepts unit directions. landProbe optionally replaces the
+ * fixed equal-area construction probe (directions, not preclassified heights). */
+export function buildOrogenLayout({seed,radiusM:R,a0,landProbe,sampleA0=a0}: {
+  seed: string; radiusM: number; a0: Coordinate; landProbe?: readonly V3[]; sampleA0?: Coordinate;
+}) {
+  const random=rng(seed+'/'+OROGEN_LAYOUT_CONSTRUCTION_SEED),belts: OrogenBelt[]=[],axes: V3[][]=[];
+  const probe: V3[]=landProbe ? [...landProbe] : [];
+  if(!landProbe)for(let i=0;i<OROGEN_LAYOUT.probeCount;i++){
+    const y=1-2*(i+.5)/OROGEN_LAYOUT.probeCount,r=Math.sqrt(1-y*y),p=i*2.399963229728653;
+    probe.push([detCos(p)*r,y,sine(p)*r]);
+  }
+  const land=probe.filter(d=>a0(d)>0),covered=new Uint8Array(land.length);
+  let count=0,maxHalfWidthM=0,majorCount=0;
+  for(let k=0;k<OROGEN_LAYOUT.candidates && count<land.length*OROGEN_LAYOUT.targetShare;k++){
+    const y=2*random()-1,r=Math.sqrt(1-y*y),az=random()*6.283185307179586;
+    const c: V3=[detCos(az)*r,y,sine(az)*r],alt=a0(c);
+    const placement=k%2===0?'margin':'interior';
+    if(alt<800 || (placement==='margin' && alt>3000))continue;
+import {test} from 'node:test';
+import {readFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+import {hash64,noise,macroHeightCode} from '../src/catalog.ts';
+import {buildOrogenLayout,continentalA0,constructionA0} from '../src/mountain-layout.ts';
+import {massifCoarseRidgeTermM,coarseBeltValue,massifEnvelopeM,composeRidgeTermM,envelopeBlendWeight} from '../src/mountain-envelope.ts';
+import {waterWorlds,fib,orogenLayout,sampler,exactSampler,directions,lookup,statistics,measureError,nodeDirection,referenceDistance,mutantSampler,boundaryChecks,unskippedTerrain,voxelSkip} from './helpers/mountain-coarse-field.mjs';
+const worlds=waterWorlds(),ss=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
+const arrays=['blockTable','masks','offsets','candidates','distances','scalars'];
+// Unused nodes are zero-filled. Only corners of active cells belong to the field.
+function nodeIsRead(f,block,i,j){
+  for(let y=Math.max(0,j-1);y<=Math.min(7,j);y++)for(let x=Math.max(0,i-1);x<=Math.min(7,i);x++){
+    const bit=y*8+x;if(f.masks[block*2+(bit>>>5)]&(1<<(bit&31)))return true;
+  }
+  return false;
+}
+const sameFields=(a,b)=>{assert.deepEqual(Object.keys(a),Object.keys(b));for(const k of Object.keys(a)){if(Array.isArray(a[k]))a[k].forEach((v,i)=>assert.ok(Object.is(v,b[k][i]),k));else assert.ok(Object.is(a[k],b[k]),k);}};
+
+test('private continental kernels are Object.is identical: 20,000 directions x four worlds',()=>{
+  // constructionA0 (private kernels, layout construction) and continentalA0 (catalog kernels, per-sample `sample`).
+  for(const body of worlds){const a0=continentalA0(body),c0=constructionA0(body),code=Number(hash64(body.seed+'/macro-v1')&0xffffffffn),sea=.37+body.water*.22;
+    for(let i=0;i<20000;i++){const d=fib(i,20000),n=(f,s)=>noise(d[0]*f+13,d[1]*f+37,d[2]*f+19,code+s),macro=macroHeightCode(code,d),expected=body.water?(macro+(n(42,5)-.5)*.012+(n(90,6)-.5)*.003-sea)*47000:(macro-.46)*44000;
+      assert.ok(Object.is(a0(d),expected));assert.ok(Object.is(c0(d),expected));}
+  }
+});
+test('HARD: the truth core\'s inline voxel prefilter changes no value (Object.is, every field, four worlds)',()=>{
+  // Production against production with only the prefilter bypassed; 6,000 Fibonacci directions plus four 41x41
+  // axis rasters per world (the rasters sit on massif axes, so both branches of the prefilter run).
+  let skipped=0,called=0;
+  for(const body of worlds){
+    const fast=sampler(body,{mountains:true}),slow=unskippedTerrain.terrainSampler(body,[],undefined,false,0,undefined,true,{mountains:true});
+    const g=orogenLayout(body).bandGrid(48000,32000),K=128,H=K/2;
+    for(const d of directions(body,6000)){
+      sameFields(fast(d),slow(d));
+      const v=(Math.max(0,Math.min(K-1,Math.floor((d[0]+1)*H)))*K+Math.max(0,Math.min(K-1,Math.floor((d[1]+1)*H))))*K+Math.max(0,Math.min(K-1,Math.floor((d[2]+1)*H)));
+      if(g.all||(g.voxels[v>>>5]&(1<<(v&31))))called++;else skipped++;
+    }
+  }
+  assert.ok(skipped>1000&&called>1000,`both prefilter branches exercised (skipped ${skipped}, called ${called})`);
+  assert.ok(readFileSync(new URL('../src/terrain.ts',import.meta.url),'utf8').includes(voxelSkip));
+});
+test('g² lemma on dense grid, and conservative composition with exact distances / zero margin',()=>{
+  for(let i=0;i<=500;i++)for(let j=0;j<=500;j++){const v=i/500,g=j/500;assert.ok(envelopeBlendWeight(v*g)+1e-15>=g*g*envelopeBlendWeight(v));}
+  for(const main of [0,100,900,3640,9000])for(const a0 of [0,1,25,50,99,100,4000])for(const lf of [0,.01,.5,1])for(const tau of [0,.25,1,2])for(const W of [32000,48000,220000])for(let i=-40;i<=40;i++)for(const u of [0,.74,.8,.9,.99,1,1.01]){
+    const sd=i/32,dist=Math.abs(sd)*Math.min(W,48000),v=coarseBeltValue(dist,W,u),belt=v*ss(0,100,a0),exact=composeRidgeTermM(main,belt,dist,W,massifEnvelopeM(belt,dist,W,a0,lf,tau,'water')),coarse=massifCoarseRidgeTermM(main,sd,0,W,u,a0,lf,tau);
+    assert.ok(coarse>=exact,`${coarse} < ${exact}: ${[main,a0,lf,tau,W,sd,u]}`);
+    assert.ok(coarse>=0);
+  }
+  assert.ok(Object.is(massifCoarseRidgeTermM(-0,2,.16,48000,0,1000,1,1),-0));
+});
+for(const body of worlds){
+  test(`${body.name}: sparse field bytes deterministic across independent builds and sample orders`,()=>{
+    const make=()=>buildOrogenLayout({seed:body.seed,radiusM:body.radiusM,a0:continentalA0(body)}),a=make(),b=make();
+    for(let i=0;i<32;i++)a.sample(fib(i,32));
+    const af=a.coarseBandField(48000,32000),bf=b.coarseBandField(48000,32000);
+    for(let i=31;i>=0;i--)b.sample(fib(i,32));
+    assert.equal(a.coarseBandField(48000,32000),af);assert.equal(b.coarseBandField(48000,32000),bf);
+    assert.equal(af.faceCells,a.bandGrid(48000,32000).faceCells/2);assert.ok(af.bytes<=8*1024*1024);
+    assert.ok(af.built.every(v=>v===0));assert.ok(bf.built.every(v=>v===0));
+    assert.ok(af.distances.every(v=>Object.is(v,0)));
+    af.materialiseAll();
+    for(let block=bf.built.length-1;block>=0;block--)bf.materialiseBlock(block);
+    assert.ok(af.built.every(v=>v===1));assert.ok(bf.built.every(v=>v===1));
+    bf.materialiseAll(); // Idempotent, including after reverse construction.
+    for(const k of arrays)assert.deepEqual(Buffer.from(af[k].buffer),Buffer.from(bf[k].buffer),k);
+    // One read corner per block/candidate against the independent eager node expression.
+    const N=af.faceCells,B=N/8;
+    let checked=0;
+    for(let q=0;q<af.blockTable.length;q++){
+      const block=af.blockTable[q]-1;if(block<0)continue;
+      let n=0;while(n<81&&!nodeIsRead(af,block,n%9,Math.floor(n/9)))n++;
+      assert.ok(n<81);
+      const d=nodeDirection(Math.floor(q/(B*B)),q%B*8+n%9,Math.floor(q/B)%B*8+Math.floor(n/9),N);
+      for(let c=af.offsets[block];c<af.offsets[block+1];c++){
+        const belt=a.belts[af.candidates[c]],expected=Math.fround(referenceDistance(belt,d,body.radiusM)/Math.min(belt.halfWidthM,48000));
+        assert.ok(Object.is(af.distances[c*81+n],expected));checked++;
+      }
+    }
+    assert.ok(checked>0);
+  });
+  test(`${body.name}: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity`,t=>{
+    const f=orogenLayout(body).coarseBandField(48000,32000),N=f.faceCells,B=N/8,layout=orogenLayout(body),seen=new Map(),coarse=sampler(body,{mountains:true,lodLevel:0});let matched=0,nodeChecks=0;
+    f.materialiseAll();
+    for(let q=0;q<f.blockTable.length;q++){
+      const block=f.blockTable[q]-1;if(block<0)continue;const face=Math.floor(q/(B*B)),i0=q%B*8,j0=Math.floor(q/B)%B*8;
+      if(i0!==0&&j0!==0&&i0+8!==N&&j0+8!==N)continue;
+      for(let j=0;j<=8;j++)for(let i=0;i<=8;i++){
+        if(!nodeIsRead(f,block,i,j))continue;
+        const x=i0+i,y=j0+j;if(x!==0&&y!==0&&x!==N&&y!==N)continue;
+        const d=nodeDirection(face,x,y,N);
+        for(let c=f.offsets[block];c<f.offsets[block+1];c++){
+          const belt=f.candidates[c],key=belt+':'+d.join(','),value=f.distances[c*81+j*9+i];
+          if(seen.has(key)){assert.ok(Object.is(value,seen.get(key)));matched++;}else seen.set(key,value);
+        }
+        const o=layout.sampleWithA0(d,1e9);
+        if(o.belt){const b=layout.belts[o.beltIndex],x=d.reduce((v,a,k)=>v+a*b.tangent[k],0),z=d.reduce((v,a,k)=>v+a*b.centre[k],0),u=x/(Math.sqrt(x*x+z*z)+z);
+          assert.ok(Object.is(coarseBeltValue(Math.abs(o.axisDistanceM),b.halfWidthM,u/b.uLimit),o.belt));nodeChecks++;}
+        // Approach the same edge from the two owning cube faces.
+        const k=face>>>1,axis=x===0||x===N?[1,0,0][k]:[2,2,1][k];
+        const move=(which)=>{const p=[...d];p[which]*=1+1e-9;const l=Math.hypot(...p);return p.map(v=>v/l);};
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "@'
+import {readFileSync} from 'node:fs';
+import {stripTypeScriptTypes} from 'node:module';
+import {waterWorlds} from '../../../../tests/terrain-climate-fixtures.mjs';
+const path=process.argv[2]==='before'?'./before-layout.txt':'../../../../src/mountain-layout.ts';
+let s=readFileSync(new URL(path,import.meta.url),'utf8');
+s=s.replace('  const N=g.faceCells/2,B=N/8,','  const times=[performance.now()];\\n  const N=g.faceCells/2,B=N/8,')
+.replace('  const masks: number[]=[]','  times.push(performance.now());\\n  const masks: number[]=[]')
+.replace('  const values=new Float32Array(candidates.length*81);','  times.push(performance.now());\\n  const values=new Float32Array(candidates.length*81);\\n  times.push(performance.now());')
+.replace('  const field={faceCells:N,','  times.push(performance.now());\\n  const field={faceCells:N,')
+.replace('  return Object.freeze({...field,bytes});','  times.push(performance.now());globalThis.fieldPhases=times.slice(1).map((t,i)=>t-times[i]);\\n  return Object.freeze({...field,bytes});')
+.replace(/from (['\"])(\\.\\/["'^'"'\"]+)\\1/g,(_,q,p)=>"'`from ${q}${new URL('"'../../../../src/'+p.slice(2),import.meta.url).href}"'${q}`);
+s+='"'\\nexport {buildCoarseBandField};';
+const {orogenLayout,buildCoarseBandField}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(s)).toString('base64'));
+const body=waterWorlds()[+process.argv[3]],l=orogenLayout(body),g=l.bandGrid(48000,32000);
+for(let n=0;n<2;n++){const t=performance.now();const f=buildCoarseBandField(l.belts,body.radiusM,g,48000,32000);console.log(JSON.stringify({world:body.name,build:n?'second':'cold',totalMs:performance.now()-t,phases:globalThis.fieldPhases}));}
+'@ | Set-Content test-results/mountains/t6-baked/r2/fix-phase-profile.mjs
+0..3 | ForEach-Object { node test-results/mountains/t6-baked/r2/fix-phase-profile.mjs before "'$_ }' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 972ms:
+{"world":"Maithea","build":"cold","totalMs":36.578800000000015,"phases":[8.224899999999991,3.204900000000009,0.11149999999999238,24.5077,0.09790000000000987]}
+{"world":"Maithea","build":"second","totalMs":33.703100000000006,"phases":[7.7791,4.073700000000002,0.09420000000000073,21.637,0.06880000000001019]}
+(node:17636) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Selawyn","build":"cold","totalMs":58.038700000000006,"phases":[12.662800000000004,3.6004000000000076,0.021299999999996544,41.23339999999999,0.1355000000000075]}
+{"world":"Selawyn","build":"second","totalMs":55.473599999999976,"phases":[11.552300000000002,8.074700000000007,0.019800000000003593,35.691,0.07639999999997826]}
+(node:56668) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Raiva","build":"cold","totalMs":13.010999999999996,"phases":[4.4069999999999965,0.5160000000000053,0.033299999999997,7.614699999999999,0.06380000000000052]}
+{"world":"Raiva","build":"second","totalMs":8.188700000000011,"phases":[4.022099999999995,0.4819000000000102,0.029599999999987858,3.612400000000008,0.02039999999999509]}
+(node:20344) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Lethuris","build":"cold","totalMs":60.675099999999986,"phases":[11.485000000000014,6.664699999999982,0.01850000000001728,42.01310000000001,0.11919999999997799]}
+{"world":"Lethuris","build":"second","totalMs":60.71489999999997,"phases":[11.289300000000026,9.788499999999999,0.11619999999999209,39.38689999999997,0.07960000000002765]}
+(node:38676) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+codex
+The eager baseline profile confirms that node evaluation dominates: 24.5 / 41.2 / 7.6 / 42.0 ms across the four worlds. Active-set construction and dilation add 4.4–12.7 ms. I’ll retain shared-node copying, specialize the builder’s distance calculation, and replace per-cell interior dilation with row bit operations.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "@'
+from pathlib import Path
+p=Path('src/mountain-layout.ts'); s=p.read_text(); Path('test-results/mountains/t6-baked/r2/fix-start-layout.txt').write_text(s)
+before=Path('test-results/mountains/t6-baked/r2/before-layout.txt').read_text()
+a=s.index('  const fieldMasks='); z=s.index('\\n}\\n',a)
+a0=before.index('  const values=new Float32Array(candidates.length*81);'); z0=before.index('\\n}\\n',a0)
+s=s[:a]+before[a0:z0]+s[z:]
+s=s.replace('  /* Check only after the active-cell mask. Materialisers accept block integers, never caller directions. */\\n  readonly built: Uint8Array;\\n  materialiseBlock(block: number): void;\\n  materialiseAll(): void;\\n','')
+# Replace dilation with per-row bit shifts; boundaries still use exact mark.
+a=s.index('  for(let q=0;q<table.length;q++)for(let h=0;h<2;h++){'); z=s.index('  const masks:',a)
+s=s[:a]+'''  for(let q=0;q<table.length;q++){
+    if("'!(base[2*q]||base[2*q+1]))continue;
+    const face=Math.floor(q/(B*B)),i0=q%B*8,j0=Math.floor(q/B)%B*8;
+    for(let row=0;row<8;row++){
+      const bits=(base[2*q+(row>>>2)]>>>((row&3)*8))&255;
+      if(!bits)continue;
+      const expanded=bits|(bits<<1)|(bits>>>1),j=j0+row;
+      for(let dy=-1;dy<=1;dy++){
+        const y=j+dy;
+        if(y>=0&&y<N){
+          const at=(face*B+(y>>>3))*B+(i0>>>3),shift=(y&3)*8,h=(y&7)>>>2;
+          flags[2*at+h]|=(expanded&255)<<shift;
+          if(bits&1){if(i0>0)flags[2*(at-1)+h]|=128<<shift;else mark(face,-1,y);}
+          if(bits&128){if(i0+8<N)flags[2*(at+1)+h]|=1<<shift;else mark(face,N,y);}
+        }else{
+          // Preserve the canonical cube-face mapping, including corner tie breaking.
+          for(let i=0;i<8;i++)if(bits&(1<<i))for(let dx=-1;dx<=1;dx++)mark(face,i0+i+dx,y);
+        }
+      }
+    }
+  }
+'"''' + s[z:]
+# Hoist candidate constants and scalar axes.
+s=s.replace('      const H=Math.min(b.halfWidthM,maxDistM);','''      const H=Math.min(b.halfWidthM,maxDistM),T=b.tangent;
+      const t0=T[0],t1=T[1],t2=T[2],c0=C[0],c1=C[1],c2=C[2],p0=P[0],p1=P[1],p2=P[2];
+      const U=b.uLimit,iU=1/U,iR=1/R,wavelength=b.wavelength,k2=2/wavelength,bend=b.bendM,amp=b.amplitudeM;
+      const hashKey=Math.imul(OFFSET_NOISE_Y,0x85ebca77)"'^Math.imul(OFFSET_NOISE_Z,0xc2b2ae3d)''^Math.imul(b.noiseSeed,0x27d4eb2f);
+      let cell=NaN,h0=0,h1=0;'"''')
+a=s.index('        coarseDirection(face,i0+i,j0+j,N,d);',s.index('const rowsOf=')); z=s.index('\\n      }',a)
+s=s[:a]+'''        // Keep world-axis normalization and dot-product operation order exactly.
+        const a=2*(i0+i)/N-1,bb=2*(j0+j)/N-1,axis=face>>>1,side=face&1?-1:1;
+        let d0=axis===0?side:a,d1=axis===0?a:axis===1?side:bb,d2=axis===2?side:bb;
+        const length=Math.sqrt(d0*d0+d1*d1+d2*d2);d0/=length;d1/=length;d2/=length;
+        const x=d0*t0+d1*t1+d2*t2,z=d0*c0+d1*c1+d2*c2,py=d0*p0+d1*p1+d2*p2;
+        let u=x/(Math.sqrt(x*x+z*z)+z);
+        // offset() uses division, whereas transverse() uses precomputed reciprocals.
+        // They cannot share the first offset without changing rounding.
+        const ov=u/U,ox=u*2/wavelength+13,oi=Math.floor(ox);let oa=ox-oi;oa=oa*oa*(3-2*oa);
+        if(oi"'!==cell){h0=cornerHash(oi,hashKey);h1=cornerHash(oi+1,hashKey);cell=oi;}
+        const off=bend*ov*ov+amp*(2*(h0*(1-oa)+h1*oa)-1),sign=py*R-off<0?-1:1;
+        let y=0,yp=0,r=1,rp=0,w=2,cc=0,ss=1;
+        for(let step=0;step<=footSteps;step++){
+          const v=u*iU,X=u*k2+13,ix=Math.floor(X),aa=X-ix,m=aa*aa*(3-2*aa);
+          if(ix!==cell){h0=cornerHash(ix,hashKey);h1=cornerHash(ix+1,hashKey);cell=ix;}
+          const n=h0*(1-m)+h1*m;
+          y=(bend*v*v+amp*(2*n-1))*iR;yp=(2*bend*v*iU+12*amp*(h1-h0)*aa*(1-aa)*k2)*iR;
+          r=Math.sqrt(1-y*y);rp=-y*yp/r;w=2/(1+u*u);cc=u*w;ss=(1-u*u)*w*.5;
+          if(step===footSteps)break;
+          const rw=r*w,q=x*cc+z*ss,t=x*ss-z*cc;
+          u=Math.max(-U,Math.min(U,u+(rp*(q-r)+rw*t+(py-y)*yp)/(rp*rp+rw*rw+yp*yp)));
+        }
+        const pT=r*cc,pC=r*ss;
+        const e0=d0-(pT*t0+pC*c0+y*p0),e1=d1-(pT*t1+pC*c1+y*p1),e2=d2-(pT*t2+pC*c2+y*p2),chord2=e0*e0+e1*e1+e2*e2;
+        values[c*81+j*9+i]=(sign*R*Math.sqrt(chord2)*(1+chord2/24+3*chord2*chord2/640))/H;'"''' +s[z:]
+p.write_text(s)
+# Optional materialisers for validation during eager trial.
+p=Path('test-results/mountains/t6-baked/fix-node-identity.mjs'); s=p.read_text().replace('b.materialiseAll();','b.materialiseAll?.();');p.write_text(s)
+'@ | python -
+node test-results/mountains/t6-baked/fix-node-identity.mjs
+0..3 | ForEach-Object { node test-results/mountains/t6-baked/r2/field-bench.mjs "'$_ }' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 1564ms:
+{"world":"Maithea","readNodesIdentical":103365,"unusedNodesZero":69489}
+{"world":"Selawyn","readNodesIdentical":182972,"unusedNodesZero":111463}
+{"world":"Raiva","readNodesIdentical":17879,"unusedNodesZero":10390}
+{"world":"Lethuris","readNodesIdentical":198949,"unusedNodesZero":119867}
+(node:51412) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Maithea","coldMs":36.085199999999986,"materialiseAllMs":null,"bytes":822144,"activeCells":74826}
+{"world":"Selawyn","coldMs":57.857500000000016,"materialiseAllMs":null,"bytes":1624130,"activeCells":133763}
+{"world":"Raiva","coldMs":18.0689,"materialiseAllMs":null,"bytes":145206,"activeCells":13112}
+{"world":"Lethuris","coldMs":49.683400000000006,"materialiseAllMs":null,"bytes":1726504,"activeCells":145451}
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '0..3 | ForEach-Object { node test-results/mountains/t6-baked/r2/fix-phase-profile.mjs after $_ }' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 896ms:
+{"world":"Maithea","build":"cold","totalMs":36.2868,"phases":[5.8519000000000005,4.308700000000002,0.11320000000000618,25.46029999999999,0.09590000000000032]}
+{"world":"Maithea","build":"second","totalMs":18.9204,"phases":[4.372299999999996,4.545599999999979,0.1092000000000155,9.608399999999989,0.231899999999996]}
+(node:59240) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Selawyn","build":"cold","totalMs":55.835999999999984,"phases":[11.526999999999987,3.66040000000001,0.014199999999988222,39.9889,0.1133000000000095]}
+{"world":"Selawyn","build":"second","totalMs":26.808299999999974,"phases":[7.848500000000001,1.8059999999999832,0.008900000000011232,17.045799999999986,0.05910000000000082]}
+(node:52324) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Raiva","build":"cold","totalMs":17.67500000000001,"phases":[3.1060000000000088,0.7232999999999947,0.028099999999994907,13.344099999999997,0.0549000000000035]}
+{"world":"Raiva","build":"second","totalMs":4.372500000000002,"phases":[0.9939999999999998,0.43009999999999593,0.08220000000000027,2.8188999999999993,0.021399999999999864]}
+(node:53800) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Lethuris","build":"cold","totalMs":51.0351,"phases":[7.885699999999986,7.116600000000005,0.017599999999987403,35.47280000000001,0.09970000000001278]}
+{"world":"Lethuris","build":"second","totalMs":28.44749999999999,"phases":[7.544299999999993,2.292299999999983,0.013800000000003365,18.491900000000015,0.06279999999998154]}
+(node:43484) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "@'
+from pathlib import Path
+p=Path('src/mountain-layout.ts');s=p.read_text();Path('test-results/mountains/t6-baked/r2/fix-eager-inline.txt').write_text(s)
+a=s.index('      const t0=T[0]',s.index('const rowsOf='));z=s.index('      let cl=-1',a);constants=s[a:z]
+a1=s.index('        const x=d0*t0',z);z1=s.index('\\n      }',a1);solve=s[a1:z1]
+solve=solve.replace('        values[c*81+j*9+i]=','        return ')
+fn='''// Builder-only distance projection: identical transverse arithmetic, without unused gradients.
+// One closure per belt keeps its noise cell and constants local across adjacent nodes.
+function coarseDistanceEvaluator(b: OrogenBelt,R: number,H: number) {
+  const T=b.tangent,C=b.centre,P=b.pole;
+'''+constants+'''  return (d0: number,d1: number,d2: number): number=>{
+'''+solve+'''\\n  };
+}
+'''
+s=s[:a1]+'        values[c*81+j*9+i]=evaluate(d0,d1,d2);'+s[z1:]
+s=s[:a]+s[z: a1] .replace('','',0)+s[a1:] if False else s # constants removed separately
+s=s.replace(constants,'',1).replace('      const H=Math.min(b.halfWidthM,maxDistM),T=b.tangent;','      const evaluate=evaluators[k];')
+pos=s.index('function buildCoarseBandField(');s=s[:pos]+fn+s[pos:]
+s=s.replace('  const values=new Float32Array(candidates.length*81);','  const evaluators=belts.map(b=>coarseDistanceEvaluator(b,R,Math.min(b.halfWidthM,maxDistM)));\\n  const values=new Float32Array(candidates.length*81);')
+p.write_text(s)
+'@ | python -
+node test-results/mountains/t6-baked/fix-node-identity.mjs
+0..3 | ForEach-Object { node test-results/mountains/t6-baked/r2/field-bench.mjs "'$_ }' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 1529ms:
+{"world":"Maithea","readNodesIdentical":103365,"unusedNodesZero":69489}
+{"world":"Selawyn","readNodesIdentical":182972,"unusedNodesZero":111463}
+{"world":"Raiva","readNodesIdentical":17879,"unusedNodesZero":10390}
+{"world":"Lethuris","readNodesIdentical":198949,"unusedNodesZero":119867}
+(node:11380) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Maithea","coldMs":26.756399999999985,"materialiseAllMs":null,"bytes":822144,"activeCells":74826}
+{"world":"Selawyn","coldMs":41.75889999999998,"materialiseAllMs":null,"bytes":1624130,"activeCells":133763}
+{"world":"Raiva","coldMs":9.95150000000001,"materialiseAllMs":null,"bytes":145206,"activeCells":13112}
+{"world":"Lethuris","coldMs":42.99369999999999,"materialiseAllMs":null,"bytes":1726504,"activeCells":145451}
+
+codex
+The specialized evaluator passes all 503,165 read-node identity comparisons. It brings eager cold builds to roughly 27 / 42 / 10 / 43 ms. I’ll now reduce active-set extraction work by collapsing each covered 2×2 T1 group before iterating it, then measure the result against the 40 ms decision threshold.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "@'
+from pathlib import Path
+p=Path('src/mountain-layout.ts');s=p.read_text();a=s.index('  for(let w=0;w<g.bits.length;w++){',s.index('function buildCoarseBandField'));z=s.index('  for(let q=0;q<table.length;q++){',a)
+s=s[:a]+'''  const wordsPerRow=g.faceCells/32;
+  for(let face=0;face<6;face++)for(let j=0;j<N;j++)for(let word=0;word<wordsPerRow;word++){
+    const at=(face*g.faceCells+2*j)*wordsPerRow+word;
+    const covered=g.bits[at]|g.bits[at+wordsPerRow];
+    let bits=(covered|(covered>>>1))&0x55555555;
+    while(bits){
+      const i=word*16+((31-Math.clz32(bits&-bits))>>>1);
+      const q=(face*B+(j>>>3))*B+(i>>>3),v=(j&7)*8+(i&7);base[2*q+(v>>>5)]|=1<<(v&31);
+      bits&=bits-1;
+    }
+  }
+'''+s[z:];p.write_text(s)
+'@ | python -
+0..3 | ForEach-Object { node test-results/mountains/t6-baked/r2/field-bench.mjs "'$_ }
+node test-results/mountains/t6-baked/fix-node-identity.mjs' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 1472ms:
+{"world":"Maithea","coldMs":27.748400000000004,"materialiseAllMs":null,"bytes":822144,"activeCells":74826}
+{"world":"Selawyn","coldMs":40.6623,"materialiseAllMs":null,"bytes":1624130,"activeCells":133763}
+{"world":"Raiva","coldMs":9.521,"materialiseAllMs":null,"bytes":145206,"activeCells":13112}
+{"world":"Lethuris","coldMs":41.680499999999995,"materialiseAllMs":null,"bytes":1726504,"activeCells":145451}
+{"world":"Maithea","readNodesIdentical":103365,"unusedNodesZero":69489}
+{"world":"Selawyn","readNodesIdentical":182972,"unusedNodesZero":111463}
+{"world":"Raiva","readNodesIdentical":17879,"unusedNodesZero":10390}
+{"world":"Lethuris","readNodesIdentical":198949,"unusedNodesZero":119867}
+(node:11584) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '0..3 | ForEach-Object { node test-results/mountains/t6-baked/r2/fix-phase-profile.mjs after $_ }' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 835ms:
+{"world":"Maithea","build":"cold","totalMs":27.63240000000002,"phases":[4.954300000000018,4.148799999999994,0.16730000000001155,17.962400000000002,0.0736999999999739]}
+{"world":"Maithea","build":"second","totalMs":15.2149,"phases":[3.032499999999999,1.1947999999999865,0.2032000000000096,10.734700000000004,0.026899999999983493]}
+(node:7252) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Selawyn","build":"cold","totalMs":42.80550000000001,"phases":[11.094899999999996,4.210100000000011,0.01269999999999527,27.0086,0.09379999999998745]}
+{"world":"Selawyn","build":"second","totalMs":28.82639999999998,"phases":[6.795999999999992,1.8348000000000013,0.011700000000018917,20.062699999999978,0.06690000000000396]}
+(node:55652) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Raiva","build":"cold","totalMs":12.861599999999996,"phases":[1.9630999999999972,0.6847000000000065,0.03349999999998943,8.991900000000001,0.06230000000000757]}
+{"world":"Raiva","build":"second","totalMs":5.991800000000012,"phases":[0.9336999999999875,0.5102000000000118,0.03909999999999059,4.455299999999994,0.023500000000012733]}
+(node:60564) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Lethuris","build":"cold","totalMs":45.3749,"phases":[7.253600000000006,8.076300000000003,0.0216999999999814,29.320100000000025,0.1250999999999749]}
+{"world":"Lethuris","build":"second","totalMs":31.075199999999995,"phases":[6.002800000000008,2.7831999999999937,0.019499999999993634,22.09559999999999,0.10430000000002337]}
+(node:20580) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '0..3 | ForEach-Object { $worldIndex=$_; 1..3 | ForEach-Object { node test-results/mountains/t6-baked/r2/field-bench.mjs $worldIndex } } | Tee-Object test-results/mountains/t6-baked/r2/fix-eager-bench.jsonl
+0..3 | ForEach-Object { node test-results/mountains/t6-baked/r2/fix-phase-profile.mjs after $_ } | Set-Content test-results/mountains/t6-baked/r2/fix-eager-phases.jsonl' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 3032ms:
+{"world":"Maithea","coldMs":27.764799999999994,"materialiseAllMs":null,"bytes":822144,"activeCells":74826}
+{"world":"Maithea","coldMs":28.74369999999999,"materialiseAllMs":null,"bytes":822144,"activeCells":74826}
+{"world":"Maithea","coldMs":27.1036,"materialiseAllMs":null,"bytes":822144,"activeCells":74826}
+{"world":"Selawyn","coldMs":42.40029999999999,"materialiseAllMs":null,"bytes":1624130,"activeCells":133763}
+{"world":"Selawyn","coldMs":39.70099999999999,"materialiseAllMs":null,"bytes":1624130,"activeCells":133763}
+{"world":"Selawyn","coldMs":41.581800000000015,"materialiseAllMs":null,"bytes":1624130,"activeCells":133763}
+{"world":"Raiva","coldMs":10.691299999999998,"materialiseAllMs":null,"bytes":145206,"activeCells":13112}
+{"world":"Raiva","coldMs":10.325100000000006,"materialiseAllMs":null,"bytes":145206,"activeCells":13112}
+{"world":"Raiva","coldMs":10.493100000000013,"materialiseAllMs":null,"bytes":145206,"activeCells":13112}
+{"world":"Lethuris","coldMs":41.011300000000006,"materialiseAllMs":null,"bytes":1726504,"activeCells":145451}
+{"world":"Lethuris","coldMs":40.3998,"materialiseAllMs":null,"bytes":1726504,"activeCells":145451}
+{"world":"Lethuris","coldMs":42.39840000000001,"materialiseAllMs":null,"bytes":1726504,"activeCells":145451}
+(node:51724) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34312) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:42332) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:37504) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+codex
+The three-process eager medians are 27.76 / 41.58 / 10.49 / 41.01 ms. Selawyn and Lethuris still exceed 40 ms, so I’ll follow the requested lazy fallback. I’ll keep the faster evaluator and copy shared nodes from built neighbours in all four same-face directions, then verify reverse-order identity and run the required checks.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "@'
+from pathlib import Path
+p=Path('src/mountain-layout.ts');s=p.read_text();Path('test-results/mountains/t6-baked/r2/fix-eager-layout.txt').write_text(s)
+s=s.replace('  readonly bytes: number; readonly activeCells: number; readonly multiBeltCells: number;','''  readonly bytes: number; readonly activeCells: number; readonly multiBeltCells: number;
+  /* Check only after the active-cell mask; materialisers accept block integers. */
+  readonly built: Uint8Array;
+  materialiseBlock(block: number): void;
+  materialiseAll(): void;''')
+s=s.replace('  // Per block, the 9 node rows (bit i = node i) that active cells read.','''  const fieldMasks=Uint32Array.from(masks),fieldOffsets=Uint32Array.from(offsets),fieldCandidates=Uint16Array.from(candidates);
+  const blockCount=offsets.length-1,built=new Uint8Array(blockCount),blockPositions=new Uint32Array(blockCount);
+  // Per block, the 9 node rows (bit i = node i) that active cells read.''')
+s=s.replace('    const face=Math.floor(q/(B*B)),j0=(Math.floor(q/B)%B)*8,i0=(q%B)*8,nodeRows=block*9;','    blockPositions[block]=q;\\n    const nodeRows=block*9;')
+a=s.index('    // Same-face neighbours already built');z=s.index('    for(let c=offsets[block]',a)
+s=s[:a]+'''  }
+  const materialiseBlock=(block: number): void=>{
+    if(built[block])return;
+    const q=blockPositions[block],face=Math.floor(q/(B*B)),j0=(Math.floor(q/B)%B)*8,i0=(q%B)*8,nodeRows=block*9;
+    // Copy only a read node of an already-built same-face neighbour with this candidate.
+    // Otherwise evaluate the canonical integer node: arbitrary build orders stay identical.
+    const left=i0>0?table[q-1]-1:-1,below=j0>0?table[q-B]-1:-1;
+    const right=i0+8<N?table[q+1]-1:-1,above=j0+8<N?table[q+B]-1:-1;
+'''+s[z:]
+s=s.replace('      const k=candidates[c],b=belts[k],C=b.centre,P=b.pole;','      const k=fieldCandidates[c];')
+s=s.replace('      let cl=-1,cb=-1;','      let cl=-1,cb=-1,cr=-1,ca=-1;').replace('if(left>=0)for','if(left>=0&&built[left])for').replace('if(below>=0)for','if(below>=0&&built[below])for')
+a=s.index('      for(let j=0;j<=8;j++)for(let i=0;i<=8;i++){',s.index('const materialiseBlock='))
+s=s[:a]+'''      if(right>=0&&built[right])for(let e=fieldOffsets[right];e<fieldOffsets[right+1];e++)if(fieldCandidates[e]===k)cr=e;
+      if(above>=0&&built[above])for(let e=fieldOffsets[above];e<fieldOffsets[above+1];e++)if(fieldCandidates[e]===k)ca=e;
+'''+s[a:]
+a=s.index('        // Keep world-axis normalization',a)
+s=s[:a]+'''        if(i===8&&cr>=0&&(rowsOf[right*9+j]&1)){values[c*81+j*9+8]=values[cr*81+j*9];continue;}
+        if(j===8&&ca>=0&&(rowsOf[above*9]&(1<<i))){values[c*81+72+i]=values[ca*81+i];continue;}
+'''+s[a:]
+a=s.index('  const field={faceCells:N,',a)
+s=s[:a].rstrip()[:-1]+'''  built[block]=1;
+  };
+  const materialiseAll=(): void=>{for(let block=0;block<blockCount;block++)materialiseBlock(block);};
+'''+s[a:]
+s=s.replace('masks:Uint32Array.from(masks),offsets:Uint32Array.from(offsets),\\n    candidates:Uint16Array.from(candidates),distances:values,scalars,activeCells,multiBeltCells','masks:fieldMasks,offsets:fieldOffsets,\\n    candidates:fieldCandidates,distances:values,scalars,activeCells,multiBeltCells,built,materialiseBlock,materialiseAll')
+s=s.replace('+field.distances.byteLength+scalars.byteLength;','+field.distances.byteLength+scalars.byteLength+built.byteLength+blockPositions.byteLength+rowsOf.byteLength;')
+# Materialiser retains typed arrays, not the temporary growable lists.
+a=s.index('  const materialiseBlock=');z=s.index('  const field=',a);chunk=s[a:z].replace('offsets[','fieldOffsets[').replace('candidates[','fieldCandidates[');s=s[:a]+chunk+s[z:]
+p.write_text(s)
+'@ | python -
+node test-results/mountains/t6-baked/fix-node-identity.mjs
+npx tsc --noEmit" in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 4042ms:
+{"world":"Maithea","readNodesIdentical":103365,"unusedNodesZero":69489}
+{"world":"Selawyn","readNodesIdentical":182972,"unusedNodesZero":111463}
+{"world":"Raiva","readNodesIdentical":17879,"unusedNodesZero":10390}
+{"world":"Lethuris","readNodesIdentical":198949,"unusedNodesZero":119867}
+(node:3332) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git diff --stat; Get-Content src/mountain-layout.ts | Select-Object -Skip 465 -First 215; Get-Content test-results/mountains/t6-baked/r2/fix-eager-phases.jsonl' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 76ms:
+ src/mountain-layout.ts                  | 124 ++++++++++++++++++++++++--------
+ src/terrain.ts                          |   1 +
+ tests/helpers/mountain-coarse-field.mjs |   2 +
+ tests/mountain-coarse-field.test.mjs    |  21 ++++++
+ 4 files changed, 118 insertions(+), 30 deletions(-)
+  let v=bits&-bits,n=0;
+  if(v&0xffff0000){n+=16;v>>>=16;}if(v&0xff00){n+=8;v>>>=8;}
+  if(v&0xf0){n+=4;v>>>=4;}if(v&0xc){n+=2;v>>>=2;}if(v&2)n++;
+  return n;
+}
+// Builder-only distance projection: identical transverse arithmetic, without unused gradients.
+// One closure per belt keeps its noise cell and constants local across adjacent nodes.
+function coarseDistanceEvaluator(b: OrogenBelt,R: number,H: number) {
+  const T=b.tangent,C=b.centre,P=b.pole;
+      const t0=T[0],t1=T[1],t2=T[2],c0=C[0],c1=C[1],c2=C[2],p0=P[0],p1=P[1],p2=P[2];
+      const U=b.uLimit,iU=1/U,iR=1/R,wavelength=b.wavelength,k2=2/wavelength,bend=b.bendM,amp=b.amplitudeM;
+      const hashKey=Math.imul(OFFSET_NOISE_Y,0x85ebca77)^Math.imul(OFFSET_NOISE_Z,0xc2b2ae3d)^Math.imul(b.noiseSeed,0x27d4eb2f);
+      let cell=NaN,h0=0,h1=0;
+  return (d0: number,d1: number,d2: number): number=>{
+        const x=d0*t0+d1*t1+d2*t2,z=d0*c0+d1*c1+d2*c2,py=d0*p0+d1*p1+d2*p2;
+        let u=x/(Math.sqrt(x*x+z*z)+z);
+        // offset() uses division, whereas transverse() uses precomputed reciprocals.
+        // They cannot share the first offset without changing rounding.
+        const ov=u/U,ox=u*2/wavelength+13,oi=Math.floor(ox);let oa=ox-oi;oa=oa*oa*(3-2*oa);
+        if(oi!==cell){h0=cornerHash(oi,hashKey);h1=cornerHash(oi+1,hashKey);cell=oi;}
+        const off=bend*ov*ov+amp*(2*(h0*(1-oa)+h1*oa)-1),sign=py*R-off<0?-1:1;
+        let y=0,yp=0,r=1,rp=0,w=2,cc=0,ss=1;
+        for(let step=0;step<=footSteps;step++){
+          const v=u*iU,X=u*k2+13,ix=Math.floor(X),aa=X-ix,m=aa*aa*(3-2*aa);
+          if(ix!==cell){h0=cornerHash(ix,hashKey);h1=cornerHash(ix+1,hashKey);cell=ix;}
+          const n=h0*(1-m)+h1*m;
+          y=(bend*v*v+amp*(2*n-1))*iR;yp=(2*bend*v*iU+12*amp*(h1-h0)*aa*(1-aa)*k2)*iR;
+          r=Math.sqrt(1-y*y);rp=-y*yp/r;w=2/(1+u*u);cc=u*w;ss=(1-u*u)*w*.5;
+          if(step===footSteps)break;
+          const rw=r*w,q=x*cc+z*ss,t=x*ss-z*cc;
+          u=Math.max(-U,Math.min(U,u+(rp*(q-r)+rw*t+(py-y)*yp)/(rp*rp+rw*rw+yp*yp)));
+        }
+        const pT=r*cc,pC=r*ss;
+        const e0=d0-(pT*t0+pC*c0+y*p0),e1=d1-(pT*t1+pC*c1+y*p1),e2=d2-(pT*t2+pC*c2+y*p2),chord2=e0*e0+e1*e1+e2*e2;
+        return (sign*R*Math.sqrt(chord2)*(1+chord2/24+3*chord2*chord2/640))/H;
+  };
+}
+function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBandGrid,maxDistM: number,minHalfWidthM: number): CoarseBandField {
+  const N=g.faceCells/2,B=N/8,table=new Int32Array(6*B*B),flags=new Uint32Array(12*B*B),base=new Uint32Array(12*B*B),d: V3=[0,0,0];
+  const mark=(face: number,i: number,j: number)=>{
+    if(i<0||j<0||i>=N||j>=N){
+      coarseDirection(face,i+.5,j+.5,N,d);
+      const c=bandCellIndex(d,N);face=Math.floor(c/(N*N));j=Math.floor(c/N)%N;i=c%N;
+    }
+    const block=(face*B+(j>>>3))*B+(i>>>3),bit=(j&7)*8+(i&7);
+    flags[block*2+(bit>>>5)]|=1<<(bit&31);
+  };
+  // Union each covered 2x2 T1 cell, then dilate by one field cell (also over face edges).
+  const wordsPerRow=g.faceCells/32;
+  for(let face=0;face<6;face++)for(let j=0;j<N;j++)for(let word=0;word<wordsPerRow;word++){
+    const at=(face*g.faceCells+2*j)*wordsPerRow+word;
+    const covered=g.bits[at]|g.bits[at+wordsPerRow];
+    let bits=(covered|(covered>>>1))&0x55555555;
+    while(bits){
+      const i=word*16+((31-Math.clz32(bits&-bits))>>>1);
+      const q=(face*B+(j>>>3))*B+(i>>>3),v=(j&7)*8+(i&7);base[2*q+(v>>>5)]|=1<<(v&31);
+      bits&=bits-1;
+    }
+  }
+  for(let q=0;q<table.length;q++){
+    if(!(base[2*q]||base[2*q+1]))continue;
+    const face=Math.floor(q/(B*B)),i0=q%B*8,j0=Math.floor(q/B)%B*8;
+    for(let row=0;row<8;row++){
+      const bits=(base[2*q+(row>>>2)]>>>((row&3)*8))&255;
+      if(!bits)continue;
+      const expanded=bits|(bits<<1)|(bits>>>1),j=j0+row;
+      for(let dy=-1;dy<=1;dy++){
+        const y=j+dy;
+        if(y>=0&&y<N){
+          const at=(face*B+(y>>>3))*B+(i0>>>3),shift=(y&3)*8,h=(y&7)>>>2;
+          flags[2*at+h]|=(expanded&255)<<shift;
+          if(bits&1){if(i0>0)flags[2*(at-1)+h]|=128<<shift;else mark(face,-1,y);}
+          if(bits&128){if(i0+8<N)flags[2*(at+1)+h]|=1<<shift;else mark(face,N,y);}
+        }else{
+          // Preserve the canonical cube-face mapping, including corner tie breaking.
+          for(let i=0;i<8;i++)if(bits&(1<<i))for(let dx=-1;dx<=1;dx++)mark(face,i0+i+dx,y);
+        }
+      }
+    }
+  }
+  const masks: number[]=[],offsets=[0],candidates: number[]=[],scalars=new Float64Array(belts.length*9);
+  // Measured bound, not an analytic curvature claim: 5x5 taps in EVERY active cell,
+  // all four worlds, |distance| <= 1.25H and |u/uLimit| < 1. Worst signed interpolation
+  // errors: .076814443 / .060304457 / .034594238 / .056697924 H (M/S/R/L).
+  // .16 exceeds twice the worst, including Float32 storage. Endpoint-clamped projections
+  // dominate; a smooth infinite-curve curvature bound alone would miss those cells.
+  // Reproduce with test-results/mountains/t6-baked/interpolation-error.mjs.
+  for(let k=0;k<belts.length;k++){
+    const b=belts[k];scalars.set([...b.tangent,...b.centre,b.uLimit,b.halfWidthM,.16],k*9);
+  }
+  // Per-belt block-test constants, hoisted (the same expressions as before, evaluated once per belt).
+  const eligible=new Uint8Array(belts.length),capOf=new Float64Array(belts.length),slabOf=new Float64Array(belts.length);
+  for(let k=0;k<belts.length;k++){
+    const b=belts[k];eligible[k]=b.halfWidthM<minHalfWidthM?0:1;capOf[k]=capZ(b,R);
+    slabOf[k]=(b.halfWidthM*b.gradientMax+Math.abs(b.bendM)+b.amplitudeM)/R;
+  }
+  let activeCells=0,multiBeltCells=0;
+  for(let q=0;q<table.length;q++){
+    if(!(flags[2*q]||flags[2*q+1]))continue;
+    table[q]=offsets.length;
+    masks.push(flags[2*q],flags[2*q+1]);
+    const face=Math.floor(q/(B*B)),j0=(Math.floor(q/B)%B)*8,i0=(q%B)*8;
+    coarseDirection(face,i0+4,j0+4,N,d);
+    const cx=d[0],cy=d[1],cz=d[2],rho=8*1.4142135623730951/N+1e-9;
+    let count=0,cells=0;
+    for(let h=0;h<2;h++){let v=flags[2*q+h];while(v){cells++;v&=v-1;}}
+    activeCells+=cells;
+    for(let k=0;k<belts.length;k++){
+      if(!eligible[k])continue;
+      const b=belts[k],C=b.centre,P=b.pole;
+      if(cx*C[0]+cy*C[1]+cz*C[2]+rho<capOf[k])continue;
+      if(Math.abs(cx*P[0]+cy*P[1]+cz*P[2])-rho>slabOf[k])continue;
+      candidates.push(k);count++;
+    }
+    if(count>1)multiBeltCells+=cells;
+    offsets.push(candidates.length);
+  }
+  const evaluators=belts.map(b=>coarseDistanceEvaluator(b,R,Math.min(b.halfWidthM,maxDistM)));
+  const values=new Float32Array(candidates.length*81);
+  const fieldMasks=Uint32Array.from(masks),fieldOffsets=Uint32Array.from(offsets),fieldCandidates=Uint16Array.from(candidates);
+  const blockCount=offsets.length-1,built=new Uint8Array(blockCount),blockPositions=new Uint32Array(blockCount);
+  // Per block, the 9 node rows (bit i = node i) that active cells read.
+  const rowsOf=new Uint16Array((offsets.length-1)*9);
+  for(let q=0;q<table.length;q++){
+    const block=table[q]-1;if(block<0)continue;
+    blockPositions[block]=q;
+    const nodeRows=block*9;
+    // Only corners of active cells can be read. Preserve every candidate at those
+    // corners; a neighbouring cell's rejection cannot discard a shared node.
+    for(let j=0;j<8;j++){
+      const row=(masks[2*block+(j>>>2)]>>>((j&3)*8))&255,corners=row|(row<<1);
+      rowsOf[nodeRows+j]|=corners;rowsOf[nodeRows+j+1]|=corners;
+    }
+  }
+  const materialiseBlock=(block: number): void=>{
+    if(built[block])return;
+    const q=blockPositions[block],face=Math.floor(q/(B*B)),j0=(Math.floor(q/B)%B)*8,i0=(q%B)*8,nodeRows=block*9;
+    // Copy only a read node of an already-built same-face neighbour with this candidate.
+    // Otherwise evaluate the canonical integer node: arbitrary build orders stay identical.
+    const left=i0>0?table[q-1]-1:-1,below=j0>0?table[q-B]-1:-1;
+    const right=i0+8<N?table[q+1]-1:-1,above=j0+8<N?table[q+B]-1:-1;
+    for(let c=fieldOffsets[block];c<fieldOffsets[block+1];c++){
+      const k=fieldCandidates[c];
+      const evaluate=evaluators[k];
+      let cl=-1,cb=-1,cr=-1,ca=-1;
+      if(left>=0&&built[left])for(let e=fieldOffsets[left];e<fieldOffsets[left+1];e++)if(fieldCandidates[e]===k)cl=e;
+      if(below>=0&&built[below])for(let e=fieldOffsets[below];e<fieldOffsets[below+1];e++)if(fieldCandidates[e]===k)cb=e;
+      if(right>=0&&built[right])for(let e=fieldOffsets[right];e<fieldOffsets[right+1];e++)if(fieldCandidates[e]===k)cr=e;
+      if(above>=0&&built[above])for(let e=fieldOffsets[above];e<fieldOffsets[above+1];e++)if(fieldCandidates[e]===k)ca=e;
+      for(let j=0;j<=8;j++)for(let i=0;i<=8;i++){
+        if(!(rowsOf[nodeRows+j]&(1<<i)))continue;
+        if(i===0&&cl>=0&&(rowsOf[left*9+j]&256)){values[c*81+j*9]=values[cl*81+j*9+8];continue;}
+        if(j===0&&cb>=0&&(rowsOf[below*9+8]&(1<<i))){values[c*81+i]=values[cb*81+72+i];continue;}
+        if(i===8&&cr>=0&&(rowsOf[right*9+j]&1)){values[c*81+j*9+8]=values[cr*81+j*9];continue;}
+        if(j===8&&ca>=0&&(rowsOf[above*9]&(1<<i))){values[c*81+72+i]=values[ca*81+i];continue;}
+        // Keep world-axis normalization and dot-product operation order exactly.
+        const a=2*(i0+i)/N-1,bb=2*(j0+j)/N-1,axis=face>>>1,side=face&1?-1:1;
+        let d0=axis===0?side:a,d1=axis===0?a:axis===1?side:bb,d2=axis===2?side:bb;
+        const length=Math.sqrt(d0*d0+d1*d1+d2*d2);d0/=length;d1/=length;d2/=length;
+        values[c*81+j*9+i]=evaluate(d0,d1,d2);
+      }
+    }
+    built[block]=1;
+  };
+  const materialiseAll=(): void=>{for(let block=0;block<blockCount;block++)materialiseBlock(block);};
+  const field={faceCells:N,blockTable:table,masks:fieldMasks,offsets:fieldOffsets,
+    candidates:fieldCandidates,distances:values,scalars,activeCells,multiBeltCells,built,materialiseBlock,materialiseAll};
+  const bytes=table.byteLength+field.masks.byteLength+field.offsets.byteLength+field.candidates.byteLength+field.distances.byteLength+scalars.byteLength+built.byteLength+blockPositions.byteLength+rowsOf.byteLength;
+  return Object.freeze({...field,bytes});
+}
+
+/* Build once; sample accepts unit directions. landProbe optionally replaces the
+ * fixed equal-area construction probe (directions, not preclassified heights). */
+export function buildOrogenLayout({seed,radiusM:R,a0,landProbe,sampleA0=a0}: {
+  seed: string; radiusM: number; a0: Coordinate; landProbe?: readonly V3[]; sampleA0?: Coordinate;
+}) {
+  const random=rng(seed+'/'+OROGEN_LAYOUT_CONSTRUCTION_SEED),belts: OrogenBelt[]=[],axes: V3[][]=[];
+  const probe: V3[]=landProbe ? [...landProbe] : [];
+  if(!landProbe)for(let i=0;i<OROGEN_LAYOUT.probeCount;i++){
+    const y=1-2*(i+.5)/OROGEN_LAYOUT.probeCount,r=Math.sqrt(1-y*y),p=i*2.399963229728653;
+    probe.push([detCos(p)*r,y,sine(p)*r]);
+  }
+  const land=probe.filter(d=>a0(d)>0),covered=new Uint8Array(land.length);
+  let count=0,maxHalfWidthM=0,majorCount=0;
+  for(let k=0;k<OROGEN_LAYOUT.candidates && count<land.length*OROGEN_LAYOUT.targetShare;k++){
+    const y=2*random()-1,r=Math.sqrt(1-y*y),az=random()*6.283185307179586;
+    const c: V3=[detCos(az)*r,y,sine(az)*r],alt=a0(c);
+    const placement=k%2===0?'margin':'interior';
+    if(alt<800 || (placement==='margin' && alt>3000))continue;
+    const e=unit(cross(Math.abs(c[1])<.9?[0,1,0]:[1,0,0],c)),f=cross(c,e);
+    let t: V3;
+    if(placement==='margin'){
+      const h=.004;
+      const delta=(v: V3)=>a0(unit([c[0]+h*v[0],c[1]+h*v[1],c[2]+h*v[2]]))-a0(unit([c[0]-h*v[0],c[1]-h*v[1],c[2]-h*v[2]]));
+      const de=delta(e),df=delta(f);
+      t=unit([e[0]*df-f[0]*de,e[1]*df-f[1]*de,e[2]*df-f[2]*de]);
+      if(dot(t,t)===0)continue;
+    }else{
+      const angle=random()*6.283185307179586,cs=detCos(angle),sn=sine(angle);
+      t=unit([e[0]*cs+f[0]*sn,e[1]*cs+f[1]*sn,e[2]*cs+f[2]*sn]);
+    }
+    const major=majorCount<OROGEN_LAYOUT.majorCount && k<OROGEN_LAYOUT.majorAttempts;
+    const L=major ? OROGEN_LAYOUT.majorMinHalfLength+(OROGEN_LAYOUT.majorMaxHalfLength-OROGEN_LAYOUT.majorMinHalfLength)*random() : OROGEN_LAYOUT.minHalfLength+random()*(OROGEN_LAYOUT.maxHalfLength-OROGEN_LAYOUT.minHalfLength);
+    const W=major ? Math.min(OROGEN_LAYOUT.majorWidthRadius*R,Math.max(OROGEN_LAYOUT.majorMinWidthM,Math.min(OROGEN_LAYOUT.majorMaxWidthM,OROGEN_LAYOUT.majorWidthRadius*R))) : OROGEN_LAYOUT.minorWidthRadius*R*(.85+.3*random());
+    const pole=unit(cross(c,t));
+    let bendM=(random()*2-1)*OROGEN_LAYOUT.interiorBowFraction*L*R;
+    if(placement==='margin'){
+      const h=.025,at=(v: V3,s: number)=>a0(unit([c[0]+s*v[0],c[1]+s*v[1],c[2]+s*v[2]]));
+      const gradient=(at(pole,h)-at(pole,-h))/(2*h);
+      const curvature=(at(t,h)+at(t,-h)-2*alt)/(h*h);
+      bendM=Math.max(-OROGEN_LAYOUT.marginBowFraction*L*R,Math.min(OROGEN_LAYOUT.marginBowFraction*L*R,Math.abs(gradient)>1 ? -.5*curvature/gradient*L*L*R : 0));
+    }
+    const uLimit=sine(L)/(1+detCos(L)),noiseSeed=Math.floor(random()*2147483647),wavelength=Math.max(OROGEN_LAYOUT.minWavelength+(OROGEN_LAYOUT.maxWavelength-OROGEN_LAYOUT.minWavelength)*random(),16*W/R*(1+uLimit*uLimit)),amplitudeM=W*(.3+.3*random());
+    // |offset'(u)/R| <= S. Exact grad(u) has norm
+    // (1+u*u)/(2*r), r >= z >= supportZ; hence g <= gradientMax.
+{"world":"Maithea","build":"cold","totalMs":27.469899999999996,"phases":[4.498899999999992,4.705200000000005,0.10840000000000316,17.736699999999985,0.08200000000002206]}
+{"world":"Maithea","build":"second","totalMs":17.73090000000002,"phases":[2.914999999999992,3.731400000000008,0.10560000000000969,10.894899999999978,0.0478000000000236]}
+{"world":"Selawyn","build":"cold","totalMs":39.9846,"phases":[10.10850000000002,3.918599999999998,0.02039999999999509,25.488499999999988,0.0841000000000065]}
+{"world":"Selawyn","build":"second","totalMs":28.68780000000001,"phases":[6.818100000000015,1.8252999999999986,0.012399999999985312,19.92530000000002,0.05629999999999313]}
+{"world":"Raiva","build":"cold","totalMs":9.019000000000005,"phases":[1.9603000000000037,0.6929999999999978,0.03520000000000323,5.9091999999999985,0.059899999999998954]}
+{"world":"Raiva","build":"second","totalMs":3.708500000000001,"phases":[0.9148000000000138,0.21019999999998618,0.09700000000000841,2.4496000000000038,0.015599999999992065]}
+{"world":"Lethuris","build":"cold","totalMs":41.2431,"phases":[6.62639999999999,6.982100000000003,0.013900000000006685,27.14869999999999,0.08880000000002042]}
+{"world":"Lethuris","build":"second","totalMs":28.55850000000001,"phases":[5.105499999999978,2.2789000000000215,0.015799999999984493,21.05420000000001,0.061599999999998545]}
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'node --test tests/mountain-coarse-field.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-envelope.test.mjs tests/terrain-mountains-assembly.test.mjs tests/lod-carving-reduction.test.mjs > test-results/mountains/t6-baked/r2/fix-tests.log 2>&1; Write-Output "tests exit=$LASTEXITCODE"' in C:\LLM\IWSDK\universe-atlas-wt\baked
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg -n lowBitIndex src/mountain-layout.ts; Get-Content test-results/mountains/t6-baked/r2/fix-tests.log | Select-Object -Last 8; Get-Content test-results/mountains/t6-baked/r2/truth-identity.mjs | Select-Object -First 14' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 43ms:
+465:function lowBitIndex(bits: number) {
+import {readFileSync} from 'node:fs';
+import {stripTypeScriptTypes} from 'node:module';
+import assert from 'node:assert/strict';
+import {directions,waterWorlds} from '../../../../tests/helpers/mountain-coarse-field.mjs';
+import {terrainSampler} from '../../../../src/terrain.ts';
+const text=readFileSync(new URL('./before-terrain.txt',import.meta.url),'utf8').replace(/from (['"])(\.\/[^'"]+)\1/g,(_,q,p)=>`from ${q}${new URL('../../../../src/'+p.slice(2),import.meta.url).href}${q}`);
+const before=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(text)).toString('base64'));
+for(const body of waterWorlds()){
+ let count=0;
+ for(const expose of [false,true]){
+  const args=[body,[],undefined,false,0,undefined,expose,{mountains:true}],a=before.terrainSampler(...args),b=terrainSampler(...args);
+  for(const d of directions(body,6000)){
+   const x=a(d),y=b(d);assert.deepEqual(Object.keys(x),Object.keys(y));
+   for(const k of Object.keys(x))if(Array.isArray(x[k]))x[k].forEach((v,i)=>assert.ok(Object.is(v,y[k][i]),k));else assert.ok(Object.is(x[k],y[k]),k);
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "@'
+from pathlib import Path
+p=Path('src/mountain-layout.ts');s=p.read_text();a=s.index('function coarseDistanceEvaluator(');z=s.index('\\nfunction buildCoarseBandField',a);lines=s[a:z].splitlines();inside=False
+for i,l in enumerate(lines):
+ if l.startswith('  return ('): inside=True;continue
+ if l.startswith('      '):lines[i]=l[4:]
+s=s[:a]+'\\n'.join(lines)+s[z:];p.write_text(s)
+'@ | python -
+node test-results/mountains/t6-baked/fix-identity.mjs r2/after.json > test-results/mountains/t6-baked/r2/fix-identity.log 2>&1; Write-Output \"identity exit="'$LASTEXITCODE"' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 6751ms:
+identity exit=0
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "@'
+from pathlib import Path
+p=Path('src/mountain-layout.ts');s=p.read_text();a=s.index('// Index of the least significant set bit');z=s.index('// Builder-only distance projection',a);s=s[:a]+s[z:];p.write_text(s)
+p=Path('test-results/mountains/t6-baked/r2/fix-phase-profile.mjs');s=p.read_text().replace(\"const path=process.argv[2]==='before'?'./before-layout.txt':'../../../../src/mountain-layout.ts';\",\"const path=process.argv[2]==='before'?'./before-layout.txt':process.argv[2]==='eager'?'./fix-eager-layout.txt':'../../../../src/mountain-layout.ts';\")
+s=s.replace(\"s+='\\\\nexport {buildCoarseBandField};';\",\"if(s.includes('const materialiseAll='))s=s.replace('  times.push(performance.now());\\\\n  const field={faceCells:N,','  times.push(performance.now());materialiseAll();times.push(performance.now());\\\\n  const field={faceCells:N,');\\ns+='\\\\nexport {buildCoarseBandField};';\")
+p.write_text(s)
+'@ | python -
+node test-results/mountains/t6-baked/r2/truth-identity.mjs
+node -e \"const fs=require('fs');const p='test-results/mountains/t6-baked/r2/';const equal=fs.readFileSync(p+'before.json').equals(fs.readFileSync(p+'after.json'));console.log('r2/after.json == r2/before.json:',equal);if("'!equal)process.exit(1)"
+git diff --check' in C:\LLM\IWSDK\universe-atlas-wt\baked
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'npx tsc --noEmit; Write-Output "tsc exit=$LASTEXITCODE"; Get-Content test-results/mountains/t6-baked/r2/fix-tests.log | Select-Object -Last 12; git diff -- src/terrain.ts tests/mountain-coarse-field.test.mjs tests/helpers/mountain-coarse-field.mjs' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 3225ms:
+tsc exit=0
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2770.9078ms)
+ℹ INFO Selawyn C=0/7/112/107 N=0/6/55/53 edge 0: morph start 0.0060 m, seam 0.0037 m; mutant 1911.0 / 1428.5 m; mean step at the cut -905.9 m (min -2212.4 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1975.2323ms)
+ℹ INFO Selawyn (cube-face edge) C=0/7/127/53 N=5/6/0/26 edge 1: morph start 0.0058 m, seam 0.0052 m; mutant 2726.4 / 1923.7 m; mean step at the cut -488.5 m (min -2869.9 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2757.1345ms)
+ℹ INFO Raiva C=1/5/19/25 N=1/4/9/13 edge 3: morph start 0.0052 m, seam 0.0052 m; mutant 771.6 / 505.4 m; mean step at the cut -208.4 m (min -782.6 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (2306.2106ms)
+ℹ INFO Raiva (cube-face edge) C=0/5/0/5 N=4/4/15/2 edge 0: morph start 0.0047 m, seam 0.0049 m; mutant 2071.0 / 228.4 m; mean step at the cut -640.7 m (min -2109.0 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2877.8786ms)
+ℹ INFO Lethuris C=2/7/28/73 N=2/6/13/36 edge 0: morph start 0.0058 m, seam 0.0056 m; mutant 2414.7 / 1767.7 m; mean step at the cut -963.0 m (min -2702.8 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1910.136ms)
+ℹ INFO Lethuris (cube-face edge) C=0/7/0/105 N=4/6/63/52 edge 0: morph start 0.0035 m, seam 0.0029 m; mutant 2296.7 / 575.1 m; mean step at the cut -828.1 m (min -2499.1 m)
+diff --git a/src/terrain.ts b/src/terrain.ts
+index 9689822..4543957 100644
+--- a/src/terrain.ts
++++ b/src/terrain.ts
+@@ -597,6 +597,7 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
+             const i=Math.max(0,Math.min(N-1,Math.floor(fx))),j=Math.max(0,Math.min(N-1,Math.floor(fy)));
+             const block=field.blockTable[(face*B+(j>>>3))*B+(i>>>3)]-1,bit=(j&7)*8+(i&7);
+             if(block>=0 && (field.masks[block*2+(bit>>>5)]&(1<<(bit&31)))) {
++              if(!field.built[block])field.materialiseBlock(block);
+               const wx=fx-i,wy=fy-j,ds=field.distances,bs=field.scalars,main=ridgeTermM;
+               let best=main; // Include the zero-belt term: candidate-list changes stay continuous.
+               for(let c=field.offsets[block];c<field.offsets[block+1];c++){
+diff --git a/tests/helpers/mountain-coarse-field.mjs b/tests/helpers/mountain-coarse-field.mjs
+index 3ac516a..4872cfb 100644
+--- a/tests/helpers/mountain-coarse-field.mjs
++++ b/tests/helpers/mountain-coarse-field.mjs
+@@ -40,6 +40,7 @@ export function lookup(field,d,absolute=false){
+   const face=k*2+(d[k]>0?0:1),fx=(d[[1,0,0][k]]/ax[k]+1)*N/2,fy=(d[[2,2,1][k]]/ax[k]+1)*N/2;
+   const i=Math.max(0,Math.min(N-1,Math.floor(fx))),j=Math.max(0,Math.min(N-1,Math.floor(fy))),block=field.blockTable[(face*B+(j>>>3))*B+(i>>>3)]-1,bit=(j&7)*8+(i&7);
+   if(block<0||!(field.masks[2*block+(bit>>>5)]&(1<<(bit&31))))return [];
++  field.materialiseBlock(block);
+   const wx=fx-i,wy=fy-j,out=[];
+   for(let c=field.offsets[block];c<field.offsets[block+1];c++){
+     const p=c*81+(j&7)*9+(i&7),a=[0,1,9,10].map(n=>absolute?Math.abs(field.distances[p+n]):field.distances[p+n]);
+@@ -73,6 +74,7 @@ export const {referenceDistance}=await import('data:text/javascript;base64,'+Buf
+ export function nodeDirection(face,i,j,N){const d=[0,0,0],k=face>>>1;d[k]=face&1?-1:1;d[[1,0,0][k]]=2*i/N-1;d[[2,2,1][k]]=2*j/N-1;const l=Math.sqrt(d[0]*d[0]+d[1]*d[1]+d[2]*d[2]);return d.map(v=>v/l);}
+ export function measureError(body,steps=4){
+   const layout=orogenLayout(body),f=layout.coarseBandField(48000,32000),N=f.faceCells,B=N/8;
++  f.materialiseAll();
+   let max=0,count=0,worst=null,boundary=Infinity;
+   for(let q=0;q<f.blockTable.length;q++){
+     const block=f.blockTable[q]-1;if(block<0)continue;
+diff --git a/tests/mountain-coarse-field.test.mjs b/tests/mountain-coarse-field.test.mjs
+index 2c39fa2..aa35b20 100644
+--- a/tests/mountain-coarse-field.test.mjs
++++ b/tests/mountain-coarse-field.test.mjs
+@@ -56,10 +56,31 @@ for(const body of worlds){
+     for(let i=31;i>=0;i--)b.sample(fib(i,32));
+     assert.equal(a.coarseBandField(48000,32000),af);assert.equal(b.coarseBandField(48000,32000),bf);
+     assert.equal(af.faceCells,a.bandGrid(48000,32000).faceCells/2);assert.ok(af.bytes<=8*1024*1024);
++    assert.ok(af.built.every(v=>v===0));assert.ok(bf.built.every(v=>v===0));
++    assert.ok(af.distances.every(v=>Object.is(v,0)));
++    af.materialiseAll();
++    for(let block=bf.built.length-1;block>=0;block--)bf.materialiseBlock(block);
++    assert.ok(af.built.every(v=>v===1));assert.ok(bf.built.every(v=>v===1));
++    bf.materialiseAll(); // Idempotent, including after reverse construction.
+     for(const k of arrays)assert.deepEqual(Buffer.from(af[k].buffer),Buffer.from(bf[k].buffer),k);
++    // One read corner per block/candidate against the independent eager node expression.
++    const N=af.faceCells,B=N/8;
++    let checked=0;
++    for(let q=0;q<af.blockTable.length;q++){
++      const block=af.blockTable[q]-1;if(block<0)continue;
++      let n=0;while(n<81&&!nodeIsRead(af,block,n%9,Math.floor(n/9)))n++;
++      assert.ok(n<81);
++      const d=nodeDirection(Math.floor(q/(B*B)),q%B*8+n%9,Math.floor(q/B)%B*8+Math.floor(n/9),N);
++      for(let c=af.offsets[block];c<af.offsets[block+1];c++){
++        const belt=a.belts[af.candidates[c]],expected=Math.fround(referenceDistance(belt,d,body.radiusM)/Math.min(belt.halfWidthM,48000));
++        assert.ok(Object.is(af.distances[c*81+n],expected));checked++;
++      }
++    }
++    assert.ok(checked>0);
+   });
+   test(`${body.name}: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity`,t=>{
+     const f=orogenLayout(body).coarseBandField(48000,32000),N=f.faceCells,B=N/8,layout=orogenLayout(body),seen=new Map(),coarse=sampler(body,{mountains:true,lodLevel:0});let matched=0,nodeChecks=0;
++    f.materialiseAll();
+     for(let q=0;q<f.blockTable.length;q++){
+       const block=f.blockTable[q]-1;if(block<0)continue;const face=Math.floor(q/(B*B)),i0=q%B*8,j0=Math.floor(q/B)%B*8;
+       if(i0!==0&&j0!==0&&i0+8!==N&&j0+8!==N)continue;
+
+codex
+The final lazy builder passes the 503,165-node identity check, and `r2/after.json` is byte-identical to `r2/before.json`. TypeScript also passes. The six-file test run and full truth-identity check are still running; I’ll wait for them before taking the final sequential timings.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-Content test-results/mountains/t6-baked/r2/fix-tests.log | Select-Object -Last 5; git diff --check; Write-Output "diff-check exit=$LASTEXITCODE"; git rev-parse --short HEAD; git branch --show-current' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 87ms:
+ℹ INFO Raiva (cube-face edge) C=0/5/0/5 N=4/4/15/2 edge 0: morph start 0.0047 m, seam 0.0049 m; mutant 2071.0 / 228.4 m; mean step at the cut -640.7 m (min -2109.0 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2877.8786ms)
+ℹ INFO Lethuris C=2/7/28/73 N=2/6/13/36 edge 0: morph start 0.0058 m, seam 0.0056 m; mutant 2414.7 / 1767.7 m; mean step at the cut -963.0 m (min -2702.8 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1910.136ms)
+ℹ INFO Lethuris (cube-face edge) C=0/7/0/105 N=4/6/63/52 edge 0: morph start 0.0035 m, seam 0.0029 m; mutant 2296.7 / 575.1 m; mean step at the cut -828.1 m (min -2499.1 m)
+diff-check exit=0
+6079ea9
+mountains/baked-coarse
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-Process node | Select-Object Id,CPU,StartTime; Get-Content test-results/mountains/t6-baked/r2/truth-identity.mjs | Select-Object -Last 10; Get-Content test-results/mountains/t6-baked/r2/fix-phase-profile.mjs' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 92ms:
+
+   Id    CPU StartTime
+   --    --- ---------
+ 1640   0,31 05-10-2026 07:55:43
+11008   0,25 05-10-2026 07:55:45
+11528   0,25 05-10-2026 07:55:43
+12076   0,41 05-10-2026 08:35:01
+12232   0,05 05-10-2026 15:13:52
+16220   7,45 05-10-2026 07:43:09
+16308   0,28 05-10-2026 07:55:03
+21052   1,00 05-10-2026 07:58:38
+21084   0,22 05-10-2026 08:35:01
+21948  98,38 05-10-2026 20:52:12
+23348 115,83 05-10-2026 07:43:09
+23512 567,86 05-10-2026 07:43:09
+27716   0,03 06-10-2026 10:34:27
+36460   0,69 05-10-2026 07:58:45
+39748   0,30 05-10-2026 07:58:45
+42940  22,91 05-10-2026 07:44:07
+43560  10,77 05-10-2026 07:44:12
+43712 410,45 05-10-2026 07:44:08
+44572   0,08 06-10-2026 10:37:47
+50260   0,27 05-10-2026 07:55:20
+52088  63,53 06-10-2026 10:38:32
+52096   0,03 05-10-2026 07:55:43
+53988   0,47 05-10-2026 07:58:27
+54324 110,33 06-10-2026 10:37:47
+55460        
+58360   0,44 05-10-2026 15:13:54
+ for(const expose of [false,true]){
+  const args=[body,[],undefined,false,0,undefined,expose,{mountains:true}],a=before.terrainSampler(...args),b=terrainSampler(...args);
+  for(const d of directions(body,6000)){
+   const x=a(d),y=b(d);assert.deepEqual(Object.keys(x),Object.keys(y));
+   for(const k of Object.keys(x))if(Array.isArray(x[k]))x[k].forEach((v,i)=>assert.ok(Object.is(v,y[k][i]),k));else assert.ok(Object.is(x[k],y[k]),k);
+   count++;
+  }
+ }
+ console.log(JSON.stringify({world:body.name,identicalTruthSamples:count}));
+}
+import {readFileSync} from 'node:fs';
+import {stripTypeScriptTypes} from 'node:module';
+import {waterWorlds} from '../../../../tests/terrain-climate-fixtures.mjs';
+const path=process.argv[2]==='before'?'./before-layout.txt':process.argv[2]==='eager'?'./fix-eager-layout.txt':'../../../../src/mountain-layout.ts';
+let s=readFileSync(new URL(path,import.meta.url),'utf8');
+s=s.replace('  const N=g.faceCells/2,B=N/8,','  const times=[performance.now()];\n  const N=g.faceCells/2,B=N/8,')
+.replace('  const masks: number[]=[]','  times.push(performance.now());\n  const masks: number[]=[]')
+.replace('  const values=new Float32Array(candidates.length*81);','  times.push(performance.now());\n  const values=new Float32Array(candidates.length*81);\n  times.push(performance.now());')
+.replace('  const field={faceCells:N,','  times.push(performance.now());\n  const field={faceCells:N,')
+.replace('  return Object.freeze({...field,bytes});','  times.push(performance.now());globalThis.fieldPhases=times.slice(1).map((t,i)=>t-times[i]);\n  return Object.freeze({...field,bytes});')
+.replace(/from (['"])(\.\/[^'"]+)\1/g,(_,q,p)=>`from ${q}${new URL('../../../../src/'+p.slice(2),import.meta.url).href}${q}`);
+if(s.includes('const materialiseAll='))s=s.replace('  times.push(performance.now());\n  const field={faceCells:N,','  times.push(performance.now());materialiseAll();times.push(performance.now());\n  const field={faceCells:N,');
+s+='\nexport {buildCoarseBandField};';
+const {orogenLayout,buildCoarseBandField}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(s)).toString('base64'));
+const body=waterWorlds()[+process.argv[3]],l=orogenLayout(body),g=l.bandGrid(48000,32000);
+for(let n=0;n<2;n++){const t=performance.now();const f=buildCoarseBandField(l.belts,body.radiusM,g,48000,32000);console.log(JSON.stringify({world:body.name,build:n?'second':'cold',totalMs:performance.now()-t,phases:globalThis.fieldPhases}));}
+
+
+ succeeded in 115113ms:
+tests exit=1
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-Content test-results/mountains/t6-baked/r2/fix-tests.log | Select-Object -Last 8' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 37ms:
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "rg -n -C 8 '✖|fail|AssertionError|tests |pass ' test-results/mountains/t6-baked/r2/fix-tests.log" in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 1ms:
+62-ℹ INFO Lethuris coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.011451772768033525,"p50":0,"p99":739.9070997250874,"max":2086.321977227656}
+63-ℹ INFO zero-margin floor violations 3586
+64-✔ Lethuris: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (38.744ms)
+65-✔ HARD: baseTerrainCore and mountainTerrainCore are identical outside the setup and ridge-term hunks (1.0135ms)
+66-BAND {"sweep":[{"halfWidthM":32000,"share":0.02059755339136694},{"halfWidthM":33000,"share":0.018673327008370835},{"halfWidthM":34000,"share":0.017962050902429538},{"halfWidthM":35000,"share":0.01783730401558141},{"halfWidthM":36000,"share":0.01783038996134826},{"halfWidthM":37000,"share":0.01767578456470943},{"halfWidthM":38000,"share":0.017258459206269817},{"halfWidthM":39000,"share":0.016553943886622013},{"halfWidthM":40000,"share":0.015587532026333159},{"halfWidthM":41000,"share":0.014410256314252806},{"halfWidthM":42000,"share":0.013085324618626099},{"halfWidthM":43000,"share":0.011680597094867651},{"halfWidthM":44000,"share":0.010264570491351833},{"halfWidthM":45000,"share":0.008904382777806284},{"halfWidthM":46000,"share":0.007664610465907796},{"halfWidthM":47000,"share":0.006605066916921468},{"halfWidthM":48000,"share":0.005774627812444001},{"halfWidthM":49000,"share":0.005774627812444001},{"halfWidthM":50000,"share":0.005774627812444001},{"halfWidthM":51000,"share":0.005774627812444001},{"halfWidthM":52000,"share":0.005774627812444001},{"halfWidthM":53000,"share":0.005774627812444001},{"halfWidthM":54000,"share":0.005774627812444001},{"halfWidthM":55000,"share":0.005774627812444001},{"halfWidthM":56000,"share":0.005774627812444001},{"halfWidthM":57000,"share":0.005774627812444001},{"halfWidthM":58000,"share":0.005774627812444001},{"halfWidthM":59000,"share":0.005774627812444001},{"halfWidthM":60000,"share":0.005774627812444001},{"halfWidthM":61000,"share":0.005774627812444001},{"halfWidthM":62000,"share":0.005774627812444001},{"halfWidthM":63000,"share":0.005774627812444001},{"halfWidthM":64000,"share":0.005774627812444001},{"halfWidthM":65000,"share":0.005774627812444001},{"halfWidthM":66000,"share":0.005774627812444001},{"halfWidthM":67000,"share":0.005774627812444001},{"halfWidthM":68000,"share":0.005774627812444001},{"halfWidthM":69000,"share":0.005774627812444001},{"halfWidthM":70000,"share":0.005774627812444001},{"halfWidthM":71000,"share":0.005774627812444001},{"halfWidthM":72000,"share":0.005774627812444001},{"halfWidthM":73000,"share":0.005774627812444001},{"halfWidthM":74000,"share":0.005774627812444001},{"halfWidthM":75000,"share":0.005774627812444001},{"halfWidthM":76000,"share":0.005774627812444001},{"halfWidthM":77000,"share":0.005774627812444001},{"halfWidthM":78000,"share":0.005774627812444001},{"halfWidthM":79000,"share":0.005774627812444001},{"halfWidthM":80000,"share":0.005774627812444001},{"halfWidthM":100000,"share":0.005774627812444001},{"halfWidthM":150000,"share":0.005774627812444001},{"halfWidthM":220000,"share":0.005774627812444001}],"oblique":0.008574179959937327,"narrow":0.48929726106718174,"box":0.22728543864871603}
+67-BOUND {"gridSamples":614922,"rasterSamples":37249,"violations":0}
+68-CONVEX {"roundedAbove":0,"maxRoundingM":0}
+69-DIGEST 945cabad88648e1f06206f8b0ea682dc22ebc78e93b726d8ce7cd4570d6b63f4
+70:✔ HARD: dense width sweep and oblique compact transect; narrow and box controls fail (63.9316ms)
+71-✔ HARD: analytic maximum on dense parameter grid and great-circle raster (25.7708ms)
+72-✔ HARD: literal positive zero at every exclusion, and dry amplitude ignores tau (0.8963ms)
+73-✔ HARD: outside composition preserves main bits; interior composition stays convex (27.6354ms)
+74-✔ HARD: massif-envelope-2 cap: one fixed-width massif on a wide belt; the weight fades to 0 at its edge (0.4435ms)
+75-✔ HARD: symmetric monotone profile, exact crown, C2 support and blend endpoints (0.324ms)
+76-✔ HARD: forward/reverse/child SHA256 agrees (118.4386ms)
+77-✔ HARD: arithmetic audit with negative controls, no imports, frozen versioned constants (2.7879ms)
+78-GRID Maithea: N=1024, 2358 in-band of 102500, edge 2743 in-band of 8880, 1480/1480 pairs straddle 48 km
+--
+96-✔ HARD: flagged area <= 1.5 x massif (band) area per world (818.677ms)
+97-✔ HARD: outside the band mountainRidgeTermM returns main's term unchanged, so massifBeltSample is value-neutral at the call site (91.2725ms)
+98-DIGEST dd8e6306c35553aad026290caa0f5dc12204a5aa66b16a155b1e2a44b4b53501
+99-DISTANCE {"count":2000,"centrelineSteps":4000,"maxErrorM":8.792267180979252e-7,"maxErrorWidth":3.996485082263296e-12,"p99ErrorWidth":3.5074084404517304e-12,"toleranceWidth":0.01,"pass":true,"worst":{"direction":[-0.8767337195899597,0.25299000000000005,0.40906484184534114],"beltIndex":0,"axisDistanceM":219794.7816744512,"actualM":219794.78167533042,"halfWidthM":220000,"distanceWidth":0.9990671894333201,"slope":0.02765879805404938}}
+100-CURVATURE Maithea {"max":0.047823456257596944,"boundMax":0.09212779763135807,"limit":0.2,"steps":4096,"worst":{"beltIndex":0,"u":0.3955079372831563}}
+101-CURVATURE Lethuris {"max":0.04782335742067525,"boundMax":0.08158014450852297,"limit":0.2,"steps":4096,"worst":{"beltIndex":22,"u":0.000027067598482168446}}
+102-ALONG 305 off-axis samples, max |alongM - dense| 0.02412321261363104 m
+103-✔ HARD: real hierarchy exercises elongation and curved-axis derivative (62.3977ms)
+104:✔ HARD: metric teeth: straight band passes, disks fail aspect, isotropic mask fails coherence (71.5612ms)
+105-✔ HARD: synthetic spherical-cap continent satisfies all M1 thresholds (37.7501ms)
+106-✔ HARD: coast, caller coordinate, bounds and tangent frame (16.7917ms)
+107-✔ HARD: gas giants and stars are zero, including sampleWithA0 (0.959ms)
+108-✔ HARD: forward, reverse and child-process sample digests agree (192.8368ms)
+109:✖ HARD: arithmetic-only layout and no terrain/climate/colour/LOD import (1.6443ms)
+110-✔ HARD: strict coherence counts all positive centres including zero tensors (4.3733ms)
+111-✔ HARD: 2000 positive Maithea distances agree with dense displaced-centreline search (216.1053ms)
+112-✔ HARD: dense Maithea/Lethuris spatial curvature times W stays below .2 (129.8987ms)
+113-✔ HARD: alongM (assembly addition) is the base-circle arc R x 2 atan(u) of the foot point, 0 off-belt (15.2633ms)
+114-✔ HARD: offsetNoise is catalog noise(x, 37, 19, seed) bit for bit, cache interleaved across cells and seeds (6.1655ms)
+115-✔ HARD: the T2 rejections are exact: sampleWithA0 and sampleWithinWithA0 == (filtered) sampleWithA0Unpruned on 4 worlds (Fibonacci, belt rasters, coast gate open) (2410.3686ms)
+116-✔ HARD: alongM off the axis is R x 2 atan(u*) of the dense-search foot point (< .1 m; 3 steps would give .64 m) (16.8567ms)
+117-✔ HARD: orogen-layout-2 keeps orogen-layout-1's belts: 4 worlds, 60 corpus bodies and the synthetic cap (literals from main 66453b2) (2952.7454ms)
+--
+119-✔ HARD: outsideBelt directions (4096 per water world) are bit-identical to main: heights, ocean and colour (333.0973ms)
+120-✔ HARD: outsideMassif directions (4096 per water world) are bit-identical to main: heights, ocean and colour (72.0672ms)
+121-✔ HARD: negative controls: the identity digest rejects one changed height, colour or ocean flag (112.8857ms)
+122-✔ HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (31.6444ms)
+123-✔ HARD: versions, fixed carving width, strip rule and per-strip seeds (0.7078ms)
+124-✔ HARD: the assembled ridge term: >= 0, <= max(main, analytic envelope), main outside the massif (350.0431ms)
+125-✔ HARD: mountain-assembly.ts is arithmetic only and imports only M2 and M3 (1.4057ms)
+126-✔ CONTRACT: M4 R1 on the whole belt core at the real Raiva tau and belt width (8 seeds, 64 km rasters) (6150.3139ms)
+127:ℹ tests 82
+128-ℹ suites 0
+129:ℹ pass 81
+130:ℹ fail 1
+131-ℹ cancelled 0
+132-ℹ skipped 0
+133-ℹ todo 0
+134-ℹ duration_ms 115071.8802
+135-
+136:✖ failing tests:
+137-
+138-test at tests\mountain-layout.test.mjs:144:1
+139:✖ HARD: arithmetic-only layout and no terrain/climate/colour/LOD import (1.6443ms)
+140:  AssertionError [ERR_ASSERTION]: Math.clz32 is not allowed
+141-      at auditArithmetic (file:///C:/LLM/IWSDK/universe-atlas-wt/baked/tests/mountain-layout.test.mjs:137:69)
+142-      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/baked/tests/mountain-layout.test.mjs:146:3)
+143-      at Test.runInAsyncScope (node:async_hooks:214:14)
+144-      at Test.run (node:internal/test_runner/test:1106:25)
+145:      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+146-      at Test.postRun (node:internal/test_runner/test:1235:19)
+147-      at Test.run (node:internal/test_runner/test:1163:12)
+148:      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+149-    generatedMessage: false,
+150-    code: 'ERR_ASSERTION',
+151-    actual: false,
+152-    expected: true,
+153-    operator: '==',
+154-    diff: 'simple'
+155-  }
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "@'
+from pathlib import Path
+before=Path('test-results/mountains/t6-baked/r2/before-layout.txt').read_text();a=before.index('// Index of the least significant set bit');z=before.index('function buildCoarseBandField',a);fn=before[a:z]
+for name in ['src/mountain-layout.ts','test-results/mountains/t6-baked/r2/fix-eager-layout.txt']:
+ p=Path(name);s=p.read_text().replace('(31-Math.clz32(bits&-bits))','lowBitIndex(bits)')
+ if 'function lowBitIndex(' not in s:s=s.replace('// Builder-only distance projection',fn+'// Builder-only distance projection')
+ p.write_text(s)
+'@ | python -
+node --test tests/mountain-coarse-field.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-envelope.test.mjs tests/terrain-mountains-assembly.test.mjs tests/lod-carving-reduction.test.mjs > test-results/mountains/t6-baked/r2/fix-tests-final.log 2>&1; Write-Output \"tests exit="'$LASTEXITCODE"' in C:\LLM\IWSDK\universe-atlas-wt\baked
+codex
+The first test run passed 81 of 82 tests. The arithmetic-source audit rejected `Math.clz32`, so I restored the existing integer-only bit-index helper and started the required test run again. All value, seam, conservativeness, and forward/reverse materialisation checks passed in the first run.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "@'
+from pathlib import Path
+p=Path('test-results/mountains/t6-baked/r2/field-bench.mjs');s=p.read_text().replace(\"import {orogenLayout} from '../../../../src/mountain-layout.ts';\",'''import {readFileSync} from 'node:fs';
+import {stripTypeScriptTypes} from 'node:module';
+let source=readFileSync(new URL('./fix-eager-layout.txt',import.meta.url),'utf8').replace(/from (['\"])(\\\\.\\\\/["'^'"'\"]+)\\\\1/g,(_,q,p)=>"'`from ${q}${new URL('"'../../../../src/'+p.slice(2),import.meta.url).href}"'${q}`);
+const {orogenLayout}=await import('"'data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)).toString('base64'));''');Path('test-results/mountains/t6-baked/r2/fix-eager-bench.mjs').write_text(s)
+'@ | python -
+node test-results/mountains/t6-baked/fix-node-identity.mjs
+npx tsc --noEmit
+node test-results/mountains/t6-baked/fix-identity.mjs r2/after.json > test-results/mountains/t6-baked/r2/fix-identity.log 2>&1; Write-Output \"identity exit="'$LASTEXITCODE"
+node -e "const fs=require('"'fs');const p='test-results/mountains/t6-baked/r2/';const equal=fs.readFileSync(p+'before.json').equals(fs.readFileSync(p+'after.json'));console.log('r2/after.json == r2/before.json:',equal);if("'!equal)process.exit(1)"' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 11125ms:
+{"world":"Maithea","readNodesIdentical":103365,"unusedNodesZero":69489}
+{"world":"Selawyn","readNodesIdentical":182972,"unusedNodesZero":111463}
+{"world":"Raiva","readNodesIdentical":17879,"unusedNodesZero":10390}
+{"world":"Lethuris","readNodesIdentical":198949,"unusedNodesZero":119867}
+(node:59280) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+identity exit=0
+r2/after.json == r2/before.json: true
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-Content src/mountain-layout.ts | Select-Object -Skip 464 -First 46; Get-Content test-results/mountains/t6-baked/r2/fix-tests-final.log | Select-Object -Last 5; git diff --check; Write-Output "diff-check exit=$LASTEXITCODE"' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 65ms:
+function lowBitIndex(bits: number) {
+  let v=bits&-bits,n=0;
+  if(v&0xffff0000){n+=16;v>>>=16;}if(v&0xff00){n+=8;v>>>=8;}
+  if(v&0xf0){n+=4;v>>>=4;}if(v&0xc){n+=2;v>>>=2;}if(v&2)n++;
+  return n;
+}
+// Builder-only distance projection: identical transverse arithmetic, without unused gradients.
+// One closure per belt keeps its noise cell and constants local across adjacent nodes.
+function coarseDistanceEvaluator(b: OrogenBelt,R: number,H: number) {
+  const T=b.tangent,C=b.centre,P=b.pole;
+  const t0=T[0],t1=T[1],t2=T[2],c0=C[0],c1=C[1],c2=C[2],p0=P[0],p1=P[1],p2=P[2];
+  const U=b.uLimit,iU=1/U,iR=1/R,wavelength=b.wavelength,k2=2/wavelength,bend=b.bendM,amp=b.amplitudeM;
+  const hashKey=Math.imul(OFFSET_NOISE_Y,0x85ebca77)^Math.imul(OFFSET_NOISE_Z,0xc2b2ae3d)^Math.imul(b.noiseSeed,0x27d4eb2f);
+  let cell=NaN,h0=0,h1=0;
+  return (d0: number,d1: number,d2: number): number=>{
+    const x=d0*t0+d1*t1+d2*t2,z=d0*c0+d1*c1+d2*c2,py=d0*p0+d1*p1+d2*p2;
+    let u=x/(Math.sqrt(x*x+z*z)+z);
+    // offset() uses division, whereas transverse() uses precomputed reciprocals.
+    // They cannot share the first offset without changing rounding.
+    const ov=u/U,ox=u*2/wavelength+13,oi=Math.floor(ox);let oa=ox-oi;oa=oa*oa*(3-2*oa);
+    if(oi!==cell){h0=cornerHash(oi,hashKey);h1=cornerHash(oi+1,hashKey);cell=oi;}
+    const off=bend*ov*ov+amp*(2*(h0*(1-oa)+h1*oa)-1),sign=py*R-off<0?-1:1;
+    let y=0,yp=0,r=1,rp=0,w=2,cc=0,ss=1;
+    for(let step=0;step<=footSteps;step++){
+      const v=u*iU,X=u*k2+13,ix=Math.floor(X),aa=X-ix,m=aa*aa*(3-2*aa);
+      if(ix!==cell){h0=cornerHash(ix,hashKey);h1=cornerHash(ix+1,hashKey);cell=ix;}
+      const n=h0*(1-m)+h1*m;
+      y=(bend*v*v+amp*(2*n-1))*iR;yp=(2*bend*v*iU+12*amp*(h1-h0)*aa*(1-aa)*k2)*iR;
+      r=Math.sqrt(1-y*y);rp=-y*yp/r;w=2/(1+u*u);cc=u*w;ss=(1-u*u)*w*.5;
+      if(step===footSteps)break;
+      const rw=r*w,q=x*cc+z*ss,t=x*ss-z*cc;
+      u=Math.max(-U,Math.min(U,u+(rp*(q-r)+rw*t+(py-y)*yp)/(rp*rp+rw*rw+yp*yp)));
+    }
+    const pT=r*cc,pC=r*ss;
+    const e0=d0-(pT*t0+pC*c0+y*p0),e1=d1-(pT*t1+pC*c1+y*p1),e2=d2-(pT*t2+pC*c2+y*p2),chord2=e0*e0+e1*e1+e2*e2;
+    return (sign*R*Math.sqrt(chord2)*(1+chord2/24+3*chord2*chord2/640))/H;
+  };
+}
+function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBandGrid,maxDistM: number,minHalfWidthM: number): CoarseBandField {
+  const N=g.faceCells/2,B=N/8,table=new Int32Array(6*B*B),flags=new Uint32Array(12*B*B),base=new Uint32Array(12*B*B),d: V3=[0,0,0];
+  const mark=(face: number,i: number,j: number)=>{
+    if(i<0||j<0||i>=N||j>=N){
+      coarseDirection(face,i+.5,j+.5,N,d);
+      const c=bandCellIndex(d,N);face=Math.floor(c/(N*N));j=Math.floor(c/N)%N;i=c%N;
+    }
+    const block=(face*B+(j>>>3))*B+(i>>>3),bit=(j&7)*8+(i&7);
+ℹ INFO Raiva (cube-face edge) C=0/5/0/5 N=4/4/15/2 edge 0: morph start 0.0047 m, seam 0.0049 m; mutant 2071.0 / 228.4 m; mean step at the cut -640.7 m (min -2109.0 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2639.2028ms)
+ℹ INFO Lethuris C=2/7/28/73 N=2/6/13/36 edge 0: morph start 0.0058 m, seam 0.0056 m; mutant 2414.7 / 1767.7 m; mean step at the cut -963.0 m (min -2702.8 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1886.788ms)
+ℹ INFO Lethuris (cube-face edge) C=0/7/0/105 N=4/6/63/52 edge 0: morph start 0.0035 m, seam 0.0029 m; mutant 2296.7 / 575.1 m; mean step at the cut -828.1 m (min -2499.1 m)
+diff-check exit=0
+
+ succeeded in 165734ms:
+{"world":"Maithea","identicalTruthSamples":25448}
+{"world":"Selawyn","identicalTruthSamples":25448}
+{"world":"Raiva","identicalTruthSamples":25448}
+{"world":"Lethuris","identicalTruthSamples":25448}
+(node:52088) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+r2/after.json == r2/before.json: true
+
+ succeeded in 91767ms:
+tests exit=0
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '0..3 | ForEach-Object { $worldIndex=$_; 1..3 | ForEach-Object { node test-results/mountains/t6-baked/r2/field-bench.mjs $worldIndex } } | Tee-Object test-results/mountains/t6-baked/r2/fix-field-bench.jsonl
+0..3 | ForEach-Object { $worldIndex=$_; 1..3 | ForEach-Object { node test-results/mountains/t6-baked/r2/fix-eager-bench.mjs $worldIndex } } | Tee-Object test-results/mountains/t6-baked/r2/fix-eager-final-bench.jsonl
+0..3 | ForEach-Object { node test-results/mountains/t6-baked/r2/fix-phase-profile.mjs after $_ } | Tee-Object test-results/mountains/t6-baked/r2/fix-after-phases.jsonl
+Get-Content test-results/mountains/t6-baked/r2/fix-tests-final.log | Select-Object -Last 8' in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 5321ms:
+{"world":"Maithea","coldMs":10.477499999999992,"materialiseAllMs":16.5488,"bytes":870996,"activeCells":74826}
+{"world":"Maithea","coldMs":10.227699999999984,"materialiseAllMs":16.89790000000002,"bytes":870996,"activeCells":74826}
+{"world":"Maithea","coldMs":12.247100000000003,"materialiseAllMs":16.166899999999984,"bytes":870996,"activeCells":74826}
+{"world":"Selawyn","coldMs":16.636799999999994,"materialiseAllMs":25.046899999999994,"bytes":1707689,"activeCells":133763}
+{"world":"Selawyn","coldMs":16.85730000000001,"materialiseAllMs":25.00449999999998,"bytes":1707689,"activeCells":133763}
+{"world":"Selawyn","coldMs":17.046700000000016,"materialiseAllMs":25.09299999999999,"bytes":1707689,"activeCells":133763}
+{"world":"Raiva","coldMs":3.396799999999999,"materialiseAllMs":6.240600000000001,"bytes":153233,"activeCells":13112}
+{"world":"Raiva","coldMs":3.2014000000000067,"materialiseAllMs":7.121200000000002,"bytes":153233,"activeCells":13112}
+{"world":"Raiva","coldMs":3.0411,"materialiseAllMs":5.767300000000006,"bytes":153233,"activeCells":13112}
+{"world":"Lethuris","coldMs":18.411400000000015,"materialiseAllMs":27.707700000000017,"bytes":1816963,"activeCells":145451}
+{"world":"Lethuris","coldMs":17.552099999999996,"materialiseAllMs":26.4932,"bytes":1816963,"activeCells":145451}
+{"world":"Lethuris","coldMs":16.33680000000001,"materialiseAllMs":26.047200000000004,"bytes":1816963,"activeCells":145451}
+(node:12284) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Maithea","coldMs":28.87960000000001,"materialiseAllMs":null,"bytes":822144,"activeCells":74826}
+(node:56632) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Maithea","coldMs":28.661599999999993,"materialiseAllMs":null,"bytes":822144,"activeCells":74826}
+(node:59464) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Maithea","coldMs":26.702799999999996,"materialiseAllMs":null,"bytes":822144,"activeCells":74826}
+(node:51976) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Selawyn","coldMs":42.959,"materialiseAllMs":null,"bytes":1624130,"activeCells":133763}
+(node:51632) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Selawyn","coldMs":40.5112,"materialiseAllMs":null,"bytes":1624130,"activeCells":133763}
+(node:57872) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Selawyn","coldMs":45.63029999999998,"materialiseAllMs":null,"bytes":1624130,"activeCells":133763}
+(node:42336) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Raiva","coldMs":12.058899999999994,"materialiseAllMs":null,"bytes":145206,"activeCells":13112}
+(node:57188) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Raiva","coldMs":9.605900000000005,"materialiseAllMs":null,"bytes":145206,"activeCells":13112}
+(node:28576) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Raiva","coldMs":9.433300000000003,"materialiseAllMs":null,"bytes":145206,"activeCells":13112}
+(node:6984) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Lethuris","coldMs":42.706999999999994,"materialiseAllMs":null,"bytes":1726504,"activeCells":145451}
+(node:60620) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Lethuris","coldMs":42.88239999999999,"materialiseAllMs":null,"bytes":1726504,"activeCells":145451}
+(node:9584) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Lethuris","coldMs":42.59619999999998,"materialiseAllMs":null,"bytes":1726504,"activeCells":145451}
+{"world":"Maithea","build":"cold","totalMs":28.362499999999983,"phases":[5.481099999999998,4.3422999999999945,0.106899999999996,0.9074999999999989,17.1276,0.04400000000001114]}
+(node:61236) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Maithea","build":"second","totalMs":18.240200000000016,"phases":[2.6056000000000097,1.4909000000000106,0.10329999999999018,0.16399999999998727,13.816600000000022,0.018000000000000682]}
+{"world":"Selawyn","build":"cold","totalMs":44.3304,"phases":[11.515800000000013,5.00139999999999,0.024500000000017508,2.4194999999999993,24.904799999999994,0.04909999999998149]}
+(node:58260) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Selawyn","build":"second","totalMs":31.239900000000006,"phases":[7.036900000000003,1.8800999999999988,0.012100000000003774,0.5056999999999903,21.727100000000007,0.021800000000013142]}
+{"world":"Raiva","build":"cold","totalMs":10.401600000000002,"phases":[2.5733000000000033,0.8855999999999966,0.06840000000001112,0.19959999999998956,6.2226,0.0607000000000113]}
+(node:57984) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Raiva","build":"second","totalMs":5.428100000000001,"phases":[1.2021000000000015,0.22710000000000719,0.03539999999999566,0.03849999999999909,3.8817999999999984,0.012000000000000455]}
+{"world":"Lethuris","build":"cold","totalMs":43.2501,"phases":[7.651199999999989,6.461500000000001,0.015899999999987813,2.261700000000019,26.46599999999998,0.04420000000001778]}
+(node:13084) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"world":"Lethuris","build":"second","totalMs":36.1139,"phases":[7.341000000000008,2.4025000000000034,0.012100000000003774,2.2117999999999824,24.081700000000012,0.018100000000004002]}
+ℹ tests 82
+ℹ suites 0
+ℹ pass 82
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 91696.5042
+
+codex
+All 82 tests now pass. Truth identity also passes for 101,792 samples, and the sampler/tile digest and all read nodes remain identical.
+
+Final lazy cold/materialise-all medians are 10.48/16.55 ms, 16.86/25.05 ms, 3.20/6.24 ms, and 17.55/26.49 ms. The eager variant still exceeds 40 ms on Selawyn and Lethuris. I’m saving the handoff with that limitation; official contract performance remains unverified.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "@'
+import json,statistics
+from pathlib import Path
+root=Path('test-results/mountains/t6-baked/r2')
+def read(name): return [json.loads(l) for l in (root/name).read_text(encoding='utf-8-sig').splitlines()]
+before=[('Maithea',[8.2249,3.2049,.1115,24.5077,.0979],[7.7791,4.0737,.0942,21.637,.0688]),('Selawyn',[12.6628,3.6004,.0213,41.2334,.1355],[11.5523,8.0747,.0198,35.691,.0764]),('Raiva',[4.407,.516,.0333,7.6147,.0638],[4.0221,.4819,.0296,3.6124,.0204]),('Lethuris',[11.485,6.6647,.0185,42.0131,.1192],[11.2893,9.7885,.1162,39.3869,.0796])]
+(root/'fix-before-phases.jsonl').write_text('\\n'.join(json.dumps(dict(world=w,build=b,phases=v)) for w,c,s in before for b,v in [('cold',c),('second',s)])+'\\n')
+text='''Bounded fix round complete on mountains/baked-coarse, HEAD 6079ea9; no commit. Kept LAZY: the optimized eager variant still exceeds the requested 40 ms threshold on Selawyn and Lethuris. This is the requested fallback, not a claim that the contract budget now passes.
+
+Phase profiles, ms, cold / second build in the same fresh process. Layout and T1 excluded; before is r2/before-layout.txt (eager). After is the final lazy builder with all blocks materialised. Float32 column measures allocation; per-node conversions/stores are included in node time. Candidate time includes scalar/evaluator setup; other includes block metadata and final packaging. Instrumented profiles are single runs, unofficial.
+
+| State/world | Active + dilation | Candidates | Float32 allocation | Nodes + stores | Other |
+|---|---:|---:|---:|---:|---:|
+'''
+for w,c,s in before:text+='| Before '+w+' | '+' | '.join(f'{x:.2f} / {y:.2f}' for x,y in zip(c,s))+' |\\n'
+after=read('fix-after-phases.jsonl')
+for w,_,_ in before:
+ c,s=[x['phases'] for x in after if x['world']==w]
+ c=[c[0],c[1],c[2],c[4],c[3]+c[5]];s=[s[0],s[1],s[2],s[4],s[3]+s[5]]
+ text+='| After '+w+' | '+' | '.join(f'{x:.2f} / {y:.2f}' for x,y in zip(c,s))+' |\\n'
+text+='''
+Fresh-process medians, three runs/world/variant, sequential, unofficial, ms. Eager uses the saved optimized eager source with the restored integer-only bit helper. Lazy total is the median of each run's cold + materialise-all, not a sum of medians.
+
+| World | Eager cold | Lazy cold | Materialise all | Lazy total | Retained typed-array bytes | Active cells |
+|---|---:|---:|---:|---:|---:|---:|
+'''
+for w,_,_ in before:
+ e=[x for x in read('fix-eager-final-bench.jsonl') if x['world']==w];l=[x for x in read('fix-field-bench.jsonl') if x['world']==w]
+ nums=[statistics.median(x['coldMs'] for x in e),statistics.median(x['coldMs'] for x in l),statistics.median(x['materialiseAllMs'] for x in l),statistics.median(x['coldMs']+x['materialiseAllMs'] for x in l)]
+ text+='| '+w+' | '+' | '.join(f'{v:.2f}' for v in nums)+f\" | {l[0]['bytes']:,} | {l[0]['activeCells']:,} |\\n\"
+text+='''
+Changes by file:
+
+- "'`src/mountain-layout.ts`: collapse covered T1 2×2 groups before iteration; dilate rows with bit operations while retaining canonical face-edge mapping. Builder-only per-belt distance closures hoist belt constants and retain independent noise caches, inline node direction, preserve division and transverse operation order, and omit unused gradients. Typed-array materialiser inputs; copy shared read nodes from built left/below/right/above neighbours. Account for retained row masks in bytes. Candidate selection remains unchanged.
+- `src/terrain.ts`, `tests/helpers/mountain-coarse-field.mjs`, `tests/mountain-coarse-field.test.mjs`: retained implement-round lazy branch, helper materialisation, and forward/reverse byte-identity/idempotence/reference-node structure checks; no new edits this fix round.
+- `fix-node-identity.mjs`: optional materialise-all call supports both eager trials and final lazy field.
+- `r2/fix-phase-profile.mjs`, `fix-eager-bench.mjs`, source snapshots and JSONL/log files: reproducible local profiling and evidence. `r2/field-bench.mjs` unchanged: existing API and one-JSON-line schema still apply.
+
+Measured and dropped: the large inline projection loop had eager cold about 36/58/18/50 ms; splitting it into per-belt evaluators improved cold compilation. `Math.clz32` failed the arithmetic-source allowlist, so restored the existing integer-only helper. Offset'"'s division and transverse's reciprocal multiplication were deliberately not conflated.
+
+Checks:
+
+- "'`node test-results/mountains/t6-baked/fix-identity.mjs r2/after.json`: exit 0; byte comparison with `r2/before.json`: exit 0, true (173,120 sampler outputs and eight tile digests).
+- `node test-results/mountains/t6-baked/fix-node-identity.mjs`: exit 0; all 503,165 read nodes Object.is-identical; 311,209 unread nodes remain zero; metadata arrays identical.
+- `node test-results/mountains/t6-baked/r2/truth-identity.mjs`: exit 0; 25,448 samples/world, 101,792 total, every field identical.
+- `npx tsc --noEmit`: exit 0.
+- `node --test tests/mountain-coarse-field.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-envelope.test.mjs tests/terrain-mountains-assembly.test.mjs tests/lod-carving-reduction.test.mjs`: final exit 0, 82 passed, zero failed/skipped. Initial run exit 1 (81 passed; Math.clz32 audit failure), fixed without changing the audit.
+- `git diff --check`: exit 0.
+- Phase profiles and all sequential field/eager bench processes: exit 0.
+
+No truth-path, terrainSampler, kernels, constructionA0, envelope, version, pin or wiring changes. No C1, official contract/orbit bench, .git writes, test-slot helper, npm test/test:full, network/downloads, browser, GPU or commit. The existing active-cell lazy branch remains in the coarse hot path, and node work still occurs during tile builds; official contract acceptance remains for the coordinator.
+'"'''
+(root/'astra-fix-handoff.md').write_text(text)
+print(text)
+'@ | python -
+git diff --check
+ git status --short" in C:\LLM\IWSDK\universe-atlas-wt\baked
+ succeeded in 62ms:
+Bounded fix round complete on mountains/baked-coarse, HEAD 6079ea9; no commit. Kept LAZY: the optimized eager variant still exceeds the requested 40 ms threshold on Selawyn and Lethuris. This is the requested fallback, not a claim that the contract budget now passes.
+
+Phase profiles, ms, cold / second build in the same fresh process. Layout and T1 excluded; before is r2/before-layout.txt (eager). After is the final lazy builder with all blocks materialised. Float32 column measures allocation; per-node conversions/stores are included in node time. Candidate time includes scalar/evaluator setup; other includes block metadata and final packaging. Instrumented profiles are single runs, unofficial.
+
+| State/world | Active + dilation | Candidates | Float32 allocation | Nodes + stores | Other |
+|---|---:|---:|---:|---:|---:|
+| Before Maithea | 8.22 / 7.78 | 3.20 / 4.07 | 0.11 / 0.09 | 24.51 / 21.64 | 0.10 / 0.07 |
+| Before Selawyn | 12.66 / 11.55 | 3.60 / 8.07 | 0.02 / 0.02 | 41.23 / 35.69 | 0.14 / 0.08 |
+| Before Raiva | 4.41 / 4.02 | 0.52 / 0.48 | 0.03 / 0.03 | 7.61 / 3.61 | 0.06 / 0.02 |
+| Before Lethuris | 11.48 / 11.29 | 6.66 / 9.79 | 0.02 / 0.12 | 42.01 / 39.39 | 0.12 / 0.08 |
+| After Maithea | 5.48 / 2.61 | 4.34 / 1.49 | 0.11 / 0.10 | 17.13 / 13.82 | 0.95 / 0.18 |
+| After Selawyn | 11.52 / 7.04 | 5.00 / 1.88 | 0.02 / 0.01 | 24.90 / 21.73 | 2.47 / 0.53 |
+| After Raiva | 2.57 / 1.20 | 0.89 / 0.23 | 0.07 / 0.04 | 6.22 / 3.88 | 0.26 / 0.05 |
+| After Lethuris | 7.65 / 7.34 | 6.46 / 2.40 | 0.02 / 0.01 | 26.47 / 24.08 | 2.31 / 2.23 |
+
+Fresh-process medians, three runs/world/variant, sequential, unofficial, ms. Eager uses the saved optimized eager source with the restored integer-only bit helper. Lazy total is the median of each run's cold + materialise-all, not a sum of medians.
+
+| World | Eager cold | Lazy cold | Materialise all | Lazy total | Retained typed-array bytes | Active cells |
+|---|---:|---:|---:|---:|---:|---:|
+| Maithea | 28.66 | 10.48 | 16.55 | 27.13 | 870,996 | 74,826 |
+| Selawyn | 42.96 | 16.86 | 25.05 | 41.86 | 1,707,689 | 133,763 |
+| Raiva | 9.61 | 3.20 | 6.24 | 9.64 | 153,233 | 13,112 |
+| Lethuris | 42.71 | 17.55 | 26.49 | 44.05 | 1,816,963 | 145,451 |
+
+Changes by file:
+
+- `src/mountain-layout.ts`: collapse covered T1 2�2 groups before iteration; dilate rows with bit operations while retaining canonical face-edge mapping. Builder-only per-belt distance closures hoist belt constants and retain independent noise caches, inline node direction, preserve division and transverse operation order, and omit unused gradients. Typed-array materialiser inputs; copy shared read nodes from built left/below/right/above neighbours. Account for retained row masks in bytes. Candidate selection remains unchanged.
+- `src/terrain.ts`, `tests/helpers/mountain-coarse-field.mjs`, `tests/mountain-coarse-field.test.mjs`: retained implement-round lazy branch, helper materialisation, and forward/reverse byte-identity/idempotence/reference-node structure checks; no new edits this fix round.
+- `fix-node-identity.mjs`: optional materialise-all call supports both eager trials and final lazy field.
+- `r2/fix-phase-profile.mjs`, `fix-eager-bench.mjs`, source snapshots and JSONL/log files: reproducible local profiling and evidence. `r2/field-bench.mjs` unchanged: existing API and one-JSON-line schema still apply.
+
+Measured and dropped: the large inline projection loop had eager cold about 36/58/18/50 ms; splitting it into per-belt evaluators improved cold compilation. `Math.clz32` failed the arithmetic-source allowlist, so restored the existing integer-only helper. Offset's division and transverse's reciprocal multiplication were deliberately not conflated.
+
+Checks:
+
+- `node test-results/mountains/t6-baked/fix-identity.mjs r2/after.json`: exit 0; byte comparison with `r2/before.json`: exit 0, true (173,120 sampler outputs and eight tile digests).
+- `node test-results/mountains/t6-baked/fix-node-identity.mjs`: exit 0; all 503,165 read nodes Object.is-identical; 311,209 unread nodes remain zero; metadata arrays identical.
+- `node test-results/mountains/t6-baked/r2/truth-identity.mjs`: exit 0; 25,448 samples/world, 101,792 total, every field identical.
+- `npx tsc --noEmit`: exit 0.
+- `node --test tests/mountain-coarse-field.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-envelope.test.mjs tests/terrain-mountains-assembly.test.mjs tests/lod-carving-reduction.test.mjs`: final exit 0, 82 passed, zero failed/skipped. Initial run exit 1 (81 passed; Math.clz32 audit failure), fixed without changing the audit.
+- `git diff --check`: exit 0.
+- Phase profiles and all sequential field/eager bench processes: exit 0.
+
+No truth-path, terrainSampler, kernels, constructionA0, envelope, version, pin or wiring changes. No C1, official contract/orbit bench, .git writes, test-slot helper, npm test/test:full, network/downloads, browser, GPU or commit. The existing active-cell lazy branch remains in the coarse hot path, and node work still occurs during tile builds; official contract acceptance remains for the coordinator.
+
+ M src/mountain-layout.ts
+ M src/terrain.ts
+ M tests/helpers/mountain-coarse-field.mjs
+ M tests/mountain-coarse-field.test.mjs
+
+codex
+Kept **lazy**, as requested when eager misses 40 ms. Shared nodes now copy from built neighbours in all four same-face directions.
+
+Three fresh-process medians, unofficial, milliseconds:
+
+| World | Eager cold | Lazy cold | Materialise all |
+|---|---:|---:|---:|
+| Maithea | 28.66 | 10.48 | 16.55 |
+| Selawyn | 42.96 | 16.86 | 25.05 |
+| Raiva | 9.61 | 3.20 | 6.24 |
+| Lethuris | 42.71 | 17.55 | 26.49 |
+
+`mountain-layout.ts` now uses grouped active-cell extraction, row-wise dilation, and specialized per-belt distance evaluators with hoisted constants and local noise caches. Arithmetic order and stored values are preserved.
+
+All final checks exited **0**:
+
+- Sampler/tile digest byte-identical.
+- **503,165** read nodes Object.is-identical.
+- **101,792** truth samples identical.
+- TypeScript passes.
+- **82/82 tests pass**, including forward/reverse materialisation.
+- `git diff --check` passes.
+
+The initial test run rejected `Math.clz32`; restored the existing integer-only helper without changing the audit.
+
+Full cold/second-build phase profiles, per-file changes, commands, exit codes, and evidence are saved in [astra-fix-handoff.md](C:/LLM/IWSDK/universe-atlas-wt/baked/test-results/mountains/t6-baked/r2/astra-fix-handoff.md).
+
+No truth/kernel changes, C1, official benchmarks, prohibited tools, `.git` writes, or commit. The eager target remains unmet on two worlds; official contract acceptance remains unverified.
+tokens used
+84.571
+Kept **lazy**, as requested when eager misses 40 ms. Shared nodes now copy from built neighbours in all four same-face directions.
+
+Three fresh-process medians, unofficial, milliseconds:
+
+| World | Eager cold | Lazy cold | Materialise all |
+|---|---:|---:|---:|
+| Maithea | 28.66 | 10.48 | 16.55 |
+| Selawyn | 42.96 | 16.86 | 25.05 |
+| Raiva | 9.61 | 3.20 | 6.24 |
+| Lethuris | 42.71 | 17.55 | 26.49 |
+
+`mountain-layout.ts` now uses grouped active-cell extraction, row-wise dilation, and specialized per-belt distance evaluators with hoisted constants and local noise caches. Arithmetic order and stored values are preserved.
+
+All final checks exited **0**:
+
+- Sampler/tile digest byte-identical.
+- **503,165** read nodes Object.is-identical.
+- **101,792** truth samples identical.
+- TypeScript passes.
+- **82/82 tests pass**, including forward/reverse materialisation.
+- `git diff --check` passes.
+
+The initial test run rejected `Math.clz32`; restored the existing integer-only helper without changing the audit.
+
+Full cold/second-build phase profiles, per-file changes, commands, exit codes, and evidence are saved in [astra-fix-handoff.md](C:/LLM/IWSDK/universe-atlas-wt/baked/test-results/mountains/t6-baked/r2/astra-fix-handoff.md).
+
+No truth/kernel changes, C1, official benchmarks, prohibited tools, `.git` writes, or commit. The eager target remains unmet on two worlds; official contract acceptance remains unverified.
