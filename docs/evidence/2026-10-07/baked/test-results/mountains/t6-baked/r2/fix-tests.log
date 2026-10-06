@@ -1,0 +1,155 @@
+✔ Maithea: cost optimisation preserves every coarse/switch tile buffer (1505.8856ms)
+✔ Selawyn: cost optimisation preserves every coarse/switch tile buffer (1264.502ms)
+✔ Raiva: cost optimisation preserves every coarse/switch tile buffer (1734.0957ms)
+✔ Lethuris: cost optimisation preserves every coarse/switch tile buffer (2155.6798ms)
+✔ Maithea: cost optimisation preserves full sampler outputs at truth and L0..22 (1348.1006ms)
+✔ Selawyn: cost optimisation preserves full sampler outputs at truth and L0..22 (957.485ms)
+✔ Raiva: cost optimisation preserves full sampler outputs at truth and L0..22 (1482.858ms)
+✔ Lethuris: cost optimisation preserves full sampler outputs at truth and L0..22 (752.6959ms)
+✔ lod-ladder-2: carving starts at the first level with edge <= 128 km; constants pinned to their sources (0.4045ms)
+✔ staged wiring: off by default, the level changes nothing without mountains, carving state per option (2.8761ms)
+✔ mountainRidgeTermM: carve = false is the composition without C, an upper envelope of the carved term (478.6031ms)
+✔ Maithea: below the cut no block solve and an upper envelope; from the cut the truth (4285.2771ms)
+✔ Selawyn: below the cut no block solve and an upper envelope; from the cut the truth (4210.185ms)
+✔ Raiva: below the cut no block solve and an upper envelope; from the cut the truth (4037.2298ms)
+✔ Lethuris: below the cut no block solve and an upper envelope; from the cut the truth (3958.9849ms)
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2800.851ms)
+ℹ INFO Maithea C=2/6/33/54 N=2/5/17/27 edge 1: morph start 0.0067 m, seam 0.0065 m; mutant 1583.6 / 475.5 m; mean step at the cut -372.3 m (min -1628.8 m)
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (2414.8508ms)
+ℹ INFO Maithea (cube-face edge) C=0/6/0/6 N=4/5/31/3 edge 0: morph start 0.0042 m, seam 0.0038 m; mutant 327.2 / 92.2 m; mean step at the cut -48.0 m (min -367.4 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2770.9078ms)
+ℹ INFO Selawyn C=0/7/112/107 N=0/6/55/53 edge 0: morph start 0.0060 m, seam 0.0037 m; mutant 1911.0 / 1428.5 m; mean step at the cut -905.9 m (min -2212.4 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1975.2323ms)
+ℹ INFO Selawyn (cube-face edge) C=0/7/127/53 N=5/6/0/26 edge 1: morph start 0.0058 m, seam 0.0052 m; mutant 2726.4 / 1923.7 m; mean step at the cut -488.5 m (min -2869.9 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2757.1345ms)
+ℹ INFO Raiva C=1/5/19/25 N=1/4/9/13 edge 3: morph start 0.0052 m, seam 0.0052 m; mutant 771.6 / 505.4 m; mean step at the cut -208.4 m (min -782.6 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (2306.2106ms)
+ℹ INFO Raiva (cube-face edge) C=0/5/0/5 N=4/4/15/2 edge 0: morph start 0.0047 m, seam 0.0049 m; mutant 2071.0 / 228.4 m; mean step at the cut -640.7 m (min -2109.0 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2877.8786ms)
+ℹ INFO Lethuris C=2/7/28/73 N=2/6/13/36 edge 0: morph start 0.0058 m, seam 0.0056 m; mutant 2414.7 / 1767.7 m; mean step at the cut -963.0 m (min -2702.8 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1910.136ms)
+ℹ INFO Lethuris (cube-face edge) C=0/7/0/105 N=4/6/63/52 edge 0: morph start 0.0035 m, seam 0.0029 m; mutant 2296.7 / 575.1 m; mean step at the cut -828.1 m (min -2499.1 m)
+(node:54324) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ private continental kernels are Object.is identical: 20,000 directions x four worlds (72.0738ms)
+✔ HARD: the truth core's inline voxel prefilter changes no value (Object.is, every field, four worlds) (104879.2729ms)
+✔ g² lemma on dense grid, and conservative composition with exact distances / zero margin (519.47ms)
+✔ Maithea: sparse field bytes deterministic across independent builds and sample orders (167.4518ms)
+✔ Maithea: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (804.1235ms)
+ℹ INFO Maithea dense interpolation {"max":0.07681444290891326,"count":1266229,"worst":{"belt":21,"face":2,"i":272,"j":244,"u":0.9995966299808274,"exact":-0.0036011524139341056,"sd":-0.08041559532284737}}
+✔ Maithea: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (1157.4416ms)
+ℹ INFO Maithea coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.02577347672099628,"p50":0,"p99":755.8003512331802,"max":2346.9077047788815}
+ℹ INFO zero-margin floor violations 3465
+✔ Maithea: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (45.7319ms)
+✔ Selawyn: sparse field bytes deterministic across independent builds and sample orders (171.9964ms)
+✔ Selawyn: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (1325.7776ms)
+ℹ INFO Selawyn dense interpolation {"max":0.06030445661613702,"count":2452374,"worst":{"belt":21,"face":4,"i":497,"j":527,"u":-0.9997647757615518,"exact":-0.07227775990745068,"sd":-0.1325822165235877}}
+✔ Selawyn: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (1504.299ms)
+ℹ INFO Selawyn coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.0074170890519863475,"p50":0,"p99":768.9661833193425,"max":1835.9634213027116}
+ℹ INFO zero-margin floor violations 2864
+✔ Selawyn: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (40.529ms)
+✔ Raiva: sparse field bytes deterministic across independent builds and sample orders (45.3634ms)
+✔ Raiva: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (140.3648ms)
+ℹ INFO Raiva dense interpolation {"max":0.03459423768171824,"count":244181,"worst":{"belt":0,"face":3,"i":159,"j":105,"u":0.9991003178766489,"exact":0.09876932216039144,"sd":0.13336355984210968}}
+✔ Raiva: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (821.1258ms)
+ℹ INFO Raiva coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.0012683949216088508,"p50":0,"p99":443.11310166671706,"max":1354.7088138869476}
+ℹ INFO zero-margin floor violations 3272
+✔ Raiva: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (37.8477ms)
+✔ Lethuris: sparse field bytes deterministic across independent builds and sample orders (156.5133ms)
+✔ Lethuris: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (1451.4056ms)
+ℹ INFO Lethuris dense interpolation {"max":0.05669792365650725,"count":2628977,"worst":{"belt":31,"face":3,"i":668,"j":424,"u":0.9994752181708975,"exact":0.09406038004537035,"sd":0.1507583037018776}}
+✔ Lethuris: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (1393.8035ms)
+ℹ INFO Lethuris coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.011451772768033525,"p50":0,"p99":739.9070997250874,"max":2086.321977227656}
+ℹ INFO zero-margin floor violations 3586
+✔ Lethuris: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (38.744ms)
+✔ HARD: baseTerrainCore and mountainTerrainCore are identical outside the setup and ridge-term hunks (1.0135ms)
+BAND {"sweep":[{"halfWidthM":32000,"share":0.02059755339136694},{"halfWidthM":33000,"share":0.018673327008370835},{"halfWidthM":34000,"share":0.017962050902429538},{"halfWidthM":35000,"share":0.01783730401558141},{"halfWidthM":36000,"share":0.01783038996134826},{"halfWidthM":37000,"share":0.01767578456470943},{"halfWidthM":38000,"share":0.017258459206269817},{"halfWidthM":39000,"share":0.016553943886622013},{"halfWidthM":40000,"share":0.015587532026333159},{"halfWidthM":41000,"share":0.014410256314252806},{"halfWidthM":42000,"share":0.013085324618626099},{"halfWidthM":43000,"share":0.011680597094867651},{"halfWidthM":44000,"share":0.010264570491351833},{"halfWidthM":45000,"share":0.008904382777806284},{"halfWidthM":46000,"share":0.007664610465907796},{"halfWidthM":47000,"share":0.006605066916921468},{"halfWidthM":48000,"share":0.005774627812444001},{"halfWidthM":49000,"share":0.005774627812444001},{"halfWidthM":50000,"share":0.005774627812444001},{"halfWidthM":51000,"share":0.005774627812444001},{"halfWidthM":52000,"share":0.005774627812444001},{"halfWidthM":53000,"share":0.005774627812444001},{"halfWidthM":54000,"share":0.005774627812444001},{"halfWidthM":55000,"share":0.005774627812444001},{"halfWidthM":56000,"share":0.005774627812444001},{"halfWidthM":57000,"share":0.005774627812444001},{"halfWidthM":58000,"share":0.005774627812444001},{"halfWidthM":59000,"share":0.005774627812444001},{"halfWidthM":60000,"share":0.005774627812444001},{"halfWidthM":61000,"share":0.005774627812444001},{"halfWidthM":62000,"share":0.005774627812444001},{"halfWidthM":63000,"share":0.005774627812444001},{"halfWidthM":64000,"share":0.005774627812444001},{"halfWidthM":65000,"share":0.005774627812444001},{"halfWidthM":66000,"share":0.005774627812444001},{"halfWidthM":67000,"share":0.005774627812444001},{"halfWidthM":68000,"share":0.005774627812444001},{"halfWidthM":69000,"share":0.005774627812444001},{"halfWidthM":70000,"share":0.005774627812444001},{"halfWidthM":71000,"share":0.005774627812444001},{"halfWidthM":72000,"share":0.005774627812444001},{"halfWidthM":73000,"share":0.005774627812444001},{"halfWidthM":74000,"share":0.005774627812444001},{"halfWidthM":75000,"share":0.005774627812444001},{"halfWidthM":76000,"share":0.005774627812444001},{"halfWidthM":77000,"share":0.005774627812444001},{"halfWidthM":78000,"share":0.005774627812444001},{"halfWidthM":79000,"share":0.005774627812444001},{"halfWidthM":80000,"share":0.005774627812444001},{"halfWidthM":100000,"share":0.005774627812444001},{"halfWidthM":150000,"share":0.005774627812444001},{"halfWidthM":220000,"share":0.005774627812444001}],"oblique":0.008574179959937327,"narrow":0.48929726106718174,"box":0.22728543864871603}
+BOUND {"gridSamples":614922,"rasterSamples":37249,"violations":0}
+CONVEX {"roundedAbove":0,"maxRoundingM":0}
+DIGEST 945cabad88648e1f06206f8b0ea682dc22ebc78e93b726d8ce7cd4570d6b63f4
+✔ HARD: dense width sweep and oblique compact transect; narrow and box controls fail (63.9316ms)
+✔ HARD: analytic maximum on dense parameter grid and great-circle raster (25.7708ms)
+✔ HARD: literal positive zero at every exclusion, and dry amplitude ignores tau (0.8963ms)
+✔ HARD: outside composition preserves main bits; interior composition stays convex (27.6354ms)
+✔ HARD: massif-envelope-2 cap: one fixed-width massif on a wide belt; the weight fades to 0 at its edge (0.4435ms)
+✔ HARD: symmetric monotone profile, exact crown, C2 support and blend endpoints (0.324ms)
+✔ HARD: forward/reverse/child SHA256 agrees (118.4386ms)
+✔ HARD: arithmetic audit with negative controls, no imports, frozen versioned constants (2.7879ms)
+GRID Maithea: N=1024, 2358 in-band of 102500, edge 2743 in-band of 8880, 1480/1480 pairs straddle 48 km
+GRID Selawyn: N=2048, 1196 in-band of 102500, edge 2314 in-band of 7680, 1280/1280 pairs straddle 48 km
+GRID Raiva: N=512, 1755 in-band of 102500, edge 306 in-band of 960, 120/160 pairs straddle 48 km
+GRID Lethuris: N=2048, 1257 in-band of 102500, edge 3067 in-band of 9840, 1640/1640 pairs straddle 48 km
+GRID AREA Maithea: N=1024 cells 216545 nodes 7156; massif 2.300%, geometric band 2.469%, flagged 3.420% (land 3.157%); land ratio 1.372, geometric ratio 1.385
+GRID AREA Maithea: flagged / massif 1.486
+GRID AREA Selawyn: N=2048 cells 398112 nodes 12689; massif 1.167%, geometric band 1.291%, flagged 1.687% (land 1.519%); land ratio 1.302, geometric ratio 1.307
+GRID AREA Selawyn: flagged / massif 1.446
+GRID AREA Raiva: N=512 cells 39459 nodes 1108; massif 1.712%, geometric band 1.816%, flagged 2.280% (land 2.136%); land ratio 1.247, geometric ratio 1.256
+GRID AREA Raiva: flagged / massif 1.332
+GRID AREA Lethuris: N=2048 cells 432521 nodes 13369; massif 1.226%, geometric band 1.318%, flagged 1.678% (land 1.546%); land ratio 1.261, geometric ratio 1.273
+GRID AREA Lethuris: flagged / massif 1.368
+✔ HARD: version and API unchanged by the grid (output-neutral; orogen-layout-2 since cost plan T2) (54.7281ms)
+✔ HARD: 4 water worlds x 102,500 Fibonacci + band-edge offsets: sampleWithinWithA0 == filtered sampleWithA0, 0 unflagged band directions (1266.2911ms)
+✔ HARD: negative control: a grid stamped for a narrower band leaves band directions unflagged (the check has teeth) (116.341ms)
+✔ HARD: coarse summary covers every flagged cell, and the word tags agree with the bits, at N = 256..2048 (96.18ms)
+✔ HARD: other band parameters (16 km / no width gate, 48 km / no width gate) on two worlds (177.662ms)
+✔ HARD: 60 corpus bodies x 20,000 directions + band-edge offsets: identical and conservative (7479.7577ms)
+✔ HARD: flagged area <= 1.5 x massif (band) area per world (818.677ms)
+✔ HARD: outside the band mountainRidgeTermM returns main's term unchanged, so massifBeltSample is value-neutral at the call site (91.2725ms)
+DIGEST dd8e6306c35553aad026290caa0f5dc12204a5aa66b16a155b1e2a44b4b53501
+DISTANCE {"count":2000,"centrelineSteps":4000,"maxErrorM":8.792267180979252e-7,"maxErrorWidth":3.996485082263296e-12,"p99ErrorWidth":3.5074084404517304e-12,"toleranceWidth":0.01,"pass":true,"worst":{"direction":[-0.8767337195899597,0.25299000000000005,0.40906484184534114],"beltIndex":0,"axisDistanceM":219794.7816744512,"actualM":219794.78167533042,"halfWidthM":220000,"distanceWidth":0.9990671894333201,"slope":0.02765879805404938}}
+CURVATURE Maithea {"max":0.047823456257596944,"boundMax":0.09212779763135807,"limit":0.2,"steps":4096,"worst":{"beltIndex":0,"u":0.3955079372831563}}
+CURVATURE Lethuris {"max":0.04782335742067525,"boundMax":0.08158014450852297,"limit":0.2,"steps":4096,"worst":{"beltIndex":22,"u":0.000027067598482168446}}
+ALONG 305 off-axis samples, max |alongM - dense| 0.02412321261363104 m
+✔ HARD: real hierarchy exercises elongation and curved-axis derivative (62.3977ms)
+✔ HARD: metric teeth: straight band passes, disks fail aspect, isotropic mask fails coherence (71.5612ms)
+✔ HARD: synthetic spherical-cap continent satisfies all M1 thresholds (37.7501ms)
+✔ HARD: coast, caller coordinate, bounds and tangent frame (16.7917ms)
+✔ HARD: gas giants and stars are zero, including sampleWithA0 (0.959ms)
+✔ HARD: forward, reverse and child-process sample digests agree (192.8368ms)
+✖ HARD: arithmetic-only layout and no terrain/climate/colour/LOD import (1.6443ms)
+✔ HARD: strict coherence counts all positive centres including zero tensors (4.3733ms)
+✔ HARD: 2000 positive Maithea distances agree with dense displaced-centreline search (216.1053ms)
+✔ HARD: dense Maithea/Lethuris spatial curvature times W stays below .2 (129.8987ms)
+✔ HARD: alongM (assembly addition) is the base-circle arc R x 2 atan(u) of the foot point, 0 off-belt (15.2633ms)
+✔ HARD: offsetNoise is catalog noise(x, 37, 19, seed) bit for bit, cache interleaved across cells and seeds (6.1655ms)
+✔ HARD: the T2 rejections are exact: sampleWithA0 and sampleWithinWithA0 == (filtered) sampleWithA0Unpruned on 4 worlds (Fibonacci, belt rasters, coast gate open) (2410.3686ms)
+✔ HARD: alongM off the axis is R x 2 atan(u*) of the dense-search foot point (< .1 m; 3 steps would give .64 m) (16.8567ms)
+✔ HARD: orogen-layout-2 keeps orogen-layout-1's belts: 4 worlds, 60 corpus bodies and the synthetic cap (literals from main 66453b2) (2952.7454ms)
+RAIVA R1 {"tau":0.4560255015129207,"w":90090.17114178278,"count":275,"area":31998.375,"density":8.59418642352932}
+✔ HARD: outsideBelt directions (4096 per water world) are bit-identical to main: heights, ocean and colour (333.0973ms)
+✔ HARD: outsideMassif directions (4096 per water world) are bit-identical to main: heights, ocean and colour (72.0672ms)
+✔ HARD: negative controls: the identity digest rejects one changed height, colour or ocean flag (112.8857ms)
+✔ HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (31.6444ms)
+✔ HARD: versions, fixed carving width, strip rule and per-strip seeds (0.7078ms)
+✔ HARD: the assembled ridge term: >= 0, <= max(main, analytic envelope), main outside the massif (350.0431ms)
+✔ HARD: mountain-assembly.ts is arithmetic only and imports only M2 and M3 (1.4057ms)
+✔ CONTRACT: M4 R1 on the whole belt core at the real Raiva tau and belt width (8 seeds, 64 km rasters) (6150.3139ms)
+ℹ tests 82
+ℹ suites 0
+ℹ pass 81
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 115071.8802
+
+✖ failing tests:
+
+test at tests\mountain-layout.test.mjs:144:1
+✖ HARD: arithmetic-only layout and no terrain/climate/colour/LOD import (1.6443ms)
+  AssertionError [ERR_ASSERTION]: Math.clz32 is not allowed
+      at auditArithmetic (file:///C:/LLM/IWSDK/universe-atlas-wt/baked/tests/mountain-layout.test.mjs:137:69)
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/baked/tests/mountain-layout.test.mjs:146:3)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

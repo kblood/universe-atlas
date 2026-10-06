@@ -1,0 +1,161 @@
+You are Astra, implementing one bounded change in the TypeScript repo checked out at
+C:/LLM/IWSDK/universe-atlas-wt/baked (branch mountains/baked-coarse, from main 9971c3f). You cannot write .git; do NOT
+run git commands that write (read-only git such as `git show`, `git diff` is fine). The coordinator reviews your diff,
+runs the official benchmarks and commits. No downloads, no browser, no GPU, no network.
+
+## Read first
+
+- docs/mountains-t6-split-core-2026-10-06.md (the open cost problem; 17 restructurings failed).
+- test-results/mountains/t6-baked/diag/results.txt (the coordinator's NEW diagnosis from today; read all of it).
+- test-results/mountains/t6-baked/prototype-coordinator.diff (a throwaway prototype with env-switched arms; NOT the
+  design to copy; it only shows the measured mechanics).
+- docs/lod-ladder-contract-v1.md section 3 (reduction rules, "Mountain carving" amendment) and section 5.
+- src/terrain.ts `baseTerrainCore` (~line 473-669), `mountainCarvingState`, `terrainSampler` (~816-985);
+  src/mountain-layout.ts (all of it: `value`, `valueInFrame`, `transverse`, `finish`, the band grid, `bandTag`,
+  `sampleWithinWithA0`); src/mountain-assembly.ts; src/mountain-envelope.ts; src/planet-tiles.ts `buildTile` (the
+  parent/child level samplers, read only); tests/lod-carving-reduction.test.mjs; tests/helpers/mountain-coarse-tiles.mjs.
+
+## What the diagnosis found (measured, unofficial)
+
+With the mountains wired the coarse tile build is +18..+33% per level against main although the genuine mountain work
+is +2..+5%. Three separate causes, each measured:
+
+1. Building the M1 layout (continentalA0 calls catalog.ts `noise`/`macroHeightCode`) slows every later plain sample
+   by ~+13%. Private copies of those kernels inside continentalA0 (bit-for-bit) remove it.
+2. Running the exact M1 path (`massifBeltSample` -> `sampleWithinWithA0`) with the CALLER'S direction array `d`
+   slows every later plain sample in the process by +15..+60%, even in a different core function. Passing a
+   core-owned scratch copy of d (`scr[0]=d[0]; scr[1]=d[1]; scr[2]=d[2]`) instead removes it (V8 effect; the copy is
+   value-preserving). It only works if the exact path lives in a SEPARATE core function literal from the coarse path
+   (one function with both branches: still +16%).
+3. Even then, the exact M1+M2 path at coarse levels costs +12%: coarse levels must not run M1 per sample. A baked
+   per-body table read by coarse levels (prototype) brought coarse tiles to main +-3% when causes 1 and 2 were also
+   fixed.
+
+## What to build (route A, "baked coarse field"; decided by Opus 5.5 on Kasper's instruction)
+
+### A1. src/mountain-layout.ts
+- Private, bit-identical copies of catalog.ts `ihash`/`noise`/`macroHeightCode` used ONLY by `continentalA0`
+  (prototype diff shows them). Pin them in a test against catalog.ts on >= 20,000 directions x 4 worlds (Object.is).
+  Every existing layout value (belts, sampleWithA0, sampleWithinWithA0, band grid, the 4096-sample M1 digest) stays
+  bit-identical.
+- A memoised, deterministic, seed-regenerable COARSE BAND FIELD on the layout, built lazily once per layout
+  (`coarseBandField(maxDistM, minHalfWidthM)`, keyed like `bandGrid`). It stores, on a cube-face node grid, the
+  geometry the massif composition needs so that a coarse sample never runs the foot-point solve:
+  - Grid: the band grid's cube-map convention (face = largest |component|, ties x then y; same A/B axes); node
+    resolution Nf = (band grid faceCells)/2 per face edge (Maithea 512, Selawyn 1024, Raiva 256, Lethuris 1024). If
+    the 50 ms budget below cannot be met at Nf, say so with numbers; do not silently go coarser.
+  - Active cells: a field cell is active when any band-grid cell it covers is flagged, dilated by one field cell (so
+    every node on the boundary of the active region is at least one field cell outside the massif band and the
+    composition there is exactly main's term; see continuity below).
+  - Per active cell, its candidate belts: the massif-eligible belts (halfWidthM >= minHalfWidthM) whose band can reach
+    the cell (a conservative cell-level test like `soloWord`'s cap/slab rejection, or the band grid's stamping). Most
+    cells have exactly one; record how many have more.
+  - Per node and candidate belt: the SIGNED foot-point distance to that belt's displaced centreline (the same
+    projection `valueInFrame`/`transverse` computes, sign rule included), normalised by the massif half-width
+    H = min(belt.halfWidthM, maxDistM), stored as Float32. Compute it for the cell's candidate belt directly (an
+    internal call, not `sampleWithinWithA0`), so nodes outside the belt's value>0 region still get a continuous
+    distance. Nodes on cube-face edges must get bit-identical values on both faces (evaluate the edge node direction
+    canonically, e.g. from one face's formula); test it.
+  - Storage: sparse (e.g. 8x8-cell blocks with their own (9x9) node arrays and a per-face block table; or anything
+    with similar memory); report bytes per body (target <= 8 MB).
+  - Build cost: <= 50 ms per body cold in a fresh process (the field only, excluding the layout construction and the
+    T1 band grid, which are existing costs), all four worlds; report the numbers.
+- Expose what terrain.ts needs to evaluate a coarse sample WITHOUT passing the direction into any layout function:
+  the typed arrays, Nf, and per-belt scalars (tangent, centre, uLimit, halfWidthM, coreFraction etc.) as plain
+  numbers/Float64Arrays. The per-sample lookup code lives in terrain.ts (inline), not in a layout function that takes d.
+- `OROGEN_LAYOUT_VERSION` -> 'orogen-layout-3' (the coarse field is a new layout output; every existing output is
+  unchanged). Update the version pins in tests/mountain-layout.test.mjs and tests/mountain-layout-grid.test.mjs with
+  an "was orogen-layout-2" message. OROGEN_LAYOUT_CONSTRUCTION_SEED does not change.
+
+### A2. src/mountain-envelope.ts
+- `MASSIF_ENVELOPE_VERSION` -> 'massif-envelope-3' and a new exported coarse composition, e.g.
+  `massifCoarseRidgeTermM(mainTermM, ...)`, documented as the declared coarse reduction. It must be a CONSERVATIVE
+  UPPER BOUND of the exact uncarved term `composeRidgeTermM(main, belt, dist, W, massifEnvelopeM(belt, dist, W, a0,
+  lf, tau, 'water'))` for every point of the cell (contract section 3 and tests/lod-carving-reduction.test.mjs demand
+  coarse floor >= carved truth floor with 0 violations, and coarse ground >= carved ground). Construction:
+  - The term is (1 - w) main + U with main >= 0, landFactor >= 0. So it suffices that w is replaced by a lower bound
+    w_lo <= w and U by an upper bound U_hi >= U.
+  - Interpolate the SIGNED normalised distance bilinearly (nearly affine across a cell, unlike |distance|), then
+    widen it by a margin delta (an interpolation-error bound in units of H: derive it from the cell size and the
+    belt's curvature bound `curvatureWidthBound`/gnomonic distortion, or measure the worst interpolation error
+    densely and use >= 2x it; state which and the numbers): s_lo = max(0, |sd| - delta), s_hi = |sd| + delta.
+  - The M1 belt value v = (1 - .1 f^2)(1 - ss(.65W, W, |dist|))(1 - ss(.75, 1, |u/uLimit|)), with f = dist/W and u the
+    SAMPLE'S OWN arc parameter u = x/(r+z) in the belt frame (as `value` computes it; cheap, exact, from the belt's
+    tangent/centre and d), is decreasing in |dist| and |u|; evaluate v_hi at |dist|_lo and v_lo at |dist|_hi, with
+    the same expressions as mountain-layout.ts (keep them in sync; test equality at nodes).
+  - Coast gate g = ss(0, coastGateM, a0) (the M1 expression). Since blend(v g) >= g^2 blend(v) for g, v in [0, 1]
+    (prove it in a comment: blend(t) = h(min(1, 2t)), h(x) = x^2(3 - 2x)), use w_lo = g^2 blend(v_lo) fade(s_hi) and
+    U_hi = E(tau) p(s_lo)^3 lf blend(v_hi) (blend(v g) <= blend(v)); E, p, fade, blend exactly as massifEnvelopeM /
+    massifBlendWeight define them. Return main unchanged (the same value, Object.is) when w_lo === 0 and U_hi === 0.
+  - Several candidate belts in a cell: the maximum of the per-belt terms (>= the truth's winning-belt term).
+  - Any rule you add must keep the term >= 0 (coastline guarantee) and must be continuous across cell edges, across
+    cube-face edges and at the boundary of the active region (equal to main there).
+  - Update the version pins in tests/mountain-envelope.test.mjs and tests/terrain-mountains-assembly.test.mjs.
+  - Unit tests: massifCoarseRidgeTermM >= exact uncarved on a dense synthetic grid of (main, a0, lf, tau, sd, u) with
+    delta = 0 and exact sd (the bound holds with equality-or-above), and the g^2 lemma on a dense (v, g) grid.
+
+### A3. src/terrain.ts
+- `baseTerrainCore` keeps the plain path (unwired default bit-identical to main) and gains the COARSE branch only:
+  when the sampler's mountain state is `false` (a tile level below carvingFromLevel, lod-ladder-2), the land path reads
+  the coarse band field: face/cell lookup inline, inactive cell -> main's literal term untouched; active cell ->
+  `massifCoarseRidgeTermM(...)`. No M1 foot-point solve, no `massifBeltSample`, no M3 at these levels.
+- A SEPARATE core function literal (e.g. `mountainTerrainCore`) for samplers whose state is `true` (the truth and
+  levels >= cut): the relief water-world path plus the existing exact M1/M2/M3 hunk, same expressions, same order,
+  bit-identical outputs to main's `{mountains: true}` truth, the same CoreSample property set/order as
+  baseTerrainCore's literals. It passes a core-owned scratch copy of d to `massifBeltSample` (value-preserving).
+  `t6-split/split-core.patch` (test-results/mountains/t6-split/) has a mountain core you may reuse, without its
+  per-sample dispatch (choose the core once at construction from mountainCarvingState: null -> base plain, false ->
+  base with coarse field, true -> mountain core).
+- `TERRAIN_MOUNTAINS_WIRED` stays false; TERRAIN_VERSION, LOD_LADDER_VERSION, MOUNTAIN_ASSEMBLY_VERSION,
+  MOUNTAIN_CARVING_VERSION, SURVEY_VERSION do not move. mountainCarvingState / TerrainSamplerOptions keep their
+  meaning; the coarse field is tied to state false, so tile cache identities stay correct (say so if not).
+- Do not touch src/planet-tiles.ts, src/lod-ladder.ts, src/mountain-carving.ts, src/catalog.ts or any other file than
+  those named here, except tests and package.json.
+
+## Value identity and tests
+
+- MUST stay bit-identical to main 9971c3f: every unwired/default sampler and tile, baseTerrainSampler, craters, every
+  `{mountains: true}` sampler at the truth and at levels >= carvingFromLevel (and tiles at L >= cut, whose parent mesh
+  at L(cut-1) is the coarse sampler and may move). The existing pins in tests/lod-carving-reduction.test.mjs
+  COST_IDENTITY[world][1] and COST_SAMPLER_IDENTITY[world][1] (carved) must still pass unchanged.
+- MOVES (the declared reduction): `{mountains: true}` samplers and tiles at L < cut. Re-pin
+  COST_IDENTITY[world][0] and COST_SAMPLER_IDENTITY[world][0] and any other test digest of coarse mountain values
+  (search tests/ for them, e.g. tests/sparse-consumer-levels.test.mjs) and list every re-pinned value as old -> new
+  in your answer (the coordinator puts the ledger in the doc). Never re-pin anything that pins the truth, unwired
+  values, or a golden.
+- tests/lod-carving-reduction.test.mjs must pass unmodified except the [0] digests and the version strings: the
+  upper envelope (0 violations), the ocean flag, 0 block solves below the cut, from the cut the truth bit for bit,
+  and the switch-level seam/morph/mutation tests.
+- New test tests/mountain-coarse-field.test.mjs (node:test, <= ~25 s, register it in package.json next to
+  tests/lod-carving-reduction.test.mjs in the same list(s)):
+  (a) determinism: two independent builds (fresh buildOrogenLayout) byte-identical; built lazily in different
+      sample orders, same bytes;
+  (b) cube-face-edge nodes identical across faces; coarse samples continuous across a face edge (|delta h| tiny
+      at a pair of directions 1e-9 apart on either side);
+  (c) upper bound: coarse (state false) floorM >= exact uncarved floorM on >= 50,000 Fibonacci directions per world
+      plus dense rasters (>= 4 axis sites x 41 x 41 at 1.5 km) per world, 0 violations; report max/p99/p50 of
+      (coarse - exact uncarved) floor as t.diagnostic INFO. For the exact uncarved reference use the
+      `mountainRidgeTermM(..., carve=false)` composition on a full layout sample (a test helper, not a production
+      path), or a test-only sampler option; do not add a production per-sample flag.
+  (d) outside active cells the coarse sampler equals the exact uncarved sampler with Object.is on every field;
+  (e) 0 ocean-flag differences coarse vs truth on the same directions;
+  (f) a mutation control: delta = 0 or |sd| interpolation (instead of signed) must produce violations of (c) on at
+      least one world (proves (c) has teeth); implement it as a test-only parameter of the composition, not a
+      production flag;
+  (g) cores: the base core and the mountain core give Object.is-identical samples on directions outside every
+      massif band (all four worlds, >= 4,096 directions, with and without exposeFloor).
+- Keep tests/known-failures.json untouched.
+
+## Checks you run (report exact commands, exit codes, pass/fail counts)
+
+- `npx tsc --noEmit`
+- `node --test tests/mountain-coarse-field.test.mjs tests/lod-carving-reduction.test.mjs tests/sparse-consumer-levels.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-envelope.test.mjs tests/terrain-mountains-assembly.test.mjs tests/lod-consistency.test.mjs`
+- a one-off script (put it under test-results/mountains/t6-baked/, not in src/) printing per world: field build ms
+  (fresh process), bytes, active cells, multi-belt cells, delta, and the (c) statistics.
+- `git diff --check`
+Do NOT run `npm run test:full` or any benchmark under the test slot; the coordinator runs the official benches.
+
+## Answer
+
+Write a short answer: files changed, design choices (resolution, delta derivation, multi-belt handling, storage),
+every re-pinned digest old -> new, every check with exit code and counts, and what you did not do.

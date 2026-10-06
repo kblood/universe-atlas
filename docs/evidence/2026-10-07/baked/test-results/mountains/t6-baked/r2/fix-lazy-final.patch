@@ -1,0 +1,247 @@
+diff --git a/src/mountain-layout.ts b/src/mountain-layout.ts
+index 8667996..cda435f 100644
+--- a/src/mountain-layout.ts
++++ b/src/mountain-layout.ts
+@@ -449,6 +449,10 @@ export interface CoarseBandField {
+   /* Per belt: tangent xyz, centre xyz, uLimit, halfWidthM, delta (units of H). */
+   readonly scalars: Float64Array;
+   readonly bytes: number; readonly activeCells: number; readonly multiBeltCells: number;
++  /* Check only after the active-cell mask; materialisers accept block integers. */
++  readonly built: Uint8Array;
++  materialiseBlock(block: number): void;
++  materialiseAll(): void;
+ }
+ function coarseDirection(face: number,i: number,j: number,N: number,d: V3) {
+   const k=face>>>1;
+@@ -464,6 +468,38 @@ function lowBitIndex(bits: number) {
+   if(v&0xf0){n+=4;v>>>=4;}if(v&0xc){n+=2;v>>>=2;}if(v&2)n++;
+   return n;
+ }
++// Builder-only distance projection: identical transverse arithmetic, without unused gradients.
++// One closure per belt keeps its noise cell and constants local across adjacent nodes.
++function coarseDistanceEvaluator(b: OrogenBelt,R: number,H: number) {
++  const T=b.tangent,C=b.centre,P=b.pole;
++  const t0=T[0],t1=T[1],t2=T[2],c0=C[0],c1=C[1],c2=C[2],p0=P[0],p1=P[1],p2=P[2];
++  const U=b.uLimit,iU=1/U,iR=1/R,wavelength=b.wavelength,k2=2/wavelength,bend=b.bendM,amp=b.amplitudeM;
++  const hashKey=Math.imul(OFFSET_NOISE_Y,0x85ebca77)^Math.imul(OFFSET_NOISE_Z,0xc2b2ae3d)^Math.imul(b.noiseSeed,0x27d4eb2f);
++  let cell=NaN,h0=0,h1=0;
++  return (d0: number,d1: number,d2: number): number=>{
++    const x=d0*t0+d1*t1+d2*t2,z=d0*c0+d1*c1+d2*c2,py=d0*p0+d1*p1+d2*p2;
++    let u=x/(Math.sqrt(x*x+z*z)+z);
++    // offset() uses division, whereas transverse() uses precomputed reciprocals.
++    // They cannot share the first offset without changing rounding.
++    const ov=u/U,ox=u*2/wavelength+13,oi=Math.floor(ox);let oa=ox-oi;oa=oa*oa*(3-2*oa);
++    if(oi!==cell){h0=cornerHash(oi,hashKey);h1=cornerHash(oi+1,hashKey);cell=oi;}
++    const off=bend*ov*ov+amp*(2*(h0*(1-oa)+h1*oa)-1),sign=py*R-off<0?-1:1;
++    let y=0,yp=0,r=1,rp=0,w=2,cc=0,ss=1;
++    for(let step=0;step<=footSteps;step++){
++      const v=u*iU,X=u*k2+13,ix=Math.floor(X),aa=X-ix,m=aa*aa*(3-2*aa);
++      if(ix!==cell){h0=cornerHash(ix,hashKey);h1=cornerHash(ix+1,hashKey);cell=ix;}
++      const n=h0*(1-m)+h1*m;
++      y=(bend*v*v+amp*(2*n-1))*iR;yp=(2*bend*v*iU+12*amp*(h1-h0)*aa*(1-aa)*k2)*iR;
++      r=Math.sqrt(1-y*y);rp=-y*yp/r;w=2/(1+u*u);cc=u*w;ss=(1-u*u)*w*.5;
++      if(step===footSteps)break;
++      const rw=r*w,q=x*cc+z*ss,t=x*ss-z*cc;
++      u=Math.max(-U,Math.min(U,u+(rp*(q-r)+rw*t+(py-y)*yp)/(rp*rp+rw*rw+yp*yp)));
++    }
++    const pT=r*cc,pC=r*ss;
++    const e0=d0-(pT*t0+pC*c0+y*p0),e1=d1-(pT*t1+pC*c1+y*p1),e2=d2-(pT*t2+pC*c2+y*p2),chord2=e0*e0+e1*e1+e2*e2;
++    return (sign*R*Math.sqrt(chord2)*(1+chord2/24+3*chord2*chord2/640))/H;
++  };
++}
+ function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBandGrid,maxDistM: number,minHalfWidthM: number): CoarseBandField {
+   const N=g.faceCells/2,B=N/8,table=new Int32Array(6*B*B),flags=new Uint32Array(12*B*B),base=new Uint32Array(12*B*B),d: V3=[0,0,0];
+   const mark=(face: number,i: number,j: number)=>{
+@@ -475,24 +511,36 @@ function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBa
+     flags[block*2+(bit>>>5)]|=1<<(bit&31);
+   };
+   // Union each covered 2x2 T1 cell, then dilate by one field cell (also over face edges).
+-  for(let w=0;w<g.bits.length;w++){
+-    let bits=g.bits[w];
+-    while(bits){const bit=lowBitIndex(bits),c=w*32+bit,face=Math.floor(c/(g.faceCells*g.faceCells));
+-      const j=(Math.floor(c/g.faceCells)%g.faceCells)>>>1,i=(c%g.faceCells)>>>1;
++  const wordsPerRow=g.faceCells/32;
++  for(let face=0;face<6;face++)for(let j=0;j<N;j++)for(let word=0;word<wordsPerRow;word++){
++    const at=(face*g.faceCells+2*j)*wordsPerRow+word;
++    const covered=g.bits[at]|g.bits[at+wordsPerRow];
++    let bits=(covered|(covered>>>1))&0x55555555;
++    while(bits){
++      const i=word*16+(lowBitIndex(bits)>>>1);
+       const q=(face*B+(j>>>3))*B+(i>>>3),v=(j&7)*8+(i&7);base[2*q+(v>>>5)]|=1<<(v&31);
+       bits&=bits-1;
+     }
+   }
+-  for(let q=0;q<table.length;q++)for(let h=0;h<2;h++){
+-    let bits=base[2*q+h];
+-    while(bits){const bit=lowBitIndex(bits)+32*h,face=Math.floor(q/(B*B)),i=q%B*8+(bit&7),j=Math.floor(q/B)%B*8+(bit>>>3);
+-      if(i>0&&j>0&&i<N-1&&j<N-1){
+-        // Interior cell: the 3x3 neighbourhood stays on this face (the same cells mark() would set).
+-        for(let y=j-1;y<=j+1;y++)for(let x=i-1;x<=i+1;x++){
+-          const block=(face*B+(y>>>3))*B+(x>>>3),bit=(y&7)*8+(x&7);flags[block*2+(bit>>>5)]|=1<<(bit&31);
++  for(let q=0;q<table.length;q++){
++    if(!(base[2*q]||base[2*q+1]))continue;
++    const face=Math.floor(q/(B*B)),i0=q%B*8,j0=Math.floor(q/B)%B*8;
++    for(let row=0;row<8;row++){
++      const bits=(base[2*q+(row>>>2)]>>>((row&3)*8))&255;
++      if(!bits)continue;
++      const expanded=bits|(bits<<1)|(bits>>>1),j=j0+row;
++      for(let dy=-1;dy<=1;dy++){
++        const y=j+dy;
++        if(y>=0&&y<N){
++          const at=(face*B+(y>>>3))*B+(i0>>>3),shift=(y&3)*8,h=(y&7)>>>2;
++          flags[2*at+h]|=(expanded&255)<<shift;
++          if(bits&1){if(i0>0)flags[2*(at-1)+h]|=128<<shift;else mark(face,-1,y);}
++          if(bits&128){if(i0+8<N)flags[2*(at+1)+h]|=1<<shift;else mark(face,N,y);}
++        }else{
++          // Preserve the canonical cube-face mapping, including corner tie breaking.
++          for(let i=0;i<8;i++)if(bits&(1<<i))for(let dx=-1;dx<=1;dx++)mark(face,i0+i+dx,y);
+         }
+-      } else for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)mark(face,i+dx,j+dy);
+-      bits&=bits-1;
++      }
+     }
+   }
+   const masks: number[]=[],offsets=[0],candidates: number[]=[],scalars=new Float64Array(belts.length*9);
+@@ -532,41 +580,57 @@ function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBa
+     if(count>1)multiBeltCells+=cells;
+     offsets.push(candidates.length);
+   }
++  const evaluators=belts.map(b=>coarseDistanceEvaluator(b,R,Math.min(b.halfWidthM,maxDistM)));
+   const values=new Float32Array(candidates.length*81);
++  const fieldMasks=Uint32Array.from(masks),fieldOffsets=Uint32Array.from(offsets),fieldCandidates=Uint16Array.from(candidates);
++  const blockCount=offsets.length-1,built=new Uint8Array(blockCount),blockPositions=new Uint32Array(blockCount);
+   // Per block, the 9 node rows (bit i = node i) that active cells read.
+   const rowsOf=new Uint16Array((offsets.length-1)*9);
+   for(let q=0;q<table.length;q++){
+     const block=table[q]-1;if(block<0)continue;
+-    const face=Math.floor(q/(B*B)),j0=(Math.floor(q/B)%B)*8,i0=(q%B)*8,nodeRows=block*9;
++    blockPositions[block]=q;
++    const nodeRows=block*9;
+     // Only corners of active cells can be read. Preserve every candidate at those
+     // corners; a neighbouring cell's rejection cannot discard a shared node.
+     for(let j=0;j<8;j++){
+       const row=(masks[2*block+(j>>>2)]>>>((j&3)*8))&255,corners=row|(row<<1);
+       rowsOf[nodeRows+j]|=corners;rowsOf[nodeRows+j+1]|=corners;
+     }
+-    // Same-face neighbours already built (left: q-1, below: q-B) share this block's column 0 / row 0 nodes:
+-    // the node direction is the same integer node (i0 + 0 = (i0 - 8) + 8), so its value is copied, not recomputed.
++  }
++  const materialiseBlock=(block: number): void=>{
++    if(built[block])return;
++    const q=blockPositions[block],face=Math.floor(q/(B*B)),j0=(Math.floor(q/B)%B)*8,i0=(q%B)*8,nodeRows=block*9;
++    // Copy only a read node of an already-built same-face neighbour with this candidate.
++    // Otherwise evaluate the canonical integer node: arbitrary build orders stay identical.
+     const left=i0>0?table[q-1]-1:-1,below=j0>0?table[q-B]-1:-1;
+-    for(let c=offsets[block];c<offsets[block+1];c++){
+-      const k=candidates[c],b=belts[k],C=b.centre,P=b.pole;
+-      const H=Math.min(b.halfWidthM,maxDistM);
+-      let cl=-1,cb=-1;
+-      if(left>=0)for(let e=offsets[left];e<offsets[left+1];e++)if(candidates[e]===k)cl=e;
+-      if(below>=0)for(let e=offsets[below];e<offsets[below+1];e++)if(candidates[e]===k)cb=e;
++    const right=i0+8<N?table[q+1]-1:-1,above=j0+8<N?table[q+B]-1:-1;
++    for(let c=fieldOffsets[block];c<fieldOffsets[block+1];c++){
++      const k=fieldCandidates[c];
++      const evaluate=evaluators[k];
++      let cl=-1,cb=-1,cr=-1,ca=-1;
++      if(left>=0&&built[left])for(let e=fieldOffsets[left];e<fieldOffsets[left+1];e++)if(fieldCandidates[e]===k)cl=e;
++      if(below>=0&&built[below])for(let e=fieldOffsets[below];e<fieldOffsets[below+1];e++)if(fieldCandidates[e]===k)cb=e;
++      if(right>=0&&built[right])for(let e=fieldOffsets[right];e<fieldOffsets[right+1];e++)if(fieldCandidates[e]===k)cr=e;
++      if(above>=0&&built[above])for(let e=fieldOffsets[above];e<fieldOffsets[above+1];e++)if(fieldCandidates[e]===k)ca=e;
+       for(let j=0;j<=8;j++)for(let i=0;i<=8;i++){
+         if(!(rowsOf[nodeRows+j]&(1<<i)))continue;
+         if(i===0&&cl>=0&&(rowsOf[left*9+j]&256)){values[c*81+j*9]=values[cl*81+j*9+8];continue;}
+         if(j===0&&cb>=0&&(rowsOf[below*9+8]&(1<<i))){values[c*81+i]=values[cb*81+72+i];continue;}
+-        coarseDirection(face,i0+i,j0+j,N,d);
+-        const x=dot(d,b.tangent),z=dot(d,C),py=dot(d,P),u=x/(Math.sqrt(x*x+z*z)+z);
+-        transverse(b,d,R,u,x,z,py,py*R-offset(b,u)<0?-1:1);
+-        values[c*81+j*9+i]=trDistance/H;
++        if(i===8&&cr>=0&&(rowsOf[right*9+j]&1)){values[c*81+j*9+8]=values[cr*81+j*9];continue;}
++        if(j===8&&ca>=0&&(rowsOf[above*9]&(1<<i))){values[c*81+72+i]=values[ca*81+i];continue;}
++        // Keep world-axis normalization and dot-product operation order exactly.
++        const a=2*(i0+i)/N-1,bb=2*(j0+j)/N-1,axis=face>>>1,side=face&1?-1:1;
++        let d0=axis===0?side:a,d1=axis===0?a:axis===1?side:bb,d2=axis===2?side:bb;
++        const length=Math.sqrt(d0*d0+d1*d1+d2*d2);d0/=length;d1/=length;d2/=length;
++        values[c*81+j*9+i]=evaluate(d0,d1,d2);
+       }
+     }
+-  }
+-  const field={faceCells:N,blockTable:table,masks:Uint32Array.from(masks),offsets:Uint32Array.from(offsets),
+-    candidates:Uint16Array.from(candidates),distances:values,scalars,activeCells,multiBeltCells};
+-  const bytes=table.byteLength+field.masks.byteLength+field.offsets.byteLength+field.candidates.byteLength+field.distances.byteLength+scalars.byteLength;
++    built[block]=1;
++  };
++  const materialiseAll=(): void=>{for(let block=0;block<blockCount;block++)materialiseBlock(block);};
++  const field={faceCells:N,blockTable:table,masks:fieldMasks,offsets:fieldOffsets,
++    candidates:fieldCandidates,distances:values,scalars,activeCells,multiBeltCells,built,materialiseBlock,materialiseAll};
++  const bytes=table.byteLength+field.masks.byteLength+field.offsets.byteLength+field.candidates.byteLength+field.distances.byteLength+scalars.byteLength+built.byteLength+blockPositions.byteLength+rowsOf.byteLength;
+   return Object.freeze({...field,bytes});
+ }
+ 
+diff --git a/src/terrain.ts b/src/terrain.ts
+index 9689822..4543957 100644
+--- a/src/terrain.ts
++++ b/src/terrain.ts
+@@ -597,6 +597,7 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
+             const i=Math.max(0,Math.min(N-1,Math.floor(fx))),j=Math.max(0,Math.min(N-1,Math.floor(fy)));
+             const block=field.blockTable[(face*B+(j>>>3))*B+(i>>>3)]-1,bit=(j&7)*8+(i&7);
+             if(block>=0 && (field.masks[block*2+(bit>>>5)]&(1<<(bit&31)))) {
++              if(!field.built[block])field.materialiseBlock(block);
+               const wx=fx-i,wy=fy-j,ds=field.distances,bs=field.scalars,main=ridgeTermM;
+               let best=main; // Include the zero-belt term: candidate-list changes stay continuous.
+               for(let c=field.offsets[block];c<field.offsets[block+1];c++){
+diff --git a/tests/helpers/mountain-coarse-field.mjs b/tests/helpers/mountain-coarse-field.mjs
+index 3ac516a..4872cfb 100644
+--- a/tests/helpers/mountain-coarse-field.mjs
++++ b/tests/helpers/mountain-coarse-field.mjs
+@@ -40,6 +40,7 @@ export function lookup(field,d,absolute=false){
+   const face=k*2+(d[k]>0?0:1),fx=(d[[1,0,0][k]]/ax[k]+1)*N/2,fy=(d[[2,2,1][k]]/ax[k]+1)*N/2;
+   const i=Math.max(0,Math.min(N-1,Math.floor(fx))),j=Math.max(0,Math.min(N-1,Math.floor(fy))),block=field.blockTable[(face*B+(j>>>3))*B+(i>>>3)]-1,bit=(j&7)*8+(i&7);
+   if(block<0||!(field.masks[2*block+(bit>>>5)]&(1<<(bit&31))))return [];
++  field.materialiseBlock(block);
+   const wx=fx-i,wy=fy-j,out=[];
+   for(let c=field.offsets[block];c<field.offsets[block+1];c++){
+     const p=c*81+(j&7)*9+(i&7),a=[0,1,9,10].map(n=>absolute?Math.abs(field.distances[p+n]):field.distances[p+n]);
+@@ -73,6 +74,7 @@ export const {referenceDistance}=await import('data:text/javascript;base64,'+Buf
+ export function nodeDirection(face,i,j,N){const d=[0,0,0],k=face>>>1;d[k]=face&1?-1:1;d[[1,0,0][k]]=2*i/N-1;d[[2,2,1][k]]=2*j/N-1;const l=Math.sqrt(d[0]*d[0]+d[1]*d[1]+d[2]*d[2]);return d.map(v=>v/l);}
+ export function measureError(body,steps=4){
+   const layout=orogenLayout(body),f=layout.coarseBandField(48000,32000),N=f.faceCells,B=N/8;
++  f.materialiseAll();
+   let max=0,count=0,worst=null,boundary=Infinity;
+   for(let q=0;q<f.blockTable.length;q++){
+     const block=f.blockTable[q]-1;if(block<0)continue;
+diff --git a/tests/mountain-coarse-field.test.mjs b/tests/mountain-coarse-field.test.mjs
+index 2c39fa2..aa35b20 100644
+--- a/tests/mountain-coarse-field.test.mjs
++++ b/tests/mountain-coarse-field.test.mjs
+@@ -56,10 +56,31 @@ for(const body of worlds){
+     for(let i=31;i>=0;i--)b.sample(fib(i,32));
+     assert.equal(a.coarseBandField(48000,32000),af);assert.equal(b.coarseBandField(48000,32000),bf);
+     assert.equal(af.faceCells,a.bandGrid(48000,32000).faceCells/2);assert.ok(af.bytes<=8*1024*1024);
++    assert.ok(af.built.every(v=>v===0));assert.ok(bf.built.every(v=>v===0));
++    assert.ok(af.distances.every(v=>Object.is(v,0)));
++    af.materialiseAll();
++    for(let block=bf.built.length-1;block>=0;block--)bf.materialiseBlock(block);
++    assert.ok(af.built.every(v=>v===1));assert.ok(bf.built.every(v=>v===1));
++    bf.materialiseAll(); // Idempotent, including after reverse construction.
+     for(const k of arrays)assert.deepEqual(Buffer.from(af[k].buffer),Buffer.from(bf[k].buffer),k);
++    // One read corner per block/candidate against the independent eager node expression.
++    const N=af.faceCells,B=N/8;
++    let checked=0;
++    for(let q=0;q<af.blockTable.length;q++){
++      const block=af.blockTable[q]-1;if(block<0)continue;
++      let n=0;while(n<81&&!nodeIsRead(af,block,n%9,Math.floor(n/9)))n++;
++      assert.ok(n<81);
++      const d=nodeDirection(Math.floor(q/(B*B)),q%B*8+n%9,Math.floor(q/B)%B*8+Math.floor(n/9),N);
++      for(let c=af.offsets[block];c<af.offsets[block+1];c++){
++        const belt=a.belts[af.candidates[c]],expected=Math.fround(referenceDistance(belt,d,body.radiusM)/Math.min(belt.halfWidthM,48000));
++        assert.ok(Object.is(af.distances[c*81+n],expected));checked++;
++      }
++    }
++    assert.ok(checked>0);
+   });
+   test(`${body.name}: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity`,t=>{
+     const f=orogenLayout(body).coarseBandField(48000,32000),N=f.faceCells,B=N/8,layout=orogenLayout(body),seen=new Map(),coarse=sampler(body,{mountains:true,lodLevel:0});let matched=0,nodeChecks=0;
++    f.materialiseAll();
+     for(let q=0;q<f.blockTable.length;q++){
+       const block=f.blockTable[q]-1;if(block<0)continue;const face=Math.floor(q/(B*B)),i0=q%B*8,j0=Math.floor(q/B)%B*8;
+       if(i0!==0&&j0!==0&&i0+8!==N&&j0+8!==N)continue;

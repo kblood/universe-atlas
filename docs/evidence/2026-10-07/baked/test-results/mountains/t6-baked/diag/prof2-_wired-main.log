@@ -1,0 +1,21 @@
+outside ns/sample median 547 main 506 branch 574
+ 30.1 n terrain.ts:318
+ 16.2 noise catalog.ts:968
+ 14.2 sample terrain.ts:525
+  5.9  terrain.ts:874
+  5.7  surface-climate.ts:287
+  4.9 detAtan2 det-math.ts:143
+  4.6 mix terrain.ts:307
+  4.2 pass zz-c1-profile.mjs:36
+  3.4 bandTag mountain-layout.ts:575
+  2.8 waterWorldLandColour terrain.ts:346
+  2.6 seabedDetail terrain.ts:498
+  2.5  planet-landforms.ts:24
+  0.8 ss terrain.ts:246
+  0.8 (garbage collector) :-1
+  0.6 massifBeltSample mountain-assembly.ts:37
+  0.2 post node:inspector:114
+  0.2 clamp terrain.ts:303
+  0.2 withinFlagged mountain-layout.ts:633
+  0.2  zz-c1-profile.mjs:-1
+  0.2 dispatch :-1

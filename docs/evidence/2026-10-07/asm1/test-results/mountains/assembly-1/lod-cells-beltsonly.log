@@ -1,0 +1,26 @@
+RETENTION pass Maithea L6 peakKept 90.28 >= 85
+RETENTION pass Maithea L8 peakKept 98.13 >= 95
+RETENTION pass Maithea L6 summitP50 6.21 <= 120
+RETENTION pass Maithea L6 summitMax 227.77 <= 400
+RETENTION pass Maithea L6 snowKept 98.76 >= 98
+RETENTION pass Maithea L6 forestKept 98.94 >= 97
+PIN FAIL Maithea L6 rgbP99 28.39 <= 26.3 (headroom -2.09)
+PIN pass Maithea L6 snow 1.21 <= 1.3 (headroom 0.09)
+PIN FAIL Maithea L6 name 3.249 <= 3.2 (headroom -0.049)
+PIN FAIL Maithea L6 carriedName 3.555 <= 3.5 (headroom -0.055)
+PIN FAIL Maithea L8 name 1.264 <= 0.8 (headroom -0.464)
+PIN FAIL Maithea L8 carriedName 1.806 <= 1.2 (headroom -0.606)
+PIN FAIL Lethuris L6 rgbP99 39.919 <= 39.2 (headroom -0.719)
+PIN pass Lethuris L6 snow 2.084 <= 2.2 (headroom 0.116)
+PIN pass Lethuris L6 forest 1.764 <= 1.8 (headroom 0.036)
+PIN FAIL Lethuris L6 name 7.469 <= 7 (headroom -0.469)
+PIN FAIL Lethuris L6 carriedName 8.552 <= 8.2 (headroom -0.352)
+PIN pass Lethuris L8 rgbP99 11.061 <= 11.1 (headroom 0.039)
+PIN pass Lethuris L8 snow 0.653 <= 1 (headroom 0.347)
+PIN pass Lethuris L8 forest 2.167 <= 2.2 (headroom 0.033)
+PIN FAIL Lethuris L8 name 2.181 <= 1.9 (headroom -0.281)
+PIN FAIL Lethuris L8 carriedName 1.903 <= 1.7 (headroom -0.203)
+PIN pass Lethuris L10 forest 0.639 <= 0.7 (headroom 0.061)
+PLAN FAIL Maithea L6 forest 0.548 > 0.5
+ladder lod-ladder-1; cells 96; pinned 17 (fail 10); total fails 11
+exit=1

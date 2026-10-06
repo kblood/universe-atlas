@@ -1,0 +1,138 @@
+{
+ "baked/Maithea": {
+  "world": "Maithea",
+  "label": "baked",
+  "rootA": "C:/LLM/IWSDK/universe-atlas-wt/ref-main",
+  "rootB": "C:/LLM/IWSDK/universe-atlas-wt/_wired-baked",
+  "rounds": 7,
+  "coldAms": 289.14459999999997,
+  "coldBms": 388.0921,
+  "aMs": [
+   330.32860000000005,
+   334.06219999999985,
+   326.2428,
+   365.14660000000003,
+   346.84270000000015,
+   345.4985999999999,
+   324.8797000000004
+  ],
+  "bMs": [
+   339.8113000000001,
+   325.47260000000006,
+   337.93560000000025,
+   328.25520000000006,
+   344.7686999999996,
+   332.8014000000003,
+   375.73199999999997
+  ],
+  "meanGrowth": 0.004962323660013368,
+  "medianGrowth": 0.011594846708189,
+  "pairedMedianGrowth": -0.005979655907420112,
+  "blockSolves": 0,
+  "digestA": "ed5a0e05a3164e61b8e30872637feba22390e703d70962f3b02d2759be22edb4",
+  "digestB": "1c1b11a7ba54f9f909f7f39e39cce8f876cd91b91c9ef3fc80bbd5a6999843a3",
+  "identical": false
+ },
+ "H/Maithea": {
+  "world": "Maithea",
+  "label": "H",
+  "rootA": "C:/LLM/IWSDK/universe-atlas-wt/ref-main",
+  "rootB": "C:/LLM/IWSDK/universe-atlas-wt/_wired-H",
+  "rounds": 7,
+  "coldAms": 289.9165,
+  "coldBms": 385.71670000000006,
+  "aMs": [
+   314.2439999999999,
+   300.9479000000001,
+   314.02419999999984,
+   374.0481,
+   355.20859999999993,
+   357.3798000000006,
+   348.86069999999927
+  ],
+  "bMs": [
+   341.7541000000001,
+   326.2294999999999,
+   328.0354000000002,
+   328.56770000000006,
+   362.64140000000043,
+   336.21569999999974,
+   367.71639999999934
+  ],
+  "meanGrowth": 0.011183977355732955,
+  "medianGrowth": -0.03624655915670516,
+  "pairedMedianGrowth": 0.04461821732210569,
+  "blockSolves": 0,
+  "digestA": "ed5a0e05a3164e61b8e30872637feba22390e703d70962f3b02d2759be22edb4",
+  "digestB": "1c1b11a7ba54f9f909f7f39e39cce8f876cd91b91c9ef3fc80bbd5a6999843a3",
+  "identical": false
+ },
+ "baked/Selawyn": {
+  "world": "Selawyn",
+  "label": "baked",
+  "rootA": "C:/LLM/IWSDK/universe-atlas-wt/ref-main",
+  "rootB": "C:/LLM/IWSDK/universe-atlas-wt/_wired-baked",
+  "rounds": 7,
+  "coldAms": 257.51390000000004,
+  "coldBms": 380.7247,
+  "aMs": [
+   308.33349999999996,
+   304.124,
+   290.9525000000001,
+   310.66049999999996,
+   297.10260000000017,
+   298.8851999999997,
+   293.5637000000006
+  ],
+  "bMs": [
+   315.01919999999996,
+   297.7754,
+   302.6459,
+   296.0836999999997,
+   338.5273000000002,
+   310.2216999999996,
+   393.1687000000002
+  ],
+  "meanGrowth": 0.07121997202919506,
+  "medianGrowth": 0.03792927853235928,
+  "pairedMedianGrowth": 0.03792927853235928,
+  "blockSolves": 0,
+  "digestA": "5779bacbbf273205568320a3997d232336ae73aabb06e23871b454d69302901c",
+  "digestB": "015e467aa2752b1636fc9978fa5638cace876556392897d2ba648e9136613991",
+  "identical": false
+ },
+ "H/Selawyn": {
+  "world": "Selawyn",
+  "label": "H",
+  "rootA": "C:/LLM/IWSDK/universe-atlas-wt/ref-main",
+  "rootB": "C:/LLM/IWSDK/universe-atlas-wt/_wired-H",
+  "rounds": 7,
+  "coldAms": 255.89600000000002,
+  "coldBms": 399.7249,
+  "aMs": [
+   304.9266,
+   305.49239999999986,
+   290.4068000000002,
+   303.7093,
+   287.5142000000001,
+   287.79359999999997,
+   286.52270000000044
+  ],
+  "bMs": [
+   331.8447000000001,
+   317.5646999999999,
+   298.40560000000005,
+   298.21619999999984,
+   337.9504999999999,
+   304.81510000000026,
+   339.90889999999945
+  ],
+  "meanGrowth": 0.07856310616088424,
+  "medianGrowth": 0.09351674960779044,
+  "pairedMedianGrowth": 0.059144817674890326,
+  "blockSolves": 0,
+  "digestA": "5779bacbbf273205568320a3997d232336ae73aabb06e23871b454d69302901c",
+  "digestB": "015e467aa2752b1636fc9978fa5638cace876556392897d2ba648e9136613991",
+  "identical": false
+ }
+}

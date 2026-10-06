@@ -1,0 +1,62 @@
+You are Astra, doing the ONE bounded fix round for route A (baked coarse field) in
+C:/LLM/IWSDK/universe-atlas-wt/baked (branch mountains/baked-coarse, uncommitted work = your implement round). You cannot
+write .git; read-only git is fine. No downloads, no network, no browser, no GPU. Do NOT run `npm run test:full` and do
+NOT run anything under tests/helpers/test-slot.mjs (the coordinator runs the official benches). Unofficial in-process
+timings without the slot are fine.
+
+## Read first
+- test-results/mountains/t6-baked/astra-implement-prompt.txt (your brief; still binding) and
+  test-results/mountains/t6-baked/implementation-handoff.md (your own report).
+- The current diff: `git diff` (src/mountain-layout.ts, src/mountain-envelope.ts, src/terrain.ts and tests).
+
+## Official results of your implement round (coordinator, CPU-quiet slot, against main 9971c3f)
+contract-build-bench (5 rounds, build mean growth per level, budget <= +10% at EVERY level):
+  Maithea  L0 +0.7 | L1 +6.7 | L2 -1.2 | L3 +5.4 | L4 +2.0 | L5 +10.7  <- FAILS (p50 +10.8%)
+  Selawyn  L0 -0.3 | L1 -2.1 | L2 +4.1 | L3 +1.3 | L4 +4.0 | L5 +1.7 | L6 +4.4
+  Raiva    L0 +5.6 | L1 -0.3 | L2 +3.8 | L3 +5.8 | L4 +6.2
+  Lethuris L0 +7.9 | L1 +2.4 | L2 +4.3 | L3 +0.2 | L4 -0.7 | L5 -0.2 | L6 -1.2
+orbit bake, wired, median growth (budget <= +5%): +1.7 / +2.6 / +0.8 / +4.8 (Lethuris thin).
+(Before route A: +18..+33% and +21..+31%. The approach works; the remaining work is margin.)
+Field build cold: 56 / 93 / 16 / 100 ms (budget <= 50 ms per body) <- FAILS on three worlds.
+
+## Fix round goals (all VALUE-PRESERVING against your current implementation)
+Every sampler output and tile must stay bit-identical to your current implement-round state, so no pin moves again.
+Before you change anything, capture digests of the current state (e.g. reuse test-results/mountains/t6-baked/
+repin-coarse.mjs's digest or main-identity.mjs's approach: {mountains:true} samplers at lodLevel 0 and cut-1 on the
+4,096 Fibonacci directions + 4 axis-site rasters, floor on and off, plus one L(cut-1) and one L(cut) tile per world)
+into test-results/mountains/t6-baked/fix-before.json, and the same after into fix-after.json; they must be equal.
+
+G1. Coarse per-sample cost (Maithea L(cut-1) is +10.7%; aim for <= +6% so there is margin on a noisy host). Cheap
+    exits that return exactly what the current code returns, for example:
+    - per candidate, compute the interpolated sd first and skip the candidate before computing u when
+      |sd| - delta >= 1 (then p = 0 so U = 0, and fade(hi) = 0 so w = 0: the term is main, which `best` already holds);
+    - in massifCoarseRidgeTermM, return main as soon as it is known that w === 0 and U === 0 (vHi === 0, a0 <= 0, ...)
+      without evaluating the remaining smoothsteps; keep the expressions that DO run unchanged (same order).
+    - hoist per-candidate constants (H, 1/uLimit, delta) into the scalars table if that removes work; avoid closures
+      and array allocation on the per-sample path; keep the lookup inline in baseTerrainCore.
+    Measure, unofficially, what fraction of Maithea L5 tile samples (the contract bench's 12 tiles: Fibonacci
+    directions i*37 mod 4000 with main ground > 0, see test-results/mountains/t3/contract-build-bench.mjs) land in an
+    active cell, in a candidate with |sd| - delta < 1, and in the non-trivial composition, and report it.
+G2. Field build <= 50 ms cold per body, every world, in a fresh process (layout and T1 grid excluded as before).
+    Value-preserving ideas: evaluate only nodes that are a corner of an ACTIVE cell (the others are never read; store
+    0 there); do not evaluate a candidate's nodes for cells whose own conservative cap/slab test rejects that belt
+    (only if no active cell of the block then reads those nodes for that candidate - otherwise keep them); avoid
+    per-node allocation; reuse the direction scratch; profile where the time goes first (node count x ns per
+    transverse) and report it. A node value must be computed by the same expression as now (bit-identical stored
+    values at every node that is read). If 50 ms is still out of reach, report the per-world numbers and the
+    profile; do not lower the resolution and do not change values.
+G3. Keep everything else: the separate mountain core literal, the scratch direction copy, private kernels, no
+    direction passed into a layout function on the coarse path, TERRAIN_MOUNTAINS_WIRED false, versions as they are.
+    Do not edit the COST_IDENTITY / COST_SAMPLER_IDENTITY pins (the coordinator handles the [1] tile pins: they move
+    only in parents/parentHeight, as you found).
+
+## Checks (exact commands, exit codes, counts)
+- `npx tsc --noEmit`
+- `node --test tests/mountain-coarse-field.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-envelope.test.mjs tests/terrain-mountains-assembly.test.mjs`
+- fix-before.json == fix-after.json (print the comparison).
+- `node test-results/mountains/t6-baked/field-report.mjs` (fresh-process build ms per world, bytes).
+- `git diff --check`
+
+## Answer
+Short: what changed, the G1 fractions and unofficial before/after timing, the G2 profile and per-world build ms,
+the identity comparison, every check with exit code, what you did not do.

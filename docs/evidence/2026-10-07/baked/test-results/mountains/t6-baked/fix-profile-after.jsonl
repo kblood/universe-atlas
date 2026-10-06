@@ -1,0 +1,4 @@
+{"world":"Maithea","ms":40.03489999999999,"nodeCount":103365,"nodeMs":28.408699999999982,"nsPerNode":274.8386784695011,"otherMs":11.626200000000011,"allocatedNodes":172854}
+{"world":"Selawyn","ms":66.06800000000001,"nodeCount":182972,"nodeMs":47.46169999999998,"nsPerNode":259.3932404958135,"otherMs":18.606300000000033,"allocatedNodes":294435}
+{"world":"Raiva","ms":12.851100000000002,"nodeCount":17879,"nodeMs":8.5043,"nsPerNode":475.65859388108953,"otherMs":4.346800000000002,"allocatedNodes":28269}
+{"world":"Lethuris","ms":69.7868,"nodeCount":198949,"nodeMs":51.00480000000002,"nsPerNode":256.3712308179484,"otherMs":18.781999999999982,"allocatedNodes":318816}

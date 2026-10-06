@@ -1,0 +1,39 @@
+{
+ "M1+M2+M3/Maithea": {
+  "wired": "M1+M2+M3",
+  "world": "Maithea",
+  "terrainVersion": "terrain-1.8.1-grain",
+  "main": "terrain-1.8.1-grain",
+  "node": "v24.7.0",
+  "inMassifLandShare": 0.02275,
+  "regionSamples": 1185800,
+  "sites": 8,
+  "mainRegionNs": 564.3032551863715,
+  "branchWarmRegionNs": 1132.2588969472092,
+  "warmRounds": [
+   1124.2769438353844,
+   1159.381936245572,
+   1128.0287569573284,
+   1146.0860178782243,
+   1132.2588969472092
+  ],
+  "inMassifWarmOverhead": 1.0064723826079294,
+  "branchColdRegionNs": 3750.3397706189908,
+  "coldBlockBuilds": 22,
+  "coldRegionMs": 4447.1603000000005,
+  "coldInMassifOverhead": 5.645965154640783,
+  "outsideSamples": 19545,
+  "mainOutsideNs": 478.3320542337345,
+  "branchOutsideNs": 572.8063443336725,
+  "outsideOverhead": 0.19750775484047667,
+  "weightedResidentOverhead": 0.21913104839246045,
+  "sparse1000": {
+   "mainNs": 1334.400000000187,
+   "branchColdNs": 3886599.7,
+   "blockBuilds": 27,
+   "ratio": 2912.619679256187
+  },
+  "l0": null,
+  "sink": 16051924046.468334
+ }
+}

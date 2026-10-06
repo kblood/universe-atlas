@@ -1,0 +1,2846 @@
+OpenAI Codex v0.160.0
+--------
+workdir: C:\LLM\IWSDK\universe-atlas-wt\m0c
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a10ce5-0849-78e3-ad88-18173307a0f8
+--------
+user
+You are reviewing element M0 (MTN-1, footprint-mean coarse colour) of the Universe Atlas mountains plan, round 3, READ-ONLY. Do not modify any tracked file. You may write scratch scripts ONLY under test-results/mountains/M0-v3/astra/ in this worktree. Do not run git commands, browsers, GPU work or downloads. Do not run npm test suites.
+
+Context to read first:
+- docs/mountains-design-2026-10-04.md section 2.0 (M0 metrics; metric 2 = L6 RGB p99 <= 0.9 x point on Maithea AND Lethuris through buildTile; metric 4 = build mean <= +10% per level), and the owner decisions at the top (decision (b): the 800 m colour grain was changed in its own step G, terrain-1.8.1-grain, now on main; M0 is re-run against the new terrain WITHOUT any threshold change).
+- docs/mountains-grain-step-g-2026-10-05.md (what step G changed).
+- docs/lod-ladder-contract-v1.md sections 9.1 and 9.2 (rounds 1-2 of M0, both blocked, and the coordinator rule: L5->6, L7->8, L8->9 must not get worse).
+- test-results/mountains/M0-v2/harness/exp.mjs (estimator harness; its localGrain now reads TERRAIN_LOCAL_GRAIN from the point checkout), harness/sweep-all-pairs.mjs (new this round).
+- Round-3 evidence: test-results/mountains/M0-v3/*.log (sweep-all-pairs.log, corner-L7.log = through-buildTile report of the retained corner K=2 L<=7 draft, attribution.log, grain-only-filters.log, ls-l5-pair.log).
+
+The harness ROOT (point checkout) is C:/LLM/IWSDK/universe-atlas (main, terrain-1.8.1-grain). This worktree holds the retained draft code (corner K=2, L<=7) in src/planet-tiles.ts and src/lod-ladder.ts.
+
+Coordinator's claim: on the step G terrain M0 is still BLOCKED. Point baselines (Maithea / Lethuris, pairs L5->6 / L6->7 / L7->8 / L8->9): 20.922/11.323/4.832/1.963 and 27.238/17.152/9.481/4.033. Required L6->7: Maithea <= 10.190, Lethuris <= 15.437. The draft (corner K=2, L<=7) through buildTile gives Maithea 11.860 (ratio 1.047, worse than point) and Lethuris 13.421 (0.782); even the near-exact footprint mean (box K=8 at L6-L8) gives Maithea 10.478 (0.925). Only the least-squares reduction at L6 passes L6->7 (8.746 / 13.387) but it worsens L5->6 (20.922 -> 28.576) and costs ~4x colour samples. The grain change alone moved the through-buildTile point values from 19.378/34.916 (old terrain) to 11.323/17.152 (ratios 0.584/0.491) and improved every pair, but metric 2 compares a reduction to the point value on the same field, so the coordinator does NOT mark M0 satisfied-by-grain.
+
+Your tasks:
+1. Fidelity: spot-check that the harness point textures still equal buildTile colour bytes on the new terrain (a few tiles L5-L9, both worlds) and that corner_L67 in the harness reproduces the through-buildTile corner-L7 values (11.860 / 13.421 at L6, 7.728 / 12.870 at L7). Recompute at least the point and box8_L678 rows yourself.
+2. Refutation attempt: try to find ANY estimator affordable within +10% L6 build time (roughly: at most ~10-20% more colour samples than one per texel, or a cheap grain-only re-weighting) that meets L6->7 <= 0.9 x point on BOTH worlds without making L5->6, L7->8 or L8->9 worse on either world. Report the numbers of what you tried.
+3. Judge the satisfied-by-grain question strictly against the literal text of metric 2 and decision (b).
+
+Answer with a verdict line first: BLOCK-CONFIRMED, BLOCK-REFUTED (with the passing estimator and all numbers), or FINDINGS (fidelity errors). Then numbers. Keep it under 80 lines.
+
+codex
+I’ll check the harness against buildTile, recompute the point and box8 rows, then test affordable alternatives against every protected LOD pair. I’ll keep scratch work under the permitted directory and leave tracked files untouched.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-Content docs/mountains-design-2026-10-04.md -TotalCount 180; Get-Content docs/mountains-grain-step-g-2026-10-05.md; Get-Content docs/lod-ladder-contract-v1.md | Select-Object -Skip 230 -First 220' in C:\LLM\IWSDK\universe-atlas-wt\m0c
+ succeeded in 83ms:
+# Mountains design (2026-10-04)
+
+Status: DESIGN, branch `design/mountains` (from main `b8d38d3`). Nothing here is wired into the app,
+and no terrain output changes on this branch. The branch adds this document and two Node-only
+prototype scripts. Owner decision 2026-10-04: mountains get their own design instead of the held
+`round2/relief-present` change; Luna verdicts are advisory and do not block alone; testing is
+element-first.
+
+Owner decisions 2026-10-05 (explicit, recorded verbatim):
+
+> (a) the M3 coherence row and the M3 pit row may be CALIBRATED against an eroded positive control
+> (coherence measured detrended/band-passed or otherwise corrected so a physically eroded range
+> passes while isotropic noise and straight mirrored fans (the rejected A0) fail; pit row made
+> resampling-tolerant because the planet sampler never lands on a construction grid). Document
+> old/new rows with numbers, negative controls proving the new rows still have teeth. All other rows
+> and all 17 LOD pins/goldens stay unchanged.
+>
+> (b) M0: the 800 m multiplicative colour grain in terrain.ts (~line 587) is moved/changed inside the
+> assembly step MTN-6 (which owns terrain.ts) with TERRAIN_VERSION bump and a deliberate golden re-pin
+> (old/new digests documented); M0 is then re-run against the new terrain without any threshold
+> change. No other loosening is authorised.
+
+Decision (a) is applied in section 2.3 and `docs/mountain-m3-calibration-v1.md`. Decision (b) belongs
+to MTN-6 and MTN-1 and is not applied by the M3 element.
+
+Further owner decisions 2026-10-05 (explicit, recorded verbatim as the coordinator relayed them):
+
+> (a) M3 coherence/pit rows calibrated (merged). (b) the 800 m colour grain is changed in its own
+> small step with TERRAIN_VERSION bump + deliberate golden re-pin + update of the two colour tests
+> that hard-code the old .88/.24 grain (old/new digests documented). (c) M3 cost judged on warm
+> resident cost. (d) assembly in two steps. (e) NEW: the 8 failing LOD class pins when belts are
+> wired are handled by FREEZING the stratified tile selection (so tile re-picking cannot move the
+> pins; document how) AND CHANGING the M2 envelope so belts do not move the class boundary in
+> snowline/treeline tiles (Maithea L8 name/carriedName); NO pin is loosened or repinned. (f) NEW:
+> the convex blend lowering heights at belt edges (up to 3 km, 23-45 directions per world) is
+> accepted ('uplift inside belts with fade-out at the edge'). (g) M3's relief scales with belt width
+> (lattice 2w/480): give M3 a FIXED carving width tiled across wide belts so Selawyn's 220 km belt
+> and low-tau belts reach M4 R1 (>=8 peaks/1000 km2), measured on the real parameters of all four
+> worlds.
+
+Decision (b) is applied as its own step, **step G** (`terrain-1.8.1-grain`), before any belt is
+wired: `docs/mountains-grain-step-g-2026-10-05.md`. Decisions (d)-(g) belong to the assembly steps
+that follow it.
+
+Prototype scripts (pure Node, no browser, no GPU, not registered in `npm test`):
+
+- `scripts/mountain-metrics.mjs` measures the mountain elements on the 4 standard worlds. Its
+  `--root` option reads another checkout's `src/` read-only, and `--synthetic alpine|dome` measures a
+  calibration control instead of Atlas terrain.
+- `scripts/mountain-lod-footprint.mjs` re-measures the lod-consistency colour and class rows on
+  the test's own 12-tile selection, first with point samples and then with footprint means.
+
+Evidence is under `test-results/design-mountains-2026-10-04/`: the metrics and footprint JSON, the
+logs, and hillshade PNGs.
+
+Words used below: **main** means `b8d38d3`. **d3** means the held RELIEF-PRESENT design 3
+(`0893ad2`), read read-only from `universe-atlas-wt/r2-relief-present`. **Site** means one of the
+8 highest well-separated land samples per world: the highest land samples of a 20 000-direction
+Fibonacci set, each at least 300 km from the others. The sites are picked from each field's own
+heights. **Nyquist(L)** is 2 x tileEdge(L)/32, the shortest wavelength a level-L height lattice can
+hold. **Colour Nyquist(L)** is 2 x tileEdge(L)/128, the same for the 128-texel colour texture.
+
+How the site numbers aggregate (as `scripts/mountain-metrics.mjs` computes them):
+
+- slope, crest and relief percentiles pool all pixels of the 8 sites;
+- the spectrum averages power over the sites before taking RMS;
+- peak density is the total peak count over the total raster area;
+- drainage numbers are the median of the per-site values;
+- the synthetic controls use 4 sites, not 8.
+
+## 1. Diagnosis
+
+### 1.1 Why mountains read as soft, low ridges (a geometry fault, not only presentation)
+
+Luna's no-clouds frames fail too ("only low, soft ridges", "gently rolling plain";
+`test-results/round2-2026-10-04/final/luna/summary.md`). Haze, tone mapping and clouds make it
+worse (owner items A4 and A8), but the field itself is soft. The table below gives the measured
+values for main, d3 and two synthetic controls. The controls are not Atlas terrain. `alpine` is a
+crest-weighted ridged multifractal with octaves from 64 km down to 250 m and an amplitude gain of
+0.71 per octave, which gives a spectral exponent near 2. `dome` is made of smooth 40 km swells.
+
+| Metric (8 sites, 48 km raster at 125 m) | Maithea main / d3 | Selawyn main / d3 | Raiva main / d3 | Lethuris main / d3 | alpine control | dome control |
+|---|---|---|---|---|---|---|
+| slope at 125 m, p50 (deg) | 11.3 / 16.3 | 8.4 / 10.8 | 4.7 / 9.5 | 10.8 / 16.4 | 27.4 | 5.3 |
+| slope at 125 m above 30 deg (% of area) | 2.2 / 17.4 | 0.2 / 7.7 | 0.2 / 5.0 | 1.8 / 18.7 | 42.7 | 0 |
+| crest flank angle at 500 m, p50 (deg) | 6.5 / 9.6 | 4.9 / 7.1 | 2.8 / 5.5 | 6.3 / 9.5 | 14.7 | 0.4 |
+| relief within 8 km, p50 (m) | 1466 / 1739 | 1000 / 1200 | 867 / 1102 | 1410 / 1808 | 1767 | 929 |
+| resolved peaks with prominence >= 300 m per 1000 km² (border-censored) | 1.2 / 6.4 | 0.5 / 2.6 | 0.3 / 1.2 | 1.2 / 5.9 | 12.0 | 0 |
+| spectral exponent beta, 0.5-8 km | 3.36 / 2.96 | 3.37 / 2.99 | 3.49 / 2.78 | 3.41 / 2.96 | 2.14 | 3.92 |
+| RMS height in the 1-2 km octave (m) | 16 / 31 | 12 / 23 | 6 / 21 | 16 / 32 | 54 | 1 |
+| RMS height in the 2-4 km octave (m) | 36 / 58 | 28 / 46 | 15 / 36 | 35 / 65 | 75 | 2 |
+| closed depressions: land with fill > 10 m | 0.142 / 0.282 | 0.228 / 0.321 | 0.052 / 0.232 | 0.127 / 0.300 | 0.308 | 0 |
+| pits per 1000 km² | 378 / 633 | 453 / 570 | 147 / 668 | 319 / 700 | 2108 | 0 |
+| gradient orientation coherence, 40 km window, p50 | 0.298 / 0.132 | 0.239 / 0.130 | 0.679 / 0.153 | 0.262 / 0.120 | 0.135 | 0.399 |
+| p99 land (m), 20 000 directions | 4358 / 4651 | 3292 / 3626 | 2475 / 2673 | 4060 / 4489 | (n/a) | (n/a) |
+
+Four causes follow from the code (`src/terrain.ts:500-546`, `src/planet-landforms.ts:23-33`) and
+from the numbers.
+
+1. **The height sits at the wrong scale.** The ridge belt term `tau*1.3*2800*ridges*ss(.35,.8,ridges)`
+   (up to about 2.9 km on Maithea) reads value noise `n(d,30,7)` in direction space. Its cells are
+   R/30 wide: 173 km on Maithea, 67 km on Raiva, 300 km on Lethuris. A crest of about 2.9 km spread
+   over tens of kilometres has flanks of a few degrees.
+   - On main, the RMS of the 64-128 km octave on Maithea is 601 m. The 1-2 km octave is only 16 m.
+   - The km-scale relief comes only from the detail window (hills of 620 m at 6.5 km), and from
+     landforms (1650 m at 14 km). Both are scaled again by `tau` (0.46-0.79) and by the upland gate.
+2. **The spectrum falls too steeply below 8 km.** beta is 3.36-3.49 on the four worlds. The
+   synthetic alpine control has 2.14. The commonly quoted value for Earth topography is about 2
+   (literature, not measured here). At the 1-2 km scale, main has 16 m of RMS where the control has
+   54 m. This is the measured form of "soft".
+3. **The relief has no valley organisation.** The crest flank angle is 6.5 deg on main, against
+   14.7 deg on the control. The main hillshade (`png-main/Maithea-site0-48km.png`) shows blob- and
+   worm-shaped cells: the ridged value-noise isolines that §9 of `docs/terrain-relief-v1.md` already
+   calls a maze. There is no drainage hierarchy and no V-valleys between the crests.
+4. **Presentation stacks on top.** The causes are haze, ACES tone mapping, clouds and the arbitrary
+   horizon poses (A4, A5 and A8). They are real, but they are separate elements (section 2.7).
+
+What d3 changed, measured:
+
+- It fixed part of causes 1 and 2. beta fell to 2.78-2.99, the area above 30 deg rose to 5-19%,
+  and resolved peak density rose by about 4-5x.
+- It made cause 3 worse. Pits rose by 1.3-4.5x and fill > 10 m rose by 1.4-4.5x.
+- Linear organisation collapsed: coherence fell from 0.24-0.68 to 0.12-0.15, which is the level of
+  the isotropic control.
+- Its hillshade (`png-design3/Maithea-site0-48km.png`) shows rugged islands in smooth soft plains,
+  not ranges with valleys.
+- It also changed the landform term on all land above about 300 m of raw base height, not only
+  inside belts. That is the most likely reason SITE_A, a lowland forest site, fell from 280.2 m to
+  155.5 m. The isolation evidence: the landform-only variant `oroOff` broke 9 checks on its own
+  (`relief-present/fix1/lod/`).
+
+A useful negative result: the synthetic alpine control passes every slope, spectrum and peak
+threshold, yet its hillshade (`png-synthetic/synthetic-alpine-site0-48km.png`) is rough noise, not
+a range. Its drainage metrics (31% closed depressions, 2108 pits per 1000 km²) and its coherence
+(0.135) catch this. So **spectrum and slope alone can be gamed by noise**.
+
+Prominence is border-censored: a peak counts only if its component never reached the raster
+border before its key saddle. Otherwise a higher col may exist outside the 48 km raster, so its
+value would be an upper bound. The first draft of this document counted those peaks; Astra's review
+caught it, and the numbers above are the censored ones (roughly half the uncensored counts). The element set below
+includes drainage and layout metrics for that reason.
+
+### 1.2 Why each prior attempt broke the LOD pins: all three suspects, measured
+
+The owner asked which of three suspects is to blame: pins that are specific to relief, high-frequency
+energy at coarse LOD, or the lack of footprint filtering. Each is measured below.
+
+**(a) The pins are regression snapshots with almost no headroom, taken on a selection that moves
+with the field.** `SHIPPED_CEILINGS` (`tests/lod-consistency.test.mjs:50-60`) holds main's own
+measured values, rounded up by 0.03-0.05. Examples: Maithea L6 RGB has a pin of 26.3 against 26.26
+measured; Lethuris L6 RGB has 39.2 against 39.17; Lethuris L6 forest has 1.8 against 1.76.
+
+The 12 tiles come from `stratifiedEdgeDirections(ts, cls)`, which reads the field under test, so a
+new field also re-picks the tiles. Only 3 of the 12 are range tiles; the other 9 are snowline,
+treeline and coast. These pins are not about mountains. They are upper bounds at main's values, so
+a change can pass by improving a row. But any change that adds colour or class variation inside the
+selected tiles has only about 0.04 of room before it fails. H10 (`main + 0.1*orogen`) passed
+because it is close to main.
+
+**(b) Height energy at wavelengths the coarse level cannot hold rose.** The measurement is the
+Hann-windowed spectrum of 128 km transects through the mountain sites (`E7_spectrum.aboveNyquist`
+in the JSON). It gives an estimate of the RMS height at wavelengths shorter than the height-lattice
+Nyquist(L6) and the colour Nyquist(L6). The estimate splits the straddling octave by uniform power
+in log wavelength; it is not an FFT-bin integral.
+
+| World | Nyquist(L6), lattice / colour | main lattice / colour | d3 lattice / colour | ratio d3/main, lattice / colour |
+|---|---|---|---|---|
+| Maithea | 7.97 / 1.99 km | 85 / 17 m | 139 / 35 m | 1.64 / 2.1 |
+| Selawyn | 13.1 / 3.28 km | 110 / 27 m | 168 / 47 m | 1.53 / 1.7 |
+| Raiva | 3.07 / 0.77 km | 14 / 3 m | 37 / 11 m | 2.64 / 3.7 |
+| Lethuris | 13.8 / 3.45 km | 154 / 36 m | 236 / 68 m | 1.53 / 1.9 |
+
+Colour depends on height (snowline, treeline, slope), so the colour column is the one that bears on
+the RGB rows. A point-sampled coarse texture cannot represent energy below its Nyquist; it aliases
+it. The direction matches the failures: Maithea L6 RGB went from 26.26 to 33.33 (x1.27) and
+Lethuris L6 RGB from 39.17 to 54.18 (x1.38).
+
+Two limits on this evidence. The spectral sites are the highest points of each world, not the 12
+LOD tiles, so the table shows the field's character in mountains, not the energy inside the tested
+tiles. And it shows a contribution, not that aliasing is the only cause.
+# Mountains step G: the 800 m colour grain, alone (terrain-1.8.1-grain, 2026-10-05)
+
+Owner decision (b), 2026-10-05, recorded verbatim in `docs/mountains-design-2026-10-04.md`:
+
+> the 800 m colour grain is changed in its own small step with TERRAIN_VERSION bump + deliberate
+> golden re-pin + update of the two colour tests that hard-code the old .88/.24 grain (old/new
+> digests documented).
+
+Step G lands that change on its own, before any mountain belt is wired (decision (d): assembly in
+two steps). The grain constants are the ones measured on the blocked `mountains/assembly-1` branch
+(`6d48c45`); no belt code (M1 layout, M2 envelope) is taken from it.
+
+## The change
+
+`src/terrain.ts`, water-world LAND colour only (the climate colour path of `terrainSampler`):
+
+| | localGrain | range | mean |
+|---|---|---|---|
+| terrain-1.8.0-relief | `.88 + n(d, R/800, 74) x .24` | +-12% | 1 |
+| terrain-1.8.1-grain | `TERRAIN_LOCAL_GRAIN.BASE + n x AMPLITUDE` = `.952 + n x .096` | +-4.8% | 1 |
+
+- `k = .4` of the old amplitude (`AMPLITUDE = .4 x .24 = .096`, `BASE = 1 - AMPLITUDE/2`). The
+  800 m cell (`CELL_M`) and the noise `n(d, R/800, 74)` are unchanged, so the fine-level pattern
+  keeps its position and scale; only its contrast drops.
+- Why `k = .4`: on assembly-1 the grain sweep (k = 0, .25, .4, .5, .75, 1) measured the grain at
+  about half of the L6/L8 cross-level RGB p99 (Maithea L6 26.26 -> 13.22 with no grain); .4 is the
+  largest k at which the grain's quadrature share stays at or below the grain-free error on every
+  pinned RGB row (Maithea L6, Lethuris L6 and L8).
+- The base core now also returns the raw noise (`CoreSample.localGrainNoise`, 0 where the core saw
+  ocean), so the climate path re-weights the same noise without a second noise call. Where the
+  core saw ocean but the post-landform height is land, the noise is evaluated as before.
+- Unchanged, bit for bit: heights, `groundHeightM`, the ocean flag (so every class), dry/ice/
+  volcanic/gas-giant colours, ocean colours, the `legacyWaterLandColour` fallback, and
+  `baseTerrainSampler` (all keep `.88/.24`).
+- `TERRAIN_VERSION` `terrain-1.8.0-relief` -> `terrain-1.8.1-grain` (a patch number: colour only;
+  `terrain-1.9.0` stays reserved for the belt assembly). `time-nav`'s `terrainPredates(v, 1, 8)`
+  parses it as 1.8, so a 1.8.0 bookmark gets the generic "older terrain" notice and no relief notice.
+  `BUILD_VERSION` is unchanged: no shader or presentation code moves.
+
+Tests changed:
+
+- `tests/terrain-climate-colour.test.mjs` and `tests/acceptance/climate-agreement.test.mjs`: their
+  independent grain copy is now `.952 + n x .096` (was `.88 + n x .24`), still written out (not
+  imported) so a drifted shared helper is caught; both still assert bit-exact colour on 20k land
+  directions x 4 water worlds.
+- Version string only: `tests/acceptance/version-compat.test.mjs`, `tests/inland-rivers-disabled.test.mjs`,
+  `tests/river-terrain.test.mjs`, `tests/terrain-relief-hypsometry.test.mjs`, `tests/terrain-climate-colour.test.mjs`.
+
+## Evidence (all under `test-results/mountains/step-g/`, untracked)
+
+### LOD cells (CONTRACT): 96 of 96 pass, 17 of 17 pins pass, nothing loosened
+
+`lod-cells.mjs` (copied from assembly-1) computes every cross-level cell of
+`tests/lod-consistency.test.mjs` (Maithea and Lethuris x L6..L14 x 9 rows) plus the 6 retention
+rows, with the SHIPPED_CEILINGS limits read from the test file itself. Main (`e636b5a`) and step G
+both: 96 cells, 17 pins, 0 failures. Only 10 cells move, all RGB p99 rows, all down:
+
+| Cell | main (1.8.0) | step G (1.8.1) | limit |
+|---|---|---|---|
+| Maithea L6 rgbP99 (pin) | 26.257 | 15.183 | 26.3 |
+| Maithea L8 rgbP99 | 3.547 | 2.258 | 4 |
+| Maithea L10 / L12 / L14 rgbP99 | 0.474 / 0.031 / 0.003 | 0.449 / 0.020 / 0.002 | 1 |
+| Lethuris L6 rgbP99 (pin) | 39.170 | 20.540 | 39.2 |
+| Lethuris L8 rgbP99 (pin) | 11.051 | 5.244 | 11.1 |
+| Lethuris L10 / L12 / L14 rgbP99 | 0.920 / 0.066 / 0.020 | 0.433 / 0.028 / 0.008 | 1 |
+
+Every height, ocean, snow, forest, name and carriedName cell and every retention row is unchanged
+(identical values), as expected from a colour-only change. The step G numbers equal the
+grain-only variant measured on assembly-1 (`lod-cells-grainonly.log`) cell for cell.
+Logs: `lod-cells-main.log`, `lod-cells-grain.log` (+ `.json`).
+
+### Identity (HARD, evidence script `identity-grain.mjs`)
+
+terrainSampler, main vs step G, 4096 Fibonacci directions on each of the 4 water worlds (Maithea,
+Selawyn, Raiva, Lethuris) and the 6 golden terrain bodies (Volcanic, Rocky, 2 Ice, 2 more Oceanic):
+0 differences in `elevationM`, `groundHeightM` and `ocean` on every body; colour differs only on
+water-world land (every land sample there, max |new/old - 1| 7.5-8.0%); 0 colour differences on
+the dry, ice and volcanic bodies and on every ocean sample. Log: `identity-grain.log`.
+
+### Golden re-pin (HARD; one deliberate re-pin, decision (b))
+
+`node tests/golden/run-cross-engine.mjs --update` (machine-wide browser lock, exit 0): Node,
+Chromium 149 and Firefox 151 equal on every digest; WebKit 26.5 differs only on the recorded
+`faunaKnownUnstable` open finding (unchanged by this step). Old -> new:
+
+| Digest | terrain-1.8.0-relief | terrain-1.8.1-grain | Cause |
+|---|---|---|---|
+| terrain | `b3818c33be40ca9947dc68e26d19ef0f6fbd4fde4e6b22c2eedeb511879578e2` | `1363e73fc158559e71febd81c54c920b1df6aba354fa0f38c0f32c9c70ee6a2b` | water-land colour |
+| combined | `ec37f25ccbedbdf16cbd18c4bae9dc33c24cab6e8fed1163d39d6ee5369fed92` | `c2b6e424e382091d10da6402452c366cea396cf0ca24b760505efccbb9b3dda5` | contains terrain |
+| placeQuery | `0ee0946d8ec2abc780589f4ba34e2e7fe9273e28664e508d0ea3650ba70da831` | `675746e64b1cde0be648a5c503d126662b955f15d30ebd6382031d89b74a5dda` | version string only |
+| census | `c681362d7289dcee12c9dec76fcbe756615c58503faa79d923de085029992892` | `02ede0a8e69348e136dfb497d2ee1d364d2f4cf08b4fca632ea0ea428122fb1e` | version string only |
+
+"Version string only" was measured: the step G source with `TERRAIN_VERSION` set back to
+`terrain-1.8.0-relief` (scratch copy) reproduces the old placeQuery and census digests exactly and
+moves only terrain and combined (`placeAt` reports `versions.terrain`; the forest census context
+hashes `TERRAIN_VERSION`). All other 12 digests and every count are unchanged.
+`tests/golden/perturbation.test.mjs`: 5/5 pass on the new fixture. Logs: `golden-update.log`,
+`golden-report.json`.
+
+### Fine-level look (VISUAL-ADVISORY, UNCALIBRATED: not citable)
+
+`render-fine.mjs`: nadir CPU renders of terrainSampler colour x a Lambert hillshade, 640 x 640 px at
+16 m/px (10.24 km, about 13 grain cells), on one lowland and one forest site of Maithea and
+Lethuris, BEFORE (main) and AFTER (step G), same sites and renderer (`fine/`). Two questions
+(`q-mottle.txt`, `q-variation.txt`), `scripts/luna-vote.mjs`, 3 asks per image plus diagnosis.
+No control set exists for these questions, so every result is NOT-CHECKED / UNCALIBRATED and none
+counts.
+
+| Image | "free of artificial mottle?" | "still shows natural variation?" |
+|---|---|---|
+| Maithea lowland before / after | FAIL 0/3 / **PASS 2/3** | FAIL 1/3 / FAIL 0/3 (1 unclear) |
+| Maithea forest before / after | FAIL 1/3 / **PASS 3/3** | FAIL 1/3 / FAIL 0/3 |
+| Lethuris lowland before / after | FAIL 0/3 / FAIL 1/3 | FAIL 0/3 / FAIL 0/3 |
+| Lethuris forest before / after | FAIL 0/3 / FAIL 1/3 | FAIL 1/3 / FAIL 0/3 |
+| pass asks, before -> after | 1/12 -> 7/12 | 3/12 -> 0/12 |
+
+Diagnoses: every non-pass names the element `texture/colour`. Before: "large soft light and dark
+patches form an artificial-looking cloud-like mottle". After (variation): "nearly uniform olive
+green with only faint broad shading". Reading: the reduced grain removes most of the 800 m mottle
+Luna objected to (and the axis-aligned blocks visible on the near-polar Lethuris sites), and the
+ground then reads flatter. The flat look was already there before (the variation question failed
+every BEFORE image too); it is a missing fine colour-detail element, not a regression the pins
+measure. Routed to the owner as an observation, not a blocker.
+
+### Other checks
+
+- `npx tsc --noEmit`: exit 0.
+- `npm run test:pkg -- tests/terrain-climate-colour.test.mjs tests/acceptance/climate-agreement.test.mjs`:
+  8/8 pass, exit 0.
+- `npm run test:affected -- --base main` (73 files: every direct and transitive importer of
+  `terrain.ts`, including `lod-consistency`, `terrain-elevation-identity`, `harness-sites`,
+  `render-bounds`, `landing-site`, `eco-identity-site`): 576 tests, 574 pass, 0 fail, 2 TODO (the
+  known SITE_A 60 km ring and rocky Spearman TODOs), exit 0. Log: `affected.log`.
+- Astra (gpt-6-astra, read-only): APPROVE WITH NITS. No correctness findings (grain scope,
+  ocean-to-land branch, legacy bits and float order correct; no renderer/worker copy of the grain;
+  version consumers and `terrainPredates` handle the bump). Its one nit (this document was still a
+  placeholder during the review) is resolved here. `astra-review.md`.
+- Not run: `npm run test:full` and `test:perf` (the plan runs test:full once, at the last merge of
+  the mountains sequence), browser/VR gates, an app-path capture.
+
+## What step G does not do
+
+No mountain belt, no M2/M3/M4 wiring, no LOD ladder change, no `SHIPPED_CEILINGS` change, no
+classifier change. Decisions (e)-(g) are for the assembly steps; their LOD cells will be measured
+against the step G field (the RGB pins now have 11.1 / 18.7 / 5.9 of headroom; the class pins'
+headroom is unchanged at 0.009-0.075).
+    brute force; Maithea horizon peak radius within 10% of the analytic value.
+  - Measured in the fast run: ratio p50 0.86-1.01. Measured in the full evidence run
+    (`render-bounds-evidence.tap`): ratio p50 0.90-1.12 (Raiva L18 1.117 is the maximum), p90 up to 1.28;
+    containment 0 of 8000 (plus 0 on seeds 13579 and 24680); horizon cull used 434.8 km vs analytic 399.7 km.
+    These values are evidence, not thresholds.
+- **Landing ceiling (formula kept, OPEN owner item).** `landingCeilingM = 0.8 x bound.maxM` is kept, as decided.
+  On P4 terrain it is 3.2-5.3 km (Maithea 5303, Selawyn 4141, Raiva 3219, Lethuris 5188 m), which is ABOVE p99
+  land (Maithea 4214, Selawyn 3246, Raiva 2506, Lethuris 4058 m) on every fixture world, so it no longer keeps
+  the landing pick off summits. Measured over 256 eyes at the datum sea (sea 0), picks at or above p99 land:
+  Maithea 2, Selawyn 6, Raiva 6, Lethuris 2. At the dated (60%-volume-lost, -2425 m) sea only Maithea and
+  Lethuris are covered (suite: `landing at a dated (lowered) sea`), with 0 summits on both; Selawyn and Raiva
+  were not measured at a dated sea. The required no-summit test exists as a `todo` test (`landing at the datum
+  sea never picks a summit`) and does NOT pass. It is not labelled passed.
+- **HUD flip and direct-landing boundary: fixed 19.5 km (owner decision).** INT had tied
+  `PlanetRenderer.lowFlightClearanceM` to the relief bound, which moved the HUD TERRAIN FLIGHT flip and the
+  direct-landing route to 4.0-6.6 km after P4 (Astra INT blocker 1). P6 (c465f6a) makes it the constant
+  `LOW_FLIGHT_CLEARANCE_M = 19500` again, used by both the HUD label and the "Land" routing in `main.ts`
+  (below it: landing preparation; above it: a terrain cruise first). Pinned in the render-bounds suite.
+- **Integration handoff runs were NOT green (corrected after Astra's INT review).** `handoff-tests.exit.txt`
+  exit=1 (TAP 104 tests: 101 pass, 1 fail, 2 todo; the failure is `tests/inland-rivers-disabled.test.mjs:236`)
+  and `handoff-tests-p4files.exit.txt` exit=1 (TAP 86 tests: 85 pass, 1 fail; the failure is
+  `tests/acceptance/version-compat.test.mjs:79`). Both were stale pins expecting
+  `atlas-surface-7-no-inland-rivers` while production returns `atlas-surface-8-ocean-volume` (bumped by P2 on
+  main; listed in `tests/known-failures.json`). They are pre-existing, not relief regressions, and their exit
+  codes are not the landing todos. Owner: P6, which re-pinned both and removed them from the known-failures
+  list (c465f6a; `test-results/finish-round-2026-10-04/P6-HARNESS-REPIN/`).
+- **Clouds above p99 land: DEFERRED, removed from this increment's acceptance.** P4 lowered relief so that only
+  3 of 161 corpus water bodies have p99 land above the reference deck top (by at most 371 m). Two attempts
+  were made and both failed Luna 9/9 on raiva-flight, selawyn-flight and selawyn-horizon (3 asks each, all
+  TERRAIN PASS, all CLOUD FAIL):
+  1. the P5 cloud hunks (79b8845 + e1b4d73: scale-height stretch, dated-sea riding, p99 floor, reference-frame
+     sampling): tall streaky curtains;
+  2. the p99 floor alone (deck stretched only where p99 + 500 m exceeds the reference top): judged "worse",
+     with the same streaks and columns as base.
+  The cloud files are back to planet-clouds-1 / cloud-volume-2 exactly. Luna's attempt-2 complaints (streaks,
+  columns, horizon curtains) are present in the BASE image too, so the cloud look itself is an open item for
+  the cloud owner, independent of the p99 rule. Evidence: `clouds/`.
+- **Integration sheets** (`sheets/`, Luna, 3 asks per world). Maithea, Selawyn (heavy, 18.6 g, tilt 90 deg),
+  Raiva (light, 2.6 g) and Lethuris (high tilt, 109 deg). Each world has four sun-aware poses: orbit, horizon,
+  ground, and seabed approach (200 m above a 3-4 km-deep floor).
+  - Across all 48 answers Luna named no holes, cracks, missing or floating tiles, or seams. That is the visual
+    side of the 0-false-cull result.
+  - Majority verdicts:
+    - orbit PASS on Maithea and Selawyn, FAIL on Raiva and Lethuris (mottled, blotchy colour patches);
+    - horizon FAIL on 3 of 4 worlds (subdued relief, the OPEN P4 horizon item); Selawyn PASS 2/3;
+    - ground PASS on Selawyn (3/3), FAIL on Maithea, Raiva (1/3) and Lethuris (1/3) (smooth, low detail);
+    - seabed FAIL on every world. The seabed is solid and continuous, but it is smooth and does not read as
+      underwater.
+  - These are absolute judgements with no before image: the poses come from the P4 terrain and do not exist on
+    main. They are presentation items, recorded OPEN for their owners and not labelled passed. Underwater
+    presentation (water tint or fog on the seabed approach) has no owner in this round.
+- **Desktop perf, before (main 7aaa48f) vs after (INT 50b3bd4): CONTENDED, NOT acceptance evidence.** Blender
+  (PID 11524) held the GPU and Opera was open, and the harness itself labels both runs CONTENDED. Each build
+  ran once (native, 1 repeat), and S4 was skipped. S4's deterministic shore-site search throws "no
+  deterministic shore site" on main as well, so it is a harness item.
+  - Frame-interval p95 (ms), before -> after: S1 ground paused 10.49 -> 8.83, S1 realtime 11.19 -> 11.40,
+    S1 100 m 9.84 -> 9.88, S2 turning 16.57 -> 21.24, S3 flight 16.58 -> 18.19, S3 walk 12.85 -> 13.41,
+    S5 out 17.34 -> 20.07, S5 back 19.13 -> 22.10, S6 descent 10.09 -> 11.23.
+  - Draw calls p50 are within +-17 in every tabulated scenario (S3 has no draw-call row in the table). The S2/S5 increases need a quiet-host, multi-repeat run
+    before anyone reads them as a regression or as noise. Evidence: `perf/compare.txt`.
+
+## 8. How place-query uses the contract
+
+1. `levelForPose` gives the rung, and with it the tile level range, that the viewer is shown.
+2. The tile at that level gives the stored heights (`surfaceHeight`), and its metadata gives the summary for
+   the place: summit, class shares, snowline/treeline, ocean share.
+3. Collision and physical queries ignore the rung and sample the terrain function directly at full detail.
+
+## 9. Measured numbers (2026-10-03; BEFORE = shipped main, AFTER = this contract)
+
+Full table: `test-results/relief-round-2026-10-03/P3-LOD-CONTRACT/report-v2.txt` and `.json`.
+
+**BEFORE reproduces the plan's shipped figures.** For example, Maithea L6->7 gives 97/761/1564 m and RGB
+6.7/33.8, retention is 70.0% with a summit loss of 205/661 m, and the figures at L8 and L10 also match.
+
+**Coarse retention on edge tiles** (plan selection; K=16 unless noted). Summit loss is shown as p50/max.
+
+| Body, level | Peak area kept, BEFORE -> AFTER | Summit loss, BEFORE -> AFTER |
+|---|---|---|
+| Maithea L6 | 70.0% -> 84.99% (K=32: 85.16%; 12 stratified tiles: 88.2%) | 205/661 m -> 67/279 m |
+| Maithea L8 | 91.4% -> 98.4% | 69/196 m -> 41/160 m |
+| Lethuris L6 | 50.6% -> 67.1% | 267/681 m -> 242/681 m (within 0.01 x edge = 2.2 km) |
+| Lethuris L8 | 76.6% -> 91.9% | — |
+
+On Maithea L6, snow kept stays at 98.5% and forest kept at 97.1%. Metadata maxH (C2) summit loss is the same
+as the in-tile value.
+
+**Cost of the correction.** On Maithea L6 the false peak area rises from 10% to 36% of the true peak area,
+and the mean bias is +122 m (L8: +54 m), because a corrected coarse surface is a conservative upper envelope.
+
+**Cross-level** (K=16):
+
+- Height p99/max improve or hold at every pair. For example, Maithea L6->7 goes from 761/1564 m to 651/1358 m.
+- The ocean flag has zero mismatch on all 4624 shared vertices at every pair, and ocean disagreement equals
+  BEFORE.
+- Snow, forest, colour and the carried name equal BEFORE, because they come from unchanged point samples.
+- The re-classified name proxy (classifier re-run at the coarse interpolated height) rises at L6->7: 0.42% ->
+  0.65% on Maithea and 0.50% -> 0.52% on Lethuris.
+
+**Open rows that shipped terrain also misses.** These are pinned as ceilings in the test for P4 to tighten:
+
+- colour p99 at L6/L8 (33.8 / 5.2 against 12 / 4);
+- the carried biome name (0.78% at L6 on the plan set);
+- on the stratified set, snow, forest and name at L6/L8.
+
+They need footprint-filtered colour and class grain in terrain.ts (P4).
+
+**Build time** (Node, interleaved A/B in one process, Maithea, mean):
+
+| Level | Change |
+|---|---|
+| L4 | +0.4% |
+| L6 | -0.8% |
+| L8 | +0.1% |
+| L9 | -0.4% |
+| L10 | -11% |
+| L12 | -12% |
+| L14 | -14% |
+| L16 | -18% |
+| L18 | -18% |
+
+The lattice samples are now reused instead of taken twice. Bytes per tile grow by exactly 64.
+
+### 9.1 M0 / MTN-1 measurements, 2026-10-05 — BLOCKED, not ready to merge
+
+Version ledger: `lod-ladder-1` -> `lod-ladder-2` (M0 draft: colour/material footprint reduction only).
+No accepted placement/level rule was found in the measured variants. Per the binding owner default,
+work stopped at the failed metric; no pin, ceiling, golden or acceptance threshold was loosened.
+The review draft retains **corner, K=2, L<=7** for both colour and class weights: it is the affordable
+variant and excludes L8, but it fails the Maithea L6 reduction requirement. It must not be treated as a
+completed M0. `peakCorrectionMaxLevel(R)` and an edge-based rule were not benchmarked. At L6->7 a rule
+that activates both levels necessarily produces the same outputs as the measured L<=7 rule.
+
+BEFORE is the point implementation in `C:/LLM/IWSDK/universe-atlas`; its `terrain.ts` and `planet-tiles.ts`
+SHA-256 matched this worktree before edits. Selection is its own 12 stratified directions (3 each of
+snowline, treeline, coast and range), reused for AFTER. Evidence: `test-results/mountains/M0/report.json`
+and `report.txt`; variant subdirectories `corner-L7`, `midpoint-L7`, `midpoint-L6`. Each directory also
+contains four Node PNGs (Maithea/Lethuris, L6/L8), with the 12 tiles stacked vertically, BEFORE left and
+AFTER right. The common RGB-difference scale is black=0, red=32, yellow=64, white>=96. No GPU was used.
+
+Each table cell is **RGB p99 / snow disagreement %**, measured through `buildTile`'s stored bytes.
+RGB uses every child texel centre and the parent's gutter-aware bilinear texture; snow uses channel 3
+of materials, at non-shared child lattice vertices, with land defined by the child's raw height.
+
+| Placement and level rule | Maithea L6 | Maithea L8 | Lethuris L6 | Lethuris L8 |
+|---|---:|---:|---:|---:|
+| BEFORE point (common to all variants) | 19.37792 / 1.26147 | 2.81597 / 0.27778 | 34.91603 / 2.11117 | 8.33690 / 0.95833 |
+| AFTER corner L<=7 (retained draft) | 17.85970 / 1.01937 | 2.81597 / 0.27778 | 20.83426 / 1.40299 | 8.33690 / 0.95833 |
+| AFTER midpoint L<=7 | 17.47945 / 1.13405 | 2.81597 / 0.27778 | 22.98692 / 1.37627 | 8.33690 / 0.95833 |
+| AFTER midpoint L<=6 | 20.14440 / 1.35066 | 2.81597 / 0.27778 | 30.16394 / 1.84393 | 8.33690 / 0.95833 |
+
+Maithea requires <=17.44013 at L6. Corner/L7 gives AFTER/BEFORE=0.92165172 and midpoint/L7 gives
+0.90202918; **both fail <=0.9**. Midpoint/L6 gives 1.03955416 and also fails. L8 is unchanged because
+all measured rules exclude it; this does not establish that active L8 filtering would help.
+Informational L7 RGB/snow: Maithea BEFORE 8.19990/0.81967, corner 13.78773/1.09290, midpoint/L7
+9.53407/0.88798; Lethuris BEFORE 20.54083/2.23611, corner 26.41422/2.73611, midpoint/L7
+21.32752/2.15278. The transition to point sampling worsens this informational row.
+
+The gate test's `crossPair` colour/class rows are a **sampler point emulation that does not read
+buildTile colour/material bytes**. Its height rows do read buildTile. Consequently M0 does not move
+any ceiling cell. The footprint report explicitly labels forest, name, carriedName and ocean as this
+point emulation, because those labels are not stored per vertex. BEFORE=AFTER:
+
+| World / level | Forest % | Name % | Carried name % | Ocean % |
+|---|---:|---:|---:|---:|
+| Maithea L6 | 0.42049 | 3.16004 | 3.49134 | 0.13542 |
+| Maithea L8 | 0.01389 | 0.76389 | 1.16667 | 0 |
+| Lethuris L6 | 1.76376 | 6.98824 | 8.15072 | 0.03125 |
+| Lethuris L8 | 2.16667 | 1.84722 | 1.65278 | 0 |
+
+Height retention uses a 129² grid over each of the same tiles, with 128 samples from each of its 129
+rows and 129 columns. Spacing is tileEdge/128. `bandPowers` performs linear detrending and Hann
+windowing; powers pool over rows, columns and tiles before taking ratios. The last spatial endpoint
+is excluded from each FFT, not from the sampled grid. N=2*tileEdge/32. Values below are
+**retained RMS / error power relative to truth**, BEFORE=AFTER: stored height buffers were compared
+byte-for-byte, making a second identical spectrum computation unnecessary.
+
+| World / level | [N,2N) | [2N,4N) | [4N,8N) | [8N,16N) |
+|---|---:|---:|---:|---:|
+| Maithea L6 | 0.69120 / 0.36568 | 0.89542 / 0.13341 | 0.97543 / 0.03020 | 1.01510 / 0.00920 |
+| Maithea L8 | 0.63779 / 0.34049 | 0.89002 / 0.07609 | 1.00422 / 0.02239 | 1.01600 / 0.00773 |
+| Lethuris L6 | 0.66748 / 0.47288 | 0.89736 / 0.23162 | 0.94551 / 0.05311 | 1.01947 / 0.00902 |
+| Lethuris L8 | 0.64842 / 0.32870 | 0.92434 / 0.07128 | 1.01137 / 0.02690 | 1.02109 / 0.01158 |
+
+Bounds stored in `LOD_HEIGHT_RETENTION` and enforced by the report: retained RMS >=0.9 separately
+for [4N,8N) and [8N,16N), on both worlds/levels. Every cell meets that proposed bound. For [N,2N)
+error power, **main does not meet the proposed bound** <=0.25 in all four cases. Applying the owner's
+outward rounding rule gives <=0.37 / 0.35 (Maithea L6/L8), <=0.48 / 0.33 (Lethuris L6/L8). These are
+new measured regression guards, not a change to existing shipped ceilings. No bound is invented
+for the informational [2N,4N) octave.
+
+Build-time growth below is one interleaved BEFORE/AFTER benchmark per variant, 12 tiles x 3 rounds,
+**indication only**, without a CPU-quiet slot. Each cell is Maithea / Lethuris percent. Coordinator must
+rerun the retained candidate in the CPU-quiet slot. Whole-tile cost includes classification using each
+vertex's existing normal dot; no extra finite-difference normal samples are taken. Corner class samples
+reuse the peak-correction cache. Midpoint class samples bypass it because its half-cell keys would alias
+quarter-cell positions. No isolated classification-only timing was taken.
+
+| Level | Corner L<=7 | Midpoint L<=7 | Midpoint L<=6 |
+|---|---:|---:|---:|
+| L4 | -1.03 / +4.15 | +198.21 / +202.73 | +207.53 / +180.41 |
+| L6 | +4.85 / +6.58 | +207.38 / +218.50 | +221.98 / +203.62 |
+| L7 | +4.61 / -1.60 | +211.18 / +204.30 | -1.23 / +2.54 |
+| L8 | +0.65 / +0.94 | +2.50 / +4.60 | -1.47 / +4.44 |
+| L9 | +5.17 / +4.60 | -0.46 / -1.14 | -0.57 / +1.99 |
+| L10 | +2.08 / -2.85 | +4.73 / -0.99 | +0.28 / +4.71 |
+| L12 | +5.68 / +0.52 | -1.14 / -2.56 | +0.93 / +8.74 |
+| L14 | +1.52 / -0.93 | -1.05 / -0.72 | +2.04 / -4.58 |
+
+At Maithea L6, corner costs 23.362 -> 24.496 ms; at Lethuris L6, 22.350 -> 23.822 ms. Midpoint fails
+the +10% budget by a wide margin in these indications. Vertex material agreement passed on 2376 shared
+edge vertices per world across L6/L7/L8. All measured parent/child surfaceHeight, metadata, geometry,
+normals, roughness, UVs, indices and ocean buffers matched BEFORE exactly. Texture sizes are unchanged.
+
+**A3 options, measured values only: NONE is applied; SHIPPED_CEILINGS are unchanged.** The following
+uses the retained corner draft for hypothetical production-byte ceilings. It does not substitute those
+numbers into the differently sampled gate. Values are ordered Maithea L6/L8, Lethuris L6/L8.
+
+| A3 option | Values and consequence |
+|---|---|
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-Content test-results/mountains/M0-v2/harness/exp.mjs; Get-Content test-results/mountains/M0-v2/harness/sweep-all-pairs.mjs' in C:\LLM\IWSDK\universe-atlas-wt\m0c
+ succeeded in 27ms:
+// M0 v2 estimator harness (2026-10-05). Builds colour textures OUTSIDE buildTile with a pluggable estimator
+// and scores them with the exact crossPairTile RGB metric (parent bilinear at child texel centres, p99).
+// The point estimator is validated byte-for-byte against buildTile colour bytes (estimators-baseline.mjs --validate).
+// ROOT = a point-sampling checkout (default C:/LLM/IWSDK/universe-atlas, main). Run from this folder: node <script>.mjs
+import {pathToFileURL} from 'node:url';
+const root=process.env.ROOT||'C:/LLM/IWSDK/universe-atlas';
+const base=pathToFileURL(root+'/').href;
+const [tiles,terrain,biomes,fixtures,catalog,report]=await Promise.all(['src/planet-tiles.ts','src/terrain.ts','src/surface-biomes.ts','tests/terrain-climate-fixtures.mjs','src/catalog.ts','scripts/lod-consistency-report.mjs'].map(p=>import(base+p)));
+const {tileDirection,directionTile,regionalBankWeights}=tiles;
+const quantile=(a,q)=>{const s=Float64Array.from(a).sort();return s[Math.floor(q*(s.length-1))];};
+const palette=[[160,141,94],[72,91,52],[104,96,84],[220,229,232]];
+const substrate=w=>palette[0].map((_,c)=>Math.floor(w.reduce((s,x,i)=>s+x*palette[i][c],0)));
+
+export function makeWorld(body){
+  const ts=terrain.terrainSampler(body),cls=biomes.biomeClassifier(body);
+  const code=Number(catalog.hash64(body.seed+'/macro-v1')&0xffffffffn),lgF=body.radiusM/800;
+  const LG=terrain.TERRAIN_LOCAL_GRAIN||{BASE:.88,AMPLITUDE:.24};const localGrain=d=>LG.BASE+catalog.noise(d[0]*lgF+13,d[1]*lgF+37,d[2]*lgF+19,code+74)*LG.AMPLITUDE;
+  const colourOf=(d,mode)=>{const s=ts(d);
+    let c=s.wet?substrate(regionalBankWeights(body,s,cls(d,s.groundHeightM,1).weights)):s.color.slice();
+    if(mode==='noLG'&&!s.ocean&&!s.wet){const g=localGrain(d);c=c.map(v=>v/g);} // decomposition only
+    return c;};
+  return {ts,cls,colourOf,localGrain};
+}
+// Estimators: (at(u,v)->rgb, size) -> Uint8Array RGBA (size+2)^2, buildTile layout.
+const pack=(size,f)=>{const w=size+2,out=new Uint8Array(w*w*4);for(let y=0;y<w;y++)for(let x=0;x<w;x++){const c=f(x,y),p=(y*w+x)*4;for(let i=0;i<3;i++)out[p+i]=Math.floor(Math.max(0,Math.min(255,c[i])));out[p+3]=255;}return out;};
+const memoGrid=(at,size,step,off)=>{const cache=new Map();return (gx,gy)=>{const k=gx+','+gy;let v=cache.get(k);if(!v){v=at((gx*step+off)/size,(gy*step+off)/size);cache.set(k,v);}return v;};};
+export const EST={
+  point:(at,size)=>pack(size,(x,y)=>at((x-.5)/size,(y-.5)/size)),
+  // separable tap kernel on a grid of spacing `step` texels; taps given as [offset(in steps), weight]
+  taps:(taps,step=1)=>(at,size)=>{
+    // offsets relative to texel centre (x-.5) in texels: o*step
+    const sum=taps.reduce((s,t)=>s+t[1],0);
+    const cache=new Map();const g=(u,v)=>{const k=u+','+v;let c=cache.get(k);if(!c){c=at(u,v);cache.set(k,c);}return c;};
+    return pack(size,(x,y)=>{const acc=[0,0,0];for(const [oy,wy] of taps)for(const [ox,wx] of taps){const c=g((x-.5+ox*step)/size,(y-.5+oy*step)/size),w=wx*wy/(sum*sum);for(let i=0;i<3;i++)acc[i]+=w*c[i];}return acc;});
+  },
+  box:K=>(at,size)=>pack(size,(x,y)=>{const acc=[0,0,0];for(let j=0;j<K;j++)for(let i=0;i<K;i++){const c=at((x-.5+(i+.5)/K-.5)/size,(y-.5+(j+.5)/K-.5)/size);for(let k=0;k<3;k++)acc[k]+=c[k]/(K*K);}return acc;}),
+};
+EST.corner=EST.taps([[-.5,1],[.5,1]]);
+EST.bspl=EST.taps([[-1.5,1],[-.5,3],[.5,3],[1.5,1]]);
+EST.tent3=EST.taps([[-1,1],[0,2],[1,1]]);
+
+export function metric(pTex,cTex,P,C){
+  const tp=128,tc=128,pw=tp+2,cw=tc+2,ox=C.x-P.x*2,oy=C.y-P.y*2,out=[];
+  const tex=(u,v,ch)=>{const gx=u*tp+.5,gy=v*tp+.5,x=Math.floor(gx),y=Math.floor(gy),a=gx-x,b=gy-y,at=(i,j)=>pTex[(j*pw+i)*4+ch];
+    return at(x,y)*(1-a)*(1-b)+at(x+1,y)*a*(1-b)+at(x,y+1)*(1-a)*b+at(x+1,y+1)*a*b;};
+  for(let y=1;y<=tc;y++)for(let x=1;x<=tc;x++){const u=(ox+(x-.5)/tc)/2,v=(oy+(y-.5)/tc)/2,idx=(y*cw+x)*4;
+    out.push(Math.hypot(...[0,1,2].map(ch=>tex(u,v,ch)-cTex[idx+ch])));}
+  return out;
+}
+export async function setup(names=['Maithea','Lethuris']){
+  const worlds={};
+  for(const body of fixtures.waterWorlds().filter(b=>names.includes(b.name))){
+    const w=makeWorld(body),picks=report.stratifiedEdgeDirections(w.ts,w.cls);
+    worlds[body.name]={body,...w,picks,dirs:Object.values(picks).flat()};
+  }
+  return worlds;
+}
+export {tiles,report,quantile};
+// M0 round 3 (2026-10-05, step G grain terrain): every estimator config scored on ALL four adjacent pairs
+// L5->6, L6->7, L7->8, L8->9 (crossPairTile RGB p99, 12 stratified tiles), so a neighbouring-pair regression is
+// visible in the same row. ROOT = point checkout (default main = terrain-1.8.1-grain). Usage:
+//   node sweep-all-pairs.mjs [--validate] [configName ...]
+import {setup,EST,metric,tiles,quantile} from './exp.mjs';
+const worlds=await setup();
+const args=process.argv.slice(2),validate=args.includes('--validate'),only=args.filter(a=>!a.startsWith('--'));
+const est=name=>name.startsWith('box')?EST.box(Number(name.slice(3))):EST[name];
+const lv=(m,levels)=>Object.fromEntries([5,6,7,8,9].map(L=>[L,levels.includes(L)?m:'point']));
+const CONFIGS={
+  point:lv('point',[]),
+  corner_L67:lv('corner',[6,7]),           // retained draft (corner K=2, L<=7 at these levels)
+  corner_L678:lv('corner',[6,7,8]),
+  corner_L5to9:lv('corner',[5,6,7,8,9]),
+  corner_L6:lv('corner',[6]),
+  corner_L56:lv('corner',[5,6]),
+  corner_L567:lv('corner',[5,6,7]),
+  box2_L67:lv('box2',[6,7]),
+  box2_L5to9:lv('box2',[5,6,7,8,9]),
+  box4_L678:lv('box4',[6,7,8]),
+  box8_L67:lv('box8',[6,7]),
+  box8_L678:lv('box8',[6,7,8]),
+  box8_L5to9:lv('box8',[5,6,7,8,9]),
+  tent3_L678:lv('tent3',[6,7,8]),
+  bspl_L678:lv('bspl',[6,7,8]),
+  box2_L6:lv('box2',[6]),
+  box8_L6:lv('box8',[6]),
+};
+const names=only.length?only:Object.keys(CONFIGS);
+for(const [wname,w] of Object.entries(worlds)){
+  if(validate){let bad=0,n=0;for(const d of w.dirs.slice(0,3))for(const L of [5,6,7,8,9]){const t=tiles.directionTile(d,L),b=tiles.buildTile(w.body,t).color,e=EST.point((u,v)=>w.colourOf(tiles.tileDirection(t,u,v)),128);n+=b.length;for(let i=0;i<b.length;i++)if(b[i]!==e[i])bad++;}
+    console.log(wname,'point vs buildTile byte mismatches',bad,'of',n);}
+  for(const cname of names){const cfg=CONFIGS[cname];const t0=performance.now();
+    const texCache=new Map(),tex=t=>{const k=tiles.tileKey(t);if(!texCache.has(k))texCache.set(k,est(cfg[t.level])((u,v)=>w.colourOf(tiles.tileDirection(t,u,v)),128));return texCache.get(k);};
+    const res=[];for(const L of [5,6,7,8]){const all=[];for(const d of w.dirs){const P=tiles.directionTile(d,L),C=tiles.directionTile(d,L+1);all.push(...metric(tex(P),tex(C),P,C));}res.push(quantile(all,.99).toFixed(3));}
+    console.log(wname.padEnd(9),cname.padEnd(14),res.join(' / '),((performance.now()-t0)/1000).toFixed(1)+'s');
+  }
+}
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "rg --files -g AGENTS.md -g '*filters*' -g '*attribution*' -g '*ls*pair*'; Get-Content docs/mountains-design-2026-10-04.md | Select-Object -Skip 204 -First 55; Get-Content docs/lod-ladder-contract-v1.md | Select-Object -Skip 464 -First 135; Get-Content test-results/mountains/M0-v3/*.log" in C:\LLM\IWSDK\universe-atlas-wt\m0c
+ succeeded in 122ms:
+| Maithea L8 RGB p99 | 3.55 | 3.89 | 3.81 | 4.34 | 4.81 | 4.71 | 4 (plan) |
+| Lethuris L6 RGB p99 | 39.17 | 25.07 | 26.33 | 54.18 | 40.09 | 40.59 | 39.2 |
+| Lethuris L6 snow % | 2.12 | 1.36 | 1.36 | 2.95 | 2.08 | 2.17 | 2.2 |
+| Lethuris L6 forest % | 1.76 | 0.52 | 0.77 | 5.89 | 2.56 | 3.34 | 1.8 |
+| Lethuris L8 RGB p99 | 11.05 | 11.56 | 11.44 | 11.79 | 12.00 | 11.92 | 11.1 |
+| Lethuris L8 forest % | 2.17 | 0.89 | 1.15 | 1.91 | 0.98 | 1.09 | 2.2 |
+
+What the table shows:
+
+- At L6, a footprint mean cuts RGB p99 by 16% on Maithea and 36% on Lethuris, and forest
+  disagreement by 2-4x. That is a large share. But a footprint mean also smooths legitimate
+  variation, so this does not isolate aliasing from smoothing; it measures what the reduction rule
+  buys.
+- With the footprint mean, d3 at L6 would sit at or near main's point-sampled values (Maithea 25.99
+  against the 26.3 pin; Lethuris 40.09 against 39.2).
+- K=2 (4 sub-samples) keeps most of the K=4 gain.
+- At L8 the footprint mean does not help, and RGB rises by 0.3-0.5. Little height energy lies
+  below colour Nyquist(L8) (3 m RMS on Maithea), so the remaining difference is mostly the blur
+  difference between the two footprints, which is the colour content of one octave.
+- **Even with the footprint mean, the strict targets stay out of reach** (12 RGB at L6, 4 RGB at L8,
+  0.5% for classes). The smallest L6 RGB value is 21.98.
+
+**(d) Peak retention is a height metric, and it may trade against sharp mountains.** The metric is
+"L6 peak area kept >= 85%" (d3: 80.18%, main 89.56%). `retentionTile` takes the truth's p90 height
+on a dense 97² grid of the tile. It counts the truth points at or above that p90 where the coarse
+bilinear surface is also at or above the same truth p90.
+
+The truth's top-decile area stays about 10% whatever the shape. What can change is its shape: thin,
+fragmented crest areas narrower than the 4 km L6 lattice are harder for a bilinear surface to reach.
+The non-negative peak correction works the other way and can raise retention. So the trade-off is
+plausible and d3 showed it once (89.56% to 80.18%), but it is not a law. Footprint filtering of
+colour does not touch this metric. MTN-4 measures it on the synthetic M3 field before MTN-6 depends
+on it, and the rule for it is an owner question (section 4.2, Q3).
+
+**Verdict.** The pins broke because the change added height energy below Nyquist(L6/L8), and that
+energy:
+
+- is aliased by point-sampled coarse colour and class, a known contract gap (c), and this is a
+  measured, large contribution, not the only cause;
+- moves pins that have about 0.04 of headroom on a field-dependent tile selection (a);
+- lowered a peak-area metric in d3 (d).
+
+So a design that makes mountains steeper is likely to break the same pins unless the coarse
+reduction changes first. Sharper mountains need more sub-8 km energy; the alpine control has about
+3x main's 1-2 km RMS. This is why element M0 comes first.
+
+### 1.3 Why SITE_A broke
+
+The site rule needs ground at least 250 m above sea and at least 80% forest on the rings. d3 put the
+old site at 155.5 m with a ring forest share of 0.31 (`relief-present/fix1/site-a-design3.json`).
+SITE_A is a lowland site. It broke because d3's landform change reached all land, not because of the
+belts.
+
+Design rule here: **where `belt = 0`, `terrainSampler` output is bit-identical to main.** It is not
+enough for the new terms to be zero there, because the old ridge term is non-zero outside belts and
+**Coordinator checks and review (2026-10-05).** On this branch: `npx tsc --noEmit` exit 0;
+`node --test tests/lod-footprint.test.mjs tests/mountain-metrics.test.mjs` exit 0 (20 tests);
+`node --test tests/lod-consistency.test.mjs` exit 0 (7 tests, 13.7 s; SHIPPED_CEILINGS untouched). Not run,
+because the element is blocked: `test:affected`, the CPU-quiet build benchmark, digests, browser/GPU.
+Astra read-only review verdict: **BLOCK-CONFIRMED**. It reproduced Maithea L6 19.37792 -> 17.85970
+(ratio 0.92165; required <= 17.44013) and found no half-texel, orientation or BEFORE-identity error in
+`crossPairTile`. It also probed a same-footprint tensor-cubic integral (16 shared samples per texel, weights
+[-1,13,13,-1]/24 per axis, 133² unique samples): Maithea L6 19.03215, ratio 0.98216, also failing. Open
+majors if this draft is ever resumed: the L<=7 cutoff makes the ungated L7->8 pair worse (Maithea
+8.19990 -> 13.78773, Lethuris 20.54083 -> 26.41422) because the child level stays point-sampled; cube-seam
+colour and active-river cases are not covered by the seam check (materials only). Owner decision needed
+to proceed: the 0.9 reduction threshold (section 2.0 metric 2 of docs/mountains-design-2026-10-04.md) is
+the element's own acceptance bound and is not loosened here.
+
+### 9.2 M0 second round, 2026-10-05: different estimators — still BLOCKED
+
+Branch `mountains/m0b` (main a3c2a26 + `mountains/m0` 61124f9). No source file changed in this round; the retained
+draft code is still corner K=2, L<=7, and it still fails. No pin, ceiling, threshold, golden or acceptance bound
+was loosened or redefined. Evidence: `test-results/mountains/M0-v2/` (`results.txt` holds every number below,
+`harness/` reproduces them, two PNGs for the visual check).
+
+**Method.** `harness/exp.mjs` builds colour textures outside `buildTile` with a pluggable estimator and scores
+them with `crossPairTile`'s exact RGB rule (parent bilinear at child texel centres, p99, the same 12 stratified
+tiles). Its point estimator is byte-identical to `buildTile`'s colour bytes, and its corner K=2 reproduces
+section 9.1's `buildTile` values (17.86 / 13.79 / 20.83 / 26.41). Requirements held: L6->7 <= 0.9 x point on both
+worlds, L7->8 and L8->9 not worse, and **L5->6 not worse** (point: Maithea 31.693, Lethuris 41.981). The last is
+the coordinator's rule: moving error onto an unmeasured neighbouring pair would be the metric gaming the owner
+ruled out.
+
+**Attribution.** Maithea's L6 tail is mostly the 800 m local colour grain `n(d,R/800,74)` (terrain.ts:587):
+with it divided out of land colour, point falls from 19.378 to 10.109. The grain sits near colour Nyquist at
+Maithea L6 (996 m texels) and is resolved at L7 and below.
+
+**Estimators tried** (Maithea L5->6 / L6->7 / L7->8; see `results.txt` for Lethuris and L8->9):
+
+| Family | Result | Why it fails |
+|---|---|---|
+| Near-exact footprint mean (K=4/K=8 midpoint quadrature) at L6-L8 | - / 17.286 / 8.861 | L6 passes (0.892) but L7->8 worsens. With L8 point, L7->8 is 9.960. With L6 alone filtered, L6->7 is 20.58. |
+| Grain-only footprint (800 m grain divided out, box/tent/B-spline per level, base point) | e.g. box2 everywhere 24.960 / 17.730 / 8.792, L8->9 3.149 | Pairs where both levels are filtered improve. The transition pair and every resolved-level pair worsen. |
+| One sample per texel at L6 with L7 point (corner, [1,8,1], tent, B-spline, sharpen, LS from Catmull-Rom) | best 18.236 | A texel-rate grid cannot carry the L7 information. |
+| Linear-light corner; R2 quasi-random jitter | 17.805; 28.922 | No material change; jitter adds noise. |
+| Least-squares reduction under the bilinear reconstruction, L6, from L7-resolution samples (4x cost) | **43.414** / 16.260 / 8.200 | Passes L6 on both worlds (Lethuris 28.407), but L5->6 gets 37% worse (Lethuris 13%). Visually it carries stronger 800 m speckle and overshoot rims along snow and coast edges. A cheap version with the grain decomposed out does the same (41.190 / 17.063). |
+| Two-sided LS at L6 (L5 and L7 terms, full information), lambda 1-30 | frontier (25.90, 19.69) ... (32.41, 17.66) ... (42.16, 16.30) | No weight gives L5->6 <= 31.69 and L6->7 <= 17.44 together. |
+| Joint LS over L6 and its four L7 children, L8-resolution samples (16x cost) | (2,2): 32.975 / 16.441 / 8.161 | Only weight-tuned points come near, and none meets all three; the cost alone excludes it. |
+
+**Conclusion.** On this metric, improving pair (L, L+1) took one of two things. Either L+1 was smoothed, which
+worsens (L+1, L+2), or L was pulled toward L+1, which worsens (L-1, L). Breaking that trade-off would need
+information at L+1 resolution inside an L build. That costs about 4x the colour samples (+200%), and colour
+samples are about half of an L6 build (cost probe in `results.txt`), against a +10% budget. The full-information
+squared-error optima above do not reach all of the targets either. Because they minimise squared error, not
+p99, they are evidence rather than proof. **No candidate meets the element's acceptance within its
+budget without worsening a neighbouring pair, so M0 stays blocked.** Nothing was merged, `LOD_LADDER_VERSION` is
+not bumped on main, and no `SHIPPED_CEILINGS` cell moved.
+
+**Astra adversarial review (read-only): BLOCK-CONFIRMED.**
+
+- Fidelity: half-texel phase, gutters, child offsets and the quantile all match `crossPairTile`. The point
+  textures matched `buildTile` on 120 tiles (L5-L9) with zero byte mismatches. Every baseline value reproduced,
+  and the LS matrix checked to 2.2e-16.
+- Fitting the LS to the stored child bytes instead of raw sampler colour leaves the failure in place: Maithea
+  43.437 / 16.386, Lethuris 47.229 / 28.584.
+- Its own refutation attempt also failed. It used adaptive quadrature: four midpoint samples on the 422
+  highest-curvature texels, 1.0999 full samples per texel.
+  - At L6 only: Maithea 29.653 / **20.002**, Lethuris 39.268 / 34.711.
+  - At L5-L9: Maithea 29.933 / 18.739 / **8.340** / **2.957**, Lethuris L8->9 **8.657**.
+
+Open for the owner: whether metric 2 should be judged as the sum over adjacent pairs (L5->6 through L8->9)
+instead of L6->7 alone, or whether the colour grain itself should change (a `terrain.ts` / TERRAIN_VERSION
+question, outside M0). Either is a change of definition, and neither is applied here.
+
+Checks on this branch: `npx tsc --noEmit` exit 0; `node --test tests/lod-footprint.test.mjs` exit 0 (3 tests).
+Harness spot check (`estimators-baseline.mjs --validate`, point and corner) exit 0, with 0 byte mismatches.
+Not run: `test:affected`, `test:full`, the CPU-quiet benchmark and digests (blocked element, no source change in
+this round), and any browser or GPU work.
+OpenAI Codex v0.160.0
+--------
+workdir: C:\LLM\IWSDK\universe-atlas-wt\m0c
+model: gpt-6-astra
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a10ce5-0849-78e3-ad88-18173307a0f8
+--------
+user
+You are reviewing element M0 (MTN-1, footprint-mean coarse colour) of the Universe Atlas mountains plan, round 3, READ-ONLY. Do not modify any tracked file. You may write scratch scripts ONLY under test-results/mountains/M0-v3/astra/ in this worktree. Do not run git commands, browsers, GPU work or downloads. Do not run npm test suites.
+
+Context to read first:
+- docs/mountains-design-2026-10-04.md section 2.0 (M0 metrics; metric 2 = L6 RGB p99 <= 0.9 x point on Maithea AND Lethuris through buildTile; metric 4 = build mean <= +10% per level), and the owner decisions at the top (decision (b): the 800 m colour grain was changed in its own step G, terrain-1.8.1-grain, now on main; M0 is re-run against the new terrain WITHOUT any threshold change).
+- docs/mountains-grain-step-g-2026-10-05.md (what step G changed).
+- docs/lod-ladder-contract-v1.md sections 9.1 and 9.2 (rounds 1-2 of M0, both blocked, and the coordinator rule: L5->6, L7->8, L8->9 must not get worse).
+- test-results/mountains/M0-v2/harness/exp.mjs (estimator harness; its localGrain now reads TERRAIN_LOCAL_GRAIN from the point checkout), harness/sweep-all-pairs.mjs (new this round).
+- Round-3 evidence: test-results/mountains/M0-v3/*.log (sweep-all-pairs.log, corner-L7.log = through-buildTile report of the retained corner K=2 L<=7 draft, attribution.log, grain-only-filters.log, ls-l5-pair.log).
+
+The harness ROOT (point checkout) is C:/LLM/IWSDK/universe-atlas (main, terrain-1.8.1-grain). This worktree holds the retained draft code (corner K=2, L<=7) in src/planet-tiles.ts and src/lod-ladder.ts.
+
+Coordinator's claim: on the step G terrain M0 is still BLOCKED. Point baselines (Maithea / Lethuris, pairs L5->6 / L6->7 / L7->8 / L8->9): 20.922/11.323/4.832/1.963 and 27.238/17.152/9.481/4.033. Required L6->7: Maithea <= 10.190, Lethuris <= 15.437. The draft (corner K=2, L<=7) through buildTile gives Maithea 11.860 (ratio 1.047, worse than point) and Lethuris 13.421 (0.782); even the near-exact footprint mean (box K=8 at L6-L8) gives Maithea 10.478 (0.925). Only the least-squares reduction at L6 passes L6->7 (8.746 / 13.387) but it worsens L5->6 (20.922 -> 28.576) and costs ~4x colour samples. The grain change alone moved the through-buildTile point values from 19.378/34.916 (old terrain) to 11.323/17.152 (ratios 0.584/0.491) and improved every pair, but metric 2 compares a reduction to the point value on the same field, so the coordinator does NOT mark M0 satisfied-by-grain.
+
+Your tasks:
+1. Fidelity: spot-check that the harness point textures still equal buildTile colour bytes on the new terrain (a few tiles L5-L9, both worlds) and that corner_L67 in the harness reproduces the through-buildTile corner-L7 values (11.860 / 13.421 at L6, 7.728 / 12.870 at L7). Recompute at least the point and box8_L678 rows yourself.
+2. Refutation attempt: try to find ANY estimator affordable within +10% L6 build time (roughly: at most ~10-20% more colour samples than one per texel, or a cheap grain-only re-weighting) that meets L6->7 <= 0.9 x point on BOTH worlds without making L5->6, L7->8 or L8->9 worse on either world. Report the numbers of what you tried.
+3. Judge the satisfied-by-grain question strictly against the literal text of metric 2 and decision (b).
+
+Answer with a verdict line first: BLOCK-CONFIRMED, BLOCK-REFUTED (with the passing estimator and all numbers), or FINDINGS (fidelity errors). Then numbers. Keep it under 80 lines.
+
+codex
+I’ll check the harness against buildTile, recompute the point and box8 rows, then test affordable alternatives against every protected LOD pair. I’ll keep scratch work under the permitted directory and leave tracked files untouched.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-Content docs/mountains-design-2026-10-04.md -TotalCount 180; Get-Content docs/mountains-grain-step-g-2026-10-05.md; Get-Content docs/lod-ladder-contract-v1.md | Select-Object -Skip 230 -First 220' in C:\LLM\IWSDK\universe-atlas-wt\m0c
+ succeeded in 83ms:
+# Mountains design (2026-10-04)
+
+Status: DESIGN, branch `design/mountains` (from main `b8d38d3`). Nothing here is wired into the app,
+and no terrain output changes on this branch. The branch adds this document and two Node-only
+prototype scripts. Owner decision 2026-10-04: mountains get their own design instead of the held
+`round2/relief-present` change; Luna verdicts are advisory and do not block alone; testing is
+element-first.
+
+Owner decisions 2026-10-05 (explicit, recorded verbatim):
+
+> (a) the M3 coherence row and the M3 pit row may be CALIBRATED against an eroded positive control
+> (coherence measured detrended/band-passed or otherwise corrected so a physically eroded range
+> passes while isotropic noise and straight mirrored fans (the rejected A0) fail; pit row made
+> resampling-tolerant because the planet sampler never lands on a construction grid). Document
+> old/new rows with numbers, negative controls proving the new rows still have teeth. All other rows
+> and all 17 LOD pins/goldens stay unchanged.
+>
+> (b) M0: the 800 m multiplicative colour grain in terrain.ts (~line 587) is moved/changed inside the
+> assembly step MTN-6 (which owns terrain.ts) with TERRAIN_VERSION bump and a deliberate golden re-pin
+> (old/new digests documented); M0 is then re-run against the new terrain without any threshold
+> change. No other loosening is authorised.
+
+Decision (a) is applied in section 2.3 and `docs/mountain-m3-calibration-v1.md`. Decision (b) belongs
+to MTN-6 and MTN-1 and is not applied by the M3 element.
+
+Further owner decisions 2026-10-05 (explicit, recorded verbatim as the coordinator relayed them):
+
+> (a) M3 coherence/pit rows calibrated (merged). (b) the 800 m colour grain is changed in its own
+> small step with TERRAIN_VERSION bump + deliberate golden re-pin + update of the two colour tests
+> that hard-code the old .88/.24 grain (old/new digests documented). (c) M3 cost judged on warm
+> resident cost. (d) assembly in two steps. (e) NEW: the 8 failing LOD class pins when belts are
+> wired are handled by FREEZING the stratified tile selection (so tile re-picking cannot move the
+> pins; document how) AND CHANGING the M2 envelope so belts do not move the class boundary in
+> snowline/treeline tiles (Maithea L8 name/carriedName); NO pin is loosened or repinned. (f) NEW:
+> the convex blend lowering heights at belt edges (up to 3 km, 23-45 directions per world) is
+> accepted ('uplift inside belts with fade-out at the edge'). (g) M3's relief scales with belt width
+> (lattice 2w/480): give M3 a FIXED carving width tiled across wide belts so Selawyn's 220 km belt
+> and low-tau belts reach M4 R1 (>=8 peaks/1000 km2), measured on the real parameters of all four
+> worlds.
+
+Decision (b) is applied as its own step, **step G** (`terrain-1.8.1-grain`), before any belt is
+wired: `docs/mountains-grain-step-g-2026-10-05.md`. Decisions (d)-(g) belong to the assembly steps
+that follow it.
+
+Prototype scripts (pure Node, no browser, no GPU, not registered in `npm test`):
+
+- `scripts/mountain-metrics.mjs` measures the mountain elements on the 4 standard worlds. Its
+  `--root` option reads another checkout's `src/` read-only, and `--synthetic alpine|dome` measures a
+  calibration control instead of Atlas terrain.
+- `scripts/mountain-lod-footprint.mjs` re-measures the lod-consistency colour and class rows on
+  the test's own 12-tile selection, first with point samples and then with footprint means.
+
+Evidence is under `test-results/design-mountains-2026-10-04/`: the metrics and footprint JSON, the
+logs, and hillshade PNGs.
+
+Words used below: **main** means `b8d38d3`. **d3** means the held RELIEF-PRESENT design 3
+(`0893ad2`), read read-only from `universe-atlas-wt/r2-relief-present`. **Site** means one of the
+8 highest well-separated land samples per world: the highest land samples of a 20 000-direction
+Fibonacci set, each at least 300 km from the others. The sites are picked from each field's own
+heights. **Nyquist(L)** is 2 x tileEdge(L)/32, the shortest wavelength a level-L height lattice can
+hold. **Colour Nyquist(L)** is 2 x tileEdge(L)/128, the same for the 128-texel colour texture.
+
+How the site numbers aggregate (as `scripts/mountain-metrics.mjs` computes them):
+
+- slope, crest and relief percentiles pool all pixels of the 8 sites;
+- the spectrum averages power over the sites before taking RMS;
+- peak density is the total peak count over the total raster area;
+- drainage numbers are the median of the per-site values;
+- the synthetic controls use 4 sites, not 8.
+
+## 1. Diagnosis
+
+### 1.1 Why mountains read as soft, low ridges (a geometry fault, not only presentation)
+
+Luna's no-clouds frames fail too ("only low, soft ridges", "gently rolling plain";
+`test-results/round2-2026-10-04/final/luna/summary.md`). Haze, tone mapping and clouds make it
+worse (owner items A4 and A8), but the field itself is soft. The table below gives the measured
+values for main, d3 and two synthetic controls. The controls are not Atlas terrain. `alpine` is a
+crest-weighted ridged multifractal with octaves from 64 km down to 250 m and an amplitude gain of
+0.71 per octave, which gives a spectral exponent near 2. `dome` is made of smooth 40 km swells.
+
+| Metric (8 sites, 48 km raster at 125 m) | Maithea main / d3 | Selawyn main / d3 | Raiva main / d3 | Lethuris main / d3 | alpine control | dome control |
+|---|---|---|---|---|---|---|
+| slope at 125 m, p50 (deg) | 11.3 / 16.3 | 8.4 / 10.8 | 4.7 / 9.5 | 10.8 / 16.4 | 27.4 | 5.3 |
+| slope at 125 m above 30 deg (% of area) | 2.2 / 17.4 | 0.2 / 7.7 | 0.2 / 5.0 | 1.8 / 18.7 | 42.7 | 0 |
+| crest flank angle at 500 m, p50 (deg) | 6.5 / 9.6 | 4.9 / 7.1 | 2.8 / 5.5 | 6.3 / 9.5 | 14.7 | 0.4 |
+| relief within 8 km, p50 (m) | 1466 / 1739 | 1000 / 1200 | 867 / 1102 | 1410 / 1808 | 1767 | 929 |
+| resolved peaks with prominence >= 300 m per 1000 km² (border-censored) | 1.2 / 6.4 | 0.5 / 2.6 | 0.3 / 1.2 | 1.2 / 5.9 | 12.0 | 0 |
+| spectral exponent beta, 0.5-8 km | 3.36 / 2.96 | 3.37 / 2.99 | 3.49 / 2.78 | 3.41 / 2.96 | 2.14 | 3.92 |
+| RMS height in the 1-2 km octave (m) | 16 / 31 | 12 / 23 | 6 / 21 | 16 / 32 | 54 | 1 |
+| RMS height in the 2-4 km octave (m) | 36 / 58 | 28 / 46 | 15 / 36 | 35 / 65 | 75 | 2 |
+| closed depressions: land with fill > 10 m | 0.142 / 0.282 | 0.228 / 0.321 | 0.052 / 0.232 | 0.127 / 0.300 | 0.308 | 0 |
+| pits per 1000 km² | 378 / 633 | 453 / 570 | 147 / 668 | 319 / 700 | 2108 | 0 |
+| gradient orientation coherence, 40 km window, p50 | 0.298 / 0.132 | 0.239 / 0.130 | 0.679 / 0.153 | 0.262 / 0.120 | 0.135 | 0.399 |
+| p99 land (m), 20 000 directions | 4358 / 4651 | 3292 / 3626 | 2475 / 2673 | 4060 / 4489 | (n/a) | (n/a) |
+
+Four causes follow from the code (`src/terrain.ts:500-546`, `src/planet-landforms.ts:23-33`) and
+from the numbers.
+
+1. **The height sits at the wrong scale.** The ridge belt term `tau*1.3*2800*ridges*ss(.35,.8,ridges)`
+   (up to about 2.9 km on Maithea) reads value noise `n(d,30,7)` in direction space. Its cells are
+   R/30 wide: 173 km on Maithea, 67 km on Raiva, 300 km on Lethuris. A crest of about 2.9 km spread
+   over tens of kilometres has flanks of a few degrees.
+   - On main, the RMS of the 64-128 km octave on Maithea is 601 m. The 1-2 km octave is only 16 m.
+   - The km-scale relief comes only from the detail window (hills of 620 m at 6.5 km), and from
+     landforms (1650 m at 14 km). Both are scaled again by `tau` (0.46-0.79) and by the upland gate.
+2. **The spectrum falls too steeply below 8 km.** beta is 3.36-3.49 on the four worlds. The
+   synthetic alpine control has 2.14. The commonly quoted value for Earth topography is about 2
+   (literature, not measured here). At the 1-2 km scale, main has 16 m of RMS where the control has
+   54 m. This is the measured form of "soft".
+3. **The relief has no valley organisation.** The crest flank angle is 6.5 deg on main, against
+   14.7 deg on the control. The main hillshade (`png-main/Maithea-site0-48km.png`) shows blob- and
+   worm-shaped cells: the ridged value-noise isolines that §9 of `docs/terrain-relief-v1.md` already
+   calls a maze. There is no drainage hierarchy and no V-valleys between the crests.
+4. **Presentation stacks on top.** The causes are haze, ACES tone mapping, clouds and the arbitrary
+   horizon poses (A4, A5 and A8). They are real, but they are separate elements (section 2.7).
+
+What d3 changed, measured:
+
+- It fixed part of causes 1 and 2. beta fell to 2.78-2.99, the area above 30 deg rose to 5-19%,
+  and resolved peak density rose by about 4-5x.
+- It made cause 3 worse. Pits rose by 1.3-4.5x and fill > 10 m rose by 1.4-4.5x.
+- Linear organisation collapsed: coherence fell from 0.24-0.68 to 0.12-0.15, which is the level of
+  the isotropic control.
+- Its hillshade (`png-design3/Maithea-site0-48km.png`) shows rugged islands in smooth soft plains,
+  not ranges with valleys.
+- It also changed the landform term on all land above about 300 m of raw base height, not only
+  inside belts. That is the most likely reason SITE_A, a lowland forest site, fell from 280.2 m to
+  155.5 m. The isolation evidence: the landform-only variant `oroOff` broke 9 checks on its own
+  (`relief-present/fix1/lod/`).
+
+A useful negative result: the synthetic alpine control passes every slope, spectrum and peak
+threshold, yet its hillshade (`png-synthetic/synthetic-alpine-site0-48km.png`) is rough noise, not
+a range. Its drainage metrics (31% closed depressions, 2108 pits per 1000 km²) and its coherence
+(0.135) catch this. So **spectrum and slope alone can be gamed by noise**.
+
+Prominence is border-censored: a peak counts only if its component never reached the raster
+border before its key saddle. Otherwise a higher col may exist outside the 48 km raster, so its
+value would be an upper bound. The first draft of this document counted those peaks; Astra's review
+caught it, and the numbers above are the censored ones (roughly half the uncensored counts). The element set below
+includes drainage and layout metrics for that reason.
+
+### 1.2 Why each prior attempt broke the LOD pins: all three suspects, measured
+
+The owner asked which of three suspects is to blame: pins that are specific to relief, high-frequency
+energy at coarse LOD, or the lack of footprint filtering. Each is measured below.
+
+**(a) The pins are regression snapshots with almost no headroom, taken on a selection that moves
+with the field.** `SHIPPED_CEILINGS` (`tests/lod-consistency.test.mjs:50-60`) holds main's own
+measured values, rounded up by 0.03-0.05. Examples: Maithea L6 RGB has a pin of 26.3 against 26.26
+measured; Lethuris L6 RGB has 39.2 against 39.17; Lethuris L6 forest has 1.8 against 1.76.
+
+The 12 tiles come from `stratifiedEdgeDirections(ts, cls)`, which reads the field under test, so a
+new field also re-picks the tiles. Only 3 of the 12 are range tiles; the other 9 are snowline,
+treeline and coast. These pins are not about mountains. They are upper bounds at main's values, so
+a change can pass by improving a row. But any change that adds colour or class variation inside the
+selected tiles has only about 0.04 of room before it fails. H10 (`main + 0.1*orogen`) passed
+because it is close to main.
+
+**(b) Height energy at wavelengths the coarse level cannot hold rose.** The measurement is the
+Hann-windowed spectrum of 128 km transects through the mountain sites (`E7_spectrum.aboveNyquist`
+in the JSON). It gives an estimate of the RMS height at wavelengths shorter than the height-lattice
+Nyquist(L6) and the colour Nyquist(L6). The estimate splits the straddling octave by uniform power
+in log wavelength; it is not an FFT-bin integral.
+
+| World | Nyquist(L6), lattice / colour | main lattice / colour | d3 lattice / colour | ratio d3/main, lattice / colour |
+|---|---|---|---|---|
+| Maithea | 7.97 / 1.99 km | 85 / 17 m | 139 / 35 m | 1.64 / 2.1 |
+| Selawyn | 13.1 / 3.28 km | 110 / 27 m | 168 / 47 m | 1.53 / 1.7 |
+| Raiva | 3.07 / 0.77 km | 14 / 3 m | 37 / 11 m | 2.64 / 3.7 |
+| Lethuris | 13.8 / 3.45 km | 154 / 36 m | 236 / 68 m | 1.53 / 1.9 |
+
+Colour depends on height (snowline, treeline, slope), so the colour column is the one that bears on
+the RGB rows. A point-sampled coarse texture cannot represent energy below its Nyquist; it aliases
+it. The direction matches the failures: Maithea L6 RGB went from 26.26 to 33.33 (x1.27) and
+Lethuris L6 RGB from 39.17 to 54.18 (x1.38).
+
+Two limits on this evidence. The spectral sites are the highest points of each world, not the 12
+LOD tiles, so the table shows the field's character in mountains, not the energy inside the tested
+tiles. And it shows a contribution, not that aliasing is the only cause.
+# Mountains step G: the 800 m colour grain, alone (terrain-1.8.1-grain, 2026-10-05)
+
+Owner decision (b), 2026-10-05, recorded verbatim in `docs/mountains-design-2026-10-04.md`:
+
+> the 800 m colour grain is changed in its own small step with TERRAIN_VERSION bump + deliberate
+> golden re-pin + update of the two colour tests that hard-code the old .88/.24 grain (old/new
+> digests documented).
+
+Step G lands that change on its own, before any mountain belt is wired (decision (d): assembly in
+two steps). The grain constants are the ones measured on the blocked `mountains/assembly-1` branch
+(`6d48c45`); no belt code (M1 layout, M2 envelope) is taken from it.
+
+## The change
+
+`src/terrain.ts`, water-world LAND colour only (the climate colour path of `terrainSampler`):
+
+| | localGrain | range | mean |
+|---|---|---|---|
+| terrain-1.8.0-relief | `.88 + n(d, R/800, 74) x .24` | +-12% | 1 |
+| terrain-1.8.1-grain | `TERRAIN_LOCAL_GRAIN.BASE + n x AMPLITUDE` = `.952 + n x .096` | +-4.8% | 1 |
+
+- `k = .4` of the old amplitude (`AMPLITUDE = .4 x .24 = .096`, `BASE = 1 - AMPLITUDE/2`). The
+  800 m cell (`CELL_M`) and the noise `n(d, R/800, 74)` are unchanged, so the fine-level pattern
+  keeps its position and scale; only its contrast drops.
+- Why `k = .4`: on assembly-1 the grain sweep (k = 0, .25, .4, .5, .75, 1) measured the grain at
+  about half of the L6/L8 cross-level RGB p99 (Maithea L6 26.26 -> 13.22 with no grain); .4 is the
+  largest k at which the grain's quadrature share stays at or below the grain-free error on every
+  pinned RGB row (Maithea L6, Lethuris L6 and L8).
+- The base core now also returns the raw noise (`CoreSample.localGrainNoise`, 0 where the core saw
+  ocean), so the climate path re-weights the same noise without a second noise call. Where the
+  core saw ocean but the post-landform height is land, the noise is evaluated as before.
+- Unchanged, bit for bit: heights, `groundHeightM`, the ocean flag (so every class), dry/ice/
+  volcanic/gas-giant colours, ocean colours, the `legacyWaterLandColour` fallback, and
+  `baseTerrainSampler` (all keep `.88/.24`).
+- `TERRAIN_VERSION` `terrain-1.8.0-relief` -> `terrain-1.8.1-grain` (a patch number: colour only;
+  `terrain-1.9.0` stays reserved for the belt assembly). `time-nav`'s `terrainPredates(v, 1, 8)`
+  parses it as 1.8, so a 1.8.0 bookmark gets the generic "older terrain" notice and no relief notice.
+  `BUILD_VERSION` is unchanged: no shader or presentation code moves.
+
+Tests changed:
+
+- `tests/terrain-climate-colour.test.mjs` and `tests/acceptance/climate-agreement.test.mjs`: their
+  independent grain copy is now `.952 + n x .096` (was `.88 + n x .24`), still written out (not
+  imported) so a drifted shared helper is caught; both still assert bit-exact colour on 20k land
+  directions x 4 water worlds.
+- Version string only: `tests/acceptance/version-compat.test.mjs`, `tests/inland-rivers-disabled.test.mjs`,
+  `tests/river-terrain.test.mjs`, `tests/terrain-relief-hypsometry.test.mjs`, `tests/terrain-climate-colour.test.mjs`.
+
+## Evidence (all under `test-results/mountains/step-g/`, untracked)
+
+### LOD cells (CONTRACT): 96 of 96 pass, 17 of 17 pins pass, nothing loosened
+
+`lod-cells.mjs` (copied from assembly-1) computes every cross-level cell of
+`tests/lod-consistency.test.mjs` (Maithea and Lethuris x L6..L14 x 9 rows) plus the 6 retention
+rows, with the SHIPPED_CEILINGS limits read from the test file itself. Main (`e636b5a`) and step G
+both: 96 cells, 17 pins, 0 failures. Only 10 cells move, all RGB p99 rows, all down:
+
+| Cell | main (1.8.0) | step G (1.8.1) | limit |
+|---|---|---|---|
+| Maithea L6 rgbP99 (pin) | 26.257 | 15.183 | 26.3 |
+| Maithea L8 rgbP99 | 3.547 | 2.258 | 4 |
+| Maithea L10 / L12 / L14 rgbP99 | 0.474 / 0.031 / 0.003 | 0.449 / 0.020 / 0.002 | 1 |
+| Lethuris L6 rgbP99 (pin) | 39.170 | 20.540 | 39.2 |
+| Lethuris L8 rgbP99 (pin) | 11.051 | 5.244 | 11.1 |
+| Lethuris L10 / L12 / L14 rgbP99 | 0.920 / 0.066 / 0.020 | 0.433 / 0.028 / 0.008 | 1 |
+
+Every height, ocean, snow, forest, name and carriedName cell and every retention row is unchanged
+(identical values), as expected from a colour-only change. The step G numbers equal the
+grain-only variant measured on assembly-1 (`lod-cells-grainonly.log`) cell for cell.
+Logs: `lod-cells-main.log`, `lod-cells-grain.log` (+ `.json`).
+
+### Identity (HARD, evidence script `identity-grain.mjs`)
+
+terrainSampler, main vs step G, 4096 Fibonacci directions on each of the 4 water worlds (Maithea,
+Selawyn, Raiva, Lethuris) and the 6 golden terrain bodies (Volcanic, Rocky, 2 Ice, 2 more Oceanic):
+0 differences in `elevationM`, `groundHeightM` and `ocean` on every body; colour differs only on
+water-world land (every land sample there, max |new/old - 1| 7.5-8.0%); 0 colour differences on
+the dry, ice and volcanic bodies and on every ocean sample. Log: `identity-grain.log`.
+
+### Golden re-pin (HARD; one deliberate re-pin, decision (b))
+
+`node tests/golden/run-cross-engine.mjs --update` (machine-wide browser lock, exit 0): Node,
+Chromium 149 and Firefox 151 equal on every digest; WebKit 26.5 differs only on the recorded
+`faunaKnownUnstable` open finding (unchanged by this step). Old -> new:
+
+| Digest | terrain-1.8.0-relief | terrain-1.8.1-grain | Cause |
+|---|---|---|---|
+| terrain | `b3818c33be40ca9947dc68e26d19ef0f6fbd4fde4e6b22c2eedeb511879578e2` | `1363e73fc158559e71febd81c54c920b1df6aba354fa0f38c0f32c9c70ee6a2b` | water-land colour |
+| combined | `ec37f25ccbedbdf16cbd18c4bae9dc33c24cab6e8fed1163d39d6ee5369fed92` | `c2b6e424e382091d10da6402452c366cea396cf0ca24b760505efccbb9b3dda5` | contains terrain |
+| placeQuery | `0ee0946d8ec2abc780589f4ba34e2e7fe9273e28664e508d0ea3650ba70da831` | `675746e64b1cde0be648a5c503d126662b955f15d30ebd6382031d89b74a5dda` | version string only |
+| census | `c681362d7289dcee12c9dec76fcbe756615c58503faa79d923de085029992892` | `02ede0a8e69348e136dfb497d2ee1d364d2f4cf08b4fca632ea0ea428122fb1e` | version string only |
+
+"Version string only" was measured: the step G source with `TERRAIN_VERSION` set back to
+`terrain-1.8.0-relief` (scratch copy) reproduces the old placeQuery and census digests exactly and
+moves only terrain and combined (`placeAt` reports `versions.terrain`; the forest census context
+hashes `TERRAIN_VERSION`). All other 12 digests and every count are unchanged.
+`tests/golden/perturbation.test.mjs`: 5/5 pass on the new fixture. Logs: `golden-update.log`,
+`golden-report.json`.
+
+### Fine-level look (VISUAL-ADVISORY, UNCALIBRATED: not citable)
+
+`render-fine.mjs`: nadir CPU renders of terrainSampler colour x a Lambert hillshade, 640 x 640 px at
+16 m/px (10.24 km, about 13 grain cells), on one lowland and one forest site of Maithea and
+Lethuris, BEFORE (main) and AFTER (step G), same sites and renderer (`fine/`). Two questions
+(`q-mottle.txt`, `q-variation.txt`), `scripts/luna-vote.mjs`, 3 asks per image plus diagnosis.
+No control set exists for these questions, so every result is NOT-CHECKED / UNCALIBRATED and none
+counts.
+
+| Image | "free of artificial mottle?" | "still shows natural variation?" |
+|---|---|---|
+| Maithea lowland before / after | FAIL 0/3 / **PASS 2/3** | FAIL 1/3 / FAIL 0/3 (1 unclear) |
+| Maithea forest before / after | FAIL 1/3 / **PASS 3/3** | FAIL 1/3 / FAIL 0/3 |
+| Lethuris lowland before / after | FAIL 0/3 / FAIL 1/3 | FAIL 0/3 / FAIL 0/3 |
+| Lethuris forest before / after | FAIL 0/3 / FAIL 1/3 | FAIL 1/3 / FAIL 0/3 |
+| pass asks, before -> after | 1/12 -> 7/12 | 3/12 -> 0/12 |
+
+Diagnoses: every non-pass names the element `texture/colour`. Before: "large soft light and dark
+patches form an artificial-looking cloud-like mottle". After (variation): "nearly uniform olive
+green with only faint broad shading". Reading: the reduced grain removes most of the 800 m mottle
+Luna objected to (and the axis-aligned blocks visible on the near-polar Lethuris sites), and the
+ground then reads flatter. The flat look was already there before (the variation question failed
+every BEFORE image too); it is a missing fine colour-detail element, not a regression the pins
+measure. Routed to the owner as an observation, not a blocker.
+
+### Other checks
+
+- `npx tsc --noEmit`: exit 0.
+- `npm run test:pkg -- tests/terrain-climate-colour.test.mjs tests/acceptance/climate-agreement.test.mjs`:
+  8/8 pass, exit 0.
+- `npm run test:affected -- --base main` (73 files: every direct and transitive importer of
+  `terrain.ts`, including `lod-consistency`, `terrain-elevation-identity`, `harness-sites`,
+  `render-bounds`, `landing-site`, `eco-identity-site`): 576 tests, 574 pass, 0 fail, 2 TODO (the
+  known SITE_A 60 km ring and rocky Spearman TODOs), exit 0. Log: `affected.log`.
+- Astra (gpt-6-astra, read-only): APPROVE WITH NITS. No correctness findings (grain scope,
+  ocean-to-land branch, legacy bits and float order correct; no renderer/worker copy of the grain;
+  version consumers and `terrainPredates` handle the bump). Its one nit (this document was still a
+  placeholder during the review) is resolved here. `astra-review.md`.
+- Not run: `npm run test:full` and `test:perf` (the plan runs test:full once, at the last merge of
+  the mountains sequence), browser/VR gates, an app-path capture.
+
+## What step G does not do
+
+No mountain belt, no M2/M3/M4 wiring, no LOD ladder change, no `SHIPPED_CEILINGS` change, no
+classifier change. Decisions (e)-(g) are for the assembly steps; their LOD cells will be measured
+against the step G field (the RGB pins now have 11.1 / 18.7 / 5.9 of headroom; the class pins'
+headroom is unchanged at 0.009-0.075).
+    brute force; Maithea horizon peak radius within 10% of the analytic value.
+  - Measured in the fast run: ratio p50 0.86-1.01. Measured in the full evidence run
+    (`render-bounds-evidence.tap`): ratio p50 0.90-1.12 (Raiva L18 1.117 is the maximum), p90 up to 1.28;
+    containment 0 of 8000 (plus 0 on seeds 13579 and 24680); horizon cull used 434.8 km vs analytic 399.7 km.
+    These values are evidence, not thresholds.
+- **Landing ceiling (formula kept, OPEN owner item).** `landingCeilingM = 0.8 x bound.maxM` is kept, as decided.
+  On P4 terrain it is 3.2-5.3 km (Maithea 5303, Selawyn 4141, Raiva 3219, Lethuris 5188 m), which is ABOVE p99
+  land (Maithea 4214, Selawyn 3246, Raiva 2506, Lethuris 4058 m) on every fixture world, so it no longer keeps
+  the landing pick off summits. Measured over 256 eyes at the datum sea (sea 0), picks at or above p99 land:
+  Maithea 2, Selawyn 6, Raiva 6, Lethuris 2. At the dated (60%-volume-lost, -2425 m) sea only Maithea and
+  Lethuris are covered (suite: `landing at a dated (lowered) sea`), with 0 summits on both; Selawyn and Raiva
+  were not measured at a dated sea. The required no-summit test exists as a `todo` test (`landing at the datum
+  sea never picks a summit`) and does NOT pass. It is not labelled passed.
+- **HUD flip and direct-landing boundary: fixed 19.5 km (owner decision).** INT had tied
+  `PlanetRenderer.lowFlightClearanceM` to the relief bound, which moved the HUD TERRAIN FLIGHT flip and the
+  direct-landing route to 4.0-6.6 km after P4 (Astra INT blocker 1). P6 (c465f6a) makes it the constant
+  `LOW_FLIGHT_CLEARANCE_M = 19500` again, used by both the HUD label and the "Land" routing in `main.ts`
+  (below it: landing preparation; above it: a terrain cruise first). Pinned in the render-bounds suite.
+- **Integration handoff runs were NOT green (corrected after Astra's INT review).** `handoff-tests.exit.txt`
+  exit=1 (TAP 104 tests: 101 pass, 1 fail, 2 todo; the failure is `tests/inland-rivers-disabled.test.mjs:236`)
+  and `handoff-tests-p4files.exit.txt` exit=1 (TAP 86 tests: 85 pass, 1 fail; the failure is
+  `tests/acceptance/version-compat.test.mjs:79`). Both were stale pins expecting
+  `atlas-surface-7-no-inland-rivers` while production returns `atlas-surface-8-ocean-volume` (bumped by P2 on
+  main; listed in `tests/known-failures.json`). They are pre-existing, not relief regressions, and their exit
+  codes are not the landing todos. Owner: P6, which re-pinned both and removed them from the known-failures
+  list (c465f6a; `test-results/finish-round-2026-10-04/P6-HARNESS-REPIN/`).
+- **Clouds above p99 land: DEFERRED, removed from this increment's acceptance.** P4 lowered relief so that only
+  3 of 161 corpus water bodies have p99 land above the reference deck top (by at most 371 m). Two attempts
+  were made and both failed Luna 9/9 on raiva-flight, selawyn-flight and selawyn-horizon (3 asks each, all
+  TERRAIN PASS, all CLOUD FAIL):
+  1. the P5 cloud hunks (79b8845 + e1b4d73: scale-height stretch, dated-sea riding, p99 floor, reference-frame
+     sampling): tall streaky curtains;
+  2. the p99 floor alone (deck stretched only where p99 + 500 m exceeds the reference top): judged "worse",
+     with the same streaks and columns as base.
+  The cloud files are back to planet-clouds-1 / cloud-volume-2 exactly. Luna's attempt-2 complaints (streaks,
+  columns, horizon curtains) are present in the BASE image too, so the cloud look itself is an open item for
+  the cloud owner, independent of the p99 rule. Evidence: `clouds/`.
+- **Integration sheets** (`sheets/`, Luna, 3 asks per world). Maithea, Selawyn (heavy, 18.6 g, tilt 90 deg),
+  Raiva (light, 2.6 g) and Lethuris (high tilt, 109 deg). Each world has four sun-aware poses: orbit, horizon,
+  ground, and seabed approach (200 m above a 3-4 km-deep floor).
+  - Across all 48 answers Luna named no holes, cracks, missing or floating tiles, or seams. That is the visual
+    side of the 0-false-cull result.
+  - Majority verdicts:
+    - orbit PASS on Maithea and Selawyn, FAIL on Raiva and Lethuris (mottled, blotchy colour patches);
+    - horizon FAIL on 3 of 4 worlds (subdued relief, the OPEN P4 horizon item); Selawyn PASS 2/3;
+    - ground PASS on Selawyn (3/3), FAIL on Maithea, Raiva (1/3) and Lethuris (1/3) (smooth, low detail);
+    - seabed FAIL on every world. The seabed is solid and continuous, but it is smooth and does not read as
+      underwater.
+  - These are absolute judgements with no before image: the poses come from the P4 terrain and do not exist on
+    main. They are presentation items, recorded OPEN for their owners and not labelled passed. Underwater
+    presentation (water tint or fog on the seabed approach) has no owner in this round.
+- **Desktop perf, before (main 7aaa48f) vs after (INT 50b3bd4): CONTENDED, NOT acceptance evidence.** Blender
+  (PID 11524) held the GPU and Opera was open, and the harness itself labels both runs CONTENDED. Each build
+  ran once (native, 1 repeat), and S4 was skipped. S4's deterministic shore-site search throws "no
+  deterministic shore site" on main as well, so it is a harness item.
+  - Frame-interval p95 (ms), before -> after: S1 ground paused 10.49 -> 8.83, S1 realtime 11.19 -> 11.40,
+    S1 100 m 9.84 -> 9.88, S2 turning 16.57 -> 21.24, S3 flight 16.58 -> 18.19, S3 walk 12.85 -> 13.41,
+    S5 out 17.34 -> 20.07, S5 back 19.13 -> 22.10, S6 descent 10.09 -> 11.23.
+  - Draw calls p50 are within +-17 in every tabulated scenario (S3 has no draw-call row in the table). The S2/S5 increases need a quiet-host, multi-repeat run
+    before anyone reads them as a regression or as noise. Evidence: `perf/compare.txt`.
+
+## 8. How place-query uses the contract
+
+1. `levelForPose` gives the rung, and with it the tile level range, that the viewer is shown.
+2. The tile at that level gives the stored heights (`surfaceHeight`), and its metadata gives the summary for
+   the place: summit, class shares, snowline/treeline, ocean share.
+3. Collision and physical queries ignore the rung and sample the terrain function directly at full detail.
+
+## 9. Measured numbers (2026-10-03; BEFORE = shipped main, AFTER = this contract)
+
+Full table: `test-results/relief-round-2026-10-03/P3-LOD-CONTRACT/report-v2.txt` and `.json`.
+
+**BEFORE reproduces the plan's shipped figures.** For example, Maithea L6->7 gives 97/761/1564 m and RGB
+6.7/33.8, retention is 70.0% with a summit loss of 205/661 m, and the figures at L8 and L10 also match.
+
+**Coarse retention on edge tiles** (plan selection; K=16 unless noted). Summit loss is shown as p50/max.
+
+| Body, level | Peak area kept, BEFORE -> AFTER | Summit loss, BEFORE -> AFTER |
+|---|---|---|
+| Maithea L6 | 70.0% -> 84.99% (K=32: 85.16%; 12 stratified tiles: 88.2%) | 205/661 m -> 67/279 m |
+| Maithea L8 | 91.4% -> 98.4% | 69/196 m -> 41/160 m |
+| Lethuris L6 | 50.6% -> 67.1% | 267/681 m -> 242/681 m (within 0.01 x edge = 2.2 km) |
+| Lethuris L8 | 76.6% -> 91.9% | — |
+
+On Maithea L6, snow kept stays at 98.5% and forest kept at 97.1%. Metadata maxH (C2) summit loss is the same
+as the in-tile value.
+
+**Cost of the correction.** On Maithea L6 the false peak area rises from 10% to 36% of the true peak area,
+and the mean bias is +122 m (L8: +54 m), because a corrected coarse surface is a conservative upper envelope.
+
+**Cross-level** (K=16):
+
+- Height p99/max improve or hold at every pair. For example, Maithea L6->7 goes from 761/1564 m to 651/1358 m.
+- The ocean flag has zero mismatch on all 4624 shared vertices at every pair, and ocean disagreement equals
+  BEFORE.
+- Snow, forest, colour and the carried name equal BEFORE, because they come from unchanged point samples.
+- The re-classified name proxy (classifier re-run at the coarse interpolated height) rises at L6->7: 0.42% ->
+  0.65% on Maithea and 0.50% -> 0.52% on Lethuris.
+
+**Open rows that shipped terrain also misses.** These are pinned as ceilings in the test for P4 to tighten:
+
+- colour p99 at L6/L8 (33.8 / 5.2 against 12 / 4);
+- the carried biome name (0.78% at L6 on the plan set);
+- on the stratified set, snow, forest and name at L6/L8.
+
+They need footprint-filtered colour and class grain in terrain.ts (P4).
+
+**Build time** (Node, interleaved A/B in one process, Maithea, mean):
+
+| Level | Change |
+|---|---|
+| L4 | +0.4% |
+| L6 | -0.8% |
+| L8 | +0.1% |
+| L9 | -0.4% |
+| L10 | -11% |
+| L12 | -12% |
+| L14 | -14% |
+| L16 | -18% |
+| L18 | -18% |
+
+The lattice samples are now reused instead of taken twice. Bytes per tile grow by exactly 64.
+
+### 9.1 M0 / MTN-1 measurements, 2026-10-05 — BLOCKED, not ready to merge
+
+Version ledger: `lod-ladder-1` -> `lod-ladder-2` (M0 draft: colour/material footprint reduction only).
+No accepted placement/level rule was found in the measured variants. Per the binding owner default,
+work stopped at the failed metric; no pin, ceiling, golden or acceptance threshold was loosened.
+The review draft retains **corner, K=2, L<=7** for both colour and class weights: it is the affordable
+variant and excludes L8, but it fails the Maithea L6 reduction requirement. It must not be treated as a
+completed M0. `peakCorrectionMaxLevel(R)` and an edge-based rule were not benchmarked. At L6->7 a rule
+that activates both levels necessarily produces the same outputs as the measured L<=7 rule.
+
+BEFORE is the point implementation in `C:/LLM/IWSDK/universe-atlas`; its `terrain.ts` and `planet-tiles.ts`
+SHA-256 matched this worktree before edits. Selection is its own 12 stratified directions (3 each of
+snowline, treeline, coast and range), reused for AFTER. Evidence: `test-results/mountains/M0/report.json`
+and `report.txt`; variant subdirectories `corner-L7`, `midpoint-L7`, `midpoint-L6`. Each directory also
+contains four Node PNGs (Maithea/Lethuris, L6/L8), with the 12 tiles stacked vertically, BEFORE left and
+AFTER right. The common RGB-difference scale is black=0, red=32, yellow=64, white>=96. No GPU was used.
+
+Each table cell is **RGB p99 / snow disagreement %**, measured through `buildTile`'s stored bytes.
+RGB uses every child texel centre and the parent's gutter-aware bilinear texture; snow uses channel 3
+of materials, at non-shared child lattice vertices, with land defined by the child's raw height.
+
+| Placement and level rule | Maithea L6 | Maithea L8 | Lethuris L6 | Lethuris L8 |
+|---|---:|---:|---:|---:|
+| BEFORE point (common to all variants) | 19.37792 / 1.26147 | 2.81597 / 0.27778 | 34.91603 / 2.11117 | 8.33690 / 0.95833 |
+| AFTER corner L<=7 (retained draft) | 17.85970 / 1.01937 | 2.81597 / 0.27778 | 20.83426 / 1.40299 | 8.33690 / 0.95833 |
+| AFTER midpoint L<=7 | 17.47945 / 1.13405 | 2.81597 / 0.27778 | 22.98692 / 1.37627 | 8.33690 / 0.95833 |
+| AFTER midpoint L<=6 | 20.14440 / 1.35066 | 2.81597 / 0.27778 | 30.16394 / 1.84393 | 8.33690 / 0.95833 |
+
+Maithea requires <=17.44013 at L6. Corner/L7 gives AFTER/BEFORE=0.92165172 and midpoint/L7 gives
+0.90202918; **both fail <=0.9**. Midpoint/L6 gives 1.03955416 and also fails. L8 is unchanged because
+all measured rules exclude it; this does not establish that active L8 filtering would help.
+Informational L7 RGB/snow: Maithea BEFORE 8.19990/0.81967, corner 13.78773/1.09290, midpoint/L7
+9.53407/0.88798; Lethuris BEFORE 20.54083/2.23611, corner 26.41422/2.73611, midpoint/L7
+21.32752/2.15278. The transition to point sampling worsens this informational row.
+
+The gate test's `crossPair` colour/class rows are a **sampler point emulation that does not read
+buildTile colour/material bytes**. Its height rows do read buildTile. Consequently M0 does not move
+any ceiling cell. The footprint report explicitly labels forest, name, carriedName and ocean as this
+point emulation, because those labels are not stored per vertex. BEFORE=AFTER:
+
+| World / level | Forest % | Name % | Carried name % | Ocean % |
+|---|---:|---:|---:|---:|
+| Maithea L6 | 0.42049 | 3.16004 | 3.49134 | 0.13542 |
+| Maithea L8 | 0.01389 | 0.76389 | 1.16667 | 0 |
+| Lethuris L6 | 1.76376 | 6.98824 | 8.15072 | 0.03125 |
+| Lethuris L8 | 2.16667 | 1.84722 | 1.65278 | 0 |
+
+Height retention uses a 129² grid over each of the same tiles, with 128 samples from each of its 129
+rows and 129 columns. Spacing is tileEdge/128. `bandPowers` performs linear detrending and Hann
+windowing; powers pool over rows, columns and tiles before taking ratios. The last spatial endpoint
+is excluded from each FFT, not from the sampled grid. N=2*tileEdge/32. Values below are
+**retained RMS / error power relative to truth**, BEFORE=AFTER: stored height buffers were compared
+byte-for-byte, making a second identical spectrum computation unnecessary.
+
+| World / level | [N,2N) | [2N,4N) | [4N,8N) | [8N,16N) |
+|---|---:|---:|---:|---:|
+| Maithea L6 | 0.69120 / 0.36568 | 0.89542 / 0.13341 | 0.97543 / 0.03020 | 1.01510 / 0.00920 |
+| Maithea L8 | 0.63779 / 0.34049 | 0.89002 / 0.07609 | 1.00422 / 0.02239 | 1.01600 / 0.00773 |
+| Lethuris L6 | 0.66748 / 0.47288 | 0.89736 / 0.23162 | 0.94551 / 0.05311 | 1.01947 / 0.00902 |
+| Lethuris L8 | 0.64842 / 0.32870 | 0.92434 / 0.07128 | 1.01137 / 0.02690 | 1.02109 / 0.01158 |
+
+Bounds stored in `LOD_HEIGHT_RETENTION` and enforced by the report: retained RMS >=0.9 separately
+for [4N,8N) and [8N,16N), on both worlds/levels. Every cell meets that proposed bound. For [N,2N)
+error power, **main does not meet the proposed bound** <=0.25 in all four cases. Applying the owner's
+outward rounding rule gives <=0.37 / 0.35 (Maithea L6/L8), <=0.48 / 0.33 (Lethuris L6/L8). These are
+new measured regression guards, not a change to existing shipped ceilings. No bound is invented
+for the informational [2N,4N) octave.
+
+Build-time growth below is one interleaved BEFORE/AFTER benchmark per variant, 12 tiles x 3 rounds,
+**indication only**, without a CPU-quiet slot. Each cell is Maithea / Lethuris percent. Coordinator must
+rerun the retained candidate in the CPU-quiet slot. Whole-tile cost includes classification using each
+vertex's existing normal dot; no extra finite-difference normal samples are taken. Corner class samples
+reuse the peak-correction cache. Midpoint class samples bypass it because its half-cell keys would alias
+quarter-cell positions. No isolated classification-only timing was taken.
+
+| Level | Corner L<=7 | Midpoint L<=7 | Midpoint L<=6 |
+|---|---:|---:|---:|
+| L4 | -1.03 / +4.15 | +198.21 / +202.73 | +207.53 / +180.41 |
+| L6 | +4.85 / +6.58 | +207.38 / +218.50 | +221.98 / +203.62 |
+| L7 | +4.61 / -1.60 | +211.18 / +204.30 | -1.23 / +2.54 |
+| L8 | +0.65 / +0.94 | +2.50 / +4.60 | -1.47 / +4.44 |
+| L9 | +5.17 / +4.60 | -0.46 / -1.14 | -0.57 / +1.99 |
+| L10 | +2.08 / -2.85 | +4.73 / -0.99 | +0.28 / +4.71 |
+| L12 | +5.68 / +0.52 | -1.14 / -2.56 | +0.93 / +8.74 |
+| L14 | +1.52 / -0.93 | -1.05 / -0.72 | +2.04 / -4.58 |
+
+At Maithea L6, corner costs 23.362 -> 24.496 ms; at Lethuris L6, 22.350 -> 23.822 ms. Midpoint fails
+the +10% budget by a wide margin in these indications. Vertex material agreement passed on 2376 shared
+edge vertices per world across L6/L7/L8. All measured parent/child surfaceHeight, metadata, geometry,
+normals, roughness, UVs, indices and ocean buffers matched BEFORE exactly. Texture sizes are unchanged.
+
+**A3 options, measured values only: NONE is applied; SHIPPED_CEILINGS are unchanged.** The following
+uses the retained corner draft for hypothetical production-byte ceilings. It does not substitute those
+numbers into the differently sampled gate. Values are ordered Maithea L6/L8, Lethuris L6/L8.
+
+| A3 option | Values and consequence |
+|---|---|
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-Content test-results/mountains/M0-v2/harness/exp.mjs; Get-Content test-results/mountains/M0-v2/harness/sweep-all-pairs.mjs' in C:\LLM\IWSDK\universe-atlas-wt\m0c
+ succeeded in 27ms:
+// M0 v2 estimator harness (2026-10-05). Builds colour textures OUTSIDE buildTile with a pluggable estimator
+// and scores them with the exact crossPairTile RGB metric (parent bilinear at child texel centres, p99).
+// The point estimator is validated byte-for-byte against buildTile colour bytes (estimators-baseline.mjs --validate).
+// ROOT = a point-sampling checkout (default C:/LLM/IWSDK/universe-atlas, main). Run from this folder: node <script>.mjs
+import {pathToFileURL} from 'node:url';
+const root=process.env.ROOT||'C:/LLM/IWSDK/universe-atlas';
+const base=pathToFileURL(root+'/').href;
+const [tiles,terrain,biomes,fixtures,catalog,report]=await Promise.all(['src/planet-tiles.ts','src/terrain.ts','src/surface-biomes.ts','tests/terrain-climate-fixtures.mjs','src/catalog.ts','scripts/lod-consistency-report.mjs'].map(p=>import(base+p)));
+const {tileDirection,directionTile,regionalBankWeights}=tiles;
+const quantile=(a,q)=>{const s=Float64Array.from(a).sort();return s[Math.floor(q*(s.length-1))];};
+const palette=[[160,141,94],[72,91,52],[104,96,84],[220,229,232]];
+const substrate=w=>palette[0].map((_,c)=>Math.floor(w.reduce((s,x,i)=>s+x*palette[i][c],0)));
+
+export function makeWorld(body){
+  const ts=terrain.terrainSampler(body),cls=biomes.biomeClassifier(body);
+  const code=Number(catalog.hash64(body.seed+'/macro-v1')&0xffffffffn),lgF=body.radiusM/800;
+  const LG=terrain.TERRAIN_LOCAL_GRAIN||{BASE:.88,AMPLITUDE:.24};const localGrain=d=>LG.BASE+catalog.noise(d[0]*lgF+13,d[1]*lgF+37,d[2]*lgF+19,code+74)*LG.AMPLITUDE;
+  const colourOf=(d,mode)=>{const s=ts(d);
+    let c=s.wet?substrate(regionalBankWeights(body,s,cls(d,s.groundHeightM,1).weights)):s.color.slice();
+    if(mode==='noLG'&&!s.ocean&&!s.wet){const g=localGrain(d);c=c.map(v=>v/g);} // decomposition only
+    return c;};
+  return {ts,cls,colourOf,localGrain};
+}
+// Estimators: (at(u,v)->rgb, size) -> Uint8Array RGBA (size+2)^2, buildTile layout.
+const pack=(size,f)=>{const w=size+2,out=new Uint8Array(w*w*4);for(let y=0;y<w;y++)for(let x=0;x<w;x++){const c=f(x,y),p=(y*w+x)*4;for(let i=0;i<3;i++)out[p+i]=Math.floor(Math.max(0,Math.min(255,c[i])));out[p+3]=255;}return out;};
+const memoGrid=(at,size,step,off)=>{const cache=new Map();return (gx,gy)=>{const k=gx+','+gy;let v=cache.get(k);if(!v){v=at((gx*step+off)/size,(gy*step+off)/size);cache.set(k,v);}return v;};};
+export const EST={
+  point:(at,size)=>pack(size,(x,y)=>at((x-.5)/size,(y-.5)/size)),
+  // separable tap kernel on a grid of spacing `step` texels; taps given as [offset(in steps), weight]
+  taps:(taps,step=1)=>(at,size)=>{
+    // offsets relative to texel centre (x-.5) in texels: o*step
+    const sum=taps.reduce((s,t)=>s+t[1],0);
+    const cache=new Map();const g=(u,v)=>{const k=u+','+v;let c=cache.get(k);if(!c){c=at(u,v);cache.set(k,c);}return c;};
+    return pack(size,(x,y)=>{const acc=[0,0,0];for(const [oy,wy] of taps)for(const [ox,wx] of taps){const c=g((x-.5+ox*step)/size,(y-.5+oy*step)/size),w=wx*wy/(sum*sum);for(let i=0;i<3;i++)acc[i]+=w*c[i];}return acc;});
+  },
+  box:K=>(at,size)=>pack(size,(x,y)=>{const acc=[0,0,0];for(let j=0;j<K;j++)for(let i=0;i<K;i++){const c=at((x-.5+(i+.5)/K-.5)/size,(y-.5+(j+.5)/K-.5)/size);for(let k=0;k<3;k++)acc[k]+=c[k]/(K*K);}return acc;}),
+};
+EST.corner=EST.taps([[-.5,1],[.5,1]]);
+EST.bspl=EST.taps([[-1.5,1],[-.5,3],[.5,3],[1.5,1]]);
+EST.tent3=EST.taps([[-1,1],[0,2],[1,1]]);
+
+export function metric(pTex,cTex,P,C){
+  const tp=128,tc=128,pw=tp+2,cw=tc+2,ox=C.x-P.x*2,oy=C.y-P.y*2,out=[];
+  const tex=(u,v,ch)=>{const gx=u*tp+.5,gy=v*tp+.5,x=Math.floor(gx),y=Math.floor(gy),a=gx-x,b=gy-y,at=(i,j)=>pTex[(j*pw+i)*4+ch];
+    return at(x,y)*(1-a)*(1-b)+at(x+1,y)*a*(1-b)+at(x,y+1)*(1-a)*b+at(x+1,y+1)*a*b;};
+  for(let y=1;y<=tc;y++)for(let x=1;x<=tc;x++){const u=(ox+(x-.5)/tc)/2,v=(oy+(y-.5)/tc)/2,idx=(y*cw+x)*4;
+    out.push(Math.hypot(...[0,1,2].map(ch=>tex(u,v,ch)-cTex[idx+ch])));}
+  return out;
+}
+export async function setup(names=['Maithea','Lethuris']){
+  const worlds={};
+  for(const body of fixtures.waterWorlds().filter(b=>names.includes(b.name))){
+    const w=makeWorld(body),picks=report.stratifiedEdgeDirections(w.ts,w.cls);
+    worlds[body.name]={body,...w,picks,dirs:Object.values(picks).flat()};
+  }
+  return worlds;
+}
+export {tiles,report,quantile};
+// M0 round 3 (2026-10-05, step G grain terrain): every estimator config scored on ALL four adjacent pairs
+// L5->6, L6->7, L7->8, L8->9 (crossPairTile RGB p99, 12 stratified tiles), so a neighbouring-pair regression is
+// visible in the same row. ROOT = point checkout (default main = terrain-1.8.1-grain). Usage:
+//   node sweep-all-pairs.mjs [--validate] [configName ...]
+import {setup,EST,metric,tiles,quantile} from './exp.mjs';
+const worlds=await setup();
+const args=process.argv.slice(2),validate=args.includes('--validate'),only=args.filter(a=>!a.startsWith('--'));
+const est=name=>name.startsWith('box')?EST.box(Number(name.slice(3))):EST[name];
+const lv=(m,levels)=>Object.fromEntries([5,6,7,8,9].map(L=>[L,levels.includes(L)?m:'point']));
+const CONFIGS={
+  point:lv('point',[]),
+  corner_L67:lv('corner',[6,7]),           // retained draft (corner K=2, L<=7 at these levels)
+  corner_L678:lv('corner',[6,7,8]),
+  corner_L5to9:lv('corner',[5,6,7,8,9]),
+  corner_L6:lv('corner',[6]),
+  corner_L56:lv('corner',[5,6]),
+  corner_L567:lv('corner',[5,6,7]),
+  box2_L67:lv('box2',[6,7]),
+  box2_L5to9:lv('box2',[5,6,7,8,9]),
+  box4_L678:lv('box4',[6,7,8]),
+  box8_L67:lv('box8',[6,7]),
+  box8_L678:lv('box8',[6,7,8]),
+  box8_L5to9:lv('box8',[5,6,7,8,9]),
+  tent3_L678:lv('tent3',[6,7,8]),
+  bspl_L678:lv('bspl',[6,7,8]),
+  box2_L6:lv('box2',[6]),
+  box8_L6:lv('box8',[6]),
+};
+const names=only.length?only:Object.keys(CONFIGS);
+for(const [wname,w] of Object.entries(worlds)){
+  if(validate){let bad=0,n=0;for(const d of w.dirs.slice(0,3))for(const L of [5,6,7,8,9]){const t=tiles.directionTile(d,L),b=tiles.buildTile(w.body,t).color,e=EST.point((u,v)=>w.colourOf(tiles.tileDirection(t,u,v)),128);n+=b.length;for(let i=0;i<b.length;i++)if(b[i]!==e[i])bad++;}
+    console.log(wname,'point vs buildTile byte mismatches',bad,'of',n);}
+  for(const cname of names){const cfg=CONFIGS[cname];const t0=performance.now();
+    const texCache=new Map(),tex=t=>{const k=tiles.tileKey(t);if(!texCache.has(k))texCache.set(k,est(cfg[t.level])((u,v)=>w.colourOf(tiles.tileDirection(t,u,v)),128));return texCache.get(k);};
+    const res=[];for(const L of [5,6,7,8]){const all=[];for(const d of w.dirs){const P=tiles.directionTile(d,L),C=tiles.directionTile(d,L+1);all.push(...metric(tex(P),tex(C),P,C));}res.push(quantile(all,.99).toFixed(3));}
+    console.log(wname.padEnd(9),cname.padEnd(14),res.join(' / '),((performance.now()-t0)/1000).toFixed(1)+'s');
+  }
+}
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "rg --files -g AGENTS.md -g '*filters*' -g '*attribution*' -g '*ls*pair*'; Get-Content docs/mountains-design-2026-10-04.md | Select-Object -Skip 204 -First 55; Get-Content docs/lod-ladder-contract-v1.md | Select-Object -Skip 464 -First 135; Get-Content test-results/mountains/M0-v3/*.log" in C:\LLM\IWSDK\universe-atlas-wt\m0c
+Maithea   point          L6->7 11.323 [s11.2 t3.2 c10.3 r14.5]  L7->8 4.832 [s5.2 t1.5 c1.5 r6.2] 0.7s
+Maithea   corner67       L6->7 11.860 [s11.3 t2.9 c8.3 r16.1]  L7->8 7.728 [s8.2 t2.3 c3.9 r9.3] 1.4s
+Maithea   box8_678       L6->7 10.478 [s10.1 t3.0 c8.6 r13.5]  L7->8 4.983 [s5.3 t1.6 c2.0 r5.9] 46.5s
+Maithea   noLG_point     L6->7 10.097 [s9.6 t1.2 c10.7 r13.4]  L7->8 4.305 [s4.8 t1.0 c0.8 r5.8] 0.9s
+Maithea   noLG_corner    L6->7 10.727 [s10.1 t1.3 c7.8 r15.0]  L7->8 5.050 [s5.9 t1.0 c2.9 r6.0] 2.2s
+Maithea   noLG_box8      L6->7 9.083 [s8.6 t1.2 c8.3 r12.5]  L7->8 4.288 [s4.8 t1.0 c1.0 r5.3] 51.3s
+Lethuris  point          L6->7 17.152 [s16.5 t18.7 c10.2 r18.4]  L7->8 9.481 [s10.2 t9.8 c0.0 r10.3] 0.9s
+Lethuris  corner67       L6->7 13.421 [s12.0 t13.4 c6.9 r17.9]  L7->8 12.870 [s12.7 t14.3 c0.0 r13.9] 1.7s
+Lethuris  box8_678       L6->7 13.054 [s11.6 t14.0 c6.7 r15.7]  L7->8 8.656 [s8.6 t9.1 c0.0 r9.6] 47.3s
+Lethuris  noLG_point     L6->7 14.280 [s11.6 t16.8 c4.0 r15.3]  L7->8 7.023 [s6.6 t9.2 c0.0 r7.2] 0.9s
+Lethuris  noLG_corner    L6->7 12.490 [s10.4 t12.8 c6.7 r17.0]  L7->8 7.923 [s7.3 t9.2 c0.0 r8.6] 2.1s
+Lethuris  noLG_box8      L6->7 12.219 [s10.0 t13.3 c5.8 r14.5]  L7->8 6.969 [s6.5 t8.5 c0.0 r7.1] 51.3s
+CONTRACT: RGB and snow read buildTile bytes. Forest/name/carriedName/ocean use crossPair sampler point emulation.
+Heat maps: each row is one of 12 baseline tiles; BEFORE left, AFTER right. Black=0, red=32, yellow=64, white>=96 RGB Euclidean units.
+Maithea L6 BEFORE RGB p99 11.32251 snow 1.26147% point {"forest":0.42048929663608564,"name":3.1600407747196737,"carriedName":3.491335372069317,"ocean":0.13541666666666666}
+Maithea L6 AFTER RGB p99 11.85953 snow 1.01937% point {"forest":0.42048929663608564,"name":3.1600407747196737,"carriedName":3.491335372069317,"ocean":0.13541666666666666}
+Maithea L7 BEFORE RGB p99 4.83154 snow 0.81967% point {"forest":0.12295081967213115,"name":1.6666666666666667,"carriedName":1.8032786885245902,"ocean":0.041666666666666664}
+Maithea L7 AFTER RGB p99 7.72830 snow 1.09290% point {"forest":0.12295081967213115,"name":1.6666666666666667,"carriedName":1.8032786885245902,"ocean":0.041666666666666664}
+Maithea L8 BEFORE RGB p99 1.96254 snow 0.27778% point {"forest":0.013888888888888888,"name":0.7638888888888888,"carriedName":1.1666666666666667,"ocean":0}
+Maithea L8 AFTER RGB p99 1.96254 snow 0.27778% point {"forest":0.013888888888888888,"name":0.7638888888888888,"carriedName":1.1666666666666667,"ocean":0}
+Maithea: 2376 shared-edge material vertices checked; stored height/metadata/geometry buffers compared exactly.
+Maithea L6 retention [{"octave":[1,2],"coarse":7229453.178982555,"truth":15132000.32533466,"error":5533483.206201045,"retainedRms":0.6912013118280614,"errorPower":0.3656808807317195},{"octave":[2,4],"coarse":26814226.695339076,"truth":33443820.168844044,"error":4461897.925797438,"retainedRms":0.8954156869492699,"errorPower":0.13341472066501844},{"octave":[4,8],"coarse":97923056.60133266,"truth":102917984.89681678,"error":3107924.64727409,"retainedRms":0.9754316508167571,"errorPower":0.030198071312706173},{"octave":[8,16],"coarse":273611146.34992546,"truth":265531735.40951973,"error":2443090.0761755346,"retainedRms":1.0150996450265486,"errorPower":0.009200746089380419}]
+Maithea L8 retention [{"octave":[1,2],"coarse":347651.9619569579,"truth":854650.3835153208,"error":291000.75814745424,"retainedRms":0.6377905739223405,"errorPower":0.3404909934639228},{"octave":[2,4],"coarse":2747629.727401071,"truth":3468627.806555227,"error":263917.46052620636,"retainedRms":0.8900209972452927,"errorPower":0.07608699325636462},{"octave":[4,8],"coarse":10082485.262243014,"truth":9997892.12754268,"error":223811.03165731046,"retainedRms":1.0042216373696384,"errorPower":0.02238582181145413},{"octave":[8,16],"coarse":22557572.851665966,"truth":21852479.36603091,"error":168986.53768001497,"retainedRms":1.0160049524702581,"errorPower":0.0077330601644543815}]
+Lethuris L6 BEFORE RGB p99 17.15212 snow 2.11117% point {"forest":1.7637626937466595,"name":6.988241582041689,"carriedName":8.150721539283806,"ocean":0.03125}
+Lethuris L6 AFTER RGB p99 13.42136 snow 1.40299% point {"forest":1.7637626937466595,"name":6.988241582041689,"carriedName":8.150721539283806,"ocean":0.03125}
+Lethuris L7 BEFORE RGB p99 9.48107 snow 2.23611% point {"forest":1.8194444444444444,"name":3.5694444444444446,"carriedName":3.763888888888889,"ocean":0}
+Lethuris L7 AFTER RGB p99 12.87045 snow 2.73611% point {"forest":1.8194444444444444,"name":3.5694444444444446,"carriedName":3.763888888888889,"ocean":0}
+Lethuris L8 BEFORE RGB p99 4.03307 snow 0.95833% point {"forest":2.1666666666666665,"name":1.8472222222222223,"carriedName":1.6527777777777777,"ocean":0}
+Lethuris L8 AFTER RGB p99 4.03307 snow 0.95833% point {"forest":2.1666666666666665,"name":1.8472222222222223,"carriedName":1.6527777777777777,"ocean":0}
+Lethuris: 2376 shared-edge material vertices checked; stored height/metadata/geometry buffers compared exactly.
+Lethuris L6 retention [{"octave":[1,2],"coarse":7049266.470328014,"truth":15822414.559602445,"error":7482090.388549606,"retainedRms":0.667475891784513,"errorPower":0.47287917785018535},{"octave":[2,4],"coarse":19164396.205008518,"truth":23799273.478483733,"error":5512426.269190037,"retainedRms":0.8973579622961768,"errorPower":0.23162161963362746},{"octave":[4,8],"coarse":80293035.1357134,"truth":89815041.59619196,"error":4770327.201521776,"retainedRms":0.9455062408218708,"errorPower":0.05311278730982664},{"octave":[8,16],"coarse":310905292.6166279,"truth":299142434.7713453,"error":2698059.5389141818,"retainedRms":1.0194713972856624,"errorPower":0.009019313963184427}]
+Lethuris L8 retention [{"octave":[1,2],"coarse":1197040.214172206,"truth":2847045.9314878797,"error":935818.9590536915,"retainedRms":0.6484210923388113,"errorPower":0.32869823022652395},{"octave":[2,4],"coarse":8267459.512301226,"truth":9676266.066225383,"error":689746.3963248911,"retainedRms":0.9243408310040399,"errorPower":0.07128228922232958},{"octave":[4,8],"coarse":19941878.390240792,"truth":19496136.377780125,"error":524449.1033845742,"retainedRms":1.011366943650419,"errorPower":0.026900155662754405},{"octave":[8,16],"coarse":29285910.42967461,"truth":28088776.553830415,"error":325168.32869305054,"retainedRms":1.02108748488408,"errorPower":0.011576450404305983}]
+CONTRACT failures: 1
+Maithea L6 RGB ratio 1.0474294163997393 > 0.9
+exit 1
+Maithea   lg-point   L5->6 20.922  L6->7 11.323  L7->8 4.832  L8->9 1.963
+Maithea   lg-box2    L5->6 19.886  L6->7 11.082  L7->8 5.000  L8->9 2.025
+Maithea   lg-box4    L5->6 19.850  L6->7 11.070  L7->8 5.021  L8->9 2.041
+Maithea   lg-tentH   L5->6 19.714  L6->7 11.012  L7->8 5.136  L8->9 2.117
+Maithea   lg-bsplH   L5->6 19.608  L6->7 10.945  L7->8 5.277  L8->9 2.194
+Maithea   lg-tent1   L5->6 19.429  L6->7 10.824  L7->8 5.581  L8->9 2.438
+Lethuris  lg-point   L5->6 27.238  L6->7 17.152  L7->8 9.481  L8->9 4.033
+Lethuris  lg-box2    L5->6 25.898  L6->7 14.988  L7->8 8.866  L8->9 4.305
+Lethuris  lg-box4    L5->6 25.722  L6->7 14.927  L7->8 8.769  L8->9 4.345
+Lethuris  lg-tentH   L5->6 25.700  L6->7 14.787  L7->8 8.554  L8->9 4.547
+Lethuris  lg-bsplH   L5->6 25.614  L6->7 14.660  L7->8 8.335  L8->9 4.766
+Lethuris  lg-tent1   L5->6 25.565  L6->7 14.485  L7->8 8.046  L8->9 5.117
+exit 0
+Maithea   point    L5->6 20.922 L6->7 11.323
+Maithea   L6ls     L5->6 28.576 L6->7 8.746
+Maithea   L56ls    L5->6 24.035 L6->7 8.746
+Maithea   L5ls     L5->6 16.213 L6->7 11.323
+Lethuris  point    L5->6 27.238 L6->7 17.152
+Lethuris  L6ls     L5->6 33.715 L6->7 13.387
+Lethuris  L56ls    L5->6 29.713 L6->7 13.387
+Lethuris  L5ls     L5->6 21.057 L6->7 17.152
+exit 0
+Maithea point vs buildTile byte mismatches 0 of 1014000
+Maithea   point          20.922 / 11.323 / 4.832 / 1.963 1.0s
+Maithea   corner_L67     12.948 / 11.860 / 7.728 / 1.963 1.6s
+Maithea   corner_L678    12.948 / 11.860 / 5.996 / 3.070 2.0s
+Maithea   corner_L5to9   20.128 / 11.860 / 5.996 / 2.550 2.6s
+Maithea   corner_L6      12.948 / 16.396 / 4.832 / 1.963 1.4s
+Maithea   corner_L56     20.128 / 16.396 / 4.832 / 1.963 2.4s
+Maithea   corner_L567    20.128 / 11.860 / 7.728 / 1.963 2.8s
+Maithea   box2_L67       17.804 / 10.462 / 5.438 / 1.963 2.8s
+Maithea   box2_L5to9     18.097 / 10.462 / 4.920 / 2.001 4.3s
+Maithea   box4_L678      17.402 / 10.492 / 4.976 / 2.208 11.1s
+Maithea   box8_L67       17.307 / 10.478 / 5.669 / 1.963 33.2s
+Maithea   box8_L678      17.307 / 10.478 / 4.983 / 2.230 47.0s
+Maithea   box8_L5to9     17.918 / 10.478 / 4.983 / 2.020 77.7s
+Maithea   tent3_L678     11.037 / 12.653 / 6.986 / 4.055 3.9s
+Maithea   bspl_L678      9.611 / 13.769 / 7.775 / 4.960 5.9s
+Maithea   box2_L6        17.804 / 12.030 / 4.832 / 1.963 2.2s
+Maithea   box8_L6        17.307 / 12.436 / 4.832 / 1.963 16.6s
+Lethuris point vs buildTile byte mismatches 0 of 1014000
+Lethuris  point          27.238 / 17.152 / 9.481 / 4.033 1.4s
+Lethuris  corner_L67     16.034 / 13.421 / 12.870 / 4.033 2.5s
+Lethuris  corner_L678    16.034 / 13.421 / 8.998 / 6.790 2.8s
+Lethuris  corner_L5to9   20.356 / 13.421 / 8.998 / 5.307 3.7s
+Lethuris  corner_L6      16.034 / 20.797 / 9.481 / 4.033 1.8s
+Lethuris  corner_L56     20.356 / 20.797 / 9.481 / 4.033 2.5s
+Lethuris  corner_L567    20.356 / 13.421 / 12.870 / 4.033 2.9s
+Lethuris  box2_L67       21.303 / 13.333 / 9.959 / 4.033 2.9s
+Lethuris  box2_L5to9     19.169 / 13.333 / 8.757 / 4.273 5.3s
+Lethuris  box4_L678      20.588 / 13.073 / 8.663 / 4.877 10.0s
+Lethuris  box8_L67       20.431 / 13.054 / 10.250 / 4.033 25.7s
+Lethuris  box8_L678      20.431 / 13.054 / 8.656 / 4.910 32.9s
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-ChildItem test-results/mountains/M0-v2/harness; Get-ChildItem test-results/mountains/M0-v3; Get-Content src/planet-tiles.ts | Select-String 'colour|color|footprint' -Context 2,3" in C:\LLM\IWSDK\universe-atlas-wt\m0c
+ succeeded in 125ms:
+
+    Directory: C:\LLM\IWSDK\universe-atlas-wt\m0c\test-results\mountains\M0-v2\harness
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          05-10-2026    18:22            969 cost-probe.mjs
+-a---          05-10-2026    18:22           2053 estimators-baseline.mjs
+-a---          05-10-2026    18:22           4272 exp.mjs
+-a---          05-10-2026    18:22           1880 grain-only-filters.mjs
+-a---          05-10-2026    18:22           5751 joint-l6-l7-ls.mjs
+-a---          05-10-2026    18:22            911 l5-pair.mjs
+-a---          05-10-2026    18:22           1211 l6-only-kernels.mjs
+-a---          05-10-2026    18:22           2097 linear-light-r2.mjs
+-a---          05-10-2026    18:22           1836 ls-grain-decomposed.mjs
+-a---          05-10-2026    18:22           1171 ls-reduction.mjs
+-a---          05-10-2026    18:22           2778 ls.mjs
+-a---          05-10-2026    18:22           1001 one-sample-sharpen.mjs
+-a---          05-10-2026    18:23           2447 sweep-all-pairs.mjs
+-a---          05-10-2026    18:22           3390 two-sided-ls.mjs
+-a---          05-10-2026    18:22           1584 visual.mjs
+
+    Directory: C:\LLM\IWSDK\universe-atlas-wt\m0c\test-results\mountains\M0-v3
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d----          05-10-2026    18:28                astra
+d----          05-10-2026    18:23                corner-L7
+-a---          05-10-2026    18:28           3434 astra-prompt.txt
+-a---          05-10-2026    18:28          49895 astra-run.log
+-a---          05-10-2026    18:27           1240 attribution.log
+-a---          05-10-2026    18:23           5181 corner-L7.log
+-a---          05-10-2026    18:24            895 grain-only-filters.log
+-a---          05-10-2026    18:27            365 ls-l5-pair.log
+-a---          05-10-2026    18:28           1921 sweep-all-pairs.log
+
+IgnoreCase : True
+LineNumber : 3
+Line       : import {peakCorrectionMaxLevel,TILE_CLASS_LABELS,SNOW_LABELS,LOD_LADDER_VERSION,LOD_FOOTPRINT,footprintAct
+             ive,footprintTexels,footprintWeights} from './lod-ladder.ts';
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 122
+Line       :  * clamping to the ocean-formation level). Threaded into the rock/colour
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 134
+Line       :   // supplies the fine grain, so retaining a 130² macro-colour texture there
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 137
+Line       :   // give a 10 m substrate colour field. Geometry carries banks and cliffs,
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 146
+Line       :   const footprintForLevel=(level:number)=>Math.min(2800,4*Math.SQRT2*body.radiusM/(2**level*PATCH_SEGMENTS
+             ));
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 147
+Line       :   const childFootprint=footprintForLevel(tile.level),parentFootprint=tile.level?footprintForLevel(tile.lev
+             el-1):childFootprint;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 150
+Line       :   const heightAt=(d:V3,footprintM:number,s:SurfaceSample=sample(d))=>{
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 151
+Line       :     if(!riverRegion||footprintM<=8)return s.groundHeightM;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 157
+Line       :     // Preserve the full conservative bed inside the footprint, then blend its
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 161
+Line       :     const radius=Math.min(2800,footprintM),bed=conservativeRiverBedM(riverRegion,d,radius,s.groundHeightM)
+             ;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 169
+Line       :   // then have a different conservative footprint; without one, heightAt does
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 170
+Line       :   // not read the footprint, so both endpoints share one cache.
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 171
+Line       :   const sharedFootprints=!riverRegion||childFootprint===parentFootprint;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 172
+Line       :   const point = (u: number, v: number, footprintM=childFootprint): LatticePoint => {
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 177
+Line       :     const x=Math.round(u*2*n),y=Math.round(v*2*n),key=`${x},${y}`,cache=!sharedFootprints&&footprintM===pa
+             rentFootprint?parentPoints:childPoints;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 179
+Line       :     const d = tileDirection(tile, u, v),s=sample(d),height=heightAt(d,footprintM,s),r = 1 + height * relie
+             f / body.radiusM;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 191
+Line       :   // colour map keep reading point samples.
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 198
+Line       :   const rawAt=(hx:number,hy:number,footprintM:number)=>{
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 199
+Line       :     let grid=rawGrids.get(footprintM);if(!grid){grid=new Float64Array(G*G).fill(NaN);rawGrids.set(footprin
+             tM,grid);}
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 201
+Line       :     if(h!==h){h=point(hx/(2*n),hy/(2*n),footprintM).height;grid[i]=h;}
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 206
+Line       :   const correctedHeight=(x:number,y:number,step:number,footprintM:number)=>{
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 207
+Line       :     const key=step*1e6+footprintM;let memo=corrected.get(key);
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 210
+Line       :     const at=(i:number,j:number)=>rawAt(2*i,2*j,footprintM),p=at(x,y);
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 223
+Line       :       // vertex whose footprint reaches the sea (any centre below sea level)
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 231
+Line       :   const vertex=(x:number,y:number,step:number,footprintM:number):{point:V3;height:number}=>{
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 232
+Line       :     const raw=point(x/n,y/n,footprintM);
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 235
+Line       :     const height=correctedHeight(x,y,step,footprintM);if(height===raw.height)return raw;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 239
+Line       :   const vertexPoint=(x:number,y:number,step:number,footprintM:number):V3=>vertex(x,y,step,footprintM).poin
+             t;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 242
+Line       :   const anchor = point(.5,.5,childFootprint).point;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 246
+Line       :     if (!tile.level) return vertexPoint(Math.round(u*n),Math.round(v*n),1,parentFootprint);
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 250
+Line       :     const p00 = vertexPoint(ix * 2, iy * 2,2,parentFootprint), p11 = vertexPoint((ix + 1) * 2, (iy + 1) * 
+             2,2,parentFootprint);
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 251
+Line       :     const p = a >= b ? vertexPoint((ix + 1) * 2, iy * 2,2,parentFootprint) : vertexPoint(ix * 2, (iy + 1) 
+             * 2,2,parentFootprint);
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 268
+Line       :       const d=point(u,v).direction,axis=Math.abs(d[1])<.9?[0,1,0] as V3:[1,0,0] as V3,tangent=unit(cross(a
+             xis,d)),bitangent=unit(cross(d,tangent)),step=2/(2**tile.level*n),at=(t:V3,sign:number)=>{const q=unit(d.m
+             ap((value,i)=>value+t[i]*step*sign) as V3),height=heightAt(q,childFootprint),r=1+height*relief/body.radius
+             M;return q.map(value=>value*r) as V3;},west=at(tangent,-1),east=at(tangent,1),south=at(bitangent,-1),north
+             =at(bitangent,1);
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 274
+Line       :   const substrateColor=(weights:number[])=>{
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 280
+Line       :     const u = x / n, v = y / n, d = point(u,v,childFootprint).direction;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 281
+Line       :     const childSample=vertex(x,y,1,childFootprint),child=childSample.point,parent=parentPoint(u,v);
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 288
+Line       :     const s=point(u,v,childFootprint).sample;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 291
+Line       :     if(footprintActive(body.radiusM,tile.level,'class')&&!onCubeEdge(tile.x*n+x,tile.y*n+y)){
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 293
+Line       :       materials.push(...materialBytes(footprintWeights((su,sv)=>{
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 295
+Line       :         const p=point(su,sv,childFootprint);
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 297
+Line       :       },u,v,n,LOD_FOOTPRINT.k)));
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 311
+Line       :     const c=point((cx+.5)/n,(cy+.5)/n,childFootprint);meta.centre(cx+.5,cy+.5,c.height,c.sample);
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 326
+Line       :   // footprint. A hydrology-adjacent boundary, or a neighbour that has not
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 334
+Line       :   const skirtDepthM=Math.max(.25,Math.min(boundaryMorphErrorM,childFootprint,40)+.25),skirt=skirtDepthM/bo
+             dy.radiusM;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 352
+Line       :   const width = textureSize + 2, color = footprintActive(body.radiusM,tile.level,'colour')?footprintTexels
+             ((u,v)=>{
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 354
+Line       :     return s.wet?substrateColor(regionalBankWeights(body,s,classify(d,s.groundHeightM,1).weights)):s.color
+             ;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 355
+Line       :   },textureSize,LOD_FOOTPRINT.k):new Uint8Array(width * width * 4);
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 356
+Line       :   if(!footprintActive(body.radiusM,tile.level,'colour'))for (let y = 0; y < width; y++) for (let x = 0; x 
+             < width; x++) {
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 361
+Line       :     // bed colour, and use a deliberately inexpensive radial classification:
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 364
+Line       :     const rgb=s.wet?substrateColor(regionalBankWeights(body,s,classify(d,s.groundHeightM,1).weights)):s.co
+             lor.map(Math.floor);
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 365
+Line       :     color.set([...rgb,255], (y * width + x) * 4);
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 383
+Line       :     const u=x/n,v=y/n,d=point(u,v,childFootprint).direction,sea=d.map(value=>value*seaRadius) as V3;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 388
+Line       :       const dir=(i:number,j:number)=>point(i*2/n,j*2/n,childFootprint).direction;
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+IgnoreCase : True
+LineNumber : 395
+Line       :   return { tile, anchor, positions: new Float32Array(positions), parents: new Float32Array(parents), surfa
+             ceHeight:new Float32Array(surfaceHeight), parentHeight:new Float32Array(parentHeight), normals: new Float3
+             2Array(normals), materials:new Uint8Array(materials), surfaceRoughness:new Float32Array(surfaceRoughness),
+              uvs: new Float32Array(uvs), indices: new Uint16Array(indices), color, width, skirtDepthM, meta:metadata, 
+             oceanPositions:oceanPositions&&new Float32Array(oceanPositions), oceanParents:oceanParents&&new Float32Arr
+             ay(oceanParents) };
+Filename   : InputStream
+Path       : InputStream
+Pattern    : colour|color|footprint
+Context    : Microsoft.PowerShell.Commands.MatchInfoContext
+Matches    : {0}
+
+
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content test-results/mountains/M0-v3/sweep-all-pairs.log,test-results/mountains/M0-v3/attribution.log,test-results/mountains/M0-v3/grain-only-filters.log,test-results/mountains/M0-v3/ls-l5-pair.log; Get-Content test-results/mountains/M0-v3/corner-L7.log -TotalCount 44; rg -n -A 35 '### 2.0' docs/mountains-design-2026-10-04.md; Get-ChildItem test-results/mountains/M0-v2/harness -Name; Get-ChildItem -Force -Name AGENTS.md" in C:\LLM\IWSDK\universe-atlas-wt\m0c
+ exited 1 in 116ms:
+Maithea point vs buildTile byte mismatches 0 of 1014000
+Maithea   point          20.922 / 11.323 / 4.832 / 1.963 1.0s
+Maithea   corner_L67     12.948 / 11.860 / 7.728 / 1.963 1.6s
+Maithea   corner_L678    12.948 / 11.860 / 5.996 / 3.070 2.0s
+Maithea   corner_L5to9   20.128 / 11.860 / 5.996 / 2.550 2.6s
+Maithea   corner_L6      12.948 / 16.396 / 4.832 / 1.963 1.4s
+Maithea   corner_L56     20.128 / 16.396 / 4.832 / 1.963 2.4s
+Maithea   corner_L567    20.128 / 11.860 / 7.728 / 1.963 2.8s
+Maithea   box2_L67       17.804 / 10.462 / 5.438 / 1.963 2.8s
+Maithea   box2_L5to9     18.097 / 10.462 / 4.920 / 2.001 4.3s
+Maithea   box4_L678      17.402 / 10.492 / 4.976 / 2.208 11.1s
+Maithea   box8_L67       17.307 / 10.478 / 5.669 / 1.963 33.2s
+Maithea   box8_L678      17.307 / 10.478 / 4.983 / 2.230 47.0s
+Maithea   box8_L5to9     17.918 / 10.478 / 4.983 / 2.020 77.7s
+Maithea   tent3_L678     11.037 / 12.653 / 6.986 / 4.055 3.9s
+Maithea   bspl_L678      9.611 / 13.769 / 7.775 / 4.960 5.9s
+Maithea   box2_L6        17.804 / 12.030 / 4.832 / 1.963 2.2s
+Maithea   box8_L6        17.307 / 12.436 / 4.832 / 1.963 16.6s
+Lethuris point vs buildTile byte mismatches 0 of 1014000
+Lethuris  point          27.238 / 17.152 / 9.481 / 4.033 1.4s
+Lethuris  corner_L67     16.034 / 13.421 / 12.870 / 4.033 2.5s
+Lethuris  corner_L678    16.034 / 13.421 / 8.998 / 6.790 2.8s
+Lethuris  corner_L5to9   20.356 / 13.421 / 8.998 / 5.307 3.7s
+Lethuris  corner_L6      16.034 / 20.797 / 9.481 / 4.033 1.8s
+Lethuris  corner_L56     20.356 / 20.797 / 9.481 / 4.033 2.5s
+Lethuris  corner_L567    20.356 / 13.421 / 12.870 / 4.033 2.9s
+Lethuris  box2_L67       21.303 / 13.333 / 9.959 / 4.033 2.9s
+Lethuris  box2_L5to9     19.169 / 13.333 / 8.757 / 4.273 5.3s
+Lethuris  box4_L678      20.588 / 13.073 / 8.663 / 4.877 10.0s
+Lethuris  box8_L67       20.431 / 13.054 / 10.250 / 4.033 25.7s
+Lethuris  box8_L678      20.431 / 13.054 / 8.656 / 4.910 32.9s
+Maithea   point          L6->7 11.323 [s11.2 t3.2 c10.3 r14.5]  L7->8 4.832 [s5.2 t1.5 c1.5 r6.2] 0.7s
+Maithea   corner67       L6->7 11.860 [s11.3 t2.9 c8.3 r16.1]  L7->8 7.728 [s8.2 t2.3 c3.9 r9.3] 1.4s
+Maithea   box8_678       L6->7 10.478 [s10.1 t3.0 c8.6 r13.5]  L7->8 4.983 [s5.3 t1.6 c2.0 r5.9] 46.5s
+Maithea   noLG_point     L6->7 10.097 [s9.6 t1.2 c10.7 r13.4]  L7->8 4.305 [s4.8 t1.0 c0.8 r5.8] 0.9s
+Maithea   noLG_corner    L6->7 10.727 [s10.1 t1.3 c7.8 r15.0]  L7->8 5.050 [s5.9 t1.0 c2.9 r6.0] 2.2s
+Maithea   noLG_box8      L6->7 9.083 [s8.6 t1.2 c8.3 r12.5]  L7->8 4.288 [s4.8 t1.0 c1.0 r5.3] 51.3s
+Lethuris  point          L6->7 17.152 [s16.5 t18.7 c10.2 r18.4]  L7->8 9.481 [s10.2 t9.8 c0.0 r10.3] 0.9s
+Lethuris  corner67       L6->7 13.421 [s12.0 t13.4 c6.9 r17.9]  L7->8 12.870 [s12.7 t14.3 c0.0 r13.9] 1.7s
+Lethuris  box8_678       L6->7 13.054 [s11.6 t14.0 c6.7 r15.7]  L7->8 8.656 [s8.6 t9.1 c0.0 r9.6] 47.3s
+Lethuris  noLG_point     L6->7 14.280 [s11.6 t16.8 c4.0 r15.3]  L7->8 7.023 [s6.6 t9.2 c0.0 r7.2] 0.9s
+Lethuris  noLG_corner    L6->7 12.490 [s10.4 t12.8 c6.7 r17.0]  L7->8 7.923 [s7.3 t9.2 c0.0 r8.6] 2.1s
+Lethuris  noLG_box8      L6->7 12.219 [s10.0 t13.3 c5.8 r14.5]  L7->8 6.969 [s6.5 t8.5 c0.0 r7.1] 51.3s
+Maithea   lg-point   L5->6 20.922  L6->7 11.323  L7->8 4.832  L8->9 1.963
+Maithea   lg-box2    L5->6 19.886  L6->7 11.082  L7->8 5.000  L8->9 2.025
+Maithea   lg-box4    L5->6 19.850  L6->7 11.070  L7->8 5.021  L8->9 2.041
+Maithea   lg-tentH   L5->6 19.714  L6->7 11.012  L7->8 5.136  L8->9 2.117
+Maithea   lg-bsplH   L5->6 19.608  L6->7 10.945  L7->8 5.277  L8->9 2.194
+Maithea   lg-tent1   L5->6 19.429  L6->7 10.824  L7->8 5.581  L8->9 2.438
+Lethuris  lg-point   L5->6 27.238  L6->7 17.152  L7->8 9.481  L8->9 4.033
+Lethuris  lg-box2    L5->6 25.898  L6->7 14.988  L7->8 8.866  L8->9 4.305
+Lethuris  lg-box4    L5->6 25.722  L6->7 14.927  L7->8 8.769  L8->9 4.345
+Lethuris  lg-tentH   L5->6 25.700  L6->7 14.787  L7->8 8.554  L8->9 4.547
+Lethuris  lg-bsplH   L5->6 25.614  L6->7 14.660  L7->8 8.335  L8->9 4.766
+Lethuris  lg-tent1   L5->6 25.565  L6->7 14.485  L7->8 8.046  L8->9 5.117
+exit 0
+Maithea   point    L5->6 20.922 L6->7 11.323
+Maithea   L6ls     L5->6 28.576 L6->7 8.746
+Maithea   L56ls    L5->6 24.035 L6->7 8.746
+Maithea   L5ls     L5->6 16.213 L6->7 11.323
+Lethuris  point    L5->6 27.238 L6->7 17.152
+Lethuris  L6ls     L5->6 33.715 L6->7 13.387
+Lethuris  L56ls    L5->6 29.713 L6->7 13.387
+Lethuris  L5ls     L5->6 21.057 L6->7 17.152
+exit 0
+CONTRACT: RGB and snow read buildTile bytes. Forest/name/carriedName/ocean use crossPair sampler point emulation.
+Heat maps: each row is one of 12 baseline tiles; BEFORE left, AFTER right. Black=0, red=32, yellow=64, white>=96 RGB Euclidean units.
+Maithea L6 BEFORE RGB p99 11.32251 snow 1.26147% point {"forest":0.42048929663608564,"name":3.1600407747196737,"carriedName":3.491335372069317,"ocean":0.13541666666666666}
+Maithea L6 AFTER RGB p99 11.85953 snow 1.01937% point {"forest":0.42048929663608564,"name":3.1600407747196737,"carriedName":3.491335372069317,"ocean":0.13541666666666666}
+Maithea L7 BEFORE RGB p99 4.83154 snow 0.81967% point {"forest":0.12295081967213115,"name":1.6666666666666667,"carriedName":1.8032786885245902,"ocean":0.041666666666666664}
+Maithea L7 AFTER RGB p99 7.72830 snow 1.09290% point {"forest":0.12295081967213115,"name":1.6666666666666667,"carriedName":1.8032786885245902,"ocean":0.041666666666666664}
+Maithea L8 BEFORE RGB p99 1.96254 snow 0.27778% point {"forest":0.013888888888888888,"name":0.7638888888888888,"carriedName":1.1666666666666667,"ocean":0}
+Maithea L8 AFTER RGB p99 1.96254 snow 0.27778% point {"forest":0.013888888888888888,"name":0.7638888888888888,"carriedName":1.1666666666666667,"ocean":0}
+Maithea: 2376 shared-edge material vertices checked; stored height/metadata/geometry buffers compared exactly.
+Maithea L6 retention [{"octave":[1,2],"coarse":7229453.178982555,"truth":15132000.32533466,"error":5533483.206201045,"retainedRms":0.6912013118280614,"errorPower":0.3656808807317195},{"octave":[2,4],"coarse":26814226.695339076,"truth":33443820.168844044,"error":4461897.925797438,"retainedRms":0.8954156869492699,"errorPower":0.13341472066501844},{"octave":[4,8],"coarse":97923056.60133266,"truth":102917984.89681678,"error":3107924.64727409,"retainedRms":0.9754316508167571,"errorPower":0.030198071312706173},{"octave":[8,16],"coarse":273611146.34992546,"truth":265531735.40951973,"error":2443090.0761755346,"retainedRms":1.0150996450265486,"errorPower":0.009200746089380419}]
+Maithea L8 retention [{"octave":[1,2],"coarse":347651.9619569579,"truth":854650.3835153208,"error":291000.75814745424,"retainedRms":0.6377905739223405,"errorPower":0.3404909934639228},{"octave":[2,4],"coarse":2747629.727401071,"truth":3468627.806555227,"error":263917.46052620636,"retainedRms":0.8900209972452927,"errorPower":0.07608699325636462},{"octave":[4,8],"coarse":10082485.262243014,"truth":9997892.12754268,"error":223811.03165731046,"retainedRms":1.0042216373696384,"errorPower":0.02238582181145413},{"octave":[8,16],"coarse":22557572.851665966,"truth":21852479.36603091,"error":168986.53768001497,"retainedRms":1.0160049524702581,"errorPower":0.0077330601644543815}]
+Lethuris L6 BEFORE RGB p99 17.15212 snow 2.11117% point {"forest":1.7637626937466595,"name":6.988241582041689,"carriedName":8.150721539283806,"ocean":0.03125}
+Lethuris L6 AFTER RGB p99 13.42136 snow 1.40299% point {"forest":1.7637626937466595,"name":6.988241582041689,"carriedName":8.150721539283806,"ocean":0.03125}
+Lethuris L7 BEFORE RGB p99 9.48107 snow 2.23611% point {"forest":1.8194444444444444,"name":3.5694444444444446,"carriedName":3.763888888888889,"ocean":0}
+Lethuris L7 AFTER RGB p99 12.87045 snow 2.73611% point {"forest":1.8194444444444444,"name":3.5694444444444446,"carriedName":3.763888888888889,"ocean":0}
+Lethuris L8 BEFORE RGB p99 4.03307 snow 0.95833% point {"forest":2.1666666666666665,"name":1.8472222222222223,"carriedName":1.6527777777777777,"ocean":0}
+Lethuris L8 AFTER RGB p99 4.03307 snow 0.95833% point {"forest":2.1666666666666665,"name":1.8472222222222223,"carriedName":1.6527777777777777,"ocean":0}
+Lethuris: 2376 shared-edge material vertices checked; stored height/metadata/geometry buffers compared exactly.
+Lethuris L6 retention [{"octave":[1,2],"coarse":7049266.470328014,"truth":15822414.559602445,"error":7482090.388549606,"retainedRms":0.667475891784513,"errorPower":0.47287917785018535},{"octave":[2,4],"coarse":19164396.205008518,"truth":23799273.478483733,"error":5512426.269190037,"retainedRms":0.8973579622961768,"errorPower":0.23162161963362746},{"octave":[4,8],"coarse":80293035.1357134,"truth":89815041.59619196,"error":4770327.201521776,"retainedRms":0.9455062408218708,"errorPower":0.05311278730982664},{"octave":[8,16],"coarse":310905292.6166279,"truth":299142434.7713453,"error":2698059.5389141818,"retainedRms":1.0194713972856624,"errorPower":0.009019313963184427}]
+Lethuris L8 retention [{"octave":[1,2],"coarse":1197040.214172206,"truth":2847045.9314878797,"error":935818.9590536915,"retainedRms":0.6484210923388113,"errorPower":0.32869823022652395},{"octave":[2,4],"coarse":8267459.512301226,"truth":9676266.066225383,"error":689746.3963248911,"retainedRms":0.9243408310040399,"errorPower":0.07128228922232958},{"octave":[4,8],"coarse":19941878.390240792,"truth":19496136.377780125,"error":524449.1033845742,"retainedRms":1.011366943650419,"errorPower":0.026900155662754405},{"octave":[8,16],"coarse":29285910.42967461,"truth":28088776.553830415,"error":325168.32869305054,"retainedRms":1.02108748488408,"errorPower":0.011576450404305983}]
+CONTRACT failures: 1
+Maithea L6 RGB ratio 1.0474294163997393 > 0.9
+exit 1
+316:### 2.0 M0: coarse reduction (LOD precondition, comes first)
+317-
+318-- **What.** Coarse colour texels and class-lattice weights become the footprint mean of K x K
+319-  sub-samples (K=2 measured as enough) at the levels where it measurably helps. In the proxy that
+320-  is L6; L8 got slightly worse. The level rule (L <= `peakCorrectionMaxLevel(R)`, or narrower) is set
+321-  by measurement in `buildTile`, not in the proxy. Heights keep the point sample plus the existing peak correction; the contract says
+322-  heights are only raised.
+323-- Each terrain band declares its shortest wavelength (see M2 and M3). The ladder can then report, per
+324-  level, which bands sit below Nyquist(L).
+325-- **Owner files:** `src/planet-tiles.ts` (colour and class grid hunks only), `src/lod-ladder.ts`
+326-  (reduction constants, `LOD_LADDER_VERSION` lod-ladder-2), `scripts/lod-consistency-report.mjs`
+327-  (footprint mode), `tests/lod-consistency.test.mjs` (ceilings, changed only after the owner's A3
+328-  answer), and the new `tests/lod-footprint.test.mjs`.
+329-- **Metrics and thresholds:**
+330-  1. *Structural (unit, exact):* on a synthetic colour field, a coarse texel equals the mean of its
+331-     K² sub-samples, bit-identical across visit order and processes.
+332-  2. *Reduction on main's own field (integration):* L6 RGB p99 at most 0.9 x the point value on
+333-     both Maithea and Lethuris, measured through `buildTile`. Proxy measurement: 0.86 and 0.67 at
+334-     K=2. The 0.9 leaves margin and still demands a real effect.
+335-  3. *Per-octave height retention*, on the coarse surface interpolated at a 4x denser grid against
+336-     the truth, octave by octave from the shared spectrum function:
+337-     - a retained RMS ratio of at least 0.9 for wavelengths of 4 Nyquist(L) or more;
+338-     - error power at most 0.25 of the truth power in the octave just above Nyquist(L), which is
+339-       what a coarse level may get wrong.
+340-
+341-     These two are proposed bounds, not measured; MTN-1 measures them on main first and records the
+342-     values before fixing the thresholds.
+343-  4. *Cost (benchmark):* build mean at most +10% per level (`LOD_BUDGETS.buildTimeGrowth`). Measure
+344-     K=2 against K=1. If it is over, apply the footprint only to the colour grid at L <= 7.
+345-- **Single-element render:** a coarse-against-child |RGB| difference heat map per level (PNG from
+346-  Node), point and footprint side by side, on the 12 test tiles.
+347-- **Must not depend on:** any mountain element, or the tile selection of a candidate field. The unit
+348-  test must not depend on the climate colour constants either. The integration check runs on
+349-  main's field, so M0 lands before any terrain change.
+350-
+351-### 2.1 M1: orogen layout (where ranges are; wavelengths of 200 km and more)
+cost-probe.mjs
+estimators-baseline.mjs
+exp.mjs
+grain-only-filters.mjs
+joint-l6-l7-ls.mjs
+l5-pair.mjs
+l6-only-kernels.mjs
+linear-light-r2.mjs
+ls-grain-decomposed.mjs
+ls-reduction.mjs
+ls.mjs
+one-sample-sharpen.mjs
+sweep-all-pairs.mjs
+two-sided-ls.mjs
+visual.mjs
+Get-ChildItem: 
+Line |
+   2 |  … s/mountains/M0-v2/harness -Name; Get-ChildItem -Force -Name AGENTS.md
+     |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Cannot find path 'C:\LLM\IWSDK\universe-atlas-wt\m0c\AGENTS.md' because it does not exist.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'node test-results/mountains/M0-v2/harness/sweep-all-pairs.mjs --validate point corner_L67 box8_L678' in C:\LLM\IWSDK\universe-atlas-wt\m0c
+codex
+The point spot-checks are matching buildTile, and the corner estimator reproduces the reported Maithea failure. I’m testing selective extra samples and grain attenuation next. I’ll distinguish candidates that pass the numerical checks from those that fail M0’s footprint-mean requirement.
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content test-results/mountains/M0-v2/harness/grain-only-filters.mjs; Get-Content test-results/mountains/M0-v2/harness/one-sample-sharpen.mjs; rg -n 'crossPairTile|function tex|rgbDiff' scripts/lod-consistency-report.mjs; Get-ChildItem test-results/mountains/M0-v3/astra -Name" in C:\LLM\IWSDK\universe-atlas-wt\m0c
+ succeeded in 63ms:
+import {setup,EST,metric,tiles,quantile} from './exp.mjs';
+const worlds=await setup();
+// base point at texel centre (colour/lg), grain replaced by a filtered grain: taps list [du,dv,w] in texels
+const box=K=>{const t=[];for(let j=0;j<K;j++)for(let i=0;i<K;i++)t.push([(i+.5)/K-.5,(j+.5)/K-.5,1]);return t;};
+const sep=(o)=>{const t=[];for(const [dy,wy] of o)for(const [dx,wx] of o)t.push([dx,dy,wx*wy]);return t;};
+const KERN={point:[[0,0,1]],box2:box(2),box4:box(4),tentH:sep([[-.5,1],[0,2],[.5,1]]),bsplH:sep([[-.75,1],[-.25,3],[.25,3],[.75,1]]),
+  tent1:sep([[-1,1],[-.5,2],[0,3],[.5,2],[1,1]])};
+const TAU=Number(process.env.TAU||0);
+const texFor=(w,t,kern)=>{if(TAU&&Math.PI/2*w.body.radiusM/2**t.level/128<TAU)kern=KERN.point;const size=128,W=size+2,out=new Uint8Array(W*W*4),sw=kern.reduce((s,k)=>s+k[2],0);
+  for(let y=0;y<W;y++)for(let x=0;x<W;x++){const d=tiles.tileDirection(t,(x-.5)/size,(y-.5)/size),s=w.ts(d),c=w.colourOf(d),p=(y*W+x)*4;
+    let f=1;if(!s.ocean&&!s.wet){const g=w.localGrain(d);let m=0;for(const [du,dv,k] of kern)m+=k*w.localGrain(tiles.tileDirection(t,(x-.5+du)/size,(y-.5+dv)/size));f=m/sw/g;}
+    for(let i=0;i<3;i++)out[p+i]=Math.floor(Math.max(0,Math.min(255,c[i]*f)));out[p+3]=255;}
+  return out;};
+const names=process.argv.slice(2).length?process.argv.slice(2):Object.keys(KERN);
+for(const [wname,w] of Object.entries(worlds)){
+  for(const kn of names){
+    const texCache=new Map(),tex=(t)=>{const k=tiles.tileKey(t);if(!texCache.has(k))texCache.set(k,texFor(w,t,KERN[kn]));return texCache.get(k);};
+    const res=[];for(const L of [5,6,7,8]){const all=[];for(const d of w.dirs){const P=tiles.directionTile(d,L),C=tiles.directionTile(d,L+1);all.push(...metric(tex(P),tex(C),P,C));}res.push(`L${L}->${L+1} ${quantile(all,.99).toFixed(3)}`);}
+    console.log(wname.padEnd(9),('lg-'+kn).padEnd(10),res.join('  '));
+  }
+}
+import {setup,EST,metric,tiles,quantile} from './exp.mjs';
+import {lsEstimator,lsCubicEstimator} from './ls.mjs';
+const worlds=await setup();
+EST.ls=lsEstimator();EST.lscub=lsCubicEstimator();
+EST.sh1=EST.taps([[-1,-1],[0,12],[1,-1]]);EST.sh2=EST.taps([[-1,-1],[0,6],[1,-1]]);
+const est=name=>name.startsWith('box')?EST.box(Number(name.slice(3))):EST[name];
+const configs={L6sh1:{6:'sh1',7:'point',8:'point'},L6sh2:{6:'sh2',7:'point',8:'point'}};
+for(const [wname,w] of Object.entries(worlds)){
+  for(const [cname,cfg] of Object.entries(configs)){
+    const texCache=new Map(),tex=(t)=>{const k=tiles.tileKey(t);if(!texCache.has(k))texCache.set(k,est(cfg[t.level])((u,v)=>w.colourOf(tiles.tileDirection(t,u,v),cfg.mode),128));return texCache.get(k);};
+    const all=[];for(const d of w.dirs){const P=tiles.directionTile(d,6),C=tiles.directionTile(d,7);all.push(...metric(tex(P),tex(C),P,C));}
+    console.log(wname.padEnd(9),cname.padEnd(14),'L6->7',quantile(all,.99).toFixed(3));
+  }
+}
+164:export function crossPairTile(m,body,ts,d,L,acc,cache=new Map()){
+220:        for(const d of dirs){heat.push(crossPairTile(m,body,m.terrainSampler(body),d,L,acc,caches[i]));crossPair(m,body,m.terrainSampler(body),m.biomeClassifier(body),d,L,point,{tileCache:caches[i]});}
+
+apply patch
+patch: completed
+C:\LLM\IWSDK\universe-atlas-wt\m0c\test-results\mountains\M0-v3\astra\probe.mjs
+diff --git a/test-results/mountains/M0-v3/astra/probe.mjs b/test-results/mountains/M0-v3/astra/probe.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..527282757bfb47f7be7b40cea10e5d5da044d6ab
+--- /dev/null
++++ b/test-results/mountains/M0-v3/astra/probe.mjs
+@@ -0,0 +1,20 @@
++import {setup,EST,metric,tiles,quantile} from '../../M0-v2/harness/exp.mjs';
++import * as draft from '../../../../../../src/planet-tiles.ts';
++const worlds=await setup();
++const W=130, N=W*W;
++const pack=a=>{const b=new Uint8Array(N*4);for(let p=0;p<N;p++){for(let c=0;c<3;c++)b[4*p+c]=Math.floor(Math.max(0,Math.min(255,a[3*p+c])));b[4*p+3]=255;}return b;};
++for(const [name,w] of Object.entries(worlds)){
++ let bad=0,n=0;
++ for(const d of w.dirs.slice(0,3))for(const L of [6,7]){const t=tiles.directionTile(d,L),a=draft.buildTile(w.body,t).color,b=EST.corner((u,v)=>w.colourOf(tiles.tileDirection(t,u,v)),128);n+=a.length;for(let i=0;i<a.length;i++)bad+=a[i]!==b[i];}
++ console.log(name,'draft corner byte mismatches',bad,'/',n);
++ const cache=new Map();
++ function data(t){const k=tiles.tileKey(t);if(cache.has(k))return cache.get(k);
++ const a=new Float64Array(N*3),g=new Float64Array(N).fill(1);
++ for(let y=0;y<W;y++)for(let x=0;x<W;x++){const p=y*W+x,d=tiles.tileDirection(t,(x-.5)/128,(y-.5)/128),s=w.ts(d),c=s.wet?w.colourOf(d):s.color;a.set(c,p*3);if(!s.ocean&&!s.wet)g[p]=w.localGrain(d);}
++ const rank=[];for(let y=1;y<W-1;y++)for(let x=1;x<W-1;x++){const p=y*W+x;let score=0;for(let c=0;c<3;c++){const v=4*a[p*3+c]-a[(p-1)*3+c]-a[(p+1)*3+c]-a[(p-W)*3+c]-a[(p+W)*3+c];score+=v*v;}rank.push([score,p]);}rank.sort((a,b)=>b[0]-a[0]);
++ const ad=a.slice();for(const [,p] of rank.slice(0,Math.floor(N*.05))){const x=p%W,y=Math.floor(p/W),v=[0,0,0];for(const dx of [-.25,.25])for(const dy of [-.25,.25]){const c=w.colourOf(tiles.tileDirection(t,(x-.5+dx)/128,(y-.5+dy)/128));for(let ch=0;ch<3;ch++)v[ch]+=c[ch]/4;}ad.set(v,p*3);}
++ const r={a,g,ad};cache.set(k,r);return r;}
++ const configs=[['adaptive6','ad',[6]],['adaptiveAll','ad',[5,6,7,8,9]],['grain0All',0,[5,6,7,8,9]],['grain025All',.25,[5,6,7,8,9]],['grain0L67',0,[6,7]],['grain0L678',0,[6,7,8]],['grain0L6',0,[6]]];
++ for(const [label,mode,levels] of configs){const tc=new Map();function tex(t){const k=tiles.tileKey(t);if(tc.has(k))return tc.get(k);const {a,g,ad}=data(t);let b=a;if(levels.includes(t.level)){if(mode==='ad')b=ad;else{b=a.slice();for(let p=0;p<N;p++)for(let c=0;c<3;c++)b[p*3+c]*=(1+mode*(g[p]-1))/g[p];}}const out=pack(b);tc.set(k,out);return out;}
++ const res=[];for(const L of [5,6,7,8]){const all=[];for(const d of w.dirs){const P=tiles.directionTile(d,L),C=tiles.directionTile(d,L+1);all.push(...metric(tex(P),tex(C),P,C));}res.push(quantile(all,.99).toFixed(5));}console.log(name,label,res.join(' / '));}
++}
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'node test-results/mountains/M0-v3/astra/probe.mjs' in C:\LLM\IWSDK\universe-atlas-wt\m0c
+ exited 1 in 54ms:
+node:internal/modules/esm/resolve:274
+    throw new ERR_MODULE_NOT_FOUND(
+          ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module 'C:\LLM\IWSDK\src\planet-tiles.ts' imported from C:\LLM\IWSDK\universe-atlas-wt\m0c\test-results\mountains\M0-v3\astra\probe.mjs
+    at finalizeResolution (node:internal/modules/esm/resolve:274:11)
+    at moduleResolve (node:internal/modules/esm/resolve:864:10)
+    at defaultResolve (node:internal/modules/esm/resolve:990:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:749:20)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:726:38)
+    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:312:38)
+    at #link (node:internal/modules/esm/module_job:208:49) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///C:/LLM/IWSDK/src/planet-tiles.ts'
+}
+
+Node.js v24.7.0
+
+diff --git a/test-results/mountains/M0-v3/astra/probe.mjs b/test-results/mountains/M0-v3/astra/probe.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..527282757bfb47f7be7b40cea10e5d5da044d6ab
+--- /dev/null
++++ b/test-results/mountains/M0-v3/astra/probe.mjs
+@@ -0,0 +1,20 @@
++import {setup,EST,metric,tiles,quantile} from '../../M0-v2/harness/exp.mjs';
++import * as draft from '../../../../../../src/planet-tiles.ts';
++const worlds=await setup();
++const W=130, N=W*W;
++const pack=a=>{const b=new Uint8Array(N*4);for(let p=0;p<N;p++){for(let c=0;c<3;c++)b[4*p+c]=Math.floor(Math.max(0,Math.min(255,a[3*p+c])));b[4*p+3]=255;}return b;};
++for(const [name,w] of Object.entries(worlds)){
++ let bad=0,n=0;
++ for(const d of w.dirs.slice(0,3))for(const L of [6,7]){const t=tiles.directionTile(d,L),a=draft.buildTile(w.body,t).color,b=EST.corner((u,v)=>w.colourOf(tiles.tileDirection(t,u,v)),128);n+=a.length;for(let i=0;i<a.length;i++)bad+=a[i]!==b[i];}
++ console.log(name,'draft corner byte mismatches',bad,'/',n);
++ const cache=new Map();
++ function data(t){const k=tiles.tileKey(t);if(cache.has(k))return cache.get(k);
++ const a=new Float64Array(N*3),g=new Float64Array(N).fill(1);
++ for(let y=0;y<W;y++)for(let x=0;x<W;x++){const p=y*W+x,d=tiles.tileDirection(t,(x-.5)/128,(y-.5)/128),s=w.ts(d),c=s.wet?w.colourOf(d):s.color;a.set(c,p*3);if(!s.ocean&&!s.wet)g[p]=w.localGrain(d);}
++ const rank=[];for(let y=1;y<W-1;y++)for(let x=1;x<W-1;x++){const p=y*W+x;let score=0;for(let c=0;c<3;c++){const v=4*a[p*3+c]-a[(p-1)*3+c]-a[(p+1)*3+c]-a[(p-W)*3+c]-a[(p+W)*3+c];score+=v*v;}rank.push([score,p]);}rank.sort((a,b)=>b[0]-a[0]);
++ const ad=a.slice();for(const [,p] of rank.slice(0,Math.floor(N*.05))){const x=p%W,y=Math.floor(p/W),v=[0,0,0];for(const dx of [-.25,.25])for(const dy of [-.25,.25]){const c=w.colourOf(tiles.tileDirection(t,(x-.5+dx)/128,(y-.5+dy)/128));for(let ch=0;ch<3;ch++)v[ch]+=c[ch]/4;}ad.set(v,p*3);}
++ const r={a,g,ad};cache.set(k,r);return r;}
++ const configs=[['adaptive6','ad',[6]],['adaptiveAll','ad',[5,6,7,8,9]],['grain0All',0,[5,6,7,8,9]],['grain025All',.25,[5,6,7,8,9]],['grain0L67',0,[6,7]],['grain0L678',0,[6,7,8]],['grain0L6',0,[6]]];
++ for(const [label,mode,levels] of configs){const tc=new Map();function tex(t){const k=tiles.tileKey(t);if(tc.has(k))return tc.get(k);const {a,g,ad}=data(t);let b=a;if(levels.includes(t.level)){if(mode==='ad')b=ad;else{b=a.slice();for(let p=0;p<N;p++)for(let c=0;c<3;c++)b[p*3+c]*=(1+mode*(g[p]-1))/g[p];}}const out=pack(b);tc.set(k,out);return out;}
++ const res=[];for(const L of [5,6,7,8]){const all=[];for(const d of w.dirs){const P=tiles.directionTile(d,L),C=tiles.directionTile(d,L+1);all.push(...metric(tex(P),tex(C),P,C));}res.push(quantile(all,.99).toFixed(5));}console.log(name,label,res.join(' / '));}
++}
+
+apply patch
+patch: completed
+C:\LLM\IWSDK\universe-atlas-wt\m0c\test-results\mountains\M0-v3\astra\probe.mjs
+diff --git a/test-results/mountains/M0-v3/astra/probe.mjs b/test-results/mountains/M0-v3/astra/probe.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..2a429499173a5e4ea13ee0ace7a9ab0742edc31a
+--- /dev/null
++++ b/test-results/mountains/M0-v3/astra/probe.mjs
+@@ -0,0 +1,20 @@
++import {setup,EST,metric,tiles,quantile} from '../../M0-v2/harness/exp.mjs';
++import * as draft from '../../../../src/planet-tiles.ts';
++const worlds=await setup();
++const W=130, N=W*W;
++const pack=a=>{const b=new Uint8Array(N*4);for(let p=0;p<N;p++){for(let c=0;c<3;c++)b[4*p+c]=Math.floor(Math.max(0,Math.min(255,a[3*p+c])));b[4*p+3]=255;}return b;};
++for(const [name,w] of Object.entries(worlds)){
++ let bad=0,n=0;
++ for(const d of w.dirs.slice(0,3))for(const L of [6,7]){const t=tiles.directionTile(d,L),a=draft.buildTile(w.body,t).color,b=EST.corner((u,v)=>w.colourOf(tiles.tileDirection(t,u,v)),128);n+=a.length;for(let i=0;i<a.length;i++)bad+=a[i]!==b[i];}
++ console.log(name,'draft corner byte mismatches',bad,'/',n);
++ const cache=new Map();
++ function data(t){const k=tiles.tileKey(t);if(cache.has(k))return cache.get(k);
++ const a=new Float64Array(N*3),g=new Float64Array(N).fill(1);
++ for(let y=0;y<W;y++)for(let x=0;x<W;x++){const p=y*W+x,d=tiles.tileDirection(t,(x-.5)/128,(y-.5)/128),s=w.ts(d),c=s.wet?w.colourOf(d):s.color;a.set(c,p*3);if(!s.ocean&&!s.wet)g[p]=w.localGrain(d);}
++ const rank=[];for(let y=1;y<W-1;y++)for(let x=1;x<W-1;x++){const p=y*W+x;let score=0;for(let c=0;c<3;c++){const v=4*a[p*3+c]-a[(p-1)*3+c]-a[(p+1)*3+c]-a[(p-W)*3+c]-a[(p+W)*3+c];score+=v*v;}rank.push([score,p]);}rank.sort((a,b)=>b[0]-a[0]);
++ const ad=a.slice();for(const [,p] of rank.slice(0,Math.floor(N*.05))){const x=p%W,y=Math.floor(p/W),v=[0,0,0];for(const dx of [-.25,.25])for(const dy of [-.25,.25]){const c=w.colourOf(tiles.tileDirection(t,(x-.5+dx)/128,(y-.5+dy)/128));for(let ch=0;ch<3;ch++)v[ch]+=c[ch]/4;}ad.set(v,p*3);}
++ const r={a,g,ad};cache.set(k,r);return r;}
++ const configs=[['adaptive6','ad',[6]],['adaptiveAll','ad',[5,6,7,8,9]],['grain0All',0,[5,6,7,8,9]],['grain025All',.25,[5,6,7,8,9]],['grain0L67',0,[6,7]],['grain0L678',0,[6,7,8]],['grain0L6',0,[6]]];
++ for(const [label,mode,levels] of configs){const tc=new Map();function tex(t){const k=tiles.tileKey(t);if(tc.has(k))return tc.get(k);const {a,g,ad}=data(t);let b=a;if(levels.includes(t.level)){if(mode==='ad')b=ad;else{b=a.slice();for(let p=0;p<N;p++)for(let c=0;c<3;c++)b[p*3+c]*=(1+mode*(g[p]-1))/g[p];}}const out=pack(b);tc.set(k,out);return out;}
++ const res=[];for(const L of [5,6,7,8]){const all=[];for(const d of w.dirs){const P=tiles.directionTile(d,L),C=tiles.directionTile(d,L+1);all.push(...metric(tex(P),tex(C),P,C));}res.push(quantile(all,.99).toFixed(5));}console.log(name,label,res.join(' / '));}
++}
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'node test-results/mountains/M0-v3/astra/probe.mjs' in C:\LLM\IWSDK\universe-atlas-wt\m0c
+ succeeded in 6737ms:
+Maithea draft corner byte mismatches 0 / 405600
+Maithea adaptive6 19.00175 / 12.14319 / 4.83154 / 1.96254
+Maithea adaptiveAll 19.93819 / 10.94750 / 4.97415 / 2.01556
+Maithea grain0All 19.14623 / 10.09699 / 4.30479 / 1.82324
+Maithea grain025All 19.27109 / 10.17676 / 4.35217 / 1.82003
+Maithea grain0L67 19.96814 / 10.09699 / 12.22350 / 1.96254
+Maithea grain0L678 19.96814 / 10.09699 / 4.30479 / 12.72792
+Maithea grain0L6 19.96814 / 14.36385 / 4.83154 / 1.96254
+Lethuris draft corner byte mismatches 0 / 405600
+Lethuris adaptive6 22.91927 / 17.84438 / 9.48107 / 4.03307
+Lethuris adaptiveAll 23.11368 / 15.70840 / 9.09627 / 4.16505
+Lethuris grain0All 25.42099 / 14.27957 / 7.02340 / 2.94812
+Lethuris grain025All 25.57381 / 14.37554 / 7.06803 / 2.96464
+Lethuris grain0L67 26.02260 / 14.27957 / 13.85641 / 4.03307
+Lethuris grain0L678 26.02260 / 14.27957 / 7.02340 / 13.71359
+Lethuris grain0L6 26.02260 / 16.56910 / 9.48107 / 4.03307
+
+diff --git a/test-results/mountains/M0-v3/astra/probe.mjs b/test-results/mountains/M0-v3/astra/probe.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..2a429499173a5e4ea13ee0ace7a9ab0742edc31a
+--- /dev/null
++++ b/test-results/mountains/M0-v3/astra/probe.mjs
+@@ -0,0 +1,20 @@
++import {setup,EST,metric,tiles,quantile} from '../../M0-v2/harness/exp.mjs';
++import * as draft from '../../../../src/planet-tiles.ts';
++const worlds=await setup();
++const W=130, N=W*W;
++const pack=a=>{const b=new Uint8Array(N*4);for(let p=0;p<N;p++){for(let c=0;c<3;c++)b[4*p+c]=Math.floor(Math.max(0,Math.min(255,a[3*p+c])));b[4*p+3]=255;}return b;};
++for(const [name,w] of Object.entries(worlds)){
++ let bad=0,n=0;
++ for(const d of w.dirs.slice(0,3))for(const L of [6,7]){const t=tiles.directionTile(d,L),a=draft.buildTile(w.body,t).color,b=EST.corner((u,v)=>w.colourOf(tiles.tileDirection(t,u,v)),128);n+=a.length;for(let i=0;i<a.length;i++)bad+=a[i]!==b[i];}
++ console.log(name,'draft corner byte mismatches',bad,'/',n);
++ const cache=new Map();
++ function data(t){const k=tiles.tileKey(t);if(cache.has(k))return cache.get(k);
++ const a=new Float64Array(N*3),g=new Float64Array(N).fill(1);
++ for(let y=0;y<W;y++)for(let x=0;x<W;x++){const p=y*W+x,d=tiles.tileDirection(t,(x-.5)/128,(y-.5)/128),s=w.ts(d),c=s.wet?w.colourOf(d):s.color;a.set(c,p*3);if(!s.ocean&&!s.wet)g[p]=w.localGrain(d);}
++ const rank=[];for(let y=1;y<W-1;y++)for(let x=1;x<W-1;x++){const p=y*W+x;let score=0;for(let c=0;c<3;c++){const v=4*a[p*3+c]-a[(p-1)*3+c]-a[(p+1)*3+c]-a[(p-W)*3+c]-a[(p+W)*3+c];score+=v*v;}rank.push([score,p]);}rank.sort((a,b)=>b[0]-a[0]);
++ const ad=a.slice();for(const [,p] of rank.slice(0,Math.floor(N*.05))){const x=p%W,y=Math.floor(p/W),v=[0,0,0];for(const dx of [-.25,.25])for(const dy of [-.25,.25]){const c=w.colourOf(tiles.tileDirection(t,(x-.5+dx)/128,(y-.5+dy)/128));for(let ch=0;ch<3;ch++)v[ch]+=c[ch]/4;}ad.set(v,p*3);}
++ const r={a,g,ad};cache.set(k,r);return r;}
++ const configs=[['adaptive6','ad',[6]],['adaptiveAll','ad',[5,6,7,8,9]],['grain0All',0,[5,6,7,8,9]],['grain025All',.25,[5,6,7,8,9]],['grain0L67',0,[6,7]],['grain0L678',0,[6,7,8]],['grain0L6',0,[6]]];
++ for(const [label,mode,levels] of configs){const tc=new Map();function tex(t){const k=tiles.tileKey(t);if(tc.has(k))return tc.get(k);const {a,g,ad}=data(t);let b=a;if(levels.includes(t.level)){if(mode==='ad')b=ad;else{b=a.slice();for(let p=0;p<N;p++)for(let c=0;c<3;c++)b[p*3+c]*=(1+mode*(g[p]-1))/g[p];}}const out=pack(b);tc.set(k,out);return out;}
++ const res=[];for(const L of [5,6,7,8]){const all=[];for(const d of w.dirs){const P=tiles.directionTile(d,L),C=tiles.directionTile(d,L+1);all.push(...metric(tex(P),tex(C),P,C));}res.push(quantile(all,.99).toFixed(5));}console.log(name,label,res.join(' / '));}
++}
+
+ succeeded in 98033ms:
+Maithea point vs buildTile byte mismatches 0 of 1014000
+Maithea   point          20.922 / 11.323 / 4.832 / 1.963 1.0s
+Maithea   corner_L67     12.948 / 11.860 / 7.728 / 1.963 1.9s
+Maithea   box8_L678      17.307 / 10.478 / 4.983 / 2.230 50.2s
+Lethuris point vs buildTile byte mismatches 0 of 1014000
+Lethuris  point          27.238 / 17.152 / 9.481 / 4.033 1.4s
+Lethuris  corner_L67     16.034 / 13.421 / 12.870 / 4.033 2.3s
+Lethuris  box8_L678      20.431 / 13.054 / 8.656 / 4.910 39.5s
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content scripts/lod-consistency-report.mjs | Select-Object -Skip 155 -First 51; Get-Content src/lod-ladder.ts | Select-String -Pattern 'footprintTexels|footprintActive|LOD_FOOTPRINT' -Context 0,15; Get-Content C:/LLM/IWSDK/universe-atlas/src/terrain.ts | Select-String -Pattern 'TERRAIN_LOCAL_GRAIN|TERRAIN_VERSION' -Context 0,5" in C:\LLM\IWSDK\universe-atlas-wt\m0c
+ succeeded in 48ms:
+
+// Stored-grid interpolation includes the exact last row/column at u or v = 1.
+function storedBilinear(grid,n,u,v){
+  const gx=u*n,gy=v*n,x=Math.min(n-1,Math.floor(gx)),y=Math.min(n-1,Math.floor(gy)),a=gx-x,b=gy-y,s=n+1;
+  return grid[y*s+x]*(1-a)*(1-b)+grid[y*s+x+1]*a*(1-b)+grid[(y+1)*s+x]*(1-a)*b+grid[(y+1)*s+x+1]*a*b;
+}
+
+/** Production texture and material bytes, not the sampler proxy used by crossPair. */
+export function crossPairTile(m,body,ts,d,L,acc,cache=new Map()){
+  const P=m.directionTile(d,L),C=m.directionTile(d,L+1),n=m.PATCH_SEGMENTS;
+  const build=t=>{const key=m.tileKey(t);if(!cache.has(key))cache.set(key,m.buildTile(body,t));return cache.get(key);};
+  const p=build(P),c=build(C),tp=p.width-2,tc=c.width-2,ox=C.x-P.x*2,oy=C.y-P.y*2,heat=[];
+  const tex=(u,v,ch)=>{
+    const gx=u*tp+.5,gy=v*tp+.5,x=Math.floor(gx),y=Math.floor(gy),a=gx-x,b=gy-y;
+    const at=(i,j)=>p.color[(j*p.width+i)*4+ch];
+    return at(x,y)*(1-a)*(1-b)+at(x+1,y)*a*(1-b)+at(x,y+1)*(1-a)*b+at(x+1,y+1)*a*b;
+  };
+  for(let y=1;y<=tc;y++)for(let x=1;x<=tc;x++){
+    const u=(ox+(x-.5)/tc)/2,v=(oy+(y-.5)/tc)/2,idx=(y*c.width+x)*4;
+    const delta=Math.hypot(...[0,1,2].map(ch=>tex(u,v,ch)-c.color[idx+ch]));acc.rgb.push(delta);heat.push(delta);
+  }
+  const snow=Array.from({length:(n+1)**2},(_,i)=>p.materials[i*4+3]/255);
+  for(let y=0;y<=n;y++)for(let x=0;x<=n;x++){
+    if(x%2===0&&y%2===0)continue;
+    if(ts(m.tileDirection(C,x/n,y/n)).groundHeightM<0)continue;
+    acc.land++;if((storedBilinear(snow,n,(ox+x/n)/2,(oy+y/n)/2)>.5)!==(c.materials[(y*(n+1)+x)*4+3]/255>.5))acc.snow++;
+  }
+  return heat;
+}
+
+function heightPowers(m,body,ts,dirs,L,cache){
+  const N=nyquistWavelengthM(body.radiusM,L),step=tileEdgeM(body.radiusM,L)/128;
+  const sums=Array.from({length:4},()=>({coarse:0,truth:0,error:0}));
+  for(const d of dirs){
+    const t=m.directionTile(d,L),data=cache.get(m.tileKey(t))||m.buildTile(body,t);
+    const coarse=new Float64Array(129*129),truth=new Float64Array(129*129);
+    for(let y=0;y<=128;y++)for(let x=0;x<=128;x++){
+      const i=y*129+x;coarse[i]=storedBilinear(data.surfaceHeight,32,x/128,y/128);
+      truth[i]=ts(m.tileDirection(t,x/128,y/128)).groundHeightM;
+    }
+    // All 129 rows and columns, first 128 samples (FFT excludes the duplicate endpoint).
+    for(let axis=0;axis<2;axis++)for(let line=0;line<=128;line++){
+      const c=[],t=[],e=[];for(let j=0;j<128;j++){const i=axis?j*129+line:line*129+j;c.push(coarse[i]);t.push(truth[i]);e.push(coarse[i]-truth[i]);}
+      const powers={coarse:bandPowers(c,step),truth:bandPowers(t,step),error:bandPowers(e,step)};
+      for(let b=0;b<4;b++)for(const key of ['coarse','truth','error'])sums[b][key]+=powers[key].octave(N*2**b,N*2**(b+1));
+    }
+  }
+  return sums.map((s,b)=>({octave:[2**b,2**(b+1)],...s,retainedRms:Math.sqrt(s.coarse/s.truth),errorPower:s.error/s.truth}));
+}
+
+async function footprintReport(args,after,before){
+
+> export const LOD_FOOTPRINT = Object.freeze({k:2,placement:'corner',colourMaxLevel:7,classMaxLevel:7});
+  /** Main misses the proposed .25 near-Nyquist error bound; outward .01 guards.
+   * Both long-wave octaves meet the proposed retained RMS bound .9. */
+  export const LOD_HEIGHT_RETENTION = Object.freeze({
+    retainedRmsMin:Object.freeze([null,null,.9,.9]),
+    nearNyquistErrorMax:Object.freeze({
+      Maithea:Object.freeze({6:.37,8:.35}),
+      Lethuris:Object.freeze({6:.48,8:.33}),
+    }),
+  });
+> export function footprintActive(_radiusM:number,level:number,kind:'colour'|'class'):boolean {
+>   return level <= (kind==='colour'?LOD_FOOTPRINT.colourMaxLevel:LOD_FOOTPRINT.classMaxLevel);
+  }
+  type Field=(u:number,v:number)=>number[];
+  /** Fixed row-major sum; the callback supplies unquantised channel values. */
+  export function footprintWeights(at:Field,u:number,v:number,size:number,k=2):number[] {
+    if(k!==1&&k!==2)throw new RangeError('Footprint K must be 1 or 2');
+    const sum=[0,0,0,0];
+    for(let j=0;j<k;j++)for(let i=0;i<k;i++){
+      const dx=k===1?0:i-.5,dy=k===1?0:j-.5;
+      const w=at(u+dx/size,v+dy/size);
+      for(let c=0;c<4;c++)sum[c]+=w[c];
+    }
+    return sum.map(w=>w/(k*k));
+  }
+  /** Half-texel gutter convention; corner samples share one (T+3)^2 grid. */
+> export function footprintTexels(at:Field,size:number,k=2):Uint8Array {
+    if(k!==1&&k!==2)throw new RangeError('Footprint K must be 1 or 2');
+    const width=size+2,out=new Uint8Array(width*width*4);
+    if(k===2){
+      const stride=width+1,grid=new Float64Array(stride*stride*3);
+      for(let y=0;y<stride;y++)for(let x=0;x<stride;x++)grid.set(at((x-1)/size,(y-1)/size),(y*stride+x)*3);
+      for(let y=0;y<width;y++)for(let x=0;x<width;x++){
+        const p=(y*stride+x)*3,q=(y*width+x)*4;
+        for(let c=0;c<3;c++)out[q+c]=Math.floor((grid[p+c]+grid[p+3+c]+grid[p+stride*3+c]+grid[p+stride*3+3+c])/4);
+        out[q+3]=255;
+      }
+    }else for(let y=0;y<width;y++)for(let x=0;x<width;x++){
+      const rgb=at((x-.5)/size,(y-.5)/size),p=(y*width+x)*4;
+      for(let c=0;c<3;c++)out[p+c]=Math.floor(rgb[c]);out[p+3]=255;
+    }
+    return out;
+> // (TERRAIN_LOCAL_GRAIN) so it no longer dominates the coarse LOD colour error.
+  // Heights, the ocean flag, classes, dry worlds, ocean colours,
+  // baseTerrainSampler and the legacy grain are unchanged; no mountain belt is
+  // wired (that is the later terrain-1.9.0 assembly).
+> export const TERRAIN_VERSION = "terrain-1.8.1-grain";
+  /**
+   * terrain-1.8.1: the 800 m local colour grain of water-world LAND colour (the
+   * climate colour path of terrainSampler): localGrain = BASE + n(d, R/CELL_M, 74) x
+   * AMPLITUDE, mean 1 (n has mean .5). terrain-1.8.0 used .88 + n x .24 (+-12%);
+   * that grain sits at the colour Nyquist of the coarse levels and was about half
+> export const TERRAIN_LOCAL_GRAIN = Object.freeze({CELL_M: 800, BASE: .952, AMPLITUDE: .096});
+  export {LANDFORM_SHAPE_VERSION};
+  /** The climate model whose fields the water-world land colour reads. */
+  export const TERRAIN_CLIMATE_VERSION = CLIMATE_VERSION;
+  export {REGIONAL_LANDFORM_VERSION};
+  /** @deprecated terrain-1.8.0: the orbit relief texture is encoded over the
+>  * sha256(JSON.stringify(RELIEF_CALIBRATION)); changing one is a TERRAIN_VERSION
+   * bump. Names follow the plan: HC land compression, HUP/HHI upland and high
+   * plateau steps over B1..B2 / B3..B4 of the raw continental metres, KB the
+   * ridge-belt gain (belt mask BT0..BT1 on ridges^5), HM0..HM1 the upland factor
+   * of the new floor and WLOW the plains share of the detail window; HS shelf
+   * compression, HAB abyssal step (A1..A2), HTR trench step (A3..A4); SEABED_*
+>    * reapplies it with TERRAIN_LOCAL_GRAIN without a second noise call. */
+    localGrainNoise: number;
+    /** R0, only when the core is built with exposeFloor. */
+    floorM?: number; continentalM?: number;
+    /** Relief diagnostics (exposeFloor only): the floor WITHOUT the seabed detail
+     * (equal to floorM on land and on dry worlds). */
+>     // noise value is kept for terrain-1.8.1's water-land colour (TERRAIN_LOCAL_GRAIN).
+      const localGrainNoise = ocean ? 0 : n(d, body.radiusM / 800, 74);
+      const localGrain = ocean ? 1 : .88 + localGrainNoise * .24;
+      const out: CoreSample = {
+        elevationM,
+        ocean,
+>   // terrain-1.8.1: the water-land colour takes the reduced TERRAIN_LOCAL_GRAIN on
+    // the same 800 m noise (the base core's own value where it saw land).
+>   const localGrainF = body.radiusM / TERRAIN_LOCAL_GRAIN.CELL_M;
+>   const LG_BASE = TERRAIN_LOCAL_GRAIN.BASE, LG_AMP = TERRAIN_LOCAL_GRAIN.AMPLITUDE;
+    const { n: grainNoise } = macroNoise(body);
+    const applyGrain = (c: number[], grain: number, localGrain: number) => {
+      // In place on a fresh array; the same clamp(v * grain * localGrain)
+      // expression, in the same order, that baseTerrainSampler applies.
+      for (let i = 0; i < 3; i++) c[i] = clamp(c[i] * grain * localGrain, 0, 255);
+>       // the reduced TERRAIN_LOCAL_GRAIN; baseTerrainSampler keeps .88/.24).
+        const localGrain = LG_BASE + (sample.ocean ? grainNoise(d, localGrainF, 74) : sample.localGrainNoise) * LG_AMP;
+        surfaceColor = applyGrain(c, sample.grain, localGrain);
+      } else if (sample.color) surfaceColor = sample.color;
+      else surfaceColor = applyGrain(core.legacyWaterLandColour(d, sample.elevationM), sample.grain, sample.localGrain)
+;
+      const baseline:SurfaceSample = {
+>     version: TERRAIN_VERSION,
+      landFraction: landPixels / totalWeight,
+      /** The relief texture encoding: byte/255 * (reliefMaxM - reliefMinM) + reliefMinM. */
+      reliefMinM: reliefRange.minM,
+      reliefMaxM: reliefRange.maxM,
+    };
+
+
+diff --git a/test-results/mountains/M0-v3/astra/probe.mjs b/test-results/mountains/M0-v3/astra/probe.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..2a429499173a5e4ea13ee0ace7a9ab0742edc31a
+--- /dev/null
++++ b/test-results/mountains/M0-v3/astra/probe.mjs
+@@ -0,0 +1,20 @@
++import {setup,EST,metric,tiles,quantile} from '../../M0-v2/harness/exp.mjs';
++import * as draft from '../../../../src/planet-tiles.ts';
++const worlds=await setup();
++const W=130, N=W*W;
++const pack=a=>{const b=new Uint8Array(N*4);for(let p=0;p<N;p++){for(let c=0;c<3;c++)b[4*p+c]=Math.floor(Math.max(0,Math.min(255,a[3*p+c])));b[4*p+3]=255;}return b;};
++for(const [name,w] of Object.entries(worlds)){
++ let bad=0,n=0;
++ for(const d of w.dirs.slice(0,3))for(const L of [6,7]){const t=tiles.directionTile(d,L),a=draft.buildTile(w.body,t).color,b=EST.corner((u,v)=>w.colourOf(tiles.tileDirection(t,u,v)),128);n+=a.length;for(let i=0;i<a.length;i++)bad+=a[i]!==b[i];}
++ console.log(name,'draft corner byte mismatches',bad,'/',n);
++ const cache=new Map();
++ function data(t){const k=tiles.tileKey(t);if(cache.has(k))return cache.get(k);
++ const a=new Float64Array(N*3),g=new Float64Array(N).fill(1);
++ for(let y=0;y<W;y++)for(let x=0;x<W;x++){const p=y*W+x,d=tiles.tileDirection(t,(x-.5)/128,(y-.5)/128),s=w.ts(d),c=s.wet?w.colourOf(d):s.color;a.set(c,p*3);if(!s.ocean&&!s.wet)g[p]=w.localGrain(d);}
++ const rank=[];for(let y=1;y<W-1;y++)for(let x=1;x<W-1;x++){const p=y*W+x;let score=0;for(let c=0;c<3;c++){const v=4*a[p*3+c]-a[(p-1)*3+c]-a[(p+1)*3+c]-a[(p-W)*3+c]-a[(p+W)*3+c];score+=v*v;}rank.push([score,p]);}rank.sort((a,b)=>b[0]-a[0]);
++ const ad=a.slice();for(const [,p] of rank.slice(0,Math.floor(N*.05))){const x=p%W,y=Math.floor(p/W),v=[0,0,0];for(const dx of [-.25,.25])for(const dy of [-.25,.25]){const c=w.colourOf(tiles.tileDirection(t,(x-.5+dx)/128,(y-.5+dy)/128));for(let ch=0;ch<3;ch++)v[ch]+=c[ch]/4;}ad.set(v,p*3);}
++ const r={a,g,ad};cache.set(k,r);return r;}
++ const configs=[['adaptive6','ad',[6]],['adaptiveAll','ad',[5,6,7,8,9]],['grain0All',0,[5,6,7,8,9]],['grain025All',.25,[5,6,7,8,9]],['grain0L67',0,[6,7]],['grain0L678',0,[6,7,8]],['grain0L6',0,[6]]];
++ for(const [label,mode,levels] of configs){const tc=new Map();function tex(t){const k=tiles.tileKey(t);if(tc.has(k))return tc.get(k);const {a,g,ad}=data(t);let b=a;if(levels.includes(t.level)){if(mode==='ad')b=ad;else{b=a.slice();for(let p=0;p<N;p++)for(let c=0;c<3;c++)b[p*3+c]*=(1+mode*(g[p]-1))/g[p];}}const out=pack(b);tc.set(k,out);return out;}
++ const res=[];for(const L of [5,6,7,8]){const all=[];for(const d of w.dirs){const P=tiles.directionTile(d,L),C=tiles.directionTile(d,L+1);all.push(...metric(tex(P),tex(C),P,C));}res.push(quantile(all,.99).toFixed(5));}console.log(name,label,res.join(' / '));}
++}
+
+codex
+BLOCK-CONFIRMED
+
+Fidelity checks passed on `terrain-1.8.1-grain`:
+
+- Point versus buildTile: **0 mismatches / 2,028,000 bytes**, 30 tiles covering L5–L9 and both worlds.
+- Harness corner versus retained draft buildTile: **0 / 811,200 bytes**, 12 tiles at L6/L7.
+- Parent interpolation, gutters, child offsets and p99 aggregation match `crossPairTile`.
+
+Independently recomputed RGB p99 below. Each tuple is **L5→6 / L6→7 / L7→8 / L8→9**.
+
+| Estimator | Maithea | Lethuris |
+|---|---|---|
+| Point | 20.922 / 11.323 / 4.832 / 1.963 | 27.238 / 17.152 / 9.481 / 4.033 |
+| corner_L67 | 12.948 / 11.860 / 7.728 / 1.963 | 16.034 / 13.421 / 12.870 / 4.033 |
+| box8_L678 | 17.307 / 10.478 / 4.983 / 2.230 | 20.431 / 13.054 / 8.656 / 4.910 |
+
+Required L6→7: **≤10.19026 / ≤15.43691**. Corner fails Maithea and worsens both L7→8 pairs. Box8 fails Maithea, worsens its L7→8, and worsens both L8→9 pairs. `corner_L67` leaves L5 point-sampled; its L5 result is not the retained L≤7 draft’s result.
+
+My refutation attempts:
+
+| Estimator | Maithea | Lethuris |
+|---|---|---|
+| Adaptive quadrature, L6 | 19.002 / 12.143 / 4.832 / 1.963 | 22.919 / 17.844 / 9.481 / 4.033 |
+| Adaptive quadrature, L5–L9 | 19.938 / 10.948 / 4.974 / 2.016 | 23.114 / 15.708 / 9.096 / 4.165 |
+| Remove grain, L6 | 19.968 / 14.364 / 4.832 / 1.963 | 26.023 / 16.569 / 9.481 / 4.033 |
+| Remove grain, L6–L7 | 19.968 / 10.097 / 12.223 / 1.963 | 26.023 / 14.280 / 13.856 / 4.033 |
+| Remove grain, L6–L8 | 19.968 / 10.097 / 4.305 / 12.728 | 26.023 / 14.280 / 7.023 / 13.714 |
+| Remove grain, L5–L9 | 19.146 / 10.097 / 4.305 / 1.823 | 25.421 / 14.280 / 7.023 / 2.948 |
+| Retain 25% grain contrast, L5–L9 | 19.271 / 10.177 / 4.352 / 1.820 | 25.574 / 14.376 / 7.068 / 2.965 |
+
+Adaptive quadrature replaces the 845 highest-curvature texels per texture with four midpoint samples: **1.20 colour samples/texel**. Neither configuration passes; selection overhead would also need benchmarking.
+
+**There is a numerical loophole:** broad grain attenuation passes all four requested pair checks. But multiplying land colour by `[1+a(g−1)]/g`, with `a=0` or `0.25`, suppresses resolved grain rather than estimating its footprint mean. It fails M0’s literal structural requirement; limiting suppression to coarse levels exposes severe transition regressions. These are harness diagnostics, not buildTile-integrated or +10%-timing-certified candidates.
+
+Thus I found no qualifying footprint estimator—not a proof that none exists. Scratch reproduction: [probe.mjs](test-results/mountains/M0-v3/astra/probe.mjs).
+
+**Satisfied-by-grain: no.** Metric 2 compares reduction against point sampling on the same current field. Decision (b) explicitly requires rerunning M0 without threshold changes. Step G’s old→new ratios, **0.584 / 0.491**, cannot substitute for that comparison; unchanged point sampling scores **1.000 / 1.000** against the new baseline.
+
+No tracked files modified; no git, browser, GPU, download or npm test commands run.
+diff --git a/test-results/mountains/M0-v3/astra/probe.mjs b/test-results/mountains/M0-v3/astra/probe.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..2a429499173a5e4ea13ee0ace7a9ab0742edc31a
+--- /dev/null
++++ b/test-results/mountains/M0-v3/astra/probe.mjs
+@@ -0,0 +1,20 @@
++import {setup,EST,metric,tiles,quantile} from '../../M0-v2/harness/exp.mjs';
++import * as draft from '../../../../src/planet-tiles.ts';
++const worlds=await setup();
++const W=130, N=W*W;
++const pack=a=>{const b=new Uint8Array(N*4);for(let p=0;p<N;p++){for(let c=0;c<3;c++)b[4*p+c]=Math.floor(Math.max(0,Math.min(255,a[3*p+c])));b[4*p+3]=255;}return b;};
++for(const [name,w] of Object.entries(worlds)){
++ let bad=0,n=0;
++ for(const d of w.dirs.slice(0,3))for(const L of [6,7]){const t=tiles.directionTile(d,L),a=draft.buildTile(w.body,t).color,b=EST.corner((u,v)=>w.colourOf(tiles.tileDirection(t,u,v)),128);n+=a.length;for(let i=0;i<a.length;i++)bad+=a[i]!==b[i];}
++ console.log(name,'draft corner byte mismatches',bad,'/',n);
++ const cache=new Map();
++ function data(t){const k=tiles.tileKey(t);if(cache.has(k))return cache.get(k);
++ const a=new Float64Array(N*3),g=new Float64Array(N).fill(1);
++ for(let y=0;y<W;y++)for(let x=0;x<W;x++){const p=y*W+x,d=tiles.tileDirection(t,(x-.5)/128,(y-.5)/128),s=w.ts(d),c=s.wet?w.colourOf(d):s.color;a.set(c,p*3);if(!s.ocean&&!s.wet)g[p]=w.localGrain(d);}
++ const rank=[];for(let y=1;y<W-1;y++)for(let x=1;x<W-1;x++){const p=y*W+x;let score=0;for(let c=0;c<3;c++){const v=4*a[p*3+c]-a[(p-1)*3+c]-a[(p+1)*3+c]-a[(p-W)*3+c]-a[(p+W)*3+c];score+=v*v;}rank.push([score,p]);}rank.sort((a,b)=>b[0]-a[0]);
++ const ad=a.slice();for(const [,p] of rank.slice(0,Math.floor(N*.05))){const x=p%W,y=Math.floor(p/W),v=[0,0,0];for(const dx of [-.25,.25])for(const dy of [-.25,.25]){const c=w.colourOf(tiles.tileDirection(t,(x-.5+dx)/128,(y-.5+dy)/128));for(let ch=0;ch<3;ch++)v[ch]+=c[ch]/4;}ad.set(v,p*3);}
++ const r={a,g,ad};cache.set(k,r);return r;}
++ const configs=[['adaptive6','ad',[6]],['adaptiveAll','ad',[5,6,7,8,9]],['grain0All',0,[5,6,7,8,9]],['grain025All',.25,[5,6,7,8,9]],['grain0L67',0,[6,7]],['grain0L678',0,[6,7,8]],['grain0L6',0,[6]]];
++ for(const [label,mode,levels] of configs){const tc=new Map();function tex(t){const k=tiles.tileKey(t);if(tc.has(k))return tc.get(k);const {a,g,ad}=data(t);let b=a;if(levels.includes(t.level)){if(mode==='ad')b=ad;else{b=a.slice();for(let p=0;p<N;p++)for(let c=0;c<3;c++)b[p*3+c]*=(1+mode*(g[p]-1))/g[p];}}const out=pack(b);tc.set(k,out);return out;}
++ const res=[];for(const L of [5,6,7,8]){const all=[];for(const d of w.dirs){const P=tiles.directionTile(d,L),C=tiles.directionTile(d,L+1);all.push(...metric(tex(P),tex(C),P,C));}res.push(quantile(all,.99).toFixed(5));}console.log(name,label,res.join(' / '));}
++}
+
+tokens used
+52.025
+BLOCK-CONFIRMED
+
+Fidelity checks passed on `terrain-1.8.1-grain`:
+
+- Point versus buildTile: **0 mismatches / 2,028,000 bytes**, 30 tiles covering L5–L9 and both worlds.
+- Harness corner versus retained draft buildTile: **0 / 811,200 bytes**, 12 tiles at L6/L7.
+- Parent interpolation, gutters, child offsets and p99 aggregation match `crossPairTile`.
+
+Independently recomputed RGB p99 below. Each tuple is **L5→6 / L6→7 / L7→8 / L8→9**.
+
+| Estimator | Maithea | Lethuris |
+|---|---|---|
+| Point | 20.922 / 11.323 / 4.832 / 1.963 | 27.238 / 17.152 / 9.481 / 4.033 |
+| corner_L67 | 12.948 / 11.860 / 7.728 / 1.963 | 16.034 / 13.421 / 12.870 / 4.033 |
+| box8_L678 | 17.307 / 10.478 / 4.983 / 2.230 | 20.431 / 13.054 / 8.656 / 4.910 |
+
+Required L6→7: **≤10.19026 / ≤15.43691**. Corner fails Maithea and worsens both L7→8 pairs. Box8 fails Maithea, worsens its L7→8, and worsens both L8→9 pairs. `corner_L67` leaves L5 point-sampled; its L5 result is not the retained L≤7 draft’s result.
+
+My refutation attempts:
+
+| Estimator | Maithea | Lethuris |
+|---|---|---|
+| Adaptive quadrature, L6 | 19.002 / 12.143 / 4.832 / 1.963 | 22.919 / 17.844 / 9.481 / 4.033 |
+| Adaptive quadrature, L5–L9 | 19.938 / 10.948 / 4.974 / 2.016 | 23.114 / 15.708 / 9.096 / 4.165 |
+| Remove grain, L6 | 19.968 / 14.364 / 4.832 / 1.963 | 26.023 / 16.569 / 9.481 / 4.033 |
+| Remove grain, L6–L7 | 19.968 / 10.097 / 12.223 / 1.963 | 26.023 / 14.280 / 13.856 / 4.033 |
+| Remove grain, L6–L8 | 19.968 / 10.097 / 4.305 / 12.728 | 26.023 / 14.280 / 7.023 / 13.714 |
+| Remove grain, L5–L9 | 19.146 / 10.097 / 4.305 / 1.823 | 25.421 / 14.280 / 7.023 / 2.948 |
+| Retain 25% grain contrast, L5–L9 | 19.271 / 10.177 / 4.352 / 1.820 | 25.574 / 14.376 / 7.068 / 2.965 |
+
+Adaptive quadrature replaces the 845 highest-curvature texels per texture with four midpoint samples: **1.20 colour samples/texel**. Neither configuration passes; selection overhead would also need benchmarking.
+
+**There is a numerical loophole:** broad grain attenuation passes all four requested pair checks. But multiplying land colour by `[1+a(g−1)]/g`, with `a=0` or `0.25`, suppresses resolved grain rather than estimating its footprint mean. It fails M0’s literal structural requirement; limiting suppression to coarse levels exposes severe transition regressions. These are harness diagnostics, not buildTile-integrated or +10%-timing-certified candidates.
+
+Thus I found no qualifying footprint estimator—not a proof that none exists. Scratch reproduction: [probe.mjs](test-results/mountains/M0-v3/astra/probe.mjs).
+
+**Satisfied-by-grain: no.** Metric 2 compares reduction against point sampling on the same current field. Decision (b) explicitly requires rerunning M0 without threshold changes. Step G’s old→new ratios, **0.584 / 0.491**, cannot substitute for that comparison; unchanged point sampling scores **1.000 / 1.000** against the new baseline.
+
+No tracked files modified; no git, browser, GPU, download or npm test commands run.
+exit 0

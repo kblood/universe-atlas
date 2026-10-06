@@ -41,3 +41,6 @@ test-results/family-capture/**/source-snapshots/*.raw.bin -text
 
 # Immutable fauna revision paths contain SHA-256 hashes of exact bytes.
 public/assets/fauna/** -text whitespace=cr-at-eol
+
+# Byte-exact evidence copies; sha256 values in docs/evidence-index-2026-10-07.md refer to the original bytes.
+docs/evidence/2026-10-07/** -text

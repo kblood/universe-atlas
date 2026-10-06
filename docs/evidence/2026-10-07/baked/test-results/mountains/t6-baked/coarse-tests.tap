@@ -1,0 +1,40 @@
+(node:34764) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ private continental kernels are Object.is identical: 20,000 directions x four worlds (28.7776ms)
+✔ g² lemma on dense grid, and conservative composition with exact distances / zero margin (365.1553ms)
+✔ Maithea: sparse field bytes deterministic across independent builds and sample orders (207.0916ms)
+✔ Maithea: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (626.5642ms)
+ℹ INFO Maithea dense interpolation {"max":0.07681444290891326,"count":1266229,"worst":{"belt":21,"face":2,"i":272,"j":244,"u":0.9995966299808274,"exact":-0.0036011524139341056,"sd":-0.08041559532284737}}
+✔ Maithea: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (733.7043ms)
+ℹ INFO Maithea coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.02577347672099628,"p50":0,"p99":755.8003512331802,"max":2346.9077047788815}
+ℹ INFO zero-margin floor violations 3465
+✔ Maithea: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (29.6051ms)
+✔ Selawyn: sparse field bytes deterministic across independent builds and sample orders (228.6228ms)
+✔ Selawyn: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (1262.8499ms)
+ℹ INFO Selawyn dense interpolation {"max":0.06030445661613702,"count":2452374,"worst":{"belt":21,"face":4,"i":497,"j":527,"u":-0.9997647757615518,"exact":-0.07227775990745068,"sd":-0.1325822165235877}}
+✔ Selawyn: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (1414.8018ms)
+ℹ INFO Selawyn coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.0074170890519863475,"p50":0,"p99":768.9661833193425,"max":1835.9634213027116}
+ℹ INFO zero-margin floor violations 2864
+✔ Selawyn: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (41.2472ms)
+✔ Raiva: sparse field bytes deterministic across independent builds and sample orders (95.2111ms)
+✔ Raiva: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (196.2893ms)
+ℹ INFO Raiva dense interpolation {"max":0.03459423768171824,"count":244181,"worst":{"belt":0,"face":3,"i":159,"j":105,"u":0.9991003178766489,"exact":0.09876932216039144,"sd":0.13336355984210968}}
+✔ Raiva: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (863.8154ms)
+ℹ INFO Raiva coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.0012683949216088508,"p50":0,"p99":443.11310166671706,"max":1354.7088138869476}
+ℹ INFO zero-margin floor violations 3272
+✔ Raiva: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (32.7085ms)
+✔ Lethuris: sparse field bytes deterministic across independent builds and sample orders (382.9209ms)
+✔ Lethuris: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (1535.1364ms)
+ℹ INFO Lethuris dense interpolation {"max":0.05669792365650725,"count":2628977,"worst":{"belt":31,"face":3,"i":668,"j":424,"u":0.9994752181708975,"exact":0.09406038004537035,"sd":0.1507583037018776}}
+✔ Lethuris: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (1431.3758ms)
+ℹ INFO Lethuris coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.011451772768033525,"p50":0,"p99":739.9070997250874,"max":2086.321977227656}
+ℹ INFO zero-margin floor violations 3586
+✔ Lethuris: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (37.5067ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9721.6944

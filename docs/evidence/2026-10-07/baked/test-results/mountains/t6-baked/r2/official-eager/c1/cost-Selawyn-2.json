@@ -1,0 +1,39 @@
+{
+ "M1+M2+M3/Selawyn": {
+  "wired": "M1+M2+M3",
+  "world": "Selawyn",
+  "terrainVersion": "terrain-1.8.1-grain",
+  "main": "terrain-1.8.1-grain",
+  "node": "v24.7.0",
+  "inMassifLandShare": 0.0111,
+  "regionSamples": 1185800,
+  "sites": 8,
+  "mainRegionNs": 607.858998144712,
+  "branchWarmRegionNs": 1215.512396694214,
+  "warmRounds": [
+   1227.3188564682068,
+   1206.7416933715645,
+   1252.1961544948556,
+   1215.512396694214,
+   1200.6781076066793
+  ],
+  "inMassifWarmOverhead": 0.9996617643304819,
+  "branchColdRegionNs": 4021.1108955979084,
+  "coldBlockBuilds": 22,
+  "coldRegionMs": 4768.2405,
+  "coldInMassifOverhead": 5.615203374254581,
+  "outsideSamples": 19778,
+  "mainOutsideNs": 451.3803215692613,
+  "branchOutsideNs": 493.8568105975381,
+  "outsideOverhead": 0.09410354638545981,
+  "weightedResidentOverhead": 0.10758794627830426,
+  "sparse1000": {
+   "mainNs": 1021.6000000000349,
+   "branchColdNs": 2206672.7,
+   "blockBuilds": 15,
+   "ratio": 2160.0163469067393
+  },
+  "l0": null,
+  "sink": 19531207906.219055
+ }
+}

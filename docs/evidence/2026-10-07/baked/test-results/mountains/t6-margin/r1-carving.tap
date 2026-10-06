@@ -1,0 +1,39 @@
+✔ Maithea: cost optimisation preserves every coarse/switch tile buffer (1238.7488ms)
+✔ Selawyn: cost optimisation preserves every coarse/switch tile buffer (1145.3186ms)
+✔ Raiva: cost optimisation preserves every coarse/switch tile buffer (1266.8626ms)
+✔ Lethuris: cost optimisation preserves every coarse/switch tile buffer (1514.6822ms)
+✔ Maithea: cost optimisation preserves full sampler outputs at truth and L0..22 (1006.2989ms)
+✔ Selawyn: cost optimisation preserves full sampler outputs at truth and L0..22 (884.4949ms)
+✔ Raiva: cost optimisation preserves full sampler outputs at truth and L0..22 (1007.1261ms)
+✔ Lethuris: cost optimisation preserves full sampler outputs at truth and L0..22 (526.9684ms)
+✔ lod-ladder-2: carving starts at the first level with edge <= 128 km; constants pinned to their sources (0.3475ms)
+✔ staged wiring: off by default, the level changes nothing without mountains, carving state per option (2.9798ms)
+✔ mountainRidgeTermM: carve = false is the composition without C, an upper envelope of the carved term (319.7028ms)
+✔ Maithea: below the cut no block solve and an upper envelope; from the cut the truth (2974.0174ms)
+✔ Selawyn: below the cut no block solve and an upper envelope; from the cut the truth (2911.0146ms)
+✔ Raiva: below the cut no block solve and an upper envelope; from the cut the truth (2980.1718ms)
+✔ Lethuris: below the cut no block solve and an upper envelope; from the cut the truth (2968.6958ms)
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2009.2066ms)
+ℹ INFO Maithea C=2/6/33/54 N=2/5/17/27 edge 1: morph start 0.0067 m, seam 0.0064 m; mutant 891.1 / 135.4 m; mean step at the cut -178.2 m (min -1021.2 m)
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1696.2453ms)
+ℹ INFO Maithea (cube-face edge) C=0/6/0/6 N=4/5/31/3 edge 0: morph start 0.0041 m, seam 0.0038 m; mutant 137.0 / 3.8 m; mean step at the cut -13.7 m (min -205.4 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (1873.8358ms)
+ℹ INFO Selawyn C=0/7/112/107 N=0/6/55/53 edge 0: morph start 0.0057 m, seam 0.0034 m; mutant 1586.3 / 1301.1 m; mean step at the cut -508.3 m (min -1583.8 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1363.5622ms)
+ℹ INFO Selawyn (cube-face edge) C=0/7/127/53 N=5/6/0/26 edge 1: morph start 0.0058 m, seam 0.0050 m; mutant 1355.1 / 112.2 m; mean step at the cut -104.4 m (min -1266.4 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2037.1477ms)
+ℹ INFO Raiva C=1/5/19/25 N=1/4/9/13 edge 3: morph start 0.0056 m, seam 0.0052 m; mutant 473.4 / 250.7 m; mean step at the cut -100.9 m (min -542.6 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1733.6042ms)
+ℹ INFO Raiva (cube-face edge) C=0/5/0/5 N=4/4/15/2 edge 0: morph start 0.0054 m, seam 0.0044 m; mutant 1018.1 / 15.7 m; mean step at the cut -250.1 m (min -1094.5 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2018.1117ms)
+ℹ INFO Lethuris C=2/7/28/73 N=2/6/13/36 edge 0: morph start 0.0062 m, seam 0.0055 m; mutant 1795.3 / 527.8 m; mean step at the cut -479.5 m (min -1944.3 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1376.3656ms)
+ℹ INFO Lethuris (cube-face edge) C=0/7/0/105 N=4/6/63/52 edge 0: morph start 0.0048 m, seam 0.0029 m; mutant 1923.0 / 26.2 m; mean step at the cut -389.3 m (min -1923.0 m)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 35030.3519

@@ -1,0 +1,54 @@
+You are Astra, doing the ONE bounded fix round of route A round 2 in C:/LLM/IWSDK/universe-atlas-wt/baked (branch
+mountains/baked-coarse, HEAD 6079ea9; the uncommitted diff is your implement round: lazy per-block field). Same rules as
+test-results/mountains/t6-baked/r2/astra-implement-prompt.txt (read it again): no .git writes, no test-slot helper, no
+npm test / test:full, no network/downloads/browser/GPU, value-preserving only, no commit.
+
+## What the coordinator measured after your implement round (slotted, unofficial)
+- Lazy materialisation moves the node work into TIMED tile builds. The contract bench's warm build is one L6 tile; on
+  Selawyn/Lethuris (cut 7) the eager field used to be built inside that untimed warm build, now ~50-70 ms of block
+  builds land in the timed L0..L6 rounds. Contract bench, lazy branch, 2 fresh processes per world, max growth per
+  level: Maithea +6.9 / +12.0 %, Selawyn +10.6 / +10.9 %, Raiva +5.7 / +8.1 %, Lethuris +10.7 / +8.6 % (budget +10 %;
+  the eager branch was officially max +8.9 %). Your recomputation of shared nodes also made the total work larger
+  (materialise-all 64 / 70 ms vs eager 58 / 62 ms on Selawyn/Lethuris).
+- C1 is NOT for this round. The coordinator found that the C1 harness itself makes this branch's PLAIN sampler (no
+  mountain work at all) +2..+18 % slower outside than main's (A/A), depending on catalog-kernel JIT state; five
+  value-preserving truth/kernels variants were measured and none helps without breaking the contract bench. Do not
+  touch the truth path, terrainSampler, the kernels or constructionA0 in this round.
+
+## Goal: the field build itself must be fast enough EAGERLY
+Target: eager `layout.coarseBandField(48000,32000)` cold, fresh process, layout and T1 grid excluded, <= 40 ms on every
+world (official limit 50 ms; it will be the median of 15 fresh processes). Current eager: 35.6 / 57.8 / 13.7 / 61.5 ms
+(Maithea/Selawyn/Raiva/Lethuris); profile ~183k/199k projections at ~250 ns each (~47-51 ms) + ~18 ms other.
+
+1. Profile first (phases: active set + dilation; candidate selection; node phase; Float32 storage; whatever else),
+   report ms per phase per world, cold and second build.
+2. Make the node phase cheaper with BIT-IDENTICAL stored values: e.g. inline the node direction (coarseDirection) and
+   hoist per-block / per-row constants; hoist per-candidate belt fields (tangent, centre, pole components, uLimit,
+   wavelength, bendM, amplitudeM, noiseSeed, H, 1/H only if the stored value stays Object.is-identical - note
+   x/H and x*(1/H) differ, so keep the division) into locals or a SoA Float64Array; keep the left/below neighbour COPY
+   (it removes ~35-40 % of the projections); avoid the per-node `offset(b,u)` call overhead and repeated
+   offsetNoise cache misses where the same arithmetic can be reused (e.g. offset(b,u) at the start equals the
+   transverse loop's first offset at the same u - only reuse if the expression and operands are bit-identical);
+   make the hot loop monomorphic (one belt shape, typed arrays). transverse() itself must keep its arithmetic and
+   operation order; a specialised copy of it for the builder is fine if bit-identical (prove with the node-identity
+   check, 503,165 read nodes Object.is).
+3. Make the "other" phase cheaper (dilation via mark()/coarseDirection/bandCellIndex on face edges, candidate loop
+   over all belts per block, arrays built with push then Uint32Array.from, etc.), same outputs.
+4. Then choose: EAGER (preferred; remove the lazy path and its hot-path branch from baseTerrainCore, keep the
+   structure tests) if eager cold <= 40 ms on all four worlds in your measurement; otherwise keep lazy, but copy a
+   shared node from an already-built same-face neighbour (bit-identical, so order-independence holds) and report
+   both numbers. Say which you chose and why.
+
+## Identity and checks (as before)
+- r2/after.json must still byte-equal r2/before.json (`node test-results/mountains/t6-baked/fix-identity.mjs r2/after.json`).
+- `node test-results/mountains/t6-baked/fix-node-identity.mjs` (all read nodes Object.is vs r2/before-layout.txt).
+- `node test-results/mountains/t6-baked/r2/truth-identity.mjs`
+- `npx tsc --noEmit`
+- `node --test tests/mountain-coarse-field.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-envelope.test.mjs tests/terrain-mountains-assembly.test.mjs tests/lod-carving-reduction.test.mjs`
+- `git diff --check`
+- Update test-results/mountains/t6-baked/r2/field-bench.mjs if the API changes (keep its one-JSON-line output:
+  {world, coldMs, materialiseAllMs|null, bytes, activeCells}); run it 3 fresh processes per world, one at a time.
+
+## Answer (-o file, and also save as test-results/mountains/t6-baked/r2/astra-fix-handoff.md)
+Short and factual: phase profile before/after per world, what changed per file, eager or lazy and why, field-bench
+medians per world, identity results, every check with exit code, what you did not do. No commit.

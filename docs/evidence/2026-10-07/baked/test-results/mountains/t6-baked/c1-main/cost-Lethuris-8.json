@@ -1,0 +1,39 @@
+{
+ "M1+M2+M3/Lethuris": {
+  "wired": "M1+M2+M3",
+  "world": "Lethuris",
+  "terrainVersion": "terrain-1.8.1-grain",
+  "main": "terrain-1.8.1-grain",
+  "node": "v24.7.0",
+  "inMassifLandShare": 0.0116,
+  "regionSamples": 1185800,
+  "sites": 8,
+  "mainRegionNs": 500.6999494012477,
+  "branchWarmRegionNs": 1158.0243717321634,
+  "warmRounds": [
+   1165.2096474953628,
+   1169.660229381008,
+   1158.0243717321634,
+   1153.1942992072863,
+   1148.214876033058
+  ],
+  "inMassifWarmOverhead": 1.3128110420561545,
+  "branchColdRegionNs": 3996.7577163096644,
+  "coldBlockBuilds": 24,
+  "coldRegionMs": 4739.3623,
+  "coldInMassifOverhead": 6.982340963064026,
+  "outsideSamples": 19768,
+  "mainOutsideNs": 450.8751517603882,
+  "branchOutsideNs": 454.78045325774355,
+  "outsideOverhead": 0.0086616028452835,
+  "weightedResidentOverhead": 0.025439991009381657,
+  "sparse1000": {
+   "mainNs": 934.6000000000458,
+   "branchColdNs": 1899759.9000000001,
+   "blockBuilds": 13,
+   "ratio": 2032.6983736356804
+  },
+  "l0": null,
+  "sink": 11194007996.673613
+ }
+}

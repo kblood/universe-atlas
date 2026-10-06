@@ -1,0 +1,13 @@
+Maithea   lg-point   L5->6 20.922  L6->7 11.323  L7->8 4.832  L8->9 1.963
+Maithea   lg-box2    L5->6 19.886  L6->7 11.082  L7->8 5.000  L8->9 2.025
+Maithea   lg-box4    L5->6 19.850  L6->7 11.070  L7->8 5.021  L8->9 2.041
+Maithea   lg-tentH   L5->6 19.714  L6->7 11.012  L7->8 5.136  L8->9 2.117
+Maithea   lg-bsplH   L5->6 19.608  L6->7 10.945  L7->8 5.277  L8->9 2.194
+Maithea   lg-tent1   L5->6 19.429  L6->7 10.824  L7->8 5.581  L8->9 2.438
+Lethuris  lg-point   L5->6 27.238  L6->7 17.152  L7->8 9.481  L8->9 4.033
+Lethuris  lg-box2    L5->6 25.898  L6->7 14.988  L7->8 8.866  L8->9 4.305
+Lethuris  lg-box4    L5->6 25.722  L6->7 14.927  L7->8 8.769  L8->9 4.345
+Lethuris  lg-tentH   L5->6 25.700  L6->7 14.787  L7->8 8.554  L8->9 4.547
+Lethuris  lg-bsplH   L5->6 25.614  L6->7 14.660  L7->8 8.335  L8->9 4.766
+Lethuris  lg-tent1   L5->6 25.565  L6->7 14.485  L7->8 8.046  L8->9 5.117
+exit 0

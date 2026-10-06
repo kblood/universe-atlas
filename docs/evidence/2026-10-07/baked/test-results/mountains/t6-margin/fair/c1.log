@@ -1,0 +1,299 @@
+AB Maithea first=cand: in 100.4% out -3.0% WEIGHTED -0.56%
+AA Maithea first=ref: in 1.9% out 4.3% WEIGHTED 4.25%
+AB Selawyn first=cand: in 99.3% out 3.4% WEIGHTED 4.69%
+AA Selawyn first=ref: in -0.3% out -0.5% WEIGHTED -0.48%
+AB Raiva first=cand: in 111.2% out 5.7% WEIGHTED 7.82%
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Maithea C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":50064,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:32.913Z","token":"c8b6bb65-6d23-4523-86ba-dae73439c4dd"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Selawyn C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scra","pid":56516,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:06:48.993Z","token":"d2e65b4b-9666-43d4-938c-d5d76d78556f"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Raiva C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratc","pid":49584,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:04.962Z","token":"cc4937ba-e926-4a45-91b7-c053d2b4e8ff"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Raiva C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratc","pid":49584,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:04.962Z","token":"cc4937ba-e926-4a45-91b7-c053d2b4e8ff"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Raiva C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratc","pid":49584,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:04.962Z","token":"cc4937ba-e926-4a45-91b7-c053d2b4e8ff"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Raiva C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratc","pid":49584,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:04.962Z","token":"cc4937ba-e926-4a45-91b7-c053d2b4e8ff"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Raiva C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratc","pid":49584,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:04.962Z","token":"cc4937ba-e926-4a45-91b7-c053d2b4e8ff"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Raiva C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratc","pid":49584,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:04.962Z","token":"cc4937ba-e926-4a45-91b7-c053d2b4e8ff"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Raiva C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratc","pid":49584,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:04.962Z","token":"cc4937ba-e926-4a45-91b7-c053d2b4e8ff"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Raiva C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratc","pid":49584,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:04.962Z","token":"cc4937ba-e926-4a45-91b7-c053d2b4e8ff"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Raiva C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratc","pid":49584,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:04.962Z","token":"cc4937ba-e926-4a45-91b7-c053d2b4e8ff"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Raiva C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratc","pid":49584,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:04.962Z","token":"cc4937ba-e926-4a45-91b7-c053d2b4e8ff"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Raiva C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratc","pid":49584,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:04.962Z","token":"cc4937ba-e926-4a45-91b7-c053d2b4e8ff"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Raiva C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratc","pid":49584,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:04.962Z","token":"cc4937ba-e926-4a45-91b7-c053d2b4e8ff"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (10 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node test-results/mountains/t3/contract-build-bench.mjs Lethuris C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scr","pid":14628,"host":"DESKTOP-N09QOSU","time":"2026-10-06T11:07:16.411Z","token":"81a01620-8ab2-448c-a03b-3ca27dbbe3a9"} (5 s) - retry in 1 s
+AA Raiva first=ref: in -5.1% out 0.2% WEIGHTED 0.05%
+AB Lethuris first=cand: in 129.3% out 1.9% WEIGHTED 3.43%
+AA Lethuris first=ref: in -1.9% out -1.2% WEIGHTED -1.24%
+AA Maithea first=cand: in -3.1% out -0.2% WEIGHTED -0.29%
+AB Maithea first=ref: in 128.3% out 5.5% WEIGHTED 8.39%
+AA Selawyn first=cand: in 0.5% out -0.8% WEIGHTED -0.83%
+AB Selawyn first=ref: in 85.8% out -4.1% WEIGHTED -2.98%
+AA Raiva first=cand: in 2.8% out 0.2% WEIGHTED 0.27%
+AB Raiva first=ref: in 95.0% out -0.1% WEIGHTED 1.72%
+AA Lethuris first=cand: in 2.4% out 0.7% WEIGHTED 0.75%
+AB Lethuris first=ref: in 129.2% out 2.2% WEIGHTED 3.86%
+AB Maithea first=cand: in 113.8% out 5.5% WEIGHTED 8.00%
+AA Maithea first=ref: in -1.5% out 2.7% WEIGHTED 2.63%
+AB Selawyn first=cand: in 108.4% out 11.0% WEIGHTED 12.36%
+AA Selawyn first=ref: in 4.5% out 6.7% WEIGHTED 6.67%
+AB Raiva first=cand: in 90.7% out 1.2% WEIGHTED 2.94%
+AA Raiva first=ref: in -0.6% out -3.6% WEIGHTED -3.59%
+AB Lethuris first=cand: in 132.2% out 3.7% WEIGHTED 5.32%
+AA Lethuris first=ref: in -0.3% out 0.1% WEIGHTED 0.09%
+AA Maithea first=cand: in 2.7% out -3.2% WEIGHTED -3.03%
+AB Maithea first=ref: in 111.6% out 2.7% WEIGHTED 5.28%
+AA Selawyn first=cand: in -4.3% out -4.2% WEIGHTED -4.20%
+AB Selawyn first=ref: in 99.1% out 0.3% WEIGHTED 1.58%
+AA Raiva first=cand: in 2.3% out 0.1% WEIGHTED 0.15%
+AB Raiva first=ref: in 105.0% out 3.7% WEIGHTED 5.69%
+AA Lethuris first=cand: in 3.6% out 0.9% WEIGHTED 0.90%
+AB Lethuris first=ref: in 126.5% out 3.1% WEIGHTED 4.67%
+AB Maithea first=cand: in 113.2% out -0.1% WEIGHTED 2.54%
+AA Maithea first=ref: in -1.7% out 3.7% WEIGHTED 3.58%
+AB Selawyn first=cand: in 93.5% out -3.0% WEIGHTED -1.69%
+AA Selawyn first=ref: in -3.7% out -1.7% WEIGHTED -1.69%
+AB Raiva first=cand: in 93.8% out 41.6% WEIGHTED 42.60%
+AA Raiva first=ref: in 6.1% out 2.5% WEIGHTED 2.61%
+AB Lethuris first=cand: in 128.3% out 2.5% WEIGHTED 4.10%
+AA Lethuris first=ref: in -4.8% out -1.5% WEIGHTED -1.53%
+AA Maithea first=cand: in -0.1% out -0.2% WEIGHTED -0.21%
+AB Maithea first=ref: in 116.4% out 8.5% WEIGHTED 11.06%
+AA Selawyn first=cand: in -1.1% out -0.5% WEIGHTED -0.46%
+AB Selawyn first=ref: in 105.4% out 3.5% WEIGHTED 4.83%
+AA Raiva first=cand: in -7.5% out -7.3% WEIGHTED -7.29%
+AB Raiva first=ref: in 94.7% out -0.3% WEIGHTED 1.57%
+AA Lethuris first=cand: in 1.9% out 2.0% WEIGHTED 1.96%
+AB Lethuris first=ref: in 118.7% out 1.1% WEIGHTED 2.66%
+AB Maithea first=cand: in 113.4% out 0.7% WEIGHTED 3.30%
+AA Maithea first=ref: in 2.6% out 3.1% WEIGHTED 3.10%
+AB Selawyn first=cand: in 103.4% out 10.8% WEIGHTED 12.04%
+AA Selawyn first=ref: in -1.6% out -1.3% WEIGHTED -1.32%
+AB Raiva first=cand: in 88.1% out 2.2% WEIGHTED 3.96%
+AA Raiva first=ref: in 1.3% out 3.0% WEIGHTED 2.95%
+AB Lethuris first=cand: in 123.5% out 3.6% WEIGHTED 5.16%
+AA Lethuris first=ref: in -4.9% out -0.3% WEIGHTED -0.40%
+AA Maithea first=cand: in -1.4% out -1.2% WEIGHTED -1.23%
+AB Maithea first=ref: in 114.7% out -5.7% WEIGHTED -3.10%
+AA Selawyn first=cand: in -8.3% out -1.6% WEIGHTED -1.69%
+AB Selawyn first=ref: in 99.0% out -3.7% WEIGHTED -2.47%
+AA Raiva first=cand: in 0.7% out 2.1% WEIGHTED 2.10%
+AB Raiva first=ref: in 111.9% out 5.9% WEIGHTED 7.95%
+AA Lethuris first=cand: in 2.6% out 2.8% WEIGHTED 2.83%
+AB Lethuris first=ref: in 110.1% out -1.5% WEIGHTED 0.03%
+AB Maithea first=cand: in 120.2% out 6.8% WEIGHTED 9.54%
+AA Maithea first=ref: in 0.1% out 0.3% WEIGHTED 0.26%
+AB Selawyn first=cand: in 98.6% out -4.4% WEIGHTED -3.08%
+AA Selawyn first=ref: in 4.0% out 1.6% WEIGHTED 1.65%
+AB Raiva first=cand: in 93.9% out 2.3% WEIGHTED 4.11%
+AA Raiva first=ref: in -0.5% out -2.0% WEIGHTED -1.93%
+AB Lethuris first=cand: in 130.3% out 7.6% WEIGHTED 9.12%
+AA Lethuris first=ref: in -4.5% out 0.1% WEIGHTED -0.00%
+AA Maithea first=cand: in 1.1% out 0.9% WEIGHTED 0.89%
+AB Maithea first=ref: in 104.5% out 2.6% WEIGHTED 5.01%
+AA Selawyn first=cand: in -0.6% out -7.8% WEIGHTED -7.73%
+AB Selawyn first=ref: in 98.2% out 3.0% WEIGHTED 4.23%
+AA Raiva first=cand: in 0.9% out -0.4% WEIGHTED -0.39%
+AB Raiva first=ref: in 102.8% out 7.1% WEIGHTED 8.94%
+AA Lethuris first=cand: in 0.3% out -0.8% WEIGHTED -0.76%
+AB Lethuris first=ref: in 123.7% out -0.7% WEIGHTED 0.88%
+AB Maithea first=cand: in 110.6% out 9.1% WEIGHTED 11.48%
+AA Maithea first=ref: in 1.9% out -2.0% WEIGHTED -1.89%
+AB Selawyn first=cand: in 119.3% out -3.6% WEIGHTED -2.18%
+AA Selawyn first=ref: in -9.8% out -4.9% WEIGHTED -4.94%
+AB Raiva first=cand: in 101.2% out 0.9% WEIGHTED 2.78%
+AA Raiva first=ref: in -1.2% out 2.5% WEIGHTED 2.47%
+AB Lethuris first=cand: in 124.3% out -1.0% WEIGHTED 0.59%
+AA Lethuris first=ref: in -5.1% out -12.3% WEIGHTED -12.22%
+AA Maithea first=cand: in 2.1% out -0.3% WEIGHTED -0.20%
+AB Maithea first=ref: in 117.4% out 2.8% WEIGHTED 5.47%
+AA Selawyn first=cand: in 1.3% out -0.2% WEIGHTED -0.17%
+AB Selawyn first=ref: in 100.8% out 4.6% WEIGHTED 5.85%
+AA Raiva first=cand: in -1.8% out -0.6% WEIGHTED -0.66%
+AB Raiva first=ref: in 96.0% out 3.4% WEIGHTED 5.20%
+AA Lethuris first=cand: in -0.8% out 2.6% WEIGHTED 2.57%
+AB Lethuris first=ref: in 123.7% out 3.7% WEIGHTED 5.11%
+AB Maithea first=cand: in 101.4% out -4.3% WEIGHTED -1.78%
+AA Maithea first=ref: in 6.1% out 8.5% WEIGHTED 8.41%
+AB Selawyn first=cand: in 102.9% out -4.5% WEIGHTED -3.12%
+AA Selawyn first=ref: in 1.6% out -4.7% WEIGHTED -4.65%
+AB Raiva first=cand: in 103.0% out 3.1% WEIGHTED 5.09%
+AA Raiva first=ref: in 1.9% out 0.5% WEIGHTED 0.48%
+AB Lethuris first=cand: in 121.3% out 4.7% WEIGHTED 6.26%
+AA Lethuris first=ref: in -0.2% out 1.8% WEIGHTED 1.75%
+AA Maithea first=cand: in 7.1% out 3.4% WEIGHTED 3.50%
+AB Maithea first=ref: in 112.0% out 1.5% WEIGHTED 4.09%
+AA Selawyn first=cand: in 1.5% out 1.0% WEIGHTED 1.05%
+AB Selawyn first=ref: in 87.8% out -2.9% WEIGHTED -1.73%
+AA Raiva first=cand: in 1.4% out 2.0% WEIGHTED 1.98%
+AB Raiva first=ref: in 102.9% out -3.4% WEIGHTED -1.41%
+AA Lethuris first=cand: in 4.3% out 1.6% WEIGHTED 1.60%
+AB Lethuris first=ref: in 131.0% out 6.0% WEIGHTED 7.61%
+AB Maithea first=cand: in 117.5% out 7.5% WEIGHTED 10.10%
+AA Maithea first=ref: in -3.0% out -1.0% WEIGHTED -1.09%
+AB Selawyn first=cand: in 102.6% out 4.0% WEIGHTED 5.22%
+AA Selawyn first=ref: in -2.0% out -2.5% WEIGHTED -2.51%
+AB Raiva first=cand: in 95.2% out 0.6% WEIGHTED 2.44%
+AA Raiva first=ref: in -0.2% out -5.4% WEIGHTED -5.28%
+AB Lethuris first=cand: in 137.2% out 12.3% WEIGHTED 13.94%
+AA Lethuris first=ref: in 2.6% out 0.0% WEIGHTED 0.05%
+AA Maithea first=cand: in -5.2% out -5.1% WEIGHTED -5.09%
+AB Maithea first=ref: in 103.3% out 1.6% WEIGHTED 3.99%
+AA Selawyn first=cand: in -2.6% out 0.4% WEIGHTED 0.37%
+AB Selawyn first=ref: in 92.0% out -2.3% WEIGHTED -1.04%
+AA Raiva first=cand: in 2.2% out 1.3% WEIGHTED 1.27%
+AB Raiva first=ref: in 97.6% out 1.0% WEIGHTED 2.82%
+AA Lethuris first=cand: in 3.8% out -0.6% WEIGHTED -0.51%
+AB Lethuris first=ref: in 126.6% out 2.4% WEIGHTED 3.92%
+AB Maithea first=cand: in 131.4% out -0.8% WEIGHTED 2.27%
+AA Maithea first=ref: in 0.6% out 3.8% WEIGHTED 3.77%
+AB Selawyn first=cand: in 97.7% out 9.2% WEIGHTED 10.48%
+AA Selawyn first=ref: in -2.2% out -4.3% WEIGHTED -4.29%
+AB Raiva first=cand: in 98.5% out 1.9% WEIGHTED 3.78%
+AA Raiva first=ref: in -1.3% out 0.1% WEIGHTED 0.08%
+AB Lethuris first=cand: in 125.5% out -0.2% WEIGHTED 1.41%
+AA Lethuris first=ref: in -0.9% out -1.7% WEIGHTED -1.66%
+AA Maithea first=cand: in -2.8% out -0.5% WEIGHTED -0.58%
+AB Maithea first=ref: in 108.2% out -1.3% WEIGHTED 1.19%
+AA Selawyn first=cand: in 0.1% out -2.9% WEIGHTED -2.83%
+AB Selawyn first=ref: in 77.7% out -6.2% WEIGHTED -5.05%
+AA Raiva first=cand: in 4.6% out 1.7% WEIGHTED 1.77%
+AB Raiva first=ref: in 113.2% out 5.0% WEIGHTED 6.70%
+AA Lethuris first=cand: in 1.4% out 1.8% WEIGHTED 1.83%
+AB Lethuris first=ref: in 130.4% out 5.1% WEIGHTED 6.77%
+AB Maithea first=cand: in 115.7% out -0.9% WEIGHTED 1.71%
+AA Maithea first=ref: in 1.8% out 3.2% WEIGHTED 3.19%
+AB Selawyn first=cand: in 87.2% out 4.8% WEIGHTED 6.01%
+AA Selawyn first=ref: in -1.9% out -1.0% WEIGHTED -0.98%
+AB Raiva first=cand: in 98.2% out 3.7% WEIGHTED 5.57%
+AA Raiva first=ref: in 3.8% out 4.4% WEIGHTED 4.41%
+AB Lethuris first=cand: in 124.4% out -2.4% WEIGHTED -1.01%
+AA Lethuris first=ref: in -1.6% out -0.6% WEIGHTED -0.65%
+AA Maithea first=cand: in -6.2% out -5.1% WEIGHTED -5.17%
+AB Maithea first=ref: in 101.8% out -2.5% WEIGHTED -0.11%
+AA Selawyn first=cand: in 3.6% out 1.7% WEIGHTED 1.72%
+AB Selawyn first=ref: in 115.2% out -7.2% WEIGHTED -5.64%
+AA Raiva first=cand: in 2.9% out 0.6% WEIGHTED 0.61%
+AB Raiva first=ref: in 95.3% out -2.6% WEIGHTED -0.79%
+AA Lethuris first=cand: in 5.2% out -0.6% WEIGHTED -0.48%
+AB Lethuris first=ref: in 124.9% out 0.8% WEIGHTED 2.38%
+AB Maithea first=cand: in 115.7% out -0.6% WEIGHTED 2.17%
+AA Maithea first=ref: in -2.7% out -4.1% WEIGHTED -4.11%
+AB Selawyn first=cand: in 107.7% out 13.9% WEIGHTED 15.21%
+AA Selawyn first=ref: in 3.2% out -19.1% WEIGHTED -18.89%
+AB Raiva first=cand: in 88.5% out 3.2% WEIGHTED 4.86%
+AA Raiva first=ref: in 5.2% out 2.2% WEIGHTED 2.24%
+AB Lethuris first=cand: in 120.0% out 3.6% WEIGHTED 5.12%
+AA Lethuris first=ref: in -0.2% out -3.0% WEIGHTED -2.93%
+AA Maithea first=cand: in 1.2% out 0.2% WEIGHTED 0.23%
+AB Maithea first=ref: in 109.6% out 4.6% WEIGHTED 7.01%
+AA Selawyn first=cand: in 1.1% out 17.4% WEIGHTED 17.22%
+AB Selawyn first=ref: in 99.6% out -2.1% WEIGHTED -0.85%
+AA Raiva first=cand: in 3.8% out 3.1% WEIGHTED 3.09%
+AB Raiva first=ref: in 102.5% out -2.2% WEIGHTED -0.24%
+AA Lethuris first=cand: in 5.0% out 0.5% WEIGHTED 0.59%
+AB Lethuris first=ref: in 119.1% out 5.1% WEIGHTED 6.56%
+AB Maithea first=cand: in 101.9% out -2.7% WEIGHTED -0.28%
+AA Maithea first=ref: in -4.1% out -3.1% WEIGHTED -3.11%
+AB Selawyn first=cand: in 90.7% out 2.0% WEIGHTED 3.21%
+AA Selawyn first=ref: in 4.5% out -3.1% WEIGHTED -3.04%
+AB Raiva first=cand: in 97.2% out -2.0% WEIGHTED -0.12%
+AA Raiva first=ref: in -0.9% out -2.2% WEIGHTED -2.20%
+AB Lethuris first=cand: in 131.2% out 4.0% WEIGHTED 5.49%
+AA Lethuris first=ref: in 5.4% out 4.5% WEIGHTED 4.54%
+AA Maithea first=cand: in -2.3% out -3.2% WEIGHTED -3.15%
+AB Maithea first=ref: in 108.5% out 13.5% WEIGHTED 15.75%
+AA Selawyn first=cand: in -0.5% out 1.5% WEIGHTED 1.51%
+AB Selawyn first=ref: in 96.8% out 6.7% WEIGHTED 7.93%
+AA Raiva first=cand: in 3.8% out 2.2% WEIGHTED 2.28%
+AB Raiva first=ref: in 103.5% out 2.1% WEIGHTED 4.09%
+AA Lethuris first=cand: in -2.8% out -1.2% WEIGHTED -1.20%
+AB Lethuris first=ref: in 134.5% out 10.4% WEIGHTED 12.04%
+AB Maithea first=cand: in 114.3% out 2.9% WEIGHTED 5.54%
+AA Maithea first=ref: in 2.1% out -0.1% WEIGHTED -0.05%
+AB Selawyn first=cand: in 89.4% out 0.2% WEIGHTED 1.37%
+AA Selawyn first=ref: in 1.7% out -1.4% WEIGHTED -1.40%
+AB Raiva first=cand: in 98.3% out 3.0% WEIGHTED 4.83%
+AA Raiva first=ref: in 0.8% out 0.2% WEIGHTED 0.26%
+AB Lethuris first=cand: in 119.4% out 8.0% WEIGHTED 9.49%
+AA Lethuris first=ref: in 2.9% out 9.1% WEIGHTED 9.00%
+AA Maithea first=cand: in -3.2% out -2.2% WEIGHTED -2.27%
+AB Maithea first=ref: in 113.5% out -2.4% WEIGHTED -0.02%
+AA Selawyn first=cand: in 1.1% out 0.8% WEIGHTED 0.82%
+AB Selawyn first=ref: in 95.9% out -8.2% WEIGHTED -6.83%
+AA Raiva first=cand: in 0.6% out 0.8% WEIGHTED 0.76%
+AB Raiva first=ref: in 96.7% out -0.9% WEIGHTED 0.67%
+AA Lethuris first=cand: in -1.8% out -1.6% WEIGHTED -1.57%
+AB Lethuris first=ref: in 118.3% out 0.6% WEIGHTED 2.18%
+AB Maithea first=cand: in 116.8% out 2.7% WEIGHTED 5.34%
+AA Maithea first=ref: in -0.6% out 2.8% WEIGHTED 2.73%
+AB Selawyn first=cand: in 108.4% out 5.2% WEIGHTED 6.48%
+AA Selawyn first=ref: in 1.3% out 5.7% WEIGHTED 5.62%
+AB Raiva first=cand: in 91.4% out 1.6% WEIGHTED 3.35%
+AA Raiva first=ref: in -2.7% out -7.8% WEIGHTED -7.68%
+AB Lethuris first=cand: in 139.5% out 5.4% WEIGHTED 7.10%
+AA Lethuris first=ref: in -2.6% out -1.2% WEIGHTED -1.23%
+AA Maithea first=cand: in -3.4% out 0.5% WEIGHTED 0.37%
+AB Maithea first=ref: in 127.8% out 2.2% WEIGHTED 5.11%
+AA Selawyn first=cand: in 4.5% out 4.6% WEIGHTED 4.63%
+AB Selawyn first=ref: in 101.2% out -1.7% WEIGHTED -0.45%
+AA Raiva first=cand: in 4.1% out 2.5% WEIGHTED 2.55%
+AB Raiva first=ref: in 88.6% out -2.7% WEIGHTED -1.21%
+AA Lethuris first=cand: in 5.0% out 1.0% WEIGHTED 1.03%
+AB Lethuris first=ref: in 131.1% out 8.8% WEIGHTED 10.41%
+AB Maithea first=cand: in 111.1% out 0.1% WEIGHTED 2.62%
+AA Maithea first=ref: in -1.2% out 0.1% WEIGHTED 0.11%
+AB Selawyn first=cand: in 104.0% out 12.4% WEIGHTED 13.64%
+AA Selawyn first=ref: in -3.0% out -2.6% WEIGHTED -2.62%
+AB Raiva first=cand: in 100.2% out 0.3% WEIGHTED 2.21%
+AA Raiva first=ref: in -2.5% out 1.1% WEIGHTED 0.98%
+AB Lethuris first=cand: in 115.2% out 9.2% WEIGHTED 10.62%
+AA Lethuris first=ref: in -3.5% out -3.4% WEIGHTED -3.42%
+AA Maithea first=cand: in 1.1% out 2.8% WEIGHTED 2.78%
+AB Maithea first=ref: in 117.5% out 6.1% WEIGHTED 8.62%
+AA Selawyn first=cand: in 5.1% out -0.8% WEIGHTED -0.77%
+AB Selawyn first=ref: in 107.5% out 0.4% WEIGHTED 1.61%
+AA Raiva first=cand: in 0.7% out -0.1% WEIGHTED -0.09%
+AB Raiva first=ref: in 96.0% out 2.4% WEIGHTED 4.21%
+AA Lethuris first=cand: in 3.0% out 1.8% WEIGHTED 1.77%
+AB Lethuris first=ref: in 124.6% out 8.2% WEIGHTED 9.66%

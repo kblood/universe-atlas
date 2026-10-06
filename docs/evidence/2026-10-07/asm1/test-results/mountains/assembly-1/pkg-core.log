@@ -1,0 +1,122 @@
+
+> universe-atlas@0.1.0 test:pkg
+> node tests/helpers/test-runner.mjs pkg tests/lod-consistency.test.mjs tests/harness-sites.test.mjs tests/terrain-relief-hypsometry.test.mjs tests/render-bounds.test.mjs tests/landing-site.test.mjs
+
+✔ harness date has the full ocean (sea exactly 0) on the harness body (0.6379ms)
+✔ SITE_A passes the robustness rule with margin above the forest gate (3.5267ms)
+ℹ {"heightM":280.19528930438025,"aboveSeaM":280.19528930438025,"biome":"Temperate ground","forestPotential":true,"effectiveMoisture":0.7496869546397443,"forestSuitability01":1,"ringForestShare":1,"minRingAboveSeaM":255.39134924080923,"minRingMoisture":0.7488193633982401,"pass":true}
+✔ the pre-relief site is recorded as failing the rule (why SITE_A moved) (1.9039ms)
+✔ the deterministic search reproduces the SITE_A literal (0.1 m rounding) (25.1212ms)
+✔ landingHeightAllowed: dry, at most the ceiling over the sea, strictly below the summit (210.581ms)
+✔ landingCandidate is main.ts exploreTerrain's golden-angle sphere (unit, deterministic) (0.7019ms)
+✔ never on a summit: 0/256 picks at or above p99 land on four worlds at the datum and the dated low sea; the kept ceiling alone does pick summits (582.5567ms)
+✔ flooded ground bookmark, default policy: keeps the saved place and hovers above the water (10.3317ms)
+✔ flooded ground bookmark, nearest-shore policy: the first dry ring direction, deterministic; open ocean hovers (20.0184ms)
+✔ main.ts wires the landing rules: summit-capped site pick and the flooded-bookmark resolver in prepareLanding (2.5768ms)
+✔ no eligible site: all-wet candidates give null (0.4788ms)
+✔ no eligible site: every candidate rejected by the summit cap gives null; the ceiling alone would have landed (0.324ms)
+✔ main.ts: a null site ends the landing request (message, no journey, no landAfterCruise) (2.4273ms)
+✔ ladder lod-ladder-1: rung ranges, pose mapping and the seabed distance policy (1.3923ms)
+✖ Maithea: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (2775.2716ms)
+✖ Lethuris: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (3688.1878ms)
+✔ Maithea coarse retention: peak area kept, summit loss, snow and forest (plan edge-tile selection) (7916.8722ms)
+✔ coarse heights are a declared reduction: point sample plus a bounded non-negative correction (373.5582ms)
+✔ morph: a child starts exactly on its corrected parent at every co-located node (347.6854ms)
+✔ determinism: bit-identical rebuilds, independent of visit order and of process (1391.53ms)
+✔ body height bound contains the sampled terrain of every fixture world (504.5023ms)
+✔ shell sphere contains its radial shell and is no larger than needed (1.675ms)
+✔ candidate bounds contain every child tile built under a resident parent (0 violations, 8 children per world) (3045.4842ms)
+✔ candidate/tight sphere ratio p50 <= 1.5 at L10 and <= 2 at L14, L18 on all four worlds (4 tiles per level; legacy 20 km envelope for comparison) (3386.3088ms)
+✔ Maithea horizon peak radius is within 10% of the analytic value (0.6119ms)
+✔ 0 false culls over 16 poses (ground, 2 km, 20 km, orbit) x 4 bodies against brute force (3746.2761ms)
+✔ HUD terrain-flight / direct-landing clearance is a fixed 19.5 km on all four worlds, not the relief bound (0.4274ms)
+✔ landing finds a site on all four worlds and never above the landing ceiling (224.4476ms)
+✔ landing at the datum sea never picks a summit (256 eyes, all four worlds) (13.6377ms)
+✔ landing at a dated (lowered) sea never picks a summit (256 eyes, Maithea and Lethuris) (386.4374ms)
+✔ landing on low relief (field and dated sea x0.3) never picks a summit (256 eyes) (34.9816ms)
+✔ seabed at -6 km: placeAt and contact-level tiles return the full-detail seabed bit-identical to terrainSampler (23.5128ms)
+✔ byte-blocked refinement is confined to a seabed dive (1.1735ms)
+# Maithea relief {"n":11012,"p10":208.91549266105528,"p50":463.65767891687835,"p90":2991.4960832026227,"p99":4462.41869156307,"max":5909.958408795425,"above4km":2.8877588085724666,"below500":52.56084271703596,"snow":20.314202687976753,"sand":1.3530693788594261,"lowland":37.150381402106795,"rangeSnow":30.192502532928064,"lowSnow":3.327495621716287}
+# seabed {"body":"Maithea","n":7366,"mean":3304.7407246944126,"deepest01":-9913.73941622209,"shelf":9.50312245452077,"reachesSea":0,"detailStd":[[0,668,24.19046184118074],[200,1017,107.09571748343835],[2000,5329,148.026304297763],[6000,352,159.95894984788993]]}
+# seabed {"body":"Selawyn","n":9957,"mean":3793.0160157656273,"deepest01":-11209.004300301403,"shelf":7.472130159686652,"reachesSea":0,"detailStd":[[0,719,23.971473570827392],[200,1137,112.5507897275552],[2000,7035,149.85854897922104],[6000,1066,147.82505276116459]]}
+# seabed {"body":"Raiva","n":7828,"mean":3686.9294024332885,"deepest01":-11248.96909263583,"shelf":8.405723045477773,"reachesSea":0,"detailStd":[[0,625,24.074311498018652],[200,905,112.88455559789],[2000,5611,149.57239721416013],[6000,687,155.36124195719756]]}
+# seabed {"body":"Lethuris","n":10199,"mean":4011.203216405083,"deepest01":-11248.259186766707,"shelf":5.745661339346995,"reachesSea":0,"detailStd":[[0,562,25.414917873275023],[200,993,109.57294998697708],[2000,7458,151.80316493422563],[6000,1186,149.68275864131502]]}
+# dry worlds {"rho":0.9672131147540983,"spanKm":[5.051585398361975,6.311566415109754,10.681081058005947],"earthLowVigourKm":[5.887905273318543,5.36437810377018,5.657367667397599,5.483246209061512,5.230389137296472,5.163549076369775,5.839176480276993,6.525837571267804]}
+# corpus snow {"n":132,"median":0.11764705882352941,"over90":16,"binMedians":[0.8861660079051383,0.4707977207977208,0.19312977099236642,0.09520400858983537,0.0025662959794696323]}
+✖ versions and the frozen R-CAL-1 calibration (any change is a TERRAIN_VERSION bump) (1.209ms)
+✔ coastline invariance: the sea-level-0 ocean flag equals the unchanged base field, 6 identity bodies x 20000 directions (1467.3813ms)
+✔ Maithea land hypsometry, snow, beaches and lowland (20000 directions, sea level 0) (42.3788ms)
+✔ seabed on the four water worlds: depth, trenches, shelf, detail at every depth, never reaching sea level (304.2595ms)
+✔ dry worlds: the p1..p99 span follows tau (Spearman > 0.6); Earth-g low-vigour spans 4-9 km (470.3241ms)
+✔ corpus of 132 habitable water planets: snow share median <= 20%, at most 20 above 90%, colder anchors are snowier (5418.4494ms)
+✔ window invariant 0 <= h - floorM <= terrainWindowMaxM(body) (tau-aware) on the identity bodies and the four water worlds (1452.8426ms)
+✔ bodyHeightBoundM contains every sample: 60 catalogue bodies x 20000 directions (all kinds); the orbit texture range is that bound (3210.2887ms)
+ℹ tests 41
+ℹ suites 0
+ℹ pass 38
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16712.828
+
+✖ failing tests:
+
+test at tests\lod-consistency.test.mjs:89:42
+✖ Maithea: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (2775.2716ms)
+  AssertionError [ERR_ASSERTION]: Maithea L6->7: forest disagreement 0.55% <= 0.5%
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/asm1/tests/lod-consistency.test.mjs:103:14)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\lod-consistency.test.mjs:89:42
+✖ Lethuris: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (3688.1878ms)
+  AssertionError [ERR_ASSERTION]: Lethuris L6->7: name disagreement 7.47% <= 7%
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/asm1/tests/lod-consistency.test.mjs:103:14)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\terrain-relief-hypsometry.test.mjs:38:1
+✖ versions and the frozen R-CAL-1 calibration (any change is a TERRAIN_VERSION bump) (1.209ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'terrain-1.9.0-massifs'
+  - 'terrain-1.8.0-relief'
+               ^
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/asm1/tests/terrain-relief-hypsometry.test.mjs:39:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'terrain-1.9.0-massifs',
+    expected: 'terrain-1.8.0-relief',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit=1
