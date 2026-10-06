@@ -11,7 +11,7 @@ import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_VERSION,CLI
 import {biomeClassifier} from '../src/surface-biomes.ts';
 import {fib,waterWorlds,goldenTerrainBodies} from './terrain-climate-fixtures.mjs';
 // T6 decision 3: the global colour/climate statistics read the level-0 field (tests/helpers/statistic-level.mjs).
-import {statisticSampler} from './helpers/statistic-level.mjs';
+import {statisticSampler,fullOnly} from './helpers/statistic-level.mjs';
 
 const N=20000;
 /** Independent copy of the water-land colour grain (seed derivation and constants
@@ -34,9 +34,11 @@ test('versions: terrain colour v2 names the climate model it reads',()=>{
   assert.equal(CLIMATE_VERSION,'surface-climate-1.1-geo-g');
 });
 
-test('water-world land colour === waterWorldLandColour(climate at post-landform height) x grain, 20k land directions x 4 worlds',()=>{
+// Pointwise colour identity, run on two samplers: level 0 by default, the carved truth (terrainSampler) in test:full
+// (T6 Astra review: a pointwise identity is not only a statistic, so the truth copy is kept).
+function colourIdentity(makeSampler){
   for(const body of waterWorlds()){
-    const sample=statisticSampler(body),climate=surfaceClimate(climateForcingFor(body)),o=createClimateSample(),grain=grainOf(body);
+    const sample=makeSampler(body),climate=surfaceClimate(climateForcingFor(body)),o=createClimateSample(),grain=grainOf(body);
     let land=0,snowy=0,forested=0;
     for(let i=0;i<N*3;i++){
       const d=fib(i,N*3),s=sample(d);
@@ -54,10 +56,12 @@ test('water-world land colour === waterWorldLandColour(climate at post-landform 
     assert.ok(land>=N,`${body.name} land samples ${land} over the whole sphere`);
     assert.ok(snowy>0||forested>0,`${body.name} exercises the climate colour`);
   }
-});
+}
+test('water-world land colour === waterWorldLandColour(climate at post-landform height) x grain, 20k land directions x 4 worlds',()=>colourIdentity(statisticSampler));
+test('water-world land colour identity on the carved truth, 20k land directions x 4 worlds (test:full)',fullOnly('truth colour identity solves M3 blocks'),()=>colourIdentity(body=>terrainSampler(body)));
 
-test('the snow in the colour is surfaceClimate.snowFraction at that height (colour and classifier agree by construction)',()=>{
-  const body=waterWorlds()[0],sample=statisticSampler(body),climate=surfaceClimate(climateForcingFor(body)),o=createClimateSample();
+function snowIdentity(makeSampler){
+  const body=waterWorlds()[0],sample=makeSampler(body),climate=surfaceClimate(climateForcingFor(body)),o=createClimateSample();
   const classify=biomeClassifier(body);
   let checked=0,classifierChecked=0;
   for(let i=0;i<4096;i++){
@@ -79,7 +83,9 @@ test('the snow in the colour is surfaceClimate.snowFraction at that height (colo
   }
   assert.ok(checked>1000);
   if(!classifierChecked)console.log('# classifier has no snowFraction field yet (pre-W1-A); colour-side identity checked only');
-});
+}
+test('the snow in the colour is surfaceClimate.snowFraction at that height (colour and classifier agree by construction)',()=>snowIdentity(statisticSampler));
+test('snow colour/classifier identity on the carved truth (test:full)',fullOnly('truth snow identity solves M3 blocks'),()=>snowIdentity(body=>terrainSampler(body)));
 
 test('every non-water body keeps the base colour exactly (no climate path off water worlds)',()=>{
   const dry=goldenTerrainBodies().filter(b=>!(b.water>0));

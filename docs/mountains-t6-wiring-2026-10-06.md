@@ -61,14 +61,15 @@ full` (`npm run test:full`) now sets. No threshold, band or pin changed in any m
 
 | File | Test | Old sampler | New | Reason |
 |---|---|---|---|---|
-| `tests/terrain-climate-colour.test.mjs` | colour identity, snow in the colour, climate zones | truth | level 0 | global colour/climate statistic |
+| `tests/terrain-climate-colour.test.mjs` | colour identity (20k × 4), snow in the colour | truth | level 0 default + truth **test:full** | pointwise identities: kept on the truth (Astra MUST 1) |
+| same | climate zones | truth | level 0 | global colour statistic |
 | same | non-water colour | truth | truth (kept) | no mountains on dry worlds (identical) |
-| `tests/acceptance/climate-agreement.test.mjs` | orbit/tile colour and classifier agreement (20k × 4) | truth | level 0 | global agreement statistic |
+| `tests/acceptance/climate-agreement.test.mjs` | orbit/tile colour and classifier agreement (20k × 4) | truth | level 0 default + truth **test:full** | pointwise agreement: kept on the truth (Astra MUST 1) |
 | same | orbit bake stores `terrainSampler` colour per pixel | truth | level 0 | the bake IS level 0 since T4 |
-| `tests/terrain-floor-window.test.mjs` | window invariant (6 × 20k), `continentalM` vs land, `floorM` | truth (floor sampler) | level 0 (`exposeFloor`) | global window statistic |
-| same | window invariant on the **truth** | — | truth, **test:full** (new) | the carving lowers ground inside massifs; kept on the truth |
+| `tests/terrain-floor-window.test.mjs` | window invariant (6 × 20k), `continentalM` vs land, `floorM` = clamped base | truth (floor sampler) | level 0 (`exposeFloor`) default + truth **test:full** for each | pointwise invariants: kept on the truth (Astra MUST 2) |
 | same | shape test (512 directions) | truth | truth (kept) | |
-| `tests/terrain-relief-hypsometry.test.mjs` | coastline flips, Maithea hypsometry, dry worlds, corpus snow, window, height bound | truth | level 0 | global relief statistics |
+| `tests/terrain-relief-hypsometry.test.mjs` | Maithea hypsometry, dry worlds, corpus snow | truth | level 0 | global relief statistics |
+| same | coastline flips (6 × 20k), window (7 × 20k), `bodyHeightBoundM` (60 × 20k) | truth | level 0 default + truth **test:full** for each | pointwise invariants: kept on the truth (Astra MUST 2) |
 | same | seabed relief layers | `reliefLayersSampler(body)` | `reliefLayersSampler(body, {lodLevel: 0})` | seabed statistic (identical below sea level) |
 | `tests/helpers/render-bounds-suite.mjs` | site selection (4096 directions); four landing tests | truth | level 0 | landing decision 2: candidates and cutoff in one field |
 | same | tile builds, containment, false-cull poses, seabed, descent | truth / tile level | unchanged | |

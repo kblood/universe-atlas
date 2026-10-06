@@ -21,7 +21,7 @@ import { biomeClassifier, BIOME_VERSION } from '../../src/surface-biomes.ts';
 import { climateForcingFor, createClimateSample, surfaceClimate, CLIMATE_VERSION } from '../../src/surface-climate.ts';
 import { fib, waterWorlds } from '../terrain-climate-fixtures.mjs';
 // T6 decision 3: the global agreement statistic reads the level-0 field; the orbit bake IS the level-0 field (T4).
-import { statisticSampler } from '../helpers/statistic-level.mjs';
+import { statisticSampler, fullOnly } from '../helpers/statistic-level.mjs';
 
 const N = 20000;
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
@@ -43,12 +43,14 @@ test('versions: the agreement is between surface-biomes-2.1-sea-datum and surfac
   assert.equal(CLIMATE_VERSION, 'surface-climate-1.1-geo-g');
 });
 
-test('orbit/tile colour and ground classifier agree on 20k land directions x 4 water worlds', () => {
+// Pointwise agreement, run on two samplers: level 0 by default, the carved truth (terrainSampler) in test:full (T6
+// Astra review: the agreement is pointwise, so the truth copy is kept).
+function agreement(makeSampler) {
   const worlds = waterWorlds();
   assert.equal(worlds.length, 4);
   for (const body of worlds) {
     assert.ok(body.water > 0 && body.type !== 'Ice world', `${body.name} is a liquid-water world`);
-    const sample = statisticSampler(body), classify = biomeClassifier(body);
+    const sample = makeSampler(body), classify = biomeClassifier(body);
     const climate = surfaceClimate(climateForcingFor(body)), o = createClimateSample(), grain = grainOf(body);
     let land = 0, snowLabel = 0, forest = 0, partialSnow = 0;
     // The WHOLE sphere (uniform Fibonacci set), never a prefix: a prefix of the
@@ -82,7 +84,10 @@ test('orbit/tile colour and ground classifier agree on 20k land directions x 4 w
     console.log(`# ${body.name}: land ${land}, snow-labelled ${snowLabel}, forestPotential ${forest}, partial snow ${partialSnow}`);
     assert.ok(snowLabel + forest > 0, `${body.name} exercises the climate branches`);
   }
-});
+}
+test('orbit/tile colour and ground classifier agree on 20k land directions x 4 water worlds', () => agreement(statisticSampler));
+test('colour and classifier agree on the carved truth, 20k land directions x 4 water worlds (test:full)',
+  fullOnly('truth agreement solves M3 blocks'), () => agreement(body => terrainSampler(body)));
 
 test('the orbit bake stores terrainSampler colour per pixel (orbit view = sampler = classifier)', () => {
   for (const body of waterWorlds()) {

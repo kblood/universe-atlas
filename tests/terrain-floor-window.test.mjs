@@ -21,6 +21,8 @@ import {fib,goldenTerrainBodies,waterWorlds} from './terrain-climate-fixtures.mj
 // the floor sampler there is terrainSampler(..., exposeFloor = true, {lodLevel: 0}), what terrainFloorSampler wraps.
 import {statisticSampler,fullOnly} from './helpers/statistic-level.mjs';
 const floorAt0=body=>statisticSampler(body,{exposeFloor:true});
+// Pointwise invariants run on both: level 0 by default, the carved truth in test:full (T6 Astra review).
+const LEVEL0=floorAt0,TRUTH=body=>terrainFloorSampler(body);
 
 const N=20000;
 function goldenAll(){
@@ -102,9 +104,9 @@ test('invariant on the truth: 0 <= h - floorM <= terrainWindowMaxM(body) over th
   assert.equal(violations,0,JSON.stringify(report));
 });
 
-test('continentalM >= 0 exactly where the sea-level-0 sampler reports land, on the four water worlds',()=>{
+function continentalSign(make){
   for(const body of waterWorlds()){
-    const s=floorAt0(body);let mismatch=0,land=0;
+    const s=make(body);let mismatch=0,land=0;
     for(let i=0;i<N;i++){
       const x=s(fib(i,N));
       if((x.continentalM>=0)!==!x.ocean)mismatch++;
@@ -113,13 +115,15 @@ test('continentalM >= 0 exactly where the sea-level-0 sampler reports land, on t
     assert.equal(mismatch,0,body.name);
     assert.ok(land>0.2*N&&land<0.9*N,body.name+' land '+land);
   }
-});
+}
+test('continentalM >= 0 exactly where the sea-level-0 sampler reports land, on the four water worlds',()=>continentalSign(LEVEL0));
+test('continentalM >= 0 exactly where the carved truth reports land (test:full)',fullOnly('truth continental scan solves M3 blocks'),()=>continentalSign(TRUTH));
 
-test('floorM is the clamped base field: water-world seabed and gas giants equal elevationM; floor never exceeds ground',()=>{
+function floorIsBase(make){
   const bodies=[...waterWorlds(),...goldenTerrainBodies().slice(0,5)];
   const gas=goldenAll().find(b=>b.type==='Gas giant');
   for(const body of bodies){
-    const s=floorAt0(body),n=4096;
+    const s=make(body),n=4096;
     for(let i=0;i<n;i++){
       const x=s(fib(i,n));
       assert.ok(x.floorM<=x.groundHeightM);
@@ -130,7 +134,9 @@ test('floorM is the clamped base field: water-world seabed and gas giants equal 
   }
   const s=terrainFloorSampler(gas);
   for(let i=0;i<64;i++){const x=s(fib(i,64));assert.equal(x.floorM,0);assert.equal(x.windowM,0);assert.equal(x.continentalM,0);}
-});
+}
+test('floorM is the clamped base field: water-world seabed and gas giants equal elevationM; floor never exceeds ground',()=>floorIsBase(LEVEL0));
+test('floorM is the clamped base field on the carved truth (test:full)',fullOnly('truth floor scan solves M3 blocks'),()=>floorIsBase(TRUTH));
 
 test('terrainFloorSampler = terrainSampler plus exactly floorM/windowM/continentalM; plain shapes unchanged',()=>{
   const KEYS=['bank','channelId','color','elevationM','flow','groundHeightM','influence','ocean','rockHeightM','roughness','visibleHeightM','waterDepthM','waterHeightM','waterKind','waterLevelM','wet'];

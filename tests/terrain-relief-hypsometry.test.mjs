@@ -20,7 +20,11 @@ import {fib,maithea,goldenTerrainBodies,waterWorlds} from './terrain-climate-fix
 // T6 decision 3: the global relief statistics (hypsometry, coastline, corpus snow, window, height bound) read the
 // level-0 field (no M3 carving, no M5 rock: an upper envelope of the truth inside the massifs, identical outside).
 // The truth's Maithea hypsometry is reported in docs/mountains-t6-wiring-2026-10-06.md. Bands unchanged.
-import {statisticSampler} from './helpers/statistic-level.mjs';
+import {statisticSampler,fullOnly} from './helpers/statistic-level.mjs';
+// Pointwise invariants (coastline, window, height bound) run on two samplers: level 0 by default and the carved truth
+// in test:full (T6 Astra review: a pointwise invariant must keep a truth copy).
+const LEVEL0={sampler:body=>statisticSampler(body),floor:body=>statisticSampler(body,{exposeFloor:true})};
+const TRUTH={sampler:body=>terrainSampler(body),floor:body=>terrainFloorSampler(body)};
 
 const SNOW='Alpine / polar snow';
 const quantile=(a,q)=>{const s=Float64Array.from(a).sort();return s[Math.floor(q*(s.length-1))];};
@@ -48,15 +52,17 @@ test('versions and the frozen R-CAL-1 calibration (any change is a TERRAIN_VERSI
   assert.equal(sha,'ec15e0e409caa3a0c94291789982f067f6f4257e437b90ac4f11231fd28e1ea3',`RELIEF_CALIBRATION changed (sha ${sha}); bump TERRAIN_VERSION and re-pin`);
 });
 
-test('coastline invariance: the sea-level-0 ocean flag equals the unchanged base field, 6 identity bodies x 20000 directions',()=>{
+function coastline(make){
   const N=20000;let flips=0,ocean=0;
   for(const body of identityBodies()){
-    const base=baseTerrainSampler(body),relief=statisticSampler(body);
+    const base=baseTerrainSampler(body),relief=make.sampler(body);
     for(let i=0;i<N;i++){const d=fib(i,N),o=relief(d).ocean;flips+=o!==base(d).ocean;ocean+=o;}
   }
   assert.ok(ocean>10000,`ocean samples ${ocean}`);
   assert.equal(flips,0);
-});
+}
+test('coastline invariance: the sea-level-0 ocean flag equals the unchanged base field, 6 identity bodies x 20000 directions',()=>coastline(LEVEL0));
+test('coastline invariance on the carved truth (test:full)',fullOnly('truth coastline scan solves M3 blocks'),()=>coastline(TRUTH));
 
 test('Maithea land hypsometry, snow, beaches and lowland (20000 directions, sea level 0)',()=>{
   const body=maithea(),tau=tectonicReliefOf(body),ts=statisticSampler(body),cls=biomeClassifier(body),N=20000;
@@ -151,18 +157,20 @@ test('corpus of 132 habitable water planets: snow share median <= 20%, at most 2
   for(let i=1;i<bins.length;i++)assert.ok(bins[i]<=bins[i-1],`snow median falls as anchor temperature rises: ${bins}`);
 });
 
-test('window invariant 0 <= h - floorM <= terrainWindowMaxM(body) (tau-aware) on the identity bodies and the four water worlds',()=>{
+function windowInvariant(make){
   const N=20000,bodies=[...identityBodies(),...waterWorlds().slice(1)];
   for(const body of bodies){
-    const s=statisticSampler(body,{exposeFloor:true}),bound=terrainWindowMaxM(body);
+    const s=make.floor(body),bound=terrainWindowMaxM(body);
     assert.ok(Math.abs(bound-tectonicReliefOf(body)*terrainUnitWindowMaxM(body))<1e-9);
     let bad=0,max=0;
     for(let i=0;i<N;i++){const x=s(fib(i,N)),w=x.groundHeightM-x.floorM;if(x.windowM!==w||!(w>=0&&w<=bound))bad++;if(w>max)max=w;}
     assert.equal(bad,0,`${body.name}: window max ${max} of ${bound}`);
   }
-});
+}
+test('window invariant 0 <= h - floorM <= terrainWindowMaxM(body) (tau-aware) on the identity bodies and the four water worlds',()=>windowInvariant(LEVEL0));
+test('window invariant on the carved truth (test:full)',fullOnly('truth window scan solves M3 blocks'),()=>windowInvariant(TRUTH));
 
-test('bodyHeightBoundM contains every sample: 60 catalogue bodies x 20000 directions (all kinds); the orbit texture range is that bound',()=>{
+function heightBound(make){
   const all=catalogueBodies(),pick=[];
   for(const type of [...new Set(all.map(b=>b.type))])pick.push(...all.filter(b=>b.type===type).slice(0,10));
   // 4 water worlds + 10 per type (Volcanic, Rocky, Oceanic, Ice, Gas giant, Airless moon), first 60.
@@ -170,10 +178,12 @@ test('bodyHeightBoundM contains every sample: 60 catalogue bodies x 20000 direct
   assert.equal(bodies.length,60);
   const N=20000;let outside=0;
   for(const body of bodies){
-    const ts=statisticSampler(body),{minM,maxM}=bodyHeightBoundM(body),range=reliefTextureRange(body);
+    const ts=make.sampler(body),{minM,maxM}=bodyHeightBoundM(body),range=reliefTextureRange(body);
     assert.ok(minM<=maxM);
     if(maxM>minM)assert.deepEqual(range,{minM,maxM});
     for(let i=0;i<N;i++){const h=ts(fib(i,N)).groundHeightM;if(!(h>=minM&&h<=maxM))outside++;}
   }
   assert.equal(outside,0);
-});
+}
+test('bodyHeightBoundM contains every sample: 60 catalogue bodies x 20000 directions (all kinds); the orbit texture range is that bound',()=>heightBound(LEVEL0));
+test('bodyHeightBoundM contains every carved-truth sample (60 bodies x 20000) (test:full)',fullOnly('truth height-bound scan solves M3 blocks'),()=>heightBound(TRUTH));
