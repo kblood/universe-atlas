@@ -1,12 +1,14 @@
 // M2: pre-radius-scale metres; finite inputs, belt/landFactor in [0,1], tau >= 0.
 //
+// massif-envelope-4 uses an along-axis coarse margin and a maximum over non-skipped belts only.
+// massif-envelope-3 adds the conservative baked coarse composition; exact M2 is unchanged.
 // massif-envelope-2 (mountains assembly, owner decision (e) of 2026-10-05; docs/mountains-assembly-2026-10-05.md):
 // the massif is a band of FIXED maximum half-width MAX_HALF_WIDTH_M along the belt axis. On a belt wider than
 // that, the outer belt keeps main's ridge term exactly (composeRidgeTermM returns it), so a wide M1 belt no
 // longer moves the class boundary of the terrain far from its axis; inside the massif the old ridge term fades
 // out over the outer EDGE_FADE_START..1 of the massif half-width (decision (f): uplift inside, fade-out at the
 // edge). massif-envelope-1 spread one (1 - s^2)^3 profile over the whole belt half-width (up to 220 km).
-export const MASSIF_ENVELOPE_VERSION = 'massif-envelope-2';
+export const MASSIF_ENVELOPE_VERSION = 'massif-envelope-4';
 export const MASSIF_ENVELOPE = Object.freeze({
   GAIN: 1,
   MIN_HALF_WIDTH_M: 32000,
@@ -17,6 +19,18 @@ export const MASSIF_ENVELOPE = Object.freeze({
   BLEND_BELT_FULL: 0.5,
   MIN_FEATURE_WAVELENGTH_M: 32000,
 });
+// Measured signed-distance interpolation error, including Float32 storage: interior maxima
+// .00066 / .00023 / .00037 / .00028 H (M/S/R/L, |u/U| < .9); <= .0005 H through .955.
+// Endpoint kinks converge slowly: the densest 32x32 taps measured .0847 H near |u/U| = 1.
+// This ramp encloses at least twice the measured error in each .0025-wide |u/U| bin;
+// the longitudinal belt fade makes the larger endpoint allowance nearly irrelevant to height.
+export const MASSIF_COARSE_MARGIN = Object.freeze({INTERIOR_H: 0.002, END_H: 0.2, RAMP_FROM: 0.94, RAMP_TO: 0.99});
+export function coarseMarginH(uFraction: number): number {
+  const m = MASSIF_COARSE_MARGIN;
+  return m.INTERIOR_H + (m.END_H - m.INTERIOR_H) * Math.max(0, Math.min(1,
+    (Math.abs(uFraction) - m.RAMP_FROM) / (m.RAMP_TO - m.RAMP_FROM)));
+}
+
 type EnvelopeClass = 'water' | 'dry';
 
 export function envelopeBlendWeight(belt: number): number {
@@ -64,4 +78,35 @@ export function massifEnvelopeM(
 export function composeRidgeTermM(mainTermM: number, belt: number, axisDistanceM: number, halfWidthM: number, envelopeM: number): number {
   const w = massifBlendWeight(belt, axisDistanceM, halfWidthM);
   return w === 0 && envelopeM === 0 ? mainTermM : (1 - w) * mainTermM + envelopeM;
+}
+
+const smooth = (lo: number,hi: number,x: number) => {
+  const t=Math.max(0,Math.min(1,(x-lo)/(hi-lo)));return t*t*(3-2*t);
+};
+/* M1 value before its coast gate. Keep the expression/order in sync with valueInFrame. */
+export function coarseBeltValue(distanceM: number,halfWidthM: number,uFraction: number): number {
+  if(distanceM>=halfWidthM)return 0;
+  const fraction=distanceM/halfWidthM;
+  return (1-.1*fraction*fraction)*(1-smooth(.65*halfWidthM,halfWidthM,Math.abs(distanceM)))*(1-smooth(.75,1,Math.abs(uFraction)));
+}
+/* Declared baked coarse reduction: lower bound the subtractive weight, upper bound the uplift.
+ * sd is bilinearly interpolated SIGNED distance / H; delta encloses its interpolation error.
+ * For h(x)=x²(3-2x), h(gx)>=g²h(x) on [0,1], since 3-2gx>=3-2x.
+ * If 2v<=1 this proves blend(vg)>=g²blend(v). If 2v>1, monotonicity gives
+ * blend(vg)>=h(g)>=g². Also blend(vg)<=blend(v). Thus this term bounds the
+ * uncarved exact term for nonnegative main/landFactor, without evaluating M1 per sample.
+ * delta is explicit so tests can exercise the zero-margin mutation without a sampler flag.
+ */
+export function massifCoarseRidgeTermM(mainTermM: number,sd: number,delta: number,halfWidthM: number,
+  uFraction: number,a0: number,landFactor: number,tau: number): number {
+  if(a0<=0||halfWidthM<MASSIF_ENVELOPE.MIN_HALF_WIDTH_M)return mainTermM;
+  const H=massifHalfWidthM(halfWidthM),lo=Math.max(0,Math.abs(sd)-delta),hi=Math.abs(sd)+delta;
+  if(lo>=1)return mainTermM;
+  const vHi=coarseBeltValue(lo*H,halfWidthM,uFraction);
+  // vLo <= vHi: zero upper belt value makes both composition terms zero.
+  if(vHi===0)return mainTermM;
+  const vLo=coarseBeltValue(hi*H,halfWidthM,uFraction);
+  const g=smooth(0,100,a0),w=g*g*envelopeBlendWeight(vLo)*(1-smooth(MASSIF_ENVELOPE.EDGE_FADE_START,1,hi));
+  const p=Math.max(0,1-lo*lo),U=maxEnvelopeM(tau,'water')*(p*p*p)*landFactor*envelopeBlendWeight(vHi);
+  return w===0&&U===0?mainTermM:(1-w)*mainTermM+U;
 }

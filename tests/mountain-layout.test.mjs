@@ -197,7 +197,7 @@ test('HARD: alongM (assembly addition) is the base-circle arc R x 2 atan(u) of t
 
 // Cost plan T2 (orogen-layout-2, docs/mountain-layout-v1.md "In-massif foot-point solve").
 test('HARD: offsetNoise is catalog noise(x, 37, 19, seed) bit for bit, cache interleaved across cells and seeds',()=>{
-  assert.equal(OROGEN_LAYOUT_VERSION,'orogen-layout-2');assert.equal(FOOT_POINT_STEPS,4);
+  assert.equal(OROGEN_LAYOUT_VERSION,'orogen-layout-4','was orogen-layout-3');assert.equal(FOOT_POINT_STEPS,4);
   const seeds=[0,1,-1,0x7fffffff,-0x80000000,...layout.belts.map(b=>b.noiseSeed)];
   const xs=[0,1,-1,13,12.999999999999998,13.000000000000002,-0,.5,-.5,-2.75,1e6+.25,-1e6-.25];
   for(let i=0;i<4000;i++)xs.push((i*0.6180339887498949%1-.5)*80+(i%7===0?Math.floor(i/7):0));

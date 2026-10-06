@@ -31,17 +31,20 @@ const CUT = {Maithea: 6, Selawyn: 7, Raiva: 5, Lethuris: 7};
 
 // Captured BEFORE the value-preserving cost optimisation, from ea0c802's mountains-on
 // path. Hash all tile fields/buffers, with binary doubles (including signed zero).
+// Re-pinned at the baked coarse field (massif-envelope-3 / orogen-layout-3, docs/mountains-t6-baked-coarse-2026-10-06.md):
+// [0] (L(cut-1)) and the [1] tiles' parents/parentHeight (their parent mesh is the L(cut-1) sampler); every
+// other [1] field and every COST_SAMPLER_IDENTITY[1] (carved) value is unchanged. Old -> new in that doc.
 const COST_IDENTITY = {
-  Maithea: ['05a0aea70e33e2b0c36594f69041d4dbb86bfbd57db25280569ab91a894384af', '2e3759c5235bb8fb179ff6a6dd7d8c62cf7c4445785165977f3f5e091ae44194'],
-  Selawyn: ['565f77b3c215ccc08d22bff6dcadd8988775f63515329e3ed6e98ba1638c321d', '59cac04c2bdc58b6e5cf3a616995e4fe7d0faf9cfb2962fb4f861fbe24e5f558'],
-  Raiva: ['fc27a747f83127b7ec7ad5c9d8b5d8cc3684906b1232f74f41c88494aa0a474e', 'd1b2089dec6817c5bfa4104305b43f46699f46e7fb55b46fdd8661c401d42d55'],
-  Lethuris: ['2640201199c1f4523b0b8a10a7d148104cc37526298e16f1d4412e468b530557', '26e7faa3c55e995b2b6d0b3c8defa35a1d8aa3e80fddf4488b60b0d5b05a89d9'],
+  Maithea: ['6c4bf8046e49e179c0d4c7e9ab8223963d1645eadd15babdaaf18faaf8714b1d', '00446f5aac1c49ecefc9a592989b1ee4c57a8cac3680c5b28e9eeae097d99cfa'],
+  Selawyn: ['c455f00ad1539773f2a855253c467cec2de9a8c2c681f22747dcc9595b45728f', 'fa4de7c27478144dcda67f7c1a05640866309416335caaf102df68f41731d5fa'],
+  Raiva: ['b6c55c60a34a26ab1dfe241ecc9b5078b2a1cd712e0344e57bea96186b8e2ac6', '134db519076d04473c6eee0e352fd9eb9271db3ad5edb403f19db6dcac62d2b6'],
+  Lethuris: ['acf6482bbfe06f80880de8482b1b2f6308dfa7fc89918a29da3bb1d5ce5e1a48', 'c3574bed133f5866e327c6457da6e586af4b99deea16f5520931e2cb4ed4ffab'],
 };
 const COST_SAMPLER_IDENTITY = {
-  Maithea: ['df801672c445213af1e0822a9ab3d678f52a34b416565f5db2099b270f1fe3a6', 'a49cc5e166d1686748f7516556d5bd4fd53d0bcef1792c93b45b4daeabf42a79'],
-  Selawyn: ['b335c740d0dd0b80eef5374af73edda3256a91eb052416a3718ad8e2fc5d9f2a', 'efba81af653849461b56d8314e3fa39280ab32c0543c1da71ffd36fe8780ba54'],
-  Raiva: ['35996b0d9fe42f5f5ef89cd6697135746eab82b66d7e4436c2537de53b58df48', '3c9b85ba194eaa8c6edfa426446b1840d7510c1c0274438eec18cd240fa6f573'],
-  Lethuris: ['f5218c6fb2d262129d3dd4465851d5fc761b17751042a5c5c9f148b498faa42b', '72ca784c16ba4b497b099e1861b9d89d26f627d318dc6023f25e31b6ad01f610'],
+  Maithea: ['6da066889d287cdb32d528d5aaec3f5d4a426d3869547e174806f9e98905225d', 'a49cc5e166d1686748f7516556d5bd4fd53d0bcef1792c93b45b4daeabf42a79'],
+  Selawyn: ['5fdbe43b04673c3b1a9785c7cf937459de4caf4d9ce55a5d47266ed12f2ab0b2', 'efba81af653849461b56d8314e3fa39280ab32c0543c1da71ffd36fe8780ba54'],
+  Raiva: ['0b215f0689780c575b21f1c226e5470bbbf0789b466f6269cbaf6099a5472270', '3c9b85ba194eaa8c6edfa426446b1840d7510c1c0274438eec18cd240fa6f573'],
+  Lethuris: ['1c5faaacd4faa4d7db7e8353629a8e77f0539d90a728e17cc3f4872e35b16878', '72ca784c16ba4b497b099e1861b9d89d26f627d318dc6023f25e31b6ad01f610'],
 };
 function costIdentityDigest(value) {
   const h = createHash('sha256');

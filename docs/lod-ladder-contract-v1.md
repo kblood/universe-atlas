@@ -119,6 +119,42 @@ the level pass-through in `src/planet-tiles.ts`. Test: `tests/lod-carving-reduct
   the rule is active only for samplers and tiles built with `{mountains: true}`; the default field is unchanged.
 - Every section-5 tolerance is unchanged. The version moved to `lod-ladder-2` for the new declared reduction.
 
+**Baked coarse band field (amendment, branch `mountains/baked-coarse`, cost route A).** This amendment is recorded
+in decisions addendum (5), decided by Opus 5.5 on Kasper's instruction; he may overrule. The evidence is in
+`docs/mountains-t6-baked-coarse-2026-10-06.md`. It is on main staged since 2026-10-06 (evidence doc section 9); it
+becomes active with the mountains at T6 wiring.
+
+- **What coarse levels evaluate.** Below the carving cut, a level's sampler does not run the M1 foot-point solve.
+  It reads a per-body field, `orogenLayout(body).coarseBandField(48 km, 32 km)`:
+  - The field stores the signed foot-point distance divided by H at cube-face nodes, at half the T1 resolution.
+  - It is deterministic, built once per layout and memoised.
+  - The ridge term comes from `massifCoarseRidgeTermM`, an upper bound of the uncarved composition (1−w)·main + U.
+    The bound uses the interpolated distance widened by a measured margin that depends on the position along the
+    belt axis (`coarseMarginH(u/U)`, `MASSIF_COARSE_MARGIN`): 0.002 H for |u/U| ≤ 0.94, ramping linearly to 0.2 H at
+    |u/U| ≥ 0.99. This is at least twice the measured interpolation error (Float32 storage included) in every
+    0.0025-wide |u/U| bin; the error is ≤ 0.0005 H up to |u/U| = 0.955 and reaches 0.0847 H only at belt ends.
+    A candidate belt is skipped when |sd| − 0.2 ≥ 1 (the largest margin, per-belt scalar [8]).
+  - The result is the maximum over the non-skipped candidates, or main when every candidate is skipped. This is
+    valid because belt footprints are disjoint (construction separates the gradient-inflated tubes): at most one
+    belt has value > 0 at any direction, and a non-skipped candidate whose true value is 0 returns ≥ main. Each term
+    tends to main as the candidate approaches its skip threshold, so the result is continuous.
+    (Amended 2026-10-06, `orogen-layout-4` / `massif-envelope-4`: before, the margin was a flat 0.16 H and the
+    maximum included main, which overestimated the uncarved floor by p99 443-769 m and broke the section-3.1 ROOM
+    pins at the carving switch pair. After: p99 5.7-9.4 m, max 27-63 m, pinned in the test at p99 ≤ 50 m and
+    max ≤ 100 m.)
+  - The coarse surface therefore stays an upper envelope of the carved truth. Heights are only raised, the ocean
+    flag is unchanged, and no M3 block is solved.
+- **Continuity.**
+  - The active region is the set of T1-flagged cells dilated by one field cell. At every boundary node of that
+    region the composition returns main exactly, so the field has no seam against inactive cells.
+  - Face-edge nodes are evaluated from canonical directions and are bit-identical on both faces.
+  - The T3 parent rule is unchanged: the parent of an L(cut) tile is coarse.
+- **What is unchanged.** The truth and levels at or above the cut keep the exact M1/M2/M3 path. Section-5
+  tolerances are unchanged.
+- **Versions.** The layout and envelope versions move: `orogen-layout-4`, `massif-envelope-4` (route A introduced
+  `-3`; the along-axis margin moved them to `-4`). `LOD_LADDER_VERSION`
+  is unchanged: the declared reduction is still "upper envelope of the carved truth below the cut".
+
 **Colour and class shares:** coverage-weighted mean of the finer level. A class is carried as a class: the
 bilinear-weighted majority of the four corner labels. It is never re-derived from a coarse height.
 
