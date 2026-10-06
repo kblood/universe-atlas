@@ -3,6 +3,7 @@ import {stripTypeScriptTypes} from 'node:module';
 import {terrainSampler} from '../../src/terrain.ts';
 import {waterWorlds,fib} from '../terrain-climate-fixtures.mjs';
 import {axisSites} from './mountain-coarse-tiles.mjs';
+import {coarseMarginH,MASSIF_COARSE_MARGIN} from '../../src/mountain-envelope.ts';
 import {orogenLayout} from '../../src/mountain-layout.ts';
 
 // Test-only full-layout uncarved reference: change only the composition's carve argument
@@ -69,11 +70,14 @@ export function statistics(body){
 let layoutSource=readFileSync(new URL('../../src/mountain-layout.ts',import.meta.url),'utf8');
 layoutSource+=`\nexport function referenceDistance(b,d,R){const x=dot(d,b.tangent),z=dot(d,b.centre),py=dot(d,b.pole),u=x/(Math.sqrt(x*x+z*z)+z);transverse(b,d,R,u,x,z,py,py*R-offset(b,u)<0?-1:1);return trDistance;}\n`;
 layoutSource=layoutSource.replace(/from (['"])(\.\/[^'"]+)\1/g,(_,q,path)=>`from ${q}${new URL('../../src/'+path.slice(2),import.meta.url).href}${q}`);
-export const {referenceDistance}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(layoutSource)).toString('base64'));
+layoutSource+=`\nexport function positiveBelts(layout,d,R){return layout.belts.reduce((n,b)=>n+(value(b,d,R)>0?1:0),0);}`;
+export const {referenceDistance,positiveBelts,orogenLayout:referenceLayout}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(layoutSource)).toString('base64'));
 export function nodeDirection(face,i,j,N){const d=[0,0,0],k=face>>>1;d[k]=face&1?-1:1;d[[1,0,0][k]]=2*i/N-1;d[[2,2,1][k]]=2*j/N-1;const l=Math.sqrt(d[0]*d[0]+d[1]*d[1]+d[2]*d[2]);return d.map(v=>v/l);}
-export function measureError(body,steps=4){
+export function measureError(body,steps=8,{marginH=coarseMarginH}={}){
   const layout=orogenLayout(body),f=layout.coarseBandField(48000,32000),N=f.faceCells,B=N/8;
-  let max=0,count=0,worst=null,boundary=Infinity;
+  // Evaluate the no-end-ramp negative control at the same taps, avoiding a second projection pass.
+  let max=0,count=0,worst=null,ratio=0,interiorMax=0,interiorOnlyRatio=0;
+  const bins=Array.from({length:400},(_,i)=>({from:i/400,to:(i+1)/400,max:0,ratio:0,count:0}));
   for(let q=0;q<f.blockTable.length;q++){
     const block=f.blockTable[q]-1;if(block<0)continue;
     const face=Math.floor(q/(B*B)),i0=q%B*8,j0=Math.floor(q/B)%B*8;
@@ -81,26 +85,38 @@ export function measureError(body,steps=4){
       const bit=j*8+i;if(!(f.masks[block*2+(bit>>>5)]&(1<<(bit&31))))continue;
       for(let c=f.offsets[block];c<f.offsets[block+1];c++){
         const b=layout.belts[f.candidates[c]],p=c*81+j*9+i,H=Math.min(b.halfWidthM,48000);
-        for(let y=0;y<=steps;y++)for(let x=0;x<=steps;x++){
-          const wx=x/steps,wy=y/steps,d=nodeDirection(face,i0+i+wx,j0+j+wy,N),z=d.reduce((a,v,k)=>a+v*b.centre[k],0),xx=d.reduce((a,v,k)=>a+v*b.tangent[k],0),u=xx/(Math.sqrt(xx*xx+z*z)+z);
+        // Resolve the slowly converging end kink more densely than the interior.
+        const centre=nodeDirection(face,i0+i+.5,j0+j+.5,N),cz=centre.reduce((a,v,k)=>a+v*b.centre[k],0),cx=centre.reduce((a,v,k)=>a+v*b.tangent[k],0);
+        const centreUf=Math.abs(cx/(Math.sqrt(cx*cx+cz*cz)+cz)/b.uLimit);
+        const taps=centreUf>.93&&centreUf<1.05?Math.max(32,steps):steps;
+        for(let y=0;y<=taps;y++)for(let x=0;x<=taps;x++){
+          const wx=x/taps,wy=y/taps,d=nodeDirection(face,i0+i+wx,j0+j+wy,N),z=d.reduce((a,v,k)=>a+v*b.centre[k],0),xx=d.reduce((a,v,k)=>a+v*b.tangent[k],0),u=xx/(Math.sqrt(xx*xx+z*z)+z);
           if(Math.abs(u/b.uLimit)>=1)continue;
           const exact=referenceDistance(b,d,body.radiusM)/H;if(Math.abs(exact)>1.25)continue;
           const a=f.distances,sd=(a[p]*(1-wx)+a[p+1]*wx)*(1-wy)+(a[p+9]*(1-wx)+a[p+10]*wx)*wy,error=Math.abs(sd-exact);count++;
+          const uf=u/b.uLimit,r=error/marginH(uf),bin=bins[Math.floor(Math.abs(uf)*400)];
+          ratio=Math.max(ratio,r);interiorOnlyRatio=Math.max(interiorOnlyRatio,error/MASSIF_COARSE_MARGIN.INTERIOR_H);
+          if(Math.abs(uf)<MASSIF_COARSE_MARGIN.RAMP_FROM)interiorMax=Math.max(interiorMax,error);
+          bin.max=Math.max(bin.max,error);bin.ratio=Math.max(bin.ratio,r);bin.count++;
           if(error>max){max=error;worst={belt:f.candidates[c],face,i:i0+i,j:j0+j,u:u/b.uLimit,exact,sd};}
         }
       }
     }
   }
-  return {max,count,worst};
+  return {max,count,worst,ratio,interiorMax,interiorOnlyRatio,bins};
 }
 // Zero-margin mutation: exactly the production field/lookup, changing only the composition's delta argument.
 let mutantSource=readFileSync(new URL('../../src/terrain.ts',import.meta.url),'utf8');
-const deltaCall='massifCoarseRidgeTermM(main,sd,bs[k+8]';
+const deltaCall='massifCoarseRidgeTermM(main,sd,coarseMarginH(uf)';
 if(!mutantSource.includes(deltaCall))throw new Error('mutation hook lost delta argument');
 mutantSource=mutantSource.replace(deltaCall,'massifCoarseRidgeTermM(main,sd,0')
  .replace(/from (['"])(\.\/[^'"]+)\1/g,(_,q,path)=>`from ${q}${new URL('../../src/'+path.slice(2),import.meta.url).href}${q}`);
 const mutantTerrain=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(mutantSource)).toString('base64'));
 export const mutantSampler=body=>mutantTerrain.terrainSampler(body,[],undefined,false,0,undefined,true,{mountains:true,lodLevel:0});
+const oldMaxHook='let best=-Infinity;';
+if(!terrainSource.includes(oldMaxHook))throw new Error('old-max mutation hook lost');
+const oldMaxTerrain=await load(terrainSource.replace(oldMaxHook,'let best=main;'));
+export const oldMaxSampler=body=>oldMaxTerrain.terrainSampler(body,[],undefined,false,0,undefined,true,{mountains:true,lodLevel:0});
 export function boundaryChecks(body,check){
  const field=orogenLayout(body).coarseBandField(48000,32000),N=field.faceCells,B=N/8,coarse=sampler(body,{mountains:true,lodLevel:0}),plain=sampler(body,{mountains:false});let count=0;
  for(let q=0;q<field.blockTable.length;q++){

@@ -3,8 +3,8 @@ import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {hash64,noise,macroHeightCode} from '../src/catalog.ts';
 import {buildOrogenLayout,continentalA0,constructionA0} from '../src/mountain-layout.ts';
-import {massifCoarseRidgeTermM,coarseBeltValue,massifEnvelopeM,composeRidgeTermM,envelopeBlendWeight} from '../src/mountain-envelope.ts';
-import {waterWorlds,fib,orogenLayout,sampler,exactSampler,directions,lookup,statistics,measureError,nodeDirection,referenceDistance,mutantSampler,boundaryChecks,unskippedTerrain,voxelSkip} from './helpers/mountain-coarse-field.mjs';
+import {coarseMarginH,MASSIF_COARSE_MARGIN,massifCoarseRidgeTermM,coarseBeltValue,massifEnvelopeM,composeRidgeTermM,envelopeBlendWeight} from '../src/mountain-envelope.ts';
+import {waterWorlds,fib,orogenLayout,sampler,exactSampler,directions,lookup,statistics,measureError,nodeDirection,referenceDistance,positiveBelts,referenceLayout,oldMaxSampler,mutantSampler,boundaryChecks,unskippedTerrain,voxelSkip} from './helpers/mountain-coarse-field.mjs';
 const worlds=waterWorlds(),ss=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 const arrays=['blockTable','masks','offsets','candidates','distances','scalars'];
 // Unused nodes are zero-filled. Only corners of active cells belong to the field.
@@ -41,12 +41,19 @@ test('HARD: the truth core\'s inline voxel prefilter changes no value (Object.is
 });
 test('g² lemma on dense grid, and conservative composition with exact distances / zero margin',()=>{
   for(let i=0;i<=500;i++)for(let j=0;j<=500;j++){const v=i/500,g=j/500;assert.ok(envelopeBlendWeight(v*g)+1e-15>=g*g*envelopeBlendWeight(v));}
-  for(const main of [0,100,900,3640,9000])for(const a0 of [0,1,25,50,99,100,4000])for(const lf of [0,.01,.5,1])for(const tau of [0,.25,1,2])for(const W of [32000,48000,220000])for(let i=-40;i<=40;i++)for(const u of [0,.74,.8,.9,.99,1,1.01]){
+  for(const main of [0,100,900,3640,9000])for(const a0 of [0,1,25,50,99,100,4000])for(const lf of [0,.01,.5,1])for(const tau of [0,.25,1,2])for(const W of [32000,48000,220000])for(let i=-40;i<=40;i++)for(const u of [0,.74,.8,.9,.939,.94,.955,.97,.98,.99,1,1.01]){
     const sd=i/32,dist=Math.abs(sd)*Math.min(W,48000),v=coarseBeltValue(dist,W,u),belt=v*ss(0,100,a0),exact=composeRidgeTermM(main,belt,dist,W,massifEnvelopeM(belt,dist,W,a0,lf,tau,'water')),coarse=massifCoarseRidgeTermM(main,sd,0,W,u,a0,lf,tau);
     assert.ok(coarse>=exact,`${coarse} < ${exact}: ${[main,a0,lf,tau,W,sd,u]}`);
     assert.ok(coarse>=0);
   }
   assert.ok(Object.is(massifCoarseRidgeTermM(-0,2,.16,48000,0,1000,1,1),-0));
+});
+test('coarse margin is frozen, symmetric, and clamped at the ramp endpoints',()=>{
+  assert.ok(Object.isFrozen(MASSIF_COARSE_MARGIN));
+  assert.deepEqual(MASSIF_COARSE_MARGIN,{INTERIOR_H:.002,END_H:.2,RAMP_FROM:.94,RAMP_TO:.99});
+  for(const u of [0,.5,.94])assert.equal(coarseMarginH(u),.002);
+  for(const u of [.99,1,2])assert.equal(coarseMarginH(u),.2);
+  for(const u of [.94,.955,.97,.98,.99])assert.equal(coarseMarginH(u),coarseMarginH(-u));
 });
 for(const body of worlds){
   test(`${body.name}: sparse field bytes deterministic across independent builds and sample orders`,()=>{
@@ -55,6 +62,7 @@ for(const body of worlds){
     const af=a.coarseBandField(48000,32000),bf=b.coarseBandField(48000,32000);
     for(let i=31;i>=0;i--)b.sample(fib(i,32));
     assert.equal(a.coarseBandField(48000,32000),af);assert.equal(b.coarseBandField(48000,32000),bf);
+    for(let k=8;k<af.scalars.length;k+=9)assert.equal(af.scalars[k],MASSIF_COARSE_MARGIN.END_H);
     assert.equal(af.faceCells,a.bandGrid(48000,32000).faceCells/2);assert.ok(af.bytes<=8*1024*1024);
     for(const k of arrays)assert.deepEqual(Buffer.from(af[k].buffer),Buffer.from(bf[k].buffer),k);
     // One read corner per block/candidate against the independent eager node expression.
@@ -101,18 +109,31 @@ for(const body of worlds){
       assert.ok(Object.is(coarseBeltValue(Math.abs(o.axisDistanceM),b.halfWidthM,u/b.uLimit),o.belt));nodeChecks++;
     }
     assert.ok(nodeChecks>0);
-    const error=measureError(body);assert.ok(.16>=2*error.max,`2x measured margin: ${error.max}`);t.diagnostic(`INFO ${body.name} dense interpolation ${JSON.stringify(error)}`);
+    const {bins,...error}=measureError(body);
+    assert.ok(error.ratio<=.5,`2x measured margin: ${error.ratio}`);
+    for(const bin of bins)assert.ok(bin.ratio<=.5,`${body.name} |u/U| [${bin.from},${bin.to}): ${bin.ratio}`);
+    assert.ok(error.interiorOnlyRatio>.5,'no-end-ramp negative control must fail the 2x enclosure');
+    t.diagnostic(`INFO ${body.name} dense interpolation ${JSON.stringify(error)}; ${bins.filter(b=>b.count).length} .0025-wide bins checked`);
   });
   test(`${body.name}: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation`,t=>{
     const stats=statistics(body);t.diagnostic(`INFO ${body.name} coarse - exact uncarved floor ${JSON.stringify(stats)}`);
     assert.equal(stats.violations,0);assert.equal(stats.oceanDifferences,0);assert.equal(stats.inactiveDifferences,0);
+    // Prototype p99 5.7-9.4 m; max 21.8 / 21.8 / 23.4 / 51.5 m (M/S/R/L).
+    // Maximum +25%, rounded up to the next 50 m, leaves a 100 m ceiling.
+    assert.ok(stats.p99<=50);assert.ok(stats.max<=100);
     const coarse=sampler(body,{mountains:true,lodLevel:0}),exact=exactSampler(body),mutant=mutantSampler(body),field=orogenLayout(body).coarseBandField(48000,32000);
-    let mutation=0,outside=0;
+    const oldMax=oldMaxSampler(body),reference=referenceLayout(body);
+    assert.deepEqual(reference.belts,orogenLayout(body).belts,'copied layout uses production construction inputs');
+    let mutation=0,outside=0,belowOldMax=0,positive=0;
     for(const d of directions(body)){
-      const e=exact(d);
+      const e=exact(d),n=positiveBelts(reference,d,body.radiusM);
+      assert.ok(n<=1,'all belt footprints, including narrow belts, are disjoint');positive+=n;
+      if(coarse(d).floorM<oldMax(d).floorM)belowOldMax++;
       if(mutant(d).floorM<e.floorM)mutation++;
       if(!lookup(field,d).length){sameFields(coarse(d),e);outside++;}
     }
+    assert.ok(positive>0);assert.ok(belowOldMax>0,'removing main from the maximum lowers an in-massif floor');
+    t.diagnostic(`INFO ${body.name} below old max ${belowOldMax}; positive belt directions ${positive}`);
     assert.ok(outside>0);assert.ok(mutation>0,'zero-margin mutation must violate the floor bound');t.diagnostic(`INFO zero-margin floor violations ${mutation}`);
     assert.ok(boundaryChecks(body,sameFields)>0,'active boundaries return main exactly');
   });

@@ -1,12 +1,13 @@
 import {hash64, macroHeightCode, noise, rng, type V3} from './catalog.ts';
 import {sine, detCos} from './det-math.ts';
 
+// orogen-layout-4 changes only coarse scalars[8] to the maximum along-axis skip margin.
 // orogen-layout-3 adds a lazy baked coarse band field; all existing outputs are unchanged.
 // orogen-layout-2 (mountains cost plan T2, 2026-10-05): the foot-point solve uses the exact derivative and
 // FOOT_POINT_STEPS fixed steps instead of five central-difference steps; distances agree with -1 to 1e-7 m,
 // alongM to 0.1 m (docs/mountain-layout-v1.md "In-massif foot-point solve"). The belts are unchanged:
 // construction keeps its orogen-layout-1 random stream (OROGEN_LAYOUT_CONSTRUCTION_SEED) and land-coverage predicate (coveredV1).
-export const OROGEN_LAYOUT_VERSION = 'orogen-layout-3';
+export const OROGEN_LAYOUT_VERSION = 'orogen-layout-4';
 export const OROGEN_LAYOUT_CONSTRUCTION_SEED = 'orogen-layout-1';
 export const OROGEN_LAYOUT = Object.freeze({
   targetShare: .10, probeCount: 4096, candidates: 4096,
@@ -540,14 +541,15 @@ function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBa
     }
   }
   const masks: number[]=[],offsets=[0],candidates: number[]=[],scalars=new Float64Array(belts.length*9);
-  // Measured bound, not an analytic curvature claim: 5x5 taps in EVERY active cell,
-  // all four worlds, |distance| <= 1.25H and |u/uLimit| < 1. Worst signed interpolation
-  // errors: .076814443 / .060304457 / .034594238 / .056697924 H (M/S/R/L).
-  // .16 exceeds twice the worst, including Float32 storage. Endpoint-clamped projections
-  // dominate; a smooth infinite-curve curvature bound alone would miss those cells.
-  // Reproduce with test-results/mountains/t6-baked/interpolation-error.mjs.
+  // Measured bound, including Float32 storage (M/S/R/L): interior |u/U| < .9 maxima
+  // .00066 / .00023 / .00037 / .00028 H; <= .0005 H through .955. Dense 32x32 endpoint
+  // taps reach .0847 H (coarser 8x8: .0803; 4x4: .0768). Endpoint kinks dominate.
+  // Composition now uses coarseMarginH(|u/U|), .002 H inside .94 ramping to .2 H at .99,
+  // >= twice the measured error per .0025-wide bin. Scalar [8] is only the largest skip margin:
+  // .2 = MASSIF_COARSE_MARGIN.END_H (a literal: the layout imports no envelope module; equality is tested).
+  // Evidence: test-results/mountains/t6-margin/err-by-u-{fine,end32}.jsonl.
   for(let k=0;k<belts.length;k++){
-    const b=belts[k];scalars.set([...b.tangent,...b.centre,b.uLimit,b.halfWidthM,.16],k*9);
+    const b=belts[k];scalars.set([...b.tangent,...b.centre,b.uLimit,b.halfWidthM,.2],k*9);
   }
   // Per-belt block-test constants, hoisted (the same expressions as before, evaluated once per belt).
   const eligible=new Uint8Array(belts.length),capOf=new Float64Array(belts.length),slabOf=new Float64Array(belts.length);

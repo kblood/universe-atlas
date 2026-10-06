@@ -1,4 +1,4 @@
-import {massifCoarseRidgeTermM,MASSIF_ENVELOPE} from './mountain-envelope.ts';
+import {massifCoarseRidgeTermM,coarseMarginH,MASSIF_ENVELOPE} from './mountain-envelope.ts';
 import {
   hash64,
   macroHeightCode,
@@ -598,18 +598,21 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
             const block=field.blockTable[(face*B+(j>>>3))*B+(i>>>3)]-1,bit=(j&7)*8+(i&7);
             if(block>=0 && (field.masks[block*2+(bit>>>5)]&(1<<(bit&31)))) {
               const wx=fx-i,wy=fy-j,ds=field.distances,bs=field.scalars,main=ridgeTermM;
-              let best=main; // Include the zero-belt term: candidate-list changes stay continuous.
+              // Non-skipped candidates lie in their separated inflated tubes (margin <= .2 H).
+              // Inside one massif all others skip: max only these terms, or main if none.
+              // At lo -> 1 each term tends to main continuously.
+              let best=-Infinity;
               for(let c=field.offsets[block];c<field.offsets[block+1];c++){
                 const node=c*81+(j&7)*9+(i&7),k=field.candidates[c]*9;
                 const sd=(ds[node]*(1-wx)+ds[node+1]*wx)*(1-wy)+(ds[node+9]*(1-wx)+ds[node+10]*wx)*wy;
                 // Both uplift and subtractive fade are exactly zero outside this margin.
                 if(Math.abs(sd)-bs[k+8]>=1)continue;
                 const x=d[0]*bs[k]+d[1]*bs[k+1]+d[2]*bs[k+2],z=d[0]*bs[k+3]+d[1]*bs[k+4]+d[2]*bs[k+5];
-                const u=x/(Math.sqrt(x*x+z*z)+z);
-                const term=massifCoarseRidgeTermM(main,sd,bs[k+8],bs[k+7],u/bs[k+6],a0,landFactor,tau);
+                const u=x/(Math.sqrt(x*x+z*z)+z),uf=u/bs[k+6];
+                const term=massifCoarseRidgeTermM(main,sd,coarseMarginH(uf),bs[k+7],uf,a0,landFactor,tau);
                 if(term>best)best=term;
               }
-              ridgeTermM=best;
+              ridgeTermM=best===-Infinity?main:best;
             }
           }
           const F = comp + tau * (RC.HUP * ss(RC.B1, RC.B2, a0) + RC.HHI * ss(RC.B3, RC.B4, a0))
