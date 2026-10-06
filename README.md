@@ -1,5 +1,9 @@
 # Universe Atlas
 
+## Mountains handoff — 2026-10-06 (local, not deployed)
+
+T6 merged to main UNVERIFIED (`aa3a2c7`, mountains wired, `terrain-1.9.0-mountains`; final gate and fair cost protocol not run; revert: `git revert -m 1 aa3a2c7`). Status, numbers, open items and resume commands: `docs/mountains-handoff-2026-10-06.md`.
+
 ## Mountains step G: the 800 m colour grain — 2026-10-05 (local, not deployed)
 
 `terrain-1.8.1-grain` (owner decision (b)). The 800 m local colour grain of
