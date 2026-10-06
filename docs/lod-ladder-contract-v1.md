@@ -119,6 +119,28 @@ the level pass-through in `src/planet-tiles.ts`. Test: `tests/lod-carving-reduct
   the rule is active only for samplers and tiles built with `{mountains: true}`; the default field is unchanged.
 - Every section-5 tolerance is unchanged. The version moved to `lod-ladder-2` for the new declared reduction.
 
+**Baked coarse band field (amendment, branch `mountains/baked-coarse`, cost route A).** This amendment is recorded
+in decisions addendum (5), decided by Opus 5.5 on Kasper's instruction; he may overrule. The evidence is in
+`docs/mountains-t6-baked-coarse-2026-10-06.md`. It is not on main while that addendum's C1 miss stands.
+
+- **What coarse levels evaluate.** Below the carving cut, a level's sampler does not run the M1 foot-point solve.
+  It reads a per-body field, `orogenLayout(body).coarseBandField(48 km, 32 km)`:
+  - The field stores the signed foot-point distance divided by H at cube-face nodes, at half the T1 resolution.
+  - It is deterministic, built once per layout and memoised.
+  - The ridge term comes from `massifCoarseRidgeTermM`, an upper bound of the uncarved composition (1−w)·main + U.
+    The bound uses the interpolated distance widened by a measured margin of 0.16 H.
+  - The coarse surface therefore stays an upper envelope of the carved truth. Heights are only raised, the ocean
+    flag is unchanged, and no M3 block is solved.
+- **Continuity.**
+  - The active region is the set of T1-flagged cells dilated by one field cell. At every boundary node of that
+    region the composition returns main exactly, so the field has no seam against inactive cells.
+  - Face-edge nodes are evaluated from canonical directions and are bit-identical on both faces.
+  - The T3 parent rule is unchanged: the parent of an L(cut) tile is coarse.
+- **What is unchanged.** The truth and levels at or above the cut keep the exact M1/M2/M3 path. Section-5
+  tolerances are unchanged.
+- **Versions.** The layout and envelope versions move: `orogen-layout-3`, `massif-envelope-3`. `LOD_LADDER_VERSION`
+  is unchanged: the declared reduction is still "upper envelope of the carved truth below the cut".
+
 **Colour and class shares:** coverage-weighted mean of the finer level. A class is carried as a class: the
 bilinear-weighted majority of the four corner labels. It is never re-derived from a coarse height.
 

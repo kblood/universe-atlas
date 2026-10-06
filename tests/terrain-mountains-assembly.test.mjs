@@ -59,7 +59,7 @@ test('HARD: the ocean flag of every direction (4096 per water world, belts inclu
 });
 
 test('HARD: versions, fixed carving width, strip rule and per-strip seeds', () => {
-  assert.deepEqual([MASSIF_ENVELOPE_VERSION, MOUNTAIN_CARVING_VERSION, MOUNTAIN_ASSEMBLY_VERSION], ['massif-envelope-2', 'mountain-carving-2', 'mountain-assembly-2'], 'mountain-assembly-1 -> -2: cost plan T3 coarse-level carve flag; the truth term is unchanged');
+  assert.deepEqual([MASSIF_ENVELOPE_VERSION, MOUNTAIN_CARVING_VERSION, MOUNTAIN_ASSEMBLY_VERSION], ['massif-envelope-3', 'mountain-carving-2', 'mountain-assembly-2'], 'mountain-assembly-1 -> -2: cost plan T3 coarse-level carve flag; the truth term is unchanged');
   assert.ok(Object.isFrozen(MOUNTAIN_ASSEMBLY));assert.deepEqual({...MOUNTAIN_ASSEMBLY}, {CARVING_HALF_WIDTH_M: 48000});
   assert.equal(MASSIF_IS_ONE_STRIP, true);
   const w = MOUNTAIN_ASSEMBLY.CARVING_HALF_WIDTH_M;

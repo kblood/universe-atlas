@@ -127,6 +127,6 @@ test('HARD: arithmetic audit with negative controls, no imports, frozen versione
   for(const bad of ['Math.sin(x)','Math.sqrt(x)','Math.pow(x,3)','x ** 3',"Math['abs'](x)",'Math.random()',
     'const alias=Math','Number.parseFloat(x)','parseFloat(x)','x.toFixed(2)'])assert.throws(()=>auditArithmetic(source+'\n'+bad),bad);
   assert.doesNotMatch(source,/\bimport\b|\bfrom\s*['"]/);
-  assert.equal(MASSIF_ENVELOPE_VERSION,'massif-envelope-2');assert.ok(Object.isFrozen(C));
+  assert.equal(MASSIF_ENVELOPE_VERSION,'massif-envelope-3');assert.ok(Object.isFrozen(C));
   assert.deepEqual(C,{GAIN:1,MIN_HALF_WIDTH_M:32000,MAX_HALF_WIDTH_M:48000,EDGE_FADE_START:.65,RIDGE_EQUIVALENT_WATER_M:3640,RIDGE_EQUIVALENT_DRY_M:1800,BLEND_BELT_FULL:.5,MIN_FEATURE_WAVELENGTH_M:32000});
 });

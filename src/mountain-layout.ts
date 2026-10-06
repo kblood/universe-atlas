@@ -1,11 +1,12 @@
 import {hash64, macroHeightCode, noise, rng, type V3} from './catalog.ts';
 import {sine, detCos} from './det-math.ts';
 
+// orogen-layout-3 adds a lazy baked coarse band field; all existing outputs are unchanged.
 // orogen-layout-2 (mountains cost plan T2, 2026-10-05): the foot-point solve uses the exact derivative and
 // FOOT_POINT_STEPS fixed steps instead of five central-difference steps; distances agree with -1 to 1e-7 m,
 // alongM to 0.1 m (docs/mountain-layout-v1.md "In-massif foot-point solve"). The belts are unchanged:
 // construction keeps its orogen-layout-1 random stream (OROGEN_LAYOUT_CONSTRUCTION_SEED) and land-coverage predicate (coveredV1).
-export const OROGEN_LAYOUT_VERSION = 'orogen-layout-2';
+export const OROGEN_LAYOUT_VERSION = 'orogen-layout-3';
 export const OROGEN_LAYOUT_CONSTRUCTION_SEED = 'orogen-layout-1';
 export const OROGEN_LAYOUT = Object.freeze({
   targetShare: .10, probeCount: 4096, candidates: 4096,
@@ -51,14 +52,48 @@ function thetaOf(u: number) {
 }
 
 // Same evaluation order as R-CAL-1, before the radius scale and compression.
+function lIhash(x: number, y: number, z: number, s: number) {
+  let h = Math.imul(x, 0x9e3779b1) ^ Math.imul(y, 0x85ebca77) ^ Math.imul(z, 0xc2b2ae3d) ^ Math.imul(s, 0x27d4eb2f);
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967295;
+}
+function lNoise(x: number, y: number, z: number, s: number) {
+  const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);
+  let a = x - ix, b = y - iy, c = z - iz;
+  a = a * a * (3 - 2 * a); b = b * b * (3 - 2 * b); c = c * c * (3 - 2 * c);
+  let value = 0;
+  for (let dx = 0; dx < 2; dx++) for (let dy = 0; dy < 2; dy++) for (let dz = 0; dz < 2; dz++)
+    value += lIhash(ix + dx, iy + dy, iz + dz, s) * (dx ? a : 1 - a) * (dy ? b : 1 - b) * (dz ? c : 1 - c);
+  return value;
+}
+function lMacro(s: number, d: V3) {
+  return 0.68 * lNoise(d[0] * 2.6 + 11, d[1] * 2.6 + 31, d[2] * 2.6 + 17, s) + 0.23 * lNoise(d[0] * 5.2, d[1] * 5.2, d[2] * 5.2, s + 1) + 0.09 * lNoise(d[0] * 10.4, d[1] * 10.4, d[2] * 10.4, s + 2);
+}
+function macroCode(body: World) {
+  return Number(hash64(body.seed+'/macro-v1') & 0xffffffffn);
+}
 export function continentalA0(body: World): Coordinate {
-  const code=Number(hash64(body.seed+'/macro-v1') & 0xffffffffn),sea=.37+body.water*.22;
+  const code=macroCode(body),sea=.37+body.water*.22;
   const n=(d: V3,f: number,s: number)=>noise(d[0]*f+13,d[1]*f+37,d[2]*f+19,code+s);
   return body.water ? d=>{
     const macro=macroHeightCode(code,d);
     const coast=macro+(n(d,42,5)-.5)*.012+(n(d,90,6)-.5)*.003;
     return (coast-sea)*47000;
   } : d=>(macroHeightCode(code,d)-.46)*44000;
+}
+// The layout CONSTRUCTION's a0 (orogenLayout): continentalA0 bit for bit on private kernel copies, so the one-time
+// construction never feeds type feedback into catalog.ts's per-sample kernels, while the per-sample `sample` keeps
+// continentalA0 on the shared kernels (docs/mountains-t6-baked-coarse-2026-10-06.md, cost bisection).
+export function constructionA0(body: World): Coordinate {
+  const code=macroCode(body),sea=.37+body.water*.22;
+  const n=(d: V3,f: number,s: number)=>lNoise(d[0]*f+13,d[1]*f+37,d[2]*f+19,code+s);
+  return body.water ? d=>{
+    const macro=lMacro(code,d);
+    const coast=macro+(n(d,42,5)-.5)*.012+(n(d,90,6)-.5)*.003;
+    return (coast-sea)*47000;
+  } : d=>(lMacro(code,d)-.46)*44000;
 }
 
 // noise(x, 37, 19, s) of catalog.ts, bit for bit (cost plan T2, docs/mountains-opus-decisions-2026-10-05.md
@@ -406,10 +441,139 @@ function bandCellIndex(d: V3,N: number) {
   return (face*N+j)*N+i;
 }
 
+/* Sparse 8x8 cell blocks. Each candidate has 9x9 signed-distance nodes; shared nodes are
+ * evaluated identically, including across cube faces. No direction-taking lookup is exported. */
+export interface CoarseBandField {
+  readonly faceCells: number; readonly blockTable: Int32Array; readonly masks: Uint32Array;
+  readonly offsets: Uint32Array; readonly candidates: Uint16Array; readonly distances: Float32Array;
+  /* Per belt: tangent xyz, centre xyz, uLimit, halfWidthM, delta (units of H). */
+  readonly scalars: Float64Array;
+  readonly bytes: number; readonly activeCells: number; readonly multiBeltCells: number;
+}
+function coarseDirection(face: number,i: number,j: number,N: number,d: V3) {
+  const k=face>>>1;
+  d[k]=face&1?-1:1;d[BAND_AXES_A[k]]=2*i/N-1;d[BAND_AXES_B[k]]=2*j/N-1;
+  // World-axis summation order is canonical on edges/corners, independent of the owning face.
+  const l=Math.sqrt(d[0]*d[0]+d[1]*d[1]+d[2]*d[2]);
+  d[0]/=l;d[1]/=l;d[2]/=l;
+}
+// Index of the least significant set bit, integer arithmetic only.
+function lowBitIndex(bits: number) {
+  let v=bits&-bits,n=0;
+  if(v&0xffff0000){n+=16;v>>>=16;}if(v&0xff00){n+=8;v>>>=8;}
+  if(v&0xf0){n+=4;v>>>=4;}if(v&0xc){n+=2;v>>>=2;}if(v&2)n++;
+  return n;
+}
+function buildCoarseBandField(belts: readonly OrogenBelt[],R: number,g: OrogenBandGrid,maxDistM: number,minHalfWidthM: number): CoarseBandField {
+  const N=g.faceCells/2,B=N/8,table=new Int32Array(6*B*B),flags=new Uint32Array(12*B*B),base=new Uint32Array(12*B*B),d: V3=[0,0,0];
+  const mark=(face: number,i: number,j: number)=>{
+    if(i<0||j<0||i>=N||j>=N){
+      coarseDirection(face,i+.5,j+.5,N,d);
+      const c=bandCellIndex(d,N);face=Math.floor(c/(N*N));j=Math.floor(c/N)%N;i=c%N;
+    }
+    const block=(face*B+(j>>>3))*B+(i>>>3),bit=(j&7)*8+(i&7);
+    flags[block*2+(bit>>>5)]|=1<<(bit&31);
+  };
+  // Union each covered 2x2 T1 cell, then dilate by one field cell (also over face edges).
+  for(let w=0;w<g.bits.length;w++){
+    let bits=g.bits[w];
+    while(bits){const bit=lowBitIndex(bits),c=w*32+bit,face=Math.floor(c/(g.faceCells*g.faceCells));
+      const j=(Math.floor(c/g.faceCells)%g.faceCells)>>>1,i=(c%g.faceCells)>>>1;
+      const q=(face*B+(j>>>3))*B+(i>>>3),v=(j&7)*8+(i&7);base[2*q+(v>>>5)]|=1<<(v&31);
+      bits&=bits-1;
+    }
+  }
+  for(let q=0;q<table.length;q++)for(let h=0;h<2;h++){
+    let bits=base[2*q+h];
+    while(bits){const bit=lowBitIndex(bits)+32*h,face=Math.floor(q/(B*B)),i=q%B*8+(bit&7),j=Math.floor(q/B)%B*8+(bit>>>3);
+      if(i>0&&j>0&&i<N-1&&j<N-1){
+        // Interior cell: the 3x3 neighbourhood stays on this face (the same cells mark() would set).
+        for(let y=j-1;y<=j+1;y++)for(let x=i-1;x<=i+1;x++){
+          const block=(face*B+(y>>>3))*B+(x>>>3),bit=(y&7)*8+(x&7);flags[block*2+(bit>>>5)]|=1<<(bit&31);
+        }
+      } else for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)mark(face,i+dx,j+dy);
+      bits&=bits-1;
+    }
+  }
+  const masks: number[]=[],offsets=[0],candidates: number[]=[],scalars=new Float64Array(belts.length*9);
+  // Measured bound, not an analytic curvature claim: 5x5 taps in EVERY active cell,
+  // all four worlds, |distance| <= 1.25H and |u/uLimit| < 1. Worst signed interpolation
+  // errors: .076814443 / .060304457 / .034594238 / .056697924 H (M/S/R/L).
+  // .16 exceeds twice the worst, including Float32 storage. Endpoint-clamped projections
+  // dominate; a smooth infinite-curve curvature bound alone would miss those cells.
+  // Reproduce with test-results/mountains/t6-baked/interpolation-error.mjs.
+  for(let k=0;k<belts.length;k++){
+    const b=belts[k];scalars.set([...b.tangent,...b.centre,b.uLimit,b.halfWidthM,.16],k*9);
+  }
+  // Per-belt block-test constants, hoisted (the same expressions as before, evaluated once per belt).
+  const eligible=new Uint8Array(belts.length),capOf=new Float64Array(belts.length),slabOf=new Float64Array(belts.length);
+  for(let k=0;k<belts.length;k++){
+    const b=belts[k];eligible[k]=b.halfWidthM<minHalfWidthM?0:1;capOf[k]=capZ(b,R);
+    slabOf[k]=(b.halfWidthM*b.gradientMax+Math.abs(b.bendM)+b.amplitudeM)/R;
+  }
+  let activeCells=0,multiBeltCells=0;
+  for(let q=0;q<table.length;q++){
+    if(!(flags[2*q]||flags[2*q+1]))continue;
+    table[q]=offsets.length;
+    masks.push(flags[2*q],flags[2*q+1]);
+    const face=Math.floor(q/(B*B)),j0=(Math.floor(q/B)%B)*8,i0=(q%B)*8;
+    coarseDirection(face,i0+4,j0+4,N,d);
+    const cx=d[0],cy=d[1],cz=d[2],rho=8*1.4142135623730951/N+1e-9;
+    let count=0,cells=0;
+    for(let h=0;h<2;h++){let v=flags[2*q+h];while(v){cells++;v&=v-1;}}
+    activeCells+=cells;
+    for(let k=0;k<belts.length;k++){
+      if(!eligible[k])continue;
+      const b=belts[k],C=b.centre,P=b.pole;
+      if(cx*C[0]+cy*C[1]+cz*C[2]+rho<capOf[k])continue;
+      if(Math.abs(cx*P[0]+cy*P[1]+cz*P[2])-rho>slabOf[k])continue;
+      candidates.push(k);count++;
+    }
+    if(count>1)multiBeltCells+=cells;
+    offsets.push(candidates.length);
+  }
+  const values=new Float32Array(candidates.length*81);
+  // Per block, the 9 node rows (bit i = node i) that active cells read.
+  const rowsOf=new Uint16Array((offsets.length-1)*9);
+  for(let q=0;q<table.length;q++){
+    const block=table[q]-1;if(block<0)continue;
+    const face=Math.floor(q/(B*B)),j0=(Math.floor(q/B)%B)*8,i0=(q%B)*8,nodeRows=block*9;
+    // Only corners of active cells can be read. Preserve every candidate at those
+    // corners; a neighbouring cell's rejection cannot discard a shared node.
+    for(let j=0;j<8;j++){
+      const row=(masks[2*block+(j>>>2)]>>>((j&3)*8))&255,corners=row|(row<<1);
+      rowsOf[nodeRows+j]|=corners;rowsOf[nodeRows+j+1]|=corners;
+    }
+    // Same-face neighbours already built (left: q-1, below: q-B) share this block's column 0 / row 0 nodes:
+    // the node direction is the same integer node (i0 + 0 = (i0 - 8) + 8), so its value is copied, not recomputed.
+    const left=i0>0?table[q-1]-1:-1,below=j0>0?table[q-B]-1:-1;
+    for(let c=offsets[block];c<offsets[block+1];c++){
+      const k=candidates[c],b=belts[k],C=b.centre,P=b.pole;
+      const H=Math.min(b.halfWidthM,maxDistM);
+      let cl=-1,cb=-1;
+      if(left>=0)for(let e=offsets[left];e<offsets[left+1];e++)if(candidates[e]===k)cl=e;
+      if(below>=0)for(let e=offsets[below];e<offsets[below+1];e++)if(candidates[e]===k)cb=e;
+      for(let j=0;j<=8;j++)for(let i=0;i<=8;i++){
+        if(!(rowsOf[nodeRows+j]&(1<<i)))continue;
+        if(i===0&&cl>=0&&(rowsOf[left*9+j]&256)){values[c*81+j*9]=values[cl*81+j*9+8];continue;}
+        if(j===0&&cb>=0&&(rowsOf[below*9+8]&(1<<i))){values[c*81+i]=values[cb*81+72+i];continue;}
+        coarseDirection(face,i0+i,j0+j,N,d);
+        const x=dot(d,b.tangent),z=dot(d,C),py=dot(d,P),u=x/(Math.sqrt(x*x+z*z)+z);
+        transverse(b,d,R,u,x,z,py,py*R-offset(b,u)<0?-1:1);
+        values[c*81+j*9+i]=trDistance/H;
+      }
+    }
+  }
+  const field={faceCells:N,blockTable:table,masks:Uint32Array.from(masks),offsets:Uint32Array.from(offsets),
+    candidates:Uint16Array.from(candidates),distances:values,scalars,activeCells,multiBeltCells};
+  const bytes=table.byteLength+field.masks.byteLength+field.offsets.byteLength+field.candidates.byteLength+field.distances.byteLength+scalars.byteLength;
+  return Object.freeze({...field,bytes});
+}
+
 /* Build once; sample accepts unit directions. landProbe optionally replaces the
  * fixed equal-area construction probe (directions, not preclassified heights). */
-export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
-  seed: string; radiusM: number; a0: Coordinate; landProbe?: readonly V3[];
+export function buildOrogenLayout({seed,radiusM:R,a0,landProbe,sampleA0=a0}: {
+  seed: string; radiusM: number; a0: Coordinate; landProbe?: readonly V3[]; sampleA0?: Coordinate;
 }) {
   const random=rng(seed+'/'+OROGEN_LAYOUT_CONSTRUCTION_SEED),belts: OrogenBelt[]=[],axes: V3[][]=[];
   const probe: V3[]=landProbe ? [...landProbe] : [];
@@ -668,8 +832,15 @@ export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
     const g=bandGrid(maxDistM,minHalfWidthM),idx=g.all?0:bandCellIndex(d,g.faceCells);
     return g.all || (g.bits[idx>>>5]&(1<<(idx&31)))!==0;
   };
-  return Object.freeze({belts:Object.freeze(belts),maxHalfWidthM,sampleWithA0,sample:(d: V3,out?: OrogenSample)=>sampleWithA0(d,a0(d),out),
-    sampleWithinWithA0,bandGrid,bandCellFlagged,bandCellIndex,sampleWithA0Unpruned,soloWordStats});
+  const coarseFields=new Map<string,CoarseBandField>();
+  const coarseBandField=(maxDistM: number,minHalfWidthM: number)=>{
+    const key=maxDistM+'/'+minHalfWidthM;
+    let field=coarseFields.get(key);
+    if(!field){field=buildCoarseBandField(belts,R,bandGrid(maxDistM,minHalfWidthM),maxDistM,minHalfWidthM);coarseFields.set(key,field);}
+    return field;
+  };
+  return Object.freeze({belts:Object.freeze(belts),maxHalfWidthM,sampleWithA0,sample:(d: V3,out?: OrogenSample)=>sampleWithA0(d,sampleA0(d),out),
+    sampleWithinWithA0,bandGrid,bandCellFlagged,bandCellIndex,sampleWithA0Unpruned,soloWordStats,coarseBandField});
 }
 
 const cache=new Map<string,ReturnType<typeof buildOrogenLayout>>();
@@ -678,7 +849,7 @@ export function orogenLayout(body: World) {
   const emptyBody=body.type==='Gas giant'||body.kind==='star'||body.type==='Star';
   const key=JSON.stringify([body.seed,body.radiusM,body.water,body.type,emptyBody]);
   let layout=cache.get(key);
-  if(!layout){layout=buildOrogenLayout({seed:body.seed,radiusM:body.radiusM,a0:emptyBody?()=>-1:continentalA0(body),...(emptyBody?{landProbe:[]}: {})});cache.set(key,layout);}
+  if(!layout){layout=buildOrogenLayout({seed:body.seed,radiusM:body.radiusM,a0:emptyBody?()=>-1:constructionA0(body),sampleA0:emptyBody?()=>-1:continentalA0(body),...(emptyBody?{landProbe:[]}: {})});cache.set(key,layout);}
   return layout;
 }
 
