@@ -25,6 +25,7 @@ import {waterWorlds, fib} from './terrain-climate-fixtures.mjs';
 import {
   ON, mountainSampler, buildOn, axisSites, switchSeamCase, latticeHeights, vertexPosition, storedPosition, distM, edgeNodes,
 } from './helpers/mountain-coarse-tiles.mjs';
+import {pick, tierNote} from './helpers/tier.mjs';
 
 const bodies = Object.fromEntries(waterWorlds().map(b => [b.name, b]));
 const MORPH_M = .05; // tests/lod-consistency.test.mjs 'morph: a child starts exactly on its corrected parent'
@@ -68,9 +69,15 @@ for (const [name, body] of Object.entries(bodies)) test(`${name}: cost optimisat
     assert.equal(costIdentityDigest(buildOn(body, tiles.directionTile(d, L))), COST_IDENTITY[name][i]);
   }
 });
-for (const [name, body] of Object.entries(bodies)) test(`${name}: cost optimisation preserves full sampler outputs at truth and L0..22`, () => {
+// Tier (docs/test-tiers-2026-10-07.md): each level's digest is pinned on its own, so a subset of levels is still exact.
+// default = truth + L0..22; smoke = truth + the class boundaries; work adds L0 and L22.
+const SAMPLER_LEVELS = (cut, rock) => pick({smoke: [undefined, cut - 1, cut, rock - 1, rock], work: [undefined, 0, cut - 1, cut, rock - 1, rock, 22],
+  default: [undefined, ...Array.from({length: 23}, (_, i) => i)]});
+for (const [name, body] of Object.entries(bodies)) test(`${name}: cost optimisation preserves full sampler outputs at truth and L0..22`, t => {
   const dirs = [...axisSites(body, {count: 3}).map(s => s.d), ...Array.from({length: 256}, (_, i) => fib(i, 256))];
-  for (const lodLevel of [undefined, ...Array.from({length: 23}, (_, i) => i)]) {
+  const levels = SAMPLER_LEVELS(CUT[name], ROCK[name]);
+  if (levels.length !== 24) t.diagnostic(tierNote(`levels ${levels.map(L => L === undefined ? 'truth' : `L${L}`).join(', ')}`));
+  for (const lodLevel of levels) {
     const sample = terrainSampler(body, undefined, undefined, undefined, 0, undefined, true, {mountains: true, lodLevel});
     const cls = lodLevel === undefined || lodLevel >= ROCK[name] ? 2 : lodLevel >= CUT[name] ? 1 : 0;
     assert.equal(costIdentityDigest(dirs.map(d => sample(d))), COST_SAMPLER_IDENTITY[name][cls], `L${lodLevel}`);

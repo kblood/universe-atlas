@@ -84,7 +84,8 @@ If protected branches or rulesets are available for the chosen visibility:
   (owner choice), one approving review, no force-push, no deletion.
 - Required checks only once a CI job exists and has been verified green on
   the migration commit. Candidate starting set: `tsc` plus
-  `npm run test:smoke`; CPU-timing caps stay out (they live in `test:perf`).
+  `npm run test:fast` (formerly `test:smoke`; the new `test:smoke` is the ~90 s
+  CPU-heavy terrain tier); CPU-timing caps stay out (they live in `test:perf`).
 - Activate `CODEOWNERS` only with real GitHub handles (draft in
   `docs/github/CODEOWNERS.draft`).
 

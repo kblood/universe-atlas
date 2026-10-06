@@ -5,7 +5,7 @@
 cd /c/LLM/IWSDK/universe-atlas-wt/t6 || exit 9
 D=test-results/mountains/t6-wiring
 : > $D/evidence-exits.log
-step() { name=$1; shift; start=$(date +%s); "$@" > $D/$name.log 2>&1; code=$?; echo "$name exit=$code $(( $(date +%s)-start )) s" >> $D/evidence-exits.log; }
+step() { local name start code; name=$1; shift; start=$(date +%s); "$@" > $D/$name.log 2>&1; code=$?; echo "$name exit=$code $(( $(date +%s)-start )) s" >> $D/evidence-exits.log; }
 step lod-cells-wired node $D/lod-cells-t6.mjs C:/LLM/IWSDK/universe-atlas-wt/t6 $D/lod-cells-wired.json
 step lod-cells-main node $D/lod-cells-t6.mjs C:/LLM/IWSDK/universe-atlas $D/lod-cells-main.json
 step hyps-truth node $D/hyps-truth.mjs $D/hyps-truth.json

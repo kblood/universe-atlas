@@ -28,10 +28,15 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {Worker} from 'node:worker_threads';
 import {LOD_TOLERANCES, carvingFromLevel, peakCorrectionMaxLevel} from '../src/lod-ladder.ts';
-import {frameViolations, carvingFrameViolations, edgeViolations, stats, CONTROL, SLOPE_BOUND, REFINE, NET, FRAME_SITES} from './helpers/lod-coarse-frame.mjs';
+import {frameViolations, carvingFrameViolations, edgeViolations, stats, CONTROL, SLOPE_BOUND, frameConfig} from './helpers/lod-coarse-frame.mjs';
+import {TIER, pick, tierNote} from './helpers/tier.mjs';
 import {waterWorlds} from './terrain-climate-fixtures.mjs';
 
 const WORLDS = ['Maithea', 'Selawyn', 'Raiva', 'Lethuris'];
+// Tier (docs/test-tiers-2026-10-07.md): default = 2 axis sites and the 4 x 16384 net (FRAME_SITES, NET, REFINE). smoke =
+// 1 site and a 1 x 2048 net refined x 8192 (same ~0.5 m sub-interval). Pins and bounds are unchanged; count floors that
+// scale with the site count use CFG.sites and MIN_SIBLING_EDGES.
+const CFG = frameConfig(TIER), FRAME_SITES = CFG.sites, MIN_SIBLING_EDGES = pick({smoke: 1, default: 4});
 /** The existing 0.05 m morph rule (tests/lod-consistency.test.mjs, tests/lod-carving-reduction.test.mjs). */
 const EPS_UP_M = .05;
 /** ROOM per world and parent level L (pair L -> L+1): measured max of (parent - child) + 25%, rounded up to 50 m.
@@ -55,7 +60,7 @@ const UP_ROOM_M = {
 
 let measured;
 const measure = () => measured ??= Promise.all(WORLDS.map(name => new Promise((resolve, reject) => {
-  const w = new Worker(new URL('./helpers/lod-coarse-frame.mjs', import.meta.url), {workerData: name});
+  const w = new Worker(new URL('./helpers/lod-coarse-frame.mjs', import.meta.url), {workerData: {world: name, tier: TIER}});
   w.once('message', resolve);w.once('error', reject);
   w.once('exit', code => {if (code !== 0) reject(new Error(`${name} worker exit ${code}`));});
 })));
@@ -64,6 +69,7 @@ const fmt = s => `p50 ${s.p50.toFixed(1)} / p99 ${s.p99.toFixed(1)} / max ${s.ma
 test('HARD: selection: massif-touching tiles by the T1 grid and belt query; coarse builds solve 0 M3 blocks', async t => {
   const all = await measure(), bodies = Object.fromEntries(waterWorlds().map(b => [b.name, b]));
   for (const r of all) {
+    assert.equal(r.tier, TIER);assert.equal(r.net.N * r.refine, 16384 * 1024, 'N x REFINE invariant (refined sub-interval)');
     assert.equal(r.cut, carvingFromLevel(bodies[r.world].radiusM));assert.equal(r.corrMax, peakCorrectionMaxLevel(bodies[r.world].radiusM));
     assert.equal(r.sites.length, FRAME_SITES, `${r.world}: ${FRAME_SITES} massif axis sites`);
     for (const s of r.selected) if (s.role === 'frame') assert.ok(s.massifSamples > 0, `${r.world} ${s.tile}: touches a massif`);
@@ -71,6 +77,7 @@ test('HARD: selection: massif-touching tiles by the T1 grid and belt query; coar
     assert.ok(r.solves.fine > 0, `${r.world}: carved tiles do solve blocks (the counter is live)`);
     const byLevel = {};for (const s of r.selected) if (s.role === 'frame') (byLevel[s.level] ??= []).push(s.massifSamples);
     t.diagnostic(`${r.world}: cut L${r.cut}, last corrected L${r.corrMax}, ${r.selected.filter(s => s.role === 'frame').length} frame tiles (+${r.selected.filter(s => s.role !== 'frame').length} edge-only); per level [tiles: massif samples of 65x65]: ${Object.entries(byLevel).map(([L, a]) => `L${L} [${a.length}: ${a.join(',')}]`).join(' ')}; block solves fine ${r.solves.fine}; ${(r.ms / 1000).toFixed(1)} s`);
+    if (TIER !== 'default' && TIER !== 'gate') t.diagnostic(tierNote(`${r.world}: ${CFG.sites} site(s), net ${CFG.net.K} x ${CFG.net.N}, refine x ${CFG.refine}`));
   }
 });
 
@@ -170,7 +177,7 @@ test('HARD: EDGE MATCH: neighbouring tiles agree on every edge vertex (Object.is
     // Massif edges at the coarse and the first fine levels, same face and across cube-face edges.
     for (const L of [r.cut - 1, r.cut]) assert.ok(r.edges.some(e => e.crossFace && e.level === L && e.massifNodes >= 3), `${r.world}: a cube-face edge on a massif at L${L}`);
     for (const L of [r.cut, r.cut + 1]) assert.ok(r.edges.some(e => !e.crossFace && e.level === L && e.massifNodes > 0), `${r.world}: a same-face massif edge at L${L}`);
-    assert.ok(r.edges.filter(e => e.kind === 'sibling' && e.massifNodes > 0).length >= 4, `${r.world}: coarse sibling edges on a massif`);
+    assert.ok(r.edges.filter(e => e.kind === 'sibling' && e.massifNodes > 0).length >= MIN_SIBLING_EDGES, `${r.world}: coarse sibling edges on a massif`);
     assert.equal(r.edges.filter(e => e.kind === 'cube-edge L0').length, 12, `${r.world}: all 12 cube edges at L0`);
     assert.ok(r.edges.some(e => e.kind === 'sibling' && e.level === r.cut - 1 && e.massifNodes > 0), `${r.world}: a same-face massif edge at L${r.cut - 1}`);
     assert.ok(r.edges.some(e => e.level === r.cut && !e.crossFace && !e.sameParent && e.massifNodes > 0), `${r.world}: a non-sibling massif edge at L${r.cut}`);
@@ -193,7 +200,7 @@ test('HARD: negative control: one edge vertex offset by 1 m fails the edge match
 test('HARD: COARSE-ONLY: the coarse field is continuous on a net over all six faces, 0 M3 block solves', async t => {
   for (const r of await measure()) {
     const c = r.continuity;
-    t.diagnostic(`${r.world}: ${c.lines} lines x ${NET.N}, ${c.samples} samples, ${c.refined} intervals refined x ${REFINE} (belt edges ${c.changes.belt}, massif edges ${c.changes.massif}, belt switches ${c.changes.beltSwitch}, height-flagged ${c.flagged}); steepest slope net ${c.worstNetSlope.toFixed(3)}, refined ${c.worstFineSlope.toFixed(3)} (bound ${SLOPE_BOUND}); block solves ${c.solves}`);
+    t.diagnostic(`${r.world}: ${c.lines} lines x ${r.net.N}, ${c.samples} samples, ${c.refined} intervals refined x ${r.refine} (belt edges ${c.changes.belt}, massif edges ${c.changes.massif}, belt switches ${c.changes.beltSwitch}, height-flagged ${c.flagged}); steepest slope net ${c.worstNetSlope.toFixed(3)}, refined ${c.worstFineSlope.toFixed(3)} (bound ${SLOPE_BOUND}); block solves ${c.solves}`);
     assert.equal(c.solves, 0, `${r.world}: no M3 block solved by the coarse system`);
     assert.ok(c.changes.belt > 0 && c.changes.massif > 0, `${r.world}: the net crosses belt and massif edges`);
     assert.equal(c.nonFinite, 0, `${r.world}: every sample finite`);

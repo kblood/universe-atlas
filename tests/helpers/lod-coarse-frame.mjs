@@ -2,7 +2,8 @@
 // Measurement for ONE world with the staged mountains on ({mountains: true}, the same test hook as
 // tests/lod-carving-reduction.test.mjs), plus the pure check functions the test applies to the real data and to
 // the negative controls. Run in-process (measureWorld) or as a worker thread (workerData = world name), one per
-// world, so the four worlds measure in parallel inside the test slot.
+// world, so the four worlds measure in parallel inside the test slot. Tier-aware (frameConfig): smoke measures one axis
+// site and a 1-line-per-direction net; default is unchanged.
 //
 // Tile selection uses M1 inputs only (never heights): the chain of tiles containing a massif axis site
 // (axisSites: |axis distance| <= 3 km on a massif-width belt), and, at uncarved child levels, every child of those
@@ -16,6 +17,7 @@ import {orogenLayout} from '../../src/mountain-layout.ts';
 import {MASSIF_ENVELOPE} from '../../src/mountain-envelope.ts';
 import {waterWorlds} from '../terrain-climate-fixtures.mjs';
 import {axisSites, buildOn, mountainSampler, parentBoundaryEdges} from './mountain-coarse-tiles.mjs';
+import {pickFor} from './tier.mjs';
 
 const n = tiles.PATCH_SEGMENTS, stride = n + 1;
 
@@ -31,6 +33,14 @@ export const SLOPE_BOUND = 4;
 /** Intervals refined to REFINE sub-intervals: every M1 state change (belt edge, massif edge, belt switch) and every
  * height interval whose slope exceeds FLAG_RATIO x the steepest of its four neighbouring intervals. */
 export const REFINE = 1024, FLAG_RATIO = 4;
+/** Tier configuration (docs/test-tiers-2026-10-07.md): default/gate = the constants above. A coarser net keeps
+ * N x REFINE = 16384 x 1024 (the refined sub-interval, ~0.5 m), so a CONTROL.stepM step stays visible. */
+export function frameConfig(tier = 'default') {
+  const net = pickFor(tier, {smoke: Object.freeze({K: 1, N: 2048, E: NET.E}), work: Object.freeze({K: 4, N: 2048, E: NET.E}), default: NET});
+  const cfg = {tier, sites: pickFor(tier, {smoke: 1, default: FRAME_SITES}), net, refine: NET.N * REFINE / net.N};
+  if (cfg.net.N * cfg.refine !== NET.N * REFINE || !Number.isInteger(cfg.refine)) throw new Error(`frameConfig(${tier}): N x REFINE must stay ${NET.N} x ${REFINE}`);
+  return cfg;
+}
 /** Negative controls. */
 export const CONTROL = Object.freeze({carveFactor: 2, edgeOffsetM: 1, stepM: 10});
 
@@ -128,8 +138,8 @@ export function crossFaceTile(body, level) {
 }
 
 /** COARSE-ONLY continuity over a list of net lines with sampler `h` (direction -> height) and M1 `m1`. */
-export function continuity(body, h, m1, lines) {
-  const R = body.radiusM, {N, E} = NET;let worstNet = 0, worstFine = 0, refined = 0, violations = 0, flagged = 0, samples = 0;
+export function continuity(body, h, m1, lines, {net = NET, refine = REFINE} = {}) {
+  const R = body.radiusM, {N, E} = net;let worstNet = 0, worstFine = 0, refined = 0, violations = 0, flagged = 0, samples = 0;
   const changes = {belt: 0, massif: 0, beltSwitch: 0}, where = [], beltLines = [];let beltEdgesCaught = 0, nonFinite = 0;
   for (const line of lines) {
     const {face, dir, c} = line, beltBefore = changes.belt;
@@ -153,9 +163,9 @@ export function continuity(body, h, m1, lines) {
       // Refine: REFINE sub-intervals on the great-circle arc; a continuous field's sub-jumps shrink with the spacing,
       // a step does not.
       refined++;let prev = H[i], pd = D[i];
-      for (let k = 1; k <= REFINE; k++) {
-        const t = k / REFINE, d = k === REFINE ? D[i + 1] : unit([0, 1, 2].map(j => D[i][j] * (1 - t) + D[i + 1][j] * t));
-        const v = k === REFINE ? H[i + 1] : h(d), l = dist3(pd, d) * R, s = Math.abs(v - prev) / l;samples++;
+      for (let k = 1; k <= refine; k++) {
+        const t = k / refine, d = k === refine ? D[i + 1] : unit([0, 1, 2].map(j => D[i][j] * (1 - t) + D[i + 1][j] * t));
+        const v = k === refine ? H[i + 1] : h(d), l = dist3(pd, d) * R, s = Math.abs(v - prev) / l;samples++;
         worstFine = Math.max(worstFine, s);
         if (!Number.isFinite(v)) nonFinite++;
         if (!(Math.abs(v - prev) <= SLOPE_BOUND * l)) {violations++;bad[i] = 1;if (where.length < 8) where.push({face, dir, c, i, k, jumpM: Math.abs(v - prev), lM: l});}
@@ -168,20 +178,21 @@ export function continuity(body, h, m1, lines) {
   return {beltLines, lines: lines.length, samples, refined, flagged, changes, worstNetSlope: worstNet, worstFineSlope: worstFine, violations, beltEdgesCaught, nonFinite, where};
 }
 
-export function netLines() {
+export function netLines(net = NET) {
   const lines = [];
-  for (let face = 0; face < 6; face++) for (let dir = 0; dir < 2; dir++) for (let k = 0; k < NET.K; k++) lines.push({face, dir, c: -1 + (2 * k + 1) / NET.K});
+  for (let face = 0; face < 6; face++) for (let dir = 0; dir < 2; dir++) for (let k = 0; k < net.K; k++) lines.push({face, dir, c: -1 + (2 * k + 1) / net.K});
   return lines;
 }
 
-export function measureWorld(name) {
+export function measureWorld(name, tier = 'default') {
+  const cfg = frameConfig(tier);
   const t0 = performance.now(), body = waterWorlds().find(b => b.name === name), R = body.radiusM;
   const cut = carvingFromLevel(R), corrMax = peakCorrectionMaxLevel(R), massifCount = massifCounter(body), inMassif = massifQuery(body);
   const cache = new Map(), solves = {coarse: 0, fine: 0};
   const build = t => {const k = tiles.tileKey(t);let b = cache.get(k);
     if (!b) {const s0 = carvingBuildStats.count;b = buildOn(body, t);solves[t.level < cut ? 'coarse' : 'fine'] += carvingBuildStats.count - s0;cache.set(k, b);}
     return b;};
-  const sites = axisSites(body, {count: FRAME_SITES});
+  const sites = axisSites(body, {count: cfg.sites});
   // Every tile of the frame check touches a massif (asserted); edge-only neighbours are reported, their shared edge's massif
   // nodes are counted per edge pair instead.
   const selected = new Map(), select = (t, role = 'frame') => {const k = tiles.tileKey(t);
@@ -272,13 +283,14 @@ export function measureWorld(name) {
   const m1 = d => {lay.sample(d, o);if (o.belt === 0) return 0;
     const massif = o.halfWidthM >= MASSIF_ENVELOPE.MIN_HALF_WIDTH_M && Math.abs(o.axisDistanceM) < MASSIF_ENVELOPE.MAX_HALF_WIDTH_M;
     return (o.beltIndex + 1) * 2 + (massif ? 1 : 0);};
-  const h = d => coarse(d).groundHeightM, lines = netLines();
-  const c0 = carvingBuildStats.count, real = continuity(body, h, m1, lines), netSolves = carvingBuildStats.count - c0;
+  const h = d => coarse(d).groundHeightM, lines = netLines(cfg.net), opts = {net: cfg.net, refine: cfg.refine};
+  const c0 = carvingBuildStats.count, real = continuity(body, h, m1, lines, opts), netSolves = carvingBuildStats.count - c0;
   // Control: the same field with a CONTROL.stepM step on every belt (belt > 0), on the lines that cross a belt edge.
   const beltLines = real.beltLines.slice(0, 4);
-  const stepped = continuity(body, d => h(d) + (lay.sample(d, o).belt > 0 ? CONTROL.stepM : 0), m1, beltLines);
-  return {world: name, cut, corrMax, sites: sites.map(s => s.d), selected: [...selected.values()], solves, frame, edges, cross,
+  const stepped = continuity(body, d => h(d) + (lay.sample(d, o).belt > 0 ? CONTROL.stepM : 0), m1, beltLines, opts);
+  return {world: name, tier, net: cfg.net, refine: cfg.refine, cut, corrMax, sites: sites.map(s => s.d), selected: [...selected.values()], solves, frame, edges, cross,
     continuity: {...real, solves: netSolves}, stepControl: stepped, edgeControl, ms: performance.now() - t0};
 }
 
-if (!isMainThread && workerData) parentPort.postMessage(measureWorld(workerData));
+// workerData: {world, tier} (a bare world name = the default tier).
+if (!isMainThread && workerData) parentPort.postMessage(typeof workerData === 'string' ? measureWorld(workerData) : measureWorld(workerData.world, workerData.tier));

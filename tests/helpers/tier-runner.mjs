@@ -19,10 +19,11 @@ import {join, resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {spawn, execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
-import {cpus} from 'node:os';
+import {cpus, setPriority, constants as osConstants} from 'node:os';
 import {withTestSlot} from './test-slot.mjs';
 import {registeredTests} from './test-selection.mjs';
 import {appendLine} from './tier-reporter.mjs';
+import {validateKnown} from './known-failures.mjs';
 
 // 'default' is accepted for timing/comparison runs of the same list (no escalation rule, no subset coverage).
 const TIERS = ['smoke', 'work', 'default'];
@@ -96,6 +97,8 @@ function runStep(s, {dir, tier, attempt, aware, index}) {
     ATLAS_TIER_ATTEMPT: String(attempt), ATLAS_TIER_STEP: s.step};
   delete env.ATLAS_TEST_FULL;delete env.NODE_TEST_CONTEXT;
   const child = spawn(process.execPath, args, {env, stdio: ['ignore', 'pipe', 'pipe']});
+  // Critical-path steps keep normal priority; the rest yield the CPU to them (scheduling only, never what a test checks).
+  if (!s.critical) try {setPriority(child.pid, osConstants.priority.PRIORITY_BELOW_NORMAL);} catch {}
   let err = '';child.stderr.on('data', b => {err += b;});child.stdout.on('data', () => {});
   const t0 = performance.now();
   const done = new Promise(r => child.on('close', (code, signal) => r({code: code ?? (signal ? 143 : 1), signal, ms: performance.now() - t0, err, spec})));
@@ -108,6 +111,9 @@ export async function runTier(tier, argv) {
   const bail = !flag('--no-bail'), force = flag('--force'), resumeDir = value('--resume');
   const lists = JSON.parse(readFileSync('tests/tiers.json', 'utf8')), list = lists[tier] ?? (tier === 'default' ? lists.smoke : undefined);
   if (!Array.isArray(list) || !list.length) throw new Error(`tests/tiers.json has no ${tier} list`);
+  // Fail closed like test:full (tests/helpers/known-failures.mjs): an invalid allowlist rejects the run before any test.
+  const invalid = validateKnown(JSON.parse(readFileSync('tests/known-failures.json', 'utf8')));
+  if (invalid.length) {console.error(`Rejected: tests/known-failures.json is invalid (nothing was run):\n  ${invalid.join('\n  ')}`);return 1;}
   const registered = registeredTests();
   let all = expandSteps(list);
   const unregistered = [...new Set(all.map(s => s.file))].filter(f => !registered.includes(f) || !existsSync(f));
@@ -142,10 +148,15 @@ export async function runTier(tier, argv) {
   const aware = Object.fromEntries([...new Set(steps.map(s => s.file))].map(f => [f, isTierAware(f)]));
   const files = Object.keys(aware);
   console.log(`tier ${tier}: ${files.length} files in ${steps.length} steps (${files.filter(f => aware[f]).length} files tier-aware, ${files.filter(f => !aware[f]).length} at default depth); bail ${bail ? 'on' : 'off'}; log ${dir}`);
+  // Longest first by the previous run of this tier; steps within half of the longest estimate are the critical path.
   const prevS = previousSeconds(tier), est = s => prevS[s.step] ?? Infinity;
+  const longest = Math.max(0, ...steps.map(s => prevS[s.step] ?? 0));
+  for (const s of steps) s.critical = !(s.step in prevS) || prevS[s.step] >= longest / 2;
+  const critical = steps.filter(s => s.critical && s.step in prevS);
+  if (critical.length) console.log(`critical path (normal priority, others below normal): ${critical.map(s => `${s.step} ~${prevS[s.step]} s`).join(', ')}`);
   const t0 = performance.now();
   const code = await withTestSlot({owner: `test:${tier} (${steps.length} steps)`}, async () => {
-    const limit = Math.max(1, cpus().length - 1), queue = steps.map((s, i) => [s, i]).sort((a, b) => est(b[0]) - est(a[0])), live = new Map();let bailed = null, seen = 0;
+    const limit = Math.max(1, Number(value('--jobs')) || cpus().length - 1), queue = steps.map((s, i) => [s, i]).sort((a, b) => est(b[0]) - est(a[0])), live = new Map();let bailed = null, seen = 0;
     const newBad = row => row.status === 'fail' && !row.known && (row.class === 'HARD' || row.class === 'CONTRACT') && row.attempt === attempt;
     const poll = () => {
       const rows = readLines(results);

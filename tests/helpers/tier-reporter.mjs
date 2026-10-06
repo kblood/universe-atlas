@@ -4,6 +4,7 @@
 // (HARD:/CONTRACT:/VISUAL-ADVISORY:/INFO:); unprefixed deterministic tests count as HARD (docs/test-policy.md).
 import {openSync, writeSync, fsyncSync, closeSync, readFileSync} from 'node:fs';
 import {relative, isAbsolute} from 'node:path';
+import {classify} from './known-failures.mjs';
 
 export const classOf = title => (/^(HARD|CONTRACT|VISUAL-ADVISORY|INFO):/.exec(title) || [, 'HARD'])[1];
 export function appendLine(path, row) {
@@ -39,7 +40,7 @@ export default async function* tierReporter(source) {
       pending.set(file, {t: new Date().toISOString(), file, step: process.env.ATLAS_TIER_STEP || file, test: title, class: classOf(title), status,
         skipReason: typeof d.skip === 'string' ? d.skip : typeof d.todo === 'string' ? d.todo : undefined,
         coverage: aware && (tier === 'smoke' || tier === 'work') ? 'subset' : 'full', ms: Math.round(d.details?.duration_ms ?? 0),
-        known: fail && known.some(k => k.title === title && k.file === file), attempt: Number(process.env.ATLAS_TIER_ATTEMPT || 1), diag: msgs});
+        known: fail && classify([{title, file}], known).matched.length > 0, attempt: Number(process.env.ATLAS_TIER_ATTEMPT || 1), diag: msgs});
       setTimeout(() => flush(file), 100).unref();
       yield `${fail ? 'FAIL' : status.toUpperCase()} ${file} :: ${title}\n`;
     }

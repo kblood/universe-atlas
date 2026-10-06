@@ -34,7 +34,11 @@ const wanted=(args.bodies||'Maithea,Lethuris,Raiva,Selawyn').split(',');
 const lookPose=(eye,target,up)=>new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(eye,target,up)).toArray();
 const fib=(i,n)=>{const y=1-2*(i+.5)/n,phi=i*2.399963229728653,r=Math.sqrt(1-y*y);return [Math.cos(phi)*r,y,Math.sin(phi)*r];};
 
-function posesFor(body,S){
+// views (audit F6a, docs/handoff-2026-10-06/test-time-audit.md): compute only the requested views (default all). Each
+// view's block reads only the shared 40,000-sample scan (and 'mountain' the summit climb), so a requested view's pick and
+// pose are identical to the all-views run.
+function posesFor(body,S,views){
+  const want=v=>!views||views.includes(v);
   const ts=terrainSampler(body),cls=biomeClassifier(body),R=body.radiusM,s=new THREE.Vector3(...S).normalize();
   const V=d=>new THREE.Vector3(...d),h=d=>ts(d.toArray()).groundHeightM,isOcean=d=>ts(d.toArray()).ocean;
   const elev=d=>Math.asin(Math.max(-1,Math.min(1,d.dot(s))))*180/Math.PI;
@@ -59,13 +63,13 @@ function posesFor(body,S){
     land.push({d,g,lat,e});}
   const picks={},poses={};
   const orbitEye=s.clone().multiplyScalar(3.2*R),orbitUp=Math.abs(s.y)>.9?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0);
-  poses.orbit={position:orbitEye.toArray(),heading:lookPose(orbitEye,new THREE.Vector3(),orbitUp),clearanceM:null};
+  if(want('orbit'))poses.orbit={position:orbitEye.toArray(),heading:lookPose(orbitEye,new THREE.Vector3(),orbitUp),clearanceM:null};
   // lowland: equatorial, 30-500 m, not snow, prefer highest sun.
   const low=land.filter(p=>Math.abs(p.lat)<15&&p.g>30&&p.g<500).sort((a,b)=>b.e-a.e);
-  for(const p of low){const c=cls(p.d.toArray(),p.g,1);if(c.name==='Alpine / polar snow')continue;const r=sunSide(p.d,[2,3],120,0);if(r.losBlocked)continue;poses.lowland=r;picks.lowland={dir:p.d.toArray(),groundM:p.g,lat:p.lat,sunElevDeg:p.e,class:c.name};break;}
+  if(want('lowland'))for(const p of low){const c=cls(p.d.toArray(),p.g,1);if(c.name==='Alpine / polar snow')continue;const r=sunSide(p.d,[2,3],120,0);if(r.losBlocked)continue;poses.lowland=r;picks.lowland={dir:p.d.toArray(),groundM:p.g,lat:p.lat,sunElevDeg:p.e,class:c.name};break;}
   // forest: mid-latitude forestPotential with forest at 1.5 km all round.
   const mid=land.filter(p=>Math.abs(p.lat)>=25&&Math.abs(p.lat)<=55).sort((a,b)=>b.e-a.e);
-  for(const p of mid){const c=cls(p.d.toArray(),p.g,1);if(!(c.forestPotential&&(c.forestSuitability01??1)>.6))continue;
+  if(want('forest'))for(const p of mid){const c=cls(p.d.toArray(),p.g,1);if(!(c.forestPotential&&(c.forestSuitability01??1)>.6))continue;
     let ok=true;for(let k=0;k<8&&ok;k++){const q=toward(p.d,rot(p.d,sunAz(p.d),k*Math.PI/4),1.5);if(isOcean(q)||!cls(q.toArray(),h(q),1).forestPotential)ok=false;}if(!ok)continue;
     const r=sunSide(p.d,[1.5,2],80,0);poses.forest=r;picks.forest={dir:p.d.toArray(),groundM:p.g,lat:p.lat,sunElevDeg:p.e,class:c.name,suitability:c.forestSuitability01};break;}
   // mountain: highest lit land (|lat|<53).
@@ -73,11 +77,11 @@ function posesFor(body,S){
   // the eye stands on ground at least 55% of the summit height lower, 18-45 km away on the sun side,
   // 300 m clearance, with a clear line of sight to the upper third of the summit.
   // The fib grid is coarse (about 40-160 km spacing), so climb to the real local summit first.
-  if(peak){for(const radius of [80,20,5]){const base=peak.clone(),t0=sunAz(base);for(let k=0;k<500;k++){const q=toward(base,rot(base,t0,k*2.399963229728653),radius*Math.sqrt((k+.5)/500)),hq=h(q);if(hq>peakH){peakH=hq;peak=q;}}}}
+  if(peak&&want('mountain')){for(const radius of [80,20,5]){const base=peak.clone(),t0=sunAz(base);for(let k=0;k<500;k++){const q=toward(base,rot(base,t0,k*2.399963229728653),radius*Math.sqrt((k+.5)/500)),hq=h(q);if(hq>peakH){peakH=hq;peak=q;}}}}
   // v3: the steepest lit range instead of the highest point: for the 400 highest lit land samples (|lat|<53),
   // refine to the local summit, then find the lowest dry ground 8-20 km away with a clear line of sight to
   // the summit; take the site with the largest summit-minus-eye drop (visible relief).
-  {const top=land.filter(p=>Math.abs(p.lat)<53).sort((a,b)=>b.g-a.g).slice(0,400);let bestV3=null;
+  if(want('mountainV3')){const top=land.filter(p=>Math.abs(p.lat)<53).sort((a,b)=>b.g-a.g).slice(0,400);let bestV3=null;
     for(const p0 of top.filter((_,i)=>i%4===0)){let pk=p0.d,pH=p0.g;for(const radius of [25,6]){const base=pk.clone(),t0=sunAz(base);for(let k=0;k<160;k++){const q=toward(base,rot(base,t0,k*2.399963229728653),radius*Math.sqrt((k+.5)/160)),hq=h(q);if(hq>pH){pH=hq;pk=q;}}}
       const az=sunAz(pk);
       for(const off of [0,30,-30,60,-60,90,-90])for(const km of [8,11,14,17,20]){const q=toward(pk,rot(pk,az,off*Math.PI/180),km),hq=h(q);if(isOcean(q))continue;const drop=pH-hq;
@@ -85,7 +89,7 @@ function posesFor(body,S){
     if(bestV3){const {pk,pH,q,hq,drop,off,km}=bestV3,e=at(q,250),aim=pk.clone().multiplyScalar(R+hq+drop*.55);
       poses.mountainV3={position:e.toArray(),heading:lookPose(e,aim,q),clearanceM:250};
       picks.mountainV3={dir:pk.toArray(),groundM:pH,sunElevDeg:elev(pk),class:cls(pk.toArray(),pH,1).name,eyeDir:q.toArray(),eyeGroundM:hq,dropM:drop,offDeg:off,km,pose:'v3'};}}
-  if(peak){const az=sunAz(peak);let best=null;const st={ocean:0,high:0,los:0};
+  if(peak&&want('mountain')){const az=sunAz(peak);let best=null;const st={ocean:0,high:0,los:0};
     search: for(const off of [0,20,-20,40,-40,60,-60,80,-80,100,-100,120,-120,150,-150,180])for(const km of [18,22,26,30,36,45,55,70]){const q=toward(peak,rot(peak,az,off*Math.PI/180),km),hq=h(q);
       if(isOcean(q)){st.ocean++;continue;}if(hq>peakH-1500){st.high++;continue;}if(!los(q,Math.max(0,hq)+300,peak,peakH-50)){st.los++;continue;}best={q,hq,off,km};break search;}
     picks.mountainSearch=st;
@@ -94,7 +98,7 @@ function posesFor(body,S){
     else{const r=sunSide(peak,[8,10,14],400,-300);poses.mountain=r;picks.mountain={dir:peak.toArray(),groundM:peakH,sunElevDeg:elev(peak),pose:'v1-fallback'};}}
   // beach: Coastal sand with ocean within 1.5 km.
   let beachFallback=null;
-  for(const p of [...land].sort((a,b)=>b.e-a.e)){const c=cls(p.d.toArray(),p.g,1);if(c.name!=='Coastal sand')continue;
+  if(want('beach'))for(const p of [...land].sort((a,b)=>b.e-a.e)){const c=cls(p.d.toArray(),p.g,1);if(c.name!=='Coastal sand')continue;
     let sea=null,seaKm=0;for(const km of [1,2,3]){for(let k=0;k<16;k++){const br=k*Math.PI/8,q=toward(p.d,rot(p.d,sunAz(p.d),br),km);if(isOcean(q)){sea=br;seaKm=km;break;}}if(sea!==null)break;}if(sea===null)continue;
     const az=rot(p.d,sunAz(p.d),sea),inland=toward(p.d,az.clone().negate(),2),edge=toward(p.d,az,seaKm*.5),e=at(inland,150);
     const pose={position:e.toArray(),heading:lookPose(e,tgt(edge),inland),clearanceM:150},pick={dir:p.d.toArray(),groundM:p.g,lat:p.lat,sunElevDeg:p.e,seaKm};
@@ -103,16 +107,16 @@ function posesFor(body,S){
   if(!poses.beach&&beachFallback){poses.beach=beachFallback.pose;picks.beach=beachFallback.pick;}
   // polar: land above 62 deg latitude, sunlit if any.
   const pol=polarLit?.d??polarAny;
-  if(pol){const r=sunSide(pol,[3,5],200,0);poses.polar=r;picks.polar={dir:pol.toArray(),groundM:h(pol),lat:Math.asin(pol.y)*180/Math.PI,sunElevDeg:elev(pol),lit:!!polarLit,class:cls(pol.toArray(),h(pol),1).name};}
+  if(pol&&want('polar')){const r=sunSide(pol,[3,5],200,0);poses.polar=r;picks.polar={dir:pol.toArray(),groundM:h(pol),lat:Math.asin(pol.y)*180/Math.PI,sunElevDeg:elev(pol),lit:!!polarLit,class:cls(pol.toArray(),h(pol),1).name};}
   // seabed approach: 600 m above a lit 2.5-4.5 km deep seabed, looking at the floor 2.5 km ahead.
-  if(deep){const g=h(deep),eye=deep.clone().multiplyScalar(R+g+600),ahead=toward(deep,sunAz(deep),2.5),target=ahead.clone().multiplyScalar(R+h(ahead));
+  if(deep&&want('seabed')){const g=h(deep),eye=deep.clone().multiplyScalar(R+g+600),ahead=toward(deep,sunAz(deep),2.5),target=ahead.clone().multiplyScalar(R+h(ahead));
     poses.seabed={position:eye.toArray(),heading:lookPose(eye,target,deep),clearanceM:null};picks.seabed={dir:deep.toArray(),groundM:g,eyeM:g+600,sunElevDeg:deepScore};}
   return {picks,poses};
 }
 
 // --dry <report.json>: Node only, recompute the picks from the sun directions a previous run recorded.
 if(args.dry){const rep=JSON.parse(await readFile(args.dry,'utf8'));for(const name of wanted){const [addr,i]=FIXTURE[name],body=system(refByAddress(g0,addr)).planets[i],sun=rep.bodies[name]?.sunDir;if(!sun)continue;
-  const {picks}=posesFor(body,sun);console.log(name,JSON.stringify(args.views?Object.fromEntries(args.views.split(',').map(v=>[v,picks[v]])):picks));}process.exit(0);}
+  const {picks}=posesFor(body,sun,args.views?.split(','));console.log(name,JSON.stringify(args.views?Object.fromEntries(args.views.split(',').map(v=>[v,picks[v]])):picks));}process.exit(0);}
 const base=`http://127.0.0.1:${port}/`;
 const preview=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port',String(port),'--strictPort','--outDir',dist],{cwd:MAIN,stdio:['ignore','pipe','pipe']});
 let previewLog='';preview.stdout.on('data',d=>previewLog+=d);preview.stderr.on('data',d=>previewLog+=d);
@@ -141,7 +145,7 @@ try{
       await page.waitForTimeout(4000);
       row.sunDir=await page.evaluate(()=>{const {light,planet}=window.__atlas.renderDebug();const p=light.getWorldPosition(light.position.clone()),t=light.target.getWorldPosition(light.position.clone());
         planet.group.worldToLocal(p);planet.group.worldToLocal(t);const v=p.sub(t).normalize();return [v.x,v.y,v.z];});
-      const plan=posesFor(body,row.sunDir);row.picks=plan.picks;row.poses=plan.poses;
+      const plan=posesFor(body,row.sunDir,args.views?.split(','));row.picks=plan.picks;row.poses=plan.poses;
       log(name,'views',Object.keys(plan.poses).join(','));
       for(const [view,pose] of Object.entries(plan.poses).filter(([v])=>!args.views||args.views.split(',').includes(v))){
         const t0=Date.now();let ok=true,err=null;
