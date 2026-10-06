@@ -1,0 +1,73 @@
+You are Astra, round 4 (the last design round) of the staged M5 element in C:/LLM/IWSDK/universe-atlas-wt/m5-rock
+(branch mountains/m5-rock). You cannot write .git; do NOT run git commands that write. No downloads, network, browser
+or GPU. Do not run `npm run test:full` or the whole `npm test`.
+
+Read first: test-results/mountains/m5/astra-implement-prompt.txt, astra-fix-prompt.txt, astra-fix3-prompt.txt and
+astra-fix3-answer.md. Everything there holds unless changed below (six-argument API, arithmetic audit, no imports,
+exact +0 exclusions, v <= 0, cap, exports, element-only fixture helper, < 2 s test file, rows-all-pools evidence,
+integration script, patch).
+
+## Coordinator decisions after round 3 (Opus, coordinator; overrulable by the owner; all recorded in the plan)
+
+Round 3 fixed the real-M3 drainage (smoke: qualifying pits 2.6 -> 10.4, was 54 in round 2) and cut new fine pits 3x
+(R6 1.67 vs 5.0 per km2). Remaining failures and what they mean:
+
+D1. R1 / R1d are not measurable as defined on mountain terrain. On the real-M3 smoke only 1.3% of core pixels are
+    flat (<10 deg), all of them narrow floors next to walls, so a 500 m box at every flat pixel straddles a steep face;
+    since v <= 0 the rock always has a mean (it lowers faces), and that mean leaks into the flat class through the box.
+    Rock is exactly 0 on flat input pixels (HARD 1/2), so "valley floors stay smooth" is already an exact HARD
+    property. New GATE row R1e replaces R1d: RMS(bp(d) | steep) >= 2 x RMS(bp(background) | flat), where d =
+    composed - base (= background + rock) as in R1d, and the flat reference is the background alone on the flat
+    pixels (exactly what the flat pixels carry, without box leakage from neighbouring rock). Same windows, classes,
+    band-pass. Negative controls that must fail R1e: no rock (ratio about 1) and a variant with depth x 0.1. R1 and
+    R1d stay as INFO (computed, reported, not asserted).
+D2. R3's band [2.0, 2.6] was mis-registered by the coordinator: the alpine control's own 125 m - 2 km beta is 2.617
+    (outside the band). The task wording is "fine spectrum exponent TOWARD the alpine control". New GATE row R3':
+    beta_with <= beta_without - (beta_without - 2.617) / 3 (closes at least a third of the gap to the alpine control's
+    fine beta; 2.617 is measured with the harness `syntheticSampler(R=5194907,'alpine')`, 4 sites, octaves 125 m - 2 km,
+    and is a fixed literal in the test with that provenance comment) AND beta_with >= 2.0 (no whiter than Earth-like
+    relief). Negative controls: no rock (fails the gap rule) and the white speckle variant at 4x depth (must fail the
+    2.0 floor; report its value).
+D3. R4 failed (0.61 > 0.20) because sparse kernels with random amplitude on a widely jittered lattice put white power
+    below the kernel frequency, and the transect runs along the kernels' long axis. Keep R4 as registered (fall line
+    along +x, the worst case) and also report it with the fall line along +y (INFO).
+D4. R2's depth x4 control no longer bites because the slope-depth cap binds. Replace it by a variant with KAPPA x4 and
+    MAX_DEPTH_M x4 (must fail R2: p90 > 48.4 or p50 drop > 0.5). R5's forced-weight control no longer fails on the
+    fixture: keep reporting it; R6 (fine new pits) is the drainage row with teeth.
+D5. Fresh GATE pool, pre-registered: 730901..730908 (unused in src/tests/scripts/docs). 730601-08, 730701-08 and
+    730801-08 are burnt (reported in rows-all-pools, never gating). Tuning pool 730501..730508 and the real-M3 smoke
+    (seed 730201, site 1) only.
+
+## Round 4 design direction (tune within it; your call on the mix, justify it)
+
+The pit-free primitive is a strictly monotone function of height: h + f(h) with 1 + f'(h) > 0 has exactly the local
+minima of h, on ANY surface, kinks included. So make STRATA BENCHES the primary rock texture and keep the downhill
+gullies as the secondary one:
+- bench profile sigma(t) on t = frac((carvedM + J)/P), sigma in [0, 1], sigma(0) = sigma(1) = 0, continuous, with a
+  slow rise (the bench tread) and a fast return (the riser), and SMALL MEAN (the R1 leakage and toe troughs come
+  from the mean). Monotone-height rule: A * max(sigma') / P < 1 with margin, where A is the bench amplitude (metres)
+  and sigma' the derivative in t on the rising part. Example family: rise linearly-smooth over a tread fraction r >=
+  A/(0.8 P), fall over a riser fraction, zero elsewhere; mean about (r + riser)/2. You may use 1 or 2 periods
+  (e.g. 160 m and 70 m, incommensurate) to fill the 125-500 m octaves on 25-45 deg faces (horizontal period = P /
+  slopeTan).
+- J: a slowly varying jitter is fine only if you include its gradient in the bound; a seed-constant J is acceptable.
+- gullies: keep the round-3 downhill kernels as a secondary term if they help R3'/R1e, with CONSTANT amplitude (no
+  A_MIN) and smaller jitter (<= 0.3 cell) so the lattice stays near-regular (blue-noise-like, little power below the
+  kernel frequency, which is what R4 needs), half-length well under 500 m.
+- weight w(s) and the slope-limited depth stay; consider evaluating the weight with the same forward gradient but be
+  explicit about its spatial derivative (it is the remaining path to a new pit at a toe).
+- Cost <= 214 ns add-on in cost-bench.mjs (round 3: 157 ns unofficial).
+- Update the HARD 6 inequality (your bound now covers benches + gullies), the L_MAX derivation, the digest, the
+  render, the patch (git apply --check), and the integration script (rows R1e and R3' added; R1/R1d INFO).
+
+If you conclude that no design in this family can meet R1e, R2, R3', R4, R5 and R6 together on the tuning pool,
+stop tuning, freeze the best candidate, run the gate once anyway, and say which rows conflict and why, with numbers.
+
+## Report
+
+Overwrite test-results/mountains/m5/report.md and end with the same report as your final message: constants with one
+line each; the monotone/climb inequality with numbers; gate-pool HARD and ROW results and every control's value and
+whether it failed as required; INFO rows; tuning and burnt pools from rows-all-pools.json; the real-M3 smoke with and
+without M5 (all eight M3 rows plus R1e/R2/R3' and all-pits INFO); unofficial cost; test duration_ms and per-test split;
+exact commands and exit codes; what you did not run; what you are unsure of. Do not call anything passed that you did
+not run.

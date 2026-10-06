@@ -1,0 +1,101 @@
+You are Astra, round 3 of the staged M5 element in C:/LLM/IWSDK/universe-atlas-wt/m5-rock (branch mountains/m5-rock).
+You cannot write .git; do NOT run git commands that write. No downloads, network, browser or GPU. Do not run
+`npm run test:full` or the whole `npm test`.
+
+Read first: test-results/mountains/m5/astra-implement-prompt.txt (round 1 brief), astra-fix-prompt.txt (round 2
+changes) and astra-fix-answer.md (your round 2 report). Everything in them holds unless changed below: arithmetic
+audit, no imports in the module, exact +0 exclusions, v <= 0, the cap, exported constants/bands/reduction, element-only
+fixture in tests/helpers/mountain-rock-detail-fixture.mjs, test file under 2 s, rows-all-pools evidence, the patch.
+
+## Coordinator diagnosis of round 2 (Opus, coordinator; overrulable by the owner)
+
+Round 2 met cost (151 ns add-on, unofficial) and runtime (1.25 s), but two measurements show ONE design flaw:
+
+1. R1d fails, 0.75 (gate), because the flat class's band-pass RMS of the detail field is 17.5 m although rock is
+   exactly 0 on every flat input pixel. That RMS is footprint leakage of the rock's MEAN: shape has a large mean
+   (ribs (1-|.8g|)^2 ~ 0.6, strata (t-t^3)/.385 mean 0.65), so every steep face is lowered by roughly
+   0.6 x 120 = 70 m as a block, and the 500 m box at a floor pixel next to a wall sees that step.
+2. The real-M3 integration smoke (seed 730201, one site; integration-m3-smoke.json) shows the consequence for
+   drainage: with M5 the M3 row pits025Per1000km2P50 goes 2.6 -> 54 (FAILS <= 50) and all strict pits 134.7 -> 1914.5
+   per 1000 km2; slope p90 46.9 -> 48.7 (above the 48.4 guard). Isotropic ribs of up to 96 m depth on 125-250 m cells
+   cut contour-parallel troughs into the faces, and the block-lowered face toes sit below the unlowered floors: closed
+   depressions. The fixture R5 did not see it because the fixture's analytic faces are planar and its floors drain
+   along y.
+
+The plan's own rule decides the fix: M5 must not break any M3 row (the drainage rows are the calibrated M3 rows).
+
+## Round 3 design (implement this; tune only within it)
+
+Make the relief drain by construction: texture that is elongated ALONG THE FALL LINE (gullies/couloirs and ribs
+running downhill) plus the existing height-monotone strata, with a depth that scales with the local slope so that,
+going downhill, the detail can never climb faster than the terrain falls.
+
+API change (the module has never been merged; version string stays 'mountain-rock-detail-1'):
+- `rockDetailM(alongM, acrossM, carvedM, carvedXM, carvedYM, seed)`: carvedXM = carved height (M2+M3, no rock) at
+  (alongM + SLOPE_STEP_M, acrossM), carvedYM at (alongM, acrossM + SLOPE_STEP_M). The module computes the forward
+  gradient gx = (carvedXM - carvedM)/S, gy = (carvedYM - carvedM)/S, slopeTan = sqrt(gx^2 + gy^2), and the downhill
+  unit vector e = -(gx, gy)/slopeTan (only after the weight exclusion, so slopeTan > tan 10 deg and the division is
+  safe). Non-finite carvedXM/carvedYM -> literal +0 too.
+- Keep `carvedSlopeTan(hC, hX, hY)` and `rockSlopeWeight` exported (tests and the patch use them).
+- Update the wiring patch (mountainRidgeTermM passes U + C, U + Cx, U + Cy) and re-check `git apply --check`.
+
+Field:
+- weight w = rockSlopeWeight(slopeTan) as now (exact 0 at/below tan 10, 1 at/above tan 30).
+- depth = min(MAX_DEPTH_M, CAP_FRACTION * carvedM, KAPPA * slopeTan * GULLY_HALF_LENGTH_M). The third term is the
+  pit guard: along the fall line the gully profile's derivative is at most B / GULLY_HALF_LENGTH_M (B = the kernel
+  profile's maximum slope in its normalised coordinate, e.g. 1.5396 for (1-z^2)^2), so the detail's downhill climb rate
+  is <= KAPPA * B * slopeTan * RIB_WEIGHT; choose KAPPA so that KAPPA * B * RIB_WEIGHT + (strata term, below) <= 0.6.
+  State the derivation in a comment and assert the inequality on the frozen constants (HARD 6).
+- gullies: sparse-convolution kernels on a jittered square lattice of cell GULLY_CELL_M (e.g. 250 m): for each of the
+  3 x 3 cells around the sample, one hash gives a centre jitter (in [0.15, 0.85] of the cell, both axes) and an
+  amplitude a in [A_MIN, 1]. With d = sample - centre, du = d . e (downhill), dw = d . n (n = e rotated 90 deg), the
+  kernel is K = a * P(du / GULLY_HALF_LENGTH_M) * P(dw / GULLY_HALF_WIDTH_M) with P(z) = (1 - z^2)^2 for |z| < 1 and 0
+  otherwise (C1, compact). gully = max over the 9 kernels (continuous; the max keeps the derivative bound of a single
+  kernel). Suggested starting point: half-length 400 m, half-width 60-90 m (so the cross-section sits at 125-350 m
+  wavelengths and the length below 1 km). The kernels are oriented by e at the SAMPLE (not at the centre), so the
+  lever arm |d| is at most ~2 cells and the field stays continuous where e varies continuously.
+  Sparse grooves keep the mean small (target: mean(gully) <= 0.25 on a uniform steep plane; report it), which is
+  what removes the R1d leakage and the toe troughs.
+- strata: keep `t = frac((carvedM + J)/P)` and (t - t^3)/0.3849..., monotone in height as proved (STRATA_WEIGHT *
+  depth <= 0.3849 * P). J must stay cheap; a jitter derived from the gully kernels' hashes or one gradient-noise octave
+  is fine within the cost budget. Its contribution to the downhill climb rate is <= STRATA_WEIGHT * depth * 2.598 / P
+  * slopeTan... (derive the correct bound, including J's gradient, and include it in the 0.6 inequality).
+- shape = clamp01(STRATA_WEIGHT * strata + RIB_WEIGHT * gully), v = -w * depth * shape, as now.
+- Delete the isotropic ribs function (keep a copy of the round-2 shape ONLY as a variant source string inside the test
+  for the negative controls below).
+
+Cost: the add-on (2 offset M3 lookups + rockDetailM) must stay <= 214 ns in cost-bench.mjs (round 2: 151 ns). Nine
+kernels with one hash each, early exit before any kernel when w = 0, and skipping kernels whose |du| >= half-length or
+|dw| >= half-width before evaluating P are expected to fit. Measure it.
+
+## Rows (gate pool is NEW and pre-registered: 730801..730808; 730701..730708 is now burnt like 730601..730608)
+
+Tune only on TUNING 730501..730508, and (new, declared) on the real-M3 integration smoke for seed 730201 site 1 only
+(`M5_INTEGRATION_SMOKE=1`), which you may run as often as you like. Do not run any row on 730801..730808 or any other
+integration seed/site until constants are frozen; then run the gate once and report what comes out.
+
+Unchanged rows and controls: HARD 1-7 (adapted to the new signature), R1d (gate) with the surface R1 as INFO, R2,
+R3 (+ no-rock and speckle negatives, equal-gains INFO), R4 (+ extra 4 km octave negative), R5 (+ forced-weight
+negative; reversed strata INFO). Note R4's uniform plane now needs carvedXM/carvedYM of a 35 deg plane (gradient
+direction fixed, e.g. along +x).
+
+New rows (thresholds pre-registered here, before any measurement):
+- R6 NEW PITS (fine): on the composed surface WITHOUT background (base + rock) on the R1 windows (257 x 257 at
+  31.25 m), count strict 8-neighbour local minima that are not strict local minima of the base alone, per km2,
+  pooled over the gate seeds. Threshold <= 1.0 per km2. Negative control that must exceed it: the round-2 isotropic
+  rib shape (variant source) at round-2 constants. Report the base's own minima per km2 as INFO.
+- R7 DOWNHILL CLIMB (INFO, not gated): on 20,000 fixture points with w > 0, the ratio of the detail's downhill
+  directional derivative (central difference of the full chain, +-0.5 m along e) to slopeTan; report p50, p99 and max
+  for the module and for the round-2 variant; state where any ratio > 0.6 occurs (expected only at the fixture's
+  analytic kinks, where the 125 m forward slope lags the true gradient).
+
+## Report
+
+Overwrite test-results/mountains/m5/report.md and end with the same report as your final message:
+1. Final constants with one line each; the KAPPA/strata inequality with numbers.
+2. Gate-pool HARD and ROW results with numbers, every negative control's value and whether it failed as required,
+   INFO rows; tuning and burnt pools from rows-all-pools.json in a separate table (gate pool cross-check too).
+3. The integration smoke (seed 730201, site 1) with and without M5: all eight M3 rows plus R1/R1d/R2/R3 numbers.
+4. Cost-bench numbers (unofficial), runtime of the test file (duration_ms) and per-test split.
+5. Exact commands and exit codes; what you did not run; what you are unsure of. Do not call anything passed that you
+   did not run.

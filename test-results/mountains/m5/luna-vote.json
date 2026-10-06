@@ -1,0 +1,140 @@
+{
+  "class": "VISUAL-ADVISORY",
+  "kind": "vote",
+  "question": null,
+  "prompt": "This is a 12 km x 12 km hillshade (light from the upper left) of a synthetic mountain height field sampled every 31.25 m. Judge only the fine scale (features under about 1 km). Do the steep faces carry plausible rock-scale relief (ledges, strata benches or gullies) that follows the terrain, with no salt-and-pepper speckle and no seams or stripes that ignore the terrain?",
+  "results": [
+    {
+      "image": "C:\\LLM\\IWSDK\\universe-atlas-wt\\m5-rock\\test-results\\mountains\\m5\\m3-with.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "Repeating horizontal and vertical stripes cut across the terrain and do not follow the slopes.",
+          "element": "seams/grid artefacts",
+          "expected": "Terrain-aligned ledges and gullies without regular cross-terrain banding.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "seams/grid artefacts",
+        "elementCounts": {
+          "seams/grid artefacts": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\LLM\\IWSDK\\universe-atlas-wt\\m5-rock\\test-results\\mountains\\m5\\m3-without.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "Fine-scale relief is dominated by blocky, pixel-aligned steps and streaks that cut across terrain forms.",
+          "element": "seams/grid artefacts",
+          "expected": "Terrain-following ledges, strata benches, or gullies without regular grid-like bands.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "seams/grid artefacts",
+        "elementCounts": {
+          "seams/grid artefacts": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\LLM\\IWSDK\\universe-atlas-wt\\m5-rock\\test-results\\mountains\\m5\\with.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "Repeated vertical dark stripes run straight down the image, ignoring the surrounding terrain.",
+          "element": "seams/grid artefacts",
+          "expected": "Fine relief should follow the mountain faces, without continuous image-aligned stripes.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "seams/grid artefacts",
+        "elementCounts": {
+          "seams/grid artefacts": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\LLM\\IWSDK\\universe-atlas-wt\\m5-rock\\test-results\\mountains\\m5\\without.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "Dark and light vertical bands run straight through the image, ignoring any visible terrain form.",
+          "element": "seams/grid artefacts",
+          "expected": "Fine relief that bends and breaks with the mountain slopes, without repeated straight stripes.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "seams/grid artefacts",
+        "elementCounts": {
+          "seams/grid artefacts": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    }
+  ]
+}

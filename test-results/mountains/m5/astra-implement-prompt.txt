@@ -1,0 +1,232 @@
+You are Astra, implementing one bounded, STAGED (unwired) terrain element in the TypeScript repo checked out at
+C:/LLM/IWSDK/universe-atlas-wt/m5-rock (branch mountains/m5-rock, from main 9971c3f). You cannot write .git; do NOT run
+git commands that write. The coordinator reviews your diff, runs the checks and commits. No downloads, no network, no
+browser, no GPU. Do not run `npm run test:full` or the whole `npm test`; run only the files named below.
+
+## Read first (in this order)
+
+- docs/mountains-design-2026-10-04.md: section 2 intro, 2.3 (M3), 2.5 (M5, the element you build), 2.6 (what no element
+  test may depend on), section 1.1 table (alpine control numbers).
+- docs/mountains-opus-decisions-2026-10-05.md: addendum items 1-4 and addendum (4) (T6 wiring is BLOCKED on cost; the
+  mountains stay staged; nothing here may touch terrain.ts).
+- src/mountain-carving.ts (M3: the arithmetic style, `CARVING_BANDS`, the exclusions returning literal +0),
+  src/mountain-assembly.ts (`mountainRidgeTermM`, `carvingStrip`, `carvingSeed`), src/lod-ladder.ts lines 140-170
+  (`CARVING_REDUCTION`, `carvingFromLevel`), src/terrain.ts lines 580-605 (the relief floor F and the detail window).
+- tests/mountain-carving.test.mjs (test style, the arithmetic audit with negative controls, the digest pin pattern) and
+  tests/helpers/mountain-metrics.mjs (the shared harness: `slopes`, `bandPowers`, `spectrum`, `depressions`,
+  `depressionPits`, `rasterFromArray`, `MOUNTAIN_THRESHOLDS`, `q`). Do not reimplement a metric the harness has.
+
+## What M5 is (decided; implement exactly this contract)
+
+Steep-rock fine detail: rock-scale relief (wavelengths under 1 km) that appears only on steep carved faces and is
+exactly zero on gentle ground (valley floors, plateaus). It is a pure, deterministic, pointwise function. It is NOT
+wired: no edit to src/terrain.ts, src/mountain-assembly.ts, src/lod-ladder.ts, src/planet-tiles.ts or any existing
+test. No version constant other than the new module's own may appear or move.
+
+### Files you own
+
+1. NEW `src/mountain-rock-detail.ts`.
+2. NEW `tests/mountain-rock-detail.test.mjs` (the element test; registered by the coordinator, not by you).
+3. NEW evidence scripts under `test-results/mountains/m5/` (integration, cost, render, the wiring patch), see below.
+Nothing else. Do not edit package.json, docs, or tests/helpers (if you need a fixture helper, put it inside the test
+file or in test-results/mountains/m5/).
+
+### Module contract: `src/mountain-rock-detail.ts`
+
+Arithmetic only, same audit as M3: `+ - * /`, `Math.floor/sqrt/imul/min/max/abs`, comparisons, integer hashing. No
+other Math function, no `**`, no Number/parseFloat/Date, no imports at all (the module is self-contained). Every value
+can feed a height and the ocean flag, so it must be bit-reproducible across engines.
+
+Exports (names fixed):
+
+- `MOUNTAIN_ROCK_DETAIL_VERSION = 'mountain-rock-detail-1'`.
+- `MOUNTAIN_ROCK_DETAIL`: frozen constants object. It must contain at least:
+  - `SLOPE_ZERO_TAN: 0.17632698070846498` (tan 10 deg; written as this literal, the plan's "below 10 deg" class) and
+    `SLOPE_FULL_TAN: 0.5773502691896257` (tan 30 deg, the plan's "above 30 deg" class);
+  - `SLOPE_STEP_M: 125` (the fixed metric step of the slope estimate; the plan's "slope at 125 m");
+  - `MAX_DEPTH_M` (the absolute amplitude bound, metres; it must be <= 200) and `CAP_FRACTION: 0.5`;
+  - the octave / strata constants you choose (wavelengths, gains, strata periods). Tuning is allowed ONLY on the
+    tuning seeds (below).
+- `ROCK_DETAIL_BANDS`: frozen array of frozen `{octave, wavelengthM}` naming the declared bands for M0/LOD, like
+  `CARVING_BANDS`. Longest declared wavelength = 1000 m (the plan: "wavelengths under 1 km").
+- `ROCK_DETAIL_MAX_EDGE_M`: the largest tile edge that can hold the band, by the SAME rule lod-ladder.ts uses for the
+  carving: `longestWavelengthM / 2 * 32 / 2` = 8000 m (lattice Nyquist 2*edge/32 <= half the longest band). Export the
+  inputs too (`ROCK_DETAIL_REDUCTION = {longestWavelengthM: 1000, latticeSegments: 32}`), frozen. This module does not
+  import lod-ladder.ts; the T6 patch adds the level helper there.
+- `rockSlopeWeight(slopeTan)`: exactly +0 when `!(slopeTan > SLOPE_ZERO_TAN)` (NaN included); exactly 1 when
+  `slopeTan >= SLOPE_FULL_TAN`; a C1 smoothstep in between (t*t*(3-2t)). Continuous.
+- `carvedSlopeTan(hC, hX, hY)`: the slope (tan) of a height field from forward differences at the fixed step
+  `SLOPE_STEP_M`: `sqrt(((hX-hC)/S)^2 + ((hY-hC)/S)^2)` with hX = h(along+S, across), hY = h(along, across+S). The
+  caller evaluates the CARVED surface (M3 output, without rock) at those three points with a fixed metric step that
+  never depends on a tile level or lattice spacing; a forward difference of a continuous field at a fixed step is
+  continuous, which is what keeps tile edges free of cracks/speckle.
+- `rockDetailSeed(carvingSeed)`: a 32-bit integer hash of the M3 strip seed with a fixed salt (so rock and carving
+  noise are decorrelated); `>>> 0`.
+- `rockDetailM(alongM, acrossM, carvedM, slopeTan, seed)`: the detail in metres. Contract:
+  - returns literal `+0` (Object.is(v, 0)) when `rockSlopeWeight(slopeTan) === 0`, when `!(carvedM > 0)`, or when
+    alongM / acrossM is non-finite (use the M3 idioms: `x - x !== 0`, negated comparisons). Never returns -0 or NaN.
+  - otherwise `-weight * depth * shape` with `depth = min(MAX_DEPTH_M, CAP_FRACTION * carvedM)` and
+    `shape` in [0, 1]. Hence for every input: `-min(MAX_DEPTH_M, CAP_FRACTION*carvedM) <= v <= 0`, so
+    `carvedM + v >= (1 - CAP_FRACTION) * carvedM >= 0` (coast/floor safety: the relief floor's F >= 0 where a0 >= 0
+    keeps holding when the T6 patch adds v to the mountain term) and `carvedM + v <= carvedM` (UPPER ENVELOPE: every
+    coarser level that drops the rock detail is >= the truth, as contract section 3 requires of a declared
+    reduction; this is why v must never be positive).
+  - `carvedM` is the carved mountain term U + C (M2 envelope plus M3 carving, pre-radius-scale metres) at the sample;
+    it is both the cap and the height the strata read.
+  - shape = a fixed blend of two parts, both deterministic and continuous in (alongM, acrossM, carvedM):
+    (a) STRATA (strata-aligned ledges): a terrace function of the height, `t = frac((carvedM + J)/P)` with a smooth
+        gradient-noise phase jitter J(along, across) (so ledges wander and dip instead of being perfect contours),
+        and `strata(t) = (t - t*t*t) / 0.3849001794597505` (in [0,1], zero at t = 0 and t = 1, so continuous across
+        the wrap; the kink at the wrap is the ledge edge). Use 1 or 2 strata periods P (vertical metres). Keep the
+        strata amplitude per period <= 0.3849*P so the terraced profile stays monotone in height (no reversed slope,
+        hence no closed depression along a ledge).
+    (b) RIDGED rock ribs/gullies: ridged 2D gradient noise (Perlin-style gradients from a fixed table of directions,
+        quintic or cubic fade, no trig) in (alongM, acrossM), 2-4 octaves with cell sizes chosen so the energy sits
+        at 125 m - 1 km wavelengths, shape `(1 - |g|)^2`-style, normalised into [0,1].
+    Combine as `shape = clamp01(wS*strata + wR*ribs)` with wS + wR = 1 (constants frozen).
+  - Gradient noise, not value noise (value noise leaks energy to long wavelengths; the band-limit row below checks).
+  - Coordinates can be up to |along| = 2e7 m: compute lattice indices with Math.floor on along/cell and keep the
+    fractional part well conditioned (subtract the floor), hash the integer cell with Math.imul like M3's `hash`.
+
+### The element test: `tests/mountain-rock-detail.test.mjs`
+
+Must run in under 2 s (`node --test tests/mountain-rock-detail.test.mjs`), no wall-clock gate, no browser/GPU/Luna, no
+other element's tuned constants (no import of src/mountain-carving.ts, mountain-envelope.ts, mountain-layout.ts,
+mountain-assembly.ts or terrain.ts). Label each test HARD (exact) or ROW (metric threshold). Print one
+`M5_ROWS {json}` line with every measured row value (tuning and held-out seeds separately) so the coordinator can
+copy the numbers into the plan.
+
+Seeds (pre-registered; addendum item 3 discipline):
+- TUNING seeds 730501..730508: you may tune constants on these.
+- HELD-OUT seeds 730601..730608: never used for tuning. Every ROW must pass on the held-out seeds pooled; report both
+  pools as separate values. If a row fails on held-out only, report it as a failure; do not re-pick seeds.
+
+Synthetic fixture (not M3; stated in the test): the plan's fixed synthetic ramp, `E(y) = 3000*max(0, 1-|y|/30000)`
+(3 km high, 60 km wide, straight axis along x), carved by an ANALYTIC ridge-valley pattern: warped triangle-wave
+valleys across x with period ~4 km, flat valley floors over ~15% of each period, base(x, y) = E(y)*(0.45 + 0.55*p(x,
+y)) where p is the clipped/warped triangle profile; the seed only shifts the warp phase and the along offset (e.g.
+along offset = (seed - 730500)*1.7e5 m) so each seed sees different noise. Valley floors fall with E(y) towards the
+margins, so the fixture drains. Required base-fixture properties (assert them, they make the rows meaningful): in the
+belt core (|y| <= 0.65*30 km) at 125 m, at least 15% of pixels below 10 deg and at least 25% above 30 deg, and the
+base passes both M3 drainage rows (fill10ShareP50 <= 0.05, pits025Per1000km2P50 <= 50).
+A slope-independent BACKGROUND stands in for main's detail window ("main has 1-3 m in these octaves everywhere",
+plan 2.5): a gradient-noise fBm with octave RMS ratio 2^((1-3.4)/2) per halving (beta 3.4, main's measured 3.36-3.49)
+scaled to about 2 m RMS in the 250-500 m octave. composed = base + background + rockDetailM(x, y, base, slope, seed)
+where slope = carvedSlopeTan(base(x,y), base(x+125,y), base(x,y+125)) (the base WITHOUT background and without rock:
+M5's input is the carved slope).
+
+HARD tests:
+1. Literal +0 at every exclusion (weight 0 incl. NaN slope, carvedM <= 0 / -0 / NaN, non-finite along/across), on a
+   grid of inputs; never -0, never NaN.
+2. Bounds on >= 200,000 fixture samples over all 16 seeds: `v <= 0`, `v >= -min(MAX_DEPTH_M, CAP_FRACTION*carvedM)`,
+   `carvedM + v >= 0`, `carvedM + v <= carvedM`; 0 violations; and non-vacuous (v < 0 on > 30% of steep samples).
+3. Weight: `rockSlopeWeight` is +0 at and below tan 10, 1 at and above tan 30, monotone and continuous in between
+   (check 10,001 points and both boundaries with 1e-12 offsets).
+4. Determinism: SHA-256 of rockDetailM over a fixed 4096-tuple fixture (include exclusions, |along| up to 2e7,
+   negative coordinates, cell-boundary coordinates), forward, reverse and in a child process (spawnSync like M3's
+   test), all equal to a pinned constant `ROCK_DETAIL_DIGEST` you write into the test after your final tuning.
+5. Arithmetic audit of the module source with M3's audit rules (copy the `audit` function pattern; this module must
+   have NO import statement at all) plus the negative-control list proving the audit has teeth.
+6. Frozen constants and bands: version string, `Object.isFrozen`, `ROCK_DETAIL_BANDS` longest = 1000 m and every band
+   <= 1000 m, `ROCK_DETAIL_MAX_EDGE_M === 1000/2*32/2`, the two slope tangents equal the literals above, MAX_DEPTH_M
+   <= 200, CAP_FRACTION === 0.5.
+7. Edge continuity (no vertical speckle at tile edges):
+   (a) Straddle Lipschitz: for >= 20,000 point pairs p, p + delta (|delta| = 0.01 m, random direction), including
+       pairs deliberately straddling every noise octave's lattice lines, strata wrap heights (carvedM = k*P), the
+       slope-weight thresholds and the fixture's own kinks, `|v(p+delta) - v(p)| <= L_MAX * 0.01` where L_MAX is an
+       analytic bound you derive and state in a comment (e.g. from MAX_DEPTH_M, the weight's maximum derivative
+       times the slope field's, the noise gradient bound and 1/P). The slope input at both points is computed by
+       carvedSlopeTan from the fixture (so the full chain is tested).
+   (b) Tile edge: two synthetic tile lattices sharing an edge line, one with spacing 200 m (coarser level) and one
+       with 100 m (finer level); each tile evaluates the composed height at its own edge vertices through the same
+       sample path. Every shared edge vertex is bit-identical between the two tiles, and the finer tile's
+       in-between edge vertices lie within the coarse edge's linear interpolation +- (the analytic second-difference
+       bound) - report the max.
+   (c) Negative controls that must FAIL (a) or (b): a speckle variant (the ribs replaced by an un-interpolated
+       per-31.25 m-cell hash, i.e. white noise per cell) and a level-dependent-slope variant (slope step = the tile's
+       own lattice spacing instead of SLOPE_STEP_M). Build variants by editing the module source text and importing
+       it as a data: URL module (the M3 test's `loadVariant` pattern), never by adding switches to the module.
+
+ROW tests (thresholds pre-registered here; the rationale is the measured number named):
+R1. Plan 2.5 row: octave RMS at 125-500 m on slopes above 30 deg is at least 2x the RMS on slopes below 10 deg.
+    Definition: composed raster at 31.25 m over the belt core (|y| <= 19.5 km) in 12 km x 12 km windows (e.g. 2 per
+    seed); band-pass bp = box(h, 125 m) - box(h, 500 m) (difference of square box means, prefix sums); classes by
+    the INPUT slope (carvedSlopeTan of the base): steep > tan 30, flat < tan 10; ratio = RMS(bp | steep) /
+    RMS(bp | flat) >= 2 (pooled per seed pool). Report both RMS values too.
+    Negative controls that must fail R1: no rock detail (ratio about 1, background only) and the rock detail with
+    the slope weight forced to 1 everywhere (variant module).
+R2. Slope band (125 m, harness `slopes(r,1)` on a 125 m raster of the composed surface over the core): p50 with rock
+    >= p50 without rock - 0.5 deg (M5 must never flatten M3's slope rows: slope125P50 >= 20); p90 with rock <= 48.4
+    deg (alpine control p90 44.0 deg measured by the coordinator with the harness on the synthetic alpine sampler,
+    +10%; an anti-needle guard). Report p50/p90 with and without rock.
+    Negative control that must fail R2: the module with MAX_DEPTH_M x4 and no CAP clamp change (variant).
+R3. Fine spectrum exponent toward the alpine control: transects of the composed surface across the valleys (along
+    x, 1024 samples at 31.25 m = 32 km, several y in the core, Hann, harness `bandPowers`), pooled power per octave
+    [125*2^b, 250*2^b) for b = 0..3 (125 m - 2 km); beta_fine = 1 + 2*slope of log2(octave RMS) against octave index
+    (the harness betaFromOctaves formula, applied to bands 0..3). Rows: beta_fine(with rock) in [2.0, 2.6] (the M3
+    beta row's calibrated band, which contains the alpine control's 2.14; the alpine control's own 125 m - 2 km beta
+    is 2.62 measured by the coordinator) AND |beta_fine(with) - 2.14| < |beta_fine(without) - 2.14|.
+    Negative controls: without rock (expected about 3.4, fails the band) and a white variant (all octave gains 1,
+    expected beta < 2.0, must fail the band).
+R4. Band limit: rockDetailM alone on a uniformly steep plane (slope 35 deg, so weight 1, carvedM large so the cap
+    does not bind), transects at 31.25 m, Hann, linear detrend (harness bandPowers): the share of the detail's
+    variance at wavelengths >= 1000 m is <= 0.20. Negative control: the module plus one extra 4 km octave (variant)
+    must exceed 0.20.
+R5. Drainage guard (M5 must not break M3's calibrated drainage rows): on the composed 125 m core raster per seed,
+    the median over seeds of fill10Share (harness `depressions`) <= 0.05 and of depressionPits(r).pitsPer1000km2 <=
+    50 (the values of MOUNTAIN_THRESHOLDS rows fill10ShareP50 and pits025Per1000km2P50, read from the harness, not
+    copied). Report all-pits as INFO. Negative control: a strata variant with amplitude 3x the monotone limit
+    (reversed slopes along ledges) - report whether it fails; if no reasonable variant fails, say so plainly (the
+    row is then a guard without demonstrated teeth, and the coordinator will record that).
+
+COST row (benchmark, not a unit gate; plan 2.6 bans wall-clock in element tests): put it in the same test file as a
+test that is SKIPPED unless `process.env.ATLAS_M5_BENCH === '1'`. When enabled it measures warm ns per call, median
+of 7 rounds of >= 1e6 calls, for (i) rockDetailM alone on fixture inputs (steep/flat mix as in the core) and
+(ii) the full T6 add-on per in-massif sample: carvedSlopeTan's two extra carved-height evaluations are represented
+by two calls of a synthetic carved-height function of the same shape as the M3 lookup (do NOT import M3 in the test)
+plus rockDetailM. It prints `M5_COST {json}` and asserts (ii) <= 214 ns (the budget: with T2's measured (C1)
+component medians on Maithea, weighted +6.99% against +8%, the headroom is 1.01 points; at s = 2.27% massif land and a
+weighted denominator of 481.6 ns, 0.0101*481.6/0.0227 = 214 ns per in-massif sample; Maithea is the binding world).
+The real-M3 cost is measured by the evidence script below, not by the test.
+
+### Evidence under test-results/mountains/m5/ (scripts you write; the coordinator runs the official ones)
+
+- `integration-m3.mjs`: INTEGRATION (not registered): M3's own ramp fixture (`rampArgs` / `SITES` from
+  scripts/mountain-render-carving.mjs, the real `ridgeValleyCarvingM`), composed U + C + rockDetailM with the slope
+  from `carvedSlopeTan` of U + C at +125 m along and across (U held from rampArgs at the offset point is fine; say
+  what you did), seeds 730201..730208 (the M3 seeds) and 730301..730308 (fresh). Report with the harness
+  `measureSites` + `judgeM3`: all eight M3 rows with and without M5, plus R1/R2/R3 computed the same way as the test.
+  Writes `integration-m3.json`. It may take minutes (M3 block solves); print progress.
+- `cost-bench.mjs`: the real cost: per in-massif sample on the M3 ramp (warm memo), ns of `ridgeValleyCarvingM`
+  alone vs `ridgeValleyCarvingM` + 2 offset calls + `carvedSlopeTan` + `rockDetailM` (the T6 add-on); median of 15
+  rounds, interleaved; JSON out. The coordinator runs it under the CPU-quiet test slot.
+- `render.mjs`: a 12 km hillshade PNG (harness `hillshade`/`writePng`) of one held-out seed's fixture without and
+  with rock, and a map of the rock detail itself.
+- `m5-wiring.patch`: a `git diff`-format patch against main 9971c3f (it must apply with `git apply --check` on a clean
+  main checkout; write it by hand or generate it in a scratch copy OUTSIDE this worktree's tracked files, e.g. in
+  %TEMP%, never by editing the tracked src files of this worktree) that T6 would apply to wire M5, STAGED-SAFE:
+  - src/lod-ladder.ts: `ROCK_DETAIL_REDUCTION` re-export or mirror, `rockDetailFromLevel(radiusM)` and
+    `rockDetailAtLevel(radiusM, lodLevel?)` in the `carvingFromLevel` style (truth = no level = evaluated), plus a
+    pin that its longest wavelength equals ROCK_DETAIL_BANDS' longest.
+  - src/mountain-assembly.ts: `mountainRidgeTermM(..., carve = true, rock = false)`: only when `carve && rock && U >
+    0`, compute C at the sample and at +SLOPE_STEP_M along and +SLOPE_STEP_M across (same strip seed and local
+    coordinate), slopeTan = carvedSlopeTan(U + C, U + Cx, U + Cy) (envelope held at the sample, stated), and add
+    `rockDetailM(alongM, localM, U + C, slopeTan, rockDetailSeed(stripSeed))` to the returned term. With rock = false
+    the function is unchanged (bit-identical).
+  - src/terrain.ts: pass `rock = mountains && rockDetailAtLevel(radiusM, lodLevel)` through `mountainCarvingState`
+    to the mountainRidgeTermM call. TERRAIN_MOUNTAINS_WIRED stays false; no TERRAIN_VERSION move in the patch (T6
+    owns the version and golden move); MOUNTAIN_ASSEMBLY_VERSION -> 'mountain-assembly-3' and LOD_LADDER_VERSION ->
+    'lod-ladder-3' ARE moved by the patch only if values at an opted-in sampler change (they do at the truth), with
+    the version-string test pins they touch listed in a header comment of the patch (do not edit those tests in the
+    patch unless needed for it to be self-consistent; list them).
+  Put a short README-style header at the top of the patch file (lines before the first `diff --git` are ignored by
+  git apply) saying what it does, what it moves, and that it is NOT applied on main.
+
+## Report (your final message, also saved by the harness)
+
+1. Files created, and the final constants with one line each on why.
+2. Every HARD and ROW result, tuning and held-out pools separately, with the numbers; every negative control's value
+   and whether it failed as required. Do not label anything passed unless you ran it and it passed.
+3. Exact commands you ran and their exit codes (`node --test tests/mountain-rock-detail.test.mjs`, `npx tsc --noEmit`,
+   the evidence scripts you ran, `git apply --check` of the patch on a scratch copy of main).
+4. What you did NOT run, and anything you were unsure of.

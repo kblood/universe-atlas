@@ -1,0 +1,446 @@
+{
+  "note": "U at each offset follows the analytic ramp envelope. No background in eight M3 rows; synthetic background added only in the same R1/R1d INFO, R1e/R2/R3-prime paths as the element test.",
+  "smoke": true,
+  "pools": {
+    "m3": {
+      "without": {
+        "metrics": {
+          "E1_layout": {
+            "coherence40kmWindowP50": 0.44,
+            "coherence40kmWindowP90": 0.485,
+            "axisCoherence40kmP50": 0.232
+          },
+          "E3_crests": {
+            "crestShareP50": 0.576,
+            "flank500mP50": 20.7,
+            "flank500mP90": 34.4,
+            "sharpness250v1kP50": 1.365
+          },
+          "E4_summits": {
+            "peaksProm300Per1000km2": 34.5,
+            "peaksProm1000Per1000km2": 0,
+            "maxProminenceP50": 680,
+            "maxProminenceMax": 680
+          },
+          "E5_slopes": {
+            "slope125P50": 37.68354724587136,
+            "slope125P90": 45.5,
+            "slope125Over30": 69.50341594441062,
+            "slope125Over40": 34.4,
+            "slope1kP50": 10.7,
+            "slope1kP90": 20
+          },
+          "E6_valleys": {
+            "relief4kmP50": 1159,
+            "relief8kmP50": 1592,
+            "relief8kmP90": 1989,
+            "relief16kmP50": 2001
+          },
+          "E3b_drainage": {
+            "fill10ShareP50": 0.004,
+            "pitsPer1000km2P50": 134.7,
+            "pits025Per1000km2P50": 2.6
+          },
+          "E7_spectrum": {
+            "beta500mTo8km": 2.41,
+            "rmsTotalM": 722,
+            "octaveRmsM": {
+              "125-250m": 5,
+              "250-500m": 10,
+              "500-1000m": 25,
+              "1000-2000m": 65,
+              "2000-4000m": 103,
+              "4000-8000m": 110,
+              "8000-16000m": 109,
+              "16000-32000m": 99,
+              "32000-64000m": 155,
+              "64000-128000m": 409
+            },
+            "aboveNyquist": {
+              "L6": {
+                "nyquistWavelengthM": 7969,
+                "rmsAboveM": 166,
+                "shareOfVariance": 0.053,
+                "colourNyquistWavelengthM": 1992,
+                "colourRmsAboveM": 71,
+                "colourShareOfVariance": 0.0096
+              },
+              "L8": {
+                "nyquistWavelengthM": 1992,
+                "rmsAboveM": 71,
+                "shareOfVariance": 0.01,
+                "colourNyquistWavelengthM": 498,
+                "colourRmsAboveM": 11,
+                "colourShareOfVariance": 0.0002
+              },
+              "L10": {
+                "nyquistWavelengthM": 498,
+                "rmsAboveM": 11,
+                "shareOfVariance": 0,
+                "colourNyquistWavelengthM": 125,
+                "colourRmsAboveM": 0,
+                "colourShareOfVariance": 0
+              },
+              "L12": {
+                "nyquistWavelengthM": 125,
+                "rmsAboveM": 0,
+                "shareOfVariance": 0,
+                "colourNyquistWavelengthM": 31,
+                "colourRmsAboveM": 0,
+                "colourShareOfVariance": 0
+              }
+            }
+          },
+          "landShare48km": 1
+        },
+        "rows": [
+          {
+            "id": "slope125Over30",
+            "op": ">=",
+            "value": 25,
+            "rationale": "Belt-core percent: alpine 42.7; d3 17.4; main 2.2",
+            "calibrated": true,
+            "actual": 69.50341594441062,
+            "pass": true
+          },
+          {
+            "id": "slope125P50",
+            "op": ">=",
+            "value": 20,
+            "rationale": "Degrees: alpine 27.4; d3 16.3; main 11.3",
+            "calibrated": true,
+            "actual": 37.68354724587136,
+            "pass": true
+          },
+          {
+            "id": "flank500mP50",
+            "op": ">=",
+            "value": 12,
+            "rationale": "Degrees: alpine 14.7; d3 9.6; main 6.5; dome 0.4",
+            "calibrated": true,
+            "actual": 20.7,
+            "pass": true
+          },
+          {
+            "id": "relief8kmP50",
+            "op": ">=",
+            "value": 1500,
+            "rationale": "Metres at a 3 km envelope: alpine 1767; main Maithea 1466",
+            "calibrated": true,
+            "actual": 1592,
+            "pass": true
+          },
+          {
+            "id": "beta500mTo8km",
+            "op": "between",
+            "value": [
+              2,
+              2.6
+            ],
+            "rationale": "Alpine 2.14; d3 2.78-2.99; main 3.36-3.49; Earth about 2 (literature)",
+            "calibrated": true,
+            "actual": 2.41,
+            "pass": true
+          },
+          {
+            "id": "fill10ShareP50",
+            "op": "<=",
+            "value": 0.05,
+            "rationale": "calibrated 2026-10-05 (MTN-4): eroded control P=0, un-eroded control N=0.30197901683152795; main 5-23%; d3 23-32%; noise 31%",
+            "calibrated": true,
+            "actual": 0.004,
+            "pass": true
+          },
+          {
+            "id": "pits025Per1000km2P50",
+            "op": "<=",
+            "value": 50,
+            "rationale": "calibrated 2026-10-05 (owner decision (a), docs/mountain-m3-calibration-v1.md): pits whose closed depression covers >= 0.25 km2. Eroded positives: steady-state stream power 0-38.4, resampled eroded control 22.5. Negatives: alpine 1023.7, noise carving 369.6, un-eroded control 829. main 79-300; d3 363-399",
+            "calibrated": true,
+            "actual": 2.6,
+            "pass": true
+          },
+          {
+            "id": "axisCoherence40kmP50",
+            "op": "between",
+            "value": [
+              0.14,
+              0.64
+            ],
+            "rationale": "calibrated 2026-10-05 (owner decision (a), docs/mountain-m3-calibration-v1.md): eroded steady-state positives 0.255-0.464; isotropic negatives alpine 0.014, noise carving 0.022, dome 0.032; straight mirrored fans A0 0.823, parallel comb B0 0.968; bounds = midpoints",
+            "calibrated": true,
+            "actual": 0.232,
+            "pass": true
+          }
+        ],
+        "fine": {
+          "R1": {
+            "steepRms": 43.16927696369386,
+            "flatRms": 52.26560608412681,
+            "ratio": 0.8259595592215753,
+            "steepSamples": 46585,
+            "flatSamples": 1739
+          },
+          "R1d": {
+            "steepRms": 4.393956419925599,
+            "flatRms": 4.523939276328858,
+            "ratio": 0.9712677716335886,
+            "steepSamples": 46585,
+            "flatSamples": 1739
+          },
+          "R1e": {
+            "steepRms": 4.393956419925599,
+            "flatRms": 4.523939276328857,
+            "ratio": 0.9712677716335888,
+            "steepSamples": 46585,
+            "flatSamples": 1739
+          },
+          "R2": {
+            "p50": 40.85867235433353,
+            "p90": 46.87494974394033,
+            "fill10ShareP50": 0.009809738538823623,
+            "pits025Per1000km2P50": 12.345202731376105,
+            "allPitsINFO": 303.69198719185215,
+            "base": {
+              "flatShare": 0.01296246286794491,
+              "steepShare": 0.9025114771806644,
+              "fill10ShareP50": 0.010007515525493454,
+              "pits025Per1000km2P50": 9.876162185100883
+            }
+          },
+          "R3": {
+            "beta": 3.714672159701555,
+            "octaveRms": [
+              7.350102259116216,
+              18.78474616130086,
+              56.235644910343176,
+              117.36920935314032
+            ]
+          }
+        }
+      },
+      "with": {
+        "metrics": {
+          "E1_layout": {
+            "coherence40kmWindowP50": 0.438,
+            "coherence40kmWindowP90": 0.477,
+            "axisCoherence40kmP50": 0.231
+          },
+          "E3_crests": {
+            "crestShareP50": 0.576,
+            "flank500mP50": 20.8,
+            "flank500mP90": 34.6,
+            "sharpness250v1kP50": 1.367
+          },
+          "E4_summits": {
+            "peaksProm300Per1000km2": 34.1,
+            "peaksProm1000Per1000km2": 0,
+            "maxProminenceP50": 694,
+            "maxProminenceMax": 694
+          },
+          "E5_slopes": {
+            "slope125P50": 37.558851404030555,
+            "slope125P90": 46.7,
+            "slope125Over30": 67.8350670259178,
+            "slope125Over40": 35.2,
+            "slope1kP50": 10.7,
+            "slope1kP90": 20
+          },
+          "E6_valleys": {
+            "relief4kmP50": 1160,
+            "relief8kmP50": 1592,
+            "relief8kmP90": 2041,
+            "relief16kmP50": 2001
+          },
+          "E3b_drainage": {
+            "fill10ShareP50": 0.005,
+            "pitsPer1000km2P50": 250.9,
+            "pits025Per1000km2P50": 2.6
+          },
+          "E7_spectrum": {
+            "beta500mTo8km": 2.37,
+            "rmsTotalM": 718,
+            "octaveRmsM": {
+              "125-250m": 8,
+              "250-500m": 13,
+              "500-1000m": 26,
+              "1000-2000m": 65,
+              "2000-4000m": 102,
+              "4000-8000m": 111,
+              "8000-16000m": 109,
+              "16000-32000m": 98,
+              "32000-64000m": 155,
+              "64000-128000m": 406
+            },
+            "aboveNyquist": {
+              "L6": {
+                "nyquistWavelengthM": 7969,
+                "rmsAboveM": 167,
+                "shareOfVariance": 0.054,
+                "colourNyquistWavelengthM": 1992,
+                "colourRmsAboveM": 72,
+                "colourShareOfVariance": 0.01
+              },
+              "L8": {
+                "nyquistWavelengthM": 1992,
+                "rmsAboveM": 72,
+                "shareOfVariance": 0.01,
+                "colourNyquistWavelengthM": 498,
+                "colourRmsAboveM": 15,
+                "colourShareOfVariance": 0.0004
+              },
+              "L10": {
+                "nyquistWavelengthM": 498,
+                "rmsAboveM": 15,
+                "shareOfVariance": 0,
+                "colourNyquistWavelengthM": 125,
+                "colourRmsAboveM": 0,
+                "colourShareOfVariance": 0
+              },
+              "L12": {
+                "nyquistWavelengthM": 125,
+                "rmsAboveM": 0,
+                "shareOfVariance": 0,
+                "colourNyquistWavelengthM": 31,
+                "colourRmsAboveM": 0,
+                "colourShareOfVariance": 0
+              }
+            }
+          },
+          "landShare48km": 1
+        },
+        "rows": [
+          {
+            "id": "slope125Over30",
+            "op": ">=",
+            "value": 25,
+            "rationale": "Belt-core percent: alpine 42.7; d3 17.4; main 2.2",
+            "calibrated": true,
+            "actual": 67.8350670259178,
+            "pass": true
+          },
+          {
+            "id": "slope125P50",
+            "op": ">=",
+            "value": 20,
+            "rationale": "Degrees: alpine 27.4; d3 16.3; main 11.3",
+            "calibrated": true,
+            "actual": 37.558851404030555,
+            "pass": true
+          },
+          {
+            "id": "flank500mP50",
+            "op": ">=",
+            "value": 12,
+            "rationale": "Degrees: alpine 14.7; d3 9.6; main 6.5; dome 0.4",
+            "calibrated": true,
+            "actual": 20.8,
+            "pass": true
+          },
+          {
+            "id": "relief8kmP50",
+            "op": ">=",
+            "value": 1500,
+            "rationale": "Metres at a 3 km envelope: alpine 1767; main Maithea 1466",
+            "calibrated": true,
+            "actual": 1592,
+            "pass": true
+          },
+          {
+            "id": "beta500mTo8km",
+            "op": "between",
+            "value": [
+              2,
+              2.6
+            ],
+            "rationale": "Alpine 2.14; d3 2.78-2.99; main 3.36-3.49; Earth about 2 (literature)",
+            "calibrated": true,
+            "actual": 2.37,
+            "pass": true
+          },
+          {
+            "id": "fill10ShareP50",
+            "op": "<=",
+            "value": 0.05,
+            "rationale": "calibrated 2026-10-05 (MTN-4): eroded control P=0, un-eroded control N=0.30197901683152795; main 5-23%; d3 23-32%; noise 31%",
+            "calibrated": true,
+            "actual": 0.005,
+            "pass": true
+          },
+          {
+            "id": "pits025Per1000km2P50",
+            "op": "<=",
+            "value": 50,
+            "rationale": "calibrated 2026-10-05 (owner decision (a), docs/mountain-m3-calibration-v1.md): pits whose closed depression covers >= 0.25 km2. Eroded positives: steady-state stream power 0-38.4, resampled eroded control 22.5. Negatives: alpine 1023.7, noise carving 369.6, un-eroded control 829. main 79-300; d3 363-399",
+            "calibrated": true,
+            "actual": 2.6,
+            "pass": true
+          },
+          {
+            "id": "axisCoherence40kmP50",
+            "op": "between",
+            "value": [
+              0.14,
+              0.64
+            ],
+            "rationale": "calibrated 2026-10-05 (owner decision (a), docs/mountain-m3-calibration-v1.md): eroded steady-state positives 0.255-0.464; isotropic negatives alpine 0.014, noise carving 0.022, dome 0.032; straight mirrored fans A0 0.823, parallel comb B0 0.968; bounds = midpoints",
+            "calibrated": true,
+            "actual": 0.231,
+            "pass": true
+          }
+        ],
+        "fine": {
+          "R1": {
+            "steepRms": 45.3197868148498,
+            "flatRms": 52.54930262899383,
+            "ratio": 0.862424134052063,
+            "steepSamples": 46585,
+            "flatSamples": 1739
+          },
+          "R1d": {
+            "steepRms": 13.86211678541383,
+            "flatRms": 9.303932880903071,
+            "ratio": 1.4899201190355456,
+            "steepSamples": 46585,
+            "flatSamples": 1739
+          },
+          "R1e": {
+            "steepRms": 13.86211678541383,
+            "flatRms": 4.523939276328857,
+            "ratio": 3.064169507744329,
+            "steepSamples": 46585,
+            "flatSamples": 1739
+          },
+          "R2": {
+            "p50": 40.70140330298518,
+            "p90": 48.08717526333816,
+            "fill10ShareP50": 0.010719512677504846,
+            "pits025Per1000km2P50": 7.407121638825663,
+            "allPitsINFO": 429.6130550518884,
+            "base": {
+              "flatShare": 0.01296246286794491,
+              "steepShare": 0.9025114771806644,
+              "fill10ShareP50": 0.010007515525493454,
+              "pits025Per1000km2P50": 9.876162185100883
+            }
+          },
+          "R3": {
+            "beta": 3.3012316056274824,
+            "octaveRms": [
+              10.977669112588252,
+              23.643911208939098,
+              56.42949711283156,
+              117.25933221427876
+            ]
+          }
+        }
+      },
+      "R3prime": {
+        "alpineFineBeta": 2.617,
+        "limit": 3.3487814398010367,
+        "beta": 3.3012316056274824,
+        "pass": true
+      }
+    }
+  }
+}

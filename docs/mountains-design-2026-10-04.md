@@ -492,15 +492,71 @@ PNG writer. Every element test imports it; no element test reimplements a metric
   physically eroded control (1.7-10.1) and above the UNCALIBRATED 25 ceiling, which stays ungated.
   `docs/mountain-summits-v1.md`.
 
-### 2.5 M5: steep-rock fine detail (wavelengths under 1 km; optional, later)
+### 2.5 M5: steep-rock fine detail (wavelengths under 1 km) — STAGED, UNWIRED (2026-10-06)
 
-- **What.** The existing detail window (hills, gullies, rocks) gets a slope weight, so steep faces
-  carry rock-scale relief and valley floors stay smooth.
-- **Owner file:** the detail-window hunk of `terrain.ts`. This is after assembly, as its own version
-  bump.
-- **Metric:** octave RMS at 125-500 m on slopes above 30 deg is at least 2x the RMS on slopes below
-  10 deg. Main has 1-3 m in these octaves everywhere.
-- **Must not depend on:** M1-M4 parameters. It is tested on the synthetic ramp.
+Original card (kept for the record): the detail window gets a slope weight; owner the detail-window hunk
+of `terrain.ts`; metric "octave RMS at 125-500 m on slopes above 30 deg is at least 2x the RMS on slopes
+below 10 deg; main has 1-3 m in these octaves everywhere"; tested on the synthetic ramp, no M1-M4
+parameters. Changes below are coordinator decisions (Opus, on Kasper's instruction; overrulable).
+
+- **What (as built).** `src/mountain-rock-detail.ts` (`mountain-rock-detail-1`), a pure, arithmetic-only,
+  import-free function `rockDetailM(along, across, carvedM, carvedXM, carvedYM, seed)` of the M2+M3 carved
+  term and its values at fixed +125 m offsets. Weight: exactly +0 at slope <= tan 10 deg, 1 at >= tan 30
+  deg, smoothstep between. Shape: strata benches on the carved height (period 280 m vertical, linear
+  tread over half the phase, fast riser over 8%, zero on 42%; mean 0.29) at 98.5%, plus downhill-oriented
+  compact gully kernels (250 m lattice, 200 x 65 m half-axes) at 1.5%. Depth = min(55 m, 0.5 x carved,
+  0.6 x slopeTan x 200 m). v <= 0 always, so `carved + v` is in [carved/2, carved].
+- **Owner (changed).** Not the detail window: `terrain-floor-window.test.mjs` pins 0 <= ground - floor
+  <= window, so a non-positive term cannot enter the window. M5 enters the floor through
+  `mountainRidgeTermM` (after M3, before the floor clamp): coastline F >= 0 where a0 >= 0 and the window
+  invariant hold by the bound above. Declared reduction: longest band 1000 m, so
+  `ROCK_DETAIL_MAX_EDGE_M` = 1000/2 x 32/2 = 8 km (first rock level: Maithea L10, Selawyn L11, Raiva L9,
+  Lethuris L11); coarser levels drop it, which is an upper envelope (v <= 0), as contract section 3 requires.
+- **Wiring:** NOT applied. `test-results/mountains/m5/m5-wiring.patch` (applies to 9971c3f; tsc exit 0
+  with it) adds `rockDetailFromLevel/AtLevel` (lod-ladder-3), the `rock` flag in `mountainRidgeTermM`
+  (mountain-assembly-3; rock = false bit-identical), and a `'rock'` cache state. With the patch 9 of 72
+  related tests fail, all T6 work: opted-in digests, the "from the cut the truth" equality (needs the
+  rock-level split) and the assembly import allowlist. No TERRAIN_VERSION or golden move until T6 (which
+  stays BLOCKED on the mountain path's own cost, addendum (4)); M5 moves its versions once, at T6.
+- **Metrics (rows as finally registered; ledger below).** Unit test `tests/mountain-rock-detail.test.mjs`
+  (synthetic ramp E(y) = 3000 max(0, 1-|y|/30 km) with analytic 4 km valleys and a beta-3.4 background of
+  2.0 m RMS at 250-500 m standing in for main's window; no M1-M4 import). Gate pool 730901-730908, single
+  run, constants frozen before:
+
+  | Row | Gate | Real M3, pools 730201-08 / 730301-08, 8 sites each (INFO) | Negative control (fails as required) |
+  |---|---|---|---|
+  | R1e steep detail RMS (125-500 m) >= 2 x background RMS on flat | 3.67 | 3.07 / 3.03 (without 1.00) | no rock 0.98; depth x0.1 1.06 |
+  | R2 slope125 p50 drop <= 0.5 deg; p90 <= 48.4 (alpine 44.0 +10%) | 38.12 (-0.01) / 45.23 | p50 -0.16 / -0.12; p90 48.25 / 48.16 | depth and KAPPA x4: p90 52.1 |
+  | R3' fine beta (125 m-2 km) closes >= 1/3 of the gap to alpine 2.617, and >= 2.0 | 2.49 (without 3.55, limit 3.24) | 3.28 / 3.25 (limits 3.32 / 3.31) | no rock 3.55; white speckle x4 1.33 |
+  | R4 rock variance at >= 1 km on a 35 deg plane <= 0.20 | 0.0001 (fall line +x) | - | extra 4 km octave 0.67 |
+  | R5 M3 drainage rows fill10 <= 0.05, pits025 <= 50 | 0.001 / 0 | all eight M3 rows pass with M5; pits025 3.9 -> 3.5, 4.3 -> 5.6 | none fails (guard without teeth) |
+  | R6 new strict fine pits <= 1 per km2 | 0 | all strict pits INFO 134 -> 243, 146 -> 259 per 1000 km2 | round-2 isotropic ribs 4.92 |
+
+  HARD: exact +0 exclusions, bounds and upper envelope (65,536 samples, 0 violations), weight endpoints,
+  SHA-256 digest (forward, reverse, child process), arithmetic audit with 20 negative controls, frozen
+  constants with the monotone-bench inequality 0.401 (0.901 with the cap) < 1, continuity (Lipschitz
+  straddles; speckle and level-dependent-slope variants fail). Runtime 1.39 s (< 2 s).
+- **Cost (benchmark, CPU-quiet slot):** T6 add-on per in-massif sample (2 offset M3 lookups +
+  `rockDetailM`) 149.5 ns median vs the 214 ns budget (Maithea binding: (8 - 6.99)% x 481.6 ns / 2.27%
+  massif share); M3 alone 43.2 ns. Synthetic opt-in row (`ATLAS_M5_BENCH=1`): 129.2 ns, rock alone 50.1 ns.
+- **Visual (advisory):** Luna, 3 asks per image with diagnosis: FAIL on all four renders, including both
+  baselines without M5 ("stripes / blocky pixel-aligned steps", element seams/grid). Not citable
+  (uncalibrated); M3's lattice look dominates the real-M3 render.
+- **Ledger (old -> new, all before any wiring):** (1) R1 on the composed surface -> INFO: the fixture's
+  own floor/crest kinks give 16.4 m flat vs 14.2 m steep without rock; (2) R1d (detail field) -> INFO: the
+  500 m box at narrow floors (1.3% of real-M3 core pixels) picks up the rock's mean on the adjacent faces;
+  gate R1e compares steep detail with the background the flat pixels actually carry (rock is exactly 0
+  there, HARD); (3) R3 band [2.0, 2.6] -> R3': the coordinator's band excluded the alpine control's own
+  fine beta 2.617; (4) gate pools 730601/730701/730801 burnt in turn after each change, gate 730901;
+  (5) round 2 (isotropic ribs) raised real-M3 pits025 2.6 -> 54 and was rejected: M5 must keep M3's
+  drainage rows. Thresholds unchanged otherwise. Evidence: `test-results/mountains/m5/`.
+- **Must not depend on:** M1-M4 parameters (it reads the carved height only through its arguments).
+- **Open for the owner:** (a) real-M3 margins are thin (p90 48.25 vs 48.4; R3' 3.28 vs 3.32), so a
+  re-tuned M3 can flip them; (b) the gully term contributes at most 0.8 m and roughly half the rock-only
+  cost (Astra's tuning-only ablation: R1e and beta unchanged); dropping it is a new candidate with a fresh
+  gate pool; (c) visual: the benches read as contour striping on the planar fixture and Luna fails every
+  render, baselines included; headset/visual acceptance waits for wiring; (d) the R1/R1d ledger changes
+  and the R3' re-registration are coordinator decisions the owner may overrule.
 
 ### 2.6 What no element test may depend on (all elements)
 
