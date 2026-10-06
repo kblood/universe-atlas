@@ -715,6 +715,11 @@ value-changing field margin (|u/U|-dependent, evidence doc §7 item 3) brings th
   - this protocol for C1 and the orbit bake;
   - contract §6 and the field build.
 
+**Lifted (2026-10-06, coordinator).** The margin follow-up was done and passed every gate above with today's ROOM
+and budgets unchanged (switch maxima 1,222 / 1,584 / 634 / 1,877 m; C1 ≤ 5.14 %, orbit ≤ 4.20 %, contract §6 ≤ +7.9 %,
+field build ≤ 42 ms). Route A is merged to main staged; evidence in `docs/mountains-t6-baked-coarse-2026-10-06.md`
+section 9. The question above is therefore moot unless Kasper wants to revisit it.
+
 ### Q-B. Frame upper side at peak-corrected levels
 
 **Question.** `tests/lod-coarse-frame.test.mjs` keeps "child ≤ parent + 0.05 m at peak-corrected child levels" as a

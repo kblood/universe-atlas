@@ -4,8 +4,9 @@ Evidence for decisions addendum (5) in `docs/mountains-opus-decisions-2026-10-05
 (Claude Opus 5.5, acting on Kasper's instruction). Astra (Codex `gpt-6-astra`) did the implement round and the one
 fix round. After that the coordinator made value-preserving edits only.
 
-The work is on branch `mountains/baked-coarse`, cut from main `9971c3f`. **The branch is not merged.** Two budgets
-are missed:
+The work is on branch `mountains/baked-coarse`, cut from main `9971c3f`. **Update 2026-10-06 (section 9): after the
+along-axis margin of round 3 every gate is met and the branch is merged to main staged.** The text below records
+the state before that. Two budgets were missed in round 1:
 
 - the C1 sampler budget, by +0.4 to +2.4 points;
 - the field build target, on two of four worlds.
@@ -286,3 +287,127 @@ Notes on the misses:
   is the same code as in the run in section 5 that was met (+2.3%). Section 5 also records that path's spread as
   −3.6..+9.4% across repeated runs. The miss is reported and was not re-run.
 - **C1.** The per-run spread is −3.4..+26.8%.
+
+## 9. Round 3 (2026-10-06): along-axis margin; the coarse-frame block is lifted
+
+Decisions addendum (6), decision 3, blocked the merge: on main's `tests/lod-coarse-frame.test.mjs` the carving switch
+pair left its §3.1 ROOM on all four worlds. This round is the follow-up recorded there ("lifting the block without
+his answer"): a tighter, value-changing field margin, with the ROOM pins and every budget unchanged. One Astra
+implement round; no fix round was needed (the coordinator replaced one import with a tested literal and corrected
+two version notes). Branch commits: merge `27abfe3` (main `0c80da4` in), change `9c71ad7`. Evidence:
+`test-results/mountains/t6-margin/` (git-ignored, kept on disk).
+
+### Diagnosis (coordinator, measured)
+
+The overestimate had two causes. Either fix alone leaves the maximum at 1.3-2.3 km; both together bring it to tens
+of metres.
+
+1. **The flat margin 0.16 H.** The bilinear signed-distance error, Float32 storage included, is tiny away from belt
+   ends (`err-by-u-fine.jsonl`, `err-by-u-end32.jsonl`):
+   - |u/U| < 0.9: max 0.00066 / 0.00023 / 0.00037 / 0.00028 H (M / S / R / L);
+   - ≤ 0.0005 H up to |u/U| = 0.955, then rising: Maithea 0.0033 at 0.970, 0.0121 at 0.980, 0.0451 at 0.990,
+     0.0847 H in [0.9975, 1) with 32x32 taps. The end kink converges slowly with tap density (4x4: 0.0768;
+     8x8: 0.0803), so 0.16 H was only 1.89x the densest measurement.
+2. **`best = main` in the candidate maximum.** Inside a massif the edge fade removes main's ridge term, so the exact
+   composition (1−w)·main + U can be far below main (Maithea example: main 2,830 m, exact 506 m, old coarse
+   2,726 m). The maximum then returned main.
+
+### Change (`orogen-layout-4`, `massif-envelope-4`)
+
+- `MASSIF_COARSE_MARGIN = {INTERIOR_H: 0.002, END_H: 0.2, RAMP_FROM: 0.94, RAMP_TO: 0.99}` (frozen) and
+  `coarseMarginH(uf)`: 0.002 H up to |u/U| = 0.94, linear to 0.2 H at 0.99. The composition gets
+  `coarseMarginH(u/U)` as its delta. The per-belt scalar [8] is the largest margin (0.2), used only for the skip
+  test. The layout keeps it as a literal (the layout module imports nothing but catalog/det-math, a HARD test); a
+  test asserts it equals `END_H`.
+- The candidate maximum starts at −∞; the result is main only when every candidate is skipped. Validity: belt
+  footprints are disjoint (construction separates the gradient-inflated tubes). At most one belt has value > 0
+  anywhere; a candidate whose true value is 0 has |u/U| ≥ 1 (the term returns main) or s ≥ 1 (w = 0, term ≥ main),
+  or it is skipped. A non-skipped candidate lies inside its own tube, so inside one massif every other candidate is
+  skipped. Each term tends to main as lo → 1, so the result stays continuous. Only `baseTerrainCore` (coarse) changed;
+  the truth core is untouched and the core-sync test passes.
+
+### Tests (lean; existing files)
+
+- Enclosure: per tap, error / `coarseMarginH(uf)` ≤ 0.5 on every world and in each of 400 bins of width 0.0025,
+  with 32x32 taps in cells whose centre has 0.93 < |u/U| < 1.05 and 8x8 elsewhere. Ratios 0.42 / 0.33 / 0.26 / 0.34.
+  Negative control: `INTERIOR_H` everywhere gives 42 / 33 / 26 / 34 (must exceed 0.5, it does).
+- Premise: at most one belt has value > 0 at every one of the 56,724 directions per world, on a copied layout
+  whose belts are asserted equal to production.
+- The max-without-main rule is exercised: 1,212 / 1,441 / 813 / 110 directions return a floor below a mutant with
+  `best = main`.
+- Tightness pin: p99 ≤ 50 m, max ≤ 100 m (coarse minus exact uncarved floor). The zero-margin mutant still violates
+  the bound; the boundary identity still holds.
+- New margin unit test (frozen values, clamping, symmetry); the g² composition test gained u values on the ramp.
+
+### Results (all exit 0)
+
+| World | Violations | Ocean diff | p99 | max | before p99 / max | Field build, cold |
+|---|---:|---:|---:|---:|---:|---:|
+| Maithea | 0 | 0 | 9.3 m | 32.3 m | 756 / 2,347 m | 26.2 ms |
+| Selawyn | 0 | 0 | 7.5 m | 27.0 m | 769 / 1,836 m | 41.5 ms |
+| Raiva | 0 | 0 | 5.7 m | 28.7 m | 443 / 1,355 m | 9.3 ms |
+| Lethuris | 0 | 0 | 9.4 m | 63.2 m | 740 / 2,086 m | 42.0 ms |
+
+Coarse-frame test, ROOM pins unchanged (`r1-frame.tap`, 9 pass, 1 todo = the Q-B upper side):
+
+| Switch pair, parent − child (m) | p50 / p99 / max | ROOM | trial merge before (max) |
+|---|---|---:|---:|
+| Maithea L5→6 | 36 / 849 / **1,222** | 1,550 | 2,874 |
+| Selawyn L6→7 | 470 / 1,358 / **1,584** | 2,000 | 2,172 |
+| Raiva L4→5 | 101 / 553 / **634** | 800 | 1,767 |
+| Lethuris L6→7 | 164 / 1,375 / **1,877** | 2,350 | 2,610 |
+
+These are within 1 % of main's own values (1,216 / 1,575 / 632 / 1,869 m). The closest non-switch pairs are Raiva
+L7→8 and L8→9 (61 / 63 m against 100 m) and Maithea L4→5 (783 m against 1,000 m; it was 999 m in the trial merge).
+
+Identity (`ledger-after-staged.json` against `ledger-before-staged.json`, SHA-256): what moved is exactly the
+`{mountains: true}` samplers at L0 and L(cut−1) and the mountain tiles at L0, L3, L(cut−1) and L(cut) (L(cut) in
+`parents`/`parentHeight` only, asserted by the re-pin script). Truth, default, ≥ cut, off, crater, base, orbit,
+hypsometry and survey are byte-identical.
+
+Re-pins in `tests/lod-carving-reduction.test.mjs` (old → new, `digest-ledger.json`):
+
+- `COST_IDENTITY[0]`: Maithea `08521843…44e0` → `6c4bf804…4b1d`; Selawyn `b787565e…8954` → `c455f00a…728f`;
+  Raiva `498662db…f570` → `b6c55c60…2ac6`; Lethuris `4f79a66f…80b7` → `acf6482b…1a48`.
+- `COST_IDENTITY[1]` (switch tile, parents only): Maithea `3e812d1d…cfdb` → `00446f5a…9cfa`; Selawyn
+  `528260f7…7ecf` → `fa4de7c2…d5fa`; Raiva `92f44e5f…4c5c` → `134db519…d2b6`; Lethuris `2c689122…0986` →
+  `c3574bed…ffab`.
+- `COST_SAMPLER_IDENTITY[0]`: Maithea `0c2e6161…d454` → `6da06688…225d`; Selawyn `c25d73c6…d5ec` →
+  `5fdbe43b…b0b2`; Raiva `733c1c25…8778` → `0b215f06…2270`; Lethuris `3fa308f5…c492` → `1c5faaac…6878`.
+- `COST_SAMPLER_IDENTITY[1]` (≥ cut) is unchanged.
+
+Checks: `tsc --noEmit` exit 0; 83/83 tests in the six touched files exit 0; `lod-coarse-frame` exit 0.
+
+### Cost (against main `0c80da4`, CPU-quiet slot)
+
+**Contract §6** (`contract-build-bench`, 5 rounds, mean growth per level, ≤ +10%): **MET**, max +5.2 / +4.1 /
++6.5 / +7.9 % (`contract-build-bench.json`).
+
+| World | L0 | L1 | L2 | L3 | L4 | L5 | L6 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Maithea | +5.2 | +3.8 | −0.7 | −0.1 | +3.2 | +3.0 | |
+| Selawyn | +2.1 | −1.2 | +1.4 | +1.5 | +4.1 | +1.2 | +0.3 |
+| Raiva | +0.8 | +0.1 | +1.1 | +5.0 | +6.5 | | |
+| Lethuris | +7.9 | −1.4 | −4.3 | +4.7 | −0.6 | +0.1 | +2.5 |
+
+**Fair protocol** (addendum 6 Q-A, `scripts/cost-fair`, 30 interleaved fresh processes per arm and world; ref and
+A/A = two `git archive` copies of main `0c80da4`, cand = `9c71ad7` with only `TERRAIN_MOUNTAINS_WIRED` flipped to
+true in a scratch copy; 480 of 480 processes exit 0; `fair/`, `fair-analysis.txt`): **ALL MET.**
+
+| World | C1 weighted, A/B median [CI] | A/A median [CI] | Judged (≤ 8%) | Orbit A/B median [CI] | Judged (≤ 5%) |
+|---|---|---|---:|---|---:|
+| Maithea | 4.55 [2.27, 5.54] | 0.03 [−1.09, 2.63] | 4.55 | 2.92 [1.73, 3.62] | 2.92 |
+| Selawyn | 1.60 [−1.69, 5.22] | −0.90 [−2.51, 0.37] | 1.60 | 3.01 [1.50, 3.53] | 3.01 |
+| Raiva | 3.87 [2.44, 4.86] | 0.54 [0.05, 1.98] (bias shown) | 3.32 | 2.78 [1.84, 3.72] | 2.78 |
+| Lethuris | 5.14 [3.86, 6.77] | 0.02 [−0.76, 1.03] | 5.14 | 4.20 [2.86, 4.98] | 4.20 |
+
+C1 outside massifs A/B: +1.86 / +0.37 / +2.01 / +3.62 %. Lethuris orbit has the least headroom (4.20 %, CI upper
+4.98 %).
+
+### Outcome
+
+Every gate is met with unchanged pins and budgets: the frame test with today's ROOM, 0 bound violations and 0 ocean
+differences, field build ≤ 50 ms, contract §6, C1 and the orbit bake under the fair protocol. The branch is merged
+to main STAGED (`TERRAIN_MOUNTAINS_WIRED = false`), which lifts decision 3 of addendum (6). Wiring (T6, with the Q-B
+decisions U1/U2 and the one remaining `test:full` use) is not part of this step. Not run here: `test:full`, the full
+`npm test`, a Luna vote, any preview.
