@@ -1,0 +1,103 @@
+You are Astra, implementing one bounded, value-preserving performance restructuring in the TypeScript repo checked out
+at C:/LLM/IWSDK/universe-atlas-wt/split-core (branch mountains/split-core, from main 33b049a). You cannot write .git;
+do NOT run git commands that write. The coordinator reviews your diff, runs the official benchmarks and commits.
+
+## Read first
+
+- docs/mountains-t3-coarse-carving-2026-10-06.md section 7 and docs/mountains-t4-sparse-consumers-2026-10-06.md
+  section 4 (the open problem and the 11 + 5 attempts that already failed: do not repeat them).
+- src/terrain.ts: `baseTerrainCore` (around lines 462-669), `mountainCarvingState`, `terrainSampler` (around 816-975).
+- src/mountain-layout.ts `buildOrogenLayout` (`bandTag`, `sampleWithinWithA0`, lines ~560-673) and
+  src/mountain-assembly.ts `massifBeltSample`, `mountainRidgeTermM`.
+
+## The problem
+
+With the mountains wired (`TERRAIN_MOUNTAINS_WIRED`, staged false on main; samplers opt in with `{mountains: true}`)
+the core terrain sample costs +17..+33% per coarse tile level and +19..+27% per orbit bake, although no M3 block is
+solved there. Land samples OUTSIDE every belt pay +40% while doing no mountain work (massifBeltSample returns belt 0
+from the band grid). Making the M1 call dead removes most of the excess. Diagnosis: the live M1 call inside the ONE
+shared `baseTerrainCore` `sample` closure degrades V8's code for it (macroHeightCode / n no longer inlined; core
+`sample` self time 1,535 ms mountains-on vs 641 ms off). Restructurings INSIDE that one function all failed.
+
+## What to build (the structural fix not yet tried)
+
+Two separate core sampler functions, chosen once at sampler construction, so the no-mountain core is never compiled
+with the mountain call in it:
+
+1. `baseTerrainCore` goes back to having NO mountain code at all: remove the `mountains` parameter, `orogen`,
+   `orogenScratch`, `beltCarvingSeeds`, `carve` and the M1/M2/M3 hunk, so the ridge term is main 914d86f's literal
+   expression again. Compare with `git show 914d86f:src/terrain.ts` (read-only git is fine): the body of
+   `baseTerrainCore` must be textually identical to 914d86f's (whitespace included) when you are done. This is the
+   core every unwired sampler, `baseTerrainSampler`, every non-massif body and every out-of-band sample uses.
+2. A DISTINCT mountain core function (a separate function declaration, e.g. `mountainTerrainCore(body, waterLevelM,
+   exposeFloor, carve)`, so V8 gives it its own SharedFunctionInfo, feedback and optimised code). It is only ever
+   built for a relief water world whose layout has massifs (mountainCarvingState(body, options) !== null), and it is a
+   specialised copy of the relief-water-world path of baseTerrainCore plus the existing M1/M2/M3 hunk (unchanged
+   expressions, unchanged evaluation order: every value must stay bit-identical). You may drop branches that cannot
+   run for a relief water world (gas giant, dry world, non-relief). It must return a CoreSample with EXACTLY the same
+   property set and property order as baseTerrainCore's object literals (including the exposeFloor fields added in the
+   same order), so the wrapper's property loads stay monomorphic. Put it in src/terrain.ts (a separate module would
+   need terrain.ts's private helpers and create an import cycle) unless you find a clean way; say which you chose.
+3. Per-sample dispatch in `terrainSampler`'s returned closure: if this sampler has a mountain core AND the T1 band
+   rejection grid says the direction is in-band, call the mountain core; otherwise call the plain core. Keep the plain
+   call site `core.sample(d, climate !== null)` as it is (monomorphic: only plain cores ever reach it); add a separate
+   call site for the mountain core. The in-band test must be the T1 grid decision for the massif band
+   (maxDistM = MASSIF_ENVELOPE.MAX_HALF_WIDTH_M, minHalfWidthM = MASSIF_ENVELOPE.MIN_HALF_WIDTH_M), i.e. exactly the
+   `tag` that `sampleWithinWithA0` computes (`gAll ? 255 : bandTag(d)`), 0 = out of band. Add a small, read-only,
+   value-neutral entry point to the layout returned by `buildOrogenLayout` for this (e.g.
+   `bandTagWithin(d, maxDistM, minHalfWidthM): number`, selecting the grid exactly as sampleWithinWithA0 does). Do not
+   change any existing layout value, the OROGEN_LAYOUT_VERSION, or the 4096-sample M1 digest.
+   Why this is value-preserving: when the tag is 0, `sampleWithinWithA0` returns the empty sample (belt 0) and the
+   mountain core's ridge term is main's literal term, so the mountain core and the plain core return identical bits.
+   Everything after the core (landforms, craters, climate colour, regions, `core.legacyWaterLandColour`) is unchanged
+   and shared.
+4. If the layout has no massif belt at all (no flagged cell in the massif band grid), build no mountain core for that
+   body (plain core only). Decide this once per sampler construction (or memoise per layout), never per sample.
+5. `TERRAIN_MOUNTAINS_WIRED` stays `false`. `mountainCarvingState`, `TerrainSamplerOptions` meaning, the T3 level
+   rule, the parent/child switch-level samplers of planet-tiles.ts and every version constant stay as they are
+   (TERRAIN_VERSION, LOD_LADDER_VERSION, MOUNTAIN_ASSEMBLY_VERSION, OROGEN_LAYOUT_VERSION, SURVEY_VERSION: no move).
+   The unwired default field must stay byte-identical.
+
+## Guard tests (required)
+
+New file tests/terrain-mountain-core-split.test.mjs (node:test, ESM, like the neighbouring tests; keep it under ~20 s):
+
+- (a) Dispatch identity, all four fixture worlds (tests/terrain-climate-fixtures.mjs waterWorlds()), wired via
+  `{mountains: true}`, at the truth (no lodLevel), level 0 and level carvingFromLevel(R): the default dispatching
+  sampler vs a sampler that sends EVERY direction to the mountain core must agree with Object.is on every field of the
+  SurfaceSample (use exposeFloor true as well) on >= 2,048 Fibonacci directions plus rasters at the M1 axis sites
+  (tests/helpers/mountain-coarse-tiles.mjs axisSites) so in-band and out-of-band and near-band-edge directions are all
+  covered. Assert the test is not vacuous: count in-band and out-of-band directions, both > 0, and count directions
+  where the mountain term changes the value against `{mountains: false}` (> 0). The "every direction to the mountain
+  core" sampler needs a test-only hook; make it construction-time only (no per-sample flag cost on the default path),
+  and name it so nobody mistakes it for a feature (e.g. an exported `terrainSamplerForceMountainCoreForTest`, or an
+  option documented as test-only). This test is also the drift guard between the two copies: an edit to one core that
+  is not mirrored in the other fails it on out-of-band directions.
+- (b) A source check: `baseTerrainCore`'s text in src/terrain.ts contains none of `orogen`, `massif`, `mountain`,
+  `carve` (case-insensitive), so nobody silently puts the mountain call back into the shared core.
+- (c) The mountain core is not built for a sampler whose state is null (unwired default, dry world, non-relief body):
+  check through a cheap observable you add (e.g. a module-level construction counter exported for tests, like
+  `carvingBuildStats` in mountain-carving.ts), not by timing.
+- Register the new file in package.json's "test" script (append it after tests/sparse-consumer-levels.test.mjs).
+
+## Checks you run (report the real exit codes)
+
+- `npx tsc --noEmit` (exit 0 required).
+- `node --test tests/terrain-mountain-core-split.test.mjs tests/lod-carving-reduction.test.mjs tests/terrain-mountains-assembly.test.mjs tests/sparse-consumer-levels.test.mjs tests/terrain-elevation-identity.test.mjs tests/planet.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-layout.test.mjs tests/lod-consistency.test.mjs`
+  (lod-carving-reduction carries the T3 SHA-256 identity guards for the wired tiles and samplers; they must pass
+  unchanged; do NOT edit any expected digest anywhere).
+- Do NOT run `npm test`, `test:full`, any benchmark, any browser, Vite, or anything on the GPU. Do not download.
+- Do not edit docs/, scripts/, test-results/ or any other src file than src/terrain.ts and src/mountain-layout.ts
+  (mountain-layout.ts: the new read-only entry point only). If you believe another file must change, stop and explain.
+
+## Optional measurement you may do (cheap, informative, not official)
+
+A single quick A/B in one process is fine if it takes < 2 minutes, e.g.
+`node test-results/mountains/t3/tile-bench-arms.mjs Maithea C:/LLM/IWSDK/universe-atlas-wt/ref-main 0,1,2,3 main,on 3`
+(ref-main is a read-only checkout of main 33b049a). Report it as UNOFFICIAL. The coordinator measures officially.
+
+## Answer
+
+Write your final answer as: files changed with a one-line reason each; the design choices (where the mountain core
+lives, how the dispatch is done, the test hook); the check commands with their real exit codes and pass/fail counts;
+any unofficial timing; and anything you could not do or are unsure about. Be concrete; no placeholders.

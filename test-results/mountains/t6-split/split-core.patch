@@ -1,0 +1,433 @@
+diff --git a/package.json b/package.json
+index 5213eda..ea2283b 100644
+--- a/package.json
++++ b/package.json
+@@ -7,7 +7,7 @@
+     "dev": "vite --host 127.0.0.1 --port 5186",
+     "build": "tsc --noEmit && vite build",
+     "preview": "vite preview --host 127.0.0.1 --port 5186",
+-    "test": "node tests/helpers/test-slot.mjs -- node --test tests/fauna-template-shoulder-preservation.test.mjs tests/fauna-template-neck-preservation.test.mjs tests/fauna-review-lighting.test.mjs tests/fauna-template.test.mjs tests/fauna-template-motion.test.mjs tests/fauna-template-browse.test.mjs tests/fauna-variation.test.mjs tests/fauna-anatomy.test.mjs tests/fauna-corpus.test.mjs tests/fauna-structural-appendages.test.mjs tests/creature-lab-state.test.mjs tests/fauna-composer.test.mjs tests/fauna-composer-recipe-independent.test.mjs tests/fauna-composer-rig-independent.test.mjs tests/fauna-composer-structure-independent.test.mjs tests/fauna-face.test.mjs tests/ground-wet-roughness.test.mjs tests/tree-diffuse-transfer.test.mjs tests/tree-captured-transfer.test.mjs tests/planet-canopy-invalidation.test.mjs tests/tree-captured-filtering.test.mjs tests/tree-canopy-bounds.test.mjs tests/forest-presentation.test.mjs tests/tree-canopy-profile.test.mjs tests/forest-impostor-family.test.mjs tests/forest-asset-package.test.mjs tests/forest-asset-attachment.test.mjs tests/forest-asset-source.test.mjs tests/tree-foliage-sidecar.test.mjs tests/compact-instance-slots.test.mjs tests/planet-forest-tree-assets.test.mjs tests/forest-patch-broadphase.test.mjs tests/forest-ordered-work.test.mjs tests/planet-forest-worklist.test.mjs tests/life-packing.test.mjs tests/life-shadow-priority.test.mjs tests/surface-lighting.test.mjs tests/tree-foliage-mips.test.mjs tests/instance-update-ranges.test.mjs tests/tree-leaf-transmission.test.mjs tests/tree-impostor-reference-shader.test.mjs tests/tree-impostor-capture.test.mjs tests/tree-impostor-filter.test.mjs tests/tree-impostor-views.test.mjs tests/tree-shape.test.mjs tests/forest-patch-selection.test.mjs tests/forest-impostor.test.mjs tests/forest-census.test.mjs tests/forest-water-validity.test.mjs tests/forest-slot-allocator.test.mjs tests/forest-coverage.test.mjs tests/planet-canopy.test.mjs tests/forest-selection-transfer.test.mjs tests/forest-selection-cache.test.mjs tests/forest-habitat.test.mjs tests/forest-patch.test.mjs tests/tree-species-recipe.test.mjs tests/tree-asset.test.mjs tests/flora-cache-ownership.test.mjs tests/flora-recipe.test.mjs tests/local-aerial-perspective.test.mjs tests/forest-retention.test.mjs tests/render-profile.test.mjs tests/population-continuity.test.mjs tests/volumetric-clouds.test.mjs tests/planet-detail.test.mjs tests/flora-understory-geometry.test.mjs tests/flora-field.test.mjs tests/flora-culling.test.mjs tests/fauna-runtime.test.mjs tests/fauna-near-rig.test.mjs tests/fauna-continuity.test.mjs tests/fauna-locomotion.test.mjs tests/fauna-body-plan.test.mjs tests/ocean-gerstner.test.mjs tests/sky-atmosphere.test.mjs tests/planet-clouds.test.mjs tests/planet-craters.test.mjs tests/planet-rings.test.mjs tests/river-determinism.test.mjs tests/address.test.mjs tests/galaxy-hierarchy.test.mjs tests/world-surface.test.mjs tests/cosmology.test.mjs tests/galaxy-history.test.mjs tests/stellar-evolution.test.mjs tests/world-time.test.mjs tests/catalog.test.mjs tests/planet.test.mjs tests/world.test.mjs tests/ground.test.mjs tests/surface.test.mjs tests/drainage.test.mjs tests/river.test.mjs tests/river-terrain.test.mjs tests/river-water.test.mjs tests/ocean-patch-culling.test.mjs tests/river-environment.test.mjs tests/river-surface.test.mjs tests/river-surface-conform.test.mjs tests/river-surface-bank.test.mjs tests/river-physical-field.test.mjs tests/biome-ecology.test.mjs tests/biosphere-model.test.mjs tests/biosphere-geometry.test.mjs tests/creature-model.test.mjs tests/creature-rig.test.mjs tests/creature-contact.test.mjs tests/golden/perturbation.test.mjs tests/acceptance/t-seek-independence.test.mjs tests/acceptance/visit-order-independence.test.mjs tests/acceptance/existence-gating.test.mjs tests/acceptance/version-compat.test.mjs tests/time-nav.test.mjs tests/time-integration.test.mjs tests/terrain-water-refresh.test.mjs tests/terrain-budget-starvation.test.mjs tests/terrain-leaf-loop-digest.test.mjs tests/tree-structural-variant.test.mjs tests/ground-pbr-material.test.mjs tests/tree-lod-coverage.test.mjs tests/forest-far-atlas.test.mjs tests/forest-resource-accounting.test.mjs tests/inland-rivers-disabled.test.mjs tests/rock-field.test.mjs tests/rock-geometry.test.mjs tests/planet-rocks.test.mjs tests/planet-rocks-draw.test.mjs tests/tree-allometry.test.mjs tests/view-heading.test.mjs tests/gpu-lock.test.mjs tests/ocean-seam-continuity.test.mjs tests/tree-foliage-cutoff.test.mjs tests/tree-handoff-debug.test.mjs tests/forest-foliage-lobe.test.mjs tests/tree-forest-coverage.test.mjs tests/tree-impostor-rendering.test.mjs tests/life-cpu-digest.test.mjs tests/fauna-activity-exact.test.mjs tests/planet-forest-frame-digest.test.mjs tests/shadow-map-cache.test.mjs tests/shadow-program-warmup.test.mjs tests/render-quality.test.mjs tests/fauna-coat-fields.test.mjs tests/fauna-composer-individual.test.mjs tests/fauna-appearance-v2.test.mjs tests/fauna-composer-skin-anatomy.test.mjs tests/fauna-composer-coat.test.mjs tests/fauna-composer-gait.test.mjs tests/fauna-review-environment.test.mjs tests/surface-climate.test.mjs tests/habitat-suitability.test.mjs tests/season.test.mjs tests/sun-frame.test.mjs tests/fauna-composer-face.test.mjs tests/fauna-planet-headgear.test.mjs tests/surface-biomes-climate.test.mjs tests/acceptance/climate-seek-independence.test.mjs tests/terrain-elevation-identity.test.mjs tests/terrain-climate-colour.test.mjs tests/ground-climate-shader.test.mjs tests/fauna-composer-eyes.test.mjs tests/fauna-composer-gloss.test.mjs tests/acceptance/climate-agreement.test.mjs tests/fauna-template-phenotype.test.mjs tests/fauna-composer-head-geometry.test.mjs tests/fauna-composer-eye-catalogue.test.mjs tests/planet-geophysics.test.mjs tests/terrain-floor-window.test.mjs tests/lod-consistency.test.mjs tests/lod-carving-reduction.test.mjs tests/tile-metadata.test.mjs tests/ocean-volume.test.mjs tests/place-query.test.mjs tests/fauna-composer-eye-catalogue-geometry.test.mjs tests/fauna-composer-skin4-links.test.mjs tests/creature-lab-eyes.test.mjs tests/test-slot.test.mjs tests/test-selection.test.mjs tests/life-guard.test.mjs tests/test-runner.test.mjs tests/terrain-relief-hypsometry.test.mjs tests/render-bounds.test.mjs tests/harness-sites.test.mjs tests/creature-core-boundary.test.mjs tests/fauna-composer-head-occlusion.test.mjs tests/asset-provenance.test.mjs tests/climate-grid.test.mjs tests/fauna-composer-export.test.mjs tests/landing-site.test.mjs tests/eco-class.test.mjs tests/eco-assemblages.test.mjs tests/eco-identity-site.test.mjs tests/eco-lab-forms.test.mjs tests/luna-vote.test.mjs tests/mountain-metrics.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-envelope.test.mjs tests/mountain-carving.test.mjs tests/mountain-summits.test.mjs tests/mountain-carving-memo.test.mjs tests/mountain-carving-pin.test.mjs tests/terrain-mountains-assembly.test.mjs tests/sparse-consumer-levels.test.mjs",
++    "test": "node tests/helpers/test-slot.mjs -- node --test tests/fauna-template-shoulder-preservation.test.mjs tests/fauna-template-neck-preservation.test.mjs tests/fauna-review-lighting.test.mjs tests/fauna-template.test.mjs tests/fauna-template-motion.test.mjs tests/fauna-template-browse.test.mjs tests/fauna-variation.test.mjs tests/fauna-anatomy.test.mjs tests/fauna-corpus.test.mjs tests/fauna-structural-appendages.test.mjs tests/creature-lab-state.test.mjs tests/fauna-composer.test.mjs tests/fauna-composer-recipe-independent.test.mjs tests/fauna-composer-rig-independent.test.mjs tests/fauna-composer-structure-independent.test.mjs tests/fauna-face.test.mjs tests/ground-wet-roughness.test.mjs tests/tree-diffuse-transfer.test.mjs tests/tree-captured-transfer.test.mjs tests/planet-canopy-invalidation.test.mjs tests/tree-captured-filtering.test.mjs tests/tree-canopy-bounds.test.mjs tests/forest-presentation.test.mjs tests/tree-canopy-profile.test.mjs tests/forest-impostor-family.test.mjs tests/forest-asset-package.test.mjs tests/forest-asset-attachment.test.mjs tests/forest-asset-source.test.mjs tests/tree-foliage-sidecar.test.mjs tests/compact-instance-slots.test.mjs tests/planet-forest-tree-assets.test.mjs tests/forest-patch-broadphase.test.mjs tests/forest-ordered-work.test.mjs tests/planet-forest-worklist.test.mjs tests/life-packing.test.mjs tests/life-shadow-priority.test.mjs tests/surface-lighting.test.mjs tests/tree-foliage-mips.test.mjs tests/instance-update-ranges.test.mjs tests/tree-leaf-transmission.test.mjs tests/tree-impostor-reference-shader.test.mjs tests/tree-impostor-capture.test.mjs tests/tree-impostor-filter.test.mjs tests/tree-impostor-views.test.mjs tests/tree-shape.test.mjs tests/forest-patch-selection.test.mjs tests/forest-impostor.test.mjs tests/forest-census.test.mjs tests/forest-water-validity.test.mjs tests/forest-slot-allocator.test.mjs tests/forest-coverage.test.mjs tests/planet-canopy.test.mjs tests/forest-selection-transfer.test.mjs tests/forest-selection-cache.test.mjs tests/forest-habitat.test.mjs tests/forest-patch.test.mjs tests/tree-species-recipe.test.mjs tests/tree-asset.test.mjs tests/flora-cache-ownership.test.mjs tests/flora-recipe.test.mjs tests/local-aerial-perspective.test.mjs tests/forest-retention.test.mjs tests/render-profile.test.mjs tests/population-continuity.test.mjs tests/volumetric-clouds.test.mjs tests/planet-detail.test.mjs tests/flora-understory-geometry.test.mjs tests/flora-field.test.mjs tests/flora-culling.test.mjs tests/fauna-runtime.test.mjs tests/fauna-near-rig.test.mjs tests/fauna-continuity.test.mjs tests/fauna-locomotion.test.mjs tests/fauna-body-plan.test.mjs tests/ocean-gerstner.test.mjs tests/sky-atmosphere.test.mjs tests/planet-clouds.test.mjs tests/planet-craters.test.mjs tests/planet-rings.test.mjs tests/river-determinism.test.mjs tests/address.test.mjs tests/galaxy-hierarchy.test.mjs tests/world-surface.test.mjs tests/cosmology.test.mjs tests/galaxy-history.test.mjs tests/stellar-evolution.test.mjs tests/world-time.test.mjs tests/catalog.test.mjs tests/planet.test.mjs tests/world.test.mjs tests/ground.test.mjs tests/surface.test.mjs tests/drainage.test.mjs tests/river.test.mjs tests/river-terrain.test.mjs tests/river-water.test.mjs tests/ocean-patch-culling.test.mjs tests/river-environment.test.mjs tests/river-surface.test.mjs tests/river-surface-conform.test.mjs tests/river-surface-bank.test.mjs tests/river-physical-field.test.mjs tests/biome-ecology.test.mjs tests/biosphere-model.test.mjs tests/biosphere-geometry.test.mjs tests/creature-model.test.mjs tests/creature-rig.test.mjs tests/creature-contact.test.mjs tests/golden/perturbation.test.mjs tests/acceptance/t-seek-independence.test.mjs tests/acceptance/visit-order-independence.test.mjs tests/acceptance/existence-gating.test.mjs tests/acceptance/version-compat.test.mjs tests/time-nav.test.mjs tests/time-integration.test.mjs tests/terrain-water-refresh.test.mjs tests/terrain-budget-starvation.test.mjs tests/terrain-leaf-loop-digest.test.mjs tests/tree-structural-variant.test.mjs tests/ground-pbr-material.test.mjs tests/tree-lod-coverage.test.mjs tests/forest-far-atlas.test.mjs tests/forest-resource-accounting.test.mjs tests/inland-rivers-disabled.test.mjs tests/rock-field.test.mjs tests/rock-geometry.test.mjs tests/planet-rocks.test.mjs tests/planet-rocks-draw.test.mjs tests/tree-allometry.test.mjs tests/view-heading.test.mjs tests/gpu-lock.test.mjs tests/ocean-seam-continuity.test.mjs tests/tree-foliage-cutoff.test.mjs tests/tree-handoff-debug.test.mjs tests/forest-foliage-lobe.test.mjs tests/tree-forest-coverage.test.mjs tests/tree-impostor-rendering.test.mjs tests/life-cpu-digest.test.mjs tests/fauna-activity-exact.test.mjs tests/planet-forest-frame-digest.test.mjs tests/shadow-map-cache.test.mjs tests/shadow-program-warmup.test.mjs tests/render-quality.test.mjs tests/fauna-coat-fields.test.mjs tests/fauna-composer-individual.test.mjs tests/fauna-appearance-v2.test.mjs tests/fauna-composer-skin-anatomy.test.mjs tests/fauna-composer-coat.test.mjs tests/fauna-composer-gait.test.mjs tests/fauna-review-environment.test.mjs tests/surface-climate.test.mjs tests/habitat-suitability.test.mjs tests/season.test.mjs tests/sun-frame.test.mjs tests/fauna-composer-face.test.mjs tests/fauna-planet-headgear.test.mjs tests/surface-biomes-climate.test.mjs tests/acceptance/climate-seek-independence.test.mjs tests/terrain-elevation-identity.test.mjs tests/terrain-climate-colour.test.mjs tests/ground-climate-shader.test.mjs tests/fauna-composer-eyes.test.mjs tests/fauna-composer-gloss.test.mjs tests/acceptance/climate-agreement.test.mjs tests/fauna-template-phenotype.test.mjs tests/fauna-composer-head-geometry.test.mjs tests/fauna-composer-eye-catalogue.test.mjs tests/planet-geophysics.test.mjs tests/terrain-floor-window.test.mjs tests/lod-consistency.test.mjs tests/lod-carving-reduction.test.mjs tests/tile-metadata.test.mjs tests/ocean-volume.test.mjs tests/place-query.test.mjs tests/fauna-composer-eye-catalogue-geometry.test.mjs tests/fauna-composer-skin4-links.test.mjs tests/creature-lab-eyes.test.mjs tests/test-slot.test.mjs tests/test-selection.test.mjs tests/life-guard.test.mjs tests/test-runner.test.mjs tests/terrain-relief-hypsometry.test.mjs tests/render-bounds.test.mjs tests/harness-sites.test.mjs tests/creature-core-boundary.test.mjs tests/fauna-composer-head-occlusion.test.mjs tests/asset-provenance.test.mjs tests/climate-grid.test.mjs tests/fauna-composer-export.test.mjs tests/landing-site.test.mjs tests/eco-class.test.mjs tests/eco-assemblages.test.mjs tests/eco-identity-site.test.mjs tests/eco-lab-forms.test.mjs tests/luna-vote.test.mjs tests/mountain-metrics.test.mjs tests/mountain-layout.test.mjs tests/mountain-layout-grid.test.mjs tests/mountain-envelope.test.mjs tests/mountain-carving.test.mjs tests/mountain-summits.test.mjs tests/mountain-carving-memo.test.mjs tests/mountain-carving-pin.test.mjs tests/terrain-mountains-assembly.test.mjs tests/sparse-consumer-levels.test.mjs tests/terrain-mountain-core-split.test.mjs",
+     "test:pkg": "node tests/helpers/test-runner.mjs pkg",
+     "test:affected": "node tests/helpers/test-runner.mjs affected",
+     "test:full": "node tests/helpers/test-runner.mjs full",
+diff --git a/src/mountain-layout.ts b/src/mountain-layout.ts
+index 7974226..1a6b6bc 100644
+--- a/src/mountain-layout.ts
++++ b/src/mountain-layout.ts
+@@ -588,6 +588,12 @@ export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
+     tagWord=word;
+     return gBits[word]&(1<<(idx&31)) ? gTags[word] : 0;
+   };
++  // Read-only band decision, identical to sampleWithinWithA0 (including the all-grid fallback).
++  // Selecting a cached grid changes no layout/sample values and does not solve a foot point.
++  const bandTagWithin=(d: V3,maxDistM: number,minHalfWidthM=0): number=>{
++    if(maxDistM!==gMax || minHalfWidthM!==gMin)selectGrid(maxDistM,minHalfWidthM);
++    return gAll?255:bandTag(d);
++  };
+   // Solo words (cost plan T2, value-preserving): word w of the selected grid is solo when every belt
+   // other than its tag belt c has value 0 on every direction of the word's 32 cells, so the other-belt
+   // loop of withinFlagged cannot change the winner and is skipped. Decided lazily on the first sample of
+@@ -669,7 +675,7 @@ export function buildOrogenLayout({seed,radiusM:R,a0,landProbe}: {
+     return g.all || (g.bits[idx>>>5]&(1<<(idx&31)))!==0;
+   };
+   return Object.freeze({belts:Object.freeze(belts),maxHalfWidthM,sampleWithA0,sample:(d: V3,out?: OrogenSample)=>sampleWithA0(d,a0(d),out),
+-    sampleWithinWithA0,bandGrid,bandCellFlagged,bandCellIndex,sampleWithA0Unpruned,soloWordStats});
++    sampleWithinWithA0,bandTagWithin,bandGrid,bandCellFlagged,bandCellIndex,sampleWithA0Unpruned,soloWordStats});
+ }
+ 
+ const cache=new Map<string,ReturnType<typeof buildOrogenLayout>>();
+diff --git a/src/terrain.ts b/src/terrain.ts
+index 061ed83..afde32d 100644
+--- a/src/terrain.ts
++++ b/src/terrain.ts
+@@ -16,6 +16,7 @@ import {climateDatumM} from './surface-biomes.ts';
+ import {DRY_SURFACE_ROUGHNESS,WET_SURFACE_ROUGHNESS} from './surface-roughness.ts';
+ import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_CALIBRATION,CLIMATE_VERSION,type ClimateSample} from './surface-climate.ts';
+ import {orogenLayout,type OrogenSample} from './mountain-layout.ts';
++import {MASSIF_ENVELOPE} from './mountain-envelope.ts';
+ import {mountainRidgeTermM,massifBeltSample} from './mountain-assembly.ts';
+ import {carvingAtLevel} from './lod-ladder.ts';
+ 
+@@ -470,23 +471,12 @@ function mountainSeeds(body: Body, layout: ReturnType<typeof orogenLayout>): Uin
+   }
+   return seeds;
+ }
+-function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false, relief: boolean = false,
+-  mountains: {carve: boolean} | null = null) {
++function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false, relief: boolean = false) {
+   const { code, n } = macroNoise(body);
+   const sea = 0.37 + body.water * 0.22;
+   // terrain-1.8.0 relief mode (terrainSampler only; baseTerrainSampler never).
+   const reliefOn = relief && reliefModeFor(body);
+   const tau = reliefOn ? tectonicReliefOf(body) : 1;
+-  // Mountains assembly (STAGED, off unless the sampler opts in; see TERRAIN_MOUNTAINS_WIRED): the M1 orogen
+-  // layout of a relief water world (memoised by mountain-layout.ts), one scratch sample per core, one 32-bit
+-  // M3 carving seed per belt (strip 0; mountain-assembly.ts derives the other strips), and whether this
+-  // sampler's level evaluates the M3 carving (lod-ladder-2 carvingFromLevel; the truth always does).
+-  const orogen = mountains && reliefOn && body.water ? orogenLayout(body) : null;
+-  const orogenScratch: OrogenSample = {belt: 0, axis: [0, 0, 0], axisDistanceM: 0, halfWidthM: 0, beltIndex: -1, alongM: 0};
+-  const beltCarvingSeeds = orogen
+-    ? mountainSeeds(body, orogen)
+-    : new Uint32Array(0);
+-  const carve = mountains ? mountains.carve : true;
+   const kd = dryFloorScale(tau);
+   const seabedHillF = body.radiusM / RC.SEABED_HILL_WAVELENGTH_M;
+   const seabedGullyF = body.radiusM / RC.SEABED_GULLY_WAVELENGTH_M;
+@@ -590,14 +580,8 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
+           const comp = a0 / (1 + a0 / RC.HC);
+           let fineT = fine * landFactor;
+           if (fineT < -0.5 * comp) fineT = -0.5 * comp;
+-          let ridgeTermM = tau * RC.KB * 2800 * ridges * ss(RC.BT0, RC.BT1, ridges) * landFactor;
+-          if (orogen) {
+-            const o = massifBeltSample(orogen, d, a0, orogenScratch);
+-            if (o.belt !== 0)
+-              ridgeTermM = mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve);
+-          }
+           const F = comp + tau * (RC.HUP * ss(RC.B1, RC.B2, a0) + RC.HHI * ss(RC.B3, RC.B4, a0))
+-            + ridgeTermM + fineT;
++            + tau * RC.KB * 2800 * ridges * ss(RC.BT0, RC.BT1, ridges) * landFactor + fineT;
+           floorM = clamp(F, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
+           const upland = ss(RC.HM0, RC.HM1, floorM);
+           elevationM = floorM + tau * detailM * (RC.WLOW + (1 - RC.WLOW) * upland);
+@@ -667,6 +651,163 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
+   };
+   return { sample, legacyWaterLandColour };
+ }
++/** Test observable: counts construction, never samples. */
++export const mountainCoreBuildStatsForTest = {count: 0};
++
++/** Relief water-world copy, kept separate so the plain core has its own V8 feedback and code.
++ * Preserve arithmetic and CoreSample property order in both copies; the split identity test guards drift. */
++function mountainTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean, carve: boolean) {
++  const { code, n } = macroNoise(body);
++  const sea = 0.37 + body.water * 0.22;
++  mountainCoreBuildStatsForTest.count++;
++  const tau = tectonicReliefOf(body);
++  const orogen = orogenLayout(body);
++  const orogenScratch: OrogenSample = {belt: 0, axis: [0, 0, 0], axisDistanceM: 0, halfWidthM: 0, beltIndex: -1, alongM: 0};
++  const beltCarvingSeeds = mountainSeeds(body, orogen);
++  const seabedHillF = body.radiusM / RC.SEABED_HILL_WAVELENGTH_M;
++  const seabedGullyF = body.radiusM / RC.SEABED_GULLY_WAVELENGTH_M;
++  /** Seabed detail (abyssal hills, gullies, fine) at every depth, metres,
++   * bounded to |S| <= depth/2 so the seabed never reaches sea level 0. Part of
++   * the same deterministic field at every depth; there is no depth cut-off.
++   * Two octaves (4 km ridged hills, 900 m gullies): a third 200 m octave cost
++   * +9-14% per terrainSampler sample against the plan's +8% budget while adding
++   * ~1% of the detail variance, so it was dropped (docs/terrain-relief-v1.md). */
++  const seabedDetail = (d: V3, floorM: number): number => {
++    const depth = -floorM;
++    const amp = RC.SEABED_DETAIL_SHELF_M + (RC.SEABED_DETAIL_DEEP_M - RC.SEABED_DETAIL_SHELF_M) * ss(0, RC.SEABED_DETAIL_RAMP_M, depth);
++    const hb = 1 - Math.abs(n(d, seabedHillF, 75) * 2 - 1);
++    const shape = (hb * hb - 0.35) * 2.0 + (n(d, seabedGullyF, 76) - 0.5) * 1.4;
++    const S = amp * shape, half = depth * 0.5;
++    return S > half ? half : S < -half ? -half : S;
++  };
++  // R0: the radius scale of the continental coordinate (same value the
++  // elevation clamp line multiplies by), hoisted out of the per-sample path.
++  const continentalScale = Math.min(1, body.radiusM / 2e6);
++  // Legacy water-world land colour (pre-grain), terrain-1.6.0 expressions.
++  const legacyWaterLandColour = (d: V3, elevationM: number): number[] => {
++    const latitude = Math.abs(d[1]);
++    const snow = clamp(
++      (latitude - 0.79) * 7 + Math.max(0, elevationM - 2600) / 3300,
++    );
++    const moisture = n(d, 5, 30);
++    const aridity = clamp(
++      (0.5 - moisture) * 4 + (latitude > 0.18 && latitude < 0.52 ? 0.17 : 0),
++    );
++    let color = mix([40, 89, 48], [173, 145, 89], aridity);
++    color = mix(color, [134, 124, 107], clamp((elevationM - 1500) / 4300));
++    if (elevationM < 120)
++      color = mix([185, 175, 128], color, elevationM / 120);
++    return mix(color, [216, 228, 226], snow);
++  };
++  const sample = (d: V3, deferWaterLand: boolean): CoreSample => {
++    const macro = macroHeightCode(code, d);
++    const coast =
++      macro + (n(d, 42, 5) - 0.5) * 0.012 + (n(d, 90, 6) - 0.5) * 0.003;
++    // Explicit multiplication instead of `**` (Math.pow): elevationM feeds
++    // the ocean/land decision below, and `**` is not guaranteed bit-identical
++    // across engines (measured ~49.6% of x**5 results differ).
++    const ridgesBase = 1 - Math.abs(n(d, 30, 7) * 2 - 1);
++    const ridges = ridgesBase * ridgesBase * ridgesBase * ridgesBase * ridgesBase;
++    const fine = (n(d, 80, 8) - 0.5) * 380 + (n(d, 155, 9) - 0.5) * 95;
++    const landFactor = clamp((coast - sea) * 12);
++    const legacyElevationSum = (coast - sea) * 47000 + ridges * 2800 * landFactor + fine * landFactor;
++    let elevationM =
++      clamp(legacyElevationSum, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
++    // R0 (additive): the regional floor is exactly the clamped, scaled value
++    // above (the continental coordinate is derived below, opt-in only).
++    let floorM = elevationM;
++    // Metre-based wavelengths, shared by collision, orbit previews and tiles.
++    // Positive land detail fades to zero at sea level, preserving every coast.
++    const landDetail = clamp(elevationM / 700);
++    if (landDetail > 0) {
++      // Explicit multiplication instead of `**` (Math.pow); see the ridges
++      // comment above.
++      const hillsBase = 1 - Math.abs(n(d, body.radiusM / 6500, 71) * 2 - 1);
++      const hills = hillsBase * hillsBase * hillsBase;
++      const gullies = n(d, body.radiusM / 1400, 72);
++      const rocks = n(d, body.radiusM / 260, 73);
++      elevationM += (hills * 620 + gullies * 130 + rocks * 22) * landDetail;
++    }
++    // The terrain-1.7 base height: the legacy return value, and in relief
++    // mode the height the landform land gate reads (geography unchanged).
++    const rawBaseM = elevationM;
++    let landformScale = 1;
++    let smoothFloorOutM = floorM;
++    // R-CAL-1 (plan floorShapingSpec). Only + - * / and arithmetic
++    // smoothstep: every term feeds a height and the ocean flag.
++    const detailM = rawBaseM - floorM; // D = (hills/gullies/rocks) x landDetail, >= 0
++    const a0 = (coast - sea) * 47000;
++    if (a0 >= 0) {
++      // Land: every term is >= 0 except the fine term, which is bounded
++      // below by half the compressed coordinate, so F >= 0 wherever
++      // a0 >= 0: the sea-level-0 coastline is invariant by construction.
++      const comp = a0 / (1 + a0 / RC.HC);
++      let fineT = fine * landFactor;
++      if (fineT < -0.5 * comp) fineT = -0.5 * comp;
++      let ridgeTermM = tau * RC.KB * 2800 * ridges * ss(RC.BT0, RC.BT1, ridges) * landFactor;
++      if (orogen) {
++        const o = massifBeltSample(orogen, d, a0, orogenScratch);
++        if (o.belt !== 0)
++          ridgeTermM = mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve);
++      }
++      const F = comp + tau * (RC.HUP * ss(RC.B1, RC.B2, a0) + RC.HHI * ss(RC.B3, RC.B4, a0))
++        + ridgeTermM + fineT;
++      floorM = clamp(F, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
++      const upland = ss(RC.HM0, RC.HM1, floorM);
++      elevationM = floorM + tau * detailM * (RC.WLOW + (1 - RC.WLOW) * upland);
++      landformScale = tau * upland;
++      smoothFloorOutM = floorM;
++    } else {
++      const m0 = -a0;
++      const F = -(m0 / (1 + m0 / RC.HS) + RC.HAB * ss(RC.A1, RC.A2, m0) + RC.HTR * ss(RC.A3, RC.A4, m0));
++      const smoothFloorM = clamp(F, -16000, 18000) * Math.min(1, body.radiusM / 2e6);
++      // The seabed has no window: its detail is part of the floor.
++      floorM = smoothFloorM + seabedDetail(d, smoothFloorM);
++      smoothFloorOutM = smoothFloorM;
++      elevationM = floorM;
++      landformScale = 0;
++    }
++    const ocean = !!body.water && elevationM < waterLevelM;
++    const latitude = Math.abs(d[1]);
++    let color: number[] | null;
++    if (ocean) {
++      color = mix(
++        [26, 114, 139],
++        [5, 25, 58],
++        Math.sqrt(clamp(-elevationM / 5500)),
++      );
++      if (latitude > 0.94)
++        color = mix(color, [202, 225, 234], clamp((latitude - 0.94) * 25));
++    } else {
++      color = deferWaterLand ? null : legacyWaterLandColour(d, elevationM);
++    }
++    const grain = 0.91 + n(d, 115, 35) * 0.18;
++    // The legacy grain (.88 + n x .24; same expression and bits as before); the
++    // noise value is kept for terrain-1.8.1's water-land colour (TERRAIN_LOCAL_GRAIN).
++    const localGrainNoise = ocean ? 0 : n(d, body.radiusM / 800, 74);
++    const localGrain = ocean ? 1 : .88 + localGrainNoise * .24;
++    const out: CoreSample = {
++      elevationM,
++      ocean,
++      color: color ? [clamp(color[0] * grain * localGrain, 0, 255), clamp(color[1] * grain * localGrain, 0, 255), clamp(color[2] * grain * localGrain, 0, 255)] : null,
++      roughness: ocean ? WET_SURFACE_ROUGHNESS : DRY_SURFACE_ROUGHNESS,
++      grain,
++      localGrain,
++      localGrainNoise,
++      landformScale,
++      landformGateM: rawBaseM,
++    };
++    if (exposeFloor) {
++      // R0: the continental coordinate repeats the first term of the
++      // elevation sum on its own (it never feeds elevationM).
++      out.floorM = floorM;
++      out.smoothFloorM = smoothFloorOutM;
++      out.continentalM = ((coast - sea) * 47000) * continentalScale;
++    }
++    return out;
++  };
++  return { sample, legacyWaterLandColour };
++}
+ 
+ /**
+  * Builds this body's (seed, id)-keyed crater field once, gated to exactly its
+@@ -830,9 +971,38 @@ export function terrainSampler(
+   onOceanThreshold?: (heightM:number)=>void,
+   exposeFloor: boolean = false,
+   options: TerrainSamplerOptions = {},
++) {
++  return buildTerrainSampler(body, regions, surfaceAgeMyr, includeCraters, waterLevelM, onOceanThreshold, exposeFloor, options);
++}
++
++/** Test-only drift guard: force every direction through the mountain core when one exists.
++ * Selection happens at construction; there is no test flag in the returned sample closure. */
++export function terrainSamplerForceMountainCoreForTest(body: Body, options: TerrainSamplerOptions = {}, exposeFloor = false) {
++  return buildTerrainSampler(body, undefined, undefined, false, 0, undefined, exposeFloor, options, true);
++}
++
++function buildTerrainSampler(
++  body: Body,
++  regions: RiverRegion[] = activeRiverRegions(body),
++  surfaceAgeMyr: number = DEFAULT_SURFACE_AGE_MYR,
++  includeCraters: boolean = false,
++  waterLevelM: number = 0,
++  onOceanThreshold?: (heightM:number)=>void,
++  exposeFloor: boolean = false,
++  options: TerrainSamplerOptions = {},
++  forceMountainCoreForTest = false,
+ ) {
+   const carving = mountainCarvingState(body, options);
+-  const core = baseTerrainCore(body, waterLevelM, exposeFloor, true, carving === null ? null : {carve: carving});
++  const core = baseTerrainCore(body, waterLevelM, exposeFloor, true);
++  const layout = carving === null ? null : orogenLayout(body);
++  const maxDistM = MASSIF_ENVELOPE.MAX_HALF_WIDTH_M, minHalfWidthM = MASSIF_ENVELOPE.MIN_HALF_WIDTH_M;
++  // Construction only: an empty massif grid needs neither the second core nor per-sample rejection.
++  const grid = layout?.bandGrid(maxDistM, minHalfWidthM);
++  const hasMassifs = grid !== undefined && (grid.all || grid.bits.some(word => word !== 0));
++  const mountainCore = hasMassifs ? mountainTerrainCore(body, waterLevelM, exposeFloor, carving!) : null;
++  const inMountainBand = forceMountainCoreForTest
++    ? (_d: V3) => true
++    : (d: V3) => layout!.bandTagWithin(d, maxDistM, minHalfWidthM) !== 0;
+   const landforms=planetLandforms(body);
+   // The landform ceiling (terrain-1.8.0): the body's analytic height bound.
+   const landformCeilingM = reliefModeFor(body) ? bodyHeightBoundM(body).maxM : undefined;
+@@ -873,7 +1043,9 @@ export function terrainSampler(
+     return c;
+   };
+   return (d: V3) => {
+-    const sample = core.sample(d, climate !== null);
++    const sample = mountainCore && inMountainBand(d)
++      ? mountainCore.sample(d, climate !== null)
++      : core.sample(d, climate !== null);
+     // Craters never touch the seafloor shape in this pass (see this
+     // function's own doc comment): only the exposed dry/rocky elevation
+     // gains a crater delta, and `ocean` itself keeps deciding land/sea from
+diff --git a/tests/terrain-mountain-core-split.test.mjs b/tests/terrain-mountain-core-split.test.mjs
+new file mode 100644
+index 0000000..956b9c0
+--- /dev/null
++++ b/tests/terrain-mountain-core-split.test.mjs
+@@ -0,0 +1,120 @@
++import {test} from 'node:test';
++import assert from 'node:assert/strict';
++import {readFileSync} from 'node:fs';
++import {Worker, isMainThread, parentPort, workerData} from 'node:worker_threads';
++import {terrainSampler, terrainSamplerForceMountainCoreForTest, mountainCoreBuildStatsForTest,
++  mountainCarvingState} from '../src/terrain.ts';
++import {orogenLayout} from '../src/mountain-layout.ts';
++import {MASSIF_ENVELOPE as M} from '../src/mountain-envelope.ts';
++import {carvingFromLevel} from '../src/lod-ladder.ts';
++import {waterWorlds, fib} from './terrain-climate-fixtures.mjs';
++import {axisSites} from './helpers/mountain-coarse-tiles.mjs';
++
++const worlds = waterWorlds();
++const tag = (layout, d) => layout.bandTagWithin(d, M.MAX_HALF_WIDTH_M, M.MIN_HALF_WIDTH_M);
++const norm = d => {const n = Math.hypot(...d); return d.map(x => x / n);};
++const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
++
++// Compare every scalar leaf with Object.is (including signed zero), and field/array order.
++function identical(a, b, path = 'sample') {
++  if (a !== null && typeof a === 'object') {
++    assert.deepEqual(Object.keys(a), Object.keys(b), path);
++    for (const k of Object.keys(a)) identical(a[k], b[k], `${path}.${k}`);
++  } else assert.ok(Object.is(a, b), `${path}: ${a} != ${b}`);
++}
++
++function checkWorld(body) {
++  const layout = orogenLayout(body);
++  const levels = [undefined, 0, carvingFromLevel(body.radiusM)];
++  const samplers = levels.flatMap(lodLevel => [false, true].map(exposeFloor => {
++    const options = {mountains: true, lodLevel};
++    return {
++      dispatch: terrainSampler(body, undefined, undefined, false, 0, undefined, exposeFloor, options),
++      forced: terrainSamplerForceMountainCoreForTest(body, options, exposeFloor),
++      plain: terrainSampler(body, undefined, undefined, false, 0, undefined, exposeFloor, {mountains: false}),
++      changed: 0,
++    };
++  }));
++  const directions = Array.from({length: 2048}, (_, i) => fib(i, 2048));
++  const sites = axisSites(body, {count: 1});
++  assert.equal(sites.length, 1);
++  // Axis-centred raster reaches past the 48 km massif boundary in both tangent axes.
++  for (const {d} of sites) {
++    const u = norm(cross(Math.abs(d[1]) < .9 ? [0,1,0] : [1,0,0], d)), v = cross(d, u);
++    for (let y = -2; y <= 2; y++) for (let x = -2; x <= 2; x++)
++      directions.push(norm(d.map((a, k) => a * body.radiusM + (x*u[k] + y*v[k])*25000)));
++    // Bracket an actual T1 band edge, then sample immediately on both sides.
++    let lo = d, hi = directions.find(p => tag(layout, p) === 0);
++    assert.ok(tag(layout, lo) > 0 && hi);
++    for (let i = 0; i < 40; i++) {
++      const mid = norm(lo.map((a, k) => a + hi[k]));
++      if (tag(layout, mid)) lo = mid; else hi = mid;
++    }
++    directions.push(lo, hi);
++  }
++  let inside = 0, outside = 0;
++  // Interleave levels/shape variants at each direction so the bounded M3 cache reuses each block.
++  for (const d of directions) {
++    if (tag(layout, d)) inside++; else outside++;
++    // Changing the selected grid must not change the next massif decision.
++    layout.bandTagWithin(d, M.MAX_HALF_WIDTH_M, 0);
++    for (const s of samplers) {
++      const a = s.dispatch(d), b = s.forced(d);
++      identical(a, b);
++      if (!Object.is(a.groundHeightM, s.plain(d).groundHeightM)) s.changed++;
++    }
++  }
++  assert.ok(inside > 0 && outside > 0, 'both dispatch arms exercised');
++  for (const s of samplers) assert.ok(s.changed > 0, 'mountain term changes heights');
++  return {inside, outside, changed: samplers.map(s => s.changed)};
++}
++
++if (!isMainThread) {
++  parentPort.postMessage(checkWorld(worlds[workerData]));
++} else {
++// Independent worlds have independent M3 caches. Parallelise cold solves without reducing truth coverage.
++test('four-world dispatch identity at truth, L0 and carving cut', {concurrency: 4}, async t => {
++  await Promise.all(worlds.map((body, index) => t.test(body.name, async t => {
++    const result = await new Promise((resolve, reject) => {
++      const worker = new Worker(new URL(import.meta.url), {workerData: index});
++      let result;
++      worker.on('message', value => {result = value;});
++      worker.on('error', reject);
++      worker.on('exit', code => code === 0 && result ? resolve(result) : reject(new Error('worker exit ' + code)));
++    });
++    t.diagnostic(JSON.stringify(result));
++  })));
++});
++
++test('plain core source contains no mountain machinery', () => {
++  const source = readFileSync(new URL('../src/terrain.ts', import.meta.url), 'utf8');
++  const start = source.indexOf('function baseTerrainCore(');
++  const end = source.indexOf('\n/**', start);
++  assert.ok(start >= 0 && end > start);
++  assert.doesNotMatch(source.slice(start, end), /orogen|massif|mountain|carve/i);
++});
++
++test('null state and empty massif grids never construct a mountain core', () => {
++  const body = worlds[0];
++  for (const [b, options] of [[body, {}], [{...body, water: 0}, {mountains: true}],
++    [{...body, type: 'Gas giant'}, {mountains: true}], [{...body, kind: 'star'}, {mountains: true}]]) {
++    assert.equal(mountainCarvingState(b, options), null);
++    const before = mountainCoreBuildStatsForTest.count;
++    terrainSampler(b, [], undefined, false, 0, undefined, true, options);
++    terrainSamplerForceMountainCoreForTest(b, options, true);
++    assert.equal(mountainCoreBuildStatsForTest.count, before);
++  }
++  // Width scales with radius: this small relief water world has no massif-width belt.
++  const small = {...body, radiusM: 1000};
++  assert.notEqual(mountainCarvingState(small, {mountains: true}), null);
++  const g = orogenLayout(small).bandGrid(M.MAX_HALF_WIDTH_M, M.MIN_HALF_WIDTH_M);
++  assert.ok(!g.all && !g.bits.some(w => w !== 0));
++  const before = mountainCoreBuildStatsForTest.count;
++  const sample = terrainSampler(small, [], undefined, false, 0, undefined, true, {mountains: true});
++  assert.equal(mountainCoreBuildStatsForTest.count, before);
++  sample(fib(0, 1));
++  assert.equal(mountainCoreBuildStatsForTest.count, before);
++  terrainSampler(body, [], undefined, false, 0, undefined, true, {mountains: true});
++  assert.equal(mountainCoreBuildStatsForTest.count, before + 1, 'positive construction control');
++});
++}
