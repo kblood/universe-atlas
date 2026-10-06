@@ -1,10 +1,11 @@
 // Mountains assembly (MTN-6, step A, docs/mountains-assembly-2026-10-05.md): M1 orogen layout + M2 massif
 // envelope (massif-envelope-2) + M3 fixed-width carving, composed by src/mountain-assembly.ts.
 //
-// NOT WIRED into terrain.ts on main: wired (branch commit 92afaa3) every rule below passed, but sparse
-// sampling costs one ~140 ms M3 block solve per in-massif sample (the 6 Maithea L0 tiles: 335 s), so the wiring
-// waits for an owner decision on cold cost. The identity pins below are main's field and stay the
-// acceptance rule for that wiring: outside every massif (and the ocean flag everywhere) bit-identical.
+// WIRED since cost plan T6 (terrain-1.9.0-mountains, docs/mountains-t6-wiring-2026-10-06.md): M1+M2+M3+M5 with the
+// baked coarse field below the carving cut. The identity pins below are main's pre-mountains field and stay the
+// acceptance rule: outside every massif (and the ocean flag everywhere) bit-identical on the wired truth. The
+// everywhere ocean check on the carved truth solves an M3 block per in-massif direction (~400 directions), so it runs
+// in test:full (T6 decision 3); npm test checks the same pin on the level-0 field (ocean flags equal by lod-ladder-3).
 //
 // HARD identity: the field outside every massif is bit-identical to main before the assembly. The digests were
 // computed FIRST on unmodified main 39e2448 (terrain-1.8.1-grain) with this file's own selection rule
@@ -22,6 +23,7 @@ import {identityDigest, outsideBelt, outsideMassif, everywhere} from './helpers/
 import {measureSummits, beltAt} from './helpers/mountain-summits.mjs';
 import {rasterFromArray} from './helpers/mountain-metrics.mjs';
 import {waterWorlds, fib} from './terrain-climate-fixtures.mjs';
+import {statisticSampler, fullOnly} from './helpers/statistic-level.mjs';
 
 const MAIN_DIGESTS = {
   outsideBelt: {heights: 'a7000ad60afb60709e7b7621ea8f573a003a712170f016467ea930a4e7e63d7b',
@@ -53,13 +55,17 @@ test('HARD: negative controls: the identity digest rejects one changed height, c
 
 // The sea-level-0 coastline is unchanged everywhere (inside belts too): the ridge term stays >= 0 where a0 >= 0.
 const MAIN_OCEAN_DIGEST = '48f643c59f6b2a55671c348d431e8242700a2e4eb5d63791ee1ff42db5b1c22d';
-test('HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main', () => {
+test('HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (level 0)', () => {
+  const r = identityDigest(body => statisticSampler(body), {select: everywhere, oceanOnly: true});
+  assert.equal(r.sha, MAIN_OCEAN_DIGEST);
+});
+test('HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (carved truth)', fullOnly('~400 in-massif truth samples with M3 block solves'), () => {
   const r = identityDigest(terrainSampler, {select: everywhere, oceanOnly: true});
   assert.equal(r.sha, MAIN_OCEAN_DIGEST);
 });
 
 test('HARD: versions, fixed carving width, strip rule and per-strip seeds', () => {
-  assert.deepEqual([MASSIF_ENVELOPE_VERSION, MOUNTAIN_CARVING_VERSION, MOUNTAIN_ASSEMBLY_VERSION], ['massif-envelope-4', 'mountain-carving-2', 'mountain-assembly-2'], 'mountain-assembly-1 -> -2: cost plan T3 coarse-level carve flag; the truth term is unchanged');
+  assert.deepEqual([MASSIF_ENVELOPE_VERSION, MOUNTAIN_CARVING_VERSION, MOUNTAIN_ASSEMBLY_VERSION], ['massif-envelope-4', 'mountain-carving-2', 'mountain-assembly-3'], 'mountain-assembly-1 -> -2: cost plan T3 coarse-level carve flag; -2 -> -3 (T6): the M5 rock flag (rock = false is bit-identical to -2)');
   assert.ok(Object.isFrozen(MOUNTAIN_ASSEMBLY));assert.deepEqual({...MOUNTAIN_ASSEMBLY}, {CARVING_HALF_WIDTH_M: 48000});
   assert.equal(MASSIF_IS_ONE_STRIP, true);
   const w = MOUNTAIN_ASSEMBLY.CARVING_HALF_WIDTH_M;
@@ -87,9 +93,9 @@ test('HARD: the assembled ridge term: >= 0, <= max(main, analytic envelope), mai
   assert.equal(mountainRidgeTermM(0, o, -1, 1, .789, seeds), 0);
 });
 
-test('HARD: mountain-assembly.ts is arithmetic only and imports only M2 and M3', () => {
+test('HARD: mountain-assembly.ts is arithmetic only and imports only M2, M3 and M5', () => {
   const src = readFileSync(new URL('../src/mountain-assembly.ts', import.meta.url), 'utf8').replace(/\/\/.*$/gm, '');
-  assert.deepEqual([...src.matchAll(/from\s*['"]([^'"]+)['"]/g)].map(m => m[1]), ['./mountain-envelope.ts', './mountain-carving.ts']);
+  assert.deepEqual([...src.matchAll(/from\s*['"]([^'"]+)['"]/g)].map(m => m[1]), ['./mountain-envelope.ts', './mountain-carving.ts', './mountain-rock-detail.ts']);
   assert.deepEqual([...new Set([...src.matchAll(/Math\.(\w+)/g)].map(m => m[1]))].sort(), ['floor', 'imul']);
   const forbidden = /\*\*|\bMath\s*\[|\b(?:Number|BigInt|parseFloat|parseInt|Date|performance)\b/;
   assert.doesNotMatch(src, forbidden);

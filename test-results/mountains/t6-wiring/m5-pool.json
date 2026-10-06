@@ -1,0 +1,134 @@
+{
+ "pool": [
+  731001,
+  731002,
+  731003,
+  731004,
+  731005,
+  731006,
+  731007,
+  731008
+ ],
+ "terrainVersion": "terrain-1.9.0-mountains",
+ "rows": {
+  "baseFixture": true,
+  "R1e": true,
+  "R1eControls": true,
+  "R2": true,
+  "R2control": true,
+  "R3prime": true,
+  "R3speckleControl": true,
+  "R4": true,
+  "R4control": true,
+  "R6": true,
+  "R6control": true,
+  "R5": true
+ },
+ "values": {
+  "R1e": {
+   "steepRms": 16.447253409219915,
+   "flatRms": 4.428890880511389,
+   "ratio": 3.713628051120737,
+   "steepSamples": 365558,
+   "flatSamples": 74832
+  },
+  "R2": {
+   "p50": 38.11843935120383,
+   "p90": 45.23649556351445,
+   "withoutP50": 38.13390856256058
+  },
+  "R3": {
+   "beta": 2.4823305003562384,
+   "limit": 3.2508994606714188,
+   "without": 3.567849191007128
+  },
+  "R4": 0.00009373988150928168,
+  "R6": 0,
+  "R5": {
+   "fill10ShareP50": 0.0009888849333491555,
+   "pits025Per1000km2P50": 2.4690405462752207
+  },
+  "controls": {
+   "shallowR1e": 1.0546680291706136,
+   "depth4R2": {
+    "p50": 38.306144411795024,
+    "p90": 52.13845889621706
+   },
+   "speckleR3": 1.2946633082309178,
+   "longR4": 0.6613449517573033,
+   "round2R6": 5.088504421376394
+  }
+ },
+ "allPass": true,
+ "wired": [
+  {
+   "world": "Maithea",
+   "rockFromLevel": 10,
+   "states": {
+    "truth": "rock",
+    "below": true,
+    "at": "rock"
+   },
+   "points": 4356,
+   "positiveRockTerm": 0,
+   "nonZeroShare": 0.7901744719926538,
+   "depthM": {
+    "p50": 0.7063592142712878,
+    "p90": 39.16709341556452,
+    "max": 80.77948925990131
+   }
+  },
+  {
+   "world": "Selawyn",
+   "rockFromLevel": 11,
+   "states": {
+    "truth": "rock",
+    "below": true,
+    "at": "rock"
+   },
+   "points": 4356,
+   "positiveRockTerm": 0,
+   "nonZeroShare": 0.8514692378328742,
+   "depthM": {
+    "p50": 4.478841285359522,
+    "p90": 50.77781189380721,
+    "max": 83.85215642120147
+   }
+  },
+  {
+   "world": "Raiva",
+   "rockFromLevel": 9,
+   "states": {
+    "truth": "rock",
+    "below": true,
+    "at": "rock"
+   },
+   "points": 4356,
+   "positiveRockTerm": 0,
+   "nonZeroShare": 0.7180899908172635,
+   "depthM": {
+    "p50": 0.1418737423972516,
+    "p90": 21.549461677301906,
+    "max": 72.32871162043898
+   }
+  },
+  {
+   "world": "Lethuris",
+   "rockFromLevel": 11,
+   "states": {
+    "truth": "rock",
+    "below": true,
+    "at": "rock"
+   },
+   "points": 4356,
+   "positiveRockTerm": 0,
+   "nonZeroShare": 0.8151974288337924,
+   "depthM": {
+    "p50": 1.7210688740665319,
+    "p90": 43.77866076402097,
+    "max": 97.40444696217764
+   }
+  }
+ ],
+ "seconds": 4.6917775
+}

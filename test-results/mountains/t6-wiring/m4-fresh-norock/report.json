@@ -1,0 +1,1649 @@
+{
+ "seedBase": 730301,
+ "rock": false,
+ "terrainVersion": "terrain-1.9.0-mountains",
+ "mainTerrainVersion": "terrain-1.8.1-grain",
+ "synthetic": [
+  {
+   "class": "CONTRACT (M4 rows on real parameters)",
+   "world": "Maithea",
+   "tau": 0.7890846035603578,
+   "beltHalfWidthM": 71598.66411557776,
+   "massifHalfWidthM": 48000,
+   "y0": 0,
+   "density": 48.84466183167482,
+   "placement": 1,
+   "topCount": 100,
+   "max": 2872.2679569597026,
+   "maxEnvelope": 2872.2679569597026,
+   "boundViolations": 0,
+   "bodyBound": 6628.141599841999,
+   "bodyViolations": 0,
+   "pass": [
+    {
+     "row": "R1",
+     "actual": 48.84466183167482,
+     "pass": true
+    },
+    {
+     "row": "R2",
+     "actual": 1,
+     "pass": true
+    },
+    {
+     "row": "R3",
+     "actual": 0,
+     "pass": true
+    }
+   ],
+   "perSeed": [
+    {
+     "seed": 730301,
+     "count": 128,
+     "areaKm2": 2316.015625,
+     "density": 55.26733007252488,
+     "max": 2870.1058122438,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730302,
+     "count": 112,
+     "areaKm2": 2316.015625,
+     "density": 48.35891381345927,
+     "max": 2859.6308768202443,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730303,
+     "count": 107,
+     "areaKm2": 2316.015625,
+     "density": 46.20003373250127,
+     "max": 2872.2679569597026,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730304,
+     "count": 101,
+     "areaKm2": 2316.015625,
+     "density": 43.60937763535166,
+     "max": 2872.0887100243986,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730305,
+     "count": 124,
+     "areaKm2": 2316.015625,
+     "density": 53.54022600775848,
+     "max": 2872.2679569597026,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730306,
+     "count": 104,
+     "areaKm2": 2316.015625,
+     "density": 44.904705683926466,
+     "max": 2869.3406850176784,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730307,
+     "count": 115,
+     "areaKm2": 2316.015625,
+     "density": 49.65424186203407,
+     "max": 2862.99466726589,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730308,
+     "count": 114,
+     "areaKm2": 2316.015625,
+     "density": 49.22246584584247,
+     "max": 2871.2049729852,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    }
+   ],
+   "wholeCore": {
+    "n": 513,
+    "step": 125,
+    "count": 1278,
+    "areaKm2": 31998.375,
+    "density": 39.93952817916535,
+    "pass": true
+   }
+  },
+  {
+   "class": "CONTRACT (M4 rows on real parameters)",
+   "world": "Maithea",
+   "tau": 0.7890846035603578,
+   "beltHalfWidthM": 71598.66411557776,
+   "massifHalfWidthM": 48000,
+   "y0": 19200,
+   "density": 36.66921313980138,
+   "placement": 1,
+   "topCount": 100,
+   "max": 2872.1183622674384,
+   "maxEnvelope": 2872.2679569597026,
+   "boundViolations": 0,
+   "bodyBound": 6628.141599841999,
+   "bodyViolations": 0,
+   "pass": [
+    {
+     "row": "R1",
+     "actual": 36.66921313980138,
+     "pass": true
+    },
+    {
+     "row": "R2",
+     "actual": 1,
+     "pass": true
+    },
+    {
+     "row": "R3",
+     "actual": 0,
+     "pass": true
+    }
+   ],
+   "perSeed": [
+    {
+     "seed": 730301,
+     "count": 71,
+     "areaKm2": 1738.515625,
+     "density": 40.839437379229764,
+     "max": 2872.1183622674384,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730302,
+     "count": 69,
+     "areaKm2": 1738.515625,
+     "density": 39.6890306924909,
+     "max": 2872.1183622674384,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730303,
+     "count": 57,
+     "areaKm2": 1738.515625,
+     "density": 32.7865905720577,
+     "max": 2872.1183622674384,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730304,
+     "count": 60,
+     "areaKm2": 1738.515625,
+     "density": 34.512200602166,
+     "max": 2872.1183622674384,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730305,
+     "count": 60,
+     "areaKm2": 1738.515625,
+     "density": 34.512200602166,
+     "max": 2852.2873161347,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730306,
+     "count": 70,
+     "areaKm2": 1738.515625,
+     "density": 40.26423403586033,
+     "max": 2872.1183622674384,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730307,
+     "count": 64,
+     "areaKm2": 1738.515625,
+     "density": 36.813013975643734,
+     "max": 2872.1183622674384,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730308,
+     "count": 59,
+     "areaKm2": 1738.515625,
+     "density": 33.936997258796566,
+     "max": 2856.933197037485,
+     "bound": 2872.2679569597026,
+     "boundViolations": 0,
+     "samples": 148225
+    }
+   ]
+  },
+  {
+   "class": "CONTRACT (M4 rows on real parameters)",
+   "world": "Selawyn",
+   "tau": 0.6033829251544975,
+   "beltHalfWidthM": 220000,
+   "massifHalfWidthM": 48000,
+   "y0": 0,
+   "density": 26.50025299375949,
+   "placement": 1,
+   "topCount": 100,
+   "max": 2196.313847562371,
+   "maxEnvelope": 2196.313847562371,
+   "boundViolations": 0,
+   "bodyBound": 5175.954474708171,
+   "bodyViolations": 0,
+   "pass": [
+    {
+     "row": "R1",
+     "actual": 26.50025299375949,
+     "pass": true
+    },
+    {
+     "row": "R2",
+     "actual": 1,
+     "pass": true
+    },
+    {
+     "row": "R3",
+     "actual": 0,
+     "pass": true
+    }
+   ],
+   "perSeed": [
+    {
+     "seed": 730301,
+     "count": 70,
+     "areaKm2": 2316.015625,
+     "density": 30.224321133412044,
+     "max": 2194.6605378951917,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730302,
+     "count": 58,
+     "areaKm2": 2316.015625,
+     "density": 25.043008939112834,
+     "max": 2186.650753965621,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730303,
+     "count": 57,
+     "areaKm2": 2316.015625,
+     "density": 24.611232922921236,
+     "max": 2196.313847562371,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730304,
+     "count": 48,
+     "areaKm2": 2316.015625,
+     "density": 20.72524877719683,
+     "max": 2196.176784261857,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730305,
+     "count": 66,
+     "areaKm2": 2316.015625,
+     "density": 28.49721706864564,
+     "max": 2196.313847562371,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730306,
+     "count": 61,
+     "areaKm2": 2316.015625,
+     "density": 26.338336987687637,
+     "max": 2194.075474263574,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730307,
+     "count": 68,
+     "areaKm2": 2316.015625,
+     "density": 29.36076910102884,
+     "max": 2189.222916328874,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730308,
+     "count": 63,
+     "areaKm2": 2316.015625,
+     "density": 27.201889020070837,
+     "max": 2195.5010242262756,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    }
+   ],
+   "wholeCore": {
+    "n": 513,
+    "step": 125,
+    "count": 681,
+    "areaKm2": 31998.375,
+    "density": 21.28233074335806,
+    "pass": true
+   }
+  },
+  {
+   "class": "CONTRACT (M4 rows on real parameters)",
+   "world": "Selawyn",
+   "tau": 0.6033829251544975,
+   "beltHalfWidthM": 220000,
+   "massifHalfWidthM": 48000,
+   "y0": 19200,
+   "density": 20.56351952545724,
+   "placement": 1,
+   "topCount": 100,
+   "max": 2196.1994582020934,
+   "maxEnvelope": 2196.313847562371,
+   "boundViolations": 0,
+   "bodyBound": 5175.954474708171,
+   "bodyViolations": 0,
+   "pass": [
+    {
+     "row": "R1",
+     "actual": 20.56351952545724,
+     "pass": true
+    },
+    {
+     "row": "R2",
+     "actual": 1,
+     "pass": true
+    },
+    {
+     "row": "R3",
+     "actual": 0,
+     "pass": true
+    }
+   ],
+   "perSeed": [
+    {
+     "seed": 730301,
+     "count": 37,
+     "areaKm2": 1738.515625,
+     "density": 21.282523704669032,
+     "max": 2196.1994582020934,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730302,
+     "count": 40,
+     "areaKm2": 1738.515625,
+     "density": 23.008133734777335,
+     "max": 2196.1994582020934,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730303,
+     "count": 32,
+     "areaKm2": 1738.515625,
+     "density": 18.406506987821867,
+     "max": 2196.1994582020934,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730304,
+     "count": 29,
+     "areaKm2": 1738.515625,
+     "density": 16.680896957713568,
+     "max": 2196.1994582020934,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730305,
+     "count": 38,
+     "areaKm2": 1738.515625,
+     "density": 21.857727048038466,
+     "max": 2181.035412964795,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730306,
+     "count": 38,
+     "areaKm2": 1738.515625,
+     "density": 21.857727048038466,
+     "max": 2196.1994582020934,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730307,
+     "count": 38,
+     "areaKm2": 1738.515625,
+     "density": 21.857727048038466,
+     "max": 2196.1994582020934,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730308,
+     "count": 34,
+     "areaKm2": 1738.515625,
+     "density": 19.556913674560732,
+     "max": 2184.587941041497,
+     "bound": 2196.313847562371,
+     "boundViolations": 0,
+     "samples": 148225
+    }
+   ]
+  },
+  {
+   "class": "CONTRACT (M4 rows on real parameters)",
+   "world": "Raiva",
+   "tau": 0.4560255015129207,
+   "beltHalfWidthM": 90090.17114178278,
+   "massifHalfWidthM": 48000,
+   "y0": 0,
+   "density": 8.905380333951763,
+   "placement": 1,
+   "topCount": 100,
+   "max": 1659.9328255070313,
+   "maxEnvelope": 1659.9328255070313,
+   "boundViolations": 0,
+   "bodyBound": 4023.61942183104,
+   "bodyViolations": 0,
+   "pass": [
+    {
+     "row": "R1",
+     "actual": 8.905380333951763,
+     "pass": true
+    },
+    {
+     "row": "R2",
+     "actual": 1,
+     "pass": true
+    },
+    {
+     "row": "R3",
+     "actual": 0,
+     "pass": true
+    }
+   ],
+   "perSeed": [
+    {
+     "seed": 730301,
+     "count": 21,
+     "areaKm2": 2316.015625,
+     "density": 9.067296340023614,
+     "max": 1658.6832850598294,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730302,
+     "count": 18,
+     "areaKm2": 2316.015625,
+     "density": 7.771968291448811,
+     "max": 1652.629640547835,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730303,
+     "count": 18,
+     "areaKm2": 2316.015625,
+     "density": 7.771968291448811,
+     "max": 1659.9328255070313,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730304,
+     "count": 16,
+     "areaKm2": 2316.015625,
+     "density": 6.90841625906561,
+     "max": 1659.8292356344145,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730305,
+     "count": 24,
+     "areaKm2": 2316.015625,
+     "density": 10.362624388598414,
+     "max": 1659.9328255070313,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730306,
+     "count": 21,
+     "areaKm2": 2316.015625,
+     "density": 9.067296340023614,
+     "max": 1658.2411049368884,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730307,
+     "count": 24,
+     "areaKm2": 2316.015625,
+     "density": 10.362624388598414,
+     "max": 1654.5736326344106,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730308,
+     "count": 23,
+     "areaKm2": 2316.015625,
+     "density": 9.930848372406814,
+     "max": 1659.3185088698983,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    }
+   ],
+   "wholeCore": {
+    "n": 513,
+    "step": 125,
+    "count": 247,
+    "areaKm2": 31998.375,
+    "density": 7.719141987679062,
+    "pass": false
+   }
+  },
+  {
+   "class": "CONTRACT (M4 rows on real parameters)",
+   "world": "Raiva",
+   "tau": 0.4560255015129207,
+   "beltHalfWidthM": 90090.17114178278,
+   "massifHalfWidthM": 48000,
+   "y0": 19200,
+   "density": 6.6148384487484835,
+   "placement": 1,
+   "topCount": 100,
+   "max": 1659.8463721733133,
+   "maxEnvelope": 1659.9328255070313,
+   "boundViolations": 0,
+   "bodyBound": 4023.61942183104,
+   "bodyViolations": 0,
+   "pass": [
+    {
+     "row": "R1",
+     "actual": 6.6148384487484835,
+     "pass": false
+    },
+    {
+     "row": "R2",
+     "actual": 1,
+     "pass": true
+    },
+    {
+     "row": "R3",
+     "actual": 0,
+     "pass": true
+    }
+   ],
+   "perSeed": [
+    {
+     "seed": 730301,
+     "count": 11,
+     "areaKm2": 1738.515625,
+     "density": 6.327236777063766,
+     "max": 1659.8463721733133,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730302,
+     "count": 10,
+     "areaKm2": 1738.515625,
+     "density": 5.752033433694334,
+     "max": 1659.8463721733133,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730303,
+     "count": 8,
+     "areaKm2": 1738.515625,
+     "density": 4.601626746955467,
+     "max": 1659.8463721733133,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730304,
+     "count": 9,
+     "areaKm2": 1738.515625,
+     "density": 5.1768300903249,
+     "max": 1659.8463721733133,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730305,
+     "count": 17,
+     "areaKm2": 1738.515625,
+     "density": 9.778456837280366,
+     "max": 1648.3856711060214,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730306,
+     "count": 9,
+     "areaKm2": 1738.515625,
+     "density": 5.1768300903249,
+     "max": 1659.8463721733133,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730307,
+     "count": 17,
+     "areaKm2": 1738.515625,
+     "density": 9.778456837280366,
+     "max": 1659.8463721733133,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730308,
+     "count": 11,
+     "areaKm2": 1738.515625,
+     "density": 6.327236777063766,
+     "max": 1651.0706052171452,
+     "bound": 1659.9328255070313,
+     "boundViolations": 0,
+     "samples": 148225
+    }
+   ]
+  },
+  {
+   "class": "CONTRACT (M4 rows on real parameters)",
+   "world": "Lethuris",
+   "tau": 0.7708020795866986,
+   "beltHalfWidthM": 129657.6150051053,
+   "massifHalfWidthM": 48000,
+   "y0": 0,
+   "density": 46.793725754764715,
+   "placement": 1,
+   "topCount": 100,
+   "max": 2805.719569695583,
+   "maxEnvelope": 2805.719569695583,
+   "boundViolations": 0,
+   "bodyBound": 6485.172262367983,
+   "bodyViolations": 0,
+   "pass": [
+    {
+     "row": "R1",
+     "actual": 46.793725754764715,
+     "pass": true
+    },
+    {
+     "row": "R2",
+     "actual": 1,
+     "pass": true
+    },
+    {
+     "row": "R3",
+     "actual": 0,
+     "pass": true
+    }
+   ],
+   "perSeed": [
+    {
+     "seed": 730301,
+     "count": 119,
+     "areaKm2": 2316.015625,
+     "density": 51.38134592680047,
+     "max": 2803.6075203210726,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730302,
+     "count": 105,
+     "areaKm2": 2316.015625,
+     "density": 45.336481700118064,
+     "max": 2793.375281633887,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730303,
+     "count": 104,
+     "areaKm2": 2316.015625,
+     "density": 44.904705683926466,
+     "max": 2805.719569695583,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730304,
+     "count": 95,
+     "areaKm2": 2316.015625,
+     "density": 41.01872153820206,
+     "max": 2805.544475783132,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730305,
+     "count": 118,
+     "areaKm2": 2316.015625,
+     "density": 50.94956991060887,
+     "max": 2805.719569695583,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730306,
+     "count": 102,
+     "areaKm2": 2316.015625,
+     "density": 44.04115365154326,
+     "max": 2802.860120543683,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730307,
+     "count": 112,
+     "areaKm2": 2316.015625,
+     "density": 48.35891381345927,
+     "max": 2796.6611354689494,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730308,
+     "count": 112,
+     "areaKm2": 2316.015625,
+     "density": 48.35891381345927,
+     "max": 2804.6812142969134,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    }
+   ],
+   "wholeCore": {
+    "n": 513,
+    "step": 125,
+    "count": 1226,
+    "areaKm2": 31998.375,
+    "density": 38.31444565544344,
+    "pass": true
+   }
+  },
+  {
+   "class": "CONTRACT (M4 rows on real parameters)",
+   "world": "Lethuris",
+   "tau": 0.7708020795866986,
+   "beltHalfWidthM": 129657.6150051053,
+   "massifHalfWidthM": 48000,
+   "y0": 19200,
+   "density": 34.65600143800836,
+   "placement": 1,
+   "topCount": 100,
+   "max": 2805.573441004981,
+   "maxEnvelope": 2805.719569695583,
+   "boundViolations": 0,
+   "bodyBound": 6485.172262367983,
+   "bodyViolations": 0,
+   "pass": [
+    {
+     "row": "R1",
+     "actual": 34.65600143800836,
+     "pass": true
+    },
+    {
+     "row": "R2",
+     "actual": 1,
+     "pass": true
+    },
+    {
+     "row": "R3",
+     "actual": 0,
+     "pass": true
+    }
+   ],
+   "perSeed": [
+    {
+     "seed": 730301,
+     "count": 67,
+     "areaKm2": 1738.515625,
+     "density": 38.538624005752034,
+     "max": 2805.573441004981,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730302,
+     "count": 62,
+     "areaKm2": 1738.515625,
+     "density": 35.662607288904866,
+     "max": 2805.573441004981,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730303,
+     "count": 53,
+     "areaKm2": 1738.515625,
+     "density": 30.485777198579967,
+     "max": 2805.573441004981,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730304,
+     "count": 55,
+     "areaKm2": 1738.515625,
+     "density": 31.636183885318832,
+     "max": 2805.573441004981,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730305,
+     "count": 59,
+     "areaKm2": 1738.515625,
+     "density": 33.936997258796566,
+     "max": 2786.2018659792807,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730306,
+     "count": 67,
+     "areaKm2": 1738.515625,
+     "density": 38.538624005752034,
+     "max": 2805.573441004981,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730307,
+     "count": 64,
+     "areaKm2": 1738.515625,
+     "density": 36.813013975643734,
+     "max": 2805.573441004981,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    },
+    {
+     "seed": 730308,
+     "count": 55,
+     "areaKm2": 1738.515625,
+     "density": 31.636183885318832,
+     "max": 2790.7401051556894,
+     "bound": 2805.719569695583,
+     "boundViolations": 0,
+     "samples": 148225
+    }
+   ]
+  }
+ ],
+ "assembled": [
+  {
+   "class": "INFO",
+   "world": "Maithea",
+   "sites": 8,
+   "areaKm2": 18528.125,
+   "branchDensity": 45.01264968797436,
+   "mainDensity": 0,
+   "perSite": [
+    {
+     "fib": 1432,
+     "beltIndex": 16,
+     "halfWidthM": 79946.1628635522,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 107,
+      "density": 46.20003373250127,
+      "maxM": 3553.4020898869626
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 3675.7656496409545
+     }
+    },
+    {
+     "fib": 1832,
+     "beltIndex": 10,
+     "halfWidthM": 78919.22740058746,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 29,
+      "density": 12.521504469556417,
+      "maxM": 2174.12828665571
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 1992.2668331356433
+     }
+    },
+    {
+     "fib": 1966,
+     "beltIndex": 16,
+     "halfWidthM": 79946.1628635522,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 150,
+      "density": 64.7664024287401,
+      "maxM": 4795.471279264061
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 357.478258384048
+     }
+    },
+    {
+     "fib": 2429,
+     "beltIndex": 34,
+     "halfWidthM": 65481.03076606857,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 91,
+      "density": 39.29161747343566,
+      "maxM": 3244.6896656956496
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 2185.3734177521906
+     }
+    },
+    {
+     "fib": 2555,
+     "beltIndex": 16,
+     "halfWidthM": 79946.1628635522,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 170,
+      "density": 73.4019227525721,
+      "maxM": 4648.573235991148
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 432.3629538054374
+     }
+    },
+    {
+     "fib": 3066,
+     "beltIndex": 28,
+     "halfWidthM": 72617.05049448367,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 158,
+      "density": 68.2206105582729,
+      "maxM": 4590.293744169384
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 4881.72374597852
+     }
+    },
+    {
+     "fib": 3106,
+     "beltIndex": 8,
+     "halfWidthM": 75561.15921994325,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 129,
+      "density": 55.699106088716476,
+      "maxM": 5176.2747794914485
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 1485.931210250169
+     }
+    },
+    {
+     "fib": 3590,
+     "beltIndex": 11,
+     "halfWidthM": 80579.26934636796,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 0,
+      "density": 0,
+      "maxM": 1164.4400325918148
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 327.44498478694163
+     }
+    }
+   ]
+  },
+  {
+   "class": "INFO",
+   "world": "Selawyn",
+   "sites": 8,
+   "areaKm2": 18528.125,
+   "branchDensity": 36.269185360094454,
+   "mainDensity": 0.5397200202395007,
+   "perSite": [
+    {
+     "fib": 5207,
+     "beltIndex": 0,
+     "halfWidthM": 220000,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 118,
+      "density": 50.94956991060887,
+      "maxM": 3767.0929753131877
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 431.62435281069924
+     }
+    },
+    {
+     "fib": 7291,
+     "beltIndex": 19,
+     "halfWidthM": 106589.05567011236,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 87,
+      "density": 37.56451340866925,
+      "maxM": 3833.4081098231436
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 616.5956770020955
+     }
+    },
+    {
+     "fib": 9326,
+     "beltIndex": 4,
+     "halfWidthM": 104278.05683322874,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 105,
+      "density": 45.336481700118064,
+      "maxM": 3721.8684650051114
+     },
+     "main": {
+      "count": 8,
+      "density": 3.454208129532805,
+      "maxM": 4023.1449067863673
+     }
+    },
+    {
+     "fib": 9503,
+     "beltIndex": 0,
+     "halfWidthM": 220000,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 95,
+      "density": 41.01872153820206,
+      "maxM": 3897.5280072780756
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 670.4990325172085
+     }
+    },
+    {
+     "fib": 11875,
+     "beltIndex": 29,
+     "halfWidthM": 114200.65291270423,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 32,
+      "density": 13.81683251813122,
+      "maxM": 2352.9708949201236
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 324.25661601418886
+     }
+    },
+    {
+     "fib": 13774,
+     "beltIndex": 15,
+     "halfWidthM": 117372.56178361364,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 123,
+      "density": 53.10844999156687,
+      "maxM": 3945.3768071481286
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 3984.7212825933975
+     }
+    },
+    {
+     "fib": 13965,
+     "beltIndex": 15,
+     "halfWidthM": 117372.56178361364,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 112,
+      "density": 48.35891381345927,
+      "maxM": 3966.106743216201
+     },
+     "main": {
+      "count": 2,
+      "density": 0.8635520323832012,
+      "maxM": 4305.269048909662
+     }
+    },
+    {
+     "fib": 14837,
+     "beltIndex": 13,
+     "halfWidthM": 117238.82416854602,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 0,
+      "density": 0,
+      "maxM": 1072.2424699280925
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 688.8785437613295
+     }
+    }
+   ]
+  },
+  {
+   "class": "INFO",
+   "world": "Raiva",
+   "sites": 8,
+   "areaKm2": 18528.125,
+   "branchDensity": 20.23950075898128,
+   "mainDensity": 0,
+   "perSite": [
+    {
+     "fib": 5020,
+     "beltIndex": 2,
+     "halfWidthM": 90090.17114178278,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 1,
+      "density": 0.4317760161916006,
+      "maxM": 1284.758532333264
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 933.5682645545055
+     }
+    },
+    {
+     "fib": 6274,
+     "beltIndex": 2,
+     "halfWidthM": 90090.17114178278,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 7,
+      "density": 3.022432113341204,
+      "maxM": 1521.900049558645
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 1480.2148516479635
+     }
+    },
+    {
+     "fib": 7528,
+     "beltIndex": 2,
+     "halfWidthM": 90090.17114178278,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 44,
+      "density": 18.998144712430427,
+      "maxM": 2965.2423154300436
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 2818.445684489874
+     }
+    },
+    {
+     "fib": 8782,
+     "beltIndex": 2,
+     "halfWidthM": 90090.17114178278,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 57,
+      "density": 24.611232922921236,
+      "maxM": 2951.1885134892905
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 3078.958448549577
+     }
+    },
+    {
+     "fib": 10358,
+     "beltIndex": 2,
+     "halfWidthM": 90090.17114178278,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 66,
+      "density": 28.49721706864564,
+      "maxM": 3318.7108057798437
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 1311.2144499112574
+     }
+    },
+    {
+     "fib": 13427,
+     "beltIndex": 1,
+     "halfWidthM": 90090.17114178278,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 62,
+      "density": 26.77011300387924,
+      "maxM": 3188.0945172660795
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 2846.7074325527487
+     }
+    },
+    {
+     "fib": 13745,
+     "beltIndex": 0,
+     "halfWidthM": 90090.17114178278,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 71,
+      "density": 30.656097149603642,
+      "maxM": 2797.8039077284902
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 1083.8512893761927
+     }
+    },
+    {
+     "fib": 15990,
+     "beltIndex": 1,
+     "halfWidthM": 90090.17114178278,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 67,
+      "density": 28.92899308483724,
+      "maxM": 2824.5449553711255
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 2606.9932039825994
+     }
+    }
+   ]
+  },
+  {
+   "class": "INFO",
+   "world": "Lethuris",
+   "sites": 8,
+   "areaKm2": 18528.125,
+   "branchDensity": 29.19885309495699,
+   "mainDensity": 0,
+   "perSite": [
+    {
+     "fib": 1334,
+     "beltIndex": 1,
+     "halfWidthM": 220000,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 159,
+      "density": 68.6523865744645,
+      "maxM": 4504.8253033343635
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 416.8320415076342
+     }
+    },
+    {
+     "fib": 1584,
+     "beltIndex": 34,
+     "halfWidthM": 124497.45538028318,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 48,
+      "density": 20.72524877719683,
+      "maxM": 2247.023912634787
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 332.2032525418613
+     }
+    },
+    {
+     "fib": 2428,
+     "beltIndex": 1,
+     "halfWidthM": 220000,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 103,
+      "density": 44.47292966773486,
+      "maxM": 3419.0670177867396
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 322.55212212549134
+     }
+    },
+    {
+     "fib": 2632,
+     "beltIndex": 26,
+     "halfWidthM": 109186.86095640199,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 135,
+      "density": 58.28976218586608,
+      "maxM": 4831.494467429174
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 587.463136546667
+     }
+    },
+    {
+     "fib": 9778,
+     "beltIndex": 0,
+     "halfWidthM": 220000,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 45,
+      "density": 19.429920728622026,
+      "maxM": 2029.1936625430858
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 359.6068288211585
+     }
+    },
+    {
+     "fib": 10508,
+     "beltIndex": 18,
+     "halfWidthM": 130975.90058723273,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 2,
+      "density": 0.8635520323832012,
+      "maxM": 1267.1499644330115
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 1069.462735991418
+     }
+    },
+    {
+     "fib": 16856,
+     "beltIndex": 3,
+     "halfWidthM": 137332.28928915985,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 45,
+      "density": 19.429920728622026,
+      "maxM": 2346.393756692638
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 395.3397738275924
+     }
+    },
+    {
+     "fib": 17827,
+     "beltIndex": 27,
+     "halfWidthM": 138386.16012776768,
+     "areaKm2": 2316.015625,
+     "coreLandShare": 1,
+     "branch": {
+      "count": 4,
+      "density": 1.7271040647664024,
+      "maxM": 1272.4600033616362
+     },
+     "main": {
+      "count": 0,
+      "density": 0,
+      "maxM": 321.2914912934384
+     }
+    }
+   ]
+  }
+ ],
+ "seconds": 86.15569839999999,
+ "gate": [
+  {
+   "world": "Maithea",
+   "row": "R1 whole core",
+   "pass": true
+  },
+  {
+   "world": "Maithea",
+   "row": "R2 y0=0",
+   "pass": true
+  },
+  {
+   "world": "Maithea",
+   "row": "R3 y0=0",
+   "pass": true
+  },
+  {
+   "world": "Maithea",
+   "row": "R2 y0=19200",
+   "pass": true
+  },
+  {
+   "world": "Maithea",
+   "row": "R3 y0=19200",
+   "pass": true
+  },
+  {
+   "world": "Selawyn",
+   "row": "R1 whole core",
+   "pass": true
+  },
+  {
+   "world": "Selawyn",
+   "row": "R2 y0=0",
+   "pass": true
+  },
+  {
+   "world": "Selawyn",
+   "row": "R3 y0=0",
+   "pass": true
+  },
+  {
+   "world": "Selawyn",
+   "row": "R2 y0=19200",
+   "pass": true
+  },
+  {
+   "world": "Selawyn",
+   "row": "R3 y0=19200",
+   "pass": true
+  },
+  {
+   "world": "Raiva",
+   "row": "R1 whole core",
+   "pass": false
+  },
+  {
+   "world": "Raiva",
+   "row": "R2 y0=0",
+   "pass": true
+  },
+  {
+   "world": "Raiva",
+   "row": "R3 y0=0",
+   "pass": true
+  },
+  {
+   "world": "Raiva",
+   "row": "R2 y0=19200",
+   "pass": true
+  },
+  {
+   "world": "Raiva",
+   "row": "R3 y0=19200",
+   "pass": true
+  },
+  {
+   "world": "Lethuris",
+   "row": "R1 whole core",
+   "pass": true
+  },
+  {
+   "world": "Lethuris",
+   "row": "R2 y0=0",
+   "pass": true
+  },
+  {
+   "world": "Lethuris",
+   "row": "R3 y0=0",
+   "pass": true
+  },
+  {
+   "world": "Lethuris",
+   "row": "R2 y0=19200",
+   "pass": true
+  },
+  {
+   "world": "Lethuris",
+   "row": "R3 y0=19200",
+   "pass": true
+  }
+ ]
+}

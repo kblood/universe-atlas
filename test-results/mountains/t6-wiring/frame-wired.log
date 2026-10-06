@@ -1,0 +1,41 @@
+Maithea L0->1 C: down max 3881.625 / ROOM 4900 ok; up p50/p99/max 0/1796.469/3217.655 UP_ROOM 4050; U1 max 0; mismatch null; storedBelowPoint 0
+Maithea L1->2 C: down max 3322.239 / ROOM 4200 ok; up p50/p99/max 0/854.577/3893.887 UP_ROOM 4900; U1 max 0; mismatch null; storedBelowPoint 0
+Maithea L2->3 C: down max 3926.382 / ROOM 4950 ok; up p50/p99/max 0/714.686/2917.586 UP_ROOM 3650; U1 max 0; mismatch null; storedBelowPoint 0
+Maithea L3->4 C: down max 2565.157 / ROOM 3250 ok; up p50/p99/max 0/458.892/1749.384 UP_ROOM 2200; U1 max 0; mismatch null; storedBelowPoint 0
+Maithea L4->5 C: down max 783.179 / ROOM 1000 ok; up p50/p99/max -2.05/129.714/896.098 UP_ROOM 1150; U1 max 0; mismatch null; storedBelowPoint 0
+Maithea L5->6 S C: down max 1221.745 / ROOM 1550 ok; up p50/p99/max -35.829/65.349/85.191 UP_ROOM 150; U1 max 0; mismatch null; storedBelowPoint 0
+Maithea L6->7 C: down max 562.451 / ROOM 750 ok; up p50/p99/max -12.318/160.779/435.294 UP_ROOM 550; U1 max 0; mismatch null; storedBelowPoint 0
+Maithea L7->8 C: down max 369.028 / ROOM 500 ok; up p50/p99/max 0/181.097/476.198 UP_ROOM 600; U1 max 0; mismatch null; storedBelowPoint 0
+Maithea L8->9 C: down max 206.609 / ROOM 300 ok; up p50/p99/max 0/110.064/205.737 UP_ROOM 300; U1 max 0; mismatch null; storedBelowPoint 0
+Maithea L9->10: down max 170.289 / ROOM 200 ok; up p50/p99/max -55.519/0/0 UP_ROOM null; U1 max 0; mismatch 0; storedBelowPoint 0
+Selawyn L0->1 C: down max 2860.345 / ROOM 3600 ok; up p50/p99/max 0/1381.871/2253.797 UP_ROOM 2850; U1 max 0; mismatch null; storedBelowPoint 0
+Selawyn L1->2 C: down max 2688.744 / ROOM 3400 ok; up p50/p99/max 0/761.398/2720.588 UP_ROOM 3450; U1 max 0; mismatch null; storedBelowPoint 0
+Selawyn L2->3 C: down max 2723.654 / ROOM 3450 ok; up p50/p99/max -0.751/620.384/2261.14 UP_ROOM 2850; U1 max 0; mismatch null; storedBelowPoint 0
+Selawyn L3->4 C: down max 1303.669 / ROOM 1650 ok; up p50/p99/max -9.679/357.354/1165.761 UP_ROOM 1500; U1 max 0; mismatch null; storedBelowPoint 0
+Selawyn L4->5 C: down max 662.018 / ROOM 850 ok; up p50/p99/max -9.289/252.68/648.016 UP_ROOM 850; U1 max 0; mismatch null; storedBelowPoint 0
+Selawyn L5->6 C: down max 398.941 / ROOM 500 ok; up p50/p99/max -5.675/122.03/299.436 UP_ROOM 400; U1 max 0; mismatch null; storedBelowPoint 0
+Selawyn L6->7 S C: down max 1583.82 / ROOM 2000 ok; up p50/p99/max -468.48/7.831/73.112 UP_ROOM 100; U1 max 0; mismatch null; storedBelowPoint 0
+Selawyn L7->8 C: down max 707.682 / ROOM 900 ok; up p50/p99/max 0/242.81/374.747 UP_ROOM 500; U1 max 0; mismatch null; storedBelowPoint 0
+Selawyn L8->9 C: down max 304.786 / ROOM 400 ok; up p50/p99/max -4.778/185.35/262.818 UP_ROOM 350; U1 max 0; mismatch null; storedBelowPoint 0
+Selawyn L9->10 C: down max 187.072 / ROOM 250 ok; up p50/p99/max -11.012/90.88/112.482 UP_ROOM 150; U1 max 0; mismatch null; storedBelowPoint 0
+Selawyn L10->11: down max 208.266 / ROOM 250 ok; up p50/p99/max -66.048/0/0 UP_ROOM null; U1 max 0; mismatch 0; storedBelowPoint 0
+Raiva L0->1 C: down max 1869.654 / ROOM 2350 ok; up p50/p99/max 0/990.885/1807.747 UP_ROOM 2300; U1 max 0; mismatch null; storedBelowPoint 0
+Raiva L1->2 C: down max 1669.488 / ROOM 2100 ok; up p50/p99/max 0/840.985/1842.529 UP_ROOM 2350; U1 max 0; mismatch null; storedBelowPoint 0
+Raiva L2->3 C: down max 2118.765 / ROOM 2650 ok; up p50/p99/max 0/593.363/1644.987 UP_ROOM 2100; U1 max 0; mismatch null; storedBelowPoint 0
+Raiva L3->4 C: down max 1383.467 / ROOM 1750 ok; up p50/p99/max -3.862/156.939/1465.674 UP_ROOM 1850; U1 max 0; mismatch null; storedBelowPoint 0
+Raiva L4->5 S C: down max 633.631 / ROOM 800 ok; up p50/p99/max -99.622/15.656/157.833 UP_ROOM 200; U1 max 0; mismatch null; storedBelowPoint 0
+Raiva L5->6 C: down max 200.68 / ROOM 300 ok; up p50/p99/max -1.425/98.899/240.82 UP_ROOM 350; U1 max 0; mismatch null; storedBelowPoint 0
+Raiva L6->7 C: down max 209.068 / ROOM 300 ok; up p50/p99/max 0/82.235/119.659 UP_ROOM 150; U1 max 0; mismatch null; storedBelowPoint 0
+Raiva L7->8 C: down max 60.996 / ROOM 100 ok; up p50/p99/max -1.977/37.251/58.394 UP_ROOM 100; U1 max 0; mismatch null; storedBelowPoint 0
+Raiva L8->9: down max 79.603 / ROOM 100 ok; up p50/p99/max -20.682/0/0 UP_ROOM null; U1 max 0; mismatch 0; storedBelowPoint 0
+Lethuris L0->1 C: down max 3815.823 / ROOM 4800 ok; up p50/p99/max 0/2619.476/3898.755 UP_ROOM 4900; U1 max 0; mismatch null; storedBelowPoint 0
+Lethuris L1->2 C: down max 3952.736 / ROOM 4950 ok; up p50/p99/max 0/1315.897/3451.481 UP_ROOM 4350; U1 max 0; mismatch null; storedBelowPoint 0
+Lethuris L2->3 C: down max 3627.046 / ROOM 4550 ok; up p50/p99/max 0/843.325/3558.974 UP_ROOM 4450; U1 max 0; mismatch null; storedBelowPoint 0
+Lethuris L3->4 C: down max 1720.425 / ROOM 2200 ok; up p50/p99/max 0/503.633/1000.666 UP_ROOM 1300; U1 max 0; mismatch null; storedBelowPoint 0
+Lethuris L4->5 C: down max 1079.561 / ROOM 1350 ok; up p50/p99/max -2.964/204/800.861 UP_ROOM 1050; U1 max 0; mismatch null; storedBelowPoint 0
+Lethuris L5->6 C: down max 725.561 / ROOM 950 ok; up p50/p99/max -6.536/171.868/826.322 UP_ROOM 1050; U1 max 0; mismatch null; storedBelowPoint 0
+Lethuris L6->7 S C: down max 1877.282 / ROOM 2350 ok; up p50/p99/max -163.934/54.276/89.709 UP_ROOM 150; U1 max 0; mismatch null; storedBelowPoint 0
+Lethuris L7->8 C: down max 533.281 / ROOM 700 ok; up p50/p99/max -2.179/271.821/895.01 UP_ROOM 1150; U1 max 0; mismatch null; storedBelowPoint 0
+Lethuris L8->9 C: down max 749.286 / ROOM 950 ok; up p50/p99/max 0/271.391/312.794 UP_ROOM 400; U1 max 0; mismatch null; storedBelowPoint 0
+Lethuris L9->10 C: down max 205.244 / ROOM 300 ok; up p50/p99/max -11.972/103.17/194.94 UP_ROOM 250; U1 max 0; mismatch null; storedBelowPoint 0
+Lethuris L10->11: down max 246.063 / ROOM 250 ok; up p50/p99/max -61.866/0/0 UP_ROOM null; U1 max 0; mismatch 0; storedBelowPoint 0

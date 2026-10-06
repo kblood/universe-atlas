@@ -107,7 +107,9 @@ test('depthAndPressureAt: Earth analogue 10 m and 10.9 km (Challenger Deep), mon
   assert.ok(Math.abs(deep - 1.10e8) / 1.10e8 <= .02, `10.9 km ${deep} Pa (~${(deep / 101325).toFixed(0)} atm)`);
 
   // A real world: Maithea's deepest sampled place (~13.6 km on the shipped seabed).
-  const {sys, body} = WORLDS[0], ctx = {sys, body, t: CATALOGUE_EPOCH_NS}, sample = terrainSampler(body);
+  // T6 decision 3: the 4096-direction search for the deepest place reads the level-0 field (the seabed is outside every
+  // massif, so the pick is the truth's; placeAt below reads the truth).
+  const {sys, body} = WORLDS[0], ctx = {sys, body, t: CATALOGUE_EPOCH_NS}, sample = terrainSampler(body, undefined, undefined, undefined, 0, undefined, false, {lodLevel: 0});
   let deepest = DIRS[0], low = Infinity;
   for (let i = 0; i < 4096; i++) { const d = fibonacciDirection(i, 4096), h = sample(d).groundHeightM; if (h < low) { low = h; deepest = d; } }
   const place = placeAt(ctx, deepest), geo = planetGeophysics(body);

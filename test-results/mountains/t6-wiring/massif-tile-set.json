@@ -1,0 +1,3775 @@
+[
+ {
+  "world": "Maithea",
+  "levels": [
+   5,
+   6,
+   8,
+   10,
+   12,
+   14
+  ],
+  "set": [
+   {
+    "kind": "axis",
+    "d": [
+     0.5095476692588011,
+     0.85675,
+     -0.07962794894334123
+    ],
+    "axisDistanceM": 1576.0602750295488,
+    "beltIndex": 16,
+    "alongM": -724781.6914965766,
+    "tiles": [
+     {
+      "level": 5,
+      "tile": "2/5/25/17",
+      "centreBelt": 0.9992819684276362,
+      "centreAxisDistanceM": 6774.37750800774,
+      "massifSamples": 1868,
+      "minAbsAxisDistanceM": 19.565774381575036
+     },
+     {
+      "level": 6,
+      "tile": "2/6/51/34",
+      "centreBelt": 0,
+      "centreAxisDistanceM": null,
+      "massifSamples": 866,
+      "minAbsAxisDistanceM": 122.59889079388756
+     },
+     {
+      "level": 8,
+      "tile": "2/8/204/139",
+      "centreBelt": 0.9963486260714274,
+      "centreAxisDistanceM": -15276.56735118104,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.4697504973744011
+     },
+     {
+      "level": 10,
+      "tile": "2/10/816/559",
+      "centreBelt": 0.999975331112387,
+      "centreAxisDistanceM": 1255.661004657224,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.5155251675198063
+     },
+     {
+      "level": 12,
+      "tile": "2/12/3266/2238",
+      "centreBelt": 0.9999848282012754,
+      "centreAxisDistanceM": 984.7277127226122,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.3230515206312112
+     },
+     {
+      "level": 14,
+      "tile": "2/14/13064/8953",
+      "centreBelt": 0.9999664216701429,
+      "centreAxisDistanceM": 1464.9647321012296,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1120.1855008466866
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.04249625528938326,
+     0.81675,
+     -0.5754246308478458
+    ],
+    "axisDistanceM": -1319.5525178010862,
+    "beltIndex": 10,
+    "alongM": 461420.27735935035,
+    "tiles": [
+     {
+      "level": 5,
+      "tile": "2/5/16/27",
+      "centreBelt": 0.0051508937825383615,
+      "centreAxisDistanceM": -77696.6575066677,
+      "massifSamples": 1509,
+      "minAbsAxisDistanceM": 51.42231426257882
+     },
+     {
+      "level": 6,
+      "tile": "2/6/33/54",
+      "centreBelt": 0.9910662483749314,
+      "centreAxisDistanceM": -23588.46943059902,
+      "massifSamples": 2884,
+      "minAbsAxisDistanceM": 9.226050992692764
+     },
+     {
+      "level": 8,
+      "tile": "2/8/134/218",
+      "centreBelt": 0.9996170788431553,
+      "centreAxisDistanceM": -4883.5710000447325,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.253391625771062
+     },
+     {
+      "level": 10,
+      "tile": "2/10/538/872",
+      "centreBelt": 0.9998807408043356,
+      "centreAxisDistanceM": -2725.3906581006036,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.3826515862794275
+     },
+     {
+      "level": 12,
+      "tile": "2/12/2154/3490",
+      "centreBelt": 0.9999610478386128,
+      "centreAxisDistanceM": -1557.5737000599454,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 390.0337607264931
+     },
+     {
+      "level": 14,
+      "tile": "2/14/8618/13963",
+      "centreBelt": 0.9999773645823063,
+      "centreAxisDistanceM": -1187.3454202676921,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 895.4691072979546
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.5605266388004269,
+     0.80335,
+     -0.20109367144466744
+    ],
+    "axisDistanceM": -1771.8254286321855,
+    "beltIndex": 16,
+    "alongM": 13856.034553619855,
+    "tiles": [
+     {
+      "level": 5,
+      "tile": "2/5/27/20",
+      "centreBelt": 0.9984891920967695,
+      "centreAxisDistanceM": -9826.576691941302,
+      "massifSamples": 1973,
+      "minAbsAxisDistanceM": 33.80691626826964
+     },
+     {
+      "level": 6,
+      "tile": "2/6/54/40",
+      "centreBelt": 0.9982672272998591,
+      "centreAxisDistanceM": 10523.699111998822,
+      "massifSamples": 3379,
+      "minAbsAxisDistanceM": 4.854921879986745
+     },
+     {
+      "level": 8,
+      "tile": "2/8/217/160",
+      "centreBelt": 0.9999970047373281,
+      "centreAxisDistanceM": 437.53729856308877,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.8649175025778727
+     },
+     {
+      "level": 10,
+      "tile": "2/10/869/640",
+      "centreBelt": 0.9999295651351473,
+      "centreAxisDistanceM": -2121.736593876786,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.27632707478178703
+     },
+     {
+      "level": 12,
+      "tile": "2/12/3476/2560",
+      "centreBelt": 0.9999780548865724,
+      "centreAxisDistanceM": -1184.313115744042,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.0810103494252215
+     },
+     {
+      "level": 14,
+      "tile": "2/14/13907/10242",
+      "centreBelt": 0.9999570213760598,
+      "centreAxisDistanceM": -1657.386805852351,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1340.5406675707645
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.184019854206868,
+     0.75705,
+     -0.6269066842502822
+    ],
+    "axisDistanceM": 2861.01995550422,
+    "beltIndex": 34,
+    "alongM": 449569.47549589834,
+    "tiles": [
+     {
+      "level": 5,
+      "tile": "2/5/19/29",
+      "centreBelt": 0.1797787024853512,
+      "centreAxisDistanceM": -58981.6614036307,
+      "massifSamples": 1732,
+      "minAbsAxisDistanceM": 30.231626663786997
+     },
+     {
+      "level": 6,
+      "tile": "2/6/39/58",
+      "centreBelt": 0.9843897380953186,
+      "centreAxisDistanceM": -25871.439992131258,
+      "massifSamples": 3001,
+      "minAbsAxisDistanceM": 3.894457381088443
+     },
+     {
+      "level": 8,
+      "tile": "2/8/159/233",
+      "centreBelt": 0.9984099833927262,
+      "centreAxisDistanceM": 8256.886930611838,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.2868363043744846
+     },
+     {
+      "level": 10,
+      "tile": "2/10/636/935",
+      "centreBelt": 0.9999027924705584,
+      "centreAxisDistanceM": 2041.5755690283268,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.4654356585409587
+     },
+     {
+      "level": 12,
+      "tile": "2/12/2545/3743",
+      "centreBelt": 0.9998971020869099,
+      "centreAxisDistanceM": 2100.481160282761,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1005.6732101049924
+     },
+     {
+      "level": 14,
+      "tile": "2/14/10183/14975",
+      "centreBelt": 0.9998009591692966,
+      "centreAxisDistanceM": 2921.370200991771,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2647.761178513032
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.5913591362806724,
+     0.7444500000000001,
+     -0.3099815630604135
+    ],
+    "axisDistanceM": -2667.983409459914,
+    "beltIndex": 16,
+    "alongM": 676878.2633607548,
+    "tiles": [
+     {
+      "level": 5,
+      "tile": "2/5/28/22",
+      "centreBelt": 0.9938888598908826,
+      "centreAxisDistanceM": 19763.267292045242,
+      "massifSamples": 2029,
+      "minAbsAxisDistanceM": 6.136559918385171
+     },
+     {
+      "level": 6,
+      "tile": "2/6/57/45",
+      "centreBelt": 0.9999879101546442,
+      "centreAxisDistanceM": -879.0387027547497,
+      "massifSamples": 3630,
+      "minAbsAxisDistanceM": 1.6770234226608658
+     },
+     {
+      "level": 8,
+      "tile": "2/8/229/181",
+      "centreBelt": 0.9997181169027335,
+      "centreAxisDistanceM": 4244.554764545883,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 5.317918226224752
+     },
+     {
+      "level": 10,
+      "tile": "2/10/918/725",
+      "centreBelt": 0.9999976408593535,
+      "centreAxisDistanceM": -388.3063928808196,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.15734145799925298
+     },
+     {
+      "level": 12,
+      "tile": "2/12/3674/2900",
+      "centreBelt": 0.9999110570860986,
+      "centreAxisDistanceM": -2384.258286506685,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1226.2342972142885
+     },
+     {
+      "level": 14,
+      "tile": "2/14/14699/11603",
+      "centreBelt": 0.9998922620920224,
+      "centreAxisDistanceM": -2624.1091350320485,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2334.6535212840454
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.5615556289785802,
+     0.69335,
+     0.45157618743958483
+    ],
+    "axisDistanceM": -1247.559217013915,
+    "beltIndex": 28,
+    "alongM": 874297.8841759817,
+    "tiles": [
+     {
+      "level": 5,
+      "tile": "2/5/28/5",
+      "centreBelt": 0,
+      "centreAxisDistanceM": null,
+      "massifSamples": 1420,
+      "minAbsAxisDistanceM": 9.973830576165582
+     },
+     {
+      "level": 6,
+      "tile": "2/6/57/11",
+      "centreBelt": 0.38305934728774516,
+      "centreAxisDistanceM": -5449.367925268862,
+      "massifSamples": 3503,
+      "minAbsAxisDistanceM": 9.973830576165582
+     },
+     {
+      "level": 8,
+      "tile": "2/8/231/44",
+      "centreBelt": 0.6279904911169676,
+      "centreAxisDistanceM": 4585.490162213652,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2.766905264817882
+     },
+     {
+      "level": 10,
+      "tile": "2/10/926/178",
+      "centreBelt": 0.6259695091594634,
+      "centreAxisDistanceM": -314.89870008774676,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.39039436095823754
+     },
+     {
+      "level": 12,
+      "tile": "2/12/3706/714",
+      "centreBelt": 0.6253746617826439,
+      "centreAxisDistanceM": -1539.9116174499868,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 314.89870008774676
+     },
+     {
+      "level": 14,
+      "tile": "2/14/14826/2856",
+      "centreBelt": 0.6280080186077063,
+      "centreAxisDistanceM": -1132.379225953248,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 826.1464689925052
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.5476870660712452,
+     0.68935,
+     0.4741681718106683
+    ],
+    "axisDistanceM": -915.7342647151976,
+    "beltIndex": 8,
+    "alongM": -467843.1063330223,
+    "tiles": [
+     {
+      "level": 5,
+      "tile": "2/5/3/4",
+      "centreBelt": 0,
+      "centreAxisDistanceM": null,
+      "massifSamples": 1464,
+      "minAbsAxisDistanceM": 3.6231931831363426
+     },
+     {
+      "level": 6,
+      "tile": "2/6/6/9",
+      "centreBelt": 0.9980389520234095,
+      "centreAxisDistanceM": 10581.389995933609,
+      "massifSamples": 3690,
+      "minAbsAxisDistanceM": 7.647046418108253
+     },
+     {
+      "level": 8,
+      "tile": "2/8/26/39",
+      "centreBelt": 0.9988860497700451,
+      "centreAxisDistanceM": 7975.014948180895,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.586924403580089
+     },
+     {
+      "level": 10,
+      "tile": "2/10/105/159",
+      "centreBelt": 0.999960607422555,
+      "centreAxisDistanceM": 1499.7049011144215,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.40413650707205023
+     },
+     {
+      "level": 12,
+      "tile": "2/12/420/639",
+      "centreBelt": 0.9999562491610922,
+      "centreAxisDistanceM": -1580.4901897075854,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 553.8732302062286
+     },
+     {
+      "level": 14,
+      "tile": "2/14/1683/2557",
+      "centreBelt": 0.9999839150715629,
+      "centreAxisDistanceM": -958.3147629101882,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 701.6515537845288
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.03847219858507095,
+     0.64095,
+     0.7666178888051275
+    ],
+    "axisDistanceM": -2546.193168026784,
+    "beltIndex": 11,
+    "alongM": 77328.78847535375,
+    "tiles": [
+     {
+      "level": 5,
+      "tile": "4/5/15/29",
+      "centreBelt": 0.38801214906357717,
+      "centreAxisDistanceM": 68029.8380091048,
+      "massifSamples": 1491,
+      "minAbsAxisDistanceM": 13.701419661227138
+     },
+     {
+      "level": 6,
+      "tile": "4/6/30/58",
+      "centreBelt": 0.998246101576162,
+      "centreAxisDistanceM": -10671.501849960043,
+      "massifSamples": 3450,
+      "minAbsAxisDistanceM": 2.8567702126684957
+     },
+     {
+      "level": 8,
+      "tile": "4/8/121/235",
+      "centreBelt": 0.999752739586778,
+      "centreAxisDistanceM": 4006.8272661293854,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.034360749014757566
+     },
+     {
+      "level": 10,
+      "tile": "4/10/486/940",
+      "centreBelt": 0.9999977630680027,
+      "centreAxisDistanceM": 381.1094484991465,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.227726540800659
+     },
+     {
+      "level": 12,
+      "tile": "4/12/1945/3760",
+      "centreBelt": 0.999942950857274,
+      "centreAxisDistanceM": -1924.6328158752303,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 690.9097335321117
+     },
+     {
+      "level": 14,
+      "tile": "4/14/7780/15041",
+      "centreBelt": 0.9998973351350642,
+      "centreAxisDistanceM": -2581.86925029703,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2273.3822842700456
+     }
+    ]
+   },
+   {
+    "kind": "flank",
+    "d": [
+     0.5053302572987797,
+     0.8589777195269438,
+     -0.0824536743549977
+    ],
+    "axisDistanceM": 30375.76522705764,
+    "beltIndex": 16,
+    "alongM": -724781.6914965766,
+    "tiles": [
+     {
+      "level": 5,
+      "tile": "2/5/25/17",
+      "centreBelt": 0.9992819684276362,
+      "centreAxisDistanceM": 6774.37750800774,
+      "massifSamples": 1868,
+      "minAbsAxisDistanceM": 19.565774381575036
+     },
+     {
+      "level": 6,
+      "tile": "2/6/50/35",
+      "centreBelt": 0,
+      "centreAxisDistanceM": null,
+      "massifSamples": 494,
+      "minAbsAxisDistanceM": 6774.37750800774
+     },
+     {
+      "level": 8,
+      "tile": "2/8/203/140",
+      "centreBelt": 0.9869423944403858,
+      "centreAxisDistanceM": 28888.792978148213,
+      "massifSamples": 4173,
+      "minAbsAxisDistanceM": 6774.37750800774
+     },
+     {
+      "level": 10,
+      "tile": "2/10/813/561",
+      "centreBelt": 0.9859291105206714,
+      "centreAxisDistanceM": 29988.75249619404,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 24451.11833879583
+     },
+     {
+      "level": 12,
+      "tile": "2/12/3252/2244",
+      "centreBelt": 0.9851436074361007,
+      "centreAxisDistanceM": 30814.441966049533,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 29429.080782782876
+     },
+     {
+      "level": 14,
+      "tile": "2/14/13011/8978",
+      "centreBelt": 0.9856066361810503,
+      "centreAxisDistanceM": 30330.444533643484,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 29984.120843552733
+     }
+    ]
+   },
+   {
+    "kind": "flank",
+    "d": [
+     0.03708539492657547,
+     0.8176095853600494,
+     -0.5745774442235861
+    ],
+    "axisDistanceM": -30119.257469829314,
+    "beltIndex": 10,
+    "alongM": 461420.2773593492,
+    "tiles": [
+     {
+      "level": 5,
+      "tile": "2/5/16/27",
+      "centreBelt": 0.0051508937825383615,
+      "centreAxisDistanceM": -77696.6575066677,
+      "massifSamples": 1509,
+      "minAbsAxisDistanceM": 51.42231426257882
+     },
+     {
+      "level": 6,
+      "tile": "2/6/33/54",
+      "centreBelt": 0.9910662483749314,
+      "centreAxisDistanceM": -23588.46943059902,
+      "massifSamples": 2884,
+      "minAbsAxisDistanceM": 9.226050992692764
+     },
+     {
+      "level": 8,
+      "tile": "2/8/133/217",
+      "centreBelt": 0.9711844920802588,
+      "centreAxisDistanceM": -42363.902957125654,
+      "massifSamples": 2835,
+      "minAbsAxisDistanceM": 23588.46943059902
+     },
+     {
+      "level": 10,
+      "tile": "2/10/535/871",
+      "centreBelt": 0.987163057540052,
+      "centreAxisDistanceM": -28275.71673293929,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 23588.46943059902
+     },
+     {
+      "level": 12,
+      "tile": "2/12/2140/3487",
+      "centreBelt": 0.984736559688863,
+      "centreAxisDistanceM": -30832.521379097947,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 29660.303626949302
+     },
+     {
+      "level": 14,
+      "tile": "2/14/8563/13948",
+      "centreBelt": 0.9853626877774945,
+      "centreAxisDistanceM": -30193.502391085774,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 29900.42172057183
+     }
+    ]
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     0.6049422447887903,
+     0.7011110510959336,
+     -0.37747605818257435
+    ],
+    "axisDistanceM": 6.448267115171161e-10,
+    "beltIndex": 16,
+    "alongM": 1099433.026083139,
+    "tiles": [
+     {
+      "level": 5,
+      "tile": "2/5/29/24",
+      "centreBelt": 0.6768034521040132,
+      "centreAxisDistanceM": 43109.93813290595,
+      "massifSamples": 1923,
+      "minAbsAxisDistanceM": 48.025860049133435
+     },
+     {
+      "level": 6,
+      "tile": "2/6/59/49",
+      "centreBelt": 0.4337662767130364,
+      "centreAxisDistanceM": 23693.062391542582,
+      "massifSamples": 3232,
+      "minAbsAxisDistanceM": 3.623481283314643
+     },
+     {
+      "level": 8,
+      "tile": "2/8/238/196",
+      "centreBelt": 0.5877485903421552,
+      "centreAxisDistanceM": -6572.387201272241,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.0406847661932213
+     },
+     {
+      "level": 10,
+      "tile": "2/10/953/787",
+      "centreBelt": 0.5506669242739236,
+      "centreAxisDistanceM": 998.5040935012063,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.3319931821647962
+     },
+     {
+      "level": 12,
+      "tile": "2/12/3815/3150",
+      "centreBelt": 0.5451405630839802,
+      "centreAxisDistanceM": -688.4335450071862,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.6593681175062289
+     },
+     {
+      "level": 14,
+      "tile": "2/14/15260/12602",
+      "centreBelt": 0.544839270563691,
+      "centreAxisDistanceM": -67.35749691696198,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.039591812894112184
+     }
+    ]
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     0.47952879820688965,
+     0.877355312023787,
+     -0.017314391525537653
+    ],
+    "axisDistanceM": 1.3298329606251493e-9,
+    "beltIndex": 16,
+    "alongM": -1099440.3742921115,
+    "tiles": [
+     {
+      "level": 5,
+      "tile": "2/5/24/16",
+      "centreBelt": 0,
+      "centreAxisDistanceM": null,
+      "massifSamples": 1207,
+      "minAbsAxisDistanceM": 18.832610220060737
+     },
+     {
+      "level": 6,
+      "tile": "2/6/49/32",
+      "centreBelt": 0.46790655410268334,
+      "centreAxisDistanceM": -10405.74306553102,
+      "massifSamples": 3174,
+      "minAbsAxisDistanceM": 7.2256470887554
+     },
+     {
+      "level": 8,
+      "tile": "2/8/197/130",
+      "centreBelt": 0.508136002944142,
+      "centreAxisDistanceM": 12089.23001934443,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.25119993063158513
+     },
+     {
+      "level": 10,
+      "tile": "2/10/791/522",
+      "centreBelt": 0.5536165221995472,
+      "centreAxisDistanceM": 4067.959242369067,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.25119993063158513
+     },
+     {
+      "level": 12,
+      "tile": "2/12/3167/2088",
+      "centreBelt": 0.5461659130066984,
+      "centreAxisDistanceM": -149.05105153577247,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.001949378645133099
+     },
+     {
+      "level": 14,
+      "tile": "2/14/12669/8353",
+      "centreBelt": 0.544464243340926,
+      "centreAxisDistanceM": -74.657922034519,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.06867010882187012
+     }
+    ]
+   }
+  ],
+  "replaced": [],
+  "evidenceOk": true,
+  "cells": [
+   {
+    "L": 5,
+    "p50": 127.46389770507812,
+    "p99": 1487.3297119140625,
+    "max": 2123.719482421875,
+    "rgbP50": 5.647955955459552,
+    "rgbP99": 175.57085090220116,
+    "snow": 8.020833333333334,
+    "forest": 3.6041666666666665,
+    "name": 11.677083333333334,
+    "carriedName": 9.177083333333334,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 7650.132138253324,
+    "planHeightMaxM": 20400.352368675532,
+    "planRgbP99": 12,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 6,
+    "p50": 67.5294418334961,
+    "p99": 808.8687744140625,
+    "max": 1600.1905517578125,
+    "rgbP50": 3.225231721554926,
+    "rgbP99": 52.58428885017963,
+    "snow": 3.3125,
+    "forest": 1.625,
+    "name": 4.177083333333333,
+    "carriedName": 4.770833333333333,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 3825.066069126662,
+    "planHeightMaxM": 10200.176184337766,
+    "planRgbP99": 12,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 8,
+    "p50": 57.33831787109375,
+    "p99": 426.3802490234375,
+    "max": 671.3443603515625,
+    "rgbP50": 0.5772184594699018,
+    "rgbP99": 12.650795796916794,
+    "snow": 2.6770833333333335,
+    "forest": 0,
+    "name": 3.0833333333333335,
+    "carriedName": 3.8958333333333335,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 956.2665172816655,
+    "planHeightMaxM": 2550.0440460844416,
+    "planRgbP99": 4,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 10,
+    "p50": 8.052665710449219,
+    "p99": 90.73138427734375,
+    "max": 198.513916015625,
+    "rgbP50": 0.03153281351383637,
+    "rgbP99": 2.9074285247447236,
+    "snow": 0.20833333333333334,
+    "forest": 0,
+    "name": 0.23958333333333334,
+    "carriedName": 0.3125,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 239.06662932041638,
+    "planHeightMaxM": 637.5110115211104,
+    "planRgbP99": 1,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 12,
+    "p50": 0.371612548828125,
+    "p99": 26.3873291015625,
+    "max": 81.1029052734375,
+    "rgbP50": 0.001971776842862973,
+    "rgbP99": 0.42346820684372,
+    "snow": 0,
+    "forest": 0,
+    "name": 0,
+    "carriedName": 0,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 59.766657330104096,
+    "planHeightMaxM": 159.3777528802776,
+    "planRgbP99": 1,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 14,
+    "p50": 0.011138916015625,
+    "p99": 3.2049560546875,
+    "max": 8.6629638671875,
+    "rgbP50": 0.000445213502974187,
+    "rgbP99": 0.1465278444037895,
+    "snow": 0,
+    "forest": 0,
+    "name": 0,
+    "carriedName": 0,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 14.941664332526024,
+    "planHeightMaxM": 39.8444382200694,
+    "planRgbP99": 1,
+    "planClassPct": 0.5
+   }
+  ],
+  "retention": [
+   {
+    "L": 6,
+    "snowKept": 98.43628782001552,
+    "snowFalse": 3.2105785241081235,
+    "forestKept": 96.1157695428726,
+    "forestFalse": 0.5916321252701314,
+    "peakKept": 85.90764331210191,
+    "peakFalseOfPeakArea": 38.78273177636235,
+    "summitP50": 122.2500052921514,
+    "summitMax": 332.53983609102943,
+    "metaSummitP50": 122.2500052921514,
+    "metaSummitMax": 332.53983609102943,
+    "meanBiasM": 57.906339704623974,
+    "tiles": 12,
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    }
+   },
+   {
+    "L": 8,
+    "snowKept": 99.70422247909158,
+    "snowFalse": 3.4647677755340633,
+    "forestKept": 76.15526802218115,
+    "forestFalse": 0.09388174442909271,
+    "peakKept": 89.76468506723283,
+    "peakFalseOfPeakArea": 35.50955414012739,
+    "summitP50": 42.81797242376388,
+    "summitMax": 205.2503266278527,
+    "metaSummitP50": 42.81797242376388,
+    "metaSummitMax": 205.2503266278527,
+    "meanBiasM": 67.92208493032727,
+    "tiles": 12,
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    }
+   }
+  ],
+  "seconds": 57.070994400000004
+ },
+ {
+  "world": "Lethuris",
+  "levels": [
+   6,
+   7,
+   8,
+   10,
+   12,
+   14
+  ],
+  "set": [
+   {
+    "kind": "axis",
+    "d": [
+     -0.4812694074877431,
+     0.8665499999999999,
+     -0.13217736158812066
+    ],
+    "axisDistanceM": -136.81364292691262,
+    "beltIndex": 1,
+    "alongM": 5840639.692767203,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "2/6/14/36",
+      "centreBelt": 0.5789694240843722,
+      "centreAxisDistanceM": -75924.74117511701,
+      "massifSamples": 1541,
+      "minAbsAxisDistanceM": 10.290741874512232
+     },
+     {
+      "level": 7,
+      "tile": "2/7/28/73",
+      "centreBelt": 0.5498916657924999,
+      "centreAxisDistanceM": -11466.66518362994,
+      "massifSamples": 3567,
+      "minAbsAxisDistanceM": 6.14011195417658
+     },
+     {
+      "level": 8,
+      "tile": "2/8/56/147",
+      "centreBelt": 0.5316128287752113,
+      "centreAxisDistanceM": 20548.35144636503,
+      "massifSamples": 4147,
+      "minAbsAxisDistanceM": 8.367931803722202
+     },
+     {
+      "level": 10,
+      "tile": "2/10/227/590",
+      "centreBelt": 0.5179691925622462,
+      "centreAxisDistanceM": 2982.338391364004,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 12.22642446790262
+     },
+     {
+      "level": 12,
+      "tile": "2/12/910/2360",
+      "centreBelt": 0.5225534741851189,
+      "centreAxisDistanceM": 178.48790062298664,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.9523923107135375
+     },
+     {
+      "level": 14,
+      "tile": "2/14/3642/9441",
+      "centreBelt": 0.5228343963081877,
+      "centreAxisDistanceM": -321.898042607942,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.006219571470354342
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.5277832272834928,
+     0.84155,
+     0.11505851771260092
+    ],
+    "axisDistanceM": 0.38359087827569793,
+    "beltIndex": 34,
+    "alongM": -458824.7394829534,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "2/6/52/27",
+      "centreBelt": 0.9947445832014817,
+      "centreAxisDistanceM": 28540.662987919102,
+      "massifSamples": 1920,
+      "minAbsAxisDistanceM": 41.55274101819321
+     },
+     {
+      "level": 7,
+      "tile": "2/7/104/55",
+      "centreBelt": 0.9858677750703404,
+      "centreAxisDistanceM": 46802.14367249126,
+      "massifSamples": 2170,
+      "minAbsAxisDistanceM": 5.477241432046201
+     },
+     {
+      "level": 8,
+      "tile": "2/8/208/110",
+      "centreBelt": 0.9996824880782524,
+      "centreAxisDistanceM": 7015.207044911259,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.0228179818473362
+     },
+     {
+      "level": 10,
+      "tile": "2/10/833/441",
+      "centreBelt": 0.9999438939889269,
+      "centreAxisDistanceM": -2948.9348062501067,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.6105817907730327
+     },
+     {
+      "level": 12,
+      "tile": "2/12/3332/1767",
+      "centreBelt": 0.999988601518435,
+      "centreAxisDistanceM": -1329.1805436265697,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.12294380496113275
+     },
+     {
+      "level": 14,
+      "tile": "2/14/13329/7071",
+      "centreBelt": 0.9999987677058901,
+      "centreAxisDistanceM": -437.03645145189995,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.12294380496113275
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.5590607134539384,
+     0.75715,
+     0.3378979079135791
+    ],
+    "axisDistanceM": -580.6001028283628,
+    "beltIndex": 1,
+    "alongM": 1403801.1667915178,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "2/6/8/17",
+      "centreBelt": 0.997291324459078,
+      "centreAxisDistanceM": -36207.719643830955,
+      "massifSamples": 2139,
+      "minAbsAxisDistanceM": 13.896630410929147
+     },
+     {
+      "level": 7,
+      "tile": "2/7/16/35",
+      "centreBelt": 0.9989332032261861,
+      "centreAxisDistanceM": 22722.887988237166,
+      "massifSamples": 3311,
+      "minAbsAxisDistanceM": 6.740005245476704
+     },
+     {
+      "level": 8,
+      "tile": "2/8/33/70",
+      "centreBelt": 0.9999067207958309,
+      "centreAxisDistanceM": -6719.161764527006,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.8632164400692003
+     },
+     {
+      "level": 10,
+      "tile": "2/10/133/283",
+      "centreBelt": 0.9999605374626194,
+      "centreAxisDistanceM": 4370.3395854556775,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.8632164400692003
+     },
+     {
+      "level": 12,
+      "tile": "2/12/535/1134",
+      "centreBelt": 0.9999989657159641,
+      "centreAxisDistanceM": 707.5263057538184,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.288756986168629
+     },
+     {
+      "level": 14,
+      "tile": "2/14/2143/4536",
+      "centreBelt": 0.9999990610297455,
+      "centreAxisDistanceM": -674.1376737940135,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 213.57154029419038
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.3425184309679688,
+     0.73675,
+     0.5829927632031471
+    ],
+    "axisDistanceM": 1656.4031760795176,
+    "beltIndex": 26,
+    "alongM": 137153.7493334382,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "2/6/17/6",
+      "centreBelt": 0.9935436133693039,
+      "centreAxisDistanceM": -27743.748908836773,
+      "massifSamples": 2542,
+      "minAbsAxisDistanceM": 55.537661569523856
+     },
+     {
+      "level": 7,
+      "tile": "2/7/34/13",
+      "centreBelt": 0.99628623957897,
+      "centreAxisDistanceM": -21041.53032061868,
+      "massifSamples": 3638,
+      "minAbsAxisDistanceM": 1.5265354186514175
+     },
+     {
+      "level": 8,
+      "tile": "2/8/68/26",
+      "centreBelt": 0.9996307245605278,
+      "centreAxisDistanceM": 6635.071272892718,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.5265354186514175
+     },
+     {
+      "level": 10,
+      "tile": "2/10/273/106",
+      "centreBelt": 0.9995382812346455,
+      "centreAxisDistanceM": 7419.235273811161,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 513.869941124279
+     },
+     {
+      "level": 12,
+      "tile": "2/12/1095/427",
+      "centreBelt": 0.9999578718325526,
+      "centreAxisDistanceM": 2241.0764117701915,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 513.869941124279
+     },
+     {
+      "level": 14,
+      "tile": "2/14/4383/1709",
+      "centreBelt": 0.9999754156898745,
+      "centreAxisDistanceM": 1711.9827855769338,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1280.1997160918634
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.6548027956098611,
+     0.022150000000000003,
+     -0.7554751328544909
+    ],
+    "axisDistanceM": 1388.4397997443687,
+    "beltIndex": 0,
+    "alongM": 1169314.4681171868,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "5/6/4/32",
+      "centreBelt": 0.9992887506175613,
+      "centreAxisDistanceM": 18553.832517848306,
+      "massifSamples": 2469,
+      "minAbsAxisDistanceM": 19.702828398531956
+     },
+     {
+      "level": 7,
+      "tile": "5/7/8/65",
+      "centreBelt": 0.9987508959940322,
+      "centreAxisDistanceM": 24587.930756539845,
+      "massifSamples": 3376,
+      "minAbsAxisDistanceM": 6.951825087374665
+     },
+     {
+      "level": 8,
+      "tile": "5/8/17/131",
+      "centreBelt": 0.9999062498653837,
+      "centreAxisDistanceM": -6736.101628857203,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 4.952109800877595
+     },
+     {
+      "level": 10,
+      "tile": "5/10/68/527",
+      "centreBelt": 0.9999599916083759,
+      "centreAxisDistanceM": -4400.461515123217,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.476820469290458
+     },
+     {
+      "level": 12,
+      "tile": "5/12/272/2108",
+      "centreBelt": 0.9999955323180523,
+      "centreAxisDistanceM": 1470.495856068506,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.12201207421676007
+     },
+     {
+      "level": 14,
+      "tile": "5/14/1091/8432",
+      "centreBelt": 0.9999963728033415,
+      "centreAxisDistanceM": 1324.9766725151628,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 835.825138872498
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.31549475552304773,
+     -0.05085000000000006,
+     -0.9475638958600376
+    ],
+    "axisDistanceM": -2665.9109216996285,
+    "beltIndex": 18,
+    "alongM": -297117.41853551177,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "5/6/42/30",
+      "centreBelt": 0.9802066816743349,
+      "centreAxisDistanceM": -58270.762081601744,
+      "massifSamples": 1501,
+      "minAbsAxisDistanceM": 13.95413215833649
+     },
+     {
+      "level": 7,
+      "tile": "5/7/85/60",
+      "centreBelt": 0.9998726252867067,
+      "centreAxisDistanceM": 4674.4767396845145,
+      "massifSamples": 3008,
+      "minAbsAxisDistanceM": 11.263279444114811
+     },
+     {
+      "level": 8,
+      "tile": "5/8/170/121",
+      "centreBelt": 0.9958206827341078,
+      "centreAxisDistanceM": -26775.899167940905,
+      "massifSamples": 3441,
+      "minAbsAxisDistanceM": 7.121093417341216
+     },
+     {
+      "level": 10,
+      "tile": "5/10/682/484",
+      "centreBelt": 0.9999694061494141,
+      "centreAxisDistanceM": -2290.9123001286616,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2.82553203707145
+     },
+     {
+      "level": 12,
+      "tile": "5/12/2729/1938",
+      "centreBelt": 0.9998944194298188,
+      "centreAxisDistanceM": -4255.821407914248,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2066.0784745179026
+     },
+     {
+      "level": 14,
+      "tile": "5/14/10919/7752",
+      "centreBelt": 0.9999548799214691,
+      "centreAxisDistanceM": -2782.1229369217444,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2234.7636500480276
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.6358658765539793,
+     -0.6856500000000001,
+     0.3543425807523552
+    ],
+    "axisDistanceM": 2432.4938266594318,
+    "beltIndex": 3,
+    "alongM": -1275361.1875164553,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "3/6/2/48",
+      "centreBelt": 0.9999681901572762,
+      "centreAxisDistanceM": -2449.364508581894,
+      "massifSamples": 2284,
+      "minAbsAxisDistanceM": 13.506953831762523
+     },
+     {
+      "level": 7,
+      "tile": "3/7/4/97",
+      "centreBelt": 0.9920522134082751,
+      "centreAxisDistanceM": 38716.470440635385,
+      "massifSamples": 2558,
+      "minAbsAxisDistanceM": 13.506953831762523
+     },
+     {
+      "level": 8,
+      "tile": "3/8/9/194",
+      "centreBelt": 0.9982463995214872,
+      "centreAxisDistanceM": 18186.03352436508,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.28714854241390503
+     },
+     {
+      "level": 10,
+      "tile": "3/10/37/776",
+      "centreBelt": 0.9999876311101572,
+      "centreAxisDistanceM": 1527.3480702833538,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.9097607818413807
+     },
+     {
+      "level": 12,
+      "tile": "3/12/148/3106",
+      "centreBelt": 0.9999622410395542,
+      "centreAxisDistanceM": 2668.5950383933537,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1231.3645269017131
+     },
+     {
+      "level": 14,
+      "tile": "3/14/594/12425",
+      "centreBelt": 0.9999708108503611,
+      "centreAxisDistanceM": 2346.29913859092,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1986.9604451974335
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.2221096245957403,
+     -0.7827500000000001,
+     0.5813516596363506
+    ],
+    "axisDistanceM": 2273.157748915411,
+    "beltIndex": 27,
+    "alongM": -198273.72591090616,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "3/6/22/55",
+      "centreBelt": 0.6988622371330386,
+      "centreAxisDistanceM": -106033.87927936528,
+      "massifSamples": 918,
+      "minAbsAxisDistanceM": 95.74008007197833
+     },
+     {
+      "level": 7,
+      "tile": "3/7/45/111",
+      "centreBelt": 0.9942100017599417,
+      "centreAxisDistanceM": -33299.05239329677,
+      "massifSamples": 2725,
+      "minAbsAxisDistanceM": 4.433637590536317
+     },
+     {
+      "level": 8,
+      "tile": "3/8/91/223",
+      "centreBelt": 0.9999537787441924,
+      "centreAxisDistanceM": 2975.181941605317,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 4.188817714703457
+     },
+     {
+      "level": 10,
+      "tile": "3/10/366/892",
+      "centreBelt": 0.9999961400239069,
+      "centreAxisDistanceM": 859.7753039049772,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 8.669886161785415
+     },
+     {
+      "level": 12,
+      "tile": "3/12/1466/3569",
+      "centreBelt": 0.9999843406441229,
+      "centreAxisDistanceM": 1731.7277085285837,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.357960140356581
+     },
+     {
+      "level": 14,
+      "tile": "3/14/5867/14276",
+      "centreBelt": 0.9999702674022966,
+      "centreAxisDistanceM": 2386.2123343220187,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1819.4023177604338
+     }
+    ]
+   },
+   {
+    "kind": "flank",
+    "d": [
+     -0.483957362424004,
+     0.8649483282182956,
+     -0.13285202620952605
+    ],
+    "axisDistanceM": 28663.08799889572,
+    "beltIndex": 1,
+    "alongM": 5840639.692767204,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "2/6/14/36",
+      "centreBelt": 0.5789694240843722,
+      "centreAxisDistanceM": -75924.74117511701,
+      "massifSamples": 1541,
+      "minAbsAxisDistanceM": 10.290741874512232
+     },
+     {
+      "level": 7,
+      "tile": "2/7/28/73",
+      "centreBelt": 0.5498916657924999,
+      "centreAxisDistanceM": -11466.66518362994,
+      "massifSamples": 3567,
+      "minAbsAxisDistanceM": 6.14011195417658
+     },
+     {
+      "level": 8,
+      "tile": "2/8/56/147",
+      "centreBelt": 0.5316128287752113,
+      "centreAxisDistanceM": 20548.35144636503,
+      "massifSamples": 4147,
+      "minAbsAxisDistanceM": 8.367931803722202
+     },
+     {
+      "level": 10,
+      "tile": "2/10/225/590",
+      "centreBelt": 0.5267012399938831,
+      "centreAxisDistanceM": 28529.74551553302,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 20548.35144636503
+     },
+     {
+      "level": 12,
+      "tile": "2/12/902/2362",
+      "centreBelt": 0.5244564428622785,
+      "centreAxisDistanceM": 27335.692404781417,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 25340.94803761501
+     },
+     {
+      "level": 14,
+      "tile": "2/14/3608/9450",
+      "centreBelt": 0.5243970761560972,
+      "centreAxisDistanceM": 28631.36597198906,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 28132.817030708753
+     }
+    ]
+   },
+   {
+    "kind": "flank",
+    "d": [
+     0.526087284200648,
+     0.8422488899777698,
+     0.11768167543675269
+    ],
+    "axisDistanceM": -28799.51805095582,
+    "beltIndex": 34,
+    "alongM": -458824.7394988021,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "2/6/51/27",
+      "centreBelt": 0.6533235461675201,
+      "centreAxisDistanceM": -96894.58904995746,
+      "massifSamples": 1043,
+      "minAbsAxisDistanceM": 46.09592671010572
+     },
+     {
+      "level": 7,
+      "tile": "2/7/103/55",
+      "centreBelt": 0.9982722928031689,
+      "centreAxisDistanceM": -16364.228914243775,
+      "massifSamples": 3301,
+      "minAbsAxisDistanceM": 16.038651169357788
+     },
+     {
+      "level": 8,
+      "tile": "2/8/207/110",
+      "centreBelt": 0.99614104890108,
+      "centreAxisDistanceM": -24456.54548885066,
+      "massifSamples": 3832,
+      "minAbsAxisDistanceM": 7.726179119775574
+     },
+     {
+      "level": 10,
+      "tile": "2/10/831/440",
+      "centreBelt": 0.9939013223910665,
+      "centreAxisDistanceM": -30745.270117914628,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 20753.901560617138
+     },
+     {
+      "level": 12,
+      "tile": "2/12/3327/1761",
+      "centreBelt": 0.9944559957234071,
+      "centreAxisDistanceM": -29313.80896197047,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 26816.563571681974
+     },
+     {
+      "level": 14,
+      "tile": "2/14/13308/7047",
+      "centreBelt": 0.9946065395592615,
+      "centreAxisDistanceM": -28913.071071635026,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 28288.643224324223
+     }
+    ]
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     0.6351770061959668,
+     0.7523093114309994,
+     0.17487387093029144
+    ],
+    "axisDistanceM": -1.701103688103229e-8,
+    "beltIndex": 34,
+    "alongM": 907637.5681311429,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "2/6/59/24",
+      "centreBelt": 0.23092897359038397,
+      "centreAxisDistanceM": 15212.0091314743,
+      "massifSamples": 1884,
+      "minAbsAxisDistanceM": 0.3927334256520731
+     },
+     {
+      "level": 7,
+      "tile": "2/7/118/49",
+      "centreBelt": 0.5253702839281988,
+      "centreAxisDistanceM": 51785.727073484406,
+      "massifSamples": 1961,
+      "minAbsAxisDistanceM": 53.43645413759577
+     },
+     {
+      "level": 8,
+      "tile": "2/8/236/98",
+      "centreBelt": 0.565162340836612,
+      "centreAxisDistanceM": 19180.776068071624,
+      "massifSamples": 4174,
+      "minAbsAxisDistanceM": 12.030640030426184
+     },
+     {
+      "level": 10,
+      "tile": "2/10/944/392",
+      "centreBelt": 0.5902124222113418,
+      "centreAxisDistanceM": -5361.894829298739,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.5114763090888328
+     },
+     {
+      "level": 12,
+      "tile": "2/12/3777/1571",
+      "centreBelt": 0.6079386455145417,
+      "centreAxisDistanceM": -1066.8097931169873,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.530717511421338
+     },
+     {
+      "level": 14,
+      "tile": "2/14/15108/6287",
+      "centreBelt": 0.615258078876524,
+      "centreAxisDistanceM": -224.49824479677164,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.019984709683456156
+     }
+    ]
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     -0.5456759453786767,
+     0.5088753281835414,
+     0.6657955114005958
+    ],
+    "axisDistanceM": -0.000011382430802343774,
+    "beltIndex": 1,
+    "alongM": -2324944.2909059,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "4/6/5/56",
+      "centreBelt": 0,
+      "centreAxisDistanceM": null,
+      "massifSamples": 1107,
+      "minAbsAxisDistanceM": 32.13204190507258
+     },
+     {
+      "level": 7,
+      "tile": "4/7/11/112",
+      "centreBelt": 0,
+      "centreAxisDistanceM": null,
+      "massifSamples": 977,
+      "minAbsAxisDistanceM": 9.96663433895702
+     },
+     {
+      "level": 8,
+      "tile": "4/8/23/225",
+      "centreBelt": 0.9998312293529646,
+      "centreAxisDistanceM": -9037.975058890996,
+      "massifSamples": 3307,
+      "minAbsAxisDistanceM": 9.96663433895702
+     },
+     {
+      "level": 10,
+      "tile": "4/10/92/903",
+      "centreBelt": 0.9963390120569561,
+      "centreAxisDistanceM": -2119.3676487421135,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2.5223781728059578
+     },
+     {
+      "level": 12,
+      "tile": "4/12/369/3613",
+      "centreBelt": 0.8357907880756142,
+      "centreAxisDistanceM": -266.2394065096993,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.5931524024057503
+     },
+     {
+      "level": 14,
+      "tile": "4/14/1477/14453",
+      "centreBelt": 0.7679859783706408,
+      "centreAxisDistanceM": 197.03798199832093,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.13129266581924026
+     }
+    ]
+   }
+  ],
+  "replaced": [],
+  "evidenceOk": true,
+  "cells": [
+   {
+    "L": 6,
+    "p50": 106.51445007324219,
+    "p99": 1375.8975219726562,
+    "max": 1929.76416015625,
+    "rgbP50": 3.029791016264145,
+    "rgbP99": 261.4328479186279,
+    "snow": 8.012463832628534,
+    "forest": 7.0999332294680615,
+    "name": 11.11729356777209,
+    "carriedName": 9.147562875584242,
+    "ocean": 0.09375,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 6624.951682000916,
+    "planHeightMaxM": 17666.53781866911,
+    "planRgbP99": 12,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 7,
+    "p50": 77.32966613769531,
+    "p99": 748.0213623046875,
+    "max": 1322.856689453125,
+    "rgbP50": 2.2098149237143274,
+    "rgbP99": 90.02802108314904,
+    "snow": 4.063660477453581,
+    "forest": 3.946949602122016,
+    "name": 5.092838196286472,
+    "carriedName": 5.7612732095490715,
+    "ocean": 0.08333333333333333,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 3312.475841000458,
+    "planHeightMaxM": 8833.268909334554,
+    "planRgbP99": 4,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 8,
+    "p50": 73.92535400390625,
+    "p99": 595.4818115234375,
+    "max": 1100.06103515625,
+    "rgbP50": 0.8575061527871235,
+    "rgbP99": 50.52982864547638,
+    "snow": 3.535830448011751,
+    "forest": 3.986989822683874,
+    "name": 4.291260098625537,
+    "carriedName": 4.81586402266289,
+    "ocean": 0.03125,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 1656.237920500229,
+    "planHeightMaxM": 4416.634454667277,
+    "planRgbP99": 4,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 10,
+    "p50": 35.7596435546875,
+    "p99": 245.52557373046875,
+    "max": 414.15472412109375,
+    "rgbP50": 0.058599417044045914,
+    "rgbP99": 16.907689858487817,
+    "snow": 0.3125,
+    "forest": 1.3020833333333333,
+    "name": 0.5416666666666666,
+    "carriedName": 0.6041666666666666,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 414.05948012505723,
+    "planHeightMaxM": 1104.1586136668193,
+    "planRgbP99": 1,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 12,
+    "p50": 1.4587860107421875,
+    "p99": 35.62371826171875,
+    "max": 78.96260070800781,
+    "rgbP50": 0.003348209002914164,
+    "rgbP99": 0.9552109361772354,
+    "snow": 0,
+    "forest": 0.13541666666666666,
+    "name": 0,
+    "carriedName": 0,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 103.51487003126431,
+    "planHeightMaxM": 276.0396534167048,
+    "planRgbP99": 1,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 14,
+    "p50": 0.0299072265625,
+    "p99": 7.8626709043674055,
+    "max": 31.261245727539062,
+    "rgbP50": 0.0009036214944906422,
+    "rgbP99": 0.1564605660871741,
+    "snow": 0,
+    "forest": 0.25,
+    "name": 0,
+    "carriedName": 0,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 25.878717507816077,
+    "planHeightMaxM": 69.0099133541762,
+    "planRgbP99": 1,
+    "planClassPct": 0.5
+   }
+  ],
+  "retention": [
+   {
+    "L": 6,
+    "snowKept": 99.81822212369762,
+    "snowFalse": 6.877431258976042,
+    "forestKept": 91.67284225087694,
+    "forestFalse": 0.5326181033088899,
+    "peakKept": 98.96466565349544,
+    "peakFalseOfPeakArea": 96.55205167173253,
+    "summitP50": -94.80050662734538,
+    "summitMax": 370.3800347792121,
+    "metaSummitP50": -94.80050662734538,
+    "metaSummitMax": 370.3800347792121,
+    "meanBiasM": 196.9334891160302,
+    "tiles": 12,
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    }
+   },
+   {
+    "L": 8,
+    "snowKept": 98.14461552436754,
+    "snowFalse": 3.1326930880562696,
+    "forestKept": 95.91122124656574,
+    "forestFalse": 1.158753776094504,
+    "peakKept": 81.25731784202468,
+    "peakFalseOfPeakArea": 45.600288210393586,
+    "summitP50": 53.84107907352427,
+    "summitMax": 360.19331951615186,
+    "metaSummitP50": 53.84107907352427,
+    "metaSummitMax": 360.19331951615186,
+    "meanBiasM": 59.82465330216774,
+    "tiles": 12,
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    }
+   }
+  ],
+  "seconds": 74.7920014
+ },
+ {
+  "world": "Selawyn",
+  "levels": [
+   6,
+   7,
+   8,
+   10,
+   12,
+   14
+  ],
+  "set": [
+   {
+    "kind": "axis",
+    "d": [
+     0.7002753949296782,
+     0.47924999999999995,
+     -0.5290877136695609
+    ],
+    "axisDistanceM": 1288.8272251375076,
+    "beltIndex": 0,
+    "alongM": -6125030.252785797,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "0/6/56/53",
+      "centreBelt": 0.9366938706458067,
+      "centreAxisDistanceM": -30109.576749492942,
+      "massifSamples": 2658,
+      "minAbsAxisDistanceM": 9.016844426075062
+     },
+     {
+      "level": 7,
+      "tile": "0/7/112/107",
+      "centreBelt": 0.9070099943411458,
+      "centreAxisDistanceM": -13246.667228851707,
+      "massifSamples": 4073,
+      "minAbsAxisDistanceM": 2.7838079794408856
+     },
+     {
+      "level": 8,
+      "tile": "0/8/224/215",
+      "centreBelt": 0.8897484358587694,
+      "centreAxisDistanceM": -4784.618778402849,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2.7838079794408856
+     },
+     {
+      "level": 10,
+      "tile": "0/10/898/862",
+      "centreBelt": 0.8903414940974341,
+      "centreAxisDistanceM": 876.1691589698099,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.7124830568518716
+     },
+     {
+      "level": 12,
+      "tile": "0/12/3595/3449",
+      "centreBelt": 0.8927325568800579,
+      "centreAxisDistanceM": 1232.1867576293573,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.21491138664558287
+     },
+     {
+      "level": 14,
+      "tile": "0/14/14381/13798",
+      "centreBelt": 0.8924511532292111,
+      "centreAxisDistanceM": 1364.415057486367,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1010.9255010626391
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.8260581139331783,
+     0.27085000000000004,
+     -0.4942350350846855
+    ],
+    "axisDistanceM": -662.0051559002,
+    "beltIndex": 19,
+    "alongM": 231740.24571666965,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "0/6/51/42",
+      "centreBelt": 0.9791269866040491,
+      "centreAxisDistanceM": 48697.33452190693,
+      "massifSamples": 1927,
+      "minAbsAxisDistanceM": 13.908198756554532
+     },
+     {
+      "level": 7,
+      "tile": "0/7/102/84",
+      "centreBelt": 0.9977680694971801,
+      "centreAxisDistanceM": -15924.028579173795,
+      "massifSamples": 3663,
+      "minAbsAxisDistanceM": 0.7094051831880067
+     },
+     {
+      "level": 8,
+      "tile": "0/8/204/169",
+      "centreBelt": 0.9971787576200847,
+      "centreAxisDistanceM": -17903.28866548212,
+      "massifSamples": 4208,
+      "minAbsAxisDistanceM": 1.954950644246411
+     },
+     {
+      "level": 10,
+      "tile": "0/10/818/679",
+      "centreBelt": 0.9999607299306347,
+      "centreAxisDistanceM": -2112.2409049759653,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.09635844391978486
+     },
+     {
+      "level": 12,
+      "tile": "0/12/3273/2719",
+      "centreBelt": 0.999999187183277,
+      "centreAxisDistanceM": -303.8847664541629,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.16913522562161593
+     },
+     {
+      "level": 14,
+      "tile": "0/14/13093/10878",
+      "centreBelt": 0.9999990347599085,
+      "centreAxisDistanceM": -331.15421762921886,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.022956263849484126
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.2175199477949274,
+     0.06735000000000002,
+     0.9737294541151008
+    ],
+    "axisDistanceM": 1268.6068768530467,
+    "beltIndex": 4,
+    "alongM": 1510865.1859906986,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "4/6/39/34",
+      "centreBelt": 0.20296765236360692,
+      "centreAxisDistanceM": -93196.44429547676,
+      "massifSamples": 1308,
+      "minAbsAxisDistanceM": 29.916358110126325
+     },
+     {
+      "level": 7,
+      "tile": "4/7/78/68",
+      "centreBelt": 0.9980611152821494,
+      "centreAxisDistanceM": -14520.077136295875,
+      "massifSamples": 3072,
+      "minAbsAxisDistanceM": 3.322486677243657
+     },
+     {
+      "level": 8,
+      "tile": "4/8/156/136",
+      "centreBelt": 0.9943060797606452,
+      "centreAxisDistanceM": 24882.76393234088,
+      "massifSamples": 3652,
+      "minAbsAxisDistanceM": 3.322486677243657
+     },
+     {
+      "level": 10,
+      "tile": "4/10/626/547",
+      "centreBelt": 0.9999967845212208,
+      "centreAxisDistanceM": -591.310721523387,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.9583064890711224
+     },
+     {
+      "level": 12,
+      "tile": "4/12/2505/2189",
+      "centreBelt": 0.9999678372272524,
+      "centreAxisDistanceM": 1870.1208439581694,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.040321130495094115
+     },
+     {
+      "level": 14,
+      "tile": "4/14/10021/8758",
+      "centreBelt": 0.9999790539248468,
+      "centreAxisDistanceM": 1509.1911799892548,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 893.839980638894
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.4422397936958107,
+     0.04964999999999997,
+     -0.8955215476870932
+    ],
+    "axisDistanceM": -324.0256218914137,
+    "beltIndex": 0,
+    "alongM": -736270.4245923029,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "5/6/16/33",
+      "centreBelt": 0.999882793090102,
+      "centreAxisDistanceM": 7531.808839225734,
+      "massifSamples": 2100,
+      "minAbsAxisDistanceM": 14.654245872061518
+     },
+     {
+      "level": 7,
+      "tile": "5/7/32/67",
+      "centreBelt": 0.9999546962940337,
+      "centreAxisDistanceM": 4682.626793554095,
+      "massifSamples": 3490,
+      "minAbsAxisDistanceM": 13.040627289568516
+     },
+     {
+      "level": 8,
+      "tile": "5/8/64/135",
+      "centreBelt": 0.9999764026281329,
+      "centreAxisDistanceM": 3379.5159392528517,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 6.774348537823295
+     },
+     {
+      "level": 10,
+      "tile": "5/10/259/540",
+      "centreBelt": 0.9999609142874105,
+      "centreAxisDistanceM": 4349.423512753686,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.971089696841382
+     },
+     {
+      "level": 12,
+      "tile": "5/12/1036/2161",
+      "centreBelt": 0.9999987928447734,
+      "centreAxisDistanceM": -764.3710680229786,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.5319358663344822
+     },
+     {
+      "level": 14,
+      "tile": "5/14/4146/8646",
+      "centreBelt": 0.9999999620332675,
+      "centreAxisDistanceM": -135.5577315159027,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.019375692964212394
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.5591508292718664,
+     -0.1875500000000001,
+     -0.8075737412921398
+    ],
+    "axisDistanceM": -2178.288102882717,
+    "beltIndex": 29,
+    "alongM": 388889.33675421873,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "5/6/9/24",
+      "centreBelt": 0.999986587003289,
+      "centreAxisDistanceM": 1322.609067897097,
+      "massifSamples": 1917,
+      "minAbsAxisDistanceM": 18.974552080895084
+     },
+     {
+      "level": 7,
+      "tile": "5/7/19/49",
+      "centreBelt": 0.9873190535129203,
+      "centreAxisDistanceM": 40667.21406718532,
+      "massifSamples": 2404,
+      "minAbsAxisDistanceM": 124.95615895516828
+     },
+     {
+      "level": 8,
+      "tile": "5/8/39/98",
+      "centreBelt": 0.9995053934737762,
+      "centreAxisDistanceM": 8031.5341094964315,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 33.31226997629843
+     },
+     {
+      "level": 10,
+      "tile": "5/10/157/393",
+      "centreBelt": 0.9999249294373199,
+      "centreAxisDistanceM": 3128.984576537182,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 14.184900453390798
+     },
+     {
+      "level": 12,
+      "tile": "5/12/629/1572",
+      "centreBelt": 0.9999857663195382,
+      "centreAxisDistanceM": -1362.4707669018528,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2.380008681757766
+     },
+     {
+      "level": 14,
+      "tile": "5/14/2519/6289",
+      "centreBelt": 0.9999669235763082,
+      "centreAxisDistanceM": -2076.958696796458,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1566.6065215455492
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.28704999397268677,
+     -0.37745000000000006,
+     0.8804168322222607
+    ],
+    "axisDistanceM": 609.3131499945993,
+    "beltIndex": 15,
+    "alongM": -1848873.5144580593,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "4/6/42/18",
+      "centreBelt": 0.7396203760165961,
+      "centreAxisDistanceM": 51751.74278877734,
+      "massifSamples": 1791,
+      "minAbsAxisDistanceM": 1.0691509244409017
+     },
+     {
+      "level": 7,
+      "tile": "4/7/84/36",
+      "centreBelt": 0.6375658439896259,
+      "centreAxisDistanceM": -16414.557701642745,
+      "massifSamples": 3314,
+      "minAbsAxisDistanceM": 1.0691509244409017
+     },
+     {
+      "level": 8,
+      "tile": "4/8/169/73",
+      "centreBelt": 0.6963665113218209,
+      "centreAxisDistanceM": 17667.059911330896,
+      "massifSamples": 4175,
+      "minAbsAxisDistanceM": 0.7795075252893121
+     },
+     {
+      "level": 10,
+      "tile": "4/10/678/292",
+      "centreBelt": 0.7228595624479571,
+      "centreAxisDistanceM": -860.0965789790575,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.39566563571294333
+     },
+     {
+      "level": 12,
+      "tile": "4/12/2715/1169",
+      "centreBelt": 0.7359740986934009,
+      "centreAxisDistanceM": -1233.3009673484594,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.36239032912641406
+     },
+     {
+      "level": 14,
+      "tile": "4/14/10862/4679",
+      "centreBelt": 0.7365305880906912,
+      "centreAxisDistanceM": 142.20245512296069,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.030476539625789435
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.5143427665831156,
+     -0.39654999999999996,
+     0.7603943818595891
+    ],
+    "axisDistanceM": 2884.950904557349,
+    "beltIndex": 15,
+    "alongM": 360906.99658044544,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "4/6/53/15",
+      "centreBelt": 0.9935540549015105,
+      "centreAxisDistanceM": 29799.56227212241,
+      "massifSamples": 2112,
+      "minAbsAxisDistanceM": 0.5770096509702982
+     },
+     {
+      "level": 7,
+      "tile": "4/7/107/30",
+      "centreBelt": 0.999947917514853,
+      "centreAxisDistanceM": -2678.6281771417066,
+      "massifSamples": 3929,
+      "minAbsAxisDistanceM": 21.74020628715645
+     },
+     {
+      "level": 8,
+      "tile": "4/8/214/61",
+      "centreBelt": 0.9986761528057907,
+      "centreAxisDistanceM": 13504.717795855371,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2.169202352042951
+     },
+     {
+      "level": 10,
+      "tile": "4/10/858/244",
+      "centreBelt": 0.9999654168912679,
+      "centreAxisDistanceM": -2182.7228690354627,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2.4889674937534996
+     },
+     {
+      "level": 12,
+      "tile": "4/12/3433/979",
+      "centreBelt": 0.9999781433315671,
+      "centreAxisDistanceM": 1735.2360658633586,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.7470927586634251
+     },
+     {
+      "level": 14,
+      "tile": "4/14/13733/3919",
+      "centreBelt": 0.9999464882992323,
+      "centreAxisDistanceM": 2715.1320785402672,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2241.121927238281
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.11128030517673787,
+     -0.4837499999999999,
+     0.8681028920466584
+    ],
+    "axisDistanceM": 2383.3615683207463,
+    "beltIndex": 13,
+    "alongM": 217302.16048653828,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "4/6/36/14",
+      "centreBelt": 0.939896701169825,
+      "centreAxisDistanceM": 79196.11325664766,
+      "massifSamples": 1489,
+      "minAbsAxisDistanceM": 6.799894880466606
+     },
+     {
+      "level": 7,
+      "tile": "4/7/72/28",
+      "centreBelt": 0.9962421229292626,
+      "centreAxisDistanceM": 22727.032797123844,
+      "massifSamples": 3151,
+      "minAbsAxisDistanceM": 5.790846077819386
+     },
+     {
+      "level": 8,
+      "tile": "4/8/144/56",
+      "centreBelt": 0.999760487493197,
+      "centreAxisDistanceM": -5737.669813187598,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 3.8910483204355293
+     },
+     {
+      "level": 10,
+      "tile": "4/10/577/226",
+      "centreBelt": 0.9999996547069991,
+      "centreAxisDistanceM": -217.85390132300327,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.0420313904386325
+     },
+     {
+      "level": 12,
+      "tile": "4/12/2310/906",
+      "centreBelt": 0.9999820517725768,
+      "centreAxisDistanceM": 1570.660189230119,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.46598962830190255
+     },
+     {
+      "level": 14,
+      "tile": "4/14/9242/3627",
+      "centreBelt": 0.9999425606558136,
+      "centreAxisDistanceM": 2809.805061177045,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2362.723198247409
+     }
+    ]
+   },
+   {
+    "kind": "flank",
+    "d": [
+     0.6979701517155658,
+     0.481484712671741,
+     -0.5301038943240854
+    ],
+    "axisDistanceM": 30088.718354134988,
+    "beltIndex": 0,
+    "alongM": -6125030.252785797,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "0/6/56/54",
+      "centreBelt": 0.8645957078863455,
+      "centreAxisDistanceM": 93250.7013284214,
+      "massifSamples": 615,
+      "minAbsAxisDistanceM": 3697.7780790998268
+     },
+     {
+      "level": 7,
+      "tile": "0/7/112/108",
+      "centreBelt": 0.8714775780560741,
+      "centreAxisDistanceM": 48720.34396289496,
+      "massifSamples": 2063,
+      "minAbsAxisDistanceM": 3697.7780790998268
+     },
+     {
+      "level": 8,
+      "tile": "0/8/225/216",
+      "centreBelt": 0.8911578853757842,
+      "centreAxisDistanceM": 40284.64178943268,
+      "massifSamples": 3154,
+      "minAbsAxisDistanceM": 17811.93851662272
+     },
+     {
+      "level": 10,
+      "tile": "0/10/900/865",
+      "centreBelt": 0.8867844732307167,
+      "centreAxisDistanceM": 31173.7246118779,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 25553.13932300795
+     },
+     {
+      "level": 12,
+      "tile": "0/12/3603/3460",
+      "centreBelt": 0.8903427117339242,
+      "centreAxisDistanceM": 29591.113212986726,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 28186.419861134655
+     },
+     {
+      "level": 14,
+      "tile": "0/14/14413/13843",
+      "centreBelt": 0.8897484731008477,
+      "centreAxisDistanceM": 30205.920587226043,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 29854.83390784733
+     }
+    ]
+   },
+   {
+    "kind": "flank",
+    "d": [
+     0.8279167080444798,
+     0.26897426528034074,
+     -0.49214506922013623
+    ],
+    "axisDistanceM": -29461.896284897342,
+    "beltIndex": 19,
+    "alongM": 231740.2457160989,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "0/6/51/42",
+      "centreBelt": 0.9791269866040491,
+      "centreAxisDistanceM": 48697.33452190693,
+      "massifSamples": 1927,
+      "minAbsAxisDistanceM": 13.908198756554532
+     },
+     {
+      "level": 7,
+      "tile": "0/7/102/84",
+      "centreBelt": 0.9977680694971801,
+      "centreAxisDistanceM": -15924.028579173795,
+      "massifSamples": 3663,
+      "minAbsAxisDistanceM": 0.7094051831880067
+     },
+     {
+      "level": 8,
+      "tile": "0/8/204/169",
+      "centreBelt": 0.9971787576200847,
+      "centreAxisDistanceM": -17903.28866548212,
+      "massifSamples": 4208,
+      "minAbsAxisDistanceM": 1.954950644246411
+     },
+     {
+      "level": 10,
+      "tile": "0/10/816/678",
+      "centreBelt": 0.9936067252479689,
+      "centreAxisDistanceM": -26950.963689625718,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 18807.480360681016
+     },
+     {
+      "level": 12,
+      "tile": "0/12/3265/2713",
+      "centreBelt": 0.9926035689028291,
+      "centreAxisDistanceM": -28988.365100770043,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 26950.963689625718
+     },
+     {
+      "level": 14,
+      "tile": "0/14/13061/10853",
+      "centreBelt": 0.9923413124552298,
+      "centreAxisDistanceM": -29497.811122101124,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 28988.365100770043
+     }
+    ]
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     0.8096010590898883,
+     0.16396454448196415,
+     -0.5636148980228903
+    ],
+    "axisDistanceM": 1.5198918379339987e-9,
+    "beltIndex": 19,
+    "alongM": 1326023.0150467674,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "0/6/54/38",
+      "centreBelt": 0.4680741350168808,
+      "centreAxisDistanceM": 34137.43591437031,
+      "massifSamples": 2246,
+      "minAbsAxisDistanceM": 5.5632947499776995
+     },
+     {
+      "level": 7,
+      "tile": "0/7/108/76",
+      "centreBelt": 0.4220985821949514,
+      "centreAxisDistanceM": -28180.377578678217,
+      "massifSamples": 3196,
+      "minAbsAxisDistanceM": 5.5632947499776995
+     },
+     {
+      "level": 8,
+      "tile": "0/8/217/153",
+      "centreBelt": 0.4489646864958824,
+      "centreAxisDistanceM": 3050.154229980221,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 3.3243124675248636
+     },
+     {
+      "level": 10,
+      "tile": "0/10/868/615",
+      "centreBelt": 0.55670863426899,
+      "centreAxisDistanceM": -683.545285388324,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.40812242397924536
+     },
+     {
+      "level": 12,
+      "tile": "0/12/3473/2462",
+      "centreBelt": 0.565645207317052,
+      "centreAxisDistanceM": -994.9743898964409,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.4669908449285009
+     },
+     {
+      "level": 14,
+      "tile": "0/14/13894/9851",
+      "centreBelt": 0.5686193364210478,
+      "centreAxisDistanceM": -97.86667150669301,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.07022650224561752
+     }
+    ]
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     0.7114391073662504,
+     0.5116537931016841,
+     -0.4817310375246458
+    ],
+    "axisDistanceM": -6.797162936135029e-9,
+    "beltIndex": 0,
+    "alongM": -6624502.676724464,
+    "tiles": [
+     {
+      "level": 6,
+      "tile": "0/6/53/55",
+      "centreBelt": 0.4406291273056701,
+      "centreAxisDistanceM": 52407.242615100644,
+      "massifSamples": 1966,
+      "minAbsAxisDistanceM": 43.10353459818765
+     },
+     {
+      "level": 7,
+      "tile": "0/7/107/110",
+      "centreBelt": 0.4993142383920864,
+      "centreAxisDistanceM": 34567.59195041215,
+      "massifSamples": 2996,
+      "minAbsAxisDistanceM": 8.898702938103273
+     },
+     {
+      "level": 8,
+      "tile": "0/8/214/220",
+      "centreBelt": 0.49562310423936357,
+      "centreAxisDistanceM": 11757.887627755763,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2.0860851072821913
+     },
+     {
+      "level": 10,
+      "tile": "0/10/858/880",
+      "centreBelt": 0.508971618464992,
+      "centreAxisDistanceM": 1569.8738502385936,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.4063500570076164
+     },
+     {
+      "level": 12,
+      "tile": "0/12/3434/3520",
+      "centreBelt": 0.5122767177638348,
+      "centreAxisDistanceM": -978.7144834578841,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.33593870338040105
+     },
+     {
+      "level": 14,
+      "tile": "0/14/13738/14083",
+      "centreBelt": 0.5119761469064016,
+      "centreAxisDistanceM": -122.72520189308061,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.07520543901975876
+     }
+    ]
+   }
+  ],
+  "replaced": [],
+  "evidenceOk": true,
+  "cells": [
+   {
+    "L": 6,
+    "p50": 256.49737548828125,
+    "p99": 1257.168212890625,
+    "max": 1604.0264892578125,
+    "rgbP50": 1.5837490774627994,
+    "rgbP99": 6.740484630870513,
+    "snow": 0,
+    "forest": 0.3229166666666667,
+    "name": 0,
+    "carriedName": 0.23958333333333334,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 6296.970717077242,
+    "planHeightMaxM": 16791.92191220598,
+    "planRgbP99": 12,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 7,
+    "p50": 117.9666748046875,
+    "p99": 688.8643798828125,
+    "max": 1140.157470703125,
+    "rgbP50": 0.9169106377635136,
+    "rgbP99": 4.702310427646636,
+    "snow": 0,
+    "forest": 0.2604166666666667,
+    "name": 0,
+    "carriedName": 0.13541666666666666,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 3148.485358538621,
+    "planHeightMaxM": 8395.96095610299,
+    "planRgbP99": 4,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 8,
+    "p50": 128.4522705078125,
+    "p99": 585.8646240234375,
+    "max": 972.706787109375,
+    "rgbP50": 0.30566342994159057,
+    "rgbP99": 1.9170018180317996,
+    "snow": 0,
+    "forest": 0.14583333333333334,
+    "name": 0.010416666666666666,
+    "carriedName": 0.010416666666666666,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 1574.2426792693104,
+    "planHeightMaxM": 4197.980478051495,
+    "planRgbP99": 4,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 10,
+    "p50": 48.2733154296875,
+    "p99": 253.3033447265625,
+    "max": 484.08642578125,
+    "rgbP50": 0.02103340096671704,
+    "rgbP99": 0.15782095836318044,
+    "snow": 0,
+    "forest": 0.07291666666666667,
+    "name": 0,
+    "carriedName": 0,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 393.5606698173276,
+    "planHeightMaxM": 1049.4951195128738,
+    "planRgbP99": 1,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 12,
+    "p50": 2.1419525146484375,
+    "p99": 38.302001953125,
+    "max": 75.478271484375,
+    "rgbP50": 0.0011403814692413335,
+    "rgbP99": 0.009954881813987375,
+    "snow": 0,
+    "forest": 0,
+    "name": 0,
+    "carriedName": 0,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 98.3901674543319,
+    "planHeightMaxM": 262.37377987821844,
+    "planRgbP99": 1,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 14,
+    "p50": 0.0499267578125,
+    "p99": 8.9224853515625,
+    "max": 25.2108154296875,
+    "rgbP50": 0.00030428912260556504,
+    "rgbP99": 0.003481388605895656,
+    "snow": 0,
+    "forest": 0,
+    "name": 0,
+    "carriedName": 0,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 24.597541863582975,
+    "planHeightMaxM": 65.59344496955461,
+    "planRgbP99": 1,
+    "planClassPct": 0.5
+   }
+  ],
+  "retention": [
+   {
+    "L": 6,
+    "snowKept": 0,
+    "snowFalse": 0,
+    "forestKept": 99.93712010060784,
+    "forestFalse": 0.10716689694264357,
+    "peakKept": 99.16843595187544,
+    "peakFalseOfPeakArea": 107.54600141542817,
+    "summitP50": -69.90649331318218,
+    "summitMax": 266.83502145655575,
+    "metaSummitP50": -69.90649331318218,
+    "metaSummitMax": 266.83502145655575,
+    "meanBiasM": 222.16888823999975,
+    "tiles": 12,
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    }
+   },
+   {
+    "L": 8,
+    "snowKept": 0,
+    "snowFalse": 0,
+    "forestKept": 99.94732649862534,
+    "forestFalse": 0.04074113437488929,
+    "peakKept": 82.8998584571833,
+    "peakFalseOfPeakArea": 45.78025477707006,
+    "summitP50": 55.321144943110994,
+    "summitMax": 219.30126301889868,
+    "metaSummitP50": 55.321144943110994,
+    "metaSummitMax": 219.30126301889868,
+    "meanBiasM": 71.82069667996817,
+    "tiles": 12,
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    }
+   }
+  ],
+  "seconds": 71.34436840000001
+ },
+ {
+  "world": "Raiva",
+  "levels": [
+   4,
+   5,
+   6,
+   8,
+   10,
+   12,
+   14
+  ],
+  "set": [
+   {
+    "kind": "axis",
+    "d": [
+     -0.8512019854246333,
+     0.49795,
+     0.16583418679259807
+    ],
+    "axisDistanceM": 192.83410135143373,
+    "beltIndex": 2,
+    "alongM": 306950.7918800571,
+    "tiles": [
+     {
+      "level": 4,
+      "tile": "1/4/9/12",
+      "centreBelt": 0.9912410149868978,
+      "centreAxisDistanceM": 26662.710891110906,
+      "massifSamples": 2147,
+      "minAbsAxisDistanceM": 56.375343579894654
+     },
+     {
+      "level": 5,
+      "tile": "1/5/19/25",
+      "centreBelt": 0.9812915446158477,
+      "centreAxisDistanceM": -38966.94676619281,
+      "massifSamples": 2557,
+      "minAbsAxisDistanceM": 16.637784039126796
+     },
+     {
+      "level": 6,
+      "tile": "1/6/38/50",
+      "centreBelt": 0.9994877698092227,
+      "centreAxisDistanceM": -6447.776840713126,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2.087441211021604
+     },
+     {
+      "level": 8,
+      "tile": "1/8/152/202",
+      "centreBelt": 0.9993865811036078,
+      "centreAxisDistanceM": 7055.958001005303,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 29.104016841582933
+     },
+     {
+      "level": 10,
+      "tile": "1/10/611/811",
+      "centreBelt": 0.9999901138576024,
+      "centreAxisDistanceM": 895.7583036630391,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.07106890498137258
+     },
+     {
+      "level": 12,
+      "tile": "1/12/2446/3246",
+      "centreBelt": 0.9999981894315718,
+      "centreAxisDistanceM": 383.34065756232724,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.07106890498137258
+     },
+     {
+      "level": 14,
+      "tile": "1/14/9787/12984",
+      "centreBelt": 0.9999991764526903,
+      "centreAxisDistanceM": 258.53639474657183,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 130.4494985534591
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.8907638864414498,
+     0.37255000000000005,
+     0.2602809945265383
+    ],
+    "axisDistanceM": -1490.3112242789878,
+    "beltIndex": 2,
+    "alongM": -17236.395025735612,
+    "tiles": [
+     {
+      "level": 4,
+      "tile": "1/4/10/11",
+      "centreBelt": 0.9746367570974597,
+      "centreAxisDistanceM": -45371.15158312004,
+      "massifSamples": 1939,
+      "minAbsAxisDistanceM": 5.69962855080266
+     },
+     {
+      "level": 5,
+      "tile": "1/5/20/22",
+      "centreBelt": 0.9928894549389083,
+      "centreAxisDistanceM": 24023.08945234638,
+      "massifSamples": 3236,
+      "minAbsAxisDistanceM": 1.2593322196631338
+     },
+     {
+      "level": 6,
+      "tile": "1/6/41/45",
+      "centreBelt": 0.9985132638571492,
+      "centreAxisDistanceM": -10984.855834599037,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.2593322196631338
+     },
+     {
+      "level": 8,
+      "tile": "1/8/165/181",
+      "centreBelt": 0.9999353339311647,
+      "centreAxisDistanceM": -2290.9501647605325,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2.2847581297516095
+     },
+     {
+      "level": 10,
+      "tile": "1/10/661/726",
+      "centreBelt": 0.9999584877312063,
+      "centreAxisDistanceM": -1835.5475812955979,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.6097021612443425
+     },
+     {
+      "level": 12,
+      "tile": "1/12/2646/2904",
+      "centreBelt": 0.9999715797390485,
+      "centreAxisDistanceM": -1518.7680155824983,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 973.9768065828208
+     },
+     {
+      "level": 14,
+      "tile": "1/14/10585/11618",
+      "centreBelt": 0.999972634993511,
+      "centreAxisDistanceM": -1490.305106883602,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1354.1220627194095
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.901229324993943,
+     0.24714999999999998,
+     0.3559530604882642
+    ],
+    "axisDistanceM": -1766.9779388945979,
+    "beltIndex": 2,
+    "alongM": -333920.6972512113,
+    "tiles": [
+     {
+      "level": 4,
+      "tile": "1/4/11/10",
+      "centreBelt": 0,
+      "centreAxisDistanceM": null,
+      "massifSamples": 1011,
+      "minAbsAxisDistanceM": 22.91396157657959
+     },
+     {
+      "level": 5,
+      "tile": "1/5/22/20",
+      "centreBelt": 0.9933944641252347,
+      "centreAxisDistanceM": -23154.28847152602,
+      "massifSamples": 3319,
+      "minAbsAxisDistanceM": 8.486470135781005
+     },
+     {
+      "level": 6,
+      "tile": "1/6/44/40",
+      "centreBelt": 0.9980946413363616,
+      "centreAxisDistanceM": 12435.572432962184,
+      "massifSamples": 4223,
+      "minAbsAxisDistanceM": 8.486470135781005
+     },
+     {
+      "level": 8,
+      "tile": "1/8/178/163",
+      "centreBelt": 0.9997725043216942,
+      "centreAxisDistanceM": -4296.98648138222,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.6660265528356824
+     },
+     {
+      "level": 10,
+      "tile": "1/10/714/652",
+      "centreBelt": 0.9999139147278026,
+      "centreAxisDistanceM": -2643.2719081763234,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 414.93175703491346
+     },
+     {
+      "level": 12,
+      "tile": "1/12/2856/2609",
+      "centreBelt": 0.9999738046361866,
+      "centreAxisDistanceM": -1458.1077865999432,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 900.9367017069434
+     },
+     {
+      "level": 14,
+      "tile": "1/14/11427/10438",
+      "centreBelt": 0.9999620741173841,
+      "centreAxisDistanceM": -1754.467227344153,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1615.2078436039255
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.8858198057748266,
+     0.12175000000000002,
+     0.44777249714229717
+    ],
+    "axisDistanceM": 2799.9090862444687,
+    "beltIndex": 2,
+    "alongM": -644871.0003539491,
+    "tiles": [
+     {
+      "level": 4,
+      "tile": "1/4/12/9",
+      "centreBelt": 0,
+      "centreAxisDistanceM": null,
+      "massifSamples": 558,
+      "minAbsAxisDistanceM": 79.87522254994366
+     },
+     {
+      "level": 5,
+      "tile": "1/5/24/18",
+      "centreBelt": 0.9721505769698469,
+      "centreAxisDistanceM": -47542.88291136442,
+      "massifSamples": 2151,
+      "minAbsAxisDistanceM": 7.940641269240625
+     },
+     {
+      "level": 6,
+      "tile": "1/6/48/36",
+      "centreBelt": 0.9980271537553732,
+      "centreAxisDistanceM": -12653.889325453627,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 4.782230778275176
+     },
+     {
+      "level": 8,
+      "tile": "1/8/192/145",
+      "centreBelt": 0.9996311816469954,
+      "centreAxisDistanceM": 5471.213646988227,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 4.88829537484203
+     },
+     {
+      "level": 10,
+      "tile": "1/10/770/582",
+      "centreBelt": 0.99986952233005,
+      "centreAxisDistanceM": 3254.2094972100463,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1039.4139808890304
+     },
+     {
+      "level": 12,
+      "tile": "1/12/3083/2329",
+      "centreBelt": 0.9999140563606049,
+      "centreAxisDistanceM": 2641.0965760267177,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2087.3918444497776
+     },
+     {
+      "level": 14,
+      "tile": "1/14/12332/9317",
+      "centreBelt": 0.9998945583725461,
+      "centreAxisDistanceM": 2925.387909754098,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2786.9295544980623
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.8228055789721294,
+     -0.03584999999999994,
+     0.567191111277618
+    ],
+    "axisDistanceM": -1790.1472813066384,
+    "beltIndex": 2,
+    "alongM": -1053604.4751466394,
+    "tiles": [
+     {
+      "level": 4,
+      "tile": "1/4/13/7",
+      "centreBelt": 0.9944479914685762,
+      "centreAxisDistanceM": 21227.67717337939,
+      "massifSamples": 2349,
+      "minAbsAxisDistanceM": 4.106071324695114
+     },
+     {
+      "level": 5,
+      "tile": "1/5/27/15",
+      "centreBelt": 0.9751008649186551,
+      "centreAxisDistanceM": -44954.1243523652,
+      "massifSamples": 2308,
+      "minAbsAxisDistanceM": 33.7072252248789
+     },
+     {
+      "level": 6,
+      "tile": "1/6/54/30",
+      "centreBelt": 0.9981982329122523,
+      "centreAxisDistanceM": -12092.796282011237,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.6212772269960232
+     },
+     {
+      "level": 8,
+      "tile": "1/8/216/122",
+      "centreBelt": 0.9997426736979014,
+      "centreAxisDistanceM": -4570.034739957008,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 4.043445237354304
+     },
+     {
+      "level": 10,
+      "tile": "1/10/864/489",
+      "centreBelt": 0.9999970139279997,
+      "centreAxisDistanceM": -492.29740843819224,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.20146196984456513
+     },
+     {
+      "level": 12,
+      "tile": "1/12/3459/1958",
+      "centreBelt": 0.9999718026447119,
+      "centreAxisDistanceM": -1512.800293800552,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 991.4050812717538
+     },
+     {
+      "level": 14,
+      "tile": "1/14/13839/7835",
+      "centreBelt": 0.9999553444549326,
+      "centreAxisDistanceM": -1903.7727637509597,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1773.4556501101783
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.5151100702263094,
+     -0.3427500000000001,
+     -0.7856106243244465
+    ],
+    "axisDistanceM": -1551.0698712542383,
+    "beltIndex": 1,
+    "alongM": -1045956.6853945659,
+    "tiles": [
+     {
+      "level": 4,
+      "tile": "5/4/13/4",
+      "centreBelt": 0.9807822975282762,
+      "centreAxisDistanceM": 39493.72925773206,
+      "massifSamples": 2151,
+      "minAbsAxisDistanceM": 11.277836189442771
+     },
+     {
+      "level": 5,
+      "tile": "5/5/26/9",
+      "centreBelt": 0.9966755952028552,
+      "centreAxisDistanceM": 16426.096205366244,
+      "massifSamples": 3660,
+      "minAbsAxisDistanceM": 1.1092905232345478
+     },
+     {
+      "level": 6,
+      "tile": "5/6/52/18",
+      "centreBelt": 0.9977552473237554,
+      "centreAxisDistanceM": -13497.758730035352,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 5.8719272926903106
+     },
+     {
+      "level": 8,
+      "tile": "5/8/211/72",
+      "centreBelt": 0.9997536641701947,
+      "centreAxisDistanceM": -4471.376134128424,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.0670164010937444
+     },
+     {
+      "level": 10,
+      "tile": "5/10/847/288",
+      "centreBelt": 0.9999388746775048,
+      "centreAxisDistanceM": -2227.347576004029,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 379.0862024645197
+     },
+     {
+      "level": 12,
+      "tile": "5/12/3390/1154",
+      "centreBelt": 0.9999616062432841,
+      "centreAxisDistanceM": -1765.2560810555667,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1303.181969330554
+     },
+     {
+      "level": 14,
+      "tile": "5/14/13563/4617",
+      "centreBelt": 0.9999701535717503,
+      "centreAxisDistanceM": -1556.408503802675,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1440.9020099222232
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     0.6645339989515039,
+     -0.37454999999999994,
+     0.6466118323519318
+    ],
+    "axisDistanceM": 2232.1916906714473,
+    "beltIndex": 0,
+    "alongM": -815903.3471044025,
+    "tiles": [
+     {
+      "level": 4,
+      "tile": "0/4/0/3",
+      "centreBelt": 0.9878859859632552,
+      "centreAxisDistanceM": 31356.057213971962,
+      "massifSamples": 2783,
+      "minAbsAxisDistanceM": 9.156332038742008
+     },
+     {
+      "level": 5,
+      "tile": "0/5/0/6",
+      "centreBelt": 0.9995448798495986,
+      "centreAxisDistanceM": -6077.716582243528,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 4.000938277719025
+     },
+     {
+      "level": 6,
+      "tile": "0/6/0/13",
+      "centreBelt": 0.9981319881044053,
+      "centreAxisDistanceM": -12313.095013278287,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 17.38577151029432
+     },
+     {
+      "level": 8,
+      "tile": "0/8/3/55",
+      "centreBelt": 0.999974201690174,
+      "centreAxisDistanceM": 1447.0150196227264,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.20660444407278025
+     },
+     {
+      "level": 10,
+      "tile": "0/10/13/223",
+      "centreBelt": 0.9999595211492306,
+      "centreAxisDistanceM": 1812.556274197794,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 656.9996413034686
+     },
+     {
+      "level": 12,
+      "tile": "0/12/55/893",
+      "centreBelt": 0.9999348517434465,
+      "centreAxisDistanceM": 2299.4756282146645,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2010.2867494707673
+     },
+     {
+      "level": 14,
+      "tile": "0/14/220/3574",
+      "centreBelt": 0.9999415679812981,
+      "centreAxisDistanceM": 2177.72409941671,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2105.427750655177
+     }
+    ]
+   },
+   {
+    "kind": "axis",
+    "d": [
+     -0.5237602431473022,
+     -0.5990500000000001,
+     -0.6056519670555681
+    ],
+    "axisDistanceM": 2966.7581730784646,
+    "beltIndex": 1,
+    "alongM": -419623.5058362399,
+    "tiles": [
+     {
+      "level": 4,
+      "tile": "5/4/14/0",
+      "centreBelt": 0.9855945207456457,
+      "centreAxisDistanceM": -34193.319760013816,
+      "massifSamples": 2516,
+      "minAbsAxisDistanceM": 18.56033747455491
+     },
+     {
+      "level": 5,
+      "tile": "5/5/29/0",
+      "centreBelt": 0.9982731237278807,
+      "centreAxisDistanceM": -11838.809246729095,
+      "massifSamples": 4133,
+      "minAbsAxisDistanceM": 22.97479294508409
+     },
+     {
+      "level": 6,
+      "tile": "5/6/59/0",
+      "centreBelt": 0.9999881410383793,
+      "centreAxisDistanceM": -981.0716897879634,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 22.97479294508409
+     },
+     {
+      "level": 8,
+      "tile": "5/8/238/1",
+      "centreBelt": 0.9999643611285941,
+      "centreAxisDistanceM": 1700.7457063087045,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 8.402625621743018
+     },
+     {
+      "level": 10,
+      "tile": "5/10/954/5",
+      "centreBelt": 0.9999308422720603,
+      "centreAxisDistanceM": 2369.178431976172,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1033.34508124278
+     },
+     {
+      "level": 12,
+      "tile": "5/12/3819/22",
+      "centreBelt": 0.9998735133390811,
+      "centreAxisDistanceM": 3204.0536235823233,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2870.0990448591215
+     },
+     {
+      "level": 14,
+      "tile": "5/14/15276/89",
+      "centreBelt": 0.999889454238726,
+      "centreAxisDistanceM": 2995.356092188245,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 2911.8641880340656
+     }
+    ]
+   },
+   {
+    "kind": "flank",
+    "d": [
+     -0.8568986905555777,
+     0.4919174544941317,
+     0.15408391248975492
+    ],
+    "axisDistanceM": 28990.84767465986,
+    "beltIndex": 2,
+    "alongM": 306950.79189427244,
+    "tiles": [
+     {
+      "level": 4,
+      "tile": "1/4/9/12",
+      "centreBelt": 0.9912410149868978,
+      "centreAxisDistanceM": 26662.710891110906,
+      "massifSamples": 2147,
+      "minAbsAxisDistanceM": 56.375343579894654
+     },
+     {
+      "level": 5,
+      "tile": "1/5/18/25",
+      "centreBelt": 0.9716179077493949,
+      "centreAxisDistanceM": 47995.40001079277,
+      "massifSamples": 2106,
+      "minAbsAxisDistanceM": 115.29317699090906
+     },
+     {
+      "level": 6,
+      "tile": "1/6/37/50",
+      "centreBelt": 0.982942837039083,
+      "centreAxisDistanceM": 37207.52748667376,
+      "massifSamples": 3127,
+      "minAbsAxisDistanceM": 4207.536495035573
+     },
+     {
+      "level": 8,
+      "tile": "1/8/151/201",
+      "centreBelt": 0.9931470033877714,
+      "centreAxisDistanceM": 23584.01109541869,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 15301.662288227979
+     },
+     {
+      "level": 10,
+      "tile": "1/10/604/805",
+      "centreBelt": 0.9900627926001925,
+      "centreAxisDistanceM": 28399.427743699318,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 26321.277690643055
+     },
+     {
+      "level": 12,
+      "tile": "1/12/2416/3223",
+      "centreBelt": 0.9897126193430736,
+      "centreAxisDistanceM": 28895.473597236312,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 28375.805310610533
+     },
+     {
+      "level": 14,
+      "tile": "1/14/9665/12894",
+      "centreBelt": 0.9896831464799043,
+      "centreAxisDistanceM": 28936.836081451496,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 28806.90737819279
+     }
+    ]
+   },
+   {
+    "kind": "flank",
+    "d": [
+     -0.8845161003234583,
+     0.37962897360445996,
+     0.27113301287118496
+    ],
+    "axisDistanceM": -30288.32479758211,
+    "beltIndex": 2,
+    "alongM": -17236.39502539828,
+    "tiles": [
+     {
+      "level": 4,
+      "tile": "1/4/10/11",
+      "centreBelt": 0.9746367570974597,
+      "centreAxisDistanceM": -45371.15158312004,
+      "massifSamples": 1939,
+      "minAbsAxisDistanceM": 5.69962855080266
+     },
+     {
+      "level": 5,
+      "tile": "1/5/20/22",
+      "centreBelt": 0.9928894549389083,
+      "centreAxisDistanceM": 24023.08945234638,
+      "massifSamples": 3236,
+      "minAbsAxisDistanceM": 1.2593322196631338
+     },
+     {
+      "level": 6,
+      "tile": "1/6/41/45",
+      "centreBelt": 0.9985132638571492,
+      "centreAxisDistanceM": -10984.855834599037,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.2593322196631338
+     },
+     {
+      "level": 8,
+      "tile": "1/8/167/182",
+      "centreBelt": 0.9888583663273,
+      "centreAxisDistanceM": -30071.27550154472,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 21453.072123743445
+     },
+     {
+      "level": 10,
+      "tile": "1/10/668/731",
+      "centreBelt": 0.9898429988460918,
+      "centreAxisDistanceM": -28711.782989211813,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 26561.276413307165
+     },
+     {
+      "level": 12,
+      "tile": "1/12/2675/2926",
+      "centreBelt": 0.9889850121813006,
+      "centreAxisDistanceM": -29899.878430791527,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 29362.776941556724
+     },
+     {
+      "level": 14,
+      "tile": "1/14/10703/11707",
+      "centreBelt": 0.9886862887203663,
+      "centreAxisDistanceM": -30302.604508927812,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 30168.372010873165
+     }
+    ]
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     -0.8065818372804591,
+     0.5816060693036251,
+     0.10564146874436223
+    ],
+    "axisDistanceM": 0.00003464670838522249,
+    "beltIndex": 2,
+    "alongM": 529921.5269702526,
+    "tiles": [
+     {
+      "level": 4,
+      "tile": "1/4/9/13",
+      "centreBelt": 0.9600071810818737,
+      "centreAxisDistanceM": -56972.91234243871,
+      "massifSamples": 1733,
+      "minAbsAxisDistanceM": 28.431252125984376
+     },
+     {
+      "level": 5,
+      "tile": "1/5/18/27",
+      "centreBelt": 0.9864675097600677,
+      "centreAxisDistanceM": -33141.05070621518,
+      "massifSamples": 2780,
+      "minAbsAxisDistanceM": 11.648458064965771
+     },
+     {
+      "level": 6,
+      "tile": "1/6/36/55",
+      "centreBelt": 0.9945596080214765,
+      "centreAxisDistanceM": -21013.215176438425,
+      "massifSamples": 4190,
+      "minAbsAxisDistanceM": 2.1227713570545808
+     },
+     {
+      "level": 8,
+      "tile": "1/8/144/220",
+      "centreBelt": 0.9999559426904764,
+      "centreAxisDistanceM": 1890.977659799951,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.3026572289382752
+     },
+     {
+      "level": 10,
+      "tile": "1/10/579/881",
+      "centreBelt": 0.9999707214284919,
+      "centreAxisDistanceM": -1541.5313233124598,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 1.0137070145250415
+     },
+     {
+      "level": 12,
+      "tile": "1/12/2316/3524",
+      "centreBelt": 0.999999874763467,
+      "centreAxisDistanceM": -100.81912644099823,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.023011121232921348
+     },
+     {
+      "level": 14,
+      "tile": "1/14/9264/14099",
+      "centreBelt": 0.9999999794745255,
+      "centreAxisDistanceM": 40.81539611255701,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.003954833807612281
+     }
+    ]
+   },
+   {
+    "kind": "belt-end",
+    "d": [
+     -0.7702814747318573,
+     -0.1180445775142857,
+     0.6266832751912156
+    ],
+    "axisDistanceM": 0.000037383911073236234,
+    "beltIndex": 2,
+    "alongM": -1275245.4417997084,
+    "tiles": [
+     {
+      "level": 4,
+      "tile": "1/4/14/6",
+      "centreBelt": 0.39423890830329333,
+      "centreAxisDistanceM": 38811.610346100664,
+      "massifSamples": 2165,
+      "minAbsAxisDistanceM": 15.15153227880296
+     },
+     {
+      "level": 5,
+      "tile": "1/5/29/13",
+      "centreBelt": 0.5114567597188387,
+      "centreAxisDistanceM": -23774.63507386828,
+      "massifSamples": 3426,
+      "minAbsAxisDistanceM": 0.799335838047199
+     },
+     {
+      "level": 6,
+      "tile": "1/6/58/27",
+      "centreBelt": 0.630222915828432,
+      "centreAxisDistanceM": -27038.65517753688,
+      "massifSamples": 3986,
+      "minAbsAxisDistanceM": 5.738491038929865
+     },
+     {
+      "level": 8,
+      "tile": "1/8/232/108",
+      "centreBelt": 0.5947704752068675,
+      "centreAxisDistanceM": -3574.9195033287765,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.0349262749675377
+     },
+     {
+      "level": 10,
+      "tile": "1/10/928/433",
+      "centreBelt": 0.5955229942106859,
+      "centreAxisDistanceM": 170.71055688794442,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.06214534501164244
+     },
+     {
+      "level": 12,
+      "tile": "1/12/3714/1734",
+      "centreBelt": 0.5963901279753216,
+      "centreAxisDistanceM": -321.36157291717547,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.09502342445768318
+     },
+     {
+      "level": 14,
+      "tile": "1/14/14856/6936",
+      "centreBelt": 0.5957401516749034,
+      "centreAxisDistanceM": 47.68358920877258,
+      "massifSamples": 4225,
+      "minAbsAxisDistanceM": 0.01670621031732222
+     }
+    ]
+   }
+  ],
+  "replaced": [],
+  "evidenceOk": true,
+  "cells": [
+   {
+    "L": 4,
+    "p50": 157.5113525390625,
+    "p99": 882.5279541015625,
+    "max": 1223.7447509765625,
+    "rgbP50": 1.5033508832303561,
+    "rgbP99": 7.35764569749069,
+    "snow": 0,
+    "forest": 2.0933977455716586,
+    "name": 0.17176596886741816,
+    "carriedName": 1.3848631239935587,
+    "ocean": 0.052083333333333336,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 5896.387912909832,
+    "planHeightMaxM": 15723.701101092887,
+    "planRgbP99": 12,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 5,
+    "p50": 70.57846069335938,
+    "p99": 461.347412109375,
+    "max": 732.4638671875,
+    "rgbP50": 0.7970884252746451,
+    "rgbP99": 4.329054009877031,
+    "snow": 0,
+    "forest": 0.8645833333333334,
+    "name": 0.052083333333333336,
+    "carriedName": 0.65625,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 2948.193956454916,
+    "planHeightMaxM": 7861.850550546444,
+    "planRgbP99": 12,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 6,
+    "p50": 65.22671508789062,
+    "p99": 385.86016845703125,
+    "max": 623.700927734375,
+    "rgbP50": 0.2655048842712578,
+    "rgbP99": 1.6840611188138712,
+    "snow": 0,
+    "forest": 0.2708333333333333,
+    "name": 0.23958333333333334,
+    "carriedName": 0.28125,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 1474.096978227458,
+    "planHeightMaxM": 3930.925275273222,
+    "planRgbP99": 12,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 8,
+    "p50": 25.1220703125,
+    "p99": 143.7291259765625,
+    "max": 225.41241455078125,
+    "rgbP50": 0.01785426678219963,
+    "rgbP99": 0.12347246978516516,
+    "snow": 0,
+    "forest": 0,
+    "name": 0,
+    "carriedName": 0.15625,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 368.5242445568645,
+    "planHeightMaxM": 982.7313188183055,
+    "planRgbP99": 4,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 10,
+    "p50": 0.8116455078125,
+    "p99": 23.9132080078125,
+    "max": 83.0858154296875,
+    "rgbP50": 0.0011098595758477403,
+    "rgbP99": 0.008177121292389245,
+    "snow": 0,
+    "forest": 0,
+    "name": 0,
+    "carriedName": 0,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 92.13106113921613,
+    "planHeightMaxM": 245.68282970457636,
+    "planRgbP99": 1,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 12,
+    "p50": 0.01898193359375,
+    "p99": 3.7459716796875,
+    "max": 17.60888671875,
+    "rgbP50": 0.00005375659725317488,
+    "rgbP99": 0.0006589036348271203,
+    "snow": 0,
+    "forest": 0,
+    "name": 0,
+    "carriedName": 0,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 23.032765284804032,
+    "planHeightMaxM": 61.42070742614409,
+    "planRgbP99": 1,
+    "planClassPct": 0.5
+   },
+   {
+    "L": 14,
+    "p50": 0.00103759765625,
+    "p99": 0.43670654296875,
+    "max": 1.79876708984375,
+    "rgbP50": 0.00001312548710991584,
+    "rgbP99": 0.00015175874447854697,
+    "snow": 0,
+    "forest": 0,
+    "name": 0,
+    "carriedName": 0,
+    "ocean": 0,
+    "sharedOceanMismatch": 0,
+    "shared": 3468,
+    "samples": 9600,
+    "planHeightP99M": 5.758191321201008,
+    "planHeightMaxM": 15.355176856536023,
+    "planRgbP99": 1,
+    "planClassPct": 0.5
+   }
+  ],
+  "retention": [
+   {
+    "L": 6,
+    "snowKept": 0,
+    "snowFalse": 0,
+    "forestKept": 99.803688519117,
+    "forestFalse": 0.11336663478230063,
+    "peakKept": 79.40552016985139,
+    "peakFalseOfPeakArea": 48.274946921443735,
+    "summitP50": 49.21073145791388,
+    "summitMax": 146.29294405889004,
+    "metaSummitP50": 49.21073145791388,
+    "metaSummitMax": 146.29294405889004,
+    "meanBiasM": 41.624315864903764,
+    "tiles": 12,
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    }
+   },
+   {
+    "L": 8,
+    "snowKept": 0,
+    "snowFalse": 0,
+    "forestKept": 99.90481332045235,
+    "forestFalse": 0.055797640556913594,
+    "peakKept": 97.48761500353856,
+    "peakFalseOfPeakArea": 32.01521585279547,
+    "summitP50": 6.289872633178675,
+    "summitMax": 34.440203190530156,
+    "metaSummitP50": 6.289872633178675,
+    "metaSummitMax": 34.440203190530156,
+    "meanBiasM": 35.49788423535916,
+    "tiles": 12,
+    "keeps": {
+     "snowL6": 0.98,
+     "forestL6": 0.97,
+     "peakAreaL6": 0.85,
+     "peakAreaL8": 0.95
+    }
+   }
+  ],
+  "seconds": 51.9090888
+ }
+]

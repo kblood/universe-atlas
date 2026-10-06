@@ -64,7 +64,10 @@ test('landingCandidate is main.ts exploreTerrain\'s golden-angle sphere (unit, d
 test(`never on a summit: 0/${EYES} picks at or above p99 land on four worlds at the datum and the dated low sea; the kept ceiling alone does pick summits`,()=>{
   const out=report.summit={};let controlSummits=0,cases=0;
   for(const {name,body} of WORLDS){
-    const ts=terrainSampler(body),heights=Array.from({length:COUNT},(_,i)=>ts(landingCandidate(i,COUNT)).groundHeightM);
+    // terrain-1.9.0-mountains (decisions addendum 4, decision 2): candidate heights in the cutoff's representation,
+    // the level-0 field (main.ts landingSurfaceFor). Was the truth sampler (terrainSampler(body)); wired, that would
+    // compare truth heights with the level-0 p99 and solve mountain blocks.
+    const ts=terrainSampler(body,undefined,undefined,undefined,0,undefined,false,{lodLevel:0}),heights=Array.from({length:COUNT},(_,i)=>ts(landingCandidate(i,COUNT)).groundHeightM);
     const low=Math.round(levelForLoss(body,.6)/25)*25;
     out[name]={};
     for(const [label,sea] of [['datum',0],['datedLow',low]]){
@@ -145,12 +148,28 @@ test('flooded ground bookmark, nearest-shore policy: the first dry ring directio
 test('main.ts wires the landing rules: summit-capped site pick and the flooded-bookmark resolver in prepareLanding',()=>{
   const src=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8').replace(/\r\n/g,'\n');
   assert.ok(src.includes('const landSummit=landPercentileM(body,LANDING_SUMMIT_PERCENTILE,landSea);'));
+  // Decision 2 (addendum 4): the candidate search reads the level-0 landing surface, the landing itself the truth.
+  const explore=src.slice(src.indexOf('function exploreTerrain('),src.indexOf('function startTerrainCruise('));
+  assert.ok(explore.includes('const sample=landingSurfaceFor(body), sun='),'landing candidates use the level-0 surface');
+  assert.ok(!/\bsurfaceFor\(/.test(explore),'no truth sampler in the candidate search');
+  assert.ok(src.includes('planetSnapshotFor(sys, body, date).landingSurface(direction)'));
   assert.ok(src.includes('summitM:landSummit,referenceM:landRef'),'the plain site pick is pickLandingSite with the summit cap');
   assert.ok(src.includes('!landingHeightAllowed(s.groundHeightM,landSea,landCeiling,landSummit)'),'the living-habitat pick has the summit cap too');
   assert.ok(src.includes('if(!s.walkable&&savedPoint){'),'a restored bookmark is resolved before the terrain-search fallback');
   assert.ok(src.includes('const flooded=resolveGroundBookmark(d.toArray() as V3,'));
   // The terrain search remains only for a non-bookmark landing over water.
   assert.equal(src.split('if(!s.walkable){if(exploreTerrain())landAfterCruise=true;return;}').length,2);
+});
+
+test('landing surface (decision 2): surfaceQuery at level 0 is the level-0 field on a massif and solves no M3 block; the truth differs there',async()=>{
+  const {axisSites}=await import('./helpers/mountain-coarse-tiles.mjs'),{carvingBuildStats}=await import('../src/mountain-carving.ts');
+  const body=MAITHEA,sites=axisSites(body,{count:4}).map(s=>s.d),level0=terrainSampler(body,undefined,undefined,undefined,0,undefined,false,{lodLevel:0});
+  const query=surfaceQuery(body,[{dateNs:0n,levelM:0}],{lodLevel:0}),before=carvingBuildStats.count,landing=sites.map(d=>query(d,0n).groundHeightM);
+  assert.equal(carvingBuildStats.count,before,'no block solve for a landing candidate');
+  sites.forEach((d,i)=>assert.ok(Object.is(landing[i],level0(d).groundHeightM)));
+  // Negative control: on the massif axis the truth is carved below the level-0 upper envelope at some site.
+  const truth=surfaceQuery(body,[{dateNs:0n,levelM:0}]),lower=sites.filter((d,i)=>truth(d,0n).groundHeightM<landing[i]).length;
+  assert.ok(lower>0,`truth below level 0 at ${lower} of ${sites.length} axis sites`);
 });
 
 // No eligible site: pickLandingSite returns null (all wet, or all at a summit),

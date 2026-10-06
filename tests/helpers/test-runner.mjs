@@ -18,7 +18,7 @@ async function full() {
   mkdirSync('test-results', {recursive: true});
   const dir = mkdtempSync(resolve('test-results', 'atlas-test-report-')), report = join(dir, 'report.json');
   try {
-    const raw = await runTests(registeredTests(), {slot: true, args: ['--test-reporter=spec', '--test-reporter-destination=stdout', '--test-reporter=./tests/helpers/failure-reporter.mjs', `--test-reporter-destination=${join(dir, 'reporter.txt')}`], env: {...process.env, ATLAS_TEST_REPORT: report}});
+    const raw = await runTests(registeredTests(), {slot: true, args: ['--test-reporter=spec', '--test-reporter-destination=stdout', '--test-reporter=./tests/helpers/failure-reporter.mjs', `--test-reporter-destination=${join(dir, 'reporter.txt')}`], env: {...process.env, ATLAS_TEST_REPORT: report, ATLAS_TEST_FULL: '1'}});
     console.log(`raw node exit code: ${raw}`);
     if (!existsSync(report)) { console.error('NEW failure: reporter did not finish'); return raw || 1; }
     const result = JSON.parse(readFileSync(report)), known = JSON.parse(readFileSync('tests/known-failures.json')).failures;

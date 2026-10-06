@@ -350,6 +350,12 @@ function surfaceFor(body: Body, sys: StarSystem = state.sys!, t: Ns = epoch) {
   if (body.kind === 'star') return (_direction: V3, _date: Ns = t) => null;
   return (direction: V3, date: Ns = t) => planetSnapshotFor(sys, body, date).surface(direction);
 }
+/** Landing candidates (decisions addendum 4, decision 2): the level-0 rock field, the representation of the level-0
+ * summit cutoff; no mountain block solves on the main thread. Landing and walking keep surfaceFor (the truth). */
+function landingSurfaceFor(body: Body, sys: StarSystem = state.sys!, t: Ns = epoch) {
+  if (body.kind === 'star') return (_direction: V3, _date: Ns = t) => null;
+  return (direction: V3, date: Ns = t) => planetSnapshotFor(sys, body, date).landingSurface(direction);
+}
 function surfaceSample(body: Body, direction: V3, sys: StarSystem = state.sys!, t: Ns = epoch) {
   return body.kind === 'star' ? null : planetSnapshotFor(sys, body, t).surface(direction);
 }
@@ -2499,7 +2505,7 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false):boolean {
   if(!flight) toggleFlight();
   autopilot=null; orbitAssist=null; planetLook=null; startCruiseAfterLook=false;
   const center=vec(bodyPosition(body,state.sys!,epoch)), eye=vec(localPose()).sub(center).normalize();
-  const sample=surfaceFor(body), sun=vec(bodyPosition(state.sys!.stars[0],state.sys!,epoch)).sub(center).normalize();
+  const sample=landingSurfaceFor(body), sun=vec(bodyPosition(state.sys!.stars[0],state.sys!,epoch)).sub(center).normalize();
   const lifeEntry=lifecycleFor(state.sys!,body);
   if(lifeEntry.kind!=='star')sun.set(...spinCompensatedSunDirection(sun.toArray() as V3,spinFor(body),lifeEntry.lc.formationNs,epoch));
   if(!sample([0,1,0],epoch)){announce('This world has no surface at this date.');return false;}
@@ -2507,7 +2513,8 @@ function exploreTerrain(preferred?:THREE.Vector3,preferLife=false):boolean {
   // render-bounds-1 + landing-site-1: heights are judged over the dated sea,
   // against the body's own bound (80%, the kept ceiling), strictly below the
   // p99 land summit height (landing-site.ts: never on a summit) and with its
-  // p90 land as the full elevation bonus.
+  // p90 land as the full elevation bonus. Candidate heights come from the
+  // level-0 field (landingSurfaceFor), the representation of these percentiles.
   const landSea=body.water?snappedWaterLevelFor(body):0,landCeiling=PlanetRenderer.landingCeilingM(body),landRef=PlanetRenderer.landingReferenceM(body,landSea);
   const landSummit=landPercentileM(body,LANDING_SUMMIT_PERCENTILE,landSea);
   let destination=eye.clone(), best=-Infinity;

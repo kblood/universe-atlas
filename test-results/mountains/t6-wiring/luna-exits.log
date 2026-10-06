@@ -1,0 +1,8 @@
+build t6 exit=127
+capture t6 exit=1
+done
+build refmain exit=0
+capture refmain exit=1
+build t6 exit=0
+capture t6 exit=0
+done

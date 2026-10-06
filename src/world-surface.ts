@@ -51,8 +51,11 @@ export function waterLevelAt(keys: readonly WaterLevelKey[], date:bigint): numbe
 }
 /** The baseline water parameter is immutable geology input. Changing the water
  * surface never changes this rock field. Future geology sits behind this query. */
-export function surfaceQuery(body:Body, keys:readonly WaterLevelKey[]=[], options:{globalOceanAvailable?:boolean}={}) {
-  const rock=terrainSampler(body);
+export function surfaceQuery(body:Body, keys:readonly WaterLevelKey[]=[], options:{globalOceanAvailable?:boolean; lodLevel?:number}={}) {
+  // `lodLevel` (terrain-1.9.0-mountains): the rock field a tile level serves (lod-ladder-3); omitted = the truth.
+  // Only the landing-candidate search passes level 0 (decisions addendum 4, decision 2).
+  const rock=options.lodLevel===undefined?terrainSampler(body)
+    :terrainSampler(body,undefined,undefined,undefined,undefined,undefined,undefined,{lodLevel:options.lodLevel});
   return (direction:V3,date=0n)=>{
     const sample=rock(direction), levelM=waterLevelAt(keys,date);
     const solid=body.kind!=='star'&&body.type!=='Gas giant';
@@ -135,10 +138,13 @@ const datedGeometryQueries=new WeakMap<Body,{
   seed:string;hydrology:Body['hydrology'];canonical:Body['canonicalRivers'];
   levelM:number;available:boolean;query:ReturnType<typeof surfaceQuery>;
 }>();
-export function datedSurfaceSampler(body:Body, planet:PlanetLifecycle, star:StarLifecycle, t:Ns) {
+export function datedSurfaceSampler(body:Body, planet:PlanetLifecycle, star:StarLifecycle, t:Ns, lodLevel?:number) {
   const ocean=datedOceanState(body,planet,star,t);
   let query:ReturnType<typeof surfaceQuery>|undefined;
   return {ocean, sample:(direction:V3)=>{
+    // A level sampler (landing candidates) is not the cached truth query.
+    if(!query&&lodLevel!==undefined)query=surfaceQuery(body,[{dateNs:0n,levelM:ocean.waterLevelM}],
+      {globalOceanAvailable:ocean.globalOceanAvailable,lodLevel});
     if(!query){
       const cached=datedGeometryQueries.get(body);
       if(cached&&cached.seed===body.seed&&cached.hydrology===body.hydrology&&cached.canonical===body.canonicalRivers&&
@@ -155,9 +161,9 @@ export function datedSurfaceSampler(body:Body, planet:PlanetLifecycle, star:Star
 }
 
 /** Lifecycle gate and dated hydrology shared by every planet surface entry point. */
-function lifecycleDatedSurfaceSampler(body:Body, planet:PlanetLifecycle, star:StarLifecycle, t:Ns) {
+function lifecycleDatedSurfaceSampler(body:Body, planet:PlanetLifecycle, star:StarLifecycle, t:Ns, lodLevel?:number) {
   const state=planetStateAt(planet,star,t);
-  const dated=datedSurfaceSampler(body,planet,star,t);
+  const dated=datedSurfaceSampler(body,planet,star,t,lodLevel);
   return {state,ocean:dated.ocean,sample:(direction:V3)=>{
     if(state.stage!=='molten'&&state.stage!=='solid')return null;
     const sample=dated.sample(direction);
@@ -362,10 +368,15 @@ export function planetSnapshotAt(
   const state=dated.state;
   const ocean=dated.ocean;
   let biosphere:BiosphereQueryResult|undefined;
+  let landing:ReturnType<typeof lifecycleDatedSurfaceSampler>|undefined;
   return {
     address:bodyAddress, dateNs:t, state, environment, ocean,
     biosphere:()=>biosphere??(biosphere=biosphereStateAt(
       seed,bodyAddress,body,t,'baseline',versions,star,parentPlanet)),
     surface:(direction:V3)=>dated.sample(direction),
+    /** Landing-candidate surface (decisions addendum 4, decision 2): the same dated query on the level-0 rock field,
+     * so candidate heights are judged in the representation of the level-0 summit cutoff (landPercentileM) and the
+     * candidate search solves no mountain block. The landed and walked ground stays `surface` (the truth). */
+    landingSurface:(direction:V3)=>(landing??=lifecycleDatedSurfaceSampler(body,planet,star,t,0)).sample(direction),
   };
 }

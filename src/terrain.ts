@@ -18,7 +18,7 @@ import {DRY_SURFACE_ROUGHNESS,WET_SURFACE_ROUGHNESS} from './surface-roughness.t
 import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_CALIBRATION,CLIMATE_VERSION,type ClimateSample} from './surface-climate.ts';
 import {orogenLayout,OROGEN_BAND_GRID,type OrogenSample} from './mountain-layout.ts';
 import {mountainRidgeTermM,massifBeltSample} from './mountain-assembly.ts';
-import {carvingAtLevel} from './lod-ladder.ts';
+import {carvingAtLevel,rockDetailAtLevel} from './lod-ladder.ts';
 
 // Bumped from terrain-1.3.0: `terrainSampler` gained the ABILITY to sum
 // procedural impact craters (planet-craters.ts) into `elevationM` for any
@@ -116,7 +116,13 @@ import {carvingAtLevel} from './lod-ladder.ts';
 // Heights, the ocean flag, classes, dry worlds, ocean colours,
 // baseTerrainSampler and the legacy grain are unchanged; no mountain belt is
 // wired (that is the later terrain-1.9.0 assembly).
-export const TERRAIN_VERSION = "terrain-1.8.1-grain";
+// 1.9.0-mountains (MTN-6 / mountains cost plan T6, 2026-10-06; docs/mountains-t6-wiring-2026-10-06.md):
+// TERRAIN_MOUNTAINS_WIRED. Relief water worlds' terrainSampler composes the M1 orogen layout
+// (orogen-layout-4), the M2 massif envelope (massif-envelope-4), the M3 ridge-valley carving (mountain-carving-2)
+// and the M5 steep-rock detail (mountain-rock-detail-1) into the land floor's ridge term inside 48 km massifs
+// (mountain-assembly-3); below the carving cut tiles read the baked coarse field (lod-ladder-3). Outside the
+// massifs, the seabed, the ocean flag at sea level 0, dry worlds and baseTerrainSampler are unchanged.
+export const TERRAIN_VERSION = "terrain-1.9.0-mountains";
 /**
  * terrain-1.8.1: the 800 m local colour grain of water-world LAND colour (the
  * climate colour path of terrainSampler): localGrain = BASE + n(d, R/CELL_M, 74) x
@@ -472,7 +478,7 @@ function mountainSeeds(body: Body, layout: ReturnType<typeof orogenLayout>): Uin
   return seeds;
 }
 function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false, relief: boolean = false,
-  mountains: {carve: boolean} | null = null) {
+  mountains: {carve: boolean; rock: boolean} | null = null) {
   const { code, n } = macroNoise(body);
   const sea = 0.37 + body.water * 0.22;
   // terrain-1.8.0 relief mode (terrainSampler only; baseTerrainSampler never).
@@ -689,7 +695,7 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
 
 // Separate function literal isolates the exact M1 call from the coarse/plain core.
 function mountainTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false, relief: boolean = false,
-  mountains: {carve: boolean} | null = null) {
+  mountains: {carve: boolean; rock: boolean} | null = null) {
   const { code, n } = macroNoise(body);
   const sea = 0.37 + body.water * 0.22;
   // terrain-1.8.0 relief mode (terrainSampler only; baseTerrainSampler never).
@@ -705,6 +711,9 @@ function mountainTerrainCore(body: Body, waterLevelM: number, exposeFloor: boole
     ? mountainSeeds(body, orogen)
     : new Uint32Array(0);
   const carve = true;
+  // M5 steep-rock detail (mountain-rock-detail-1, lod-ladder-3): the truth and levels from
+  // rockDetailFromLevel(R) on; between the carving cut and that level the carved term without rock.
+  const rock = mountains !== null && mountains.rock;
   // The T1 band grid's voxel prefilter, read inline (value-preserving): where d's voxel is unset,
   // massifBeltSample returns the empty sample (the first test of the layout's bandTag, same expression), so the
   // call, and the copy of d it takes, is skipped. Most land samples are outside every massif.
@@ -826,7 +835,7 @@ function mountainTerrainCore(body: Body, waterLevelM: number, exposeFloor: boole
               // in docs/mountains-t6-baked-coarse-2026-10-06.md).
               const o = massifBeltSample(orogen, [d[0], d[1], d[2]], a0, orogenScratch);
               if (o.belt !== 0)
-                ridgeTermM = mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve);
+                ridgeTermM = mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve, rock);
             }
           }
           const F = comp + tau * (RC.HUP * ss(RC.B1, RC.B2, a0) + RC.HHI * ss(RC.B3, RC.B4, a0))
@@ -1034,26 +1043,31 @@ export function previousDouble(x: number): number {
  * `planet-tiles.ts` threads a real value through.
  */
 /**
- * Mountains assembly wiring (MTN-6; docs/mountains-opus-decisions-2026-10-05.md). STAGED: false on main until
- * the assembled check (cost plan T6) wires it, moves TERRAIN_VERSION and re-pins the goldens in one step. While
- * false, a sampler evaluates the M1+M2+M3 belts only when it opts in with `{mountains: true}` (evidence and
- * the T3 tests), and `lodLevel` changes nothing: the default field is bit-identical to terrain-1.8.1-grain.
+ * Mountains assembly wiring (MTN-6, cost plan T6; docs/mountains-opus-decisions-2026-10-05.md,
+ * docs/mountains-t6-wiring-2026-10-06.md). WIRED since terrain-1.9.0-mountains: every relief water world's
+ * terrainSampler evaluates the M1+M2+M3 belts (route A baked coarse field below the carving cut) and the M5
+ * steep-rock detail (truth and levels from rockDetailFromLevel). `{mountains: false}` still selects the
+ * pre-mountains field (terrain-1.8.1-grain, bit-identical) for evidence and controls.
  */
-export const TERRAIN_MOUNTAINS_WIRED = false;
+export const TERRAIN_MOUNTAINS_WIRED = true;
 /**
- * `lodLevel`: the tile level this sampler serves (lod-ladder-2, cost plan T3). Below
- * `carvingFromLevel(radiusM)` the baked band field conservatively bounds the uncarved composition; omitted, the
- * sampler is the truth (full carving), as collision, physics and place queries require (contract section 8).
- * `mountains`: whether the M1+M2+M3 belts are evaluated (default TERRAIN_MOUNTAINS_WIRED).
+ * `lodLevel`: the tile level this sampler serves (lod-ladder-3). Below `carvingFromLevel(radiusM)` the baked band
+ * field conservatively bounds the uncarved composition; from the cut the M3 carving is exact; from
+ * `rockDetailFromLevel(radiusM)` the M5 rock detail is added. Omitted, the sampler is the truth (full carving and
+ * rock), as collision, physics and place queries require (contract section 8).
+ * `mountains`: whether the mountain belts are evaluated (default TERRAIN_MOUNTAINS_WIRED).
  */
 export type TerrainSamplerOptions = {lodLevel?: number; mountains?: boolean};
 /** The mountain carving state a sampler with `options` evaluates on `body`: null when no mountain belt is
- * evaluated (not wired, or not a relief water world: the level then changes nothing), else whether the M3
- * carving is on. False selects the baked coarse field. Two samplers with equal states return identical
- * fields; tile caches key on it, so the new reduction requires no cache-key change. */
-export function mountainCarvingState(body: Body, options: TerrainSamplerOptions = {}): boolean | null {
+ * evaluated (not wired, or not a relief water world: the level then changes nothing); false below the carving
+ * cut (the baked coarse field); true from the cut (exact M3 carving, no rock); 'rock' where the M5 rock detail
+ * is on too (the truth, and levels from rockDetailFromLevel). Two samplers with equal states return identical
+ * fields; tile caches key on it, and planet-tiles' split-parent rule compares it with strict equality, so the
+ * rock switch level gets its own parent sampler exactly like the carving switch. */
+export function mountainCarvingState(body: Body, options: TerrainSamplerOptions = {}): boolean | 'rock' | null {
   if (!(options.mountains ?? TERRAIN_MOUNTAINS_WIRED) || !reliefModeFor(body) || !body.water) return null;
-  return carvingAtLevel(body.radiusM, options.lodLevel);
+  if (!carvingAtLevel(body.radiusM, options.lodLevel)) return false;
+  return rockDetailAtLevel(body.radiusM, options.lodLevel) ? 'rock' : true;
 }
 export function terrainSampler(
   body: Body,
@@ -1066,9 +1080,9 @@ export function terrainSampler(
   options: TerrainSamplerOptions = {},
 ) {
   const carving = mountainCarvingState(body, options);
-  const core = carving === true
-    ? mountainTerrainCore(body, waterLevelM, exposeFloor, true, {carve: true})
-    : baseTerrainCore(body, waterLevelM, exposeFloor, true, carving === false ? {carve: false} : null);
+  const core = carving === true || carving === 'rock'
+    ? mountainTerrainCore(body, waterLevelM, exposeFloor, true, {carve: true, rock: carving === 'rock'})
+    : baseTerrainCore(body, waterLevelM, exposeFloor, true, carving === false ? {carve: false, rock: false} : null);
   const landforms=planetLandforms(body);
   // The landform ceiling (terrain-1.8.0): the body's analytic height bound.
   const landformCeilingM = reliefModeFor(body) ? bodyHeightBoundM(body).maxM : undefined;
@@ -1242,11 +1256,12 @@ export function terrainFloorSampler(
  * per direction the terrainSampler ground height (crater-free, sea level 0)
  * with the relief core's floorM (seabed detail included), smoothFloorM (seabed
  * detail excluded), continentalM, the raw terrain-1.7 base height and the
- * landform scale.
+ * landform scale. `options` selects the surface's level (terrain-1.9.0: statistic-style callers pass
+ * {lodLevel: 0}, the field without M3 carving and M5 rock); omitted = the truth.
  */
-export function reliefLayersSampler(body: Body) {
+export function reliefLayersSampler(body: Body, options: TerrainSamplerOptions = {}) {
   const core = baseTerrainCore(body, 0, true, true);
-  const surface = terrainSampler(body);
+  const surface = terrainSampler(body, undefined, undefined, undefined, 0, undefined, false, options);
   return (d: V3) => {
     const c = core.sample(d, true), s = surface(d);
     return {groundHeightM: s.groundHeightM, ocean: s.ocean, floorM: c.floorM!, smoothFloorM: c.smoothFloorM!,

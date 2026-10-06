@@ -1,0 +1,1259 @@
+{
+ "Maithea": {
+  "cut": 6,
+  "corrMax": 9,
+  "ms": 11499,
+  "solves": {
+   "coarse": 0,
+   "fine": 28
+  },
+  "pairs": [
+   {
+    "L": 0,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 4,
+    "room": 4900,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 1156,
+     "p50": 0,
+     "p99": 2600.889,
+     "max": 3881.625
+    },
+    "childMinusParent": {
+     "count": 1156,
+     "p50": 0,
+     "p99": 1796.469,
+     "max": 3217.655
+    },
+    "upRoom": 4050,
+    "childPointMinusParent": {
+     "count": 1156,
+     "p50": 0,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 1,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 4,
+    "room": 4200,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 1156,
+     "p50": 0,
+     "p99": 1579.324,
+     "max": 3322.239
+    },
+    "childMinusParent": {
+     "count": 1156,
+     "p50": 0,
+     "p99": 854.577,
+     "max": 3893.887
+    },
+    "upRoom": 4900,
+    "childPointMinusParent": {
+     "count": 1156,
+     "p50": 0,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 2,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 7,
+    "room": 4950,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 2023,
+     "p50": 0,
+     "p99": 1214.401,
+     "max": 3926.382
+    },
+    "childMinusParent": {
+     "count": 2023,
+     "p50": 0,
+     "p99": 714.686,
+     "max": 2917.586
+    },
+    "upRoom": 3650,
+    "childPointMinusParent": {
+     "count": 2023,
+     "p50": 0,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 3,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 5,
+    "room": 3250,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 1445,
+     "p50": 0,
+     "p99": 494.213,
+     "max": 2565.157
+    },
+    "childMinusParent": {
+     "count": 1445,
+     "p50": 0,
+     "p99": 458.892,
+     "max": 1749.384
+    },
+    "upRoom": 2200,
+    "childPointMinusParent": {
+     "count": 1445,
+     "p50": -12.444,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 4,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 8,
+    "room": 1000,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 2312,
+     "p50": 2.069,
+     "p99": 287.306,
+     "max": 783.179
+    },
+    "childMinusParent": {
+     "count": 2312,
+     "p50": -2.05,
+     "p99": 129.714,
+     "max": 896.098
+    },
+    "upRoom": 1150,
+    "childPointMinusParent": {
+     "count": 2312,
+     "p50": -15.532,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 5,
+    "childCorrected": true,
+    "switch": true,
+    "pairs": 2,
+    "room": 1550,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 36.414,
+     "p99": 849.119,
+     "max": 1221.745
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -35.829,
+     "p99": 65.349,
+     "max": 85.191
+    },
+    "upRoom": 150,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -67.592,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 6,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 2,
+    "room": 750,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 12.478,
+     "p99": 239.556,
+     "max": 562.451
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -12.318,
+     "p99": 160.779,
+     "max": 435.294
+    },
+    "upRoom": 550,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -50.445,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 7,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 2,
+    "room": 500,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 0,
+     "p99": 284.258,
+     "max": 369.028
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": 0,
+     "p99": 181.097,
+     "max": 476.198
+    },
+    "upRoom": 600,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -37.968,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 8,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 2,
+    "room": 300,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 0,
+     "p99": 146.54,
+     "max": 206.609
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": 0,
+     "p99": 110.064,
+     "max": 205.737
+    },
+    "upRoom": 300,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -45.301,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 9,
+    "childCorrected": false,
+    "switch": false,
+    "pairs": 2,
+    "room": 200,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 55.546,
+     "p99": 142.658,
+     "max": 170.289
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -55.519,
+     "p99": 0,
+     "max": 0
+    },
+    "upRoom": null,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -55.519,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": 0,
+    "storedBelowPoint": 0
+   }
+  ],
+  "continuity": {
+   "violations": 0,
+   "worstFine": 0.620133339624226,
+   "solves": 0
+  },
+  "edges": 42
+ },
+ "Selawyn": {
+  "cut": 7,
+  "corrMax": 10,
+  "ms": 11222,
+  "solves": {
+   "coarse": 0,
+   "fine": 22
+  },
+  "pairs": [
+   {
+    "L": 0,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 3,
+    "room": 3600,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 867,
+     "p50": 0,
+     "p99": 1553.058,
+     "max": 2860.345
+    },
+    "childMinusParent": {
+     "count": 867,
+     "p50": 0,
+     "p99": 1381.871,
+     "max": 2253.797
+    },
+    "upRoom": 2850,
+    "childPointMinusParent": {
+     "count": 867,
+     "p50": 0,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 1,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 3,
+    "room": 3400,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 867,
+     "p50": 0,
+     "p99": 2029.971,
+     "max": 2688.744
+    },
+    "childMinusParent": {
+     "count": 867,
+     "p50": 0,
+     "p99": 761.398,
+     "max": 2720.588
+    },
+    "upRoom": 3450,
+    "childPointMinusParent": {
+     "count": 867,
+     "p50": 0,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 2,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 7,
+    "room": 3450,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 2023,
+     "p50": 0.751,
+     "p99": 1491.318,
+     "max": 2723.654
+    },
+    "childMinusParent": {
+     "count": 2023,
+     "p50": -0.751,
+     "p99": 620.384,
+     "max": 2261.14
+    },
+    "upRoom": 2850,
+    "childPointMinusParent": {
+     "count": 2023,
+     "p50": -36.441,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 3,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 8,
+    "room": 1650,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 2312,
+     "p50": 9.686,
+     "p99": 462.208,
+     "max": 1303.669
+    },
+    "childMinusParent": {
+     "count": 2312,
+     "p50": -9.679,
+     "p99": 357.354,
+     "max": 1165.761
+    },
+    "upRoom": 1500,
+    "childPointMinusParent": {
+     "count": 2312,
+     "p50": -30.908,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 4,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 6,
+    "room": 850,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 1734,
+     "p50": 9.309,
+     "p99": 403.839,
+     "max": 662.018
+    },
+    "childMinusParent": {
+     "count": 1734,
+     "p50": -9.289,
+     "p99": 252.68,
+     "max": 648.016
+    },
+    "upRoom": 850,
+    "childPointMinusParent": {
+     "count": 1734,
+     "p50": -23.239,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 5,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 7,
+    "room": 500,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 2023,
+     "p50": 5.675,
+     "p99": 265.037,
+     "max": 398.941
+    },
+    "childMinusParent": {
+     "count": 2023,
+     "p50": -5.675,
+     "p99": 122.03,
+     "max": 299.436
+    },
+    "upRoom": 400,
+    "childPointMinusParent": {
+     "count": 2023,
+     "p50": -16.404,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 6,
+    "childCorrected": true,
+    "switch": true,
+    "pairs": 2,
+    "room": 2000,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 470.1,
+     "p99": 1357.973,
+     "max": 1583.82
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -468.48,
+     "p99": 7.831,
+     "max": 73.112
+    },
+    "upRoom": 100,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -565.797,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 7,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 2,
+    "room": 900,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 0,
+     "p99": 382.669,
+     "max": 707.682
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": 0,
+     "p99": 242.81,
+     "max": 374.747
+    },
+    "upRoom": 500,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -67.242,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 8,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 2,
+    "room": 400,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 5.083,
+     "p99": 206.777,
+     "max": 304.786
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -4.778,
+     "p99": 185.35,
+     "max": 262.818
+    },
+    "upRoom": 350,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -78.37,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 9,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 2,
+    "room": 250,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 11.031,
+     "p99": 98.64,
+     "max": 187.072
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -11.012,
+     "p99": 90.88,
+     "max": 112.482
+    },
+    "upRoom": 150,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -59.328,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 10,
+    "childCorrected": false,
+    "switch": false,
+    "pairs": 2,
+    "room": 250,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 66.131,
+     "p99": 163.014,
+     "max": 208.266
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -66.048,
+     "p99": 0,
+     "max": 0
+    },
+    "upRoom": null,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -66.048,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": 0,
+    "storedBelowPoint": 0
+   }
+  ],
+  "continuity": {
+   "violations": 0,
+   "worstFine": 0.7855580511373114,
+   "solves": 0
+  },
+  "edges": 44
+ },
+ "Raiva": {
+  "cut": 5,
+  "corrMax": 8,
+  "ms": 8941,
+  "solves": {
+   "coarse": 0,
+   "fine": 25
+  },
+  "pairs": [
+   {
+    "L": 0,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 3,
+    "room": 2350,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 867,
+     "p50": 0,
+     "p99": 1259.421,
+     "max": 1869.654
+    },
+    "childMinusParent": {
+     "count": 867,
+     "p50": 0,
+     "p99": 990.885,
+     "max": 1807.747
+    },
+    "upRoom": 2300,
+    "childPointMinusParent": {
+     "count": 867,
+     "p50": 0,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 1,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 3,
+    "room": 2100,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 867,
+     "p50": 0,
+     "p99": 1255.893,
+     "max": 1669.488
+    },
+    "childMinusParent": {
+     "count": 867,
+     "p50": 0,
+     "p99": 840.985,
+     "max": 1842.529
+    },
+    "upRoom": 2350,
+    "childPointMinusParent": {
+     "count": 867,
+     "p50": 0,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 2,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 6,
+    "room": 2650,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 1734,
+     "p50": 0,
+     "p99": 1469.91,
+     "max": 2118.765
+    },
+    "childMinusParent": {
+     "count": 1734,
+     "p50": 0,
+     "p99": 593.363,
+     "max": 1644.987
+    },
+    "upRoom": 2100,
+    "childPointMinusParent": {
+     "count": 1734,
+     "p50": -16.568,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 3,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 6,
+    "room": 1750,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 1734,
+     "p50": 3.946,
+     "p99": 200.37,
+     "max": 1383.467
+    },
+    "childMinusParent": {
+     "count": 1734,
+     "p50": -3.862,
+     "p99": 156.939,
+     "max": 1465.674
+    },
+    "upRoom": 1850,
+    "childPointMinusParent": {
+     "count": 1734,
+     "p50": -16.451,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 4,
+    "childCorrected": true,
+    "switch": true,
+    "pairs": 2,
+    "room": 800,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 100.956,
+     "p99": 552.83,
+     "max": 633.631
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -99.622,
+     "p99": 15.656,
+     "max": 157.833
+    },
+    "upRoom": 200,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -135.162,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 5,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 2,
+    "room": 300,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 1.633,
+     "p99": 143.283,
+     "max": 200.68
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -1.425,
+     "p99": 98.899,
+     "max": 240.82
+    },
+    "upRoom": 350,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -22.291,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 6,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 2,
+    "room": 300,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 0,
+     "p99": 151.459,
+     "max": 209.068
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": 0,
+     "p99": 82.235,
+     "max": 119.659
+    },
+    "upRoom": 150,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -25.016,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 7,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 2,
+    "room": 100,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 1.996,
+     "p99": 44.054,
+     "max": 60.996
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -1.977,
+     "p99": 37.251,
+     "max": 58.394
+    },
+    "upRoom": 100,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -21.41,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 8,
+    "childCorrected": false,
+    "switch": false,
+    "pairs": 2,
+    "room": 100,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 20.832,
+     "p99": 61.739,
+     "max": 79.603
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -20.682,
+     "p99": 0,
+     "max": 0
+    },
+    "upRoom": null,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -20.682,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": 0,
+    "storedBelowPoint": 0
+   }
+  ],
+  "continuity": {
+   "violations": 0,
+   "worstFine": 0.6576346666793933,
+   "solves": 0
+  },
+  "edges": 28
+ },
+ "Lethuris": {
+  "cut": 7,
+  "corrMax": 10,
+  "ms": 12287,
+  "solves": {
+   "coarse": 0,
+   "fine": 27
+  },
+  "pairs": [
+   {
+    "L": 0,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 4,
+    "room": 4800,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 1156,
+     "p50": 0,
+     "p99": 2786.537,
+     "max": 3815.823
+    },
+    "childMinusParent": {
+     "count": 1156,
+     "p50": 0,
+     "p99": 2619.476,
+     "max": 3898.755
+    },
+    "upRoom": 4900,
+    "childPointMinusParent": {
+     "count": 1156,
+     "p50": 0,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 1,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 7,
+    "room": 4950,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 2023,
+     "p50": 0,
+     "p99": 2603.696,
+     "max": 3952.736
+    },
+    "childMinusParent": {
+     "count": 2023,
+     "p50": 0,
+     "p99": 1315.897,
+     "max": 3451.481
+    },
+    "upRoom": 4350,
+    "childPointMinusParent": {
+     "count": 2023,
+     "p50": 0,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 2,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 5,
+    "room": 4550,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 1445,
+     "p50": 0,
+     "p99": 1697.412,
+     "max": 3627.046
+    },
+    "childMinusParent": {
+     "count": 1445,
+     "p50": 0,
+     "p99": 843.325,
+     "max": 3558.974
+    },
+    "upRoom": 4450,
+    "childPointMinusParent": {
+     "count": 1445,
+     "p50": -27.5,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 3,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 5,
+    "room": 2200,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 1445,
+     "p50": 0,
+     "p99": 420.29,
+     "max": 1720.425
+    },
+    "childMinusParent": {
+     "count": 1445,
+     "p50": 0,
+     "p99": 503.633,
+     "max": 1000.666
+    },
+    "upRoom": 1300,
+    "childPointMinusParent": {
+     "count": 1445,
+     "p50": 0,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 4,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 6,
+    "room": 1350,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 1734,
+     "p50": 3.027,
+     "p99": 504.402,
+     "max": 1079.561
+    },
+    "childMinusParent": {
+     "count": 1734,
+     "p50": -2.964,
+     "p99": 204,
+     "max": 800.861
+    },
+    "upRoom": 1050,
+    "childPointMinusParent": {
+     "count": 1734,
+     "p50": -17.929,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 5,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 6,
+    "room": 950,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 1734,
+     "p50": 6.54,
+     "p99": 351.447,
+     "max": 725.561
+    },
+    "childMinusParent": {
+     "count": 1734,
+     "p50": -6.536,
+     "p99": 171.868,
+     "max": 826.322
+    },
+    "upRoom": 1050,
+    "childPointMinusParent": {
+     "count": 1734,
+     "p50": -20.512,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 6,
+    "childCorrected": true,
+    "switch": true,
+    "pairs": 2,
+    "room": 2350,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 164.267,
+     "p99": 1375.119,
+     "max": 1877.282
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -163.934,
+     "p99": 54.276,
+     "max": 89.709
+    },
+    "upRoom": 150,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -208.535,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 7,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 2,
+    "room": 700,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 2.267,
+     "p99": 328.795,
+     "max": 533.281
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -2.179,
+     "p99": 271.821,
+     "max": 895.01
+    },
+    "upRoom": 1150,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -43.407,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 8,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 2,
+    "room": 950,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 0,
+     "p99": 305.375,
+     "max": 749.286
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": 0,
+     "p99": 271.391,
+     "max": 312.794
+    },
+    "upRoom": 400,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -50.425,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 9,
+    "childCorrected": true,
+    "switch": false,
+    "pairs": 2,
+    "room": 300,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 12.01,
+     "p99": 148.691,
+     "max": 205.244
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -11.972,
+     "p99": 103.17,
+     "max": 194.94
+    },
+    "upRoom": 250,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -59.925,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": null,
+    "storedBelowPoint": 0
+   },
+   {
+    "L": 10,
+    "childCorrected": false,
+    "switch": false,
+    "pairs": 2,
+    "room": 250,
+    "roomMet": true,
+    "parentMinusChild": {
+     "count": 578,
+     "p50": 62.024,
+     "p99": 171.293,
+     "max": 246.063
+    },
+    "childMinusParent": {
+     "count": 578,
+     "p50": -61.866,
+     "p99": 0,
+     "max": 0
+    },
+    "upRoom": null,
+    "childPointMinusParent": {
+     "count": 578,
+     "p50": -61.866,
+     "p99": 0,
+     "max": 0
+    },
+    "pointMismatch": 0,
+    "storedBelowPoint": 0
+   }
+  ],
+  "continuity": {
+   "violations": 0,
+   "worstFine": 0.7217459324647516,
+   "solves": 0
+  },
+  "edges": 41
+ }
+}

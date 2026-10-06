@@ -1,0 +1,9 @@
+FAIL 0/3/0 (pass/fail/unclear of 3) calibration NOT-CHECKED (not citable) -> element: massif height/silhouette  C:\LLM\IWSDK\universe-atlas-wt\t6\test-results\mountains\t6-wiring\luna-sheet\refmain\lethuris-mountainV3-noclouds-refmain.png
+FAIL 0/3/0 (pass/fail/unclear of 3) calibration NOT-CHECKED (not citable) -> element: haze/clouds  C:\LLM\IWSDK\universe-atlas-wt\t6\test-results\mountains\t6-wiring\luna-sheet\refmain\lethuris-mountainV3-refmain.png
+FAIL 0/3/0 (pass/fail/unclear of 3) calibration NOT-CHECKED (not citable) -> element: massif height/silhouette  C:\LLM\IWSDK\universe-atlas-wt\t6\test-results\mountains\t6-wiring\luna-sheet\refmain\maithea-mountainV3-noclouds-refmain.png
+FAIL 0/3/0 (pass/fail/unclear of 3) calibration NOT-CHECKED (not citable) -> element: massif height/silhouette  C:\LLM\IWSDK\universe-atlas-wt\t6\test-results\mountains\t6-wiring\luna-sheet\refmain\maithea-mountainV3-refmain.png
+FAIL 0/3/0 (pass/fail/unclear of 3) calibration NOT-CHECKED (not citable) -> element: massif height/silhouette  C:\LLM\IWSDK\universe-atlas-wt\t6\test-results\mountains\t6-wiring\luna-sheet\refmain\raiva-mountainV3-noclouds-refmain.png
+FAIL 0/3/0 (pass/fail/unclear of 3) calibration NOT-CHECKED (not citable) -> element: massif height/silhouette  C:\LLM\IWSDK\universe-atlas-wt\t6\test-results\mountains\t6-wiring\luna-sheet\refmain\raiva-mountainV3-refmain.png
+FAIL 0/3/0 (pass/fail/unclear of 3) calibration NOT-CHECKED (not citable) -> element: massif height/silhouette  C:\LLM\IWSDK\universe-atlas-wt\t6\test-results\mountains\t6-wiring\luna-sheet\refmain\selawyn-mountainV3-noclouds-refmain.png
+FAIL 0/2/1 (pass/fail/unclear of 3) calibration NOT-CHECKED (not citable) -> element: massif height/silhouette  C:\LLM\IWSDK\universe-atlas-wt\t6\test-results\mountains\t6-wiring\luna-sheet\refmain\selawyn-mountainV3-refmain.png
+VISUAL-ADVISORY: recorded only; never blocks a gate by itself.

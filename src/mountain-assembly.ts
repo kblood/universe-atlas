@@ -13,11 +13,12 @@
 // Arithmetic only (+ - * /, Math.floor/min/max/abs/imul): every value feeds a height and the ocean flag.
 import {massifEnvelopeM, composeRidgeTermM, MASSIF_ENVELOPE} from './mountain-envelope.ts';
 import {ridgeValleyCarvingM} from './mountain-carving.ts';
+import {MOUNTAIN_ROCK_DETAIL, rockDetailM, rockDetailSeed} from './mountain-rock-detail.ts';
 
 // mountain-assembly-2 (mountains cost plan T3): mountainRidgeTermM takes `carve`; with carve = false (tile
 // levels coarser than lod-ladder.ts carvingFromLevel) it returns the uncarved composition. The truth (carve =
 // true, the default) is unchanged. Was mountain-assembly-1.
-export const MOUNTAIN_ASSEMBLY_VERSION = 'mountain-assembly-2';
+export const MOUNTAIN_ASSEMBLY_VERSION = 'mountain-assembly-3';
 export const MOUNTAIN_ASSEMBLY = Object.freeze({
   // Fixed M3 carving half-width (m): one strip spans 2x this across the belt axis.
   CARVING_HALF_WIDTH_M: 48000,
@@ -66,14 +67,22 @@ export function carvingSeed(beltSeed: number, strip: number): number {
 // main + U. C <= 0, so it is >= the carved term (an upper envelope), and no M3 block is ever solved for it.
 export function mountainRidgeTermM(
   mainTermM: number, o: BeltSample, a0: number, landFactor: number, tau: number, beltSeeds: ArrayLike<number>,
-  carve = true,
+  carve = true, rock = false,
 ): number {
   const U = massifEnvelopeM(o.belt, o.axisDistanceM, o.halfWidthM, a0, landFactor, tau, 'water');
   const composed = composeRidgeTermM(mainTermM, o.belt, o.axisDistanceM, o.halfWidthM, U);
   if (!carve || !(U > 0)) return composed;
   const {strip, localM} = carvingStrip(o.axisDistanceM);
-  return composed + ridgeValleyCarvingM(o.alongM ?? 0, localM, MOUNTAIN_ASSEMBLY.CARVING_HALF_WIDTH_M, U, o.belt,
-    carvingSeed(beltSeeds[o.beltIndex], strip));
+  const alongM = o.alongM ?? 0, w = MOUNTAIN_ASSEMBLY.CARVING_HALF_WIDTH_M;
+  const stripSeed = carvingSeed(beltSeeds[o.beltIndex], strip);
+  const C = ridgeValleyCarvingM(alongM, localM, w, U, o.belt, stripSeed);
+  if (!rock) return composed + C; // Same operation order as mountain-assembly-2.
+  // Envelope U and strip seed held at the sample; offsets use the same local
+  // coordinate system and fixed metric step, never tile lattice spacing.
+  const S = MOUNTAIN_ROCK_DETAIL.SLOPE_STEP_M;
+  const Cx = ridgeValleyCarvingM(alongM + S, localM, w, U, o.belt, stripSeed);
+  const Cy = ridgeValleyCarvingM(alongM, localM + S, w, U, o.belt, stripSeed);
+  return composed + C + rockDetailM(alongM, localM, U + C, U + Cx, U + Cy, rockDetailSeed(stripSeed));
 }
 
 // The massif cap and the carving width agree (decision (e) and (g)): a massif is one carving strip.

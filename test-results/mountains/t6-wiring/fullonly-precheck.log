@@ -1,0 +1,25 @@
+✔ window bound constant: 772 m detail + 1908 m landforms x min(1, R/2e6); 2680 m from R = 2000 km up; 0 on gas giants (0.4402ms)
+✔ invariant 0 <= h - floorM <= terrainWindowMaxM(body) over 6 bodies x 20000 directions (0 violations) (1198.7208ms)
+✔ invariant on the truth: 0 <= h - floorM <= terrainWindowMaxM(body) over the 6 bodies x 20000 directions (test:full) (206668.8248ms)
+✔ continentalM >= 0 exactly where the sea-level-0 sampler reports land, on the four water worlds (62.8208ms)
+✔ floorM is the clamped base field: water-world seabed and gas giants equal elevationM; floor never exceeds ground (1940.5531ms)
+✔ terrainFloorSampler = terrainSampler plus exactly floorM/windowM/continentalM; plain shapes unchanged (8046.6795ms)
+✔ baseTerrainSampler keeps its historical four-field shape (2.5226ms)
+RAIVA R1 {"tau":0.4560255015129207,"w":90090.17114178278,"count":275,"area":31998.375,"density":8.59418642352932}
+✔ HARD: outsideBelt directions (4096 per water world) are bit-identical to main: heights, ocean and colour (251.5799ms)
+✔ HARD: outsideMassif directions (4096 per water world) are bit-identical to main: heights, ocean and colour (52.3741ms)
+✔ HARD: negative controls: the identity digest rejects one changed height, colour or ocean flag (78.9356ms)
+✔ HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (level 0) (117.301ms)
+✔ HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (carved truth) (56091.2224ms)
+✔ HARD: versions, fixed carving width, strip rule and per-strip seeds (0.8601ms)
+✔ HARD: the assembled ridge term: >= 0, <= max(main, analytic envelope), main outside the massif (397.3671ms)
+✔ HARD: mountain-assembly.ts is arithmetic only and imports only M2, M3 and M5 (1.0033ms)
+✔ CONTRACT: M4 R1 on the whole belt core at the real Raiva tau and belt width (8 seeds, 64 km rasters) (6447.6366ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 218101.0143

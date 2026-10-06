@@ -1,0 +1,1642 @@
+{
+ "Maithea/L6": {
+  "world": "Maithea",
+  "level": 6,
+  "maxMs": 1378,
+  "meanMs": 980,
+  "maxSolves": 9,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "2/6/51/34",
+    "ms": 1045,
+    "blockSolves": 7
+   },
+   {
+    "kind": "axis",
+    "tile": "2/6/33/54",
+    "ms": 884,
+    "blockSolves": 6
+   },
+   {
+    "kind": "axis",
+    "tile": "2/6/54/40",
+    "ms": 1041,
+    "blockSolves": 7
+   },
+   {
+    "kind": "axis",
+    "tile": "2/6/39/58",
+    "ms": 1038,
+    "blockSolves": 7
+   },
+   {
+    "kind": "axis",
+    "tile": "2/6/57/45",
+    "ms": 950,
+    "blockSolves": 6
+   },
+   {
+    "kind": "axis",
+    "tile": "2/6/57/11",
+    "ms": 914,
+    "blockSolves": 6
+   },
+   {
+    "kind": "axis",
+    "tile": "2/6/6/9",
+    "ms": 762,
+    "blockSolves": 5
+   },
+   {
+    "kind": "axis",
+    "tile": "4/6/30/58",
+    "ms": 1191,
+    "blockSolves": 8
+   },
+   {
+    "kind": "flank",
+    "tile": "2/6/50/35",
+    "ms": 730,
+    "blockSolves": 5
+   },
+   {
+    "kind": "flank",
+    "tile": "2/6/33/54",
+    "ms": 892,
+    "blockSolves": 6
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/6/59/49",
+    "ms": 935,
+    "blockSolves": 6
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/6/49/32",
+    "ms": 1378,
+    "blockSolves": 9
+   }
+  ]
+ },
+ "Maithea/L7": {
+  "world": "Maithea",
+  "level": 7,
+  "maxMs": 806,
+  "meanMs": 651,
+  "maxSolves": 5,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "2/7/102/69",
+    "ms": 783,
+    "blockSolves": 5
+   },
+   {
+    "kind": "axis",
+    "tile": "2/7/67/109",
+    "ms": 617,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "2/7/108/80",
+    "ms": 760,
+    "blockSolves": 5
+   },
+   {
+    "kind": "axis",
+    "tile": "2/7/79/116",
+    "ms": 788,
+    "blockSolves": 5
+   },
+   {
+    "kind": "axis",
+    "tile": "2/7/114/90",
+    "ms": 645,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "2/7/115/22",
+    "ms": 498,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "2/7/13/19",
+    "ms": 498,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "4/7/60/117",
+    "ms": 806,
+    "blockSolves": 5
+   },
+   {
+    "kind": "flank",
+    "tile": "2/7/101/70",
+    "ms": 334,
+    "blockSolves": 2
+   },
+   {
+    "kind": "flank",
+    "tile": "2/7/66/108",
+    "ms": 661,
+    "blockSolves": 4
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/7/119/98",
+    "ms": 639,
+    "blockSolves": 4
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/7/98/65",
+    "ms": 777,
+    "blockSolves": 5
+   }
+  ]
+ },
+ "Maithea/L8": {
+  "world": "Maithea",
+  "level": 8,
+  "maxMs": 485,
+  "meanMs": 386,
+  "maxSolves": 3,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "2/8/204/139",
+    "ms": 479,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "2/8/134/218",
+    "ms": 485,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "2/8/217/160",
+    "ms": 316,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "2/8/159/233",
+    "ms": 450,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "2/8/229/181",
+    "ms": 480,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "2/8/231/44",
+    "ms": 325,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "2/8/26/39",
+    "ms": 331,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "4/8/121/235",
+    "ms": 481,
+    "blockSolves": 3
+   },
+   {
+    "kind": "flank",
+    "tile": "2/8/203/140",
+    "ms": 172,
+    "blockSolves": 1
+   },
+   {
+    "kind": "flank",
+    "tile": "2/8/133/217",
+    "ms": 186,
+    "blockSolves": 1
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/8/238/196",
+    "ms": 452,
+    "blockSolves": 3
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/8/197/130",
+    "ms": 472,
+    "blockSolves": 3
+   }
+  ]
+ },
+ "Maithea/L10": {
+  "world": "Maithea",
+  "level": 10,
+  "maxMs": 328,
+  "meanMs": 212,
+  "maxSolves": 2,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "2/10/816/559",
+    "ms": 183,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/10/538/872",
+    "ms": 325,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "2/10/869/640",
+    "ms": 198,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/10/636/935",
+    "ms": 168,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/10/918/725",
+    "ms": 176,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/10/926/178",
+    "ms": 170,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/10/105/159",
+    "ms": 167,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "4/10/486/940",
+    "ms": 319,
+    "blockSolves": 2
+   },
+   {
+    "kind": "flank",
+    "tile": "2/10/813/561",
+    "ms": 180,
+    "blockSolves": 1
+   },
+   {
+    "kind": "flank",
+    "tile": "2/10/535/871",
+    "ms": 32,
+    "blockSolves": 0
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/10/953/787",
+    "ms": 328,
+    "blockSolves": 2
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/10/791/522",
+    "ms": 299,
+    "blockSolves": 2
+   }
+  ]
+ },
+ "Maithea/L12": {
+  "world": "Maithea",
+  "level": 12,
+  "maxMs": 318,
+  "meanMs": 175,
+  "maxSolves": 2,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "2/12/3266/2238",
+    "ms": 185,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/12/2154/3490",
+    "ms": 183,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/12/3476/2560",
+    "ms": 174,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/12/2545/3743",
+    "ms": 188,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/12/3674/2900",
+    "ms": 169,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/12/3706/714",
+    "ms": 182,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/12/420/639",
+    "ms": 165,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "4/12/1945/3760",
+    "ms": 318,
+    "blockSolves": 2
+   },
+   {
+    "kind": "flank",
+    "tile": "2/12/3252/2244",
+    "ms": 29,
+    "blockSolves": 0
+   },
+   {
+    "kind": "flank",
+    "tile": "2/12/2140/3487",
+    "ms": 176,
+    "blockSolves": 1
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/12/3815/3150",
+    "ms": 165,
+    "blockSolves": 1
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/12/3167/2088",
+    "ms": 170,
+    "blockSolves": 1
+   }
+  ]
+ },
+ "Selawyn/L7": {
+  "world": "Selawyn",
+  "level": 7,
+  "maxMs": 1182,
+  "meanMs": 944,
+  "maxSolves": 8,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "0/7/112/107",
+    "ms": 911,
+    "blockSolves": 6
+   },
+   {
+    "kind": "axis",
+    "tile": "0/7/102/84",
+    "ms": 1015,
+    "blockSolves": 7
+   },
+   {
+    "kind": "axis",
+    "tile": "4/7/78/68",
+    "ms": 1182,
+    "blockSolves": 8
+   },
+   {
+    "kind": "axis",
+    "tile": "5/7/32/67",
+    "ms": 1057,
+    "blockSolves": 7
+   },
+   {
+    "kind": "axis",
+    "tile": "5/7/19/49",
+    "ms": 760,
+    "blockSolves": 5
+   },
+   {
+    "kind": "axis",
+    "tile": "4/7/84/36",
+    "ms": 889,
+    "blockSolves": 6
+   },
+   {
+    "kind": "axis",
+    "tile": "4/7/107/30",
+    "ms": 745,
+    "blockSolves": 5
+   },
+   {
+    "kind": "axis",
+    "tile": "4/7/72/28",
+    "ms": 875,
+    "blockSolves": 6
+   },
+   {
+    "kind": "flank",
+    "tile": "0/7/112/108",
+    "ms": 886,
+    "blockSolves": 6
+   },
+   {
+    "kind": "flank",
+    "tile": "0/7/102/84",
+    "ms": 1029,
+    "blockSolves": 7
+   },
+   {
+    "kind": "belt-end",
+    "tile": "0/7/108/76",
+    "ms": 1069,
+    "blockSolves": 7
+   },
+   {
+    "kind": "belt-end",
+    "tile": "0/7/107/110",
+    "ms": 909,
+    "blockSolves": 6
+   }
+  ]
+ },
+ "Selawyn/L8": {
+  "world": "Selawyn",
+  "level": 8,
+  "maxMs": 640,
+  "meanMs": 496,
+  "maxSolves": 4,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "0/8/224/215",
+    "ms": 475,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "0/8/204/169",
+    "ms": 630,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "4/8/156/136",
+    "ms": 629,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "5/8/64/135",
+    "ms": 638,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "5/8/39/98",
+    "ms": 494,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "4/8/169/73",
+    "ms": 640,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "4/8/214/61",
+    "ms": 482,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "4/8/144/56",
+    "ms": 640,
+    "blockSolves": 4
+   },
+   {
+    "kind": "flank",
+    "tile": "0/8/225/216",
+    "ms": 192,
+    "blockSolves": 1
+   },
+   {
+    "kind": "flank",
+    "tile": "0/8/204/169",
+    "ms": 37,
+    "blockSolves": 0
+   },
+   {
+    "kind": "belt-end",
+    "tile": "0/8/217/153",
+    "ms": 633,
+    "blockSolves": 4
+   },
+   {
+    "kind": "belt-end",
+    "tile": "0/8/214/220",
+    "ms": 466,
+    "blockSolves": 3
+   }
+  ]
+ },
+ "Selawyn/L9": {
+  "world": "Selawyn",
+  "level": 9,
+  "maxMs": 529,
+  "meanMs": 358,
+  "maxSolves": 3,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "0/9/449/431",
+    "ms": 482,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "0/9/409/339",
+    "ms": 519,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "4/9/313/273",
+    "ms": 505,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "5/9/129/270",
+    "ms": 360,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "5/9/78/196",
+    "ms": 363,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "4/9/339/146",
+    "ms": 354,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "4/9/429/122",
+    "ms": 386,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "4/9/288/113",
+    "ms": 382,
+    "blockSolves": 2
+   },
+   {
+    "kind": "flank",
+    "tile": "0/9/450/432",
+    "ms": 34,
+    "blockSolves": 0
+   },
+   {
+    "kind": "flank",
+    "tile": "0/9/408/339",
+    "ms": 29,
+    "blockSolves": 0
+   },
+   {
+    "kind": "belt-end",
+    "tile": "0/9/434/307",
+    "ms": 529,
+    "blockSolves": 3
+   },
+   {
+    "kind": "belt-end",
+    "tile": "0/9/429/440",
+    "ms": 348,
+    "blockSolves": 2
+   }
+  ]
+ },
+ "Selawyn/L11": {
+  "world": "Selawyn",
+  "level": 11,
+  "maxMs": 356,
+  "meanMs": 216,
+  "maxSolves": 2,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "0/11/1797/1724",
+    "ms": 189,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "0/11/1636/1359",
+    "ms": 321,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "4/11/1252/1094",
+    "ms": 343,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "5/11/518/1080",
+    "ms": 200,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "5/11/314/786",
+    "ms": 352,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "4/11/1357/584",
+    "ms": 190,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "4/11/1716/489",
+    "ms": 356,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "4/11/1155/453",
+    "ms": 188,
+    "blockSolves": 1
+   },
+   {
+    "kind": "flank",
+    "tile": "0/11/1801/1730",
+    "ms": 32,
+    "blockSolves": 0
+   },
+   {
+    "kind": "flank",
+    "tile": "0/11/1632/1356",
+    "ms": 33,
+    "blockSolves": 0
+   },
+   {
+    "kind": "belt-end",
+    "tile": "0/11/1736/1231",
+    "ms": 203,
+    "blockSolves": 1
+   },
+   {
+    "kind": "belt-end",
+    "tile": "0/11/1717/1760",
+    "ms": 187,
+    "blockSolves": 1
+   }
+  ]
+ },
+ "Selawyn/L13": {
+  "world": "Selawyn",
+  "level": 13,
+  "maxMs": 323,
+  "meanMs": 162,
+  "maxSolves": 2,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "0/13/7190/6899",
+    "ms": 182,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "0/13/6546/5439",
+    "ms": 323,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "4/13/5010/4379",
+    "ms": 180,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "5/13/2073/4323",
+    "ms": 176,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "5/13/1259/3144",
+    "ms": 181,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "4/13/5431/2339",
+    "ms": 168,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "4/13/6866/1959",
+    "ms": 177,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "4/13/4621/1813",
+    "ms": 161,
+    "blockSolves": 1
+   },
+   {
+    "kind": "flank",
+    "tile": "0/13/7206/6921",
+    "ms": 27,
+    "blockSolves": 0
+   },
+   {
+    "kind": "flank",
+    "tile": "0/13/6530/5426",
+    "ms": 27,
+    "blockSolves": 0
+   },
+   {
+    "kind": "belt-end",
+    "tile": "0/13/6947/4925",
+    "ms": 179,
+    "blockSolves": 1
+   },
+   {
+    "kind": "belt-end",
+    "tile": "0/13/6869/7041",
+    "ms": 166,
+    "blockSolves": 1
+   }
+  ]
+ },
+ "Raiva/L5": {
+  "world": "Raiva",
+  "level": 5,
+  "maxMs": 1211,
+  "meanMs": 973,
+  "maxSolves": 8,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "1/5/19/25",
+    "ms": 1049,
+    "blockSolves": 7
+   },
+   {
+    "kind": "axis",
+    "tile": "1/5/20/22",
+    "ms": 1167,
+    "blockSolves": 8
+   },
+   {
+    "kind": "axis",
+    "tile": "1/5/22/20",
+    "ms": 1211,
+    "blockSolves": 8
+   },
+   {
+    "kind": "axis",
+    "tile": "1/5/24/18",
+    "ms": 1070,
+    "blockSolves": 7
+   },
+   {
+    "kind": "axis",
+    "tile": "1/5/27/15",
+    "ms": 1062,
+    "blockSolves": 7
+   },
+   {
+    "kind": "axis",
+    "tile": "5/5/26/9",
+    "ms": 760,
+    "blockSolves": 5
+   },
+   {
+    "kind": "axis",
+    "tile": "0/5/0/6",
+    "ms": 763,
+    "blockSolves": 5
+   },
+   {
+    "kind": "axis",
+    "tile": "5/5/29/0",
+    "ms": 607,
+    "blockSolves": 4
+   },
+   {
+    "kind": "flank",
+    "tile": "1/5/18/25",
+    "ms": 1040,
+    "blockSolves": 7
+   },
+   {
+    "kind": "flank",
+    "tile": "1/5/20/22",
+    "ms": 1178,
+    "blockSolves": 8
+   },
+   {
+    "kind": "belt-end",
+    "tile": "1/5/18/27",
+    "ms": 878,
+    "blockSolves": 6
+   },
+   {
+    "kind": "belt-end",
+    "tile": "1/5/29/13",
+    "ms": 885,
+    "blockSolves": 6
+   }
+  ]
+ },
+ "Raiva/L6": {
+  "world": "Raiva",
+  "level": 6,
+  "maxMs": 755,
+  "meanMs": 517,
+  "maxSolves": 5,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "1/6/38/50",
+    "ms": 623,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "1/6/41/45",
+    "ms": 739,
+    "blockSolves": 5
+   },
+   {
+    "kind": "axis",
+    "tile": "1/6/44/40",
+    "ms": 755,
+    "blockSolves": 5
+   },
+   {
+    "kind": "axis",
+    "tile": "1/6/48/36",
+    "ms": 738,
+    "blockSolves": 5
+   },
+   {
+    "kind": "axis",
+    "tile": "1/6/54/30",
+    "ms": 633,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "5/6/52/18",
+    "ms": 488,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "0/6/0/13",
+    "ms": 465,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "5/6/59/0",
+    "ms": 467,
+    "blockSolves": 3
+   },
+   {
+    "kind": "flank",
+    "tile": "1/6/37/50",
+    "ms": 176,
+    "blockSolves": 1
+   },
+   {
+    "kind": "flank",
+    "tile": "1/6/41/45",
+    "ms": 32,
+    "blockSolves": 0
+   },
+   {
+    "kind": "belt-end",
+    "tile": "1/6/36/55",
+    "ms": 606,
+    "blockSolves": 4
+   },
+   {
+    "kind": "belt-end",
+    "tile": "1/6/58/27",
+    "ms": 482,
+    "blockSolves": 3
+   }
+  ]
+ },
+ "Raiva/L7": {
+  "world": "Raiva",
+  "level": 7,
+  "maxMs": 475,
+  "meanMs": 307,
+  "maxSolves": 3,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "1/7/76/101",
+    "ms": 335,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "1/7/82/90",
+    "ms": 475,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "1/7/89/81",
+    "ms": 456,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "1/7/96/72",
+    "ms": 449,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "1/7/108/61",
+    "ms": 313,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "5/7/105/36",
+    "ms": 311,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "0/7/1/27",
+    "ms": 325,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "5/7/119/0",
+    "ms": 315,
+    "blockSolves": 2
+   },
+   {
+    "kind": "flank",
+    "tile": "1/7/75/100",
+    "ms": 34,
+    "blockSolves": 0
+   },
+   {
+    "kind": "flank",
+    "tile": "1/7/83/91",
+    "ms": 32,
+    "blockSolves": 0
+   },
+   {
+    "kind": "belt-end",
+    "tile": "1/7/72/110",
+    "ms": 328,
+    "blockSolves": 2
+   },
+   {
+    "kind": "belt-end",
+    "tile": "1/7/116/54",
+    "ms": 311,
+    "blockSolves": 2
+   }
+  ]
+ },
+ "Raiva/L9": {
+  "world": "Raiva",
+  "level": 9,
+  "maxMs": 338,
+  "meanMs": 224,
+  "maxSolves": 2,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "1/9/305/405",
+    "ms": 338,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "1/9/330/363",
+    "ms": 170,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "1/9/357/326",
+    "ms": 324,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "1/9/385/291",
+    "ms": 311,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "1/9/432/244",
+    "ms": 170,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "5/9/423/144",
+    "ms": 326,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "0/9/6/111",
+    "ms": 321,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "5/9/477/2",
+    "ms": 178,
+    "blockSolves": 1
+   },
+   {
+    "kind": "flank",
+    "tile": "1/9/302/402",
+    "ms": 33,
+    "blockSolves": 0
+   },
+   {
+    "kind": "flank",
+    "tile": "1/9/334/365",
+    "ms": 34,
+    "blockSolves": 0
+   },
+   {
+    "kind": "belt-end",
+    "tile": "1/9/289/440",
+    "ms": 181,
+    "blockSolves": 1
+   },
+   {
+    "kind": "belt-end",
+    "tile": "1/9/464/216",
+    "ms": 296,
+    "blockSolves": 2
+   }
+  ]
+ },
+ "Raiva/L11": {
+  "world": "Raiva",
+  "level": 11,
+  "maxMs": 338,
+  "meanMs": 163,
+  "maxSolves": 2,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "1/11/1223/1623",
+    "ms": 338,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "1/11/1323/1452",
+    "ms": 170,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "1/11/1428/1304",
+    "ms": 184,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "1/11/1541/1164",
+    "ms": 167,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "1/11/1729/979",
+    "ms": 176,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "5/11/1695/577",
+    "ms": 172,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "0/11/27/446",
+    "ms": 182,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "5/11/1909/11",
+    "ms": 164,
+    "blockSolves": 1
+   },
+   {
+    "kind": "flank",
+    "tile": "1/11/1208/1611",
+    "ms": 31,
+    "blockSolves": 0
+   },
+   {
+    "kind": "flank",
+    "tile": "1/11/1337/1463",
+    "ms": 30,
+    "blockSolves": 0
+   },
+   {
+    "kind": "belt-end",
+    "tile": "1/11/1158/1762",
+    "ms": 179,
+    "blockSolves": 1
+   },
+   {
+    "kind": "belt-end",
+    "tile": "1/11/1857/867",
+    "ms": 165,
+    "blockSolves": 1
+   }
+  ]
+ },
+ "Lethuris/L7": {
+  "world": "Lethuris",
+  "level": 7,
+  "maxMs": 1192,
+  "meanMs": 929,
+  "maxSolves": 8,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "2/7/28/73",
+    "ms": 1192,
+    "blockSolves": 8
+   },
+   {
+    "kind": "axis",
+    "tile": "2/7/104/55",
+    "ms": 1013,
+    "blockSolves": 7
+   },
+   {
+    "kind": "axis",
+    "tile": "2/7/16/35",
+    "ms": 904,
+    "blockSolves": 6
+   },
+   {
+    "kind": "axis",
+    "tile": "2/7/34/13",
+    "ms": 916,
+    "blockSolves": 6
+   },
+   {
+    "kind": "axis",
+    "tile": "5/7/8/65",
+    "ms": 1081,
+    "blockSolves": 7
+   },
+   {
+    "kind": "axis",
+    "tile": "5/7/85/60",
+    "ms": 1029,
+    "blockSolves": 7
+   },
+   {
+    "kind": "axis",
+    "tile": "3/7/4/97",
+    "ms": 644,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "3/7/45/111",
+    "ms": 917,
+    "blockSolves": 6
+   },
+   {
+    "kind": "flank",
+    "tile": "2/7/28/73",
+    "ms": 1190,
+    "blockSolves": 8
+   },
+   {
+    "kind": "flank",
+    "tile": "2/7/103/55",
+    "ms": 1040,
+    "blockSolves": 7
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/7/118/49",
+    "ms": 737,
+    "blockSolves": 5
+   },
+   {
+    "kind": "belt-end",
+    "tile": "4/7/11/112",
+    "ms": 481,
+    "blockSolves": 3
+   }
+  ]
+ },
+ "Lethuris/L8": {
+  "world": "Lethuris",
+  "level": 8,
+  "maxMs": 628,
+  "meanMs": 480,
+  "maxSolves": 4,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "2/8/56/147",
+    "ms": 628,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "2/8/208/110",
+    "ms": 606,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "2/8/33/70",
+    "ms": 452,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "2/8/68/26",
+    "ms": 604,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "5/8/17/131",
+    "ms": 610,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "5/8/170/121",
+    "ms": 620,
+    "blockSolves": 4
+   },
+   {
+    "kind": "axis",
+    "tile": "3/8/9/194",
+    "ms": 479,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "3/8/91/223",
+    "ms": 465,
+    "blockSolves": 3
+   },
+   {
+    "kind": "flank",
+    "tile": "2/8/56/147",
+    "ms": 33,
+    "blockSolves": 0
+   },
+   {
+    "kind": "flank",
+    "tile": "2/8/207/110",
+    "ms": 182,
+    "blockSolves": 1
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/8/236/98",
+    "ms": 621,
+    "blockSolves": 4
+   },
+   {
+    "kind": "belt-end",
+    "tile": "4/8/23/225",
+    "ms": 463,
+    "blockSolves": 3
+   }
+  ]
+ },
+ "Lethuris/L9": {
+  "world": "Lethuris",
+  "level": 9,
+  "maxMs": 477,
+  "meanMs": 332,
+  "maxSolves": 3,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "2/9/113/295",
+    "ms": 477,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "2/9/416/220",
+    "ms": 463,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "2/9/66/141",
+    "ms": 310,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "2/9/136/53",
+    "ms": 451,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "5/9/34/263",
+    "ms": 472,
+    "blockSolves": 3
+   },
+   {
+    "kind": "axis",
+    "tile": "5/9/341/242",
+    "ms": 314,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "3/9/18/388",
+    "ms": 320,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "3/9/183/446",
+    "ms": 334,
+    "blockSolves": 2
+   },
+   {
+    "kind": "flank",
+    "tile": "2/9/112/295",
+    "ms": 31,
+    "blockSolves": 0
+   },
+   {
+    "kind": "flank",
+    "tile": "2/9/415/220",
+    "ms": 174,
+    "blockSolves": 1
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/9/472/196",
+    "ms": 324,
+    "blockSolves": 2
+   },
+   {
+    "kind": "belt-end",
+    "tile": "4/9/46/451",
+    "ms": 314,
+    "blockSolves": 2
+   }
+  ]
+ },
+ "Lethuris/L11": {
+  "world": "Lethuris",
+  "level": 11,
+  "maxMs": 340,
+  "meanMs": 176,
+  "maxSolves": 2,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "2/11/455/1180",
+    "ms": 186,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/11/1666/883",
+    "ms": 184,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/11/267/567",
+    "ms": 340,
+    "blockSolves": 2
+   },
+   {
+    "kind": "axis",
+    "tile": "2/11/547/213",
+    "ms": 179,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "5/11/136/1054",
+    "ms": 166,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "5/11/1364/969",
+    "ms": 184,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "3/11/74/1553",
+    "ms": 165,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "3/11/733/1784",
+    "ms": 163,
+    "blockSolves": 1
+   },
+   {
+    "kind": "flank",
+    "tile": "2/11/451/1181",
+    "ms": 31,
+    "blockSolves": 0
+   },
+   {
+    "kind": "flank",
+    "tile": "2/11/1663/880",
+    "ms": 168,
+    "blockSolves": 1
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/11/1888/785",
+    "ms": 178,
+    "blockSolves": 1
+   },
+   {
+    "kind": "belt-end",
+    "tile": "4/11/184/1806",
+    "ms": 173,
+    "blockSolves": 1
+   }
+  ]
+ },
+ "Lethuris/L13": {
+  "world": "Lethuris",
+  "level": 13,
+  "maxMs": 191,
+  "meanMs": 151,
+  "maxSolves": 1,
+  "over2s": 0,
+  "rows": [
+   {
+    "kind": "axis",
+    "tile": "2/13/1821/4720",
+    "ms": 185,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/13/6664/3535",
+    "ms": 184,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/13/1071/2268",
+    "ms": 168,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "2/13/2191/854",
+    "ms": 191,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "5/13/545/4216",
+    "ms": 172,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "5/13/5459/3876",
+    "ms": 170,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "3/13/297/6212",
+    "ms": 175,
+    "blockSolves": 1
+   },
+   {
+    "kind": "axis",
+    "tile": "3/13/2933/7138",
+    "ms": 167,
+    "blockSolves": 1
+   },
+   {
+    "kind": "flank",
+    "tile": "2/13/1804/4725",
+    "ms": 28,
+    "blockSolves": 0
+   },
+   {
+    "kind": "flank",
+    "tile": "2/13/6654/3523",
+    "ms": 25,
+    "blockSolves": 0
+   },
+   {
+    "kind": "belt-end",
+    "tile": "2/13/7554/3143",
+    "ms": 178,
+    "blockSolves": 1
+   },
+   {
+    "kind": "belt-end",
+    "tile": "4/13/738/7226",
+    "ms": 169,
+    "blockSolves": 1
+   }
+  ]
+ }
+}

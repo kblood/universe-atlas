@@ -35,7 +35,9 @@ function patch(a,{present=1,candidates=64,testedCells=64,context=contextA,record
 }
 function begin(capacity=256,canopyBody=body){
   const previousWorker=globalThis.Worker;MockWorker.instances=[];globalThis.Worker=MockWorker;
-  const host=new PlanetCanopy(canopyBody,capacity);host.prepare(eye,ground,100,0,true,false,nearOrigin);
+  // Non-timing hook: only the deterministic operation quotas bound each slice, so suite load cannot cut a
+  // 2 ms wall-clock slice short (the former full-suite flake). The deadline test below restores 2 ms.
+  const host=new PlanetCanopy(canopyBody,capacity);host.sliceMs=Infinity;host.prepare(eye,ground,100,0,true,false,nearOrigin);
   const worker=MockWorker.instances[0],configure=worker.sent.find(m=>m.type==='configure');
   assert.ok(worker&&configure,'prepare starts and configures a census worker');
   const generation=configure.generation,n=configure.body?Math.ceil(2*configure.body.radiusM/18):Math.ceil(2*body.radiusM/18);
@@ -139,6 +141,7 @@ test('selection requests and queued census results stay bounded and installs are
 test('selection application stops at the injected monotonic two millisecond deadline',t=>{
   const h=begin(64),n=h.n;
   try{
+    h.host.sliceMs=2;assert.equal(new PlanetCanopy(body,4).sliceMs,2,'production slice budget is 2 ms');
     const addresses=Array.from({length:1300},(_,i)=>[0,n,i,1000]);
     h.host.selection={id:999,center:[...ground],started:0};
     h.host.selectionApply={packed:Float64Array.from(addresses.flat()),offset:0,desired:new Map(),order:[],phase:'addresses',iterator:null,evictions:[],workMs:0,workerMs:0};

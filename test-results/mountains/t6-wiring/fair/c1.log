@@ -1,0 +1,272 @@
+AB Maithea first=cand: in 150.0% out 2.4% WEIGHTED 5.86%
+AA Maithea first=ref: in 5.0% out -1.9% WEIGHTED -1.74%
+AB Selawyn first=cand: in 137.2% out 1.9% WEIGHTED 3.66%
+AA Selawyn first=ref: in -1.0% out 0.2% WEIGHTED 0.18%
+AB Raiva first=cand: in 140.9% out 2.5% WEIGHTED 5.14%
+AA Raiva first=ref: in 0.4% out 2.2% WEIGHTED 2.15%
+AB Lethuris first=cand: in 156.5% out 0.5% WEIGHTED 2.47%
+AA Lethuris first=ref: in -4.6% out -3.9% WEIGHTED -3.95%
+AA Maithea first=cand: in -3.1% out -1.2% WEIGHTED -1.21%
+AB Maithea first=ref: in 138.0% out -5.2% WEIGHTED -2.07%
+AA Selawyn first=cand: in -0.9% out -0.5% WEIGHTED -0.54%
+AB Selawyn first=ref: in 130.2% out 4.6% WEIGHTED 6.24%
+AA Raiva first=cand: in -0.9% out 0.5% WEIGHTED 0.48%
+AB Raiva first=ref: in 128.7% out 6.4% WEIGHTED 8.80%
+AA Lethuris first=cand: in -1.6% out -10.4% WEIGHTED -10.33%
+AB Lethuris first=ref: in 162.5% out 7.5% WEIGHTED 9.60%
+AB Maithea first=cand: in 140.9% out -2.4% WEIGHTED 0.87%
+AA Maithea first=ref: in -7.2% out -2.4% WEIGHTED -2.53%
+AB Selawyn first=cand: in 139.5% out -3.4% WEIGHTED -1.57%
+AA Selawyn first=ref: in 0.7% out -3.1% WEIGHTED -3.09%
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node tests/golden/run-cross-engine.mjs --update --port 5297 --report test-results/mountains/t6-wiring/golden-report.json","pid":56836,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:23:57.237Z","token":"53f5f494-0506-438e-80ae-7b3e5b28b748"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (4 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (5 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (6 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (7 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (8 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (9 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (0 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (1 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (2 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (3 s) - retry in 1 s
+waiting for test slot: held by {"name":"node C:/LLM/IWSDK/universe-atlas-wt/t6/test-results/mountains/t6-wiring/capture-sheet.browser.mjs --tag refmain --out C:/LLM/IWSDK/universe-atlas-wt/t6/test-res","pid":55272,"host":"DESKTOP-N09QOSU","time":"2026-10-06T15:24:33.648Z","token":"6f8972d8-45eb-4d17-9e22-0bddf038c2cf"} (4 s) - retry in 1 s
+AB Raiva first=cand: in 127.6% out 1.8% WEIGHTED 4.38%
+AA Raiva first=ref: in -0.8% out -12.4% WEIGHTED -12.18%
+AB Lethuris first=cand: in 166.9% out 10.5% WEIGHTED 12.55%
+AA Lethuris first=ref: in -5.6% out -3.9% WEIGHTED -3.88%
+AA Maithea first=cand: in -1.0% out -2.1% WEIGHTED -2.07%
+AB Maithea first=ref: in 141.8% out 7.1% WEIGHTED 10.44%
+AA Selawyn first=cand: in 1.1% out 2.1% WEIGHTED 2.05%
+AB Selawyn first=ref: in 133.6% out 1.2% WEIGHTED 2.92%
+AA Raiva first=cand: in 7.7% out 3.6% WEIGHTED 3.66%
+AB Raiva first=ref: in 127.1% out -2.7% WEIGHTED -0.20%
+AA Lethuris first=cand: in -2.3% out -1.5% WEIGHTED -1.49%
+AB Lethuris first=ref: in 155.4% out 4.1% WEIGHTED 6.04%
+AB Maithea first=cand: in 137.7% out 4.0% WEIGHTED 6.50%
+AA Maithea first=ref: in 2.3% out -11.6% WEIGHTED -11.33%
+AB Selawyn first=cand: in 129.1% out 5.1% WEIGHTED 6.76%
+AA Selawyn first=ref: in 5.6% out 1.4% WEIGHTED 1.44%
+AB Raiva first=cand: in 138.9% out 6.7% WEIGHTED 9.23%
+AA Raiva first=ref: in 0.3% out 1.1% WEIGHTED 1.11%
+AB Lethuris first=cand: in 183.4% out 8.2% WEIGHTED 10.42%
+AA Lethuris first=ref: in -0.3% out -0.9% WEIGHTED -0.85%
+AA Maithea first=cand: in -0.3% out -2.1% WEIGHTED -2.03%
+AB Maithea first=ref: in 143.7% out 1.1% WEIGHTED 4.47%
+AA Selawyn first=cand: in -1.1% out -7.6% WEIGHTED -7.48%
+AB Selawyn first=ref: in 128.7% out 2.0% WEIGHTED 3.67%
+AA Raiva first=cand: in -2.7% out -1.9% WEIGHTED -1.96%
+AB Raiva first=ref: in 130.0% out 2.6% WEIGHTED 5.13%
+AA Lethuris first=cand: in 0.3% out 1.9% WEIGHTED 1.90%
+AB Lethuris first=ref: in 155.3% out 2.8% WEIGHTED 4.85%
+AB Maithea first=cand: in 134.5% out -1.8% WEIGHTED 1.35%
+AA Maithea first=ref: in 3.1% out -2.5% WEIGHTED -2.37%
+AB Selawyn first=cand: in 121.1% out 0.5% WEIGHTED 2.12%
+AA Selawyn first=ref: in 1.0% out -0.1% WEIGHTED -0.12%
+AB Raiva first=cand: in 136.0% out 1.3% WEIGHTED 3.85%
+AA Raiva first=ref: in -1.5% out -0.3% WEIGHTED -0.35%
+AB Lethuris first=cand: in 164.9% out 3.1% WEIGHTED 5.19%
+AA Lethuris first=ref: in -4.9% out -1.3% WEIGHTED -1.36%
+AA Maithea first=cand: in -0.3% out -4.2% WEIGHTED -4.11%
+AB Maithea first=ref: in 147.3% out 2.0% WEIGHTED 5.32%
+AA Selawyn first=cand: in 1.7% out 3.4% WEIGHTED 3.34%
+AB Selawyn first=ref: in 114.0% out -3.3% WEIGHTED -1.67%
+AA Raiva first=cand: in -1.6% out -3.7% WEIGHTED -3.67%
+AB Raiva first=ref: in 128.4% out 1.8% WEIGHTED 4.24%
+AA Lethuris first=cand: in -1.5% out 1.3% WEIGHTED 1.22%
+AB Lethuris first=ref: in 166.9% out 6.6% WEIGHTED 8.71%
+AB Maithea first=cand: in 152.0% out -1.1% WEIGHTED 2.31%
+AA Maithea first=ref: in 5.0% out 1.1% WEIGHTED 1.18%
+AB Selawyn first=cand: in 134.8% out -8.7% WEIGHTED -6.92%
+AA Selawyn first=ref: in 1.3% out -1.7% WEIGHTED -1.66%
+AB Raiva first=cand: in 128.6% out -0.8% WEIGHTED 1.70%
+AA Raiva first=ref: in 0.4% out 1.0% WEIGHTED 1.03%
+AB Lethuris first=cand: in 169.7% out 9.8% WEIGHTED 11.86%
+AA Lethuris first=ref: in -5.6% out -2.7% WEIGHTED -2.71%
+AA Maithea first=cand: in -0.3% out -9.2% WEIGHTED -9.05%
+AB Maithea first=ref: in 146.9% out 1.8% WEIGHTED 5.18%
+AA Selawyn first=cand: in 6.2% out -3.3% WEIGHTED -3.17%
+AB Selawyn first=ref: in 130.8% out -3.4% WEIGHTED -1.67%
+AA Raiva first=cand: in 1.5% out 1.7% WEIGHTED 1.74%
+AB Raiva first=ref: in 139.3% out 0.5% WEIGHTED 3.12%
+AA Lethuris first=cand: in 0.4% out 1.9% WEIGHTED 1.88%
+AB Lethuris first=ref: in 160.3% out 4.1% WEIGHTED 6.20%
+AB Maithea first=cand: in 149.1% out 3.1% WEIGHTED 6.51%
+AA Maithea first=ref: in 4.0% out 10.1% WEIGHTED 9.94%
+AB Selawyn first=cand: in 134.6% out 3.3% WEIGHTED 4.99%
+AA Selawyn first=ref: in -1.1% out 4.8% WEIGHTED 4.72%
+AB Raiva first=cand: in 126.8% out 1.0% WEIGHTED 3.41%
+AA Raiva first=ref: in 1.5% out 1.1% WEIGHTED 1.12%
+AB Lethuris first=cand: in 166.1% out 1.0% WEIGHTED 3.10%
+AA Lethuris first=ref: in 1.1% out 3.6% WEIGHTED 3.59%
+AA Maithea first=cand: in 3.3% out 0.0% WEIGHTED 0.07%
+AB Maithea first=ref: in 148.2% out 1.5% WEIGHTED 4.94%
+AA Selawyn first=cand: in 2.1% out 0.8% WEIGHTED 0.86%
+AB Selawyn first=ref: in 131.3% out -1.5% WEIGHTED 0.22%
+AA Raiva first=cand: in 0.8% out 2.1% WEIGHTED 2.04%
+AB Raiva first=ref: in 134.9% out 1.4% WEIGHTED 3.98%
+AA Lethuris first=cand: in -2.1% out -0.9% WEIGHTED -0.94%
+AB Lethuris first=ref: in 137.7% out -2.0% WEIGHTED -0.11%
+AB Maithea first=cand: in 147.9% out 1.0% WEIGHTED 4.38%
+AA Maithea first=ref: in 2.6% out 2.8% WEIGHTED 2.79%
+AB Selawyn first=cand: in 152.9% out 2.1% WEIGHTED 4.02%
+AA Selawyn first=ref: in 0.7% out -1.3% WEIGHTED -1.23%
+AB Raiva first=cand: in 125.8% out 6.7% WEIGHTED 9.01%
+AA Raiva first=ref: in 1.0% out -3.1% WEIGHTED -3.04%
+AB Lethuris first=cand: in 167.8% out 3.3% WEIGHTED 5.42%
+AA Lethuris first=ref: in -0.0% out 0.7% WEIGHTED 0.71%
+AA Maithea first=cand: in -5.9% out -5.3% WEIGHTED -5.31%
+AB Maithea first=ref: in 145.9% out -1.7% WEIGHTED 1.61%
+AA Selawyn first=cand: in -0.9% out 2.4% WEIGHTED 2.32%
+AB Selawyn first=ref: in 128.8% out 0.0% WEIGHTED 1.71%
+AA Raiva first=cand: in -0.6% out -0.3% WEIGHTED -0.29%
+AB Raiva first=ref: in 128.2% out 2.4% WEIGHTED 4.80%
+AA Lethuris first=cand: in 0.5% out -0.1% WEIGHTED -0.12%
+AB Lethuris first=ref: in 158.9% out 0.1% WEIGHTED 2.15%
+AB Maithea first=cand: in 142.5% out -0.1% WEIGHTED 3.27%
+AA Maithea first=ref: in 2.9% out -0.5% WEIGHTED -0.42%
+AB Selawyn first=cand: in 133.2% out 10.0% WEIGHTED 11.71%
+AA Selawyn first=ref: in 3.5% out 2.1% WEIGHTED 2.14%
+AB Raiva first=cand: in 124.3% out 1.8% WEIGHTED 4.19%
+AA Raiva first=ref: in 3.8% out -1.3% WEIGHTED -1.19%
+AB Lethuris first=cand: in 157.1% out -2.3% WEIGHTED -0.24%
+AA Lethuris first=ref: in -1.3% out -1.6% WEIGHTED -1.60%
+AA Maithea first=cand: in 1.9% out -0.5% WEIGHTED -0.45%
+AB Maithea first=ref: in 150.4% out 7.4% WEIGHTED 10.73%
+AA Selawyn first=cand: in 2.3% out 0.3% WEIGHTED 0.34%
+AB Selawyn first=ref: in 140.0% out -5.3% WEIGHTED -3.40%
+AA Raiva first=cand: in -0.9% out -3.2% WEIGHTED -3.14%
+AB Raiva first=ref: in 132.2% out 3.1% WEIGHTED 5.58%
+AA Lethuris first=cand: in 3.6% out 5.8% WEIGHTED 5.73%
+AB Lethuris first=ref: in 160.0% out 0.4% WEIGHTED 2.44%
+AB Maithea first=cand: in 171.8% out 1.3% WEIGHTED 5.17%
+AA Maithea first=ref: in -3.8% out -0.3% WEIGHTED -0.39%
+AB Selawyn first=cand: in 101.9% out -3.4% WEIGHTED -2.05%
+AA Selawyn first=ref: in -9.1% out -0.4% WEIGHTED -0.55%
+AB Raiva first=cand: in 137.1% out -2.1% WEIGHTED 0.59%
+AA Raiva first=ref: in -0.7% out -1.4% WEIGHTED -1.39%
+AB Lethuris first=cand: in 153.2% out -0.7% WEIGHTED 1.39%
+AA Lethuris first=ref: in 0.3% out 6.1% WEIGHTED 6.02%
+AA Maithea first=cand: in -2.5% out -12.2% WEIGHTED -11.99%
+AB Maithea first=ref: in 126.5% out 5.4% WEIGHTED 8.65%
+AA Selawyn first=cand: in -2.0% out -1.5% WEIGHTED -1.50%
+AB Selawyn first=ref: in 141.3% out -0.2% WEIGHTED 1.63%
+AA Raiva first=cand: in 6.9% out 2.6% WEIGHTED 2.64%
+AB Raiva first=ref: in 129.2% out -0.3% WEIGHTED 2.24%
+AA Lethuris first=cand: in 2.9% out 4.2% WEIGHTED 4.22%
+AB Lethuris first=ref: in 166.0% out 4.1% WEIGHTED 6.21%
+AB Maithea first=cand: in 139.4% out 0.3% WEIGHTED 3.57%
+AA Maithea first=ref: in -1.0% out -3.3% WEIGHTED -3.21%
+AB Selawyn first=cand: in 134.0% out -1.4% WEIGHTED 0.39%
+AA Selawyn first=ref: in -10.2% out 4.5% WEIGHTED 4.23%
+AB Raiva first=cand: in 134.5% out 4.1% WEIGHTED 6.60%
+AA Raiva first=ref: in -0.1% out -12.2% WEIGHTED -12.01%
+AB Lethuris first=cand: in 181.0% out 6.7% WEIGHTED 8.93%

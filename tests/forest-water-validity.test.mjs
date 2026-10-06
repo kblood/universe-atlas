@@ -35,23 +35,29 @@ function patchAt(d,n){
   const [u,v]=[[-cz/axis,cy/axis],[cz/axis,cy/axis],[cx/axis,-cz/axis],[cx/axis,cz/axis],[cx/axis,cy/axis],[-cx/axis,cy/axis]][face];
   return {face,n,x:Math.floor(Math.min(n-1,Math.floor((u+1)*n/2))/8),y:Math.floor(Math.min(n-1,Math.floor((v+1)*n/2))/8)};
 }
+// T6 decision 3 (terrain-1.9.0-mountains): the 65536-direction SEARCH reads the level-0 field (on the truth it solved
+// M3 blocks at every massif direction it passed, ~40 s); the found patch is then CONFIRMED on the truth, which the
+// census itself reads, and the search continues if the truth disagrees. The criteria are unchanged.
 function findFixturePatch(){
-  const n=Math.ceil(2*body.radiusM/18),W=FIXTURE_WATER_M;
-  const sample=terrainSampler(body,undefined,undefined,false,W),classify=biomeClassifier(body,W),habitat=forestHabitat(sample,classify,body.radiusM,true);
+  const n=Math.ceil(2*body.radiusM/18),W=FIXTURE_WATER_M,classify=biomeClassifier(body,W);
   const up=new THREE.Vector3(0,1,0),pole=new THREE.Vector3(1,0,0);
-  const slopeAt=dir=>{const d=new THREE.Vector3(...dir),right=new THREE.Vector3().crossVectors(Math.abs(d.y)>.9?pole:up,d).normalize();
-    const a=d.clone().addScaledVector(right,5/body.radiusM).normalize(),b=d.clone().addScaledVector(right,-5/body.radiusM).normalize();
-    return Math.abs(sample(a.toArray()).groundHeightM-sample(b.toArray()).groundHeightM)/10;};
+  const probe=sample=>{const habitat=forestHabitat(sample,classify,body.radiusM,true);
+    const slopeAt=dir=>{const d=new THREE.Vector3(...dir),right=new THREE.Vector3().crossVectors(Math.abs(d.y)>.9?pole:up,d).normalize();
+      const a=d.clone().addScaledVector(right,5/body.radiusM).normalize(),b=d.clone().addScaledVector(right,-5/body.radiusM).normalize();
+      return Math.abs(sample(a.toArray()).groundHeightM-sample(b.toArray()).groundHeightM)/10;};
+    return d=>{const s=sample(d);
+      if(s.wet||!classify(d,s.groundHeightM).forestPotential||slopeAt(d)<.4)return null;
+      const a=patchAt(d,n);let eligible=0,rejected=0;
+      for(const cell of forestPatch(body.seed,a).cells){
+        const c=sample(cell.direction),b=classify(cell.direction,c.groundHeightM);
+        if(c.wet||!b.forestPotential||!(cell.roll<.76*b.forestSuitability01))continue;
+        eligible++;if(!habitat(cell).present)rejected++;
+      }
+      return rejected>0&&eligible>rejected?{address:a,eligible,rejected}:null;};};
+  const search=probe(terrainSampler(body,undefined,undefined,false,W,undefined,false,{lodLevel:0})),truth=probe(terrainSampler(body,undefined,undefined,false,W));
   for(let i=0,N=1<<16;i<N;i++){
-    const d=fib(i,N),s=sample(d);
-    if(s.wet||!classify(d,s.groundHeightM).forestPotential||slopeAt(d)<.4)continue;
-    const a=patchAt(d,n);let eligible=0,rejected=0;
-    for(const cell of forestPatch(body.seed,a).cells){
-      const c=sample(cell.direction),b=classify(cell.direction,c.groundHeightM);
-      if(c.wet||!b.forestPotential||!(cell.roll<.76*b.forestSuitability01))continue;
-      eligible++;if(!habitat(cell).present)rejected++;
-    }
-    if(rejected>0&&eligible>rejected)return {address:a,i,eligible,rejected};
+    const d=fib(i,N);if(!search(d))continue;
+    const found=truth(d);if(found)return {...found,i};
   }
   throw new Error('no forest-water-validity fixture patch found');
 }

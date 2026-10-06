@@ -1,0 +1,37 @@
+Maithea: 12 directions (axis,axis,axis,axis,axis,axis,axis,axis,flank,flank,belt-end,belt-end), replaced 0; every tile has a massif sample: true; 57 s
+  L5->L6: dh p99 1487.3 / max 2123.7 m (plan 7650 / 20400), rgbP99 175.5709 (plan 12), snow 8.02% forest 3.60% name 11.68% carried 9.18% ocean 0.00% sharedOcean 0
+  L6->L7: dh p99 808.9 / max 1600.2 m (plan 3825 / 10200), rgbP99 52.5843 (plan 12), snow 3.31% forest 1.63% name 4.18% carried 4.77% ocean 0.00% sharedOcean 0
+  L8->L9: dh p99 426.4 / max 671.3 m (plan 956 / 2550), rgbP99 12.6508 (plan 4), snow 2.68% forest 0.00% name 3.08% carried 3.90% ocean 0.00% sharedOcean 0
+  L10->L11: dh p99 90.7 / max 198.5 m (plan 239 / 638), rgbP99 2.9074 (plan 1), snow 0.21% forest 0.00% name 0.24% carried 0.31% ocean 0.00% sharedOcean 0
+  L12->L13: dh p99 26.4 / max 81.1 m (plan 60 / 159), rgbP99 0.4235 (plan 1), snow 0.00% forest 0.00% name 0.00% carried 0.00% ocean 0.00% sharedOcean 0
+  L14->L15: dh p99 3.2 / max 8.7 m (plan 15 / 40), rgbP99 0.1465 (plan 1), snow 0.00% forest 0.00% name 0.00% carried 0.00% ocean 0.00% sharedOcean 0
+  retention L6: peakKept 85.91% summit p50 122 max 333 m snowKept 98.4% forestKept 96.1% (12 tiles)
+  retention L8: peakKept 89.76% summit p50 43 max 205 m snowKept 99.7% forestKept 76.2% (12 tiles)
+Lethuris: 12 directions (axis,axis,axis,axis,axis,axis,axis,axis,flank,flank,belt-end,belt-end), replaced 0; every tile has a massif sample: true; 75 s
+  L6->L7: dh p99 1375.9 / max 1929.8 m (plan 6625 / 17667), rgbP99 261.4328 (plan 12), snow 8.01% forest 7.10% name 11.12% carried 9.15% ocean 0.09% sharedOcean 0
+  L7->L8: dh p99 748.0 / max 1322.9 m (plan 3312 / 8833), rgbP99 90.0280 (plan 4), snow 4.06% forest 3.95% name 5.09% carried 5.76% ocean 0.08% sharedOcean 0
+  L8->L9: dh p99 595.5 / max 1100.1 m (plan 1656 / 4417), rgbP99 50.5298 (plan 4), snow 3.54% forest 3.99% name 4.29% carried 4.82% ocean 0.03% sharedOcean 0
+  L10->L11: dh p99 245.5 / max 414.2 m (plan 414 / 1104), rgbP99 16.9077 (plan 1), snow 0.31% forest 1.30% name 0.54% carried 0.60% ocean 0.00% sharedOcean 0
+  L12->L13: dh p99 35.6 / max 79.0 m (plan 104 / 276), rgbP99 0.9552 (plan 1), snow 0.00% forest 0.14% name 0.00% carried 0.00% ocean 0.00% sharedOcean 0
+  L14->L15: dh p99 7.9 / max 31.3 m (plan 26 / 69), rgbP99 0.1565 (plan 1), snow 0.00% forest 0.25% name 0.00% carried 0.00% ocean 0.00% sharedOcean 0
+  retention L6: peakKept 98.96% summit p50 -95 max 370 m snowKept 99.8% forestKept 91.7% (12 tiles)
+  retention L8: peakKept 81.26% summit p50 54 max 360 m snowKept 98.1% forestKept 95.9% (12 tiles)
+Selawyn: 12 directions (axis,axis,axis,axis,axis,axis,axis,axis,flank,flank,belt-end,belt-end), replaced 0; every tile has a massif sample: true; 71 s
+  L6->L7: dh p99 1257.2 / max 1604.0 m (plan 6297 / 16792), rgbP99 6.7405 (plan 12), snow 0.00% forest 0.32% name 0.00% carried 0.24% ocean 0.00% sharedOcean 0
+  L7->L8: dh p99 688.9 / max 1140.2 m (plan 3148 / 8396), rgbP99 4.7023 (plan 4), snow 0.00% forest 0.26% name 0.00% carried 0.14% ocean 0.00% sharedOcean 0
+  L8->L9: dh p99 585.9 / max 972.7 m (plan 1574 / 4198), rgbP99 1.9170 (plan 4), snow 0.00% forest 0.15% name 0.01% carried 0.01% ocean 0.00% sharedOcean 0
+  L10->L11: dh p99 253.3 / max 484.1 m (plan 394 / 1049), rgbP99 0.1578 (plan 1), snow 0.00% forest 0.07% name 0.00% carried 0.00% ocean 0.00% sharedOcean 0
+  L12->L13: dh p99 38.3 / max 75.5 m (plan 98 / 262), rgbP99 0.0100 (plan 1), snow 0.00% forest 0.00% name 0.00% carried 0.00% ocean 0.00% sharedOcean 0
+  L14->L15: dh p99 8.9 / max 25.2 m (plan 25 / 66), rgbP99 0.0035 (plan 1), snow 0.00% forest 0.00% name 0.00% carried 0.00% ocean 0.00% sharedOcean 0
+  retention L6: peakKept 99.17% summit p50 -70 max 267 m snowKept 0.0% forestKept 99.9% (12 tiles)
+  retention L8: peakKept 82.90% summit p50 55 max 219 m snowKept 0.0% forestKept 99.9% (12 tiles)
+Raiva: 12 directions (axis,axis,axis,axis,axis,axis,axis,axis,flank,flank,belt-end,belt-end), replaced 0; every tile has a massif sample: true; 52 s
+  L4->L5: dh p99 882.5 / max 1223.7 m (plan 5896 / 15724), rgbP99 7.3576 (plan 12), snow 0.00% forest 2.09% name 0.17% carried 1.38% ocean 0.05% sharedOcean 0
+  L5->L6: dh p99 461.3 / max 732.5 m (plan 2948 / 7862), rgbP99 4.3291 (plan 12), snow 0.00% forest 0.86% name 0.05% carried 0.66% ocean 0.00% sharedOcean 0
+  L6->L7: dh p99 385.9 / max 623.7 m (plan 1474 / 3931), rgbP99 1.6841 (plan 12), snow 0.00% forest 0.27% name 0.24% carried 0.28% ocean 0.00% sharedOcean 0
+  L8->L9: dh p99 143.7 / max 225.4 m (plan 369 / 983), rgbP99 0.1235 (plan 4), snow 0.00% forest 0.00% name 0.00% carried 0.16% ocean 0.00% sharedOcean 0
+  L10->L11: dh p99 23.9 / max 83.1 m (plan 92 / 246), rgbP99 0.0082 (plan 1), snow 0.00% forest 0.00% name 0.00% carried 0.00% ocean 0.00% sharedOcean 0
+  L12->L13: dh p99 3.7 / max 17.6 m (plan 23 / 61), rgbP99 0.0007 (plan 1), snow 0.00% forest 0.00% name 0.00% carried 0.00% ocean 0.00% sharedOcean 0
+  L14->L15: dh p99 0.4 / max 1.8 m (plan 6 / 15), rgbP99 0.0002 (plan 1), snow 0.00% forest 0.00% name 0.00% carried 0.00% ocean 0.00% sharedOcean 0
+  retention L6: peakKept 79.41% summit p50 49 max 146 m snowKept 0.0% forestKept 99.8% (12 tiles)
+  retention L8: peakKept 97.49% summit p50 6 max 34 m snowKept 0.0% forestKept 99.9% (12 tiles)

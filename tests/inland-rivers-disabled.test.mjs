@@ -234,7 +234,8 @@ test('model versions record the withdrawal and old bookmarks explain it',()=>{
   // and atlas-surface-8-ocean-volume (P2-OCEAN-QUERY; re-pinned here by P6,
   // was atlas-surface-7-no-inland-rivers): version strings only; the river
   // withdrawal itself is unchanged and surface-8 keeps it.
-  assert.equal(TERRAIN_VERSION,'terrain-1.8.1-grain');
+  // T6 (mountains wired): terrain-1.9.0-mountains, version string only for this file.
+  assert.equal(TERRAIN_VERSION,'terrain-1.9.0-mountains');
   assert.equal(SURFACE_VERSION,'atlas-surface-8-ocean-volume');
   assert.equal(CURRENT_VERSIONS.terrain,TERRAIN_VERSION);
   assert.equal(CURRENT_VERSIONS.surface,SURFACE_VERSION);
