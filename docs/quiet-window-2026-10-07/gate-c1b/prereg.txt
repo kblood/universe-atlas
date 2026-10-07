@@ -1,27 +1,31 @@
-GATE-C1b cost-fair protocol: PRE-REGISTRATION (DRAFT, written by the branch agent 2026-10-07; NOT started.
-The coordinator finalises the time stamp, the export shas and the harness sha, and commits this file before the
-first counted process.)
+GATE-C1b cost-fair protocol: PRE-REGISTRATION (FINAL; drafted by the branch agent 2026-10-07, finalised by the
+coordinator's quiet-window runner 2026-10-07T14:59Z and committed before the first counted process).
 
 Authority: docs/fable-decision-carving-lattice-2026-10-07.md section 2d(b) (Fable 5.1, on Kasper's instruction,
 overrulable), which makes the fused-lookup refactor mandatory and permits exactly ONE new counted run.
 Protocol = decisions addendum (6) Q-A, harness = addendum (7) / docs/cost-fair-harness-2026-10-07.md, both unchanged.
-Counted ONCE: never repeated, never dropped; every run counts. THIS IS THE ONE PERMITTED NEW RUN; there is no third.
-b84bcf9 (GATE-C1's CAND) is never re-measured.
+Counted ONCE: never repeated, never dropped; every run counts (flag, never drop). THIS IS THE ONE PERMITTED NEW RUN;
+there is no third. b84bcf9 (GATE-C1's CAND) is never re-measured.
 
-Arms (git archive exports, one node_modules junction in their common parent pointing at main's node_modules):
+Arms (git archive exports under C:/LLM/IWSDK/universe-atlas-wt/_fair-c1b/{ref,ref2,cand}, one node_modules junction
+in their common parent pointing at main's node_modules):
   REF  = 9dcb1cf74307513b72d938e57b2fb7da3b64df41  (GATE-1 REF: terrain-1.8.1-grain, the UNWIRED build; budgets are
          cumulative against the unwired build, section 2c(2) correction). Unchanged from GATE-C1.
-  REF2 = a second identical export of 9dcb1cf (A/A control). Unchanged from GATE-C1.
-  CAND = the mountains/carving-c1 tip with the fused carving lookups: code commit 616562d, src tree
-         a0aa5a06e4bf69ec46edab3e73c1f83934b0da49 (terrain-1.9.1-carving-c1, mountain-carving-3,
-         mountain-assembly-4, wired). Every later commit on the branch up to the run is docs/evidence only and must
-         keep this src tree; the coordinator records the exported tip sha here and checks `git rev-parse <tip>:src`
-         equals the tree above before the first process.
-Harness: main's checkout (scripts/cost-fair/* identical to the branch).
+  REF2 = a second identical export of 9dcb1cf (A/A control; `diff -rq ref ref2` empty). Unchanged from GATE-C1.
+  CAND = cd2886309dde72ddcb655a5ba65589ec51b7b433  (mountains/carving-c1 tip after merging evidence/gate-c1-step2
+         1b3b9f7, docs only). What is measured is its src tree a0aa5a06e4bf69ec46edab3e73c1f83934b0da49
+         (`git rev-parse cd28863:src`, checked before the first process): code commit 616562d, fused carving lookups,
+         terrain-1.9.1-carving-c1, mountain-carving-3, mountain-assembly-4, wired. The CAND arm is exported from this
+         exact sha. Any later docs-only commit on the branch (including this prereg's own commit and the verdict commit)
+         does not change CAND's measured content.
+Harness: main's checkout C:/LLM/IWSDK/universe-atlas at bf1184bd1f8e34483138178a237f3af68602978e (scripts/cost-fair/*
+and tests/helpers/test-slot.mjs identical to the branch; `git diff main mountains/carving-c1 -- scripts/cost-fair` empty).
+Node v24.7.0. Point sets: the cost-fair cache for 9dcb1cf (fingerprint-verified; built for GATE-C1).
 Command (from main's repo root):
-  REF=<ref> REF2=<ref2> CAND=<cand> REF_SHA=9dcb1cf74307513b72d938e57b2fb7da3b64df41 OUT=test-results/gate-c1b/fair N=30 sh scripts/cost-fair/run.sh
+  REF=C:/LLM/IWSDK/universe-atlas-wt/_fair-c1b/ref REF2=C:/LLM/IWSDK/universe-atlas-wt/_fair-c1b/ref2 CAND=C:/LLM/IWSDK/universe-atlas-wt/_fair-c1b/cand REF_SHA=9dcb1cf74307513b72d938e57b2fb7da3b64df41 OUT=test-results/gate-c1b/fair N=30 sh scripts/cost-fair/run.sh
   node scripts/cost-fair/analyze.mjs test-results/gate-c1b/fair
 N = 30 per world per kind (C1 A/B, C1 A/A, orbit A/B, orbit A/A), 480 processes, order fixed by run.sh.
+Pre-check rules as the harness doc section 4 (default PRECHECK_MAX_WAIT_MS = 600000); flagged processes count.
 
 Judging rule (unchanged, as GATE-1 / GATE-C1 / Q-A): per world, median over the 30 processes with the
 distribution-free 95 % CI (order statistics 10 and 21). A/A bias demonstrated only if the A/A CI excludes 0; then
