@@ -1,7 +1,9 @@
 # Creature export v2: LOD chain, Quest 3 budget, seamless loops
 
-Task T4 (Fable 5.1 decision on Kasper's instruction), branch `fauna/export-v2`, based on main `5450d9d`.
-v1 is described in `docs/creature-export.md`; this document covers only what v2 adds.
+Task T4, branch `fauna/export-v2`, based on main `5450d9d`. Decided by Fable 5.1 on Kasper's instruction; implemented
+and written by Claude Opus 5.5, as the commit trailers say. The 2026-10-07 follow-up (branch `fauna/ocellus-seam`:
+decision D4, Opus-decided on Kasper's instruction, overrulable) was also implemented by Claude Opus 5.5.
+v1 is described in `docs/creature-export-v1.md`; this document covers only what v2 adds.
 
 ## Hand-off header
 
@@ -32,9 +34,9 @@ v1 is described in `docs/creature-export.md`; this document covers only what v2 
   - `assetctl package`;
   - the cross-engine golden runs. No golden or terrain file was touched.
 - **needs:** (outside this task's files)
-  - `needs: package.json` "test": register `tests/fauna-composer-lod.test.mjs`. It is currently UNREGISTERED: test:affected picked it up, but `npm test` does not run it. `tests/fauna-composer-export.test.mjs` is already registered.
+  - DONE (`1ce6005`): `needs: package.json` "test": register `tests/fauna-composer-lod.test.mjs`. It was UNREGISTERED: test:affected picked it up, but `npm test` does not run it. `tests/fauna-composer-export.test.mjs` is already registered.
   - `needs: tests/tiers.json`: put `tests/fauna-composer-lod.test.mjs` in the same tier as `fauna-composer-export.test.mjs`. It takes about 14 s.
-  - `needs: regenerate after the composer-stability merge (T2)`. When `fauna-composer-mesh.ts`, `fauna-composer-rig.ts` or `fauna-composer.ts` change, three things change with them:
+  - DONE 2026-10-07 (`fauna/ocellus-seam`): `regenerate after the composer-stability merge (T2)`; see "Triangle counts" below. When `fauna-composer-mesh.ts`, `fauna-composer-rig.ts` or `fauna-composer.ts` change, three things change with them:
     - the v1 byte pins in `tests/fauna-composer-export.test.mjs` (`V1_PINS`) stop applying. The test then logs a "composer core moved" diagnostic and skips them. Re-pin them, keyed by the new core hash;
     - the triangle table below and the evidence directory must be regenerated;
     - the reducer itself does not need to change.
@@ -66,6 +68,10 @@ The output is written as `fauna-composer-export-2`, with `versions.export` and `
 - `budget`, with the limits, the actual numbers and pass;
 - one `lods` row per level: target, triangles, vertices, node, mesh, screen coverage, relaxation, mirrorKept, maxWeightChange, maxPlaneError and parts;
 - `lodPlayback` and `seamlessPlayback` notes.
+
+In a v2 export with an LOD chain, the report's and sidecar's `mesh` block (`vertices`, `triangles`, `parts`,
+`restBounds`) describes **level 0**, the reduced mesh the scene draws up close, not the unreduced creature. Level-0
+vertices are a subset of the skin's, so `restBounds` can only be slightly smaller than the creature's true rest box.
 
 Its `generator.sources` list also includes `src/fauna-composer-lod.ts`. The per-creature brief records:
 
@@ -145,7 +151,7 @@ The module is pure: it has no imports and no Node, three or Atlas API. No core m
 
 ### Skinning and deformation
 
-The skinning test is `tests/fauna-composer-lod.test.mjs`. It runs on the bird, the centipede and coherent export-test-1, at walk t = 0.31 and display t = 1.7. Deviation is the distance from each source vertex to the reduced surface, sampled at every third vertex and given as a percentage of the body diagonal:
+The skinning test is `tests/fauna-composer-lod.test.mjs`. It runs on the bird, the centipede and coherent export-test-1, at walk t = 0.31 and display t = 1.7. Deviation is the distance from each source vertex to the reduced surface, sampled at every fifth vertex (`stride: 5`) and given as a percentage of the body diagonal:
 
 | Level | Rest max | Note |
 |---|---:|---|
@@ -156,9 +162,12 @@ The skinning test is `tests/fauna-composer-lod.test.mjs`. It runs on the bird, t
 Posing barely changes these numbers:
 
 - **Posed vs rest:** the posed deviation exceeds the rest deviation by at most about 0.7 % of the diagonal (winged-ape-rhino, level 2).
-- **Test gates:**
+- **Test gates** (levels 0 and 1 only):
   - posed max minus rest max ≤ 1 % of the diagonal;
   - level 0 posed ≤ 1 % of the diagonal.
+  - Level 2 is **deliberately ungated**. It is the far level (screen coverage 0.1 → 0), it may use relaxation stage 2,
+    and it re-binds whole vertices to other bones: the centipede's level 2 reports `maxWeightChange` 2.0000000056, the
+    full 0..2 range plus float-summation overshoot. Its numbers are reported in the sidecar, not asserted.
 
   Both pass. Bird level 0 measures 0.36 %, centipede level 0 0.28 % and export-test-1 level 0 0.09 %.
 - **GLTFLoader + AnimationMixer:** every LOD level shares the 24 joint nodes of the bird. Played this way, the levels skin to the runtime's own vertices within **2.9e-8 m (walk)** and **8.5e-8 m (display)**. The comparison is against the runtime vertex each output vertex came from, over 3 levels and 5040 and 3780 vertex samples.
@@ -214,7 +223,17 @@ Command: `node scripts/export-creature.mjs --out <dir> --preset all --count 4 --
 
 ### Triangle counts per species and LOD level
 
-Taken at main `5450d9d` and branch `880ea62`, with the composer core unchanged. **These numbers will be regenerated after the composer-stability merge (T2).** The skin changes then, and the table changes with it.
+First taken at main `5450d9d` and branch `880ea62`. **Regenerated 2026-10-07** after the composer-stability merge (T2)
+and the midline-ocellus `seamNormal` package (D2), at `fauna/ocellus-seam` `e087695` (composer core `a0a31556…`), into
+`test-results/round-2026-10-07/creature-export-v2/after-stability/`:
+
+- two v2 runs (`v2-quest3-run-a/`, `v2-quest3-run-b/`, `*.sha256`): all 48 files byte-identical between them;
+- every one of the 16 v2 GLBs is byte-identical to T4's `v2-quest3-run-a`, and every one of the 16 v1 GLBs (`v1/`,
+  no v2 flag) is byte-identical to T4's `v1-baseline`. None of these species has the midline insect ocellus, and the
+  proboscis-ear clamp changes no unperturbed build, so the table below did not change (`lod-table.md`, 16 rows equal).
+  The sidecars differ from T4's only in `generator.sourceSha256`, which hashes the changed core sources;
+- `assetctl validate` exit 0 on all 16 (`assetctl-validate/`, valid, 0 errors / 0 warnings, skinQuality clean), and
+  all 16 briefs validate (`brief-validate.txt`).
 
 | Creature | v1 full | LOD0 (≤8000) | LOD1 (≤3000) | LOD2 (≤1000) | Relaxation | mirrorKept | Joints | GLB bytes v1 → v2 | assetctl validate |
 |---|---:|---:|---:|---:|---|---|---:|---:|---|
@@ -248,6 +267,8 @@ Reading the table:
 1. **No visual review was done.** No Luna sheet and no headset check covers the LOD levels. Level 2 can lose up to 8.8 % of the body diagonal (rhinoceros), and the centipede's level 1 shortens leg tips by 6.6 %. Both fall within the 0.1 and 0.25 screen-coverage switch hints, but a person has not looked at them.
 2. **The 80-joint limit is a judgement call** (see the ledger). The centipede at 79 passes by one joint.
 3. **The display crossfade is a blend, not `poseComposer`.** Inside the last second, the clip is a blend between two source poses. On the creatures with large raw seams, a smoothstep blend over 1 s could look like a slow drift. `--seamless-blend` can lengthen the blend, up to half the window.
-4. **The evidence goes stale when T2 merges.** The T2 composer-stability merge changes the skin. When it does, the v1 pins skip and do not fail, and this table must be regenerated (see needs:).
+4. **The evidence goes stale when the composer core moves.** When a core source changes, the v1 pins skip (with a
+   "composer core moved" diagnostic) and do not fail, and this table must be regenerated. Done 2026-10-07 for T2 and
+   the ocellus package: core re-keyed to `a0a31556…`, all five v1 shas and the whole table unchanged.
 5. **Some tools hide the extension.** gltf-transform-based tools (`assetctl validate`/`inspect`) report `extensions.used: []` because MSFT_lod is not registered with them, and a gltf-transform rewrite would drop it (not tested here; `assetctl package` was not run). Only the exporter's GLB keeps it. Do not run a gltf-transform optimisation pass over a v2 GLB without a step that adds the extension back.
 6. **Licence.** The licence is `NOASSERTION` in the template, the sidecars and the briefs. There is no Creature Lab Export button.
