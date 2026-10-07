@@ -1,110 +1,255 @@
-# mountain-carving-3 (C1 Catmull-Rom carving query): STOPPED at the spectrum pin
+# mountain-carving-3 / mountain-assembly-4: C1 carving height, C2 rock driver (terrain-1.9.1-carving-c1)
 
-Branch `mountains/carving-c1` (from main 32f5de3). Staged; NOT for merge. It implements
-docs/fable-decision-carving-lattice-2026-10-07.md, and the implementation is complete as specified. But the decision's
-pre-registered HARD spectrum pin (pooled massif 200 m lattice <= 4.7 dB on the **truth** sampler) **fails**:
-9.34 dB. Per the brief, a failing acceptance row is a reject. I stopped there and did not tune, so the downstream rows
-did not run (re-pins, M3/M4/M5 rows, golden, bench, test:full). A second problem, point-memo capacity, is open (section 4).
+Branch `mountains/carving-c1`, staged. NOT for merge on its own: it rides the next `TERRAIN_VERSION` bump.
 
-## 1. What is implemented (committed on the branch)
+- Decisions: docs/fable-decision-carving-lattice-2026-10-07.md section 2 (first attempt) and section 2b, the addendum
+  written after the pin failed. Both were decided by Fable 5.1 on Kasper's instruction and can be overruled.
+- Cost-fair protocol (GATE-1) and the GPU probe pair: **not run**. The coordinator runs the cost-fair protocol in a quiet
+  window. This agent runs no browser and uses no GPU.
 
-| item | change |
+## 0. History: the design changed after the pin failed
+
+1. **First attempt (7fb4850): Catmull-Rom for everything.**
+   - The carving height C was a 4x4 Catmull-Rom of the stored cut fraction, and M5 rock read the same C.
+   - Result: the HARD 200 m lattice pin **failed on the truth** at 9.34 / 8.22 / 1.36 / 0.57 dB (lattice x / y / d / d2,
+     against a 4.7 dB limit).
+   - Carving alone was fixed (rock off: 2.28 / -0.79 / 0.58 / 0.12).
+   - M5 rock put the lattice back. It reads the slope of a C1 field, and that slope's magnitude kinks on every lattice
+     line (rock alone: 10.29 dB).
+   - Work stopped and was reported. Nothing was tuned.
+2. **Addendum 2b: split fields.**
+   - The carving height stays the vertex-exact Catmull-Rom.
+   - M5 rock reads **all three** of its inputs from the C2 cubic B-spline of the same 16 stored taps: `U + Cb`,
+     `U + Cbx`, `U + Cby`. C is never mixed into rock's finite difference.
+   - **Unchanged:** the 4.7 dB pin, its midpoint rule and the negative control. The control was rewritten so that both
+     kernels are triangle, which is main's semantics.
+   - **New pre-registration** (stated before measuring): rock-off must equal 2.28 / -0.79 / 0.58 / 0.12 (the CR row);
+     rock-alone must equal 2.43 / 1.82 / 1.07 / -0.32 (the bc diag row).
+   - **Stop condition:** pooled truth > 4.7 dB.
+3. **Point memo.**
+   - The first attempt halved it to 2 x 2048 cells. That re-solved 266 blocks on pass 2 of the placeAt perf set.
+   - It is now one clock (second-chance) table: 4096 slots, at most 3072 live cells, backward-shift deletion, same
+     bytes.
+
+## 1. Acceptance rows
+
+### Step A: spectrum pin (smoke tier)
+
+20 frozen massif tiles, truth, fine 256 x 50 m rasters aligned with the belt, pooled whitened spectrum. Values are
+peakDb for lattice x / y / d / d2.
+
+| row | main (triangle) | 7fb4850 (CR everywhere) | **this branch (split fields)** | limit / identity |
+|---|---|---|---|---|
+| truth, pooled (HARD) | 7.84 / 8.20 / 8.83 / 8.88 | 9.34 / 8.22 / 1.36 / 0.57 FAIL | **1.90 / -0.15 / 0.76 / -0.21 PASS** | max <= 4.7 |
+| negative control: triangle height AND triangle rock driver (HARD) | | | **7.84 / 8.20 / 8.83 / 8.88 PASS** (max 8.88) | > 4.7 |
+| 250 m gully cell, pooled (HARD) | 1.22 / 0.47 | 0.92 / 0.84 | **1.24 / 1.05 PASS** | < 4.7 |
+| rock off (INFO) | 8.35 / 9.32 / 9.73 / 9.62 | 2.28 / -0.79 / 0.58 / 0.12 | **2.28 / -0.79 / 0.58 / 0.12** | = 2.28 / -0.79 / 0.58 / 0.12: **met exactly** (2.276823 / -0.785011 / 0.584037 / 0.116485 in both runs) |
+| rock alone = truth - rock off (INFO) | 9.81 / 9.14 / 6.46 / 4.40 | 10.29 / 9.30 / 1.58 / 1.04 | **2.44 / 1.82 / 1.07 / -0.31** | = 2.43 / 1.82 / 1.07 / -0.32: within 0.012 dB, not exact (see below) |
+| off-belt control (Part 2 INFO) | max 1.58 | | max 1.58 (unchanged) | |
+
+**Why the rock-alone identity is close but not exact.**
+- Full precision, branch: 2.44077 / 1.81582 / 1.06633 / -0.31132.
+- Full precision, bc diag: 2.42890 / 1.81728 / 1.07127 / -0.31647.
+- The rock term itself gets identical inputs in both runs (U + Cb and the two offsets).
+- But "rock alone" is measured as truth minus rock-off **after** terrain.ts composes the floor. There,
+  `upland = ss(HM0, HM1, floorM)` scales the detail term (src/terrain.ts:843-845), so the difference contains
+  `detail x (upland(F + R) - upland(F))`, whose base F is U + C here and U + Cb in the diag.
+- The 0.01 dB rounding flips (2.43 -> 2.44, -0.32 -> -0.31) come from that, not from the rock driver. The rock-off row,
+  which has no such base change, matches bit for bit.
+
+**Rock RMS** (median over the 20 tiles of the RMS of truth - rock off):
+- main 16.70 m;
+- CR-driven rock 18.43 m;
+- **split fields 13.02 m**: -22 % vs main and -29 % vs the CR-driven rock. The addendum estimated -24 %, from 20.0 to 15.3 m.
+- Max per tile: 29.03 -> 26.27 m.
+- Reproduce: `test-results/mountains/carving-c1/diag.mjs`, with `diag-tri.json`, `diag-cr.json` (7fb4850) and
+  `diag-split.json`.
+
+### Step A: element tests (tests/mountain-carving.test.mjs, tests/mountain-carving-memo.test.mjs)
+
+All 20 pass.
+
+| test | result |
 |---|---|
-| storage | `S = CORE + 3` stored columns (block-local -1 .. CORE+1). The stored value is the **cut fraction** `cut = c>0 ? 1 - min(v/c, 1) : 0` (Float32), replacing `r`. The normaliser window is extended by one column per side; core values are unchanged. |
-| query | 4x4 tensor Catmull-Rom of `cut`. Rows are clamped to [0, ROWS]; the result is clamped to [0, 1]; `carvingFM = cut===0 ? 0 : -envelope*cut`. The hashed diagonal is no longer read at query time. |
-| point memo | 16 Float32 taps per cell. SLOTS 4096 -> 2048 and FILL 3072 -> 1536 keep the memo bound: 32 x 252,044 + 2 x 2048 x 85 = 8,413,568 B <= 8.5e6. |
-| export/import API | `cut` replaces `r`. Validation checks the length `NR*S`, that every value is in [0, 1], and that capped/positive are <= `NR*(CORE+1)`. Byte length is 252,044. `placeBlockTransferables` returns `cut.buffer`. |
-| version | `MOUNTAIN_CARVING_VERSION` `mountain-carving-2` -> `mountain-carving-3`. `MOUNTAIN_CARVING.INTERPOLANT = 'catmull-rom'`. |
-| digest | `CARVING_F_DIGEST` `1321803fcd6ba5b03fa009035154a025aefff6a2a5bf1442e9e4cf902443cfee` -> `1c94b28fde21ee4a55894303b28c19a50ded833f6135d58563b81f412bb3c2bd` |
-| triangle reference | `tests/helpers/mountain-carving-triangle.mjs` rewrites the source (two needles, each must occur exactly once) and is used test-side only. `tests/helpers/spectrum-triangle-worker.mjs` runs the whole terrain stack in a worker with `module.registerHooks`. |
-| tests | Three new HARD tests: exact +0, vertex reproduction, and the C1 straddle with the triangle negative control. The memo tests are adapted. `terrain-structural-spectrum` gets Part 3, the HARD lattice pin (with the triangle control and an INFO row with rock off). |
+| CARVING_F_DIGEST (cold / warm / reverse / child process) | 1c94b28f... |
+| CARVING_S_DIGEST (new, the same fixture through `carvingSmoothFM`) | 194bc671... (cold, reverse, child process) |
+| exact +0 where no stencil tap is cut | 4000 uncut queries return +0 for both kernels; imported synthetic blocks, 0 builds |
+| C1 straddle of the carving height (1246 lattice lines incl. block seams, h = 1 mm, limit 0.01) | Catmull-Rom 0 kinks (max 8.94e-5); triangle 1012/1246 (max 4) |
+| **C2 straddle of the rock driver** (curvature jump x cell, same lines) | B-spline 0 jumps (max 3.55e-3); Catmull-Rom control 1140/1246 (max 6.58) |
+| `Cb <= 0` and `U + Cb >= 0` on the ramp, +0 at exclusions | 0 violations |
+| smooth point-memo bit identity | cold, warm, interleaved (point, block and CR-then-smooth), aged (SLOTS 16 / FILL 12: 15,479 evictions, 29 hits) |
 
-Not moved, because the run stopped first: `TERRAIN_VERSION`, the 129-square metric pin, `COST_SAMPLER_IDENTITY`, the
-elevation-identity digests, golden, `docs/place-query-v1.md`.
+### Step B: point memo
 
-## 2. Rows run
+- **Memory:** one table, 4096 x 85 B = 348,160 B. Blocks: 32 x 252,044 = 8,065,408 B. Total **8,413,568 B** <= 8.5e6.
+- **Perf set** (`test-results/mountains/carving-c1/cells.mjs`, 40,000 placeAt points):
+  - pass 1: 935 builds, 2146 stores, 0 evictions, 141 s;
+  - **pass 2: 0 builds**, 7518 hits, 0.1 s.
+  - The halved first attempt re-solved 266 blocks on pass 2.
+- **Rows:** in tests/perf/place-query.perf.test.mjs, inside `npm run test:perf`.
 
-| row | result |
-|---|---|
-| mountain-carving + memo tests (`test:pkg`) | 19 pass, 0 fail |
-| C1 straddle (1246 lines incl. seams, h = 1 mm, jump limit 0.01) | Catmull-Rom 0 kinks (max jump 8.94e-5); triangle 1012/1246 kinks (max 4) |
-| seam stored-column identity | 0 / 4329 diffs (3 seams incl. w = 48 km) |
-| point memo == block path | bit-identical |
-| imported-only blocks | 0 builds |
-| **spectrum pin, truth (HARD <= 4.7 dB)** | **FAIL: 9.34 dB** (lattice-x) |
-| spectrum negative control (triangle > 4.7) | pass: 8.88 dB |
-| 250 m gully cell (< 4.7) | pass: 0.92 dB |
+  | row | result | limit |
+  |---|---|---|
+  | W | 0 main-thread solves, first-pass p50 16.3 µs | <= 60 µs |
+  | F | 157.4 ms per solve | <= 250 ms |
+  | best-of-3 x 40,000 | 1.84 µs (2.79 µs in a standalone run) | strict 3 µs |
 
-Spectrum, smoke tier: 20 frozen massif tiles, fine rasters of 256 x 50 m aligned with the belt axis, pooled whitened. Values
-are peakDb for lattice-x / lattice-y / lattice-d / lattice-d2.
+### Step C1: version bump, re-pins, identity
 
-| field | truth (rock on) | rock off (INFO) | rock term alone (truth - rock off) |
+- **Identity vs main** (`test-results/mountains/carving-c1/belt-identity.mjs`):
+  - The test compared the whole sample (height, ocean, colour, roughness) on 4 worlds x 15,120 directions (the T3 set).
+  - belt = 0: **0 mismatches**. Maithea 3870, Selawyn 3935, Raiva 3880, Lethuris 3939 directions.
+  - Outside the massif: 0 mismatches.
+  - In the massif, every direction moved (10,838-10,896 per world; max |dh| 151-189 m).
+- **The other pins (`test:full` pass):**
+  - level-0 identity outside the belts;
+  - the truth identity outside the belts;
+  - ocean-flag identity at level 0;
+  - outsideBelt/outsideMassif identity vs main in terrain-mountains-assembly.
+- **tsc:** clean.
+
+### Step C2: `test:pkg` for the mountain-* files, lod-carving-reduction, lod-coarse-frame and terrain-mountains-assembly
+
+160 tests: 158 pass, 2 skipped (test:full only), 0 fail. That count is after the M4 reduced-fixture digest was re-pinned:
+the first run failed only that digest, while that test's judge rows passed.
+
+### Step C3: M3 eight rows, both pools, no re-tuning (`test-results/mountains/carving-c1/m3-rows.mjs`)
+
+This is the T6 script, changed only so that rock reads U + Cb, U + Cbx, U + Cby.
+- **training** = seeds 730201-08;
+- **held-out** = seeds 730301-08.
+
+Rows are given as no rock / with rock:
+
+| row | limit | training, T6 | **training, C1** | held-out, T6 | **held-out, C1** |
+|---|---|---|---|---|---|
+| slope125Over30 % | | 69.74 / 67.94 | **69.75 / 67.75** | 69.58 / 67.65 | **69.59 / 67.44** |
+| slope125P50 deg | | 37.81 / 37.78 | **37.82 / 37.43** | 37.66 / 37.63 | **37.66 / 37.30** |
+| flank500mP50 | | 20.7 / 20.7 | **20.7 / 20.7** | 20.5 / 20.6 | **20.5 / 20.6** |
+| relief8kmP50 m | | 1574 / 1561 | **1574 / 1563** | 1573 / 1561 | **1573 / 1564** |
+| beta500mTo8km | | 2.29 / 2.25 | **2.21 / 2.17** | 2.30 / 2.25 | **2.21 / 2.18** |
+| fill10ShareP50 | | 0.004 / 0.005 | **0.004 / 0.007** | 0.004 / 0.005 | **0.004 / 0.007** |
+| pits025Per1000km2P50 | | 3.9 / 3.5 | **3.9 / 4.3** | 4.3 / 5.6 | **4.3 / 6.0** |
+| axisCoherence40kmP50 | | 0.224 / 0.223 | **0.223 / 0.224** | 0.237 / 0.238 | **0.237 / 0.238** |
+
+**All eight rows pass on both pools, with and without rock.**
+
+**M4, Raiva whole-core R1 (hard reject at < 8)**, from `test-results/mountains/t6-wiring/m4-summits.mjs`, PART2=0:
+
+| run | T6 | **C1** |
+|---|---|---|
+| training, no rock | | **9.38** |
+| training, rock | 8.75 | **9.28** |
+| held-out, no rock | 7.72 FAIL | **8.19** |
+| held-out, rock | 7.66 FAIL | **8.22** |
+
+- The M4 gate rows pass 20/20 in all four runs (T6's held-out runs: 19/20).
+- Whole-core R1 of the other worlds (training, rock): Maithea 44.00, Selawyn 24.59, Lethuris 42.41.
+- The element contract (Raiva tau, 8 seeds) gives 9.375.
+
+**M5 real-M3 margins (INFO, as the decision classes them).** Training / held-out:
+
+| margin | T6 | **C1** | limit |
 |---|---|---|---|
-| mountain-carving-2 triangle (main) | 7.84 / 8.20 / 8.83 / 8.88 | 8.35 / 9.32 / 9.73 / 9.62 | 9.81 / 9.14 / 6.46 / 4.40 |
-| **mountain-carving-3 Catmull-Rom** | **9.34 / 8.22 / 1.36 / 0.57** | 2.28 / -0.79 / 0.58 / 0.12 | 10.29 / 9.30 / 1.58 / 1.04 |
-| diag only: quadratic B-spline (the decision's fallback) | 5.27 / 4.39 / 0.41 / -0.50 | 0.44 / -0.87 / -0.48 / -0.25 | 6.48 / 6.28 / 0.64 / -0.60 |
-| diag only: uniform cubic B-spline (C2) | 1.83 / 1.46 / 0.16 / -0.29 | 0.91 / 0.30 / -0.28 / -0.23 | 2.43 / 1.82 / 1.07 / -0.32 |
+| R2 slope p90 | 48.25 / 48.16 | **48.72 / 48.62** | 48.4: **crossed on both pools** |
+| R3' beta | 3.280 / 3.252 | **3.3675 / 3.3368** | 3.3666 / 3.3637: **crossed on training by 0.0009**; held-out passes |
+| R1e ratio | 3.07 / 3.03 | **3.07 / 3.02** | |
+| R2 pits025 | 4.94 / 17.3 | **4.94 / 19.8** | |
+| R1 steep RMS | 45.5 / 45.6 | **49.5 / 49.8** | |
 
-Off-belt control, unchanged: 1.58 dB max. Gully cell, Catmull-Rom truth: gully-x 0.92, gully-y 0.84.
+- The R3' limit is derived from each pool's no-rock beta, which itself rose from 3.668 to 3.741 with the Catmull-Rom
+  height.
+- These are the thin M5 margins the decision flagged (section 2: "slope p90 48.25 vs 48.4, R3' 3.28 vs 3.32"). Both were
+  already close in T6. On real M3 they now sit just past their INFO limits.
+- They are reported, not tuned. **This needs a decision** if these INFO rows are meant as gates at the gate review.
 
-## 3. Finding
+### Step C4: cost
 
-C1 does what the decision intended for the **carving field itself**. With rock off, the lattice drops from 9.73 to 2.28 dB,
-and the diagonal families disappear even with rock on (8.88 -> 0.57 dB).
+**In-massif warm bench** (`test-results/mountains/carving-c1/inmassif-bench.mjs`):
+- method: `mountainRidgeTermM`, carve = true, Raiva tau, 4096 cached inputs, 9 x 1e6 calls;
+- main and the branch alternated, 3 runs each;
+- results are the median ns per in-massif sample.
 
-The axis families come back through **M5 rock detail**:
-- `rockDetailM` reads the carved field's slope (forward differences over 125 m) and its height (strata phase), and both
-  feed nonlinear terms: the slope weight, the depth term `KAPPA x slope` and the bench phase.
-- A C1 interpolant has a curvature that jumps on every lattice line. The slope magnitude therefore keeps a 200 m-periodic
-  modulation along x and y, and rock turns that modulation into relief.
-- The rock term alone has 10.29 dB at lattice-x under Catmull-Rom, which is higher than under the triangle (9.81).
+| | main (carving-2 / assembly-3) | **branch (carving-3 / assembly-4)** | delta |
+|---|---|---|---|
+| carving, no rock | 57.0 / 56.7 / 57.4 | **55.6 / 55.8 / 55.1** | -1.5 ns (-3 %) |
+| carving + rock | 189.8 / 190.6 / 189.7 | **239.0 / 225.9 / 228.0** | **+38..49 ns (+20..26 %)** |
 
-The ordering over interpolants matches the smoothness class:
-- Catmull-Rom (C1, interpolating, with overshoot-shaped curvature): 9.34 dB;
-- quadratic B-spline (C1): 5.27 dB, which still fails;
-- cubic B-spline (C2): 1.83 dB, which passes.
+The extra cost at rock levels comes from one more carving evaluation, the smoothed value at the sample. The two offsets
+were already evaluated before, now through the B-spline. The addendum estimated +10..15 ns: **measured higher, report
+only**. Levels below `rockDetailFromLevel` (rock = false) and the orbit bake are unchanged in cost. The cost-fair
+protocol, which measures the real tile cost, is the coordinator's.
 
-The decision's premise that "rock only shaves about 2 dB" was measured on the triangle field. On a C1 field, rock is the
-dominant lattice source.
+**M5 micro-bench** (`ATLAS_M5_BENCH=1`, tests/mountain-rock-detail.test.mjs, synthetic, no carving involved):
+- rock: main 50.4 / 50.4 ns, branch 49.7 / 50.7 ns;
+- add-on: main 130.0 / 131.6 ns, branch 129.8 / 130.8 ns (limit 214);
+- unchanged, as expected.
 
-So **neither the specified C1 nor the named 9-tap fallback passes the pre-registered pin**. Two candidates did pass in the
-scratch diagnostic, and both need a new decision (neither was adopted here):
-- (a) a C2 query: the cubic B-spline. It is approximating, not interpolating: vertex values are smoothed, so the exact-vertex
-  reproduction test and the M3/M4 margins (Raiva R1 8.59 vs >= 8) would need re-measuring.
-- (b) the decision's other fallback: give M5 an analytic or C1-consistent gradient (changes M5 input semantics, own
-  version).
+**`npm run test:perf`:** 12 pass, 0 fail, 1 skipped (the eco-class quiet-host acceptance, which is OPEN on main).
 
-Reproduce: `node test-results/mountains/carving-c1/diag.mjs <worktree> cr|tri|bq|bc` (about 9 s each; per-tile values in the
-`diag-*.json` files).
+### Step C5: suites
 
-## 4. Second open issue: the point memo under the perf set
+- `test:affected --base main`: 48 changed files, 89 selected. 725 tests: 712 pass, 0 fail, 11 skipped. Two known
+  OPEN/NOT MET todo rows (SITE_A ring, rocky corpus Spearman), the same as main.
+- `test:full`: see section 3.
 
-The perf set of 40,000 placeAt points touches about 2147 distinct cells per pass. SLOTS 2048 / FILL 1536 cannot hold them:
-- on the branch, the second pass re-solved **266 blocks** (pass 0: 935 builds, 2148 stores, 3492 hits, 170 s; pass 1:
-  266 builds, 5029 hits, 74 s);
-- on main the second pass re-solved 0 (0.4 s).
+## 2. Ledger (old -> new)
 
-The `place-query.perf` best-of-3 row would fail. At 85 B per cell (16 taps), the memo bound leaves about 2552 slots at most.
-Options:
-- a load factor near 0.9;
-- a compacted key;
-- caching blocks rather than cells for warm sets.
+| item | old (main ada9dae) | new |
+|---|---|---|
+| `MOUNTAIN_CARVING_VERSION` | mountain-carving-2 | mountain-carving-3 (`MOUNTAIN_CARVING.INTERPOLANT: 'catmull-rom'` added; other constants unchanged) |
+| `MOUNTAIN_ASSEMBLY_VERSION` | mountain-assembly-3 | mountain-assembly-4 (rock = false bit-identical to -3) |
+| `TERRAIN_VERSION` | terrain-1.9.0-mountains | terrain-1.9.1-carving-c1 |
+| `MOUNTAIN_ROCK_DETAIL_VERSION`, `LOD_LADDER_VERSION`, `SURVEY_VERSION`, `MASSIF_ENVELOPE_VERSION`, `OROGEN_LAYOUT_VERSION` | | unchanged |
+| block storage | `r` Float32 retained, 481 x 129 = 248,196 B | `cut` Float32 cut fraction, 481 x 131 (block-local columns -1..129) = 252,044 B |
+| point memo | 2 generations x 4096 slots x 37 B (4 corners) = 303,104 B | 1 clock table, 4096 slots x 85 B (16 taps), FILL 3072 = 348,160 B |
+| memo total | 32 x 248,196 + 303,104 = 8,245,376 B | 32 x 252,044 + 348,160 = 8,413,568 B (bound 8.5e6 unchanged) |
+| `CARVING_F_DIGEST` | 1321803fcd6ba5b03fa009035154a025aefff6a2a5bf1442e9e4cf902443cfee | 1c94b28fde21ee4a55894303b28c19a50ded833f6135d58563b81f412bb3c2bd |
+| `CARVING_S_DIGEST` | (new) | 194bc67183744abda59192967c929ae35d0a54428674b7a02cc2bd7c4a2c570c |
+| 129-square metric pin | slope 79.8, P50 42.2, flank 24.2, relief 1908, beta 2.41, fill 0.007, pits 0, coherence 0.192 | flank **24.3**, beta **2.33**, coherence **0.186**; the other five unchanged |
+| M4 reduced fixture raster digest | 4e470f04b8ce224b32852d6a99b6ef15ef6faf360bc5758e1ecf62803d315386 | 3e9d3367610ecabddcc8210742237f728d60e91149787dda4fd374ef80b3ba52 (judge rows pass: density 45.93, placement 1) |
+| `MOUNTAINS_TRUTH_SHA256` (test:full) | 7de7c8f7d73fe535435522f2d158bccc654f833eee81c1e9b6acb286f79fb3cd | 46ecb662891719725b26eb98a1e600f769efd99f71a41ed08f3227028832a5cd |
+| `MOUNTAINS_LEVEL0_SHA256`, `KEPT_PALETTE_COLOUR_SHA256` | | unchanged |
+| `COST_IDENTITY[0]` (L(cut-1), uncarved), `COST_SAMPLER_IDENTITY[0]` | | unchanged |
+| `COST_IDENTITY[1]` Maithea | 00446f5a... | 026b284a69284619fbd031dea0ee77ea3e64af5763e972fc0f4b04a8f395a342 |
+| `COST_IDENTITY[1]` Selawyn | fa4de7c2... | acda960fecf57667d934cb54e9f93a8dfa8fa8578156a16eb9d0867e8defe32d |
+| `COST_IDENTITY[1]` Raiva | 134db519... | 5a947b9d9e2855db1eee89416604c31501c2109ae87fff7908fff3c8b0f7fe34 |
+| `COST_IDENTITY[1]` Lethuris | c3574bed... | 2c4088746ba0d5d054f922c2e5aa3ba441cdc2641401b71f128e8e1f6dba03c5 |
+| `COST_SAMPLER_IDENTITY[1]` (carved, no rock) | Maithea a49cc5e1..., Selawyn efba81af..., Raiva 3c9b85ba..., Lethuris 72ca784c... | 8fc436b6..., 667a16d6..., 84c0f1e0..., cb266bda... |
+| `COST_SAMPLER_IDENTITY[2]` (truth and rock levels) | Maithea 9fd0dcf1..., Selawyn f0d4b21f..., Raiva ae4c6a53..., Lethuris 2783f372... | 0bd5ce54..., 63392837..., 86503962..., 16773c77... |
+| golden `biomes` | 5bbf5a1c6c5d0ec2277eec1c365795e11a3454c45d0768217889c6d443e1961a | f60bb445d88b84550ac9fba5c3737dd6556079c2831f7f4f444b7e280063fb6d |
+| golden `placeQuery` | a5d9e5cc7287266cf85ecba029715a786d72d20e2dddbfa11a2d1c8e3144a569 | 52ad8f99ebbc8fb1dd0c00069cd386ed24dc9e6e5456b672fc299a053715d456 |
+| golden `census` | d63ad49733eaa56debcc4fadb05d1baaf793d6e2a6cadfecbfa65d7951a91627 | 060898a2699af91770d2b668b45a14275ac92984920e4102da4bde38db45ef35 |
+| golden `rocks` | f0697d6854d51876c6353ca63c9d86395b1776249373bb1395dc9fd2cfcb4477 | fa0621596e359811f862e33e6e80765f9a50467255b6d1d23d3c5e65209c237c |
+| golden `terrain` and every other section | | unchanged |
+| tests/tier-sets.json | inputs.TERRAIN_VERSION terrain-1.9.0-mountains | terrain-1.9.1-carving-c1; history entry added; **same tiles** (sha 90bb43c0 unchanged) |
+| tests/tiers.json | spectrum shards `^INFO: real` | smoke and work: `^INFO: real`, `^HARD: real` (authorised by the coordinator); `all` unchanged |
+| version-string pins | version-compat, inland-rivers-disabled, river-terrain (geologyVersion), terrain-climate-colour, terrain-relief-hypsometry, lod-carving-reduction, terrain-mountains-assembly (version tuple) | moved |
 
-This needs a decision too. Evidence: `test-results/mountains/carving-c1/cells.mjs`, `cells-c1.log`.
+- **Golden:** re-pinned from `node tests/golden/node-run.mjs` (Node only). **The cross-engine check
+  (`run-cross-engine.mjs`) is pending**: it needs headless browsers under the GPU lock, which this agent does not run.
+- **SURVEY_VERSION:** no survey pin failed in test:affected or test:full, so it stays put.
 
-## 5. Not run (stopped at the failing HARD row)
+## 3. test:full
 
-- TERRAIN_VERSION bump and its pins;
-- re-pins (129-square, sampler identity, elevation identity, golden);
-- M3 eight rows on both pools;
-- M4 Raiva R1;
-- M5 INFO margins;
-- belt = 0 identity on 4 x 15,120;
-- lod-carving-reduction, lod-coarse-frame;
-- M5 micro-bench (ATLAS_M5_BENCH=1);
-- test:affected and test:full;
-- the GPU probe pair (not this agent's: no browser).
+**GREEN.** 214 files in 247 steps, 247/247 steps exited 0.
 
-needs: a `^HARD: real` shard for tests/terrain-structural-spectrum.test.mjs in tests/tiers.json, so the HARD pin does not
-run inside the `#rest` step (the current shard is `^INFO: real`). Not edited, because another agent owns tiers.json and
-package.json.
+| result | count |
+|---|---|
+| tests | 1610 |
+| pass | 1603 |
+| fail | 0 |
+| skip | 5 |
+| todo | 2 |
+
+- Known failures matched: 0. New failures: 0. Stale known entries: 0.
+- Wall 592.1 s; peak step RSS 1235 MiB.
+- Log: test-results/tiers/4df66f0a676b-full-2026-10-07T10-18-04-717Z.
+
+## 4. Pending, and not this agent's
+
+- Cost-fair protocol (GATE-1): the coordinator, in a quiet window.
+- GPU probe pair (Maithea massif, L11-L13, low sun) and the golden cross-engine run: need a browser and the GPU lock.
+- **Decision needed:** whether the M5 INFO margins that are now crossed (R2 p90 48.72 / 48.62 vs 48.4; R3' training
+  3.3675 vs 3.3666) are acceptable as INFO.
+- **Decision needed:** whether the +38..49 ns at rock levels (estimated +10..15) needs the cost-fair run before staging.
