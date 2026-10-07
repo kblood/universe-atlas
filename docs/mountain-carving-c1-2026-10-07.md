@@ -4,8 +4,9 @@ Branch `mountains/carving-c1`, staged. NOT for merge on its own: it rides the ne
 
 - Decisions: docs/fable-decision-carving-lattice-2026-10-07.md section 2 (first attempt) and section 2b, the addendum
   written after the pin failed. Both were decided by Fable 5.1 on Kasper's instruction and can be overruled.
-- Cost-fair protocol (GATE-1) and the GPU probe pair: **not run**. The coordinator runs the cost-fair protocol in a quiet
-  window. This agent runs no browser and uses no GPU.
+- Cost-fair protocol (coordinator's quiet window, 2026-10-07): **run once, STOP.** Raiva orbit median 5.02 % > 5 %
+  (every C1 cell MET). The cross-engine golden check and the GPU probe pair were **not run**, because step 2 runs only
+  after the protocol passes. See section 5.
 
 ## 0. History: the design changed after the pin failed
 
@@ -227,7 +228,7 @@ Rows are given as no rock / with rock:
 The extra cost at rock levels comes from one more carving evaluation, the smoothed value at the sample. The two offsets
 were already evaluated before, now through the B-spline. The addendum estimated +10..15 ns: **measured higher, report
 only**. Levels below `rockDetailFromLevel` (rock = false) and the orbit bake are unchanged in cost. The cost-fair
-protocol, which measures the real tile cost, is the coordinator's.
+protocol, which measures the real tile cost, is the coordinator's: see section 5 (STOP on Raiva orbit 5.02 %).
 
 **M5 micro-bench** (`ATLAS_M5_BENCH=1`, tests/mountain-rock-detail.test.mjs, synthetic, no carving involved):
 - rock: main 50.4 / 50.4 ns, branch 49.7 / 50.7 ns;
@@ -297,8 +298,9 @@ protocol, which measures the real tile cost, is the coordinator's.
 
 ## 4. Pending, and not this agent's
 
-- Cost-fair protocol (GATE-1): the coordinator, in a quiet window.
-- GPU probe pair (Maithea massif, L11-L13, low sun) and the golden cross-engine run: need a browser and the GPU lock.
+- Cost-fair protocol: **run, STOP** (section 5).
+- GPU probe pair (Maithea massif, L11-L13, low sun) and the golden cross-engine run: **not run**, because the protocol
+  STOPped first.
 - **Decided (section 2c):** the crossed M5 margins stay INFO. The cost protocol runs as is, with REF = `9dcb1cf`
   (GATE-1 REF), REF2 an identical export, and CAND = the branch tip. Merge follows only after these, in order: the
   protocol passes, the cross-engine golden check shows 0 mismatches, and the probe pair shows no visual STOP.
@@ -313,3 +315,69 @@ protocol, which measures the real tile cost, is the coordinator's.
 - **Expected gain:** about 15-25 ns recoverable of the measured +38..49 ns.
 - **When:** with the next terrain change. Per section 2c(2), it becomes mandatory, and is followed by a new counted run,
   if the cost-fair protocol STOPs. It moves to the top of the backlog if Maithea lands in (7, 8] %.
+
+## 5. Cost-fair protocol, quiet window 2026-10-07 (coordinator; counted once): STOP on Raiva orbit
+
+- **Authority.** Fable 5.1, section 2c(2) and 2c(3), decided on Kasper's instruction and overrulable. The protocol is
+  addendum (6) Q-A and the harness is addendum (7), both unchanged.
+- **Pre-registration.** Committed before the first counted process, as `fc5975f`
+  (`docs/quiet-window-2026-10-07/gate-c1/prereg.txt`). Expected C1: Maithea ~5.98, Selawyn ~2.94, Raiva ~4.77, Lethuris
+  ~5.23 %. Orbit expected unchanged. STOP rule: any C1 median > 8 % or any orbit median > 5 % means no rerun.
+- **Arms.** All three are `git archive` exports with one `node_modules` junction to main's:
+  - REF = `9dcb1cf`, terrain-1.8.1-grain. This is the **unwired** build, because the budgets are cumulative against it.
+  - REF2 = a second export of `9dcb1cf`, identical (`diff -rq` empty).
+  - CAND = `b84bcf9`, terrain-1.9.1-carving-c1, wired.
+- **Harness.** Main's checkout `581a484`, whose `scripts/cost-fair` is identical to the branch's.
+  - Command: `REF_SHA=9dcb1cf… OUT=test-results/gate-c1/fair N=30 sh scripts/cost-fair/run.sh`. It took the exclusive slot
+    once.
+  - Then `node scripts/cost-fair/analyze.mjs test-results/gate-c1/fair`.
+- **Run.**
+  - Wall: 10:45:25Z to 12:24:19Z.
+  - Exits: 480/480 exit 0, `failed=0`, `orbit.err` empty.
+  - Point sets: the eight `.f64` sha256 equal GATE-1's.
+  - The records confirm the arms. A/B is 1.8.1/unwired against 1.9.1-carving-c1/wired; A/A is 1.8.1 against 1.8.1.
+  - Orbit bakes: every A/A pair is byte-identical, every A/B pair differs, and there are 0 block solves in the timed bakes.
+
+| World | C1 A/B [CI] | A/A [CI] | C1 judged (<= 8) | Orbit A/B [CI] | A/A [CI] | Orbit judged (<= 5) |
+|---|---|---|---:|---|---|---:|
+| Maithea | 6.89 [3.76, 8.55] | -0.08 [-1.62, 1.02] | **6.89 MET** | 4.68 [1.89, 5.50] | 0.89 [-1.95, 1.44] | **4.68 MET** |
+| Selawyn | 1.75 [-0.33, 3.04] | -0.65 [-3.09, 1.02] | **1.75 MET** | 2.83 [1.75, 5.11] | -0.50 [-1.96, 1.06] | **2.83 MET** |
+| Raiva | 6.08 [3.98, 6.82] | -0.49 [-2.05, 0.44] | **6.08 MET** | 5.02 [3.30, 5.46] | -0.51 [-2.40, 0.30] | **5.02 NOT MET** |
+| Lethuris | 4.35 [3.67, 6.10] | 0.57 [-0.51, 2.31] | **4.35 MET** | 2.63 [0.65, 4.26] | -0.35 [-1.61, 0.77] | **2.63 MET** |
+
+**Verdict.**
+- No cell shows a demonstrated A/A bias, so each judged value is the A/B median. **ALL MET: false.**
+- **STOP:** Raiva orbit 5.02 % > 5 %. There is no rerun, and the cross-engine golden check and the GPU probe pair were not
+  run.
+- The section 2c(3) remedy (the fused-lookup refactor, then a new counted run) targets C1. The cell that failed is orbit,
+  which the decision expected to be untouched. The next step therefore needs a decision; this agent did not take one.
+
+**INFO only (none of this changes the verdict).**
+- **Raiva orbit, per process.** The sorted A/B values run from -2.59 to 8.88. The two middle values are 5.00 and 5.04,
+  so the median 5.02 lies 0.02 points over the budget. The value also falls inside GATE-1's own Raiva CI
+  [2.94, 5.49].
+- **The orbit bake output did not change since GATE-1.**
+  - CAND's orbit digests equal GATE-1's CAND (`772cad3`) on all four worlds.
+  - `git diff 772cad3 b84bcf9 -- src` touches only `mountain-carving.ts`, `mountain-assembly.ts` (the rock inputs),
+    `place-query.ts` and `terrain.ts` (an import and the version string).
+  - Orbit medians nevertheless rose against GATE-1, from 3.08 / 2.50 / 4.36 / 1.64 to 4.68 / 2.83 / 5.02 / 2.63.
+  - Whether that is run-to-run noise (the documented per-run spread is -9..+10 %) or a real cost is **not established**.
+- **C1 against expectation.** Measured 6.89 / 1.75 / 6.08 / 4.35, expected 5.98 / 2.94 / 4.77 / 5.23. Maithea's CI upper
+  bound, 8.55 %, is above 8 %.
+  - Outside massifs, A/B: +3.26 / -0.14 / +3.32 / +2.71 %.
+  - In-massif, A/B: +161 / +139 / +137 / +176 %.
+- **Pre-check.**
+  - 33 of 480 processes were flagged (20 C1, 13 orbit).
+  - All of them were short host-idle waits; no contender counted.
+  - Waits totalled 1,455 s, and the minimum idle was 85 %.
+  - Excluding the flagged processes: C1 6.89 / 1.50 / 6.12 / 4.20, orbit 4.68 / 3.60 / 5.06 / 2.66.
+- **Evidence.** `docs/quiet-window-2026-10-07/gate-c1/` holds:
+  - `prereg.txt` and `verdict.txt`;
+  - the analysis (`analysis.txt`, `analysis.json`);
+  - the records (`c1.jsonl`, `orbit.jsonl`), the logs (`exits.log`, `c1.log`, `orbit.err`) and `protocol.txt`;
+  - `precheck.jsonl` and `baseline.json`;
+  - the point-set metadata (`points-*.json`, `points-f64.sha256`, `points-source.jsonl`);
+  - `sensitivity-info.txt` and `started.txt`.
+  - The per-record files are in the git-ignored `test-results/gate-c1/fair/rec/` in main's checkout.
+- **Cleanup.** The arms were removed, the junction first with `cmd /c rmdir`; main's `node_modules` is intact. No slot,
+  shared holder or GPU lock is held.

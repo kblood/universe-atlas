@@ -1,0 +1,10 @@
+c1 versions AB terrain-1.8.1-grain/false -> terrain-1.9.1-carving-c1/true
+c1 versions AA terrain-1.8.1-grain/false -> terrain-1.8.1-grain/false
+orbit identical AA true AB false blockSolves 0
+node v24.7.0
+order mismatches 0 flagged c1 20 flagged orbit 13 strong-contender 
+waits total s 1455 idle min 85
+Maithea UNFLAGGED-ONLY (INFO): C1 A/B 6.89% [3.74,8.55] n=26; orbit A/B 4.68% [1.89,5.50] n=30
+Selawyn UNFLAGGED-ONLY (INFO): C1 A/B 1.50% [-0.51,3.04] n=26; orbit A/B 3.60% [1.75,5.30] n=28
+Raiva UNFLAGGED-ONLY (INFO): C1 A/B 6.12% [3.76,6.92] n=29; orbit A/B 5.06% [3.30,5.58] n=27
+Lethuris UNFLAGGED-ONLY (INFO): C1 A/B 4.20% [3.62,6.10] n=28; orbit A/B 2.66% [-1.25,4.40] n=29
