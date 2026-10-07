@@ -1,0 +1,39 @@
+START 2026-10-07T10:54:02+02:00
+
+> universe-atlas@0.1.0 test:perf
+> node tests/helpers/test-runner.mjs perf
+
+CPU load 1.0%; require < 25% for 3 samples
+CPU load 1.0%; require < 25% for 3 samples
+CPU load 5.0%; require < 25% for 3 samples
+# eco-class cost 21.7 ns/call (contended unless quiet host), heap delta -425704 B
+✔ eco-class cost regression guard: <= 100 ns per sample (relaxed, not the 25 ns criterion), no allocation (65.9792ms)
+✔ eco-class cost acceptance: <= 25 ns per sample on a quiet host (61.6598ms)
+✔ far-LOD mean cost: 512 new realistic genomes of warm species stay within about 15 ms (160.449ms)
+ℹ {"strict":false,"capMs":30,"coldTwelveSpeciesMs":47,"burstsMs":[18.7,12.5,13.7,12.1,11,10.7,10.6,11,10.8]}
+✔ 96 corpus bodies: coat CPU and step timing caps (4662.9991ms)
+ℹ {"strict":false,"coatCapMs":40,"specimens":96,"longestStepMs":11.2,"minYields":47,"maxTriangles":18068,"maxGrid":199723,"maxCoatMs":10.96,"meanCoatMs":5.83}
+✔ the resumable build stays within the step timing cap (71.3449ms)
+✔ performance sanity (strict 2 us / 3 ms budgets are measured by fauna-coat-swatches.mjs) (53.4263ms)
+ocean-volume cost: build median 3.25 ms (first call in this test 89.52 ms), levelForLoss 1.64 us true
+✔ cost: hypsometry build and levelForLoss (strict budgets with OCEAN_PERF_STRICT=1) (339.8802ms)
+ROW W {"directions":12,"imported":8,"priming":{"queries":488,"imported":10},"workerSolves":18,"workerMs":3095,"mainSolves":0,"firstPassP50Us":10,"INFO":{"firstPassMeanUs":13.49,"firstCallUs":44.4,"maxCallUs":44.4,"perCallUs":[44.4,12.4,9.4,16.8,10,8.1,16.1,8.4,6.7,13.5,8.4,7.7],"secondPassMeanUs":14.46}} true
+ROW F {"directions":16,"counted":16,"msPerSolve":156.1,"INFO":{"p50MsPerSolve":153.6,"maxMsPerSolve":178,"maxCallMs":178,"solvesPerCall":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"blocksPerCall":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}}
+placeAt 1.74 us (best of 3 x 40000) true
+✔ cost: row W warm-up: worker-exported massif blocks imported, 0 solves, first-pass placeAt per-call p50 <= 60 us (strict 30 us with OCEAN_PERF_STRICT=1), no call > 5 ms (3565.797ms)
+✔ cost: row F first touch: placeAt on cold massif blocks, ms per solve <= 250 (strict 200 with OCEAN_PERF_STRICT=1), regression guard (2499.9987ms)
+✔ cost: placeAt at full level (strict budget 3 us with OCEAN_PERF_STRICT=1) (151619.9046ms)
+# cost: seasonBasis 0.430 ms/body (best 40-body cold batch of 5), seasonAt 0.524 us/call (best 20k batch of 5, warm, out param); retained heap after gc 84.7 KiB over 100000 calls; minor GCs during them: 15 (transient BigInt/bodyPosition temporaries)
+✔ cost: seasonBasis <= 2 ms per body, seasonAt <= 5 us (best of 5 batches) (215.5365ms)
+# signature 0.152 ms per frame for 602 casters, 40377 values
+✔ the signature is linear in caster count and cheap (57.708ms)
+✔ planetSurface default stays within the system-surfaces multi-body job budget (7.4399ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 164754.8225
+EXITCODE 0 2026-10-07T11:00:54+02:00

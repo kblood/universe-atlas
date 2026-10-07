@@ -32,7 +32,7 @@ const TIER_SETS = JSON.parse(readFileSync(new URL('../tier-sets.json', import.me
 const ctxOf = w => ({sys: WORLDS[w].sys, body: WORLDS[w].body, t: CATALOGUE_EPOCH_NS});
 const pct = (a, q) => {const s = [...a].sort((x, y) => x - y);return s[Math.min(s.length - 1, Math.floor(q * s.length))];};
 
-// Rows W and F: docs/placeat-first-touch-decision-2026-10-07.md section 2.D.3.
+// Rows W and F: docs/placeat-first-touch-decision-2026-10-07.md section 2.D.3. Row W limits corrected in section 5 of that file.
 const PRIME_JITTER = 60;
 const rng = s => () => {s = (s + 0x6d2b79f5) | 0;let t = Math.imul(s ^ (s >>> 15), 1 | s);t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;return ((t ^ (t >>> 14)) >>> 0) / 4294967296;};
 /** Seeded random massif directions (M1 belt query only, no heights): `perWorld` per world. */
@@ -48,7 +48,8 @@ function massifDirections(seed, perWorld) {
   return dirs;
 }
 
-test('cost: row W warm-up: worker-exported massif blocks imported, first-pass placeAt mean <= 30 us (strict 10 us with OCEAN_PERF_STRICT=1), 0 solves', async () => {
+test('cost: row W warm-up: worker-exported massif blocks imported, 0 solves, first-pass placeAt per-call p50 <= 60 us (strict 30 us with OCEAN_PERF_STRICT=1), no call > 5 ms', async () => {
+  // Metric: per-call p50 of the first pass. The first query after an import costs ~50 us once; the rest 7-25 us depending on JIT warmth (17 us mean in the full perf run, 26 us alone); the carving memo itself is sub-us on a hit.
   assert.deepEqual(placeWorlds().map(w => w.body.id), WORLDS.map(w => w.body.id));
   const jobs = frozenMassifJobs(TIER_SETS);
   assert.ok(jobs.length >= 12, `${jobs.length} frozen massif directions`);
@@ -76,16 +77,19 @@ test('cost: row W warm-up: worker-exported massif blocks imported, first-pass pl
   for (let pass = 0; pass < 2; pass++) for (const {world, d} of prime) placeAt(ctxOf(world), d);
   for (const b of rowBlocks) imported += importPlaceBlocks(b);
   assert.ok(primeImported + imported <= 32, `${primeImported} + ${imported} imported blocks fit the 32-block LRU`);
-  let x = 0;const t1 = performance.now();
-  for (const j of jobs) x += placeAt(ctxOf(j.world), j.d).groundHeightM;
-  const first = (performance.now() - t1) / jobs.length * 1000, t2 = performance.now();
+  let x = 0;const per = [];
+  for (const j of jobs) {const t = performance.now();x += placeAt(ctxOf(j.world), j.d).groundHeightM;per.push((performance.now() - t) * 1000);}
+  const p50 = pct(per, .5), mean = per.reduce((a, v) => a + v, 0) / per.length, max = Math.max(...per), t2 = performance.now();
   for (const j of jobs) x += placeAt(ctxOf(j.world), j.d).groundHeightM;
   const second = (performance.now() - t2) / jobs.length * 1000, solves = carvingBuildStats.count - b0;
   jobs.forEach((j, k) => assert.deepStrictEqual(placeAt(ctxOf(j.world), j.d), rowResults[k], `job ${k} answer`));
   console.log(`ROW W ${JSON.stringify({directions: jobs.length, imported, priming: {queries: prime.length, imported: primeImported}, workerSolves: warm.builds,
-    workerMs: Math.round(warm.ms), mainSolves: solves, firstPassMeanUs: +first.toFixed(2), secondPassMeanUs_INFO: +second.toFixed(2)})}`, x !== 0);
+    workerMs: Math.round(warm.ms), mainSolves: solves, firstPassP50Us: +p50.toFixed(2),
+    INFO: {firstPassMeanUs: +mean.toFixed(2), firstCallUs: +per[0].toFixed(2), maxCallUs: +max.toFixed(2), perCallUs: per.map(v => +v.toFixed(1)),
+      secondPassMeanUs: +second.toFixed(2)}})}`, x !== 0);
   assert.equal(solves, 0, 'no main-thread solve after the import');
-  assert.ok(first <= (STRICT ? 10 : 30), `row W first pass ${first} us`);
+  assert.ok(max <= 5000, `row W slowest first-pass call ${max} us (> 5 ms means a solve or a stall)`);
+  assert.ok(p50 <= (STRICT ? 30 : 60), `row W first-pass per-call p50 ${p50} us`);
 });
 
 test('cost: row F first touch: placeAt on cold massif blocks, ms per solve <= 250 (strict 200 with OCEAN_PERF_STRICT=1), regression guard', () => {

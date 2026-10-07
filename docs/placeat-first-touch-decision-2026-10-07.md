@@ -2,7 +2,7 @@
 
 Decided by Fable 5.1 on Kasper's instruction (2026-10-07), overrulable. Kasper's input: "cliffs are allowed to exist, maybe that helps". Recorded from the Fable decision report. Measured numbers from the acceptance runs are appended by the implementer at the end.
 
-Ledger: no threshold, pin, version, golden or budget change; two perf rows added. Adding exported functions is not a `place-query` version bump: the version keys answers, and no field or answer changes.
+Ledger: no threshold, pin, version, golden or budget change; two perf rows added. Adding exported functions is not a `place-query` version bump: the version keys answers, and no field or answer changes. Row W's limits were corrected before merge (section 5); nothing on main moved.
 
 ## 1. Decision
 
@@ -127,3 +127,36 @@ Notes on row W:
   (17.4 / 26.3 us measured), so this row may flake on a loaded host (decision risk 5). The strict limit is left as
   briefed; changing it is an owner/Fable call.
 - Captures ran outside the test slot at below-normal priority (they are not tests; 1 + 3 worker threads on 32 cores).
+
+## 5. Row W limit correction (Fable 5.1 on Kasper's instruction, 2026-10-07, overrulable)
+
+- The briefed limits (first-pass **mean** <= 30 us relaxed, <= 10 us strict) were set without a measurement.
+- What the row measures after an import: the carving part (point-memo miss, resident block hit) is sub-us. The 7-25 us
+  per call is the non-carving massif point path at a fresh location (mountain term, envelope, rock detail, first touch
+  of location-keyed state) and JIT warmth, which is out of scope for this decision. The first query after an import
+  costs about 50 us once.
+- New assertion: **HARD** 0 main-thread solves and no first-pass call > 5,000 us; **cost guard** per-call p50 of the
+  first pass <= 60 us relaxed, <= 30 us strict (`OCEAN_PERF_STRICT=1`); mean, first call, max, the per-call array and
+  the second pass are INFO.
+- Not a ledger entry: the corrected limits never reached main.
+
+Verification (branch rebased onto main `225c362`): see 5.1 below.
+
+### 5.1 Verification of the corrected row W
+
+Under the slot, quiet-CPU gate passed before every perf run. Logs `docs/placeat-first-touch-2026-10-07/r2-*.log`.
+
+| Run | W p50 (us) | W mean | W first call | W max | 0 solves | F ms/solve | existing best-of-3 | Result |
+|---|---|---|---|---|---|---|---|---|
+| file alone, `OCEAN_PERF_STRICT=1`, run 1 | **19.1** | 30.65 | 31.1 | 151.1 | yes | 169.9 | 1.71 us | 3/3 pass |
+| file alone, `OCEAN_PERF_STRICT=1`, run 2 | **11.6** | 16.29 | 52.8 | 52.8 | yes | 158.4 | 1.72 us | 3/3 pass |
+| file alone, `OCEAN_PERF_STRICT=1`, run 3 | **9.5** | 11.59 | 34.4 | 34.4 | yes | 164.0 | 1.69 us | 3/3 pass |
+| `ECO_PERF_STRICT=1 npm run test:perf` | **10.0** | 13.49 | 44.4 | 44.4 | yes | 156.1 | 1.74 us | 13/13 pass |
+| A/B: main `225c362`, file alone, `OCEAN_PERF_STRICT=1` | - | - | - | - | - | - | **1.64 us** | 1/1 pass |
+
+- Strict W (p50 <= 30 us) passes in all three alone runs; max call 151.1 us is far under the 5,000 us HARD bound.
+- Existing row A/B: branch 1.69-1.74 us vs main 1.64 us, +3.0 % to +6.1 %, under the 10 % stop line (the extra
+  `traceKeys!==null` compare on the block path plus run-to-run noise; not separated here).
+- `npx tsc --noEmit` clean; after the rebase `npm run test:pkg -- tests/mountain-carving-memo.test.mjs
+  tests/mountain-carving.test.mjs tests/place-query.test.mjs`: 26 pass, 0 fail. No smoke or capture rerun (no src change
+  since the captures; the rebase brought only test-runner changes from main).

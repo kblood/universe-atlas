@@ -62,8 +62,8 @@ additive: no field or answer changes, so `PLACE_QUERY_VERSION` stays
 first touch solves one M3 carving block (the drainage solve of
 `src/mountain-carving.ts`): about **150 ms**, at most about **0.3 s** when a
 query touches two blocks. That is a frame stall on the main thread. After the
-query's blocks have been imported, the same query costs **<= 30 µs** (17-26 µs measured; perf row
-W in `tests/perf/place-query.perf.test.mjs`); a repeat of a query is a
+query's blocks have been imported, the same query typically costs **<= 30 µs** (per-call p50 on a quiet host; mean 17-26 µs measured, the first query
+after an import about 50 µs once; perf row W in `tests/perf/place-query.perf.test.mjs`); a repeat of a query is a
 point-memo hit (**~1.6 µs**). The cold cost is pinned as a regression guard
 (row F, <= 250 ms per solve), not hidden.
 
