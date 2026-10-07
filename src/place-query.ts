@@ -33,6 +33,7 @@ import {OCEAN_VOLUME_VERSION} from './ocean-volume.ts';
 import {planetGeophysics, pressureAtDepthPa, GEOPHYSICS_VERSION, type PlanetGeophysics, type AirClass} from './planet-geophysics.ts';
 import {biomeClassifier, BIOME_VERSION} from './surface-biomes.ts';
 import {CLIMATE_VERSION} from './surface-climate.ts';
+import {enterCarvingPointQuery, exitCarvingPointQuery} from './mountain-carving.ts';
 
 export const PLACE_QUERY_VERSION = 'place-query-1';
 
@@ -193,8 +194,16 @@ function measuredUpDot(sample: DatedPlace['sample'], d: V3, radiusM: number): nu
   return 1 / Math.sqrt(1 + gx * gx + gy * gy);
 }
 
-/** Everything the platform knows about one place at one date. Plain data. */
+/** Everything the platform knows about one place at one date. Plain data.
+ *
+ * A point query: it opens an M3 carving point query (mountain-carving.ts cell memo), so a repeat query on a
+ * massif reads its lattice cell from the bounded memo instead of re-solving the evicted block. Values are
+ * bit-identical either way (docs/placeat-regression-2026-10-07.md); a first touch still solves one block. */
 export function placeAt(ctx: PlaceContext, direction: V3, level: PlaceLevel = 'S4', options: PlaceOptions = {}): PlaceResult {
+  enterCarvingPointQuery();
+  try { return placeAtTruth(ctx, direction, level, options); } finally { exitCarvingPointQuery(); }
+}
+function placeAtTruth(ctx: PlaceContext, direction: V3, level: PlaceLevel, options: PlaceOptions): PlaceResult {
   const {body} = ctx;
   if (body.kind === 'star') return {version: PLACE_QUERY_VERSION, exists: false, stage: 'star', level, versions: PLACE_VERSIONS};
   const dated = datedPlace(ctx);

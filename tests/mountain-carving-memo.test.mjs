@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {stripTypeScriptTypes} from 'node:module';
-import {MOUNTAIN_CARVING as C} from '../src/mountain-carving.ts';
+import {MOUNTAIN_CARVING as C,CARVING_POINT_MEMO} from '../src/mountain-carving.ts';
 import {carvingDigest,carvingDigestArgs,CARVING_F_DIGEST} from './helpers/mountain-carving-digest.mjs';
 
 const SOURCE=readFileSync(new URL('../src/mountain-carving.ts',import.meta.url),'utf8');
@@ -70,9 +70,41 @@ test('HARD: memo key is exact in half-width and normalised seed (key-mutation co
 test('HARD: persistent memo payload stays below 8.5 MB; per-solve transient arrays reported',async()=>{
   const m=await loadVariant();const b=m.build(730201,30000,0),s=m.solve(730201,30000,0);
   assert.ok(b.r instanceof Float32Array);assert.equal(b.r.length,(C.ROWS+1)*S);
-  const memo=C.CACHE*b.r.byteLength;assert.ok(memo<=8.5e6,'memo '+memo);
+  // The point-query cell memo (fixed typed arrays) counts against the same 8.5 MB.
+  const pm=await loadVariant({},'export {pmSeed,pmW,pmCol,pmRow,pmUsed,pmV};');
+  const pointMemo=[pm.pmSeed,pm.pmW,pm.pmCol,pm.pmRow,pm.pmUsed,pm.pmV].reduce((a,x)=>a+x.byteLength,0);
+  assert.equal(pointMemo,2*CARVING_POINT_MEMO.SLOTS*37);
+  const memo=C.CACHE*b.r.byteLength+pointMemo;assert.ok(memo<=8.5e6,'memo '+memo);
   // Transient per solve (freed after the build): 4 Float64 + 2 Uint8 + 4 Int32 domain arrays.
   const NN=(C.CORE+2*C.HALO+1)*(C.ROWS+1),transient=NN*(4*8+2+4*4);
   assert.equal(s.h.length,NN);
-  console.log('MEMORY '+JSON.stringify({blockBytes:b.r.byteLength,memoBytes:memo,transientBytesPerSolve:transient}));
+  console.log('MEMORY '+JSON.stringify({blockBytes:b.r.byteLength,blockMemoBytes:C.CACHE*b.r.byteLength,pointMemoBytes:pointMemo,memoBytes:memo,transientBytesPerSolve:transient}));
+});
+test('HARD: point-query cell memo is bit-identical to the block path (cold, warm, aged, interleaved; key control)',async()=>{
+  // docs/placeat-regression-2026-10-07.md: inside enter/exitCarvingPointQuery retainedAt reads memoised cell corners.
+  const args=carvingDigestArgs(),rev=args.map((_,i)=>args.length-1-i);
+  const point=m=>(...a)=>{m.enterCarvingPointQuery();try{return m.carvingFM(...a);}finally{m.exitCarvingPointQuery();}};
+  const m=await loadVariant({},'');
+  const b0=m.carvingBuildStats.count;
+  assert.equal(carvingDigest(point(m)),CARVING_F_DIGEST,'cold');
+  const b1=m.carvingBuildStats.count,h1=m.carvingPointMemoStats.hits;
+  assert.equal(carvingDigest(point(m),rev),CARVING_F_DIGEST,'warm, reversed');
+  assert.ok(m.carvingPointMemoStats.hits-h1>1000,'warm pass hits the memo: '+(m.carvingPointMemoStats.hits-h1));
+  // Interleaved point and block calls on one module instance.
+  let n=0;const mixed=(...a)=>(n++&1?point(m)(...a):m.carvingFM(...a));
+  assert.equal(carvingDigest(mixed),CARVING_F_DIGEST,'interleaved');
+  // A 16-slot memo ages every 12 stores (the block memo keeps the fixture's 4 blocks).
+  const aged=await loadVariant({SLOTS:16,FILL:12},'');
+  for(const order of [null,rev])assert.equal(carvingDigest(point(aged),order),CARVING_F_DIGEST,'aged');
+  assert.ok(aged.carvingPointMemoStats.stores>64&&aged.carvingPointMemoStats.hits>0,JSON.stringify(aged.carvingPointMemoStats));
+  // Mutation control: a width-blind cell key must be caught. Cell-centre points (d = 125 m) fall in the same
+  // lattice cell at both half-widths, so a width-blind memo returns the other width's corners.
+  const pts=[[8,200],[72,260],[100,300],[40,150],[-20,330]].map(([c,j])=>[(c+.5)*125,(j+.5)*125-30000]),ws=[30000,30000.5];
+  const fresh={};for(const w of ws){const f=await loadVariant();fresh[w]=pts.map(([x,y])=>f.carvingFM(x,y,w,3000,1,730201));}
+  const diffs=mod=>{let d=0;const f=point(mod);for(let pass=0;pass<2;pass++)for(const w of pass?[...ws].reverse():ws)pts.forEach(([x,y],k)=>{if(f(x,y,w,3000,1,730201)!==fresh[w][k])d++;});return d;};
+  assert.equal(diffs(await loadVariant({},'')),0);
+  const key='&&pmW[k]===w)return k;';assert.ok(SOURCE.includes(key));
+  const blind=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(SOURCE.replace(key,')return k;')+'\n// blind '+(variants++))).toString('base64'));
+  assert.ok(diffs(blind)>0,'a width-blind cell key must be detected');
+  console.log('POINT_MEMO '+JSON.stringify({coldBuilds:b1-b0,warmHits:m.carvingPointMemoStats.hits-h1,aged:aged.carvingPointMemoStats}));
 });

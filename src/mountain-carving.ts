@@ -207,8 +207,71 @@ function block(seed:N,w:N,id:N):Block {
   if(cache.length>=F.CACHE)cache.shift();
   cache.push(b);return b;
 }
+// Point-query cell memo (docs/placeat-regression-2026-10-07.md). Sparse point queries (place-query.ts placeAt)
+// touch one block per massif point, far apart, so the CACHE-block LRU above thrashes and every repeat of a
+// query re-solved its block (~150 ms). While a point query is open (enterCarvingPointQuery), retainedAt first
+// looks up the lattice cell in this memo: the four Float32 corner values r[a], r[a+1], r[a+S], r[a+S+1] of the
+// cell, copied from the solved block, keyed on exact (normalised seed, half-width, global column, row). The
+// interpolation below reads the same Float32 values with the same expressions, so a memo hit is bit-identical
+// to the block path (pinned by tests/mountain-carving-memo.test.mjs). Two generations of SLOTS open-addressed
+// slots; the young one ages into the old one after FILL entries and an old hit is copied back (an approximate
+// LRU). Bounded: 2 x SLOTS x 37 B = 303,104 B. Observationally pure like the block memo. Outside a point query
+// (tiles, bakes, every dense caller) the path is the block path, unchanged.
+export const CARVING_POINT_MEMO=Object.freeze({
+  SLOTS:4096,          // open-addressed slots per generation (a power of two)
+  FILL:3072,           // entries per generation before it ages (load 0.75)
+});
+const PS=CARVING_POINT_MEMO.SLOTS,PF=CARVING_POINT_MEMO.FILL,PMASK=PS-1;
+const pmSeed=new Uint32Array(2*PS),pmW=new Float64Array(2*PS),pmCol=new Int32Array(2*PS),pmRow=new Int32Array(2*PS);
+const pmUsed=new Uint8Array(2*PS),pmV=new Float32Array(8*PS),pmCount=[0,0];
+let pmYoung=0,pointDepth=0;
+// Counters for benchmarks and purity tests; never read by the arithmetic.
+export const carvingPointMemoStats={hits:0,stores:0};
+// Open / close a sparse point query (place-query.ts placeAt). Nestable; always pair them (try/finally).
+export function enterCarvingPointQuery():void { pointDepth++; }
+export function exitCarvingPointQuery():void { if(pointDepth>0)pointDepth--; }
+// Slot of the key in generation g, or -1-(first free slot).
+function pmFind(g:N,seed:N,w:N,col:N,row:N):N {
+  const base=g*PS;
+  let i=Math.imul(seed^Math.imul(col,0x9e3779b1)^Math.imul(row,0x85ebca77)^(w|0),0x27d4eb2d);
+  i=(i^(i>>>15))&PMASK;
+  for(;;i=(i+1)&PMASK){
+    const k=base+i;
+    if(!pmUsed[k])return -1-k;
+    if(pmCol[k]===col&&pmRow[k]===row&&pmSeed[k]===seed&&pmW[k]===w)return k;
+  }
+}
+function pmStore(seed:N,w:N,col:N,row:N,v0:N,v1:N,v2:N,v3:N):void {
+  if(pmCount[pmYoung]>=PF){pmYoung^=1;pmUsed.fill(0,pmYoung*PS,pmYoung*PS+PS);pmCount[pmYoung]=0;}
+  const f=pmFind(pmYoung,seed,w,col,row);if(f>=0)return;
+  const k=-1-f;pmUsed[k]=1;pmSeed[k]=seed;pmW[k]=w;pmCol[k]=col;pmRow[k]=row;pmCount[pmYoung]++;
+  pmV[4*k]=v0;pmV[4*k+1]=v1;pmV[4*k+2]=v2;pmV[4*k+3]=v3;carvingPointMemoStats.stores++;
+}
+// retainedAt inside a point query: the same lattice arithmetic and interpolation as below, on the memoised
+// corners r0 = r[a], r1 = r[a+1], r2 = r[a+S], r3 = r[a+S+1].
+function retainedAtPoint(alongM:N,acrossM:N,halfWidthM:N,seed:N):N {
+  const d=2*halfWidthM/ROWS,gx=alongM/d,gy=(acrossM+halfWidthM)/d,col=Math.floor(gx),row=Math.min(ROWS-1,Math.floor(gy));
+  const u=gx-col,t=gy-row;
+  let r0:N,r1:N,r2:N,r3:N;
+  const keyed=(col|0)===col; // the memo keys an int32 column; any other column takes the block path
+  let k=keyed?pmFind(pmYoung,seed,halfWidthM,col,row):-1,old=false;
+  if(k<0&&keyed){k=pmFind(pmYoung^1,seed,halfWidthM,col,row);old=k>=0;}
+  if(k>=0){
+    carvingPointMemoStats.hits++;r0=pmV[4*k];r1=pmV[4*k+1];r2=pmV[4*k+2];r3=pmV[4*k+3];
+    if(old)pmStore(seed,halfWidthM,col,row,r0,r1,r2,r3); // copy an old-generation hit into the young one
+  }else{
+    const id=Math.floor(col/CORE),r=block(seed,halfWidthM,id).r,a=row*S+col-id*CORE;
+    r0=r[a];r1=r[a+1];r2=r[a+S];r3=r[a+S+1];
+    if(keyed)pmStore(seed,halfWidthM,col,row,r0,r1,r2,r3);
+  }
+  const v=diagonal(col,row,seed)
+    ?(u>=t?(1-u)*r0+(u-t)*r1+t*r3:(1-t)*r0+(t-u)*r2+u*r3)
+    :(u+t<=1?(1-u-t)*r0+u*r1+t*r2:(u+t-1)*r3+(1-t)*r1+(1-u)*r2);
+  return Math.max(0,Math.min(1,v));
+}
 // Retained fraction of the envelope at (along, across), triangle-interpolated.
 function retainedAt(alongM:N,acrossM:N,halfWidthM:N,seed:N):N {
+  if(pointDepth)return retainedAtPoint(alongM,acrossM,halfWidthM,seed);
   const d=2*halfWidthM/ROWS,gx=alongM/d,gy=(acrossM+halfWidthM)/d,col=Math.floor(gx),row=Math.min(ROWS-1,Math.floor(gy));
   const u=gx-col,t=gy-row,id=Math.floor(col/CORE),r=block(seed,halfWidthM,id).r,a=row*S+col-id*CORE;
   const v=diagonal(col,row,seed)
