@@ -1,0 +1,3 @@
+45dbde378c1b243791d2dfecd7d91fe7eae0e3d8382aec5802822d4146dc8d47 *after-warmup-branch-fwd.tsv (docs/placeat-regression-2026-10-07/capture.mjs, perf,fresh, fwd, 1 pass; 4,994 main-thread solves)
+45dbde378c1b243791d2dfecd7d91fe7eae0e3d8382aec5802822d4146dc8d47 *after-warmup-worker-imported.tsv (capture-warm.mjs, 3 workers export, main imports then placeAt; 0 main-thread solves, 0 worker/main line mismatches)
+45dbde378c1b243791d2dfecd7d91fe7eae0e3d8382aec5802822d4146dc8d47 *before.tsv (reference: docs/placeat-regression-2026-10-07/capture-sha256.txt)

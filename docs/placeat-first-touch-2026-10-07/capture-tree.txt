@@ -1,0 +1,11 @@
+5bce32bcd3c967f8896c9066e58b98dcedec06f8
+ docs/place-query-v1.md               | 48 +++++++++++++++++++++++
+ src/mountain-carving.ts              | 54 +++++++++++++++++++++++++
+ src/place-query.ts                   | 34 +++++++++++++++-
+ tests/mountain-carving-memo.test.mjs | 76 ++++++++++++++++++++++++++++++++++++
+ tests/perf/place-query.perf.test.mjs | 63 +++++++++++++++++++++++++++++-
+ tests/place-query.test.mjs           | 25 +++++++++++-
+ 6 files changed, 296 insertions(+), 4 deletions(-)
+src blobs at capture time (unchanged since):
+59b5268138cbfecf9c9fa729799fe6c8729eeb0d	src/mountain-carving.ts
+d5eeef6da5431340883bac025cb1e41b4317956d	src/place-query.ts

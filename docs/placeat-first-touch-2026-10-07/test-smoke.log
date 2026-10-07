@@ -1,0 +1,64 @@
+START 2026-10-07T09:48:24+02:00
+
+> universe-atlas@0.1.0 test:smoke
+> node tests/helpers/test-runner.mjs tier smoke
+
+warning: in the working copy of 'src/mountain-carving.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/place-query.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/place-query.test.mjs', LF will be replaced by CRLF the next time Git touches it
+tier smoke: 27 files in 50 steps (5 files tier-aware, 22 at default depth); bail on; log test-results\tiers\e2c49e57df39-smoke-2026-10-07T07-48-25-254Z
+pass      3.1 s    87 MiB  tests/mountain-envelope.test.mjs  (default depth)
+pass      3.9 s   124 MiB  tests/lod-carving-reduction.test.mjs#rest
+pass      5.6 s   135 MiB  tests/mountain-layout.test.mjs#rest  (default depth)
+pass      5.8 s   134 MiB  tests/mountain-summits.test.mjs  (default depth)
+pass      7.9 s   127 MiB  tests/mountain-carving.test.mjs  (default depth)
+pass     10.3 s   188 MiB  tests/mountain-coarse-field.test.mjs#2
+pass     11.8 s   164 MiB  tests/mountain-carving-pin.test.mjs  (default depth)
+pass     12.0 s   107 MiB  tests/mountain-tile-set.test.mjs#0  (default depth)
+pass     12.4 s    86 MiB  tests/mountain-metrics.test.mjs  (default depth)
+pass     13.1 s   202 MiB  tests/mountain-layout.test.mjs#0  (default depth)
+pass     14.4 s   306 MiB  tests/lod-consistency.test.mjs#0
+pass     15.1 s    88 MiB  tests/sparse-consumer-levels.test.mjs  (default depth)
+pass     16.2 s   316 MiB  tests/mountain-layout-grid.test.mjs#rest  (default depth)
+pass     19.3 s   107 MiB  tests/mountain-tile-set.test.mjs#rest  (default depth)
+pass     19.9 s   252 MiB  tests/lod-consistency.test.mjs#rest
+pass     12.6 s   192 MiB  tests/terrain-elevation-identity.test.mjs#rest  (default depth)
+pass     12.3 s   194 MiB  tests/terrain-climate-colour.test.mjs  (default depth)
+pass     23.1 s   214 MiB  tests/lod-carving-reduction.test.mjs#3
+pass     11.0 s   190 MiB  tests/terrain-floor-window.test.mjs#rest  (default depth)
+pass     23.6 s   241 MiB  tests/lod-carving-reduction.test.mjs#1
+pass     23.9 s   200 MiB  tests/mountain-rock-detail.test.mjs  (default depth)
+pass     24.1 s   232 MiB  tests/terrain-mountains-assembly.test.mjs  (default depth)
+pass     11.5 s   187 MiB  tests/terrain-relief-hypsometry.test.mjs#1  (default depth)
+pass      2.5 s   125 MiB  tests/tier-sets.test.mjs  (default depth)
+pass     26.2 s   322 MiB  tests/lod-consistency.test.mjs#1
+pass      4.1 s   203 MiB  tests/tree-lod-coverage.test.mjs  (default depth)
+pass      5.3 s    65 MiB  tests/tier.test.mjs
+pass     29.1 s   181 MiB  tests/mountain-coarse-field.test.mjs#0
+pass     17.3 s   270 MiB  tests/terrain-floor-window.test.mjs#1  (default depth)
+pass     25.5 s   284 MiB  tests/terrain-elevation-identity.test.mjs#0  (default depth)
+pass     25.9 s   216 MiB  tests/terrain-elevation-identity.test.mjs#1  (default depth)
+pass     31.8 s   215 MiB  tests/mountain-coarse-field.test.mjs#rest
+pass     33.6 s   213 MiB  tests/lod-carving-reduction.test.mjs#2
+pass     34.9 s   213 MiB  tests/lod-carving-reduction.test.mjs#0
+pass     37.5 s   247 MiB  tests/mountain-layout.test.mjs#1  (default depth)
+pass     17.1 s   408 MiB  tests/river-terrain.test.mjs#rest  (default depth)
+pass     39.7 s   328 MiB  tests/lod-consistency.test.mjs#2
+pass     40.5 s   971 MiB  tests/lod-coarse-frame.test.mjs
+pass     22.0 s   301 MiB  tests/river-terrain.test.mjs#1  (default depth)
+pass     42.6 s   158 MiB  tests/mountain-carving-memo.test.mjs  (default depth)
+pass     43.3 s   196 MiB  tests/mountain-coarse-field.test.mjs#1
+pass     24.0 s   417 MiB  tests/river-terrain.test.mjs#0  (default depth)
+pass     28.3 s   295 MiB  tests/terrain-relief-hypsometry.test.mjs#rest  (default depth)
+pass     33.2 s   240 MiB  tests/terrain-floor-window.test.mjs#0  (default depth)
+pass     45.2 s   179 MiB  tests/mountain-coarse-field.test.mjs#3
+pass     46.3 s   434 MiB  tests/mountain-layout-grid.test.mjs#0  (default depth)
+pass     35.3 s   687 MiB  tests/terrain-relief-hypsometry.test.mjs#0  (default depth)
+pass     37.3 s   423 MiB  tests/terrain-water-refresh.test.mjs  (default depth)
+pass     75.6 s   639 MiB  tests/terrain-leaf-loop-digest.test.mjs  (default depth)
+pass     95.0 s   695 MiB  tests/terrain-budget-starvation.test.mjs  (default depth)
+
+smoke: GREEN; 239 tests (pass 228, fail 0, skip 11, todo 0; 69 subset-coverage results); 50/50 steps; wall 182.9 s; peak step RSS 971.2 MiB
+WARNING: smoke wall 182.9 s exceeds the 120 s budget
+log: test-results\tiers\e2c49e57df39-smoke-2026-10-07T07-48-25-254Z
+EXITCODE 0 2026-10-07T09:51:28+02:00

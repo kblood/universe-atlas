@@ -46,6 +46,54 @@ and echoes the requested `level` (`resolution: 'full'`). When `lod-ladder.ts`
 renderer draws, so a strategy map and the orbit view agree; the ladder version
 then appears in `versions.lodLadder`.
 
+## Warm-up and residency transfer (additive, place-query-1)
+
+```ts
+exportPlaceBlocks(ctx, direction, level?, options?): {result: PlaceResult, blocks: CarvingBlockExport[]}
+importPlaceBlocks(blocks: CarvingBlockExport[]): number      // count newly made resident
+placeBlockTransferables(blocks: CarvingBlockExport[]): ArrayBuffer[]
+```
+
+Decision: `docs/placeat-first-touch-decision-2026-10-07.md`. These functions are
+additive: no field or answer changes, so `PLACE_QUERY_VERSION` stays
+`place-query-1`.
+
+**Cost.** Full-level `placeAt` is the collision truth. On a massif, a *cold*
+first touch solves one M3 carving block (the drainage solve of
+`src/mountain-carving.ts`): about **150 ms**, at most about **0.3 s** when a
+query touches two blocks. That is a frame stall on the main thread. After the
+query's blocks have been imported, the same query typically costs **<= 30 µs** (per-call p50 on a quiet host; mean 17-26 µs measured, the first query
+after an import about 50 µs once; perf row W in `tests/perf/place-query.perf.test.mjs`); a repeat of a query is a
+point-memo hit (**~1.6 µs**). The cold cost is pinned as a regression guard
+(row F, <= 250 ms per solve), not hidden.
+
+**Worker pattern.** Run `placeAt` in a worker when frame time matters:
+
+```ts
+// worker
+const {result, blocks} = exportPlaceBlocks(ctx, direction);
+postMessage({result, blocks}, placeBlockTransferables(blocks));
+// main thread
+importPlaceBlocks(msg.blocks);
+placeAt(ctx, direction);   // memo hit, bit-identical to msg.result
+```
+
+`exportPlaceBlocks` runs `placeAt` under a block trace (every carving block the
+query touched, including point-memo hits) and returns copies of those blocks, so
+transferring them never detaches the worker's own memo. The solved block is a
+pure function of (seed, half-width, block id) in every module instance, thread
+and process, so the imported block yields exactly the answer the worker
+computed (`tests/place-query.test.mjs`, `tests/mountain-carving-memo.test.mjs`).
+The main-thread memo is a 32-block LRU: import close to use, since more than 32
+far-apart warmed blocks evict each other (repeats are still served by the point
+memo).
+
+**Trust rule.** Imported blocks are in-session data only: posted between threads
+of the same build, never persisted, cached on disk or taken from another
+session. The import checks the carving version, the key, the shape and the value
+range (every value in [0, 1]) and throws on any mismatch, leaving the memo
+untouched; it does not re-solve the values.
+
 ## Fields of `placeAt` (exists: true)
 
 Provenance: **physical** = a physical law applied to model inputs;

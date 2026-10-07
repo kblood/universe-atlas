@@ -10,7 +10,9 @@ import {surfaceAt, surfaceQuery, datedOceanState} from '../src/world-surface.ts'
 import {fibonacciDirection} from '../src/ocean-volume.ts';
 import {geophysicsFromParams, pressureAtDepthPa, planetGeophysics} from '../src/planet-geophysics.ts';
 import {terrainSampler, terrainFloorSampler} from '../src/terrain.ts';
-import {placeAt, depthAndPressureAt, PLACE_QUERY_VERSION, PLACE_VERSIONS} from '../src/place-query.ts';
+import {placeAt, depthAndPressureAt, importPlaceBlocks, PLACE_QUERY_VERSION, PLACE_VERSIONS} from '../src/place-query.ts';
+import {carvingBuildStats} from '../src/mountain-carving.ts';
+import {frozenMassifJobs, placeWorlds, warmInWorker} from './helpers/place-warm-worker.mjs';
 
 const SEED = 'LETHRA-001';
 const ADDR = {clusterCell:[0n,0n,0n], groupCell:[0n,0n,0n], galaxyOrdinal:0,
@@ -166,6 +168,27 @@ test('docs/place-query-v1.md documents every field with unit and provenance, and
   for (const k of keys) assert.ok(doc.includes('`' + k + '`'), `doc lists \`${k}\``);
   assert.match(doc, /## Game layer/);
   for (const word of ['physical', 'heuristic', 'Pa', 'm/s']) assert.ok(doc.includes(word), word);
+});
+
+test('HARD: warm-up transfer: blocks a worker exported make placeAt a 0-build hit with the identical answer (8 frozen massif directions)', async () => {
+  // docs/placeat-first-touch-decision-2026-10-07.md 2.D.2. Frozen tier-set massif sites: per world the first axis and the
+  // flank entry. The worker solves (cold); the main thread imports each job's blocks just before its query.
+  const sets = JSON.parse(readFileSync(new URL('./tier-sets.json', import.meta.url), 'utf8'));
+  const jobs = frozenMassifJobs(sets).filter((j, i, a) => j.kind === 'flank' || a.findIndex(x => x.world === j.world && x.kind === 'axis') === i);
+  assert.equal(jobs.length, 8);
+  assert.deepEqual(placeWorlds().map(w => w.body.id), WORLDS.map(w => w.body.id), "helper worlds are this file's WORLDS");
+  const warm = await warmInWorker(jobs);
+  assert.ok(warm.builds >= 1, `the worker solved the massif blocks (${warm.builds})`);
+  const b0 = carvingBuildStats.count;
+  let imported = 0;
+  jobs.forEach((j, k) => {
+    assert.ok(warm.blocks[k].length >= 1, `job ${k} touches a carving block`);
+    imported += importPlaceBlocks(warm.blocks[k]);
+    const {sys, body} = WORLDS[j.world];
+    assert.deepStrictEqual(placeAt({sys, body, t: CATALOGUE_EPOCH_NS}, j.d), warm.results[k], `job ${k} (${j.kind}) answer`);
+  });
+  assert.equal(carvingBuildStats.count - b0, 0, 'no main-thread solve after the import');
+  console.log('WARM ' + JSON.stringify({jobs: jobs.length, workerBuilds: warm.builds, workerMs: Math.round(warm.ms), imported, blocks: warm.blocks.map(b => b.length)}));
 });
 
 // Timing gate moved to perf/place-query.perf.test.mjs.

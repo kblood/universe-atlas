@@ -1,0 +1,56 @@
+START 2026-10-07T09:51:28+02:00
+
+> universe-atlas@0.1.0 test:perf
+> node tests/helpers/test-runner.mjs perf
+
+CPU load 25.0%; require < 25% for 3 samples
+CPU load 2.0%; require < 25% for 3 samples
+CPU load 6.0%; require < 25% for 3 samples
+CPU load 9.0%; require < 25% for 3 samples
+# eco-class cost 22.2 ns/call (contended unless quiet host), heap delta -425656 B
+✔ eco-class cost regression guard: <= 100 ns per sample (relaxed, not the 25 ns criterion), no allocation (68.8623ms)
+✔ eco-class cost acceptance: <= 25 ns per sample on a quiet host (63.8545ms)
+✔ far-LOD mean cost: 512 new realistic genomes of warm species stay within about 15 ms (181.6086ms)
+ℹ {"strict":false,"capMs":30,"coldTwelveSpeciesMs":55.8,"burstsMs":[25.1,14.4,13.7,12.6,12.8,11.2,11,11.4,11.4]}
+✔ 96 corpus bodies: coat CPU and step timing caps (5137.591ms)
+ℹ {"strict":false,"coatCapMs":40,"specimens":96,"longestStepMs":16.9,"minYields":47,"maxTriangles":18068,"maxGrid":199723,"maxCoatMs":11.24,"meanCoatMs":6.08}
+✔ the resumable build stays within the step timing cap (91.0158ms)
+✔ performance sanity (strict 2 us / 3 ms budgets are measured by fauna-coat-swatches.mjs) (60.7093ms)
+ocean-volume cost: build median 3.72 ms (first call in this test 137.81 ms), levelForLoss 1.71 us true
+✔ cost: hypsometry build and levelForLoss (strict budgets with OCEAN_PERF_STRICT=1) (434.8925ms)
+ROW W {"directions":12,"imported":8,"workerSolves":8,"workerMs":1748,"mainSolves":0,"firstPassMeanUs":214.24,"secondPassMeanUs_INFO":15.09} true
+ROW F {"directions":16,"counted":16,"msPerSolve":195.1,"INFO":{"p50MsPerSolve":193.1,"maxMsPerSolve":245.7,"maxCallMs":245.7,"solvesPerCall":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"blocksPerCall":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}}
+placeAt 1.73 us (best of 3 x 40000) true
+✖ cost: row W warm-up: worker-exported massif blocks imported, first-pass placeAt mean <= 30 us (strict 10 us with OCEAN_PERF_STRICT=1), 0 solves (2183.3541ms)
+✔ cost: row F first touch: placeAt on cold massif blocks, ms per solve <= 250 (strict 200 with OCEAN_PERF_STRICT=1), regression guard (3126.0921ms)
+✔ cost: placeAt at full level (strict budget 3 us with OCEAN_PERF_STRICT=1) (171698.1109ms)
+# cost: seasonBasis 0.424 ms/body (best 40-body cold batch of 5), seasonAt 0.528 us/call (best 20k batch of 5, warm, out param); retained heap after gc 67.7 KiB over 100000 calls; minor GCs during them: 15 (transient BigInt/bodyPosition temporaries)
+✔ cost: seasonBasis <= 2 ms per body, seasonAt <= 5 us (best of 5 batches) (215.0659ms)
+# signature 0.159 ms per frame for 602 casters, 40377 values
+✔ the signature is linear in caster count and cheap (62.3329ms)
+✔ planetSurface default stays within the system-surfaces multi-body job budget (8.2187ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 12
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 185442.9558
+
+✖ failing tests:
+
+test at tests\perf\place-query.perf.test.mjs:36:1
+✖ cost: row W warm-up: worker-exported massif blocks imported, first-pass placeAt mean <= 30 us (strict 10 us with OCEAN_PERF_STRICT=1), 0 solves (2183.3541ms)
+  AssertionError [ERR_ASSERTION]: row W first pass 214.24166666664254 us
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/placeat-warmup/tests/perf/place-query.perf.test.mjs:57:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+EXITCODE 1 2026-10-07T10:10:53+02:00

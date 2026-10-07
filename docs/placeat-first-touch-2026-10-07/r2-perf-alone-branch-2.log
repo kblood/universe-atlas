@@ -1,0 +1,20 @@
+START 2026-10-07T10:46:09+02:00
+checkout /c/LLM/IWSDK/universe-atlas-wt/placeat-warmup HEAD f8577be
+CPU load 3%
+CPU load 3%
+CPU load 1%
+ROW W {"directions":12,"imported":8,"priming":{"queries":488,"imported":10},"workerSolves":18,"workerMs":3300,"mainSolves":0,"firstPassP50Us":11.6,"INFO":{"firstPassMeanUs":16.29,"firstCallUs":52.8,"maxCallUs":52.8,"perCallUs":[52.8,20.1,11.6,27.1,11.1,7.5,19.6,8.5,7.2,13.2,9.4,7.4],"secondPassMeanUs":5.26}} true
+ROW F {"directions":16,"counted":16,"msPerSolve":158.4,"INFO":{"p50MsPerSolve":155.2,"maxMsPerSolve":186,"maxCallMs":186,"solvesPerCall":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"blocksPerCall":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}}
+placeAt 1.72 us (best of 3 x 40000) true
+✔ cost: row W warm-up: worker-exported massif blocks imported, 0 solves, first-pass placeAt per-call p50 <= 60 us (strict 30 us with OCEAN_PERF_STRICT=1), no call > 5 ms (3774.0845ms)
+✔ cost: row F first touch: placeAt on cold massif blocks, ms per solve <= 250 (strict 200 with OCEAN_PERF_STRICT=1), regression guard (2537.8376ms)
+✔ cost: placeAt at full level (strict budget 3 us with OCEAN_PERF_STRICT=1) (142048.2565ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 148557.7785
+EXITCODE 0 2026-10-07T10:48:46+02:00

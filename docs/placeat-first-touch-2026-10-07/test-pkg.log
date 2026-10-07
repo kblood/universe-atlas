@@ -1,0 +1,53 @@
+START 2026-10-07T09:27:39+02:00
+
+> universe-atlas@0.1.0 test:pkg
+> node tests/helpers/test-runner.mjs pkg tests/mountain-carving-memo.test.mjs tests/mountain-carving.test.mjs tests/place-query.test.mjs
+
+HALO {"production":192,"reference":256,"narrow":32,"narrowDifferingValues":25530}
+EVICTED {"builds":8,"distinctBlocks":4}
+MEMORY {"blockBytes":248196,"blockMemoBytes":7942272,"pointMemoBytes":303104,"memoBytes":8245376,"transientBytesPerSolve":12337650}
+POINT_MEMO {"coldBuilds":4,"warmHits":5014,"aged":{"hits":13,"stores":7756}}
+TRANSFER {"keys":["730202/30000/-1","730201/30000/-1","730202/30000/0","730201/30000/0"],"importedBuilds":0,"rejected":["version","length","nan","above1","seed","id","capped"]}
+TRACE {"blockPath":["730202/30000/-1","730201/30000/-1","730202/30000/0","730201/30000/0"],"pointWarmHits":242,"mutantWarmKeys":0}
+(node:50716) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ HARD: halo agreement with a wider reference halo, narrow-halo negative control (847.8648ms)
+✔ HARD: neighbouring blocks share the seam column bit-exactly and the surface is continuous (1216.0452ms)
+✔ HARD: evicted (CACHE 1) and LRU-bounded memo reproduces the pinned digest (2139.1633ms)
+✔ HARD: memo key is exact in half-width and normalised seed (key-mutation control) (1228.8261ms)
+✔ HARD: persistent memo payload stays below 8.5 MB; per-solve transient arrays reported (639.026ms)
+✔ HARD: point-query cell memo is bit-identical to the block path (cold, warm, aged, interleaved; key control) (3773.6972ms)
+✔ HARD: residency transfer: a fresh instance that imports the traced blocks reproduces the digest with 0 builds; export copies, import validates (876.1522ms)
+✔ HARD: block trace sees hits and misses on both paths, is not nestable and closes on a throw (point-memo note mutation control) (2279.0677ms)
+DIGEST {"sha256":"1321803fcd6ba5b03fa009035154a025aefff6a2a5bf1442e9e4cf902443cfee","builds":2}
+DRAINAGE_SMALL {"P":{"fill10Share":0,"pitsPer1000km2":19.229613604951627,"pits025":0},"N":{"fill10Share":0.22146444292888587,"pitsPer1000km2":1899.8858241692205,"pits025":757.646776035094}}
+(node:15504) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ HARD: literal positive zero at exclusions (1.3108ms)
+✔ HARD: coast safety and bounds including the zero-envelope margin (630.4409ms)
+✔ HARD: cold, warm, reverse and child-process SHA-256 agree with the pin (1004.7545ms)
+✔ HARD: arithmetic audit with negative controls (3.7496ms)
+✔ HARD: frozen versioned constants and level bands (0.5648ms)
+✔ HARD: every interior core construction vertex drains (solved heights), lowered-vertex control (326.7103ms)
+✔ HARD: drainage teeth and eroded builder determinism on a small fixture (161.5ms)
+✔ HARD: structure helper counts known plane channels and raw correlation (0.5086ms)
+✔ floorM/windowM come from the R0 floor sampler on the same rock field (window = ground - floor) (2499.3301ms)
+✔ version and version block (0.3625ms)
+✔ placeAt matches the surface query bit for bit at full level (ground height, ocean, water depth) (8078.017ms)
+✔ level ladder argument is echoed; place-query-1 answers every rung at full resolution (1.251ms)
+✔ no field depends on visit order (forward vs shuffled, interleaved bodies and dates) (47.0516ms)
+✔ depthAndPressureAt: Earth analogue 10 m and 10.9 km (Challenger Deep), monotone, every depth to the seabed, clamped below it (9.0667ms)
+✔ gravity, air, biome and climate are exposed as data with sane values (1.0132ms)
+✔ absent places are explicit: stars, and planets before they form or after engulfment (0.4645ms)
+✔ docs/place-query-v1.md documents every field with unit and provenance, and the game-layer rule (1.1555ms)
+WARM {"jobs":8,"workerBuilds":4,"workerMs":1302,"imported":4,"blocks":[1,1,1,1,1,1,1,1]}
+✔ HARD: warm-up transfer: blocks a worker exported make placeAt a 0-build hit with the identical answer (8 frozen massif directions) (1438.8314ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13103.0814
+EXITCODE 0 2026-10-07T09:37:32+02:00
