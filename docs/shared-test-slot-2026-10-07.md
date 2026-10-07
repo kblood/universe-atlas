@@ -3,8 +3,9 @@
 Lane L1 (test infra), branch `infra/shared-slot` from main 2250d1e. Items from
 `docs/parallel-development-plan-2026-10-07.md`: I2 (shared/exclusive slot), the
 lock-order correction from part 2, I5 (semantic `package.json` diff) and the I3
-RSS column. **The flag is OFF by default. Do not turn it on until the I3 proof
-below has passed.**
+RSS column. **Update (O1, branch `tests/shared-slot-on`): the I3 proof passed
+and the flag is now ON by default at the runner entry points. See "I3 result and
+switch-on" below. `ATLAS_SLOT_SHARED=0` turns it off.**
 
 ## Hand-off header
 
@@ -212,6 +213,64 @@ admitted finish normally, and the next exclusive caller drains them.
   at await points. One run with about 8 separate processes contending on a
   sandbox dir would confirm the same bound across processes on NTFS. Not run
   here.
+
+## I3 result and switch-on (O1, 2026-10-07)
+
+Implements O1 from `docs/fable-test-review-2026-10-07.md`.
+
+**Proof (arms item above): passed.**
+
+- Sha: one frozen detached checkout of main `225c362`.
+- Suite: the registered default suite, 213 files and 1594 tests. Each arm ran
+  `node --test --test-concurrency=16` with `failure-reporter.mjs`. Each arm held
+  the live slot in exclusive mode, so nothing else was counted alongside it.
+- Load: one process pinned to CPUs 16-31 with affinity mask `0xFFFF0000` (the
+  mask was checked after it was set) and 16 spinning worker threads. The load
+  started inside the slot hold and stopped before the hold was released.
+- Busy CCD0/CCD1 is the mean CPU busy share over the run.
+
+| arm | slot taken (UTC) | exit | wall s | pass | fail | skip | todo | busy CCD0 / CCD1 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| alone | 08:54:02 | 0 | 239.1 | 1576 | 0 | 16 | 2 | 58.1% / 58.6% |
+| load1 | 09:00:55 | 0 | 244.5 | 1576 | 0 | 16 | 2 | 78.7% / 100% |
+| load2 | 09:05:02 | 0 | 237.4 | 1576 | 0 | 16 | 2 | 81.1% / 100% |
+| load3 | 09:09:02 | 0 | 240.2 | 1576 | 0 | 16 | 2 | 79.7% / 100% |
+
+Zero new failures, so no test moves to `tests/perf`. Under load, wall time
+changed by -0.7% to +2.3%.
+
+**What changed (switch-on):**
+
+- `defaultSharedSlotOn()` in `tests/helpers/test-slot.mjs` sets
+  `ATLAS_SLOT_SHARED=1` only when it is unset. Both entry points call it:
+  - the `test-slot.mjs` CLI, which is the `npm test` prefix;
+  - the `test-runner.mjs` main, which covers test:pkg, test:affected and the
+    tier runner.
+
+  Every child inherits the flag. An explicit `0` (or an empty value) keeps the
+  flag off. Anything else still throws.
+- `npm test` now takes `--shared 16`, the same token count as smoke/work.
+- `RUN_CLASSES` is unchanged, so timing and gate runs stay **exclusive**:
+  - test:full: until the arms above have run on its I7 shards;
+  - test:perf;
+  - cost-fair;
+  - desktop-perf.
+- `tests/desktop-perf.browser.mjs` now takes the exclusive slot **before** the
+  GPU lock (merge -> slot -> GPU). A GPU-lock failure releases the slot, and the
+  run record carries `slot.mode` and `slot.waitedMs`.
+- Turn-on condition 1 (retire the stale worktrees): done. asm1, baked, m0b, m0c,
+  r2-relief-present, t6 and t6-refmain are removed, along with the `_fair-t6`
+  arms. Their branches are kept. Ignored evidence that was not on main went to
+  `universe-atlas-wt/_archive/<name>/`, each with an `ARCHIVE-MANIFEST.tsv`.
+  - **A checkout from before this branch still does not drain shared holders.**
+    Run nothing from an old checkout while shared holders may be live. That
+    includes a scratch detached worktree, and every branch cut before `41afb47`.
+
+**Not done (still open):**
+
+- The RSS check under overlap (the RSS item above).
+- The cross-process stress run.
+- The arms on the test:full shards.
 
 ## Known limits
 

@@ -4,6 +4,14 @@ Branch `tests/tiered-mvp`. Design: `docs/handoff-2026-10-06/tiered-testing-mvp.m
 slice of section 2). Audit: `docs/handoff-2026-10-06/test-time-audit.md`. Policy: `docs/test-policy.md`, section
 "Tiers".
 
+**Updates (2026-10-07, review `docs/fable-test-review-2026-10-07.md`).** O4: the three renderer simulations
+(`terrain-budget-starvation`, `terrain-leaf-loop-digest`, `terrain-water-refresh`) left smoke and run at the work
+tier only; smoke fell from 110.2 s to 64.3 s. O7: `terrain-structural-spectrum` is registered and in smoke and work
+(shard `^INFO: real`), with smoke 24 tiles / 4 seeds, work = default 24 tiles / 8 seeds, gate 36 tiles. O2: tier
+`all` (`test:all`, `test:full`) runs the whole registry on this runner (`docs/tier-all-2026-10-07.md`). O1: the shared
+slot is on, so smoke/work take 16 shared tokens instead of the whole machine (`docs/shared-test-slot-2026-10-07.md`).
+Sections 2 and 5 below keep the MVP measurements; the update notes say what changed.
+
 **Rule.** A tier changes the sample COUNT and the sample SET of a tier-aware test. It never changes a pin, a
 threshold or a test title. Unset = `default` = today's `npm test`, by construction: every tier-aware literal is the
 `default` entry of a `pick({...})`.
@@ -14,8 +22,8 @@ threshold or a test title. Unset = `default` = today's `npm test`, by constructi
 |---|---|---|
 | Tier helper | `tests/helpers/tier.mjs` | `ATLAS_TEST_TIER=smoke\|work\|default\|gate` (`ATLAS_TEST_FULL=1` implies gate). `pick({smoke, work, default, gate})` falls back to the next DEEPER tier given; gate falls back to default. `onlyFrom(t, why)`, `gateOnly(why)` (skip reason `tier <t>+ only (now <tier>): <why>`), `coverage()`, `subset()`, `tierBodies()`, `samples(world, kinds)`, `tierNote()`. |
 | Incremental reporter | `tests/helpers/tier-reporter.mjs` | node:test reporter: one fsynced JSON line per finished top-level test in `$ATLAS_TIER_RESULTS`: `{t, file, step, test, class, status, skipReason, coverage, ms, known, attempt, diag[<=3]}`. Class from the title prefix (unprefixed = HARD). `known` uses `classify` from `known-failures.mjs`, so a CONTRACT failure needs a CONTRACT entry with a decision. A killed run keeps every finished line (tested). |
-| Tier runner | `tests/helpers/tier-runner.mjs` (mode `tier` of `test-runner.mjs`) | Validates `tests/known-failures.json` first (fail closed, as test:full). Takes the test slot ONCE. Runs every step as its own `node --test --test-isolation=none` child, longest first, up to cores - 1 at a time. Bail: the first NEW HARD/CONTRACT line kills every child. Writes the run directory (below). Escalation, resume, shards: see section 3. |
-| Lists | `tests/tiers.json` | smoke = work = 27 files (25 terrain/mountain files + the 2 tier tests) in 50 steps (10 files sharded by anchored title regex). Every file must be registered in `npm test`. |
+| Tier runner | `tests/helpers/tier-runner.mjs` (mode `tier` of `test-runner.mjs`) | Validates `tests/known-failures.json` first (fail closed, as test:full). Takes the test slot ONCE (smoke/work/default/`all`: 16 shared tokens and `--jobs 16` since O1; `all --full` = test:full: exclusive). Runs every step as its own `node --test --test-isolation=none` child, longest first (estimates: latest local run, else `tests/tier-estimates.json`), up to the job limit at a time. Bail: the first NEW HARD/CONTRACT line kills every child (in `all`, any NEW failure). Writes the run directory (below). Escalation, resume, shards: see section 3. |
+| Lists | `tests/tiers.json` | smoke = 26 files in 50 steps (22 terrain/mountain/LOD files, the spectrum test and the tier tests `tier`, `tier-all`, `tier-sets`); work = smoke + the 3 renderer simulations (O4) = 29 files in 53 steps; `all` names only the 14 files that run as shards in tier `all` (47 steps), the rest of the registry runs one process per file. Every file must be registered in `npm test`. |
 | Frozen sets | `tests/tier-sets.json`, `scripts/tier-sets/generate.mjs` | Smoke set, 12 entries per water world (axis x2, flank, belt-end x2, face-edge at L(cut-1) and L(cut), switch, rock, coast, ocean, outside). Built from M1 and the level-0 field only. The generator asserts 0 M3 block solves. Records the generator sha256, the input versions and a `history` ledger (date, commit, sha, reason). Version `tier-sets-1`, sha `90bb43c065f3...`. |
 | Set test | `tests/tier-sets.test.mjs` (default suite, 0.3 s) | Regenerates in process and deepEquals the file (minus history). On mismatch: "tier sets stale: npm run tier-sets:generate -- --reason <text>". |
 | Helper tests | `tests/tier.test.mjs` (default suite, 2.7 s) | Env parse, pick fallback, onlyFrom/gateOnly/tierBodies in fresh processes, reporter kill test, summary rules. |
@@ -29,6 +37,7 @@ threshold or a test title. Unset = `default` = today's `npm test`, by constructi
 | `lod-coarse-frame` (helper `frameConfig`) | 1 axis site; net K 1 x N 2048, REFINE 8192 | 2 sites; net 4 x 2048, REFINE 8192 | 2 sites; net 4 x 16384, REFINE 1024 |
 | `lod-carving-reduction` sampler identity | levels truth, cut-1, cut, rock-1, rock | + L0, L22 | truth + L0..22 |
 | `lod-consistency` cross-level contract | pairs L6, L14 (all 12 tiles each) | L6, L10, L14 | L6..L14 (5 pairs) |
+| `terrain-structural-spectrum` (O7, INFO measure-only) | 24 real tiles, 4 synthetic seeds, 1 alpine chart | 24 tiles, 8 seeds | 24 tiles, 8 seeds, 2 charts; **gate** (test:full): 36 tiles (+ face-edge, coast) |
 
 The coarse-frame invariant `N x REFINE = 16384 x 1024` (refined sub-interval ~0.5 m) is asserted in the selection
 test, so the 10 m step control cannot go blind on the coarse net. Count floors written for 2 sites
@@ -73,13 +82,18 @@ digest over a fixed pose sequence), so they cannot be subsampled without changin
 priority of the other steps (implemented) and halving the job count (`--jobs 16`, tried) did not move them: the
 slowdown comes from CPU frequency and SMT sharing under load, not from scheduling.
 
+**Update (O4, 2026-10-07).** The three renderer simulations moved to the work list, unchanged. Smoke then measured
+**64.3 s** (GREEN, 249 tests, 50 steps; run `a04ea85bc710-smoke-...08-36-04`), bound by the spectrum shard
+`^INFO: real` (~64 s), no longer by the renderer simulations. The simulations still run (and still bound the wall)
+at work, at default (`npm test`, `test:all`) and at test:full.
+
 **Fail-fast is where the time goes away.** A broken carving constant is reported in 12 s, instead of at the end
 of a full `npm test` or of the ~28 min `test:full`.
 
 ## 3. How to use
 
 ```sh
-npm run test:smoke                       # tier 0, fail-fast, ~90 s; prints the log dir
+npm run test:smoke                       # tier 0, fail-fast, ~65 s since O4; prints the log dir
 npm run test:work                        # refused unless a green smoke exists for this exact tree
 npm run test:work -- --force             # override (recorded in run.json as forced)
 npm run test:smoke -- --resume test-results/tiers/<dir>   # same tree only; reruns the non-green steps
@@ -87,6 +101,8 @@ npm run test:smoke -- --no-bail          # run everything, list every failure
 npm run test:smoke -- --only tests/lod-coarse-frame.test.mjs   # one file (all its shards)
 node tests/helpers/test-runner.mjs tier default --only <file>  # the same list/runner at default depth
 npm run tier-sets:generate -- --reason "<why the set moved>"   # only when tier-sets.test.mjs says stale
+npm run test:all                         # tier all: the whole npm test registry, one process per file/shard (O2)
+npm run test:full                        # tier all --full: the merge gate (exclusive slot, bail on)
 ```
 
 Run directory `test-results/tiers/<treeKey12>-<tier>-<start>/`:
@@ -127,7 +143,8 @@ statuses and diagnostics with a run from before the change.
 
 1. **Renderer simulations at smoke.** budget-starvation, leaf-loop-digest and water-refresh set the smoke wall
    (~90 s). A real cut needs smaller scenarios with their own pins (an owner decision; out of scope for "never change
-   a pin"). Until then smoke is ~90 s, not the design's 45 s critical path.
+   a pin"). Until then smoke is ~90 s, not the design's 45 s critical path. **Resolved for smoke by O4** (they run
+   at work only; smoke 64.3 s). Smaller scenarios with their own pins remain an owner decision (O11, later).
 2. **The working set** (audit section 2.1, about 10-12 tiles per body) is not generated. `samples()` at work falls
    back to the smoke set, and `test:work` is mostly default depth for non-aware files, so work currently adds little
    over smoke. Next: generate `work` in `tier-sets.json` and use it in coarse-frame (net lines through the set's
@@ -138,7 +155,10 @@ statuses and diagnostics with a run from before the change.
    `onlyFrom('default')` for its R1 CONTRACT. The cost eyeball and the capture sanity check (design section 1,
    "Cost sanity", "Capture sanity"). `statistic-level.mjs` `fullOnly` still reads `ATLAS_TEST_FULL` directly (same
    behaviour as `gateOnly`, older skip text).
-4. **Gate tier.** `gate` exists in the helper (ATLAS_TEST_FULL=1) but no file has a `gate` value yet; it equals
-   default everywhere.
+4. **Gate tier.** `gate` exists in the helper (ATLAS_TEST_FULL=1). Since O7 one file has a `gate` value:
+   `terrain-structural-spectrum` measures 36 tiles at gate (a superset of the default 24 kinds; INFO, measure-only).
+   It equals default everywhere else. The gate procedure relies on this (`docs/gate-procedure-2026-10-07.md`: GATE-7
+   dropped because test:full covers plain `npm test`); a `gate` value that narrows a HARD/CONTRACT sample set would
+   bring GATE-7 back.
 5. **Other audit items** (F1/F2 C1 protocol, F3a ticket queue, F3b/c preflight and lock order, F4/F5 carved-truth
    sharing, F6b-d capture caches, F7) are untouched.
