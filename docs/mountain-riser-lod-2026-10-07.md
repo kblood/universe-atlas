@@ -259,3 +259,53 @@ four Maithea filtered spacings and 2 x 2 x the coarsest (stress):
   105,990 / 105,982 small-width cases (w <= 0.08) 0 mismatches.
 - INFO, non-vacuity at L(sharp)-1 (33 x 33 per site): Maithea L13 165 / 3,267 points moved, Selawyn L14 239,
   Lethuris L14 170, Raiva L12 0 (Raiva's rock is weak at these sites, as in step 8).
+
+## Step 3: tests, re-pins and ledger: PASS (no lower-limit failure)
+
+**Ledger (old -> new), every move samples a filtered level or names an edited line:**
+
+| # | pin / file | old | new | why |
+|---|---|---|---|---|
+| 1 | `LOD_LADDER_VERSION` (version-compat, lod-consistency, lod-carving-reduction) | lod-ladder-3 | lod-ladder-4 | new declared reduction |
+| 2 | tests/tier-sets.json `inputs.LOD_LADDER_VERSION` + history entry (regenerated; generator sha and every entry unchanged, 90bb43c0) | lod-ladder-3 | lod-ladder-4 | version input |
+| 3 | `COST_SAMPLER_IDENTITY[2]` at filtered levels -> new `RISER_SAMPLER_IDENTITY` (lod-carving-reduction) | [2] for every level >= rock | Maithea L10 803ae421, L11 45541e1b, L12 7cd1996e, L13 5b1427cc; Selawyn L11 f18be3c3, L12 2321aaf0; Raiva L9 9f3d4fee, L10 5dce9009; Lethuris L11 c53de4e0, L12 90bfd244, L13 b0dbd52b | filtered levels; the test asserts each pinned level has a positive riser width |
+| 4 | same test, levels whose digest did NOT move | | stay on [2]: Selawyn L13, L14; Raiva L11, L12; Lethuris L14 (no bench in those 259 directions at that width) | |
+| 5 | `mountainCarvingState` at L(rock) (lod-carving-reduction) | 'rock' | 2 x edge / 32 (number); new: L13 = 2 x edge(13)/32, L14 and L20 = 'rock', `riserSharpFromLevel(Maithea) = 14` | state carries the width |
+| 6 | lod-carving-reduction "from the rock level the truth": `deepEqual(L, truth)` at rockL and rockL + 3 | rockL, rockL+3 == truth | filtered levels rockL .. sharp-1: L >= truth and L-1 >= L and ocean equal (0 violations; points above the truth Maithea 41, Selawyn 30, Raiva 5, Lethuris 60 of 81 x levels); `deepEqual` truth moved to sharpL and sharpL + 3 | rockL+3 = sharp-1 is now filtered by design; the equality moves to the first sharp level |
+| 7 | `SAMPLER_LEVELS` smoke / work lists | truth, cut-1, cut, rock-1, rock (+0, 22) | adds sharp-1 and sharp | the new class boundary is sampled in every tier |
+| 8 | needles (semantics unchanged): mountain-rock-detail.test HARD 7 level variant (signature, call passes riser 0); fixture `reversed` control (`const strata = bench(t, ...)`); mountain-coarse-field helper exact-reference hook (`..., carve, rock, riserWidthM)` -> `false, false, 0`) | | | edited lines |
+| 9 | mountain-coarse-field structural test (the two terrain cores identical outside their hunks) | | no test change: `baseTerrainCore`'s parameter type gained `riserWidthM?: number` (type only, no emitted code) | keeps the cores textually identical |
+
+Unchanged (verified by the runs below): `TERRAIN_VERSION`, `MOUNTAIN_ROCK_DETAIL_VERSION` and `ROCK_DETAIL_DIGEST`
+c1cd74f8, `MOUNTAIN_ASSEMBLY_VERSION`, truth / level-0 SHAs, golden.json (perturbation test), `COST_IDENTITY`,
+`COST_SAMPLER_IDENTITY[0]`, `[1]` and `[2]` at the truth and every level >= L(sharp), tile-metadata, terrain-leaf-loop
+digest, spectrum, M3 / M5 R-rows. No limit or tolerance changed.
+
+**New test** `tests/mountain-riser-lod.test.mjs` (registered in `npm test` and tiers smoke / work), widths = the ladder's
+Maithea L10..L13 widths 498.06 / 249.03 / 124.51 / 62.26 m and the stress width 996.11 m:
+- F1: width 0 and every w <= 0.08 case equal v1 (TUNING 32,768 samples + 18,951 small-width cases, GATE the same):
+  0 mismatches; `ROCK_DETAIL_DIGEST` unchanged.
+- F2 / F3: 0 / 0 violations on TUNING and GATE (65,536 samples x 5 widths); raised (non-vacuity) 15,452 / 15,430.
+  Disclosed: the first run reported F3 violations because the test compared the widths in list order (L10 .. L13,
+  then stress), which is not width order; the comparison was fixed to ascending width before any other change. The
+  F2 count and every value were the same in both runs.
+- F4 (GATE, HARD): truth 1,619 reversals in 354,465 steps (minRatio -3.234). Widths L13 62.26 m 1,503; L12 124.51 m
+  1,113; L11 249.03 m 506; L10 498.06 m 0; stress 0. Every width <= the truth: **PASS**.
+- F5: L_MAX x 0.01 = 0.1134 m (HARD 7's expression, checked textually). Max straddle at width 0 0.0267 (TUNING) /
+  0.0263 (GATE); filtered widths 0.0003-0.0267: **PASS**.
+
+**H rows on the tuning station** (`heights.mjs Maithea probe branch`, `heights-probe-branch.json`; 75,625 points on
+the 4 km L14 lattice, 55,005 rock points):
+- H1: branch truth vs v1 truth 0 mismatches (plus step 2's 202,800).
+- H2: coarseBelowTruth 0 and aboveRockOff 0 at every level L9..L15.
+- H3: monotone violations 0 and ulp cases 0 at every switch.
+- H4: pointwise bound violations 0 at every switch. Largest switch per level: L9->10 1.14 m, L10->11 17.78, L11->12
+  38.10, L12->13 37.19, L13->14 29.46 (p99 11.06), L14->15 0. Main's single rock switch: max 65.23 m, p99 53.21.
+- LR (tuning station): L13 **0.944** (HARD at the finest filtered level, >= 0.5: PASS), L12 0.743, L11 0.345,
+  L10 0.020 (INFO; the section-1 prior for L12 was 0.45-0.5, measured higher because the median slope over the
+  window's rock vertices is lower than 0.77).
+
+**Suites:** `tsc --noEmit` exit 0. `npm run test:affected -- --base main`: 93 files selected (27 changed), 758 tests,
+744 pass, **0 fail**, 12 skipped, 2 todo (the two pre-existing OPEN entries: SITE_A ring, rocky Spearman); exit 0
+(`test-results/mountains/riser-lod/step3-affected.log`). The first two affected runs failed only on the needles of
+ledger rows 8-9 (mountain-coarse-field import hook, then the cores-identical text); fixed as listed, nothing else.

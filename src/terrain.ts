@@ -482,7 +482,7 @@ function mountainSeeds(body: Body, layout: ReturnType<typeof orogenLayout>): Uin
   return seeds;
 }
 function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false, relief: boolean = false,
-  mountains: {carve: boolean; rock: boolean} | null = null) {
+  mountains: {carve: boolean; rock: boolean; riserWidthM?: number} | null = null) {
   const { code, n } = macroNoise(body);
   const sea = 0.37 + body.water * 0.22;
   // terrain-1.8.0 relief mode (terrainSampler only; baseTerrainSampler never).
