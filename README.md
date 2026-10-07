@@ -1,5 +1,17 @@
 # Universe Atlas
 
+## Creature composer core lives in creature-kit — 2026-10-07
+
+The creature composer core (the `src/fauna-composer*.ts` / `fauna-coat-*` core
+modules, the GLB exporter, the LOD reducer, `scripts/export-creature.mjs` and
+their Atlas-free tests and fixtures) is now owned by the separate repo
+`C:/LLM/IWSDK/creature-kit`. Atlas keeps a byte-identical, sha-pinned copy at
+the same paths (`vendor/creature-kit/VENDOR.json` lists them). **Edit those
+files in creature-kit**, commit there, then run
+`node scripts/sync-creature-kit.mjs --write --kit ../creature-kit` here.
+Direct edits in Atlas fail `tests/creature-kit-vendor.test.mjs`. Details:
+`docs/creature-kit-consumption.md`.
+
 ## Mountains handoff — 2026-10-06 (local, not deployed)
 
 T6 merged to main UNVERIFIED (`aa3a2c7`, mountains wired, `terrain-1.9.0-mountains`; final gate and fair cost protocol not run; revert: `git revert -m 1 aa3a2c7`). Status, numbers, open items and resume commands: `docs/mountains-handoff-2026-10-06.md`.
