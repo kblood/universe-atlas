@@ -12,8 +12,10 @@
 // aligned with the M1 belt axis. Reports the lattice-peak ratio at the M3 carving block (CORE x 2w/ROWS) and the
 // doc's nominal 16 km, the 200 m carving lattice and the 250 m gully cell, and the anisotropy per octave. No pin:
 // off-belt real tiles already reach the synthetic comb threshold (doc section 4), so a real-terrain gate needs a
-// real eroded control first. Tier: smoke = axis/flank/belt-end/outside tiles (about 20-24), default/gate add the
-// face-edge and coast tiles; synthetic seed count 4 at smoke, 8 otherwise. Thresholds never change with the tier.
+// real eroded control first. Tiers (O7, docs/fable-test-review-2026-10-07.md; decided by Fable 5.1 on Kasper's
+// instruction): smoke = 24 tiles (axis/flank/belt-end/outside) and 4 synthetic seeds; work = default = the same 24
+// tiles and 8 seeds; gate (test:full) = 36 tiles (+ face-edge and coast) and 8 seeds. Alpine charts: 1 at smoke, 2
+// otherwise. Thresholds, titles and the INFO (measure-only) status never change with the tier.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -37,7 +39,7 @@ import {pick,samples,tierNote,TIER} from './helpers/tier.mjs';
 export const SPECTRUM_THRESHOLDS = Object.freeze({PEAK_DB: 8.75, COMB_DB: 2.75, FINE_COHERENCE: 0.24, FINE_MIN_BINS: 1000});
 const T = SPECTRUM_THRESHOLDS;
 const C = {n: 512, stepM: 200}, F = {n: 256, stepM: 50}, BLOCK_16K = 16000;
-const SEEDS = Array.from({length: pick({smoke: 4, default: 8})}, (_, i) => 101 + i);
+const SEEDS = Array.from({length: pick({smoke: 4, work: 8, default: 8, gate: 8})}, (_, i) => 101 + i);
 const range = h => {let a = Infinity, b = -Infinity;for (const v of h) {if (v < a) a = v;if (v > b) b = v;}return b - a;};
 const r2 = v => v === null || !Number.isFinite(v) ? v : Math.round(v * 100) / 100;
 const T16 = latticeTargets('b16k', BLOCK_16K, {harmonics: 16});
@@ -159,7 +161,9 @@ const TC = [...latticeTargets('block', BLOCK_M, {harmonics: 16}), ...latticeTarg
 const TF = [...latticeTargets('lattice-x', LATTICE_M), ...latticeTargets('lattice-y', LATTICE_M, {angleRad: Math.PI / 2}),
   ...latticeTargets('lattice-d', LATTICE_M * Math.SQRT1_2, {angleRad: Math.PI / 4}), ...latticeTargets('lattice-d2', LATTICE_M * Math.SQRT1_2, {angleRad: -Math.PI / 4}),
   ...latticeTargets('gully-x', GULLY_M, {harmonics: 2}), ...latticeTargets('gully-y', GULLY_M, {angleRad: Math.PI / 2, harmonics: 2})];
-const KINDS = pick({smoke: ['axis', 'flank', 'belt-end', 'outside'], default: ['axis', 'flank', 'belt-end', 'face-edge', 'outside', 'coast']});
+// O7: 24 tiles (4 worlds x axis x2, flank, belt-end x2, outside) at smoke, work and default; 36 tiles at gate only.
+const KINDS_24 = ['axis', 'flank', 'belt-end', 'outside'];
+const KINDS = pick({smoke: KINDS_24, work: KINDS_24, default: KINDS_24, gate: ['axis', 'flank', 'belt-end', 'face-edge', 'outside', 'coast']});
 const MASSIF = new Set(['axis', 'flank', 'belt-end', 'face-edge']);
 let tiles = null;
 function realTiles() {
