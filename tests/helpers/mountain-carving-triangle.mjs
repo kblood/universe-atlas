@@ -18,6 +18,10 @@ const SOURCE_URL = new URL('../../src/mountain-carving.ts', import.meta.url);
 // rock reads a triangle field too: main's mountain-carving-2 / mountain-assembly-3 semantics on the new block data.
 const BLOCK_QUERY = 'return smooth?bspline(v,o0,o1,o2,o3,u,t):catmullRom(v,o0,o1,o2,o3,u,t);';
 const POINT_DISPATCH = 'if(pointDepth)return cutAtPoint(alongM,acrossM,halfWidthM,seed,smooth);';
+// The fused rock-path lookup (carvingRockFM, section 2d) inlines both kernels; its point-query branch makes the four
+// separate carvingFM / carvingSmoothFM calls, so forcing that branch routes C, Cb, Cbx and Cby through the (rewritten)
+// block query above.
+const ROCK_DISPATCH = 'if(pointDepth){';
 // mountain-carving-2's triangle expressions (src at 32f5de3, retainedAt), read on the cut storage: the cell's
 // lower-left vertex is stored at index row*S + (col - id*CORE) + 1 = row*S + a + 1.
 const TRIANGLE_QUERY = 'const r=v,b=row*S+a+1;' +
@@ -27,10 +31,10 @@ const TRIANGLE_QUERY = 'const r=v,b=row*S+a+1;' +
   'return Math.max(0,Math.min(1,tv));';
 
 export function triangleSource(source = readFileSync(SOURCE_URL, 'utf8')) {
-  for (const needle of [BLOCK_QUERY, POINT_DISPATCH])
+  for (const needle of [BLOCK_QUERY, POINT_DISPATCH, ROCK_DISPATCH])
     if (source.split(needle).length !== 2) throw new Error('mountain-carving-triangle: needle not found exactly once: ' + needle);
   // Point queries take the (triangle) block path too, so placeAt and every caller see the same reference field.
-  return source.replace(POINT_DISPATCH, '').replace(BLOCK_QUERY, TRIANGLE_QUERY) +
+  return source.replace(POINT_DISPATCH, '').replace(BLOCK_QUERY, TRIANGLE_QUERY).replace(ROCK_DISPATCH, 'if(true){') +
     "\n// triangle reference (test-side)\nexport const TEST_REFERENCE_INTERPOLANT='triangle';\n";
 }
 let instances = 0;
