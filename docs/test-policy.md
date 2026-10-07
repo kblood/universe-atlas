@@ -57,6 +57,10 @@ VISUAL-ADVISORY rules:
   result with `calibration` and `citable`. Calibration is bound to the exact
   prompt text that was calibrated: a different prompt under the same id is
   UNCALIBRATED. Without it the result is `NOT-CHECKED` and not citable.
+- **Gates are capture-only for Luna** (2026-10-07, review O6): a gate captures
+  the review images but asks no vote until the question meets the bar of >= 2
+  good and >= 2 bad controls in `tests/visual-controls/<feature>.json`
+  (`docs/luna-gate-policy-2026-10-07.md`).
 - **Parsing never guesses.** Only a standalone `VERDICT: PASS|FAIL` line counts
   (otherwise the ask is `unclear`). An ELEMENT answer must be an exact element
   name or `other: <name>`; anything else is kept as `ambiguous: ...` and
@@ -111,12 +115,26 @@ threshold or a test title. Unset is `default`: plain `npm test` is unchanged.
 coverage `subset`: a maximum or pin can fail early there, it is never certified.
 
 - `npm run test:smoke`: tier 0, the terrain/mountain list in `tests/tiers.json`
-  (every terrain test file once; tier-aware files at their smoke sample sets,
-  the rest at default depth). Target well under 2 min (measured ~90 s).
-  Fail-fast: the first NEW HARD/CONTRACT failure kills the run.
-- `npm run test:work`: the same list at the work tier. Refused (exit 3) unless
-  a green smoke run exists for the same tree (`treeKey` = HEAD + diff +
-  untracked files); `--force` overrides and is recorded.
+  (tier-aware files at their smoke sample sets, the rest at default depth).
+  Target well under 2 min. Fail-fast: the first NEW HARD/CONTRACT failure kills
+  the run. Since 2026-10-07 (review O4) the three renderer simulations
+  `terrain-budget-starvation`, `terrain-leaf-loop-digest` and
+  `terrain-water-refresh` are in the work list only (they bounded the smoke
+  wall); `terrain-structural-spectrum` is in smoke and work (review O7).
+- `npm run test:work`: the work list (smoke's files plus those three) at the
+  work tier. Refused (exit 3) unless a green smoke run exists for the same tree
+  (`treeKey` = HEAD + diff + untracked files); `--force` overrides and is
+  recorded.
+- `npm run test:all` (tier `all`, 2026-10-07, review O2): the WHOLE `npm test`
+  registry at default depth (`ATLAS_TEST_TIER` and `ATLAS_TEST_FULL` removed),
+  one process per file or shard, longest first, fail-fast, same run directory,
+  resume and `--only` as the tiers. Every unmatched failure is NEW, whatever its
+  title class (test:full's rule). Plain `npm test` is unchanged and stays the
+  registry; `test:all` is a faster way to run the same list.
+- Longest-first needs step estimates: the latest local run of the same label,
+  else the committed seed `tests/tier-estimates.json` (so a fresh worktree is
+  not cold), else "unknown" (runs first). Refresh with
+  `npm run tier-estimates -- <label> <run dir>...` and commit the result.
 - Options: `--resume <run dir>` (same tree only; reruns the non-green steps),
   `--no-bail`, `--only <file>`, `--jobs N`.
 - Output: `test-results/tiers/<treeKey12>-<tier>-<start>/` with `run.json`,
@@ -124,12 +142,14 @@ coverage `subset`: a maximum or pin can fail early there, it is never certified.
   `steps.jsonl` (per step: status, exit, ms and `maxRSS`, the step process's
   peak RSS in KiB, null when it was killed), `summary.json` (with
   `peakStepRSSMiB`) and per-step spec logs.
-- Neither tier replaces the affected selection, test:full or the merge gate.
+- Neither smoke nor work replaces the affected selection, test:full or the
+  merge gate.
 - Frozen sample sets: `tests/tier-sets.json`, regenerated only with
   `npm run tier-sets:generate -- --reason "<why>"` (M1 + level-0 field only,
   0 M3 block solves; `tests/tier-sets.test.mjs` fails when it is stale).
 
-Details, timings and what is left: `docs/test-tiers-2026-10-07.md`.
+Details, timings and what is left: `docs/test-tiers-2026-10-07.md`; tier `all`
+and test:full on it: `docs/tier-all-2026-10-07.md`.
 
 ## Fast check: test:fast (formerly test:smoke)
 
@@ -242,13 +262,23 @@ the slot. LIFE_FILES is dependency-free and re-exported by life-scenario.mjs.
 
 ## Known failures
 
-`npm test` always returns raw Node status. `npm run test:full` streams spec output
-and uses a built-in-only custom reporter to collect failing title + file pairs
-(no line numbers), excluding TODOs and aggregate parent failures. It prints the
-raw Node exit code, every matched KNOWN failure, every NEW failure, and known
-entries that did not fail (stale entries). Exit 0 means zero NEW failures and
-a valid completed report, **not** that raw Node was green. Reporter/launch errors
-fail closed. A same-title failure in a different file is NEW.
+`npm test` always returns raw Node status. `npm run test:full` (since 2026-10-07)
+is tier `all --full`: the whole registry with `ATLAS_TEST_FULL=1`, one process
+per file or shard (`tests/tiers.json` `all` splits the carved-truth scans),
+longest first, under test:full's exclusive slot class. Every finished test is an
+fsynced line in `test-results/tiers/<treeKey12>-full-<start>/results.jsonl`;
+the failing title + file pairs (no line numbers, TODOs excluded) go through the
+same `classify()` as before. It prints every matched KNOWN failure, every NEW
+failure, and known entries that did not fail (stale entries; incomplete when a
+step did not run). Exit 0 means zero NEW failures, every step exited 0 or failed
+only on known failures, no step missing and no title reported twice. Fail-fast
+by default (the first NEW failure of any class kills the run, as the gate's
+stop-at-first-failure rule); `npm run test:full -- --no-bail` lists every
+failure, `-- --resume <run dir>` reruns the non-green steps of the same tree. A
+same-title failure in a different file is NEW. The pre-2026-10-07 single
+`node --test` path with `tests/helpers/failure-reporter.mjs` stays available as
+`npm run test:full:legacy` for cross-checks; it prints the raw Node exit code
+and the same three lists.
 
 The initial normal allowlist contains only the two baseline SURFACE_VERSION
 pins, owned by `relief-round P2 follow-up / merger`. The two old fauna timing
@@ -259,8 +289,8 @@ and rewrites `tests/known-failures.json` with title, file, reason, owner and
 classification. Implementers do not bless new failures to make a run green.
 
 Allowlist rules (2026-10-07, `tests/helpers/known-failures.mjs`, enforced by `npm run
-test:full` before anything runs; an invalid file rejects the run without taking the
-slot):
+test:full`, `test:all` and the tiers before anything runs; an invalid file rejects the
+run without taking the slot):
 
 - every `failures` entry has `title`, `file`, `reason`, `owner` and `class`, where
   `class` is `HARD` or `CONTRACT` (VISUAL-ADVISORY never fails a test; timing lives

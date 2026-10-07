@@ -20,7 +20,20 @@ export async function runTests(files, {slot = true, args = [], env = process.env
   const work = () => runCommand(process.execPath, [...nodeArgs, ...files], {env});
   return slot ? withTestSlot({owner: `tests: ${files.length} files${cls.mode === 'shared' ? ` (${runClass}, shared ${cls.tokens} tokens)` : ''}`, ...cls}, work) : work();
 }
-async function full() {
+// test:full (docs/tier-all-2026-10-07.md, review O2): the tier runner's `all` mode with ATLAS_TEST_FULL=1, one process per
+// file (or shard), longest first, fsynced per-test results, resume and optional bail. Its NEW / known / stale lines are
+// classify() over the failing title + file pairs, as the legacy failure-reporter path below computed them; the switch was
+// made after one full run gave the same counts and classification as the last legacy report (docs/tier-all-2026-10-07.md).
+async function full(args) {
+  // Fail closed before the suite: an allowlist that could wave a CONTRACT failure through is rejected.
+  const invalid = validateKnown(JSON.parse(readFileSync('tests/known-failures.json')));
+  if (invalid.length) { console.error(`Rejected: tests/known-failures.json is invalid (nothing was run):\n  ${invalid.join('\n  ')}`); return 1; }
+  const {runTier} = await import('./tier-runner.mjs');
+  return runTier('all', ['--full', ...args]);
+}
+// The pre-2026-10-07 test:full: one `node --test` over the registry with failure-reporter.mjs (kept for cross-checks:
+// npm run test:full:legacy). Same allowlist rules and acceptance as before.
+async function fullLegacy() {
   // Fail closed before the ~28 min suite: an allowlist that could wave a CONTRACT failure through is rejected.
   const knownDoc = JSON.parse(readFileSync('tests/known-failures.json')), invalid = validateKnown(knownDoc);
   if (invalid.length) { console.error(`Rejected: tests/known-failures.json is invalid (nothing was run):\n  ${invalid.join('\n  ')}`); return 1; }
@@ -73,8 +86,15 @@ async function quietCPU() {
 if (process.argv[1] && resolve(process.argv[1]) === resolve('tests/helpers/test-runner.mjs')) {
   const [mode, ...args] = process.argv.slice(2), baseIndex = args.indexOf('--base');
   let code;
-  if (mode === 'full') code = await full();
-  else if (mode === 'pkg') {
+  if (mode === 'full') code = await full(args);
+  else if (mode === 'full-legacy') code = await fullLegacy();
+  else if (mode === 'tier-estimates') {
+    // node tests/helpers/test-runner.mjs tier-estimates <label> <run dir>...: rewrite that label's table of
+    // tests/tier-estimates.json from finished tier runs (killed steps dropped). Commit the result with the run ids.
+    const {writeEstimates} = await import('./tier-runner.mjs');
+    if (args.length < 2) throw new Error('tier-estimates <smoke|work|default|all|full> <run dir>...');
+    console.log(writeEstimates(args[0], args.slice(1))); code = 0;
+  } else if (mode === 'pkg') {
     if (!args.length || args.some(f => !/\.test\.mjs$/.test(f) || !existsSync(f))) throw new Error('test:pkg requires existing .test.mjs paths');
     code = await runTests(args, {runClass: 'pkg'});
   } else if (mode === 'affected') {
