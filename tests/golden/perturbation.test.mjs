@@ -193,16 +193,10 @@ const PLATFORM_PERTURBED_NAMES = [...PERTURBED_NAMES, "asin", "hypot", "log2", "
  * reaches it. GOLDEN: the pinned digest itself moved under a 1-ULP nudge.
  * EXACT: only the full-precision form moved (the pinned form absorbed it). */
 const GOLDEN_FLIP_FINDINGS = {
-  // Found by the merger 2026-10-04 when GOLDEN-EXT met EC4 on main (composer
-  // graph-4 / face-geometry-2). One pinned record moves under the 1-ULP nudge:
-  // "trunked-centipede|skin-arrays" (the positions and colours hashes; skin
-  // weights, indices and the rest are unchanged). A standalone probe of that
-  // specimen found only three midline vertices (z = +-1e-17 m) moving, which
-  // cannot cross the quantisation grid on their own, so the vertex that crosses
-  // it under the golden run's call order is NOT traced. OPEN: trace it, then
-  // round the decision through det-math.ts or move the specimen to
-  // FAUNA_KNOWN_UNSTABLE if real engines disagree (cross-engine run decides).
-  fauna: "trunked-centipede skin-arrays positions/colours move under a 1-ULP Math.* nudge since EC4 (cause not traced; OPEN)",
+  // (2026-10-07) The `fauna` entry ("trunked-centipede skin-arrays move under a
+  // 1-ULP nudge") is CLOSED: proboscisEar's sin(pi x)^p profile went NaN when
+  // pow(1, 0.75) was nudged above 1; fixed by clamping the sine at 0 (merge of
+  // fauna/composer-stability, docs/fauna-composer-stability-2026-10-07.md).
 };
 // Measured 2026-10-04 (GOLDEN-EXT) on main b7d1df3. None of these moves a
 // pinned record (golden flips 0), but each is a raw libm path into platform

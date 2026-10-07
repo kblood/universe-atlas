@@ -150,9 +150,11 @@ What the merged work adds:
   and two ray hits tie exactly there. The gate result is
   PASS-WITH-KNOWN-MISMATCH, not PASS. The fix belongs in
   `src/fauna-composer-mesh.ts`, and a trial patch exists.
-- **The trunked-centipede skin record moves under a 1-ULP nudge.** This
-  appeared after EC4 met the new perturbation test. All three browsers still
-  match Node, but the cause is not traced.
+- ~~**The trunked-centipede skin record moves under a 1-ULP nudge.**~~
+  CLOSED 2026-10-07: the proboscis ear's `sin(pi x)^p` profile went NaN when
+  `pow(1, 0.75)` was nudged one ULP above 1; the sine is now clamped at 0
+  (byte-identical on every real engine, no repin). See
+  [docs/fauna-composer-stability-2026-10-07.md](docs/fauna-composer-stability-2026-10-07.md).
 - **Canopy rebuilds on every 25 m sea-level step.** It has done so since
   relief.
 - **The climate grid's cold build** takes 8.27 ms against a 5 ms target.
