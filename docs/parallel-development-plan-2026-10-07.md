@@ -62,7 +62,7 @@ State at writing: tiers MVP merged (27ce1bf), test fixes merged (b09a235), T6 me
 
 | Lane | Items | Resources | Agent mix | Can start now |
 |---|---|---|---|---|
-| **L0 Gate / merger (terrain first)** | Tiers merge → GATE-7 → GATE-2 → GATE-3/4. Then a quiet window: GATE-1 (fair protocol), GATE-6 (perf), GATE-5 (massif Luna sheet). Then cleanup, junction first: `cmd /c rmdir` before removing any worktree. | Merge lock, exclusive slot, GPU queue | 1 Opus coordinator | **Y**, once tiers merges |
+| **L0 Gate / merger (terrain first)** | Tiers merge → GATE-2 → GATE-3/4 (GATE-7 dropped 2026-10-07, review O8: test:full runs the whole registry on tier `all` with bail; procedure in `docs/gate-procedure-2026-10-07.md`). Then a quiet window: GATE-1 (fair protocol), GATE-6 (perf), GATE-5 (massif Luna sheet). Then cleanup, junction first: `cmd /c rmdir` before removing any worktree. | Merge lock, exclusive slot, GPU queue | 1 Opus coordinator | **Y**, once tiers merges |
 | **L1 Test infra** (sole owner of test-slot, test-runner, test-selection and cost-fair harness) | I2 → I3 → I4 → I5 → I6 → I7 → I8; then tiers T2, T8–T11 | Sandbox slot dir; live slot only for I3 and the I7 measurement | Opus writes; Astra reviews a frozen sha | **Y** in sandbox. Merges after tiers. |
 | **L2 Terrain** (one identity-changing branch per round) | Gully filter steps 1–2: a new, unwired `src/mountain-gully-filter.ts` with H1–H4 registered first and a **fresh seed pool** (not 731001–008). F-carving (a) parameter sweep in the existing harness. Landing-stall worker design. | Only the new files. `terrain.ts` group and version strings are read-only until GATE-1 passes and Kasper answers. | Opus; Astra adversarial review | **Y**, element tests only |
 | **L3 Fauna** | WebKit midline-eye fix → #17 COAT-CRISP → #18 DEER-PARITY | Single writer on `fauna-composer*`; GPU only through tickets; golden is a node-run compare only | Astra implements pure modules; Opus runs checks and commits | **Y** |
@@ -132,7 +132,7 @@ State at writing: tiers MVP merged (27ce1bf), test fixes merged (b09a235), T6 me
    - L1 I2 slot work in a sandbox `ATLAS_TEST_SLOT_DIR` (Opus).
 
    Also apply I0 (docs plus rerere).
-2. **Coordinator merges the tiers branch** once its verification finishes. The slot holder is now pid 48828 `test:default` (seen 23:04Z, alive), so that run is live, not stale. Then run GATE-7 → GATE-2 → GATE-3/4 on main.
+2. **Coordinator merges the tiers branch** once its verification finishes. The slot holder is now pid 48828 `test:default` (seen 23:04Z, alive), so that run is live, not stale. Then run GATE-7 → GATE-2 → GATE-3/4 on main. (Superseded 2026-10-07 by O8: GATE-7 is dropped; the gate order is GATE-2 → GATE-3 → GATE-4, see `docs/gate-procedure-2026-10-07.md`.)
 3. **Tonight's quiet window, terrain first.** Pause all local writer runs and civ-lab ensembles; reviews, research and docs keep going. Run GATE-1 (about 67 min) → GATE-6 → GATE-5. If I4's single batch hold is not merged by then, it can wait, because nothing else contends for the slot in the window. Record the GATE-1 verdict before any terrain branch is wired or bumped.
 
 # Part 2: critic corrections (binding)

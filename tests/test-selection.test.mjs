@@ -72,3 +72,23 @@ test('review 4/8: only paths in the node --test argument list count; moving one 
   assert.equal(packageJsonChange(pkgText('vitest'), JSON.stringify(JSON.parse(pkgText('vitest')))).full, true, 'unchanged but unsupported (no paths)');
   assert.equal(packageJsonChange(BASE, JSON.stringify(JSON.parse(BASE))).full, false, 'unchanged supported script, formatting only');
 });
+test('scripts/**/*.test.mjs is a registered test path: registry, argument list, import graph and the allowlist rule', async () => {
+  mkdirSync('test-results', {recursive: true});
+  const root = mkdtempSync(join(process.cwd(), 'test-results', 'atlas-selection-scripts-'));
+  const put = (p, s) => { mkdirSync(join(root, p, '..'), {recursive: true}); writeFileSync(join(root, p), s); };
+  try {
+    put('package.json', JSON.stringify({scripts: {test: 'w -- node --test tests/a.test.mjs scripts/tool/x.test.mjs'}}));
+    put('tests/a.test.mjs', ''); put('tests/helpers/slot.mjs', '');
+    put('scripts/tool/x.test.mjs', "import './x.mjs';"); put('scripts/tool/x.mjs', "import '../../tests/helpers/slot.mjs';");
+    const registered = registeredTests(root), graph = importGraph(root);
+    assert.deepEqual(registered, ['tests/a.test.mjs', 'scripts/tool/x.test.mjs']);
+    for (const changed of ['scripts/tool/x.mjs', 'tests/helpers/slot.mjs']) assert.deepEqual(selectTests([changed], registered, graph).selected.map(s => s.file), ['scripts/tool/x.test.mjs'], changed);
+    const {testArgumentList} = await import('./helpers/test-selection.mjs');
+    assert.deepEqual(testArgumentList('w -- node --test tests/a.test.mjs scripts/tool/x.test.mjs')?.paths, ['tests/a.test.mjs', 'scripts/tool/x.test.mjs']);
+    assert.equal(testArgumentList('w -- node --test tests/a.test.mjs && node scripts/tool/x.test.mjs'), null, 'a scripts/ path outside the list is unsupported');
+    const {validateKnown} = await import('./helpers/known-failures.mjs');
+    const entry = file => ({failures: [{title: 't', file, reason: 'r', owner: 'o', class: 'HARD'}]});
+    assert.deepEqual(validateKnown(entry('scripts/tool/x.test.mjs')), []);
+    assert.equal(validateKnown(entry('tests/perf/x.perf.test.mjs')).length > 0, true, 'perf is never allowlisted');
+  } finally { rmSync(root, {recursive: true, force: true}); }
+});

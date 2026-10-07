@@ -47,7 +47,7 @@ export function validateKnown(doc, {readDoc = defaultReadDoc} = {}) {
     if (!e || typeof e !== 'object') {problems.push(`${at}: not an object`); return;}
     for (const k of REQUIRED) if (typeof e[k] !== 'string' || !e[k].trim()) problems.push(`${at}: missing \`${k}\``);
     if (typeof e.class === 'string' && !ENTRY_CLASSES.includes(e.class)) problems.push(`${at}: class ${e.class} is not one of ${ENTRY_CLASSES.join(', ')}`);
-    if (typeof e.file === 'string' && (!/^tests\/.+\.test\.mjs$/.test(e.file) || e.file.startsWith('tests/perf/'))) problems.push(`${at}: file must be a registered tests/**/*.test.mjs path outside tests/perf/ (timing is never allowlisted)`);
+    if (typeof e.file === 'string' && (!/^(?:tests|scripts)\/.+\.test\.mjs$/.test(e.file) || e.file.startsWith('tests/perf/'))) problems.push(`${at}: file must be a registered tests/**/*.test.mjs or scripts/**/*.test.mjs path outside tests/perf/ (timing is never allowlisted)`);
     const declared = titleClass(e.title);
     if (declared && e.class !== declared) problems.push(`${at}: the title declares ${declared} but the entry says ${e.class}`);
     if (e.class === 'CONTRACT') for (const p of decisionProblems(e, readDoc)) problems.push(`${at}: ${p}`);

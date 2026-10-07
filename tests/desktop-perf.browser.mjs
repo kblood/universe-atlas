@@ -3,8 +3,8 @@
  *
  * Builds (unless ATLAS_PERF_SKIP_BUILD=1), serves the production bundle with
  * `vite preview` (COOP/COEP), and runs scenarios S0-S6 at 2560x1440 DPR 1 for
- * each condition x repeat in a FRESH browser, holding the machine-wide GPU
- * browser lock only while that browser runs. Writes report.json + summary.md.
+ * each condition x repeat in a FRESH browser, holding the exclusive test slot
+ * and then the machine-wide GPU browser lock only while that browser runs. Writes report.json + summary.md.
  *
  * Conditions: native, cpu-proxy (CDP Emulation.setCPUThrottlingRate 1.7; run
  * the harness under affinity 0xFFF for the 6C/12T proxy). The GPU ratio proxy
@@ -24,6 +24,7 @@ import {spawn,execFileSync} from 'node:child_process';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import {acquireGpuLock} from './helpers/gpu-lock.mjs';
+import {acquireTestSlot,slotClass} from './helpers/test-slot.mjs';
 import {nvidiaSnapshot,startGpuSampler,processAffinity,browserAffinities,setBrowserAffinity,cpuInfo,cpuLoad} from './helpers/perf-host.mjs';
 import {aggregateReport,markdownSummary,CPU_PROXY_RATE} from './helpers/perf-report.mjs';
 import {encodeVersions,CURRENT_VERSIONS} from '../src/time-nav.ts';
@@ -189,8 +190,15 @@ const INIT_SCRIPT=()=>{
 };
 
 async function browserRun(condition,repeat){
-  const lock=await acquireGpuLock({owner:`${config.owner} ${condition} r${repeat} (${head.slice(0,7)}) port ${config.port}`,retryMs:config.lockRetryMs,log});
-  const run={condition,repeat,lock:{owner:lock.owner,waitedMs:lock.waitedMs},errors:[],scenarios:{},started:new Date().toISOString()};
+  // A timing run: the EXCLUSIVE test slot first (no shared test holder may overlap the measured browser), then the GPU
+  // lock. Lock order merge -> slot -> GPU (docs/test-policy.md "Lock order"); released in reverse order below.
+  const slotWaitStart=Date.now();
+  const slot=await acquireTestSlot({owner:`desktop-perf ${config.owner} ${condition} r${repeat} (${head.slice(0,7)})`,...slotClass('desktop-perf')});
+  const slotWaitedMs=Date.now()-slotWaitStart;
+  let lock;
+  try{lock=await acquireGpuLock({owner:`${config.owner} ${condition} r${repeat} (${head.slice(0,7)}) port ${config.port}`,retryMs:config.lockRetryMs,log});}
+  catch(error){slot.release();throw error;}
+  const run={condition,repeat,slot:{mode:slot.mode,waitedMs:slotWaitedMs},lock:{owner:lock.owner,waitedMs:lock.waitedMs},errors:[],scenarios:{},started:new Date().toISOString()};
   let browser=null,sampler=null;
   try{
     run.gpuBefore=await nvidiaSnapshot('before');run.cpuLoadBefore=await cpuLoad();
@@ -392,7 +400,7 @@ async function browserRun(condition,repeat){
     try{await browser?.close();}catch{}
     run.gpuSamples=sampler?.stop()??null;
     try{run.gpuAfter=await nvidiaSnapshot('after');}catch(error){run.gpuAfter={error:String(error)};}
-    await lock.release();
+    try{await lock.release();}finally{slot.release();}
     run.finished=new Date().toISOString();
   }
   return run;

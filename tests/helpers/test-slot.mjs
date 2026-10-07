@@ -1,5 +1,5 @@
 // Machine-wide test slot (docs/test-policy.md "Slot and exit codes"; shared/exclusive design: docs/shared-test-slot-2026-10-07.md).
-// EXCLUSIVE (the only class while ATLAS_SLOT_SHARED is unset/0, i.e. today's behaviour): atomic mkdir of TEST_SLOT_DIR with
+// EXCLUSIVE (the only class when ATLAS_SLOT_SHARED is unset/0 at the call; runner entry points default it to 1, O1): atomic mkdir of TEST_SLOT_DIR with
 // owner.txt. Before an exclusive holder runs it also waits until no live SHARED holder remains (a no-op when nobody uses
 // the shared class). SHARED (ATLAS_SLOT_SHARED=1 only): a holder file `<dir>.shared/<token>.json` {pid, host, tokens};
 // admitted while the exclusive dir is absent and the live tokens stay <= SLOT_CAPACITY. Writer priority: a shared caller
@@ -26,11 +26,20 @@ export const RUN_CLASSES = Object.freeze({
   smoke: {mode: 'shared', tokens: 16}, work: {mode: 'shared', tokens: 16}, default: {mode: 'shared', tokens: 16}, 'npm-test': {mode: 'shared', tokens: 16},
   full: {mode: 'exclusive'}, perf: {mode: 'exclusive'}, 'cost-fair': {mode: 'exclusive'}, 'desktop-perf': {mode: 'exclusive'},
 });
-/** ATLAS_SLOT_SHARED: unset/'0' = off (today's behaviour), '1' = on; anything else fails closed. Read at call time. */
+/** ATLAS_SLOT_SHARED: unset/'0' = off (library default; see defaultSharedSlotOn), '1' = on; anything else fails closed. Read at call time. */
 export function sharedSlotEnabled(env = process.env) {
   const v = env.ATLAS_SLOT_SHARED ?? '';
   if (v !== '' && v !== '0' && v !== '1') throw new Error(`ATLAS_SLOT_SHARED must be 0 or 1, got ${JSON.stringify(v)}`);
   return v === '1';
+}
+/** Runner entry points (the test-runner.mjs CLI: test:pkg/affected/fast/smoke/work/all/full/perf, and this file's CLI:
+ * npm test, cost-fair run.sh) call this first: since 2026-10-07 (review O1, I3 load proof in
+ * docs/shared-test-slot-2026-10-07.md) the flag is ON for every runner of this checkout unless the caller's env sets it.
+ * `ATLAS_SLOT_SHARED=0` still turns it off. Written into process.env so children inherit it (never-nest pass-through).
+ * Library imports (acquireTestSlot, runTests) are unaffected: they read the env as given. */
+export function defaultSharedSlotOn(env = process.env) {
+  if (env.ATLAS_SLOT_SHARED === undefined) env.ATLAS_SLOT_SHARED = '1';
+  return sharedSlotEnabled(env);
 }
 /** The slot class for a named run class: always exclusive while the flag is off. */
 export function slotClass(name, env = process.env) {
@@ -284,8 +293,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   if (divider < 0 || !args[divider + 1]) throw new Error('usage: test-slot.mjs [--timeout-ms N] [--shared K] -- command args...');
   // An option given without its value fails here, before acquiring (the old parser read the `--` as NaN and refused).
   const option = name => { const i = own.indexOf(name); if (i < 0) return undefined; if (i + 1 >= own.length) throw new Error(`${name} needs a value`); return own[i + 1]; };
-  // --shared K takes effect only with ATLAS_SLOT_SHARED=1; without it every CLI call is exclusive, exactly as before.
-  const k = option('--shared') === undefined ? null : Number(option('--shared'));
+  // --shared K takes effect only with ATLAS_SLOT_SHARED=1 (the CLI's default since O1; 0 turns it off); without --shared
+  // every CLI call is exclusive, exactly as before.
+  defaultSharedSlotOn();
+  const k =option('--shared') === undefined ? null : Number(option('--shared'));
   const timeoutMs = option('--timeout-ms') === undefined ? Infinity : Number(option('--timeout-ms'));
   const shared = k !== null && sharedSlotEnabled(), given = args[divider + 1];
   if (shared && !isNodeCommand(given)) throw new Error(`--shared needs a node command (its --test-concurrency is bounded); got ${given}`);
