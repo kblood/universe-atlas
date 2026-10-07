@@ -27,7 +27,7 @@ import {spinStateFor} from './stellar-evolution.ts';
 import {oceanHypsometry} from './ocean-volume.ts';
 import {CATALOGUE_EPOCH_NS} from './world-time.ts';
 import {prepareFlora, floraFromRecipe, toMyr, buildFloraGeometryData, floraGeometryToBufferGeometry, FLORA_KIND_NAMES, type FloraRecipe, type FloraKind, type FloraBiosphereGate, type FloraBiomeSample, type FloraStage} from './flora-field.ts';
-import {FloraFieldRenderer, FloraCandidateBuffer, packCullPlane, pickFloraLodBand, DEFAULT_FRUSTUM_PLANE_COUNT} from './flora-culling.ts';
+import {FloraFieldRenderer, FloraCandidateBuffer, packCullPlane, pickFloraLodBand, submitFloraCandidate, DEFAULT_FRUSTUM_PLANE_COUNT} from './flora-culling.ts';
 import {faunaHerdAt, faunaMemberActivityAtWorldNs, faunaRigSecondsAt, faunaMemberGenome, faunaGroundedTransform, faunaGroundedTransformInto, toSeconds, type FaunaHerd, type FaunaHerdMember, type FaunaMemberActivity, type FaunaBiosphereGate, type FaunaStage, type CreatureArchetype, type CreatureGenome} from './fauna-runtime.ts';
 import {FaunaFieldRenderer,FAUNA_FIELD_CAPACITY,FAUNA_FIELD_VISIBLE_M} from './fauna-field-renderer.ts';
 import {FaunaNearRigs,FAUNA_NEAR_RIG_EXIT_M,type FaunaNearCandidate} from './fauna-near-rig.ts';
@@ -51,7 +51,9 @@ const LIFE_LOAD_MARGIN_M = 48;
 const FLORA_KIND_CULL_RADIUS_M: Record<FloraKind, number> = { tree: 6, shrub: 2.5, grass: 1, flower: .6 };
 const LIFE_UP_Y = new THREE.Vector3(0, 1, 0);
 type LifeCell=SurfaceCell & {layer:'flora'|'fauna';cellSizeM:number};
-type LifeResident={cell:LifeCell;height:number;biome:FloraBiomeSample;herd:FaunaHerd|null;ground:Float64Array|null;groundCursor:number;floraRecipe?:FloraRecipe;floraPose?:FloraPose};
+type LifeResident={cell:LifeCell;height:number;biome:FloraBiomeSample;herd:FaunaHerd|null;ground:Float64Array|null;groundCursor:number;floraRecipe?:FloraRecipe;floraPose?:FloraPose;
+  /** Continuity only: the flora LOD band last drawn (F7 band memory, `submitFloraCandidate`). */
+  floraLod?:number};
 /** A flora resident's origin-independent draw terms at (recipe, tMyr, relief,
  * radius, packed height and direction): its drawn kind (null when absent or a
  * tree), planet-local position, cull radius and the rotation/scale lanes of
@@ -1848,7 +1850,9 @@ export class PlanetRenderer {
       this.floraPresentCount++;
       const px = pose.px - origin.x, py = pose.py - origin.y, pz = pose.pz - origin.z, lanes = pose.lanes;
       lanes[12] = px; lanes[13] = py; lanes[14] = pz;
-      this.floraCandidates.push(pose.kind, px, py, pz, pose.cullRadiusLocal, lanes);
+      // Continuity: the resident owns its LOD band memory (F7 hysteresis).
+      if(this.continuity)this.floraCandidates.push(pose.kind, px, py, pz, pose.cullRadiusLocal, lanes, resident);
+      else this.floraCandidates.push(pose.kind, px, py, pz, pose.cullRadiusLocal, lanes);
     }
     // Inlined `drawFloraCandidates` (see the UNIT-MISMATCH FINDING above):
     // `cull()` stays in the local (radius-normalized) frame the frustum
@@ -1862,6 +1866,7 @@ export class PlanetRenderer {
       const idx = this.floraDrawOrder[slot];
       const cdx = this.floraCandidates.centerX[idx]!, cdy = this.floraCandidates.centerY[idx]!, cdz = this.floraCandidates.centerZ[idx]!;
       const distanceM = Math.sqrt(cdx * cdx + cdy * cdy + cdz * cdz) * radiusM;
+      if(this.continuity){if(submitFloraCandidate(this.floraRenderer,this.floraCandidates,idx,distanceM))this.floraSubmittedCount++;continue;}
       const lod = pickFloraLodBand(distanceM);
       if (lod === -1) continue;
       const kind = FLORA_KIND_NAMES[this.floraCandidates.kindIndex[idx]!]!;
