@@ -423,6 +423,16 @@ function riverRegionSphere(r: RiverRegion): THREE.Sphere {
 const TILE_WORKER_COUNT = isSoftwareRenderer() ? 1 : Math.max(1, Math.min(2, (typeof navigator!=='undefined'&&navigator.hardwareConcurrency||4)-1));
 /** HUD terrain-flight / direct-landing clearance (see lowFlightClearanceM). */
 export const LOW_FLIGHT_CLEARANCE_M=19500;
+/** Presentation-only renderer switches. A deliberate presentation change to a
+ * LIFE_FILES file ships behind one of these: the life-cpu-digest identity
+ * scenario leaves it off, and the change gets its own behavioural test
+ * (tests/life-continuity-scenario.test.mjs; decision D1, 2026-10-07). */
+export interface PlanetRendererOptions{
+  /** Transition-continuity hooks (audit F3/F5/F7/F12/F13): near-rig cross-fade
+   * with listed fade-outs, continuous proxy gait, the 350/380 m ground-life
+   * hysteresis and the flora LOD band memory. Off keeps the former output bit for bit. */
+  presentationContinuity?:boolean;
+}
 export class PlanetRenderer {
   /** render-bounds-1 helpers for main.ts (its import of this class is its only seam). */
   static heightBoundM(body:Body){return renderHeightBoundM(body);}
@@ -674,8 +684,9 @@ export class PlanetRenderer {
   private classify!: ReturnType<typeof biomeClassifier>;
   private readonly faunaRenderer=new FaunaFieldRenderer();
   /** Bounded skinned bodies for the nearest animals; a child of the field
-   * renderer's origin-relative group, with the instanced batch as fallback. */
-  private readonly faunaNear=new FaunaNearRigs();
+   * renderer's origin-relative group, with the instanced batch as fallback.
+   * Built in the constructor: its cross-fade follows `presentationContinuity`. */
+  private readonly faunaNear:FaunaNearRigs;
   private readonly lifeOrigin=new THREE.Vector3();
   private readonly floraGroup=new THREE.Group();
   private readonly lifeResidents=new Map<string,LifeResident>();
@@ -798,7 +809,11 @@ export class PlanetRenderer {
   // refreshed in place on a bucket change instead of being reconstructed
   // once per patch.
   private waterBucket = 0;
-  constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,readonly anisotropy=1, private surfaceAgeMyr = DEFAULT_SURFACE_AGE_MYR) {
+  /** `PlanetRendererOptions.presentationContinuity`, fixed for the renderer's lifetime. */
+  private readonly continuity:boolean;
+  constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,readonly anisotropy=1, private surfaceAgeMyr = DEFAULT_SURFACE_AGE_MYR,options:PlanetRendererOptions={}) {
+    this.continuity=options.presentationContinuity===true;
+    this.faunaNear=new FaunaNearRigs(this.continuity?{crossFade:true}:{});
     this.groundAtlas=detailTexture(anisotropy);
     this.groundPbrTextures=acquireGroundPbrTextures(anisotropy);
     this.sample=terrainSampler(body, undefined, surfaceAgeMyr);
