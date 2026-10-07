@@ -593,11 +593,10 @@ export function exportCreatureGlb(input: ComposerRecipe | string, options: Compo
       levels = v2.lods[0] === 'full' ? [levels[0]!, ...reducedLevels] : reducedLevels;
     }
     const budgetActual = {level0Triangles: levels[0]!.index.length / 3, bones: n, materials: 1, textureBytes: 0, drawCallsPerLevel: 1};
-    let budgetPass = true;
     if (v2) {
+      // a failing budget throws here, before anything is written, so a report that carries a budget always passed it
       const check = checkComposerExportBudget(v2.budget, {...budgetActual, levels: levels.map(l => ({triangles: l.index.length / 3, target: l.target}))});
       if (!check.pass) throw new ComposerExportBudgetError(v2.target, v2.budget, check.reasons);
-      budgetPass = check.pass;
     }
 
     const b = new GlbBuilder();
@@ -706,7 +705,7 @@ export function exportCreatureGlb(input: ComposerRecipe | string, options: Compo
           relaxation: r?.stats.relaxation ?? 0, mirrorKept: r?.stats.mirrorKept ?? 1, maxWeightChange: r?.stats.maxWeightChange ?? 0, maxPlaneError: r?.stats.maxPlaneError ?? 0,
           parts: level.parts, sourceVertex: r ? r.sourceVertex : Uint32Array.from({length: level.vertexCount}, (_, v) => v)};
       });
-      report.budget = {target: v2.target, limits: v2.budget, actual: budgetActual, pass: budgetPass};
+      report.budget = {target: v2.target, limits: v2.budget, actual: budgetActual, pass: true};
     }
     return {glb, report};
   } finally {
