@@ -1,0 +1,30 @@
+GATE-C1 cost-fair protocol: PRE-REGISTRATION (written 2026-10-07T10:45Z, before the first counted process)
+
+Authority: docs/fable-decision-carving-lattice-2026-10-07.md section 2c(2) and 2c(3) (Fable 5.1, on Kasper's
+instruction, overrulable); protocol = decisions addendum (6) Q-A, harness = addendum (7) / docs/cost-fair-harness-2026-10-07.md.
+Counted ONCE: never repeated, never dropped; every run counts.
+
+Arms (git archive exports, one node_modules junction in their common parent pointing at main's node_modules):
+  REF  = 9dcb1cf74307513b72d938e57b2fb7da3b64df41  (GATE-1 REF: terrain-1.8.1-grain, the UNWIRED build;
+         budgets are cumulative against the unwired build, section 2c(2) correction)
+  REF2 = a second identical export of 9dcb1cf (A/A control)
+  CAND = b84bcf92de8198661b4cfa87e547ea4367ba5afa  (mountains/carving-c1 tip, src tree 9f7446efc9fb76c9300fe2772417fe0f8247cfd7,
+         terrain-1.9.1-carving-c1, wired)
+Harness: main's checkout C:/LLM/IWSDK/universe-atlas at 581a484 (scripts/cost-fair/* identical to the branch).
+Command (from main's repo root):
+  REF=<ref> REF2=<ref2> CAND=<cand> REF_SHA=9dcb1cf74307513b72d938e57b2fb7da3b64df41 OUT=test-results/gate-c1/fair N=30 sh scripts/cost-fair/run.sh
+  node scripts/cost-fair/analyze.mjs test-results/gate-c1/fair
+N = 30 per world per kind (C1 A/B, C1 A/A, orbit A/B, orbit A/A), 480 processes, order fixed by run.sh.
+
+Judging rule (as GATE-1 / Q-A): per world, median over the 30 processes with the distribution-free 95 % CI
+(order statistics 10 and 21). A/A bias demonstrated only if the A/A CI excludes 0; then judged = median(A/B) -
+median(A/A), else judged = median(A/B). Budgets: C1 <= 8 %, orbit <= 5 % (unchanged).
+
+Expectation (section 2c(2), +45 ns diluted by the in-massif land share; the protocol's CI half-width ~1.7 points
+cannot resolve these deltas):
+  C1 median:  Maithea ~5.98 %, Selawyn ~2.94 %, Raiva ~4.77 %, Lethuris ~5.23 %   (GATE-1: 5.77 / 2.83 / 4.61 / 5.11)
+  Orbit: unchanged vs GATE-1 (3.08 / 2.50 / 4.36 / 1.64), the orbit bake samples level 0 (uncarved).
+
+STOP condition: any judged C1 median > 8 % or any judged orbit median > 5 % => no rerun; stop and report
+(section 2c(3): the fused-lookup refactor then becomes mandatory, followed by a new counted run).
+Maithea C1 in (7, 8] still passes (the refactor moves to the top of the backlog).
