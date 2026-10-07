@@ -1,0 +1,150 @@
+{
+ "world": "Lethuris",
+ "station": "0",
+ "arm": "branch",
+ "root": "C:/LLM/IWSDK/universe-atlas-wt/riser-lod/",
+ "rock": 11,
+ "sharp": 15,
+ "levels": [
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16
+ ],
+ "crossLevel": {
+  "points": 95481,
+  "spacingM": 13.036153605108863,
+  "armTruthVsV1TruthMismatch": 0,
+  "rockPoints": 80339,
+  "perLevel": {
+   "10": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   },
+   "11": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   },
+   "12": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   },
+   "13": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   },
+   "14": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   },
+   "15": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   },
+   "16": {
+    "coarseBelowTruth": 0,
+    "coarseBelowTruthMaxM": 0,
+    "aboveRockOff": 0
+   }
+  },
+  "switches": {
+   "L10->L11": {
+    "monotoneViolations": 0,
+    "ulpViolations": 0,
+    "maxAbsM": 2.4725823967401084,
+    "p99AbsM": 1.3563268153170611,
+    "pointwiseBoundViolations": 0
+   },
+   "L11->L12": {
+    "monotoneViolations": 0,
+    "ulpViolations": 0,
+    "maxAbsM": 21.989219433501148,
+    "p99AbsM": 17.26357155960295,
+    "pointwiseBoundViolations": 0
+   },
+   "L12->L13": {
+    "monotoneViolations": 0,
+    "ulpViolations": 0,
+    "maxAbsM": 37.331981452846776,
+    "p99AbsM": 31.874748273519344,
+    "pointwiseBoundViolations": 0
+   },
+   "L13->L14": {
+    "monotoneViolations": 0,
+    "ulpViolations": 0,
+    "maxAbsM": 37.72205788413521,
+    "p99AbsM": 31.108398925273832,
+    "pointwiseBoundViolations": 0
+   },
+   "L14->L15": {
+    "monotoneViolations": 0,
+    "ulpViolations": 0,
+    "maxAbsM": 40.802858738872146,
+    "p99AbsM": 24.40395625302881,
+    "pointwiseBoundViolations": 0
+   },
+   "L15->L16": {
+    "monotoneViolations": 0,
+    "ulpViolations": 0,
+    "maxAbsM": 0,
+    "p99AbsM": 0,
+    "pointwiseBoundViolations": 0
+   }
+  },
+  "mainRockSwitch": {
+   "maxAbsM": 64.83199993102198,
+   "p99AbsM": 56.201887088799594
+  }
+ },
+ "LR": {
+  "11": {
+   "spacingM": 208.57281272383923,
+   "rockVertices": 654,
+   "LR": 0.03398386000621962,
+   "truthPointLR": 1.96411544385145,
+   "hpRmsM": 0.3683992931280022,
+   "idealHpRmsM": 10.840419336137181
+  },
+  "12": {
+   "spacingM": 104.28578152574163,
+   "rockVertices": 2493,
+   "LR": 0.3229175069783093,
+   "truthPointLR": 1.278353365486622,
+   "hpRmsM": 5.219049572262655,
+   "idealHpRmsM": 16.16217597212289
+  },
+  "13": {
+   "spacingM": 52.14271839373291,
+   "rockVertices": 9469,
+   "LR": 0.6942213837487928,
+   "truthPointLR": 1.0900207490798495,
+   "hpRmsM": 13.230503032960245,
+   "idealHpRmsM": 19.058045952885486
+  },
+  "14": {
+   "spacingM": 26.071962482072788,
+   "rockVertices": 37702,
+   "LR": 0.9180969268160212,
+   "truthPointLR": 1.0266530287006372,
+   "hpRmsM": 18.53716942975459,
+   "idealHpRmsM": 20.190863173937277
+  },
+  "15": {
+   "spacingM": 13.036153605108863,
+   "rockVertices": 150272,
+   "LR": 1.007216732830143,
+   "truthPointLR": 1.007216732830143,
+   "hpRmsM": 20.68762951880049,
+   "idealHpRmsM": 20.539402141057614
+  }
+ }
+}

@@ -302,10 +302,69 @@ the 4 km L14 lattice, 55,005 rock points):
 - H4: pointwise bound violations 0 at every switch. Largest switch per level: L9->10 1.14 m, L10->11 17.78, L11->12
   38.10, L12->13 37.19, L13->14 29.46 (p99 11.06), L14->15 0. Main's single rock switch: max 65.23 m, p99 53.21.
 - LR (tuning station): L13 **0.944** (HARD at the finest filtered level, >= 0.5: PASS), L12 0.743, L11 0.345,
-  L10 0.020 (INFO; the section-1 prior for L12 was 0.45-0.5, measured higher because the median slope over the
-  window's rock vertices is lower than 0.77).
+  L10 0.020 (INFO; the section-1 prior for L12 was 0.45-0.5; measured higher, cause not investigated).
 
 **Suites:** `tsc --noEmit` exit 0. `npm run test:affected -- --base main`: 93 files selected (27 changed), 758 tests,
 744 pass, **0 fail**, 12 skipped, 2 todo (the two pre-existing OPEN entries: SITE_A ring, rocky Spearman); exit 0
 (`test-results/mountains/riser-lod/step3-affected.log`). The first two affected runs failed only on the needles of
 ledger rows 8-9 (mountain-coarse-field import hook, then the cores-identical text); fixed as listed, nothing else.
+
+## Step 4: held-out check (single attempt): **STOP, registered "fewer than 3 teeth frames" rule**
+
+Run once: 54 held-out frames + 6 height rows + 8 tuning branch frames, all 68 jobs exit 0. Frames stay in the scratchpad
+(sha256 in `test-results/mountains/riser-lod/heldout/frames-png.sha256`). Scores: `metric-heldout.json`,
+`metric-tuning-branch.json`; heights: `heldout/heights-*.json`.
+
+### 4a notch-row P99 (HARD rule, section 4a)
+
+| frame | rock windows | P99 v1 | off | **branch** | teeth |
+|---|---|---|---|---|---|
+| Maithea[1] c4200 L11 / L12 / L13 | 58 / 80 / 91 | .189 / .187 / .231 | .173 / .232 / .233 | .178 / .187 / .231 | no (< 100 windows) |
+| Maithea[1] c3000 L11 / L12 / L13 | 63 / 101 / 116 | .470 / .319 / .157 | .467 / .334 / .166 | .467 / .319 / .157 | no |
+| Selawyn[0] c4200 L12 / L13 / L14 | 664 / 664 / 670 | .196 / .237 / .240 | .258 / .226 / .237 | .237 / .258 / .247 | no |
+| Selawyn[0] c3000 L12 / L13 / L14 | 628 / 621 / 632 | .277 / .254 / .204 | .367 / .159 / .169 | .328 / .268 / .206 | no |
+| Lethuris[0] c4200 L12 / L13 / L14 | 694 / 705 / 707 | .281 / .299 / .270 | .347 / .241 / .255 | .341 / .225 / .238 | no |
+| Lethuris[0] c3000 L12 / L13 | 685 / 690 | .312 / .395 | .397 / .332 | .360 / .390 | no |
+| Lethuris[0] c3000 L14 | 689 | **.388** | .265 | **.299** | **yes** |
+
+Held-out teeth frames: **1** (Lethuris c3000 L14). On it the branch passes both sub-rules (.299 <= T_P .4892 and
+<= v1 .388), but the registered rule says fewer than 3 teeth frames is not a pass: **STOP for a decision.** Nothing
+was re-rendered, re-scored, or re-thresholded. Reading (not a verdict): v1 shows no measurable notch rows at the
+held-out stations, mostly. Maithea[1] has little rock in view (58-116 windows), and at Selawyn/Lethuris L12-L13 v1
+P99 is close to or below rock-off.
+
+Tuning re-score (INFO, the calibration frames, branch arm added):
+
+| frame | v1 | off | branch |
+|---|---|---|---|
+| c4200 L12 (teeth) | .550 | .338 | **.341** |
+| c3000 L12 (teeth) | .744 | .377 | **.450** |
+| c3000 L13 (teeth) | .723 | .203 | **.564** |
+| non-teeth frames | | | within .03 of v1 or lower |
+
+Pooled over the tuning teeth frames, branch is .4519 (v1 .6724, off .3061, T_P .4892). Every frame is <= v1. Note
+that c3000 L13 stays above T_P: at L13 the two-cell riser (62 m) only partly removes the rows at 3 km clearance.
+
+### 4b ledge retention LR (HARD at the finest filtered level): PASS
+
+| station | finest filtered | LR | coarser filtered levels (INFO) | v1 (INFO) |
+|---|---|---|---|---|
+| Maithea[1] | L13 | **1.008** | L12 0.863, L11 0.708, L10 0.150 | L10-13 1.44 / 1.13 / 1.04 / 1.01 |
+| Selawyn[0] | L14 | **0.953** | L13 0.754, L12 0.372, L11 0.035 | 1.36 / 1.11 / 1.03 / 1.01 |
+| Lethuris[0] | L14 | **0.918** | L13 0.694, L12 0.323, L11 0.034 | 1.96 / 1.28 / 1.09 / 1.03 |
+
+### 4c height rows: H1-H4 PASS at all three held-out stations
+
+| station | points | rock | H1 truth mismatch | H2 below truth / above off | H3 monotone / ulp | H4 bound violations | largest branch switch | main's rock switch (max / p99) |
+|---|---|---|---|---|---|---|---|---|
+| Maithea[1] | 62,001 | 40,748 | 0 | 0 / 0 | 0 / 0 | 0 | 16.95 m (L10->11) | 20.80 / 13.01 m |
+| Selawyn[0] | 172,225 | 141,906 | 0 | 0 / 0 | 0 / 0 | 0 | 46.58 m (L13->14) | 81.02 / 66.66 m |
+| Lethuris[0] | 95,481 | 80,339 | 0 | 0 / 0 | 0 / 0 | 0 | 40.80 m (L14->15) | 64.83 / 56.20 m |
+
+### Not run (held at this STOP)
+
+- Step 5: GPU blind comparison. Prepared but not started: probe arms built (`_riser-probe-main` 7419733,
+  `_riser-probe-branch` 2802fca, `_riser-probe-rockoff` 7419733 plus an uncommitted probe-only `return 0` edit, each with a
+  node_modules junction). Tooling is in `test-results/mountains/riser-lod/gpu/`: `probe-riser.browser.mjs`, the step-8
+  probe with equal-LOD matching (`--match`), plus `hold-gpu.mjs` and `cmds.json`. The GPU lock was never taken.
+- Step 6: test:full.
