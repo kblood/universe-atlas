@@ -176,7 +176,9 @@ do **not** coordinate with other worktrees. This task uses the workspace-local
 
 `npm test` has a wrapper **prefix**, followed by the existing `node --test` and
 its explicit ordered file list. New tests are still registered by appending
-paths to that list. All selectors/runners parse test-path tokens out of that
+paths to that list. Registered paths are `tests/**/*.test.mjs` or (since
+2026-10-07) `scripts/**/*.test.mjs` (`scripts/cost-fair/precheck.test.mjs`);
+the import graph of test:affected also walks `scripts/`. All selectors/runners parse test-path tokens out of that
 script, tolerating wrappers; there is no second full-suite registry. A prefix
 holds the slot until the child closes and releases it in `finally` even on
 failure. Unlike `posttest`, cleanup does not depend on success. The wrapper
@@ -197,19 +199,31 @@ age. A verifiably dead local PID permits logged rename-then-remove takeover.
 Concurrent reapers serialize inside the dead directory. If a reaper itself
 dies mid-takeover, stop and inspect its guard rather than guessing ownership.
 
-Shared/exclusive slot (2026-10-07, design and switch-on conditions:
-`docs/shared-test-slot-2026-10-07.md`). Behind `ATLAS_SLOT_SHARED`; unset or `0`
-(the default) keeps every run exclusive exactly as above. With `1`, correctness
+Shared/exclusive slot (2026-10-07, design, switch-on conditions and the I3 load
+proof: `docs/shared-test-slot-2026-10-07.md`). **ON since 2026-10-07 (review
+O1):** the runner entry points (`tests/helpers/test-runner.mjs`, i.e. test:pkg,
+test:affected, test:fast, test:smoke, test:work, test:all, test:full, test:perf,
+and the `tests/helpers/test-slot.mjs` CLI, i.e. `npm test` and cost-fair
+`run.sh`) set `ATLAS_SLOT_SHARED=1` when the caller's env does not set it, and
+children inherit it. `ATLAS_SLOT_SHARED=0` turns it off for a run; library
+calls (`acquireTestSlot`, `runTests`) read the env as given. `npm test` is
+`test-slot.mjs --shared 16 -- node --test --test-concurrency=16 ...`. Timing and
+gate runs stay exclusive through their run class: test:perf, test:full (until
+I3 has run on its shards), cost-fair and `tests/desktop-perf.browser.mjs`, which
+takes the exclusive slot before the GPU lock (merge -> slot -> GPU). With `1`, correctness
 runs take CPU **tokens** out of 28 instead of the whole machine (`test:pkg` 4,
-`test:affected` 8, `test:fast` 8, `test:smoke`/`test:work` 16, each with the same
+`test:affected` 8, `test:fast` 8, `test:smoke`/`test:work`/`test:all`/`npm test` 16, each with the same
 explicit `--test-concurrency` / `--jobs`) as holder files in
 `<slot>.shared/<token>.json`; the existing mkdir directory stays the exclusive
 gate (test:perf, test:full until I3 ran on its shards, cost-fair, every old
 caller and the CLI without `--shared K`). An exclusive caller takes the gate
 first, so no new shared holder enters, then waits for the admitted ones to
 drain. A child of a holder inherits `ATLAS_TEST_SLOT_TOKEN` and runs through
-without a second level (never nest). Do not set the flag while any live
-worktree still has the old `test-slot.mjs` (it does not drain shared holders).
+without a second level (never nest). A checkout from before the shared-slot
+merge (`41afb47`) has an old `test-slot.mjs` that does not drain shared holders:
+do not run tests from one (the seven stale worktrees were retired for O1;
+checkouts from before this change but after `41afb47` stay flag-off, which is
+exclusive and drains, the safe direction).
 
 Perf holds the same slot through CPU quietness and `node --test
 --test-concurrency=1 tests/perf/*.perf.test.mjs` (the runner expands the files).

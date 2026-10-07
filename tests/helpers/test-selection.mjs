@@ -3,13 +3,14 @@ import {execFileSync} from 'node:child_process';
 import {resolve, relative, dirname} from 'node:path';
 
 export const slash = p => p.replaceAll('\\', '/');
-const TEST_PATH = /(?:^|\s|["'])(tests\/[^\s"']+\.test\.mjs)(?=$|\s|["'])/g;
+// Registered test paths live under tests/ or scripts/ (scripts/cost-fair/precheck.test.mjs; review O1 step 5).
+const TEST_PATH = /(?:^|\s|["'])((?:tests|scripts)\/[^\s"']+\.test\.mjs)(?=$|\s|["'])/g;
 export const testPaths = script => [...script.matchAll(TEST_PATH)].map(m => m[1]);
 export function registeredTests(root = process.cwd()) {
   return testPaths(JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')).scripts.test);
 }
 const canonical = v => Array.isArray(v) ? v.map(canonical) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map(k => [k, canonical(v[k])])) : v;
-const LIST_PATH = /^(["']?)(tests\/[^\s"']+\.test\.mjs)\1$/, ANY_PATH = /tests\/[^\s"']*\.test\.mjs/;
+const LIST_PATH = /^(["']?)((?:tests|scripts)\/[^\s"']+\.test\.mjs)\1$/, ANY_PATH = /(?:tests|scripts)\/[^\s"']*\.test\.mjs/;
 /** Splits `scripts.test` into the `node --test` argument list and the text around it: `head` runs through the single
  * `<node> --test` and the `--flags` right after it, `paths` is the contiguous run of test paths that follows, `tail` is
  * everything after. null (unsupported, fail closed) without exactly one `node --test`, with an empty list, or when a test
@@ -78,7 +79,7 @@ function walk(dir, root) {
 }
 export function importGraph(root = process.cwd()) {
   const graph = new Map();
-  const files = [...walk('src', root), ...walk('tests', root)].filter(f => /\.(ts|mjs|js)$/.test(f));
+  const files = [...walk('src', root), ...walk('tests', root), ...walk('scripts', root)].filter(f => /\.(ts|mjs|js)$/.test(f));
   function resolveSpec(file, spec) {
     const base = slash(relative(root, resolve(root, dirname(file), spec)));
     for (const p of [base, ...['.ts', '.mjs', '.js'].map(e => base + e), ...['ts', 'mjs', 'js'].map(e => `${base}/index.${e}`), base.replace(/\.js$/, '.ts')]) {

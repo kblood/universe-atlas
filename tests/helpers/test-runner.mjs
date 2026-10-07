@@ -2,7 +2,7 @@ import {readFileSync, mkdtempSync, rmSync, readdirSync, existsSync, mkdirSync} f
 import {join, resolve} from 'node:path';
 import {cpus} from 'node:os';
 import {execFileSync} from 'node:child_process';
-import {withTestSlot, runCommand, slotClass, boundTestConcurrency} from './test-slot.mjs';
+import {withTestSlot, runCommand, slotClass, boundTestConcurrency, defaultSharedSlotOn} from './test-slot.mjs';
 import {registeredTests, changedFiles, baseRef, importGraph, selectTests, packageJsonChangeSince} from './test-selection.mjs';
 import {classify, validateKnown} from './known-failures.mjs';
 export {classify, validateKnown};
@@ -84,6 +84,9 @@ async function quietCPU() {
   throw new Error('CPU quietness timeout; perf NOT run');
 }
 if (process.argv[1] && resolve(process.argv[1]) === resolve('tests/helpers/test-runner.mjs')) {
+  // Shared slot ON for every runner unless the env says otherwise (review O1; ATLAS_SLOT_SHARED=0 turns it off). Timing
+  // and gate runs stay exclusive through their run class (perf, full, desktop-perf, cost-fair in RUN_CLASSES).
+  defaultSharedSlotOn();
   const [mode, ...args] = process.argv.slice(2), baseIndex = args.indexOf('--base');
   let code;
   if (mode === 'full') code = await full(args);

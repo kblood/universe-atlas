@@ -256,3 +256,20 @@ test('review 10: forced interleaving - shared caller saw no gate, then an exclus
     assert.equal(overlap, false); assert.equal(sharedIn, true, 'it enters once the exclusive holder is gone');
   } finally { hooks.beforePublish = null; }
 }));
+// O1 (docs/shared-test-slot-2026-10-07.md "I3 result and switch-on"): runner entry points default the flag ON unless
+// the caller's env sets it; library calls read the env as given.
+test('O1: defaultSharedSlotOn sets 1 only when unset; 0 and an empty value stay off; the CLI defaults to a shared hold', async () => {
+  const on = slotMod.defaultSharedSlotOn; assert.equal(typeof on, 'function', 'defaultSharedSlotOn exported');
+  const unset = {}; assert.equal(on(unset), true); assert.equal(unset.ATLAS_SLOT_SHARED, '1');
+  for (const v of ['0', '']) { const e = {ATLAS_SLOT_SHARED: v}; assert.equal(on(e), false, JSON.stringify(v)); assert.equal(e.ATLAS_SLOT_SHARED, v); }
+  assert.throws(() => on({ATLAS_SLOT_SHARED: 'yes'}), /must be 0 or 1/);
+  const probe = "const fs=require('fs');const t=process.env.ATLAS_TEST_SLOT_TOKEN;const d=process.env.ATLAS_TEST_SLOT_DIR;console.log(JSON.stringify({t,flag:process.env.ATLAS_SLOT_SHARED,shared:fs.existsSync(d+'.shared/'+t+'.json'),excl:fs.existsSync(d)}))";
+  for (const [flag, expect] of [[undefined, [true, false, '1']], ['0', [false, true, '0']]]) {
+    const dir = join(root, `cli-default-${flag ?? 'unset'}`), env = cliEnv(dir); if (flag === undefined) delete env.ATLAS_SLOT_SHARED; else env.ATLAS_SLOT_SHARED = flag;
+    const r = await runCli(['--shared', '4', '--', 'node', '-e', probe], env);
+    assert.equal(r.code, 0, r.out);
+    const seen = JSON.parse(r.out.trim().split('\n').at(-1));
+    assert.deepEqual([seen.shared, seen.excl, seen.flag], expect, `flag ${flag}`);
+    assert.equal(existsSync(dir), false); assert.deepEqual(holderFiles(dir), []);
+  }
+});
