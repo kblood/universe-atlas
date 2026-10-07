@@ -1,8 +1,12 @@
-// place-query-1 (relief round 2026-10, P2-OCEAN-QUERY): the documented query
-// surface for games built on the platform. Plain derived data, never game rules.
+// place-query-1 (relief round 2026-10, P2-OCEAN-QUERY) and place-query-2 (backlog task 16, docs/place-query-v2.md):
+// the documented query surface for games built on the platform. Plain derived data, never game rules.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync, mkdtempSync, writeFileSync, rmSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {fileURLToPath, pathToFileURL} from 'node:url';
 import {galaxies, refByAddress, system} from '../src/catalog.ts';
 import {CATALOGUE_EPOCH_NS, YEAR_NS} from '../src/world-time.ts';
 import {starLifecycle, planetLifecycle} from '../src/stellar-evolution.ts';
@@ -10,7 +14,12 @@ import {surfaceAt, surfaceQuery, datedOceanState} from '../src/world-surface.ts'
 import {fibonacciDirection} from '../src/ocean-volume.ts';
 import {geophysicsFromParams, pressureAtDepthPa, planetGeophysics} from '../src/planet-geophysics.ts';
 import {terrainSampler, terrainFloorSampler} from '../src/terrain.ts';
-import {placeAt, depthAndPressureAt, importPlaceBlocks, PLACE_QUERY_VERSION, PLACE_VERSIONS} from '../src/place-query.ts';
+import {
+  placeAt, depthAndPressureAt, importPlaceBlocks, coastAt, airPressureAtHeightPa, airScaleHeightM,
+  PLACE_QUERY_VERSION, PLACE_VERSIONS,
+} from '../src/place-query.ts';
+import {LOD_LADDER_VERSION, ladderFor, carvingFromLevel, rockDetailFromLevel, contactLevelFor} from '../src/lod-ladder.ts';
+import {detExp} from '../src/det-math.ts';
 import {carvingBuildStats} from '../src/mountain-carving.ts';
 import {frozenMassifJobs, placeWorlds, warmInWorker} from './helpers/place-warm-worker.mjs';
 
@@ -38,11 +47,15 @@ test('floorM/windowM come from the R0 floor sampler on the same rock field (wind
 });
 
 test('version and version block', () => {
-  assert.equal(PLACE_QUERY_VERSION, 'place-query-1');
+  assert.equal(PLACE_QUERY_VERSION, 'place-query-2');
+  assert.equal(PLACE_VERSIONS.placeQuery, PLACE_QUERY_VERSION);
   assert.equal(PLACE_VERSIONS.surface, 'atlas-surface-8-ocean-volume');
   assert.equal(PLACE_VERSIONS.oceanVolume, 'ocean-volume-1');
   assert.equal(PLACE_VERSIONS.geophysics, 'planet-geophysics-1');
-  assert.equal(PLACE_VERSIONS.lodLadder, null, 'no ladder module yet: every level answers at full resolution');
+  // place-query-2: the imported ladder version, never a pinned string (the ladder contract moves it on its own).
+  assert.equal(PLACE_VERSIONS.lodLadder, LOD_LADDER_VERSION);
+  assert.equal(typeof LOD_LADDER_VERSION, 'string');
+  assert.ok(Object.isFrozen(PLACE_VERSIONS));
 });
 
 test('placeAt matches the surface query bit for bit at full level (ground height, ocean, water depth)', () => {
@@ -158,16 +171,23 @@ test('absent places are explicit: stars, and planets before they form or after e
   if (planetLc.engulfedNs !== null) assert.equal(placeAt({sys, body, t: planetLc.engulfedNs}, DIRS[0]).stage, 'engulfed');
 });
 
-test('docs/place-query-v1.md documents every field with unit and provenance, and the game-layer rule', () => {
-  const doc = readFileSync(new URL('../docs/place-query-v1.md', import.meta.url), 'utf8');
-  const {sys, body} = WORLDS[0];
-  const p = placeAt({sys, body, t: CATALOGUE_EPOCH_NS}, DIRS[3]);
+test('docs/place-query-v1.md + v2.md document every field with unit and provenance, and the game-layer rule', () => {
+  const v1 = readFileSync(new URL('../docs/place-query-v1.md', import.meta.url), 'utf8');
+  const v2 = readFileSync(new URL('../docs/place-query-v2.md', import.meta.url), 'utf8');
+  const {sys, body} = WORLDS[0], ctx = {sys, body, t: CATALOGUE_EPOCH_NS};
+  const p = placeAt(ctx, DIRS[3], 6, {rung: true});
   const keys = [...Object.keys(p), ...Object.keys(p.biome).map(k => 'biome.' + k), ...Object.keys(p.climate).map(k => 'climate.' + k),
-    ...Object.keys(p.versions).map(k => 'versions.' + k),
-    ...Object.keys(depthAndPressureAt({sys, body, t: CATALOGUE_EPOCH_NS}, DIRS[3], 1))];
-  for (const k of keys) assert.ok(doc.includes('`' + k + '`'), `doc lists \`${k}\``);
-  assert.match(doc, /## Game layer/);
-  for (const word of ['physical', 'heuristic', 'Pa', 'm/s']) assert.ok(doc.includes(word), word);
+    ...Object.keys(p.versions).map(k => 'versions.' + k), ...Object.keys(p.rung).map(k => 'rung.' + k),
+    ...Object.keys(depthAndPressureAt(ctx, DIRS[3], 1)), ...Object.keys(coastAt(ctx, DIRS[3]))];
+  for (const k of keys) assert.ok((v1 + v2).includes('`' + k + '`'), `doc lists \`${k}\``);
+  // Every place-query-2 addition is documented in the v2 file, with the stated formula.
+  for (const k of ['airPressurePa', 'airScaleHeightM', 'rung', 'rung.lodLevel', 'rung.ladder', 'rung.groundHeightM', 'rung.ocean',
+    'heightAboveSeaM', 'seaSign', 'coastAt', 'airPressureAtHeightPa'])
+    assert.ok(v2.includes('`' + k + '`') || v2.includes(k + '('), `v2 doc lists ${k}`);
+  assert.match(v2, /H\s+= k_B \* T \/ \(m_N2 \* g0\)/); assert.match(v2, /P\(h\) = P0 \* exp\(-h \/ H\)/);
+  assert.ok(v1.includes('place-query-v2.md'), 'v1 doc points to v2');
+  assert.match(v1, /## Game layer/);
+  for (const word of ['physical', 'heuristic', 'Pa', 'm/s']) assert.ok(v1.includes(word), word);
 });
 
 test('HARD: warm-up transfer: blocks a worker exported make placeAt a 0-build hit with the identical answer (8 frozen massif directions)', async () => {
@@ -192,3 +212,234 @@ test('HARD: warm-up transfer: blocks a worker exported make placeAt a 0-build hi
 });
 
 // Timing gate moved to perf/place-query.perf.test.mjs.
+
+// ---------------------------------------------------------------------------
+// place-query-2 (backlog task 16, docs/place-query-v2.md)
+// ---------------------------------------------------------------------------
+
+/** The two dated seas of the coast test (500 and 1000 Myr after the epoch): below the catalogue-epoch level on three
+ * harness worlds (Maithea -1225 / -4725 m, Selawyn -150 / -600 m, Raiva -525 / -2100 m; Lethuris keeps 0 m), so the
+ * sign is taken against a DATED level. */
+const COAST_DATES = [CATALOGUE_EPOCH_NS + 500_000_000n * YEAR_NS, CATALOGUE_EPOCH_NS + 1_000_000_000n * YEAR_NS];
+
+test('coastAt agrees with the sign of the dated sea level at 1000 points x 4 worlds x 2 dates, and with placeAt', () => {
+  const dirs = Array.from({length: 1000}, (_, i) => fibonacciDirection(i, 1000));
+  let below = 0;
+  for (const {sys, body, starLc, planetLc} of WORLDS) {
+    for (const t of COAST_DATES) {
+      const ctx = {sys, body, t}, dated = datedOceanState(body, planetLc, starLc, t);
+      assert.equal(dated.globalOceanAvailable, true, `${body.name}: a global ocean exists at ${t}`);
+      let sea = 0, land = 0;
+      dirs.forEach((d, i) => {
+        const c = coastAt(ctx, d);
+        assert.equal(c.exists, true);
+        assert.equal(c.seaLevelM, dated.waterLevelM, 'the dated (snapped) sea level');
+        assert.ok(Object.is(c.heightAboveSeaM, c.groundHeightM - c.seaLevelM));
+        assert.equal(c.ocean, c.heightAboveSeaM < 0, `${body.name} sign of height above the dated sea`);
+        assert.equal(c.seaSign, c.ocean ? -1 : 1);
+        assert.equal(c.version, PLACE_QUERY_VERSION);
+        c.ocean ? sea++ : land++;
+        // placeAt agreement on every 4th point and on every point within 200 m of the dated shoreline.
+        if (i % 4 && Math.abs(c.heightAboveSeaM) >= 200) return;
+        const p = placeAt(ctx, d);
+        assert.equal(c.ocean, p.ocean, 'coastAt agrees with placeAt');
+        assert.ok(Object.is(c.groundHeightM, p.groundHeightM) && c.seaLevelM === p.seaLevelM);
+        assert.deepEqual(c.versions, p.versions);
+      });
+      assert.ok(sea >= 20 && land >= 20, `${body.name} @${t}: both sides present (sea ${sea}, land ${land})`);
+      if (dated.waterLevelM < 0) below++;
+    }
+  }
+  // Lethuris (dim host star) keeps its full ocean through both dates (dated level 0 m); the other three worlds are
+  // tested against a dated level below the datum, so the sign is not just the sign of the ground height.
+  assert.ok(below >= (WORLDS.length - 1) * COAST_DATES.length, `cases against a sea level below the datum: ${below}`);
+});
+
+test('rung: Object.is-equal to the renderer tile sampler (terrainSampler with lodLevel) at the same direction', async () => {
+  const sets = JSON.parse(readFileSync(new URL('./tier-sets.json', import.meta.url), 'utf8'));
+  const massif = frozenMassifJobs(sets).filter((j, i, a) => a.findIndex(x => x.world === j.world && x.kind === j.kind) === i);
+  let differs = 0, compared = 0;
+  for (const [w, {sys, body, starLc, planetLc}] of WORLDS.entries()) {
+    const t = CATALOGUE_EPOCH_NS, ctx = {sys, body, t}, R = body.radiusM;
+    const water = datedOceanState(body, planetLc, starLc, t).renderWaterLevelM;
+    const dirs = [...massif.filter(j => j.world === w).map(j => j.d), ...DIRS.filter((_, i) => i % 75 === 0)];
+    const levels = [...new Set([0, 2, carvingFromLevel(R) - 1, carvingFromLevel(R), 9, 12, rockDetailFromLevel(R) - 1,
+      rockDetailFromLevel(R), contactLevelFor(R), 22])].filter(l => l >= 0);
+    for (const level of levels) {
+      // Built at runtime with the renderer's arguments (planet-tiles.ts buildTile): numbers are never pinned here.
+      const renderer = terrainSampler(body, undefined, undefined, undefined, water, undefined, false, {lodLevel: level});
+      for (const d of dirs) {
+        const p = placeAt(ctx, d, level, {rung: true}), s = renderer(d);
+        assert.equal(p.rung.lodLevel, level);
+        assert.ok(Object.is(p.rung.groundHeightM, s.groundHeightM), `${body.name} L${level}: rung height is the renderer sampler's`);
+        assert.equal(p.rung.ocean, s.ocean, `${body.name} L${level}: rung ocean flag`);
+        compared++;
+        if (!Object.is(p.rung.groundHeightM, p.groundHeightM)) differs++;
+        // The truth fields do not depend on the rung option.
+        const plain = placeAt(ctx, d, level);
+        assert.equal('rung' in plain, false, 'no rung key without the option');
+        assert.deepStrictEqual({...p, rung: undefined}, {...plain, rung: undefined});
+        // From the rock level the tile sampler is the truth (lod-ladder contract section 3).
+        if (level >= rockDetailFromLevel(R)) assert.ok(Object.is(p.rung.groundHeightM, p.groundHeightM), `${body.name} L${level} equals the truth`);
+      }
+    }
+    // Ladder ids resolve to the finest tile level of the rung (ladderFor), and echo that rung.
+    for (const rung of ladderFor(R)) {
+      const p = placeAt(ctx, dirs[0], rung.id, {rung: true});
+      assert.equal(p.rung.lodLevel, rung.levels[1]); assert.equal(p.rung.ladder, rung.id); assert.equal(p.level, rung.id);
+      const s = terrainSampler(body, undefined, undefined, undefined, water, undefined, false, {lodLevel: rung.levels[1]})(dirs[0]);
+      assert.ok(Object.is(p.rung.groundHeightM, s.groundHeightM));
+    }
+  }
+  assert.ok(differs > 0, `some coarse rung answers differ from the truth on the massif sites (${differs}/${compared}): the check is not vacuous`);
+});
+
+test('rung on a dated sea: the ocean flag uses the dated render water level', () => {
+  const {sys, body, starLc, planetLc} = WORLDS[0], t = COAST_DATES[1], ctx = {sys, body, t};
+  const water = datedOceanState(body, planetLc, starLc, t).renderWaterLevelM;
+  assert.ok(water < 0);
+  let agree = 0;
+  for (const d of DIRS.filter((_, i) => i % 5 === 0)) {
+    const p = placeAt(ctx, d, 22, {rung: true});
+    assert.equal(p.rung.ocean, p.rung.groundHeightM < water);
+    if (p.rung.ocean === p.ocean) agree++;
+  }
+  assert.ok(agree > 0);
+});
+
+test('air pressure: hypsometric formula, Earth analogue, monotone in height, det-math exp, placeAt agreement', () => {
+  const earth = geophysicsFromParams({kind: 'planet', type: 'Ocean world', radiusM: 6.371e6, temperatureK: 278, water: .7, coreFraction: .32, vigourDraw01: .5});
+  const H = airScaleHeightM(earth, 278);
+  assert.ok(Object.is(H, 1.380649e-23 * 278 / (4.65e-26 * earth.surfaceGravityMS2)), 'H = k_B T / (m_N2 g0)');
+  assert.ok(H > 8000 && H < 8900, `Earth-analogue scale height ${H} m`);
+  assert.ok(Object.is(airPressureAtHeightPa(earth, 278, 0), earth.surfacePressurePa), 'P(0) = P0 exactly');
+  for (const h of [-11000, -400, 1, 1500, 5500, 8848, 30000, 80000])
+    assert.ok(Object.is(airPressureAtHeightPa(earth, 278, h), earth.surfacePressurePa * detExp(-h / H)), `P(${h}) = P0 exp(-h/H)`);
+  // Isothermal heuristic vs measured air (5.5 km: 0.50 P0; Everest 8.85 km: 0.33 P0), within 10%.
+  const ratio = h => airPressureAtHeightPa(earth, 278, h) / earth.surfacePressurePa;
+  assert.ok(Math.abs(ratio(5500) / .50 - 1) < .10, `5.5 km ratio ${ratio(5500)}`);
+  assert.ok(Math.abs(ratio(8848) / .333 - 1) < .10, `8.85 km ratio ${ratio(8848)}`);
+  // det-math exp tracks Math.exp closely (the value itself is engine-independent).
+  for (const x of [-12, -3.3, -1, -.25, 0, .5, 1.3]) assert.ok(Math.abs(detExp(x) / Math.exp(x) - 1) < 1e-12, `detExp(${x})`);
+  let prev = Infinity;
+  for (let h = -12000; h <= 60000; h += 250) {
+    const p = airPressureAtHeightPa(earth, 278, h);
+    assert.ok(p < prev && p > 0, `strictly decreasing at ${h} m`); prev = p;
+  }
+  assert.ok(airPressureAtHeightPa(earth, 278, -500) > earth.surfacePressurePa, 'a dry basin below the datum is above P0');
+  // placeAt: ground height on land, the dated sea surface on the ocean.
+  for (const {sys, body} of WORLDS) for (const t of [CATALOGUE_EPOCH_NS, COAST_DATES[1]]) {
+    const geo = planetGeophysics(body);
+    let sea = 0;
+    for (const d of DIRS.filter((_, i) => i % 6 === 0)) {
+      const p = placeAt({sys, body, t}, d);
+      const h = p.ocean ? p.seaLevelM : p.groundHeightM;
+      assert.ok(Object.is(p.airPressurePa, airPressureAtHeightPa(geo, body.temperatureK, h)));
+      assert.ok(Object.is(p.airScaleHeightM, airScaleHeightM(geo, body.temperatureK)));
+      if (p.ocean) { sea++; if (p.seaLevelM === 0) assert.ok(Object.is(p.airPressurePa, p.surfacePressurePa)); else assert.ok(p.airPressurePa > p.surfacePressurePa); }
+      else if (p.groundHeightM > 0) assert.ok(p.airPressurePa < p.surfacePressurePa, 'land above the datum has less air pressure');
+    }
+    assert.ok(sea > 0);
+  }
+});
+
+test('negative cases: airless and dry bodies, absent places, invalid rung levels', () => {
+  const {sys, body, planetLc} = WORLDS[0], t = CATALOGUE_EPOCH_NS;
+  // A dry, airless body (Veortar, volcanic, no water, airClass none): no pressure, no scale height, no sea.
+  const dry = sys.planets.find(b => !b.water && planetGeophysics(b).airClass === 'none' && b.type !== 'Gas giant');
+  assert.ok(dry, 'the harness system has a dry airless rocky planet');
+  const pd = placeAt({sys, body: dry, t}, DIRS[1]), cd = coastAt({sys, body: dry, t}, DIRS[1]);
+  assert.equal(pd.exists, true); assert.equal(pd.airPressurePa, 0); assert.equal(pd.airScaleHeightM, null);
+  assert.equal(cd.seaLevelM, null); assert.equal(cd.heightAboveSeaM, null); assert.equal(cd.seaSign, 1); assert.equal(cd.ocean, false);
+  assert.ok(Object.is(cd.groundHeightM, pd.groundHeightM));
+  const vacuum = geophysicsFromParams({kind: 'planet', type: 'Rocky world', radiusM: 2e6, temperatureK: 400, water: 0, coreFraction: .3, vigourDraw01: .5});
+  assert.equal(vacuum.surfacePressurePa, 0);
+  for (const h of [-1000, 0, 1000]) assert.equal(airPressureAtHeightPa(vacuum, 400, h), 0);
+  const cold = geophysicsFromParams({kind: 'planet', type: 'Ocean world', radiusM: 6.371e6, temperatureK: 278, water: .7, coreFraction: .32, vigourDraw01: .5});
+  assert.equal(airScaleHeightM(cold, 0), null, 'no scale height without a positive temperature');
+  assert.equal(airPressureAtHeightPa(cold, 0, -10), cold.surfacePressurePa); assert.equal(airPressureAtHeightPa(cold, 0, 10), 0);
+  // Absent places: stars and planets before they form; no rung key, no fabricated coast.
+  const star = coastAt({sys, body: sys.stars[0], t}, DIRS[0]);
+  assert.deepEqual([star.exists, star.stage, 'groundHeightM' in star], [false, 'star', false]);
+  const early = coastAt({sys, body, t: planetLc.formationNs - 1n}, DIRS[0]);
+  assert.deepEqual([early.exists, early.stage], [false, 'accreting']);
+  const earlyPlace = placeAt({sys, body, t: planetLc.formationNs - 1n}, DIRS[0], 3, {rung: true});
+  assert.equal(earlyPlace.exists, false); assert.equal('rung' in earlyPlace, false);
+  // Invalid rung levels throw; the same levels without the option are only echoed (place-query-1 behaviour).
+  const ctx = {sys, body, t};
+  for (const level of [-1, 2.5, 31, NaN, Infinity, 'S9', 'S'])
+    assert.throws(() => placeAt(ctx, DIRS[0], level, {rung: true}), RangeError, `rung level ${String(level)}`);
+  for (const level of [2.5, 31]) assert.equal(placeAt(ctx, DIRS[0], level).level, level);
+});
+
+// v1-field identity: the place-query-1 source of main 7419733, run against this tree's modules (so only place-query.ts
+// differs), must give Object.is-equal values on every place-query-1 field. The intended exceptions are the version keys.
+const V1_COMMIT = '7419733';
+const V1_VERSION_KEYS = new Set(['version', 'versions.placeQuery', 'versions.lodLadder']);
+async function placeQueryV1() {
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const source = execFileSync('git', ['show', `${V1_COMMIT}:src/place-query.ts`], {cwd: root, encoding: 'utf8'});
+  assert.ok(source.includes("PLACE_QUERY_VERSION = 'place-query-1'"), 'the reference is place-query-1');
+  const srcUrl = pathToFileURL(join(root, 'src')).href + '/';
+  const text = source.replace(/from '\.\/([^']+)'/g, (_, f) => `from '${srcUrl}${f}'`);
+  const dir = mkdtempSync(join(tmpdir(), 'place-query-v1-ref-'));
+  try {
+    const file = join(dir, 'place-query-v1.ts');
+    writeFileSync(join(dir, 'package.json'), '{"type": "module"}');
+    writeFileSync(file, text);
+    return await import(pathToFileURL(file).href);
+  } finally { rmSync(dir, {recursive: true, force: true}); }
+}
+function assertV1Fields(v1, v2, where, path = '') {
+  if (v1 === null || typeof v1 !== 'object') {
+    if (!V1_VERSION_KEYS.has(path)) assert.ok(Object.is(v1, v2), `${where} ${path}: ${v1} vs ${v2}`);
+    return;
+  }
+  assert.equal(typeof v2, 'object', `${where} ${path}`);
+  for (const k of Object.keys(v1)) {
+    const key = path ? `${path}.${k}` : k;
+    assert.ok(v2 !== null && k in v2, `${where}: place-query-2 keeps ${key}`);
+    assertV1Fields(v1[k], v2[k], where, key);
+  }
+}
+
+test('v1-field identity vs main 7419733: Object.is on every place-query-1 field (fixed corpus)', async () => {
+  const v1 = await placeQueryV1();
+  assert.equal(v1.PLACE_QUERY_VERSION, 'place-query-1');
+  const sets = JSON.parse(readFileSync(new URL('./tier-sets.json', import.meta.url), 'utf8'));
+  const massif = frozenMassifJobs(sets);
+  const moonSys = WORLDS.find(w => w.sys.moons.length).sys;
+  const cases = [...WORLDS.map(({sys, body}, w) => ({sys, body, extra: massif.filter(j => j.world === w).slice(0, 2).map(j => j.d)})),
+    {sys: moonSys, body: moonSys.moons[0], extra: []},
+    {sys: WORLDS[0].sys, body: WORLDS[0].sys.planets.find(b => !b.water && b.type !== 'Gas giant'), extra: []},
+    {sys: WORLDS[0].sys, body: WORLDS[0].sys.planets.find(b => b.type === 'Gas giant'), extra: []},
+    {sys: WORLDS[0].sys, body: WORLDS[0].sys.stars[0], extra: []}];
+  const dates = [CATALOGUE_EPOCH_NS, CATALOGUE_EPOCH_NS + 300_000_000n * YEAR_NS, COAST_DATES[1], CATALOGUE_EPOCH_NS - 9_000_000_000n * YEAR_NS];
+  const dirs = Array.from({length: 24}, (_, i) => fibonacciDirection(i, 24));
+  let n = 0;
+  for (const {sys, body, extra} of cases) for (const t of dates) {
+    const ctx = {sys, body, t};
+    [...dirs, ...extra].forEach((d, i) => {
+      const level = ['S4', 2, 'S0', 22, 'S2'][i % 5];
+      const options = i % 4 === 0 ? {measureSlope: true} : i % 4 === 1 ? {upDot: .8} : {};
+      const where = `${body.name} t=${t} #${i} ${level}`;
+      const a = v1.placeAt(ctx, d, level, options);
+      assertV1Fields(a, placeAt(ctx, d, level, options), where);
+      if (a.exists) assertV1Fields(a, placeAt(ctx, d, level, {...options, rung: true}), where + ' +rung');
+      if (i % 3 === 0) for (const depth of [0, 30, 1e6, -5]) assertV1Fields(v1.depthAndPressureAt(ctx, d, depth), depthAndPressureAt(ctx, d, depth), where + ` depth ${depth}`);
+      n++;
+    });
+  }
+  assert.ok(n >= 300, `corpus size ${n}`);
+  // The intended exceptions really are the version keys (and only those differ).
+  const a = v1.placeAt({sys: WORLDS[0].sys, body: WORLDS[0].body, t: CATALOGUE_EPOCH_NS}, dirs[0]), b = placeAt({sys: WORLDS[0].sys, body: WORLDS[0].body, t: CATALOGUE_EPOCH_NS}, dirs[0]);
+  assert.deepEqual([a.version, a.versions.placeQuery, a.versions.lodLadder], ['place-query-1', 'place-query-1', null]);
+  assert.deepEqual([b.version, b.versions.placeQuery, b.versions.lodLadder], [PLACE_QUERY_VERSION, PLACE_QUERY_VERSION, LOD_LADDER_VERSION]);
+  assert.deepEqual({...a.versions, placeQuery: 0, lodLadder: 0}, {...b.versions, placeQuery: 0, lodLadder: 0});
+  // Negative controls: the comparison catches a 1-ulp field change, a nested change and a dropped field.
+  const ulp = x => x + Math.abs(x) * Number.EPSILON || Number.MIN_VALUE;
+  assert.throws(() => assertV1Fields(a, {...b, groundHeightM: ulp(b.groundHeightM)}, 'control'), /groundHeightM/);
+  assert.throws(() => assertV1Fields(a, {...b, climate: {...b.climate, snowFraction: ulp(b.climate.snowFraction)}}, 'control'), /climate\.snowFraction/);
+  const {floorM, ...dropped} = b; void floorM;
+  assert.throws(() => assertV1Fields(a, dropped, 'control'), /keeps floorM/);
+});
