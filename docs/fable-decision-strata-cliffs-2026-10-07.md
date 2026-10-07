@@ -47,3 +47,46 @@ Any HARD failure after one attempt returns to Fable for a design decision, not t
 ## 3. For Kasper
 
 The long parallel ledges on the flanks are not the grid coming back; they are the rock-strata layer putting an identical 280 m staircase at the same heights on every slope of the massif, so they are the next thing to fix now that the carving branch has merged. The smallest fix gives the strata a geology: a gently tilted bedding plane per range, a slightly different layer thickness per range, and layers that thin out and end over a few kilometres, which breaks the lock-step at almost no cost and stays within the proven no-pit budget. Cliffs come next as fault scarps up to about 80 m that cut across the ledges at any angle and cannot make closed pits; glacial headwalls need the drainage solver and wait for its next change.
+
+## Addendum A: stage-1 step-1 STOP (decided by Fable 5.1 on Kasper's instruction 2026-10-07, overrulable)
+
+Last Fable decision on this track: from 2026-10-07 new decisions go to Opus 5.5 (owner instruction). Where this addendum says "returns to Fable", read "returns to the Opus decision agent".
+
+Evidence: branch `mountains/strata-datum` ee9c613 (`docs/mountain-strata-datum-2026-10-07.md`: attribution holds, rock term 10.86 dB on the real tiles; fixture calibration midpoint fails; finding 1 planar flank; finding 2 span dependence). Fable read-only probes on the fixture ramp (seeds 740101-08, 35°, 3.2 km along contour):
+
+| arm | heightCombDb pooled (per-seed) | riser-spacing CV pooled (per-seed) | mean carve / v1 |
+|---|---|---|---|
+| v1 (main) | 39.0 (34.9-40.3) | 0.00 | 1.00 |
+| old stage 1 datum+lens | 23.3 (24.9-35.0) | 0.20 (0.05-0.25) | - |
+| per-bed, GAP .25, PROM_FLOOR .35 | 18.1 (14.5-25.2) | 0.59 (0.42-0.68) | 0.43 |
+| random-walk ledge null | 8.8 (7.1-16.0) | 0.24 (0.13-0.33) | - |
+| rock off | 13.7 (11.0-18.3) | n/a | 0 |
+
+Reversal spot-check of the per-bed design on planes 12-45°, 8 datum directions, foot included: min uphill slope ratio 0.40 at >= 30°, 0.99 at 12°, no reversal. Cost rock-alone 68 -> 116 ns.
+
+**Decision.** Any spatial modulation of the stratigraphic coordinate is gradient-bounded (~0.05) and needs >= ~5.6 km per period of phase shift, so it cannot de-regularise bands inside a 3 km view; straight parallel ledges on a planar flank are geologically fine, the artefact is identical thickness and depth. Lever = 1-D variation per bed: per-bed prominence with ledge-less beds (dominant), per-bed thickness, per-bed lateral lens; datum kept only to break the height lock and give dip on curved flanks. Rejected: domain warp (stage 1b), spatially varying period, per-strip period spread. This reverses the earlier "amplitude-only rejected" line.
+
+**Metrics.**
+- HARD A `riserSpacingCv` on a planar ramp: 35° plane, 256 x 12.5 m along contour, 160 x 25 m along fall line (carved 100-2900 m), fixture background, two tiles per seed; per fall-line column a riser = pixel pair where the rock term alone rises > 15 m uphill; spacings in carved height, merge < 70 m; pooled CV over 8 seeds x 2 tiles. BAD = v1 (~0.00), GOOD = random-walk null (bed thickness uniform [0.5P, 1.5P] by prefix sum, unit prominence, no datum, no lens; ~0.24). Threshold = pooled midpoint (~0.12); design pooled CV on fresh seeds 740201-08 >= threshold.
+- HARD B `heightCombDb` on the same ramp tiles (`HEIGHT_COMB` frozen): BAD v1 (~39), GOOD max(rock-off, null) (~13.7); threshold pooled midpoint (~26); design pooled on 740201-08 <= threshold.
+- HARD C (conditional) `riserSpacingCv` on the 20 frozen massif tiles via the trace worker (columns and rows, spacings only within monotone-uphill carved runs): BAD = main via the hook, GOOD = the null via the hook; pooled midpoint; if bad >= good or < 300 pooled spacings, C demotes to INFO (pre-registered).
+- INFO: real-tile heightCombDb (main 10.86), riser run count (expect -25..40 %). Old fixture-field calibration withdrawn. Thresholds recorded before any src edit; the design is never a control.
+
+**Design (constants frozen).** In `rockDetailM` after the `weight === 0` return, pinned `const jitter = ...` line kept textually:
+- `u = carvedM - DATUM_TAN*(sx*alongM + sy*acrossM) + jitter`, `DATUM_TAN = 0.05`, `(sx, sy)` seeded unit vector per strip (two hashes + sqrt).
+- Beds: `q = u / STRATA_PERIOD_M`, `k = floor(q)`; boundary k at `k + BED_SHIFT*(2*h01(k) - 1)`, `BED_SHIFT = 0.06` (thickness 246.4-313.6 m); resolve bed k-1/k/k+1 from the boundary hashes; `t = (q - lo)/(hi - lo)`; `bench(t)` unchanged.
+- Prominence `r = h01(k)`: `prom = r < BED_GAP ? 0 : PROM_FLOOR + (1 - PROM_FLOOR)*(r - BED_GAP)/(1 - BED_GAP)`, `BED_GAP = 0.25`, `PROM_FLOOR = 0.35`.
+- Per-bed lens: value noise, `LENS_FLOOR 0.4`, `LENS_LAMBDA_M 4000`, corners hashed with octave `4096 + k` (document no collision with gully octave 0; assert |k| <= 2048 over the gate pool).
+- `strata = bench(t)*prom*lens`; rest unchanged. Per-bed hashes keyed on (k, seed) only.
+- HARD 6 at `T_min = P*(1 - 2*BED_SHIFT) = 246.4`: benchBound 0.4397, bound 0.4536 <= 0.6, +0.5 = 0.954 < 1. HARD 7 `L_MAX`: strata term with `(|grad base| + DATUM_TAN)` and `T_min`, plus lens term `MAX_DEPTH_M*(1-LENS_FLOOR)*1.5*sqrt2/LENS_LAMBDA_M`.
+
+**Revised steps** (branch continues from ee9c613; each a stop point):
+1. Metric + calibration, no src change: `riserSpacingCv` and ramp builder in `tests/helpers/height-comb.mjs`; `null-edit.mjs` beside `stage1-edit.mjs`; A, B controls on 740101-08; C on the 20 tiles; thresholds into the evidence doc. STOP if v1 is not CV < 0.05 and comb > 30 pooled on the ramp, or the null reads CV < 0.15.
+2. Code as above; no per-strip period spread; no new imports; audited arithmetic; no `Math.cos/sin`.
+3. Tests: version `mountain-rock-detail-2`; HARD 6/7 as above; every `SOURCE.replace` needle throws when absent; HARD no-uphill-reversal row (planes 12/15/20/25/30/35/45°, 8 datum directions, 1 m central differences along the fall line, 65,536 samples per slope, foot band from carved 20 m, min ratio > 0; negative controls `BENCH_RISE 0.2` and `DATUM_TAN 0.5` (foot band) must fail; `DATUM_TAN 0.12` INFO); HARD A/B on 740201-08, HARD C per step 1; HARD 2 unchanged; gate pool 731001-08 single run, rows at unchanged limits (mean carve ~0.43 of main; any lower-limit row tripped = STOP, no tuning); cost row `ATLAS_M5_BENCH=1` <= 248 ns.
+4. Re-pins/identities as in section 2 step 4.
+5. Spectrum: HARD truth <= 4.7 dB; rock-off row = CR row exactly; INFO families, real-tile comb, riser runs.
+6. M3 eight rows on 730201-08 and 730301-08, no re-tuning; Raiva R1 >= 8 hard reject.
+7. In-massif warm bench <= 250 ns; `test:perf`; `test:affected --base main`; `test:full` once.
+8. GPU lock: cross-engine golden; blind probe pairs main vs branch at the Maithea axis station, a Raiva flank station and one long straight flank station, plus rock-off frames; judged on varied ledge thickness/depth, absent beds, ledges ending laterally, no tile-spanning identical bands; STOP on new regular structure.
+9. Counted cost protocol (O13 now signed by Kasper; pre-register which protocol), budgets unchanged; expected +0.15-0.2 points Maithea.
