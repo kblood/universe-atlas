@@ -10,32 +10,26 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {galaxies,sector,system} from '../src/catalog.ts';
 import {
-  RELIEF_CALIBRATION,TERRAIN_VERSION,LANDFORM_SHAPE_VERSION,baseTerrainSampler,terrainSampler,terrainFloorSampler,
-  reliefLayersSampler,terrainWindowMaxM,terrainUnitWindowMaxM,bodyHeightBoundM,reliefTextureRange,tectonicReliefOf,
+  RELIEF_CALIBRATION,TERRAIN_VERSION,LANDFORM_SHAPE_VERSION,reliefLayersSampler,tectonicReliefOf,
 } from '../src/terrain.ts';
 import {biomeClassifier} from '../src/surface-biomes.ts';
 import {temperateHabitat} from '../src/surface-climate.ts';
 import {planetGeophysics} from '../src/planet-geophysics.ts';
-import {fib,maithea,goldenTerrainBodies,waterWorlds} from './terrain-climate-fixtures.mjs';
+import {fib,maithea,waterWorlds} from './terrain-climate-fixtures.mjs';
 // T6 decision 3: the global relief statistics (hypsometry, coastline, corpus snow, window, height bound) read the
 // level-0 field (no M3 carving, no M5 rock: an upper envelope of the truth inside the massifs, identical outside).
 // The truth's Maithea hypsometry is reported in docs/mountains-t6-wiring-2026-10-06.md. Bands unchanged.
 import {statisticSampler,fullOnly} from './helpers/statistic-level.mjs';
 // Pointwise invariants (coastline, window, height bound) run on two samplers: level 0 by default and the carved truth
-// in test:full (T6 Astra review: a pointwise invariant must keep a truth copy).
-const LEVEL0={sampler:body=>statisticSampler(body),floor:body=>statisticSampler(body,{exposeFloor:true})};
-const TRUTH={sampler:body=>terrainSampler(body),floor:body=>terrainFloorSampler(body)};
+// in test:full (T6 Astra review: a pointwise invariant must keep a truth copy). The per-body scans live in
+// tests/helpers/body-chunks.mjs (O3, docs/truth-scan-chunks-2026-10-07.md): level 0 runs them in-process, the truth
+// splits them across worker threads (coastline and window: one per body; height bound: 6 workers pulling the 60).
+import {scanBodies,inOrder,logScan} from './helpers/body-chunks.mjs';
+const LEVEL0={mode:'level0',workers:0,boundWorkers:0};
+const TRUTH={mode:'truth',workers:Infinity,boundWorkers:6};
 
 const SNOW='Alpine / polar snow';
 const quantile=(a,q)=>{const s=Float64Array.from(a).sort();return s[Math.floor(q*(s.length-1))];};
-const identityBodies=()=>[maithea(),...goldenTerrainBodies().slice(0,5)];
-/** Golden-generator catalogue bodies (all kinds and types), deterministic order. */
-function catalogueBodies(){
-  const refs=[];
-  for(const g of galaxies('LETHRA-GOLDEN-001').slice(0,3))
-    for(const c of [[266,0,0],[0,0,0],[-2,-1,-2],[12,-4,7]])refs.push(...sector(g,c).refs);
-  return refs.slice(0,220).map(system).flatMap(s=>[...s.planets,...s.moons]);
-}
 function spearman(a,b){
   const rank=v=>{const idx=v.map((x,i)=>[x,i]).sort((p,q)=>p[0]-q[0]),r=new Array(v.length);idx.forEach(([,i],k)=>r[i]=k);return r;};
   const ra=rank(a),rb=rank(b),n=a.length,m=(n-1)/2;let num=0,da=0,db=0;
@@ -52,12 +46,11 @@ test('versions and the frozen R-CAL-1 calibration (any change is a TERRAIN_VERSI
   assert.equal(sha,'ec15e0e409caa3a0c94291789982f067f6f4257e437b90ac4f11231fd28e1ea3',`RELIEF_CALIBRATION changed (sha ${sha}); bump TERRAIN_VERSION and re-pin`);
 });
 
-function coastline(make){
-  const N=20000;let flips=0,ocean=0;
-  for(const body of identityBodies()){
-    const base=baseTerrainSampler(body),relief=make.sampler(body);
-    for(let i=0;i<N;i++){const d=fib(i,N),o=relief(d).ocean;flips+=o!==base(d).ocean;ocean+=o;}
-  }
+// 6 identity bodies x 20000 directions (SCANS.coastline per body); flips and ocean samples summed in body order.
+async function coastline(make){
+  const scan=await scanBodies('coastline','identity',make.mode,{workers:make.workers});logScan('coastline',make.mode,scan);
+  let flips=0,ocean=0;
+  for(const {value} of inOrder(scan)){flips+=value.flips;ocean+=value.ocean;}
   assert.ok(ocean>10000,`ocean samples ${ocean}`);
   assert.equal(flips,0);
 }
@@ -157,32 +150,24 @@ test('corpus of 132 habitable water planets: snow share median <= 20%, at most 2
   for(let i=1;i<bins.length;i++)assert.ok(bins[i]<=bins[i-1],`snow median falls as anchor temperature rises: ${bins}`);
 });
 
-function windowInvariant(make){
-  const N=20000,bodies=[...identityBodies(),...waterWorlds().slice(1)];
-  for(const body of bodies){
-    const s=make.floor(body),bound=terrainWindowMaxM(body);
-    assert.ok(Math.abs(bound-tectonicReliefOf(body)*terrainUnitWindowMaxM(body))<1e-9);
-    let bad=0,max=0;
-    for(let i=0;i<N;i++){const x=s(fib(i,N)),w=x.groundHeightM-x.floorM;if(x.windowM!==w||!(w>=0&&w<=bound))bad++;if(w>max)max=w;}
-    assert.equal(bad,0,`${body.name}: window max ${max} of ${bound}`);
-  }
+// Identity bodies + the other three water worlds x 20000 directions; the per-body asserts run in SCANS.hypsometryWindow
+// and the first failing body (body order) is reported.
+async function windowInvariant(make){
+  const scan=await scanBodies('hypsometryWindow','hypsometryWindow',make.mode,{workers:make.workers});logScan('hypsWindow',make.mode,scan);
+  for(const {value} of inOrder(scan))assert.equal(value.bad,0);
 }
 test('window invariant 0 <= h - floorM <= terrainWindowMaxM(body) (tau-aware) on the identity bodies and the four water worlds',()=>windowInvariant(LEVEL0));
 test('window invariant on the carved truth (test:full)',fullOnly('truth window scan solves M3 blocks'),()=>windowInvariant(TRUTH));
 
-function heightBound(make){
-  const all=catalogueBodies(),pick=[];
-  for(const type of [...new Set(all.map(b=>b.type))])pick.push(...all.filter(b=>b.type===type).slice(0,10));
-  // 4 water worlds + 10 per type (Volcanic, Rocky, Oceanic, Ice, Gas giant, Airless moon), first 60.
-  const bodies=[...waterWorlds(),...pick.filter(b=>!waterWorlds().some(w=>w.id===b.id))].slice(0,60);
-  assert.equal(bodies.length,60);
-  const N=20000;let outside=0;
-  for(const body of bodies){
-    const ts=make.sampler(body),{minM,maxM}=bodyHeightBoundM(body),range=reliefTextureRange(body);
-    assert.ok(minM<=maxM);
-    if(maxM>minM)assert.deepEqual(range,{minM,maxM});
-    for(let i=0;i<N;i++){const h=ts(fib(i,N)).groundHeightM;if(!(h>=minM&&h<=maxM))outside++;}
-  }
+// 4 water worlds + 10 per type (Volcanic, Rocky, Oceanic, Ice, Gas giant, Airless moon), first 60 (BODY_SETS.heightBound)
+// x 20000 directions. The truth runs 6 workers pulling bodies from one queue; scanBodies asserts the chunks' body ids
+// are exactly the 60 ids, each once.
+async function heightBound(make){
+  const scan=await scanBodies('heightBound','heightBound',make.mode,{workers:make.boundWorkers});logScan('heightBound',make.mode,scan);
+  assert.equal(scan.bodies.length,60);
+  if(scan.chunks)assert.equal(scan.chunks.length,6);
+  let outside=0;
+  for(const {value} of inOrder(scan))outside+=value.outside;
   assert.equal(outside,0);
 }
 test('bodyHeightBoundM contains every sample: 60 catalogue bodies x 20000 directions (all kinds); the orbit texture range is that bound',()=>heightBound(LEVEL0));

@@ -5,26 +5,17 @@
 // are pinned bit-identical in tests/terrain-elevation-identity.test.mjs.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {hash64,noise} from '../src/catalog.ts';
 import {terrainSampler,baseTerrainSampler,waterWorldLandColour,bodyHeightBoundM,TERRAIN_VERSION,TERRAIN_CLIMATE_VERSION} from '../src/terrain.ts';
 import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_VERSION,CLIMATE_CALIBRATION} from '../src/surface-climate.ts';
 import {biomeClassifier} from '../src/surface-biomes.ts';
 import {fib,waterWorlds,goldenTerrainBodies} from './terrain-climate-fixtures.mjs';
 // T6 decision 3: the global colour/climate statistics read the level-0 field (tests/helpers/statistic-level.mjs).
 import {statisticSampler,fullOnly} from './helpers/statistic-level.mjs';
+// The colour identity scan, with the independent copy of the water-land colour grain (seed derivation and constants
+// written out, so a drifted src helper is caught rather than reused), is SCANS.colour.
+import {scanBodies,inOrder,logScan} from './helpers/body-chunks.mjs';
 
 const N=20000;
-/** Independent copy of the water-land colour grain (seed derivation and constants
- * written out here on purpose, so a drifted shared helper is caught rather than
- * reused). terrain-1.8.1-grain (mountains step G, owner decision (b)): the 800 m
- * local grain of water-world LAND colour is .952 + n x .096 (was .88 + n x .24,
- * which every other palette still uses); the 115 grain is unchanged. */
-function grainOf(body){
-  const code=Number(hash64(body.seed+'/macro-v1')&0xffffffffn);
-  const n=(d,f,seed)=>noise(d[0]*f+13,d[1]*f+37,d[2]*f+19,code+seed);
-  return d=>[0.91+n(d,115,35)*0.18,.952+n(d,body.radiusM/800,74)*.096];
-}
-const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 
 test('versions: terrain colour v2 names the climate model it reads',()=>{
   // Re-pinned for P4-RELIEF (terrain-1.8.0-relief, surface-climate-1.1-geo-g),
@@ -35,30 +26,17 @@ test('versions: terrain colour v2 names the climate model it reads',()=>{
 });
 
 // Pointwise colour identity, run on two samplers: level 0 by default, the carved truth (terrainSampler) in test:full
-// (T6 Astra review: a pointwise identity is not only a statistic, so the truth copy is kept).
-function colourIdentity(makeSampler){
-  for(const body of waterWorlds()){
-    const sample=makeSampler(body),climate=surfaceClimate(climateForcingFor(body)),o=createClimateSample(),grain=grainOf(body);
-    let land=0,snowy=0,forested=0;
-    for(let i=0;i<N*3;i++){
-      const d=fib(i,N*3),s=sample(d);
-      if(s.ocean)continue;
-      land++;
-      // includeCraters defaults to false, so groundHeightM IS the post-landform,
-      // pre-crater height the colour is evaluated at.
-      climate(d,s.groundHeightM,o);
-      const [g,l]=grain(d);
-      const expected=waterWorldLandColour(o,s.groundHeightM).map(v=>clamp(v*g*l,0,255));
-      if(s.color[0]!==expected[0]||s.color[1]!==expected[1]||s.color[2]!==expected[2])
-        assert.fail(`${body.name} ${d}: ${s.color} !== ${expected}`);
-      snowy+=o.snowFraction>.6;forested+=o.forestSuitability01>.5;
-    }
-    assert.ok(land>=N,`${body.name} land samples ${land} over the whole sphere`);
-    assert.ok(snowy>0||forested>0,`${body.name} exercises the climate colour`);
-  }
+// (T6 Astra review: a pointwise identity is not only a statistic, so the truth copy is kept). The per-world scan
+// (60000 directions, >= N = 20000 land, the independent grain copy and every assert) is SCANS.colour in
+// tests/helpers/body-chunks.mjs (O3, docs/truth-scan-chunks-2026-10-07.md): level 0 in-process, the truth one worker
+// thread per water world; the first failing world (world order) is reported.
+async function colourIdentity(mode,workers){
+  const scan=await scanBodies('colour','waterWorlds',mode,{workers});logScan('colour',mode,scan);
+  assert.equal(scan.bodies.length,4);
+  for(const {body,value} of inOrder(scan))assert.ok(value.land>=N,`${body.name} land samples ${value.land} over the whole sphere`);
 }
-test('water-world land colour === waterWorldLandColour(climate at post-landform height) x grain, 20k land directions x 4 worlds',()=>colourIdentity(statisticSampler));
-test('water-world land colour identity on the carved truth, 20k land directions x 4 worlds (test:full)',fullOnly('truth colour identity solves M3 blocks'),()=>colourIdentity(body=>terrainSampler(body)));
+test('water-world land colour === waterWorldLandColour(climate at post-landform height) x grain, 20k land directions x 4 worlds',()=>colourIdentity('level0',0));
+test('water-world land colour identity on the carved truth, 20k land directions x 4 worlds (test:full)',fullOnly('truth colour identity solves M3 blocks'),()=>colourIdentity('truth',4));
 
 function snowIdentity(makeSampler){
   const body=waterWorlds()[0],sample=makeSampler(body),climate=surfaceClimate(climateForcingFor(body)),o=createClimateSample();
