@@ -39,7 +39,7 @@ import {PlanetForest} from './planet-forest.ts';
 import {PlanetRocks} from './planet-rocks.ts';
 import {TOTAL_BUDGET_BYTES,LIFE_RESERVE_BYTES,ROCK_RESERVE_BYTES,TERRAIN_BUDGET_BYTES,PENDING_TILE_BYTES,TERRAIN_PRESSURE_ENTER_FRACTION,TERRAIN_PRESSURE_EXIT_FRACTION,rendererMemoryAccounting,terrainAdmission} from './renderer-memory.ts';
 import type {RockGate} from './rock-field.ts';
-import {PLANET_DETAIL} from './planet-detail.ts';
+import {PLANET_DETAIL,altitudeGate} from './planet-detail.ts';
 import type {Species} from './biosphere-model.ts';
 import type {TreeAssetOptions} from './tree-asset.ts';
 
@@ -811,6 +811,8 @@ export class PlanetRenderer {
   private waterBucket = 0;
   /** `PlanetRendererOptions.presentationContinuity`, fixed for the renderer's lifetime. */
   private readonly continuity:boolean;
+  /** Continuity only: the ground-life altitude latch (`altitudeGate`, 350 m in / 380 m out). */
+  private groundLifeOn=false;
   constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,readonly anisotropy=1, private surfaceAgeMyr = DEFAULT_SURFACE_AGE_MYR,options:PlanetRendererOptions={}) {
     this.continuity=options.presentationContinuity===true;
     this.faunaNear=new FaunaNearRigs(this.continuity?{crossFade:true}:{});
@@ -1317,7 +1319,10 @@ export class PlanetRenderer {
     const rocksStarted=systemTimer.start();
     this.rocks.update({eye,focus:lifeFocus,altitudeM,gate:this.lifeContext?.rocks,relief:this.relief,waterLevelM:snappedWaterLevelM,frusta,shadowFrustum});
     systemTimer.stop('rocks',rocksStarted);
-    if (this.relief === 1 && (contact||altitudeM<PLANET_DETAIL.groundLifeAltitudeM) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs,shadowFrustum); this.lifeMs=performance.now()-lifeStarted; }
+    // Continuity (F3): the 350 m life gate latches on and holds to 380 m. Off,
+    // the former single-threshold expression below is used exactly as before.
+    if (this.continuity) this.groundLifeOn=altitudeGate(this.groundLifeOn,altitudeM,PLANET_DETAIL.groundLifeAltitudeM,PLANET_DETAIL.groundLifeAltitudeExitM);
+    if (this.relief === 1 && (contact||(this.continuity?this.groundLifeOn:altitudeM<PLANET_DETAIL.groundLifeAltitudeM)) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs,shadowFrustum); this.lifeMs=performance.now()-lifeStarted; }
     else { this.hideLife(); this.lifeMs=0; }
     const direction = eye.clone().normalize();
     const pixels = height / (2 * Math.tan(fov * Math.PI / 360));
