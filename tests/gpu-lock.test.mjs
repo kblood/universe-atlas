@@ -77,6 +77,36 @@ test('lock order: a capture path (capture: true) is refused while it holds the t
   }finally{if(savedToken===undefined)delete process.env.ATLAS_TEST_SLOT_TOKEN;else process.env.ATLAS_TEST_SLOT_TOKEN=savedToken;}
 });
 
+// I8 (Astra 3; docs/shared-test-slot-2026-10-07.md "Tickets, pending waits and the descendant registry"): a process with
+// a pending slot wait must not take the GPU lock from another async path - a slot holder may be waiting for that GPU.
+test('lock order (I8): a pending test-slot wait refuses the GPU lock and names the fix; once the wait is aborted or resolved, slot -> GPU works', async()=>{
+  const {hostname}=await import('node:os');
+  const savedToken=process.env.ATLAS_TEST_SLOT_TOKEN;delete process.env.ATLAS_TEST_SLOT_TOKEN;
+  const dir=join(root,'pending-slot');
+  try{
+    // A live holder (this pid: never reaped) keeps the sandbox slot busy, so the next acquisition stays pending.
+    await mkdir(dir);await writeFile(join(dir,'owner.txt'),JSON.stringify({name:'slot holder that waits for the GPU',pid:process.pid,host:hostname()}));
+    const ac=new AbortController();
+    const pending=acquireTestSlot({dir,owner:'smoke run',retryMs:10,signal:ac.signal});pending.catch(()=>{});
+    await new Promise(r=>setTimeout(r,30));
+    await assert.rejects(acquireGpuLock({owner:'capture',log:quiet,listBrowsers:async()=>[]}),
+      /lock order violation: "capture" asks for the GPU lock while this process is still waiting for the test slot \(smoke run\); release the pending slot wait first \(await the slot or abort it/);
+    assert.equal(existsSync(GPU_LOCK_DIR),false,'the GPU lock was never touched');
+    // Negative 1: abort the pending wait - the GPU lock is allowed again.
+    ac.abort();await assert.rejects(pending,/abort/i);
+    const g=await acquireGpuLock({owner:'capture',log:quiet,listBrowsers:async()=>[]});await g.release();
+    // Negative 2: a wait that resolves into a held slot is the allowed order slot -> GPU.
+    const second=acquireTestSlot({dir,owner:'golden',retryMs:10});
+    await new Promise(r=>setTimeout(r,30));
+    await assert.rejects(acquireGpuLock({owner:'golden capture',log:quiet,listBrowsers:async()=>[]}),/still waiting for the test slot \(golden\)/);
+    await rm(dir,{recursive:true,force:true});
+    const slot=await second;
+    const g2=await acquireGpuLock({owner:'golden capture',log:quiet,listBrowsers:async()=>[]});await g2.release();
+    slot.release();
+    assert.equal(existsSync(GPU_LOCK_DIR),false);assert.equal(existsSync(dir),false);
+  }finally{if(savedToken===undefined)delete process.env.ATLAS_TEST_SLOT_TOKEN;else process.env.ATLAS_TEST_SLOT_TOKEN=savedToken;await rm(dir,{recursive:true,force:true});}
+});
+
 // Preview-server port selection for the browser runners (tests/helpers/free-port.mjs; docs/test-fixes-2026-10-07.md).
 // A tiny child HTTP server stands in for `vite preview --strictPort`: it exits 1 on EADDRINUSE and answers its stamp.
 const {portFree,ephemeralPort,parsePortOption,startOnFreePort,stopServer}=await import('./helpers/free-port.mjs');

@@ -131,7 +131,7 @@ test('never nest: a child holding the parent token runs through; exclusive insid
   const s = await acquireTestSlot({dir, mode: 'shared', tokens: 4});
   await withEnv({ATLAS_TEST_SLOT_TOKEN: s.token}, async () => {
     await assert.rejects(acquireTestSlot({dir, timeoutMs: 0}), /never nest/);
-    assert.ok((await acquireTestSlot({dir, mode: 'shared', tokens: 2, timeoutMs: 0})).nested);
+    const n3 = await acquireTestSlot({dir, mode: 'shared', tokens: 2, timeoutMs: 0}); assert.ok(n3.nested); n3.release();
   });
   s.release();
   await withEnv({ATLAS_TEST_SLOT_TOKEN: randomUUID()}, async () => { const l = await acquireTestSlot({dir}); assert.equal(l.nested, undefined); l.release(); });
@@ -272,4 +272,267 @@ test('O1: defaultSharedSlotOn sets 1 only when unset; 0 and an empty value stay 
     assert.deepEqual([seen.shared, seen.excl, seen.flag], expect, `flag ${flag}`);
     assert.equal(existsSync(dir), false); assert.deepEqual(holderFiles(dir), []);
   }
+});
+
+// I8 / T1 (docs/shared-test-slot-2026-10-07.md "Tickets, pending waits and the descendant registry"): FIFO tickets,
+// published pending waits, legacy coexistence and the descendant registry. Sandbox dirs under test-results only; the
+// "live" foreign pids are throwaway sleeper processes, never a real slot user.
+import {rmdirSync} from 'node:fs';
+import {pathToFileURL} from 'node:url';
+const {pendingDir, nestedDir, nestedEntries, pendingSlotWaits} = slotMod;
+const until = async (cond, what, ms = 8000) => { for (const end = Date.now() + ms; Date.now() < end; await tick(5)) if (await cond()) return; throw new Error(`timed out waiting for ${what}`); };
+const ticketFiles = dir => existsSync(pendingDir(dir)) ? readdirSync(pendingDir(dir)).filter(n => n.endsWith('.json')) : [];
+const ticketPids = dir => ticketFiles(dir).map(n => { try { return JSON.parse(readFileSync(join(pendingDir(dir), n), 'utf8')).pid; } catch { return null; } });
+const KIDS = new Set();
+test.afterEach(() => { for (const k of KIDS) k.kill(); KIDS.clear(); });
+const track = c => { KIDS.add(c); c.on('close', () => KIDS.delete(c)); return c; };
+const sleeper = () => { const s = track(spawn(process.execPath, ['-e', 'setTimeout(() => {}, 120000)'], {stdio: 'ignore'})); s.closed = new Promise(r => s.on('close', r)); return s; };
+const putTicket = (dir, name, t) => { mkdirSync(pendingDir(dir), {recursive: true}); const p = join(pendingDir(dir), name); writeFileSync(p, JSON.stringify({host: hostname(), time: new Date().toISOString(), since: Date.now(), ticket: randomUUID(), class: 'ticket', holds: 0, ...t})); return p; };
+// A child process that takes the slot from the helper under test, prints {"ev":"in"} once it holds, and releases when
+// its stdin gets a line (or closes). It never inherits the runner's live-slot token.
+const childScript = join(root, 'slot-child.mjs');
+writeFileSync(childScript, `const {acquireTestSlot} = await import(${JSON.stringify(pathToFileURL(join(process.cwd(), 'tests/helpers/test-slot.mjs')).href)});
+const [mode, tokens, timeoutMs] = process.argv.slice(2);
+try {
+  const l = await acquireTestSlot({owner: process.env.CHILD_NAME, mode, tokens: mode === 'shared' ? Number(tokens) : undefined, retryMs: 20, timeoutMs: Number(timeoutMs)});
+  console.log(JSON.stringify({ev: 'in', t: Date.now(), pid: process.pid, nested: !!l.nested, id: l.id ?? null}));
+  let done = false; const out = () => { if (done) return; done = true; l.release(); console.log(JSON.stringify({ev: 'out', t: Date.now()})); process.stdin.destroy(); };
+  process.stdin.on('data', out); process.stdin.on('end', out);
+} catch (e) { console.log(JSON.stringify({ev: 'error', message: e.message})); process.exitCode = 3; process.stdin.destroy(); }
+`);
+function child(name, mode, tokens, {timeoutMs = 20000, env = {}} = {}) {
+  const e = {...process.env, ATLAS_SLOT_SHARED: '1', CHILD_NAME: name};
+  for (const k of ['ATLAS_TEST_SLOT_TOKEN', 'ATLAS_TEST_SLOT_NESTED', 'NODE_TEST_CONTEXT']) delete e[k];
+  const c = track(spawn(process.execPath, [childScript, mode, String(tokens), String(timeoutMs)], {env: {...e, ...env}, stdio: ['pipe', 'pipe', 'pipe']}));
+  c.events = []; c.err = ''; let buf = '';
+  c.stdout.on('data', b => { buf += b; for (let i; (i = buf.indexOf('\n')) >= 0;) { const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (line.startsWith('{')) c.events.push(JSON.parse(line)); } });
+  c.stderr.on('data', b => { c.err += b; });
+  c.exited = new Promise(r => c.on('close', code => r(code)));
+  c.seen = ev => c.events.find(x => x.ev === ev);
+  c.until = async ev => { await until(() => c.seen(ev) || c.seen('error'), `${name} ${ev}`); const x = c.seen(ev); if (!x) throw new Error(`${name}: ${c.seen('error').message}\n${c.err}`); return x; };
+  c.go = () => { try { c.stdin.end('go\n'); } catch {} };
+  return c;
+}
+
+test('FIFO tickets: a 16-token waiter behind a stream of 4-token holders gets in within 4 releases; later small callers queue behind it (negative: without the queue it starves)', {timeout: 60000}, () => shared(async () => {
+  const hooks = slotMod.slotTestHooks;
+  for (const ignoreQueue of [false, true]) {
+    const dir = join(root, `fifo-${ignoreQueue ? 'off' : 'on'}`), order = [], holders = [], late = [], ac = new AbortController(), signal = ac.signal;
+    let bigP = null;
+    hooks.ignoreQueue = ignoreQueue;
+    try {
+      for (let i = 0; i < 7; i++) holders.push(await acquireTestSlot({dir, mode: 'shared', tokens: 4, retryMs: 10, owner: `h${i}`}));
+      let big = null, releases = 0;
+      bigP = acquireTestSlot({dir, mode: 'shared', tokens: 16, retryMs: 10, owner: 'big', signal}).then(l => { big = l; order.push('big'); });
+      await until(() => ticketFiles(dir).length === 1, 'the big waiter ticket');
+      while (!big && releases < 12) {
+        holders.shift().release(); releases++;
+        const n = releases;
+        late.push(acquireTestSlot({dir, mode: 'shared', tokens: 4, retryMs: 10, owner: `late${n}`, signal}).then(l => { holders.push(l); order.push(`late${n}`); }));
+        // Condition waits, not a fixed tick (a busy box can miss any fixed window): with the queue, the late caller's
+        // ticket must be visible behind the big one (big + n late tickets) before the next release, and the 4th release
+        // must admit the big waiter; without it, the late caller must have overtaken (been admitted) first.
+        await until(() => big || (ignoreQueue ? order.includes(`late${n}`) : ticketFiles(dir).length >= releases + 1), `late${n} ticket/admission`);
+        if (!ignoreQueue && releases === 4) await until(() => big, 'big admitted', 5000);
+      }
+      if (!ignoreQueue) {
+        assert.ok(big, `the 16-token waiter acquired (after ${releases} releases)`);
+        assert.equal(releases, 4, '28 - 16 = 12: exactly 4 of the 7 four-token holders had to go');
+        assert.equal(order[0], 'big', `no later 4-token caller overtook it: ${order.join(',')}`);
+        big.release();
+        await Promise.all(late);
+        assert.deepEqual(order, ['big', 'late1', 'late2', 'late3', 'late4'], 'the queued small callers then enter in arrival order');
+      } else {
+        assert.equal(big, null, `negative: without the queue, a stream of 4-token callers keeps the 16-token waiter out (${releases} releases, order ${order.join(',')})`);
+        assert.equal(order.length, 12, 'every late caller overtook it');
+        hooks.ignoreQueue = false;
+        for (const h of holders.splice(0)) h.release();
+        await bigP; big.release();
+      }
+      await bigP;
+      for (const h of holders) h.release();
+      assert.deepEqual(holderFiles(dir), []); assert.deepEqual(ticketFiles(dir), []);
+    } finally {
+      hooks.ignoreQueue = false; ac.abort();
+      await Promise.allSettled([bigP, ...late].filter(Boolean));
+      for (const h of holders) h.release();
+    }
+  }
+}));
+test('FIFO tickets: concurrent shared callers still never exceed the capacity, with and without the queue', {timeout: 60000}, () => shared(async () => {
+  for (const ignoreQueue of [false, true]) {
+    slotMod.slotTestHooks.ignoreQueue = ignoreQueue;
+    try {
+      const dir = join(root, `race-q-${ignoreQueue}`); let inUse = 0, peak = 0;
+      await Promise.all(Array.from({length: 12}, async () => {
+        const l = await acquireTestSlot({dir, mode: 'shared', tokens: 10, retryMs: 5});
+        inUse += 10; peak = Math.max(peak, inUse); await tick(15); inUse -= 10; l.release();
+      }));
+      assert.ok(peak <= SLOT_CAPACITY && peak >= 10, `peak ${peak} tokens (queue ${ignoreQueue ? 'off' : 'on'})`);
+      assert.deepEqual(holderFiles(dir), []); assert.deepEqual(ticketFiles(dir), []);
+    } finally { slotMod.slotTestHooks.ignoreQueue = false; }
+  }
+}));
+test('pending waits: published as a ticket, removed on acquire, timeout and abort; dead tickets reaped; stale or slot-holding ones never block and are kept (negative: a fresh live earlier ticket blocks)', {timeout: 60000}, () => shared(async () => {
+  const dir = join(root, 'tickets'), s = sleeper();
+  try {
+    const full = await acquireTestSlot({dir, mode: 'shared', tokens: 28});
+    const ac = new AbortController();
+    const w = acquireTestSlot({dir, mode: 'shared', tokens: 4, retryMs: 10, owner: 'waiter', signal: ac.signal});
+    await until(() => ticketFiles(dir).length === 1, 'pending ticket');
+    const t = JSON.parse(readFileSync(join(pendingDir(dir), ticketFiles(dir)[0]), 'utf8'));
+    assert.deepEqual([t.name, t.pid, t.mode, t.tokens, t.host, t.holds], ['waiter', process.pid, 'shared', 4, hostname(), 1], 'this process holds `full`');
+    assert.ok(Number.isFinite(t.since)); assert.match(ticketFiles(dir)[0], /^\d{17}-\d{6}-[0-9a-f-]{36}\.json$/);
+    assert.deepEqual(pendingSlotWaits(), {waits: 1, owners: ['waiter']});
+    ac.abort(); await assert.rejects(w, /abort/i);
+    assert.deepEqual(ticketFiles(dir), [], 'abort removes the ticket'); assert.equal(pendingSlotWaits().waits, 0);
+    await assert.rejects(acquireTestSlot({dir, mode: 'shared', tokens: 4, retryMs: 10, timeoutMs: 40}), /28\/28 tokens in use/);
+    assert.deepEqual(ticketFiles(dir), [], 'timeout removes the ticket');
+    full.release();
+    const l = await acquireTestSlot({dir, mode: 'shared', tokens: 4}); assert.deepEqual(ticketFiles(dir), [], 'acquire removes the ticket'); l.release();
+    // A dead local ticket at the very front of the queue is reaped and does not block.
+    const deadTicket = putTicket(dir, `00000000000000001-000001-${randomUUID()}.json`, {name: 'dead waiter', pid: await deadPid(), mode: 'shared', tokens: 28});
+    const a = await acquireTestSlot({dir, mode: 'shared', tokens: 4, retryMs: 10, timeoutMs: 2000}); a.release();
+    assert.equal(existsSync(deadTicket), false, 'dead ticket reaped');
+    // Live but stale (no heartbeat), and live but its process already holds the slot: no queue position, never deleted.
+    const stale = putTicket(dir, `00000000000000002-000001-${randomUUID()}.json`, {name: 'frozen waiter', pid: s.pid, mode: 'exclusive'});
+    utimesSync(stale, new Date(0), new Date(0));
+    const holding = putTicket(dir, `00000000000000003-000001-${randomUUID()}.json`, {name: 'nesting waiter', pid: s.pid, mode: 'shared', tokens: 28, holds: 1});
+    const b = await acquireTestSlot({dir, mode: 'shared', tokens: 4, retryMs: 10, timeoutMs: 2000}); b.release();
+    assert.ok(existsSync(stale) && existsSync(holding), 'live tickets are never deleted');
+    rmSync(stale); rmSync(holding);
+    // Negative: a fresh live earlier shared ticket, and a fresh live exclusive ticket, do keep a shared caller out.
+    const ahead = putTicket(dir, `00000000000000004-000001-${randomUUID()}.json`, {name: 'earlier waiter', pid: s.pid, mode: 'shared', tokens: 4});
+    await assert.rejects(acquireTestSlot({dir, mode: 'shared', tokens: 1, retryMs: 10, timeoutMs: 60}), /queued behind 1 earlier shared waiter\(s\) \(earlier waiter pid/);
+    rmSync(ahead);
+    const excl = putTicket(dir, `99999999999999999-000001-${randomUUID()}.json`, {name: 'queued exclusive', pid: s.pid, mode: 'exclusive'});
+    await assert.rejects(acquireTestSlot({dir, mode: 'shared', tokens: 1, retryMs: 10, timeoutMs: 60}), /an exclusive caller is queued \(queued exclusive pid/);
+    assert.ok(existsSync(excl)); rmSync(excl);
+    assert.deepEqual(holderFiles(dir), []); assert.deepEqual(ticketFiles(dir), []);
+  } finally { s.kill(); await s.closed; }
+}));
+test('legacy coexistence: old-format exclusive dirs and shared holder files block new callers correctly and are never deleted while their pid lives (negative: once it dies they are reaped)', {timeout: 60000}, () => shared(async () => {
+  const dir = join(root, 'legacy'), sd = sharedDir(dir), s = sleeper();
+  try {
+    // Old exclusive owners: pre-token {name,pid,host} and the token format of main before this branch.
+    for (const owner of [{name: 'old npm test', pid: s.pid, host: hostname()}, {name: 'old npm test (token)', pid: s.pid, host: hostname(), time: new Date().toISOString(), token: randomUUID()}]) {
+      mkdirSync(dir); const text = JSON.stringify(owner); writeFileSync(join(dir, 'owner.txt'), text);
+      await assert.rejects(acquireTestSlot({dir, mode: 'shared', tokens: 1, retryMs: 10, timeoutMs: 60}), /exclusive held by .*old npm test/);
+      await assert.rejects(acquireTestSlot({dir, retryMs: 10, timeoutMs: 60}), /still held by .*old npm test/);
+      assert.equal(readFileSync(join(dir, 'owner.txt'), 'utf8'), text, 'old exclusive owner untouched');
+      assert.deepEqual(readdirSync(dir), ['owner.txt']); rmSync(dir, {recursive: true});
+    }
+    // An old shared holder file (format of main before this branch), 20 tokens.
+    mkdirSync(sd, {recursive: true});
+    const oldName = `${randomUUID()}.json`, oldFile = join(sd, oldName);
+    const old = JSON.stringify({name: 'old test:smoke', pid: s.pid, host: hostname(), time: new Date().toISOString(), token: oldName.slice(0, 36), class: 'shared', tokens: 20});
+    writeFileSync(oldFile, old);
+    await assert.rejects(acquireTestSlot({dir, mode: 'shared', tokens: 16, retryMs: 10, timeoutMs: 60}), /20\/28 tokens in use by .*old test:smoke/);
+    const s8 = await acquireTestSlot({dir, mode: 'shared', tokens: 8});
+    // New-code tickets and registry entries live in their own dirs: an old reader (*.json directly in .shared) still
+    // counts exactly the two holders.
+    const waiter = acquireTestSlot({dir, mode: 'shared', tokens: 4, retryMs: 10});
+    await until(() => ticketFiles(dir).length === 1, 'waiter ticket');
+    const nested = await withEnv({ATLAS_TEST_SLOT_TOKEN: s8.token}, () => acquireTestSlot({dir, mode: 'shared', tokens: 4, timeoutMs: 0}));
+    assert.ok(nested.nested); assert.equal(nestedEntries(dir).length, 1);
+    assert.deepEqual(holderFiles(dir).sort(), [oldName, `${s8.token}.json`].sort());
+    await assert.rejects(acquireTestSlot({dir, retryMs: 10, timeoutMs: 80}), /2 shared holder\(s\), 28 tokens: .*old test:smoke/);
+    assert.equal(readFileSync(oldFile, 'utf8'), old, 'old shared holder untouched (no re-home, no reap)');
+    nested.release(); s8.release(); (await waiter).release();
+    assert.equal(readFileSync(oldFile, 'utf8'), old);
+    // Negative: the old holders were kept because their pid lives; once it dies the next scan reaps them.
+    s.kill(); await s.closed;
+    const all = await acquireTestSlot({dir, mode: 'shared', tokens: SLOT_CAPACITY, retryMs: 10, timeoutMs: 2000});
+    assert.equal(existsSync(oldFile), false, 'dead old shared holder reaped'); all.release();
+    mkdirSync(dir); writeFileSync(join(dir, 'owner.txt'), JSON.stringify({name: 'old npm test', pid: s.pid, host: hostname()}));
+    const ex = await acquireTestSlot({dir, retryMs: 10, timeoutMs: 2000}); ex.release();
+    assert.equal(existsSync(dir), false, 'dead old exclusive owner taken over');
+    assert.deepEqual(holderFiles(dir), []); assert.deepEqual(ticketFiles(dir), []);
+  } finally { s.kill(); await s.closed; }
+}));
+test('descendant registry: a parent that dies or releases while its pass-through child runs is re-homed to the child and kept until the child exits (negative: a dead parent without live descendants is reaped)', {timeout: 60000}, () => shared(async () => {
+  const dir = join(root, 'heir'), sd = sharedDir(dir), env = {ATLAS_TEST_SLOT_DIR: dir};
+  // (1) The parent process dies (killed, no exit handler): the next scan re-homes its holder file to the live child.
+  const s = sleeper(), token = randomUUID(), parentFile = join(sd, `${token}.json`);
+  mkdirSync(sd, {recursive: true});
+  writeFileSync(parentFile, JSON.stringify({name: 'parent runner', pid: s.pid, host: hostname(), time: new Date().toISOString(), token, class: 'shared', tokens: 4}));
+  const c = child('heir', 'shared', 4, {env: {...env, ATLAS_TEST_SLOT_TOKEN: token}});
+  const inEv = await c.until('in'); assert.equal(inEv.nested, true);
+  assert.deepEqual(nestedEntries(dir).map(e => [e.pid, e.root, e.parent, e.tokens]), [[c.pid, token, token, 4]]);
+  s.kill(); await s.closed;
+  await assert.rejects(acquireTestSlot({dir, retryMs: 10, timeoutMs: 120}), /1 shared holder\(s\), 4 tokens/);
+  const h = JSON.parse(readFileSync(parentFile, 'utf8'));
+  assert.deepEqual([h.token, h.pid, h.rehomed.from, h.rehomed.to], [token, c.pid, s.pid, inEv.id], 're-homed: same token, the child pid');
+  c.go(); assert.equal(await c.exited, 0);
+  assert.equal(existsSync(parentFile), false, 'the child was its last process: the record goes with it');
+  assert.deepEqual(nestedEntries(dir), []);
+  // (2) The parent releases normally (here: this process) while the child still runs: re-homed instead of deleted.
+  const p = await acquireTestSlot({dir, mode: 'shared', tokens: 4});
+  const c2 = child('heir2', 'shared', 2, {env: {...env, ATLAS_TEST_SLOT_TOKEN: p.token}});
+  assert.equal((await c2.until('in')).nested, true);
+  p.release();
+  assert.equal(JSON.parse(readFileSync(join(sd, `${p.token}.json`), 'utf8')).pid, c2.pid, 'kept alive under the child pid');
+  await assert.rejects(acquireTestSlot({dir, retryMs: 10, timeoutMs: 80}), /1 shared holder\(s\), 4 tokens/);
+  // (3) Negative: the child is killed too (no exit handler) - now nothing of the tree lives, and the record is reaped.
+  c2.kill(); await c2.exited;
+  const ex = await acquireTestSlot({dir, retryMs: 10, timeoutMs: 2000}); ex.release();
+  assert.deepEqual(holderFiles(dir), []); assert.deepEqual(nestedEntries(dir), []);
+  // (4) An exclusive parent re-homes the same way (owner.txt keeps its token, gets the child pid).
+  const s2 = sleeper(), t2 = randomUUID();
+  mkdirSync(dir); writeFileSync(join(dir, 'owner.txt'), JSON.stringify({name: 'exclusive parent', pid: s2.pid, host: hostname(), time: new Date().toISOString(), token: t2}));
+  const c3 = child('heir3', 'exclusive', 0, {env: {...env, ATLAS_TEST_SLOT_TOKEN: t2}});
+  assert.equal((await c3.until('in')).nested, true);
+  s2.kill(); await s2.closed;
+  await assert.rejects(acquireTestSlot({dir, mode: 'shared', tokens: 1, retryMs: 10, timeoutMs: 80}), /exclusive held by .*exclusive parent/);
+  assert.equal(JSON.parse(readFileSync(join(dir, 'owner.txt'), 'utf8')).pid, c3.pid);
+  c3.go(); assert.equal(await c3.exited, 0);
+  assert.equal(existsSync(dir), false, 're-homed exclusive dir freed by its last descendant');
+}));
+test('descendant registry: nested siblings share the parent tokens (sum cap); a grandchild counts against its own parent (negative: over the cap it waits and times out)', {timeout: 60000}, () => shared(async () => {
+  const dir = join(root, 'sibs'), env = {ATLAS_TEST_SLOT_DIR: dir};
+  const p = await acquireTestSlot({dir, mode: 'shared', tokens: 4}), tok = {...env, ATLAS_TEST_SLOT_TOKEN: p.token};
+  const c1 = child('sib1', 'shared', 4, {env: tok}); await c1.until('in');
+  const c2 = child('sib2', 'shared', 2, {env: tok, timeoutMs: 300});
+  assert.equal(await c2.exited, 3);
+  assert.match(c2.seen('error').message, /nested, 2 of 4 tokens\) still unavailable: 4\/4 tokens of the shared parent in use by nested sibling\(s\) sib1/);
+  c1.go(); assert.equal(await c1.exited, 0);
+  // Two siblings of 2 fit together under a 4-token parent.
+  const c3 = child('sib3', 'shared', 2, {env: tok}), c4 = child('sib4', 'shared', 2, {env: tok});
+  const e3 = await c3.until('in'); await c4.until('in');
+  // A grandchild under sib3 (2 tokens) is counted against sib3, not against the full root: it gets in.
+  const g1 = child('grand1', 'shared', 2, {env: {...tok, ATLAS_TEST_SLOT_NESTED: e3.id}}); assert.equal((await g1.until('in')).nested, true);
+  assert.equal(nestedEntries(dir).find(e => e.pid === g1.pid).parent, e3.id);
+  // ...and a second grandchild of 2 would exceed sib3's 2: it waits and times out.
+  const g2 = child('grand2', 'shared', 2, {env: {...tok, ATLAS_TEST_SLOT_NESTED: e3.id}, timeoutMs: 300});
+  assert.equal(await g2.exited, 3); assert.match(g2.seen('error').message, /2\/2 tokens of the nested parent in use by nested sibling\(s\) grand1/);
+  // A grandchild asking for more than its parent holds is refused outright (never nest), as before.
+  const g3 = child('grand3', 'shared', 4, {env: {...tok, ATLAS_TEST_SLOT_NESTED: e3.id}, timeoutMs: 300});
+  assert.equal(await g3.exited, 3); assert.match(g3.seen('error').message, /4 tokens exceed the 2 of the nested parent/);
+  for (const c of [g1, c3, c4]) { c.go(); assert.equal(await c.exited, 0); }
+  assert.deepEqual(nestedEntries(dir), []);
+  p.release(); assert.deepEqual(holderFiles(dir), []);
+}));
+test('cross-process smoke: 3 child processes on a sandbox dir keep FIFO order across processes; a killed waiter is reaped; the sandbox ends empty', {timeout: 60000}, async () => {
+  const box = join(root, 'xproc'); mkdirSync(box);
+  const dir = join(box, 'slot'), env = {ATLAS_TEST_SLOT_DIR: dir}, kids = [];
+  try {
+    const A = child('A', 'shared', 16, {env}); kids.push(A); await A.until('in');
+    // D queues first and is killed while waiting: its ticket stays behind with a dead pid.
+    const D = child('D', 'shared', 16, {env}); kids.push(D);
+    await until(() => ticketPids(dir).includes(D.pid), 'D ticket'); D.kill(); await D.exited;
+    const B = child('B', 'shared', 20, {env}); kids.push(B); await until(() => ticketPids(dir).includes(B.pid), 'B ticket');
+    const C = child('C', 'shared', 12, {env}); kids.push(C); await until(() => ticketPids(dir).includes(C.pid), 'C ticket');
+    await tick(400);
+    assert.equal(C.seen('in'), undefined, 'C (12) would fit next to A (16) but is queued behind B');
+    assert.equal(B.seen('in'), undefined, 'B (20) does not fit next to A');
+    A.go(); assert.equal(await A.exited, 0);
+    await B.until('in');
+    assert.ok(!ticketPids(dir).includes(D.pid), 'the dead waiter D was reaped, not waited for');
+    await tick(300); assert.equal(C.seen('in'), undefined, 'C (12) does not fit next to B (20)');
+    B.go(); assert.equal(await B.exited, 0);
+    await C.until('in'); C.go(); assert.equal(await C.exited, 0);
+    // Non-recursive rmdir throws if anything is left: no holder, ticket, tmp or registry file, no exclusive dir.
+    for (const d of [sharedDir(dir), pendingDir(dir), nestedDir(dir)]) if (existsSync(d)) rmdirSync(d);
+    assert.deepEqual(readdirSync(box), [], 'sandbox empty');
+  } finally { for (const k of kids) k.kill(); }
 });
