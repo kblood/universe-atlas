@@ -262,14 +262,18 @@ test('HARD: 200 m carving lattice: pooled massif max lattice-x/y/d/d2 peakDb <= 
   t.diagnostic(tierNote(`${m.length} frozen massif tiles (truth, fine 256 x 50 m, aligned with the belt axis), lattice ${LATTICE_M} m`));
   assert.ok(m.length >= 10, `massif tile count ${m.length}`);
   const truth = pooledFamilies(m.map(x => x.fine.W), LATTICE_FAMILIES), gully = pooledFamilies(m.map(x => x.fine.W), GULLY_FAMILIES);
-  // Negative control: the same tiles with the mountain-carving-2 triangle interpolant on the same block data (worker).
+  // Negative control: the same tiles with main's semantics on the same block data (worker): the carving height AND
+  // the M5 rock driver triangle-interpolated (mountain-carving-2 / mountain-assembly-3).
   const ref = await triangleRasters(m.map(x => ({world: x.world, d: x.d, axis: x.axis})), F.n, F.stepM);
   assert.equal(ref.interpolant, 'triangle');assert.equal(ref.rasters.length, m.length);
   const triangle = pooledFamilies(ref.rasters.map(h => structuralSpectrum(h, F.n, F.stepM, TF).W), LATTICE_FAMILIES);
   // INFO: the row with rock off (tile level rockDetailFromLevel - 1: exact M3 carving, no M5 rock detail).
-  const rockOff = pooledFamilies(m.map(x => structuralSpectrum(alignedRaster(mountainSampler(x.body, rockDetailFromLevel(x.body.radiusM) - 1), x.d, x.body.radiusM, F.n, F.stepM, x.axis), F.n, F.stepM, TF).W), LATTICE_FAMILIES);
+  // INFO: rock alone (truth - rock off): the M5 term, driven by the smoothed carving (mountain-assembly-4).
+  const off = m.map(x => alignedRaster(mountainSampler(x.body, rockDetailFromLevel(x.body.radiusM) - 1), x.d, x.body.radiusM, F.n, F.stepM, x.axis));
+  const rockOff = pooledFamilies(off.map(h => structuralSpectrum(h, F.n, F.stepM, TF).W), LATTICE_FAMILIES);
+  const rockAlone = pooledFamilies(m.map((x, i) => structuralSpectrum(x.hf.map((v, j) => v - off[i][j]), F.n, F.stepM, TF).W), LATTICE_FAMILIES);
   report.real.latticePin = {class: 'HARD', pinDb: LATTICE_PIN_DB, tiles: m.length, truth, triangleControl: triangle, gully,
-    INFO: {rockOff, triangleWorkerBuilds: ref.builds}};
+    INFO: {rockOff, rockAlone, triangleWorkerBuilds: ref.builds}};
   t.diagnostic('lattice pin ' + JSON.stringify(report.real.latticePin));
   assert.ok(truth.max <= LATTICE_PIN_DB, `truth pooled lattice peak ${truth.max} dB > ${LATTICE_PIN_DB} (${JSON.stringify(truth.per)})`);
   assert.ok(triangle.max > LATTICE_PIN_DB, `negative control: the triangle reference must exceed ${LATTICE_PIN_DB} dB, got ${triangle.max}`);

@@ -14,8 +14,10 @@ import {stripTypeScriptTypes} from 'node:module';
 
 const SOURCE_URL = new URL('../../src/mountain-carving.ts', import.meta.url);
 // The block-path query and the point-query dispatch of src/mountain-carving.ts (mountain-carving-3).
-const BLOCK_QUERY = 'return catmullRom(v,Math.max(0,row-1)*S+a,row*S+a,(row+1)*S+a,Math.min(ROWS,row+2)*S+a,u,t);';
-const POINT_DISPATCH = 'if(pointDepth)return cutAtPoint(alongM,acrossM,halfWidthM,seed);';
+// Both kernels (the Catmull-Rom height and the smoothed M5 rock driver, mountain-assembly-4) become the triangle, so
+// rock reads a triangle field too: main's mountain-carving-2 / mountain-assembly-3 semantics on the new block data.
+const BLOCK_QUERY = 'return smooth?bspline(v,o0,o1,o2,o3,u,t):catmullRom(v,o0,o1,o2,o3,u,t);';
+const POINT_DISPATCH = 'if(pointDepth)return cutAtPoint(alongM,acrossM,halfWidthM,seed,smooth);';
 // mountain-carving-2's triangle expressions (src at 32f5de3, retainedAt), read on the cut storage: the cell's
 // lower-left vertex is stored at index row*S + (col - id*CORE) + 1 = row*S + a + 1.
 const TRIANGLE_QUERY = 'const r=v,b=row*S+a+1;' +

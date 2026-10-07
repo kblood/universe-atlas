@@ -86,7 +86,7 @@ for (const [name, body] of Object.entries(bodies)) test(`${name}: cost optimisat
 
 test('lod-ladder-2: carving starts at the first level with edge <= 128 km; constants pinned to their sources', () => {
   assert.equal(LOD_LADDER_VERSION, 'lod-ladder-3');
-  assert.equal(MOUNTAIN_ASSEMBLY_VERSION, 'mountain-assembly-3');
+  assert.equal(MOUNTAIN_ASSEMBLY_VERSION, 'mountain-assembly-4');
   assert.equal(CARVING_REDUCTION.longestWavelengthM, Math.max(...CARVING_BANDS.map(b => b.wavelengthM)));
   assert.equal(CARVING_REDUCTION.latticeSegments, tiles.PATCH_SEGMENTS);
   assert.equal(CARVING_MAX_EDGE_M, 128_000);

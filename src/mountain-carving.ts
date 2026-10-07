@@ -283,84 +283,133 @@ function catmullRom(v:Float32Array,o0:N,o1:N,o2:N,o3:N,u:N,t:N):N {
     +b2*(a0*v[o2]+a1*v[o2+1]+a2*v[o2+2]+a3*v[o2+3])+b3*(a0*v[o3]+a1*v[o3+1]+a2*v[o3+2]+a3*v[o3+3]);
   return Math.max(0,Math.min(1,c));
 }
+// 4x4 tensor uniform cubic B-spline of the same taps (mountain-carving-3, the M5 rock driver of mountain-assembly-4;
+// docs/fable-decision-carving-lattice-2026-10-07.md section 2b). C2 (no curvature jump on a lattice line) but
+// approximating: it does not reproduce the vertex values. Weights are >= 0 and sum to 1, so the result is in [0,1]
+// and an all-zero stencil gives +0; the clamp is kept for symmetry. Same tap order as catmullRom.
+function bspline(v:Float32Array,o0:N,o1:N,o2:N,o3:N,u:N,t:N):N {
+  const iu=1-u,it=1-t;
+  const a0=iu*iu*iu/6,a1=(3*u*u*u-6*u*u+4)/6,a2=(-3*u*u*u+3*u*u+3*u+1)/6,a3=u*u*u/6;
+  const b0=it*it*it/6,b1=(3*t*t*t-6*t*t+4)/6,b2=(-3*t*t*t+3*t*t+3*t+1)/6,b3=t*t*t/6;
+  const c=b0*(a0*v[o0]+a1*v[o0+1]+a2*v[o0+2]+a3*v[o0+3])+b1*(a0*v[o1]+a1*v[o1+1]+a2*v[o1+2]+a3*v[o1+3])
+    +b2*(a0*v[o2]+a1*v[o2+1]+a2*v[o2+2]+a3*v[o2+3])+b3*(a0*v[o3]+a1*v[o3+1]+a2*v[o3+2]+a3*v[o3+3]);
+  return Math.max(0,Math.min(1,c));
+}
 // Point-query cell memo (docs/placeat-regression-2026-10-07.md). Sparse point queries (place-query.ts placeAt)
 // touch one block per massif point, far apart, so the CACHE-block LRU above thrashes and every repeat of a
 // query re-solved its block (~150 ms). While a point query is open (enterCarvingPointQuery), cutAt first
 // looks up the lattice cell in this memo: the 16 Float32 taps of the cell's 4x4 stencil (rows row-1 .. row+2
 // clamped, columns col-1 .. col+2), copied from the solved block, keyed on exact (normalised seed, half-width,
 // global column, row). The interpolation reads the same Float32 values with the same expression, so a memo hit is
-// bit-identical to the block path (pinned by tests/mountain-carving-memo.test.mjs). Two generations of SLOTS
-// open-addressed slots; the young one ages into the old one after FILL entries and an old hit is copied back (an
-// approximate LRU). Bounded: 2 x SLOTS x 85 B (16 taps of 4 B and a 21 B key per slot); with the CACHE blocks the
-// memo stays under the 8.5 MB bound. Observationally pure like the block memo. Outside a point query (tiles, bakes,
-// every dense caller) the path is the block path.
+// bit-identical to the block path (pinned by tests/mountain-carving-memo.test.mjs). One open-addressed table of SLOTS
+// slots (linear probing) holding at most FILL entries; past FILL a clock (second-chance) hand evicts: a slot hit since
+// the hand last passed (used 2) is demoted to 1 and skipped, the first un-hit entry (used 1) is removed by
+// backward-shift deletion (no tombstones, so probe chains stay exact). Capacity FILL = 3072 cells holds a warm
+// placeAt set of ~2150 cells without re-solving (mountain-carving-3, docs/fable-decision-carving-lattice-2026-10-07.md
+// section 2b; was two generations of 2 x 2048). Bounded: SLOTS x 85 B (16 taps of 4 B and a 21 B key per slot); with the
+// CACHE blocks the memo stays under the 8.5 MB bound. Observationally pure like the block memo: eviction order only
+// decides whether a value is re-read from a block, never the value. Outside a point query (tiles, bakes, every dense
+// caller) the path is the block path.
 export const CARVING_POINT_MEMO=Object.freeze({
-  SLOTS:2048,          // open-addressed slots per generation (a power of two)
-  FILL:1536,           // entries per generation before it ages (load 0.75)
+  SLOTS:4096,          // open-addressed slots (a power of two)
+  FILL:3072,           // live entries before the clock evicts (load 0.75)
 });
 const PS=CARVING_POINT_MEMO.SLOTS,PF=CARVING_POINT_MEMO.FILL,PMASK=PS-1;
-const pmSeed=new Uint32Array(2*PS),pmW=new Float64Array(2*PS),pmCol=new Int32Array(2*PS),pmRow=new Int32Array(2*PS);
-const pmUsed=new Uint8Array(2*PS),pmV=new Float32Array(32*PS),pmCount=[0,0];
-let pmYoung=0,pointDepth=0;
+const pmSeed=new Uint32Array(PS),pmW=new Float64Array(PS),pmCol=new Int32Array(PS),pmRow=new Int32Array(PS);
+// pmUsed: 0 free, 1 live, 2 live and hit since the clock hand last passed it.
+const pmUsed=new Uint8Array(PS),pmV=new Float32Array(16*PS);
+let pmCount=0,pmHand=0,pointDepth=0;
 // Counters for benchmarks and purity tests; never read by the arithmetic.
-export const carvingPointMemoStats={hits:0,stores:0};
+export const carvingPointMemoStats={hits:0,stores:0,evictions:0};
 // Open / close a sparse point query (place-query.ts placeAt). Nestable; always pair them (try/finally).
 export function enterCarvingPointQuery():void { pointDepth++; }
 export function exitCarvingPointQuery():void { if(pointDepth>0)pointDepth--; }
-// Slot of the key in generation g, or -1-(first free slot).
-function pmFind(g:N,seed:N,w:N,col:N,row:N):N {
-  const base=g*PS;
-  let i=Math.imul(seed^Math.imul(col,0x9e3779b1)^Math.imul(row,0x85ebca77)^(w|0),0x27d4eb2d);
-  i=(i^(i>>>15))&PMASK;
-  for(;;i=(i+1)&PMASK){
-    const k=base+i;
+// Home slot of a key.
+function pmHome(seed:N,w:N,col:N,row:N):N {
+  const i=Math.imul(seed^Math.imul(col,0x9e3779b1)^Math.imul(row,0x85ebca77)^(w|0),0x27d4eb2d);
+  return (i^(i>>>15))&PMASK;
+}
+// Slot of the key, or -1-(first free slot on its probe chain).
+function pmFind(seed:N,w:N,col:N,row:N):N {
+  for(let k=pmHome(seed,w,col,row);;k=(k+1)&PMASK){
     if(!pmUsed[k])return -1-k;
     if(pmCol[k]===col&&pmRow[k]===row&&pmSeed[k]===seed&&pmW[k]===w)return k;
   }
 }
-// Store the 16 taps (four taps from each of src[s0..], src[s1..], src[s2..], src[s3..]) in the young generation.
+// Backward-shift deletion of slot i: every later entry of the run whose home is not cyclically in (i, j] moves into
+// the hole, so each remaining key stays reachable from its home without tombstones.
+function pmDelete(i:N):void {
+  pmCount--;carvingPointMemoStats.evictions++;
+  for(let j=(i+1)&PMASK;pmUsed[j];j=(j+1)&PMASK){
+    if(((j-pmHome(pmSeed[j],pmW[j],pmCol[j],pmRow[j]))&PMASK)<((j-i)&PMASK))continue;
+    pmUsed[i]=pmUsed[j];pmSeed[i]=pmSeed[j];pmW[i]=pmW[j];pmCol[i]=pmCol[j];pmRow[i]=pmRow[j];
+    pmV.copyWithin(16*i,16*j,16*j+16);i=j;
+  }
+  pmUsed[i]=0;
+}
+// Clock: demote hit entries (2 -> 1) until the hand reaches an un-hit one, and delete it.
+function pmEvict():void {
+  for(;;){
+    const k=pmHand;pmHand=(pmHand+1)&PMASK;
+    if(pmUsed[k]===2)pmUsed[k]=1;
+    else if(pmUsed[k]===1){pmDelete(k);return;}
+  }
+}
+// Store the 16 taps (four taps from each of src[s0..], src[s1..], src[s2..], src[s3..]) of a missed key.
 function pmStore(seed:N,w:N,col:N,row:N,src:Float32Array,s0:N,s1:N,s2:N,s3:N):void {
-  if(pmCount[pmYoung]>=PF){pmYoung^=1;pmUsed.fill(0,pmYoung*PS,pmYoung*PS+PS);pmCount[pmYoung]=0;}
-  const f=pmFind(pmYoung,seed,w,col,row);if(f>=0)return;
-  const k=-1-f,o=16*k;pmUsed[k]=1;pmSeed[k]=seed;pmW[k]=w;pmCol[k]=col;pmRow[k]=row;pmCount[pmYoung]++;
+  if(pmCount>=PF)pmEvict();
+  const f=pmFind(seed,w,col,row);if(f>=0)return;
+  const k=-1-f,o=16*k;pmUsed[k]=1;pmSeed[k]=seed;pmW[k]=w;pmCol[k]=col;pmRow[k]=row;pmCount++;
   for(let i=0;i<4;i++){pmV[o+i]=src[s0+i];pmV[o+4+i]=src[s1+i];pmV[o+8+i]=src[s2+i];pmV[o+12+i]=src[s3+i];}
   carvingPointMemoStats.stores++;
 }
 // cutAt inside a point query: the same lattice arithmetic and interpolation as below, on the memoised taps.
-function cutAtPoint(alongM:N,acrossM:N,halfWidthM:N,seed:N):N {
+function cutAtPoint(alongM:N,acrossM:N,halfWidthM:N,seed:N,smooth:boolean):N {
   const d=2*halfWidthM/ROWS,gx=alongM/d,gy=(acrossM+halfWidthM)/d,col=Math.floor(gx),row=Math.min(ROWS-1,Math.floor(gy));
   const u=gx-col,t=gy-row;
   const keyed=(col|0)===col; // the memo keys an int32 column; any other column takes the block path
-  let k=keyed?pmFind(pmYoung,seed,halfWidthM,col,row):-1,old=false;
-  if(k<0&&keyed){k=pmFind(pmYoung^1,seed,halfWidthM,col,row);old=k>=0;}
+  const k=keyed?pmFind(seed,halfWidthM,col,row):-1;
   if(k>=0){
     // A point-memo hit never calls block(): note the cell's block for a warm-up trace.
     if(traceKeys!==null)traceNote(seed,halfWidthM,Math.floor(col/CORE));
-    carvingPointMemoStats.hits++;const o=16*k;
-    if(old)pmStore(seed,halfWidthM,col,row,pmV,o,o+4,o+8,o+12); // copy an old-generation hit into the young one
-    return catmullRom(pmV,o,o+4,o+8,o+12,u,t);
+    carvingPointMemoStats.hits++;pmUsed[k]=2;const o=16*k;
+    return smooth?bspline(pmV,o,o+4,o+8,o+12,u,t):catmullRom(pmV,o,o+4,o+8,o+12,u,t);
   }
   const id=Math.floor(col/CORE),v=block(seed,halfWidthM,id).cut,a=col-id*CORE;
   const s0=Math.max(0,row-1)*S+a,s1=row*S+a,s2=(row+1)*S+a,s3=Math.min(ROWS,row+2)*S+a;
   if(keyed)pmStore(seed,halfWidthM,col,row,v,s0,s1,s2,s3);
-  return catmullRom(v,s0,s1,s2,s3,u,t);
+  return smooth?bspline(v,s0,s1,s2,s3,u,t):catmullRom(v,s0,s1,s2,s3,u,t);
 }
-// Cut fraction of the envelope at (along, across): 4x4 Catmull-Rom on the stored taps. The cell's block-local
-// column a holds tap col-1 at stored index a (stored index = block-local column + 1), so the taps are a .. a+3.
-function cutAt(alongM:N,acrossM:N,halfWidthM:N,seed:N):N {
-  if(pointDepth)return cutAtPoint(alongM,acrossM,halfWidthM,seed);
+// Cut fraction of the envelope at (along, across): 4x4 Catmull-Rom on the stored taps (smooth: the cubic B-spline
+// of the same taps). The cell's block-local column a holds tap col-1 at stored index a (stored index = block-local
+// column + 1), so the taps are a .. a+3.
+function cutAt(alongM:N,acrossM:N,halfWidthM:N,seed:N,smooth:boolean):N {
+  if(pointDepth)return cutAtPoint(alongM,acrossM,halfWidthM,seed,smooth);
   const d=2*halfWidthM/ROWS,gx=alongM/d,gy=(acrossM+halfWidthM)/d,col=Math.floor(gx),row=Math.min(ROWS-1,Math.floor(gy));
   const u=gx-col,t=gy-row,id=Math.floor(col/CORE),v=block(seed,halfWidthM,id).cut,a=col-id*CORE;
-  return catmullRom(v,Math.max(0,row-1)*S+a,row*S+a,(row+1)*S+a,Math.min(ROWS,row+2)*S+a,u,t);
+  const o0=Math.max(0,row-1)*S+a,o1=row*S+a,o2=(row+1)*S+a,o3=Math.min(ROWS,row+2)*S+a;
+  return smooth?bspline(v,o0,o1,o2,o3,u,t):catmullRom(v,o0,o1,o2,o3,u,t);
 }
 // Candidate F carving (metres, <= 0). Arguments follow section 2.3.
 export function carvingFM(alongM:N,acrossM:N,halfWidthM:N,envelopeM:N,belt:N,seed:N):N {
   // Negated comparisons also exclude NaN envelope / across / half-width and a non-finite along.
   if(belt===0||!(envelopeM>0)||!(Math.abs(acrossM)<halfWidthM)||alongM-alongM!==0)return 0;
-  const cut=cutAt(alongM,acrossM,halfWidthM,seed>>>0);
+  const cut=cutAt(alongM,acrossM,halfWidthM,seed>>>0,false);
+  return cut===0?0:-envelopeM*cut;
+}
+// The smoothed carving (metres, <= 0): the cubic B-spline of the same stored cut, same gates as carvingFM. It is
+// NOT the carving height; it only drives M5 rock detail (mountain-assembly-4), whose slope weight and depth need a
+// C2 field (a C1 field's slope magnitude kinks on every lattice line and rock turns that into a 200 m grid).
+export function carvingSmoothFM(alongM:N,acrossM:N,halfWidthM:N,envelopeM:N,belt:N,seed:N):N {
+  if(belt===0||!(envelopeM>0)||!(Math.abs(acrossM)<halfWidthM)||alongM-alongM!==0)return 0;
+  const cut=cutAt(alongM,acrossM,halfWidthM,seed>>>0,true);
   return cut===0?0:-envelopeM*cut;
 }
 // The M3 carving term. Unwired until MTN-6.
 export function ridgeValleyCarvingM(alongM:N,acrossM:N,halfWidthM:N,envelopeM:N,belt:N,seed:N):N {
   return carvingFM(alongM,acrossM,halfWidthM,envelopeM,belt,seed);
+}
+// The M5 rock driver (mountain-assembly-4): the smoothed carving at the same arguments.
+export function ridgeValleyCarvingSmoothM(alongM:N,acrossM:N,halfWidthM:N,envelopeM:N,belt:N,seed:N):N {
+  return carvingSmoothFM(alongM,acrossM,halfWidthM,envelopeM,belt,seed);
 }

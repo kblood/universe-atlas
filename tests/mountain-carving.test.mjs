@@ -9,10 +9,10 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {stripTypeScriptTypes} from 'node:module';
-import {carvingFM,ridgeValleyCarvingM,MOUNTAIN_CARVING as C,MOUNTAIN_CARVING_VERSION,CARVING_BANDS,carvingBuildStats} from '../src/mountain-carving.ts';
+import {carvingFM,carvingSmoothFM,ridgeValleyCarvingM,ridgeValleyCarvingSmoothM,MOUNTAIN_CARVING as C,MOUNTAIN_CARVING_VERSION,CARVING_BANDS,carvingBuildStats} from '../src/mountain-carving.ts';
 import {raster,rasterFromArray,carvingStructure,depressions,depressionPits,MOUNTAIN_THRESHOLDS} from './helpers/mountain-metrics.mjs';
 import {buildErodedControl,ERODED_CONTROL,ERODED_CONTROL_VERSION} from './helpers/mountain-eroded-control.mjs';
-import {carvingDigest,carvingDigestArgs,CARVING_F_DIGEST} from './helpers/mountain-carving-digest.mjs';
+import {carvingDigest,carvingDigestArgs,CARVING_F_DIGEST,CARVING_S_DIGEST} from './helpers/mountain-carving-digest.mjs';
 import {R,SITES,rampArgs} from '../scripts/mountain-render-carving.mjs';
 import {loadTriangleCarving} from './helpers/mountain-carving-triangle.mjs';
 
@@ -21,7 +21,7 @@ const loadVariant=(edit=s=>s,exports='')=>import('data:text/javascript;base64,'+
 
 test('HARD: literal positive zero at exclusions',()=>{
   const before=carvingBuildStats.count;
-  for(const fn of [carvingFM,ridgeValleyCarvingM])for(const x of [-1e7,-125,0,125,1e7])for(const seed of [0,730201,0xffffffff]){
+  for(const fn of [carvingFM,ridgeValleyCarvingM,carvingSmoothFM,ridgeValleyCarvingSmoothM])for(const x of [-1e7,-125,0,125,1e7])for(const seed of [0,730201,0xffffffff]){
     for(const y of [-48000,0,48000])assert.ok(Object.is(fn(x,y,30000,3000,0,seed),0));
     for(const y of [-30000,30000,-30000.5,45000])assert.ok(Object.is(fn(x,y,30000,3000,1,seed),0));
     for(const h of [-100,-0,0])assert.ok(Object.is(fn(x,0,30000,h,1,seed),0));
@@ -30,12 +30,14 @@ test('HARD: literal positive zero at exclusions',()=>{
   assert.equal(carvingBuildStats.count,before,'exclusions never solve a block');
 });
 test('HARD: coast safety and bounds including the zero-envelope margin',()=>{
-  let violations=0,samples=0,carved=0;
-  raster(d=>{const a=rampArgs(d),v=ridgeValleyCarvingM(...a);samples++;if(v<0)carved++;
+  // mountain-carving-3: also the smoothed carving Cb (the M5 rock driver): Cb <= 0 and U + Cb >= 0.
+  let violations=0,samples=0,carved=0,smoothCarved=0;
+  raster(d=>{const a=rampArgs(d),v=ridgeValleyCarvingM(...a),vb=ridgeValleyCarvingSmoothM(...a);samples++;if(v<0)carved++;if(vb<0)smoothCarved++;
     if(!(v<=0&&a[3]+v>=0&&v>=-a[3]))violations++;
-    if(a[4]===0&&!Object.is(v,0))violations++;
+    if(!(vb<=0&&a[3]+vb>=0&&vb>=-a[3]))violations++;
+    if(a[4]===0&&!(Object.is(v,0)&&Object.is(vb,0)))violations++;
     return {groundHeightM:a[3]+v,ocean:false};},SITES[0].d,R,129,500);
-  assert.equal(violations,0);assert.ok(carved>samples/2,'the belt is actually carved');
+  assert.equal(violations,0);assert.ok(carved>samples/2&&smoothCarved>samples/2,'the belt is actually carved');
 });
 test('HARD: cold, warm, reverse and child-process SHA-256 agree with the pin',()=>{
   const before=carvingBuildStats.count,cold=carvingDigest(carvingFM),built=carvingBuildStats.count-before;
@@ -47,8 +49,17 @@ test('HARD: cold, warm, reverse and child-process SHA-256 agree with the pin',()
     import {carvingDigest} from './tests/helpers/mountain-carving-digest.mjs';
     process.stdout.write(carvingDigest(carvingFM));`});
   assert.equal(child.status,0,child.stderr);assert.equal(child.stdout,cold);
-  for(let i=0;i<100;i++){const a=[i*173,-i*91,30000,2500,1,730201];assert.equal(ridgeValleyCarvingM(...a),carvingFM(...a));}
-  console.log('DIGEST '+JSON.stringify({sha256:cold,builds:built}));
+  for(let i=0;i<100;i++){const a=[i*173,-i*91,30000,2500,1,730201];assert.equal(ridgeValleyCarvingM(...a),carvingFM(...a));
+    assert.equal(ridgeValleyCarvingSmoothM(...a),carvingSmoothFM(...a));}
+  // The smoothed carving (mountain-carving-3): same fixture through carvingSmoothFM, in-process and in a child process.
+  const sCold=carvingDigest(carvingSmoothFM),sRev=carvingDigest(carvingSmoothFM,carvingDigestArgs().map((_,i)=>4095-i));
+  assert.equal(sCold,CARVING_S_DIGEST);assert.equal(sRev,sCold);assert.notEqual(sCold,cold);
+  const sChild=spawnSync(process.execPath,['--input-type=module'],{cwd:new URL('..',import.meta.url),encoding:'utf8',input:`
+    import {carvingSmoothFM} from './src/mountain-carving.ts';
+    import {carvingDigest} from './tests/helpers/mountain-carving-digest.mjs';
+    process.stdout.write(carvingDigest(carvingSmoothFM));`});
+  assert.equal(sChild.status,0,sChild.stderr);assert.equal(sChild.stdout,sCold);
+  console.log('DIGEST '+JSON.stringify({sha256:cold,smoothSha256:sCold,builds:built}));
 });
 function audit(source){
   assert.doesNotMatch(source,/\bMath\s*\[|\*\*|\b(?:Number|BigInt|parseFloat|parseInt|isFinite|isNaN|Date|eval|Function)\b|\.\s*(?:toFixed|toPrecision|toExponential)\b/);
@@ -120,13 +131,13 @@ test('HARD: exact +0 wherever no tap of the 4x4 stencil is cut (imported synthet
   for(let k=0;k<4000;k++){
     const col=(k*7919)%C.CORE,row=(k*104729)%C.ROWS,u=((k*37)%100)/100,t=((k*61)%100)/100;
     // Block 0: nothing is cut anywhere, so every query is a literal +0.
-    const v0=m.carvingFM((col+u)*d,-30000+(row+t)*d,30000,3000,1,730201);
-    assert.ok(Object.is(v0,0),'uncut block at '+col+','+row+': '+v0);zero++;
+    const v0=m.carvingFM((col+u)*d,-30000+(row+t)*d,30000,3000,1,730201),s0=m.carvingSmoothFM((col+u)*d,-30000+(row+t)*d,30000,3000,1,730201);
+    assert.ok(Object.is(v0,0)&&Object.is(s0,0),'uncut block at '+col+','+row+': '+v0+' / '+s0);zero++;
     // Block 1: only cells whose stencil (columns col-1..col+2, rows row-1..row+2) holds the tap can be non-zero.
     const c1=col,r1=Math.min(C.ROWS-1,row),holds=59>=c1-1&&59<=c1+2&&240>=r1-1&&240<=r1+2;
-    const v1=m.carvingFM((C.CORE+c1+u)*d,-30000+(r1+t)*d,30000,3000,1,730201);
-    if(holds){inStencil++;assert.ok(v1<=0&&v1>=-3000*.5*1.5);if(v1<0)nonzero++;}
-    else assert.ok(Object.is(v1,0),'outside the stencil at '+c1+','+r1+': '+v1);
+    const v1=m.carvingFM((C.CORE+c1+u)*d,-30000+(r1+t)*d,30000,3000,1,730201),s1=m.carvingSmoothFM((C.CORE+c1+u)*d,-30000+(r1+t)*d,30000,3000,1,730201);
+    if(holds){inStencil++;assert.ok(v1<=0&&v1>=-3000*.5*1.5&&s1<=0&&s1>=-3000*.5);if(v1<0)nonzero++;}
+    else assert.ok(Object.is(v1,0)&&Object.is(s1,0),'outside the stencil at '+c1+','+r1+': '+v1+' / '+s1);
   }
   // Points aimed at the tap's 16 cells: carved where the Catmull-Rom weight is positive (+0 by the clamp elsewhere).
   for(let c=57;c<=60;c++)for(let r=238;r<=241;r++)for(const [u,t] of [[.5,.5],[.1,.9],[.9,.1]]){
@@ -167,4 +178,30 @@ test('HARD: C1 across lattice lines (one-sided slopes agree), including block se
   assert.ok(cr.carved>lines.length*.9,'the straddle lines are carved: '+cr.carved);
   assert.equal(cr.kinks,0,'Catmull-Rom has no slope jump on a lattice line');
   assert.ok(tr.kinks>=lines.length/2,'negative control: the triangle reference kinks on most lattice lines ('+tr.kinks+'/'+lines.length+')');
+});
+
+test('HARD: the smoothed carving (M5 rock driver) is C2 across lattice lines incl. block seams; Catmull-Rom must fail the same straddle',()=>{
+  // mountain-assembly-4 (docs/fable-decision-carving-lattice-2026-10-07.md section 2b): M5 rock reads the slope of the
+  // smoothed carving, so the slope must not kink AND its curvature must not jump on a lattice line. Second differences
+  // over h = 1 mm on both sides of a lattice line: a C2 field changes them by about (third derivative) x h, a C1 field (Catmull-Rom)
+  // by its full curvature jump. Constant envelope (3000 m), lines at y = 0 (the tent envelope's kink) avoided.
+  const w=30000,d=2*w/C.ROWS,hm=1e-3,JUMP=.01,lines=[];
+  for(let k=0;k<600;k++){
+    const col=-160+(k*7919)%320,row=8+(k*104729)%464,f=.1+((k*37)%100)/125;
+    if(row===C.ROWS/2)continue;
+    lines.push([col*d,-w+(row+f)*d,1,0],[(col+f)*d,-w+row*d,0,1]);
+  }
+  for(const col of [-C.CORE,0,C.CORE])for(let row=8;row<472;row+=29)lines.push([col*d,-w+(row+.37)*d,1,0]); // block seams
+  // Curvature (1/m) on each side from three points at 0, s, 2s (s = +-h): (f(2s) - 2 f(s) + f(0)) / h^2, compared
+  // as the jump of slope differences (one-sided second differences x h), so the limit is in the same units as the C1 test.
+  const straddle=fn=>{let jumps=0,carved=0,maxJump=0;
+    for(const [x,y,dx,dy] of lines){const f=s=>fn(x+s*hm*dx,y+s*hm*dy,w,3000,1,730201);
+      const f0=f(0),right=(f(2)-2*f(1)+f0)/hm,left=(f0-2*f(-1)+f(-2))/hm,jump=Math.abs(right-left)/hm*d;
+      if(f0<0)carved++;if(jump>JUMP)jumps++;if(jump>maxJump)maxJump=jump;}
+    return {lines:lines.length,carved,jumps,maxJump:+maxJump.toPrecision(3)};};
+  const sm=straddle(carvingSmoothFM),cr=straddle(carvingFM);
+  console.log('C2_STRADDLE '+JSON.stringify({smooth:sm,catmullRom:cr,jumpLimit:JUMP,hM:hm}));
+  assert.ok(sm.carved>lines.length*.9,'the straddle lines are carved: '+sm.carved);
+  assert.equal(sm.jumps,0,'the smoothed carving has no curvature jump on a lattice line');
+  assert.ok(cr.jumps>=lines.length/2,'negative control: Catmull-Rom jumps in curvature on most lattice lines ('+cr.jumps+'/'+lines.length+')');
 });

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {stripTypeScriptTypes} from 'node:module';
 import {MOUNTAIN_CARVING as C,CARVING_POINT_MEMO} from '../src/mountain-carving.ts';
-import {carvingDigest,carvingDigestArgs,CARVING_F_DIGEST} from './helpers/mountain-carving-digest.mjs';
+import {carvingDigest,carvingDigestArgs,CARVING_F_DIGEST,CARVING_S_DIGEST} from './helpers/mountain-carving-digest.mjs';
 
 const SOURCE=readFileSync(new URL('../src/mountain-carving.ts',import.meta.url),'utf8');
 let variants=0;
@@ -75,10 +75,11 @@ test('HARD: persistent memo payload stays below 8.5 MB; per-solve transient arra
   const m=await loadVariant();const b=m.build(730201,30000,0),s=m.solve(730201,30000,0);
   assert.ok(b.cut instanceof Float32Array);assert.equal(b.cut.length,(C.ROWS+1)*S);
   // The point-query cell memo (fixed typed arrays, 16 Float32 taps and a 21 B key per slot) counts against the same
-  // 8.5 MB (mountain-carving-3: 2 x 2048 x 85 = 348,160 B; was 2 x 4096 x 37 = 303,104 B with 4 corners per cell).
+  // 8.5 MB (mountain-carving-3: one clock table of 4096 x 85 = 348,160 B; was two generations of 4096 x 37 = 303,104 B
+  // with 4 corners per cell).
   const pm=await loadVariant({},'export {pmSeed,pmW,pmCol,pmRow,pmUsed,pmV};');
   const pointMemo=[pm.pmSeed,pm.pmW,pm.pmCol,pm.pmRow,pm.pmUsed,pm.pmV].reduce((a,x)=>a+x.byteLength,0);
-  assert.equal(pointMemo,2*CARVING_POINT_MEMO.SLOTS*85);
+  assert.equal(pointMemo,CARVING_POINT_MEMO.SLOTS*85);assert.equal(pointMemo,348160);
   const memo=C.CACHE*b.cut.byteLength+pointMemo;assert.ok(memo<=8.5e6,'memo '+memo);
   // A transferred block (warm-up export) is exactly one memo block (481 x 131 Float32; was 481 x 129 = 248,196 B).
   assert.equal(m.exportCarvingBlock({seed:730201,w:30000,id:0}).cut.byteLength,252044);
@@ -91,6 +92,7 @@ test('HARD: point-query cell memo is bit-identical to the block path (cold, warm
   // docs/placeat-regression-2026-10-07.md: inside enter/exitCarvingPointQuery cutAt reads the memoised 16 taps of the cell.
   const args=carvingDigestArgs(),rev=args.map((_,i)=>args.length-1-i);
   const point=m=>(...a)=>{m.enterCarvingPointQuery();try{return m.carvingFM(...a);}finally{m.exitCarvingPointQuery();}};
+  const pointS=m=>(...a)=>{m.enterCarvingPointQuery();try{return m.carvingSmoothFM(...a);}finally{m.exitCarvingPointQuery();}};
   const m=await loadVariant({},'');
   const b0=m.carvingBuildStats.count;
   assert.equal(carvingDigest(point(m)),CARVING_F_DIGEST,'cold');
@@ -100,10 +102,18 @@ test('HARD: point-query cell memo is bit-identical to the block path (cold, warm
   // Interleaved point and block calls on one module instance.
   let n=0;const mixed=(...a)=>(n++&1?point(m)(...a):m.carvingFM(...a));
   assert.equal(carvingDigest(mixed),CARVING_F_DIGEST,'interleaved');
-  // A 16-slot memo ages every 12 stores (the block memo keeps the fixture's 4 blocks).
+  // The smoothed carving (mountain-assembly-4 rock driver) reads the same memoised taps: warm (memo filled by the
+  // Catmull-Rom passes), cold on a fresh instance, and interleaved with Catmull-Rom point and block calls.
+  assert.equal(carvingDigest(pointS(m)),CARVING_S_DIGEST,'smooth warm');
+  const ms=await loadVariant({},'');assert.equal(carvingDigest(pointS(ms),rev),CARVING_S_DIGEST,'smooth cold');
+  let q=0;const mixedS=(...a)=>{const r=q%3;q++;return r===0?pointS(ms)(...a):r===1?ms.carvingSmoothFM(...a):(point(ms)(...a),pointS(ms)(...a));};
+  assert.equal(carvingDigest(mixedS),CARVING_S_DIGEST,'smooth interleaved');
+  // A 16-slot memo holds 12 live cells and evicts by the clock on every later store (the block memo keeps the
+  // fixture's 4 blocks).
   const aged=await loadVariant({SLOTS:16,FILL:12},'');
   for(const order of [null,rev])assert.equal(carvingDigest(point(aged),order),CARVING_F_DIGEST,'aged');
-  assert.ok(aged.carvingPointMemoStats.stores>64&&aged.carvingPointMemoStats.hits>0,JSON.stringify(aged.carvingPointMemoStats));
+  for(const order of [null,rev])assert.equal(carvingDigest(pointS(aged),order),CARVING_S_DIGEST,'smooth aged');
+  assert.ok(aged.carvingPointMemoStats.stores>64&&aged.carvingPointMemoStats.hits>0&&aged.carvingPointMemoStats.evictions>64,JSON.stringify(aged.carvingPointMemoStats));
   // Mutation control: a width-blind cell key must be caught. Cell-centre points (d = 125 m) fall in the same
   // lattice cell at both half-widths, so a width-blind memo returns the other width's taps.
   const pts=[[8,200],[72,260],[100,300],[40,150],[-20,330]].map(([c,j])=>[(c+.5)*125,(j+.5)*125-30000]),ws=[30000,30000.5];
