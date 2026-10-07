@@ -1944,7 +1944,9 @@ export class PlanetRenderer {
       const grounded=this.faunaPlace(a,activity.pose),distanceM=eye.distanceTo(grounded.position)*radiusM;
       const cameraVisible=this.faunaBoundsIntersect(grounded.position,this.faunaTraceFrustum);
       const shadowVisible=this.faunaTraceShadowValid&&this.faunaBoundsIntersect(grounded.position,this.faunaTraceShadow);
-      const drawn=drawnIndex.get(id),rigged=this.faunaNear.poseOf(id)!==null;
+      // Continuity: a fading slot is posed but its proxy still draws, so only a
+      // fully rigged member (this frame's returned set) counts as rigged.
+      const drawn=drawnIndex.get(id),rigged=this.continuity?this.faunaRigged.has(id):this.faunaNear.poseOf(id)!==null;
       const toEye=eye.clone().sub(grounded.position).normalize();
       const stage=!inRange||distanceM>FAUNA_FIELD_VISIBLE_M?'out-of-range':!cameraVisible&&!shadowVisible?'culled':
         drawn===undefined?'budget-drop':rigged?'near-rig':cameraVisible?'instanced':'shadow-only-instanced';
@@ -1953,7 +1955,9 @@ export class PlanetRenderer {
         position:grounded.position.toArray(),distanceM,cameraVisible,shadowVisible,drawnIndex:drawn??null,rigged,
         lighting:{sunElevation:anchorUp.dot(sun),viewFromSunSide:toEye.dot(sun)}};
     });
-    return {frame:{worldNs:worldNs.toString(),eye:eye.toArray(),drawn:this.faunaDrawn.length,cameraVisible:this.faunaCameraVisibleCount,capacity:FAUNA_FIELD_CAPACITY,budgetDrops:this.faunaBudgetDrops,culled:this.faunaCulledCount,anchors:this.faunaAnchorCount,near:this.faunaNear.diagnostics().activeMembers.map(m=>m.id)},individuals};
+    return {frame:{worldNs:worldNs.toString(),eye:eye.toArray(),drawn:this.faunaDrawn.length,cameraVisible:this.faunaCameraVisibleCount,capacity:FAUNA_FIELD_CAPACITY,budgetDrops:this.faunaBudgetDrops,culled:this.faunaCulledCount,anchors:this.faunaAnchorCount,
+      // With continuity on, `near` (activeMembers) also lists members whose rig is still fading in or out.
+      near:this.faunaNear.diagnostics().activeMembers.map(m=>m.id)},individuals};
   }
   /** Dated poses of one resident herd at one instant, retained while the date,
    * relief and packing are unchanged, plus a conservative bound of every
@@ -2091,7 +2095,13 @@ export class PlanetRenderer {
     // Anything not rigged this frame keeps the instanced representation.
     const near=this.faunaNearList,nearPool=this.faunaNearPool;near.length=0;
     for(const item of visible){
-      if(!item.cameraVisible||item.distance>FAUNA_NEAR_RIG_EXIT_M||near.length>=this.faunaNear.capacity*2)break;
+      if(this.continuity){
+        // Continuity (F5): keep listing members a slot still holds (fading out)
+        // up to 15 m past the 95 m cut, so their exit fades instead of a hard
+        // drop. `visible` is camera-visible first, then by distance.
+        if(!item.cameraVisible||near.length>=this.faunaNear.capacity*2)break;
+        if(item.distance>FAUNA_NEAR_RIG_EXIT_M){if(item.distance>FAUNA_NEAR_RIG_EXIT_M+15)break;if(!this.faunaNear.holds(item.member.id))continue;}
+      }else if(!item.cameraVisible||item.distance>FAUNA_NEAR_RIG_EXIT_M||near.length>=this.faunaNear.capacity*2)break;
       let candidate=nearPool[near.length];
       if(!candidate)nearPool.push(candidate={member:item.member,genome:this.faunaGenomeOf(item.member),distanceM:0,activity:item.activity,rigSeconds:0,matrix:new THREE.Matrix4(),ground:()=>0});
       candidate.member=item.member;candidate.genome=this.faunaGenomeOf(item.member);candidate.distanceM=item.distance;candidate.activity=item.activity;candidate.rigSeconds=rigTime;
@@ -2114,7 +2124,10 @@ export class PlanetRenderer {
       this.faunaDrawnItems[this.faunaDrawnCount]=item;this.faunaDrawnGenomes[this.faunaDrawnCount++]=genome;
       if(rigged.has(item.member.id)){this.faunaVisibleCount++;continue;}
       this.faunaProxyMatrix.compose(this.faunaLocalScratch.copy(item.position).sub(this.lifeOrigin),item.quaternion,this.faunaProxyScale);
-      if(this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member))this.faunaVisibleCount++;else this.faunaBudgetDrops++;
+      // Continuity (F12/F13): `stateS` selects the eased proxy gait and the eye/range fades.
+      const submitted=this.continuity?this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member,item.activity.stateS)
+        :this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member);
+      if(submitted)this.faunaVisibleCount++;else this.faunaBudgetDrops++;
     }
     this.faunaRenderer.endFrame();
   }
