@@ -194,6 +194,14 @@ All seven are OPEN. The phases of the plan use the default so that work can proc
 | 6 | Where does it live? | Own repo `C:/LLM/IWSDK/creature-kit`, vendored sha-pinned into Atlas. This conflicts in part with the owner's 2026-10-02 "one committed repo" preference. |
 | 7 | Package name and compatibility promise for recipe links. | `creature-kit`, decodes `v1` to `v4` forever. |
 
+### Owner answers 2026-10-07 (in chat to the coordinator)
+
+- **EC4 4b, wing cover on the face in the display pose:** acceptable. Kasper answered "ja" to "may the wings cover a small part of the face in the display pose? (measured 3-4.7 % on seeds 19, 38, 115)". Small nonzero cover is not a defect; no fix required.
+- **A18 Q6, where the creature kit lives:** own repo, `C:/LLM/IWSDK/creature-kit`, consumed by Atlas (vendored sha-pinned, per the plan). Kasper: "Ja, det troede jeg allerede jeg havde bedt om at det skulle blive sin egen ting som dette projekt så bruger." This is an explicit exception to the 2026-10-02 one-repo rule, which keeps applying to Atlas itself.
+- **O13, shorter fair cost protocol:** signed, both F1 and F2 (see `docs/cost-fair-shorter-protocol-draft-2026-10-07.md` section 6).
+- **Decision maker for design questions:** from 2026-10-07 the coordinator asks Opus 5.5, not Fable 5.1, for new decisions and reviews ("brug Opus til de næste opgaver i stedet for fable"). Earlier Fable decisions stand.
+- **A13 licence:** still OPEN (explained to Kasper 2026-10-07; awaiting answer).
+
 ## B. Already decided by the owner
 
 These are listed so that nobody reopens them by accident. "Date" is the date the source records. Where a source says "owner decision" without a date, the date column says so, and the source's own date is the earliest known.

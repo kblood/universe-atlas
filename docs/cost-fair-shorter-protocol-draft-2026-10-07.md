@@ -75,8 +75,10 @@ n = 30 judging rule when no early stop happens.
 
 ## 6. Signature
 
-- [ ] F1 adopted (subject to its admission trial)  - [ ] F2 adopted  - [ ] both  - [ ] neither
+- [ ] F1 adopted (subject to its admission trial)  - [ ] F2 adopted  - [x] both  - [ ] neither
 
-Signed: ______________________ (Kasper)  Date: __________
+Signed: Kasper (in chat to the coordinator: "det lyder godt, det er ok", answering "O13 ... kræver din underskrift")  Date: 2026-10-07
+
+Recorded by the coordinator (Opus 5.5). In force for counted runs pre-registered AFTER this commit; F1 still subject to its admission trial. GATE-1, GATE-C1 and GATE-C1b are unaffected.
 
 Until this is signed, nothing in this document is implemented or used.
