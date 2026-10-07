@@ -1062,6 +1062,11 @@ export class PlanetRenderer {
     this.reflectionRevision++;
     this.retries.delete(key);this.retryAfter.delete(key);
     const stale=this.patches.get(key);
+    // presentationContinuity (audit F1.3): a replacement of a resident tile (a
+    // water-bucket rebuild or a retry) keeps the morph of the patch it
+    // replaces, so a settled leaf does not drop to its parent's shape and
+    // regrow. Off: every new patch starts at morph 0 (former behaviour).
+    const inheritedMorph=this.continuity&&stale?stale.morph.value:0;
     if(stale)this.release(stale);
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(d.positions, 3));
@@ -1086,7 +1091,7 @@ export class PlanetRenderer {
     map.anisotropy = this.anisotropy;
     map.needsUpdate = true;
     const material = new THREE.MeshStandardMaterial({map, roughness: this.body.water ? .72 : .95});
-    const morph = {value: 0};
+    const morph = {value: inheritedMorph};
     const detail={value:0};
     const pbrDetail={value:0};
     const edge={value:new THREE.Vector4()};
