@@ -146,6 +146,67 @@ export function pickFloraLodBand(distanceM: number): FloraLodBand | -1 {
   return -1;
 }
 
+// ---------------------------------------------------------------------------
+// LOD hysteresis and range fade (transition audit F7). Presentation only:
+// nothing here feeds back into `floraAt` placement.
+// ---------------------------------------------------------------------------
+
+/** A plant keeps its previous LOD band while its distance stays within this
+ * many metres beyond either inner edge of that band (22 m and 55 m), so a
+ * +-1 m oscillation at a boundary switches the band at most once. */
+export const FLORA_LOD_HYSTERESIS_M = 2;
+/** Coverage fades 1 -> 0 by a smoothstep over the last this-many metres before
+ * FLORA_VISIBLE_DISTANCE_M (10%), so the range cut is dithered, not a pop. */
+export const FLORA_RANGE_FADE_M = 12;
+
+/** `pickFloraLodBand` with memory. `prev` is the band the plant was last
+ * drawn at (-1 or anything else: none, which gives `pickFloraLodBand`). The
+ * visible-range cut is never held; it is faded by `floraCoverage`. */
+export function pickFloraLodBandHysteretic(prev: number, distanceM: number): FloraLodBand | -1 {
+  const lod = pickFloraLodBand(distanceM);
+  if (lod === -1 || !(prev === 0 || prev === 1 || prev === 2) || prev === lod) return lod;
+  const lo = prev === 0 ? -Infinity : (prev === 1 ? FLORA_LOD0_DISTANCE_M : FLORA_LOD1_DISTANCE_M) - FLORA_LOD_HYSTERESIS_M;
+  const hi = prev === 2 ? Infinity : (prev === 0 ? FLORA_LOD0_DISTANCE_M : FLORA_LOD1_DISTANCE_M) + FLORA_LOD_HYSTERESIS_M;
+  return distanceM > lo && distanceM <= hi ? prev : lod;
+}
+
+/** Drawn coverage in [0,1]: 1 out to FLORA_VISIBLE_DISTANCE_M -
+ * FLORA_RANGE_FADE_M, then a smoothstep to 0 at the visible range, and 0
+ * beyond it (where `pickFloraLodBand` is -1). Never rises with distance. */
+export function floraCoverage(distanceM: number): number {
+  if (!(distanceM <= FLORA_VISIBLE_DISTANCE_M)) return 0;
+  const t = Math.min(1, Math.max(0, (distanceM - (FLORA_VISIBLE_DISTANCE_M - FLORA_RANGE_FADE_M)) / FLORA_RANGE_FADE_M));
+  return 1 - t * t * (3 - 2 * t);
+}
+
+/** Per-instance coverage attribute name and the fragment dither that reads
+ * it (interleaved gradient noise in screen space: a fading plant thins out,
+ * it never turns translucent, so no sorting is needed). */
+export const FLORA_FADE_ATTRIBUTE = 'floraFade';
+export const FLORA_FADE_VERSION = 'atlas-flora-fade-1';
+const FLORA_FADE_DITHER_GLSL = 'if(vFloraFade<1.0&&fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))))>=vFloraFade)discard;';
+
+/** Adds the coverage dither to a bucket material once, composing with any
+ * earlier `onBeforeCompile` and program cache key (as local aerial does). A
+ * shader without the expected chunks is left as it was. */
+function attachFloraFade(material: THREE.Material): void {
+  if (material.userData.floraFadeVersion) return;
+  material.userData.floraFadeVersion = FLORA_FADE_VERSION;
+  const compile = material.onBeforeCompile;
+  const inheritedKey = material.customProgramCacheKey === THREE.Material.prototype.customProgramCacheKey
+    ? () => compile.toString() : material.customProgramCacheKey.bind(material);
+  material.onBeforeCompile = (shader, renderer) => {
+    compile.call(material, shader, renderer);
+    if (!shader.vertexShader.includes('#include <begin_vertex>') || !shader.fragmentShader.includes('#include <clipping_planes_fragment>')) return;
+    shader.vertexShader = `attribute float ${FLORA_FADE_ATTRIBUTE};\nvarying float vFloraFade;\n` + shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      vFloraFade=${FLORA_FADE_ATTRIBUTE};`);
+    shader.fragmentShader = 'varying float vFloraFade;\n' + shader.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+      ${FLORA_FADE_DITHER_GLSL}`);
+  };
+  material.customProgramCacheKey = () => inheritedKey() + '/' + FLORA_FADE_VERSION;
+  material.needsUpdate = true;
+}
+
 /**
  * Documented per-(kind, LOD band) instance budget. Bounds worst-case memory
  * (each unit of budget is one `THREE.InstancedMesh` instance slot, allocated
@@ -187,12 +248,20 @@ export function totalFloraInstanceBudget(budget: Record<FloraKind, readonly [num
 export class FloraLodBucket {
   readonly mesh: THREE.InstancedMesh;
   readonly capacity: number;
+  /** Per-instance coverage in [0,1] (F7 range fade), read by the dither. */
+  readonly fade: THREE.InstancedBufferAttribute;
   private writeCount = 0;
   private readonly scratchMatrix = new THREE.Matrix4();
 
   constructor(geometry: THREE.BufferGeometry, material: THREE.Material, capacity: number) {
     this.capacity = capacity;
-    this.mesh = new THREE.InstancedMesh(geometry, material, capacity);
+    // The fade is per bucket; a geometry that already carries another
+    // bucket's fade attribute is shared, so this bucket gets its own copy.
+    const own = geometry.getAttribute(FLORA_FADE_ATTRIBUTE) ? geometry.clone() : geometry;
+    this.fade = new THREE.InstancedBufferAttribute(new Float32Array(capacity).fill(1), 1).setUsage(THREE.DynamicDrawUsage);
+    own.setAttribute(FLORA_FADE_ATTRIBUTE, this.fade);
+    attachFloraFade(material);
+    this.mesh = new THREE.InstancedMesh(own, material, capacity);
     this.mesh.count = 0;
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     // This module does its own bounded sphere-frustum cull upstream
@@ -208,10 +277,11 @@ export class FloraLodBucket {
    * (`THREE.Matrix4.elements` layout). Returns false once `capacity` is
    * reached for this frame (see budget-drop note above); never throws, never
    * allocates. */
-  tryAdd(source: ArrayLike<number>, offset = 0): boolean {
+  tryAdd(source: ArrayLike<number>, offset = 0, coverage = 1): boolean {
     if (this.writeCount >= this.capacity) return false;
     this.scratchMatrix.fromArray(source, offset);
     this.mesh.setMatrixAt(this.writeCount, this.scratchMatrix);
+    (this.fade.array as Float32Array)[this.writeCount] = coverage;
     this.writeCount++;
     return true;
   }
@@ -220,6 +290,7 @@ export class FloraLodBucket {
   endFrame(): void {
     this.mesh.count = this.writeCount;
     this.mesh.instanceMatrix.needsUpdate = true;
+    this.fade.needsUpdate = true;
   }
 
   get instanceCount(): number { return this.writeCount; }
@@ -291,9 +362,9 @@ export class FloraFieldRenderer {
   /** Zero-allocation: `bucketIndex` is a Record lookup + arithmetic (no
    * string concatenation) and `bucketList[...]` is a plain array read (no
    * `Map.get`), so this is safe to call once per surviving candidate. */
-  submit(kind: FloraKind, lod: FloraLodBand, source: ArrayLike<number>, offset = 0): boolean {
+  submit(kind: FloraKind, lod: FloraLodBand, source: ArrayLike<number>, offset = 0, coverage = 1): boolean {
     const bucket = this.bucketList[bucketIndex(kind, lod)];
-    return bucket ? bucket.tryAdd(source, offset) : false;
+    return bucket ? bucket.tryAdd(source, offset, coverage) : false;
   }
 
   endFrame(): void { for (const bucket of this.bucketList) bucket.endFrame(); }
@@ -313,6 +384,11 @@ export class FloraFieldRenderer {
  * culling/LOD-banding gets a chance to reject most of them. */
 export const FLORA_CANDIDATE_BUFFER_CAPACITY = 8192;
 
+/** Anything that outlives a frame and stands for one plant (the renderer's
+ * canonical flora resident). `floraLod` is the band it was last drawn at; it
+ * is presentation memory only (F7 hysteresis). */
+export type FloraLodOwner = { floraLod?: number };
+
 /**
  * Fixed-capacity struct-of-arrays candidate list, filled by the wiring
  * agent (one `push` per `floraAt` hit while walking a tile's sample
@@ -329,6 +405,8 @@ export class FloraCandidateBuffer {
   readonly kindIndex: Uint8Array;
   /** `capacity * 16` floats, `THREE.Matrix4.elements` layout per candidate. */
   readonly matrices: Float32Array;
+  /** Optional per-candidate owner carrying LOD memory (null: no memory). */
+  private readonly owners: (FloraLodOwner | null)[];
   private readonly outIndices: Uint32Array;
   /** Built once at construction and reused for every `cull()` call: only its
    * `count`/`planes`/`planeCount` fields are overwritten in place per call
@@ -345,6 +423,7 @@ export class FloraCandidateBuffer {
     this.radius = new Float32Array(capacity);
     this.kindIndex = new Uint8Array(capacity);
     this.matrices = new Float32Array(capacity * 16);
+    this.owners = new Array<FloraLodOwner | null>(capacity).fill(null);
     this.outIndices = new Uint32Array(capacity);
     this.cullInput = {
       centerX: this.centerX, centerY: this.centerY, centerZ: this.centerZ, radius: this.radius,
@@ -352,13 +431,15 @@ export class FloraCandidateBuffer {
     };
   }
 
-  clear(): void { this.count = 0; }
+  /** Owner references are dropped so a cleared buffer keeps no plant alive. */
+  clear(): void { this.owners.fill(null, 0, this.count); this.count = 0; }
 
   /** Returns false once `capacity` is reached (silently dropped, same
    * bounded-degradation contract as `FloraLodBucket.tryAdd`). */
-  push(kind: FloraKind, centerX: number, centerY: number, centerZ: number, radius: number, matrixElements: ArrayLike<number>): boolean {
+  push(kind: FloraKind, centerX: number, centerY: number, centerZ: number, radius: number, matrixElements: ArrayLike<number>, owner: FloraLodOwner | null = null): boolean {
     if (this.count >= this.capacity) return false;
     const i = this.count;
+    this.owners[i] = owner;
     this.centerX[i] = centerX; this.centerY[i] = centerY; this.centerZ[i] = centerZ; this.radius[i] = radius;
     const kindIdx = FLORA_KIND_NAMES.indexOf(kind);
     this.kindIndex[i] = kindIdx < 0 ? 0 : kindIdx;
@@ -381,6 +462,26 @@ export class FloraCandidateBuffer {
   }
 
   survivorIndex(survivorSlot: number): number { return this.outIndices[survivorSlot]!; }
+
+  /** The owner pushed with candidate `index`, or null. */
+  owner(index: number): FloraLodOwner | null { return this.owners[index] ?? null; }
+}
+
+/**
+ * Bands, fades and submits candidate `index` at `distanceM` (real metres):
+ * the hysteretic band from its owner's memory, the range-fade coverage, then
+ * `renderer.submit`. The owner (if any) records the band it was drawn at, or
+ * -1. Returns whether an instance was written. No allocation. Without an owner
+ * this is exactly the old `pickFloraLodBand` + `submit`, plus the fade.
+ */
+export function submitFloraCandidate(renderer: FloraFieldRenderer, buffer: FloraCandidateBuffer, index: number, distanceM: number): boolean {
+  const owner = buffer.owner(index);
+  const lod = pickFloraLodBandHysteretic(owner?.floraLod ?? -1, distanceM);
+  if (lod === -1) { if (owner) owner.floraLod = -1; return false; }
+  const kind = FLORA_KIND_NAMES[buffer.kindIndex[index]!]!;
+  const drawn = renderer.submit(kind, lod, buffer.matrices, index * 16, floraCoverage(distanceM));
+  if (owner) owner.floraLod = drawn ? lod : -1;
+  return drawn;
 }
 
 /**
@@ -416,10 +517,7 @@ export function drawFloraCandidates(
     const dy = buffer.centerY[idx]! - cameraPosition.y;
     const dz = buffer.centerZ[idx]! - cameraPosition.z;
     const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    const lod = pickFloraLodBand(distance);
-    if (lod === -1) continue;
-    const kind = FLORA_KIND_NAMES[buffer.kindIndex[idx]!]!;
-    if (renderer.submit(kind, lod, buffer.matrices, idx * 16)) drawnCount++;
+    if (submitFloraCandidate(renderer, buffer, idx, distance)) drawnCount++;
   }
   renderer.endFrame();
   return { survivorCount, drawnCount };

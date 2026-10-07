@@ -188,6 +188,73 @@ function now(): number {
   return typeof performance !== 'undefined' ? performance.now() : Date.now();
 }
 
+// ---------------------------------------------------------------------------
+// Inside/outside shell blend (transition audit F2).
+//
+// The shell used two coefficient sets: one for an eye inside `outer` (dense,
+// day-weighted haze) and one for an eye outside it (orbital limb). They used to
+// switch with `length(eye)<outer?..:..`, a 0 m wide step that changed alpha
+// from about .115 to .910 (D = 1, noon) in one frame on every descent or climb.
+// Now both coefficients are mixed with `shellBlend`, a smoothstep across
+// outer +- ATMOSPHERE_SHELL_BLEND_EPS * (outer - inner). The shader text is
+// generated from the same constants (`shellBlendGlsl`), so the CPU mirror
+// `shellAlpha` evaluates the shader's formula. Outside the band the result is
+// the old one exactly: mix(a, b, 1) = b and mix(a, b, 0) = a.
+// ---------------------------------------------------------------------------
+
+/** Half-width of the inside/outside blend band, as a fraction of the shell
+ * thickness (outer - inner). 2.5% of a 100 km atmosphere is +-2.5 km. */
+export const ATMOSPHERE_SHELL_BLEND_EPS = 0.025;
+/** Extinction coefficients (per unit column density) for an eye inside and
+ * outside the shell. */
+export const ATMOSPHERE_SHELL_EXTINCTION = Object.freeze({ inside: 2.5, outside: 0.14 });
+/** Opacity multipliers: inside mixes night..day by the LUT day weight. */
+export const ATMOSPHERE_SHELL_OPACITY = Object.freeze({ insideNight: 0.42, insideDay: 0.995, outside: 0.88 });
+
+/** GLSL float literal (GLSL ES needs a decimal point). */
+function glslFloat(value: number): string {
+  if (!Number.isFinite(value)) throw new RangeError(`not a finite GLSL float: ${value}`);
+  return Number.isInteger(value) ? value.toFixed(1) : String(value);
+}
+
+/** Weight of the inside coefficients for an eye at radius `eyeR`: 1 well
+ * inside the shell, 0 well outside, smooth across outer +- eps*(outer-inner).
+ * `eps <= 0` reproduces the old hard switch (`eyeR < outer ? 1 : 0`); it exists
+ * for the regression test's negative case, never for the shader. */
+export function shellBlend(eyeR: number, inner: number, outer: number, eps: number = ATMOSPHERE_SHELL_BLEND_EPS): number {
+  const half = eps * Math.max(0, outer - inner);
+  if (!(half > 0)) return eyeR < outer ? 1 : 0;
+  return 1 - smoothstep(outer - half, outer + half, eyeR);
+}
+
+/** The GLSL expression that `shellBlend` mirrors, for GLSL expressions of the
+ * eye radius and the inner/outer shell radii. */
+export function shellBlendGlsl(eyeR: string, inner: string, outer: string, eps: number = ATMOSPHERE_SHELL_BLEND_EPS): string {
+  if (!(eps > 0)) throw new RangeError('the shader blend needs eps > 0');
+  const half = `${glslFloat(eps)}*max(0.0,${outer}-${inner})`;
+  return `(1.0-smoothstep(${outer}-${half},${outer}+${half},${eyeR}))`;
+}
+
+/** CPU mirror of the shell fragment's alpha for a ray of column density
+ * `density` and LUT day weight `day`. */
+export function shellAlpha(density: number, day: number, eyeR: number, inner: number, outer: number, eps: number = ATMOSPHERE_SHELL_BLEND_EPS): number {
+  const w = shellBlend(eyeR, inner, outer, eps), e = ATMOSPHERE_SHELL_EXTINCTION, o = ATMOSPHERE_SHELL_OPACITY;
+  const mix = (a: number, b: number, t: number) => a * (1 - t) + b * t;
+  const opacity = 1 - Math.exp(-density * mix(e.outside, e.inside, w));
+  return opacity * mix(o.outside, mix(o.insideNight, o.insideDay, day), w);
+}
+
+/** The two shader lines `shellAlpha` mirrors (opacity, then the alpha
+ * multiplier), generated from the constants above. */
+export function shellAlphaGlsl(): { blend: string; opacity: string; multiplier: string } {
+  const e = ATMOSPHERE_SHELL_EXTINCTION, o = ATMOSPHERE_SHELL_OPACITY;
+  return {
+    blend: `float shellIn=${shellBlendGlsl('length(eye)', 'inner', 'outer')};`,
+    opacity: `float opacity=1.0-exp(-density*mix(${glslFloat(e.outside)},${glslFloat(e.inside)},shellIn));`,
+    multiplier: `mix(${glslFloat(o.outside)},mix(${glslFloat(o.insideNight)},${glslFloat(o.insideDay)},day),shellIn)`,
+  };
+}
+
 /** Builds the shell mesh, material and its once-per-body LUT. Constructing
  * this never touches a GL context (DataTexture/ShaderMaterial/Mesh are plain
  * objects until the renderer uploads them), so it is unit-testable without
@@ -211,6 +278,7 @@ export function createAtmosphereShell(params: AtmosphereShellParams): Atmosphere
   lut.needsUpdate = true;
 
   const outer = params.radius + params.atmosphereHeight;
+  const shellGlsl = shellAlphaGlsl();
   const uniforms = {
     eye: { value: new THREE.Vector3(0, 0, outer * 2) },
     sun: { value: new THREE.Vector3(1, 0, 0) },
@@ -255,8 +323,9 @@ export function createAtmosphereShell(params: AtmosphereShellParams): Atmosphere
         }
         float day=density>0.00001?lit/density:0.0;
         vec3 color=density>0.00001?scatter/density:vec3(0.03,0.05,0.09);
-        float opacity=1.0-exp(-density*(length(eye)<outer?2.5:0.14));
-        gl_FragColor=vec4(max(color,vec3(.008,.012,.02)),opacity*(length(eye)<outer?mix(.42,.995,day):.88));
+        ${shellGlsl.blend}
+        ${shellGlsl.opacity}
+        gl_FragColor=vec4(max(color,vec3(.008,.012,.02)),opacity*${shellGlsl.multiplier});
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,

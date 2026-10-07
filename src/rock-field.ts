@@ -39,6 +39,23 @@ export const ROCK_SHORE_CLEARANCE_M=.3;
 export const ROCK_MAX_SLOPE_DEG=58;
 /** Rendering is disabled once no tier can be within range of the eye. */
 export const ROCK_MAX_ALTITUDE_M=Math.max(...ROCK_TIERS.map(t=>t.rangeM));
+/** Altitude gate hysteresis (transition audit F3). Rocks that are hidden turn
+ * on below ROCK_MAX_ALTITUDE_M - this; rocks that are shown stay on up to
+ * ROCK_MAX_ALTITUDE_M, which stays the hard exit (above it no tier can be in
+ * range). The band sits below the old threshold so nothing is drawn higher
+ * than before. Presentation only: placement never reads it. */
+export const ROCK_ALTITUDE_HYSTERESIS_M=40;
+/** LOD hysteresis (transition audit F7). A rock keeps its previous LOD while
+ * its distance stays within max(ROCK_LOD_HYSTERESIS x boundary,
+ * ROCK_LOD_HYSTERESIS_MIN_M) beyond either edge of that LOD's band. The
+ * absolute floor keeps a +-1 m oscillation from flipping small rocks, whose
+ * boundaries are only a few metres out. */
+export const ROCK_LOD_HYSTERESIS=.05;
+export const ROCK_LOD_HYSTERESIS_MIN_M=1.5;
+/** Coverage fade at the far cuts (tier range and the last LOD ratio), as a
+ * fraction of the cut distance: coverage goes 1 -> 0 by a smoothstep over the
+ * last 10%, so a rock is fully dithered out where it used to pop. */
+export const ROCK_RANGE_FADE=.1;
 
 /** Minimal dated gate the renderer receives from main.ts. `surfaceSolid` is
  * the planet lifecycle's solid stage; it does not depend on any biosphere. */
@@ -144,6 +161,33 @@ export function rockLod(distanceM:number,diameterM:number,rangeM:number):0|1|2|-
   if(!(distanceM<=rangeM))return -1;
   const ratio=distanceM/Math.max(1e-3,diameterM);
   return ratio<ROCK_LOD_RATIOS[0]?0:ratio<ROCK_LOD_RATIOS[1]?1:ratio<ROCK_LOD_RATIOS[2]?2:-1;
+}
+/** Hysteresis margin (m) around an LOD boundary at `boundaryM`. */
+export function rockLodHysteresisM(boundaryM:number):number{return Math.max(ROCK_LOD_HYSTERESIS*boundaryM,ROCK_LOD_HYSTERESIS_MIN_M);}
+/** `rockLod` with memory (transition audit F7). `prev` is the LOD the rock
+ * was last drawn at (-1: none). The range and last-ratio cuts stay exactly
+ * those of `rockLod` (they are faded by `rockCoverage`, not held); between
+ * LOD 0, 1 and 2 a rock keeps `prev` while its distance is inside prev's band
+ * widened by `rockLodHysteresisM` at each inner boundary. With prev = -1 this
+ * is `rockLod`. */
+export function rockLodHysteretic(prev:number,distanceM:number,diameterM:number,rangeM:number):0|1|2|-1{
+  const lod=rockLod(distanceM,diameterM,rangeM);
+  if(lod<0||!(prev===0||prev===1||prev===2)||prev===lod)return lod;
+  const d=Math.max(1e-3,diameterM);
+  const lo=prev===0?0:ROCK_LOD_RATIOS[prev-1]!*d,hi=prev===2?Infinity:ROCK_LOD_RATIOS[prev]!*d;
+  const keepLo=prev===0?-Infinity:lo-rockLodHysteresisM(lo),keepHi=prev===2?Infinity:hi+rockLodHysteresisM(hi);
+  return distanceM>=keepLo&&distanceM<keepHi?prev:lod;
+}
+function smoothstep(edge0:number,edge1:number,x:number){const t=clamp01((x-edge0)/(edge1-edge0));return t*t*(3-2*t);}
+/** Drawn coverage of a rock in [0,1] (transition audit F7): 1 inside, then a
+ * smoothstep to 0 over the last ROCK_RANGE_FADE of the tier range and of the
+ * last LOD ratio. It is the product of two non-increasing terms, so it never
+ * rises with distance, and it is 0 wherever `rockLod` is -1. */
+export function rockCoverage(distanceM:number,diameterM:number,rangeM:number):number{
+  if(!(distanceM<=rangeM))return 0;
+  const lastM=ROCK_LOD_RATIOS[2]*Math.max(1e-3,diameterM);
+  if(!(distanceM<lastM))return 0;
+  return (1-smoothstep(rangeM*(1-ROCK_RANGE_FADE),rangeM,distanceM))*(1-smoothstep(lastM*(1-ROCK_RANGE_FADE),lastM,distanceM));
 }
 
 export type RockCellContext={
