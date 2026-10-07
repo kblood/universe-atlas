@@ -274,9 +274,11 @@ test('export CLI: sidecar and brief carry provenance; an existing file is never 
 /** v1 GLB sha256 per specimen, exported by fauna-composer-export-1 at main 5450d9d. They hold while the 12 composer-core
  * sources hash to `core` (generatorSourceHash format); when the core moves (skin version, composer-stability work) the
  * byte comparison is skipped with a diagnostic and the self-relative checks still run. Regenerate by exporting the
- * specimens with no v2 option on the new core. */
+ * specimens with no v2 option on the new core.
+ * 2026-10-07: core re-keyed e49fc2ec… -> 84d9d6fd… after the fauna/composer-stability merge (proboscis-ear clamp);
+ * all five GLB shas regenerated on the new core were byte-identical to the pins below, so only `core` changed. */
 const V1_PINS = {
-  core: 'e49fc2ec469caac34660c1ff2500aedb2531fc488d6481da3a1e641d7c94254b',
+  core: '84d9d6fd4f0832c6bbef3f3930971a8153a1dd83ae1f44916b1428daf08e182a',
   glb: {
     bird: 'bb87f35b228bab8a7ec375aad1ff3b7e91562e984df641d2cc067a43417a7a0f',
     centipede: '709abe3ce33ccfaff18ce5b55e877a4016cbe492b2bd663127d559f3cb933786',
