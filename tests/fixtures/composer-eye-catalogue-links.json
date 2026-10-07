@@ -244,11 +244,32 @@
    "text": "v4*layout_biped*legPairs_1*bodyLength_0.22*girth_1.2*posture_0.45*torso_barrel*neckLength_0.45*head_beak*headSize_1.2*snoutLength_0.55*horns_none*legs_digitigrade*legLength_0.85*feet_claw*arms_none*armLength_0.6*hands_hand*tail_feather-fan*tailLength_0.9*armor_none*wings_feathered*wingSpan_3.2*trunk_none*trunkLength_0.8*palette_plumage*colorSeed_5*pattern_auto*marks_0*patternScale_1*patternContrast_1*countershade_0.8*dimorphism_0.6*variability_1*allometry_1*individualSeed_0*sex_auto*maturity_1*condition_0*eyes_insect*iris_auto*eyeRules_2",
    "kind": "insect",
    "eyeRules": 2,
-   "skin": "1d759b279c4c6cd5d0885daa2ff9eaa52b74b4d3335330755c1060a5d99109d3",
+   "skin": "314d93b3effdadd1b33f126880b354d5528cb8027e7a0e9d6ffc8e4b2dc0268f",
    "gloss": "763cd582be48f9760f9107fe572ce6a742feeceb5b0ece2e14aa694025c17bf1",
    "vertices": 5896,
    "triangles": 11616,
-   "bones": 24
+   "bones": 24,
+   "stabilityDrift": {
+    "reason": "fauna-composer-stability (2026-10-07): the midline insect ocellus is seated on the head mirror seam with the tie-order-independent seamNormal (sum of the tied seam-triangle exit normals in triangle-index order, lateral component dropped) instead of whichever seam triangle the 1-ulp tie order picked; 8 ocellus vertices move, colours/weights/index unchanged",
+    "before": {
+     "skin": "1d759b279c4c6cd5d0885daa2ff9eaa52b74b4d3335330755c1060a5d99109d3",
+     "gloss": "763cd582be48f9760f9107fe572ce6a742feeceb5b0ece2e14aa694025c17bf1"
+    },
+    "after": {
+     "skin": "314d93b3effdadd1b33f126880b354d5528cb8027e7a0e9d6ffc8e4b2dc0268f",
+     "gloss": "763cd582be48f9760f9107fe572ce6a742feeceb5b0ece2e14aa694025c17bf1"
+    },
+    "verticesMoved": 8,
+    "maxVertexDisplacementM": 0.0000438195,
+    "unchanged": [
+     "index",
+     "skinIndex",
+     "skinWeight",
+     "colors",
+     "gloss"
+    ]
+   },
+   "skinPreStability": "1d759b279c4c6cd5d0885daa2ff9eaa52b74b4d3335330755c1060a5d99109d3"
   },
   {
    "name": "odd-earlier-rules-worm",
@@ -370,5 +391,15 @@
    "triangles": 17636,
    "bones": 79
   }
- ]
+ ],
+ "repinnedAtStability": {
+  "branch": "fauna/ocellus-seam",
+  "replacesPinsAt": "a9a4893",
+  "date": "2026-10-07",
+  "skin": "fauna-composer-skin-4",
+  "changed": 1,
+  "of": 30,
+  "reason": "fauna-composer-stability (2026-10-07): the midline insect ocellus is seated on the head mirror seam with the tie-order-independent seamNormal (sum of the tied seam-triangle exit normals in triangle-index order, lateral component dropped) instead of whichever seam triangle the 1-ulp tie order picked; 8 ocellus vertices move, colours/weights/index unchanged",
+  "note": "Repinned in place (skin-4 is unreleased: the deployed build is fauna-preview-20261002-01; D2 accepted the in-place repin). The drifted entry records the replaced pin (skinPreStability) and the before/after hashes (stabilityDrift), as in composer-skin4-links.json. Ledger: docs/fauna-composer-stability-2026-10-07.md."
+ }
 }
