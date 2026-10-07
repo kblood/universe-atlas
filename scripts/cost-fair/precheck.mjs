@@ -1,7 +1,8 @@
 // Pre-check before EACH counted fair-protocol process (O5; promoted from docs/quiet-window-2026-10-07/gate1/precheck.mjs,
 // see docs/cost-fair-harness-2026-10-07.md). It never kills anything and never drops a process:
 //  (1) HARD: the shared test-slot holder dir `<slot>.shared` must be empty; with --in-batch also: this batch must still
-//      hold the EXCLUSIVE slot (its ATLAS_TEST_SLOT_TOKEN is the live owner). Either failing after the wait -> exit 3.
+//      hold the EXCLUSIVE slot (its ATLAS_TEST_SLOT_TOKEN is the live owner). Exit 3: shared holders still present after
+//      the wait; a lost exclusive slot at once.
 //  (2) contenders: perf-host classifyProcess over the tasklist and the nvidia-smi compute apps, diffed against the
 //      baseline taken at the batch start. A NEW strong-named process (codex, chrome, blender, ffmpeg, llama, comfyui,
 //      python) counts ONLY if it used more than 5 % of one logical CPU over a 500 ms sample (CPU_ACTIVE_FRAC); idle ones
@@ -87,16 +88,17 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     writeFileSync(basePath, JSON.stringify(rec, null, 1));console.log(JSON.stringify(rec));process.exit(0);
   }
   const base = JSON.parse(readFileSync(basePath, 'utf8')), basePids = new Set(base.heavy.map(p => p.pid)), baseGpuPids = new Set(base.gpu.map(p => p.pid));
-  const t0 = Date.now();let waits = 0, s, c, hard;
+  const t0 = Date.now(), waitReasons = new Set();let waits = 0, s, c, hard;
   for (;;) {
     s = await snap(basePids);
     c = classify({...s, cpu: s.cpu.map, basePids, baseGpuPids});
     hard = inBatch && s.slot !== 'exclusive' ? `this batch does not hold the exclusive test slot (state ${s.slot})` : null;
     if (hard) c.reasons.push(hard);
-    if (!c.reasons.length || Date.now() - t0 >= maxWaitMs) break;
+    if (!c.reasons.length || hard || Date.now() - t0 >= maxWaitMs) break; // a lost slot does not come back: abort at once
+    for (const r of c.reasons) waitReasons.add(r.replace(/ [0-9.]+%$/, ''));
     waits++;await sleep(stepMs);
   }
-  const rec = {at: new Date().toISOString(), label, waits, waitedMs: Date.now() - t0, flagged: c.reasons.length > 0 || waits > 0, reasons: c.reasons,
+  const rec = {at: new Date().toISOString(), label, waits, waitedMs: Date.now() - t0, flagged: c.reasons.length > 0 || waits > 0, reasons: c.reasons, waitReasons: [...waitReasons],
     idlePct: +(100 * s.idleFrac).toFixed(1), shared: s.shared, slot: s.slot, newHeavy: c.newHeavy.map(p => `${p.pid} ${p.name}`),
     active: c.active.map(fmt), quiet: c.quiet.map(fmt), gone: c.gone.map(p => `${p.pid} ${p.name}`), newGpu: c.newGpu.map(p => `${p.pid} ${p.name}`),
     ...(s.cpu.error ? {cpuSampleError: s.cpu.error} : {})};

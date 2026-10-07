@@ -59,7 +59,7 @@ if (reused) {
   const tmp = `${dir}.tmp-${process.pid}`;
   rmSync(tmp, {recursive: true, force: true});mkdirSync(tmp);
   for (const w of WORLDS) {
-    const r = spawnSync(process.execPath, [`${H}c1-points.mjs`, w, ref, `${tmp}/points-${w}`], {stdio: ['ignore', 'inherit', 'inherit']});
+    const r = spawnSync(process.execPath, [`${H}c1-points.mjs`, w, ref, `${tmp}/points-${w}`], {stdio: ['ignore', 2, 'inherit']}); // child stdout -> our stderr: stdout carries only the cache dir
     if (r.status !== 0) { rmSync(tmp, {recursive: true, force: true}); throw new Error(`c1-points.mjs ${w} exit ${r.status ?? r.signal}`); }
   }
   writeFileSync(`${tmp}/manifest.json`, JSON.stringify({sha, fingerprint: fp, ref, node: process.version, at: new Date().toISOString(), files: hashes(tmp)}, null, 1) + '\n');

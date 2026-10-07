@@ -33,7 +33,7 @@ if [ -f "$OUT/protocol.txt" ]; then
 else echo "$want" > "$OUT/protocol.txt"; fi
 echo "$(date +%T) SESSION pid=$$ $want" >> "$OUT/exits.log"
 [ -f "$OUT/baseline.json" ] || node "$H/precheck.mjs" baseline "$OUT/precheck.jsonl" "$OUT/baseline.json" --baseline > /dev/null || exit 3
-PC=$(node "$H/points.mjs" "$REF" "${REF_SHA:-}" "${POINTS_CACHE:-$(pwd)/test-results/cost-fair/points}" "$OUT") || { echo "$(date +%T) POINTS FAILED" >> "$OUT/exits.log"; exit 4; }
+PC=$(node "$H/points.mjs" "$REF" "${REF_SHA:-}" "${POINTS_CACHE:-$(pwd)/test-results/cost-fair/points}" "$OUT") && [ -f "$PC/manifest.json" ] || { echo "$(date +%T) POINTS FAILED" >> "$OUT/exits.log"; exit 4; }
 
 pre() { node "$H/precheck.mjs" "$1" "$OUT/precheck.jsonl" "$OUT/baseline.json" --in-batch || { echo "$(date +%T) PRECHECK ABORT $1" >> "$OUT/exits.log"; exit 3; }; }
 # start <type> <kind> <world> <first>: sets rf (record path without extension); returns 1 if the record is finished or failed.
