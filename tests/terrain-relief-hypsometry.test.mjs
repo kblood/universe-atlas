@@ -38,7 +38,7 @@ function spearman(a,b){
 }
 
 test('versions and the frozen R-CAL-1 calibration (any change is a TERRAIN_VERSION bump)',()=>{
-  assert.equal(TERRAIN_VERSION,'terrain-1.9.0-mountains'); // was terrain-1.8.1-grain (T6: mountains wired)
+  assert.equal(TERRAIN_VERSION,'terrain-1.9.1-carving-c1'); // was terrain-1.9.0-mountains (carving C1); was terrain-1.8.1-grain (T6: mountains wired)
   assert.equal(LANDFORM_SHAPE_VERSION,'planet-landforms-shape-2');
   assert.ok(Object.isFrozen(RELIEF_CALIBRATION));
   assert.equal(RELIEF_CALIBRATION.name,'R-CAL-1');

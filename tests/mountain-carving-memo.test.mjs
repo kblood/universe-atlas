@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {stripTypeScriptTypes} from 'node:module';
 import {MOUNTAIN_CARVING as C,CARVING_POINT_MEMO} from '../src/mountain-carving.ts';
-import {carvingDigest,carvingDigestArgs,CARVING_F_DIGEST} from './helpers/mountain-carving-digest.mjs';
+import {carvingDigest,carvingDigestArgs,CARVING_F_DIGEST,CARVING_S_DIGEST} from './helpers/mountain-carving-digest.mjs';
 
 const SOURCE=readFileSync(new URL('../src/mountain-carving.ts',import.meta.url),'utf8');
 let variants=0;
@@ -16,29 +16,33 @@ function loadVariant(literals={},exports='export {build,block,cache,solve};'){
   // A unique comment keeps every variant a separate module instance (own memo and scratch).
   return import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(s+'\n'+exports+'\n// variant '+(variants++))).toString('base64'));
 }
-const S=C.CORE+1;
+// Stored columns per block (mountain-carving-3): block-local columns -1 .. CORE+1 at index column+1.
+const S=C.CORE+3;
 
 test('HARD: halo agreement with a wider reference halo, narrow-halo negative control',async()=>{
   const prod=await loadVariant(),wide=await loadVariant({HALO:256}),narrow=await loadVariant({HALO:32});
   let narrowDiff=0;
   for(const [seed,id] of [[730201,0],[730204,-3]]){
-    const a=prod.build(seed,30000,id).r,b=wide.build(seed,30000,id).r,c=narrow.build(seed,30000,id).r;
+    const a=prod.build(seed,30000,id).cut,b=wide.build(seed,30000,id).cut,c=narrow.build(seed,30000,id).cut;
     assert.equal(a.length,(C.ROWS+1)*S);assert.deepEqual(a,b);
     for(let k=0;k<a.length;k++)if(a[k]!==c[k])narrowDiff++;
   }
   assert.ok(narrowDiff>100,'a 4 km halo must disagree: the test has teeth ('+narrowDiff+')');
   console.log('HALO '+JSON.stringify({production:C.HALO,reference:256,narrow:32,narrowDifferingValues:narrowDiff}));
 });
-test('HARD: neighbouring blocks share the seam column bit-exactly and the surface is continuous',async()=>{
-  const m=await loadVariant(),{carvingFM}=m;
-  for(const [seed,id,w] of [[730207,5,30000],[730203,-1,22000]]){
-    const a=m.build(seed,w,id).r,b=m.build(seed,w,id+1).r;
-    for(let j=0;j<=C.ROWS;j++)assert.equal(a[j*S+C.CORE],b[j*S],'row '+j);
+test('HARD: neighbouring blocks share their three common stored columns bit-exactly and the surface is continuous',async()=>{
+  // mountain-carving-3 stores block-local columns -1 .. CORE+1: block id's CORE-1, CORE, CORE+1 are block id+1's -1, 0, 1
+  // (the seam column plus the two extra stored columns the 4x4 stencil reads).
+  const m=await loadVariant(),{carvingFM}=m;let shared=0;
+  for(const [seed,id,w] of [[730207,5,30000],[730203,-1,22000],[730201,0,48000]]){
+    const a=m.build(seed,w,id).cut,b=m.build(seed,w,id+1).cut;
+    for(let j=0;j<=C.ROWS;j++)for(let L=-1;L<=1;L++){assert.equal(a[j*S+C.CORE+L+1],b[j*S+L+1],'row '+j+' column '+L);shared++;}
     const d=2*w/C.ROWS,x=(id+1)*C.CORE*d;let maxJump=0;
     for(let j=1;j<C.ROWS;j+=7){const y=-w+(j+.3)*d,e=3000*(1-Math.abs(y)/w);
       maxJump=Math.max(maxJump,Math.abs(carvingFM(x-1e-7,y,w,e,1,seed)-carvingFM(x,y,w,e,1,seed)));}
     assert.ok(maxJump<1e-3,'seam jump '+maxJump);
   }
+  console.log('SEAM '+JSON.stringify({seams:3,sharedValues:shared,differing:0}));
 });
 test('HARD: evicted (CACHE 1) and LRU-bounded memo reproduces the pinned digest',async()=>{
   const m=await loadVariant({CACHE:1});
@@ -69,23 +73,26 @@ test('HARD: memo key is exact in half-width and normalised seed (key-mutation co
 });
 test('HARD: persistent memo payload stays below 8.5 MB; per-solve transient arrays reported',async()=>{
   const m=await loadVariant();const b=m.build(730201,30000,0),s=m.solve(730201,30000,0);
-  assert.ok(b.r instanceof Float32Array);assert.equal(b.r.length,(C.ROWS+1)*S);
-  // The point-query cell memo (fixed typed arrays) counts against the same 8.5 MB.
+  assert.ok(b.cut instanceof Float32Array);assert.equal(b.cut.length,(C.ROWS+1)*S);
+  // The point-query cell memo (fixed typed arrays, 16 Float32 taps and a 21 B key per slot) counts against the same
+  // 8.5 MB (mountain-carving-3: one clock table of 4096 x 85 = 348,160 B; was two generations of 4096 x 37 = 303,104 B
+  // with 4 corners per cell).
   const pm=await loadVariant({},'export {pmSeed,pmW,pmCol,pmRow,pmUsed,pmV};');
   const pointMemo=[pm.pmSeed,pm.pmW,pm.pmCol,pm.pmRow,pm.pmUsed,pm.pmV].reduce((a,x)=>a+x.byteLength,0);
-  assert.equal(pointMemo,2*CARVING_POINT_MEMO.SLOTS*37);
-  const memo=C.CACHE*b.r.byteLength+pointMemo;assert.ok(memo<=8.5e6,'memo '+memo);
-  // A transferred block (warm-up export) is exactly one memo block.
-  assert.equal(m.exportCarvingBlock({seed:730201,w:30000,id:0}).r.byteLength,248196);
+  assert.equal(pointMemo,CARVING_POINT_MEMO.SLOTS*85);assert.equal(pointMemo,348160);
+  const memo=C.CACHE*b.cut.byteLength+pointMemo;assert.ok(memo<=8.5e6,'memo '+memo);
+  // A transferred block (warm-up export) is exactly one memo block (481 x 131 Float32; was 481 x 129 = 248,196 B).
+  assert.equal(m.exportCarvingBlock({seed:730201,w:30000,id:0}).cut.byteLength,252044);
   // Transient per solve (freed after the build): 4 Float64 + 2 Uint8 + 4 Int32 domain arrays.
   const NN=(C.CORE+2*C.HALO+1)*(C.ROWS+1),transient=NN*(4*8+2+4*4);
   assert.equal(s.h.length,NN);
-  console.log('MEMORY '+JSON.stringify({blockBytes:b.r.byteLength,blockMemoBytes:C.CACHE*b.r.byteLength,pointMemoBytes:pointMemo,memoBytes:memo,transientBytesPerSolve:transient}));
+  console.log('MEMORY '+JSON.stringify({blockBytes:b.cut.byteLength,blockMemoBytes:C.CACHE*b.cut.byteLength,pointMemoBytes:pointMemo,memoBytes:memo,transientBytesPerSolve:transient}));
 });
 test('HARD: point-query cell memo is bit-identical to the block path (cold, warm, aged, interleaved; key control)',async()=>{
-  // docs/placeat-regression-2026-10-07.md: inside enter/exitCarvingPointQuery retainedAt reads memoised cell corners.
+  // docs/placeat-regression-2026-10-07.md: inside enter/exitCarvingPointQuery cutAt reads the memoised 16 taps of the cell.
   const args=carvingDigestArgs(),rev=args.map((_,i)=>args.length-1-i);
   const point=m=>(...a)=>{m.enterCarvingPointQuery();try{return m.carvingFM(...a);}finally{m.exitCarvingPointQuery();}};
+  const pointS=m=>(...a)=>{m.enterCarvingPointQuery();try{return m.carvingSmoothFM(...a);}finally{m.exitCarvingPointQuery();}};
   const m=await loadVariant({},'');
   const b0=m.carvingBuildStats.count;
   assert.equal(carvingDigest(point(m)),CARVING_F_DIGEST,'cold');
@@ -95,12 +102,20 @@ test('HARD: point-query cell memo is bit-identical to the block path (cold, warm
   // Interleaved point and block calls on one module instance.
   let n=0;const mixed=(...a)=>(n++&1?point(m)(...a):m.carvingFM(...a));
   assert.equal(carvingDigest(mixed),CARVING_F_DIGEST,'interleaved');
-  // A 16-slot memo ages every 12 stores (the block memo keeps the fixture's 4 blocks).
+  // The smoothed carving (mountain-assembly-4 rock driver) reads the same memoised taps: warm (memo filled by the
+  // Catmull-Rom passes), cold on a fresh instance, and interleaved with Catmull-Rom point and block calls.
+  assert.equal(carvingDigest(pointS(m)),CARVING_S_DIGEST,'smooth warm');
+  const ms=await loadVariant({},'');assert.equal(carvingDigest(pointS(ms),rev),CARVING_S_DIGEST,'smooth cold');
+  let q=0;const mixedS=(...a)=>{const r=q%3;q++;return r===0?pointS(ms)(...a):r===1?ms.carvingSmoothFM(...a):(point(ms)(...a),pointS(ms)(...a));};
+  assert.equal(carvingDigest(mixedS),CARVING_S_DIGEST,'smooth interleaved');
+  // A 16-slot memo holds 12 live cells and evicts by the clock on every later store (the block memo keeps the
+  // fixture's 4 blocks).
   const aged=await loadVariant({SLOTS:16,FILL:12},'');
   for(const order of [null,rev])assert.equal(carvingDigest(point(aged),order),CARVING_F_DIGEST,'aged');
-  assert.ok(aged.carvingPointMemoStats.stores>64&&aged.carvingPointMemoStats.hits>0,JSON.stringify(aged.carvingPointMemoStats));
+  for(const order of [null,rev])assert.equal(carvingDigest(pointS(aged),order),CARVING_S_DIGEST,'smooth aged');
+  assert.ok(aged.carvingPointMemoStats.stores>64&&aged.carvingPointMemoStats.hits>0&&aged.carvingPointMemoStats.evictions>64,JSON.stringify(aged.carvingPointMemoStats));
   // Mutation control: a width-blind cell key must be caught. Cell-centre points (d = 125 m) fall in the same
-  // lattice cell at both half-widths, so a width-blind memo returns the other width's corners.
+  // lattice cell at both half-widths, so a width-blind memo returns the other width's taps.
   const pts=[[8,200],[72,260],[100,300],[40,150],[-20,330]].map(([c,j])=>[(c+.5)*125,(j+.5)*125-30000]),ws=[30000,30000.5];
   const fresh={};for(const w of ws){const f=await loadVariant();fresh[w]=pts.map(([x,y])=>f.carvingFM(x,y,w,3000,1,730201));}
   const diffs=mod=>{let d=0;const f=point(mod);for(let pass=0;pass<2;pass++)for(const w of pass?[...ws].reverse():ws)pts.forEach(([x,y],k)=>{if(f(x,y,w,3000,1,730201)!==fresh[w][k])d++;});return d;};
@@ -121,10 +136,10 @@ test('HARD: residency transfer: a fresh instance that imports the traced blocks 
   assert.equal(blocks.length,4,'the fixture touches 4 blocks: '+blocks.map(keyOf));
   assert.equal(new Set(blocks.map(keyOf)).size,4,'unique keys');
   const ex=blocks.map(A.exportCarvingBlock);assert.equal(A.carvingBuildStats.count,a0,'export of resident blocks does not solve');
-  for(const e of ex){assert.equal(e.version,'mountain-carving-2');assert.equal(e.r.byteLength,248196);}
-  // Through a postMessage-equivalent structured clone with the transfer list (the r buffers move).
-  const posted=structuredClone(ex,{transfer:ex.map(e=>e.r.buffer)});
-  assert.equal(ex[0].r.byteLength,0,'transferred (detached in the sender copy only)');
+  for(const e of ex){assert.equal(e.version,'mountain-carving-3');assert.equal(e.cut.byteLength,252044);}
+  // Through a postMessage-equivalent structured clone with the transfer list (the cut buffers move).
+  const posted=structuredClone(ex,{transfer:ex.map(e=>e.cut.buffer)});
+  assert.equal(ex[0].cut.byteLength,0,'transferred (detached in the sender copy only)');
   const B=await loadVariant({},'export {cache};'),b0=B.carvingBuildStats.count;
   assert.deepEqual(posted.map(B.importCarvingBlock),[true,true,true,true]);assert.equal(B.cache.length,4);
   assert.equal(carvingDigest(B.carvingFM),CARVING_F_DIGEST,'block path');
@@ -134,23 +149,25 @@ test('HARD: residency transfer: a fresh instance that imports the traced blocks 
   assert.equal(carvingDigest(A.carvingFM),CARVING_F_DIGEST,'the sender still has its own blocks');
   // Export is a copy: mutating it leaves the source instance unchanged.
   const copy=A.exportCarvingBlock(blocks[0]),own=A.cache.find(b=>keyOf(b)===keyOf(blocks[0]));
-  assert.notEqual(copy.r,own.r);assert.deepEqual(copy.r,own.r);copy.r.fill(.5);
+  assert.notEqual(copy.cut,own.cut);assert.deepEqual(copy.cut,own.cut);copy.cut.fill(.5);
   assert.equal(carvingDigest(A.carvingFM),CARVING_F_DIGEST,'mutated export does not reach the memo');
   // Invalid imports throw and leave the memo untouched (a fresh instance, where a valid import would insert).
   const base=A.exportCarvingBlock(blocks[0]),D=await loadVariant({},'export {cache};');
-  const withR=f=>{const r=new Float32Array(base.r);f(r);return {...base,r};};
-  const bad={version:{...base,version:'mountain-carving-1'},length:{...base,r:new Float32Array(base.r.length-1)},
-    nan:withR(r=>{r[100]=NaN;}),above1:withR(r=>{r[200]=1.5;}),seed:{...base,seed:-1},id:{...base,id:1.5},
-    capped:{...base,capped:5,positive:4}};
+  const withCut=f=>{const cut=new Float32Array(base.cut);f(cut);return {...base,cut};};
+  // version: a mountain-carving-2 block (retained, CORE+1 columns) must never enter a -3 memo; old248196: the old shape.
+  const bad={version:{...base,version:'mountain-carving-2'},length:{...base,cut:new Float32Array(base.cut.length-1)},
+    old248196:{...base,cut:new Float32Array(248196/4)},
+    nan:withCut(r=>{r[100]=NaN;}),above1:withCut(r=>{r[200]=1.5;}),below0:withCut(r=>{r[300]=-.25;}),seed:{...base,seed:-1},id:{...base,id:1.5},
+    capped:{...base,capped:5,positive:4},positive:{...base,capped:0,positive:(C.ROWS+1)*(C.CORE+1)+1}};
   for(const [name,b] of Object.entries(bad)){assert.throws(()=>D.importCarvingBlock(b),Error,name);assert.equal(D.cache.length,0,name);}
   assert.equal(D.carvingTransferStats.imported,0);
   assert.equal(D.importCarvingBlock(base),true);assert.equal(D.cache.length,1);
   const again=A.exportCarvingBlock(blocks[0]);
-  assert.equal(D.importCarvingBlock(again),false,'duplicate');assert.equal(D.cache[0].r,base.r,'the resident object is kept');
+  assert.equal(D.importCarvingBlock(again),false,'duplicate');assert.equal(D.cache[0].cut,base.cut,'the resident object is kept');
   assert.deepEqual(D.carvingTransferStats,{exported:0,imported:1,duplicate:1});
   // LRU bound on a CACHE 4 variant: 8 imports keep the last 4, in MRU order; a duplicate does not reorder.
   const L=await loadVariant({CACHE:4},'export {cache};'),NRS=(C.ROWS+1)*S;
-  const synth=id=>({version:L.MOUNTAIN_CARVING_VERSION,seed:730201,w:30000,id,r:new Float32Array(NRS).fill(id/8),capped:0,positive:0});
+  const synth=id=>({version:L.MOUNTAIN_CARVING_VERSION,seed:730201,w:30000,id,cut:new Float32Array(NRS).fill(id/8),capped:0,positive:0});
   for(let id=0;id<8;id++)assert.equal(L.importCarvingBlock(synth(id)),true);
   assert.ok(L.cache.length<=4);assert.deepEqual(L.cache.map(b=>b.id),[4,5,6,7]);
   assert.equal(L.importCarvingBlock(synth(5)),false);assert.deepEqual(L.cache.map(b=>b.id),[4,5,6,7]);

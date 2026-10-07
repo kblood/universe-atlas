@@ -280,7 +280,7 @@ export function importPlaceBlocks(blocks: readonly CarvingBlockExport[]): number
   for (const b of blocks) if (importCarvingBlock(b)) n++;
   return n;
 }
-/** The transfer list for `postMessage(blocks, placeBlockTransferables(blocks))` (each block's r.buffer). */
+/** The transfer list for `postMessage(blocks, placeBlockTransferables(blocks))` (each block's cut.buffer). */
 export function placeBlockTransferables(blocks: readonly CarvingBlockExport[]): ArrayBuffer[] {
-  return blocks.map(b => b.r.buffer as ArrayBuffer);
+  return blocks.map(b => b.cut.buffer as ArrayBuffer);
 }

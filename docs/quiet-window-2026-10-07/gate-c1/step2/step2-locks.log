@@ -1,0 +1,14 @@
+2026-10-07T12:36:42.468Z GPU lock held: opus55 GATE-C1 step 2 (golden + probe pair, one hold) pid=11676 host=DESKTOP-N09QOSU acquired=2026-10-07T12:36:42.466Z
+2026-10-07T12:36:42.468Z RUN C:/LLM/IWSDK/universe-atlas-wt/c1-probe: node tests/golden/run-cross-engine.mjs --report C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/golden-branch-report.json
+2026-10-07T12:37:19.627Z EXIT 0 golden cross-engine branch b84bcf9 (HARD)
+2026-10-07T12:37:19.627Z RUN C:/LLM/IWSDK/universe-atlas-wt/q-main-c1: node tests/golden/run-cross-engine.mjs --report C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/golden-main-report.json
+2026-10-07T12:37:54.895Z EXIT 0 golden cross-engine main 581a484 (reference)
+2026-10-07T12:37:54.895Z RUN C:/LLM/IWSDK/universe-atlas-wt/c1-probe: node node_modules/vite/bin/vite.js build
+2026-10-07T12:38:00.563Z EXIT 0 app build branch
+2026-10-07T12:38:00.565Z RUN C:/LLM/IWSDK/universe-atlas-wt/q-main-c1: node node_modules/vite/bin/vite.js build
+2026-10-07T12:38:06.332Z EXIT 0 app build main
+2026-10-07T12:38:06.333Z RUN C:/LLM/IWSDK/universe-atlas-wt/q-main-c1: node C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/probe/probe-c1.browser.mjs --root C:/LLM/IWSDK/universe-atlas-wt/q-main-c1 --tag main --out C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames --tileset C:/LLM/IWSDK/universe-atlas-wt/c1-probe/tests/helpers/mountain-tile-set.mjs
+2026-10-07T12:39:57.307Z EXIT 0 probe main
+2026-10-07T12:39:57.307Z RUN C:/LLM/IWSDK/universe-atlas-wt/c1-probe: node C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/probe/probe-c1.browser.mjs --root C:/LLM/IWSDK/universe-atlas-wt/c1-probe --tag branch --out C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames --tileset C:/LLM/IWSDK/universe-atlas-wt/c1-probe/tests/helpers/mountain-tile-set.mjs --descent-like C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/probe-main.json
+2026-10-07T12:41:47.856Z EXIT 0 probe branch
+2026-10-07T12:41:47.857Z GPU lock released

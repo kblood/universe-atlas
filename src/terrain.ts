@@ -122,7 +122,11 @@ import {carvingAtLevel,rockDetailAtLevel} from './lod-ladder.ts';
 // and the M5 steep-rock detail (mountain-rock-detail-1) into the land floor's ridge term inside 48 km massifs
 // (mountain-assembly-3); below the carving cut tiles read the baked coarse field (lod-ladder-3). Outside the
 // massifs, the seabed, the ocean flag at sea level 0, dry worlds and baseTerrainSampler are unchanged.
-export const TERRAIN_VERSION = "terrain-1.9.0-mountains";
+// 1.9.1-carving-c1 (docs/fable-decision-carving-lattice-2026-10-07.md, docs/mountain-carving-c1-2026-10-07.md): the
+// M3 carving height is a C1 4x4 Catmull-Rom of the stored cut fraction (mountain-carving-3, was the triangle-
+// interpolated retained of mountain-carving-2) and M5 rock reads the C2 cubic B-spline of the same taps
+// (mountain-assembly-4). Removes the 200 m carving-lattice grid; only massif interiors change.
+export const TERRAIN_VERSION = "terrain-1.9.1-carving-c1";
 /**
  * terrain-1.8.1: the 800 m local colour grain of water-world LAND colour (the
  * climate colour path of terrainSampler): localGrain = BASE + n(d, R/CELL_M, 74) x

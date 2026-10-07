@@ -1,0 +1,13 @@
+M4 Maithea WHOLE CORE (64 km raster, 8 seeds): R1 44.00 over 31998 km2 PASS
+M4 Maithea tau 0.789 w 71.6 km massif 48 km y=0m: R1 53.65 R2 1 R3 0 max 2872/2872 body 0 PASS
+M4 Maithea tau 0.789 w 71.6 km massif 48 km y=0.4m: R1 40.34 R2 1 R3 0 max 2872/2872 body 0 PASS
+M4 Selawyn WHOLE CORE (64 km raster, 8 seeds): R1 24.59 over 31998 km2 PASS
+M4 Selawyn tau 0.603 w 220.0 km massif 48 km y=0m: R1 30.28 R2 1 R3 0 max 2196/2196 body 0 PASS
+M4 Selawyn tau 0.603 w 220.0 km massif 48 km y=0.4m: R1 22.29 R2 1 R3 0 max 2196/2196 body 0 PASS
+M4 Raiva WHOLE CORE (64 km raster, 8 seeds): R1 9.28 over 31998 km2 PASS
+M4 Raiva tau 0.456 w 90.1 km massif 48 km y=0m: R1 11.50 R2 1 R3 0 max 1660/1660 body 0 PASS
+M4 Raiva tau 0.456 w 90.1 km massif 48 km y=0.4m: R1 7.62 R2 1 R3 0 max 1660/1660 body 0 FAIL
+M4 Lethuris WHOLE CORE (64 km raster, 8 seeds): R1 42.41 over 31998 km2 PASS
+M4 Lethuris tau 0.771 w 129.7 km massif 48 km y=0m: R1 51.65 R2 1 R3 0 max 2806/2806 body 0 PASS
+M4 Lethuris tau 0.771 w 129.7 km massif 48 km y=0.4m: R1 39.04 R2 1 R3 0 max 2806/2806 body 0 PASS
+wall 80.9 s; M4 gate rows on real parameters: 20/20 pass

@@ -135,7 +135,9 @@ test('kept palette: ocean, sea-ice, Ice, Volcanic, barren, gas-giant and base-sa
 // envelope's reach) is bit-identical to the
 // pre-mountains field (the whole sample object), and the massifs do move the field (negative control).
 export const MOUNTAINS_LEVEL0_SHA256='81b7bdd57562012304414995a4cb4ee1e81b2b719ad6bdcf79f579c84038f7bb';
-export const MOUNTAINS_TRUTH_SHA256='7de7c8f7d73fe535435522f2d158bccc654f833eee81c1e9b6acb286f79fb3cd';
+// Carving C1 (terrain-1.9.1-carving-c1): the truth re-pinned, was 7de7c8f7d73fe535435522f2d158bccc654f833eee81c1e9b6acb286f79fb3cd;
+// level 0 (uncarved) unchanged.
+export const MOUNTAINS_TRUTH_SHA256='46ecb662891719725b26eb98a1e600f769efd99f71a41ed08f3227028832a5cd';
 // The truth: the massif is |axis| < H = min(halfWidth, 48 km). Level 0 reads the baked coarse field (massif-envelope-3),
 // a conservative upper envelope whose candidate is skipped only when |sd| - margin >= 1 (sd bilinear in Float32,
 // error <= 0.5 x margin, measured, docs/mountains-t6-baked-coarse-2026-10-06.md section 9): outside 1 + 1.5 x END_H.

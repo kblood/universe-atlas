@@ -1,0 +1,186 @@
+{
+ "variant": "cr",
+ "tiles": 20,
+ "truth": {
+  "lattice-x": 9.34,
+  "lattice-y": 8.22,
+  "lattice-d": 1.36,
+  "lattice-d2": 0.57
+ },
+ "rockOff": {
+  "lattice-x": 2.28,
+  "lattice-y": -0.79,
+  "lattice-d": 0.58,
+  "lattice-d2": 0.12
+ },
+ "rockOnly": {
+  "lattice-x": 10.29,
+  "lattice-y": 9.3,
+  "lattice-d": 1.58,
+  "lattice-d2": 1.04
+ },
+ "perTile": [
+  {
+   "world": "Maithea",
+   "kind": "axis",
+   "truthX": 8.93,
+   "rockOffX": 0.98,
+   "rockOnlyX": 9.34,
+   "rockRmsM": 23.74
+  },
+  {
+   "world": "Maithea",
+   "kind": "axis",
+   "truthX": 13,
+   "rockOffX": 0.45,
+   "rockOnlyX": 12.96,
+   "rockRmsM": 12.96
+  },
+  {
+   "world": "Maithea",
+   "kind": "flank",
+   "truthX": 11.09,
+   "rockOffX": 3.35,
+   "rockOnlyX": 11.55,
+   "rockRmsM": 5.42
+  },
+  {
+   "world": "Maithea",
+   "kind": "belt-end",
+   "truthX": 5.9,
+   "rockOffX": 3.77,
+   "rockOnlyX": 5.05,
+   "rockRmsM": 29.27
+  },
+  {
+   "world": "Maithea",
+   "kind": "belt-end",
+   "truthX": -3.08,
+   "rockOffX": -5.93,
+   "rockOnlyX": 8.02,
+   "rockRmsM": 0.07
+  },
+  {
+   "world": "Selawyn",
+   "kind": "axis",
+   "truthX": 6.02,
+   "rockOffX": -0.12,
+   "rockOnlyX": 6.36,
+   "rockRmsM": 28.39
+  },
+  {
+   "world": "Selawyn",
+   "kind": "axis",
+   "truthX": 3.91,
+   "rockOffX": 6.62,
+   "rockOnlyX": 4.14,
+   "rockRmsM": 26.26
+  },
+  {
+   "world": "Selawyn",
+   "kind": "flank",
+   "truthX": 10.34,
+   "rockOffX": -5.37,
+   "rockOnlyX": 10.18,
+   "rockRmsM": 9.29
+  },
+  {
+   "world": "Selawyn",
+   "kind": "belt-end",
+   "truthX": 5.94,
+   "rockOffX": 2.12,
+   "rockOnlyX": 6.11,
+   "rockRmsM": 24.53
+  },
+  {
+   "world": "Selawyn",
+   "kind": "belt-end",
+   "truthX": 7.81,
+   "rockOffX": 4.82,
+   "rockOnlyX": 7.75,
+   "rockRmsM": 28.45
+  },
+  {
+   "world": "Raiva",
+   "kind": "axis",
+   "truthX": 12.29,
+   "rockOffX": -3.61,
+   "rockOnlyX": 12.78,
+   "rockRmsM": 2.04
+  },
+  {
+   "world": "Raiva",
+   "kind": "axis",
+   "truthX": 13.12,
+   "rockOffX": -2.41,
+   "rockOnlyX": 13.12,
+   "rockRmsM": 8.99
+  },
+  {
+   "world": "Raiva",
+   "kind": "flank",
+   "truthX": -2.6,
+   "rockOffX": -2.62,
+   "rockOnlyX": 0.86,
+   "rockRmsM": 0.01
+  },
+  {
+   "world": "Raiva",
+   "kind": "belt-end",
+   "truthX": -3.19,
+   "rockOffX": -3.19,
+   "rockOnlyX": 0,
+   "rockRmsM": 0
+  },
+  {
+   "world": "Raiva",
+   "kind": "belt-end",
+   "truthX": 0.15,
+   "rockOffX": 3.08,
+   "rockOnlyX": -0.56,
+   "rockRmsM": 20
+  },
+  {
+   "world": "Lethuris",
+   "kind": "axis",
+   "truthX": 2.53,
+   "rockOffX": 4.94,
+   "rockOnlyX": 1.67,
+   "rockRmsM": 25.48
+  },
+  {
+   "world": "Lethuris",
+   "kind": "axis",
+   "truthX": 9.09,
+   "rockOffX": -4,
+   "rockOnlyX": 9.04,
+   "rockRmsM": 16.85
+  },
+  {
+   "world": "Lethuris",
+   "kind": "flank",
+   "truthX": 12.11,
+   "rockOffX": 8.49,
+   "rockOnlyX": 12.37,
+   "rockRmsM": 20.28
+  },
+  {
+   "world": "Lethuris",
+   "kind": "belt-end",
+   "truthX": -0.32,
+   "rockOffX": -0.2,
+   "rockOnlyX": -0.61,
+   "rockRmsM": 27.24
+  },
+  {
+   "world": "Lethuris",
+   "kind": "belt-end",
+   "truthX": 0.52,
+   "rockOffX": 0.52,
+   "rockOnlyX": 0,
+   "rockRmsM": 0
+  }
+ ],
+ "builds": 27,
+ "s": 8.7
+}

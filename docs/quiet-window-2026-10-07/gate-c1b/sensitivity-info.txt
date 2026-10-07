@@ -1,0 +1,14 @@
+c1 versions AB terrain-1.8.1-grain/false -> terrain-1.9.1-carving-c1/true; AA terrain-1.8.1-grain/false -> terrain-1.8.1-grain/false
+orbit identical AA true AB false blockSolves 0
+orbit CAND digests Maithea 662d404d Selawyn ac0907ad Raiva 29b2a2a3 Lethuris 0f4671fe
+orbit CAND digests equal to GATE-C1 CAND: Maithea true Selawyn true Raiva true Lethuris true
+node v24.7.0
+records c1 240 orbit 240 fail 0; precheck lines 480
+flagged c1 8 flagged orbit 11 contender-counted 0
+waits total s 1019 (incl. ~1 s sample per call) idle min 85.3 waitReasons host,new
+Maithea UNFLAGGED-ONLY (INFO): C1 A/B 4.53% [3.19,7.66] n=28; orbit A/B 4.30% [2.83,5.44] n=29
+Selawyn UNFLAGGED-ONLY (INFO): C1 A/B -0.98% [-2.35,3.34] n=29; orbit A/B 3.61% [1.23,5.22] n=28
+Raiva UNFLAGGED-ONLY (INFO): C1 A/B 3.39% [2.52,5.12] n=29; orbit A/B 4.37% [2.79,5.39] n=26
+Lethuris UNFLAGGED-ONLY (INFO): C1 A/B 5.17% [3.51,6.58] n=29; orbit A/B 2.99% [1.33,3.63] n=29
+Raiva orbit A/B sorted (INFO): -7.03 -1.28 0.22 1.48 1.65 2.19 2.19 2.47 2.52 2.59 2.79 2.84 3.11 3.23 3.30 4.31 4.43 4.47 4.52 4.68 4.83 5.06 5.39 6.13 6.45 6.70 6.78 6.91 6.97 7.33
+Maithea orbit A/B sorted (INFO): -14.73 -2.86 -1.27 -1.21 1.27 1.48 1.55 2.57 2.70 2.83 2.88 2.98 3.31 3.94 4.28 4.30 4.35 4.37 4.45 4.83 4.98 5.44 5.65 5.94 6.61 8.09 8.15 13.98 15.24 42.29

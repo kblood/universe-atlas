@@ -1,0 +1,25 @@
+node:internal/modules/package_json_reader:268
+  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+        ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'three' imported from C:\Users\Caldor\AppData\Local\Temp\claude\C--LLM-IWSDK\84c3735d-46ff-4f28-8f76-5598fd94ed7b\scratchpad\c1\b84\src\river-surface.ts
+    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:268:9)
+    at packageResolve (node:internal/modules/esm/resolve:768:81)
+    at moduleResolve (node:internal/modules/esm/resolve:858:18)
+    at defaultResolve (node:internal/modules/esm/resolve:990:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:749:20)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:726:38)
+    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:312:38)
+    at #link (node:internal/modules/esm/module_job:208:49) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v24.7.0
+ORBIT Maithea 662d404ddd1d68b44df953bb3a7545ec1033365638c49711909fc213fd92afd0 0
+ORBIT Selawyn ac0907ad8e6a561f22620c29c501bcd5b51d4d4f710ed599620bb673a9471c68 0
+ORBIT Raiva 29b2a2a356776b2303a93c4913aeeb6fd54c5506137334616717533c96c71c12 0
+ORBIT Lethuris 0f4671fec288e84b1b48aa0be43c93add3c5ef6d9deb83fea97fa7cc682634f9 0
+Maithea {"directions":15120,"belt0":3870,"belt0Mismatch":0,"outsideMassif":4224,"outsideMismatch":0,"inMassif":10896,"inMassifMoved":0,"maxInMassifDhM":0}
+Selawyn {"directions":15120,"belt0":3935,"belt0Mismatch":0,"outsideMassif":4262,"outsideMismatch":0,"inMassif":10858,"inMassifMoved":0,"maxInMassifDhM":0}
+Raiva {"directions":15120,"belt0":3880,"belt0Mismatch":0,"outsideMassif":4282,"outsideMismatch":0,"inMassif":10838,"inMassifMoved":0,"maxInMassifDhM":0}
+Lethuris {"directions":15120,"belt0":3939,"belt0Mismatch":0,"outsideMassif":4252,"outsideMismatch":0,"inMassif":10868,"inMassifMoved":0,"maxInMassifDhM":0}
