@@ -7,7 +7,10 @@
  * Lock order (docs/test-policy.md "Lock order"): merge -> slot -> GPU, never GPU -> slot. While this process waits for
  * or holds the GPU lock it publishes that in-process (globalThis symbol) and, while held, in ATLAS_GPU_LOCK_HELD for its
  * children; tests/helpers/test-slot.mjs refuses to take the slot in either state. A capture path passes `capture: true`
- * and is refused while it holds the test slot (I8: captures do their GPU work outside the CPU slot). */
+ * and is refused while it holds the test slot (I8: captures do their GPU work outside the CPU slot).
+ * Pending slot waits (I8, Astra 3): test-slot.mjs publishes every unresolved slot wait of this process on a globalThis
+ * symbol; acquireGpuLock refuses while one is pending, because a slot holder may be waiting for this GPU lock. Take the
+ * slot first and the GPU lock inside it (withTestSlot -> withGpuLock), or await/abort the pending slot wait first. */
 import {mkdir,writeFile,readFile,rm,rename,stat} from 'node:fs/promises';
 import {readFileSync,rmSync} from 'node:fs';
 import {hostname,platform} from 'node:os';
@@ -27,6 +30,13 @@ function publish(){
 export function assertCaptureOutsideSlot(owner){
   const held=globalThis[Symbol.for('atlas.test-slot.held')]?.length>0;
   if(held||process.env.ATLAS_TEST_SLOT_TOKEN)throw new Error(`lock order: capture path "${owner}" asks for the GPU lock while holding the test slot (${held?'this process':'ATLAS_TEST_SLOT_TOKEN inherited'}); captures take the GPU lock outside the CPU slot (docs/test-policy.md "Lock order")`);
+}
+
+/** Refuses the GPU lock while this process has a test-slot wait pending (lock order merge -> slot -> GPU): a process that
+ * waits for the slot and takes the GPU from another async path can deadlock against a slot holder that waits for the GPU. */
+export function assertNoPendingSlotWait(owner){
+  const p=globalThis[Symbol.for('atlas.test-slot.pending')];
+  if(p?.waits>0)throw new Error(`lock order violation: "${owner}" asks for the GPU lock while this process is still waiting for the test slot (${p.owners.join('; ')}); release the pending slot wait first (await the slot or abort it with its AbortSignal), then take the GPU lock inside the slot: the order is merge -> slot -> GPU (docs/test-policy.md "Lock order")`);
 }
 
 async function lockOwner(){
@@ -70,6 +80,7 @@ async function tryBreakStale(staleMs,log,listBrowsers){
  * `retryMs` (default 60 s) until `timeoutMs` (default: wait indefinitely). */
 export async function acquireGpuLock({owner,retryMs=60000,timeoutMs=Infinity,staleMs=GPU_LOCK_STALE_MS,listBrowsers=runningBrowsers,heartbeatMs=60000,log=console.error,capture=false}={}){
   if(!owner)throw new Error('acquireGpuLock needs an owner name');
+  assertNoPendingSlotWait(owner);
   if(capture)assertCaptureOutsideSlot(owner);
   STATE.waiting++;
   try{return await acquire({owner,retryMs,timeoutMs,staleMs,listBrowsers,heartbeatMs,log});}finally{STATE.waiting--;}
@@ -110,7 +121,8 @@ async function acquire({owner,retryMs,timeoutMs,staleMs,listBrowsers,heartbeatMs
   }
 }
 
-/** Holds the lock only for `work()`, releasing it on success or failure. */
+/** Holds the lock only for `work()`, releasing it on success or failure. Order merge -> slot -> GPU: call this inside
+ * withTestSlot's work (never around it), and never while a slot acquisition of this process is still pending. */
 export async function withGpuLock(options,work){
   const lock=await acquireGpuLock(options);
   try{return await work(lock);}finally{await lock.release();}
