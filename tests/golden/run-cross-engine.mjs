@@ -166,28 +166,18 @@ if (checkArgsOnly) {
  * (faunaKnownUnstable) so the main key keeps guarding everything else.
  * A tolerated entry is NOT equality: the gate reports PASS-WITH-KNOWN-MISMATCH
  * and fourEngineEqual=false, and --strict fails on it.
- * Root cause of the webkit entry (measured 2026-10-04): the midline ocellus site
- * (z = 0) lies on the head's mirror seam, where raycastLine returns two exit
- * hits with the same t (seam triangles with normal z -0.073 / +0.078). Chromium
- * orders one first, WebKit the other (the site differs by 1 ULP upstream), so
- * nearestExit's tie-break flips the lens normal. The fix belongs in
- * src/fauna-composer-mesh.ts (outside this task); a trialled patch makes all
- * four engines equal. Remove this entry when that lands (the run then reports
- * NOW-MATCHES) and fold GOLDEN-FAUNA-2 back into the fauna key. */
-const KNOWN_ENGINE_MISMATCHES = {
-  webkit: {
-    faunaKnownUnstable: {
-      // Re-measured by the merger after EC4 (composer graph-4 / face-geometry-2)
-      // reached main: the old WebKit digest 7b81264f... moved with the composer
-      // version line. A per-record probe (WebKit vs Node, 2026-10-04) found only
-      // GOLDEN-FAUNA-2|skin-arrays differing, and only in its positions hash
-      // (colours, weights, indices, gloss identical): consistent with the
-      // traced ocellus cause. The vertex-level trace was not repeated.
-      digest: "ed5d56a238409d09929558b2ae7f1e19f097629cd58ac2ff8b08f1b7deabd971",
-      cause: "WebKit 26.5 (2026-10-04, re-measured after EC4): GOLDEN-FAUNA-2's midline insect ocellus is seated differently (skin positions only); see generator.ts FAUNA_KNOWN_UNSTABLE",
-    },
-  },
-};
+ * Empty since 2026-10-07 (fauna/ocellus-seam, D2): the former webkit
+ * faunaKnownUnstable entry (measured digest ed5d56a2..., 2026-10-04) is gone.
+ * Its cause was the midline ocellus site (z = 0) on the head's mirror seam,
+ * where raycastLine returns two exit hits with the same t and Chromium and
+ * WebKit ordered them differently (1 ULP upstream), so nearestExit's tie-break
+ * flipped the lens normal. src/fauna-composer-mesh.ts seamNormal now sums the
+ * tied seam normals in triangle-index order; four engines are equal since that
+ * fix (strict run, docs/fauna-composer-stability-2026-10-07.md "Decision").
+ * GOLDEN-FAUNA-2 stays in faunaKnownUnstable for one more round and is folded
+ * back into the fauna key at the next routine golden round if --strict passes
+ * again. */
+const KNOWN_ENGINE_MISMATCHES = {};
 
 function run(cmd, cmdArgs, opts = {}) {
   return new Promise((resolvePromise, reject) => {
