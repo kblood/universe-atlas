@@ -1,0 +1,12 @@
+[probe branch 12:39:58] serving b84bcf92de8198661b4cfa87e547ea4367ba5afa Carving C1 evidence: R2 p50 drop row, M5 margin attribution, CR-driver INFO control, fused-lookup backlog
+[probe branch 12:40:06] station 0 sun elev 11.77
+[probe branch 12:40:23] still 6000 m settled 7182 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe branch 12:40:32] still 4200 m settled 2 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe branch 12:40:41] still 3000 m settled 2 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe branch 12:40:51] still 2100 m settled 4 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe branch 12:41:00] still 1500 m settled 5 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe branch 12:41:09] still 1050 m settled 4 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe branch 12:41:19] still 750 m settled 2 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe branch 12:41:28] still 520 m settled 2 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe branch 12:41:38] still 360 m settled 6 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe branch 12:41:47] done
