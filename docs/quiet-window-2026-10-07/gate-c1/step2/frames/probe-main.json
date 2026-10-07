@@ -1,0 +1,450 @@
+{
+ "tag": "main",
+ "root": "C:/LLM/IWSDK/universe-atlas-wt/q-main-c1",
+ "build": {
+  "commit": "581a48484d118523d222a5de1a10a6cc003c7406",
+  "branch": "HEAD",
+  "subject": "Docs: Fable addendum 2c on C1 (margins INFO, cost run as is with REF 9dcb1cf, merge after protocol + golden + probe)",
+  "dirty": false,
+  "builtAt": "2026-10-07T12:38:05.686Z"
+ },
+ "tileSet": {
+  "path": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/tests/helpers/mountain-tile-set.mjs",
+  "source": {
+   "branch": "mountains/t6-wiring",
+   "base": "9dcb1cf",
+   "terrainVersion": "terrain-1.9.0-mountains"
+  }
+ },
+ "viewport": [
+  1920,
+  1080
+ ],
+ "pitchDeg": 35,
+ "clearances": [
+  6000,
+  4200,
+  3000,
+  2100,
+  1500,
+  1050,
+  750,
+  520,
+  360
+ ],
+ "started": "2026-10-07T12:38:07.013Z",
+ "stills": [
+  {
+   "clearanceM": 6000,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-c6000-main.png",
+   "settledMs": 7717,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 5999.999995977991,
+   "pose": {
+    "position": [
+     2643633.0149090253,
+     4453447.667072023,
+     -406285.4300730729
+    ],
+    "heading": [
+     -0.38117658718586883,
+     -0.15692964350023497,
+     -0.3067865809103491,
+     0.8578808134849274
+    ],
+    "clearanceM": 6000,
+    "eyeDir": [
+     0.508889375311611,
+     0.8572718635673505,
+     -0.07820841150873972
+    ],
+    "horizontalM": 8568.888040452688
+   }
+  },
+  {
+   "clearanceM": 4200,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-c4200-main.png",
+   "settledMs": 2,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 4199.999998802965,
+   "pose": {
+    "position": [
+     2644659.7033351962,
+     4452635.6291849185,
+     -408497.85657198913
+    ],
+    "heading": [
+     -0.38138883385105266,
+     -0.15685373300565647,
+     -0.3068253993148136,
+     0.8577864758733549
+    ],
+    "clearanceM": 4200,
+    "eyeDir": [
+     0.5090870089577667,
+     0.8571155493396315,
+     -0.07863429525758339
+    ],
+    "horizontalM": 5998.221628316882
+   }
+  },
+  {
+   "clearanceM": 3000,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-c3000-main.png",
+   "settledMs": 2,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 2999.9999994214013,
+   "pose": {
+    "position": [
+     2645343.8025246817,
+     4452093.664849222,
+     -409972.75203307567
+    ],
+    "heading": [
+     -0.3815303186906531,
+     -0.15680312076623065,
+     -0.30685126783811384,
+     0.8577235549196033
+    ],
+    "clearanceM": 3000,
+    "eyeDir": [
+     0.5092186954691792,
+     0.8570112232509957,
+     -0.07891820706592041
+    ],
+    "horizontalM": 4284.444020226344
+   }
+  },
+  {
+   "clearanceM": 2100,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-c2100-main.png",
+   "settledMs": 3,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 2100.000010231027,
+   "pose": {
+    "position": [
+     2645856.687989181,
+     4451686.873623621,
+     -411078.89435722405
+    ],
+    "heading": [
+     -0.38163642567151457,
+     -0.15676515883435363,
+     -0.30687066379778044,
+     0.8576763487916756
+    ],
+    "clearanceM": 2100,
+    "eyeDir": [
+     0.509317423984886,
+     0.8569329174757574,
+     -0.07913113528748787
+    ],
+    "horizontalM": 2999.110814158441
+   }
+  },
+  {
+   "clearanceM": 1500,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-c1500-main.png",
+   "settledMs": 5,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 1500.0000019985596,
+   "pose": {
+    "position": [
+     2646198.5216492065,
+     4451415.528070946,
+     -411816.3085968143
+    ],
+    "heading": [
+     -0.3817071602463127,
+     -0.15673984951134423,
+     -0.3068835917831473,
+     0.8576448708446472
+    ],
+    "clearanceM": 1500,
+    "eyeDir": [
+     0.5093832256739744,
+     0.8568806844812322,
+     -0.07927308474477435
+    ],
+    "horizontalM": 2142.222010113172
+   }
+  },
+  {
+   "clearanceM": 1050,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-c1050-main.png",
+   "settledMs": 2,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 1050.000000170611,
+   "pose": {
+    "position": [
+     2646454.84964655,
+     4451211.939425493,
+     -412369.36192457605
+    ],
+    "heading": [
+     -0.38176020941189265,
+     -0.156720866508072,
+     -0.3068932863400804,
+     0.8576212586626641
+    ],
+    "clearanceM": 1050,
+    "eyeDir": [
+     0.5094325678457916,
+     0.856841494435556,
+     -0.07937954542252026
+    ],
+    "horizontalM": 1499.5554070792205
+   }
+  },
+  {
+   "clearanceM": 750,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-c750-main.png",
+   "settledMs": 2,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 750.0000026483988,
+   "pose": {
+    "position": [
+     2646625.7124770423,
+     4451076.175815519,
+     -412738.0606374621
+    ],
+    "heading": [
+     -0.38179557486726806,
+     -0.15670821111708796,
+     -0.30689974880529747,
+     0.8576055152361719
+    ],
+    "clearanceM": 750,
+    "eyeDir": [
+     0.509465458295632,
+     0.8568153604531614,
+     -0.07945051853286525
+    ],
+    "horizontalM": 1071.111005056586
+   }
+  },
+  {
+   "clearanceM": 520,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-c520-main.png",
+   "settledMs": 2,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 519.9999978547323,
+   "pose": {
+    "position": [
+     2646756.6951223146,
+     4450972.069877581,
+     -413020.72774955735
+    ],
+    "heading": [
+     -0.38182268790821877,
+     -0.15669850857116058,
+     -0.30690470301560574,
+     0.8575934442829072
+    ],
+    "clearanceM": 520,
+    "eyeDir": [
+     0.5094906719603703,
+     0.8567953204531218,
+     -0.07950493088483848
+    ],
+    "horizontalM": 742.6369635058996
+   }
+  },
+  {
+   "clearanceM": 360,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-c360-main.png",
+   "settledMs": 2,
+   "setPoseError": null,
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 360.00000441916245,
+   "pose": {
+    "position": [
+     2646847.807243198,
+     4450899.637860079,
+     -413217.3647667412
+    ],
+    "heading": [
+     -0.3818415487940889,
+     -0.15669175858555548,
+     -0.3069081491645969,
+     0.8575850467342927
+    ],
+    "clearanceM": 360,
+    "eyeDir": [
+     0.5095082106996803,
+     0.8567813775631931,
+     -0.07954278276831606
+    ],
+    "horizontalM": 514.1332824271612
+   }
+  }
+ ],
+ "descent": [
+  {
+   "k": 0,
+   "tMs": 0,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-descent-00-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 5403.804995973316,
+   "terrainPending": 0
+  },
+  {
+   "k": 1,
+   "tMs": 513,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-descent-01-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 4494.552408573325,
+   "terrainPending": 0
+  },
+  {
+   "k": 2,
+   "tMs": 1010,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-descent-02-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 3555.7744503830727,
+   "terrainPending": 0
+  },
+  {
+   "k": 3,
+   "tMs": 1509,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-descent-03-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 2522.225672045886,
+   "terrainPending": 0
+  },
+  {
+   "k": 4,
+   "tMs": 2004,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-descent-04-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 1548.6677008257484,
+   "terrainPending": 0
+  },
+  {
+   "k": 5,
+   "tMs": 2500,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-descent-05-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 548.4137228928578,
+   "terrainPending": 0
+  },
+  {
+   "k": 6,
+   "tMs": 3012,
+   "file": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/maithea-descent-06-main.png",
+   "maxLevel": 12,
+   "frontierMaxLevel": 12,
+   "targetLevel": 11,
+   "appClearanceM": 360.0000000009202,
+   "terrainPending": 0
+  }
+ ],
+ "url": "http://127.0.0.1:57271/?seed=LETHRA-001&g=G001&system=G001%2FC2128%2C0%2C1%2F0&body=G001%2FC2128%2C0%2C1%2F0%2Fplanet%2F1&date=435084631200000032044300000&wv=atlas-time-2%2Catlas-address-1%2Catlas-cosmology-2-radiation%2Catlas-2.0.0%2Catlas-history-3-remnant-cooling%2Catlas-surface-8-ocean-volume%2Cterrain-1.9.0-mountains%2Cbiosphere-lab-3%2Catlas-galaxy-history-2",
+ "terrainVersion": "terrain-1.9.0-mountains",
+ "versions": {
+  "time": "atlas-time-2",
+  "space": "atlas-address-1",
+  "cosmology": "atlas-cosmology-2-radiation",
+  "catalog": "atlas-2.0.0",
+  "history": "atlas-history-3-remnant-cooling",
+  "surface": "atlas-surface-8-ocean-volume",
+  "terrain": "terrain-1.9.0-mountains",
+  "biosphere": "biosphere-lab-3",
+  "galaxyHistory": "atlas-galaxy-history-2"
+ },
+ "sunDir": [
+  0.8503990769857541,
+  -0.2234706759300356,
+  0.4763216002462523
+ ],
+ "axisSunElevs": [
+  {
+   "idx": 0,
+   "e": 11.767
+  },
+  {
+   "idx": 1,
+   "e": -24.864
+  },
+  {
+   "idx": 2,
+   "e": 11.617
+  },
+  {
+   "idx": 3,
+   "e": -18.137
+  },
+  {
+   "idx": 4,
+   "e": 10.887
+  },
+  {
+   "idx": 5,
+   "e": 32.527
+  },
+  {
+   "idx": 6,
+   "e": -23.2
+  },
+  {
+   "idx": 7,
+   "e": 10.906
+  }
+ ],
+ "station": {
+  "tileSetIndex": 0,
+  "dir": [
+   0.5095476692588011,
+   0.85675,
+   -0.07962794894334123
+  ],
+  "sunElevDeg": 11.76697794390798,
+  "viewAzimuthFromSunDeg": 90
+ },
+ "descentPlan": {
+  "fromClearanceM": 6000,
+  "toClearanceM": 360,
+  "minDescentMps": 1880,
+  "seconds": 3
+ },
+ "errors": [],
+ "finished": "2026-10-07T12:39:57.298Z"
+}

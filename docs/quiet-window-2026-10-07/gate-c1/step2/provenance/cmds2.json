@@ -1,0 +1,81 @@
+[
+ {
+  "name": "golden cross-engine branch b84bcf9 (HARD)",
+  "cwd": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe",
+  "cmd": "node",
+  "args": [
+   "tests/golden/run-cross-engine.mjs",
+   "--report",
+   "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/golden-branch-report.json"
+  ],
+  "log": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/golden-branch.log"
+ },
+ {
+  "name": "golden cross-engine main 581a484 (reference)",
+  "cwd": "C:/LLM/IWSDK/universe-atlas-wt/q-main-c1",
+  "cmd": "node",
+  "args": [
+   "tests/golden/run-cross-engine.mjs",
+   "--report",
+   "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/golden-main-report.json"
+  ],
+  "log": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/golden-main.log",
+  "continue": true
+ },
+ {
+  "name": "app build branch",
+  "cwd": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe",
+  "cmd": "node",
+  "args": [
+   "node_modules/vite/bin/vite.js",
+   "build"
+  ],
+  "log": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/build-branch.log"
+ },
+ {
+  "name": "app build main",
+  "cwd": "C:/LLM/IWSDK/universe-atlas-wt/q-main-c1",
+  "cmd": "node",
+  "args": [
+   "node_modules/vite/bin/vite.js",
+   "build"
+  ],
+  "log": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/build-main.log"
+ },
+ {
+  "name": "probe main",
+  "cwd": "C:/LLM/IWSDK/universe-atlas-wt/q-main-c1",
+  "cmd": "node",
+  "args": [
+   "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/probe/probe-c1.browser.mjs",
+   "--root",
+   "C:/LLM/IWSDK/universe-atlas-wt/q-main-c1",
+   "--tag",
+   "main",
+   "--out",
+   "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames",
+   "--tileset",
+   "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/tests/helpers/mountain-tile-set.mjs"
+  ],
+  "log": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/probe-main.log"
+ },
+ {
+  "name": "probe branch",
+  "cwd": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe",
+  "cmd": "node",
+  "args": [
+   "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/probe/probe-c1.browser.mjs",
+   "--root",
+   "C:/LLM/IWSDK/universe-atlas-wt/c1-probe",
+   "--tag",
+   "branch",
+   "--out",
+   "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames",
+   "--tileset",
+   "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/tests/helpers/mountain-tile-set.mjs",
+   "--descent-like",
+   "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/frames/probe-main.json"
+  ],
+  "log": "C:/LLM/IWSDK/universe-atlas-wt/c1-probe/docs/quiet-window-2026-10-07/gate-c1/step2/probe-branch.log"
+ }
+]

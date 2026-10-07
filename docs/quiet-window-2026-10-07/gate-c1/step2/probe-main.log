@@ -1,0 +1,12 @@
+[probe main 12:38:07] serving 581a48484d118523d222a5de1a10a6cc003c7406 Docs: Fable addendum 2c on C1 (margins INFO, cost run as is with REF 9dcb1cf, merge after protocol + golden + probe)
+[probe main 12:38:15] station 0 sun elev 11.77
+[probe main 12:38:32] still 6000 m settled 7717 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe main 12:38:41] still 4200 m settled 2 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe main 12:38:51] still 3000 m settled 2 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe main 12:39:00] still 2100 m settled 3 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe main 12:39:09] still 1500 m settled 5 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe main 12:39:19] still 1050 m settled 2 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe main 12:39:28] still 750 m settled 2 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe main 12:39:38] still 520 m settled 2 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe main 12:39:47] still 360 m settled 2 ms levels {"maxLevel":12,"frontierMaxLevel":12,"targetLevel":11}
+[probe main 12:39:57] done
