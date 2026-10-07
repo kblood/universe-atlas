@@ -3,7 +3,9 @@
 // Used by tests/mountain-carving*.test.mjs in-process and in a child process.
 import {createHash} from 'node:crypto';
 
-export const CARVING_F_DIGEST='1321803fcd6ba5b03fa009035154a025aefff6a2a5bf1442e9e4cf902443cfee';
+// mountain-carving-3 (4x4 Catmull-Rom on the cut fraction, docs/mountain-carving-c1-2026-10-07.md); was
+// 1321803fcd6ba5b03fa009035154a025aefff6a2a5bf1442e9e4cf902443cfee (mountain-carving-2, triangle on retained).
+export const CARVING_F_DIGEST='1c94b28fde21ee4a55894303b28c19a50ded833f6135d58563b81f412bb3c2bd';
 export function carvingDigestArgs(){
   const out=[];
   for(let i=0;i<4096;i++){

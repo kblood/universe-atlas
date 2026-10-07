@@ -15,20 +15,29 @@
 //     This is measured, not proven (a flood route can in principle run further along the
 //     belt than HALO): 0 of 280 seams differ at HALO 192 (1 of 280 at 160, 2 of 56 at 128,
 //     max 8e-4 retained); tests/mountain-carving-memo.test.mjs pins it.
-//   - The memo stores only the CORE+1 core columns of a block (Float32); the last column is the
-//     first column of the next block and is bit-identical there. The memo is an LRU of
-//     CACHE blocks keyed on exact (seed, halfWidth, block id). It is observationally pure:
-//     a value never depends on what was solved before (cold/warm/evicted/child tests).
+//   - The memo stores the cut fraction 1 - retained (Float32) on the block's CORE+3 columns -1 .. CORE+1
+//     (the core plus one halo column on the left and two on the right: the taps a 4x4 query in the
+//     block's cells reads). Every stored column is solved inside the halo, so a column stored by two
+//     blocks is bit-identical in both (pinned). The memo is an LRU of CACHE blocks keyed on exact
+//     (seed, halfWidth, block id). It is observationally pure: a value never depends on what was
+//     solved before (cold/warm/evicted/child tests).
+//   - Query (mountain-carving-3, docs/fable-decision-carving-lattice-2026-10-07.md): the cut fraction is
+//     interpolated by a 4x4 tensor Catmull-Rom on the quad lattice (C1: no gradient kink on the lattice
+//     lines; the hashed diagonal only shapes the solve's mesh), rows clamped to [0, ROWS], then clamped
+//     to [0,1]. Vertex values are reproduced exactly. mountain-carving-2 triangle-interpolated retained
+//     (a gradient kink on every lattice line: the 200 m lattice peak of the structural spectrum); that
+//     interpolant is kept test-side only (tests/helpers/mountain-carving-triangle.mjs).
 //
-// The carving is retained*envelope - envelope with retained in [0,1], so
-// envelope + carving = envelope*retained >= 0 (coast safety) and it is exactly +0 where
-// belt === 0, envelope <= 0 or |across| >= halfWidth.
+// The carving is -envelope*cut with cut in [0,1], so envelope + carving = envelope*(1-cut) >= 0
+// (coast safety) and it is exactly +0 where belt === 0, envelope <= 0, |across| >= halfWidth, or no
+// tap of the 4x4 stencil is cut.
 // Arithmetic: only Math.floor/sqrt/imul/min/max/abs (audited); A^(3/8) is
 // sqrt(sqrt(sqrt(A*A*A))).
 type N=number;
-export const MOUNTAIN_CARVING_VERSION='mountain-carving-2';
+export const MOUNTAIN_CARVING_VERSION='mountain-carving-3';
 export const MOUNTAIN_CARVING=Object.freeze({
   METHOD:'F',
+  INTERPOLANT:'catmull-rom', // query interpolant of the cut fraction (mountain-carving-3; -2 was a triangle)
   ROWS:480,            // lattice rows across the belt; d = 2w/ROWS
   CORE:128,            // columns per memo block (16 km at w = 30 km)
   HALO:192,            // solve padding per side (24 km at w = 30 km); see the halo note above
@@ -57,7 +66,7 @@ export const CARVING_BANDS=Object.freeze([
   Object.freeze({level:4,wavelengthM:1000}),
 ]);
 const F=MOUNTAIN_CARVING;
-const ROWS=F.ROWS,CORE=F.CORE,HALO=F.HALO,NC=CORE+2*HALO+1,NR=ROWS+1,NN=NC*NR,S=CORE+1;
+const ROWS=F.ROWS,CORE=F.CORE,HALO=F.HALO,NC=CORE+2*HALO+1,NR=ROWS+1,NN=NC*NR,S=CORE+3;
 
 function hash(x:N,y:N,o:N,seed:N):N {
   let h=Math.imul(x,0x9e3779b1)^Math.imul(y,0x85ebca77)^Math.imul(o,0xc2b2ae3d)^Math.imul(seed,0x27d4eb2d);
@@ -72,8 +81,9 @@ function valueNoise(x:N,y:N,o:N,seed:N):N {
 // Diagonal of the cell whose lower-left vertex is (global column, row): 1 = (c,j)-(c+1,j+1).
 function diagonal(col:N,row:N,seed:N):N { return hash(col,row,103,seed)<0.5?1:0; }
 
-// A memo block: retained fractions on the CORE+1 core columns, rows 0..ROWS (Float32).
-type Block={seed:N,w:N,id:N,r:Float32Array,capped:N,positive:N};
+// A memo block: cut fractions 1 - retained on the S = CORE+3 stored columns (block-local columns
+// -1 .. CORE+1 at index column+1), rows 0..ROWS (Float32).
+type Block={seed:N,w:N,id:N,cut:Float32Array,capped:N,positive:N};
 type Solved={h:Float64Array,cap:Float64Array,ramp:Float64Array};
 // Build counter for benchmarks and purity tests; never read by the arithmetic.
 export const carvingBuildStats={count:0};
@@ -170,9 +180,11 @@ function solve(seed:N,w:N,id:N):Solved {
   }
   for(let k=0;k<NN;k++)h[k]=Math.min(h[k],best[k]);
   // 6. Smooth local relief normaliser M: box blurs (A, then B) of a square dilation, only
-  //    on the columns that reach the core (the column windows never meet a domain edge).
+  //    on the columns that reach the stored columns HALO-1 .. HALO+CORE+1 (the column windows never
+  //    meet a domain edge). Each column's value is its own window's, so widening the range by one
+  //    column per side changes no value on the core.
   const R1=F.NORM_DILATE,RA=F.NORM_BLUR_A,RB=F.NORM_BLUR_B,t1=filled,t2=rd,t3=best;
-  const lo=HALO-R1-RA-RB,hi=HALO+CORE+R1+RA+RB;
+  const lo=HALO-1-R1-RA-RB,hi=HALO+CORE+1+R1+RA+RB;
   const rowMax=(src:Float64Array,dst:Float64Array,i0:N,i1:N):void=>{
     for(let j=0;j<NR;j++)for(let i=i0;i<=i1;i++){let m=-Infinity;for(let a=i-R1;a<=i+R1;a++)m=Math.max(m,src[j*NC+a]);dst[j*NC+i]=m;}};
   const columnMax=(src:Float64Array,dst:Float64Array,i0:N,i1:N):void=>{
@@ -183,19 +195,20 @@ function solve(seed:N,w:N,id:N):Solved {
     for(let j=0;j<NR;j++)for(let i=i0;i<=i1;i++){let s=0,c=0;for(let b=Math.max(0,j-r);b<=Math.min(ROWS,j+r);b++){s+=src[b*NC+i];c++;}dst[j*NC+i]=s/c;}};
   rowMax(h,t1,lo+R1,hi-R1);columnMax(t1,t2,lo+R1,hi-R1);
   rowMean(t2,t1,RA,lo+R1+RA,hi-R1-RA);columnMean(t1,t3,RA,lo+R1+RA,hi-R1-RA);
-  rowMean(t3,t1,RB,HALO,HALO+CORE);columnMean(t1,t2,RB,HALO,HALO+CORE);
-  for(let j=0;j<NR;j++)for(let i=HALO;i<=HALO+CORE;i++){const k=j*NC+i;t2[k]=Math.max(ramp[j],t2[k]);}
+  rowMean(t3,t1,RB,HALO-1,HALO+CORE+1);columnMean(t1,t2,RB,HALO-1,HALO+CORE+1);
+  for(let j=0;j<NR;j++)for(let i=HALO-1;i<=HALO+CORE+1;i++){const k=j*NC+i;t2[k]=Math.max(ramp[j],t2[k]);}
   return {h,cap:t2,ramp};
 }
-// 7. Memo block: retained = h / max(e_ref, M) on the core columns, clipped to [0,1].
+// 7. Memo block: cut = 1 - retained, retained = h / max(e_ref, M) clipped to [0,1], on the stored
+//    columns -1 .. CORE+1 (exactly 0 where uncut). capped/positive count the CORE+1 core columns.
 function build(seed:N,w:N,id:N):Block {
-  const {h,cap}=solve(seed,w,id),r=new Float32Array(NR*S);let capped=0,positive=0;
-  for(let j=0;j<NR;j++)for(let i=0;i<=CORE;i++){
+  const {h,cap}=solve(seed,w,id),cut=new Float32Array(NR*S);let capped=0,positive=0;
+  for(let j=0;j<NR;j++)for(let i=-1;i<=CORE+1;i++){
     const k=j*NC+i+HALO,c=cap[k],v=h[k];
-    if(c>0){positive++;if(v>=c)capped++;}
-    r[j*S+i]=c>0?Math.min(v/c,1):1;
+    if(i>=0&&i<=CORE&&c>0){positive++;if(v>=c)capped++;}
+    cut[j*S+i+1]=c>0?1-Math.min(v/c,1):0;
   }
-  return {seed,w,id,r,capped,positive};
+  return {seed,w,id,cut,capped,positive};
 }
 // LRU memo: most recently used at the end.
 function block(seed:N,w:N,id:N):Block {
@@ -212,11 +225,11 @@ function block(seed:N,w:N,id:N):Block {
 // A solved block is observationally pure (the same r in every module instance, thread and process), so a block
 // solved in a worker can be exported, posted (r.buffer transferable) and imported into another instance's LRU;
 // the importing instance then serves it exactly as if it had solved it. Nothing here touches solve(), build() or
-// the retainedAt arithmetic: the trace is one compare on the block path, importing is an LRU insert.
+// the cutAt arithmetic: the trace is one compare on the block path, importing is an LRU insert.
 // Trust: an imported block is data from the same session. It is validated (version, key, shape, value range)
 // but its values are not re-solved, so never insert blocks read back from persisted or foreign storage.
 export type CarvingBlockKey={seed:N;w:N;id:N};
-export type CarvingBlockExport=CarvingBlockKey&{version:string;r:Float32Array;capped:N;positive:N};
+export type CarvingBlockExport=CarvingBlockKey&{version:string;cut:Float32Array;capped:N;positive:N};
 // Counters for benchmarks and tests; never read by the arithmetic.
 export const carvingTransferStats={exported:0,imported:0,duplicate:0};
 let traceKeys:CarvingBlockKey[]|null=null;
@@ -238,44 +251,56 @@ function checkKey(where:string,seed:N,w:N,id:N):void {
   if((id|0)!==id)throw new Error(where+': block id must be an int32');
   if(typeof w!=='number'||!(w>0)||w-w!==0)throw new Error(where+': half-width must be finite and > 0');
 }
-// A copy of the block (solving it here if it is not resident). The copy's r.buffer may be transferred.
+// A copy of the block (solving it here if it is not resident). The copy's cut.buffer may be transferred.
 export function exportCarvingBlock(key:CarvingBlockKey):CarvingBlockExport {
   const {seed,w,id}=key;checkKey('exportCarvingBlock',seed,w,id);
   const b=block(seed,w,id);carvingTransferStats.exported++;
-  return {version:MOUNTAIN_CARVING_VERSION,seed,w,id,r:new Float32Array(b.r),capped:b.capped,positive:b.positive};
+  return {version:MOUNTAIN_CARVING_VERSION,seed,w,id,cut:new Float32Array(b.cut),capped:b.capped,positive:b.positive};
 }
 // Insert an exported block as the most recently used entry (evicting the oldest exactly as block() does) and take
-// ownership of its r. Returns false (and keeps the resident object, in place) when the key is already resident.
+// ownership of its cut. Returns false (and keeps the resident object, in place) when the key is already resident.
 // Throws on any invalid field, leaving the memo untouched. Does not count as a build.
 export function importCarvingBlock(b:CarvingBlockExport):boolean {
   if(b===null||typeof b!=='object')throw new Error('importCarvingBlock: not a block export');
   if(b.version!==MOUNTAIN_CARVING_VERSION)throw new Error('importCarvingBlock: version '+b.version+' is not '+MOUNTAIN_CARVING_VERSION);
-  const {seed,w,id,r,capped,positive}=b;checkKey('importCarvingBlock',seed,w,id);
-  if(!(r instanceof Float32Array)||r.length!==NR*S)throw new Error('importCarvingBlock: r must be a Float32Array of '+(NR*S)+' values');
-  if((capped|0)!==capped||(positive|0)!==positive||!(0<=capped&&capped<=positive&&positive<=NR*S))
-    throw new Error('importCarvingBlock: capped/positive must be integers with 0 <= capped <= positive <= '+(NR*S));
-  for(let k=0;k<r.length;k++){const v=r[k];if(!(v>=0&&v<=1))throw new Error('importCarvingBlock: r['+k+'] is outside [0,1]');}
+  const {seed,w,id,cut,capped,positive}=b;checkKey('importCarvingBlock',seed,w,id);
+  if(!(cut instanceof Float32Array)||cut.length!==NR*S)throw new Error('importCarvingBlock: cut must be a Float32Array of '+(NR*S)+' values');
+  if((capped|0)!==capped||(positive|0)!==positive||!(0<=capped&&capped<=positive&&positive<=NR*(CORE+1)))
+    throw new Error('importCarvingBlock: capped/positive must be integers with 0 <= capped <= positive <= '+(NR*(CORE+1)));
+  for(let k=0;k<cut.length;k++){const v=cut[k];if(!(v>=0&&v<=1))throw new Error('importCarvingBlock: cut['+k+'] is outside [0,1]');}
   for(let i=0;i<cache.length;i++){const c=cache[i];if(c.seed===seed&&c.w===w&&c.id===id){carvingTransferStats.duplicate++;return false;}}
   if(cache.length>=F.CACHE)cache.shift();
-  cache.push({seed,w,id,r,capped,positive});carvingTransferStats.imported++;return true;
+  cache.push({seed,w,id,cut,capped,positive});carvingTransferStats.imported++;return true;
+}
+// 4x4 tensor Catmull-Rom of the cut fraction (mountain-carving-3). v holds four rows of four taps, the taps of
+// row i at v[oi], v[oi+1], v[oi+2], v[oi+3] (columns col-1 .. col+2; rows row-1 .. row+2 clamped to [0, ROWS]); u and
+// t are the fractional position in the cell. One expression for the block path and the point memo, on the same
+// Float32 values in the same order, so both paths are bit-identical. Clamped to [0,1]: an all-zero stencil gives +0.
+function catmullRom(v:Float32Array,o0:N,o1:N,o2:N,o3:N,u:N,t:N):N {
+  const a0=u*(u*(1-0.5*u)-0.5),a1=u*u*(1.5*u-2.5)+1,a2=u*(u*(2-1.5*u)+0.5),a3=u*u*(0.5*u-0.5);
+  const b0=t*(t*(1-0.5*t)-0.5),b1=t*t*(1.5*t-2.5)+1,b2=t*(t*(2-1.5*t)+0.5),b3=t*t*(0.5*t-0.5);
+  const c=b0*(a0*v[o0]+a1*v[o0+1]+a2*v[o0+2]+a3*v[o0+3])+b1*(a0*v[o1]+a1*v[o1+1]+a2*v[o1+2]+a3*v[o1+3])
+    +b2*(a0*v[o2]+a1*v[o2+1]+a2*v[o2+2]+a3*v[o2+3])+b3*(a0*v[o3]+a1*v[o3+1]+a2*v[o3+2]+a3*v[o3+3]);
+  return Math.max(0,Math.min(1,c));
 }
 // Point-query cell memo (docs/placeat-regression-2026-10-07.md). Sparse point queries (place-query.ts placeAt)
 // touch one block per massif point, far apart, so the CACHE-block LRU above thrashes and every repeat of a
-// query re-solved its block (~150 ms). While a point query is open (enterCarvingPointQuery), retainedAt first
-// looks up the lattice cell in this memo: the four Float32 corner values r[a], r[a+1], r[a+S], r[a+S+1] of the
-// cell, copied from the solved block, keyed on exact (normalised seed, half-width, global column, row). The
-// interpolation below reads the same Float32 values with the same expressions, so a memo hit is bit-identical
-// to the block path (pinned by tests/mountain-carving-memo.test.mjs). Two generations of SLOTS open-addressed
-// slots; the young one ages into the old one after FILL entries and an old hit is copied back (an approximate
-// LRU). Bounded: 2 x SLOTS x 37 B = 303,104 B. Observationally pure like the block memo. Outside a point query
-// (tiles, bakes, every dense caller) the path is the block path, unchanged.
+// query re-solved its block (~150 ms). While a point query is open (enterCarvingPointQuery), cutAt first
+// looks up the lattice cell in this memo: the 16 Float32 taps of the cell's 4x4 stencil (rows row-1 .. row+2
+// clamped, columns col-1 .. col+2), copied from the solved block, keyed on exact (normalised seed, half-width,
+// global column, row). The interpolation reads the same Float32 values with the same expression, so a memo hit is
+// bit-identical to the block path (pinned by tests/mountain-carving-memo.test.mjs). Two generations of SLOTS
+// open-addressed slots; the young one ages into the old one after FILL entries and an old hit is copied back (an
+// approximate LRU). Bounded: 2 x SLOTS x 85 B (16 taps of 4 B and a 21 B key per slot); with the CACHE blocks the
+// memo stays under the 8.5 MB bound. Observationally pure like the block memo. Outside a point query (tiles, bakes,
+// every dense caller) the path is the block path.
 export const CARVING_POINT_MEMO=Object.freeze({
-  SLOTS:4096,          // open-addressed slots per generation (a power of two)
-  FILL:3072,           // entries per generation before it ages (load 0.75)
+  SLOTS:2048,          // open-addressed slots per generation (a power of two)
+  FILL:1536,           // entries per generation before it ages (load 0.75)
 });
 const PS=CARVING_POINT_MEMO.SLOTS,PF=CARVING_POINT_MEMO.FILL,PMASK=PS-1;
 const pmSeed=new Uint32Array(2*PS),pmW=new Float64Array(2*PS),pmCol=new Int32Array(2*PS),pmRow=new Int32Array(2*PS);
-const pmUsed=new Uint8Array(2*PS),pmV=new Float32Array(8*PS),pmCount=[0,0];
+const pmUsed=new Uint8Array(2*PS),pmV=new Float32Array(32*PS),pmCount=[0,0];
 let pmYoung=0,pointDepth=0;
 // Counters for benchmarks and purity tests; never read by the arithmetic.
 export const carvingPointMemoStats={hits:0,stores:0};
@@ -293,52 +318,47 @@ function pmFind(g:N,seed:N,w:N,col:N,row:N):N {
     if(pmCol[k]===col&&pmRow[k]===row&&pmSeed[k]===seed&&pmW[k]===w)return k;
   }
 }
-function pmStore(seed:N,w:N,col:N,row:N,v0:N,v1:N,v2:N,v3:N):void {
+// Store the 16 taps (four taps from each of src[s0..], src[s1..], src[s2..], src[s3..]) in the young generation.
+function pmStore(seed:N,w:N,col:N,row:N,src:Float32Array,s0:N,s1:N,s2:N,s3:N):void {
   if(pmCount[pmYoung]>=PF){pmYoung^=1;pmUsed.fill(0,pmYoung*PS,pmYoung*PS+PS);pmCount[pmYoung]=0;}
   const f=pmFind(pmYoung,seed,w,col,row);if(f>=0)return;
-  const k=-1-f;pmUsed[k]=1;pmSeed[k]=seed;pmW[k]=w;pmCol[k]=col;pmRow[k]=row;pmCount[pmYoung]++;
-  pmV[4*k]=v0;pmV[4*k+1]=v1;pmV[4*k+2]=v2;pmV[4*k+3]=v3;carvingPointMemoStats.stores++;
+  const k=-1-f,o=16*k;pmUsed[k]=1;pmSeed[k]=seed;pmW[k]=w;pmCol[k]=col;pmRow[k]=row;pmCount[pmYoung]++;
+  for(let i=0;i<4;i++){pmV[o+i]=src[s0+i];pmV[o+4+i]=src[s1+i];pmV[o+8+i]=src[s2+i];pmV[o+12+i]=src[s3+i];}
+  carvingPointMemoStats.stores++;
 }
-// retainedAt inside a point query: the same lattice arithmetic and interpolation as below, on the memoised
-// corners r0 = r[a], r1 = r[a+1], r2 = r[a+S], r3 = r[a+S+1].
-function retainedAtPoint(alongM:N,acrossM:N,halfWidthM:N,seed:N):N {
+// cutAt inside a point query: the same lattice arithmetic and interpolation as below, on the memoised taps.
+function cutAtPoint(alongM:N,acrossM:N,halfWidthM:N,seed:N):N {
   const d=2*halfWidthM/ROWS,gx=alongM/d,gy=(acrossM+halfWidthM)/d,col=Math.floor(gx),row=Math.min(ROWS-1,Math.floor(gy));
   const u=gx-col,t=gy-row;
-  let r0:N,r1:N,r2:N,r3:N;
   const keyed=(col|0)===col; // the memo keys an int32 column; any other column takes the block path
   let k=keyed?pmFind(pmYoung,seed,halfWidthM,col,row):-1,old=false;
   if(k<0&&keyed){k=pmFind(pmYoung^1,seed,halfWidthM,col,row);old=k>=0;}
   if(k>=0){
     // A point-memo hit never calls block(): note the cell's block for a warm-up trace.
     if(traceKeys!==null)traceNote(seed,halfWidthM,Math.floor(col/CORE));
-    carvingPointMemoStats.hits++;r0=pmV[4*k];r1=pmV[4*k+1];r2=pmV[4*k+2];r3=pmV[4*k+3];
-    if(old)pmStore(seed,halfWidthM,col,row,r0,r1,r2,r3); // copy an old-generation hit into the young one
-  }else{
-    const id=Math.floor(col/CORE),r=block(seed,halfWidthM,id).r,a=row*S+col-id*CORE;
-    r0=r[a];r1=r[a+1];r2=r[a+S];r3=r[a+S+1];
-    if(keyed)pmStore(seed,halfWidthM,col,row,r0,r1,r2,r3);
+    carvingPointMemoStats.hits++;const o=16*k;
+    if(old)pmStore(seed,halfWidthM,col,row,pmV,o,o+4,o+8,o+12); // copy an old-generation hit into the young one
+    return catmullRom(pmV,o,o+4,o+8,o+12,u,t);
   }
-  const v=diagonal(col,row,seed)
-    ?(u>=t?(1-u)*r0+(u-t)*r1+t*r3:(1-t)*r0+(t-u)*r2+u*r3)
-    :(u+t<=1?(1-u-t)*r0+u*r1+t*r2:(u+t-1)*r3+(1-t)*r1+(1-u)*r2);
-  return Math.max(0,Math.min(1,v));
+  const id=Math.floor(col/CORE),v=block(seed,halfWidthM,id).cut,a=col-id*CORE;
+  const s0=Math.max(0,row-1)*S+a,s1=row*S+a,s2=(row+1)*S+a,s3=Math.min(ROWS,row+2)*S+a;
+  if(keyed)pmStore(seed,halfWidthM,col,row,v,s0,s1,s2,s3);
+  return catmullRom(v,s0,s1,s2,s3,u,t);
 }
-// Retained fraction of the envelope at (along, across), triangle-interpolated.
-function retainedAt(alongM:N,acrossM:N,halfWidthM:N,seed:N):N {
-  if(pointDepth)return retainedAtPoint(alongM,acrossM,halfWidthM,seed);
+// Cut fraction of the envelope at (along, across): 4x4 Catmull-Rom on the stored taps. The cell's block-local
+// column a holds tap col-1 at stored index a (stored index = block-local column + 1), so the taps are a .. a+3.
+function cutAt(alongM:N,acrossM:N,halfWidthM:N,seed:N):N {
+  if(pointDepth)return cutAtPoint(alongM,acrossM,halfWidthM,seed);
   const d=2*halfWidthM/ROWS,gx=alongM/d,gy=(acrossM+halfWidthM)/d,col=Math.floor(gx),row=Math.min(ROWS-1,Math.floor(gy));
-  const u=gx-col,t=gy-row,id=Math.floor(col/CORE),r=block(seed,halfWidthM,id).r,a=row*S+col-id*CORE;
-  const v=diagonal(col,row,seed)
-    ?(u>=t?(1-u)*r[a]+(u-t)*r[a+1]+t*r[a+S+1]:(1-t)*r[a]+(t-u)*r[a+S]+u*r[a+S+1])
-    :(u+t<=1?(1-u-t)*r[a]+u*r[a+1]+t*r[a+S]:(u+t-1)*r[a+S+1]+(1-t)*r[a+1]+(1-u)*r[a+S]);
-  return Math.max(0,Math.min(1,v));
+  const u=gx-col,t=gy-row,id=Math.floor(col/CORE),v=block(seed,halfWidthM,id).cut,a=col-id*CORE;
+  return catmullRom(v,Math.max(0,row-1)*S+a,row*S+a,(row+1)*S+a,Math.min(ROWS,row+2)*S+a,u,t);
 }
 // Candidate F carving (metres, <= 0). Arguments follow section 2.3.
 export function carvingFM(alongM:N,acrossM:N,halfWidthM:N,envelopeM:N,belt:N,seed:N):N {
   // Negated comparisons also exclude NaN envelope / across / half-width and a non-finite along.
   if(belt===0||!(envelopeM>0)||!(Math.abs(acrossM)<halfWidthM)||alongM-alongM!==0)return 0;
-  const retained=retainedAt(alongM,acrossM,halfWidthM,seed>>>0);
-  return retained===1?0:-envelopeM*(1-retained);
+  const cut=cutAt(alongM,acrossM,halfWidthM,seed>>>0);
+  return cut===0?0:-envelopeM*cut;
 }
 // The M3 carving term. Unwired until MTN-6.
 export function ridgeValleyCarvingM(alongM:N,acrossM:N,halfWidthM:N,envelopeM:N,belt:N,seed:N):N {

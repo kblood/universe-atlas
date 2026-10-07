@@ -10,9 +10,12 @@
 //
 // Part 2 (INFO, MEASURE-ONLY): the frozen tier-set tiles of the four water worlds (tests/tier-sets.json), rasters
 // aligned with the M1 belt axis. Reports the lattice-peak ratio at the M3 carving block (CORE x 2w/ROWS) and the
-// doc's nominal 16 km, the 200 m carving lattice and the 250 m gully cell, and the anisotropy per octave. No pin:
-// off-belt real tiles already reach the synthetic comb threshold (doc section 4), so a real-terrain gate needs a
-// real eroded control first. Tiers (O7, docs/fable-test-review-2026-10-07.md; decided by Fable 5.1 on Kasper's
+// doc's nominal 16 km, the 200 m carving lattice and the 250 m gully cell, and the anisotropy per octave. No pin on
+// the block rhythm: off-belt real tiles already reach the synthetic comb threshold (doc section 4), so a real-terrain
+// gate needs a real eroded control first.
+// Part 3 (HARD, mountain-carving-3, docs/fable-decision-carving-lattice-2026-10-07.md and
+// docs/mountain-carving-c1-2026-10-07.md): the 200 m carving-lattice pin on the same frozen massif tiles (truth, fine
+// rasters, pooled), at every tier, with the mountain-carving-2 triangle interpolant as its negative control. Tiers (O7, docs/fable-test-review-2026-10-07.md; decided by Fable 5.1 on Kasper's
 // instruction): smoke = 24 tiles (axis/flank/belt-end/outside) and 4 synthetic seeds; work = default = the same 24
 // tiles and 8 seeds; gate (test:full) = 36 tiles (+ face-edge and coast) and 8 seeds. Alpine charts: 1 at smoke, 2
 // otherwise. Thresholds, titles and the INFO (measure-only) status never change with the tier.
@@ -29,7 +32,9 @@ import {orogenLayout} from '../src/mountain-layout.ts';
 import {MOUNTAIN_CARVING} from '../src/mountain-carving.ts';
 import {MOUNTAIN_ASSEMBLY} from '../src/mountain-assembly.ts';
 import {MOUNTAIN_ROCK_DETAIL} from '../src/mountain-rock-detail.ts';
+import {rockDetailFromLevel} from '../src/lod-ladder.ts';
 import {pick,samples,tierNote,TIER} from './helpers/tier.mjs';
+import {triangleRasters} from './helpers/spectrum-triangle-worker.mjs';
 
 // ---------- calibrated thresholds (synthetic, midpoint rule; doc section 3) ----------
 // Coarse raster 512 x 200 m (102.4 km), 16 km rhythm at bin 6.4, harmonics 1-16. Calibration seeds 1-16:
@@ -166,7 +171,10 @@ const KINDS_24 = ['axis', 'flank', 'belt-end', 'outside'];
 const KINDS = pick({smoke: KINDS_24, work: KINDS_24, default: KINDS_24, gate: ['axis', 'flank', 'belt-end', 'face-edge', 'outside', 'coast']});
 const MASSIF = new Set(['axis', 'flank', 'belt-end', 'face-edge']);
 let tiles = null;
-function realTiles() {
+/** The frozen tiles with their fine 256 x 50 m rasters (truth). The coarse rasters are added by realTiles() on first use,
+ * so the HARD lattice pin (fine rasters only) does not pay for them when it runs in a shard step of its own. The memo is
+ * observationally pure, so the sampling order does not change a value. */
+function fineTiles() {
   if (tiles) return tiles;
   tiles = [];
   for (const body of waterWorlds()) {
@@ -174,10 +182,16 @@ function realTiles() {
     for (const e of samples(body.name, KINDS)) {
       const key = e.d.join();if (seen.has(key)) continue;seen.add(key);
       const o = layout.sample(e.d), axis = o.belt > 0 ? [...o.axis] : null;
-      const hc = alignedRaster(ts, e.d, body.radiusM, C.n, C.stepM, axis), hf = alignedRaster(ts, e.d, body.radiusM, F.n, F.stepM, axis);
-      tiles.push({world: body.name, kind: e.kind, massif: MASSIF.has(e.kind) && o.belt > 0, belt: r2(o.belt), hc, hf,
-        coarse: structuralSpectrum(hc, C.n, C.stepM, TC), fine: structuralSpectrum(hf, F.n, F.stepM, TF)});
+      const hf = alignedRaster(ts, e.d, body.radiusM, F.n, F.stepM, axis);
+      tiles.push({body, ts, d: e.d, axis, world: body.name, kind: e.kind, massif: MASSIF.has(e.kind) && o.belt > 0, belt: r2(o.belt), hf,
+        fine: structuralSpectrum(hf, F.n, F.stepM, TF)});
     }
+  }
+  return tiles;
+}
+function realTiles() {
+  for (const x of fineTiles()) if (!x.hc) {
+    x.hc = alignedRaster(x.ts, x.d, x.body.radiusM, C.n, C.stepM, x.axis);x.coarse = structuralSpectrum(x.hc, C.n, C.stepM, TC);
   }
   return tiles;
 }
@@ -229,4 +243,35 @@ test('INFO: real tiles, fine 256 x 50 m: 200 m carving-lattice and 250 m gully-c
   for (const r of rows) t.diagnostic(JSON.stringify(r));
   t.diagnostic('pooled massif ' + JSON.stringify(report.real.fine.pooledMassif) + ' | pooled off-belt ' + JSON.stringify(report.real.fine.pooledOffBelt));
   assert.ok(rows.every(r => r.latticePeakDb.every(Number.isFinite)));
+});
+
+// ---------- Part 3: the 200 m carving-lattice pin (HARD, mountain-carving-3) ----------
+// PRE-REGISTERED (docs/fable-decision-carving-lattice-2026-10-07.md, before the Catmull-Rom field was measured) by the
+// midpoint rule on doc section 3.2 (smoke tiles, truth): control max 1.58 dB (pooled off-belt, max over the four lattice
+// families) and defect min 7.84 dB (pooled massif, mountain-carving-2 triangle lattice): (1.58 + 7.84) / 2 = 4.71 -> 4.7.
+export const LATTICE_PIN_DB = 4.7;
+const LATTICE_FAMILIES = ['lattice-x', 'lattice-y', 'lattice-d', 'lattice-d2'], GULLY_FAMILIES = ['gully-x', 'gully-y'];
+/** Pooled whitened spectrum of fine rasters' W: per family the largest in-range harmonic peakDb, and the overall max. */
+function pooledFamilies(Ws, families) {
+  const st = latticeStats(poolWhitened(Ws), F.n, F.stepM, TF), per = {};
+  for (const f of families) per[f] = r2(Math.max(...st.peaks.filter(p => p.family === f && p.inRange).map(p => p.peakDb)));
+  return {per, max: Math.max(...Object.values(per))};
+}
+test('HARD: 200 m carving lattice: pooled massif max lattice-x/y/d/d2 peakDb <= 4.7 dB on the truth; the triangle reference exceeds it; 250 m gully cell < 4.7 dB', async t => {
+  const m = fineTiles().filter(x => x.massif);
+  t.diagnostic(tierNote(`${m.length} frozen massif tiles (truth, fine 256 x 50 m, aligned with the belt axis), lattice ${LATTICE_M} m`));
+  assert.ok(m.length >= 10, `massif tile count ${m.length}`);
+  const truth = pooledFamilies(m.map(x => x.fine.W), LATTICE_FAMILIES), gully = pooledFamilies(m.map(x => x.fine.W), GULLY_FAMILIES);
+  // Negative control: the same tiles with the mountain-carving-2 triangle interpolant on the same block data (worker).
+  const ref = await triangleRasters(m.map(x => ({world: x.world, d: x.d, axis: x.axis})), F.n, F.stepM);
+  assert.equal(ref.interpolant, 'triangle');assert.equal(ref.rasters.length, m.length);
+  const triangle = pooledFamilies(ref.rasters.map(h => structuralSpectrum(h, F.n, F.stepM, TF).W), LATTICE_FAMILIES);
+  // INFO: the row with rock off (tile level rockDetailFromLevel - 1: exact M3 carving, no M5 rock detail).
+  const rockOff = pooledFamilies(m.map(x => structuralSpectrum(alignedRaster(mountainSampler(x.body, rockDetailFromLevel(x.body.radiusM) - 1), x.d, x.body.radiusM, F.n, F.stepM, x.axis), F.n, F.stepM, TF).W), LATTICE_FAMILIES);
+  report.real.latticePin = {class: 'HARD', pinDb: LATTICE_PIN_DB, tiles: m.length, truth, triangleControl: triangle, gully,
+    INFO: {rockOff, triangleWorkerBuilds: ref.builds}};
+  t.diagnostic('lattice pin ' + JSON.stringify(report.real.latticePin));
+  assert.ok(truth.max <= LATTICE_PIN_DB, `truth pooled lattice peak ${truth.max} dB > ${LATTICE_PIN_DB} (${JSON.stringify(truth.per)})`);
+  assert.ok(triangle.max > LATTICE_PIN_DB, `negative control: the triangle reference must exceed ${LATTICE_PIN_DB} dB, got ${triangle.max}`);
+  assert.ok(gully.max < LATTICE_PIN_DB, `250 m gully cell pooled peak ${gully.max} dB >= ${LATTICE_PIN_DB}`);
 });
