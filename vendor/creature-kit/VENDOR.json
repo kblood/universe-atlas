@@ -1,0 +1,188 @@
+{
+  "schema": "creature-kit-vendor-1",
+  "kit": {
+    "name": "creature-kit",
+    "version": "0.1.0",
+    "commit": "6ca5e18f7499488c8a5304665670f00048775f49",
+    "license": "NOASSERTION"
+  },
+  "note": "Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.",
+  "files": [
+    {
+      "path": "assets/briefs/creature-export-quest-3.json",
+      "sha256": "07f0c49a220bb5ff010c2d41149ec0ce382efc98ed4477ca89f1ef056c983e13"
+    },
+    {
+      "path": "scripts/export-creature.mjs",
+      "sha256": "e86c69ca0e74eca9273a5f5c2e7f316bd947afadab455bb6ab34bda850dafe56"
+    },
+    {
+      "path": "src/fauna-coat-fields.ts",
+      "sha256": "0648dcf1cfb11853813dc655030f93a9571825aa554d36be2b993992a529bb15"
+    },
+    {
+      "path": "src/fauna-coat-vocab.ts",
+      "sha256": "4ffc73800d048c7f46a2c5452a18d5179cf9a17b5cbbc1bb3497989bf0f4cab7"
+    },
+    {
+      "path": "src/fauna-composer-export.ts",
+      "sha256": "20d781298faa484f6c595141a5ad0df73914760d4128d60facb0b9841496a293"
+    },
+    {
+      "path": "src/fauna-composer-eye-catalogue.ts",
+      "sha256": "8cfcb95cedced7e71a718a6f1c9c7f57899ed6decebdb9837faed187049aca2b"
+    },
+    {
+      "path": "src/fauna-composer-eye.ts",
+      "sha256": "5e10538cd89b5106dd8627f5a2a0beaeeccd7cd43573f8bed9ec7a751daf4110"
+    },
+    {
+      "path": "src/fauna-composer-face-geometry.ts",
+      "sha256": "1eeac2392172a491ab183e051efdffd49a265570cc94420110c3da2e9800c54b"
+    },
+    {
+      "path": "src/fauna-composer-face.ts",
+      "sha256": "64d24814bc97952d162ac5cbe7ca0fab77759e379799b959cff293436a083365"
+    },
+    {
+      "path": "src/fauna-composer-individual.ts",
+      "sha256": "9d5cb67607fdda03464efdc6647692b195d317dbc741ada91e52da78e918bdbd"
+    },
+    {
+      "path": "src/fauna-composer-lod.ts",
+      "sha256": "3842242654f3090c725b9c283034a10997c1ba41b4ff239b044a8d3dbc5a1e53"
+    },
+    {
+      "path": "src/fauna-composer-mesh.ts",
+      "sha256": "fbb66cd375f67b62dd333cfde0cce269ed6c48fa22db91e74ca129c1a769c8ff"
+    },
+    {
+      "path": "src/fauna-composer-recipe.ts",
+      "sha256": "fceaae0cc833262e098d29f62ed8836e6d9da458641741e66fb6ceaefc6ae39b"
+    },
+    {
+      "path": "src/fauna-composer-rig.ts",
+      "sha256": "4cb64e17425ab88092177476603b3c9ba7d8134352fcd42456ea3095da92c066"
+    },
+    {
+      "path": "src/fauna-composer-species.ts",
+      "sha256": "d756ddb1409edae98a28fc1072e55002c6504871cd5c9166dad43b3ff2af3ad0"
+    },
+    {
+      "path": "src/fauna-composer.ts",
+      "sha256": "0d7fa3397fa9bbc415f0f2fa6f23023cf633677a9a8a416ea18638baffa95a2b"
+    },
+    {
+      "path": "tests/fauna-composer-coat.test.mjs",
+      "sha256": "027797a5f15b867029afbe4d515a6711357ea8213cd03c07b28bbdbbdb094a2f"
+    },
+    {
+      "path": "tests/fauna-composer-export.test.mjs",
+      "sha256": "073e9cbc397254920de1bc7f25498d0fd0502fc608df141374b1e7786e89f954"
+    },
+    {
+      "path": "tests/fauna-composer-eye-catalogue-geometry.test.mjs",
+      "sha256": "5f78a65ceed6a29864372b1c592474b2a7a8b348bbcd30e3f15f6d704c2e0182"
+    },
+    {
+      "path": "tests/fauna-composer-eye-catalogue.test.mjs",
+      "sha256": "eefa72ef605d56eb38324d843450d7936e59e4b700151c66c3e0b0e6e742c428"
+    },
+    {
+      "path": "tests/fauna-composer-eyes.test.mjs",
+      "sha256": "733602bd32a632d8a2db56e5be2999839386ecaa8e7a14d7847bcbc1056ce2d8"
+    },
+    {
+      "path": "tests/fauna-composer-face.test.mjs",
+      "sha256": "f7a76d99b97e11047f0107959df09eb2df4eac2aa1429bb1a052d7bf0022bca6"
+    },
+    {
+      "path": "tests/fauna-composer-gait.test.mjs",
+      "sha256": "5bbfd1b8eec2c4449f987d2e62e371ca0a57cc4a72d0228b734e27e1886ce946"
+    },
+    {
+      "path": "tests/fauna-composer-gloss.test.mjs",
+      "sha256": "99f74d96e0291ba3d808f7ee89a5531e804ac7ac7746a2f679e394da324091d7"
+    },
+    {
+      "path": "tests/fauna-composer-head-geometry.test.mjs",
+      "sha256": "999123819ac1824317c7f5e8a8c4ca8225c1f08a49bb0312502e49febb5a56ab"
+    },
+    {
+      "path": "tests/fauna-composer-head-occlusion.test.mjs",
+      "sha256": "c8ea6988dace13c735c29d5b22f9d19fb4d258a251c308b07357c48ded325cd0"
+    },
+    {
+      "path": "tests/fauna-composer-individual.test.mjs",
+      "sha256": "459f214c479a15c78b9d013b38f327f2afacd3b244185f7cb8524661dd7fac50"
+    },
+    {
+      "path": "tests/fauna-composer-lod.test.mjs",
+      "sha256": "63c427b489348f7891586533e04f80e24405fd3862500245e0edd5fffe2a47e8"
+    },
+    {
+      "path": "tests/fauna-composer-mesh-stability.test.mjs",
+      "sha256": "36ec1e8c9494eaef95a3b3d05945e71b7206c611d910d597a1d1866227bf2783"
+    },
+    {
+      "path": "tests/fauna-composer-recipe-independent.test.mjs",
+      "sha256": "c83be4821bfabc9e63ace2c12cc16e0a469dbef50c26ccb10817ce56b9538c55"
+    },
+    {
+      "path": "tests/fauna-composer-rig-independent.test.mjs",
+      "sha256": "96b0eea919a9d7619000e93fb96d69e3b62d2dad6cc268bd21fe0ffffa8f3555"
+    },
+    {
+      "path": "tests/fauna-composer-skin-anatomy.test.mjs",
+      "sha256": "aa03a340f8b4b2aee5d96e8619628bda101a7e292227242433c60b2f00f6d7de"
+    },
+    {
+      "path": "tests/fauna-composer-skin4-links.test.mjs",
+      "sha256": "30e820bd8edf5624f6d2606554f6b7a1f673d870773d8e054d1755dc5100a97f"
+    },
+    {
+      "path": "tests/fauna-composer-structure-independent.test.mjs",
+      "sha256": "3293c664f35bcecaf52e57862167fab2ce6eaf703c28a674235e64d046105433"
+    },
+    {
+      "path": "tests/fauna-face-specimens.json",
+      "sha256": "d4a36aa7ff0035af54ca2197e610ec94ffc7d6c4defd386243d360b54e9eee16"
+    },
+    {
+      "path": "tests/fixtures/composer-baseline-v2.json",
+      "sha256": "c9834a221fbd0ebeefc9bf8b3b0fc49399ae15c9503158e21e377181570bb2fa"
+    },
+    {
+      "path": "tests/fixtures/composer-baseline-v3.json",
+      "sha256": "9eeecc60e3d61050e3830940fb279b0038a7c8c895a98d2d42a633f4479997bc"
+    },
+    {
+      "path": "tests/fixtures/composer-eye-catalogue-links.json",
+      "sha256": "292de79f72559f7e7e97cdefa03fe52e2ca3098a0d8f7229b67a301c216aea0e"
+    },
+    {
+      "path": "tests/fixtures/composer-skin2-links.json",
+      "sha256": "a733621ebb3338dfb9a204588c639080b17cae80c92f9ee00a982e40342bf9a2"
+    },
+    {
+      "path": "tests/fixtures/composer-skin3-links.json",
+      "sha256": "dd281b0c4a152ca0715ac12567920686f80bba8cb652ed8826dbe3f4466b174e"
+    },
+    {
+      "path": "tests/fixtures/composer-skin4-links.json",
+      "sha256": "b6c1fc96be251d8aaf94b10dcb2563c395a1a27f5c08e12b5b930a84cdb44985"
+    },
+    {
+      "path": "tests/fixtures/composer-v1-links.json",
+      "sha256": "4df69c57e5c330a563fcce68e4fcc3dea71a6fd6258e18948336969f16e0057b"
+    },
+    {
+      "path": "tests/fixtures/creature-core-exports.json",
+      "sha256": "27fd1eb9a9b6575f846ccc99d31d3066e20903282c7bbf6d81d808c8876a9c19"
+    },
+    {
+      "path": "tests/helpers/composer-head-occlusion.mjs",
+      "sha256": "2c87cf41bd90c02059da4c7a9f98da9644b0a33a6d576a0686d3a2c6d90637e8"
+    }
+  ]
+}
