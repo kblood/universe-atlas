@@ -409,3 +409,17 @@ This section is written and committed before any 4b frame is rendered.
 measured p50 riser width of 46 m: 0.08 x 280 / 46 implies tan 0.49. With tan 0.49 the per-level riser phase widths are
 smaller, so the coarse-level amplitude priors in section 1 are pessimistic. This explains why LR at L12 measured above
 the prior; it is INFO only.
+
+### Step 4b pass 1 (v1 + rock-off, 72 renders, all exit 0): frozen frame list = **0 frames**
+
+`metric-4b-pass1.json`, `frozen-4b.json`. All 36 frames have >= 100 rock windows; 307-689 per frame.
+
+| | min | max |
+|---|---|---|
+| P99(v1) - P99(off) | -0.109 (Lethuris[2] c3000 L13) | +0.073 (Maithea[3] c3000 L13) |
+| Frames with v1 below rock-off | 17 of 36 | |
+
+No frame reaches the registered 0.10. With fewer than 3 frames, the pre-declared outcome applies: notch rows are rare
+outside the tuning station. Over 9 held-out stations (54 frames) only 1 frame (Lethuris[0] c3000 L14) showed them in
+v1. The check goes to step 5; there is no further station hunt and no branch render in pass 2 (the frozen list is
+empty). The six branch height rows (HARD LR and H2-H4) follow below.
