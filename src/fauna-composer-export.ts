@@ -54,8 +54,14 @@ export interface ComposerExportBudget {maxTriangles: number; maxBones: number; m
 /** Target profiles. desktop-web: no LOD by default and no hard gate beyond the composer's own budget.
  * quest-3: the Quest 3 standalone tier (docs/creature-export-v2.md, "Budget"): <= 150k triangles and <= 150 draw calls
  * per frame for a whole scene, so one creature gets 8000 / 3000 / 1000 triangles at its three levels, one draw call
- * per level, at most 80 bones (half the composer graph budget; skeleton update cost is per bone per creature) and at
- * most one 1024x1024 RGBA8 texture's worth of texture memory. */
+ * per level and at most one 1024x1024 RGBA8 texture's worth of texture memory.
+ * Bones: 80 is a CPU budget we set (D4, 2026-10-07), not a Quest 3 hardware limit. three r181 skins through a float
+ * bone texture (no uniform-array path, so MAX_VERTEX_UNIFORM_VECTORS does not apply) and JOINTS_0 is unsigned 16-bit.
+ * The cost is CPU: mixer (2 tracks per bone) + world matrices + skeleton update measured 0.17 us per bone per frame on
+ * the desktop, flat over 40/80/160 bones; ~1 us on Quest 3 is an ESTIMATE (assumed ~5x slower CPU, not measured).
+ * The 8000-triangle level 0 implies ~18 creatures per 150k-triangle scene; at 80 bones they cost ~1.4 ms of an 11.1 ms
+ * frame (160 bones: ~2.9 ms). Raise it only after a headset measurement of <= 0.5 us per bone, or answer a sweep that
+ * often fails with a bone-reducing LOD skeleton, not a higher cap. */
 export const COMPOSER_EXPORT_TARGETS: Readonly<Record<ComposerExportTarget, {lods: readonly number[] | null; budget: Readonly<ComposerExportBudget> | null}>> = Object.freeze({
   'desktop-web': Object.freeze({lods: null, budget: null}),
   'quest-3': Object.freeze({lods: Object.freeze([8000, 3000, 1000]), budget: Object.freeze({maxTriangles: 8000, maxBones: 80, maxMaterials: 1, maxTextureBytes: 1024 * 1024 * 4, maxDrawCallsPerLevel: 1})}),

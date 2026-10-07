@@ -24,7 +24,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {COMPOSER_EXPORT_TARGETS, COMPOSER_EXPORT_V2_VERSION, COMPOSER_GLOSS_ATTRIBUTE, COMPOSER_EXPORT_VERSION, ComposerExportBudgetError, bakeComposerClip, bakeComposerLoopClip,
   checkComposerExportBudget, composerClipWindow, exportCreatureGlb, readComposerGlb} from '../src/fauna-composer-export.ts';
-import {composerPreset, encodeComposerRecipe} from '../src/fauna-composer-recipe.ts';
+import {composerPreset, encodeComposerRecipe, randomComposerRecipe} from '../src/fauna-composer-recipe.ts';
 import {coherentComposerSpecies} from '../src/fauna-composer-species.ts';
 import {COMPOSER_BUDGET, buildComposerGraph, poseComposer} from '../src/fauna-composer-rig.ts';
 import {deriveComposerIndividual} from '../src/fauna-composer-individual.ts';
@@ -306,6 +306,26 @@ test('export v2: with no v2 option the GLB is v1 byte for byte', t => {
   const core = generatorSourceHash(undefined, [...CORE].map(f => `src/${f}`));
   if (core !== V1_PINS.core) { t.diagnostic(`composer core moved (${core.slice(0, 12)} != ${V1_PINS.core.slice(0, 12)}): v1 byte pins not applicable`); return; }
   for (const [name, pin] of Object.entries(V1_PINS.glb)) assert.equal(sha(exported(name).glb), pin, `${name}: v1 bytes`);
+});
+
+/** REPORT-ONLY bone sweep (D4, docs/creature-export-v2.md "Budget ledger"): joint counts of the composer graph, as the
+ * exporter builds it (individual-derived recipe), for 100 coherent species (the CLI's --seed/--count path) and 100 raw
+ * random recipes. It prints a histogram and the number over the quest-3 limit; it asserts nothing about the limit. */
+function boneSweep(recipeOf) {
+  const counts = [];
+  for (let i = 0; i < 100; i++) counts.push(buildComposerGraph(deriveComposerIndividual(recipeOf(`bone-sweep-${i}`)).recipe).bones.length);
+  const bins = new Map();
+  for (const n of counts) { const lo = Math.floor(n / 10) * 10; bins.set(lo, (bins.get(lo) ?? 0) + 1); }
+  const limit = COMPOSER_EXPORT_TARGETS['quest-3'].budget.maxBones;
+  return {limit, min: Math.min(...counts), max: Math.max(...counts), over: counts.filter(n => n > limit).length,
+    histogram: [...bins.entries()].sort((a, b) => a[0] - b[0]).map(([lo, k]) => `${lo}-${lo + 9}:${k}`).join(' ')};
+}
+test('export v2: bone sweep over 100 seeds (report only, the quest-3 limit is not asserted)', t => {
+  for (const [label, recipeOf] of [['coherent species', seed => coherentComposerSpecies(seed).recipe], ['random recipes', seed => randomComposerRecipe(seed)]]) {
+    const s = boneSweep(recipeOf);
+    t.diagnostic(`bone sweep, ${label} bone-sweep-0..99: joints ${s.min}..${s.max}, histogram ${s.histogram}; over the quest-3 limit of ${s.limit}: ${s.over} of 100`);
+    assert.ok(s.min > 0 && s.max <= COMPOSER_BUDGET.maxBones, `${label}: every graph within the composer's own cap`);
+  }
 });
 
 test('export v2: quest-3 writes an MSFT_lod chain within budget and reports it', () => {

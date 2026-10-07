@@ -40,7 +40,7 @@ v1 is described in `docs/creature-export-v1.md`; this document covers only what 
     - the v1 byte pins in `tests/fauna-composer-export.test.mjs` (`V1_PINS`) stop applying. The test then logs a "composer core moved" diagnostic and skips them. Re-pin them, keyed by the new core hash;
     - the triangle table below and the evidence directory must be regenerated;
     - the reducer itself does not need to change.
-  - `needs: owner decision`: the Quest 3 bone budget of 80. There is no documented Quest guidance for it; see the ledger below.
+  - DECIDED (D4, 2026-10-07): the Quest 3 bone budget stays 80, as a CPU budget we set, not a Quest 3 limit; see "Why 80 joints" below.
   - `needs: owner decision`: the creature-kit licence. It stays `NOASSERTION`.
 
 ## What v2 adds
@@ -113,12 +113,47 @@ Here is an example with the trunked centipede, whose unreduced skin has 28 408 t
 |---|---|---|
 | level-0 triangles | 8000 | One creature among many. The Quest 3 standalone scene budget is ≤150k triangles a frame and ≤150 draw calls per eye (memory `feedback_quest3_perf_budgets`, docs/webxr cookbook). 8000 lets a dozen animals take under two thirds of that budget at full detail, and the far levels cut it further. |
 | LOD targets | 8000 / 3000 / 1000 | Each step is about 2.7× to 3×. 1000 triangles still keeps the limbs and head as separate shapes on every preset (deviation figures below). |
-| joints | 80 | **No documented Quest guidance exists.** This is half the composer's own cap (`COMPOSER_BUDGET.maxBones` = 160). The highest count over the 16 evidence species is 79 (centipede), so every one of them passes. A longer myriapod would fail with a `bones` reason instead of exporting silently. This limit should be revisited after a headset skinning-cost measurement. |
+| joints | 80 | **A CPU budget we set, not a Quest 3 limit** (decision D4, 2026-10-07, Opus-decided on Kasper's instruction, overrulable). See "Why 80 joints" below. The highest count over the 16 evidence species is 79 (centipede), so every one of them passes. A longer myriapod fails with a `bones` reason instead of exporting silently. |
 | materials | 1 | The composer skin is a single vertex-coloured material. |
 | texture bytes | 4 MiB | There are no textures today (0 bytes). The limit is there so that a future textured export cannot exceed the 256 MB Quest texture budget by accident. |
 | draw calls per level | 1 | One primitive per level. |
 
 Nothing in v1 was loosened. The desktop profile uses the existing composer budget unchanged.
+
+### Why 80 joints
+
+**There is no hardware cap involved.**
+
+- three.js r181, as installed, skins every mesh through a float bone texture (`skinning_pars_vertex` uses
+  `texelFetch(boneTexture)`). There is no uniform-array path, so `MAX_VERTEX_UNIFORM_VECTORS` does not apply. The old
+  uniform fallback (about 59 bones at 256 vectors) only mattered for WebGL1-era engines, not the WebGL2 Quest Browser.
+- `JOINTS_0` is written as unsigned 16-bit, so there is no 256-joint ceiling either.
+
+**The real cost is CPU.** A small benchmark covered the animation mixer with 2 tracks per bone, the world-matrix update
+and the skeleton update:
+
+- measured on the desktop: **0.17 µs per bone per frame**, flat across 40, 80 and 160 bones;
+- estimated for Quest 3: **about 1 µs per bone**. This assumes the headset CPU is roughly 5× slower than the desktop;
+  the multiplier is an **estimate, not a measurement**;
+- the 8000-triangle level 0 already implies a scene of about 18 creatures (150k ÷ 8000). At 80 bones those 18 cost about
+  **1.4 ms**, roughly 13 % of an 11.1 ms frame. At 160 bones they would cost about 2.9 ms. So 80 is consistent with the
+  scene the triangle budget already assumes.
+
+**Raising it later.** Briefs can only tighten budgets, so going up means a code change plus an entry here. Do that only
+if a headset measurement comes in at 0.5 µs per bone or less (then 160 is fine). If a bone sweep shows random seeds
+failing often, the fix is a bone-reducing LOD skeleton, not a higher cap.
+
+**Bone sweep (report only, `tests/fauna-composer-export.test.mjs` "bone sweep").** Joint counts of the composer graph as
+the exporter builds it, seeds `bone-sweep-0` .. `bone-sweep-99`. The limit is not asserted and was not changed.
+
+| Population | Joints | Histogram (joints: seeds) | Over 80 |
+|---|---|---|---:|
+| coherent species (the CLI's `--seed` / `--count` path) | 15 .. 72 | 10-19: 3, 20-29: 66, 30-39: 20, 50-59: 1, 60-69: 7, 70-79: 3 | 0 of 100 |
+| raw random recipes (`randomComposerRecipe`) | 15 .. 126 | 10-19: 2, 20-29: 31, 30-39: 42, 40-49: 8, 50-59: 3, 70-79: 3, 80-89: 3, 90-99: 3, 100-109: 3, 110-119: 1, 120-129: 1 | 11 of 100 |
+
+Coherent species, which is what the export CLI draws, never exceed 80. Raw random recipes do in 11 of 100: all 11 are
+`many-legged` layouts with 8 to 12 leg pairs (82 to 126 joints), and they fail the quest-3 export with a `bones` reason. Whether 11 % counts as "often" is
+an owner call; per D4 the answer would be a bone-reducing LOD skeleton, not a higher limit.
 
 ## LOD chain (`src/fauna-composer-lod.ts`, `fauna-composer-lod-1`)
 
@@ -265,7 +300,9 @@ Reading the table:
 ## Open risks
 
 1. **No visual review was done.** No Luna sheet and no headset check covers the LOD levels. Level 2 can lose up to 8.8 % of the body diagonal (rhinoceros), and the centipede's level 1 shortens leg tips by 6.6 %. Both fall within the 0.1 and 0.25 screen-coverage switch hints, but a person has not looked at them.
-2. **The 80-joint limit is a judgement call** (see the ledger). The centipede at 79 passes by one joint.
+2. **The 80-joint limit is a CPU budget we set** (see "Why 80 joints"). The Quest 3 per-bone cost is an estimate, not a
+   headset measurement. The centipede at 79 passes by one joint, and 11 of 100 raw random recipes exceed 80 (coherent
+   species: 0 of 100).
 3. **The display crossfade is a blend, not `poseComposer`.** Inside the last second, the clip is a blend between two source poses. On the creatures with large raw seams, a smoothstep blend over 1 s could look like a slow drift. `--seamless-blend` can lengthen the blend, up to half the window.
 4. **The evidence goes stale when the composer core moves.** When a core source changes, the v1 pins skip (with a
    "composer core moved" diagnostic) and do not fail, and this table must be regenerated. Done 2026-10-07 for T2 and
