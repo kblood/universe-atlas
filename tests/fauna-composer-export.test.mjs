@@ -276,9 +276,12 @@ test('export CLI: sidecar and brief carry provenance; an existing file is never 
  * byte comparison is skipped with a diagnostic and the self-relative checks still run. Regenerate by exporting the
  * specimens with no v2 option on the new core.
  * 2026-10-07: core re-keyed e49fc2ec… -> 84d9d6fd… after the fauna/composer-stability merge (proboscis-ear clamp);
- * all five GLB shas regenerated on the new core were byte-identical to the pins below, so only `core` changed. */
+ * all five GLB shas regenerated on the new core were byte-identical to the pins below, so only `core` changed.
+ * 2026-10-07: core re-keyed 84d9d6fd… -> a0a31556… after the midline-ocellus seamNormal package (fauna/ocellus-seam, D2/D4);
+ * none of the five specimens has the midline insect ocellus: their skins (positions, index, weights, colours, gloss)
+ * are identical before and after, and all five GLB shas are byte-identical to the pins below, so only `core` changed. */
 const V1_PINS = {
-  core: '84d9d6fd4f0832c6bbef3f3930971a8153a1dd83ae1f44916b1428daf08e182a',
+  core: 'a0a315563251220cedb09cb760b07a80de3441a0c863bf981c513249f6148f5c',
   glb: {
     bird: 'bb87f35b228bab8a7ec375aad1ff3b7e91562e984df641d2cc067a43417a7a0f',
     centipede: '709abe3ce33ccfaff18ce5b55e877a4016cbe492b2bd663127d559f3cb933786',
