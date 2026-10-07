@@ -405,6 +405,79 @@ export function carvingSmoothFM(alongM:N,acrossM:N,halfWidthM:N,envelopeM:N,belt
   const cut=cutAt(alongM,acrossM,halfWidthM,seed>>>0,true);
   return cut===0?0:-envelopeM*cut;
 }
+// Fused rock-path lookup (docs/fable-decision-carving-lattice-2026-10-07.md section 2d; evidence doc section 6).
+// Returns C = carvingFM(along, across, ...) and writes out[0] = carvingSmoothFM(along, across, ...), out[1] =
+// carvingSmoothFM(along + stepM, across, ...), out[2] = carvingSmoothFM(along, across + stepM, ...), each bit-identical to
+// those four calls in that order, with the same block() calls in the same order (so the LRU, the build count and a
+// block trace are unchanged): one gate pass, one cell computation and one 16-tap load shared by C and Cb, and the
+// B-spline weights shared where the coordinate is shared (Cbx keeps the row weights, Cby the column weights). Inside a
+// point query (placeAt) it makes the four separate calls, so the point memo sees exactly the same sequence.
+export function carvingRockFM(alongM:N,acrossM:N,halfWidthM:N,envelopeM:N,belt:N,seed:N,stepM:N,out:Float64Array):N {
+  if(pointDepth){
+    const C=carvingFM(alongM,acrossM,halfWidthM,envelopeM,belt,seed);
+    out[0]=carvingSmoothFM(alongM,acrossM,halfWidthM,envelopeM,belt,seed);
+    out[1]=carvingSmoothFM(alongM+stepM,acrossM,halfWidthM,envelopeM,belt,seed);
+    out[2]=carvingSmoothFM(alongM,acrossM+stepM,halfWidthM,envelopeM,belt,seed);
+    return C;
+  }
+  out[0]=0;out[1]=0;out[2]=0;
+  // The gates of carvingFM / carvingSmoothFM for each of the three points (negated comparisons exclude NaN).
+  if(belt===0||!(envelopeM>0))return 0;
+  const xM=alongM+stepM,yM=acrossM+stepM,inA=Math.abs(acrossM)<halfWidthM;
+  const okB=inA&&alongM-alongM===0,okX=inA&&xM-xM===0,okY=Math.abs(yM)<halfWidthM&&alongM-alongM===0;
+  if(!okB&&!okX&&!okY)return 0;
+  const s=seed>>>0,d=2*halfWidthM/ROWS;
+  // Base cell (shared by C, Cb and, for its column, Cby; for its row, Cbx).
+  const gx=alongM/d,gy=(acrossM+halfWidthM)/d,col=Math.floor(gx),row=Math.min(ROWS-1,Math.floor(gy));
+  const u=gx-col,t=gy-row,id=Math.floor(col/CORE),a=col-id*CORE;
+  const iu=1-u,it=1-t;
+  const ba0=iu*iu*iu/6,ba1=(3*u*u*u-6*u*u+4)/6,ba2=(-3*u*u*u+3*u*u+3*u+1)/6,ba3=u*u*u/6;
+  const bb0=it*it*it/6,bb1=(3*t*t*t-6*t*t+4)/6,bb2=(-3*t*t*t+3*t*t+3*t+1)/6,bb3=t*t*t/6;
+  let C=0,lastId=0,cur:Float32Array|null=null;
+  if(okB){
+    const v=block(s,halfWidthM,id).cut;cur=v;lastId=id;
+    const o0=Math.max(0,row-1)*S+a,o1=row*S+a,o2=(row+1)*S+a,o3=Math.min(ROWS,row+2)*S+a;
+    const p00=v[o0],p01=v[o0+1],p02=v[o0+2],p03=v[o0+3],p10=v[o1],p11=v[o1+1],p12=v[o1+2],p13=v[o1+3];
+    const p20=v[o2],p21=v[o2+1],p22=v[o2+2],p23=v[o2+3],p30=v[o3],p31=v[o3+1],p32=v[o3+2],p33=v[o3+3];
+    // catmullRom, term for term.
+    const a0=u*(u*(1-0.5*u)-0.5),a1=u*u*(1.5*u-2.5)+1,a2=u*(u*(2-1.5*u)+0.5),a3=u*u*(0.5*u-0.5);
+    const b0=t*(t*(1-0.5*t)-0.5),b1=t*t*(1.5*t-2.5)+1,b2=t*(t*(2-1.5*t)+0.5),b3=t*t*(0.5*t-0.5);
+    const c=b0*(a0*p00+a1*p01+a2*p02+a3*p03)+b1*(a0*p10+a1*p11+a2*p12+a3*p13)
+      +b2*(a0*p20+a1*p21+a2*p22+a3*p23)+b3*(a0*p30+a1*p31+a2*p32+a3*p33);
+    const cut=Math.max(0,Math.min(1,c));
+    C=cut===0?0:-envelopeM*cut;
+    // bspline, term for term.
+    const cb=bb0*(ba0*p00+ba1*p01+ba2*p02+ba3*p03)+bb1*(ba0*p10+ba1*p11+ba2*p12+ba3*p13)
+      +bb2*(ba0*p20+ba1*p21+ba2*p22+ba3*p23)+bb3*(ba0*p30+ba1*p31+ba2*p32+ba3*p33);
+    const cutB=Math.max(0,Math.min(1,cb));
+    out[0]=cutB===0?0:-envelopeM*cutB;
+  }
+  if(okX){
+    // Same row and t as the base cell (the across coordinate is the same expression).
+    const gxx=xM/d,colx=Math.floor(gxx),ux=gxx-colx,idx=Math.floor(colx/CORE),ax=colx-idx*CORE;
+    const v=cur!==null&&lastId===idx?cur:block(s,halfWidthM,idx).cut;cur=v;lastId=idx;
+    const o0=Math.max(0,row-1)*S+ax,o1=row*S+ax,o2=(row+1)*S+ax,o3=Math.min(ROWS,row+2)*S+ax;
+    const iux=1-ux;
+    const xa0=iux*iux*iux/6,xa1=(3*ux*ux*ux-6*ux*ux+4)/6,xa2=(-3*ux*ux*ux+3*ux*ux+3*ux+1)/6,xa3=ux*ux*ux/6;
+    const cb=bb0*(xa0*v[o0]+xa1*v[o0+1]+xa2*v[o0+2]+xa3*v[o0+3])+bb1*(xa0*v[o1]+xa1*v[o1+1]+xa2*v[o1+2]+xa3*v[o1+3])
+      +bb2*(xa0*v[o2]+xa1*v[o2+1]+xa2*v[o2+2]+xa3*v[o2+3])+bb3*(xa0*v[o3]+xa1*v[o3+1]+xa2*v[o3+2]+xa3*v[o3+3]);
+    const cutB=Math.max(0,Math.min(1,cb));
+    out[1]=cutB===0?0:-envelopeM*cutB;
+  }
+  if(okY){
+    // Same column, u and block as the base cell (the along coordinate is the same expression).
+    const gyy=(yM+halfWidthM)/d,rowy=Math.min(ROWS-1,Math.floor(gyy)),ty=gyy-rowy;
+    const v=cur!==null&&lastId===id?cur:block(s,halfWidthM,id).cut;
+    const o0=Math.max(0,rowy-1)*S+a,o1=rowy*S+a,o2=(rowy+1)*S+a,o3=Math.min(ROWS,rowy+2)*S+a;
+    const ity=1-ty;
+    const yb0=ity*ity*ity/6,yb1=(3*ty*ty*ty-6*ty*ty+4)/6,yb2=(-3*ty*ty*ty+3*ty*ty+3*ty+1)/6,yb3=ty*ty*ty/6;
+    const cb=yb0*(ba0*v[o0]+ba1*v[o0+1]+ba2*v[o0+2]+ba3*v[o0+3])+yb1*(ba0*v[o1]+ba1*v[o1+1]+ba2*v[o1+2]+ba3*v[o1+3])
+      +yb2*(ba0*v[o2]+ba1*v[o2+1]+ba2*v[o2+2]+ba3*v[o2+3])+yb3*(ba0*v[o3]+ba1*v[o3+1]+ba2*v[o3+2]+ba3*v[o3+3]);
+    const cutB=Math.max(0,Math.min(1,cb));
+    out[2]=cutB===0?0:-envelopeM*cutB;
+  }
+  return C;
+}
 // The M3 carving term. Unwired until MTN-6.
 export function ridgeValleyCarvingM(alongM:N,acrossM:N,halfWidthM:N,envelopeM:N,belt:N,seed:N):N {
   return carvingFM(alongM,acrossM,halfWidthM,envelopeM,belt,seed);

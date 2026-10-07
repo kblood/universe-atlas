@@ -12,7 +12,7 @@
 //
 // Arithmetic only (+ - * /, Math.floor/min/max/abs/imul): every value feeds a height and the ocean flag.
 import {massifEnvelopeM, composeRidgeTermM, MASSIF_ENVELOPE} from './mountain-envelope.ts';
-import {ridgeValleyCarvingM, ridgeValleyCarvingSmoothM} from './mountain-carving.ts';
+import {ridgeValleyCarvingM, carvingRockFM} from './mountain-carving.ts';
 import {MOUNTAIN_ROCK_DETAIL, rockDetailM, rockDetailSeed} from './mountain-rock-detail.ts';
 
 // mountain-assembly-2 (mountains cost plan T3): mountainRidgeTermM takes `carve`; with carve = false (tile
@@ -60,6 +60,9 @@ export function carvingSeed(beltSeed: number, strip: number): number {
   return (h ^ (h >>> 16)) >>> 0;
 }
 
+// Scratch for the fused rock-path lookup (Cb, Cbx, Cby); written and read within one call, never retained.
+const ROCK_CARVING = new Float64Array(3);
+
 // The ridge term inside an M1 belt (pre-radius-scale metres): (1 - w) x main + U + C, where U is the M2
 // massif envelope (massif-envelope-2), w its composition weight and C the M3 carving of U on the fixed-width
 // strip that contains the sample. U + C = U x retained >= 0, so the term is >= 0 and the sea-level-0
@@ -78,17 +81,16 @@ export function mountainRidgeTermM(
   const {strip, localM} = carvingStrip(o.axisDistanceM);
   const alongM = o.alongM ?? 0, w = MOUNTAIN_ASSEMBLY.CARVING_HALF_WIDTH_M;
   const stripSeed = carvingSeed(beltSeeds[o.beltIndex], strip);
-  const C = ridgeValleyCarvingM(alongM, localM, w, U, o.belt, stripSeed);
-  if (!rock) return composed + C; // Same operation order as mountain-assembly-2.
+  if (!rock) return composed + ridgeValleyCarvingM(alongM, localM, w, U, o.belt, stripSeed); // Same operation order as mountain-assembly-2.
   // Envelope U and strip seed held at the sample; offsets use the same local
   // coordinate system and fixed metric step, never tile lattice spacing.
   // mountain-assembly-4: all three rock inputs come from the smoothed carving (C2), the height keeps C. Cb - C is
   // lattice-periodic, so C is never mixed into the finite difference.
+  // Fused lookup (section 2d): C, Cb, Cbx, Cby bit-identical to ridgeValleyCarvingM and three
+  // ridgeValleyCarvingSmoothM calls at (along, local), (along + S, local), (along, local + S), in that order.
   const S = MOUNTAIN_ROCK_DETAIL.SLOPE_STEP_M;
-  const Cb = ridgeValleyCarvingSmoothM(alongM, localM, w, U, o.belt, stripSeed);
-  const Cbx = ridgeValleyCarvingSmoothM(alongM + S, localM, w, U, o.belt, stripSeed);
-  const Cby = ridgeValleyCarvingSmoothM(alongM, localM + S, w, U, o.belt, stripSeed);
-  return composed + C + rockDetailM(alongM, localM, U + Cb, U + Cbx, U + Cby, rockDetailSeed(stripSeed));
+  const Cr = carvingRockFM(alongM, localM, w, U, o.belt, stripSeed, S, ROCK_CARVING);
+  return composed + Cr + rockDetailM(alongM, localM, U + ROCK_CARVING[0], U + ROCK_CARVING[1], U + ROCK_CARVING[2], rockDetailSeed(stripSeed));
 }
 
 // The massif cap and the carving width agree (decision (e) and (g)): a massif is one carving strip.

@@ -205,3 +205,54 @@ test('HARD: the smoothed carving (M5 rock driver) is C2 across lattice lines inc
   assert.equal(sm.jumps,0,'the smoothed carving has no curvature jump on a lattice line');
   assert.ok(cr.jumps>=lines.length/2,'negative control: Catmull-Rom jumps in curvature on most lattice lines ('+cr.jumps+'/'+lines.length+')');
 });
+test('HARD: fused rock-path lookup (carvingRockFM) is bit-identical to the four separate calls, with the same block calls, LRU order and point-memo traffic',async()=>{
+  // docs/fable-decision-carving-lattice-2026-10-07.md section 2d: the fused lookup must not move any value or any memo
+  // state. Two fresh module instances: A makes carvingFM + three carvingSmoothFM calls (the mountain-assembly-4 order),
+  // B makes one carvingRockFM call. Imported random synthetic blocks only (no solve), lattice and block seams, every gate.
+  const A=await loadVariant(s=>s,'//fused-A'),B=await loadVariant(s=>s,'//fused-B'),w=30000,d=2*w/C.ROWS;
+  let rnd=0x9e3779b9;const r=()=>{rnd=Math.imul(rnd^(rnd>>>15),0x2c1b3c6d)+0x6d2b79f5|0;return (rnd>>>0)/4294967296;};
+  const fill=id=>c=>{for(let k=0;k<c.length;k++){const x=r();c[k]=x<.3?0:x>.9?1:Math.fround((x-.3)/.6);}};
+  for(const id of [-1,0,1,2]){const f=fill(id),a=synthBlock(A,id,()=>{}),b=synthBlock(B,id,()=>{});f(a.cut);b.cut.set(a.cut);
+    assert.equal(A.importCarvingBlock(a),true);assert.equal(B.importCarvingBlock(b),true);}
+  const pts=[];
+  for(let k=0;k<6000;k++)pts.push([(-C.CORE+r()*3*C.CORE)*d,(r()*2.1-1.05)*w,[125,37.25,0,-125][k&3]]);
+  for(const id of [0,1,2])for(let k=0;k<200;k++)pts.push([id*C.CORE*d-r()*130,(r()*2-1)*w,125]); // Cbx crosses into block id
+  for(let k=0;k<200;k++)pts.push([r()*C.CORE*d,w-r()*130,125],[r()*C.CORE*d,-w-r()*130+1,125]); // Cby / base gates at +-w
+  for(let k=0;k<200;k++)pts.push([Math.floor(r()*C.CORE)*d,(Math.floor(r()*C.ROWS)*d)-w,125]); // exact lattice vertices
+  const odd=[[NaN,0,125],[Infinity,0,125],[0,NaN,125],[100,w,125],[100,-w,125],[100,w-125,125],[100,-w-125,125]];
+  const run=(m,fused,x,y,s,env,belt,out)=>{if(fused){const c=m.carvingRockFM(x,y,w,env,belt,730201,s,out);return [c,out[0],out[1],out[2]];}
+    return [m.carvingFM(x,y,w,env,belt,730201),m.carvingSmoothFM(x,y,w,env,belt,730201),m.carvingSmoothFM(x+s,y,w,env,belt,730201),m.carvingSmoothFM(x,y+s,w,env,belt,730201)];};
+  const out=new Float64Array(3);let n=0,carved=0;
+  const cmp=(x,y,s,env,belt)=>{const a=run(A,false,x,y,s,env,belt),b=run(B,true,x,y,s,env,belt,out);n++;if(a[0]<0||a[1]<0)carved++;
+    for(let i=0;i<4;i++)assert.ok(Object.is(a[i],b[i]),`(${x}, ${y}, step ${s}, env ${env}, belt ${belt}) value ${i}: ${a[i]} vs ${b[i]}`);};
+  const {blocks:ta}=A.traceCarvingBlocks(()=>0),{blocks:tb}=B.traceCarvingBlocks(()=>0);assert.deepEqual(ta,tb);
+  const tr=[];
+  for(const [x,y,s] of pts){
+    const ka=A.traceCarvingBlocks(()=>run(A,false,x,y,s,3000,1)).blocks,kb=B.traceCarvingBlocks(()=>run(B,true,x,y,s,3000,1,out)).blocks;
+    assert.deepEqual(kb,ka);tr.push(ka.length);cmp(x,y,s,3000,1);}
+  for(const [x,y,s] of [...odd,...pts.slice(0,200)])for(const [env,belt] of [[3000,1],[3000,0],[0,1],[-1,1],[NaN,1],[1e-300,-1]])cmp(x,y,s,env,belt);
+  // Point-query mode: the fused call makes the four separate calls, so values and memo traffic agree.
+  A.enterCarvingPointQuery();B.enterCarvingPointQuery();
+  for(const [x,y,s] of pts.slice(0,3000))cmp(x,y,s,3000,1);
+  A.exitCarvingPointQuery();B.exitCarvingPointQuery();
+  assert.deepEqual({...B.carvingPointMemoStats},{...A.carvingPointMemoStats});
+  assert.ok(A.carvingPointMemoStats.hits>0&&A.carvingPointMemoStats.stores>0);
+  // LRU order: after a seam query whose Cbx reads block 1 and whose Cby reads block 0 again, block 0 must be the most
+  // recently used. Fill the cache with new blocks until exactly one of {0, 1} is evicted: it must be block 1 in both.
+  const seam=[C.CORE*d-60,0,125];
+  for(const [m,fused] of [[A,false],[B,true]]){
+    run(m,fused,...seam,3000,1,out);
+    for(let id=3;id<3+C.CACHE-1;id++)assert.equal(m.importCarvingBlock(synthBlock(m,id,()=>{})),true);
+    assert.equal(m.importCarvingBlock(synthBlock(m,0,()=>{})),false,(fused?'fused':'separate')+': block 0 (most recent) is resident');
+    assert.equal(m.importCarvingBlock(synthBlock(m,1,()=>{})),true,(fused?'fused':'separate')+': block 1 was evicted first');
+  }
+  // Negative control: a fused variant that reads Cby's block without touching the LRU (same values) must fail this.
+  const NEEDLE='const v=cur!==null&&lastId===id?cur:block(s,halfWidthM,id).cut;';assert.ok(SOURCE.includes(NEEDLE));
+  const P=await loadVariant(src=>src.replace(NEEDLE,'const v=cur!==null&&lastId===id?cur:(cache.find(b=>b.seed===s&&b.w===halfWidthM&&b.id===id)??block(s,halfWidthM,id)).cut;'),'//fused-P');
+  for(const id of [0,1])assert.equal(P.importCarvingBlock(synthBlock(P,id,()=>{})),true);
+  P.carvingRockFM(...seam.slice(0,2),w,3000,1,730201,125,out);
+  for(let id=3;id<3+C.CACHE-1;id++)P.importCarvingBlock(synthBlock(P,id,()=>{}));
+  assert.equal(P.importCarvingBlock(synthBlock(P,0,()=>{})),true,'negative control: without the LRU touch block 0 is evicted first');
+  assert.equal(B.carvingBuildStats.count,A.carvingBuildStats.count,'same solves (a step of -125 m reaches block -2 from the left edge)');
+  console.log('FUSED_IDENTITY '+JSON.stringify({queries:n,carved,crossBlockTraces:tr.filter(k=>k>1).length,builds:B.carvingBuildStats.count,pointMemo:{...B.carvingPointMemoStats}}));
+});
