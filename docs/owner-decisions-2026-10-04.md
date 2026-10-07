@@ -154,7 +154,7 @@ This is one list of every question that is waiting on the owner. It was assemble
   2. Change catalogue masses so both agree. This changes moon counts, orbits, old bookmarks and the golden `systems` digest.
 - **Recommended default:** option 1, and revisit only if orbits must match.
 
-#### A13. Project licence
+#### A13. Project licence (DECIDED 2026-10-07: same as the rest = private, `UNLICENSED`; see "Owner answers 2026-10-07")
 - **State:** OPEN. No LICENSE file exists anywhere in IWSDK or Atlas.
 - **Evidence:** `IWSDK/docs/creature-kit-extraction-plan-2026-10-04.md` question 3; `IWSDK/docs/atlas-backlog-2026-10-04.md` task 21; `README.md` (third-party notice only).
 - **Options:** private and unlicensed (`NOASSERTION`); MIT for code and CC0 for generated creatures; another licence.
@@ -200,7 +200,7 @@ All seven are OPEN. The phases of the plan use the default so that work can proc
 - **A18 Q6, where the creature kit lives:** own repo, `C:/LLM/IWSDK/creature-kit`, consumed by Atlas (vendored sha-pinned, per the plan). Kasper: "Ja, det troede jeg allerede jeg havde bedt om at det skulle blive sin egen ting som dette projekt så bruger." This is an explicit exception to the 2026-10-02 one-repo rule, which keeps applying to Atlas itself.
 - **O13, shorter fair cost protocol:** signed, both F1 and F2 (see `docs/cost-fair-shorter-protocol-draft-2026-10-07.md` section 6).
 - **Decision maker for design questions:** from 2026-10-07 the coordinator asks Opus 5.5, not Fable 5.1, for new decisions and reviews ("brug Opus til de næste opgaver i stedet for fable"). Earlier Fable decisions stand.
-- **A13 licence:** still OPEN (explained to Kasper 2026-10-07; awaiting answer).
+- **A13 licence: DECIDED.** Kasper: "Den licens skal være den samme som resten tænker jeg? Hvorfor skulle den være noget andet?" The owner's projects carry no public licence (private; civilization-lab declares `UNLICENSED`, Atlas is `private` with no licence field), so creature-kit is `UNLICENSED`: private, all rights reserved (creature-kit 3e0d6e8). Follow-up: asset sidecars written by the exporter still say `NOASSERTION`; switching them to the same private licence is a versioned exporter change (made in creature-kit, then synced), not yet done. Publishing under an open licence stays a separate, later owner decision (with A14).
 
 ## B. Already decided by the owner
 
