@@ -423,3 +423,14 @@ No frame reaches the registered 0.10. With fewer than 3 frames, the pre-declared
 outside the tuning station. Over 9 held-out stations (54 frames) only 1 frame (Lethuris[0] c3000 L14) showed them in
 v1. The check goes to step 5; there is no further station hunt and no branch render in pass 2 (the frozen list is
 empty). The six branch height rows (HARD LR and H2-H4) follow below.
+
+### Step 4b branch HARD rows on the six new stations: PASS
+
+| station | points | rock | H1 truth mismatch | H2 below truth / above off | H3 mono / ulp | H4 bound viol. | largest branch switch | main's rock switch | LR finest filtered (HARD >= 0.5) | LR all filtered levels (INFO) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Maithea[2] | 93,025 | 79,083 | 0 | 0 / 0 | 0 / 0 | 0 | 50.94 m | 70.25 m | L13 **0.854** | L10 .03, L11 .21, L12 .58 |
+| Maithea[3] | 74,529 | 56,273 | 0 | 0 / 0 | 0 / 0 | 0 | 47.84 | 82.03 | L13 **0.956** | .02, .37, .77 |
+| Selawyn[1] | 117,649 | 93,982 | 0 | 0 / 0 | 0 / 0 | 0 | 43.60 | 74.78 | L14 **0.961** | L11 .04, L12 .40, L13 .77 |
+| Selawyn[2] | 68,121 | 56,298 | 0 | 0 / 0 | 0 / 0 | 0 | 51.32 | 87.02 | L14 **0.955** | .05, .39, .76 |
+| Lethuris[1] | 108,241 | 80,139 | 0 | 0 / 0 | 0 / 0 | 0 | 37.30 | 64.85 | L14 **1.002** | .12, .62, .89 |
+| Lethuris[2] | 139,129 | 113,082 | 0 | 0 / 0 | 0 / 0 | 0 | 60.26 | 103.03 | L14 **0.968** | .04, .42, .78 |
