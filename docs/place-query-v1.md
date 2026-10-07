@@ -86,7 +86,12 @@ and process, so the imported block yields exactly the answer the worker
 computed (`tests/place-query.test.mjs`, `tests/mountain-carving-memo.test.mjs`).
 The main-thread memo is a 32-block LRU: import close to use, since more than 32
 far-apart warmed blocks evict each other (repeats are still served by the point
-memo).
+memo). Since mountain-carving-3 (terrain-1.9.1-carving-c1) an exported block
+carries the cut fraction `cut` (Float32Array of 481 x 131 values, 252,044 B,
+block-local columns -1 .. 128) instead of `r`, and `placeBlockTransferables`
+lists `cut.buffer`; the point memo is one clock table of 4096 cells (16 taps
+each, 348,160 B, at most 3072 live cells), so a warm set of about 2150 cells is
+served without re-solving.
 
 **Trust rule.** Imported blocks are in-session data only: posted between threads
 of the same build, never persisted, cached on disk or taken from another
