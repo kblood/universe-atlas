@@ -152,6 +152,7 @@ Rows are given as no rock / with rock:
 | margin | T6 | **C1** | limit |
 |---|---|---|---|
 | R2 slope p90 | 48.25 / 48.16 | **48.72 / 48.62** | 48.4: **crossed on both pools** |
+| R2 slope125 p50 drop, no rock -> rock | -0.16 / -0.12 | **-0.74 / -0.62** | <= 0.5°: **crossed on both pools** (under-reported in the first version of this doc) |
 | R3' beta | 3.280 / 3.252 | **3.3675 / 3.3368** | 3.3666 / 3.3637: **crossed on training by 0.0009**; held-out passes |
 | R1e ratio | 3.07 / 3.03 | **3.07 / 3.02** | |
 | R2 pits025 | 4.94 / 17.3 | **4.94 / 19.8** | |
@@ -161,7 +162,55 @@ Rows are given as no rock / with rock:
   height.
 - These are the thin M5 margins the decision flagged (section 2: "slope p90 48.25 vs 48.4, R3' 3.28 vs 3.32"). Both were
   already close in T6. On real M3 they now sit just past their INFO limits.
-- They are reported, not tuned. **This needs a decision** if these INFO rows are meant as gates at the gate review.
+- They are reported, not tuned.
+
+**Attribution (verified from the `fine` blocks of `m3-rows.json`, T6 = the 2026-09-13 review copy, identical to
+`test-results/mountains/t6-wiring/m3-rows.json`):**
+
+| quantity, training / held-out | T6 | C1 |
+|---|---|---|
+| R2 p50, no rock | 41.3800 / 40.8925 | 41.3800 / 40.8925 (identical to four decimals) |
+| R2 p90, no rock | 46.9945 / 46.9266 | 46.9945 / 46.9266 (identical to four decimals) |
+| R2 p50, rock | 41.2194 / 40.7711 | 40.6378 / 40.2768 |
+| R2 p90, rock (rock's own increment) | 48.2506 / 48.1566 (+1.26 / +1.23) | 48.7212 / 48.6223 (**+1.73 / +1.70**) |
+| R3' closure of the no-rock -> alpine gap (rule: >= one third) | 36.9 % / 38.7 % | **33.25 % / 35.7 %** |
+
+- No-rock R2 is unchanged by the Catmull-Rom height, so the whole R2 move is the C2 rock driver.
+- The rock-off R3 beta did move (3.668 -> 3.741 training), which raised the R3' bar. The training closure, 33.25 %
+  against the one-third rule, is a miss by 0.0009 in beta.
+
+**INFO attribution control: the rock driver switched back to Catmull-Rom.**
+- Script: `test-results/mountains/carving-c1/m3-rows-crdriver.mjs`, output `m3-rows-crdriver.json` and `.log`. It was run
+  under the test slot and took 154 s for both pools.
+- It is identical to `m3-rows.mjs` except that rock reads U+C, U+Cx and U+Cy from `carvingFM` (7fb4850 semantics)
+  instead of `carvingSmoothFM`. The carving height is Catmull-Rom in all three columns below; only the driver differs.
+
+| training / held-out | T6 (triangle height and driver) | CR driver (control) | C2 driver (this branch) |
+|---|---|---|---|
+| R2 p50 drop | -0.16 / -0.12 | **-0.16 / -0.12** | -0.74 / -0.62 |
+| R2 p90, rock (increment) | 48.2506 / 48.1566 (+1.26 / +1.23) | **48.2506 / 48.1566 (+1.26 / +1.23)** | 48.7212 / 48.6223 (+1.73 / +1.70) |
+| R3' beta / limit | 3.2798 / 3.3175, 3.2520 / 3.3074 | **3.2980 / 3.3666, 3.2750 / 3.3637 (pass, pass)** | 3.3675 / 3.3666, 3.3368 / 3.3637 |
+| R3' closure | 36.9 % / 38.7 % | **39.4 % / 41.3 %** | 33.25 % / 35.7 % |
+
+- **The rows are not unchanged under the CR driver, so the stop condition is not met.**
+- Switching the driver back to Catmull-Rom restores R2 and R3' fully. The R2 move, and the R3' miss, therefore belong
+  to the C2 driver, which confirms the attribution.
+- **Caveat:** the CR-driver R2 equals T6's triangle values to about 5e-6°. The coarse R2 raster evidently samples at
+  (or next to) carving lattice vertices. Every interpolating kernel reproduces the stored value there, so R2 cannot
+  tell Catmull-Rom from triangle.
+- The B-spline is approximating. At a vertex it returns the [1, 4, 1] / 6 smoothed value, so R2 sees the driver's
+  smoothing directly. This is consistent with, and sharper than, the "spatially coherent benches" reading. The visual
+  check is still the probe pair.
+- R1 steep RMS is 49.6 / 49.8 under the CR driver against 49.5 / 49.8 under C2. Its rise from T6's 45.5 / 45.6
+  therefore comes from the Catmull-Rom height, not the driver.
+
+**Decision (Fable 5.1, section 2c(1), on Kasper's instruction, overrulable):**
+- These rows stay **INFO**. They are not blocking and not re-registered. The HARD M5 gate is the synthetic pool, which
+  this branch cannot move.
+- The signature (median flattening, tail steepening, unchanged steep-band detail, rock RMS -22 %) points to the M5
+  benches becoming spatially coherent under the C2 driver.
+- The real check is visual and is routed to the GPU probe pair's after-frame. That frame looks for bench or contour
+  striping, or blocky steps, that are visibly stronger than in the before-frame.
 
 ### Step C4: cost
 
@@ -250,6 +299,17 @@ protocol, which measures the real tile cost, is the coordinator's.
 
 - Cost-fair protocol (GATE-1): the coordinator, in a quiet window.
 - GPU probe pair (Maithea massif, L11-L13, low sun) and the golden cross-engine run: need a browser and the GPU lock.
-- **Decision needed:** whether the M5 INFO margins that are now crossed (R2 p90 48.72 / 48.62 vs 48.4; R3' training
-  3.3675 vs 3.3666) are acceptable as INFO.
-- **Decision needed:** whether the +38..49 ns at rock levels (estimated +10..15) needs the cost-fair run before staging.
+- **Decided (section 2c):** the crossed M5 margins stay INFO. The cost protocol runs as is, with REF = `9dcb1cf`
+  (GATE-1 REF), REF2 an identical export, and CAND = the branch tip. Merge follows only after these, in order: the
+  protocol passes, the cross-engine golden check shows 0 mismatches, and the probe pair shows no visual STOP.
+
+### Backlog (not implemented): fused carving lookups
+
+- **What:** one gate pass and one cell/offset computation, shared by C and Cb at the base point. Cbx and Cby are
+  computed in the same call. This replaces the four independent `ridgeValleyCarving*M` calls on the rock path.
+- **Acceptance:**
+  - every digest unchanged: `CARVING_F_DIGEST`, `CARVING_S_DIGEST`, `COST_IDENTITY`, golden and `MOUNTAINS_TRUTH_SHA256`;
+  - `inmassif-bench.mjs` carving + rock <= main + 15 ns.
+- **Expected gain:** about 15-25 ns recoverable of the measured +38..49 ns.
+- **When:** with the next terrain change. Per section 2c(2), it becomes mandatory, and is followed by a new counted run,
+  if the cost-fair protocol STOPs. It moves to the top of the backlog if Maithea lands in (7, 8] %.
