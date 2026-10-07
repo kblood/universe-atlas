@@ -145,11 +145,14 @@ What the merged work adds:
 
 **New findings, OPEN:**
 
-- **Four engines are not all equal.** WebKit 26.5 differs on
-  `faunaKnownUnstable`: a midline insect eye sits on the head's mirror seam,
-  and two ray hits tie exactly there. The gate result is
-  PASS-WITH-KNOWN-MISMATCH, not PASS. The fix belongs in
-  `src/fauna-composer-mesh.ts`, and a trial patch exists.
+- ~~**Four engines are not all equal.**~~ CLOSED 2026-10-07: the midline
+  insect ocellus is seated with `seamNormal` (the tied seam-triangle normals
+  summed in triangle-index order), skin-4 repinned in place (D2), and the
+  strict cross-engine run gives `GOLDEN CROSS-ENGINE GATE: PASS (all four
+  engines equal)` with `faunaKnownUnstable` repinned to `61e258fc…d84d`.
+  `KNOWN_ENGINE_MISMATCHES` is empty; GOLDEN-FAUNA-2 folds back into `fauna`
+  next round. See
+  [docs/fauna-composer-stability-2026-10-07.md](docs/fauna-composer-stability-2026-10-07.md) "Decision".
 - ~~**The trunked-centipede skin record moves under a 1-ULP nudge.**~~
   CLOSED 2026-10-07: the proboscis ear's `sin(pi x)^p` profile went NaN when
   `pow(1, 0.75)` was nudged one ULP above 1; the sine is now clamped at 0

@@ -10,6 +10,7 @@ Task T2 of the 2026-10-07 parallel round (decided by Fable 5.1 on Kasper's instr
   repin). The WebKit midline-ocellus fix is implemented and verified but **withheld**: it hits the stop condition
   "more than ~5% of skin-4 link fixtures drift" (2 of 28 = 7.1%). It is ready to apply (Appendix A) once Fable or the
   coordinator accepts the drift. Both fixes are in `src/fauna-composer-mesh.ts` only.
+  **Update 2026-10-07:** accepted under D2 and applied on `fauna/ocellus-seam`; four engines equal (see "Decision").
 - **Commits:** see the final report (`git log main..fauna/composer-stability`).
 - **NOT run:** `test:full` (coordinator, on main after merge); `npm test` as a whole (the affected and fauna sets were
   run instead); a cross-engine compare of the committed tip alone (the one permitted compare ran with the withheld
@@ -170,6 +171,32 @@ Only if the ocellus package (Appendix A) is accepted:
 - needs: repin `odd-insect-bird` in `tests/fixtures/composer-eye-catalogue-links.json` (skin
   `314d93b3effdadd1b33f126880b354d5528cb8027e7a0e9d6ffc8e4b2dc0268f`; gloss, vertices, triangles and bones unchanged).
 - needs: close the README OPEN item "Four engines are not all equal".
+
+## Decision (D2, 2026-10-07): the ocellus package is accepted and applied
+
+Opus-decided on Kasper's instruction (overrulable): accept the in-place skin-4 repin (not a skin-5), repin only
+`faunaKnownUnstable` this round, keep GOLDEN-FAUNA-2 in its own key for one more round. The ~5 % stop condition guards
+against a change in how creatures look; this is 8 vertices, at most 0.75 mm, and the eye becomes exactly
+mirror-symmetric. skin-4 is unreleased (deployed: `fauna-preview-20261002-01`), the recipe and vocabulary are
+unchanged (v1-v4 links decode as before), and EC4 set the in-place precedent.
+
+Applied on branch `fauna/ocellus-seam` from main `a9a4893`:
+
+| Step | Result |
+|---|---|
+| Appendix A (`git apply --check`, then apply) | clean, no context drift |
+| `composer-eye-catalogue-links.json` | `odd-insect-bird` only (1 of 30): skin `1d759b27…09d3` -> `314d93b3…268f`, taken from the test; 8 vertices, max 0.0438 mm, positions only. Same history fields as the skin-4 file (`skinPreStability`, `stabilityDrift`, file-level `repinnedAtStability`) |
+| `KNOWN_ENGINE_MISMATCHES` (run-cross-engine.mjs) | the `webkit.faunaKnownUnstable` entry is removed; the table is empty |
+| `FAUNA_KNOWN_UNSTABLE` (generator.ts) | kept, with its key; comments say four engines equal since the `seamNormal` fix, fold next round |
+| `tests/golden/node-run.mjs` | exactly 1 of 16 keys differs from `golden.json`: `faunaKnownUnstable` `ad34e48e…bb6bb` -> `61e258fc…d84d` |
+| strict cross-engine run (`test-slot -- run-cross-engine.mjs --strict --update --report …`, exclusive slot; the runner took the GPU lock per engine) | `GOLDEN CROSS-ENGINE GATE: PASS (all four engines equal)`, exit 0. Node, Chromium 149, Firefox 151 and WebKit 26.5 all give `fauna` `6bf5d085…3546` (unchanged) and `faunaKnownUnstable` `61e258fc…d84d` |
+| `golden.json` diff | that one digest line only; no other key or metadata moved |
+| `tests/golden/perturbation.test.mjs` | 5/5 pass; `fauna` golden flips 0, `faunaKnownUnstable` golden flips 0 |
+
+Evidence: `test-results/round-2026-10-07/golden-ocellus-seam/` (`cross-engine.log`, `cross-engine-report.json`).
+
+**Next routine golden round:** if `--strict` passes again, fold GOLDEN-FAUNA-2 back into the `fauna` key and empty
+`FAUNA_KNOWN_UNSTABLE` (that moves the `fauna` digest, so it needs a fresh Node + four-engine run).
 
 ## Appendix A: the withheld midline-ocellus package
 
