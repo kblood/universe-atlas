@@ -1,67 +1,48 @@
+// A stationary retained nonroot leaf rebuilds for a new water bucket while its old tile stays installed and visible.
+// O12 (docs/fable-test-review-2026-10-07.md, docs/test-tidy-d-2026-10-07.md):
+// - the renderer comes from the shared fixture (tests/terrain-renderer-fixture.mjs: one esbuild bundle, the in-process
+//   tile builder and its per-process tile cache) instead of a private bundle and Worker stub;
+// - the hydrology build (drainage, the outlet-3386 region and the canonical set) is cached per process;
+// - the water levels are the relief round's P6 lowered-sea pair (tests/helpers/harness-water.mjs, lost-volume fraction
+//   0.6 resolved through levelForLoss; Maithea -2425 / -2400 m), replacing the pre-P6 metre literals -4500 / -4475.
+// Inland rivers are withdrawn (src/inland-rivers.ts), so the attached hydrology is inert in tiles and the renderer; the
+// body still carries it, as before, so the scenario is the one this test always ran.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,rm} from 'node:fs/promises';
-import {tmpdir} from 'node:os';
-import {join,resolve,dirname,basename} from 'node:path';
-import {pathToFileURL,fileURLToPath} from 'node:url';
-import {build} from 'esbuild';
-import {galaxies,refByAddress,system} from '../src/catalog.ts';
+import {rendererModule,maithea,createRenderer,nextTurn} from './terrain-renderer-fixture.mjs';
+import {loweredSeaLevels,WATER_BUCKET_M} from './helpers/harness-water.mjs';
 import {buildDrainage} from '../src/drainage.ts';
 import {buildRiverRegion} from '../src/river-generation.ts';
+import {buildCanonicalHydrology} from '../src/hydrology-registry.ts';
 
-async function rendererModule(){
-  const directory=await mkdtemp(join(tmpdir(),'atlas-water-refresh-')),output=join(directory,'renderer.mjs');
-  await build({bundle:true,platform:'node',format:'esm',outfile:output,logLevel:'silent',stdin:{resolveDir:fileURLToPath(new URL('..',import.meta.url)),sourcefile:'terrain-water-refresh-entry.mjs',contents:`
-    import * as THREE from 'three';
-    import {buildTile} from './src/planet-tiles.ts';
-    import {PlanetRenderer} from './src/planet-renderer.ts';
-    import {primeCanonicalHydrologySync} from './src/hydrology-registry.ts';
-    export {THREE,buildTile,PlanetRenderer,primeCanonicalHydrologySync};
-  `}});
-  return {module:await import(pathToFileURL(output).href),directory};
+const OUTLET=3386;
+const hydrologyCache=globalThis.__atlasWaterRefreshHydrology??=new Map();
+/** Maithea with the outlet-3386 river region as body.hydrology and the canonical set as body.canonicalRivers (the
+ * id-sorted regions primeCanonicalHydrologySync's settle() attaches), built once per process. */
+function hydrologyBody(){
+  const base=maithea();
+  let h=hydrologyCache.get(base.id);
+  if(!h){
+    const catchment=buildDrainage(base).catchments.find(value=>value.outlet===OUTLET);
+    assert.ok(catchment,`Maithea has a catchment with outlet ${OUTLET}`);
+    const canonical=buildCanonicalHydrology(base).regions;
+    h={hydrology:buildRiverRegion(base,catchment),canonicalRivers:[...canonical].sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0)};
+    hydrologyCache.set(base.id,h);
+  }
+  return {...base,hydrology:h.hydrology,canonicalRivers:h.canonicalRivers};
 }
 
 test('stationary retained nonroot terrain leaf refreshes its water bucket while the old tile stays visible',async()=>{
-  const {module,directory}=await rendererModule(),{THREE,buildTile,PlanetRenderer,primeCanonicalHydrologySync}=module;
-  const maithea=system(refByAddress(galaxies('LETHRA-001')[0],'G001/C2128,0,1/0')).planets[1];
-  const catchment=buildDrainage(maithea).catchments.find(value=>value.outlet===3386);
-  assert.ok(catchment);
-  const body={...maithea,hydrology:buildRiverRegion(maithea,catchment)};
-  primeCanonicalHydrologySync(body);
-  const host=new THREE.Mesh(new THREE.SphereGeometry(1,8,8),new THREE.MeshBasicMaterial());
-  const held=[];
-  const SavedWorker=globalThis.Worker;
-  class ControlledWorker {
-    onmessage=null; onerror=null;
-    postMessage(data){
-      const job={data,worker:this};
-      if(data.waterBucket===-179&&held.targetKey===data.key){held.push(job);return;}
-      queueMicrotask(()=>respond(job));
-    }
-    terminate(){}
-  }
-  function respond(job){
-    const {data,worker}=job;
-    try{worker.onmessage?.({data:{key:data.key,result:buildTile(data.body,data.tile,data.relief,data.waterLevelM??0),waterBucket:data.waterBucket}});}
-    catch(error){worker.onmessage?.({data:{key:data.key,error:String(error),waterBucket:data.waterBucket}});}
-  }
-  globalThis.Worker=ControlledWorker;
-  // PlanetRenderer acquires browser PNG textures in its constructor. This CPU
-  // tile-refresh fixture never renders them, so return tiny uploadable textures
-  // instead of allowing Three.ImageLoader to reference `document` in Node.
-  const nativeTextureLoad=THREE.TextureLoader.prototype.load;
-  THREE.TextureLoader.prototype.load=function(_url,onLoad){
-    const texture=new THREE.DataTexture(new Uint8Array([128,128,128,255]),1,1,THREE.RGBAFormat);
-    texture.needsUpdate=true;onLoad?.(texture);return texture;
-  };
-  let renderer;
-  try{renderer=new PlanetRenderer(body,host,maithea.radiusM,1,1);}
-  finally{THREE.TextureLoader.prototype.load=nativeTextureLoad;}
-  const eye=[1.01,0,0],sun=[1,0,0],frame=async water=>{renderer.update(eye,1080,65,1/60,false,sun,[],undefined,null,water);await new Promise(resolve=>setImmediate(resolve));};
+  const {module,cleanup}=await rendererModule({prefix:'atlas-water-refresh-'});
+  const body=hydrologyBody(),{lowM,highM}=loweredSeaLevels(body);
+  const LOW_BUCKET=lowM/WATER_BUCKET_M,HIGH_BUCKET=highM/WATER_BUCKET_M;
+  let targetKey=null;
+  const fx=createRenderer(module,body,{hold:data=>data.waterBucket===HIGH_BUCKET&&targetKey===data.key}),{renderer,held}=fx;
+  const eye=[1.01,0,0],sun=[1,0,0],frame=async water=>{renderer.update(eye,1080,65,1/60,false,sun,[],undefined,null,water);await nextTurn();};
   try{
     let diagnostics;
     for(let i=0;i<900;i++){
-      await frame(-4500);
+      await frame(lowM);
       diagnostics=renderer.diagnostics();
       if(diagnostics.pending===0&&diagnostics.maxLevel>0&&diagnostics.visible>0)break;
     }
@@ -70,30 +51,27 @@ test('stationary retained nonroot terrain leaf refreshes its water bucket while 
     assert.ok(leafKey,'fixture has a nonroot visible leaf');
     const leaf=renderer.patches.get(leafKey);
     assert.ok(leaf,'selected leaf is resident');
-    assert.equal(leaf.waterBucket,-180,'initial tile was built at -4500 m');
+    assert.equal(leaf.waterBucket,LOW_BUCKET,`initial tile was built at ${lowM} m`);
     assert.ok(leaf.mesh.visible,'initial leaf is visible');
 
-    held.targetKey=leafKey;
+    targetKey=leafKey;
     let queued=false;
     for(let i=0;i<120;i++){
-      await frame(-4475);
+      await frame(highM);
       diagnostics=renderer.diagnostics();
       if(held.length){queued=true;break;}
     }
     assert.ok(queued,`water change must request retained leaf ${leafKey}; diagnostics=${JSON.stringify({pending:diagnostics.pending,staleWaterPatches:diagnostics.staleWaterPatches,active:diagnostics.debug.activeTileIds})}`);
-    assert.equal(held[0].data.waterLevelM,-4475,'replacement job carries the new water level, not only a new bucket stamp');
-    assert.equal(renderer.patches.get(leafKey)?.waterBucket,-180,'old resident tile remains installed until replacement completes');
+    assert.equal(held[0].data.waterLevelM,highM,'replacement job carries the new water level, not only a new bucket stamp');
+    assert.equal(renderer.patches.get(leafKey)?.waterBucket,LOW_BUCKET,'old resident tile remains installed until replacement completes');
     assert.ok(renderer.patches.get(leafKey)?.mesh.visible,'old tile remains visible while its replacement is pending');
 
-    for(const job of held.splice(0))respond(job);
-    for(let i=0;i<600&&renderer.diagnostics().staleWaterPatches>0;i++)await frame(-4475);
-    assert.equal(renderer.patches.get(leafKey)?.waterBucket,-179,'replacement echoes and installs the requested water bucket');
+    fx.releaseHeld();
+    for(let i=0;i<600&&renderer.diagnostics().staleWaterPatches>0;i++)await frame(highM);
+    assert.equal(renderer.patches.get(leafKey)?.waterBucket,HIGH_BUCKET,'replacement echoes and installs the requested water bucket');
     assert.equal(renderer.diagnostics().staleWaterPatches,0,'all visible retained leaves are fresh after their responses drain');
   } finally {
-    renderer?.dispose();host.geometry.dispose();host.material.dispose();globalThis.Worker=SavedWorker;
-    const target=resolve(directory);
-    assert.equal(dirname(target),resolve(tmpdir()));
-    assert.ok(basename(target).startsWith('atlas-water-refresh-'));
-    await rm(target,{recursive:true,force:true});
+    fx.dispose();
+    await cleanup();
   }
 });
