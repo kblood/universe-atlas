@@ -6,21 +6,31 @@
 // - the export path imports only the 12-module composer core and three (the CLI adds only node: builtins);
 // - the CLI refuses to overwrite a file whose bytes differ.
 // assetctl validate/package run outside this repo (evidence: test-results/round2-2026-10-04/creature-export/).
+// Export v2 (docs/creature-export-v2.md), self-relative except one core-keyed v1 pin:
+// - with no v2 option the GLB is v1's byte for byte (pinned hashes apply only while the core sources are unchanged);
+// - quest-3: an LOD chain on MSFT_lod nodes, every level within its target, the budget in the report and sidecar;
+//   an export over budget fails with machine-readable reasons (library and CLI, nothing written);
+// - LOD levels played by GLTFLoader + AnimationMixer skin exactly like the runtime vertices they came from;
+// - seamless idle/display: first and last keys bit-identical, poseComposer(b + t) before the blend, other clips v1;
+// - a v2 export is byte-identical on a second run, for three coherent seeds.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync, readFileSync, rmSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import ts from 'typescript';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
-import {COMPOSER_GLOSS_ATTRIBUTE, COMPOSER_EXPORT_VERSION, bakeComposerClip, composerClipWindow, exportCreatureGlb, readComposerGlb} from '../src/fauna-composer-export.ts';
+import {COMPOSER_EXPORT_TARGETS, COMPOSER_EXPORT_V2_VERSION, COMPOSER_GLOSS_ATTRIBUTE, COMPOSER_EXPORT_VERSION, ComposerExportBudgetError, bakeComposerClip, bakeComposerLoopClip,
+  checkComposerExportBudget, composerClipWindow, exportCreatureGlb, readComposerGlb} from '../src/fauna-composer-export.ts';
 import {composerPreset, encodeComposerRecipe} from '../src/fauna-composer-recipe.ts';
 import {coherentComposerSpecies} from '../src/fauna-composer-species.ts';
 import {COMPOSER_BUDGET, buildComposerGraph, poseComposer} from '../src/fauna-composer-rig.ts';
 import {deriveComposerIndividual} from '../src/fauna-composer-individual.ts';
 import {createComposerCreature} from '../src/fauna-composer.ts';
-import {CREATURE_EXPORT_SIDECAR_SCHEMA, buildCreatureFiles, generatorSourceHash, parseArgs, writeOnce} from '../scripts/export-creature.mjs';
+import {CREATURE_EXPORT_BUDGET_EXIT, CREATURE_EXPORT_GENERATOR_SOURCES_V2, CREATURE_EXPORT_SIDECAR_SCHEMA, CREATURE_EXPORT_SIDECAR_SCHEMA_V2, briefExportOptions, buildCreatureFiles,
+  generatorSourceHash, main as cliMain, parseArgs, parseLods, writeOnce} from '../scripts/export-creature.mjs';
 
 const SPECIMENS = {
   bird: composerPreset('bird'),            // biped, feathered wings (scale channels), fast walk
@@ -215,10 +225,11 @@ const specifiers = (path, kind) => {
 const CORE = new Set(['fauna-coat-fields.ts', 'fauna-coat-vocab.ts', 'fauna-composer-eye-catalogue.ts', 'fauna-composer-eye.ts', 'fauna-composer-face-geometry.ts',
   'fauna-composer-face.ts', 'fauna-composer-individual.ts', 'fauna-composer-mesh.ts', 'fauna-composer-recipe.ts', 'fauna-composer-rig.ts', 'fauna-composer-species.ts', 'fauna-composer.ts']);
 
-test('export: the export path imports only the composer core and three (the CLI adds node: builtins)', () => {
+test('export: the export path imports only the composer core, the LOD reducer and three (the CLI adds node: builtins)', () => {
   // the core itself is closed (tests/creature-core-boundary.test.mjs); so the export path never reaches an Atlas module
-  const leaks = specifiers('src/fauna-composer-export.ts', ts.ScriptKind.TS).filter(s => s !== 'three' && !CORE.has(/^\.\/([^/]+\.ts)$/.exec(s)?.[1]));
+  const leaks = specifiers('src/fauna-composer-export.ts', ts.ScriptKind.TS).filter(s => s !== 'three' && s !== './fauna-composer-lod.ts' && !CORE.has(/^\.\/([^/]+\.ts)$/.exec(s)?.[1]));
   assert.deepEqual(leaks, []);
+  assert.deepEqual(specifiers('src/fauna-composer-lod.ts', ts.ScriptKind.TS), [], 'the LOD reducer imports nothing');
   const cli = specifiers('scripts/export-creature.mjs', ts.ScriptKind.JS).filter(s => !s.startsWith('node:') && !(s === '../src/fauna-composer-export.ts' || CORE.has(/^\.\.\/src\/([^/]+\.ts)$/.exec(s)?.[1])));
   assert.deepEqual(cli, []);
 });
@@ -256,4 +267,294 @@ test('export CLI: sidecar and brief carry provenance; an existing file is never 
   assert.throws(() => parseArgs(['--out', 'x', '--preset', 'ape', '--fps', 'NaN']), /--fps/);
   assert.throws(() => buildCreatureFiles({kind: 'preset', preset: 'ape'}, {motions: []}), /no motions/);
   assert.equal(parseArgs(['--out', 'x', '--count', '3', '--seed-prefix', 'p']).selections.map(s => s.seed).join(), 'p-0,p-1,p-2');
+});
+
+// ------------------------------------------------------------------ export v2
+
+/** v1 GLB sha256 per specimen, exported by fauna-composer-export-1 at main 5450d9d. They hold while the 12 composer-core
+ * sources hash to `core` (generatorSourceHash format); when the core moves (skin version, composer-stability work) the
+ * byte comparison is skipped with a diagnostic and the self-relative checks still run. Regenerate by exporting the
+ * specimens with no v2 option on the new core. */
+const V1_PINS = {
+  core: 'e49fc2ec469caac34660c1ff2500aedb2531fc488d6481da3a1e641d7c94254b',
+  glb: {
+    bird: 'bb87f35b228bab8a7ec375aad1ff3b7e91562e984df641d2cc067a43417a7a0f',
+    centipede: '709abe3ce33ccfaff18ce5b55e877a4016cbe492b2bd663127d559f3cb933786',
+    worm: '86fecc903ec8f19bda2c89db1012fff514a493b01b3ca38a03c543176f54be00',
+    'winged-ape-rhino': 'ae1784773193c049f6a4f9ff9749c76085a2d8b61eaf02d256c37ded648aedb7',
+    coherent: '01b43824c05d6733afe0bc769ea20bf2b5b3596be7f0b225293106e05d637965',
+  },
+};
+const sha = bytes => createHash('sha256').update(bytes).digest('hex');
+let questBirdCache = null;
+const questBird = () => questBirdCache ??= exportCreatureGlb(SPECIMENS.bird, {target: 'quest-3', seamless: true});
+
+test('export v2: with no v2 option the GLB is v1 byte for byte', t => {
+  for (const name of Object.keys(SPECIMENS)) {
+    const v1 = exported(name);
+    // flags spelled out as off give the same bytes as no options at all
+    assert.equal(sha(exportCreatureGlb(SPECIMENS[name], {lods: false, seamless: false}).glb), sha(v1.glb), name);
+    assert.equal(v1.report.version, COMPOSER_EXPORT_VERSION);
+    assert.equal(v1.report.lods, undefined); assert.equal(v1.report.budget, undefined);
+    assert.equal(readComposerGlb(v1.glb).json.extensionsUsed, undefined);
+  }
+  const core = generatorSourceHash(undefined, [...CORE].map(f => `src/${f}`));
+  if (core !== V1_PINS.core) { t.diagnostic(`composer core moved (${core.slice(0, 12)} != ${V1_PINS.core.slice(0, 12)}): v1 byte pins not applicable`); return; }
+  for (const [name, pin] of Object.entries(V1_PINS.glb)) assert.equal(sha(exported(name).glb), pin, `${name}: v1 bytes`);
+});
+
+test('export v2: quest-3 writes an MSFT_lod chain within budget and reports it', () => {
+  const {glb, report} = questBird();
+  const {json, bin} = readComposerGlb(glb);
+  assert.equal(report.version, COMPOSER_EXPORT_V2_VERSION);
+  assert.equal(json.asset.generator, `universe-atlas ${COMPOSER_EXPORT_V2_VERSION}`);
+  assert.equal(json.asset.extras.composer.versions.export, COMPOSER_EXPORT_V2_VERSION);
+  assert.deepEqual(json.extensionsUsed, ['MSFT_lod']);
+  assert.equal(json.extensionsRequired, undefined, 'MSFT_lod stays optional: a plain loader shows level 0');
+  const targets = COMPOSER_EXPORT_TARGETS['quest-3'].lods;
+  assert.equal(json.meshes.length, targets.length);
+  const ids = json.nodes[0].extensions.MSFT_lod.ids;
+  assert.equal(ids.length, targets.length - 1);
+  assert.equal(json.nodes[0].extras.MSFT_screencoverage.length, targets.length);
+  assert.deepEqual(json.scenes[0].nodes, [0, 1], 'LOD nodes stay outside the scene');
+  ids.forEach((id, i) => { assert.equal(json.nodes[id].mesh, i + 1); assert.equal(json.nodes[id].skin, 0); });
+  assert.equal(report.lods.length, targets.length);
+  report.lods.forEach((l, i) => {
+    const prim = json.meshes[i].primitives[0];
+    const tri = json.accessors[prim.indices].count / 3;
+    assert.equal(tri, l.triangles); assert.equal(l.target, targets[i]);
+    assert.ok(l.reached && tri <= targets[i], `level ${i}: ${tri} <= ${targets[i]}`);
+    assert.equal(json.accessors[prim.attributes.POSITION].count, l.vertices);
+    assert.equal(l.sourceVertex.length, l.vertices);
+    assert.deepEqual(Object.keys(prim.attributes), ['POSITION', 'NORMAL', 'COLOR_0', 'JOINTS_0', 'WEIGHTS_0', COMPOSER_GLOSS_ATTRIBUTE]);
+    const w = accessorArray(json, bin, prim.attributes.WEIGHTS_0);
+    for (let v = 0; v < w.length; v += 4) assert.ok(Math.abs(w[v] + w[v + 1] + w[v + 2] + w[v + 3] - 1) <= 1e-6);
+    assert.equal(json.meshes[i].extras.composer.parts.reduce((s, p) => s + p.triangles, 0), tri);
+    assert.deepEqual(json.meshes[i].extras.composer.lod, {level: i, target: targets[i], triangles: tri});
+  });
+  assert.equal(report.mesh.triangles, report.lods[0].triangles);
+  assert.deepEqual(report.budget.limits, {...COMPOSER_EXPORT_TARGETS['quest-3'].budget});
+  assert.equal(report.budget.pass, true);
+  assert.ok(report.mesh.bones <= report.budget.limits.maxBones);
+  for (const v of json.bufferViews) { assert.equal(v.byteOffset % 4, 0); assert.ok(v.byteOffset + v.byteLength <= bin.byteLength); }
+  // a brief can tighten the budget but not loosen it
+  const loose = exportCreatureGlb(SPECIMENS.bird, {target: 'quest-3', clips: [], budget: {maxTriangles: 1e6, maxBones: 500}}).report.budget.limits;
+  assert.equal(loose.maxTriangles, 8000); assert.equal(loose.maxBones, 80);
+  // desktop-web with seamless only: one mesh, v2 version, desktop budget
+  const desk = exportCreatureGlb(SPECIMENS.bird, {seamless: true, clips: ['idle']});
+  assert.equal(desk.report.target, 'desktop-web'); assert.equal(desk.report.lods.length, 1);
+  assert.equal(readComposerGlb(desk.glb).json.extensionsUsed, undefined);
+});
+
+test('export v2: a quest-3 export over budget fails with machine-readable reasons', () => {
+  const big = composerPreset('trunked-centipede');
+  const fail = (options, check) => assert.throws(() => exportCreatureGlb(big, {clips: [], ...options}), e => {
+    assert.ok(e instanceof ComposerExportBudgetError, String(e));
+    assert.equal(e.code, 'composer-export-budget');
+    const json = JSON.parse(JSON.stringify(e));
+    assert.equal(json.error, 'composer-export-budget'); assert.equal(json.target, 'quest-3');
+    check(json.reasons);
+    return true;
+  });
+  // the unreduced skin as level 0 (trunked-centipede: ~28k triangles)
+  fail({target: 'quest-3', lods: ['full', 3000, 1000]}, r => {
+    assert.deepEqual(r.map(x => x.code), ['triangles']);
+    assert.equal(r[0].level, 0); assert.equal(r[0].limit, 8000); assert.ok(r[0].actual > 8000, String(r[0].actual));
+  });
+  // a brief tighter than the chain, and a bone limit below the skeleton
+  fail({target: 'quest-3', budget: {maxTriangles: 500}}, r => assert.deepEqual(r.map(x => [x.code, x.limit]), [['triangles', 500]]));
+  fail({target: 'quest-3', budget: {maxBones: 10}}, r => assert.deepEqual(r.map(x => [x.code, x.limit]), [['bones', 10]]));
+  // the check itself: every reason code
+  const reasons = checkComposerExportBudget({maxTriangles: 10, maxBones: 1, maxMaterials: 0, maxTextureBytes: 0, maxDrawCallsPerLevel: 0},
+    {bones: 2, materials: 1, textureBytes: 1, drawCallsPerLevel: 1, levels: [{triangles: 11, target: 8}, {triangles: 5, target: 4}]}).reasons;
+  assert.deepEqual(reasons.map(r => r.code), ['triangles', 'lod-target', 'lod-target', 'bones', 'materials', 'texture-bytes', 'draw-calls']);
+  assert.throws(() => exportCreatureGlb(SPECIMENS.bird, {target: 'quest-9'}), /unknown target/);
+  assert.throws(() => exportCreatureGlb(SPECIMENS.bird, {lods: [3000, 'full']}), /'full' only first/);
+  assert.throws(() => exportCreatureGlb(SPECIMENS.bird, {lods: [3000, 3000]}), /strictly decrease/);
+  assert.throws(() => exportCreatureGlb(SPECIMENS.bird, {target: 'quest-3', budget: {maxTriangles: -1}}), /budget/);
+  assert.throws(() => exportCreatureGlb(SPECIMENS.bird, {target: 'quest-3', budget: {maxPolys: 1}}), /unknown budget field/);
+  assert.throws(() => exportCreatureGlb(SPECIMENS.bird, {seamless: true, seamlessBlend: 0}), /seamlessBlend/);
+});
+
+test('export v2: LOD levels played by GLTFLoader skin exactly like the runtime vertices they came from', async () => {
+  const fwd = new THREE.Matrix4().makeRotationY(-Math.PI / 2);
+  const a = new THREE.Vector3(), b = new THREE.Vector3();
+  const {glb, report} = questBird();
+  const gltf = await loadGlb(glb);
+  let level0 = null; gltf.scene.traverse(o => { if (o.isSkinnedMesh) level0 = o; });
+  assert.ok(level0);
+  const lodMeshes = [level0];
+  for (const id of gltf.parser.json.nodes[0].extensions.MSFT_lod.ids) {
+    const node = await gltf.parser.getDependency('node', id);
+    let mesh = null; node.traverse(o => { if (o.isSkinnedMesh) mesh = o; });
+    assert.ok(mesh, `LOD node ${id} is a SkinnedMesh`);
+    assert.equal(mesh.skeleton.bones.length, level0.skeleton.bones.length);
+    mesh.skeleton.bones.forEach((bone, i) => assert.equal(bone, level0.skeleton.bones[i], 'LOD levels share the joint nodes'));
+    lodMeshes.push(mesh);
+  }
+  const runtime = createComposerCreature(SPECIMENS.bird);
+  const mixer = new THREE.AnimationMixer(gltf.scene);
+  const lines = [];
+  try {
+    for (const motion of ['walk', 'display']) {
+      const clip = gltf.animations.find(c => c.name === motion), spec = report.clips.find(c => c.motion === motion);
+      mixer.stopAllAction();
+      const action = mixer.clipAction(clip); action.setLoop(THREE.LoopOnce, 1); action.clampWhenFinished = true; action.reset().play();
+      // keys outside a crossfade blend (where the clip is poseComposer(sourceStart + t))
+      const end = spec.crossfade ? spec.duration - spec.crossfade.blendSeconds : spec.duration;
+      const ks = [0, Math.floor(spec.keys / 3), Math.floor(spec.keys / 2), spec.keys - 1].filter(k => spec.duration * k / (spec.keys - 1) < end || (!spec.crossfade && k === spec.keys - 1));
+      let worst = 0, samples = 0;
+      for (const k of ks) {
+        const t = spec.duration * k / (spec.keys - 1);
+        action.reset(); action.time = t; mixer.update(0); gltf.scene.updateMatrixWorld(true);
+        runtime.update(motion, spec.crossfade ? spec.crossfade.sourceStart + t : t); runtime.group.updateMatrixWorld(true);
+        lodMeshes.forEach((mesh, level) => {
+          mesh.updateMatrixWorld(true);
+          const sv = report.lods[level].sourceVertex;
+          for (let v = 0; v < sv.length; v += 5) {
+            mesh.getVertexPosition(v, a).applyMatrix4(mesh.matrixWorld);
+            runtime.mesh.getVertexPosition(sv[v], b).applyMatrix4(fwd);
+            worst = Math.max(worst, a.distanceTo(b)); samples++;
+          }
+        });
+      }
+      lines.push(`bird quest-3 ${motion}: ${lodMeshes.length} levels x ${ks.length} keys, ${samples} vertex samples, worst skinned LOD vertex vs runtime ${worst.toExponential(1)} m`);
+      assert.ok(ks.length >= 2 && samples > 0);
+      assert.ok(worst < 2e-6, lines[lines.length - 1]);
+    }
+  } finally { runtime.dispose(); }
+  console.log(lines.join('\n'));
+});
+
+test('export v2: seamless idle and display close bit for bit and equal poseComposer(b + t) before the blend', () => {
+  const recipe = SPECIMENS.bird;
+  const graph = buildComposerGraph(deriveComposerIndividual(recipe).recipe);
+  const v2 = exportCreatureGlb(recipe, {seamless: true, clips: ['idle', 'walk', 'display']});
+  const v1 = exportCreatureGlb(recipe, {clips: ['idle', 'walk', 'display']});
+  const d2 = readComposerGlb(v2.glb), d1 = readComposerGlb(v1.glb);
+  assert.equal(v2.report.version, COMPOSER_EXPORT_V2_VERSION);
+  const lines = [];
+  for (const motion of ['idle', 'display']) {
+    const spec = v2.report.clips.find(c => c.motion === motion), raw = v1.report.clips.find(c => c.motion === motion);
+    assert.equal(spec.method, 'crossfade'); assert.equal(spec.seamless, true);
+    assert.equal(spec.seamPosition, 0); assert.equal(spec.seamAngle, 0);
+    assert.equal(spec.duration, raw.duration); assert.equal(spec.keys, raw.keys);
+    assert.equal(spec.crossfade.rawSeamPosition, raw.seamPosition);
+    assert.ok(spec.crossfade.blendSeconds > 0 && spec.crossfade.blendSeconds <= spec.duration / 2);
+    const anim = d2.json.animations.find(x => x.name === motion);
+    assert.equal(anim.extras.composer.seamless, true);
+    assert.deepEqual(anim.extras.composer.crossfade, {blendSeconds: spec.crossfade.blendSeconds, sourceStart: spec.crossfade.sourceStart});
+    let worstPose = 0, worstStep = 0, wrapStep = 0, poseKeys = 0;
+    for (const ch of anim.channels) {
+      const sampler = anim.samplers[ch.sampler];
+      const out = accessorArray(d2.json, d2.bin, sampler.output), keys = accessorArray(d2.json, d2.bin, sampler.input).length;
+      const c = {translation: 3, rotation: 4, scale: 3}[ch.target.path], bone = ch.target.node - 2;
+      // 1) the loop closes bit for bit
+      const bytes = new Uint8Array(out.buffer, out.byteOffset, out.byteLength);
+      assert.deepEqual([...bytes.subarray((keys - 1) * c * 4, keys * c * 4)], [...bytes.subarray(0, c * 4)], `${motion} bone ${bone} ${ch.target.path}: last key bytes = first key bytes`);
+      // 2) outside the blend each key is the source pose at b + t
+      for (let k = 0; k < keys; k += 3) {
+        const t = spec.duration * k / (keys - 1);
+        if (t >= spec.duration - spec.crossfade.blendSeconds) break;
+        const pose = poseComposer(graph, motion, spec.crossfade.sourceStart + t);
+        const ref = ch.target.path === 'translation' ? [0, 1, 2].map(i => pose.positions[bone * 3 + i])
+          : ch.target.path === 'rotation' ? [0, 1, 2, 3].map(i => pose.quaternions[bone * 4 + i])
+          : [1, pose.radialScale[bone], pose.radialScale[bone] * pose.chordScale[bone]];
+        const sign = ch.target.path === 'rotation' && ref.reduce((s, x, i) => s + x * out[k * c + i], 0) < 0 ? -1 : 1;
+        for (let i = 0; i < c; i++) worstPose = Math.max(worstPose, Math.abs(out[k * c + i] - sign * ref[i]));
+        poseKeys++;
+      }
+      // 3) the wrap step (key K-2 -> key K-1, which equals key 0) is no larger than the largest ordinary step
+      for (let k = 1; k < keys; k++) {
+        let step = 0; for (let i = 0; i < c; i++) step = Math.max(step, Math.abs(out[k * c + i] - out[(k - 1) * c + i]));
+        if (k === keys - 1) wrapStep = Math.max(wrapStep, step); else worstStep = Math.max(worstStep, step);
+      }
+    }
+    lines.push(`bird ${motion}: ${spec.keys} keys, blend ${spec.crossfade.blendSeconds} s, raw seam ${(raw.seamPosition * 1000).toFixed(2)} mm / ${(raw.seamAngle * 180 / Math.PI).toFixed(3)} deg -> 0 (bit-identical); ${poseKeys} channel keys before the blend, worst vs poseComposer ${worstPose.toExponential(1)}; wrap step ${wrapStep.toExponential(2)} vs largest other step ${worstStep.toExponential(2)}`);
+    assert.ok(poseKeys > 0);
+    assert.ok(worstPose < 2e-6, `${motion}: keys before the blend equal poseComposer(b + t) (${worstPose})`);
+    assert.ok(wrapStep <= worstStep + 1e-7, `${motion}: the wrap is no jump (${wrapStep} vs ${worstStep})`);
+  }
+  // walk is untouched by the seamless flag: its channel data equal v1's
+  const walk2 = d2.json.animations.find(x => x.name === 'walk'), walk1 = d1.json.animations.find(x => x.name === 'walk');
+  assert.equal(walk2.channels.length, walk1.channels.length);
+  walk2.samplers.forEach((s, i) => {
+    assert.deepEqual([...accessorArray(d2.json, d2.bin, s.output)], [...accessorArray(d1.json, d1.bin, walk1.samplers[i].output)]);
+    assert.deepEqual([...accessorArray(d2.json, d2.bin, s.input)], [...accessorArray(d1.json, d1.bin, walk1.samplers[i].input)]);
+  });
+  assert.deepEqual(v2.report.clips.find(c => c.motion === 'walk'), v1.report.clips.find(c => c.motion === 'walk'));
+  // a static neutral stays static
+  assert.equal(exportCreatureGlb(SPECIMENS.worm, {seamless: true, clips: ['neutral']}).report.clips[0].method, 'static');
+  assert.throws(() => bakeComposerLoopClip(graph, 'walk', {duration: 2, keys: 61}, 0.5), /travels/);
+  assert.throws(() => bakeComposerLoopClip(graph, 'idle', {duration: 2, keys: 61}, 1.5), /crossfade/);
+  console.log(lines.join('\n'));
+});
+
+test('export v2: deterministic, byte-identical on a second export for three coherent seeds', () => {
+  const lines = [];
+  for (const seed of ['export-test-1', 'export-test-2', 'export-test-3']) {
+    const recipe = coherentComposerSpecies(seed).recipe;
+    const opts = {target: 'quest-3', seamless: true, clips: ['idle', 'walk']};
+    const one = exportCreatureGlb(recipe, opts), two = exportCreatureGlb(structuredClone(recipe), {...opts});
+    assert.equal(sha(one.glb), sha(two.glb), seed);
+    one.report.lods.forEach((l, i) => assert.ok(l.triangles <= COMPOSER_EXPORT_TARGETS['quest-3'].lods[i], `${seed} level ${i}`));
+    lines.push(`${seed}: ${sha(one.glb).slice(0, 16)} lods ${one.report.lods.map(l => l.triangles).join('/')}`);
+  }
+  assert.equal(new Set(lines.map(l => l.split(' ')[1])).size, 3, 'three seeds, three different GLBs');
+  console.log(lines.join('\n'));
+});
+
+test('export v2 CLI: brief options, sidecar-2 with the LOD chain, budget failure exits 3 and writes nothing', () => {
+  assert.deepEqual(parseLods('full,8000,3000'), ['full', 8000, 3000]);
+  assert.equal(parseLods('none'), false);
+  assert.throws(() => parseLods('full,abc'), /not 'full' or an integer/);
+  assert.throws(() => parseArgs(['--out', 'x', '--preset', 'ape', '--target', 'quest-4']), /--target/);
+  const args = parseArgs(['--out', 'x', '--preset', 'ape', '--target', 'quest-3', '--lods', '8000,2000', '--seamless', '--seamless-blend', '0.5', '--brief', 'b.json']);
+  assert.deepEqual([args.target, args.lods, args.seamless, args.seamlessBlend, args.brief], ['quest-3', [8000, 2000], true, 0.5, 'b.json']);
+  const template = JSON.parse(readFileSync(new URL('../assets/briefs/creature-export-quest-3.json', import.meta.url), 'utf8'));
+  assert.deepEqual(briefExportOptions(template), {target: 'quest-3', budget: {maxTriangles: 8000, maxMaterials: 1}, lods: [8000, 3000, 1000]});
+  assert.deepEqual(briefExportOptions({...template, target: {...template.target, devices: ['desktop-web']}, constraints: {geometry: {lodCount: 0}}}), {target: 'desktop-web', budget: {}, lods: false});
+  assert.throws(() => briefExportOptions({...template, kind: 'static-prop'}), /kind must be creature/);
+  assert.throws(() => briefExportOptions({...template, constraints: {geometry: {lodCount: 5}}}), /exceeds/);
+
+  const options = {briefJson: template, seamless: true, motions: ['idle', 'walk']};
+  const built = buildCreatureFiles({kind: 'preset', preset: 'bird'}, options);
+  const sidecar = built.sidecar;
+  assert.equal(sidecar.schema, CREATURE_EXPORT_SIDECAR_SCHEMA_V2);
+  assert.deepEqual(sidecar.generator.sources, CREATURE_EXPORT_GENERATOR_SOURCES_V2);
+  assert.ok(sidecar.generator.sources.includes('src/fauna-composer-lod.ts'));
+  assert.equal(sidecar.generator.sourceSha256, generatorSourceHash(undefined, CREATURE_EXPORT_GENERATOR_SOURCES_V2));
+  assert.equal(sidecar.target, 'quest-3');
+  assert.match(sidecar.status, /^experimental/);
+  assert.deepEqual(sidecar.lods.map(l => l.target), [8000, 3000, 1000]);
+  assert.ok(sidecar.lods.every(l => l.triangles <= l.target && !('sourceVertex' in l)));
+  assert.equal(sidecar.budget.pass, true); assert.equal(sidecar.budget.limits.maxTriangles, 8000);
+  assert.equal(sidecar.provenance.license.expression, 'NOASSERTION');
+  const brief = JSON.parse(new TextDecoder().decode(built.files.find(([n]) => n.endsWith('.brief.json'))[1]));
+  assert.deepEqual(brief.target.devices, ['quest-3']);
+  assert.deepEqual(brief.constraints.geometry, {maxTriangles: 8000, maxMaterials: 1, lodCount: 2, collision: 'none'});
+  assert.ok(brief.deliverables.some(d => d.type === 'lod' && d.format === 'glb-msft-lod'));
+  assert.equal(brief.provenance.license.expression, 'NOASSERTION');
+  // a second build is byte-identical (GLB, sidecar, brief)
+  const again = buildCreatureFiles({kind: 'preset', preset: 'bird'}, options);
+  built.files.forEach(([name, bytes], i) => assert.equal(Buffer.compare(Buffer.from(bytes), Buffer.from(again.files[i][1])), 0, name));
+
+  // the CLI: an over-budget brief fails with exit code 3, a JSON reason on stdout, and writes nothing
+  const dir = mkdtempSync(join(tmpdir(), 'creature-export-v2-'));
+  const log = console.log, exitCode = process.exitCode, out = [];
+  try {
+    const tight = join(dir, 'tight.brief.json'), outDir = join(dir, 'out');
+    writeFileSync(tight, JSON.stringify({...template, constraints: {geometry: {...template.constraints.geometry, maxTriangles: 500}}}));
+    console.log = s => out.push(s);
+    cliMain(['--out', outDir, '--preset', 'bird', '--preset', 'worm', '--motions', 'neutral', '--brief', tight]);
+    console.log = log;
+    assert.equal(process.exitCode, CREATURE_EXPORT_BUDGET_EXIT);
+    const result = JSON.parse(out.join('\n'));
+    assert.equal(result.error, 'composer-export-budget'); assert.equal(result.written, 0);
+    assert.deepEqual(result.failures.map(f => [f.selection.preset, f.reasons[0].code, f.reasons[0].limit]), [['bird', 'triangles', 500], ['worm', 'triangles', 500]]);
+    assert.equal(existsSync(outDir), false, 'nothing written');
+  } finally {
+    console.log = log; process.exitCode = exitCode;
+    rmSync(dir, {recursive: true, force: true});
+  }
 });
