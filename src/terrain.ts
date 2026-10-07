@@ -18,7 +18,7 @@ import {DRY_SURFACE_ROUGHNESS,WET_SURFACE_ROUGHNESS} from './surface-roughness.t
 import {climateForcingFor,createClimateSample,surfaceClimate,CLIMATE_CALIBRATION,CLIMATE_VERSION,type ClimateSample} from './surface-climate.ts';
 import {orogenLayout,OROGEN_BAND_GRID,type OrogenSample} from './mountain-layout.ts';
 import {mountainRidgeTermM,massifBeltSample} from './mountain-assembly.ts';
-import {carvingAtLevel,rockDetailAtLevel} from './lod-ladder.ts';
+import {carvingAtLevel,rockDetailAtLevel,rockRiserWidthM} from './lod-ladder.ts';
 
 // Bumped from terrain-1.3.0: `terrainSampler` gained the ABILITY to sum
 // procedural impact craters (planet-craters.ts) into `elevationM` for any
@@ -699,7 +699,7 @@ function baseTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean =
 
 // Separate function literal isolates the exact M1 call from the coarse/plain core.
 function mountainTerrainCore(body: Body, waterLevelM: number, exposeFloor: boolean = false, relief: boolean = false,
-  mountains: {carve: boolean; rock: boolean} | null = null) {
+  mountains: {carve: boolean; rock: boolean; riserWidthM?: number} | null = null) {
   const { code, n } = macroNoise(body);
   const sea = 0.37 + body.water * 0.22;
   // terrain-1.8.0 relief mode (terrainSampler only; baseTerrainSampler never).
@@ -718,6 +718,8 @@ function mountainTerrainCore(body: Body, waterLevelM: number, exposeFloor: boole
   // M5 steep-rock detail (mountain-rock-detail-1, lod-ladder-3): the truth and levels from
   // rockDetailFromLevel(R) on; between the carving cut and that level the carved term without rock.
   const rock = mountains !== null && mountains.rock;
+  // lod-ladder-4 riser reduction: the level's riser width (rockRiserWidthM), 0 for the truth and the sharp levels.
+  const riserWidthM = rock ? mountains.riserWidthM ?? 0 : 0;
   // The T1 band grid's voxel prefilter, read inline (value-preserving): where d's voxel is unset,
   // massifBeltSample returns the empty sample (the first test of the layout's bandTag, same expression), so the
   // call, and the copy of d it takes, is skipped. Most land samples are outside every massif.
@@ -839,7 +841,7 @@ function mountainTerrainCore(body: Body, waterLevelM: number, exposeFloor: boole
               // in docs/mountains-t6-baked-coarse-2026-10-06.md).
               const o = massifBeltSample(orogen, [d[0], d[1], d[2]], a0, orogenScratch);
               if (o.belt !== 0)
-                ridgeTermM = mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve, rock);
+                ridgeTermM = mountainRidgeTermM(ridgeTermM, o, a0, landFactor, tau, beltCarvingSeeds, carve, rock, riserWidthM);
             }
           }
           const F = comp + tau * (RC.HUP * ss(RC.B1, RC.B2, a0) + RC.HHI * ss(RC.B3, RC.B4, a0))
@@ -1057,8 +1059,9 @@ export const TERRAIN_MOUNTAINS_WIRED = true;
 /**
  * `lodLevel`: the tile level this sampler serves (lod-ladder-3). Below `carvingFromLevel(radiusM)` the baked band
  * field conservatively bounds the uncarved composition; from the cut the M3 carving is exact; from
- * `rockDetailFromLevel(radiusM)` the M5 rock detail is added. Omitted, the sampler is the truth (full carving and
- * rock), as collision, physics and place queries require (contract section 8).
+ * `rockDetailFromLevel(radiusM)` the M5 rock detail is added; below `riserSharpFromLevel(radiusM)` its bench riser is
+ * widened to two lattice cells (lod-ladder-4, never deeper than the truth). Omitted, the sampler is the truth (full
+ * carving and rock), as collision, physics and place queries require (contract section 8).
  * `mountains`: whether the mountain belts are evaluated (default TERRAIN_MOUNTAINS_WIRED).
  */
 export type TerrainSamplerOptions = {lodLevel?: number; mountains?: boolean};
@@ -1067,11 +1070,15 @@ export type TerrainSamplerOptions = {lodLevel?: number; mountains?: boolean};
  * cut (the baked coarse field); true from the cut (exact M3 carving, no rock); 'rock' where the M5 rock detail
  * is on too (the truth, and levels from rockDetailFromLevel). Two samplers with equal states return identical
  * fields; tile caches key on it, and planet-tiles' split-parent rule compares it with strict equality, so the
- * rock switch level gets its own parent sampler exactly like the carving switch. */
-export function mountainCarvingState(body: Body, options: TerrainSamplerOptions = {}): boolean | 'rock' | null {
+ * rock switch level gets its own parent sampler exactly like the carving switch. lod-ladder-4: a positive number is
+ * 'rock' with the M5 riser reduction of that width in metres (levels rockDetailFromLevel .. riserSharpFromLevel - 1),
+ * so each of those levels, and the first sharp level, gets its own parent sampler too. */
+export function mountainCarvingState(body: Body, options: TerrainSamplerOptions = {}): boolean | 'rock' | number | null {
   if (!(options.mountains ?? TERRAIN_MOUNTAINS_WIRED) || !reliefModeFor(body) || !body.water) return null;
   if (!carvingAtLevel(body.radiusM, options.lodLevel)) return false;
-  return rockDetailAtLevel(body.radiusM, options.lodLevel) ? 'rock' : true;
+  if (!rockDetailAtLevel(body.radiusM, options.lodLevel)) return true;
+  const riserWidthM = rockRiserWidthM(body.radiusM, options.lodLevel);
+  return riserWidthM > 0 ? riserWidthM : 'rock';
 }
 export function terrainSampler(
   body: Body,
@@ -1084,8 +1091,9 @@ export function terrainSampler(
   options: TerrainSamplerOptions = {},
 ) {
   const carving = mountainCarvingState(body, options);
-  const core = carving === true || carving === 'rock'
-    ? mountainTerrainCore(body, waterLevelM, exposeFloor, true, {carve: true, rock: carving === 'rock'})
+  const rockOn = carving === 'rock' || typeof carving === 'number';
+  const core = carving === true || rockOn
+    ? mountainTerrainCore(body, waterLevelM, exposeFloor, true, {carve: true, rock: rockOn, riserWidthM: typeof carving === 'number' ? carving : 0})
     : baseTerrainCore(body, waterLevelM, exposeFloor, true, carving === false ? {carve: false, rock: false} : null);
   const landforms=planetLandforms(body);
   // The landform ceiling (terrain-1.8.0): the body's analytic height bound.

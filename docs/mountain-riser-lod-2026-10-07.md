@@ -240,3 +240,22 @@ four Maithea filtered spacings and 2 x 2 x the coarsest (stress):
   truth (unchanged); anything that samples a filtered level for a gameplay decision would now see the shallower
   bench (none found: L0 consumers only, besides tiles).
 - Selawyn / Lethuris L14 filtered (deviation in section 1).
+
+---
+
+## Step 2: implemented (src), tsc clean, identity PASS
+
+- `src/mountain-rock-detail.ts`: `rockDetailM(..., seed, riserWidthM = 0)`, `bench(t, w)` exactly as section 1 (the v1
+  branch is the old code, reached whenever `!(w > BENCH_FALL)`). `src/lod-ladder.ts`: `LOD_LADDER_VERSION`
+  lod-ladder-4, `RISER_REDUCTION {widthCells: 2, sharpMaxSpacingM: 19.39896904477143}`, `riserSharpFromLevel`,
+  `rockRiserWidthM`. `src/mountain-assembly.ts`: `mountainRidgeTermM(..., rock, riserWidthM = 0)`. `src/terrain.ts`:
+  `mountainCarvingState` returns the width at filtered levels; the core threads it. No new import in the rock or
+  assembly modules. `docs/lod-ladder-contract-v1.md` amended (section 3, "M5 riser reduction").
+- `tsc --noEmit`: exit 0.
+- **Identity** (`test-results/mountains/riser-lod/identity.mjs`, `identity.json`; branch vs main 7419733 export, every
+  sample field Object.is): 4 worlds x 3 FROZEN axis sites x 65 x 65 lattice points x {truth, L(sharp), L(sharp)+1,
+  L(sharp)+2} = **202,800 comparisons, 0 mismatches**.
+- **F1** on the M5 fixture (TUNING and GATE, 32,768 samples each): width 0 (explicit and default) 0 mismatches;
+  105,990 / 105,982 small-width cases (w <= 0.08) 0 mismatches.
+- INFO, non-vacuity at L(sharp)-1 (33 x 33 per site): Maithea L13 165 / 3,267 points moved, Selawyn L14 239,
+  Lethuris L14 170, Raiva L12 0 (Raiva's rock is weak at these sites, as in step 8).

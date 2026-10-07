@@ -72,8 +72,11 @@ function gullies(alongM: number, acrossM: number, ex: number, ey: number, seed: 
   }
   return gully;
 }
+// riserWidthM (lod-ladder-4, docs/mountain-riser-lod-2026-10-07.md): the smallest horizontal riser width the tile
+// level can draw (2 lattice cells), 0 for the truth and the sharp levels. Where the v1 riser is narrower, the drop
+// starts earlier, ends at the same phase and never cuts deeper than v1; with 0 the v1 bench runs unchanged.
 export function rockDetailM(alongM: number, acrossM: number, carvedM: number,
-  carvedXM: number, carvedYM: number, seed: number): number {
+  carvedXM: number, carvedYM: number, seed: number, riserWidthM: number = 0): number {
   if (!(carvedM > 0) || carvedM - carvedM !== 0
     || carvedXM - carvedXM !== 0 || carvedYM - carvedYM !== 0
     || alongM - alongM !== 0 || acrossM - acrossM !== 0) return 0;
@@ -87,7 +90,7 @@ export function rockDetailM(alongM: number, acrossM: number, carvedM: number,
   // Seed-only phase jitter is spatially constant: grad J = 0, including across cells.
   const jitter = C.JITTER_M * (seed >>> 0) / 4294967295;
   const phase = (carvedM + jitter) / C.STRATA_PERIOD_M, t = phase - Math.floor(phase);
-  const strata = bench(t);
+  const strata = bench(t, riserWidthM * slopeTan / C.STRATA_PERIOD_M);
   // Continuous linear tread and fast linear riser; zero over the remaining phase.
   // For constant weight/depth: climb/slope <= depth*STRATA_WEIGHT/(P*rise)
   // + KAPPA*B*RIB_WEIGHT. J is seed-constant and has zero spatial derivative.
@@ -102,7 +105,16 @@ export function rockDetailM(alongM: number, acrossM: number, carvedM: number,
   return result === 0 ? 0 : result;
 }
 
-function bench(t: number): number {
+// w: the riser's phase width at this slope. w <= BENCH_FALL is the v1 bench itself (bit-identical). Otherwise the drop
+// spans w and still ends at BENCH_RISE + BENCH_FALL; the tread keeps its slope, so the peak is (end - w) / BENCH_RISE
+// and the result is <= the v1 bench (the min makes that exact in floating point). No two-cell riser fits: 0.
+function bench(t: number, w: number): number {
+  if (w > C.BENCH_FALL) {
+    const end = C.BENCH_RISE + C.BENCH_FALL;
+    if (!(w < end)) return 0;
+    const tp = end - w, v = t < tp ? t / C.BENCH_RISE : t < end ? tp / C.BENCH_RISE * (end - t) / w : 0;
+    return Math.min(bench(t, 0), v);
+  }
   if (t < C.BENCH_RISE) return t / C.BENCH_RISE;
   if (t < C.BENCH_RISE + C.BENCH_FALL) return 1 - (t - C.BENCH_RISE) / C.BENCH_FALL;
   return 0;
