@@ -27,7 +27,7 @@ import {spinStateFor} from './stellar-evolution.ts';
 import {oceanHypsometry} from './ocean-volume.ts';
 import {CATALOGUE_EPOCH_NS} from './world-time.ts';
 import {prepareFlora, floraFromRecipe, toMyr, buildFloraGeometryData, floraGeometryToBufferGeometry, FLORA_KIND_NAMES, type FloraRecipe, type FloraKind, type FloraBiosphereGate, type FloraBiomeSample, type FloraStage} from './flora-field.ts';
-import {FloraFieldRenderer, FloraCandidateBuffer, packCullPlane, pickFloraLodBand, DEFAULT_FRUSTUM_PLANE_COUNT} from './flora-culling.ts';
+import {FloraFieldRenderer, FloraCandidateBuffer, packCullPlane, pickFloraLodBand, submitFloraCandidate, DEFAULT_FRUSTUM_PLANE_COUNT} from './flora-culling.ts';
 import {faunaHerdAt, faunaMemberActivityAtWorldNs, faunaRigSecondsAt, faunaMemberGenome, faunaGroundedTransform, faunaGroundedTransformInto, toSeconds, type FaunaHerd, type FaunaHerdMember, type FaunaMemberActivity, type FaunaBiosphereGate, type FaunaStage, type CreatureArchetype, type CreatureGenome} from './fauna-runtime.ts';
 import {FaunaFieldRenderer,FAUNA_FIELD_CAPACITY,FAUNA_FIELD_VISIBLE_M} from './fauna-field-renderer.ts';
 import {FaunaNearRigs,FAUNA_NEAR_RIG_EXIT_M,type FaunaNearCandidate} from './fauna-near-rig.ts';
@@ -39,7 +39,7 @@ import {PlanetForest} from './planet-forest.ts';
 import {PlanetRocks} from './planet-rocks.ts';
 import {TOTAL_BUDGET_BYTES,LIFE_RESERVE_BYTES,ROCK_RESERVE_BYTES,TERRAIN_BUDGET_BYTES,PENDING_TILE_BYTES,TERRAIN_PRESSURE_ENTER_FRACTION,TERRAIN_PRESSURE_EXIT_FRACTION,rendererMemoryAccounting,terrainAdmission} from './renderer-memory.ts';
 import type {RockGate} from './rock-field.ts';
-import {PLANET_DETAIL} from './planet-detail.ts';
+import {PLANET_DETAIL,altitudeGate} from './planet-detail.ts';
 import type {Species} from './biosphere-model.ts';
 import type {TreeAssetOptions} from './tree-asset.ts';
 
@@ -51,7 +51,9 @@ const LIFE_LOAD_MARGIN_M = 48;
 const FLORA_KIND_CULL_RADIUS_M: Record<FloraKind, number> = { tree: 6, shrub: 2.5, grass: 1, flower: .6 };
 const LIFE_UP_Y = new THREE.Vector3(0, 1, 0);
 type LifeCell=SurfaceCell & {layer:'flora'|'fauna';cellSizeM:number};
-type LifeResident={cell:LifeCell;height:number;biome:FloraBiomeSample;herd:FaunaHerd|null;ground:Float64Array|null;groundCursor:number;floraRecipe?:FloraRecipe;floraPose?:FloraPose};
+type LifeResident={cell:LifeCell;height:number;biome:FloraBiomeSample;herd:FaunaHerd|null;ground:Float64Array|null;groundCursor:number;floraRecipe?:FloraRecipe;floraPose?:FloraPose;
+  /** Continuity only: the flora LOD band last drawn (F7 band memory, `submitFloraCandidate`). */
+  floraLod?:number};
 /** A flora resident's origin-independent draw terms at (recipe, tMyr, relief,
  * radius, packed height and direction): its drawn kind (null when absent or a
  * tree), planet-local position, cull radius and the rotation/scale lanes of
@@ -423,6 +425,16 @@ function riverRegionSphere(r: RiverRegion): THREE.Sphere {
 const TILE_WORKER_COUNT = isSoftwareRenderer() ? 1 : Math.max(1, Math.min(2, (typeof navigator!=='undefined'&&navigator.hardwareConcurrency||4)-1));
 /** HUD terrain-flight / direct-landing clearance (see lowFlightClearanceM). */
 export const LOW_FLIGHT_CLEARANCE_M=19500;
+/** Presentation-only renderer switches. A deliberate presentation change to a
+ * LIFE_FILES file ships behind one of these: the life-cpu-digest identity
+ * scenario leaves it off, and the change gets its own behavioural test
+ * (tests/life-continuity-scenario.test.mjs; decision D1, 2026-10-07). */
+export interface PlanetRendererOptions{
+  /** Transition-continuity hooks (audit F3/F5/F7/F12/F13): near-rig cross-fade
+   * with listed fade-outs, continuous proxy gait, the 350/380 m ground-life
+   * hysteresis and the flora LOD band memory. Off keeps the former output bit for bit. */
+  presentationContinuity?:boolean;
+}
 export class PlanetRenderer {
   /** render-bounds-1 helpers for main.ts (its import of this class is its only seam). */
   static heightBoundM(body:Body){return renderHeightBoundM(body);}
@@ -674,8 +686,9 @@ export class PlanetRenderer {
   private classify!: ReturnType<typeof biomeClassifier>;
   private readonly faunaRenderer=new FaunaFieldRenderer();
   /** Bounded skinned bodies for the nearest animals; a child of the field
-   * renderer's origin-relative group, with the instanced batch as fallback. */
-  private readonly faunaNear=new FaunaNearRigs();
+   * renderer's origin-relative group, with the instanced batch as fallback.
+   * Built in the constructor: its cross-fade follows `presentationContinuity`. */
+  private readonly faunaNear:FaunaNearRigs;
   private readonly lifeOrigin=new THREE.Vector3();
   private readonly floraGroup=new THREE.Group();
   private readonly lifeResidents=new Map<string,LifeResident>();
@@ -798,7 +811,13 @@ export class PlanetRenderer {
   // refreshed in place on a bucket change instead of being reconstructed
   // once per patch.
   private waterBucket = 0;
-  constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,readonly anisotropy=1, private surfaceAgeMyr = DEFAULT_SURFACE_AGE_MYR) {
+  /** `PlanetRendererOptions.presentationContinuity`, fixed for the renderer's lifetime. */
+  private readonly continuity:boolean;
+  /** Continuity only: the ground-life altitude latch (`altitudeGate`, 350 m in / 380 m out). */
+  private groundLifeOn=false;
+  constructor(readonly body: Body, private host: THREE.Mesh, radius: number, readonly relief = 1,readonly anisotropy=1, private surfaceAgeMyr = DEFAULT_SURFACE_AGE_MYR,options:PlanetRendererOptions={}) {
+    this.continuity=options.presentationContinuity===true;
+    this.faunaNear=new FaunaNearRigs(this.continuity?{crossFade:true}:{});
     this.groundAtlas=detailTexture(anisotropy);
     this.groundPbrTextures=acquireGroundPbrTextures(anisotropy);
     this.sample=terrainSampler(body, undefined, surfaceAgeMyr);
@@ -1302,7 +1321,10 @@ export class PlanetRenderer {
     const rocksStarted=systemTimer.start();
     this.rocks.update({eye,focus:lifeFocus,altitudeM,gate:this.lifeContext?.rocks,relief:this.relief,waterLevelM:snappedWaterLevelM,frusta,shadowFrustum});
     systemTimer.stop('rocks',rocksStarted);
-    if (this.relief === 1 && (contact||altitudeM<PLANET_DETAIL.groundLifeAltitudeM) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs,shadowFrustum); this.lifeMs=performance.now()-lifeStarted; }
+    // Continuity (F3): the 350 m life gate latches on and holds to 380 m. Off,
+    // the former single-threshold expression below is used exactly as before.
+    if (this.continuity) this.groundLifeOn=altitudeGate(this.groundLifeOn,altitudeM,PLANET_DETAIL.groundLifeAltitudeM,PLANET_DETAIL.groundLifeAltitudeExitM);
+    if (this.relief === 1 && (contact||(this.continuity?this.groundLifeOn:altitudeM<PLANET_DETAIL.groundLifeAltitudeM)) && this.lifeContext) { const lifeStarted=performance.now(); this.updateLife(eye, lifeFocus, frusta[0] ?? null, worldNs,shadowFrustum); this.lifeMs=performance.now()-lifeStarted; }
     else { this.hideLife(); this.lifeMs=0; }
     const direction = eye.clone().normalize();
     const pixels = height / (2 * Math.tan(fov * Math.PI / 360));
@@ -1828,7 +1850,9 @@ export class PlanetRenderer {
       this.floraPresentCount++;
       const px = pose.px - origin.x, py = pose.py - origin.y, pz = pose.pz - origin.z, lanes = pose.lanes;
       lanes[12] = px; lanes[13] = py; lanes[14] = pz;
-      this.floraCandidates.push(pose.kind, px, py, pz, pose.cullRadiusLocal, lanes);
+      // Continuity: the resident owns its LOD band memory (F7 hysteresis).
+      if(this.continuity)this.floraCandidates.push(pose.kind, px, py, pz, pose.cullRadiusLocal, lanes, resident);
+      else this.floraCandidates.push(pose.kind, px, py, pz, pose.cullRadiusLocal, lanes);
     }
     // Inlined `drawFloraCandidates` (see the UNIT-MISMATCH FINDING above):
     // `cull()` stays in the local (radius-normalized) frame the frustum
@@ -1842,6 +1866,7 @@ export class PlanetRenderer {
       const idx = this.floraDrawOrder[slot];
       const cdx = this.floraCandidates.centerX[idx]!, cdy = this.floraCandidates.centerY[idx]!, cdz = this.floraCandidates.centerZ[idx]!;
       const distanceM = Math.sqrt(cdx * cdx + cdy * cdy + cdz * cdz) * radiusM;
+      if(this.continuity){if(submitFloraCandidate(this.floraRenderer,this.floraCandidates,idx,distanceM))this.floraSubmittedCount++;continue;}
       const lod = pickFloraLodBand(distanceM);
       if (lod === -1) continue;
       const kind = FLORA_KIND_NAMES[this.floraCandidates.kindIndex[idx]!]!;
@@ -1919,7 +1944,9 @@ export class PlanetRenderer {
       const grounded=this.faunaPlace(a,activity.pose),distanceM=eye.distanceTo(grounded.position)*radiusM;
       const cameraVisible=this.faunaBoundsIntersect(grounded.position,this.faunaTraceFrustum);
       const shadowVisible=this.faunaTraceShadowValid&&this.faunaBoundsIntersect(grounded.position,this.faunaTraceShadow);
-      const drawn=drawnIndex.get(id),rigged=this.faunaNear.poseOf(id)!==null;
+      // Continuity: a fading slot is posed but its proxy still draws, so only a
+      // fully rigged member (this frame's returned set) counts as rigged.
+      const drawn=drawnIndex.get(id),rigged=this.continuity?this.faunaRigged.has(id):this.faunaNear.poseOf(id)!==null;
       const toEye=eye.clone().sub(grounded.position).normalize();
       const stage=!inRange||distanceM>FAUNA_FIELD_VISIBLE_M?'out-of-range':!cameraVisible&&!shadowVisible?'culled':
         drawn===undefined?'budget-drop':rigged?'near-rig':cameraVisible?'instanced':'shadow-only-instanced';
@@ -1928,7 +1955,9 @@ export class PlanetRenderer {
         position:grounded.position.toArray(),distanceM,cameraVisible,shadowVisible,drawnIndex:drawn??null,rigged,
         lighting:{sunElevation:anchorUp.dot(sun),viewFromSunSide:toEye.dot(sun)}};
     });
-    return {frame:{worldNs:worldNs.toString(),eye:eye.toArray(),drawn:this.faunaDrawn.length,cameraVisible:this.faunaCameraVisibleCount,capacity:FAUNA_FIELD_CAPACITY,budgetDrops:this.faunaBudgetDrops,culled:this.faunaCulledCount,anchors:this.faunaAnchorCount,near:this.faunaNear.diagnostics().activeMembers.map(m=>m.id)},individuals};
+    return {frame:{worldNs:worldNs.toString(),eye:eye.toArray(),drawn:this.faunaDrawn.length,cameraVisible:this.faunaCameraVisibleCount,capacity:FAUNA_FIELD_CAPACITY,budgetDrops:this.faunaBudgetDrops,culled:this.faunaCulledCount,anchors:this.faunaAnchorCount,
+      // With continuity on, `near` (activeMembers) also lists members whose rig is still fading in or out.
+      near:this.faunaNear.diagnostics().activeMembers.map(m=>m.id)},individuals};
   }
   /** Dated poses of one resident herd at one instant, retained while the date,
    * relief and packing are unchanged, plus a conservative bound of every
@@ -2066,7 +2095,13 @@ export class PlanetRenderer {
     // Anything not rigged this frame keeps the instanced representation.
     const near=this.faunaNearList,nearPool=this.faunaNearPool;near.length=0;
     for(const item of visible){
-      if(!item.cameraVisible||item.distance>FAUNA_NEAR_RIG_EXIT_M||near.length>=this.faunaNear.capacity*2)break;
+      if(this.continuity){
+        // Continuity (F5): keep listing members a slot still holds (fading out)
+        // up to 15 m past the 95 m cut, so their exit fades instead of a hard
+        // drop. `visible` is camera-visible first, then by distance.
+        if(!item.cameraVisible||near.length>=this.faunaNear.capacity*2)break;
+        if(item.distance>FAUNA_NEAR_RIG_EXIT_M){if(item.distance>FAUNA_NEAR_RIG_EXIT_M+15)break;if(!this.faunaNear.holds(item.member.id))continue;}
+      }else if(!item.cameraVisible||item.distance>FAUNA_NEAR_RIG_EXIT_M||near.length>=this.faunaNear.capacity*2)break;
       let candidate=nearPool[near.length];
       if(!candidate)nearPool.push(candidate={member:item.member,genome:this.faunaGenomeOf(item.member),distanceM:0,activity:item.activity,rigSeconds:0,matrix:new THREE.Matrix4(),ground:()=>0});
       candidate.member=item.member;candidate.genome=this.faunaGenomeOf(item.member);candidate.distanceM=item.distance;candidate.activity=item.activity;candidate.rigSeconds=rigTime;
@@ -2089,7 +2124,10 @@ export class PlanetRenderer {
       this.faunaDrawnItems[this.faunaDrawnCount]=item;this.faunaDrawnGenomes[this.faunaDrawnCount++]=genome;
       if(rigged.has(item.member.id)){this.faunaVisibleCount++;continue;}
       this.faunaProxyMatrix.compose(this.faunaLocalScratch.copy(item.position).sub(this.lifeOrigin),item.quaternion,this.faunaProxyScale);
-      if(this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member))this.faunaVisibleCount++;else this.faunaBudgetDrops++;
+      // Continuity (F12/F13): `stateS` selects the eased proxy gait and the eye/range fades.
+      const submitted=this.continuity?this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member,item.activity.stateS)
+        :this.faunaRenderer.submit(genome,this.faunaProxyMatrix,rigTime,item.gait,item.distance,item.member);
+      if(submitted)this.faunaVisibleCount++;else this.faunaBudgetDrops++;
     }
     this.faunaRenderer.endFrame();
   }

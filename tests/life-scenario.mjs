@@ -102,7 +102,7 @@ function heading(direction,yawDeg){
   const {east,north}=tangentFrame(direction),y=yawDeg*Math.PI/180;
   return norm(add(north.map(v=>v*Math.cos(y)),east,Math.sin(y)));
 }
-function moveAlong(direction,yawDeg,metres){return norm(add(direction,heading(direction,yawDeg),metres/body.radiusM));}
+export function moveAlong(direction,yawDeg,metres){return norm(add(direction,heading(direction,yawDeg),metres/body.radiusM));}
 const NS=1_000_000_000n,frameNs=s=>BigInt(Math.round(s*1e9));
 
 /** Frames: `{direction, clearanceM, yawDeg, pitchDeg, dateNs, shadow, phase}`. */
@@ -149,8 +149,11 @@ export function benchPoses(){
 const tileCache=globalThis.__atlasLifeTileCache??=new Map();
 /** A renderer whose terrain Worker is an in-process builder (memoized per
  * tile and water level). Forest/canopy workers never answer: they do not
- * feed the life layer, and a tile answer would be garbage to them. */
-function createRenderer(module,body){
+ * feed the life layer, and a tile answer would be garbage to them.
+ * `rendererOptions` is PlanetRendererOptions (7th constructor argument);
+ * undefined keeps the identity scenario's defaults (and older revisions
+ * simply ignore it). */
+function createRenderer(module,body,{rendererOptions}={}){
   const {THREE,buildTile,PlanetRenderer}=module;
   const respond=({data,worker})=>{
     if(worker.terminated)return;
@@ -172,7 +175,7 @@ function createRenderer(module,body){
   };
   const host=new THREE.Mesh(new THREE.SphereGeometry(1,8,8),new THREE.MeshBasicMaterial());
   let renderer;
-  try{renderer=new PlanetRenderer(body,host,body.radiusM,1,1);}
+  try{renderer=new PlanetRenderer(body,host,body.radiusM,1,1,undefined,rendererOptions);}
   finally{THREE.TextureLoader.prototype.load=nativeTextureLoad;}
   return {renderer,dispose(){renderer.dispose();host.geometry.dispose();host.material.dispose();globalThis.Worker=SavedWorker;}};
 }
@@ -219,9 +222,13 @@ export function lifeState(renderer){
 
 /** Runs `poses` through `module`'s renderer; returns per-frame digests and,
  * on request, frame states. `deterministicClock` freezes performance.now so
- * time-sliced queues and rig builds cannot depend on host speed. */
-export async function runLifeScenario(module,poses,{deterministicClock=true,detailFrames=new Set(),lifeOnly=false,onFrame}={}){
-  const {THREE}=module,fx=createRenderer(module,body),renderer=fx.renderer;
+ * time-sliced queues and rig builds cannot depend on host speed.
+ * `clockStepMs` (with the deterministic clock) instead makes performance.now
+ * return `i*clockStepMs` for frame i, constant within the frame (0 while
+ * settling), for wall-clock-timed presentation such as the near-rig
+ * cross-fade. `rendererOptions` goes to the PlanetRenderer constructor. */
+export async function runLifeScenario(module,poses,{deterministicClock=true,detailFrames=new Set(),lifeOnly=false,onFrame,rendererOptions,clockStepMs}={}){
+  const {THREE}=module,fx=createRenderer(module,body,{rendererOptions}),renderer=fx.renderer;
   const water=waterLevelAt(poses[0].dateNs),sample=terrainSampler(body,undefined,undefined,undefined,Math.round(water/25)*25);
   const camera=new THREE.PerspectiveCamera(48,16/9,1e-9,4);
   const savedNow=performance.now;const contexts=new Map();
@@ -243,7 +250,7 @@ export async function runLifeScenario(module,poses,{deterministicClock=true,deta
     run(poses[0]);settleLife(renderer,()=>run(poses[0]));
     performance.now=savedNow;
     for(let i=0;i<poses.length;i++){
-      if(deterministicClock)performance.now=()=>0;
+      if(deterministicClock){const nowMs=clockStepMs===undefined?0:i*clockStepMs;performance.now=()=>nowMs;}
       const started=savedNow.call(performance);
       run(poses[i]);
       timings.push({phase:poses[i].phase,ms:savedNow.call(performance)-started,fauna:renderer.drawFaunaMs,flora:renderer.drawFloraMs,life:renderer.lifeMs});

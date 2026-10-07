@@ -2685,7 +2685,9 @@ function restartPlanetTiles() {
   // undersampled at grazing/orbital view angles, showing as jagged coastlines
   // from orbit and blurry ground texture up close. Raised to 8x, a
   // conservative step up in cost for a clear filtering improvement.
-  planetTiles = new PlanetRenderer(state.body, surfaceMesh, focusRadius(), reliefScale,Math.min(8,renderer.capabilities.getMaxAnisotropy()));
+  // Transition-continuity hooks (decision D1/D3): on by default; `?continuity=0` restores the former hard switches for an A/B.
+  planetTiles = new PlanetRenderer(state.body, surfaceMesh, focusRadius(), reliefScale,Math.min(8,renderer.capabilities.getMaxAnisotropy()),undefined,
+    {presentationContinuity:new URLSearchParams(location.search).get('continuity')!=='0'});
   planetTiles.setSurfaceDetail(surfaceDetail);
   planetTiles.setRenderQuality(RENDER_QUALITY[effectiveQuality()]);
 }

@@ -228,7 +228,11 @@ Checked and smooth, with no action needed:
 - **#12 OCEAN-PRESENT** should take F10 (the underwater switch is not wave-aware) and should check F2 on the seabed approach.
   The Luna "reads as underwater" FAIL has no known cause, and the medium flip at the mean level is a candidate worth one render (R12).
 - **#13 BIOME2-VISUAL and #9 BIOME2-CLIMATE** are where F8 and the §3 colour kinks belong. They change forest and colour identity, so they ride the version bump those tasks already carry.
-- **L3 fauna** owns F5, F12 and F13. They are independent of terrain, and a dither cross-fade there moves no digest.
+- **L3 fauna** owns F5, F12 and F13. They are independent of terrain.
+  - *Correction (2026-10-07, decisions D1/D3, Opus-decided on Kasper's instruction):* the claim that they "move no digest" was wrong. F12 (proxy gait eased on `stateS`) and F13 (eye/range fades) do move the life digest (`tests/life-cpu-digest.test.mjs`) when on, and so do the F5 near-rig cross-fade (proxies stay drawn through the overlap, exits past 95 m are listed so they fade) and the F3/F7 life hooks.
+  - They therefore ship behind `PlanetRendererOptions.presentationContinuity` (`src/planet-renderer.ts`). The app turns it on (`?continuity=0` turns it off for an A/B). The identity scenario leaves it off, so `life-cpu-digest` and `planet-forest-frame-digest` stay byte-identical against `e6a0b39`. `tests/life-continuity-scenario.test.mjs` covers the on path.
+  - **F7-flora is partial.** Band memory (hysteresis) and the 108–120 m range fade are in, but the 22 m grass blade-count step (7→3 blades) is still a mesh swap with no fade.
+  - **For the R5 brief:** the rock altitude gate's descent switch is now at 920 m (it exits at 960 m, the old hard threshold), not 960 m as in §3. The ground-life gate is 350 m in and 380 m out with the option on.
 - **F3, F4, F6 and F7 have no owner yet.** They are presentation-only and move no digests, so they are good candidates for a non-identity rendering round:
   - F3 and F4 are cheap, each a few lines with a CPU test;
   - F6 overlaps the forest files (#14);

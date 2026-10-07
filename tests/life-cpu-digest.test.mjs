@@ -8,6 +8,17 @@
 // transforms and bone palettes; the rigged member ids and pose states; every
 // flora bucket's count and matrices; group origins; `faunaDrawn` (ids, cells,
 // positions, genomes); and the life counters.
+//
+// RULE (decision D1, 2026-10-07, Opus-decided on Kasper's instruction): a
+// deliberate PRESENTATION change in a LIFE_FILES file ships behind a
+// `PlanetRendererOptions` switch (src/planet-renderer.ts). This identity
+// scenario leaves every such switch off, so it keeps comparing optimised with
+// unoptimised code against REFERENCE; the change gets its own behavioural test
+// (e.g. tests/life-continuity-scenario.test.mjs for `presentationContinuity`,
+// which also needs a stepped clock: this scenario freezes performance.now at
+// 0, so wall-clock fades would never advance here). Never move REFERENCE,
+// patch the hooks into the reference, or extend SHARED_PRESENTATION_FILES to
+// make a presentation change pass.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
