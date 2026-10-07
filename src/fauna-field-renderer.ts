@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type {CreatureGenome,CreatureGait} from './fauna-runtime.ts';
 import {createFaunaMaterial} from './fauna-material.ts';
+import {eyeDetailWeight,gaitBlend,rangeWeight} from './fauna-handoff.ts';
 
 /** Animals drawn through the instanced anatomy per frame. Sized from the
  * measured ground-level population at LETHRA-001 G001/C2128,0,1/0/planet/1
@@ -37,14 +38,15 @@ function faunaColor(style:string):THREE.Color {
 
 /** One animal's instance output (kinds, Float32 matrix lanes, colours) and
  * the inputs that produced it. `FaunaFieldRenderer.submit` is a pure function
- * of (genome, parent, timeS, gait, eye detail), so while those repeat, as on
+ * of (genome, parent, timeS, gait, stateS, eye weight), with the range fade
+ * folded into the parent's scale lanes, so while those repeat, as on
  * every frame at a paused date, replaying the recorded lanes writes exactly
  * the values drawing would. A part's translation lane is
  * `((a11·x + a12·y) + a13·z) + a14` with a14 the parent's (origin-relative)
  * translation, so the record keeps that partial sum in double precision and
  * replay adds the current parent translation: moving the eye (and so the
  * life origin) at a paused date still replays, bit for bit. */
-type AnimalRecord={genome:CreatureGenome|null;timeS:number;gait:CreatureGait|null;eyes:boolean;parent:Float64Array;
+type AnimalRecord={genome:CreatureGenome|null;timeS:number;gait:CreatureGait|null;stateS:number;eyes:number;parent:Float64Array;
   parts:number;kinds:Uint8Array;matrices:Float32Array;sums:Float64Array;colors:THREE.Color[];valid:boolean;frame:number};
 const RECORD_PARTS=48;
 
@@ -53,7 +55,14 @@ const RECORD_PARTS=48;
  * as the near body. This simpler pose does not reproduce the near rig's IK or
  * grazing, so it is not yet a continuous representation handoff.
  * Geometry is in metres; instance translations are relative to a double-
- * precision local origin before they reach the Float32 instance buffers. */
+ * precision local origin before they reach the Float32 instance buffers.
+ *
+ * Continuity (opt-in per submission, audit F12/F13): passing the dated
+ * activity clock's `stateS` eases the idle <-> walk stride and bob like the
+ * near rig (`gaitBlend`), shrinks the eyes through `eyeDetailWeight` instead
+ * of cutting them at 60 m, and scales the whole animal through `rangeWeight`
+ * to exactly 0 at 600 m. Omitting `stateS` reproduces the former output bit
+ * for bit (tests/life-cpu-digest pins it), so the switch is the caller's. */
 export class FaunaFieldRenderer {
   readonly group=new THREE.Group();
   private meshes:THREE.InstancedMesh[];
@@ -66,6 +75,8 @@ export class FaunaFieldRenderer {
   private readonly records=new Map<object,AnimalRecord>();
   private recording:AnimalRecord|null=null;
   private frame=0;
+  /** Parent × uniform range scale, reused (no per-frame allocation). */
+  private readonly faded=new THREE.Matrix4();
   constructor(){
     const geometries=[new THREE.SphereGeometry(1,10,7),new THREE.CylinderGeometry(1,1,1,7),new THREE.ConeGeometry(1,1,6),new THREE.BoxGeometry(1,1,1)];
     this.meshes=geometries.map((g,i)=>{
@@ -126,24 +137,35 @@ export class FaunaFieldRenderer {
   /** `key` (e.g. the herd member) enables replay of this animal's last
    * output when every input repeats. Recording starts only once the date has
    * repeated for the animal, so realtime frames pay no copy cost. */
-  submit(g:CreatureGenome,parent:THREE.Matrix4,timeS:number,gait:CreatureGait,distanceM=0,key?:object):boolean{
+  /** `stateS` (seconds into the dated idle/walk window, `FaunaMemberActivity.stateS`)
+   * opts this submission into the continuous presentation; see the class note. */
+  submit(g:CreatureGenome,parent:THREE.Matrix4,timeS:number,gait:CreatureGait,distanceM=0,key?:object,stateS?:number):boolean{
     if(this.animalCount>=FAUNA_FIELD_CAPACITY)return false;this.animalCount++;
-    if(!key){this.draw(g,parent,timeS,gait,distanceM);return true;}
-    const eyes=distanceM<=FAUNA_FIELD_EYE_DETAIL_M,pe=parent.elements;
+    const continuous=stateS!==undefined,state=continuous?stateS:NaN;
+    const eyes=continuous?eyeDetailWeight(distanceM):distanceM<=FAUNA_FIELD_EYE_DETAIL_M?1:0;
+    if(continuous){
+      // Range fade as a uniform scale about the animal's ground point:
+      // parent × diag(w, w, w, 1) leaves the translation lanes untouched.
+      const w=rangeWeight(distanceM);
+      if(w===0)return true;
+      if(w<1){const pe=parent.elements,fe=this.faded.elements;for(let i=0;i<12;i++)fe[i]=pe[i]!*w;for(let i=12;i<16;i++)fe[i]=pe[i]!;parent=this.faded;}
+    }
+    if(!key){this.draw(g,parent,timeS,gait,eyes,state);return true;}
+    const pe=parent.elements;
     let record=this.records.get(key);
     if(record){
       record.frame=this.frame;
-      if(record.valid&&record.genome===g&&record.gait===gait&&record.eyes===eyes&&Object.is(record.timeS,timeS)&&sameLanes(record.parent,pe)){this.replay(record,pe);return true;}
+      if(record.valid&&record.genome===g&&record.gait===gait&&Object.is(record.stateS,state)&&Object.is(record.eyes,eyes)&&Object.is(record.timeS,timeS)&&sameLanes(record.parent,pe)){this.replay(record,pe);return true;}
     }else{
-      record={genome:null,timeS:NaN,gait:null,eyes:false,parent:new Float64Array(16),parts:0,kinds:new Uint8Array(RECORD_PARTS),
+      record={genome:null,timeS:NaN,gait:null,stateS:NaN,eyes:0,parent:new Float64Array(16),parts:0,kinds:new Uint8Array(RECORD_PARTS),
         matrices:new Float32Array(RECORD_PARTS*16),sums:new Float64Array(RECORD_PARTS*3),colors:[],valid:false,frame:this.frame};
       this.records.set(key,record);
     }
     // A new date (realtime): draw only; record from the next repeat on.
-    if(!Object.is(record.timeS,timeS)){record.timeS=timeS;record.valid=false;this.draw(g,parent,timeS,gait,distanceM);return true;}
-    record.genome=g;record.gait=gait;record.eyes=eyes;record.parent.set(pe);record.parts=0;record.valid=true;
+    if(!Object.is(record.timeS,timeS)){record.timeS=timeS;record.valid=false;this.draw(g,parent,timeS,gait,eyes,state);return true;}
+    record.genome=g;record.gait=gait;record.stateS=state;record.eyes=eyes;record.parent.set(pe);record.parts=0;record.valid=true;
     this.recording=record;
-    try{this.draw(g,parent,timeS,gait,distanceM);}finally{this.recording=null;}
+    try{this.draw(g,parent,timeS,gait,eyes,state);}finally{this.recording=null;}
     return true;
   }
   private replay(record:AnimalRecord,pe:ArrayLike<number>){
@@ -155,9 +177,14 @@ export class FaunaFieldRenderer {
       mesh.setColorAt(index,record.colors[n]!);
     }
   }
-  private draw(g:CreatureGenome,parent:THREE.Matrix4,timeS:number,gait:CreatureGait,distanceM:number){
-    const moving=gait!=='idle',phase=timeS*g.walkSpeed/Math.max(.2,g.strideLength)*Math.PI*2;
-    const bob=moving?Math.sin(phase*2)*g.legLength*.012:Math.sin(timeS*1.8)*.006;
+  /** `eyes` is the eye coverage (0 skips them); `stateS` NaN keeps the
+   * former binary gait, a number eases it on the dated window clock. Weights
+   * of exactly 0 and 1 take the former expressions, so legacy lanes are
+   * bit-identical. */
+  private draw(g:CreatureGenome,parent:THREE.Matrix4,timeS:number,gait:CreatureGait,eyes:number,stateS:number){
+    const walk=Number.isNaN(stateS)?(gait!=='idle'?1:0):gaitBlend(gait,stateS),phase=timeS*g.walkSpeed/Math.max(.2,g.strideLength)*Math.PI*2;
+    const walkBob=Math.sin(phase*2)*g.legLength*.012,idleBob=Math.sin(timeS*1.8)*.006;
+    const bob=walk===1?walkBob:walk===0?idleBob:idleBob+(walkBob-idleBob)*walk;
     const torsoY=g.legLength+g.torsoHeight*.36+bob;
     this.part(0,parent,0,torsoY,0,g.torsoLength*.52,g.torsoHeight*.42,g.torsoWidth*.52,g.color);
     const nx=g.torsoLength*.42,ny=torsoY+g.torsoHeight*.12;
@@ -166,14 +193,15 @@ export class FaunaFieldRenderer {
     this.part(0,parent,hx+g.headLength*.3,hy,0,g.headLength*.52,g.headWidth*.48,g.headWidth*.52,g.color);
     this.segment(parent,this.a.set(-g.torsoLength*.43,torsoY,0),this.b.set(-g.torsoLength*.43-g.tailLength*.84,torsoY+g.tailLength*.12,Math.sin(phase*.5)*g.tailLength*.08),Math.max(.006,g.torsoWidth*.04),g.accentColor);
     for(const side of [-1,1]){
-      if(distanceM<=FAUNA_FIELD_EYE_DETAIL_M)this.part(0,parent,hx+g.headLength*.57,hy+g.headWidth*.12,side*g.headWidth*.43,.025,.025,.025,'#151a12');
+      if(eyes>0){const r=.025*eyes;this.part(0,parent,hx+g.headLength*.57,hy+g.headWidth*.12,side*g.headWidth*.43,r,r,r,'#151a12');}
       if(g.earLength>.01)this.part(2,parent,hx+g.headLength*.15,hy+g.headWidth*.42,side*g.headWidth*.32,g.headWidth*.1,g.earLength,g.headWidth*.1,g.accentColor);
       if(g.hornLength>.01)this.part(2,parent,hx+g.headLength*.35,hy+g.headWidth*.48+g.hornLength*.42,side*g.headWidth*.25,g.headWidth*.09,g.hornLength,g.headWidth*.09,g.accentColor);
       for(const rear of [false,true]){
         const hipX=(rear?-.3:.3)*g.torsoLength,z=side*g.stanceWidth*.5;
         const legPhase=phase+(rear?Math.PI:0)+(side<0?Math.PI:0);
-        const stride=moving?Math.sin(legPhase)*g.strideLength*.24:0;
-        const lift=moving?Math.max(0,Math.cos(legPhase))*g.legLength*.12:0;
+        // ×1 is exact, so a full walk keeps the former lanes.
+        const stride=walk===0?0:Math.sin(legPhase)*g.strideLength*.24*walk;
+        const lift=walk===0?0:Math.max(0,Math.cos(legPhase))*g.legLength*.12*walk;
         const footX=hipX+stride,footY=g.footWidth*.18+lift;
         const kneeX=hipX+(rear?.12:-.12)*g.legLength+stride*.45,kneeY=g.legLength*.48+lift*.5;
         this.segment(parent,this.a.set(hipX,g.legLength+bob,z*.82),this.b.set(kneeX,kneeY,z),g.footWidth*.27,g.color);
