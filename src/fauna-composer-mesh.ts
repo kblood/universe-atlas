@@ -4,7 +4,7 @@ import {COAT_REGIONS, type CoatRegion} from './fauna-coat-vocab.ts';
 import {COAT_CELLS_PER_BODY, applyCoatDrift, coatIndividualDrift, defaultCoatGenome, evaluateCoat, hash3u, valueNoise3, type CoatGenome} from './fauna-coat-fields.ts';
 import {composerIndividualTraits, type ComposerIndividualTraits} from './fauna-composer-individual.ts';
 import {COMPOSER_IRIS_RGB, FACE_EYE_PROFILE, composerEyeProfileId, composerEyeRulesOf, composerHeadgearBuild, composerSkullOf, resolveComposerEyes, type ComposerSkull} from './fauna-composer-face.ts';
-import {EYE_PATCH, EYE_ROLE, OCELLUS, type LiddedEyeType, buildCompoundEye, buildEyePatch, buildEyespot, buildEyespotBead, buildFacetedEye, buildOcellus, buildStalk, catalogueEyeSpec, type CatalogueEyeSpec, eyeBarAxis, eyeGaze, nearestExit, normalize3, outermostExit, raycastFirstHit, type EyePatch, type RayHit, type Vec3 as EyeVec3} from './fauna-composer-eye.ts';
+import {EYE_PATCH, EYE_ROLE, OCELLUS, type LiddedEyeType, buildCompoundEye, buildEyePatch, buildEyespot, buildEyespotBead, buildFacetedEye, buildOcellus, buildStalk, catalogueEyeSpec, type CatalogueEyeSpec, eyeBarAxis, eyeGaze, nearestExit, normalize3, outermostExit, raycastFirstHit, raycastLine, type EyePatch, type RayHit, type Vec3 as EyeVec3} from './fauna-composer-eye.ts';
 import {isFaceRoundEyeKind} from './fauna-composer-eye-catalogue.ts';
 import {PROBOSCIS_FACE, composerFaceTip} from './fauna-composer-face-geometry.ts';
 import {composerFeatherFanSpan, composerWingChord, composerWingThickness, type ComposerBone, type ComposerGraph, type ComposerLimb, type ComposerSection, type Vec3} from './fauna-composer-rig.ts';
@@ -1712,6 +1712,21 @@ export const SPIDER_EYES = Object.freeze([
 ]);
 /** Insect ocelli: site offsets (x head length, x craniumWidth) from the compound eyes' site, on the head top. */
 const INSECT_OCELLI: readonly (readonly [number, number])[] = [[0.1, 0], [-0.05, -0.3], [-0.05, 0.3]];
+/** Tie window (head-local metres) for exits that share one mirror-seam crossing: engine noise on t is ~1e-17, a head
+ * triangle is >= ~1e-4 across. */
+const SEAM_TIE = 1e-9;
+/** The skull normal under a site on the head's mirror plane (z = 0) along a line in that plane (dir z = 0). Such a line
+ * crosses the two seam triangles at the SAME t, and which of them nearestExit keeps is decided by a 1-ulp difference in
+ * the site (WebKit 26.5 kept the other one than Node/Chromium/Firefox: a 0.15 rad lens-normal flip, 0.42 mm on the
+ * midline insect ocellus, golden faunaKnownUnstable). Every exit at the chosen signed crossing is summed in triangle-
+ * index order (not t order, which is what differed) and the lateral component dropped, so the midline normal is
+ * symmetric and independent of the tie order. Trialled 2026-10-04 (golden-ext/composer-patch-trial: four engines equal). */
+function seamNormal(tris: ArrayLike<number>, site: EyeVec3, dir: EyeVec3, hit: RayHit): EyeVec3 {
+  const tied = raycastLine(tris, site, dir).filter(h => h.normal[0] * dir[0] + h.normal[1] * dir[1] + h.normal[2] * dir[2] > 0 && Math.abs(h.t - hit.t) <= SEAM_TIE).sort((a, b) => a.tri - b.tri);
+  let sx = 0, sy = 0;
+  for (const h of tied) { sx += h.normal[0]; sy += h.normal[1]; }
+  return normalize3([sx, sy, 0]);
+}
 /** Every catalogue ring vertex lies within this many er of its centre (facial disc 2.1 er in plane + the closest-point
  * search 2.5 er), so the skull triangles beyond it never affect the patch. */
 const CATALOGUE_PATCH_REACH = 5.2;
@@ -1919,7 +1934,8 @@ function buildCatalogueEyes(e: CatalogueEyeEnv) {
       for (const [dx, z] of INSECT_OCELLI) {
         const site: EyeVec3 = [ox + dx! * H, 0.3 * cH, z! * cW], hit = nearestExit(headTris, site, up);
         if (!hit) ctx.fallbacks++;
-        const n = hit ? normalize3(addV(up, hit.normal, 1)) : up, base = hit ? addV(hit.point, n, -0.25 * rr) : site;
+        const hn = hit ? (z === 0 ? seamNormal(headTris, site, up, hit) : hit.normal) : null;
+        const n = hn ? normalize3(addV(up, hn, 1)) : up, base = hit ? addV(hit.point, n, -0.25 * rr) : site;
         const patch = buildOcellus({r: rr, height: 0.7 * rr, centre: base, normal: n, up: [1, 0, 0], segments: 6, stations: 1});
         const lens = gainC(facet, 1.2);
         emit(patch, [...patch.roles].map(() => lens), 0, 'ocellus', rr, base, n, hit ? hit.point : null);

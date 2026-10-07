@@ -92,6 +92,38 @@ test('trunked-centipede: the skin arrays hold the golden grid under every 1-ULP 
   }
 });
 
+// The midline insect ocellus (golden faunaKnownUnstable, GOLDEN-FAUNA-2): its site and seating ray lie in the head's
+// mirror plane and cross the two seam triangles at the same t. Before seamNormal the tie order (a 1-ulp question) picked
+// one seam triangle's normal: WebKit 26.5 picked the other one, and so does Node under the alternating nudge below.
+const MIDLINE_INSECT = 'GOLDEN-FAUNA-2';
+test('midline-ocellus insect: the skin arrays hold the golden grid under every 1-ULP nudge mode (seam tie)', () => {
+  const recipe = randomComposerRecipe(MIDLINE_INSECT), base = build(recipe);
+  for (const [mode, [names, sign, select]] of Object.entries(MODES)) {
+    const skin = withNudge(names, sign, () => build(recipe), select);
+    assert.deepEqual(nonFinite(skin), [], `${mode}: non-finite skin values`);
+    assert.deepEqual(gridDiff(base, skin), [], `${mode}: skin arrays moved on the golden 1e-6 grid (the midline ocellus seam tie)`);
+  }
+});
+
+/** The eye-part vertices near the mirror plane (|z| < 0.1 x the eyes' largest |z|): the midline ocellus. */
+function midlineEyeVertices(skin) {
+  const vs = new Set();
+  for (const p of skin.parts) if (p.part === 'eyes') for (let t = p.firstTriangle; t < p.firstTriangle + p.triangles; t++) for (let k = 0; k < 3; k++) vs.add(skin.index[3 * t + k]);
+  const z = v => skin.positions[3 * v + 2], maxZ = Math.max(...[...vs].map(v => Math.abs(z(v))));
+  return [...vs].filter(v => Math.abs(z(v)) < 0.1 * maxZ);
+}
+test('midline ocellus is exactly mirror-symmetric: its on-seam vertices sit at z = 0 and every vertex has an exact mirror twin', () => {
+  for (const name of [MIDLINE_INSECT]) {
+    const skin = build(randomComposerRecipe(name)), mid = midlineEyeVertices(skin), P = v => [0, 1, 2].map(k => skin.positions[3 * v + k]);
+    assert.equal(mid.length, 8, `${name}: the midline ocellus (6 rim + apex + base vertices)`);
+    assert.ok(mid.filter(v => P(v)[2] === 0).length >= 2, `${name}: the ocellus axis vertices lie on the seam, z exactly 0`);
+    for (const v of mid) {
+      const [x, y, z] = P(v);
+      assert.ok(mid.some(u => { const [a, b, c] = P(u); return a === x && b === y && c === -z; }), `${name}: vertex ${v} (${x}, ${y}, ${z}) has no exact mirror twin`);
+    }
+  }
+});
+
 test('the pow(1, y) nudge reaches the proboscis ear (negative control: the nudge is live)', () => {
   // the ear profile is the only pow(1, y) call site that feeds a fractional power of a sine; the nudge must still reach
   // pow(1, y) in the build, or the test above proves nothing

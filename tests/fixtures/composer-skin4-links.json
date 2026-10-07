@@ -135,13 +135,34 @@
    "skin3": "e718d853159589727ef3c6c84bffc8033ade5b939cd7d2090f1427c689589385"
   },
   "v1*layout_biped*legPairs_1*bodyLength_1.83*girth_0.85*posture_0.33*torso_deep-chest*neckLength_0.21*head_mandibles*headSize_1.21*snoutLength_0.89*horns_none*legs_unguligrade*legLength_0.41*feet_hoof*arms_grasping*armLength_0.59*hands_pincer*tail_tufted*tailLength_1.31*armor_dome*wings_membrane*wingSpan_2.61*trunk_none*trunkLength_0.41*palette_earth*colorSeed_4293": {
-   "skin": "ac3d2d0bde971b3459780eb3c641b69231d4afc59c7f8610dfadd06e03523bc8",
+   "skin": "812b6779bd1018bab3c3cac01ba73f390c47f26686ea830e18a01827a108f0f0",
    "gloss": "ba5574100c6604015e25296946303d19535e2fea2f72bcd9547e4b3c2d68b6f5",
    "vertices": 7240,
    "triangles": 14332,
    "bones": 34,
    "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
-   "skin3": "a6c7776780290ccad911bff098683cf91a4329b90c55fa716c1752127a778dc3"
+   "skin3": "a6c7776780290ccad911bff098683cf91a4329b90c55fa716c1752127a778dc3",
+   "stabilityDrift": {
+    "reason": "fauna-composer-stability (2026-10-07): the midline insect ocellus is seated on the head mirror seam with the tie-order-independent seamNormal (sum of the tied seam-triangle exit normals in triangle-index order, lateral component dropped) instead of whichever seam triangle the 1-ulp tie order picked; 8 ocellus vertices move, colours/weights/index unchanged",
+    "before": {
+     "skin": "ac3d2d0bde971b3459780eb3c641b69231d4afc59c7f8610dfadd06e03523bc8",
+     "gloss": "ba5574100c6604015e25296946303d19535e2fea2f72bcd9547e4b3c2d68b6f5"
+    },
+    "after": {
+     "skin": "812b6779bd1018bab3c3cac01ba73f390c47f26686ea830e18a01827a108f0f0",
+     "gloss": "ba5574100c6604015e25296946303d19535e2fea2f72bcd9547e4b3c2d68b6f5"
+    },
+    "verticesMoved": 8,
+    "maxVertexDisplacementM": 0.000749714,
+    "unchanged": [
+     "index",
+     "skinIndex",
+     "skinWeight",
+     "colors",
+     "gloss"
+    ]
+   },
+   "skinPreStability": "ac3d2d0bde971b3459780eb3c641b69231d4afc59c7f8610dfadd06e03523bc8"
   },
   "v1*layout_quadruped*legPairs_2*bodyLength_0.84*girth_0.77*posture_0.43*torso_slim*neckLength_0.3*head_blunt*headSize_0.94*snoutLength_0.87*horns_paired*legs_plantigrade*legLength_0.47*feet_pad*arms_none*armLength_0.86*hands_hand*tail_tufted*tailLength_0.8*armor_none*wings_none*wingSpan_2.33*trunk_none*trunkLength_0.67*palette_slate*colorSeed_7350": {
    "skin": "82d5b843221af5d24e5341c25dcd13d8b64cccb32d5c339772c29866cc040dbe",
@@ -258,13 +279,34 @@
    "skin3": "d5bac2f2322d26b78b91ef4ac07d0b88904691dd36ce1750704746015965ed8e"
   },
   "v1*layout_sprawled*legPairs_2*bodyLength_0.8*girth_1.35*posture_0.75*torso_slim*neckLength_0.13*head_mandibles*headSize_0.87*snoutLength_0.6*horns_crest*legs_arthropod*legLength_0.51*feet_spike*arms_none*armLength_0.49*hands_pincer*tail_feather-fan*tailLength_1.36*armor_bands*wings_feathered*wingSpan_1.98*trunk_none*trunkLength_1.19*palette_slate*colorSeed_1258": {
-   "skin": "2b58e7c512f15379b7c36621c55536d2c77354ed6764305c6fa199b044054fc3",
+   "skin": "30160ba78ab6ae2a14ec56d2f33ab54e76a259bdfcfb6e2a74b3aac63e313ffd",
    "gloss": "7ad7f0b1b409f2fc9ab1996056ae0ef4e83ccd7a0cd6b5da4cd130ab8346f766",
    "vertices": 4738,
    "triangles": 9300,
    "bones": 26,
    "driftFromSkin3": "fauna-composer-eye-2: eyes rebuilt under the current eye rules",
-   "skin3": "d0102b2736adc2de2065f36cae10f87ed95c550ff94848853dde8927a41076be"
+   "skin3": "d0102b2736adc2de2065f36cae10f87ed95c550ff94848853dde8927a41076be",
+   "stabilityDrift": {
+    "reason": "fauna-composer-stability (2026-10-07): the midline insect ocellus is seated on the head mirror seam with the tie-order-independent seamNormal (sum of the tied seam-triangle exit normals in triangle-index order, lateral component dropped) instead of whichever seam triangle the 1-ulp tie order picked; 8 ocellus vertices move, colours/weights/index unchanged",
+    "before": {
+     "skin": "2b58e7c512f15379b7c36621c55536d2c77354ed6764305c6fa199b044054fc3",
+     "gloss": "7ad7f0b1b409f2fc9ab1996056ae0ef4e83ccd7a0cd6b5da4cd130ab8346f766"
+    },
+    "after": {
+     "skin": "30160ba78ab6ae2a14ec56d2f33ab54e76a259bdfcfb6e2a74b3aac63e313ffd",
+     "gloss": "7ad7f0b1b409f2fc9ab1996056ae0ef4e83ccd7a0cd6b5da4cd130ab8346f766"
+    },
+    "verticesMoved": 8,
+    "maxVertexDisplacementM": 0.000266246,
+    "unchanged": [
+     "index",
+     "skinIndex",
+     "skinWeight",
+     "colors",
+     "gloss"
+    ]
+   },
+   "skinPreStability": "2b58e7c512f15379b7c36621c55536d2c77354ed6764305c6fa199b044054fc3"
   },
   "v1*layout_biped*legPairs_1*bodyLength_1.7*girth_1.12*posture_0.33*torso_slim*neckLength_0.19*head_beak*headSize_1.23*snoutLength_0.37*horns_paired*legs_pillar*legLength_1.14*feet_hand*arms_none*armLength_1.19*hands_claw*tail_tufted*tailLength_1.41*armor_none*wings_none*wingSpan_2.22*trunk_none*trunkLength_0.7*palette_plumage*colorSeed_4688": {
    "skin": "225ad56a5510aab003cfb7d25270c94b17ad6826c822e5201981fc32a8705fd9",
@@ -290,5 +332,15 @@
    "EC4 (graph-4): arms of a limbless or many-legged body rest beside and behind the head instead of in front of the face": 1
   },
   "note": "Eye round EC4 (head polish) repin in place: graph-4 / face-geometry-2 rebuilt the proboscis trunk and ears and moved the rest arms of limbless and many-legged bodies off the face. These are not eye rules, so they apply under both eye-rule epochs. Every drifted entry keeps its earlier history, records the replaced pin (skinPreEC4, glossPreEC4, verticesPreEC4, trianglesPreEC4) and says why (ec4Drift). Bone counts are unchanged. The skin version string stays fauna-composer-skin-4 (unreleased in this round); the graph and face-geometry versions carry the change."
+ },
+ "repinnedAtStability": {
+  "branch": "fauna/composer-stability",
+  "replacesPinsAt": "5450d9d",
+  "date": "2026-10-07",
+  "skin": "fauna-composer-skin-4",
+  "changed": 2,
+  "of": 28,
+  "reason": "fauna-composer-stability (2026-10-07): the midline insect ocellus is seated on the head mirror seam with the tie-order-independent seamNormal (sum of the tied seam-triangle exit normals in triangle-index order, lateral component dropped) instead of whichever seam triangle the 1-ulp tie order picked; 8 ocellus vertices move, colours/weights/index unchanged",
+  "note": "Repinned in place (skin-4 is unreleased: the deployed build is fauna-preview-20261002-01). Each drifted entry keeps every earlier history field, records the replaced pin (skinPreStability) and the before/after hashes (stabilityDrift). Ledger: docs/fauna-composer-stability-2026-10-07.md."
  }
 }
