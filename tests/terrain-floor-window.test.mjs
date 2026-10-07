@@ -14,31 +14,19 @@
 // descriptive window-usage checks are tau-aware (old/new values inline below).
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {galaxies,sector,system} from '../src/catalog.ts';
 import {baseTerrainSampler,terrainFloorSampler,terrainSampler,terrainWindowMaxM,terrainUnitWindowMaxM,tectonicReliefOf,TERRAIN_DETAIL_WINDOW_M,TERRAIN_LANDFORM_WINDOW_M} from '../src/terrain.ts';
 import {fib,goldenTerrainBodies,waterWorlds} from './terrain-climate-fixtures.mjs';
 // T6 decision 3: the 20k-direction window/continent statistics read the level-0 field (no carving, no rock);
 // the floor sampler there is terrainSampler(..., exposeFloor = true, {lodLevel: 0}), what terrainFloorSampler wraps.
-import {statisticSampler,fullOnly} from './helpers/statistic-level.mjs';
-const floorAt0=body=>statisticSampler(body,{exposeFloor:true});
-// Pointwise invariants run on both: level 0 by default, the carved truth in test:full (T6 Astra review).
-const LEVEL0=floorAt0,TRUTH=body=>terrainFloorSampler(body);
-
-const N=20000;
-function goldenAll(){
-  const refs=[];
-  for(const g of galaxies('LETHRA-GOLDEN-001').slice(0,3))
-    for(const c of [[266,0,0],[0,0,0],[-2,-1,-2],[12,-4,7]])refs.push(...sector(g,c).refs);
-  return refs.slice(0,220).map(system).flatMap(s=>[...s.planets,...s.moons]);
-}
-/** Maithea, Selawyn, Raiva, Lethuris (water), one dry Rocky world, and one
- * small Airless moon (R < 2000 km, where the hill layer is not radius-scaled). */
-function windowBodies(){
-  const all=goldenAll();
-  const dry=all.find(b=>b.kind==='planet'&&b.type==='Rocky world'&&!(b.water>0));
-  const moon=all.find(b=>b.type==='Airless moon'&&b.radiusM<1e6);
-  return [...waterWorlds(),dry,moon];
-}
+import {fullOnly} from './helpers/statistic-level.mjs';
+// Pointwise invariants run on both: level 0 by default, the carved truth in test:full (T6 Astra review). The per-body
+// scans (window, continental sign, floor = base) are SCANS.floorWindow / continental / floorBase in
+// tests/helpers/body-chunks.mjs (O3, docs/truth-scan-chunks-2026-10-07.md): level 0 in-process, the truth one worker
+// thread per body; results are combined in body order. Body sets: BODY_SETS.floorWindow = Maithea, Selawyn, Raiva,
+// Lethuris (water), one dry Rocky world, and one small Airless moon (R < 2000 km, where the hill layer is not
+// radius-scaled); BODY_SETS.floorBase = the four water worlds and 5 golden terrain bodies.
+import {scanBodies,inOrder,logScan,goldenAll} from './helpers/body-chunks.mjs';
+const LEVEL0={mode:'level0',workers:0},TRUTH={mode:'truth',workers:Infinity};
 
 test('window bound constant: 772 m detail + 1908 m landforms x min(1, R/2e6); 2680 m from R = 2000 km up; 0 on gas giants',()=>{
   assert.equal(TERRAIN_DETAIL_WINDOW_M,772);
@@ -50,29 +38,20 @@ test('window bound constant: 772 m detail + 1908 m landforms x min(1, R/2e6); 26
   assert.equal(terrainWindowMaxM({kind:'star',type:'G',radiusM:7e8}),0);
 });
 
-function windowScan(bodies,make){
+// 20000 directions per body (SCANS.floorWindow): violations summed and the report rows in body order.
+async function windowScan(make){
+  const scan=await scanBodies('floorWindow','floorWindow',make.mode,{workers:make.workers});logScan('floorWindow',make.mode,scan);
   const report=[];let violations=0;
-  for(const body of bodies){
-    const s=make(body),bound=terrainWindowMaxM(body);
-    let max=0,min=Infinity,bad=0;
-    for(let i=0;i<N;i++){
-      const x=s(fib(i,N));
-      const w=x.groundHeightM-x.floorM;
-      // windowM is that same difference, carried on the sample.
-      if(x.windowM!==w)bad++;
-      if(!(w>=0&&w<=bound))bad++;
-      if(w>max)max=w;if(w<min)min=w;
-    }
+  for(const {body,value:{bad,min,max,bound,type,radiusM}} of inOrder(scan)){
     violations+=bad;
-    report.push({id:body.id,type:body.type,radiusM:Math.round(body.radiusM),bound,min,max:Math.round(max)});
+    report.push({id:body.id,type,radiusM,bound,min,max:Math.round(max)});
   }
-  return {report,violations};
+  return {bodies:scan.bodies,report,violations};
 }
 
-test('invariant 0 <= h - floorM <= terrainWindowMaxM(body) over 6 bodies x 20000 directions (0 violations)',()=>{
-  const bodies=windowBodies();
+test('invariant 0 <= h - floorM <= terrainWindowMaxM(body) over 6 bodies x 20000 directions (0 violations)',async()=>{
+  const {bodies,report,violations}=await windowScan(LEVEL0);
   assert.equal(bodies.length,6);
-  const {report,violations}=windowScan(bodies,floorAt0);
   assert.equal(violations,0,JSON.stringify(report));
   // terrain-1.8.0-relief (P4-RELIEF r2): the window is tau-scaled,
   // terrainWindowMaxM(body) = tau x terrainUnitWindowMaxM(body), tau =
@@ -99,39 +78,25 @@ test('invariant 0 <= h - floorM <= terrainWindowMaxM(body) over 6 bodies x 20000
 
 // T6 decision 3: the same invariant on the full-detail TRUTH (M3 carving and M5 rock inside the massifs), where the
 // carving lowers the ground; it solves M3 blocks at every massif direction (minutes), so it runs in test:full only.
-test('invariant on the truth: 0 <= h - floorM <= terrainWindowMaxM(body) over the 6 bodies x 20000 directions (test:full)',fullOnly('truth window scan solves M3 blocks'),()=>{
-  const {report,violations}=windowScan(windowBodies(),body=>terrainFloorSampler(body));
+test('invariant on the truth: 0 <= h - floorM <= terrainWindowMaxM(body) over the 6 bodies x 20000 directions (test:full)',fullOnly('truth window scan solves M3 blocks'),async()=>{
+  const {report,violations}=await windowScan(TRUTH);
   assert.equal(violations,0,JSON.stringify(report));
 });
 
-function continentalSign(make){
-  for(const body of waterWorlds()){
-    const s=make(body);let mismatch=0,land=0;
-    for(let i=0;i<N;i++){
-      const x=s(fib(i,N));
-      if((x.continentalM>=0)!==!x.ocean)mismatch++;
-      if(!x.ocean)land++;
-    }
-    assert.equal(mismatch,0,body.name);
-    assert.ok(land>0.2*N&&land<0.9*N,body.name+' land '+land);
-  }
+// The four water worlds x 20000 directions (SCANS.continental, per-body asserts); first failing world reported.
+async function continentalSign(make){
+  const scan=await scanBodies('continental','waterWorlds',make.mode,{workers:make.workers});logScan('continental',make.mode,scan);
+  for(const {value} of inOrder(scan))assert.equal(value.mismatch,0);
 }
 test('continentalM >= 0 exactly where the sea-level-0 sampler reports land, on the four water worlds',()=>continentalSign(LEVEL0));
 test('continentalM >= 0 exactly where the carved truth reports land (test:full)',fullOnly('truth continental scan solves M3 blocks'),()=>continentalSign(TRUTH));
 
-function floorIsBase(make){
-  const bodies=[...waterWorlds(),...goldenTerrainBodies().slice(0,5)];
+// The four water worlds and 5 golden terrain bodies x 4096 directions (SCANS.floorBase, per-direction asserts), then
+// the gas giant.
+async function floorIsBase(make){
   const gas=goldenAll().find(b=>b.type==='Gas giant');
-  for(const body of bodies){
-    const s=make(body),n=4096;
-    for(let i=0;i<n;i++){
-      const x=s(fib(i,n));
-      assert.ok(x.floorM<=x.groundHeightM);
-      // Below sea level on a water world there is no hill/landform layer.
-      if(body.water>0&&x.ocean)assert.equal(x.floorM,x.groundHeightM);
-      assert.ok(Math.abs(x.floorM)<=18000);
-    }
-  }
+  const scan=await scanBodies('floorBase','floorBase',make.mode,{workers:make.workers});logScan('floorBase',make.mode,scan);
+  for(const {value} of inOrder(scan))assert.equal(value.n,4096);
   const s=terrainFloorSampler(gas);
   for(let i=0;i<64;i++){const x=s(fib(i,64));assert.equal(x.floorM,0);assert.equal(x.windowM,0);assert.equal(x.continentalM,0);}
 }
