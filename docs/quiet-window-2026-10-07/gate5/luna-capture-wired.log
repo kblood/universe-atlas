@@ -1,0 +1,9 @@
+[gate wired 02:46:27] serving 772cad3b3f90676c2fd9191cfa347a84c15989f1 Tests: clear ATLAS_TEST_FULL in the tier reporter child run (failed under test:full at GATE-2)
+[gate wired 02:49:16] Maithea views orbit,lowland,forest,mountainV3,massifAxis,mountain,beach,polar,seabed
+[gate wired 02:49:34] Maithea massifAxis settled 12644 ms 
+[gate wired 02:51:01] Lethuris views orbit,lowland,forest,mountainV3,massifAxis,mountain,beach,polar,seabed
+[gate wired 02:51:18] Lethuris massifAxis settled 11291 ms 
+[gate wired 02:52:26] Raiva views orbit,lowland,forest,mountainV3,massifAxis,mountain,beach,polar,seabed
+[gate wired 02:52:45] Raiva massifAxis settled 12888 ms 
+[gate wired 02:54:11] Selawyn views orbit,lowland,forest,mountainV3,mountain,beach,polar,seabed
+[gate wired 02:54:11] done

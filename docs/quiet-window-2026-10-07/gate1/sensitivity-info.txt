@@ -1,0 +1,10 @@
+c1 versions AB terrain-1.8.1-grain/false -> terrain-1.9.0-mountains/true
+c1 versions AA terrain-1.8.1-grain/false -> terrain-1.8.1-grain/false
+orbit identical AA true AB false blockSolves 0
+node v24.7.0
+order mismatches 0 flagged c1 18 flagged orbit 21 strong-contender orbit AA Lethuris ref i=10 47424 python.exe; c1 AA Maithea ref i=11 12500 python.exe
+waits total s 3295 idle min 86.3
+Maithea UNFLAGGED-ONLY (INFO): C1 A/B 5.77% [4.28,7.69] n=30; orbit A/B 3.45% [2.24,5.18] n=26
+Selawyn UNFLAGGED-ONLY (INFO): C1 A/B 3.87% [-0.11,7.54] n=27; orbit A/B 2.46% [1.51,2.95] n=28
+Raiva UNFLAGGED-ONLY (INFO): C1 A/B 4.61% [2.69,6.91] n=28; orbit A/B 4.32% [2.88,5.56] n=29
+Lethuris UNFLAGGED-ONLY (INFO): C1 A/B 5.13% [2.62,6.16] n=28; orbit A/B 1.48% [0.01,3.40] n=27

@@ -1,0 +1,4 @@
+{"root":"ref","round":0,"N":4000,"usPerCall":6.5,"blockBuilds":0,"callsOver1ms":1,"maxCallMs":14.7}
+{"root":"ref","round":1,"N":4000,"usPerCall":2,"blockBuilds":0,"callsOver1ms":0,"maxCallMs":0.2}
+{"root":"cand","round":0,"N":4000,"usPerCall":3213.5,"blockBuilds":88,"callsOver1ms":88,"maxCallMs":287.1}
+{"root":"cand","round":1,"N":4000,"usPerCall":3210.5,"blockBuilds":88,"callsOver1ms":87,"maxCallMs":289.4}

@@ -1,0 +1,4 @@
+placeAt 1.43 us (best of 3 x 40000) true
+✔ cost: placeAt at full level (strict budget 3 us with OCEAN_PERF_STRICT=1) (204.9255ms)
+ℹ pass 1
+ℹ fail 0
