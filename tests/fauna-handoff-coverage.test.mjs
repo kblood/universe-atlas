@@ -113,15 +113,39 @@ const candidate = (member, distanceM) => ({ member, genome: faunaMemberGenome(me
   activity: faunaMemberActivityAtWorldNs(member, NOW), ground, rigSeconds: faunaRigSecondsAt(NOW) });
 /** One build step per fake millisecond: a body takes many frames (a delayed, time-sliced build). */
 function steppedClock() { let t = 0; return () => t++; }
+/**
+ * PlanetRenderer.drawFauna's near-candidate cut with the REQUIRED widening
+ * hook (needs: planet-renderer.ts:2069): animals within the 95 m retention
+ * range, plus any member a slot still holds, so a fade-out is re-posed with a
+ * fresh matrix every frame until it completes.
+ */
+const widenedCut = (member, d) => near => d <= FAUNA_NEAR_RIG_EXIT_M || near.holds(member.id) ? [candidate(member, d)] : [];
 
-/** Drives `near` through per-frame candidate lists and records each member's coverage. */
+/**
+ * No stale rig: every drawn rig mesh carries the matrix of its member's
+ * candidate in THIS frame's list. Candidate matrices are origin-relative and
+ * the planet moves the parent group to the eye each frame, so a visible rig
+ * on an older matrix slides with the camera over a proxy that walked on.
+ */
+function assertNoStaleRig(near, list, label = 'rig') {
+  for (const mesh of near.group.children) {
+    if (!mesh.visible) continue;
+    const own = list.find(c => near.meshOf(c.member.id) === mesh);
+    assert.ok(own, `${label}: a visible rig has no candidate this frame (stale matrix)`);
+    assert.ok(mesh.matrix.equals(own.matrix), `${label}: a visible rig is not on this frame's matrix (stale matrix)`);
+  }
+}
+
+/** Drives `near` through per-frame candidate lists (or `near => list`) and records each member's coverage. */
 function drive(near, frames, ids) {
   const traces = Object.fromEntries(ids.map(id => [id, { rig: [], proxy: [] }])), readyBefore = Object.fromEntries(ids.map(id => [id, []]));
-  frames.forEach(list => {
+  frames.forEach(frame => {
+    const list = typeof frame === 'function' ? frame(near) : frame;
     // Readiness = the body is in the geometry cache when selection runs
     // (read from the private cache: test-only observation, no mutation).
     for (const id of ids) readyBefore[id].push(near.cache.has(id));
     const replaced = near.update(list, DT);
+    assertNoStaleRig(near, list);
     for (const id of ids) {
       const rig = near.rigWeightOf(id), proxy = near.proxyWeightOf(id), mesh = near.meshOf(id);
       traces[id].rig.push(rig); traces[id].proxy.push(proxy);
@@ -136,9 +160,9 @@ function drive(near, frames, ids) {
 }
 test('near rigs: oscillating 75 <-> 100 m with a delayed build, one swap per crossing; the hard swap fails', () => {
   const member = MEMBERS[0], id = member.id, distances = oscillation(560, 40);
-  // As PlanetRenderer.drawFauna: only animals within the 95 m retention range
-  // are near candidates, so a released rig fades out on its last pose.
-  const frames = distances.map(d => d <= FAUNA_NEAR_RIG_EXIT_M ? [candidate(member, d)] : []);
+  // PlanetRenderer.drawFauna with the required widening hook: a released rig
+  // stays listed (and re-posed) until its fade-out completes.
+  const frames = distances.map(d => widenedCut(member, d));
   const run = options => {
     const near = new FaunaNearRigs({ capacity: 2, now: steppedClock(), buildBudgetMs: 3, ...options });
     try { return drive(near, frames, [id]); } finally { near.dispose(); }
@@ -163,7 +187,7 @@ test('near rigs: oscillating 75 <-> 100 m with a delayed build, one swap per cro
 test('near rigs: capacity reassignment inside 80 m fades the old rig out before the new one fades in; the hard swap fails', () => {
   const [a, b] = MEMBERS, frames = [];
   for (let i = 0; i < 260; i++) frames.push([candidate(b, 50)]);                       // B builds and rigs
-  for (let i = 0; i < 260; i++) frames.push([candidate(a, 50)]);                       // A builds; B leaves the list
+  for (let i = 0; i < 260; i++) frames.push([candidate(a, 50), candidate(b, 100)]);    // A builds; B walks past 95 m (still listed)
   for (let i = 0; i < 120; i++) frames.push([candidate(b, 40), candidate(a, 60)]);     // B outranks A for the one slot
   const run = fadeS => {
     const near = new FaunaNearRigs({ capacity: 1, cacheSize: 4, now: steppedClock(), buildBudgetMs: 12, fadeS });
@@ -178,11 +202,76 @@ test('near rigs: capacity reassignment inside 80 m fades the old rig out before 
   const aGone = aOut.indexOf(0), bStart = bIn.findIndex(w => w > 0);
   assert.ok(aGone > 5 && bStart > aGone, `A fades out over ${aGone} frames, then B fades in from frame ${bStart}`);
   assert.equal(bIn.at(-1), 1, 'B ends fully rigged');
-  // B left the list at frame 260 while rigged: it fades out on its last pose.
-  assert.ok(traces[b.id].rig[260] < 1 && traces[b.id].rig[260] > 0, 'B fades out after leaving the candidate list');
+  // B passed 95 m at frame 260 while rigged and still listed: it fades out, re-posed each frame.
+  assert.ok(traces[b.id].rig[260] < 1 && traces[b.id].rig[260] > 0, 'B fades out after passing the exit distance');
   // Negative: the former instant reassignment.
   const hard = run(0);
   assert.throws(() => { for (const id of [a.id, b.id]) assertCoverage(hard[id], id); }, /hard swap/);
+});
+
+test('near rigs: a member dropped from the list mid-fade is released at once, never left on a stale matrix; keeping its last pose fails', () => {
+  const member = MEMBERS[2], id = member.id;
+  // The eye moves every frame, so every candidate matrix differs from the last
+  // one (as planet-renderer.ts composes item.position - lifeOrigin).
+  let frame = 0;
+  const moving = d => { const c = candidate(member, d); c.matrix.makeTranslation(d - frame * .25, frame * .01, frame * .13); return c; };
+  const script = [];
+  const phase = (n, d, tag) => { for (let i = 0; i < n; i++) script.push({ d, tag: i === 0 ? tag : null }); };
+  phase(200, 50, 'rig');            // build, fade in, fully rigged
+  phase(5, 100, 'fadeOut');         // past 95 m, still listed: fading out, re-posed
+  phase(10, null, 'dropOut');       // dropped from the list mid fade-out
+  phase(5, 50, 'fadeIn');           // back inside 80 m: fading in
+  phase(10, null, 'dropIn');        // dropped from the list mid fade-in
+  phase(60, 50, 'rigAgain');        // fully rigged again
+  phase(10, null, 'dropFull');      // dropped while fully rigged
+  const run = patch => {
+    const near = new FaunaNearRigs({ capacity: 1, now: steppedClock(), buildBudgetMs: 60, fadeS: FADE });
+    patch?.(near);
+    const at = {};
+    try {
+      frame = 0;
+      for (const step of script) {
+        const before = near.rigWeightOf(id);
+        const list = step.d === null ? [] : [moving(step.d)];
+        near.update(list, DT);
+        assertNoStaleRig(near, list, `frame ${frame}`);
+        if (step.tag) at[step.tag] = { before, after: near.rigWeightOf(id), proxy: near.proxyWeightOf(id), mesh: near.meshOf(id), held: near.holds(id) };
+        frame++;
+      }
+      return { at, diagnostics: near.diagnostics() };
+    } finally { near.dispose(); }
+  };
+  const { at, diagnostics } = run();
+  assert.equal(at.fadeOut.before, 1, 'fully rigged before passing 95 m');
+  for (const tag of ['dropOut', 'dropIn']) {
+    assert.ok(at[tag].before > 0 && at[tag].before < 1, `${tag}: the drop lands mid-fade (${at[tag].before})`);
+    assert.equal(at[tag].after, 0, `${tag}: released at once`);
+    assert.equal(at[tag].proxy, 1, `${tag}: the proxy carries the animal`);
+    assert.equal(at[tag].mesh, null, `${tag}: no slot keeps the member`);
+    assert.equal(at[tag].held, false, `${tag}: holds() reports the release`);
+  }
+  assert.equal(at.dropFull.before, 1); assert.equal(at.dropFull.after, 0, 'a fully rigged member dropped from the list is released at once');
+  assert.equal(diagnostics.unlistedDrops, 3, 'each unlisted drop is counted');
+  // Negative: the former "keep the last pose for the rest of the fade-out".
+  assert.throws(() => run(near => { near.dropUnlisted = () => {}; }), /stale matrix/);
+});
+
+test('near rigs at the current 95 m candidate cut (no widening hook): exits drop instead of fading, but no rig is stale', () => {
+  const member = MEMBERS[0], id = member.id;
+  const near = new FaunaNearRigs({ crossFade: true, capacity: 2, now: steppedClock(), buildBudgetMs: 60 });
+  try {
+    let drops = 0;
+    for (let i = 0; i < 400; i++) {
+      // 70 m for 200 frames, then out to 120 m and back (0.5 m/frame steps).
+      const d = i < 200 ? 70 : 70 + Math.min(i - 200, 400 - i) * .5;
+      const list = d <= FAUNA_NEAR_RIG_EXIT_M ? [candidate(member, d)] : [], before = near.rigWeightOf(id);
+      near.update(list, DT);
+      assertNoStaleRig(near, list, `${d.toFixed(1)} m`);
+      if (before > 0 && !list.length) { assert.equal(near.rigWeightOf(id), 0, 'unlisted: released at once'); drops++; }
+    }
+    assert.equal(drops, 1, 'the one exit past 95 m is a hard drop without the widening hook');
+    assert.equal(near.diagnostics().unlistedDrops, 1);
+  } finally { near.dispose(); }
 });
 
 test('near rigs without a fade keep the former behaviour and report no fade state', () => {
@@ -211,8 +300,10 @@ test('planet hooks applied (crossFade rigs, proxy skipped only for returned ids)
     for (let i = 0; i < 80; i++) distances.push(110 - i * .5);        // and back inside 80 m
     let overlap = 0, sawIdleDuringFade = false;
     for (const d of distances) {
-      // PlanetRenderer.drawFauna: candidates only within the 95 m retention range.
-      const rigged = near.update(d <= FAUNA_NEAR_RIG_EXIT_M ? [candidate(member, d)] : [], DT);
+      // PlanetRenderer.drawFauna with both required hooks: the widened cut
+      // (95 m plus held members) and the proxy skipped only for returned ids.
+      const list = widenedCut(member, d)(near), rigged = near.update(list, DT);
+      assertNoStaleRig(near, list);
       const proxyDrawn = !rigged.has(id), rig = near.rigWeightOf(id);
       assert.ok((proxyDrawn ? 1 : 0) + rig >= 1, `${d.toFixed(1)} m: the animal is covered`);
       assert.ok(proxyDrawn || near.proxyWeightOf(id) === 0, 'the proxy is drawn whenever it still has coverage');

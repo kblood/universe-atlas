@@ -31,6 +31,15 @@ import { advanceHandoff, handoffRigWeight, FAUNA_HANDOFF_FADE_S } from './fauna-
  * slot stays bound to its member until its coverage reaches 0, so capacity
  * reassignment fades the old animal out before the new one fades in.
  * `fadeS = 0` (the default) is the former behaviour, bit for bit.
+ *
+ * A fade only ever runs on a slot re-posed this frame. Candidate matrices are
+ * origin-relative and the caller moves the parent group to a new origin each
+ * frame, so a slot whose member is missing from this frame's candidate list
+ * has no valid transform: it is released at once (a documented hard drop,
+ * counted as `unlistedDrops`), never left fading on its stale matrix. To
+ * fade an exit instead of dropping it, the caller must keep listing every
+ * member `holds(id)` reports until its fade completes (e.g. past the 95 m
+ * candidate cut); any list cap that still omits one falls back to the drop.
  */
 export const FAUNA_NEAR_RIG_CAPACITY = 6;
 export const FAUNA_NEAR_RIG_ENTER_M = 80;
@@ -98,6 +107,8 @@ export class FaunaNearRigs {
   private readonly inside = new Set<string>();
   /** A slot's coverage is still moving toward its target. */
   private fading = false;
+  /** Cross-fade only: slots released at once because their member left the candidate list. */
+  private unlistedDrops = 0;
   private readonly slots: Slot[] = [];
   private readonly cache = new Map<string, Cached>();
   private readonly failed = new Set<string>();
@@ -197,9 +208,11 @@ export class FaunaNearRigs {
     // (or a slot that frees) inside the band acquires without a new crossing.
     // An animal missing from the list is beyond the caller's range: outside.
     const chosen: FaunaNearCandidate[] = [], held = new Set<string>(), inside = new Set<string>();
+    const listed = new Map<string, FaunaNearCandidate>();
     let wanted: FaunaNearCandidate | null = null, fallbacks = 0;
     for (const candidate of candidates) {
       const id = candidate.member.id;
+      if (!listed.has(id)) listed.set(id, candidate);
       if (inside.has(id) || candidate.distanceM > (this.inside.has(id) ? this.exitM : this.enterM)) continue;
       inside.add(id);
       if (this.failed.has(id) || chosen.length >= this.capacity) continue;
@@ -207,7 +220,13 @@ export class FaunaNearRigs {
       else { this.stats.fallbacks++; fallbacks++; wanted ??= candidate; }
     }
     this.inside.clear(); for (const id of inside) this.inside.add(id);
-    for (const slot of this.slots) if (slot.memberId) slot.target = held.has(slot.memberId) ? 1 : 0;
+    for (const slot of this.slots) {
+      if (!slot.memberId) continue;
+      slot.target = held.has(slot.memberId) ? 1 : 0;
+      // No candidate, no transform this frame: drop now rather than fade on a
+      // stale origin-relative matrix (class note). Frees the slot for a waiter.
+      if (!listed.has(slot.memberId)) this.dropUnlisted(slot);
+    }
     // Bind newly held animals to free slots, step every bound slot, free the
     // slots that finished fading out, then give those to animals still waiting.
     this.bindFree(chosen);
@@ -224,9 +243,9 @@ export class FaunaNearRigs {
       if (!id) continue;
       const cached = this.cache.get(id)!;
       cached.used = this.frame;
-      // Pose from this frame's candidate when there is one; a member that left
-      // the candidate list keeps its last pose for the rest of its fade-out.
-      const candidate = candidates.find(c => c.member.id === id);
+      // Every bound member is listed (unlisted ones were dropped above), so
+      // each visible slot carries this frame's pose and matrix.
+      const candidate = listed.get(id);
       if (candidate) this.poseSlot(slot, cached.plan, candidate);
       const rig = handoffRigWeight(slot.progress);
       slot.material.opacity = rig;
@@ -254,6 +273,14 @@ export class FaunaNearRigs {
     }
     return bound;
   }
+
+  /** Hard drop of a slot whose member left the candidate list (class note). */
+  private dropUnlisted(slot: Slot) { this.releaseSlot(slot); this.unlistedDrops++; }
+
+  /** True while `id` is bound to a slot (held or fading out). A caller that
+   * keeps listing these past its distance cut lets every exit fade instead of
+   * dropping; one that does not gets the hard drop. */
+  holds(id: string): boolean { return this.slots.some(s => s.memberId === id); }
 
   private releaseSlot(slot: Slot) {
     slot.memberId = null; slot.pose = null; slot.target = 0; slot.progress = 0;
@@ -365,7 +392,7 @@ export class FaunaNearRigs {
     }));
     return { active: activeMembers.length, activeMembers, capacity: this.capacity, cached: this.cache.size, cacheSize: this.cacheSize,
       building: this.build?.id ?? null, failed: this.failed.size, allocatedBytes: this.allocatedBytes, ...this.stats,
-      ...(this.fadeS > 0 ? { fadeS: this.fadeS, fading: this.fading } : {}) };
+      ...(this.fadeS > 0 ? { fadeS: this.fadeS, fading: this.fading, unlistedDrops: this.unlistedDrops } : {}) };
   }
 
   dispose() {
