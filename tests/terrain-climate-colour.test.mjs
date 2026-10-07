@@ -20,7 +20,7 @@ const N=20000;
 test('versions: terrain colour v2 names the climate model it reads',()=>{
   // Re-pinned for P4-RELIEF (terrain-1.8.0-relief, surface-climate-1.1-geo-g),
   // then for mountains step G (terrain-1.8.1-grain: reduced 800 m land grain), then T6 (terrain-1.9.0-mountains).
-  assert.equal(TERRAIN_VERSION,'terrain-1.9.0-mountains');
+  assert.equal(TERRAIN_VERSION,'terrain-1.9.1-carving-c1'); // then carving C1 (terrain-1.9.1-carving-c1)
   assert.equal(TERRAIN_CLIMATE_VERSION,CLIMATE_VERSION);
   assert.equal(CLIMATE_VERSION,'surface-climate-1.1-geo-g');
 });

@@ -41,17 +41,20 @@ const ROCK = {Maithea: 10, Selawyn: 11, Raiva: 9, Lethuris: 11};
 // T6 (M5 wired, lod-ladder-3): COST_IDENTITY and COST_SAMPLER_IDENTITY[0], [1] are unchanged (L(cut-1) and L(cut) carry no
 // rock; rock = false is bit-identical to mountain-assembly-2). The truth and levels >= ROCK now carry the rock term, a new
 // class [2] (re-pinned; old: the truth was [1]). Ledger: docs/mountains-t6-wiring-2026-10-06.md.
+// Carving C1 (terrain-1.9.1-carving-c1, mountain-carving-3 + mountain-assembly-4): COST_IDENTITY[1] and
+// COST_SAMPLER_IDENTITY[1], [2] re-pinned (carved levels and the truth); [0] (uncarved L(cut-1)) unchanged.
+// Old -> new: docs/mountain-carving-c1-2026-10-07.md.
 const COST_IDENTITY = {
-  Maithea: ['6c4bf8046e49e179c0d4c7e9ab8223963d1645eadd15babdaaf18faaf8714b1d', '00446f5aac1c49ecefc9a592989b1ee4c57a8cac3680c5b28e9eeae097d99cfa'],
-  Selawyn: ['c455f00ad1539773f2a855253c467cec2de9a8c2c681f22747dcc9595b45728f', 'fa4de7c27478144dcda67f7c1a05640866309416335caaf102df68f41731d5fa'],
-  Raiva: ['b6c55c60a34a26ab1dfe241ecc9b5078b2a1cd712e0344e57bea96186b8e2ac6', '134db519076d04473c6eee0e352fd9eb9271db3ad5edb403f19db6dcac62d2b6'],
-  Lethuris: ['acf6482bbfe06f80880de8482b1b2f6308dfa7fc89918a29da3bb1d5ce5e1a48', 'c3574bed133f5866e327c6457da6e586af4b99deea16f5520931e2cb4ed4ffab'],
+  Maithea: ['6c4bf8046e49e179c0d4c7e9ab8223963d1645eadd15babdaaf18faaf8714b1d', '026b284a69284619fbd031dea0ee77ea3e64af5763e972fc0f4b04a8f395a342'],
+  Selawyn: ['c455f00ad1539773f2a855253c467cec2de9a8c2c681f22747dcc9595b45728f', 'acda960fecf57667d934cb54e9f93a8dfa8fa8578156a16eb9d0867e8defe32d'],
+  Raiva: ['b6c55c60a34a26ab1dfe241ecc9b5078b2a1cd712e0344e57bea96186b8e2ac6', '5a947b9d9e2855db1eee89416604c31501c2109ae87fff7908fff3c8b0f7fe34'],
+  Lethuris: ['acf6482bbfe06f80880de8482b1b2f6308dfa7fc89918a29da3bb1d5ce5e1a48', '2c4088746ba0d5d054f922c2e5aa3ba441cdc2641401b71f128e8e1f6dba03c5'],
 };
 const COST_SAMPLER_IDENTITY = {
-  Maithea: ['6da066889d287cdb32d528d5aaec3f5d4a426d3869547e174806f9e98905225d', 'a49cc5e166d1686748f7516556d5bd4fd53d0bcef1792c93b45b4daeabf42a79', '9fd0dcf1206bdc59198f723c734f8f335aa3c292bdd768a617231ad95fd49ef2'],
-  Selawyn: ['5fdbe43b04673c3b1a9785c7cf937459de4caf4d9ce55a5d47266ed12f2ab0b2', 'efba81af653849461b56d8314e3fa39280ab32c0543c1da71ffd36fe8780ba54', 'f0d4b21fa701a3c5e035db57a857612ba3681a6ae144796dc6b8dbaa90f7cd90'],
-  Raiva: ['0b215f0689780c575b21f1c226e5470bbbf0789b466f6269cbaf6099a5472270', '3c9b85ba194eaa8c6edfa426446b1840d7510c1c0274438eec18cd240fa6f573', 'ae4c6a536a76e6028f1bc33639ab48cc6e7b3083ebed22d0d5c0354fdec5b90f'],
-  Lethuris: ['1c5faaacd4faa4d7db7e8353629a8e77f0539d90a728e17cc3f4872e35b16878', '72ca784c16ba4b497b099e1861b9d89d26f627d318dc6023f25e31b6ad01f610', '2783f3726fe610b761431f1eabcd0d7e6d39285607e3e6e5795489a18752f1d1'],
+  Maithea: ['6da066889d287cdb32d528d5aaec3f5d4a426d3869547e174806f9e98905225d', '8fc436b6804d0bf564ed4d1b892bb1202e683d1fe33012605628c6a462c64cbc', '0bd5ce54678c1c673630692171cfd0af7f0d61cebb061e9e47f2208fdb1ef6e6'],
+  Selawyn: ['5fdbe43b04673c3b1a9785c7cf937459de4caf4d9ce55a5d47266ed12f2ab0b2', '667a16d6afb147627e8b3c534cb173464ee793fa876b3bd5421ee27d23a82ca5', '6339283780c086b140bb55641077547f02cbdb5c89794136bedaba73caafe278'],
+  Raiva: ['0b215f0689780c575b21f1c226e5470bbbf0789b466f6269cbaf6099a5472270', '84c0f1e056c4cab4172cee41879db444f9f35e969a2024f72917d7c0ff2b6bc7', '86503962720206916eb486c9766d4b0c21a0a03ca9a1ca1a9f8778a658b1c26c'],
+  Lethuris: ['1c5faaacd4faa4d7db7e8353629a8e77f0539d90a728e17cc3f4872e35b16878', 'cb266bdaf3d2a358725d50ba792350bf3ef888c5963d98e4a47c3c72bc42b787', '16773c77632727157c8092524dba195badb10e6b39d1f5ef9c4142de75808579'],
 };
 function costIdentityDigest(value) {
   const h = createHash('sha256');
@@ -103,7 +106,7 @@ test('lod-ladder-2: carving starts at the first level with edge <= 128 km; const
 
 test('wired (T6): on by default, the level changes nothing without mountains, carving state per level', () => {
   assert.equal(TERRAIN_MOUNTAINS_WIRED, true, 'wired at cost plan T6 together with TERRAIN_VERSION and the goldens');
-  assert.equal(TERRAIN_VERSION, 'terrain-1.9.0-mountains');
+  assert.equal(TERRAIN_VERSION, 'terrain-1.9.1-carving-c1'); // was terrain-1.9.0-mountains (carving C1)
   const body = bodies.Maithea, cut = CUT.Maithea, rock = ROCK.Maithea;
   assert.equal(rockDetailFromLevel(body.radiusM), rock);
   assert.equal(mountainCarvingState(body), 'rock');assert.equal(mountainCarvingState(body, {lodLevel: 0}), false);

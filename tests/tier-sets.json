@@ -5,7 +5,7 @@
   "OROGEN_LAYOUT_VERSION": "orogen-layout-4",
   "MASSIF_ENVELOPE_VERSION": "massif-envelope-4",
   "LOD_LADDER_VERSION": "lod-ladder-3",
-  "TERRAIN_VERSION": "terrain-1.9.0-mountains"
+  "TERRAIN_VERSION": "terrain-1.9.1-carving-c1"
  },
  "smoke": {
   "Maithea": [
@@ -501,6 +501,18 @@
     "TERRAIN_VERSION": "terrain-1.9.0-mountains"
    },
    "reason": "initial smoke set (tier-sets-1)"
+  },
+  {
+   "date": "2026-10-07",
+   "commit": "0f88d73",
+   "sha256": "90bb43c065f3928bf91a3396a825cca48b92bf81c15021c693bd7c1f0e2f4bce",
+   "inputs": {
+    "OROGEN_LAYOUT_VERSION": "orogen-layout-4",
+    "MASSIF_ENVELOPE_VERSION": "massif-envelope-4",
+    "LOD_LADDER_VERSION": "lod-ladder-3",
+    "TERRAIN_VERSION": "terrain-1.9.1-carving-c1"
+   },
+   "reason": "terrain-1.9.1-carving-c1 (mountain-carving-3 + mountain-assembly-4): TERRAIN_VERSION input moved"
   }
  ]
 }

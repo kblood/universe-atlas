@@ -1,0 +1,44 @@
+{
+ "mine": "terrain-1.9.1-carving-c1",
+ "main": "terrain-1.9.0-mountains",
+ "Maithea": {
+  "directions": 15120,
+  "belt0": 3870,
+  "belt0Mismatch": 0,
+  "outsideMassif": 4224,
+  "outsideMismatch": 0,
+  "inMassif": 10896,
+  "inMassifMoved": 10896,
+  "maxInMassifDhM": 188.69
+ },
+ "Selawyn": {
+  "directions": 15120,
+  "belt0": 3935,
+  "belt0Mismatch": 0,
+  "outsideMassif": 4262,
+  "outsideMismatch": 0,
+  "inMassif": 10858,
+  "inMassifMoved": 10858,
+  "maxInMassifDhM": 159.07
+ },
+ "Raiva": {
+  "directions": 15120,
+  "belt0": 3880,
+  "belt0Mismatch": 0,
+  "outsideMassif": 4282,
+  "outsideMismatch": 0,
+  "inMassif": 10838,
+  "inMassifMoved": 10838,
+  "maxInMassifDhM": 151.65
+ },
+ "Lethuris": {
+  "directions": 15120,
+  "belt0": 3939,
+  "belt0Mismatch": 0,
+  "outsideMassif": 4252,
+  "outsideMismatch": 0,
+  "inMassif": 10868,
+  "inMassifMoved": 10868,
+  "maxInMassifDhM": 153.78
+ }
+}

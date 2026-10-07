@@ -1,4 +1,4 @@
-// HARD: reduced 129-square ramp metric pin for the M3 winner (carving F, mountain-carving-2).
+// HARD: reduced 129-square ramp metric pin for the M3 winner (carving F, mountain-carving-3).
 // Full 8-seed acceptance: node scripts/mountain-carving-f.mjs (docs/mountain-carving-f-v1.md).
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -12,5 +12,7 @@ test('HARD: reduced 129-square ramp metric pin for the winner',()=>{
   // Re-pinned for carving F (mountain-carving-2); rows 7/8 are the calibrated rows of owner
   // decision (a). Previous pin (A2, mountain-carving-1): slope125Over30 44.5, slope125P50 27.4,
   // flank500mP50 22.1, relief8kmP50 2739, beta 2.04, fill 0.003, pits025 3.8, coherence 0.297.
-  assert.deepEqual(actual,{"slope125Over30":79.8,"slope125P50":42.2,"flank500mP50":24.2,"relief8kmP50":1908,"beta500mTo8km":2.41,"fill10ShareP50":0.007,"pits025Per1000km2P50":0,"axisCoherence40kmP50":0.192});
+  // Re-pinned for mountain-carving-3 (Catmull-Rom query, docs/mountain-carving-c1-2026-10-07.md); was (mountain-carving-2)
+  // flank500mP50 24.2, beta500mTo8km 2.41, axisCoherence40kmP50 0.192, the other five rows unchanged.
+  assert.deepEqual(actual,{"slope125Over30":79.8,"slope125P50":42.2,"flank500mP50":24.3,"relief8kmP50":1908,"beta500mTo8km":2.33,"fill10ShareP50":0.007,"pits025Per1000km2P50":0,"axisCoherence40kmP50":0.186});
 });

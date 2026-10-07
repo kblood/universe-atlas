@@ -94,7 +94,8 @@
   {
    "file": "tests/terrain-structural-spectrum.test.mjs",
    "shards": [
-    "^INFO: real"
+    "^INFO: real",
+    "^HARD: real"
    ]
   },
   "tests/tier.test.mjs",
@@ -193,7 +194,8 @@
   {
    "file": "tests/terrain-structural-spectrum.test.mjs",
    "shards": [
-    "^INFO: real"
+    "^INFO: real",
+    "^HARD: real"
    ]
   },
   "tests/tier.test.mjs",

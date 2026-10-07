@@ -257,7 +257,7 @@ function pooledFamilies(Ws, families) {
   for (const f of families) per[f] = r2(Math.max(...st.peaks.filter(p => p.family === f && p.inRange).map(p => p.peakDb)));
   return {per, max: Math.max(...Object.values(per))};
 }
-test('HARD: 200 m carving lattice: pooled massif max lattice-x/y/d/d2 peakDb <= 4.7 dB on the truth; the triangle reference exceeds it; 250 m gully cell < 4.7 dB', async t => {
+test('HARD: real tiles, fine 256 x 50 m: 200 m carving lattice: pooled massif max lattice-x/y/d/d2 peakDb <= 4.7 dB on the truth; the triangle reference exceeds it; 250 m gully cell < 4.7 dB', async t => {
   const m = fineTiles().filter(x => x.massif);
   t.diagnostic(tierNote(`${m.length} frozen massif tiles (truth, fine 256 x 50 m, aligned with the belt axis), lattice ${LATTICE_M} m`));
   assert.ok(m.length >= 10, `massif tile count ${m.length}`);
