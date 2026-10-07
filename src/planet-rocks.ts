@@ -15,15 +15,16 @@ import * as THREE from 'three';
 import type {V3} from './catalog.ts';
 import type {RockFamily} from './biosphere-model.ts';
 import {
-  ROCK_FIELD_VERSION,ROCK_TIERS,ROCK_VARIANTS,ROCK_MAX_ALTITUDE_M,canonicalRockFamilies,rockFamiliesSignature,
-  ROCK_LOD_RATIOS,rockCellsNear,rocksForCell,rockLod,rockCensusDigest,
+  ROCK_FIELD_VERSION,ROCK_TIERS,ROCK_VARIANTS,ROCK_MAX_ALTITUDE_M,ROCK_ALTITUDE_HYSTERESIS_M,canonicalRockFamilies,rockFamiliesSignature,
+  ROCK_LOD_RATIOS,rockCellsNear,rocksForCell,rockLodHysteretic,rockCoverage,rockCensusDigest,
   type RockGate,type RockInstance,type RockSampler,type RockClassifier,
 } from './rock-field.ts';
 import {buildRockMesh,rockMeshBytes,ROCK_GEOMETRY_VERSION,ROCK_LOD_COUNT,ROCK_MAX_TRIANGLES,type RockLod} from './rock-geometry.ts';
 import {GROUND_PBR_REPEAT_M} from './ground-material.ts';
 import type {SurfaceCell} from './surface-cell.ts';
+import {altitudeGate} from './planet-detail.ts';
 
-export const ROCK_MATERIAL_VERSION='atlas-rock-material-1';
+export const ROCK_MATERIAL_VERSION='atlas-rock-material-2';
 /** Submitted instances per LOD band, all families together. */
 export const ROCK_LOD_CAPS=Object.freeze([512,1536,2048] as const);
 /** Per-batch capacity: an even share of a band across variants plus margin.
@@ -49,6 +50,13 @@ export const ROCK_DRAW_UNITS_PER_FRAME=4096;
  * camera frusta and LOD caps (batch capacity still applies), so turning or
  * saturated caps during a job cannot hide close rocks. */
 export const ROCK_NEAR_UNCULLED_M=8;
+/** LOD memory (transition audit F7): a job reuses the LOD each rock had in the
+ * previous published set only when its eye is within this distance of that
+ * set's eye. Hovering and head jitter (what flickers) stay far below it; a
+ * larger step between published views is directed motion, where each boundary
+ * is crossed once anyway, and the job then picks the memoryless `rockLod`
+ * band, which equals a flat per-rock pass. */
+export const ROCK_LOD_MEMORY_M=1;
 /** Estimated heap per structure. Each is calibrated against Node/V8
  * `heapUsed + arrayBuffers` deltas after forced GC on the saturated fixture
  * (tests/rock-draw-measure.mjs), plus a margin; browsers remain unmeasured.
@@ -68,7 +76,8 @@ export const ROCK_REF_BYTES=8;
  * capped cell for the tier record lists it may still hold after a rescatter
  * replaced them (evicted entries are dropped; see retargetJob). */
 export const ROCK_DRAW_JOB_BYTES=4096+ROCK_TIERS.reduce((a,t)=>a+t.residentCap,0)*ROCK_REF_BYTES;
-const INSTANCE_STRIDE_BYTES=(16+3+2)*4;
+/** Per instance: matrix, colour, detail (diameter, seed) and coverage fade. */
+const INSTANCE_STRIDE_BYTES=(16+3+2+1)*4;
 const FAMILIES_PER_BODY=3;
 /** Upper bound on rocks within ROCK_NEAR_UNCULLED_M of any eye: every slot of
  * every cell that can hold such a rock. Those cells have centres within
@@ -172,7 +181,10 @@ export type RockUpdate={
  * detail seed are derived when the rock is published. `evicted` marks a rock
  * whose cell left the residents while slots may still reference it; `mark`
  * de-duplicates such rocks when they are counted. */
-type RuntimeRock=RockInstance&{matrix:Float32Array;originVersion:number;evicted:boolean;mark:number};
+type RuntimeRock=RockInstance&{matrix:Float32Array;originVersion:number;evicted:boolean;mark:number;
+  /** LOD band of this rock in the published set numbered `lodPublish`
+   * (presentation memory only), and the coverage of its staged copy. */
+  lod:number;lodPublish:number;fade:number};
 /** A resolved canonical cell. The bounds are in planet units and are slightly
  * inflated so that cell-level decisions are never more aggressive than the
  * per-rock tests they replace. */
@@ -189,12 +201,14 @@ const EMPTY_RECORDS:(CellRecord|null)[]=[];
 type TierState={center:THREE.Vector3;valid:boolean;wanted:SurfaceCell[];records:(CellRecord|null)[];queue:number[];queueIndex:number;truncated:number;residents:Map<string,CellRecord>};
 /** `staged` fills during a draw job; `published` is what the instance buffers
  * currently hold. Both are fixed-size reference slots of `capacity`. */
-type Batch={mesh:THREE.InstancedMesh;material:THREE.MeshStandardMaterial;detail:THREE.InstancedBufferAttribute;family:number;lod:RockLod;capacity:number;triangles:number;geometryBytes:number;
+type Batch={mesh:THREE.InstancedMesh;material:THREE.MeshStandardMaterial;detail:THREE.InstancedBufferAttribute;fade:THREE.InstancedBufferAttribute;family:number;lod:RockLod;capacity:number;triangles:number;geometryBytes:number;
   count:number;staged:(RuntimeRock|null)[];stagedCount:number;published:(RuntimeRock|null)[]};
 type Shape={height:number;boundCenterY:number;boundRadius:number};
 /** One bounded, resumable draw/cull pass over a view snapshot. */
 type DrawJob={key:string;ex:number;ey:number;ez:number;cameras:Float64Array[];shadow:Float64Array|null;
   origin:THREE.Vector3;originVersion:number;records:(CellRecord|null)[][];tier:number;index:number;frames:number;frame:number;startFrame:number;
+  /** Published-set serial whose LODs this job may keep (-1: none). */
+  lodSerial:number;
   drawn:[number,number,number];culled:number;shadowOnly:number;near:number;drops:number;nearDrops:number};
 const BOUND_EPSILON=1e-12;
 function framePlanes(frustum:THREE.Frustum){
@@ -229,6 +243,9 @@ vec3 rockTriNormal(sampler2D t,vec3 p,vec3 w,vec3 n){
 }
 `;
 
+/** Interleaved-gradient-noise dither against the per-instance coverage. */
+export const ROCK_FADE_DITHER_GLSL='if(vRockFade<1.0&&fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))))>=vRockFade)discard;';
+
 /** Shared material shape per batch. LOD 2 skips texture sampling; far mips
  * converge to the mean anyway, so detail ratio -> 1 continuously. */
 export function createRockMaterial(family:RockFamily,lod:RockLod,textures:RockTextureLease|null|undefined){
@@ -236,8 +253,9 @@ export function createRockMaterial(family:RockFamily,lod:RockLod,textures:RockTe
   const material=new THREE.MeshStandardMaterial({vertexColors:true,metalness:0,roughness:.78+.14*Math.max(0,Math.min(1,family.roughness))});
   material.name=`Rock ${family.form} LOD${lod}`;
   material.onBeforeCompile=shader=>{
-    shader.vertexShader='attribute vec2 rockDetail;\nvarying vec3 vRockPos,vRockNormal,vRockN0,vRockN1,vRockN2;\n'+shader.vertexShader;
+    shader.vertexShader='attribute vec2 rockDetail;\nattribute float rockFade;\nvarying float vRockFade;\nvarying vec3 vRockPos,vRockNormal,vRockN0,vRockN1,vRockN2;\n'+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      vRockFade=rockFade;
       vRockPos=position*rockDetail.x+vec3(rockDetail.y*37.0,rockDetail.y*11.0,rockDetail.y*23.0);
       vRockNormal=normal;
       #ifdef USE_INSTANCING
@@ -248,6 +266,10 @@ export function createRockMaterial(family:RockFamily,lod:RockLod,textures:RockTe
       #else
         vRockN0=normalMatrix[0];vRockN1=normalMatrix[1];vRockN2=normalMatrix[2];
       #endif`);
+    // Coverage fade at the range cuts (F7): screen-space dither, so a fading
+    // rock thins out instead of turning translucent (no sorting, depth intact).
+    shader.fragmentShader='varying float vRockFade;\n'+shader.fragmentShader.replace('#include <clipping_planes_fragment>',`#include <clipping_planes_fragment>
+      ${ROCK_FADE_DITHER_GLSL}`);
     if(!pbr)return;
     shader.uniforms.rockColorMap={value:textures!.rockColor};
     shader.uniforms.rockNormalMap={value:textures!.rockNormal};
@@ -301,6 +323,11 @@ export class PlanetRocks {
   /** Draw frame whose view the published set was built from. */
   private publishedFrame=0;
   private publishedKey='';
+  /** Serial of the published set (F7 LOD memory) and the eye it was built at. */
+  private publishSerial=0;
+  private publishedEye:{x:number;y:number;z:number}|null=null;
+  /** Altitude gate state (F3 hysteresis). */
+  private altitudeOn=false;
   private disposed=false;
   private reason='no-context';
   private readonly scratch={position:new THREE.Vector3(),quaternion:new THREE.Quaternion(),yaw:new THREE.Quaternion(),scale:new THREE.Vector3(),up:new THREE.Vector3(),matrix:new THREE.Matrix4(),color:new THREE.Color()};
@@ -341,17 +368,19 @@ export class PlanetRocks {
         const capacity=ROCK_BATCH_CAPACITY[lod]!;
         const detail=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2).setUsage(THREE.DynamicDrawUsage);
         geometry.setAttribute('rockDetail',detail);
+        const fade=new THREE.InstancedBufferAttribute(new Float32Array(capacity).fill(1),1).setUsage(THREE.DynamicDrawUsage);
+        geometry.setAttribute('rockFade',fade);
         geometry.boundingSphere=new THREE.Sphere(new THREE.Vector3(0,data.boundCenterY,0),data.boundRadius);
         const material=createRockMaterial(family,lod,this.options.textures);
         const mesh=new THREE.InstancedMesh(geometry,material,capacity);
         mesh.name=`Surface rocks ${family.form} v${v} LOD${lod}`;
         mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
         mesh.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3).fill(1),3).setUsage(THREE.DynamicDrawUsage);
-        for(const attribute of [mesh.instanceMatrix,mesh.instanceColor,detail])attribute.onUpload(()=>attribute.clearUpdateRanges());
+        for(const attribute of [mesh.instanceMatrix,mesh.instanceColor,detail,fade])attribute.onUpload(()=>attribute.clearUpdateRanges());
         mesh.count=0;mesh.visible=false;mesh.frustumCulled=false;
         mesh.castShadow=lod<2;mesh.receiveShadow=true;
         this.group.add(mesh);this.options.attach?.(mesh);
-        this.batches.push({mesh,material,detail,family:f,lod,capacity,triangles:data.triangles,geometryBytes:rockMeshBytes(data),count:0,
+        this.batches.push({mesh,material,detail,fade,family:f,lod,capacity,triangles:data.triangles,geometryBytes:rockMeshBytes(data),count:0,
           staged:new Array<RuntimeRock|null>(capacity).fill(null),stagedCount:0,published:new Array<RuntimeRock|null>(capacity).fill(null)});
       }
     });
@@ -376,6 +405,8 @@ export class PlanetRocks {
   }
   private unpublish(){
     for(const b of this.batches){b.published.fill(null,0,b.count);b.count=0;b.mesh.count=0;b.mesh.visible=false;}
+    // Nothing is drawn now, so no rock has an LOD to keep.
+    this.publishSerial++;this.publishedEye=null;
     const s=this.stats;
     s.drawn=[0,0,0];s.draws=0;s.triangles=0;s.cameraCulled=0;s.shadowOnly=0;s.nearUnculled=0;s.budgetDrops=0;s.nearDrops=0;
     this.publishedKey='';
@@ -392,7 +423,10 @@ export class PlanetRocks {
     this.setFamilies(gate.families);
     if(!this.families.length){this.reason='no-families';this.clearAll();return this.finish(started);}
     if(input.relief!==1){this.reason='relief';this.hide();return this.finish(started);}
-    if(!(input.altitudeM<ROCK_MAX_ALTITUDE_M)){this.reason='altitude';this.hide();return this.finish(started);}
+    // Hysteresis (F3): on below ROCK_MAX_ALTITUDE_M - ROCK_ALTITUDE_HYSTERESIS_M,
+    // off at ROCK_MAX_ALTITUDE_M (the old threshold, still the hard exit).
+    this.altitudeOn=altitudeGate(this.altitudeOn,input.altitudeM,ROCK_MAX_ALTITUDE_M-ROCK_ALTITUDE_HYSTERESIS_M,ROCK_MAX_ALTITUDE_M);
+    if(!this.altitudeOn){this.reason='altitude';this.hide();return this.finish(started);}
     // Only a wet body's rocks depend on the dated sea level.
     const signature=`${this.familiesSignature}|${this.body.water>0?input.waterLevelM:'dry'}`;
     if(signature!==this.signature){this.signature=signature;this.waterLevelM=input.waterLevelM;this.clearResidents();}
@@ -507,7 +541,7 @@ export class PlanetRocks {
       cull[o+4]=shape.boundRadius*rock.diameterM*Math.max(rock.aspect[0],rock.aspect[1],rock.aspect[2])/r;
       cull[o+5]=this.batchIndex(family,rock.variant,0);
       bx+=cull[o]!;by+=cull[o+1]!;bz+=cull[o+2]!;maxDiameterM=Math.max(maxDiameterM,rock.diameterM);
-      runtime.push({...rock,matrix:new Float32Array(16),originVersion:-1,evicted:false,mark:0});
+      runtime.push({...rock,matrix:new Float32Array(16),originVersion:-1,evicted:false,mark:0,lod:-1,lodPublish:-1,fade:1});
     });
     if(n){
       bx/=n;by/=n;bz/=n;
@@ -582,7 +616,8 @@ export class PlanetRocks {
   }
   private startJob(key:string,eye:THREE.Vector3,frusta:readonly THREE.Frustum[],shadow:THREE.Frustum|null):DrawJob{
     this.stats.jobsStarted++;
-    return {key,ex:eye.x,ey:eye.y,ez:eye.z,cameras:frusta.map(framePlanes),shadow:shadow?framePlanes(shadow):null,
+    const p=this.publishedEye,memory=!!p&&Math.hypot(eye.x-p.x,eye.y-p.y,eye.z-p.z)*this.body.radiusM<=ROCK_LOD_MEMORY_M;
+    return {lodSerial:memory?this.publishSerial:-1,key,ex:eye.x,ey:eye.y,ez:eye.z,cameras:frusta.map(framePlanes),shadow:shadow?framePlanes(shadow):null,
       origin:this.origin.clone(),originVersion:this.originVersion,records:this.tiers.map(t=>t.records),tier:0,index:0,frames:0,frame:0,startFrame:this.drawFrame,
       drawn:[0,0,0],culled:0,shadowOnly:0,near:0,drops:0,nearDrops:0};
   }
@@ -611,7 +646,8 @@ export class PlanetRocks {
       units+=n;s.drawRocks+=n;
       for(let k=0,o=0;k<n;k++,o+=CULL_STRIDE){
         const x=cull[o]!,y=cull[o+1]!,z=cull[o+2]!,dx=x-ex,dy=y-ey,dz=z-ez,distanceM=Math.sqrt(dx*dx+dy*dy+dz*dz)*r;
-        const lod=rockLod(distanceM,cull[o+3]!,tier.rangeM);if(lod<0)continue;
+        const rock=record.rocks[k]!,diameterM=cull[o+3]!;
+        const lod=rockLodHysteretic(rock.lodPublish===job.lodSerial?rock.lod:-1,distanceM,diameterM,tier.rangeM);if(lod<0)continue;
         const band=lod as RockLod,radius=cull[o+4]!,close=distanceM<=ROCK_NEAR_UNCULLED_M;
         if(close)job.near++;
         else if(camera<1&&(camera<0||camerasSide(job.cameras,x,y,z,radius)<0)){
@@ -621,8 +657,8 @@ export class PlanetRocks {
         const batch=this.batches[cull[o+5]!+band]!;
         // Near rocks bypass the LOD caps; only a full batch can refuse them.
         if(batch.stagedCount>=batch.capacity||(!close&&job.drawn[band]>=ROCK_LOD_CAPS[band]!)){job.drops++;if(close)job.nearDrops++;continue;}
-        const rock=record.rocks[k]!;
         if(rock.originVersion!==job.originVersion)this.writeMatrix(rock,job.origin,job.originVersion);
+        rock.fade=rockCoverage(distanceM,diameterM,tier.rangeM);
         batch.staged[batch.stagedCount++]=rock;job.drawn[band]++;
       }
     }
@@ -632,14 +668,15 @@ export class PlanetRocks {
   /** Copies staged rocks into the instance buffers and swaps the reference
    * slots: the LOD caps (4,096) plus near rocks, never above ROCK_PUBLISH_MAX. */
   private publish(job:DrawJob){
-    let draws=0,triangles=0;
+    let draws=0,triangles=0;const serial=++this.publishSerial;
     for(const b of this.batches){
-      const matrices=b.mesh.instanceMatrix.array as Float32Array,colors=b.mesh.instanceColor!.array as Float32Array,detail=b.detail.array as Float32Array;
+      const matrices=b.mesh.instanceMatrix.array as Float32Array,colors=b.mesh.instanceColor!.array as Float32Array,detail=b.detail.array as Float32Array,fade=b.fade.array as Float32Array;
       for(let i=0;i<b.stagedCount;i++){
         const rock=b.staged[i]!,t=rock.tint,f=b.family*3;
         matrices.set(rock.matrix,i*16);
         colors[i*3]=this.familyRgb[f]!*t[0];colors[i*3+1]=this.familyRgb[f+1]!*t[1];colors[i*3+2]=this.familyRgb[f+2]!*t[2];
         detail[i*2]=rock.diameterM;detail[i*2+1]=(rock.yaw*97.13)%61;
+        fade[i]=rock.fade;rock.lod=b.lod;rock.lodPublish=serial;
       }
       this.stats.publishInstances+=b.stagedCount;
       // The old published slots become the next staging area. They are cleared
@@ -650,7 +687,7 @@ export class PlanetRocks {
       b.mesh.count=b.count;b.mesh.visible=b.count>0;
       if(!b.count)continue;
       draws++;triangles+=b.count*b.triangles;
-      for(const [attribute,size] of [[b.mesh.instanceMatrix,16],[b.mesh.instanceColor!,3],[b.detail,2]] as const){
+      for(const [attribute,size] of [[b.mesh.instanceMatrix,16],[b.mesh.instanceColor!,3],[b.detail,2],[b.fade,1]] as const){
         attribute.clearUpdateRanges();attribute.addUpdateRange(0,b.count*size);attribute.needsUpdate=true;
       }
     }
@@ -658,7 +695,7 @@ export class PlanetRocks {
     const s=this.stats;
     Object.assign(s,{drawn:[...job.drawn],draws,triangles,cameraCulled:job.culled,shadowOnly:job.shadowOnly,nearUnculled:job.near,budgetDrops:job.drops,nearDrops:job.nearDrops});
     s.rebuilds++;s.publishedThisFrame++;s.lastJobFrames=job.frames;this.history.jobFrames.push(job.frames);s.maxJobFrames=Math.max(s.maxJobFrames,job.frames);
-    this.publishedKey=job.key;this.publishedFrame=job.startFrame;this.job=null;
+    this.publishedKey=job.key;this.publishedFrame=job.startFrame;this.publishedEye={x:job.ex,y:job.ey,z:job.ez};this.job=null;
   }
   /** Remaining cells in the running draw job, and an upper bound on its
    * units including the publish copies (staged so far plus every rock left). */
