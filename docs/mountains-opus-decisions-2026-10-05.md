@@ -801,3 +801,7 @@ bounded by numbers and stated.
 - Route A is not merged. Main is unchanged except for this addendum and `scripts/cost-fair/`.
 - `test:full` was not run; its one use stays reserved for the T6 gate. No Luna vote (no visual question was decided
   here; NOT RUN). No Astra round (no implementation in this step).
+
+## Addendum 2026-10-07 (7): fair-protocol harness O5; the counted protocol is unchanged
+
+**Decided by Fable 5.1 on Kasper's instruction 2026-10-07, overrulable** (`docs/fable-test-review-2026-10-07.md` O5): `scripts/cost-fair/run.sh` takes the exclusive test slot once per batch, resumes per (kind, world, i) record (a finished record is never re-run, an interrupted one is re-run at its position, a failed one is not re-run), runs `scripts/cost-fair/precheck.mjs` before every counted process (a new contender counts only above 5 % of one CPU over 500 ms; host idle and the shared-holder hard assert kept) and caches the C1 point sets by REF sha; the counted protocol of addendum (6) Q-A (arms, point selection, the 480 processes and their order, N = 30, every run counts, the judging rule, budgets) is unchanged (`docs/cost-fair-harness-2026-10-07.md`).
