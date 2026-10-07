@@ -24,7 +24,8 @@ test('CONTRACT: M4 reduced fixture and four measured negative controls',()=>{
   console.log(JSON.stringify({positive,negative:{dome:dome.density,bare:bare.density,shiftPlacement:shifted.placement,shiftCount:shifted.topCount,boundMax:bound.max,boundViolations:bound.boundViolations}}));
   const digest=r=>createHash('sha256').update(Buffer.from(r.h.buffer,r.h.byteOffset,r.h.byteLength)).digest('hex');
   assert.equal(digest(local),digest(summitRaster({reverse:true})));
-  assert.equal(digest(local),'4e470f04b8ce224b32852d6a99b6ef15ef6faf360bc5758e1ecf62803d315386');
+  // mountain-carving-3 (Catmull-Rom carving query): re-pinned, was 4e470f04b8ce224b32852d6a99b6ef15ef6faf360bc5758e1ecf62803d315386.
+  assert.equal(digest(local),'3e9d3367610ecabddcc8210742237f728d60e91149787dda4fd374ef80b3ba52');
 });
 
 test('HARD: frozen rows, fail-closed judge and dependency source audit',()=>{
