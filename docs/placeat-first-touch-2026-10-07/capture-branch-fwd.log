@@ -1,0 +1,7 @@
+{"world":0,"massifFound":500}
+{"world":1,"massifFound":500}
+{"world":2,"massifFound":500}
+{"world":3,"massifFound":500}
+{"root":"C:/LLM/IWSDK/universe-atlas-wt/placeat-warmup","TERRAIN_VERSION":"terrain-1.9.0-mountains","order":"fwd","n":56000,"passes":1,"ms":1023276,"builds":4994,"memoHits":30673}
+EXIT 0
+45dbde378c1b243791d2dfecd7d91fe7eae0e3d8382aec5802822d4146dc8d47 *C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/after-warmup-branch-fwd.tsv

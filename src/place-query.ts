@@ -19,7 +19,14 @@
  * Ladder: `level` selects the detail ladder rung (S0 orbit .. S4 fine, or a
  * numeric tile level). place-query-1 answers every level at FULL resolution
  * and echoes the requested level; once lod-ladder.ts (P3-LOD-CONTRACT) lands,
- * S0/S1 answer from the same coarse reduction the renderer draws. */
+ * S0/S1 answer from the same coarse reduction the renderer draws.
+ *
+ * Warm-up and residency transfer (additive, place-query-1; docs/place-query-v1.md): a cold massif first touch
+ * solves one M3 carving block (~150 ms, at most ~0.3 s). `exportPlaceBlocks` runs `placeAt` under a block
+ * trace and returns the answer plus copies of every carving block it touched; post them from a worker with
+ * `placeBlockTransferables` as the transfer list, and `importPlaceBlocks` them on the main thread, after which
+ * the same `placeAt` is a memo hit with a bit-identical answer. In-session only (version-checked, never
+ * persisted). Adding these functions changes no field or answer, so `PLACE_QUERY_VERSION` is unchanged. */
 import {AU, type Body, type StarSystem, type V3} from './catalog.ts';
 import type {Ns} from './world-time.ts';
 import {TERRAIN_VERSION, terrainFloorSampler} from './terrain.ts';
@@ -33,7 +40,10 @@ import {OCEAN_VOLUME_VERSION} from './ocean-volume.ts';
 import {planetGeophysics, pressureAtDepthPa, GEOPHYSICS_VERSION, type PlanetGeophysics, type AirClass} from './planet-geophysics.ts';
 import {biomeClassifier, BIOME_VERSION} from './surface-biomes.ts';
 import {CLIMATE_VERSION} from './surface-climate.ts';
-import {enterCarvingPointQuery, exitCarvingPointQuery} from './mountain-carving.ts';
+import {
+  enterCarvingPointQuery, exitCarvingPointQuery, traceCarvingBlocks, exportCarvingBlock, importCarvingBlock,
+  type CarvingBlockExport,
+} from './mountain-carving.ts';
 
 export const PLACE_QUERY_VERSION = 'place-query-1';
 
@@ -253,4 +263,24 @@ export function depthAndPressureAt(ctx: PlaceContext, direction: V3, depthBelowS
   const depthM = want < 0 ? 0 : want > seabedDepthM ? seabedDepthM : want;
   return {depthM, pressurePa: pressureAtDepthPa(geo, depthM), seabedDepthM,
     clamped: depthM !== want, fluidDensityKgM3: geo.fluidDensityKgM3, gravityMS2: geo.surfaceGravityMS2};
+}
+
+/** Warm-up (worker side): `placeAt` plus copies of every M3 carving block the query touched (solved here when
+ * not resident). `result` is exactly `placeAt(ctx, direction, level, options)`. Post `blocks` with
+ * `placeBlockTransferables(blocks)` as the transfer list; the main thread imports them with `importPlaceBlocks`. */
+export function exportPlaceBlocks(ctx: PlaceContext, direction: V3, level: PlaceLevel = 'S4',
+  options: PlaceOptions = {}): {result: PlaceResult; blocks: CarvingBlockExport[]} {
+  const {result, blocks} = traceCarvingBlocks(() => placeAt(ctx, direction, level, options));
+  return {result, blocks: blocks.map(exportCarvingBlock)};
+}
+/** Warm-up (main side): import exported blocks into this thread's carving memo. Returns how many were inserted
+ * (already-resident blocks are kept as they are). Throws on an invalid block. In-session data only. */
+export function importPlaceBlocks(blocks: readonly CarvingBlockExport[]): number {
+  let n = 0;
+  for (const b of blocks) if (importCarvingBlock(b)) n++;
+  return n;
+}
+/** The transfer list for `postMessage(blocks, placeBlockTransferables(blocks))` (each block's r.buffer). */
+export function placeBlockTransferables(blocks: readonly CarvingBlockExport[]): ArrayBuffer[] {
+  return blocks.map(b => b.r.buffer as ArrayBuffer);
 }

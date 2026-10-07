@@ -74,3 +74,56 @@ Add after the LRU `block()`, `//` comments only (the smoke audit rejects `**` in
 ## 3. For Kasper
 
 The truth-level `placeAt` stays exact and synchronous, so a cold massif query keeps its one ~150 ms solve, but a worker can now solve and hand the block to the main thread bit-identically, after which the same query costs under 30 µs; nothing moves except two added perf rows that pin today's first-touch cost. The cliff hint does not make the current solve cheaper (the cost is drainage non-locality, and halo-free seams would be a 25.6 km lattice rhythm, not natural cliffs), but it is the right direction for a future carving with seeded fault scarps or a solve-free local formulation, which would need a terrain version move and Kasper's go.
+
+## 4. Measured (implementer, 2026-10-07, branch `perf/placeat-warmup`)
+
+Host DESKTOP-N09QOSU, Node v24.7.0. Evidence: `docs/placeat-first-touch-2026-10-07/` (logs, `capture-warm.mjs`,
+`capture-sha256.txt`, `capture-tree.txt`, `perf-alone.sh`). Implementation as briefed (sections A-D); nothing in
+`solve()`, `build()` or the `retainedAt`/`retainedAtPoint`/`carvingFM` arithmetic changed, and no version, pin,
+golden, budget or `known-failures.json` entry moved.
+
+**Bit identity (HARD).**
+
+| Check | Result |
+|---|---|
+| `CARVING_F_DIGEST` (cold/warm/reverse/child, `tests/mountain-carving.test.mjs`) | `1321803f...cfee`, unchanged |
+| Cross-instance import (block path and point path), `tests/mountain-carving-memo.test.mjs` | digest `1321803f...cfee`, **0 builds** in the importing instance |
+| Capture, plain (`docs/placeat-regression-2026-10-07/capture.mjs`, 56,000 lines, fwd) | sha `45dbde37...dc8d47` **identical**; 4,994 solves, 1,023 s |
+| Capture, worker-imported (`capture-warm.mjs`, 3 workers export, main imports then queries) | sha `45dbde37...dc8d47` **identical**; **0 main-thread solves**; 0 worker/main line mismatches; 5,121 blocks posted, 4,996 imported, 125 duplicates; 393 s |
+
+**Tests.**
+
+| Command | Result |
+|---|---|
+| `npx tsc --noEmit` | clean |
+| `npm run test:pkg -- tests/mountain-carving-memo.test.mjs tests/mountain-carving.test.mjs tests/place-query.test.mjs` | 26 pass, 0 fail (arithmetic audit incl. the `**`-in-comment rule passes) |
+| `npm run test:affected -- --base main` (85 files) | 701 tests: 688 pass, 0 fail, 11 skip, 2 todo (pre-existing OPEN/NOT MET todos) |
+| `npm run test:smoke` | GREEN, 239 tests (228 pass, 0 fail, 11 skip), 50/50 steps; wall 182.9 s (over the 120 s budget warning, host shared) |
+
+New test numbers: transfer keys = the fixture's 4 blocks; 7 invalid imports rejected (version, length, NaN, 1.5,
+seed -1, id 1.5, capped > positive); trace mutation control: warm point-path trace 4 keys, 0 keys without the hit-branch
+note (242 memo hits); place-query warm-up test: 8 frozen massif directions (axis + flank per world, they share 4 blocks),
+worker 4 solves / 1.3 s, main 0 solves, all answers `deepStrictEqual`; export `r.byteLength` 248,196.
+
+**Perf** (under the slot, CPU gate passed: 7/2/5 % for the suite, 9/7/1 % for the file alone).
+
+| Row | `ECO_PERF_STRICT=1 npm run test:perf` (13/13 pass) | File alone, `OCEAN_PERF_STRICT=1` |
+|---|---|---|
+| W, first pass mean, 12 frozen massif directions, 0 main solves | **17.44 us** PASS (<= 30) | **26.25 us** FAIL strict (<= 10); within relaxed 30 |
+| W, second pass (INFO) | 10.71 us | 7.79 us |
+| F, ms per solve, 16 counted cold calls, 1 solve/1 block each | **171.6 ms** PASS (<= 250); p50 174.1, max 182.2 | **164.0 ms** PASS strict (<= 200); p50 162.8, max 176.8 |
+| existing best-of-3 x 40,000 | **1.72 us** PASS | **1.76 us** PASS strict (<= 3) |
+
+Notes on row W:
+
+- The first implementation timed the first 12 massif queries of the process: **214 / 206 us** with 0 solves
+  (`*.run1-rowW-unprimed.log`). That is interpreter/JIT cost of the massif code path (mountain term, envelope, rock
+  detail, carving), not a solve. The row now JIT-warms on a disjoint priming set first (2 seeded massif centres per
+  world, 60 points within 2 km of each, queried twice; their blocks come from the same worker and are imported first;
+  10 + 8 blocks <= 32), as a game that has been running `placeAt` would be. This is documented in the test.
+- **Strict 10 us is not met** (26.25 us alone). Per call (dev run, not under the slot) the first query after import
+  is ~45-50 us and the rest 7-18 us; wider priming did not lower it. The cost is the first query at a new location
+  (cell-memo miss plus first touch of other location-keyed state), not a solve. The relaxed 30 us margin is thin
+  (17.4 / 26.3 us measured), so this row may flake on a loaded host (decision risk 5). The strict limit is left as
+  briefed; changing it is an owner/Fable call.
+- Captures ran outside the test slot at below-normal priority (they are not tests; 1 + 3 worker threads on 32 cores).

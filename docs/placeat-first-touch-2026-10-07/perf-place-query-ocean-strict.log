@@ -1,0 +1,35 @@
+START 2026-10-07T10:24:29+02:00
+CPU load 9%
+CPU load 7%
+CPU load 1%
+ROW W {"directions":12,"imported":8,"priming":{"queries":488,"imported":10},"workerSolves":18,"workerMs":3173,"mainSolves":0,"firstPassMeanUs":26.25,"secondPassMeanUs_INFO":7.79} true
+ROW F {"directions":16,"counted":16,"msPerSolve":164,"INFO":{"p50MsPerSolve":162.8,"maxMsPerSolve":176.8,"maxCallMs":176.8,"solvesPerCall":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"blocksPerCall":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}}
+placeAt 1.76 us (best of 3 x 40000) true
+✖ cost: row W warm-up: worker-exported massif blocks imported, first-pass placeAt mean <= 30 us (strict 10 us with OCEAN_PERF_STRICT=1), 0 solves (3649.8134ms)
+✔ cost: row F first touch: placeAt on cold massif blocks, ms per solve <= 250 (strict 200 with OCEAN_PERF_STRICT=1), regression guard (2628.2293ms)
+✔ cost: placeAt at full level (strict budget 3 us with OCEAN_PERF_STRICT=1) (164800.5524ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 171283.8542
+
+✖ failing tests:
+
+test at tests\perf\place-query.perf.test.mjs:51:1
+✖ cost: row W warm-up: worker-exported massif blocks imported, first-pass placeAt mean <= 30 us (strict 10 us with OCEAN_PERF_STRICT=1), 0 solves (3649.8134ms)
+  AssertionError [ERR_ASSERTION]: row W first pass 26.250000000004547 us
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/placeat-warmup/tests/perf/place-query.perf.test.mjs:88:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+EXITCODE 1 2026-10-07T10:37:16+02:00

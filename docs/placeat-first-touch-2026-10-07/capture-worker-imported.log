@@ -1,0 +1,18 @@
+{"world":0,"massifFound":500}
+{"world":1,"massifFound":500}
+{"world":2,"massifFound":500}
+{"world":3,"massifFound":500}
+{"progress":5000,"ms":7586,"mainBuilds":0}
+{"progress":10000,"ms":18383,"mainBuilds":0}
+{"progress":15000,"ms":23511,"mainBuilds":0}
+{"progress":20000,"ms":32966,"mainBuilds":0}
+{"progress":25000,"ms":42976,"mainBuilds":0}
+{"progress":30000,"ms":52157,"mainBuilds":0}
+{"progress":35000,"ms":59875,"mainBuilds":0}
+{"progress":40000,"ms":70855,"mainBuilds":0}
+{"progress":45000,"ms":175117,"mainBuilds":0}
+{"progress":50000,"ms":234498,"mainBuilds":0}
+{"progress":55000,"ms":306354,"mainBuilds":0}
+{"root":"C:/LLM/IWSDK/universe-atlas-wt/placeat-warmup","mode":"worker-imported","workers":3,"n":56000,"ms":393398,"workerBuilds":5011,"mainBuilds":0,"massifJobs":5090,"postedBlocks":5121,"importedBlocks":4996,"duplicateImports":125,"mainMemoHits":30673,"workerMainLineMismatches":0,"peakBuffer":3429,"sha256":"45dbde378c1b243791d2dfecd7d91fe7eae0e3d8382aec5802822d4146dc8d47"}
+EXIT 0
+45dbde378c1b243791d2dfecd7d91fe7eae0e3d8382aec5802822d4146dc8d47 *C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/after-warmup-worker-imported.tsv

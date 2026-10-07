@@ -1,0 +1,1183 @@
+START 2026-10-07T09:37:32+02:00
+
+> universe-atlas@0.1.0 test:affected
+> node tests/helpers/test-runner.mjs affected --base main
+
+warning: in the working copy of 'src/mountain-carving.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/place-query.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/place-query.test.mjs', LF will be replaced by CRLF the next time Git touches it
+Changed vs main:
+docs/place-query-v1.md
+src/mountain-carving.ts
+src/place-query.ts
+tests/mountain-carving-memo.test.mjs
+tests/perf/place-query.perf.test.mjs
+tests/place-query.test.mjs
+docs/placeat-first-touch-2026-10-07/capture-branch-fwd.log
+docs/placeat-first-touch-2026-10-07/capture-sha256.txt
+docs/placeat-first-touch-2026-10-07/capture-tree.txt
+docs/placeat-first-touch-2026-10-07/capture-warm.mjs
+docs/placeat-first-touch-2026-10-07/capture-worker-imported.log
+docs/placeat-first-touch-2026-10-07/test-pkg.log
+docs/placeat-first-touch-2026-10-07/tsc.log
+tests/helpers/place-warm-worker.mjs
+tests/ground-wet-roughness.test.mjs: tests/ground-wet-roughness.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/planet-canopy-invalidation.test.mjs: references path: tests/planet-canopy-invalidation.test.mjs -> src/planet-canopy.ts -> src/forest-census.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/planet-forest-tree-assets.test.mjs: references path: tests/planet-forest-tree-assets.test.mjs -> src/planet-forest.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/forest-patch-broadphase.test.mjs: tests/forest-patch-broadphase.test.mjs -> src/planet-canopy.ts -> src/forest-census.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/planet-forest-worklist.test.mjs: references path: tests/planet-forest-worklist.test.mjs -> src/planet-forest.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/life-packing.test.mjs: references path: tests/life-packing.test.mjs -> src/planet-renderer.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/forest-patch-selection.test.mjs: tests/forest-patch-selection.test.mjs -> src/forest-patch-selection.ts -> src/planet-tiles.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/forest-census.test.mjs: tests/forest-census.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/forest-water-validity.test.mjs: tests/forest-water-validity.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/planet-canopy.test.mjs: tests/planet-canopy.test.mjs -> src/planet-canopy.ts -> src/forest-census.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/forest-selection-transfer.test.mjs: references path: tests/forest-selection-transfer.test.mjs -> src/forest-selection-cache.ts -> src/planet-tiles.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/forest-selection-cache.test.mjs: tests/forest-selection-cache.test.mjs -> src/planet-population.ts -> src/planet-tiles.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/forest-habitat.test.mjs: tests/forest-habitat.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/forest-patch.test.mjs: tests/forest-patch.test.mjs -> src/planet-population.ts -> src/planet-tiles.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/flora-cache-ownership.test.mjs: tests/flora-cache-ownership.test.mjs -> src/planet-renderer.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/forest-retention.test.mjs: references path: tests/forest-retention.test.mjs -> src/planet-forest.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/planet-detail.test.mjs: tests/planet-detail.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/ocean-gerstner.test.mjs: tests/ocean-gerstner.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/river-determinism.test.mjs: tests/river-determinism.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/world-surface.test.mjs: tests/world-surface.test.mjs -> src/world-surface.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/stellar-evolution.test.mjs: tests/stellar-evolution.test.mjs -> src/stellar-evolution.ts -> src/world-surface.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/world-time.test.mjs: tests/world-time.test.mjs -> src/stellar-evolution.ts -> src/world-surface.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/catalog.test.mjs: tests/catalog.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/planet.test.mjs: tests/planet.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/world.test.mjs: tests/world.test.mjs -> src/world-surface.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/ground.test.mjs: tests/ground.test.mjs -> src/planet-tiles.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/surface.test.mjs: tests/surface.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/drainage.test.mjs: tests/drainage.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/river.test.mjs: tests/river.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/river-terrain.test.mjs: tests/river-terrain.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/river-environment.test.mjs: tests/river-environment.test.mjs -> src/world-surface.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/golden/perturbation.test.mjs: tests/golden/perturbation.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/acceptance/t-seek-independence.test.mjs: tests/acceptance/t-seek-independence.test.mjs -> src/world-surface.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/acceptance/visit-order-independence.test.mjs: tests/acceptance/visit-order-independence.test.mjs -> src/world-surface.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/acceptance/existence-gating.test.mjs: tests/acceptance/existence-gating.test.mjs -> src/world-surface.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/acceptance/version-compat.test.mjs: tests/acceptance/version-compat.test.mjs -> src/place-query.ts
+tests/time-nav.test.mjs: tests/time-nav.test.mjs -> src/time-nav.ts -> src/place-query.ts
+tests/time-integration.test.mjs: tests/time-integration.test.mjs -> src/time-nav.ts -> src/place-query.ts
+tests/terrain-water-refresh.test.mjs: tests/terrain-water-refresh.test.mjs -> src/drainage.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/terrain-budget-starvation.test.mjs: tests/terrain-budget-starvation.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/terrain-leaf-loop-digest.test.mjs: tests/terrain-leaf-loop-digest.test.mjs -> tests/terrain-leaf-scenario.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/inland-rivers-disabled.test.mjs: references path: tests/inland-rivers-disabled.test.mjs -> src/ -> src/mountain-carving.ts
+tests/rock-field.test.mjs: tests/rock-field.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/planet-rocks.test.mjs: tests/planet-rocks.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/planet-rocks-draw.test.mjs: tests/planet-rocks-draw.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/ocean-seam-continuity.test.mjs: tests/ocean-seam-continuity.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/tree-handoff-debug.test.mjs: references path: tests/tree-handoff-debug.test.mjs -> src/planet-forest.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/life-cpu-digest.test.mjs: tests/life-cpu-digest.test.mjs -> tests/life-scenario.mjs -> src/time-nav.ts -> src/place-query.ts
+tests/planet-forest-frame-digest.test.mjs: references path: tests/planet-forest-frame-digest.test.mjs -> src/planet-forest.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/surface-climate.test.mjs: tests/surface-climate.test.mjs -> src/planet-renderer.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/habitat-suitability.test.mjs: tests/habitat-suitability.test.mjs -> src/surface-climate.ts -> src/stellar-evolution.ts -> src/world-surface.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/season.test.mjs: references path: tests/season.test.mjs -> src/ -> src/mountain-carving.ts
+tests/sun-frame.test.mjs: tests/sun-frame.test.mjs -> src/stellar-evolution.ts -> src/world-surface.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/surface-biomes-climate.test.mjs: tests/surface-biomes-climate.test.mjs -> src/time-nav.ts -> src/place-query.ts
+tests/acceptance/climate-seek-independence.test.mjs: tests/acceptance/climate-seek-independence.test.mjs -> src/world-surface.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/terrain-elevation-identity.test.mjs: tests/terrain-elevation-identity.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/terrain-climate-colour.test.mjs: tests/terrain-climate-colour.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/ground-climate-shader.test.mjs: tests/ground-climate-shader.test.mjs -> src/planet-renderer.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/acceptance/climate-agreement.test.mjs: tests/acceptance/climate-agreement.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/planet-geophysics.test.mjs: tests/planet-geophysics.test.mjs -> src/surface-climate.ts -> src/stellar-evolution.ts -> src/world-surface.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/terrain-floor-window.test.mjs: tests/terrain-floor-window.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/lod-consistency.test.mjs: tests/lod-consistency.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/lod-carving-reduction.test.mjs: tests/lod-carving-reduction.test.mjs -> src/mountain-carving.ts
+tests/mountain-coarse-field.test.mjs: tests/mountain-coarse-field.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/mountain-tile-set.test.mjs: tests/mountain-tile-set.test.mjs -> tests/helpers/mountain-tile-set.mjs -> src/planet-tiles.ts -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/tile-metadata.test.mjs: tests/tile-metadata.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/ocean-volume.test.mjs: tests/ocean-volume.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/place-query.test.mjs: tests/place-query.test.mjs
+tests/test-selection.test.mjs: references path: tests/test-selection.test.mjs -> src/ -> src/mountain-carving.ts
+tests/life-guard.test.mjs: references path: tests/life-guard.test.mjs -> tests/helpers/life-guard.mjs -> tests/helpers/test-selection.mjs -> tests/perf/ -> tests/perf/place-query.perf.test.mjs
+tests/test-runner.test.mjs: references path: tests/test-runner.test.mjs -> tests/helpers/known-failures.mjs -> tests/perf/ -> tests/perf/place-query.perf.test.mjs
+tests/terrain-relief-hypsometry.test.mjs: tests/terrain-relief-hypsometry.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/render-bounds.test.mjs: tests/render-bounds.test.mjs -> tests/helpers/render-bounds-suite.mjs -> src/place-query.ts
+tests/harness-sites.test.mjs: tests/harness-sites.test.mjs -> tests/helpers/harness-site-search.mjs -> src/time-nav.ts -> src/place-query.ts
+tests/climate-grid.test.mjs: tests/climate-grid.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/landing-site.test.mjs: tests/landing-site.test.mjs -> src/mountain-carving.ts
+tests/eco-identity-site.test.mjs: tests/eco-identity-site.test.mjs -> src/terrain.ts -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/mountain-layout-grid.test.mjs: tests/mountain-layout-grid.test.mjs -> src/mountain-assembly.ts -> src/mountain-carving.ts
+tests/mountain-carving.test.mjs: tests/mountain-carving.test.mjs -> src/mountain-carving.ts
+tests/mountain-summits.test.mjs: references path: tests/mountain-summits.test.mjs -> src/mountain-carving.ts
+tests/mountain-carving-memo.test.mjs: tests/mountain-carving-memo.test.mjs
+tests/terrain-mountains-assembly.test.mjs: tests/terrain-mountains-assembly.test.mjs -> src/mountain-carving.ts
+tests/sparse-consumer-levels.test.mjs: references path: tests/sparse-consumer-levels.test.mjs -> tests/helpers/sparse-consumers-wired.mjs -> src/mountain-carving.ts
+tests/lod-coarse-frame.test.mjs: tests/lod-coarse-frame.test.mjs -> tests/helpers/lod-coarse-frame.mjs -> src/mountain-carving.ts
+tests/tier.test.mjs: references path: tests/tier.test.mjs -> tests/helpers/tier-reporter.mjs -> tests/helpers/known-failures.mjs -> tests/perf/ -> tests/perf/place-query.perf.test.mjs
+Outside graph (review manually):
+docs/placeat-first-touch-2026-10-07/capture-branch-fwd.log
+docs/placeat-first-touch-2026-10-07/capture-sha256.txt
+docs/placeat-first-touch-2026-10-07/capture-tree.txt
+docs/placeat-first-touch-2026-10-07/capture-warm.mjs
+docs/placeat-first-touch-2026-10-07/capture-worker-imported.log
+docs/placeat-first-touch-2026-10-07/test-pkg.log
+docs/placeat-first-touch-2026-10-07/tsc.log
+14 changed; 85 selected
+# Maithea: land 32982, snow-labelled 6507, forestPotential 12428, partial snow 2290
+# Selawyn: land 23571, snow-labelled 0, forestPotential 12526, partial snow 0
+# Raiva: land 31372, snow-labelled 0, forestPotential 16715, partial snow 0
+# Lethuris: land 22641, snow-labelled 4733, forestPotential 8529, partial snow 6012
+# Maithea orbit 256x128: land 18649, snow-labelled 7791
+# Selawyn orbit 256x128: land 12367, snow-labelled 1
+# Raiva orbit 256x128: land 17901, snow-labelled 0
+# Lethuris orbit 256x128: land 12668, snow-labelled 2245
+✔ versions: the agreement is between surface-biomes-2.1-sea-datum and surface-climate-1.1-geo-g (3.9419ms)
+✔ orbit/tile colour and ground classifier agree on 20k land directions x 4 water worlds (6958.1017ms)
+﹣ colour and classifier agree on the carved truth, 20k land directions x 4 water worlds (test:full) (0.822ms) # test:full only (T6 decision 3): truth agreement solves M3 blocks
+✔ the orbit bake stores terrainSampler colour per pixel (orbit view = sampler = classifier) (2561.1581ms)
+✔ classifier bytes at catalogue epoch +32 s: direct seek equals stepped playback over all five tiers (12397.7199ms)
+✔ classifier bytes are independent of body visit order and of cold vs warm climate-forcing cache (780.945ms)
+✔ sanity: corpus is non-trivial (1.4914ms)
+✔ star existence gate: state(formationNs - 1) is unformed (not-exists, zeroed fields), state(formationNs) is main-sequence (exists), across the full corpus (119.6846ms)
+✔ star existence gate: a remnant persists (exists) through UNIVERSE_END_NS, no scripted extinction (§7.1) (2.1628ms)
+✔ planet existence gate: exists=false + sample=null strictly outside [formation, cooling-onward), exists=true inside, across a real corpus (50312.1915ms)
+✔ ocean existence gate: no global sea before oceanNs, even though the planet itself already exists (molten/solid but pre-condensation) (46.5816ms)
+✔ biosphere existence gate: extinct is false one instant before engulfment (INCLUDED), true exactly at engulfment (death, EXCLUDED) and forever after (65.2469ms)
+✔ biosphere existence gate: a never-engulfed planet becomes extinct once its star is a permanent remnant, even without engulfment (§7.1 no remnant cooling stages) (7.1458ms)
+✔ galaxy existence gate: unformed strictly before birthNs, active at birthNs, across all 32 legacy addresses (60.2939ms)
+✔ galaxy existence gate: merge boundary is a genuine half-open death — active at mergeNs-1 (included), merged at mergeNs (excluded) and forever after (112.3832ms)
+✔ FIXED (was a FINDING): a merged galaxy's properPosition redirects through mergedIntoAddress into the survivor's frame, per contract §4.2 (102.9164ms)
+✔ merge redirect: exact boundary instant — properPosition redirects starting exactly at mergeNs, and equals a(t)/peculiar-consistent tracking of the survivor thereafter (284.7304ms)
+✔ sanity: corpus is non-trivial (1.1986ms)
+✔ scaleFactorAt stays finite at its adapter ceiling while lnScaleFactorAt keeps increasing (0.3864ms)
+✔ t-seek independence: starStateAt — direct seek matches advanceDate-driven playback at every boundary-anchored checkpoint, across the full 0..UNIVERSE_END_NS range (126.03ms)
+✔ t-seek independence: planetStateAt — direct seek matches advanceDate-driven playback across formation/cooling/engulfment boundaries (609.3455ms)
+✔ t-seek independence: surfaceAt — direct seek matches advanceDate-driven playback for >=25 real planets (5421.3337ms)
+✔ t-seek independence: biosphereStateAt (Maithea, a real engulfment/extinction case) — direct seek matches advanceDate-driven playback across the extinction boundary (175.0681ms)
+✔ t-seek independence: galaxyStateAt — direct seek matches advanceDate-driven playback across birth/merge boundaries (9725.9583ms)
+✔ WorldVersions has exactly the nine §1.3-declared keys, every value a non-empty string (19.93ms)
+✔ WorldVersions bundle round-trips through JSON (the persisted save/bookmark/URL form) byte-for-byte (0.8058ms)
+✔ pinned current package versions include the released rivers-off surface contract (1.2869ms)
+✔ FINDING (not this suite's fault, reported for visibility): §6.2 explicitly requires TERRAIN_VERSION stay fixed at "terrain-1.2.0" ("deliberate: ... its version shouldn't either"); the live value has since moved (0.9923ms)
+✔ legacy galaxies digest for seed "LETHRA-001" is pinned and must not move (11.0287ms)
+✔ legacy galaxies digest is consistent between galaxiesInGroup and the back-compat galaxies() alias (13.1442ms)
+✔ legacy galaxies digest matches the independently-tracked tests/fixtures/legacy-galaxies.json fixture (247.2192ms)
+✔ legacy address strings (no U/K/H prefix) parse to clusterCell=groupCell=(0,0,0) and resolve to the exact legacy galaxy (10.8291ms)
+✔ a bookmark (address string + date string) round-trips to byte-identical resolved content (74.7626ms)
+✔ yearsToDate/dateYears/dateRecord/parseDate round-trip a bookmark date exactly, including fractional years and huge (but in-cap) magnitudes (3.3513ms)
+✔ yearsToDate: floor and ceiling are a matched pair — before the Big Bang and past UNIVERSE_END_NS both throw, "0" and UNIVERSE_END_NS itself both succeed (1.9635ms)
+✔ FIXED (was a FINDING): UNIVERSE_END_NS (10^100 yr, the contract's own declared navigable ceiling, §2.1) now round-trips exactly through yearsToDate, with no silent Number precision loss (1.078ms)
+✔ GALAXY_HISTORY_VERSION is pinned to its exact contractual value — a change here must be a deliberate, reviewed bump, not silently absorbed (0.4407ms)
+✔ GALAXY_HISTORY_VERSION has a dedicated WorldVersions.galaxyHistory slot (§1.3 gap closed) (0.2616ms)
+✔ an old (8-field, pre-galaxyHistory) wv bundle decodes as current, not legacy (0.3928ms)
+✔ an old (8-field) bookmark URL with an absolute atlas-time-2 date resolves to that exact t — no double-offset (0.6252ms)
+✔ a freshly written (9-field) bookmark URL still round-trips exactly through the new encoding (0.2911ms)
+✔ a genuinely pre-4D-contract URL (no wv at all) still falls back to the CATALOGUE_EPOCH_NS-relative offset interpretation (0.2141ms)
+✔ biome-climate model versions are pinned and part of the model manifest (19.5796ms)
+✔ relief model versions are pinned and part of the model manifest; build version moved (150.4071ms)
+✔ a terrain-1.7.0 bookmark loads with the relief notice; a current (1.8.0) bookmark loads without it (2.3861ms)
+✔ ground bookmarks re-snap to the new ground height: main.ts restores ?walk= by direction only (157.6801ms)
+✔ sanity: corpus is non-trivial (0.8918ms)
+✔ visit-order independence: galaxiesInGroup across mixed near/far cells (33.1997ms)
+✔ visit-order independence: galaxyLifecycle/galaxyStateAt at several t across all 32 legacy-root addresses (1008.0233ms)
+✔ visit-order independence: starLifecycle/starStateAt across a >=60-star corpus (19.0875ms)
+✔ visit-order independence: planetLifecycle/planetStateAt across a real planet corpus (127.4884ms)
+✔ visit-order independence: surfaceAt across a real planet corpus and several checkpoints (7431.3708ms)
+✔ visit-order independence: biosphereStateAt across a real planet corpus (171.2772ms)
+✔ visit-order independence: parseAddress/formatAddress/resolveGalaxy across a mixed address set (34.1334ms)
+✔ no cross-contamination: interleaving queries for other bodies between two calls for the same body does not change the result or mutate inputs (161.8681ms)
+✔ galaxy previews sample sector density by volume and preserve detail prefixes (2377.5547ms)
+✔ system sky uses catalogue neighbours and the same parent galaxy points (21578.1647ms)
+✔ surrounding stars belong to adjacent catalogue sectors with a fixed budget (1806.9901ms)
+✔ PCG32 matches the official reference sequence (17.3691ms)
+✔ overview bodies and rings remain separated during orbital playback; physical scale preserves ratios (1928.8004ms)
+✔ orbital terrain shares coastlines across resolutions with seam-safe geometry and flat oceans (16883.8804ms)
+✔ catalogue is seed-specific and independent of query order (5946.3137ms)
+✔ sector ownership and direct address lookup work across signed boundaries (7991.0219ms)
+✔ system records have stable names, valid parents, orbits, and bounded moons (489.8835ms)
+✔ Kepler solver returns an orbit after one period (1.63ms)
+✔ macro surface has stable spherical geography independent of texture resolution (119.9643ms)
+✔ galaxy map points are unique real catalogue stars across detail levels (1887.1227ms)
+✔ aquaplanet and dry world: exact constants at all vertices and 1000 samples (9.3476ms)
+✔ ridge shadow beyond a flat-ground control; trades reverse which side is dry; flat continentality (0.3776ms)
+✔ 10000 edge/corner pairs are continuous; corrupted face fails the same assertion (5.5681ms)
+✔ build bytes are repeatable and depend on macro seed; grid memory <=64 KiB (84.5795ms)
+✔ raster distances within 15% of brute force, including adversarial oceans (144.6529ms)
+ℹ wrapped patch: worst relative error 0.0015143529852725823
+ℹ long thin meridian: worst relative error 0.01905356083957188
+ℹ wrap seam only: worst relative error 0.0015143531504300256
+ℹ single south polar cell: worst relative error 2.224751838308947e-8
+ℹ single north polar cell: worst relative error 2.5098586098337705e-8
+ℹ single equatorial cell: worst relative error 0.0000021120128339546795
+ℹ long thin equatorial ocean: worst relative error 7.466705032044274e-10
+ℹ Overall worst relative error: 0.01905356083957188
+✔ land proxy matches terrain floor, is monotone and handles legacy units and radius clamp (8.9895ms)
+✔ real catalogue world with relief profile: bounded finite fields and deep ocean ~1 (34.6349ms)
+✔ no-ocean rows have zero maritime influence and floor rain; ITCZ crossing the Hadley edge reverses winds in both hemispheres (14.7545ms)
+✔ source determinism and import boundaries; sampler contains no allocations or hashing (1.8139ms)
+{"digest":"84e5defe16c694f0f49a654a8738b54f56d58db58d82fa2e9e12b313a82bffe9","stats":{"nodes":24578,"edges":98304,"oceanNodes":10868,"catchments":1560,"landKm2":186427985.05384487,"meanSpacingKm":117.46526026574753},"bytes":3170454,"first":{"id":"G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/16162","name":"Eiren Bracken Basin","outlet":16162,"head":15166,"areaKm2":4724304.149420381,"lengthKm":4597.372286115595,"depressionKm2":622997.0812005453,"headwater":{"direction":[0.20606068329331229,-0.9419916950551419,0.26493516423425867],"elevationM":6483.257173679424},"mouth":{"direction":[-0.127184737743948,-0.7816248642694881,0.6106444252105374],"elevationM":12.00000940695727}}}
+✔ spherical drainage topology joins all seams and sums to the area of a sphere (241.7759ms)
+✔ closed depressions fill only in the conditioning field, with acyclic conservative flow (24.9864ms)
+✔ planet catchments retain identities and physical locations independent of requests (3111.9367ms)
+# SITE_A class 6, h 280.2 m, Ta 294.91 K, Tc 290.60 K, tropical margin 0.549 K
+✔ the harness body is Maithea at the catalogue sea (1.4841ms)
+✔ SITE_A centre is a legacy-behaviour class, and its live ground look is all zeros (3.7224ms)
+✔ SITE_A robustness rings (SITE_RULE 500/1000/2000 m) and the 5 and 10 km rings are all legacy-behaviour classes (6.414ms)
+✖ SITE_A 60 km ring of 64 points is all legacy-behaviour classes (3.2843ms) # OPEN (owner / BIOME2-REPLAN): post-relief 60 km ring crosses the coast and the tropical boundary {6:25,7:18,11:6,ocean:15}; ring radius to be re-baselined
+✔ flora resident cache invalidates on water and habitat gate changes (1.4793ms)
+✔ canonical resident recipes survive packed slot reorder and are released on eviction (0.8199ms)
+✔ complete census equals the authoritative near query across cube faces and water contexts (992.2791ms)
+✔ slices are bounded, cancellation never yields a partial patch and visit order is irrelevant (6.4276ms)
+✔ transfer detachment, mutations, zero budgets and eviction cannot change patch results (3.0413ms)
+✔ partial edge patches and known empty patches are complete, not missing (0.6606ms)
+✔ snapshot and content stamp isolate water and same-ID hydrology edits (52.9982ms)
+✔ context hashing fails closed on unsupported binary/container values and non-finite numbers (23.667ms)
+# tree-habitat-1 -> tree-habitat-2-climate {"cells":625,"v1Present":470,"v2Present":47,"kept":47,"lost":423,"gainedNewlySuitable":0,"thinnedSameWindow":423,"ecotoneCells":276,"suitableCells":625}
+✔ strict census sampling never records a non-finite slope neighbour as absence (2.063ms)
+✔ shared habitat matches the tree-habitat-2-climate expression on terrain and water fixtures (5023.9084ms)
+✔ v1 -> v2 report: v2 presence is nested thinning plus cells newly suitable under the treeline window (7321.757ms)
+✔ legacy slope behavior stays explicit, including the unsampled tangent axis; suitability scales the roll (0.9906ms)
+✔ group skip agrees with per-cell oracle across movement, patch validity and global cell order (10.0032ms)
+✔ partial, stale-water, invalidated-hydrology and unavailable-census groups always fall back (7.3151ms)
+✔ water changes, habitat replacements, and later arrivals rebuild conservative bounds before skipping (7.1003ms)
+✔ selection replacement drops old keys and a census arriving after a miss enables only fresh skips (2.0067ms)
+✔ invalid inputs fail closed and diagnostics report bounds readiness (1.4983ms)
+✔ distance boundary uses the conservative margin and never skips an inside group (0.551ms)
+✔ local resident edits re-evaluate only their patch and stale roots become non-skippable (1.9947ms)
+✔ patch selector conservatively covers production cells at face centres, edges, corners and real forest site (67033.2531ms)
+✔ patch selector rejects invalid or unbounded work (5.0684ms)
+✔ address extraction preserves the previous forest selection digest (280.075ms)
+✔ bounded patches partition all six faces exactly including clipped edge patches (42.1144ms)
+✔ summary distinguishes unknown habitat from empty land and preserves height datum (1.8433ms)
+✔ stationary and reordered demand preserve instance slots without matrix or colour writes (578.4038ms)
+✔ frustum departure swap-removes one slot instead of rewriting the batch tail (20.5156ms)
+✔ retained origin rebases without changing canonical root placement (18.7032ms)
+✔ water changes do not enqueue additional water-independent selection jobs (18.5361ms)
+✔ dirty uploads keep separated edits separate and preallocate instance colours (22.7784ms)
+✔ off-camera sun casters retain canonical slots and only leave when both frusta exclude them (15.7637ms)
+✔ owned instance attributes clear consumed upload ranges before the next sparse edit (23.6977ms)
+✔ selection worker gets one bounded restart and exposes permanent fallback (36.2914ms)
+✔ late canonical hydrology attachment refreshes near habitat at unchanged water (12.3096ms)
+✔ complete distant canopy skips near work while missing or stale water keeps fallback (8.9499ms)
+✔ packed selection applies once, ignores stale replies and recovers from decode and message errors (18.1642ms)
+✔ malformed response envelope and synchronous post failure cannot leave selection pending (25.1938ms)
+✔ main selection application defects remain visible and do not consume worker recovery (72.4652ms)
+✔ selection apply prunes retention, queue and cache exactly by incoming identity (97.3295ms)
+✔ cached selection is exactly equal at faces, seams, corners and nearby flight positions (3500.5157ms)
+✔ eviction, zero cache and query order cannot change selected cells (1068.64ms)
+✔ cache validates bounds and returns independent objects (25.5027ms)
+✔ Earth-scale seam and corner perturbations retain exact selection boundaries (4880.8811ms)
+✔ current Earth-scale corner working set leaves cache headroom (5642.8217ms)
+✔ transfer preserves every double, identity, order and representative flag at seams and corners (10911.5742ms)
+✔ empty and optional representative fields survive round trips (3.0642ms)
+✔ malformed, excessive and detached buffers reject without yielding a partial selection (8.9775ms)
+# forest-water-validity fixture {"address":{"face":5,"n":577212,"x":23790,"y":56593},"eligible":26,"rejected":4,"i":17234}
+✔ interval boundaries preserve strict ocean comparisons exactly (2.5377ms)
+✔ waterless bodies retain an unbounded interval (213.2738ms)
+✔ real patch interval records primary and every evaluated slope probe, including rejected trees (156.1118ms)
+✔ family and water both gate inherited completed patches; returned interval copies are isolated (1363.1778ms)
+✔ canonical river patch reuses only within its sampled H/G interval (archived rivers) (7896.1983ms)
+✔ water-only census hops reuse exact immutable records only at an unchanged sea datum (74.2548ms)
+✔ discrete catalog/terrain/history decisions are invariant to +-1ulp perturbation of platform transcendentals (22074.1052ms)
+✔ the perturbation harness itself actually changes platform transcendental output (negative control) (0.6027ms)
+{"perturbationReport":[{"section":"geophysics","records":86,"goldenFlips":0,"exactFlips":0},{"section":"climate","records":17713,"goldenFlips":0,"exactFlips":0},{"section":"biomes","records":6913,"goldenFlips":0,"exactFlips":6912},{"section":"oceanVolume","records":34,"goldenFlips":0,"exactFlips":0},{"section":"placeQuery","records":471,"goldenFlips":0,"exactFlips":28},{"section":"census","records":29,"goldenFlips":0,"exactFlips":16},{"section":"rocks","records":578,"goldenFlips":0,"exactFlips":57},{"section":"fauna","records":625,"goldenFlips":1,"exactFlips":345},{"section":"faunaKnownUnstable","records":31,"goldenFlips":0,"exactFlips":11}],"nudged":3213174,"names":["sin","cos","atan2","atan","tan","pow","exp","log","cbrt","acos","asin","hypot","log2","log10","log1p","expm1","sinh","cosh","tanh","asinh","acosh","atanh"]}
+✔ platform sections: 1-ULP perturbation flip counts (fresh worker per run; findings reported, unlisted flips fail) (20817.4911ms)
+ℹ nudged platform transcendental calls: 3213174
+ℹ geophysics: 86 records, golden flips 0, exact flips 0
+ℹ climate: 17713 records, golden flips 0, exact flips 0
+ℹ biomes: 6913 records, golden flips 0, exact flips 6912
+ℹ oceanVolume: 34 records, golden flips 0, exact flips 0
+ℹ placeQuery: 471 records, golden flips 0, exact flips 28
+ℹ census: 29 records, golden flips 0, exact flips 16
+ℹ rocks: 578 records, golden flips 0, exact flips 57
+ℹ fauna: 625 records, golden flips 1, exact flips 345
+ℹ faunaKnownUnstable: 31 records, golden flips 0, exact flips 11
+✔ perturbation exact-case table follows ECMA-262 21.3.2 (spec-exact results kept, approximated ones nudged) (3.2544ms)
+✔ platform sections: a coarse nudge flips the raw-Math sections (negative control for the worker harness) (17216.743ms)
+✔ worst-path ground fragment fetches stay within the 23-fetch budget (3.009ms)
+✔ the two mean fetches sit only where their photograph is already sampled (0.6741ms)
+✔ PBR is ratio detail around the photograph mean, never an absolute override (0.2582ms)
+✔ sand keeps atlas grain only; turf and dry straw follow the climate macro colour (0.5501ms)
+✔ snow is tinted slightly cool and the pebble/sand atlas terms are kept (0.2511ms)
+✔ renderer habitat uniform uses the shared climate gate and the bumped cache key (1.0471ms)
+✔ byte pins, periods and the atlas seed are unchanged (0.8323ms)
+✔ withdrawn river geometry does not inject wet roughness; dry biome targets remain intact (3.1755ms)
+✔ tile roughness samples match terrain values, stay continuous at shared vertices, and include skirts (324.7477ms)
+✔ ground shader transports sampler roughness and preserves dry biome targets (1.0987ms)
+✔ settled grounded pose is fixed while idle and wakes for walk and jump (584.6232ms)
+✔ capsule walks and jumps with radial gravity at both poles and the equator (565.6069ms)
+✔ actual moon terrain supports walking across poles, cube edges and origin rebases (9567.9178ms)
+✔ versions and nominal profile temperatures match the biosphere niche centres (18.8198ms)
+✔ nicheSuitability === habitatMembership over 5 lab habitats x 3 profiles; evaluator occupancy matches (17.2374ms)
+✔ evaluator reproduces habitatMembership occupancy on 3,000 random habitats (incl. the producer rule) (74.737ms)
+✔ after rebasing, planets at 235..330 K all have occupied plants somewhere on a latitude x height sweep (104.8735ms)
+✔ family affinity corrects the spire/branching inversion; tree weights are bounded, memoised and fall back (55.8872ms)
+✔ pickWeightedMax: all-ones reproduces bindTreeSpecies; weights are proportional; order independent (709.4757ms)
+✔ fauna species weights are bounded integers and zero only where absent (0.4538ms)
+✔ harness date has the full ocean (sea exactly 0) on the harness body (1.1029ms)
+✔ SITE_A passes the robustness rule with margin above the forest gate (4.7881ms)
+ℹ {"heightM":280.19528930438025,"aboveSeaM":280.19528930438025,"biome":"Temperate ground","forestPotential":true,"effectiveMoisture":0.7496869546397443,"forestSuitability01":1,"ringForestShare":1,"minRingAboveSeaM":255.39134924080923,"minRingMoisture":0.7488193633982401,"pass":true}
+✔ the pre-relief site is recorded as failing the rule (why SITE_A moved) (58.7369ms)
+✔ the deterministic search reproduces the SITE_A literal (0.1 m rounding) (333.1771ms)
+✔ inland rivers are withdrawn by default and the fixture really contains archived river water (1330.9ms)
+✔ production terrain samples ignore attached hydrology and canonical rivers: no carve, wetness or bank (218.248ms)
+✔ terrain tiles have no conservative river bed or bank palette while a region is attached (1189.1118ms)
+✔ dated ocean keeps its sampler: wet after formation, absent before, unaffected by attached rivers (507.5567ms)
+✔ focusing a water world never starts the hydrology worker and readiness never gates contact (0.8958ms)
+✔ renderer: stale river attachments add no river water/reflection and dry-ground contact refines without hydrology (65533.736ms)
+✔ model versions record the withdrawal and old bookmarks explain it (3.6401ms)
+✔ legacy ?river= URLs get a concise unavailable notice and open the ordinary body view (3.7992ms)
+✔ only tests may re-enable the archived river pipeline (27.8921ms)
+✔ landingHeightAllowed: dry, at most the ceiling over the sea, strictly below the summit (3907.4138ms)
+✔ landingCandidate is main.ts exploreTerrain's golden-angle sphere (unit, deterministic) (1.644ms)
+✔ never on a summit: 0/256 picks at or above p99 land on four worlds at the datum and the dated low sea; the kept ceiling alone does pick summits (4293.7844ms)
+✔ flooded ground bookmark, default policy: keeps the saved place and hovers above the water (3046.3456ms)
+✔ flooded ground bookmark, nearest-shore policy: the first dry ring direction, deterministic; open ocean hovers (104.7088ms)
+✔ main.ts wires the landing rules: summit-capped site pick and the flooded-bookmark resolver in prepareLanding (17.8215ms)
+✔ landing surface (decision 2): surfaceQuery at level 0 is the level-0 field on a massif and solves no M3 block; the truth differs there (1975.4353ms)
+✔ no eligible site: all-wet candidates give null (1.6221ms)
+✔ no eligible site: every candidate rejected by the summit cap gives null; the ceiling alone would have landed (1.0327ms)
+✔ main.ts: a null site ends the landing request (message, no journey, no landAfterCruise) (16.4171ms)
+✔ life layer output is identical to the reference for a fixed pose/date sequence (101433.0973ms)
+✔ hidden life reports no flora or fauna (S6 15 km finding) (6205.3841ms)
+✔ life guard returns only LIFE_FILES and errors on invalid refs (972.4227ms)
+✔ stable retained life stops repacking anchors while preserving resident recipe identity (2.5877ms)
+✔ completion of a retained herd stencil publishes that herd exactly once (1.3912ms)
+✔ dated gate invalidation can rebuild an empty packed set without retaining old herds (0.5075ms)
+✔ Maithea: cost optimisation preserves every coarse/switch tile buffer (4096.3393ms)
+✔ Selawyn: cost optimisation preserves every coarse/switch tile buffer (4055.7944ms)
+✔ Raiva: cost optimisation preserves every coarse/switch tile buffer (4358.2698ms)
+✔ Lethuris: cost optimisation preserves every coarse/switch tile buffer (5048.4408ms)
+✔ Maithea: cost optimisation preserves full sampler outputs at truth and L0..22 (2976.9757ms)
+✔ Selawyn: cost optimisation preserves full sampler outputs at truth and L0..22 (2948.1279ms)
+✔ Raiva: cost optimisation preserves full sampler outputs at truth and L0..22 (3568.0482ms)
+✔ Lethuris: cost optimisation preserves full sampler outputs at truth and L0..22 (1958.1464ms)
+✔ lod-ladder-2: carving starts at the first level with edge <= 128 km; constants pinned to their sources (1.6171ms)
+✔ wired (T6): on by default, the level changes nothing without mountains, carving state per level (9.8289ms)
+✔ mountainRidgeTermM: carve = false is the composition without C, an upper envelope of the carved term (960.0141ms)
+✔ Maithea: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth (9734.5915ms)
+✔ Selawyn: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth (8689.8598ms)
+✔ Raiva: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth (8537.7257ms)
+✔ Lethuris: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth (7546.728ms)
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (3702.5247ms)
+ℹ INFO Maithea C=2/6/33/54 N=2/5/17/27 edge 1: morph start 0.0067 m, seam 0.0064 m; mutant 891.1 / 135.4 m; mean step at the cut -178.2 m (min -1021.2 m)
+✔ Maithea: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (3003.1864ms)
+ℹ INFO Maithea (cube-face edge) C=0/6/0/6 N=4/5/31/3 edge 0: morph start 0.0041 m, seam 0.0038 m; mutant 137.0 / 3.8 m; mean step at the cut -13.7 m (min -205.4 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (2901.0764ms)
+ℹ INFO Selawyn C=0/7/112/107 N=0/6/55/53 edge 0: morph start 0.0057 m, seam 0.0034 m; mutant 1586.3 / 1301.1 m; mean step at the cut -508.3 m (min -1583.8 m)
+✔ Selawyn: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1983.3124ms)
+ℹ INFO Selawyn (cube-face edge) C=0/7/127/53 N=5/6/0/26 edge 1: morph start 0.0058 m, seam 0.0050 m; mutant 1355.1 / 112.2 m; mean step at the cut -104.4 m (min -1266.4 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (3269.6918ms)
+ℹ INFO Raiva C=1/5/19/25 N=1/4/9/13 edge 3: morph start 0.0056 m, seam 0.0052 m; mutant 473.4 / 250.7 m; mean step at the cut -100.9 m (min -542.6 m)
+✔ Raiva: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (2827.6473ms)
+ℹ INFO Raiva (cube-face edge) C=0/5/0/5 N=4/4/15/2 edge 0: morph start 0.0054 m, seam 0.0044 m; mutant 1018.1 / 15.7 m; mean step at the cut -250.1 m (min -1094.5 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (axis site) (3015.2696ms)
+ℹ INFO Lethuris C=2/7/28/73 N=2/6/13/36 edge 0: morph start 0.0062 m, seam 0.0055 m; mutant 1795.3 / 527.8 m; mean step at the cut -479.5 m (min -1944.3 m)
+✔ Lethuris: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (cube-face edge) (1857.6806ms)
+ℹ INFO Lethuris (cube-face edge) C=0/7/0/105 N=4/6/63/52 edge 0: morph start 0.0048 m, seam 0.0029 m; mutant 1923.0 / 26.2 m; mean step at the cut -389.3 m (min -1923.0 m)
+✔ HARD: selection: massif-touching tiles by the T1 grid and belt query; coarse builds solve 0 M3 blocks (68148.9604ms)
+ℹ Maithea: cut L6, last corrected L9, 39 frame tiles (+8 edge-only); per level [tiles: massif samples of 65x65]: L0 [1: 107] L1 [4: 136,98,54,170] L2 [4: 24,251,247,134] L3 [7: 473,4,189,342,167,772,53] L4 [5: 901,12,114,874,657] L5 [8: 1207,580,5,1868,789,349,1509,72] L6 [2: 866,2884] L7 [2: 2961,4188] L8 [2: 4225,4225] L9 [2: 4225,4225] L10 [2: 4225,4225]; block solves fine 28; 53.9 s
+ℹ Selawyn: cut L7, last corrected L10, 45 frame tiles (+6 edge-only); per level [tiles: massif samples of 65x65]: L0 [1: 52] L1 [3: 61,25,129] L2 [3: 114,218,180] L3 [7: 232,416,95,200,98,410,201] L4 [8: 30,783,797,86,461,507,301,376] L5 [6: 1482,1568,164,375,265,1246] L6 [7: 543,2658,2756,1043,1927,2093,6] L7 [2: 4073,3663] L8 [2: 4225,4208] L9 [2: 4225,4225] L10 [2: 4225,4225] L11 [2: 4225,4225]; block solves fine 22; 53.8 s
+ℹ Raiva: cut L5, last corrected L8, 29 frame tiles (+7 edge-only); per level [tiles: massif samples of 65x65]: L0 [1: 97] L1 [3: 112,3,288] L2 [3: 432,213,534] L3 [6: 972,49,1118,546,120,1098] L4 [6: 2147,30,1733,1485,1011,1939] L5 [2: 2557,3236] L6 [2: 4225,4225] L7 [2: 4225,4225] L8 [2: 4225,4225] L9 [2: 4225,4225]; block solves fine 25; 39.2 s
+ℹ Lethuris: cut L7, last corrected L10, 44 frame tiles (+7 edge-only); per level [tiles: massif samples of 65x65]: L0 [1: 77] L1 [4: 109,69,101,52] L2 [7: 102,72,158,83,118,28,124] L3 [5: 247,154,4,191,305] L4 [5: 491,487,72,494,201] L5 [6: 128,877,974,453,1005,558] L6 [6: 1541,1949,135,1668,1920,356] L7 [2: 3567,2170] L8 [2: 4147,4225] L9 [2: 4225,4225] L10 [2: 4225,4225] L11 [2: 4225,4225]; block solves fine 27; 66.4 s
+✔ HARD: FRAME lower side: child >= parent - ROOM at every shared point of every pair (ROOM measured per pair) (24.1337ms)
+ℹ Maithea L0->1: 4 pairs, parent - child p50 0.0 / p99 2600.9 / max 3881.6 m (1156 points); ROOM 4900 m
+ℹ Maithea L1->2: 4 pairs, parent - child p50 0.0 / p99 1579.3 / max 3322.2 m (1156 points); ROOM 4200 m
+ℹ Maithea L2->3: 7 pairs, parent - child p50 0.0 / p99 1214.4 / max 3926.4 m (2023 points); ROOM 4950 m
+ℹ Maithea L3->4: 5 pairs, parent - child p50 0.0 / p99 494.2 / max 2565.2 m (1445 points); ROOM 3250 m
+ℹ Maithea L4->5: 8 pairs, parent - child p50 2.1 / p99 287.3 / max 783.2 m (2312 points); ROOM 1000 m
+ℹ Maithea L5->6 (switch): 2 pairs, parent - child p50 36.4 / p99 849.1 / max 1221.7 m (578 points); ROOM 1550 m
+ℹ Maithea L6->7: 2 pairs, parent - child p50 12.5 / p99 239.6 / max 562.5 m (578 points); ROOM 750 m
+ℹ Maithea L7->8: 2 pairs, parent - child p50 0.0 / p99 284.3 / max 369.0 m (578 points); ROOM 500 m
+ℹ Maithea L8->9: 2 pairs, parent - child p50 0.0 / p99 146.5 / max 206.6 m (578 points); ROOM 300 m
+ℹ Maithea L9->10: 2 pairs, parent - child p50 55.5 / p99 142.7 / max 170.3 m (578 points); ROOM 200 m
+ℹ Selawyn L0->1: 3 pairs, parent - child p50 0.0 / p99 1553.1 / max 2860.3 m (867 points); ROOM 3600 m
+ℹ Selawyn L1->2: 3 pairs, parent - child p50 0.0 / p99 2030.0 / max 2688.7 m (867 points); ROOM 3400 m
+ℹ Selawyn L2->3: 7 pairs, parent - child p50 0.8 / p99 1491.3 / max 2723.7 m (2023 points); ROOM 3450 m
+ℹ Selawyn L3->4: 8 pairs, parent - child p50 9.7 / p99 462.2 / max 1303.7 m (2312 points); ROOM 1650 m
+ℹ Selawyn L4->5: 6 pairs, parent - child p50 9.3 / p99 403.8 / max 662.0 m (1734 points); ROOM 850 m
+ℹ Selawyn L5->6: 7 pairs, parent - child p50 5.7 / p99 265.0 / max 398.9 m (2023 points); ROOM 500 m
+ℹ Selawyn L6->7 (switch): 2 pairs, parent - child p50 470.1 / p99 1358.0 / max 1583.8 m (578 points); ROOM 2000 m
+ℹ Selawyn L7->8: 2 pairs, parent - child p50 0.0 / p99 382.7 / max 707.7 m (578 points); ROOM 900 m
+ℹ Selawyn L8->9: 2 pairs, parent - child p50 5.1 / p99 206.8 / max 304.8 m (578 points); ROOM 400 m
+ℹ Selawyn L9->10: 2 pairs, parent - child p50 11.0 / p99 98.6 / max 187.1 m (578 points); ROOM 250 m
+ℹ Selawyn L10->11: 2 pairs, parent - child p50 66.1 / p99 163.0 / max 208.3 m (578 points); ROOM 250 m
+ℹ Raiva L0->1: 3 pairs, parent - child p50 0.0 / p99 1259.4 / max 1869.7 m (867 points); ROOM 2350 m
+ℹ Raiva L1->2: 3 pairs, parent - child p50 0.0 / p99 1255.9 / max 1669.5 m (867 points); ROOM 2100 m
+ℹ Raiva L2->3: 6 pairs, parent - child p50 0.0 / p99 1469.9 / max 2118.8 m (1734 points); ROOM 2650 m
+ℹ Raiva L3->4: 6 pairs, parent - child p50 3.9 / p99 200.4 / max 1383.5 m (1734 points); ROOM 1750 m
+ℹ Raiva L4->5 (switch): 2 pairs, parent - child p50 101.0 / p99 552.8 / max 633.6 m (578 points); ROOM 800 m
+ℹ Raiva L5->6: 2 pairs, parent - child p50 1.6 / p99 143.3 / max 200.7 m (578 points); ROOM 300 m
+ℹ Raiva L6->7: 2 pairs, parent - child p50 0.0 / p99 151.5 / max 209.1 m (578 points); ROOM 300 m
+ℹ Raiva L7->8: 2 pairs, parent - child p50 2.0 / p99 44.1 / max 61.0 m (578 points); ROOM 100 m
+ℹ Raiva L8->9: 2 pairs, parent - child p50 20.8 / p99 61.7 / max 79.6 m (578 points); ROOM 100 m
+ℹ Lethuris L0->1: 4 pairs, parent - child p50 0.0 / p99 2786.5 / max 3815.8 m (1156 points); ROOM 4800 m
+ℹ Lethuris L1->2: 7 pairs, parent - child p50 0.0 / p99 2603.7 / max 3952.7 m (2023 points); ROOM 4950 m
+ℹ Lethuris L2->3: 5 pairs, parent - child p50 0.0 / p99 1697.4 / max 3627.0 m (1445 points); ROOM 4550 m
+ℹ Lethuris L3->4: 5 pairs, parent - child p50 0.0 / p99 420.3 / max 1720.4 m (1445 points); ROOM 2200 m
+ℹ Lethuris L4->5: 6 pairs, parent - child p50 3.0 / p99 504.4 / max 1079.6 m (1734 points); ROOM 1350 m
+ℹ Lethuris L5->6: 6 pairs, parent - child p50 6.5 / p99 351.4 / max 725.6 m (1734 points); ROOM 950 m
+ℹ Lethuris L6->7 (switch): 2 pairs, parent - child p50 164.3 / p99 1375.1 / max 1877.3 m (578 points); ROOM 2350 m
+ℹ Lethuris L7->8: 2 pairs, parent - child p50 2.3 / p99 328.8 / max 533.3 m (578 points); ROOM 700 m
+ℹ Lethuris L8->9: 2 pairs, parent - child p50 0.0 / p99 305.4 / max 749.3 m (578 points); ROOM 950 m
+ℹ Lethuris L9->10: 2 pairs, parent - child p50 12.0 / p99 148.7 / max 205.2 m (578 points); ROOM 300 m
+ℹ Lethuris L10->11: 2 pairs, parent - child p50 62.0 / p99 171.3 / max 246.1 m (578 points); ROOM 250 m
+✔ HARD: FRAME upper side where the child stores point samples (child level > last corrected level): child <= parent + 0.05 m (1.1842ms)
+✔ HARD: FRAME upper side at peak-corrected child levels: child - parent within the section 5 height tolerance (14.348ms)
+ℹ Maithea L0->1: child - parent p50 0.0 / p99 1796.5 / max 3217.7 m (1156 points) (strict bound 0.05 m)
+ℹ Maithea L1->2: child - parent p50 0.0 / p99 854.6 / max 3893.9 m (1156 points) (strict bound 0.05 m)
+ℹ Maithea L2->3: child - parent p50 0.0 / p99 714.7 / max 2917.6 m (2023 points) (strict bound 0.05 m)
+ℹ Maithea L3->4: child - parent p50 0.0 / p99 458.9 / max 1749.4 m (1445 points) (strict bound 0.05 m)
+ℹ Maithea L4->5: child - parent p50 -2.0 / p99 129.7 / max 896.1 m (2312 points) (strict bound 0.05 m)
+ℹ Maithea L5->6: child - parent p50 -35.8 / p99 65.3 / max 85.2 m (578 points) (strict bound 0.05 m)
+ℹ Maithea L6->7: child - parent p50 -12.3 / p99 160.8 / max 435.3 m (578 points) (strict bound 0.05 m)
+ℹ Maithea L7->8: child - parent p50 0.0 / p99 181.1 / max 476.2 m (578 points) (strict bound 0.05 m)
+ℹ Maithea L8->9: child - parent p50 0.0 / p99 110.1 / max 205.7 m (578 points) (strict bound 0.05 m)
+ℹ Selawyn L0->1: child - parent p50 0.0 / p99 1381.9 / max 2253.8 m (867 points) (strict bound 0.05 m)
+ℹ Selawyn L1->2: child - parent p50 0.0 / p99 761.4 / max 2720.6 m (867 points) (strict bound 0.05 m)
+ℹ Selawyn L2->3: child - parent p50 -0.8 / p99 620.4 / max 2261.1 m (2023 points) (strict bound 0.05 m)
+ℹ Selawyn L3->4: child - parent p50 -9.7 / p99 357.4 / max 1165.8 m (2312 points) (strict bound 0.05 m)
+ℹ Selawyn L4->5: child - parent p50 -9.3 / p99 252.7 / max 648.0 m (1734 points) (strict bound 0.05 m)
+ℹ Selawyn L5->6: child - parent p50 -5.7 / p99 122.0 / max 299.4 m (2023 points) (strict bound 0.05 m)
+ℹ Selawyn L6->7: child - parent p50 -468.5 / p99 7.8 / max 73.1 m (578 points) (strict bound 0.05 m)
+ℹ Selawyn L7->8: child - parent p50 0.0 / p99 242.8 / max 374.7 m (578 points) (strict bound 0.05 m)
+ℹ Selawyn L8->9: child - parent p50 -4.8 / p99 185.3 / max 262.8 m (578 points) (strict bound 0.05 m)
+ℹ Selawyn L9->10: child - parent p50 -11.0 / p99 90.9 / max 112.5 m (578 points) (strict bound 0.05 m)
+ℹ Raiva L0->1: child - parent p50 0.0 / p99 990.9 / max 1807.7 m (867 points) (strict bound 0.05 m)
+ℹ Raiva L1->2: child - parent p50 0.0 / p99 841.0 / max 1842.5 m (867 points) (strict bound 0.05 m)
+ℹ Raiva L2->3: child - parent p50 0.0 / p99 593.4 / max 1645.0 m (1734 points) (strict bound 0.05 m)
+ℹ Raiva L3->4: child - parent p50 -3.9 / p99 156.9 / max 1465.7 m (1734 points) (strict bound 0.05 m)
+ℹ Raiva L4->5: child - parent p50 -99.6 / p99 15.7 / max 157.8 m (578 points) (strict bound 0.05 m)
+ℹ Raiva L5->6: child - parent p50 -1.4 / p99 98.9 / max 240.8 m (578 points) (strict bound 0.05 m)
+ℹ Raiva L6->7: child - parent p50 0.0 / p99 82.2 / max 119.7 m (578 points) (strict bound 0.05 m)
+ℹ Raiva L7->8: child - parent p50 -2.0 / p99 37.3 / max 58.4 m (578 points) (strict bound 0.05 m)
+ℹ Lethuris L0->1: child - parent p50 0.0 / p99 2619.5 / max 3898.8 m (1156 points) (strict bound 0.05 m)
+ℹ Lethuris L1->2: child - parent p50 0.0 / p99 1315.9 / max 3451.5 m (2023 points) (strict bound 0.05 m)
+ℹ Lethuris L2->3: child - parent p50 0.0 / p99 843.3 / max 3559.0 m (1445 points) (strict bound 0.05 m)
+ℹ Lethuris L3->4: child - parent p50 0.0 / p99 503.6 / max 1000.7 m (1445 points) (strict bound 0.05 m)
+ℹ Lethuris L4->5: child - parent p50 -3.0 / p99 204.0 / max 800.9 m (1734 points) (strict bound 0.05 m)
+ℹ Lethuris L5->6: child - parent p50 -6.5 / p99 171.9 / max 826.3 m (1734 points) (strict bound 0.05 m)
+ℹ Lethuris L6->7: child - parent p50 -163.9 / p99 54.3 / max 89.7 m (578 points) (strict bound 0.05 m)
+ℹ Lethuris L7->8: child - parent p50 -2.2 / p99 271.8 / max 895.0 m (578 points) (strict bound 0.05 m)
+ℹ Lethuris L8->9: child - parent p50 0.0 / p99 271.4 / max 312.8 m (578 points) (strict bound 0.05 m)
+ℹ Lethuris L9->10: child - parent p50 -12.0 / p99 103.2 / max 194.9 m (578 points) (strict bound 0.05 m)
+✔ HARD: (U1) carving frame exact: child point sample <= parent stored + 0.05 m at every shared point, every pair L0 -> L(corrMax+1) (16.6333ms)
+ℹ Maithea L0->1: child point - parent stored p50 -0.0 / p99 0.0 / max 0.0 m (1156 points)
+ℹ Maithea L1->2: child point - parent stored p50 -0.0 / p99 0.0 / max 0.0 m (1156 points)
+ℹ Maithea L2->3: child point - parent stored p50 -0.0 / p99 0.0 / max 0.0 m (2023 points)
+ℹ Maithea L3->4: child point - parent stored p50 -12.4 / p99 0.0 / max 0.0 m (1445 points)
+ℹ Maithea L4->5: child point - parent stored p50 -15.5 / p99 0.0 / max 0.0 m (2312 points)
+ℹ Maithea L5->6 (switch): child point - parent stored p50 -67.6 / p99 0.0 / max 0.0 m (578 points)
+ℹ Maithea L6->7: child point - parent stored p50 -50.4 / p99 0.0 / max 0.0 m (578 points)
+ℹ Maithea L7->8: child point - parent stored p50 -38.0 / p99 0.0 / max 0.0 m (578 points)
+ℹ Maithea L8->9: child point - parent stored p50 -45.3 / p99 0.0 / max 0.0 m (578 points)
+ℹ Maithea L9->10: child point - parent stored p50 -55.5 / p99 0.0 / max 0.0 m (578 points)
+ℹ Selawyn L0->1: child point - parent stored p50 -0.0 / p99 0.0 / max 0.0 m (867 points)
+ℹ Selawyn L1->2: child point - parent stored p50 -0.0 / p99 0.0 / max 0.0 m (867 points)
+ℹ Selawyn L2->3: child point - parent stored p50 -36.4 / p99 0.0 / max 0.0 m (2023 points)
+ℹ Selawyn L3->4: child point - parent stored p50 -30.9 / p99 0.0 / max 0.0 m (2312 points)
+ℹ Selawyn L4->5: child point - parent stored p50 -23.2 / p99 0.0 / max 0.0 m (1734 points)
+ℹ Selawyn L5->6: child point - parent stored p50 -16.4 / p99 0.0 / max 0.0 m (2023 points)
+ℹ Selawyn L6->7 (switch): child point - parent stored p50 -565.8 / p99 0.0 / max 0.0 m (578 points)
+ℹ Selawyn L7->8: child point - parent stored p50 -67.2 / p99 0.0 / max 0.0 m (578 points)
+ℹ Selawyn L8->9: child point - parent stored p50 -78.4 / p99 0.0 / max 0.0 m (578 points)
+ℹ Selawyn L9->10: child point - parent stored p50 -59.3 / p99 0.0 / max 0.0 m (578 points)
+ℹ Selawyn L10->11: child point - parent stored p50 -66.0 / p99 0.0 / max 0.0 m (578 points)
+ℹ Raiva L0->1: child point - parent stored p50 -0.0 / p99 0.0 / max 0.0 m (867 points)
+ℹ Raiva L1->2: child point - parent stored p50 -0.0 / p99 0.0 / max 0.0 m (867 points)
+ℹ Raiva L2->3: child point - parent stored p50 -16.6 / p99 0.0 / max 0.0 m (1734 points)
+ℹ Raiva L3->4: child point - parent stored p50 -16.5 / p99 0.0 / max 0.0 m (1734 points)
+ℹ Raiva L4->5 (switch): child point - parent stored p50 -135.2 / p99 0.0 / max 0.0 m (578 points)
+ℹ Raiva L5->6: child point - parent stored p50 -22.3 / p99 0.0 / max 0.0 m (578 points)
+ℹ Raiva L6->7: child point - parent stored p50 -25.0 / p99 0.0 / max 0.0 m (578 points)
+ℹ Raiva L7->8: child point - parent stored p50 -21.4 / p99 0.0 / max 0.0 m (578 points)
+ℹ Raiva L8->9: child point - parent stored p50 -20.7 / p99 0.0 / max 0.0 m (578 points)
+ℹ Lethuris L0->1: child point - parent stored p50 -0.0 / p99 0.0 / max 0.0 m (1156 points)
+ℹ Lethuris L1->2: child point - parent stored p50 -0.0 / p99 0.0 / max 0.0 m (2023 points)
+ℹ Lethuris L2->3: child point - parent stored p50 -27.5 / p99 0.0 / max 0.0 m (1445 points)
+ℹ Lethuris L3->4: child point - parent stored p50 -0.0 / p99 0.0 / max 0.0 m (1445 points)
+ℹ Lethuris L4->5: child point - parent stored p50 -17.9 / p99 0.0 / max 0.0 m (1734 points)
+ℹ Lethuris L5->6: child point - parent stored p50 -20.5 / p99 0.0 / max 0.0 m (1734 points)
+ℹ Lethuris L6->7 (switch): child point - parent stored p50 -208.5 / p99 0.0 / max 0.0 m (578 points)
+ℹ Lethuris L7->8: child point - parent stored p50 -43.4 / p99 0.0 / max 0.0 m (578 points)
+ℹ Lethuris L8->9: child point - parent stored p50 -50.4 / p99 0.0 / max 0.0 m (578 points)
+ℹ Lethuris L9->10: child point - parent stored p50 -59.9 / p99 0.0 / max 0.0 m (578 points)
+ℹ Lethuris L10->11: child point - parent stored p50 -61.9 / p99 0.0 / max 0.0 m (578 points)
+✔ HARD: (U1) negative control: one parent vertex 1 m below the child point sample fails, on every world and level (3.0691ms)
+✔ HARD: (U2) peak-correction excess: child stored - parent stored <= UP_ROOM at every corrected pair (UP_ROOM measured on the T6 wired tree) (14.9469ms)
+ℹ Maithea L0->1: child - parent stored p50 0.0 / p99 1796.5 / max 3217.7 m (1156 points); UP_ROOM 4050 m
+ℹ Maithea L1->2: child - parent stored p50 0.0 / p99 854.6 / max 3893.9 m (1156 points); UP_ROOM 4900 m
+ℹ Maithea L2->3: child - parent stored p50 0.0 / p99 714.7 / max 2917.6 m (2023 points); UP_ROOM 3650 m
+ℹ Maithea L3->4: child - parent stored p50 0.0 / p99 458.9 / max 1749.4 m (1445 points); UP_ROOM 2200 m
+ℹ Maithea L4->5: child - parent stored p50 -2.0 / p99 129.7 / max 896.1 m (2312 points); UP_ROOM 1150 m
+ℹ Maithea L5->6: child - parent stored p50 -35.8 / p99 65.3 / max 85.2 m (578 points); UP_ROOM 150 m
+ℹ Maithea L6->7: child - parent stored p50 -12.3 / p99 160.8 / max 435.3 m (578 points); UP_ROOM 550 m
+ℹ Maithea L7->8: child - parent stored p50 0.0 / p99 181.1 / max 476.2 m (578 points); UP_ROOM 600 m
+ℹ Maithea L8->9: child - parent stored p50 0.0 / p99 110.1 / max 205.7 m (578 points); UP_ROOM 300 m
+ℹ Selawyn L0->1: child - parent stored p50 0.0 / p99 1381.9 / max 2253.8 m (867 points); UP_ROOM 2850 m
+ℹ Selawyn L1->2: child - parent stored p50 0.0 / p99 761.4 / max 2720.6 m (867 points); UP_ROOM 3450 m
+ℹ Selawyn L2->3: child - parent stored p50 -0.8 / p99 620.4 / max 2261.1 m (2023 points); UP_ROOM 2850 m
+ℹ Selawyn L3->4: child - parent stored p50 -9.7 / p99 357.4 / max 1165.8 m (2312 points); UP_ROOM 1500 m
+ℹ Selawyn L4->5: child - parent stored p50 -9.3 / p99 252.7 / max 648.0 m (1734 points); UP_ROOM 850 m
+ℹ Selawyn L5->6: child - parent stored p50 -5.7 / p99 122.0 / max 299.4 m (2023 points); UP_ROOM 400 m
+ℹ Selawyn L6->7: child - parent stored p50 -468.5 / p99 7.8 / max 73.1 m (578 points); UP_ROOM 100 m
+ℹ Selawyn L7->8: child - parent stored p50 0.0 / p99 242.8 / max 374.7 m (578 points); UP_ROOM 500 m
+ℹ Selawyn L8->9: child - parent stored p50 -4.8 / p99 185.3 / max 262.8 m (578 points); UP_ROOM 350 m
+ℹ Selawyn L9->10: child - parent stored p50 -11.0 / p99 90.9 / max 112.5 m (578 points); UP_ROOM 150 m
+ℹ Raiva L0->1: child - parent stored p50 0.0 / p99 990.9 / max 1807.7 m (867 points); UP_ROOM 2300 m
+ℹ Raiva L1->2: child - parent stored p50 0.0 / p99 841.0 / max 1842.5 m (867 points); UP_ROOM 2350 m
+ℹ Raiva L2->3: child - parent stored p50 0.0 / p99 593.4 / max 1645.0 m (1734 points); UP_ROOM 2100 m
+ℹ Raiva L3->4: child - parent stored p50 -3.9 / p99 156.9 / max 1465.7 m (1734 points); UP_ROOM 1850 m
+ℹ Raiva L4->5: child - parent stored p50 -99.6 / p99 15.7 / max 157.8 m (578 points); UP_ROOM 200 m
+ℹ Raiva L5->6: child - parent stored p50 -1.4 / p99 98.9 / max 240.8 m (578 points); UP_ROOM 350 m
+ℹ Raiva L6->7: child - parent stored p50 0.0 / p99 82.2 / max 119.7 m (578 points); UP_ROOM 150 m
+ℹ Raiva L7->8: child - parent stored p50 -2.0 / p99 37.3 / max 58.4 m (578 points); UP_ROOM 100 m
+ℹ Lethuris L0->1: child - parent stored p50 0.0 / p99 2619.5 / max 3898.8 m (1156 points); UP_ROOM 4900 m
+ℹ Lethuris L1->2: child - parent stored p50 0.0 / p99 1315.9 / max 3451.5 m (2023 points); UP_ROOM 4350 m
+ℹ Lethuris L2->3: child - parent stored p50 0.0 / p99 843.3 / max 3559.0 m (1445 points); UP_ROOM 4450 m
+ℹ Lethuris L3->4: child - parent stored p50 0.0 / p99 503.6 / max 1000.7 m (1445 points); UP_ROOM 1300 m
+ℹ Lethuris L4->5: child - parent stored p50 -3.0 / p99 204.0 / max 800.9 m (1734 points); UP_ROOM 1050 m
+ℹ Lethuris L5->6: child - parent stored p50 -6.5 / p99 171.9 / max 826.3 m (1734 points); UP_ROOM 1050 m
+ℹ Lethuris L6->7: child - parent stored p50 -163.9 / p99 54.3 / max 89.7 m (578 points); UP_ROOM 150 m
+ℹ Lethuris L7->8: child - parent stored p50 -2.2 / p99 271.8 / max 895.0 m (578 points); UP_ROOM 1150 m
+ℹ Lethuris L8->9: child - parent stored p50 0.0 / p99 271.4 / max 312.8 m (578 points); UP_ROOM 400 m
+ℹ Lethuris L9->10: child - parent stored p50 -12.0 / p99 103.2 / max 194.9 m (578 points); UP_ROOM 250 m
+✔ HARD: negative control: a switch child carved with 2x depth leaves the frame on every world (2.3124ms)
+ℹ Maithea 2/6/51/34: carving depth max 1145 m; 2x-depth child: 6 shared points below parent - 1550 m
+ℹ Maithea 2/6/33/54: carving depth max 799 m; 2x-depth child: 2 shared points below parent - 1550 m
+ℹ Selawyn 0/7/112/107: carving depth max 1520 m; 2x-depth child: 24 shared points below parent - 2000 m
+ℹ Selawyn 0/7/102/84: carving depth max 1137 m; 2x-depth child: 12 shared points below parent - 2000 m
+ℹ Raiva 1/5/19/25: carving depth max 472 m; 2x-depth child: 4 shared points below parent - 800 m
+ℹ Raiva 1/5/20/22: carving depth max 672 m; 2x-depth child: 28 shared points below parent - 800 m
+ℹ Lethuris 2/7/28/73: carving depth max 1509 m; 2x-depth child: 22 shared points below parent - 2350 m
+ℹ Lethuris 2/7/104/55: carving depth max 849 m; 2x-depth child: 0 shared points below parent - 2350 m
+✔ HARD: EDGE MATCH: neighbouring tiles agree on every edge vertex (Object.is), no morph or Float32 position gap (4.872ms)
+ℹ Maithea: 42 edge pairs {"sibling":{"pairs":27,"crossFace":0,"onMassif":22,"gapM":0.1517,"boundM":0.3753,"skirtM":40.25},"cube-edge":{"pairs":12,"crossFace":12,"onMassif":7,"gapM":0.3047,"boundM":0.5696,"skirtM":0.25},"cross-face":{"pairs":2,"crossFace":2,"onMassif":2,"gapM":0.0074,"boundM":0.017,"skirtM":40.25},"neighbour":{"pairs":1,"crossFace":0,"onMassif":1,"gapM":0.0045,"boundM":0.0104,"skirtM":40.25}}; cube-face massif tiles {"5":{"tile":"0/5/0/3","edge":0,"massifEdgeNodes":9},"6":{"tile":"0/6/0/7","edge":0,"massifEdgeNodes":17}}
+ℹ Selawyn: 44 edge pairs {"sibling":{"pairs":29,"crossFace":0,"onMassif":24,"gapM":0.2559,"boundM":0.6174,"skirtM":40.25},"cube-edge":{"pairs":12,"crossFace":12,"onMassif":2,"gapM":0.4711,"boundM":0.9372,"skirtM":0.25},"cross-face":{"pairs":2,"crossFace":2,"onMassif":2,"gapM":0.0066,"boundM":0.0144,"skirtM":40.25},"neighbour":{"pairs":1,"crossFace":0,"onMassif":1,"gapM":0.0037,"boundM":0.0067,"skirtM":40.25}}; cube-face massif tiles {"6":{"tile":"0/6/63/27","edge":1,"massifEdgeNodes":10},"7":{"tile":"0/7/127/54","edge":1,"massifEdgeNodes":17}}
+ℹ Raiva: 28 edge pairs {"sibling":{"pairs":13,"crossFace":0,"onMassif":13,"gapM":0.0441,"boundM":0.1446,"skirtM":40.25},"cube-edge":{"pairs":12,"crossFace":12,"onMassif":4,"gapM":0.1134,"boundM":0.2196,"skirtM":0.25},"cross-face":{"pairs":2,"crossFace":2,"onMassif":2,"gapM":0.0049,"boundM":0.0136,"skirtM":40.25},"neighbour":{"pairs":1,"crossFace":0,"onMassif":1,"gapM":0.0046,"boundM":0.0088,"skirtM":40.25}}; cube-face massif tiles {"4":{"tile":"0/4/0/2","edge":0,"massifEdgeNodes":3},"5":{"tile":"0/5/0/5","edge":0,"massifEdgeNodes":5}}
+ℹ Lethuris: 41 edge pairs {"sibling":{"pairs":26,"crossFace":0,"onMassif":19,"gapM":0.2421,"boundM":0.6497,"skirtM":40.25},"cube-edge":{"pairs":12,"crossFace":12,"onMassif":4,"gapM":0.5267,"boundM":0.9863,"skirtM":0.25},"cross-face":{"pairs":2,"crossFace":2,"onMassif":2,"gapM":0.0076,"boundM":0.015,"skirtM":40.25},"neighbour":{"pairs":1,"crossFace":0,"onMassif":1,"gapM":0.0045,"boundM":0.0096,"skirtM":40.25}}; cube-face massif tiles {"6":{"tile":"0/6/0/53","edge":0,"massifEdgeNodes":15},"7":{"tile":"0/7/0/106","edge":0,"massifEdgeNodes":17}}
+✔ HARD: negative control: one edge vertex offset by 1 m fails the edge match (0.6204ms)
+ℹ Maithea: 12 offset edges, all caught (sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; cross-face L5: heights 1, gaps 1; cross-face L6: heights 1, gaps 1; neighbour L6: heights 1, gaps 1; sibling L7: heights 1, gaps 1)
+ℹ Selawyn: 10 offset edges, all caught (sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; cross-face L6: heights 1, gaps 1; cross-face L7: heights 1, gaps 1; neighbour L7: heights 1, gaps 1; sibling L8: heights 1, gaps 1)
+ℹ Raiva: 8 offset edges, all caught (sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; cross-face L4: heights 1, gaps 1; cross-face L5: heights 1, gaps 1; neighbour L5: heights 1, gaps 1; sibling L6: heights 1, gaps 1)
+ℹ Lethuris: 9 offset edges, all caught (sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; sibling: heights 1, gaps 1; cross-face L6: heights 1, gaps 1; cross-face L7: heights 1, gaps 1; neighbour L7: heights 1, gaps 1; sibling L8: heights 1, gaps 1)
+✔ HARD: COARSE-ONLY: the coarse field is continuous on a net over all six faces, 0 M3 block solves (0.3163ms)
+ℹ Maithea: 48 lines x 16384, 1821744 samples, 1011 intervals refined x 1024 (belt edges 119, massif edges 111, belt switches 0, height-flagged 785); steepest slope net 1.030, refined 0.620 (bound 4); block solves 0
+ℹ Selawyn: 48 lines x 16384, 2713648 samples, 1882 intervals refined x 1024 (belt edges 104, massif edges 96, belt switches 0, height-flagged 1686); steepest slope net 0.699, refined 0.786 (bound 4); block solves 0
+ℹ Raiva: 48 lines x 16384, 1127472 samples, 333 intervals refined x 1024 (belt edges 120, massif edges 43, belt switches 0, height-flagged 179); steepest slope net 1.013, refined 0.658 (bound 4); block solves 0
+ℹ Lethuris: 48 lines x 16384, 2627632 samples, 1798 intervals refined x 1024 (belt edges 116, massif edges 102, belt switches 0, height-flagged 1589); steepest slope net 0.786, refined 0.722 (bound 4); block solves 0
+✔ HARD: negative control: a 10 m step on every belt breaks the continuity check at the belt edges (0.1546ms)
+ℹ Maithea: 4 belt-crossing lines, 9 belt edges, 9 caught, 9 violations
+ℹ Selawyn: 4 belt-crossing lines, 14 belt edges, 14 caught, 14 violations
+ℹ Raiva: 4 belt-crossing lines, 7 belt edges, 7 caught, 7 violations
+ℹ Lethuris: 4 belt-crossing lines, 8 belt edges, 8 caught, 8 violations
+✔ ladder lod-ladder-2: rung ranges, pose mapping and the seabed distance policy (2.6758ms)
+✔ Maithea: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (33101.3462ms)
+✔ Lethuris: 12 stratified edge tiles meet the cross-level contract at L6->7 ... L14->15 (30897.8872ms)
+✔ Maithea coarse retention: peak area kept, summit loss, snow and forest (plan edge-tile selection) (17252.9143ms)
+✔ coarse heights are a declared reduction: point sample plus a bounded non-negative correction (253.346ms)
+✔ morph: a child starts exactly on its corrected parent at every co-located node (247.2436ms)
+✔ determinism: bit-identical rebuilds, independent of visit order and of process (2141.1909ms)
+HALO {"production":192,"reference":256,"narrow":32,"narrowDifferingValues":25530}
+EVICTED {"builds":8,"distinctBlocks":4}
+MEMORY {"blockBytes":248196,"blockMemoBytes":7942272,"pointMemoBytes":303104,"memoBytes":8245376,"transientBytesPerSolve":12337650}
+POINT_MEMO {"coldBuilds":4,"warmHits":5014,"aged":{"hits":13,"stores":7756}}
+TRANSFER {"keys":["730202/30000/-1","730201/30000/-1","730202/30000/0","730201/30000/0"],"importedBuilds":0,"rejected":["version","length","nan","above1","seed","id","capped"]}
+TRACE {"blockPath":["730202/30000/-1","730201/30000/-1","730202/30000/0","730201/30000/0"],"pointWarmHits":242,"mutantWarmKeys":0}
+(node:53080) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ HARD: halo agreement with a wider reference halo, narrow-halo negative control (6011.6016ms)
+✔ HARD: neighbouring blocks share the seam column bit-exactly and the surface is continuous (6666.5997ms)
+✔ HARD: evicted (CACHE 1) and LRU-bounded memo reproduces the pinned digest (10047.5381ms)
+✔ HARD: memo key is exact in half-width and normalised seed (key-mutation control) (6839.2777ms)
+✔ HARD: persistent memo payload stays below 8.5 MB; per-solve transient arrays reported (3744.12ms)
+✔ HARD: point-query cell memo is bit-identical to the block path (cold, warm, aged, interleaved; key control) (16660.1153ms)
+✔ HARD: residency transfer: a fresh instance that imports the traced blocks reproduces the digest with 0 builds; export copies, import validates (3192.8616ms)
+✔ HARD: block trace sees hits and misses on both paths, is not nestable and closes on a throw (point-memo note mutation control) (7084.7539ms)
+DIGEST {"sha256":"1321803fcd6ba5b03fa009035154a025aefff6a2a5bf1442e9e4cf902443cfee","builds":2}
+DRAINAGE_SMALL {"P":{"fill10Share":0,"pitsPer1000km2":19.229613604951627,"pits025":0},"N":{"fill10Share":0.22146444292888587,"pitsPer1000km2":1899.8858241692205,"pits025":757.646776035094}}
+(node:49948) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ HARD: literal positive zero at exclusions (2.225ms)
+✔ HARD: coast safety and bounds including the zero-envelope margin (3200.6851ms)
+✔ HARD: cold, warm, reverse and child-process SHA-256 agree with the pin (3991.5856ms)
+✔ HARD: arithmetic audit with negative controls (14.6628ms)
+✔ HARD: frozen versioned constants and level bands (1.5021ms)
+✔ HARD: every interior core construction vertex drains (solved heights), lowered-vertex control (2366.7973ms)
+✔ HARD: drainage teeth and eroded builder determinism on a small fixture (2331.9356ms)
+✔ HARD: structure helper counts known plane channels and raw correlation (4.9634ms)
+(node:25712) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ private continental kernels are Object.is identical: 20,000 directions x four worlds (259.8544ms)
+✔ HARD: the truth core's inline voxel prefilter changes no value (Object.is, every field, four worlds) (138528.2326ms)
+✔ g² lemma on dense grid, and conservative composition with exact distances / zero margin (634.8626ms)
+✔ coarse margin is frozen, symmetric, and clamped at the ramp endpoints (0.4779ms)
+✔ Maithea: sparse field bytes deterministic across independent builds and sample orders (144.4895ms)
+✔ Maithea: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (3463.6795ms)
+ℹ INFO Maithea dense interpolation {"max":0.08470560241000466,"count":7600923,"worst":{"belt":27,"face":1,"i":196,"j":253,"u":0.9996892227338091,"exact":-0.12183748042701073,"sd":-0.2065430828370154},"ratio":0.4235280120500233,"interiorMax":0.0006571398501379333,"interiorOnlyRatio":42.35280120500233}; 400 .0025-wide bins checked
+✔ Maithea: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (1088.4921ms)
+ℹ INFO Maithea coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.02577347672099628,"p50":0,"p99":9.265159716504513,"max":32.319805529174346}
+ℹ INFO Maithea below old max 1212; positive belt directions 9688
+ℹ INFO zero-margin floor violations 3908
+✔ Maithea: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (35.1084ms)
+✔ Selawyn: sparse field bytes deterministic across independent builds and sample orders (154.1312ms)
+✔ Selawyn: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (6603.7924ms)
+ℹ INFO Selawyn dense interpolation {"max":0.06609035104170952,"count":15045302,"worst":{"belt":21,"face":4,"i":497,"j":527,"u":-0.9999266853076781,"exact":0.014218362643220902,"sd":-0.05187198839848861},"ratio":0.3304517552085476,"interiorMax":0.000226716647867109,"interiorOnlyRatio":33.045175520854755}; 400 .0025-wide bins checked
+✔ Selawyn: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (1207.1093ms)
+ℹ INFO Selawyn coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.0074170890519863475,"p50":0,"p99":7.531337030924988,"max":27.03517195712402}
+ℹ INFO Selawyn below old max 1441; positive belt directions 8765
+ℹ INFO zero-margin floor violations 3567
+✔ Selawyn: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (27.433ms)
+✔ Raiva: sparse field bytes deterministic across independent builds and sample orders (41.2927ms)
+✔ Raiva: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (570.7821ms)
+ℹ INFO Raiva dense interpolation {"max":0.05176391863107824,"count":1307106,"worst":{"belt":1,"face":5,"i":63,"j":113,"u":-0.9999220505568476,"exact":-0.03585074414342784,"sd":0.015913174487650394},"ratio":0.25881959315539116,"interiorMax":0.00036783711771271044,"interiorOnlyRatio":25.881959315539117}; 400 .0025-wide bins checked
+✔ Raiva: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (783.4993ms)
+ℹ INFO Raiva coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.0012683949216088508,"p50":0,"p99":5.694192387082694,"max":28.663664537670684}
+ℹ INFO Raiva below old max 813; positive belt directions 9515
+ℹ INFO zero-margin floor violations 3783
+✔ Raiva: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (24.9644ms)
+✔ Lethuris: sparse field bytes deterministic across independent builds and sample orders (112.4498ms)
+✔ Lethuris: signed-distance measured enclosure, edges, node M1 expressions, and active boundary continuity (7082.8428ms)
+ℹ INFO Lethuris dense interpolation {"max":0.06771199563383427,"count":15593071,"worst":{"belt":31,"face":3,"i":668,"j":424,"u":0.9999622507681086,"exact":0.09135953365028533,"sd":0.1590715292841196},"ratio":0.3385599781691713,"interiorMax":0.00028291944467362384,"interiorOnlyRatio":33.85599781691714}; 400 .0025-wide bins checked
+✔ Lethuris: >=50,000 Fibonacci + 4 x 41² rasters, upper floor, inactive identity, ocean flags, mutation (1225.185ms)
+ℹ INFO Lethuris coarse - exact uncarved floor {"count":56724,"violations":0,"oceanDifferences":0,"inactiveDifferences":0,"maxError":0.011451772768033525,"p50":0,"p99":9.369666756751712,"max":63.21540662403686}
+ℹ INFO Lethuris below old max 110; positive belt directions 8718
+ℹ INFO zero-margin floor violations 3641
+✔ Lethuris: separate plain and mountain cores identical outside massifs, 4096 directions, both floor modes (25.1162ms)
+✔ HARD: baseTerrainCore and mountainTerrainCore are identical outside the setup and ridge-term hunks (0.9ms)
+GRID Maithea: N=1024, 2358 in-band of 102500, edge 2743 in-band of 8880, 1480/1480 pairs straddle 48 km
+GRID Selawyn: N=2048, 1196 in-band of 102500, edge 2314 in-band of 7680, 1280/1280 pairs straddle 48 km
+GRID Raiva: N=512, 1755 in-band of 102500, edge 306 in-band of 960, 120/160 pairs straddle 48 km
+GRID Lethuris: N=2048, 1257 in-band of 102500, edge 3067 in-band of 9840, 1640/1640 pairs straddle 48 km
+GRID AREA Maithea: N=1024 cells 216545 nodes 7156; massif 2.300%, geometric band 2.469%, flagged 3.420% (land 3.157%); land ratio 1.372, geometric ratio 1.385
+GRID AREA Maithea: flagged / massif 1.486
+GRID AREA Selawyn: N=2048 cells 398112 nodes 12689; massif 1.167%, geometric band 1.291%, flagged 1.687% (land 1.519%); land ratio 1.302, geometric ratio 1.307
+GRID AREA Selawyn: flagged / massif 1.446
+GRID AREA Raiva: N=512 cells 39459 nodes 1108; massif 1.712%, geometric band 1.816%, flagged 2.280% (land 2.136%); land ratio 1.247, geometric ratio 1.256
+GRID AREA Raiva: flagged / massif 1.332
+GRID AREA Lethuris: N=2048 cells 432521 nodes 13369; massif 1.226%, geometric band 1.318%, flagged 1.678% (land 1.546%); land ratio 1.261, geometric ratio 1.273
+GRID AREA Lethuris: flagged / massif 1.368
+✔ HARD: version and API unchanged by the grid (output-neutral; orogen-layout-2 since cost plan T2) (141.8579ms)
+✔ HARD: 4 water worlds x 102,500 Fibonacci + band-edge offsets: sampleWithinWithA0 == filtered sampleWithA0, 0 unflagged band directions (6355.9261ms)
+✔ HARD: negative control: a grid stamped for a narrower band leaves band directions unflagged (the check has teeth) (588.2041ms)
+✔ HARD: coarse summary covers every flagged cell, and the word tags agree with the bits, at N = 256..2048 (732.8196ms)
+✔ HARD: other band parameters (16 km / no width gate, 48 km / no width gate) on two worlds (1071.2616ms)
+✔ HARD: 60 corpus bodies x 20,000 directions + band-edge offsets: identical and conservative (48777.6339ms)
+✔ HARD: flagged area <= 1.5 x massif (band) area per world (4040.6122ms)
+✔ HARD: outside the band mountainRidgeTermM returns main's term unchanged, so massifBeltSample is value-neutral at the call site (303.5854ms)
+{"positive":{"count":87,"areaKm2":2003.203125,"density":43.43044343044343,"placement":1,"placementOfAvailable":1,"topCount":100,"max":3000,"boundViolations":0,"samples":296450},"negative":{"dome":0,"bare":0,"shiftPlacement":0.12,"shiftCount":100,"boundMax":3030,"boundViolations":11165}}
+✔ CONTRACT: M4 reduced fixture and four measured negative controls (9788.0648ms)
+✔ HARD: frozen rows, fail-closed judge and dependency source audit (10.7202ms)
+✔ HARD: the M1-only rule reproduces the frozen massif tile set (12 per world: 8 axis, 2 flank, 2 belt-end) (9923.4475ms)
+✔ HARD: every tile of the set, at every evaluated level, has a sample with |axisDistanceM| < 48 km on a massif (9355.9781ms)
+✔ HARD: negative control: a direction far from every belt fails the massif evidence (26.4058ms)
+✔ wave field generation is deterministic and body-distinct (3.9025ms)
+✔ seeking time directly equals arriving at it by stepping through arbitrary increments (no accumulated state) (0.7193ms)
+✔ height is a smooth, continuous function of position (0.5565ms)
+✔ analytic slope matches the finite-difference gradient (3.1752ms)
+✔ uniform-array packing matches the wave field, one entry per wave (23.7653ms)
+✔ GLSL mirror declares the same wave count and both stay in sync (single source of truth check) (2.3327ms)
+✔ ocean height matches terrain.ts waterLevelM at the shoreline, within the documented wave-amplitude tolerance (Maithea G001/C2128,0,1/0 planets[1]) (4327.7832ms)
+✔ material construction needs no GL context (97.9108ms)
+✔ ocean waves are continuous across drawn patch edges and per-patch ocean uniforms stay fresh (98015.9558ms)
+ℹ drawn ocean patches 349 (levels 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18)
+ℹ near field (level >= 9): 639 shared edges (175 2:1), 247 across a 4096 m phase-origin cell, max height jump 6.596e-5 m, max slope jump 2.012e-5, worst {"a":"2/18/157234/123903","b":"2/18/157235/123903","cellA":"247,67","cellB":"247,67","dh":0.00006595950265760042,"ds":0.000004126422058083796}
+ℹ far field: 565 shared edges, 565 across a 4096 m phase-origin cell, max height jump 0.000e+0 m, max slope jump 0.000e+0, max jump / precision bound 0.000
+ℹ wave fade: 3040488 vertex-wave pairs, 2356596 beyond the Nyquist limit, 0 of those still displaced (worst 0 m null), 676671 resolvable pairs keep amplitude
+ℹ ocean skirts: 349 drawn shells, 331 drawing skirts, max skirt-copy error 0.500 float32 ulp
+ℹ skirt coverage, drawn geometry as settled: 1204 edges (332 coarser, 13 at 4:1 or more), 192640 samples, 27754 open > tol (max gap 632.817 m, tol <= 1239.56 mm), 0 uncovered, min skirt margin 0.655 m, surface samples missing 0
+ℹ skirt coverage, morph 0: 1204 edges (332 coarser, 13 at 4:1 or more), 192640 samples, 33230 open > tol (max gap 2526.801 m, tol <= 1239.56 mm), 0 uncovered, min skirt margin 0.655 m, surface samples missing 0
+ℹ skirt coverage, morph 0.5: 1204 edges (332 coarser, 13 at 4:1 or more), 192640 samples, 20339 open > tol (max gap 1263.660 m, tol <= 1239.56 mm), 0 uncovered, min skirt margin 0.655 m, surface samples missing 0
+ℹ negative control 'skirts not drawn': 1204 edges (332 coarser, 13 at 4:1 or more), 192640 samples, 27754 open > tol (max gap 632.817 m, tol <= 1239.56 mm), 27754 uncovered, min skirt margin -632.817 m, surface samples missing 0
+ℹ negative control 'every other skirt triangle missing': 1204 edges (332 coarser, 13 at 4:1 or more), 192640 samples, 27754 open > tol (max gap 632.817 m, tol <= 1239.56 mm), 429 uncovered, min skirt margin -0.250 m, surface samples missing 0
+ℹ negative control 'degenerate skirt triangles': 1204 edges (332 coarser, 13 at 4:1 or more), 192640 samples, 27754 open > tol (max gap 632.817 m, tol <= 1239.56 mm), 27754 uncovered, min skirt margin -632.817 m, surface samples missing 0
+ℹ negative control 'skirt without the chord sag': 1204 edges (332 coarser, 13 at 4:1 or more), 192640 samples, 27754 open > tol (max gap 632.817 m, tol <= 1239.56 mm), 11085 uncovered, min skirt margin -630.959 m, surface samples missing 0
+✔ wave phase offsets map a 4096 m-wrapped origin back onto the one world wave field (12.7681ms)
+✔ wave amplitude fade: kept on a fine grid, gone at the Nyquist limit, gone past OCEAN_SURFACE_DETAIL_M (OCEAN-PRESENT) (4.2212ms)
+✔ underwater medium: identity for a dry eye, water colour with distance, red lost first, darker deeper (OCEAN-PRESENT) (0.7916ms)
+✔ versions: ocean-volume-1 and surface 8 (1.0158ms)
+✔ catalogue epoch: datedOceanState waterLevelM is exactly 0 (full ocean) on Maithea, Selawyn, Raiva, Lethuris (2819.7134ms)
+✔ levelForLoss: f=0 -> exactly 0, strictly monotone, volume conserved to 1e-6 (28.4199ms)
+✔ solver reproduces the shipped dated level: Maithea 67.8% loss -> -4503 +- 25 m (version-gated on the terrain it was measured on) (3.0984ms)
+✔ solver on caller heights: tiny hand-checked basin (7.5816ms)
+✔ loss keys: 0 before the epoch, 1 no later than giantNs, strictly ordered, at most 16 (6.5983ms)
+✔ seek independence: the same t reached by two seek paths gives a bit-identical level (410.952ms)
+✔ determinism: Math.* nudged by 1 ulp leaves hypsometry and levels bit-identical (515.7796ms)
+✔ floorM/windowM come from the R0 floor sampler on the same rock field (window = ground - floor) (14631.2716ms)
+✔ version and version block (0.5508ms)
+✔ placeAt matches the surface query bit for bit at full level (ground height, ocean, water depth) (32479.193ms)
+✔ level ladder argument is echoed; place-query-1 answers every rung at full resolution (27.5366ms)
+✔ no field depends on visit order (forward vs shuffled, interleaved bodies and dates) (505.1934ms)
+✔ depthAndPressureAt: Earth analogue 10 m and 10.9 km (Challenger Deep), monotone, every depth to the seabed, clamped below it (60.6432ms)
+✔ gravity, air, biome and climate are exposed as data with sane values (7.7683ms)
+✔ absent places are explicit: stars, and planets before they form or after engulfment (3.0424ms)
+✔ docs/place-query-v1.md documents every field with unit and provenance, and the game-layer rule (14.4463ms)
+WARM {"jobs":8,"workerBuilds":4,"workerMs":5675,"imported":4,"blocks":[1,1,1,1,1,1,1,1]}
+✔ HARD: warm-up transfer: blocks a worker exported make placeAt a 0-build hit with the identical answer (8 frozen massif directions) (6559.9095ms)
+✔ patch invalidation snapshots acknowledge only versions actually consumed (33.145ms)
+✔ global invalidation advances the epoch and supersedes pending local keys (12.1612ms)
+✔ an unconsumed local-key journal is bounded by escalating to a full-reset epoch (19.2476ms)
+✔ dated family retag preserves roots and requires matching appearance and canonical height for handoff (15.1403ms)
+✔ presentation replacement validates before adoption and rapid dates preserve the retag cursor (25.9565ms)
+✔ selection requests and queued census results stay bounded and installs are frame budgeted (129.5116ms)
+✔ selection application stops at the injected monotonic two millisecond deadline (5.0737ms)
+✔ current-patch revision tracks ownership/readiness changes but not stationary queries (2.2821ms)
+✔ large selection decoding is sliced and atomically swaps the old patch window (37.7015ms)
+✔ old patch replies cannot install after the replacement address scan has completed (8.4483ms)
+✔ malformed deferred selection terminates before replacing the current window (3.3932ms)
+✔ only structurally complete patches install; validated empty patches remain known (3.4286ms)
+✔ patch address coverage metadata rejects a partial edge/interior result before installation (1.0169ms)
+✔ near ownership, absence suppression, and reused-slot previous IDs resolve in one frame (1.736ms)
+✔ caches current-patch ownership lookups only within one prepare transaction (1.1962ms)
+✔ a census arrival replaces a cached miss at the next frame boundary (0.7658ms)
+✔ water reconfiguration ignores stale generation replies and accepts the new context (14.4415ms)
+✔ matching family retags an in-range patch only after ready without rewriting its slot (4.1958ms)
+✔ outside-interval and different-family patches stay stale and are requested again (4.3152ms)
+✔ near absence during a water shift still suppresses the paired far instance (2.2625ms)
+✔ water targets coalesce to one follow-up configure and water-only messages omit the body (1.5199ms)
+✔ a lagging interval reply is validated against its configured water snapshot (2.3875ms)
+✔ same-water river reference attachment forces a full-body worker configure (2.7493ms)
+✔ close canonical crowns require same-frame ownership; holes and submerged trees do not count as forced closes (2.3916ms)
+✔ worker failure retries once then disables the full canopy for legacy near rendering (0.7454ms)
+✔ hung configure, selection, and request each restart once then disable far ownership (2.8227ms)
+✔ valid partial patch progress refreshes the request watchdog timestamp (0.8872ms)
+✔ nonfinite water is rejected before host state changes and zero stays stable for waterless bodies (1.6027ms)
+✔ canopy prefetches while hidden between prepare and streaming altitude thresholds (1.0302ms)
+✔ canopy does not start or keep streaming above its altitude band (4.5275ms)
+✔ patch failures stop retrying after three attempts and an infinite wake does not spin (3.5243ms)
+✔ a pending patch job cannot install results from the previous selection after a long move (1.0883ms)
+✔ water change during pending selection invalidates its reply before requesting the new context (0.7985ms)
+✔ capacity overflow rejects a whole patch without a partial slot allocation (1.1101ms)
+✔ water refresh can replace a resident patch using its old slots (26.0625ms)
+✔ replacement that still exceeds capacity retires the stale patch without a partial resident (5.5042ms)
+✔ same-water family replacement releases its old full-capacity patch before whole-patch install (4.5987ms)
+✔ origin rebasing retains positions until the replacement buffer is complete (5.9044ms)
+✔ forestCellPatchKey matches the split-and-map reference for well-formed and malformed ids (70.8983ms)
+✔ slot identity and install revision keep a cached slot equal to slotOf across removal and reuse (3.8021ms)
+✔ forest cells retain position, dimensions and identity when the observer moves and returns (60.9403ms)
+✔ forest working sets span cube seams with unique addresses (7.9619ms)
+✔ landforms have metre-scale regional relief while preserving coastal lowlands (5.0879ms)
+✔ regional rock relief does not disappear when the dated ocean floods it (1811.5427ms)
+✔ forest frame outputs are identical to the reference forest for a fixed pose/date sequence (97286.7568ms)
+✔ a no-sidecar diagnostic family keeps both near and far game presentation on legacy fallback (1314.8798ms)
+✔ near and distant family selection share the dated catalogue and adopted library revision (157.8453ms)
+✔ dated catalogue attaches detailed branching instances while below-envelope and unloaded-family species retain legacy coverage (152.2857ms)
+✔ reordering retained canonical cells and rebasing preserves species, phase, and appearance (96.0601ms)
+✔ empty or non-tree dated catalogue clears detail draw and restores legacy coverage (19.2707ms)
+✔ immersive mode hides detailed batches and restores legacy representation (17.5634ms)
+✔ clear during a pending load disposes stale family without attaching it (35.9221ms)
+✔ dispose during pending load disposes late family and rejects later loads (119.4931ms)
+✔ loader failure is diagnostic and preserves legacy rendering; invalid family is disposed (70.4905ms)
+✔ successful replacement disposes previous batches/family only after replacement is ready (68.1671ms)
+✔ resource accounting includes pending family ownership and releases replaced resources once (182.6263ms)
+✔ resource accounting includes canopy host arrays and canonical far-instance buffers (105.7288ms)
+✔ attaching after legacy slots exist initializes only selected detailed slots without gaps (19.2628ms)
+✔ dated tree catalogue is order independent, filters non-trees, and tracks trait changes (2.9465ms)
+✔ partial batch creation failure disposes already-created batches and family (163.5122ms)
+✔ malformed dated catalogue reports error, preserves legacy draw, and recovers on a valid snapshot (234.1694ms)
+✔ malformed dated catalogue is reported safely while detail family is absent and legacy keeps canonical proxy (64.6457ms)
+✔ overlapping family loads are newest-wins and dispose the stale result exactly once (25.3068ms)
+✔ near slots and far codes share one canonical structural variant across dates, catalogues and slot reuse (48.0702ms)
+✔ a family without a structural pool keeps authored structure in near and far paths (22.3138ms)
+✔ branching and spire use separate compact pools and suppress all supported legacy draws (19.2548ms)
+✔ family reassignment and empty demand regrow initialized compact slots without gaps (79.3302ms)
+✔ failure in second family preserves active library and disposes partial replacement (145.0468ms)
+✔ duplicate family requests are rejected without replacing or cancelling active state (63.0733ms)
+✔ cancelling between family parses releases all staged assets and keeps latest request authoritative (356.8473ms)
+✔ each family receives its own offline mip sidecar while sharing atmosphere options (49.8972ms)
+✔ the far canopy bakes each adopted family atlas outside XR, adopts it, and drops it with its family (305.4605ms)
+✔ whole-population presentation census covers every retained slot and replays exactly after a catalogue change (242.2715ms)
+✔ no-canopy fallback keeps a stable revision and reuses stationary work (808.2434ms)
+✔ present canopy without a revision API refreshes conservatively (50.0211ms)
+✔ owned far patches reduce per-cell work while preserving canonical capacity winners (67.9036ms)
+✔ movement stays safe within the cached 20m margin and crossing it refreshes at the 650m cutoff (40.8151ms)
+✔ census loss and stale water reintroduce fallback work immediately (44.5014ms)
+✔ local patch refreshes use the frozen 20m anchor across a movement reversal (82.914ms)
+✔ version string (1.221ms)
+✔ analogue densities within 10% of Earth 5514, Mars 3933, Mercury 5427, Moon 3344 (11.8158ms)
+✔ Earth twin (cf 0.32): g = 9.81 +- 0.3, escape velocity ~11.2 km/s (0.5499ms)
+✔ hasAir: Earth, Venus, Mars, Titan true; Moon, Mercury false; with margin around the retention factor (0.6373ms)
+✔ tectonicRelief: Earth twin at the reference vigour 0.7 = 1.00 +- 0.02; at the seed-median draw it is 0.964 (0.3006ms)
+✔ ocean fluid and hydrostatic pressure: Earth twin at Challenger Deep depth ~ 1086 bar (0.4278ms)
+✔ gas giants and stars: no solid surface, tectonicRelief 0; gas giants at the 1 bar convention (0.3885ms)
+✔ matches the planning prototype per planet (g to 1e-4 relative, tau to 2e-4) on both corpora (4610.6063ms)
+✔ planning corpus (132 habitable water planets): g p10/p90 3.35/14.79, tau p10/p50/p90 within 0.05 of 0.59/0.89/1.39 (5389.3113ms)
+✔ rocky corpus (460): g spans ~2 to 15+ m/s2; tau p50/p90 within 0.05 of the prototype (1805.6067ms)
+✖ rocky corpus (460): Spearman(g, R) < 0.95 (1734.9819ms) # NOT MET by the specified model: measured 0.990 (density spread +-25% cannot decorrelate g from a 4.5x radius span; real rocky solar-system bodies also rank 1.0). An ice-mantle density for Ice worlds would give ~0.84 but changes Ice-world relief; left to the owner/P4.
+✔ pure and FIFO-cached by (seed, kind, type, radius, temperature, water); massKg is never read (18.0418ms)
+✔ source rules: imports only catalog.ts / det-math.ts; no massKg, no transcendental or locale maths in code (9.2861ms)
+✔ saturated fixture: 7,600 cells and 13,600 rocks at the resident caps (199.144ms)
+✔ draw work per frame is bounded; saturated jobs span frames and report their backlog (390.2356ms)
+✔ published outcomes equal a flat per-rock pass for every view and draw budget (3250.8177ms)
+✔ the previous published set stays drawn, at its own origin, while a job is pending (1400.7539ms)
+✔ near rocks stay submitted every frame while turning with multi-frame jobs (9146.3269ms)
+✔ moving on real terrain: bounded frames and parity after every stop, independent of draw budget (2393.7845ms)
+✔ barren bodies ignore sea level; wet bodies clear drawn rocks at once on a sea-level change (1111.651ms)
+✔ gates cancel pending jobs: surface loss, altitude and relief leave nothing drawn (667.5063ms)
+✔ family rebuild releases old batches before building new ones; dispose mid-job releases everything (340.7201ms)
+✔ rock-owned bytes are exact sums of real buffers plus labelled estimates; textures are never rock-owned (613.0543ms)
+✔ the worst case includes rescatter transients and leaves headroom under the declared budget (58.4811ms)
+✔ combined renderer accounting adds rock-owned bytes once, never the shared PBR set twice, and keeps headroom (220.0998ms)
+✔ rescatter during a pending job: residents stay capped, the job drops evicted records, pinned rocks are counted once (3102.9919ms)
+✔ near bound covers the densest canonical neighbourhood (1.1391ms)
+✔ moving: rocks within the near radius, less the distance moved since the published view, are always drawn (3058.8579ms)
+✔ a still view is not re-traversed when only an out-of-reach frustum plane changes (astronomical far plane noise) (244.3653ms)
+✔ rock work history: per-frame rings summarise enabled frames against the 1.5 ms target and job frames (227.9139ms)
+✔ published rock probe: nearest drawn rocks with canonical placement fields (160.2644ms)
+✔ a settling camera turn (micro-radian drift per frame) does not restart the draw traversal every frame (339.8974ms)
+✔ the streamed census is independent of approach path, view and frame budget (1691.086ms)
+✔ date seeks that remove the solid surface clear residents; returning reproduces the census (1298.8783ms)
+✔ altitude and relief gates hide rocks without discarding canonical residents (509.8091ms)
+✔ a drowned ocean world hosts no rocks while the gate stays open (2031.7768ms)
+✔ origin rebasing preserves absolute rock positions (1429.5396ms)
+✔ draw work respects LOD caps, batch capacity, culling and change detection (507.7454ms)
+✔ owned bytes stay within the declared worst case and budget, and diagnostics state the collision limit (668.1952ms)
+✔ dispose releases every mesh, geometry and material and makes updates inert (640.6356ms)
+✔ materials reuse the shared rock PBR lease only for near LODs and own no textures (2.9099ms)
+✔ renderer and app wiring gate rocks on the solid surface, not on life (13.8605ms)
+✔ all twelve cube edges and eight corners share geography and normals (3059.7812ms)
+✔ patches are deterministic with outward triangles and shared child boundaries (2527.9521ms)
+✔ canonical tile buffers are invariant under forward and reverse generation order (1001.7723ms)
+✔ near-contact tiles reduce opaque colour-map resolution deterministically (306.302ms)
+✔ fine L18 terrain and parent morph edges agree within two centimetres (160.0549ms)
+✔ fine cube-face edge positions agree within two centimetres (173.7457ms)
+✔ camera transport crosses both poles without heading jumps or radius drift (20.5563ms)
+✔ terrain-aware clearance permits low orbit at poles, coasts and face corners (1.6603ms)
+✔ atmospheric roll assist preserves aim and gently aligns down at poles and equator (26.7301ms)
+✔ cached child-lattice normals are finite, outward, and continuous across tile and cube edges (719.7514ms)
+✔ body height bound contains the sampled terrain of every fixture world (10058.4981ms)
+✔ shell sphere contains its radial shell and is no larger than needed (9.9772ms)
+✔ candidate bounds contain every child tile built under a resident parent (0 violations, 8 children per world) (19669.0738ms)
+✔ candidate/tight sphere ratio p50 <= 1.5 at L10 and <= 2 at L14, L18 on all four worlds (4 tiles per level; legacy 20 km envelope for comparison) (16820.477ms)
+✔ Maithea horizon peak radius is within 10% of the analytic value (2.3656ms)
+✔ 0 false culls over 16 poses (ground, 2 km, 20 km, orbit) x 4 bodies against brute force (12618.4565ms)
+✔ HUD terrain-flight / direct-landing clearance is a fixed 19.5 km on all four worlds, not the relief bound (1.0733ms)
+✔ landing finds a site on all four worlds and never above the landing ceiling (1035.754ms)
+✔ landing at the datum sea never picks a summit (256 eyes, all four worlds) (42.2632ms)
+✔ landing at a dated (lowered) sea never picks a summit (256 eyes, Maithea and Lethuris) (303.4165ms)
+✔ landing on low relief (field and dated sea x0.3) never picks a summit (256 eyes) (45.4514ms)
+✔ seabed at -6 km: placeAt and contact-level tiles return the full-detail seabed bit-identical to terrainSampler (8702.5788ms)
+✔ byte-blocked refinement is confined to a seabed dive (1.9873ms)
+auto top pick by day {
+  '0': 'G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/6862',
+  '90': 'G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/3386',
+  '135': 'G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/3386',
+  '180': 'G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/3386',
+  '270': 'G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/6862'
+}
+Find rivers destination by day {
+  '0': 'G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/16162',
+  '180': 'G001/C2128,0,1/0/planet/1/drainage-2/n64/outlet/3386'
+}
+✔ canonical river existence never depends on request date; auto only re-ranks which one to fly to (7874.6477ms)
+✔ auto destination ranking has a strict, input-order-independent tiebreak for an exact score tie (3.0897ms)
+✔ terrain sample at a fixed direction is identical regardless of which canonical rivers are passed and in what order (1814.5677ms)
+✔ app-level flow through the registry: terrain at fixed directions is identical with no UI action, after Find rivers at day 0, and at day 180 (7310.7905ms)
+✔ environment placement is deterministic, bounded and has no visual colliders (5396.5735ms)
+✔ environment hides above walking detail altitude and disposes all draws (1561.7302ms)
+✔ placements conform to the shared dry-bank surface query across tangent seams (2035.9893ms)
+✔ tree and grass source geometry stay walk-scale and local anchor is stable inside a resident cell (1873.8813ms)
+✔ radial instance frames have positive handedness (2217.8086ms)
+✔ leaf crown is a high-resolution separated-leaf spray above a visible trunk zone (32.018ms)
+✔ branch yaw changes its tilted direction and mipmapped bark memory includes CPU plus GPU mips (1802.2238ms)
+✔ grass cache follows 10m movement inside a stable 100m forest cell (1615.2085ms)
+✔ near-foot cover uses sub-metre deterministic density and refuses wet ground (57.0087ms)
+✔ new vegetation and stones contain only finite-area, normalized geometry (133.1814ms)
+✔ ground cover has mixed blade pigments and compact subdivided fern fronds (68.4824ms)
+✔ irregular stone remains welded and closed after deterministic deformation (62.4632ms)
+✔ planet-frame lighting uses actual instanced normals at defined shader hooks (76.0231ms)
+✔ tapered wood side normals face outward from their bent centreline (119.9102ms)
+✔ wood has finite cylindrical UVs with matched positions at its explicit seam (63.0511ms)
+✔ bark is a repeatable 256px longitudinal atlas with weathered variation (18.6682ms)
+✔ bark and leaf maps are the single visible albedo sources (101.3732ms)
+✔ instanced meshes and owned textures dispose exactly once (151.4511ms)
+✔ hydrology leaves the baseline sampler unchanged outside its regional influence (41.7016ms)
+✔ physical sampler shares canonical wet triangles and their bounded dry-bank field (78.3995ms)
+✔ canonical outer banks stay continuous around a bend and confluence (132.9917ms)
+✔ inland water keeps a carved rock field and a separate visible water surface (5.2841ms)
+✔ river shore bed and dry bank meet continuously without a submerged walking trench (16.3325ms)
+✔ regional dry banks use a narrow pebbly edge and soil farther inland (24.2428ms)
+✔ temperate dry-bank colour is shared, finite, and leaves wet water unchanged (329.0898ms)
+✔ orbit preview retains its palette while terrain tiles use opaque ground substrate (709.1538ms)
+✔ tile colour is opaque ground substrate for inland water, dry bank and ocean bed (2834.8261ms)
+✔ Maithea Eiren Bracken lake collar is continuous across lake and nearby river edges (4367.2584ms)
+✔ wet/dry rock-height continuity holds across every canonical basin of several catalogue bodies, not just one pinned fixture (41131.99ms)
+✔ future global water overtops and later reveals the immutable inland level (8.0457ms)
+✔ tiles and contact patches use the ground bed while wet blocking retains visible water (221.9792ms)
+✔ synthetic sloping lake shore has a submerged bed, separate water grid and no alpha coverage hole (252.6408ms)
+✔ ocean grids share the terrain anchor and base topology without skirts (97.627ms)
+✔ hydrology fine contact mesh remains within two centimetres across the saved dry-bank failure fixture (1414.2023ms)
+✔ Maithea coarse child and parent triangles conservatively expose authored river water (11006.4111ms)
+✔ coarse wet envelope agrees across the cube-face boundary (239.1732ms)
+✔ coarse envelope includes every overlapping channel bed at a junction (146.0967ms)
+✔ conservative lake envelope avoids a circular short-axis moat (0.866ms)
+✔ regional landform uses wet-edge distance across unequal-width channel bisectors (0.7133ms)
+✔ tangent-frame sampling remains deterministic at poles and cube boundaries (4.5505ms)
+✔ walker rejects both intended and collision-resolved wet crossings (1997.2818ms)
+✔ Maithea carved-envelope normals remain continuous across a streamed hydrology edge (1233.2013ms)
+✔ coarse envelope preserves its full bed core and fades continuously through the bounded apron (0.6083ms)
+✔ single coarse envelope stays continuous where a higher core overlaps a lower parallel apron (0.4834ms)
+✔ physical regional rivers are deterministic, bounded, and retain the baseline (5146.3042ms)
+✔ sampler shares wet beds, banks, lake and tangent coordinates (2097.5733ms)
+✔ rock cell enumeration is exactly the canonical surface-cell set and order (1157.1495ms)
+✔ each rock lies strictly inside its owning canonical cell, including seams and corners (72.7998ms)
+✔ placement is a pure function of body, tier and cell: order, focus and repetition do not matter (191.031ms)
+✔ family inputs are canonical, read-only and array-order independent (116.3478ms)
+✔ rock generation leaves the biosphere catalogue, species and digests untouched (1070.1657ms)
+✔ barren, life-free ground is rock-bearing without any species or biosphere stage (542.4439ms)
+✔ ocean and wet ground never host rocks; shore clearance is enforced (474.362ms)
+✔ suitability and form choice follow geology: cliffs are bare, forms respond to slope and ground (0.9059ms)
+✔ physical sizes, partial embedding and orientation are bounded per tier and family (202.4983ms)
+✔ density per square metre is uniform across the cube (cell area compensation) (2543.1044ms)
+✔ LOD bands use physical distance over diameter and never exceed the tier range (9.4834ms)
+✔ census digest is order independent and sensitive to canonical content (13.5305ms)
+# periodicity: single-star planets bit-exact; |d subsolarSinLat| after one year: binary max 5.05e-2, moon max 3.18e-2
+# 0deg: Qeq=1.2732 Qpole=0.0000 halfPole=0.000 dTpole=0.0K dTeq=0.0K
+# 23.4deg: Qeq=1.2214 Qpole=0.5056 halfPole=0.794 dTpole=23.2K dTeq=0.9K
+# 60deg: Qeq=0.9816 Qpole=1.1026 halfPole=1.732 dTpole=50.5K dTeq=5.2K
+# 90deg: Qeq=0.8105 Qpole=1.2732 halfPole=2.000 dTpole=58.3K dTeq=9.0K
+# 120deg: Qeq=0.9816 Qpole=1.1026 halfPole=1.732 dTpole=50.5K dTeq=5.2K
+# 180deg: Qeq=1.2732 Qpole=0.0000 halfPole=0.000 dTpole=0.0K dTeq=0.0K
+# crossover 53.896 deg; catalogue planets above 54.7: 205, below: 359 of 570
+# solstice subsolar latitude at 23.4 deg tilt: worst |delta| 2.829 deg over 40 planets
+✔ version literal (3.223ms)
+✔ yearNs is the exact phaseAt period: carrier positions repeat bit for bit after a year (273.6074ms)
+✔ basis samples are the main.ts sun pair: bit-identical to seasonAt at t_k for single-star planets (34.3523ms)
+✔ periodicity: seasonAt(t) deep-equals seasonAt(t + yearNs) for 200 random t (negative and > 1e27 ns included) (1017.183ms)
+✔ seek independence: direct seasonAt equals the value reached by playback across all 5 PLAYBACK_TIERS (229.8602ms)
+✔ cold vs warm basis cache and shuffled body order are bit-identical (311.3854ms)
+✔ window: W=0n is byte-identical to the unfiltered call; W >= 50 years leaves < 1e-3 of the paused amplitude (137.6491ms)
+✔ Berger daily-mean insolation: equinox/solstice spot values (1.0242ms)
+✔ owner amendment 2: any obliquity 0/23.4/60/90/120/180 deg matches the annual-mean closed forms and folds (89.925ms)
+✔ physics: catalogue crossover — effective obliquity above the ~54 deg crossover gives polar annual mean > equatorial (1156.5231ms)
+✔ physics: 23.4 deg tilt gives a solstice subsolar latitude of 23.4 deg +- the orbit inclination (1598.7406ms)
+✔ temperature harmonics are the exact periodic solution of tau dT/dt = F - T (RK4 cross-check) (384.7312ms)
+✔ slowRotator flag and fauna season context (316.2412ms)
+# retained season heap -1144 B over 100000 calls
+# Maithea: tilt 13.52 deg (folded 13.52, effective 14.16), e=0.0914, year 286.9 d, spin 3806.7 h, slowRotator true; qMean eq 1.254 45N 0.898 pole 0.311; dT half-range eq 5.8 K, 60N 13.5 K, 60S 8.1 K
+✔ season sampling has no retained heap growth (1279.4312ms)
+✔ isolation: nothing in src imports season.ts or sun-frame.ts; season.ts has no three import (39.6282ms)
+✔ Maithea fixture (LETHRA-001 G001/C2128,0,1/0/planet/1) (6.0333ms)
+✔ wired: orbit bake, ocean hypsometry and surface survey solve 0 M3 blocks on all four worlds (negative control solves) (17589.8037ms)
+✔ the wiring hook targets the real constant (a rename cannot leave the child silently unwired) (4.6924ms)
+✔ the sparse-global callers pass level 0 (S0) and the dense/truth callers pass no level (8.0932ms)
+✔ corpus size meets the acceptance-test floor (1.0486ms)
+✔ determinism: same (seed, address, t) star lifecycles match across repeated runs and shuffled/reversed order (39.4835ms)
+✔ determinism: planet lifecycles (population depends on stellar lifecycle) match across repeated/shuffled order (163.9841ms)
+✔ t-seek independence: starStateAt(t) is identical whether reached by direct seek or by stepping through arbitrary checkpoints (13.5391ms)
+✔ t-seek independence: planetStateAt(t) across boundary-crossing and huge steps (66.2411ms)
+✔ existence gating: no planet is born before its star, and stage transitions land on the documented not-exists states (33.4658ms)
+✔ existence gating: querying a star before formation/after remnant returns the documented stage (6.9045ms)
+✔ sanity physics: mass-lifetime scaling matches the textbook approximation within the acceptance bounds (1.205ms)
+✔ sanity physics: t handles the full 0n..UNIVERSE_END_NS range and BigInt round-trips at 10^100 yr without precision loss (0.9059ms)
+✔ ulp-perturbation: discrete lifecycle digests (formation/giant/remnant/outcome, planet formation/cooling/ocean/engulfment) are unchanged under ulp-level Math perturbation (98.363ms)
+✔ waterKeysFor: empty for dry planets, strictly ordered and gated by planet lifecycle for wet ones (1.0741ms)
+# sun-frame parity: 36224 evaluations, max |dv|=0.00e+0, max |d sinLat|=3.33e-16, bit-identical vectors 36224/36224
+✔ parity: spinCompensated and subsolarSinLat match a THREE replica of main.ts within 1e-12 (566 planets x 64 dates) (1049.9224ms)
+✔ subsolarSinLat is independent of the spin angle and equals dot(sun, polar axis) (1.0234ms)
+✔ sun-frame.ts is pure: no three import, no state (1.656ms)
+✔ classifier golden: 6 bodies x 64 directions x 5 heights x 3 upDots x 2 water levels (241.9503ms)
+✔ golden is independent of forcing-cache state and body visit order (seed-sharing variants included) (1196.0765ms)
+✔ weights[3] === snowFraction, weights are a partition, labels stay within the 10 v1 strings (132.4073ms)
+✔ moisture is bit-identical to the legacy classifier on 20k directions; airless and Ice branches unchanged (383.8036ms)
+✔ forestPotential is false wherever the legacy body clause is false (97.3627ms)
+✔ Maithea sites: the 18 km equatorial summit is snow, the pole is snow, both forest sites keep forest (1.0231ms)
+✔ the manifest version imports pull in neither three nor a cycle back to time-nav (14.8051ms)
+✔ calibration constants are pinned; any change forces a CLIMATE_VERSION bump (6.0821ms)
+✔ module boundaries: allowed imports only, no platform transcendentals, no locale collation (5.915ms)
+✔ Berger daily-mean insolation: annual tables match an independent platform-math reference (185.2914ms)
+✔ obliquity: honour the drawn tilt 0..180 deg, folded, with correct high-tilt physics (23.6765ms)
+✔ Earth reference forcing (288 K, 23.44 deg, water 0.7, 6.5 K/km) has the right shape (47.3343ms)
+✔ per-planet lapse rate from surface gravity (owner amendment 1) (548.1658ms)
+✔ legacyMoisture is bit-identical to the classifier; temperateHabitat equals the renderer gate (405.517ms)
+✔ determinism: 50k samples identical across cold processes, cache states and body order (2795.6653ms)
+✔ forcing cache: FIFO eviction never changes values (256.6075ms)
+✔ continuity: no steps at cube edges, poles or the dry-belt edges (49.6969ms)
+✔ sample fields: ranges, climate code round-trip, frozen and dry worlds (94.6441ms)
+✔ Maithea: snow emerges from its own gravity, and the 18 km equatorial summit is snow (0.7228ms)
+✔ biome weights sum to one and distinguish airless ground from living habitat (60.9531ms)
+✔ material coordinates and weights match at poles, cube corners and LOD boundaries (7403.607ms)
+✔ ground texture is repeatable and phase agrees between planet-sized tile origins (800.6971ms)
+✔ survey sites are repeatable real dry terrain and retain IDs across request order (568.3711ms)
+✔ procedural craters: pure function of (seed,address,t), gated by real surface age, never flip ocean/land (2473.4561ms)
+✔ planetSurface gates craters off by default (the system-surfaces multi-body job budget) and matches terrainSampler exactly when opted in (25892.2502ms)
+✔ saturated terrain budget: a stationary sea-level change refreshes every visible patch within budget, also after the budget shrinks (114568.1728ms)
+ℹ settled: resident 450 tiles 174316572 B (0.9335 of 186733908), visible 322, splitsBlockedByBytes max 322, refreshReserve 1497624
+ℹ seek -2400 (stationary): {"frames":172,"stalePeak":322,"blocked":0,"final":0}, blockedAdmissionsTotal 0
+ℹ shrink to 148169086: pressure entries 1, exit resident 0.8990 of budget, recovered at frame 46, resident 138972564 (0.9379)
+ℹ seek -2375 after shrink: {"frames":138,"stalePeak":253,"blocked":0,"final":0}
+✔ request order: rebuilds of undrawn resident patches move behind all other requests, order otherwise kept (128.5062ms)
+✔ versions: terrain colour v2 names the climate model it reads (1.3433ms)
+✔ water-world land colour === waterWorldLandColour(climate at post-landform height) x grain, 20k land directions x 4 worlds (3768.3026ms)
+﹣ water-world land colour identity on the carved truth, 20k land directions x 4 worlds (test:full) (0.545ms) # test:full only (T6 decision 3): truth colour identity solves M3 blocks
+✔ the snow in the colour is surfaceClimate.snowFraction at that height (colour and classifier agree by construction) (92.7468ms)
+﹣ snow colour/classifier identity on the carved truth (test:full) (0.4251ms) # test:full only (T6 decision 3): truth snow identity solves M3 blocks
+✔ every non-water body keeps the base colour exactly (no climate path off water worlds) (7179.2524ms)
+✔ climate zones read as distinct colours on Maithea (forest green, alpine meadow olive, fell-field grey, snow white, dry tan) (561.4809ms)
+✔ BASE: baseTerrainSampler elevation and ocean are bit-identical to the pre-relief tree (never re-pinned) (6354.4532ms)
+✔ RELIEF: the pre-mountains field ({mountains: false}) is bit-identical to the terrain-1.8.0-relief pin (re-pinned deliberately by P4-RELIEF, old 4f6021aa; unchanged by T6) (7049.0618ms)
+✔ kept palette: ocean, sea-ice, Ice, Volcanic, barren, gas-giant and base-sampler colours are bit-identical to the terrain-1.8.0-relief pin (ocean colours follow the relief depth; old 06d335ce) (14716.9451ms)
+✔ T6 identity outside the belts (level 0): bit-identical to the pre-mountains field outside the coarse envelope reach (1.3 H); massifs move (10913.4063ms)
+﹣ T6 identity outside the belts (truth) and the wired truth digest (0.2413ms) # test:full only (T6 decision 3): the carved truth on 6 bodies x 4096 directions
+✔ window bound constant: 772 m detail + 1908 m landforms x min(1, R/2e6); 2680 m from R = 2000 km up; 0 on gas giants (1.3073ms)
+✔ invariant 0 <= h - floorM <= terrainWindowMaxM(body) over 6 bodies x 20000 directions (0 violations) (9767.7885ms)
+﹣ invariant on the truth: 0 <= h - floorM <= terrainWindowMaxM(body) over the 6 bodies x 20000 directions (test:full) (1.0495ms) # test:full only (T6 decision 3): truth window scan solves M3 blocks
+✔ continentalM >= 0 exactly where the sea-level-0 sampler reports land, on the four water worlds (472.719ms)
+﹣ continentalM >= 0 exactly where the carved truth reports land (test:full) (0.3634ms) # test:full only (T6 decision 3): truth continental scan solves M3 blocks
+✔ floorM is the clamped base field: water-world seabed and gas giants equal elevationM; floor never exceeds ground (13438.5876ms)
+﹣ floorM is the clamped base field on the carved truth (test:full) (0.7092ms) # test:full only (T6 decision 3): truth floor scan solves M3 blocks
+✔ terrainFloorSampler = terrainSampler plus exactly floorM/windowM/continentalM; plain shapes unchanged (21640.7645ms)
+✔ baseTerrainSampler keeps its historical four-field shape (5.0551ms)
+✔ cached terrain leaf loop is output-identical to the reference loop for a fixed pose sequence (87831.6473ms)
+RAIVA R1 {"tau":0.4560255015129207,"w":90090.17114178278,"count":275,"area":31998.375,"density":8.59418642352932}
+✔ HARD: outsideBelt directions (4096 per water world) are bit-identical to main: heights, ocean and colour (2628.5266ms)
+✔ HARD: outsideMassif directions (4096 per water world) are bit-identical to main: heights, ocean and colour (1050.6224ms)
+✔ HARD: negative controls: the identity digest rejects one changed height, colour or ocean flag (1190.4622ms)
+✔ HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (level 0) (1565.2517ms)
+﹣ HARD: the ocean flag of every direction (4096 per water world, belts included) is identical to main (carved truth) (9.4283ms) # test:full only (T6 decision 3): ~400 in-massif truth samples with M3 block solves
+✔ HARD: versions, fixed carving width, strip rule and per-strip seeds (27.0386ms)
+✔ HARD: the assembled ridge term: >= 0, <= max(main, analytic envelope), main outside the massif (2059.7987ms)
+✔ HARD: mountain-assembly.ts is arithmetic only and imports only M2, M3 and M5 (28.1005ms)
+✔ CONTRACT: M4 R1 on the whole belt core at the real Raiva tau and belt width (8 seeds, 64 km rasters) (23547.2977ms)
+# Maithea relief {"n":11012,"p10":207.1006198463288,"p50":442.21580198995804,"p90":2812.547214654138,"p99":4378.397320136994,"max":5909.958408795425,"above4km":2.42462767889575,"below500":54.26807119505993,"snow":19.869233563385396,"sand":1.3621503814021068,"lowland":38.240101707228476,"rangeSnow":28.66741321388578,"lowSnow":3.3056762807849336}
+# seabed {"body":"Maithea","n":7366,"mean":3304.7407246944126,"deepest01":-9913.73941622209,"shelf":9.50312245452077,"reachesSea":0,"detailStd":[[0,668,24.19046184118074],[200,1017,107.09571748343835],[2000,5329,148.026304297763],[6000,352,159.95894984788993]]}
+# seabed {"body":"Selawyn","n":9957,"mean":3793.0160157656273,"deepest01":-11209.004300301403,"shelf":7.472130159686652,"reachesSea":0,"detailStd":[[0,719,23.971473570827392],[200,1137,112.5507897275552],[2000,7035,149.85854897922104],[6000,1066,147.82505276116459]]}
+# seabed {"body":"Raiva","n":7828,"mean":3686.9294024332885,"deepest01":-11248.96909263583,"shelf":8.405723045477773,"reachesSea":0,"detailStd":[[0,625,24.074311498018652],[200,905,112.88455559789],[2000,5611,149.57239721416013],[6000,687,155.36124195719756]]}
+# seabed {"body":"Lethuris","n":10199,"mean":4011.203216405083,"deepest01":-11248.259186766707,"shelf":5.745661339346995,"reachesSea":0,"detailStd":[[0,562,25.414917873275023],[200,993,109.57294998697708],[2000,7458,151.80316493422563],[6000,1186,149.68275864131502]]}
+# dry worlds {"rho":0.9672131147540983,"spanKm":[5.051585398361975,6.311566415109754,10.681081058005947],"earthLowVigourKm":[5.887905273318543,5.36437810377018,5.657367667397599,5.483246209061512,5.230389137296472,5.163549076369775,5.839176480276993,6.525837571267804]}
+# corpus snow {"n":132,"median":0.1138353765323993,"over90":16,"binMedians":[0.88300395256917,0.4658119658119658,0.17480916030534352,0.08375089477451682,0.0020134228187919465]}
+✔ versions and the frozen R-CAL-1 calibration (any change is a TERRAIN_VERSION bump) (2.3722ms)
+✔ coastline invariance: the sea-level-0 ocean flag equals the unchanged base field, 6 identity bodies x 20000 directions (9186.7096ms)
+﹣ coastline invariance on the carved truth (test:full) (0.8039ms) # test:full only (T6 decision 3): truth coastline scan solves M3 blocks
+✔ Maithea land hypsometry, snow, beaches and lowland (20000 directions, sea level 0) (148.5863ms)
+✔ seabed on the four water worlds: depth, trenches, shelf, detail at every depth, never reaching sea level (1668.2513ms)
+✔ dry worlds: the p1..p99 span follows tau (Spearman > 0.6); Earth-g low-vigour spans 4-9 km (2919.7579ms)
+✔ corpus of 132 habitable water planets: snow share median <= 20%, at most 20 above 90%, colder anchors are snowier (32017.2735ms)
+✔ window invariant 0 <= h - floorM <= terrainWindowMaxM(body) (tau-aware) on the identity bodies and the four water worlds (2425.6977ms)
+﹣ window invariant on the carved truth (test:full) (0.1677ms) # test:full only (T6 decision 3): truth window scan solves M3 blocks
+✔ bodyHeightBoundM contains every sample: 60 catalogue bodies x 20000 directions (all kinds); the orbit texture range is that bound (4439.4841ms)
+﹣ bodyHeightBoundM contains every carved-truth sample (60 bodies x 20000) (test:full) (0.2189ms) # test:full only (T6 decision 3): truth height-bound scan solves M3 blocks
+✔ stationary retained nonroot terrain leaf refreshes its water bucket while the old tile stays visible (54487.9828ms)
+✔ reporter records title + file, excludes TODO, and completes with the raw failed status (906.4539ms)
+✔ known-failures: valid HARD and CONTRACT entries pass validation (1.8426ms)
+✔ known-failures: every unsafe entry is rejected (negative controls) (0.8962ms)
+✔ known-failures: classify never matches a CONTRACT-titled failure through a bare title + file entry (0.3108ms)
+✔ known-failures: test:full rejects an invalid allowlist before running or taking the slot (274.6141ms)
+✔ runTests: test:pkg is a shared 4-token holder with ATLAS_SLOT_SHARED=1 and exclusive without it; children carry the token (2316.68ms)
+✔ literal forms, transitive chains, directory and repo path references, unregistered and configuration (78.488ms)
+✔ known failure matching requires both title and file; fixes are stale entries (1.1201ms)
+✔ I5: appended or reordered test paths with an identical wrapper never force the full suite (11.2966ms)
+✔ I5: a changed wrapper prefix, a removed path, other text or any other key selects the full suite (6.4874ms)
+✔ review 4/8: only paths in the node --test argument list count; moving one out of it, or an unsupported script, forces full (1.9001ms)
+✔ HARD: tier env parse: default when unset, ATLAS_TEST_FULL=1 implies gate, unknown tiers throw (4.1823ms)
+✔ HARD: pick falls back to the next DEEPER tier given (never shallower); gate falls back to default (0.3718ms)
+✔ HARD: gateOnly / onlyFrom skip below their tier and run from it (fresh processes) (1154.82ms)
+✔ HARD: reporter: one complete JSON line per top-level test, class from the title prefix, a killed run keeps finished lines (2587.147ms)
+✔ HARD: summary: latest attempt per file wins; NEW HARD/CONTRACT failures and missing files make a run red (13.5593ms)
+✔ HARD: runStep records the step process peak RSS (maxRSS, KiB); a killed step records null; summary keeps the peak (739.2915ms)
+✔ tile metadata: 64 bytes, versioned, deterministic, carried by every tile (4964.3239ms)
+✔ tile metadata: height bounds, summit, snowline/treeline, ocean/snow/forest counts and class histogram match the lattice exactly (15479.8611ms)
+✔ t-seek independence at the app level: the existence digest is a pure function of t — reaching the same t via different arithmetic paths, and in shuffled order, always agrees (140.0999ms)
+✔ headline bug check: a planet never reports solid/molten existence before its host star has formed (62.7472ms)
+✔ era checkpoints: eraIndexAt is monotonic non-decreasing and matches the checkpoint table (7.2063ms)
+✔ era navigation: next/prev bracket the current checkpoint and never go out of range (0.5781ms)
+✔ eraTrackFraction is monotonically non-decreasing across the full range (0.4167ms)
+✔ playback tiers: rates strictly increase from Realtime to Cosmic (0.1966ms)
+✔ advancePlayback: monotonic forward stepping at every tier, never throws, always in range (0.4227ms)
+✔ advancePlayback: a pathologically huge dt at the Cosmic tier saturates instead of throwing (0.2031ms)
+✔ fine control: fineFractionToT/tToFineFraction round-trip and stay within era bounds (0.6029ms)
+✔ fine control: catalogue-epoch era is a linear +-14 Gyr band around now, clamped to neighbours (0.1464ms)
+✔ URL migration: absent date resolves to the default landing point (CATALOGUE_EPOCH_NS) (0.2431ms)
+✔ URL migration: an old date=<n> URL (no wv, or wv with atlas-time-1) is offset from CATALOGUE_EPOCH_NS (0.7984ms)
+✔ URL migration: a new URL (wv with atlas-time-2) carries an absolute t, no offset applied (0.4816ms)
+✔ URL round-trip: writeTimeToUrl -> resolveTimeFromUrl reproduces the exact same instant for arbitrary t, including the default (0.437ms)
+✔ regression (tests/walking.mjs moon-nav bug): a date-without-wv URL is ALWAYS legacy-interpreted, even when the value looks absolute — this is contractual, not a bug to "fix" by relaxing the condition (0.3626ms)
+✔ regression companion: the SAME absolute t, produced the correct way (via writeTimeToUrl, which always attaches wv), restores unchanged (0.3587ms)
+✔ WorldVersions bundle: encode/decode round-trips exactly, and CURRENT_VERSIONS has all nine fields (1.1418ms)
+✔ grounded seek: falls back to the nearest still-existing ancestor scope, never hovers over nothing (0.3076ms)
+✔ grounded seek: hover is only offered when the target scope is body-level (9.5059ms)
+✔ horizon gating: safeScaleFactorAt and galaxyVisibility are always finite, never NaN, across 1e12/1e50/1e100 yr (2.1424ms)
+✔ horizon gating: late-time particle horizon approaches a finite comoving limit (0.3541ms)
+✔ horizon gating: the observer's own galaxy (comoving distance 0) is always visible (0.2374ms)
+✔ horizon gating: rejects a negative/non-finite comoving distance rather than propagating it (0.1158ms)
+✔ t-seek independence: advancePlayback stepping to t agrees with a direct computation at t, for every pure query in this module (0.537ms)
+✔ the game family library enables the mip-aware foliage cutoff only for sidecar MASK foliage (9.9894ms)
+✔ forest hand-off probe validates its radius and restores material writes (439.7249ms)
+✔ corpus size meets the acceptance-test floor (1.9615ms)
+✔ determinism: same (seed, bodyAddress, t) -> same canonical digest across repeated runs and shuffled order, for >=200 bodies across >=8 dates (24813.7262ms)
+✔ t-seek independence: surfaceAt(t) agrees regardless of visit order or which other checkpoints were evaluated first (212.3808ms)
+✔ existence gating: no ground/water before formation, nothing after engulfment, documented not-exists state (531.7623ms)
+✔ existence gating: a star before formation is not-exists; a remnant after death is still exists (26.2774ms)
+✔ water loss keys (ocean-volume-1): 0 up to the catalogue epoch, monotone, 1 no later than giantNs, holds after (7.4236ms)
+✔ moon engulfment gates on the parent planet's stellar distance, not the moon's own tiny local orbit (a Package A gap this package corrects, now fixed inside stellar-evolution.ts's planetLifecycle itself rather than patched around here) (50.0722ms)
+✔ moon formation/engulfment bounds are inherited from the parent planet: no moon birth precedes its planet's birth, and an engulfed planet's moon engulfs at exactly the same instant (17.4575ms)
+✔ planetLifecycle/surfaceAt reject a moon body without its resolved parentPlanet (2.0052ms)
+✔ surfaceAt rejects a non-baseline branch and requires hostStar for a planet/moon (0.8258ms)
+✔ ulp-perturbation: exists/stage discrete gating is unchanged under ulp-level Math perturbation (116.8389ms)
+✔ planetAgeMyr: zero at formation, clamped into biosphere-model.ts's own MIN/MAX_DATE_MYR range (4.5164ms)
+✔ integration: biosphere existence is gated by the real PlanetLifecycle clock via planetAgeMyr, and rekeyed per real body (7.1442ms)
+✔ Maithea planet 1: biosphereStateAt is complex at CATALOGUE_EPOCH_NS, extinct at 15.6 Gyr (just past the measured ~15.579 Gyr giant/engulfment boundary) and extinct at 1e14 yr (4.8904ms)
+✔ t-seek independence across the Maithea extinction boundary: biosphereStateAt(t) agrees regardless of visit order (16.1641ms)
+✔ biosphereStateAt: engulfment (condition 1/2) forces extinct even for a planet that would otherwise still be in its complex-biosphere window (0.9052ms)
+✔ biosphereStateAt: a remnant star with the planet outside every habitable condition (condition 3) forces extinct even without engulfment (4.6432ms)
+✔ biosphereStateAt requires a resolved parentPlanet for a moon body (0.6832ms)
+✔ TIME_VERSION bumped for the Big-Bang-origin axis (1.625ms)
+✔ tenToThe is exact for huge exponents (no ** / Math.pow float rounding) (0.2442ms)
+✔ CATALOGUE_EPOCH_NS is 13.787 Gyr and strictly within [0, UNIVERSE_END_NS) (0.2407ms)
+✔ phaseFromPeriod: Euclidean-modulo pattern survives huge magnitudes and negative elapsed time (0.3696ms)
+✔ rotationAngleAt is deterministic and wraps within [0, 2*PI); day/night is bounded and pure (70.9115ms)
+✔ yearsToDate: the exact UNIVERSE_END_NS ceiling (10^100 yr, 101 digits) round-trips exactly, entered directly and via dateYears (3.6118ms)
+✔ yearsToDate: one full year below the ceiling is exact and distinct from the ceiling itself (no Number-precision collapse) (0.342ms)
+✔ yearsToDate: beyond the ceiling is a loud, explicit rejection — never a silent clamp/truncation (8.1423ms)
+✔ yearsToDate: the raw-nanosecond pipeline (parseDate) already carries the ceiling and ceiling-1 exactly, independent of yearsToDate's own digit cap (0.7299ms)
+✔ yearsToDate: t = 0n (the Big Bang) round-trips exactly (0.7374ms)
+✔ yearsToDate: one year before the Big Bang throws — the boundary itself, not just a value far from it (0.4097ms)
+✔ yearsToDate: a large negative magnitude throws — same floor rejection as a small one, not swallowed by the ceiling check (0.3628ms)
+✔ yearsToDate: existing ceiling behaviour (UNIVERSE_END_NS itself succeeds, one year beyond throws) still holds alongside the new floor check (0.479ms)
+✔ star approach staging cannot trap flight on a rounded boundary (2.7355ms)
+✔ precise dates survive huge forward/backward seeks and serialization (15.2587ms)
+✔ water changes leave the baseline rock field unchanged (1053.9008ms)
+✔ stellar fixture histories are order-independent with distinct remnant lineages (2.2675ms)
+✔ cube topology has neighbours across every face edge at walking depth (7.2513ms)
+ℹ tests 701
+ℹ suites 0
+ℹ pass 688
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 11
+ℹ todo 2
+ℹ duration_ms 164350.1408
+
+✖ failing tests:
+
+test at tests\eco-identity-site.test.mjs:54:1
+✖ SITE_A 60 km ring of 64 points is all legacy-behaviour classes (3.2843ms) # OPEN (owner / BIOME2-REPLAN): post-relief 60 km ring crosses the coast and the tropical boundary {6:25,7:18,11:6,ocean:15}; ring radius to be re-baselined
+  AssertionError [ERR_ASSERTION]: {"6":25,"7":18,"11":6,"-1":15}
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/placeat-warmup/tests/eco-identity-site.test.mjs:57:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\planet-geophysics.test.mjs:162:1
+✖ rocky corpus (460): Spearman(g, R) < 0.95 (1734.9819ms) # NOT MET by the specified model: measured 0.990 (density spread +-25% cannot decorrelate g from a 4.5x radius span; real rocky solar-system bodies also rank 1.0). An ice-mantle density for Ice worlds would give ~0.84 but changes Ice-world relief; left to the owner/P4.
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(spearman(g,c.map(b=>b.radiusM))<0.95)
+  
+      at TestContext.<anonymous> (file:///C:/LLM/IWSDK/universe-atlas-wt/placeat-warmup/tests/planet-geophysics.test.mjs:164:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+EXITCODE 0 2026-10-07T09:48:24+02:00
