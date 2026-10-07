@@ -329,7 +329,11 @@ test('FIFO tickets: a 16-token waiter behind a stream of 4-token holders gets in
         holders.shift().release(); releases++;
         const n = releases;
         late.push(acquireTestSlot({dir, mode: 'shared', tokens: 4, retryMs: 10, owner: `late${n}`, signal}).then(l => { holders.push(l); order.push(`late${n}`); }));
-        await tick(80);
+        // Condition waits, not a fixed tick (a busy box can miss any fixed window): with the queue, the late caller's
+        // ticket must be visible behind the big one (big + n late tickets) before the next release, and the 4th release
+        // must admit the big waiter; without it, the late caller must have overtaken (been admitted) first.
+        await until(() => big || (ignoreQueue ? order.includes(`late${n}`) : ticketFiles(dir).length >= releases + 1), `late${n} ticket/admission`);
+        if (!ignoreQueue && releases === 4) await until(() => big, 'big admitted', 5000);
       }
       if (!ignoreQueue) {
         assert.ok(big, `the 16-token waiter acquired (after ${releases} releases)`);
