@@ -345,10 +345,23 @@ Enforced in code:
   while held, `ATLAS_GPU_LOCK_HELD` for children. `acquireTestSlot` throws
   `lock order violation` in either state before it touches the slot (an
   inherited slot of an ancestor, which never waits, is still allowed).
+- `acquireGpuLock` also refuses (`lock order violation`) while this process
+  still has a test-slot wait pending: every slot waiter publishes its wait (an
+  in-process count on a `globalThis` symbol, plus a ticket in
+  `<slot dir>.pending/`) from the start of the wait until it holds, times out or
+  is aborted. Await the slot (then take the GPU lock inside it) or abort the
+  wait with its `AbortSignal` first.
 - `acquireGpuLock({capture: true})` throws while the caller holds the test slot
   (in-process or `ATLAS_TEST_SLOT_TOKEN` inherited). Capture paths adopt it with
   I8 (build, preview server and pose work before the GPU lock, no CPU slot
   around the GPU wait); until then no caller passes it and nothing changes.
+- Child processes of a slot holder do not take a second slot level: a
+  pass-through child (it inherits `ATLAS_TEST_SLOT_TOKEN`) is registered in
+  `<slot dir>.nested/` and shares its parent's tokens. The live siblings under
+  one parent sum to at most the parent's tokens (a sibling waits), a nested
+  shared request may not ask for more than its parent holds, and a holder whose
+  process died or released while a registered descendant still runs is
+  re-homed to that descendant instead of reaped, so its tokens keep counting.
 
 Tests: `tests/test-slot.test.mjs`, `tests/gpu-lock.test.mjs` (sandbox dirs only).
 

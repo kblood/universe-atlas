@@ -158,6 +158,9 @@ test('lod: skinning keeps the reduced surface on the posed source surface', () =
       for (let i = 0; i < skin.vertexCount; i++) { creature.mesh.getVertexPosition(i, v); P[i * 3] = v.x; P[i * 3 + 1] = v.y; P[i * 3 + 2] = v.z; }
       posed.push(P);
     }
+    // Levels 0 and 1 only. Level 2 (1000 triangles) is deliberately ungated: it is the far level (MSFT_screencoverage
+    // 0.1 -> 0), may use relaxation stage 2 (unpaired collapses), and re-binds whole vertices to other bones
+    // (maxWeightChange up to 2, plus float-summation overshoot). Its numbers are reported in the sidecar, not asserted.
     for (const [i, level] of chain.levels.slice(0, 2).entries()) {
       const rest = composerLodDeviation(skin.positions, level, {stride: 5});
       let worst = 0;

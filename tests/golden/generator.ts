@@ -613,18 +613,18 @@ function rockLines(worlds: PlatformWorld[], f: Fmt): string[] {
 }
 
 const FAUNA_RANDOM_SEEDS = ["GOLDEN-FAUNA-1", "GOLDEN-FAUNA-2", "GOLDEN-FAUNA-3", "GOLDEN-FAUNA-4"];
-/** Specimens with a MEASURED cross-engine mismatch, pinned in their own key
+/** Specimens that had a MEASURED cross-engine mismatch, pinned in their own key
  * (faunaKnownUnstable) so the `fauna` key keeps protecting every other
- * specimen on every engine. Each entry is an OPEN determinism finding; the
- * cross-engine runner lists the same key in KNOWN_ENGINE_MISMATCHES. */
+ * specimen on every engine. Four engines are equal on this key since the
+ * seamNormal fix (2026-10-07, fauna/ocellus-seam, D2); KNOWN_ENGINE_MISMATCHES
+ * in the cross-engine runner is empty. The key is kept for one more round
+ * (D2): fold GOLDEN-FAUNA-2 back into `fauna` at the next routine golden round
+ * if --strict passes again (that changes the `fauna` digest). */
 export const FAUNA_KNOWN_UNSTABLE: Readonly<Record<string, string>> = Object.freeze({
-  "GOLDEN-FAUNA-2": "WebKit 26.5 vs Node/Chromium/Firefox: skin positions differ only in the 8 vertices of the midline insect " +
-    "ocellus (z = 0, vertices 3270-3277, up to 0.42 mm; colours, weights and gloss identical). That ocellus is seated by " +
-    "nearestExit() on a ray lying in the head's mirror plane (fauna-composer-mesh.ts insect-ocelli block). Traced " +
-    "2026-10-04: raycastLine returns two exit hits with the SAME t on the seam triangles 993/994 (normal z -0.073 / " +
-    "+0.078); Chromium lists 993 first, WebKit 994 (the site differs by 1 ULP upstream), so the tie-break flips the " +
-    "lens normal. Fix belongs to the composer owner; a trialled patch (evidence golden-ext/composer-patch-trial) " +
-    "makes all four engines equal. Measured 2026-10-04.",
+  "GOLDEN-FAUNA-2": "Was: WebKit 26.5 vs Node/Chromium/Firefox, skin positions of the 8 midline insect ocellus vertices " +
+    "(z = 0, up to 0.42 mm): nearestExit() on a ray in the head's mirror plane hit the two seam triangles at the SAME t " +
+    "and the engines broke the tie differently (1 ULP upstream). Four engines equal since the seamNormal fix " +
+    "(fauna-composer-mesh.ts, 2026-10-07); fold back into the fauna key next round.",
 });
 function faunaLines(f: Fmt, which: "stable" | "unstable"): string[] {
   const lines = [`version|${COMPOSER_RECIPE_VERSION}|${COMPOSER_GRAPH_VERSION}|${COMPOSER_SKIN_VERSION}|q=${f.q}`];
