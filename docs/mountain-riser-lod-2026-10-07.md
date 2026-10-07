@@ -368,3 +368,44 @@ that c3000 L13 stays above T_P: at L13 the two-cell riser (62 m) only partly rem
   node_modules junction). Tooling is in `test-results/mountains/riser-lod/gpu/`: `probe-riser.browser.mjs`, the step-8
   probe with equal-LOD matching (`--match`), plus `hold-gpu.mjs` and `cmds.json`. The GPU lock was never taken.
 - Step 6: test:full.
+
+## Step 4b: registration (before any frame), coordinator decision 2026-10-07
+
+Decision on the step-4 STOP: "Opus-decided on Kasper's instruction, overrulable". Option (b), no src change.
+This section is written and committed before any 4b frame is rendered.
+
+**Stations.** Six new held-out stations, all FROZEN_MASSIF_TILE_SET axis stations that have never been rendered:
+
+| world | indices |
+|---|---|
+| Maithea | 2, 3 |
+| Selawyn | 1, 2 |
+| Lethuris | 1, 2 |
+
+**Reserve, kept untouched:** Maithea [4-7], Selawyn [3-7], Lethuris [3-7].
+
+**Frames.**
+- Rule: the registered sun / view / pitch rule (section 4a).
+- Clearances: 4200 and 3000 m.
+- Levels: Maithea L11, L12, L13; Selawyn and Lethuris L12, L13, L14.
+- Total: 6 stations x 2 clearances x 3 levels = 36 frames.
+
+**Pass 1 (v1 and rock-off only; no branch render).**
+- A frame has notch rows when P99(v1) - P99(off) >= 0.10 with >= 100 rock windows.
+- The frozen frame list is committed before the first branch render.
+
+**Pass 2 (branch once, frozen frames only).** Behaviour depends on the frozen list.
+- **>= 3 frames:** the unchanged rule applies.
+  - Pooled mean P99(branch) <= 0.4892, AND every frame P99(branch) <= P99(v1).
+  - E = (v1 - branch) / (v1 - off) per frame is INFO.
+  - Rule fails: STOP. The fallback is the 3-cell design, registered separately.
+- **< 3 frames:** no further hunt. Record that notch rows are rare outside the tuning station, and go to step 5. This is pre-declared, not a STOP.
+
+**Branch-arm HARD checks on the six new stations (both cases):**
+- LR >= 0.5 at the finest filtered level (Maithea L13; Selawyn and Lethuris L14).
+- H2-H4 as in section 4c, with 0 violations.
+
+**INFO note on section 1.** The amplitude prior assumed a median rock slope of tan 0.77. That does not match the
+measured p50 riser width of 46 m: 0.08 x 280 / 46 implies tan 0.49. With tan 0.49 the per-level riser phase widths are
+smaller, so the coarse-level amplitude priors in section 1 are pessimistic. This explains why LR at L12 measured above
+the prior; it is INFO only.
