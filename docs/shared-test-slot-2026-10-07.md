@@ -331,3 +331,223 @@ failed on 70b68fe and pass now.
   without the slot would overlap them. These files are outside L1's files this
   round.
 - needs: none for `tiers.json`, `tier-sets.json`, golden or known-failures.
+
+## Tickets, pending waits and the descendant registry (T5, 2026-10-07)
+
+Branch `infra/slot-tickets` from main 5450d9d. Task T5 (Fable 5.1 on Kasper's
+instruction). It closes the first three "Known limits" above: shared waiters
+without a queue, the pending slot wait vs GPU deadlock (Astra 3), and untracked
+nested holders. Files: `tests/helpers/test-slot.mjs`, `tests/helpers/gpu-lock.mjs`,
+`tests/test-slot.test.mjs`, `tests/gpu-lock.test.mjs`.
+
+### Hand-off header
+
+- Verdict: implemented and tested in sandbox dirs only. Every scenario has a
+  negative case. Mutation checks: each of the six mechanisms, disabled one at a
+  time, fails at least one test (table below).
+- Checks: `npm run test:pkg -- tests/test-slot.test.mjs tests/gpu-lock.test.mjs`
+  (shared slot, 4 tokens) = 37 tests, 37 pass, 0 fail, exit 0. Before this
+  branch: 29. New: 7 in test-slot.test.mjs, 1 in gpu-lock.test.mjs.
+  `npm run test:affected -- --base main`: see the report for the counts.
+  `npx tsc --noEmit` = exit 0 (tsconfig covers `src/` only; no lint script).
+- NOT run: the **live-slot stress run** (about 8 processes contending on the real
+  `C:/LLM/IWSDK/.atlas-test-slot`), `npm test`, `test:full`, browsers and GPU.
+  Nothing touched the live slot or the live GPU lock except the runner's own
+  shared 4-token hold. The 3-child cross-process smoke ran on a sandbox dir only.
+- fs.watch on this volume (NTFS, `C:/LLM/IWSDK`): a probe saw 40 of 40
+  create/rename/delete operations, latency at most 1 ms. Watching only speeds up
+  wake-ups; the retry timer is still the fallback. `ATLAS_SLOT_WATCH=0` turns
+  watching off.
+- needs: see "needs: lines (T5)" below.
+
+### Design
+
+**1. Pending waits are published (Astra 3).**
+
+- From the moment `acquireTestSlot` starts waiting until it holds, times out or
+  is aborted, the waiter has a ticket file in `<slot>.pending/` and an in-process
+  count on `globalThis[Symbol.for('atlas.test-slot.pending')]`, read through
+  `pendingSlotWaits()`.
+- The ticket is removed on acquire, on timeout, on abort (the new `signal`
+  option takes an AbortSignal) and at process exit. The ticket of a killed
+  process is reaped as soon as its pid is verifiably dead on this host.
+- `acquireGpuLock` calls `assertNoPendingSlotWait` first. While a slot wait is
+  pending, it throws:
+  `lock order violation: "<owner>" asks for the GPU lock while this process is
+  still waiting for the test slot (<slot owner>); release the pending slot wait
+  first (await the slot or abort it with its AbortSignal), then take the GPU lock
+  inside the slot ...`
+- A nested pass-through that has to wait for its siblings counts as a pending
+  wait too. It also runs `assertSlotLockOrder` before it waits.
+- `withTestSlot` and `withGpuLock` now document the order: slot first, GPU
+  inside it.
+
+**2. FIFO tickets for shared waiters.**
+
+- Ticket name: `<µs since epoch, 17 digits>-<per-process seq, 6 digits>-<uuid>.json`.
+  Lexical order is arrival order: the µs clock orders processes, the sequence
+  orders tickets within one process, and the uuid breaks exact ties.
+- The ticket is written as `.<uuid>.tmp` and then renamed. Its mtime is
+  refreshed every `heartbeatMs`.
+- A shared waiter tries admission only when no live exclusive ticket exists
+  (writer priority) and no live shared ticket is earlier than its own. The
+  admission itself is unchanged: publish the holder file, then look, then check
+  capacity. Tickets only order the waiters; the holder files still bound the
+  tokens.
+- Tickets that never block:
+  - a dead local ticket (it is reaped);
+  - an unreadable ticket;
+  - a stale ticket (no heartbeat for `ticketStaleMs`, default 120 s; it is
+    kept);
+  - a ticket from another process that already holds this slot (`holds > 0`).
+    That process may be waiting on itself, so other processes do not queue
+    behind it.
+- Exclusive callers do not wait for the queue. They keep the mkdir gate and the
+  drain as before.
+- Before it publishes, a waiter checks capacity read-only. A head-of-queue
+  waiter whose tokens visibly do not fit does not publish and retract a holder
+  file on every retry, so watchers are not woken for nothing.
+- Wake-ups: fs.watch on the slot's parent dir, `<slot>.shared` and
+  `<slot>.pending`, debounced 10-40 ms, with the jittered `retryMs` timer as the
+  fallback. The exclusive dir itself is never watched, because an open handle
+  could make an old holder's `rm` fail.
+
+**3. Descendant registry.**
+
+- A pass-through child (flag on, its `ATLAS_TEST_SLOT_TOKEN` names a live holder)
+  writes `<slot>.nested/<id>.json`. The fields are listed under "File formats"
+  below.
+- Its immediate parent is the registry entry named by the new env var
+  `ATLAS_TEST_SLOT_NESTED`. If the env lost that variable, it is the entry whose
+  pid is `process.ppid`. Otherwise it is the root holder.
+- `slotEnv()` hands the variable down at spawn time, and the variable is also
+  set in `process.env` while the entry is held, so raw spawns inherit it. A
+  grandchild is therefore counted against its own parent and never as a
+  sibling of it. Counting it as a sibling would make a child wait for its own
+  parent: the nested-slot deadlock.
+- Sum cap: the live siblings under one parent together hold at most the parent's
+  tokens. The budget is the shared parent's tokens, 28 under an exclusive root,
+  or a nested parent's own tokens. Admission is publish-then-sum, as for
+  holders. A sibling over the cap waits until its `timeoutMs`. A request larger
+  than the parent alone is still refused at once ("never nest").
+- In-process, the second acquisition for the same root reuses the process's
+  entry (refcounted), so an in-process re-entry can never wait on itself.
+- Re-homing: a holder record (shared json or exclusive `owner.txt`) whose pid
+  is verifiably dead, or whose holder releases while a registered descendant in
+  another process still runs, is rewritten in place. It keeps the same token
+  and gets the descendant's pid and
+  `rehomed: {from, to, at, why}`. The write is atomic (tmp + rename), and only
+  if the record still has the text that was judged.
+- Re-homing is done by:
+  - any new-code reaper (`sharedHolders`, `inspectExclusive`, the latter under
+    its `reaping` mkdir);
+  - the holder's own release;
+  - each nested child's heartbeat.
+- When the descendant that holds the re-homed record releases, it hands the
+  record to another live descendant, or removes it if it was the last one. If
+  it is killed, the next scan finds no live descendant and reaps the record as
+  before.
+
+### File formats (new; old ones unchanged)
+
+| Path | Written by | Content |
+|---|---|---|
+| `<slot>/owner.txt` | exclusive holder (unchanged) | `{name, pid, host, time, token}`; after a re-home also `rehomed` |
+| `<slot>.shared/<token>.json` | shared holder (unchanged) | `{name, pid, host, time, token, class: "shared", tokens}`; after a re-home also `rehomed` |
+| `<slot>.pending/<µs17>-<seq6>-<uuid>.json` | every waiter, new code | `{name, pid, host, time, since, ticket, class: "ticket", mode, tokens?, holds}` |
+| `<slot>.nested/<id>.json` | pass-through child, new code | `{name, pid, host, time, token: id, root, parent, class: "nested", mode, tokens}` |
+| env `ATLAS_TEST_SLOT_NESTED` | nested holder for its children | registry id of the immediate parent |
+
+### Compatibility matrix (old = main before this branch, carving-c1, any older checkout)
+
+| Holder \ caller | Old caller | New caller |
+|---|---|---|
+| Old exclusive dir | as before | blocks shared and exclusive; reaped only if its pid is dead (pre-token owners have no token, so no re-home) |
+| Old shared json | as before | counted with its tokens; never deleted while its pid lives; dead: reaped (no registry entries point at it) |
+| New exclusive dir | blocks (mkdir gate unchanged) | as designed |
+| New shared json | counted as before | as designed |
+| Re-homed record | sees a live pid, so it keeps it and counts it | kept until the last descendant exits |
+| New tickets / registry | never read (separate directories) | as designed |
+
+Known gaps in the mixed state (none of them is new harm to an old holder):
+
+- Old callers ignore tickets. An old shared caller can still overtake a queued
+  new-code waiter, as before this branch. FIFO holds between new-code callers.
+- An old-code reaper does not know the registry. It reaps a dead parent that
+  has a live descendant, as it does today, unless a new-code process has
+  re-homed the record first. The window is at most one `heartbeatMs` (10 s) of
+  the nested child's heartbeat.
+- Old code never takes tickets. An old exclusive caller still races new shared
+  waiters at the mkdir gate, as before.
+
+### Tests (all sandbox dirs under test-results; each with a negative case)
+
+| Test | Proves | Negative case |
+|---|---|---|
+| FIFO tickets: 16-token waiter behind 4-token stream | 7 x 4 tokens held; the 16-token waiter gets in after exactly 4 releases; the 4 late callers queue behind it and then enter in arrival order | with `slotTestHooks.ignoreQueue` it is still out after 12 releases, and all 12 late callers overtook it |
+| FIFO tickets: concurrent callers never exceed capacity | 12 x 10 tokens with the queue on, peak <= 28 | same with the queue off (keeps the publish-then-look race exercised) |
+| pending waits | ticket fields; removed on abort, timeout and acquire; a dead front ticket is reaped; stale and slot-holding tickets do not block and are kept | a fresh live earlier shared ticket, and a fresh live exclusive ticket, keep a shared caller out |
+| legacy coexistence | pre-token and token exclusive owners, and an old 20-token shared json, block new callers with the right messages; files are byte-identical afterwards; an old-style reader of `.shared` still sees exactly the holders | when the pid dies, the old shared holder is reaped and the old exclusive owner is taken over |
+| descendant registry: re-home | parent killed: holder re-homed to the child (same token, child pid, `rehomed.from`), exclusive caller drains it; parent releases normally: re-homed too; exclusive parent re-homed the same way | the child exits, so the record goes with it; the child is killed, so the record is reaped |
+| descendant registry: sum cap | 2 + 2 siblings fit under a 4-token parent; a grandchild is counted against its own parent | a 2-token sibling next to a 4-token one waits and times out; a second grandchild over its parent's 2 times out; a grandchild of 4 under 2 is refused |
+| cross-process smoke | children A (16), B (20), C (12) on a sandbox dir. C would fit next to A but stays queued behind B; B gets in after A; C after B | waiter D is killed while queued, and its ticket is reaped instead of blocking B. The sandbox ends empty: non-recursive `rmdir` of the protocol dirs succeeds |
+| gpu-lock: lock order (I8) | a pending slot wait refuses the GPU lock, with the fix in the message; the GPU lock dir is never created | after `abort()` the GPU lock is allowed; a wait that resolves into a held slot allows slot -> GPU |
+
+Mutation checks (each mechanism disabled in place, the two files run through
+`test:pkg`, then restored with git):
+
+| Mutation | Result |
+|---|---|
+| M1 FIFO queue check off | exit 1; 34 pass, 3 fail: FIFO starvation, pending waits (earlier ticket must block), cross-process smoke |
+| M2 GPU pending-wait refusal off | exit 1; 36 pass, 1 fail: gpu-lock lock order (I8) |
+| M3 re-home of a dead shared holder off | exit 1; 36 pass, 1 fail: descendant registry re-home |
+| M4 nested sibling sum off | exit 1; 36 pass, 0 fail, 1 cancelled by its 60 s timeout: descendant registry sum cap (the over-cap sibling got in and held) |
+| M5 dead-ticket reaping off | exit 1; 35 pass, 2 fail: pending waits (dead ticket reaped), cross-process smoke (killed waiter D) |
+| M6 re-home on holder release off | exit 1; 36 pass, 1 fail: descendant registry re-home (parent releases normally) |
+
+The first M3/M4 attempt hung: a failing assertion left a child process waiting
+on stdin, so the test file never exited. The new tests now have a 60 s timeout,
+every spawned process is killed in `afterEach`, and the FIFO waiters are
+aborted in `finally`. A regression now fails within seconds; it no longer hangs
+the runner.
+
+### Behaviour changes worth knowing
+
+- **Nested siblings can now wait.** Before, any number of concurrent
+  pass-through children ran at once. Now the siblings under one parent share
+  its tokens. Under an exclusive root, a nested exclusive request takes all 28,
+  so two concurrent nested exclusive children run one after the other. No
+  in-repo caller does this today. `cost-fair/run.sh` children run one at a time.
+- A child spawned with an env snapshot taken before its parent's nested
+  acquisition, and without `slotEnv()`, loses `ATLAS_TEST_SLOT_NESTED`. If its
+  real parent is not its direct `ppid`, it is counted as a sibling of its parent
+  and can wait on it. The wait log names both entries. Spawn through
+  `runCommand`/`slotEnv`.
+- Every acquisition, even an immediate one, writes and removes one ticket file.
+  That is a few file operations per acquisition.
+- `acquireTestSlot` accepts `signal` and `ticketStaleMs`.
+- `slotTestHooks.ignoreQueue` is test-only and false in production.
+
+### Still not done
+
+- The live-slot stress run: about 8 processes contending on the real slot,
+  booked in a merge window. The sandbox smoke used 3 + 1 processes.
+- The RSS check under overlap (I3 RSS item above).
+- The I3 arms on the test:full shards (test:full stays exclusive).
+- FIFO tickets for the GPU lock itself (plan I8 first clause). The GPU lock still
+  polls every 60 s by default. This branch only adds the pending-wait refusal.
+- Cross-process pending detection: `acquireGpuLock` sees only this process's
+  pending waits. It cannot see an ancestor that waits for the slot while a child
+  takes the GPU lock.
+- Old-code reapers can still reap a dead parent with live descendants (window
+  above) until every checkout has this branch.
+
+### needs: lines (T5)
+
+- needs: `docs/test-policy.md` "Lock order" / "Enforced in code": add that
+  `acquireGpuLock` refuses while this process has a pending slot wait
+  (`assertNoPendingSlotWait`), and that pass-through children are registered and
+  share their parent's tokens. Reason: the policy is binding text outside T5's
+  files.
+- needs: none for `package.json`, `tests/tiers.json`, golden, known-failures. No
+  new test file was added (both files are already registered).
