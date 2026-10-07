@@ -1348,10 +1348,16 @@ export const TRUNK_WRINKLE = [0.08, 6] as const;
 export const PROBOSCIS_EAR = Object.freeze({flare: 22, length: 0.44, top: 0.15, lobe: 0.3, root: 0.05, rim: 0.012, bow: 0.035, segments: 12, stations: 10});
 function proboscisEar(s: Skin, root: THREE.Vector3, back: THREE.Vector3, up: THREE.Vector3, out: THREE.Vector3, unit: number, w: W, color: (f: number, p: THREE.Vector3) => RGB) {
   const E = PROBOSCIS_EAR, rings: Ring[] = [];
+  // sin(pi x)^p with a fractional p is NaN for a sin a hair below 0. At the rim station (f = 1) the argument is pi x 1:
+  // every libm returns pow(1, 0.75) = 1 and sin(Math.PI) = +1.2e-16, but a pow(1, 0.75) one ulp above 1 (ECMA-262
+  // leaves it implementation-approximated) gives a negative sine and a NaN rim ring (the trunked-centipede skin record
+  // that moved under the 1-ULP perturbation test, docs/fauna-composer-stability-2026-10-07.md). Clamped at 0: the
+  // value is unchanged wherever the sine is not negative.
+  const arch = (x: number, p: number) => Math.pow(Math.max(0, Math.sin(Math.PI * x)), p);
   for (let i = 0; i <= E.stations; i++) {
-    const f = i / E.stations, bulge = Math.pow(Math.sin(Math.PI * Math.min(1, 0.08 + 0.92 * f)), 0.6);
-    const top = (0.035 + E.top * Math.pow(Math.sin(Math.PI * Math.min(1, f * 1.15)), 0.7)) * Math.max(0, 1 - Math.pow(f, 6));
-    const bottom = -(0.035 + E.lobe * Math.pow(Math.sin(Math.PI * Math.pow(f, 0.75)), 0.8)) * Math.max(0, 1 - Math.pow(f, 6));
+    const f = i / E.stations, bulge = arch(Math.min(1, 0.08 + 0.92 * f), 0.6);
+    const top = (0.035 + E.top * arch(Math.min(1, f * 1.15), 0.7)) * Math.max(0, 1 - Math.pow(f, 6));
+    const bottom = -(0.035 + E.lobe * arch(Math.pow(f, 0.75), 0.8)) * Math.max(0, 1 - Math.pow(f, 6));
     const half = Math.max(0.004, (top - bottom) / 2), thick = E.rim + (E.root - E.rim) * Math.pow(1 - f, 3);
     const c = root.clone().addScaledVector(back, E.length * f * unit).addScaledVector(up, (top + bottom) / 2 * unit).addScaledVector(out, E.bow * bulge * unit);
     rings.push({c, t: back, u: up, rx: Math.min(thick, half) * unit, ry: half * unit, w, color: (_a, p) => color(f, p)});
