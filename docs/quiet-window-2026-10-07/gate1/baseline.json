@@ -1,0 +1,214 @@
+{
+ "at": "2026-10-07T00:28:21.348Z",
+ "heavy": [
+  {
+   "name": "node.exe",
+   "pid": 23272
+  },
+  {
+   "name": "node.exe",
+   "pid": 23388
+  },
+  {
+   "name": "node.exe",
+   "pid": 23400
+  },
+  {
+   "name": "node.exe",
+   "pid": 43800
+  },
+  {
+   "name": "node.exe",
+   "pid": 44876
+  },
+  {
+   "name": "node.exe",
+   "pid": 44056
+  },
+  {
+   "name": "ollama app.exe",
+   "pid": 41892
+  },
+  {
+   "name": "ollama.exe",
+   "pid": 5648
+  },
+  {
+   "name": "node.exe",
+   "pid": 19152
+  },
+  {
+   "name": "node.exe",
+   "pid": 47864
+  },
+  {
+   "name": "blender-mcp-server.exe",
+   "pid": 2860
+  },
+  {
+   "name": "python.exe",
+   "pid": 22980
+  },
+  {
+   "name": "python.exe",
+   "pid": 4592
+  },
+  {
+   "name": "python.exe",
+   "pid": 31764
+  },
+  {
+   "name": "python.exe",
+   "pid": 15800
+  },
+  {
+   "name": "python.exe",
+   "pid": 2300
+  },
+  {
+   "name": "node.exe",
+   "pid": 50824
+  },
+  {
+   "name": "node.exe",
+   "pid": 6812
+  },
+  {
+   "name": "blender-mcp-server.exe",
+   "pid": 19240
+  },
+  {
+   "name": "python.exe",
+   "pid": 48396
+  },
+  {
+   "name": "python.exe",
+   "pid": 22784
+  }
+ ],
+ "gpu": [
+  {
+   "pid": 12300,
+   "name": "C:\\Windows\\System32\\ShellHost.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 12488,
+   "name": "C:\\Windows\\SystemApps\\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\\CrossDeviceResume.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 13712,
+   "name": "C:\\Program Files\\WindowsApps\\Microsoft.WindowsTerminal_1.24.12741.0_x64__8wekyb3d8bbwe\\WindowsTerminal.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 12160,
+   "name": "C:\\Windows\\explorer.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 14916,
+   "name": "C:\\Windows\\SystemApps\\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\\StartMenuExperienceHost.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 14888,
+   "name": "C:\\Windows\\SystemApps\\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\\SearchHost.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 17884,
+   "name": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\154.0.4258.53\\msedgewebview2.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 9864,
+   "name": "C:\\Program Files\\LogiOptionsPlus\\logioptionsplus_agent.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 19576,
+   "name": "C:\\Program Files\\WindowsApps\\Microsoft.YourPhone_1.26072.257.0_x64__8wekyb3d8bbwe\\PhoneExperienceHost.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 14864,
+   "name": "C:\\Windows\\SystemApps\\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\\TextInputHost.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 22960,
+   "name": "C:\\Program Files\\Corsair\\Corsair iCUE5 Software\\iCUE.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 26184,
+   "name": "C:\\Users\\Caldor\\AppData\\Local\\Programs\\Opera\\opera.exe",
+   "class": "user-browser"
+  },
+  {
+   "pid": 29364,
+   "name": "C:\\Program Files\\Corsair\\Corsair iCUE5 Software\\QmlRenderer.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 29784,
+   "name": "C:\\Users\\Caldor\\AppData\\Local\\Programs\\Opera\\opera.exe",
+   "class": "user-browser"
+  },
+  {
+   "pid": 32936,
+   "name": "C:\\Program Files (x86)\\Steam\\bin\\cef\\cef.win64\\steamwebhelper.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 34812,
+   "name": "C:\\Users\\Caldor\\AppData\\Local\\Discord\\app-1.0.9260\\Discord.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 36412,
+   "name": "C:\\Program Files (x86)\\GOG Galaxy\\GalaxyClient.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 40912,
+   "name": "C:\\Users\\Caldor\\AppData\\Local\\Programs\\Perplexity\\Perplexity.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 36184,
+   "name": "C:\\Program Files (x86)\\GOG Galaxy\\GOG Galaxy Notifications Renderer.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 47352,
+   "name": "C:\\Windows\\SystemApps\\ShellExperienceHost_cw5n1h2txyewy\\ShellExperienceHost.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 41780,
+   "name": "C:\\Program Files\\AMD\\CNext\\CNext\\RadeonSoftware.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 7788,
+   "name": "C:\\Windows\\System32\\ApplicationFrameHost.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 16552,
+   "name": "C:\\Windows\\ImmersiveControlPanel\\SystemSettings.exe",
+   "class": "desktop"
+  },
+  {
+   "pid": 2948,
+   "name": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\154.0.4258.53\\msedgewebview2.exe",
+   "class": "desktop"
+  }
+ ],
+ "idleFrac": 0.9274494224069434,
+ "shared": [],
+ "exclusive": false
+}

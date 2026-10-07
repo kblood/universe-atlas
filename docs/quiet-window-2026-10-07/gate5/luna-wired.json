@@ -1,0 +1,206 @@
+{
+  "class": "VISUAL-ADVISORY",
+  "kind": "vote",
+  "question": null,
+  "prompt": "The attached image is a rendered view of terrain. Ignore any user-interface panels, buttons, labels or text drawn over the image; judge only the landscape.\n\nQuestion: does this view show a mountain range? A mountain range here means high ground with steep faces and distinct peaks or sharp ridges, separated by valleys that drain away from the crests. It does not mean flat ground, gentle rolling hills or smooth swells, and it does not mean rough random noise with no organisation into ridges and valleys.\n\nAnswer with: a 1-5 confidence that it is a mountain range (5 = clearly a range), and the features you can actually see, naming each of these as present or absent: peaks, steep faces, valleys, snow line.",
+  "results": [
+    {
+      "image": "C:\\Users\\Caldor\\AppData\\Local\\Temp\\claude\\C--LLM-IWSDK\\84c3735d-46ff-4f28-8f76-5598fd94ed7b\\scratchpad\\quiet\\g5\\luna-sheet\\wired\\lethuris-massifAxis-noclouds-wired.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The terrain shows soft, rounded swells without distinct peaks or sharp ridges.",
+          "element": "summits/peaks",
+          "expected": "A clearly defined skyline with distinct summits and ridges rising above the surrounding terrain.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "summits/peaks",
+        "elementCounts": {
+          "summits/peaks": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\Users\\Caldor\\AppData\\Local\\Temp\\claude\\C--LLM-IWSDK\\84c3735d-46ff-4f28-8f76-5598fd94ed7b\\scratchpad\\quiet\\g5\\luna-sheet\\wired\\lethuris-massifAxis-wired.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The landscape reads as smooth, gently rolling swells, without clearly organized peaks or valleys.",
+          "element": "ridges and valleys/drainage",
+          "expected": "Distinct ridges descending from sharp crests, with visible valleys between them.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "ridges and valleys/drainage",
+        "elementCounts": {
+          "ridges and valleys/drainage": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\Users\\Caldor\\AppData\\Local\\Temp\\claude\\C--LLM-IWSDK\\84c3735d-46ff-4f28-8f76-5598fd94ed7b\\scratchpad\\quiet\\g5\\luna-sheet\\wired\\maithea-massifAxis-noclouds-wired.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The terrain reads as overlapping soft hills and a broad smooth swell, without distinct mountain peaks.",
+          "element": "summits/peaks",
+          "expected": "Several clearly defined, sharp summits rising above the surrounding ridges and valleys.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "summits/peaks",
+        "elementCounts": {
+          "summits/peaks": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\Users\\Caldor\\AppData\\Local\\Temp\\claude\\C--LLM-IWSDK\\84c3735d-46ff-4f28-8f76-5598fd94ed7b\\scratchpad\\quiet\\g5\\luna-sheet\\wired\\maithea-massifAxis-wired.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The terrain forms soft, rounded swells with no distinct sharp summits.",
+          "element": "summits/peaks",
+          "expected": "Clearly separated pointed or sharply ridged peaks rising above the surrounding slopes.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "summits/peaks",
+        "elementCounts": {
+          "summits/peaks": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\Users\\Caldor\\AppData\\Local\\Temp\\claude\\C--LLM-IWSDK\\84c3735d-46ff-4f28-8f76-5598fd94ed7b\\scratchpad\\quiet\\g5\\luna-sheet\\wired\\raiva-massifAxis-noclouds-wired.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The terrain reads as broad, rounded hills rather than a high mountain range.",
+          "element": "massif height/silhouette",
+          "expected": "A taller, more prominent skyline with distinct high peaks rising above the surrounding terrain.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\Users\\Caldor\\AppData\\Local\\Temp\\claude\\C--LLM-IWSDK\\84c3735d-46ff-4f28-8f76-5598fd94ed7b\\scratchpad\\quiet\\g5\\luna-sheet\\wired\\raiva-massifAxis-wired.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The landscape reads as irregular rolling hills rather than an organized mountain range.",
+          "element": "ridges and valleys/drainage",
+          "expected": "Distinct steep ridges and peaks with clear valleys descending away from their crests.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "ridges and valleys/drainage",
+        "elementCounts": {
+          "ridges and valleys/drainage": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    }
+  ]
+}

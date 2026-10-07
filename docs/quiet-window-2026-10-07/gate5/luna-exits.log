@@ -1,0 +1,5 @@
+build refmain exit=0
+capture refmain exit=0
+build wired exit=0
+capture wired exit=0
+done

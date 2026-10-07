@@ -1,0 +1,206 @@
+{
+  "class": "VISUAL-ADVISORY",
+  "kind": "vote",
+  "question": null,
+  "prompt": "The attached image is a rendered view of terrain. Ignore any user-interface panels, buttons, labels or text drawn over the image; judge only the landscape.\n\nQuestion: does this view show a mountain range? A mountain range here means high ground with steep faces and distinct peaks or sharp ridges, separated by valleys that drain away from the crests. It does not mean flat ground, gentle rolling hills or smooth swells, and it does not mean rough random noise with no organisation into ridges and valleys.\n\nAnswer with: a 1-5 confidence that it is a mountain range (5 = clearly a range), and the features you can actually see, naming each of these as present or absent: peaks, steep faces, valleys, snow line.",
+  "results": [
+    {
+      "image": "C:\\Users\\Caldor\\AppData\\Local\\Temp\\claude\\C--LLM-IWSDK\\84c3735d-46ff-4f28-8f76-5598fd94ed7b\\scratchpad\\quiet\\g5\\luna-sheet\\refmain\\lethuris-massifAxis-noclouds-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The landscape is flat, with no visible mountain range.",
+          "element": "massif height/silhouette",
+          "expected": "A high, distinct skyline with sharp peaks or ridges rising above the surrounding terrain.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\Users\\Caldor\\AppData\\Local\\Temp\\claude\\C--LLM-IWSDK\\84c3735d-46ff-4f28-8f76-5598fd94ed7b\\scratchpad\\quiet\\g5\\luna-sheet\\refmain\\lethuris-massifAxis-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The horizon and terrain are nearly flat, with no visible mountain forms.",
+          "element": "massif height/silhouette",
+          "expected": "A clearly raised massif with steep slopes and distinct peaks or ridges above the surrounding land.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\Users\\Caldor\\AppData\\Local\\Temp\\claude\\C--LLM-IWSDK\\84c3735d-46ff-4f28-8f76-5598fd94ed7b\\scratchpad\\quiet\\g5\\luna-sheet\\refmain\\maithea-massifAxis-noclouds-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The view is mostly flat, with only faint, smooth distant undulations and no organized mountain forms.",
+          "element": "massif height/silhouette",
+          "expected": "A prominent high massif rising above the horizon, with a clear silhouette of distinct peaks or sharp ridges.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\Users\\Caldor\\AppData\\Local\\Temp\\claude\\C--LLM-IWSDK\\84c3735d-46ff-4f28-8f76-5598fd94ed7b\\scratchpad\\quiet\\g5\\luna-sheet\\refmain\\maithea-massifAxis-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "No identifiable mountain forms; the visible terrain is mostly a pale, nearly uniform surface with a low, smooth horizon.",
+          "element": "massif height/silhouette",
+          "expected": "A prominent high massif rising above the surrounding terrain, with a clear silhouette of distinct peaks or sharp ridges.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\Users\\Caldor\\AppData\\Local\\Temp\\claude\\C--LLM-IWSDK\\84c3735d-46ff-4f28-8f76-5598fd94ed7b\\scratchpad\\quiet\\g5\\luna-sheet\\refmain\\raiva-massifAxis-noclouds-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The terrain is an almost flat, uniform plain with no visible mountain forms.",
+          "element": "massif height/silhouette",
+          "expected": "A prominent high massif rising clearly above the surrounding landscape, with a distinct skyline.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    },
+    {
+      "image": "C:\\Users\\Caldor\\AppData\\Local\\Temp\\claude\\C--LLM-IWSDK\\84c3735d-46ff-4f28-8f76-5598fd94ed7b\\scratchpad\\quiet\\g5\\luna-sheet\\refmain\\raiva-massifAxis-refmain.png",
+      "status": "FAIL",
+      "pass": 0,
+      "fail": 3,
+      "unclear": 0,
+      "asks": 3,
+      "verdicts": [
+        "FAIL",
+        "FAIL",
+        "FAIL"
+      ],
+      "errors": [],
+      "diagnoses": [
+        {
+          "reason": "The landscape is nearly flat, with no clearly organized high ground.",
+          "element": "massif height/silhouette",
+          "expected": "A prominent mountain mass rising above the horizon with a distinct, steep-sided silhouette.",
+          "confidence": "high",
+          "ambiguity": ""
+        }
+      ],
+      "diagnosis": {
+        "mostCommonElement": "massif height/silhouette",
+        "elementCounts": {
+          "massif height/silhouette": 1
+        },
+        "flags": [],
+        "answers": 1
+      },
+      "calibration": "NOT-CHECKED",
+      "citable": false
+    }
+  ]
+}
