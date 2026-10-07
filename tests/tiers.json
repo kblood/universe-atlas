@@ -2,7 +2,8 @@
  "$comment": [
   "Tier lists for tests/helpers/tier-runner.mjs (docs/test-tiers-2026-10-07.md). Every file must be registered in npm test.",
   "{file, shards}: one step per anchored title regex (--test-name-pattern) plus a #rest step (--test-skip-pattern of the union); every test runs exactly once (duplicates are flagged). Shards change scheduling only, never what a test checks.",
-  "smoke and work list the same files (terrain only, MVP); the tier changes N and the sample set inside tier-aware files."
+  "smoke and work list terrain files (MVP); the tier changes N and the sample set inside tier-aware files. Since 2026-10-07 (review O4) terrain-budget-starvation, terrain-leaf-loop-digest and terrain-water-refresh are in work only: renderer simulations that bound the smoke wall.",
+  "all (tier all = test:all / test:full, docs/tier-all-2026-10-07.md): the whole npm test registry runs; this list only names the files that run as shards there ({file, shards} entries only). Shards in all split the carved-truth fullOnly scans of one file into separate processes and the heaviest default-depth files."
  ],
  "smoke": [
   {
@@ -60,8 +61,6 @@
    ]
   },
   "tests/sparse-consumer-levels.test.mjs",
-  "tests/terrain-budget-starvation.test.mjs",
-  "tests/terrain-leaf-loop-digest.test.mjs",
   {
    "file": "tests/terrain-elevation-identity.test.mjs",
    "shards": [
@@ -84,7 +83,6 @@
     "^coastline invariance"
    ]
   },
-  "tests/terrain-water-refresh.test.mjs",
   {
    "file": "tests/river-terrain.test.mjs",
    "shards": [
@@ -93,7 +91,14 @@
    ]
   },
   "tests/tree-lod-coverage.test.mjs",
+  {
+   "file": "tests/terrain-structural-spectrum.test.mjs",
+   "shards": [
+    "^INFO: real"
+   ]
+  },
   "tests/tier.test.mjs",
+  "tests/tier-all.test.mjs",
   "tests/tier-sets.test.mjs"
  ],
  "work": [
@@ -185,7 +190,119 @@
    ]
   },
   "tests/tree-lod-coverage.test.mjs",
+  {
+   "file": "tests/terrain-structural-spectrum.test.mjs",
+   "shards": [
+    "^INFO: real"
+   ]
+  },
   "tests/tier.test.mjs",
+  "tests/tier-all.test.mjs",
   "tests/tier-sets.test.mjs"
+ ],
+ "all": [
+  {
+   "file": "tests/mountain-coarse-field.test.mjs",
+   "shards": [
+    "^Maithea: ",
+    "^Selawyn: ",
+    "^Raiva: ",
+    "^Lethuris: "
+   ]
+  },
+  {
+   "file": "tests/lod-carving-reduction.test.mjs",
+   "shards": [
+    "^Maithea: ",
+    "^Selawyn: ",
+    "^Raiva: ",
+    "^Lethuris: "
+   ]
+  },
+  {
+   "file": "tests/lod-consistency.test.mjs",
+   "shards": [
+    "^Maithea: ",
+    "^Lethuris: ",
+    "^Maithea coarse retention"
+   ]
+  },
+  {
+   "file": "tests/mountain-layout.test.mjs",
+   "shards": [
+    "^HARD: the T2 rejections",
+    "^HARD: orogen-layout-2 keeps"
+   ]
+  },
+  {
+   "file": "tests/mountain-layout-grid.test.mjs",
+   "shards": [
+    "^HARD: 60 corpus bodies"
+   ]
+  },
+  {
+   "file": "tests/river-terrain.test.mjs",
+   "shards": [
+    "^wet/dry rock-height",
+    "^Maithea coarse child"
+   ]
+  },
+  {
+   "file": "tests/terrain-elevation-identity.test.mjs",
+   "shards": [
+    "^kept palette",
+    "^T6 identity outside the belts \\(level 0\\)",
+    "^T6 identity outside the belts \\(truth\\)"
+   ]
+  },
+  {
+   "file": "tests/terrain-relief-hypsometry.test.mjs",
+   "shards": [
+    "^bodyHeightBoundM contains every carved-truth sample",
+    "^window invariant on the carved truth",
+    "^coastline invariance on the carved truth",
+    "^corpus of 132"
+   ]
+  },
+  {
+   "file": "tests/terrain-floor-window.test.mjs",
+   "shards": [
+    "^invariant on the truth: ",
+    "^continentalM >= 0 exactly where the carved truth",
+    "^floorM is the clamped base field on the carved truth"
+   ]
+  },
+  {
+   "file": "tests/terrain-climate-colour.test.mjs",
+   "shards": [
+    "^water-world land colour identity on the carved truth"
+   ]
+  },
+  {
+   "file": "tests/fauna-composer-eye-catalogue.test.mjs",
+   "shards": [
+    "^eyeRules 1 reproduces",
+    "^species keys \\(herds\\)"
+   ]
+  },
+  {
+   "file": "tests/fauna-composer-eyes.test.mjs",
+   "shards": [
+    "^budget: per-eye triangles",
+    "^built eyes: pupil aspect"
+   ]
+  },
+  {
+   "file": "tests/fauna-composer-head-occlusion.test.mjs",
+   "shards": [
+    "^review specimens with arms or wings"
+   ]
+  },
+  {
+   "file": "tests/terrain-structural-spectrum.test.mjs",
+   "shards": [
+    "^INFO: real"
+   ]
+  }
  ]
 }
