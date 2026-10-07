@@ -1,0 +1,39 @@
+# node --cpu-prof scripts/cost-fair/orbit-ab.mjs Raiva <branch> <branch> 7 (2 cold + 14 timed bakes, one process), tree 616562d
+total sampled ms 5992
+self time in src/mountain-*.ts (all functions): 73 ms = 1.22 %
+
+top self:
+ 30.50 % noise catalog.ts:968
+ 12.74 % sample terrain.ts:530
+  9.49 % n terrain.ts:329
+  8.83 % planetSurface terrain.ts:1312
+  5.68 % macroHeightCode catalog.ts:992
+  5.63 %  surface-climate.ts:287
+  4.54 % detAcos det-math.ts:157
+  4.26 %  terrain.ts:1128
+  2.97 % mix terrain.ts:318
+  2.83 % seabedDetail terrain.ts:503
+  2.56 % (garbage collector) :-1
+  2.01 %  planet-landforms.ts:24
+  1.66 % ss terrain.ts:257
+  1.56 % waterWorldLandColour terrain.ts:357
+  0.68 % applyGrain terrain.ts:1122
+  0.41 % compileSourceTextModule utils:354
+  0.33 % Module :-1
+  0.33 % clamp terrain.ts:314
+  0.29 % buildOrogenLayout mountain-layout.ts:622
+  0.20 % massifCoarseRidgeTermM mountain-envelope.ts:99
+
+mountain inclusive:
+  0.52 % orogenLayout mountain-layout.ts:895
+  0.39 % buildOrogenLayout mountain-layout.ts:622
+  0.35 % coarseBandField mountain-layout.ts:883
+  0.25 % massifCoarseRidgeTermM mountain-envelope.ts:99
+  0.21 % bandGrid mountain-layout.ts:762
+  0.17 % buildBandGrid mountain-layout.ts:379
+  0.14 % buildCoarseBandField mountain-layout.ts:499
+  0.10 %  mountain-layout.ts:475
+  0.08 % coveredV1 mountain-layout.ts:235
+  0.08 % coarseMarginH mountain-envelope.ts:27
+  0.06 %  mountain-layout.ts:92
+  0.05 % lNoise mountain-layout.ts:62

@@ -298,14 +298,16 @@ protocol, which measures the real tile cost, is the coordinator's: see section 5
 
 ## 4. Pending, and not this agent's
 
-- Cost-fair protocol: **run, STOP** (section 5).
-- GPU probe pair (Maithea massif, L11-L13, low sun) and the golden cross-engine run: **not run**, because the protocol
-  STOPped first.
+- Cost-fair protocol: **run, STOP** (section 5). Per section 2d the fused refactor was done (section 6), followed by
+  exactly one new counted run, pre-registered in `docs/quiet-window-2026-10-07/gate-c1b/prereg.txt` (a draft, not
+  started by this agent).
+- GPU probe pair (Maithea massif, L11-L13, low sun) and the golden cross-engine run: per section 2d(c) they are being
+  run on `b84bcf9` by the GPU agent. The results carry over to the new CAND by digest equality (section 6).
 - **Decided (section 2c):** the crossed M5 margins stay INFO. The cost protocol runs as is, with REF = `9dcb1cf`
   (GATE-1 REF), REF2 an identical export, and CAND = the branch tip. Merge follows only after these, in order: the
   protocol passes, the cross-engine golden check shows 0 mismatches, and the probe pair shows no visual STOP.
 
-### Backlog (not implemented): fused carving lookups
+### Backlog: fused carving lookups (implemented in section 6, `616562d`)
 
 - **What:** one gate pass and one cell/offset computation, shared by C and Cb at the base point. Cbx and Cby are
   computed in the same call. This replaces the four independent `ridgeValleyCarving*M` calls on the rock path.
@@ -359,9 +361,22 @@ protocol, which measures the real tile cost, is the coordinator's: see section 5
 - **The orbit bake output did not change since GATE-1.**
   - CAND's orbit digests equal GATE-1's CAND (`772cad3`) on all four worlds.
   - `git diff 772cad3 b84bcf9 -- src` touches only `mountain-carving.ts`, `mountain-assembly.ts` (the rock inputs),
-    `place-query.ts` and `terrain.ts` (an import and the version string).
+    `place-query.ts` and `terrain.ts`. **Correction (INFO, after the verdict; `verdict.txt` and the records are not
+    changed):** the `terrain.ts` diff is the version string and a comment block only, with no import change. Also,
+    `src/place-query.ts` is not in the bake's import graph (a transitive walk from `src/terrain.ts` covers 34 modules and
+    does not include it).
   - Orbit medians nevertheless rose against GATE-1, from 3.08 / 2.50 / 4.36 / 1.64 to 4.68 / 2.83 / 5.02 / 2.63.
-  - Whether that is run-to-run noise (the documented per-run spread is -9..+10 %) or a real cost is **not established**.
+  - Whether that is run-to-run noise (the documented per-run spread is -9..+10 %) or a real cost was **not established**
+    by the run itself. The section 2d diagnosis (INFO, added after the verdict) finds noise plus session drift:
+    - **No code mechanism.** The level-0 bake runs `baseTerrainCore({carve:false, rock:false})` ->
+      `massifCoarseRidgeTermM`, which is unchanged since `772cad3`. No `mountainRidgeTermM`, `block` or `cutAt` runs and
+      no block is solved.
+    - **Mann-Whitney, GATE-1 against GATE-C1 orbit A/B, per world:** z = 0.52 / 0.62 / -0.25 / 0.33. The two runs are
+      indistinguishable.
+    - **REF drift.** The REF arm (the same source in both runs) ran 1.5-2.4 % slower in this session; Raiva went from
+      330.9 to 338.8 ms.
+    - **Pooled N = 60.** GATE-1 and GATE-C1 together put the Raiva orbit median at **4.42 %**, against a CI half-width
+      of about 1.1-1.3 points. Any counted run on that cell is close to a coin flip with any CAND, main included.
 - **C1 against expectation.** Measured 6.89 / 1.75 / 6.08 / 4.35, expected 5.98 / 2.94 / 4.77 / 5.23. Maithea's CI upper
   bound, 8.55 %, is above 8 %.
   - Outside massifs, A/B: +3.26 / -0.14 / +3.32 / +2.71 %.
@@ -381,3 +396,91 @@ protocol, which measures the real tile cost, is the coordinator's: see section 5
   - The per-record files are in the git-ignored `test-results/gate-c1/fair/rec/` in main's checkout.
 - **Cleanup.** The arms were removed, the junction first with `cmd /c rmdir`; main's `node_modules` is intact. No slot,
   shared holder or GPU lock is held.
+
+## 6. Fused carving lookups (section 2d, mandatory after the GATE-C1 STOP): `616562d`
+
+**What changed.**
+- `carvingRockFM` (`src/mountain-carving.ts`) returns C and writes Cb, Cbx and Cby into a scratch `Float64Array(3)`.
+  `mountainRidgeTermM` (rock = true) makes this one call instead of `ridgeValleyCarvingM` plus three
+  `ridgeValleyCarvingSmoothM`. The rock = false path is unchanged.
+- **Shared work:**
+  - one gate pass, one `seed >>> 0` and one `d`;
+  - one base-cell computation and one 16-tap load, feeding both the Catmull-Rom (C) and the B-spline (Cb) sum, each
+    written term for term;
+  - Cbx keeps the base row and its B-spline row weights, Cby the base column and its column weights. So only 4 of the
+    6 B-spline weight sets are computed.
+  - A block is re-read only when the id changes.
+- **Memo and LRU behaviour is unchanged.** The `block()` calls happen in the same order as the four separate calls,
+  including the final re-touch of the base block for Cby after Cbx crossed into the next block, so the LRU, the build
+  count and a block trace are unchanged. Inside a point query (`placeAt`) the function makes the four separate calls,
+  so the point memo sees the identical sequence.
+- **No version moves:** `TERRAIN_VERSION` stays terrain-1.9.1-carving-c1, with mountain-carving-3 and
+  mountain-assembly-4. No pin was touched.
+
+**Identity (HARD; every row unchanged, no re-pin).**
+
+| item | how checked | result |
+|---|---|---|
+| `CARVING_F_DIGEST`, `CARVING_S_DIGEST` | tests/mountain-carving.test.mjs (cold / warm / reverse / child process) | unchanged (1c94b28f..., 194bc671...) |
+| fused == separate | new HARD test: 11,442 queries (10,004 carved, 611 crossing a block) on random synthetic blocks, steps 125 / 37.25 / 0 / -125 m, lattice vertices, every gate (+-w, NaN, Infinity, belt 0, envelope 0 / -1 / NaN); `Object.is` on all four values; per-query block trace equal | bit-identical |
+| point-query mode | the same test, 3000 queries inside `enterCarvingPointQuery` | values and memo stats equal (5404 hits, 6083 stores, 3011 evictions) |
+| LRU order | the same test: seam query, then fill the cache until one of {0, 1} is evicted; must be block 1 in both | equal. Negative control: a variant that reads Cby's block without the LRU touch evicts block 0 and fails |
+| point memo and memo bound | tests/mountain-carving-memo.test.mjs | pass; MEMORY 8,413,568 B; POINT_MEMO coldBuilds 4, warmHits 5762 |
+| `COST_IDENTITY`, `COST_SAMPLER_IDENTITY` (24 levels x 4 worlds) | tests/lod-carving-reduction.test.mjs | unchanged |
+| `MOUNTAINS_TRUTH_SHA256` | tests/terrain-elevation-identity.test.mjs (test:full) | unchanged |
+| truth sampler vs `b84bcf9` (whole sample: height, ocean, colour, roughness, landformScale) | `belt-identity.mjs` against a `git archive b84bcf9` export, 4 x 15,120 directions | 0 mismatches, 43,460 of them in-massif (`fused-identity-vs-b84bcf9.json`) |
+| golden | `node tests/golden/node-run.mjs` against tests/golden/golden.json | 36/36 keys equal |
+| orbit digests (planetSurface 1024 x 192) | `scripts/cost-fair/orbit-ab.mjs <w> <branch> <branch> 0` | equal to GATE-C1's CAND digests: Maithea 662d404d..., Selawyn ac0907ad..., Raiva 29b2a2a3..., Lethuris 0f4671fe...; 0 block solves |
+
+**Cost (under the exclusive test slot, main and branch alternated, 3 runs each; `bench-fused.log`).** Median ns per
+in-massif sample:
+
+| | main (assembly-3) | b84bcf9 (separate calls) | **616562d (fused)** |
+|---|---|---|---|
+| carving, no rock | 58.0 / 57.5 / 57.4 | 55.6 / 55.8 / 55.1 | **55.6 / 56.8 / 54.3** |
+| carving + rock | 190.8 / 191.0 / 191.2 | 239.0 / 225.9 / 228.0 | **177.5 / 178.0 / 177.2** |
+
+- Acceptance is carving + rock <= main + 15 ns, about 206 ns. **Measured 177 ns, 13 ns below main and 49-62 ns below
+  `b84bcf9`.**
+- That is more than the 15-25 ns the backlog entry estimated. Sharing the base taps and four of the six weight sets
+  removed most of the second cubic evaluation's cost.
+
+**Optional level-0 speed-up (time-boxed 2 h): abandoned after the profile, about 20 min, nothing included.**
+- `node --cpu-prof scripts/cost-fair/orbit-ab.mjs Raiva <branch> <branch> 7` ran 2 cold and 14 timed bakes in about 6 s
+  of samples (`orbit-profile-raiva.txt`).
+- Self time in all of `src/mountain-*.ts` is **1.22 %**. Most of it is the one-time layout build (`buildOrogenLayout`,
+  `bandGrid`, `coarseBandField`), which falls outside the timed rounds. `massifCoarseRidgeTermM` is 0.25 % inclusive.
+- The per-point massif test is inlined in `terrain.ts` (the cube and block lookup).
+- The bake is dominated by the pre-mountain field: `noise` 30.5 %, `sample` 12.7 %, `n` 9.5 %, `planetSurface` 8.8 %,
+  `macroHeightCode` 5.7 %.
+- No digest-identical change to mountain code can save >= 1 point of Raiva orbit. The 2d diagnosis (noise plus drift
+  around a 4.42 % pooled median) stands.
+
+**Orbit diagnosis (section 2d, summary).**
+- **Code.** The level-0 bake never reaches the carving. The CAND orbit output is byte-identical to GATE-1's CAND and is
+  unchanged by the refactor (table above).
+- **Statistics.** Mann-Whitney z = 0.52 / 0.62 / -0.25 / 0.33 between GATE-1 and GATE-C1. REF drifted +1.5-2.4 % within
+  the session (Raiva 330.9 -> 338.8 ms). The pooled N = 60 Raiva median is 4.42 %, against a CI half-width of about
+  1.1-1.3 points.
+- **Consequence.** The Raiva orbit margin is below the protocol's resolution. The one permitted new counted run
+  (`gate-c1b/prereg.txt`) carries the outcomes decided in advance in 2d(b).
+
+**Suites after the refactor.**
+- tsc --noEmit: clean.
+- test:pkg (all `tests/mountain-*.test.mjs`, lod-carving-reduction, lod-coarse-frame, terrain-mountains-assembly):
+  161 tests, 159 pass, 2 skipped, 0 fail. That count includes the new fused-identity test.
+- `npm run test:perf`: 12 pass, 1 skipped (the eco quiet-host test, OPEN on main), 0 fail.
+  - Row W: 0 main-thread solves, first-pass p50 17.7 µs.
+  - Row F: 174.9 ms per solve.
+  - placeAt best-of-3: 2.71 µs.
+- **The first test:full after the refactor was RED on one HARD row, and production was not at fault.** The spectrum
+  pin's triangle negative control came out equal to the truth (1.90 dB). The test-side triangle rewrite
+  (`tests/helpers/mountain-carving-triangle.mjs`) replaces the query inside `cutAt`, but the fused `carvingRockFM`
+  inlines both kernels, so the control no longer reached the rock path or the height.
+  - **Fix (`6d4249a`, test-side only):** a third needle forces `carvingRockFM`'s four-call branch in the reference
+    copy, so all four values go through the triangle query again. It throws if the needle is missing.
+  - **Result:** the control is back to 7.84 / 8.20 / 8.83 / 8.88 dB, identical to before the refactor. The truth is
+    unchanged at 1.90 / -0.15 / 0.76 / -0.21.
+- `test:affected --base main` (76 changed, 89 selected): 726 tests, 713 pass, 0 fail, 11 skipped.
+- `test:full`: **GREEN**. 1611 tests, 1604 pass, 0 fail, 5 skipped, 2 to-do; 0 new failures; 247/247 steps.
+  Log: test-results/tiers/474128f5e42e-full-2026-10-07T13-07-01-856Z.
