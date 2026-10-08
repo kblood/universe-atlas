@@ -54,14 +54,38 @@ Owner decision: Kasper, 2026-10-07, the creature kit is its own repo (`C:/LLM/IW
 - Gates (through `test-slot.mjs --shared 4`): tsc 0; `creature-kit-vendor` 3 / 3 with `CREATURE_KIT_DIR` set;
   `life-cpu-digest` 2 / 2 against `e6a0b39`, unchanged (lineage B imports `fauna-coat-*`), which is also guarded by
   the kit's `coat-lineage-b-guard.json`.
-- **Golden: not re-pinned.** The four-engine run (`run-cross-engine.mjs --strict --update`) FAILED: Chromium 149 and
-  Firefox 151 equal Node on every key; WebKit 26.5 differs on `fauna` only (WebKit a8e59237... vs Node fefcb903...).
-  Cause, measured: ostrich skin positions, two coincident `round eyes` vertices (3654 and 3674, head-weighted), off
-  by up to 8.1e-6 m (over the 1e-6 fauna quantum); every other skin array of all specimens is within the quantum.
-  `golden.json` is left as on main (fauna still pins skin-4); `placeQuery` is confirmed: all four engines equal Node and
-  main's pin. Open for the kit; cause not yet isolated (hypothesis: an eye-seating ray near-tie on the skin-5 unfolded blend, like the earlier ocellus seam).
-- `needs: package.json` "test": register `tests/fauna-composer-coat-crisp.test.mjs`. `needs: tests/tiers.json`: tier it
-  with the other composer tests.
+- First attempt at `c5b0cde` (commit `031f4b5`): golden NOT re-pinned. The strict four-engine run failed on `fauna` only:
+  WebKit 26.5 built the ostrich's two coincident `round eyes` vertices (3654, 3674) up to 8.1e-6 m away from Node
+  (WebKit a8e59237... vs Node fefcb903...). Cause, found in the kit (`docs/fauna-eye-seat-tie-2026-10-08.md`): the
+  catalogue eye patch's `surfaceZ` fallback took the first strict minimum of `closestPointOnSoup` on an exact tie
+  across a shared quad edge, so 1 ULP of engine noise picked the triangle (and the lift normal). Fixed in the kit as
+  R7a-KIT-EYE-TIE (lowest-index tie within 1e-9, catalogue patch only; Node golden corpus byte-identical; 3 eye-catalogue
+  entries re-pinned with `eyeTieDrift`), merged to kit main `aa89701`.
+- **Re-sync at kit main `aa89701`** (the R7 commit after `031f4b5`): 5 vendored files moved (`src/fauna-composer-eye.ts`,
+  `tests/fauna-composer-export.test.mjs` (V1_PINS `core` re-key only), `tests/fauna-composer-mesh-stability.test.mjs`,
+  `tests/fixtures/composer-eye-catalogue-links.json`, `VENDOR.json`); still 46 paths, licence `UNLICENSED`.
+- Gates at `aa89701` (through `test-slot.mjs --shared 4` unless noted): `creature-kit-vendor` 3 / 3 with
+  `CREATURE_KIT_DIR`; `life-cpu-digest` 2 / 2 against `e6a0b39`, unchanged; tsc 0; `test:affected --base main` (takes the
+  slot itself): 1208 tests, 1190 pass, 0 fail, 16 skipped, 2 todo; `tests/golden/perturbation.test.mjs` 5 / 5 (`fauna`
+  655 records, golden flips 0).
+- **GOLDEN-FAUNA-2 folded back into `fauna`; the `faunaKnownUnstable` key is dropped** (D2's next-round plan,
+  `docs/fauna-composer-stability-2026-10-07.md`): `tests/golden/generator.ts` loses `FAUNA_KNOWN_UNSTABLE` and the key;
+  `tests/golden/perturbation.test.mjs` drops the key from its section list and `EXACT_FLIP_FINDINGS` (an empty key
+  fails its "section is non-trivial" check); the stale fold note in `run-cross-engine.mjs` is updated. Records:
+  `fauna` 625 + 30 = 655.
+- **Golden re-pinned** (`run-cross-engine.mjs --strict --update`): "GOLDEN CROSS-ENGINE GATE: PASS (all four engines
+  equal)"; Node, Chromium 149, Firefox 151 and WebKit 26.5 equal on every key. `golden.json` diff, with its ledger:
+
+  | Key | Was | Now | Why |
+  |---|---|---|---|
+  | `fauna` | `6bf5d085...` (skin-4) | `75a59833...` | skin-5 coat crisp v1 (kit `c5b0cde`, gives `fefcb903...` on all four engines with the eye-tie fix, proved by a strict `--fixture` run before the fold), then GOLDEN-FAUNA-2 folded in (`fefcb903...` -> `75a59833...`) |
+  | `faunaKnownUnstable` | `61e258fc...` | dropped | the fold above |
+  | counts | `faunaRecords` 625, `faunaKnownUnstableRecords` 31 | `faunaRecords` 655 | the fold above |
+
+  No other key moved: the R5/R6 `climate`, `biomes`, `census`, `placeQuery` and `terrain` pins already on main equal
+  all four engines. Evidence (local, `test-results/` is ignored): `test-results/round-2026-10-08/golden-kit-sync-2/`.
+- `package.json` "test" now registers `tests/fauna-composer-coat-crisp.test.mjs` (after the gloss test).
+- `needs: tests/tiers.json`: tier `tests/fauna-composer-coat-crisp.test.mjs` with the other composer tests.
 
 ## Moving to the plan's phase 4b later
 

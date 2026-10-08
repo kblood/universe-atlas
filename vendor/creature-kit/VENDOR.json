@@ -3,7 +3,7 @@
   "kit": {
     "name": "creature-kit",
     "version": "0.1.0",
-    "commit": "c5b0cde16640a488b7faab9f5ffc99c477cfc748",
+    "commit": "aa89701272b5f7c4535dc91c673875e4fba529f8",
     "license": "UNLICENSED"
   },
   "note": "Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.",
@@ -34,7 +34,7 @@
     },
     {
       "path": "src/fauna-composer-eye.ts",
-      "sha256": "5e10538cd89b5106dd8627f5a2a0beaeeccd7cd43573f8bed9ec7a751daf4110"
+      "sha256": "a408ca881912671fe5cae3407407753d6d62994deba28af9daa9df3602ef5162"
     },
     {
       "path": "src/fauna-composer-face-geometry.ts",
@@ -82,7 +82,7 @@
     },
     {
       "path": "tests/fauna-composer-export.test.mjs",
-      "sha256": "16a6eb5f27eaf0f2bee6f90ee0155dc7e288c451325047e191ec4d0876d548f0"
+      "sha256": "034a01cc1e2f0f166edacf756654139e7715da81b094b1790d3565c695c2d289"
     },
     {
       "path": "tests/fauna-composer-eye-catalogue-geometry.test.mjs",
@@ -126,7 +126,7 @@
     },
     {
       "path": "tests/fauna-composer-mesh-stability.test.mjs",
-      "sha256": "36ec1e8c9494eaef95a3b3d05945e71b7206c611d910d597a1d1866227bf2783"
+      "sha256": "3bc8ea6e8d76b238f9b83921fc7aa91a1899d9c6a98f8d4f1c397683ccb9b747"
     },
     {
       "path": "tests/fauna-composer-recipe-independent.test.mjs",
@@ -162,7 +162,7 @@
     },
     {
       "path": "tests/fixtures/composer-eye-catalogue-links.json",
-      "sha256": "9084e44798f2325c256a33fc806d3d0253a695f254bda16fde49d3485674aecc"
+      "sha256": "2affbfe073a507d9638d4b577487fe6c973f4d99f9993193bf8c5b8af1edbb54"
     },
     {
       "path": "tests/fixtures/composer-skin2-links.json",
