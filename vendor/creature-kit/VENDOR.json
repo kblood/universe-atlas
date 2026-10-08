@@ -3,22 +3,22 @@
   "kit": {
     "name": "creature-kit",
     "version": "0.1.0",
-    "commit": "6ca5e18f7499488c8a5304665670f00048775f49",
-    "license": "NOASSERTION"
+    "commit": "c5b0cde16640a488b7faab9f5ffc99c477cfc748",
+    "license": "UNLICENSED"
   },
   "note": "Files owned by creature-kit (C:/LLM/IWSDK/creature-kit), vendored at their original paths. Edit them in the kit, then run node scripts/sync-creature-kit.mjs --write --kit <dir>. sha256 is over LF-normalised text.",
   "files": [
     {
       "path": "assets/briefs/creature-export-quest-3.json",
-      "sha256": "07f0c49a220bb5ff010c2d41149ec0ce382efc98ed4477ca89f1ef056c983e13"
+      "sha256": "7a343548348bb8d28d2c91792625055ccc1dc706f896bba8c984e058c73dc321"
     },
     {
       "path": "scripts/export-creature.mjs",
-      "sha256": "e86c69ca0e74eca9273a5f5c2e7f316bd947afadab455bb6ab34bda850dafe56"
+      "sha256": "a9ce00ed6c120b5c404ec8adbf736adbd905c2692d9332624b44e28af79f9415"
     },
     {
       "path": "src/fauna-coat-fields.ts",
-      "sha256": "0648dcf1cfb11853813dc655030f93a9571825aa554d36be2b993992a529bb15"
+      "sha256": "e91382c312e5d0d4002ecc4b6d02ea4d923741980fb04e82f80aa116a25878ba"
     },
     {
       "path": "src/fauna-coat-vocab.ts",
@@ -26,7 +26,7 @@
     },
     {
       "path": "src/fauna-composer-export.ts",
-      "sha256": "20d781298faa484f6c595141a5ad0df73914760d4128d60facb0b9841496a293"
+      "sha256": "6baf1bff1dfdf9d486ebd606f24fadff8e646103ed783e9fe64e981262c7f62f"
     },
     {
       "path": "src/fauna-composer-eye-catalogue.ts",
@@ -54,7 +54,7 @@
     },
     {
       "path": "src/fauna-composer-mesh.ts",
-      "sha256": "fbb66cd375f67b62dd333cfde0cce269ed6c48fa22db91e74ca129c1a769c8ff"
+      "sha256": "e74e02059411a5b39edd2e5e8fde71b12aced4bbec24c10723cda98289e8048e"
     },
     {
       "path": "src/fauna-composer-recipe.ts",
@@ -70,15 +70,19 @@
     },
     {
       "path": "src/fauna-composer.ts",
-      "sha256": "0d7fa3397fa9bbc415f0f2fa6f23023cf633677a9a8a416ea18638baffa95a2b"
+      "sha256": "5c1eb0789878d66768a8419951d8fd5b0e2362f49dcba1b2f52bb189d3d60a07"
     },
     {
       "path": "tests/fauna-composer-coat.test.mjs",
       "sha256": "027797a5f15b867029afbe4d515a6711357ea8213cd03c07b28bbdbbdb094a2f"
     },
     {
+      "path": "tests/fauna-composer-coat-crisp.test.mjs",
+      "sha256": "af24dbe07e708b8609ba499d082a308bb80d5bc7dbaa912a37a4fc952e47960a"
+    },
+    {
       "path": "tests/fauna-composer-export.test.mjs",
-      "sha256": "073e9cbc397254920de1bc7f25498d0fd0502fc608df141374b1e7786e89f954"
+      "sha256": "16a6eb5f27eaf0f2bee6f90ee0155dc7e288c451325047e191ec4d0876d548f0"
     },
     {
       "path": "tests/fauna-composer-eye-catalogue-geometry.test.mjs",
@@ -90,7 +94,7 @@
     },
     {
       "path": "tests/fauna-composer-eyes.test.mjs",
-      "sha256": "733602bd32a632d8a2db56e5be2999839386ecaa8e7a14d7847bcbc1056ce2d8"
+      "sha256": "bfd68947bfb7b40eaa4c8975e6ffb9de5fb87ede0dc5661403d638224a62bfab"
     },
     {
       "path": "tests/fauna-composer-face.test.mjs",
@@ -102,7 +106,7 @@
     },
     {
       "path": "tests/fauna-composer-gloss.test.mjs",
-      "sha256": "99f74d96e0291ba3d808f7ee89a5531e804ac7ac7746a2f679e394da324091d7"
+      "sha256": "d3598cf73e51d53965b53c51b32390e94bcef0c6113d65be0b232189e741d82f"
     },
     {
       "path": "tests/fauna-composer-head-geometry.test.mjs",
@@ -114,7 +118,7 @@
     },
     {
       "path": "tests/fauna-composer-individual.test.mjs",
-      "sha256": "459f214c479a15c78b9d013b38f327f2afacd3b244185f7cb8524661dd7fac50"
+      "sha256": "78a8725f3eecc40adb3230d30ce11d942ca8c8efbae642b675c4a4ddef800d50"
     },
     {
       "path": "tests/fauna-composer-lod.test.mjs",
@@ -134,11 +138,11 @@
     },
     {
       "path": "tests/fauna-composer-skin-anatomy.test.mjs",
-      "sha256": "aa03a340f8b4b2aee5d96e8619628bda101a7e292227242433c60b2f00f6d7de"
+      "sha256": "2fb50d29616032c7a7cd4384167fad15d814216138fa660092aa7fa9590a3f8a"
     },
     {
       "path": "tests/fauna-composer-skin4-links.test.mjs",
-      "sha256": "30e820bd8edf5624f6d2606554f6b7a1f673d870773d8e054d1755dc5100a97f"
+      "sha256": "d6636aaa9581fcaca8a91bfe395829636edecd82fc0bd358ff2929e34072c5c6"
     },
     {
       "path": "tests/fauna-composer-structure-independent.test.mjs",
@@ -158,7 +162,7 @@
     },
     {
       "path": "tests/fixtures/composer-eye-catalogue-links.json",
-      "sha256": "292de79f72559f7e7e97cdefa03fe52e2ca3098a0d8f7229b67a301c216aea0e"
+      "sha256": "9084e44798f2325c256a33fc806d3d0253a695f254bda16fde49d3485674aecc"
     },
     {
       "path": "tests/fixtures/composer-skin2-links.json",
@@ -166,11 +170,15 @@
     },
     {
       "path": "tests/fixtures/composer-skin3-links.json",
-      "sha256": "dd281b0c4a152ca0715ac12567920686f80bba8cb652ed8826dbe3f4466b174e"
+      "sha256": "e5d0c0d71e04d7e5829c0b2f55f85fc63a535722a37f2761062a4545cef51bff"
     },
     {
       "path": "tests/fixtures/composer-skin4-links.json",
       "sha256": "b6c1fc96be251d8aaf94b10dcb2563c395a1a27f5c08e12b5b930a84cdb44985"
+    },
+    {
+      "path": "tests/fixtures/composer-skin5-links.json",
+      "sha256": "5c34a51914d2708760a174188138ed0a85fed1c1fc8c63a4eb903e69ae242c29"
     },
     {
       "path": "tests/fixtures/composer-v1-links.json",
@@ -178,7 +186,7 @@
     },
     {
       "path": "tests/fixtures/creature-core-exports.json",
-      "sha256": "27fd1eb9a9b6575f846ccc99d31d3066e20903282c7bbf6d81d808c8876a9c19"
+      "sha256": "04c916e154d25222a84ff8e933d0f7f97b1e5c681db8b747c0a1fc380ee82fb2"
     },
     {
       "path": "tests/helpers/composer-head-occlusion.mjs",

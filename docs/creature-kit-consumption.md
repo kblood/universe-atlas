@@ -40,6 +40,29 @@ Owner decision: Kasper, 2026-10-07, the creature kit is its own repo (`C:/LLM/IW
   `CREATURE_KIT_DIR` set, the vendor test also compares a kit checkout.
 - **Line endings:** sha256 is over LF-normalised text, so the CRLF Windows checkout and the LF blobs hash the same.
 
+## Sync 2 (2026-10-08, branch `infra/creature-kit-sync-2`, task R7)
+
+- `node scripts/sync-creature-kit.mjs --write --kit C:/LLM/IWSDK/creature-kit` at kit main `c5b0cde` (was `6ca5e18`):
+  coat crisp v1 (`fauna-composer-skin-5`, `fauna-composer-coat-crisp-1`), export v3 (`fauna-composer-export-3`,
+  `fauna-composer-skeleton-1`), the re-keyed export `V1_PINS` and the kit README. 15 vendored files changed.
+- Two paths added to `VENDORED_PATHS` (44 -> 46): `tests/fixtures/composer-skin5-links.json` (the vendored
+  `fauna-composer-skin4-links.test.mjs` now reads it) and `tests/fauna-composer-coat-crisp.test.mjs` (Atlas-free, so
+  vendored like the other composer tests).
+- **Licence: `UNLICENSED`** (owner decision A13, 2026-10-07: "Den licens skal være den samme som resten"). The sync
+  script copies the kit's `package.json` licence, so it needed no change; `tests/creature-kit-vendor.test.mjs` now
+  expects `UNLICENSED` with the message "owner decision A13, 2026-10-07" (it expected `NOASSERTION` while A13 was open).
+- Gates (through `test-slot.mjs --shared 4`): tsc 0; `creature-kit-vendor` 3 / 3 with `CREATURE_KIT_DIR` set;
+  `life-cpu-digest` 2 / 2 against `e6a0b39`, unchanged (lineage B imports `fauna-coat-*`), which is also guarded by
+  the kit's `coat-lineage-b-guard.json`.
+- **Golden: not re-pinned.** The four-engine run (`run-cross-engine.mjs --strict --update`) FAILED: Chromium 149 and
+  Firefox 151 equal Node on every key; WebKit 26.5 differs on `fauna` only (WebKit a8e59237... vs Node fefcb903...).
+  Cause, measured: ostrich skin positions, two coincident `round eyes` vertices (3654 and 3674, head-weighted), off
+  by up to 8.1e-6 m (over the 1e-6 fauna quantum); every other skin array of all specimens is within the quantum.
+  `golden.json` is left as on main (fauna still pins skin-4); `placeQuery` is confirmed: all four engines equal Node and
+  main's pin. Open for the kit; cause not yet isolated (hypothesis: an eye-seating ray near-tie on the skin-5 unfolded blend, like the earlier ocellus seam).
+- `needs: package.json` "test": register `tests/fauna-composer-coat-crisp.test.mjs`. `needs: tests/tiers.json`: tier it
+  with the other composer tests.
+
 ## Moving to the plan's phase 4b later
 
 Option B (vendored `dist/`, `creature-kit/three` and `creature-kit/gltf` entry points, the Lab as a kit app) stays the
@@ -51,4 +74,4 @@ it: the sync script and `VENDOR.json` carry over, only the vendored paths change
 
 - `needs: package.json` "test": register `tests/creature-kit-vendor.test.mjs` (package.json is merger-owned). Until then
   `npm run test:affected` selects it, `npm test` does not.
-- `needs: tests/tiers.json`: put `tests/creature-kit-vendor.test.mjs` in the fastest tier (it reads 44 small files, < 1 s).
+- `needs: tests/tiers.json`: put `tests/creature-kit-vendor.test.mjs` in the fastest tier (it reads 46 small files, < 1 s).
