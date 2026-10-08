@@ -36,10 +36,32 @@ export const SITE_RULE=Object.freeze({minAboveSeaM:250,minMoisture:.6,minRingFor
  * is the nearest passing site (radius grows with the index). */
 export const SITE_SEARCH=Object.freeze({points:4096,radiusM:100000});
 
+/** Eco-class clauses for SITE_A (surface-climate-2 resume, climate-m1-decision 2026-10-08 decision 1; Opus-decided on
+ * Kasper's instruction, overrulable). On top of SITE_RULE (unchanged), the site must keep increment-1 life behaviour:
+ * (2) the centre and the SITE_RULE rings are in LEGACY_BEHAVIOUR_CLASSES {4,5,6} at the live values AND with the
+ * seasonal half-range shifted by +-halfShiftK (Tw and the datum warmest month move by +-1 K, Tc by -+1 K, Ta fixed),
+ * which covers the "Tc margin >= 1 K" clause of Q2(a) and the boreal edge; (3) the extraRingsM rings of
+ * extraRingSamples points are in {4,5,6}; (4) groundLookOf is all zeros at the centre. Clauses 3 and 4 are what
+ * tests/eco-identity-site.test.mjs asserts; the rings use that test's tangent basis. */
+export const SITE_CLASS_RULE=Object.freeze({halfShiftK:1,extraRingsM:Object.freeze([5000,10000]),extraRingSamples:64});
+/** Whole-planet search (decision 1): 65,536 Fibonacci directions over the harness body, visited in great-circle order
+ * from SITE_A_LEGACY (ties by index); the first that passes SITE_RULE and SITE_CLASS_RULE is SITE_A. Used because the
+ * SITE_SEARCH disc has no forest under surface-climate-2 (0 of 4096 points with effM >= 0.6). */
+export const SITE_PLANET_SEARCH=Object.freeze({points:65536});
+
 /** SITE_A: the living inland site on Maithea at HARNESS_DATE, body-frame
- * metres (found by the search above at index 55, 11.64 km from the legacy
- * site; ground 280.2 m, ring minimum 255.4 m, forest share 1.0, moisture
- * 0.750). tests/harness-sites.test.mjs re-runs the search and fails if this
- * literal no longer matches it or no longer passes SITE_RULE. */
-export const SITE_A_M=Object.freeze([4075043.7,-1510938.2,2845723.8]);
+ * metres (direction x body radius). surface-climate-2 (climate-m1 resume,
+ * decision 1): found by the whole-planet search (SITE_PLANET_SEARCH) at
+ * Fibonacci index 35760, visiting rank 708, 1083.1 km from the legacy site:
+ * lat -5.24 deg, ground 3064.3 m, ring minimum 2971.5 m, forest share 1.0,
+ * effM 0.644, eco class 4 live and at +-1 K, Tc 284.51 K (6.64 K below the
+ * tropical edge, 14.36 K above the boreal edge),
+ * ground look all zeros. tests/harness-sites.test.mjs re-runs the search and
+ * fails if this literal no longer matches it or no longer passes the rules. */
+export const SITE_A_M=Object.freeze([4096333.3,-474418.9,3159436.6]);
+/** SITE_A under surface-climate-1.1 (found by the SITE_SEARCH disc at index
+ * 55, 11.64 km from the legacy site; ground 280.2 m, effM 0.750, class 6).
+ * Under surface-climate-2 it is 'Dry upland' (effM 0.380, class 5, no
+ * forest) on the flank of the subtropical dry band. History only. */
+export const SITE_A_CLIMATE1_M=Object.freeze([4075043.7,-1510938.2,2845723.8]);
 export const SITE_A=Object.freeze(unit(SITE_A_M));

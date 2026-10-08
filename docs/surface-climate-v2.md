@@ -189,8 +189,8 @@ closest candidate, not the most robust one. Decision 3 keeps this choice: the 0.
 | Maithea land snow (label) | 15-40 % | 19.7 | 20.5 | pass |
 | Selawyn / Raiva land snow | 0 % | 0 / 0 | 0 / 0 | pass |
 | Earth reference forest > 0.5 (h = 0, 60k directions; decision 5, pre-registered in c05ec06) | 25-55 % | - | 46.8 % | pass |
-| SITE_A, original SITE_RULE (moisture, height, forest, rings) | pass | pass (effM 0.750) | **fail** (effM 0.380, no forest) | **STOP** |
-| SITE_A, Q2(a) extension: {4,5,6} with >= 1 K Tc margin | pass | fail (class 6, margin 0.549 K) | fail (class 5, 0.497 K) | **STOP** |
+| SITE_A, original SITE_RULE (moisture, height, forest, rings) | pass | pass (effM 0.750) | old site fails (effM 0.380, no forest); **new site passes** (effM 0.644, ring forest 1.0) | pass after move (section 6) |
+| SITE_A, decision-1 clauses: {4,5,6} live and at +-1 K, 5/10 km rings, ground look 0 | pass | fail (class 6, margin 0.549 K) | old fails (class 5, 0.497 K); **new passes** (class 4, margin 6.64 K) | pass after move (section 6) |
 | lod-consistency L6 ceilings (Maithea / Lethuris rgbP99 26.3 / 39.2; snow kept >= 98 %) | within | pass (within both ceilings) | 43.01 / 58.06; snow kept 95.3 % | **STOP** |
 
 Negative tests, each kept in the suite:
@@ -221,7 +221,7 @@ Two numbers come out below the prototype: Raiva forest (0.2 % against 6-10 %) an
 0.26), so less forest survives the heat cap. Raiva's ITCZ is polar: its tropics lie 60-90 deg from the ITCZ and receive
 the polar-desert term (effM 0.34-0.44 at 0-15 deg).
 
-## 6. SITE_A (step 8): STOP
+## 6. SITE_A (step 8): first-pass STOP, resolved by decision 1
 
 SITE_A (`tests/harness-sites.mjs`, 280 m, 16.9 deg) now sits on the flank of the subtropical subsidence band
 (dryBelt01 0.47 at 15-20 deg). After M1 its centre reads:
@@ -249,15 +249,46 @@ All 96 ring samples are class 5, with effM 0.379-0.381 and no forest. Shipped va
 The disc is no longer forest, and the existing search finds no site. This is the brief's STOP condition. The two tests
 in `tests/harness-sites.test.mjs` that assert a passing site exist fail on this branch, deliberately (see section 7).
 
-Options for the owner (not taken here):
+Options listed for the owner at d134a87: widen or move the search; accept a site outside {4,5,6}; retune the band
+(rejected). Decision 1 chose a whole-planet nearest-first search with the extra eco-class clauses (section 2a).
 
-- (a') Widen the search disc, or search a different latitude band such as the 45-60 deg storm track or 0-8 deg near the
-  ITCZ. This changes the search, not just its result.
-- (b) Accept a site outside {4,5,6}.
-- (c) Retune the band. This is rejected: physics is never retuned for a test.
+### Resolution (resume step 4)
 
-The life and forest digests that read SITE_A (`life-cpu-digest`, `terrain-leaf-loop-digest`) still pass unmodified.
-They pin rendered life at fixed inputs, not the site rule.
+`tests/helpers/harness-site-search.mjs` `searchSitePlanet` visits the 65,536 Fibonacci directions of Maithea in
+great-circle order from `SITE_A_LEGACY` (ties by index) and returns the first that passes SITE_RULE (unchanged) and
+`SITE_CLASS_RULE` (clauses 2-4 of decision 1). Script and output: `test-results/climate-m1/resume/site-planet.mjs`,
+`site-planet.json`. It found a site at visiting rank 708 (Fibonacci index 35760) after rejecting 337 land points;
+the run takes 2.6 s.
+
+| | surface-climate-1.1 SITE_A (old) | surface-climate-2 SITE_A (new) |
+|---|---|---|
+| Literal (body-frame m, direction x radius) | [4075043.7, -1510938.2, 2845723.8] | [4096333.3, -474418.9, 3159436.6] |
+| Found by | SITE_SEARCH disc, index 55 | SITE_PLANET_SEARCH, index 35760, rank 708 |
+| Distance from SITE_A_LEGACY | 11.64 km | 1083.1 km (1085.1 km from the old site) |
+| Latitude, longitude | -16.91, 34.93 deg | -5.24, 37.64 deg |
+| Ground (sea 0) / ring minimum | 280.2 m / 255.4 m | 3064.3 m / 2971.5 m |
+| Biome / forestPotential | 'Dry upland' / no (under climate 2) | 'Temperate ground' / yes |
+| effM centre / ring minimum | 0.380 / 0.379 (0.750 under climate 1.1) | 0.644 / 0.640 |
+| forestSuitability01 / ring forest share | 0 / 0 | 0.731 / 1.0 |
+| Eco class live, at -1 K, at +1 K half-range | 5, 8, 5 | 4, 4, 4 |
+| Ta / Tc | - | 285.95 K / 284.51 K |
+| Tc margin min(tropical, boreal) | 0.497 K | 6.643 K (to the tropical edge; 14.36 K to the boreal edge) |
+| groundLookOf at the centre | [0, 0.217, 0, 0] | [0, 0, 0, 0] |
+
+The new site is a **tropical-highland temperate forest**, not the 40-55 deg mid-latitude forest the decision
+expected: the nearest passing direction lies 5 deg south of the equator at 3 km, where the height lapse puts the
+coldest month 6.6 K below the tropical threshold and the seasonal range is small (Tw - Ta = 1.4 K). It is the
+nearest direction that passes every clause; no latitude band was chosen by hand. Consequences to watch in M2: the
+site's class depends on its height (the lapse), and its effM margin over the 0.6 rule is 0.044.
+
+Gates (`tests/harness-sites.test.mjs`, `tests/eco-identity-site.test.mjs`, shared slot): harness-sites 6/6 pass
+(including the literal reproduction, the new eco-class clause test, and a record that the climate-1.1 site and the
+disc search no longer pass); eco-identity-site :32 (class 4, ground look all zeros) and :45-46 (all rings in
+{4,5,6}) pass. :54 (60 km ring) stays `todo` (decision 6): the ring is now {2:5, 4:26, 6:4, 8:29}.
+
+Users of SITE_A that move with it (they import the constant): `tests/life-scenario.mjs`,
+`tests/forest-frame-fixture.mjs`, `tests/desktop-perf.browser.mjs`, `tests/rock-acceptance.browser.mjs`,
+`scripts/render-probe.browser.mjs`, `scripts/climate-calibration-report.mjs`.
 
 ## 6b. lod-consistency: STOP (LOD ceiling exceeded)
 
