@@ -96,15 +96,21 @@ test('climate zones read as distinct colours on Maithea (forest green, alpine me
   // directions. The fell colour is therefore also exercised on climate columns:
   // land directions x heights 800 m .. bodyHeightBoundM(Maithea).maxM every
   // 250 m (heights the relief field can reach). Thresholds are unchanged.
+  // surface-climate-2 (PDD snow): a warmest month below 271 K leaves < 250 positive degree-days, so every
+  // such column carries snow (measured: 0 snow-free fell columns). The column fallback therefore reads the
+  // ground colour UNDER the snow (snowFraction 0 in the colour call): the fell tint the assertion checks is
+  // the rock mix, which the snow layer covers. The thresholds and the fell assertion are unchanged.
   if(zones.fell.length<=20){
-    const maxM=bodyHeightBoundM(body).maxM;
+    const maxM=bodyHeightBoundM(body).maxM,bare=createClimateSample();
     for(let i=0;i<4096;i++){
       const d=fib(i,4096),s=sample(d);if(s.ocean)continue;
       for(let h=800;h<=maxM;h+=250){
         climate(d,h,o);
-        if(o.snowFraction>0||o.forestSuitability01>.8)continue;
+        if(o.forestSuitability01>.8)continue;
         if(o.treeline01===0&&o.warmestMonthK>CLIMATE_CALIBRATION.T_TREE_WARMEST_K-CLIMATE_CALIBRATION.TREE_RAMP_K&&o.aridity01<.2)continue;
-        if(o.warmestMonthK<CLIMATE_CALIBRATION.T_TREE_WARMEST_K-2*CLIMATE_CALIBRATION.TREE_RAMP_K)zones.fell.push(waterWorldLandColour(o,h));
+        if(o.warmestMonthK<CLIMATE_CALIBRATION.T_TREE_WARMEST_K-2*CLIMATE_CALIBRATION.TREE_RAMP_K){
+          Object.assign(bare,o);bare.snowFraction=0;zones.fell.push(waterWorldLandColour(bare,h));
+        }
       }
     }
   }
