@@ -1,0 +1,4 @@
+{
+ "rule": "P99(v1)-P99(off)>=0.10 and rockWindows>=100",
+ "frames": []
+}

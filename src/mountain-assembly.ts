@@ -71,9 +71,10 @@ const ROCK_CARVING = new Float64Array(3);
 //
 // `carve = false` is the declared coarse-level reduction (lod-ladder-2, T3): the term without C, i.e. (1 - w) x
 // main + U. C <= 0, so it is >= the carved term (an upper envelope), and no M3 block is ever solved for it.
+// `riserWidthM` (lod-ladder-4): the M5 riser reduction of the tile level (lod-ladder.ts rockRiserWidthM); 0 = the truth.
 export function mountainRidgeTermM(
   mainTermM: number, o: BeltSample, a0: number, landFactor: number, tau: number, beltSeeds: ArrayLike<number>,
-  carve = true, rock = false,
+  carve = true, rock = false, riserWidthM = 0,
 ): number {
   const U = massifEnvelopeM(o.belt, o.axisDistanceM, o.halfWidthM, a0, landFactor, tau, 'water');
   const composed = composeRidgeTermM(mainTermM, o.belt, o.axisDistanceM, o.halfWidthM, U);
@@ -90,7 +91,7 @@ export function mountainRidgeTermM(
   // ridgeValleyCarvingSmoothM calls at (along, local), (along + S, local), (along, local + S), in that order.
   const S = MOUNTAIN_ROCK_DETAIL.SLOPE_STEP_M;
   const Cr = carvingRockFM(alongM, localM, w, U, o.belt, stripSeed, S, ROCK_CARVING);
-  return composed + Cr + rockDetailM(alongM, localM, U + ROCK_CARVING[0], U + ROCK_CARVING[1], U + ROCK_CARVING[2], rockDetailSeed(stripSeed));
+  return composed + Cr + rockDetailM(alongM, localM, U + ROCK_CARVING[0], U + ROCK_CARVING[1], U + ROCK_CARVING[2], rockDetailSeed(stripSeed), riserWidthM);
 }
 
 // The massif cap and the carving width agree (decision (e) and (g)): a massif is one carving strip.

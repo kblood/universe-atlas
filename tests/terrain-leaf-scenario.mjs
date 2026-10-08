@@ -57,9 +57,10 @@ function moveAlong(direction,yawDeg,metres){return norm(add(direction,heading(di
 
 /** Runs `poses` and returns one digest per frame (plus the JSON of a frame on
  * request) and update() timings in ms. `deterministicClock` freezes
- * performance.now so selection time budgets can never break early. */
-export async function runScenario(module,body,poses,{deterministicClock=true,detailFrames=new Set(),onFrame}={}){
-  const {THREE}=module,fx=createRenderer(module,body),renderer=fx.renderer;
+ * performance.now so selection time budgets can never break early.
+ * `rendererOptions` (PlanetRendererOptions) is absent for the identity runs. */
+export async function runScenario(module,body,poses,{deterministicClock=true,detailFrames=new Set(),onFrame,rendererOptions}={}){
+  const {THREE}=module,fx=createRenderer(module,body,{rendererOptions}),renderer=fx.renderer;
   const sample=terrainSampler(body,undefined,undefined,undefined,SEA.lowM);
   const camera=new THREE.PerspectiveCamera(65,16/9,1e-8,4);
   const savedNow=performance.now;

@@ -6,6 +6,47 @@ import * as THREE from 'three';
 // (test-results/biome-climate-2026-10/W1-integrate) show .16 only halves the
 // banding while .30 matches the shadowless basic-lighting reference.
 export const SURFACE_SHADOW = {widthM:320, depthM:1000, mapSize:2048, normalBiasM:.30} as const;
+/** Audit F4 (docs/transition-audit-2026-10-07.md): the shadow window ended in a
+ * hard straight line that moved with the eye. Under presentationContinuity the
+ * receiver fades the shadow out over the outer `fadeM` of the +-160 m window
+ * (22.5 % of the half-width), so its weight is exactly 0 at the frustum edge
+ * and exactly 1 inside the inner +-124 m. Shader-side only: no CPU state, digest
+ * or caster set changes. Opus-decided on Kasper's instruction, overrulable. */
+export const SHADOW_WINDOW_FADE = {fadeM:36, fraction:36/(SURFACE_SHADOW.widthM*.5)} as const;
+/** The fade band in shadow-map coordinates (0..1 across the window). */
+const FADE_UV=SHADOW_WINDOW_FADE.fadeM/SURFACE_SHADOW.widthM;
+/** GLSL of the receiver fade weight; `c` is the shadow coordinate after the
+ * perspective divide (0..1 inside the window). */
+export const SHADOW_WINDOW_FADE_GLSL=`float atlasShadowWindowFade( vec2 c ) {
+		float d = min( min( c.x, 1.0 - c.x ), min( c.y, 1.0 - c.y ) );
+		return smoothstep( 0.0, ${FADE_UV.toFixed(6)}, d );
+	}
+`;
+const glslSmoothstep=(e0:number,e1:number,x:number)=>{const t=Math.min(1,Math.max(0,(x-e0)/(e1-e0)));return t*t*(3-2*t);};
+/** CPU mirror of `SHADOW_WINDOW_FADE_GLSL` (same constant, same operations). */
+export function shadowWindowFadeWeight(x:number,y:number){
+  return glslSmoothstep(0,Number(FADE_UV.toFixed(6)),Math.min(Math.min(x,1-x),Math.min(y,1-y)));
+}
+const SHADOW_RETURN='return mix( 1.0, shadow, shadowIntensity );';
+const FADED_RETURN='return mix( 1.0, shadow, shadowIntensity * atlasShadowWindowFade( shadowCoord.xy ) );';
+/** `shadowmap_pars_fragment` with the window fade in `getShadow` (directional
+ * and spot shadows; point shadows are untouched). Throws if three's chunk no
+ * longer has the expected shape, so an upgrade cannot silently drop the fade. */
+export function fadedShadowChunk(chunk:string){
+  if(chunk.includes('atlasShadowWindowFade'))return chunk;
+  const start=chunk.indexOf('float getShadow(');
+  const ret=start<0?-1:chunk.indexOf(SHADOW_RETURN,start);
+  if(start<0||ret<0||chunk.indexOf('float getShadow(',start+1)>=0)throw new Error('shadowmap_pars_fragment: getShadow shape changed (three upgrade?)');
+  return chunk.slice(0,start)+SHADOW_WINDOW_FADE_GLSL+'\n\t'+chunk.slice(start,ret)+FADED_RETURN+chunk.slice(ret+SHADOW_RETURN.length);
+}
+/** Installs the fade into THREE.ShaderChunk (global, idempotent, one-way for the
+ * page). Called by PlanetRenderer when presentationContinuity is on, before any
+ * shadowed program exists (the sun casts only under SurfaceLighting, which
+ * needs planet tiles, and ShadowProgramWarmup warms those tiles' programs). */
+export function installShadowWindowFade(){
+  const chunks=THREE.ShaderChunk as unknown as Record<string,string>;
+  chunks.shadowmap_pars_fragment=fadedShadowChunk(chunks.shadowmap_pars_fragment!);
+}
 /** Linear sky-dome colour and the linear albedo of the surroundings. The lower
  * hemisphere radiates what that ground reflects: albedo x (direct sun on the
  * ground + sky dome). The previous code used the albedo itself as that
