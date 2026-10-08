@@ -162,6 +162,8 @@
   "tests/sparse-consumer-levels.test.mjs",
   "tests/terrain-budget-starvation.test.mjs",
   "tests/terrain-leaf-loop-digest.test.mjs",
+  "tests/terrain-morph-continuity.test.mjs",
+  "tests/shadow-window-edge-fade.test.mjs",
   {
    "file": "tests/terrain-elevation-identity.test.mjs",
    "shards": [
