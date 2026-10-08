@@ -1,0 +1,6 @@
+TILE_BUILD_AB {"world":"Selawyn","level":11,"role":"rock (split on both arms)","tiles":8,"builds":56,"mainMeanMs":60.95,"branchMeanMs":68.19,"mainMedianMs":31.08,"branchMedianMs":36.47,"ratio":0.119,"medianRatio":0.173,"pass":true}
+TILE_BUILD_AB {"world":"Selawyn","level":12,"role":"filtered (newly split)","tiles":8,"builds":56,"mainMeanMs":28.47,"branchMeanMs":34.18,"mainMedianMs":28.43,"branchMedianMs":33.51,"ratio":0.201,"medianRatio":0.179,"pass":true}
+TILE_BUILD_AB {"world":"Selawyn","level":13,"role":"filtered (newly split)","tiles":8,"builds":56,"mainMeanMs":28.59,"branchMeanMs":33.28,"mainMedianMs":28.26,"branchMedianMs":33.28,"ratio":0.164,"medianRatio":0.178,"pass":true}
+TILE_BUILD_AB {"world":"Selawyn","level":14,"role":"filtered (newly split)","tiles":8,"builds":56,"mainMeanMs":10.82,"branchMeanMs":12.57,"mainMedianMs":10.54,"branchMedianMs":12.45,"ratio":0.162,"medianRatio":0.181,"pass":true}
+TILE_BUILD_AB {"world":"Selawyn","level":15,"role":"first sharp (newly split)","tiles":8,"builds":56,"mainMeanMs":10.24,"branchMeanMs":12.24,"mainMedianMs":10.23,"branchMedianMs":12.24,"ratio":0.195,"medianRatio":0.196,"pass":true}
+TILE_BUILD_AB_WORLD {"world":"Selawyn","rockL":11,"sharpL":15,"pass":true,"maxRatio":0.201,"sinkFinite":true}

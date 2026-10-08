@@ -4,7 +4,7 @@
  "inputs": {
   "OROGEN_LAYOUT_VERSION": "orogen-layout-4",
   "MASSIF_ENVELOPE_VERSION": "massif-envelope-4",
-  "LOD_LADDER_VERSION": "lod-ladder-3",
+  "LOD_LADDER_VERSION": "lod-ladder-4",
   "TERRAIN_VERSION": "terrain-1.9.1-carving-c1"
  },
  "smoke": {
@@ -513,6 +513,18 @@
     "TERRAIN_VERSION": "terrain-1.9.1-carving-c1"
    },
    "reason": "terrain-1.9.1-carving-c1 (mountain-carving-3 + mountain-assembly-4): TERRAIN_VERSION input moved"
+  },
+  {
+   "date": "2026-10-07",
+   "commit": "5227214",
+   "sha256": "90bb43c065f3928bf91a3396a825cca48b92bf81c15021c693bd7c1f0e2f4bce",
+   "inputs": {
+    "OROGEN_LAYOUT_VERSION": "orogen-layout-4",
+    "MASSIF_ENVELOPE_VERSION": "massif-envelope-4",
+    "LOD_LADDER_VERSION": "lod-ladder-4",
+    "TERRAIN_VERSION": "terrain-1.9.1-carving-c1"
+   },
+   "reason": "lod-ladder-4 (riser LOD, docs/mountain-riser-lod-2026-10-07.md): LOD_LADDER_VERSION input moved"
   }
  ]
 }

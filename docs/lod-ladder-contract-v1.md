@@ -1,9 +1,10 @@
-# LOD ladder and consistency contract, v1 (`lod-ladder-3`)
+# LOD ladder and consistency contract, v1 (`lod-ladder-4`)
 
 Status: P3-LOD-CONTRACT, relief round 2026-10-03 (`lod-ladder-1`); amended 2026-10-05 by mountains cost plan T3
 (`lod-ladder-2`: the M3 carving reduction in section 3; nothing else changed); amended 2026-10-06 by mountains
 cost plan T6 (`lod-ladder-3`: the M5 rock-detail reduction in section 3, the mountains wired, and the section 3.1
-upper-side rule U1/U2; no tolerance, budget or ROOM pin changed). Code: `src/lod-ladder.ts` (data and arithmetic only),
+upper-side rule U1/U2; no tolerance, budget or ROOM pin changed); amended 2026-10-07 by the riser LOD fix
+(`lod-ladder-4`: the M5 riser reduction in section 3; nothing else changed). Code: `src/lod-ladder.ts` (data and arithmetic only),
 `src/planet-tiles.ts` (peak-preserving coarse heights, tile metadata). Tests: `tests/lod-consistency.test.mjs`,
 `tests/tile-metadata.test.mjs`. Report: `scripts/lod-consistency-report.mjs`.
 
@@ -180,6 +181,24 @@ becomes active with the mountains at T6 wiring.
 - The four sampler states are: `{mountains: false}` (no mountains), below the cut (baked coarse field, no M3, no
   M5), cut .. rock-1 (M3 carved, no M5), and from the rock level on (M3 + M5, bit-identical to the truth).
 - Every section-5 tolerance is unchanged.
+
+**M5 riser reduction (amendment, `lod-ladder-4`, docs/mountain-riser-lod-2026-10-07.md).** Code: `RISER_REDUCTION`,
+`riserSharpFromLevel`, `rockRiserWidthM` in `src/lod-ladder.ts`; `mountainRidgeTermM(..., rock, riserWidthM)`;
+`rockDetailM(..., seed, riserWidthM)`. Owner decision 2026-10-07 (option 1 of the strata step-8 notch diagnosis).
+
+- The v1 bench riser is 0.08 x 280 m / slope wide (38.8 m at the full-rock slope). A level whose lattice spacing
+  (edge / 32) exceeds 19.399 m cannot draw it with two cells and point-samples a staircase (the notch rows). From the
+  rock level up to `riserSharpFromLevel - 1` the rock term widens the riser to 2 x the level's nominal spacing: the
+  drop starts earlier, ends at the same phase, the tread keeps its slope, and the term is never deeper than the
+  truth's; where the period cannot hold such a riser the bench is 0 (the 1.5% gully ribs stay).
+- It is a reduction like the others: no-rock (rock-1) >= rock level >= ... >= sharp level = truth at every point, so
+  each coarse level is an upper envelope of the next finer one and of the truth, the ocean flag does not change,
+  and each switch morphs a part of the one rock switch the ladder already had.
+- Filtered levels: Maithea L10-L13 (sharp from L14), Selawyn L11-L14 (L15), Raiva L9-L12 (L13), Lethuris L11-L14
+  (L15). The truth and every other level are bit-identical to `lod-ladder-3`.
+- Sampler state: `mountainCarvingState` returns the riser width (a positive number) at filtered levels, 'rock' from
+  the sharp level on and for the truth; every filtered level and the first sharp level therefore get their own parent
+  sampler in planet-tiles, as the carving and rock switches do.
 
 **Colour and class shares:** coverage-weighted mean of the finer level. A class is carried as a class: the
 bilinear-weighted majority of the four corner labels. It is never re-derived from a coarse height.

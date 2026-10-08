@@ -18,7 +18,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import * as tiles from '../src/planet-tiles.ts';
 import {terrainSampler, mountainCarvingState, TERRAIN_MOUNTAINS_WIRED, TERRAIN_VERSION} from '../src/terrain.ts';
-import {LOD_LADDER_VERSION, CARVING_REDUCTION, CARVING_MAX_EDGE_M, carvingFromLevel, carvingAtLevel, rockDetailFromLevel, tileEdgeM} from '../src/lod-ladder.ts';
+import {LOD_LADDER_VERSION, CARVING_REDUCTION, CARVING_MAX_EDGE_M, carvingFromLevel, carvingAtLevel, rockDetailFromLevel, tileEdgeM, riserSharpFromLevel, rockRiserWidthM} from '../src/lod-ladder.ts';
 import {CARVING_BANDS, carvingBuildStats} from '../src/mountain-carving.ts';
 import {MOUNTAIN_ASSEMBLY_VERSION, mountainRidgeTermM} from '../src/mountain-assembly.ts';
 import {waterWorlds, fib} from './terrain-climate-fixtures.mjs';
@@ -56,6 +56,17 @@ const COST_SAMPLER_IDENTITY = {
   Raiva: ['0b215f0689780c575b21f1c226e5470bbbf0789b466f6269cbaf6099a5472270', '84c0f1e056c4cab4172cee41879db444f9f35e969a2024f72917d7c0ff2b6bc7', '86503962720206916eb486c9766d4b0c21a0a03ca9a1ca1a9f8778a658b1c26c'],
   Lethuris: ['1c5faaacd4faa4d7db7e8353629a8e77f0539d90a728e17cc3f4872e35b16878', 'cb266bdaf3d2a358725d50ba792350bf3ef888c5963d98e4a47c3c72bc42b787', '16773c77632727157c8092524dba195badb10e6b39d1f5ef9c4142de75808579'],
 };
+// lod-ladder-4 riser reduction (docs/mountain-riser-lod-2026-10-07.md): the filtered levels rockDetailFromLevel ..
+// riserSharpFromLevel - 1 whose digest moved get their own pin (old: COST_SAMPLER_IDENTITY[name][2]); a filtered level not
+// listed (no strata in these 259 directions at that riser width) and the truth and levels >= the sharp level stay on [2].
+const RISER_SAMPLER_IDENTITY = {
+  Maithea: {10: '803ae4210e45bab35ee665391eaadbb428fa3c6dc8f14372662c96e1493d09e0', 11: '45541e1b22dfc093ac4de1115b60d15a17f5f7cf71199b5ec44f319d08d95523',
+    12: '7cd1996ee1104d7bfe65120a0c52e8df770134a213b76dbd89c12a201629f72e', 13: '5b1427cc0baffa7b8b532dc8defcc0d700777799700cc406717dc47277da6438'},
+  Selawyn: {11: 'f18be3c386db83433d4e18be0b57a87b13572490a3bbcf164d142a7b848113cf', 12: '2321aaf05833a41d92523ae6a5044f6d776e466bcf57024de1b308e931416b19'},
+  Raiva: {9: '9f3d4feef46be7759db41df5f9e2254dc06bdf3d6d5f684baf1b9698ea99f3a0', 10: '5dce9009625dff163450d401a71fa8c3398a495ff46f8e983d5788d5b1ed41bc'},
+  Lethuris: {11: 'c53de4e0a3fcb04edb2e83e69709bbb7062102d62af9b0aa7d6fddc3efe4c8ca', 12: '90bfd244599611b527cf6c17fb2e8c8b90a51a90f8186ec96ec7796ce39ed78c',
+    13: 'b0dbd52baee6d39f7bb61e3bae82426518d91b135c202566f05eb884ec314c6a'},
+};
 function costIdentityDigest(value) {
   const h = createHash('sha256');
   function add(v) {
@@ -74,21 +85,23 @@ for (const [name, body] of Object.entries(bodies)) test(`${name}: cost optimisat
 });
 // Tier (docs/test-tiers-2026-10-07.md): each level's digest is pinned on its own, so a subset of levels is still exact.
 // default = truth + L0..22; smoke = truth + the class boundaries; work adds L0 and L22.
-const SAMPLER_LEVELS = (cut, rock) => pick({smoke: [undefined, cut - 1, cut, rock - 1, rock], work: [undefined, 0, cut - 1, cut, rock - 1, rock, 22],
+const SAMPLER_LEVELS = (cut, rock, sharp) => pick({smoke: [undefined, cut - 1, cut, rock - 1, rock, sharp - 1, sharp], work: [undefined, 0, cut - 1, cut, rock - 1, rock, sharp - 1, sharp, 22],
   default: [undefined, ...Array.from({length: 23}, (_, i) => i)]});
 for (const [name, body] of Object.entries(bodies)) test(`${name}: cost optimisation preserves full sampler outputs at truth and L0..22`, t => {
   const dirs = [...axisSites(body, {count: 3}).map(s => s.d), ...Array.from({length: 256}, (_, i) => fib(i, 256))];
-  const levels = SAMPLER_LEVELS(CUT[name], ROCK[name]);
+  const levels = SAMPLER_LEVELS(CUT[name], ROCK[name], riserSharpFromLevel(body.radiusM));
   if (levels.length !== 24) t.diagnostic(tierNote(`levels ${levels.map(L => L === undefined ? 'truth' : `L${L}`).join(', ')}`));
   for (const lodLevel of levels) {
     const sample = terrainSampler(body, undefined, undefined, undefined, 0, undefined, true, {mountains: true, lodLevel});
     const cls = lodLevel === undefined || lodLevel >= ROCK[name] ? 2 : lodLevel >= CUT[name] ? 1 : 0;
-    assert.equal(costIdentityDigest(dirs.map(d => sample(d))), COST_SAMPLER_IDENTITY[name][cls], `L${lodLevel}`);
+    const pin = cls === 2 && lodLevel !== undefined && RISER_SAMPLER_IDENTITY[name][lodLevel] || COST_SAMPLER_IDENTITY[name][cls];
+    if (pin !== COST_SAMPLER_IDENTITY[name][cls]) assert.ok(rockRiserWidthM(body.radiusM, lodLevel) > 0, `L${lodLevel} pinned as filtered`);
+    assert.equal(costIdentityDigest(dirs.map(d => sample(d))), pin, `L${lodLevel}`);
   }
 });
 
 test('lod-ladder-2: carving starts at the first level with edge <= 128 km; constants pinned to their sources', () => {
-  assert.equal(LOD_LADDER_VERSION, 'lod-ladder-3');
+  assert.equal(LOD_LADDER_VERSION, 'lod-ladder-4'); // was lod-ladder-3 (riser LOD, docs/mountain-riser-lod-2026-10-07.md)
   assert.equal(MOUNTAIN_ASSEMBLY_VERSION, 'mountain-assembly-4');
   assert.equal(CARVING_REDUCTION.longestWavelengthM, Math.max(...CARVING_BANDS.map(b => b.wavelengthM)));
   assert.equal(CARVING_REDUCTION.latticeSegments, tiles.PATCH_SEGMENTS);
@@ -112,7 +125,11 @@ test('wired (T6): on by default, the level changes nothing without mountains, ca
   assert.equal(mountainCarvingState(body), 'rock');assert.equal(mountainCarvingState(body, {lodLevel: 0}), false);
   assert.equal(mountainCarvingState(body, ON), 'rock');assert.equal(mountainCarvingState(body, {mountains: false}), null);
   assert.equal(mountainCarvingState(body, {...ON, lodLevel: cut - 1}), false);assert.equal(mountainCarvingState(body, {...ON, lodLevel: cut}), true);
-  assert.equal(mountainCarvingState(body, {lodLevel: rock - 1}), true);assert.equal(mountainCarvingState(body, {lodLevel: rock}), 'rock');
+  assert.equal(mountainCarvingState(body, {lodLevel: rock - 1}), true);
+  // lod-ladder-4: filtered levels carry their riser width (2 x edge / 32); 'rock' from the sharp level (Maithea L14) on.
+  assert.equal(mountainCarvingState(body, {lodLevel: rock}), rockRiserWidthM(body.radiusM, rock));assert.ok(rockRiserWidthM(body.radiusM, rock) > 0);
+  assert.equal(riserSharpFromLevel(body.radiusM), 14);assert.equal(mountainCarvingState(body, {lodLevel: 13}), 2 * tileEdgeM(body.radiusM, 13) / 32);
+  assert.equal(mountainCarvingState(body, {lodLevel: 14}), 'rock');assert.equal(mountainCarvingState(body, {lodLevel: 20}), 'rock');
   // Without the mountains a level changes nothing (the plain field is level-free).
   const site = axisSites(body, {count: 1})[0].d, OFF = {mountains: false}, base = terrainSampler(body, undefined, undefined, undefined, 0, undefined, false, OFF),
     coarse = terrainSampler(body, undefined, undefined, undefined, 0, undefined, false, {...OFF, lodLevel: 0});
@@ -131,7 +148,7 @@ test('mountainRidgeTermM: carve = false is the composition without C, an upper e
   assert.ok(carvedBelow > 0, 'the carving is active on the fixture (negative control for the >= check)');
 });
 
-for (const [name, body] of Object.entries(bodies)) test(`${name}: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth`, () => {
+for (const [name, body] of Object.entries(bodies)) test(`${name}: below the cut no block solve and an upper envelope; from the cut an upper envelope of the truth (no rock); from the rock level the truth`, t => {
   const cut = CUT[name], sites = axisSites(body, {count: 3}), truth = mountainSampler(body), R = body.radiusM;
   assert.equal(sites.length, 3, 'three massif axis sites');
   // A 9 x 9 raster spanning 2 x 48 km across and along the axis at every site.
@@ -163,7 +180,16 @@ for (const [name, body] of Object.entries(bodies)) test(`${name}: below the cut 
   for (const L of [cut, rockL - 1]) {const s = mountainSampler(body, L);
     for (const d of dirs.slice(0, 81)) {const a = s(d), b = truth(d);assert.ok(a.groundHeightM >= b.groundHeightM, `L${L}: no-rock >= truth`);assert.equal(a.ocean, b.ocean);if (a.groundHeightM > b.groundHeightM) rockActive++;}}
   assert.ok(rockActive > 0, 'the rock term is active on these sites (negative control for the >= check)');
-  for (const L of [rockL, rockL + 3]) {const s = mountainSampler(body, L);for (const d of dirs.slice(0, 81)) assert.deepEqual(s(d), truth(d), `L${L}`);}
+  // lod-ladder-4 (riser reduction, docs/mountain-riser-lod-2026-10-07.md): from the rock level up to the sharp level - 1
+  // each level lies between the next coarser level and the truth (no-rock >= L(rock) >= ... >= truth, ocean equal), and
+  // from the sharp level on a level's sampler IS the truth, bit for bit. (Was: rockL and rockL + 3 equal to the truth.)
+  const sharpL = riserSharpFromLevel(R);assert.ok(sharpL > rockL);let filteredAbove = 0;
+  for (let L = rockL; L < sharpL; L++) {const s = mountainSampler(body, L), p = mountainSampler(body, L - 1);
+    for (const d of dirs.slice(0, 81)) {const a = s(d), b = truth(d), c = p(d);
+      assert.ok(a.groundHeightM >= b.groundHeightM, `L${L}: filtered >= truth`);assert.ok(c.groundHeightM >= a.groundHeightM, `L${L - 1} >= L${L}`);
+      assert.equal(a.ocean, b.ocean);if (a.groundHeightM > b.groundHeightM) filteredAbove++;}}
+  t.diagnostic(`filtered-level points above the truth: ${filteredAbove}`);
+  for (const L of [sharpL, sharpL + 3]) {const s = mountainSampler(body, L);for (const d of dirs.slice(0, 81)) assert.deepEqual(s(d), truth(d), `L${L}`);}
 });
 
 for (const [name, body] of Object.entries(bodies)) for (const crossFace of [false, true]) test(`${name}: switch level L(cut-1) -> L(cut): parent and child keep their own level's carving (${crossFace ? 'cube-face edge' : 'axis site'})`, t => {

@@ -1,0 +1,317 @@
+[
+ {
+  "pid": "P06",
+  "station": "Maithea[0]",
+  "pose": "c4200",
+  "level": 12,
+  "refLevel": 11,
+  "A": "branch",
+  "B": "main",
+  "imgs": {
+   "branch": "img/maithea-c4200-branch.jpg",
+   "main": "img/maithea-c4200-main.jpg",
+   "ref": "img/maithea-c4200-rockoff.jpg"
+  },
+  "verdict": {
+   "pair": "P06",
+   "notchRows": "B",
+   "notchRegions": "B: x~280-470, y~425-475; x~740-1010, y~495-565; x~690-870, y~580-640; x~300-520, y~670-735; also shorter rows at x~1330-1430, y~370-420 and x~520-650, y~640-680. Each is a row of about 6-12 identical dark lens/saw-tooth notches under a ledge lip.",
+   "ledgesAtDistance": "no clear difference",
+   "newRegularStructure": "only B: several lattice-spaced saw-tooth notch rows under mid-distance ledge lips, across x~280-1010, y~425-735 (none in A or REF)",
+   "confidence": "high",
+   "notes": "The clearest case in the set. A shows the same ledges as smooth continuous benches that are still easy to read, so B's ledges are not more readable, only notched."
+  },
+  "p99": {
+   "main": 0.546,
+   "branch": 0.214,
+   "ref": 0.191
+  },
+  "sort": [
+   0,
+   0
+  ]
+ },
+ {
+  "pid": "P08",
+  "station": "Maithea[0]",
+  "pose": "c3000",
+  "level": 12,
+  "refLevel": 11,
+  "A": "main",
+  "B": "branch",
+  "imgs": {
+   "main": "img/maithea-c3000-main.jpg",
+   "branch": "img/maithea-c3000-branch.jpg",
+   "ref": "img/maithea-c3000-rockoff.jpg"
+  },
+  "verdict": {
+   "pair": "P08",
+   "notchRows": "A",
+   "notchRegions": "A: x~640-870, y~655-715 (row of about 8-10 dark saw-tooth notches); x~30-270, y~490-545 (left-side row of evenly spaced dark vertical teeth); possibly x~250-420, y~430-470",
+   "ledgesAtDistance": "no clear difference",
+   "newRegularStructure": "only A: saw-tooth notch rows at x~640-870, y~655-715 and x~30-270, y~490-545 (smooth in B and REF)",
+   "confidence": "high",
+   "notes": "The side is swapped compared with P02, P06 and P07: here the artifact is in A and B is clean. B's benches are smooth but still clearly readable."
+  },
+  "p99": {
+   "main": 0.676,
+   "branch": 0.37,
+   "ref": 0.271
+  },
+  "sort": [
+   0,
+   1
+  ]
+ },
+ {
+  "pid": "P07",
+  "station": "Maithea[0]",
+  "pose": "c2100",
+  "level": 12,
+  "refLevel": 11,
+  "A": "branch",
+  "B": "main",
+  "imgs": {
+   "branch": "img/maithea-c2100-branch.jpg",
+   "main": "img/maithea-c2100-main.jpg",
+   "ref": "img/maithea-c2100-rockoff.jpg"
+  },
+  "verdict": {
+   "pair": "P07",
+   "notchRows": "B",
+   "notchRegions": "B: x~540-900, y~845-905 (row of about 8-10 dark saw-tooth notches on a foreground/mid ledge face); probably also x~110-300, y~630-700 on the left (shorter row of vertical dark teeth)",
+   "ledgesAtDistance": "no clear difference",
+   "newRegularStructure": "only B: saw-tooth notch row, x~540-900, y~845-905 (smooth in A and REF)",
+   "confidence": "medium-high",
+   "notes": "Far ridges and benches above y~450 look the same in A and B. The left-side row is less certain than the lower one."
+  },
+  "p99": {
+   "main": 0.536,
+   "branch": 0.353,
+   "ref": 0.21
+  },
+  "sort": [
+   0,
+   2
+  ]
+ },
+ {
+  "pid": "P02",
+  "station": "Maithea[0]",
+  "pose": "c1500",
+  "level": 12,
+  "refLevel": 11,
+  "A": "branch",
+  "B": "main",
+  "imgs": {
+   "branch": "img/maithea-c1500-branch.jpg",
+   "main": "img/maithea-c1500-main.jpg",
+   "ref": "img/maithea-c1500-rockoff.jpg"
+  },
+  "verdict": {
+   "pair": "P02",
+   "notchRows": "B",
+   "notchRegions": "B: lower-left foreground ledge face, x~260-770, y~880-990, a row of about 8-10 evenly spaced dark vertical teeth/notches. A is smooth there.",
+   "ledgesAtDistance": "no clear difference",
+   "newRegularStructure": "only B: saw-tooth row of identical dark notches along the foreground ledge face, x~260-770, y~880-990 (not in A or REF)",
+   "confidence": "high",
+   "notes": "Mid and far benches (y~200-650) look the same in A and B. The vertical light/dark banding at x~380-1100, y~380-600 is in A, B and REF, so it is lighting, not ledge detail."
+  },
+  "p99": {
+   "main": 0.188,
+   "branch": 0.17,
+   "ref": 0.176
+  },
+  "sort": [
+   0,
+   3
+  ]
+ },
+ {
+  "pid": "P05",
+  "station": "Maithea[0]",
+  "pose": "c1050",
+  "level": 12,
+  "refLevel": 11,
+  "A": "main",
+  "B": "branch",
+  "imgs": {
+   "main": "img/maithea-c1050-main.jpg",
+   "branch": "img/maithea-c1050-branch.jpg",
+   "ref": "img/maithea-c1050-rockoff.jpg"
+  },
+  "verdict": {
+   "pair": "P05",
+   "notchRows": "neither",
+   "notchRegions": "none",
+   "ledgesAtDistance": "no clear difference",
+   "newRegularStructure": "none",
+   "confidence": "high",
+   "notes": "A and B look identical. Benches at y~280 and y~650 read the same in both."
+  },
+  "p99": {
+   "main": 0.14,
+   "branch": 0.14,
+   "ref": 0.178
+  },
+  "sort": [
+   0,
+   4
+  ]
+ },
+ {
+  "pid": "P03",
+  "station": "Maithea[0]",
+  "pose": "c750",
+  "level": 12,
+  "refLevel": 11,
+  "A": "main",
+  "B": "branch",
+  "imgs": {
+   "main": "img/maithea-c750-main.jpg",
+   "branch": "img/maithea-c750-branch.jpg",
+   "ref": "img/maithea-c750-rockoff.jpg"
+  },
+  "verdict": {
+   "pair": "P03",
+   "notchRows": "neither",
+   "notchRegions": "none",
+   "ledgesAtDistance": "no clear difference",
+   "newRegularStructure": "none",
+   "confidence": "high",
+   "notes": "A and B look identical. Smooth snow faces only."
+  },
+  "p99": {
+   "main": 0.175,
+   "branch": 0.175,
+   "ref": 0.165
+  },
+  "sort": [
+   0,
+   5
+  ]
+ },
+ {
+  "pid": "P04",
+  "station": "Maithea[0]",
+  "pose": "c520",
+  "level": 12,
+  "refLevel": 11,
+  "A": "branch",
+  "B": "main",
+  "imgs": {
+   "branch": "img/maithea-c520-branch.jpg",
+   "main": "img/maithea-c520-main.jpg",
+   "ref": "img/maithea-c520-rockoff.jpg"
+  },
+  "verdict": {
+   "pair": "P04",
+   "notchRows": "neither",
+   "notchRegions": "none",
+   "ledgesAtDistance": "no clear difference",
+   "newRegularStructure": "none",
+   "confidence": "high",
+   "notes": "A and B look identical."
+  },
+  "p99": {
+   "main": 0.119,
+   "branch": 0.115,
+   "ref": 0.124
+  },
+  "sort": [
+   0,
+   6
+  ]
+ },
+ {
+  "pid": "P01",
+  "station": "Maithea[0]",
+  "pose": "c360",
+  "level": 12,
+  "refLevel": 11,
+  "A": "branch",
+  "B": "main",
+  "imgs": {
+   "branch": "img/maithea-c360-branch.jpg",
+   "main": "img/maithea-c360-main.jpg",
+   "ref": "img/maithea-c360-rockoff.jpg"
+  },
+  "verdict": {
+   "pair": "P01",
+   "notchRows": "neither",
+   "notchRegions": "none",
+   "ledgesAtDistance": "no clear difference",
+   "newRegularStructure": "none",
+   "confidence": "high",
+   "notes": "Close-up of a smooth snow slope with no ledges visible in either image. A and B look identical. REF has a different ridge silhouette (coarser carving)."
+  },
+  "p99": {
+   "main": 0.171,
+   "branch": 0.171,
+   "ref": 0.17
+  },
+  "sort": [
+   0,
+   7
+  ]
+ },
+ {
+  "pid": "P10",
+  "station": "Maithea[0]",
+  "pose": "descent-06",
+  "level": 12,
+  "refLevel": null,
+  "A": "branch",
+  "B": "main",
+  "imgs": {
+   "branch": "img/maithea-descent-06-branch.jpg",
+   "main": "img/maithea-descent-06-main.jpg"
+  },
+  "verdict": {
+   "pair": "P10",
+   "notchRows": "neither",
+   "notchRegions": "none",
+   "ledgesAtDistance": "no clear difference",
+   "newRegularStructure": "none",
+   "confidence": "high",
+   "notes": "No REF for this pair. Close-up slope with no ledges. B has an extra small dark object at x~790, y~435 and a slightly different ridge kink near x~950-1000, y~160-180. Both look like scene/LOD differences, not regular structure."
+  },
+  "p99": null,
+  "sort": [
+   0,
+   8
+  ]
+ },
+ {
+  "pid": "P09",
+  "station": "Lethuris[0]",
+  "pose": "c3000",
+  "level": 13,
+  "refLevel": 13,
+  "A": "main",
+  "B": "branch",
+  "imgs": {
+   "main": "img/lethuris-c3000-main.jpg",
+   "branch": "img/lethuris-c3000-branch.jpg",
+   "ref": "img/lethuris-c3000-rockoff.jpg"
+  },
+  "verdict": {
+   "pair": "P09",
+   "notchRows": "neither",
+   "notchRegions": "none that meet the 6-12 evenly spaced definition",
+   "ledgesAtDistance": "no clear difference",
+   "newRegularStructure": "only A: small sharp zig-zag (about 3-4 teeth) on a lit ledge edge at x~1400-1465, y~365-415, not in B or REF. Possibly also small comb-like teeth at x~230-330, y~325-350 in A, but B looks similar there.",
+   "confidence": "low-medium",
+   "notes": "Dark, high-contrast scene with a lot of jagged silhouette edges, and many of them also appear in REF (e.g. x~640-720, y~160-200), so they come from the carving. Thin horizontal striations at the left edge (x~0-60, y~400-500) are in both A and B. Nothing here clearly qualifies as a notch row."
+  },
+  "p99": {
+   "main": 0.204,
+   "branch": 0.191,
+   "ref": 0.195
+  },
+  "sort": [
+   1,
+   1
+  ]
+ }
+]

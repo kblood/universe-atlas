@@ -1,0 +1,134 @@
+{
+ "worlds": {
+  "Maithea": {
+   "sharp": 14,
+   "rock": 10,
+   "compared": 50700,
+   "mismatches": 0,
+   "perLevel": {
+    "truth": {
+     "points": 12675,
+     "mismatches": 0
+    },
+    "L14": {
+     "points": 12675,
+     "mismatches": 0
+    },
+    "L15": {
+     "points": 12675,
+     "mismatches": 0
+    },
+    "L16": {
+     "points": 12675,
+     "mismatches": 0
+    }
+   },
+   "infoFilteredLevelMoved": {
+    "level": 13,
+    "points": 3267,
+    "moved": 165
+   }
+  },
+  "Selawyn": {
+   "sharp": 15,
+   "rock": 11,
+   "compared": 50700,
+   "mismatches": 0,
+   "perLevel": {
+    "truth": {
+     "points": 12675,
+     "mismatches": 0
+    },
+    "L15": {
+     "points": 12675,
+     "mismatches": 0
+    },
+    "L16": {
+     "points": 12675,
+     "mismatches": 0
+    },
+    "L17": {
+     "points": 12675,
+     "mismatches": 0
+    }
+   },
+   "infoFilteredLevelMoved": {
+    "level": 14,
+    "points": 3267,
+    "moved": 239
+   }
+  },
+  "Raiva": {
+   "sharp": 13,
+   "rock": 9,
+   "compared": 50700,
+   "mismatches": 0,
+   "perLevel": {
+    "truth": {
+     "points": 12675,
+     "mismatches": 0
+    },
+    "L13": {
+     "points": 12675,
+     "mismatches": 0
+    },
+    "L14": {
+     "points": 12675,
+     "mismatches": 0
+    },
+    "L15": {
+     "points": 12675,
+     "mismatches": 0
+    }
+   },
+   "infoFilteredLevelMoved": {
+    "level": 12,
+    "points": 3267,
+    "moved": 0
+   }
+  },
+  "Lethuris": {
+   "sharp": 15,
+   "rock": 11,
+   "compared": 50700,
+   "mismatches": 0,
+   "perLevel": {
+    "truth": {
+     "points": 12675,
+     "mismatches": 0
+    },
+    "L15": {
+     "points": 12675,
+     "mismatches": 0
+    },
+    "L16": {
+     "points": 12675,
+     "mismatches": 0
+    },
+    "L17": {
+     "points": 12675,
+     "mismatches": 0
+    }
+   },
+   "infoFilteredLevelMoved": {
+    "level": 14,
+    "points": 3267,
+    "moved": 170
+   }
+  }
+ },
+ "fixture": {
+  "tuning": {
+   "samples": 32768,
+   "widthZeroMismatches": 0,
+   "smallWidthCases": 105990,
+   "smallWidthMismatches": 0
+  },
+  "gate": {
+   "samples": 32768,
+   "widthZeroMismatches": 0,
+   "smallWidthCases": 105982,
+   "smallWidthMismatches": 0
+  }
+ }
+}

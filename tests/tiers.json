@@ -52,6 +52,7 @@
   "tests/mountain-carving-memo.test.mjs",
   "tests/mountain-carving-pin.test.mjs",
   "tests/mountain-rock-detail.test.mjs",
+  "tests/mountain-riser-lod.test.mjs",
   "tests/mountain-summits.test.mjs",
   "tests/mountain-metrics.test.mjs",
   {
@@ -149,6 +150,7 @@
   "tests/mountain-carving-memo.test.mjs",
   "tests/mountain-carving-pin.test.mjs",
   "tests/mountain-rock-detail.test.mjs",
+  "tests/mountain-riser-lod.test.mjs",
   "tests/mountain-summits.test.mjs",
   "tests/mountain-metrics.test.mjs",
   {
