@@ -5,13 +5,15 @@ Package R5-ATLAS-CLIMATE-M1, branch `climate/m1`. Plan: `docs/biome-climate-incr
 `TREE_HABITAT_VERSION` `tree-habitat-2-climate` -> `tree-habitat-3-heat` (expression unchanged; the heat cap moves the
 `forestSuitability01` it reads). `TERRAIN_VERSION` is not touched here (coordinator).
 
-**Status: two STOP conditions hit.**
+**Status.** The first pass (tip d134a87) hit two STOP conditions:
 
-1. **SITE_A (step 8).** The harness site fails the complete SITE_RULE after M1, and the existing deterministic search
-   finds no replacement in its 100 km disc (section 6).
-2. **LOD ceiling (lod-consistency).** PDD snow (step 1) pushes the frozen L6 ceilings over their limits (section 6b).
+1. **SITE_A (step 8).** The harness site failed the complete SITE_RULE after M1, and the existing deterministic search
+   found no replacement in its 100 km disc (section 6).
+2. **LOD ceiling (lod-consistency).** PDD snow (step 1) pushed the frozen L6 ceilings over their limits (section 6b).
 
-Steps 1-7 are implemented and pass their own acceptance. Nothing was retuned to keep the site or the ceilings.
+Steps 1-7 were implemented and passed their own acceptance; nothing was retuned to keep the site or the ceilings.
+The package was then resumed under the six decisions in section 2a (climate-m1-decision, 2026-10-08), which settle
+both STOPs without changing the physics.
 
 ## 1. Model (all per sample, no per-sample transcendental)
 
@@ -47,12 +49,79 @@ All are Opus-decided on Kasper's instruction and can be overruled.
 
   These finite grids do not prove that no band works at 1000 mm. They show only that none of the scanned bands did.
 
+## 2a. Resume decisions (climate-m1-decision, 2026-10-08)
+
+Each of the six is **Opus-decided on Kasper's instruction, overrulable**. They answer the two STOPs and the review of
+d134a87.
+
+1. **SITE_A: whole-planet nearest-first search; no relaxation, no site outside {4,5,6}.** A new stage in
+   `tests/helpers/harness-site-search.mjs` walks 65,536 Fibonacci directions over Maithea in great-circle order from
+   `SITE_A_LEGACY` (ties by index) and stops at the first that passes: (1) the full SITE_RULE, unchanged; (2) centre and
+   the 0.5/1/2 km rings in {4,5,6} at the live values and with the seasonal half-range shifted by +-1 K (Tc and Tw move
+   in opposite directions, Ta fixed); (3) the 5 km and 10 km rings (64 points each) in {4,5,6}; (4) `groundLookOf` all
+   zeros at the centre. If none passes: STOP with the 10 nearest near-misses. Reason: the 100 km disc has no forest at
+   all, and 0-8 deg is class 7. Result: section 6.
+2. **lod-consistency L6: re-measure after riser-lod merged, then re-pin within limits; no visual snow-blend widening.**
+   Only the L6 RGB p99 rows of Maithea and Lethuris may be re-pinned, at the measured value rounded up to 0.1, with a
+   ledger line "surface-climate-2 PDD snowline", and only if the L8-and-finer rows pass unchanged, the snow, forest
+   and name disagreement rows pass their existing limits, and the new values are at most 5 % above 43.01 / 58.06.
+   `LOD_TOLERANCES.coarseKeeps.snowL6` (98 %) is a plan tolerance and is not changed; the test gets a Maithea
+   retention ceiling at the measured value rounded down to 0.1, with 98 % kept as the tracked target. Granted lines:
+   exactly these, plus `lod-carving-reduction:69,79` and `terrain-mountains-assembly:38` (moved pins with a ledger).
+   Reason: the failure is a sharper, more physical snowline, not a LOD defect; "snow kept" reads the snow label, so a
+   visual blend cannot fix it, and a blend would break colour == classifier snow and pre-empt the open A4. Result:
+   section 6b.
+3. **Calibration: P_REF_MM 650 and the chosen band (margin 0.021) are ratified; the 0.05 candidate is not taken.**
+   The 0.05 candidate sits on the scanned grid's edge (a1 = 2 and w3 = 16 are the grid maxima), is drier (effM 0.595
+   at 45-60 deg against 0.627), and M2 changes moisture again. Widening the search was "report and continue", not a
+   STOP. The missing piece was a pre-registered choice rule, now recorded in section 3.
+4. **Fell-zone test: the synthesised substrate colour is rejected.** Instead: a positive PDD invariant (every land
+   column with Tw < T_TREE - 2 x ramp = 271 K has snowFraction > 0), and the fell colour assertion marked `todo` with
+   the finding "under PDD snow no snow-free fell band exists; the climate rock band in `waterWorldLandColour` is
+   unreachable." Follow-up for the coordinator: retire the rock band, or redefine it on PDD in a later terrain-colour
+   version. Reason: a warmest month below -2 C is permanent snow (Koppen EF); a colour check on a state that is never
+   rendered proves nothing.
+5. **Forest loss: acceptable as M1 physics after one Earth check; Kasper sees it before merge.** New pre-registered
+   test in `tests/climate-earth-reference.test.mjs`: on the Earth reference (h = 0, 60k directions) the share of
+   directions with forestSuitability01 > 0.5 lies in 25-55 % (band: Opus's judgement; Earth's present forest is about
+   31 % of land, from memory). Outside the band: STOP, no tuning. The merge waits for Kasper's look until the end of
+   the round; without an answer by then it merges on this decision (nothing is deployed; it is revertible). Result:
+   section 4.
+6. **Other merge gates.** Blocking: `scripts/climate-calibration-report.mjs` is fixed in this package (granted); the
+   `version-compat:335` pin and the `TERRAIN_VERSION` bump are the coordinator's; the real `npm run test:affected` and
+   then `test:full`, including the golden sections climate, biomes, census, placeQuery and terrain (golden re-pins are
+   the coordinator's); `surface-climate.bench` in a quiet window (<= 150 ns per sample, zero allocation, A/B ratio,
+   cold build) blocks the merge because this is on the hot path of every land sample. Not blocking:
+   `planet-geophysics:162` (pre-existing, unrelated), the weaker obliquity assertion (accepted), `eco-identity-site:54`
+   (stays `todo`).
+
+### Open M2 physics question (decision 5)
+
+On worlds whose ITCZ sits at a pole, the polar-desert term (centre dI = 88 deg) lands on the geographic equator. This
+is the main reason Raiva's tropics are dry (effM 0.34-0.44 at 0-15 deg). The Earth targets cannot constrain that term,
+because on Earth dI = 88 deg is the pole. M2 must decide whether the polar-desert term should key on distance from the
+ITCZ (as now) or on cold-air subsidence (temperature), before re-running the calibration.
+
 ## 3. Calibration (step 6)
 
 The calibration uses only the Earth reference: 288 K, 23.44 deg, water 0.7, g 9.81, all directions, h = 0, noise
 included. It reads no catalogue planet, no SITE_A value and no corpus value.
 
-Targets (plan v1 P1 step 6), each needing a margin of at least 0.02:
+**Source of the targets.** They come from plan v1, `plan.workPackages[0].changes`, M1 step 6, of the BIOME2 increment
+plan. That file is not tracked in this repo (it lives in the coordinator's scratchpad as `biome2-plan.json`); plan v2
+(`docs/biome-climate-increment-2-plan-v2-2026-10-04.json`) says "v1 formulas" but does not repeat them. The step-6
+text, word for word:
+
+> 6) ITCZ zonal band (replaces the BELT_* constants at :54 and their use at :272/:285-287).
+>    - itczSinLat is the argmax row of the forcing's existing 65-row qMean table: the equator below about 54 deg obliquity, the poles above. Store it and hadleyEdgeDeg = 30 on the forcing.
+>    - dItcz = angular distance (deg) from the ITCZ.
+>    - Z = 1 + a1\*detExp(-(dItcz/w1)^2) + a2\*detExp(-((dItcz-50)/w2)^2) - a3\*detExp(-((dItcz-28)/w3)^2) - a4\*detExp(-((dItcz-88)/w4)^2). Squares are written as products.
+>    - Start from a = (0.9, 0.6, 0.55, 0.4) and w = (10, 12, 9, 12), then CALIBRATE: the prototype's subtropics were not dry.
+>    - Targets on the Earth reference (288 K, 23.44 deg, water 0.7, g 9.81), as land zonal means of P relative to the ITCZ band: 15-35 deg <= 0.55x, 45-60 deg >= 1.2x the 15-35 deg band, poleward of 75 deg < 0.35x.
+>    - Effective-moisture targets: >= 0.6 at 0-10 deg, <= 0.40 at 18-32 deg, 0.45-0.65 at 45-60 deg.
+>    - Keep dryBelt01 as a diagnostic (the subsidence term).
+
+As implemented (the "ITCZ band" is read as 0-10 deg), each needing a margin of at least 0.02:
 
 - P(15-35) <= 0.55 P(0-10)
 - P(45-60) >= 1.2 P(15-35)
@@ -61,7 +130,23 @@ Targets (plan v1 P1 step 6), each needing a margin of at least 0.02:
 - effM(18-32) <= 0.40
 - effM(45-60) in 0.45-0.65
 
-Choice rule: among the passing candidates, take the one closest to the plan's starting band.
+**Choice rule (implementer-set, ratified by decision 3).** Among the passing candidates, take the one closest to the
+plan's starting band; a candidate passes only with a minimum margin of at least 0.02. Neither the rule nor the 0.02
+floor was written down before the round-1 scan; both were set by the implementer and ratified afterwards.
+
+**Pre-registered for M2 (decision 3), fixed before any M2 scan.** Among candidates with minimum margin >= 0.02, choose
+the one closest to the shipped M1 constants (a = 1.6, 0, 0.75, 0.4; w = 10, 12, 12, 12; PET_MIN 120; P_REF 650),
+P_REF included.
+
+**Earth values: source flags (as plan v1 step 7 asks).**
+
+| Value | Used for | Flag |
+|---|---|---|
+| ELA 45 deg 2984 m, 60 deg 1528 m, 70 deg 673 m, 78 deg 349 m; equator >= 4450 m | ELA acceptance bands | from memory (plan v1 thesis); not verified in this package |
+| Zonal P ratios and effM bands above | calibration targets | from memory (plan v1 step 6; coarse literature ratios); not verified |
+| Holdridge PET = 58.93 x biotemperature (Holdridge 1947) | step 5 | from memory (plan v1 step 5) |
+| Earth forest about 31 % of land | decision 5 band 25-55 % | from memory (decision 5); the band itself is a judgement |
+| Earth reference body 288 K, 23.44 deg, water 0.7, g 9.81 | all of the above | 23.44 deg and 9.81 m/s^2 are standard values; 288 K and water 0.7 are model conventions |
 
 The scans are in `test-results/climate-m1/calibrate-zonal*.mjs` and `*.out.jsonl`:
 
@@ -85,7 +170,7 @@ minimum margin 0.021. Its live values on the Earth reference:
 
 The binding constraint is P(45-60)/P(15-35) (margin 0.021). More robust candidates exist, such as
 [2, 0, 0.85, 0.4; 12, 12, 16, 12; 120; 625] with margin 0.05. They were not chosen because the choice rule picks the
-closest candidate, not the most robust one.
+closest candidate, not the most robust one. Decision 3 keeps this choice: the 0.05 candidate lies on the grid edge and is drier.
 
 ## 4. Acceptance (after M1, `test-results/climate-m1/after/measure-all.json`)
 
