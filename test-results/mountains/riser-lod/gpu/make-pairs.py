@@ -22,6 +22,7 @@ for label in ['riser-maithea0', 'riser-lethuris0']:
                'mainMax': sm['maxLevel'], 'branchMax': sb['maxLevel'], 'main': sm['file'], 'branch': sb['file'],
                'ref': sr['file'] if sr else None, 'refLevel': sr['targetLevel'] if sr else None,
                'activeSetEqual': sm.get('activeSetSha') == sb.get('activeSetSha')}
+        if sm['targetLevel'] != sb['targetLevel']: rec['excludedFor'] = 'level mismatch'
         (items if sm['targetLevel'] == sb['targetLevel'] else excluded).append(rec)
     for dm in pm['descent']:
         db = next((d for d in pb['descent'] if d['k'] == dm['k']), None)
@@ -30,7 +31,12 @@ for label in ['riser-maithea0', 'riser-lethuris0']:
                'mainClearanceM': dm['appClearanceM'], 'branchClearanceM': db and db['appClearanceM'],
                'mainPending': dm['terrainPending'], 'branchPending': db and db['terrainPending'],
                'activeSetEqual': db is not None and dm.get('activeSetSha') == db.get('activeSetSha')}
-        (items if db and dm['targetLevel'] == db['targetLevel'] else excluded).append(rec)
+        # Post-capture addition (disclosed in the doc): a descent frame is a pair only when both arms are at the same pose
+        # (app clearance within 5 %); the branch replay ran ahead of main's timing, so most k do not match.
+        poseOk = db is not None and abs(dm['appClearanceM'] - db['appClearanceM']) <= .05 * max(dm['appClearanceM'], db['appClearanceM'])
+        if db is not None and not poseOk: rec['excludedFor'] = 'pose mismatch (descent timing)'
+        elif db is not None and dm['targetLevel'] != db['targetLevel']: rec['excludedFor'] = 'level mismatch'
+        (items if poseOk and dm['targetLevel'] == db['targetLevel'] else excluded).append(rec)
 order = list(range(len(items)))
 for i in range(len(order) - 1, 0, -1):
     j = secrets.randbelow(i + 1); order[i], order[j] = order[j], order[i]

@@ -1,0 +1,4 @@
+[probe riser-lethuris0 main 08:13:38] serving 74197338ca4fee3aec11c46a4b0850cb7fa1e6da Owner decision: strata notch rows -> riser smoothing by mesh spacing (option 1)
+[probe riser-lethuris0 main 08:13:47] station 0 axis sun elev -4.28
+[probe riser-lethuris0 main 08:14:02] still 3000 m settled 5893 ms levels {"maxLevel":14,"frontierMaxLevel":14,"targetLevel":13,"activeLevelHistogram":{"2":7,"3":15,"4":9,"5":14,"6":14,"7":11,"8":14,"9":8,"10":12,"11":18,"12":13,"13":15,"14":4},"activeSetSha":"13f7138f49cb90d1"}
+[probe riser-lethuris0 main 08:14:02] done

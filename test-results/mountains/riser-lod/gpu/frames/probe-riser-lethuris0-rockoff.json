@@ -1,0 +1,124 @@
+{
+ "tag": "rockoff",
+ "label": "riser-lethuris0",
+ "world": "Lethuris",
+ "rule": "fixed",
+ "candidates": [
+  0
+ ],
+ "root": "C:/LLM/IWSDK/universe-atlas-wt/_riser-probe-rockoff",
+ "build": {
+  "commit": "74197338ca4fee3aec11c46a4b0850cb7fa1e6da",
+  "branch": "HEAD",
+  "subject": "Owner decision: strata notch rows -> riser smoothing by mesh spacing (option 1)",
+  "dirty": true,
+  "builtAt": "2026-10-08T08:05:48.493Z"
+ },
+ "tileSet": {
+  "path": "C:/LLM/IWSDK/universe-atlas-wt/_riser-probe-main/tests/helpers/mountain-tile-set.mjs",
+  "source": {
+   "branch": "mountains/t6-wiring",
+   "base": "9dcb1cf",
+   "terrainVersion": "terrain-1.9.0-mountains"
+  }
+ },
+ "viewport": [
+  1920,
+  1080
+ ],
+ "pitchDeg": 35,
+ "clearances": [
+  3000
+ ],
+ "started": "2026-10-08T08:14:27.372Z",
+ "stills": [
+  {
+   "clearanceM": 3000,
+   "file": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/riser-lethuris0-c3000-rockoff.png",
+   "settledMs": 5912,
+   "setPoseError": null,
+   "maxLevel": 14,
+   "frontierMaxLevel": 14,
+   "targetLevel": 13,
+   "activeLevelHistogram": {
+    "2": 7,
+    "3": 15,
+    "4": 9,
+    "5": 14,
+    "6": 14,
+    "7": 11,
+    "8": 14,
+    "9": 8,
+    "10": 12,
+    "11": 18,
+    "12": 13,
+    "13": 15,
+    "14": 4
+   },
+   "activeSetSha": "13f7138f49cb90d1",
+   "referenceTargetLevel": 13,
+   "lodMatch": true,
+   "lodAttempts": [],
+   "appClearanceM": 3000.000003234001,
+   "pose": {
+    "position": [
+     -4331163.290975831,
+     7795639.0977086285,
+     -1193285.7096935392
+    ],
+    "heading": [
+     -0.18307252456698817,
+     0.9427996227286859,
+     0.18789820087441078,
+     -0.20568808482621612
+    ],
+    "clearanceM": 3000,
+    "eyeDir": [
+     -0.48137441090921246,
+     0.8664233893326225,
+     -0.13262423209647448
+    ],
+    "horizontalM": 4284.444020226344
+   }
+  }
+ ],
+ "descent": [],
+ "match": "C:/Users/Caldor/AppData/Local/Temp/claude/C--LLM-IWSDK/84c3735d-46ff-4f28-8f76-5598fd94ed7b/scratchpad/riser/gpu-frames/probe-riser-lethuris0-main.json",
+ "url": "http://127.0.0.1:55842/?seed=LETHRA-001&g=G001&system=G001%2FC2142%2C6%2C1%2F1&body=G001%2FC2142%2C6%2C1%2F1%2Fplanet%2F1&date=435084631200000032044300000&wv=atlas-time-2%2Catlas-address-1%2Catlas-cosmology-2-radiation%2Catlas-2.0.0%2Catlas-history-3-remnant-cooling%2Catlas-surface-8-ocean-volume%2Cterrain-1.9.1-carving-c1%2Cbiosphere-lab-3%2Catlas-galaxy-history-2",
+ "versions": {
+  "time": "atlas-time-2",
+  "space": "atlas-address-1",
+  "cosmology": "atlas-cosmology-2-radiation",
+  "catalog": "atlas-2.0.0",
+  "history": "atlas-history-3-remnant-cooling",
+  "surface": "atlas-surface-8-ocean-volume",
+  "terrain": "terrain-1.9.1-carving-c1",
+  "biosphere": "biosphere-lab-3",
+  "galaxyHistory": "atlas-galaxy-history-2"
+ },
+ "sunDir": [
+  -0.8101107185707254,
+  -0.4859294408292806,
+  0.3280140274320077
+ ],
+ "candidateSunElevs": [
+  {
+   "idx": 0,
+   "kind": "axis",
+   "e": -4.276
+  }
+ ],
+ "station": {
+  "tileSetIndex": 0,
+  "kind": "axis",
+  "dir": [
+   -0.4812694074877432,
+   0.8665500000000002,
+   -0.13217736158812068
+  ],
+  "sunElevDeg": -4.275750631098236,
+  "viewAzimuthFromSunDeg": 90
+ },
+ "errors": [],
+ "finished": "2026-10-08T08:14:51.004Z"
+}
