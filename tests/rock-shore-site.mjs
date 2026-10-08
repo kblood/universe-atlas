@@ -13,16 +13,19 @@ const offset=(d,e,n,x,z,r)=>norm([d[0]+(e[0]*x+n[0]*z)/r,d[1]+(e[1]*x+n[1]*z)/r,
  * nearest the start first) are dry sites a few metres above the high level;
  * the first with open ocean (at the low level) within `reachM` along one of
  * 16 bearings, crossing the band on the way, is returned. */
-export function findShoreSite(body,start,{lowLevelM,highLevelM,globalSamples=400000,siteAboveM=[3,40],reachM=2400,stepM=20}={}){
-  const sample=terrainSampler(body,undefined,undefined,undefined,lowLevelM),r=body.radiusM,s=norm(start);
+export function prepareShoreSearch(body,{lowLevelM,highLevelM,globalSamples=400000,siteAboveM=[3,40],reachM=2400,stepM=20}={}){
+  const sample=terrainSampler(body,undefined,undefined,undefined,lowLevelM),r=body.radiusM;
   const coarse=[];
   for(let i=0;i<globalSamples;i++){
     const y=1-2*(i+.5)/globalSamples,phi=i*2.399963229728653,q=Math.sqrt(1-y*y),d=[Math.cos(phi)*q,y,Math.sin(phi)*q];
     const p=sample(d);if(p.ocean||!(p.groundHeightM>highLevelM+siteAboveM[0]&&p.groundHeightM<highLevelM+siteAboveM[1]))continue;
-    coarse.push({d,h:p.groundHeightM,dot:d[0]*s[0]+d[1]*s[1]+d[2]*s[2]});
+    coarse.push({d,h:p.groundHeightM});
   }
-  coarse.sort((a,b)=>b.dot-a.dot);
-  for(const c of coarse){
+  return start=>{
+  const s=norm(start);
+  const candidates=coarse.map(c=>({...c,dot:c.d[0]*s[0]+c.d[1]*s[1]+c.d[2]*s[2]}));
+  candidates.sort((a,b)=>b.dot-a.dot);
+  for(const c of candidates){
     const b=basis(c.d);
     for(let q=0;q<16;q++){
       const t=2*Math.PI*q/16,dir=[Math.cos(t),Math.sin(t)];let band=0,ocean=null,firstBand=null,firstBandHeight=null;
@@ -45,4 +48,8 @@ export function findShoreSite(body,start,{lowLevelM,highLevelM,globalSamples=400
     }
   }
   return null;
+  };
 }
+/** Backwards-compatible one-shot search. The expensive global sampling can
+ * instead be prepared before a browser lock, then resolved from its live pose. */
+export function findShoreSite(body,start,options){return prepareShoreSearch(body,options)(start);}

@@ -22,6 +22,14 @@ external server configuration, fixtures, and assertions are unchanged.
 Render-probe already owned its lock and preview lifecycle; `--shots` now marks
 the lock acquisition as a capture, enforcing the same CPU-slot restriction.
 
+The expensive global shoreline candidate pass can now be prepared separately
+from its nearest-first resolution. Rock acceptance prepares the same 400,000
+samples before taking the GPU lock, through the shared one-token CPU slot.
+It resolves the unchanged search from the actual living close-view pose once
+that pose exists. The legacy one-shot helper remains available to desktop-perf.
+A caller that already holds the GPU lock remains responsible for scheduling
+that CPU preparation; the harness does not request a CPU slot under that lock.
+
 Run rock acceptance from this checkout, outside the CPU test slot:
 
 ```powershell
@@ -40,3 +48,13 @@ Verification: syntax checks pass for all four changed scripts; TypeScript
 passes through the shared one-token test slot. These checks do not certify
 the canopy, surface, or render-probe browser runs. Desktop performance needs
 a separate quiet-host run; Quest and other device checks remain outstanding.
+
+The search refactor passes an independent comparison against the original
+`4711abf` helper on nine analytic coastline cases (three phase offsets and
+three start directions), each using the original 400,000 sample count and
+shoreline criteria. Every returned site object is exactly equal, including
+the candidate count. This verifies the decomposition rather than product
+terrain acceptance. Script: `test-results/harness-rerun/shore-identity.mjs`;
+receipt: `shore-identity-analytic.log` (exit 0). A duplicate real-terrain
+comparison was interrupted to release the CPU slot for allocation verification;
+its interrupted result is not an acceptance receipt.

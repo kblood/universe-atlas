@@ -41,7 +41,8 @@ import { galaxies, refByAddress, system, bodyPosition } from '../src/catalog.ts'
 import { parseAddress } from '../src/address.ts';
 import { starLifecycle, planetLifecycle } from '../src/stellar-evolution.ts';
 import { planetSnapshotAt } from '../src/world-surface.ts';
-import { findShoreSite } from './rock-shore-site.mjs';
+import { prepareShoreSearch } from './rock-shore-site.mjs';
+import { defaultSharedSlotOn, withTestSlot } from './helpers/test-slot.mjs';
 import { HARNESS_SEED, HARNESS_SYSTEM_ID, HARNESS_DATE, SITE_A_M } from './harness-sites.mjs';
 import { datedLoweredSea } from './helpers/harness-water.mjs';
 
@@ -81,6 +82,16 @@ assert.equal(snappedLevel(DATE), 0, 'catalogue-date sea level is the full ocean'
 assert.equal(LEVEL_LOW, SEA.lowM, 'low water date is at the 60%-volume-lost harness sea');
 assert.equal(LEVEL_HIGH, LEVEL_LOW + 25, 'high water date is one bucket higher');
 
+// The 400k global samples do not depend on the eventual observer pose. Keep
+// that CPU work outside the GPU lock; resolve the original nearest-first
+// search from the actual living close pose once it is available.
+assertCaptureOutsideSlot('rock-acceptance');
+defaultSharedSlotOn();
+const shoreSearch = scenarios.includes('shore')
+  ? process.env.ATLAS_GPU_LOCK_HELD
+    ? prepareShoreSearch(living, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH })
+    : await withTestSlot({ owner: 'rock shore candidates', tokens: 1, mode: 'shared' },
+      () => prepareShoreSearch(living, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH })) : null;
 await mkdir(out, { recursive: true });
 assertCaptureOutsideSlot('rock-acceptance');
 const server = process.env.ATLAS_URL ? null
@@ -363,7 +374,7 @@ try {
   if (scenarios.includes('shore')) {
     // Search from the living close-view site (body-relative), or its recorded value.
     const start = report.scenarios.living?.close?.pose?.position ?? [...SITE_A_M];
-    const site = findShoreSite(living, start, { lowLevelM: LEVEL_LOW, highLevelM: LEVEL_HIGH });
+    const site = shoreSearch(start);
     assert.ok(site, 'a deterministic coastal site exists');
     const r = { body: living.id, site };
     report.scenarios.shore = r;
