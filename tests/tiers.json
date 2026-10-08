@@ -164,6 +164,8 @@
   "tests/terrain-leaf-loop-digest.test.mjs",
   "tests/terrain-morph-continuity.test.mjs",
   "tests/shadow-window-edge-fade.test.mjs",
+  "tests/platform-getting-started.test.mjs",
+  "tests/readme-versions.test.mjs",
   {
    "file": "tests/terrain-elevation-identity.test.mjs",
    "shards": [

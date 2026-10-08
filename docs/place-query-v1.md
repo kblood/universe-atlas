@@ -1,5 +1,7 @@
 # place-query-1: the platform's place query
 
+Superseded additively by [place-query-2](place-query-v2.md) (coastAt, altitude pressure, the rung answer); every field below keeps its value.
+
 Status: relief round 2026-10, package P2-OCEAN-QUERY. Module `src/place-query.ts`,
 version key `PLACE_QUERY_VERSION = 'place-query-1'`. Tests:
 `tests/place-query.test.mjs`, `tests/ocean-volume.test.mjs`.
