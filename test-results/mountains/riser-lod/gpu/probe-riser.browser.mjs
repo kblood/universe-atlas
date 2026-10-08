@@ -1,8 +1,8 @@
 // Riser LOD step 5 (docs/mountain-riser-lod-2026-10-07.md section 5): copy of the strata step-8 probe
 // (strata-datum docs/quiet-window-2026-10-07/gate-strata/step8/provenance/probe-strata.browser.mjs) plus EQUAL-LOD
 // verification: with --match <probe json of the reference arm>, a still whose station targetLevel differs from the
-// reference still at the same clearance is re-settled (wait + settle) and, if still different, re-approached from the
-// previous clearance, at most 3 attempts; the final level and every attempt are recorded (lodMatch true/false).
+// reference still at the same clearance is re-settled at the same pose (wait + settle) and its level re-read; the still
+// is taken after that ONE re-settle (coordinator 2026-10-07); the final level and every attempt are recorded (lodMatch true/false).
 // Original header:
 // Strata stage 1, Addendum A step 8: GPU probe stills (+ optional descent) per arm, derived from
 // docs/quiet-window-2026-10-07/gate-c1/step2/provenance/probe-c1.browser.mjs (same fixture seed/date, free-port preview,
@@ -12,6 +12,7 @@
 //   node probe-strata.browser.mjs --root <checkout> --tag <main|branch|rockoff> --out <dir> --tileset <mountain-tile-set.mjs>
 //        --world <Maithea|Selawyn|Raiva|Lethuris> --label <name> --candidates <idx,idx,...> --rule <axis|nearest10>
 //        [--clearances ...] [--descent 1] [--descent-like <probe json>] [--width 1920 --height 1080]
+// rule fixed (riser step 5) = the single given candidate, whatever its sun elevation (recorded).
 // Rules (pre-registered in ../README.md before any frame): axis = among the candidates the highest sun elevation in
 // [5, 15] deg (C1's rule); nearest10 = candidates in the given order, the first with sun elevation in [3, 40] deg.
 const arg=(n,d)=>{const i=process.argv.indexOf('--'+n);return i>0&&process.argv[i+1]&&!process.argv[i+1].startsWith('--')?process.argv[i+1]:d;};
@@ -29,6 +30,7 @@ const {directionTile,tileKey}=await import(ROOT+'src/planet-tiles.ts');
 const {FROZEN_MASSIF_TILE_SET:FROZEN,FROZEN_MASSIF_TILE_SET_SOURCE}=await import('file:///'+TILESET.replace(/\\/g,'/'));
 import {mkdir,writeFile} from 'node:fs/promises';
 import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
 const W=+arg('width',1920),H=+arg('height',1080),PITCH=+arg('pitch',35);
 const clearances=arg('clearances','6000,4200,3000,2100,1500,1050,750,520,360').split(',').map(Number);
 const log=(...a)=>console.error(`[probe ${label} ${tag} ${new Date().toISOString().slice(11,19)}]`,...a);
@@ -64,7 +66,7 @@ try{
   const elev=d=>Math.asin(Math.max(-1,Math.min(1,d.dot(S))))*180/Math.PI;
   const cands=candidates.map(idx=>{const e=FROZEN[name][idx];return {idx,kind:e.kind,v:V(e.d),e:elev(V(e.d))};});
   report.candidateSunElevs=cands.map(c=>({idx:c.idx,kind:c.kind,e:+c.e.toFixed(3)}));
-  const pick=rule==='axis'?cands.filter(a=>a.e>=5&&a.e<=15).sort((a,b)=>b.e-a.e||a.idx-b.idx)[0]:cands.find(a=>a.e>=3&&a.e<=40);
+  const pick=rule==='fixed'?cands[0]:rule==='axis'?cands.filter(a=>a.e>=5&&a.e<=15).sort((a,b)=>b.e-a.e||a.idx-b.idx)[0]:cands.find(a=>a.e>=3&&a.e<=40);
   if(!pick)throw new Error(`no ${name} candidate lit under rule ${rule}: ${JSON.stringify(report.candidateSunElevs)}`);
   const t=pick.v,az=tangentTo(t,S),view=az.clone().applyAxisAngle(t,Math.PI/2);
   report.station={tileSetIndex:pick.idx,kind:pick.kind,dir:t.toArray(),sunElevDeg:pick.e,viewAzimuthFromSunDeg:90};
@@ -77,7 +79,8 @@ try{
     return {position:eye.toArray(),heading,clearanceM:c,eyeDir:q.toArray(),horizontalM:d};};
   const levels=async()=>{const dg=await page.evaluate(()=>{const d=window.__atlas.renderDebug().planet.diagnostics();return {maxLevel:d.maxLevel,frontierMaxLevel:d.frontierMaxLevel,active:d.debug.activeTileIds};});
     let targetLevel=null;const set=new Set(dg.active);for(let L=24;L>=0;L--){if(set.has(tileKey(directionTile(t.toArray(),L)))){targetLevel=L;break;}}
-    return {maxLevel:dg.maxLevel,frontierMaxLevel:dg.frontierMaxLevel,targetLevel};};
+    const hist={};for(const k of dg.active){const L=k.split('/')[1];hist[L]=(hist[L]??0)+1;}
+    return {maxLevel:dg.maxLevel,frontierMaxLevel:dg.frontierMaxLevel,targetLevel,activeLevelHistogram:hist,activeSetSha:createHash('sha256').update([...dg.active].sort().join('|')).digest('hex').slice(0,16)};};
   const settle=async ms=>{const t0=Date.now();try{await page.waitForFunction(()=>{const b=window.__atlas.perfSample().backlog;return !!b&&b.surfaceReady&&b.terrainPending===0;},null,{timeout:ms,polling:250});return Date.now()-t0;}catch{return -1;}};
   for(const c of clearances){
     const pose=poseFor(c);let err=null;
@@ -85,11 +88,9 @@ try{
     await page.waitForTimeout(6000);const settledMs=err?-1:await settle(90000);await page.waitForTimeout(3000);
     let lv=await levels();const attempts=[];
     const want=MATCH?.stills.find(x=>x.clearanceM===c)?.targetLevel;
-    for(let k=0;MATCH&&want!=null&&lv.targetLevel!==want&&k<3;k++){
+    for(let k=0;MATCH&&want!=null&&lv.targetLevel!==want&&k<1;k++){ // coordinator 2026-10-07: re-settle and re-capture ONCE
       attempts.push({attempt:k,targetLevel:lv.targetLevel});
-      if(k>0){const i=clearances.indexOf(c),prev=poseFor(clearances[Math.max(0,i-1)]);await page.evaluate(q=>window.__atlas.setPose(q.position,q.heading,q.clearanceM),prev);await page.waitForTimeout(4000);await settle(90000);
-        await page.evaluate(q=>window.__atlas.setPose(q.position,q.heading,q.clearanceM),pose);await page.waitForTimeout(6000);}
-      await settle(90000);await page.waitForTimeout(3000);lv=await levels();
+      await page.waitForTimeout(6000);await settle(90000);await page.waitForTimeout(3000);lv=await levels();
     }
     const lodMatch=MATCH&&want!=null?lv.targetLevel===want:null;
     const sample=await page.evaluate(()=>window.__atlas.perfSample()).catch(()=>null);

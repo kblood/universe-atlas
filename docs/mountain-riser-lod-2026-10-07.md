@@ -434,3 +434,55 @@ empty). The six branch height rows (HARD LR and H2-H4) follow below.
 | Selawyn[2] | 68,121 | 56,298 | 0 | 0 / 0 | 0 / 0 | 0 | 51.32 | 87.02 | L14 **0.955** | .05, .39, .76 |
 | Lethuris[1] | 108,241 | 80,139 | 0 | 0 / 0 | 0 / 0 | 0 | 37.30 | 64.85 | L14 **1.002** | .12, .62, .89 |
 | Lethuris[2] | 139,129 | 113,082 | 0 | 0 / 0 | 0 / 0 | 0 | 60.26 | 103.03 | L14 **0.968** | .04, .42, .78 |
+
+## Step 5: registration (coordinator instruction 2026-10-07, before any capture)
+
+**Crash note (2026-10-07 ~23:35, bugcheck 0x154).** The machine crashed before any step-5 capture. Checked afterwards:
+- no step-5 frame directory existed and the GPU lock was free, so no partial captures exist and none were discarded;
+- the one uncommitted file was this probe script (the edits below);
+- a dead re-approach block left by an edit was removed;
+- all three arms were rebuilt (exit 0).
+
+**Arms.**
+- main = 7419733 (`_riser-probe-main`).
+- branch = `_riser-probe-branch` at 2802fca. Its src is identical to the branch tip; later commits touch docs and
+  test-results only.
+- rock-off reference = 7419733 with a probe-only `return 0` in `rockDetailM` (uncommitted, never merged). It is a
+  "carving only" reference for the judge and the rock-window mask for the INFO P99.
+
+**Stations and poses.**
+- Maithea[0]: stills at 4200 and 3000 m. Also stills at 2100 / 1500 / 1050 / 750 / 520 / 360 m (the step-8 descent
+  poses), to find matched L12 / L13 station tiles.
+- Maithea[0] descent: the step-8 descent plan (6000 -> 360 m in 3 s, 7 frames), main and branch only.
+- Lethuris[0]: 3000 m.
+- Rule `fixed`: the given index, whatever its sun elevation (recorded). Side light, pitch 35 deg, 1920 x 1080, clouds
+  hidden.
+
+**Equal LOD.**
+- The station tile's targetLevel is recorded per still in both arms, plus the active-tile level histogram and a hash
+  of the active set.
+- If the branch or rock-off level differs from main's, the still is re-settled at the same pose once and re-captured.
+  If it still differs, it is excluded and listed.
+- Descent frames cannot be re-captured; mismatched ones are excluded and listed.
+- If the runtime never shows L13 (or L12) at the station tile, that is written down.
+
+**Blinding** (`gpu/make-pairs.py`).
+- One pair per matched still or frame, full-resolution JPEGs. A/B and pair numbering come from `secrets` randomness.
+- The key (`gpu/pairs-key.json`) is committed before the judge starts.
+- A fresh-context Opus judge (Agent tool) sees only the pair images and the rock-off REF images.
+- Per pair the judge answers:
+  - notch rows: A / B / both / neither / "both but clearly weaker in X";
+  - ledges at distance: A clearly worse / B clearly worse / no clear difference;
+  - any new regular structure present in only one image.
+
+**PASS requires all of the following:**
+1. In every matched still where main has notch rows, the branch has none. "Weaker but visible" is a fail.
+2. The branch never has notch rows where main has none.
+3. No new regular structure in the branch.
+4. No pose class (c4200, c3000) where the branch is judged clearly worse on ledges in the majority of its stills.
+
+INFO: notch P99 per GPU still, with branch <= main. The metric is run on luminance, with the rock-off still as the off
+arm.
+
+**If step 5 fails on notch rows:** STOP. The pre-decided fallback is the 3-cell design, which the coordinator hands
+over as a new registration.
