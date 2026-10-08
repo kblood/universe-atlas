@@ -578,3 +578,54 @@ The run log is at `test-results/tiers/1a72107b0c2b-full-2026-10-08T08-23-38-514Z
 - the in-massif warm bench;
 - test:perf;
 - cost rows.
+
+## Pre-merge timing (coordinator quiet window, 2026-10-08)
+
+**Setup.**
+- All rows ran in ONE exclusive test-slot hold, 08:55:30-09:00:19Z, with no GPU or browser. The coordinator reported
+  the machine quiet: R1-R6 done, the Chromium build stopped, no other agent testing.
+- Driver: `test-results/mountains/riser-lod/timing/run-timing.sh`; logs are next to it (`driver.log`).
+- main = git-archive export of 7419733 (src + tests); branch = this checkout (src identical to 2802fca).
+- Gates:
+  - the tile-build gate (+50 %) is the coordinator's;
+  - the in-massif and M5 limits are the standing limits of those benches (in-massif 250 ns as used for the strata
+    stage; M5 row 214 ns as asserted in `tests/mountain-rock-detail.test.mjs`);
+  - they were stated before the run.
+- Before the hold, one smoke run of the tile-bench script (Raiva, 1 round, shared slot) checked that it works. It is
+  not counted.
+
+**1. Tile-build cost at the newly split levels**: **PASS** (gate: branch mean / main mean - 1 <= +50 % on every row).
+- Script: `timing/tile-build-ab.mjs`. Main and branch are interleaved in one process, order alternating per round,
+  after a warm-up.
+- 8 massif axis-site tiles per level, 7 rounds, so 56 builds per arm per row.
+- Levels: L(rock) (split on both arms), the filtered levels above it, and the first sharp level. Default (wired)
+  sampler options.
+
+| World | L(rock) | filtered (newly split) | first sharp | max |
+|---|---|---|---|---|
+| Maithea | L10 +10.7 % | L11 +24.6, L12 +26.9, L13 +27.9 % | L14 +20.3 % | **+27.9 %** |
+| Selawyn | L11 +11.9 % | L12 +20.1, L13 +16.4, L14 +16.2 % | L15 +19.5 % | +20.1 % |
+| Raiva | L9 +6.5 % | L10 +19.1, L11 +19.3, L12 +15.0 % | L13 +14.4 % | +19.3 % |
+| Lethuris | L11 +9.5 % | L12 +15.0, L13 +20.1, L14 +17.4 % | L15 +23.4 % | +23.4 % |
+
+- Absolute means: about 27-28 ms -> 32-35 ms per tile at L10-L13, and 10-11 -> 12 ms at L14-L15.
+- The L(rock) rows include cold cache fills; their medians are +15-20 %.
+- The pre-registration estimate was about +30 %. Measured +14-28 % on the newly split levels.
+
+**2. In-massif warm bench**: **PASS**, 193.1 ns against a limit of 250 ns.
+- Script: `timing/inmassif-ab.mjs`. It runs C1's `inmassif-bench.mjs`, unchanged, on the truth rock path. Main and
+  branch alternate, 3 runs each, one fresh process per run.
+
+| Path | main | branch | delta |
+|---|---|---|---|
+| carving, no rock | 56.7 / 57.3 / 57.6 | 56.7 / 56.7 / 57.1 | 0 |
+| carving + rock (truth, riser 0) | 185.0 / 186.8 / 183.5 (median 185.0) | **192.4 / 194.3 / 193.1 (median 193.1)** | **+8 ns (+4.4 %)** |
+| INFO: rock with riser width, Raiva L9 (w = 383.9 m) | 181.3 x3 (v1 path; main ignores the width) | 191.4 / 193.1 / 191.1 | +10 ns |
+| INFO: rock with riser width, Raiva L12 (w = 48.0 m) | 182.2 / 180.6 / 180.8 | 189.7 / 193.5 / 190.9 | +10 ns |
+
+**3. Cost row M5** (`ATLAS_M5_BENCH=1`, "warm synthetic add-on <= 214 ns"): **PASS**, branch 156.3 ns against 214 ns.
+- Main: 137.5 ns, so the branch is +18.8 ns (+13.7 %). The rock-alone term is 52.6 -> 66.5 ns (+14 ns).
+- This is larger than "one multiply and one branch" suggests. The likely cause is the extra parameter and the
+  `bench(t, 0)` self-call on the truth path costing V8 inlining; this was not investigated or tuned.
+
+**4. `test:perf`**: **PASS**. 13 tests: 12 pass, 0 fail, 1 skipped.

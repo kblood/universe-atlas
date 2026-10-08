@@ -1,0 +1,6 @@
+TILE_BUILD_AB {"world":"Maithea","level":10,"role":"rock (split on both arms)","tiles":8,"builds":56,"mainMeanMs":55.36,"branchMeanMs":61.29,"mainMedianMs":30.59,"branchMedianMs":36.62,"ratio":0.107,"medianRatio":0.197,"pass":true}
+TILE_BUILD_AB {"world":"Maithea","level":11,"role":"filtered (newly split)","tiles":8,"builds":56,"mainMeanMs":28.09,"branchMeanMs":35.01,"mainMedianMs":27.79,"branchMedianMs":34.82,"ratio":0.246,"medianRatio":0.253,"pass":true}
+TILE_BUILD_AB {"world":"Maithea","level":12,"role":"filtered (newly split)","tiles":8,"builds":56,"mainMeanMs":27.38,"branchMeanMs":34.74,"mainMedianMs":27.37,"branchMedianMs":34.53,"ratio":0.269,"medianRatio":0.262,"pass":true}
+TILE_BUILD_AB {"world":"Maithea","level":13,"role":"filtered (newly split)","tiles":8,"builds":56,"mainMeanMs":27.19,"branchMeanMs":34.78,"mainMedianMs":27.18,"branchMedianMs":34.41,"ratio":0.279,"medianRatio":0.266,"pass":true}
+TILE_BUILD_AB {"world":"Maithea","level":14,"role":"first sharp (newly split)","tiles":8,"builds":56,"mainMeanMs":10.27,"branchMeanMs":12.35,"mainMedianMs":10.18,"branchMedianMs":12.35,"ratio":0.203,"medianRatio":0.213,"pass":true}
+TILE_BUILD_AB_WORLD {"world":"Maithea","rockL":10,"sharpL":14,"pass":true,"maxRatio":0.279,"sinkFinite":true}

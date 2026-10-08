@@ -1,0 +1,6 @@
+TILE_BUILD_AB {"world":"Raiva","level":9,"role":"rock (split on both arms)","tiles":8,"builds":56,"mainMeanMs":62.36,"branchMeanMs":66.42,"mainMedianMs":30.87,"branchMedianMs":35.55,"ratio":0.065,"medianRatio":0.152,"pass":true}
+TILE_BUILD_AB {"world":"Raiva","level":10,"role":"filtered (newly split)","tiles":8,"builds":56,"mainMeanMs":27.76,"branchMeanMs":33.06,"mainMedianMs":27.8,"branchMedianMs":32.91,"ratio":0.191,"medianRatio":0.184,"pass":true}
+TILE_BUILD_AB {"world":"Raiva","level":11,"role":"filtered (newly split)","tiles":8,"builds":56,"mainMeanMs":27.48,"branchMeanMs":32.77,"mainMedianMs":27.39,"branchMedianMs":32.68,"ratio":0.193,"medianRatio":0.193,"pass":true}
+TILE_BUILD_AB {"world":"Raiva","level":12,"role":"filtered (newly split)","tiles":8,"builds":56,"mainMeanMs":28.22,"branchMeanMs":32.45,"mainMedianMs":28.02,"branchMedianMs":32.36,"ratio":0.15,"medianRatio":0.155,"pass":true}
+TILE_BUILD_AB {"world":"Raiva","level":13,"role":"first sharp (newly split)","tiles":8,"builds":56,"mainMeanMs":28.22,"branchMeanMs":32.27,"mainMedianMs":28.13,"branchMedianMs":32.12,"ratio":0.144,"medianRatio":0.142,"pass":true}
+TILE_BUILD_AB_WORLD {"world":"Raiva","rockL":9,"sharpL":13,"pass":true,"maxRatio":0.193,"sinkFinite":true}
