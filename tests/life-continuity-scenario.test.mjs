@@ -119,7 +119,8 @@ test('presentation continuity: receding exits fade past 95 m; the former 95 m ca
   // (realtime date) so the herd ahead recedes through 80/95/110 m in view.
   const start=digestPoses()[SLICE[0]],poses=[];
   let direction=start.direction,dateNs=start.dateNs;
-  for(let i=0;i<100;i++){dateNs+=BigInt(Math.round(1e9/60));direction=moveAlong(direction,start.yawDeg+180,25/60);poses.push({...start,direction,dateNs,phase:'recede'});}
+  const RECEDE_FRAMES=360; // 150 m ≥ 80 m entry + 15 m listed band + margin, so any rig that was active at the start crosses 95 m in view whatever the site
+  for(let i=0;i<RECEDE_FRAMES;i++){dateNs+=BigInt(Math.round(1e9/60));direction=moveAlong(direction,start.yawDeg+180,25/60);poses.push({...start,direction,dateNs,phase:'recede'});}
   const source=readFileSync(new URL('../src/planet-renderer.ts',import.meta.url),'utf8');
   const widened='if(item.distance>FAUNA_NEAR_RIG_EXIT_M){if(item.distance>FAUNA_NEAR_RIG_EXIT_M+15)break;if(!this.faunaNear.holds(item.member.id))continue;}';
   assert.equal(source.split(widened).length,2,'widened near-candidate cut anchor');
