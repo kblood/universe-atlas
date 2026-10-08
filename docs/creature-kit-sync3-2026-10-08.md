@@ -1,6 +1,7 @@
 # Creature-kit sync 3
 
-Source: creature-kit `2e34b6ba5aa26ae41480a82da707684086d29a97` (kit/coat-alloc).
+Source: creature-kit `5e4265f` (kit/coat-alloc), following `2e34b6b` with a
+benchmark-only correction that rejects missing/malformed GC profiler output.
 The sync script writes all 47 vendor files and the manifest; no vendor file is
 edited directly. The contract now includes the GC-counted coat allocation bench.
 
@@ -21,6 +22,9 @@ captures are under the shared workspace `Assets/_assetctl/kit-nudge-evidence/`.
 Kit validation: typecheck clean; nudge/head/fixture/coat 46/46; historical neutral
 guard and unconditional V1 pins 2/2. The empty known-unstable list now gates all
 74 specimens under six modes. Atlas vendor files match the committed kit.
+Atlas handoff checks: 14 tests, 13 pass, one optional kit-checkout skip, zero
+failures (vendor, nudge, life digest); typecheck clean. The fail-closed benchmark
+followup measures coat 0.025 B/call and control 0.189 B/call, zero GC events.
 
 The golden fauna corpus adds the exact catalogue texts for the earlier-rule
 worm mouth and cephalopod horse. The merger must run the combined strict
