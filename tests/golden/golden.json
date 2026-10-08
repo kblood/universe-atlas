@@ -17,7 +17,7 @@
     "placeQueryRecords": 471,
     "censusRecords": 29,
     "rocksRecords": 578,
-    "faunaRecords": 655
+    "faunaRecords": 716
   },
   "digests": {
     "galaxies": "cc5da8f9b5764b2886411fa287c41e23b6205e48452ddd9de60c39891b0e5d3a",
@@ -31,10 +31,10 @@
     "climate": "63916081c7d768de808198e5d05ae50596310c50066c812193830c3658af1179",
     "biomes": "0730ba317b0e87e07ade65338ac3cd69b4ce9013c70cab6d0b885f6f90db99dc",
     "oceanVolume": "3d3ef47fb181322e95156804aa870696fd20762f8eefc1fc2ecd05f68ffb2c11",
-    "placeQuery": "ae5b7337a935c8649cfdff96643899ebd996e097894fb7eab4ad3f9b1e448ba9",
-    "census": "bceff683a66bfb13d08c9d54bbaf18a006c2734764a19b03df7688720a1c4fd5",
+    "placeQuery": "52aadfbda89be86ceed936d03d8da30906de9af8f6b5d6f84752093f75e84685",
+    "census": "69137b0becb9cc37583b1802484c12af13bd3c8808c529ca6b6c81f8e3b88173",
     "rocks": "fa0621596e359811f862e33e6e80765f9a50467255b6d1d23d3c5e65209c237c",
-    "fauna": "75a59833a03444b1506de5770a66c4eceeaa5b6c1107c180e5db50a9a495ff6a"
+    "fauna": "f0d8a400c6c130381cea790df5c7dd252630f92f49c2f7d915a6ce7cf98e866e"
   },
   "platformSeed": "LETHRA-001"
 }
